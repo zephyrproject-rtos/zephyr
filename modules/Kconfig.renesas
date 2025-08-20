@@ -287,6 +287,11 @@ config USE_RZ_FSP_SCI_UART
 	help
 	  Enable RZ FSP SCI UART driver
 
+config USE_RZ_FSP_MTU
+	bool
+	help
+	  Enable RZ FSP MTU driver
+
 endif
 
 config HAS_RENESAS_RX_RDP
@@ -325,5 +330,10 @@ config USE_RX_RDP_FLASH
 	bool
 	help
 	  Enable RX RDP Flash driver
+
+config USE_RX_RDP_ADC
+	bool
+	help
+	  Enable RX RDP ADC driver
 
 endif # HAS_RENESAS_RX_RDP

@@ -117,7 +117,7 @@ def build_elf(elf_file, include_dirs):
         includes.extend(["-I", include_dir])
     cmd = ([args.compiler, "-shared", "-Wall", "-Werror", "-I."] + includes +
            ["-fno-stack-protector", "-fpic", "-mno-red-zone", "-fshort-wchar",
-            "-Wl,-nostdlib", "-T", ldscript, "-o", "zefi.elf", cfile])
+            "-Wl,-nostdlib", "-nostartfiles", "-T", ldscript, "-o", "zefi.elf", cfile])
     verbose(" ".join(cmd))
     subprocess.run(cmd, check = True)
 

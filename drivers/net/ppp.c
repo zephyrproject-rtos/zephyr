@@ -1031,6 +1031,12 @@ use_random_mac:
 
 	memset(ppp->buf, 0, sizeof(ppp->buf));
 
+	/*
+	 * Set the point-to-point interface flag. This is needed at least for IPv6 neighbor
+	 * discovery to handle packets correctly.
+	 */
+	net_if_flag_set(iface, NET_IF_POINTOPOINT);
+
 #if defined(CONFIG_PPP_NET_IF_NO_AUTO_START)
 	/*
 	 * If interface autostart is disabled from Kconfig, then do not start the

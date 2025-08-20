@@ -1,0 +1,18 @@
+# Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: dt_xt_zb1_devkit
+name: Zigbee 3.0 and BLE 5.0 Coexistence Module Development Kitt
+type: mcu
+arch: riscv
+ram: 132
+toolchain:
+  - zephyr
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+supported:
+  - pinctrl
+  - uart
+vendor: doiting

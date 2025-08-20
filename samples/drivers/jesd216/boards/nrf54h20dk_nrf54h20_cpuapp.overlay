@@ -4,6 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+&gpio6 {
+	status = "okay";
+	zephyr,pm-device-runtime-auto;
+};
+
+&exmif {
+	status = "okay";
+	zephyr,pm-device-runtime-auto;
+};
+
 &mx25uw63 {
 	status = "okay";
 };

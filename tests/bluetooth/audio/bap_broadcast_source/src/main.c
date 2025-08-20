@@ -6,6 +6,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <errno.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -1402,4 +1403,81 @@ ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_get_base_inval_sm
 	err = bt_bap_broadcast_source_delete(fixture->source);
 	zassert_equal(0, err, "Unable to delete broadcast source: err %d", err);
 	fixture->source = NULL;
+}
+
+static bool bap_broadcast_source_foreach_stream_cb(struct bt_bap_stream *stream, void *user_data)
+{
+	size_t *cnt = user_data;
+
+	(*cnt)++;
+
+	return false;
+}
+
+static ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_foreach_stream)
+{
+	size_t cnt = 0U;
+	int err;
+
+	err = bt_bap_broadcast_source_create(fixture->param, &fixture->source);
+	zassert_equal(err, 0, "Unexpected return value: %d", err);
+
+	err = bt_bap_broadcast_source_foreach_stream(fixture->source,
+						     bap_broadcast_source_foreach_stream_cb, &cnt);
+	zassert_equal(err, 0, "Unexpected return value: %d", err);
+	zassert_equal(cnt, CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT, "Got %zu, expected %d", cnt,
+		      CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT);
+}
+
+static bool bap_broadcast_source_foreach_stream_return_early_cb(struct bt_bap_stream *stream,
+								void *user_data)
+{
+	size_t *cnt = user_data;
+
+	(*cnt)++;
+
+	return true;
+}
+
+static ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_foreach_stream_return_early)
+{
+	size_t cnt = 0U;
+	int err;
+
+	err = bt_bap_broadcast_source_create(fixture->param, &fixture->source);
+	zassert_equal(err, 0, "Unexpected return value: %d", err);
+
+	err = bt_bap_broadcast_source_foreach_stream(
+		fixture->source, bap_broadcast_source_foreach_stream_return_early_cb, &cnt);
+	zassert_equal(err, -ECANCELED, "Unexpected return value: %d", err);
+	zassert_equal(cnt, 1U, "Got %zu, expected %u", cnt, 1U);
+}
+
+static ZTEST_F(bap_broadcast_source_test_suite,
+	       test_broadcast_source_foreach_stream_inval_null_source)
+{
+	size_t cnt = 0U;
+	int err;
+
+	err = bt_bap_broadcast_source_create(fixture->param, &fixture->source);
+	zassert_equal(err, 0, "Unexpected return value: %d", err);
+
+	err = bt_bap_broadcast_source_foreach_stream(NULL, bap_broadcast_source_foreach_stream_cb,
+						     &cnt);
+	zassert_equal(err, -EINVAL, "Unexpected return value: %d", err);
+	zassert_equal(cnt, 0U, "Got %zu, expected %u", cnt, 0U);
+}
+
+static ZTEST_F(bap_broadcast_source_test_suite,
+	       test_broadcast_source_foreach_stream_inval_null_func)
+{
+	size_t cnt = 0U;
+	int err;
+
+	err = bt_bap_broadcast_source_create(fixture->param, &fixture->source);
+	zassert_equal(err, 0, "Unexpected return value: %d", err);
+
+	err = bt_bap_broadcast_source_foreach_stream(fixture->source, NULL, &cnt);
+	zassert_equal(err, -EINVAL, "Unexpected return value: %d", err);
+	zassert_equal(cnt, 0U, "Got %zu, expected %u", cnt, 0U);
 }

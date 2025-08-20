@@ -516,41 +516,56 @@ static void shell_udp_upload_print_stats(const struct shell *sh,
 			client_rate_in_kbps = 0U;
 		}
 
-		if (!rate_in_kbps) {
+		/* Print warning if no server stats in unicast case; for multicast,
+		 * server stats are not expected.
+		 */
+		if (!rate_in_kbps && !results->is_multicast) {
 			shell_fprintf(sh, SHELL_ERROR,
 				      "LAST PACKET NOT RECEIVED!!!\n");
 		}
 
-		shell_fprintf(sh, SHELL_NORMAL,
-			      "Statistics:\t\tserver\t(client)\n");
-		shell_fprintf(sh, SHELL_NORMAL, "Duration:\t\t");
-		print_number_64(sh, results->time_in_us, TIME_US,
-			     TIME_US_UNIT);
-		shell_fprintf(sh, SHELL_NORMAL, "\t(");
-		print_number_64(sh, results->client_time_in_us, TIME_US,
-			     TIME_US_UNIT);
-		shell_fprintf(sh, SHELL_NORMAL, ")\n");
+		if (results->is_multicast) {
+			shell_fprintf(sh, SHELL_NORMAL, "Statistics (client only)\n");
+			shell_fprintf(sh, SHELL_NORMAL, "Duration:\t\t");
+			print_number_64(sh, results->client_time_in_us, TIME_US, TIME_US_UNIT);
+			shell_fprintf(sh, SHELL_NORMAL, "\n");
+			shell_fprintf(sh, SHELL_NORMAL, "Num packets:\t\t%u\n",
+					results->nb_packets_sent);
+			shell_fprintf(sh, SHELL_NORMAL, "Rate:\t\t\t");
+			print_number(sh, client_rate_in_kbps, KBPS, KBPS_UNIT);
+			shell_fprintf(sh, SHELL_NORMAL, "\n");
+		} else {
+			shell_fprintf(sh, SHELL_NORMAL,
+					"Statistics:\t\tserver\t(client)\n");
+			shell_fprintf(sh, SHELL_NORMAL, "Duration:\t\t");
+			print_number_64(sh, results->time_in_us, TIME_US,
+					TIME_US_UNIT);
+			shell_fprintf(sh, SHELL_NORMAL, "\t(");
+			print_number_64(sh, results->client_time_in_us, TIME_US,
+					TIME_US_UNIT);
+			shell_fprintf(sh, SHELL_NORMAL, ")\n");
 
-		shell_fprintf(sh, SHELL_NORMAL, "Num packets:\t\t%u\t(%u)\n",
-			      results->nb_packets_rcvd,
-			      results->nb_packets_sent);
+			shell_fprintf(sh, SHELL_NORMAL, "Num packets:\t\t%u\t(%u)\n",
+					results->nb_packets_rcvd,
+					results->nb_packets_sent);
 
-		shell_fprintf(sh, SHELL_NORMAL,
-			      "Num packets out order:\t%u\n",
-			      results->nb_packets_outorder);
-		shell_fprintf(sh, SHELL_NORMAL, "Num packets lost:\t%u\n",
-			      results->nb_packets_lost);
+			shell_fprintf(sh, SHELL_NORMAL,
+					"Num packets out order:\t%u\n",
+					results->nb_packets_outorder);
+			shell_fprintf(sh, SHELL_NORMAL, "Num packets lost:\t%u\n",
+					results->nb_packets_lost);
 
-		shell_fprintf(sh, SHELL_NORMAL, "Jitter:\t\t\t");
-		print_number(sh, results->jitter_in_us, TIME_US,
-			     TIME_US_UNIT);
-		shell_fprintf(sh, SHELL_NORMAL, "\n");
+			shell_fprintf(sh, SHELL_NORMAL, "Jitter:\t\t\t");
+			print_number(sh, results->jitter_in_us, TIME_US,
+					TIME_US_UNIT);
+			shell_fprintf(sh, SHELL_NORMAL, "\n");
 
-		shell_fprintf(sh, SHELL_NORMAL, "Rate:\t\t\t");
-		print_number(sh, rate_in_kbps, KBPS, KBPS_UNIT);
-		shell_fprintf(sh, SHELL_NORMAL, "\t(");
-		print_number(sh, client_rate_in_kbps, KBPS, KBPS_UNIT);
-		shell_fprintf(sh, SHELL_NORMAL, ")\n");
+			shell_fprintf(sh, SHELL_NORMAL, "Rate:\t\t\t");
+			print_number(sh, rate_in_kbps, KBPS, KBPS_UNIT);
+			shell_fprintf(sh, SHELL_NORMAL, "\t(");
+			print_number(sh, client_rate_in_kbps, KBPS, KBPS_UNIT);
+			shell_fprintf(sh, SHELL_NORMAL, ")\n");
+		}
 
 #ifdef CONFIG_ZPERF_SESSION_PER_THREAD
 		if (is_async) {

@@ -9,3 +9,14 @@ config RENESAS_RZ_EXT_IRQ
 	select PINCTRL
 	help
 	  Renesas RZ external interrupt controller driver
+
+if RENESAS_RZ_EXT_IRQ
+
+config RENESAS_RZ_INTC_HAS_NMI
+	bool "NMI (Non Maskable Interrupt) pin"
+	default y
+	depends on SOC_SERIES_RZG3S || SOC_SERIES_RZA3UL
+	help
+	  Renesas RZ interrupt controller has NMI (Non Maskable Interrupt) pin
+
+endif

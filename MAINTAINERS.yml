@@ -597,7 +597,7 @@ Bluetooth Host:
     - tests/bsim/bluetooth/hci_uart/
     - tests/bsim/bluetooth/ll/
     - tests/bsim/bluetooth/mesh/
-    - tests/bsim/bluetooth/tester/src/audio/
+    - tests/bsim/bluetooth/tester/
   labels:
     - "area: Bluetooth Host"
     - "area: Bluetooth"
@@ -662,6 +662,7 @@ Bluetooth Qualification:
     - doc/connectivity/bluetooth/autopts/
     - tests/bluetooth/qualification/
     - tests/bluetooth/tester/
+    - tests/bsim/bluetooth/tester/
   labels:
     - "area: Bluetooth Qualification"
     - "area: Bluetooth"
@@ -1546,7 +1547,7 @@ Documentation Infrastructure:
     - decsny
     - lmajewski
     - pdgendt
-    - clamattia
+    - ClaCodes
   files:
     - drivers/ethernet/
     - include/zephyr/dt-bindings/ethernet/
@@ -3228,8 +3229,11 @@ Microchip SAM Platforms:
     - stephanosio
   files:
     - boards/atmel/
+    - boards/microchip/sam/
     - dts/arm/atmel/
+    - dts/arm/microchip/sam/
     - soc/atmel/
+    - soc/microchip/sam/
     - drivers/*/*sam*.c
     - dts/bindings/*/atmel,*
   labels:
@@ -4345,6 +4349,7 @@ Samples:
     - kartben
   collaborators:
     - nashif
+    - JarmouniA
   files:
     - samples/sample_definition_and_criteria.rst
     - samples/
@@ -5314,6 +5319,7 @@ West:
     - jvasanth1
     - AzharMCHP
     - scottwcpg
+    - nandojve
   collaborators:
     - VenkatKotakonda
     - albertofloyd
@@ -5486,6 +5492,7 @@ West:
   status: maintained
   maintainers:
     - vaishnavachath
+    - ssekar15
   files: []
   labels:
     - "platform: TI"

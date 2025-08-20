@@ -516,7 +516,8 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 	}
 
 	if ((config->channel_direction == MEMORY_TO_PERIPHERAL) ||
-	    (config->channel_direction == PERIPHERAL_TO_MEMORY)) {
+	    (config->channel_direction == PERIPHERAL_TO_MEMORY) ||
+	    (config->channel_direction == LPC_DMA_SPI_MCUX_FLEXCOMM_TX)) {
 		is_periph = true;
 	} else {
 		is_periph = false;

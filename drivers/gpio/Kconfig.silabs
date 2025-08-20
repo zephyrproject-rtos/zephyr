@@ -13,7 +13,9 @@ if GPIO_SILABS
 
 config GPIO_SILABS_COMMON_INIT_PRIORITY
 	int "Common initialization priority"
-	depends on GPIO_SILABS
 	default 39
+	help
+	  Main GPIO controller has to initialized before the GPIO themselves.
+	  "GPIO_INIT_PRIORITY - 1" is usually the right value.
 
 endif # GPIO_SILABS

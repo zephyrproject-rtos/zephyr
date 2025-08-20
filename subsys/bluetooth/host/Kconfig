@@ -760,7 +760,7 @@ config BT_MAX_PAIRED
 	int "Maximum number of paired devices"
 	default 0 if !BT_SMP
 	default 1
-	range 0 128
+	range 0 250
 	help
 	  Maximum number of paired Bluetooth devices. The minimum (and
 	  default) number is 1.

@@ -8,7 +8,11 @@ endif()
 
 board_runner_args(openocd --target-handle=_CHIPNAME.cpu0)
 
+board_runner_args(pyocd "--target=stm32h7s7l8hxh")
+board_runner_args(pyocd "--flash-opt=-O reset_type=hw")
+board_runner_args(pyocd "--flash-opt=-O connect_mode=under-reset")
+
 # keep first
 include(${ZEPHYR_BASE}/boards/common/stm32cubeprogrammer.board.cmake)
-# FIXME: openocd runner not yet available.
+include(${ZEPHYR_BASE}/boards/common/pyocd.board.cmake)
 include(${ZEPHYR_BASE}/boards/common/openocd-stm32.board.cmake)

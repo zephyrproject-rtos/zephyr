@@ -16,9 +16,6 @@ config MEMC
 
 if LVGL
 
-config CACHE_MANAGEMENT
-	default y
-
 config LV_USE_DRAW_DMA2D
 	default y
 

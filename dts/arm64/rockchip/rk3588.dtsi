@@ -1,0 +1,95 @@
+/*
+ * Copyright (c) 2025 Syswonder
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <arm64/armv8-a.dtsi>
+#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	compatible = "rockchip,rk3588";
+	interrupt-parent = <&gic>;
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a55";
+			enable-method = "psci";
+			clock-frequency = <24000000>;
+			reg = <0x000>;
+		};
+
+		cpu@100 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a55";
+			enable-method = "psci";
+			reg = <0x100>;
+		};
+
+		cpu@200 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a55";
+			enable-method = "psci";
+			reg = <0x200>;
+
+		};
+
+		cpu@300 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a55";
+			enable-method = "psci";
+			reg = <0x300>;
+		};
+	};
+
+	gic: interrupt-controller@fe600000 {
+		#address-cells = <1>;
+		compatible = "arm,gic-v3","arm,gic";
+		#interrupt-cells = <4>;
+		interrupt-controller;
+
+		reg = <0xfe600000 0x10000>, /* GICD */
+		      <0xfe680000 0x100000>; /* GICR */
+		status = "okay";
+	};
+
+	psci {
+		compatible = "arm,psci-0.2", "arm,psci";
+		method = "smc";
+	};
+
+	timer {
+		compatible = "arm,armv8-timer";
+		interrupts = <GIC_PPI 13 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 14 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 11 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 10 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+	};
+
+	uart2: serial@feb50000 {
+		compatible = "rockchip,rk3588-uart", "ns16550";
+		reg = <0xfeb50000 0x100>;
+		interrupts = <GIC_SPI 333 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+		clock-frequency = <12000000>;
+		reg-shift = <2>;
+		status = "disabled";
+	};
+
+	uart3: serial@feb60000 {
+		compatible = "rockchip,rk3588-uart", "ns16550";
+		reg = <0xfeb60000 0x100>;
+		interrupts = <GIC_SPI 334 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+		clock-frequency = <24000000>;
+		reg-shift = <2>;
+		status = "disabled";
+	};
+};

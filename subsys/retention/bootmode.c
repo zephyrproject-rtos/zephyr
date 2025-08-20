@@ -7,9 +7,6 @@
 #include <zephyr/kernel.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/retention/retention.h>
-#include <zephyr/logging/log.h>
-
-LOG_MODULE_REGISTER(bootmode, CONFIG_RETENTION_LOG_LEVEL);
 
 static const struct device *boot_mode_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_boot_mode));
 

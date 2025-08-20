@@ -1110,17 +1110,17 @@ BUILD_ASSERT(DT_INST_CLOCKS_HAS_IDX(0, 1), "RTC source clock not defined in the 
 static const struct rtc_stm32_config rtc_config = {
 #if DT_INST_CLOCKS_CELL_BY_IDX(0, 1, bus) == STM32_SRC_LSI
 	/* prescaler values for LSI @ 32 KHz */
-	.async_prescaler = 0x7F,
-	.sync_prescaler = 0x00F9,
+	.async_prescaler = DT_INST_PROP_OR(0, async_prescaler, 0x7F),
+	.sync_prescaler = DT_INST_PROP_OR(0, sync_prescaler, 0x00F9),
 #elif DT_INST_CLOCKS_CELL_BY_IDX(0, 1, bus) == STM32_SRC_LSE
 	/* prescaler values for LSE @ 32768 Hz */
-	.async_prescaler = 0x7F,
-	.sync_prescaler = 0x00FF,
+	.async_prescaler = DT_INST_PROP_OR(0, async_prescaler, 0x7F),
+	.sync_prescaler = DT_INST_PROP_OR(0, sync_prescaler, 0x00FF),
 #elif DT_INST_CLOCKS_CELL_BY_IDX(0, 1, bus) == STM32_SRC_HSE
 	/* prescaler values for HSE */
-	.async_prescaler = RTC_HSE_ASYNC_PRESCALER - 1,
-	.sync_prescaler = RTC_HSE_SYNC_PRESCALER - 1,
-	.hse_prescaler = RTC_HSE_PRESCALER,
+	.async_prescaler = DT_INST_PROP_OR(0, async_prescaler, RTC_HSE_ASYNC_PRESCALER - 1),
+	.sync_prescaler = DT_INST_PROP_OR(0, sync_prescaler, RTC_HSE_SYNC_PRESCALER - 1),
+	.hse_prescaler = DT_INST_PROP_OR(0, hse_prescaler, RTC_HSE_PRESCALER),
 #else
 #error Invalid RTC SRC
 #endif

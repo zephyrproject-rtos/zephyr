@@ -326,7 +326,7 @@ static int ocpp_process_server_msg(struct ocpp_info *ctx)
 
 	if (is_rsp) {
 		buf = strtok_r(uid, "-", &tmp);
-		sh = (struct ocpp_session *) atoi(buf);
+		sh = (struct ocpp_session *)(uintptr_t)atoi(buf);
 
 		buf = strtok_r(NULL, "-", &tmp);
 		pdu = atoi(buf);

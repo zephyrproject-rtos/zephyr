@@ -78,12 +78,34 @@ New APIs and options
 * Architectures
 
   * :kconfig:option:`CONFIG_SRAM_SW_ISR_TABLE`
+  * ARM (Cortex-M) system state save/restore primitives
+
+    * :c:func:`z_arm_save_scb_context` / :c:func:`z_arm_restore_scb_context`
+    * :c:func:`z_arm_save_mpu_context` / :c:func:`z_arm_restore_mpu_context`
+    * Existing :c:func:`z_arm_save_fp_context` and :c:func:`z_arm_save_fp_context` have also been updated
 
 * Bluetooth
 
   * Audio
 
     * :c:struct:`bt_audio_codec_cfg` now contains a target_latency and a target_phy option
+    * :c:func:`bt_bap_broadcast_source_foreach_stream`
+    * :c:struct:`bt_bap_stream` now contains an ``iso`` field as a reference to the ISO channel
+
+  * Host
+
+    * :c:struct:`bt_iso_unicast_info` now contains a ``cig_id`` and a ``cis_id`` field
+    * :c:struct:`bt_iso_broadcaster_info` now contains a ``big_handle`` and a ``bis_number`` field
+    * :c:struct:`bt_iso_sync_receiver_info` now contains a ``big_handle`` and a ``bis_number`` field
+
+* Display
+
+  * :c:enumerator:`PIXEL_FORMAT_AL_88`
+
+  * SDL
+
+    * :kconfig:option:`CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_AL_88`
+    * :kconfig:option:`CONFIG_SDL_DISPLAY_COLOR_TINT`
 
 * Logging:
 

@@ -111,7 +111,7 @@
 };
 
 &rtc {
-	clocks = <&rcc STM32_CLOCK_BUS_APB4 0x00010000>,
+	clocks = <&rcc STM32_CLOCK(APB4, 16)>,
 		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
 	status = "okay";
 };
@@ -225,7 +225,7 @@
 	status = "okay";
 	pinctrl-0 = <&fdcan1_tx_ph13 &fdcan1_rx_ph14>;
 	pinctrl-names = "default";
-	clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000100>,
+	clocks = <&rcc STM32_CLOCK(APB1_2, 8)>,
 		<&rcc STM32_SRC_PLL2_Q FDCAN_SEL(2)>;
 
 	can-transceiver {
@@ -237,7 +237,7 @@
 	status = "okay";
 	pinctrl-0 = <&fdcan2_tx_pb13 &fdcan2_rx_pb5>;
 	pinctrl-names = "default";
-	clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000100>,
+	clocks = <&rcc STM32_CLOCK(APB1_2, 8)>,
 		<&rcc STM32_SRC_PLL2_Q FDCAN_SEL(2)>;
 
 	can-transceiver {

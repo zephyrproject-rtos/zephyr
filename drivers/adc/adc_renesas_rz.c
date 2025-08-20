@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Renesas Electronics Corporation
+ * Copyright (c) 2024-2025 Renesas Electronics Corporation
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -8,16 +8,27 @@
 #include <zephyr/drivers/adc.h>
 #include <zephyr/irq.h>
 #include <zephyr/logging/log.h>
-#include "r_adc_c.h"
+#include <zephyr/devicetree.h>
 
-LOG_MODULE_REGISTER(adc_renesas_rz, CONFIG_ADC_LOG_LEVEL);
+#if defined(CONFIG_ADC_RENESAS_RZ_ADC_C)
+#include "r_adc_c.h"
+typedef adc_c_channel_cfg_t adc_channel_cfg_t;
+typedef adc_c_instance_ctrl_t adc_instance_ctrl_t;
+typedef adc_c_extended_cfg_t adc_extended_cfg_t;
+void adc_c_scan_end_isr(void *irq);
+#define ADC_SCAN_END_ISR adc_c_scan_end_isr
+#else /* CONFIG_ADC_RENESAS_RZ */
+#include "r_adc.h"
+void adc_scan_end_isr(void *irq);
+#define ADC_SCAN_END_ISR adc_scan_end_isr
+#endif
 
 #define ADC_CONTEXT_USES_KERNEL_TIMER
 #include "adc_context.h"
 
 #define ADC_RZ_MAX_RESOLUTION 12
 
-void adc_c_scan_end_isr(void);
+LOG_MODULE_REGISTER(adc_renesas_rz, CONFIG_ADC_LOG_LEVEL);
 
 /**
  * @brief RZ ADC config
@@ -42,11 +53,11 @@ struct adc_rz_data {
 	/** Pointer to RZ ADC own device structure */
 	const struct device *dev;
 	/** Structure that handle fsp ADC */
-	adc_c_instance_ctrl_t fsp_ctrl;
+	adc_instance_ctrl_t fsp_ctrl;
 	/** Structure that handle fsp ADC config */
 	struct st_adc_cfg fsp_cfg;
 	/** Structure that handle fsp ADC channel config */
-	adc_c_channel_cfg_t fsp_channel_cfg;
+	adc_channel_cfg_t fsp_channel_cfg;
 	/** Pointer to memory where next sample will be written */
 	uint16_t *buf;
 	/** Mask with channels that will be sampled */
@@ -133,7 +144,7 @@ static void adc_rz_isr(const struct device *dev)
 		}
 		channels = channels >> 1;
 	}
-	adc_c_scan_end_isr();
+	ADC_SCAN_END_ISR((void *)data->fsp_cfg.scan_end_irq);
 	adc_context_on_sampling_done(&data->ctx, dev);
 }
 
@@ -303,18 +314,9 @@ static int adc_rz_init(const struct device *dev)
  * ************************* DRIVER REGISTER SECTION ***************************
  */
 
-#define ADC_RZG_IRQ_CONNECT(idx, irq_name, isr)                                                    \
-	do {                                                                                       \
-		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(idx, irq_name, irq),                               \
-			    DT_INST_IRQ_BY_NAME(idx, irq_name, priority), isr,                     \
-			    DEVICE_DT_INST_GET(idx), 0);                                           \
-		irq_enable(DT_INST_IRQ_BY_NAME(idx, irq_name, irq));                               \
-	} while (0)
-
-#define ADC_RZG_CONFIG_FUNC(idx) ADC_RZG_IRQ_CONNECT(idx, scanend, adc_rz_isr);
-
-#define ADC_RZG_INIT(idx)                                                                          \
-	static const adc_c_extended_cfg_t g_adc##idx##_cfg_extend = {                              \
+#if defined(CONFIG_ADC_RENESAS_RZ_ADC_C)
+#define ADC_RZ_EXTENDED_FSP_CFG(idx)                                                               \
+	static const adc_extended_cfg_t g_adc##idx##_cfg_extend = {                                \
 		.trigger_mode = ADC_C_TRIGGER_MODE_SOFTWARE,                                       \
 		.trigger_source = ADC_C_ACTIVE_TRIGGER_EXTERNAL,                                   \
 		.trigger_edge = ADC_C_TRIGGER_EDGE_FALLING,                                        \
@@ -324,43 +326,123 @@ static int adc_rz_init(const struct device *dev)
 		.sampling_time = 100,                                                              \
 		.external_trigger_filter = ADC_C_FILTER_STAGE_SETTING_DISABLE,                     \
 	};                                                                                         \
+	static const struct adc_rz_config adc_rz_config_##idx = {                                  \
+		.channel_available_mask = DT_INST_PROP(idx, channel_available_mask),               \
+		.fsp_api = &g_adc_on_adc_c,                                                        \
+	};
+
+#define ADC_RZ_FSP_CFG(idx)                                                                        \
+	.fsp_cfg =                                                                                 \
+		{                                                                                  \
+			.mode = ADC_MODE_SINGLE_SCAN,                                              \
+			.p_callback = NULL,                                                        \
+			.p_context = NULL,                                                         \
+			.p_extend = &g_adc##idx##_cfg_extend,                                      \
+			.scan_end_irq = DT_INST_IRQ_BY_NAME(idx, scanend, irq),                    \
+			.scan_end_ipl = DT_INST_IRQ_BY_NAME(idx, scanend, priority),               \
+	},                                                                                         \
+	.fsp_channel_cfg = {                                                                       \
+		.scan_mask = 0,                                                                    \
+		.interrupt_setting = ADC_C_INTERRUPT_CHANNEL_SETTING_ENABLE,                       \
+	}
+
+#endif /* CONFIG_ADC_RENESAS_RZ_ADC_C */
+
+#if defined(CONFIG_ADC_RENESAS_RZ)
+#define ADC_RZ_EXTENDED_FSP_CFG(idx)                                                               \
+	static const adc_extended_cfg_t g_adc##idx##_cfg_extend = {                                \
+		.add_average_count = ADC_ADD_OFF,                                                  \
+		.clearing = ADC_CLEAR_AFTER_READ_ON,                                               \
+		.trigger_group_b = ADC_TRIGGER_SYNC_ELC,                                           \
+		.double_trigger_mode = ADC_DOUBLE_TRIGGER_DISABLED,                                \
+		.adc_start_trigger_a = ADC_ACTIVE_TRIGGER_DISABLED,                                \
+		.adc_start_trigger_b = ADC_ACTIVE_TRIGGER_DISABLED,                                \
+		.adc_start_trigger_c_enabled = 0,                                                  \
+		.adc_start_trigger_c = ADC_ACTIVE_TRIGGER_DISABLED,                                \
+		.adc_elc_ctrl = ADC_ELC_SINGLE_SCAN,                                               \
+		.window_a_irq = FSP_INVALID_VECTOR,                                                \
+		.window_a_ipl = BSP_IRQ_DISABLED,                                                  \
+		.window_b_irq = FSP_INVALID_VECTOR,                                                \
+		.window_b_ipl = BSP_IRQ_DISABLED,                                                  \
+	};                                                                                         \
+	static const struct adc_rz_config adc_rz_config_##idx = {                                  \
+		.channel_available_mask = DT_INST_PROP(idx, channel_available_mask),               \
+		.fsp_api = &g_adc_on_adc,                                                          \
+	};
+
+#define ADC_RZ_FSP_CFG(idx)                                                                        \
+	.fsp_cfg =                                                                                 \
+		{                                                                                  \
+			.unit = DT_INST_PROP(idx, unit),                                           \
+			.mode = ADC_MODE_SINGLE_SCAN,                                              \
+			.resolution = ADC_RESOLUTION_12_BIT,                                       \
+			.alignment = (adc_alignment_t)ADC_ALIGNMENT_RIGHT,                         \
+			.trigger = ADC_TRIGGER_SOFTWARE,                                           \
+			.p_callback = NULL,                                                        \
+			.p_context = NULL,                                                         \
+			.p_extend = &g_adc##idx##_cfg_extend,                                      \
+			.scan_end_irq = DT_INST_IRQ_BY_NAME(idx, scanend, irq),                    \
+			.scan_end_ipl = DT_INST_IRQ_BY_NAME(idx, scanend, priority),               \
+			.scan_end_b_irq = FSP_INVALID_VECTOR,                                      \
+			.scan_end_b_ipl = BSP_IRQ_DISABLED,                                        \
+			.scan_end_c_irq = FSP_INVALID_VECTOR,                                      \
+			.scan_end_c_ipl = BSP_IRQ_DISABLED,                                        \
+	},                                                                                         \
+	.fsp_channel_cfg = {                                                                       \
+		.scan_mask = 0,                                                                    \
+		.scan_mask_group_b = 0,                                                            \
+		.priority_group_a = ADC_GROUP_A_PRIORITY_OFF,                                      \
+		.add_mask = 0,                                                                     \
+		.sample_hold_mask = 0,                                                             \
+		.sample_hold_states = 24,                                                          \
+		.scan_mask_group_c = 0,                                                            \
+	}
+
+#endif /* CONFIG_ADC_RENESAS_RZ */
+
+#ifdef CONFIG_CPU_CORTEX_M
+#define GET_IRQ_FLAGS(index) 0
+#else /* Cortex-A/R */
+#define GET_IRQ_FLAGS(index) DT_INST_IRQ_BY_IDX(index, 0, flags)
+#endif
+
+#define ADC_RZ_IRQ_CONNECT(idx, irq_name, isr)                                                     \
+	do {                                                                                       \
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(idx, irq_name, irq),                               \
+			    DT_INST_IRQ_BY_NAME(idx, irq_name, priority), isr,                     \
+			    DEVICE_DT_INST_GET(idx), GET_IRQ_FLAGS(idx));                          \
+		irq_enable(DT_INST_IRQ_BY_NAME(idx, irq_name, irq));                               \
+	} while (0)
+
+#define ADC_RZ_CONFIG_FUNC(idx) ADC_RZ_IRQ_CONNECT(idx, scanend, adc_rz_isr);
+
+#define ADC_RZ_INIT(idx)                                                                           \
+	ADC_RZ_EXTENDED_FSP_CFG(idx)                                                               \
 	static DEVICE_API(adc, adc_rz_api_##idx) = {                                               \
 		.channel_setup = adc_rz_channel_setup,                                             \
 		.read = adc_rz_read,                                                               \
 		.ref_internal = DT_INST_PROP(idx, vref_mv),                                        \
 		IF_ENABLED(CONFIG_ADC_ASYNC,                                                       \
 					  (.read_async = adc_rz_read_async))};                     \
-	static const struct adc_rz_config adc_rz_config_##idx = {                                  \
-		.channel_available_mask = DT_INST_PROP(idx, channel_available_mask),               \
-		.fsp_api = &g_adc_on_adc,                                                          \
-	};                                                                                         \
 	static struct adc_rz_data adc_rz_data_##idx = {                                            \
 		ADC_CONTEXT_INIT_TIMER(adc_rz_data_##idx, ctx),                                    \
 		ADC_CONTEXT_INIT_LOCK(adc_rz_data_##idx, ctx),                                     \
 		ADC_CONTEXT_INIT_SYNC(adc_rz_data_##idx, ctx),                                     \
 		.dev = DEVICE_DT_INST_GET(idx),                                                    \
-		.fsp_cfg =                                                                         \
-			{                                                                          \
-				.mode = ADC_MODE_SINGLE_SCAN,                                      \
-				.p_callback = NULL,                                                \
-				.p_context = NULL,                                                 \
-				.p_extend = &g_adc##idx##_cfg_extend,                              \
-				.scan_end_irq = DT_INST_IRQ_BY_NAME(idx, scanend, irq),            \
-				.scan_end_ipl = DT_INST_IRQ_BY_NAME(idx, scanend, priority),       \
-			},                                                                         \
-		.fsp_channel_cfg =                                                                 \
-			{                                                                          \
-				.scan_mask = 0,                                                    \
-				.interrupt_setting = ADC_C_INTERRUPT_CHANNEL_SETTING_ENABLE,       \
-			},                                                                         \
+		ADC_RZ_FSP_CFG(idx),                                                               \
 	};                                                                                         \
 	static int adc_rz_init_##idx(const struct device *dev)                                     \
 	{                                                                                          \
-		ADC_RZG_CONFIG_FUNC(idx)                                                           \
+		ADC_RZ_CONFIG_FUNC(idx)                                                            \
 		return adc_rz_init(dev);                                                           \
 	}                                                                                          \
 	DEVICE_DT_INST_DEFINE(idx, adc_rz_init_##idx, NULL, &adc_rz_data_##idx,                    \
 			      &adc_rz_config_##idx, POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,         \
 			      &adc_rz_api_##idx)
 
-DT_INST_FOREACH_STATUS_OKAY(ADC_RZG_INIT);
+DT_INST_FOREACH_STATUS_OKAY(ADC_RZ_INIT);
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT renesas_rz_adc_c
+
+DT_INST_FOREACH_STATUS_OKAY(ADC_RZ_INIT);

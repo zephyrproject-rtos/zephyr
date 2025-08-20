@@ -15,4 +15,16 @@
 			slew-rate = "fast";
 		};
 	};
+
+	/omit-if-no-ref/ mtu1_pins: mtu1 {
+		mtu1-pinmux {
+			pinmux = <RZA_PINMUX(PORT_01, 0, 4)>; /* MTIOCA */
+		};
+	};
+
+	/omit-if-no-ref/ mtu3_pins: mtu3 {
+		mtu3-pinmux {
+			pinmux = <RZA_PINMUX(PORT_04, 2, 4)>; /* MTIOCA */
+		};
+	};
 };

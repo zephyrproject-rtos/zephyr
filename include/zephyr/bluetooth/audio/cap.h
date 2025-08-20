@@ -414,10 +414,10 @@ typedef bool (*bt_cap_unicast_group_foreach_stream_func_t)(struct bt_cap_stream 
  *
  * @param unicast_group  The unicast group
  * @param func           The callback function
- * @param user_data      User specified data that sent to the callback function
+ * @param user_data      User specified data that is sent to the callback function
  *
  * @retval 0 Success (even if no streams exists in the group).
- * @retval -ECANCELED Iteration was stopped by the callback function before complete.
+ * @retval -ECANCELED The @p func returned true.
  * @retval -EINVAL @p unicast_group or @p func were NULL.
  */
 int bt_cap_unicast_group_foreach_stream(struct bt_cap_unicast_group *unicast_group,

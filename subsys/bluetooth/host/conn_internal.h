@@ -176,21 +176,6 @@ struct bt_conn_iso {
 	/* Reference to the struct bt_iso_chan */
 	struct bt_iso_chan      *chan;
 
-	union {
-		/* CIG ID */
-		uint8_t			cig_id;
-		/* BIG handle */
-		uint8_t			big_handle;
-	};
-
-	union {
-		/* CIS ID within the CIG */
-		uint8_t			cis_id;
-
-		/* BIS ID within the BIG*/
-		uint8_t			bis_id;
-	};
-
 	/** Stored information about the ISO stream */
 	struct bt_iso_info info;
 
@@ -207,11 +192,11 @@ struct bt_conn_tx {
 	void *user_data;
 };
 
-struct acl_data {
+struct bt_conn_rx {
 	/* Index into the bt_conn storage array */
 	uint8_t  index;
 
-	/** ACL connection handle */
+	/** Connection handle */
 	uint16_t handle;
 };
 
@@ -324,7 +309,6 @@ struct bt_conn {
 	 * This will be used by the TX processor to then fetch HCI frags from it.
 	 */
 	sys_snode_t		_conn_ready;
-	atomic_t		_conn_ready_lock;
 
 	/* Holds the number of packets that have been sent to the controller but
 	 * not yet ACKd (by receiving an Number of Completed Packets). This

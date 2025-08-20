@@ -2,6 +2,7 @@
  * Copyright (c) 2017 Linaro Limited
  * Copyright (c) 2019, Nordic Semiconductor ASA
  * Copyright (c) 2021 Seagate Technology LLC
+ * Copyright (c) 2025 Google LLC
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,8 +24,15 @@ LOG_MODULE_REGISTER(ws2812_spi);
 #include <zephyr/sys/util.h>
 #include <zephyr/dt-bindings/led/led.h>
 
-/* spi-one-frame and spi-zero-frame in DT are for 8-bit frames. */
+/*
+ * The N-bit symbols for a '1' and '0' bit (spi-one-frame, spi-zero-frame)
+ * are packed into the 8-bit SPI frames sent on the bus. The symbol width
+ * is defined by the 'spi-bits-per-symbol' DT property.
+ */
 #define SPI_FRAME_BITS 8
+
+/* Each color channel is represented by 8 bits. */
+#define BITS_PER_COLOR_CHANNEL 8
 
 /*
  * SPI master configuration:
@@ -41,6 +49,7 @@ struct ws2812_spi_cfg {
 	uint8_t *px_buf;
 	uint8_t one_frame;
 	uint8_t zero_frame;
+	uint8_t bits_per_symbol;
 	uint8_t num_colors;
 	const uint8_t *color_mapping;
 	size_t length;
@@ -53,17 +62,36 @@ static const struct ws2812_spi_cfg *dev_cfg(const struct device *dev)
 }
 
 /*
- * Serialize an 8-bit color channel value into an equivalent sequence
- * of SPI frames, MSbit first, where a one bit becomes SPI frame
- * one_frame, and zero bit becomes zero_frame.
+ * Serialize an 8-bit color value into the SPI buffer, MSbit first. Each of
+ * the 8 data bits is represented by a N-bit symbol (`one_frame` for a '1' or
+ * `zero_frame` for a '0'), which is then packed into the SPI buffer.
  */
-static inline void ws2812_spi_ser(uint8_t buf[8], uint8_t color,
-				  const uint8_t one_frame, const uint8_t zero_frame)
+static inline void ws2812_spi_ser(uint8_t color, uint8_t one, uint8_t zero,
+				  uint8_t bits_per_symbol, uint8_t **buf,
+				  uint8_t *bit_mask)
 {
-	int i;
+	for (int i = BITS_PER_COLOR_CHANNEL - 1; i >= 0; i--) {
+		uint8_t pattern = (color & BIT(i)) ? one : zero;
 
-	for (i = 0; i < 8; i++) {
-		buf[i] = color & BIT(7 - i) ? one_frame : zero_frame;
+		if (bits_per_symbol == SPI_FRAME_BITS) {
+			/* Fast path for the common 8-bit symbol case */
+			*(*buf)++ = pattern;
+		} else {
+			/* Generic path for N-bit symbols */
+			for (int p = bits_per_symbol - 1; p >= 0; p--) {
+				if (pattern & BIT(p)) {
+					**buf |= *bit_mask;
+				} else {
+					**buf &= ~(*bit_mask);
+				}
+
+				*bit_mask >>= 1;
+				if (!*bit_mask) {
+					*bit_mask = BIT(SPI_FRAME_BITS - 1);
+					(*buf)++;
+				}
+			}
+		}
 	}
 }
 
@@ -81,21 +109,27 @@ static int ws2812_strip_update_rgb(const struct device *dev,
 {
 	const struct ws2812_spi_cfg *cfg = dev_cfg(dev);
 	const uint8_t one = cfg->one_frame, zero = cfg->zero_frame;
+	const uint8_t bits_per_symbol = cfg->bits_per_symbol;
+	const size_t total_bits = num_pixels * cfg->num_colors *
+				  BITS_PER_COLOR_CHANNEL * bits_per_symbol;
+	const size_t buf_len = DIV_ROUND_UP(total_bits, SPI_FRAME_BITS);
 	struct spi_buf buf = {
 		.buf = cfg->px_buf,
-		.len = (cfg->length * 8 * cfg->num_colors),
+		.len = buf_len,
 	};
 	const struct spi_buf_set tx = {
 		.buffers = &buf,
 		.count = 1
 	};
 	uint8_t *px_buf = cfg->px_buf;
+	uint8_t bit_mask = BIT(SPI_FRAME_BITS - 1);
 	size_t i;
 	int rc;
 
 	/*
-	 * Convert pixel data into SPI frames. Each frame has pixel data
-	 * in color mapping on-wire format (e.g. GRB, GRBW, RGB, etc).
+	 * Convert pixel data into an SPI bitstream. The bitstream contains
+	 * pixel data in color mapping on-wire format (e.g. GRB, GRBW, RGB,
+	 * etc).
 	 */
 	for (i = 0; i < num_pixels; i++) {
 		uint8_t j;
@@ -120,9 +154,15 @@ static int ws2812_strip_update_rgb(const struct device *dev,
 			default:
 				return -EINVAL;
 			}
-			ws2812_spi_ser(px_buf, pixel, one, zero);
-			px_buf += 8;
+
+			ws2812_spi_ser(pixel, one, zero, bits_per_symbol,
+				       &px_buf, &bit_mask);
 		}
+	}
+
+	/* Clear unused padding bits in the final SPI byte. */
+	if (bit_mask != BIT(SPI_FRAME_BITS - 1)) {
+		*px_buf &= ~((bit_mask << 1) - 1);
 	}
 
 	/*
@@ -176,14 +216,18 @@ static DEVICE_API(led_strip, ws2812_spi_api) = {
 
 #define WS2812_SPI_NUM_PIXELS(idx) \
 	(DT_INST_PROP(idx, chain_length))
-#define WS2812_SPI_HAS_WHITE(idx) \
-	(DT_INST_PROP(idx, has_white_channel) == 1)
 #define WS2812_SPI_ONE_FRAME(idx) \
 	(DT_INST_PROP(idx, spi_one_frame))
 #define WS2812_SPI_ZERO_FRAME(idx) \
 	(DT_INST_PROP(idx, spi_zero_frame))
+#define WS2812_SPI_BITS_PER_SYMBOL(idx) \
+	(DT_INST_PROP(idx, bits_per_symbol))
+#define WS2812_NUM_COLORS(idx) \
+	(DT_INST_PROP_LEN(idx, color_mapping))
 #define WS2812_SPI_BUFSZ(idx) \
-	(WS2812_NUM_COLORS(idx) * 8 * WS2812_SPI_NUM_PIXELS(idx))
+	DIV_ROUND_UP(WS2812_NUM_COLORS(idx) * BITS_PER_COLOR_CHANNEL * \
+		     WS2812_SPI_NUM_PIXELS(idx) * \
+		     WS2812_SPI_BITS_PER_SYMBOL(idx), SPI_FRAME_BITS)
 
 /*
  * Retrieve the channel to color mapping (e.g. RGB, BGR, GRB, ...) from the
@@ -193,12 +237,14 @@ static DEVICE_API(led_strip, ws2812_spi_api) = {
 	static const uint8_t ws2812_spi_##idx##_color_mapping[] = \
 		DT_INST_PROP(idx, color_mapping)
 
-#define WS2812_NUM_COLORS(idx) (DT_INST_PROP_LEN(idx, color_mapping))
-
 /* Get the latch/reset delay from the "reset-delay" DT property. */
 #define WS2812_RESET_DELAY(idx) DT_INST_PROP(idx, reset_delay)
 
 #define WS2812_SPI_DEVICE(idx)							\
+	BUILD_ASSERT(								\
+		(WS2812_SPI_BITS_PER_SYMBOL(idx) >= 3) &&			\
+		(WS2812_SPI_BITS_PER_SYMBOL(idx) <= 8),				\
+		"bits-per-symbol property must be between 3 and 8");		\
 										\
 	static uint8_t ws2812_spi_##idx##_px_buf[WS2812_SPI_BUFSZ(idx)]		\
 		IF_ENABLED(CONFIG_WS2812_STRIP_SPI_FORCE_NOCACHE, (__nocache)); \
@@ -210,9 +256,10 @@ static DEVICE_API(led_strip, ws2812_spi_api) = {
 		.px_buf = ws2812_spi_##idx##_px_buf,				\
 		.one_frame = WS2812_SPI_ONE_FRAME(idx),				\
 		.zero_frame = WS2812_SPI_ZERO_FRAME(idx),			\
+		.bits_per_symbol = WS2812_SPI_BITS_PER_SYMBOL(idx),             \
 		.num_colors = WS2812_NUM_COLORS(idx),				\
 		.color_mapping = ws2812_spi_##idx##_color_mapping,		\
-		.length = DT_INST_PROP(idx, chain_length),			\
+		.length = WS2812_SPI_NUM_PIXELS(idx),                           \
 		.reset_delay = WS2812_RESET_DELAY(idx),				\
 	};									\
 										\

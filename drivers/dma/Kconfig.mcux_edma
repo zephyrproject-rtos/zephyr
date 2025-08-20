@@ -35,6 +35,11 @@ config DMA_MCUX_EDMA_V5
 	help
 	  DMA version 5 driver for MCUX series SoCs.
 
+config DMA_MCUX_MAX_DATA_SIZE
+	int
+	default 64 if DMA_MCUX_EDMA_V5 || DMA_MCUX_EDMA_V4 || DMA_MCUX_EDMA_V3
+	default 32
+
 if DMA_MCUX_EDMA || DMA_MCUX_EDMA_V3 || DMA_MCUX_EDMA_V4 || DMA_MCUX_EDMA_V5
 
 config DMA_TCD_QUEUE_SIZE
@@ -54,10 +59,12 @@ config DMA_MCUX_TEST_SLOT_START
 	help
 	  test slot start num
 
+ZEPHYR_DTCM := zephyr,dtcm
+
 config DMA_MCUX_USE_DTCM_FOR_DMA_DESCRIPTORS
 	bool "Use DTCM for DMA descriptors"
 	default y
-	depends on DT_HAS_NXP_IMX_DTCM_ENABLED
+	depends on $(dt_chosen_enabled,$(ZEPHYR_DTCM))
 	help
 	  When this option is activated, the descriptors for DMA transfer are
 	  located in the DTCM (Data Tightly Coupled Memory).

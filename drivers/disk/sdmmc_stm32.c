@@ -872,10 +872,16 @@ static struct stm32_sdmmc_priv stm32_sdmmc_priv_1 = {
 	.irq_config = stm32_sdmmc_irq_config_func,
 	.hsd = {
 		.Instance = (MMC_TypeDef *)DT_INST_REG_ADDR(0),
-		.Init.BusWide = SDMMC_BUS_WIDTH,
-#if DT_INST_NODE_HAS_PROP(0, clk_div)
-		.Init.ClockDiv = DT_INST_PROP(0, clk_div),
+		.Init.ClockEdge = SDMMC_CLOCK_EDGE_RISING,
+#ifdef SDMMC_CLOCK_BYPASS_DISABLE
+		.Init.ClockBypass = DT_INST_PROP(0, clk_bypass)
+						? SDMMC_CLOCK_BYPASS_ENABLE
+						: SDMMC_CLOCK_BYPASS_DISABLE,
 #endif
+		.Init.ClockPowerSave = SDMMC_CLOCK_POWER_SAVE_DISABLE,
+		.Init.BusWide = SDMMC_BUS_WIDTH,
+		.Init.HardwareFlowControl = SDMMC_HARDWARE_FLOW_CONTROL_DISABLE,
+		.Init.ClockDiv = DT_INST_PROP_OR(0, clk_div, 0),
 	},
 #if DT_INST_NODE_HAS_PROP(0, cd_gpios)
 	.cd = GPIO_DT_SPEC_INST_GET(0, cd_gpios),

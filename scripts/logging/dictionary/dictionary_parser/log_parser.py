@@ -9,6 +9,7 @@ Abstract Class for Dictionary-based Logging Parsers
 """
 
 import abc
+import re
 
 from colorama import Fore
 
@@ -36,13 +37,13 @@ def formalize_fmt_string(fmt_str):
 
     for spec in ['d', 'i', 'o', 'u', 'x', 'X']:
         # Python doesn't support %ll for integer specifiers, so remove extra 'l'
-        new_str = new_str.replace("%ll" + spec, "%l" + spec)
+        new_str = re.sub(r'%(\#?\d*)ll' + spec, r'%\1l' + spec, new_str)
 
         if spec in ['x', 'X']:
-            new_str = new_str.replace("%#ll" + spec, "%#l" + spec)
+            new_str = re.sub(r'%\#(\d*)ll' + spec, r'%#\1l' + spec, new_str)
 
         # Python doesn't support %hh for integer specifiers, so remove extra 'h'
-        new_str = new_str.replace("%hh" + spec, "%h" + spec)
+        new_str = re.sub(r'%(\#?\d*)hh' + spec, r'%\1h' + spec, new_str)
 
     # No %p for pointer either, so use %x
     new_str = new_str.replace("%p", "0x%x")

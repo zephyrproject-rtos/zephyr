@@ -1,0 +1,107 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+/dts-v1/;
+
+#include <ti/mspm0/g/mspm0g3519.dtsi>
+#include <ti/mspm0/g/mspm0g1x0x_g3x0x-pinctrl.dtsi>
+#include <zephyr/dt-bindings/clock/mspm0_clock.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "TI LP_MSPM0G3519";
+	compatible = "ti,mspm0g3519";
+
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+		led2 = &led2;
+		sw0 = &btn0;
+		sw1 = &btn1;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			gpios = <&gpiob 22 GPIO_ACTIVE_HIGH>;
+			label = "Blue LED";
+		};
+
+		led1: led_1 {
+			gpios = <&gpiob 26 GPIO_ACTIVE_HIGH>;
+			label = "Red LED";
+		};
+
+		led2: led_2 {
+			gpios = <&gpiob 27 GPIO_ACTIVE_HIGH>;
+			label = "Green LED";
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		btn0: btn_0 {
+			gpios = <&gpioa 18 (GPIO_ACTIVE_HIGH)>;
+			label = "Switch 1";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		btn1: btn_1 {
+			gpios = <&gpiob 3 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			label = "Switch 2";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+};
+
+&cpu0 {
+	clock-frequency = <DT_FREQ_M(80)>;
+};
+
+&ulpclk {
+	clock-frequency = <DT_FREQ_M(40)>;
+	clk-div = <2>;
+};
+
+&mclk {
+	clock-frequency = <DT_FREQ_M(80)>;
+	clocks = <&hsclk 0>;
+};
+
+&hsclk {
+	clocks = <&syspll2x 0>;
+	status = "okay";
+};
+
+&syspll2x {
+	status = "okay";
+};
+
+&pinctrl {
+	status = "okay";
+};
+
+&gpioa {
+	status = "okay";
+};
+
+&gpiob {
+	status = "okay";
+};
+
+&uart0 {
+	status = "okay";
+
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_tx_pa10 &uart0_rx_pa11>;
+	pinctrl-names = "default";
+};

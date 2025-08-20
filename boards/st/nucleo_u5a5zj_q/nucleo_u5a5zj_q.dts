@@ -83,3 +83,7 @@ zephyr_udc0: &usbotg_hs {
 	pinctrl-names = "default";
 	status = "okay";
 };
+
+&otghs_phy {
+	clock-reference = "SYSCFG_OTG_HS_PHY_CLK_16MHz";
+};

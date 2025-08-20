@@ -309,8 +309,7 @@ int main(void)
 
 	struct bt_le_cs_create_config_params config_params = {
 		.id = CS_CONFIG_ID,
-		.main_mode_type = BT_CONN_LE_CS_MAIN_MODE_2,
-		.sub_mode_type = BT_CONN_LE_CS_SUB_MODE_1,
+		.mode = BT_CONN_LE_CS_MAIN_MODE_2_SUB_MODE_1,
 		.min_main_mode_steps = 2,
 		.max_main_mode_steps = 10,
 		.main_mode_repetition = 0,

@@ -203,8 +203,6 @@ static void broadcast_source_iso_connected(struct bt_iso_chan *chan)
 
 	if (ops != NULL && ops->started != NULL) {
 		ops->started(stream);
-	} else {
-		LOG_WRN("No callback for started set");
 	}
 }
 
@@ -237,8 +235,6 @@ static void broadcast_source_iso_disconnected(struct bt_iso_chan *chan, uint8_t 
 
 	if (ops != NULL && ops->stopped != NULL) {
 		ops->stopped(stream, reason);
-	} else {
-		LOG_WRN("No callback for stopped set");
 	}
 }
 
@@ -318,6 +314,7 @@ static int broadcast_source_setup_stream(uint8_t index, struct bt_bap_stream *st
 
 	bt_bap_iso_init(iso, &broadcast_source_iso_ops);
 	bt_bap_iso_bind_ep(iso, ep);
+	stream->iso = &iso->chan;
 
 	bt_bap_qos_cfg_to_iso_qos(iso->chan.qos->tx, qos);
 
@@ -329,6 +326,7 @@ static int broadcast_source_setup_stream(uint8_t index, struct bt_bap_stream *st
 
 	bt_bap_stream_attach(NULL, stream, ep, codec_cfg);
 	stream->qos = qos;
+	stream->group = source;
 	ep->broadcast_source = source;
 
 	return 0;
@@ -463,7 +461,9 @@ static void broadcast_source_cleanup(struct bt_bap_broadcast_source *source)
 
 		SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&subgroup->streams, stream, next_stream, _node) {
 			bt_bap_iso_unbind_ep(stream->ep->iso, stream->ep);
+			stream->iso = NULL;
 			stream->ep->stream = NULL;
+			stream->ep->broadcast_source = NULL;
 			stream->ep = NULL;
 			stream->codec_cfg = NULL;
 			stream->qos = NULL;
@@ -1279,6 +1279,37 @@ int bt_bap_broadcast_source_unregister_cb(struct bt_bap_broadcast_source_cb *cb)
 		LOG_DBG("cb %p is not registered", cb);
 
 		return -ENOENT;
+	}
+
+	return 0;
+}
+
+int bt_bap_broadcast_source_foreach_stream(struct bt_bap_broadcast_source *source,
+					   bt_bap_broadcast_source_foreach_stream_func_t func,
+					   void *user_data)
+{
+	struct bt_bap_broadcast_subgroup *subgroup, *next_subgroup;
+
+	if (source == NULL) {
+		LOG_DBG("source is NULL");
+		return -EINVAL;
+	}
+
+	if (func == NULL) {
+		LOG_DBG("func is NULL");
+		return -EINVAL;
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&source->subgroups, subgroup, next_subgroup, _node) {
+		struct bt_bap_stream *stream, *next_stream;
+
+		SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&subgroup->streams, stream, next_stream, _node) {
+			const bool stop = func(stream, user_data);
+
+			if (stop) {
+				return -ECANCELED;
+			}
+		}
 	}
 
 	return 0;

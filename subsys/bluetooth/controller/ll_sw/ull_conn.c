@@ -5,10 +5,13 @@
  */
 
 #include <stddef.h>
+
 #include <zephyr/kernel.h>
-#include <soc.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/sys/byteorder.h>
+
+#include <soc.h>
 
 #include "hal/cpu.h"
 #include "hal/ecb.h"

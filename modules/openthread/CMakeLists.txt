@@ -50,13 +50,16 @@ kconfig_to_ot_option(CONFIG_OPENTHREAD_BLE_TCAT OT_BLE_TCAT "Enable BLE TCAT sup
 kconfig_to_ot_option(CONFIG_OPENTHREAD_BORDER_AGENT OT_BORDER_AGENT "Enable Border Agent")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_BORDER_AGENT_EPHEMERAL_KEY_ENABLE OT_BORDER_AGENT_EPSKC "Border agent ephemeral PSKc")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_BORDER_AGENT_ID OT_BORDER_AGENT_ID "Create and save border agent ID")
+kconfig_to_ot_option(CONFIG_OPENTHREAD_BORDER_AGENT_MESHCOP_SERVICE OT_BORDER_AGENT_MESHCOP_SERVICE "Border agent meshcop service")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_BORDER_ROUTER OT_BORDER_ROUTER "Enable Border Router")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_BORDER_ROUTING OT_BORDER_ROUTING "Enable Border routing")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_BORDER_ROUTING_COUNTERS OT_BORDER_ROUTING_COUNTERS "Enable Border routing counters")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_BORDER_ROUTING_DHCP6_PD OT_BORDER_ROUTING_DHCP6_PD "DHCPv6-PD support in border routing")
+kconfig_to_ot_option(CONFIG_OPENTHREAD_BORDER_ROUTING_DHCP6_PD_CLIENT OT_BORDER_ROUTING_DHCP6_PD_CLIENT, "DHCPv6-PD client support in border routing")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_CHANNEL_MANAGER OT_CHANNEL_MANAGER "Enable channel manager support")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_CHANNEL_MANAGER_CSL OT_CHANNEL_MANAGER_CSL "Channel manager for CSL channel")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_CHANNEL_MONITOR OT_CHANNEL_MONITOR "Enable channel monitor support")
+kconfig_to_ot_option(CONFIG_OPENTHREAD_CHANNEL_MONITOR_AUTO_START OT_CHANNEL_MONITOR_AUTO_START "Start channel monitor with interface")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_COAP OT_COAP "Enable CoAP API")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_COAP_BLOCK OT_COAP_BLOCK "Enable CoAP Block-wise option support")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_COAP_OBSERVE OT_COAP_OBSERVE "Enable CoAP Observe option support")
@@ -124,9 +127,11 @@ kconfig_to_ot_option(CONFIG_OPENTHREAD_SNTP_CLIENT OT_SNTP_CLIENT "Enable SNTP C
 kconfig_to_ot_option(CONFIG_OPENTHREAD_SRP_ADV_PROXY OT_SRP_ADV_PROXY "Enable SRP Server Advertising Proxy support")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_SRP_CLIENT OT_SRP_CLIENT "Enable SRP Client support")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_SRP_SERVER OT_SRP_SERVER "Enable SRP Server support")
+kconfig_to_ot_option(CONFIG_OPENTHREAD_SRP_SERVER_FAST_START OT_SRP_SERVER_FAST_START_MDOE "Enable SRP server fast start")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_TCP_ENABLE OT_TCP "Enable TCP support")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_TIME_SYNC OT_TIME_SYNC "Enable the time synchronization service feature")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_TREL OT_TREL "Enable TREL radio link for Thread over Infrastructure feature")
+kconfig_to_ot_option(CONFIG_OPENTHREAD_TREL_MANAGE_DNSSD OT_TREL_MANAGE_DNSSD "Enable TREL to manage DNSSD and peer discovery")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_TX_BEACON_PAYLOAD OT_TX_BEACON_PAYLOAD "Enable tx beacon payload support")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_TX_QUEUE_STATISTICS OT_TX_QUEUE_STATS "Enable tx queue statistics")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_UDP_FORWARD OT_UDP_FORWARD "Enable UDP forward feature")
@@ -206,6 +211,13 @@ target_compile_options(ot-config INTERFACE
     $<TARGET_PROPERTY:compiler,no_builtin>
     -imacros ${AUTOCONF_H}
 )
+
+# FIXME Temporary suppress -Wundef option to avoid warning about
+# MBEDTLS_SSL_DTLS_CONNECTION_ID_COMPAT undefined option. To be removed
+# when the issue is resolved in mbed TLS (the faulty option is already removed
+# on the development branch or there is a pending bugfix for the 3.6 branch
+# https://github.com/Mbed-TLS/mbedtls/pull/10112).
+target_compile_options(ot-config INTERFACE -Wno-undef)
 
 # Openthread depends on errno.h, which includes errno_private.h in minimal libc.
 # errno_private.h is generated as part of ${SYSCALL_LIST_H_TARGET} target.

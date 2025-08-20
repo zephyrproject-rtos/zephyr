@@ -442,6 +442,13 @@ void z_nrf_clock_bt_ctlr_hf_release(void)
 	hfclk_users &= ~HF_USER_BT;
 	/* Skip stopping if generic is still requesting the clock. */
 	if (!(hfclk_users & HF_USER_GENERIC)) {
+		struct nrf_clock_control_sub_data *sub_data =
+			get_sub_data(CLOCK_DEVICE, CLOCK_CONTROL_NRF_TYPE_HFCLK);
+
+		/* State needs to be set to OFF as BT API does not call stop API which
+		 * normally setting this state.
+		 */
+		sub_data->flags = CLOCK_CONTROL_STATUS_OFF;
 		hfclk_stop();
 	}
 

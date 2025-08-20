@@ -41,7 +41,7 @@ config SHELL_PROMPT_UART
 
 config SHELL_BACKEND_SERIAL_INTERRUPT_DRIVEN
 	bool "Interrupt driven"
-	default y
+	default y if !UART_NATIVE_PTY
 	depends on SERIAL_SUPPORT_INTERRUPT
 
 config SHELL_ASYNC_API

@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2023 Antmicro <www.antmicro.com>
- *
+ * Copyright (c) 2025 Linumiz GmbH
+
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -9,6 +10,59 @@
 /* ambiq-sdk includes */
 #include <soc.h>
 
+#if defined(CONFIG_SOC_SERIES_APOLLO2X)
+static void pinctrl_configure_pin(const pinctrl_soc_pin_t *cfg)
+{
+	uint32_t config = 0;
+
+	if (cfg->alt_func) {
+		config |= AM_HAL_GPIO_FUNC(cfg->alt_func);
+	}
+
+	if (cfg->input_enable) {
+		config |= AM_HAL_GPIO_INPEN;
+	}
+
+	switch (cfg->drive_strength) {
+	case 2:
+		config |= AM_HAL_GPIO_DRIVE_2MA;
+		break;
+	case 4:
+		config |= AM_HAL_GPIO_DRIVE_4MA;
+		break;
+	case 8:
+		config |= AM_HAL_GPIO_DRIVE_8MA;
+		break;
+	case 12:
+		config |= AM_HAL_GPIO_DRIVE_12MA;
+		break;
+	}
+
+	if (cfg->bias_pull_up) {
+
+		switch (cfg->ambiq_pull_up_ohms) {
+		case 1500:
+			config |= AM_HAL_GPIO_PULL1_5K;
+			break;
+		case 6000:
+			config |= AM_HAL_GPIO_PULL6K;
+			break;
+		case 12000:
+			config |= AM_HAL_GPIO_PULL12K;
+			break;
+		case 24000:
+			config |= AM_HAL_GPIO_PULL24K;
+			break;
+		}
+	}
+
+	if (cfg->open_drain) {
+		config |= AM_HAL_GPIO_OUT_OPENDRAIN;
+	}
+
+	am_hal_gpio_pin_config(cfg->pin_num, config);
+}
+#else
 static void pinctrl_configure_pin(const pinctrl_soc_pin_t *pin)
 {
 	am_hal_gpio_pincfg_t pin_config = {0};
@@ -86,6 +140,7 @@ static void pinctrl_configure_pin(const pinctrl_soc_pin_t *pin)
 #endif
 	am_hal_gpio_pinconfig(pin->pin_num, pin_config);
 }
+#endif
 
 int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintptr_t reg)
 {
@@ -94,6 +149,5 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 	for (uint8_t i = 0U; i < pin_cnt; i++) {
 		pinctrl_configure_pin(pins++);
 	}
-
 	return 0;
 }

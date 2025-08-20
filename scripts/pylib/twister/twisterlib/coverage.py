@@ -414,6 +414,7 @@ class Gcovr(CoverageTool):
         cmd = ["gcovr", "-r", self.base_dir,
                "--gcov-ignore-parse-errors=negative_hits.warn_once_per_file",
                "--gcov-executable", self.gcov_tool,
+               "--gcov-object-directory", outdir,
                "-e", "tests/*"]
         cmd += excludes + self.options + ["--json", "-o", coverage_file, outdir]
         cmd_str = " ".join(cmd)
@@ -427,6 +428,7 @@ class Gcovr(CoverageTool):
 
         cmd = ["gcovr", "-r", self.base_dir] + self.options
         cmd += ["--gcov-executable", self.gcov_tool,
+                "--gcov-object-directory", outdir,
                 "-f", "tests/ztest", "-e", "tests/ztest/test/*",
                 "--json", "-o", ztest_file, outdir]
         cmd_str = " ".join(cmd)

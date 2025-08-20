@@ -136,14 +136,20 @@ static void spi_flexio_master_init(FLEXIO_SPI_Type *base, flexio_spi_master_conf
 
 	/* Configure FLEXIO SPI Master */
 	ctrlReg = base->flexioBase->CTRL;
-	ctrlReg &= ~(FLEXIO_CTRL_DOZEN_MASK | FLEXIO_CTRL_DBGE_MASK |
-			FLEXIO_CTRL_FASTACC_MASK | FLEXIO_CTRL_FLEXEN_MASK);
+	ctrlReg &= ~(FLEXIO_CTRL_DBGE_MASK | FLEXIO_CTRL_FASTACC_MASK | FLEXIO_CTRL_FLEXEN_MASK);
+#if !(defined(FSL_FEATURE_FLEXIO_HAS_DOZE_MODE_SUPPORT) && \
+		(FSL_FEATURE_FLEXIO_HAS_DOZE_MODE_SUPPORT == 0))
+	ctrlReg &= ~FLEXIO_CTRL_DOZEN_MASK;
+#endif
 	ctrlReg |= (FLEXIO_CTRL_DBGE(masterConfig->enableInDebug) |
 		FLEXIO_CTRL_FASTACC(masterConfig->enableFastAccess) |
 		FLEXIO_CTRL_FLEXEN(masterConfig->enableMaster));
+#if !(defined(FSL_FEATURE_FLEXIO_HAS_DOZE_MODE_SUPPORT) && \
+		(FSL_FEATURE_FLEXIO_HAS_DOZE_MODE_SUPPORT == 0))
 	if (!masterConfig->enableInDoze) {
 		ctrlReg |= FLEXIO_CTRL_DOZEN_MASK;
 	}
+#endif
 
 	base->flexioBase->CTRL = ctrlReg;
 

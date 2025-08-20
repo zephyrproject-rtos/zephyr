@@ -1,0 +1,7 @@
+/*
+ * Copyright (c) 2025 Beechwoods Software, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <raspberrypi/partitions_4M_storage.dtsi>

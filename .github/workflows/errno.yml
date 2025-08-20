@@ -5,6 +5,7 @@ on:
       - '.github/workflows/errno.yml'
       - 'lib/libc/minimal/include/errno.h'
       - 'scripts/ci/errno.py'
+      - 'SDK_VERSION'
 
 permissions:
   contents: read
@@ -13,7 +14,7 @@ jobs:
   check-errno:
     runs-on: ubuntu-24.04
     container:
-      image: ghcr.io/zephyrproject-rtos/ci:v0.28.0
+      image: ghcr.io/zephyrproject-rtos/ci:v0.28.2
 
     steps:
       - name: Apply container owner mismatch workaround

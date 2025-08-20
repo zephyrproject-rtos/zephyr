@@ -5,6 +5,7 @@
 import hashlib
 import os
 import re
+from dataclasses import dataclass
 
 from reuse.project import Project
 from west import log
@@ -15,28 +16,26 @@ from zspdx.util import getHashes
 
 # ScannerConfig contains settings used to configure how the SPDX
 # Document scanning should occur.
+@dataclass(eq=True)
 class ScannerConfig:
-    def __init__(self):
-        super().__init__()
+    # when assembling a Package's data, should we auto-conclude the
+    # Package's license, based on the licenses of its Files?
+    shouldConcludePackageLicense: bool = True
 
-        # when assembling a Package's data, should we auto-conclude the
-        # Package's license, based on the licenses of its Files?
-        self.shouldConcludePackageLicense = True
+    # when assembling a Package's Files' data, should we auto-conclude
+    # each File's license, based on its detected license(s)?
+    shouldConcludeFileLicenses: bool = True
 
-        # when assembling a Package's Files' data, should we auto-conclude
-        # each File's license, based on its detected license(s)?
-        self.shouldConcludeFileLicenses = True
+    # number of lines to scan for SPDX-License-Identifier (0 = all)
+    # defaults to 20
+    numLinesScanned: int = 20
 
-        # number of lines to scan for SPDX-License-Identifier (0 = all)
-        # defaults to 20
-        self.numLinesScanned = 20
+    # should we calculate SHA256 hashes for each Package's Files?
+    # note that SHA1 hashes are mandatory, per SPDX 2.3
+    doSHA256: bool = True
 
-        # should we calculate SHA256 hashes for each Package's Files?
-        # note that SHA1 hashes are mandatory, per SPDX 2.3
-        self.doSHA256 = True
-
-        # should we calculate MD5 hashes for each Package's Files?
-        self.doMD5 = False
+    # should we calculate MD5 hashes for each Package's Files?
+    doMD5: bool = False
 
 
 def parseLineForExpression(line):

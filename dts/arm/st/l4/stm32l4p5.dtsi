@@ -6,6 +6,7 @@
 
 #include <mem.h>
 #include <st/l4/stm32l4.dtsi>
+#include <zephyr/dt-bindings/clock/stm32l4plus_clock.h>
 #include <zephyr/dt-bindings/flash_controller/ospi.h>
 
 /delete-node/ &quadspi;
@@ -27,6 +28,12 @@
 			#clock-cells = <0>;
 			compatible = "fixed-clock";
 			clock-frequency = <DT_FREQ_M(48)>;
+			status = "disabled";
+		};
+
+		pllsai2: pllsai2 {
+			#clock-cells = <0>;
+			compatible = "st,stm32l4-pllsai-clock";
 			status = "disabled";
 		};
 	};

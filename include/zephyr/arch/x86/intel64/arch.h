@@ -66,7 +66,8 @@ static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 		"movq %[reason], %%rax\n\t" \
 		"int $32\n\t" \
 		: \
-		: [reason] "i" (reason_p)); \
+		: [reason] "i" (reason_p) \
+		: "memory"); \
 	CODE_UNREACHABLE; /* LCOV_EXCL_LINE */ \
 } while (false)
 

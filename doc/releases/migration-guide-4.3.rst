@@ -31,10 +31,21 @@ Boards
 
 * mimxrt11x0: renamed lpadc1 to lpadc2 and renamed lpadc0 to lpadc1.
 
+* NXP ``frdm_mcxa166`` is renamed to ``frdm_mcxa346``.
+* NXP ``frdm_mcxa276`` is renamed to ``frdm_mcxa266``.
+
 Device Drivers and Devicetree
 *****************************
 
 .. zephyr-keep-sorted-start re(^\w)
+
+Phy
+===
+
+* Nodes with compatible property :dtcompatible:`st,stm32u5-otghs-phy` now need to select the
+  CLKSEL (phy reference clock) in the SYSCFG_OTGHSPHYCR register using the new property
+  clock-reference. The selection directly depends on the value on OTGHSSEL (OTG_HS PHY kernel
+  clock source selection) located in the RCC_CCIPR2 register.
 
 Sensors
 =======
@@ -51,6 +62,12 @@ Stepper
 
 Bluetooth
 *********
+
+* :c:struct:`bt_le_cs_test_param` and :c:struct:`bt_le_cs_create_config_params` now require
+  providing both the main and sub mode as a single parameter.
+* :c:struct:`bt_conn_le_cs_config` now reports both the main and sub mode as a single parameter.
+* :c:struct:`bt_conn_le_cs_main_mode` and :c:struct:`bt_conn_le_cs_sub_mode` have been replaced
+  with :c:struct:`bt_conn_le_cs_mode`.
 
 .. zephyr-keep-sorted-start re(^\w)
 
@@ -93,6 +110,8 @@ Display
   This has now been fixed. Boards and applications that were tested or developed based on the
   previous sample may be affected by this change (see :github:`79996` for more information).
 
+* SSD1363's properties using 'greyscale' now use 'grayscale'.
+
 PTP Clock
 *********
 
@@ -106,6 +125,15 @@ Other subsystems
 ****************
 
 .. zephyr-keep-sorted-start re(^\w)
+
+Logging
+=======
+
+* The UART dictionary log parsing script
+  :zephyr_file:`scripts/logging/dictionary/log_parser_uart.py` has been deprecated. Instead, the
+  more generic script of :zephyr_file:`scripts/logging/dictionary/live_log_parser.py` should be
+  used. The new script supports the same functionality (and more), but requires different command
+  line arguments when invoked.
 
 .. zephyr-keep-sorted-stop
 
@@ -129,6 +157,9 @@ Silabs
 
 * Fixed name of the :kconfig:option:`CONFIG_SOC_*`. These option contained PART_NUMBER in their
   while they shouldn't.
+
+* The separate ``em3`` power state was removed from Series 2 SoCs. The system automatically
+  transitions to EM2 or EM3 depending on hardware peripheral requests for the oscillators.
 
 Architectures
 *************

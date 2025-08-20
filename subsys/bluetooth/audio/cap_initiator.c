@@ -1044,9 +1044,8 @@ static bool bap_unicast_group_foreach_stream_cb(struct bt_bap_stream *bap_stream
 	/* Since we are iterating on a CAP unicast group, we can assume that all streams are CAP
 	 * streams
 	 */
-	data->func(CONTAINER_OF(bap_stream, struct bt_cap_stream, bap_stream), data->user_data);
-
-	return false;
+	return data->func(CONTAINER_OF(bap_stream, struct bt_cap_stream, bap_stream),
+			  data->user_data);
 }
 
 int bt_cap_unicast_group_foreach_stream(struct bt_cap_unicast_group *unicast_group,
@@ -1825,6 +1824,14 @@ void bt_cap_initiator_started(struct bt_cap_stream *cap_stream)
 
 		LOG_DBG("Stream %p started (%zu/%zu streams done)", cap_stream,
 			active_proc->proc_done_cnt, active_proc->proc_cnt);
+	}
+
+	if (bt_cap_common_proc_is_aborted()) {
+		if (bt_cap_common_proc_all_handled()) {
+			cap_initiator_unicast_audio_proc_complete();
+		}
+
+		return;
 	}
 
 	if (!bt_cap_common_proc_is_done()) {

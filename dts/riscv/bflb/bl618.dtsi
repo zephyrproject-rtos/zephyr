@@ -1,0 +1,8 @@
+/*
+ * Copyright (c) 2024-2025 MASSDRIVER EI (massdriver.space)
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <bflb/bl61x.dtsi>
+#include <dt-bindings/pinctrl/bl618x-pinctrl.h>

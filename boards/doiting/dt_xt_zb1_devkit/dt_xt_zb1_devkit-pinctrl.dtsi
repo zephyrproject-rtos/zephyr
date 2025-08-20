@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/pinctrl/bl702x-pinctrl.h>
+
+&pinctrl {
+	uart0_default: uart0_default {
+		group1 {
+			pinmux = <GPIO15_UART0_RX>,
+				 <GPIO14_UART0_TX>;
+			bias-pull-up;
+			input-schmitt-enable;
+		};
+	};
+
+	uart0_sleep: uart0_sleep {
+		group1 {
+			pinmux = <GPIO15_UART0_RX>,
+				 <GPIO14_UART0_TX>;
+			bias-high-impedance;
+		};
+	};
+};

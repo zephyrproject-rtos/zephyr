@@ -7,7 +7,7 @@
 
 source "Kconfig.constants"
 
-osource "${APPLICATION_SOURCE_DIR}/VERSION"
+osource "$(APPLICATION_SOURCE_DIR)/VERSION"
 
 # Include Kconfig.defconfig files first so that they can override defaults and
 # other symbol/choice properties by adding extra symbol/choice definitions.
@@ -963,7 +963,7 @@ config BUILD_OUTPUT_STRIP_PATHS
 	bool "Strip absolute paths from binaries"
 	default y
 	help
-	  If the compiler supports it, strip the ${ZEPHYR_BASE} prefix from the
+	  If the compiler supports it, strip the $(ZEPHYR_BASE) prefix from the
 	  __FILE__ macro used in __ASSERT*, in the
 	  .noinit."/home/joe/zephyr/fu/bar.c" section names and in any
 	  application code.

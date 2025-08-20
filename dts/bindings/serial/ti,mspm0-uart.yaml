@@ -8,6 +8,9 @@ properties:
   reg:
     required: true
 
+  interrupts:
+    required: true
+
   pinctrl-0:
     required: true
 

@@ -44,6 +44,12 @@ config BT_MAX_SCO_CONN
 	  Maximum number of simultaneous Bluetooth synchronous connections
 	  supported. The minimum (and default) number is 1.
 
+config BT_L2CAP_CONNLESS
+	bool "Bluetooth L2CAP connectionless data reception [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  This option enables Bluetooth L2CAP connectionless data reception
+
 config BT_L2CAP_RET
 	bool "Bluetooth L2CAP retransmission mode [EXPERIMENTAL]"
 	select EXPERIMENTAL
@@ -146,17 +152,6 @@ config BT_RFCOMM_TX_MAX
 	  Maximum number of pending TX buffers that have an associated
 	  sending buf. Normally this can be left to the default value, which
 	  is equal to the number of session in the stack-internal pool.
-
-config BT_RFCOMM_DLC_STACK_SIZE
-	int "Stack size of DLC for RFCOMM"
-	default 512
-	help
-	  Stack size of DLC for RFCOMM. This is the context from which
-	  all data of upper layer are sent and disconnect
-	  callback to the upper layer. The default value is sufficient
-	  for basic operation, but if the application needs to do
-	  advanced things in its callbacks that require extra stack
-	  space, this value can be increased to accommodate for that.
 
 config BT_HFP_HF
 	bool "Bluetooth Handsfree profile HF Role support [EXPERIMENTAL]"

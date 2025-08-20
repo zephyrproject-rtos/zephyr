@@ -122,14 +122,14 @@ manifest:
       groups:
         - hal
     - name: cmsis-dsp
-      revision: d80a49b2bb186317dc1db4ac88da49c0ab77e6e7
+      revision: 2c014e93d75c4896df57f072b3f7d5d06e37f254
       path: modules/lib/cmsis-dsp
     - name: cmsis-nn
       revision: e9328d612ea3ea7d0d210d3ac16ea8667c01abdd
       path: modules/lib/cmsis-nn
     - name: cmsis_6
       repo-path: CMSIS_6
-      revision: 06d952b6713a2ca41c9224a62075e4059402a151
+      revision: 30a859f44ef8ab4dc8f84b03ed586fd16ccf9d74
       path: modules/hal/cmsis_6
       groups:
         - hal
@@ -154,22 +154,22 @@ manifest:
       groups:
         - hal
     - name: hal_ambiq
-      revision: e9212585cd7c4e1cc189f7d530b8a028d5e8ecf5
+      revision: 5546a303ac04b7bc728b2c92ff1b1009ea795a22
       path: modules/hal/ambiq
       groups:
         - hal
     - name: hal_atmel
-      revision: ca7e4c6920f44b9d677ed5995ffa169f18a54cdf
+      revision: 065e57c5013051c8b7f2256271349c6942bd9344
       path: modules/hal/atmel
       groups:
         - hal
     - name: hal_bouffalolab
       path: modules/hal/bouffalolab
-      revision: 5811738e2be348f30dc97d78280f2735d5d14084
+      revision: a2276fb0c6ed0eaa6062aa0790500ab32dcaae9c
       groups:
         - hal
     - name: hal_espressif
-      revision: 883b9e84c86bab3ffef8572330cdaad8c1b289bc
+      revision: aa5443a4eea6a49d58f808f41bceb5de19678fa6
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -210,7 +210,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: 9b49fb1130209214a95d279b64e1efd5c87ec915
+      revision: 54ebe9bfd5ecc96ee68ad54f710d92732bcc401d
       path: modules/hal/nxp
       groups:
         - hal
@@ -226,7 +226,7 @@ manifest:
         - hal
     - name: hal_renesas
       path: modules/hal/renesas
-      revision: 1372089250bf0d8afc46a7efc3ecf080003ead22
+      revision: 0cdd997d9f39aa24099ecbc4dcba051546788619
       groups:
         - hal
     - name: hal_rpi_pico
@@ -260,7 +260,7 @@ manifest:
       groups:
         - hal
     - name: hal_ti
-      revision: 9c687784a13581c8b7574ccae0b93b35be903fcd
+      revision: 391f7cb740b59c077ddd49411f043161597b10aa
       path: modules/hal/ti
       groups:
         - hal
@@ -340,7 +340,7 @@ manifest:
       revision: c30a6d8b92fcebdb797fc1a7698e8729e250f637
       path: modules/lib/open-amp
     - name: openthread
-      revision: 3ae741f95e7dfb391dec35c48742862049eb62e8
+      revision: 2bc7712f57af22058770d1ef131ad3da79a0c764
       path: modules/lib/openthread
     - name: percepio
       path: modules/debug/percepio

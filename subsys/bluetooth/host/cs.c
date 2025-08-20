@@ -529,8 +529,16 @@ int bt_le_cs_start_test(const struct bt_le_cs_test_param *params)
 
 	cp = net_buf_add(buf, sizeof(*cp));
 
-	cp->main_mode_type = params->main_mode;
-	cp->sub_mode_type = params->sub_mode;
+	cp->main_mode_type = BT_CONN_LE_CS_MODE_MAIN_MODE_PART(params->mode);
+
+	uint8_t sub_mode_type = BT_CONN_LE_CS_MODE_SUB_MODE_PART(params->mode);
+
+	if (sub_mode_type) {
+		cp->sub_mode_type = sub_mode_type;
+	} else {
+		cp->sub_mode_type = BT_HCI_OP_LE_CS_SUB_MODE_UNUSED;
+	}
+
 	cp->main_mode_repetition = params->main_mode_repetition;
 	cp->mode_0_steps = params->mode_0_steps;
 	cp->role = params->role;
@@ -850,9 +858,13 @@ void bt_hci_le_cs_config_complete_event(struct net_buf *buf)
 			return;
 		}
 
+		if (evt->sub_mode_type == BT_HCI_OP_LE_CS_SUB_MODE_UNUSED) {
+			config.mode = evt->main_mode_type;
+		} else {
+			config.mode = evt->main_mode_type | (evt->sub_mode_type << 4);
+		}
+
 		config.id = evt->config_id;
-		config.main_mode_type = evt->main_mode_type;
-		config.sub_mode_type = evt->sub_mode_type;
 		config.min_main_mode_steps = evt->min_main_mode_steps;
 		config.max_main_mode_steps = evt->max_main_mode_steps;
 		config.main_mode_repetition = evt->main_mode_repetition;
@@ -893,8 +905,16 @@ int bt_le_cs_create_config(struct bt_conn *conn, struct bt_le_cs_create_config_p
 	cp->handle = sys_cpu_to_le16(conn->handle);
 	cp->config_id = params->id;
 	cp->create_context = context;
-	cp->main_mode_type = params->main_mode_type;
-	cp->sub_mode_type = params->sub_mode_type;
+	cp->main_mode_type = BT_CONN_LE_CS_MODE_MAIN_MODE_PART(params->mode);
+
+	uint8_t sub_mode_type = BT_CONN_LE_CS_MODE_SUB_MODE_PART(params->mode);
+
+	if (sub_mode_type) {
+		cp->sub_mode_type = sub_mode_type;
+	} else {
+		cp->sub_mode_type = BT_HCI_OP_LE_CS_SUB_MODE_UNUSED;
+	}
+
 	cp->min_main_mode_steps = params->min_main_mode_steps;
 	cp->max_main_mode_steps = params->max_main_mode_steps;
 	cp->main_mode_repetition = params->main_mode_repetition;

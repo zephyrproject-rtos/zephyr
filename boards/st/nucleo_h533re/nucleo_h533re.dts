@@ -26,7 +26,7 @@
 		compatible = "gpio-leds";
 
 		green_led_2: led_42 {
-			gpios = <&gpioa 5 GPIO_ACTIVE_LOW>;
+			gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>;
 			label = "User LD2";
 		};
 	};
@@ -130,7 +130,7 @@
 };
 
 &adc1 {
-	clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000400>,
+	clocks = <&rcc STM32_CLOCK(AHB2, 10)>,
 		 <&rcc STM32_SRC_HCLK ADCDAC_SEL(0)>;
 	pinctrl-0 = <&adc1_inp0_pa0>; /* Arduino A0 */
 	pinctrl-names = "default";
@@ -160,7 +160,7 @@
 };
 
 &rtc {
-	clocks = <&rcc STM32_CLOCK_BUS_APB3 0x00200000>,
+	clocks = <&rcc STM32_CLOCK(APB3, 21)>,
 		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
 	status = "okay";
 };

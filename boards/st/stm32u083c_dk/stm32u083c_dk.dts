@@ -78,7 +78,7 @@
 	pinctrl-0 = <&adc1_in0_pc0 &adc1_in1_pc1>;
 	pinctrl-names = "default";
 	st,adc-clock-source = "ASYNC";
-	clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00100000>,
+	clocks = <&rcc STM32_CLOCK(APB1_2, 20)>,
 		 <&rcc STM32_SRC_HSI ADC_SEL(2)>;
 	st,adc-prescaler = <4>;
 	status = "okay";

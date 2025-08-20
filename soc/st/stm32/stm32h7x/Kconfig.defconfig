@@ -14,6 +14,9 @@ config ROM_START_OFFSET
 	default 0x400 if BOOTLOADER_MCUBOOT
 	default 0x0   if !BOOTLOADER_MCUBOOT
 
+config CACHE_MANAGEMENT
+	default y if CPU_CORTEX_M7
+
 if LVGL
 
 config LV_DRAW_DMA2D_HAL_INCLUDE

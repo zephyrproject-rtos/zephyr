@@ -393,8 +393,11 @@ def process_kconfig(module, meta):
     module_path = PurePath(module)
     module_yml = module_path.joinpath('zephyr/module.yml')
     kconfig_extern = section.get('kconfig-ext', False)
+    name_sanitized = meta['name-sanitized']
+    snippet = f'ZEPHYR_{name_sanitized.upper()}_MODULE_DIR := {module_path.as_posix()}\n'
+
     if kconfig_extern:
-        return kconfig_snippet(meta, module_path, blobs=blobs, taint_blobs=taint_blobs)
+        return snippet + kconfig_snippet(meta, module_path, blobs=blobs, taint_blobs=taint_blobs)
 
     kconfig_setting = section.get('kconfig', None)
     if not validate_setting(kconfig_setting, module):
@@ -404,12 +407,10 @@ def process_kconfig(module, meta):
 
     kconfig_file = os.path.join(module, kconfig_setting or 'zephyr/Kconfig')
     if os.path.isfile(kconfig_file):
-        return kconfig_snippet(meta, module_path, Path(kconfig_file),
-                               blobs=blobs, taint_blobs=taint_blobs)
+        return snippet + kconfig_snippet(meta, module_path, Path(kconfig_file),
+                                         blobs=blobs, taint_blobs=taint_blobs)
     else:
-        name_sanitized = meta['name-sanitized']
-        snippet = kconfig_module_opts(name_sanitized, blobs, taint_blobs)
-        return '\n'.join(snippet) + '\n'
+        return snippet + '\n'.join(kconfig_module_opts(name_sanitized, blobs, taint_blobs)) + '\n'
 
 
 def process_sysbuildkconfig(module, meta):
@@ -417,8 +418,11 @@ def process_sysbuildkconfig(module, meta):
     module_path = PurePath(module)
     module_yml = module_path.joinpath('zephyr/module.yml')
     kconfig_extern = section.get('sysbuild-kconfig-ext', False)
+    name_sanitized = meta['name-sanitized']
+    snippet = f'ZEPHYR_{name_sanitized.upper()}_MODULE_DIR := {module_path.as_posix()}\n'
+
     if kconfig_extern:
-        return kconfig_snippet(meta, module_path, sysbuild=True)
+        return snippet + kconfig_snippet(meta, module_path, sysbuild=True)
 
     kconfig_setting = section.get('sysbuild-kconfig', None)
     if not validate_setting(kconfig_setting, module):
@@ -429,10 +433,10 @@ def process_sysbuildkconfig(module, meta):
     if kconfig_setting is not None:
         kconfig_file = os.path.join(module, kconfig_setting)
         if os.path.isfile(kconfig_file):
-            return kconfig_snippet(meta, module_path, Path(kconfig_file))
+            return snippet + kconfig_snippet(meta, module_path, Path(kconfig_file))
 
-    name_sanitized = meta['name-sanitized']
-    return (f'config ZEPHYR_{name_sanitized.upper()}_MODULE\n'
+    return snippet + \
+           (f'config ZEPHYR_{name_sanitized.upper()}_MODULE\n'
             f'   bool\n'
             f'   default y\n')
 
@@ -759,8 +763,10 @@ def parse_modules(zephyr_base, manifest=None, west_projs=None, modules=None,
     if extra_modules is None:
         extra_modules = []
         for var in ['EXTRA_ZEPHYR_MODULES', 'ZEPHYR_EXTRA_MODULES']:
-            if var in os.environ:
-                extra_modules.extend(PurePosixPath(p) for p in os.environ[var].split(';'))
+            extra_module = os.environ.get(var, None)
+            if not extra_module:
+                continue
+            extra_modules.extend(PurePosixPath(p) for p in extra_module.split(';'))
 
     Module = namedtuple('Module', ['project', 'meta', 'depends'])
 

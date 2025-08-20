@@ -13,21 +13,7 @@ config SOC_SERIES_KINETIS_KE1XF
 	select CLOCK_CONTROL
 	select HAS_MCUX
 	select HAS_MCUX_CACHE
-	select HAS_MCUX_FTFX
-	select HAS_MCUX_LPI2C
-	select HAS_MCUX_LPSPI
-	select HAS_MCUX_LPUART
-	select HAS_MCUX_PCC
-	select HAS_MCUX_RTC
 	select HAS_MCUX_SIM
-	select HAS_MCUX_ADC12
-	select HAS_MCUX_SCG
-	select HAS_MCUX_WDOG32
-	select HAS_MCUX_FTM
-	select HAS_MCUX_LPTMR
-	select HAS_MCUX_DAC32
-	select HAS_MCUX_EDMA
-	select HAS_MCUX_PWT
 	select HAS_MCUX_RCM
 	select SOC_RESET_HOOK
 	select SOC_EARLY_INIT_HOOK
@@ -35,11 +21,9 @@ config SOC_SERIES_KINETIS_KE1XF
 
 config SOC_MKE16F16
 	select HAS_MCUX
-	select HAS_MCUX_FLEXCAN
 
 config SOC_MKE18F16
 	select HAS_MCUX
-	select HAS_MCUX_FLEXCAN
 
 if SOC_SERIES_KINETIS_KE1XF
 

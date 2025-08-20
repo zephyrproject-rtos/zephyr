@@ -114,6 +114,7 @@ module-help = Enables core ARP code to output debug messages.
 source "subsys/net/Kconfig.template.log_config.net"
 endif # NET_ARP
 
+source "subsys/net/l2/ethernet/dsa/Kconfig"
 source "subsys/net/l2/ethernet/gptp/Kconfig"
 source "subsys/net/l2/ethernet/lldp/Kconfig"
 

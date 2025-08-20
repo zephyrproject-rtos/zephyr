@@ -30,17 +30,17 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			clint: clint@2000000 {
+			clint: clint@a0010000 {
 				compatible = "sifive,clint0";
-				reg = <0x2000000 0x1000>;
+				reg = <0xa0010000 0x1000>;
 				interrupts-extended = <&cpu0_intc 3 &cpu0_intc 7>;
 				interrupt-names = "soft0", "timer0";
 			};
 
-			mtimer: timer@200bff8 {
+			mtimer: timer@a001bff8 {
 				compatible = "riscv,machine-timer";
 				interrupts-extended = <&cpu0_intc 7>;
-				reg = <0x200bff8 0x8 0x2004000 0x8>;
+				reg = <0xa001bff8 0x8 0xa0014000 0x8>;
 				reg-names = "mtime", "mtimecmp";
 			};
 

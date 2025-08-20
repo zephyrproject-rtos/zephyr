@@ -90,6 +90,7 @@ struct zperf_results {
 	uint64_t client_time_in_us;   /**< Client connection time in microseconds */
 	uint32_t packet_size;         /**< Packet size */
 	uint32_t nb_packets_errors;   /**< Number of packet errors */
+	bool is_multicast;            /**< True if this session used IP multicast */
 };
 
 /**

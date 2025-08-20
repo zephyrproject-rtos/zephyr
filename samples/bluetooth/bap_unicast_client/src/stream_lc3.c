@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Nordic Semiconductor ASA
+ * Copyright (c) 2024-2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -158,6 +158,7 @@ static bool encode_frame_block(struct tx_stream *stream, struct net_buf *out_buf
 		 * purposes
 		 */
 		if (!encode_frame(stream, i, out_buf)) {
+			LOG_WRN("Failed to encode frame %u", i);
 			return false;
 		}
 	}
@@ -169,6 +170,7 @@ void stream_lc3_add_data(struct tx_stream *stream, struct net_buf *buf)
 {
 	for (uint8_t i = 0U; i < stream->lc3_tx.frame_blocks_per_sdu; i++) {
 		if (!encode_frame_block(stream, buf)) {
+			LOG_WRN("Failed to encode frame block %u", i);
 			break;
 		}
 	}

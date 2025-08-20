@@ -286,7 +286,7 @@ static int cyw208xx_send(const struct device *dev, struct net_buf *buf)
 
 	ARG_UNUSED(dev);
 
-	int ret = 0;
+	int ret;
 
 	k_sem_take(&hci_sem, K_FOREVER);
 
@@ -324,8 +324,14 @@ static int cyw208xx_send(const struct device *dev, struct net_buf *buf)
 
 done:
 	k_sem_give(&hci_sem);
+
+	if (ret != 0) {
+		return -EIO;
+	}
+
 	net_buf_unref(buf);
-	return ret ? -EIO : 0;
+
+	return 0;
 }
 
 static DEVICE_API(bt_hci, drv) = {

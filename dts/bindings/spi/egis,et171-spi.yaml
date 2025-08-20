@@ -1,0 +1,17 @@
+#
+# Copyright (c) 2022, Andes Technology Corporation.
+# Copyright (c) 2025 Egis Technology Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: |
+    Egis ET171 SPI controller based on the Andes ATCSPI200 architecture.
+
+compatible: "egis,et171-spi"
+
+include: spi-controller.yaml
+
+properties:
+  reg:
+    required: true

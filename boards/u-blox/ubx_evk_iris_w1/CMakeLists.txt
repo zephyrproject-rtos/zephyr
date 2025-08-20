@@ -5,6 +5,8 @@
 #
 
 if(CONFIG_NXP_RW6XX_BOOT_HEADER)
+	dt_nodelabel(xtal32 NODELABEL "xtal32")
+	dt_node_has_status(xtal32_status PATH ${xtal32} STATUS okay)
 	zephyr_compile_definitions(BOARD_FLASH_SIZE=${CONFIG_FLASH_SIZE}*1024)
 
 	if(BOARD_REVISION STREQUAL "macronix")
@@ -15,7 +17,7 @@ if(CONFIG_NXP_RW6XX_BOOT_HEADER)
 		message(FATAL_ERROR "Unsupported board revision: ${BOARD_REVISION}")
 	endif()
 
-	if(CONFIG_DT_HAS_NXP_ENET_MAC_ENABLED AND CONFIG_XTAL32K)
+	if(CONFIG_DT_HAS_NXP_ENET_MAC_ENABLED AND ${xtal32_status})
 		message(FATAL_ERROR
 			"Ethernet and external 32K clock source are "
 			"mutually exclusive on FRDM_RW612 due to shared PCB nets "

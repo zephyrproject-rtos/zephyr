@@ -10,6 +10,7 @@
 #include <dt-bindings/gpio/gpio.h>
 #include "rsk_rx130_512kb-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/adc/adc.h>
 
 / {
 	model = "Renesas RSK+RX130-512KB KIT";
@@ -137,4 +138,10 @@
 			reg = <0X0 DT_SIZE_K(8)>;
 		};
 	};
+};
+
+&adc {
+	pinctrl-0 = <&adc_default>;
+	pinctrl-names = "default";
+	status = "okay";
 };

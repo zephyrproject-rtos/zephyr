@@ -89,7 +89,7 @@
 };
 
 &rtc {
-	clocks = <&rcc STM32_CLOCK_BUS_APB4 0x00010000>,
+	clocks = <&rcc STM32_CLOCK(APB4, 16)>,
 		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
 	status = "okay";
 };
@@ -158,7 +158,7 @@ zephyr_udc0: &usbotg_fs {
 	pinctrl-0 = <&fdcan1_rx_pd0 &fdcan1_tx_pd1>;
 	/* HSE will be used by default. Uncomment below to enable APB1.2 120MHz clock */
 	/*
-	 * clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000100>,
+	 * clocks = <&rcc STM32_CLOCK(APB1_2, 8)>,
 	 *	   <&rcc STM32_SRC_PLL1_Q FDCAN_SEL(1)>;
 	 */
 	pinctrl-names = "default";

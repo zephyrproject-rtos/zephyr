@@ -60,4 +60,8 @@ if(CONFIG_PLIC_SHELL)
   )
 endif()
 
+if(CONFIG_NXP_PINT)
+  zephyr_compile_definitions(PINT_USE_LEGACY_CALLBACK=1)
+endif()
+
 zephyr_library_include_directories(${ZEPHYR_BASE}/arch/common/include)

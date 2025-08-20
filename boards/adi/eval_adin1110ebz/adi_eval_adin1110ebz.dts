@@ -61,7 +61,7 @@
 		fmc: memory-controller@a0000000 {
 			compatible = "st,stm32-fmc";
 			reg = <0xa0000000 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_AHB3 0x00000001>;
+			clocks = <&rcc STM32_CLOCK(AHB3, 0)>;
 
 			sram {
 				compatible = "st,stm32-fmc-nor-psram";
@@ -247,7 +247,7 @@
 };
 
 &rtc {
-	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>,
+	clocks = <&rcc STM32_CLOCK(APB1, 28)>,
 		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
 	status = "okay";
 };
