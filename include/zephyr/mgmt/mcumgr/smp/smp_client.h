@@ -15,7 +15,7 @@
 
 /**
  * @brief MCUmgr SMP client API
- * @defgroup mcumgr_smp_client SMP client API
+ * @defgroup mcumgr_smp_client SMP client
  * @ingroup mcumgr
  * @{
  */

@@ -12,8 +12,9 @@ extern "C" {
 #endif
 
 /**
- * @brief MCUmgr os_mgmt callback API
- * @defgroup mcumgr_callback_api_os_mgmt MCUmgr os_mgmt callback API
+ * @brief MCUmgr OS Management Callbacks API
+ * @defgroup mcumgr_callback_api_os_mgmt OS Management Callbacks
+ * @ingroup mcumgr_os_mgmt
  * @ingroup mcumgr_callback_api
  * @{
  */
