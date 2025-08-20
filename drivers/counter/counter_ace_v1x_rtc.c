@@ -36,7 +36,7 @@ int counter_ace_v1x_rtc_init(const struct device *dev)
 }
 
 static DEVICE_API(counter, ace_v1x_rtc_counter_apis) = {
-	.get_value_64 = counter_ace_v1x_rtc_get_value
+	.get_value = counter_ace_v1x_rtc_get_value
 };
 
 DEVICE_DT_DEFINE(DT_NODELABEL(ace_rtc_counter), counter_ace_v1x_rtc_init, NULL, NULL, NULL,
