@@ -136,5 +136,5 @@ static const struct memc_max32_hpb_config config = {
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 };
 
-DEVICE_DT_INST_DEFINE(0, memc_max32_hpb_init, NULL, NULL, &config, POST_KERNEL,
+DEVICE_DT_INST_DEFINE(0, memc_max32_hpb_init, NULL, NULL, &config, PRE_KERNEL_1,
 		      CONFIG_MEMC_INIT_PRIORITY, NULL);
