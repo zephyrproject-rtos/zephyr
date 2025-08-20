@@ -123,6 +123,9 @@ struct lora_modem_config {
 	 * interacting with a public network.
 	 */
 	bool public_network;
+
+	/** Set to true to disable the 16-bit payload CRC */
+	bool packet_crc_disable;
 };
 
 /**
