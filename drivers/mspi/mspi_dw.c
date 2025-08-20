@@ -1665,6 +1665,20 @@ static int api_register_callback(const struct device *dev,
 	return 0;
 }
 
+static int api_timing_config(const struct device *dev,
+			     const struct mspi_dev_id *dev_id,
+			     const uint32_t param_mask, void *cfg)
+{
+	struct mspi_dw_data *dev_data = dev->data;
+	struct mspi_dw_timing_cfg *config = cfg;
+
+	if (param_mask & MSPI_DW_RX_TIMING_CFG) {
+		dev_data->rx_sample_dly = config->rx_sample_dly;
+		return 0;
+	}
+	return -ENOTSUP;
+}
+
 #if defined(CONFIG_MSPI_XIP)
 static int _api_xip_config(const struct device *dev,
 			   const struct mspi_dev_id *dev_id,
@@ -1769,20 +1783,6 @@ static int _api_xip_config(const struct device *dev,
 	dev_data->xip_enabled |= BIT(dev_id->dev_idx);
 
 	return 0;
-}
-
-static int api_timing_config(const struct device *dev,
-			     const struct mspi_dev_id *dev_id,
-			     const uint32_t param_mask, void *cfg)
-{
-	struct mspi_dw_data *dev_data = dev->data;
-	struct mspi_dw_timing_cfg *config = cfg;
-
-	if (param_mask & MSPI_DW_RX_TIMING_CFG) {
-		dev_data->rx_sample_dly = config->rx_sample_dly;
-		return 0;
-	}
-	return -ENOTSUP;
 }
 
 static int api_xip_config(const struct device *dev,
