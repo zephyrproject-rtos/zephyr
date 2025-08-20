@@ -16,20 +16,26 @@
  * - USB Device Class Definition for Video Devices: Motion-JPEG Payload (Revision 1.5)
  */
 
-#ifndef ZEPHYR_INCLUDE_USBD_CLASS_UVC_H_
-#define ZEPHYR_INCLUDE_USBD_CLASS_UVC_H_
+#ifndef ZEPHYR_INCLUDE_USB_CLASS_UVC_H_
+#define ZEPHYR_INCLUDE_USB_CLASS_UVC_H_
 
 #include <zephyr/usb/usb_ch9.h>
 
 /* Video Class-Specific Request Codes */
 #define UVC_SET_CUR					0x01
 #define UVC_GET_CUR					0x81
+#define UVC_SET_CUR_ALL				0x11
 #define UVC_GET_MIN					0x82
 #define UVC_GET_MAX					0x83
 #define UVC_GET_RES					0x84
 #define UVC_GET_LEN					0x85
-#define UVC_GET_INFO					0x86
+#define UVC_GET_INFO				0x86
 #define UVC_GET_DEF					0x87
+#define UVC_GET_CUR_ALL				0x91
+#define UVC_GET_MIN_ALL				0x92
+#define UVC_GET_MAX_ALL				0x93
+#define UVC_GET_RES_ALL				0x94
+#define UVC_GET_DEF_ALL				0x97
 
 /* Flags announcing which controls are supported */
 #define UVC_INFO_SUPPORTS_GET				BIT(0)
@@ -55,6 +61,8 @@
 #define UVC_BMHEADERINFO_ERROR				BIT(6)
 #define UVC_BMHEADERINFO_END_OF_HEADER			BIT(7)
 
+/* Video Interface Class Codes */
+#define UVC_SC_VIDEOCLASS				0x0E
 /* Video Interface Subclass Codes */
 #define UVC_SC_VIDEOCONTROL				0x01
 #define UVC_SC_VIDEOSTREAMING				0x02
@@ -119,6 +127,7 @@
 #define UVC_EXT_COMPONENT_CONNECTOR			0x0403
 
 /* VideoStreaming Interface Controls */
+#define UVC_VS_CONTROL_UNDEFINED			0x00
 #define UVC_VS_PROBE_CONTROL				0x01
 #define UVC_VS_COMMIT_CONTROL				0x02
 #define UVC_VS_STILL_PROBE_CONTROL			0x03
@@ -138,6 +147,7 @@
 #define UVC_SU_INPUT_SELECT_CONTROL			0x01
 
 /* Camera Terminal Controls */
+#define UVC_CT_CONTROL_UNDEFINED			0x00
 #define UVC_CT_SCANNING_MODE_CONTROL			0x01
 #define UVC_CT_AE_MODE_CONTROL				0x02
 #define UVC_CT_AE_PRIORITY_CONTROL			0x03
@@ -202,6 +212,52 @@
 #define UVC_EU_START_OR_STOP_LAYER_CONTROL		0x13
 #define UVC_EU_ERROR_RESILIENCY_CONTROL			0x14
 
+/* Processing Unit Control Bit Positions (for bmControls bitmap) */
+#define UVC_PU_BMCONTROL_BRIGHTNESS					  BIT(0)
+#define UVC_PU_BMCONTROL_CONTRAST						BIT(1)
+#define UVC_PU_BMCONTROL_HUE							 BIT(2)
+#define UVC_PU_BMCONTROL_SATURATION					  BIT(3)
+#define UVC_PU_BMCONTROL_SHARPNESS					   BIT(4)
+#define UVC_PU_BMCONTROL_GAMMA						   BIT(5)
+#define UVC_PU_BMCONTROL_WHITE_BALANCE_TEMPERATURE	   BIT(6)
+#define UVC_PU_BMCONTROL_WHITE_BALANCE_COMPONENT		 BIT(7)
+#define UVC_PU_BMCONTROL_BACKLIGHT_COMPENSATION		  BIT(8)
+#define UVC_PU_BMCONTROL_GAIN							BIT(9)
+#define UVC_PU_BMCONTROL_POWER_LINE_FREQUENCY			BIT(10)
+#define UVC_PU_BMCONTROL_HUE_AUTO						BIT(11)
+#define UVC_PU_BMCONTROL_WHITE_BALANCE_TEMPERATURE_AUTO  BIT(12)
+#define UVC_PU_BMCONTROL_WHITE_BALANCE_COMPONENT_AUTO	BIT(13)
+#define UVC_PU_BMCONTROL_DIGITAL_MULTIPLIER			  BIT(14)
+#define UVC_PU_BMCONTROL_DIGITAL_MULTIPLIER_LIMIT		BIT(15)
+#define UVC_PU_BMCONTROL_ANALOG_VIDEO_STANDARD		   BIT(16)
+#define UVC_PU_BMCONTROL_ANALOG_LOCK_STATUS			  BIT(17)
+#define UVC_PU_BMCONTROL_CONTRAST_AUTO				   BIT(18)
+/* Bits 19-23 are reserved for future use */
+
+/* Camera Terminal Control Bit Positions (for bmControls bitmap) */
+#define UVC_CT_BMCONTROL_SCANNING_MODE					  BIT(0)
+#define UVC_CT_BMCONTROL_AE_MODE							BIT(1)
+#define UVC_CT_BMCONTROL_AE_PRIORITY						BIT(2)
+#define UVC_CT_BMCONTROL_EXPOSURE_TIME_ABSOLUTE			 BIT(3)
+#define UVC_CT_BMCONTROL_EXPOSURE_TIME_RELATIVE			 BIT(4)
+#define UVC_CT_BMCONTROL_FOCUS_ABSOLUTE					 BIT(5)
+#define UVC_CT_BMCONTROL_FOCUS_RELATIVE					 BIT(6)
+#define UVC_CT_BMCONTROL_IRIS_ABSOLUTE					  BIT(7)
+#define UVC_CT_BMCONTROL_IRIS_RELATIVE					  BIT(8)
+#define UVC_CT_BMCONTROL_ZOOM_ABSOLUTE					  BIT(9)
+#define UVC_CT_BMCONTROL_ZOOM_RELATIVE					  BIT(10)
+#define UVC_CT_BMCONTROL_PAN_TILT_ABSOLUTE				  BIT(11)
+#define UVC_CT_BMCONTROL_PAN_TILT_RELATIVE				  BIT(12)
+#define UVC_CT_BMCONTROL_ROLL_ABSOLUTE					  BIT(13)
+#define UVC_CT_BMCONTROL_ROLL_RELATIVE					  BIT(14)
+/* Bits 15-16 are reserved */
+#define UVC_CT_BMCONTROL_FOCUS_AUTO						 BIT(17)
+#define UVC_CT_BMCONTROL_PRIVACY							BIT(18)
+#define UVC_CT_BMCONTROL_FOCUS_SIMPLE					   BIT(19)
+#define UVC_CT_BMCONTROL_WINDOW							 BIT(20)
+#define UVC_CT_BMCONTROL_REGION_OF_INTEREST				 BIT(21)
+/* Bits 22-23 are reserved for future use */
+
 /* Extension Unit Controls */
 #define UVC_XU_BASE_CONTROL				0x00
 
@@ -222,7 +278,7 @@ struct uvc_control_header_descriptor {
 	uint16_t wTotalLength;
 	uint32_t dwClockFrequency;
 	uint8_t bInCollection;
-	uint8_t baInterfaceNr[1];
+	uint8_t baInterfaceNr[];
 } __packed;
 
 struct uvc_unit_descriptor {
@@ -231,6 +287,16 @@ struct uvc_unit_descriptor {
 	uint8_t bDescriptorSubtype;
 	uint8_t bUnitID;
 };
+
+struct uvc_input_terminal_descriptor {
+	uint8_t  bLength;
+	uint8_t  bDescriptorType;
+	uint8_t  bDescriptorSubType;
+	uint8_t  bTerminalID;
+	uint16_t wTerminalType;
+	uint8_t  bAssocTerminal;
+	uint8_t  iTerminal;
+} __packed;
 
 struct uvc_output_terminal_descriptor {
 	uint8_t bLength;
@@ -307,10 +373,10 @@ struct uvc_extension_unit_descriptor {
 	uint8_t iExtension;
 } __packed;
 
-struct uvc_stream_header_descriptor {
+struct uvc_stream_input_header_descriptor {
 	uint8_t bLength;
 	uint8_t bDescriptorType;
-	uint8_t bDescriptorSubtype;
+	uint8_t bDescriptorSubType;
 	uint8_t bNumFormats;
 	uint16_t wTotalLength;
 	uint8_t bEndpointAddress;
@@ -320,6 +386,19 @@ struct uvc_stream_header_descriptor {
 	uint8_t bTriggerSupport;
 	uint8_t bTriggerUsage;
 	uint8_t bControlSize;
+	uint8_t  bmControls[];
+} __packed;
+
+struct uvc_stream_output_header_descriptor {
+	uint8_t  bLength;
+	uint8_t  bDescriptorType;
+	uint8_t  bDescriptorSubType;
+	uint8_t  bNumFormats;
+	uint16_t wTotalLength;
+	uint8_t  bEndpointAddress;
+	uint8_t  bTerminalLink;
+	uint8_t  bControlSize;
+	uint8_t  bmControls[];
 } __packed;
 
 struct uvc_frame_still_image_descriptor {
@@ -348,7 +427,7 @@ struct uvc_format_descriptor {
 struct uvc_format_uncomp_descriptor {
 	uint8_t bLength;
 	uint8_t bDescriptorType;
-	uint8_t bDescriptorSubtype;
+	uint8_t bDescriptorSubType;
 	uint8_t bFormatIndex;
 	uint8_t bNumFrameDescriptors;
 	uint8_t guidFormat[16];
@@ -363,7 +442,7 @@ struct uvc_format_uncomp_descriptor {
 struct uvc_format_mjpeg_descriptor {
 	uint8_t bLength;
 	uint8_t bDescriptorType;
-	uint8_t bDescriptorSubtype;
+	uint8_t bDescriptorSubType;
 	uint8_t bFormatIndex;
 	uint8_t bNumFrameDescriptors;
 	uint8_t bmFlags;
@@ -375,10 +454,18 @@ struct uvc_format_mjpeg_descriptor {
 	uint8_t bCopyProtect;
 } __packed;
 
+struct uvc_format_descriptor_header {
+	uint8_t bLength;
+	uint8_t bDescriptorType;
+	uint8_t bDescriptorSubType;
+	uint8_t bFormatIndex;
+	uint8_t bNumFrameDescriptors;
+} __packed;
+
 struct uvc_frame_descriptor {
 	uint8_t bLength;
 	uint8_t bDescriptorType;
-	uint8_t bDescriptorSubtype;
+	uint8_t bDescriptorSubType;
 	uint8_t bFrameIndex;
 	uint8_t bmCapabilities;
 	uint16_t wWidth;
@@ -394,7 +481,7 @@ struct uvc_frame_descriptor {
 struct uvc_frame_continuous_descriptor {
 	uint8_t bLength;
 	uint8_t bDescriptorType;
-	uint8_t bDescriptorSubtype;
+	uint8_t bDescriptorSubType;
 	uint8_t bFrameIndex;
 	uint8_t bmCapabilities;
 	uint16_t wWidth;
@@ -422,11 +509,18 @@ struct uvc_frame_discrete_descriptor {
 	uint32_t dwMaxVideoFrameBufferSize;
 	uint32_t dwDefaultFrameInterval;
 	uint8_t bFrameIntervalType;
+ /* TODO: commonly configurable frame interval ( suggestion: uint32_t dwFrameInterval[]; )*/
 #ifdef CONFIG_USBD_VIDEO_MAX_FRMIVAL
 	uint32_t dwFrameInterval[CONFIG_USBD_VIDEO_MAX_FRMIVAL];
 #else
 	uint32_t dwFrameInterval[1];
 #endif
+} __packed;
+
+struct uvc_cs_descriptor_header {
+	uint8_t bLength;
+	uint8_t bDescriptorType;
+	uint8_t bDescriptorSubType;
 } __packed;
 
 struct uvc_color_descriptor {
@@ -485,4 +579,4 @@ struct uvc_payload_header {
 	uint16_t scrSourceClockSOF;  /* optional */
 } __packed;
 
-#endif /* ZEPHYR_INCLUDE_USBD_CLASS_UVC_H_ */
+#endif /* ZEPHYR_INCLUDE_USB_CLASS_UVC_H_ */
