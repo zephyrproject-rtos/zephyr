@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright The Zephyr Project Contributors
+
+config SOC_RK3588
+	select ARM64
+	select CPU_CORTEX_A55
+	select ARM_ARCH_TIMER if SYS_CLOCK_EXISTS

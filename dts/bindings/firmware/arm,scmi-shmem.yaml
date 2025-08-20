@@ -10,3 +10,8 @@ include: [base.yaml]
 properties:
   reg:
     required: true
+  no-map:
+    type: boolean
+    description: |
+      Indicates that the memory region should not be mapped into the
+      kernel's virtual address space.
