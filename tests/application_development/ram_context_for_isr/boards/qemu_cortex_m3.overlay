@@ -1,0 +1,12 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "../app.overlay"
+
+&fakedriver {
+	interrupt-parent = <&nvic>;
+	interrupts = <42 1>;
+};

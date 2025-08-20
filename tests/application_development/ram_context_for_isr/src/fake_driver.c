@@ -8,8 +8,6 @@
 #include <zephyr/irq.h>
 #include "fake_driver.h"
 
-#define DT_DRV_COMPAT fakedriver
-
 static void fake_driver_isr(const void *arg)
 {
 	const struct device *dev = (const struct device *)arg;
