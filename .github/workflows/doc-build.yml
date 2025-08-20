@@ -164,6 +164,17 @@ jobs:
         name: api-coverage
         path: zephyr/api-coverage.tar.xz
 
+    - name: Upload Doxygen coverage to Codecov
+      if: github.event_name == 'schedule'
+      uses: codecov/codecov-action@18283e04ce6e62d37312384ff67231eb8fd56d24 # v5.4.3
+      with:
+        env_vars: OS,PYTHON
+        fail_ci_if_error: false
+        verbose: true
+        token: ${{ secrets.CODECOV_TOKEN }}
+        files: zephyr/new.info
+        flags: doxygen-coverage
+
     - name: process-pr
       if: github.event_name == 'pull_request'
       run: |
