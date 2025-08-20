@@ -47,18 +47,19 @@ enum dwc2_drv_event_type {
 	DWC2_DRV_EVT_DISABLE,
 };
 
-/* Minimum RX FIFO size in 32-bit words considering the largest used OUT packet
- * of 512 bytes. The value must be adjusted according to the number of OUT
- * endpoints.
+/* Default Rx FIFO size in 32-bit words calculated in Completer/Buffer DMA mode
+ *
+ * (5 * number of control endpoints + 8) +
+ * 2 * ((largest endpoints size / 4) + 1 for status) +
+ * (2 * number of OUT endpoints) + 1 for global NAK
+ *
+ * For example, largest endpoint size is 1024,
+ * there are 3 OUT endpoints plus control OUT endpoint:
+ *
+ * 13 + 2 * (1024/4 + 1) + 2 * 4 + 1 = 536 (2144 bytes)
  */
-#define UDC_DWC2_GRXFSIZ_FS_DEFAULT	(15U + 512U/4U)
-/* Default Rx FIFO size in 32-bit words calculated to support High-Speed with:
- *   * 1 control endpoint in Completer/Buffer DMA mode: 13 locations
- *   * Global OUT NAK: 1 location
- *   * Space for 3 * 1024 packets: ((1024/4) + 1) * 3 = 774 locations
- * Driver adds 2 locations for each OUT endpoint to this value.
- */
-#define UDC_DWC2_GRXFSIZ_HS_DEFAULT	(13 + 1 + 774)
+#define UDC_DWC2_GRXFSIZ_DEFAULT(ep_size, out_eps)			\
+	(13 + 2 * (DIV_ROUND_UP(ep_size, 4) + 1) + ((out_eps) + 1) * 2 + 1)
 
 /* TX FIFO0 depth in 32-bit words (used by control IN endpoint)
  * Try 2 * bMaxPacketSize0 to allow simultaneous operation with a fallback to
@@ -68,9 +69,6 @@ enum dwc2_drv_event_type {
 
 /* Get Data FIFO access register */
 #define UDC_DWC2_EP_FIFO(base, idx)	((mem_addr_t)base + 0x1000 * (idx + 1))
-
-/* Percentage limit of how much SPRAM can be allocated for RxFIFO */
-#define MAX_RXFIFO_GDFIFO_PERCENTAGE 25
 
 static void udc_dwc2_ep_disable(const struct device *dev,
 				struct udc_ep_config *const cfg,
@@ -1747,7 +1745,6 @@ static int udc_dwc2_init_controller(const struct device *dev)
 	uint32_t ghwcfg4;
 	uint32_t val;
 	int ret;
-	bool hs_phy;
 
 	ret = dwc2_core_soft_reset(dev);
 	if (ret) {
@@ -1867,7 +1864,6 @@ static int udc_dwc2_init_controller(const struct device *dev)
 		} else {
 			dcfg |= usb_dwc2_set_dcfg_devspd(USB_DWC2_DCFG_DEVSPD_USBFS20);
 		}
-		hs_phy = true;
 		break;
 	case USB_DWC2_GHWCFG2_HSPHYTYPE_UTMIPLUS:
 		gusbcfg |= USB_DWC2_GUSBCFG_PHYSEL_USB20 |
@@ -1877,7 +1873,6 @@ static int udc_dwc2_init_controller(const struct device *dev)
 		} else {
 			dcfg |= usb_dwc2_set_dcfg_devspd(USB_DWC2_DCFG_DEVSPD_USBFS20);
 		}
-		hs_phy = true;
 		break;
 	case USB_DWC2_GHWCFG2_HSPHYTYPE_NO_HS:
 		__fallthrough;
@@ -1888,7 +1883,6 @@ static int udc_dwc2_init_controller(const struct device *dev)
 		}
 
 		dcfg |= usb_dwc2_set_dcfg_devspd(USB_DWC2_DCFG_DEVSPD_USBFS1148);
-		hs_phy = false;
 	}
 
 	if (usb_dwc2_get_ghwcfg4_phydatawidth(ghwcfg4)) {
@@ -1935,34 +1929,22 @@ static int udc_dwc2_init_controller(const struct device *dev)
 	if (priv->dynfifosizing) {
 		uint32_t gnptxfsiz;
 		uint32_t default_depth;
-		uint32_t spram_size;
-		uint32_t max_rxfifo;
+		uint16_t out_ep_size;
+		uint8_t num_out_eps;
+		uint16_t mps;
 
-		/* Get available SPRAM size and calculate max allocatable RX fifo size */
-		val = sys_read32((mem_addr_t)&base->gdfifocfg);
-		spram_size = usb_dwc2_get_gdfifocfg_gdfifocfg(val);
-		max_rxfifo = ((spram_size * MAX_RXFIFO_GDFIFO_PERCENTAGE) / 100);
+		udc_get_eps_fifo_size(dev, NULL, NULL, &mps, NULL);
+		udc_get_claimed_eps(dev, &num_out_eps, NULL);
+		out_ep_size = MAX(USB_MPS_EP_SIZE(mps), 64U);
 
-		/* TODO: For proper runtime FIFO sizing UDC driver would have to
-		 * have prior knowledge of the USB configurations. Only with the
-		 * prior knowledge, the driver will be able to fairly distribute
-		 * available resources. For the time being just use different
-		 * defaults based on maximum configured PHY speed, but this has
-		 * to be revised if e.g. thresholding support would be necessary
-		 * on some target.
-		 */
-		if (hs_phy) {
-			default_depth = UDC_DWC2_GRXFSIZ_HS_DEFAULT;
-		} else {
-			default_depth = UDC_DWC2_GRXFSIZ_FS_DEFAULT;
-		}
-		default_depth += priv->outeps * 2U;
+		LOG_DBG("Largest OUT MPS 0x%04x, %u bytes", mps, out_ep_size);
+		default_depth = UDC_DWC2_GRXFSIZ_DEFAULT(out_ep_size, num_out_eps);
 
 		/* Driver does not dynamically resize RxFIFO so there is no need
 		 * to store reset value. Read the reset value and make sure that
 		 * the programmed value is not greater than what driver sets.
 		 */
-		priv->rxfifo_depth = min3(priv->rxfifo_depth, default_depth, max_rxfifo);
+		priv->rxfifo_depth = MIN(priv->rxfifo_depth, default_depth);
 		sys_write32(usb_dwc2_set_grxfsiz(priv->rxfifo_depth), grxfsiz_reg);
 
 		/* Set TxFIFO 0 depth */
