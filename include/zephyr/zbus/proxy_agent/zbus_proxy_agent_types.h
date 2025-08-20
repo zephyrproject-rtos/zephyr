@@ -26,6 +26,7 @@ extern "C" {
  * @brief Type of the proxy agent.
  */
 enum zbus_proxy_agent_type {
+	ZBUS_PROXY_AGENT_TYPE_IPC,
 	ZBUS_PROXY_AGENT_TYPE_UART
 };
 
