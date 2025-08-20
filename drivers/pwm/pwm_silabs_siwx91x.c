@@ -13,6 +13,7 @@
 #include <zephyr/drivers/pwm.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/types.h>
 #include "sl_si91x_pwm.h"
 
@@ -179,7 +180,7 @@ static int pwm_siwx91x_get_cycles_per_sec(const struct device *dev, uint32_t cha
 	return 0;
 }
 
-static int pwm_siwx91x_init(const struct device *dev)
+static int pwm_siwx91x_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	const struct pwm_siwx91x_config *config = dev->config;
 	struct pwm_siwx91x_data *data = dev->data;
@@ -187,31 +188,44 @@ static int pwm_siwx91x_init(const struct device *dev)
 	uint32_t pwm_frequency;
 	int ret;
 
-	ret = clock_control_on(config->clock_dev, config->clock_subsys);
-	if (ret) {
-		return ret;
-	}
+	if (action == PM_DEVICE_ACTION_RESUME) {
+		ret = clock_control_on(config->clock_dev, config->clock_subsys);
+		if (ret) {
+			return ret;
+		}
 
-	ret = clock_control_get_rate(config->clock_dev, config->clock_subsys, &pwm_frequency);
-	if (ret) {
-		return ret;
-	}
+		ret = clock_control_get_rate(config->clock_dev, config->clock_subsys,
+					     &pwm_frequency);
+		if (ret) {
+			return ret;
+		}
 
-	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
-	if (ret) {
-		return ret;
-	}
+		ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+		if (ret) {
+			return ret;
+		}
 
-	ARRAY_FOR_EACH(data->pwm_channel_cfg, i) {
-		data->pwm_channel_cfg[i].frequency = pwm_frequency / config->ch_prescaler[i];
-	}
+		ARRAY_FOR_EACH(data->pwm_channel_cfg, i) {
+			data->pwm_channel_cfg[i].frequency =
+				pwm_frequency / config->ch_prescaler[i];
+		}
 
-	ret = sl_si91x_pwm_set_output_polarity(polarity_inverted, !polarity_inverted);
-	if (ret) {
-		return -EINVAL;
+		ret = sl_si91x_pwm_set_output_polarity(polarity_inverted, !polarity_inverted);
+		if (ret) {
+			return -EINVAL;
+		}
+	} else if (IS_ENABLED(CONFIG_PM_DEVICE) && (action == PM_DEVICE_ACTION_SUSPEND)) {
+		return 0;
+	} else {
+		return -ENOTSUP;
 	}
 
 	return 0;
+}
+
+static int pwm_siwx91x_init(const struct device *dev)
+{
+	return pm_device_driver_init(dev, pwm_siwx91x_pm_action);
 }
 
 static DEVICE_API(pwm, pwm_siwx91x_driver_api) = {
@@ -229,8 +243,9 @@ static DEVICE_API(pwm, pwm_siwx91x_driver_api) = {
 		.ch_prescaler = DT_INST_PROP(inst, silabs_ch_prescaler),                           \
 		.pwm_polarity = DT_INST_PROP(inst, silabs_pwm_polarity),                           \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(inst, &pwm_siwx91x_init, NULL, &pwm_siwx91x_data_##inst,             \
-			      &pwm_config_##inst, PRE_KERNEL_1, CONFIG_PWM_INIT_PRIORITY,          \
-			      &pwm_siwx91x_driver_api);
+	PM_DEVICE_DT_INST_DEFINE(inst, pwm_siwx91x_pm_action);                                     \
+	DEVICE_DT_INST_DEFINE(inst, &pwm_siwx91x_init, PM_DEVICE_DT_INST_GET(inst),                \
+			      &pwm_siwx91x_data_##inst, &pwm_config_##inst, PRE_KERNEL_1,	   \
+			      CONFIG_PWM_INIT_PRIORITY, &pwm_siwx91x_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SIWX91X_PWM_INIT)
