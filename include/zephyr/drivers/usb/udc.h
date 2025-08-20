@@ -92,6 +92,8 @@ struct udc_ep_caps {
  * USB device controller endpoint status
  */
 struct udc_ep_stat {
+	/** Endpoint is claimed */
+	bool claimed;
 	/** Endpoint is enabled */
 	bool enabled;
 	/** Endpoint is halted (returning STALL PID) */
@@ -116,6 +118,8 @@ struct udc_ep_config {
 	struct udc_ep_caps caps;
 	/** Endpoint status */
 	struct udc_ep_stat stat;
+	/** Largest MPS within all interface settings */
+	uint16_t m_mps;
 	/** Endpoint address */
 	uint8_t addr;
 	/** Endpoint attributes */
