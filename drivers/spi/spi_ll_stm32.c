@@ -834,6 +834,7 @@ static int32_t spi_stm32_count_total_frames(const struct spi_config *config,
 }
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
 
+#ifndef CONFIG_SPI_STM32_INTERRUPT
 static int spi_stm32_half_duplex_switch_to_receive(const struct spi_stm32_config *cfg,
 	struct spi_stm32_data *data)
 {
@@ -841,12 +842,10 @@ static int spi_stm32_half_duplex_switch_to_receive(const struct spi_stm32_config
 
 	if (!spi_context_tx_on(&data->ctx) &&
 		spi_context_rx_on(&data->ctx)) {
-#ifndef CONFIG_SPI_STM32_INTERRUPT
 		while (ll_func_spi_is_busy(spi)) {
 			/* NOP */
 		}
 		LL_SPI_Disable(spi);
-#endif /* CONFIG_SPI_STM32_INTERRUPT*/
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 		const struct spi_config *config = data->ctx.config;
@@ -903,6 +902,7 @@ static int spi_stm32_half_duplex_switch_to_receive(const struct spi_stm32_config
 
 	return 0;
 }
+#endif /* CONFIG_SPI_STM32_INTERRUPT*/
 
 static int transceive(const struct device *dev,
 		      const struct spi_config *config,
@@ -943,11 +943,10 @@ static int transceive(const struct device *dev,
 		spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 2);
 	}
 
-	uint32_t transfer_dir = LL_SPI_GetTransferDirection(spi);
-
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 	if (cfg->fifo_enabled && SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_MASTER) {
 		int total_frames;
+		uint32_t transfer_dir = LL_SPI_GetTransferDirection(spi);
 
 		if (transfer_dir == LL_SPI_FULL_DUPLEX) {
 			total_frames = spi_stm32_count_total_frames(
@@ -1020,16 +1019,9 @@ static int transceive(const struct device *dev,
 	irq_enable(cfg->irq_line);
 #endif  /* CONFIG_SPI_STM32_INTERRUPT && CONFIG_SOC_SERIES_STM32H7X */
 
-	do {
-		ret = spi_context_wait_for_completion(&data->ctx);
-
-		if (!ret &&
-			transfer_dir == LL_SPI_HALF_DUPLEX_TX) {
-			ret = spi_stm32_half_duplex_switch_to_receive(cfg, data);
-			transfer_dir = LL_SPI_GetTransferDirection(spi);
-		}
-	} while (!ret && spi_stm32_transfer_ongoing(data));
+	ret = spi_context_wait_for_completion(&data->ctx);
 #else /* CONFIG_SPI_STM32_INTERRUPT */
+	uint32_t transfer_dir = LL_SPI_GetTransferDirection(spi);
 	do {
 		ret = spi_stm32_shift_frames(cfg, data);
 
