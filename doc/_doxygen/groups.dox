@@ -13,6 +13,9 @@
 @brief MCUmgr
 @defgroup mcumgr MCUmgr
 @{
+@defgroup mcumgr_transport Transport layers
+@{
+@}
 @}
 
 @}
