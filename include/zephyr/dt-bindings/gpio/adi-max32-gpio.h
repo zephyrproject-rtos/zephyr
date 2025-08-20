@@ -9,7 +9,7 @@
 /**
  * @brief MAX32-specific GPIO Flags
  * @defgroup gpio_interface_max32 MAX32-specific GPIO Flags
- * @ingroup gpio_interface
+ * @ingroup gpio_interface_ext
  * @{
  */
 
