@@ -303,6 +303,33 @@
 		clocks = <&syscon MCUX_LPADC1_CLK>;
 	};
 
+	opamp0: opamp@400b4000 {
+		compatible = "nxp,opamp";
+		reg = <0x400b4000 0x1000>;
+		status = "disabled";
+		#io-channel-cells = <1>;
+		operation-mode = "low_noise";
+		support-programmable-gain;
+	};
+
+	opamp1: opamp@400b8000 {
+		compatible = "nxp,opamp";
+		reg = <0x400b8000 0x1000>;
+		status = "disabled";
+		#io-channel-cells = <1>;
+		operation-mode = "low_noise";
+		support-programmable-gain;
+	};
+
+	opamp2: opamp@400bb000 {
+		compatible = "nxp,opamp";
+		reg = <0x400bb000 0x1000>;
+		status = "disabled";
+		#io-channel-cells = <1>;
+		operation-mode = "low_noise";
+		support-programmable-gain;
+	};
+
 	dac0: dac@b2000 {
 		compatible = "nxp,lpdac";
 		reg = < 0xb2000 0x1000>;
