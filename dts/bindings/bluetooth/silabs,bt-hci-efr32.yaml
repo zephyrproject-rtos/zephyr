@@ -11,6 +11,6 @@ properties:
   bt-hci-name:
     default: "efr32"
   bt-hci-bus:
-    default: "virtual"
+    default: "bus_virtual"
   bt-hci-quirks:
     default: ["no-reset"]

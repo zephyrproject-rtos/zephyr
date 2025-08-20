@@ -18,4 +18,4 @@ properties:
   bt-hci-name:
     default: "CYW208XX"
   bt-hci-bus:
-    default: "virtual"
+    default: "bus_virtual"

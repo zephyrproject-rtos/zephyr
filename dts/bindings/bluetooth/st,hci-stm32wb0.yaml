@@ -8,6 +8,6 @@ properties:
   bt-hci-name:
     default: "HCI over RAM"
   bt-hci-bus:
-    default: "virtual"
+    default: "bus_virtual"
   bt-hci-quirks:
     default: ["no-reset"]

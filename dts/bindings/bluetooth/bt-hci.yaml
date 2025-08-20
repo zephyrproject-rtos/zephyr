@@ -10,19 +10,19 @@ properties:
     type: string
     description: Bus of the transport
     enum:
-      - "virtual"
-      - "usb"
-      - "pccard"
-      - "uart"
-      - "rs232"
-      - "pci"
-      - "sdio"
-      - "spi"
-      - "i2c"
-      - "smd"
-      - "virtio"
-      - "ipm"    # Deprecated. "ipc" should be used instead.
-      - "ipc"
+      - "bus_virtual"
+      - "bus_usb"
+      - "bus_pccard"
+      - "bus_uart"
+      - "bus_rs232"
+      - "bus_pci"
+      - "bus_sdio"
+      - "bus_spi"
+      - "bus_i2c"
+      - "bus_smd"
+      - "bus_virtio"
+      - "bus_ipm"    # Deprecated. "ipc" should be used instead.
+      - "bus_ipc"
   bt-hci-quirks:
     type: string-array
     description: HCI device quirks

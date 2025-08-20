@@ -37,4 +37,4 @@ properties:
     default: "ambiq hci"
 
   bt-hci-bus:
-    default: "spi"
+    default: "bus_spi"

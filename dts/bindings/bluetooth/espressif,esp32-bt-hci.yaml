@@ -8,6 +8,6 @@ properties:
   bt-hci-name:
     default: "BT ESP32"
   bt-hci-bus:
-    default: "ipm"
+    default: "bus_ipm"
   bt-hci-quirks:
     default: ["no-auto-dle"]

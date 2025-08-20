@@ -47,4 +47,4 @@ properties:
     default: "SPI"
 
   bt-hci-bus:
-    default: "spi"
+    default: "bus_spi"
