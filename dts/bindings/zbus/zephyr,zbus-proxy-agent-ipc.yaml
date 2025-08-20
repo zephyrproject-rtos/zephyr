@@ -1,0 +1,14 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+description: Zbus proxy agent IPC backend
+
+compatible: "zephyr,zbus-proxy-agent-ipc"
+
+include: zephyr,zbus-proxy-agent-base.yaml
+
+properties:
+  ipc-device:
+    required: true
+    type: phandle
+    description: |
+      Phandle to the IPC device node used for interprocessor communication.
