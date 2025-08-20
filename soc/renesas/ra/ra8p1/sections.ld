@@ -43,17 +43,17 @@ SECTION_DATA_PROLOGUE(.option_setting_ofs3_sec, DT_REG_ADDR(DT_NODELABEL(option_
 } GROUP_LINK_IN(OFS_CONF_SEC_MEMORY)
 #endif
 
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(option_setting_ofs1_sec))
-SECTION_DATA_PROLOGUE(.option_setting_ofs1_sec, DT_REG_ADDR(DT_NODELABEL(option_setting_ofs1_sec)),)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(option_setting_ofs1_sel))
+SECTION_DATA_PROLOGUE(.option_setting_ofs1_sel, DT_REG_ADDR(DT_NODELABEL(option_setting_ofs1_sel)),)
 {
-	KEEP(*(.option_setting_ofs1_sec))
+	KEEP(*(.option_setting_ofs1_sel))
 } GROUP_LINK_IN(OFS_CONF_SEC_MEMORY)
 #endif
 
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(option_setting_ofs3_sec))
-SECTION_DATA_PROLOGUE(.option_setting_ofs3_sec, DT_REG_ADDR(DT_NODELABEL(option_setting_ofs3_sec)),)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(option_setting_ofs3_sel))
+SECTION_DATA_PROLOGUE(.option_setting_ofs3_sel, DT_REG_ADDR(DT_NODELABEL(option_setting_ofs3_sel)),)
 {
-	KEEP(*(.option_setting_ofs3_sec))
+	KEEP(*(.option_setting_ofs3_sel))
 } GROUP_LINK_IN(OFS_CONF_SEC_MEMORY)
 #endif
 
