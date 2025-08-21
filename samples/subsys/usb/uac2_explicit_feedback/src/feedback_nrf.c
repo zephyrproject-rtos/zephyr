@@ -272,7 +272,7 @@ static void update_sof_offset(struct feedback_ctx *ctx, uint32_t sof_cc,
 	int sof_offset;
 
 	if (!IS_ENABLED(CONFIG_APP_USE_I2S_LRCLK_EDGES_COUNTER)) {
-		uint32_t clks_per_edge;
+		uint32_t nominator;
 
 		/* Convert timer clock (independent from both Audio clock and
 		 * USB host SOF clock) to fake sample clock shifted by P values.
@@ -282,18 +282,17 @@ static void update_sof_offset(struct feedback_ctx *ctx, uint32_t sof_cc,
 		 * when regulated and therefore the relative clock frequency
 		 * discrepancies are essentially negligible.
 		 */
-		clks_per_edge = sof_cc / ctx->counts_per_sof;
-		sof_cc /= MAX(clks_per_edge, 1);
-		framestart_cc /= MAX(clks_per_edge, 1);
+		nominator = MIN(sof_cc, framestart_cc) * ctx->counts_per_sof;
+		sof_offset = nominator / MAX(sof_cc, 1);
+	} else {
+		sof_offset = framestart_cc;
 	}
 
 	/* /2 because we treat the middle as a turning point from being
 	 * "too late" to "too early".
 	 */
-	if (framestart_cc > ctx->counts_per_sof/2) {
-		sof_offset = framestart_cc - ctx->counts_per_sof;
-	} else {
-		sof_offset = framestart_cc;
+	if (sof_offset > ctx->counts_per_sof/2) {
+		sof_offset -= ctx->counts_per_sof;
 	}
 
 	/* The heuristic above is not enough when the offset gets too large.
