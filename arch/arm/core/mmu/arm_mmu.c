@@ -33,6 +33,7 @@
 
 #include <zephyr/arch/arm/mmu/arm_mmu.h>
 #include "arm_mmu_priv.h"
+#include "zephyr/cache.h"
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
@@ -571,7 +572,7 @@ static void arm_mmu_l2_map_page(uint32_t va, uint32_t pa,
 
 	if (l1_page_table.entries[l1_index].undefined.id == ARM_MMU_PTE_ID_INVALID ||
 	    (l1_page_table.entries[l1_index].undefined.id & ARM_MMU_PTE_ID_SECTION) != 0) {
-		l2_page_table = arm_mmu_assign_l2_table(pa);
+		l2_page_table = arm_mmu_assign_l2_table(va);
 		__ASSERT(l2_page_table != NULL,
 			 "Unexpected L2 page table NULL pointer for VA 0x%08X",
 			 va);
@@ -958,6 +959,7 @@ void arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 		LOG_ERR("__arch_mem_map() returned %d", ret);
 		k_panic();
 	} else {
+		sys_cache_data_flush_all();
 		invalidate_tlb_all();
 	}
 }
