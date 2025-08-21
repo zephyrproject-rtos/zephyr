@@ -36,7 +36,7 @@ static void thread_function(void *p1, void *p2, void *p3)
 {
 }
 
-ZTEST(regression_generic, thread_stack_validate)
+ZTEST(thread_stack_validate, test_thread_stack_validate)
 {
 	expect_fault = false;
 
@@ -57,4 +57,4 @@ ZTEST(regression_generic, thread_stack_validate)
 	ztest_test_fail();
 }
 
-ZTEST_SUITE(regression_generic, NULL, NULL, NULL, NULL, NULL);
+ZTEST_SUITE(thread_stack_validate, NULL, NULL, NULL, NULL, NULL);
