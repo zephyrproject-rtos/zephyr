@@ -1908,6 +1908,11 @@ int supplicant_btm_query(const struct device *dev, uint8_t reason)
 		goto out;
 	}
 
+	/* Flush all unused BSS entries */
+	if (!wpa_cli_cmd_v("bss_flush")) {
+		goto out;
+	}
+
 	if (!wpa_cli_cmd_v("wnm_bss_query %d", reason)) {
 		goto out;
 	}
