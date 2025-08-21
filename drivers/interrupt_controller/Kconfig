@@ -90,6 +90,8 @@ source "drivers/interrupt_controller/Kconfig.xec"
 
 source "drivers/interrupt_controller/Kconfig.clic"
 
+source "drivers/interrupt_controller/Kconfig.litex_clic"
+
 source "drivers/interrupt_controller/Kconfig.gd32_exti"
 
 source "drivers/interrupt_controller/Kconfig.plic"
