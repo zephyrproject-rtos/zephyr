@@ -11,7 +11,6 @@ config HAS_CPU_FREQ
 menuconfig CPU_FREQ
 	bool "CPU Frequency Scaling Subsystem"
 	select EXPERIMENTAL
-	depends on !SMP
 	help
 	  CPU Frequency scaling subsystem
 
@@ -27,6 +26,15 @@ config CPU_FREQ_INTERVAL_MS
 	help
 	  Controls the interval (in milliseconds) at which the CPU Frequency
 	  subsystem runs and evaluates the current policy.
+
+config CPU_FREQ_PER_CPU_SCALING
+	bool "Per-CPU frequency scaling"
+	default n
+	depends on SMP
+	help
+	  Enable per-CPU frequency scaling support. If disabled, setting the
+	  P-state will apply to the whole system instead of just the current CPU.
+	  This should be done at the SoC level.
 
 choice CPU_FREQ_POLICY
 	prompt "CPU Frequency Scaling Policy"
