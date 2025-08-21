@@ -312,7 +312,7 @@ static void sy1xx_mac_iface_init(struct net_if *iface)
 	struct sy1xx_mac_dev_config *cfg = (struct sy1xx_mac_dev_config *)dev->config;
 	struct sy1xx_mac_dev_data *const data = dev->data;
 
-	LOG_INF("Interface init %s (%.8x)", net_if_get_device(iface)->name, iface);
+	LOG_INF("Interface init %s (%p)", net_if_get_device(iface)->name, iface);
 
 	data->iface = iface;
 
