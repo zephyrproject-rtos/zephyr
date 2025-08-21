@@ -58,12 +58,8 @@
 				 <I2S0_O_BCK_GPIO3>,
 				 <I2S0_O_SD_GPIO4>,
 				 <I2S0_I_WS_GPIO5>,
-				 <I2S0_I_BCK_GPIO6>;
-			output-enable;
-		};
-		group2 {
-			pinmux = <I2S0_I_SD_GPIO7>;
-			input-enable;
+				 <I2S0_I_BCK_GPIO6>,
+				 <I2S0_I_SD_GPIO7>;
 		};
 	};
 
@@ -74,12 +70,8 @@
 				 <I2S1_O_BCK_GPIO10>,
 				 <I2S1_O_SD_GPIO11>,
 				 <I2S1_I_WS_GPIO12>,
-				 <I2S1_I_BCK_GPIO13>;
-			output-enable;
-		};
-		group2 {
-			pinmux = <I2S1_I_SD_GPIO14>;
-			input-enable;
+				 <I2S1_I_BCK_GPIO13>,
+				 <I2S1_I_SD_GPIO14>;
 		};
 	};
 

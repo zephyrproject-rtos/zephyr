@@ -12,15 +12,18 @@
 	};
 };
 
-&i2s0_default {
-	group1 {
-		pinmux = <I2S0_O_SD_GPIO38>;
-		output-enable;
+&pinctrl {
+	i2s0_default: i2s0_default {
+		group1 {
+			pinmux = <I2S0_O_SD_GPIO38>;
+		};
 	};
 };
 
 i2s_led: &i2s0 {
 	status = "okay";
+	pinctrl-0 = <&i2s0_default>;
+	pinctrl-names = "default";
 
 	dmas = <&dma 3>;
 	dma-names = "tx";
