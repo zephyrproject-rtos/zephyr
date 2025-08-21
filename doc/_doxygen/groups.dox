@@ -22,6 +22,12 @@
 @{
 @}
 
+@brief Interfaces for USB hardware and associated standards.
+@defgroup usb_interfaces USB
+@ingroup io_interfaces
+@{
+@}
+
 @brief Multi Function Device Drivers APIs
 @defgroup mfd_interfaces Multi Function Device Drivers APIs
 @ingroup io_interfaces

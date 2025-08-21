@@ -20,8 +20,8 @@
 
 /**
  * @brief USB host controller (UHC) driver API
- * @defgroup uhc_api USB host controller driver API
- * @ingroup io_interfaces
+ * @defgroup uhc_api USB Host Controller
+ * @ingroup usb_interfaces
  * @since 3.3
  * @version 0.1.1
  * @{
