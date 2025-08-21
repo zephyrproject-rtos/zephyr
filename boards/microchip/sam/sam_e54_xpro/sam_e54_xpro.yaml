@@ -13,4 +13,6 @@ supported:
   - pinctrl
   - shell
   - uart
+  - usb
+  - watchdog
 vendor: microchip
