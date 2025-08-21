@@ -7,11 +7,11 @@
 &pinctrl {
 	i2s0_default: i2s0_default {
 		group1 {
-			pinmux = <I2S0_O_WS_GPIO17>,
-				 <I2S0_O_BCK_GPIO16>,
-				 <I2S0_O_SD_GPIO15>,
-				 <I2S0_I_WS_GPIO11>,
-				 <I2S0_I_BCK_GPIO10>,
+			pinmux = <I2S0_O_WS_GPIO33>,
+				 <I2S0_O_BCK_GPIO32>,
+				 <I2S0_O_SD_GPIO27>,
+				 <I2S0_I_WS_GPIO26>,
+				 <I2S0_I_BCK_GPIO25>,
 				 <I2S0_I_SD_GPIO18>;
 			};
 	};

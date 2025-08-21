@@ -10,21 +10,20 @@
 	};
 };
 
-&i2s0_default {
-	group1 {
-		pinmux = <I2S0_O_WS_GPIO33>,
-				<I2S0_O_BCK_GPIO32>,
-				<I2S0_O_SD_GPIO27>;
-		output-enable;
-	};
-	group2 {
-		pinmux = <I2S0_I_SD_GPIO18>;
-		input-enable;
+&pinctrl {
+	i2s0_default: i2s0_default {
+		group1 {
+			pinmux = <I2S0_O_WS_GPIO33>,
+				 <I2S0_O_BCK_GPIO32>,
+				 <I2S0_O_SD_GPIO27>;
+		};
 	};
 };
 
 &i2s0 {
 	status = "okay";
+	pinctrl-0 = <&i2s0_default>;
+	pinctrl-names = "default";
 
 	interrupts = <I2S0_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 	interrupt-names = "tx";
