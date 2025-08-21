@@ -518,7 +518,8 @@ static int icm45686_fifo_decode(const uint8_t *buffer,
 								  2,
 								  &out->readings[count].z);
 			if (err != 0) {
-				count--;
+				LOG_ERR("error getting fifo packet: %d", err);
+				return -EIO;
 			}
 			break;
 		}
