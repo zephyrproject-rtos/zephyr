@@ -604,6 +604,8 @@ static int pwm_renesas_ra_init(const struct device *dev)
 		.capture_filter_gtiocb = GPT_CAPTURE_FILTER_NONE,                                  \
 		.p_pwm_cfg = NULL,                                                                 \
 		.gtior_setting.gtior = (0x0U),                                                     \
+		.gtioca_polarity = GPT_GTIOC_POLARITY_NORMAL,                                      \
+		.gtiocb_polarity = GPT_GTIOC_POLARITY_NORMAL,                                      \
 	};                                                                                         \
 	static struct pwm_renesas_ra_data pwm_renesas_ra_data_##index = {                          \
 		.fsp_cfg =                                                                         \
