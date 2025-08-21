@@ -7,6 +7,7 @@
  */
 
 #include <zephyr/drivers/sensor_clock.h>
+#include <zephyr/sys/check.h>
 
 #include "icm45686.h"
 #include "icm45686_reg.h"
@@ -481,11 +482,15 @@ static int icm45686_fifo_decode(const uint8_t *buffer,
 		/** This driver assumes 20-byte fifo packets, with both accel and gyro,
 		 * and no auxiliary sensors.
 		 */
-		__ASSERT(!(fdata->header & FIFO_HEADER_EXT_HEADER_EN(true)) &&
-			(fdata->header & FIFO_HEADER_ACCEL_EN(true)) &&
-			(fdata->header & FIFO_HEADER_GYRO_EN(true)) &&
-			(fdata->header & FIFO_HEADER_HIRES_EN(true)),
-			"Unsupported FIFO packet format");
+		CHECKIF(fdata->header & FIFO_HEADER_EXT_HEADER_EN(true) ||
+			!(fdata->header & FIFO_HEADER_ACCEL_EN(true)) ||
+			!(fdata->header & FIFO_HEADER_GYRO_EN(true)) ||
+			!(fdata->header & FIFO_HEADER_HIRES_EN(true))) {
+				LOG_ERR("Unsupported FIFO packet format: %d", fdata->header);
+				LOG_HEXDUMP_ERR(fdata, sizeof(struct icm45686_encoded_fifo_payload),
+						"fdata");
+				return -EINVAL;
+		}
 
 		switch (chan_spec.chan_type) {
 		case SENSOR_CHAN_ACCEL_XYZ:
