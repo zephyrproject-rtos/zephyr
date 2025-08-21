@@ -16,6 +16,7 @@ subsystem, etc).
 In general, follow the `Linux kernel coding style`_, with the following
 exceptions and clarifications:
 
+* Tabs are 8 characters.
 * Use `snake case`_ for code and variables.
 * The line length is 100 columns or fewer. In the documentation, longer lines
   for URL references are an allowed exception.
