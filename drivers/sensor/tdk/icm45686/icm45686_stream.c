@@ -48,23 +48,19 @@ static inline bool should_flush_fifo(const struct sensor_read_config *read_cfg,
 	struct sensor_stream_trigger *trig_fifo_ths = get_read_config_trigger(
 		read_cfg,
 		SENSOR_TRIG_FIFO_WATERMARK);
-	struct sensor_stream_trigger *trig_fifo_full = get_read_config_trigger(
-		read_cfg,
-		SENSOR_TRIG_FIFO_FULL);
 
 	bool fifo_ths = int_status & REG_INT1_STATUS0_FIFO_THS(true);
 	bool fifo_full = int_status & REG_INT1_STATUS0_FIFO_FULL(true);
 
 	if ((trig_fifo_ths && trig_fifo_ths->opt == SENSOR_STREAM_DATA_DROP && fifo_ths) ||
-	    (trig_fifo_full && trig_fifo_full->opt == SENSOR_STREAM_DATA_DROP && fifo_full)) {
+	    (fifo_full)) {
 		return true;
 	}
 
 	return false;
 }
 
-static inline bool should_read_fifo(const struct sensor_read_config *read_cfg,
-				    uint8_t int_status)
+static inline bool should_read_fifo(const struct sensor_read_config *read_cfg)
 {
 	struct sensor_stream_trigger *trig_fifo_ths = get_read_config_trigger(
 		read_cfg,
@@ -73,11 +69,8 @@ static inline bool should_read_fifo(const struct sensor_read_config *read_cfg,
 		read_cfg,
 		SENSOR_TRIG_FIFO_FULL);
 
-	bool fifo_ths = int_status & REG_INT1_STATUS0_FIFO_THS(true);
-	bool fifo_full = int_status & REG_INT1_STATUS0_FIFO_FULL(true);
-
-	if ((trig_fifo_ths && trig_fifo_ths->opt == SENSOR_STREAM_DATA_INCLUDE && fifo_ths) ||
-	    (trig_fifo_full && trig_fifo_full->opt == SENSOR_STREAM_DATA_INCLUDE && fifo_full)) {
+	if ((trig_fifo_ths && trig_fifo_ths->opt == SENSOR_STREAM_DATA_INCLUDE) ||
+	    (trig_fifo_full && trig_fifo_full->opt == SENSOR_STREAM_DATA_INCLUDE)) {
 		return true;
 	}
 
@@ -100,9 +93,7 @@ static inline bool should_read_data(const struct sensor_read_config *read_cfg,
 		read_cfg,
 		SENSOR_TRIG_DATA_READY);
 
-	bool drdy = int_status & REG_INT1_STATUS0_DRDY(true);
-
-	if (trig_drdy && trig_drdy->opt == SENSOR_STREAM_DATA_INCLUDE && drdy) {
+	if (trig_drdy && trig_drdy->opt == SENSOR_STREAM_DATA_INCLUDE) {
 		return true;
 	}
 
@@ -116,23 +107,67 @@ static inline void icm45686_stream_result(const struct device *dev,
 	struct rtio_iodev_sqe *iodev_sqe = data->stream.iodev_sqe;
 
 	(void)atomic_set(&data->stream.state, ICM45686_STREAM_OFF);
+	memset(&data->stream.data, 0, sizeof(data->stream.data));
 	data->stream.iodev_sqe = NULL;
 
 	if (result < 0) {
+		/** Clear config-set so next submission re-configures the IMU */
+		memset(&data->stream.settings, 0, sizeof(data->stream.settings));
+
 		rtio_iodev_sqe_err(iodev_sqe, result);
 	} else {
 		rtio_iodev_sqe_ok(iodev_sqe, 0);
 	}
 }
 
-static void icm45686_complete_result(struct rtio *ctx,
-				     const struct rtio_sqe *sqe,
-				     void *arg)
+static void icm45686_complete_handler(struct rtio *ctx,
+				      const struct rtio_sqe *sqe,
+				      void *arg)
 {
 	const struct device *dev = (const struct device *)arg;
-	struct rtio_cqe *cqe;
-	int err = 0;
+	struct icm45686_data *data = dev->data;
+	const struct sensor_read_config *read_cfg = data->stream.iodev_sqe->sqe.iodev->data;
+	uint8_t int_status = data->stream.data.int_status;
+	int err;
 
+	data->stream.data.events.drdy = int_status & REG_INT1_STATUS0_DRDY(true);
+	data->stream.data.events.fifo_ths = int_status & REG_INT1_STATUS0_FIFO_THS(true);
+	data->stream.data.events.fifo_full = int_status & REG_INT1_STATUS0_FIFO_FULL(true);
+
+	struct icm45686_encoded_data *buf;
+	uint32_t buf_len;
+
+	err = rtio_sqe_rx_buf(data->stream.iodev_sqe, 0, 0, (uint8_t **)&buf, &buf_len);
+	CHECKIF(err != 0 || buf_len == 0) {
+		LOG_ERR("Failed to acquire buffer for encoded data: %d, len: %d", err, buf_len);
+		icm45686_stream_result(dev, -ENOMEM);
+		return;
+	}
+
+	buf->header.timestamp = data->stream.data.timestamp;
+	buf->header.events = REG_INT1_STATUS0_DRDY(data->stream.data.events.drdy) |
+			     REG_INT1_STATUS0_FIFO_THS(data->stream.data.events.fifo_ths) |
+			     REG_INT1_STATUS0_FIFO_FULL(data->stream.data.events.fifo_full);
+
+	if (should_flush_fifo(read_cfg, int_status)) {
+		uint8_t write_reg = REG_FIFO_CONFIG2_FIFO_FLUSH(true) |
+				    REG_FIFO_CONFIG2_FIFO_WM_GT_THS(true);
+		LOG_WRN("Flushing FIFO: %d", int_status);
+
+		err = icm45686_prep_reg_write_rtio_async(&data->bus, REG_FIFO_CONFIG2, &write_reg,
+							 1, NULL);
+		if (err < 0) {
+			LOG_ERR("Failed to acquire RTIO SQE");
+			icm45686_stream_result(dev, -ENOMEM);
+			return;
+		}
+		icm45686_stream_result(dev, 0);
+		return;
+	}
+
+	struct rtio_cqe *cqe;
+
+	err = 0;
 	do {
 		cqe = rtio_cqe_consume(ctx);
 		if (cqe != NULL) {
@@ -146,132 +181,11 @@ static void icm45686_complete_result(struct rtio *ctx,
 	icm45686_stream_result(dev, err);
 }
 
-static void icm45686_handle_event_actions(struct rtio *ctx,
-					  const struct rtio_sqe *sqe,
-					  void *arg)
-{
-	const struct device *dev = (const struct device *)arg;
-	struct icm45686_data *data = dev->data;
-	const struct icm45686_config *cfg = dev->config;
-	const struct sensor_read_config *read_cfg = data->stream.iodev_sqe->sqe.iodev->data;
-	uint8_t int_status = data->stream.data.int_status;
-	int err;
-
-	data->stream.data.events.drdy = int_status & REG_INT1_STATUS0_DRDY(true);
-	data->stream.data.events.fifo_ths = int_status & REG_INT1_STATUS0_FIFO_THS(true);
-	data->stream.data.events.fifo_full = int_status & REG_INT1_STATUS0_FIFO_FULL(true);
-
-	struct icm45686_encoded_data *buf;
-	uint32_t buf_len;
-	uint32_t buf_len_required = sizeof(struct icm45686_encoded_header);
-
-	/** We just need the header to communicate the events occurred during
-	 * this SQE. Only include more data if the associated trigger needs it.
-	 */
-	if (should_read_fifo(read_cfg, int_status)) {
-		size_t num_frames_to_read = should_read_all_fifo(read_cfg) ?
-					    FIFO_COUNT_MAX_HIGH_RES : cfg->settings.fifo_watermark;
-
-		buf_len_required += (num_frames_to_read *
-				     sizeof(struct icm45686_encoded_fifo_payload));
-	} else if (should_read_data(read_cfg, int_status)) {
-		buf_len_required += sizeof(struct icm45686_encoded_payload);
-	}
-
-	err = rtio_sqe_rx_buf(data->stream.iodev_sqe, buf_len_required, buf_len_required,
-			      (uint8_t **)&buf, &buf_len);
-	CHECKIF(err != 0) {
-		LOG_ERR("Failed to acquire buffer (len: %d) for encoded data: %d. Please revisit"
-			" RTIO queue sizing and look for bottlenecks during sensor data processing",
-			buf_len_required, err);
-		icm45686_stream_result(dev, -ENOMEM);
-		return;
-	}
-
-	LOG_DBG("Alloc buf - required: %d, alloc: %d", buf_len_required, buf_len);
-
-	buf->header.timestamp = data->stream.data.timestamp;
-	buf->header.fifo_count = 0;
-	buf->header.channels = 0;
-	buf->header.events = REG_INT1_STATUS0_DRDY(data->stream.data.events.drdy) |
-			     REG_INT1_STATUS0_FIFO_THS(data->stream.data.events.fifo_ths) |
-			     REG_INT1_STATUS0_FIFO_FULL(data->stream.data.events.fifo_full);
-
-	if (should_read_fifo(read_cfg, int_status)) {
-		struct rtio_sqe *data_rd_sqe;
-
-		/** In FIFO data, the scale is fixed, irrespective of
-		 * the configured settings.
-		 */
-		buf->header.accel_fs = ICM45686_DT_ACCEL_FS_32;
-		buf->header.gyro_fs = ICM45686_DT_GYRO_FS_4000;
-		buf->header.channels = 0x7F; /* Signal all channels are available */
-		buf->header.fifo_count = should_read_all_fifo(read_cfg) ? FIFO_COUNT_MAX_HIGH_RES :
-					 cfg->settings.fifo_watermark;
-
-		err = icm45686_prep_reg_read_rtio_async(
-			&data->bus, REG_FIFO_DATA | REG_READ_BIT, (uint8_t *)&buf->fifo_payload,
-			buf->header.fifo_count * sizeof(struct icm45686_encoded_fifo_payload),
-			&data_rd_sqe);
-		if (err < 0) {
-			LOG_ERR("Failed to acquire RTIO SQEs");
-			icm45686_stream_result(dev, -ENOMEM);
-			return;
-		}
-		data_rd_sqe->flags |= RTIO_SQE_CHAINED;
-
-	} else if (should_flush_fifo(read_cfg, int_status)) {
-		struct rtio_sqe *write_sqe;
-		uint8_t write_reg = REG_FIFO_CONFIG2_FIFO_FLUSH(true) |
-				    REG_FIFO_CONFIG2_FIFO_WM_GT_THS(true);
-
-		err = icm45686_prep_reg_write_rtio_async(&data->bus, REG_FIFO_CONFIG2, &write_reg,
-							 1, &write_sqe);
-		if (err < 0) {
-			LOG_ERR("Failed to acquire RTIO SQE");
-			icm45686_stream_result(dev, -ENOMEM);
-			return;
-		}
-		write_sqe->flags |= RTIO_SQE_CHAINED;
-
-	} else if (should_read_data(read_cfg, int_status)) {
-		struct rtio_sqe *read_sqe;
-
-		buf->header.accel_fs = data->edata.header.accel_fs;
-		buf->header.gyro_fs = data->edata.header.gyro_fs;
-		buf->header.channels = 0x7F; /* Signal all channels are available */
-
-		err = icm45686_prep_reg_read_rtio_async(&data->bus,
-							REG_ACCEL_DATA_X1_UI | REG_READ_BIT,
-							buf->payload.buf, sizeof(buf->payload.buf),
-							&read_sqe);
-		if (err < 0) {
-			LOG_ERR("Failed to acquire RTIO SQEs");
-			icm45686_stream_result(dev, -ENOMEM);
-			return;
-		}
-		read_sqe->flags |= RTIO_SQE_CHAINED;
-	}
-
-	struct rtio_sqe *cb_sqe = rtio_sqe_acquire(ctx);
-
-	if (!cb_sqe) {
-		LOG_ERR("Failed to acquire RTIO SQE for completion callback");
-		rtio_sqe_drop_all(data->bus.rtio.ctx);
-		icm45686_stream_result(dev, -ENOMEM);
-		return;
-	}
-	rtio_sqe_prep_callback_no_cqe(cb_sqe,
-				      icm45686_complete_result,
-				      (void *)dev,
-				      data->stream.iodev_sqe);
-
-	rtio_submit(ctx, 0);
-}
-
 static void icm45686_event_handler(const struct device *dev)
 {
 	struct icm45686_data *data = dev->data;
+	const struct icm45686_config *cfg = dev->config;
+	const struct sensor_read_config *read_cfg = data->stream.iodev_sqe->sqe.iodev->data;
 	uint8_t val = 0;
 	uint64_t cycles;
 	int err;
@@ -313,6 +227,7 @@ static void icm45686_event_handler(const struct device *dev)
 
 	/** Prepare an asynchronous read of the INT status register */
 	struct rtio_sqe *read_sqe;
+	struct rtio_sqe *data_rd_sqe;
 
 	/** Directly read Status Register to determine what triggered the event */
 	err = icm45686_prep_reg_read_rtio_async(&data->bus, REG_INT1_STATUS0 | REG_READ_BIT,
@@ -324,6 +239,78 @@ static void icm45686_event_handler(const struct device *dev)
 	}
 	read_sqe->flags |= RTIO_SQE_CHAINED;
 
+	struct icm45686_encoded_data *buf;
+	uint32_t buf_len;
+	uint32_t buf_len_required = sizeof(struct icm45686_encoded_header);
+
+	/** We just need the header to communicate the events occurred during
+	 * this SQE. Only include more data if the associated trigger needs it.
+	 */
+	if (should_read_fifo(read_cfg)) {
+		size_t num_frames_to_read = should_read_all_fifo(read_cfg) ?
+					    FIFO_COUNT_MAX_HIGH_RES : cfg->settings.fifo_watermark;
+
+		buf_len_required += (num_frames_to_read *
+				     sizeof(struct icm45686_encoded_fifo_payload));
+	} else if (should_read_data(read_cfg)) {
+		buf_len_required += sizeof(struct icm45686_encoded_payload);
+	} else {
+		/** No need additional space as probably we'll want to
+		 * flush the data or just report the event.
+		 */
+	}
+	err = rtio_sqe_rx_buf(data->stream.iodev_sqe, buf_len_required, buf_len_required,
+			      (uint8_t **)&buf, &buf_len);
+	CHECKIF(err != 0) {
+		LOG_ERR("Failed to acquire buffer (len: %d) for encoded data: %d. Please revisit"
+			" RTIO queue sizing and look for bottlenecks during sensor data processing",
+			buf_len_required, err);
+		rtio_sqe_drop_all(data->bus.rtio.ctx);
+		icm45686_stream_result(dev, -ENOMEM);
+		return;
+	}
+
+	if (should_read_fifo(read_cfg)) {
+		/** In FIFO data, the scale is fixed, irrespective of
+		 * the configured settings.
+		 */
+		buf->header.accel_fs = ICM45686_DT_ACCEL_FS_32;
+		buf->header.gyro_fs = ICM45686_DT_GYRO_FS_4000;
+		buf->header.channels = 0x7F; /* Signal all channels are available */
+		buf->header.fifo_count = should_read_all_fifo(read_cfg) ? FIFO_COUNT_MAX_HIGH_RES :
+					 cfg->settings.fifo_watermark;
+
+		err = icm45686_prep_reg_read_rtio_async(
+			&data->bus, REG_FIFO_DATA | REG_READ_BIT, (uint8_t *)&buf->fifo_payload,
+			buf->header.fifo_count * sizeof(struct icm45686_encoded_fifo_payload),
+			&data_rd_sqe);
+		if (err < 0) {
+			LOG_ERR("Failed to acquire RTIO SQEs");
+			icm45686_stream_result(dev, -ENOMEM);
+			return;
+		}
+		data_rd_sqe->flags |= RTIO_SQE_CHAINED;
+	} else if (should_read_data(read_cfg)) {
+		buf->header.accel_fs = data->edata.header.accel_fs;
+		buf->header.gyro_fs = data->edata.header.gyro_fs;
+		buf->header.channels = 0x7F; /* Signal all channels are available */
+
+		err = icm45686_prep_reg_read_rtio_async(&data->bus,
+							REG_ACCEL_DATA_X1_UI | REG_READ_BIT,
+							buf->payload.buf, sizeof(buf->payload.buf),
+							&data_rd_sqe);
+		if (err < 0) {
+			LOG_ERR("Failed to acquire RTIO SQEs");
+			icm45686_stream_result(dev, -ENOMEM);
+			return;
+		}
+		data_rd_sqe->flags |= RTIO_SQE_CHAINED;
+	} else {
+		/** No need additional actions as probably we'll want to
+		 * flush the data or just report the event.
+		 */
+	}
+
 	struct rtio_sqe *complete_sqe = rtio_sqe_acquire(data->bus.rtio.ctx);
 
 	if (!complete_sqe) {
@@ -333,7 +320,7 @@ static void icm45686_event_handler(const struct device *dev)
 		return;
 	}
 	rtio_sqe_prep_callback_no_cqe(complete_sqe,
-				      icm45686_handle_event_actions,
+				      icm45686_complete_handler,
 				      (void *)dev,
 				      data->stream.iodev_sqe);
 
