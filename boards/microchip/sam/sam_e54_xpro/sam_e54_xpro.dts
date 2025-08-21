@@ -217,3 +217,8 @@
 &portc {
 	status = "okay";
 };
+
+zephyr_udc0: &usb0 {
+	pinctrl-0 = <&usb_dc_default>;
+	pinctrl-names = "default";
+};

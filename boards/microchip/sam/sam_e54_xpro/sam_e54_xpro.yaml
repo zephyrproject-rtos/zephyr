@@ -25,4 +25,5 @@ supported:
   - rtc
   - shell
   - uart
+  - usb
 vendor: microchip
