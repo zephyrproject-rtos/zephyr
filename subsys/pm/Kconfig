@@ -199,4 +199,24 @@ config PM_DEVICE_SYSTEM_MANAGED
 
 endif # PM_DEVICE
 
+config PM_CPU_SHELL
+	bool "CPU Power Management shell"
+	depends on SHELL
+	help
+	  Enable the cpu power management shell, for triggering cpu power
+	  management events through the shell interface.
+	  The shell allows:
+	    - listing supported CPU low power states from devicetree;
+	    - checking whether states are currently available;
+	    - idling the shell thread so the system naturally enters low power;
+
+config PM_CPU_SHELL_MAX_IDLE_MS
+	int "Maximum ms accepted by 'cpu idle' command"
+	depends on PM_CPU_SHELL
+	default 3600000
+	range 1 2147483647
+	help
+	  Upper bound for 'cpu idle <ms>' to prevent accidental huge values
+	  that could block the shell thread for a long time.
+	  The value must fit in k_msleep(int32_t)
 endmenu
