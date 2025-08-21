@@ -14,7 +14,6 @@ menuconfig ETH_STM32_HAL
 	select HWINFO
 	select ETH_DSA_SUPPORT_DEPRECATED
 	select PINCTRL
-	select MDIO if DT_HAS_ST_STM32_MDIO_ENABLED
 	imply CRC
 	help
 	  Enable STM32 HAL based Ethernet driver. It is available for
