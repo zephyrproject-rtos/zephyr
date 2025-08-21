@@ -23,7 +23,7 @@ properties:
     description: |
       This configures the ADC to convert temperature or input signals
       0: ADC mode
-      1: Temperature sensor mode 
+      1: Temperature sensor mode
 
 io-channel-cells:
   - input

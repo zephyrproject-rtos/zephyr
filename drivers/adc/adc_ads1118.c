@@ -483,16 +483,6 @@ static int ads1118_wait_data_ready(const struct device *dev)
 	if (rc != 0) {
 		return rc;
 	}
-#if 0
-	while ((reg_cfg & ADS1118_DATA_READY) == 1) {
-
-		k_sleep(K_USEC(100));
-		rc = ads1118_config_reg_read(dev, &reg_cfg);
-		if (rc != 0) {
-			return rc;
-		}
-	}
-#endif
 
 	return 0;
 }
@@ -529,10 +519,12 @@ static void ads1118_acquisition_thread(void *p1, void *p2, void *p3)
 	ARG_UNUSED(p3);
 
 	const struct device *dev = p1;
+
 	while (true) {
 		ads1118_perform_read(dev);
 	}
 }
+
 static int ads1118_adc_read_async(const struct device *dev, const struct adc_sequence *sequence,
 				  struct k_poll_signal *async)
 {
@@ -545,6 +537,7 @@ static int ads1118_adc_read_async(const struct device *dev, const struct adc_seq
 
 	return rc;
 }
+
 static int ads1118_read(const struct device *dev, const struct adc_sequence *sequence)
 {
 	int rc;
@@ -574,6 +567,7 @@ static int ads1118_read(const struct device *dev, const struct adc_sequence *seq
 	return ret;
 }
 #endif
+
 static int ads1118_init(const struct device *dev)
 {
 	const struct ads1118_config *cfg = dev->config;
@@ -613,20 +607,22 @@ static DEVICE_API(adc, api) = {
 #endif
 };
 
+/* clang-format off */
 #define ADC_ADS1118_INST_DEFINE(n)                                                                 \
-	IF_ENABLED(CONFIG_ADC_ASYNC,\
-		(static\
-	K_KERNEL_STACK_DEFINE(thread_stack_##n,				   \
-			   CONFIG_ADC_ADS1118_ACQUISITION_THREAD_STACK_SIZE);))                                                             \
+	IF_ENABLED(CONFIG_ADC_ASYNC,                                                               \
+		(static                                                                            \
+	K_KERNEL_STACK_DEFINE(thread_stack_##n,				                           \
+			   CONFIG_ADC_ADS1118_ACQUISITION_THREAD_STACK_SIZE);))                    \
 	static const struct ads1118_config config_##n = {                                          \
 		.spi = SPI_DT_SPEC_INST_GET(                                                       \
 			n, SPI_OP_MODE_MASTER | SPI_MODE_CPHA | SPI_WORD_SET(8), 0),               \
 		.resolution = ADS1118_RESOLUTION,                                                  \
 		.multiplexer = true,                                                               \
 		.sensor_mode = DT_INST_PROP(n, ti_temperature_sensor),                             \
-		IF_ENABLED(CONFIG_ADC_ASYNC, (.stack = thread_stack_##n)) };                          \
+		IF_ENABLED(CONFIG_ADC_ASYNC, (.stack = thread_stack_##n)) };                       \
 	static struct ads1118_data data_##n;                                                       \
 	DEVICE_DT_INST_DEFINE(n, ads1118_init, NULL, &data_##n, &config_##n, POST_KERNEL,          \
 			      CONFIG_ADC_INIT_PRIORITY, &api);
+/* clang-format on */
 
 DT_INST_FOREACH_STATUS_OKAY(ADC_ADS1118_INST_DEFINE)
