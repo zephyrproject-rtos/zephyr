@@ -50,16 +50,28 @@ __pinned_bss atomic_t _cpus_active;
 #endif
 
 /* init/main and idle threads */
+#if defined(CONFIG_MAIN_STACK_USE_DTCM_SECTION)
+Z_KERNEL_STACK_DEFINE_IN(z_main_stack, CONFIG_MAIN_STACK_SIZE, __dtcm_noinit_section);
+#else
 K_THREAD_PINNED_STACK_DEFINE(z_main_stack, CONFIG_MAIN_STACK_SIZE);
+#endif /* CONFIG_MAIN_STACK_USE_DTCM_SECTION */
+
 struct k_thread z_main_thread;
 
 #ifdef CONFIG_MULTITHREADING
 __pinned_bss
 struct k_thread z_idle_threads[CONFIG_MP_MAX_NUM_CPUS];
 
+#if defined(CONFIG_IDLE_STACKS_USE_DTCM_SECTION)
+static Z_KERNEL_STACK_ARRAY_DEFINE_IN(z_idle_stacks,
+				   CONFIG_MP_MAX_NUM_CPUS,
+				   CONFIG_IDLE_STACK_SIZE,
+				   __dtcm_noinit_section);
+#else
 static K_KERNEL_PINNED_STACK_ARRAY_DEFINE(z_idle_stacks,
 					  CONFIG_MP_MAX_NUM_CPUS,
 					  CONFIG_IDLE_STACK_SIZE);
+#endif /* CONFIG_IDLE_STACKS_USE_DTCM_SECTION */
 
 static void z_init_static_threads(void)
 {
@@ -144,9 +156,16 @@ extern const struct init_entry __init_SMP_start[];
  * of this area is safe since interrupts are disabled until the kernel context
  * switches to the init thread.
  */
+#if defined(CONFIG_ISR_STACKS_USE_DTCM_SECTION)
+Z_KERNEL_STACK_ARRAY_DEFINE_IN(z_interrupt_stacks,
+				   CONFIG_MP_MAX_NUM_CPUS,
+				   CONFIG_ISR_STACK_SIZE,
+				   __dtcm_noinit_section);
+#else
 K_KERNEL_PINNED_STACK_ARRAY_DEFINE(z_interrupt_stacks,
 				   CONFIG_MP_MAX_NUM_CPUS,
 				   CONFIG_ISR_STACK_SIZE);
+#endif /* CONFIG_ISR_STACKS_USE_DTCM_SECTION */
 
 extern void idle(void *unused1, void *unused2, void *unused3);
 
