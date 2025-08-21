@@ -11,14 +11,15 @@
 #include <zephyr/dsp/types.h>
 
 /**
- * @brief Data Types
- * @addtogroup sensing_datatypes
+ * @defgroup sensing_datatypes Data Types
+ * @ingroup sensing_api
+ * @brief Sensor data structures used by the sensing subsystem
+ *
  * @{
  */
 
 /**
- * @struct sensing_sensor_value_header
- * @brief sensor value header
+ * @brief Common header for all sensor value payloads.
  *
  * Each sensor value data structure should have this header
  *

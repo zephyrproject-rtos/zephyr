@@ -8,14 +8,15 @@
 #define ZEPHYR_INCLUDE_SENSING_SENSOR_TYPES_H_
 
 /**
- * @brief Sensor Types Definition
+ * @defgroup sensing_sensor_types Sensor Types (Sensing)
+ * @ingroup sensing_api
+ *
+ * @brief Sensor type identifiers used by the sensing subsystem.
  *
  * Sensor types definition followed HID standard.
  * https://usb.org/sites/default/files/hutrr39b_0.pdf
  *
  * TODO: will add more types
- *
- * @addtogroup sensing_sensor_types
  * @{
  */
 
