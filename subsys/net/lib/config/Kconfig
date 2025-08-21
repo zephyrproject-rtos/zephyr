@@ -24,8 +24,7 @@ if NET_CONFIG_SETTINGS
 
 config NET_CONFIG_AUTO_INIT
 	bool "Init networking support automatically during device startup"
-	default n if USB_DEVICE_NETWORK || USBD_CDC_ECM_CLASS || USBD_CDC_NCM_CLASS
-	default y
+	default y if !(USB_DEVICE_NETWORK || USBD_CDC_ECM_CLASS || USBD_CDC_NCM_CLASS)
 	help
 	  If this option is set, then the networking system is automatically
 	  initialized when the device is started. If you do not wish to do
