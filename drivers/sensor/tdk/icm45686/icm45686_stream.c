@@ -278,7 +278,9 @@ static void icm45686_event_handler(const struct device *dev)
 		data->stream.settings.enabled.fifo_ths = false;
 		data->stream.settings.enabled.fifo_full = false;
 		return;
-	} else if (!atomic_cas(&data->stream.in_progress, 0, 1)) {
+	}
+	if (!atomic_cas(&data->stream.in_progress, 0, 1)) {
+		LOG_WRN("Event handler triggered while a stream is in progress! Ignoring");
 		/** There's an on-going */
 		return;
 	}
