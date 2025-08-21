@@ -13,7 +13,6 @@ toolchain:
   - gnuarmemb
 supported:
   - usbd
-  - usb_cdc
   - ble
   - pwm
   - watchdog
