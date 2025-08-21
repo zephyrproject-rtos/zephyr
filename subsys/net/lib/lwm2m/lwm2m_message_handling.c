@@ -103,6 +103,7 @@ sys_slist_t *lwm2m_engine_obj_inst_list(void);
 
 static int handle_request(struct coap_packet *request, struct lwm2m_message *msg);
 static int lwm2m_error_response_init(struct lwm2m_message *msg, int result);
+static int lwm2m_message_allocate_pending_reply(struct lwm2m_message *msg);
 #if defined(CONFIG_LWM2M_COAP_BLOCK_TRANSFER)
 STATIC int build_msg_block_for_send(struct lwm2m_message *msg, uint16_t block_num,
 				    enum coap_block_size block_size);
@@ -579,6 +580,47 @@ void lm2m_message_clear_allocations(struct lwm2m_message *msg)
 	}
 }
 
+static int lwm2m_message_allocate_pending_reply(struct lwm2m_message *msg)
+{
+	int r = 0;
+
+	lwm2m_client_lock(msg->ctx);
+
+	msg->pending = coap_pending_next_unused(msg->ctx->pendings, ARRAY_SIZE(msg->ctx->pendings));
+	if (!msg->pending) {
+		LOG_ERR("Unable to find a free pending to track "
+			"retransmissions.");
+		r = -ENOMEM;
+		goto out;
+	}
+
+	r = coap_pending_init(msg->pending, &msg->cpkt, &msg->ctx->remote_addr, NULL);
+	if (r < 0) {
+		LOG_ERR("Unable to initialize a pending "
+			"retransmission (err:%d).", r);
+		goto out;
+	}
+
+	if (msg->reply_cb) {
+		msg->reply =
+			coap_reply_next_unused(msg->ctx->replies, ARRAY_SIZE(msg->ctx->replies));
+		if (!msg->reply) {
+			LOG_ERR("No resources for waiting for replies.");
+			r = -ENOMEM;
+			goto out;
+		}
+
+		coap_reply_clear(msg->reply);
+		coap_reply_init(msg->reply, &msg->cpkt);
+		msg->reply->reply = msg->reply_cb;
+	}
+
+out:
+	lwm2m_client_unlock(msg->ctx);
+
+	return r;
+}
+
 void lwm2m_reset_message(struct lwm2m_message *msg, bool release)
 {
 	if (!msg) {
@@ -670,44 +712,14 @@ int lwm2m_init_message(struct lwm2m_message *msg)
 		return 0;
 	}
 
-	lwm2m_client_lock(msg->ctx);
 
-	msg->pending = coap_pending_next_unused(msg->ctx->pendings, ARRAY_SIZE(msg->ctx->pendings));
-	if (!msg->pending) {
-		LOG_ERR("Unable to find a free pending to track "
-			"retransmissions.");
-		r = -ENOMEM;
-		goto cleanup_unlock;
-	}
-
-	r = coap_pending_init(msg->pending, &msg->cpkt, &msg->ctx->remote_addr, NULL);
+	r = lwm2m_message_allocate_pending_reply(msg);
 	if (r < 0) {
-		LOG_ERR("Unable to initialize a pending "
-			"retransmission (err:%d).",
-			r);
-		goto cleanup_unlock;
+		goto cleanup;
 	}
-
-	if (msg->reply_cb) {
-		msg->reply =
-			coap_reply_next_unused(msg->ctx->replies, ARRAY_SIZE(msg->ctx->replies));
-		if (!msg->reply) {
-			LOG_ERR("No resources for waiting for replies.");
-			r = -ENOMEM;
-			goto cleanup_unlock;
-		}
-
-		coap_reply_clear(msg->reply);
-		coap_reply_init(msg->reply, &msg->cpkt);
-		msg->reply->reply = msg->reply_cb;
-	}
-
-	lwm2m_client_unlock(msg->ctx);
 
 	return 0;
 
-cleanup_unlock:
-	lwm2m_client_unlock(msg->ctx);
 cleanup:
 	lwm2m_reset_message(msg, true);
 
