@@ -19,9 +19,9 @@ extern "C" {
 #endif
 
 /**
- * @brief BC1.2 driver APIs
- * @defgroup b12_interface BC1.2 driver APIs
- * @ingroup io_interfaces
+ * @brief USB Battery Charging (BC1.2) driver APIs
+ * @defgroup b12_interface Battery Charging (BC1.2)
+ * @ingroup usb_interfaces
  * @{
  */
 
