@@ -18,7 +18,7 @@ To build and run this sample on a supported board:
 
 .. code-block:: console
 
-   west build -b <your_board> samples/lib/min_heap
+   west build -b <your_board> samples/data_structures/min_heap
    west flash
 
 Replace ``<your_board>`` with your actual board name (e.g., ``native_sim``).
