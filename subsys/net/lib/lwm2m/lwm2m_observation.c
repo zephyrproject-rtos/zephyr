@@ -1750,7 +1750,7 @@ int lwm2m_engine_observation_handler(struct lwm2m_message *msg, int observe, uin
 			r = engine_add_observer(msg, msg->token, msg->tkl, accept);
 		}
 
-		if (r < 0) {
+		if (r < 0 && r != -EINPROGRESS) {
 			LOG_ERR("add OBSERVE error: %d", r);
 		}
 	} else if (observe == 1) {
