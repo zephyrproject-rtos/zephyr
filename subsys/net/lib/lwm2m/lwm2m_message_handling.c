@@ -102,6 +102,7 @@ sys_slist_t *lwm2m_engine_obj_list(void);
 sys_slist_t *lwm2m_engine_obj_inst_list(void);
 
 static int handle_request(struct coap_packet *request, struct lwm2m_message *msg);
+static int lwm2m_error_response_init(struct lwm2m_message *msg, int result);
 #if defined(CONFIG_LWM2M_COAP_BLOCK_TRANSFER)
 STATIC int build_msg_block_for_send(struct lwm2m_message *msg, uint16_t block_num,
 				    enum coap_block_size block_size);
@@ -2308,6 +2309,43 @@ static int lwm2m_exec_handler(struct lwm2m_message *msg)
 	return -ENOENT;
 }
 
+static int lwm2m_error_response_init(struct lwm2m_message *msg, int result)
+{
+	int ret;
+
+	lwm2m_reset_message(msg, false);
+
+	if (result == -ENOENT) {
+		msg->code = COAP_RESPONSE_CODE_NOT_FOUND;
+	} else if (result == -EPERM) {
+		msg->code = COAP_RESPONSE_CODE_NOT_ALLOWED;
+	} else if (result == -EEXIST) {
+		msg->code = COAP_RESPONSE_CODE_BAD_REQUEST;
+	} else if (result == -EFAULT) {
+		msg->code = COAP_RESPONSE_CODE_INCOMPLETE;
+	} else if (result == -EFBIG) {
+		msg->code = COAP_RESPONSE_CODE_REQUEST_TOO_LARGE;
+	} else if (result == -ENOTSUP) {
+		msg->code = COAP_RESPONSE_CODE_NOT_IMPLEMENTED;
+	} else if (result == -ENOMSG) {
+		msg->code = COAP_RESPONSE_CODE_UNSUPPORTED_CONTENT_FORMAT;
+	} else if (result == -EACCES) {
+		msg->code = COAP_RESPONSE_CODE_UNAUTHORIZED;
+	} else if (result == -ECANCELED) {
+		msg->code = COAP_RESPONSE_CODE_NOT_ACCEPTABLE;
+	} else {
+		/* Failed to handle the request */
+		msg->code = COAP_RESPONSE_CODE_INTERNAL_ERROR;
+	}
+
+	ret = lwm2m_init_message(msg);
+	if (ret < 0) {
+		LOG_ERR("Error recreating message: %d", ret);
+	}
+
+	return ret;
+}
+
 static int handle_request(struct coap_packet *request, struct lwm2m_message *msg)
 {
 	int r;
@@ -2609,36 +2647,9 @@ static int handle_request(struct coap_packet *request, struct lwm2m_message *msg
 	return 0;
 
 error:
-	lwm2m_reset_message(msg, false);
-	if (r == -ENOENT) {
-		msg->code = COAP_RESPONSE_CODE_NOT_FOUND;
-	} else if (r == -EPERM) {
-		msg->code = COAP_RESPONSE_CODE_NOT_ALLOWED;
-	} else if (r == -EEXIST) {
-		msg->code = COAP_RESPONSE_CODE_BAD_REQUEST;
-	} else if (r == -EFAULT) {
-		msg->code = COAP_RESPONSE_CODE_INCOMPLETE;
-	} else if (r == -EFBIG) {
-		msg->code = COAP_RESPONSE_CODE_REQUEST_TOO_LARGE;
-	} else if (r == -ENOTSUP) {
-		msg->code = COAP_RESPONSE_CODE_NOT_IMPLEMENTED;
-	} else if (r == -ENOMSG) {
-		msg->code = COAP_RESPONSE_CODE_UNSUPPORTED_CONTENT_FORMAT;
-	} else if (r == -EACCES) {
-		msg->code = COAP_RESPONSE_CODE_UNAUTHORIZED;
-	} else if (r == -ECANCELED) {
-		msg->code = COAP_RESPONSE_CODE_NOT_ACCEPTABLE;
-	} else {
-		/* Failed to handle the request */
-		msg->code = COAP_RESPONSE_CODE_INTERNAL_ERROR;
-	}
+	r = lwm2m_error_response_init(msg, r);
 
-	r = lwm2m_init_message(msg);
-	if (r < 0) {
-		LOG_ERR("Error recreating message: %d", r);
-	}
-
-	return 0;
+	return r;
 }
 
 static int lwm2m_response_promote_to_con(struct lwm2m_message *msg)
@@ -2927,6 +2938,7 @@ void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, uint8_t *buf, uint16_t buf_
 		r = handle_request(&response, msg);
 		lwm2m_registry_unlock();
 		if (r < 0) {
+			lwm2m_reset_message(msg, true);
 			return;
 		}
 
