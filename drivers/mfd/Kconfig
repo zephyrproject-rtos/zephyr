@@ -37,5 +37,6 @@ source "drivers/mfd/Kconfig.pf1550"
 source "drivers/mfd/Kconfig.lpflexcomm"
 source "drivers/mfd/Kconfig.tle9104"
 source "drivers/mfd/Kconfig.it8801"
+source "drivers/mfd/Kconfig.pca9422"
 
 endif # MFD
