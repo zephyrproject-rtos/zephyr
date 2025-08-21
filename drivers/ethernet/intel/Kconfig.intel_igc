@@ -5,7 +5,6 @@ menuconfig ETH_INTEL_IGC
 	bool "Intel IGC MAC driver"
 	default y
 	depends on DT_HAS_INTEL_IGC_MAC_ENABLED
-	select MDIO
 	select PCIE_MSI_MULTI_VECTOR
 	select PCIE_MSI_X
 	help
