@@ -82,6 +82,7 @@ struct max32_uart_data {
 	void *cb_data;                    /* Interrupt callback arg */
 	uint32_t flags;                   /* Cached interrupt flags */
 	uint32_t status;                  /* Cached status flags */
+	struct k_timer timer;
 #endif
 #ifdef CONFIG_UART_ASYNC_API
 	struct max32_uart_async_data async;
@@ -91,6 +92,7 @@ struct max32_uart_data {
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void uart_max32_isr(const struct device *dev);
+static void uart_max32_soft_isr(struct k_timer *timer);
 #endif
 
 #ifdef CONFIG_UART_ASYNC_API
@@ -273,7 +275,7 @@ static int uart_max32_init(const struct device *dev)
 	int ret;
 	const struct max32_uart_config *const cfg = dev->config;
 	mxc_uart_regs_t *regs = cfg->regs;
-#ifdef CONFIG_UART_ASYNC_API
+#if defined(CONFIG_UART_ASYNC_API) || defined(CONFIG_UART_INTERRUPT_DRIVEN)
 	struct max32_uart_data *data = dev->data;
 #endif
 
@@ -328,6 +330,11 @@ static int uart_max32_init(const struct device *dev)
 	data->async.rx.offset = 0;
 #endif
 
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	k_timer_init(&data->timer, &uart_max32_soft_isr, NULL);
+	k_timer_user_data_set(&data->timer, (void *)dev);
+#endif
+
 	return ret;
 }
 
@@ -337,8 +344,18 @@ static int api_fifo_fill(const struct device *dev, const uint8_t *tx_data, int s
 {
 	unsigned int num_tx = 0;
 	const struct max32_uart_config *cfg = dev->config;
+#ifdef CONFIG_UART_MAX32_TX_AE_WORKAROUND
+	struct max32_uart_data *const data = dev->data;
+#endif
 
 	num_tx = MXC_UART_WriteTXFIFO(cfg->regs, (unsigned char *)tx_data, size);
+
+#ifdef CONFIG_UART_MAX32_TX_AE_WORKAROUND
+	/* AE doesn't always trigger when small payloads are sent, so trigger timer ISR */
+	if (size <= 2) {
+		k_timer_start(&data->timer, K_NO_WAIT, K_NO_WAIT);
+	}
+#endif
 
 	return (int)num_tx;
 }
@@ -359,13 +376,12 @@ static int api_fifo_read(const struct device *dev, uint8_t *rx_data, const int s
 static void api_irq_tx_enable(const struct device *dev)
 {
 	const struct max32_uart_config *cfg = dev->config;
-	unsigned int key;
+	struct max32_uart_data *const data = dev->data;
 
 	MXC_UART_EnableInt(cfg->regs, ADI_MAX32_UART_INT_TX | ADI_MAX32_UART_INT_TX_OEM);
 
-	key = irq_lock();
-	uart_max32_isr(dev);
-	irq_unlock(key);
+	/* Fire timer interrupt to run TX callbacks for ISR context */
+	k_timer_start(&data->timer, K_NO_WAIT, K_NO_WAIT);
 }
 
 static void api_irq_tx_disable(const struct device *dev)
@@ -446,6 +462,13 @@ static void api_irq_callback_set(const struct device *dev, uart_irq_callback_use
 
 	dev_data->cb = cb;
 	dev_data->cb_data = cb_data;
+}
+
+static void uart_max32_soft_isr(struct k_timer *timer)
+{
+	const struct device *dev = k_timer_user_data_get(timer);
+
+	uart_max32_isr(dev);
 }
 
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
