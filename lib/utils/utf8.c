@@ -7,6 +7,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <zephyr/sys/__assert.h>
+#include <errno.h>
 
 #define ASCII_CHAR 0x7F
 #define SEQUENCE_FIRST_MASK 0xC0
@@ -78,4 +79,46 @@ char *utf8_lcpy(char *dst, const char *src, size_t n)
 	}
 
 	return dst;
+}
+
+int utf8_count_chars(const char *s)
+{
+	int count = 0;
+	const unsigned char *p = (const unsigned char *)s;
+
+	while (*p != '\0') {
+		if ((*p & 0x80) == 0) { /* 1-byte character: 0xxxxxxx */
+			p += 1;
+		} else if ((*p & 0xE0) == 0xC0) {
+			/* 2-byte character: 110xxxxx */
+			if ((p[1] & 0xC0) != 0x80) {
+				/* invalid continuation */
+				return -EINVAL;
+			}
+			p += 2;
+		} else if ((*p & 0xF0) == 0xE0) {
+			/* 3-byte character: 1110xxxx */
+			if ((p[1] & 0xC0) != 0x80
+				|| (p[2] & 0xC0) != 0x80) {
+				/* invalid continuation */
+				return -EINVAL;
+			}
+			p += 3;
+		} else if ((*p & 0xF8) == 0xF0) {
+			/* 4-byte character: 11110xxx */
+			if ((p[1] & 0xC0) != 0x80
+				|| (p[2] & 0xC0) != 0x80
+				|| (p[3] & 0xC0) != 0x80) {
+				/* invalid continuation */
+				return -EINVAL;
+			}
+			p += 4;
+		} else {
+			/* Invalid UTF-8 byte (return) */
+			return -EINVAL;
+		}
+		count++;
+	}
+
+	return count;
 }
