@@ -902,8 +902,12 @@ static int do_write_op_tlv_item(struct lwm2m_message *msg)
 	}
 
 	ret = lwm2m_write_handler(obj_inst, res, res_inst, obj_field, msg);
-	if (ret == -EACCES || ret == -ENOENT) {
-		/* if read-only or non-existent data buffer move on */
+	if (ret == -EACCES || ret == -ENOENT || ret == -EALREADY) {
+		/* Move on in case of:
+		 *   - read-only resource,
+		 *   - non-existent data,
+		 *   - resource was already handled when resuming postponed message processing.
+		 */
 		do_write_op_tlv_dummy_read(msg);
 		ret = 0;
 	}

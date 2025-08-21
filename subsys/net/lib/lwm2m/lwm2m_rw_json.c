@@ -1047,7 +1047,17 @@ int do_write_op_json(struct lwm2m_message *msg)
 
 		/* Write the resource value */
 		ret = lwm2m_write_handler(obj_inst, res, res_inst, obj_field, msg);
-		if (orig_path.level >= 3U && ret < 0) {
+		if (ret == -EALREADY) {
+			/* Resource was already handled when resuming postponed message
+			 * processing, move on.
+			 */
+			ret = 0;
+			continue;
+		} else if (ret == -EINPROGRESS) {
+			/* Processing was postponed, restore the original message content. */
+			lwm2m_json_restore_quotes(msg);
+			break;
+		} else if (orig_path.level >= 3U && ret < 0) {
 			/* return errors on a single write */
 			break;
 		}

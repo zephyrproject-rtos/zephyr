@@ -1489,9 +1489,16 @@ static int lwm2m_senml_write_operation(struct lwm2m_message *msg, struct json_in
 
 	/* Write the resource value */
 	ret = lwm2m_write_handler(obj_inst, res, res_inst, obj_field, msg);
-	if (ret == -EACCES || ret == -ENOENT) {
-		/* if read-only or non-existent data buffer move on */
+	if (ret == -EACCES || ret == -ENOENT || ret == -EALREADY) {
+		/* Move on in case of:
+		 *   - read-only resource,
+		 *   - non-existent data,
+		 *   - resource was already handled when resuming postponed message processing.
+		 */
 		ret = 0;
+	} else if (ret == -EINPROGRESS) {
+		/* Processing was postponed, restore the original message content. */
+		lwm2m_json_restore_quotes(msg);
 	}
 
 	return ret;
