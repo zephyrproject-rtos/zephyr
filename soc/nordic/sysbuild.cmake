@@ -29,3 +29,7 @@ if(SB_CONFIG_VPR_LAUNCHER)
 
   sysbuild_cache_set(VAR ${image}_SNIPPET APPEND REMOVE_DUPLICATES ${launcher_snippet})
 endif()
+
+if(SB_CONFIG_NRF_HALTIUM_GENERATE_UICR)
+  include(${CMAKE_CURRENT_LIST_DIR}/common/uicr/sysbuild.cmake)
+endif()
