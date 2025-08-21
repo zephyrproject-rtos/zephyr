@@ -299,6 +299,39 @@ struct json_in_formatter_data {
 /* some temporary buffer space for format conversions */
 static char pt_buffer[42];
 
+#if defined(CONFIG_LWM2M_ASYNC_RESPONSES)
+static int backup_out_fmt_data(struct lwm2m_output_context *out, uint8_t *buf,
+			       size_t *buflen)
+{
+	if (out->user_data == NULL) {
+		return -ENOENT;
+	}
+
+	if (buf != NULL) {
+		if (*buflen < sizeof(struct json_out_formatter_data)) {
+			return -ENOMEM;
+		}
+
+		memcpy(buf, out->user_data, sizeof(struct json_out_formatter_data));
+	}
+
+	*buflen = sizeof(struct json_out_formatter_data);
+
+	return 0;
+}
+
+static int restore_out_fmt_data(struct lwm2m_output_context *out, uint8_t *buf)
+{
+	if (out->user_data == NULL) {
+		return -ENOENT;
+	}
+
+	memcpy(out->user_data, buf, sizeof(struct json_out_formatter_data));
+
+	return 0;
+}
+#endif /* defined(CONFIG_LWM2M_ASYNC_RESPONSES) */
+
 static int init_object_name_parameters(struct json_out_formatter_data *fd,
 				       struct lwm2m_obj_path *path)
 {
@@ -1377,6 +1410,10 @@ const struct lwm2m_writer senml_json_writer = {
 	.put_opaque = put_opaque,
 	.put_objlnk = put_objlnk,
 	.put_data_timestamp = put_data_timestamp,
+#if defined(CONFIG_LWM2M_ASYNC_RESPONSES)
+	.backup_ctx = backup_out_fmt_data,
+	.restore_ctx = restore_out_fmt_data,
+#endif
 };
 
 const struct lwm2m_reader senml_json_reader = {
@@ -1625,6 +1662,9 @@ int do_composite_read_op_for_parsed_list_senml_json(struct lwm2m_message *msg,
 	engine_set_out_user_data(&msg->out, &fd);
 
 	ret = lwm2m_perform_composite_read_op(msg, LWM2M_FORMAT_APP_SEML_JSON, path_list);
+	if (response_is_postponed(msg)) {
+		lwm2m_json_restore_quotes(msg);
+	}
 	engine_clear_out_user_data(&msg->out);
 
 	return ret;
@@ -1636,6 +1676,7 @@ int do_composite_read_op_senml_json(struct lwm2m_message *msg)
 	sys_slist_t path_list;
 	sys_slist_t free_list;
 	uint8_t path_list_size;
+	int ret;
 
 	/* Init list */
 	lwm2m_engine_path_list_init(&path_list, &free_list, path_list_buf,
@@ -1651,7 +1692,9 @@ int do_composite_read_op_senml_json(struct lwm2m_message *msg)
 	/* Clear path which are part are part of recursive path /1 will include /1/0/1 */
 	lwm2m_engine_clear_duplicate_path(&path_list, &free_list);
 
-	return do_composite_read_op_for_parsed_list(msg, LWM2M_FORMAT_APP_SEML_JSON, &path_list);
+	ret = do_composite_read_op_for_parsed_list(msg, LWM2M_FORMAT_APP_SEML_JSON, &path_list);
+
+	return ret;
 }
 
 int do_send_op_senml_json(struct lwm2m_message *msg, sys_slist_t *lwm2m_path_list)

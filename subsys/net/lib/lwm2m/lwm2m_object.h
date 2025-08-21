@@ -523,6 +523,14 @@ struct lwm2m_message {
 
 	/** Indicate that this is part of outgoing block transfer. */
 	bool block_send : 1;
+
+#if defined(CONFIG_LWM2M_ASYNC_RESPONSES)
+	/** Indicate that the processing of this message has been postponed. */
+	bool postponed : 1;
+
+	/** Indicate that the processing of this message is being resumed. */
+	bool resuming : 1;
+#endif
 };
 
 /* LWM2M format writer for the various formats supported */
@@ -570,6 +578,9 @@ struct lwm2m_writer {
 			  struct lwm2m_objlnk *value);
 	int (*put_corelink)(struct lwm2m_output_context *out,
 			    const struct lwm2m_obj_path *path);
+	int (*backup_ctx)(struct lwm2m_output_context *out, uint8_t *buf,
+			  size_t *buflen);
+	int (*restore_ctx)(struct lwm2m_output_context *out, uint8_t *buf);
 };
 
 struct lwm2m_reader {
