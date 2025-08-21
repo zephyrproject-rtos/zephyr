@@ -1,29 +1,9 @@
 # Copyright (c) 2025 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-config NRF_HALTIUM_GENERATE_UICR
-	bool "Generate UICR file"
-	depends on SOC_NRF54H20_CPUAPP
-	default y
-	help
-	  Generate UICR HEX file.
-
-if NRF_HALTIUM_GENERATE_UICR
-
-config NRF_HALTIUM_UICR_PERIPHCONF
-	bool "Initialize global domain peripherals"
-	default y
-	help
-	  Generates a blob containing static global domain peripheral initialization
-	  values extracted from the build artifacts, and configures UICR.PERIPHCONF
-	  to point at the blob. The initialization values are then loaded ahead of
-	  ahead of the application boot.
-
-endif
-
 config NRF_PERIPHCONF_SECTION
 	bool "Populate global peripheral initialization section"
-	default y if SOC_NRF54H20_CPUAPP
+	default y if SOC_NRF54H20_CPUAPP || SOC_NRF54H20_CPURAD
 	depends on LINKER_DEVNULL_SUPPORT
 	imply LINKER_DEVNULL_MEMORY
 	help
