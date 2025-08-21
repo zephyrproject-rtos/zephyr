@@ -5108,7 +5108,7 @@ int bt_gatt_write_without_response_cb(struct bt_conn *conn, uint16_t handle,
 {
 	struct net_buf *buf;
 	struct bt_att_write_cmd *cmd;
-	size_t write;
+	__maybe_unused size_t write;
 
 	__ASSERT(conn, "invalid parameters\n");
 	__ASSERT(handle, "invalid parameters\n");
@@ -5139,11 +5139,7 @@ int bt_gatt_write_without_response_cb(struct bt_conn *conn, uint16_t handle,
 	cmd->handle = sys_cpu_to_le16(handle);
 
 	write = net_buf_append_bytes(buf, length, data, K_NO_WAIT, NULL, NULL);
-	if (write != length) {
-		LOG_DBG("Unable to allocate length %u: only %zu written", length, write);
-		net_buf_unref(buf);
-		return -ENOMEM;
-	}
+	__ASSERT(write == length, "Unable to allocate length %u: only %zu written", length, write);
 
 	LOG_DBG("handle 0x%04x length %u", handle, length);
 
