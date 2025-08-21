@@ -1,0 +1,24 @@
+# Copyright (c) 2025
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_NUCLEO_U5A5ZJ_Q
+
+config TFM_BOARD
+	default "${ZEPHYR_BASE}/boards/st/nucleo_u5a5zj_q/tfm"
+
+if BUILD_WITH_TFM
+
+config USE_DT_CODE_PARTITION
+	default y if TRUSTED_EXECUTION_NONSECURE
+
+config TFM_INITIAL_ATTESTATION_KEY
+	default y
+
+# Disabled to show how to define custom keys,
+#  see nucleo_u5a5zj_q_stm32u5a5xx_ns_defconfig
+config TFM_DUMMY_PROVISIONING
+	default n
+
+endif # BUILD_WITH_TFM
+
+endif # BOARD_NUCLEO_U5A5ZJ_Q
