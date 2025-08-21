@@ -1,0 +1,28 @@
+# Copyright(c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config UDC_MCHP_G1
+	bool "Microchip USB G1 IP Group Controller Driver"
+	default y
+	depends on DT_HAS_MICROCHIP_USB_G1_ENABLED
+	select PINCTRL
+	select SYS_MEM_BLOCKS
+	select EVENTS
+	help
+	  USB Device Controller Driver for USB G1 group of IPs.
+
+if UDC_MCHP_G1
+
+config UDC_MCHP_G1_STACK_SIZE
+	int "UDC controller driver internal thread stack size"
+	default 512
+	help
+	  Device controller driver internal thread stack size.
+
+config UDC_MCHP_G1_THREAD_PRIORITY
+	int "UDC controller driver thread priority"
+	default 8
+	help
+	  Device controller driver thread priority.
+
+endif # UDC_G1
