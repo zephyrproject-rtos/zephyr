@@ -280,6 +280,7 @@ static void icm45686_event_handler(const struct device *dev)
 	    FIELD_GET(RTIO_SQE_CANCELED, data->stream.iodev_sqe->sqe.flags)) {
 		LOG_WRN("Callback triggered with no streaming submission - Disabling interrupts");
 		(void)atomic_set(&data->stream.state, ICM45686_STREAM_OFF);
+		(void)gpio_pin_interrupt_configure_dt(&cfg->int_gpio, GPIO_INT_DISABLE);
 		err = icm45686_prep_reg_write_rtio_async(&data->bus, REG_INT1_CONFIG0, &val, 1,
 							 NULL);
 		if (err < 0) {
@@ -517,6 +518,7 @@ void icm45686_stream_submit(const struct device *dev,
 			}
 		}
 	}
+	(void)gpio_pin_interrupt_configure_dt(&cfg->int_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 }
 
 int icm45686_stream_init(const struct device *dev)
@@ -551,12 +553,6 @@ int icm45686_stream_init(const struct device *dev)
 		if (err) {
 			LOG_ERR("Failed to add interrupt callback");
 			return -EIO;
-		}
-
-		err = gpio_pin_interrupt_configure_dt(&cfg->int_gpio,
-						      GPIO_INT_EDGE_TO_ACTIVE);
-		if (err) {
-			LOG_ERR("Failed to configure interrupt");
 		}
 
 		err = icm45686_reg_write_rtio(&data->bus, REG_INT1_CONFIG0, &val, 1);
