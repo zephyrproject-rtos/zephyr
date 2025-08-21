@@ -32,7 +32,7 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				reg = <0x40022400 0x400>;
-				clocks = <&rcc STM32_CLOCK(AHB1, 9U)>;
+				clocks = <&rcc STM32_CLOCK(AHB1, 9)>;
 			};
 
 			gpiok: gpio@40022800 {
@@ -40,7 +40,7 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				reg = <0x40022800 0x400>;
-				clocks = <&rcc STM32_CLOCK(AHB1, 10U)>;
+				clocks = <&rcc STM32_CLOCK(AHB1, 10)>;
 			};
 		};
 
@@ -50,7 +50,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40006000 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB1, 24U)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 24)>;
 			interrupts = <95 0>, <96 0>;
 			interrupt-names = "event", "error";
 			status = "disabled";
@@ -61,7 +61,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40015400 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB2, 21U)>;
+			clocks = <&rcc STM32_CLOCK(APB2, 21)>;
 			interrupts = <86 5>;
 			status = "disabled";
 		};
@@ -71,7 +71,7 @@
 			reg = <0x40006800 0x400>;
 			interrupts = <63 0>, <64 0>, <65 0>, <66 0>;
 			interrupt-names = "TX", "RX0", "RX1", "SCE";
-			clocks = <&rcc STM32_CLOCK(APB1, 26U)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 26)>;
 			status = "disabled";
 		};
 

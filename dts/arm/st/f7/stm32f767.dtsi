@@ -17,7 +17,7 @@
 			reg = <0x40016800 0x200>;
 			interrupts = <88 0>, <89 0>;
 			interrupt-names = "ltdc", "ltdc_err";
-			clocks = <&rcc STM32_CLOCK(APB2, 26U)>;
+			clocks = <&rcc STM32_CLOCK(APB2, 26)>;
 			resets = <&rctl STM32_RESET(APB2, 26U)>;
 			status = "disabled";
 		};

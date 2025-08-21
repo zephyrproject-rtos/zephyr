@@ -332,7 +332,7 @@ zephyr_udc0: &usbotg_hs {
 };
 
 &xspi1 {
-	clocks = <&rcc STM32_CLOCK(AHB2_2, 12U)>,
+	clocks = <&rcc STM32_CLOCK(AHB2_2, 12)>,
 			 <&rcc STM32_SRC_PLL2_Q HSPI_SEL(2)>;
 
 	pinctrl-0 = <&hspi1_dqs0_pi2 &hspi1_ncs_ph9

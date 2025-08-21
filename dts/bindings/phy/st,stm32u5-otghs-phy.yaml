@@ -22,19 +22,19 @@ properties:
       Supported configurations:
 
         /* HSE */
-        clocks = <&rcc STM32_CLOCK(AHB2, 15U)>,
+        clocks = <&rcc STM32_CLOCK(AHB2, 15)>,
                  <&rcc STM32_SRC_HSE OTGHS_SEL(0)>;
 
         /* HSE/2 */
-        clocks = <&rcc STM32_CLOCK(AHB2, 15U)>,
+        clocks = <&rcc STM32_CLOCK(AHB2, 15)>,
                  <&rcc (STM32_SRC_HSE | STM32_CLOCK_DIV(2)) OTGHS_SEL(2)>;
 
         /* PLL1_P_CK */
-        clocks = <&rcc STM32_CLOCK(AHB2, 15U)>,
+        clocks = <&rcc STM32_CLOCK(AHB2, 15)>,
                  <&rcc STM32_SRC_PLL1_P OTGHS_SEL(1)>;
 
         /* PLL1_P_CK/2 */
-        clocks = <&rcc STM32_CLOCK(AHB2, 15U)>,
+        clocks = <&rcc STM32_CLOCK(AHB2, 15)>,
                  <&rcc (STM32_SRC_PLL1_P | STM32_CLOCK_DIV(2)) OTGHS_SEL(3)>;
 
   clock-reference:

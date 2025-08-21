@@ -32,7 +32,7 @@
 			ram-size = <1024>;
 			maximum-speed = "full-speed";
 			phys = <&otgfs_phy>;
-			clocks = <&rcc STM32_CLOCK(APB1, 23U)>,
+			clocks = <&rcc STM32_CLOCK(APB1, 23)>,
 				 <&rcc STM32_SRC_HSI48 HSI48_SEL(1)>;
 			status = "disabled";
 		};
@@ -41,7 +41,7 @@
 			compatible = "st,stm32-rng";
 			reg = <0x40025000 0x400>;
 			interrupts = <29 0>;
-			clocks = <&rcc STM32_CLOCK(AHB1, 20U)>;
+			clocks = <&rcc STM32_CLOCK(AHB1, 20)>;
 			status = "disabled";
 		};
 	};
@@ -54,7 +54,7 @@
 	dac1: dac@40007400 {
 		compatible = "st,stm32-dac";
 		reg = <0x40007400 0x400>;
-		clocks = <&rcc STM32_CLOCK(APB1, 29U)>;
+		clocks = <&rcc STM32_CLOCK(APB1, 29)>;
 		status = "disabled";
 		#io-channel-cells = <1>;
 	};
