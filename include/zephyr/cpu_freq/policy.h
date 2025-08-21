@@ -32,6 +32,10 @@ extern "C" {
  * @brief Get the next P-state from CPU Frequency Policy
  *
  * This function is implemented by a CPU Freq policy selected via Kconfig.
+ * The caller must ensure that the current CPU does not change. If called
+ * from an ISR or a single CPU system, this restriction is automatically met.
+ * If called from a thread on an SMP system, either interrupts or the scheduler
+ * must be disabled to ensure the current CPU does not change.
  *
  * @param pstate Pointer to the P-state struct where the next P-state is returned.
  *
