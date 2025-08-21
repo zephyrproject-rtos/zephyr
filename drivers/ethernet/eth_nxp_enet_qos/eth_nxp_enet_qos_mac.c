@@ -131,12 +131,7 @@ static int eth_nxp_enet_qos_tx(const struct device *dev, struct net_pkt *pkt)
 						      k_thread_name_get(k_current_get()));
 
 	net_pkt_ref(pkt);
-
 	data->tx.pkt = pkt;
-	/* Need to save the header because the ethernet stack
-	 * otherwise discards it from the packet after this call
-	 */
-	data->tx.tx_header = pkt->frags;
 
 	LOG_DBG("Setting up TX descriptors for packet %p", pkt);
 
@@ -197,8 +192,6 @@ static void tx_dma_done(const struct device *dev)
 		net_pkt_frag_unref(fragment);
 		fragment = fragment->frags;
 	}
-
-	net_pkt_frag_unref(data->tx.tx_header);
 	net_pkt_unref(pkt);
 
 	eth_stats_update_pkts_tx(data->iface);
