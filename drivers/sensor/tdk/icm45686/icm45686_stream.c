@@ -24,6 +24,12 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(ICM45686_STREAM, CONFIG_SENSOR_LOG_LEVEL);
 
+enum icm45686_stream_state {
+	ICM45686_STREAM_OFF = 0,
+	ICM45686_STREAM_ON = 1,
+	ICM45686_STREAM_BUSY = 2,
+};
+
 static struct sensor_stream_trigger *get_read_config_trigger(const struct sensor_read_config *cfg,
 							     enum sensor_trigger_type trig)
 {
@@ -109,6 +115,7 @@ static inline void icm45686_stream_result(const struct device *dev,
 	struct icm45686_data *data = dev->data;
 	struct rtio_iodev_sqe *iodev_sqe = data->stream.iodev_sqe;
 
+	(void)atomic_set(&data->stream.state, ICM45686_STREAM_OFF);
 	data->stream.iodev_sqe = NULL;
 
 	if (result < 0) {
@@ -272,6 +279,7 @@ static void icm45686_event_handler(const struct device *dev)
 	if (!data->stream.iodev_sqe ||
 	    FIELD_GET(RTIO_SQE_CANCELED, data->stream.iodev_sqe->sqe.flags)) {
 		LOG_WRN("Callback triggered with no streaming submission - Disabling interrupts");
+		(void)atomic_set(&data->stream.state, ICM45686_STREAM_OFF);
 		err = icm45686_prep_reg_write_rtio_async(&data->bus, REG_INT1_CONFIG0, &val, 1,
 							 NULL);
 		if (err < 0) {
@@ -287,9 +295,9 @@ static void icm45686_event_handler(const struct device *dev)
 		data->stream.settings.enabled.fifo_full = false;
 		return;
 	}
-	if (!atomic_cas(&data->stream.in_progress, 0, 1)) {
+
+	if (atomic_cas(&data->stream.state, ICM45686_STREAM_ON, ICM45686_STREAM_BUSY) == false) {
 		LOG_WRN("Event handler triggered while a stream is in progress! Ignoring");
-		/** There's an on-going */
 		return;
 	}
 
@@ -414,8 +422,7 @@ void icm45686_stream_submit(const struct device *dev,
 
 	/* Store context for next submission (handled within callbacks) */
 	data->stream.iodev_sqe = iodev_sqe;
-
-	(void)atomic_clear(&data->stream.in_progress);
+	(void)atomic_set(&data->stream.state, ICM45686_STREAM_ON);
 
 	if (settings_changed(&data->stream, &stream)) {
 
@@ -522,7 +529,7 @@ int icm45686_stream_init(const struct device *dev)
 	/** Needed to get back the device handle from the callback context */
 	data->stream.dev = dev;
 
-	(void)atomic_clear(&data->stream.in_progress);
+	(void)atomic_set(&data->stream.state, ICM45686_STREAM_OFF);
 
 	if (cfg->int_gpio.port) {
 		if (!gpio_is_ready_dt(&cfg->int_gpio)) {
