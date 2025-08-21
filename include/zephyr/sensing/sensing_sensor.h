@@ -13,15 +13,9 @@
 #include <zephyr/sensing/sensing.h>
 
 /**
- * @defgroup sensing_sensor Sensing Sensor API
- * @ingroup sensing
- * @defgroup sensing_sensor_callbacks Sensor Callbacks
- * @ingroup sensing_sensor
- */
-
-/**
- * @brief Sensing Sensor API
- * @addtogroup sensing_sensor
+ * @brief Interfaces to manipulate sensors in the sensing subsystem
+ * @defgroup sensing_sensor Sensors (Sensing)
+ * @ingroup sensing_api
  * @{
  */
 
@@ -390,7 +384,7 @@ extern const struct rtio_iodev_api __sensing_iodev_api;
 	SENSING_SENSORS_DT_DEFINE(DT_DRV_INST(inst), __VA_ARGS__)
 
 /**
- * @brief Get reporter handles	of a given sensor instance by sensor type.
+ * @brief Get reporter handles of a given sensor instance by sensor type.
  *
  * @param dev The sensor instance device structure.
  * @param type The given type, \ref SENSING_SENSOR_TYPE_ALL to get reporters
