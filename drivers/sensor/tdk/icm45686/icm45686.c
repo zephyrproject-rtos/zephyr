@@ -394,7 +394,7 @@ static int icm45686_init(const struct device *dev)
 
 #define ICM45686_INIT(inst)									   \
 												   \
-	RTIO_DEFINE(icm45686_rtio_ctx_##inst, 8, 8);						   \
+	RTIO_DEFINE(icm45686_rtio_ctx_##inst, 32, 32);						   \
 												   \
 	COND_CODE_1(DT_INST_ON_BUS(inst, i3c),							   \
 		    (I3C_DT_IODEV_DEFINE(icm45686_bus_##inst,					   \
