@@ -15,5 +15,5 @@ supported:
   - qspi
   - memc
   - usb_cdc
-  - usb_device
+  - usbd
 vendor: arduino
