@@ -140,22 +140,14 @@ static void icm45686_handle_event_actions(struct rtio *ctx,
 		buf_len_required += sizeof(struct icm45686_encoded_payload);
 	}
 
-	err = rtio_sqe_rx_buf(data->stream.iodev_sqe,
-			      buf_len_required,
-			      buf_len_required,
-			      (uint8_t **)&buf,
-			      &buf_len);
-	__ASSERT(err == 0, "Failed to acquire buffer (len: %d) for encoded data: %d. "
-			   "Please revisit RTIO queue sizing and look for "
-			   "bottlenecks during sensor data processing",
-			   buf_len_required, err);
-
-	/** Still throw an error even if asserts are off */
-	if (err) {
+	err = rtio_sqe_rx_buf(data->stream.iodev_sqe, buf_len_required, buf_len_required,
+			      (uint8_t **)&buf, &buf_len);
+	CHECKIF(err != 0) {
 		struct rtio_iodev_sqe *iodev_sqe = data->stream.iodev_sqe;
 
-		LOG_ERR("Failed to acquire buffer for encoded data: %d", err);
-
+		LOG_ERR("Failed to acquire buffer (len: %d) for encoded data: %d. Please revisit"
+			" RTIO queue sizing and look for bottlenecks during sensor data processing",
+			buf_len_required, err);
 		data->stream.iodev_sqe = NULL;
 		rtio_iodev_sqe_err(iodev_sqe, err);
 		return;
