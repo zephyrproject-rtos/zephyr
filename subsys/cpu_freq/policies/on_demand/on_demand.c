@@ -24,19 +24,25 @@ const struct pstate *soc_pstates[] = {
 int cpu_freq_policy_select_pstate(const struct pstate **pstate_out)
 {
 	int cpu_load;
+	int cpu_id = 0;
 
 	if (pstate_out == NULL) {
 		LOG_ERR("On-Demand Policy: pstate_out is NULL");
 		return -EINVAL;
 	}
 
-	cpu_load = cpu_load_get(0);
+#if defined(CONFIG_SMP)
+	/* The caller has already ensured that the CPU is fixed */
+	cpu_id = arch_curr_cpu()->id;
+#endif
+
+	cpu_load = cpu_load_get(cpu_id);
 	if (cpu_load < 0) {
 		LOG_ERR("Unable to retrieve CPU load");
 		return cpu_load;
 	}
 
-	LOG_DBG("Current CPU Load: %d%%", cpu_load);
+	LOG_DBG("CPU%d Load: %d%%", cpu_id, cpu_load);
 
 	for (int i = 0; i < ARRAY_SIZE(soc_pstates); i++) {
 		const struct pstate *state = soc_pstates[i];
