@@ -190,6 +190,39 @@ struct json_in_formatter_data {
 /* some temporary buffer space for format conversions */
 static char pt_buffer[42];
 
+#if defined(CONFIG_LWM2M_ASYNC_RESPONSES)
+static int backup_out_fmt_data(struct lwm2m_output_context *out, uint8_t *buf,
+			       size_t *buflen)
+{
+	if (out->user_data == NULL) {
+		return -ENOENT;
+	}
+
+	if (buf != NULL) {
+		if (*buflen < sizeof(struct json_out_formatter_data)) {
+			return -ENOMEM;
+		}
+
+		memcpy(buf, out->user_data, sizeof(struct json_out_formatter_data));
+	}
+
+	*buflen = sizeof(struct json_out_formatter_data);
+
+	return 0;
+}
+
+static int restore_out_fmt_data(struct lwm2m_output_context *out, uint8_t *buf)
+{
+	if (out->user_data == NULL) {
+		return -ENOENT;
+	}
+
+	memcpy(out->user_data, buf, sizeof(struct json_out_formatter_data));
+
+	return 0;
+}
+#endif /* defined(CONFIG_LWM2M_ASYNC_RESPONSES) */
+
 static int init_object_name_parameters(struct json_out_formatter_data *fd,
 				       struct lwm2m_obj_path *path)
 {
@@ -872,6 +905,10 @@ const struct lwm2m_writer json_writer = {
 	.put_time = put_time,
 	.put_bool = put_bool,
 	.put_objlnk = put_objlnk,
+#if defined(CONFIG_LWM2M_ASYNC_RESPONSES)
+	.backup_ctx = backup_out_fmt_data,
+	.restore_ctx = restore_out_fmt_data,
+#endif
 };
 
 const struct lwm2m_reader json_reader = {

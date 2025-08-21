@@ -637,6 +637,45 @@ cleanup:
 	return next;
 }
 
+#if defined(CONFIG_LWM2M_ASYNC_RESPONSES)
+
+static int64_t check_postponed_responses(struct lwm2m_ctx *ctx, const int64_t now)
+{
+	struct lwm2m_message *tmp, *msg;
+	int64_t next = INT64_MAX;
+	int ret;
+
+	lwm2m_registry_lock();
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&ctx->postponed_responses, msg, tmp, node) {
+		if (msg->postponed) {
+			continue;
+		}
+
+		ret = resume_postponed_response(ctx, msg);
+		if (ret == 0) {
+			next = now;
+		}
+	}
+
+	lwm2m_registry_unlock();
+
+	return next;
+}
+
+#else /* defined(CONFIG_LWM2M_ASYNC_RESPONSES) */
+
+static int64_t check_postponed_responses(struct lwm2m_ctx *ctx, const int64_t now)
+{
+	ARG_UNUSED(ctx);
+	ARG_UNUSED(now);
+
+	return INT64_MAX;
+}
+
+#endif /* defined(CONFIG_LWM2M_ASYNC_RESPONSES) */
+
+
 /**
  * @brief Check TX queue states as well as number or pending CoAP transmissions.
  *
@@ -855,6 +894,11 @@ static void socket_loop(void *p1, void *p2, void *p3)
 			}
 			if (lwm2m_rd_client_is_registred(ctx)) {
 				next_tx = check_notifications(ctx, now);
+				if (next_tx < next) {
+					next = next_tx;
+				}
+
+				next_tx = check_postponed_responses(ctx, now);
 				if (next_tx < next) {
 					next = next_tx;
 				}
