@@ -1738,7 +1738,7 @@ int bt_gatt_service_register(struct bt_gatt_service *svc)
 	if (IS_ENABLED(CONFIG_BT_SETTINGS) &&
 	    atomic_test_bit(gatt_flags, GATT_INITIALIZED) &&
 	    !atomic_test_bit(gatt_sc.flags, SC_LOAD)) {
-		LOG_ERR("Can't register service after init and before settings are loaded.");
+		LOG_DBG("Can't register service after init and before settings are loaded.");
 		return -EINVAL;
 	}
 
@@ -1842,7 +1842,7 @@ ssize_t bt_gatt_attr_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	}
 
 	if (value_len != 0U && value == NULL) {
-		LOG_WRN("value_len of %u provided for NULL value", value_len);
+		LOG_DBG("value_len of %u provided for NULL value", value_len);
 
 		return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
 	}
@@ -2540,7 +2540,7 @@ static int gatt_notify(struct bt_conn *conn, uint16_t handle,
 
 	/* Confirm that the connection has the correct level of security */
 	if (bt_gatt_check_perm(conn, params->attr, BT_GATT_PERM_READ_ENCRYPT_MASK)) {
-		LOG_WRN("Link is not encrypted");
+		LOG_DBG("Link is not encrypted");
 		return -EPERM;
 	}
 
@@ -2550,7 +2550,7 @@ static int gatt_notify(struct bt_conn *conn, uint16_t handle,
 		 * but follows its spirit.
 		 */
 		if (!bt_gatt_is_subscribed(conn, params->attr, BT_GATT_CCC_NOTIFY)) {
-			LOG_WRN("Device is not subscribed to characteristic");
+			LOG_DBG("Device is not subscribed to characteristic");
 			return -EINVAL;
 		}
 	}
@@ -2569,7 +2569,7 @@ static int gatt_notify(struct bt_conn *conn, uint16_t handle,
 	buf = bt_att_create_pdu(conn, BT_ATT_OP_NOTIFY,
 				sizeof(*nfy) + params->len);
 	if (!buf) {
-		LOG_WRN("No buffer available to send notification");
+		LOG_DBG("No buffer available to send notification");
 		return -ENOMEM;
 	}
 
@@ -2704,7 +2704,7 @@ static int gatt_indicate(struct bt_conn *conn, uint16_t handle,
 
 	/* Confirm that the connection has the correct level of security */
 	if (bt_gatt_check_perm(conn, params->attr, BT_GATT_PERM_READ_ENCRYPT_MASK)) {
-		LOG_WRN("Link is not encrypted");
+		LOG_DBG("Link is not encrypted");
 		return -EPERM;
 	}
 
@@ -2714,7 +2714,7 @@ static int gatt_indicate(struct bt_conn *conn, uint16_t handle,
 		 * but follows its spirit.
 		 */
 		if (!bt_gatt_is_subscribed(conn, params->attr, BT_GATT_CCC_INDICATE)) {
-			LOG_WRN("Device is not subscribed to characteristic");
+			LOG_DBG("Device is not subscribed to characteristic");
 			return -EINVAL;
 		}
 	}
@@ -2734,7 +2734,7 @@ static int gatt_indicate(struct bt_conn *conn, uint16_t handle,
 
 	buf = bt_att_create_pdu(conn, BT_ATT_OP_INDICATE, len);
 	if (!buf) {
-		LOG_WRN("No buffer available to send indication");
+		LOG_DBG("No buffer available to send indication");
 		bt_att_req_free(req);
 		return -ENOMEM;
 	}
@@ -2827,7 +2827,7 @@ static uint8_t notify_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 
 		/* Confirm that the connection has the correct level of security */
 		if (bt_gatt_check_perm(conn, attr, BT_GATT_PERM_READ_ENCRYPT_MASK)) {
-			LOG_WRN("Link is not encrypted");
+			LOG_DBG("Link %p is not encrypted", (void *)conn);
 			bt_conn_unref(conn);
 			continue;
 		}
@@ -3028,7 +3028,7 @@ static int gatt_notify_multiple_verify_params(struct bt_conn *conn,
 		if (bt_gatt_check_perm(conn, params[i].attr,
 				       BT_GATT_PERM_READ_ENCRYPT |
 				       BT_GATT_PERM_READ_AUTHEN)) {
-			LOG_WRN("Link is not encrypted");
+			LOG_DBG("Link %p is not encrypted", (void *)conn);
 			return -EPERM;
 		}
 
@@ -4754,7 +4754,7 @@ int bt_gatt_discover(struct bt_conn *conn,
 	case BT_GATT_DISCOVER_ATTRIBUTE:
 		return gatt_find_info(conn, params);
 	default:
-		LOG_ERR("Invalid discovery type: %u", params->type);
+		LOG_DBG("Invalid discovery type: %u", params->type);
 	}
 
 	return -EINVAL;
@@ -5140,7 +5140,7 @@ int bt_gatt_write_without_response_cb(struct bt_conn *conn, uint16_t handle,
 
 	write = net_buf_append_bytes(buf, length, data, K_NO_WAIT, NULL, NULL);
 	if (write != length) {
-		LOG_WRN("Unable to allocate length %u: only %zu written", length, write);
+		LOG_DBG("Unable to allocate length %u: only %zu written", length, write);
 		net_buf_unref(buf);
 		return -ENOMEM;
 	}
