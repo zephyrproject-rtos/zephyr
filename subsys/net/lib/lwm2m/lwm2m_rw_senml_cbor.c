@@ -127,6 +127,39 @@ static void clear_in_fmt_data(struct lwm2m_message *msg)
 	k_mutex_unlock(&fd_mtx);
 }
 
+#if defined(CONFIG_LWM2M_ASYNC_RESPONSES)
+static int backup_out_fmt_data(struct lwm2m_output_context *out, uint8_t *buf,
+			       size_t *buflen)
+{
+	if (out->user_data == NULL) {
+		return -ENOENT;
+	}
+
+	if (buf != NULL) {
+		if (*buflen < sizeof(struct cbor_out_fmt_data)) {
+			return -ENOMEM;
+		}
+
+		memcpy(buf, out->user_data, sizeof(struct cbor_out_fmt_data));
+	}
+
+	*buflen = sizeof(struct cbor_out_fmt_data);
+
+	return 0;
+}
+
+static int restore_out_fmt_data(struct lwm2m_output_context *out, uint8_t *buf)
+{
+	if (out->user_data == NULL) {
+		return -ENOENT;
+	}
+
+	memcpy(out->user_data, buf, sizeof(struct cbor_out_fmt_data));
+
+	return 0;
+}
+#endif /* defined(CONFIG_LWM2M_ASYNC_RESPONSES) */
+
 static int fmt_range_check(struct cbor_out_fmt_data *fd)
 {
 	if (fd->name_cnt >= CONFIG_LWM2M_RW_SENML_CBOR_RECORDS ||
@@ -812,6 +845,10 @@ const struct lwm2m_writer senml_cbor_writer = {
 	.put_opaque = put_opaque,
 	.put_objlnk = put_objlnk,
 	.put_data_timestamp = put_data_timestamp,
+#if defined(CONFIG_LWM2M_ASYNC_RESPONSES)
+	.backup_ctx = backup_out_fmt_data,
+	.restore_ctx = restore_out_fmt_data,
+#endif
 };
 
 const struct lwm2m_reader senml_cbor_reader = {

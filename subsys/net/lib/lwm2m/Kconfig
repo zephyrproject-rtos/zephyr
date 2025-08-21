@@ -142,6 +142,21 @@ config LWM2M_ENGINE_ALWAYS_REPORT_OBJ_VERSION
 	  a client 'can always attach Object Version Information'. Enable this configuration to
 	  always report all object versions.
 
+config LWM2M_ASYNC_RESPONSES
+	bool "Allow to send LwM2M responses asynchronously [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	depends on KERNEL_MEM_POOL
+	help
+	  Allows the application to defer request processing and send the response
+	  asynchronously, for example if the requested data is not available
+	  immediately. Note that this feature requires heap memory to be available
+	  to store the message processing context.
+
+config HEAP_MEM_POOL_ADD_SIZE_LWM2M
+	depends on LWM2M_ASYNC_RESPONSES
+	def_int 5120 if LWM2M_RW_SENML_CBOR_SUPPORT
+	def_int 512
+
 choice
 	prompt "Socket handling at idle state"
 
