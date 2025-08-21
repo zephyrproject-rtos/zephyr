@@ -78,6 +78,15 @@ static inline bool should_read_fifo(const struct sensor_read_config *read_cfg,
 	return false;
 }
 
+static inline bool should_read_all_fifo(const struct sensor_read_config *read_cfg)
+{
+	struct sensor_stream_trigger *trig_fifo_full = get_read_config_trigger(
+		read_cfg,
+		SENSOR_TRIG_FIFO_FULL);
+
+	return (trig_fifo_full && trig_fifo_full->opt == SENSOR_STREAM_DATA_INCLUDE);
+}
+
 static inline bool should_read_data(const struct sensor_read_config *read_cfg,
 				    uint8_t int_status)
 {
@@ -136,6 +145,7 @@ static void icm45686_handle_event_actions(struct rtio *ctx,
 {
 	const struct device *dev = (const struct device *)arg;
 	struct icm45686_data *data = dev->data;
+	const struct icm45686_config *cfg = dev->config;
 	const struct sensor_read_config *read_cfg = data->stream.iodev_sqe->sqe.iodev->data;
 	uint8_t int_status = data->stream.data.int_status;
 	int err;
@@ -143,10 +153,6 @@ static void icm45686_handle_event_actions(struct rtio *ctx,
 	data->stream.data.events.drdy = int_status & REG_INT1_STATUS0_DRDY(true);
 	data->stream.data.events.fifo_ths = int_status & REG_INT1_STATUS0_FIFO_THS(true);
 	data->stream.data.events.fifo_full = int_status & REG_INT1_STATUS0_FIFO_FULL(true);
-
-	__ASSERT(data->stream.data.fifo_count > 0 &&
-		 data->stream.data.fifo_count <= FIFO_COUNT_MAX_HIGH_RES,
-		 "Invalid fifo count: %d", data->stream.data.fifo_count);
 
 	struct icm45686_encoded_data *buf;
 	uint32_t buf_len;
@@ -156,7 +162,10 @@ static void icm45686_handle_event_actions(struct rtio *ctx,
 	 * this SQE. Only include more data if the associated trigger needs it.
 	 */
 	if (should_read_fifo(read_cfg, int_status)) {
-		buf_len_required += (data->stream.data.fifo_count *
+		size_t num_frames_to_read = should_read_all_fifo(read_cfg) ?
+					    FIFO_COUNT_MAX_HIGH_RES : cfg->settings.fifo_watermark;
+
+		buf_len_required += (num_frames_to_read *
 				     sizeof(struct icm45686_encoded_fifo_payload));
 	} else if (should_read_data(read_cfg, int_status)) {
 		buf_len_required += sizeof(struct icm45686_encoded_payload);
@@ -190,7 +199,8 @@ static void icm45686_handle_event_actions(struct rtio *ctx,
 		buf->header.accel_fs = ICM45686_DT_ACCEL_FS_32;
 		buf->header.gyro_fs = ICM45686_DT_GYRO_FS_4000;
 		buf->header.channels = 0x7F; /* Signal all channels are available */
-		buf->header.fifo_count = data->stream.data.fifo_count;
+		buf->header.fifo_count = should_read_all_fifo(read_cfg) ? FIFO_COUNT_MAX_HIGH_RES :
+					 cfg->settings.fifo_watermark;
 
 		err = icm45686_prep_reg_read_rtio_async(
 			&data->bus, REG_FIFO_DATA | REG_READ_BIT, (uint8_t *)&buf->fifo_payload,
@@ -294,7 +304,6 @@ static void icm45686_event_handler(const struct device *dev)
 
 	/** Prepare an asynchronous read of the INT status register */
 	struct rtio_sqe *read_sqe;
-	struct rtio_sqe *read_ct_sqe;
 
 	/** Directly read Status Register to determine what triggered the event */
 	err = icm45686_prep_reg_read_rtio_async(&data->bus, REG_INT1_STATUS0 | REG_READ_BIT,
@@ -305,19 +314,6 @@ static void icm45686_event_handler(const struct device *dev)
 		return;
 	}
 	read_sqe->flags |= RTIO_SQE_CHAINED;
-
-	/** Preemptively read FIFO count so we can decide on the next callback
-	 * how much FIFO data we'd read (if needed).
-	 */
-	err = icm45686_prep_reg_read_rtio_async(&data->bus, REG_FIFO_COUNT_0 | REG_READ_BIT,
-						(uint8_t *)&data->stream.data.fifo_count, 1,
-						&read_ct_sqe);
-	if (err < 0) {
-		LOG_ERR("Failed to prepare Fifo Count read: %d", err);
-		icm45686_stream_result(dev, -ENOMEM);
-		return;
-	}
-	read_ct_sqe->flags |= RTIO_SQE_CHAINED;
 
 	struct rtio_sqe *complete_sqe = rtio_sqe_acquire(data->bus.rtio.ctx);
 
