@@ -1,0 +1,82 @@
+# Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: Microchip USB G1 driver
+
+description: |
+  Microchip USB G1 driver bindings.
+
+  Group g1 USB driver supports following hardware peripherals:
+    - module name="USB" id="U2222" version="1.2.0"
+
+compatible: "microchip,usb-g1"
+
+include:
+  - name: usb-ep.yaml
+  - name: pinctrl-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  maximum-speed:
+    required: true
+
+  clocks:
+    required: true
+
+  clock-names:
+    required: true
+
+  nvm-calib:
+    type: phandle
+    required: true
+    description: |
+      Phandle to the NVM software calibration area containing the
+      factory-programmed USB pad calibration data.
+
+      The USB driver reads a calibration word from this memory region
+      and extracts individual calibration fields according to the
+      calib-mapping property.
+
+  calib-mapping:
+    type: array
+    required: true
+    description: |
+      Mapping entries describing how calibration values are extracted
+      from the NVM calibration word and written into the USB_PADCAL
+      register.
+
+      Each entry consists of four cells:
+
+        <dst_bit nvm_bit mask default>
+
+      where:
+
+        dst_bit
+          Bit offset of the calibration field in the USB_PADCAL register.
+
+        nvm_bit
+          Bit offset of the calibration value in the NVM calibration word.
+
+        mask
+          Bit mask defining the width of the calibration field.
+
+        default
+          Default value used when the extracted OTP value equals the mask,
+          indicating an invalid or unprogrammed calibration entry.
+
+      Multiple entries may be provided to configure all required USB pad
+      calibration fields.
+
+  calib-mapping-names:
+    type: string-array
+    description: |
+      Optional names of calibration fields corresponding one-to-one with
+      the entries in calib-mapping.
+
+      These names are intended for documentation and debugging only and
+      are not used by the driver.
