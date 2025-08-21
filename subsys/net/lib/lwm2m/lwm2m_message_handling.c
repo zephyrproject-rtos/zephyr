@@ -105,6 +105,9 @@ static int handle_request(struct coap_packet *request, struct lwm2m_message *msg
 static int lwm2m_error_response_init(struct lwm2m_message *msg, int result);
 static int lwm2m_message_allocate_pending_reply(struct lwm2m_message *msg);
 static int lwm2m_response_promote_to_con(struct lwm2m_message *msg);
+static int do_read_op(struct lwm2m_message *msg, uint16_t content_format);
+static int do_send_op(struct lwm2m_message *msg, uint16_t content_format,
+		      sys_slist_t *lwm2m_path_list);
 #if defined(CONFIG_LWM2M_COAP_BLOCK_TRANSFER)
 STATIC int build_msg_block_for_send(struct lwm2m_message *msg, uint16_t block_num,
 				    enum coap_block_size block_size);
@@ -221,7 +224,8 @@ static int save_postponed_request(struct lwm2m_message *response)
 	bool skip_copy = false;
 	int ret = 0;
 
-	if (response->in.in_cpkt->max_len > CONFIG_LWM2M_COAP_MAX_MSG_SIZE) {
+	if (!response->notification &&
+	    response->in.in_cpkt->max_len > CONFIG_LWM2M_COAP_MAX_MSG_SIZE) {
 		/* Request too large to store. */
 		return -EMSGSIZE;
 	}
@@ -235,6 +239,10 @@ static int save_postponed_request(struct lwm2m_message *response)
 
 	if (request == NULL) {
 		return -ENOMEM;
+	}
+
+	if (response->notification) {
+		skip_copy = true;
 	}
 
 	if (!skip_copy) {
@@ -274,8 +282,81 @@ static struct lwm2m_obj_path *get_postponed_resume_path(struct lwm2m_message *re
 	return &request->path;
 }
 
+static int resume_notify(struct lwm2m_ctx *ctx, struct lwm2m_message *notify)
+{
+	struct observe_node *obs;
+	bool obs_found = false;
+	int64_t now = k_uptime_get();
+	int ret;
+
+	lwm2m_registry_lock();
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&ctx->observer, obs, node) {
+		if (obs->active_notify == notify) {
+			obs_found = true;
+			break;
+		}
+	}
+
+	if (!obs_found) {
+		ret = -EINVAL;
+		goto out;
+	}
+
+	ret = lwm2m_message_allocate_pending_reply(notify);
+	if (ret < 0) {
+		goto out;
+	}
+
+	ret = generate_notify_message(ctx, obs, NULL);
+	if (ret < 0) {
+		goto out;
+	}
+
+	obs->event_timestamp =
+		engine_observe_shedule_next_event(obs, ctx->srv_obj_inst, now);
+	obs->last_timestamp = now;
+
+out:
+	lwm2m_registry_unlock();
+	return ret;
+}
+
+static int resume_response(struct lwm2m_ctx *ctx, struct lwm2m_message *request,
+			   struct lwm2m_message *response)
+{
+	int ret;
+
+	lwm2m_registry_lock();
+	/* process the response to this request */
+	ret = handle_request(&request->cpkt, response);
+	lwm2m_registry_unlock();
+	if (ret < 0) {
+		goto out;
+	}
+
+	if (response_is_postponed(response)) {
+		goto out;
+	}
+
+	ret = lwm2m_response_promote_to_con(response);
+	if (ret < 0) {
+		LOG_ERR("Failed to promote response to CON: %d", ret);
+		goto out;
+	}
+
+	ret = lwm2m_send_message_async(response);
+	if (ret < 0) {
+		LOG_ERR("Failed to send response (err: %d)", ret);
+	}
+
+out:
+	return ret;
+}
+
 int resume_postponed_response(struct lwm2m_ctx *client_ctx, struct lwm2m_message *response)
 {
+	/* In case of notification, a dummy request is still used as a metadata buffer. */
 	struct lwm2m_message *request = get_postponed_request(response);
 	struct lwm2m_obj_path resume_path;
 	int ret;
@@ -292,28 +373,15 @@ int resume_postponed_response(struct lwm2m_ctx *client_ctx, struct lwm2m_message
 	sys_slist_find_and_remove(&client_ctx->postponed_responses,
 				  &response->node);
 
-	lwm2m_registry_lock();
-	/* process the response to this request */
-	ret = handle_request(&request->cpkt, response);
-	lwm2m_registry_unlock();
-	if (ret < 0) {
-		goto out;
+	if (response->notification) {
+		ret = resume_notify(client_ctx, response);
+	} else {
+		ret = resume_response(client_ctx, request, response);
 	}
 
 	if (response_is_postponed(response)) {
 		client_ctx->processed_msg = NULL;
 		return -EAGAIN;
-	}
-
-	ret = lwm2m_response_promote_to_con(response);
-	if (ret < 0) {
-		LOG_ERR("Failed to promote response to CON: %d", ret);
-		goto out;
-	}
-
-	ret = lwm2m_send_message_async(response);
-	if (ret < 0) {
-		LOG_ERR("Failed to send response (err: %d)", ret);
 	}
 
 out:
@@ -357,6 +425,7 @@ void *lwm2m_response_postpone(struct lwm2m_ctx *client_ctx)
 		goto out_null;
 	}
 
+	/* In case of notification, a dummy request is still allocated as a metadata buffer. */
 	ret = save_postponed_request(response);
 	if (ret < 0) {
 		goto out_null;
@@ -366,7 +435,7 @@ void *lwm2m_response_postpone(struct lwm2m_ctx *client_ctx)
 
 	sys_slist_append(&client_ctx->postponed_responses, &response->node);
 
-	if (!response->acknowledged) {
+	if (!response->notification && !response->acknowledged) {
 		lwm2m_acknowledge(client_ctx);
 	}
 
@@ -3109,7 +3178,7 @@ resume_processing:
 				/* Composite Observation request & cancel handler */
 				r = lwm2m_engine_observation_handler(msg, observe, accept,
 									true);
-				if (r < 0) {
+				if (r < 0 && r != -EINPROGRESS) {
 					goto error;
 				}
 			}
@@ -3666,6 +3735,11 @@ int generate_notify_message(struct lwm2m_ctx *ctx, struct observe_node *obs, voi
 	cache_temp_info.entry_limit = 0;
 #endif
 
+	if (ctx->processed_msg != NULL && response_is_resuming(ctx->processed_msg)) {
+		msg = ctx->processed_msg;
+		goto resuming;
+	}
+
 	msg = lwm2m_get_message(ctx);
 	if (!msg) {
 		LOG_ERR("Unable to get a lwm2m message!");
@@ -3710,18 +3784,13 @@ msg_init:
 	msg->reply_cb = notify_message_reply_cb;
 	msg->message_timeout_cb = notify_message_timeout_cb;
 	msg->out.out_cpkt = &msg->cpkt;
+	msg->notification = true;
 
 	ret = lwm2m_init_message(msg);
 	if (ret < 0) {
 		LOG_ERR("Unable to init lwm2m message! (err: %d)", ret);
 		goto cleanup;
 	}
-#if defined(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)
-	msg->cache_info = &cache_temp_info;
-#endif
-
-	/* lwm2m_init_message() cleans the coap reply fields, so we assign our data here */
-	msg->reply->user_data = user_data;
 
 	/* each notification should increment the obs counter */
 	obs->counter++;
@@ -3731,6 +3800,16 @@ msg_init:
 		goto cleanup;
 	}
 
+	ctx->processed_msg = msg;
+
+resuming:
+#if defined(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)
+	msg->cache_info = &cache_temp_info;
+#endif
+
+	/* lwm2m_init_message() cleans the coap reply fields, so we assign our data here */
+	msg->reply->user_data = user_data;
+
 	/* set the output writer */
 	select_writer(&msg->out, obs->format);
 	if (obs->composite) {
@@ -3738,6 +3817,18 @@ msg_init:
 		ret = do_send_op(msg, obs->format, &obs->path_list);
 	} else {
 		ret = do_read_op(msg, obs->format);
+	}
+
+	ctx->processed_msg = NULL;
+
+	if (ret == -EINPROGRESS) {
+		obs->active_notify = msg;
+		obs->resource_update = false;
+#if defined(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)
+		msg->cache_info = NULL;
+#endif
+		lm2m_message_clear_allocations(msg);
+		return 0;
 	}
 
 	if (ret < 0) {

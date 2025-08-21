@@ -1713,6 +1713,9 @@ int do_send_op_senml_json(struct lwm2m_message *msg, sys_slist_t *lwm2m_path_lis
 	engine_set_out_user_data(&msg->out, &fd);
 
 	ret = lwm2m_perform_composite_read_op(msg, LWM2M_FORMAT_APP_SEML_JSON, lwm2m_path_list);
+	if (response_is_postponed(msg)) {
+		lwm2m_json_restore_quotes(msg);
+	}
 	engine_clear_out_user_data(&msg->out);
 
 	return ret;
