@@ -107,7 +107,7 @@ struct icm45686_stream {
 	struct gpio_callback cb;
 	const struct device *dev;
 	struct rtio_iodev_sqe *iodev_sqe;
-	atomic_t in_progress;
+	atomic_t state;
 	struct {
 		struct {
 			bool drdy : 1;
