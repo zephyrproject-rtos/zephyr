@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_DISKS_SDMMC_STM32_H_
-#define ZEPHYR_INCLUDE_DRIVERS_DISKS_SDMMC_STM32_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_DISK_SDMMC_STM32_H_
+#define ZEPHYR_INCLUDE_DRIVERS_DISK_SDMMC_STM32_H_
 
 #include <zephyr/device.h>
 #include <stdint.h>
@@ -28,4 +28,4 @@
  */
 void stm32_sdmmc_get_card_cid(const struct device *dev, uint32_t cid[4]);
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_DISKS_SDMMC_STM32_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_DISK_SDMMC_STM32_H_ */
