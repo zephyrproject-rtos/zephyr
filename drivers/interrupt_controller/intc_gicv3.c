@@ -673,6 +673,9 @@ static bool arm_gic_aff_matching(uint64_t gicr_aff, uint64_t aff)
 	uint64_t mask = BIT64_MASK(8);
 
 	return (gicr_aff & mask) == (aff & mask);
+#elif defined(CONFIG_ARM)
+	/* For ARM (AArch32), only compare aff2:aff1:aff0 (lower 24 bits) */
+	return (gicr_aff & 0xFFFFFF) == (aff & 0xFFFFFF);
 #else
 	return gicr_aff == aff;
 #endif
