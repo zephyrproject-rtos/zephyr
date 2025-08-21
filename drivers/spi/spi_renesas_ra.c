@@ -153,7 +153,23 @@ static int ra_spi_configure(const struct device *dev, const struct spi_config *c
 		data->fsp_config_extend.spi_clksyn = SPI_SSL_MODE_CLK_SYN;
 	} else {
 		data->fsp_config_extend.spi_clksyn = SPI_SSL_MODE_SPI;
-		data->fsp_config_extend.ssl_select = SPI_SSL_SELECT_SSL0;
+		switch (config->slave) {
+		case 0:
+			data->fsp_config_extend.ssl_select = SPI_SSL_SELECT_SSL0;
+			break;
+		case 1:
+			data->fsp_config_extend.ssl_select = SPI_SSL_SELECT_SSL1;
+			break;
+		case 2:
+			data->fsp_config_extend.ssl_select = SPI_SSL_SELECT_SSL2;
+			break;
+		case 3:
+			data->fsp_config_extend.ssl_select = SPI_SSL_SELECT_SSL3;
+			break;
+		default:
+			LOG_ERR("Invalid SSL");
+			return -EINVAL;
+		}
 	}
 
 	data->fsp_config.p_extend = &data->fsp_config_extend;
