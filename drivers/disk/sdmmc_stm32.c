@@ -8,7 +8,7 @@
 
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/disk.h>
-#include <zephyr/drivers/disks/sdmmc_stm32.h>
+#include <zephyr/drivers/disk/sdmmc_stm32.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
