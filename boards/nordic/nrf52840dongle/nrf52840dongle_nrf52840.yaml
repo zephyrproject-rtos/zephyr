@@ -9,7 +9,7 @@ toolchain:
   - gnuarmemb
 supported:
   - adc
-  - usb_device
+  - usbd
   - ble
   - pwm
   - spi

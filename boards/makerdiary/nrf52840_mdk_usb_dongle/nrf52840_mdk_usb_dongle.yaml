@@ -8,7 +8,7 @@ toolchain:
   - zephyr
   - gnuarmemb
 supported:
-  - usb_device
+  - usbd
   - ble
   - watchdog
   - counter
