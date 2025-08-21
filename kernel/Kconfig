@@ -297,6 +297,23 @@ endchoice # DYNAMIC_THREAD_PREFER
 
 endif # DYNAMIC_THREADS
 
+config VALIDATE_THREAD_STACK_POINTER
+	bool "Validate thread stack pointer limits"
+	depends on !DYNAMIC_THREAD_ALLOC && !KERNEL_COHERENCE
+	help
+	  Enable runtime validation of the stack pointer passed to the thread creation API.
+	  This check ensures that the pointer lies within the memory regions reserved for
+	  thread stacks .kernel_stacks for kernel threads and .user_stacks for user threads
+	  based on the thread type.
+
+	  This helps catch cases where manually allocated or incorrectly passed stack pointers
+	  do not conform to Zephyr’s expectations, such as those not defined using
+	  K_THREAD_STACK_DEFINE or K_KERNEL_STACK_DEFINE.
+
+	  This feature is not compatible with DYNAMIC_THREAD_ALLOC, as dynamically allocated stacks
+	  may originate from system heap and cannot be reliably validated against
+	  fixed memory sections.
+
 config SCHED_DUMB
 	bool "Simple linked-list ready queue"
 	select DEPRECATED

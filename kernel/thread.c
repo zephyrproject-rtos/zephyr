@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2010-2014 Wind River Systems, Inc.
+ * Copyright (c) 2025 Qualcomm Technologies, Inc. and/or its subsidiaries.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -792,6 +793,10 @@ k_tid_t z_impl_k_thread_create(struct k_thread *new_thread,
 			      int prio, uint32_t options, k_timeout_t delay)
 {
 	__ASSERT(!arch_is_in_isr(), "Threads may not be created in ISRs");
+
+#if CONFIG_VALIDATE_THREAD_STACK_POINTER
+	z_check_thread_stack(stack, stack_size, options);
+#endif
 
 	z_setup_new_thread(new_thread, stack, stack_size, entry, p1, p2, p3,
 			  prio, options, NULL);
