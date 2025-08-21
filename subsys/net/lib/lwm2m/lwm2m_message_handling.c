@@ -2783,6 +2783,23 @@ static int lwm2m_exec_handler(struct lwm2m_message *msg)
 		return -EINVAL;
 	}
 
+	if (response_is_resuming(msg)) {
+		struct lwm2m_obj_path *resume_path = get_postponed_resume_path(msg);
+
+		if (resume_path == NULL) {
+			LOG_ERR("Tried to resume w/o resume path set");
+			return -EINVAL;
+		}
+
+		if (lwm2m_obj_path_equal(&msg->path, resume_path)) {
+			/* Reached the place where we paused. */
+			ret = response_processing_resume(msg);
+			return ret;
+		} else {
+			return -EINVAL;
+		}
+	}
+
 	ret = path_to_objs(&msg->path, &obj_inst, NULL, &res, NULL);
 	if (ret < 0) {
 		return ret;
@@ -2791,7 +2808,22 @@ static int lwm2m_exec_handler(struct lwm2m_message *msg)
 	args = (uint8_t *)coap_packet_get_payload(msg->in.in_cpkt, &args_len);
 
 	if (res->execute_cb) {
-		return res->execute_cb(obj_inst->obj_inst_id, args, args_len);
+		ret = res->execute_cb(obj_inst->obj_inst_id, args, args_len);
+
+		if (response_is_postponed(msg)) {
+			struct lwm2m_message *request =
+					get_postponed_request(msg);
+
+			if (request == NULL) {
+				return -EINVAL;
+			}
+
+			request->path = msg->path;
+
+			return -EINPROGRESS;
+		}
+
+		return ret;
 	}
 
 	/* TODO: something else to handle for execute? */
