@@ -50,7 +50,8 @@ config PHY_MICROCHIP_KSZ8081
 	default y
 	depends on DT_HAS_MICROCHIP_KSZ8081_ENABLED
 	select MDIO
-	depends on GPIO
+	select GPIO if ($(dt_compat_any_has_prop,$(DT_COMPAT_MICROCHIP_KSZ8081),reset-gpios) || \
+			$(dt_compat_any_has_prop,$(DT_COMPAT_MICROCHIP_KSZ8081),int-gpios))
 	help
 	  Enable Microchip KSZ8081 Ethernet PHY Driver
 
@@ -59,7 +60,8 @@ config PHY_MICROCHIP_VSC8541
 	default y
 	depends on DT_HAS_MICROCHIP_VSC8541_ENABLED
 	select MDIO
-	depends on GPIO
+	select GPIO if ($(dt_compat_any_has_prop,$(DT_COMPAT_MICROCHIP_VSC8541),reset-gpios) || \
+			$(dt_compat_any_has_prop,$(DT_COMPAT_MICROCHIP_VSC8541),int-gpios))
 	help
 	  Enable Microchip VSC8541 Ethernet PHY Driver
 
@@ -68,7 +70,8 @@ config PHY_TI_DP83825
 	default y
 	depends on DT_HAS_TI_DP83825_ENABLED
 	select MDIO
-	depends on GPIO
+	select GPIO if ($(dt_compat_any_has_prop,$(DT_COMPAT_TI_DP83825),reset-gpios) || \
+			$(dt_compat_any_has_prop,$(DT_COMPAT_TI_DP83825),int-gpios))
 	help
 	  Enable TI DP83825 Ethernet PHY Driver
 
@@ -77,7 +80,8 @@ config PHY_TI_DP83867
 	default y
 	depends on DT_HAS_TI_DP83867_ENABLED
 	select MDIO
-	depends on GPIO
+	select GPIO if ($(dt_compat_any_has_prop,$(DT_COMPAT_TI_DP83867),reset-gpios) || \
+			$(dt_compat_any_has_prop,$(DT_COMPAT_TI_DP83867),int-gpios))
 	help
 	  Enable TI DP83867 Ethernet PHY Driver
 
@@ -86,8 +90,8 @@ config PHY_REALTEK_RTL8211F
 	default y
 	depends on DT_HAS_REALTEK_RTL8211F_ENABLED
 	select MDIO
-	depends on GPIO || (!$(dt_compat_any_has_prop,$(DT_COMPAT_REALTEK_RTL8211F),reset-gpios) && \
-			    !$(dt_compat_any_has_prop,$(DT_COMPAT_REALTEK_RTL8211F),int-gpios))
+	select GPIO if ($(dt_compat_any_has_prop,$(DT_COMPAT_REALTEK_RTL8211F),reset-gpios) || \
+			$(dt_compat_any_has_prop,$(DT_COMPAT_REALTEK_RTL8211F),int-gpios))
 	help
 	  Enable Realtek RTL8211F Ethernet PHY Driver
 
