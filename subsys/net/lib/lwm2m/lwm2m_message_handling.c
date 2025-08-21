@@ -815,11 +815,11 @@ void lwm2m_acknowledge(struct lwm2m_ctx *client_ctx)
 {
 	struct lwm2m_message *request;
 
-	if (client_ctx == NULL || client_ctx->processed_req == NULL) {
+	if (client_ctx == NULL || client_ctx->processed_msg == NULL) {
 		return;
 	}
 
-	request = (struct lwm2m_message *)client_ctx->processed_req;
+	request = (struct lwm2m_message *)client_ctx->processed_msg;
 
 	if (request->acknowledged) {
 		return;
@@ -2920,7 +2920,7 @@ void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, uint8_t *buf, uint16_t buf_
 		/* skip token generation by default */
 		msg->tkl = 0;
 
-		client_ctx->processed_req = msg;
+		client_ctx->processed_msg = msg;
 
 		lwm2m_registry_lock();
 		/* process the response to this request */
@@ -2939,7 +2939,7 @@ void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, uint8_t *buf, uint16_t buf_
 			}
 		}
 
-		client_ctx->processed_req = NULL;
+		client_ctx->processed_msg = NULL;
 		r = lwm2m_send_message_async(msg);
 		if (r < 0) {
 			LOG_ERR("Failed to send response (err: %d)", r);
