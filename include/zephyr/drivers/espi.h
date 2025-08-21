@@ -415,11 +415,17 @@ struct espi_evt_data_acpi {
 };
 
 /**
- * @brief Bit field definition of evt_data in struct espi_event for PVT.
+ * @brief Event data format for Private Channel (PVT) events.
+ *
+ * Event data (@ref espi_event.evt_data) for Private Channel (PVT) events, allowing to manipulate
+ * the raw event data as a bit field.
  */
 struct espi_evt_data_pvt {
+	/** Event type identifier */
 	uint32_t type: 8;
+	/** Event data payload */
 	uint32_t data: 8;
+	/** Reserved field for future use */
 	uint32_t reserved: 16;
 };
 
