@@ -748,7 +748,7 @@ static struct net_buf *bt_att_chan_create_pdu(struct bt_att_chan *chan, uint8_t 
 	/* This will reserve headspace for lower layers */
 	buf = bt_l2cap_create_pdu_timeout(&att_pool, 0, timeout);
 	if (!buf) {
-		LOG_ERR("Unable to allocate buffer for op 0x%02x", op);
+		LOG_DBG("Unable to allocate buffer for op 0x%02x", op);
 		return NULL;
 	}
 
@@ -831,6 +831,7 @@ static void send_err_rsp(struct bt_att_chan *chan, uint8_t req, uint16_t handle,
 
 	buf = bt_att_chan_create_pdu(chan, BT_ATT_OP_ERROR_RSP, sizeof(*rsp));
 	if (!buf) {
+		LOG_ERR("Unable to create err rsp PDU");
 		return;
 	}
 
@@ -2129,6 +2130,7 @@ static uint8_t att_write_rsp(struct bt_att_chan *chan, uint8_t req, uint8_t rsp,
 	if (rsp) {
 		data.buf = bt_att_chan_create_pdu(chan, rsp, 0);
 		if (!data.buf) {
+			LOG_ERR("Unable to create rsp PDU");
 			return BT_ATT_ERR_INSUFFICIENT_RESOURCES;
 		}
 	}
@@ -2720,6 +2722,7 @@ static uint8_t att_indicate(struct bt_att_chan *chan, struct net_buf *buf)
 
 	buf = bt_att_chan_create_pdu(chan, BT_ATT_OP_CONFIRM, 0);
 	if (!buf) {
+		LOG_ERR("Unable to create confirm PDU");
 		return 0;
 	}
 
@@ -3257,6 +3260,7 @@ static uint8_t att_req_retry(struct bt_att_chan *att_chan)
 
 	buf = bt_att_chan_create_pdu(att_chan, req->att_op, req->len);
 	if (!buf) {
+		LOG_ERR("Unable to create retry PDU (%u)", req->att_op);
 		return BT_ATT_ERR_UNLIKELY;
 	}
 
