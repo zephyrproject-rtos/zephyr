@@ -10,6 +10,7 @@
 #include <zephyr/drivers/sensor_clock.h>
 #include <zephyr/rtio/rtio.h>
 #include <zephyr/sys/atomic.h>
+#include <zephyr/sys/check.h>
 
 #if DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(invensense_icm45686, i3c)
 #include <zephyr/drivers/i3c.h>
@@ -17,6 +18,7 @@
 
 #include "icm45686.h"
 #include "icm45686_bus.h"
+#include "icm45686_reg.h"
 #include "icm45686_stream.h"
 
 #include <zephyr/logging/log.h>
@@ -169,20 +171,7 @@ static void icm45686_handle_event_actions(struct rtio *ctx,
 			     REG_INT1_STATUS0_FIFO_FULL(data->stream.data.events.fifo_full);
 
 	if (should_read_fifo(read_cfg, int_status)) {
-
-		struct rtio_sqe *data_wr_sqe = rtio_sqe_acquire(ctx);
-		struct rtio_sqe *data_rd_sqe = rtio_sqe_acquire(ctx);
-		uint8_t read_reg;
-
-		if (!data_wr_sqe || !data_rd_sqe) {
-			struct rtio_iodev_sqe *iodev_sqe = data->stream.iodev_sqe;
-
-			LOG_ERR("Failed to acquire RTIO SQEs");
-
-			data->stream.iodev_sqe = NULL;
-			rtio_iodev_sqe_err(iodev_sqe, -ENOMEM);
-			return;
-		}
+		struct rtio_sqe *data_rd_sqe;
 
 		/** In FIFO data, the scale is fixed, irrespective of
 		 * the configured settings.
@@ -192,101 +181,55 @@ static void icm45686_handle_event_actions(struct rtio *ctx,
 		buf->header.channels = 0x7F; /* Signal all channels are available */
 		buf->header.fifo_count = data->stream.data.fifo_count;
 
-		read_reg = REG_FIFO_DATA | REG_READ_BIT;
-		rtio_sqe_prep_tiny_write(data_wr_sqe,
-					 data->rtio.iodev,
-					 RTIO_PRIO_HIGH,
-					 &read_reg,
-					 1,
-					 NULL);
-		data_wr_sqe->flags |= RTIO_SQE_TRANSACTION;
-
-		rtio_sqe_prep_read(data_rd_sqe,
-				   data->rtio.iodev,
-				   RTIO_PRIO_HIGH,
-				   (uint8_t *)&buf->fifo_payload,
-				   (buf->header.fifo_count *
-				   sizeof(struct icm45686_encoded_fifo_payload)),
-				   NULL);
-		if (data->rtio.type == ICM45686_BUS_I2C) {
-			data_rd_sqe->iodev_flags |= RTIO_IODEV_I2C_STOP | RTIO_IODEV_I2C_RESTART;
-		} else if (data->rtio.type == ICM45686_BUS_I3C) {
-			data_rd_sqe->iodev_flags |= RTIO_IODEV_I3C_STOP | RTIO_IODEV_I3C_RESTART;
-		}
-		data_rd_sqe->flags |= RTIO_SQE_CHAINED;
-
-	} else if (should_flush_fifo(read_cfg, int_status)) {
-
-		struct rtio_sqe *write_sqe = rtio_sqe_acquire(ctx);
-
-		if (!write_sqe) {
+		err = icm45686_prep_reg_read_rtio_async(
+			&data->bus, REG_FIFO_DATA | REG_READ_BIT, (uint8_t *)&buf->fifo_payload,
+			buf->header.fifo_count * sizeof(struct icm45686_encoded_fifo_payload),
+			&data_rd_sqe);
+		if (err < 0) {
 			struct rtio_iodev_sqe *iodev_sqe = data->stream.iodev_sqe;
 
-			LOG_ERR("Failed to acquire RTIO SQE");
-
+			LOG_ERR("Failed to acquire RTIO SQEs");
 			data->stream.iodev_sqe = NULL;
 			rtio_iodev_sqe_err(iodev_sqe, -ENOMEM);
 			return;
 		}
+		data_rd_sqe->flags |= RTIO_SQE_CHAINED;
 
-		uint8_t write_reg[] = {
-			REG_FIFO_CONFIG2,
-			REG_FIFO_CONFIG2_FIFO_FLUSH(true) |
-			REG_FIFO_CONFIG2_FIFO_WM_GT_THS(true)
-		};
+	} else if (should_flush_fifo(read_cfg, int_status)) {
+		struct rtio_sqe *write_sqe;
+		uint8_t write_reg = REG_FIFO_CONFIG2_FIFO_FLUSH(true) |
+				    REG_FIFO_CONFIG2_FIFO_WM_GT_THS(true);
 
-		rtio_sqe_prep_tiny_write(write_sqe,
-					 data->rtio.iodev,
-					 RTIO_PRIO_HIGH,
-					 write_reg,
-					 sizeof(write_reg),
-					 NULL);
-		if (data->rtio.type == ICM45686_BUS_I2C) {
-			write_sqe->iodev_flags |= RTIO_IODEV_I2C_STOP;
-		} else if (data->rtio.type == ICM45686_BUS_I3C) {
-			write_sqe->iodev_flags |= RTIO_IODEV_I3C_STOP;
+		err = icm45686_prep_reg_write_rtio_async(&data->bus, REG_FIFO_CONFIG2, &write_reg,
+							 1, &write_sqe);
+		if (err < 0) {
+			struct rtio_iodev_sqe *iodev_sqe = data->stream.iodev_sqe;
+
+			LOG_ERR("Failed to acquire RTIO SQE");
+			data->stream.iodev_sqe = NULL;
+			rtio_iodev_sqe_err(iodev_sqe, -ENOMEM);
+			return;
 		}
 		write_sqe->flags |= RTIO_SQE_CHAINED;
 
 	} else if (should_read_data(read_cfg, int_status)) {
+		struct rtio_sqe *read_sqe;
 
 		buf->header.accel_fs = data->edata.header.accel_fs;
 		buf->header.gyro_fs = data->edata.header.gyro_fs;
 		buf->header.channels = 0x7F; /* Signal all channels are available */
 
-		struct rtio_sqe *write_sqe = rtio_sqe_acquire(ctx);
-		struct rtio_sqe *read_sqe = rtio_sqe_acquire(ctx);
-
-		if (!write_sqe || !read_sqe) {
+		err = icm45686_prep_reg_read_rtio_async(&data->bus,
+							REG_ACCEL_DATA_X1_UI | REG_READ_BIT,
+							buf->payload.buf, sizeof(buf->payload.buf),
+							&read_sqe);
+		if (err < 0) {
 			struct rtio_iodev_sqe *iodev_sqe = data->stream.iodev_sqe;
 
 			LOG_ERR("Failed to acquire RTIO SQEs");
-
 			data->stream.iodev_sqe = NULL;
 			rtio_iodev_sqe_err(iodev_sqe, -ENOMEM);
 			return;
-		}
-
-		uint8_t read_reg = REG_ACCEL_DATA_X1_UI | REG_READ_BIT;
-
-		rtio_sqe_prep_tiny_write(write_sqe,
-					 data->rtio.iodev,
-					 RTIO_PRIO_HIGH,
-					 &read_reg,
-					 1,
-					 NULL);
-		write_sqe->flags |= RTIO_SQE_TRANSACTION;
-
-		rtio_sqe_prep_read(read_sqe,
-				   data->rtio.iodev,
-				   RTIO_PRIO_HIGH,
-				   buf->payload.buf,
-				   sizeof(buf->payload.buf),
-				   NULL);
-		if (data->rtio.type == ICM45686_BUS_I2C) {
-			read_sqe->iodev_flags |= RTIO_IODEV_I2C_STOP | RTIO_IODEV_I2C_RESTART;
-		} else if (data->rtio.type == ICM45686_BUS_I3C) {
-			read_sqe->iodev_flags |= RTIO_IODEV_I3C_STOP | RTIO_IODEV_I3C_RESTART;
 		}
 		read_sqe->flags |= RTIO_SQE_CHAINED;
 	}
@@ -308,7 +251,6 @@ static void icm45686_handle_event_actions(struct rtio *ctx,
 		rtio_iodev_sqe_err(data->stream.iodev_sqe, -ENOMEM);
 		return;
 	}
-
 	rtio_sqe_prep_callback_no_cqe(cb_sqe,
 				      icm45686_complete_result,
 				      (void *)dev,
@@ -327,22 +269,15 @@ static void icm45686_event_handler(const struct device *dev)
 	if (!data->stream.iodev_sqe ||
 	    FIELD_GET(RTIO_SQE_CANCELED, data->stream.iodev_sqe->sqe.flags)) {
 		LOG_WRN("Callback triggered with no streaming submission - Disabling interrupts");
-
-		struct rtio_sqe *write_sqe = rtio_sqe_acquire(data->rtio.ctx);
-		uint8_t wr_data[] = {REG_INT1_CONFIG0, 0x00};
-
-		rtio_sqe_prep_tiny_write(write_sqe,
-					 data->rtio.iodev,
-					 RTIO_PRIO_HIGH,
-					 wr_data,
-					 sizeof(wr_data),
-					 NULL);
-		if (data->rtio.type == ICM45686_BUS_I2C) {
-			write_sqe->iodev_flags |= RTIO_IODEV_I2C_STOP;
-		} else if (data->rtio.type == ICM45686_BUS_I3C) {
-			write_sqe->iodev_flags |= RTIO_IODEV_I3C_STOP;
+		err = icm45686_prep_reg_write_rtio_async(&data->bus, REG_INT1_CONFIG0, &val, 1,
+							 NULL);
+		if (err < 0) {
+			LOG_ERR("Failed to prepare write to disable interrupts: %d", err);
+			rtio_sqe_drop_all(data->bus.rtio.ctx);
+			data->stream.iodev_sqe = NULL;
+			return;
 		}
-		rtio_submit(data->rtio.ctx, 0);
+		rtio_submit(data->bus.rtio.ctx, 0);
 
 		data->stream.settings.enabled.drdy = false;
 		data->stream.settings.enabled.fifo_ths = false;
@@ -367,77 +302,55 @@ static void icm45686_event_handler(const struct device *dev)
 	data->stream.data.timestamp = sensor_clock_cycles_to_ns(cycles);
 
 	/** Prepare an asynchronous read of the INT status register */
-	struct rtio_sqe *write_sqe = rtio_sqe_acquire(data->rtio.ctx);
-	struct rtio_sqe *read_sqe = rtio_sqe_acquire(data->rtio.ctx);
-	struct rtio_sqe *write_fifo_ct_sqe = rtio_sqe_acquire(data->rtio.ctx);
-	struct rtio_sqe *read_fifo_ct_sqe = rtio_sqe_acquire(data->rtio.ctx);
-	struct rtio_sqe *complete_sqe = rtio_sqe_acquire(data->rtio.ctx);
+	struct rtio_sqe *read_sqe;
+	struct rtio_sqe *read_ct_sqe;
 
-	if (!write_sqe || !read_sqe || !complete_sqe) {
+	/** Directly read Status Register to determine what triggered the event */
+	err = icm45686_prep_reg_read_rtio_async(&data->bus, REG_INT1_STATUS0 | REG_READ_BIT,
+						&data->stream.data.int_status, 1, &read_sqe);
+	if (err < 0) {
 		struct rtio_iodev_sqe *iodev_sqe = data->stream.iodev_sqe;
 
-		LOG_ERR("Failed to acquire RTIO SQEs");
-
+		LOG_ERR("Failed to prepare Status-reg read: %d", err);
 		data->stream.iodev_sqe = NULL;
 		rtio_iodev_sqe_err(iodev_sqe, -ENOMEM);
 		return;
 	}
-
-	/** Directly read Status Register to determine what triggered the event */
-	val = REG_INT1_STATUS0 | REG_READ_BIT;
-	rtio_sqe_prep_tiny_write(write_sqe,
-				 data->rtio.iodev,
-				 RTIO_PRIO_HIGH,
-				 &val,
-				 1,
-				 NULL);
-	write_sqe->flags |= RTIO_SQE_TRANSACTION;
-
-	rtio_sqe_prep_read(read_sqe,
-			   data->rtio.iodev,
-			   RTIO_PRIO_HIGH,
-			   &data->stream.data.int_status,
-			   1,
-			   NULL);
-	if (data->rtio.type == ICM45686_BUS_I2C) {
-		read_sqe->iodev_flags |= RTIO_IODEV_I2C_STOP | RTIO_IODEV_I2C_RESTART;
-	} else if (data->rtio.type == ICM45686_BUS_I3C) {
-		read_sqe->iodev_flags |= RTIO_IODEV_I3C_STOP | RTIO_IODEV_I3C_RESTART;
-	}
 	read_sqe->flags |= RTIO_SQE_CHAINED;
-
 
 	/** Preemptively read FIFO count so we can decide on the next callback
 	 * how much FIFO data we'd read (if needed).
 	 */
-	val = REG_FIFO_COUNT_0 | REG_READ_BIT;
-	rtio_sqe_prep_tiny_write(write_fifo_ct_sqe,
-				 data->rtio.iodev,
-				 RTIO_PRIO_HIGH,
-				 &val,
-				 1,
-				 NULL);
-	write_fifo_ct_sqe->flags |= RTIO_SQE_TRANSACTION;
+	err = icm45686_prep_reg_read_rtio_async(&data->bus, REG_FIFO_COUNT_0 | REG_READ_BIT,
+						(uint8_t *)&data->stream.data.fifo_count, 1,
+						&read_ct_sqe);
+	if (err < 0) {
+		struct rtio_iodev_sqe *iodev_sqe = data->stream.iodev_sqe;
 
-	rtio_sqe_prep_read(read_fifo_ct_sqe,
-			   data->rtio.iodev,
-			   RTIO_PRIO_HIGH,
-			   (uint8_t *)&data->stream.data.fifo_count,
-			   2,
-			   NULL);
-	if (data->rtio.type == ICM45686_BUS_I2C) {
-		read_fifo_ct_sqe->iodev_flags |= RTIO_IODEV_I2C_STOP | RTIO_IODEV_I2C_RESTART;
-	} else if (data->rtio.type == ICM45686_BUS_I3C) {
-		read_fifo_ct_sqe->iodev_flags |= RTIO_IODEV_I3C_STOP | RTIO_IODEV_I3C_RESTART;
+		LOG_ERR("Failed to prepare Fifo Count read: %d", err);
+		data->stream.iodev_sqe = NULL;
+		rtio_iodev_sqe_err(iodev_sqe, -ENOMEM);
+		return;
 	}
-	read_fifo_ct_sqe->flags |= RTIO_SQE_CHAINED;
+	read_ct_sqe->flags |= RTIO_SQE_CHAINED;
 
+	struct rtio_sqe *complete_sqe = rtio_sqe_acquire(data->bus.rtio.ctx);
+
+	if (!complete_sqe) {
+		struct rtio_iodev_sqe *iodev_sqe = data->stream.iodev_sqe;
+
+		LOG_ERR("Failed to acquire complete_sqe");
+		rtio_sqe_drop_all(data->bus.rtio.ctx);
+		data->stream.iodev_sqe = NULL;
+		rtio_iodev_sqe_err(iodev_sqe, -ENOMEM);
+		return;
+	}
 	rtio_sqe_prep_callback_no_cqe(complete_sqe,
 				      icm45686_handle_event_actions,
 				      (void *)dev,
 				      data->stream.iodev_sqe);
 
-	rtio_submit(data->rtio.ctx, 0);
+	rtio_submit(data->bus.rtio.ctx, 0);
 }
 
 #if DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(invensense_icm45686, i3c)
@@ -531,7 +444,7 @@ void icm45686_stream_submit(const struct device *dev,
 		data->stream.settings = stream.settings;
 
 		/* Disable all interrupts before re-configuring */
-		err = icm45686_bus_write(dev, REG_INT1_CONFIG0, &val, 1);
+		err = icm45686_reg_write_rtio(&data->bus, REG_INT1_CONFIG0, &val, 1);
 		if (err) {
 			LOG_ERR("Failed to disable interrupts on INT1_CONFIG0: %d", err);
 			data->stream.iodev_sqe = NULL;
@@ -540,7 +453,7 @@ void icm45686_stream_submit(const struct device *dev,
 		}
 
 		/* Read flags to clear them */
-		err = icm45686_bus_read(dev, REG_INT1_STATUS0, &val, 1);
+		err = icm45686_reg_read_rtio(&data->bus, REG_INT1_STATUS0 | REG_READ_BIT, &val, 1);
 		if (err) {
 			LOG_ERR("Failed to read INT1_STATUS0: %d", err);
 			data->stream.iodev_sqe = NULL;
@@ -552,7 +465,7 @@ void icm45686_stream_submit(const struct device *dev,
 		      REG_FIFO_CONFIG3_FIFO_ACCEL_EN(false) |
 		      REG_FIFO_CONFIG3_FIFO_GYRO_EN(false) |
 		      REG_FIFO_CONFIG3_FIFO_HIRES_EN(false);
-		err = icm45686_bus_write(dev, REG_FIFO_CONFIG3, &val, 1);
+		err = icm45686_reg_write_rtio(&data->bus, REG_FIFO_CONFIG3, &val, 1);
 		if (err) {
 			LOG_ERR("Failed to disable all FIFO settings: %d", err);
 			data->stream.iodev_sqe = NULL;
@@ -563,7 +476,7 @@ void icm45686_stream_submit(const struct device *dev,
 		val = REG_INT1_CONFIG0_STATUS_EN_DRDY(data->stream.settings.enabled.drdy) |
 		      REG_INT1_CONFIG0_STATUS_EN_FIFO_THS(data->stream.settings.enabled.fifo_ths) |
 		      REG_INT1_CONFIG0_STATUS_EN_FIFO_FULL(data->stream.settings.enabled.fifo_full);
-		err = icm45686_bus_write(dev, REG_INT1_CONFIG0, &val, 1);
+		err = icm45686_reg_write_rtio(&data->bus, REG_INT1_CONFIG0, &val, 1);
 		if (err) {
 			LOG_ERR("Failed to configure INT1_CONFIG0: %d", err);
 			data->stream.iodev_sqe = NULL;
@@ -573,7 +486,7 @@ void icm45686_stream_submit(const struct device *dev,
 
 		val = REG_FIFO_CONFIG0_FIFO_MODE(REG_FIFO_CONFIG0_FIFO_MODE_BYPASS) |
 		      REG_FIFO_CONFIG0_FIFO_DEPTH(REG_FIFO_CONFIG0_FIFO_DEPTH_2K);
-		err = icm45686_bus_write(dev, REG_FIFO_CONFIG0, &val, 1);
+		err = icm45686_reg_write_rtio(&data->bus, REG_FIFO_CONFIG0, &val, 1);
 		if (err) {
 			LOG_ERR("Failed to disable FIFO: %d", err);
 			data->stream.iodev_sqe = NULL;
@@ -588,7 +501,7 @@ void icm45686_stream_submit(const struct device *dev,
 
 			val = REG_FIFO_CONFIG2_FIFO_WM_GT_THS(true) |
 			      REG_FIFO_CONFIG2_FIFO_FLUSH(true);
-			err = icm45686_bus_write(dev, REG_FIFO_CONFIG2, &val, 1);
+			err = icm45686_reg_write_rtio(&data->bus, REG_FIFO_CONFIG2, &val, 1);
 			if (err) {
 				LOG_ERR("Failed to configure greater-than FIFO threshold: %d", err);
 				data->stream.iodev_sqe = NULL;
@@ -596,7 +509,8 @@ void icm45686_stream_submit(const struct device *dev,
 				return;
 			}
 
-			err = icm45686_bus_write(dev, REG_FIFO_CONFIG1_0, (uint8_t *)&fifo_ths, 2);
+			err = icm45686_reg_write_rtio(&data->bus, REG_FIFO_CONFIG1_0,
+						      (uint8_t *)&fifo_ths, 2);
 			if (err) {
 				LOG_ERR("Failed to configure FIFO watermark: %d", err);
 				data->stream.iodev_sqe = NULL;
@@ -606,7 +520,7 @@ void icm45686_stream_submit(const struct device *dev,
 
 			val = REG_FIFO_CONFIG0_FIFO_MODE(REG_FIFO_CONFIG0_FIFO_MODE_STREAM) |
 			      REG_FIFO_CONFIG0_FIFO_DEPTH(REG_FIFO_CONFIG0_FIFO_DEPTH_2K);
-			err = icm45686_bus_write(dev, REG_FIFO_CONFIG0, &val, 1);
+			err = icm45686_reg_write_rtio(&data->bus, REG_FIFO_CONFIG0, &val, 1);
 			if (err) {
 				LOG_ERR("Failed to disable FIFO: %d", err);
 				data->stream.iodev_sqe = NULL;
@@ -618,7 +532,7 @@ void icm45686_stream_submit(const struct device *dev,
 			      REG_FIFO_CONFIG3_FIFO_ACCEL_EN(true) |
 			      REG_FIFO_CONFIG3_FIFO_GYRO_EN(true) |
 			      REG_FIFO_CONFIG3_FIFO_HIRES_EN(true);
-			err = icm45686_bus_write(dev, REG_FIFO_CONFIG3, &val, 1);
+			err = icm45686_reg_write_rtio(&data->bus, REG_FIFO_CONFIG3, &val, 1);
 			if (err) {
 				LOG_ERR("Failed to enable FIFO: %d", err);
 				data->stream.iodev_sqe = NULL;
@@ -669,7 +583,7 @@ int icm45686_stream_init(const struct device *dev)
 			LOG_ERR("Failed to configure interrupt");
 		}
 
-		err = icm45686_bus_write(dev, REG_INT1_CONFIG0, &val, 1);
+		err = icm45686_reg_write_rtio(&data->bus, REG_INT1_CONFIG0, &val, 1);
 		if (err) {
 			LOG_ERR("Failed to disable all INTs");
 		}
@@ -677,7 +591,7 @@ int icm45686_stream_init(const struct device *dev)
 		val = REG_INT1_CONFIG2_EN_OPEN_DRAIN(false) |
 		      REG_INT1_CONFIG2_EN_ACTIVE_HIGH(true);
 
-		err = icm45686_bus_write(dev, REG_INT1_CONFIG2, &val, 1);
+		err = icm45686_reg_write_rtio(&data->bus, REG_INT1_CONFIG2, &val, 1);
 		if (err) {
 			LOG_ERR("Failed to configure INT as push-pull: %d", err);
 		}
