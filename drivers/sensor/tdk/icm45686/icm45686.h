@@ -126,7 +126,6 @@ struct icm45686_stream {
 	struct {
 		uint64_t timestamp;
 		uint8_t int_status;
-		uint16_t fifo_count;
 		struct {
 			bool drdy : 1;
 			bool fifo_ths : 1;
