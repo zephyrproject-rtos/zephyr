@@ -3,6 +3,7 @@ board:
   full_name: ROC-RK3588-PC (Quad-core Cortex-A55)
   vendor: firefly
   socs:
-  - name: rk3588
+  - name: rk3588_aarch64
     variants:
     - name: smp
+  - name: rk3588_aarch32

@@ -5,5 +5,14 @@ config SOC_RK3588
 	bool
 	select SOC_SERIES_RK35
 
+config SOC_RK3588_AARCH64
+	bool
+	select SOC_RK3588
+
+config SOC_RK3588_AARCH32
+	bool
+	select SOC_RK3588
+
 config SOC
-	default "rk3588" if SOC_RK3588
+	default "rk3588_aarch32" if SOC_RK3588_AARCH32
+	default "rk3588_aarch64" if SOC_RK3588_AARCH64
