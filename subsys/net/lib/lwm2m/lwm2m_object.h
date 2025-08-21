@@ -524,6 +524,9 @@ struct lwm2m_message {
 	/** Indicate that this is part of outgoing block transfer. */
 	bool block_send : 1;
 
+	/** Indicate that the message is a notification. */
+	bool notification : 1;
+
 #if defined(CONFIG_LWM2M_ASYNC_RESPONSES)
 	/** Indicate that the processing of this message has been postponed. */
 	bool postponed : 1;
