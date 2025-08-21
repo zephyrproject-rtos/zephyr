@@ -79,6 +79,16 @@
 		};
 	};
 
+	/*
+	 * Temporary revert of pinctrl-0 definition for stm3wba65
+	 * to fix issue on stm32wba5x based boards
+	 */
+	swj_port: swj_port {
+		pinctrl-0 = <&debug_jtms_swdio_pa13 &debug_jtck_swclk_pa14
+			     &debug_jtdi_pa15 &debug_jtdo_swo_pb3
+			     &debug_njtrst_pb4>;
+	};
+
 	die_temp: dietemp {
 		ts-cal1-addr = <0x0BFA0710>;
 		ts-cal2-addr = <0x0BFA0742>;
