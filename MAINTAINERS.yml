@@ -1643,7 +1643,6 @@ Documentation Infrastructure:
     - include/zephyr/drivers/gnss/
     - include/zephyr/gnss/
     - dts/bindings/gnss/
-    - include/zephyr/dt-bindings/gnss/
     - tests/drivers/build_all/gnss/
     - tests/drivers/gnss/
     - tests/subsys/gnss/
