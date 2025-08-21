@@ -222,12 +222,12 @@ struct lwm2m_ctx {
 	struct k_mutex lock;
 	/** @endcond */
 
-	/** A pointer to currently processed request, for internal LwM2M engine
+	/** A pointer to currently processed message, for internal LwM2M engine
 	 *  use. The underlying type is ``struct lwm2m_message``, but since it's
 	 *  declared in a private header and not exposed to the application,
 	 *  it's stored as a void pointer.
 	 */
-	void *processed_req;
+	void *processed_msg;
 
 #if defined(CONFIG_LWM2M_DTLS_SUPPORT) || defined(__DOXYGEN__)
 	/**
