@@ -9,12 +9,11 @@
 
 /**
  * @defgroup sensing Sensing
- * @defgroup sensing_api Sensing Subsystem API
- * @ingroup sensing
- * @defgroup sensing_sensor_types Sensor Types
- * @ingroup sensing
- * @defgroup sensing_datatypes Data Types
- * @ingroup sensing
+ * @brief High-level sensor framework.
+ * @ingroup os_services
+ *
+ * The Sensing subsystem provides a high-level API for applications to discover sensors, open sensor
+ * instances, configure reporting behavior, and receive sampled data via callbacks.
  */
 
 #include <zephyr/sensing/sensing_datatypes.h>
@@ -22,15 +21,15 @@
 #include <zephyr/device.h>
 
 /**
- * @brief Sensing Subsystem API
- * @addtogroup sensing_api
+ * @defgroup sensing_api Sensing Subsystem API
+ * @ingroup sensing
+ * @brief Public APIs for applications using the Sensing subsystem.
  * @{
  */
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
 
 /**
  * @struct sensing_sensor_version

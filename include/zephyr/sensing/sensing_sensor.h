@@ -13,15 +13,9 @@
 #include <zephyr/sensing/sensing.h>
 
 /**
+ * @brief Sensing Sensor API
  * @defgroup sensing_sensor Sensing Sensor API
  * @ingroup sensing
- * @defgroup sensing_sensor_callbacks Sensor Callbacks
- * @ingroup sensing_sensor
- */
-
-/**
- * @brief Sensing Sensor API
- * @addtogroup sensing_sensor
  * @{
  */
 
