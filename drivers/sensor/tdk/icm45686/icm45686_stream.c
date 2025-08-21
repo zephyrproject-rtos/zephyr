@@ -242,6 +242,7 @@ static void icm45686_handle_event_actions(struct rtio *ctx,
 
 	if (!cb_sqe) {
 		LOG_ERR("Failed to acquire RTIO SQE for completion callback");
+		rtio_sqe_drop_all(data->bus.rtio.ctx);
 		icm45686_stream_result(dev, -ENOMEM);
 		return;
 	}
