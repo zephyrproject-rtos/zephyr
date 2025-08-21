@@ -117,8 +117,6 @@ static void icm45686_complete_result(struct rtio *ctx,
 	struct rtio_cqe *cqe;
 	int err = 0;
 
-	memset(&data->stream.data, 0, sizeof(data->stream.data));
-
 	do {
 		cqe = rtio_cqe_consume(ctx);
 		if (cqe != NULL) {
