@@ -1,0 +1,32 @@
+# Copyright (c) 2025 Muhmmad Waleed Badar
+#
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+config TEST_IRQ_NUM
+	int "Test IRQ number"
+	default 42 if BOARD_QEMU_CORTEX_M3
+	default 14 if GIC
+	default 22 if SOC_SERIES_DA1469X
+	default 18 if SOC_SERIES_STM32C0X
+	default 0
+	help
+	  IRQ number to use for testing purposes. This should be an
+	  available/unused IRQ on the target platform.
+
+	  Platform-specific defaults:
+	  - QEMU Cortex-M3: 42 (available test IRQ)
+	  - GIC platforms: 14 (available test SGI - Software Generated Interrupt)
+	  - DA1469X series: 22 (available test IRQ)
+	  - STM32C0X series: 18 (available test IRQ)
+	  - Other platforms: 0 (magic config value to select the last IRQ: NUM_IRQS - 1)
+
+config TEST_IRQ_PRIO
+	int "Test IRQ priority"
+	default 160 if GIC
+	default 1
+	help
+	  Platform-specific defaults:
+	  - GIC platforms: IRQ_DEFAULT_PRIORITY (system default)
+	  - Other platforms: 1 (high priority for testing)
