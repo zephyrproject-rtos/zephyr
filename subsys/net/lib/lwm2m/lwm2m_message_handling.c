@@ -1450,6 +1450,8 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst, struct lwm2m_eng
 			struct lwm2m_engine_res_inst *res_inst,
 			struct lwm2m_engine_obj_field *obj_field, struct lwm2m_message *msg)
 {
+	struct lwm2m_obj_path *resume_path = NULL;
+	struct lwm2m_obj_path temp_path;
 	void *data_ptr = NULL;
 	size_t data_len = 0;
 	size_t len = 0;
@@ -1469,6 +1471,39 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst, struct lwm2m_eng
 
 	if (LWM2M_HAS_RES_FLAG(res_inst, LWM2M_RES_DATA_FLAG_RO)) {
 		return -EACCES;
+	}
+
+	temp_path.obj_id = obj_inst->obj->obj_id;
+	temp_path.obj_inst_id = obj_inst->obj_inst_id;
+	temp_path.res_id = obj_field->res_id;
+	if (res->multi_res_inst) {
+		temp_path.res_inst_id = res_inst->res_inst_id;
+		temp_path.level = LWM2M_PATH_LEVEL_RESOURCE_INST;
+	} else {
+		temp_path.res_inst_id = 0;
+		temp_path.level = LWM2M_PATH_LEVEL_RESOURCE;
+	}
+
+	if (response_is_resuming(msg)) {
+		resume_path = get_postponed_resume_path(msg);
+		if (resume_path == NULL) {
+			LOG_ERR("Tried to resume w/o resume path set");
+			return -EINVAL;
+		}
+
+		if (lwm2m_obj_path_equal(&temp_path, resume_path)) {
+			/* Reached the place where we paused. */
+			ret = response_processing_resume(msg);
+			if (ret < 0) {
+				return ret;
+			}
+
+			ret = -EALREADY;
+
+			goto resuming;
+		} else {
+			return -EALREADY;
+		}
 	}
 
 	/* setup initial data elements */
@@ -1672,6 +1707,17 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst, struct lwm2m_eng
 			ret = res->post_write_cb(obj_inst->obj_inst_id, res->res_id,
 						 res_inst->res_inst_id, data_ptr, len, last_block,
 						 total_size, offset);
+			if (response_is_postponed(msg)) {
+				struct lwm2m_message *request =
+						get_postponed_request(msg);
+				if (request == NULL) {
+					return -EINVAL;
+				}
+
+				request->path = temp_path;
+
+				ret = -EINPROGRESS;
+			}
 		}
 	}
 
@@ -1681,7 +1727,8 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst, struct lwm2m_eng
 
 	res_inst->data_len = len;
 
-	if (LWM2M_HAS_PERM(obj_field, LWM2M_PERM_R)) {
+resuming:
+	if (!response_is_postponed(msg) && LWM2M_HAS_PERM(obj_field, LWM2M_PERM_R)) {
 		lwm2m_notify_observer_path(&msg->path);
 	}
 
@@ -2533,6 +2580,11 @@ static int parse_write_op(struct lwm2m_message *msg, uint16_t format)
 	/* Check for block transfer */
 	block_opt = coap_get_option_int(msg->in.in_cpkt, COAP_OPTION_BLOCK1);
 	if (block_opt > 0) {
+		if (response_is_resuming(msg)) {
+			block_ctx = msg->in.block_ctx;
+			goto resuming;
+		}
+
 		last_block = !GET_MORE(block_opt);
 
 		/* RFC7252: 4.6. Message Size */
@@ -2595,7 +2647,11 @@ static int parse_write_op(struct lwm2m_message *msg, uint16_t format)
 		block_ctx->expected++;
 	}
 
+resuming:
 	r = do_write_op(msg, format);
+	if (r == -EINPROGRESS) {
+		return r;
+	}
 
 	/* Handle blockwise 1 (Part 2): Append BLOCK1 option / free context */
 	if (block_ctx) {
