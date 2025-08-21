@@ -94,18 +94,42 @@ static inline bool should_read_data(const struct sensor_read_config *read_cfg,
 	return false;
 }
 
+static inline void icm45686_stream_result(const struct device *dev,
+					  int result)
+{
+	struct icm45686_data *data = dev->data;
+	struct rtio_iodev_sqe *iodev_sqe = data->stream.iodev_sqe;
+
+	data->stream.iodev_sqe = NULL;
+
+	if (result < 0) {
+		rtio_iodev_sqe_err(iodev_sqe, result);
+	} else {
+		rtio_iodev_sqe_ok(iodev_sqe, 0);
+	}
+}
+
 static void icm45686_complete_result(struct rtio *ctx,
 				     const struct rtio_sqe *sqe,
 				     void *arg)
 {
 	const struct device *dev = (const struct device *)arg;
-	struct icm45686_data *data = dev->data;
-
-	struct rtio_iodev_sqe *iodev_sqe = data->stream.iodev_sqe;
+	struct rtio_cqe *cqe;
+	int err = 0;
 
 	memset(&data->stream.data, 0, sizeof(data->stream.data));
 
-	rtio_iodev_sqe_ok(iodev_sqe, 0);
+	do {
+		cqe = rtio_cqe_consume(ctx);
+		if (cqe != NULL) {
+			if (err == 0) {
+				err = cqe->result;
+			}
+			rtio_cqe_release(ctx, cqe);
+		}
+	} while (cqe != NULL);
+
+	icm45686_stream_result(dev, err);
 }
 
 static void icm45686_handle_event_actions(struct rtio *ctx,
@@ -143,13 +167,10 @@ static void icm45686_handle_event_actions(struct rtio *ctx,
 	err = rtio_sqe_rx_buf(data->stream.iodev_sqe, buf_len_required, buf_len_required,
 			      (uint8_t **)&buf, &buf_len);
 	CHECKIF(err != 0) {
-		struct rtio_iodev_sqe *iodev_sqe = data->stream.iodev_sqe;
-
 		LOG_ERR("Failed to acquire buffer (len: %d) for encoded data: %d. Please revisit"
 			" RTIO queue sizing and look for bottlenecks during sensor data processing",
 			buf_len_required, err);
-		data->stream.iodev_sqe = NULL;
-		rtio_iodev_sqe_err(iodev_sqe, err);
+		icm45686_stream_result(dev, -ENOMEM);
 		return;
 	}
 
@@ -178,11 +199,8 @@ static void icm45686_handle_event_actions(struct rtio *ctx,
 			buf->header.fifo_count * sizeof(struct icm45686_encoded_fifo_payload),
 			&data_rd_sqe);
 		if (err < 0) {
-			struct rtio_iodev_sqe *iodev_sqe = data->stream.iodev_sqe;
-
 			LOG_ERR("Failed to acquire RTIO SQEs");
-			data->stream.iodev_sqe = NULL;
-			rtio_iodev_sqe_err(iodev_sqe, -ENOMEM);
+			icm45686_stream_result(dev, -ENOMEM);
 			return;
 		}
 		data_rd_sqe->flags |= RTIO_SQE_CHAINED;
@@ -195,11 +213,8 @@ static void icm45686_handle_event_actions(struct rtio *ctx,
 		err = icm45686_prep_reg_write_rtio_async(&data->bus, REG_FIFO_CONFIG2, &write_reg,
 							 1, &write_sqe);
 		if (err < 0) {
-			struct rtio_iodev_sqe *iodev_sqe = data->stream.iodev_sqe;
-
 			LOG_ERR("Failed to acquire RTIO SQE");
-			data->stream.iodev_sqe = NULL;
-			rtio_iodev_sqe_err(iodev_sqe, -ENOMEM);
+			icm45686_stream_result(dev, -ENOMEM);
 			return;
 		}
 		write_sqe->flags |= RTIO_SQE_CHAINED;
@@ -216,31 +231,18 @@ static void icm45686_handle_event_actions(struct rtio *ctx,
 							buf->payload.buf, sizeof(buf->payload.buf),
 							&read_sqe);
 		if (err < 0) {
-			struct rtio_iodev_sqe *iodev_sqe = data->stream.iodev_sqe;
-
 			LOG_ERR("Failed to acquire RTIO SQEs");
-			data->stream.iodev_sqe = NULL;
-			rtio_iodev_sqe_err(iodev_sqe, -ENOMEM);
+			icm45686_stream_result(dev, -ENOMEM);
 			return;
 		}
 		read_sqe->flags |= RTIO_SQE_CHAINED;
 	}
 
-	struct rtio_cqe *cqe;
-
-	do {
-		cqe = rtio_cqe_consume(ctx);
-		if (cqe != NULL) {
-			err = cqe->result;
-			rtio_cqe_release(ctx, cqe);
-		}
-	} while (cqe != NULL);
-
 	struct rtio_sqe *cb_sqe = rtio_sqe_acquire(ctx);
 
 	if (!cb_sqe) {
 		LOG_ERR("Failed to acquire RTIO SQE for completion callback");
-		rtio_iodev_sqe_err(data->stream.iodev_sqe, -ENOMEM);
+		icm45686_stream_result(dev, -ENOMEM);
 		return;
 	}
 	rtio_sqe_prep_callback_no_cqe(cb_sqe,
@@ -282,12 +284,8 @@ static void icm45686_event_handler(const struct device *dev)
 
 	err = sensor_clock_get_cycles(&cycles);
 	if (err) {
-		struct rtio_iodev_sqe *iodev_sqe = data->stream.iodev_sqe;
-
 		LOG_ERR("Failed to get timestamp: %d", err);
-
-		data->stream.iodev_sqe = NULL;
-		rtio_iodev_sqe_err(iodev_sqe, err);
+		icm45686_stream_result(dev, err);
 		return;
 	}
 
@@ -301,11 +299,8 @@ static void icm45686_event_handler(const struct device *dev)
 	err = icm45686_prep_reg_read_rtio_async(&data->bus, REG_INT1_STATUS0 | REG_READ_BIT,
 						&data->stream.data.int_status, 1, &read_sqe);
 	if (err < 0) {
-		struct rtio_iodev_sqe *iodev_sqe = data->stream.iodev_sqe;
-
 		LOG_ERR("Failed to prepare Status-reg read: %d", err);
-		data->stream.iodev_sqe = NULL;
-		rtio_iodev_sqe_err(iodev_sqe, -ENOMEM);
+		icm45686_stream_result(dev, -ENOMEM);
 		return;
 	}
 	read_sqe->flags |= RTIO_SQE_CHAINED;
@@ -317,11 +312,8 @@ static void icm45686_event_handler(const struct device *dev)
 						(uint8_t *)&data->stream.data.fifo_count, 1,
 						&read_ct_sqe);
 	if (err < 0) {
-		struct rtio_iodev_sqe *iodev_sqe = data->stream.iodev_sqe;
-
 		LOG_ERR("Failed to prepare Fifo Count read: %d", err);
-		data->stream.iodev_sqe = NULL;
-		rtio_iodev_sqe_err(iodev_sqe, -ENOMEM);
+		icm45686_stream_result(dev, -ENOMEM);
 		return;
 	}
 	read_ct_sqe->flags |= RTIO_SQE_CHAINED;
@@ -329,12 +321,9 @@ static void icm45686_event_handler(const struct device *dev)
 	struct rtio_sqe *complete_sqe = rtio_sqe_acquire(data->bus.rtio.ctx);
 
 	if (!complete_sqe) {
-		struct rtio_iodev_sqe *iodev_sqe = data->stream.iodev_sqe;
-
 		LOG_ERR("Failed to acquire complete_sqe");
 		rtio_sqe_drop_all(data->bus.rtio.ctx);
-		data->stream.iodev_sqe = NULL;
-		rtio_iodev_sqe_err(iodev_sqe, -ENOMEM);
+		icm45686_stream_result(dev, -ENOMEM);
 		return;
 	}
 	rtio_sqe_prep_callback_no_cqe(complete_sqe,
@@ -439,8 +428,7 @@ void icm45686_stream_submit(const struct device *dev,
 		err = icm45686_reg_write_rtio(&data->bus, REG_INT1_CONFIG0, &val, 1);
 		if (err) {
 			LOG_ERR("Failed to disable interrupts on INT1_CONFIG0: %d", err);
-			data->stream.iodev_sqe = NULL;
-			rtio_iodev_sqe_err(iodev_sqe, err);
+			icm45686_stream_result(dev, err);
 			return;
 		}
 
@@ -448,8 +436,7 @@ void icm45686_stream_submit(const struct device *dev,
 		err = icm45686_reg_read_rtio(&data->bus, REG_INT1_STATUS0 | REG_READ_BIT, &val, 1);
 		if (err) {
 			LOG_ERR("Failed to read INT1_STATUS0: %d", err);
-			data->stream.iodev_sqe = NULL;
-			rtio_iodev_sqe_err(iodev_sqe, err);
+			icm45686_stream_result(dev, err);
 			return;
 		}
 
@@ -460,8 +447,7 @@ void icm45686_stream_submit(const struct device *dev,
 		err = icm45686_reg_write_rtio(&data->bus, REG_FIFO_CONFIG3, &val, 1);
 		if (err) {
 			LOG_ERR("Failed to disable all FIFO settings: %d", err);
-			data->stream.iodev_sqe = NULL;
-			rtio_iodev_sqe_err(iodev_sqe, err);
+			icm45686_stream_result(dev, err);
 			return;
 		}
 
@@ -471,8 +457,7 @@ void icm45686_stream_submit(const struct device *dev,
 		err = icm45686_reg_write_rtio(&data->bus, REG_INT1_CONFIG0, &val, 1);
 		if (err) {
 			LOG_ERR("Failed to configure INT1_CONFIG0: %d", err);
-			data->stream.iodev_sqe = NULL;
-			rtio_iodev_sqe_err(iodev_sqe, err);
+			icm45686_stream_result(dev, err);
 			return;
 		}
 
@@ -481,8 +466,7 @@ void icm45686_stream_submit(const struct device *dev,
 		err = icm45686_reg_write_rtio(&data->bus, REG_FIFO_CONFIG0, &val, 1);
 		if (err) {
 			LOG_ERR("Failed to disable FIFO: %d", err);
-			data->stream.iodev_sqe = NULL;
-			rtio_iodev_sqe_err(iodev_sqe, err);
+			icm45686_stream_result(dev, err);
 			return;
 		}
 
@@ -496,8 +480,7 @@ void icm45686_stream_submit(const struct device *dev,
 			err = icm45686_reg_write_rtio(&data->bus, REG_FIFO_CONFIG2, &val, 1);
 			if (err) {
 				LOG_ERR("Failed to configure greater-than FIFO threshold: %d", err);
-				data->stream.iodev_sqe = NULL;
-				rtio_iodev_sqe_err(iodev_sqe, err);
+				icm45686_stream_result(dev, err);
 				return;
 			}
 
@@ -505,8 +488,7 @@ void icm45686_stream_submit(const struct device *dev,
 						      (uint8_t *)&fifo_ths, 2);
 			if (err) {
 				LOG_ERR("Failed to configure FIFO watermark: %d", err);
-				data->stream.iodev_sqe = NULL;
-				rtio_iodev_sqe_err(iodev_sqe, err);
+				icm45686_stream_result(dev, err);
 				return;
 			}
 
@@ -515,8 +497,7 @@ void icm45686_stream_submit(const struct device *dev,
 			err = icm45686_reg_write_rtio(&data->bus, REG_FIFO_CONFIG0, &val, 1);
 			if (err) {
 				LOG_ERR("Failed to disable FIFO: %d", err);
-				data->stream.iodev_sqe = NULL;
-				rtio_iodev_sqe_err(iodev_sqe, err);
+				icm45686_stream_result(dev, err);
 				return;
 			}
 
@@ -527,8 +508,7 @@ void icm45686_stream_submit(const struct device *dev,
 			err = icm45686_reg_write_rtio(&data->bus, REG_FIFO_CONFIG3, &val, 1);
 			if (err) {
 				LOG_ERR("Failed to enable FIFO: %d", err);
-				data->stream.iodev_sqe = NULL;
-				rtio_iodev_sqe_err(iodev_sqe, err);
+				icm45686_stream_result(dev, err);
 				return;
 			}
 		}
