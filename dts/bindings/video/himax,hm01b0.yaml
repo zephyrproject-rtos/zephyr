@@ -9,6 +9,7 @@
 # 		compatible = "himax,hm01b0";
 # 		reg = <0x24>;
 # 		status = "okay";
+#     data-bits = <0x4>;
 # 		port {
 # 					hm01b0_ep_out: endpoint {
 # 							remote-endpoint-label = "video_pio_dma_ep_in";
@@ -21,6 +22,12 @@
 description: Himax HM01B0 video sensor
 
 compatible: "himax,hm01b0"
+properties:
+  data-bits:
+    type: int
+    default: 0x1
+    description: Camera input data width. 1/4/8 bits
+    enum: [1, 4, 8]
 
 include: i2c-device.yaml
 

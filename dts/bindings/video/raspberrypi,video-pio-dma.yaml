@@ -2,6 +2,15 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # example:
+# &pinctrl {
+# 	pio0_hm01b0_default: pio0_hm01b0_default {
+# 		group1 {
+# 			pinmux = <PIO0_P6>,<PIO0_P7>,<PIO0_P8>,<PIO0_P9>,<PIO0_P10>,<PIO0_P11>,<PIO0_P12>;
+# 			input-enable;
+# 		};
+# 	};
+# };
+
 # &pio0 {
 # 	status = "okay";
 # 	video_pio_dma: video_pio_dma{
@@ -14,6 +23,7 @@
 # 		pinctrl-names = "default";
 # 		status = "okay";
 # 		dma = <&dma>;
+#     data-bits = <0x4>;
 # 		port {
 # 			video_pio_dma_ep_in: endpoint {
 # 				remote-endpoint-label = "hm01b0_ep_out";
@@ -55,6 +65,11 @@ properties:
     type: phandle
     description: |
       DMA device handle to configure with the PIO engine.
+  data-bits:
+    type: int
+    default: 0x1
+    description: Camera input data width. 1/4/8 bits
+    enum: [1, 4, 8]
 
 child-binding:
   child-binding:

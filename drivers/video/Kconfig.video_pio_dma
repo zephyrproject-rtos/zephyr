@@ -5,6 +5,7 @@ config VIDEO_PIO_DMA
 	depends on DT_HAS_RASPBERRYPI_VIDEO_PIO_DMA_ENABLED
 	select PICOSDK_USE_PIO
 	select PICOSDK_USE_CLAIM
+	select DMA
 	default y
 	help
 	  Enable driver for the receiver video pio dma.

@@ -140,11 +140,12 @@ static int video_pio_dma_config_pio(const struct device *dev)
 	if (data->pio_program_offset >= 0) {
 		data->pio_sm_config = pio_get_default_sm_config();
 		sm_config_set_in_pins(&data->pio_sm_config, config->data_gpio.pin);
-		sm_config_set_in_shift(&data->pio_sm_config, true, true, data->pclk_per_px);
+		sm_config_set_in_pin_count(&data->pio_sm_config, config->data_bits);
+		sm_config_set_in_shift(&data->pio_sm_config, true, true, 8);
 		sm_config_set_wrap(&data->pio_sm_config, data->pio_program_offset + 7,
 				   data->pio_program_offset + data->pio_program.length - 1);
-		pio_sm_set_consecutive_pindirs(data->pio, data->pio_sm, config->data_gpio.pin, 1,
-					       false);
+		pio_sm_set_consecutive_pindirs(data->pio, data->pio_sm, config->data_gpio.pin,
+					       config->data_bits, false);
 	}
 	return data->pio_program_offset >= 0 ? 0 : data->pio_program_offset;
 }
@@ -537,7 +538,7 @@ static int video_pio_dma_init(const struct device *dev)
 		.data_gpio = GPIO_DT_SPEC_INST_GET(inst, data_gpios),                              \
 		.sensor_dev = SOURCE_DEV(inst),                                                    \
 		.dma_dev = DEVICE_DT_GET(DT_PROP(DT_DRV_INST(inst), dma)),                         \
-		.data_bits = 1 /* Use only 1 pin for data */                                       \
+		.data_bits = DT_INST_PROP(inst, data_bits),                                        \
 	};                                                                                         \
 	struct video_pio_dma_data video_pio_dma_data_##inst;                                       \
 	DEVICE_DT_INST_DEFINE(inst, &video_pio_dma_init, NULL, &video_pio_dma_data_##inst,         \

@@ -296,7 +296,8 @@ static int hm01b0_init(const struct device *dev)
 
 #define HM01B0_INIT(inst)                                                                          \
 	const struct hm01b0_config hm01b0_config_##inst = {                                        \
-		.i2c = I2C_DT_SPEC_INST_GET(inst), .data_bits = 1 /* Use only 1 pin for data */    \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
+		.data_bits = DT_INST_PROP(inst, data_bits),                                        \
 	};                                                                                         \
 	struct hm01b0_data hm01b0_data_##inst;                                                     \
 	DEVICE_DT_INST_DEFINE(inst, &hm01b0_init, NULL, &hm01b0_data_##inst,                       \
