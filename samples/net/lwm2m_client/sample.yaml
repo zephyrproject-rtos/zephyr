@@ -87,3 +87,15 @@ tests:
     tags:
       - net
       - lwm2m
+  sample.net.lwm2m_client.async_operations:
+    harness: net
+    depends_on: netif
+    extra_args: EXTRA_CONF_FILE=overlay-async.conf
+    platform_allow:
+      - qemu_x86
+      - native_sim
+    integration_platforms:
+      - qemu_x86
+    tags:
+      - net
+      - lwm2m
