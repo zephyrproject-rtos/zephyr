@@ -123,19 +123,28 @@ struct flash_mspi_nor_quirks flash_quirks_mxicy_mx25r = {
 
 #if DT_HAS_COMPAT_STATUS_OKAY(mxicy_mx25u)
 
-#define MXICY_MX25R_OE_MASK BIT(0)
-
-static uint8_t mxicy_mx25u_oe_payload = MXICY_MX25R_OE_MASK;
-
 static inline int mxicy_mx25u_post_switch_mode(const struct device *dev)
 {
 	const struct flash_mspi_nor_config *dev_config = dev->config;
 	struct flash_mspi_nor_data *dev_data = dev->data;
 	enum mspi_io_mode io_mode = dev_config->mspi_nor_cfg.io_mode;
+	uint8_t opi_enable;
 	int rc;
 
 	if (io_mode != MSPI_IO_MODE_OCTAL) {
 		return 0;
+	}
+
+	/*
+	 * TODO - replace this with a generic routine that uses information
+	 *        from SFDP header FF87 (Status, Control and Configuration
+	 *        Register Map)
+	 */
+
+	if (dev_config->mspi_nor_cfg.data_rate == MSPI_DATA_RATE_DUAL) {
+		opi_enable = BIT(1);
+	} else {
+		opi_enable = BIT(0);
 	}
 
 	/* Write enable */
@@ -148,8 +157,8 @@ static inline int mxicy_mx25u_post_switch_mode(const struct device *dev)
 	set_up_xfer(dev, MSPI_TX);
 	dev_data->xfer.addr_length = 4;
 	dev_data->packet.address   = 0;
-	dev_data->packet.data_buf  = &mxicy_mx25u_oe_payload;
-	dev_data->packet.num_bytes = sizeof(mxicy_mx25u_oe_payload);
+	dev_data->packet.data_buf  = &opi_enable;
+	dev_data->packet.num_bytes = sizeof(opi_enable);
 	return perform_xfer(dev, SPI_NOR_CMD_WR_CFGREG2, false);
 }
 
