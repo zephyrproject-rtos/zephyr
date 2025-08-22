@@ -161,11 +161,11 @@ __weak void clk_init(void)
 	/* Init FIRC. */
 	CLOCK_CONFIG_FircSafeConfig(&scg_firc_config);
 	/* Init SIRC. */
-    	CLOCK_InitSirc(&scg_sirc_config);
-    	/* Init LPFLL. */
-    	CLOCK_InitLpFll(&scg_lpfll_config);
-    	/* Finally init the App desired clock */
-    	CLOCK_SetRunModeSysClkConfig(&scg_sys_clk_config);
+	CLOCK_InitSirc(&scg_sirc_config);
+	/* Init LPFLL. */
+	CLOCK_InitLpFll(&scg_lpfll_config);
+	/* Finally init the App desired clock */
+	CLOCK_SetRunModeSysClkConfig(&scg_sys_clk_config);
 	do {
 	     CLOCK_GetCurSysClkConfig(&current);
 	} while (current.src != scg_sys_clk_config.src);
