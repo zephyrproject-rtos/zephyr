@@ -1,0 +1,130 @@
+/*
+ * Copyright 2025 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+
+#include <nxp/nxp_imx/mimx9352cvuxk-pinctrl.dtsi>
+
+&pinctrl {
+	uart1_default: uart1_default {
+		group0 {
+			pinmux = <&iomuxc1_uart1_rxd_lpuart_rx_lpuart1_rx>,
+				 <&iomuxc1_uart1_txd_lpuart_tx_lpuart1_tx>;
+			bias-pull-up;
+			slew-rate = "slightly_fast";
+			drive-strength = "x5";
+		};
+	};
+
+	uart2_default: uart2_default {
+		group0 {
+			pinmux = <&iomuxc1_uart2_rxd_lpuart_rx_lpuart2_rx>,
+				 <&iomuxc1_uart2_txd_lpuart_tx_lpuart2_tx>;
+			bias-pull-up;
+			slew-rate = "slightly_fast";
+			drive-strength = "x5";
+		};
+	};
+
+	i2c1_default: i2c1_default {
+		group0 {
+			pinmux = <&iomuxc1_i2c1_scl_lpi2c_scl_lpi2c1_scl>,
+				 <&iomuxc1_i2c1_sda_lpi2c_sda_lpi2c1_sda>;
+			drive-strength = "x5";
+			drive-open-drain;
+			slew-rate = "fast";
+			input-enable;
+		};
+	};
+
+	i2c2_default: i2c2_default {
+		group0 {
+			pinmux = <&iomuxc1_i2c2_scl_lpi2c_scl_lpi2c2_scl>,
+				 <&iomuxc1_i2c2_sda_lpi2c_sda_lpi2c2_sda>;
+			drive-strength = "x5";
+			drive-open-drain;
+			slew-rate = "fast";
+			input-enable;
+		};
+	};
+
+	i2c3_default: i2c3_default {
+		group0 {
+			pinmux = <&iomuxc1_gpio_io01_lpi2c_scl_lpi2c3_scl>,
+				 <&iomuxc1_gpio_io00_lpi2c_sda_lpi2c3_sda>;
+			drive-strength = "x5";
+			drive-open-drain;
+			slew-rate = "fast";
+			input-enable;
+		};
+	};
+
+	i2c4_default: i2c4_default {
+		group0 {
+			pinmux = <&iomuxc1_gpio_io03_lpi2c_scl_lpi2c4_scl>,
+				 <&iomuxc1_gpio_io02_lpi2c_sda_lpi2c4_sda>;
+			drive-strength = "x5";
+			drive-open-drain;
+			slew-rate = "fast";
+			input-enable;
+		};
+	};
+
+	spi3_default: spi3_default {
+		group0 {
+			pinmux = <&iomuxc1_gpio_io07_lpspi_pcs_lpspi3_pcs1>,
+				 <&iomuxc1_gpio_io08_lpspi_pcs_lpspi3_pcs0>,
+				 <&iomuxc1_gpio_io09_lpspi_sin_lpspi3_sin>,
+				 <&iomuxc1_gpio_io10_lpspi_sout_lpspi3_sout>,
+				 <&iomuxc1_gpio_io11_lpspi_sck_lpspi3_sck>;
+			slew-rate = "fast";
+			drive-strength = "x5";
+		};
+	};
+
+	flexcan2_default: flexcan2_default {
+		group0 {
+			pinmux = <&iomuxc1_gpio_io25_can_tx_can2_tx>,
+				 <&iomuxc1_gpio_io27_can_rx_can2_rx>;
+			slew-rate = "slightly_fast";
+			drive-strength = "x5";
+		};
+	};
+
+	pinmux_mdio: pinmux_mdio {
+		group0 {
+			pinmux = <&iomuxc1_enet2_mdc_enet_mdc_enet1_mdc>,
+				 <&iomuxc1_enet2_mdio_enet_mdio_enet1_mdio>;
+			bias-pull-down;
+			slew-rate = "slightly_fast";
+			drive-strength = "x6";
+		};
+	};
+
+	pinmux_enet: pinmux_enet {
+		group0 {
+			pinmux = <&iomuxc1_enet2_rd0_enet_rgmii_rd_enet1_rgmii_rd0>,
+				 <&iomuxc1_enet2_rd1_enet_rgmii_rd_enet1_rgmii_rd1>,
+				 <&iomuxc1_enet2_rd2_enet_rgmii_rd_enet1_rgmii_rd2>,
+				 <&iomuxc1_enet2_rd3_enet_rgmii_rd_enet1_rgmii_rd3>,
+				 <&iomuxc1_enet2_rx_ctl_enet_rgmii_rx_ctl_enet1_rgmii_rx_ctl>,
+				 <&iomuxc1_enet2_td0_enet_rgmii_td_enet1_rgmii_td0>,
+				 <&iomuxc1_enet2_td1_enet_rgmii_td_enet1_rgmii_td1>,
+				 <&iomuxc1_enet2_td2_enet_rgmii_td_enet1_rgmii_td2>,
+				 <&iomuxc1_enet2_td3_enet_rgmii_td_enet1_rgmii_td3>,
+				 <&iomuxc1_enet2_tx_ctl_enet_rgmii_tx_ctl_enet1_rgmii_tx_ctl>;
+			bias-pull-down;
+			slew-rate = "slightly_fast";
+			drive-strength = "x6";
+		};
+
+		group1 {
+			pinmux = <&iomuxc1_enet2_rxc_enet_rgmii_rxc_enet1_rgmii_rxc>,
+				 <&iomuxc1_enet2_txc_enet_rgmii_txc_enet1_rgmii_txc>;
+			bias-pull-down;
+			slew-rate = "fast";
+			drive-strength = "x6";
+		};
+	};
+};
