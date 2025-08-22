@@ -17,8 +17,6 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/cache.h>
 
-#include <zephyr/drivers/dma/dma_stm32.h>
-#include <zephyr/drivers/dma.h>
 #include <stm32_ll_dma.h>
 
 #include <zephyr/logging/log.h>
@@ -284,13 +282,11 @@ static int i2s_stm32_sai_dma_init(const struct device *dev)
 	}
 
 #if defined(CONFIG_SOC_SERIES_STM32H7X)
-	hdma->Instance = __LL_DMA_GET_STREAM_INSTANCE(stream->reg, stream->dma_channel);
 	hdma->Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD;
 	hdma->Init.MemDataAlignment = DMA_PDATAALIGN_HALFWORD;
 	hdma->Init.Priority = DMA_PRIORITY_HIGH;
 	hdma->Init.FIFOMode = DMA_FIFOMODE_DISABLE;
 #else
-	hdma->Instance = LL_DMA_GET_CHANNEL_INSTANCE(stream->reg, stream->dma_channel);
 	hdma->Init.BlkHWRequest = DMA_BREQ_SINGLE_BURST;
 	hdma->Init.SrcDataWidth = DMA_SRC_DATAWIDTH_HALFWORD;
 	hdma->Init.DestDataWidth = DMA_DEST_DATAWIDTH_HALFWORD;
@@ -300,7 +296,7 @@ static int i2s_stm32_sai_dma_init(const struct device *dev)
 	hdma->Init.TransferAllocatedPort = DMA_SRC_ALLOCATED_PORT0 | DMA_DEST_ALLOCATED_PORT0;
 	hdma->Init.TransferEventMode = DMA_TCEM_BLOCK_TRANSFER;
 #endif
-
+	hdma->Instance = STM32_DMA_GET_INSTANCE(stream->reg, stream->dma_channel);
 	hdma->Init.Request = dma_cfg.dma_slot;
 	hdma->Init.Mode = DMA_NORMAL;
 
