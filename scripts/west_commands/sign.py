@@ -234,6 +234,23 @@ class Signer(abc.ABC):
         '''
 
 
+# Resolve a path to a tool binary using either --tool-path or the `which` utility
+def get_tool_path(command, tool_name):
+    if command.args.tool_path:
+        tool = command.args.tool_path
+        if not os.path.isfile(tool):
+            command.die(f'--tool-path {tool}: no such file')
+    else:
+        tool = shutil.which(tool_name)
+        if not tool:
+            command.die(f'"{tool_name}" not found; either make it available on PATH or provide --tool-path')
+    return tool
+
+# This function returns the path to build result, without the file extension
+def get_kernel_bin_name(build_conf):
+    return build_conf.get('CONFIG_KERNEL_BIN_NAME', "zephyr")
+
+
 class ImgtoolSigner(Signer):
 
     def sign(self, command, build_dir, build_conf, formats):
@@ -258,17 +275,17 @@ class ImgtoolSigner(Signer):
             command.wrn("CONFIG_BOOTLOADER_MCUBOOT is not set to y in "
                         f"{build_conf.path}; this probably won't work")
 
-        kernel = build_conf.get('CONFIG_KERNEL_BIN_NAME', 'zephyr')
+        kernel = pathlib.Path('zephyr') / get_kernel_bin_name(build_conf)
 
         if 'bin' in formats:
-            in_bin = b / 'zephyr' / f'{kernel}.bin'
+            in_bin = b / f'{kernel}.bin'
             if not in_bin.is_file():
                 command.die(f"no unsigned .bin found at {in_bin}")
             in_bin = os.fspath(in_bin)
         else:
             in_bin = None
         if 'hex' in formats:
-            in_hex = b / 'zephyr' / f'{kernel}.hex'
+            in_hex = b / f'{kernel}.hex'
             if not in_hex.is_file():
                 command.die(f"no unsigned .hex found at {in_hex}")
             in_hex = os.fspath(in_hex)
@@ -501,14 +518,14 @@ class RimageSigner(Signer):
             else:
                 command.die(msg)
 
-        kernel_name = build_conf.get('CONFIG_KERNEL_BIN_NAME', 'zephyr')
+        kernel_name = pathlib.Path('zephyr') / get_kernel_bin_name(build_conf)
 
         bootloader = None
         cold = None
-        kernel = str(b / 'zephyr' / f'{kernel_name}.elf')
-        out_bin = str(b / 'zephyr' / f'{kernel_name}.ri')
-        out_xman = str(b / 'zephyr' / f'{kernel_name}.ri.xman')
-        out_tmp = str(b / 'zephyr' / f'{kernel_name}.rix')
+        kernel = str(b / f'{kernel_name}.elf')
+        out_bin = str(b / f'{kernel_name}.ri')
+        out_xman = str(b / f'{kernel_name}.ri.xman')
+        out_tmp = str(b / f'{kernel_name}.rix')
 
         # Intel platforms generate a "boot.mod" and "main.mod" as
         # separate intermediates to use.  Other platforms just use
@@ -535,6 +552,7 @@ class RimageSigner(Signer):
         )
         err_prefix = '--tool-path' if args.tool_path else 'west config'
 
+        # TODO: use get_tool_path
         if tool_path:
             command.check_force(shutil.which(tool_path),
                                 f'{err_prefix} {tool_path}: not an executable')
@@ -646,6 +664,7 @@ class RimageSigner(Signer):
         os.rename(out_tmp, out_bin)
 
 class CommanderSigner(Signer):
+    # TODO: replace with get_tool_path
     @staticmethod
     def get_tool(command):
         if command.args.tool_path:
@@ -672,8 +691,7 @@ class CommanderSigner(Signer):
 
     @staticmethod
     def get_input_output(command, build_dir, build_conf):
-        kernel_prefix = (pathlib.Path(build_dir) / 'zephyr' /
-                         build_conf.get('CONFIG_KERNEL_BIN_NAME', "zephyr"))
+        kernel_prefix = pathlib.Path(build_dir) / 'zephyr' / get_kernel_bin_name(build_conf)
         in_file = f'{kernel_prefix}.rps'
         out_file = command.args.sbin or f'{kernel_prefix}.signed.rps'
         return (in_file, out_file)
