@@ -90,6 +90,7 @@
 					<GIC_SPI 11 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		gpio-controller;
 		#gpio-cells = <2>;
+		status = "disabled";
 	};
 
 	gpio2: gpio@43810000 {
@@ -100,6 +101,7 @@
 					<GIC_SPI 58 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		gpio-controller;
 		#gpio-cells = <2>;
+		status = "disabled";
 	};
 
 	gpio3: gpio@43820000 {
@@ -110,6 +112,7 @@
 					<GIC_SPI 60 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		gpio-controller;
 		#gpio-cells = <2>;
+		status = "disabled";
 	};
 
 	gpio4: gpio@43830000 {
@@ -120,6 +123,7 @@
 					<GIC_SPI 190 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		gpio-controller;
 		#gpio-cells = <2>;
+		status = "disabled";
 	};
 
 	lpuart1: serial@44380000 {
