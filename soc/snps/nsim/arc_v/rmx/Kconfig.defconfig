@@ -18,4 +18,7 @@ config RISCV_PMP
 config PMP_SLOTS
 	default 16
 
+config PMP_GRANULARITY
+	default 8
+
 endif # SOC_SERIES_NSIM_ARC_V_RMX
