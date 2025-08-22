@@ -8,11 +8,13 @@ common:
   harness: ztest
 
 tests:
-  test.ipc.ipc_sessions.nrf5340dk:
+  ipc.ipc_sessions:
     platform_allow:
       - nrf5340dk/nrf5340/cpuapp
+      - nrf5340bsim/nrf5340/cpuapp
     integration_platforms:
       - nrf5340dk/nrf5340/cpuapp
+      - nrf5340bsim/nrf5340/cpuapp
     extra_args:
       - CONFIG_IPC_TEST_SKIP_CORE_RESET=y
   test.ipc.ipc_sessions.nrf54h20dk_cpuapp_cpurad:
