@@ -687,6 +687,7 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 
 static void isr_done(void *param)
 {
+	struct lll_scan *scan_lll = NULL;
 	struct lll_sync *lll;
 	uint8_t is_lll_scan;
 
@@ -694,6 +695,9 @@ static void isr_done(void *param)
 
 	if (param) {
 		lll = ull_scan_aux_lll_parent_get(param, &is_lll_scan);
+		if (is_lll_scan) {
+			scan_lll = (void *)lll;
+		}
 	} else {
 		lll = NULL;
 	}
@@ -725,6 +729,21 @@ static void isr_done(void *param)
 #if defined(CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS)
 		e->lll = param;
 #endif /* CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS */
+	}
+
+	/* Lets tail chain the execution of LLL disable of any scan event in the pipeline if scan
+	 * role is to be stopped.
+	 * This is for the case of connection setup or the duration has expired.
+	 */
+	if ((scan_lll != NULL) && (scan_lll->is_stop != 0U)) {
+		static memq_link_t link;
+		static struct mayfly mfy = {0, 0, &link, NULL, lll_disable};
+		uint32_t ret;
+
+		mfy.param = scan_lll;
+
+		ret = mayfly_enqueue(TICKER_USER_ID_LLL, TICKER_USER_ID_LLL, 1U, &mfy);
+		LL_ASSERT(!ret);
 	}
 
 	lll_isr_cleanup(param);
@@ -917,6 +936,7 @@ isr_rx_do_close:
 			radio_isr_set(isr_done, lll->lll_aux);
 		}
 	}
+
 	radio_disable();
 }
 
