@@ -45,7 +45,7 @@
 
 &ttc0 {
 	status = "okay";
-	clock-frequency = <5000000>;
+	clock-frequency = <100000000>;
 };
 
 &psgpio {
