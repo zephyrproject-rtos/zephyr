@@ -13,6 +13,12 @@
 		sram0: memory@20000000 {
 			reg = <0x20000000 DT_SIZE_K(32)>;
 		};
+
+		spi1: spi@4046a000 {
+			compatible = "ti,mspm0-spi";
+			reg = <0x4046a000 0x2000>;
+			status = "disabled";
+		};
 	};
 };
 
