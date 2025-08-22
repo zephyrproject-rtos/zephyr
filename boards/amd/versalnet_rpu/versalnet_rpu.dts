@@ -31,6 +31,11 @@
 		compatible = "mmio-sram";
 		reg = <0x30000 DT_SIZE_M(2047)>;
 	};
+
+	tcm: memory@0 {
+		compatible = "mmio-sram";
+		reg = <0x0 DT_SIZE_K(64)>;
+	};
 };
 
 &ocm {
