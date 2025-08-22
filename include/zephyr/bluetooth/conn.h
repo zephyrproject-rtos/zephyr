@@ -519,24 +519,60 @@ struct bt_conn_le_cs_fae_table {
 	int8_t *remote_fae_table;
 };
 
+/** @brief Extract main mode part from @ref bt_conn_le_cs_mode
+ *
+ * @private
+ *
+ * @param x @ref bt_conn_le_cs_mode value
+ * @retval 1 Matches @ref BT_HCI_OP_LE_CS_MAIN_MODE_1 (0x01)
+ * @retval 2 Matches @ref BT_HCI_OP_LE_CS_MAIN_MODE_2 (0x02)
+ * @retval 3 Matches @ref BT_HCI_OP_LE_CS_MAIN_MODE_3 (0x03)
+ *
+ * @note Returned values match the HCI main mode values.
+ */
 #define BT_CONN_LE_CS_MODE_MAIN_MODE_PART(x) ((x) & 0x3)
+
+/** @brief Extract sub-mode part from @ref bt_conn_le_cs_mode
+ *
+ * @private
+ *
+ * @param x @ref bt_conn_le_cs_mode value
+ * @retval 0 Internal encoding for @ref BT_HCI_OP_LE_CS_SUB_MODE_UNUSED (0xFF)
+ * @retval 1 Matches @ref BT_HCI_OP_LE_CS_SUB_MODE_1 (0x01)
+ * @retval 2 Matches @ref BT_HCI_OP_LE_CS_SUB_MODE_2 (0x02)
+ * @retval 3 Matches @ref BT_HCI_OP_LE_CS_SUB_MODE_3 (0x03)
+ *
+ * @note The value 0 encodes HCI 0xFF. This allows @ref bt_conn_le_cs_mode to
+ * fit in one byte. To obtain the HCI sub-mode value, use `(sub_mode == 0 ? 0xFF
+ * : sub_mode)`, where `sub_mode` is the value returned by this macro.
+ */
 #define BT_CONN_LE_CS_MODE_SUB_MODE_PART(x)  (((x) >> 4) & 0x3)
 
-/** Channel sounding main and sub mode */
+/** @brief Channel sounding mode (main and sub-mode)
+ *
+ * Represents the combination of Channel Sounding (CS) main mode and sub-mode.
+ *
+ * @note The underlying numeric values are an internal encoding and are
+ * not stable API. Do not assume a direct concatenation of HCI values
+ * when inspecting the raw enum value.
+ *
+ * @sa BT_CONN_LE_CS_MODE_MAIN_MODE_PART
+ * @sa BT_CONN_LE_CS_MODE_SUB_MODE_PART
+ */
 enum bt_conn_le_cs_mode {
-	/** Mode-1 (RTT) Main Mode, Unused Sub Mode */
+	/** Main mode 1 (RTT), sub-mode: unused */
 	BT_CONN_LE_CS_MAIN_MODE_1_NO_SUB_MODE = BT_HCI_OP_LE_CS_MAIN_MODE_1,
-	/** Mode-2 (PBR) Main Mode, Unused Sub Mode */
+	/** Main mode 2 (PBR), sub-mode: unused */
 	BT_CONN_LE_CS_MAIN_MODE_2_NO_SUB_MODE = BT_HCI_OP_LE_CS_MAIN_MODE_2,
-	/** Mode-3 (RTT and PBR) Main Mode, Unused Sub Mode */
+	/** Main mode 3 (RTT and PBR), sub-mode: unused */
 	BT_CONN_LE_CS_MAIN_MODE_3_NO_SUB_MODE = BT_HCI_OP_LE_CS_MAIN_MODE_3,
-	/** Mode-2 (PBR) Main Mode, Mode-1 (RTT) Sub Mode */
+	/** Main mode 2 (PBR), sub-mode 1 (RTT) */
 	BT_CONN_LE_CS_MAIN_MODE_2_SUB_MODE_1 = BT_HCI_OP_LE_CS_MAIN_MODE_2 |
 					      (BT_HCI_OP_LE_CS_SUB_MODE_1 << 4),
-	/** Mode-2 (PBR) Main Mode, Mode-3 (RTT and PBR) Sub Mode */
+	/** Main mode 2 (PBR), sub-mode 3 (RTT and PBR) */
 	BT_CONN_LE_CS_MAIN_MODE_2_SUB_MODE_3 = BT_HCI_OP_LE_CS_MAIN_MODE_2 |
 					      (BT_HCI_OP_LE_CS_SUB_MODE_3 << 4),
-	/** Mode-3 (RTT and PBR) Main Mode, Mode-2 (PBR) Sub Mode  */
+	/** Main mode 3 (RTT and PBR), sub-mode 2 (PBR) */
 	BT_CONN_LE_CS_MAIN_MODE_3_SUB_MODE_2 = BT_HCI_OP_LE_CS_MAIN_MODE_3 |
 					      (BT_HCI_OP_LE_CS_SUB_MODE_2 << 4),
 };
