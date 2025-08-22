@@ -105,6 +105,10 @@ ADC
   ``adcx`` for the register clock, ``adc-ker`` for the kernel source clock, and ``adc-pre`` to set
   the ADC prescaler (for series where it is located in the RCC registers).
 
+* The STM32 ADC driver now automatically enables :kconfig:option:`CONFIG_DMA` and switches
+  to DMA operation mode if the ``dmas`` property is added to any ADC node in devicetree.
+  Control of operation mode using Kconfig is no longer possible, similarly to other STM32 drivers.
+
 Clock Control
 =============
 
