@@ -104,6 +104,7 @@ static inline void icm45686_stream_result(const struct device *dev,
 					  int result)
 {
 	struct icm45686_data *data = dev->data;
+	const struct icm45686_config *cfg = dev->config;
 	struct rtio_iodev_sqe *iodev_sqe = data->stream.iodev_sqe;
 
 	(void)atomic_set(&data->stream.state, ICM45686_STREAM_OFF);
@@ -113,7 +114,7 @@ static inline void icm45686_stream_result(const struct device *dev,
 	if (result < 0) {
 		/** Clear config-set so next submission re-configures the IMU */
 		memset(&data->stream.settings, 0, sizeof(data->stream.settings));
-
+		(void)gpio_pin_interrupt_configure_dt(&cfg->int_gpio, GPIO_INT_DISABLE);
 		rtio_iodev_sqe_err(iodev_sqe, result);
 	} else {
 		rtio_iodev_sqe_ok(iodev_sqe, 0);
