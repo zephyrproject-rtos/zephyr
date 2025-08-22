@@ -1995,12 +1995,9 @@ static int flash_stm32_xspi_dma_init(DMA_HandleTypeDef *hdma, struct stream *dma
 	dma_stream->cfg.user_data = hdma;
 	/* HACK: This field is used to inform driver that it is overridden */
 	dma_stream->cfg.linked_channel = STM32_DMA_HAL_OVERRIDE;
-	/* Because of the STREAM OFFSET, the DMA channel given here is from 1 - 8 */
-	ret = dma_config(dma_stream->dev,
-			 (dma_stream->channel + STM32_DMA_STREAM_OFFSET), &dma_stream->cfg);
+	ret = dma_config(dma_stream->dev, dma_stream->channel, &dma_stream->cfg);
 	if (ret != 0) {
-		LOG_ERR("Failed to configure DMA channel %d",
-			dma_stream->channel + STM32_DMA_STREAM_OFFSET);
+		LOG_ERR("Failed to configure DMA channel %d", dma_stream->channel);
 		return ret;
 	}
 

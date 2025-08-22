@@ -277,12 +277,10 @@ static int i2s_stm32_sai_dma_init(const struct device *dev)
 	/* HACK: This field is used to inform driver that it is overridden */
 	dma_cfg.linked_channel = STM32_DMA_HAL_OVERRIDE;
 
-	/* Because of the STREAM OFFSET, the DMA channel given here is from 1 - 8 */
-	ret = dma_config(stream->dma_dev, stream->dma_channel + STM32_DMA_STREAM_OFFSET, &dma_cfg);
+	ret = dma_config(stream->dma_dev, stream->dma_channel, &dma_cfg);
 
 	if (ret != 0) {
-		LOG_ERR("Failed to configure DMA channel %d",
-			stream->dma_channel + STM32_DMA_STREAM_OFFSET);
+		LOG_ERR("Failed to configure DMA channel %d", stream->dma_channel);
 		return ret;
 	}
 
