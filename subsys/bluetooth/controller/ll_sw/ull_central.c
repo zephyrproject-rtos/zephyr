@@ -1007,8 +1007,6 @@ static void ticker_op_stop_scan_cb(uint32_t status, void *param)
 #if defined(CONFIG_BT_CTLR_ADV_EXT) && defined(CONFIG_BT_CTLR_PHY_CODED)
 static void ticker_op_stop_scan_other_cb(uint32_t status, void *param)
 {
-	static memq_link_t link;
-	static struct mayfly mfy = {0, 0, &link, NULL, NULL};
 	struct ll_scan_set *scan;
 	struct ull_hdr *hdr;
 
@@ -1027,11 +1025,13 @@ static void ticker_op_stop_scan_other_cb(uint32_t status, void *param)
 	 */
 	scan = param;
 	hdr = &scan->ull;
-	mfy.param = &scan->lll;
 	if (ull_ref_get(hdr)) {
+		static memq_link_t link;
+		static struct mayfly mfy = {0, 0, &link, NULL, lll_disable};
 		uint32_t ret;
 
-		mfy.fp = lll_disable;
+		mfy.param = &scan->lll;
+
 		ret = mayfly_enqueue(TICKER_USER_ID_ULL_LOW,
 				     TICKER_USER_ID_LLL, 0, &mfy);
 		LL_ASSERT(!ret);
