@@ -57,7 +57,9 @@ struct i2s_esp32_stream_data {
 	size_t mem_block_len;
 	bool stop_without_draining;
 	struct k_msgq queue;
+#if !SOC_GDMA_SUPPORTED
 	struct intr_handle_data_t *irq_handle;
+#endif
 	bool dma_pending;
 	uint8_t chunks_rem;
 	uint8_t chunk_idx;
@@ -67,16 +69,15 @@ struct i2s_esp32_stream_conf {
 	void (*queue_drop)(const struct i2s_esp32_stream *stream);
 	int (*start_transfer)(const struct device *dev);
 	void (*stop_transfer)(const struct device *dev);
+#if SOC_GDMA_SUPPORTED
 	const struct device *dma_dev;
 	uint32_t dma_channel;
-#if SOC_GDMA_SUPPORTED
-	void *dma_desc;
 #else
 	lldesc_t *dma_desc;
-#endif
 	int irq_source;
 	int irq_priority;
 	int irq_flags;
+#endif
 };
 
 struct i2s_esp32_stream {
@@ -1508,12 +1509,46 @@ static DEVICE_API(i2s, i2s_esp32_driver_api) = {
 	.write = i2s_esp32_write
 };
 
-#define I2S_ESP32_STREAM_DECLARE_DMA_DESC(index, dir)                                              \
+#if SOC_GDMA_SUPPORTED
+
+#define I2S_ESP32_DT_INST_SANITY_CHECK(index)                                                      \
+	BUILD_ASSERT(DT_INST_NODE_HAS_PROP(index, dmas), "Missing property: dmas");                \
+	BUILD_ASSERT(DT_INST_NODE_HAS_PROP(index, dma_names), "Missing property: dma-names");
+
+#define I2S_ESP32_STREAM_DECL_DESC(index, rx)
+
+#define I2S_ESP32_STREAM_DECLARE_DATA(index, dir)
+
+#define I2S_ESP32_STREAM_DECLARE_CONF(index, dir)                                                  \
+	.dma_dev = UTIL_AND(DT_INST_DMAS_HAS_NAME(index, dir),                                     \
+			    DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(index, dir))),                 \
+	.dma_channel = UTIL_AND(DT_INST_DMAS_HAS_NAME(index, dir),                                 \
+				DT_INST_DMAS_CELL_BY_NAME(index, dir, channel))
+
+#else
+
+#define I2S_ESP32_DT_INST_SANITY_CHECK(index)                                                      \
+	BUILD_ASSERT(!DT_INST_NODE_HAS_PROP(index, dmas), "Unexpected property: dmas");            \
+	BUILD_ASSERT(!DT_INST_NODE_HAS_PROP(index, dma_names), "Unexpected property: dma-names");  \
+	BUILD_ASSERT(DT_INST_NODE_HAS_PROP(index, interrupt_names),                                \
+		     "Missing property: interrupt-names")
+
+#define I2S_ESP32_STREAM_DECL_DESC(index, dir)                                                     \
 	lldesc_t i2s_esp32_stream_##index##_##dir##_dma_desc[CONFIG_I2S_ESP32_DMA_DESC_NUM_MAX]
 
-#define I2S_ESP32_STREAM_DECL_DMA_DESC(index, dir)                                                 \
-	COND_CODE_1(DT_INST_IRQ_HAS_NAME(index, dir),                                              \
-		    (I2S_ESP32_STREAM_DECLARE_DMA_DESC(index, dir)), ())
+#define I2S_ESP32_STREAM_DECLARE_DATA(index, dir) .irq_handle = NULL
+
+#define I2S_ESP32_STREAM_DECLARE_CONF(index, dir)                                                  \
+	.irq_source = COND_CODE_1(DT_INST_IRQ_HAS_NAME(index, dir),                                \
+				  (DT_INST_IRQ_BY_NAME(index, dir, irq)), (-1)),                   \
+	.irq_priority = COND_CODE_1(DT_INST_IRQ_HAS_NAME(index, dir),                              \
+				    (DT_INST_IRQ_BY_NAME(index, dir, priority)), (-1)),            \
+	.irq_flags = COND_CODE_1(DT_INST_IRQ_HAS_NAME(index, dir),                                 \
+				 (DT_INST_IRQ_BY_NAME(index, dir, flags)), (-1)),                  \
+	.dma_desc = UTIL_AND(DT_INST_IRQ_HAS_NAME(index, dir),                                     \
+			     i2s_esp32_stream_##index##_##dir##_dma_desc)
+
+#endif /* SOC_GDMA_SUPPORTED */
 
 #define I2S_ESP32_STREAM_DECLARE(index, dir)                                                       \
 	struct i2s_esp32_stream_data i2s_esp32_stream_##index##_##dir##_data = {                   \
@@ -1524,48 +1559,34 @@ static DEVICE_API(i2s, i2s_esp32_driver_api) = {
 		.mem_block_len = 0,                                                                \
 		.stop_without_draining = false,                                                    \
 		.queue = {},                                                                       \
-		.irq_handle = NULL,                                                                \
-		.dma_pending = false                                                               \
-	};                                                                                         \
+		.dma_pending = false,                                                              \
+		I2S_ESP32_STREAM_DECLARE_DATA(index, dir)};                                        \
                                                                                                    \
 	const struct i2s_esp32_stream_conf i2s_esp32_stream_##index##_##dir##_conf = {             \
 		.queue_drop = i2s_esp32_queue_drop,                                                \
 		.start_transfer = i2s_esp32_##dir##_start_transfer,                                \
 		.stop_transfer = i2s_esp32_##dir##_stop_transfer,                                  \
-		.dma_dev = UTIL_AND(DT_INST_DMAS_HAS_NAME(index, dir),                             \
-				    DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(index, dir))),         \
-		.dma_channel = UTIL_AND(DT_INST_DMAS_HAS_NAME(index, dir),                         \
-					DT_INST_DMAS_CELL_BY_NAME(index, dir, channel)),           \
-		.dma_desc = UTIL_AND(DT_INST_IRQ_HAS_NAME(index, dir),                             \
-					i2s_esp32_stream_##index##_##dir##_dma_desc),              \
-		.irq_source = COND_CODE_1(DT_INST_IRQ_HAS_NAME(index, dir),                        \
-					  (DT_INST_IRQ_BY_NAME(index, dir, irq)), (-1)),           \
-		.irq_priority = COND_CODE_1(DT_INST_IRQ_HAS_NAME(index, dir),                      \
-					    (DT_INST_IRQ_BY_NAME(index, dir, priority)), (-1)),    \
-		.irq_flags = COND_CODE_1(DT_INST_IRQ_HAS_NAME(index, dir),                         \
-					 (DT_INST_IRQ_BY_NAME(index, dir, flags)), (-1))           \
-	}
+		I2S_ESP32_STREAM_DECLARE_CONF(index, dir)};
 
-#define I2S_ESP32_STREAM_DECL(index, dir) \
+#define I2S_ESP32_STREAM_COND_DECLARE(index, dir)                                                  \
+	COND_CODE_1(DT_INST_IRQ_HAS_NAME(index, dir), (I2S_ESP32_STREAM_DECL_DESC(index, dir)),    \
+		    ());   \
 	COND_CODE_1(UTIL_OR(DT_INST_DMAS_HAS_NAME(index, dir), DT_INST_IRQ_HAS_NAME(index, dir)),  \
 		    (I2S_ESP32_STREAM_DECLARE(index, dir)), ())
 
 #define I2S_ESP32_STREAM_INIT(index, dir)                                                          \
-	.dir = {.conf = UTIL_AND(UTIL_OR(DT_INST_DMAS_HAS_NAME(index, dir),                        \
-					 DT_INST_IRQ_HAS_NAME(index, dir)),                        \
-				 &i2s_esp32_stream_##index##_##dir##_conf),                        \
-		.data = UTIL_AND(UTIL_OR(DT_INST_DMAS_HAS_NAME(index, dir),                        \
-					 DT_INST_IRQ_HAS_NAME(index, dir)),                        \
-				 &i2s_esp32_stream_##index##_##dir##_data)}
+	COND_CODE_1(UTIL_OR(DT_INST_DMAS_HAS_NAME(index, dir), DT_INST_IRQ_HAS_NAME(index, dir)),  \
+		    (.dir = {.conf = &i2s_esp32_stream_##index##_##dir##_conf,                     \
+			     .data = &i2s_esp32_stream_##index##_##dir##_data}),                   \
+		    (.dir = {.conf = NULL, .data = NULL}))
 
 #define I2S_ESP32_INIT(index)                                                                      \
+	I2S_ESP32_DT_INST_SANITY_CHECK(index);                                                     \
+                                                                                                   \
 	PINCTRL_DT_INST_DEFINE(index);                                                             \
                                                                                                    \
-	I2S_ESP32_STREAM_DECL_DMA_DESC(index, rx);                                                 \
-	I2S_ESP32_STREAM_DECL(index, rx);                                                          \
-                                                                                                   \
-	I2S_ESP32_STREAM_DECL_DMA_DESC(index, tx);                                                 \
-	I2S_ESP32_STREAM_DECL(index, tx);                                                          \
+	I2S_ESP32_STREAM_COND_DECLARE(index, rx);                                                  \
+	I2S_ESP32_STREAM_COND_DECLARE(index, tx);                                                  \
                                                                                                    \
 	static struct i2s_esp32_data i2s_esp32_data_##index = {.clk_info = {0}};                   \
                                                                                                    \
