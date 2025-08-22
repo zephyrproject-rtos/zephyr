@@ -37,6 +37,14 @@ config ADC_MCUX_LPADC
 	help
 	  Enable the MCUX LPADC driver.
 
+config ADC_MCUX_SAR_ADC
+	bool "MCUX SAR ADC driver"
+	default y
+	select ADC_CONFIGURABLE_INPUTS
+	depends on DT_HAS_NXP_SAR_ADC_ENABLED
+	help
+	  Enable the MCUX SAR ADC driver.
+
 config ADC_MCUX_GAU
 	bool "MCUX GAU ADC driver"
 	default y
@@ -115,3 +123,16 @@ config LPADC_CHANNEL_COUNT
 
 
 endif # ADC_MCUX_LPADC
+
+if ADC_MCUX_SAR_ADC
+
+config SAR_ADC_CHANNEL_COUNT
+	int "SAR_ADC channel count"
+	default 8
+	range 1 8
+	help
+	  Amount of hardware channels to use, reduce to save RAM.
+	  The user can reduce this value if their application uses fewer than
+	  8 ADC channels.
+
+endif # ADC_MCUX_SAR_ADC
