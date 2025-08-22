@@ -122,7 +122,7 @@ manifest:
       groups:
         - hal
     - name: cmsis-dsp
-      revision: 2c014e93d75c4896df57f072b3f7d5d06e37f254
+      revision: pull/7/head
       path: modules/lib/cmsis-dsp
     - name: cmsis-nn
       revision: e9328d612ea3ea7d0d210d3ac16ea8667c01abdd
@@ -231,7 +231,7 @@ manifest:
         - hal
     - name: hal_rpi_pico
       path: modules/hal/rpi_pico
-      revision: 5a981c7c29e3846646549a1902183684f0147e1d
+      revision: b547a36a722af7787e5f55b551fd6ce72dcba5a4
       groups:
         - hal
     - name: hal_silabs
@@ -308,7 +308,7 @@ manifest:
       revision: b03edc8e6282a963cd312cd0b409eb5ce263ea75
       path: modules/lib/gui/lvgl
     - name: mbedtls
-      revision: 85440ef5fffa95d0e9971e9163719189cf34d979
+      revision: pull/73/head
       path: modules/crypto/mbedtls
       groups:
         - crypto
@@ -361,7 +361,7 @@ manifest:
       groups:
         - tee
     - name: trusted-firmware-m
-      revision: 021e2bbd50c215e41710a72e05abce3224f074a7
+      revision: pull/134/head
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee
