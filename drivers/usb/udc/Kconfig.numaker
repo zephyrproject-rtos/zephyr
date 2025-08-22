@@ -2,12 +2,14 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config UDC_NUMAKER
-	bool "Nuvoton NuMaker USB 1.1 device controller"
+	bool "Nuvoton NuMaker USB device controller"
 	default y
-	depends on DT_HAS_NUVOTON_NUMAKER_USBD_ENABLED
+	depends on DT_HAS_NUVOTON_NUMAKER_USBD_ENABLED \
+		|| DT_HAS_NUVOTON_NUMAKER_HSUSBD_ENABLED
 	select PINCTRL
+	select UDC_DRIVER_HAS_HIGH_SPEED_SUPPORT if DT_HAS_NUVOTON_NUMAKER_HSUSBD_ENABLED
 	help
-	  Enable Nuvoton NuMaker USB 1.1 device controller driver
+	  Enable Nuvoton NuMaker USB device controller driver
 
 if UDC_NUMAKER
 
