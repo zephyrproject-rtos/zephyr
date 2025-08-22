@@ -60,9 +60,9 @@ struct clock_management_event {
 	/** Type of event */
 	enum clock_management_event_type type;
 	/** Old clock rate */
-	uint32_t old_rate;
+	clock_freq_t old_rate;
 	/** New clock rate */
-	uint32_t new_rate;
+	clock_freq_t new_rate;
 };
 
 /**
@@ -103,9 +103,9 @@ struct clock_management_callback {
  */
 struct clock_management_rate_req {
 	/** Minimum acceptable frequency */
-	int min_freq;
+	clock_freq_t min_freq;
 	/** Maximum acceptable frequency */
-	int max_freq;
+	clock_freq_t max_freq;
 };
 
 /**

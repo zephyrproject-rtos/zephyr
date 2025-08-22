@@ -45,7 +45,7 @@ struct clock_output_state {
 	/* Number of clock nodes to configure */
 	const uint8_t num_clocks;
 	/* Frequency resulting from this setting */
-	const uint32_t frequency;
+	const clock_freq_t frequency;
 #if defined(CONFIG_CLOCK_MANAGEMENT_RUNTIME) || defined(__DOXYGEN__)
 	/* Should this state lock the clock configuration? */
 	const bool locking;
@@ -165,58 +165,53 @@ static void clock_remove_constraint(const struct clk *clk_hw,
  * children clocks to determine a final rate
  *
  * @param clk_hw Clock to check the rate for
- * @param output_rate Pointer to store the current rate of the clock
- * @return 0 if successful, or negative value on error
+ * @return clock rate on success, or negative value on error
  */
-int clock_management_clk_rate(const struct clk *clk_hw, uint32_t *output_rate)
+clock_freq_t clock_management_clk_rate(const struct clk *clk_hw)
 {
-	int ret;
-	uint32_t parent_rate;
-	uint8_t parent_idx;
+	clock_freq_t current_rate, ret;
 
 #ifdef CONFIG_CLOCK_MANAGEMENT_RUNTIME
 	if (clk_hw->subsys_data->rate != 0) {
-		*output_rate = clk_hw->subsys_data->rate;
-		return 0;
+		return clk_hw->subsys_data->rate;
 	}
 #endif
 
 	if (clock_get_type(clk_hw) == CLK_TYPE_ROOT) {
 		/* Base case- just get the rate of this clock */
-		ret = clock_get_rate(clk_hw, output_rate);
+		current_rate = clock_get_rate(clk_hw);
 	} else if (clock_get_type(clk_hw) == CLK_TYPE_STANDARD) {
 		/* Recursive. Single parent clock, use recalc_rate */
-		ret = clock_management_clk_rate(GET_CLK_PARENT(clk_hw), &parent_rate);
+		ret = clock_management_clk_rate(GET_CLK_PARENT(clk_hw));
 		if (ret < 0) {
 			return ret;
 		}
-		ret = clock_recalc_rate(clk_hw, parent_rate, output_rate);
+		current_rate = clock_recalc_rate(clk_hw, ret);
 	} else {
 		/* Recursive. Multi parent clock, get the parent and return its rate */
-		ret = clock_get_parent(clk_hw, &parent_idx);
+		ret = clock_get_parent(clk_hw);
 		if (ret == -ENOTCONN) {
 			/* Clock has no parent, it is disconnected */
-			*output_rate = 0;
 			return 0;
 		} else if (ret < 0) {
 			/* Error getting parent */
 			return ret;
 		}
-		ret = clock_management_clk_rate(GET_CLK_PARENTS(clk_hw)[parent_idx], output_rate);
+		current_rate = clock_management_clk_rate(GET_CLK_PARENTS(clk_hw)[ret]);
 	}
 
 	IF_ENABLED(CONFIG_CLOCK_MANAGEMENT_CLK_NAME, (
-		if (ret == 0) {
-			LOG_DBG("Clock %s returns rate %d", clk_hw->clk_name, *output_rate);
+		if (current_rate >= 0) {
+			LOG_DBG("Clock %s returns rate %d", clk_hw->clk_name, current_rate);
 		}
 	))
 #ifdef CONFIG_CLOCK_MANAGEMENT_RUNTIME
-	if (ret == 0) {
+	if (current_rate >= 0) {
 		/* Cache rate */
-		clk_hw->subsys_data->rate = *output_rate;
+		clk_hw->subsys_data->rate = current_rate;
 	}
 #endif
-	return ret;
+	return current_rate;
 }
 
 #ifdef CONFIG_CLOCK_MANAGEMENT_RUNTIME
@@ -275,8 +270,8 @@ void clock_management_disable_unused(void)
  * @return 0 if notification chain succeeded, or error if not
  */
 static int clock_notify_children(const struct clk *clk_hw,
-				 uint32_t old_freq,
-				 uint32_t new_freq,
+				 clock_freq_t old_freq,
+				 clock_freq_t new_freq,
 				 enum clock_management_event_type ev_type)
 {
 	const struct clock_management_event event = {
@@ -289,8 +284,8 @@ static int clock_notify_children(const struct clk *clk_hw,
 	const struct clock_output *consumer;
 	struct clock_management_callback *cb;
 	const struct clk *child;
-	int ret, child_newrate, child_oldrate;
-	uint8_t parent_idx;
+	int ret, parent_idx;
+	clock_freq_t child_newrate, child_oldrate;
 
 	if (*handle == CLOCK_LIST_END) {
 		/* Base case- clock leaf (output node) */
@@ -329,27 +324,27 @@ static int clock_notify_children(const struct clk *clk_hw,
 				child_newrate = new_freq;
 			} else if (clock_get_type(child) == CLK_TYPE_STANDARD) {
 				/* Single parent clock, use recalc */
-				ret = clock_recalc_rate(child, new_freq, &child_newrate);
-				if (ret < 0) {
+				child_newrate = clock_recalc_rate(child, new_freq);
+				if (child_newrate < 0) {
 					IF_ENABLED(CONFIG_CLOCK_MANAGEMENT_CLK_NAME, (
 						LOG_DBG("Clock %s rejected rate %u",
 							clk_hw->clk_name, new_freq);
 					))
-					return ret;
+					return child_newrate;
 				}
-				ret = clock_recalc_rate(child, old_freq, &child_oldrate);
-				if (ret < 0) {
-					return ret;
+				child_oldrate = clock_recalc_rate(child, old_freq);
+				if (child_oldrate < 0) {
+					return child_oldrate;
 				}
 			} else {
 				/* Multi parent clock, see if it is connected */
-				ret = clock_get_parent(child, &parent_idx);
-				if (ret == -ENOTCONN) {
+				parent_idx = clock_get_parent(child);
+				if (parent_idx == -ENOTCONN) {
 					/* Clock has no parent, it is disconnected */
 					continue;
-				} else if (ret < 0) {
+				} else if (parent_idx < 0) {
 					/* Error getting parent */
-					return ret;
+					return parent_idx;
 				}
 				if (GET_CLK_PARENTS(child)[parent_idx] != clk_hw) {
 					/* Disconnected */
@@ -397,54 +392,49 @@ static int clock_notify_children(const struct clk *clk_hw,
 static int clock_tree_configure(const struct clk *clk_hw,
 				const void *cfg_param)
 {
-	uint32_t current_rate, new_rate, parent_rate;
-	int ret;
-	uint8_t parent_idx;
+	clock_freq_t current_rate, new_rate, parent_rate;
+	int ret, parent_idx;
 
 	if (clock_get_type(clk_hw) == CLK_TYPE_ROOT) {
-		ret = clock_get_rate(clk_hw, &current_rate);
-		if (ret < 0) {
-			return ret;
+		current_rate =  clock_get_rate(clk_hw);
+		if (current_rate < 0) {
+			return current_rate;
 		}
-		ret = clock_root_configure_recalc(clk_hw,
-					cfg_param,
-					&new_rate);
-		if (ret < 0) {
-			return ret;
+		new_rate = clock_root_configure_recalc(clk_hw,
+					cfg_param);
+		if (new_rate < 0) {
+			return new_rate;
 		}
 	} else if (clock_get_type(clk_hw) == CLK_TYPE_STANDARD) {
 		/* Single parent clock */
-		ret = clock_management_clk_rate(
-			GET_CLK_PARENT(clk_hw),
-			&parent_rate);
-		if (ret < 0) {
-			return ret;
+		parent_rate = clock_management_clk_rate(
+			GET_CLK_PARENT(clk_hw));
+		if (parent_rate < 0) {
+			return parent_rate;
 		}
-		ret = clock_recalc_rate(clk_hw, parent_rate, &current_rate);
-		if (ret < 0) {
-			return ret;
+		current_rate = clock_recalc_rate(clk_hw, parent_rate);
+		if (current_rate < 0) {
+			return current_rate;
 		}
-		ret = clock_configure_recalc(clk_hw, cfg_param,
-					     parent_rate, &new_rate);
-		if (ret < 0) {
-			return ret;
+		new_rate = clock_configure_recalc(clk_hw, cfg_param,
+					     parent_rate);
+		if (new_rate < 0) {
+			return new_rate;
 		}
 	} else {
 		/* Multi parent clock */
-		ret = clock_management_clk_rate(clk_hw, &current_rate);
-		if (ret < 0) {
-			return ret;
+		current_rate = clock_management_clk_rate(clk_hw);
+		if (current_rate < 0) {
+			return current_rate;
 		}
 		/* Get new parent rate */
-		ret = clock_mux_configure_recalc(clk_hw, cfg_param,
-						  &parent_idx);
-		if (ret < 0) {
-			return ret;
+		parent_idx = clock_mux_configure_recalc(clk_hw, cfg_param);
+		if (parent_idx < 0) {
+			return parent_idx;
 		}
-		ret = clock_management_clk_rate(GET_CLK_PARENTS(clk_hw)[parent_idx],
-						&new_rate);
-		if (ret < 0) {
-			return ret;
+		new_rate = clock_management_clk_rate(GET_CLK_PARENTS(clk_hw)[parent_idx]);
+		if (new_rate < 0) {
+			return new_rate;
 		}
 		ret = clock_mux_validate_parent(clk_hw, new_rate, parent_idx);
 		if (ret < 0) {
@@ -496,14 +486,13 @@ static int clock_tree_configure(const struct clk *clk_hw,
  * @param new_rate Proposed new rate of the clock
  * @return 0 if all children can support the new rate, or negative value on error
  */
-int clock_children_check_rate(const struct clk *clk_hw, uint32_t new_rate)
+int clock_children_check_rate(const struct clk *clk_hw, clock_freq_t new_rate)
 {
-	int ret;
-	uint32_t current_rate;
+	clock_freq_t current_rate;
 
-	ret = clock_management_clk_rate(clk_hw, &current_rate);
-	if (ret < 0) {
-		return ret;
+	current_rate = clock_management_clk_rate(clk_hw);
+	if (current_rate < 0) {
+		return current_rate;
 	}
 	return clock_notify_children(clk_hw, current_rate,
 				     new_rate, CLOCK_MANAGEMENT_QUERY_RATE_CHANGE);
@@ -523,7 +512,7 @@ int clock_children_check_rate(const struct clk *clk_hw, uint32_t new_rate)
  * @param new_rate Proposed new rate of the clock
  * @return 0 if all children can support the new rate, or negative value on error
  */
-int clock_children_check_rate(const struct clk *clk_hw, uint32_t new_rate)
+int clock_children_check_rate(const struct clk *clk_hw, clock_freq_t new_rate)
 {
 	/* No-op */
 	return 0;
@@ -554,31 +543,31 @@ static int clock_tree_configure(const struct clk *clk_hw,
  * @param rate_req Requested rate to find best parent for
  * @param best_rate Best rate found
  * @param best_parent Index of best parent clock
- * @return 0 on success, or negative value on error
+ * @return best possible rate on success, or negative value on error
  */
-static int clock_management_best_parent(const struct clk *clk_hw, int rate_req,
-					 uint32_t *best_rate, uint8_t *best_parent)
+static clock_freq_t clock_management_best_parent(const struct clk *clk_hw,
+						 clock_freq_t rate_req,
+						 int *best_parent)
 {
 	int ret;
 	uint32_t best_delta = UINT32_MAX, delta;
-	uint32_t cand_rate, current_rate;
+	clock_freq_t cand_rate, current_rate, best_rate;
 	const struct clk *cand_parent;
 	const struct clk_mux_subsys_data *mux_data = clk_hw->hw_data;
 
 	/* Evaluate each parent clock. If one fails for any reason, just skip it */
-	for (uint8_t i = 0; i < mux_data->parent_cnt; i++) {
+	for (int i = 0; i < mux_data->parent_cnt; i++) {
 		cand_parent = mux_data->parents[i];
-		ret = clock_management_round_rate(cand_parent, rate_req,
-						  &cand_rate);
-		if (ret < 0) {
+		cand_rate = clock_management_round_rate(cand_parent, rate_req);
+		if (cand_rate < 0) {
 			continue; /* Not a candidate */
 		}
 		ret = clock_mux_validate_parent(clk_hw, cand_rate, i);
 		if (ret < 0) {
 			continue; /* Not a candidate */
 		}
-		ret = clock_management_clk_rate(clk_hw, &current_rate);
-		if (ret < 0) {
+		current_rate = clock_management_clk_rate(clk_hw);
+		if (current_rate < 0) {
 			continue; /* Not a candidate */
 		}
 		IF_ENABLED(CONFIG_CLOCK_MANAGEMENT_CLK_NAME, (
@@ -599,7 +588,7 @@ static int clock_management_best_parent(const struct clk *clk_hw, int rate_req,
 		}
 		if (delta < best_delta) {
 			best_delta = delta;
-			*best_rate = cand_rate;
+			best_rate = cand_rate;
 			*best_parent = i;
 		}
 		if (best_delta == 0) {
@@ -608,7 +597,7 @@ static int clock_management_best_parent(const struct clk *clk_hw, int rate_req,
 		}
 	}
 	/* If we didn't find a suitable clock, indicate error here */
-	return (best_delta == UINT32_MAX) ? -ENOTSUP : 0;
+	return (best_delta == UINT32_MAX) ? -ENOTSUP : best_rate;
 }
 
 /**
@@ -619,54 +608,58 @@ static int clock_management_best_parent(const struct clk *clk_hw, int rate_req,
  *
  * @param clk_hw Clock to round rate for
  * @param rate_req Requested rate to round
- * @param best_rate best rate output
- * @return 0 on success, or negative value on error
+ * @return best possible rate on success, or negative value on error
  */
-int clock_management_round_rate(const struct clk *clk_hw, int rate_req,
-				uint32_t *best_rate)
+clock_freq_t clock_management_round_rate(const struct clk *clk_hw, int rate_req)
 {
 	int ret;
-	uint32_t parent_rate, current_rate;
-	uint8_t best_parent;
+	clock_freq_t parent_rate, current_rate, best_rate;
+	int best_parent;
 
 	if (clock_get_type(clk_hw) == CLK_TYPE_MUX) {
 		/* Mux clocks don't support round_rate, we implement it generically */
-		ret = clock_management_best_parent(clk_hw, rate_req,
-						  best_rate, &best_parent);
+		best_rate = clock_management_best_parent(clk_hw, rate_req,
+							&best_parent);
 	} else if (clock_get_type(clk_hw) == CLK_TYPE_ROOT) {
 		/* No need to check parents */
-		ret = clock_get_rate(clk_hw, &current_rate);
+		current_rate = clock_get_rate(clk_hw);
+		if (current_rate < 0) {
+			return current_rate;
+		}
+		best_rate = clock_root_round_rate(clk_hw, rate_req);
+		if (best_rate < 0) {
+			/* Clock can't reconfigure, use the current rate */
+			best_rate = current_rate;
+		}
+		ret = clock_notify_children(clk_hw, current_rate, best_rate,
+					     CLOCK_MANAGEMENT_QUERY_RATE_CHANGE);
 		if (ret < 0) {
 			return ret;
 		}
-		ret = clock_root_round_rate(clk_hw, rate_req, best_rate);
-		if (ret < 0) {
-			/* Clock can't reconfigure, use the current rate */
-			*best_rate = current_rate;
-		}
-		ret = clock_notify_children(clk_hw, current_rate, *best_rate,
-					     CLOCK_MANAGEMENT_QUERY_RATE_CHANGE);
 	} else {
 		/* Standard clock, check what rate the parent can offer */
-		ret = clock_management_round_rate(GET_CLK_PARENT(clk_hw), rate_req, &parent_rate);
-		if (ret < 0) {
-			return ret;
+		parent_rate = clock_management_round_rate(GET_CLK_PARENT(clk_hw), rate_req);
+		if (parent_rate < 0) {
+			return parent_rate;
 		}
-		ret = clock_management_clk_rate(clk_hw, &current_rate);
-		if (ret < 0) {
-			return ret;
+		current_rate = clock_management_clk_rate(clk_hw);
+		if (current_rate < 0) {
+			return current_rate;
 		}
 		/* Check what rate this clock can offer with its parent offering */
-		ret = clock_round_rate(clk_hw, rate_req, parent_rate, best_rate);
-		if (ret < 0) {
+		best_rate = clock_round_rate(clk_hw, rate_req, parent_rate);
+		if (best_rate < 0) {
 			/* Clock can't reconfigure, use the current rate */
-			*best_rate = current_rate;
+			best_rate = current_rate;
 		}
-		ret = clock_notify_children(clk_hw, current_rate, *best_rate,
+		ret = clock_notify_children(clk_hw, current_rate, best_rate,
 					     CLOCK_MANAGEMENT_QUERY_RATE_CHANGE);
+		if (ret < 0) {
+			return ret;
+		}
 	}
 
-	return ret;
+	return best_rate;
 }
 
 /**
@@ -676,34 +669,32 @@ int clock_management_round_rate(const struct clk *clk_hw, int rate_req,
  *
  * @param clk_hw Clock to set rate for
  * @param rate_req Requested rate to set
- * @param new_rate New rate output
- * @return 0 on success, or negative value on error
+ * @return rate clock is set to on success, or negative value on error
  */
-int clock_management_set_rate(const struct clk *clk_hw, int rate_req,
-			      uint32_t *new_rate)
+clock_freq_t clock_management_set_rate(const struct clk *clk_hw, clock_freq_t rate_req)
 {
 	int ret;
-	uint32_t best_rate, current_rate, parent_rate;
-	uint8_t best_parent;
+	clock_freq_t parent_rate, current_rate, new_rate, best_rate;
+	int best_parent;
 
-	ret = clock_management_clk_rate(clk_hw, &current_rate);
-	if (ret < 0) {
-		return ret;
+	current_rate = clock_management_clk_rate(clk_hw);
+	if (current_rate < 0) {
+		return current_rate;
 	}
 	if (clock_get_type(clk_hw) == CLK_TYPE_MUX) {
 		/* Find the best parent and select that one */
-		ret = clock_management_best_parent(clk_hw, rate_req,
-						  &best_rate, &best_parent);
-		if (ret < 0) {
-			return ret;
+		best_rate = clock_management_best_parent(clk_hw, rate_req,
+						  &best_parent);
+		if (best_rate < 0) {
+			return best_rate;
 		}
 		/* Set the parent's rate */
-		ret = clock_management_set_rate(GET_CLK_PARENTS(clk_hw)[best_parent],
-						best_rate, new_rate);
-		if (ret < 0) {
-			return ret;
+		new_rate = clock_management_set_rate(GET_CLK_PARENTS(clk_hw)[best_parent],
+						best_rate);
+		if (new_rate < 0) {
+			return new_rate;
 		}
-		ret = clock_notify_children(clk_hw, current_rate, *new_rate,
+		ret = clock_notify_children(clk_hw, current_rate, new_rate,
 					     CLOCK_MANAGEMENT_PRE_RATE_CHANGE);
 		if (ret < 0) {
 			return ret;
@@ -712,12 +703,15 @@ int clock_management_set_rate(const struct clk *clk_hw, int rate_req,
 		if (ret < 0) {
 			return ret;
 		}
-		ret = clock_notify_children(clk_hw, current_rate, *new_rate,
+		ret = clock_notify_children(clk_hw, current_rate, new_rate,
 					     CLOCK_MANAGEMENT_POST_RATE_CHANGE);
-	} else if (clock_get_type(clk_hw) == CLK_TYPE_ROOT) {
-		ret = clock_management_round_rate(clk_hw, rate_req, &best_rate);
 		if (ret < 0) {
 			return ret;
+		}
+	} else if (clock_get_type(clk_hw) == CLK_TYPE_ROOT) {
+		best_rate = clock_management_round_rate(clk_hw, rate_req);
+		if (best_rate < 0) {
+			return best_rate;
 		}
 		ret = clock_notify_children(clk_hw, current_rate, best_rate,
 					     CLOCK_MANAGEMENT_PRE_RATE_CHANGE);
@@ -725,48 +719,51 @@ int clock_management_set_rate(const struct clk *clk_hw, int rate_req,
 			return ret;
 		}
 		/* Root clock parent can be set directly (base case) */
-		ret = clock_root_set_rate(clk_hw, best_rate, new_rate);
+		new_rate = clock_root_set_rate(clk_hw, best_rate);
+		if (new_rate < 0) {
+			return new_rate;
+		}
+		ret = clock_notify_children(clk_hw, current_rate, new_rate,
+					     CLOCK_MANAGEMENT_POST_RATE_CHANGE);
 		if (ret < 0) {
 			return ret;
 		}
-		ret = clock_notify_children(clk_hw, current_rate, *new_rate,
-					     CLOCK_MANAGEMENT_POST_RATE_CHANGE);
 	} else {
 		/* Set parent rate, then child rate */
-		ret = clock_management_set_rate(GET_CLK_PARENT(clk_hw), rate_req,
-						&parent_rate);
-		if (ret < 0) {
-			return ret;
+		parent_rate = clock_management_set_rate(GET_CLK_PARENT(clk_hw), rate_req);
+		if (parent_rate < 0) {
+			return parent_rate;
 		}
-		ret = clock_management_round_rate(clk_hw, rate_req, &best_rate);
-		if (ret < 0) {
-			return ret;
+		best_rate = clock_management_round_rate(clk_hw, rate_req);
+		if (best_rate < 0) {
+			return best_rate;
 		}
 		ret = clock_notify_children(clk_hw, current_rate, best_rate,
 					     CLOCK_MANAGEMENT_PRE_RATE_CHANGE);
 		if (ret < 0) {
 			return ret;
 		}
-		ret = clock_set_rate(clk_hw, best_rate, parent_rate, new_rate);
+		new_rate = clock_set_rate(clk_hw, best_rate, parent_rate);
+		if (new_rate < 0) {
+			return new_rate;
+		}
+		ret = clock_notify_children(clk_hw, current_rate, new_rate,
+					     CLOCK_MANAGEMENT_POST_RATE_CHANGE);
 		if (ret < 0) {
 			return ret;
 		}
-		ret = clock_notify_children(clk_hw, current_rate, *new_rate,
-					     CLOCK_MANAGEMENT_POST_RATE_CHANGE);
 	}
-	return ret;
+	return new_rate;
 }
 
 #else
 
-int clock_management_round_rate(const struct clk *clk_hw, int rate_req,
-				uint32_t *best_rate)
+clock_freq_t clock_management_round_rate(const struct clk *clk_hw, clock_freq_t rate_req)
 {
 	return -ENOTSUP;
 }
 
-int clock_management_set_rate(const struct clk *clk_hw, int rate_req,
-			      uint32_t *new_rate)
+clock_freq_t clock_management_set_rate(const struct clk *clk_hw, clock_freq_t rate_req)
 {
 	return -ENOTSUP;
 }
@@ -785,16 +782,15 @@ static int clock_apply_state(const struct clk *clk_hw,
 			     const struct clock_output_state *clk_state)
 {
 	const struct clock_output_data *data = clk_hw->hw_data;
-	uint32_t new_rate = 0;
+	clock_freq_t new_rate = 0;
 	int ret;
 
 	if (clk_state->num_clocks == 0) {
 		/* Use runtime clock setting */
-		ret = clock_management_set_rate(data->parent, clk_state->frequency,
-						&new_rate);
+		new_rate = clock_management_set_rate(data->parent, clk_state->frequency);
 
-		if (ret < 0) {
-			return ret;
+		if (new_rate < 0) {
+			return new_rate;
 		}
 		if (new_rate != clk_state->frequency) {
 			return -ENOTSUP;
@@ -834,8 +830,6 @@ static int clock_apply_state(const struct clk *clk_hw,
 int clock_management_get_rate(const struct clock_output *clk)
 {
 	const struct clock_output_data *data;
-	uint32_t output_rate;
-	int ret;
 
 	if (!clk) {
 		return -EINVAL;
@@ -844,17 +838,12 @@ int clock_management_get_rate(const struct clock_output *clk)
 	data = GET_CLK_CORE(clk)->hw_data;
 
 	/* Read rate */
-	ret = clock_management_clk_rate(data->parent, &output_rate);
-	if (ret < 0) {
-		return ret;
-	}
-	return output_rate;
+	return clock_management_clk_rate(data->parent);
 }
 
 static int clock_management_onoff(const struct clk *clk_hw, bool on)
 {
 	const struct clk *child = clk_hw, *parent;
-	uint8_t parent_idx;
 	int ret = 0;
 
 	/* Walk up parents tree, turning on clocks as we go */
@@ -886,7 +875,7 @@ static int clock_management_onoff(const struct clk *clk_hw, bool on)
 			parent = GET_CLK_PARENT(child);
 		} else {
 			/* Multi parent clock */
-			ret = clock_get_parent(child, &parent_idx);
+			ret = clock_get_parent(child);
 			if (ret == -ENOTCONN) {
 				/* Clock has no parent, it is disconnected */
 				return 0;
@@ -894,7 +883,7 @@ static int clock_management_onoff(const struct clk *clk_hw, bool on)
 				/* Error getting parent */
 				return ret;
 			}
-			parent = GET_CLK_PARENTS(child)[parent_idx];
+			parent = GET_CLK_PARENTS(child)[ret];
 		}
 		child = parent;
 	}
@@ -958,10 +947,9 @@ int clock_management_req_rate(const struct clock_output *clk,
 			const struct clock_management_rate_req *req)
 {
 	const struct clock_output_data *data;
-	int ret = -ENOENT;
+	clock_freq_t ret = -ENOENT;
 	const struct clock_output_state *best_state = NULL;
 	int best_delta = INT32_MAX;
-	uint32_t new_freq;
 	struct clock_management_rate_req *combined_req;
 
 	if (!clk) {
@@ -1050,10 +1038,9 @@ int clock_management_req_rate(const struct clock_output *clk,
 		}
 	}
 	/* No best setting was found, try runtime clock setting */
-	ret = clock_management_round_rate(data->parent, combined_req->max_freq,
-					  &new_freq);
-	if (ret == 0) {
-		ret = new_freq;
+	ret = clock_management_round_rate(data->parent, combined_req->max_freq);
+	if (ret < 0) {
+		return ret;
 	}
 out:
 	if (ret >= 0) {
@@ -1064,12 +1051,7 @@ out:
 		}
 	}
 #ifdef CONFIG_CLOCK_MANAGEMENT_SET_RATE
-	ret = clock_management_set_rate(data->parent, ret, &new_freq);
-
-	if (ret < 0) {
-		return ret;
-	}
-	ret = new_freq;
+	ret = clock_management_set_rate(data->parent, ret);
 #endif
 #ifdef CONFIG_CLOCK_MANAGEMENT_RUNTIME
 	/* New clock state applied. Save the new combined constraint set. */

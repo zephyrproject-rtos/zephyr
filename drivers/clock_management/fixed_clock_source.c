@@ -10,23 +10,20 @@
 #define DT_DRV_COMPAT fixed_clock
 
 struct fixed_clock_data {
-	int clock_rate;
+	clock_freq_t clock_rate;
 };
 
-static int clock_source_get_rate(const struct clk *clk_hw, uint32_t *out_rate)
+static clock_freq_t clock_source_get_rate(const struct clk *clk_hw)
 {
-	*out_rate = ((struct fixed_clock_data *)clk_hw->hw_data)->clock_rate;
-	return 0;
+	return ((struct fixed_clock_data *)clk_hw->hw_data)->clock_rate;
 }
 
 #ifdef CONFIG_CLOCK_MANAGEMENT_SET_RATE
-static int clock_source_request_rate(const struct clk *clk_hw, uint32_t rate_req,
-				     uint32_t *out_rate)
+static clock_freq_t clock_source_request_rate(const struct clk *clk_hw, clock_freq_t rate_req)
 {
 	/* Clock isn't reconfigurable, just return current rate */
 	ARG_UNUSED(rate_req);
-	*out_rate = ((struct fixed_clock_data *)clk_hw->hw_data)->clock_rate;
-	return 0;
+	return ((struct fixed_clock_data *)clk_hw->hw_data)->clock_rate;
 }
 #endif
 

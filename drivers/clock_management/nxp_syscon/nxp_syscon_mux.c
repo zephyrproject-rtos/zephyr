@@ -21,7 +21,7 @@ struct syscon_clock_mux_config {
 	volatile uint32_t *reg;
 };
 
-static int syscon_clock_mux_get_parent(const struct clk *clk_hw, uint8_t *parent_idx)
+static int syscon_clock_mux_get_parent(const struct clk *clk_hw)
 {
 	const struct syscon_clock_mux_config *config = clk_hw->hw_data;
 	uint32_t mux_mask = GENMASK((config->mask_width +
@@ -33,8 +33,7 @@ static int syscon_clock_mux_get_parent(const struct clk *clk_hw, uint8_t *parent
 		return -ENOTCONN;
 	}
 
-	*parent_idx = sel;
-	return 0;
+	return sel;
 }
 
 static int syscon_clock_mux_configure(const struct clk *clk_hw, const void *mux)
@@ -57,8 +56,7 @@ static int syscon_clock_mux_configure(const struct clk *clk_hw, const void *mux)
 
 #if defined(CONFIG_CLOCK_MANAGEMENT_RUNTIME)
 static int syscon_clock_mux_configure_recalc(const struct clk *clk_hw,
-					     const void *mux,
-					     uint8_t *new_idx)
+					     const void *mux)
 {
 	const struct syscon_clock_mux_config *config = clk_hw->hw_data;
 
@@ -66,12 +64,11 @@ static int syscon_clock_mux_configure_recalc(const struct clk *clk_hw,
 		return -EINVAL;
 	}
 
-	*new_idx = (uint8_t)(uintptr_t)mux;
-	return 0;
+	return (int)(uintptr_t)mux;
 }
 
 static int syscon_clock_mux_validate_parent(const struct clk *clk_hw,
-					    uint32_t parent_freq, uint8_t new_idx)
+					    clock_freq_t parent_freq, uint8_t new_idx)
 {
 	const struct syscon_clock_mux_config *config = clk_hw->hw_data;
 	int ret;

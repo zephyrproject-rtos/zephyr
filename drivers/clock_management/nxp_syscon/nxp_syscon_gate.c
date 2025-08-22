@@ -15,15 +15,13 @@ struct syscon_clock_gate_config {
 	uint8_t enable_offset;
 };
 
-static int syscon_clock_gate_recalc_rate(const struct clk *clk_hw,
-					uint32_t parent_rate,
-					uint32_t *output_rate)
+static clock_freq_t syscon_clock_gate_recalc_rate(const struct clk *clk_hw,
+					clock_freq_t parent_rate)
 {
 	const struct syscon_clock_gate_config *config = clk_hw->hw_data;
 
-	*output_rate = ((*config->reg) & BIT(config->enable_offset)) ?
-			parent_rate : 0;
-	return 0;
+	return ((*config->reg) & BIT(config->enable_offset)) ?
+		parent_rate : 0;
 }
 
 static int syscon_clock_gate_configure(const struct clk *clk_hw, const void *data)
@@ -41,47 +39,38 @@ static int syscon_clock_gate_configure(const struct clk *clk_hw, const void *dat
 }
 
 #if defined(CONFIG_CLOCK_MANAGEMENT_RUNTIME)
-static int syscon_clock_gate_configure_recalc(const struct clk *clk_hw,
+static clock_freq_t syscon_clock_gate_configure_recalc(const struct clk *clk_hw,
 					      const void *data,
-					      uint32_t parent_rate,
-					      uint32_t *output_rate)
+					      clock_freq_t parent_rate)
 {
 	bool ungate = (bool)data;
 
-	*output_rate = (ungate) ? parent_rate : 0;
-	return 0;
+	return (ungate) ? parent_rate : 0;
 }
 #endif
 
 #if defined(CONFIG_CLOCK_MANAGEMENT_SET_RATE)
-static int syscon_clock_gate_round_rate(const struct clk *clk_hw,
-					uint32_t rate_req,
-					uint32_t parent_rate,
-					uint32_t *output_rate)
+static clock_freq_t syscon_clock_gate_round_rate(const struct clk *clk_hw,
+					clock_freq_t rate_req,
+					clock_freq_t parent_rate)
 {
 	if (rate_req != 0) {
-		*output_rate = parent_rate;
-	} else {
-		*output_rate = 0;
+		return parent_rate;
 	}
-
 	return 0;
 }
 
-static int syscon_clock_gate_set_rate(const struct clk *clk_hw,
-				      uint32_t rate_req,
-				      uint32_t parent_rate,
-				      uint32_t *output_rate)
+static clock_freq_t syscon_clock_gate_set_rate(const struct clk *clk_hw,
+				      clock_freq_t rate_req,
+				      clock_freq_t parent_rate)
 {
 	const struct syscon_clock_gate_config *config = clk_hw->hw_data;
 
 	if (rate_req != 0) {
-		*output_rate = parent_rate;
 		(*config->reg) |= BIT(config->enable_offset);
-	} else {
-		*output_rate = 0;
-		(*config->reg) &= ~BIT(config->enable_offset);
+		return parent_rate;
 	}
+	(*config->reg) &= ~BIT(config->enable_offset);
 	return 0;
 }
 #endif

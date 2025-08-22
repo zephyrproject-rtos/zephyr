@@ -44,6 +44,9 @@ extern "C" {
  */
 typedef int16_t clock_handle_t;
 
+/** @brief Clock frequency type. Defined for future portability */
+typedef int32_t clock_freq_t;
+
 /** @brief Flag value used to identify the end of a clock list. */
 #define CLOCK_LIST_END INT16_MIN
 /** @brief Flag value used to identify a NULL clock handle */
@@ -64,7 +67,7 @@ typedef int16_t clock_handle_t;
  * Clock state data used by the clock management subsystem in runtime mode
  */
 struct clk_subsys_data {
-	uint32_t rate; /**< Current clock rate in Hz */
+	clock_freq_t rate; /**< Current clock rate in Hz */
 	uint8_t usage_cnt; /**< Number of users of this clock */
 };
 
@@ -281,7 +284,7 @@ struct clk_mux_subsys_data {
  * @param name_ clock name
  * @param subsys_data_ clock subsystem data
  */
-#define Z_CLOCK_INIT(children_, hw_data_, api_, name, subsys_data_)                    \
+#define Z_CLOCK_INIT(children_, hw_data_, api_, name_, subsys_data_)                   \
 	{                                                                              \
 		IF_ENABLED(CONFIG_CLOCK_MANAGEMENT_RUNTIME, (.children = children_,))  \
 		.hw_data = (void *)hw_data_,                                           \

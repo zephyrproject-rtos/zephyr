@@ -19,9 +19,8 @@ struct syscon_rtcclk_config {
 };
 
 
-static int syscon_clock_rtcclk_recalc_rate(const struct clk *clk_hw,
-					   uint32_t parent_rate,
-					   uint32_t *output_rate)
+static clock_freq_t syscon_clock_rtcclk_recalc_rate(const struct clk *clk_hw,
+					   clock_freq_t parent_rate)
 {
 	const struct syscon_rtcclk_config *config = clk_hw->hw_data;
 	uint8_t div_mask = GENMASK((config->mask_width +
@@ -30,8 +29,7 @@ static int syscon_clock_rtcclk_recalc_rate(const struct clk *clk_hw,
 	uint32_t div_factor = (*config->reg & div_mask) + config->add_factor;
 
 	/* Calculate divided clock */
-	*output_rate = parent_rate / div_factor;
-	return 0;
+	return parent_rate / div_factor;
 }
 
 static int syscon_clock_rtcclk_configure(const struct clk *clk_hw, const void *div_cfg)
@@ -49,40 +47,34 @@ static int syscon_clock_rtcclk_configure(const struct clk *clk_hw, const void *d
 }
 
 #if defined(CONFIG_CLOCK_MANAGEMENT_RUNTIME)
-static int syscon_clock_rtcclk_recalc_configure(const struct clk *clk_hw,
+static clock_freq_t syscon_clock_rtcclk_recalc_configure(const struct clk *clk_hw,
 						const void *div_cfg,
-						uint32_t parent_rate,
-						uint32_t *output_rate)
+						clock_freq_t parent_rate)
 {
-	*output_rate = parent_rate / ((uint32_t)div_cfg);
-
-	return 0;
+	return parent_rate / ((uint32_t)div_cfg);
 }
 #endif
 
 #if defined(CONFIG_CLOCK_MANAGEMENT_SET_RATE)
-static int syscon_clock_rtcclk_round_rate(const struct clk *clk_hw,
-					  uint32_t rate_req,
-					  uint32_t parent_rate,
-					  uint32_t *output_rate)
+static clock_freq_t syscon_clock_rtcclk_round_rate(const struct clk *clk_hw,
+					  clock_freq_t rate_req,
+					  clock_freq_t parent_rate)
 {
 	const struct syscon_rtcclk_config *config = clk_hw->hw_data;
-	int ret;
 	uint32_t div_raw, div_factor;
 	uint8_t div_mask = GENMASK((config->mask_width +
 				   config->mask_offset - 1),
 				   config->mask_offset);
-	uint32_t parent_req = rate_req * config->add_factor;
+	clock_freq_t parent_req = rate_req * config->add_factor;
 
 
 	/*
 	 * Request a parent rate at the lower end of the frequency range
 	 * this RTC divider can handle
 	 */
-	ret = clock_management_round_rate(GET_CLK_PARENT(clk_hw), parent_req,
-					  &parent_rate);
-	if (ret < 0) {
-		return ret;
+	parent_rate = clock_management_round_rate(GET_CLK_PARENT(clk_hw), parent_req);
+	if (parent_rate < 0) {
+		return parent_rate;
 	}
 	/*
 	 * Formula for the target RTC clock div setting is given
@@ -92,32 +84,28 @@ static int syscon_clock_rtcclk_round_rate(const struct clk *clk_hw,
 	div_raw = (parent_rate / rate_req) - config->add_factor;
 	div_factor = (div_raw & div_mask) + config->add_factor;
 
-	*output_rate = parent_rate / div_factor;
-	return 0;
+	return parent_rate / div_factor;
 }
 
-static int syscon_clock_rtcclk_set_rate(const struct clk *clk_hw,
-					uint32_t rate_req,
-					uint32_t parent_rate,
-					uint32_t *output_rate)
+static clock_freq_t syscon_clock_rtcclk_set_rate(const struct clk *clk_hw,
+					clock_freq_t rate_req,
+					clock_freq_t parent_rate)
 {
 	const struct syscon_rtcclk_config *config = clk_hw->hw_data;
-	int ret;
 	uint32_t div_raw, div_factor;
 	uint8_t div_mask = GENMASK((config->mask_width +
 				   config->mask_offset - 1),
 				   config->mask_offset);
-	uint32_t parent_req = rate_req * config->add_factor;
+	clock_freq_t parent_req = rate_req * config->add_factor;
 
 
 	/*
 	 * Request a parent rate at the lower end of the frequency range
 	 * this RTC divider can handle
 	 */
-	ret = clock_management_round_rate(GET_CLK_PARENT(clk_hw), parent_req,
-					  &parent_rate);
-	if (ret < 0) {
-		return ret;
+	parent_rate = clock_management_round_rate(GET_CLK_PARENT(clk_hw), parent_req);
+	if (parent_rate < 0) {
+		return parent_rate;
 	}
 	/*
 	 * Formula for the target RTC clock div setting is given
@@ -128,9 +116,7 @@ static int syscon_clock_rtcclk_set_rate(const struct clk *clk_hw,
 	div_factor = (div_raw & div_mask) + config->add_factor;
 
 	(*config->reg) = ((*config->reg) & ~div_mask) | div_raw;
-	*output_rate = parent_rate / div_factor;
-
-	return 0;
+	return parent_rate / div_factor;
 }
 #endif
 

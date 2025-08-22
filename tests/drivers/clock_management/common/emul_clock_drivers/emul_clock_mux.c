@@ -16,16 +16,11 @@ struct emul_clock_mux {
 	uint8_t src_sel;
 };
 
-static int emul_clock_mux_get_parent(const struct clk *clk_hw,
-				     uint8_t *index)
+static int emul_clock_mux_get_parent(const struct clk *clk_hw)
 {
 	struct emul_clock_mux *data = clk_hw->hw_data;
 
-	if (index) {
-		*index = data->src_sel;
-	}
-
-	return 0;
+	return data->src_sel;
 }
 
 static int emul_clock_mux_configure(const struct clk *clk_hw, const void *mux)
@@ -45,8 +40,7 @@ static int emul_clock_mux_configure(const struct clk *clk_hw, const void *mux)
 
 #if defined(CONFIG_CLOCK_MANAGEMENT_RUNTIME)
 static int emul_clock_mux_configure_recalc(const struct clk *clk_hw,
-					       const void *mux,
-					       uint8_t *new_idx)
+					       const void *mux)
 {
 	struct emul_clock_mux *data = clk_hw->hw_data;
 	uint32_t mux_val = (uint32_t)(uintptr_t)mux;
@@ -55,12 +49,11 @@ static int emul_clock_mux_configure_recalc(const struct clk *clk_hw,
 		return -EINVAL;
 	}
 
-	*new_idx = mux_val;
-	return 0;
+	return mux_val;
 }
 
 static int emul_clock_mux_validate_parent(const struct clk *clk_hw,
-					  uint32_t parent_freq,
+					  clock_freq_t parent_freq,
 					  uint8_t new_idx)
 {
 	struct emul_clock_mux *data = clk_hw->hw_data;

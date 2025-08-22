@@ -81,20 +81,19 @@ struct clock_management_standard_api {
 	/** Shared API. Must be first member of structure */
 	struct clock_management_shared_api shared;
 	/** Recalculate a clock rate given a parent's new clock rate */
-	int (*recalc_rate)(const struct clk *clk_hw, uint32_t parent_rate,
-			   uint32_t *output_rate);
+	clock_freq_t (*recalc_rate)(const struct clk *clk_hw, clock_freq_t parent_rate);
 #if defined(CONFIG_CLOCK_MANAGEMENT_RUNTIME) || defined(__DOXYGEN__)
 	/** Recalculate a clock rate given device specific configuration data */
-	int (*configure_recalc)(const struct clk *clk_hw, const void *data,
-				uint32_t parent_rate, uint32_t *output_rate);
+	clock_freq_t (*configure_recalc)(const struct clk *clk_hw, const void *data,
+				clock_freq_t parent_rate);
 #endif
 #if defined(CONFIG_CLOCK_MANAGEMENT_SET_RATE) || defined(__DOXYGEN__)
 	/** Gets nearest rate clock can support given rate request */
-	int (*round_rate)(const struct clk *clk_hw, uint32_t rate_req,
-			  uint32_t parent_rate, uint32_t *output_rate);
+	clock_freq_t (*round_rate)(const struct clk *clk_hw, clock_freq_t rate_req,
+			  clock_freq_t parent_rate);
 	/** Sets clock rate using rate request */
-	int (*set_rate)(const struct clk *clk_hw, uint32_t rate_req,
-			uint32_t parent_rate, uint32_t *output_rate);
+	clock_freq_t (*set_rate)(const struct clk *clk_hw, clock_freq_t rate_req,
+			clock_freq_t parent_rate);
 #endif
 };
 
@@ -111,13 +110,12 @@ struct clock_management_mux_api {
 	/** Shared API. Must be first member of structure */
 	struct clock_management_shared_api shared;
 	/** Get parent of clock */
-	int (*get_parent)(const struct clk *clk_hw, uint8_t *parent_idx);
+	int (*get_parent)(const struct clk *clk_hw);
 #if defined(CONFIG_CLOCK_MANAGEMENT_RUNTIME) || defined(__DOXYGEN__)
 	/** Query new parent selection based on device specific configuration data */
-	int (*mux_configure_recalc)(const struct clk *clk_hw, const void *data,
-				    uint8_t *new_idx);
+	int (*mux_configure_recalc)(const struct clk *clk_hw, const void *data);
 	/** Validate mux can accept a new parent */
-	int (*mux_validate_parent)(const struct clk *clk_hw, uint32_t parent_freq,
+	int (*mux_validate_parent)(const struct clk *clk_hw, clock_freq_t parent_freq,
 				   uint8_t new_idx);
 #endif
 #if defined(CONFIG_CLOCK_MANAGEMENT_SET_RATE) || defined(__DOXYGEN__)
@@ -138,19 +136,16 @@ struct clock_management_root_api {
 	/** Shared API. Must be first member of structure */
 	struct clock_management_shared_api shared;
 	/** Get rate of clock  */
-	int (*get_rate)(const struct clk *clk_hw, uint32_t *rate);
+	clock_freq_t (*get_rate)(const struct clk *clk_hw);
 #if defined(CONFIG_CLOCK_MANAGEMENT_RUNTIME) || defined(__DOXYGEN__)
 	/** Recalculate a clock rate given device specific configuration data */
-	int (*root_configure_recalc)(const struct clk *clk_hw, const void *data,
-				     uint32_t *output_rate);
+	clock_freq_t (*root_configure_recalc)(const struct clk *clk_hw, const void *data);
 #endif
 #if defined(CONFIG_CLOCK_MANAGEMENT_SET_RATE) || defined(__DOXYGEN__)
 	/** Gets nearest rate clock can support given rate request */
-	int (*root_round_rate)(const struct clk *clk_hw, uint32_t rate_req,
-			       uint32_t *output_rate);
+	clock_freq_t (*root_round_rate)(const struct clk *clk_hw, clock_freq_t rate_req);
 	/** Sets clock rate using rate request */
-	int (*root_set_rate)(const struct clk *clk_hw, uint32_t rate_req,
-			     uint32_t *output_rate);
+	clock_freq_t (*root_set_rate)(const struct clk *clk_hw, clock_freq_t rate_req);
 #endif
 };
 
@@ -222,31 +217,29 @@ static inline int clock_onoff(const struct clk *clk_hw, bool on)
  * calculate their rate via clock_recalc_rate.
  *
  * @param clk_hw clock device to read rate from
- * @param rate Pointer to store clock rate in Hz
  * @return -ENOSYS if clock does not implement get_rate API
  * @return -EIO if clock could not be read
  * @return -ENOTCONN if clock is not yet configured (will produce zero rate)
  * @return negative errno for other error reading clock rate
- * @return 0 on success
+ * @return clock rate on success
  */
-static inline int clock_get_rate(const struct clk *clk_hw, uint32_t *rate)
+static inline clock_freq_t clock_get_rate(const struct clk *clk_hw)
 {
-	int ret;
+	clock_freq_t ret;
 	const struct clock_management_root_api *api = clk_hw->api;
 
 	if (!(api) || !(api->get_rate)) {
 		return -ENOSYS;
 	}
 
-	ret = api->get_rate(clk_hw, rate);
+	ret = api->get_rate(clk_hw);
 	if (ret == -ENOTCONN) {
 		/* Clock isn't configured, rate is 0 */
-		*rate = 0;
-		ret = 0;
+		return 0;
 	}
 #ifdef CONFIG_CLOCK_MANAGEMENT_CLK_NAME
 	LOG_MODULE_DECLARE(clock_management, CONFIG_CLOCK_MANAGEMENT_LOG_LEVEL);
-	LOG_DBG("Clock %s returns rate %d", clk_hw->clk_name, *rate);
+	LOG_DBG("Clock %s returns rate %d", clk_hw->clk_name, ret);
 #endif
 	return ret;
 }
@@ -258,14 +251,13 @@ static inline int clock_get_rate(const struct clk *clk_hw, uint32_t *rate)
  * management subsystem to determine the current parent of a clock.
  *
  * @param clk_hw clock device to read rate from
- * @param parent_idx Index of parent in use by this clock
  * @return -ENOSYS if clock does not implement get_parent API
  * @return -ENOTCONN if clock is not yet configured (will produce zero rate)
  * @return -EIO if clock could not be read
  * @return negative errno for other error reading clock parent
- * @return 0 on success
+ * @return index of parent in parent array on success
  */
-static inline int clock_get_parent(const struct clk *clk_hw, uint8_t *parent_idx)
+static inline int clock_get_parent(const struct clk *clk_hw)
 {
 	int ret;
 	const struct clock_management_mux_api *api = clk_hw->api;
@@ -274,12 +266,12 @@ static inline int clock_get_parent(const struct clk *clk_hw, uint8_t *parent_idx
 		return -ENOSYS;
 	}
 
-	ret = api->get_parent(clk_hw, parent_idx);
+	ret = api->get_parent(clk_hw);
 #ifdef CONFIG_CLOCK_MANAGEMENT_CLK_NAME
 	LOG_MODULE_DECLARE(clock_management, CONFIG_CLOCK_MANAGEMENT_LOG_LEVEL);
-	if (ret == 0) {
+	if (ret >= 0) {
 		LOG_DBG("Clock %s returns parent %s", clk_hw->clk_name,
-			GET_CLK_PARENTS(clk_hw)[*parent_idx]->clk_name);
+			GET_CLK_PARENTS(clk_hw)[ret]->clk_name);
 	}
 #endif
 	return ret;
@@ -294,33 +286,31 @@ static inline int clock_get_parent(const struct clk *clk_hw, uint8_t *parent_idx
  * clock management subsystem, not intended for use directly within drivers.
  * @param clk_hw clock to recalculate rate for
  * @param parent_rate new frequency parent would update to
- * @param output_rate pointer to store the calculated output rate
  * @return -ENOSYS if API is not supported by this clock
  * @return -EINVAL if clock cannot accept rate
  * @return -EIO if calculation is not possible
  * @return -ENOTCONN if clock is not yet configured (will produce zero rate)
- * @return 0 on success
+ * @return negative errno for other error calculating rate
+ * @return rate clock would produce with @p parent_rate on success
  */
-static inline int clock_recalc_rate(const struct clk *clk_hw,
-				    uint32_t parent_rate,
-				    uint32_t *output_rate)
+static inline clock_freq_t clock_recalc_rate(const struct clk *clk_hw,
+				    clock_freq_t parent_rate)
 {
-	int ret;
+	clock_freq_t ret;
 	const struct clock_management_standard_api *api = clk_hw->api;
 
 	if (!(api) || !(api->recalc_rate)) {
 		return -ENOSYS;
 	}
-	ret = api->recalc_rate(clk_hw, parent_rate, output_rate);
+	ret = api->recalc_rate(clk_hw, parent_rate);
 	if (ret == -ENOTCONN) {
 		/* Clock isn't configured, rate is 0 */
-		*output_rate = 0;
-		ret = 0;
+		return 0;
 	}
 #ifdef CONFIG_CLOCK_MANAGEMENT_CLK_NAME
 	LOG_MODULE_DECLARE(clock_management, CONFIG_CLOCK_MANAGEMENT_LOG_LEVEL);
 	LOG_DBG("Clock %s would produce frequency %d from parent rate %d",
-		clk_hw->clk_name, *output_rate, parent_rate);
+		clk_hw->clk_name, ret, parent_rate);
 #endif
 	return ret;
 }
@@ -337,29 +327,27 @@ static inline int clock_recalc_rate(const struct clk *clk_hw,
  * @param clk_hw clock device to query
  * @param data hardware specific clock configuration data
  * @param parent_rate clock rate of this clock's parent
- * @param output_rate filled with rate that would be produced on reconfiguration
  * @return -ENOSYS if clock does not implement configure_recalc API
  * @return -EBUSY if clock cannot be modified at this time
  * @return -EINVAL if the configuration data in invalid
  * @return -EIO for I/O error configuring clock
  * @return negative errno for other error configuring clock
- * @return 0 on success
+ * @return rate clock would produce with @p data configuration on success
  */
-static inline int clock_configure_recalc(const struct clk *clk_hw,
-					const void *data, uint32_t parent_rate,
-					uint32_t *output_rate)
+static inline clock_freq_t clock_configure_recalc(const struct clk *clk_hw,
+					const void *data, clock_freq_t parent_rate)
 {
-	int ret;
+	clock_freq_t ret;
 	const struct clock_management_standard_api *api = clk_hw->api;
 
 	if (!(api) || !(api->configure_recalc)) {
 		return -ENOSYS;
 	}
-	ret = api->configure_recalc(clk_hw, data, parent_rate, output_rate);
+	ret = api->configure_recalc(clk_hw, data, parent_rate);
 #ifdef CONFIG_CLOCK_MANAGEMENT_CLK_NAME
 	LOG_MODULE_DECLARE(clock_management, CONFIG_CLOCK_MANAGEMENT_LOG_LEVEL);
 	LOG_DBG("Clock %s would produce frequency %d after configuration",
-		clk_hw->clk_name, *output_rate);
+		clk_hw->clk_name, ret);
 #endif
 	return ret;
 }
@@ -374,29 +362,27 @@ static inline int clock_configure_recalc(const struct clk *clk_hw,
  * intended for use directly within drivers.
  * @param clk_hw clock device to query
  * @param data hardware specific clock configuration data
- * @param output_rate filled with rate that would be produced on reconfiguration
  * @return -ENOSYS if clock does not implement root_configure_recalc API
  * @return -EBUSY if clock cannot be modified at this time
  * @return -EINVAL if the configuration data in invalid
  * @return -EIO for I/O error configuring clock
  * @return negative errno for other error configuring clock
- * @return 0 on success
+ * @return rate clock would produce with @p data configuration on success
  */
-static inline int clock_root_configure_recalc(const struct clk *clk_hw,
-					      const void *data,
-					      uint32_t *output_rate)
+static inline clock_freq_t clock_root_configure_recalc(const struct clk *clk_hw,
+					      const void *data)
 {
-	int ret;
+	clock_freq_t ret;
 	const struct clock_management_root_api *api = clk_hw->api;
 
 	if (!(api) || !(api->root_configure_recalc)) {
 		return -ENOSYS;
 	}
-	ret = api->root_configure_recalc(clk_hw, data, output_rate);
+	ret = api->root_configure_recalc(clk_hw, data);
 #ifdef CONFIG_CLOCK_MANAGEMENT_CLK_NAME
 	LOG_MODULE_DECLARE(clock_management, CONFIG_CLOCK_MANAGEMENT_LOG_LEVEL);
 	LOG_DBG("Clock %s would produce frequency %d after configuration",
-		clk_hw->clk_name, *output_rate);
+		clk_hw->clk_name, ret);
 #endif
 	return ret;
 }
@@ -409,17 +395,15 @@ static inline int clock_root_configure_recalc(const struct clk *clk_hw,
  * it should simply report which parent the mux would use.
  * @param clk_hw clock device to query
  * @param data hardware specific clock configuration data
- * @param new_idx New parent index
  * @return -ENOSYS if clock does not implement mux_configure_recalc API
  * @return -EBUSY if clock cannot be modified at this time
  * @return -EINVAL if the configuration data in invalid
  * @return -EIO for I/O error configuring clock
  * @return negative errno for other error configuring clock
- * @return 0 on success
+ * @return index of new parent in parent array when using @p data on success
  */
 static inline int clock_mux_configure_recalc(const struct clk *clk_hw,
-					      const void *data,
-					      uint8_t *new_idx)
+					      const void *data)
 {
 	int ret;
 	const struct clock_management_mux_api *api = clk_hw->api;
@@ -427,11 +411,13 @@ static inline int clock_mux_configure_recalc(const struct clk *clk_hw,
 	if (!(api) || !(api->mux_configure_recalc)) {
 		return -ENOSYS;
 	}
-	ret = api->mux_configure_recalc(clk_hw, data, new_idx);
+	ret = api->mux_configure_recalc(clk_hw, data);
 #ifdef CONFIG_CLOCK_MANAGEMENT_CLK_NAME
 	LOG_MODULE_DECLARE(clock_management, CONFIG_CLOCK_MANAGEMENT_LOG_LEVEL);
-	LOG_DBG("Clock %s would use parent %s after reconfiguration",
-		clk_hw->clk_name, GET_CLK_PARENTS(clk_hw)[*new_idx]->clk_name);
+	if (ret >= 0) {
+		LOG_DBG("Clock %s would use parent %s after reconfiguration",
+			clk_hw->clk_name, GET_CLK_PARENTS(clk_hw)[ret]->clk_name);
+	}
 #endif
 	return ret;
 }
@@ -449,11 +435,11 @@ static inline int clock_mux_configure_recalc(const struct clk *clk_hw,
  * @return -EBUSY if clock cannot be modified at this time
  * @return -EINVAL if the mux index is invalid
  * @return -ENOTSUP if api is not supported
- * @return negative errno for other error configuring clock
+ * @return negative errno for other error validating parent
  * @return 0 on success
  */
 static inline int clock_mux_validate_parent(const struct clk *clk_hw,
-					   uint32_t parent_freq,
+					   clock_freq_t parent_freq,
 					   uint8_t new_idx)
 {
 	int ret;
@@ -475,26 +461,24 @@ static inline int clock_mux_validate_parent(const struct clk *clk_hw,
 #else
 /* Stub functions to indicate recalc isn't supported */
 
-static inline int clock_configure_recalc(const struct clk *clk_hw, const void *data,
-					 uint32_t parent_rate, uint32_t *output_rate)
+static inline clock_freq_t clock_configure_recalc(const struct clk *clk_hw, const void *data,
+					 clock_freq_t parent_rate)
 {
 	return -ENOTSUP;
 }
 
-static inline int clock_root_configure_recalc(const struct clk *clk_hw, const void *data,
-					      uint32_t *output_rate)
+static inline clock_freq_t clock_root_configure_recalc(const struct clk *clk_hw, const void *data)
 {
 	return -ENOTSUP;
 }
 
-static inline int clock_mux_configure_recalc(const struct clk *clk_hw, const void *data,
-					     uint8_t *new_idx)
+static inline int clock_mux_configure_recalc(const struct clk *clk_hw, const void *data)
 {
 	return -ENOTSUP;
 }
 
 static inline int clock_mux_validate_parent(const struct clk *clk_hw,
-					    uint32_t parent_freq, uint8_t new_idx)
+					    clock_freq_t parent_freq, uint8_t new_idx)
 {
 	return -ENOTSUP;
 }
@@ -510,8 +494,7 @@ static inline int clock_mux_validate_parent(const struct clk *clk_hw,
  * was called with the requested frequency.
  * @param clk_hw clock device to query
  * @param rate_req requested rate
- * @param parent_rate parent clock rate
- * @param output_rate output rate clock will produce
+ * @param parent_rate best parent clock rate offered based on request
  * @return -ENOTSUP if API is not supported
  * @return -ENOENT if clock cannot satisfy request
  * @return -ENOSYS if clock does not implement round_rate API
@@ -519,23 +502,23 @@ static inline int clock_mux_validate_parent(const struct clk *clk_hw,
  * @return -EBUSY if clock can't be reconfigured
  * @return -EIO if clock could not be queried
  * @return negative errno for other error calculating rate
- * @return 0 on success
+ * @return best rate clock could produce on success
  */
-static inline int clock_round_rate(const struct clk *clk_hw, uint32_t rate_req,
-				   uint32_t parent_rate, uint32_t *output_rate)
+static inline clock_freq_t clock_round_rate(const struct clk *clk_hw, clock_freq_t rate_req,
+				   clock_freq_t parent_rate)
 {
-	int ret;
+	clock_freq_t ret;
 	const struct clock_management_standard_api *api = clk_hw->api;
 
 	if (!(api) || !(api->round_rate)) {
 		return -ENOSYS;
 	}
 
-	ret = api->round_rate(clk_hw, rate_req, parent_rate, output_rate);
+	ret = api->round_rate(clk_hw, rate_req, parent_rate);
 #ifdef CONFIG_CLOCK_MANAGEMENT_CLK_NAME
 	LOG_MODULE_DECLARE(clock_management, CONFIG_CLOCK_MANAGEMENT_LOG_LEVEL);
 	LOG_DBG("Clock %s reports rate %d for rate %u",
-		clk_hw->clk_name, *output_rate, rate_req);
+		clk_hw->clk_name, ret, rate_req);
 #endif
 	return ret;
 }
@@ -546,8 +529,7 @@ static inline int clock_round_rate(const struct clk *clk_hw, uint32_t rate_req,
  * Sets a clock to the closest frequency possible given the requested rate.
  * @param clk_hw clock device to set rate for
  * @param rate_req requested rate
- * @param parent_rate parent clock rate
- * @param output_rate output rate clock now produces
+ * @param parent_rate best parent clock rate offered based on request
  * @return -ENOTSUP if API is not supported
  * @return -ENOENT if clock cannot satisfy request
  * @return -ENOSYS if clock does not implement set_rate API
@@ -556,19 +538,19 @@ static inline int clock_round_rate(const struct clk *clk_hw, uint32_t rate_req,
  * @return -EIO if clock rate could not be set
  * @return -EBUSY if clock can't be reconfigured
  * @return negative errno for other error setting rate
- * @return 0 on success
+ * @return rate clock now produces on success
  */
-static inline int clock_set_rate(const struct clk *clk_hw, uint32_t rate_req,
-				uint32_t parent_rate, uint32_t *output_rate)
+static inline clock_freq_t clock_set_rate(const struct clk *clk_hw, clock_freq_t rate_req,
+				clock_freq_t parent_rate)
 {
-	int ret;
+	clock_freq_t ret;
 	const struct clock_management_standard_api *api = clk_hw->api;
 
 	if (!(api) || !(api->set_rate)) {
 		return -ENOSYS;
 	}
 
-	ret = api->set_rate(clk_hw, rate_req, parent_rate, output_rate);
+	ret = api->set_rate(clk_hw, rate_req, parent_rate);
 #ifdef CONFIG_CLOCK_MANAGEMENT_CLK_NAME
 	LOG_MODULE_DECLARE(clock_management, CONFIG_CLOCK_MANAGEMENT_LOG_LEVEL);
 	if (ret > 0) {
@@ -586,7 +568,6 @@ static inline int clock_set_rate(const struct clk *clk_hw, uint32_t rate_req,
  * was called with the requested frequency.
  * @param clk_hw clock device to query
  * @param rate_req requested rate
- * @param output_rate output rate clock will produce
  * @return -ENOTSUP if API is not supported
  * @return -ENOENT if clock cannot satisfy request
  * @return -ENOSYS if clock does not implement round_rate API
@@ -594,19 +575,18 @@ static inline int clock_set_rate(const struct clk *clk_hw, uint32_t rate_req,
  * @return -EIO if clock could not be queried
  * @return -EBUSY if clock can't be reconfigured
  * @return negative errno for other error calculating rate
- * @return 0 on success
+ * @return best rate clock could produce on success
  */
-static inline int clock_root_round_rate(const struct clk *clk_hw, uint32_t rate_req,
-					uint32_t *output_rate)
+static inline clock_freq_t clock_root_round_rate(const struct clk *clk_hw, clock_freq_t rate_req)
 {
-	int ret;
+	clock_freq_t ret;
 	const struct clock_management_root_api *api = clk_hw->api;
 
 	if (!(api) || !(api->root_round_rate)) {
 		return -ENOSYS;
 	}
 
-	ret = api->root_round_rate(clk_hw, rate_req, output_rate);
+	ret = api->root_round_rate(clk_hw, rate_req);
 #ifdef CONFIG_CLOCK_MANAGEMENT_CLK_NAME
 	LOG_MODULE_DECLARE(clock_management, CONFIG_CLOCK_MANAGEMENT_LOG_LEVEL);
 	LOG_DBG("Clock %s reports rate %d for rate %u",
@@ -621,7 +601,6 @@ static inline int clock_root_round_rate(const struct clk *clk_hw, uint32_t rate_
  * Sets a clock to the closest frequency possible given the requested rate.
  * @param clk_hw clock device to set rate for
  * @param rate_req requested rate
- * @param output_rate output rate clock now produces
  * @return -ENOTSUP if API is not supported
  * @return -ENOENT if clock cannot satisfy request
  * @return -ENOSYS if clock does not implement set_rate API
@@ -630,19 +609,18 @@ static inline int clock_root_round_rate(const struct clk *clk_hw, uint32_t rate_
  * @return -EIO if clock rate could not be set
  * @return -EBUSY if clock can't be reconfigured
  * @return negative errno for other error setting rate
- * @return 0 on success
+ * @return rate clock now produces on success
  */
-static inline int clock_root_set_rate(const struct clk *clk_hw, uint32_t rate_req,
-				      uint32_t *output_rate)
+static inline clock_freq_t clock_root_set_rate(const struct clk *clk_hw, clock_freq_t rate_req)
 {
-	int ret;
+	clock_freq_t ret;
 	const struct clock_management_root_api *api = clk_hw->api;
 
 	if (!(api) || !(api->root_set_rate)) {
 		return -ENOSYS;
 	}
 
-	ret = api->root_set_rate(clk_hw, rate_req, output_rate);
+	ret = api->root_set_rate(clk_hw, rate_req);
 #ifdef CONFIG_CLOCK_MANAGEMENT_CLK_NAME
 	LOG_MODULE_DECLARE(clock_management, CONFIG_CLOCK_MANAGEMENT_LOG_LEVEL);
 	if (ret > 0) {
@@ -688,26 +666,24 @@ static inline int clock_set_parent(const struct clk *clk_hw, uint8_t new_idx)
 
 /* Stub functions to indicate SET_RATE APIs aren't supported */
 
-static inline int clock_round_rate(const struct clk *clk_hw, uint32_t req_rate,
-				   uint32_t parent_rate, uint32_t *output_rate)
+static inline clock_freq_t clock_round_rate(const struct clk *clk_hw, clock_freq_t req_rate,
+				   clock_freq_t parent_rate)
 {
 	return -ENOTSUP;
 }
 
-static inline int clock_set_rate(const struct clk *clk_hw, uint32_t req_rate,
-				  uint32_t parent_rate, uint32_t *output_rate)
+static inline clock_freq_t clock_set_rate(const struct clk *clk_hw, clock_freq_t req_rate,
+				  clock_freq_t parent_rate)
 {
 	return -ENOTSUP;
 }
 
-static inline int clock_root_round_rate(const struct clk *clk_hw, uint32_t req_rate,
-					uint32_t *output_rate)
+static inline clock_freq_t clock_root_round_rate(const struct clk *clk_hw, clock_freq_t req_rate)
 {
 	return -ENOTSUP;
 }
 
-static inline int clock_root_set_rate(const struct clk *clk_hw, uint32_t req_rate,
-					  uint32_t *output_rate)
+static inline clock_freq_t clock_root_set_rate(const struct clk *clk_hw, clock_freq_t req_rate)
 {
 	return -ENOTSUP;
 }

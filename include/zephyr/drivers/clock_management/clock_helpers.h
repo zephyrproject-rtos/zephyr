@@ -33,7 +33,7 @@ extern "C" {
  * @param new_rate Proposed new rate of the clock
  * @return 0 if all children can support the new rate, or negative value on error
  */
-int clock_children_check_rate(const struct clk *clk_hw, uint32_t new_rate);
+int clock_children_check_rate(const struct clk *clk_hw, clock_freq_t new_rate);
 
 /**
  * @brief Check the rate of a given clock
@@ -44,10 +44,9 @@ int clock_children_check_rate(const struct clk *clk_hw, uint32_t new_rate);
  * frequency needs to be read.
  *
  * @param clk_hw Clock to check the rate for
- * @param output_rate Pointer to store the current rate of the clock
- * @return 0 if successful, or negative value on error
+ * @return clock rate on success, or negative value on error
  */
-int clock_management_clk_rate(const struct clk *clk_hw, uint32_t *output_rate);
+clock_freq_t clock_management_clk_rate(const struct clk *clk_hw);
 
 /**
  * @brief Determine the best rate a clock can produce
@@ -59,11 +58,9 @@ int clock_management_clk_rate(const struct clk *clk_hw, uint32_t *output_rate);
  *
  * @param clk_hw Clock to round rate for
  * @param rate_req Requested rate to round
- * @param best_rate best rate output
- * @return 0 on success, or negative value on error
+ * @return best possible rate on success, or negative value on error
  */
-int clock_management_round_rate(const struct clk *clk_hw, int rate_req,
-				uint32_t *best_rate);
+clock_freq_t clock_management_round_rate(const struct clk *clk_hw, clock_freq_t rate_req);
 
 /**
  * @brief Set the rate of a clock
@@ -75,11 +72,9 @@ int clock_management_round_rate(const struct clk *clk_hw, int rate_req,
  *
  * @param clk_hw Clock to set rate for
  * @param rate_req Requested rate to set
- * @param new_rate New rate output
- * @return 0 on success, or negative value on error
+ * @return rate clock is set to on success, or negative value on error
  */
-int clock_management_set_rate(const struct clk *clk_hw, int rate_req,
-			      uint32_t *new_rate);
+clock_freq_t clock_management_set_rate(const struct clk *clk_hw, clock_freq_t rate_req);
 
 #ifdef __cplusplus
 }

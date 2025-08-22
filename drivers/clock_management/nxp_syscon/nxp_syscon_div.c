@@ -16,16 +16,14 @@ struct syscon_clock_div_config {
 };
 
 
-static int syscon_clock_div_recalc_rate(const struct clk *clk_hw,
-					uint32_t parent_rate,
-					uint32_t *output_rate)
+static clock_freq_t syscon_clock_div_recalc_rate(const struct clk *clk_hw,
+						 clock_freq_t parent_rate)
 {
 	const struct syscon_clock_div_config *config = clk_hw->hw_data;
 	uint8_t div_mask = GENMASK((config->mask_width - 1), 0);
 
 	/* Calculate divided clock */
-	*output_rate = parent_rate / ((*config->reg & div_mask) + 1);
-	return 0;
+	return parent_rate / ((*config->reg & div_mask) + 1);
 }
 
 static int syscon_clock_div_configure(const struct clk *clk_hw, const void *div_cfg)
@@ -40,44 +38,37 @@ static int syscon_clock_div_configure(const struct clk *clk_hw, const void *div_
 }
 
 #if defined(CONFIG_CLOCK_MANAGEMENT_RUNTIME)
-static int syscon_clock_div_configure_recalc(const struct clk *clk_hw,
+static clock_freq_t syscon_clock_div_configure_recalc(const struct clk *clk_hw,
 					     const void *div_cfg,
-					     uint32_t parent_rate,
-					     uint32_t *output_rate)
+					     clock_freq_t parent_rate)
 {
-	*output_rate = parent_rate / ((uint32_t)div_cfg);
-	return 0;
+	return parent_rate / ((uint32_t)div_cfg);
 }
 
 #endif
 
 #if defined(CONFIG_CLOCK_MANAGEMENT_SET_RATE)
-static int syscon_clock_div_round_rate(const struct clk *clk_hw,
-				       uint32_t rate_req,
-				       uint32_t parent_rate,
-				       uint32_t *output_rate)
+static clock_freq_t syscon_clock_div_round_rate(const struct clk *clk_hw,
+						clock_freq_t rate_req,
+						clock_freq_t parent_rate)
 {
 	const struct syscon_clock_div_config *config = clk_hw->hw_data;
 	uint32_t div_val = MAX((parent_rate / rate_req), 1) - 1;
 	uint8_t div_mask = GENMASK((config->mask_width - 1), 0);
 
-	*output_rate = parent_rate / ((div_val & div_mask) + 1);
-	return 0;
+	return parent_rate / ((div_val & div_mask) + 1);
 }
 
-static int syscon_clock_div_set_rate(const struct clk *clk_hw,
-				     uint32_t rate_req,
-				     uint32_t parent_rate,
-				     uint32_t *output_rate)
+static clock_freq_t syscon_clock_div_set_rate(const struct clk *clk_hw,
+				     clock_freq_t rate_req,
+				     clock_freq_t parent_rate)
 {
 	const struct syscon_clock_div_config *config = clk_hw->hw_data;
 	uint32_t div_val = MAX((parent_rate / rate_req), 1) - 1;
 	uint8_t div_mask = GENMASK((config->mask_width - 1), 0);
 
 	(*config->reg) = ((*config->reg) & ~div_mask) | (div_val & div_mask);
-	*output_rate = parent_rate / ((div_val & div_mask) + 1);
-
-	return 0;
+	return parent_rate / ((div_val & div_mask) + 1);
 }
 #endif
 

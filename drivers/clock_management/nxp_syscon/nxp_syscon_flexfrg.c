@@ -18,26 +18,24 @@ struct syscon_clock_frg_config {
 #define SYSCON_FLEXFRGXCTRL_MULT_MASK 0xFF00
 
 /* Rate calculation helper */
-static uint32_t syscon_clock_frg_calc_rate(uint64_t parent_rate, uint32_t mult)
+static clock_freq_t syscon_clock_frg_calc_rate(uint64_t parent_rate, uint32_t mult)
 {
 	/*
 	 * Calculate rate. We will use 64 bit integers for this division.
 	 * DIV value must be 256, no need to read it
 	 */
-	return (uint32_t)((parent_rate * ((uint64_t)SYSCON_FLEXFRGXCTRL_DIV_MASK + 1ULL)) /
+	return (clock_freq_t)((parent_rate * ((uint64_t)SYSCON_FLEXFRGXCTRL_DIV_MASK + 1ULL)) /
 		(mult + SYSCON_FLEXFRGXCTRL_DIV_MASK + 1UL));
 }
 
-static int syscon_clock_frg_recalc_rate(const struct clk *clk_hw,
-					uint32_t parent_rate,
-					uint32_t *output_rate)
+static clock_freq_t syscon_clock_frg_recalc_rate(const struct clk *clk_hw,
+					clock_freq_t parent_rate)
 {
 	const struct syscon_clock_frg_config *config = clk_hw->hw_data;
 	uint32_t frg_mult;
 
 	frg_mult = FIELD_GET(SYSCON_FLEXFRGXCTRL_MULT_MASK, (*config->reg));
-	*output_rate = syscon_clock_frg_calc_rate(parent_rate, frg_mult);
-	return 0;
+	return syscon_clock_frg_calc_rate(parent_rate, frg_mult);
 }
 
 static int syscon_clock_frg_configure(const struct clk *clk_hw, const void *mult)
@@ -52,23 +50,20 @@ static int syscon_clock_frg_configure(const struct clk *clk_hw, const void *mult
 }
 
 #if defined(CONFIG_CLOCK_MANAGEMENT_RUNTIME)
-static int syscon_clock_frg_configure_recalc(const struct clk *clk_hw,
+static clock_freq_t syscon_clock_frg_configure_recalc(const struct clk *clk_hw,
 					     const void *mult,
-					     uint32_t parent_rate,
-					     uint32_t *output_rate)
+					     clock_freq_t parent_rate)
 {
 	uint32_t mult_val = FIELD_PREP(SYSCON_FLEXFRGXCTRL_MULT_MASK, ((uint32_t)mult));
 
-	*output_rate = syscon_clock_frg_calc_rate(parent_rate, mult_val);
-	return 0;
+	return syscon_clock_frg_calc_rate(parent_rate, mult_val);
 }
 #endif
 
 #if defined(CONFIG_CLOCK_MANAGEMENT_SET_RATE)
-static int syscon_clock_frg_round_rate(const struct clk *clk_hw,
-				       uint32_t rate_req,
-				       uint32_t parent_rate,
-				       uint32_t *output_rate)
+static clock_freq_t syscon_clock_frg_round_rate(const struct clk *clk_hw,
+				       clock_freq_t rate_req,
+				       clock_freq_t parent_rate)
 {
 	uint32_t mult;
 
@@ -84,18 +79,16 @@ static int syscon_clock_frg_round_rate(const struct clk *clk_hw,
 	mult = SYSCON_FLEXFRGXCTRL_DIV_MASK * ((parent_rate - rate_req) /
 		rate_req);
 
-	*output_rate = syscon_clock_frg_calc_rate(parent_rate, mult);
-
-	return 0;
+	return syscon_clock_frg_calc_rate(parent_rate, mult);
 }
 
-static int syscon_clock_frg_set_rate(const struct clk *clk_hw,
-				     uint32_t rate_req,
-				     uint32_t parent_rate,
-				     uint32_t *output_rate)
+static clock_freq_t syscon_clock_frg_set_rate(const struct clk *clk_hw,
+					      clock_freq_t rate_req,
+					      clock_freq_t parent_rate)
 {
 	const struct syscon_clock_frg_config *config = clk_hw->hw_data;
 	uint32_t mult, mult_val;
+	clock_freq_t output_rate;
 
 	/* FRG rate is calculated as out_clk = in_clk / (1 + (MULT/DIV)) */
 	if (rate_req < parent_rate / 2) {
@@ -115,15 +108,15 @@ static int syscon_clock_frg_set_rate(const struct clk *clk_hw,
 	 * generate a rate equal to input clock divided by 2
 	 */
 	if (mult > 255) {
-		*output_rate = parent_rate / 2;
+		output_rate = parent_rate / 2;
 	} else {
-		*output_rate = syscon_clock_frg_calc_rate(parent_rate, mult);
+		output_rate = syscon_clock_frg_calc_rate(parent_rate, mult);
 	}
 
 	/* Apply new configuration */
 	(*config->reg) = mult_val | SYSCON_FLEXFRGXCTRL_DIV_MASK;
 
-	return 0;
+	return output_rate;
 }
 #endif
 
