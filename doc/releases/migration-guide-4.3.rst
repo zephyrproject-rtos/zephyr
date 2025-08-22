@@ -39,6 +39,12 @@ Device Drivers and Devicetree
 
 .. zephyr-keep-sorted-start re(^\w)
 
+ADC
+===
+
+* On STM32 based devices, DMA will enabled automatically if dma property is added to the adc node.
+  Control by Kconfig is not possible anymore, similarly to other STM32 drivers.
+
 Phy
 ===
 
