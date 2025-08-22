@@ -1,0 +1,6 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_FRDM_IMX93
+	select SOC_MIMX9352_A55 if BOARD_FRDM_IMX93_MIMX9352_A55
+	select SOC_PART_NUMBER_MIMX9352DVVXM
