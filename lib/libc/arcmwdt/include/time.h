@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Synopsys
+ * Copyright The Zephyr Project Contributors
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,17 +9,14 @@
 
 #include_next <time.h>
 
-#ifdef __cplusplus
-extern "C" {
+#include <zephyr/toolchain.h>
+#include <zephyr/posix/posix_time.h>
+
+#if __STDC_VERSION__ >= 202311L
+struct tm *gmtime_r(const time_t *ZRESTRICT timep, struct tm *ZRESTRICT result);
 #endif
-
-extern char *asctime_r(const struct tm *tp, char *buf);
-extern char *ctime_r(const time_t *clock, char *buf);
-extern struct tm *gmtime_r(const time_t *timep, struct tm *result);
-extern struct tm *localtime_r(const time_t *timer, struct tm *result);
-
-#ifdef __cplusplus
-}
+#if __STDC_VERSION__ >= 202311L
+struct tm *localtime_r(const time_t *ZRESTRICT timer, struct tm *ZRESTRICT result);
 #endif
 
 #endif /* LIB_LIBC_ARCMWDT_INCLUDE_TIME_H_ */

@@ -1,31 +1,22 @@
 /*
- * Copyright (c) 2025 IAR Systems AB
+ * Copyright The Zephyr Project Contributors
  *
  * SPDX-License-Identifier: Apache-2.0
- */
-
-/**
- * @file
- * @brief Declares additional time related functions based on POSIX
  */
 
 #ifndef ZEPHYR_LIB_LIBC_IAR_INCLUDE_TIME_H_
 #define ZEPHYR_LIB_LIBC_IAR_INCLUDE_TIME_H_
 
-#include <zephyr/toolchain.h>
 #include_next <time.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include <zephyr/toolchain.h>
+#include <zephyr/posix/posix_time.h>
 
-char      *asctime_r(const struct tm *ZRESTRICT tp, char *ZRESTRICT buf);
-char      *ctime_r(const time_t *clock, char *buf);
+#if __STDC_VERSION__ >= 202311L
 struct tm *gmtime_r(const time_t *ZRESTRICT timep, struct tm *ZRESTRICT result);
+#endif
+#if __STDC_VERSION__ >= 202311L
 struct tm *localtime_r(const time_t *ZRESTRICT timer, struct tm *ZRESTRICT result);
-
-#ifdef __cplusplus
-}
 #endif
 
 #endif /* ZEPHYR_LIB_LIBC_IAR_INCLUDE_TIME_H_ */
