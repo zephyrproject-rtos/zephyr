@@ -6,6 +6,8 @@
 #ifndef ZEPHYR_INCLUDE_POSIX_UNISTD_H_
 #define ZEPHYR_INCLUDE_POSIX_UNISTD_H_
 
+#include <time.h>
+
 #include <zephyr/posix/posix_types.h>
 
 #ifdef CONFIG_POSIX_API

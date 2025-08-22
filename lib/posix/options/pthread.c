@@ -1518,18 +1518,21 @@ int pthread_sigmask(int how, const sigset_t *ZRESTRICT set, sigset_t *ZRESTRICT 
 			SYS_SEM_LOCK_BREAK;
 		}
 
+		unsigned long *const x = (unsigned long *)set;
+		unsigned long *const y = (unsigned long *)&t->sigset;
+
 		switch (how) {
 		case SIG_BLOCK:
-			for (size_t i = 0; i < ARRAY_SIZE(set->sig); ++i) {
-				t->sigset.sig[i] |= set->sig[i];
+			for (size_t i = 0; i < sizeof(sigset_t) / sizeof(unsigned long); ++i) {
+				y[i] |= x[i];
 			}
 			break;
 		case SIG_SETMASK:
 			t->sigset = *set;
 			break;
 		case SIG_UNBLOCK:
-			for (size_t i = 0; i < ARRAY_SIZE(set->sig); ++i) {
-				t->sigset.sig[i] &= ~set->sig[i];
+			for (size_t i = 0; i < sizeof(sigset_t) / sizeof(unsigned long); ++i) {
+				y[i] &= ~x[i];
 			}
 			break;
 		}
