@@ -4,6 +4,7 @@
 
 #include <nxp/nxp_kw41z.dtsi>
 #include "frdm_kw41z-pinctrl.dtsi"
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
@@ -88,26 +89,26 @@
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
 		gpio-map = /* A0 cannot be muxed as gpio */
-			   <1 0 &gpiob 18 0>,	/* A1 */
-			   <2 0 &gpiob 2 0>,	/* A2 */
-			   <3 0 &gpiob 3 0>,	/* A3 */
-			   <4 0 &gpiob 1 0>,	/* A4 */
-			   <6 0 &gpioc 6 0>,	/* D0 */
-			   <7 0 &gpioc 7 0>,	/* D1 */
-			   <8 0 &gpioc 19 0>,	/* D2 */
-			   <9 0 &gpioc 16 0>,	/* D3 */
-			   <10 0 &gpioc 4 0>,	/* D4 */
-			   <11 0 &gpioc 17 0>,	/* D5 */
-			   <12 0 &gpioc 18 0>,	/* D6 */
-			   <13 0 &gpioa 1 0>,	/* D7 */
-			   <14 0 &gpioa 0 0>,	/* D8 */
-			   <15 0 &gpioc 1 0>,	/* D9 */
-			   <16 0 &gpioa 19 0>,	/* D10 */
-			   <17 0 &gpioa 16 0>,	/* D11 */
-			   <18 0 &gpioa 17 0>,	/* D12 */
-			   <19 0 &gpioa 18 0>,	/* D13 */
-			   <20 0 &gpioc 3 0>,	/* D14 */
-			   <21 0 &gpioc 2 0>;	/* D15 */
+			   <ARDUINO_HEADER_R3_A1 0 &gpiob 18 0>,
+			   <ARDUINO_HEADER_R3_A2 0 &gpiob 2 0>,
+			   <ARDUINO_HEADER_R3_A3 0 &gpiob 3 0>,
+			   <ARDUINO_HEADER_R3_A4 0 &gpiob 1 0>,
+			   <ARDUINO_HEADER_R3_D0 0 &gpioc 6 0>,
+			   <ARDUINO_HEADER_R3_D1 0 &gpioc 7 0>,
+			   <ARDUINO_HEADER_R3_D2 0 &gpioc 19 0>,
+			   <ARDUINO_HEADER_R3_D3 0 &gpioc 16 0>,
+			   <ARDUINO_HEADER_R3_D4 0 &gpioc 4 0>,
+			   <ARDUINO_HEADER_R3_D5 0 &gpioc 17 0>,
+			   <ARDUINO_HEADER_R3_D6 0 &gpioc 18 0>,
+			   <ARDUINO_HEADER_R3_D7 0 &gpioa 1 0>,
+			   <ARDUINO_HEADER_R3_D8 0 &gpioa 0 0>,
+			   <ARDUINO_HEADER_R3_D9 0 &gpioc 1 0>,
+			   <ARDUINO_HEADER_R3_D10 0 &gpioa 19 0>,
+			   <ARDUINO_HEADER_R3_D11 0 &gpioa 16 0>,
+			   <ARDUINO_HEADER_R3_D12 0 &gpioa 17 0>,
+			   <ARDUINO_HEADER_R3_D13 0 &gpioa 18 0>,
+			   <ARDUINO_HEADER_R3_D14 0 &gpioc 3 0>,
+			   <ARDUINO_HEADER_R3_D15 0 &gpioc 2 0>;
 	};
 };
 
