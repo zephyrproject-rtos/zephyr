@@ -19,6 +19,7 @@ extern "C" {
 /**
  * @defgroup devicetree-spi Devicetree SPI API
  * @ingroup devicetree
+ * @ingroup spi_interface
  * @{
  */
 
