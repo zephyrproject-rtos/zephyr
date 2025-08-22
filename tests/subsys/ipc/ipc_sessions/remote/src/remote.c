@@ -420,7 +420,7 @@ int main(void)
 			LOG_INF("Initial seed: %u", ipc_tx_params.seed);
 
 			cmd_data->cmd = IPC_TEST_CMD_XDATA;
-			for (/* No init */; ipc_tx_params.blk_cnt > 0; --ipc_tx_params.blk_cnt) {
+			while (ipc_tx_params.blk_cnt > 0) {
 				int ret;
 
 				if (ipc_tx_params.blk_cnt % 1000 == 0) {
@@ -430,6 +430,7 @@ int main(void)
 				for (size_t n = 0; n < ipc_tx_params.blk_size; ++n) {
 					cmd_data->data[n] = (uint8_t)rand_r(&ipc_tx_params.seed);
 				}
+				--ipc_tx_params.blk_cnt;
 				do {
 					ret = ipc_service_send(ep_cfg.priv, cmd_data, cmd_size);
 					k_busy_wait(1);
