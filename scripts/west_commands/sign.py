@@ -236,6 +236,24 @@ class Signer(abc.ABC):
         '''
 
 
+# Resolve a path to a tool binary using either --tool-path or which
+def get_tool_path(command, tool_name):
+    if command.args.tool_path:
+        tool = command.args.tool_path
+        if not os.path.isfile(tool):
+            command.die(f'--tool-path {tool}: no such file')
+    else:
+        tool = shutil.which(tool_name)
+        if not tool:
+            command.die(f'"{tool_name}" not found; either make it available on PATH or provide --tool-path')
+    return tool
+
+# This function returns the path to build result, without the file extension
+def get_kernel_filename_stem(build_dir, build_conf):
+    return (pathlib.Path(build_dir) / 'zephyr' /
+                        build_conf.get('CONFIG_KERNEL_BIN_NAME', "zephyr"))
+
+
 class ImgtoolSigner(Signer):
 
     def sign(self, command, build_dir, build_conf, formats):
@@ -260,6 +278,7 @@ class ImgtoolSigner(Signer):
             command.wrn("CONFIG_BOOTLOADER_MCUBOOT is not set to y in "
                         f"{build_conf.path}; this probably won't work")
 
+        # TODO: use get_kernel_filename_stem
         kernel = build_conf.get('CONFIG_KERNEL_BIN_NAME', 'zephyr')
 
         if 'bin' in formats:
@@ -501,6 +520,7 @@ class RimageSigner(Signer):
             else:
                 command.die(msg)
 
+        # TODO: use get_kernel_filename_stem
         kernel_name = build_conf.get('CONFIG_KERNEL_BIN_NAME', 'zephyr')
 
         bootloader = None
@@ -535,6 +555,7 @@ class RimageSigner(Signer):
         )
         err_prefix = '--tool-path' if args.tool_path else 'west config'
 
+        # TODO: use get_tool_path
         if tool_path:
             command.check_force(shutil.which(tool_path),
                                 f'{err_prefix} {tool_path}: not an executable')
@@ -649,6 +670,7 @@ class RimageSigner(Signer):
         os.rename(out_tmp, out_bin)
 
 class CommanderSigner(Signer):
+    # TODO: replace with get_tool_path
     @staticmethod
     def get_tool(command):
         if command.args.tool_path:
@@ -675,6 +697,7 @@ class CommanderSigner(Signer):
 
     @staticmethod
     def get_input_output(command, build_dir, build_conf):
+        # TODO: use get_kernel_filename_stem
         kernel_prefix = (pathlib.Path(build_dir) / 'zephyr' /
                          build_conf.get('CONFIG_KERNEL_BIN_NAME', "zephyr"))
         in_file = f'{kernel_prefix}.rps'
