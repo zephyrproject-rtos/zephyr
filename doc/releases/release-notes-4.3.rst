@@ -158,6 +158,11 @@ New APIs and options
 
 * Logging:
 
+  * Added options to skip timestamp and level in log backends.
+
+    * :kconfig:option:`CONFIG_LOG_BACKEND_SHOW_TIMESTAMP`
+    * :kconfig:option:`CONFIG_LOG_BACKEND_SHOW_LEVEL`
+
   * Added rate-limited logging macros to prevent log flooding when messages are generated frequently.
 
     * :c:macro:`LOG_ERR_RATELIMIT` - Rate-limited error logging macro (convenience)
