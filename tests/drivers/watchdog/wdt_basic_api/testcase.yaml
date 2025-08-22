@@ -33,6 +33,7 @@ tests:
       - bl54l15u_dvk/nrf54l15/cpuapp/ns
       - raytac_an54l15q_db/nrf54l15/cpuapp/ns
       - frdm_mcxw71
+      - frdm_mcxw72/mcxw727c/cpu0
   drivers.watchdog.stm32wwdg:
     filter: dt_compat_enabled("st,stm32-window-watchdog") or dt_compat_enabled("st,stm32-watchdog")
     extra_args: DTC_OVERLAY_FILE="boards/stm32_wwdg.overlay"
@@ -150,3 +151,8 @@ tests:
     filter: dt_compat_enabled("ti,tps382x")
     platform_allow: mimxrt1050_evk/mimxrt1052/hyperflash
     extra_args: DTC_OVERLAY_FILE="boards/mimxrt1050_evk_ti_tps382x.overlay"
+  drivers.watchdog.nxp_sram_noecc:
+    extra_args: EXTRA_DTC_OVERLAY_FILE="sram_noecc.overlay"
+    platform_allow:
+      - frdm_mcxw71
+      - frdm_mcxw72/mcxw727c/cpu0
