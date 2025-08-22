@@ -488,6 +488,7 @@ for brevity, in real drivers they must be handled.
    /* Define the device, pointing to the device's PM DEVICE context */
    DEVICE_DT_INST_DEINIT_DEFINE(
            0,
+           "dummy_device_unique_name",
            &dummy_init,
            &dummy_deinit,
            PM_DEVICE_DT_INST_GET(0),
