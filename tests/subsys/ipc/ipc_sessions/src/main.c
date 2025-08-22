@@ -332,7 +332,7 @@ ZTEST(ipc_sessions, test_tx_long)
 	zassert_not_null(cmd_rxstat, "No command response on time");
 	zassert_equal(cmd_rsp_size, sizeof(*cmd_rxstat),
 		      "Unexpected response size: %u, expected: %u", cmd_rsp_size,
-		      sizeof(cmd_rxstat));
+		      sizeof(*cmd_rxstat));
 	zassert_equal(cmd_rxstat->base.cmd, IPC_TEST_CMD_XSTAT,
 		      "Unexpected command in response: %u", cmd_rxstat->base.cmd);
 	zassert_ok(cmd_rxstat->result, "RX result not ok: %d", cmd_rxstat->result);
@@ -365,7 +365,7 @@ ZTEST(ipc_sessions, test_tx_long)
 	zassert_not_null(cmd_rxstat, "No command response on time");
 	zassert_equal(cmd_rsp_size, sizeof(*cmd_rxstat),
 		      "Unexpected response size: %u, expected: %u", cmd_rsp_size,
-		      sizeof(cmd_rxstat));
+		      sizeof(*cmd_rxstat));
 	zassert_equal(cmd_rxstat->base.cmd, IPC_TEST_CMD_XSTAT,
 		      "Unexpected command in response: %u", cmd_rxstat->base.cmd);
 	zassert_ok(cmd_rxstat->result, "RX result not ok: %d", cmd_rxstat->result);
@@ -449,7 +449,7 @@ ZTEST(ipc_sessions, test_rx_long)
 	zassert_not_null(cmd_txstat, "No command response on time");
 	zassert_equal(cmd_rsp_size, sizeof(*cmd_txstat),
 		      "Unexpected response size: %u, expected: %u", cmd_rsp_size,
-		      sizeof(cmd_txstat));
+		      sizeof(*cmd_txstat));
 	zassert_equal(cmd_txstat->base.cmd, IPC_TEST_CMD_XSTAT,
 		      "Unexpected command in response: %u", cmd_txstat->base.cmd);
 	zassert_ok(cmd_txstat->result, "RX result not ok: %d", cmd_txstat->result);
