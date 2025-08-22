@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <signal.h>
 #include <time.h>
 #include <unistd.h>
 
