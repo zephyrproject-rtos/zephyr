@@ -177,10 +177,6 @@
 #define _POSIX_TIMEOUTS _POSIX_VERSION
 #endif
 
-#ifdef CONFIG_POSIX_TIMERS
-#define _POSIX_TIMERS _POSIX_VERSION
-#endif
-
 /* #define _POSIX_TRACE (-1L) */
 /* #define _POSIX_TRACE_EVENT_FILTER (-1L) */
 /* #define _POSIX_TRACE_INHERIT (-1L) */

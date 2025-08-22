@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
+set(POSIX_VERSION 200809L)
 set(GEN_DIR ${ZEPHYR_BINARY_DIR}/include/generated)
 
 zephyr_syscall_header_ifdef(CONFIG_POSIX_CLOCK_SELECTION posix_clock.h)
@@ -124,6 +125,9 @@ if (NOT CONFIG_TC_PROVIDES_POSIX_TIMERS)
     timer.c
     timespec_to_timeout.c
   )
+endif()
+if (CONFIG_POSIX_TIMERS)
+  zephyr_compile_definitions(-D_POSIX_TIMERS=${POSIX_VERSION})
 endif()
 
 if (NOT CONFIG_TC_PROVIDES_POSIX_READER_WRITER_LOCKS)
