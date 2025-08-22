@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -60,6 +60,16 @@
 			interrupt-names = "status";
 			clocks = <&scg KINETIS_SCG_BUS_CLK>;
 			status = "disabled";
+		};
+
+		scg@40064000 {
+			/delete-node/ lpfll_clk;
+
+			lpfll_clk: lpfll_clk {
+			compatible = "fixed-clock";
+			clock-frequency = <96000000>;
+			#clock-cells = <0>;
+			};
 		};
 	};
 };
