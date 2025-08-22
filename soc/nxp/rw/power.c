@@ -6,7 +6,9 @@
 #include <zephyr/kernel.h>
 #include <zephyr/pm/pm.h>
 #include <fsl_clock.h>
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(standby))
 #include <fsl_rtc.h>
+#endif
 #include <zephyr/init.h>
 #include <zephyr/drivers/pinctrl.h>
 #if CONFIG_GPIO && (DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pin0)) || \
@@ -220,7 +222,9 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 				CLOCK_AttachClk(kLPOSC_to_OSTIMER_CLK);
 				/* Clear the RTC wakeup bits */
 				POWER_ClearWakeupStatus(DT_IRQN(DT_NODELABEL(rtc)));
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(standby))
 				RTC_ClearStatusFlags(RTC, kRTC_WakeupFlag);
+#endif
 				NVIC_ClearPendingIRQ(DT_IRQN(DT_NODELABEL(rtc)));
 				sys_clock_idle_exit();
 				sys_clock_set_timeout(0, true);
