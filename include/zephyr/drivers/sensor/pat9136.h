@@ -5,8 +5,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Header file for extended sensor API of PAT9136 sensor
+ * @ingroup pat9136_interface
+ */
+
 #ifndef ZEPHYR_INCLUDE_DRIVERS_SENSOR_PAT9136_H_
 #define ZEPHYR_INCLUDE_DRIVERS_SENSOR_PAT9136_H_
+
+/**
+ * @brief Pixart PAT9136 optical flow sensor
+ * @defgroup pat9136_interface PAT9136
+ * @ingroup sensor_interface_ext
+ * @{
+ */
 
 #include <zephyr/drivers/sensor.h>
 
@@ -14,7 +27,10 @@
 extern "C" {
 #endif
 
-/** This sensor does have the ability to provide DXY in meaningful units, and
+/**
+ * Custom sensor channels for PAT9136
+ *
+ * This sensor does have the ability to provide DXY in meaningful units, and
  * since the standard channels' unit is in points (SENSOR_CHAN_POS_DX,
  * SENSOR_CHAN_POS_DY, SENSOR_CHAN_POS_DXYZ), we've captured the following
  * channels to provide an alternative for this sensor.
@@ -34,5 +50,9 @@ enum sensor_channel_pat9136 {
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @}
+ */
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_SENSOR_PAT9136_H_ */
