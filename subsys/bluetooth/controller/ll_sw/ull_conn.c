@@ -909,6 +909,12 @@ void ull_conn_setup(memq_link_t *rx_link, struct node_rx_pdu *rx)
 		LL_ASSERT(!hdr->disabled_cb);
 		hdr->disabled_param = rx;
 		hdr->disabled_cb = conn_setup_adv_scan_disabled_cb;
+
+		/* NOTE: we are not forcing a lll_disable, in case of initiator
+		 *       we need let the CONNECT_IND PDU be transmitted. There
+		 *       is a possibility that a new scan window is in the LLL
+		 *       pipeline, it has to be disabled.
+		 */
 	} else {
 		conn_setup_adv_scan_disabled_cb(rx);
 	}
