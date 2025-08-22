@@ -43,12 +43,12 @@ static const struct device *counter_dev =
 	DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(0, deep_sleep_counter));
 /* Indicates if the counter is running. */
 static bool counter_running;
+static uint32_t counter_max_val;
+#endif
 /* Indicates we received a call with ticks set to wait forever */
 static bool wait_forever;
 /* Incase of counter overflow, track the remaining ticks left */
 static uint32_t counter_remaining_ticks;
-static uint32_t counter_max_val;
-#endif
 
 static uint64_t mcux_lpc_ostick_get_compensated_timer_value(void)
 {
@@ -191,11 +191,6 @@ static uint32_t mcux_lpc_ostick_compensate_system_timer(void)
 	return 0;
 }
 
-bool z_nxp_os_timer_ignore_timer_wakeup(void)
-{
-	return (wait_forever || counter_remaining_ticks);
-}
-
 static uint32_t mcux_os_timer_set_lp_counter_timeout(void)
 {
 	uint64_t timeout;
@@ -232,6 +227,11 @@ static uint32_t mcux_os_timer_set_lp_counter_timeout(void)
 #else
 #define mcux_os_timer_set_lp_counter_timeout(...) do { } while (0)
 #endif
+
+bool z_nxp_os_timer_ignore_timer_wakeup(void)
+{
+	return (wait_forever || counter_remaining_ticks);
+}
 
 void sys_clock_set_timeout(int32_t ticks, bool idle)
 {
