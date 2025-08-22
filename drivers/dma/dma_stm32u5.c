@@ -563,9 +563,7 @@ static int dma_stm32_reload(const struct device *dev, uint32_t id,
 		return -EINVAL;
 	}
 
-	LL_DMA_ConfigAddresses(dma,
-				dma_stm32_id_to_stream(id),
-				src, dst);
+	LL_DMA_ConfigAddresses(dma, dma_stm32_id_to_stream(id), src, dst);
 
 	LL_DMA_SetBlkDataLength(dma, dma_stm32_id_to_stream(id), size);
 
