@@ -244,6 +244,26 @@ class Signer(abc.ABC):
         '''
 
 
+class CommonSigner(Signer):
+    @staticmethod
+    def get_tool(command, tool_name):
+        if command.args.tool_path:
+            tool = command.args.tool_path
+            if not os.path.isfile(tool):
+                command.die(f'--tool-path {tool}: no such file')
+        else:
+            tool = shutil.which(tool_name)
+            if not tool:
+                command.die(f'"{tool_name}" not found; either make it available on PATH or provide --tool-path')
+        return tool
+
+    @staticmethod
+    def get_basename(build_dir, build_conf):
+        return (pathlib.Path(build_dir) / 'zephyr' /
+                         build_conf.get('CONFIG_KERNEL_BIN_NAME', "zephyr"))
+
+
+# TODO: use methods from CommonSigner
 class ImgtoolSigner(Signer):
 
     def sign(self, command, build_dir, build_conf, formats):
@@ -429,6 +449,7 @@ class ImgtoolSigner(Signer):
 
         return (align, addr, size)
 
+# TODO: use methods from CommonSigner
 class RimageSigner(Signer):
 
     def rimage_config_dir(self):
@@ -656,6 +677,7 @@ class RimageSigner(Signer):
         os.remove(out_bin)
         os.rename(out_tmp, out_bin)
 
+# TODO: use methods from CommonSigner
 class CommanderSigner(Signer):
     @staticmethod
     def get_tool(command):
