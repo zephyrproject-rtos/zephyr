@@ -275,9 +275,9 @@
 		compatible = "nxp,wdog32";
 		reg = <0x1a000 10>;
 		interrupts = <23 0>;
-		clocks = <&scg SCG_K4_SYSOSC_CLK 0x68>;
+		clocks = <&scg SCG_K4_RTCOSC_CLK 0x68>;
 		clk-source = <1>;
-		clk-divider = <256>;
+		clk-divider = <1>;
 		status = "okay";
 	};
 
@@ -285,9 +285,9 @@
 		compatible = "nxp,wdog32";
 		reg = <0x1b000 10>;
 		interrupts = <24 0>;
-		clocks = <&scg SCG_K4_SYSOSC_CLK 0x6c>;
+		clocks = <&scg SCG_K4_RTCOSC_CLK 0x6c>;
 		clk-source = <1>;
-		clk-divider = <256>;
+		clk-divider = <1>;
 		status = "disabled";
 	};
 
