@@ -181,11 +181,8 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x6002d000 0x1000>;
-			interrupts = <I2S1_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
 			clocks = <&clock ESP32_I2S1_MODULE>;
-			dmas = <&dma 2>, <&dma 3>;
-			dma-names = "rx", "tx";
 			unit = <0>;
 			status = "disabled";
 		};
