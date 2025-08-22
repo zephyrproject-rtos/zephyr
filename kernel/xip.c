@@ -33,8 +33,8 @@ void z_data_copy(void)
 #endif /* CONFIG_ARCH_HAS_RAMFUNC_SUPPORT */
 #ifdef CONFIG_ARCH_HAS_NOCACHE_MEMORY_SUPPORT
 #if CONFIG_NOCACHE_MEMORY
-	z_early_memcpy(&_nocache_ram_start, &_nocache_load_start,
-		       (uintptr_t) &_nocache_ram_size);
+	z_early_memcpy(&_nocache_load_ram_start, &_nocache_load_rom_start,
+		       (uintptr_t) &_nocache_load_ram_size);
 #endif /* CONFIG_NOCACHE_MEMORY */
 #endif /* CONFIG_ARCH_HAS_NOCACHE_MEMORY_SUPPORT */
 #if DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_ccm))

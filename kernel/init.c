@@ -249,9 +249,8 @@ void z_bss_zero(void)
 		       ((uintptr_t) &__gcov_bss_end - (uintptr_t) &__gcov_bss_start));
 #endif /* CONFIG_COVERAGE_GCOV */
 #ifdef CONFIG_NOCACHE_MEMORY
-z_early_memset(&_nocache_ram_start, 0,
-		   (uintptr_t) &_nocache_ram_end
-		   - (uintptr_t) &_nocache_ram_start);
+	z_early_memset(&_nocache_ram_start, 0,
+		       (uintptr_t)&_nocache_ram_end - (uintptr_t)&_nocache_ram_start);
 #endif
 }
 
