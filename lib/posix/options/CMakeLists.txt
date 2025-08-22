@@ -3,6 +3,8 @@
 set(POSIX_VERSION 200809L)
 set(GEN_DIR ${ZEPHYR_BINARY_DIR}/include/generated)
 
+zephyr_compile_definitions(-D_POSIX_C_SOURCE=${POSIX_VERSION})
+
 zephyr_syscall_header_ifdef(CONFIG_POSIX_CLOCK_SELECTION posix_clock.h)
 zephyr_syscall_header_ifdef(CONFIG_POSIX_TIMERS posix_clock.h)
 zephyr_syscall_header_ifdef(CONFIG_XSI_SINGLE_PROCESS posix_clock.h)
@@ -81,6 +83,9 @@ endif()
 if (NOT CONFIG_TC_PROVIDES_POSIX_FILE_SYSTEM_R)
   zephyr_library_sources_ifdef(CONFIG_POSIX_FILE_SYSTEM_R file_system_r.c)
 endif()
+if (CONFIG_POSIX_FILE_SYSTEM_R)
+  zephyr_compile_definitions(-D_POSIX_THREAD_SAFE_FUNCTIONS=${POSIX_VERSION})
+endif()
 
 if (NOT CONFIG_TC_PROVIDES_POSIX_MEMORY_PROTECTION)
 zephyr_library_sources_ifdef(CONFIG_POSIX_MEMORY_PROTECTION mprotect.c)
@@ -128,6 +133,12 @@ if (NOT CONFIG_TC_PROVIDES_POSIX_TIMERS)
 endif()
 if (CONFIG_POSIX_TIMERS)
   zephyr_compile_definitions(-D_POSIX_TIMERS=${POSIX_VERSION})
+  # FIXME: Until we have CONFIG_XSI_ADVANCED_REALTIME define _POSIX_CPUTIME and
+  # _POSIX_MONOTONIC_CLOCK with _POSIX_TIMERS.
+  # For more information on the Advanced Realtime Option Group, please see
+  # https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap02.html
+  zephyr_compile_definitions(-D_POSIX_CPUTIME=${POSIX_VERSION})
+  zephyr_compile_definitions(-D_POSIX_MONOTONIC_CLOCK=${POSIX_VERSION})
 endif()
 
 if (NOT CONFIG_TC_PROVIDES_POSIX_READER_WRITER_LOCKS)

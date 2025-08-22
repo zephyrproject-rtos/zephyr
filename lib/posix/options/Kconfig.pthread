@@ -157,6 +157,10 @@ config POSIX_THREAD_PRIO_PROTECT
 	  For more information, please see
 	  https://pubs.opengroup.org/onlinepubs/9699919799/functions/pthread_mutexattr_getprotocol.html
 
+# FIXME: this is an option, not an option group, and probably should be removed.
+# Furthermore, it should also depend on POSIX_FILE_LOCKING and POSIX_SYSTEM_DATABASE_R rather
+# than select any other options. The feature test macro _POSIX_THREAD_SAFE_FUNCTIONS should be
+# enabled when dependencies are satisfied.
 config POSIX_THREAD_SAFE_FUNCTIONS
 	bool "POSIX thread-safe functions"
 	select POSIX_FILE_SYSTEM_R
