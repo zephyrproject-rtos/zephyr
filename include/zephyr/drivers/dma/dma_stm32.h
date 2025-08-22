@@ -85,4 +85,12 @@
 #define STM32_DMA_FEATURES_FIFO_THRESHOLD(features)	0
 #endif
 
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_dma_v1)
+#define STM32_DMA_GET_INSTANCE(reg, channel)				\
+		__LL_DMA_GET_STREAM_INSTANCE((reg), (channel) - STM32_DMA_STREAM_OFFSET);
+#else
+#define STM32_DMA_GET_INSTANCE(reg, channel)				\
+		__LL_DMA_GET_CHANNEL_INSTANCE((reg), (channel) - STM32_DMA_STREAM_OFFSET);
+#endif
+
 #endif /* ZEPHYR_INCLUDE_DRIVERS_DMA_STM32_H_ */
