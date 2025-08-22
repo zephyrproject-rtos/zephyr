@@ -17,9 +17,6 @@ properties:
   clocks:
     required: true
 
-  interrupts:
-    required: true
-
   interrupt-parent:
     required: true
 
