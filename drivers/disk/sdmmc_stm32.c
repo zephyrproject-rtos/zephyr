@@ -241,8 +241,8 @@ static int stm32_sdmmc_configure_dma(DMA_HandleTypeDef *handle, struct sdmmc_dma
 		return ret;
 	}
 
+	handle->Instance                 = STM32_DMA_GET_INSTANCE(dma->reg, dma->channel_nb);
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_dma_v1)
-	handle->Instance                 = __LL_DMA_GET_STREAM_INSTANCE(dma->reg, dma->channel_nb);
 	handle->Init.Channel             = dma->cfg.dma_slot * DMA_CHANNEL_1;
 	handle->Init.PeriphInc           = DMA_PINC_DISABLE;
 	handle->Init.MemInc              = DMA_MINC_ENABLE;
@@ -255,14 +255,11 @@ static int stm32_sdmmc_configure_dma(DMA_HandleTypeDef *handle, struct sdmmc_dma
 	handle->Init.MemBurst            = DMA_MBURST_INC4;
 	handle->Init.PeriphBurst         = DMA_PBURST_INC4;
 #else
-	uint32_t channel_id = dma->channel_nb - STM32_DMA_STREAM_OFFSET;
-
 	BUILD_ASSERT(STM32_SDMMC_USE_DMA_SHARED == 1, "Only txrx is supported on this family");
 	/* handle->Init.Direction is not initialised here on purpose.
 	 * Since the channel is reused for both directions, the direction is
 	 * configured before each read/write call.
 	 */
-	handle->Instance                 = __LL_DMA_GET_CHANNEL_INSTANCE(dma->reg, channel_id);
 	handle->Init.Request             = dma->cfg.dma_slot;
 	handle->Init.PeriphInc           = DMA_PINC_DISABLE;
 	handle->Init.MemInc              = DMA_MINC_ENABLE;
