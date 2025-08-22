@@ -432,6 +432,7 @@ int main(void)
 				}
 				do {
 					ret = ipc_service_send(ep_cfg.priv, cmd_data, cmd_size);
+					k_busy_wait(1);
 				} while (ret == -ENOMEM);
 				if (ret < 0) {
 					LOG_ERR("Cannot send TX test buffer: %d", ret);

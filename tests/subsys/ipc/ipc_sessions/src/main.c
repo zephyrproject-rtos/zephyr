@@ -348,6 +348,7 @@ ZTEST(ipc_sessions, test_tx_long)
 		}
 		do {
 			ret = ipc_service_send(&ep, &cmd_txdata, sizeof(cmd_txdata));
+			k_busy_wait(1);
 		} while (ret == -ENOMEM);
 		if ((blk % 1000) == 0) {
 			LOG_INF("Transfer number: %u of %u", blk, cmd_rxstart.blk_cnt);
