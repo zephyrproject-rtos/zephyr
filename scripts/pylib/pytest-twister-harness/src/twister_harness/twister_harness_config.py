@@ -61,7 +61,7 @@ class TwisterHarnessConfig:
 
         west_flash_extra_args: list[str] = []
         if config.option.west_flash_extra_args:
-            west_flash_extra_args = [w.strip() for w in config.option.west_flash_extra_args.split(',')]
+            west_flash_extra_args = [w.strip() for w in next(csv.reader([config.option.west_flash_extra_args]))]
         flash_command: list[str] = []
         if config.option.flash_command:
             flash_command = [w.strip() for w in next(csv.reader([config.option.flash_command]))]
