@@ -6,13 +6,16 @@
 #include "posix/strsignal_table.h"
 
 #include <errno.h>
+#include <signal.h>
 #include <stdio.h>
+#include <time.h>
 
 #include <zephyr/posix/pthread.h>
-#include <zephyr/posix/signal.h>
 
 #define SIGNO_WORD_IDX(_signo) (_signo / BITS_PER_LONG)
 #define SIGNO_WORD_BIT(_signo) (_signo & BIT_MASK(LOG2(BITS_PER_LONG)))
+
+#define SIGSET_NWORDS (sizeof(sigset_t) / sizeof(unsigned long))
 
 static inline bool signo_valid(int signo)
 {
@@ -24,53 +27,66 @@ static inline bool signo_is_rt(int signo)
 	return ((signo >= SIGRTMIN) && (signo <= SIGRTMAX));
 }
 
+#undef sigemptyset
 int sigemptyset(sigset_t *set)
 {
 	*set = (sigset_t){0};
 	return 0;
 }
 
+#undef sigfillset
 int sigfillset(sigset_t *set)
 {
-	for (int i = 0; i < ARRAY_SIZE(set->sig); i++) {
-		set->sig[i] = -1;
+	unsigned long *const _set = (unsigned long *)set;
+
+	for (int i = 0; i < SIGSET_NWORDS; i++) {
+		_set[i] = -1;
 	}
 
 	return 0;
 }
 
+#undef sigaddset
 int sigaddset(sigset_t *set, int signo)
 {
+	unsigned long *_set = (unsigned long *)set;
+
 	if (!signo_valid(signo)) {
 		errno = EINVAL;
 		return -1;
 	}
 
-	WRITE_BIT(set->sig[SIGNO_WORD_IDX(signo)], SIGNO_WORD_BIT(signo), 1);
+	WRITE_BIT(_set[SIGNO_WORD_IDX(signo)], SIGNO_WORD_BIT(signo), 1);
 
 	return 0;
 }
 
+#undef sigdelset
 int sigdelset(sigset_t *set, int signo)
 {
+	unsigned long *_set = (unsigned long *)set;
+
 	if (!signo_valid(signo)) {
 		errno = EINVAL;
 		return -1;
 	}
 
-	WRITE_BIT(set->sig[SIGNO_WORD_IDX(signo)], SIGNO_WORD_BIT(signo), 0);
+	WRITE_BIT(_set[SIGNO_WORD_IDX(signo)], SIGNO_WORD_BIT(signo), 0);
 
 	return 0;
 }
 
+#undef sigismember
 int sigismember(const sigset_t *set, int signo)
 {
+	unsigned long *_set = (unsigned long *)set;
+
 	if (!signo_valid(signo)) {
 		errno = EINVAL;
 		return -1;
 	}
 
-	return 1 & (set->sig[SIGNO_WORD_IDX(signo)] >> SIGNO_WORD_BIT(signo));
+	return 1 & (_set[SIGNO_WORD_IDX(signo)] >> SIGNO_WORD_BIT(signo));
 }
 
 char *strsignal(int signum)
