@@ -2,6 +2,7 @@
 
 zephyr_library()
 zephyr_library_sources_ifdef(CONFIG_CRYPTO_ATAES132A		crypto_ataes132a.c)
+zephyr_library_sources_ifdef(CONFIG_CRYPTO_MSPM0_AES		crypto_mspm0_aes.c)
 zephyr_library_sources_ifdef(CONFIG_CRYPTO_MBEDTLS_SHIM		crypto_mtls_shim.c)
 zephyr_library_sources_ifdef(CONFIG_CRYPTO_STM32			crypto_stm32.c)
 zephyr_library_sources_ifdef(CONFIG_CRYPTO_SMARTBOND        crypto_smartbond.c)
