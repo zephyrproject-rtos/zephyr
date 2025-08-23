@@ -28,6 +28,7 @@ config AUDIO_CODEC_INIT_PRIORITY
 config AUDIO_CODEC_SHELL
 	bool "Audio Codec shell"
 	depends on SHELL
+	default y if SHELL_ALL
 	help
 	  Enable the Audio Codec shell with Audio Codec related commands.
 

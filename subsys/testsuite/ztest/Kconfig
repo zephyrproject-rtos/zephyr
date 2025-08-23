@@ -25,6 +25,7 @@ config ZTEST_TEST_DELAY_MS
 
 config ZTEST_SHELL
 	bool "Ztest with shell support"
+	default y if SHELL_ALL
 	select SHELL
 	select SHELL_THREAD_PRIORITY_OVERRIDE
 	select GETOPT_LONG

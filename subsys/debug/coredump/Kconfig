@@ -105,6 +105,7 @@ endif # DEBUG_COREDUMP_BACKEND_FLASH_PARTITION
 
 config DEBUG_COREDUMP_SHELL
 	bool "Coredump shell"
+	default y if SHELL_ALL
 	depends on SHELL
 	help
 	  This shell provides access to coredump and its backends.

@@ -69,6 +69,7 @@ endchoice
 
 config NET_L2_IEEE802154_SHELL
 	bool "IEEE 802.15.4 shell module"
+	default y if SHELL_ALL
 	select SHELL
 	depends on NET_L2_IEEE802154_RFD
 	help
