@@ -155,15 +155,8 @@ void isr_radio(void)
 
 void radio_isr_set(radio_isr_cb_t cb, void *param)
 {
-	irq_disable(HAL_RADIO_IRQn);
-
 	isr_cb_param = param;
 	isr_cb = cb;
-
-	nrf_radio_int_enable(NRF_RADIO, HAL_RADIO_INTENSET_DISABLED_Msk);
-
-	NVIC_ClearPendingIRQ(HAL_RADIO_IRQn);
-	irq_enable(HAL_RADIO_IRQn);
 }
 
 void radio_setup(void)
@@ -197,7 +190,6 @@ void radio_setup(void)
 
 void radio_reset(void)
 {
-	irq_disable(HAL_RADIO_IRQn);
 
 	/* nRF SoC generic radio reset/initializations
 	 * Note: Only registers whose bits are partially modified across
