@@ -262,6 +262,157 @@ cleanup:
 	return ret;
 }
 
+static int crypto_aes_cfb_op(struct cipher_ctx *ctx, struct cipher_pkt *pkt, uint8_t *iv)
+{
+	const struct device *dev = ctx->device;
+	const struct crypto_mspm0_aes_config *config = dev->config;
+	struct mspm0_aes_session *session = ctx->drv_sessn_state;
+	struct crypto_mspm0_aes_data *data = dev->data;
+	int bytes_processed = 0;
+	int ret;
+
+	if (session == NULL || !session->in_use || iv == NULL) {
+		LOG_ERR("No session data");
+		return -EINVAL;
+	}
+
+	ret = validate_pkt(pkt);
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = k_mutex_lock(&data->device_mutex, AES_WAIT_TIMEOUT);
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = aes_hw_init(ctx);
+	if (ret != 0) {
+		goto cleanup;
+	}
+
+	/* Enable cipher mode for cfb */
+	DL_AES_enableCipherMode(config->regs);
+
+	do {
+		/* load the next block */
+		ret = DL_AES_loadDataIn(config->regs, iv);
+		if (ret != DL_AES_STATUS_SUCCESS) {
+			break;
+		}
+
+		/* wait for AES operation completion */
+		ret = k_sem_take(&data->aes_done, AES_SEM_TIMEOUT);
+		if (ret != 0) {
+			break;
+		}
+
+		/* xor the intput block with internal state */
+		ret = DL_AES_loadXORDataInWithoutTrigger(config->regs,
+							 &pkt->in_buf[bytes_processed]);
+		if (ret != DL_AES_STATUS_SUCCESS) {
+			break;
+		}
+
+		/* load next block */
+		if (session->op == CRYPTO_CIPHER_OP_DECRYPT) {
+			iv = &pkt->in_buf[bytes_processed];
+		} else {
+			iv = &pkt->out_buf[bytes_processed];
+		}
+
+		/* read the dataout */
+		ret = DL_AES_getDataOut(config->regs, &pkt->out_buf[bytes_processed]);
+		if (ret != DL_AES_STATUS_SUCCESS) {
+			break;
+		}
+		bytes_processed += AES_BLOCK_SIZE;
+
+	} while (bytes_processed < pkt->in_len);
+
+cleanup:
+	pkt->out_len = bytes_processed;
+	k_mutex_unlock(&data->device_mutex);
+
+	return ret;
+}
+
+static int crypto_aes_ofb_op(struct cipher_ctx *ctx, struct cipher_pkt *pkt, uint8_t *iv)
+{
+	const struct device *dev = ctx->device;
+	const struct crypto_mspm0_aes_config *config = dev->config;
+	struct mspm0_aes_session *session = ctx->drv_sessn_state;
+	struct crypto_mspm0_aes_data *data = dev->data;
+	uint8_t block[AES_BLOCK_SIZE] __aligned(4);
+	int bytes_processed = 0;
+	int ret;
+
+	if (session == NULL || !session->in_use || iv == NULL) {
+		LOG_ERR("No session data");
+		return -EINVAL;
+	}
+
+	ret = validate_pkt(pkt);
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = k_mutex_lock(&data->device_mutex, AES_WAIT_TIMEOUT);
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = aes_hw_init(ctx);
+	if (ret != 0) {
+		goto cleanup;
+	}
+
+	/* Enable cipher mode for ofb */
+	DL_AES_enableCipherMode(config->regs);
+
+	do {
+		/* load the next block */
+		ret = DL_AES_loadDataIn(config->regs, iv);
+		if (ret != DL_AES_STATUS_SUCCESS) {
+			break;
+		}
+
+		/* wait for AES operation completion */
+		ret = k_sem_take(&data->aes_done, AES_SEM_TIMEOUT);
+		if (ret != 0) {
+			break;
+		}
+
+		/* read the dataout for next feedback */
+		ret = DL_AES_getDataOut(config->regs, (uint8_t *)&block);
+		if (ret != DL_AES_STATUS_SUCCESS) {
+			break;
+		}
+		iv = (uint8_t *)&block;
+
+		/* xor the input text with internal state */
+		ret = DL_AES_loadXORDataInWithoutTrigger(config->regs,
+							 &pkt->in_buf[bytes_processed]);
+		if (ret != DL_AES_STATUS_SUCCESS) {
+			break;
+		}
+
+		/* read the dataout */
+		ret = DL_AES_getDataOut(config->regs, &pkt->out_buf[bytes_processed]);
+		if (ret != DL_AES_STATUS_SUCCESS) {
+			break;
+		}
+		bytes_processed += AES_BLOCK_SIZE;
+
+	} while (bytes_processed < pkt->in_len);
+
+cleanup:
+	pkt->out_len = bytes_processed;
+	k_mutex_unlock(&data->device_mutex);
+
+	return ret;
+}
+
 static void crypto_mspm0_aes_isr(const struct device *dev)
 {
 	const struct crypto_mspm0_aes_config *config = dev->config;
@@ -338,6 +489,24 @@ static int aes_session_setup(const struct device *dev, struct cipher_ctx *ctx,
 			session->aesconfig = DL_AES_MODE_GEN_FIRST_ROUND_KEY_CBC_MODE;
 		}
 		ctx->ops.cbc_crypt_hndlr = crypto_aes_cbc_op;
+		break;
+
+	case CRYPTO_CIPHER_MODE_CFB:
+		if (op == CRYPTO_CIPHER_OP_ENCRYPT) {
+			session->aesconfig = DL_AES_MODE_ENCRYPT_CFB_MODE;
+		} else {
+			session->aesconfig = DL_AES_MODE_DECRYPT_SAME_KEY_CFB_MODE;
+		}
+		ctx->ops.cfb_crypt_hndlr = crypto_aes_cfb_op;
+		break;
+
+	case CRYPTO_CIPHER_MODE_OFB:
+		if (op == CRYPTO_CIPHER_OP_ENCRYPT) {
+			session->aesconfig = DL_AES_MODE_ENCRYPT_OFB_MODE;
+		} else {
+			session->aesconfig = DL_AES_MODE_DECRYPT_SAME_KEY_OFB_MODE;
+		}
+		ctx->ops.ofb_crypt_hndlr = crypto_aes_ofb_op;
 		break;
 
 	default:
