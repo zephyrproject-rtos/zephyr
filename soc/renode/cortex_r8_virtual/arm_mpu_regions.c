@@ -57,6 +57,13 @@ static const struct arm_mpu_region mpu_regions[] = {
 			 NORMAL_OUTER_INNER_WRITE_BACK_WRITE_READ_ALLOCATE_NON_SHAREABLE}),
 #endif /* CONFIG_XIP */
 	MPU_REGION_ENTRY(
+		"priv_peripherals",
+		0xae000000,
+		REGION_8K,
+		{.rasr = P_RW_U_NA_Msk |
+			 DEVICE_SHAREABLE |
+			 NOT_EXEC}),
+	MPU_REGION_ENTRY(
 		"peripherals",
 		0xf8000000,
 		REGION_128M,
