@@ -307,6 +307,9 @@ int lll_init(void)
 #endif
 #endif /* !CONFIG_BT_CTLR_DYNAMIC_INTERRUPTS */
 
+	/* Enable Radio interrupt on radio state disabled; after tx or rx or explicitly disabled */
+	nrf_radio_int_enable(NRF_RADIO, HAL_RADIO_INTENSET_DISABLED_Msk);
+
 	/* Enable IRQs */
 	irq_enable(HAL_RADIO_IRQn);
 	irq_enable(HAL_RTC_IRQn);
