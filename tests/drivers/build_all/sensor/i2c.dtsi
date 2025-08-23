@@ -1472,3 +1472,8 @@ test_rv3032: rv3032c7@c2 {
 		status = "okay";
 	};
 };
+
+test_i2c_as6221: as6221@c3 {
+	compatible = "ams,as6221";
+	reg = <0xc3>;
+};

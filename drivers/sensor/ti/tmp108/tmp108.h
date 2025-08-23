@@ -32,6 +32,8 @@
 	 .TEMP_DIV = 2,                                                                            \
 	 IF_ENABLED(CONFIG_TMP108_ALERT_INTERRUPTS, (.CONF_POL = 0x0400))}
 
+#define AMS_AS6221_CONF AMS_AS6212_CONF
+
 #define TI_TMP108_CONF                                                                             \
 	{.CONF_M0 = 0x0100,                                                                        \
 	 .CONF_M1 = 0x0200,                                                                        \
