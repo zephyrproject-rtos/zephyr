@@ -210,6 +210,24 @@ struct fs_statvfs {
 	 | (DT_PROP(node_id, disk_access) ? FS_MOUNT_FLAG_USE_DISK_ACCESS : 0))
 
 /**
+ * @brief Get the mount-point from an fstab entry.
+ *
+ * @param node_id The node identifier for a child entry in a zephyr,fstab node.
+ * @return The mount-point path.
+ */
+#define FSTAB_ENTRY_DT_MOUNT_POINT(node_id) \
+	DT_PROP(node_id, mount_point)
+
+/**
+ * @brief Get the mount-point from an fstab entry.
+ *
+ * @param inst Instance number
+ * @return The mount-point path.
+ */
+#define FSTAB_ENTRY_DT_INST_MOUNT_POINT(inst) \
+	DT_INST_PROP(inst, mount_point)
+
+/**
  * @brief The name under which a zephyr,fstab entry mount structure is
  * defined.
  *
