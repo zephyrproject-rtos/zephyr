@@ -7,6 +7,7 @@ if SHELL
 
 config POSIX_SHELL
 	bool
+	default y if SHELL_ALL
 	help
 	  Compile the parent `posix` shell command.
 

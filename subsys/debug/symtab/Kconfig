@@ -16,6 +16,7 @@ if SYMTAB
 config SYMTAB_SHELL
 	bool "Symbol table shell commands"
 	depends on SHELL
+	default y if SHELL_ALL
 	help
 	  Shell commands to access the symbol table.
 

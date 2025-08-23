@@ -171,6 +171,7 @@ config MODEM_SOCKET_PACKET_COUNT
 config MODEM_SHELL
 	bool "Modem shell utilities"
 	depends on SHELL
+	default y if SHELL_ALL
 	help
 	  Activate shell module that provides modem utilities like
 	  sending a command to the modem UART.

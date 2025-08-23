@@ -18,6 +18,7 @@ config CHARACTER_FRAMEBUFFER_USE_DEFAULT_FONTS
 
 config CHARACTER_FRAMEBUFFER_SHELL
 	bool "Character Framebuffer shell"
+	default y if SHELL_ALL
 	depends on SHELL
 	help
 	  Activate shell module that provides Framebuffer commands to the

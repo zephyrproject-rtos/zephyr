@@ -38,7 +38,7 @@ config INPUT_KBD_ACTUAL_KEY_MASK_DYNAMIC
 config INPUT_SHELL_KBD_MATRIX_STATE
 	bool "Input kbd_matrix_state shell command"
 	depends on INPUT_SHELL
-	depends on SHELL
+	default y if SHELL_ALL
 	help
 	  Enable an input kbd_matrix_state shell command to log the state of a
 	  keyboard matrix device.
