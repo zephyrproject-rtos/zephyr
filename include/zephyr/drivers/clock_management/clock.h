@@ -86,6 +86,10 @@ struct clk {
 	/** Children nodes of the clock */
 	const clock_handle_t *children;
 	struct clk_subsys_data *subsys_data;
+	/** Clock ranking for this clock */
+	uint8_t rank;
+	/** Factor to scale frequency by for this clock ranking */
+	uint8_t rank_factor;
 #endif
 #if defined(CONFIG_CLOCK_MANAGEMENT_CLK_NAME) || defined(__DOXYGEN__)
 	/** Name of this clock */
@@ -283,14 +287,18 @@ struct clk_mux_subsys_data {
  * @param subsys_data_ Subsystem data for this clock
  * @param name_ clock name
  * @param subsys_data_ clock subsystem data
+ * @param rank_ clock rank
  */
-#define Z_CLOCK_INIT(children_, hw_data_, api_, name_, subsys_data_)                   \
+#define Z_CLOCK_INIT(children_, hw_data_, api_, name_, subsys_data_, rank_,            \
+		     rank_factor_)                                                     \
 	{                                                                              \
 		IF_ENABLED(CONFIG_CLOCK_MANAGEMENT_RUNTIME, (.children = children_,))  \
 		.hw_data = (void *)hw_data_,                                           \
 		.api = api_,                                                           \
 		IF_ENABLED(CONFIG_CLOCK_MANAGEMENT_CLK_NAME, (.clk_name = name_,))     \
 		IF_ENABLED(CONFIG_CLOCK_MANAGEMENT_RUNTIME, (.subsys_data = subsys_data_,)) \
+		IF_ENABLED(CONFIG_CLOCK_MANAGEMENT_SET_RATE, (.rank = rank_,))         \
+		IF_ENABLED(CONFIG_CLOCK_MANAGEMENT_SET_RATE, (.rank_factor = rank_factor_,)) \
 	}
 
 /**
@@ -326,7 +334,9 @@ struct clk_mux_subsys_data {
 		Z_CLOCK_INIT(Z_CLOCK_GET_CHILDREN(node_id),                    \
 			     hw_data, api, DT_NODE_FULL_NAME(node_id),         \
 			     COND_CODE_1(CONFIG_CLOCK_MANAGEMENT_RUNTIME,      \
-			     (&Z_CLOCK_SUBSYS_NAME(node_id)), NULL));
+			     (&Z_CLOCK_SUBSYS_NAME(node_id)), NULL),           \
+			     DT_PROP(node_id, clock_ranking),                  \
+			     DT_PROP(node_id, clock_rank_factor));
 
 /**
  * @brief Declare a clock for each used clock node in devicetree

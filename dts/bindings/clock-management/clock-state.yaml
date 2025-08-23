@@ -20,6 +20,13 @@ properties:
     type: int
     required: true
     description: Frequency this configuration produces, in Hz
+  rank:
+    type: int
+    default: 0
+    description: |
+      Rank of this configuration. Lower rank values are preferred over higher
+      rank values when the user requests a clock state with the best ranking.
+      Defaults to 0, the highest possible rank.
   locking-state:
     type: boolean
     description: |
