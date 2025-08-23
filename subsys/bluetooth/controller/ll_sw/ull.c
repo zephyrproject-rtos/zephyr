@@ -2021,6 +2021,7 @@ int ull_disable(void *lll)
 	struct ull_hdr *hdr;
 	struct k_sem sem;
 	uint32_t ret;
+	int err;
 
 	hdr = HDR_LLL2ULL(lll);
 	if (!ull_ref_get(hdr)) {
@@ -2053,7 +2054,12 @@ int ull_disable(void *lll)
 			     &mfy);
 	LL_ASSERT(!ret);
 
-	return k_sem_take(&sem, ULL_DISABLE_TIMEOUT);
+	err = k_sem_take(&sem, ULL_DISABLE_TIMEOUT);
+	if (err != 0) {
+		return err;
+	}
+
+	return 0;
 }
 
 void *ull_pdu_rx_alloc_peek(uint8_t count)
@@ -3028,6 +3034,9 @@ static inline void rx_demux_event_done(memq_link_t *link,
 	if (ull_hdr) {
 		LL_ASSERT(ull_ref_get(ull_hdr));
 		ull_ref_dec(ull_hdr);
+	} else {
+		/* No reference count decrement, event placed back as resume event in the pipeline.
+		 */
 	}
 
 	/* Process role dependent event done */

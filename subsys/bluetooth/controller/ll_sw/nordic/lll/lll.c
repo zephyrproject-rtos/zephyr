@@ -528,6 +528,9 @@ int lll_done(void *param)
 		param = event.curr.param;
 		event.curr.param = NULL;
 
+		/* Resume events will have set event.curr.param to NULL, these
+		 * should not generate done events.
+		 */
 		if (param) {
 			ull = HDR_LLL2ULL(param);
 		} else {
