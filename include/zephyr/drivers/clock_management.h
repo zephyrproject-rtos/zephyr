@@ -106,7 +106,12 @@ struct clock_management_rate_req {
 	clock_freq_t min_freq;
 	/** Maximum acceptable frequency */
 	clock_freq_t max_freq;
+	/** Maximum acceptable rank */
+	uint32_t max_rank;
 };
+
+/** Constant to indicate any rank is acceptable for the clock request */
+#define CLOCK_MANAGEMENT_ANY_RANK UINT32_MAX
 
 /**
  * @brief Clock output structure
@@ -190,6 +195,7 @@ struct clock_output {
 	struct clock_management_rate_req Z_CLOCK_MANAGEMENT_REQ_NAME(symname) = {          \
 		.min_freq = 0U,                                                \
 		.max_freq = INT32_MAX,                                         \
+		.max_rank = CLOCK_MANAGEMENT_ANY_RANK,                         \
 	};                                                                     \
 	/* Define output clock structure */                                    \
 	static const Z_DECL_ALIGN(struct clock_output)                         \
@@ -509,6 +515,25 @@ int clock_management_get_rate(const struct clock_output *clk);
  */
 int clock_management_req_rate(const struct clock_output *clk,
 			const struct clock_management_rate_req *req);
+
+/**
+ * @brief Request the best ranked clock configuration for a given frequency range
+ *
+ * Requests the clock framework select the best ranked clock configuration
+ * for a given frequency range. Clock ranks are calculated per clock node
+ * by summing the fixed "clock-ranking" property with the "clock-rank-factor"
+ * property times the output frequency (divided by 255). A clock configuration's
+ * rank is the sum of all the ranks for the clocks used in that configuration.
+ * @param clk Clock output to make request for
+ * @param req Upper and lower bounds on frequency
+ * @return -EINVAL if parameters are invalid
+ * @return -ENOENT if request could not be satisfied
+ * @return -EPERM if clock is not configurable
+ * @return -EIO if configuration of a clock failed
+ * @return frequency of clock output in HZ on success
+ */
+int clock_management_req_ranked(const struct clock_output *clk,
+				const struct clock_management_rate_req *req);
 
 /**
  * @brief Apply a clock state based on a devicetree clock state identifier
