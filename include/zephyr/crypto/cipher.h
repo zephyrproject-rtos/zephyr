@@ -47,6 +47,8 @@ enum cipher_mode {
 	CRYPTO_CIPHER_MODE_CTR = 3, /**< Counter mode. */
 	CRYPTO_CIPHER_MODE_CCM = 4, /**< Counter with CBC-MAC mode. */
 	CRYPTO_CIPHER_MODE_GCM = 5, /**< Galois/Counter mode. */
+	CRYPTO_CIPHER_MODE_CFB = 6, /**< Cipher Feedback mode. */
+	CRYPTO_CIPHER_MODE_OFB = 7, /**< Output Feedback mode. */
 };
 
 /* Forward declarations */
@@ -124,6 +126,32 @@ typedef int (*gcm_op_t)(struct cipher_ctx *ctx, struct cipher_aead_pkt *pkt,
 			 uint8_t *nonce);
 
 /**
+ * @brief Perform a CFB cipher operation.
+ *
+ * @param ctx Cipher session context.
+ * @param pkt Packet containing input and output buffers.
+ * @param iv Initialization vector for this operation.
+ *
+ * @retval 0 Operation completed successfully.
+ * @retval -errno Negative errno code on failure.
+ */
+typedef int (*cfb_op_t)(struct cipher_ctx *ctx, struct cipher_pkt *pkt,
+			uint8_t *iv);
+
+/**
+ * @brief Perform an OFB cipher operation.
+ *
+ * @param ctx Cipher session context.
+ * @param pkt Packet containing input and output buffers.
+ * @param iv Initialization vector for this operation.
+ *
+ * @retval 0 Operation completed successfully.
+ * @retval -errno Negative errno code on failure.
+ */
+typedef int (*ofb_op_t)(struct cipher_ctx *ctx, struct cipher_pkt *pkt,
+			uint8_t *iv);
+
+/**
  * Cipher operation handlers selected for a session.
  *
  * The crypto driver populates this structure during cipher_begin_session()
@@ -146,6 +174,10 @@ struct cipher_ops {
 		ccm_op_t	ccm_crypt_hndlr;
 		/** Handler for GCM authenticated operations. */
 		gcm_op_t	gcm_crypt_hndlr;
+		/** Handler for CFB operations. */
+		cfb_op_t	cfb_crypt_hndlr;
+		/** Handler for OFB operations. */
+		ofb_op_t	ofb_crypt_hndlr;
 	};
 };
 
