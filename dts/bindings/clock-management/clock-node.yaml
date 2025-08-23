@@ -10,3 +10,20 @@ properties:
     type: int
     required: true
     description: Number of items to expect in a node setpoint specifier
+  clock-ranking:
+    type: int
+    default: 0
+    description: |
+      Ranking value for this clock, used when clock set rate features are
+      enabled. By default this value is set to 0, the highest possible
+      rank. If two clocks can both satisfy a given request, the one with the
+      lower rank will be selected.
+  clock-rank-factor:
+    type: int
+    default: 0
+    description: |
+      Ranking factor for this clock, used when clock set rate features are
+      enabled. This value is multiplied by the requested rate to
+      determine the effective rate for ranking purposes. By default this
+      value is set to 1, meaning the effective rate is the same as the
+      requested rate.
