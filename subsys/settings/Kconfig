@@ -239,6 +239,7 @@ config SETTINGS_ZMS_LOAD_SUBTREE_PATH
 
 config SETTINGS_SHELL
 	bool "Settings shell"
+	default y if SHELL_ALL
 	depends on SHELL
 	help
 	  Enable shell commands for listing and reading the settings. Note that

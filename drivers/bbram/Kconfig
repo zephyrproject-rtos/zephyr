@@ -15,6 +15,7 @@ source "subsys/logging/Kconfig.template.log_config"
 config BBRAM_SHELL
 	bool "Battery-backed RAM shell"
 	depends on SHELL
+	default y if SHELL_ALL
 	help
 	  Enable the BBRAM shell with read and write commands.
 

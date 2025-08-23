@@ -51,6 +51,7 @@ config USBD_VREQ_SUPPORT
 
 config USBD_SHELL
 	bool "USB device shell"
+	default y if SHELL_ALL
 	depends on SHELL
 	help
 	  Enable USB device shell.

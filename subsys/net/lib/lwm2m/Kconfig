@@ -537,6 +537,7 @@ config LWM2M_SERVER_BOOTSTRAP_ON_FAIL
 config LWM2M_SHELL
 	bool "LwM2M shell utilities"
 	depends on SHELL
+	default y if SHELL_ALL
 	select CRC
 	help
 	  Activate shell module that provides LwM2M commands like

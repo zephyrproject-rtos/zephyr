@@ -258,6 +258,7 @@ config COAP_SERVER_TRUNCATE_MSGS
 
 config COAP_SERVER_SHELL
 	bool "CoAP service shell commands"
+	default y if SHELL_ALL
 	depends on SHELL
 	help
 	  Enable CoAP service shell commands.

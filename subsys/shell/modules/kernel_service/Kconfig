@@ -33,6 +33,7 @@ rsource "thread/Kconfig"
 config KERNEL_SHELL_PANIC_CMD
 	bool "Add a panic command"
 	depends on SHELL
+	default y if SHELL_ALL
 	help
 	  Whether a fatal error handler is installed or not, it may come in
 	  handy to have a way to generate a kernel panic as if something had

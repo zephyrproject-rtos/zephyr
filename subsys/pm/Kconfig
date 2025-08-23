@@ -181,6 +181,7 @@ endif # PM_DEVICE_RUNTIME
 
 config PM_DEVICE_SHELL
 	bool "Device Power Management shell"
+	default y if SHELL_ALL
 	depends on SHELL
 	help
 	  Enable the device power management shell, for triggering device power

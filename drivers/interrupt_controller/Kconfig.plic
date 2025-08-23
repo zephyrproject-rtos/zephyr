@@ -68,6 +68,7 @@ config PLIC_IRQ_AFFINITY_MASK
 config PLIC_SHELL
 	bool "PLIC shell commands"
 	depends on SHELL
+	default y if SHELL_ALL
 	help
 	  Enable additional shell commands useful for debugging.
 	  Caution: This can use quite a bit of RAM (PLICs * IRQs * sizeof(uint16_t)).

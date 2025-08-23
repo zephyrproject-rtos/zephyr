@@ -83,6 +83,7 @@ config PCIE_PRT
 config PCIE_SHELL
 	bool "PCIe/new PCI Shell"
 	depends on SHELL
+	default y if SHELL_ALL
 	help
 	  Enable commands for debugging PCI(e) using the built-in shell.
 

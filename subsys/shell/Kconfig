@@ -25,6 +25,12 @@ config SHELL_MINIMAL
 	  defaults which favor reduced flash or memory requirements over extra
 	  features.
 
+config SHELL_ALL
+	bool "Single config option for all shell modules"
+	depends on !SHELL_MINIMAL
+	help
+	  Enable all shell modules by default.
+
 config SHELL_DEVICE_HELPERS
 	bool "Shell device helpers"
 	imply DEVICE_DT_METADATA

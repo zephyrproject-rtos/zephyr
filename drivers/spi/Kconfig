@@ -16,6 +16,7 @@ if SPI
 config SPI_SHELL
 	bool "SPI Shell"
 	depends on SHELL
+	default y if SHELL_ALL
 	help
 	  Enable SPI Shell.
 

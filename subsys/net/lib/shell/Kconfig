@@ -6,6 +6,7 @@
 menuconfig NET_SHELL
 	bool "Network shell utilities"
 	depends on SHELL
+	default y if SHELL_ALL
 	select NET_IPV4_IGMP if NET_NATIVE_IPV4
 	select REQUIRES_FLOAT_PRINTF
 	help

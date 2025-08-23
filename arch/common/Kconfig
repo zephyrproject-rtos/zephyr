@@ -19,6 +19,7 @@ config SEMIHOST
 
 config ISR_TABLE_SHELL
 	bool "Shell command to dump the ISR tables"
+	default y if SHELL_ALL
 	depends on GEN_SW_ISR_TABLE
 	depends on SHELL
 	help

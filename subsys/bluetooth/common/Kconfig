@@ -267,6 +267,7 @@ config BT_RPA
 config BT_PRIVATE_SHELL
 	bool
 	depends on SHELL
+	default y if SHELL_ALL
 
 config BT_ASSERT
 	bool "Custom Bluetooth assert implementation"

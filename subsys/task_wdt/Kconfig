@@ -70,6 +70,7 @@ config TASK_WDT_HW_FALLBACK_PAUSE_IN_SLEEP
 
 config TASK_WDT_SHELL
 	bool "Task watchdog shell utilities"
+	default y if SHELL_ALL
 	depends on SHELL
 	help
 	  Activate shell module that provides Task watchdog commands.

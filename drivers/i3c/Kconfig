@@ -46,6 +46,7 @@ config I3C_TARGET
 config I3C_SHELL
 	bool "I3C Shell"
 	depends on SHELL
+	default y if SHELL_ALL
 	help
 	  Enable I3C Shell.
 

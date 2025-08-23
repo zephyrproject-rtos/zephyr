@@ -19,6 +19,7 @@ config EDAC_ERROR_INJECT
 config EDAC_SHELL
 	bool "EDAC Shell"
 	depends on SHELL
+	default y if SHELL_ALL
 	help
 	  Enable EDAC shell for debugging EDAC.
 

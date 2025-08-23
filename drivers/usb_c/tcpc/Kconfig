@@ -22,6 +22,7 @@ config USBC_TCPC_INIT_PRIORITY
 config USBC_TCPC_SHELL
 	bool "Shell commands for TCPC subsystem"
 	depends on SHELL
+	default y if SHELL_ALL
 	help
 	  Enable support for TCPC shell commands that helps with USB-C diagnostics.
 	  Example functions are printing vbus, chip information and dumping registers.

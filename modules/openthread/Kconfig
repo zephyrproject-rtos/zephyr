@@ -144,6 +144,7 @@ endmenu # "Zephyr optimizations"
 
 config OPENTHREAD_SHELL
 	bool "OpenThread shell"
+	default y if SHELL_ALL
 	depends on SHELL
 
 config MBEDTLS_PROMPTLESS
