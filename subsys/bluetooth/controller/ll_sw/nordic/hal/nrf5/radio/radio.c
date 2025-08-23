@@ -150,6 +150,8 @@ void isr_radio(void)
 {
 	if (radio_has_disabled()) {
 		isr_cb(isr_cb_param);
+	} else {
+		/* Nothing to do here, we shall not get spurious Radio IRQ */
 	}
 }
 
