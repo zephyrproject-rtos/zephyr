@@ -13,6 +13,12 @@ zephyr_library_sources_ifdef(CONFIG_MEMC_MCUX_FLEXSPI_W956A8MBYA memc_mcux_flexs
 if((DEFINED CONFIG_FLASH_MCUX_FLEXSPI_XIP) AND (DEFINED CONFIG_FLASH))
   zephyr_code_relocate(FILES memc_mcux_flexspi.c LOCATION ${CONFIG_FLASH_MCUX_FLEXSPI_XIP_MEM}_TEXT)
 endif()
+zephyr_library_sources_ifdef(CONFIG_MEMC_MCUX_XSPI memc_mcux_xspi.c)
+if((DEFINED CONFIG_FLASH_MCUX_XSPI_XIP) AND (DEFINED CONFIG_FLASH))
+  zephyr_code_relocate(FILES memc_mcux_xspi.c LOCATION ${CONFIG_FLASH_MCUX_XSPI_XIP_MEM}_TEXT)
+  zephyr_code_relocate(FILES memc_mcux_xspi.c LOCATION ${CONFIG_FLASH_MCUX_XSPI_XIP_MEM}_RODATA)
+endif()
+zephyr_library_sources_ifdef(CONFIG_MEMC_MCUX_XSPI_PSRAM memc_mcux_xspi_psram.c)
 
 zephyr_library_sources_ifdef(CONFIG_MEMC_MSPI_APS6404L           memc_mspi_aps6404l.c)
 zephyr_library_sources_ifdef(CONFIG_MEMC_MSPI_APS_Z8             memc_mspi_aps_z8.c)
