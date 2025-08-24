@@ -5,6 +5,7 @@
 
 config KERNEL_THREAD_SHELL
 	bool
+	depends on SHELL
 	depends on THREAD_MONITOR
 	help
 	  Internal helper macro to determine if the main `thread` command

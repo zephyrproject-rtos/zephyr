@@ -5,6 +5,7 @@
 
 config KERNEL_SHELL
 	bool "Kernel shell"
+	depends on SHELL
 	default y if !SHELL_MINIMAL
 	imply INIT_STACKS
 	imply THREAD_MONITOR
@@ -31,6 +32,7 @@ rsource "thread/Kconfig"
 
 config KERNEL_SHELL_PANIC_CMD
 	bool "Add a panic command"
+	depends on SHELL
 	help
 	  Whether a fatal error handler is installed or not, it may come in
 	  handy to have a way to generate a kernel panic as if something had

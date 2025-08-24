@@ -161,6 +161,7 @@ config NET_ETHERNET_BRIDGE_TXRX_DEBUG
 
 config NET_ETHERNET_BRIDGE_SHELL
 	bool "Ethernet Bridging management shell"
+	depends on SHELL
 	depends on NET_ETHERNET_BRIDGE
 	select NET_SHELL
 	help

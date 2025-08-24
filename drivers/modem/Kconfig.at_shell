@@ -7,6 +7,7 @@ config MODEM_AT_SHELL
 	select MODEM_CHAT
 	select MODEM_PIPE
 	select MODEM_PIPELINK
+	depends on SHELL
 	depends on !MODEM_SHELL
 	depends on !SHELL_WILDCARD
 	depends on $(dt_alias_enabled,modem)
