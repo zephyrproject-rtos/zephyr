@@ -1,3 +1,16 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
 #include <ti/mspm0/g/mspm0g.dtsi>
+
+/{
+	soc {
+
+		adc0: adc@40004000 {
+			compatible = "ti,mspm0-adc12";
+			reg = <0x40004000 0x2000>;
+			interrupts = <4 0>;
+			status = "disabled";
+			#io-channel-cells = <1>;
+		};
+	};
+};
