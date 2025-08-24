@@ -370,3 +370,12 @@
 		status = "disabled";
 	};
 };
+
+&xspi2 {
+	compatible = "nxp,xspi";
+	status = "disabled";
+	interrupts = <74 0>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clocks = <&clkctl4 MCUX_XSPI2_CLK>;
+};

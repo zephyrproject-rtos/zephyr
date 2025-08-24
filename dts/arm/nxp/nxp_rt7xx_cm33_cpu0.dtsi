@@ -1127,8 +1127,26 @@
 &xspi0 {
 	compatible = "nxp,xspi";
 	status = "disabled";
-	interrupts = <42 0>;
+	interrupts = <118 0>;
 	#address-cells = <1>;
 	#size-cells = <0>;
-	clocks = <&clkctl0 MCUX_XSPI_CLK>;
+	clocks = <&clkctl0 MCUX_XSPI0_CLK>;
+};
+
+&xspi1 {
+	compatible = "nxp,xspi";
+	status = "disabled";
+	interrupts = <119 0>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clocks = <&clkctl0 MCUX_XSPI1_CLK>;
+};
+
+&xspi2 {
+	compatible = "nxp,xspi";
+	status = "disabled";
+	interrupts = <120 0>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clocks = <&clkctl4 MCUX_XSPI2_CLK>;
 };
