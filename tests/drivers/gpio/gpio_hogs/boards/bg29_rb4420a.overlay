@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2025 Silicon Laboratories Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	zephyr,user {
+		output-high-gpios = <&gpioc 0 GPIO_ACTIVE_LOW>;
+		output-low-gpios = <&gpioc 2 GPIO_ACTIVE_HIGH>;
+		input-gpios = <&gpioc 1 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&gpioc {
+	hog1 {
+		gpio-hog;
+		gpios = <0 GPIO_ACTIVE_LOW>;
+		output-high;
+	};
+
+	hog2 {
+		gpio-hog;
+		gpios = <1 GPIO_ACTIVE_HIGH>;
+		input;
+	};
+	hog3 {
+		gpio-hog;
+		gpios = <2 GPIO_ACTIVE_HIGH>;
+		output-low;
+	};
+};

@@ -1,0 +1,9 @@
+/*
+ * Copyright (c) 2025 Silicon Laboratories, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&dma0 {
+	status = "okay";
+};
