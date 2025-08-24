@@ -69,6 +69,7 @@ endif # NET_L2_WIFI_MGMT
 
 config NET_L2_WIFI_SHELL
 	bool "Wi-Fi shell module"
+	depends on SHELL
 	select NET_L2_WIFI_MGMT
 	select NET_L2_WIFI_UTILS
 	select SHELL_GETOPT
