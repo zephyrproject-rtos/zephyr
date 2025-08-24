@@ -462,9 +462,9 @@
 			status = "disabled";
 		};
 
-		wdog0: wdog@4a018000 {
+		wdog0: wdog@5a018000 {
 			compatible = "silabs,gecko-wdog";
-			reg = <0x4A018000 0x3028>;
+			reg = <0x5A018000 0x3028>;
 			interrupts = <49 2>;
 			clocks = <&cmu CLOCK_WDOG0 CLOCK_BRANCH_WDOG0CLK>;
 			peripheral-id = <0>;
