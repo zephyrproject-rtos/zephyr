@@ -8,6 +8,9 @@ if NETWORKING
 config MODEM
 	default y
 
+config SHELL
+	default y
+
 config MODEM_SHELL
 	default y
 
