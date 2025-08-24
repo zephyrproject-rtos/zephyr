@@ -36,7 +36,7 @@ struct hm0360_reg {
 struct hm0360_ctrls {
 	struct video_ctrl hflip;
 	struct video_ctrl vflip;
-  struct video_ctrl test_pattern;
+	struct video_ctrl test_pattern;
 };
 
 struct hm0360_data {
@@ -46,147 +46,147 @@ struct hm0360_data {
 };
 
 /* hm0360 registers */
-#define         MODEL_ID_H                      0x0000
-#define         MODEL_ID_L                      0x0001
-#define         SILICON_REV                     0x0002
-#define         FRAME_COUNT_H                   0x0005
-#define         FRAME_COUNT_L                   0x0006
-#define         PIXEL_ORDER                     0x0007
+#define MODEL_ID_H        0x0000
+#define MODEL_ID_L        0x0001
+#define SILICON_REV       0x0002
+#define FRAME_COUNT_H     0x0005
+#define FRAME_COUNT_L     0x0006
+#define PIXEL_ORDER       0x0007
 /* Sensor mode control */
-#define         MODE_SELECT                     0x0100
-#define         IMG_ORIENTATION                 0x0101
-#define         EMBEDDED_LINE_EN                0x0102
-#define         SW_RESET                        0x0103
-#define         COMMAND_UPDATE                  0x0104
+#define MODE_SELECT       0x0100
+#define IMG_ORIENTATION   0x0101
+#define EMBEDDED_LINE_EN  0x0102
+#define SW_RESET          0x0103
+#define COMMAND_UPDATE    0x0104
 /* Sensor exposure gain control */
-#define         INTEGRATION_H                   0x0202
-#define         INTEGRATION_L                   0x0203
-#define         ANALOG_GAIN                     0x0205
-#define         DIGITAL_GAIN_H                  0x020E
-#define         DIGITAL_GAIN_L                  0x020F
+#define INTEGRATION_H     0x0202
+#define INTEGRATION_L     0x0203
+#define ANALOG_GAIN       0x0205
+#define DIGITAL_GAIN_H    0x020E
+#define DIGITAL_GAIN_L    0x020F
 /* Clock control */
-#define         PLL1_CONFIG                     0x0300
-#define         PLL2_CONFIG                     0x0301
-#define         PLL3_CONFIG                     0x0302
+#define PLL1_CONFIG       0x0300
+#define PLL2_CONFIG       0x0301
+#define PLL3_CONFIG       0x0302
 /* Frame timing control */
-#define         FRAME_LEN_LINES_H               0x0340
-#define         FRAME_LEN_LINES_L               0x0341
-#define         LINE_LEN_PCK_H                  0x0342
-#define         LINE_LEN_PCK_L                  0x0343
+#define FRAME_LEN_LINES_H 0x0340
+#define FRAME_LEN_LINES_L 0x0341
+#define LINE_LEN_PCK_H    0x0342
+#define LINE_LEN_PCK_L    0x0343
 /* Monochrome programming */
-#define         MONO_MODE                       0x0370
-#define         MONO_MODE_ISP                   0x0371
-#define         MONO_MODE_SEL                   0x0372
+#define MONO_MODE         0x0370
+#define MONO_MODE_ISP     0x0371
+#define MONO_MODE_SEL     0x0372
 /* Binning mode control */
-#define         H_SUBSAMPLE                     0x0380
-#define         V_SUBSAMPLE                     0x0381
-#define         BINNING_MODE                    0x0382
+#define H_SUBSAMPLE       0x0380
+#define V_SUBSAMPLE       0x0381
+#define BINNING_MODE      0x0382
 /* Test pattern control */
-#define         TEST_PATTERN_MODE               0x0601
+#define TEST_PATTERN_MODE 0x0601
 /* Black level control */
-#define         BLC_TGT                         0x1004
-#define         BLC2_TGT                        0x1009
-#define         MONO_CTRL                       0x100A
+#define BLC_TGT           0x1004
+#define BLC2_TGT          0x1009
+#define MONO_CTRL         0x100A
 /* VSYNC / HSYNC / pixel shift registers  */
-#define         OPFM_CTRL                       0x1014
+#define OPFM_CTRL         0x1014
 /* Tone mapping registers */
-#define         CMPRS_CTRL                      0x102F
-#define         CMPRS_01                        0x1030
-#define         CMPRS_02                        0x1031
-#define         CMPRS_03                        0x1032
-#define         CMPRS_04                        0x1033
-#define         CMPRS_05                        0x1034
-#define         CMPRS_06                        0x1035
-#define         CMPRS_07                        0x1036
-#define         CMPRS_08                        0x1037
-#define         CMPRS_09                        0x1038
-#define         CMPRS_10                        0x1039
-#define         CMPRS_11                        0x103A
-#define         CMPRS_12                        0x103B
-#define         CMPRS_13                        0x103C
-#define         CMPRS_14                        0x103D
-#define         CMPRS_15                        0x103E
-#define         CMPRS_16                        0x103F
+#define CMPRS_CTRL        0x102F
+#define CMPRS_01          0x1030
+#define CMPRS_02          0x1031
+#define CMPRS_03          0x1032
+#define CMPRS_04          0x1033
+#define CMPRS_05          0x1034
+#define CMPRS_06          0x1035
+#define CMPRS_07          0x1036
+#define CMPRS_08          0x1037
+#define CMPRS_09          0x1038
+#define CMPRS_10          0x1039
+#define CMPRS_11          0x103A
+#define CMPRS_12          0x103B
+#define CMPRS_13          0x103C
+#define CMPRS_14          0x103D
+#define CMPRS_15          0x103E
+#define CMPRS_16          0x103F
 /* Automatic exposure control */
-#define         AE_CTRL                         0x2000
-#define         AE_CTRL1                        0x2001
-#define         CNT_ORGH_H                      0x2002
-#define         CNT_ORGH_L                      0x2003
-#define         CNT_ORGV_H                      0x2004
-#define         CNT_ORGV_L                      0x2005
-#define         CNT_STH_H                       0x2006
-#define         CNT_STH_L                       0x2007
-#define         CNT_STV_H                       0x2008
-#define         CNT_STV_L                       0x2009
-#define         CTRL_PG_SKIPCNT                 0x200A
-#define         BV_WIN_WEIGHT_EN                0x200D
-#define         MAX_INTG_H                      0x2029
-#define         MAX_INTG_L                      0x202A
-#define         MAX_AGAIN                       0x202B
-#define         MAX_DGAIN_H                     0x202C
-#define         MAX_DGAIN_L                     0x202D
-#define         MIN_INTG                        0x202E
-#define         MIN_AGAIN                       0x202F
-#define         MIN_DGAIN                       0x2030
-#define         T_DAMPING                       0x2031
-#define         N_DAMPING                       0x2032
-#define         ALC_TH                          0x2033
-#define         AE_TARGET_MEAN                  0x2034
-#define         AE_MIN_MEAN                     0x2035
-#define         AE_TARGET_ZONE                  0x2036
-#define         CONVERGE_IN_TH                  0x2037
-#define         CONVERGE_OUT_TH                 0x2038
-#define         FS_CTRL                         0x203B
-#define         FS_60HZ_H                       0x203C
-#define         FS_60HZ_L                       0x203D
-#define         FS_50HZ_H                       0x203E
-#define         FS_50HZ_L                       0x203F
-#define         FRAME_CNT_TH                    0x205B
-#define         AE_MEAN                         0x205D
-#define         AE_CONVERGE                     0x2060
-#define         AE_BLI_TGT                      0x2070
+#define AE_CTRL           0x2000
+#define AE_CTRL1          0x2001
+#define CNT_ORGH_H        0x2002
+#define CNT_ORGH_L        0x2003
+#define CNT_ORGV_H        0x2004
+#define CNT_ORGV_L        0x2005
+#define CNT_STH_H         0x2006
+#define CNT_STH_L         0x2007
+#define CNT_STV_H         0x2008
+#define CNT_STV_L         0x2009
+#define CTRL_PG_SKIPCNT   0x200A
+#define BV_WIN_WEIGHT_EN  0x200D
+#define MAX_INTG_H        0x2029
+#define MAX_INTG_L        0x202A
+#define MAX_AGAIN         0x202B
+#define MAX_DGAIN_H       0x202C
+#define MAX_DGAIN_L       0x202D
+#define MIN_INTG          0x202E
+#define MIN_AGAIN         0x202F
+#define MIN_DGAIN         0x2030
+#define T_DAMPING         0x2031
+#define N_DAMPING         0x2032
+#define ALC_TH            0x2033
+#define AE_TARGET_MEAN    0x2034
+#define AE_MIN_MEAN       0x2035
+#define AE_TARGET_ZONE    0x2036
+#define CONVERGE_IN_TH    0x2037
+#define CONVERGE_OUT_TH   0x2038
+#define FS_CTRL           0x203B
+#define FS_60HZ_H         0x203C
+#define FS_60HZ_L         0x203D
+#define FS_50HZ_H         0x203E
+#define FS_50HZ_L         0x203F
+#define FRAME_CNT_TH      0x205B
+#define AE_MEAN           0x205D
+#define AE_CONVERGE       0x2060
+#define AE_BLI_TGT        0x2070
 /* Interrupt control */
-#define         PULSE_MODE                      0x2061
-#define         PULSE_TH_H                      0x2062
-#define         PULSE_TH_L                      0x2063
-#define         INT_INDIC                       0x2064
-#define         INT_CLEAR                       0x2065
+#define PULSE_MODE        0x2061
+#define PULSE_TH_H        0x2062
+#define PULSE_TH_L        0x2063
+#define INT_INDIC         0x2064
+#define INT_CLEAR         0x2065
 /* Motion detection control */
-#define         MD_CTRL                         0x2080
-#define         ROI_START_END_V                 0x2081
-#define         ROI_START_END_H                 0x2082
-#define         MD_TH_MIN                       0x2083
-#define         MD_TH_STR_L                     0x2084
-#define         MD_TH_STR_H                     0x2085
-#define         MD_LIGHT_COEF                   0x2099
-#define         MD_BLOCK_NUM_TH                 0x209B
-#define         MD_LATENCY                      0x209C
-#define         MD_LATENCY_TH                   0x209D
-#define         MD_CTRL1                        0x209E
+#define MD_CTRL           0x2080
+#define ROI_START_END_V   0x2081
+#define ROI_START_END_H   0x2082
+#define MD_TH_MIN         0x2083
+#define MD_TH_STR_L       0x2084
+#define MD_TH_STR_H       0x2085
+#define MD_LIGHT_COEF     0x2099
+#define MD_BLOCK_NUM_TH   0x209B
+#define MD_LATENCY        0x209C
+#define MD_LATENCY_TH     0x209D
+#define MD_CTRL1          0x209E
 /* Context switch control registers */
-#define         PMU_CFG_3                       0x3024
-#define         PMU_CFG_4                       0x3025
+#define PMU_CFG_3         0x3024
+#define PMU_CFG_4         0x3025
 /* Operation mode control */
-#define         WIN_MODE                        0x3030
+#define WIN_MODE          0x3030
 /* IO and clock control */
-#define         PAD_REGISTER_07                 0x3112
+#define PAD_REGISTER_07   0x3112
 
 /* Register bits/values */
-#define         HIMAX_RESET                     0x01
-#define         HIMAX_MODE_STANDBY              0x00
-#define         HIMAX_MODE_STREAMING            0x01     /* I2C triggered streaming enable */
-#define         HIMAX_MODE_STREAMING_NFRAMES    0x03     /* Output N frames */
-#define         HIMAX_MODE_STREAMING_TRIG       0x05     /* Hardware Trigger */
-#define         HIMAX_SET_HMIRROR(r, x)         ((r&0xFE)|((x&1)<<0))
-#define         HIMAX_SET_VMIRROR(r, x)         ((r&0xFD)|((x&1)<<1))
+#define HIMAX_RESET                  0x01
+#define HIMAX_MODE_STANDBY           0x00
+#define HIMAX_MODE_STREAMING         0x01 /* I2C triggered streaming enable */
+#define HIMAX_MODE_STREAMING_NFRAMES 0x03 /* Output N frames */
+#define HIMAX_MODE_STREAMING_TRIG    0x05 /* Hardware Trigger */
+#define HIMAX_SET_HMIRROR(r, x)      ((r & 0xFE) | ((x & 1) << 0))
+#define HIMAX_SET_VMIRROR(r, x)      ((r & 0xFD) | ((x & 1) << 1))
 
-#define         PCLK_RISING_EDGE                0x00
-#define         PCLK_FALLING_EDGE               0x01
-#define         AE_CTRL_ENABLE                  0x00
-#define         AE_CTRL_DISABLE                 0x01
+#define PCLK_RISING_EDGE  0x00
+#define PCLK_FALLING_EDGE 0x01
+#define AE_CTRL_ENABLE    0x00
+#define AE_CTRL_DISABLE   0x01
 
 /* hm0360 definitions */
-#define hm0360_PROD_ID 0x0360
+#define hm0360_PROD_ID         0x0360
 #define HIMAX_LINE_LEN_PCK_VGA 0x0300
 #define HIMAX_FRAME_LENGTH_VGA 0x0214
 
@@ -551,7 +551,6 @@ static const struct video_format_cap fmts[] = {
 	{0}
 };
 
-
 static int hm0360_read_reg(const struct i2c_dt_spec *spec, const uint16_t addr, void *val,
 			   const uint8_t val_size)
 {
@@ -630,80 +629,77 @@ static int hm0360_write_multi_regs(const struct i2c_dt_spec *spec, const struct 
 static int hm0360_set_frmival(const struct device *dev, struct video_frmival *frmival)
 {
 	const struct hm0360_config *config = dev->config;
-  struct video_format fmt;
-  struct hm0360_data *drv_data = dev->data;
+	struct video_format fmt;
+	struct hm0360_data *drv_data = dev->data;
 
-  uint8_t ret;
-  uint16_t i = 0U;
+	uint8_t ret;
+	uint16_t i = 0U;
 
-  uint32_t pll_cfg = 0;
-  uint32_t osc_div = 0;
-  bool highres = false;
+	uint32_t pll_cfg = 0;
+	uint32_t osc_div = 0;
+	bool highres = false;
 
-  ret = video_get_format(dev, &fmt);
-  if (ret < 0) {
-    LOG_ERR("Can not get video format");
-    return ret;
-  }
-  /* Set output resolution */
+	video_get_format(dev, &fmt);
+
+	/* Set output resolution */
 	while (fmts[i].pixelformat) {
 		if (fmts[i].width_min == fmt.width && fmts[i].height_min == fmt.height) {
 			/* Set output format */
 			switch (fmts[i].width_min) {
 			case 160: /* QQVGA */
-        highres = false;
+				highres = false;
 				break;
 			case 320: /* QVGA */
-        highres = false;
+				highres = false;
 				break;
-      case 640: /* VGA */
-        highres = true;
+			case 640: /* VGA */
+				highres = true;
 				break;
 			default:
-        LOG_ERR("Resolution not set!");
-        return -ENOTSUP;
+				LOG_ERR("Resolution not set!");
+				return -ENOTSUP;
 			}
 		}
 		i++;
 	}
 
-  drv_data->cur_frmrate = frmival->numerator ;
+	drv_data->cur_frmrate = frmival->numerator;
 
-  if (frmival->numerator <= 10) {
-      osc_div = 0x03;
-  } else if (frmival->numerator <= 15) {
-      osc_div = (highres == true) ? 0x02 : 0x03;
-  } else if (frmival->numerator <= 30) {
-      osc_div = (highres == true) ? 0x01 : 0x02;
-  } else {
-      /* Set to the max possible FPS at this resolution. */
-      osc_div = (highres == true) ? 0x00 : 0x01;
-  }
+	if (frmival->numerator <= 10) {
+		osc_div = 0x03;
+	} else if (frmival->numerator <= 15) {
+		osc_div = (highres == true) ? 0x02 : 0x03;
+	} else if (frmival->numerator <= 30) {
+		osc_div = (highres == true) ? 0x01 : 0x02;
+	} else {
+		/* Set to the max possible FPS at this resolution. */
+		osc_div = (highres == true) ? 0x00 : 0x01;
+	}
 
-  ret = hm0360_write_reg(&config->bus, PLL1_CONFIG, pll_cfg);
-  if(ret) {
-    LOG_ERR("Could not read PLL1 Config");
-    return ret;
-  }
+	ret = hm0360_write_reg(&config->bus, PLL1_CONFIG, pll_cfg);
+	if (ret) {
+		LOG_ERR("Could not read PLL1 Config");
+		return ret;
+	}
 
-  ret = hm0360_write_reg(&config->bus, PLL1_CONFIG, (pll_cfg & 0xFC) | osc_div);
-  if(ret) {
-    LOG_ERR("Could not set PLL1 Config");
-    return ret;
-  }
+	ret = hm0360_write_reg(&config->bus, PLL1_CONFIG, (pll_cfg & 0xFC) | osc_div);
+	if (ret) {
+		LOG_ERR("Could not set PLL1 Config");
+		return ret;
+	}
 
-  LOG_ERR("FrameRate selected: %d", frmival->numerator);
-  LOG_ERR("HIRES Selecte: %d", highres);
-  LOG_ERR("OSC DIV: %d", osc_div);
+	LOG_ERR("FrameRate selected: %d", frmival->numerator);
+	LOG_ERR("HIRES Selecte: %d", highres);
+	LOG_ERR("OSC DIV: %d", osc_div);
 
-  return 0;
+	return 0;
 }
 
 static int hm0360_get_frmival(const struct device *dev, struct video_frmival *frmival)
 {
 	struct hm0360_data *drv_data = dev->data;
 
-	frmival->numerator = drv_data->cur_frmrate;;
+	frmival->numerator = drv_data->cur_frmrate;
 	frmival->denominator = 1;
 
 	return 0;
@@ -718,7 +714,7 @@ static int hm0360_get_caps(const struct device *dev, struct video_caps *caps)
 static int hm0360_set_fmt(const struct device *dev, struct video_format *fmt)
 {
 	const struct hm0360_config *config = dev->config;
-  struct hm0360_data *data = dev->data;
+	struct hm0360_data *data = dev->data;
 	int ret;
 	uint16_t i = 0U;
 
@@ -734,33 +730,37 @@ static int hm0360_set_fmt(const struct device *dev, struct video_format *fmt)
 
 	memcpy(&data->fmt, fmt, sizeof(data->fmt));
 
-  k_msleep(300);
-  /* Note: hm0360 only supports grayscale so pixelformat does not need to be set */
-  LOG_INF("hm0360_set_fmt: W:%u H:%u fmt:%x", fmt->width, fmt->height, fmt->pixelformat);
+	k_msleep(300);
+	/* Note: hm0360 only supports grayscale so pixelformat does not need to be set */
+	LOG_INF("hm0360_set_fmt: W:%u H:%u fmt:%x", fmt->width, fmt->height, fmt->pixelformat);
 	/* Set output resolution */
 	while (fmts[i].pixelformat) {
-		if (fmts[i].width_min == fmt->width && fmts[i].height_min == fmt->height && fmts[i].pixelformat == fmt->pixelformat) {
+		if (fmts[i].width_min == fmt->width && fmts[i].height_min == fmt->height &&
+		    fmts[i].pixelformat == fmt->pixelformat) {
 			/* Set output format */
 			switch (fmts[i].width_min) {
 			case 160: /* QQVGA */
-        ret = hm0360_write_multi_regs(&config->bus, hm0360_qqvga_regs, ARRAY_SIZE(hm0360_qqvga_regs));
+				ret = hm0360_write_multi_regs(&config->bus, hm0360_qqvga_regs,
+							      ARRAY_SIZE(hm0360_qqvga_regs));
 				break;
 			case 320: /* QVGA */
-        ret = hm0360_write_multi_regs(&config->bus, hm0360_qvga_regs, ARRAY_SIZE(hm0360_qvga_regs));
+				ret = hm0360_write_multi_regs(&config->bus, hm0360_qvga_regs,
+							      ARRAY_SIZE(hm0360_qvga_regs));
 				break;
 			default: /* VGA */
-        ret = hm0360_write_multi_regs(&config->bus, hm0360_vga_regs, ARRAY_SIZE(hm0360_vga_regs));
+				ret = hm0360_write_multi_regs(&config->bus, hm0360_vga_regs,
+							      ARRAY_SIZE(hm0360_vga_regs));
 				break;
 			}
 			if (ret < 0) {
-        LOG_ERR("Resolution not set!");
+				LOG_ERR("Resolution not set!");
 				return ret;
 			}
 		}
 		i++;
 	}
 
-  k_msleep(200);
+	k_msleep(200);
 
 	return 1;
 }
@@ -776,7 +776,7 @@ static int hm0360_get_fmt(const struct device *dev, struct video_format *fmt)
 static int hm0360_init_controls(const struct device *dev)
 {
 	int ret;
-  LOG_ERR("Controls initialized!\n");
+	LOG_ERR("Controls initialized!\n");
 	struct hm0360_data *drv_data = dev->data;
 	struct hm0360_ctrls *ctrls = &drv_data->ctrls;
 
@@ -815,12 +815,12 @@ static int hm0360_init(const struct device *dev)
 			return -ENODEV;
 		}
 		ret = gpio_pin_configure_dt(&config->pwdn, GPIO_OUTPUT_ACTIVE);
-    		if (ret < 0) {
+		if (ret < 0) {
 			LOG_ERR("Could not clear power down pin: %d", ret);
 			return ret;
 		}
 	}
-  gpio_pin_set_dt(&config->pwdn, 1);
+	gpio_pin_set_dt(&config->pwdn, 1);
 #endif
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
 	/* Reset camera module */
@@ -847,57 +847,57 @@ static int hm0360_init(const struct device *dev)
 	 * To work around this, use a write then a read to interface with
 	 * registers.
 	 */
-  uint8_t Data;
-  uint16_t pid = 0x0000;
+	uint8_t Data;
+	uint16_t pid = 0x0000;
 
-  /*  Read Product ID and check if PID OK  */
+	/*  Read Product ID and check if PID OK  */
 	ret = hm0360_read_reg(&config->bus, MODEL_ID_H, &Data, sizeof(Data));
 	if (ret < 0) {
 		LOG_ERR("Could not read product ID: %d", ret);
 		return ret;
 	}
-   pid = (Data << 8);
+	pid = (Data << 8);
 
 	ret = hm0360_read_reg(&config->bus, MODEL_ID_L, &Data, sizeof(Data));
 	if (ret < 0) {
 		LOG_ERR("Could not read product ID: %d", ret);
 		return ret;
 	}
-  pid |= Data;
+	pid |= Data;
 
 	if (pid != hm0360_PROD_ID) {
 		LOG_ERR("Incorrect product ID: 0x%02X", pid);
 		return -ENODEV;
 	}
-  LOG_ERR("Product ID is: %x", pid);
+	LOG_ERR("Product ID is: %x", pid);
 
 	/* Reset camera registers */
-  ret = hm0360_write_reg(&config->bus, SW_RESET, HIMAX_RESET);
+	ret = hm0360_write_reg(&config->bus, SW_RESET, HIMAX_RESET);
 
 	if (ret) {
 		LOG_ERR("Could not write reset: %d", ret);
 		return ret;
 	}
-  /* Delay for 1ms. */
-  k_msleep(1);
+	/* Delay for 1ms. */
+	k_msleep(1);
 
-  /* Write Default registers */
+	/* Write Default registers */
 	ret = hm0360_write_multi_regs(&config->bus, hm0360_default_regs,
 				      ARRAY_SIZE(hm0360_default_regs));
-  if (ret < 0) {
-    LOG_ERR("Failed to set default registers");
+	if (ret < 0) {
+		LOG_ERR("Failed to set default registers");
 		return ret;
 	}
 
-  hm0360_set_fmt(dev, &fmt);
+	hm0360_set_fmt(dev, &fmt);
 	if (ret) {
 		return ret;
 	}
 
 	frmival.numerator = 15;
 	frmival.denominator = 1;
-	if (hm0360_set_frmival(dev, &frmival)){
-		printk("ERROR: Unable to set up video format\n") ;
+	if (hm0360_set_frmival(dev, &frmival)) {
+		printk("ERROR: Unable to set up video format\n");
 		return false;
 	}
 
@@ -907,15 +907,15 @@ static int hm0360_init(const struct device *dev)
 
 static int hm0360_set_stream(const struct device *dev, bool enable, enum video_buf_type type)
 {
-  uint8_t ret;
+	uint8_t ret;
 	const struct hm0360_config *config = dev->config;
 
-  ret = hm0360_write_reg(&config->bus, MODE_SELECT, HIMAX_MODE_STREAMING);
-  if(ret) {
-    LOG_ERR("Could not set streaming");
-    return ret;
-  }
-  k_msleep(4);
+	ret = hm0360_write_reg(&config->bus, MODE_SELECT, HIMAX_MODE_STREAMING);
+	if (ret) {
+		LOG_ERR("Could not set streaming");
+		return ret;
+	}
+	k_msleep(4);
 
 	return 0;
 }
@@ -926,24 +926,27 @@ static int hm0360_set_ctrl(const struct device *dev, uint32_t id)
 	struct hm0360_data *drv_data = dev->data;
 	struct hm0360_ctrls *ctrls = &drv_data->ctrls;
 
-  uint8_t ret;
-  uint8_t data;
+	uint8_t ret;
+	uint8_t data;
 
 	switch (id) {
 	case VIDEO_CID_TEST_PATTERN:
-    ret = hm0360_write_reg(&config->bus, TEST_PATTERN_MODE, ctrls->test_pattern.val & 0x01);
-    ret |= hm0360_write_reg(&config->bus, COMMAND_UPDATE, 0x01);
-    return ret;
+		ret = hm0360_write_reg(&config->bus, TEST_PATTERN_MODE,
+				       ctrls->test_pattern.val & 0x01);
+		ret |= hm0360_write_reg(&config->bus, COMMAND_UPDATE, 0x01);
+		return ret;
 	case VIDEO_CID_HFLIP:
-    ret = hm0360_read_reg(&config->bus, IMG_ORIENTATION, &data, sizeof(data));
-    ret |= hm0360_write_reg(&config->bus, IMG_ORIENTATION, HIMAX_SET_HMIRROR(data, ctrls->hflip.val));
-    ret |= hm0360_write_reg(&config->bus, COMMAND_UPDATE, 0x01);
-    return ret;
+		ret = hm0360_read_reg(&config->bus, IMG_ORIENTATION, &data, sizeof(data));
+		ret |= hm0360_write_reg(&config->bus, IMG_ORIENTATION,
+					HIMAX_SET_HMIRROR(data, ctrls->hflip.val));
+		ret |= hm0360_write_reg(&config->bus, COMMAND_UPDATE, 0x01);
+		return ret;
 	case VIDEO_CID_VFLIP:
-    ret = hm0360_read_reg(&config->bus, IMG_ORIENTATION, &data, sizeof(data));
-    ret |= hm0360_write_reg(&config->bus, IMG_ORIENTATION, HIMAX_SET_VMIRROR(data, ctrls->vflip.val));
-    ret |= hm0360_write_reg(&config->bus, COMMAND_UPDATE, 0x01);
-    return ret;
+		ret = hm0360_read_reg(&config->bus, IMG_ORIENTATION, &data, sizeof(data));
+		ret |= hm0360_write_reg(&config->bus, IMG_ORIENTATION,
+					HIMAX_SET_VMIRROR(data, ctrls->vflip.val));
+		ret |= hm0360_write_reg(&config->bus, COMMAND_UPDATE, 0x01);
+		return ret;
 	default:
 		return -ENOTSUP;
 	}
@@ -972,10 +975,9 @@ static DEVICE_API(video, hm0360_api) = {
 #endif
 
 #define HM0360_INIT(inst)                                                                          \
-	const struct hm0360_config hm0360_config_##inst = { \
-          .bus = I2C_DT_SPEC_INST_GET(inst),      \
-					HM0360_RESET_GPIO(inst)                 \
-					HM0360_PWDN_GPIO(inst)};        \
+	const struct hm0360_config hm0360_config_##inst = {.bus = I2C_DT_SPEC_INST_GET(inst),      \
+							   HM0360_RESET_GPIO(inst)                 \
+								   HM0360_PWDN_GPIO(inst)};        \
 	struct hm0360_data hm0360_data_##inst;                                                     \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, hm0360_init, NULL, &hm0360_data_##inst, &hm0360_config_##inst, \
