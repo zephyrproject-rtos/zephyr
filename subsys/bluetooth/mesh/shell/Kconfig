@@ -5,7 +5,7 @@
 
 menuconfig BT_MESH_SHELL
 	bool "Bluetooth Mesh shell"
-	select SHELL
+	depends on SHELL
 	select BT_PRIVATE_SHELL
 	help
 	  Activate shell module that provides Bluetooth Mesh commands to
