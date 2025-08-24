@@ -131,8 +131,9 @@
 	};
 
 	sram1: memory@20200000 {
-		compatible =  "mmio-sram";
+		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x20200000 DT_SIZE_K(2048)>;
+		zephyr,memory-region = "SRAM1";
 	};
 };
 
@@ -1253,10 +1254,28 @@
 &xspi0 {
 	compatible = "nxp,xspi";
 	status = "disabled";
-	interrupts = <42 0>;
+	interrupts = <118 0>;
 	#address-cells = <1>;
 	#size-cells = <0>;
-	clocks = <&clkctl0 MCUX_XSPI_CLK>;
+	clocks = <&clkctl0 MCUX_XSPI0_CLK>;
+};
+
+&xspi1 {
+	compatible = "nxp,xspi";
+	status = "disabled";
+	interrupts = <119 0>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clocks = <&clkctl0 MCUX_XSPI1_CLK>;
+};
+
+&xspi2 {
+	compatible = "nxp,xspi";
+	status = "disabled";
+	interrupts = <120 0>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clocks = <&clkctl4 MCUX_XSPI2_CLK>;
 };
 
 &nvic {

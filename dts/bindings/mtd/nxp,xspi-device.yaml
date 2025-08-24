@@ -1,6 +1,104 @@
-# Copyright 2024 NXP
+# Copyright 2024-2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 description: NXP XSPI device
 
-include: [spi-device.yaml, "jedec,jesd216.yaml"]
+include: [base.yaml, "jedec,jesd216.yaml"]
+
+properties:
+  size:
+    type: int
+    required: true
+    description: Total memory size in bytes.
+
+  cs-setup-time:
+    type: int
+    default: 3
+    description: |
+      Chip select setup time, in serial clock cycles.
+
+  cs-hold-time:
+    type: int
+    default: 3
+    description: |
+      Chip select hold time, in serial clock cycles.
+
+  column-space:
+    type: int
+    default: 0
+    description: |
+      Column address bit width. Set to zero if the memory does not support
+      column address.
+
+  address-mode:
+    type: string
+    enum: ["byte", "2-byte", "4-byte"]
+    default: "byte"
+    description: External device interface type.
+
+  enable-ckn:
+    type: boolean
+    description: Enable differential clock pad.
+
+  device-interface:
+    type: string
+    enum: ["spi", "hyperbus"]
+    required: true
+    description: External device interface type.
+
+  hyperbus-x16-mode:
+    type: int
+    default: 2
+    enum: [0, 2, 3]
+    description: |
+      HyperBus x16 mode.
+      Only valid when device-interface is "hyperbus".
+
+  hyperbus-enable-latency:
+    type: boolean
+    description: |
+      Enable variable latency.
+      Only valid when device-interface is "hyperbus".
+
+  page-size:
+    type: int
+    default: 1024
+    description: Page size in bytes.
+
+  sample-clk-source:
+    type: int
+    default: 3
+    enum: [1, 2, 3, 5, 9]
+    description: Sample clock source.
+
+  enable-dqs-latency:
+    type: boolean
+    description: Enable DQS latency.
+
+  column-space:
+    type: int
+    default: 0
+    description: Column address bit width.
+
+  enable-cas-interleaving:
+    type: boolean
+    description: Enable CAS interleaving.
+
+  enable-ddr:
+    type: boolean
+    description: |
+      Enable DDR mode for the external device.
+
+  ddr-data-aligned-clk:
+    type: int
+    default: 1
+    enum: [0, 1]
+    description: |
+      DDR data alignment clock source.
+      0 = Aligned with internal reference clock,
+      1 = Aligned with 2x internal reference clock.
+
+  ddr-enable-byte-swap:
+    type: boolean
+    description: |
+      Enable byte swap in octal mode.
