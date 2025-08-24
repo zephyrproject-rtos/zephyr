@@ -26,6 +26,7 @@
 		i2s-tx = &sai0;
 		sdhc0 = &usdhc0;
 		rtc = &rtc0;
+		sram-ext = &psram0;
 	};
 
 	chosen {
@@ -220,17 +221,87 @@ zephyr_lcdif: &lcdif {};
 
 &xspi0 {
 	status = "okay";
+	pinctrl-0 = <&pinmux_xspi0>;
+	pinctrl-names = "default";
+	amba-address = <0x28000000>;
 
-	mx25um51345g: mx25um51345g@0 {
-		compatible = "nxp,xspi-mx25um51345g";
-		/* MX25UM51245G is 64MB, 512MBit flash part */
-		size = <DT_SIZE_M(64 * 8)>;
-		reg = <0>;
-		spi-max-frequency = <200000000>;
+	byte-order = <3>;
+	ahb-buffer-write-flush;
+	ahb-prefetch;
+
+	mx25um51345g: flash@0 {
 		status = "okay";
-		jedec-id = [c2 81 3a];
-		erase-block-size = <4096>;
-		write-block-size = <2>;
+		compatible = "nxp,xspi-flash";
+		/* MX25UM51245G is 64MB, 512MBit flash part */
+		size = <DT_SIZE_M(64)>;
+		reg = <0>;
+		device-interface = "spi";
+		page-size = <256>;
+		cs-hold-time = <3>;
+		cs-setup-time = <3>;
+		sample-clk-source = <3>;
+		address-mode = "byte";
+		column-space = <0>;
+		enable-ddr;
+		ddr-data-aligned-clk = <1>;
+	};
+};
+
+&xspi1 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_xspi1>;
+	pinctrl-names = "default";
+	amba-address = <0x08000000>;
+	byte-order = <3>;
+	ahb-buffer-write-flush;
+	ahb-prefetch;
+	enable-ahb-write;
+
+	psram0: w958d6nbkx5l@0 {
+		status = "okay";
+		compatible = "nxp,xspi-psram";
+		size = <DT_SIZE_M(32)>;
+		reg = <0>;
+		enable-ckn;
+		device-interface = "hyperbus";
+		hyperbus-x16-mode = <2>;
+		page-size = <1024>;
+		cs-hold-time = <2>;
+		cs-setup-time = <2>;
+		sample-clk-source = <3>;
+		address-mode = "4-byte";
+		column-space = <3>;
+		enable-ddr;
+		ddr-data-aligned-clk = <1>;
+	};
+};
+
+&xspi2 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_xspi2>;
+	pinctrl-names = "default";
+	amba-address = <0x60000000>;
+	byte-order = <3>;
+	ahb-buffer-write-flush;
+	ahb-prefetch;
+	enable-ahb-write;
+
+	psram1: w958d6nbkx4l@0 {
+		status = "okay";
+		compatible = "nxp,xspi-psram";
+		size = <DT_SIZE_M(32)>;
+		reg = <0>;
+		enable-ckn;
+		device-interface = "hyperbus";
+		hyperbus-x16-mode = <2>;
+		page-size = <1024>;
+		cs-hold-time = <2>;
+		cs-setup-time = <2>;
+		sample-clk-source = <3>;
+		address-mode = "4-byte";
+		column-space = <3>;
+		enable-ddr;
+		ddr-data-aligned-clk = <1>;
 	};
 };
 
