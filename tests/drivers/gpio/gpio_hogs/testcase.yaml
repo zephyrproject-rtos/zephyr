@@ -22,6 +22,7 @@ tests:
       - s32z2xxdc2@D/s32z270/rtu0
       - s32z2xxdc2@D/s32z270/rtu1
       - xg29_rb4412a
+      - bg29_rb4420a
     integration_platforms:
       - native_sim
       - native_sim/native/64
