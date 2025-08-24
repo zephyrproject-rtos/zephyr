@@ -326,6 +326,11 @@ ZTEST(wdt_coverage, test_04wm_wdt_install_timeout_with_multiple_timeout_values)
 		ztest_test_skip();
 	}
 
+	if (MAX_INSTALLABLE_TIMEOUTS < 2) {
+		/* Skip this test because two timeouts aren't supported */
+		ztest_test_skip();
+	}
+
 	m_cfg_wdt0.callback = NULL;
 	m_cfg_wdt0.flags = DEFAULT_FLAGS;
 	m_cfg_wdt0.window.max = DEFAULT_WINDOW_MAX;
