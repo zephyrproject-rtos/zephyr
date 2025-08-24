@@ -568,6 +568,34 @@ void board_early_init_hook(void)
 	CLOCK_SetClkDiv(kCLOCK_DivMediaMainClk, 2U);
 	CLOCK_AttachClk(kMAIN_PLL_PFD2_to_MEDIA_MAIN);
 #endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(xspi0))
+	POWER_DisablePD(kPDRUNCFG_APD_XSPI0);
+	POWER_DisablePD(kPDRUNCFG_PPD_XSPI0);
+	POWER_ApplyPD();
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(xspi1))
+	xspi_setup_clock(XSPI1, 1U, 1U); /* Audio PLL PDF1 DIV1. */
+
+	POWER_DisablePD(kPDRUNCFG_APD_XSPI1);
+	POWER_DisablePD(kPDRUNCFG_PPD_XSPI1);
+	POWER_ApplyPD();
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(xspi2))
+#if CONFIG_SOC_MIMXRT798S_CM33_CPU0
+	CLOCK_AttachClk(kMAIN_PLL_PFD3_to_XSPI2);
+#elif CONFIG_SOC_MIMXRT798S_CM33_CPU1
+	CLOCK_AttachClk(kFRO1_DIV1_to_COMMON_BASE);
+	CLOCK_AttachClk(kCOMMON_BASE_to_XSPI2);
+#endif
+	CLOCK_SetClkDiv(kCLOCK_DivXspi2Clk, 1U);
+
+	POWER_DisablePD(kPDRUNCFG_APD_XSPI2);
+	POWER_DisablePD(kPDRUNCFG_PPD_XSPI2);
+	POWER_ApplyPD();
+#endif
 }
 
 static void GlikeyWriteEnable(GLIKEY_Type *base, uint8_t idx)
