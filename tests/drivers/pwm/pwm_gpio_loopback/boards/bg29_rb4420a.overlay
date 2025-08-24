@@ -1,0 +1,37 @@
+/*
+ * Copyright (c) 2025 Silicon Laboratories Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+/* Connections:
+ * EXP4 - EXP6: TIMER (PC5) to GPIO (PC3)
+ */
+
+/ {
+	zephyr,user {
+		pwms = <&timer0_pwm 0 PWM_MSEC(5) PWM_POLARITY_NORMAL>;
+		gpios = <&gpioc 3 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&pinctrl {
+	timer0_default: timer0_default {
+		group1 {
+			pins = <TIMER0_CC0_PC5>;
+			drive-push-pull;
+		};
+	};
+};
+
+&timer0 {
+	status = "okay";
+
+	timer0_pwm: pwm {
+		pinctrl-0 = <&timer0_default>;
+		pinctrl-names = "default";
+		status = "okay";
+	};
+};
