@@ -1,0 +1,81 @@
+# TI MSPM0 Family
+
+# Copyright (c) 2024, Texas Instruments
+# Copyright (c) 2026, Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+description: TI MSPM0 ADC12
+
+compatible: "ti,mspm0-adc12"
+
+include: [adc-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  "#io-channel-cells":
+    const: 1
+
+  clocks:
+    required: true
+
+  ti,clk-range:
+    type: int
+    required: true
+    enum: [0, 1, 2, 3, 4, 5, 6, 7]
+    description: |
+      0 - MSP_ADC_CLOCK_RANGE_1TO4
+      1 - MSP_ADC_CLOCK_RANGE_4TO8
+      2 - MSP_ADC_CLOCK_RANGE_8TO16
+      3 - MSP_ADC_CLOCK_RANGE_16TO20
+      4 - MSP_ADC_CLOCK_RANGE_20TO24
+      5 - MSP_ADC_CLOCK_RANGE_24TO32
+      6 - MSP_ADC_CLOCK_RANGE_32TO40
+      7 - MSP_ADC_CLOCK_RANGE_40TO48
+      ADC clock range.
+
+  ti,clk-divider:
+    type: int
+    required: true
+    enum:
+      - 1 # clock is not divided
+      - 2
+      - 4
+      - 8
+      - 16
+      - 24
+      - 32
+      - 48
+
+  auto_powerdown:
+    type: boolean
+
+  vref-mv:
+    type: int
+    default: 2500
+    description: Voltage reference in mV
+
+  vref:
+    type: phandle
+
+  max_result_reg:
+    type: int
+    required: true
+    description: |
+      Number of conversion result memory registers available on this ADC instance.
+      L-series devices typically have 4 registers (MEMRES0:3), while G-series
+      devices typically have 12 registers (MEMRES0:11). This determines the
+      maximum number of channels that can be converted in a single sequence.
+
+io-channel-cells:
+  - input
