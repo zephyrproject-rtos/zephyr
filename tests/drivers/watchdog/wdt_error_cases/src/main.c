@@ -37,6 +37,7 @@
 #define WDT_OPT_PAUSE_HALTED_BY_DBG_SUPPORTED     BIT(6)
 #define WDT_FEED_CAN_STALL                        BIT(7)
 #define WDT_WINDOW_MIN_SUPPORTED                  BIT(8)
+#define WDT_OPT_PAUSE_IN_SLEEP_REQUIRES_PM        BIT(9)
 
 /* Common for all targets: */
 #define DEFAULT_WINDOW_MAX (500U)
@@ -433,6 +434,11 @@ ZTEST(wdt_coverage, test_06b_wdt_setup_WDT_OPT_PAUSE_IN_SLEEP_functional)
 
 	if (!(WDT_TEST_FLAGS & WDT_OPT_PAUSE_IN_SLEEP_SUPPORTED)) {
 		/* Skip this test because WDT_OPT_PAUSE_IN_SLEEP can NOT be used. */
+		ztest_test_skip();
+	}
+
+	if ((WDT_TEST_FLAGS & WDT_OPT_PAUSE_IN_SLEEP_REQUIRES_PM) && !IS_ENABLED(CONFIG_PM)) {
+		/* Skip this test because WDT_OPT_PAUSE_IN_SLEEP can't be tested without PM. */
 		ztest_test_skip();
 	}
 
