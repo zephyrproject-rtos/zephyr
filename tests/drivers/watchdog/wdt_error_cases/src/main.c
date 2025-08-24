@@ -36,6 +36,7 @@
 #define WDT_OPT_PAUSE_IN_SLEEP_SUPPORTED          BIT(5)
 #define WDT_OPT_PAUSE_HALTED_BY_DBG_SUPPORTED     BIT(6)
 #define WDT_FEED_CAN_STALL                        BIT(7)
+#define WDT_WINDOW_MIN_SUPPORTED                  BIT(8)
 
 /* Common for all targets: */
 #define DEFAULT_WINDOW_MAX (500U)
@@ -276,12 +277,14 @@ ZTEST(wdt_coverage, test_04w_wdt_install_timeout_with_invalid_window)
 	/* ----------------- window.min
 	 * Check that window.min can't be different than 0
 	 */
-	m_cfg_wdt0.window.min = 1U;
-	ret = wdt_install_timeout(wdt, &m_cfg_wdt0);
-	zassert_true(ret == -EINVAL,
-		     "Calling wdt_install_timeout with window.min = 1 should return -EINVAL (-22), "
-		     "got unexpected value of %d",
-		     ret);
+	if (!(WDT_TEST_FLAGS & WDT_WINDOW_MIN_SUPPORTED)) {
+		m_cfg_wdt0.window.min = 1U;
+		ret = wdt_install_timeout(wdt, &m_cfg_wdt0);
+		zassert_true(ret == -EINVAL,
+			"Calling wdt_install_timeout with window.min = 1 should return -EINVAL (-22), "
+			"got unexpected value of %d",
+			ret);
+	}
 
 	/* Set default window.min */
 	m_cfg_wdt0.window.min = DEFAULT_WINDOW_MIN;
