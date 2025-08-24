@@ -414,8 +414,8 @@ rsource "Kconfig.logging"
 
 config BT_SHELL
 	bool "Bluetooth shell"
+	depends on SHELL
 	default y if SHELL_ALL
-	select SHELL
 	select BT_PRIVATE_SHELL
 	select BT_TICKER_NEXT_SLOT_GET if BT_LL_SW_SPLIT
 	help
