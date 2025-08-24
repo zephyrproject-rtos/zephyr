@@ -8,6 +8,7 @@ config MODEM_AT_SHELL
 	select MODEM_PIPE
 	select MODEM_PIPELINK
 	default y if SHELL_ALL
+	depends on SHELL
 	depends on !MODEM_SHELL
 	depends on !SHELL_WILDCARD
 	depends on $(dt_alias_enabled,modem)
