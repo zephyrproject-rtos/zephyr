@@ -3,7 +3,10 @@
 
 tests:
   drivers.watchdog.reset_none:
-    filter: dt_compat_enabled("nxp,s32-swt") or dt_compat_enabled("renesas,ra-wdt")
+    filter: |
+      dt_compat_enabled("nxp,s32-swt")
+      or dt_compat_enabled("renesas,ra-wdt")
+      or dt_compat_enabled("silabs,gecko-wdog")
     integration_platforms:
       - s32z2xxdc2/s32z270/rtu0
     tags:

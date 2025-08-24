@@ -54,6 +54,21 @@
 #define MAX_INSTALLABLE_TIMEOUTS (8)
 #define WDT_WINDOW_MAX_ALLOWED   (0x07CFFFFFU)
 #define DEFAULT_OPTIONS          (WDT_OPT_PAUSE_IN_SLEEP | WDT_OPT_PAUSE_HALTED_BY_DBG)
+#elif defined(CONFIG_SOC_FAMILY_SILABS_S2)
+#if defined(WDOG_CFG_EM1RUN)
+#define WDT_TEST_FLAG_SLEEP_REQUIRES_PM 0
+#else
+#define WDT_TEST_FLAG_SLEEP_REQUIRES_PM WDT_OPT_PAUSE_IN_SLEEP_REQUIRES_PM
+#endif
+#define WDT_TEST_FLAGS                                                                             \
+	(WDT_DISABLE_SUPPORTED | WDT_FLAG_RESET_NONE_SUPPORTED | WDT_FLAG_RESET_SOC_SUPPORTED |    \
+	 WDT_FLAG_ONLY_ONE_TIMEOUT_VALUE_SUPPORTED | WDT_OPT_PAUSE_IN_SLEEP_SUPPORTED |            \
+	 WDT_OPT_PAUSE_HALTED_BY_DBG_SUPPORTED | WDT_WINDOW_MIN_SUPPORTED |                        \
+	 WDT_TEST_FLAG_SLEEP_REQUIRES_PM)
+#define DEFAULT_FLAGS            (WDT_FLAG_RESET_NONE)
+#define MAX_INSTALLABLE_TIMEOUTS (1)
+#define WDT_WINDOW_MAX_ALLOWED   (0x40001U)
+#define DEFAULT_OPTIONS          (WDT_OPT_PAUSE_IN_SLEEP | WDT_OPT_PAUSE_HALTED_BY_DBG)
 #else
 /* By default run most of the error checks.
  * See Readme.txt on how to align test scope for the specific target.
