@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2024 Texas Instruments
+
+config ADC_MSPM0_ADC12
+	bool "TI ADC MSPM0 driver"
+	default y
+	depends on DT_HAS_TI_MSPM0_ADC12_ENABLED
+	select USE_MSPM0_DL_ADC
+	select PINCTRL
+	help
+	  Enable support for ADC12 on the TI MSPM0 series.
