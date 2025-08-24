@@ -16,4 +16,5 @@ supported:
   - clock_control
   - comparator
   - adc
+  - watchdog
 vendor: silabs
