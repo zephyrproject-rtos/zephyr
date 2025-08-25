@@ -398,6 +398,9 @@
 #define CCM_MODE_DATARATE_500Kbps             CCM_MODE_DATARATE_500Kbit
 #define CCM_RATEOVERRIDE_RATEOVERRIDE_500Kbps CCM_RATEOVERRIDE_RATEOVERRIDE_500Kbit
 
+/* HAL abstraction of AAR h/w */
+#define NRF_AAR NRF_AAR00
+
 static inline void hal_radio_reset(void)
 {
 	/* TODO: Add any required setup for each radio event
