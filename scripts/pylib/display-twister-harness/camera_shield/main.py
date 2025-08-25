@@ -93,15 +93,21 @@ class Application:
                     continue
 
                 # Maintain OpenCV event loop
-                if cv2.waitKey(1) == 27:  # ESC key
-                    break
+                try:
+                    if cv2.waitKey(1) == 27:  # ESC key
+                        break
+                except:
+                    pass
 
                 results = {}
                 for name, plugin in self.active_plugins.items():
                     results[name] = plugin.process_frame(frame)
 
                 self.handle_results(results, frame)
-                self.camera.show_frame(frame)
+                try:
+                    self.camera.show_frame(frame)
+                except:
+                    pass
                 frame_delay = 1 / self.case_config["fps"]
                 if time.time() - start_time > self.case_config["run_time"]:
                     break
