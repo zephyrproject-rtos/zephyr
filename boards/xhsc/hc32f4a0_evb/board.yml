@@ -1,0 +1,5 @@
+board:
+  name: hc32f4a0_evb
+  vendor: xhsc
+  socs:
+    - name: hc32f4a0
