@@ -1,0 +1,27 @@
+/*
+ * Copyright (c) 2024 Arduino SA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&timers3 {
+	status = "okay";
+	st,prescaler = <100>;
+
+	pwm3: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim3_ch1_pc6 &tim3_ch2_pc7>;
+		pinctrl-names = "default";
+	};
+};
+
+/ {
+    /* The sample expects a node labelled "servo" */
+    servo: servo {
+        compatible = "pwm-servo";
+		pwms = <&pwm3 2 PWM_HZ(333) PWM_POLARITY_NORMAL>;
+		label = "PWM Arduino PIN D4";
+        min-pulse = <PWM_USEC(500)>;
+        max-pulse = <PWM_USEC(2500)>;
+    };
+};
