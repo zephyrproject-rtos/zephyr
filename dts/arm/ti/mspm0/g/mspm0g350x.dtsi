@@ -11,6 +11,13 @@
 			#io-channel-cells = <1>;
 		};
 
+		aes: aes@40442000 {
+			compatible = "ti,mspm0-aes";
+			reg = <0x40442000 0x2000>;
+			interrupts = <28 0>;
+			status = "disabled";
+		};
+
 		canfd0: can@40508000 {
 			compatible = "ti,mspm0-canfd";
 			reg = <0x40508000 0x8000>, <0x4050f000 0x1000>, <0x40508000 0x400>;
