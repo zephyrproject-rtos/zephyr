@@ -19,6 +19,7 @@ extern "C" {
 /**
  * @defgroup devicetree-display Devicetree Display API
  * @ingroup devicetree
+ * @ingroup display_interface
  * @{
  */
 

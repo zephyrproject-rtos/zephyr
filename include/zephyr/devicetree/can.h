@@ -19,6 +19,7 @@ extern "C" {
 /**
  * @defgroup devicetree-can Devicetree CAN API
  * @ingroup devicetree
+ * @ingroup can_interface
  * @{
  */
 

@@ -7,9 +7,7 @@
 #define ZEPHYR_INCLUDE_DT_BINDINGS_PWM_PWM_H_
 
 /**
- * @brief PWM Interface
- * @defgroup pwm_interface PWM Interface
- * @ingroup io_interfaces
+ * @addtogroup pwm_interface
  * @{
  */
 

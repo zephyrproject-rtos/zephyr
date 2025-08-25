@@ -11,8 +11,10 @@
 #include <zephyr/dsp/types.h>
 
 /**
+ * @defgroup sensing_datatypes Data Types
+ * @ingroup sensing
  * @brief Data Types
- * @addtogroup sensing_datatypes
+ *
  * @{
  */
 

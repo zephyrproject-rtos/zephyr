@@ -20,19 +20,27 @@
 
 @}
 
-@brief Device Driver APIs
-@defgroup io_interfaces Device Driver APIs
+@defgroup io_interfaces Device Drivers
+@brief Interfaces to interact with various hardware peripherals.
+@details Collection of hardware-agnostic interfaces used to implement and interact with device
+         drivers.
 @{
 @}
 
-@brief Miscellaneous Drivers APIs
-@defgroup misc_interfaces Miscellaneous Drivers APIs
+@defgroup misc_interfaces Miscellaneous Devices
+@ingroup io_interfaces
+@brief Interfaces to interact with hardware peripherals that do not have a dedicated driver class.
+@{
+@}
+
+@brief Interfaces for USB hardware and associated standards.
+@defgroup usb_interface USB
 @ingroup io_interfaces
 @{
 @}
 
-@brief Multi Function Device Drivers APIs
-@defgroup mfd_interfaces Multi Function Device Drivers APIs
+@brief Interfaces to interact with Multi-function Devices.
+@defgroup mfd_interfaces Multi-function Devices
 @ingroup io_interfaces
 @{
 @}

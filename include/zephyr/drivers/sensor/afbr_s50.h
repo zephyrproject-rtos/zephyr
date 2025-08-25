@@ -30,6 +30,9 @@ extern "C" {
 /** Disregard pixel reading if contains this value */
 #define AFBR_PIXEL_INVALID_VALUE 0x80000000
 
+/**
+ * Custom sensor channels for AFBR-S50
+ */
 enum sensor_channel_afbr_s50 {
 	/**
 	 * Obtain matrix of pixels, with readings in meters.
