@@ -65,7 +65,7 @@ struct shell_stream unicast_streams[CONFIG_BT_MAX_CONN *
 				    MAX(UNICAST_SERVER_STREAM_COUNT, UNICAST_CLIENT_STREAM_COUNT)];
 
 #if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
-struct bt_bap_unicast_group *default_unicast_group;
+struct unicast_group default_unicast_group;
 static struct bt_bap_unicast_client_cb unicast_client_cbs;
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0
 struct bt_bap_ep *snks[CONFIG_BT_MAX_CONN][CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT];
@@ -876,7 +876,7 @@ int bap_ac_create_unicast_group(const struct bap_unicast_ac_param *param,
 	group_param.params = pair_params;
 	group_param.params_count = pair_cnt;
 
-	return bt_bap_unicast_group_create(&group_param, &default_unicast_group);
+	return bt_bap_unicast_group_create(&group_param, &default_unicast_group.bap_group);
 }
 
 static uint8_t stream_dir(const struct bt_bap_stream *stream)
@@ -1492,7 +1492,7 @@ static int create_unicast_group(const struct shell *sh)
 		return err;
 	}
 
-	err = bt_bap_unicast_group_create(&group_param, &default_unicast_group);
+	err = bt_bap_unicast_group_create(&group_param, &default_unicast_group.bap_group);
 	if (err != 0) {
 		shell_error(sh, "Unable to create default unicast group: %d", err);
 
@@ -1514,7 +1514,7 @@ static int reconfig_unicast_group(const struct shell *sh)
 		return err;
 	}
 
-	err = bt_bap_unicast_group_reconfig(default_unicast_group, &group_param);
+	err = bt_bap_unicast_group_reconfig(default_unicast_group.bap_group, &group_param);
 	if (err != 0) {
 		shell_error(sh, "Unable to create default unicast group: %d", err);
 
@@ -1538,7 +1538,13 @@ static int cmd_qos(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	if (default_unicast_group == NULL) {
+	if (default_unicast_group.is_cap) {
+		shell_error(sh, "Cannot perform action on CAP unicast group");
+
+		return -ENOEXEC;
+	}
+
+	if (default_unicast_group.bap_group == NULL) {
 		err = create_unicast_group(sh);
 		if (err != 0) {
 			return err;
@@ -1550,7 +1556,7 @@ static int cmd_qos(const struct shell *sh, size_t argc, char *argv[])
 		}
 	}
 
-	err = bt_bap_stream_qos(default_conn, default_unicast_group);
+	err = bt_bap_stream_qos(default_conn, default_unicast_group.bap_group);
 	if (err) {
 		shell_error(sh, "Unable to setup QoS: %d", err);
 		return -ENOEXEC;
@@ -3177,7 +3183,7 @@ static void stream_released_cb(struct bt_bap_stream *stream)
 	bt_shell_print("Stream %p released\n", stream);
 
 #if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
-	if (default_unicast_group != NULL) {
+	if (default_unicast_group.bap_group != NULL && !default_unicast_group.is_cap) {
 		bool group_can_be_deleted = true;
 
 		for (size_t i = 0U; i < ARRAY_SIZE(unicast_streams); i++) {
@@ -3202,12 +3208,12 @@ static void stream_released_cb(struct bt_bap_stream *stream)
 
 			bt_shell_print("All streams released, deleting group\n");
 
-			err = bt_bap_unicast_group_delete(default_unicast_group);
+			err = bt_bap_unicast_group_delete(default_unicast_group.bap_group);
 
 			if (err != 0) {
 				bt_shell_error("Failed to delete unicast group: %d", err);
 			} else {
-				default_unicast_group = NULL;
+				default_unicast_group.bap_group = NULL;
 			}
 		}
 	}
