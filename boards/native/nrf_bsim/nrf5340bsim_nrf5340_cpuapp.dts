@@ -88,6 +88,11 @@
 
 	/delete-node/ cpus;
 	/delete-node/ sw-pwm;
+
+	/* Dummy, to be replaced by usbip-native-sim */
+	zephyr_udc0: udc0 {
+		compatible = "zephyr,native-posix-udc";
+	};
 };
 
 &ieee802154 {
