@@ -1,0 +1,17 @@
+/* add the DALI-interfacxe via click-adapter board */
+/* connect DALI Tx to port 0.11 */
+/* connect DALI Rx to port 0.12 */
+
+/ {
+	dali0: dali {
+		compatible = "nxp,dali-lpc11u6x";
+		status = "okay";
+		interrupt-parent = <&nvic>;
+		#interrupt-cells = <2>;
+		interrupts = <18 1>, <19 1>;
+		tx-rise-fall-delta-us = <(-44)>;
+		rx-rise-fall-delta-us = <(-48)>;
+		tx-rx-propagation-min-us = <80>;
+		tx-rx-propagation-max-us = <125>;
+	};
+};
