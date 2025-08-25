@@ -1495,6 +1495,7 @@ int bt_le_ext_adv_get_info(const struct bt_le_ext_adv *adv,
 	}
 
 	info->id = adv->id;
+	info->sid = adv->sid;
 	info->tx_power = adv->tx_power;
 	info->addr = &adv->random_addr;
 
@@ -1546,6 +1547,7 @@ int bt_le_ext_adv_create(const struct bt_le_adv_param *param,
 	}
 
 	adv->id = param->id;
+	adv->sid = param->sid;
 	adv->cb = cb;
 
 	err = le_ext_adv_param_set(adv, param, false);

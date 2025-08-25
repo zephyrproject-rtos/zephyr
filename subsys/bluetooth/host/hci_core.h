@@ -171,6 +171,17 @@ struct bt_le_ext_adv {
 	/* Advertising handle */
 	uint8_t                 handle;
 
+#if defined(CONFIG_BT_EXT_ADV)
+	/* TX Power in use by the controller */
+	int8_t                    tx_power;
+
+	/* Advertising Set ID */
+	uint8_t                   sid;
+
+	/* Callbacks for the advertising set */
+	const struct bt_le_ext_adv_cb *cb;
+#endif /* defined(CONFIG_BT_EXT_ADV) */
+
 	/* Current local Random Address */
 	bt_addr_le_t            random_addr;
 
@@ -178,13 +189,6 @@ struct bt_le_ext_adv {
 	bt_addr_le_t            target_addr;
 
 	ATOMIC_DEFINE(flags, BT_ADV_NUM_FLAGS);
-
-#if defined(CONFIG_BT_EXT_ADV)
-	const struct bt_le_ext_adv_cb *cb;
-
-	/* TX Power in use by the controller */
-	int8_t                    tx_power;
-#endif /* defined(CONFIG_BT_EXT_ADV) */
 
 	struct k_work_delayable	lim_adv_timeout_work;
 
