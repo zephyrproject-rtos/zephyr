@@ -222,6 +222,13 @@ usbd_class_node_get(const char *name, const enum usbd_speed speed)
 				return c_nd;
 			}
 		}
+	} else if (speed == USBD_SPEED_SS) {
+		STRUCT_SECTION_FOREACH_ALTERNATE(usbd_class_ss,
+						 usbd_class_node, c_nd) {
+			if (strcmp(name, c_nd->c_data->name) == 0) {
+				return c_nd;
+			}
+		}
 	}
 
 	LOG_ERR("USB device class %s not found", name);
@@ -359,6 +366,20 @@ int usbd_register_all_classes(struct usbd_context *const uds_ctx,
 {
 	int ret;
 
+	if (USBD_SUPPORTS_SUPER_SPEED && speed == USBD_SPEED_SS) {
+		STRUCT_SECTION_FOREACH_ALTERNATE(usbd_class_ss, usbd_class_node, c_nd) {
+			ret = usbd_register_class(uds_ctx, c_nd->c_data->name,
+						  speed, cfg);
+			if (ret) {
+				LOG_ERR("Failed to register %s to SS configuration %u",
+					c_nd->c_data->name, cfg);
+				return ret;
+			}
+		}
+
+		return 0;
+	}
+
 	if (USBD_SUPPORTS_HIGH_SPEED && speed == USBD_SPEED_HS) {
 		STRUCT_SECTION_FOREACH_ALTERNATE(usbd_class_hs, usbd_class_node, c_nd) {
 			if (blocklist != NULL && is_blocklisted(c_nd, blocklist)) {
@@ -431,7 +452,16 @@ int usbd_unregister_class(struct usbd_context *const uds_ctx,
 	/* TODO: The use of atomic here does not make this code thread safe.
 	 * The atomic should be changed to something else.
 	 */
-	if (USBD_SUPPORTS_HIGH_SPEED && speed == USBD_SPEED_HS) {
+	if (USBD_SUPPORTS_SUPER_SPEED && speed == USBD_SPEED_SS) {
+		STRUCT_SECTION_FOREACH_ALTERNATE(usbd_class_ss,
+						 usbd_class_node, i) {
+			if ((i->c_data == c_nd->c_data) &&
+			    atomic_test_bit(&i->state, USBD_CCTX_REGISTERED)) {
+				can_release_data = false;
+				break;
+			}
+		}
+	} else if (USBD_SUPPORTS_HIGH_SPEED && speed == USBD_SPEED_HS) {
 		STRUCT_SECTION_FOREACH_ALTERNATE(usbd_class_hs,
 						 usbd_class_node, i) {
 			if ((i->c_data == c_nd->c_data) &&
@@ -470,6 +500,20 @@ int usbd_unregister_all_classes(struct usbd_context *const uds_ctx,
 				const enum usbd_speed speed, const uint8_t cfg)
 {
 	int ret;
+
+	if (USBD_SUPPORTS_SUPER_SPEED && speed == USBD_SPEED_SS) {
+		STRUCT_SECTION_FOREACH_ALTERNATE(usbd_class_ss, usbd_class_node, c_nd) {
+			ret = usbd_unregister_class(uds_ctx, c_nd->c_data->name,
+						    speed, cfg);
+			if (ret) {
+				LOG_ERR("Failed to unregister %s to SS configuration %u",
+					c_nd->c_data->name, cfg);
+				return ret;
+			}
+		}
+
+		return 0;
+	}
 
 	if (USBD_SUPPORTS_HIGH_SPEED && speed == USBD_SPEED_HS) {
 		STRUCT_SECTION_FOREACH_ALTERNATE(usbd_class_hs, usbd_class_node, c_nd) {
