@@ -19,6 +19,7 @@ from enum import Enum
 import junitparser.junitparser as junit
 import yaml
 from pytest import ExitCode
+from string import Template
 from twisterlib.constants import SUPPORTED_SIMS_IN_PYTEST
 from twisterlib.environment import PYTEST_PLUGIN_INSTALLED, ZEPHYR_BASE
 from twisterlib.error import ConfigurationError, StatusAttributeError
@@ -644,7 +645,9 @@ class Display_capture(Pytest):
 
     def _get_display_config_file(self, harness_config):
         if test_config_file := harness_config.get('display_capture_config'):
-            test_config_path = os.path.join(self.source_dir, test_config_file)
+            _template = Template(test_config_file)
+            _config_file = _template.safe_substitute(os.environ)
+            test_config_path = os.path.join(self.source_dir, _config_file)
             logger.info(f'test_config_path = {test_config_path}')
             if os.path.exists(test_config_path):
                 return test_config_path

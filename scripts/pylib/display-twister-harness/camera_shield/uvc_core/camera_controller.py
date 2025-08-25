@@ -269,4 +269,8 @@ class UVCCamera:
 
     def release(self):
         self.cap.release()
-        cv2.destroyAllWindows()
+        try:
+            # we may in headless mode
+            cv2.destroyAllWindows()
+        except:
+            pass
