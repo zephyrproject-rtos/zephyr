@@ -43,6 +43,14 @@ config VIDEO_FRAME_WIDTH
 	help
 	  Width of the video frame. If set to 0, the default width is used.
 
+config VIDEO_TARGET_FPS
+	int "Target frame rate for video capture"
+	default 0
+	help
+	  Target frame rate (FPS) for video capture. If set to 0, the device
+	  default frame rate is used. This value will be used to configure
+	  the video device's frame interval settings.
+
 config VIDEO_PIXEL_FORMAT
 	string "Pixel format of the video frame"
 	help

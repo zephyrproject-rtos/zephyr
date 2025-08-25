@@ -101,6 +101,7 @@ struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 	const struct uhc_api *api = dev->api;
 	struct uhc_transfer *xfer = NULL;
 	uint16_t mps;
+	uint8_t interval;
 
 	api->lock(dev);
 
@@ -125,6 +126,7 @@ struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 		}
 
 		mps = ep_desc->wMaxPacketSize;
+		interval = ep_desc->bInterval;
 	}
 
 	LOG_DBG("Allocate xfer, ep 0x%02x mps %u cb %p", ep, mps, cb);
@@ -137,6 +139,7 @@ struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 	memset(xfer, 0, sizeof(struct uhc_transfer));
 	xfer->ep = ep;
 	xfer->mps = mps;
+	xfer->interval = interval;
 	xfer->udev = udev;
 	xfer->cb = cb;
 	xfer->priv = cb_priv;
