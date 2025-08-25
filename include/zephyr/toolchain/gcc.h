@@ -710,6 +710,12 @@ do {                                                                    \
 #define FUNC_NO_STACK_PROTECTOR
 #endif
 
+#if defined(CONFIG_INSTRUMENTATION)
+#define __no_instrumentation__ __attribute__((__no_instrument_function__))
+#else
+#define __no_instrumentation__ /**/
+#endif
+
 #endif /* !_LINKER */
 
 #define TOOLCHAIN_WARNING_ADDRESS_OF_PACKED_MEMBER "-Waddress-of-packed-member"
