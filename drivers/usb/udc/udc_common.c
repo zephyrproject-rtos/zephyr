@@ -355,7 +355,6 @@ int udc_ep_enable_internal(const struct device *dev,
 	cfg->mps = mps;
 	cfg->interval = interval;
 
-	cfg->stat.odd = 0;
 	cfg->stat.halted = 0;
 	cfg->stat.data1 = false;
 	ret = api->ep_enable(dev, cfg);
