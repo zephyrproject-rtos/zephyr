@@ -69,6 +69,7 @@
 #define SYSTICK_SEL(val)	STM32_DT_CLOCK_SELECT((val), 3, 22, CCIPR1_REG)
 #define TIMIC_SEL(val)		STM32_DT_CLOCK_SELECT((val), 1, 31, CCIPR1_REG)
 /** CCIPR2 devices */
+#define SAI1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 7, 5, CCIPR2_REG)
 #define RNG_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 12, CCIPR2_REG)
 #define OTGHS_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 28, CCIPR2_REG)
 /** CCIPR3 devices */
