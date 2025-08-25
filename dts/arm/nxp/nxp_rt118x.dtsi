@@ -666,8 +666,11 @@
 			status = "disabled";
 		};
 
-		switch: dsa {
+		switch: dsa@60a00000 {
 			compatible = "nxp,netc-switch";
+			reg = <0x60a00000 0x10000>,
+				<0x60002000 0x1000>;
+			reg-names = "base", "pfconfig";
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;

@@ -8,6 +8,7 @@
 #include <freq.h>
 #include <arm64/armv8-a.dtsi>
 #include <zephyr/dt-bindings/clock/imx943_clock.h>
+#include <zephyr/dt-bindings/ethernet/dsa_tag_proto.h>
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
 
 / {
@@ -62,7 +63,15 @@
 		      <0x48060000 0xc0000>; /* GICR (RD_base + SGI_base) */
 		interrupt-controller;
 		#interrupt-cells = <4>;
+		#address-cells = <1>;
+		#size-cells = <1>;
 		status = "okay";
+
+		its: msi-controller@48040000 {
+			compatible = "arm,gic-v3-its";
+			reg = <0x48040000 0x20000>;
+			status = "okay";
+		};
 	};
 
 	reserved-memory {
@@ -84,6 +93,12 @@
 
 			#address-cells = <1>;
 			#size-cells = <0>;
+
+			scmi_devpd: protocol@11 {
+				compatible = "arm,scmi-power";
+				reg = <0x11>;
+				#power-domain-cells = <1>;
+			};
 
 			scmi_clk: protocol@14 {
 				compatible = "arm,scmi-clock";
@@ -335,6 +350,141 @@
 		#gpio-cells = <2>;
 		ngpios = <16>;
 		status = "disabled";
+	};
+
+	netc_blk_ctrl: netc-blk-ctrl@4ceb0000 {
+		compatible = "nxp,imx-netc-blk-ctrl";
+		reg = <0x4ceb0000 0x10000>,
+		      <0x4cec0000 0x10000>,
+		      <0x4c810000 0x7c>;
+		reg-names = "ierb", "prb", "netcmix";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		netc: ethernet {
+			compatible = "nxp,imx-netc";
+			msi-parent = <&its>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
+
+			enetc_psi0: ethernet@4cc80000 {
+				compatible = "nxp,imx-netc-psi";
+				reg = <0x4cc80000 0x40000>,
+				      <0x4cb00000 0x1000>;
+				reg-names = "port", "pfconfig";
+				msi-device-id = <0x65>;
+				mac-index = <0>;
+				si-index = <0>;
+				status = "disabled";
+			};
+
+			enetc_psi1: ethernet@4ccc0000 {
+				compatible = "nxp,imx-netc-psi";
+				reg = <0x4ccc0000 0x40000>,
+				      <0x4cb40000 0x1000>;
+				reg-names = "port", "pfconfig";
+				msi-device-id = <0x66>;
+				mac-index = <1>;
+				si-index = <1>;
+				status = "disabled";
+			};
+
+			enetc_psi2: ethernet@4cd00000 {
+				compatible = "nxp,imx-netc-psi";
+				reg = <0x4cd00000 0x40000>,
+				      <0x4cb80000 0x1000>;
+				reg-names = "port", "pfconfig";
+				msi-device-id = <0x67>;
+				mac-index = <2>;
+				si-index = <2>;
+				status = "disabled";
+			};
+
+			/* Internal port */
+			enetc_psi3: ethernet@4cd40000 {
+				compatible = "nxp,imx-netc-psi";
+				reg = <0x4cd40000 0x40000>,
+				      <0x4ca00000 0x1000>;
+				reg-names = "port", "pfconfig";
+				mac-index = <3>;
+				si-index = <3>;
+				phy-connection-type = "internal";
+				status = "disabled";
+			};
+
+			netc_ptp_clock0: ptp_clock@4cd80000 {
+				compatible = "nxp,netc-ptp-clock";
+				reg = <0x4cd80000 0x10000>;
+				clocks = <&scmi_clk IMX943_CLK_ENET>;
+				status = "disabled";
+			};
+
+			netc_ptp_clock1: ptp_clock@4cda0000 {
+				compatible = "nxp,netc-ptp-clock";
+				reg = <0x4cda0000 0x10000>;
+				clocks = <&scmi_clk IMX943_CLK_ENET>;
+				status = "disabled";
+			};
+
+			netc_ptp_clock2: ptp_clock@4cdc0000 {
+				compatible = "nxp,netc-ptp-clock";
+				reg = <0x4cdc0000 0x10000>;
+				clocks = <&scmi_clk IMX943_CLK_ENET>;
+				status = "disabled";
+			};
+
+			emdio: mdio@4cbc0000 {
+				compatible = "nxp,imx-netc-emdio";
+				reg = <0x4cde0000 0x2000>,
+					<0x4cbc0000 0x40000>;
+				reg-names = "basic", "pfconfig";
+				clocks = <&scmi_clk IMX943_CLK_ENET>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+
+			netc_switch: switch@4cc00000 {
+				compatible = "nxp,netc-switch";
+				reg = <0x4cc00000 0x40000>,
+					<0x4ca02000 0x1000>;
+				reg-names = "base", "pfconfig";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+
+				switch_port0: switch_port@0 {
+					compatible = "zephyr,dsa-port";
+					reg = <0>;
+					status = "disabled";
+				};
+
+				switch_port1: switch_port@1 {
+					compatible = "zephyr,dsa-port";
+					reg = <1>;
+					status = "disabled";
+				};
+
+				/* Parallel interface is muxed with enetc_psi0. */
+				switch_port2: switch_port@2 {
+					compatible = "zephyr,dsa-port";
+					reg = <2>;
+					status = "disabled";
+				};
+
+				/* Internal port */
+				switch_port3: switch_port@3 {
+					compatible = "zephyr,dsa-port";
+					reg = <3>;
+					ethernet = <&enetc_psi3>;
+					phy-connection-type = "internal";
+					dsa-tag-protocol = <DSA_TAG_PROTO_NETC>;
+					status = "disabled";
+				};
+			};
+		};
 	};
 };
 

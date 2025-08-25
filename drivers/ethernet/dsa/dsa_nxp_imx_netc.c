@@ -18,12 +18,22 @@ LOG_MODULE_REGISTER(dsa_netc, CONFIG_ETHERNET_LOG_LEVEL);
 #define DT_DRV_COMPAT nxp_netc_switch
 #define PRV_DATA(ctx) ((struct dsa_netc_data *const)(ctx)->prv_data)
 
+#define DEV_CFG(_dev)  ((const struct dsa_netc_config *)(_dev)->config)
+#define DEV_DATA(_dev) ((struct dsa_netc_data *)(_dev)->data)
+
 struct dsa_netc_port_config {
 	const struct pinctrl_dev_config *pincfg;
 	netc_hw_mii_mode_t phy_mode;
 };
 
+struct dsa_netc_config {
+	DEVICE_MMIO_NAMED_ROM(base);
+	DEVICE_MMIO_NAMED_ROM(pfconfig);
+};
+
 struct dsa_netc_data {
+	DEVICE_MMIO_NAMED_RAM(base);
+	DEVICE_MMIO_NAMED_RAM(pfconfig);
 	swt_config_t swt_config;
 	swt_handle_t swt_handle;
 	netc_cmd_bd_t *cmd_bd;
@@ -108,6 +118,14 @@ static void dsa_netc_port_phylink_change(const struct device *phydev, struct phy
 	}
 }
 
+static int dsa_netc_switch_init(const struct device *dev)
+{
+	DEVICE_MMIO_NAMED_MAP(dev, base, K_MEM_CACHE_NONE | K_MEM_DIRECT_MAP);
+	DEVICE_MMIO_NAMED_MAP(dev, pfconfig, K_MEM_CACHE_NONE | K_MEM_DIRECT_MAP);
+
+	return 0;
+}
+
 static struct dsa_api dsa_netc_api = {
 	.port_init = dsa_netc_port_init,
 	.port_generate_random_mac = dsa_netc_port_generate_random_mac,
@@ -138,9 +156,21 @@ static struct dsa_api dsa_netc_api = {
 #define DSA_NETC_DEVICE(n)                                                                  \
 	AT_NONCACHEABLE_SECTION_ALIGN(static netc_cmd_bd_t dsa_netc_##n##_cmd_bd[8],        \
 				      NETC_BD_ALIGN);                                       \
+	static const struct dsa_netc_config netc_switch##n##_config = {                     \
+		DEVICE_MMIO_NAMED_ROM_INIT_BY_NAME(base, DT_DRV_INST(n)),                   \
+		DEVICE_MMIO_NAMED_ROM_INIT_BY_NAME(pfconfig, DT_DRV_INST(n)),               \
+	};                                                                                  \
 	static struct dsa_netc_data dsa_netc_data_##n = {                                   \
 		.cmd_bd = dsa_netc_##n##_cmd_bd,                                            \
 	};                                                                                  \
-	DSA_SWITCH_INST_INIT(n, &dsa_netc_api, &dsa_netc_data_##n, DSA_NETC_PORT_INST_INIT);
+	DEVICE_DT_INST_DEFINE(n,                                                            \
+			      dsa_netc_switch_init,                                         \
+			      NULL,                                                         \
+			      &dsa_netc_data_##n,                                           \
+			      &netc_switch##n##_config,                                     \
+			      POST_KERNEL,                                                  \
+			      CONFIG_ETH_INIT_PRIORITY,                                     \
+			      NULL);		                                            \
+	DSA_SWITCH_INST_INIT(n, &dsa_netc_api, &dsa_netc_data_##n, DSA_NETC_PORT_INST_INIT); \
 
 DT_INST_FOREACH_STATUS_OKAY(DSA_NETC_DEVICE);
