@@ -22,8 +22,18 @@ if(NOT CONFIG_PICOLIBC_USE_MODULE)
   # Use picolibc provided with the toolchain. This requires a new enough
   # toolchain so that the version of picolibc supports auto-detecting a
   # Zephyr build (via the __ZEPHYR__ macro) to expose the Zephyr C API
-  zephyr_compile_options(PROPERTY specs picolibc.specs)
-  zephyr_link_libraries(PROPERTY specs picolibc.specs)
+
+  if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
+    # ask GNU compiler about absolute location of the specs so that other tools like
+    # ccache can find the specs as well.
+    execute_process(
+      COMMAND ${CMAKE_C_COMPILER} -print-file-name=picolibc.specs
+      OUTPUT_VARIABLE PICOLIBC_SPECS
+      OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    zephyr_compile_options(PROPERTY specs "${PICOLIBC_SPECS}")
+    zephyr_link_libraries(PROPERTY specs "${PICOLIBC_SPECS}")
+  endif()
   if(CONFIG_PICOLIBC_IO_FLOAT)
     zephyr_compile_definitions(PICOLIBC_DOUBLE_PRINTF_SCANF)
     zephyr_link_libraries(-DPICOLIBC_DOUBLE_PRINTF_SCANF)
