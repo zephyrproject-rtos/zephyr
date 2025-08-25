@@ -1389,3 +1389,15 @@ test_i2c_mb7040: mb7040@ba {
 	reg = <0xba>;
 	status-gpios = <&test_gpio 0 0>;
 };
+
+test_i2c_ina7xx: ina7xx@bb {
+	compatible = "ti,ina7xx";
+	reg = <0xbb>;
+	inatype = <2>;
+	convdly = <0x80>;
+	mode = <0xf>;
+	vbusct = <5>;
+	vsenct = <5>;
+	tct = <5>;
+	avg = <3>;
+};
