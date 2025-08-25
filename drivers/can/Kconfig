@@ -49,6 +49,7 @@ config CAN_SAMPLE_POINT_MARGIN
 config CAN_SHELL
 	bool "CAN shell"
 	depends on SHELL
+	default y if SHELL_ALL
 	select POLL
 	help
 	  Enable CAN Shell for testing.

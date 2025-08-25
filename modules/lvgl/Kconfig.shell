@@ -3,6 +3,7 @@
 
 config LV_Z_SHELL
 	bool "LVGL Shell"
+	default y if SHELL_ALL
 	depends on SHELL
 	help
 	  Enable LVGL shell for testing.
