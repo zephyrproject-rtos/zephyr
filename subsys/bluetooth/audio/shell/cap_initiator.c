@@ -42,8 +42,6 @@
 #define UNICAST_SINK_SUPPORTED (CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0)
 #define UNICAST_SRC_SUPPORTED  (CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0)
 
-struct bt_cap_unicast_group *cap_unicast_group;
-
 #define CAP_UNICAST_CLIENT_STREAM_COUNT ARRAY_SIZE(unicast_streams)
 
 static void cap_discover_cb(struct bt_conn *conn, int err,
@@ -90,13 +88,14 @@ static void unicast_stop_complete_cb(int err, struct bt_conn *conn)
 	} else {
 		bt_shell_print("Unicast stop completed");
 
-		if (cap_unicast_group != NULL) {
-			err = bt_cap_unicast_group_delete(cap_unicast_group);
+		if (default_unicast_group.is_cap && default_unicast_group.cap_group != NULL) {
+			err = bt_cap_unicast_group_delete(default_unicast_group.cap_group);
 			if (err != 0) {
 				bt_shell_error("Failed to delete unicast group %p: %d",
-					       cap_unicast_group, err);
+					       default_unicast_group.cap_group, err);
 			} else {
-				cap_unicast_group = NULL;
+				default_unicast_group.cap_group = NULL;
+				default_unicast_group.is_cap = false;
 			}
 		}
 	}
@@ -320,13 +319,15 @@ static int cmd_cap_initiator_unicast_start(const struct shell *sh, size_t argc,
 	group_param.params_count = pair_cnt;
 	group_param.params = pair_params;
 
-	if (cap_unicast_group == NULL) {
-		err = bt_cap_unicast_group_create(&group_param, &cap_unicast_group);
+	if (default_unicast_group.cap_group == NULL) {
+		err = bt_cap_unicast_group_create(&group_param, &default_unicast_group.cap_group);
 		if (err != 0) {
 			shell_print(sh, "Failed to create group: %d", err);
 
 			return -ENOEXEC;
 		}
+
+		default_unicast_group.is_cap = true;
 	}
 
 	shell_print(sh, "Starting %zu streams", start_param.count);
@@ -754,6 +755,7 @@ static int cap_ac_create_unicast_group(const struct cap_unicast_ac_param *param,
 	size_t snk_stream_cnt = 0U;
 	size_t src_stream_cnt = 0U;
 	size_t pair_cnt = 0U;
+	int err;
 
 	for (size_t i = 0U; i < snk_cnt; i++) {
 		snk_qos[i] = &snk_uni_streams[i]->qos;
@@ -803,7 +805,12 @@ static int cap_ac_create_unicast_group(const struct cap_unicast_ac_param *param,
 	group_param.params = pair_params;
 	group_param.params_count = pair_cnt;
 
-	return bt_cap_unicast_group_create(&group_param, &default_unicast_group.cap_group);
+	err = bt_cap_unicast_group_create(&group_param, &default_unicast_group.cap_group);
+	if (err == 0) {
+		default_unicast_group.is_cap = true;
+	}
+
+	return err;
 }
 
 int cap_ac_unicast(const struct shell *sh, const struct cap_unicast_ac_param *param)
@@ -818,7 +825,7 @@ int cap_ac_unicast(const struct shell *sh, const struct cap_unicast_ac_param *pa
 	size_t total_cnt;
 	int err;
 
-	if (cap_unicast_group != NULL) {
+	if (default_unicast_group.cap_group != NULL) {
 		shell_error(sh, "Unicast Group already exist, please delete first");
 		return -ENOEXEC;
 	}
@@ -919,11 +926,12 @@ int cap_ac_unicast(const struct shell *sh, const struct cap_unicast_ac_param *pa
 	if (err != 0) {
 		shell_error(sh, "Failed to start unicast audio: %d", err);
 
-		err = bt_cap_unicast_group_delete(cap_unicast_group);
+		err = bt_cap_unicast_group_delete(default_unicast_group.cap_group);
 		if (err != 0) {
 			shell_error(sh, "Failed to delete group: %d", err);
 		} else {
-			cap_unicast_group = NULL;
+			default_unicast_group.cap_group = NULL;
+			default_unicast_group.is_cap = false;
 		}
 
 		return -ENOEXEC;
