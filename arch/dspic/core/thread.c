@@ -54,3 +54,8 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack, char *sta
 	/*TODO: Need to handle splim properly*/
 	thread->callee_saved.splim = RAM_END;
 }
+
+int arch_coprocessors_disable(struct k_thread *thread)
+{
+	return -ENOTSUP;
+}

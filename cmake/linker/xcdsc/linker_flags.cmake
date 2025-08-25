@@ -13,7 +13,7 @@ check_set_linker_property(
 	${LINKERFLAGPREFIX},--no-ivt
 	# do not generate ivt or aivt
 	# Check to create an interrupt function for unused vectors.
-	${LINKERFLAGPREFIX},--no-gc-sections
+	${LINKERFLAGPREFIX},--gc-sections
 	# preserve all sections (do not garbage-collect unused code/data)
 	${LINKERFLAGPREFIX},--fill-upper=0
 	# zero-fill any gaps above defined sections
@@ -25,5 +25,5 @@ check_set_linker_property(
 	# Set picolib lib path from xc-dsc toolchain to link
 	${LINKERFLAGPREFIX}, -lc-pico-elf
 	# link picolib from xc-dsc toolchain
-
+	${LINKERFLAGPREFIX}, -mdfp="${DFP_ROOT}/xc16"
 	)

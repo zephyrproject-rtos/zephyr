@@ -1,19 +1,49 @@
-# microchip,dspic33-uart.yaml
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
 
 description: Microchip dsPIC33 UART controller
 
 compatible: "microchip,dspic33-uart"
 
-include: uart-controller.yaml
+include: [uart-controller.yaml, pinctrl-device.yaml]
 
 properties:
   reg:
     required: true
+    type: array
+    description: Register address and size for the UART peripheral
 
   clock-frequency:
     type: int
     required: true
+    description: Clock frequency for the UART peripheral
+
+  interrupts:
+    required: true
+    type: array
+    description: Interrupt specifiers for RX, TX, and error interrupts
+
+  interrupt-names:
+    type: string-array
+    description: Interrupt names "rx", "tx", "err"
+
+  interrupt-parent:
+    type: phandle
+    description: Parent interrupt controller
+
+  current-speed:
+    required: true
+    type: int
+    description: Baud rate for the UART
+
+  pinctrl-0:
+    required: true
+    description: Pin control group for default state
+
+  pinctrl-names:
+    required: true
+    description: Pin control state names
 
   status:
     type: string
-    required: true
+    description: Device status

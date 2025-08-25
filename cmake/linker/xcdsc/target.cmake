@@ -24,6 +24,7 @@ macro(configure_linker_script linker_script_gen linker_pass_define)
                         -D_LINKER
                         -D_ASM_LANGUAGE
                         -D__XCDSC_LINKER_CMD__
+                        -mdfp="${DFP_ROOT}/xc16"
                         -imacros ${AUTOCONF_H}
                         -I${ZEPHYR_BASE}/include
                         -imacros${ZEPHYR_BASE}/include/zephyr/linker/sections.h
@@ -80,7 +81,6 @@ cmake_parse_arguments(
 endfunction(toolchain_ld_link_elf)
 # Finalize Link Execution Behaviour
 macro(toolchain_linker_finalize)
-    get_property(zephyr_std_libs TARGET linker PROPERTY lib_include_dir)
     get_property(link_order TARGET linker PROPERTY link_order_library)
     foreach(lib ${link_order})
         get_property(link_flag TARGET linker PROPERTY ${lib}_library)

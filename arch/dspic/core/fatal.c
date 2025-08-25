@@ -16,7 +16,7 @@ LOG_MODULE_REGISTER(dspic, 4);
 
 volatile uint32_t reason, address;
 
-#define EXCEPTION_HANDLER __attribute__((interrupt, no_auto_psv, weak))
+#define EXCEPTION_HANDLER __attribute__((interrupt, no_auto_psv, weak, naked))
 #define BUS_ERROR_MASK    0xF
 #define MATH_ERROR_MASK   0x1F
 #define GENERAL_TRAP_MASK 0x8000000Fu

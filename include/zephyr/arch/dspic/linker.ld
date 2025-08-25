@@ -37,6 +37,12 @@ MEMORY
     /* Used by and documented in include/linker/intlist.ld */
     IDT_LIST (wx) : ORIGIN = 0xFFFFF7FF, LENGTH = 2K
 }
+/*
+ * After adding gc-section option compiler was discarding __start symbol
+ * adding ENTRY directive avoid it from being discarded.
+ */
+ENTRY(__start)
+
 SECTIONS
 {
     /* Start of the ROM-based sections */
@@ -165,6 +171,8 @@ SECTIONS
     GROUP_END(RAMABLE_REGION)
 
 }
+
+PROVIDE(__isr_wrapper = __COMMONInterrupt);
 
 /*
 ** ============== Equates for SFR Addresses =============

@@ -16,11 +16,12 @@
 #include <xc.h>
 
 #define TIMER1_CYCLES_PER_TICK                                                                     \
-	((sys_clock_hw_cycles_per_sec()) /                                                         \
-	 (2 * DT_INST_PROP(0, prescalar) * CONFIG_SYS_CLOCK_TICKS_PER_SEC))
+	((float)((sys_clock_hw_cycles_per_sec())) /                                                \
+	 (float)((2 * DT_INST_PROP(0, prescalar) * CONFIG_SYS_CLOCK_TICKS_PER_SEC)))
 
-#define MAX_TIMER_CLOCK_CYCLES 0xFFFFFFFFu
+#define MAX_TIMER_CLOCK_CYCLES 0xFFFFFFFFU
 static struct k_spinlock lock;
+static uint64_t total_cycles;
 
 uint8_t map_prescaler_to_bits(uint32_t val)
 {
@@ -36,7 +37,7 @@ uint8_t map_prescaler_to_bits(uint32_t val)
 	case 64:
 		ret_val = 0b10;
 		break;
-	case 128:
+	case 256:
 		ret_val = 0b11;
 		break;
 	default:
@@ -52,6 +53,8 @@ static void configure_timer1(void)
 
 	/* clear timer control and timer count register */
 	T1CONbits.ON = 0;
+
+	/* Select standard peripheral clock */
 	T1CONbits.TCS = 0;
 	T1CONbits.TCKPS = map_prescaler_to_bits(DT_INST_PROP(0, prescalar));
 	TMR1 = 0;
@@ -70,7 +73,14 @@ static void configure_timer1(void)
  */
 uint32_t sys_clock_cycle_get_32(void)
 {
-	return TMR1;
+	uint32_t cycles;
+	k_spinlock_key_t key;
+
+	key = k_spin_lock(&lock);
+	cycles = ((uint32_t)total_cycles + (uint32_t)TMR1);
+	k_spin_unlock(&lock, key);
+
+	return cycles * 2U * DT_INST_PROP(0, prescalar);
 }
 
 uint32_t sys_clock_elapsed(void)
@@ -90,9 +100,11 @@ uint32_t sys_clock_elapsed(void)
 		 * Call is made, the ticks elapsed is current timer1 count divided by
 		 * Number of cycles per tick
 		 */
-		ticks_elapsed = (uint32_t)TMR1 < (uint32_t)TIMER1_CYCLES_PER_TICK
-					? 0
-					: (uint32_t)TMR1 / (uint32_t)TIMER1_CYCLES_PER_TICK;
+		ticks_elapsed =
+			(uint32_t)TMR1 < (uint32_t)TIMER1_CYCLES_PER_TICK
+				? 0
+				: (uint32_t)(TMR1 + ((uint32_t)TIMER1_CYCLES_PER_TICK / 2U)) /
+					  ((uint32_t)TIMER1_CYCLES_PER_TICK);
 		k_spin_unlock(&lock, key);
 	} while (0);
 
@@ -101,7 +113,7 @@ uint32_t sys_clock_elapsed(void)
 
 void sys_clock_set_timeout(int32_t ticks, bool idle)
 {
-	uint32_t next_count;
+	volatile uint32_t next_count;
 	k_spinlock_key_t key;
 
 	ARG_UNUSED(idle);
@@ -109,7 +121,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	do {
 		if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 
-			/* If it is not in tickles mode, no need to change the
+			/* if it is not in tickles mode, no need to change the
 			 * Timeout interval, it will periodically interrupt
 			 * At every tick
 			 */
@@ -121,6 +133,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 				     ? MAX_TIMER_CLOCK_CYCLES
 				     : (uint32_t)(ticks * TIMER1_CYCLES_PER_TICK);
 		key = k_spin_lock(&lock);
+		total_cycles = total_cycles + (uint64_t)TMR1;
 
 		/* clear the timer1 counter register and set the period register to the
 		 * New timeout value. This should be done with TIMER1 disabled
@@ -131,7 +144,6 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 		T1CONbits.ON = 1;
 		k_spin_unlock(&lock, key);
 	} while (0);
-
 }
 
 /* Timer1 ISR */
@@ -150,8 +162,7 @@ static void timer1_isr(const void *arg)
 	elapsed_ticks = (uint32_t)PR1 / (uint32_t)TIMER1_CYCLES_PER_TICK;
 	key = k_spin_lock(&lock);
 
-	/* Clear the timer interrupt flag status bit*/
-	IFS1bits.T1IF = 0;
+	total_cycles = total_cycles + (uint64_t)PR1;
 
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		/* If not in tickles mode set the interrupt to happen at the next

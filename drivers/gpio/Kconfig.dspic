@@ -1,0 +1,5 @@
+#Enable GPIO driver for dsPIC33A
+config GPIO_DSPIC
+	bool "dsPIC33A GPIO driver"
+	help
+	  Enable support for the dsPIC33A GPIO driver.

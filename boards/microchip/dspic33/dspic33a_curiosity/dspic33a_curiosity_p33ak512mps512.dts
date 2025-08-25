@@ -4,63 +4,59 @@
  */
 
 /dts-v1/;
-#include "p33ak128mc106.dtsi"
+#include "p33ak512mps512.dtsi"
 #include <zephyr/dt-bindings/gpio/gpio.h>
 
 / {
 	model = "Microchip dsPIC33A Curiosity Platform Development Board";
-	compatible = "microchip,dspic33a-criosity-p33ak128mc106";
+	compatible = "microchip,dspic33a-criosity-p33ak512mps512";
 
 	chosen {
 		zephyr,flash = &flash0;
 		zephyr,sram = &sram0;
-		zephyr,serial = &uart0;
-		zephyr,console = &uart0;
-		zephyr,shell-uart = &uart0;
-		uart,passthrough = &uart1;
+		zephyr,serial = &uart1;
+		zephyr,console = &uart1;
 	};
 
 	leds {
 		compatible = "gpio-leds";
 
 		led0: led_0 {
-			gpios = <&gpioc 3 GPIO_ACTIVE_LOW>;
+			gpios = <&gpioc 8 GPIO_ACTIVE_LOW>;
 			label = "P28 LED0";
 		};
 		led1: led_1 {
-			gpios = <&gpioc 4 GPIO_ACTIVE_LOW>;
+			gpios = <&gpioc 9 GPIO_ACTIVE_LOW>;
 			label = "P30 LED1";
 		};
 		led2: led_2 {
-			gpios = <&gpioc 5 GPIO_ACTIVE_LOW>;
+			gpios = <&gpioc 10 GPIO_ACTIVE_LOW>;
 			label = "P32 LED2";
 		};
 		led3: led_3 {
-			gpios = <&gpioc 6 GPIO_ACTIVE_LOW>;
+			gpios = <&gpioc 11 GPIO_ACTIVE_LOW>;
 			label = "P34 LED3";
 		};
 		led4: led_4 {
-			gpios = <&gpioc 7 GPIO_ACTIVE_LOW>;
+			gpios = <&gpioc 12 GPIO_ACTIVE_LOW>;
 			label = "P36 LED4";
 		};
 		led5: led_5 {
-			gpios = <&gpioc 8 GPIO_ACTIVE_LOW>;
+			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
 			label = "P50 LED5";
 		};
 		led6: led_6 {
-			gpios = <&gpioc 9 GPIO_ACTIVE_LOW>;
+			gpios = <&gpioc 14 GPIO_ACTIVE_LOW>;
 			label = "P52 LED6";
 		};
 		led7: led_7 {
-			gpios = <&gpioc 10 GPIO_ACTIVE_LOW>;
+			gpios = <&gpioc 15 GPIO_ACTIVE_LOW>;
 			label = "P54 LED7";
 		};
 	};
 
 	aliases {
-		uart-0 = &uart0;
-		uart-1 = &uart1;
-		uart-2 = &uart2;
+		uart-0 = &uart1;
 		led0 = &led0;
 		led1 = &led1;
 		led2 = &led2;
@@ -69,7 +65,6 @@
 		led5 = &led5;
 		led6 = &led6;
 		led7 = &led7;
-
 	};
 };
 
@@ -84,14 +79,6 @@
 	status = "okay";
 };
 
-&uart0 {
-	status = "okay";
-};
-
 &uart1 {
-	status = "okay";
-};
-
-&uart2 {
 	status = "okay";
 };

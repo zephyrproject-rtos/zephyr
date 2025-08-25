@@ -20,4 +20,11 @@ config NUM_IRQS
 config GEN_IRQ_START_VECTOR
 	default 0
 
+config DSPIC33_IRQ_OFFLOAD_IRQ
+	int "IRQ number for irq_offload()"
+	default 34
+	help
+	  Select the interrupt number used by irq_offload().
+	  This must be a valid, software-triggerable interrupt on the dsPIC33.
+
 endmenu

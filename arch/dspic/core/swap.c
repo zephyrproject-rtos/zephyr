@@ -11,6 +11,8 @@
 #include <kernel_arch_swap.h>
 #include "kswap.h"
 
+int swap_working_set[NUM_TEMP_REGS];
+
 int arch_swap(unsigned int key)
 {
 #ifdef CONFIG_INSTRUMENT_THREAD_SWITCHING

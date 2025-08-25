@@ -5,8 +5,7 @@ find_program(CMAKE_CXX_COMPILER xc-dsc-gcc PATHS ${XCDSC_TOOLCHAIN_PATH}/bin/ NO
 # Set assembler explicitly
 find_program(CMAKE_ASM_COMPILER xc-dsc-gcc PATHS ${XCDSC_TOOLCHAIN_PATH}/bin/ NO_DEFAULT_PATH )
 # Target CPU (must match user platform)
-set(TARGET_CPU "33AK128MC106")
-list(APPEND TOOLCHAIN_C_FLAGS -mcpu=${TARGET_CPU})
+list(APPEND TOOLCHAIN_C_FLAGS "-mcpu=${TARGET_CPU}")
 # Picolibc and standard includes(if supported in toolchain)
 list(APPEND TOOLCHAIN_C_FLAGS
 	-I${XCDSC_TOOLCHAIN_PATH}/include/picolibc

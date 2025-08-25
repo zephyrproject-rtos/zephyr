@@ -20,6 +20,7 @@
 #include <zephyr/arch/cpu.h>
 #include <zephyr/platform/hooks.h>
 #include <zephyr/kernel_structs.h>
+#include <libpic30.h>
 #include <xc.h>
 
 #ifdef __cplusplus
@@ -27,6 +28,9 @@ extern "C" {
 #endif
 
 #include "kswap.h"
+
+#define NUM_TEMP_REGS 3
+extern int swap_working_set[NUM_TEMP_REGS];
 
 static inline __attribute__((always_inline)) void z_dspic_save_context(void)
 {
@@ -42,6 +46,25 @@ static inline __attribute__((always_inline)) void z_dspic_save_context(void)
 		"mov.l [--w15], w0\n\t"
 		/*This unlink is needed to match esf*/
 		"ulnk\n\t"
+		/*Backup the working reg W0-W2*/
+		"mov.l w2, [w15++]\n\t"
+		"mov.l w1, [w15++]\n\t"
+		"mov.l w0, [w15++]\n\t"
+		"mov.l #_swap_working_set, w0\n\t"
+		"mov.l [--w15], [w0++]\n\t"
+		"mov.l [--w15], [w0++]\n\t"
+		"mov.l [--w15], [w0]\n\t"
+		/*Format SR and LR as its from interrupt*/
+		"mov.l [--w15], w1\n\t"
+		"mov.l sr, [w15++]\n\t"
+		"mov.l w1, [w15++]\n\t"
+		"mov.l [w0--], w2\n\t"
+		"mov.l [w0--], w1\n\t"
+		"mov.l [w0], w0\n\t"
+		"mov.l w0, [w15++]\n\t"
+
+		"1:\n\t"
+		"mov.l [--w15], w0\n\t"
 		"push RCOUNT\n\t"
 		"push.l fsr\n\t"
 		"push.l fcr\n\t"
@@ -53,7 +76,6 @@ static inline __attribute__((always_inline)) void z_dspic_save_context(void)
 		"mov.l w5, [w15++]\n\t"
 		"mov.l w6, [w15++]\n\t"
 		"mov.l w7, [w15++]\n\t"
-		"mov.l w8, [w15++]\n\t"
 		"push.l f0\n\t"
 		"push.l f1\n\t"
 		"push.l f2\n\t"
@@ -62,13 +84,8 @@ static inline __attribute__((always_inline)) void z_dspic_save_context(void)
 		"push.l f5\n\t"
 		"push.l f6\n\t"
 		"push.l f7\n\t"
-		"lnk #0x0\n\t"
-		/*in isr lnk is done after esf push*/
-		"mov.l w0, [w15++]\n\t"
-
-		/*In interrupt context*/
-		"1:\n\t"
-		"mov.l [--w15], w0\n\t");
+		"lnk #0x4\n\t");
+	/*in isr lnk is done after esf push*/
 
 	/* Get the current thread callee_saved context
 	 * TODO:
@@ -229,15 +246,6 @@ static inline __attribute__((always_inline)) void z_dspic_restore_context(void)
 
 	/*pop exception/swap saved stack frame*/
 	__asm__ volatile(
-		/* Check context and only pop the
-		 * esf if in thread context
-		 */
-		"mov.l w0, [w15++]\n\t"
-		"mov.l sr, w0\n\t"
-		"and #0xe0, w0\n\t"
-		"mov.l [--w15], w0\n\t"
-		"bra nz, 1f\n\t"
-
 		/*in isr the unlink is done before esf pop*/
 		"ulnk\n\t"
 		/*Thread context*/
@@ -249,7 +257,6 @@ static inline __attribute__((always_inline)) void z_dspic_restore_context(void)
 		"pop.l f2\n\t"
 		"pop.l f1\n\t"
 		"pop.l f0\n\t"
-		"mov.l [--w15], w8\n\t"
 		"mov.l [--w15], w7\n\t"
 		"mov.l [--w15], w6\n\t"
 		"mov.l [--w15], w5\n\t"
@@ -261,7 +268,34 @@ static inline __attribute__((always_inline)) void z_dspic_restore_context(void)
 		"pop.l fcr\n\t"
 		"pop.l fsr\n\t"
 		"pop RCOUNT\n\t"
-		"lnk #0x0\n\t"
+
+		/* Check context and only pop the
+		 * esf if in thread context
+		 */
+		"mov.l w0, [w15++]\n\t"
+		"mov.l sr, w0\n\t"
+		"and #0xe0, w0\n\t"
+		"mov.l [--w15], w0\n\t"
+		"bra nz, 1f\n\t"
+
+		/*Backup the working reg W0-W2*/
+		"mov.l w2, [w15++]\n\t"
+		"mov.l w1, [w15++]\n\t"
+		"mov.l w0, [w15++]\n\t"
+		"mov.l #_swap_working_set, w0\n\t"
+		"mov.l [--w15], [w0++]\n\t"
+		"mov.l [--w15], [w0++]\n\t"
+		"mov.l [--w15], [w0]\n\t"
+		/*Format SR and LR as its from interrupt*/
+		"mov.l [--w15], w1\n\t"
+		"mov.l [--w15], w2\n\t"
+		"mov.l w2, sr\n\t"
+		"mov.l w1, [w15++]\n\t"
+		"mov.l [w0--], w2\n\t"
+		"mov.l [w0--], w1\n\t"
+		"mov.l [w0], w0\n\t"
+
+		"lnk #0x4\n\t"
 
 		/*Interrupt context*/
 		"1:\n\t"
@@ -271,10 +305,27 @@ static inline __attribute__((always_inline)) void z_dspic_restore_context(void)
 /* routine which swaps the context. Needs to be written in assembly */
 static inline __attribute__((always_inline)) void z_dspic_do_swap(void)
 {
+	/* Switch to context 0 before starting context save and restore
+	 * This Arch has 7 context and each has banked register sets for w0-w8
+	 * So in interrupt we are in ctx 1 and need to go to ctx 0 for tasks
+	 */
+	__asm__ volatile("CTXTSWP #0x0");
+
 	z_dspic_save_context();
 
     /*Switch to next task in queue*/
 	z_current_thread_set(_kernel.ready_q.cache);
+
+	/* It is expected to save current thread's pointer on z_tls_current
+	 * variable because k_current_get() call will get the current thread's
+	 * pointer from this variable if the CONFIG_CURRENT_THREAD_USE_TLS
+	 * is enabled. In ztest k_thread_abort() was trying to abort the
+	 * current thread.
+	 */
+#ifdef CONFIG_CURRENT_THREAD_USE_TLS
+	/* Thread-local cache of current thread ID, set in z_thread_entry() */
+	_set_tls((void *)_current->tls);
+#endif
 
 	z_dspic_restore_context();
 }
