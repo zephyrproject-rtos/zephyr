@@ -9,15 +9,6 @@
 @defgroup os_services Operating System Services
 @brief Operating System Services
 @{
-
-@brief MCUmgr
-@defgroup mcumgr MCUmgr
-@{
-@defgroup mcumgr_transport Transport layers
-@{
-@}
-@}
-
 @}
 
 @brief Device Driver APIs
@@ -45,6 +36,21 @@
 @brief Debug Services
 @defgroup debug Debug
 @ingroup os_services
+@{
+@}
+
+@brief Device Management
+@defgroup device_mgmt Device Management
+@ingroup os_services
+@{
+@}
+
+@brief MCUmgr
+@defgroup mcumgr MCUmgr
+@ingroup device_mgmt
+
+@brief Transport layers for MCUmgr: SMP, UART, etc.
+@defgroup mcumgr_transport Transport layers
 @{
 @}
 
