@@ -61,6 +61,9 @@ Removed APIs and options
 * The TinyCrypt library was removed as the upstream version is no longer maintained.
   PSA Crypto API is now the recommended cryptographic library for Zephyr.
 
+* Removed deprecated property ``config`` and broken enum ``"Shutdown continuous"`` from
+  :dtcompatible:`ti,ina230`.
+
 Deprecated APIs and options
 ===========================
 
