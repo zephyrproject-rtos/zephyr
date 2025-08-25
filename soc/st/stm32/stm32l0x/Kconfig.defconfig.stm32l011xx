@@ -8,4 +8,14 @@ if SOC_STM32L011XX
 config NUM_IRQS
 	default 32
 
+# Reduce kernel stack sizes to fit in 2 KiB RAM
+config MAIN_STACK_SIZE
+	default 320
+
+config IDLE_STACK_SIZE
+	default 100
+
+config ISR_STACK_SIZE
+	default 256
+
 endif # SOC_STM32L011XX
