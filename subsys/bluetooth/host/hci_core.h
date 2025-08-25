@@ -184,6 +184,9 @@ struct bt_le_ext_adv {
 
 	/* TX Power in use by the controller */
 	int8_t                    tx_power;
+
+	/* Advertising Set ID */
+	uint8_t                   sid;
 #endif /* defined(CONFIG_BT_EXT_ADV) */
 
 	struct k_work_delayable	lim_adv_timeout_work;
