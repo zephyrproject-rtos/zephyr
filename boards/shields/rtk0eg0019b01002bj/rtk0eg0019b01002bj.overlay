@@ -1,0 +1,92 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/gpio/renesas-rtk0eg0019b01002bj.h>
+
+/ {
+	rtk0eg0019b01002bj_cn1: rtk0eg0019b01002bj-cn1 {
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+	};
+
+	zephyr,user {
+		rtk0eg0019b01002bj-led-row-gpios =
+			<&rtk0eg0019b01002bj_cn1 RTK0EG0019B01002BJ_CN1_LED_ROW0 GPIO_ACTIVE_LOW>,
+			<&rtk0eg0019b01002bj_cn1 RTK0EG0019B01002BJ_CN1_LED_ROW1 GPIO_ACTIVE_LOW>,
+			<&rtk0eg0019b01002bj_cn1 RTK0EG0019B01002BJ_CN1_LED_ROW2 GPIO_ACTIVE_LOW>,
+			<&rtk0eg0019b01002bj_cn1 RTK0EG0019B01002BJ_CN1_LED_ROW3 GPIO_ACTIVE_LOW>;
+		rtk0eg0019b01002bj-led-col-gpios =
+			<&rtk0eg0019b01002bj_cn1 RTK0EG0019B01002BJ_CN1_LED_COL0 GPIO_ACTIVE_HIGH>,
+			<&rtk0eg0019b01002bj_cn1 RTK0EG0019B01002BJ_CN1_LED_COL1 GPIO_ACTIVE_HIGH>,
+			<&rtk0eg0019b01002bj_cn1 RTK0EG0019B01002BJ_CN1_LED_COL2 GPIO_ACTIVE_HIGH>,
+			<&rtk0eg0019b01002bj_cn1 RTK0EG0019B01002BJ_CN1_LED_COL3 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&rtk0eg0019b01002bj_ctsu {
+	status = "okay";
+
+	group1 {
+		ctsuchac = <0x01 0x0E 0x00 0x00 0x00>;
+		ctsuchtrc = <0x01 0x00 0x00 0x00 0x00>;
+		rx-count = <3>;
+		tx-count = <0>;
+		status = "okay";
+
+		rtk0eg0019b01002bj_bt1: button1 {
+			compatible = "renesas,ra-ctsu-button";
+			elements = <2>;
+			event-code = <INPUT_KEY_0>;
+			status = "okay";
+		};
+
+		rtk0eg0019b01002bj_bt2: button2 {
+			compatible = "renesas,ra-ctsu-button";
+			elements = <1>;
+			event-code = <INPUT_KEY_1>;
+			status = "okay";
+		};
+
+		rtk0eg0019b01002bj_bt3: button3 {
+			compatible = "renesas,ra-ctsu-button";
+			elements = <0>;
+			event-code = <INPUT_KEY_2>;
+			status = "okay";
+		};
+	};
+
+	group2 {
+		ctsuchac = <0xF4 0x01 0x00 0x00 0x00>;
+		ctsuchtrc = <0x00 0x01 0x00 0x00 0x00>;
+		rx-count = <5>;
+		tx-count = <0>;
+		status = "okay";
+
+		rtk0eg0019b01002bj_slider: slider {
+			compatible = "renesas,ra-ctsu-slider";
+			elements = <1>, <0>, <2>, <4>, <3>;
+			threshold = <703>;
+			event-code = <INPUT_ABS_THROTTLE>;
+			status = "okay";
+		};
+	};
+
+	group3 {
+		ctsuchac = <0x00 0x40 0xA4 0x00 0x01>;
+		ctsuchtrc = <0x00 0x40 0x00 0x00 0x00>;
+		rx-count = <4>;
+		tx-count = <0>;
+		status = "okay";
+
+		rtk0eg0019b01002bj_wheel: wheel {
+			compatible = "renesas,ra-ctsu-wheel";
+			elements = <0>, <1>, <2>, <3>;
+			event-code = <INPUT_ABS_WHEEL>;
+			status = "okay";
+		};
+	};
+};
