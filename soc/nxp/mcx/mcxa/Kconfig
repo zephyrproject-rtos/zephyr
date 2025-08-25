@@ -9,6 +9,7 @@ config SOC_FAMILY_MCXA
 	select CPU_CORTEX_M_HAS_SYSTICK
 	select CPU_CORTEX_M_HAS_DWT
 	select SOC_RESET_HOOK
+	select HAS_POWEROFF
 
 config SOC_MCXA153
 	select CPU_CORTEX_M33
@@ -37,3 +38,16 @@ config SOC_MCXA266
 	select ARMV8_M_DSP
 	select HAS_MCUX_CACHE
 	select HAS_MCUX_MCX_CMC
+
+if SOC_FAMILY_MCXA && (PM || POWEROFF)
+
+config SOC_MCXA_WAKEUP_DELAY
+	int "Wakeup delay"
+	default 91 if SOC_MCXA153 || SOC_MCXA156
+	default 110 if SOC_MCXA346 || SOC_MCXA266
+	help
+	  When a different VDD_CORE level is configured in low
+	  power modes compared to active modes, the wakeup delay
+	  must be configured to a minimum value.
+
+endif

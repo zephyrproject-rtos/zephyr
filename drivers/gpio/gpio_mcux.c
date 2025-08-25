@@ -17,6 +17,13 @@
 
 #include <zephyr/drivers/gpio/gpio_utils.h>
 
+#if defined(CONFIG_PM) || defined(CONFIG_POWEROFF)
+#if defined(CONFIG_SOC_FAMILY_MCXN) || defined(CONFIG_SOC_FAMILY_MCXA) || \
+	defined(CONFIG_SOC_FAMILY_MCXW)
+#include <fsl_wuu.h>
+#endif
+#endif
+
 #if defined(CONFIG_PINCTRL_NXP_IOCON)
 #include <fsl_iopctl.h>
 /* Use IOCON to configure electrical characteristic, set PORT_Type as void. */
@@ -39,6 +46,12 @@ struct gpio_mcux_config {
 	PORT_Type *port_base;
 	unsigned int flags;
 	uint32_t port_no;
+#if defined(CONFIG_PM) || defined(CONFIG_POWEROFF)
+	bool wakeup_source;
+	uint8_t wakeup_pin;
+	uint8_t wuu_index; /* Index used to configure wakeup unit (wuu). */
+	uint8_t wakeup_signal_edge;
+#endif
 };
 
 struct gpio_mcux_data {
@@ -208,6 +221,31 @@ static int gpio_mcux_port_configure(const struct device *dev, gpio_pin_t pin, gp
 
 	/* Accessing by pin, we only need to write one PCR register. */
 	port_base->PCR[pin] = (port_base->PCR[pin] & ~mask) | pcr;
+
+
+#if defined(CONFIG_PM) || defined(CONFIG_POWEROFF)
+#if defined(CONFIG_SOC_FAMILY_MCXN) || defined(CONFIG_SOC_FAMILY_MCXA) || \
+	defined(CONFIG_SOC_FAMILY_MCXW)
+	if ((config->wakeup_source) && (config->wakeup_pin == pin)) {
+		wuu_external_wakeup_pin_config_t wakeup_pin_config;
+
+		wakeup_pin_config.edge = config->wakeup_signal_edge;
+		wakeup_pin_config.event = kWUU_ExternalPinInterrupt;
+		wakeup_pin_config.mode = kWUU_ExternalPinActiveAlways;
+
+		/* We get pin index here not WUU input index. */
+		if (WUU_GetExternalWakeUpPinsFlag(WUU0) == BIT(config->wuu_index)) {
+			WUU_ClearExternalWakeUpPinsFlag(WUU0, BIT(config->wuu_index));
+		}
+
+		WUU_SetExternalWakeUpPinsConfig(WUU0, config->wuu_index, &wakeup_pin_config);
+	}
+#elif
+	/* Other platforms may also use gpio as the wakeup source, but the wakeup source
+	 * management is not done using WUU.
+	 */
+#endif
+#endif
 
 	return 0;
 }
@@ -411,6 +449,21 @@ static void gpio_mcux_port_isr(const struct device *dev)
 	ARG_UNUSED(config);
 #endif /* defined(GPIO_MCUX_HAS_INTERRUPT_CHANNEL_SELECT) || defined(PORT_HAS_NO_INTERRUPT) */
 
+#if defined(CONFIG_PM) || defined(CONFIG_POWEROFF)
+#if defined(CONFIG_SOC_FAMILY_MCXN) || defined(CONFIG_SOC_FAMILY_MCXA) || \
+	defined(CONFIG_SOC_FAMILY_MCXW)
+	if (config->wakeup_source) {
+		if (WUU_GetExternalWakeUpPinsFlag(WUU0) == BIT(config->wuu_index)) {
+			WUU_ClearExternalWakeUpPinsFlag(WUU0, BIT(config->wuu_index));
+		}
+	}
+#elif
+	/* Other platforms may also use gpio as the wakeup source, but the wakeup source
+	 * management is not done using WUU.
+	 */
+#endif
+#endif
+
 	gpio_fire_callbacks(&data->callbacks, dev, int_status);
 }
 
@@ -429,18 +482,18 @@ static void gpio_mcux_shared_cluster_isr(const struct device *ports[])
 
 #define CLUSTER_ARRAY_ELEMENT(node_id) DEVICE_DT_GET(node_id),
 
-#define GPIO_MCUX_CLUSTER_INIT(node_id)                                                            \
-	const struct device *shared_array##node_id[DT_CHILD_NUM_STATUS_OKAY(node_id) + 1] = {      \
-		DT_FOREACH_CHILD_STATUS_OKAY(node_id, CLUSTER_ARRAY_ELEMENT) NULL};                \
-                                                                                                   \
-	static int gpio_mcux_shared_interrupt_init##node_id(void)                                  \
-	{                                                                                          \
-		IRQ_CONNECT(DT_IRQN(node_id), DT_IRQ(node_id, priority),                           \
-			    gpio_mcux_shared_cluster_isr, shared_array##node_id, 0);               \
-		irq_enable(DT_IRQN(node_id));                                                      \
-                                                                                                   \
-		return 0;                                                                          \
-	}                                                                                          \
+#define GPIO_MCUX_CLUSTER_INIT(node_id)								\
+	const struct device *shared_array##node_id[DT_CHILD_NUM_STATUS_OKAY(node_id) + 1] = {	\
+		DT_FOREACH_CHILD_STATUS_OKAY(node_id, CLUSTER_ARRAY_ELEMENT) NULL};		\
+												\
+	static int gpio_mcux_shared_interrupt_init##node_id(void)				\
+	{											\
+		IRQ_CONNECT(DT_IRQN(node_id), DT_IRQ(node_id, priority),			\
+			    gpio_mcux_shared_cluster_isr, shared_array##node_id, 0);		\
+		irq_enable(DT_IRQN(node_id));							\
+												\
+		return 0;									\
+	}											\
 	SYS_INIT(gpio_mcux_shared_interrupt_init##node_id, POST_KERNEL, 0);
 
 DT_FOREACH_STATUS_OKAY(nxp_gpio_cluster, GPIO_MCUX_CLUSTER_INIT)
@@ -485,44 +538,61 @@ static DEVICE_API(gpio, gpio_mcux_driver_api) = {
 #endif /* CONFIG_GPIO_GET_DIRECTION */
 };
 
-#define GPIO_MCUX_IRQ_INIT(n)                                                                      \
-	do {                                                                                       \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), gpio_mcux_port_isr,         \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-                                                                                                   \
-		irq_enable(DT_INST_IRQN(n));                                                       \
+
+
+#if defined(CONFIG_PM) || defined(CONFIG_POWEROFF)
+#define GPIO_ENABLED_WAKEUP_FUNCTION(n)								\
+	.wakeup_source = DT_INST_PROP_OR(n, wakeup_source, 0),					\
+	IF_ENABLED(DT_INST_PROP(n, wakeup_source),						\
+		(.wakeup_signal_edge = DT_INST_PROP(n, wakeup_signal_edge),))			\
+	IF_ENABLED(DT_INST_PROP(n, wakeup_source),						\
+		(.wakeup_pin = DT_PROP_BY_IDX(DT_DRV_INST(n), wakeup_line, 0),))		\
+	IF_ENABLED(DT_INST_PROP(n, wakeup_source),						\
+		(.wuu_index = DT_PROP_BY_IDX(DT_DRV_INST(n), wakeup_line, 1),))			\
+
+#else
+#define GPIO_ENABLED_WAKEUP_FUNCTION(n)
+#endif
+
+#define GPIO_MCUX_IRQ_INIT(n)									\
+	do {											\
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), gpio_mcux_port_isr,	\
+			    DEVICE_DT_INST_GET(n), 0);						\
+												\
+		irq_enable(DT_INST_IRQN(n));							\
 	} while (false)
 
 #define GPIO_PORT_BASE_ADDR(n) DT_REG_ADDR(DT_INST_PHANDLE(n, nxp_kinetis_port))
-#define GPIO_PORT_NUMBER(n) COND_CODE_1(DT_INST_NODE_HAS_PROP(n, gpio_port_offest),	\
+#define GPIO_PORT_NUMBER(n) COND_CODE_1(DT_INST_NODE_HAS_PROP(n, gpio_port_offest),		\
 						(DT_INST_PROP(n, gpio_port_offest) + n), (n))	\
 
-#define GPIO_DEVICE_INIT_MCUX(n)                                                                   \
-	static int gpio_mcux_port##n##_init(const struct device *dev);                             \
-                                                                                                   \
-	static const struct gpio_mcux_config gpio_mcux_port##n##_config = {                        \
-		.common =                                                                          \
-			{                                                                          \
-				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),               \
-			},                                                                         \
-		.gpio_base = (GPIO_Type *)DT_INST_REG_ADDR(n),                                     \
-		.port_base = (PORT_Type *)GPIO_PORT_BASE_ADDR(n),                                  \
-		.flags = UTIL_AND(UTIL_OR(DT_INST_IRQ_HAS_IDX(n, 0), GPIO_HAS_SHARED_IRQ),         \
-				  GPIO_INT_ENABLE),                                                \
-		.port_no = GPIO_PORT_NUMBER(n),						\
-	};                                                                                         \
-                                                                                                   \
-	static struct gpio_mcux_data gpio_mcux_port##n##_data;                                     \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, gpio_mcux_port##n##_init, NULL, &gpio_mcux_port##n##_data,        \
-			      &gpio_mcux_port##n##_config, POST_KERNEL, CONFIG_GPIO_INIT_PRIORITY, \
-			      &gpio_mcux_driver_api);                                              \
-                                                                                                   \
-	static int gpio_mcux_port##n##_init(const struct device *dev)                              \
-	{                                                                                          \
-		IF_ENABLED(DT_INST_IRQ_HAS_IDX(n, 0),			\
-			(GPIO_MCUX_IRQ_INIT(n);))                                         \
-		return 0;                                                                          \
+#define GPIO_DEVICE_INIT_MCUX(n)								\
+	static int gpio_mcux_port##n##_init(const struct device *dev);				\
+												\
+	static const struct gpio_mcux_config gpio_mcux_port##n##_config = {			\
+		.common =									\
+			{									\
+				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),		\
+			},									\
+		.gpio_base = (GPIO_Type *)DT_INST_REG_ADDR(n),					\
+		.port_base = (PORT_Type *)GPIO_PORT_BASE_ADDR(n),				\
+		.flags = UTIL_AND(UTIL_OR(DT_INST_IRQ_HAS_IDX(n, 0), GPIO_HAS_SHARED_IRQ),	\
+				  GPIO_INT_ENABLE),						\
+		.port_no = GPIO_PORT_NUMBER(n),							\
+		GPIO_ENABLED_WAKEUP_FUNCTION(n)							\
+	};											\
+												\
+	static struct gpio_mcux_data gpio_mcux_port##n##_data;					\
+												\
+	DEVICE_DT_INST_DEFINE(n, gpio_mcux_port##n##_init, NULL, &gpio_mcux_port##n##_data,	\
+			&gpio_mcux_port##n##_config, POST_KERNEL,				\
+			CONFIG_GPIO_INIT_PRIORITY, &gpio_mcux_driver_api);			\
+												\
+	static int gpio_mcux_port##n##_init(const struct device *dev)				\
+	{											\
+		IF_ENABLED(DT_INST_IRQ_HAS_IDX(n, 0),						\
+			(GPIO_MCUX_IRQ_INIT(n);))						\
+		return 0;									\
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_DEVICE_INIT_MCUX)
