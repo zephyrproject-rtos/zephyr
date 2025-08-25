@@ -24,28 +24,35 @@ class IpecmdBinaryRunner(ZephyrBinaryRunner):
         self.mplabx_base = None
         self.java_bin = None
         self.ipecmd_jar = None
-        if platform.system() == 'Linux' or platform.system() == 'Windows':
-            self.mplabx_base = self.find_mplabx_base()
-            if not self.mplabx_base:
-                print("Error: Could not locate mplabx base directory")
-                sys.exit(1)
 
-            version_path = self.find_latest_version_dir(self.mplabx_base)
-            if not version_path:
-                print("Error: No MPLAB X version directories found")
-                sys.exit(1)
+        self.mplabx_base = self.find_mplabx_base()
+        if not self.mplabx_base:
+            print("Error: Could not locate mplabx base directory")
+            sys.exit(1)
 
+        version_path = self.find_latest_version_dir(self.mplabx_base)
+        if not version_path:
+            print("Error: No MPLAB X version directories found")
+            sys.exit(1)
+        if platform.system() == 'Linux':
             self.java_bin = self.find_java_bin(version_path)
             if not self.java_bin or not os.access(self.java_bin, os.X_OK):
                 print("Error: Java executable not found or not executable")
                 sys.exit(1)
 
-            self.ipecmd_jar = self.find_ipecmd_jar(version_path)
+            self.ipecmd_jar = self.find_ipecmd(version_path, "ipecmd.jar")
             if not self.ipecmd_jar:
                 print(f"Error: ipecmd.jar not found in {version_path}/mplab_platform/mplab_ipe/")
                 sys.exit(1)
             else:
                 print(f'ipecmd: {self.ipecmd_jar}')
+        elif platform.system() == 'Windows':
+            self.ipecmd_exe = self.find_ipecmd(version_path, "ipecmd.exe")
+            if not self.ipecmd_exe:
+                print(f"Error: ipecmd.exe not found in {version_path}/mplab_platform/mplab_ipe/")
+                sys.exit(1)
+            else:
+                print(f'ipecmd: {self.ipecmd_exe}')
         self.app_bin = cfg.bin_file
         print(f'bin file: {cfg.bin_file}')
         self.hex_file = cfg.hex_file
@@ -78,19 +85,30 @@ class IpecmdBinaryRunner(ZephyrBinaryRunner):
         self.ensure_output('hex')
 
         self.logger.info(f'Flashing file: {self.hex_file}')
+        self.logger.info(f'flash tool: {self.flash_tool}, Device: {self.device}')
         if self.hex_file is not None:
-            self.logger.info(f'flash tool: {self.flash_tool}, Device: {self.device}')
-            self.logger.info(f'flash cmd: {self.ipecmd_jar}')
-            cmd = [
-                str(self.java_bin),
-                '-jar',
-                str(self.ipecmd_jar),
-                '-TP' + self.flash_tool,
-                '-P' + self.device,
-                '-M',
-                '-F' + self.hex_file,
-                '-OL',
-            ]
+            if platform.system() == 'Linux':
+                self.logger.info(f'flash cmd: {self.ipecmd_jar}')
+                cmd = [
+                    str(self.java_bin),
+                    '-jar',
+                    str(self.ipecmd_jar),
+                    '-TP' + self.flash_tool,
+                    '-P' + self.device,
+                    '-M',
+                    '-F' + self.hex_file,
+                    '-OL',
+                ]
+            elif platform.system() == 'Windows':
+                self.logger.info(f'flash cmd: {self.ipecmd_exe}')
+                cmd = [
+                    str(self.ipecmd_exe),
+                    '-TP' + self.flash_tool,
+                    '-P' + self.device,
+                    '-M',
+                    '-F' + self.hex_file,
+                    '-OL',
+                ]
             self.require(cmd[0])
             self.check_call(cmd)
         else:
@@ -118,9 +136,9 @@ class IpecmdBinaryRunner(ZephyrBinaryRunner):
             sys.exit(1)
         return java_dirs[0] if java_dirs else None
 
-    def find_ipecmd_jar(self, version_path):
+    def find_ipecmd(self, version_path, tool):
         ipe_dir = version_path / "mplab_platform/mplab_ipe"
         for root, _, files in os.walk(ipe_dir):
-            if "ipecmd.jar" in files:
-                return Path(root) / "ipecmd.jar"
+            if tool in files:
+                return Path(root) / tool
         return None
