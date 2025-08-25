@@ -4,7 +4,7 @@
 
 import logging
 from pathlib import Path
-from typing import Generator, Type
+from typing import Generator, Type, Callable
 
 import pytest
 import time
@@ -15,6 +15,7 @@ from twister_harness.twister_harness_config import DeviceConfig, TwisterHarnessC
 from twister_harness.helpers.shell import Shell
 from twister_harness.helpers.mcumgr import MCUmgr, MCUmgrBle
 from twister_harness.helpers.utils import find_in_config
+from twister_harness.helpers.config_reader import ConfigReader
 
 logger = logging.getLogger(__name__)
 
@@ -117,3 +118,27 @@ def mcumgr_ble(device_object: DeviceAdapter) -> Generator[MCUmgrBle, None, None]
     ) or 'Zephyr'
 
     yield MCUmgrBle.create_for_ble(hci_index, peer_name)
+
+
+@pytest.fixture
+def config_reader() -> Callable[[str | Path], ConfigReader]:
+    """
+    Pytest fixture that provides a ConfigReader instance for reading configuration files.
+
+    This fixture allows tests to easily create a ConfigReader object by passing
+    the path to a configuration file. The ConfigReader reads the file and
+    provides a method to access the configuration data.
+
+    Returns:
+        Callable[[str, Path], ConfigReader]: A function that takes a file path
+        (as a string or Path object) and returns an instance of ConfigReader.
+
+    Example:
+        def test_config_value(config_reader):
+            config = config_reader("build_dir/zephyr/.config")
+            assert config.read("some_key") == "expected_value"
+    """
+    def inner(file):
+        return ConfigReader(file)
+
+    return inner
