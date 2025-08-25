@@ -187,6 +187,14 @@ struct broadcast_sink {
 	bool syncable;
 };
 
+struct unicast_group {
+	bool is_cap;
+	union {
+		struct bt_bap_unicast_group *bap_group;
+		struct bt_cap_unicast_group *cap_group;
+	};
+};
+
 #define BAP_UNICAST_AC_MAX_CONN   2U
 #define BAP_UNICAST_AC_MAX_SNK    (2U * BAP_UNICAST_AC_MAX_CONN)
 #define BAP_UNICAST_AC_MAX_SRC    (2U * BAP_UNICAST_AC_MAX_CONN)
@@ -219,7 +227,7 @@ struct bap_unicast_ac_param {
 	size_t src_chan_cnt;
 };
 
-extern struct bt_bap_unicast_group *default_unicast_group;
+extern struct unicast_group default_unicast_group;
 extern struct bt_bap_ep *snks[CONFIG_BT_MAX_CONN][CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT];
 extern struct bt_bap_ep *srcs[CONFIG_BT_MAX_CONN][CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT];
 extern struct named_lc3_preset default_sink_preset;
