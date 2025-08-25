@@ -269,4 +269,13 @@ class UVCCamera:
 
     def release(self):
         self.cap.release()
-        cv2.destroyAllWindows()
+        try:
+            # we may in headless mode
+            cv2.destroyAllWindows()
+        except Exception as e:
+            # Handle cv2.error and other potential exceptions
+            if "not implemented" in str(e) or "Rebuild the library" in str(e):
+                # This is expected in headless/no-GUI environments
+                pass
+            else:
+                print(f"Warning: Could not destroy windows: {e}")
