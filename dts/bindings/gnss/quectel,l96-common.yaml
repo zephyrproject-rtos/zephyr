@@ -1,0 +1,23 @@
+# Copyright (c) 2025 Nick Ward
+# SPDX-License-Identifier: Apache-2.0
+
+include:
+  - gnss-pps.yaml
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    description: |
+      GPIO connected to the RESET pin of the Quectel L96 GNSS module.
+      - Drive low for at least 10ms to reset the module.
+      - Drive high (or release if open-drain) to complete the reset cycle.
+      Volatile RAM data may be lost, but backup RAM is retained,
+      allowing faster time to first fix (TTFF) after reset.
+
+  vcc-gpios:
+    type: phandle-array
+    description: |
+      Cutting off VCC and keeping V_BCKP powered will make the
+      module enter into backup mode from full on mode. As long as
+      the VCC pin is powered, the module will enter into full on
+      mode immediately.
