@@ -7,5 +7,5 @@ toolchain:
 supported:
   - i2c
   - adc
-  - usb_device
+  - usbd
 vendor: atmarktechno
