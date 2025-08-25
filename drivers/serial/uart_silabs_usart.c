@@ -982,9 +982,17 @@ static int uart_silabs_configure(const struct device *dev,
 		return -ENOSYS;
 	}
 
+	if (cfg->parity > UART_CFG_PARITY_SPACE) {
+		return -EINVAL;
+	}
+
 	if (cfg->flow_ctrl == UART_CFG_FLOW_CTRL_DTR_DSR ||
 	    cfg->flow_ctrl == UART_CFG_FLOW_CTRL_RS485) {
 		return -ENOSYS;
+	}
+
+	if (cfg->flow_ctrl > UART_CFG_FLOW_CTRL_RS485) {
+		return -EINVAL;
 	}
 
 	*data->uart_cfg = *cfg;
