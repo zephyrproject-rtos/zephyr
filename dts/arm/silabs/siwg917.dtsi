@@ -124,6 +124,12 @@
 			status = "disabled";
 		};
 
+		siwx91x_soc_pd: siwx91x_soc_pd {
+			compatible = "power-domain";
+			status = "okay";
+			#power-domain-cells = <0>;
+		};
+
 		ulpuart: uart@24041800 {
 			compatible = "ns16550";
 			reg = <0x24041800 0x1000>;
@@ -131,6 +137,7 @@
 			reg-shift = <2>;
 			clocks = <&clock0 SIWX91X_CLK_ULP_UART>;
 			current-speed = <115200>;
+			power-domains = <&siwx91x_soc_pd>;
 			status = "disabled";
 		};
 
@@ -141,6 +148,7 @@
 			reg-shift = <2>;
 			clocks = <&clock0 SIWX91X_CLK_UART0>;
 			current-speed = <115200>;
+			power-domains = <&siwx91x_soc_pd>;
 			status = "disabled";
 		};
 
@@ -151,6 +159,7 @@
 			reg-shift = <2>;
 			clocks = <&clock0 SIWX91X_CLK_UART1>;
 			current-speed = <115200>;
+			power-domains = <&siwx91x_soc_pd>;
 			status = "disabled";
 		};
 
