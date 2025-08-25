@@ -16,3 +16,8 @@ zephyr_sources_ifdef(CONFIG_SETTINGS_SHELL settings_shell.c)
 zephyr_sources_ifdef(CONFIG_SETTINGS_ZMS settings_zms.c)
 zephyr_sources_ifdef(CONFIG_SETTINGS_TFM_ITS settings_its.c)
 zephyr_sources_ifdef(CONFIG_SETTINGS_RETENTION settings_retention.c)
+
+if (CONFIG_SETTINGS_TFM_ITS)
+  # For psa/internal_trusted_storage.h in case of TF-M implementation
+  zephyr_library_link_libraries_ifdef(CONFIG_BUILD_WITH_TFM tfm_api)
+endif()

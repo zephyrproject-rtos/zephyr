@@ -1,0 +1,12 @@
+tests:
+  settings.functional.psa-its:
+    platform_allow:
+      - mps2/an521/cpu0/ns
+    integration_platforms:
+      - mps2/an521/cpu0/ns
+    tags:
+      - settings
+      - trusted-firmware-m
+    extra_args:
+      - CONFIG_SETTINGS_TFM_ITS=y
+      - CONFIG_TFM_ITS_MAX_ASSET_SIZE_OVERRIDE=y
