@@ -51,6 +51,7 @@ tests:
     # display shield within Zephyr.
     # Boards with built-in displays are also covered by this testcase.
     filter: dt_chosen_enabled("zephyr,display")
+    timeout: 120
     harness_config:
       fixture: fixture_display
       pytest_dut_scope: session
@@ -66,6 +67,7 @@ tests:
       - platform:frdm_k22f/mk22f51212:SHIELD=ls013b7dh03
       - platform:nrf52833dk/nrf52833:SHIELD=st7735r_ada_160x128
       - platform:mimxrt1170_evk/mimxrt1176/cm7:SHIELD=rk055hdmipi4ma0
+      - platform:mimxrt1170_evk@A/mimxrt1176/cm7:SHIELD=rk055hdmipi4ma0
       - platform:da1469x_dk_pro/da14699:DTC_OVERLAY_FILE=da1469x_dk_pro_mipi_dbi.overlay
       - platform:nrf52840dk/nrf52840:SHIELD=max7219_8x8
       - platform:stm32h747i_disco/stm32h747xx/m7:SHIELD=st_b_lcd40_dsi1_mb1166
