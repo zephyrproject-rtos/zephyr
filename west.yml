@@ -301,6 +301,9 @@ manifest:
       groups:
         - fs
       revision: 8f5ca347843363882619d8f96c00d8dbd88a8e79
+    - name: lora-basics-modem
+      revision: 9a14f6772c1d6e303bacb2d594c8063bb804b6ee
+      path: modules/lib/lora-basics-modem
     - name: loramac-node
       revision: fb00b383072518c918e2258b0916c996f2d4eebe
       path: modules/lib/loramac-node
