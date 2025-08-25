@@ -21,6 +21,6 @@ if(CONFIG_BOARD_NXP_SPSDK_IMAGE OR (DEFINED ENV{USE_NXP_SPSDK_IMAGE}
 endif()
 
 if(CONFIG_SOC_MIMX9596_A55)
-  board_runner_args(jlink "--device=MIMX9556_A55_0" "--no-reset" "--flash-sram")
+  board_runner_args(jlink "--device=MIMX9596_A55_0" "--no-reset" "--flash-sram")
   include(${ZEPHYR_BASE}/boards/common/jlink.board.cmake)
 endif()
