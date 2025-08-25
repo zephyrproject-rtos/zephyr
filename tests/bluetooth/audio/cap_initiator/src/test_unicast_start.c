@@ -139,7 +139,7 @@ static ZTEST_F(cap_initiator_test_unicast_start, test_initiator_unicast_start)
 
 	for (size_t i = 0U; i < ARRAY_SIZE(stream_params); i++) {
 		const struct bt_bap_stream *bap_stream = &fixture->cap_streams[i].bap_stream;
-		const enum bt_bap_ep_state state = bap_stream->ep->status.state;
+		const enum bt_bap_ep_state state = bap_stream->ep->state;
 
 		zassert_equal(state, BT_BAP_EP_STATE_STREAMING,
 			      "[%zu]: Stream %p unexpected state: %d", i, bap_stream, state);
@@ -430,7 +430,7 @@ static ZTEST_F(cap_initiator_test_unicast_start,
 
 	for (size_t i = 0U; i < ARRAY_SIZE(stream_params); i++) {
 		const struct bt_bap_stream *bap_stream = &fixture->cap_streams[i].bap_stream;
-		const enum bt_bap_ep_state state = bap_stream->ep->status.state;
+		const enum bt_bap_ep_state state = bap_stream->ep->state;
 
 		zassert_equal(state, BT_BAP_EP_STATE_STREAMING,
 			      "[%zu]: Stream %p unexpected state: %d", i, bap_stream, state);
@@ -471,7 +471,7 @@ static ZTEST_F(cap_initiator_test_unicast_start, test_initiator_unicast_start_st
 
 	for (size_t i = 0U; i < ARRAY_SIZE(stream_params); i++) {
 		const struct bt_bap_stream *bap_stream = &fixture->cap_streams[i].bap_stream;
-		const enum bt_bap_ep_state state = bap_stream->ep->status.state;
+		const enum bt_bap_ep_state state = bap_stream->ep->state;
 
 		zassert_equal(state, BT_BAP_EP_STATE_STREAMING,
 			      "[%zu]: Stream %p unexpected state: %d", i, bap_stream, state);
@@ -512,7 +512,7 @@ static ZTEST_F(cap_initiator_test_unicast_start, test_initiator_unicast_start_st
 
 	for (size_t i = 0U; i < ARRAY_SIZE(stream_params); i++) {
 		const struct bt_bap_stream *bap_stream = &fixture->cap_streams[i].bap_stream;
-		const enum bt_bap_ep_state state = bap_stream->ep->status.state;
+		const enum bt_bap_ep_state state = bap_stream->ep->state;
 
 		zassert_equal(state, BT_BAP_EP_STATE_STREAMING,
 			      "[%zu]: Stream %p unexpected state: %d", i, bap_stream, state);
@@ -549,7 +549,7 @@ static ZTEST_F(cap_initiator_test_unicast_start, test_initiator_unicast_start_st
 
 	for (size_t i = 0U; i < ARRAY_SIZE(stream_params); i++) {
 		const struct bt_bap_stream *bap_stream = &fixture->cap_streams[i].bap_stream;
-		const enum bt_bap_ep_state state = bap_stream->ep->status.state;
+		const enum bt_bap_ep_state state = bap_stream->ep->state;
 
 		zassert_equal(state, BT_BAP_EP_STATE_STREAMING,
 			      "[%zu]: Stream %p unexpected state: %d", i, bap_stream, state);
