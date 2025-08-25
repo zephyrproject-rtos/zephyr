@@ -96,8 +96,7 @@ config USBD_MSG_WORK_DELAY
 	  yet ready to publish the message. The delay unit is milliseconds.
 
 config USBD_HWINFO_DEVID_LENGTH
-	int "The length of the device ID requested from HWINFO in bytes"
-	depends on HWINFO
+	int "The length of the device ID requested from HWINFO in bytes" if HWINFO
 	range 8 128
 	default 16
 	help
