@@ -184,49 +184,41 @@ int slcan_serial_process(uint8_t *buf, size_t size)
 			LOG_INF("CAN already stopped");
 		}
 		break;
-	case 'r': /* Transmit a standard RTR (11bit) CAN frame */
-	case 't': /* Transmit a standard (11bit) CAN frame */
+
+	/* Transmitting frames or RTRs to the bus */
+	case 't':
+	case 'T':
+	case 'r':
+	case 'R':
 		if (slcan.can_open) {
-			uint8_t can_id[2];
-
-			buf[0] = '0'; /* add leading 0 to 3-digit ID for proper conversion */
-			hex2bin(&buf[0], 4, can_id, 2);
-
 			struct can_frame frame = {
-				.id = sys_get_be16(can_id),
-				.flags = 0,
+				.flags = (cmd == 'r' || cmd == 'R') ? CAN_FRAME_RTR : 0,
 			};
 
-			if (cmd == 'r') {
-				frame.flags |= CAN_FRAME_RTR;
+			if (cmd == 'R' || cmd == 'T') {
+				uint8_t can_id[4];
+
+				hex2bin(&buf[1], 8, can_id, 4);
+				frame.id = sys_get_be32(can_id);
+				frame.flags |= CAN_FRAME_IDE;
+
+				frame.dlc = buf[9] - '0';
+				hex2bin(&buf[10], frame.dlc * 2, frame.data, frame.dlc);
+			} else {
+				uint8_t can_id[2];
+
+				buf[0] = '0'; /* add leading 0 to 3-digit ID for proper conversion */
+				hex2bin(&buf[0], 4, can_id, 2);
+				frame.id = sys_get_be16(can_id);
+
+				frame.dlc = buf[4] - '0';
+				hex2bin(&buf[5], frame.dlc * 2, frame.data, frame.dlc);
 			}
 
-			frame.dlc = buf[4] - '0';
-			hex2bin(&buf[5], frame.dlc * 2, frame.data, frame.dlc);
-
-			err = can_send(can_dev, &frame, K_MSEC(10), slcan_can_tx_cb, NULL);
-		} else {
-			err = -ENETDOWN;
-		}
-		break;
-	case 'R': /* Transmit an extended RTR (29bit) CAN frame */
-	case 'T': /* Transmit an extended (29bit) CAN frame */
-		if (slcan.can_open) {
-			uint8_t can_id[4];
-
-			hex2bin(&buf[1], 8, can_id, 4);
-
-			struct can_frame frame = {
-				.id = sys_get_be32(can_id),
-				.flags = CAN_FRAME_IDE,
-			};
-
-			if (cmd == 'R') {
-				frame.flags |= CAN_FRAME_RTR;
-			}
-
-			frame.dlc = buf[9] - '0';
-			hex2bin(&buf[10], frame.dlc * 2, frame.data, frame.dlc);
+			LOG_DBG("Sending CAN message with ID 0x%X, RTR %d, %d bytes: %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X",
+				frame.id, frame.flags & CAN_FRAME_RTR, frame.dlc,
+				frame.data[0], frame.data[1], frame.data[2], frame.data[3],
+				frame.data[4], frame.data[5], frame.data[6], frame.data[7]);
 
 			err = can_send(can_dev, &frame, K_MSEC(10), slcan_can_tx_cb, NULL);
 		} else {
