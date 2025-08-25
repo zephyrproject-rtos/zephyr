@@ -190,8 +190,6 @@ struct bt_cap_handover_proc_param {
 			/* Set type */
 			enum bt_cap_set_type type;
 
-			/* The SID of the ext_adv */
-			uint8_t sid;
 			/* The PA interval of the ext_adv */
 			uint16_t pa_interval;
 			/* The broadcast ID the broadcast source will use */

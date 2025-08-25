@@ -659,7 +659,6 @@ static void handover_unicast_to_broadcast(struct bt_cap_unicast_group *unicast_g
 	param.unicast_group = unicast_group;
 	param.broadcast_create_param = &create_param;
 	param.ext_adv = ext_adv;
-	param.sid = 0x00;
 	param.pa_interval = BT_BAP_PA_INTERVAL_UNKNOWN;
 	param.broadcast_id = 0x123456;
 
