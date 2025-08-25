@@ -11,11 +11,12 @@
 extern "C" {
 #endif
 
-#ifdef CONFIG_BOARD_QEMU_CORTEX_M3
+#define DT_DRV_COMPAT fakedriver
 
-#define TEST_IRQ_NUM  42
-#define TEST_IRQ_PRIO 1
-
+#if DT_INST_NODE_HAS_PROP(0, interrupts)
+/* Platforms with specific needs can provide IRQn and priority via DT */
+#define TEST_IRQ_NUM	DT_INST_IRQN(0)
+#define TEST_IRQ_PRIO	DT_INST_IRQ(0, priority)
 #elif defined(CONFIG_GIC)
 /*
  * For the platforms that use the ARM GIC, use the SGI (software generated
@@ -23,7 +24,6 @@ extern "C" {
  */
 #define TEST_IRQ_NUM  14
 #define TEST_IRQ_PRIO IRQ_DEFAULT_PRIORITY
-
 #else
 /* For all the other platforms, use the last available IRQ line for testing. */
 #define TEST_IRQ_NUM  (CONFIG_NUM_IRQS - 1)
