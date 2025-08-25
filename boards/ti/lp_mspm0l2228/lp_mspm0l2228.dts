@@ -83,3 +83,9 @@
 	pinctrl-0 = <&uart0_tx_pa10 &uart0_rx_pa11>;
 	pinctrl-names = "default";
 };
+
+&i2c0 {
+	pinctrl-0 = <&i2c1_scl_pa1 &i2c1_sda_pa0>;
+	pinctrl-names = "default";
+	status = "okay";
+};
