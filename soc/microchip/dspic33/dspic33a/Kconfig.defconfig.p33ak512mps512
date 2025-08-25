@@ -1,0 +1,37 @@
+# Copyright (c) 2025, Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_P33AK512MPS512
+
+config SRAM_SIZE
+	default $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_SRAM),0,K)
+
+config SRAM_BASE_ADDRESS
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_SRAM))
+
+config FLASH_SIZE
+	default $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_FLASH),0,K)
+
+config FLASH_BASE_ADDRESS
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))
+
+config MAIN_STACK_SIZE
+	default 128
+
+config IDLE_STACK_SIZE
+	default 512
+
+config MINIMAL_LIBC_SUPPORTED
+	bool
+	default n
+
+config NEWLIB_LIBC_SUPPORTED
+	bool
+	default n
+
+# Picolibc with C++ support in Zephyr SDK is handled by Zephyr SDK's own Kconfig.
+config PICOLIBC_SUPPORTED
+	bool
+	default n
+
+endif # SOC_P33AK512MPS512

@@ -948,7 +948,7 @@ FUNC_NORETURN void k_thread_user_mode_enter(k_thread_entry_t entry,
 }
 
 #if defined(CONFIG_INIT_STACKS) && defined(CONFIG_THREAD_STACK_INFO)
-#ifdef CONFIG_STACK_GROWS_UP
+#if defined(CONFIG_STACK_GROWS_UP) && !defined(CONFIG_DSPIC)
 #error "Unsupported configuration for stack analysis"
 #endif /* CONFIG_STACK_GROWS_UP */
 

@@ -19,13 +19,13 @@
 
 #define ARCH_STACK_PTR_ALIGN 4
 
-#define IRQ_KEY_ILR_IRQ_MASK 0x7
-
-#define DSPIC_STATUS_DEFAULT 0
+#define STATUS_CTX_MASK      0x00070000
+#define IRQ_KEY_ILR_IRQ_MASK 0x7u
 #define DSPIC_PRIORITY_BITS  3u
 #define DSPIC_PRIORITY_WIDTH DSPIC_PRIORITY_BITS + 1u
 #define DSPIC_IRQ_PER_REG    8u
 #define DSPIC_PRIORITY_MASK  ((1u << DSPIC_PRIORITY_BITS) - 1u)
+
 #ifndef _ASMLANGUAGE
 #include <xc.h>
 #ifdef __cplusplus
@@ -36,6 +36,8 @@ void arch_irq_enable(unsigned int irq);
 void arch_irq_disable(unsigned int irq);
 int arch_irq_is_enabled(unsigned int irq);
 void z_irq_spurious(const void *unused);
+bool arch_dspic_irq_isset(unsigned int irq);
+void z_dspic_enter_irq(int irq);
 
 /* dsPIC has no MMU, so device_map() is replaced with a direct assignment */
 #define device_map(virt, phys, size, flags) *(virt) = (phys)
@@ -79,27 +81,31 @@ static ALWAYS_INLINE void z_dspic_irq_priority_set(unsigned int irq, unsigned in
 
 static ALWAYS_INLINE void arch_irq_unlock(unsigned int key)
 {
-	__builtin_write_DISICTL(key & IRQ_KEY_ILR_IRQ_MASK);
-	__builtin_enable_interrupts();
+	if (key) {
+		__builtin_enable_interrupts();
+	}
 }
 
 static ALWAYS_INLINE bool arch_irq_unlocked(unsigned int key)
 {
-	return ((key & IRQ_KEY_ILR_IRQ_MASK) == IRQ_KEY_ILR_IRQ_MASK) ? false : true;
+	return key;
 }
 
 static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 {
 	volatile unsigned int key;
 
-	key = __builtin_write_DISICTL(IRQ_KEY_ILR_IRQ_MASK);
+	key = INTCON1bits.GIE;
 	__builtin_disable_interrupts();
 	return key;
 }
 
 static ALWAYS_INLINE bool arch_is_in_isr(void)
 {
-	return ((INTTREGbits.VECNUM) ? (true) : (false));
+	uint32_t status_reg;
+
+	__asm__ volatile("mov.l sr, %0" : "=r"(status_reg)::);
+	return ((status_reg & STATUS_CTX_MASK) ? (true) : (false));
 }
 
 static ALWAYS_INLINE void arch_nop(void)

@@ -12,4 +12,3 @@ config SOC_SERIES_DSPIC33A
 	select GEN_IRQ_VECTOR_TABLE
 	select GEN_SW_ISR_TABLE
 	select HAS_PM
-	select PM

@@ -3,7 +3,6 @@ family:
   series:
   - name: dspic33a
     socs:
+    - name: p33ak512mps512
     - name: p33ak128mc106
     - name: p33ak256mc506
-      cpuclusters:
-      - name: cpu0

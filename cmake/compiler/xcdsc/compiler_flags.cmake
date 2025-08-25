@@ -19,10 +19,13 @@ set_compiler_property(PROPERTY linker_script -Wl,-T)
 set_compiler_property(PROPERTY save_temps -save-temps=obj)
 # Smart I/O conversion for format strings (safe printf optimizations)
 list(APPEND TOOLCHAIN_C_FLAGS -msmart-io=1)
+
 # Disable SFR access warnings
 list(APPEND TOOLCHAIN_C_FLAGS -msfr-warn=off)
 # Disable instruction scheduling (for stability)
 list(APPEND TOOLCHAIN_C_FLAGS -fno-schedule-insns -fno-schedule-insns2)
 list(APPEND TOOLCHAIN_C_FLAGS -fno-omit-frame-pointer)
+# list(APPEND TOOLCHAIN_C_FLAGS  -mdfp="${DFP_ROOT}/xc16")
+# list(APPEND TOOLCHAIN_ASM_FLAGS  -mdfp="${DFP_ROOT}/xc16")
 # assembler compiler flags for imacros. The specific header must be appended by user.
 set_property(TARGET asm PROPERTY imacros -imacros)

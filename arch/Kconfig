@@ -179,8 +179,6 @@ config DSPIC
 	select STACK_SENTINAL
 	select ATOMIC_OPERATIONS_C
 	select ARCH_HAS_VECTOR_TABLE_RELOCATION
-	select CPU_HAS_ICACHE
-	select CACHE_MANAGEMENT
 	select TICKLESS_CAPABLE
 	help
 	  dspic architecture

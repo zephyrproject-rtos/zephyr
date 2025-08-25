@@ -11,6 +11,11 @@ if(CONFIG_BOARD_DSPIC33A_CURIOSITY_P33AK128MC106)
     board_runner_args(ipecmd "--device=33AK128MC106" "--flash-tool=PKOB4")
 endif()
 
+if(CONFIG_BOARD_DSPIC33A_CURIOSITY_P33AK512MPS512)
+    message(STATUS "device selected")
+    board_runner_args(ipecmd "--device=33AK512MPS512" "--flash-tool=PKOB4")
+endif()
+
 board_finalize_runner_args(ipecmd)
 
 set_property(GLOBAL PROPERTY BOARD_SUPPORTS_DEBUGGER TRUE)

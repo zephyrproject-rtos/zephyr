@@ -18,7 +18,6 @@ void z_irq_spurious(const void *unused)
 	ARG_UNUSED(unused);
 	while (1) {
 	}
-	return;
 }
 
 void arch_irq_enable(unsigned int irq)
@@ -31,8 +30,6 @@ void arch_irq_enable(unsigned int irq)
 
 	/* Enable the interrupt by setting it's bit in interrupt enable register*/
 	*int_enable_reg[reg_index] |= (uint32_t)(1u << bit_pos);
-
-	return;
 }
 
 int arch_irq_is_enabled(unsigned int irq)
@@ -56,8 +53,34 @@ void arch_irq_disable(unsigned int irq)
 
 	/* Disable the interrupt by clearing it's bit in interrupt enable register*/
 	*int_enable_reg[reg_index] &= (uint32_t)(~(1u << bit_pos));
+}
 
-	return;
+bool arch_dspic_irq_isset(unsigned int irq)
+{
+	volatile uint32_t *int_ifs_reg[] = {&IFS0, &IFS1, &IFS2, &IFS3, &IFS4,
+					    &IFS5, &IFS6, &IFS7, &IFS8};
+	volatile int ret_ifs = false;
+	unsigned int reg_index = irq / (sizeof(uint32_t) << 3);
+	unsigned int bit_pos = irq % (sizeof(uint32_t) << 3);
+
+	if ((bool)(void *)(*int_ifs_reg[reg_index] & (uint32_t)(1U << bit_pos))) {
+		ret_ifs = true;
+	}
+	return ret_ifs;
+}
+
+
+
+void z_dspic_enter_irq(int irq)
+{
+	volatile uint32_t *int_ifs_reg[] = {&IFS0, &IFS1, &IFS2, &IFS3, &IFS4,
+					    &IFS5, &IFS6, &IFS7, &IFS8};
+
+	unsigned int reg_index = (unsigned int)irq / (sizeof(uint32_t) << 3);
+	unsigned int bit_pos = (unsigned int)irq % (sizeof(uint32_t) << 3);
+
+	/* Enable the interrupt by setting it's bit in interrupt enable register*/
+	*int_ifs_reg[reg_index] |= (uint32_t)(1u << bit_pos);
 }
 
 #ifdef __cplusplus

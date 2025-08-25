@@ -20,6 +20,7 @@ __start:
     ;; Initialize stack pointer and limit
     mov.l  #__SP_init, w15        ; Stack pointer (W15)
     mov.l  #__SPLIM_init, w14     ; Stack limit (W14)
+    mov.l  w14, _SPLIM
 
     ;; Data initialization
     mov.l  #__dinit_tbloffset, w0

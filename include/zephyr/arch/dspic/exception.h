@@ -15,6 +15,7 @@ extern "C" {
 #endif
 
 struct arch_esf {
+	uint32_t SR;
 	uint32_t PC;     /* Program counter*/
 	uint32_t RCOUNT; /* repeat count register*/
 	uint32_t FSR;    /* Floating point status register */
@@ -27,7 +28,6 @@ struct arch_esf {
 	uint32_t W5;     /* working register W5 */
 	uint32_t W6;     /* working register W6 */
 	uint32_t W7;     /* working register W7 */
-	uint32_t W8;     /* working register W8 */
 	uint32_t F0;     /* Floating point register F0 */
 	uint32_t F1;     /* Floating point register F1 */
 	uint32_t F2;     /* Floating point register F2 */

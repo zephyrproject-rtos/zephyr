@@ -1,5 +1,5 @@
 # Usage of the objcopy utility (aliased as elfconvert) for converting ELF binaries into other formats,such as hex, binary, etc.
-set_property(TARGET bintools PROPERTY elfconvert_command ${CMAKE_OBJCOPY})
+set_property(TARGET bintools PROPERTY elfconvert_command ${CMAKE_OBJCOPY} -mdfp="${DFP_ROOT}/xc16")
 # List of format the tool supports for converting, for example,
 # GNU tools uses objectcopy, which supports the following: ihex, srec, binary
 set_property(TARGET bintools PROPERTY elfconvert_formats ihex srec binary)
