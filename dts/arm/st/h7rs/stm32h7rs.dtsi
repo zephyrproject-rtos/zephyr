@@ -908,6 +908,26 @@
 			resets = <&rctl STM32_RESET(APB5, 1)>;
 			status = "disabled";
 		};
+
+		sdmmc1: sdmmc@52007000 {
+			compatible = "st,stm32-sdmmc";
+			reg = <0x52007000 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB5, 8)>,
+				 <&rcc STM32_SRC_PLL2_S SDMMC_SEL(0)>;
+			resets = <&rctl STM32_RESET(AHB5, 8)>;
+			interrupts = <108 0>;
+			status = "disabled";
+		};
+
+		sdmmc2: sdmmc@48002400 {
+			compatible = "st,stm32-sdmmc";
+			reg = <0x48002400 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB2, 9)>,
+				 <&rcc STM32_SRC_PLL2_S SDMMC_SEL(0)>;
+			resets = <&rctl STM32_RESET(AHB2, 9)>;
+			interrupts = <109 0>;
+			status = "disabled";
+		};
 	};
 
 	otgfs_phy: otgfs_phy {
