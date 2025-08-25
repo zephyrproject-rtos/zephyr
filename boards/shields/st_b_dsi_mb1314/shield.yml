@@ -1,0 +1,6 @@
+shield:
+  name: st_b_dsi_mb1314
+  full_name: ST B-DSI-MB1314
+  vendor: st
+  supported_features:
+    - display
