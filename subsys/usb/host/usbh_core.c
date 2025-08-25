@@ -10,9 +10,11 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/init.h>
 #include <zephyr/sys/iterable_sections.h>
+#include <zephyr/usb/usbh.h>
 
 #include "usbh_internal.h"
 #include "usbh_device.h"
+#include "usbh_class.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(uhs, CONFIG_USBH_LOG_LEVEL);
@@ -43,7 +45,7 @@ static int usbh_event_carrier(const struct device *dev,
 	return err;
 }
 
-static void dev_connected_handler(struct usbh_contex *const ctx,
+static void dev_connected_handler(struct usbh_context *const ctx,
 				  const struct uhc_event *const event)
 {
 
@@ -73,7 +75,7 @@ static void dev_connected_handler(struct usbh_contex *const ctx,
 	}
 }
 
-static void dev_removed_handler(struct usbh_contex *const ctx)
+static void dev_removed_handler(struct usbh_context *const ctx)
 {
 	if (ctx->root != NULL) {
 		usbh_device_free(ctx->root);
@@ -84,7 +86,7 @@ static void dev_removed_handler(struct usbh_contex *const ctx)
 	}
 }
 
-static int discard_ep_request(struct usbh_contex *const ctx,
+static int discard_ep_request(struct usbh_context *const ctx,
 			      struct uhc_transfer *const xfer)
 {
 	const struct device *dev = ctx->dev;
@@ -97,7 +99,7 @@ static int discard_ep_request(struct usbh_contex *const ctx,
 	return uhc_xfer_free(dev, xfer);
 }
 
-static ALWAYS_INLINE int usbh_event_handler(struct usbh_contex *const ctx,
+static ALWAYS_INLINE int usbh_event_handler(struct usbh_context *const ctx,
 					    struct uhc_event *const event)
 {
 	int ret = 0;
@@ -141,7 +143,7 @@ static void usbh_bus_thread(void *p1, void *p2, void *p3)
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
 
-	struct usbh_contex *uhs_ctx;
+	struct usbh_context *uhs_ctx;
 	struct uhc_event event;
 
 	while (true) {
@@ -158,7 +160,7 @@ static void usbh_thread(void *p1, void *p2, void *p3)
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
 
-	struct usbh_contex *uhs_ctx;
+	struct usbh_context *uhs_ctx;
 	struct uhc_event event;
 	usbh_udev_cb_t cb;
 	int ret;
@@ -182,7 +184,7 @@ static void usbh_thread(void *p1, void *p2, void *p3)
 	}
 }
 
-int usbh_init_device_intl(struct usbh_contex *const uhs_ctx)
+int usbh_init_device_intl(struct usbh_context *const uhs_ctx)
 {
 	int ret;
 
@@ -193,13 +195,18 @@ int usbh_init_device_intl(struct usbh_contex *const uhs_ctx)
 	}
 
 	sys_dlist_init(&uhs_ctx->udevs);
+	sys_slist_init(&uhs_ctx->class_list);
 
-	STRUCT_SECTION_FOREACH(usbh_class_data, cdata) {
-		/*
-		 * For now, we have not implemented any class drivers,
-		 * so just keep it as placeholder.
-		 */
-		break;
+	ret = usbh_register_all_classes(uhs_ctx);
+	if (ret != 0) {
+		LOG_ERR("Failed to auto-register class instances");
+		return ret;
+	}
+
+	ret = usbh_init_registered_classes(uhs_ctx);
+	if (ret != 0) {
+		LOG_ERR("Failed to initialize all registered class instances");
+		return ret;
 	}
 
 	return 0;
