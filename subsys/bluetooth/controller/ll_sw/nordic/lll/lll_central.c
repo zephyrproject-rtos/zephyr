@@ -247,12 +247,21 @@ static int prepare_cb(struct lll_prepare_param *p)
 	overhead = lll_preempt_calc(ull, (TICKER_ID_CONN_BASE + lll->handle), ticks_at_event);
 	/* check if preempt to start has changed */
 	if (overhead) {
-		LL_ASSERT_OVERHEAD(overhead);
+		int err;
+
+		if (p->defer == 1U) {
+			/* We accept the overlap as previous event elected to continue */
+			err = 0;
+		} else {
+			LL_ASSERT_OVERHEAD(overhead);
+
+			err = -ECANCELED;
+		}
 
 		radio_isr_set(lll_isr_abort, lll);
 		radio_disable();
 
-		return -ECANCELED;
+		return err;
 	}
 #endif /* !CONFIG_BT_CTLR_XTAL_ADVANCED */
 
