@@ -37,13 +37,6 @@ config 2ND_LEVEL_INTERRUPTS
 config DYNAMIC_INTERRUPTS
 	default y
 
-if LOG
-
-config LOG_BACKEND_ADSP
-	default y
-
-endif # LOG
-
 if GDBSTUB
 
 # GDB expects 420 byte G-packet, so double for hexadecimal digits.
