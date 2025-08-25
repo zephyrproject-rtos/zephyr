@@ -1,0 +1,60 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	/*
+	 * Allocating whole openamp region as reserved memory
+	 * to save MPU entries
+	 */
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		openamp_shm: memory-region@62F00000 {
+			compatible = "zephyr,memory-region";
+			reg = <0x62F00000 0x900000>;
+			zephyr,memory-region = "openamp_memory";
+			zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_IO) )>;
+		};
+	};
+
+	mhu1_shm: memory@62F01008 {
+		compatible = "mmio-sram";
+		reg = <0x62F01008 0x8>;
+	};
+
+	mhu3_shm: memory@62F01018 {
+		compatible = "mmio-sram";
+		reg = <0x62F01018 0x8>;
+	};
+
+	mhu4_shm: memory@62F01020 {
+		compatible = "mmio-sram";
+		reg = <0x62F01020 0x8>;
+	};
+
+	mhu5_shm: memory@62F01028 {
+		compatible = "mmio-sram";
+		reg = <0x62F01028 0x8>;
+	};
+
+	mbox-consumer {
+		compatible = "vnd,mbox-consumer";
+		mboxes = <&mbox1 1>, <&mbox1 4>, <&mbox3 0>, <&mbox3 3>;
+		mbox-names = "remote_valid", "remote_incorrect", "local_valid", "local_incorrect";
+	};
+
+};
+
+&mbox1 {
+	shared-memory = <&mhu1_shm>;
+	status = "okay";
+};
+
+&mbox3 {
+	shared-memory = <&mhu3_shm>;
+	status = "okay";
+};
