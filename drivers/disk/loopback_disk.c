@@ -94,6 +94,34 @@ static int loopback_disk_access_write(struct disk_info *disk, const uint8_t *dat
 
 	return 0;
 }
+static int loopback_disk_access_erase(struct disk_info *disk, uint32_t start_sector,
+				      uint32_t num_sector)
+{
+	const uint8_t erase_bytes[CONFIG_LOOPBACK_DISK_SECTOR_SIZE] = { 0x00 };
+	struct loopback_disk_access *ctx = get_ctx(disk);
+
+	if (start_sector + num_sector > ctx->num_sectors) {
+		LOG_WRN("Tried to erase past end of backing file");
+		return -EINVAL;
+	}
+
+	int ret = fs_seek(&ctx->file, start_sector * LOOPBACK_SECTOR_SIZE, FS_SEEK_SET);
+
+	if (ret != 0) {
+		LOG_ERR("Failed to seek backing file: %d", ret);
+		return ret;
+	}
+
+	for (int i = 0; i < num_sector; i++) {
+		ret = fs_write(&ctx->file, erase_bytes, LOOPBACK_SECTOR_SIZE);
+		if (ret < 0) {
+			LOG_ERR("Failed to erase backing file: %d", ret);
+			return ret;
+		}
+	}
+
+	return 0;
+}
 static int loopback_disk_access_ioctl(struct disk_info *disk, uint8_t cmd, void *buff)
 {
 	struct loopback_disk_access *ctx = get_ctx(disk);
@@ -126,6 +154,7 @@ static const struct disk_operations loopback_disk_operations = {
 	.status = loopback_disk_access_status,
 	.read = loopback_disk_access_read,
 	.write = loopback_disk_access_write,
+	.erase = loopback_disk_access_erase,
 	.ioctl = loopback_disk_access_ioctl,
 };
 
