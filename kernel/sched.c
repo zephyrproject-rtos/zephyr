@@ -1117,13 +1117,11 @@ static int32_t z_tick_sleep(k_timeout_t timeout)
 	}
 
 	/* We require a 32 bit unsigned subtraction to care a wraparound */
-	uint32_t left_ticks = expected_wakeup_ticks - sys_clock_tick_get_32();
+	uint32_t now = sys_clock_tick_get_32();
+	int32_t remaining = (int32_t)(expected_wakeup_ticks - now);
 
-	/* To handle a negative value correctly, once type-cast it to signed 32 bit */
-	k_ticks_t ticks = (k_ticks_t)(int32_t)left_ticks;
-
-	if (ticks > 0) {
-		return ticks;
+	if (remaining > 0) {
+		return (k_ticks_t)remaining;
 	}
 
 	return 0;
