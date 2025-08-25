@@ -66,6 +66,21 @@ static void eth_nxp_enet_qos_phy_cb(const struct device *phy,
 	}
 
 	LOG_INF("Link is %s", state->is_up ? "up" : "down");
+
+	/* handle link speed in MAC configuration register */
+	if (state->is_up) {
+		const struct nxp_enet_qos_mac_config *config = dev->config;
+		struct nxp_enet_qos_config *module_cfg = ENET_QOS_MODULE_CFG(config->enet_dev);
+		enet_qos_t *base = module_cfg->base;
+
+		if (PHY_LINK_IS_SPEED_10M(state->speed)) {
+			LOG_DBG("Link Speed reduced to 10MBit");
+			base->MAC_CONFIGURATION &= ~ENET_QOS_REG_PREP(MAC_CONFIGURATION, FES, 0b1);
+		} else {
+			LOG_DBG("Link Speed 100MBit or higher");
+			base->MAC_CONFIGURATION |= ENET_QOS_REG_PREP(MAC_CONFIGURATION, FES, 0b1);
+		}
+	}
 }
 
 static void eth_nxp_enet_qos_iface_init(struct net_if *iface)
@@ -502,8 +517,8 @@ static inline void enet_qos_mtl_config_init(enet_qos_t *base)
 		ENET_QOS_REG_PREP(MTL_QUEUE_MTL_RXQX_OP_MODE, FUP, 0b1);
 }
 
-static inline void enet_qos_mac_config_init(enet_qos_t *base,
-				struct nxp_enet_qos_mac_data *data, uint32_t clk_rate)
+static inline void enet_qos_mac_config_init(enet_qos_t *base, struct nxp_enet_qos_mac_data *data,
+					    uint32_t clk_rate)
 {
 	/* Set MAC address */
 	base->MAC_ADDRESS0_HIGH =
@@ -532,7 +547,7 @@ static inline void enet_qos_mac_config_init(enet_qos_t *base,
 		ENET_QOS_REG_PREP(MAC_CONFIGURATION, PS, 0b1) |
 		/* Full duplex mode */
 		ENET_QOS_REG_PREP(MAC_CONFIGURATION, DM, 0b1) |
-		/* 100 Mbps mode */
+		/* 100 Mbps mode, adjust link speed in phy callback if needed */
 		ENET_QOS_REG_PREP(MAC_CONFIGURATION, FES, 0b1) |
 		/* Don't talk unless no one else is talking */
 		ENET_QOS_REG_PREP(MAC_CONFIGURATION, ECRSFD, 0b1);
