@@ -454,17 +454,20 @@ int lorawan_device_time_get(uint32_t *gps_time);
  */
 int lorawan_request_link_check(bool force_request);
 
-#ifdef CONFIG_LORAWAN_APP_CLOCK_SYNC
+#if defined(CONFIG_LORAWAN_APP_CLOCK_SYNC) || defined(__DOXYGEN__)
 
 /**
  * @brief Run Application Layer Clock Synchronization service
  *
  * This service sends out its current time in a regular interval (configurable
- * via Kconfig) and receives a correction offset from the application server if
- * the clock deviation is considered too large.
+ * via Kconfig, using @kconfig{CONFIG_LORAWAN_APP_CLOCK_SYNC_PERIODICITY}) and
+ * receives a correction offset from the application server if the clock
+ * deviation is considered too large.
  *
  * Clock synchronization is required for firmware upgrades over multicast
  * sessions, but can also be used independent of a FUOTA process.
+ *
+ * @kconfig_dep{CONFIG_LORAWAN_APP_CLOCK_SYNC}
  *
  * @return 0 if successful, negative errno otherwise.
  */
@@ -478,6 +481,8 @@ int lorawan_clock_sync_run(void);
  * The GPS epoch started on 1980-01-06T00:00:00Z, but has since diverged
  * from UTC, as it does not consider corrections like leap seconds.
  *
+ * @kconfig_dep{CONFIG_LORAWAN_APP_CLOCK_SYNC}
+ *
  * @param gps_time Synchronized time in GPS epoch format truncated to 32-bit.
  *
  * @return 0 if successful, -EAGAIN if the clock is not yet synchronized.
@@ -486,7 +491,7 @@ int lorawan_clock_sync_get(uint32_t *gps_time);
 
 #endif /* CONFIG_LORAWAN_APP_CLOCK_SYNC */
 
-#ifdef CONFIG_LORAWAN_FRAG_TRANSPORT
+#if defined(CONFIG_LORAWAN_FRAG_TRANSPORT) || defined(__DOXYGEN__)
 
 /**
  * @brief Register a handle descriptor callback function.
@@ -495,7 +500,9 @@ int lorawan_clock_sync_get(uint32_t *gps_time);
  * whenever a FragSessionSetupReq is received and Descriptor field should be
  * handled.
  *
- * @param transport_descriptor_cb Callback for notification.
+ * @kconfig_dep{CONFIG_LORAWAN_FRAG_TRANSPORT}
+ *
+ * @param cb Callback for notification.
  */
 void lorawan_frag_transport_register_descriptor_callback(transport_descriptor_cb cb);
 
@@ -506,6 +513,8 @@ void lorawan_frag_transport_register_descriptor_callback(transport_descriptor_cb
  * stores them in the image-1 flash partition.
  *
  * After all fragments have been received, the provided callback is invoked.
+ *
+ * @kconfig_dep{CONFIG_LORAWAN_FRAG_TRANSPORT}
  *
  * @param transport_finished_cb Callback for notification of finished data transfer.
  *
