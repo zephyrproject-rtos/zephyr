@@ -688,6 +688,20 @@ char *utf8_trunc(char *utf8_str);
  */
 char *utf8_lcpy(char *dst, const char *src, size_t n);
 
+/**
+ * @brief Counts the characters in a UTF-8 encoded string @p s
+ *
+ * Counts the number of UTF-8 characters (code points) in a null-terminated string.
+ * This function steps through each UTF-8 sequence by checking leading byte patterns.
+ * It does not fully validate UTF-8 correctness, only counts characters.
+ *
+ * @param s The input string
+ *
+ * @return Number of UTF-8 characters in @p s on success or (negative) error code
+ *  otherwise.
+ */
+int utf8_count_chars(const char *s);
+
 #define __z_log2d(x) (32 - __builtin_clz(x) - 1)
 #define __z_log2q(x) (64 - __builtin_clzll(x) - 1)
 #define __z_log2(x) (sizeof(__typeof__(x)) > 4 ? __z_log2q(x) : __z_log2d(x))
