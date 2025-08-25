@@ -43,9 +43,16 @@ SAMPLE_GTEST_START = (
 SAMPLE_GTEST_FMT = (
     "[00:00:00.000,000] [0m<inf> label:  [{state}] {suite}.{test} (0ms)[0m"
 )
+SAMPLE_GTEST_PARAMETRIZED_FMT = (
+    "[00:00:00.000,000] [0m<inf> label:  [{state}] {suite}/{test}/{parametrized_idx}.{parametrized_test_name} (0ms)[0m"
+        )
 SAMPLE_GTEST_FMT_FAIL_WITH_PARAM = (
     "[00:00:00.000,000] [0m<inf> label:  "
     + "[{state}] {suite}.{test}, where GetParam() = 8-byte object <0B-00 00-00 00-9A 80-F7> (0 ms total)[0m"
+)
+SAMPLE_GTEST_PARAMETRIZED_FMT_FAIL_WITH_PARAM = (
+    "[00:00:00.000,000] [0m<inf> label:  "
+    + "[{state}] {suite}/{test}/{parametrized_idx}.{parametrized_test_name}, where GetParam() = 8-byte object <0B-00 00-00 00-9A 80-F7> (0 ms total)[0m"
 )
 SAMPLE_GTEST_END = (
     "[00:00:00.000,000] [0m<inf> label:  [==========] Done running all tests.[0m"
@@ -849,7 +856,6 @@ def test_gtest_start_test_no_suites_detected(gtest):
     assert len(gtest.detected_suite_names) == 0
     assert gtest.status == TwisterStatus.NONE
 
-
 def test_gtest_start_test(gtest):
     process_logs(
         gtest,
@@ -866,6 +872,27 @@ def test_gtest_start_test(gtest):
     assert gtest.instance.get_case_by_name("id.suite_name.test_name") is not None
     assert (
         gtest.instance.get_case_by_name("id.suite_name.test_name").status
+        == TwisterStatus.STARTED
+    )
+
+def test_gtest_parametrized_start_test(gtest):
+    process_logs(
+        gtest,
+        [
+            SAMPLE_GTEST_START,
+            SAMPLE_GTEST_PARAMETRIZED_FMT.format(
+                state=GTEST_START_STATE, suite="suite_name", test="test_name",
+                parametrized_idx=0,
+                parametrized_test_name="parametrized_test_name",
+            ),
+        ],
+    )
+    assert gtest.status == TwisterStatus.NONE
+    assert len(gtest.detected_suite_names) == 1
+    assert gtest.detected_suite_names[0] == "suite_name"
+    assert gtest.instance.get_case_by_name("id.suite_name.test_name.0.parametrized_test_name") is not None
+    assert (
+        gtest.instance.get_case_by_name("id.suite_name.test_name.0.parametrized_test_name").status
         == TwisterStatus.STARTED
     )
 
@@ -895,6 +922,35 @@ def test_gtest_pass(gtest):
     )
 
 
+def test_gtest_parametrized_pass(gtest):
+    process_logs(
+        gtest,
+        [
+            SAMPLE_GTEST_START,
+            SAMPLE_GTEST_PARAMETRIZED_FMT.format(
+                state=GTEST_START_STATE, suite="suite_name", test="test_name",
+                parametrized_idx=0,
+                parametrized_test_name="parametrized_test_name",
+            ),
+            SAMPLE_GTEST_PARAMETRIZED_FMT.format(
+                state=GTEST_PASS_STATE, suite="suite_name", test="test_name",
+                parametrized_idx=0,
+                parametrized_test_name="parametrized_test_name",
+            ),
+        ],
+    )
+    assert gtest.status == TwisterStatus.NONE
+    assert len(gtest.detected_suite_names) == 1
+    assert gtest.detected_suite_names[0] == "suite_name"
+    assert (
+        gtest.instance.get_case_by_name("id.suite_name.test_name.0.parametrized_test_name") != TwisterStatus.NONE
+    )
+    assert (
+        gtest.instance.get_case_by_name("id.suite_name.test_name.0.parametrized_test_name").status
+        == TwisterStatus.PASS
+    )
+
+
 def test_gtest_failed(gtest):
     process_logs(
         gtest,
@@ -916,6 +972,34 @@ def test_gtest_failed(gtest):
     )
     assert (
         gtest.instance.get_case_by_name("id.suite_name.test_name").status
+        == TwisterStatus.FAIL
+    )
+
+def test_gtest_parametrized_failed(gtest):
+    process_logs(
+        gtest,
+        [
+            SAMPLE_GTEST_START,
+            SAMPLE_GTEST_PARAMETRIZED_FMT.format(
+                state=GTEST_START_STATE, suite="suite_name", test="test_name",
+                parametrized_idx=0,
+                parametrized_test_name="parametrized_test_name"
+            ),
+            SAMPLE_GTEST_PARAMETRIZED_FMT.format(
+                state=GTEST_FAIL_STATE, suite="suite_name", test="test_name",
+                parametrized_idx=0,
+                parametrized_test_name="parametrized_test_name",
+            ),
+        ],
+    )
+    assert gtest.status == TwisterStatus.NONE
+    assert len(gtest.detected_suite_names) == 1
+    assert gtest.detected_suite_names[0] == "suite_name"
+    assert (
+        gtest.instance.get_case_by_name("id.suite_name.test_name.0.parametrized_test_name") != TwisterStatus.NONE
+    )
+    assert (
+        gtest.instance.get_case_by_name("id.suite_name.test_name.0.parametrized_test_name").status
         == TwisterStatus.FAIL
     )
 
@@ -941,6 +1025,35 @@ def test_gtest_skipped(gtest):
     )
     assert (
         gtest.instance.get_case_by_name("id.suite_name.test_name").status
+        == TwisterStatus.SKIP
+    )
+
+
+def test_gtest_parametrized_skipped(gtest):
+    process_logs(
+        gtest,
+        [
+            SAMPLE_GTEST_START,
+            SAMPLE_GTEST_PARAMETRIZED_FMT.format(
+                state=GTEST_START_STATE, suite="suite_name", test="test_name",
+                parametrized_idx=0,
+                parametrized_test_name="parametrized_test_name",
+            ),
+            SAMPLE_GTEST_PARAMETRIZED_FMT.format(
+                state=GTEST_SKIP_STATE, suite="suite_name", test="test_name",
+                parametrized_idx=0,
+                parametrized_test_name="parametrized_test_name",
+            ),
+        ],
+    )
+    assert gtest.status == TwisterStatus.NONE
+    assert len(gtest.detected_suite_names) == 1
+    assert gtest.detected_suite_names[0] == "suite_name"
+    assert (
+        gtest.instance.get_case_by_name("id.suite_name.test_name.0.parametrized_test_name") != TwisterStatus.NONE
+    )
+    assert (
+        gtest.instance.get_case_by_name("id.suite_name.test_name.0.parametrized_test_name").status
         == TwisterStatus.SKIP
     )
 
@@ -971,6 +1084,36 @@ def test_gtest_all_pass(gtest):
     )
 
 
+def test_gtest_parametrized_all_pass(gtest):
+    process_logs(
+        gtest,
+        [
+            SAMPLE_GTEST_START,
+            SAMPLE_GTEST_PARAMETRIZED_FMT.format(
+                state=GTEST_START_STATE, suite="suite_name", test="test_name",
+                parametrized_idx=0,
+                parametrized_test_name="parametrized_test_name",
+            ),
+            SAMPLE_GTEST_PARAMETRIZED_FMT.format(
+                state=GTEST_PASS_STATE, suite="suite_name", test="test_name",
+                parametrized_idx=0,
+                parametrized_test_name="parametrized_test_name",
+            ),
+            SAMPLE_GTEST_END,
+        ],
+    )
+    assert gtest.status == TwisterStatus.PASS
+    assert len(gtest.detected_suite_names) == 1
+    assert gtest.detected_suite_names[0] == "suite_name"
+    assert (
+        gtest.instance.get_case_by_name("id.suite_name.test_name.0.parametrized_test_name") != TwisterStatus.NONE
+    )
+    assert (
+        gtest.instance.get_case_by_name("id.suite_name.test_name.0.parametrized_test_name").status
+        == TwisterStatus.PASS
+    )
+
+
 def test_gtest_all_pass_with_variant(gtest):
     process_logs(
         gtest,
@@ -992,6 +1135,31 @@ def test_gtest_all_pass_with_variant(gtest):
     assert gtest.instance.get_case_by_name("id.suite_name.test_name").status == "passed"
 
 
+def test_gtest_parametrized_all_pass_with_variant(gtest):
+    process_logs(
+        gtest,
+        [
+            SAMPLE_GTEST_START,
+            SAMPLE_GTEST_PARAMETRIZED_FMT.format(
+                state=GTEST_START_STATE, suite="suite_name", test="test_name",
+                parametrized_idx=0,
+                parametrized_test_name="parametrized_test_name",
+            ),
+            SAMPLE_GTEST_PARAMETRIZED_FMT.format(
+                state=GTEST_PASS_STATE, suite="suite_name", test="test_name",
+                parametrized_idx=0,
+                parametrized_test_name="parametrized_test_name",
+            ),
+            SAMPLE_GTEST_END_VARIANT,
+        ],
+    )
+    assert gtest.status == "passed"
+    assert len(gtest.detected_suite_names) == 1
+    assert gtest.detected_suite_names[0] == "suite_name"
+    assert gtest.instance.get_case_by_name("id.suite_name.test_name.0.parametrized_test_name") is not None
+    assert gtest.instance.get_case_by_name("id.suite_name.test_name.0.parametrized_test_name").status == "passed"
+
+
 def test_gtest_one_skipped(gtest):
     process_logs(
         gtest,
@@ -1009,6 +1177,7 @@ def test_gtest_one_skipped(gtest):
             SAMPLE_GTEST_FMT.format(
                 state=GTEST_SKIP_STATE, suite="suite_name", test="test_name1"
             ),
+
             SAMPLE_GTEST_END,
         ],
     )
@@ -1028,6 +1197,55 @@ def test_gtest_one_skipped(gtest):
     )
     assert (
         gtest.instance.get_case_by_name("id.suite_name.test_name1").status
+        == TwisterStatus.SKIP
+    )
+
+
+def test_gtest_parametrized_one_skipped(gtest):
+    process_logs(
+        gtest,
+        [
+            SAMPLE_GTEST_START,
+            SAMPLE_GTEST_PARAMETRIZED_FMT.format(
+                state=GTEST_START_STATE, suite="suite_name", test="test_name",
+                parametrized_idx=0,
+                parametrized_test_name="parametrized_test_name",
+                ),
+            SAMPLE_GTEST_PARAMETRIZED_FMT.format(
+                state=GTEST_PASS_STATE, suite="suite_name", test="test_name",
+                parametrized_idx=0,
+                parametrized_test_name="parametrized_test_name",
+                ),
+            SAMPLE_GTEST_PARAMETRIZED_FMT.format(
+                state=GTEST_START_STATE, suite="suite_name", test="test_name",
+                parametrized_idx=1,
+                parametrized_test_name="parametrized_test_name",
+                ),
+            SAMPLE_GTEST_PARAMETRIZED_FMT.format(
+                state=GTEST_SKIP_STATE, suite="suite_name", test="test_name",
+                parametrized_idx=1,
+                parametrized_test_name="parametrized_test_name",
+                ),
+            SAMPLE_GTEST_END,
+        ],
+    )
+    assert gtest.status == TwisterStatus.PASS
+    assert len(gtest.detected_suite_names) == 1
+    assert gtest.detected_suite_names[0] == "suite_name"
+    assert (
+        gtest.instance.get_case_by_name("id.suite_name.test_name.0.parametrized_test_name")
+        != TwisterStatus.NONE
+    )
+    assert (
+        gtest.instance.get_case_by_name("id.suite_name.test_name.0.parametrized_test_name").status
+        == TwisterStatus.PASS
+    )
+    assert (
+        gtest.instance.get_case_by_name("id.suite_name.test_name.1.parametrized_test_name")
+        != TwisterStatus.NONE
+    )
+    assert (
+        gtest.instance.get_case_by_name("id.suite_name.test_name.1.parametrized_test_name").status
         == TwisterStatus.SKIP
     )
 
@@ -1066,6 +1284,53 @@ def test_gtest_one_fail(gtest):
         == TwisterStatus.FAIL
     )
 
+def test_gtest_parametrized_one_fail(gtest):
+    process_logs(
+        gtest,
+        [
+            SAMPLE_GTEST_START,
+            SAMPLE_GTEST_PARAMETRIZED_FMT.format(
+                state=GTEST_START_STATE, suite="suite_name", test="test_name",
+                parametrized_idx=0,
+                parametrized_test_name="parametrized_test_name",
+                ),
+            SAMPLE_GTEST_PARAMETRIZED_FMT.format(
+                state=GTEST_PASS_STATE, suite="suite_name", test="test_name",
+                parametrized_idx=0,
+                parametrized_test_name="parametrized_test_name",
+                ),
+            SAMPLE_GTEST_PARAMETRIZED_FMT.format(
+                state=GTEST_START_STATE, suite="suite_name", test="test_name",
+                parametrized_idx=1,
+                parametrized_test_name="parametrized_test_name",
+                ),
+            SAMPLE_GTEST_PARAMETRIZED_FMT.format(
+                state=GTEST_FAIL_STATE, suite="suite_name", test="test_name",
+                parametrized_idx=1,
+                parametrized_test_name="parametrized_test_name",
+                ),
+            SAMPLE_GTEST_END,
+        ],
+    )
+    assert gtest.status == TwisterStatus.FAIL
+    assert len(gtest.detected_suite_names) == 1
+    assert gtest.detected_suite_names[0] == "suite_name"
+    assert (
+        gtest.instance.get_case_by_name("id.suite_name.test_name.0.parametrized_test_name")
+        != TwisterStatus.NONE
+    )
+    assert (
+        gtest.instance.get_case_by_name("id.suite_name.test_name.0.parametrized_test_name").status
+        == TwisterStatus.PASS
+    )
+    assert (
+        gtest.instance.get_case_by_name("id.suite_name.test_name.1.parametrized_test_name")
+        != TwisterStatus.NONE
+    )
+    assert (
+        gtest.instance.get_case_by_name("id.suite_name.test_name.1.parametrized_test_name").status
+        == TwisterStatus.FAIL
+    )
 
 def test_gtest_one_fail_with_variant(gtest):
     process_logs(
@@ -1094,6 +1359,43 @@ def test_gtest_one_fail_with_variant(gtest):
     assert gtest.instance.get_case_by_name("id.suite_name.test0").status == "passed"
     assert gtest.instance.get_case_by_name("id.suite_name.test1") is not None
     assert gtest.instance.get_case_by_name("id.suite_name.test1").status == "failed"
+
+
+def test_gtest_parametrized_one_fail_with_variant(gtest):
+    process_logs(
+        gtest,
+        [
+            SAMPLE_GTEST_START,
+            SAMPLE_GTEST_PARAMETRIZED_FMT.format(
+                state=GTEST_START_STATE, suite="suite_name", test="test_name",
+                parametrized_idx=0,
+                parametrized_test_name="parametrized_test_name",
+                ),
+            SAMPLE_GTEST_PARAMETRIZED_FMT.format(
+                state=GTEST_PASS_STATE, suite="suite_name", test="test_name",
+                parametrized_idx=0,
+                parametrized_test_name="parametrized_test_name",
+                ),
+            SAMPLE_GTEST_PARAMETRIZED_FMT.format(
+                state=GTEST_START_STATE, suite="suite_name", test="test_name",
+                parametrized_idx=1,
+                parametrized_test_name="parametrized_test_name",
+                ),
+            SAMPLE_GTEST_PARAMETRIZED_FMT.format(
+                state=GTEST_FAIL_STATE, suite="suite_name", test="test_name",
+                parametrized_idx=1,
+                parametrized_test_name="parametrized_test_name",
+                ),
+            SAMPLE_GTEST_END_VARIANT,
+        ],
+    )
+    assert gtest.status == "failed"
+    assert len(gtest.detected_suite_names) == 1
+    assert gtest.detected_suite_names[0] == "suite_name"
+    assert gtest.instance.get_case_by_name("id.suite_name.test_name.0.parametrized_test_name") is not None
+    assert gtest.instance.get_case_by_name("id.suite_name.test_name.0.parametrized_test_name").status == "passed"
+    assert gtest.instance.get_case_by_name("id.suite_name.test_name.1.parametrized_test_name") is not None
+    assert gtest.instance.get_case_by_name("id.suite_name.test_name.1.parametrized_test_name").status == "failed"
 
 
 def test_gtest_one_fail_with_variant_and_param(gtest):
@@ -1125,6 +1427,43 @@ def test_gtest_one_fail_with_variant_and_param(gtest):
     assert gtest.instance.get_case_by_name("id.suite_name.test1").status == "failed"
 
 
+def test_gtest_parametrized_one_fail_with_variant_and_param(gtest):
+    process_logs(
+        gtest,
+        [
+            SAMPLE_GTEST_START,
+            SAMPLE_GTEST_PARAMETRIZED_FMT.format(
+                state=GTEST_START_STATE, suite="suite_name", test="test_name",
+                parametrized_idx=0,
+                parametrized_test_name="parametrized_test_name",
+                ),
+            SAMPLE_GTEST_PARAMETRIZED_FMT.format(
+                state=GTEST_PASS_STATE, suite="suite_name", test="test_name",
+                parametrized_idx=0,
+                parametrized_test_name="parametrized_test_name",
+                ),
+            SAMPLE_GTEST_PARAMETRIZED_FMT.format(
+                state=GTEST_START_STATE, suite="suite_name", test="test_name",
+                parametrized_idx=1,
+                parametrized_test_name="parametrized_test_name",
+                ),
+            SAMPLE_GTEST_PARAMETRIZED_FMT_FAIL_WITH_PARAM.format(
+                state=GTEST_FAIL_STATE, suite="suite_name", test="test_name",
+                parametrized_idx=1,
+                parametrized_test_name="parametrized_test_name",
+            ),
+            SAMPLE_GTEST_END_VARIANT,
+        ],
+    )
+    assert gtest.status == "failed"
+    assert len(gtest.detected_suite_names) == 1
+    assert gtest.detected_suite_names[0] == "suite_name"
+    assert gtest.instance.get_case_by_name("id.suite_name.test_name.0.parametrized_test_name") is not None
+    assert gtest.instance.get_case_by_name("id.suite_name.test_name.0.parametrized_test_name").status == "passed"
+    assert gtest.instance.get_case_by_name("id.suite_name.test_name.1.parametrized_test_name") is not None
+    assert gtest.instance.get_case_by_name("id.suite_name.test_name.1.parametrized_test_name").status == "failed"
+
+
 def test_gtest_missing_result(gtest):
     with pytest.raises(
         AssertionError,
@@ -1144,6 +1483,29 @@ def test_gtest_missing_result(gtest):
         )
 
 
+def test_gtest_parametrized_missing_result(gtest):
+    with pytest.raises(
+        AssertionError,
+        match=r"gTest error, id.suite_name.test.0.parametrized_test_name didn't finish",
+    ):
+        process_logs(
+            gtest,
+            [
+                SAMPLE_GTEST_START,
+                SAMPLE_GTEST_PARAMETRIZED_FMT.format(
+                    state=GTEST_START_STATE, suite="suite_name", test="test",
+                    parametrized_idx=0,
+                    parametrized_test_name="parametrized_test_name"
+                ),
+                SAMPLE_GTEST_FMT.format(
+                    state=GTEST_START_STATE, suite="suite_name", test="test",
+                    parametrized_idx=1,
+                    parametrized_test_name="parametrized_test_name"
+                ),
+            ],
+        )
+
+
 def test_gtest_mismatch_result(gtest):
     with pytest.raises(
         AssertionError,
@@ -1158,6 +1520,29 @@ def test_gtest_mismatch_result(gtest):
                 ),
                 SAMPLE_GTEST_FMT.format(
                     state=GTEST_PASS_STATE, suite="suite_name", test="test1"
+                ),
+            ],
+        )
+
+
+def test_gtest_parametrized_mismatch_result(gtest):
+    with pytest.raises(
+        AssertionError,
+        match=r"gTest error, mismatched tests. Expected id.suite_name.test.0.parametrized_test_name but got None",
+    ):
+        process_logs(
+            gtest,
+            [
+                SAMPLE_GTEST_START,
+                SAMPLE_GTEST_PARAMETRIZED_FMT.format(
+                    state=GTEST_START_STATE, suite="suite_name", test="test",
+                    parametrized_idx=0,
+                    parametrized_test_name="parametrized_test_name",
+                ),
+                SAMPLE_GTEST_FMT.format(
+                    state=GTEST_PASS_STATE, suite="suite_name", test="test",
+                    parametrized_idx=1,
+                    parametrized_test_name="parametrized_test_name",
                 ),
             ],
         )
@@ -1188,6 +1573,39 @@ def test_gtest_repeated_result(gtest):
         )
 
 
+def test_gtest_parametrized_repeated_result(gtest):
+    with pytest.raises(
+        AssertionError,
+        match=r"gTest error, mismatched tests. Expected id.suite_name.test.1.parametrized_test_name but got id.suite_name.test.0.parametrized_test_name",
+    ):
+        process_logs(
+            gtest,
+            [
+                SAMPLE_GTEST_START,
+                SAMPLE_GTEST_PARAMETRIZED_FMT.format(
+                    state=GTEST_START_STATE, suite="suite_name", test="test",
+                    parametrized_idx=0,
+                    parametrized_test_name="parametrized_test_name",
+                ),
+                SAMPLE_GTEST_PARAMETRIZED_FMT.format(
+                    state=GTEST_PASS_STATE, suite="suite_name", test="test",
+                    parametrized_idx=0,
+                    parametrized_test_name="parametrized_test_name",
+                ),
+                SAMPLE_GTEST_PARAMETRIZED_FMT.format(
+                    state=GTEST_START_STATE, suite="suite_name", test="test",
+                    parametrized_idx=1,
+                    parametrized_test_name="parametrized_test_name",
+                ),
+                SAMPLE_GTEST_PARAMETRIZED_FMT.format(
+                    state=GTEST_PASS_STATE, suite="suite_name", test="test",
+                    parametrized_idx=0,
+                    parametrized_test_name="parametrized_test_name",
+                ),
+            ],
+        )
+
+
 def test_gtest_repeated_run(gtest):
     with pytest.raises(
         AssertionError,
@@ -1205,6 +1623,34 @@ def test_gtest_repeated_run(gtest):
                 ),
                 SAMPLE_GTEST_FMT.format(
                     state=GTEST_START_STATE, suite="suite_name", test="test0"
+                ),
+            ],
+        )
+
+
+def test_gtest_parametrized_repeated_run(gtest):
+    with pytest.raises(
+        AssertionError,
+        match=r"gTest error, id.suite_name.test.0.parametrized_test_name running twice",
+    ):
+        process_logs(
+            gtest,
+            [
+                SAMPLE_GTEST_START,
+                SAMPLE_GTEST_PARAMETRIZED_FMT.format(
+                    state=GTEST_START_STATE, suite="suite_name", test="test",
+                    parametrized_idx=0,
+                    parametrized_test_name="parametrized_test_name"
+                ),
+                SAMPLE_GTEST_PARAMETRIZED_FMT.format(
+                    state=GTEST_PASS_STATE, suite="suite_name", test="test",
+                    parametrized_idx=0,
+                    parametrized_test_name="parametrized_test_name"
+                ),
+                SAMPLE_GTEST_PARAMETRIZED_FMT.format(
+                    state=GTEST_START_STATE, suite="suite_name", test="test",
+                    parametrized_idx=0,
+                    parametrized_test_name="parametrized_test_name"
                 ),
             ],
         )
