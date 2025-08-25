@@ -429,7 +429,7 @@ tests:
     extra_configs:
       - CONFIG_RING_BUFFER=n
       - CONFIG_USB_DEVICE_STACK=n
-      - CONFIG_USB_DEVICE_AUDIO=n
+      - CONFIG_USBD_AUDIO2_CLASS=n
   bluetooth.native_shell:
     build_only: true
     extra_args:
