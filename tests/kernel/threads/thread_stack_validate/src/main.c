@@ -34,6 +34,7 @@ void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *pEsf)
 
 static void thread_function(void *p1, void *p2, void *p3)
 {
+	/* Empty thread function */
 }
 
 ZTEST(thread_stack_validate, test_thread_stack_validate)
