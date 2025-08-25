@@ -338,6 +338,12 @@ do { \
 	} else { \
 		CBPRINTF_STATIC_PACKAGE(NULL, 0, _plen, Z_LOG_MSG_ALIGN_OFFSET, _options, \
 					__VA_ARGS__); \
+		/* When GCOV was enabled it was seen that compilation could fail here. */ \
+		/* Adding protection like this helps. It is compile time resolved code */ \
+		/* so has no impact on performance. */ \
+		if (_plen < 0) { \
+			break; \
+		} \
 	} \
 	struct log_msg *_msg; \
 	Z_LOG_MSG_ON_STACK_ALLOC(_msg, Z_LOG_MSG_LEN(_plen, 0)); \
