@@ -679,28 +679,21 @@ class DeviceHandler(Handler):
             logger.error(self.instance.reason)
         return hardware
 
-    def _get_serial_device(self, serial_pty, hardware_serial):
+    def _start_serial_pty(self, serial_pty, serial_pty_master):
         ser_pty_process = None
-        if serial_pty:
-            master, slave = pty.openpty()
-            try:
-                ser_pty_process = subprocess.Popen(
-                    re.split('[, ]', serial_pty),
-                    stdout=master,
-                    stdin=master,
-                    stderr=master
-                )
-            except subprocess.CalledProcessError as error:
-                logger.error(
-                    f"Failed to run subprocess {serial_pty}, error {error.output}"
-                )
-                return
+        try:
+            ser_pty_process = subprocess.Popen(
+                re.split('[, ]', serial_pty),
+                stdout=serial_pty_master,
+                stdin=serial_pty_master,
+                stderr=serial_pty_master
+            )
+        except subprocess.CalledProcessError as error:
+            logger.error(
+                f"Failed to run subprocess {serial_pty}, error {error.output}"
+            )
 
-            serial_device = os.ttyname(slave)
-        else:
-            serial_device = hardware_serial
-
-        return serial_device, ser_pty_process
+        return ser_pty_process
 
     def handle(self, harness):
         runner = None
@@ -713,7 +706,11 @@ class DeviceHandler(Handler):
         runner = hardware.runner or self.options.west_runner
         serial_pty = hardware.serial_pty
 
-        serial_device, ser_pty_process = self._get_serial_device(serial_pty, hardware.serial)
+        if not serial_pty:
+            serial_device = hardware.serial
+        else:
+            ser_pty_master, slave = pty.openpty()
+            serial_device = os.ttyname(slave)
 
         logger.debug(f"Using serial device {serial_device} @ {hardware.baud} baud")
 
@@ -735,7 +732,10 @@ class DeviceHandler(Handler):
             flash_timeout += self.get_test_timeout()
 
         serial_port = None
+        ser_pty_process = None
         if hardware.flash_before is False:
+            if serial_pty:
+                ser_pty_process = self._start_serial_pty(serial_pty, ser_pty_master)
             serial_port = serial_device
 
         try:
@@ -801,6 +801,8 @@ class DeviceHandler(Handler):
         # Connect to device after flashing it
         if hardware.flash_before:
             try:
+                if serial_pty:
+                    ser_pty_process = self._start_serial_pty(serial_pty, ser_pty_master)
                 logger.debug(f"Attach serial device {serial_device} @ {hardware.baud} baud")
                 ser.port = serial_device
                 ser.open()
