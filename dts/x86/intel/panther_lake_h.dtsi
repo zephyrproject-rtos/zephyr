@@ -7,6 +7,8 @@
 #include <zephyr/dt-bindings/interrupt-controller/intel-ioapic.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/pcie/pcie.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include "gpio_common.dtsi"
 
 / {
 	cpus {
@@ -47,6 +49,98 @@
 		interrupt-controller;
 		#interrupt-cells = <3>;
 		#address-cells = <1>;
+	};
+
+	acpi {
+		gpio_a: gpio_a {
+			acpi-hid = "INTC10BC";
+			acpi-uid = "3";
+			group-index = <0x02>;
+			acpi-ginf-3-param;
+			int-stat-offset = <0x30>;
+			int-en-offset = <0x20>;
+			status = "disabled";
+		};
+
+		gpio_b: gpio_b {
+			acpi-hid = "INTC10BC";
+			acpi-uid = "5";
+			group-index = <0x00>;
+			acpi-ginf-3-param;
+			int-stat-offset = <0x30>;
+			int-en-offset = <0x20>;
+			status = "disabled";
+		};
+
+		gpio_c: gpio_c {
+			acpi-hid = "INTC10BC";
+			acpi-uid = "0";
+			group-index = <0x01>;
+			acpi-ginf-3-param;
+			int-stat-offset = <0x30>;
+			int-en-offset = <0x20>;
+			status = "disabled";
+		};
+
+		gpio_d: gpio_d {
+			acpi-hid = "INTC10BC";
+			acpi-uid = "5";
+			group-index = <0x01>;
+			acpi-ginf-3-param;
+			int-stat-offset = <0x30>;
+			int-en-offset = <0x20>;
+			status = "disabled";
+		};
+
+		gpio_e: gpio_e {
+			acpi-hid = "INTC10BC";
+			acpi-uid = "1";
+			group-index = <0x01>;
+			acpi-ginf-3-param;
+			int-stat-offset = <0x30>;
+			int-en-offset = <0x20>;
+			status = "disabled";
+		};
+
+		gpio_f: gpio_f {
+			acpi-hid = "INTC10BC";
+			acpi-uid = "1";
+			group-index = <0x00>;
+			acpi-ginf-3-param;
+			int-stat-offset = <0x30>;
+			int-en-offset = <0x20>;
+			status = "disabled";
+		};
+
+		gpio_h: gpio_h {
+			acpi-hid = "INTC10BC";
+			acpi-uid = "3";
+			group-index = <0x01>;
+			acpi-ginf-3-param;
+			int-stat-offset = <0x30>;
+			int-en-offset = <0x20>;
+			status = "disabled";
+		};
+
+		gpio_s: gpio_s {
+			acpi-hid = "INTC10BC";
+			acpi-uid = "4";
+			group-index = <0x00>;
+			acpi-ginf-3-param;
+			int-stat-offset = <0x30>;
+			int-en-offset = <0x20>;
+			status = "disabled";
+		};
+
+		gpio_v: gpio_v {
+			acpi-hid = "INTC10BC";
+			acpi-uid = "0";
+			group-index = <0x00>;
+			acpi-ginf-3-param;
+			int-stat-offset = <0x30>;
+			int-en-offset = <0x20>;
+			status = "disabled";
+		};
 	};
 
 	pcie0: pcie0 {
@@ -178,6 +272,7 @@
 			pw,cs-mode = <0>;
 			pw,cs-output = <0>;
 			pw,fifo-depth = <64>;
+			cs-gpios = <&gpio_e 17 GPIO_ACTIVE_LOW>;
 			clock-frequency = <100000000>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
@@ -193,6 +288,7 @@
 			pw,cs-mode = <0>;
 			pw,cs-output = <0>;
 			pw,fifo-depth = <64>;
+			cs-gpios = <&gpio_f 17 GPIO_ACTIVE_LOW>;
 			clock-frequency = <100000000>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
@@ -208,6 +304,7 @@
 			pw,cs-mode = <0>;
 			pw,cs-output = <0>;
 			pw,fifo-depth = <64>;
+			cs-gpios = <&gpio_f 18 GPIO_ACTIVE_LOW>;
 			clock-frequency = <100000000>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
