@@ -85,6 +85,39 @@ struct oma_tlv {
 	uint32_t length;
 };
 
+#if defined(CONFIG_LWM2M_ASYNC_RESPONSES)
+static int backup_out_fmt_data(struct lwm2m_output_context *out, uint8_t *buf,
+			       size_t *buflen)
+{
+	if (out->user_data == NULL) {
+		return -ENOENT;
+	}
+
+	if (buf != NULL) {
+		if (*buflen < sizeof(struct tlv_out_formatter_data)) {
+			return -ENOMEM;
+		}
+
+		memcpy(buf, out->user_data, sizeof(struct tlv_out_formatter_data));
+	}
+
+	*buflen = sizeof(struct tlv_out_formatter_data);
+
+	return 0;
+}
+
+static int restore_out_fmt_data(struct lwm2m_output_context *out, uint8_t *buf)
+{
+	if (out->user_data == NULL) {
+		return -ENOENT;
+	}
+
+	memcpy(out->user_data, buf, sizeof(struct tlv_out_formatter_data));
+
+	return 0;
+}
+#endif /* defined(CONFIG_LWM2M_ASYNC_RESPONSES) */
+
 static uint8_t get_len_type(const struct oma_tlv *tlv)
 {
 	if (tlv->length < 8) {
@@ -789,6 +822,10 @@ const struct lwm2m_writer oma_tlv_writer = {
 	.put_bool = put_bool,
 	.put_opaque = put_opaque,
 	.put_objlnk = put_objlnk,
+#if defined(CONFIG_LWM2M_ASYNC_RESPONSES)
+	.backup_ctx = backup_out_fmt_data,
+	.restore_ctx = restore_out_fmt_data,
+#endif
 };
 
 const struct lwm2m_reader oma_tlv_reader = {
@@ -865,8 +902,12 @@ static int do_write_op_tlv_item(struct lwm2m_message *msg)
 	}
 
 	ret = lwm2m_write_handler(obj_inst, res, res_inst, obj_field, msg);
-	if (ret == -EACCES || ret == -ENOENT) {
-		/* if read-only or non-existent data buffer move on */
+	if (ret == -EACCES || ret == -ENOENT || ret == -EALREADY) {
+		/* Move on in case of:
+		 *   - read-only resource,
+		 *   - non-existent data,
+		 *   - resource was already handled when resuming postponed message processing.
+		 */
 		do_write_op_tlv_dummy_read(msg);
 		ret = 0;
 	}
