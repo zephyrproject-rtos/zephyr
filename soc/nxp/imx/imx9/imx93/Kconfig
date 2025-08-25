@@ -1,4 +1,4 @@
-# Copyright 2024 NXP
+# Copyright 2024-2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_MIMX9352_A55
@@ -11,6 +11,7 @@ config SOC_MIMX9352_A55
 config SOC_MIMX9352_M33
 	select ARM
 	select CPU_CORTEX_M33
+	select CPU_CORTEX_M_HAS_DWT
 	select CPU_HAS_FPU
 	select CPU_HAS_ARM_MPU
 	select CPU_HAS_ARM_SAU
