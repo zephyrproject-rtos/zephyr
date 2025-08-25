@@ -37,6 +37,9 @@
 #if defined(CONFIG_PINCTRL)
 #include <zephyr/drivers/pinctrl.h>
 #endif
+#if defined(CONFIG_UART_NS16550_ENABLE_DEVICE_PM)
+#include <zephyr/pm/device.h>
+#endif
 
 #include <zephyr/drivers/serial/uart_ns16550.h>
 #include <zephyr/logging/log.h>
@@ -731,6 +734,39 @@ out:
 	k_spin_unlock(&dev_data->lock, key);
 	return ret;
 };
+
+#if defined(CONFIG_UART_NS16550_ENABLE_DEVICE_PM)
+__maybe_unused static int uart_ns16550_pm_action(const struct device *dev,
+						 enum pm_device_action action)
+{
+	const struct uart_ns16550_dev_config * const dev_cfg = dev->config;
+	struct uart_ns16550_dev_data *data = dev->data;
+	struct uart_config *uart_cfg = &data->uart_config;
+	int ret;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		return uart_ns16550_configure(dev, uart_cfg);
+	case PM_DEVICE_ACTION_SUSPEND:
+#if defined(CONFIG_PINCTRL)
+		if (dev_cfg->pincfg != NULL) {
+			ret = pinctrl_apply_state(dev_cfg->pincfg, PINCTRL_STATE_SLEEP);
+			if (ret != 0 && ret != -ENOENT) {
+				return ret;
+			}
+		}
+#endif
+		ret = clock_control_off(dev_cfg->clock_dev, dev_cfg->clock_subsys);
+		if (ret != 0 && ret != -EALREADY && ret != -ENOSYS) {
+			return ret;
+		}
+
+		return 0;
+	default:
+		return -ENOTSUP;
+	}
+}
+#endif
 
 #ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 static int uart_ns16550_config_get(const struct device *dev,
@@ -1964,6 +2000,14 @@ static DEVICE_API(uart, uart_ns16550_driver_api) = {
 			(.dlf = DT_INST_PROP_OR(n, dlf, 0),))			     \
 		DEV_DATA_ASYNC(n)						     \
 
+#if defined(CONFIG_UART_NS16550_ENABLE_DEVICE_PM)
+#define PM_DEVICE_INST_DEFINE_NS16550	PM_DEVICE_DT_INST_DEFINE(n, uart_ns16550_pm_action);
+#define PM_DEVICE_INST_GET_NS16550      PM_DEVICE_DT_INST_GET(n)
+#else
+#define PM_DEVICE_INST_DEFINE_NS16550
+#define PM_DEVICE_INST_GET_NS16550      NULL
+#endif
+
 #define UART_NS16550_DEVICE_IO_MMIO_INIT(n)                                          \
 	UART_NS16550_IRQ_FUNC_DECLARE(n);                                            \
 	IF_ENABLED(CONFIG_PINCTRL, (PINCTRL_DT_INST_DEFINE(n)));                     \
@@ -1979,7 +2023,8 @@ static DEVICE_API(uart, uart_ns16550_driver_api) = {
 	static struct uart_ns16550_dev_data uart_ns16550_dev_data_##n = {            \
 		UART_NS16550_COMMON_DEV_DATA_INITIALIZER(n)                          \
 	};                                                                           \
-	DEVICE_DT_INST_DEFINE(n, uart_ns16550_init, NULL,                            \
+	PM_DEVICE_INST_DEFINE_NS16550                                                \
+	DEVICE_DT_INST_DEFINE(n, uart_ns16550_init, PM_DEVICE_INST_GET_NS16550,	     \
 			      &uart_ns16550_dev_data_##n, &uart_ns16550_dev_cfg_##n, \
 			      PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,             \
 			      &uart_ns16550_driver_api);                             \
@@ -1997,7 +2042,8 @@ static DEVICE_API(uart, uart_ns16550_driver_api) = {
 	static struct uart_ns16550_dev_data uart_ns16550_dev_data_##n = {            \
 		UART_NS16550_COMMON_DEV_DATA_INITIALIZER(n)                          \
 	};                                                                           \
-	DEVICE_DT_INST_DEFINE(n, uart_ns16550_init, NULL,                            \
+	PM_DEVICE_INST_DEFINE_NS16550                                                \
+	DEVICE_DT_INST_DEFINE(n, uart_ns16550_init, PM_DEVICE_INST_GET_NS16550,      \
 			      &uart_ns16550_dev_data_##n, &uart_ns16550_dev_cfg_##n, \
 			      PRE_KERNEL_1,            \
 			      CONFIG_SERIAL_INIT_PRIORITY,                           \
