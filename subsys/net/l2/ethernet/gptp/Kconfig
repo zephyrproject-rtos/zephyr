@@ -75,7 +75,7 @@ config NET_GPTP_CLOCK_ACCURACY_1MS
 	bool "1ms"
 
 config NET_GPTP_CLOCK_ACCURACY_2_5MS
-	bool "1.5ms"
+	bool "2.5ms"
 
 config NET_GPTP_CLOCK_ACCURACY_10MS
 	bool "10ms"
