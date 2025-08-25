@@ -780,7 +780,7 @@ static int cap_ac_create_unicast_group(const struct cap_unicast_ac_param *param,
 			cap_stream_from_shell_stream(src_uni_streams[i]);
 	}
 
-	for (size_t i = 0U; i < param->conn_cnt; i++) {
+	for (size_t i = 0U; i < MIN(param->conn_cnt, BAP_UNICAST_AC_MAX_CONN); i++) {
 		for (size_t j = 0; j < MAX(param->snk_cnt[i], param->src_cnt[i]); j++) {
 			if (param->snk_cnt[i] > j) {
 				pair_params[pair_cnt].tx_param =
@@ -860,6 +860,11 @@ int cap_ac_unicast(const struct shell *sh, const struct cap_unicast_ac_param *pa
 			    "this audio configuration",
 			    conn_avail_cnt, param->conn_cnt);
 		return -ENOEXEC;
+	}
+
+	if (param->conn_cnt > BAP_UNICAST_AC_MAX_CONN) {
+		shell_info(sh, "Only starting unicast audio on %d/%u connections",
+			   BAP_UNICAST_AC_MAX_CONN, param->conn_cnt);
 	}
 
 	/* Set all endpoints from multiple connections in a single array, and verify that the known
