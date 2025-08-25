@@ -584,8 +584,9 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 	 */
 	if (!aux_ptr || !PDU_ADV_AUX_PTR_OFFSET_GET(aux_ptr) || is_scan_req ||
 	    (PDU_ADV_AUX_PTR_PHY_GET(aux_ptr) > EXT_ADV_AUX_PHY_LE_CODED) ||
-		(!IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED) &&
-		  PDU_ADV_AUX_PTR_PHY_GET(aux_ptr) == EXT_ADV_AUX_PHY_LE_CODED)) {
+	    (!IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED) &&
+	     PDU_ADV_AUX_PTR_PHY_GET(aux_ptr) == EXT_ADV_AUX_PHY_LE_CODED) ||
+	    (aux_ptr->chan_idx >= CHM_USED_COUNT_MAX)) {
 		if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC) && sync_lll) {
 			struct ll_sync_set *sync_set;
 
@@ -845,6 +846,13 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 		/* Do not ULL schedule if scan disable requested */
 		if (unlikely(scan->is_stop)) {
 			goto ull_scan_aux_rx_flush;
+		}
+
+		/* Remove auxiliary context association with scan context so
+		 * that LLL can differentiate it to being ULL scheduling.
+		 */
+		if ((lll != NULL) && (lll->lll_aux == lll_aux)) {
+			lll->lll_aux = NULL;
 		}
 	} else {
 		struct ll_sync_set *sync_set;
@@ -1422,6 +1430,11 @@ static void flush(void *param)
 	scan = HDR_LLL2ULL(lll);
 	scan = ull_scan_is_valid_get(scan);
 	if (!IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC) || scan) {
+		/* Remove auxiliary context association with scan context */
+		if (lll->lll_aux == &aux->lll) {
+			lll->lll_aux = NULL;
+		}
+
 #if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
 		lll->scan_aux_score = aux->lll.hdr.score;
 #endif /* CONFIG_BT_CTLR_JIT_SCHEDULING */
@@ -1988,9 +2001,9 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 	 */
 	if (!aux_ptr || !PDU_ADV_AUX_PTR_OFFSET_GET(aux_ptr) || is_scan_req ||
 	    (PDU_ADV_AUX_PTR_PHY_GET(aux_ptr) > EXT_ADV_AUX_PHY_LE_CODED) ||
-		(!IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED) &&
-		  PDU_ADV_AUX_PTR_PHY_GET(aux_ptr) == EXT_ADV_AUX_PHY_LE_CODED)) {
-
+	    (!IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED) &&
+	     PDU_ADV_AUX_PTR_PHY_GET(aux_ptr) == EXT_ADV_AUX_PHY_LE_CODED) ||
+	    (aux_ptr->chan_idx >= CHM_USED_COUNT_MAX)) {
 		if (is_scan_req) {
 			LL_ASSERT(chain && chain->rx_last);
 
