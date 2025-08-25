@@ -95,6 +95,12 @@ Bluetooth Audio
 
 .. zephyr-keep-sorted-stop
 
+Bluetooth HCI
+=============
+
+* The deprecated ``ipm`` value was removed from ``bt-hci-bus`` devicetree property.
+  ``ipc`` should be used instead.
+
 Ethernet
 ========
 
