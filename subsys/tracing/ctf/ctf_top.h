@@ -52,9 +52,11 @@
 #ifdef CONFIG_TRACING_CTF_TIMESTAMP
 #define CTF_EVENT(...)                                                         \
 	{                                                                      \
+		int key = irq_lock();                                          \
 		const uint32_t tstamp = k_cyc_to_ns_floor64(k_cycle_get_32()); \
 									       \
 		CTF_GATHER_FIELDS(tstamp, __VA_ARGS__)                         \
+		irq_unlock(key);                                               \
 	}
 #else
 #define CTF_EVENT(...)                                                         \
