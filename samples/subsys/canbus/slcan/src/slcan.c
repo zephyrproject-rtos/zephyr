@@ -10,7 +10,6 @@
 #include <zephyr/drivers/uart.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/usb/usb_device.h>
 #include <zephyr/sys/byteorder.h>
 
 #include <string.h>
@@ -18,7 +17,7 @@
 LOG_MODULE_REGISTER(slcan, CONFIG_LOG_DEFAULT_LEVEL);
 
 #define CAN_NODE	DT_CHOSEN(zephyr_canbus)
-#define SERIAL_NODE	DT_NODELABEL(cdc_acm_uart0)
+#define SERIAL_NODE	DT_NODELABEL(uart1)
 
 #define CAN_TX_QUEUE_SIZE 3
 
@@ -361,16 +360,8 @@ int slcan_canbus_process(struct can_frame *frame)
 void slcan_serial_thread(void *arg1, void *arg2, void *arg3)
 {
 	char buf[SLCAN_MTU];
-	uint32_t dtr = 0;
 
-	/* Poll if the DTR flag was set */
-	while (!dtr) {
-		uart_line_ctrl_get(serial_dev, UART_LINE_CTRL_DTR, &dtr);
-		/* Give CPU resources to low priority threads. */
-		k_sleep(K_MSEC(100));
-	}
-
-	uart_irq_callback_user_data_set(serial_dev, serial_rx_callback, NULL);
+	uart_irq_callback_set(serial_dev, serial_rx_callback);
 	uart_irq_rx_enable(serial_dev);
 
 	while (k_msgq_get(&serial_rx_msgq, &buf, K_FOREVER) == 0) {
@@ -407,9 +398,6 @@ static int slcan_init(void)
 		return -ENODEV;
 	}
 
-	if (usb_enable(NULL)) {
-		return -ENODEV;
-	}
 
 	k_thread_create(&canbus_thread_data, canbus_thread_stack,
 			K_THREAD_STACK_SIZEOF(canbus_thread_stack),
