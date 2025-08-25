@@ -4,6 +4,9 @@ family:
   - name: mec15xx
     socs:
     - name: mec1501_hsz
+  - name: mec165xb
+    socs:
+    - name: mec1653b_nsz
   - name: mec172x
     socs:
     - name: mec172x_nsz
