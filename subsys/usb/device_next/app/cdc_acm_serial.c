@@ -62,7 +62,7 @@ static int register_cdc_acm_0(struct usbd_context *const uds_ctx,
 		return err;
 	}
 
-	err = usbd_register_class(&cdc_acm_serial, "cdc_acm_0", speed, 1);
+	err = usbd_register_all_classes(&cdc_acm_serial, speed, 1, NULL);
 	if (err) {
 		LOG_ERR("Failed to register classes");
 		return err;
