@@ -1994,10 +1994,11 @@ struct bt_gatt_read_params {
  *  the callback being called with @p data set to @c NULL.
  *
  *  Note that returning @ref BT_GATT_ITER_CONTINUE is really starting a new ATT
- *  operation, so this can fail to allocate resources. However, all API errors
- *  are reported as if the server returned @ref BT_ATT_ERR_UNLIKELY. There is no
- *  way to distinguish between this condition and a @ref BT_ATT_ERR_UNLIKELY
- *  response from the server itself.
+ *  operation, so this can fail to allocate resources. However, if the received
+ *  data length is invalid, the error @ref BT_ATT_ERR_INVALID_PDU will be
+ *  returned. For all other API errors are reported as if the server returned
+ *  @ref BT_ATT_ERR_UNLIKELY. There is no way to distinguish between this
+ *  condition and a @ref BT_ATT_ERR_UNLIKELY response from the server itself.
  *
  *  Note that the effect of returning @ref BT_GATT_ITER_CONTINUE from the
  *  callback varies depending on the type of read operation.
