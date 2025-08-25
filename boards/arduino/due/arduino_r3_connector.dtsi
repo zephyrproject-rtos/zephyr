@@ -4,33 +4,35 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
+
 / {
 	arduino_header: connector {
 		compatible = "arduino-header-r3";
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map = < 0 0 &pioa 16 0>,	/* A0 */
-			   < 1 0 &pioa 24 0>,	/* A1 */
-			   < 2 0 &pioa 23 0>,	/* A2 */
-			   < 3 0 &pioa 22 0>,	/* A3 */
-			   < 4 0 &pioa  6 0>,	/* A4 */
-			   < 5 0 &pioa  4 0>,	/* A5 */
-			   < 6 0 &pioa  8 0>,	/* D0 */
-			   < 7 0 &pioa  9 0>,	/* D1 */
-			   < 8 0 &piob 25 0>,	/* D2 */
-			   < 9 0 &pioc 28 0>,	/* D3 */
-			   <10 0 &pioa 29 0>,	/* D4 */
-			   <11 0 &pioc 25 0>,	/* D5 */
-			   <12 0 &pioc 24 0>,	/* D6 */
-			   <13 0 &pioc 23 0>,	/* D7 */
-			   <14 0 &pioc 22 0>,	/* D8 */
-			   <15 0 &pioc 21 0>,	/* D9 */
-			   <16 0 &pioa 28 0>,	/* D10 */
-			   <17 0 &piod  7 0>,	/* D11 */
-			   <18 0 &piod  8 0>,	/* D12 */
-			   <19 0 &piob 27 0>,	/* D13 */
-			   <20 0 &pioa 17 0>,	/* D20 */
-			   <21 0 &pioa 18 0>;	/* D21 */
+		gpio-map = <ARDUINO_HEADER_R3_A0 0 &pioa 16 0>,
+			   <ARDUINO_HEADER_R3_A1 0 &pioa 24 0>,
+			   <ARDUINO_HEADER_R3_A2 0 &pioa 23 0>,
+			   <ARDUINO_HEADER_R3_A3 0 &pioa 22 0>,
+			   <ARDUINO_HEADER_R3_A4 0 &pioa 6 0>,
+			   <ARDUINO_HEADER_R3_A5 0 &pioa 4 0>,
+			   <ARDUINO_HEADER_R3_D0 0 &pioa 8 0>,
+			   <ARDUINO_HEADER_R3_D1 0 &pioa 9 0>,
+			   <ARDUINO_HEADER_R3_D2 0 &piob 25 0>,
+			   <ARDUINO_HEADER_R3_D3 0 &pioc 28 0>,
+			   <ARDUINO_HEADER_R3_D4 0 &pioa 29 0>,
+			   <ARDUINO_HEADER_R3_D5 0 &pioc 25 0>,
+			   <ARDUINO_HEADER_R3_D6 0 &pioc 24 0>,
+			   <ARDUINO_HEADER_R3_D7 0 &pioc 23 0>,
+			   <ARDUINO_HEADER_R3_D8 0 &pioc 22 0>,
+			   <ARDUINO_HEADER_R3_D9 0 &pioc 21 0>,
+			   <ARDUINO_HEADER_R3_D10 0 &pioa 28 0>,
+			   <ARDUINO_HEADER_R3_D11 0 &piod 7 0>,
+			   <ARDUINO_HEADER_R3_D12 0 &piod 8 0>,
+			   <ARDUINO_HEADER_R3_D13 0 &piob 27 0>,
+			   <ARDUINO_HEADER_R3_D14 0 &pioa 17 0>,
+			   <ARDUINO_HEADER_R3_D15 0 &pioa 18 0>;
 	};
 };
