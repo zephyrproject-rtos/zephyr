@@ -21,6 +21,9 @@
 #include <zephyr/dt-bindings/flash_controller/ospi.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/irq.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
+#include <zephyr/pm/policy.h>
 
 #include "spi_nor.h"
 #include "jesd216.h"
@@ -173,6 +176,21 @@ struct flash_stm32_ospi_data {
 	struct stream dma;
 #endif /* STM32_OSPI_USE_DMA */
 };
+
+
+static inline void ospi_pm_get(const struct device *dev)
+{
+	(void)pm_device_runtime_get(dev);
+
+	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+}
+
+static inline void ospi_pm_put(const struct device *dev)
+{
+	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+
+	(void)pm_device_runtime_put(dev);
+}
 
 static inline void ospi_lock_thread(const struct device *dev)
 {
@@ -1209,6 +1227,8 @@ static int flash_stm32_ospi_erase(const struct device *dev, off_t addr,
 		.SIOOMode = HAL_OSPI_SIOO_INST_EVERY_CMD,
 	};
 
+	ospi_pm_get(dev);
+
 	if (stm32_ospi_mem_ready(dev_data,
 		dev_cfg->data_mode, dev_cfg->data_rate) != 0) {
 		LOG_ERR("Erase failed : flash busy");
@@ -1323,6 +1343,8 @@ static int flash_stm32_ospi_erase(const struct device *dev, off_t addr,
 	goto end_erase;
 
 end_erase:
+	ospi_pm_put(dev);
+
 	ospi_unlock_thread(dev);
 
 	return ret;
@@ -1425,7 +1447,11 @@ static int flash_stm32_ospi_read(const struct device *dev, off_t addr,
 	LOG_DBG("OSPI: read %zu data", size);
 	ospi_lock_thread(dev);
 
+	ospi_pm_get(dev);
+
 	ret = ospi_read_access(dev, &cmd, data, size);
+
+	ospi_pm_put(dev);
 
 	ospi_unlock_thread(dev);
 
@@ -1457,6 +1483,8 @@ static int flash_stm32_ospi_write(const struct device *dev, off_t addr,
 	}
 
 	ospi_lock_thread(dev);
+
+	ospi_pm_get(dev);
 
 #ifdef CONFIG_STM32_MEMMAP
 	if (stm32_ospi_is_memorymap(dev)) {
@@ -1521,6 +1549,8 @@ static int flash_stm32_ospi_write(const struct device *dev, off_t addr,
 	ret = stm32_ospi_mem_ready(dev_data,
 				   dev_cfg->data_mode, dev_cfg->data_rate);
 	if (ret != 0) {
+		ospi_pm_put(dev);
+
 		ospi_unlock_thread(dev);
 		LOG_ERR("OSPI: write not ready");
 		return -EIO;
@@ -1568,6 +1598,8 @@ static int flash_stm32_ospi_write(const struct device *dev, off_t addr,
 	goto end_write;
 
 end_write:
+	ospi_pm_put(dev);
+
 	ospi_unlock_thread(dev);
 
 	return ret;
@@ -2186,6 +2218,47 @@ static int spi_nor_process_bfp(const struct device *dev,
 	return 0;
 }
 
+#ifdef CONFIG_PM_DEVICE
+static int ospi_suspend(const struct device *dev)
+{
+	const struct flash_stm32_ospi_config *dev_cfg = dev->config;
+
+#if DT_CLOCKS_HAS_NAME(STM32_OSPI_NODE, ospi_mgr)
+	if (clock_control_off(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
+			     (clock_control_subsys_t) &dev_cfg->pclken_mgr) != 0) {
+		LOG_ERR("Could not disable OSPI Manager clock");
+		return -EIO;
+	}
+#endif
+	if (clock_control_off(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
+			     (clock_control_subsys_t) &dev_cfg->pclken) != 0) {
+		LOG_ERR("Could not enable OSPI clock");
+		return -EIO;
+	}
+	return 0;
+}
+#endif
+
+static int ospi_resume(const struct device *dev)
+{
+	const struct flash_stm32_ospi_config *dev_cfg = dev->config;
+
+	/* Clock configuration */
+	if (clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
+			     (clock_control_subsys_t) &dev_cfg->pclken) != 0) {
+		LOG_ERR("Could not enable OSPI clock");
+		return -EIO;
+	}
+#if DT_CLOCKS_HAS_NAME(STM32_OSPI_NODE, ospi_mgr)
+	if (clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
+			     (clock_control_subsys_t) &dev_cfg->pclken_mgr) != 0) {
+		LOG_ERR("Could not enable OSPI Manager clock");
+		return -EIO;
+	}
+#endif
+	return 0;
+}
+
 static int flash_stm32_ospi_init(const struct device *dev)
 {
 	const struct flash_stm32_ospi_config *dev_cfg = dev->config;
@@ -2297,12 +2370,12 @@ static int flash_stm32_ospi_init(const struct device *dev)
 
 #endif /* STM32_OSPI_USE_DMA */
 
-	/* Clock configuration */
-	if (clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-			     (clock_control_subsys_t) &dev_cfg->pclken) != 0) {
-		LOG_ERR("Could not enable OSPI clock");
-		return -EIO;
+	ret = ospi_resume(dev);
+	if (ret < 0) {
+		LOG_ERR("OSPI clock activation failed (%d)", ret);
+		return ret;
 	}
+
 	/* Alternate clock config for peripheral if any */
 #if DT_CLOCKS_HAS_NAME(STM32_OSPI_NODE, ospi_ker)
 	if (clock_control_configure(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
@@ -2322,13 +2395,6 @@ static int flash_stm32_ospi_init(const struct device *dev)
 					(clock_control_subsys_t) &dev_cfg->pclken,
 					&ahb_clock_freq) < 0) {
 		LOG_ERR("Failed call clock_control_get_rate(pclken)");
-		return -EIO;
-	}
-#endif
-#if DT_CLOCKS_HAS_NAME(STM32_OSPI_NODE, ospi_mgr)
-	if (clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-			     (clock_control_subsys_t) &dev_cfg->pclken_mgr) != 0) {
-		LOG_ERR("Could not enable OSPI Manager clock");
 		return -EIO;
 	}
 #endif
@@ -2588,8 +2654,31 @@ static int flash_stm32_ospi_init(const struct device *dev)
 		dev_cfg->flash_size);
 #endif /* CONFIG_STM32_MEMMAP */
 
+	(void)pm_device_runtime_enable(dev);
+
 	return 0;
 }
+
+#ifdef CONFIG_PM_DEVICE
+static int flash_stm32_ospi_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	__maybe_unused struct flash_stm32_ospi_data *dev_data = dev->data;
+	int err;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		err = ospi_resume(dev);
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		err = ospi_suspend(dev);
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return err;
+}
+#endif
 
 #if STM32_OSPI_USE_DMA
 #define DMA_CHANNEL_CONFIG(node, dir)					\
@@ -2684,7 +2773,9 @@ static struct flash_stm32_ospi_data flash_stm32_ospi_dev_data = {
 	OSPI_DMA_CHANNEL(STM32_OSPI_NODE, tx_rx)
 };
 
-DEVICE_DT_INST_DEFINE(0, &flash_stm32_ospi_init, NULL,
+PM_DEVICE_DT_INST_DEFINE(0, flash_stm32_ospi_pm_action);
+
+DEVICE_DT_INST_DEFINE(0, &flash_stm32_ospi_init, PM_DEVICE_DT_INST_GET(0),
 		      &flash_stm32_ospi_dev_data, &flash_stm32_ospi_cfg,
 		      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		      &flash_stm32_ospi_driver_api);
