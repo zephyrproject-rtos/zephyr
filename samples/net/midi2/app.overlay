@@ -1,0 +1,35 @@
+/*
+ * Copyright (c) 2025 Titouan Christophe
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	midi2: zephyr-midi2 {
+		compatible = "zephyr,midi2-device";
+		status = "okay";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		label = "Zephyr-UDP-MIDI2";
+
+		midi2@0 {
+			reg = <0 4>;
+			label = "Synthesizer";
+			protocol = "midi2";
+		};
+
+		midi1@8 {
+			reg = <8 1>;
+			protocol = "midi1-up-to-64b";
+			terminal-type = "input-only";
+			label = "Keyboard";
+		};
+
+		ext_midi_out: midi1@9 {
+			reg = <9 1>;
+			protocol = "midi1-up-to-64b";
+			terminal-type = "output-only";
+			label = "External output (MIDI DIN-5)";
+			serial-31250bps;
+		};
+	};
+};
