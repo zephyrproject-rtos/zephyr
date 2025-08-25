@@ -7,3 +7,6 @@ CONFIG_UART_CONSOLE=y
 
 # Enable GPIO
 CONFIG_GPIO=y
+
+# Si4467 is connected via SPI
+CONFIG_SPI=y
