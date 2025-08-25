@@ -299,7 +299,7 @@ endif # DYNAMIC_THREADS
 
 config VALIDATE_THREAD_STACK_POINTER
 	bool "Validate thread stack pointer limits"
-	depends on !DYNAMIC_THREAD_ALLOC && !KERNEL_COHERENCE
+	depends on !DYNAMIC_THREAD_ALLOC && ASSERT
 	help
 	  Enable runtime validation of the stack pointer passed to the thread creation API.
 	  This check ensures that the pointer lies within the memory regions reserved for

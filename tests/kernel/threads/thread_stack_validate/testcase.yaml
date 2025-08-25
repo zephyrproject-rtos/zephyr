@@ -5,3 +5,7 @@ tests:
       - security
       - userspace
     ignore_faults: true
+    arch_allow:
+      - arm
+      - arm64
+      - riscv

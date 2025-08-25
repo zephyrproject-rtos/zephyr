@@ -70,7 +70,11 @@
 #else
 #define __stackmem __incoherent
 #endif /* CONFIG_USERSPACE */
+#if defined(CONFIG_VALIDATE_THREAD_STACK_POINTER)
+#define __kstackmem Z_GENERIC_SECTION(.kernel_stacks)
+#else
 #define __kstackmem __incoherent
+#endif /* CONFIG_VALIDATE_THREAD_STACK_POINTER */
 #else
 #define __incoherent
 #define __stackmem Z_GENERIC_SECTION(.user_stacks)

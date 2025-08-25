@@ -11,5 +11,11 @@ if(CONFIG_USERSPACE)
     SYMBOLS z_user_stacks_start z_user_stacks_end)
 
 endif()
+
+zephyr_linker_section_configure(
+  SECTION .noinit
+  INPUT ".kernel_stacks*"
+  SYMBOLS z_kernel_stacks_start z_kernel_stacks_end)
+
 # TODO: #include <snippets-noinit.ld>
 include(${COMMON_ZEPHYR_LINKER_DIR}/kobject-priv-stacks.cmake)

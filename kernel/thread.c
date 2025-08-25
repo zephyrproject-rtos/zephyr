@@ -794,7 +794,7 @@ k_tid_t z_impl_k_thread_create(struct k_thread *new_thread,
 {
 	__ASSERT(!arch_is_in_isr(), "Threads may not be created in ISRs");
 
-#if CONFIG_VALIDATE_THREAD_STACK_POINTER
+#ifdef CONFIG_VALIDATE_THREAD_STACK_POINTER
 	z_check_thread_stack(stack, stack_size, options);
 #endif
 
