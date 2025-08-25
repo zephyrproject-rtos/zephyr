@@ -7,6 +7,8 @@
 /dts-v1/;
 
 #include <bflb/bl602.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 #include "ai_wb2_12f-pinctrl.dtsi"
 
 / {
@@ -21,6 +23,38 @@
 		zephyr,sram = &sram0;
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
+	};
+
+	aliases {
+		led0 = &blue_led;
+		sw0 = &button_0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		blue_led: led_0 {
+			gpios =  <&gpio0 3 GPIO_ACTIVE_HIGH>;
+			label = "Blue - LED0";
+		};
+
+		green_led: led_1 {
+			gpios =  <&gpio0 17 GPIO_ACTIVE_HIGH>;
+			label = "Green - LED1";
+		};
+
+		red_led: led_2 {
+			gpios =  <&gpio0 14 GPIO_ACTIVE_HIGH>;
+			label = "Red - LED2";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		button_0: sw0 {
+			gpios = <&gpio0 8 (GPIO_ACTIVE_HIGH)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
 	};
 };
 
@@ -62,4 +96,8 @@
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
+};
+
+&gpio0 {
+	status = "okay";
 };
