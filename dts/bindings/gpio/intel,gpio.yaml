@@ -25,6 +25,15 @@ properties:
     type: int
     description: Pin offset of this GPIO entry
 
+  acpi-ginf:
+    type: boolean
+    description: |
+      This boolean will indicate the version of GINF method ACPI
+      enabled for a given platform. If the value is true, GINF
+      method which takes 3 parameters (u-id,banki-id and field-id)
+      will be used else GINF method with 2 parameters (field-id
+      and bank-id) will be used.
+
   "#gpio-cells":
     const: 2
 
