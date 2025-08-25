@@ -96,13 +96,14 @@
 		scmi_shmem0: memory@445b1000 {
 			compatible = "arm,scmi-shmem";
 			reg = <0x445b1000 0x80>;
+			#shmem-cells = <0>;
 		};
 	};
 
 	firmware {
 		scmi {
 			compatible = "arm,scmi";
-			shmem = <&scmi_shmem0>;
+			shmems = <&scmi_shmem0>;
 			mboxes = <&mu2 0>;
 			mbox-names = "tx";
 

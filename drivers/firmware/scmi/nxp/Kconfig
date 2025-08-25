@@ -16,4 +16,11 @@ config NXP_SCMI_CPU_DOMAIN_HELPERS
 	help
 	  Enable support for SCMI cpu domain protocol helper functions.
 
+config NXP_SCMI_BBM_HELPERS
+	bool "Helper functions for SCMI bbm protocol"
+	default y
+	depends on DT_HAS_NXP_SCMI_BBM_ENABLED
+	help
+	  Enable support for SCMI bbm protocol helper functions.
+
 endif # ARM_SCMI_NXP_VENDOR_EXTENSIONS

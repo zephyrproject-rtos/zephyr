@@ -63,11 +63,6 @@ static int scmi_core_setup_chan(const struct device *transport,
 		return 0;
 	}
 
-	/* no support for RX channels ATM */
-	if (!tx) {
-		return -ENOTSUP;
-	}
-
 	k_mutex_init(&chan->lock);
 	k_sem_init(&chan->sem, 0, 1);
 
@@ -216,6 +211,31 @@ int scmi_send_message(struct scmi_protocol *proto, struct scmi_message *msg,
 	}
 }
 
+int scmi_read_message(struct scmi_protocol *proto, struct scmi_message *msg)
+{
+	int ret = 0;
+
+	if (!proto->rx) {
+		return -ENODEV;
+	}
+
+	if (!proto->rx->ready) {
+		return -EINVAL;
+	}
+
+	/* read message from platform, such as notification event
+	 *
+	 * Unlike scmi_send_message, reading messages with scmi_read_message is not currently
+	 * required in the PRE_KERNEL stage. The interrupt-based logic is used here.
+	 */
+	ret = scmi_transport_read_message(proto->transport, proto->rx, msg);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return ret;
+}
+
 static int scmi_core_protocol_setup(const struct device *transport)
 {
 	int ret;
@@ -226,6 +246,7 @@ static int scmi_core_protocol_setup(const struct device *transport)
 #ifndef CONFIG_ARM_SCMI_TRANSPORT_HAS_STATIC_CHANNELS
 		/* no static channel allocation, attempt dynamic binding */
 		it->tx = scmi_transport_request_channel(transport, it->id, true);
+		it->rx = scmi_transport_request_channel(transport, it->id, false);
 #endif /* CONFIG_ARM_SCMI_TRANSPORT_HAS_STATIC_CHANNELS */
 
 		if (!it->tx) {
@@ -235,6 +256,18 @@ static int scmi_core_protocol_setup(const struct device *transport)
 		ret = scmi_core_setup_chan(transport, it->tx, true);
 		if (ret < 0) {
 			return ret;
+		}
+
+		/*
+		 * rx is optional and can be either NULL or resolved to
+		 * scmi_channel_16_1 during the build phase. This depends on whether
+		 * the board-level DTS node defines a second RX shared memory region.
+		 */
+		if (it->rx) {
+			ret = scmi_core_setup_chan(transport, it->rx, false);
+			if (ret < 0) {
+				return ret;
+			}
 		}
 	}
 
