@@ -72,6 +72,10 @@ zephyr_library_sources_ifdef(
   cap_commander.c
   )
 zephyr_library_sources_ifdef(
+  CONFIG_BT_CAP_HANDOVER
+  cap_handover.c
+  )
+zephyr_library_sources_ifdef(
   CONFIG_BT_HAS_CLIENT
   has_client.c
   )

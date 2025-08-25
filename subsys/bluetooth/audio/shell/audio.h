@@ -171,7 +171,8 @@ void bap_usb_get_frame(struct shell_stream *sh_stream, enum bt_audio_location ch
 size_t bap_usb_get_frame_size(const struct shell_stream *sh_stream);
 
 struct broadcast_source {
-	bool is_cap;
+	bool is_cap: 1;
+	bool handover_in_progress: 1;
 	union {
 		struct bt_bap_broadcast_source *bap_source;
 		struct bt_cap_broadcast_source *cap_source;
