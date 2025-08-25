@@ -11,3 +11,9 @@ sample will print debug information like CPU load and CPU frequency subsystem lo
 console for visibility into the subsystem.
 
 The example will iterate through some simulated CPU processing scenarios in the main application.
+
+To use the pstate-stub.overlay file, build the sample with:
+
+.. code-block:: console
+
+   west build -b <board> -p -- -DDTC_OVERLAY_FILE=pstate-stub.overlay
