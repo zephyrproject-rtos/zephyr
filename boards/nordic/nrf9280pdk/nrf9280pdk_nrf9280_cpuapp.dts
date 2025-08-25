@@ -24,7 +24,6 @@
 		zephyr,flash = &mram1x;
 		zephyr,sram = &cpuapp_data;
 		zephyr,shell-uart = &uart136;
-		zephyr,ieee802154 = &cpuapp_ieee802154;
 		zephyr,bt-hci = &bt_hci_ipc0;
 		nordic,802154-spinel-ipc = &ipc0;
 	};
@@ -276,10 +275,6 @@ ipc0: &cpuapp_cpurad_ipc {
 		mspi-endian = "MSPI_BIG_ENDIAN";
 		mspi-ce-polarity = "MSPI_CE_ACTIVE_LOW";
 	};
-};
-
-&cpuapp_ieee802154 {
-	status = "okay";
 };
 
 zephyr_udc0: &usbhs {
