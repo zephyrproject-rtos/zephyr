@@ -43,7 +43,7 @@ static int usbh_event_carrier(const struct device *dev,
 	return err;
 }
 
-static void dev_connected_handler(struct usbh_contex *const ctx,
+static void dev_connected_handler(struct usbh_context *const ctx,
 				  const struct uhc_event *const event)
 {
 
@@ -73,7 +73,7 @@ static void dev_connected_handler(struct usbh_contex *const ctx,
 	}
 }
 
-static void dev_removed_handler(struct usbh_contex *const ctx)
+static void dev_removed_handler(struct usbh_context *const ctx)
 {
 	if (ctx->root != NULL) {
 		usbh_device_free(ctx->root);
@@ -84,7 +84,7 @@ static void dev_removed_handler(struct usbh_contex *const ctx)
 	}
 }
 
-static int discard_ep_request(struct usbh_contex *const ctx,
+static int discard_ep_request(struct usbh_context *const ctx,
 			      struct uhc_transfer *const xfer)
 {
 	const struct device *dev = ctx->dev;
@@ -97,7 +97,7 @@ static int discard_ep_request(struct usbh_contex *const ctx,
 	return uhc_xfer_free(dev, xfer);
 }
 
-static ALWAYS_INLINE int usbh_event_handler(struct usbh_contex *const ctx,
+static ALWAYS_INLINE int usbh_event_handler(struct usbh_context *const ctx,
 					    struct uhc_event *const event)
 {
 	int ret = 0;
@@ -141,7 +141,7 @@ static void usbh_bus_thread(void *p1, void *p2, void *p3)
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
 
-	struct usbh_contex *uhs_ctx;
+	struct usbh_context *uhs_ctx;
 	struct uhc_event event;
 
 	while (true) {
@@ -158,7 +158,7 @@ static void usbh_thread(void *p1, void *p2, void *p3)
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
 
-	struct usbh_contex *uhs_ctx;
+	struct usbh_context *uhs_ctx;
 	struct uhc_event event;
 	usbh_udev_cb_t cb;
 	int ret;
@@ -182,7 +182,7 @@ static void usbh_thread(void *p1, void *p2, void *p3)
 	}
 }
 
-int usbh_init_device_intl(struct usbh_contex *const uhs_ctx)
+int usbh_init_device_intl(struct usbh_context *const uhs_ctx)
 {
 	int ret;
 
