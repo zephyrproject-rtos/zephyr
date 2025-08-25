@@ -49,6 +49,30 @@ static int stm32h7_m4_wakeup(void)
 }
 #endif /* CONFIG_STM32H7_DUAL_CORE */
 
+/* Early boot functions */
+void z_early_memset(void *dst, int c, size_t n);
+
+void soc_reset_hook(void)
+{
+	/* If the device tree has a chosen itcm or dtcm node with status okay,
+	   we need to initialize the values in the ecc controller. To do so,
+	   we write all the locations with an arbitrary value (0 in this case).
+	   This will prevent ecc error when reading memory locations that have not
+	   been written yet.
+	   This procedure is suggested in ST's AN5342 - How to use error correction
+	   code (ECC) management for internal memories protection on STM32 MCUs,
+	   section 3.1.1, Step 1
+	*/
+#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_itcm), okay)
+	z_early_memset((void *)DT_REG_ADDR(DT_CHOSEN(zephyr_itcm)), 0,
+		DT_REG_SIZE(DT_CHOSEN(zephyr_itcm)));
+#endif
+#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_dtcm), okay)
+	z_early_memset((void *)DT_REG_ADDR(DT_CHOSEN(zephyr_dtcm)), 0,
+		DT_REG_SIZE(DT_CHOSEN(zephyr_dtcm)));
+#endif
+}
+
 /**
  * @brief Perform basic hardware initialization at boot.
  *
