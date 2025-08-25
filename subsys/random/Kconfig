@@ -121,7 +121,7 @@ config CTR_DRBG_CSPRNG_GENERATOR
 	bool "Use CTR-DRBG CSPRNG"
 	depends on MBEDTLS
 	depends on ENTROPY_HAS_DRIVER
-	select MBEDTLS_CIPHER_AES_ENABLED
+	select MBEDTLS_AES_C
 	help
 	  Enables the CTR-DRBG pseudo-random number generator. This CSPRNG
 	  shall use the entropy API for an initialization seed. The CTR-DRBG
