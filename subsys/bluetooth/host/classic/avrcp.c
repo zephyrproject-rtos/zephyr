@@ -325,7 +325,7 @@ static struct net_buf *avrcp_create_unit_pdu(struct bt_avrcp *avrcp, uint8_t tid
 }
 
 static struct net_buf *avrcp_create_subunit_pdu(struct bt_avrcp *avrcp, uint8_t tid,
-						bt_avctp_cr_t cr)
+						bt_avctp_cr_t cr, uint8_t ctype_or_rsp)
 {
 	struct net_buf *buf;
 	struct bt_avrcp_frame *cmd;
@@ -337,8 +337,7 @@ static struct net_buf *avrcp_create_subunit_pdu(struct bt_avrcp *avrcp, uint8_t 
 
 	cmd = net_buf_add(buf, sizeof(*cmd));
 	memset(cmd, 0, sizeof(*cmd));
-	BT_AVRCP_HDR_SET_CTYPE_OR_RSP(&cmd->hdr, cr == BT_AVCTP_CMD ? BT_AVRCP_CTYPE_STATUS
-								    : BT_AVRCP_RSP_STABLE);
+	BT_AVRCP_HDR_SET_CTYPE_OR_RSP(&cmd->hdr, ctype_or_rsp);
 	BT_AVRCP_HDR_SET_SUBUNIT_ID(&cmd->hdr, BT_AVRCP_SUBUNIT_ID_IGNORE);
 	BT_AVRCP_HDR_SET_SUBUNIT_TYPE(&cmd->hdr, BT_AVRCP_SUBUNIT_TYPE_UNIT);
 	cmd->hdr.opcode = BT_AVRCP_OPC_SUBUNIT_INFO;
@@ -417,6 +416,40 @@ static int bt_avrcp_send_unit_info_err_rsp(struct bt_avrcp *avrcp, uint8_t tid)
 	buf = avrcp_create_unit_pdu(avrcp, tid, BT_AVCTP_RESPONSE, BT_AVRCP_RSP_REJECTED);
 	if (!buf) {
 		LOG_WRN("Insufficient buffer");
+		return -ENOMEM;
+	}
+
+	return avrcp_send(avrcp, buf);
+}
+
+static void avrcp_fill_subunit_info_param(uint8_t *param, uint8_t subunit_type,
+					  uint8_t max_subunit_id)
+{
+	memset(param, 0xFF, BT_AVRCP_SUBUNIT_INFO_RSP_SIZE);
+
+	param[0] = FIELD_PREP(GENMASK(6, 4), AVRCP_SUBUNIT_PAGE) |
+		   FIELD_PREP(GENMASK(2, 0), AVRCP_SUBUNIT_EXTENSION_CODE);
+
+	param[1] = FIELD_PREP(GENMASK(7, 3), subunit_type) |
+		   FIELD_PREP(GENMASK(2, 0), max_subunit_id);
+}
+
+static int bt_avrcp_send_subunit_info_err_rsp(struct bt_avrcp *avrcp)
+{
+	struct net_buf *buf;
+	uint8_t param[BT_AVRCP_SUBUNIT_INFO_RSP_SIZE];
+
+	buf = avrcp_create_subunit_pdu(avrcp, 0x0, BT_AVCTP_RESPONSE, BT_AVRCP_RSP_REJECTED);
+	if (!buf) {
+		LOG_WRN("Insufficient buffer");
+		return -ENOMEM;
+	}
+
+	avrcp_fill_subunit_info_param(param, BT_AVRCP_SUBUNIT_TYPE_PANEL, 0);
+
+	if (net_buf_tailroom(buf) < sizeof(param)) {
+		LOG_WRN("Not enough tailroom in buffer");
+		net_buf_unref(buf);
 		return -ENOMEM;
 	}
 
@@ -622,6 +655,9 @@ err_rsp:
 	err = bt_avrcp_send_unit_info_err_rsp(avrcp, tid);
 	if (err) {
 		LOG_ERR("Failed to send unit info error response");
+		if (bt_avrcp_disconnect(avrcp->acl_conn)) {
+			LOG_ERR("Failed to disconnect AVRCP connection");
+		}
 	}
 }
 
@@ -634,13 +670,116 @@ static void avrcp_vendor_dependent_cmd_handler(struct bt_avrcp *avrcp, uint8_t t
 static void avrcp_subunit_info_cmd_handler(struct bt_avrcp *avrcp, uint8_t tid,
 					   struct net_buf *buf)
 {
-/* ToDo */
+	struct bt_avrcp_header *avrcp_hdr;
+	bt_avrcp_subunit_type_t subunit_type;
+	bt_avrcp_subunit_id_t subunit_id;
+	bt_avrcp_ctype_t ctype;
+	uint8_t page;
+	uint8_t extension_code;
+	int err;
+
+	if ((avrcp_tg_cb == NULL) || (avrcp_tg_cb->subunit_info_req == NULL)) {
+		goto err_rsp;
+	}
+
+	if (buf->len < sizeof(*avrcp_hdr)) {
+		goto err_rsp;
+	}
+
+	avrcp_hdr = net_buf_pull_mem(buf, sizeof(*avrcp_hdr));
+	if (buf->len != BT_AVRCP_SUBUNIT_INFO_CMD_SIZE) {
+		LOG_ERR("Invalid subunit info length");
+		goto err_rsp;
+	}
+
+	subunit_type = BT_AVRCP_HDR_GET_SUBUNIT_TYPE(avrcp_hdr);
+	subunit_id = BT_AVRCP_HDR_GET_SUBUNIT_ID(avrcp_hdr);
+	ctype = BT_AVRCP_HDR_GET_CTYPE_OR_RSP(avrcp_hdr);
+
+	/* First byte contains page and extension code */
+	page = FIELD_GET(GENMASK(6, 4), buf->data[0]);
+	extension_code = FIELD_GET(GENMASK(2, 0), buf->data[0]);
+
+	if ((subunit_type != BT_AVRCP_SUBUNIT_TYPE_UNIT) || (ctype != BT_AVRCP_CTYPE_STATUS) ||
+	    (subunit_id != BT_AVRCP_SUBUNIT_ID_IGNORE) || (page != AVRCP_SUBUNIT_PAGE) ||
+	    (avrcp_hdr->opcode != BT_AVRCP_OPC_SUBUNIT_INFO) ||
+	    (extension_code != AVRCP_SUBUNIT_EXTENSION_CODE)) {
+		LOG_ERR("Invalid subunit info command");
+		goto err_rsp;
+	}
+
+	return avrcp_tg_cb->subunit_info_req(get_avrcp_tg(avrcp), tid);
+
+err_rsp:
+	err = bt_avrcp_send_subunit_info_err_rsp(avrcp);
+	if (err) {
+		LOG_ERR("Failed to send subunit info error response");
+		if (bt_avrcp_disconnect(avrcp->acl_conn)) {
+			LOG_ERR("Failed to disconnect AVRCP connection");
+		}
+	}
 }
 
 static void avrcp_pass_through_cmd_handler(struct bt_avrcp *avrcp, uint8_t tid,
 					   struct net_buf *buf)
 {
-/* ToDo */
+	struct bt_avrcp_header *avrcp_hdr;
+	bt_avrcp_opid_t opid;
+	bt_avrcp_button_state_t state;
+	uint8_t data_len;
+	uint8_t tmp;
+	uint8_t *data;
+	int err;
+
+	if ((avrcp_tg_cb == NULL) || (avrcp_tg_cb->passthrough_cmd_req == NULL)) {
+		goto err_rsp;
+	}
+
+	if (buf->len < (sizeof(*avrcp_hdr) + BT_AVRCP_PASSTHROUGH_CMD_SIZE)) {
+		LOG_ERR("Invalid passthrough command length: %d", buf->len);
+		goto err_rsp;
+	}
+	avrcp_hdr = net_buf_pull_mem(buf, sizeof(*avrcp_hdr));
+
+	if (BT_AVRCP_HDR_GET_SUBUNIT_TYPE(avrcp_hdr) != BT_AVRCP_SUBUNIT_TYPE_PANEL ||
+	    BT_AVRCP_HDR_GET_SUBUNIT_ID(avrcp_hdr) != BT_AVRCP_SUBUNIT_ID_ZERO ||
+	    BT_AVRCP_HDR_GET_CTYPE_OR_RSP(avrcp_hdr) != BT_AVRCP_CTYPE_CONTROL) {
+		LOG_ERR("Invalid  passthrough command ");
+		goto err_rsp;
+	}
+
+	tmp = net_buf_pull_u8(buf);
+	state = FIELD_GET(BIT(7), tmp);
+	opid = FIELD_GET(GENMASK(6, 0), tmp);
+
+	data_len = net_buf_pull_u8(buf);
+	if (data_len > 0U) {
+		if (buf->len < data_len) {
+			LOG_ERR("Invalid passthrough data length: %d, buf length = %d", data_len,
+				buf->len);
+			goto err_rsp;
+		}
+		data = buf->data;
+	} else {
+		data = NULL;
+	}
+
+	if ((opid < BT_AVRCP_OPID_SELECT) || (opid > BT_AVRCP_OPID_VENDOR_UNIQUE)) {
+		LOG_ERR("Invalid passthrough operation ID: 0x%02X", opid);
+		goto err_rsp;
+	}
+	return avrcp_tg_cb->passthrough_cmd_req(get_avrcp_tg(avrcp), tid, opid, state, data,
+							     data_len);
+
+err_rsp:
+	err = bt_avrcp_tg_send_passthrough_rsp(get_avrcp_tg(avrcp), tid, BT_AVRCP_RSP_REJECTED, 0U,
+					       0U, NULL, 0U);
+	if (err) {
+		LOG_ERR("Failed to send passthrough error response");
+		if (bt_avrcp_disconnect(avrcp->acl_conn)) {
+			LOG_ERR("Failed to disconnect AVRCP connection");
+		}
+	}
 }
 
 static const struct avrcp_handler cmd_handlers[] = {
@@ -879,7 +1018,7 @@ int bt_avrcp_ct_get_subunit_info(struct bt_avrcp_ct *ct, uint8_t tid)
 		return -ENOTSUP;
 	}
 
-	buf = avrcp_create_subunit_pdu(ct->avrcp, tid, BT_AVCTP_CMD);
+	buf = avrcp_create_subunit_pdu(ct->avrcp, tid, BT_AVCTP_CMD, BT_AVRCP_CTYPE_STATUS);
 	if (!buf) {
 		return -ENOMEM;
 	}
@@ -974,6 +1113,86 @@ int bt_avrcp_tg_send_unit_info_rsp(struct bt_avrcp_tg *tg, uint8_t tid,
 	net_buf_add_u8(buf, FIELD_PREP(GENMASK(7, 3), (rsp->unit_type)));
 	/* Company ID */
 	net_buf_add_be24(buf, (rsp->company_id));
+
+	return avrcp_send(tg->avrcp, buf);
+}
+
+int bt_avrcp_tg_send_subunit_info_rsp(struct bt_avrcp_tg *tg, uint8_t tid,
+				      struct bt_avrcp_subunit_info_rsp *rsp)
+{
+	struct net_buf *buf;
+	uint8_t param[BT_AVRCP_SUBUNIT_INFO_RSP_SIZE];
+
+	if ((tg == NULL) || (tg->avrcp == NULL) || (rsp == NULL)) {
+		return -EINVAL;
+	}
+
+	if (!IS_TG_ROLE_SUPPORTED()) {
+		return -ENOTSUP;
+	}
+
+	/* It should be always value 0 in the max_subunit_ID and PANEL in the subunit_type field */
+	if ((rsp->max_subunit_id != 0u) || (rsp->subunit_type != BT_AVRCP_SUBUNIT_TYPE_PANEL)) {
+		return -EINVAL;
+	}
+
+	buf = avrcp_create_subunit_pdu(tg->avrcp, tid, BT_AVCTP_RESPONSE, BT_AVRCP_RSP_STABLE);
+	if (!buf) {
+		LOG_WRN("Insufficient buffer");
+		return -ENOMEM;
+	}
+
+	avrcp_fill_subunit_info_param(param, rsp->subunit_type, rsp->max_subunit_id);
+
+	if (net_buf_tailroom(buf) < sizeof(param)) {
+		LOG_WRN("Not enough tailroom in buffer");
+		net_buf_unref(buf);
+		return -ENOMEM;
+	}
+
+	net_buf_add_mem(buf, param, sizeof(param));
+
+	return avrcp_send(tg->avrcp, buf);
+}
+
+int bt_avrcp_tg_send_passthrough_rsp(struct bt_avrcp_tg *tg, uint8_t tid, bt_avrcp_rsp_t result,
+				     bt_avrcp_opid_t opid, bt_avrcp_button_state_t state,
+				     const uint8_t *payload, uint8_t len)
+{
+	struct net_buf *buf;
+	uint8_t total_len = BT_AVRCP_PASSTHROUGH_RSP_SIZE + len;
+
+	if ((tg == NULL) || (tg->avrcp == NULL)) {
+		return -EINVAL;
+	}
+
+	if (!IS_TG_ROLE_SUPPORTED()) {
+		return -ENOTSUP;
+	}
+
+	buf = avrcp_create_passthrough_pdu(tg->avrcp, tid, BT_AVCTP_RESPONSE, result);
+	if (!buf) {
+		LOG_WRN("Insufficient buffer");
+		return -ENOMEM;
+	}
+
+	if (total_len > net_buf_tailroom(buf)) {
+		LOG_WRN("Not enough tailroom in buffer");
+		net_buf_unref(buf);
+		return -ENOMEM;
+	}
+
+	/* Add operation ID and state */
+	net_buf_add_u8(buf, FIELD_PREP(BIT(7), state) | FIELD_PREP(GENMASK(6, 0), opid));
+
+	net_buf_add_u8(buf, len);
+	if (len > 0U) {
+		if (payload == NULL) {
+			net_buf_unref(buf);
+			return -EINVAL;
+		}
+		net_buf_add_mem(buf, payload, len);
+	}
 
 	return avrcp_send(tg->avrcp, buf);
 }
