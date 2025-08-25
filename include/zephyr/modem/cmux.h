@@ -37,6 +37,8 @@ extern "C" {
 /**
  * @brief Modem CMUX
  * @defgroup modem_cmux Modem CMUX
+ * @since 3.5
+ * @version 1.0.0
  * @ingroup modem
  * @{
  */
