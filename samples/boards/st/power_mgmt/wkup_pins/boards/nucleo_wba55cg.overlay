@@ -6,7 +6,7 @@
 
 / {
 	aliases {
-		wkup-src = &button_0;
+		wkup-src = &user_button_1;
 	};
 };
 
