@@ -10,4 +10,9 @@ zephyr_include_directories(.)
 # Add the image definition block if required
 zephyr_linker_sources(ROM_START rom_start.ld)
 
-set(SOC_LINKER_SCRIPT ${ZEPHYR_BASE}/include/zephyr/arch/arm/cortex_m/scripts/linker.ld CACHE INTERNAL "")
+# Conditionally include a linker script.
+if(CONFIG_ARM)
+  set(SOC_LINKER_SCRIPT ${ZEPHYR_BASE}/include/zephyr/arch/arm/cortex_m/scripts/linker.ld CACHE INTERNAL "")
+else()
+  set(SOC_LINKER_SCRIPT ${ZEPHYR_BASE}/include/zephyr/arch/riscv/common/linker.ld CACHE INTERNAL "")
+endif()
