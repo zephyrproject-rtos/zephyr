@@ -1253,6 +1253,16 @@
 		#size-cells = <0>;
 	};
 
+	kpp: kpp@2a00000 {
+		compatible = "nxp,mcux-kpp";
+		reg = <0x2A00000 0x1000>;
+		interrupts = <211 0>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+		clocks = <&ccm IMX_CCM_KPP_CLK 0x0 0>;
+	};
+
 	lpspi2: spi@4370000 {
 		compatible = "nxp,lpspi";
 		reg = <0x4370000 0x4000>;

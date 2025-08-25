@@ -28,4 +28,5 @@ supported:
   - spi
   - uart
   - dac
+  - kpp
 vendor: nxp

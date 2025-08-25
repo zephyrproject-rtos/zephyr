@@ -1,0 +1,16 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config INPUT_MCUX_KPP
+	bool "KPP driver"
+	default y
+	depends on DT_HAS_NXP_MCUX_KPP_ENABLED
+	help
+	  Enable the driver of keypad port.
+
+config INPUT_KPP_PERIOD_MS
+	int "Sample period"
+	default 10
+	depends on INPUT_MCUX_KPP
+	help
+	  Sample period in milliseconds when the key is pressed.
