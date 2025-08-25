@@ -51,7 +51,6 @@ static int rx_buf_pos;
 static struct {
 	bool can_initiated;
 	bool can_open;
-	bool timestamp_on;
 } slcan;
 
 /*
@@ -274,20 +273,6 @@ int slcan_serial_process(uint8_t *buf, size_t size)
 		/* Get Serial number of the CANUSB (dummy response) */
 		slcan_serial_print("N0000\r", 6);
 		err = 0;
-		break;
-	case 'Z':
-		/* Sets Time Stamp ON/OFF for received frames only */
-		if (!slcan.can_open) {
-			if (buf[1] == '0') {
-				slcan.timestamp_on = false;
-				err = 0;
-			} else if (buf[1] == '1') {
-				slcan.timestamp_on = true;
-				err = 0;
-			}
-		} else {
-			err = -EBUSY;
-		}
 		break;
 	}
 
