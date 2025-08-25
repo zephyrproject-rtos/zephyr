@@ -516,6 +516,7 @@
 			compatible = "espressif,esp32-adc";
 			reg = <0x3ff48800 10>;
 			clocks = <&clock ESP32_SARADC_MODULE>;
+			interrupt-parent = <&intc>;
 			unit = <1>;
 			channel-count = <8>;
 			#io-channel-cells = <1>;
