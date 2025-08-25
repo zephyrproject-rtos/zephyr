@@ -1048,6 +1048,26 @@ static int open(const struct device *instance)
 			  (void *)instance);
 }
 
+static int close(const struct device *instance)
+{
+	const struct icbmsg_config *conf = instance->config;
+	struct backend_data *dev_data = instance->data;
+	struct ept_data *ept = NULL;
+	int ept_index;
+
+	for (ept_index = 0; ept_index < NUM_EPT; ept_index++) {
+		ept = &dev_data->ept[ept_index];
+		ept->cfg = NULL;
+		atomic_set(&ept->state, EPT_UNCONFIGURED);
+		atomic_set(&ept->rebound_state, EPT_NORMAL);
+		ept->addr = EPT_ADDR_INVALID;
+	}
+	atomic_clear(&dev_data->flags);
+	memset(&dev_data->waiting_bound, 0xFF, sizeof(dev_data->waiting_bound));
+	memset(&dev_data->ept_map, EPT_ADDR_INVALID, sizeof(dev_data->ept_map));
+	return icmsg_close(&conf->control_config, &dev_data->control_data);
+}
+
 /**
  * Endpoint send callback function (with copy).
  */
@@ -1290,7 +1310,7 @@ static int backend_init(const struct device *instance)
  */
 const static struct ipc_service_backend backend_ops = {
 	.open_instance = open,
-	.close_instance = NULL, /* not implemented */
+	.close_instance = close,
 	.send = send,
 	.register_endpoint = register_ept,
 	.deregister_endpoint = deregister_ept,
