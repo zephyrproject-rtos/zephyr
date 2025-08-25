@@ -678,7 +678,7 @@ static void z_check_thread_stack(k_thread_stack_t *stack, size_t stack_size,
 	 * K_THREAD_STACK_DEFINE.
 	 */
 
-#if CONFIG_USERSPACE
+#ifdef CONFIG_USERSPACE
 	extern char z_user_stacks_start[];
 	extern char z_user_stacks_end[];
 
