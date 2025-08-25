@@ -167,6 +167,23 @@
 #endif /* !CONFIG_BT_PERIPHERAL */
 #endif /* !CONFIG_BT_CTLR_LE_ENC */
 
+/* TODO this could be incorporated in logic above but since PAST receiver and
+ * sender are separate options this would get a bit complicated
+ *
+ * Adjust for LL_PERIODIC_SYNC_IND if ISO support is not enabled.
+ */
+#if !defined(CONFIG_BT_CTLR_CONN_ISO)
+#if defined(CONFIG_BT_PER_ADV_SYNC_TRANSFER_RECEIVER)
+#undef PDU_DC_CTRL_RX_SIZE_MAX
+#define PDU_DC_CTRL_RX_SIZE_MAX       PDU_DATA_LLCTRL_LEN(periodic_sync_ind)
+#endif
+
+#if defined(CONFIG_BT_PER_ADV_SYNC_TRANSFER_SENDER)
+#undef PDU_DC_CTRL_TX_SIZE_MAX
+#define PDU_DC_CTRL_TX_SIZE_MAX       PDU_DATA_LLCTRL_LEN(periodic_sync_ind)
+#endif
+#endif
+
 #else /* !CONFIG_BT_CONN */
 #define PDU_DC_CTRL_TX_SIZE_MAX       0U
 #define PDU_DC_CTRL_RX_SIZE_MAX       0U
