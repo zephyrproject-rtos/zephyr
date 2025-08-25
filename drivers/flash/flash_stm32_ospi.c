@@ -183,6 +183,9 @@ struct flash_stm32_ospi_data {
 #if STM32_OSPI_USE_DMA
 	struct stream dma;
 #endif /* STM32_OSPI_USE_DMA */
+#if CONFIG_FLASH_STM32_ERRATUM_U5_STOP2_3_CORRUPT_READ
+	bool errata_u59_2_5_13;
+#endif
 };
 
 
@@ -243,6 +246,18 @@ static int ospi_read_access(const struct device *dev, OSPI_RegularCmdTypeDef *cm
 {
 	struct flash_stm32_ospi_data *dev_data = dev->data;
 	HAL_StatusTypeDef hal_ret;
+
+#if CONFIG_FLASH_STM32_ERRATUM_U5_STOP2_3_CORRUPT_READ
+	int err;
+
+	if (dev_data->errata_u59_2_5_13) {
+		dev_data->errata_u59_2_5_13 = false;
+		err = ospi_read_access(dev, cmd, data, 1);
+		if (err) {
+			return err;
+		}
+	}
+#endif
 
 	LOG_DBG("Instruction 0x%x", cmd->Instruction);
 
@@ -2682,6 +2697,9 @@ static int flash_stm32_ospi_pm_action(const struct device *dev, enum pm_device_a
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
+#if CONFIG_FLASH_STM32_ERRATUM_U5_STOP2_3_CORRUPT_READ
+		dev_data->errata_u59_2_5_13 = true;
+#endif
 		err = flash_stm32_ospi_activate(dev);
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
