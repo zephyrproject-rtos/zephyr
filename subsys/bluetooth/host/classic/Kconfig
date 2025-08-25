@@ -485,6 +485,37 @@ config BT_AVRCP_CONTROLLER
 	help
 	  This option enables the AVRCP profile controller function
 
+config BT_AVRCP_RX_DATA_BUF_SIZE
+	int "AVRCP RX Data Buffer Size"
+	default 1024
+	help
+	  Size of the AVRCP receive data buffer in bytes.
+
+config BT_AVRCP_RX_DATA_BUF_CNT
+	int "AVRCP RX Data Buffer Count"
+	default 1
+	help
+	  Number of receive data buffers used by AVRCP.
+
+config BT_AVRCP_TX_DATA_BUF_SIZE
+	int "AVRCP TX Data Buffer Size"
+	default 1024
+	help
+	  Size of the AVRCP transmit data buffer in bytes.
+
+config BT_AVRCP_TX_DATA_BUF_CNT
+	int "AVRCP TX Data Buffer Count"
+	default 3
+	help
+	  Number of transmit data buffers used by AVRCP.
+
+config BT_AVRCP_MAX_ATTR_COUNT
+	int "Maximum number of AVRCP attributes"
+	default 10
+	range 1 255
+	help
+	  The option is the maximum number of AVRCP attributes that can be handled.
+
 endif # BT_AVRCP
 
 config BT_PAGE_TIMEOUT

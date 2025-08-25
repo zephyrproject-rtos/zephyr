@@ -103,6 +103,35 @@ typedef enum __packed {
 	BT_AVRCP_PDU_ID_GENERAL_REJECT = 0xa0,
 } bt_avrcp_pdu_id_t;
 
+
+typedef enum {
+	AVRCP_STATE_IDLE,
+	AVRCP_STATE_SENDING_CONTINUING,
+	AVRCP_STATE_ABORT_CONTINUING,
+} avrcp_tg_rsp_state_t;
+
+struct bt_avrcp_ct_frag_reassembly_ctx {
+	uint8_t tid;				/**< Transaction ID */
+	uint16_t total_len;			/**< Total length of complete response */
+	uint16_t received_len;			/**< Length already received */
+	struct net_buf *reassembly_buf;		/**< Buffer for reassembling fragments */
+	bool fragmentation_active;		/**< Flag fragmentation is in progress */
+};
+
+struct bt_avrcp_tg_tx {
+	sys_snode_t node;
+
+	struct bt_avrcp_tg *tg;
+	struct net_buf *buf;
+	uint16_t total_len;
+	uint16_t sent_len;
+	void *user_data;
+	int err;
+	uint8_t tid;
+	uint8_t pdu_id; /**< PDU ID for the current transaction */
+	avrcp_tg_rsp_state_t state;
+};
+
 struct bt_avrcp_req {
 	uint8_t tid;
 	uint8_t subunit;
@@ -121,6 +150,20 @@ struct bt_avrcp_avc_pdu {
 	uint16_t param_len;
 	uint8_t param[];
 } __packed;
+
+
+#define BT_AVRCP_ELEMENT_ID_SIZE		0x08U
+#define BT_AVRCP_ATTR_ID_SIZE			0x04U
+#define BT_AVRCP_CHARSET_ID_SIZE		0x02U
+#define BT_AVRCP_ATTR_LEN_SIZE			0x02U
+
+/** AVRCP Error Status Code. */
+#define BT_AVRCP_METADATA_ERROR_INVALID_COMMAND      0x00
+#define BT_AVRCP_METADATA_ERROR_INVALID_PARAMETER    0x01
+#define BT_AVRCP_METADATA_ERROR_PARAMETER_NOT_FOUND  0x02
+#define BT_AVRCP_METADATA_ERROR_INTERNAL             0x03
+#define BT_AVRCP_METADATA_ERROR_OPERATION_SUCCESSFUL 0x04
+#define BT_AVRCP_METADATA_ERROR_UID_CHANGED          0x05
 
 /** The 4-bit command type or the 4-bit response code. */
 #define BT_AVRCP_HDR_GET_CTYPE_OR_RSP(hdr) FIELD_GET(GENMASK(3, 0), ((hdr)->byte0))
