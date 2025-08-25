@@ -132,8 +132,8 @@ class Sign(Forceable):
 
         # general options
         group = parser.add_argument_group('tool control options')
-        group.add_argument('-t', '--tool', choices=['imgtool', 'rimage', 'silabs_commander'],
-                           help='''image signing tool name; imgtool, rimage and silabs_commander
+        group.add_argument('-t', '--tool', choices=['imgtool', 'rimage', 'silabs_commander', 'picotool'],
+                           help='''image signing tool name; imgtool, rimage, silabs_commander and picotool
                            are currently supported (imgtool is deprecated)''')
         group.add_argument('-p', '--tool-path', default=None,
                            help='''path to the tool itself, if needed''')
@@ -217,6 +217,8 @@ schema (rimage "target") is not defined in board.cmake.''')
             signer = RimageSigner()
         elif args.tool == 'silabs_commander':
             signer = CommanderSigner()
+        elif args.tool == 'picotool':
+            signer = PicotoolSigner()
         # (Add support for other signers here in elif blocks)
         else:
             if args.tool is None:
@@ -244,6 +246,26 @@ class Signer(abc.ABC):
         '''
 
 
+class CommonSigner(Signer):
+    @staticmethod
+    def get_tool(command, tool_name):
+        if command.args.tool_path:
+            tool = command.args.tool_path
+            if not os.path.isfile(tool):
+                command.die(f'--tool-path {tool}: no such file')
+        else:
+            tool = shutil.which(tool_name)
+            if not tool:
+                command.die(f'"{tool_name}" not found; either make it available on PATH or provide --tool-path')
+        return tool
+
+    @staticmethod
+    def get_basename(build_dir, build_conf):
+        return (pathlib.Path(build_dir) / 'zephyr' /
+                         build_conf.get('CONFIG_KERNEL_BIN_NAME', "zephyr"))
+
+
+# TODO: use methods from CommonSigner
 class ImgtoolSigner(Signer):
 
     def sign(self, command, build_dir, build_conf, formats):
@@ -429,6 +451,7 @@ class ImgtoolSigner(Signer):
 
         return (align, addr, size)
 
+# TODO: use methods from CommonSigner
 class RimageSigner(Signer):
 
     def rimage_config_dir(self):
@@ -656,6 +679,7 @@ class RimageSigner(Signer):
         os.remove(out_bin)
         os.rename(out_tmp, out_bin)
 
+# TODO: use methods from CommonSigner
 class CommanderSigner(Signer):
     @staticmethod
     def get_tool(command):
@@ -701,6 +725,30 @@ class CommanderSigner(Signer):
             commandline.extend(["--encrypt", encrypt_key])
         if sign_key:
             commandline.extend(["--sign", sign_key])
+        commandline.extend(command.args.tool_args)
+
+        if not command.args.quiet:
+            command.inf("Signing with:", ' '.join(commandline))
+        subprocess.run(commandline, check=True)
+
+class PicotoolSigner(CommonSigner):
+    @staticmethod
+    def get_input_output(command, build_dir, build_conf):
+        kernel_prefix = CommonSigner.get_basename(build_dir, build_conf)
+        in_file = f'{kernel_prefix}.elf'
+        out_file = command.args.sbin or f'{kernel_prefix}.signed.elf'
+        return (in_file, out_file)
+
+    def sign(self, command, build_dir, build_conf, formats):
+        tool = self.get_tool(command, 'picotool')
+        in_file, out_file = self.get_input_output(command, build_dir, build_conf)
+        key_file = getattr(command.args, 'key',
+                           build_conf.get('CONFIG_RP2350_SIGNING_KEY', None))
+
+        if not key_file:
+            command.die('Please provide a key file using RP2350_SIGNING_KEY Kconfig option')
+
+        commandline = [ tool, "seal", "--sign", in_file, out_file, key_file ]
         commandline.extend(command.args.tool_args)
 
         if not command.args.quiet:
