@@ -17,15 +17,95 @@
 
 LOG_MODULE_REGISTER(uvc_sample, LOG_LEVEL_INF);
 
-const struct device *const uvc_dev = DEVICE_DT_GET(DT_NODELABEL(uvc));
-const struct device *const video_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_camera));
+const static struct device *const uvc_dev = DEVICE_DT_GET(DT_NODELABEL(uvc));
+const static struct device *const video_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_camera));
+
+/* Format capabilities of video_dev, usd everywhere through the sampel */
+static struct video_caps video_caps = {.type = VIDEO_BUF_TYPE_OUTPUT};
+
+static size_t app_get_min_buf_size(const struct video_format *const fmt)
+{
+	if (video_caps.min_line_count == LINE_COUNT_HEIGHT) {
+		return fmt->pitch * fmt->height;
+	} else {
+		return fmt->pitch * video_caps.min_line_count;
+	}
+}
+
+static bool app_is_standard_format(uint32_t pixfmt)
+{
+	return pixfmt == VIDEO_PIX_FMT_GREY || pixfmt == VIDEO_PIX_FMT_JPEG ||
+	       pixfmt == VIDEO_PIX_FMT_YUYV;
+}
+
+/* Check whether the video device supports one of the wisespread image sensor formats */
+static bool app_has_standard_formats(void)
+{
+	for (int i = 0;; i++) {
+		uint32_t pixfmt = video_caps.format_caps[i].pixelformat;
+
+		if (pixfmt == 0) {
+			return false;
+		}
+		if (app_is_standard_format(pixfmt)) {
+			return true;
+		}
+	}
+}
+
+static void app_add_format(uint32_t pixfmt, uint16_t width, uint16_t height, bool has_std_fmts)
+{
+	struct video_format fmt = {
+		.pixelformat = pixfmt,
+		.width = width,
+		.height = height,
+		.type = VIDEO_BUF_TYPE_OUTPUT,
+	};
+	int ret;
+
+	/* If the system has any standard pixel format, only propose them to the host */
+	if (has_std_fmts && !app_is_standard_format(pixfmt)) {
+		return;
+	}
+
+	/* Set the format to get the pitch */
+	ret = video_set_format(video_dev, &fmt);
+	if (ret != 0) {
+		LOG_ERR("Could not set the format of %s", video_dev->name);
+		return;
+	}
+
+	if (app_get_min_buf_size(&fmt) > CONFIG_VIDEO_BUFFER_POOL_SZ_MAX) {
+		LOG_WRN("Skipping format %ux%u", fmt.width, fmt.height);
+		return;
+	}
+
+	uvc_add_format(uvc_dev, &fmt);
+}
+
+/* Submit to UVC only the formats expected to be working (enough memory for the size, etc.) */
+static void app_add_filtered_formats(void)
+{
+	const bool has_std_fmts = app_has_standard_formats();
+
+	for (int i = 0; video_caps.format_caps[i].pixelformat != 0; i++) {
+		const struct video_format_cap *vcap = &video_caps.format_caps[i];
+
+		app_add_format(vcap->pixelformat, vcap->width_min, vcap->height_min, has_std_fmts);
+
+		if (vcap->width_min != vcap->width_max || vcap->height_min != vcap->height_max) {
+			app_add_format(vcap->pixelformat, vcap->width_max, vcap->height_max,
+				       has_std_fmts);
+		}
+	}
+}
 
 int main(void)
 {
 	struct usbd_context *sample_usbd;
 	struct video_buffer *vbuf;
 	struct video_format fmt = {0};
-	struct video_caps caps;
+	struct video_frmival frmival = {0};
 	struct k_poll_signal sig;
 	struct k_poll_event evt[1];
 	k_timeout_t timeout = K_FOREVER;
@@ -37,15 +117,17 @@ int main(void)
 		return -ENODEV;
 	}
 
-	caps.type = VIDEO_BUF_TYPE_OUTPUT;
-
-	if (video_get_caps(video_dev, &caps)) {
+	ret = video_get_caps(video_dev, &video_caps);
+	if (ret != 0) {
 		LOG_ERR("Unable to retrieve video capabilities");
 		return 0;
 	}
 
-	/* Must be done before initializing USB */
+	/* Must be called before usb_enable() */
 	uvc_set_video_dev(uvc_dev, video_dev);
+
+	/* Must be called before uvc_set_video_dev() */
+	app_add_filtered_formats();
 
 	sample_usbd = sample_usbd_init_device(NULL);
 	if (sample_usbd == NULL) {
@@ -59,7 +141,6 @@ int main(void)
 
 	LOG_INF("Waiting the host to select the video format");
 
-	/* Get the video format once it is selected by the host */
 	while (true) {
 		fmt.type = VIDEO_BUF_TYPE_INPUT;
 
@@ -75,16 +156,31 @@ int main(void)
 		k_sleep(K_MSEC(10));
 	}
 
-	LOG_INF("The host selected format '%s' %ux%u, preparing %u buffers of %u bytes",
-		VIDEO_FOURCC_TO_STR(fmt.pixelformat), fmt.width, fmt.height,
-		CONFIG_VIDEO_BUFFER_POOL_NUM_MAX, fmt.pitch * fmt.height);
-
-	/* Size to allocate for each buffer */
-	if (caps.min_line_count == LINE_COUNT_HEIGHT) {
-		bsize = fmt.pitch * fmt.height;
-	} else {
-		bsize = fmt.pitch * caps.min_line_count;
+	ret = video_get_frmival(uvc_dev, &frmival);
+	if (ret != 0) {
+		LOG_ERR("Failed to get the video frame interval");
+		return ret;
 	}
+
+	LOG_INF("The host selected format '%s' %ux%u at frame interval %u/%u",
+		VIDEO_FOURCC_TO_STR(fmt.pixelformat), fmt.width, fmt.height,
+		frmival.numerator, frmival.denominator);
+
+	fmt.type = VIDEO_BUF_TYPE_OUTPUT;
+
+	ret = video_set_format(video_dev, &fmt);
+	if (ret != 0) {
+		LOG_WRN("Could not set the format of %s", video_dev->name);
+	}
+
+	ret = video_set_frmival(video_dev, &frmival);
+	if (ret != 0) {
+		LOG_WRN("Could not set the framerate of %s", video_dev->name);
+	}
+
+	bsize = app_get_min_buf_size(&fmt);
+
+	LOG_INF("Preparing %u buffers of %u bytes", CONFIG_VIDEO_BUFFER_POOL_NUM_MAX, bsize);
 
 	for (int i = 0; i < CONFIG_VIDEO_BUFFER_POOL_NUM_MAX; i++) {
 		vbuf = video_buffer_alloc(bsize, K_NO_WAIT);
