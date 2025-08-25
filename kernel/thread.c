@@ -649,9 +649,9 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 	return stack_ptr;
 }
 
-#if CONFIG_VALIDATE_THREAD_STACK_POINTER
+#ifdef CONFIG_VALIDATE_THREAD_STACK_POINTER
 static bool is_stack_in_section(k_thread_stack_t *stack_base, size_t stack_size,
-                                char *section_start, char *section_end)
+				char *section_start, char *section_end)
 {
 	uintptr_t stack_start_addr = (uintptr_t)stack_base;
 	uintptr_t stack_end_addr = (uintptr_t)stack_base + stack_size;
@@ -683,7 +683,7 @@ static void z_check_thread_stack(k_thread_stack_t *stack, size_t stack_size,
 	extern char z_user_stacks_end[];
 
 	if (options & K_USER) {
-		// If userspace is enabled, user threads MUST be in the user stack section.
+		/* If userspace is enabled, user threads MUST be in the user stack section. */
 		is_valid_stack = is_stack_in_section(stack, stack_size,
 						     z_user_stacks_start,
 						     z_user_stacks_end);
@@ -692,17 +692,21 @@ static void z_check_thread_stack(k_thread_stack_t *stack, size_t stack_size,
 						     z_kernel_stacks_start,
 						     z_kernel_stacks_end);
 		if (!is_valid_stack) {
-			// Kernel threads can also be placed in the user stack section
-			// if CONFIG_USERSPACE is enabled, which happens if
-			// K_THREAD_STACK_DEFINE is used for them.
+			/**
+			 * Kernel threads can also be placed in the user stack section
+			 * if CONFIG_USERSPACE is enabled, which happens if
+			 * K_THREAD_STACK_DEFINE is used for them.
+			 */
 			is_valid_stack = is_stack_in_section(stack, stack_size,
 							     z_user_stacks_start,
 							     z_user_stacks_end);
 		}
 	}
 #else
-	// If userspace is disabled, K_USER option is effectively ignored;
-	// threads are created in kernel space. Check against kernel stacks.
+	/**
+	 * If userspace is disabled, K_USER option is effectively ignored;
+	 * threads are created in kernel space. Check against kernel stacks.
+	 */
 	is_valid_stack = is_stack_in_section(stack, stack_size,
 						z_kernel_stacks_start,
 						z_kernel_stacks_end);
@@ -710,6 +714,8 @@ static void z_check_thread_stack(k_thread_stack_t *stack, size_t stack_size,
 
 	__ASSERT(is_valid_stack, "Stack pointer is outside of the stack section");
 
+	/* To suppress variable unused report from SA */
+	(void)is_valid_stack;
 }
 #endif
 
@@ -721,7 +727,7 @@ k_tid_t z_impl_k_thread_create(struct k_thread *new_thread,
 {
 	__ASSERT(!arch_is_in_isr(), "Threads may not be created in ISRs");
 
-#if CONFIG_VALIDATE_THREAD_STACK_POINTER
+#ifdef CONFIG_VALIDATE_THREAD_STACK_POINTER
 	z_check_thread_stack(stack, stack_size, options);
 #endif
 
