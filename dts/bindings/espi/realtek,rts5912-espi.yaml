@@ -17,3 +17,6 @@ properties:
 
   pinctrl-names:
     required: true
+
+  gpios:
+    type: phandle-array
