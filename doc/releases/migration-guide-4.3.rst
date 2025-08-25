@@ -29,6 +29,10 @@ Kernel
 Boards
 ******
 
+* b_u585i_iot02a/ns: The flash layout was changed to be in sync with the upstream TF-M 2.2.1 board
+  configurations. The new layout expands the flash partitions, moving the secondary ones to the
+  external NOR flash.
+
 * mimxrt11x0: renamed lpadc1 to lpadc2 and renamed lpadc0 to lpadc1.
 
 * NXP ``frdm_mcxa166`` is renamed to ``frdm_mcxa346``.
@@ -171,6 +175,17 @@ Silabs
 
 * The separate ``em3`` power state was removed from Series 2 SoCs. The system automatically
   transitions to EM2 or EM3 depending on hardware peripheral requests for the oscillators.
+
+Trusted Firmware-M
+==================
+
+* The signing process for BL2 (MCUboot) was updated. The boards that run using
+  tf-m NS must have their flash layout with the flash controller information.
+  This ensure that when signing the hex/bin files all the details will be
+  present in the S and NS image. This change fixes the image details to allow
+  the FWU state machine be correct and allow FOTA.
+
+  For more details: https://github.com/zephyrproject-rtos/zephyr/pull/94470
 
 Architectures
 *************
