@@ -35,5 +35,7 @@ if (CONFIG_MODEM_SIM7080)
 	zephyr_library_sources(simcom-sim7080.c)
 endif()
 
+add_subdirectory_ifdef(CONFIG_MODEM_HL78XX hl78xx)
+
 zephyr_library_sources_ifdef(CONFIG_MODEM_CELLULAR modem_cellular.c)
 zephyr_library_sources_ifdef(CONFIG_MODEM_AT_SHELL modem_at_shell.c)
