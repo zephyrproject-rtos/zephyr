@@ -26,18 +26,6 @@ LOG_MODULE_REGISTER(shell_mqtt, CONFIG_SHELL_MQTT_LOG_LEVEL);
 #define PROCESS_INTERVAL K_MSEC(CONFIG_SHELL_MQTT_WORK_DELAY_MS)
 #define SHELL_MQTT_WORKQ_STACK_SIZE 2048
 
-#ifdef CONFIG_SHELL_MQTT_SERVER_USERNAME
-#define MQTT_USERNAME CONFIG_SHELL_MQTT_SERVER_USERNAME
-#else
-#define MQTT_USERNAME NULL
-#endif /* CONFIG_SHELL_MQTT_SERVER_USERNAME */
-
-#ifdef CONFIG_SHELL_MQTT_SERVER_PASSWORD
-#define MQTT_PASSWORD CONFIG_SHELL_MQTT_SERVER_PASSWORD
-#else
-#define MQTT_PASSWORD NULL
-#endif /*SHELL_MQTT_SERVER_PASSWORD */
-
 struct shell_mqtt *sh_mqtt;
 K_KERNEL_STACK_DEFINE(sh_mqtt_workq_stack, SHELL_MQTT_WORKQ_STACK_SIZE);
 
@@ -187,10 +175,10 @@ static void client_init(struct shell_mqtt *sh)
 	static struct mqtt_utf8 password;
 	static struct mqtt_utf8 username;
 
-	password.utf8 = (uint8_t *)MQTT_PASSWORD;
-	password.size = strlen(MQTT_PASSWORD);
-	username.utf8 = (uint8_t *)MQTT_USERNAME;
-	username.size = strlen(MQTT_USERNAME);
+	password.utf8 = (uint8_t *)CONFIG_SHELL_MQTT_SERVER_PASSWORD;
+	password.size = strlen(CONFIG_SHELL_MQTT_SERVER_PASSWORD);
+	username.utf8 = (uint8_t *)CONFIG_SHELL_MQTT_SERVER_USERNAME;
+	username.size = strlen(CONFIG_SHELL_MQTT_SERVER_USERNAME);
 
 	mqtt_client_init(&sh->mqtt_cli);
 
