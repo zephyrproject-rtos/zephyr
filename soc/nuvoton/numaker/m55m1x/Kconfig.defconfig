@@ -6,4 +6,10 @@ if SOC_SERIES_M55M1X
 
 rsource "Kconfig.defconfig.m55m1*"
 
+DT_NUMAKER_CPU_CLOCK_PATH := $(dt_nodelabel_path,sysclk)
+DT_NUMAKER_CPU_CLOCK_FREQ := $(dt_node_int_prop_int,$(DT_NUMAKER_CPU_CLOCK_PATH),clock-frequency)
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(DT_NUMAKER_CPU_CLOCK_FREQ)
+
 endif # SOC_SERIES_M55M1X
