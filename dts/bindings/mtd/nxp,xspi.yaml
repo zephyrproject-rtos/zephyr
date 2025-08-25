@@ -1,0 +1,46 @@
+# Copyright 2024-2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP XSPI controller
+
+compatible: "nxp,xspi"
+
+include: [spi-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  amba-address:
+    type: int
+    required: true
+    description: |
+      XSPI AMBA memory map.
+
+  byte-order:
+    type: int
+    default: 3
+    enum: [0, 1, 2, 3]
+    description: |
+      Byte ordering endianness.
+      0 = 64-bit BE, 1 = 32-bit LE, 2 = 32-bit BE, 3 = 64-bit LE
+
+  enable-ahb-write:
+    type: boolean
+    description: Enable AHB write access.
+
+  ahb-buffer-write-flush:
+    type: boolean
+    description: Enable flushing AHB buffer on write or IP access.
+
+  ahb-prefetch:
+    type: boolean
+    description: Enable AHB read prefetch feature.
+
+child-binding:
+  description: NXP XSPI port
+
+  include: nxp,xspi-device.yaml
