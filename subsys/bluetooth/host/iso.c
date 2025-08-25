@@ -2722,6 +2722,11 @@ static void big_disconnect(struct bt_iso_big *big, uint8_t reason)
 		bt_iso_chan_disconnected(bis, reason);
 	}
 
+	/* Cleanup the BIG before calling the `stopped` so that the `big` pointer and the ISO
+	 * channels in the `big` can be reused in the callback
+	 */
+	cleanup_big(big);
+
 	if (!sys_slist_is_empty(&iso_big_cbs)) {
 		struct bt_iso_big_cb *listener;
 
@@ -3158,7 +3163,6 @@ void hci_le_big_complete(struct net_buf *buf)
 		big = big_lookup_flag(BT_BIG_PENDING);
 		if (big) {
 			big_disconnect(big, evt->status ? evt->status : BT_HCI_ERR_UNSPECIFIED);
-			cleanup_big(big);
 		}
 
 		return;
@@ -3176,7 +3180,6 @@ void hci_le_big_complete(struct net_buf *buf)
 				big->num_bis);
 		}
 		big_disconnect(big, evt->status ? evt->status : BT_HCI_ERR_UNSPECIFIED);
-		cleanup_big(big);
 		return;
 	}
 
@@ -3216,7 +3219,6 @@ void hci_le_big_terminate(struct net_buf *buf)
 	LOG_DBG("BIG[%u] %p terminated", big->handle, big);
 
 	big_disconnect(big, evt->reason);
-	cleanup_big(big);
 }
 #endif /* CONFIG_BT_ISO_BROADCASTER */
 
@@ -3303,7 +3305,6 @@ int bt_iso_big_terminate(struct bt_iso_big *big)
 
 		if (!err) {
 			big_disconnect(big, BT_HCI_ERR_LOCALHOST_TERM_CONN);
-			cleanup_big(big);
 		}
 	} else {
 		err = -EINVAL;
@@ -3352,7 +3353,6 @@ void hci_le_big_sync_established(struct net_buf *buf)
 		big = big_lookup_flag(BT_BIG_SYNCING);
 		if (big) {
 			big_disconnect(big, evt->status ? evt->status : BT_HCI_ERR_UNSPECIFIED);
-			cleanup_big(big);
 		}
 
 		return;
@@ -3370,7 +3370,6 @@ void hci_le_big_sync_established(struct net_buf *buf)
 				big->num_bis);
 		}
 		big_disconnect(big, evt->status ? evt->status : BT_HCI_ERR_UNSPECIFIED);
-		cleanup_big(big);
 		return;
 	}
 
@@ -3410,7 +3409,6 @@ void hci_le_big_sync_lost(struct net_buf *buf)
 	LOG_DBG("BIG[%u] %p sync lost", big->handle, big);
 
 	big_disconnect(big, evt->reason);
-	cleanup_big(big);
 }
 
 static int hci_le_big_create_sync(const struct bt_le_per_adv_sync *sync, struct bt_iso_big *big,
@@ -3621,7 +3619,6 @@ void bt_iso_reset(void)
 		struct bt_iso_big *big = &bigs[i];
 
 		big_disconnect(big, BT_HCI_ERR_UNSPECIFIED);
-		cleanup_big(big);
 	}
 #endif /* CONFIG_BT_ISO_BROADCAST */
 }
