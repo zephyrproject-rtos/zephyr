@@ -4,7 +4,7 @@ common:
     - drivers
     - spi
 tests:
-  drivers.spi.build:
+  drivers.spi.build.spi_cdns:
     # will cover drivers without in-tree boards
     platform_allow: qemu_cortex_m3
     tags: spi_cdns
