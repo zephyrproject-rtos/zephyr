@@ -149,6 +149,11 @@ bool pm_system_suspend(int32_t kernel_ticks)
 	int32_t ticks, events_ticks;
 	uint32_t exit_latency_ticks;
 
+	if (pm_cpu_shell_forced_idle()) {
+		/* Directly enter cpu_idle, no about soc level low power mode */
+		return false;
+	}
+
 	SYS_PORT_TRACING_FUNC_ENTER(pm, system_suspend, kernel_ticks);
 
 	if (!pm_policy_state_any_active() && (z_cpus_pm_forced_state[id] == NULL)) {
