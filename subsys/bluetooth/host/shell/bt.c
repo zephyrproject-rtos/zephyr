@@ -2654,7 +2654,7 @@ static int cmd_adv_info(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	shell_print(sh, "Advertiser[%d] %p", selected_adv, adv);
-	shell_print(sh, "Id: %d, TX power: %d dBm", info.id, info.tx_power);
+	shell_print(sh, "Id: %d, SID %u, TX power: %d dBm", info.id, info.sid, info.tx_power);
 	shell_print(sh, "Adv state: %d", info.ext_adv_state);
 	print_le_addr("Address", info.addr);
 
