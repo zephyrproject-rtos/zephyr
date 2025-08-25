@@ -1,0 +1,12 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+properties:
+  "#mux-control-cells":
+    type: int
+    required: true
+    description: Number of items to expect in a mux control specifier
+  "#mux-state-cells":
+    type: int
+    required: true
+    description: Number of items to expect in a mux state specifier

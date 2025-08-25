@@ -3817,6 +3817,32 @@
 #define DT_PHA_HAS_CELL(node_id, pha, cell) \
 	DT_PHA_HAS_CELL_AT_IDX(node_id, pha, 0, cell)
 
+/* doc todo */
+
+#define DT_FOREACH_PHA_CELL_BY_IDX(node_id, pha, idx, fn)	\
+ 	DT_CAT6(node_id, _P_, pha, _IDX_, idx, _FOREACH_CELL)(fn)
+
+#define DT_FOREACH_PHA_CELL_BY_IDX_SEP(node_id, pha, idx, fn, sep)	\
+ 	DT_CAT6(node_id, _P_, pha, _IDX_, idx, _FOREACH_CELL_SEP)(fn, sep)
+
+#define DT_PHA_NUM_CELLS_BY_IDX(node_id, pha, idx) \
+	DT_CAT6(node_id, _P_, pha, _IDX_, idx, _NUM_CELLS)
+
+#define DT_PHA_ELEM_NAME_BY_IDX(node_id, pha, idx) \
+	 DT_CAT6(node_id, _P_, pha, _IDX_, idx, _NAME)
+
+#define DT_FOREACH_PHA_CELL_BY_NAME(node_id, pha, name, fn)	\
+ 	DT_CAT6(node_id, _P_, pha, _NAME_, name, _FOREACH_CELL)(fn)
+
+#define DT_FOREACH_PHA_CELL_BY_NAME_SEP(node_id, pha, name, fn, sep)	\
+ 	DT_CAT6(node_id, _P_, pha, _NAME_, name, _FOREACH_CELL_SEP)(fn, sep)
+
+#define DT_PHA_NUM_CELLS_BY_NAME(node_id, pha, name) \
+	DT_CAT6(node_id, _P_, pha, _NAME_, name, _NUM_CELLS)
+
+#define DT_PHA_ELEM_IDX_BY_NAME(node_id, pha, name) \
+	 DT_CAT6(node_id, _P_, pha, _NAME_, name, _IDX)
+
 /**
  * @}
  */
