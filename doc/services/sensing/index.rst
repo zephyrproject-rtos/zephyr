@@ -246,7 +246,4 @@ See the example :zephyr_file:`samples/subsys/sensing/simple/boards/native_sim.ov
 API Reference
 *************
 
-.. doxygengroup:: sensing_sensor_types
-.. doxygengroup:: sensing_datatypes
 .. doxygengroup:: sensing_api
-.. doxygengroup:: sensing_sensor
