@@ -1,0 +1,56 @@
+# Copyright (c) 2024 Tenstorrent AI UL
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Binding for emulated clock consumer device. This device is used in testing
+  to verify that clock states are applied as expected.
+
+compatible: "vnd,emul-clock-consumer"
+
+include: [clock-device.yaml]
+
+properties:
+  fast-default-freq:
+    type: int
+    required: true
+    description: |
+      Frequency this consumer expects to read when applying default
+      clock state for fast output
+
+  fast-sleep-freq:
+    type: int
+    required: true
+    description: |
+      Frequency this consumer expects to read when applying sleep
+      clock state for fast output
+
+  fast-request-freq:
+    type: int
+    required: true
+    description: |
+      Frequency this consumer will request from the fast output. Consumer
+      expects the resulting frequency from this request to match the
+      requested frequency exactly.
+
+  slow-default-freq:
+    type: int
+    required: true
+    description: |
+      Frequency this consumer expects to read when applying default
+      clock state for slow output
+
+  slow-sleep-freq:
+    type: int
+    required: true
+    description: |
+      Frequency this consumer expects to read when applying sleep
+      clock state for slow output
+
+  slow-request-freq:
+    type: int
+    required: true
+    description: |
+      Frequency this consumer will request from the slow output. Consumer
+      expects the resulting frequency from this request to match the
+      requested frequency exactly.
