@@ -18,6 +18,14 @@ LOG_MODULE_REGISTER(spi_litex_litespi);
 
 #define SPI_LITEX_HAS_IRQ UTIL_OR(SPI_LITEX_ALL_HAS_IRQ, dev_config->has_irq)
 
+#define SPI_LITEX_ANY_HAS_MASTER_CLK_DIVISOR                                                       \
+	DT_ANY_INST_REG_HAS_NAME_STATUS_OKAY(master_clk_divisor)
+#define SPI_LITEX_ALL_HAS_MASTER_CLK_DIVISOR                                                       \
+	DT_ALL_INST_REG_HAS_NAME_STATUS_OKAY(master_clk_divisor)
+
+BUILD_ASSERT(SPI_LITEX_ANY_HAS_MASTER_CLK_DIVISOR == SPI_LITEX_ALL_HAS_MASTER_CLK_DIVISOR,
+	     "Either all or no one should have a master_clk_divisor register");
+
 #define SPIFLASH_MASTER_PHYCONFIG_LEN_OFFSET   0x0
 #define SPIFLASH_MASTER_PHYCONFIG_WIDTH_OFFSET 0x1
 #define SPIFLASH_MASTER_PHYCONFIG_MASK_OFFSET  0x2
@@ -37,8 +45,7 @@ struct spi_litex_dev_config {
 	uint32_t master_rxtx_addr;
 	uint32_t master_rxtx_size;
 	uint32_t master_status_addr;
-	uint32_t phy_clk_divisor_addr;
-	bool phy_clk_divisor_exists;
+	uint32_t clk_divisor_addr;
 #if SPI_LITEX_ANY_HAS_IRQ
 #if !SPI_LITEX_ALL_HAS_IRQ
 	bool has_irq;
@@ -55,20 +62,24 @@ struct spi_litex_data {
 	uint8_t len; /* length of the last transfer in bytes */
 };
 
-static int spi_litex_set_frequency(const struct device *dev, const struct spi_config *config)
+static void spi_litex_set_frequency(const struct device *dev, const struct spi_config *config)
 {
 	const struct spi_litex_dev_config *dev_config = dev->config;
+	uint32_t divisor;
 
-	if (!dev_config->phy_clk_divisor_exists) {
+	if (dev_config->clk_divisor_addr == 0) {
 		/* In the LiteX Simulator the phy_clk_divisor doesn't exists, thats why we check. */
-		LOG_WRN("No phy_clk_divisor found, can't change frequency");
-		return 0;
+		LOG_WRN_ONCE("No clk_divisor register, can't change frequency");
+		return;
 	}
 
-	uint32_t divisor = DIV_ROUND_UP(sys_clock_hw_cycles_per_sec(), (2 * config->frequency)) - 1;
+	if (SPI_LITEX_ALL_HAS_MASTER_CLK_DIVISOR) {
+		divisor = DIV_ROUND_UP(sys_clock_hw_cycles_per_sec(), config->frequency);
+	} else {
+		divisor = DIV_ROUND_UP(sys_clock_hw_cycles_per_sec(), (2 * config->frequency)) - 1;
+	}
 
-	litex_write32(divisor, dev_config->phy_clk_divisor_addr);
-	return 0;
+	litex_write32(divisor, dev_config->clk_divisor_addr);
 }
 
 /* Helper Functions */
@@ -415,8 +426,8 @@ static DEVICE_API(spi, spi_litex_api) = {
 		.master_rxtx_addr = DT_INST_REG_ADDR_BY_NAME(n, master_rxtx),                      \
 		.master_rxtx_size = DT_INST_REG_SIZE_BY_NAME(n, master_rxtx),                      \
 		.master_status_addr = DT_INST_REG_ADDR_BY_NAME(n, master_status),                  \
-		.phy_clk_divisor_exists = DT_INST_REG_HAS_NAME(n, phy_clk_divisor),                \
-		.phy_clk_divisor_addr = DT_INST_REG_ADDR_BY_NAME_OR(n, phy_clk_divisor, 0),        \
+		.clk_divisor_addr = DT_INST_REG_ADDR_BY_NAME_OR(n, master_clk_divisor,             \
+			DT_INST_REG_ADDR_BY_NAME_OR(n, phy_clk_divisor, 0)),                       \
 		IF_ENABLED(SPI_LITEX_ANY_HAS_IRQ, (SPI_LITEX_IRQ_CONFIG(n)))                       \
 	};                                                                                         \
                                                                                                    \
