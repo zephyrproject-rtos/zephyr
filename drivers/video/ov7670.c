@@ -12,16 +12,11 @@
 #include <zephyr/drivers/video-controls.h>
 #include <zephyr/logging/log.h>
 
+#include "video_common.h"
 #include "video_ctrls.h"
 #include "video_device.h"
 
 LOG_MODULE_REGISTER(video_ov7670, CONFIG_VIDEO_LOG_LEVEL);
-
-/* Initialization register structure */
-struct ov7670_reg {
-	uint8_t reg;
-	uint8_t cmd;
-};
 
 struct ov7670_config {
 	struct i2c_dt_spec bus;
@@ -99,7 +94,7 @@ const struct ov7670_resolution_cfg OV7670_RESOLUTION_VGA = {
 	.pclk_delay = 0x02
 };
 
-
+#define OV7670_REG8(addr)   ((addr) | VIDEO_REG_ADDR8_DATA8)
 /* OV7670 registers */
 #define OV7670_PID                0x0A
 #define OV7670_COM7               0x12
@@ -200,6 +195,7 @@ const struct ov7670_resolution_cfg OV7670_RESOLUTION_VGA = {
 		.height_min = (height), .height_max = (height), .width_step = 0, .height_step = 0  \
 	}
 
+
 static const struct video_format_cap fmts[] = {
 	OV7670_VIDEO_FORMAT_CAP(176, 144, VIDEO_PIX_FMT_RGB565), /* QCIF  */
 	OV7670_VIDEO_FORMAT_CAP(320, 240, VIDEO_PIX_FMT_RGB565), /* QVGA  */
@@ -215,7 +211,7 @@ static const struct video_format_cap fmts[] = {
  * This initialization table is based on the MCUX SDK driver for the OV7670.
  * Note that this table assumes the camera is fed a 6MHz XCLK signal
  */
-static const struct ov7670_reg ov7670_init_regtbl[] = {
+static const struct video_reg8 ov7670_init_regtbl[] = {
 	{OV7670_MVFP, 0x00}, /* MVFP: Mirror/VFlip,Normal image */
 
 	/* configure the output timing */
@@ -415,43 +411,44 @@ static int ov7670_set_fmt(const struct device *dev, struct video_format *fmt)
 				break;
 			}
 			/* Program resolution bytes settings */
-			ret = i2c_reg_write_byte_dt(&config->bus, OV7670_COM7,
-						    resolution->com7);
+      ret = video_write_cci_reg(&config->bus, OV7670_REG8(OV7670_COM7),
+               resolution->com7);
 			if (ret < 0) {
 				return ret;
 			}
-			ret = i2c_reg_write_byte_dt(&config->bus, OV7670_COM3,
+			ret = video_write_cci_reg(&config->bus, OV7670_REG8(OV7670_COM3),
 						    resolution->com3);
 			if (ret < 0) {
 				return ret;
 			}
-			ret = i2c_reg_write_byte_dt(&config->bus, OV7670_COM14,
+			ret = video_write_cci_reg(&config->bus, OV7670_REG8(OV7670_COM14),
 						    resolution->com14);
 			if (ret < 0) {
 				return ret;
 			}
-			ret = i2c_reg_write_byte_dt(&config->bus, OV7670_SCALING_XSC,
+			ret = video_write_cci_reg(&config->bus, OV7670_REG8(OV7670_SCALING_XSC),
 						    resolution->scaling_xsc);
 			if (ret < 0) {
 				return ret;
 			}
-			ret = i2c_reg_write_byte_dt(&config->bus, OV7670_SCALING_YSC,
+			ret = video_write_cci_reg(&config->bus, OV7670_REG8(OV7670_SCALING_YSC),
 						    resolution->scaling_ysc);
 			if (ret < 0) {
 				return ret;
 			}
-			ret = i2c_reg_write_byte_dt(&config->bus, OV7670_SCALING_DCWCTR,
+			ret = video_write_cci_reg(&config->bus, OV7670_REG8(OV7670_SCALING_DCWCTR),
 						    resolution->dcwctr);
 			if (ret < 0) {
 				return ret;
 			}
-			ret = i2c_reg_write_byte_dt(&config->bus, OV7670_SCALING_PCLK_DIV,
+			ret = video_write_cci_reg(&config->bus, OV7670_REG8(OV7670_SCALING_PCLK_DIV),
 						    resolution->pclk_div);
 			if (ret < 0) {
 				return ret;
 			}
-			return i2c_reg_write_byte_dt(&config->bus, OV7670_SCALING_PCLK_DELAY,
+			ret = video_write_cci_reg(&config->bus, OV7670_REG8(OV7670_SCALING_PCLK_DELAY),
 						     resolution->pclk_delay);
+			return ret;
 		}
 		i++;
 	}
@@ -487,14 +484,13 @@ static int ov7670_init_controls(const struct device *dev)
 static int ov7670_init(const struct device *dev)
 {
 	const struct ov7670_config *config = dev->config;
-	int ret, i;
-	uint8_t pid;
+	int ret;
+	uint32_t pid;
 	struct video_format fmt = {
 		.pixelformat = VIDEO_PIX_FMT_RGB565,
 		.width = 320,
 		.height = 240,
 	};
-	const struct ov7670_reg *reg;
 
 	if (!i2c_is_ready_dt(&config->bus)) {
 		/* I2C device is not ready, return */
@@ -540,16 +536,10 @@ static int ov7670_init(const struct device *dev)
 	 * To work around this, use a write then a read to interface with
 	 * registers.
 	 */
-	uint8_t cmd = OV7670_PID;
 
-	ret = i2c_write_dt(&config->bus, &cmd, sizeof(cmd));
+	ret = video_read_cci_reg(&config->bus, OV7670_REG8(OV7670_PID), &pid);
 	if (ret < 0) {
 		LOG_ERR("Could not request product ID: %d", ret);
-		return ret;
-	}
-	ret = i2c_read_dt(&config->bus, &pid, sizeof(pid));
-	if (ret < 0) {
-		LOG_ERR("Could not read product ID: %d", ret);
 		return ret;
 	}
 
@@ -559,7 +549,7 @@ static int ov7670_init(const struct device *dev)
 	}
 
 	/* Reset camera registers */
-	ret = i2c_reg_write_byte_dt(&config->bus, OV7670_COM7, 0x80);
+	ret = video_write_cci_reg(&config->bus, OV7670_REG8(OV7670_COM7), 0x80);
 	if (ret < 0) {
 		LOG_ERR("Could not reset camera: %d", ret);
 		return ret;
@@ -573,12 +563,10 @@ static int ov7670_init(const struct device *dev)
 	}
 
 	/* Write initialization values to OV7670 */
-	for (i = 0; i < ARRAY_SIZE(ov7670_init_regtbl); i++) {
-		reg = &ov7670_init_regtbl[i];
-		ret = i2c_reg_write_byte_dt(&config->bus, reg->reg, reg->cmd);
-		if (ret < 0) {
-			return ret;
-		}
+	ret = video_write_cci_multiregs8(&config->bus, ov7670_init_regtbl,
+        ARRAY_SIZE(ov7670_init_regtbl));
+	if (ret < 0) {
+		return ret;
 	}
 
 	/* Initialize controls */
@@ -598,10 +586,10 @@ static int ov7670_set_ctrl(const struct device *dev, uint32_t id)
 
 	switch (id) {
 	case VIDEO_CID_HFLIP:
-		return i2c_reg_update_byte_dt(&config->bus, OV7670_MVFP, OV7670_MVFP_HFLIP,
+		return video_modify_cci_reg(&config->bus, OV7670_REG8(OV7670_MVFP), OV7670_MVFP_HFLIP,
 					      ctrls->hflip.val ? OV7670_MVFP_HFLIP : 0);
 	case VIDEO_CID_VFLIP:
-		return i2c_reg_update_byte_dt(&config->bus, OV7670_MVFP, OV7670_MVFP_VFLIP,
+		return video_modify_cci_reg(&config->bus, OV7670_REG8(OV7670_MVFP), OV7670_MVFP_VFLIP,
 					      ctrls->vflip.val ? OV7670_MVFP_VFLIP : 0);
 	default:
 		return -ENOTSUP;
