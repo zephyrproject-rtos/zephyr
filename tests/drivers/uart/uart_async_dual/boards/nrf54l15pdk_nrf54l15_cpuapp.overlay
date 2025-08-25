@@ -45,7 +45,6 @@ dut: &uart21 {
 	pinctrl-1 = <&uart21_sleep>;
 	pinctrl-names = "default", "sleep";
 	hw-flow-control;
-	zephyr,pm-device-runtime-auto;
 };
 
 dut_aux: &uart22 {
@@ -55,7 +54,6 @@ dut_aux: &uart22 {
 	pinctrl-1 = <&uart22_sleep>;
 	pinctrl-names = "default", "sleep";
 	hw-flow-control;
-	zephyr,pm-device-runtime-auto;
 };
 
 &timer20 {
