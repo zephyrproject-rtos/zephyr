@@ -107,10 +107,11 @@ void slcan_can_tx_cb(const struct device *dev, int error, void *user_data)
 int slcan_serial_process(uint8_t *buf, size_t size)
 {
 	int err = -EINVAL;
+	char cmd = buf[0];
 
 	LOG_HEXDUMP_DBG(buf, size, "Serial message");
 
-	switch (buf[0]) {
+	switch (cmd) {
 	case 'S':
 		/* Setup with standard CAN bit-rates */
 		switch (buf[1]) {
@@ -183,8 +184,8 @@ int slcan_serial_process(uint8_t *buf, size_t size)
 			LOG_INF("CAN already stopped");
 		}
 		break;
-	case 't':
-		/* Transmit a standard (11bit) CAN frame */
+	case 'r': /* Transmit a standard RTR (11bit) CAN frame */
+	case 't': /* Transmit a standard (11bit) CAN frame */
 		if (slcan.can_open) {
 			uint8_t can_id[2];
 
@@ -196,6 +197,10 @@ int slcan_serial_process(uint8_t *buf, size_t size)
 				.flags = 0,
 			};
 
+			if (cmd == 'r') {
+				frame.flags |= CAN_FRAME_RTR;
+			}
+
 			frame.dlc = buf[4] - '0';
 			hex2bin(&buf[5], frame.dlc * 2, frame.data, frame.dlc);
 
@@ -204,8 +209,8 @@ int slcan_serial_process(uint8_t *buf, size_t size)
 			err = -ENETDOWN;
 		}
 		break;
-	case 'T':
-		/* Transmit an extended (29bit) CAN frame */
+	case 'R': /* Transmit an extended RTR (29bit) CAN frame */
+	case 'T': /* Transmit an extended (29bit) CAN frame */
 		if (slcan.can_open) {
 			uint8_t can_id[4];
 
@@ -216,6 +221,10 @@ int slcan_serial_process(uint8_t *buf, size_t size)
 				.flags = CAN_FRAME_IDE,
 			};
 
+			if (cmd == 'R') {
+				frame.flags |= CAN_FRAME_RTR;
+			}
+
 			frame.dlc = buf[9] - '0';
 			hex2bin(&buf[10], frame.dlc * 2, frame.data, frame.dlc);
 
@@ -224,10 +233,6 @@ int slcan_serial_process(uint8_t *buf, size_t size)
 			err = -ENETDOWN;
 		}
 		break;
-	case 'r':
-		/* Transmit a standard RTR (11bit) CAN frame */
-	case 'R':
-		/* Transmit an extended RTR (29bit) CAN frame */
 		err = -ENOSYS;
 		break;
 	case 'F':
@@ -325,19 +330,20 @@ int slcan_canbus_process(struct can_frame *frame)
 	uint8_t can_id[4];
 	int pos = 0;
 
-	LOG_DBG("CAN message with ID 0x%X, %d bytes: %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X",
-		frame->id, frame->dlc, frame->data[0], frame->data[1], frame->data[2],
-		frame->data[3], frame->data[4], frame->data[5], frame->data[6], frame->data[7]);
+	LOG_DBG("CAN message with ID 0x%X, RTR %d, %d bytes: %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X",
+		frame->id, frame->flags & CAN_FRAME_RTR, frame->dlc, frame->data[0], frame->data[1],
+		frame->data[2], frame->data[3], frame->data[4], frame->data[5], frame->data[6], frame->data[7]);
 
 	sys_put_be32(frame->id, can_id);
 
 	/* CAN ID */
 	if ((frame->flags & CAN_FRAME_IDE) == 0) {
 		buf_append_hex(buf, can_id + 2, 2);
-		buf[0] = 't'; /* overwrite first digit for correct 3-digit standard ID encoding */
+		/* overwrite first digit for correct 3-digit standard ID encoding */
+		buf[0] = (frame->flags & CAN_FRAME_RTR) ? 'r' : 't';
 		pos = 1 + 3;
 	} else {
-		buf[0] = 'T';
+		buf[0] = (frame->flags & CAN_FRAME_RTR) ? 'R' : 'T';
 		buf_append_hex(buf + 1, can_id, 4);
 		pos = 1 + 8;
 	}
