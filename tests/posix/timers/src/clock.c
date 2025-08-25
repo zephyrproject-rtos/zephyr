@@ -157,8 +157,10 @@ ZTEST(posix_timers, test_realtime)
 	zassert_between_inclusive(cma, lo, hi);
 }
 
+/* FIXME: this should be moved to a testsuite called advanced_realtime */
 ZTEST(posix_timers, test_clock_getcpuclockid)
 {
+#ifdef _POSIX_CPUTIME
 	int ret = 0;
 	clockid_t clock_id = CLOCK_INVALID;
 
@@ -168,6 +170,7 @@ ZTEST(posix_timers, test_clock_getcpuclockid)
 
 	ret = clock_getcpuclockid((pid_t)2482, &clock_id);
 	zassert_equal(ret, EPERM, "POSIX clock_getcpuclock id failed");
+#endif
 }
 
 ZTEST(posix_timers, test_clock_getres)
@@ -190,13 +193,21 @@ ZTEST(posix_timers, test_clock_getres)
 		{CLOCK_INVALID, NULL, -1},
 		{CLOCK_INVALID, &res, -1},
 		{CLOCK_REALTIME, NULL, 0},
+#if defined(_POSIX_MONOTONIC_CLOCK)
 		{CLOCK_MONOTONIC, NULL, 0},
+#endif
+#if defined(_POSIX_CPUTIME)
 		{CLOCK_PROCESS_CPUTIME_ID, NULL, 0},
+#endif
 
 		/* all valid inputs */
 		{CLOCK_REALTIME, &res, 0},
+#if defined(_POSIX_MONOTONIC_CLOCK)
 		{CLOCK_MONOTONIC, &res, 0},
+#endif
+#if defined(_POSIX_CPUTIME)
 		{CLOCK_PROCESS_CPUTIME_ID, &res, 0},
+#endif
 	};
 
 	ARRAY_FOR_EACH_PTR(args, arg) {
