@@ -54,6 +54,7 @@ typedef uint32_t pinctrl_soc_pin_t;
 		DT_FOREACH_PROP_ELEM(node_id, prop, Z_PINCTRL_STATE_PIN_INIT)                      \
 	}
 
+
 /** @endcond */
 
 #ifdef __cplusplus
