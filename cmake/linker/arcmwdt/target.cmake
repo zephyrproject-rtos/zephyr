@@ -60,6 +60,9 @@ macro(configure_linker_script linker_script_gen linker_pass_define)
 )
 endmacro()
 
+function(compiler_set_linker_properties)
+endfunction()
+
 # Force symbols to be entered in the output file as undefined symbols
 function(toolchain_ld_force_undefined_symbols)
   foreach(symbol ${ARGN})
