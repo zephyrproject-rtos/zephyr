@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define GINF_MISSING_UID 2 /* Missing community in GPIO communities */
+
 struct gpio_acpi_res {
 	uintptr_t reg_base;
 	uint32_t len;
@@ -24,6 +26,8 @@ struct gpio_acpi_res {
  * @param hid the hardware id of the acpi device
  * @param uid the unique id of the acpi device
  * @param res the pointer to resource struct on which data return
+ * @param ginf bool to indicate ginf method
  * @return return 0 on success or error code
  */
-int soc_acpi_gpio_resource_get(int bank_idx, char *hid, char *uid, struct gpio_acpi_res *res);
+int soc_acpi_gpio_resource_get(int bank_idx, char *hid, char *uid, struct gpio_acpi_res *res,
+			       bool ginf);
