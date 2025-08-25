@@ -24,6 +24,11 @@
 #include <zephyr/internal/syscall_handler.h>
 #include <zephyr/sys/atomic.h>
 
+#ifndef CONFIG_MINIMAL_LIBC
+extern FILE *z_libc_file_alloc(int fd, const char *mode);
+extern int z_libc_file_get_fd(const FILE *fp);
+#endif
+
 struct stat;
 
 struct fd_entry {
@@ -74,6 +79,20 @@ static struct fd_entry fdtable[CONFIG_ZVFS_OPEN_MAX] = {
 };
 
 static K_MUTEX_DEFINE(fdtable_lock);
+
+#ifdef CONFIG_MINIMAL_LIBC
+static ALWAYS_INLINE inline FILE *z_libc_file_alloc(int fd, const char *mode)
+{
+	ARG_UNUSED(mode);
+
+	return (FILE *)&fdtable[fd];
+}
+
+static ALWAYS_INLINE inline int z_libc_file_get_fd(const FILE *fp)
+{
+	return (const struct fd_entry *)fp - fdtable;
+}
+#endif
 
 static int z_fd_ref(int fd)
 {
@@ -413,23 +432,30 @@ int zvfs_close(int fd)
 
 FILE *zvfs_fdopen(int fd, const char *mode)
 {
-	ARG_UNUSED(mode);
+	FILE *ret;
 
 	if (_check_fd(fd) < 0) {
 		return NULL;
 	}
 
-	return (FILE *)&fdtable[fd];
+	ret = z_libc_file_alloc(fd, mode);
+	if (ret == NULL) {
+		errno = ENOMEM;
+	}
+
+	return ret;
 }
 
 int zvfs_fileno(FILE *file)
 {
-	if (!IS_ARRAY_ELEMENT(fdtable, file)) {
+	int fd = z_libc_file_get_fd(file);
+
+	if (fd < 0 || fd >= ARRAY_SIZE(fdtable)) {
 		errno = EBADF;
 		return -1;
 	}
 
-	return (struct fd_entry *)file - fdtable;
+	return fd;
 }
 
 int zvfs_fstat(int fd, struct stat *buf)
