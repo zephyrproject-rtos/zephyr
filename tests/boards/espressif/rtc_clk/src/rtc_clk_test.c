@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Espressif Systems (Shanghai) Co., Ltd.
+ * Copyright (c) 2024-2025 Espressif Systems (Shanghai) Co., Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,8 +15,7 @@
 #define DT_CPU_COMPAT espressif_xtensa_lx6
 #elif defined(CONFIG_SOC_SERIES_ESP32S2) || defined(CONFIG_SOC_SERIES_ESP32S3)
 #define DT_CPU_COMPAT espressif_xtensa_lx7
-#elif defined(CONFIG_SOC_SERIES_ESP32C2) || defined(CONFIG_SOC_SERIES_ESP32C3) || \
-	defined(CONFIG_SOC_SERIES_ESP32C6)
+#elif defined(CONFIG_RISCV)
 #define DT_CPU_COMPAT espressif_riscv
 #endif
 
@@ -74,14 +73,22 @@ ZTEST(rtc_clk, test_cpu_xtal_src)
 }
 
 uint32_t rtc_pll_src_freq_mhz[] = {
+#if defined(ESP32_CLK_CPU_PLL_48M)
+	ESP32_CLK_CPU_PLL_48M,
+#endif
+#if defined(ESP32_CLK_CPU_PLL_80M)
 	ESP32_CLK_CPU_PLL_80M,
-#if defined(CONFIG_SOC_SERIES_ESP32C2)
+#endif
+#if defined(ESP32_CLK_CPU_PLL_96M)
+	ESP32_CLK_CPU_PLL_96M,
+#endif
+#if defined(ESP32_CLK_CPU_PLL_120M)
 	ESP32_CLK_CPU_PLL_120M,
-#else
+#endif
+#if defined(ESP32_CLK_CPU_PLL_160M)
 	ESP32_CLK_CPU_PLL_160M,
 #endif
-#if !defined(CONFIG_SOC_SERIES_ESP32C2) && !defined(CONFIG_SOC_SERIES_ESP32C3) && \
-	!defined(CONFIG_SOC_SERIES_ESP32C6)
+#if defined(ESP32_CLK_CPU_PLL_240M)
 	ESP32_CLK_CPU_PLL_240M,
 #endif
 };
@@ -159,10 +166,13 @@ ZTEST(rtc_clk, test_rtc_fast_src)
 }
 
 uint32_t rtc_rtc_slow_clk_src[] = {
+#if defined(ESP32_RTC_SLOW_CLK_SRC_RC_SLOW)
 	ESP32_RTC_SLOW_CLK_SRC_RC_SLOW,
-#if defined(CONFIG_SOC_SERIES_ESP32C6)
+#endif
+#if defined(ESP32_RTC_SLOW_CLK_SRC_RC32K)
 	ESP32_RTC_SLOW_CLK_SRC_RC32K,
-#else
+#endif
+#if defined(ESP32_RTC_SLOW_CLK_SRC_RC_FAST_D256)
 	ESP32_RTC_SLOW_CLK_SRC_RC_FAST_D256,
 #endif
 #if CONFIG_FIXTURE_XTAL
@@ -171,10 +181,13 @@ uint32_t rtc_rtc_slow_clk_src[] = {
 };
 
 uint32_t rtc_rtc_slow_clk_src_freq[] = {
+#if defined(ESP32_RTC_SLOW_CLK_SRC_RC_SLOW_FREQ)
 	ESP32_RTC_SLOW_CLK_SRC_RC_SLOW_FREQ,
-#if defined(CONFIG_SOC_SERIES_ESP32C6)
+#endif
+#if defined(ESP32_RTC_SLOW_CLK_SRC_RC32K_FREQ)
 	ESP32_RTC_SLOW_CLK_SRC_RC32K_FREQ,
-#else
+#endif
+#if defined(ESP32_RTC_SLOW_CLK_SRC_RC_FAST_D256_FREQ)
 	ESP32_RTC_SLOW_CLK_SRC_RC_FAST_D256_FREQ,
 #endif
 #if CONFIG_FIXTURE_XTAL
