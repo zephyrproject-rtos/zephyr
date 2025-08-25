@@ -166,5 +166,13 @@
 		periphconf_partition: partition@1ae000 {
 			reg = <0x1ae000 DT_SIZE_K(8)>;
 		};
+
+		cpuapp_secondary_partition: partition@1b0000 {
+			reg = <0x1b0000 DT_SIZE_K(312)>;
+		};
+
+		secondary_periphconf_partition: partition@1fe000 {
+			reg = <0x1fe000 DT_SIZE_K(8)>;
+		};
 	};
 };
