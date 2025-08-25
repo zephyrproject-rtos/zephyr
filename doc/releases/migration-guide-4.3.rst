@@ -172,5 +172,16 @@ Silabs
 * The separate ``em3`` power state was removed from Series 2 SoCs. The system automatically
   transitions to EM2 or EM3 depending on hardware peripheral requests for the oscillators.
 
+Trusted Firmware-M
+==================
+
+* The signing process for BL2 (MCUboot) was updated. The boards that run using
+  tf-m NS must have their flash layout with the flash controller information.
+  This ensure that when signing the hex/bin files all the details will be
+  present in the S and NS image. This change fixes the image details to allow
+  the FWU state machine be correct and allow FOTA.
+
+  For more details: https://github.com/zephyrproject-rtos/zephyr/pull/94470
+
 Architectures
 *************

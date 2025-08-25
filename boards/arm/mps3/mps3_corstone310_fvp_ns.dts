@@ -11,6 +11,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <mem.h>
 
+#include "mps3_common_ns.dtsi"
+
 / {
 	compatible = "arm,mps3-fvp";
 	#address-cells = <1>;
@@ -20,7 +22,8 @@
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
 		zephyr,sram = &ram;
-		zephyr,flash = &code;
+		zephyr,flash = &reserved_memory;
+		zephyr,code-partition = &slot0_ns_partition;
 	};
 
 	cpus {
@@ -68,21 +71,7 @@
 		zephyr,memory-region = "ISRAM";
 	};
 
-	reserved-memory {
-		#address-cells = <1>;
-		#size-cells = <1>;
-		ranges;
-
-		/* The memory regions defined below must match what the TF-M
-		 * project has defined for that board - a single image boot is
-		 * assumed. Please see the memory layout in:
-		 * https://git.trustedfirmware.org/TF-M/trusted-firmware-m.git/tree/platform/ext/target/mps3/corstone310/common/partition/flash_layout.h
-		 */
-
-		code: memory@28080000 {
-			reg = <0x28080000 DT_SIZE_K(512)>;
-		};
-
+	reserved-memory@28000000 {
 		ram: memory@21020000 {
 			reg = <0x21020000 DT_SIZE_M(1)>;
 		};
