@@ -25,6 +25,7 @@ tests:
       - esp32h2_devkitm
       - esp32s2_saola
       - esp32s3_devkitm/esp32s3/procpu
+      - xg24_rb4187c
     integration_platforms:
       - nrf54h20dk/nrf54h20/cpuapp
   drivers.uart.uart_elementary_dual_nrf54h:
