@@ -1,0 +1,7 @@
+# Copyright (c) 2025 Alex Bucknall
+# SPDX-License-Identifier: Apache-2.0
+
+# zephyr-keep-sorted-start
+source "drivers/sensor/plantower/pms7003/Kconfig"
+source "drivers/sensor/plantower/pmsa003i/Kconfig"
+# zephyr-keep-sorted-stop
