@@ -4776,6 +4776,15 @@ static void parse_read_by_uuid(struct bt_conn *conn,
 		uint16_t handle;
 		uint16_t len;
 
+		len = MIN(rsp->len, length);
+		if (len < sizeof(struct bt_att_data)) {
+			LOG_WRN("Bad peer: ATT read-by-uuid rsp: invalid ATTR PDU len %u", len);
+			params->func(conn, BT_ATT_ERR_INVALID_PDU, params, NULL, 0);
+			return;
+		}
+
+		len -= sizeof(struct bt_att_data);
+
 		handle = sys_le16_to_cpu(data->handle);
 
 		/* Handle 0 is invalid */
@@ -4783,8 +4792,6 @@ static void parse_read_by_uuid(struct bt_conn *conn,
 			LOG_ERR("Invalid handle");
 			return;
 		}
-
-		len = rsp->len > length ? length - 2 : rsp->len - 2;
 
 		LOG_DBG("handle 0x%04x len %u value %u", handle, rsp->len, len);
 
