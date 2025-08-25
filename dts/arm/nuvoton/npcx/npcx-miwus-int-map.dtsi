@@ -13,12 +13,12 @@
 
 			group_b0: group-b0-map {
 				irq        = <31>;
-				irq-prio   = <2>;
+				irq-prio   = <3>;
 				group-mask = <0x02>;
 			};
 			group_c0: group-c0-map {
 				irq        = <15>;
-				irq-prio   = <2>;
+				irq-prio   = <3>;
 				group-mask = <0x04>;
 			};
 		};
@@ -29,42 +29,42 @@
 
 			group_a1: group-a1-map {
 				irq        = <47>;
-				irq-prio   = <2>;
+				irq-prio   = <3>;
 				group-mask = <0x01>;
 			};
 			group_b1: group-b1-map {
 				irq        = <48>;
-				irq-prio   = <2>;
+				irq-prio   = <3>;
 				group-mask = <0x02>;
 			};
 			group_c1: group-c1-map {
 				irq        = <49>;
-				irq-prio   = <2>;
+				irq-prio   = <3>;
 				group-mask = <0x04>;
 			};
 			group_d1: group-d1-map {
 				irq        = <50>;
-				irq-prio   = <2>;
+				irq-prio   = <3>;
 				group-mask = <0x08>;
 			};
 			group_e1: group-e1-map {
 				irq        = <51>;
-				irq-prio   = <2>;
+				irq-prio   = <3>;
 				group-mask = <0x10>;
 			};
 			group_f1: group-f1-map {
 				irq        = <52>;
-				irq-prio   = <2>;
+				irq-prio   = <3>;
 				group-mask = <0x20>;
 			};
 			group_g1: group-g1-map {
 				irq        = <53>;
-				irq-prio   = <2>;
+				irq-prio   = <3>;
 				group-mask = <0x40>;
 			};
 			group_h1: group-h1-map {
 				irq        = <54>;
-				irq-prio   = <2>;
+				irq-prio   = <3>;
 				group-mask = <0x80>;
 			};
 		};
@@ -75,22 +75,22 @@
 
 			group_a2: group-a2-map {
 				irq        = <60>;
-				irq-prio   = <2>;
+				irq-prio   = <3>;
 				group-mask = <0x01>;
 			};
 			group_b2: group-b2-map {
 				irq        = <61>;
-				irq-prio   = <2>;
+				irq-prio   = <3>;
 				group-mask = <0x02>;
 			};
 			group_c2: group-c2-map {
 				irq        = <62>;
-				irq-prio   = <2>;
+				irq-prio   = <3>;
 				group-mask = <0x04>;
 			};
 			group_d2: group-d2-map {
 				irq        = <63>;
-				irq-prio   = <2>;
+				irq-prio   = <3>;
 				group-mask = <0x08>;
 			};
 		};
