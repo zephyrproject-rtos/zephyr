@@ -827,6 +827,62 @@
 			interrupt-names = "rxi", "txi", "tei", "naki", "spi", "sti", "ali", "tmoi";
 			status = "disabled";
 		};
+
+		/* CA55_0 <-> CM33 */
+		mbox1: mhu@40400020 {
+			compatible = "renesas,rz-mhu-mbox";
+			channel = <1>;
+			reg = <0x40400020 0x20>;
+			tx-mask = <0x00000002>; /* Channel 1 is for TX */
+			rx-mask = <0x00000001>; /* Channel 0 is for RX */
+			channels-count = <2>;
+			interrupts = <69 2>;
+			interrupt-names = "mhuns";
+			#mbox-cells = <1>;
+			status = "disabled";
+		};
+
+		/* CA55_1 <-> CM33 */
+		mbox3: mhu@40400060 {
+			compatible = "renesas,rz-mhu-mbox";
+			channel = <3>;
+			reg = <0x40400060 0x20>;
+			tx-mask = <0x00000002>; /* Channel 1 is for TX */
+			rx-mask = <0x00000001>; /* Channel 0 is for RX */
+			channels-count = <2>;
+			interrupts = <71 2>;
+			interrupt-names = "mhuns";
+			#mbox-cells = <1>;
+			status = "disabled";
+		};
+
+		/* CM33 <-> CA55_0 */
+		mbox4: mhu@40400080 {
+			compatible = "renesas,rz-mhu-mbox";
+			channel = <4>;
+			reg = <0x40400080 0x20>;
+			tx-mask = <0x00000002>; /* Channel 1 is for TX */
+			rx-mask = <0x00000001>; /* Channel 0 is for RX */
+			channels-count = <2>;
+			interrupts = <78 2>;
+			interrupt-names = "mhuns";
+			#mbox-cells = <1>;
+			status = "disabled";
+		};
+
+		/* CM33 <-> CA55_1 */
+		mbox5: mhu@404000a0 {
+			compatible = "renesas,rz-mhu-mbox";
+			channel = <5>;
+			reg = <0x404000a0 0x20>;
+			tx-mask = <0x00000002>; /* Channel 1 is for TX */
+			rx-mask = <0x00000001>; /* Channel 0 is for RX */
+			channels-count = <2>;
+			interrupts = <79 2>;
+			interrupt-names = "mhuns";
+			#mbox-cells = <1>;
+			status = "disabled";
+		};
 	};
 };
 
