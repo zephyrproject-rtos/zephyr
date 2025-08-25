@@ -43,3 +43,4 @@ tests:
       - platform:mimxrt1180_evk/mimxrt1189/cm33:SHIELD=p3t1755dp_ard_i3c
       - platform:mimxrt1180_evk/mimxrt1189/cm7:SHIELD=p3t1755dp_ard_i3c
       - platform:frdm_mcxn236/mcxn236:SHIELD=p3t1755dp_ard_i3c
+      - platform:frdm_mcxw71:SHIELD=p3t1755dp_ard_i3c
