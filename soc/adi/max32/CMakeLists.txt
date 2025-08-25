@@ -14,3 +14,8 @@ if(CONFIG_SOC_MAX78000 OR CONFIG_SOC_MAX78002)
 endif()
 
 set(SOC_LINKER_SCRIPT ${ZEPHYR_BASE}/include/zephyr/arch/arm/cortex_m/scripts/linker.ld CACHE INTERNAL "")
+
+if(CONFIG_SOC_MAX32655)
+ zephyr_library_sources_ifdef(CONFIG_CPU_FREQ max32655/cpu_freq.c)
+ zephyr_include_directories(max32655)
+endif()
