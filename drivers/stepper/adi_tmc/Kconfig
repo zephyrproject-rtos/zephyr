@@ -26,6 +26,7 @@ config STEPPER_ADI_TMC_UART
 
 comment "Trinamic Stepper Drivers"
 
+rsource "Kconfig.tmc2130"
 rsource "Kconfig.tmc22xx"
 rsource "Kconfig.tmc50xx"
 rsource "Kconfig.tmc51xx"
