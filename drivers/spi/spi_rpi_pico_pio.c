@@ -320,10 +320,12 @@ static int spi_pico_pio_configure(const struct spi_pico_pio_config *dev_cfg,
 
 #if SPI_RPI_PICO_PIO_HALF_DUPLEX_ENABLED
 	if (spi_cfg->operation & SPI_HALF_DUPLEX) {
+#if defined(CONFIG_SPI_RPI_PICO_PIO_DMA)
 		if (dev_cfg->dma_config.dev) {
 			LOG_ERR("DMA not supported in 3-wire operation");
 			return -ENOTSUP;
 		}
+#endif
 
 		if ((cpol != 0) || (cpha != 0)) {
 			LOG_ERR("Only mode (0, 0) supported in 3-wire SIO");
