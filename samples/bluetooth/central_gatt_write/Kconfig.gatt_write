@@ -1,0 +1,8 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config USE_VARIABLE_LENGTH_DATA
+	bool "Use variable length data in GATT Write without Response"
+	help
+	  Use increasing and decreasing length data in GATT Write without
+	  Response.

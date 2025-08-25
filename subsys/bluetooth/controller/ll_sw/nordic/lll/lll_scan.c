@@ -529,7 +529,14 @@ static int common_prepare_cb(struct lll_prepare_param *p, bool is_resume)
 
 static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
 {
-	struct lll_scan *lll = curr;
+	struct lll_scan *lll;
+
+	/* Prepare being cancelled (no resume for scan) */
+	if (!next) {
+		return -ECANCELED;
+	}
+
+	lll = curr;
 
 #if defined(CONFIG_BT_CENTRAL)
 	/* Irrespective of same state/role (initiator radio event) or different
@@ -1108,6 +1115,21 @@ static void isr_done_cleanup(void *param)
 		ull_rx_put_sched(node_rx2->hdr.link, node_rx2);
 	}
 #endif  /* CONFIG_BT_CTLR_ADV_EXT */
+
+	/* Lets tail chain the execution of LLL disable of any scan event in the pipeline if scan
+	 * role is to be stopped.
+	 * This is for the case of connection setup or the duration has expired.
+	 */
+	if (lll->is_stop != 0U) {
+		static memq_link_t link;
+		static struct mayfly mfy = {0, 0, &link, NULL, lll_disable};
+		uint32_t ret;
+
+		mfy.param = param;
+
+		ret = mayfly_enqueue(TICKER_USER_ID_LLL, TICKER_USER_ID_LLL, 1U, &mfy);
+		LL_ASSERT(!ret);
+	}
 
 	lll_isr_cleanup(param);
 }
