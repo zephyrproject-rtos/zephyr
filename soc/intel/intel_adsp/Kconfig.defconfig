@@ -33,14 +33,6 @@ config XTENSA_UNCACHED_REGION
 
 endif # XTENSA_RPO_CACHE
 
-config CONSOLE
-	def_bool y
-
-if CONSOLE
-config WINSTREAM_CONSOLE
-	def_bool y
-endif
-
 config CACHE_MANAGEMENT
 	def_bool y
 
