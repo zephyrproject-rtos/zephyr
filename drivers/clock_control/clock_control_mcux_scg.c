@@ -69,7 +69,7 @@ static int mcux_scg_get_rate(const struct device *dev,
 		break;
 #endif /* (defined(FSL_FEATURE_SCG_HAS_SPLL) && FSL_FEATURE_SCG_HAS_SPLL) */
 #if (defined(FSL_FEATURE_SCG_HAS_LPFLL) && FSL_FEATURE_SCG_HAS_LPFLL)
-	case KINETIS_SCG_SPLL_CLK:
+	case KINETIS_SCG_LPFLL_CLK:
 		clock_name = kCLOCK_ScgLpFllClk;
 		break;
 #endif /* (defined(FSL_FEATURE_SCG_HAS_LPFLL) && FSL_FEATURE_SCG_HAS_LPFLL) */
@@ -136,6 +136,8 @@ static int mcux_scg_init(const struct device *dev)
 	CLOCK_SetClkOutSel(kClockClkoutSelFirc);
 #elif DT_SAME_NODE(DT_CLOCKS_CTLR(MCUX_SCG_CLOCK_NODE(clkout_clk)), MCUX_SCG_CLOCK_NODE(spll_clk))
 	CLOCK_SetClkOutSel(kClockClkoutSelSysPll);
+#elif DT_SAME_NODE(DT_CLOCKS_CTLR(MCUX_SCG_CLOCK_NODE(clkout_clk)), MCUX_SCG_CLOCK_NODE(lpfll_clk))
+	CLOCK_SetClkOutSel(kClockClkoutSelSysLpfll);
 #else
 #error Unsupported SCG clkout clock source
 #endif
