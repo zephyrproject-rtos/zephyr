@@ -163,8 +163,7 @@ zephyr_udc0: &usbotg_fs {
 		size = <DT_SIZE_M(128)>; /* 128 MBits */
 		qspi-max-frequency = <80000000>;
 		jedec-id = [01 1f 89];
-		spi-bus-width = <4>;
-		quad-enable-requirements = "NONE";
+		spi-bus-width = <2>;
 		status = "okay";
 
 		/* The following partitions are valid only if the Opta external flash
