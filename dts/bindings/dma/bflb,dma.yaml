@@ -1,0 +1,31 @@
+# Copyright (c) 2025 MASSDRIVER EI <massdriver.space>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Bouffalo Lab DMA
+
+  BFLB platforms support 4 (BL60x and BL61x) to 8 (BL70x) independent DMA channels.
+  Every channel is capable of memory-to-memory, memory-to-peripheral, peripheral-to-memory and
+  peripheral-to-peripheral access.
+  All channels support 8, 16, and 32 bit width memory access.
+  Each channel can be triggered by independent peripheral hardware or software.
+
+compatible: "bflb,dma"
+
+include: dma-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  dma-channels:
+    required: true
+
+  "#dma-cells":
+    const: 1
+
+dma-cells:
+  - channel
