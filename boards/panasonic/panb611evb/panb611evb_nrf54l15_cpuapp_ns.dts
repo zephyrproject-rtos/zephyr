@@ -9,11 +9,11 @@
 #define USE_NON_SECURE_ADDRESS_MAP 1
 
 #include <nordic/nrf54l15_cpuapp.dtsi>
-#include "panb511evb_nrf54l15_cpuapp_common.dtsi"
+#include "panb611evb_nrf54l15_cpuapp_common.dtsi"
 
 / {
-	model = "Panasonic PAN B511 EVB nRF54L15 Application MCU";
-	compatible = "panasonic-industrial-devices-europe-gmbh,panb511evb-cpuapp";
+	model = "Panasonic PAN B611 EVB nRF54L15 Application MCU";
+	compatible = "panasonic-industrial-devices-europe-gmbh,panb611evb-cpuapp";
 
 	chosen {
 		zephyr,code-partition = &slot0_ns_partition;

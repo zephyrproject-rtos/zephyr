@@ -46,6 +46,9 @@ set(mimxrt1060_evkb_DEPRECATED
 set(neorv32_DEPRECATED
     neorv32/neorv32/up5kdemo
 )
+set(panb511evb_DEPRECATED
+    panb611evb
+)
 set(xiao_esp32c6_DEPRECATED
     xiao_esp32c6/esp32c6/hpcore
 )
