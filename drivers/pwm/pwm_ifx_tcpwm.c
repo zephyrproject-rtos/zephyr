@@ -6,10 +6,10 @@
  */
 
 /**
- * @brief ADC driver for Infineon CAT1 MCU family.
+ * PWM driver for Infineon MCUs using the TCPWM block.
  */
 
-#define DT_DRV_COMPAT infineon_cat1_pwm
+#define DT_DRV_COMPAT infineon_tcpwm_pwm
 
 #include <zephyr/drivers/pwm.h>
 #include <zephyr/drivers/pinctrl.h>
@@ -21,15 +21,15 @@
 #include <cyhal_hw_types.h>
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(pwm_ifx_cat1, CONFIG_PWM_LOG_LEVEL);
+LOG_MODULE_REGISTER(pwm_ifx_tcpwm, CONFIG_PWM_LOG_LEVEL);
 
 #define PWM_REG_BASE TCPWM0
 
-struct ifx_cat1_pwm_data {
+struct ifx_tcpwm_pwm_data {
 	uint32_t pwm_num;
 };
 
-struct ifx_cat1_pwm_config {
+struct ifx_tcpwm_pwm_config {
 	TCPWM_GRP_CNT_Type *reg_addr;
 	const struct pinctrl_dev_config *pcfg;
 	bool resolution_32_bits;
@@ -38,10 +38,10 @@ struct ifx_cat1_pwm_config {
 	uint32_t divider_val;
 };
 
-static int ifx_cat1_pwm_init(const struct device *dev)
+static int ifx_tcpwm_pwm_init(const struct device *dev)
 {
-	struct ifx_cat1_pwm_data *data = dev->data;
-	const struct ifx_cat1_pwm_config *config = dev->config;
+	struct ifx_tcpwm_pwm_data *data = dev->data;
+	const struct ifx_tcpwm_pwm_config *config = dev->config;
 	cy_en_tcpwm_status_t status;
 	int ret;
 	uint32_t addr_offset = (uint32_t)config->reg_addr - TCPWM0_BASE;
@@ -91,11 +91,11 @@ static int ifx_cat1_pwm_init(const struct device *dev)
 	return 0;
 }
 
-static int ifx_cat1_pwm_set_cycles(const struct device *dev, uint32_t channel,
+static int ifx_tcpwm_pwm_set_cycles(const struct device *dev, uint32_t channel,
 				   uint32_t period_cycles, uint32_t pulse_cycles, pwm_flags_t flags)
 {
-	struct ifx_cat1_pwm_data *data = dev->data;
-	const struct ifx_cat1_pwm_config *config = dev->config;
+	struct ifx_tcpwm_pwm_data *data = dev->data;
+	const struct ifx_tcpwm_pwm_config *config = dev->config;
 
 	if (!config->resolution_32_bits &&
 	    ((period_cycles > UINT16_MAX) || (pulse_cycles > UINT16_MAX))) {
@@ -149,27 +149,27 @@ static int ifx_cat1_pwm_set_cycles(const struct device *dev, uint32_t channel,
 	return 0;
 }
 
-static int ifx_cat1_pwm_get_cycles_per_sec(const struct device *dev, uint32_t channel,
+static int ifx_tcpwm_pwm_get_cycles_per_sec(const struct device *dev, uint32_t channel,
 					   uint64_t *cycles)
 {
-	const struct ifx_cat1_pwm_config *config = dev->config;
+	const struct ifx_tcpwm_pwm_config *config = dev->config;
 
 	*cycles = Cy_SysClk_PeriphGetFrequency(config->divider_type, config->divider_sel);
 
 	return 0;
 }
 
-static DEVICE_API(pwm, ifx_cat1_pwm_api) = {
-	.set_cycles = ifx_cat1_pwm_set_cycles,
-	.get_cycles_per_sec = ifx_cat1_pwm_get_cycles_per_sec,
+static DEVICE_API(pwm, ifx_tcpwm_pwm_api) = {
+	.set_cycles = ifx_tcpwm_pwm_set_cycles,
+	.get_cycles_per_sec = ifx_tcpwm_pwm_get_cycles_per_sec,
 };
 
-#define INFINEON_CAT1_PWM_INIT(n)                                                                  \
+#define INFINEON_TCPWM_PWM_INIT(n)                                                                 \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
                                                                                                    \
-	static struct ifx_cat1_pwm_data pwm_cat1_data_##n;                                         \
+	static struct ifx_tcpwm_pwm_data pwm_tcpwm_data_##n;                                       \
                                                                                                    \
-	static struct ifx_cat1_pwm_config pwm_cat1_config_##n = {                                  \
+	static struct ifx_tcpwm_pwm_config pwm_tcpwm_config_##n = {                                \
 		.reg_addr = (TCPWM_GRP_CNT_Type *)DT_INST_REG_ADDR(n),                             \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
 		.resolution_32_bits = (DT_INST_PROP(n, resolution) == 32) ? true : false,          \
@@ -178,8 +178,8 @@ static DEVICE_API(pwm, ifx_cat1_pwm_api) = {
 		.divider_val = DT_INST_PROP(n, divider_val),                                       \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, ifx_cat1_pwm_init, NULL, &pwm_cat1_data_##n,                      \
-			      &pwm_cat1_config_##n, POST_KERNEL, CONFIG_PWM_INIT_PRIORITY,         \
-			      &ifx_cat1_pwm_api);
+	DEVICE_DT_INST_DEFINE(n, ifx_tcpwm_pwm_init, NULL, &pwm_tcpwm_data_##n,                    \
+			      &pwm_tcpwm_config_##n, POST_KERNEL, CONFIG_PWM_INIT_PRIORITY,        \
+			      &ifx_tcpwm_pwm_api);
 
-DT_INST_FOREACH_STATUS_OKAY(INFINEON_CAT1_PWM_INIT)
+DT_INST_FOREACH_STATUS_OKAY(INFINEON_TCPWM_PWM_INIT)
