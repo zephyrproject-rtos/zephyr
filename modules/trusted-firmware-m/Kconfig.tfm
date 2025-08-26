@@ -25,7 +25,7 @@ config TFM_BOARD
 	default "stm/stm32wba65i_dk" if BOARD_NUCLEO_WBA65RI || BOARD_STM32WBA65I_DK1
 	default "arm/musca_b1" if BOARD_V2M_MUSCA_B1
 	default "arm/musca_s1" if BOARD_V2M_MUSCA_S1
-	default "adi/max32657" if BOARD_MAX32657EVKIT_MAX32657_NS
+	default "adi/max32657" if BOARD_MAX32657EVKIT_MAX32657_NS || BOARD_MAX32658EVKIT_MAX32658_NS
 	default "$(ZEPHYR_BASE)/modules/trusted-firmware-m/nordic/nrf9160" if SOC_NRF9160
 	default "$(ZEPHYR_BASE)/modules/trusted-firmware-m/nordic/nrf9120" if SOC_NRF9120
 	default "$(ZEPHYR_BASE)/modules/trusted-firmware-m/nordic/nrf5340_cpuapp" if SOC_NRF5340_CPUAPP
