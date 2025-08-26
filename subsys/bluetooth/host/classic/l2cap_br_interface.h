@@ -44,6 +44,9 @@ int bt_l2cap_br_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf);
 int bt_l2cap_br_chan_send_cb(struct bt_l2cap_chan *chan, struct net_buf *buf, bt_conn_tx_cb_t cb,
 			     void *user_data);
 
+/* Notify that the BR channel has data to send and start invoking the seg_send callback */
+int bt_l2cap_br_chan_send_ready(struct bt_l2cap_chan *chan);
+
 /* Send a single PDU over a BR channel.
  * Used by e.g. SMP.
  */

@@ -791,6 +791,11 @@ int bt_l2cap_send_pdu(struct bt_l2cap_le_chan *le_chan, struct net_buf *pdu,
 /* L2CAP channel wants to send a PDU */
 static bool chan_has_data(struct bt_l2cap_le_chan *lechan)
 {
+	IF_ENABLED(CONFIG_BT_L2CAP_SEG_SEND, (
+		if (lechan->chan.ops->seg_send) {
+			return true;
+		}
+	))
 	return !k_fifo_is_empty(&lechan->tx_queue);
 }
 
@@ -921,6 +926,115 @@ __weak void bt_test_l2cap_data_pull_spy(struct bt_conn *conn,
 {
 }
 
+__maybe_unused static bool user_data_not_empty(const struct net_buf *buf)
+{
+	size_t ud_len = sizeof(struct closure);
+	const uint8_t *ud = net_buf_user_data(buf);
+
+	for (size_t i = 0; i < ud_len; i++) {
+		if (ud[i] != 0) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+#if defined(CONFIG_BT_L2CAP_SEG_SEND)
+/* A "segment" is one PDU of a SDU. The SDU must be segmented into multiple
+ * PDUs if the SDU len is > tx.mps.
+ *
+ * A PDU may be further fragmented if the PDU len is bigger than the le.acl_mtu.
+ * Fragmentation is done in the conn.c layer.
+ *
+ * Segmentation of the SDU is the responsibility of the callback. It's the
+ * callback's responsibility to provide a segment/PDU, including adding the
+ * SDU header, but we add the PDU header and we check that the segment length
+ * is not bigger than the tx.mps. The tx.mps only covers the segment data
+ * length and not the PDU header.
+ */
+static struct net_buf *l2cap_chan_le_send_seg_direct(struct bt_l2cap_le_chan *le_chan,
+						     size_t amount, size_t *length)
+{
+	struct net_buf *seg;
+
+	if (!chan_has_credits(le_chan)) {
+		/* We don't have credits to send a new K-frame PDU. Remove the
+		 * channel from the ready-list, it will be added back later when
+		 * we get more credits.
+		 */
+		LOG_DBG("no credits for new K-frame on %p", le_chan);
+		lower_data_ready(le_chan);
+		bt_tx_irq_raise();
+		return NULL;
+	}
+	seg = le_chan->chan.ops->seg_send(&le_chan->chan);
+	LOG_DBG("seg_send callback returned %p", seg);
+
+	if (seg == NULL) {
+		LOG_DBG("no segment to send");
+		lower_data_ready(le_chan);
+		bt_tx_irq_raise();
+	} else {
+		struct bt_l2cap_hdr *hdr;
+		uint16_t pdu_data_len = seg->len;
+
+		if (pdu_data_len > le_chan->tx.mps) {
+			LOG_ERR("attempt to send %u PDU data bytes on %u MPS le_chan", seg->len,
+				le_chan->tx.mps);
+			return NULL;
+		}
+		LOG_DBG("Got seg/PDU to send, data len %u", pdu_data_len);
+
+		/* add PDU header */
+		hdr = net_buf_push(seg, sizeof(*hdr));
+		hdr->len = sys_cpu_to_le16(pdu_data_len);
+		hdr->cid = sys_cpu_to_le16(le_chan->tx.cid);
+
+		le_chan->_pdu_remaining = pdu_data_len + sizeof(*hdr);
+		chan_take_credit(le_chan);
+
+		if (user_data_not_empty(seg)) {
+			/* There may be issues if user_data is not empty. */
+			LOG_WRN("user_data is not empty");
+		}
+		make_closure(seg->user_data, NULL, NULL);
+		if (amount < le_chan->_pdu_remaining) {
+			LOG_DBG("Putting segment on tx_queue due to fragmentation");
+			LOG_DBG("amount %u, acl_mtu %u, _pdu_remaining %u", amount,
+				bt_dev.le.acl_mtu, le_chan->_pdu_remaining);
+			k_fifo_put(&le_chan->tx_queue, seg);
+			seg = net_buf_ref(seg);
+		} else {
+			/* Last/only PDU. remove the channel from the
+			 * ready list and put it at the back to give
+			 * other channels a chance to send.
+			 */
+			LOG_DBG("moving chan %p to end of ready list", le_chan);
+			lower_data_ready(le_chan);
+			/* directly append instead of calling raise_data_ready().
+			 * we just removed ourself from the list and this
+			 * thread is the non-preeemptable system workq thread.
+			 */
+			sys_slist_append(&le_chan->chan.conn->l2cap_data_ready,
+					 &le_chan->_pdu_ready);
+		}
+		/* This is used by `conn.c` to figure out if the PDU is done sending. */
+		*length = le_chan->_pdu_remaining;
+		/* Assume conn will send this segment so adjust pdu_remaining */
+		if (le_chan->_pdu_remaining > amount) {
+			LOG_DBG("Sending PDU fragment of %u bytes", amount);
+			le_chan->_pdu_remaining -= amount;
+		} else {
+			LOG_DBG("Sending PDU fragment of %u bytes", le_chan->_pdu_remaining);
+			le_chan->_pdu_remaining = 0;
+		}
+	}
+
+	return seg;
+}
+#endif /* CONFIG_BT_L2CAP_SEG_SEND */
+
 struct net_buf *l2cap_data_pull(struct bt_conn *conn,
 				size_t amount,
 				size_t *length)
@@ -952,6 +1066,14 @@ struct net_buf *l2cap_data_pull(struct bt_conn *conn,
 	 * again and this time we will select another channel to pull data from.
 	 */
 	if (!fifo_pdu) {
+		IF_ENABLED(CONFIG_BT_L2CAP_SEG_SEND, (
+			/* If no PDU in the tx_queue, check if the application
+			 * has one for us to send. If so, add it to the tx_queue.
+			 */
+			if (lechan->chan.ops->seg_send) {
+				return l2cap_chan_le_send_seg_direct(lechan, amount, length);
+			}
+		))
 		bt_tx_irq_raise();
 		return NULL;
 	}
@@ -1012,7 +1134,7 @@ struct net_buf *l2cap_data_pull(struct bt_conn *conn,
 	}
 
 	if (last_frag && L2CAP_LE_CID_IS_DYN(lechan->tx.cid)) {
-		bool sdu_end = last_frag && last_seg;
+		bool sdu_end = last_frag && last_seg && (lechan->chan.ops->sent != NULL);
 
 		LOG_DBG("adding %s callback", sdu_end ? "`sdu_sent`" : "NULL");
 		/* No user callbacks for SDUs */
@@ -1046,8 +1168,10 @@ struct net_buf *l2cap_data_pull(struct bt_conn *conn,
 	*length = lechan->_pdu_remaining;
 
 	if (lechan->_pdu_remaining > amount) {
+		LOG_DBG("Sending PDU fragment of %u bytes", amount);
 		lechan->_pdu_remaining -= amount;
 	} else {
+		LOG_DBG("Sending PDU fragment of %u bytes", lechan->_pdu_remaining);
 		lechan->_pdu_remaining = 0;
 	}
 
@@ -3312,20 +3436,6 @@ int bt_l2cap_chan_disconnect(struct bt_l2cap_chan *chan)
 	return 0;
 }
 
-__maybe_unused static bool user_data_not_empty(const struct net_buf *buf)
-{
-	size_t ud_len = sizeof(struct closure);
-	const uint8_t *ud = net_buf_user_data(buf);
-
-	for (size_t i = 0; i < ud_len; i++) {
-		if (ud[i] != 0) {
-			return true;
-		}
-	}
-
-	return false;
-}
-
 static int bt_l2cap_dyn_chan_send(struct bt_l2cap_le_chan *le_chan, struct net_buf *buf)
 {
 	uint16_t sdu_len = buf->len;
@@ -3336,8 +3446,7 @@ static int bt_l2cap_dyn_chan_send(struct bt_l2cap_le_chan *le_chan, struct net_b
 	__ASSERT_NO_MSG(buf->frags == NULL);
 
 	if (sdu_len > le_chan->tx.mtu) {
-		LOG_ERR("attempt to send %u bytes on %u MTU chan",
-			sdu_len, le_chan->tx.mtu);
+		LOG_ERR("attempt to send %u bytes on %u MTU chan", sdu_len, le_chan->tx.mtu);
 		return -EMSGSIZE;
 	}
 
@@ -3436,4 +3545,56 @@ int bt_l2cap_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf)
 
 	return -EINVAL;
 }
+
+#if defined(CONFIG_BT_L2CAP_SEG_SEND)
+int bt_l2cap_chan_send_ready(struct bt_l2cap_chan *chan)
+{
+	if (!chan) {
+		return -EINVAL;
+	}
+
+	LOG_DBG("chan %p", chan);
+
+	if (!chan->conn || chan->conn->state != BT_CONN_CONNECTED) {
+		return -ENOTCONN;
+	}
+
+	if (atomic_test_bit(chan->status, BT_L2CAP_STATUS_SHUTDOWN)) {
+		return -ESHUTDOWN;
+	}
+
+	if (chan->ops->seg_send == NULL) {
+		LOG_ERR("%s: Available only with seg_send.", __func__);
+		return -EINVAL;
+	}
+
+	if (chan->ops->sent != NULL) {
+		LOG_ERR("sent callback will not be invoked for SDUs sent using seg_send");
+		return -EINVAL;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_CLASSIC) && chan->conn->type == BT_CONN_TYPE_BR) {
+		return bt_l2cap_br_chan_send_ready(chan);
+	}
+
+	/* Sending over static channels is not supported by this fn. Use
+	 * `bt_l2cap_send_pdu()` instead.
+	 */
+	if (IS_ENABLED(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)) {
+		struct bt_l2cap_le_chan *le_chan = BT_L2CAP_LE_CHAN(chan);
+
+		__ASSERT_NO_MSG(le_chan);
+		__ASSERT_NO_MSG(L2CAP_LE_CID_IS_DYN(le_chan->tx.cid));
+
+		LOG_DBG("set chan %p ready", le_chan);
+		raise_data_ready(le_chan);
+
+		return 0;
+	}
+
+	LOG_DBG("Invalid channel type (chan %p)", chan);
+
+	return -EINVAL;
+}
+#endif /* CONFIG_BT_L2CAP_SEG_SEND */
 #endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
