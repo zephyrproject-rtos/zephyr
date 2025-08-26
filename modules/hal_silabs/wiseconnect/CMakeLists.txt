@@ -147,6 +147,7 @@ if(CONFIG_BT_SILABS_SIWX91X)
     ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/ble/src/rsi_bt_ble.c
     ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/ble/src/rsi_common_apis.c
     ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/ble/src/rsi_utils.c
+    ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/ble/src/sl_si91x_ble.c
   )
 endif() # CONFIG_BT_SILABS_SIWX91X
 
