@@ -1837,7 +1837,7 @@ ssize_t zms_calc_free_space(struct zms_fs *fs)
 	return free_space;
 }
 
-size_t zms_active_sector_free_space(struct zms_fs *fs)
+ssize_t zms_active_sector_free_space(struct zms_fs *fs)
 {
 	if (!fs->ready) {
 		LOG_ERR("ZMS not initialized");
