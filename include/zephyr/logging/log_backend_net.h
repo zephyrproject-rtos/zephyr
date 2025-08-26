@@ -65,7 +65,7 @@ bool log_backend_net_set_ip(const struct sockaddr *addr);
  * @param len Length of the hostname array.
  */
 #if defined(CONFIG_NET_HOSTNAME_ENABLE)
-void log_backend_net_hostname_set(char *hostname, size_t len);
+void log_backend_net_hostname_set(const char *hostname, size_t len);
 #else
 static inline void log_backend_net_hostname_set(const char *hostname, size_t len)
 {
