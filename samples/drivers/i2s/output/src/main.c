@@ -33,10 +33,8 @@ static void fill_buf(int16_t *tx_block, int att)
 
 	for (int i = 0; i < SAMPLE_NO; i++) {
 		/* Left channel is sine wave */
-		tx_block[2 * i] = data[i] / (1 << att);
-		/* Right channel is same sine wave, shifted by 90 degrees */
-		r_idx = (i + (ARRAY_SIZE(data) / 4)) % ARRAY_SIZE(data);
-		tx_block[2 * i + 1] = data[r_idx] / (1 << att);
+		tx_block[2 * i] = data[i];
+		tx_block[2 * i + 1] = data[i];
 	}
 }
 
