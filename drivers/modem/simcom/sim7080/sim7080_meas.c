@@ -70,7 +70,7 @@ MODEM_CMD_DEFINE(on_cmd_cbc)
 
 int mdm_sim7080_get_battery_charge(uint8_t *bcs, uint8_t *bcl, uint16_t *voltage)
 {
-    int ret;
+	int ret;
 	struct modem_cmd cmds[] = {MODEM_CMD("+CBC: ", on_cmd_cbc, 3U, ",")};
 
 	if (sim7080_get_state() == SIM7080_STATE_OFF) {
@@ -79,7 +79,7 @@ int mdm_sim7080_get_battery_charge(uint8_t *bcs, uint8_t *bcl, uint16_t *voltage
 	}
 
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, cmds, ARRAY_SIZE(cmds), "AT+CBC",
-			     &mdata.sem_response, K_SECONDS(2));
+				 &mdata.sem_response, K_SECONDS(2));
 	if (ret < 0) {
 		return ret;
 	}
@@ -92,18 +92,18 @@ int mdm_sim7080_get_battery_charge(uint8_t *bcs, uint8_t *bcl, uint16_t *voltage
 }
 
 static const uint8_t *ue_sys_mode_lut[] = {
-    "NO SERVICE",
-    "GSM",
-    "LTE CAT-M1",
-    "LTE NB-IOT",
+	"NO SERVICE",
+	"GSM",
+	"LTE CAT-M1",
+	"LTE NB-IOT",
 };
 
 static const uint8_t *ue_op_mode_lut[] = {
-    "Online",
-    "Offline",
-    "Factory Test Mode",
-    "Reset",
-    "Low Power Mode",
+	"Online",
+	"Offline",
+	"Factory Test Mode",
+	"Reset",
+	"Low Power Mode",
 };
 
 /**
@@ -115,19 +115,20 @@ static const uint8_t *ue_op_mode_lut[] = {
  */
 static int8_t lut_match(const uint8_t *s, const uint8_t **lut, uint8_t size)
 {
-    for (uint8_t i = 0; i < size; i++) {
-        if (strcmp(s, lut[i]) == 0) {
-            return i;
-        }
-    }
+	for (uint8_t i = 0; i < size; i++) {
+		if (strcmp(s, lut[i]) == 0) {
+			return i;
+		}
+	}
 
-    return -1;
+	return -1;
 }
 
 static int cpsi_parse_minus(uint8_t *s, uint16_t *a, uint16_t *b)
 {
 	char *saveptr;
 	char *tmp = strtok_r(s, "-", &saveptr);
+
 	if (tmp == NULL) {
 		return -1;
 	}
@@ -247,13 +248,13 @@ MODEM_CMD_DEFINE(on_cmd_cpsi)
 	}
 
 out:
-    return ret;
+	return ret;
 }
 
 int mdm_sim7080_get_ue_sys_info(struct sim7080_ue_sys_info *info)
 {
-    int ret = -1;
-    struct modem_cmd cmds[] = {MODEM_CMD("+CPSI: ", on_cmd_cpsi, 14U, ",")};
+	int ret = -1;
+	struct modem_cmd cmds[] = {MODEM_CMD("+CPSI: ", on_cmd_cpsi, 14U, ",")};
 
 	if (sim7080_get_state() == SIM7080_STATE_OFF) {
 		LOG_ERR("SIM7080 not powered on!");
@@ -268,13 +269,13 @@ int mdm_sim7080_get_ue_sys_info(struct sim7080_ue_sys_info *info)
 	ue_sys_info = info;
 
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, cmds, ARRAY_SIZE(cmds), "AT+CPSI?",
-			     &mdata.sem_response, K_SECONDS(2));
+				 &mdata.sem_response, K_SECONDS(2));
 	if (ret < 0) {
 		goto out;
 	}
 
 out:
-    return ret;
+	return ret;
 }
 
 static struct tm *local_tm;
@@ -286,18 +287,20 @@ MODEM_CMD_DEFINE(on_cmd_cclk)
 
 	/* +1 to skip leading " */
 	char *date = strtok_r(argv[0] + 1, ",", &saveptr);
+
 	if (date == NULL) {
 		LOG_WRN("Failed to parse date");
 		goto out;
 	}
 
-	char *time = strtok_r(NULL, "\"", &saveptr);
-	if (time == NULL) {
+	char *time_str = strtok_r(NULL, "\"", &saveptr);
+
+	if (time_str == NULL) {
 		LOG_WRN("Failed to parse time");
 		goto out;
 	}
 
-	ret = sim7080_utils_parse_time(date, time, local_tm);
+	ret = sim7080_utils_parse_time(date, time_str, local_tm);
 
 out:
 	return ret;
@@ -320,7 +323,7 @@ int mdm_sim7080_get_local_time(struct tm *t)
 	local_tm = t;
 
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, cmds, ARRAY_SIZE(cmds), "AT+CCLK?",
-			     &mdata.sem_response, K_SECONDS(2));
+				 &mdata.sem_response, K_SECONDS(2));
 
 out:
 	local_tm = NULL;

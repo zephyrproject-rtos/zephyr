@@ -281,12 +281,13 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_tx_ready)
  * Handles pdp context urc.
  *
  * The urc has the form +APP PDP: <index>,<state>.
- * State can either be ACTIVE for activation or
- * DEACTIVE if disabled.
+ * When activated ACTIVE is reported as state.
+ * All other states will be treated as deactivated.
  */
 MODEM_CMD_DEFINE(on_urc_app_pdp)
 {
 	bool active = strcmp(argv[1], "ACTIVE") == 0;
+
 	if (active) {
 		mdata.status_flags |= SIM7080_STATUS_FLAG_PDP_ACTIVE;
 	} else {
@@ -466,12 +467,14 @@ static int modem_set_baudrate(uint32_t baudrate)
 	char buf[sizeof("AT+IPR=##########")] = {0};
 
 	int ret = snprintk(buf, sizeof(buf), "AT+IPR=%u", baudrate);
+
 	if (ret < 0) {
 		LOG_ERR("Failed to build command");
 		goto out;
 	}
 
-	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0U, buf, &mdata.sem_response, K_SECONDS(2));
+	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0U, buf, &mdata.sem_response,
+		K_SECONDS(2));
 	if (ret != 0) {
 		LOG_ERR("Failed to set baudrate");
 	}
@@ -516,7 +519,7 @@ int modem_autobaud(void)
  * @return 0 on success. Otherwise <0.
  *
  * @note Autobaud is only allowed during driver setup.
- * 		 In any other case a fixed baudrate should be used.
+ * In any other case a fixed baudrate should be used.
  */
 static int modem_boot(bool allow_autobaud)
 {
@@ -773,7 +776,7 @@ static int modem_init(const struct device *dev)
 	k_sem_init(&mdata.sem_dns, 0, 1);
 	k_sem_init(&mdata.sem_ftp, 0, 1);
 	k_sem_init(&mdata.sem_http, 0, 1);
-	k_sem_init(&mdata.boot_sem, 0 ,1);
+	k_sem_init(&mdata.boot_sem, 0, 1);
 	k_sem_init(&mdata.pdp_sem, 0, 1);
 	k_work_queue_start(&modem_workq, modem_workq_stack,
 			   K_KERNEL_STACK_SIZEOF(modem_workq_stack), K_PRIO_COOP(7), NULL);

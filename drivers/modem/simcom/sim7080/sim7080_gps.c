@@ -246,10 +246,10 @@ int mdm_sim7080_query_gnss(struct sim7080_gnss_data *data)
 		return -1;
 	}
 
-    memset(&gnss_data, 0, sizeof(gnss_data));
+	memset(&gnss_data, 0, sizeof(gnss_data));
 
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, cmds, ARRAY_SIZE(cmds), "AT+CGNSINF",
-			     &mdata.sem_response, K_SECONDS(2));
+				 &mdata.sem_response, K_SECONDS(2));
 	if (ret < 0) {
 		return ret;
 	}
@@ -282,6 +282,7 @@ MODEM_CMD_DEFINE(on_cmd_cgnsxtra)
 	xtra_diff_h = (int16_t)strtol(argv[0], NULL, 10);
 	xtra_duration_h = (int16_t)strtol(argv[1], NULL, 10);
 	int ret = sim7080_utils_parse_time(argv[2], argv[3], xtra_inject);
+
 	LOG_INF("XTRA validity: diff=%d, duration=%d, inject=%s,%s",
 		xtra_diff_h,
 		xtra_duration_h,
@@ -302,7 +303,7 @@ int mdm_sim7080_query_xtra_validity(int16_t *diff_h, int16_t *duration_h, struct
 	xtra_inject = inject;
 
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, cmds, ARRAY_SIZE(cmds), "AT+CGNSXTRA",
-			     &mdata.sem_response, K_SECONDS(2));
+				 &mdata.sem_response, K_SECONDS(2));
 	if (ret != 0) {
 		LOG_ERR("Failed to query xtra validity");
 		goto out;
@@ -331,7 +332,7 @@ static int sim7080_start_gnss_ext(bool xtra)
 
 	/* Power GNSS unit */
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0U, "AT+CGNSPWR=1",
-			     &mdata.sem_response, K_SECONDS(2));
+				 &mdata.sem_response, K_SECONDS(2));
 	if (ret < 0) {
 		LOG_ERR("Failed to power on gnss: %d", ret);
 		goto out;
@@ -347,7 +348,7 @@ static int sim7080_start_gnss_ext(bool xtra)
 
 	/* Copy the xtra file to gnss unit */
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, cmds, ARRAY_SIZE(cmds), "AT+CGNSCPY",
-			     &mdata.sem_response, K_SECONDS(5));
+				 &mdata.sem_response, K_SECONDS(5));
 	if (ret < 0) {
 		LOG_WRN("Failed to copy xtra file. Performing cold start");
 		goto coldstart;
@@ -375,7 +376,7 @@ static int sim7080_start_gnss_ext(bool xtra)
 
 	/* Enable xtra functionality */
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0U, "AT+CGNSXTRA=1",
-			     &mdata.sem_response, K_SECONDS(5));
+				 &mdata.sem_response, K_SECONDS(5));
 	if (ret < 0) {
 		LOG_WRN("Failed to enable xtra. Performing cold start");
 		goto coldstart;
@@ -383,7 +384,7 @@ static int sim7080_start_gnss_ext(bool xtra)
 
 coldstart:
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0U, "AT+CGNSCOLD",
-			     &mdata.sem_response, K_SECONDS(2));
+				 &mdata.sem_response, K_SECONDS(2));
 	if (ret < 0) {
 		LOG_ERR("Failed to start gnss: %d", ret);
 		goto out;
@@ -414,7 +415,7 @@ int mdm_sim7080_stop_gnss(void)
 	}
 
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0U, "AT+CGNSPWR=0",
-			     &mdata.sem_response, K_SECONDS(2));
+				 &mdata.sem_response, K_SECONDS(2));
 	if (ret < 0) {
 		LOG_ERR("Failed to power on gnss: %d", ret);
 		goto out;
@@ -446,7 +447,7 @@ int mdm_sim7080_download_xtra(uint8_t server_id, const char *f_name)
 
 	/* Download xtra file */
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0U, buf,
-			     &mdata.sem_response, K_SECONDS(2));
+				 &mdata.sem_response, K_SECONDS(2));
 	if (ret < 0) {
 		LOG_ERR("Failed to download xtra file");
 		goto out;

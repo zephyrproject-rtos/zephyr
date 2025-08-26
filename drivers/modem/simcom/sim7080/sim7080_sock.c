@@ -77,7 +77,7 @@ static int offload_connect(void *obj, const struct sockaddr *addr, socklen_t add
 	}
 
 	ret = snprintk(buf, sizeof(buf), "AT+CAOPEN=%d,0,\"%s\",\"%s\",%d", sock->id,
-		       protocol, ip_str, dst_port);
+			   protocol, ip_str, dst_port);
 	if (ret < 0) {
 		LOG_ERR("Failed to build connect command. ID: %d, FD: %d", sock->id, sock->sock_fd);
 		errno = ENOMEM;
@@ -86,7 +86,7 @@ static int offload_connect(void *obj, const struct sockaddr *addr, socklen_t add
 
 	mdata.socket_open_rc = 1;
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, cmd, ARRAY_SIZE(cmd), buf,
-			     &mdata.sem_response, MDM_CONNECT_TIMEOUT);
+				 &mdata.sem_response, MDM_CONNECT_TIMEOUT);
 	if (ret < 0) {
 		LOG_ERR("%s ret: %d", buf, ret);
 		goto error;
@@ -124,7 +124,7 @@ MODEM_CMD_DEFINE(on_cmd_casend)
  * then send a OK or ERROR.
  */
 static ssize_t offload_sendto(void *obj, const void *buf, size_t len, int flags,
-			      const struct sockaddr *dest_addr, socklen_t addrlen)
+				  const struct sockaddr *dest_addr, socklen_t addrlen)
 {
 	int ret;
 	struct modem_socket *sock = (struct modem_socket *)obj;
@@ -191,7 +191,7 @@ static ssize_t offload_sendto(void *obj, const void *buf, size_t len, int flags,
 	/* Send CASEND */
 	mdata.current_sock_written = len;
 	ret = modem_cmd_send_nolock(&mctx.iface, &mctx.cmd_handler, NULL, 0U, send_buf, NULL,
-				    K_NO_WAIT);
+					K_NO_WAIT);
 	if (ret < 0) {
 		LOG_ERR("Failed to send CASEND");
 		goto exit;
@@ -351,7 +351,7 @@ static ssize_t offload_recvfrom(void *obj, void *buf, size_t max_len, int flags,
 	mdata.current_sock_fd = sock->sock_fd;
 
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, data_cmd, ARRAY_SIZE(data_cmd),
-			     sendbuf, &mdata.sem_response, MDM_CMD_TIMEOUT);
+				 sendbuf, &mdata.sem_response, MDM_CMD_TIMEOUT);
 	if (ret < 0) {
 		errno = -ret;
 		ret = -1;
@@ -432,7 +432,7 @@ static void socket_close(struct modem_socket *sock)
 	snprintk(buf, sizeof(buf), "AT+CACLOSE=%d", sock->id);
 
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0U, buf, &mdata.sem_response,
-			     MDM_CMD_TIMEOUT);
+				 MDM_CMD_TIMEOUT);
 	if (ret < 0) {
 		LOG_ERR("%s ret: %d", buf, ret);
 	}
@@ -562,6 +562,7 @@ const struct socket_op_vtable offload_socket_fd_op_vtable = {
 void sim7080_handle_sock_data_indication(int fd)
 {
 	struct modem_socket *sock = modem_socket_from_fd(&mdata.socket_config, fd);
+
 	if (!sock) {
 		LOG_INF("No socket with fd %d", fd);
 		return;
@@ -577,6 +578,7 @@ void sim7080_handle_sock_data_indication(int fd)
 void sim7080_handle_sock_state(int fd, uint8_t state)
 {
 	struct modem_socket *sock = modem_socket_from_fd(&mdata.socket_config, fd);
+
 	if (!sock) {
 		LOG_INF("No socket with fd %d", fd);
 		return;
@@ -637,8 +639,6 @@ int mdm_sim7080_stop_network(void)
 		LOG_WRN("Modem not in networking state");
 		goto out;
 	}
-
-	//TODO: close sockets
 
 	ret = sim7080_pdp_deactivate();
 
