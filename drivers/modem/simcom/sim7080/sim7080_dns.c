@@ -53,7 +53,7 @@ MODEM_CMD_DEFINE(on_cmd_cdnsgip)
 
 	*ipv4 = '\0';
 	net_addr_pton(dns_result.ai_family, ips,
-		      &((struct sockaddr_in *)&dns_result_addr)->sin_addr);
+			  &((struct sockaddr_in *)&dns_result_addr)->sin_addr);
 	ret = 0;
 
 exit:
@@ -65,7 +65,7 @@ exit:
  * Perform a dns lookup.
  */
 static int offload_getaddrinfo(const char *node, const char *service,
-			       const struct zsock_addrinfo *hints, struct zsock_addrinfo **res)
+				   const struct zsock_addrinfo *hints, struct zsock_addrinfo **res)
 {
 	struct modem_cmd cmd[] = { MODEM_CMD("+CDNSGIP: ", on_cmd_cdnsgip, 2U, ",") };
 	char sendbuf[sizeof("AT+CDNSGIP=\"\",##,#####") + 128];
@@ -117,7 +117,7 @@ static int offload_getaddrinfo(const char *node, const char *service,
 
 	snprintk(sendbuf, sizeof(sendbuf), "AT+CDNSGIP=\"%s\",10,20000", node);
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, cmd, ARRAY_SIZE(cmd), sendbuf,
-			     &mdata.sem_dns, MDM_DNS_TIMEOUT);
+				 &mdata.sem_dns, MDM_DNS_TIMEOUT);
 	if (ret < 0) {
 		return ret;
 	}

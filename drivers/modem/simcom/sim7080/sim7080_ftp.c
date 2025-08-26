@@ -40,7 +40,7 @@ MODEM_CMD_DEFINE(on_cmd_ftpget)
 	}
 
 	out_len = net_buf_linearize(mdata.ftp.read_buffer, mdata.ftp.nread, data->rx_buf,
-				    bytes_to_skip, nbytes);
+					bytes_to_skip, nbytes);
 	if (out_len != nbytes) {
 		LOG_WRN("FTP read size differs!");
 	}
@@ -59,7 +59,7 @@ int mdm_sim7080_ftp_get_read(char *dst, size_t *size)
 
 	/* Some error occurred. */
 	if (mdata.ftp.state == SIM7080_FTP_CONNECTION_STATE_ERROR ||
-	    mdata.ftp.state == SIM7080_FTP_CONNECTION_STATE_INITIAL) {
+		mdata.ftp.state == SIM7080_FTP_CONNECTION_STATE_INITIAL) {
 		return SIM7080_FTP_RC_ERROR;
 	}
 
@@ -86,7 +86,7 @@ int mdm_sim7080_ftp_get_read(char *dst, size_t *size)
 	}
 
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, cmds, ARRAY_SIZE(cmds), buffer,
-			     &mdata.sem_response, MDM_CMD_TIMEOUT);
+				 &mdata.sem_response, MDM_CMD_TIMEOUT);
 	if (ret < 0) {
 		*size = 0;
 		return SIM7080_FTP_RC_ERROR;
@@ -99,7 +99,7 @@ int mdm_sim7080_ftp_get_read(char *dst, size_t *size)
 }
 
 int mdm_sim7080_ftp_get_start(const char *server, const char *user, const char *passwd,
-			      const char *file, const char *path)
+				  const char *file, const char *path)
 {
 	int ret;
 	char buffer[256];
@@ -113,7 +113,7 @@ int mdm_sim7080_ftp_get_start(const char *server, const char *user, const char *
 
 	/* Set connection id for ftp. */
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0U, "AT+FTPCID=0",
-			     &mdata.sem_response, MDM_CMD_TIMEOUT);
+				 &mdata.sem_response, MDM_CMD_TIMEOUT);
 	if (ret < 0) {
 		LOG_WRN("Failed to set FTP Cid!");
 		return -1;
@@ -127,7 +127,7 @@ int mdm_sim7080_ftp_get_start(const char *server, const char *user, const char *
 	}
 
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0U, buffer, &mdata.sem_response,
-			     MDM_CMD_TIMEOUT);
+				 MDM_CMD_TIMEOUT);
 	if (ret < 0) {
 		LOG_WRN("Failed to set FTP Cid!");
 		return -1;
@@ -141,7 +141,7 @@ int mdm_sim7080_ftp_get_start(const char *server, const char *user, const char *
 	}
 
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0U, buffer, &mdata.sem_response,
-			     MDM_CMD_TIMEOUT);
+				 MDM_CMD_TIMEOUT);
 	if (ret < 0) {
 		LOG_WRN("Failed to set ftp user!");
 		return -1;
@@ -155,7 +155,7 @@ int mdm_sim7080_ftp_get_start(const char *server, const char *user, const char *
 	}
 
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0U, buffer, &mdata.sem_response,
-			     MDM_CMD_TIMEOUT);
+				 MDM_CMD_TIMEOUT);
 	if (ret < 0) {
 		LOG_WRN("Failed to set ftp password!");
 		return -1;
@@ -169,7 +169,7 @@ int mdm_sim7080_ftp_get_start(const char *server, const char *user, const char *
 	}
 
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0U, buffer, &mdata.sem_response,
-			     MDM_CMD_TIMEOUT);
+				 MDM_CMD_TIMEOUT);
 	if (ret < 0) {
 		LOG_WRN("Failed to set ftp filename!");
 		return -1;
@@ -183,7 +183,7 @@ int mdm_sim7080_ftp_get_start(const char *server, const char *user, const char *
 	}
 
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0U, buffer, &mdata.sem_response,
-			     MDM_CMD_TIMEOUT);
+				 MDM_CMD_TIMEOUT);
 	if (ret < 0) {
 		LOG_WRN("Failed to set ftp filename!");
 		return -1;
@@ -197,7 +197,7 @@ int mdm_sim7080_ftp_get_start(const char *server, const char *user, const char *
 	}
 
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0U, buffer, &mdata.sem_response,
-			     MDM_CMD_TIMEOUT);
+				 MDM_CMD_TIMEOUT);
 	if (ret < 0) {
 		LOG_WRN("Failed to set ftp path!");
 		return -1;
@@ -210,7 +210,7 @@ int mdm_sim7080_ftp_get_start(const char *server, const char *user, const char *
 
 	/* Start the ftp session. */
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0U, "AT+FTPGET=1",
-			     &mdata.sem_ftp, MDM_CMD_TIMEOUT);
+				 &mdata.sem_ftp, MDM_CMD_TIMEOUT);
 	if (ret < 0) {
 		LOG_WRN("Failed to start session!");
 		return -1;
