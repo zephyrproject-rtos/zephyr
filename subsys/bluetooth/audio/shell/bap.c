@@ -3266,6 +3266,7 @@ static int cmd_create_broadcast(const struct shell *sh, size_t argc,
 	struct bt_bap_broadcast_source_subgroup_param subgroup_param;
 	struct bt_bap_broadcast_source_param create_param = {0};
 	const struct named_lc3_preset *named_preset;
+	uint32_t broadcast_id = 0U;
 	int err;
 
 	if (default_source.bap_source != NULL) {
@@ -3324,6 +3325,15 @@ static int cmd_create_broadcast(const struct shell *sh, size_t argc,
 		}
 	}
 
+	err = bt_rand(&broadcast_id, BT_AUDIO_BROADCAST_ID_SIZE);
+	if (err != 0) {
+		bt_shell_error("Unable to generate broadcast ID: %d\n", err);
+
+		return -ENOEXEC;
+	}
+
+	shell_print(sh, "Generated broadcast_id 0x%06X", broadcast_id);
+
 	copy_broadcast_source_preset(&default_source, named_preset);
 
 	(void)memset(stream_params, 0, sizeof(stream_params));
@@ -3341,11 +3351,14 @@ static int cmd_create_broadcast(const struct shell *sh, size_t argc,
 	err = bt_bap_broadcast_source_create(&create_param, &default_source.bap_source);
 	if (err != 0) {
 		shell_error(sh, "Unable to create broadcast source: %d", err);
+
+		default_source.broadcast_id = BT_BAP_INVALID_BROADCAST_ID;
 		return err;
 	}
 
 	shell_print(sh, "Broadcast source created: preset %s",
 		    named_preset->name);
+	default_source.broadcast_id = broadcast_id;
 
 	if (default_stream == NULL) {
 		default_stream = bap_stream_from_shell_stream(&broadcast_source_streams[0]);
@@ -3890,6 +3903,8 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 		bt_bap_stream_cb_register(
 			bap_stream_from_shell_stream(&broadcast_source_streams[i]), &stream_ops);
 	}
+
+	default_source.broadcast_id = BT_BAP_INVALID_BROADCAST_ID;
 #endif /* CONFIG_BT_BAP_BROADCAST_SOURCE */
 
 #if defined(CONFIG_LIBLC3)
@@ -4332,18 +4347,7 @@ static size_t nonconnectable_ad_data_add(struct bt_data *data_array, const size_
 		static uint8_t ad_bap_broadcast_announcement[5] = {
 			BT_UUID_16_ENCODE(BT_UUID_BROADCAST_AUDIO_VAL),
 		};
-		uint32_t broadcast_id;
-		int err;
-
-		err = bt_rand(&broadcast_id, BT_AUDIO_BROADCAST_ID_SIZE);
-		if (err != 0) {
-			bt_shell_error("Unable to generate broadcast ID: %d\n", err);
-
-			return 0;
-		}
-		bt_shell_print("Generated broadcast_id 0x%06X", broadcast_id);
-
-		sys_put_le24(broadcast_id, &ad_bap_broadcast_announcement[2]);
+		sys_put_le24(default_source.broadcast_id, &ad_bap_broadcast_announcement[2]);
 		data_array[ad_len].type = BT_DATA_SVC_DATA16;
 		data_array[ad_len].data_len = ARRAY_SIZE(ad_bap_broadcast_announcement);
 		data_array[ad_len].data = ad_bap_broadcast_announcement;
