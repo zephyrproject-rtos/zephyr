@@ -7,7 +7,7 @@
 #define DT_DRV_COMPAT ti_ina237
 
 #include "ina237.h"
-#include "ina23x_common.h"
+#include "ina2xx_common.h"
 
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/sensor.h>
@@ -124,7 +124,7 @@ static int ina237_trigg_one_shot_request(const struct device *dev)
 	const struct ina237_config *config = dev->config;
 	int ret;
 
-	ret = ina23x_reg_write(&config->bus, INA237_REG_ADC_CONFIG, config->adc_config);
+	ret = ina2xx_reg_write(&config->bus, INA237_REG_ADC_CONFIG, config->adc_config);
 	if (ret < 0) {
 		LOG_ERR("Failed to write ADC configuration register!");
 		return ret;
@@ -146,7 +146,7 @@ static int ina237_read_data(const struct device *dev)
 	int ret;
 
 	if ((data->chan == SENSOR_CHAN_ALL) || (data->chan == SENSOR_CHAN_VOLTAGE)) {
-		ret = ina23x_reg_read_16(&config->bus, INA237_REG_BUS_VOLT, &data->bus_voltage);
+		ret = ina2xx_reg_read_16(&config->bus, INA237_REG_BUS_VOLT, &data->bus_voltage);
 		if (ret < 0) {
 			LOG_ERR("Failed to read bus voltage");
 			return ret;
@@ -154,7 +154,7 @@ static int ina237_read_data(const struct device *dev)
 	}
 
 	if ((data->chan == SENSOR_CHAN_ALL) || (data->chan == SENSOR_CHAN_CURRENT)) {
-		ret = ina23x_reg_read_16(&config->bus, INA237_REG_CURRENT, &data->current);
+		ret = ina2xx_reg_read_16(&config->bus, INA237_REG_CURRENT, &data->current);
 		if (ret < 0) {
 			LOG_ERR("Failed to read current");
 			return ret;
@@ -162,7 +162,7 @@ static int ina237_read_data(const struct device *dev)
 	}
 
 	if ((data->chan == SENSOR_CHAN_ALL) || (data->chan == SENSOR_CHAN_POWER)) {
-		ret = ina23x_reg_read_24(&config->bus, INA237_REG_POWER, &data->power);
+		ret = ina2xx_reg_read_24(&config->bus, INA237_REG_POWER, &data->power);
 		if (ret < 0) {
 			LOG_ERR("Failed to read power");
 			return ret;
@@ -170,7 +170,7 @@ static int ina237_read_data(const struct device *dev)
 	}
 
 	if ((data->chan == SENSOR_CHAN_ALL) || (data->chan == SENSOR_CHAN_DIE_TEMP)) {
-		ret = ina23x_reg_read_16(&config->bus, INA237_REG_DIETEMP, &data->die_temp);
+		ret = ina2xx_reg_read_16(&config->bus, INA237_REG_DIETEMP, &data->die_temp);
 		if (ret < 0) {
 			LOG_ERR("Failed to read temperature");
 			return ret;
@@ -179,7 +179,7 @@ static int ina237_read_data(const struct device *dev)
 
 #ifdef CONFIG_INA237_VSHUNT
 	if ((data->chan == SENSOR_CHAN_ALL) || (data->chan == SENSOR_CHAN_VSHUNT)) {
-		ret = ina23x_reg_read_16(&config->bus, INA237_REG_SHUNT_VOLT, &data->shunt_voltage);
+		ret = ina2xx_reg_read_16(&config->bus, INA237_REG_SHUNT_VOLT, &data->shunt_voltage);
 		if (ret < 0) {
 			LOG_ERR("Failed to read shunt voltage");
 			return ret;
@@ -226,9 +226,9 @@ static int ina237_attr_set(const struct device *dev, enum sensor_channel chan,
 
 	switch (attr) {
 	case SENSOR_ATTR_CONFIGURATION:
-		return ina23x_reg_write(&config->bus, INA237_REG_CONFIG, data);
+		return ina2xx_reg_write(&config->bus, INA237_REG_CONFIG, data);
 	case SENSOR_ATTR_CALIBRATION:
-		return ina23x_reg_write(&config->bus, INA237_REG_CALIB, data);
+		return ina2xx_reg_write(&config->bus, INA237_REG_CALIB, data);
 	default:
 		LOG_ERR("INA237 attribute not supported.");
 		return -ENOTSUP;
@@ -244,13 +244,13 @@ static int ina237_attr_get(const struct device *dev, enum sensor_channel chan,
 
 	switch (attr) {
 	case SENSOR_ATTR_CONFIGURATION:
-		ret = ina23x_reg_read_16(&config->bus, INA237_REG_CONFIG, &data);
+		ret = ina2xx_reg_read_16(&config->bus, INA237_REG_CONFIG, &data);
 		if (ret < 0) {
 			return ret;
 		}
 		break;
 	case SENSOR_ATTR_CALIBRATION:
-		ret = ina23x_reg_read_16(&config->bus, INA237_REG_CALIB, &data);
+		ret = ina2xx_reg_read_16(&config->bus, INA237_REG_CALIB, &data);
 		if (ret < 0) {
 			return ret;
 		}
@@ -272,7 +272,7 @@ static int ina237_calibrate(const struct device *dev)
 	int ret;
 
 	/* see datasheet "Current and Power calculations" section */
-	ret = ina23x_reg_write(&config->bus, INA237_REG_CALIB, config->cal);
+	ret = ina2xx_reg_write(&config->bus, INA237_REG_CALIB, config->cal);
 	if (ret < 0) {
 		return ret;
 	}
@@ -282,14 +282,14 @@ static int ina237_calibrate(const struct device *dev)
 
 static void ina237_trigger_work_handler(struct k_work *work)
 {
-	struct ina23x_trigger *trigg = CONTAINER_OF(work, struct ina23x_trigger, conversion_work);
+	struct ina2xx_trigger *trigg = CONTAINER_OF(work, struct ina2xx_trigger, conversion_work);
 	struct ina237_data *data = CONTAINER_OF(trigg, struct ina237_data, trigger);
 	const struct ina237_config *config = data->dev->config;
 	int ret;
 	uint16_t reg_alert;
 
 	/* Read reg alert to clear alerts */
-	ret = ina23x_reg_read_16(&config->bus, INA237_REG_ALERT, &reg_alert);
+	ret = ina2xx_reg_read_16(&config->bus, INA237_REG_ALERT, &reg_alert);
 	if (ret < 0) {
 		LOG_ERR("Failed to read alert register!");
 		return;
@@ -319,7 +319,7 @@ static int ina237_init(const struct device *dev)
 
 	data->dev = dev;
 
-	ret = ina23x_reg_read_16(&config->bus, INA237_REG_MANUFACTURER_ID, &id);
+	ret = ina2xx_reg_read_16(&config->bus, INA237_REG_MANUFACTURER_ID, &id);
 	if (ret < 0) {
 		LOG_ERR("Failed to read manufacturer register!");
 		return ret;
@@ -330,13 +330,13 @@ static int ina237_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	ret = ina23x_reg_write(&config->bus, INA237_REG_ADC_CONFIG, config->adc_config);
+	ret = ina2xx_reg_write(&config->bus, INA237_REG_ADC_CONFIG, config->adc_config);
 	if (ret < 0) {
 		LOG_ERR("Failed to write ADC configuration register!");
 		return ret;
 	}
 
-	ret = ina23x_reg_write(&config->bus, INA237_REG_CONFIG, config->config);
+	ret = ina2xx_reg_write(&config->bus, INA237_REG_CONFIG, config->config);
 	if (ret < 0) {
 		LOG_ERR("Failed to write configuration register!");
 		return ret;
@@ -356,13 +356,13 @@ static int ina237_init(const struct device *dev)
 
 		k_work_init(&data->trigger.conversion_work, ina237_trigger_work_handler);
 
-		ret = ina23x_trigger_mode_init(&data->trigger, &config->alert_gpio);
+		ret = ina2xx_trigger_mode_init(&data->trigger, &config->alert_gpio);
 		if (ret < 0) {
 			LOG_ERR("Failed to init trigger mode");
 			return ret;
 		}
 
-		ret = ina23x_reg_write(&config->bus, INA237_REG_ALERT, config->alert_config);
+		ret = ina2xx_reg_write(&config->bus, INA237_REG_ALERT, config->alert_config);
 		if (ret < 0) {
 			LOG_ERR("Failed to write alert configuration register!");
 			return ret;

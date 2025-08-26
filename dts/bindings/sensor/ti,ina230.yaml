@@ -13,7 +13,7 @@ description: |
 
 compatible: "ti,ina230"
 
-include: ti,ina23x-common.yaml
+include: ti,ina2xx-common.yaml
 
 properties:
   config:
