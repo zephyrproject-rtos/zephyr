@@ -1,0 +1,108 @@
+# TI MSPM0 Family
+
+# Copyright (c) 2026, Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Texas Instruments MSPM0 Comparator Module with Reference DAC
+
+compatible: "ti,mspm0-comparator"
+include:
+  - base.yaml
+  - pinctrl-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  positive-inputs:
+    type: int
+    default: 0
+    description: |
+      Positive input channel selection (0-7) and also acts as
+      window comparator input in window comparator mode.
+
+  negative-inputs:
+    type: int
+    default: 0
+    description: |
+      Negative input channel selection (0-7) and also acts as
+      upperthreshold channel input in window comparator mode.
+
+  ti,mode:
+    type: string
+    default: "fast"
+    enum:
+      - "fast"
+      - "ulp"
+
+  ti,hysteresis:
+    type: string
+    default: "none"
+    enum: ["none", "10", "20", "30"]
+
+  ti,reference-source:
+    type: string
+    default: "none"
+    enum: ["none", "vdda_dac", "vdda", "int_vref_dac", "vref_dac", "int_vref", "vref"]
+
+  ti,reference-terminal:
+    type: string
+    default: "neg"
+    enum: ["pos", "neg"]
+
+  ti,reference-dac-code0:
+    type: int
+    default: 128
+    description: 8-bit DAC code for reference level 0
+
+  ti,reference-dac-code1:
+    type: int
+    default: 128
+    description: 8-bit DAC code for reference level 1
+
+  ti,reference-dac-control:
+    type: string
+    default: "comp_out"
+    enum: ["comp_out", "sw"]
+    description: |
+      comp_out automatically chooses the dac reference input either code0 or code1
+      based on output high and low resepctively and for sw manually select the dac
+      reference input.
+
+  ti,reference-dac-input:
+    type: int
+    default: 0
+    enum: [0, 1]
+    description: |
+      This is used for selecting the reference dac input either code0 or code1  for
+      sw dac control.
+
+  ti,filter-enable:
+    type: boolean
+    description: Enable analog output filter.
+
+  ti,filter-delay:
+    type: int
+    default: 70
+    enum: [70, 500, 1200, 2700]
+
+  ti,window-mode-enable:
+    type: boolean
+
+  ti,window-lower-threshold:
+    type: int
+    description: |
+      select the channel from 0 to 7.
+
+  ti,window-companion:
+    type: phandle
+
+  vref:
+    type: phandle
+    description: |
+      For internal reference selection phandle the vref0 node and enable the
+      regulator (vref module in mspm0).
