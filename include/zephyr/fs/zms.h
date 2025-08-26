@@ -218,7 +218,7 @@ ssize_t zms_calc_free_space(struct zms_fs *fs);
  * @retval >=0 Number of free bytes in the currently active sector
  * @retval -EACCES if ZMS is still not initialized.
  */
-size_t zms_active_sector_free_space(struct zms_fs *fs);
+ssize_t zms_active_sector_free_space(struct zms_fs *fs);
 
 /**
  * @brief Close the currently active sector and switch to the next one.
