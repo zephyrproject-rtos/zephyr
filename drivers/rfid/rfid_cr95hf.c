@@ -20,12 +20,9 @@ struct rfid_cr95hf_spi_config {
 	const struct spi_dt_spec spi;
 	const struct gpio_dt_spec irq_in;
 	const struct gpio_dt_spec irq_out;
-	const struct gpio_dt_spec cs;
 };
 
 struct rfid_cr95hf_data {
-	enum rfid_mode current_mode;
-	uint64_t cm_timestamp;
 	struct gpio_callback irq_callback;
 	struct spi_buf spi_snd_buffer;
 	struct spi_buf spi_rcv_buffer;
@@ -36,20 +33,21 @@ struct rfid_cr95hf_data {
 	struct k_sem irq_out_sem;
 	gpio_callback_handler_t cb_handler;
 	struct k_mutex data_mutex;
+	bool hw_tx_crc;
+	uint32_t timeout_us;
 };
 
-/**
- * @brief Set the current operating mode of the RFID reader.
- *
- * This function updates the mode and records the current timestamp.
- *
- * @param data Pointer to the RFID data structure.
- * @param mode The new operating mode to set.
- */
-static inline void rfid_cr95hf_setmode(struct rfid_cr95hf_data *data, enum rfid_mode mode)
+static inline size_t count_bits(uint32_t val)
 {
-	data->current_mode = mode;
-	data->cm_timestamp = k_uptime_get();
+	/* Implements Brian Kernighan’s Algorithm to count bits. */
+	size_t cnt = 0U;
+
+	while (val != 0U) {
+		val = val & (val - 1U);
+		cnt++;
+	}
+
+	return cnt;
 }
 
 /**
@@ -63,16 +61,20 @@ static inline void rfid_cr95hf_setmode(struct rfid_cr95hf_data *data, enum rfid_
  * @param irq_out Pointer to the GPIO specification for the IRQ_OUT pin.
  * @param data Pointer to the RFID data structure containing the semaphore.
  */
-static void rfid_cr95hf_wait_for_irq_out_low(const struct gpio_dt_spec *irq_out,
-					     struct rfid_cr95hf_data *data)
+static int rfid_cr95hf_wait_for_irq_out_low(const struct gpio_dt_spec *irq_out,
+					    struct rfid_cr95hf_data *data, k_timeout_t timeout)
 {
+	int ret = 0;
+
 	if (gpio_pin_get_dt(irq_out)) {
-		return; /* Already low, no need to wait */
+		return 0; /* Already low, no need to wait */
 	}
 
 	gpio_pin_interrupt_configure_dt(irq_out, GPIO_INT_EDGE_TO_ACTIVE);
-	k_sem_take(&data->irq_out_sem, K_FOREVER);
+	ret = k_sem_take(&data->irq_out_sem, timeout);
 	gpio_pin_interrupt_configure_dt(irq_out, GPIO_INT_DISABLE);
+
+	return ret;
 }
 
 static inline void rfid_cr95hf_IRQ_IN_pulse(const struct gpio_dt_spec *irq_in)
@@ -99,45 +101,31 @@ static int rfid_cr95hf_transceive(const struct device *dev, bool release_cs)
 	struct rfid_cr95hf_data *data = dev->data;
 	int err;
 
-	gpio_pin_set_dt(&config->cs, 1); /* Set CS pin low */
-	k_sleep(K_MSEC(1));
-
-	k_mutex_lock(&data->data_mutex, K_FOREVER);
-
 	if (data->spi_snd_buffer.len > 0 && data->spi_rcv_buffer.len > 0) {
 		err = spi_transceive_dt(&config->spi, &data->spi_snd_buffer_arr,
 					&data->spi_rcv_buffer_arr);
 		if (err) {
-			goto error;
+			return err;
 		}
 	} else if (data->spi_snd_buffer.len > 0) {
 		err = spi_write_dt(&config->spi, &data->spi_snd_buffer_arr);
 		if (err) {
-			goto error;
+			return err;
 		}
 	} else if (data->spi_rcv_buffer.len > 0) {
 		err = spi_transceive_dt(&config->spi, NULL, &data->spi_rcv_buffer_arr);
 		if (err) {
-			goto error;
+			return err;
 		}
 	} else {
 		/* Nothing to do */
 	}
 
-	k_mutex_unlock(&data->data_mutex);
-
 	if (release_cs) {
-		k_sleep(K_MSEC(1));
-		gpio_pin_set_dt(&config->cs, 0); /* Set CS pin high */
+		spi_release_dt(&config->spi);
 	}
-	k_sleep(K_MSEC(1));
 
 	return 0;
-
-error:
-	k_mutex_unlock(&data->data_mutex);
-
-	return err;
 }
 
 /**
@@ -158,19 +146,6 @@ static int rfid_cr95hf_init_spi(const struct device *dev)
 
 	if (!spi_is_ready_dt(&config->spi)) {
 		LOG_ERR("SPI bus %s is not ready", config->spi.bus->name);
-		return -ENODEV;
-	}
-
-	const struct gpio_dt_spec *cs = &config->cs;
-
-	if (gpio_is_ready_dt(cs)) {
-		err = gpio_pin_configure_dt(cs, GPIO_OUTPUT_INACTIVE);
-		if (err) {
-			LOG_ERR("Cannot configure GPIO (err %d)", err);
-			return err;
-		}
-	} else {
-		LOG_ERR("%s: GPIO device not ready", dev->name);
 		return -ENODEV;
 	}
 
@@ -201,14 +176,11 @@ static int rfid_cr95hf_init_spi(const struct device *dev)
 			return err;
 		}
 
-		k_mutex_lock(&data->data_mutex, K_FOREVER);
-
 		k_sem_init(&data->irq_out_sem, 0, 1);
 
 		gpio_init_callback(&data->irq_callback, data->cb_handler, BIT(irq_out->pin));
 
 		err = gpio_add_callback_dt(irq_out, &data->irq_callback);
-		k_mutex_unlock(&data->data_mutex);
 		if (err) {
 			LOG_ERR("Failed to add GPIO callback (err %d)", err);
 			return err;
@@ -222,11 +194,9 @@ static int rfid_cr95hf_init_spi(const struct device *dev)
 
 	do {
 		/* Send Reset Command*/
-		k_mutex_lock(&data->data_mutex, K_FOREVER);
 		data->snd_buffer[0] = 0x01; /* SPI control Byte: Reset*/
 		data->spi_snd_buffer.len = 1;
 		data->spi_rcv_buffer.len = 0;
-		k_mutex_unlock(&data->data_mutex);
 
 		err = rfid_cr95hf_transceive(dev, true);
 		if (err) {
@@ -237,11 +207,9 @@ static int rfid_cr95hf_init_spi(const struct device *dev)
 		rfid_cr95hf_IRQ_IN_pulse(irq_in);
 
 		/* Send Echo */
-		k_mutex_lock(&data->data_mutex, K_FOREVER);
 		data->snd_buffer[0] = 0x00; /* SPI control Byte: Send*/
 		data->snd_buffer[1] = 0x55; /* CMD: Echo */
 		data->spi_snd_buffer.len = 2;
-		k_mutex_unlock(&data->data_mutex);
 
 		err = rfid_cr95hf_transceive(dev, true);
 		if (err) {
@@ -250,11 +218,9 @@ static int rfid_cr95hf_init_spi(const struct device *dev)
 		}
 
 		/* Receive Echo*/
-		k_mutex_lock(&data->data_mutex, K_FOREVER);
 		data->snd_buffer[0] = 0x02; /* SPI control Byte: Send*/
 		data->spi_snd_buffer.len = 1;
 		data->spi_rcv_buffer.len = 2; /* Byte 0: Dummy Read; Byte 1: Echo Value*/
-		k_mutex_unlock(&data->data_mutex);
 
 		err = rfid_cr95hf_transceive(dev, true);
 		if (err) {
@@ -262,21 +228,16 @@ static int rfid_cr95hf_init_spi(const struct device *dev)
 			return err;
 		}
 
-		k_mutex_lock(&data->data_mutex, K_FOREVER);
 		echo_resp = data->rcv_buffer[1];
-		k_mutex_unlock(&data->data_mutex);
 
 		LOG_DBG("Echo Response: %02X", echo_resp);
 		tries--;
 	} while (echo_resp != 0x55 && tries > 0);
 
 	if (tries == 0 && echo_resp != 0x55) {
-		rfid_cr95hf_setmode(data, UNINITIALIZED);
 		LOG_ERR("Initialization Failed");
 		return -EIO;
 	}
-
-	rfid_cr95hf_setmode(data, POWER_UP);
 
 	return 0;
 }
@@ -296,17 +257,26 @@ static int rfid_cr95hf_init_spi(const struct device *dev)
  * for readiness to send data.
  * @return 0 on success or a negative error code on failure.
  */
-static int rfid_cr95hf_polling(const struct device *dev, bool ready_read, bool ready_send)
+static int rfid_cr95hf_polling(const struct device *dev, bool ready_read, bool ready_send,
+			       k_timeout_t timeout)
 {
 	struct rfid_cr95hf_data *data = dev->data;
 	int err;
-	uint8_t reveived;
+	uint8_t received;
+	int64_t start_time = k_uptime_get();
+	int64_t timeout_ms;
 
-	k_mutex_lock(&data->data_mutex, K_FOREVER);
+	if (K_TIMEOUT_EQ(timeout, K_FOREVER)) {
+		timeout_ms = INT64_MAX;
+	} else if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
+		timeout_ms = 0;
+	} else {
+		timeout_ms = k_ticks_to_ms_floor64(timeout.ticks);
+	}
+
 	data->snd_buffer[0] = 0x03; /* SPI control Byte: Poll */
 	data->spi_snd_buffer.len = 1;
 	data->spi_rcv_buffer.len = 0;
-	k_mutex_unlock(&data->data_mutex);
 
 	err = rfid_cr95hf_transceive(dev, true);
 	if (err) {
@@ -315,35 +285,35 @@ static int rfid_cr95hf_polling(const struct device *dev, bool ready_read, bool r
 	}
 
 	/* Read Flags */
-	k_mutex_lock(&data->data_mutex, K_FOREVER);
 	data->spi_snd_buffer.len = 0;
 	data->spi_rcv_buffer.len = 1;
-	k_mutex_unlock(&data->data_mutex);
 
 	while (1) {
-		k_mutex_lock(&data->data_mutex, K_FOREVER);
 		data->rcv_buffer[0] = 0;
-		k_mutex_unlock(&data->data_mutex);
 		err = rfid_cr95hf_transceive(dev, true);
 		if (err) {
 			LOG_ERR("Failed to read data (err %d)", err);
 			return err;
 		}
 
-		k_mutex_lock(&data->data_mutex, K_FOREVER);
-		reveived = data->rcv_buffer[0];
-		k_mutex_unlock(&data->data_mutex);
+		received = data->rcv_buffer[0];
 
-		LOG_DBG("Polling: Flags received: %02X", reveived);
+		LOG_DBG("Polling: Flags received: %02X", received);
 
 		/* Check if read flag is requested and set */
-		if (ready_read && (reveived & (CR95HF_READY_TO_READ))) {
+		if (ready_read && (received & (CR95HF_READY_TO_READ))) {
 			return 0;
 		}
 
 		/* Check if send flag is requested and set */
-		if (ready_send && (reveived & (CR95HF_READY_TO_WRITE))) {
+		if (ready_send && (received & (CR95HF_READY_TO_WRITE))) {
 			return 0;
+		}
+
+		int64_t elapsed = k_uptime_get() - start_time;
+
+		if (elapsed >= timeout_ms) {
+			return -EAGAIN;
 		}
 	}
 }
@@ -357,21 +327,24 @@ static int rfid_cr95hf_polling(const struct device *dev, bool ready_read, bool r
  *
  * @param dev The device structure representing the CR95HF device.
  */
-static void rfid_cr95hf_wait(const struct device *dev)
+static int rfid_cr95hf_wait(const struct device *dev, k_timeout_t timeout)
 {
 	const struct rfid_cr95hf_spi_config *config = dev->config;
 	struct rfid_cr95hf_data *data = dev->data;
+	int ret = 0;
 
 	/* Function blocks until wakeup of CR95HF*/
 	if (config->irq_out.port == NULL) {
 		LOG_DBG("Polling");
 		/* Active polling for readiness since irq_out is not configured */
-		rfid_cr95hf_polling(dev, 1, 1);
+		ret = rfid_cr95hf_polling(dev, 1, 1, timeout);
 	} else {
 		LOG_DBG("Sleeping");
 		/* Wait for IRQ_OUT to be set low, indicating readiness */
-		rfid_cr95hf_wait_for_irq_out_low(&config->irq_out, data);
+		ret = rfid_cr95hf_wait_for_irq_out_low(&config->irq_out, data, timeout);
 	}
+
+	return ret;
 }
 
 /**
@@ -392,8 +365,6 @@ static int rfid_cr95hf_response(const struct device *dev)
 	uint8_t response_code;
 	int err;
 
-	k_mutex_lock(&data->data_mutex, K_FOREVER);
-
 	data->snd_buffer[0] = 0x02; /* Set the control byte for reading */
 	data->spi_snd_buffer.len = 1;
 	/* Set Length to 3
@@ -402,7 +373,6 @@ static int rfid_cr95hf_response(const struct device *dev)
 	 * Byte 2: Len
 	 */
 	data->spi_rcv_buffer.len = 3;
-	k_mutex_unlock(&data->data_mutex);
 
 	err = rfid_cr95hf_transceive(dev, false);
 	if (err) {
@@ -410,10 +380,8 @@ static int rfid_cr95hf_response(const struct device *dev)
 		return err;
 	}
 
-	k_mutex_lock(&data->data_mutex, K_FOREVER);
 	response_code = data->rcv_buffer[1];
 	data_len = data->rcv_buffer[2];
-	k_mutex_unlock(&data->data_mutex);
 
 	LOG_DBG("Response Code: %02X Datalen %02X ", response_code, data_len);
 
@@ -422,10 +390,8 @@ static int rfid_cr95hf_response(const struct device *dev)
 		data_len = CR95HF_RCV_BUF_SIZE;
 	}
 
-	k_mutex_lock(&data->data_mutex, K_FOREVER);
 	data->spi_snd_buffer.len = 0;
 	data->spi_rcv_buffer.len = data_len;
-	k_mutex_unlock(&data->data_mutex);
 
 	err = rfid_cr95hf_transceive(dev, true);
 	if (err) {
@@ -436,401 +402,127 @@ static int rfid_cr95hf_response(const struct device *dev)
 	return 0;
 }
 
-/**
- * @brief Switches the CR95HF device to the requested mode.
- *
- * This function sets the CR95HF device to a specific operational mode,
- * while handling transitions from other modes as necessary. It includes
- * a waiting mechanism to ensure the device has stabilized before changing
- * modes. Supported modes include TAG_DETECTOR.
- *
- * @param dev The device structure representing the CR95HF device.
- * @param req_mode The requested mode to switch to.
- * @return 0 on success or a negative error code on failure.
- */
-int rfid_cr95hf_select_mode(const struct device *dev, enum rfid_mode req_mode)
+static int rfid_cr95hf_claim(const struct device *dev)
 {
 	struct rfid_cr95hf_data *data = dev->data;
-	const struct rfid_cr95hf_spi_config *config = dev->config;
-	const struct gpio_dt_spec *irq_in = &config->irq_in;
-	enum rfid_mode current_mode = data->current_mode;
-	int err;
 
-	if (req_mode == current_mode) {
-		LOG_DBG("Nothing to do: Requested Mode = current Mode");
-		return 0;
-	}
+	return k_mutex_lock(&data->data_mutex, K_FOREVER);
+}
 
-	if (req_mode >= INVALID) {
-		LOG_ERR("Invalid Mode requested");
-		err = -EINVAL;
-		return err;
-	}
+static int rfid_cr95hf_release(const struct device *dev)
+{
+	struct rfid_cr95hf_data *data = dev->data;
 
-	k_mutex_lock(&data->data_mutex, K_FOREVER);
+	return k_mutex_unlock(&data->data_mutex);
+}
 
-	/* Wait if the last state switch is lower than 10ms */
-	if (data->cm_timestamp < 10) {
-		k_sleep(K_MSEC(10 - data->cm_timestamp));
-	}
+static int rfid_cr95hf_get_property(const struct device *dev, struct rfid_property *prop)
+{
+	return -ENOTSUP;
+}
 
-	k_mutex_unlock(&data->data_mutex);
+static int rfid_cr95hf_get_properties(const struct device *dev, struct rfid_property *props,
+				      size_t props_len)
+{
+	__ASSERT_NO_MSG(props != NULL);
 
-	/* Transition to READY STATE if not already in that state */
-	if (current_mode != READY) {
-		if (current_mode == READER) {
-			/* Todo: Send serial command to switch to READY */
-			LOG_ERR("Leaving READER state is not implemented, yet");
-		} else {
-			/* Set IRQ_IN to 0 for at least 10us (t1) */
-			gpio_pin_set_dt(irq_in, 1);
-			k_sleep(K_USEC(10));
-			gpio_pin_set_dt(irq_in, 0);
-			rfid_cr95hf_setmode(data, READY);
-		}
-	}
-
-	/* Wait 10ms (t3) to stabilize before switching modes */
-	k_sleep(K_MSEC(10));
-
-	switch (req_mode) {
-	case TAG_DETECTOR:
-		uint8_t tag_detector_msg[17] = CR95HF_WFE_TAG_DETECTOR_ARRAY;
-
-		k_mutex_lock(&data->data_mutex, K_FOREVER);
-
-		memcpy(data->snd_buffer, tag_detector_msg, 17);
-		data->spi_snd_buffer.len = 17;
-		data->spi_rcv_buffer.len = 0;
-
-		k_mutex_unlock(&data->data_mutex);
-
-		err = rfid_cr95hf_transceive(dev, true);
-		if (err) {
-			LOG_ERR("Failed to send tag detector command (err %d)", err);
-			return err;
-		}
-
-		rfid_cr95hf_setmode(data, TAG_DETECTOR);
-
-		/* Block until the CR95HF device has woken up */
-		rfid_cr95hf_wait(dev);
-
-		err = rfid_cr95hf_response(dev);
-		if (err) {
-			LOG_ERR("Failed to read response after wakeup (err %d)", err);
-			return err;
-		}
-
-		rfid_cr95hf_setmode(data, READY);
-
-		break;
-	default:
-		LOG_ERR("Requested Mode not implemented");
-		return -EINVAL;
+	for (size_t index = 0U; index < props_len; ++index) {
+		props[index].status = rfid_cr95hf_get_property(dev, &props[index]);
 	}
 
 	return 0;
 }
 
-/**
- * @brief Retrieves the UID of an ISO 14443A card using the anticollision protocol.
- *
- * This function executes the necessary commands to communicate with an ISO 14443A card
- * and read its Unique Identifier (UID). It handles the anticollision procedure to obtain
- * the UID in cases where the card has multiple parts.
- *
- * @param dev The device structure representing the CR95HF device.
- * @param uid Pointer to a buffer that will store the retrieved UID.
- * @param uid_len Pointer to a variable that indicates the length of the UID buffer.
- * @return 0 on success or a negative error code on failure.
- */
-int rfid_cr95hf_iso14443A_get_uid(const struct device *dev, uint8_t *uid, size_t *uid_len)
+static int rfid_cr95hf_set_property(const struct device *dev, struct rfid_property *prop)
 {
 	struct rfid_cr95hf_data *data = dev->data;
-	int err;
-	uint8_t sak_byte;
 
-	/* Check if the UID buffer is of sufficient size */
-	if (*uid_len < 10 || uid == NULL) {
-		LOG_ERR("UID Buffer too short. Please provide at least 10 Unsigned Bytes");
+	switch (prop->type) {
+	case RFID_PROP_HW_TX_CRC:
+		data->hw_tx_crc = prop->hw_tx_crc;
+		return 0;
+
+	case RFID_PROP_TIMEOUT:
+		data->timeout_us = prop->timeout_us;
+		return 0;
+
+	default:
+		break;
+	}
+
+	return -ENOTSUP;
+}
+
+static int rfid_cr95hf_set_properties(const struct device *dev, struct rfid_property *props,
+				      size_t props_len)
+{
+	__ASSERT_NO_MSG(props != NULL);
+
+	for (size_t index = 0; index < props_len; ++index) {
+		props[index].status = rfid_cr95hf_set_property(dev, &props[index]);
+	}
+
+	return 0;
+}
+
+static int rfid_cr95hf_load_protocol(const struct device *dev, rfid_proto_t proto, rfid_mode_t mode)
+{
+	struct rfid_cr95hf_data *data = dev->data;
+	uint8_t rf_tx = CR95HF_ISO_14443_106_KBPS;
+	uint8_t rf_rx = CR95HF_ISO_14443_106_KBPS;
+	int err;
+
+	/* Only initiator mode is supported */
+	if ((mode & RFID_MODE_ROLE_MASK) != RFID_MODE_INITIATOR) {
 		return -EINVAL;
 	}
 
-	/* Send REQA command to initiate communication with the card */
-	k_mutex_lock(&data->data_mutex, K_FOREVER);
-	data->snd_buffer[0] = 0x00; /* Control Byte: Send */
-	data->snd_buffer[1] = 0x04; /* cmd: SendRecev */
-	data->snd_buffer[2] = 0x02; /* Data Length */
-	data->snd_buffer[3] = 0x26; /*  */
-	data->snd_buffer[4] = 0x07; /*  */
-	data->spi_snd_buffer.len = 5;
-	data->spi_rcv_buffer.len = 0;
-	k_mutex_unlock(&data->data_mutex);
-	err = rfid_cr95hf_transceive(dev, true);
-	if (err) {
-		LOG_ERR("Failed to send REQA (err %d)", err);
-		return err;
+	/* Only one data rate could be set*/
+	if (count_bits(mode & RFID_MODE_TX_MASK) > 1U ||
+	    count_bits(mode & RFID_MODE_RX_MASK) > 1U) {
+		return -EINVAL;
 	}
 
-	rfid_cr95hf_wait(dev);
-
-	/* Wait for response (ATQA) after sending REQA */
-	err = rfid_cr95hf_response(dev);
-	if (err) {
-		LOG_ERR("Failed to read response after REQA (err %d)", err);
-		return err;
-	}
-
-	/* Send SEL_CL1 command to read UID */
-	k_mutex_lock(&data->data_mutex, K_FOREVER);
-	data->snd_buffer[0] = 0x00; /* Control Byte: Send */
-	data->snd_buffer[1] = 0x04; /* cmd: SendRecev */
-	data->snd_buffer[2] = 0x03; /* Data Length */
-	data->snd_buffer[3] = 0x93; /*  */
-	data->snd_buffer[4] = 0x20; /*  */
-	data->snd_buffer[5] = 0x08; /*  */
-	data->spi_snd_buffer.len = 6;
-	data->spi_rcv_buffer.len = 0;
-	k_mutex_unlock(&data->data_mutex);
-	err = rfid_cr95hf_transceive(dev, true);
-	if (err) {
-		LOG_ERR("Failed to send SEL_CL1 (err %d)", err);
-		return err;
-	}
-
-	rfid_cr95hf_wait(dev);
-
-	err = rfid_cr95hf_response(dev);
-	if (err) {
-		LOG_ERR("Failed to read response after SEL_CL1 (err %d)", err);
-		return err;
-	}
-
-	k_mutex_lock(&data->data_mutex, K_FOREVER);
-	if (data->rcv_buffer[0] == 0x88) {
-		uid[0] = data->rcv_buffer[1];
-		uid[1] = data->rcv_buffer[2];
-		uid[2] = data->rcv_buffer[3];
-	} else {
-		uid[0] = data->rcv_buffer[0];
-		uid[1] = data->rcv_buffer[1];
-		uid[2] = data->rcv_buffer[2];
-		uid[3] = data->rcv_buffer[3];
-		*uid_len = 4;
-	}
-
-	/* Send SEL_CL1 complete command */
-	data->snd_buffer[0] = 0x00;                /* Control Byte: Send */
-	data->snd_buffer[1] = 0x04;                /* cmd: SendRecev */
-	data->snd_buffer[2] = 0x08;                /* Data Length */
-	data->snd_buffer[3] = 0x93;                /*  */
-	data->snd_buffer[4] = 0x70;                /*  */
-	data->snd_buffer[5] = data->rcv_buffer[0]; /*  */
-	data->snd_buffer[6] = data->rcv_buffer[1]; /*  */
-	data->snd_buffer[7] = data->rcv_buffer[2]; /*  */
-	data->snd_buffer[8] = data->rcv_buffer[3]; /*  */
-	data->snd_buffer[9] = data->rcv_buffer[4]; /*  */
-	data->snd_buffer[10] = 0x28;
-
-	data->spi_snd_buffer.len = 11;
-	data->spi_rcv_buffer.len = 0;
-	k_mutex_unlock(&data->data_mutex);
-
-	err = rfid_cr95hf_transceive(dev, true);
-	if (err) {
-		LOG_ERR("Failed to send SEL_CL1 complete (err %d)", err);
-		return err;
-	}
-
-	rfid_cr95hf_wait(dev);
-
-	err = rfid_cr95hf_response(dev);
-	if (err) {
-		LOG_ERR("Failed to read response after SEL_CL1 complete (err %d)", err);
-		return err;
-	}
-
-	k_mutex_lock(&data->data_mutex, K_FOREVER);
-	sak_byte = data->rcv_buffer[0];
-	k_mutex_unlock(&data->data_mutex);
-
-	/* Check if more UID data can be read */
-	if (sak_byte & 0x04) {
-		k_mutex_lock(&data->data_mutex, K_FOREVER);
-		data->snd_buffer[0] = 0x00; /* Control Byte: Send */
-		data->snd_buffer[1] = 0x04; /* Cmd: SendRecev */
-		data->snd_buffer[2] = 0x03; /* Data Length */
-		data->snd_buffer[3] = 0x95; /* SEL_CL2 command */
-		data->snd_buffer[4] = 0x20;
-		data->snd_buffer[5] = 0x08;
-		data->spi_snd_buffer.len = 6;
-		data->spi_rcv_buffer.len = 0;
-		k_mutex_unlock(&data->data_mutex);
-
-		err = rfid_cr95hf_transceive(dev, true);
-		if (err) {
-			LOG_ERR("Failed to send SEL_CL2 (err %d)", err);
-			return err;
+	if (proto == RFID_PROTO_ISO14443A) {
+		if ((mode & RFID_MODE_TX_MASK) != 0U) {
+			switch (mode & RFID_MODE_TX_MASK) {
+			case RFID_MODE_TX_106:
+				rf_tx = CR95HF_ISO_14443_106_KBPS;
+				break;
+			case RFID_MODE_TX_212:
+				rf_tx = CR95HF_ISO_14443_212_KBPS;
+				break;
+			case RFID_MODE_TX_424:
+				rf_tx = CR95HF_ISO_14443_424_KBPS;
+				break;
+			default:
+				return -EINVAL;
+			}
 		}
 
-		rfid_cr95hf_wait(dev);
-
-		err = rfid_cr95hf_response(dev);
-		if (err) {
-			LOG_ERR("Failed to read response after SEL_CL2 (err %d)", err);
-			return err;
+		if ((mode & RFID_MODE_RX_MASK) != 0U) {
+			switch (mode & RFID_MODE_RX_MASK) {
+			case RFID_MODE_RX_106:
+				rf_rx = CR95HF_ISO_14443_106_KBPS;
+				break;
+			case RFID_MODE_RX_212:
+				rf_rx = CR95HF_ISO_14443_212_KBPS;
+				break;
+			case RFID_MODE_RX_424:
+				rf_rx = CR95HF_ISO_14443_424_KBPS;
+				break;
+			default:
+				return -EINVAL;
+			}
 		}
 
-		k_mutex_lock(&data->data_mutex, K_FOREVER);
-		if (data->rcv_buffer[0] == 0x88) {
-			uid[3] = data->rcv_buffer[1];
-			uid[4] = data->rcv_buffer[2];
-			uid[5] = data->rcv_buffer[3];
-		} else {
-			uid[3] = data->rcv_buffer[0];
-			uid[4] = data->rcv_buffer[1];
-			uid[5] = data->rcv_buffer[2];
-			uid[6] = data->rcv_buffer[3];
-			*uid_len = 7;
-		}
-
-		data->snd_buffer[0] = 0x00; /* Control Byte: Send */
-		data->snd_buffer[1] = 0x04; /* Cmd: SendRecev */
-		data->snd_buffer[2] = 0x08; /* Data Length */
-		data->snd_buffer[3] = 0x95; /* SEL_CL2 complete command */
-		data->snd_buffer[4] = 0x70;
-		data->snd_buffer[5] = data->rcv_buffer[0];
-		data->snd_buffer[6] = data->rcv_buffer[1];
-		data->snd_buffer[7] = data->rcv_buffer[2];
-		data->snd_buffer[8] = data->rcv_buffer[3];
-		data->snd_buffer[9] = data->rcv_buffer[4];
-		data->snd_buffer[10] = 0x28; /* Termination byte */
-
-		data->spi_snd_buffer.len = 11;
-		data->spi_rcv_buffer.len = 0;
-		k_mutex_unlock(&data->data_mutex);
-
-		err = rfid_cr95hf_transceive(dev, true);
-		if (err) {
-			LOG_ERR("Failed to send SEL_CL2 complete (err %d)", err);
-			return err;
-		}
-
-		rfid_cr95hf_wait(dev);
-		err = rfid_cr95hf_response(dev);
-		if (err) {
-			LOG_ERR("Failed to read response after SEL_CL2 complete (err %d)", err);
-			return err;
-		}
-
-		k_mutex_lock(&data->data_mutex, K_FOREVER);
-		sak_byte = data->rcv_buffer[0];
-		k_mutex_unlock(&data->data_mutex);
-	}
-
-	if (sak_byte & 0x04) {
-		k_mutex_lock(&data->data_mutex, K_FOREVER);
-		data->snd_buffer[0] = 0x00; /* Control Byte: Send */
-		data->snd_buffer[1] = 0x04; /* Cmd: SendRecev */
-		data->snd_buffer[2] = 0x03; /* Data Length */
-		data->snd_buffer[3] = 0x97; /* Command for reading next UID part */
-		data->snd_buffer[4] = 0x20;
-		data->snd_buffer[5] = 0x08;
-		data->spi_snd_buffer.len = 6;
-		data->spi_rcv_buffer.len = 0;
-		k_mutex_unlock(&data->data_mutex);
-		err = rfid_cr95hf_transceive(dev, true);
-		if (err) {
-			LOG_ERR("Failed to send SEL_CL3 (err %d)", err);
-			return err;
-		}
-
-		rfid_cr95hf_wait(dev);
-		err = rfid_cr95hf_response(dev);
-		if (err) {
-			LOG_ERR("Failed to read response after SEL_CL3 (err %d)", err);
-			return err;
-		}
-
-		k_mutex_lock(&data->data_mutex, K_FOREVER);
-		uid[6] = data->rcv_buffer[0];
-		uid[7] = data->rcv_buffer[1];
-		uid[8] = data->rcv_buffer[2];
-		uid[9] = data->rcv_buffer[3];
-		*uid_len = 10;
-		data->snd_buffer[0] = 0x00; /* Control Byte: Send */
-		data->snd_buffer[1] = 0x04; /* Cmd: SendRecev */
-		data->snd_buffer[2] = 0x08; /* Data Length */
-		data->snd_buffer[3] = 0x97; /* Complete command */
-		data->snd_buffer[4] = 0x70;
-		data->snd_buffer[5] = data->rcv_buffer[0];
-		data->snd_buffer[6] = data->rcv_buffer[1];
-		data->snd_buffer[7] = data->rcv_buffer[2];
-		data->snd_buffer[8] = data->rcv_buffer[3];
-		data->snd_buffer[9] = data->rcv_buffer[4];
-		data->snd_buffer[10] = 0x28; /* Termination byte */
-
-		data->spi_snd_buffer.len = 11;
-		data->spi_rcv_buffer.len = 0;
-		k_mutex_unlock(&data->data_mutex);
-
-		err = rfid_cr95hf_transceive(dev, true);
-		if (err) {
-			LOG_ERR("Failed to send SEL_CL3 complete (err %d)", err);
-			return err;
-		}
-
-		rfid_cr95hf_wait(dev);
-		err = rfid_cr95hf_response(dev);
-		if (err) {
-			LOG_ERR("Failed to read response after SEL_CL3 complete (err %d)", err);
-			return err;
-		}
-
-		k_mutex_lock(&data->data_mutex, K_FOREVER);
-		sak_byte = data->snd_buffer[0];
-		k_mutex_unlock(&data->data_mutex);
-	}
-
-	if (*uid_len == 4) {
-		/* Log 4-byte UID */
-		LOG_DBG("UID: %02X %02X %02X %02X", uid[0], uid[1], uid[2], uid[3]);
-	} else if (*uid_len == 7) {
-		/* Log 7-byte UID */
-		LOG_DBG("UID: %02X %02X %02X %02X %02X %02X %02X", uid[0], uid[1], uid[2], uid[3],
-			uid[4], uid[5], uid[6]);
-	} else {
-		/* Log 10-byte UID */
-		LOG_DBG("UID: %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X", uid[0], uid[1],
-			uid[2], uid[3], uid[4], uid[5], uid[6], uid[7], uid[8], uid[9]);
-	}
-
-	return 0; /* Return success */
-}
-
-/**
- * @brief Selects the RFID protocol for communication.
- *
- * This function configures the RFID reader to use the specified protocol,
- * such as ISO_14443A. It sends the necessary command to the device and waits
- * for a response to acknowledge the protocol switch.
- */
-int rfid_cr95hf_protocol_select(const struct device *dev, enum rfid_protocol proto)
-{
-	struct rfid_cr95hf_data *data = dev->data;
-	int err;
-
-	switch (proto) {
-	case ISO_14443A:
 		/* Prepare the command for switching the protocol */
-		uint8_t protocol_msg[7] = CR95HF_SELECT_14443_A_ARRAY;
+		uint8_t protocol_msg[7] = {
+			0, 2, 4, 2, ((rf_tx & 0x03) << 6) | ((rf_rx & 0x03) << 4), 1, 0x80};
 
-		k_mutex_lock(&data->data_mutex, K_FOREVER);
 		memcpy(data->snd_buffer, protocol_msg, 7);
 		data->spi_snd_buffer.len = 7;
 		data->spi_rcv_buffer.len = 0;
-		k_mutex_unlock(&data->data_mutex);
 
 		err = rfid_cr95hf_transceive(dev, true);
 		if (err) {
@@ -838,40 +530,97 @@ int rfid_cr95hf_protocol_select(const struct device *dev, enum rfid_protocol pro
 			return err;
 		}
 
-		rfid_cr95hf_wait(dev);
+		err = rfid_cr95hf_wait(dev, K_MSEC(1));
+		if (err) {
+			return err;
+		}
+
 		err = rfid_cr95hf_response(dev);
 		if (err) {
 			LOG_ERR("Failed to read response after protocol select command (err %d)",
 				err);
 			return err;
 		}
-		rfid_cr95hf_setmode(data, READER);
 
-		break;
-	default:
-		LOG_ERR("The selected protocol is not supported");
+	} else {
 		return -EINVAL;
 	}
+
 	return 0;
 }
 
-/**
- * @brief Transmits data to the RFID device and receives a response.
- *
- * This function is responsible for sending a buffer of data to the RFID device and receiving
- * a response buffer back. It also manages the lengths of the transmitted and received data.
- */
-int rfid_cr95hf_transceive_api(const struct device *dev, struct transceive_data data)
+static int rfid_cr95hf_im_transceive(const struct device *dev, const uint8_t *tx_data,
+				     uint16_t tx_len, uint8_t tx_last_bits, uint8_t *rx_data,
+				     uint16_t *rx_len)
 {
-	LOG_ERR("Function not implemented");
-	return -EPERM;
+	struct rfid_cr95hf_data *data = dev->data;
+	int err;
+
+	data->snd_buffer[0] = 0x00; /* Control Byte: Send */
+	data->snd_buffer[1] = 0x04; /* cmd: SendRecev */
+	data->snd_buffer[2] = tx_len + 1;
+	data->snd_buffer[tx_len + 3] = tx_last_bits | (data->hw_tx_crc ? 0x20 : 0x00);
+	memcpy(data->snd_buffer + 3, tx_data, tx_len);
+	data->spi_snd_buffer.len = tx_len + 4;
+	data->spi_rcv_buffer.len = 0;
+
+	err = rfid_cr95hf_transceive(dev, true);
+	if (err) {
+		LOG_ERR("Failed to send data (err %d)", err);
+		return err;
+	}
+
+	err = rfid_cr95hf_wait(dev, K_USEC(data->timeout_us));
+	if (err) {
+		return err;
+	}
+
+	err = rfid_cr95hf_response(dev);
+	if (err) {
+		LOG_ERR("Failed to read response (err %d)", err);
+		return err;
+	}
+
+	if (data->spi_rcv_buffer.len > 3) {
+		data->spi_rcv_buffer.len -= 3;
+	}
+	*rx_len = data->spi_rcv_buffer.len;
+	memcpy(rx_data, data->rcv_buffer, data->spi_rcv_buffer.len);
+
+	return 0;
+}
+
+static rfid_proto_t rfid_cr95hf_supported_protocols(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	return RFID_PROTO_ISO14443A;
+}
+
+static rfid_mode_t rfid_cr95hf_supported_modes(const struct device *dev, rfid_proto_t proto)
+{
+	ARG_UNUSED(dev);
+
+	if (proto == RFID_PROTO_ISO14443A) {
+		return RFID_MODE_INITIATOR | RFID_MODE_RX_106 | RFID_MODE_TX_106 |
+		       RFID_MODE_RX_212 | RFID_MODE_TX_212 | RFID_MODE_RX_424 | RFID_MODE_TX_424;
+	}
+
+	return 0;
 }
 
 static DEVICE_API(rfid, rfid_cr95hf_api) = {
-	.select_mode = rfid_cr95hf_select_mode,
-	.protocol_select = rfid_cr95hf_protocol_select,
-	.get_uid = rfid_cr95hf_iso14443A_get_uid,
-	.transceive = NULL,
+	.claim = rfid_cr95hf_claim,
+	.release = rfid_cr95hf_release,
+	.load_protocol = rfid_cr95hf_load_protocol,
+	.get_properties = rfid_cr95hf_get_properties,
+	.set_properties = rfid_cr95hf_set_properties,
+	.im_transceive = rfid_cr95hf_im_transceive,
+	.tm_transmit = NULL,
+	.tm_receive = NULL,
+	.listen = NULL,
+	.supported_protocols = rfid_cr95hf_supported_protocols,
+	.supported_modes = rfid_cr95hf_supported_modes,
 };
 
 /* Define to initialize RFID device using SPI communication */
@@ -883,14 +632,15 @@ static DEVICE_API(rfid, rfid_cr95hf_api) = {
 		k_sem_give(&rfid_device_prv_data_##n.irq_out_sem);                                 \
 	}                                                                                          \
 	static const struct rfid_cr95hf_spi_config rfid_device_prv_config_##n = {                  \
-		.spi = SPI_DT_SPEC_INST_GET(                                                       \
-			n, SPI_OP_MODE_MASTER | SPI_WORD_SET(8U) | SPI_TRANSFER_MSB, 0U),          \
-		.cs = GPIO_DT_SPEC_GET(DT_DRV_INST(n), cs_gpios),                                  \
+		.spi = SPI_DT_SPEC_INST_GET(n,                                                     \
+					    SPI_OP_MODE_MASTER | SPI_WORD_SET(8U) |                \
+						    SPI_TRANSFER_MSB | SPI_HOLD_ON_CS |            \
+						    SPI_LOCK_ON,                                   \
+					    0U),                                                   \
 		.irq_in = GPIO_DT_SPEC_INST_GET(n, irq_in_gpios),                                  \
 		.irq_out = GPIO_DT_SPEC_INST_GET_OR(n, irq_out_gpios, {0}),                        \
 	};                                                                                         \
 	static struct rfid_cr95hf_data rfid_device_prv_data_##n = {                                \
-		.current_mode = UNINITIALIZED,                                                     \
 		.spi_snd_buffer.buf = rfid_device_prv_data_##n.snd_buffer,                         \
 		.spi_rcv_buffer.buf = rfid_device_prv_data_##n.rcv_buffer,                         \
 		.spi_snd_buffer_arr.buffers = &rfid_device_prv_data_##n.spi_snd_buffer,            \
