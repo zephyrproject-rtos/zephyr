@@ -145,6 +145,10 @@ __weak void clk_init(void)
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ewm0))
 	CLOCK_EnableClock(kCLOCK_Ewm0);
 #endif
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpit0))
+	CLOCK_SetIpSrc(kCLOCK_Lpit0,
+		       DT_CLOCKS_CELL(DT_NODELABEL(lpit0), ip_source));
+#endif
 }
 
 void soc_early_init_hook(void)
