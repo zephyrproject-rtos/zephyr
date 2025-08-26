@@ -1,0 +1,190 @@
+<div class="admonition note available-space-calculator zms-calc">
+  <p class="admonition-title">Available Space Calculator</p>
+  <p>Calculate the available storage space for your ZMS configuration.</p>
+
+  <div class="zms-grid">
+    <div
+      class="zms-field"
+      title="Device type: NOR flash requires explicit erase; RRAM/MRAM do not."
+    >
+      <label class="zms-label" for="space-flash-type">Flash type:</label>
+      <select class="zms-input" id="space-flash-type">
+        <option value="no-erase">No explicit erase (RRAM, MRAM)</option>
+        <option value="explicit-erase">Explicit erase (NOR flash)</option>
+      </select>
+    </div>
+
+    <div
+      class="zms-field"
+      id="space-erase-block-wrap"
+      style="display: none"
+      title="Erase block size. Sector size must be a multiple of this."
+    >
+      <label class="zms-label" for="space-erase-block-size">Erase block size (bytes):</label>
+      <input
+        type="number"
+        class="zms-input"
+        id="space-erase-block-size"
+        value="4096"
+        min="256"
+        step="256"
+      />
+    </div>
+
+    <div
+      class="zms-field"
+      title="Size of each sector in bytes. Must be a multiple of write-block-size."
+    >
+      <label class="zms-label" for="space-sector-size">Sector Size (bytes):</label>
+      <input
+        type="number"
+        class="zms-input"
+        id="space-sector-size"
+        value="1024"
+        min="256"
+        step="256"
+      />
+    </div>
+
+    <div
+      class="zms-field"
+      title="Total sectors in the partition. One sector is always reserved for garbage collection."
+    >
+      <label class="zms-label" for="space-sector-count">Number of Sectors:</label>
+      <input type="number" class="zms-input" id="space-sector-count" value="4" min="2" max="100" />
+    </div>
+
+    <div
+      class="zms-field"
+      title="Minimum write unit in bytes. ATE and data sizes are aligned to this. Default 1 for byte-addressable devices."
+    >
+      <label class="zms-label" for="space-write-block-size">Write block size (bytes):</label>
+      <input
+        type="number"
+        class="zms-input"
+        id="space-write-block-size"
+        value="1"
+        min="1"
+        max="32"
+      />
+    </div>
+
+    <div
+      class="zms-field"
+      title="Size in bytes of each value. ≤8 for small data stored in ATE. For large data, value is stored at top of sector."
+    >
+      <label class="zms-label" for="space-data-size">Average Data Size (bytes):</label>
+      <input type="number" class="zms-input" id="space-data-size" value="8" min="1" max="65536" />
+    </div>
+  </div>
+
+  <div class="zms-results" id="space-results">
+    <div class="zms-results-content" id="space-results-content"></div>
+  </div>
+</div>
+
+<script>
+  function roundUp(len, wbs) {
+    if (wbs <= 1) return len;
+    return (len + (wbs - 1)) & ~(wbs - 1);
+  }
+  function typesetMath(el) {
+    if (window.MathJax && window.MathJax.typesetPromise) {
+      return MathJax.typesetPromise([el]).catch(() => {});
+    }
+    return Promise.resolve();
+  }
+  let spaceDebounceTimer;
+  function debouncedSpaceCalc() {
+    clearTimeout(spaceDebounceTimer);
+    spaceDebounceTimer = setTimeout(calculateAvailableSpace, 150);
+  }
+  function calculateAvailableSpace() {
+    const sectorSize = parseInt(document.getElementById("space-sector-size").value);
+    const sectorCount = parseInt(document.getElementById("space-sector-count").value);
+    const writeBlockSize = parseInt(document.getElementById("space-write-block-size").value) || 1;
+    const dataSize = parseInt(document.getElementById("space-data-size").value);
+    const flashType = (document.getElementById("space-flash-type") || {}).value || "no-erase";
+
+    const resultsDiv = document.getElementById("space-results");
+    const resultsContent = document.getElementById("space-results-content");
+
+    if (sectorSize % writeBlockSize !== 0) {
+      resultsContent.innerHTML = `<div class="zms-error">Sector size must be a multiple of write block size (${writeBlockSize}).</div>`;
+      resultsDiv.style.display = "block";
+      return;
+    }
+    if (flashType === "explicit-erase") {
+      const eraseBlockSize =
+        parseInt((document.getElementById("space-erase-block-size") || {}).value) || 4096;
+      if (sectorSize % eraseBlockSize !== 0) {
+        resultsContent.innerHTML = `<div class="zms-error">Sector size must be a multiple of erase block size (${eraseBlockSize}).</div>`;
+        resultsDiv.style.display = "block";
+        return;
+      }
+    }
+
+    const ATE_SIZE = roundUp(16, writeBlockSize);
+    const HEADER_SIZE = 5 * ATE_SIZE;
+    const sectorEffectiveSize = sectorSize - HEADER_SIZE;
+
+    const effectiveDataSize =
+      dataSize <= 8 ? ATE_SIZE : roundUp(ATE_SIZE + dataSize, writeBlockSize);
+    const availableSectors = sectorCount - 1;
+    const totalAvailableSpace = sectorEffectiveSize * availableSectors;
+    const itemsPerSector = Math.floor(sectorEffectiveSize / effectiveDataSize);
+    const totalItemsThatCanFit = itemsPerSector * availableSectors;
+    const totalDataCapacity = totalItemsThatCanFit * dataSize;
+    const totalStorageUsed = totalItemsThatCanFit * effectiveDataSize;
+    const storageEfficiency =
+      totalStorageUsed > 0 ? (totalDataCapacity / totalStorageUsed) * 100 : 0;
+
+    if (window.MathJax && window.MathJax.typesetClear) {
+      MathJax.typesetClear([resultsContent]);
+    }
+
+    let formulaLaTeX;
+    if (dataSize <= 8) {
+      formulaLaTeX = `\\(\\frac{(${sectorCount}-1) \\times (${sectorSize} - (5 \\times ${ATE_SIZE})) \\times ${dataSize}}{${ATE_SIZE}} = ${totalDataCapacity} \\; \\text{bytes}\\)`;
+    } else {
+      formulaLaTeX = `\\(\\lfloor \\frac{${sectorSize} - (5 \\times ${ATE_SIZE})}{${ATE_SIZE} + ${dataSize}} \\rfloor \\times (${sectorCount}-1) \\times ${dataSize} = ${totalDataCapacity} \\; \\text{bytes}\\)`;
+    }
+    const formulaHtml = window.MathJax
+      ? `<span class="math notranslate nohighlight">${formulaLaTeX}</span>`
+      : `${totalDataCapacity.toLocaleString()} bytes`;
+
+    let html = `<div class="zms-result-primary">${formulaHtml}</div>`;
+    html += `<div class="zms-result-secondary">${totalItemsThatCanFit.toLocaleString()} key-value pairs · ${itemsPerSector} per sector · ${storageEfficiency.toFixed(0)}% efficiency</div>`;
+
+    resultsContent.innerHTML = html;
+    resultsDiv.style.display = "block";
+    typesetMath(resultsContent);
+  }
+
+  document.addEventListener("DOMContentLoaded", function () {
+    const spaceIds = [
+      "space-sector-size",
+      "space-sector-count",
+      "space-write-block-size",
+      "space-data-size",
+      "space-erase-block-size",
+    ];
+    spaceIds.forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.addEventListener("input", debouncedSpaceCalc);
+        el.addEventListener("change", calculateAvailableSpace);
+      }
+    });
+    const spaceFlash = document.getElementById("space-flash-type");
+    const spaceEraseWrap = document.getElementById("space-erase-block-wrap");
+    if (spaceFlash && spaceEraseWrap) {
+      spaceFlash.addEventListener("change", function () {
+        spaceEraseWrap.style.display = this.value === "explicit-erase" ? "" : "none";
+        calculateAvailableSpace();
+      });
+      spaceEraseWrap.style.display = spaceFlash.value === "explicit-erase" ? "" : "none";
+    }
+    calculateAvailableSpace();
+  });
+</script>

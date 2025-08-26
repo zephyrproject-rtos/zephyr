@@ -301,6 +301,97 @@ Only 3 sectors are available for writes with a capacity of 944 bytes each,
 which makes it possible to store 11 key-value pairs in each sector (:math:`\frac{944}{64 + 16}`).
 Total data that could be stored in this partition for this case is :math:`11 \times 3 \times 64 = 2112 \text{ bytes}`.
 
+.. raw:: html
+
+    <style>
+        .rst-content .available-space-calculator input,
+        .rst-content .device-lifetime-calculator input {
+            color: var(--body-color);
+        }
+
+        .rst-content .available-space-calculator input:focus,
+        .rst-content .device-lifetime-calculator input:focus {
+            border-color: var(--input-focus-border-color);
+            outline: none;
+        }
+
+        .zms-calc .zms-grid {
+            display: grid;
+            grid-template-columns: max-content 1fr;
+            gap: 0.75rem 1rem;
+            margin-bottom: 1.5rem;
+            align-items: center;
+        }
+
+        .zms-field {
+            display: contents;
+        }
+
+        .zms-label {
+            margin: 0;
+            font-weight: 600;
+            color: var(--admonition-note-color);
+            cursor: default;
+        }
+
+        .zms-calc .zms-field {
+            cursor: default;
+        }
+
+        .zms-calc input.zms-input {
+            cursor: text;
+        }
+
+        .zms-input {
+            width: 100%;
+            padding: 0.5rem;
+            background-color: var(--input-background-color);
+            color: var(--body-color);
+        }
+
+        .zms-results {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background-color: var(--code-background-color);
+            border: 1px solid var(--code-border-color);
+            border-radius: 0.25rem;
+            display: none;
+        }
+
+        .zms-results-content {
+            font-family: var(--monospace-font-family);
+            color: var(--body-color);
+        }
+
+        .zms-result-primary {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        .device-lifetime-calculator .zms-result-formula {
+            color: var(--body-color);
+        }
+
+        .zms-result-secondary {
+            font-size: 0.9rem;
+            color: var(--admonition-note-color);
+            margin-bottom: 0.25rem;
+        }
+
+        .zms-error {
+            color: var(--admonition-attention-color);
+        }
+
+        @media (max-width: 600px) {
+            .zms-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+
+.. raw:: html
+   :file: zms-available-space.html
+
 Wear leveling
 *************
 
@@ -373,6 +464,9 @@ Where:
 ``TOTAL_EFFECTIVE_SIZE``: Total effective size of the set of written data
 
 ``WR_MIN``: Number of writes of the set of data per minute
+
+.. raw:: html
+   :file: zms-lifetime.html
 
 Features
 ********
