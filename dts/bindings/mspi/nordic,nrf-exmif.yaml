@@ -10,4 +10,4 @@ include: snps,designware-ssi.yaml
 properties:
 
   op-mode:
-    default: "MSPI_CONTROLLER"
+    default: "MSPI_OP_MODE_CONTROLLER"
