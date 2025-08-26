@@ -26,5 +26,6 @@ rsource "Kconfig.nrf_comp"
 rsource "Kconfig.nrf_lpcomp"
 rsource "Kconfig.shell"
 rsource "Kconfig.renesas_ra"
+rsource "Kconfig.mspm0_comp"
 
 endif # COMPARATOR
