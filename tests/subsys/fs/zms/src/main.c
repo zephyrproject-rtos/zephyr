@@ -889,3 +889,62 @@ ZTEST_F(zms, test_zms_cache_hash_quality)
 
 #endif
 }
+
+ZTEST_F(zms, test_zms_input_validation)
+{
+	int err;
+
+	err = zms_mount(NULL);
+	zassert_true(err == -EINVAL, "zms_mount call with NULL fs failure: %d", err);
+
+	err = zms_clear(NULL);
+	zassert_true(err == -EINVAL, "zms_clear call with NULL fs failure: %d", err);
+	err = zms_clear(&fixture->fs);
+	zassert_true(err == -EACCES, "zms_clear call before mount fs failure: %d", err);
+
+	err = zms_calc_free_space(NULL);
+	zassert_true(err == -EINVAL, "zms_calc_free_space call with NULL fs failure: %d", err);
+	err = zms_calc_free_space(&fixture->fs);
+	zassert_true(err == -EACCES, "zms_calc_free_space call before mount fs failure: %d", err);
+
+	err = zms_active_sector_free_space(NULL);
+	zassert_true(err == -EINVAL, "zms_active_sector_free_space call with NULL fs failure: %d",
+		     err);
+	err = zms_active_sector_free_space(&fixture->fs);
+	zassert_true(err == -EACCES, "zms_calc_free_space call before mount fs failure: %d", err);
+
+	err = zms_sector_use_next(NULL);
+	zassert_true(err == -EINVAL, "zms_sector_use_next call with NULL fs failure: %d", err);
+	err = zms_sector_use_next(&fixture->fs);
+	zassert_true(err == -EACCES, "zms_sector_use_next call before mount fs failure: %d", err);
+
+	/* Read */
+	err = zms_read(NULL, 0, NULL, 0);
+	zassert_true(err == -EINVAL, "zms_read call with NULL fs failure: %d", err);
+	err = zms_read(&fixture->fs, 0, NULL, 0);
+	zassert_true(err == -EACCES, "zms_read call before mount fs failure: %d", err);
+
+	/* zms_read() and zms_get_data_length() are currently wrappers around zms_read_hist() but
+	 * add test here in case that is ever changed. Same is true for zms_delete() and zms_write()
+	 */
+	err = zms_read_hist(NULL, 0, NULL, 0, 0);
+	zassert_true(err == -EINVAL, "zms_read_hist call with NULL fs failure: %d", err);
+	err = zms_read_hist(&fixture->fs, 0, NULL, 0, 0);
+	zassert_true(err == -EACCES, "zms_read_hist call before mount fs failure: %d", err);
+	err = zms_get_data_length(NULL, 0);
+	zassert_true(err == -EINVAL, "zms_get_data_length call with NULL fs failure: %d", err);
+	err = zms_get_data_length(&fixture->fs, 0);
+	zassert_true(err == -EACCES, "zms_get_data_length call before mount fs failure: %d", err);
+
+	/* Write */
+	err = zms_write(NULL, 0, NULL, 0);
+	zassert_true(err == -EINVAL, "zms_write call with NULL fs failure: %d", err);
+	err = zms_write(&fixture->fs, 0, NULL, 0);
+	zassert_true(err == -EACCES, "zms_write call before mount fs failure: %d", err);
+
+	/* Delete */
+	err = zms_delete(NULL, 0);
+	zassert_true(err == -EINVAL, "zms_delete call with NULL fs failure: %d", err);
+	err = zms_delete(&fixture->fs, 0);
+	zassert_true(err == -EACCES, "zms_delete call before mount fs failure: %d", err);
+}
