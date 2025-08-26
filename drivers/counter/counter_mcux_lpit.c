@@ -161,7 +161,7 @@ static void mcux_lpit_isr(const struct device *dev)
 			LPIT_CHANNEL_DATA(config->channels[channel_index]);
 
 		if (data->top_callback != NULL) {
-			data->top_callback(dev, data->top_user_data);
+			data->top_callback(config->channels[channel_index], data->top_user_data);
 		}
 	}
 }
