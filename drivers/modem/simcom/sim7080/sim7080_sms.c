@@ -362,7 +362,7 @@ int mdm_sim7080_read_sms(struct sim7080_sms_buffer *buffer)
 	mdata.sms_buffer_pos = 0;
 
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, cmds, ARRAY_SIZE(cmds), "AT+CMGL=4",
-			     &mdata.sem_response, K_SECONDS(20));
+				 &mdata.sem_response, K_SECONDS(20));
 	if (ret < 0) {
 		return -1;
 	}
@@ -381,7 +381,7 @@ int mdm_sim7080_delete_sms(uint16_t index)
 	}
 
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0, buf, &mdata.sem_response,
-			     K_SECONDS(5));
+				 K_SECONDS(5));
 	if (ret < 0) {
 		return -1;
 	}

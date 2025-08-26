@@ -232,7 +232,7 @@ int mdm_sim7080_power_off(void);
 /**
  * Forcefully reset the modem by pulling pwrkey for 15 seconds.
  * @note The state of the modem may be undefined after calling
- * 		 this function. Call mdm_sim7080_power_on after force reset.
+ * this function. Call mdm_sim7080_power_on after force reset.
  */
 void mdm_sim7080_force_reset(void);
 
@@ -241,7 +241,7 @@ void mdm_sim7080_force_reset(void);
  *
  * @return 0 on success. Otherwise <0 is returned.
  * @note The modem needs to be booted for this function to work.
- * 		 Concurrent use of network and gnss is not possible.
+ * Concurrent use of network and gnss is not possible.
  */
 int mdm_sim7080_start_network(void);
 
@@ -257,7 +257,7 @@ int mdm_sim7080_stop_network(void);
  *
  * @return 0 on success. Otherwise <0 is returned.
  * @note The modem needs to be booted for this function to work.
- * 		 Concurrent use of network and gnss is not possible.
+ * Concurrent use of network and gnss is not possible.
  */
 int mdm_sim7080_start_gnss(void);
 
@@ -266,7 +266,7 @@ int mdm_sim7080_start_gnss(void);
  *
  * @return 0 on success. Otherwise <0 is returned.
  * @note The modem needs to be booted for this function to work.
- * 		 Concurrent use of network and gnss is not possible.
+ * Concurrent use of network and gnss is not possible.
  * @note If enabling xtra functionality fails a normal cold start will be performed.
  */
 int mdm_sim7080_start_gnss_xtra(void);
