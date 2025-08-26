@@ -778,10 +778,10 @@ Bluetooth Audio Stack.
    |        |                               |         |                  | - BSIM test           |                                                  |
    |        |                               |         |                  | - Sample Application  |                                                  |
    |        +-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
-   |        | Commander                     |         |                  | - WIP                 | - Feature complete                               |
-   |        |                               |         |                  |                       | - Shell Module                                   |
-   |        |                               |         |                  |                       | - BSIM test                                      |
-   |        |                               |         |                  |                       | - Sample Application                             |
+   |        | Commander                     |         |                  | - Feature complete    | - Shell Module                                   |
+   |        |                               |         |                  | - BSIM test           | - Sample Application                             |
+   |        |                               |         |                  |                       |                                                  |
+   |        |                               |         |                  |                       |                                                  |
    +--------+-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
    | HAP    | Hearing Aid                   | 1.0.0   | 3.1              | - Feature complete    |                                                  |
    |        |                               |         |                  | - Shell Module        |                                                  |
