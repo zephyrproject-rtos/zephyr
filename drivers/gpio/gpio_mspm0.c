@@ -158,6 +158,8 @@ static int gpio_mspm0_pin_configure(const struct device *port,
 				    gpio_flags_t flags)
 {
 	const struct gpio_mspm0_config *config = port->config;
+	DL_GPIO_WAKEUP wakeup = DL_GPIO_WAKEUP_DISABLE;
+
 	/* determine pull up resistor value based on flags */
 	DL_GPIO_RESISTOR pull_res;
 
@@ -169,14 +171,25 @@ static int gpio_mspm0_pin_configure(const struct device *port,
 		pull_res = DL_GPIO_RESISTOR_NONE;
 	}
 
+	if (flags & GPIO_INT_WAKEUP) {
+		if (flags & GPIO_ACTIVE_LOW) {
+			wakeup = DL_GPIO_WAKEUP_ON_0;
+		} else {
+			wakeup = DL_GPIO_WAKEUP_ON_1;
+		}
+	}
+
 	/* Config pin based on flags */
 	switch (flags & (GPIO_INPUT | GPIO_OUTPUT)) {
 	case GPIO_INPUT:
+		if (wakeup != DL_GPIO_WAKEUP_DISABLE) {
+			DL_GPIO_enableFastWakePins(config->base, BIT(pin));
+		}
 		DL_GPIO_initDigitalInputFeatures(config->pincm_lut[pin],
 						 DL_GPIO_INVERSION_DISABLE,
 						 pull_res,
 						 DL_GPIO_HYSTERESIS_DISABLE,
-						 DL_GPIO_WAKEUP_DISABLE);
+						 wakeup);
 		DL_GPIO_disableOutput(config->base, BIT(pin));
 		break;
 	case GPIO_OUTPUT:
@@ -187,7 +200,6 @@ static int gpio_mspm0_pin_configure(const struct device *port,
 						  (flags & GPIO_OPEN_DRAIN) ?
 						  DL_GPIO_HIZ_ENABLE :
 						  DL_GPIO_HIZ_DISABLE);
-
 		/* Set initial state */
 		if (flags & GPIO_OUTPUT_INIT_HIGH) {
 			gpio_mspm0_port_set_bits_raw(port, BIT(pin));
@@ -198,6 +210,9 @@ static int gpio_mspm0_pin_configure(const struct device *port,
 		DL_GPIO_enableOutput(config->base, BIT(pin));
 		break;
 	case GPIO_DISCONNECTED:
+		if (wakeup != DL_GPIO_WAKEUP_DISABLE) {
+			DL_GPIO_disableWakeUp(config->pincm_lut[pin]);
+		}
 		DL_GPIO_disableOutput(config->base, BIT(pin));
 		break;
 	default:
