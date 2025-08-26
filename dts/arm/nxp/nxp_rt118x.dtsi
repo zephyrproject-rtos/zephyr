@@ -14,6 +14,7 @@
 / {
 	aliases {
 		watchdog0 = &rtwdog0;
+		die-temp0 = &tmpsns;
 	};
 
 	cpus {
@@ -401,6 +402,12 @@
 		offset-value-b = <10>;
 		#io-channel-cells = <1>;
 		clocks = <&ccm IMX_CCM_LPADC2_CLK 0 0>;
+	};
+
+	tmpsns: tmpsns@44484580 {
+		compatible = "nxp,tmpsns";
+		reg = <0x44484580 0x2a0>;
+		status = "disabled";
 	};
 
 	dac: dac@42e20000 {
