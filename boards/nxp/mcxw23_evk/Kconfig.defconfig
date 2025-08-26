@@ -1,0 +1,19 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_MCXW23_EVK
+
+config FXLS8974_DRDY_INT1
+	default y
+	depends on FXLS8974_TRIGGER
+
+if BOOTLOADER_MCUBOOT
+
+choice MCUBOOT_BOOTLOADER_MODE
+	# Board only supports MCUBoot via "upgrade only" method:
+	default MCUBOOT_BOOTLOADER_MODE_OVERWRITE_ONLY
+endchoice
+
+endif #BOOTLOADER_MCUBOOT
+
+endif # BOARD_MCXW23_EVK
