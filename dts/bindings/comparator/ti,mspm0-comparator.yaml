@@ -1,0 +1,106 @@
+# TI MSPM0 Family
+
+# Copyright (c) 2025, Linumiz GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Texas Instruments MSPM0 Comparator Module with Reference DAC
+
+compatible: "ti,mspm0-comparator"
+include:
+  - base.yaml
+  - pinctrl-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  positive-inputs:
+    type: int
+    default: 0
+    description: |
+      Positive input channel selection (0-7)
+
+  negative-inputs:
+    type: int
+    default: 0
+    description: |
+      Negative input channel selection (0-7)
+
+  mode:
+    type: string
+    default: "fast"
+    enum:
+      - "fast"
+      - "ulp"
+
+  hysteresis:
+    type: int
+    enum: [10, 20, 30]
+    description: default none
+
+  reference-source:
+    type: string
+    default: "none"
+    enum: ["none", "vdda_dac", "vdda", "int_vref_dac", "vref_dac", "int_vref", "vref"]
+
+  reference-terminal:
+    type: string
+    default: "neg"
+    enum: ["pos", "neg"]
+
+  reference-dac-code0:
+    type: int
+    default: 128
+    description: 8-bit DAC code for reference level 0
+
+  reference-dac-code1:
+    type: int
+    default: 128
+    description: 8-bit DAC code for reference level 1
+
+  reference-dac-control:
+    type: string
+    default: "comp_out"
+    enum: ["comp_out", "sw"]
+
+  reference-dac-input:
+    type: int
+    default: 0
+    enum: [0, 1]
+
+  filter-enable:
+    type: boolean
+    description: Enable analog output filter default false state
+
+  filter-delay:
+    type: int
+    default: 70
+    enum: [70, 500, 1200, 2700]
+
+  window-mode-enable:
+    type: boolean
+
+  window-signal-input:
+    type: int
+
+  window-upper-threshold:
+    type: int
+
+  window-lower-threshold:
+    type: int
+
+  window-companion:
+    type: phandle
+
+  vref:
+    type: phandle
