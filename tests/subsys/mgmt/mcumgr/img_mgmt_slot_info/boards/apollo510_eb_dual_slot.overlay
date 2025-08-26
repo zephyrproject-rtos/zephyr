@@ -1,0 +1,41 @@
+/*
+ * Copyright (c) 2025, Ambiq Micro Inc. <www.ambiq.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/delete-node/ &boot_partition;
+/delete-node/ &slot0_partition;
+/delete-node/ &slot1_partition;
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(256)>;
+
+		};
+		slot0_partition: partition@40000 {
+			label = "image-0";
+			reg = <0x40000 DT_SIZE_K(512)>;
+		};
+
+		slot1_partition: partition@C0000 {
+			label = "image-1";
+			reg = <0xC0000 DT_SIZE_K(512)>;
+		};
+
+		slot2_partition: partition@140000 {
+			label = "image-2";
+			reg = <0x140000 DT_SIZE_K(512)>;
+		};
+		slot3_partition: partition@1C0000 {
+			label = "image-3";
+			reg = <0x1C0000 DT_SIZE_K(512)>;
+		};
+	};
+};

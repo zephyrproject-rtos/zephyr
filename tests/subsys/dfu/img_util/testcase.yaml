@@ -8,6 +8,8 @@ tests:
     platform_allow:
       - native_sim
       - native_sim/native/64
+      - apollo510_evb
+      - apollo510_eb
     integration_platforms:
       - native_sim
     tags: dfu_image_util
