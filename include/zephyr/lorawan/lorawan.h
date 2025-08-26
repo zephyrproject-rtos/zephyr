@@ -454,8 +454,6 @@ int lorawan_device_time_get(uint32_t *gps_time);
  */
 int lorawan_request_link_check(bool force_request);
 
-#ifdef CONFIG_LORAWAN_APP_CLOCK_SYNC
-
 /**
  * @brief Run Application Layer Clock Synchronization service
  *
@@ -484,10 +482,6 @@ int lorawan_clock_sync_run(void);
  */
 int lorawan_clock_sync_get(uint32_t *gps_time);
 
-#endif /* CONFIG_LORAWAN_APP_CLOCK_SYNC */
-
-#ifdef CONFIG_LORAWAN_FRAG_TRANSPORT
-
 /**
  * @brief Register a handle descriptor callback function.
  *
@@ -512,8 +506,6 @@ void lorawan_frag_transport_register_descriptor_callback(transport_descriptor_cb
  * @return 0 if successful, negative errno otherwise.
  */
 int lorawan_frag_transport_run(void (*transport_finished_cb)(void));
-
-#endif /* CONFIG_LORAWAN_FRAG_TRANSPORT */
 
 #ifdef __cplusplus
 }
