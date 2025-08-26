@@ -1,0 +1,159 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2023, Nordic Semiconductor ASA
+
+# JSON Schema for SoC metadata YAML files
+# When possible, constraints and validation rules should be modeled directly in this file.
+
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "https://zephyrproject.org/schemas/zephyr/soc"
+title: Zephyr SoC Schema
+description: Schema for validating Zephyr SoC metadata files
+type: object
+$defs:
+  cpucluster:
+    type: object
+    properties:
+      name:
+        type: string
+        description: Name of the CPU cluster
+    required:
+      - name
+    additionalProperties: false
+  soc:
+    type: object
+    properties:
+      name:
+        type: string
+        description: Name of the SoC
+      cpuclusters:
+        type: array
+        items:
+          $ref: "#/$defs/cpucluster"
+    required:
+      - name
+    additionalProperties: false
+  soc-extend:
+    type: object
+    oneOf:
+      - type: object
+        properties:
+          name:
+            type: string
+            description: Name of the SoC
+          cpuclusters:
+            type: array
+            items:
+              $ref: "#/$defs/cpucluster"
+        required:
+          - name
+        additionalProperties: false
+      - type: object
+        properties:
+          extend:
+            type: string
+            description: Name of the SoC to extend
+          cpuclusters:
+            type: array
+            items:
+              $ref: "#/$defs/cpucluster"
+        required:
+          - extend
+        additionalProperties: false
+  series:
+    type: object
+    properties:
+      name:
+        type: string
+        description: Name of the series
+      socs:
+        type: array
+        items:
+          $ref: "#/$defs/soc"
+    required:
+      - name
+    additionalProperties: false
+  family:
+    type: object
+    properties:
+      name:
+        type: string
+        description: Name of the family
+      series:
+        type: array
+        items:
+          $ref: "#/$defs/series"
+      socs:
+        type: array
+        items:
+          $ref: "#/$defs/soc"
+    required:
+      - name
+    additionalProperties: false
+  runner-group:
+    type: object
+    properties:
+      qualifiers:
+        type: array
+        items:
+          type: string
+          description: Board qualifier to match against in regex form
+    required:
+      - qualifiers
+  runner-command:
+    type: object
+    properties:
+      run:
+        type: string
+        enum:
+          - first
+          - last
+        description: When to run this command - first or last image
+      runners:
+        type: array
+        items:
+          type: string
+          description: List of flash runners this applies to
+      groups:
+        type: array
+        items:
+          $ref: "#/$defs/runner-group"
+    required:
+      - run
+      - runners
+      - groups
+    additionalProperties: false
+properties:
+  family:
+    type: array
+    items:
+      $ref: "#/$defs/family"
+  series:
+    type: array
+    items:
+      $ref: "#/$defs/series"
+  socs:
+    type: array
+    items:
+      $ref: "#/$defs/soc-extend"
+  vendor:
+    type: string
+    description: SoC series of the SoC
+  comment:
+    type: string
+    description: Free form comment with extra information regarding the SoC
+  runners:
+    type: object
+    properties:
+      priority:
+        type: integer
+        description: Priority of this flash run once configuration
+      run_once:
+        type: object
+        patternProperties:
+          .*:
+            type: array
+            items:
+              $ref: "#/$defs/runner-command"
+    additionalProperties: false
+additionalProperties: false

@@ -10,6 +10,7 @@ gitlint-core>=0.19.1
 gitpython>=3.1.41
 ijson
 intelhex
+jsonschema
 junit2html
 junitparser>=4.0.1
 mypy
