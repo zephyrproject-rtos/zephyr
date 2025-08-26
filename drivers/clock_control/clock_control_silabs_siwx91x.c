@@ -107,6 +107,9 @@ static int siwx91x_clock_on(const struct device *dev, clock_control_subsys_t sys
 	case SIWX91X_ADC_CLK:
 		RSI_ADC_PowerControl(ADC_POWER_ON);
 		break;
+	case SIWX91X_CLK_GPDMA0:
+		RSI_CLK_PeripheralClkEnable(M4CLK, RPDMA_CLK, ENABLE_STATIC_CLK);
+		break;
 	default:
 		return -EINVAL;
 	}
