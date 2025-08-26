@@ -4,23 +4,23 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "ina23x_trigger.h"
+#include "ina2xx_trigger.h"
 
 #include <zephyr/logging/log.h>
 
-LOG_MODULE_REGISTER(INA23X_TRIGGER, CONFIG_SENSOR_LOG_LEVEL);
+LOG_MODULE_REGISTER(INA2XX_TRIGGER, CONFIG_SENSOR_LOG_LEVEL);
 
-static void ina23x_gpio_callback(const struct device *port,
+static void ina2xx_gpio_callback(const struct device *port,
 				 struct gpio_callback *cb, uint32_t pin)
 {
 	ARG_UNUSED(pin);
 
-	struct ina23x_trigger *trigg = CONTAINER_OF(cb, struct ina23x_trigger, gpio_cb);
+	struct ina2xx_trigger *trigg = CONTAINER_OF(cb, struct ina2xx_trigger, gpio_cb);
 
 	k_work_submit(&trigg->conversion_work);
 }
 
-int ina23x_trigger_mode_init(struct ina23x_trigger *trigg, const struct gpio_dt_spec *alert_gpio)
+int ina2xx_trigger_mode_init(struct ina2xx_trigger *trigg, const struct gpio_dt_spec *alert_gpio)
 {
 	int ret;
 
@@ -36,7 +36,7 @@ int ina23x_trigger_mode_init(struct ina23x_trigger *trigg, const struct gpio_dt_
 	}
 
 	gpio_init_callback(&trigg->gpio_cb,
-			   ina23x_gpio_callback,
+			   ina2xx_gpio_callback,
 			   BIT(alert_gpio->pin));
 
 	ret = gpio_add_callback(alert_gpio->port, &trigg->gpio_cb);

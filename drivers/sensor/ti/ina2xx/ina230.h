@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_DRIVERS_SENSOR_INA23X_INA230_H_
-#define ZEPHYR_DRIVERS_SENSOR_INA23X_INA230_H_
+#ifndef ZEPHYR_DRIVERS_SENSOR_INA2XX_INA230_H_
+#define ZEPHYR_DRIVERS_SENSOR_INA2XX_INA230_H_
 
 #ifdef CONFIG_INA230_TRIGGER
 #include <stdbool.h>
@@ -67,4 +67,4 @@ int ina230_trigger_mode_init(const struct device *dev);
 int ina230_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
 		       sensor_trigger_handler_t handler);
 
-#endif /* ZEPHYR_DRIVERS_SENSOR_INA23X_INA230_H_ */
+#endif /* ZEPHYR_DRIVERS_SENSOR_INA2XX_INA230_H_ */

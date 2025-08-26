@@ -6,7 +6,7 @@
  */
 
 #include "ina230.h"
-#include "ina23x_common.h"
+#include "ina2xx_common.h"
 
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/sensor.h>
@@ -78,7 +78,7 @@ static int ina230_sample_fetch(const struct device *dev, enum sensor_channel cha
 	}
 
 	if ((chan == SENSOR_CHAN_ALL) || (chan == SENSOR_CHAN_VOLTAGE)) {
-		ret = ina23x_reg_read_16(&config->bus, INA230_REG_BUS_VOLT, &data->bus_voltage);
+		ret = ina2xx_reg_read_16(&config->bus, INA230_REG_BUS_VOLT, &data->bus_voltage);
 		if (ret < 0) {
 			LOG_ERR("Failed to read bus voltage");
 			return ret;
@@ -86,7 +86,7 @@ static int ina230_sample_fetch(const struct device *dev, enum sensor_channel cha
 	}
 
 	if ((chan == SENSOR_CHAN_ALL) || (chan == SENSOR_CHAN_CURRENT)) {
-		ret = ina23x_reg_read_16(&config->bus, INA230_REG_CURRENT, &data->current);
+		ret = ina2xx_reg_read_16(&config->bus, INA230_REG_CURRENT, &data->current);
 		if (ret < 0) {
 			LOG_ERR("Failed to read current");
 			return ret;
@@ -94,7 +94,7 @@ static int ina230_sample_fetch(const struct device *dev, enum sensor_channel cha
 	}
 
 	if ((chan == SENSOR_CHAN_ALL) || (chan == SENSOR_CHAN_POWER)) {
-		ret = ina23x_reg_read_16(&config->bus, INA230_REG_POWER, &data->power);
+		ret = ina2xx_reg_read_16(&config->bus, INA230_REG_POWER, &data->power);
 		if (ret < 0) {
 			LOG_ERR("Failed to read power");
 			return ret;
@@ -112,13 +112,13 @@ static int ina230_attr_set(const struct device *dev, enum sensor_channel chan,
 
 	switch (attr) {
 	case SENSOR_ATTR_CONFIGURATION:
-		return ina23x_reg_write(&config->bus, INA230_REG_CONFIG, data);
+		return ina2xx_reg_write(&config->bus, INA230_REG_CONFIG, data);
 	case SENSOR_ATTR_CALIBRATION:
-		return ina23x_reg_write(&config->bus, INA230_REG_CALIB, data);
+		return ina2xx_reg_write(&config->bus, INA230_REG_CALIB, data);
 	case SENSOR_ATTR_FEATURE_MASK:
-		return ina23x_reg_write(&config->bus, INA230_REG_MASK, data);
+		return ina2xx_reg_write(&config->bus, INA230_REG_MASK, data);
 	case SENSOR_ATTR_ALERT:
-		return ina23x_reg_write(&config->bus, INA230_REG_ALERT, data);
+		return ina2xx_reg_write(&config->bus, INA230_REG_ALERT, data);
 	default:
 		LOG_ERR("INA230 attribute not supported.");
 		return -ENOTSUP;
@@ -134,25 +134,25 @@ static int ina230_attr_get(const struct device *dev, enum sensor_channel chan,
 
 	switch (attr) {
 	case SENSOR_ATTR_CONFIGURATION:
-		ret = ina23x_reg_read_16(&config->bus, INA230_REG_CONFIG, &data);
+		ret = ina2xx_reg_read_16(&config->bus, INA230_REG_CONFIG, &data);
 		if (ret < 0) {
 			return ret;
 		}
 		break;
 	case SENSOR_ATTR_CALIBRATION:
-		ret = ina23x_reg_read_16(&config->bus, INA230_REG_CALIB, &data);
+		ret = ina2xx_reg_read_16(&config->bus, INA230_REG_CALIB, &data);
 		if (ret < 0) {
 			return ret;
 		}
 		break;
 	case SENSOR_ATTR_FEATURE_MASK:
-		ret = ina23x_reg_read_16(&config->bus, INA230_REG_MASK, &data);
+		ret = ina2xx_reg_read_16(&config->bus, INA230_REG_MASK, &data);
 		if (ret < 0) {
 			return ret;
 		}
 		break;
 	case SENSOR_ATTR_ALERT:
-		ret = ina23x_reg_read_16(&config->bus, INA230_REG_ALERT, &data);
+		ret = ina2xx_reg_read_16(&config->bus, INA230_REG_ALERT, &data);
 		if (ret < 0) {
 			return ret;
 		}
@@ -174,7 +174,7 @@ static int ina230_calibrate(const struct device *dev)
 	int ret;
 
 	/* See datasheet "Programming" section */
-	ret = ina23x_reg_write(&config->bus, INA230_REG_CALIB, config->cal);
+	ret = ina2xx_reg_write(&config->bus, INA230_REG_CALIB, config->cal);
 	if (ret < 0) {
 		return ret;
 	}
@@ -192,7 +192,7 @@ static int ina230_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	ret = ina23x_reg_write(&config->bus, INA230_REG_CONFIG, config->config);
+	ret = ina2xx_reg_write(&config->bus, INA230_REG_CONFIG, config->config);
 	if (ret < 0) {
 		LOG_ERR("Failed to write configuration register!");
 		return ret;
@@ -212,13 +212,13 @@ static int ina230_init(const struct device *dev)
 			return ret;
 		}
 
-		ret = ina23x_reg_write(&config->bus, INA230_REG_ALERT, config->alert_limit);
+		ret = ina2xx_reg_write(&config->bus, INA230_REG_ALERT, config->alert_limit);
 		if (ret < 0) {
 			LOG_ERR("Failed to write alert register!");
 			return ret;
 		}
 
-		ret = ina23x_reg_write(&config->bus, INA230_REG_MASK, config->mask);
+		ret = ina2xx_reg_write(&config->bus, INA230_REG_MASK, config->mask);
 		if (ret < 0) {
 			LOG_ERR("Failed to write mask register!");
 			return ret;

@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_DRIVERS_SENSOR_INA23X_INA237_H_
-#define ZEPHYR_DRIVERS_SENSOR_INA23X_INA237_H_
+#ifndef ZEPHYR_DRIVERS_SENSOR_INA2XX_INA237_H_
+#define ZEPHYR_DRIVERS_SENSOR_INA2XX_INA237_H_
 
-#include "ina23x_trigger.h"
+#include "ina2xx_trigger.h"
 
 #include <stdint.h>
 
@@ -47,7 +47,7 @@ struct ina237_data {
 	int16_t shunt_voltage;
 #endif
 	enum sensor_channel chan;
-	struct ina23x_trigger trigger;
+	struct ina2xx_trigger trigger;
 };
 
 struct ina237_config {
@@ -60,4 +60,4 @@ struct ina237_config {
 	uint16_t alert_config;
 };
 
-#endif /* ZEPHYR_DRIVERS_SENSOR_INA23X_INA237_H_ */
+#endif /* ZEPHYR_DRIVERS_SENSOR_INA2XX_INA237_H_ */

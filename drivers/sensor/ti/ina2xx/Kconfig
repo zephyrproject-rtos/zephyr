@@ -2,15 +2,15 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-config INA23X
-	bool "INA23X Current and Power Monitor"
+config INA2XX
+	bool "INA2XX Current and Power Monitor"
 	default y
 	depends on DT_HAS_TI_INA230_ENABLED || DT_HAS_TI_INA236_ENABLED || DT_HAS_TI_INA237_ENABLED
 	select I2C
 	help
-	  Enable driver for INA23X Current and Power Monitor.
+	  Enable driver for INA2XX Current and Power Monitor.
 
-if INA23X
+if INA2XX
 
 config INA230
 	bool "INA230"
@@ -49,4 +49,4 @@ config INA230_TRIGGER
 	  Set to enable trigger mode using gpio interrupt, where
 	  interrupts are configured to line ALERT PIN.
 
-endif # INA23X
+endif # INA2XX
