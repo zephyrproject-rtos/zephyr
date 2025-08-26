@@ -188,15 +188,7 @@ static int ra_spi_configure(const struct device *dev, const struct spi_config *c
 
 static bool ra_spi_transfer_ongoing(struct ra_spi_data *data)
 {
-#if defined(CONFIG_SPI_INTERRUPT)
 	return (spi_context_tx_on(&data->ctx) || spi_context_rx_on(&data->ctx));
-#else
-	if (spi_context_total_tx_len(&data->ctx) < spi_context_total_rx_len(&data->ctx)) {
-		return (spi_context_tx_on(&data->ctx) || spi_context_rx_on(&data->ctx));
-	} else {
-		return (spi_context_tx_on(&data->ctx) && spi_context_rx_on(&data->ctx));
-	}
-#endif
 }
 
 #ifndef CONFIG_SPI_INTERRUPT
