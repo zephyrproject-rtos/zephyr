@@ -10,6 +10,7 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/flash.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/cache.h>
 
 #include <soc.h>
 
@@ -23,7 +24,12 @@ LOG_MODULE_REGISTER(flash_ambiq, CONFIG_FLASH_LOG_LEVEL);
 #else
 #define MIN_WRITE_SIZE 16
 #endif
+#ifdef CONFIG_DCACHE
+#define FLASH_WRITE_BLOCK_SIZE                                                                     \
+	MAX(CONFIG_DCACHE_LINE_SIZE, DT_PROP(SOC_NV_FLASH_NODE, write_block_size))
+#else
 #define FLASH_WRITE_BLOCK_SIZE MAX(DT_PROP(SOC_NV_FLASH_NODE, write_block_size), MIN_WRITE_SIZE)
+#endif
 #define FLASH_ERASE_BLOCK_SIZE DT_PROP(SOC_NV_FLASH_NODE, erase_block_size)
 
 BUILD_ASSERT((FLASH_WRITE_BLOCK_SIZE & (MIN_WRITE_SIZE - 1)) == 0,
@@ -130,7 +136,8 @@ static int flash_ambiq_write(const struct device *dev, off_t offset, const void 
 	}
 
 	irq_unlock(key);
-
+	sys_cache_data_invd_range((uint32_t *)(SOC_NV_FLASH_ADDR + offset), len);
+	sys_cache_instr_flush_range((uint32_t *)(SOC_NV_FLASH_ADDR + offset), len);
 	FLASH_SEM_GIVE();
 
 	return ret;
@@ -182,10 +189,20 @@ static int flash_ambiq_erase(const struct device *dev, off_t offset, size_t len)
 				    (uint32_t *)(SOC_NV_FLASH_ADDR + offset),
 				    (len / sizeof(uint32_t)));
 #endif
-
+	sys_cache_data_invd_range((uint32_t *)(SOC_NV_FLASH_ADDR + offset), len);
+	sys_cache_instr_flush_range((uint32_t *)(SOC_NV_FLASH_ADDR + offset), len);
 	FLASH_SEM_GIVE();
 
 	return ret;
+}
+
+static int flash_ambiq_get_size(const struct device *dev, uint64_t *size)
+{
+	ARG_UNUSED(dev);
+
+	*size = SOC_NV_FLASH_SIZE;
+
+	return 0;
 }
 
 static const struct flash_parameters *flash_ambiq_get_parameters(const struct device *dev)
@@ -216,6 +233,7 @@ static DEVICE_API(flash, flash_ambiq_driver_api) = {
 	.write = flash_ambiq_write,
 	.erase = flash_ambiq_erase,
 	.get_parameters = flash_ambiq_get_parameters,
+	.get_size = flash_ambiq_get_size,
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 	.page_layout = flash_ambiq_pages_layout,
 #endif
