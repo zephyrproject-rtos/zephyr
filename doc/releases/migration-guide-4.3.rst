@@ -34,6 +34,8 @@ Boards
 * NXP ``frdm_mcxa166`` is renamed to ``frdm_mcxa346``.
 * NXP ``frdm_mcxa276`` is renamed to ``frdm_mcxa266``.
 
+* Panasonic ``panb511evb`` is renamed to ``panb611evb``.
+
 Device Drivers and Devicetree
 *****************************
 

@@ -6,7 +6,7 @@
 
 /* This file is common to the secure and non-secure domain */
 
-#include "panb511evb_nrf54l15_common.dtsi"
+#include "panb611evb_nrf54l15_common.dtsi"
 
 / {
 	chosen {

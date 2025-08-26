@@ -9,8 +9,8 @@ tests:
     min_flash: 40
     platform_exclude:
       - nucleo_u031r8
-      - panb511evb/nrf54l15/cpuapp
-      - panb511evb/nrf54l15/cpuapp/ns
+      - panb611evb/nrf54l15/cpuapp
+      - panb611evb/nrf54l15/cpuapp/ns
       - nrf54l15dk/nrf54l15/cpuapp/ns
       - nrf54l15dk/nrf54l10/cpuapp/ns
       - bl54l15_dvk/nrf54l10/cpuapp/ns
