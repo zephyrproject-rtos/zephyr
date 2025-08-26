@@ -352,6 +352,42 @@
 			};
 		};
 
+		lpit0: lpit@40037000 {
+			compatible = "nxp,lpit";
+			reg = <0x40037000 0x1000>;
+			interrupts = <22 0>;
+			clocks = <&pcc 0xdc KINETIS_PCC_SRC_SIRC_ASYNC>;
+			status = "disabled";
+			enable-run-in-doze;
+			max-load-value = <0xffffffff>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			lpit0_channel0: lpit_channel@0 {
+				compatible = "nxp,lpit-channel";
+				reg = <0>;
+				status = "disabled";
+			};
+
+			lpit0_channel1: lpit_channel@1 {
+				compatible = "nxp,lpit-channel";
+				reg = <1>;
+				status = "disabled";
+			};
+
+			lpit0_channel2: lpit_channel@2 {
+				compatible = "nxp,lpit-channel";
+				reg = <2>;
+				status = "disabled";
+			};
+
+			lpit0_channel3: lpit_channel@3 {
+				compatible = "nxp,lpit-channel";
+				reg = <3>;
+				status = "disabled";
+			};
+		};
+
 		ftm0: ftm@40038000 {
 			compatible = "nxp,ftm";
 			reg = <0x40038000 0x1000>;
