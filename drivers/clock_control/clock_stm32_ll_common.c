@@ -612,7 +612,7 @@ static int stm32_clock_control_get_subsys_rate(const struct device *clock,
 #endif /* STM32_TIMER_PRESCALER && (RCC_DCKCFGR_TIMPRE || RCC_DCKCFGR1_TIMPRE) */
 		break;
 #endif /* STM32_SRC_TIMPCLK2 */
-#if defined(STM32_SRC_TIMPLLCLK)
+#if defined(STM32_SRC_TIMPLLCLK) && DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pll))
 	case STM32_SRC_TIMPLLCLK:
 		*rate = get_pllout_frequency() * 2;
 		if (*rate == 0) {
