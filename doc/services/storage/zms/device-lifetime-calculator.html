@@ -1,0 +1,354 @@
+<!--
+SPDX-FileCopyrightText: Copyright (c) 2026 Nordic Semiconductor ASA
+SPDX-License-Identifier: Apache-2.0
+-->
+
+<div class="zms-calculator device-lifetime-calculator">
+    <div class="zms-calculator__header">
+        <button type="button" class="btn btn-neutral" aria-controls="zms-lifetime-advanced-container" aria-expanded="false" onclick="lifetimeToggleAdvanced(this)">Advanced mode</button>
+    </div>
+    <p>Calculate the expected lifetime of your ZMS storage device based on your configuration.</p>
+
+    <div id="zms-lifetime-advanced-container" class="admonition note" style="display: none;">
+        <p class="admonition-title">Advanced mode</p>
+        <p id="zms-lifetime-advanced-help"></p>
+        <label for="zms-lifetime-advanced-entries" title="One entry per line as ID:data (hexadecimal data). Used instead of the simple average data size/count fields to model a real, mixed data set.">Entries (ID:data per line):</label>
+        <textarea id="zms-lifetime-advanced-entries" rows="6"></textarea>
+    </div>
+
+    <div class="zms-grid">
+        <div>
+            <label for="zms-lifetime-write-block-size" title="Smallest number of bytes the flash can write in a single operation (the device write-block-size). Check your flash/DTS.">Write Block Size (bytes):</label>
+            <input type="number" id="zms-lifetime-write-block-size" value="1" min="1" step="1">
+        </div>
+
+        <div>
+            <label for="zms-lifetime-flash-type" title="Choose 'No Explicit Erase' for RRAM/MRAM that can be rewritten in place, or 'Explicit Erase Required' for NOR flash that must be erased in blocks before rewriting.">Flash Type:</label>
+            <select id="zms-lifetime-flash-type" onchange="lifetimeToggleEraseBlockSize('zms-lifetime')">
+                <option value="no-erase">No Explicit Erase (RRAM/MRAM)</option>
+                <option value="explicit-erase">Explicit Erase Required (NOR Flash)</option>
+            </select>
+        </div>
+
+        <div id="zms-lifetime-erase-block-container" style="display: none;">
+            <label for="zms-lifetime-erase-block-size" title="For NOR flash, the smallest region that can be erased at once (the erase-block-size, e.g. 4096). The sector size must be a multiple of this value.">Erase Block Size (bytes):</label>
+            <input type="number" id="zms-lifetime-erase-block-size" value="4096" min="256" step="256">
+        </div>
+
+        <div>
+            <label for="zms-lifetime-sector-size" title="Size of one ZMS sector. Must be at least 5 ATEs, aligned to the write block size, and (for NOR flash) a multiple of the erase block size.">Sector Size (bytes):</label>
+            <input type="number" id="zms-lifetime-sector-size" value="1024" min="256" step="256">
+        </div>
+
+        <div>
+            <label for="zms-lifetime-sector-count" title="How many sectors the ZMS partition contains (minimum 2). One sector is always reserved for garbage collection, so usable space is (count - 1) sectors.">Number of Sectors:</label>
+            <input type="number" id="zms-lifetime-sector-count" value="4" min="2" max="100">
+        </div>
+
+        <div id="zms-lifetime-data-size-container">
+            <label for="zms-lifetime-data-size" title="Average payload size of a single stored item, in bytes (not counting ZMS metadata). Use the typical size of the values you store.">Average Data Size (bytes):</label>
+            <input type="number" id="zms-lifetime-data-size" value="8" min="1" max="65536">
+        </div>
+
+        <div>
+            <label for="zms-lifetime-writes-per-minute" title="How often your application updates a stored item, expressed as writes per minute. Drives how fast the storage wears out (e.g. 1 = one write every minute, 0.017 ≈ one per hour).">Writes per Minute:</label>
+            <input type="number" id="zms-lifetime-writes-per-minute" value="1" min="0.01" step="0.01">
+        </div>
+
+        <div>
+            <label for="zms-lifetime-max-writes" title="Flash endurance: how many program/erase cycles each memory cell tolerates before wear-out, from the datasheet (e.g. 100000 for typical NOR, often higher for RRAM/MRAM).">Maximum Writes per Cell Before Wear-out:</label>
+            <input type="number" id="zms-lifetime-max-writes" value="100000" min="1000" step="1000">
+        </div>
+
+        <div id="zms-lifetime-data-count-container">
+            <label for="zms-lifetime-data-count" title="How many distinct items (unique IDs) you store at the same time. Together with average data size this estimates the total effective data set.">Number of Data Items:</label>
+            <input type="number" id="zms-lifetime-data-count" value="1" min="1" max="1000">
+        </div>
+
+        <div>
+            <label for="zms-lifetime-use-settings" title="Select 'Yes' if you access ZMS through the Settings subsystem. Each setting then uses extra entries (name, value and a linked-list node), which increases storage usage.">Use with Settings Subsystem:</label>
+            <select id="zms-lifetime-use-settings" onchange="lifetimeToggleSettingsOptions()">
+                <option value="no">No</option>
+                <option value="yes">Yes</option>
+            </select>
+        </div>
+
+        <div id="zms-lifetime-settings-path-container" style="display: none;">
+            <label for="zms-lifetime-avg-path-size" title="Average length of a settings key/path string, in bytes (e.g. 'bt/cf' or '/data/key1'). Only used when storing through the Settings subsystem.">Average Path Size (bytes):</label>
+            <input type="number" id="zms-lifetime-avg-path-size" value="16" min="1" max="256">
+        </div>
+
+        <div id="zms-lifetime-id-type-container">
+            <label for="zms-lifetime-id-type" title="Width of the ZMS entry ID. 32-bit IDs store up to 8 bytes of data inside the ATE; 64-bit IDs store up to 4 bytes inline. Match this to your CONFIG_ZMS_ID_64BIT setting.">ID Type:</label>
+            <select id="zms-lifetime-id-type">
+                <option value="32">32-bit</option>
+                <option value="64">64-bit</option>
+            </select>
+        </div>
+    </div>
+
+    <button type="button" class="btn btn-primary" onclick="calculateLifetime()">Calculate Lifetime</button>
+
+    <div id="zms-lifetime-results" style="display: none;">
+        <div id="zms-lifetime-results-content" class="zms-results-grid"></div>
+    </div>
+
+    <div id="zms-lifetime-errors" style="display: none;"></div>
+</div>
+
+<script>
+function lifetimeToggleAdvanced(button) {
+    const isVisible = zmsIsElementVisible('zms-lifetime-advanced-container');
+    zmsSetElementVisible('zms-lifetime-advanced-container', !isVisible);
+
+    zmsSetElementVisible('zms-lifetime-data-size-container', isVisible);
+    zmsSetElementVisible('zms-lifetime-data-count-container', isVisible);
+
+    if (button) {
+        button.setAttribute('aria-expanded', String(!isVisible));
+    }
+
+    lifetimeUpdateSettingsVisibility();
+    lifetimeUpdateAdvancedHelp();
+}
+
+function lifetimeIsAdvancedEnabled() {
+    return zmsIsElementVisible('zms-lifetime-advanced-container');
+}
+
+function lifetimeToggleSettingsOptions() {
+    lifetimeUpdateSettingsVisibility();
+    lifetimeUpdateAdvancedHelp();
+}
+
+function lifetimeUpdateSettingsVisibility() {
+    const useSettings = document.getElementById('zms-lifetime-use-settings').value === 'yes';
+    const advanced = lifetimeIsAdvancedEnabled();
+    zmsSyncSettingsUi('zms-lifetime', useSettings, advanced);
+}
+
+function lifetimeUpdateAdvancedHelp() {
+    const useSettings = document.getElementById('zms-lifetime-use-settings').value === 'yes';
+    const help = document.getElementById('zms-lifetime-advanced-help');
+    zmsRenderAdvancedHelp(help, useSettings, '/data/key1:0102030405060708');
+}
+
+function lifetimeToggleEraseBlockSize(prefix) {
+    const flashType = document.getElementById(prefix + '-flash-type').value;
+    zmsSetElementVisible(prefix + '-erase-block-container', flashType === 'explicit-erase');
+}
+
+function validateLifetimeInputs() {
+    const errors = [];
+
+    const writeBlockSize = parseInt(document.getElementById('zms-lifetime-write-block-size').value);
+    const sectorSize = parseInt(document.getElementById('zms-lifetime-sector-size').value);
+    const sectorCount = parseInt(document.getElementById('zms-lifetime-sector-count').value);
+    const advanced = lifetimeIsAdvancedEnabled();
+    const dataSize = parseInt(document.getElementById('zms-lifetime-data-size').value);
+    const dataCount = parseInt(document.getElementById('zms-lifetime-data-count').value);
+    const writesPerMinute = parseFloat(document.getElementById('zms-lifetime-writes-per-minute').value);
+    const maxWrites = parseInt(document.getElementById('zms-lifetime-max-writes').value);
+    const useSettings = document.getElementById('zms-lifetime-use-settings').value === 'yes';
+    const idType = useSettings ? 32 : parseInt(document.getElementById('zms-lifetime-id-type').value);
+    const flashType = document.getElementById('zms-lifetime-flash-type').value;
+    const eraseBlockSize = flashType === 'explicit-erase' ?
+        parseInt(document.getElementById('zms-lifetime-erase-block-size').value) : NaN;
+
+    zmsValidatePositiveNumber(errors, writeBlockSize, 'Write block size must be greater than 0');
+    zmsValidatePositiveNumber(errors, sectorSize, 'Sector size must be greater than 0');
+    zmsValidateMinimumNumber(errors, sectorCount, 2, 'Number of sectors must be at least 2');
+    if (!advanced) {
+        zmsValidatePositiveNumber(errors, dataSize, 'Average data size must be greater than 0');
+        zmsValidatePositiveNumber(errors, dataCount, 'Number of data items must be greater than 0');
+    }
+    zmsValidatePositiveNumber(errors, writesPerMinute, 'Writes per minute must be greater than 0');
+    zmsValidatePositiveNumber(errors, maxWrites, 'Maximum writes per cell must be greater than 0');
+
+    if (!useSettings && idType !== 32 && idType !== 64) {
+        errors.push('ID type must be 32-bit or 64-bit');
+    }
+
+    if (useSettings && !advanced) {
+        const avgPathSize = parseInt(document.getElementById('zms-lifetime-avg-path-size').value);
+        zmsValidatePositiveNumber(errors, avgPathSize, 'Average path size must be greater than 0');
+    }
+
+    zmsValidateSectorConstraints(errors, sectorSize, writeBlockSize, flashType, eraseBlockSize);
+
+    return errors;
+}
+
+function calculateLifetime() {
+    const errors = validateLifetimeInputs();
+    const errorsDiv = document.getElementById('zms-lifetime-errors');
+
+    if (errors.length > 0) {
+        zmsRenderValidationErrors(errorsDiv, errors);
+        errorsDiv.style.display = 'block';
+        document.getElementById('zms-lifetime-results').style.display = 'none';
+        return;
+    }
+
+    errorsDiv.style.display = 'none';
+
+    const writeBlockSize = parseInt(document.getElementById('zms-lifetime-write-block-size').value);
+    const sectorSize = parseInt(document.getElementById('zms-lifetime-sector-size').value);
+    const sectorCount = parseInt(document.getElementById('zms-lifetime-sector-count').value);
+    let dataSize = parseInt(document.getElementById('zms-lifetime-data-size').value);
+    const writesPerMinute = parseFloat(document.getElementById('zms-lifetime-writes-per-minute').value);
+    const maxWrites = parseInt(document.getElementById('zms-lifetime-max-writes').value);
+    let dataCount = parseInt(document.getElementById('zms-lifetime-data-count').value);
+    const useSettings = document.getElementById('zms-lifetime-use-settings').value === 'yes';
+    const avgPathSize = useSettings ? parseInt(document.getElementById('zms-lifetime-avg-path-size').value) : 0;
+    const idType = useSettings ? 32 : parseInt(document.getElementById('zms-lifetime-id-type').value);
+
+    const BASE_ATE_SIZE = 16;
+    const ATE_SIZE = zmsRoundUpToMultiple(BASE_ATE_SIZE, writeBlockSize);
+    const HEADER_SIZE = 5 * ATE_SIZE;
+    const roundedDataSize = zmsRoundUpToMultiple(dataSize, writeBlockSize);
+    const sectorEffectiveSize = sectorSize - HEADER_SIZE;
+    const dataInsideATE = idType === 64 ? 4 : 8;
+    let effectiveDataSize;
+    let totalEffectiveSize;
+    let advancedInfo = null;
+
+    if (lifetimeIsAdvancedEnabled()) {
+        const parsedEntries = zmsParseAdvancedEntriesFromTextarea('zms-lifetime-advanced-entries', useSettings);
+        if (!parsedEntries.ok) {
+            zmsRenderValidationErrors(errorsDiv, [parsedEntries.error]);
+            errorsDiv.style.display = 'block';
+            document.getElementById('zms-lifetime-results').style.display = 'none';
+            return;
+        }
+
+        const entryDataBytes = parsedEntries.entries.map(entry => entry.dataBytes);
+        const totalDataBytes = entryDataBytes.reduce((sum, value) => sum + value, 0);
+        const entryEffectiveSizes = parsedEntries.entries.map(entry =>
+            zmsEntryEffectiveSize(entry, useSettings, writeBlockSize, ATE_SIZE, avgPathSize, dataInsideATE));
+
+        totalEffectiveSize = entryEffectiveSizes.reduce((sum, value) => sum + value, 0);
+        dataCount = parsedEntries.entries.length;
+        dataSize = Math.max(1, Math.ceil(totalDataBytes / dataCount));
+        effectiveDataSize = Math.max(1, Math.ceil(totalEffectiveSize / dataCount));
+
+        advancedInfo = {
+            entriesCount: dataCount,
+            totalDataBytes: totalDataBytes,
+            totalEffectiveSize: totalEffectiveSize
+        };
+    } else if (useSettings) {
+        effectiveDataSize = zmsEntryEffectiveSize({ dataBytes: dataSize, pathBytes: avgPathSize }, true, writeBlockSize, ATE_SIZE, avgPathSize, dataInsideATE);
+        totalEffectiveSize = effectiveDataSize * dataCount;
+    } else {
+        effectiveDataSize = dataSize <= dataInsideATE ? ATE_SIZE : ATE_SIZE + roundedDataSize;
+        totalEffectiveSize = effectiveDataSize * dataCount;
+    }
+
+    if (effectiveDataSize <= 0 || totalEffectiveSize <= 0) {
+        zmsRenderValidationErrors(errorsDiv, ['Invalid configuration: effective data size and total effective size must be greater than 0']);
+        errorsDiv.style.display = 'block';
+        document.getElementById('zms-lifetime-results').style.display = 'none';
+        return;
+    }
+
+    const itemsPerSector = Math.floor(sectorEffectiveSize / effectiveDataSize);
+    if (itemsPerSector < 1) {
+        zmsRenderValidationErrors(errorsDiv, [`Effective entry size (${effectiveDataSize} bytes) exceeds sector effective size (${sectorEffectiveSize} bytes)`]);
+        errorsDiv.style.display = 'block';
+        document.getElementById('zms-lifetime-results').style.display = 'none';
+        return;
+    }
+    const totalAvailableSpace = sectorEffectiveSize * (sectorCount - 1);
+    const totalPhysicalSpace = sectorEffectiveSize * sectorCount;
+    const totalStorageUsedPercent = totalAvailableSpace > 0 ? (totalEffectiveSize / totalAvailableSpace) * 100 : 0;
+    const cyclesThroughStorage = totalPhysicalSpace / totalEffectiveSize;
+
+    /* Garbage collection write amplification.
+     *
+     * When the write pointer wraps to a new sector, ZMS garbage-collects the
+     * oldest sector (see zms_gc() in zms.c): every still-current entry is
+     * physically moved forward, while entries that already have a newer copy
+     * are dropped. These moves are extra physical writes on top of the user
+     * writes and therefore shorten the device lifetime.
+     *
+     * Let u be the fraction of the available space occupied by live data.
+     *  - u <= 0.5: by the time a sector is collected, all of its entries have
+     *    already been superseded, so nothing is moved (amplification = 1).
+     *  - u  > 0.5: live data must be relocated on every pass. In the worst
+     *    case (u -> 1) almost a full sector is moved just to write a small
+     *    update, so the total writes per user write approach u / (1 - u)
+     *    (for example ~99x at 99% occupancy).
+     *
+     * u / (1 - u) equals 1 at exactly 50%, so max(1, u / (1 - u)) gives a
+     * continuous factor that is 1 up to 50% and grows toward the worst case
+     * beyond it. u is capped just under 1 to keep the result finite.
+     */
+    const storageUsedRatio = totalAvailableSpace > 0 ? (totalEffectiveSize / totalAvailableSpace) : 0;
+    const cappedStorageUsedRatio = Math.min(storageUsedRatio, 0.999);
+    const gcWriteAmplification = Math.max(1, cappedStorageUsedRatio / (1 - cappedStorageUsedRatio));
+
+    const totalLifetimeMinutes = (cyclesThroughStorage * maxWrites) / (writesPerMinute * gcWriteAmplification);
+
+    const MINUTES_PER_HOUR = 60;
+    const MINUTES_PER_DAY = 24 * MINUTES_PER_HOUR;
+    const MINUTES_PER_YEAR = 365 * MINUTES_PER_DAY;
+
+    let remainingMinutes = totalLifetimeMinutes;
+    const lifetimeYears = Math.floor(remainingMinutes / MINUTES_PER_YEAR);
+    remainingMinutes %= MINUTES_PER_YEAR;
+    const lifetimeDays = Math.floor(remainingMinutes / MINUTES_PER_DAY);
+    remainingMinutes %= MINUTES_PER_DAY;
+    const lifetimeHours = Math.floor(remainingMinutes / MINUTES_PER_HOUR);
+    remainingMinutes %= MINUTES_PER_HOUR;
+    const lifetimeMinutes = Math.floor(remainingMinutes);
+
+    const resultsDiv = document.getElementById('zms-lifetime-results');
+    const resultsContent = document.getElementById('zms-lifetime-results-content');
+
+    zmsClearElement(resultsContent);
+    if (totalEffectiveSize > totalAvailableSpace) {
+        zmsAppendAdmonition(resultsContent, 'danger', 'Error', 'Total Storage Requirement exceeds the total available storage size. Increase the storage size or reduce the effective data set.');
+    } else if (totalEffectiveSize > (totalAvailableSpace / 2)) {
+        zmsAppendAdmonition(resultsContent, 'warning', 'Warning', 'Effective data occupies more than 50% of the available storage size. The storage should be dimensioned so that effective data occupies less than 50% of available storage.');
+    }
+
+    zmsRenderModeSummary(resultsContent, useSettings, advancedInfo, writeBlockSize, avgPathSize);
+
+    zmsAppendLabeledLine(resultsContent, 'Storage layout', '');
+    zmsAppendLabeledLine(resultsContent, 'Write Block Size', writeBlockSize + ' bytes', 'Smallest number of bytes that can be written to the storage in a single operation.');
+    zmsAppendLabeledLine(resultsContent, 'ATE Size (rounded)', ATE_SIZE + ' bytes', 'Size of one Allocation Table Entry (the metadata record for each item), rounded up to a multiple of the write block size.');
+    zmsAppendLabeledLine(resultsContent, 'Header Size', HEADER_SIZE + ' bytes (5 × ' + ATE_SIZE + ')', 'Per-sector overhead reserved for ZMS metadata (5 ATEs per sector).');
+    zmsAppendLabeledLine(resultsContent, 'Sector Effective Size', sectorEffectiveSize + ' bytes', 'Usable space in one sector after subtracting the header overhead.');
+    zmsAppendLabeledLine(resultsContent, 'Total Available Space', totalAvailableSpace + ' bytes', 'Total usable storage across all data sectors.');
+
+    zmsAppendDivider(resultsContent);
+    zmsAppendLabeledLine(resultsContent, 'Data and wear', '');
+    zmsAppendLabeledLine(resultsContent, 'Storage Per Item (with metadata)', effectiveDataSize + ' bytes' + (advancedInfo ? ' (average from parsed lines)' : ''), 'Total storage consumed by a single item after rounding and including its ATE metadata.');
+    zmsAppendLabeledLine(resultsContent, 'Items per Sector', String(itemsPerSector), 'How many items fit in one sector (sector effective size ÷ storage per item).');
+    zmsAppendLabeledLine(resultsContent, 'Total Storage Requirement', totalEffectiveSize.toLocaleString() + ' bytes (' + totalStorageUsedPercent.toFixed(1) + '% of total available space)', 'Storage consumed by your full data set, including ATE metadata.');
+    zmsAppendLabeledLine(resultsContent, 'Cycles through Storage', cyclesThroughStorage.toFixed(2), 'Number of times the full data set must be written to raise the wear count of a memory cell by 1, since wear leveling spreads the writes evenly across the whole storage.');
+    zmsAppendLabeledLine(resultsContent, 'GC Write Amplification', '×' + gcWriteAmplification.toFixed(2) + (gcWriteAmplification > 1 ? '' : ' (no GC moves)'), 'Extra physical writes caused by garbage collection moving live data. Stays at ×1 up to 50% occupancy, then grows toward the worst case (≈ ×100 at 99%), reducing the expected lifetime.');
+    zmsAppendDivider(resultsContent);
+    zmsAppendLabeledLine(resultsContent, 'Expected Lifetime', '');
+    zmsAppendBullets(resultsContent, [
+        Math.floor(totalLifetimeMinutes).toLocaleString() + ' minutes',
+        lifetimeYears.toLocaleString() + ' years',
+        lifetimeDays.toLocaleString() + ' days',
+        lifetimeHours.toLocaleString() + ' hours',
+        lifetimeMinutes.toLocaleString() + ' minutes'
+    ]);
+
+    resultsDiv.style.display = 'block';
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    zmsBindEnterToCalculate('#zms-lifetime-write-block-size, #zms-lifetime-flash-type, #zms-lifetime-erase-block-size, #zms-lifetime-sector-size, #zms-lifetime-sector-count, #zms-lifetime-data-size, #zms-lifetime-data-count, #zms-lifetime-writes-per-minute, #zms-lifetime-max-writes, #zms-lifetime-use-settings, #zms-lifetime-avg-path-size, #zms-lifetime-id-type, #zms-lifetime-advanced-entries', calculateLifetime);
+
+    lifetimeToggleSettingsOptions();
+    document.getElementById('zms-lifetime-data-size-container').style.display = 'block';
+    document.getElementById('zms-lifetime-data-count-container').style.display = 'block';
+    lifetimeUpdateSettingsVisibility();
+    lifetimeUpdateAdvancedHelp();
+});
+</script>
