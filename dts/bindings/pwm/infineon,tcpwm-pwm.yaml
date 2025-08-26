@@ -3,9 +3,9 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-description: Infineon CAT1 PWM
+description: Infineon TCPWM PWM
 
-compatible: "infineon,cat1-pwm"
+compatible: "infineon,tcpwm-pwm"
 
 include: [pwm-controller.yaml, pinctrl-device.yaml, "infineon,system-interrupts.yaml"]
 
