@@ -176,6 +176,7 @@ struct broadcast_source {
 	};
 	struct bt_audio_codec_cfg codec_cfg;
 	struct bt_bap_qos_cfg qos;
+	uint32_t broadcast_id;
 };
 
 struct broadcast_sink {
