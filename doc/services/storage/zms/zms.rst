@@ -320,6 +320,21 @@ Only 3 sectors are available for writes with a capacity of 944 bytes each,
 which makes it possible to store 11 key-value pairs in each sector (:math:`\frac{944}{64 + 16}`).
 Total data that could be stored in this partition for this case is :math:`11 \times 3 \times 64 = 2112 \text{ bytes}`.
 
+.. only:: html
+
+  .. raw:: html
+     :file: zms-calculator-common.html
+
+.. _zms_available_space_calculator:
+
+Available space calculator
+==========================
+
+.. only:: html
+
+  .. raw:: html
+     :file: available-space-calculator.html
+
 Wear leveling
 *************
 
@@ -392,6 +407,16 @@ Where:
 ``TOTAL_EFFECTIVE_SIZE``: Total effective size of the set of written data
 
 ``WR_MIN``: Number of writes of the set of data per minute
+
+.. _zms_device_lifetime_calculator:
+
+Device lifetime calculator
+==========================
+
+.. only:: html
+
+  .. raw:: html
+     :file: device-lifetime-calculator.html
 
 Features
 ********
