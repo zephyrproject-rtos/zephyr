@@ -887,6 +887,18 @@
 			};
 		};
 
+		dcmi: dcmi@4202C000 {
+			compatible = "st,stm32-dcmi";
+			reg = <0x4202C000 0x400>;
+			interrupts = <119 0>;
+			interrupt-names = "dcmi";
+			clocks = <&rcc STM32_CLOCK(AHB2, 12U)>;
+
+			dmas = <&gpdma1 5 86 (STM32_DMA_PERIPH_TO_MEMORY | STM32_DMA_PERIPH_NO_INC |
+				STM32_DMA_MEM_INC | STM32_DMA_PERIPH_32BITS | STM32_DMA_MEM_32BITS |
+				STM32_DMA_PRIORITY_HIGH) STM32_DMA_FIFO_1_4>;
+			status = "disabled";
+		};
 	};
 
 	swj_port: swj_port {
