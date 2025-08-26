@@ -11,9 +11,10 @@ from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
 
+import jsonschema
 import list_hardware
-import pykwalify.core
 import yaml
+from jsonschema.exceptions import best_match
 from list_hardware import unique_paths
 
 try:
@@ -21,11 +22,13 @@ try:
 except ImportError:
     from yaml import SafeLoader
 
-BOARD_SCHEMA_PATH = str(Path(__file__).parent / 'schemas' / 'board-schema.yml')
+BOARD_SCHEMA_PATH = str(Path(__file__).parent / 'schemas' / 'board-schema.yaml')
 with open(BOARD_SCHEMA_PATH) as f:
     board_schema = yaml.load(f.read(), Loader=SafeLoader)
 
-BOARD_VALIDATOR = pykwalify.core.Core(schema_data=board_schema, source_data={})
+validator_class = jsonschema.validators.validator_for(board_schema)
+validator_class.check_schema(board_schema)
+board_validator = validator_class(board_schema)
 
 BOARD_YML = 'board.yml'
 
@@ -231,23 +234,14 @@ def load_v2_boards(board_name, board_yml, systems):
         with board_yml.open('r', encoding='utf-8') as f:
             b = yaml.load(f.read(), Loader=SafeLoader)
 
-        try:
-            BOARD_VALIDATOR.source = b
-            BOARD_VALIDATOR.validate()
-        except pykwalify.errors.SchemaError as e:
-            sys.exit(f'ERROR: Malformed "build" section in file: {board_yml.as_posix()}\n{e}')
-
-        mutual_exclusive = {'board', 'boards'}
-        if len(mutual_exclusive - b.keys()) < 1:
-            sys.exit(f'ERROR: Malformed content in file: {board_yml.as_posix()}\n'
-                     f'{mutual_exclusive} are mutual exclusive at this level.')
+        errors = list(board_validator.iter_errors(b))
+        if errors:
+            sys.exit('ERROR: Malformed board YAML file: '
+                     f'{board_yml.as_posix()}\n'
+                     f'{best_match(errors).message} in {best_match(errors).json_path}')
 
         board_array = b.get('boards', [b.get('board', None)])
         for board in board_array:
-            mutual_exclusive = {'name', 'extend'}
-            if len(mutual_exclusive - board.keys()) < 1:
-                sys.exit(f'ERROR: Malformed "board" section in file: {board_yml.as_posix()}\n'
-                         f'{mutual_exclusive} are mutual exclusive at this level.')
 
             # This is a extending an existing board, place in array to allow later processing.
             if 'extend' in board:
@@ -260,19 +254,6 @@ def load_v2_boards(board_name, board_yml, systems):
                 # Not the board we're looking for, ignore.
                 continue
 
-            board_revision = board.get('revision')
-            if board_revision is not None and board_revision.get('format') != 'custom':
-                if board_revision.get('default') is None:
-                    sys.exit(f'ERROR: Malformed "board" section in file: {board_yml.as_posix()}\n'
-                             "Cannot find required key 'default'. Path: '/board/revision.'")
-                if board_revision.get('revisions') is None:
-                    sys.exit(f'ERROR: Malformed "board" section in file: {board_yml.as_posix()}\n'
-                             "Cannot find required key 'revisions'. Path: '/board/revision.'")
-
-            mutual_exclusive = {'socs', 'variants'}
-            if len(mutual_exclusive - board.keys()) < 1:
-                sys.exit(f'ERROR: Malformed "board" section in file: {board_yml.as_posix()}\n'
-                         f'{mutual_exclusive} are mutual exclusive at this level.')
             socs = [Soc.from_soc(systems.get_soc(s['name']), s.get('variants', []))
                     for s in board.get('socs', {})]
 
