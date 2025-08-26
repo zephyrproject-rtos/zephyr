@@ -5,6 +5,8 @@ tests:
     platform_allow:
       - qemu_x86
       - mps2/an385
+      - apollo510_evb
+      - apollo510_eb
   filesystem.nvs.0x00:
     extra_args: DTC_OVERLAY_FILE=boards/qemu_x86_ev_0x00.overlay
     platform_allow: qemu_x86
@@ -15,16 +17,24 @@ tests:
     extra_args:
       - CONFIG_NVS_LOOKUP_CACHE=y
       - CONFIG_NVS_LOOKUP_CACHE_SIZE=64
-    platform_allow: native_sim
+    platform_allow:
+      - native_sim
+      - apollo510_evb
+      - apollo510_eb
   filesystem.nvs.data_crc:
     extra_args:
       - CONFIG_NVS_DATA_CRC=y
     platform_allow:
       - native_sim
       - qemu_x86
+      - apollo510_evb
+      - apollo510_eb
   filesystem.nvs.data_crc_cache:
     extra_args:
       - CONFIG_NVS_DATA_CRC=y
       - CONFIG_NVS_LOOKUP_CACHE=y
       - CONFIG_NVS_LOOKUP_CACHE_SIZE=64
-    platform_allow: native_sim
+    platform_allow:
+      - native_sim
+      - apollo510_evb
+      - apollo510_eb
