@@ -96,7 +96,7 @@ void sent_cb(struct bt_l2cap_chan *chan)
 void recv_cb(struct bt_l2cap_chan *l2cap_chan, size_t sdu_len, off_t seg_offset,
 	     struct net_buf_simple *seg)
 {
-	LOG_DBG("sdu len %u frag offset %u frag len %u", sdu_len, seg_offset, seg->len);
+	LOG_DBG("sdu len %u seg offset %u seg len %u", sdu_len, seg_offset, seg->len);
 
 	TEST_ASSERT(sdu_len == sizeof(tx_data), "Recv SDU length does not match send length.");
 
@@ -130,7 +130,7 @@ void l2cap_chan_connected_cb(struct bt_l2cap_chan *l2cap_chan)
 	/* TODO: check that actual MPS < expected MPS */
 
 	SET_FLAG(flag_l2cap_connected);
-	LOG_DBG("%x (tx mtu %d mps %d) (tx mtu %d mps %d)", l2cap_chan, chan->tx.mtu, chan->tx.mps,
+	LOG_DBG("%x (tx mtu %d mps %d) (rx mtu %d mps %d)", l2cap_chan, chan->tx.mtu, chan->tx.mps,
 		chan->rx.mtu, chan->rx.mps);
 }
 
