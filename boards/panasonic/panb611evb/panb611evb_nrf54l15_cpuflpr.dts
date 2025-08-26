@@ -6,11 +6,11 @@
 
 /dts-v1/;
 #include <nordic/nrf54l15_cpuflpr.dtsi>
-#include "panb511evb_nrf54l15_common.dtsi"
+#include "panb611evb_nrf54l15_common.dtsi"
 
 / {
-	model = "Panasonic PAN B511 EVB nRF54L15 FLPR MCU";
-	compatible = "panasonic-industrial-devices-europe-gmbh,panb511evb-cpuflpr";
+	model = "Panasonic PAN B611 EVB nRF54L15 FLPR MCU";
+	compatible = "panasonic-industrial-devices-europe-gmbh,panb611evb-cpuflpr";
 
 	chosen {
 		zephyr,console = &uart20;

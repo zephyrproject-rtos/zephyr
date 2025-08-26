@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "panb511evb_nrf54l15_cpuflpr.dts"
+#include "panb611evb_nrf54l15_cpuflpr.dts"
 
 &cpuflpr_sram {
 	reg = <0x2002f000 DT_SIZE_K(68)>;
