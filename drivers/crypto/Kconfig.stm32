@@ -27,10 +27,9 @@ config CRYPTO_STM32_USE_MBEDTLS_CT_MEMCMP
 	default y
 	depends on MBEDTLS
 	help
-	  When disabled, operations such as authentication tag validation
-	  use memcmp, which is known to be vulnerable to timing attacks.
-	  It is recommended to use a constant-time comparison method
-	  to enhance security.
+	  When you enable this feature, the driver will use mbedtls_ct_memcmp
+	  to compare authentication tags. If it's disabled, it uses a simpler
+	  constant-time comparison function that isn't optimized.
 
 endif # CRYPTO_STM32
 

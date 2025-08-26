@@ -60,8 +60,20 @@ LOG_MODULE_REGISTER(crypto_stm32);
 #include <mbedtls/constant_time.h>
 #define STM32_CRYPTO_MEMCMP(a, b, n) mbedtls_ct_memcmp((a), (b), (n))
 #else
-/* memcmp is vulnerable to timing attacks */
-#define STM32_CRYPTO_MEMCMP(a, b, n) memcmp((a), (b), (n))
+__unused
+static int crypto_stm32_ct_memcmp(const void *a, const void *b, size_t n)
+{
+	const uint8_t *pa;
+	const uint8_t *pb;
+	uint8_t diff = 0U;
+
+	for (pa = a, pb = b; n != 0U; n--, pa++, pb++) {
+		diff |= *pa ^ *pb;
+	}
+
+	return (int) diff;
+}
+#define STM32_CRYPTO_MEMCMP(a, b, n) crypto_stm32_ct_memcmp((a), (b), (n))
 #endif
 
 struct crypto_stm32_session crypto_stm32_sessions[CRYPTO_MAX_SESSION];
