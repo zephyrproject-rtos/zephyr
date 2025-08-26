@@ -178,7 +178,7 @@ int main(void)
 			uint32_t block_size = BLOCK_SIZE;
 			int i;
 
-			for (i = 0; i < 2; i++) {
+			for (i = 0; i < CONFIG_I2S_INIT_BUFFERS; i++) {
 #if CONFIG_USE_DMIC
 				/* If using DMIC, use a buffer (memory slab) from dmic_read */
 				ret = dmic_read(dmic_dev, 0, &mem_block, &block_size, TIMEOUT);
