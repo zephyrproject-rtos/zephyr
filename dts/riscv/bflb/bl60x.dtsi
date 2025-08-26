@@ -187,6 +187,16 @@
 			interrupt-parent = <&clic>;
 		};
 
+		dma0: dma@4000c000 {
+			compatible = "bflb,dma";
+			reg = <0x4000c000 0x1000>;
+			#dma-cells = <1>;
+			dma-channels = <4>;
+
+			interrupts = <31 0>;
+			interrupt-parent = <&clic>;
+		};
+
 		retram: memory@40010000 {
 			compatible = "mmio-sram";
 			reg = <0x40010000 DT_SIZE_K(4)>;
