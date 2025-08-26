@@ -338,6 +338,7 @@ static bool modem_cmux_transmit_cmd_frame(struct modem_cmux *cmux,
 
 	if (space < MODEM_CMUX_CMD_FRAME_SIZE_MAX) {
 		k_mutex_unlock(&cmux->transmit_rb_lock);
+		LOG_WRN("CMD buffer overflow");
 		return false;
 	}
 
@@ -475,6 +476,41 @@ static void modem_cmux_on_control_frame_ua(struct modem_cmux *cmux)
 	k_event_post(&cmux->event, MODEM_CMUX_EVENT_CONNECTED_BIT);
 }
 
+static void modem_cmux_respond_unsupported_cmd(struct modem_cmux *cmux)
+{
+	struct modem_cmux_frame frame = cmux->frame;
+	struct modem_cmux_command *cmd;
+
+	if (modem_cmux_wrap_command(&cmd, frame.data, frame.data_len) < 0) {
+		LOG_WRN("Invalid command");
+		return;
+	}
+
+	struct {
+		/* 3GPP TS 27.010: 5.4.6.3.8 Non Supported Command Response (NSC) */
+		struct modem_cmux_command nsc;
+		struct modem_cmux_command_type value;
+	} nsc_cmd = {
+		.nsc = {
+			.type = {
+				.ea = 1,
+				.cr = 0,
+				.value = MODEM_CMUX_COMMAND_NSC,
+			},
+			.length = {
+				.ea = 1,
+				.value = 1,
+			},
+		},
+		.value = cmd->type,
+	};
+
+	frame.data = (uint8_t *)&nsc_cmd;
+	frame.data_len = sizeof(nsc_cmd);
+
+	modem_cmux_transmit_cmd_frame(cmux, &frame);
+}
+
 static void modem_cmux_on_control_frame_uih(struct modem_cmux *cmux)
 {
 	struct modem_cmux_command *command;
@@ -511,6 +547,7 @@ static void modem_cmux_on_control_frame_uih(struct modem_cmux *cmux)
 
 	default:
 		LOG_DBG("Unknown control command");
+		modem_cmux_respond_unsupported_cmd(cmux);
 		break;
 	}
 }
@@ -531,6 +568,26 @@ static void modem_cmux_connect_response_transmit(struct modem_cmux *cmux)
 	};
 
 	LOG_DBG("SABM/DISC request state send ack");
+	modem_cmux_transmit_cmd_frame(cmux, &frame);
+}
+
+static void modem_cmux_dm_response_transmit(struct modem_cmux *cmux)
+{
+	if (cmux == NULL) {
+		return;
+	}
+
+	/* 3GPP TS 27.010: 5.3.3 Disconnected Mode (DM) response */
+	struct modem_cmux_frame frame = {
+		.dlci_address = cmux->frame.dlci_address,
+		.cr = cmux->frame.cr,
+		.pf = 1,
+		.type = MODEM_CMUX_FRAME_TYPE_DM,
+		.data = NULL,
+		.data_len = 0,
+	};
+
+	LOG_DBG("Send DM response");
 	modem_cmux_transmit_cmd_frame(cmux, &frame);
 }
 
@@ -593,6 +650,13 @@ static struct modem_cmux_dlci *modem_cmux_find_dlci(struct modem_cmux *cmux)
 	return NULL;
 }
 
+static void modem_cmux_on_dlci_frame_dm(struct modem_cmux_dlci *dlci)
+{
+	dlci->state = MODEM_CMUX_DLCI_STATE_CLOSED;
+	modem_pipe_notify_closed(&dlci->pipe);
+	k_work_cancel_delayable(&dlci->close_work);
+}
+
 static void modem_cmux_on_dlci_frame_ua(struct modem_cmux_dlci *dlci)
 {
 	switch (dlci->state) {
@@ -608,9 +672,7 @@ static void modem_cmux_on_dlci_frame_ua(struct modem_cmux_dlci *dlci)
 
 	case MODEM_CMUX_DLCI_STATE_CLOSING:
 		LOG_DBG("DLCI %u closed", dlci->dlci_address);
-		dlci->state = MODEM_CMUX_DLCI_STATE_CLOSED;
-		modem_pipe_notify_closed(&dlci->pipe);
-		k_work_cancel_delayable(&dlci->close_work);
+		modem_cmux_on_dlci_frame_dm(dlci);
 		break;
 
 	default:
@@ -618,6 +680,8 @@ static void modem_cmux_on_dlci_frame_ua(struct modem_cmux_dlci *dlci)
 		break;
 	}
 }
+
+
 
 static void modem_cmux_on_dlci_frame_uih(struct modem_cmux_dlci *dlci)
 {
@@ -665,7 +729,7 @@ static void modem_cmux_on_dlci_frame_disc(struct modem_cmux_dlci *dlci)
 	modem_cmux_connect_response_transmit(cmux);
 
 	if (dlci->state != MODEM_CMUX_DLCI_STATE_OPEN) {
-		LOG_DBG("Unexpected Disc frame");
+		modem_cmux_dm_response_transmit(cmux);
 		return;
 	}
 
@@ -682,8 +746,9 @@ static void modem_cmux_on_dlci_frame(struct modem_cmux *cmux)
 
 	dlci = modem_cmux_find_dlci(cmux);
 	if (dlci == NULL) {
-		LOG_WRN("Ignoring frame intended for unconfigured DLCI %u.",
+		LOG_WRN("Frame intended for unconfigured DLCI %u.",
 			cmux->frame.dlci_address);
+		modem_cmux_dm_response_transmit(cmux);
 		return;
 	}
 
@@ -703,7 +768,9 @@ static void modem_cmux_on_dlci_frame(struct modem_cmux *cmux)
 	case MODEM_CMUX_FRAME_TYPE_DISC:
 		modem_cmux_on_dlci_frame_disc(dlci);
 		break;
-
+	case MODEM_CMUX_FRAME_TYPE_DM:
+		modem_cmux_on_dlci_frame_dm(dlci);
+		break;
 	default:
 		LOG_WRN("Unknown %s frame type (%d, DLCI %d)", "DLCI", cmux->frame.type,
 			cmux->frame.dlci_address);
