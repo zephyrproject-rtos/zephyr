@@ -36,9 +36,21 @@ typedef uint8_t flash_prg_t;
 #error Write block size must be a power of 2, from 1 to 8
 #endif
 
-bool flash_stm32_valid_range(const struct device *dev, off_t offset,
-			     uint32_t len,
-			     bool write)
+#if defined(CONFIG_FLASH_STM32_ASYNC)
+#if FLASH_STM32_WRITE_BLOCK_SIZE == 8
+#define FLASH_TYPEPROGRAM_SIZE FLASH_TYPEPROGRAM_DOUBLEWORD
+#elif FLASH_STM32_WRITE_BLOCK_SIZE == 4
+#define FLASH_TYPEPROGRAM_SIZE FLASH_TYPEPROGRAM_WORD
+#elif FLASH_STM32_WRITE_BLOCK_SIZE == 2
+#define FLASH_TYPEPROGRAM_SIZE FLASH_TYPEPROGRAM_HALFWORD
+#elif FLASH_STM32_WRITE_BLOCK_SIZE == 1
+#define FLASH_TYPEPROGRAM_SIZE FLASH_TYPEPROGRAM_BYTE
+#else
+#error Write block size must be a power of 2, from 1 to 8
+#endif
+#endif /* CONFIG_FLASH_STM32_ASYNC */
+
+bool flash_stm32_valid_range(const struct device *dev, off_t offset, uint32_t len, bool write)
 {
 	ARG_UNUSED(write);
 
@@ -82,12 +94,31 @@ static inline void flush_cache(FLASH_TypeDef *regs)
 
 static int write_value(const struct device *dev, off_t offset, flash_prg_t val)
 {
+	int rc;
+
+#if defined(CONFIG_FLASH_STM32_ASYNC)
+	FLASH_STM32_PRIV(dev)->async_complete = false;
+	FLASH_STM32_PRIV(dev)->async_error = false;
+
+	HAL_FLASH_Program_IT(FLASH_TYPEPROGRAM_SIZE, offset + FLASH_STM32_BASE_ADDRESS, val);
+	k_sem_take(&FLASH_STM32_PRIV(dev)->async_sem, K_FOREVER);
+	if (FLASH_STM32_PRIV(dev)->async_complete) {
+		LOG_DBG("Flash write successful. Wrote 0x%x at 0x%lx", val,
+			offset + FLASH_STM32_BASE_ADDRESS);
+		rc = 0;
+	} else {
+		if (FLASH_STM32_PRIV(dev)->async_error) {
+			LOG_ERR("Flash write failed at 0x%x", FLASH_STM32_PRIV(dev)->async_ret);
+		}
+		rc = -EIO;
+	}
+#else /* CONFIG_FLASH_STM32_ASYNC */
+
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
 #if defined(FLASH_OPTCR_DB1M)
 	bool dcache_enabled = false;
 #endif /* FLASH_OPTCR_DB*/
 	uint32_t tmp;
-	int rc;
 
 	/* if the control register is locked, do not fail silently */
 	if (regs->CR & FLASH_CR_LOCK) {
@@ -130,15 +161,43 @@ static int write_value(const struct device *dev, off_t offset, flash_prg_t val)
 		regs->ACR |= FLASH_ACR_DCEN;
 	}
 #endif /* FLASH_OPTCR_DB1M */
+#endif /* CONFIG_FLASH_STM32_ASYNC */
 
 	return rc;
 }
 
 static int erase_sector(const struct device *dev, uint32_t sector)
 {
+	int rc;
+
+#if defined(CONFIG_FLASH_STM32_ASYNC)
+	FLASH_STM32_PRIV(dev)->async_complete = false;
+	FLASH_STM32_PRIV(dev)->async_error = false;
+
+	FLASH_EraseInitTypeDef erase_init = {
+		.TypeErase = FLASH_TYPEERASE_SECTORS,
+		.Banks = 1, /* dual bank flash not supported */
+		.Sector = sector,
+		.NbSectors = 1,
+		.VoltageRange = FLASH_VOLTAGE_RANGE_4,
+	};
+
+	HAL_FLASHEx_Erase_IT(&erase_init);
+	k_sem_take(&FLASH_STM32_PRIV(dev)->async_sem, K_FOREVER);
+	if (FLASH_STM32_PRIV(dev)->async_complete) {
+		LOG_DBG("Flash erase successful. Erased sector %d at 0x%x", sector,
+			FLASH_STM32_PRIV(dev)->async_ret);
+		rc = 0;
+	} else {
+		if (FLASH_STM32_PRIV(dev)->async_error) {
+			LOG_ERR("Flash erase failed at 0x%x", FLASH_STM32_PRIV(dev)->async_ret);
+		}
+		rc = -EIO;
+	}
+#else /* CONFIG_FLASH_STM32_ASYNC */
+
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
 	uint32_t tmp;
-	int rc;
 
 	/* if the control register is locked, do not fail silently */
 	if (regs->CR & FLASH_CR_LOCK) {
@@ -180,13 +239,12 @@ static int erase_sector(const struct device *dev, uint32_t sector)
 
 	rc = flash_stm32_wait_flash_idle(dev);
 	regs->CR &= ~(FLASH_CR_SER | FLASH_CR_SNB);
+#endif /* CONFIG_FLASH_STM32_ASYNC */
 
 	return rc;
 }
 
-int flash_stm32_block_erase_loop(const struct device *dev,
-				 unsigned int offset,
-				 unsigned int len)
+int flash_stm32_block_erase_loop(const struct device *dev, unsigned int offset, unsigned int len)
 {
 	struct flash_pages_info info;
 	uint32_t start_sector, end_sector;
@@ -214,8 +272,8 @@ int flash_stm32_block_erase_loop(const struct device *dev,
 	return rc;
 }
 
-int flash_stm32_write_range(const struct device *dev, unsigned int offset,
-			    const void *data, unsigned int len)
+int flash_stm32_write_range(const struct device *dev, unsigned int offset, const void *data,
+			    unsigned int len)
 {
 	int i, rc = 0;
 	flash_prg_t value;
@@ -231,8 +289,7 @@ int flash_stm32_write_range(const struct device *dev, unsigned int offset,
 	return rc;
 }
 
-int flash_stm32_option_bytes_write(const struct device *dev, uint32_t mask,
-				   uint32_t value)
+int flash_stm32_option_bytes_write(const struct device *dev, uint32_t mask, uint32_t value)
 {
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
 	int rc;
@@ -272,8 +329,7 @@ uint32_t flash_stm32_option_bytes_read(const struct device *dev)
 }
 
 #if defined(CONFIG_FLASH_STM32_WRITE_PROTECT)
-int flash_stm32_update_wp_sectors(const struct device *dev,
-				  uint64_t changed_sectors,
+int flash_stm32_update_wp_sectors(const struct device *dev, uint64_t changed_sectors,
 				  uint64_t protected_sectors)
 {
 	changed_sectors <<= FLASH_OPTCR_nWRP_Pos;
@@ -290,13 +346,11 @@ int flash_stm32_update_wp_sectors(const struct device *dev,
 					      (uint32_t)protected_sectors);
 }
 
-int flash_stm32_get_wp_sectors(const struct device *dev,
-			       uint64_t *protected_sectors)
+int flash_stm32_get_wp_sectors(const struct device *dev, uint64_t *protected_sectors)
 {
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
 
-	*protected_sectors =
-		(~regs->OPTCR & FLASH_OPTCR_nWRP_Msk) >> FLASH_OPTCR_nWRP_Pos;
+	*protected_sectors = (~regs->OPTCR & FLASH_OPTCR_nWRP_Msk) >> FLASH_OPTCR_nWRP_Pos;
 
 	return 0;
 }
@@ -331,7 +385,7 @@ void flash_stm32_set_rdp_level(const struct device *dev, uint8_t level)
  */
 #ifndef FLASH_SECTOR_TOTAL
 #error "Unknown flash layout"
-#else  /* defined(FLASH_SECTOR_TOTAL) */
+#else /* defined(FLASH_SECTOR_TOTAL) */
 #if FLASH_SECTOR_TOTAL == 5
 static const struct flash_pages_layout stm32f4_flash_layout[] = {
 	/* RM0401, table 5: STM32F410Tx, STM32F410Cx, STM32F410Rx */
@@ -379,20 +433,16 @@ static const struct flash_pages_layout stm32f4_flash_layout[] = {
 	 * RM0090, table 6: STM32F427xx, STM32F437xx, STM32F429xx, STM32F439xx
 	 * RM0386, table 4: STM32F469xx, STM32F479xx
 	 */
-	{.pages_count = 4, .pages_size = KB(16)},
-	{.pages_count = 1, .pages_size = KB(64)},
-	{.pages_count = 7, .pages_size = KB(128)},
-	{.pages_count = 4, .pages_size = KB(16)},
-	{.pages_count = 1, .pages_size = KB(64)},
-	{.pages_count = 7, .pages_size = KB(128)},
+	{.pages_count = 4, .pages_size = KB(16)},  {.pages_count = 1, .pages_size = KB(64)},
+	{.pages_count = 7, .pages_size = KB(128)}, {.pages_count = 4, .pages_size = KB(16)},
+	{.pages_count = 1, .pages_size = KB(64)},  {.pages_count = 7, .pages_size = KB(128)},
 };
 #else
 #error "Unknown flash layout"
 #endif /* FLASH_SECTOR_TOTAL == 5 */
-#endif/* !defined(FLASH_SECTOR_TOTAL) */
+#endif /* !defined(FLASH_SECTOR_TOTAL) */
 
-void flash_stm32_page_layout(const struct device *dev,
-			     const struct flash_pages_layout **layout,
+void flash_stm32_page_layout(const struct device *dev, const struct flash_pages_layout **layout,
 			     size_t *layout_size)
 {
 	ARG_UNUSED(dev);

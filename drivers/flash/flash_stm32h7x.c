@@ -33,7 +33,7 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 /* Let's wait for double the max erase time to be sure that the operation is
  * completed.
  */
-#define STM32H7_FLASH_TIMEOUT     (2 * DT_PROP(DT_INST(0, st_stm32_nv_flash), max_erase_time))
+#define STM32H7_FLASH_TIMEOUT        (2 * DT_PROP(DT_INST(0, st_stm32_nv_flash), max_erase_time))
 /* No information in documentation about that. */
 #define STM32H7_FLASH_OPT_TIMEOUT_MS 800
 
@@ -61,7 +61,7 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 #define DISCONTINUOUS_BANKS         (REAL_FLASH_SIZE_KB < STM32H7_SERIES_MAX_FLASH_KB)
 #define NUMBER_OF_BANKS             2
 #else
-#define NUMBER_OF_BANKS             1
+#define NUMBER_OF_BANKS 1
 #endif
 
 struct flash_stm32_sector_t {
@@ -239,8 +239,7 @@ int flash_stm32_get_wp_sectors(const struct device *dev, uint64_t *protected_sec
 	*protected_sectors = (~regs->WPSN_CUR1 & WP_MSK) >> WP_POS;
 #ifdef DUAL_BANK
 	/* Available only for STM32H7x */
-	uint64_t proctected_sectors_2 =
-		(~regs->WPSN_CUR2 & WP_MSK) >> WP_POS;
+	uint64_t proctected_sectors_2 = (~regs->WPSN_CUR2 & WP_MSK) >> WP_POS;
 	const uint32_t sectors_per_bank = __builtin_popcount(WP_MSK);
 	*protected_sectors |= proctected_sectors_2 << sectors_per_bank;
 #endif /* DUAL_BANK */
@@ -515,6 +514,32 @@ static int erase_sector(const struct device *dev, int offset)
 	int rc;
 	struct flash_stm32_sector_t sector = get_sector(dev, offset);
 
+#if defined(CONFIG_FLASH_STM32_ASYNC)
+	FLASH_STM32_PRIV(dev)->async_complete = false;
+	FLASH_STM32_PRIV(dev)->async_error = false;
+
+	FLASH_EraseInitTypeDef erase_init = {
+		.TypeErase = FLASH_TYPEERASE_SECTORS,
+		.Banks = sector.bank,
+		.Sector = sector.sector_index,
+		.NbSectors = 1,
+		.VoltageRange = FLASH_VOLTAGE_RANGE_4,
+	};
+
+	HAL_FLASHEx_Erase_IT(&erase_init);
+	k_sem_take(&FLASH_STM32_PRIV(dev)->async_sem, K_FOREVER);
+	if (FLASH_STM32_PRIV(dev)->async_complete) {
+		LOG_DBG("Flash erase successful. Erased %lu bytes at 0x%x", FLASH_SECTOR_SIZE,
+			FLASH_STM32_PRIV(dev)->async_ret);
+		rc = 0;
+	} else {
+		if (FLASH_STM32_PRIV(dev)->async_error) {
+			LOG_ERR("Flash erase failed at 0x%x", FLASH_STM32_PRIV(dev)->async_ret);
+		}
+		rc = -EIO;
+	}
+#else  /* CONFIG_FLASH_STM32_ASYNC */
+
 	if (sector.bank == 0) {
 
 		LOG_ERR("Offset %ld does not exist", (long)offset);
@@ -539,6 +564,7 @@ static int erase_sector(const struct device *dev, int offset)
 
 	rc = flash_stm32_wait_flash_idle(dev);
 	*(sector.cr) &= ~(FLASH_CR_SER | FLASH_CR_SNB);
+#endif /* CONFIG_FLASH_STM32_ASYNC */
 
 	return rc;
 }
@@ -557,6 +583,7 @@ int flash_stm32_block_erase_loop(const struct device *dev, unsigned int offset, 
 	return rc;
 }
 
+#if !defined(CONFIG_FLASH_STM32_ASYNC)
 static int wait_write_queue(const struct flash_stm32_sector_t *sector)
 {
 	int64_t timeout_time = k_uptime_get() + 100;
@@ -570,11 +597,35 @@ static int wait_write_queue(const struct flash_stm32_sector_t *sector)
 
 	return 0;
 }
+#endif /* !CONFIG_FLASH_STM32_ASYNC */
 
 static int write_ndwords(const struct device *dev, off_t offset, const uint64_t *data, uint8_t n)
 {
+	int rc = 0;
+
+#if defined(CONFIG_FLASH_STM32_ASYNC)
+	for (size_t i = 0; i < n; i += FLASH_NB_32BITWORD_IN_FLASHWORD) {
+		FLASH_STM32_PRIV(dev)->async_complete = false;
+		FLASH_STM32_PRIV(dev)->async_error = false;
+		uint32_t wordAddr = (uint32_t)&data[i];
+
+		HAL_FLASH_Program_IT(FLASH_TYPEPROGRAM_FLASHWORD, offset + FLASH_STM32_BASE_ADDRESS,
+				     wordAddr);
+		k_sem_take(&FLASH_STM32_PRIV(dev)->async_sem, K_FOREVER);
+		if (FLASH_STM32_PRIV(dev)->async_complete) {
+			LOG_DBG("Flash write successful. Wrote %u bytes to 0x%x",
+				FLASH_STM32_WRITE_BLOCK_SIZE, FLASH_STM32_PRIV(dev)->async_ret);
+		} else {
+			if (FLASH_STM32_PRIV(dev)->async_error) {
+				LOG_ERR("Flash write failed at 0x%x",
+					FLASH_STM32_PRIV(dev)->async_ret);
+			}
+			return = -EIO;
+		}
+	}
+#else  /* CONFIG_FLASH_STM32_ASYNC */
+
 	volatile uint64_t *flash = (uint64_t *)(offset + FLASH_STM32_BASE_ADDRESS);
-	int rc;
 	int i;
 	struct flash_stm32_sector_t sector = get_sector(dev, offset);
 
@@ -623,6 +674,7 @@ static int write_ndwords(const struct device *dev, off_t offset, const uint64_t 
 
 	/* Clear the PG bit */
 	*(sector.cr) &= (~FLASH_CR_PG);
+#endif /* CONFIG_FLASH_STM32_ASYNC */
 
 	return rc;
 }
@@ -812,6 +864,10 @@ static int flash_stm32h7_read(const struct device *dev, off_t offset, void *data
 
 	LOG_DBG("Read offset: %ld, len: %zu", (long)offset, len);
 
+#if defined(CONFIG_FLASH_STM32_ASYNC)
+	flash_stm32_sem_take(dev);
+#endif /* CONFIG_FLASH_STM32_ASYNC */
+
 	/* During the read we mask bus errors and only allow NMI.
 	 *
 	 * If the flash has a double ECC error then there is normally
@@ -832,7 +888,13 @@ static int flash_stm32h7_read(const struct device *dev, off_t offset, void *data
 	barrier_isync_fence_full();
 	irq_unlock(irq_lock_key);
 
-	return flash_stm32_check_status(dev);
+	int rc = flash_stm32_check_status(dev);
+
+#if defined(CONFIG_FLASH_STM32_ASYNC)
+	flash_stm32_sem_give(dev);
+#endif /* CONFIG_FLASH_STM32_ASYNC */
+
+	return rc;
 }
 
 static const struct flash_parameters flash_stm32h7_parameters = {
@@ -927,6 +989,32 @@ static DEVICE_API(flash, flash_stm32h7_api) = {
 #endif
 };
 
+#if defined(CONFIG_FLASH_STM32_ASYNC)
+static struct flash_stm32_priv *flash_dev;
+
+/* IRQ handler function for async flash mode */
+void flash_stm32_irq_handler(void)
+{
+	HAL_FLASH_IRQHandler();
+	if (flash_dev->async_complete || flash_dev->async_error) {
+		k_sem_give(&flash_dev->async_sem);
+	}
+}
+
+/* cube hal functions for end of a async flash operation */
+void HAL_FLASH_EndOfOperationCallback(uint32_t op_ret_val)
+{
+	flash_dev->async_complete = true;
+	flash_dev->async_ret = op_ret_val;
+}
+
+void HAL_FLASH_OperationErrorCallback(uint32_t op_ret_val)
+{
+	flash_dev->async_error = true;
+	flash_dev->async_ret = op_ret_val;
+}
+#endif /* CONFIG_FLASH_STM32_ASYNC */
+
 static int stm32h7_flash_init(const struct device *dev)
 {
 #if DT_NODE_HAS_PROP(DT_INST(0, st_stm32h7_flash_controller), clocks)
@@ -946,6 +1034,13 @@ static int stm32h7_flash_init(const struct device *dev)
 	}
 #endif
 	flash_stm32_sem_init(dev);
+
+#if defined(CONFIG_FLASH_STM32_ASYNC)
+	flash_dev = FLASH_STM32_PRIV(dev);
+	flash_stm32_async_sem_init(dev);
+	IRQ_CONNECT(FLASH_IRQn, 0, flash_stm32_irq_handler, NULL, 0);
+	irq_enable(FLASH_IRQn);
+#endif /* CONFIG_FLASH_STM32_ASYNC */
 
 	LOG_DBG("Flash initialized. BS: %zu", flash_stm32h7_parameters.write_block_size);
 
