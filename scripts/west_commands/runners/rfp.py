@@ -12,7 +12,7 @@ from pathlib import Path
 
 from runners.core import RunnerCaps, ZephyrBinaryRunner
 
-if platform.system() == 'Darwin' or 'Windows':
+if platform.system() in {'Darwin', 'Windows'}:
     DEFAULT_RFP_PORT = None
 else:
     DEFAULT_RFP_PORT = '/dev/ttyACM0'
