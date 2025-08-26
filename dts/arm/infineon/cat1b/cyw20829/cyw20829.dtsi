@@ -280,7 +280,7 @@
 		};
 
 		pwm0_0: pwm@404a0000 {
-			compatible = "infineon,cat1-pwm";
+			compatible = "infineon,tcpwm-pwm";
 			reg = <0x404a0000 0x80>;
 			interrupts = <42 4>;
 			resolution = <32>;
@@ -288,7 +288,7 @@
 			#pwm-cells = <3>;
 		};
 		pwm0_1: pwm@404a0080 {
-			compatible = "infineon,cat1-pwm";
+			compatible = "infineon,tcpwm-pwm";
 			reg = <0x404a0080 0x80>;
 			interrupts = <43 4>;
 			resolution = <32>;
@@ -296,7 +296,7 @@
 			#pwm-cells = <3>;
 		};
 		pwm1_0: pwm@404a8000 {
-			compatible = "infineon,cat1-pwm";
+			compatible = "infineon,tcpwm-pwm";
 			reg = <0x404a8000 0x80>;
 			interrupts = <44 4>;
 			resolution = <16>;
@@ -304,7 +304,7 @@
 			#pwm-cells = <3>;
 		};
 		pwm1_1: pwm@404a8080 {
-			compatible = "infineon,cat1-pwm";
+			compatible = "infineon,tcpwm-pwm";
 			reg = <0x404a8080 0x80>;
 			interrupts = <45 4>;
 			resolution = <16>;
@@ -312,7 +312,7 @@
 			#pwm-cells = <3>;
 		};
 		pwm1_2: pwm@404a8100 {
-			compatible = "infineon,cat1-pwm";
+			compatible = "infineon,tcpwm-pwm";
 			reg = <0x404a8100 0x80>;
 			interrupts = <46 4>;
 			resolution = <16>;
@@ -320,7 +320,7 @@
 			#pwm-cells = <3>;
 		};
 		pwm1_3: pwm@404a8180 {
-			compatible = "infineon,cat1-pwm";
+			compatible = "infineon,tcpwm-pwm";
 			reg = <0x404a8180 0x80>;
 			interrupts = <47 4>;
 			resolution = <16>;
@@ -328,7 +328,7 @@
 			#pwm-cells = <3>;
 		};
 		pwm1_4: pwm@404a8200 {
-			compatible = "infineon,cat1-pwm";
+			compatible = "infineon,tcpwm-pwm";
 			reg = <0x404a8200 0x80>;
 			interrupts = <48 4>;
 			resolution = <16>;
@@ -336,7 +336,7 @@
 			#pwm-cells = <3>;
 		};
 		pwm1_5: pwm@404a8280 {
-			compatible = "infineon,cat1-pwm";
+			compatible = "infineon,tcpwm-pwm";
 			reg = <0x404a8280 0x80>;
 			interrupts = <49 4>;
 			resolution = <16>;
@@ -344,7 +344,7 @@
 			#pwm-cells = <3>;
 		};
 		pwm1_6: pwm@404a8300 {
-			compatible = "infineon,cat1-pwm";
+			compatible = "infineon,tcpwm-pwm";
 			reg = <0x404a8300 0x80>;
 			interrupts = <50 4>;
 			resolution = <16>;
