@@ -278,4 +278,4 @@ References
    http://store.digilentinc.com/pmod-modules
 
 .. _Putty website:
-   http://www.putty.org
+   https://www.putty.software
