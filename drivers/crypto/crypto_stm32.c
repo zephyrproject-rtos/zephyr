@@ -53,17 +53,30 @@ LOG_MODULE_REGISTER(crypto_stm32);
 #define STM32_CRYPTO_HEAP 1
 #endif
 
-#if IS_ENABLED(STM32_CRYPTO_GCM_CCM_SUPPORT) && !IS_ENABLED(STM32_CRYPTO_HEAP)
+#if IS_ENABLED(STM32_CRYPTO_GCM_CCM_SUPPORT)
+#if !IS_ENABLED(STM32_CRYPTO_HEAP)
 #warning "CCM AD support requires CONFIG_HEAP_MEM_POOL_SIZE > 0"
-#endif
-
+#endif /* !IS_ENABLED(STM32_CRYPTO_HEAP) */
 #if IS_ENABLED(CONFIG_CRYPTO_STM32_USE_MBEDTLS_CT_MEMCMP)
 #include <mbedtls/constant_time.h>
 #define STM32_CRYPTO_MEMCMP(a, b, n) mbedtls_ct_memcmp((a), (b), (n))
 #else
-/* memcmp is vulnerable to timing attacks */
-#define STM32_CRYPTO_MEMCMP(a, b, n) memcmp((a), (b), (n))
-#endif
+/* Returns 0 if the buffers are identical; otherwise, returns a non-zero value */
+static int crypto_stm32_ct_memcmp(const void *a, const void *b, size_t n)
+{
+	const uint8_t *pa;
+	const uint8_t *pb;
+	uint8_t diff = 0U;
+
+	for (pa = a, pb = b; n != 0U; n--, pa++, pb++) {
+		diff |= *pa ^ *pb;
+	}
+
+	return (int) diff;
+}
+#define STM32_CRYPTO_MEMCMP(a, b, n) crypto_stm32_ct_memcmp((a), (b), (n))
+#endif /* IS_ENABLED(CONFIG_CRYPTO_STM32_USE_MBEDTLS_CT_MEMCMP) */
+#endif /* IS_ENABLED(STM32_CRYPTO_GCM_CCM_SUPPORT) */
 
 struct crypto_stm32_session crypto_stm32_sessions[CRYPTO_MAX_SESSION];
 
