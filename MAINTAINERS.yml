@@ -4610,11 +4610,11 @@ TDK Sensors:
 TI K3 Platforms:
   status: maintained
   maintainers:
-    - vaishnavachath
+    - glneo
   collaborators:
     - gramsay0
     - dnltz
-    - glneo
+    - vaishnavachath
   files:
     - boards/ti/*am62*/
     - drivers/*/*davinci*
