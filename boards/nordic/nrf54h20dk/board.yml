@@ -5,6 +5,8 @@ board:
   socs:
   - name: nrf54h20
     variants:
+    - name: secondary
+      cpucluster: cpuapp
     - name: xip
       cpucluster: cpuppr
     - name: xip
