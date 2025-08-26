@@ -96,6 +96,7 @@
 		scmi_shmem0: memory@445b1000 {
 			compatible = "arm,scmi-shmem";
 			reg = <0x445b1000 0x80>;
+			#shmem-cells = <0>;
 		};
 	};
 
