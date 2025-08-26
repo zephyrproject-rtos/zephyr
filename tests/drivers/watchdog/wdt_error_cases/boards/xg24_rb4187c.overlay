@@ -1,0 +1,10 @@
+/ {
+	resources {
+		compatible = "test-wdt-error-cases";
+		flag-reset-none;
+		opt-pause-in-sleep;
+		opt-pause-halted-by-dbg;
+		window-min;
+		opt-pause-in-sleep-requires-pm;
+	};
+};
