@@ -52,70 +52,70 @@ void nct_espi_disable_interrupts(const struct device *dev);
  *
  * @param dev Pointer to structure device of eSPI module
  */
-void nct_espi_vmevsm_rcin_sw(const struct device *dev);
+void nct_espi_vwevsm_rcin_sw(const struct device *dev);
 
 /**
  * @brief SMI event use software path.
  *
  * @param dev Pointer to structure device of eSPI module
  */
-void nct_espi_vmevsm_smi_sw(const struct device *dev);
+void nct_espi_vwevsm_smi_sw(const struct device *dev);
 
 /**
  * @brief SCI event use software path.
  *
  * @param dev Pointer to structure device of eSPI module
  */
-void nct_espi_vmevsm_sci_sw(const struct device *dev);
+void nct_espi_vwevsm_sci_sw(const struct device *dev);
 
 /**
  * @brief PME event use software path.
  *
  * @param dev Pointer to structure device of eSPI module
  */
-void nct_espi_vmevsm_pme_sw(const struct device *dev);
+void nct_espi_vwevsm_pme_sw(const struct device *dev);
 
 /**
  * @brief WAKE event use software path.
  *
  * @param dev Pointer to structure device of eSPI module
  */
-void nct_espi_vmevsm_wake_sw(const struct device *dev);
+void nct_espi_vwevsm_wake_sw(const struct device *dev);
 
 /**
  * @brief RCIN event use hardware path.
  *
  * @param dev Pointer to structure device of eSPI module
  */
-void nct_espi_vmevsm_rcin_hw(const struct device *dev);
+void nct_espi_vwevsm_rcin_hw(const struct device *dev);
 
 /**
  * @brief SMI event use hardware path.
  *
  * @param dev Pointer to structure device of eSPI module
  */
-void nct_espi_vmevsm_smi_hw(const struct device *dev);
+void nct_espi_vwevsm_smi_hw(const struct device *dev);
 
 /**
  * @brief SCI event use hardware path.
  *
  * @param dev Pointer to structure device of eSPI module
  */
-void nct_espi_vmevsm_sci_hw(const struct device *dev);
+void nct_espi_vwevsm_sci_hw(const struct device *dev);
 
 /**
  * @brief PME event use hardware path.
  *
  * @param dev Pointer to structure device of eSPI module
  */
-void nct_espi_vmevsm_pme_hw(const struct device *dev);
+void nct_espi_vwevsm_pme_hw(const struct device *dev);
 
 /**
  * @brief WAKE event use hardware path.
  *
  * @param dev Pointer to structure device of eSPI module
  */
-void nct_espi_vmevsm_wake_hw(const struct device *dev);
+void nct_espi_vwevsm_wake_hw(const struct device *dev);
 
 #ifdef __cplusplus
 }

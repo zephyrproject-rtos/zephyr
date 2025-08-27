@@ -1005,11 +1005,11 @@ struct espi_reg {
 #define NCT_VWGP_S_TO_M                 0
 #define NCT_VWGP_M_TO_S                 1
 #define NCT_VWGPMS_DIRECTION_POS        7
-#define NCT_VWEVSMTYPE_WAKETYPE			2
-#define NCT_VWEVSMTYPE_PMETYPE			3
-#define NCT_VWEVSMTYPE_SCITYPE			8
-#define NCT_VWEVSMTYPE_SMITYPE			9
-#define NCT_VWEVSMTYPE_RCINTYPE			10
+#define NCT_VWEVSMTYPE_WAKETYPE		2
+#define NCT_VWEVSMTYPE_PMETYPE		3
+#define NCT_VWEVSMTYPE_SCITYPE		8
+#define NCT_VWEVSMTYPE_SMITYPE		9
+#define NCT_VWEVSMTYPE_RCINTYPE		10
 #define NCT_OOBCTL_OOB_FREE             0
 #define NCT_OOBCTL_OOB_AVAIL            1
 #define NCT_OOBCTL_RSTBUFHEADS          2

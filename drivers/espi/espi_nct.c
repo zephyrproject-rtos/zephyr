@@ -1523,61 +1523,61 @@ static int espi_nct_init(const struct device *dev)
 	return 0;
 }
 
-void nct_espi_vmevsm_rcin_sw(const struct device *dev)
+void nct_espi_vwevsm_rcin_sw(const struct device *dev)
 {
 	struct espi_reg *const inst = HAL_INSTANCE(dev);
 	inst->VWEVSMTYPE &= ~BIT(NCT_VWEVSMTYPE_RCINTYPE);
 }
 
-void nct_espi_vmevsm_smi_sw(const struct device *dev)
+void nct_espi_vwevsm_smi_sw(const struct device *dev)
 {
 	struct espi_reg *const inst = HAL_INSTANCE(dev);
 	inst->VWEVSMTYPE &= ~BIT(NCT_VWEVSMTYPE_SMITYPE);
 }
 
-void nct_espi_vmevsm_sci_sw(const struct device *dev)
+void nct_espi_vwevsm_sci_sw(const struct device *dev)
 {
 	struct espi_reg *const inst = HAL_INSTANCE(dev);
 	inst->VWEVSMTYPE &= ~BIT(NCT_VWEVSMTYPE_SCITYPE);
 }
 
-void nct_espi_vmevsm_pme_sw(const struct device *dev)
+void nct_espi_vwevsm_pme_sw(const struct device *dev)
 {
 	struct espi_reg *const inst = HAL_INSTANCE(dev);
 	inst->VWEVSMTYPE &= ~BIT(NCT_VWEVSMTYPE_PMETYPE);
 }
 
-void nct_espi_vmevsm_wake_sw(const struct device *dev)
+void nct_espi_vwevsm_wake_sw(const struct device *dev)
 {
 	struct espi_reg *const inst = HAL_INSTANCE(dev);
 	inst->VWEVSMTYPE &= ~BIT(NCT_VWEVSMTYPE_WAKETYPE);
 }
 
-void nct_espi_vmevsm_rcin_hw(const struct device *dev)
+void nct_espi_vwevsm_rcin_hw(const struct device *dev)
 {
 	struct espi_reg *const inst = HAL_INSTANCE(dev);
 	inst->VWEVSMTYPE |= BIT(NCT_VWEVSMTYPE_RCINTYPE);
 }
 
-void nct_espi_vmevsm_smi_hw(const struct device *dev)
+void nct_espi_vwevsm_smi_hw(const struct device *dev)
 {
 	struct espi_reg *const inst = HAL_INSTANCE(dev);
 	inst->VWEVSMTYPE |= BIT(NCT_VWEVSMTYPE_SMITYPE);
 }
 
-void nct_espi_vmevsm_sci_hw(const struct device *dev)
+void nct_espi_vwevsm_sci_hw(const struct device *dev)
 {
 	struct espi_reg *const inst = HAL_INSTANCE(dev);
 	inst->VWEVSMTYPE |= BIT(NCT_VWEVSMTYPE_SCITYPE);
 }
 
-void nct_espi_vmevsm_pme_hw(const struct device *dev)
+void nct_espi_vwevsm_pme_hw(const struct device *dev)
 {
 	struct espi_reg *const inst = HAL_INSTANCE(dev);
 	inst->VWEVSMTYPE |= BIT(NCT_VWEVSMTYPE_PMETYPE);
 }
 
-void nct_espi_vmevsm_wake_hw(const struct device *dev)
+void nct_espi_vwevsm_wake_hw(const struct device *dev)
 {
 	struct espi_reg *const inst = HAL_INSTANCE(dev);
 	inst->VWEVSMTYPE |= BIT(NCT_VWEVSMTYPE_WAKETYPE);

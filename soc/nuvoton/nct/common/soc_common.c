@@ -10,9 +10,8 @@
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/devicetree.h>
-#include "soc_common.h"
-#include "reg/reg_def.h"
-
+#include <soc_common.h>
+#include <reg/reg_def.h>
 
 #define ROM_RESET_STATUS_ADDR	(0x100C7F00 + 0x84)
 #define ROM_RESET_VCC_POWERUP	0x01
