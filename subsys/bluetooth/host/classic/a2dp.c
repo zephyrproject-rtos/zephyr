@@ -507,6 +507,56 @@ static int a2dp_abort_ind(struct bt_avdtp *session, struct bt_avdtp_sep *sep, ui
 	return a2dp_ctrl_ind(session, sep, errcode, req_cb, NULL);
 }
 
+static int a2dp_get_config_ind(struct bt_avdtp *session, struct bt_avdtp_sep *sep,
+			       struct net_buf *rsp_buf, uint8_t *errcode)
+{
+	struct bt_a2dp_ep *ep;
+
+	__ASSERT(sep, "Invalid sep");
+
+	ep = CONTAINER_OF(sep, struct bt_a2dp_ep, sep);
+	if (ep->stream == NULL) {
+		*errcode = BT_AVDTP_ERR_SEP_NOT_IN_USE;
+		return -EINVAL;
+	}
+
+	*errcode = 0;
+	if (a2dp_cb != NULL && a2dp_cb->get_config_req != NULL) {
+		int err;
+
+		err = a2dp_cb->get_config_req(ep->stream, errcode);
+		if (err != 0) {
+			if (*errcode == 0) {
+				*errcode = BT_AVDTP_BAD_ACP_SEID;
+			}
+
+			return err;
+		}
+	}
+
+	/* Service Category: Media Transport */
+	net_buf_add_u8(rsp_buf, BT_AVDTP_SERVICE_MEDIA_TRANSPORT);
+	net_buf_add_u8(rsp_buf, 0);
+	/* Service Category: Media Codec */
+	net_buf_add_u8(rsp_buf, BT_AVDTP_SERVICE_MEDIA_CODEC);
+	/* Length Of Service Capability */
+	net_buf_add_u8(rsp_buf, ep->stream->codec_config.len + 2U);
+	/* Media Type */
+	net_buf_add_u8(rsp_buf, sep->sep_info.media_type << 4U);
+	/* Media Codec Type */
+	net_buf_add_u8(rsp_buf, ep->codec_type);
+	/* Codec Info Element */
+	net_buf_add_mem(rsp_buf, &ep->stream->codec_config.codec_ie[0],
+			ep->stream->codec_config.len);
+
+	if (ep->stream->delay_report) {
+		net_buf_add_u8(rsp_buf, BT_AVDTP_SERVICE_DELAY_REPORTING);
+		net_buf_add_u8(rsp_buf, 0);
+	}
+
+	return 0;
+}
+
 #ifdef CONFIG_BT_A2DP_SOURCE
 int a2dp_delay_report_ind(struct bt_avdtp *session, struct bt_avdtp_sep *sep, struct net_buf *buf,
 			  uint8_t *errcode)
@@ -910,6 +960,50 @@ static int bt_a2dp_abort_cb(struct bt_avdtp_req *req, struct net_buf *buf)
 	return bt_a2dp_ctrl_cb(req, rsp_cb, NULL);
 }
 
+static int bt_a2dp_get_config_cb(struct bt_avdtp_req *req, struct net_buf *buf)
+{
+	int err;
+	bool delay_report;
+	uint8_t codec_type;
+	uint8_t *codec_info_element;
+	uint16_t codec_info_element_len;
+	struct bt_a2dp_codec_cfg cfg;
+	struct bt_a2dp_codec_ie codec_config;
+	struct bt_a2dp_ep *ep = CONTAINER_OF(CTRL_REQ(req)->sep, struct bt_a2dp_ep, sep);
+
+	if (req->status != BT_AVDTP_SUCCESS) {
+		if (a2dp_cb != NULL && a2dp_cb->get_config_rsp != NULL) {
+			a2dp_cb->get_config_rsp(ep->stream, NULL, req->status);
+		}
+
+		return 0;
+	}
+
+	/* parse the configuration */
+	err = bt_avdtp_parse_capability_codec(buf, &codec_type, &codec_info_element,
+					      &codec_info_element_len, &delay_report);
+	if (err != 0) {
+		if (a2dp_cb != NULL && a2dp_cb->get_config_rsp != NULL) {
+			a2dp_cb->get_config_rsp(ep->stream, NULL, BT_AVDTP_BAD_LENGTH);
+		}
+
+		return -EINVAL;
+	}
+
+	cfg.delay_report = delay_report;
+	cfg.codec_config = &codec_config;
+	cfg.codec_config->len = codec_info_element_len;
+	memcpy(&cfg.codec_config->codec_ie[0], codec_info_element,
+	       (codec_info_element_len > BT_A2DP_MAX_IE_LENGTH ? BT_A2DP_MAX_IE_LENGTH
+							       : codec_info_element_len));
+
+	if (a2dp_cb != NULL && a2dp_cb->get_config_rsp != NULL) {
+		a2dp_cb->get_config_rsp(ep->stream, &cfg, req->status);
+	}
+
+	return 0;
+}
+
 #ifdef CONFIG_BT_A2DP_SINK
 static int bt_a2dp_delay_report_cb(struct bt_avdtp_req *req, struct net_buf *buf)
 {
@@ -1024,6 +1118,19 @@ int bt_a2dp_stream_reconfig(struct bt_a2dp_stream *stream, struct bt_a2dp_codec_
 					stream->local_ep->sep.sep_info.id,
 					stream->local_ep->codec_type, &stream->local_ep->sep);
 	return bt_avdtp_reconfigure(&stream->a2dp->session, &stream->a2dp->set_config_param);
+}
+
+int bt_a2dp_stream_get_config(struct bt_a2dp_stream *stream)
+{
+	int err;
+	struct bt_a2dp *a2dp = stream->a2dp;
+
+	err = bt_a2dp_stream_ctrl_pre(stream, bt_a2dp_get_config_cb);
+	if (err != 0) {
+		return err;
+	}
+
+	return bt_avdtp_get_configuration(&a2dp->session, &a2dp->ctrl_param);
 }
 
 uint32_t bt_a2dp_get_mtu(struct bt_a2dp_stream *stream)
@@ -1147,6 +1254,7 @@ static const struct bt_avdtp_ops_cb signaling_avdtp_ops = {
 	.discovery_ind = a2dp_discovery_ind,
 	.get_capabilities_ind = a2dp_get_capabilities_ind,
 	.set_configuration_ind = a2dp_set_config_ind,
+	.get_configuration_ind = a2dp_get_config_ind,
 	.re_configuration_ind = a2dp_re_config_ind,
 	.open_ind = a2dp_open_ind,
 	.start_ind = a2dp_start_ind,

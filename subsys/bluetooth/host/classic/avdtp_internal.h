@@ -178,7 +178,7 @@ struct bt_avdtp_set_configuration_params {
 	bool delay_report;
 };
 
-/* avdtp_open, avdtp_close, avdtp_start, avdtp_suspend */
+/* avdtp_open, avdtp_close, avdtp_start, avdtp_suspend, avdtp_get_configuration */
 struct bt_avdtp_ctrl_params {
 	struct bt_avdtp_req req;
 	struct bt_avdtp_sep *sep;
@@ -254,6 +254,9 @@ struct bt_avdtp_ops_cb {
 
 	int (*set_configuration_ind)(struct bt_avdtp *session, struct bt_avdtp_sep *sep,
 				     uint8_t int_seid, struct net_buf *buf, uint8_t *errcode);
+
+	int (*get_configuration_ind)(struct bt_avdtp *session, struct bt_avdtp_sep *sep,
+				    struct net_buf *rsp_buf, uint8_t *errcode);
 
 	int (*re_configuration_ind)(struct bt_avdtp *session, struct bt_avdtp_sep *sep,
 				    struct net_buf *buf, uint8_t *errcode);
@@ -342,6 +345,9 @@ int bt_avdtp_suspend(struct bt_avdtp *session, struct bt_avdtp_ctrl_params *para
 
 /* AVDTP ABORT */
 int bt_avdtp_abort(struct bt_avdtp *session, struct bt_avdtp_ctrl_params *param);
+
+/* AVDTP Get Configuration */
+int bt_avdtp_get_configuration(struct bt_avdtp *session, struct bt_avdtp_ctrl_params *param);
 
 /* AVDTP send delay report */
 int bt_avdtp_delay_report(struct bt_avdtp *session, struct bt_avdtp_delay_report_params *param);
