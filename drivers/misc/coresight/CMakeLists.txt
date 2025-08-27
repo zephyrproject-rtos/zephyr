@@ -2,3 +2,4 @@
 # SPDX-License-Identifier: Apache-2.0
 
 zephyr_library_sources_ifdef(CONFIG_NRF_ETR nrf_etr.c)
+zephyr_library_sources_ifdef(CONFIG_CORESIGHT_NRF coresight_nrf.c)

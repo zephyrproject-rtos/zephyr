@@ -68,17 +68,6 @@ config SOC_NRF54H20_CPURAD_COMMON
 	select HAS_PM_S2RAM_CUSTOM_MARKING
 	select HAS_POWEROFF
 
-config SOC_NRF54H20_TDD_ENABLE
-	bool "Power and configure the trace and debug domain (TDD)"
-	depends on SOC_NRF54H20_CPUAPP
-	select NRF_IRONSIDE_TDD_SERVICE
-	select SOC_LATE_INIT_HOOK
-	help
-	  This will at application boot time request that the trace and
-	  debug domain (TDD) is powered up and configured.
-	  This allows configuring the coresight peripherals from
-	  the application domain.
-
 config SOC_NRF54H20_CPURAD_ENABLE
 	bool "Boot the nRF54H20 Radio core"
 	default y if NRF_802154_SER_HOST || BT_HCI_HOST
