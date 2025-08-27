@@ -4,10 +4,12 @@ board:
   vendor: beagle
   socs:
     - name: am6232
+    - name: am6254
     - name: mspm0l1105
   revision:
     format: custom
     exact: true
-    default: "A0"
+    default: "A1"
     revisions:
       - name: "A0"
+      - name: "A1"
