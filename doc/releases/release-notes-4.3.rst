@@ -134,7 +134,7 @@ New APIs and options
 
 * Settings
 
-   * :kconfig:option:`CONFIG_SETTINGS_TFM_ITS`
+   * :kconfig:option:`CONFIG_SETTINGS_PSA`
 
 .. zephyr-keep-sorted-stop
 
