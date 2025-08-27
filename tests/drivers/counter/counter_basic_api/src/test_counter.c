@@ -453,7 +453,6 @@ static void test_single_shot_alarm_instance(const struct device *dev, bool set_t
 		zassert_equal(-EINVAL, err,
 			      "%s: Counter should return error because ticks"
 			      " exceeded the limit set alarm", dev->name);
-		cntr_alarm_cfg.ticks = ticks - 1;
 	}
 
 	cntr_alarm_cfg.ticks = ticks;
