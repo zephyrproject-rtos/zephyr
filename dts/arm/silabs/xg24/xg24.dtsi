@@ -139,7 +139,7 @@
 			device_type = "cpu";
 			compatible = "arm,cortex-m33";
 			reg = <0>;
-			cpu-power-states = <&pstate_em1 &pstate_em2>;
+			cpu-power-states = <&pstate_em1 &pstate_em2 &pstate_em4>;
 			/*
 			 * The minimum residency and exit latency is
 			 * managed by sl_power_manager on S2 devices.
@@ -171,6 +171,16 @@
 			pstate_em2: em2 {
 				compatible = "zephyr,power-state";
 				power-state-name = "suspend-to-idle";
+			};
+
+			/*
+			 * EM4 is a shutdown state where all clocks are off. The device
+			 * is reset on wakeup from EM4.
+			 */
+			pstate_em4: em4 {
+				compatible = "zephyr,power-state";
+				power-state-name = "soft-off";
+				status = "disabled";
 			};
 		};
 	};
@@ -431,6 +441,8 @@
 				reg = <0x5003c030 0x30>;
 				gpio-controller;
 				#gpio-cells = <2>;
+				silabs,wakeup-ints = <0>;
+				silabs,wakeup-pins = <5>;
 				status = "disabled";
 			};
 
@@ -439,6 +451,8 @@
 				reg = <0x5003c060 0x30>;
 				gpio-controller;
 				#gpio-cells = <2>;
+				silabs,wakeup-ints = <3>, <4>;
+				silabs,wakeup-pins = <1>, <3>;
 				status = "disabled";
 			};
 
@@ -447,6 +461,8 @@
 				reg = <0x5003c090 0x30>;
 				gpio-controller;
 				#gpio-cells = <2>;
+				silabs,wakeup-ints = <6>, <7>, <8>;
+				silabs,wakeup-pins = <0>, <5>, <7>;
 				status = "disabled";
 			};
 
@@ -455,6 +471,8 @@
 				reg = <0x5003c0C0 0x30>;
 				gpio-controller;
 				#gpio-cells = <2>;
+				silabs,wakeup-ints = <9>, <10>;
+				silabs,wakeup-pins = <2>, <5>;
 				status = "disabled";
 			};
 		};
