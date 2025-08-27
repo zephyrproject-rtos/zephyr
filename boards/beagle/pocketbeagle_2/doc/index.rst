@@ -3,17 +3,20 @@
 Overview
 ********
 
-PocketBeagle 2 is a computational platform powered by TI AM62x SoC (there are two
-revisions, AM6232 and AM6254).
+PocketBeagle 2 is a computational platform powered by a TI AM6254 SoC.
+
+(NOTE: Rev A0 used a TI AM6232 SoC and is no longer available. Rev A1
+uses a TI AM6254 SoC.)
 
 See the `PocketBeagle 2 Product Page`_ for details.
 
 Hardware
 ********
+
 PocketBeagle 2 features the TI AM62x SoC based around an Arm Cortex-A53 multicore
 cluster with an Arm Cortex-M4F microcontroller, Imagination Technologies AXE-1-16
-graphics processor (from revision A1) and TI programmable real-time unit subsystem
-microcontroller cluster coprocessors.
+graphics processor and TI programmable real-time unit subsystem microcontroller
+cluster coprocessors.
 
 Additionally, PocketBeagle 2 also contains an MSPM0L1105 SoC which serves as EEPROM and ADC.
 
@@ -23,18 +26,10 @@ Zephyr is enabled to run on:
 - Arm Cortex-M4F core on AM62x, and
 - Arm Cortex-M0+ core on MSPM0L1105.
 
-The following listed hardware specifications are used:
-
-- Dual ARM Cortex-A53 cores
-- Low-power ARM Cortex-M4F
-- Memory
-
-   - 256KB of SRAM
-   - 512MB of DDR4
-
 Currently supported PocketBeagle 2 revisions:
 
-- A0: Comes wth SOC AM6232
+- A0: Comes with SOC AM6232. Discontinued.
+- A1: Comes with SOC AM6254
 
 Supported Features
 ==================
@@ -105,7 +100,7 @@ The testing requires the binary to be copied to the BOOT partition in SD card.
 To test the A53 core, we build the :zephyr:code-sample:`hello_world` sample with the following command.
 
 .. zephyr-app-commands::
-   :board: pocketbeagle_2/am6232/a53
+   :board: pocketbeagle_2/am6254/a53
    :zephyr-app: samples/hello_world
    :goals: build
 
@@ -133,7 +128,7 @@ The testing requires the binary to be copied to the SD card to allow the A53 cor
 To test the M4F core, we build the :zephyr:code-sample:`hello_world` sample with the following command.
 
 .. zephyr-app-commands::
-   :board: pocketbeagle_2/am6232/m4
+   :board: pocketbeagle_2/am6254/m4
    :zephyr-app: samples/hello_world
    :goals: build
 
@@ -200,7 +195,7 @@ superuser privilege, openocd needs to be launched separately for now:
 Start debugging
 
 .. zephyr-app-commands::
-   :board: pocketbeagle_2/am6232/m4
+   :board: pocketbeagle_2/am6254/m4
    :goals: debug
 
 References
