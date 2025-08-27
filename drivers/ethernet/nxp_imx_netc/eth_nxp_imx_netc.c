@@ -96,7 +96,9 @@ static int netc_eth_rx(const struct device *dev)
 		goto out;
 	}
 
-	if (result != kStatus_Success) {
+	if (result != kStatus_NETC_RxTsrResp &&
+	    result != kStatus_NETC_RxHRNotZeroFrame &&
+	    result != kStatus_Success) {
 		LOG_ERR("Error on received frame");
 		ret = -EIO;
 		goto out;
