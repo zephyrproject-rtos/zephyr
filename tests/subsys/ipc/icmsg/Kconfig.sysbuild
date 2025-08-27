@@ -1,0 +1,14 @@
+# Copyright 2023 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+
+source "share/sysbuild/Kconfig"
+
+config REMOTE_BOARD
+	string "The board used for remote target"
+	default "nrf5340dk/nrf5340/cpunet" if $(BOARD) = "nrf5340dk"
+	default "nrf5340bsim/nrf5340/cpunet" if $(BOARD) = "nrf5340bsim"
+	default "nrf54h20dk/nrf54h20/cpuppr" if BOARD_NRF54H20DK_NRF54H20_CPUAPP
+	default "nrf54l15dk/nrf54l15/cpuflpr" if $(BOARD) = "nrf54l15dk"
+	default "nrf54lm20dk/nrf54lm20a/cpuflpr" if $(BOARD) = "nrf54lm20dk"
+	default "stm32h747i_disco/stm32h747xx/m4" if $(BOARD) = "stm32h747i_disco"
