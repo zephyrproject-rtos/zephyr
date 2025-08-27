@@ -2902,6 +2902,73 @@ int bt_conn_br_switch_role(const struct bt_conn *conn, uint8_t role);
  */
 int bt_conn_br_set_role_switch_enable(const struct bt_conn *conn, bool enable);
 
+/** @brief Callback type for handling unknown LTK requests.
+ *
+ * Invoked when a peer Central initiates encryption and the Host does not have
+ * an LTK for that peer. The application can decide whether the stack's default
+ * handling should proceed, or whether the application will provide the LTK
+ * directly by calling bt_conn_le_ltk_reply() or a negative reply via
+ * bt_conn_le_ltk_neg_reply().
+ *
+ * @note This callback is only used when @kconfig{CONFIG_BT_HOOK_CONN_LTK_REQUEST}
+ * is enabled.
+ *
+ * @param conn Connection object associated with the LTK Request.
+ * @param rand 64-bit random number from the HCI event (CPU endianness).
+ * @param ediv 16-bit EDIV from the HCI event (CPU endianness).
+ *
+ * @retval false Defer handling to the stack's default processing.
+ * @retval true  The application takes ownership and will reply.
+ */
+typedef bool bt_conn_ltk_request_cb_t(struct bt_conn *conn, uint64_t rand, uint16_t ediv);
+
+/** @brief Register an application callback for unknown LTK requests.
+ *
+ * Registers a single global callback using an atomic compare-and-swap. If a
+ * callback is already registered this will fail.
+ *
+ * @param cb Callback to be called when an unknown LTK request is received.
+ *
+ * @retval 0 Success.
+ * @retval -EALREADY A callback has already been registered.
+ * @retval -EINVAL cb is NULL.
+ */
+int bt_conn_register_ltk_request_cb(bt_conn_ltk_request_cb_t cb);
+
+/** @brief Unregister the application callback for unknown LTK requests.
+ *
+ * Uses atomic compare-and-swap to ensure only the currently registered
+ * callback is removed.
+ *
+ * @param cb The same callback pointer that was previously registered.
+ *
+ * @retval 0 Success.
+ * @retval -ENOENT The provided callback is not currently registered.
+ * @retval -EINVAL cb is NULL.
+ */
+int bt_conn_unregister_ltk_request_cb(bt_conn_ltk_request_cb_t cb);
+
+/** @brief Send an LE Long Term Key Request Reply for a connection.
+ *
+ * @param conn @ref BT_CONN_TYPE_LE connection object.
+ * @param ltk  Pointer to 16-byte LTK to reply with.
+ *
+ * @retval 0 Success.
+ * @retval -EINVAL @p conn is not a valid @ref BT_CONN_TYPE_LE connection or @p ltk is NULL.
+ * @retval -ENOBUFS HCI command buffer not available.
+ */
+int bt_conn_le_ltk_reply(struct bt_conn *conn, const uint8_t *ltk);
+
+/** @brief Send an LE Long Term Key Request Negative Reply for a connection.
+ *
+ * @param conn @ref BT_CONN_TYPE_LE connection object.
+ *
+ * @retval 0 Success.
+ * @retval -EINVAL @p conn is not a valid @ref BT_CONN_TYPE_LE connection.
+ * @retval -ENOBUFS HCI command buffer not available.
+ */
+int bt_conn_le_ltk_neg_reply(struct bt_conn *conn);
+
 #ifdef __cplusplus
 }
 #endif

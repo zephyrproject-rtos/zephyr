@@ -2498,9 +2498,13 @@ static void le_ltk_request(struct net_buf *buf)
 	struct bt_hci_evt_le_ltk_request *evt = (void *)buf->data;
 	struct bt_conn *conn;
 	uint16_t handle;
+	uint64_t random_number;
+	uint16_t ediv;
 	uint8_t ltk[16];
 
 	handle = sys_le16_to_cpu(evt->handle);
+	random_number = sys_le64_to_cpu(evt->rand);
+	ediv = sys_le16_to_cpu(evt->ediv);
 
 	LOG_DBG("handle %u", handle);
 
@@ -2510,13 +2514,54 @@ static void le_ltk_request(struct net_buf *buf)
 		return;
 	}
 
-	if (bt_smp_request_ltk(conn, evt->rand, evt->ediv, ltk)) {
+	if (bt_smp_request_ltk(conn, random_number, ediv, ltk)) {
 		le_ltk_reply(handle, ltk);
+	} else if (IS_ENABLED(CONFIG_BT_HOOK_CONN_LTK_REQUEST) &&
+		   bt_conn_invoke_ltk_request_cb(conn, random_number, ediv)) {
+		/* Application will reply using bt_conn_le_ltk_reply/neg_reply */
 	} else {
 		le_ltk_neg_reply(handle);
 	}
 
 	bt_conn_unref(conn);
+}
+#endif /* CONFIG_BT_SMP */
+
+#if defined(CONFIG_BT_SMP)
+int bt_conn_le_ltk_reply(struct bt_conn *conn, const uint8_t *ltk)
+{
+	uint16_t handle;
+	int err;
+
+	if (conn == NULL || conn->type != BT_CONN_TYPE_LE || ltk == NULL) {
+		return -EINVAL;
+	}
+
+	err = bt_hci_get_conn_handle(conn, &handle);
+	if (err) {
+		return err;
+	}
+
+	le_ltk_reply(handle, (uint8_t *)ltk);
+	return 0;
+}
+
+int bt_conn_le_ltk_neg_reply(struct bt_conn *conn)
+{
+	uint16_t handle;
+	int err;
+
+	if (conn == NULL || conn->type != BT_CONN_TYPE_LE) {
+		return -EINVAL;
+	}
+
+	err = bt_hci_get_conn_handle(conn, &handle);
+	if (err) {
+		return err;
+	}
+
+	le_ltk_neg_reply(handle);
+	return 0;
 }
 #endif /* CONFIG_BT_SMP */
 

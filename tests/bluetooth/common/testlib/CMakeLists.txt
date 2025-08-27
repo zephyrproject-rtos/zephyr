@@ -22,6 +22,7 @@ target_sources(testlib PRIVATE
   src/conn_wait.c
   src/connect.c
   src/disconnect.c
+  src/enable_quiet.c
   src/scan.c
 )
 
