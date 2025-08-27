@@ -156,6 +156,14 @@
 
 _ASM_FILE_PROLOGUE
 
+/*
+ * NOTE: the z_arm_pm_s2ram_*_fpu functions always
+ * exist (but behave as no-ops if CONFIG_FPU=n)
+ */
+GTEXT(z_arm_pm_s2ram_save_scb_mpu)
+GTEXT(z_arm_pm_s2ram_restore_scb_mpu)
+GTEXT(z_arm_pm_s2ram_save_and_disable_fpu)
+GTEXT(z_arm_pm_s2ram_enable_and_restore_fpu)
 GTEXT(pm_s2ram_mark_set)
 GTEXT(pm_s2ram_mark_check_and_clear)
 GDATA(_cpu_context)
@@ -175,6 +183,10 @@ SECTION_FUNC(TEXT, arch_pm_s2ram_suspend)
 	ldr	r1, =_cpu_context
 
 	SAVE_SPECIAL_REGISTERS(/* ctx: */ r1, /* tmp: */ r2)
+
+	/* Call C helpers to save the rest of CPU context */
+	bl		z_arm_pm_s2ram_save_scb_mpu
+	bl		z_arm_pm_s2ram_save_and_disable_fpu
 
 	/*
 	 * Mark entering suspend to RAM.
@@ -199,6 +211,13 @@ SECTION_FUNC(TEXT, arch_pm_s2ram_suspend)
 	 * Reset the marking of suspend to RAM, return is ignored.
 	 */
 	bl pm_s2ram_mark_check_and_clear
+
+	/*
+	 * SCB and MPU state is intact since power off was not
+	 * successful. However, the FPU was disabled and its state
+	 * may have been lost: restore it unconditionally.
+	 */
+	bl		z_arm_pm_s2ram_enable_and_restore_fpu
 
 	/* Move the stored return value of system_off back to r0,
 	 * setting it as return value for this function.
@@ -237,6 +256,20 @@ SECTION_FUNC(TEXT, arch_pm_s2ram_resume)
 	RESTORE_SPECIAL_REGISTERS(/* ctx: */ r0, /* tmp: */ r1)
 
 	POP_GPRS
+
+	/*
+	 * Call C helpers to restore the rest of context.
+	 *
+	 * TODO: optimization to avoid the push/pop here
+	 * (push r4+lr first during save sequence and
+	 *  leave them on stack during POP_GPRS then
+	 *  return from here using a "pop {r4, pc}"
+	 *  instead of "bx lr")
+	 */
+	push		{ r4, lr }
+	bl		z_arm_pm_s2ram_restore_scb_mpu
+	bl		z_arm_pm_s2ram_enable_and_restore_fpu
+	pop		{ r4, lr }
 
 	/*
 	 * Set the return value and return
