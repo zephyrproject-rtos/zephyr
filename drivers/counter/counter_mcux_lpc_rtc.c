@@ -99,9 +99,6 @@ static int mcux_lpc_rtc_stop(const struct device *dev)
 
 	RTC_EnableTimer(config->base, false);
 
-	/* clear out any set alarms */
-	RTC_SetSecondsTimerMatch(config->base, 0);
-
 	return 0;
 }
 
@@ -255,9 +252,11 @@ static DEVICE_API(counter, mcux_rtc_driver_api) = {
 			DT_INST_IRQ(id, priority),				\
 			mcux_lpc_rtc_isr, DEVICE_DT_INST_GET(id), 0);		\
 		irq_enable(DT_INST_IRQN(id));					\
-		if (DT_INST_PROP(id, wakeup_source)) {				\
-			EnableDeepSleepIRQ(DT_INST_IRQN(id));			\
-		}								\
+		IF_ENABLED(CONFIG_PM, (						\
+			if (DT_INST_PROP(id, wakeup_source)) {			\
+				EnableDeepSleepIRQ(DT_INST_IRQN(id));		\
+			}							\
+		))								\
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(COUNTER_LPC_RTC_DEVICE)
@@ -431,9 +430,11 @@ static DEVICE_API(counter, mcux_rtc_highres_driver_api) = {
 			mcux_lpc_rtc_isr,							\
 			DEVICE_DT_INST_GET(n), 0);						\
 		irq_enable(DT_IRQN(DT_INST_PARENT(n)));						\
-		if (DT_INST_PROP(n, wakeup_source)) {						\
-			EnableDeepSleepIRQ(DT_IRQN(DT_INST_PARENT(n)));				\
-		}										\
+		IF_ENABLED(CONFIG_PM, (								\
+			if (DT_INST_PROP(n, wakeup_source)) {					\
+				EnableDeepSleepIRQ(DT_IRQN(DT_INST_PARENT(n)));			\
+			}									\
+		))										\
 	} while (false)
 
 #define COUNTER_LPC_RTC_HIGHRES_DEVICE(id)							\
