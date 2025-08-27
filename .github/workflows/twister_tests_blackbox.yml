@@ -51,7 +51,7 @@ jobs:
         toolchains: all
 
     - name: Run Pytest For Twister Black Box Tests
-      if: ${{ startsWith(runner.os, 'ubuntu') }}
+      if: ${{ runner.os == 'Linux' }}
       working-directory: zephyr
       shell: bash
       env:
