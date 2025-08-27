@@ -12,7 +12,7 @@ from unittest import mock
 import pytest
 
 from contextlib import nullcontext
-from pykwalify.errors import SchemaError
+from jsonschema import ValidationError
 
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))
@@ -171,7 +171,7 @@ TESTDATA_2 = [
     ),
     (
         ['m0', 'm5'],
-        SchemaError(), # Unknown message as this is raised externally
+        ValidationError(""), # Unknown message as this is raised externally
         None,
     ),
 ]

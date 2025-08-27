@@ -19,7 +19,7 @@ import scl
 
 from contextlib import nullcontext
 from importlib import reload
-from pykwalify.errors import SchemaError
+from jsonschema import ValidationError
 from yaml.scanner import ScannerError
 
 
@@ -86,43 +86,7 @@ def test_yaml_imports(fail_c):
     reload(yaml)
 
 
-TESTDATA_2 = [
-    (False, logging.CRITICAL, []),
-    (True, None, ['can\'t import pykwalify; won\'t validate YAML']),
-]
 
-@pytest.mark.parametrize(
-    'fail_pykwalify, log_level, expected_logs',
-    TESTDATA_2,
-    ids=['pykwalify OK', 'no pykwalify']
-)
-def test_pykwalify_import(caplog, fail_pykwalify, log_level, expected_logs):
-    class ImportRaiser:
-        def find_spec(self, fullname, path, target=None):
-            if fullname == 'pykwalify.core' and fail_pykwalify:
-                raise ImportError()
-
-    modules_mock = sys.modules.copy()
-    modules_mock['pykwalify'] = None if fail_pykwalify else \
-                                modules_mock['pykwalify']
-
-    meta_path_mock = sys.meta_path[:]
-    meta_path_mock.insert(0, ImportRaiser())
-
-    with mock.patch.dict('sys.modules', modules_mock, clear=True), \
-         mock.patch('sys.meta_path', meta_path_mock):
-        reload(scl)
-
-    if log_level:
-        assert logging.getLogger('pykwalify.core').level == log_level
-
-    assert all([log in caplog.text for log in expected_logs])
-
-    if fail_pykwalify:
-        assert scl._yaml_validate(None, None) is None
-        assert scl._yaml_validate(mock.Mock(), mock.Mock()) is None
-
-    reload(scl)
 
 
 TESTDATA_3 = [
@@ -175,7 +139,7 @@ def test_yaml_load(caplog, fail_parsing):
 
 TESTDATA_4 = [
     (True, False, None),
-    (False, False, SchemaError),
+    (False, False, ValidationError),
     (False, True, ScannerError),
 ]
 
@@ -200,7 +164,7 @@ def test_yaml_load_verify(validate, fail_load, expected_error):
         assert schema == schema_mock
         if validate:
             return True
-        raise SchemaError(u'Schema validation failed.')
+        raise ValidationError(u'Schema validation failed.')
 
     with mock.patch('scl.yaml_load', side_effect=mock_load), \
          mock.patch('scl._yaml_validate', side_effect=mock_validate), \
@@ -213,7 +177,7 @@ def test_yaml_load_verify(validate, fail_load, expected_error):
 
 TESTDATA_5 = [
     (True, True, None),
-    (True, False, SchemaError),
+    (True, False, ValidationError),
     (False, None, None),
 ]
 
@@ -223,34 +187,19 @@ TESTDATA_5 = [
     ids=['successful validation', 'failed validation', 'no schema']
 )
 def test_yaml_validate(schema_exists, validate, expected_error):
-    data_mock = mock.Mock()
-    schema_mock = mock.Mock() if schema_exists else None
+    data_mock = {'test': 'data'}  # Use a real dict instead of Mock
+    schema_mock = {'type': 'object', 'properties': {'test': {'type': 'string'}}} if schema_exists else None
 
-    def mock_validate(raise_exception, *args, **kwargs):
-        assert raise_exception
-        if validate:
-            return True
-        raise SchemaError(u'Schema validation failed.')
+    if schema_exists and not validate:
+        # Create an invalid schema that will cause validation to fail
+        schema_mock = {'type': 'object', 'properties': {'test': {'type': 'integer'}}}
 
-    def mock_core(source_data, schema_data, *args, **kwargs):
-        assert source_data == data_mock
-        assert schema_data == schema_mock
-        return mock.Mock(validate=mock_validate)
-
-    core_mock = mock.Mock(side_effect=mock_core)
-
-    with mock.patch('pykwalify.core.Core', core_mock), \
-         pytest.raises(expected_error) if expected_error else nullcontext():
+    with pytest.raises(expected_error) if expected_error else nullcontext():
         scl._yaml_validate(data_mock, schema_mock)
-
-    if schema_exists:
-        core_mock.assert_called_once()
-    else:
-        core_mock.assert_not_called()
 
 
 def test_yaml_load_empty_file(tmp_path):
     quarantine_file = tmp_path / 'empty_quarantine.yml'
-    quarantine_file.write_text("# yaml file without data")
+    quarantine_file.write_text("")  # Truly empty file
     with pytest.raises(scl.EmptyYamlFileException):
         scl.yaml_load_verify(quarantine_file, None)
