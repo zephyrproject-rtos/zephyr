@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2021  Grinn
+ * Copyright 2021 Grinn
+ * Copyright 2025 Nova Dynamics LLC
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,14 +8,14 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_INA2XX_INA237_H_
 #define ZEPHYR_DRIVERS_SENSOR_INA2XX_INA237_H_
 
+#include "ina2xx_common.h"
 #include "ina2xx_trigger.h"
-
-#include <stdint.h>
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
-#include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/sensor.h>
+
+#define INA237_DT_CONFIG(inst) DT_INST_PROP_OR(inst, high_precision, 0) << 4
 
 #define INA237_REG_CONFIG     0x00
 #define INA237_CFG_HIGH_PRECISION	BIT(4)
@@ -35,27 +36,15 @@
 #define INA237_REG_PWR_LIMIT  0x11
 #define INA237_REG_MANUFACTURER_ID 0x3E
 
-#define INA237_MANUFACTURER_ID 0x5449
-
 struct ina237_data {
+	struct ina2xx_data common;
 	const struct device *dev;
-	int16_t current;
-	uint16_t bus_voltage;
-	uint32_t power;
-	int16_t die_temp;
-#ifdef CONFIG_INA237_VSHUNT
-	int16_t shunt_voltage;
-#endif
 	enum sensor_channel chan;
 	struct ina2xx_trigger trigger;
 };
 
 struct ina237_config {
-	struct i2c_dt_spec bus;
-	uint16_t config;
-	uint16_t adc_config;
-	uint32_t current_lsb;
-	uint16_t cal;
+	const struct ina2xx_config common;
 	const struct gpio_dt_spec alert_gpio;
 	uint16_t alert_config;
 };
