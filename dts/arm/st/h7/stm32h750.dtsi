@@ -11,6 +11,4 @@
 	soc {
 		compatible = "st,stm32h750", "st,stm32h7", "simple-bus";
 	};
-
-
 };
