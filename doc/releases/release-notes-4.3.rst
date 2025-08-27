@@ -63,6 +63,9 @@ Deprecated APIs and options
 
 * :dtcompatible:`maxim,ds3231` is deprecated in favor of :dtcompatible:`maxim,ds3231-rtc`.
 
+* :c:enum:`bt_hci_bus` was deprecated as it was not used. :c:macro:`BT_DT_HCI_BUS_GET` should be
+  used instead.
+
 New APIs and options
 ====================
 
