@@ -217,7 +217,7 @@ static const struct ethernet_api netc_eth_api = {.iface_api.init = netc_eth_ifac
 			(.tx_intr_msg_data = NETC_TX_INTR_MSG_DATA_START + n,                      \
 			.rx_intr_msg_data = NETC_RX_INTR_MSG_DATA_START + n,))                     \
 		IF_ENABLED(CONFIG_PTP_CLOCK_NXP_NETC,				                   \
-			(.ptp_clock = DEVICE_DT_GET(DT_INST_PHANDLE(n, ptp_clock)),))              \
+			(.ptp_clock = DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(n, ptp_clock)),))      \
 	};                                                                                         \
 	ETH_NET_DEVICE_DT_INST_DEFINE(n, netc_eth_init, NULL, &netc_eth##n##_data,                 \
 				      &netc_eth##n##_config, CONFIG_ETH_INIT_PRIORITY,             \

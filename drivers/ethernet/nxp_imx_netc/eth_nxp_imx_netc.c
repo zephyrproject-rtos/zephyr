@@ -246,7 +246,9 @@ int netc_eth_init_common(const struct device *dev)
 	config->bdr_init(&bdr_config, &rx_bdr_config, &tx_bdr_config);
 
 #ifdef CONFIG_PTP_CLOCK_NXP_NETC
-	bdr_config.rxBdrConfig[0].extendDescEn = true;
+	if (netc_eth_get_ptp_clock(dev) != NULL) {
+		bdr_config.rxBdrConfig[0].extendDescEn = true;
+	}
 #endif
 
 	/* MSIX entry configuration */
@@ -377,6 +379,8 @@ int netc_eth_tx(const struct device *dev, struct net_pkt *pkt)
 	size_t pkt_len = net_pkt_get_len(pkt);
 #if defined(NETC_HAS_NO_SWITCH_TAG_SUPPORT)
 	struct ethernet_context *eth_ctx = net_if_l2_data(data->iface);
+#endif
+#if defined(NETC_HAS_NO_SWITCH_TAG_SUPPORT) || defined(CONFIG_PTP_CLOCK_NXP_NETC)
 	const struct netc_eth_config *cfg = dev->config;
 #endif
 	status_t result;
@@ -404,7 +408,8 @@ int netc_eth_tx(const struct device *dev, struct net_pkt *pkt)
 
 #ifdef CONFIG_PTP_CLOCK_NXP_NETC
 	pkt_is_gptp = ntohs(NET_ETH_HDR(pkt)->type) == NET_ETH_PTYPE_PTP;
-	if (pkt_is_gptp || net_pkt_is_tx_timestamping(pkt)) {
+	if ((pkt_is_gptp || net_pkt_is_tx_timestamping(pkt)) &&
+	    (netc_eth_get_ptp_clock(dev) != NULL)) {
 		opt.flags |= kEP_TX_OPT_REQ_TS;
 	}
 #endif
@@ -487,14 +492,16 @@ enum ethernet_hw_caps netc_eth_get_capabilities(const struct device *dev)
 #if defined(CONFIG_NET_VLAN)
 		| ETHERNET_HW_VLAN
 #endif
-#if defined(CONFIG_PTP_CLOCK_NXP_NETC)
-		| ETHERNET_PTP
-#endif
 #if defined(CONFIG_NET_PROMISCUOUS_MODE)
 		| ETHERNET_PROMISC_MODE
 #endif
 	);
 
+#if defined(CONFIG_PTP_CLOCK_NXP_NETC)
+	if (netc_eth_get_ptp_clock(dev) != NULL) {
+		caps |= ETHERNET_PTP;
+	}
+#endif
 	return caps;
 }
 
