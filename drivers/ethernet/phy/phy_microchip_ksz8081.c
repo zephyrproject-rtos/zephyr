@@ -56,6 +56,7 @@ struct mc_ksz8081_config {
 /* arbitrarily defined internal driver flags */
 #define KSZ8081_DO_AUTONEG_FLAG 0x1
 #define KSZ8081_SILENCE_DEBUG_LOGS 0x2
+#define KSZ8081_LINK_STATE_VALID 0x3
 
 struct mc_ksz8081_data {
 	const struct device *dev;
@@ -181,11 +182,28 @@ done:
 	return ret;
 }
 
+
 static int phy_mc_ksz8081_get_link(const struct device *dev,
 					struct phy_link_state *state)
 {
+	struct mc_ksz8081_data *data = dev->data;
+	struct phy_link_state *link_state = &data->state;
+
+	if ((data->flags & KSZ8081_LINK_STATE_VALID) != KSZ8081_LINK_STATE_VALID) {
+		return -EIO;
+	}
+
+	state->speed = link_state->speed;
+	state->is_up = link_state->is_up;
+
+	return 0;
+}
+
+static int phy_mc_ksz8081_update_link(const struct device *dev)
+{
 	const struct mc_ksz8081_config *config = dev->config;
 	struct mc_ksz8081_data *data = dev->data;
+	struct phy_link_state *state = &data->state;
 	int ret;
 	uint32_t bmsr = 0;
 	uint32_t anar = 0;
@@ -443,7 +461,7 @@ static void phy_mc_ksz8081_monitor_work_handler(struct k_work *work)
 		CONTAINER_OF(dwork, struct mc_ksz8081_data, phy_monitor_work);
 	const struct device *dev = data->dev;
 	const struct mc_ksz8081_config *config = dev->config;
-	struct phy_link_state state = {};
+	struct phy_link_state state = data->state;
 	bool turn_on_logs = false;
 	int rc = 0;
 
@@ -462,12 +480,15 @@ static void phy_mc_ksz8081_monitor_work_handler(struct k_work *work)
 		turn_on_logs = true;
 	}
 
-	rc = phy_mc_ksz8081_get_link(dev, &state);
+	data->flags &= ~KSZ8081_LINK_STATE_VALID;
+	rc = phy_mc_ksz8081_update_link(dev);
+	if (rc == 0) {
+		data->flags |= KSZ8081_LINK_STATE_VALID;
+	}
 	if (!turn_on_logs) {
 		turn_on_logs = (rc != 0);
 	}
 	if (rc == 0 && memcmp(&state, &data->state, sizeof(struct phy_link_state)) != 0) {
-		memcpy(&data->state, &state, sizeof(struct phy_link_state));
 		if (data->cb) {
 			data->cb(dev, &data->state, data->cb_data);
 		}
