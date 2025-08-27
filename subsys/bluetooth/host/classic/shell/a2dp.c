@@ -408,6 +408,15 @@ void app_suspend_rsp(struct bt_a2dp_stream *stream, uint8_t rsp_err_code)
 	}
 }
 
+void app_delay_report_rsp(struct bt_a2dp_stream *stream, uint8_t rsp_err_code)
+{
+	if (rsp_err_code == 0) {
+		bt_shell_print("success to send delay report");
+	} else {
+		bt_shell_print("fail to send delay report");
+	}
+}
+
 void stream_configured(struct bt_a2dp_stream *stream)
 {
 	bt_shell_print("stream configured");
@@ -473,6 +482,7 @@ struct bt_a2dp_cb a2dp_cb = {
 	.suspend_req = app_suspend_req,
 	.suspend_rsp = app_suspend_rsp,
 	.reconfig_req = app_reconfig_req,
+	.delay_report_rsp = app_delay_report_rsp,
 };
 
 static int cmd_register_cb(const struct shell *sh, int32_t argc, char *argv[])
@@ -768,6 +778,30 @@ static int cmd_abort(const struct shell *sh, int32_t argc, char *argv[])
 	return 0;
 }
 
+static int cmd_delay(const struct shell *sh, int32_t argc, char *argv[])
+{
+#if defined(CONFIG_BT_A2DP_SINK)
+	int err = 0;
+	uint16_t delay;
+
+	if (a2dp_initied == 0) {
+		shell_print(sh, "need to register a2dp connection callbacks");
+		return -ENOEXEC;
+	}
+
+	delay = (uint16_t)shell_strtoul(argv[1], 0, &err);
+	if (err != 0) {
+		shell_error(sh, "failed to parse delay: %d", err);
+		return -ENOEXEC;
+	}
+
+	if (bt_a2dp_stream_delay_report(&sbc_stream, delay) != 0) {
+		shell_print(sh, "fail");
+	}
+#endif
+	return 0;
+}
+
 static int cmd_send_media(const struct shell *sh, int32_t argc, char *argv[])
 {
 #if defined(CONFIG_BT_A2DP_SOURCE)
@@ -815,6 +849,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(a2dp_cmds,
 	SHELL_CMD_ARG(start, NULL, "\"start the stream\"", cmd_start, 1, 0),
 	SHELL_CMD_ARG(suspend, NULL, "\"suspend the stream\"", cmd_suspend, 1, 0),
 	SHELL_CMD_ARG(abort, NULL, "\"abort the stream\"", cmd_abort, 1, 0),
+	SHELL_CMD_ARG(delay, NULL, "\"send delay report\"", cmd_delay, 2, 0),
 	SHELL_CMD_ARG(send_media, NULL, HELP_NONE, cmd_send_media, 1, 0),
 	SHELL_SUBCMD_SET_END
 );

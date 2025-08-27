@@ -430,7 +430,22 @@ static void avdtp_get_capabilities_rsp(struct bt_avdtp *session, struct net_buf 
 	k_work_cancel_delayable(&session->timeout_work);
 	avdtp_set_status(req, buf, msg_type);
 	bt_avdtp_clear_req(session);
+	if (req->func != NULL) {
+		req->func(req, buf);
+	}
+}
 
+static void avdtp_delay_report_rsp(struct bt_avdtp *session, struct net_buf *buf, uint8_t msg_type)
+{
+	struct bt_avdtp_req *req = session->req;
+
+	if (req == NULL) {
+		return;
+	}
+
+	k_work_cancel_delayable(&session->timeout_work);
+	avdtp_set_status(req, buf, msg_type);
+	bt_avdtp_clear_req(session);
 	if (req->func != NULL) {
 		req->func(req, buf);
 	}
@@ -1146,7 +1161,7 @@ void (*rsp_handler[])(struct bt_avdtp *session, struct net_buf *buf, uint8_t msg
 	avdtp_abort_rsp,             /* BT_AVDTP_ABORT */
 	NULL,                        /* BT_AVDTP_SECURITY_CONTROL */
 	avdtp_get_capabilities_rsp,  /* BT_AVDTP_GET_ALL_CAPABILITIES */
-	NULL,                        /* BT_AVDTP_DELAYREPORT */
+	avdtp_delay_report_rsp,      /* BT_AVDTP_DELAYREPORT */
 };
 
 int bt_avdtp_l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
@@ -1185,7 +1200,6 @@ int bt_avdtp_l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		/* discard the continue packet and end packet */
 		return -EINVAL;
 	}
-
 	if (msgtype == BT_AVDTP_CMD) {
 		if (sigid != 0U && sigid <= BT_AVDTP_DELAYREPORT &&
 		    cmd_handler[sigid - 1U] != NULL) {
@@ -1206,9 +1220,8 @@ int bt_avdtp_l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 				session->req->sig, session->req->tid);
 			return -EINVAL;
 		}
-
 		if (sigid != 0U && sigid <= BT_AVDTP_DELAYREPORT &&
-		    cmd_handler[sigid - 1U] != NULL) {
+		    rsp_handler[sigid - 1U] != NULL) {
 			rsp_handler[sigid - 1U](session, buf, msgtype);
 			return 0;
 		}
@@ -1677,6 +1690,36 @@ int bt_avdtp_abort(struct bt_avdtp *session, struct bt_avdtp_ctrl_params *param)
 				     AVDTP_CLOSING);
 }
 
+int bt_avdtp_delay_report(struct bt_avdtp *session, struct bt_avdtp_delay_report_params *param)
+{
+	struct net_buf *buf;
+	int err;
+
+	LOG_DBG("");
+	if (!session) {
+		LOG_DBG("Error: parameters not valid");
+		return -EINVAL;
+	}
+
+	buf = avdtp_create_pdu(BT_AVDTP_CMD, BT_AVDTP_PACKET_TYPE_SINGLE, BT_AVDTP_DELAYREPORT);
+	if (!buf) {
+		LOG_ERR("Error: No Buff available");
+		return -ENOMEM;
+	}
+
+	/* Body of the message */
+	/* ACP Stream Endpoint ID */
+	net_buf_add_u8(buf, (param->acp_stream_ep_id << 2U));
+	/* Delay */
+	net_buf_add_be16(buf, param->delay);
+
+	err = avdtp_send(session, buf, &param->req);
+	if (err) {
+		net_buf_unref(buf);
+	}
+
+	return err;
+}
 int bt_avdtp_send_media_data(struct bt_avdtp_sep *sep, struct net_buf *buf)
 {
 	int err;

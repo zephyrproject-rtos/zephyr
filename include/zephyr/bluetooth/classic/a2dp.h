@@ -578,6 +578,15 @@ struct bt_a2dp_cb {
 	 *                          bt_a2dp_err_code or bt_avdtp_err_code
 	 */
 	void (*abort_rsp)(struct bt_a2dp_stream *stream, uint8_t rsp_err_code);
+	/** @brief Callback function for bt_a2dp_stream_delay_report()
+	 *
+	 *  Called when the delay report procedure is completed.
+	 *
+	 *  @param[in] stream    Pointer to stream object.
+	 *  @param[in] rsp_err_code the remote responded error code
+	 *                          bt_a2dp_err_code or bt_avdtp_err_code
+	 */
+	void (*delay_report_rsp)(struct bt_a2dp_stream *stream, uint8_t rsp_err_code);
 };
 
 /** @brief A2DP Connect.
@@ -855,6 +864,17 @@ uint32_t bt_a2dp_get_mtu(struct bt_a2dp_stream *stream);
 int bt_a2dp_stream_send(struct bt_a2dp_stream *stream, struct net_buf *buf, uint16_t seq_num,
 			uint32_t ts);
 
+/** @brief send a2dp delay report command
+ *
+ * Only A2DP sink side can call this function. A first Delay Report shall be sent immediately after
+ * the SEP has been configured.
+ *
+ *  @param stream The stream object.
+ *  @param delay  The delay value in 1/10 milliseconds.
+ *
+ *  @return 0 in case of success and error code in case of error.
+ */
+int bt_a2dp_stream_delay_report(struct bt_a2dp_stream *stream, uint16_t delay);
 #ifdef __cplusplus
 }
 #endif

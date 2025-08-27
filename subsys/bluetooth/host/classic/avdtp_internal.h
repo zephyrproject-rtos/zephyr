@@ -167,6 +167,13 @@ struct bt_avdtp_set_configuration_params {
 	uint8_t *codec_specific_ie;
 };
 
+struct bt_avdtp_delay_report_params {
+	struct bt_avdtp_req req;
+	struct bt_avdtp_sep *sep;
+	uint8_t acp_stream_ep_id;
+	uint16_t delay;
+};
+
 /* avdtp_open, avdtp_close, avdtp_start, avdtp_suspend */
 struct bt_avdtp_ctrl_params {
 	struct bt_avdtp_req req;
@@ -271,6 +278,9 @@ int bt_avdtp_suspend(struct bt_avdtp *session, struct bt_avdtp_ctrl_params *para
 
 /* AVDTP ABORT */
 int bt_avdtp_abort(struct bt_avdtp *session, struct bt_avdtp_ctrl_params *param);
+
+/* AVDTP Delay Report */
+int bt_avdtp_delay_report(struct bt_avdtp *session, struct bt_avdtp_delay_report_params *param);
 
 /* AVDTP send data */
 int bt_avdtp_send_media_data(struct bt_avdtp_sep *sep, struct net_buf *buf);

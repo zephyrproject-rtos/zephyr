@@ -38,6 +38,9 @@
 #define SET_CONF_REQ(_req) CONTAINER_OF(_req, struct bt_avdtp_set_configuration_params, req)
 #define SET_CONF_PARAM(_set_conf_param)                                                            \
 	CONTAINER_OF(_set_conf_param, struct bt_a2dp, set_config_param)
+#define DELAY_REPORT_REQ(_req) CONTAINER_OF(_req, struct bt_avdtp_delay_report_params, req)
+#define DELAY_REPORT_PARAM(_delay_report_param)                                                    \
+	CONTAINER_OF(_delay_report_param, struct bt_a2dp, delay_report_param)
 #define CTRL_REQ(_req)          CONTAINER_OF(_req, struct bt_avdtp_ctrl_params, req)
 #define CTRL_PARAM(_ctrl_param) CONTAINER_OF(_ctrl_param, struct bt_a2dp, ctrl_param)
 
@@ -64,6 +67,7 @@ struct bt_a2dp {
 	struct bt_a2dp_discover_param *discover_cb_param;
 	struct bt_avdtp_get_capabilities_params get_capabilities_param;
 	struct bt_avdtp_set_configuration_params set_config_param;
+	struct bt_avdtp_delay_report_params delay_report_param;
 	struct bt_avdtp_ctrl_params ctrl_param;
 	uint8_t get_cap_index;
 	enum bt_a2dp_internal_state a2dp_state;
@@ -139,6 +143,11 @@ static int a2dp_get_capabilities_ind(struct bt_avdtp *session, struct bt_avdtp_s
 	/* Service Category: Media Transport */
 	net_buf_add_u8(rsp_buf, BT_AVDTP_SERVICE_MEDIA_TRANSPORT);
 	net_buf_add_u8(rsp_buf, 0);
+	if (get_all_caps && sep->sep_info.tsep == BT_AVDTP_SINK) {
+		/* Service Category: Delay Reporting */
+		net_buf_add_u8(rsp_buf, BT_AVDTP_SERVICE_DELAY_REPORTING);
+		net_buf_add_u8(rsp_buf, 0);
+	}
 	/* Service Category: Media Codec */
 	net_buf_add_u8(rsp_buf, BT_AVDTP_SERVICE_MEDIA_CODEC);
 	ep = CONTAINER_OF(sep, struct bt_a2dp_ep, sep);
@@ -863,7 +872,20 @@ static int bt_a2dp_abort_cb(struct bt_avdtp_req *req, struct net_buf *buf)
 
 	return bt_a2dp_ctrl_cb(req, rsp_cb, done_cb, true);
 }
+#if defined(CONFIG_BT_A2DP_SINK)
+static int bt_a2dp_delay_report_cb(struct bt_avdtp_req *req, struct net_buf *buf)
+{
+	struct bt_a2dp_ep *ep = CONTAINER_OF(DELAY_REPORT_REQ(req)->sep, struct bt_a2dp_ep, sep);
 
+	LOG_DBG("delay report result:%d", req->status);
+
+	if ((a2dp_cb != NULL) && (a2dp_cb->delay_report_rsp != NULL)) {
+		a2dp_cb->delay_report_rsp(ep->stream, req->status);
+	}
+
+	return 0;
+}
+#endif
 static int bt_a2dp_stream_ctrl_pre(struct bt_a2dp_stream *stream, bt_avdtp_func_t cb)
 {
 	struct bt_a2dp *a2dp;
@@ -999,7 +1021,28 @@ int bt_a2dp_stream_send(struct bt_a2dp_stream *stream, struct net_buf *buf, uint
 	return bt_avdtp_send_media_data(&stream->local_ep->sep, buf);
 }
 #endif
+#if defined(CONFIG_BT_A2DP_SINK)
+int bt_a2dp_stream_delay_report(struct bt_a2dp_stream *stream, uint16_t delay)
+{
+	struct bt_a2dp *a2dp;
 
+	if ((stream == NULL) || (stream->a2dp == NULL)) {
+		return -EINVAL;
+	}
+
+	a2dp = stream->a2dp;
+
+	memset(&a2dp->delay_report_param, 0U, sizeof(a2dp->delay_report_param));
+	a2dp->delay_report_param.req.func = bt_a2dp_delay_report_cb;
+	a2dp->delay_report_param.acp_stream_ep_id = stream->remote_ep != NULL
+							    ? stream->remote_ep->sep.sep_info.id
+							    : stream->remote_ep_id;
+	a2dp->delay_report_param.sep = &stream->local_ep->sep;
+	a2dp->delay_report_param.delay = delay;
+
+	return bt_avdtp_delay_report(&a2dp->session, &a2dp->delay_report_param);
+}
+#endif
 int a2dp_stream_l2cap_disconnected(struct bt_avdtp *session, struct bt_avdtp_sep *sep)
 {
 	struct bt_a2dp_ep *ep;
