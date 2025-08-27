@@ -616,6 +616,14 @@ int rfid_iso14443a_exchange(const struct device *dev, struct rfid_iso14443a_info
 			if (block + 1 == num_blocks) {
 				tx_frame[0] &= ~RFID_ISO14443_PCB_IBLOCK_CHAINING;
 			}
+
+			if (tx_data_len < block * tx_data_size) {
+				LOG_ERR("Invalid block size, (%d) (%d)", tx_data_len,
+					(block * tx_data_size));
+				ret = -ENOMEM;
+				goto unlock;
+			}
+
 			block_size =
 				hdr_len + MIN(tx_data_size, tx_data_len - (block * tx_data_size));
 
@@ -704,7 +712,8 @@ int rfid_iso14443a_exchange(const struct device *dev, struct rfid_iso14443a_info
 		}
 
 		if ((rx_frame[0] & RFID_ISO14443_PCB_RBLOCK_NAK) == 0U &&
-		    ((tx_frame[0] ^ rx_frame[0]) & RFID_ISO14443_PCB_BLOCK_NUM) == 0U) {
+		    ((tx_frame[0] ^ rx_frame[0]) & RFID_ISO14443_PCB_BLOCK_NUM) == 0U &&
+		    (tx_frame[0] & RFID_ISO14443_PCB_IBLOCK_CHAINING) != 0U) {
 			block++;
 			retry_cnt = 0U;
 
