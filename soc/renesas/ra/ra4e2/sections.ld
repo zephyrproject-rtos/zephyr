@@ -12,35 +12,35 @@
 SECTION_DATA_PROLOGUE(.option_setting_ofs0, DT_REG_ADDR(DT_NODELABEL(option_setting_ofs0)),)
 {
 	KEEP(*(.option_setting_ofs0))
-} GROUP_LINK_IN(OFS_CONF_MEMORY)
+} GROUP_LINK_IN(OPTION_SETTING_OFS0_MEMORY)
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(option_setting_osis))
 SECTION_DATA_PROLOGUE(.option_setting_osis, DT_REG_ADDR(DT_NODELABEL(option_setting_osis)),)
 {
 	KEEP(*(.option_setting_osis))
-} GROUP_LINK_IN(OFS_CONF_MEMORY)
+} GROUP_LINK_IN(OPTION_SETTING_OSIS_MEMORY)
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(option_setting_ofs1_sec))
 SECTION_DATA_PROLOGUE(.option_setting_ofs1_sec, DT_REG_ADDR(DT_NODELABEL(option_setting_ofs1_sec)),)
 {
 	KEEP(*(.option_setting_ofs1_sec))
-} GROUP_LINK_IN(OFS_CONF_MEMORY)
+} GROUP_LINK_IN(OPTION_SETTING_OFS1_SEC_MEMORY)
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(option_setting_bps_sec))
 SECTION_DATA_PROLOGUE(.option_setting_bps_sec, DT_REG_ADDR(DT_NODELABEL(option_setting_bps_sec)),)
 {
 	KEEP(*(.option_setting_bps_sec))
-} GROUP_LINK_IN(OFS_CONF_MEMORY)
+} GROUP_LINK_IN(OPTION_SETTING_BPS_SEC_MEMORY)
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(option_setting_pbps_sec))
 SECTION_DATA_PROLOGUE(.option_setting_pbps_sec, DT_REG_ADDR(DT_NODELABEL(option_setting_pbps_sec)),)
 {
 	KEEP(*(.option_setting_pbps_sec))
-} GROUP_LINK_IN(OFS_CONF_MEMORY)
+} GROUP_LINK_IN(OPTION_SETTING_PBPS_SEC_MEMORY)
 #endif
 
 #endif /* option_setting_ofs_conf */
