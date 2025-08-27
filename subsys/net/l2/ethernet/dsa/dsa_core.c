@@ -29,11 +29,42 @@ int dsa_xmit(const struct device *dev, struct net_pkt *pkt)
 	struct net_if *iface_conduit = dsa_switch_ctx->iface_conduit;
 	const struct device *dev_conduit = net_if_get_device(iface_conduit);
 	const struct ethernet_api *eth_api_conduit = dev_conduit->api;
+	struct net_pkt *dsa_pkt;
+	struct net_pkt *clone;
+	int ret;
+
+#ifdef CONFIG_NET_L2_PTP
+	/* Handle TX timestamp if defines */
+	if (ntohs(NET_ETH_HDR(pkt)->type) == NET_ETH_PTYPE_PTP &&
+	    dsa_switch_ctx->dapi->port_txtstamp != NULL) {
+		ret = dsa_switch_ctx->dapi->port_txtstamp(dev, pkt);
+		if (ret != 0) {
+			return ret;
+		}
+	}
+#endif
+	/*
+	 * In case of using TX pkt in other places, pkt should not be changed.
+	 * Here just clone pkt to use for tagging and sending.
+	 * It could be optimized here for performance in the future if some mechanism
+	 * implemented marks whether the pkt data will be accessed or not in other
+	 * places after sending.
+	 */
+	clone = net_pkt_clone(pkt, K_NO_WAIT);
+	if (clone == NULL) {
+		return -ENOBUFS;
+	}
+
 	/* Tag protocol handles pkt first */
-	struct net_pkt *dsa_pkt = dsa_tag_xmit(iface, pkt);
+	dsa_pkt = dsa_tag_xmit(iface, clone);
 
 	/* Transmit from conduit port */
-	return eth_api_conduit->send(dev_conduit, dsa_pkt);
+	ret = eth_api_conduit->send(dev_conduit, dsa_pkt);
+
+	/* Release the cloned pkt */
+	net_pkt_unref(clone);
+
+	return ret;
 }
 
 int dsa_eth_init(struct net_if *iface)

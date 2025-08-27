@@ -117,6 +117,13 @@ struct dsa_api {
 	/** Port generates random mac address */
 	void (*port_generate_random_mac)(uint8_t *mac_addr);
 
+#if defined(CONFIG_NET_L2_PTP) || defined(__DOXYGEN__)
+	/**
+	 * Port TX timestamp handling
+	 * @kconfig_dep{CONFIG_NET_L2_PTP}
+	 */
+	int (*port_txtstamp)(const struct device *dev, struct net_pkt *pkt);
+#endif
 	/** Switch setup */
 	int (*switch_setup)(const struct dsa_switch_context *dsa_switch_ctx);
 
@@ -142,6 +149,13 @@ struct dsa_port_config {
 	const int tag_proto;
 	/** Ethernet device connected to the port */
 	const struct device *ethernet_connection;
+#if defined(CONFIG_NET_L2_PTP) || defined(__DOXYGEN__)
+	/**
+	 * PTP clock used on the port
+	 * @kconfig_dep{CONFIG_NET_L2_PTP}
+	 */
+	const struct device *ptp_clock;
+#endif
 	/** Instance specific config */
 	void *prv_config;
 };
