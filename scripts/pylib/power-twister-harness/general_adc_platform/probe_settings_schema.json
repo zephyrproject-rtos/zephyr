@@ -1,0 +1,88 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "probe_settings_schema.json",
+  "title": "Probe Settings Schema",
+  "description": "Schema for validating probe_settings.yaml configuration files",
+  "type": "object",
+  "required": ["device_id", "routes", "calibration"],
+  "properties": {
+    "device_id": {
+      "type": "string",
+      "description": "Unique identifier for the ADC power monitor device",
+      "minLength": 1
+    },
+    "routes": {
+      "type": "array",
+      "description": "Array of measurement routes configuration",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "shunt_resistor", "gain", "type", "channels"],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Unique route identifier",
+            "minimum": 0
+          },
+          "name": {
+            "type": "string",
+            "description": "Human-readable name for the route",
+            "minLength": 1
+          },
+          "shunt_resistor": {
+            "type": "number",
+            "description": "Shunt resistor value in ohms",
+            "exclusiveMinimum": 0
+          },
+          "gain": {
+            "type": "number",
+            "description": "Amplifier gain value",
+            "exclusiveMinimum": 0
+          },
+          "type": {
+            "type": "string",
+            "description": "Measurement type",
+            "enum": ["single", "differential"]
+          },
+          "channels": {
+            "type": "object",
+            "description": "ADC channel configuration",
+            "required": ["channels_p", "channels_n"],
+            "properties": {
+              "channels_p": {
+                "type": "integer",
+                "description": "Positive channel number",
+                "minimum": 0
+              },
+              "channels_n": {
+                "type": "integer",
+                "description": "Negative channel number",
+                "minimum": 0
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "calibration": {
+      "type": "object",
+      "description": "Calibration parameters",
+      "required": ["offset", "scale"],
+      "properties": {
+        "offset": {
+          "type": "number",
+          "description": "Calibration offset value"
+        },
+        "scale": {
+          "type": "number",
+          "description": "Calibration scale factor",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
