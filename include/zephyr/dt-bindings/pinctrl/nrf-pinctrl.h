@@ -186,6 +186,16 @@
 #define NRF_FUN_TDM_SDOUT        76U
 /** TDM MCK */
 #define NRF_FUN_TDM_MCK          77U
+/** TPIU CLOCK */
+#define NRF_FUN_TPIU_CLOCK       78U
+/** TPIU DATA0 */
+#define NRF_FUN_TPIU_DATA0       79U
+/** TPIU DATA1 */
+#define NRF_FUN_TPIU_DATA1       80U
+/** TPIU DATA2 */
+#define NRF_FUN_TPIU_DATA2       81U
+/** TPIU DATA3 */
+#define NRF_FUN_TPIU_DATA3       82U
 
 /** @} */
 
