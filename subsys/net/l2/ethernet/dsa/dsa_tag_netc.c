@@ -9,7 +9,7 @@ LOG_MODULE_REGISTER(net_dsa_tag_netc, CONFIG_NET_DSA_LOG_LEVEL);
 
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/dsa_core.h>
-#include "dsa_tag_netc.h"
+#include <zephyr/net/dsa_tag_netc.h>
 #include "fsl_netc_tag.h"
 
 /* tag is inserted after DMAC/SMAC fields */
