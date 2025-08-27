@@ -1,0 +1,27 @@
+# Development dependencies for Power Twister Harness
+
+# Testing framework
+pytest>=6.0
+pytest-html>=3.1.0
+pytest-cov>=4.0.0
+pytest-mock>=3.10.0
+
+# Code quality and formatting
+black>=22.0.0
+flake8>=5.0.0
+isort>=5.10.0
+mypy>=0.991
+
+# Documentation
+sphinx>=5.0.0
+sphinx-rtd-theme>=1.2.0
+
+# Development utilities
+pre-commit>=2.20.0
+tox>=4.0.0
+
+# Core runtime dependencies (also needed for development)
+PyYAML>=5.4
+numpy>=1.20
+scipy>=1.7
+matplotlib>=3.3

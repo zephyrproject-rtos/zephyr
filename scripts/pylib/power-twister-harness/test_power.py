@@ -1,7 +1,9 @@
 # Copyright (c) 2024 Intel Corporation
+# Copyright 2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 import logging
+import os
 
 import pytest
 from abstract.PowerMonitor import PowerMonitor
@@ -10,9 +12,13 @@ from utils.UtilityFunctions import current_RMS
 
 logger = logging.getLogger(__name__)
 
+PROBE_CLASS = os.environ.get('PROBE_CLASS', 'stm_powershield')
 
-@pytest.mark.parametrize("probe_class", ['stm_powershield'], indirect=True)
-def test_power_harness(probe_class: PowerMonitor, test_data, request, dut: DeviceAdapter):
+
+@pytest.mark.parametrize("probe_class", [PROBE_CLASS], indirect=True)
+def test_power_harness(
+    probe_class: PowerMonitor, test_data, request, dut: DeviceAdapter, dft: DeviceAdapter
+):
     """
     This test measures and validates the RMS current values from the power monitor
     and compares them against expected RMS values.
@@ -22,6 +28,7 @@ def test_power_harness(probe_class: PowerMonitor, test_data, request, dut: Devic
     test_data -- Fixture to prepare data.
     request -- Request object that provides access to test configuration.
     dut -- The Device Under Test (DUT) that the power monitor is measuring.
+    dft -- the power shield handler
     """
 
     # Initialize the probe with the provided path
@@ -31,46 +38,57 @@ def test_power_harness(probe_class: PowerMonitor, test_data, request, dut: Devic
     measurements_dict = test_data
 
     # Start the measurement process with the provided duration
-    probe.measure(time=measurements_dict['measurement_duration'])
+    probe.measure(measurements_dict['measurement_duration'])
 
     # Retrieve the measured data
     data = probe.get_data()
 
-    # Calculate the RMS current values using utility functions
-    rms_values_measured = current_RMS(
-        data,
-        trim=measurements_dict['elements_to_trim'],
-        num_peaks=measurements_dict['num_of_transitions'],
-        peak_distance=measurements_dict['min_peak_distance'],
-        peak_height=measurements_dict['min_peak_height'],
-        padding=measurements_dict['peak_padding'],
-    )
+    if hasattr(probe, 'dump_voltage'):
+        assert probe.dump_voltage(dut.device_config.platform)
 
-    # Convert measured values from amps to milliamps for comparison
-    # Measured states: ['idle', 'state 0', 'state 1', 'state 2', 'active']
-    rms_values_in_milliamps = [value * 1e3 for value in rms_values_measured]
+    if hasattr(probe, 'dump_current'):
+        assert probe.dump_current(dut.device_config.platform)
+    else:
+        # Calculate the RMS current values using utility functions
+        rms_values_measured = current_RMS(
+            data,
+            trim=measurements_dict['elements_to_trim'],
+            num_peaks=measurements_dict['num_of_transitions'],
+            peak_distance=measurements_dict['min_peak_distance'],
+            peak_height=measurements_dict['min_peak_height'],
+            padding=measurements_dict['peak_padding'],
+        )
 
-    # Log the calculated values in milliamps for debugging purposes
-    logger.debug(f"Measured RMS values in mA: {rms_values_in_milliamps}")
-    logger.debug(f"Expected RMS values in mA: {measurements_dict['expected_rms_values']}")
+        # Convert measured values from amps to milliamps for comparison
+        # Measured states: ['idle', 'state 0', 'state 1', 'state 2', 'active']
+        rms_values_in_milliamps = [value * 1e3 for value in rms_values_measured]
 
-    tuples = zip(measurements_dict['expected_rms_values'], rms_values_in_milliamps, strict=False)
-    if not tuple:
-        pytest.skip('Measured values not provided')
+        # Log the calculated values in milliamps for debugging purposes
+        logger.debug(f"Measured RMS values in mA: {rms_values_in_milliamps}")
+        logger.debug(f"Expected RMS values in mA: {measurements_dict['expected_rms_values']}")
 
-    logger.debug("Check if measured values are in tolerance")
-    measure_passed = True
-    for expected_rms_value, measured_rms_value in tuples:
-        if not is_within_tolerance(
-            measured_rms_value, expected_rms_value, measurements_dict['tolerance_percentage']
-        ):
-            logger.error(f"Measured RMS value {measured_rms_value} mA is out of tolerance.")
-            measure_passed = False
+        tuples = zip(
+            measurements_dict['expected_rms_values'], rms_values_in_milliamps, strict=False
+        )
+        if not tuple:
+            pytest.skip('Measured values not provided')
 
-    assert measure_passed, (
-        f"Measured RMS value in mA is out of tolerance "
-        f"{measurements_dict['tolerance_percentage']} %"
-    )
+        logger.debug("Check if measured values are in tolerance")
+        measure_passed = True
+        for expected_rms_value, measured_rms_value in tuples:
+            if not is_within_tolerance(
+                measured_rms_value, expected_rms_value, measurements_dict['tolerance_percentage']
+            ):
+                logger.error(f"Measured RMS value {measured_rms_value} mA is out of tolerance.")
+                measure_passed = False
+
+        assert measure_passed, (
+            f"Measured RMS value in mA is out of tolerance "
+            f"{measurements_dict['tolerance_percentage']} %"
+        )
+
+    if hasattr(probe, 'dump_power'):
+        assert probe.dump_power(dut.device_config.platform)
 
 
 def is_within_tolerance(measured_rms_value, expected_rms_value, tolerance_percentage) -> bool:
