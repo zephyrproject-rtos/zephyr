@@ -1,8 +1,9 @@
 /*
- * Copyright (c) 2025 Nordic Semiconductor ASA.
+ * Copyright (c) 2025 Nordic Semiconductor ASA
  *
- * SPDX-License-Identifier: LicenseRef-Nordic-4-Clause
+ * SPDX-License-Identifier: Apache-2.0
  */
+
 #include <stddef.h>
 #include <stdbool.h>
 #include <zephyr/drivers/pinctrl.h>
