@@ -111,3 +111,68 @@ config DEBUG_NRF_ETR_SHELL_ASYNC_RX_BUFFER_COUNT
 endif # DEBUG_NRF_ETR_SHELL
 
 endif # DEBUG_NRF_ETR
+
+menuconfig DEBUG_CORESIGHT_NRF
+	bool "Coresight Trace support"
+	default y
+	depends on DT_HAS_NORDIC_CORESIGHT_NRF_ENABLED
+	select PINCTRL
+	select NRF_IRONSIDE_TDD_SERVICE
+	help
+	  Support CoreSight peripherals in Test and Debug Domain for ARM
+	  CoreSight System Trace Macrocell (STM) trace support.
+
+if DEBUG_CORESIGHT_NRF
+
+config DEBUG_CORESIGHT_NRF_ATB_TRACE_ID_STM_GLOBAL
+	def_hex 0x40
+	help
+	  Global trace ID used by STM.
+
+config DEBUG_CORESIGHT_NRF_STM_SYNC_BYTE_COUNT
+	int "STM: Emit synhronization packet every N bytes"
+	range 0 4095
+	default 512
+
+config DEBUG_CORESIGHT_NRF_STM_HWEVENTS
+	bool "STM: Enable hardware events"
+	help
+	  Enable the output of hardware events in STM.
+
+config DEBUG_CORESIGHT_NRF_TPIU_FFCR_TRIG
+	bool "TPIU: Use flush request trigger"
+	default y
+	help
+	  Use CTI channel 1 for triggering flush request in TPIU.
+
+config DEBUG_CORESIGHT_NRF_TPIU_SYNC_FRAME_COUNT
+	int "TPIU: Emit synchronisation packet every N frames"
+	default 8
+
+config DEBUG_CORESIGHT_NRF_TPIU_PORTSIZE
+	int "TPIU: Size of the current TPIU port in bits"
+	range 1 32
+	default 4
+
+config DEBUG_CORESIGHT_NRF_ATBFUNNEL_HOLD_TIME
+	int "ATBFUNNEL: Hold time for the transaction"
+	range 1 15
+	default 4
+	help
+	  Number of transactions that are output on the funnel master port from the
+	  same slave.
+
+config DEBUG_CORESIGHT_NRF_TSGEN_CLK_DIV
+	int
+	default 8
+	help
+	  Clock division factor for generating trace timestamps. The timestamp
+	  counter should not be slower than 10% of the fastest processor clock
+	  frequency in the system, therefore its clock speed is divided by
+	  eight.
+
+module = DEBUG_CORESIGHT_NRF
+module-str = CoreSight Trace
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # DEBUG_CORESIGHT_NRF

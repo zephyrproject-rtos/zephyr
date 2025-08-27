@@ -121,6 +121,10 @@ def main() -> None:
     for node in dt.label2node["global_peripherals"].children.values():
         builder.add_global_peripheral_cfg(node, **get_additional_node_kwargs(node))
 
+    # TDD (Trace and Debug Domain) peripherals - contains coresight/TPIU
+    for node in dt.label2node["tdd_peripherals"].children.values():
+        builder.add_global_peripheral_cfg(node, **get_additional_node_kwargs(node))
+
     # Add pins referenced by 'gpios' properties on non-peripheral nodes, for example
     # buttons and leds. We only add SPU configurations for these and not CTRLSEL,
     # to avoid false CTRLSEL conflicts for things like PWM leds.
