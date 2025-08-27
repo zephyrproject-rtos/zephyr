@@ -5,6 +5,10 @@
  */
 
 #include <zephyr/kernel.h>
+#include <zephyr/irq.h>
+#include <zephyr/init.h>
+
+#include "sedi_driver_pm.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(ish_pm, CONFIG_PM_LOG_LEVEL);
@@ -58,11 +62,32 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 }
 
 #if defined(CONFIG_REBOOT) && !defined(CONFIG_REBOOT_RST_CNT)
-extern void sedi_pm_reset(void);
-
 void sys_arch_reboot(int type)
 {
 	ARG_UNUSED(type);
 	sedi_pm_reset();
 }
 #endif
+
+#define ISH_SOC_IRQ(_node_name, _cell) DT_IRQ_BY_NAME(DT_NODELABEL(soc), _node_name, _cell)
+
+#define DO_PM_IRQ_CONNECT(node) \
+	IRQ_CONNECT(ISH_SOC_IRQ(node, irq), ISH_SOC_IRQ(node, priority), \
+			sedi_pm_isr, ISH_SOC_IRQ(node, irq), \
+			ISH_SOC_IRQ(node, sense))
+
+static int ish_soc_pm_init(void)
+{
+	sedi_pm_init();
+
+	DO_PM_IRQ_CONNECT(reset_prep);
+	DO_PM_IRQ_CONNECT(pcidev);
+	DO_PM_IRQ_CONNECT(pmu2ioapic);
+
+	irq_enable(ISH_SOC_IRQ(reset_prep, irq));
+	irq_enable(ISH_SOC_IRQ(pcidev, irq));
+
+	return 0;
+}
+
+SYS_INIT(ish_soc_pm_init, PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
