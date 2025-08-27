@@ -1,0 +1,98 @@
+/*
+ * Copyright (c) 2025 Leica Geosystems AG
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include "nucleo_u5a5zj_q-common.dtsi"
+
+/ {
+	model = "STMicroelectronics STM32U5A5ZJ-NUCLEO-Q board";
+	compatible = "st,stm32u5a5zj-nucleo-q";
+
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_ns_partition;
+		zephyr,entropy = &psa_rng;
+	};
+
+	aliases {
+		led0 = &blue_led_1;
+		sw0 = &user_button;
+	};
+
+	/* SRAM3 + SRAM5 (832 kiB + 832kiB)*/
+	/delete-node/ memory@20000000;
+	sram0: memory@200d0000 {
+		compatible = "mmio-sram";
+		reg = <0x200d0000 DT_SIZE_K(1664)>;
+	};
+
+	psa_rng: psa-rng {
+		compatible = "zephyr,psa-crypto-rng";
+		status = "okay";
+	};
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/*
+		 * Following flash partition is compatible with requirements
+		 * given in TFM configuration given for current board.
+		 * It might require adjustment depending on evolutions on TFM.
+		 */
+		 boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(384)>;
+			read-only;
+		};
+
+		/* Secure image primary slot */
+		slot0_partition: partition@60000 {
+			label = "image-0";
+			reg = <0x00060000 DT_SIZE_K(512)>;
+		};
+
+		/* Non-secure image primary slot */
+		slot0_ns_partition: partition@e0000 {
+			label = "image-0-nonsecure";
+			reg = <0x000e0000 DT_SIZE_K(1280)>;
+		};
+
+		/* Secure image secondary slot */
+		slot1_partition: partition@220000 {
+			label = "image-1";
+			reg = <0x00220000 DT_SIZE_K(512)>;
+		};
+
+		/* Non-secure image secondary slot */
+		slot1_ns_partition: partition@2a0000 {
+			label = "image-1-nonsecure";
+			reg = <0x002a0000 DT_SIZE_K(1280)>;
+		};
+
+		/* Applicative Non Volatile Storage */
+		storage_partition: partition@3e0000 {
+			label = "storage";
+			reg = <0x003e0000 DT_SIZE_K(128)>;
+		};
+	};
+};
+
+&usart1 {
+	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
