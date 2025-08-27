@@ -1529,6 +1529,69 @@ static void avdtp_delay_report_rsp(struct bt_avdtp *session, struct net_buf *buf
 	}
 }
 
+static void avdtp_get_configuration_cmd(struct bt_avdtp *session, struct net_buf *buf, uint8_t tid)
+{
+	int err = 0;
+	struct net_buf *rsp_buf;
+	struct bt_avdtp_sep *sep;
+	uint8_t error_code = 0;
+
+	sep = avdtp_get_cmd_sep(buf, &error_code, NULL);
+
+	if ((sep == NULL) || (session->ops->get_configuration_ind == NULL)) {
+		err = -ENOTSUP;
+	} else if (sep->state & (AVDTP_IDLE | AVDTP_CLOSING | AVDTP_ABORTING)) {
+		/* The procedure shall fail when the addressed SEP is in Idle,
+		 * Closing or Aborting state.
+		 */
+		err = -EACCES;
+	} else {
+		rsp_buf = avdtp_create_pdu(BT_AVDTP_ACCEPT, BT_AVDTP_GET_CONFIGURATION, tid);
+		if (rsp_buf == NULL) {
+			return;
+		}
+
+		err = session->ops->get_configuration_ind(session, sep, rsp_buf, &error_code);
+		if (err != 0) {
+			net_buf_unref(rsp_buf);
+		}
+	}
+
+	if (err != 0) {
+		rsp_buf = avdtp_create_pdu(BT_AVDTP_REJECT, BT_AVDTP_GET_CONFIGURATION, tid);
+		if (rsp_buf == NULL) {
+			return;
+		}
+
+		if (error_code == 0) {
+			error_code = BT_AVDTP_BAD_ACP_SEID;
+		}
+
+		LOG_DBG("get config err code:%d", error_code);
+		net_buf_add_u8(rsp_buf, error_code);
+	}
+
+	(void)avdtp_send_rsp(session, rsp_buf);
+}
+
+static void avdtp_get_configuration_rsp(struct bt_avdtp *session, struct net_buf *buf,
+					uint8_t msg_type)
+{
+	struct bt_avdtp_req *req = session->req;
+
+	if (req == NULL) {
+		return;
+	}
+
+	k_work_cancel_delayable(&session->timeout_work);
+	avdtp_set_status(req, buf, msg_type);
+	bt_avdtp_clear_req(session);
+
+	if (req->func != NULL) {
+		req->func(req, buf);
+	}
+}
+
 /* Timeout handler */
 static void avdtp_timeout(struct k_work *work)
 {
@@ -1690,7 +1753,7 @@ void (*cmd_handler[])(struct bt_avdtp *session, struct net_buf *buf, uint8_t tid
 	avdtp_discover_cmd,              /* BT_AVDTP_DISCOVER */
 	avdtp_get_capabilities_cmd,      /* BT_AVDTP_GET_CAPABILITIES */
 	avdtp_set_configuration_cmd,     /* BT_AVDTP_SET_CONFIGURATION */
-	NULL,                            /* BT_AVDTP_GET_CONFIGURATION */
+	avdtp_get_configuration_cmd,     /* BT_AVDTP_GET_CONFIGURATION */
 	avdtp_re_configure_cmd,          /* BT_AVDTP_RECONFIGURE */
 	avdtp_open_cmd,                  /* BT_AVDTP_OPEN */
 	avdtp_start_cmd,                 /* BT_AVDTP_START */
@@ -1707,7 +1770,7 @@ void (*rsp_handler[])(struct bt_avdtp *session, struct net_buf *buf, uint8_t msg
 	avdtp_discover_rsp,          /* BT_AVDTP_DISCOVER */
 	avdtp_get_capabilities_rsp,  /* BT_AVDTP_GET_CAPABILITIES */
 	avdtp_set_configuration_rsp, /* BT_AVDTP_SET_CONFIGURATION */
-	NULL,                        /* BT_AVDTP_GET_CONFIGURATION */
+	avdtp_get_configuration_rsp, /* BT_AVDTP_GET_CONFIGURATION */
 	avdtp_re_configure_rsp,      /* BT_AVDTP_RECONFIGURE */
 	avdtp_open_rsp,              /* BT_AVDTP_OPEN */
 	avdtp_start_rsp,             /* BT_AVDTP_START */
@@ -2441,6 +2504,12 @@ int bt_avdtp_abort(struct bt_avdtp *session, struct bt_avdtp_ctrl_params *param)
 	return bt_avdtp_ctrl(session, param, BT_AVDTP_ABORT,
 			     AVDTP_IDLE | AVDTP_CONFIGURED | AVDTP_OPENING | AVDTP_OPEN |
 			     AVDTP_STREAMING | AVDTP_CLOSING);
+}
+
+int bt_avdtp_get_configuration(struct bt_avdtp *session, struct bt_avdtp_ctrl_params *param)
+{
+	return bt_avdtp_ctrl(session, param, BT_AVDTP_GET_CONFIGURATION,
+			     AVDTP_CONFIGURED | AVDTP_OPENING | AVDTP_OPEN | AVDTP_STREAMING);
 }
 
 int bt_avdtp_delay_report(struct bt_avdtp *session, struct bt_avdtp_delay_report_params *param)
