@@ -1320,7 +1320,7 @@ int bt_avdtp_l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		}
 
 		if (sigid != 0U && sigid <= BT_AVDTP_DELAYREPORT &&
-		    cmd_handler[sigid - 1U] != NULL) {
+		    rsp_handler[sigid - 1U] != NULL) {
 			rsp_handler[sigid - 1U](session, buf, msgtype);
 			return 0;
 		}
