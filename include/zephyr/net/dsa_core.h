@@ -89,6 +89,9 @@ struct dsa_switch_context {
 
 	/** Number of initialized ports in the DSA switch */
 	uint8_t init_ports;
+
+	/** DSA tagger data provided by instance when connecting to tag protocol */
+	void *tagger_data;
 };
 
 /**
@@ -116,6 +119,9 @@ struct dsa_api {
 
 	/** Switch setup */
 	int (*switch_setup)(const struct dsa_switch_context *dsa_switch_ctx);
+
+	/** Connect the switch to the tag protocol */
+	int (*connect_tag_protocol)(struct dsa_switch_context *dsa_switch_ctx, int tag_proto);
 };
 
 /**
