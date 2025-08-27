@@ -32,8 +32,8 @@
 		 * Because VIN14, THR14, TD1P is the same pin, it must only select one type.
 		 * Because VIN1, THR1, TD3P is the same pin, it must only select one type.
 		 * Because VIN2, THR2, TD4P is the same pin, it must only select one type.
-		 * Exsample : if you select channel 6(VIN16),
-		 *            and you can't select channel 7(THR16) and channel 19(TD2P).
+		 * Exsample : if you select channel 8(VIN16),
+		 *            and you can't select channel 9(THR16) and channel 22(TD2P).
 		 */
 		io-channels = <&dsadc 17>, <&dsadc 18>;
 	};

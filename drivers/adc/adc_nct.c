@@ -26,26 +26,29 @@ enum adc_channel_en {
 	CHEN1_VSB,
 	CHEN2_VCC,
 	CHEN3_VHIF,
-	CHEN4_VIN7,
-	CHEN5_VIN5,
-	CHEN6_VIN16,
-	CHEN7_THR16,
-	CHEN8_VIN15,
-	CHEN9_THR15,
-	CHEN10_VIN14,
-	CHEN11_THR14,
-	CHEN12_VIN1,
-	CHEN13_THR1,
-	CHEN14_VIN2,
-	CHEN15_THR2,
-	CHEN16_VIN3,
-	CHEN17_VTT,
-	CHEN18_VBAT,
-	CHEN19_TD2P,
-	CHEN20_TD1P,
-	CHEN21_TD0P,
-	CHEN22_TD3P,
-	CHEN23_TD4P
+	CHEN4_VIN0,
+	CHEN5_VIN6,
+	CHEN6_VIN7,
+	CHEN7_VIN5,
+	CHEN8_VIN16,
+	CHEN9_THR16,
+	CHEN10_VIN15,
+	CHEN11_THR15,
+	CHEN12_VIN14,
+	CHEN13_THR14,
+	CHEN14_VIN1,
+	CHEN15_THR1,
+	CHEN16_VIN2,
+	CHEN17_THR2,
+	CHEN18_VIN3,
+	CHEN19_THR3,
+	CHEN20_VTT,
+	CHEN21_VBAT,
+	CHEN22_TD2P,
+	CHEN23_TD1P,
+	CHEN24_TD0P,
+	CHEN25_TD3P,
+	CHEN26_TD4P
 };
 
 /* Device config */
@@ -122,7 +125,7 @@ static void nct_adc_start_convert(const struct device *dev)
 	/* Start ADC scan conversion */
 	adc_regs->DSADCCTRL0 &= ~0x1F; /* CH_SEL Mask */
 
-	if ((data->CurChannel_Idx >= CHEN19_TD2P) && (data->CurChannel_Idx <= CHEN23_TD4P)) {
+	if ((data->CurChannel_Idx >= CHEN22_TD2P) && (data->CurChannel_Idx <= CHEN26_TD4P)) {
 		IsDiode = true;
 		/* Set voltage smaller than 2.048V */
 		adc_regs->ADCACTRL1 |= MaskBit(NCT_ACTRL1_PWCTRL);
@@ -130,23 +133,23 @@ static void nct_adc_start_convert(const struct device *dev)
 	if (IsDiode) {
 		adc_regs->DSADCCTRL0 &= ~MaskBit(NCT_CTRL0_VNT);
 		switch (data->CurChannel_Idx) {
-		case CHEN19_TD2P:
+		case CHEN22_TD2P:
 			adc_regs->DSADCCTRL0 |= 0x00;
 			adc_regs->ADCTM &= ~(0x03 << NCT_TM_T_MODE1);
 			break;
-		case CHEN20_TD1P:
+		case CHEN23_TD1P:
 			adc_regs->DSADCCTRL0 |= 0x01;
 			adc_regs->ADCTM &= ~(0x03 << NCT_TM_T_MODE2);
 			break;
-		case CHEN21_TD0P:
+		case CHEN24_TD0P:
 			adc_regs->DSADCCTRL0 |= 0x02;
 			adc_regs->ADCTM &= ~(0x03 << NCT_TM_T_MODE3);
 			break;
-		case CHEN22_TD3P:
+		case CHEN25_TD3P:
 			adc_regs->DSADCCTRL0 |= 0x03;
 			adc_regs->ADCTM &= ~(0x03 << NCT_TM_T_MODE4);
 			break;
-		case CHEN23_TD4P:
+		case CHEN26_TD4P:
 			adc_regs->DSADCCTRL0 |= 0x04;
 			adc_regs->ADCTM &= ~(0x03 << NCT_TM_T_MODE5);
 			break;
@@ -155,71 +158,84 @@ static void nct_adc_start_convert(const struct device *dev)
 		}
 	} else   {
 		adc_regs->DSADCCTRL0 |= MaskBit(NCT_CTRL0_VNT);
-		if ((data->CurChannel_Idx >= CHEN4_VIN7) && (data->CurChannel_Idx <= CHEN18_VBAT)) {
+		if ((data->CurChannel_Idx >= CHEN4_VIN0) && (data->CurChannel_Idx <= CHEN21_VBAT)) {
 			switch (data->CurChannel_Idx) {
-			case CHEN4_VIN7:
+			case CHEN4_VIN0:
+				adc_regs->DSADCCTRL0 |= 0x04;
+				break;
+			case CHEN5_VIN6:
+				adc_regs->DSADCCTRL0 |= 0x05;
+				break;
+			case CHEN6_VIN7:
 				adc_regs->DSADCCTRL0 |= 0x06;
 				break;
-			case CHEN5_VIN5:
+			case CHEN7_VIN5:
 				adc_regs->DSADCCTRL0 |= 0x07;
 				break;
-			case CHEN6_VIN16:
+			case CHEN8_VIN16:
 				adc_regs->DSADCCTRL0 |= 0x08;
 				adc_regs->DSADCCTRL6 |= MaskBit(0);
 				break;
-			case CHEN7_THR16:
+			case CHEN9_THR16:
 				adc_regs->DSADCCTRL0 |= 0x08;
 				adc_regs->DSADCCTRL6 &= ~MaskBit(0);
 				/* Set voltage smaller than 2.048V */
 				adc_regs->ADCACTRL1 |= MaskBit(NCT_ACTRL1_PWCTRL);
 				break;
-			case CHEN8_VIN15:
+			case CHEN10_VIN15:
 				adc_regs->DSADCCTRL0 |= 0x09;
 				adc_regs->DSADCCTRL6 |= MaskBit(1);
 				break;
-			case CHEN9_THR15:
+			case CHEN11_THR15:
 				adc_regs->DSADCCTRL0 |= 0x09;
 				adc_regs->DSADCCTRL6 &= ~MaskBit(1);
 				/* Set voltage smaller than 2.048V */
 				adc_regs->ADCACTRL1 |= MaskBit(NCT_ACTRL1_PWCTRL);
 				break;
-			case CHEN10_VIN14:
+			case CHEN12_VIN14:
 				adc_regs->DSADCCTRL0 |= 0x0A;
 				adc_regs->DSADCCTRL6 |= MaskBit(2);
 				break;
-			case CHEN11_THR14:
+			case CHEN13_THR14:
 				adc_regs->DSADCCTRL0 |= 0x0A;
 				adc_regs->DSADCCTRL6 &= ~MaskBit(2);
 				/* Set voltage smaller than 2.048V */
 				adc_regs->ADCACTRL1 |= MaskBit(NCT_ACTRL1_PWCTRL);
 				break;
-			case CHEN12_VIN1:
+			case CHEN14_VIN1:
 				adc_regs->DSADCCTRL0 |= 0x0B;
 				adc_regs->DSADCCTRL6 |= MaskBit(3);
 				break;
-			case CHEN13_THR1:
+			case CHEN15_THR1:
 				adc_regs->DSADCCTRL0 |= 0x0B;
 				adc_regs->DSADCCTRL6 &= ~MaskBit(3);
 				/* Set voltage smaller than 2.048V */
 				adc_regs->ADCACTRL1 |= MaskBit(NCT_ACTRL1_PWCTRL);
 				break;
-			case CHEN14_VIN2:
+			case CHEN16_VIN2:
 				adc_regs->DSADCCTRL0 |= 0x0C;
 				adc_regs->DSADCCTRL6 |= MaskBit(4);
 				break;
-			case CHEN15_THR2:
+			case CHEN17_THR2:
 				adc_regs->DSADCCTRL0 |= 0x0C;
 				adc_regs->DSADCCTRL6 &= ~MaskBit(4);
 				/* Set voltage smaller than 2.048V */
 				adc_regs->ADCACTRL1 |= MaskBit(NCT_ACTRL1_PWCTRL);
 				break;
-			case CHEN16_VIN3:
+			case CHEN18_VIN3:
 				adc_regs->DSADCCTRL0 |= 0x0D;
+				adc_regs->DSADCCTRL6 |= MaskBit(5);
 				break;
-			case CHEN17_VTT:
+			case CHEN19_THR3:
+				adc_regs->DSADCCTRL0 |= 0x0D;
+				adc_regs->DSADCCTRL6 &= ~MaskBit(5);
+				/* Set voltage smaller than 2.048V */
+				adc_regs->ADCACTRL1 |= MaskBit(NCT_ACTRL1_PWCTRL);
+				break;
+			case CHEN20_VTT:
 				adc_regs->DSADCCTRL0 |= 0x0E;
 				break;
-			case CHEN18_VBAT:
+			case CHEN21_VBAT:
 				adc_regs->DSADCCTRL0 |= 0x0F;
 				break;
 
@@ -250,12 +266,13 @@ static void adc_nct_isr(const struct device *dev)
 	channel = data->channels;
 	result = adc_regs->TCHNDAT;
 	result &= ~MaskBit(NCT_TCHNDATA_NEW);
-	if ((data->CurChannel_Idx >= CHEN0_AVSB) && (data->CurChannel_Idx <= CHEN18_VBAT)) {
-		if ((data->CurChannel_Idx == CHEN7_THR16) ||
-		    (data->CurChannel_Idx == CHEN9_THR15) ||
-		    (data->CurChannel_Idx == CHEN11_THR14) ||
-		    (data->CurChannel_Idx == CHEN13_THR1) ||
-		    (data->CurChannel_Idx == CHEN15_THR2)) {
+	if ((data->CurChannel_Idx >= CHEN0_AVSB) && (data->CurChannel_Idx <= CHEN21_VBAT)) {
+		if ((data->CurChannel_Idx == CHEN9_THR16) ||
+		    (data->CurChannel_Idx == CHEN11_THR15) ||
+		    (data->CurChannel_Idx == CHEN13_THR14) ||
+		    (data->CurChannel_Idx == CHEN15_THR1) ||
+		    (data->CurChannel_Idx == CHEN17_THR2) ||
+			(data->CurChannel_Idx == CHEN19_THR3) ) {
 
 			result = (result << 5);
 		} else   {
