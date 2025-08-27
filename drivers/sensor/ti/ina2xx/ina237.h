@@ -7,6 +7,7 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_INA2XX_INA237_H_
 #define ZEPHYR_DRIVERS_SENSOR_INA2XX_INA237_H_
 
+#include "ina2xx_common.h"
 #include "ina2xx_trigger.h"
 
 #include <stdint.h>
@@ -51,11 +52,7 @@ struct ina237_data {
 };
 
 struct ina237_config {
-	struct i2c_dt_spec bus;
-	uint16_t config;
-	uint16_t adc_config;
-	uint32_t current_lsb;
-	uint16_t cal;
+	const struct ina2xx_config common;
 	const struct gpio_dt_spec alert_gpio;
 	uint16_t alert_config;
 };
