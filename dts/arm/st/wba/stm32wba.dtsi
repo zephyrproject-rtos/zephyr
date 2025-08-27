@@ -63,7 +63,11 @@
 				power-state-name = "suspend-to-ram";
 				substate-id = <1>;
 				min-residency-us = <1000>;
-				exit-latency-us = <50>;
+				/*
+				 * From DS: worst case Twu_stdby with retention = 51.49 us
+				 * Add extra margin to take resume code into account.
+				 */
+				exit-latency-us = <150>;
 			};
 		};
 	};
