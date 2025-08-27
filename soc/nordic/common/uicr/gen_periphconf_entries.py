@@ -425,6 +425,14 @@ def lookup_tables_get(soc: Soc) -> SocLookupTables:
                 NrfPsel(fun=NrfFun.IGNORE, port=2, pin=10): Ctrlsel.CAN,
                 NrfPsel(fun=NrfFun.IGNORE, port=2, pin=11): Ctrlsel.CAN,
             },
+            # Coresight (TPIU)
+            0xBF04_0000: {
+                NrfPsel(fun=NrfFun.TPIU_CLOCK, port=7, pin=3): Ctrlsel.TND,
+                NrfPsel(fun=NrfFun.TPIU_DATA0, port=7, pin=4): Ctrlsel.TND,
+                NrfPsel(fun=NrfFun.TPIU_DATA1, port=7, pin=5): Ctrlsel.TND,
+                NrfPsel(fun=NrfFun.TPIU_DATA2, port=7, pin=6): Ctrlsel.TND,
+                NrfPsel(fun=NrfFun.TPIU_DATA3, port=7, pin=7): Ctrlsel.TND,
+            },
         }
     elif soc == Soc.NRF9280:
         ctrlsel_lookup = {
