@@ -26,11 +26,12 @@ BUILD_ASSERT(CONFIG_MP_MAX_NUM_CPUS == 1,
 /* Linker section name is given by `zephyr,memory-region` property of
  * `zephyr,memory-region` compatible DT node with nodelabel `pm_s2ram`.
  */
-__attribute__((section(DT_PROP(DT_NODELABEL(pm_s2ram), zephyr_memory_region))))
+#define __s2ram_ctx Z_GENERIC_SECTION(DT_PROP(DT_NODELABEL(pm_s2ram), zephyr_memory_region))
 #else
-__noinit
+#define __s2ram_ctx __noinit
 #endif
-_cpu_context_t _cpu_context;
+
+__s2ram_ctx _cpu_context_t _cpu_context;
 
 #ifndef CONFIG_PM_S2RAM_CUSTOM_MARKING
 /**
