@@ -11,14 +11,9 @@
 #include "sedi_driver_hpet.h"
 #endif
 
-extern void sedi_pm_init(void);
-
 void soc_early_init_hook(void)
 {
 #if defined(CONFIG_HPET_TIMER)
 	sedi_hpet_set_min_delay(HPET_CMP_MIN_DELAY);
-#endif
-#if defined(CONFIG_PM)
-	sedi_pm_init();
 #endif
 }
