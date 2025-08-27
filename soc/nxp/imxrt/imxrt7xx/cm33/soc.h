@@ -41,6 +41,12 @@ void imxrt_post_init_display_interface(void);
 void imxrt_deinit_display_interface(void);
 #endif
 
+#ifdef CONFIG_MFD_PCA9422
+void imxrt_disable_pmic_interrupt(void);
+void imxrt_enable_pmic_interrupt(void);
+void imxrt_clear_pmic_interrupt(void);
+#endif
+
 #ifdef __cplusplus
 }
 #endif
