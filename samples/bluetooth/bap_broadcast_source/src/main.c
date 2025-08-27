@@ -63,14 +63,26 @@ static struct bt_bap_lc3_preset preset_active = BT_BAP_LC3_BROADCAST_PRESET_24_2
 
 #define BROADCAST_SAMPLE_RATE 24000
 
+#elif defined(CONFIG_BAP_BROADCAST_441_2_1)
+
+static struct bt_bap_lc3_preset preset_active = BT_BAP_LC3_BROADCAST_PRESET_441_2_1(
+	BT_AUDIO_LOCATION_FRONT_LEFT | BT_AUDIO_LOCATION_FRONT_RIGHT,
+	BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
+
+#define BROADCAST_SAMPLE_RATE 44100
+
 #endif
 
 #if defined(CONFIG_BAP_BROADCAST_16_2_1)
 #define MAX_SAMPLE_RATE 16000
+#define MAX_FRAME_DURATION_US 10000
 #elif defined(CONFIG_BAP_BROADCAST_24_2_1)
 #define MAX_SAMPLE_RATE 24000
-#endif
 #define MAX_FRAME_DURATION_US 10000
+#elif defined(CONFIG_BAP_BROADCAST_441_2_1)
+#define MAX_SAMPLE_RATE 44100
+#define MAX_FRAME_DURATION_US 10884
+#endif
 #define MAX_NUM_SAMPLES       ((MAX_FRAME_DURATION_US * MAX_SAMPLE_RATE) / USEC_PER_SEC)
 
 #if defined(CONFIG_LIBLC3)
@@ -139,6 +151,8 @@ static struct broadcast_source_stream {
 #if defined(CONFIG_BAP_BROADCAST_16_2_1)
 	lc3_encoder_mem_16k_t lc3_encoder_mem;
 #elif defined(CONFIG_BAP_BROADCAST_24_2_1)
+	lc3_encoder_mem_48k_t lc3_encoder_mem;
+#elif defined(CONFIG_BAP_BROADCAST_441_2_1)
 	lc3_encoder_mem_48k_t lc3_encoder_mem;
 #endif
 #if defined(CONFIG_USE_USB_AUDIO_INPUT)
@@ -244,6 +258,7 @@ static void init_lc3_thread(void *arg1, void *arg2, void *arg3)
 	ret = bt_audio_codec_cfg_get_freq(codec_cfg);
 	if (ret > 0) {
 		freq_hz = bt_audio_codec_cfg_freq_to_freq_hz(ret);
+		printk("Frequency %d Hz.\n", freq_hz);
 	} else {
 		return;
 	}
@@ -251,6 +266,7 @@ static void init_lc3_thread(void *arg1, void *arg2, void *arg3)
 	ret = bt_audio_codec_cfg_get_frame_dur(codec_cfg);
 	if (ret > 0) {
 		frame_duration_us = bt_audio_codec_cfg_frame_dur_to_frame_dur_us(ret);
+		printk("Frame duration %d us.\n", frame_duration_us);
 	} else {
 		printk("Error: Frame duration not set, cannot start codec.");
 		return;
