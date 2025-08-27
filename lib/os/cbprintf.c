@@ -23,6 +23,7 @@ int cbprintf(cbprintf_cb out, void *ctx, const char *format, ...)
 #if defined(CONFIG_CBPRINTF_LIBC_SUBSTS)
 
 #include <stdio.h>
+#include <zephyr/sys/__assert.h>
 
 /* Context for sn* variants is the next space in the buffer, and the buffer
  * end.
@@ -96,11 +97,17 @@ int snprintfcb(char *str, size_t size, const char *format, ...)
 
 int vsnprintfcb(char *str, size_t size, const char *format, va_list ap)
 {
+	__ASSERT(str || !size, "str may only be NULL when size == 0");
+
 	struct str_ctx ctx = {
 		.dp = str,
 		.dpe = str + size,
 	};
 	int rv = cbvprintf(str_out, &ctx, format, ap);
+
+	if (!size) {
+		return rv;
+	}
 
 	if (ctx.dp < ctx.dpe) {
 		ctx.dp[0] = 0;
