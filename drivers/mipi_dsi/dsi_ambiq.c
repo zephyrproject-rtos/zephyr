@@ -158,12 +158,23 @@ static ssize_t mipi_dsi_ambiq_transfer(const struct device *dev, uint8_t channel
 	case MIPI_DSI_DCS_LONG_WRITE:
 		if ((msg->cmd == MIPI_DCS_WRITE_MEMORY_START) ||
 		    (msg->cmd == MIPI_DCS_WRITE_MEMORY_CONTINUE)) {
-			nemadc_timing(data->dc_layer.resx, 1, 10, 1, data->dc_layer.resy, 1, 1, 1);
+			nemadc_timing(data->dc_layer.resx, data->dc_config.ui32FrontPorchX,
+				      data->dc_config.ui32BlankingX, data->dc_config.ui32BackPorchX,
+				      data->dc_layer.resy, data->dc_config.ui32FrontPorchY,
+				      data->dc_config.ui32BlankingY, data->dc_config.ui32BlankingY);
+			data->dc_layer.stride =
+				nemadc_stride_size(data->dc_layer.format, data->dc_layer.resx);
 			data->dc_layer.baseaddr_virt = (void *)msg->tx_buf;
 			data->dc_layer.baseaddr_phys = (unsigned int)(data->dc_layer.baseaddr_virt);
 			nemadc_set_layer(0, &data->dc_layer);
-			nemadc_transfer_frame_prepare(data->dc_config.bTEEnable);
-			if (!data->dc_config.bTEEnable) {
+
+			if (msg->cmd == MIPI_DCS_WRITE_MEMORY_START) {
+				nemadc_transfer_frame_prepare(data->dc_config.bTEEnable);
+				if (!data->dc_config.bTEEnable) {
+					nemadc_transfer_frame_launch();
+				}
+			} else {
+				nemadc_transfer_frame_continue(false);
 				nemadc_transfer_frame_launch();
 			}
 			nemadc_wait_vsync();
