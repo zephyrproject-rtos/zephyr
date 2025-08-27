@@ -7,8 +7,12 @@
 
 #include <zephyr/arch/cpu.h>
 #include <zephyr/linker/sections.h>
+#include <zephyr/toolchain.h>
 
 #include <zephyr/arch/common/pm_s2ram.h>
+
+BUILD_ASSERT(CONFIG_MP_MAX_NUM_CPUS == 1,
+	"Suspend-to-RAM not yet supported on multi-core SoCs");
 
 #define MAGIC (0xDABBAD00)
 
