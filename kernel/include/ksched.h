@@ -337,4 +337,9 @@ static inline void z_sched_usage_switch(struct k_thread *thread)
 #endif /* CONFIG_SCHED_THREAD_USAGE */
 }
 
+/**
+ * @brief Resets thread longest frame usage data for specified thread
+ */
+void z_sched_thread_reset_long_frame(struct k_thread *thread);
+
 #endif /* ZEPHYR_KERNEL_INCLUDE_KSCHED_H_ */
