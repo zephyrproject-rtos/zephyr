@@ -18,8 +18,10 @@ source "subsys/logging/Kconfig.template.log_config"
 
 config NORDIC_VPR_LAUNCHER_INIT_PRIORITY
 	int "Nordic VPR coprocessor launcher init priority"
+	default 44 if DT_HAS_NORDIC_NRF_CORESIGHT_ENABLED
 	default 0
 	help
 	  The init priority of the VPR coprocessor launcher.
+	  Needs to be higher than the init priority of NRF coresight if enabled.
 
 endif # NORDIC_VPR_LAUNCHER
