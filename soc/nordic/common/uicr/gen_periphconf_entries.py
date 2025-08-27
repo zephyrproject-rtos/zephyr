@@ -122,6 +122,10 @@ def main() -> None:
     for node in dt.label2node["global_peripherals"].children.values():
         builder.add_global_peripheral_cfg(node, **get_additional_node_kwargs(node))
 
+    # TDD (Trace and Debug Domain) peripherals - contains coresight/TPIU
+    for node in dt.label2node["tdd_peripherals"].children.values():
+        builder.add_global_peripheral_cfg(node, **get_additional_node_kwargs(node))
+
     # Add pins referenced by 'gpios' properties on non-peripheral nodes, for example
     # buttons and leds. We only add SPU configurations for these and not CTRLSEL,
     # to avoid false CTRLSEL conflicts for things like PWM leds.
@@ -420,6 +424,14 @@ def lookup_tables_get(soc: Soc) -> SocLookupTables:
                 NrfPsel(fun=NrfFun.IGNORE, port=2, pin=10): Ctrlsel.CAN,
                 NrfPsel(fun=NrfFun.IGNORE, port=2, pin=11): Ctrlsel.CAN,
             },
+            # Coresight (TPIU)
+            0xBF04_0000: {
+                NrfPsel(fun=NrfFun.TPIU_CLOCK, port=7, pin=3): Ctrlsel.TND,
+                NrfPsel(fun=NrfFun.TPIU_DATA0, port=7, pin=4): Ctrlsel.TND,
+                NrfPsel(fun=NrfFun.TPIU_DATA1, port=7, pin=5): Ctrlsel.TND,
+                NrfPsel(fun=NrfFun.TPIU_DATA2, port=7, pin=6): Ctrlsel.TND,
+                NrfPsel(fun=NrfFun.TPIU_DATA3, port=7, pin=7): Ctrlsel.TND,
+            },
         }
     elif soc == Soc.NRF9280:
         ctrlsel_lookup = {
@@ -558,6 +570,8 @@ def lookup_tables_get(soc: Soc) -> SocLookupTables:
         ("SPU135", 0x5F9B_0000),
         ("SPU136", 0x5F9C_0000),
         ("SPU137", 0x5F9D_0000),
+        ("SPU200", 0xBF00_0000),
+        ("SPU210", 0xBF01_0000),
     ]
     dppics = {
         "DPPIC120": 0x5F8E_1000,
