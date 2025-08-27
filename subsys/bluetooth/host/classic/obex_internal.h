@@ -20,7 +20,11 @@
 #define BT_OBEX_OPCODE_ACTION   0x06
 #define BT_OBEX_OPCODE_ACTION_F 0x86
 #define BT_OBEX_OPCODE_SESSION  0x87
-#define BT_OBEX_OPCODE_ABORT    0xFF
+#define BT_OBEX_OPCODE_ABORT    0xff
+
+struct bt_obex_comm_hdr {
+	uint8_t code;
+} __packed;
 
 struct bt_obex_req_hdr {
 	uint8_t code;
