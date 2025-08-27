@@ -11,6 +11,7 @@
 #include <stdint.h>
 
 #include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/sensor/ina2xx.h>
 #include <zephyr/sys/util_macro.h>
 
 /**
@@ -37,6 +38,7 @@ struct ina2xx_config {
 	int cal_reg;
 };
 
+int ina2xx_reg_read_40(const struct i2c_dt_spec *bus, uint8_t reg, uint64_t *val);
 int ina2xx_reg_read_24(const struct i2c_dt_spec *bus, uint8_t reg, uint32_t *val);
 int ina2xx_reg_read_16(const struct i2c_dt_spec *bus, uint8_t reg, uint16_t *val);
 int ina2xx_reg_write(const struct i2c_dt_spec *bus, uint8_t reg, uint16_t val);
