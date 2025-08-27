@@ -2,8 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config SHIELD_AP510_DISP
-	bool "apollo510 Display Shield"
 	def_bool $(shields_list_contains,ap510_disp)
-	depends on DISPLAY
-	help
-	  Enable support for the apollo510 display shield.
+
+config SHIELD_AP510_DISP_SPI
+	def_bool $(shields_list_contains,ap510_disp_spi)

@@ -1,0 +1,118 @@
+/*
+ * Copyright (c) 2025 Ambiq Micro Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include <apollo510/ambiq-apollo510-pinmux.h>
+#include <zephyr/dt-bindings/spi/spi.h>
+#include <zephyr/dt-bindings/display/panel.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+
+/ {
+	chosen {
+		zephyr,display = &co5300;
+		zephyr,touch = &chsc5x;
+	};
+};
+
+&iom2 {
+	cmdq-buffer-location = "SRAM_NO_CACHE";
+	cmdq-buffer-size = <256>;
+
+	i2c2: i2c {
+		pinctrl-0 = <&i2c2_default>;
+		pinctrl-1 = <&i2c2_sleep>;
+		pinctrl-names = "default", "sleep";
+		clock-frequency = <I2C_BITRATE_FAST>;
+		scl-gpios = <&gpio0_31 25 (GPIO_OPEN_DRAIN | GPIO_PULL_UP)>;
+		sda-gpios = <&gpio0_31 26 (GPIO_OPEN_DRAIN | GPIO_PULL_UP)>;
+		status = "okay";
+
+		chsc5x: chsc5x@2e {
+			compatible = "chipsemi,chsc5x";
+			reg = <0x2e>;
+			int-gpios = <&gpio64_95 13 GPIO_ACTIVE_LOW>;
+			reset-gpios = <&gpio64_95 14 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&pinctrl {
+	/* QSPI pinctrl */
+	dc_spi_default: dc_spi_default {
+		group1 {
+			pinmux = <DISP_TE_P33>,
+				<DISP_QSPI_D0_P79>,
+				<DISP_QSPI_D1_P80>,
+				<DISP_QSPI_SCK_P81>,
+				<DISP_QSPI_D2_P82>,
+				<DISP_QSPI_D3_P83>;
+			drive-strength = "0.5";
+		};
+		group2 {
+			pinmux = <NCE209_P209>;
+			ambiq,nce-src = <0x33>;
+			drive-strength = "0.5";
+		};
+	};
+	/* SPI/DSPI pinctrl,co5300 couldn't support SPI.
+	 * dc_spi_default: dc_spi_default {
+	 *	group1 {
+	 *		pinmux = <DISP_TE_P33>,
+	 *			<DISP_SPI_SD_P79>,
+	 *			<DISP_SPI_DCX_P80>,
+	 *			<DISP_SPI_SCK_P81>,
+	 *		drive-strength = "0.5";
+	 *	};
+	 *	group2 {
+	 *		pinmux = <NCE209_P209>;
+	 *		ambiq,nce-src = <0x32>;
+	 *		drive-strength = "0.5";
+	 *	};
+	 *};
+	 */
+};
+
+&dc_spi {
+	status = "okay";
+	clock-frequency = <48000000>;
+	/*disp-te;*/
+	pinctrl-0 = <&dc_spi_default>;
+	pinctrl-names = "default";
+	pixfmt = "rgb888";
+	hactive = <468>;	/*its value depends on display size*/
+	hfp = <1>;	/*Please use this recommended value.*/
+	hbp = <1>;	/*Please use this recommended value.*/
+	hsync = <1>;	/*Please use this recommended value.*/
+	vactive = <468>;	/*its value depends on display size*/
+	vfp = <1>;	/*Please use this recommended value.*/
+	vbp = <1>;	/*Please use this recommended value.*/
+	vsync = <1>;	/*Please use this recommended value.*/
+
+	co5300: co5300@0 {
+		status = "okay";
+		compatible = "chipone,co5300";
+		reset-gpios = <&gpio32_63 31 (GPIO_PULL_UP)>;
+		reg = <0x0>;
+		pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
+		rotation = <0>;
+		width = <468>;	/*Its value should be an integer multiple of 4.*/
+		height = <468>;
+
+		data-lines = <4>;
+		spi-max-frequency = <48000000>;
+		duplex = <SPI_HALF_DUPLEX>;
+		frame-format = <SPI_FRAME_FORMAT_MOTOROLA>;
+		spi-cpol;
+		spi-cpha;
+		/*spi-hold-cs;*/
+	};
+};
+
+&gpio32_63 {
+	status = "okay";
+};
+
+&gpio64_95 {
+	status = "okay";
+};

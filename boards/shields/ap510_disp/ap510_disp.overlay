@@ -37,12 +37,24 @@
 	};
 };
 
+&pinctrl {
+	/* Node with pin configuration for default state */
+	/omit-if-no-ref/dc_te_default: dc_te_default {
+		group1 {
+			/* Mappings: DISP_TE -> GPIO33*/
+			pinmux = <DISP_TE_P33>;
+		};
+	};
+};
+
 &mipi_dsi {
 	status = "okay";
 	phy-clock = <240000000>;	/*The frequency should be a multiple of 12MHz.*/
+	/*disp-te;*/
+	pinctrl-0 = <&dc_te_default>;
+	pinctrl-names = "default";
 	/*apollo510_evb designed with a loadswitch to control power Vdd18.*/
 	vdd18-gpios = <&gpio32_63 26 (GPIO_PULL_DOWN)>;
-	/*disp-te;*/
 
 	co5300: co5300@0 {
 		status = "okay";
