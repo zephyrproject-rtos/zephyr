@@ -546,6 +546,9 @@ bool bt_conn_ltk_present(const struct bt_conn *conn);
 int bt_conn_le_start_encryption(struct bt_conn *conn, uint8_t rand[8],
 				uint8_t ediv[2], const uint8_t *ltk, size_t len);
 
+/* Invoke the application-registered LTK request callback if present. */
+bool bt_conn_invoke_ltk_request_cb(struct bt_conn *conn, uint64_t rand, uint16_t ediv);
+
 /* Notify higher layers that RPA was resolved */
 void bt_conn_identity_resolved(struct bt_conn *conn);
 

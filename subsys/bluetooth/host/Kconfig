@@ -756,6 +756,22 @@ rsource "Kconfig.l2cap"
 rsource "Kconfig.gatt"
 rsource "../services/Kconfig"
 
+config BT_CONN_LTK_REQUEST_REPLY_API
+	bool "LTK request hook"
+	select EXPERIMENTAL
+	depends on BT_SMP
+	depends on BT_PERIPHERAL
+	help
+	  Enables the application to react when a peer Central initiates encryption
+	  and the Host does not have an LTK for that peer. The application can
+	  provide the LTK in this case.
+
+	  Usage: When enabled, the application may register a callback using
+	  bt_conn_ltk_request_cb_register(). If the callback returns true the
+	  application must reply using bt_conn_ltk_request_reply() or bt_conn_ltk_request_reject().
+
+	  This option currently depends on BT_SMP due to implementation details.
+
 config BT_MAX_PAIRED
 	int "Maximum number of paired devices"
 	default 0 if !BT_SMP

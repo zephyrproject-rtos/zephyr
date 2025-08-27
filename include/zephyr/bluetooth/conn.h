@@ -2902,6 +2902,91 @@ int bt_conn_br_switch_role(const struct bt_conn *conn, uint8_t role);
  */
 int bt_conn_br_set_role_switch_enable(const struct bt_conn *conn, bool enable);
 
+/** @brief Callback type for handling LTK requests when no key is available.
+ *
+ * Invoked when a peer Central initiates encryption and the Host does not have
+ * an LTK for that peer. The application can decide whether the stack's default
+ * handling should proceed, or whether the application will provide the LTK by
+ * calling @ref bt_conn_ltk_request_reply, or explicitly reject the request via
+ * @ref bt_conn_ltk_request_reject.
+ *
+ * @note This callback is only used when @kconfig{CONFIG_BT_CONN_LTK_REQUEST_REPLY_API}
+ * is enabled.
+ *
+ * @param conn Connection object associated with the LTK Request.
+ * @param rand 64-bit random number from the HCI event (CPU endianness).
+ * @param ediv 16-bit EDIV from the HCI event (CPU endianness).
+ *
+ * @retval false Defer handling to the stack's default processing.
+ * @retval true  The application will reply (by calling @ref bt_conn_ltk_request_reply
+ *               or @ref bt_conn_ltk_request_reject).
+ */
+typedef bool bt_conn_ltk_request_cb_t(struct bt_conn *conn, uint64_t rand, uint16_t ediv);
+
+/** @brief Register an application callback for LTK requests with no key available.
+ *
+ * @see bt_conn_ltk_request_cb_t
+ *
+ * @param cb Callback to be called when an LTK request arrives and no key is
+ *           available in the Host.
+ *
+ * @retval 0 Success.
+ * @retval -ENOSPC No space for the callback. In the current
+ * implementation there is only space for one callback and this means a
+ * callback is already registered.
+ * @retval -EINVAL cb is NULL.
+ */
+int bt_conn_ltk_request_cb_register(bt_conn_ltk_request_cb_t cb);
+
+/** @brief Unregister the application callback for unknown LTK requests.
+ *
+ * @param cb The same callback pointer that was previously registered.
+ *
+ * @retval 0 Success.
+ * @retval -ENOENT The provided callback is not currently registered.
+ * @retval -EINVAL cb is NULL.
+ */
+int bt_conn_ltk_request_cb_unregister(bt_conn_ltk_request_cb_t cb);
+
+/** @brief Reply to the LTK request with a key.
+ *
+ * Provide the 16-byte LTK for this connection in response to a pending
+ * LTK request. Completes handling immediately.
+ *
+ * Implementation note: this results in an HCI LE Long Term Key Request
+ * Reply being sent to the controller.
+ *
+ * @param conn @ref BT_CONN_TYPE_LE connection object.
+ * @param ltk  Pointer to 16-byte little-endian LTK to reply with.
+ *
+ * @retval 0 Success.
+ * @retval -EINVAL @p conn is not a valid @ref BT_CONN_TYPE_LE connection or @p ltk is NULL.
+ * @retval -ENOBUFS HCI command buffer not available.
+ *
+ * @note LTK is defined as a number, and therefore the byte encoding has
+ * endianness. If you expected it to be a byte string, then you most likely
+ * already have the little-endian encoding, as that is the byte order used
+ * in HCI and on-air.
+ */
+int bt_conn_ltk_request_reply(struct bt_conn *conn, const uint8_t *ltk);
+
+/** @brief Reject the LTK request.
+ *
+ * Explicitly indicate that no encryption key (LTK) is available for this
+ * connection. Completes handling immediately; no other LTK handlers are
+ * invoked.
+ *
+ * Implementation note: this results in an HCI LE Long Term Key Request
+ * Negative Reply being sent to the controller.
+ *
+ * @param conn @ref BT_CONN_TYPE_LE connection object.
+ *
+ * @retval 0 Success.
+ * @retval -EINVAL @p conn is not a valid @ref BT_CONN_TYPE_LE connection.
+ * @retval -ENOBUFS HCI command buffer not available.
+ */
+int bt_conn_ltk_request_reject(struct bt_conn *conn);
+
 #ifdef __cplusplus
 }
 #endif
