@@ -23,6 +23,8 @@
 #include <zephyr/kernel.h>
 #endif
 
+#include "ina2xx_common.h"
+
 #define INA230_REG_CONFIG          0x00
 #define INA230_REG_SHUNT_VOLT      0x01
 #define INA230_REG_BUS_VOLT        0x02
@@ -49,10 +51,7 @@ struct ina230_data {
 };
 
 struct ina230_config {
-	struct i2c_dt_spec bus;
-	uint16_t config;
-	uint32_t current_lsb;
-	uint16_t cal;
+	struct ina2xx_config common;
 	uint8_t power_scale;
 	uint32_t uv_lsb;
 #ifdef CONFIG_INA230_TRIGGER
