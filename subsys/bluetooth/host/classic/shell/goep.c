@@ -11,6 +11,7 @@
 
 #include <errno.h>
 #include <zephyr/types.h>
+#include <zephyr/sys/byteorder.h>
 #include <stdlib.h>
 
 #include <zephyr/bluetooth/bluetooth.h>
@@ -34,6 +35,8 @@ static uint8_t add_head_buffer[GOEP_MOPL];
 
 struct bt_goep_app {
 	struct bt_goep goep;
+	struct bt_obex_client client;
+	struct bt_obex_server server;
 	struct bt_conn *conn;
 	struct net_buf *tx_buf;
 };
@@ -130,49 +133,50 @@ static int goep_parse_headers(struct net_buf *buf)
 	return err;
 }
 
-static void goep_server_connect(struct bt_obex *obex, uint8_t version, uint16_t mopl,
+static void goep_server_connect(struct bt_obex_server *server, uint8_t version, uint16_t mopl,
 				struct net_buf *buf)
 {
-	bt_shell_print("OBEX %p conn req, version %02x, mopl %04x", obex, version, mopl);
+	bt_shell_print("OBEX server %p conn req, version %02x, mopl %04x", server, version, mopl);
 	goep_parse_headers(buf);
 }
 
-static void goep_server_disconnect(struct bt_obex *obex, struct net_buf *buf)
+static void goep_server_disconnect(struct bt_obex_server *server, struct net_buf *buf)
 {
-	bt_shell_print("OBEX %p disconn req", obex);
+	bt_shell_print("OBEX server %p disconn req", server);
 	goep_parse_headers(buf);
 }
 
-static void goep_server_put(struct bt_obex *obex, bool final, struct net_buf *buf)
+static void goep_server_put(struct bt_obex_server *server, bool final, struct net_buf *buf)
 {
-	bt_shell_print("OBEX %p put req, final %s, data len %d", obex, final ? "true" : "false",
+	bt_shell_print("OBEX server %p put req, final %s, data len %d", server,
+		       final ? "true" : "false", buf->len);
+	goep_parse_headers(buf);
+}
+
+static void goep_server_get(struct bt_obex_server *server, bool final, struct net_buf *buf)
+{
+	bt_shell_print("OBEX server %p get req, final %s, data len %d", server,
+		       final ? "true" : "false", buf->len);
+	goep_parse_headers(buf);
+}
+
+static void goep_server_abort(struct bt_obex_server *server, struct net_buf *buf)
+{
+	bt_shell_print("OBEX server %p abort req", server);
+	goep_parse_headers(buf);
+}
+
+static void goep_server_setpath(struct bt_obex_server *server, uint8_t flags, struct net_buf *buf)
+{
+	bt_shell_print("OBEX server %p setpath req, flags %02x, data len %d", server, flags,
 		       buf->len);
 	goep_parse_headers(buf);
 }
 
-static void goep_server_get(struct bt_obex *obex, bool final, struct net_buf *buf)
+static void goep_server_action(struct bt_obex_server *server, bool final, struct net_buf *buf)
 {
-	bt_shell_print("OBEX %p get req, final %s, data len %d", obex, final ? "true" : "false",
-		       buf->len);
-	goep_parse_headers(buf);
-}
-
-static void goep_server_abort(struct bt_obex *obex, struct net_buf *buf)
-{
-	bt_shell_print("OBEX %p abort req", obex);
-	goep_parse_headers(buf);
-}
-
-static void goep_server_setpath(struct bt_obex *obex, uint8_t flags, struct net_buf *buf)
-{
-	bt_shell_print("OBEX %p setpath req, flags %02x, data len %d", obex, flags, buf->len);
-	goep_parse_headers(buf);
-}
-
-static void goep_server_action(struct bt_obex *obex, bool final, struct net_buf *buf)
-{
-	bt_shell_print("OBEX %p action req, final %s, data len %d", obex, final ? "true" : "false",
-		       buf->len);
+	bt_shell_print("OBEX server %p action req, final %s, data len %d", server,
+		       final ? "true" : "false", buf->len);
 	goep_parse_headers(buf);
 }
 
@@ -186,49 +190,56 @@ struct bt_obex_server_ops goep_server_ops = {
 	.action = goep_server_action,
 };
 
-static void goep_client_connect(struct bt_obex *obex, uint8_t rsp_code, uint8_t version,
+static void goep_client_connect(struct bt_obex_client *client, uint8_t rsp_code, uint8_t version,
 				uint16_t mopl, struct net_buf *buf)
 {
-	bt_shell_print("OBEX %p conn rsp, rsp_code %s, version %02x, mopl %04x", obex,
+	bt_shell_print("OBEX client %p conn rsp, rsp_code %s, version %02x, mopl %04x", client,
 		       bt_obex_rsp_code_to_str(rsp_code), version, mopl);
 	goep_parse_headers(buf);
 }
 
-static void goep_client_disconnect(struct bt_obex *obex, uint8_t rsp_code, struct net_buf *buf)
+static void goep_client_disconnect(struct bt_obex_client *client, uint8_t rsp_code,
+				   struct net_buf *buf)
 {
-	bt_shell_print("OBEX %p disconn rsp, rsp_code %s", obex, bt_obex_rsp_code_to_str(rsp_code));
+	bt_shell_print("OBEX client %p disconn rsp, rsp_code %s", client,
+		       bt_obex_rsp_code_to_str(rsp_code));
 	goep_parse_headers(buf);
 }
 
-static void goep_client_put(struct bt_obex *obex, uint8_t rsp_code, struct net_buf *buf)
+static void goep_client_put(struct bt_obex_client *client, uint8_t rsp_code, struct net_buf *buf)
 {
-	bt_shell_print("OBEX %p put rsp, rsp_code %s, data len %d", obex,
+	bt_shell_print("OBEX client %p put rsp, rsp_code %s, data len %d", client,
 		       bt_obex_rsp_code_to_str(rsp_code), buf->len);
 	goep_parse_headers(buf);
 }
 
-static void goep_client_get(struct bt_obex *obex, uint8_t rsp_code, struct net_buf *buf)
+static void goep_client_get(struct bt_obex_client *client, uint8_t rsp_code, struct net_buf *buf)
 {
-	bt_shell_print("OBEX %p get rsp, rsp_code %s, data len %d", obex,
+	bt_shell_print("OBEX client %p get rsp, rsp_code %s, data len %d", client,
 		       bt_obex_rsp_code_to_str(rsp_code), buf->len);
 	goep_parse_headers(buf);
 }
 
-static void goep_client_abort(struct bt_obex *obex, uint8_t rsp_code, struct net_buf *buf)
+static void goep_client_abort(struct bt_obex_client *client, uint8_t rsp_code,
+			      struct net_buf *buf)
 {
-	bt_shell_print("OBEX %p abort rsp, rsp_code %s", obex, bt_obex_rsp_code_to_str(rsp_code));
+	bt_shell_print("OBEX client %p abort rsp, rsp_code %s", client,
+		       bt_obex_rsp_code_to_str(rsp_code));
 	goep_parse_headers(buf);
 }
 
-static void goep_client_setpath(struct bt_obex *obex, uint8_t rsp_code, struct net_buf *buf)
+static void goep_client_setpath(struct bt_obex_client *client, uint8_t rsp_code,
+				struct net_buf *buf)
 {
-	bt_shell_print("OBEX %p setpath rsp, rsp_code %s", obex, bt_obex_rsp_code_to_str(rsp_code));
+	bt_shell_print("OBEX client %p setpath rsp, rsp_code %s", client,
+		       bt_obex_rsp_code_to_str(rsp_code));
 	goep_parse_headers(buf);
 }
 
-static void goep_client_action(struct bt_obex *obex, uint8_t rsp_code, struct net_buf *buf)
+static void goep_client_action(struct bt_obex_client *client, uint8_t rsp_code,
+			       struct net_buf *buf)
 {
-	bt_shell_print("OBEX %p action rsp, rsp_code %s, data len %d", obex,
+	bt_shell_print("OBEX client %p action rsp, rsp_code %s, data len %d", client,
 		       bt_obex_rsp_code_to_str(rsp_code), buf->len);
 	goep_parse_headers(buf);
 }
@@ -255,7 +266,6 @@ static int rfcomm_accept(struct bt_conn *conn, struct bt_goep_transport_rfcomm_s
 	}
 
 	g_app->goep.transport_ops = &goep_transport_ops;
-	g_app->goep.obex.server_ops = &goep_server_ops;
 	*goep = &g_app->goep;
 	return 0;
 }
@@ -308,7 +318,6 @@ static int cmd_connect_rfcomm(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	g_app->goep.transport_ops = &goep_transport_ops;
-	g_app->goep.obex.client_ops = &goep_client_ops;
 
 	err = bt_goep_transport_rfcomm_connect(default_conn, &g_app->goep, channel);
 	if (err) {
@@ -356,7 +365,6 @@ static int l2cap_accept(struct bt_conn *conn, struct bt_goep_transport_l2cap_ser
 	}
 
 	g_app->goep.transport_ops = &goep_transport_ops;
-	g_app->goep.obex.server_ops = &goep_server_ops;
 	*goep = &g_app->goep;
 	return 0;
 }
@@ -409,7 +417,6 @@ static int cmd_connect_l2cap(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	g_app->goep.transport_ops = &goep_transport_ops;
-	g_app->goep.obex.client_ops = &goep_client_ops;
 
 	err = bt_goep_transport_l2cap_connect(default_conn, &g_app->goep, psm);
 	if (err) {
@@ -1021,7 +1028,9 @@ static int cmd_goep_client_conn(const struct shell *sh, size_t argc, char *argv[
 
 	mopl = (uint16_t)strtoul(argv[1], NULL, 16);
 
-	err = bt_obex_connect(&goep_app.goep.obex, mopl, goep_app.tx_buf);
+	goep_app.client.ops = &goep_client_ops;
+	goep_app.client.obex = &goep_app.goep.obex;
+	err = bt_obex_connect(&goep_app.client, mopl, goep_app.tx_buf);
 	if (err) {
 		shell_error(sh, "Fail to send conn req %d", err);
 	} else {
@@ -1044,7 +1053,7 @@ static int cmd_goep_client_disconn(const struct shell *sh, size_t argc, char *ar
 		return -ENOEXEC;
 	}
 
-	err = bt_obex_disconnect(&goep_app.goep.obex, goep_app.tx_buf);
+	err = bt_obex_disconnect(&goep_app.client, goep_app.tx_buf);
 	if (err) {
 		shell_error(sh, "Fail to send disconn req %d", err);
 	} else {
@@ -1074,7 +1083,7 @@ static int cmd_goep_client_put(const struct shell *sh, size_t argc, char *argv[]
 		return SHELL_CMD_HELP_PRINTED;
 	}
 
-	err = bt_obex_put(&goep_app.goep.obex, final, goep_app.tx_buf);
+	err = bt_obex_put(&goep_app.client, final, goep_app.tx_buf);
 	if (err) {
 		shell_error(sh, "Fail to send put req %d", err);
 	} else {
@@ -1104,7 +1113,7 @@ static int cmd_goep_client_get(const struct shell *sh, size_t argc, char *argv[]
 		return SHELL_CMD_HELP_PRINTED;
 	}
 
-	err = bt_obex_get(&goep_app.goep.obex, final, goep_app.tx_buf);
+	err = bt_obex_get(&goep_app.client, final, goep_app.tx_buf);
 	if (err) {
 		shell_error(sh, "Fail to send get req %d", err);
 	} else {
@@ -1127,7 +1136,7 @@ static int cmd_goep_client_abort(const struct shell *sh, size_t argc, char *argv
 		return -ENOEXEC;
 	}
 
-	err = bt_obex_abort(&goep_app.goep.obex, goep_app.tx_buf);
+	err = bt_obex_abort(&goep_app.client, goep_app.tx_buf);
 	if (err) {
 		shell_error(sh, "Fail to send abort req %d", err);
 	} else {
@@ -1162,7 +1171,7 @@ static int cmd_goep_client_setpath(const struct shell *sh, size_t argc, char *ar
 		}
 	}
 
-	err = bt_obex_setpath(&goep_app.goep.obex, flags, goep_app.tx_buf);
+	err = bt_obex_setpath(&goep_app.client, flags, goep_app.tx_buf);
 	if (err) {
 		shell_error(sh, "Fail to send setpath req %d", err);
 	} else {
@@ -1192,12 +1201,49 @@ static int cmd_goep_client_action(const struct shell *sh, size_t argc, char *arg
 		return SHELL_CMD_HELP_PRINTED;
 	}
 
-	err = bt_obex_action(&goep_app.goep.obex, final, goep_app.tx_buf);
+	err = bt_obex_action(&goep_app.client, final, goep_app.tx_buf);
 	if (err) {
 		shell_error(sh, "Fail to send action req %d", err);
 	} else {
 		goep_app.tx_buf = NULL;
 	}
+	return err;
+}
+
+static int cmd_goep_server_reg(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err;
+	uint8_t uuid128[BT_UUID_SIZE_128];
+	struct bt_uuid_128 *u = NULL;
+
+	static struct bt_uuid_128 uuid;
+
+	if (argc > 1) {
+		hex2bin(argv[1], strlen(argv[1]), uuid128, sizeof(uuid128));
+		uuid.uuid.type = BT_UUID_TYPE_128;
+		sys_memcpy_swap(uuid.val, uuid128, BT_UUID_SIZE_128);
+		u = &uuid;
+	}
+
+	goep_app.server.ops = &goep_server_ops;
+	goep_app.server.obex = &goep_app.goep.obex;
+	err = bt_obex_server_register(&goep_app.server, u);
+	if (err != 0) {
+		shell_error(sh, "Fail to register obex server %d", err);
+	}
+
+	return err;
+}
+
+static int cmd_goep_server_unreg(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err;
+
+	err = bt_obex_server_unregister(&goep_app.server);
+	if (err != 0) {
+		shell_error(sh, "Fail to unregister obex server %d", err);
+	}
+
 	return err;
 }
 
@@ -1237,7 +1283,7 @@ static int cmd_goep_server_conn(const struct shell *sh, size_t argc, char *argv[
 
 	mopl = (uint16_t)strtoul(argv[2], NULL, 16);
 
-	err = bt_obex_connect_rsp(&goep_app.goep.obex, rsp_code, mopl, goep_app.tx_buf);
+	err = bt_obex_connect_rsp(&goep_app.server, rsp_code, mopl, goep_app.tx_buf);
 	if (err) {
 		shell_error(sh, "Fail to send conn rsp %d", err);
 	} else {
@@ -1279,7 +1325,7 @@ static int cmd_goep_server_disconn(const struct shell *sh, size_t argc, char *ar
 		return SHELL_CMD_HELP_PRINTED;
 	}
 
-	err = bt_obex_disconnect_rsp(&goep_app.goep.obex, rsp_code, goep_app.tx_buf);
+	err = bt_obex_disconnect_rsp(&goep_app.server, rsp_code, goep_app.tx_buf);
 	if (err) {
 		shell_error(sh, "Fail to send disconn rsp %d", err);
 	} else {
@@ -1321,7 +1367,7 @@ static int cmd_goep_server_put(const struct shell *sh, size_t argc, char *argv[]
 		return SHELL_CMD_HELP_PRINTED;
 	}
 
-	err = bt_obex_put_rsp(&goep_app.goep.obex, rsp_code, goep_app.tx_buf);
+	err = bt_obex_put_rsp(&goep_app.server, rsp_code, goep_app.tx_buf);
 	if (err) {
 		shell_error(sh, "Fail to send put rsp %d", err);
 	} else {
@@ -1363,7 +1409,7 @@ static int cmd_goep_server_get(const struct shell *sh, size_t argc, char *argv[]
 		return SHELL_CMD_HELP_PRINTED;
 	}
 
-	err = bt_obex_get_rsp(&goep_app.goep.obex, rsp_code, goep_app.tx_buf);
+	err = bt_obex_get_rsp(&goep_app.server, rsp_code, goep_app.tx_buf);
 	if (err) {
 		shell_error(sh, "Fail to send get rsp %d", err);
 	} else {
@@ -1405,7 +1451,7 @@ static int cmd_goep_server_abort(const struct shell *sh, size_t argc, char *argv
 		return SHELL_CMD_HELP_PRINTED;
 	}
 
-	err = bt_obex_abort_rsp(&goep_app.goep.obex, rsp_code, goep_app.tx_buf);
+	err = bt_obex_abort_rsp(&goep_app.server, rsp_code, goep_app.tx_buf);
 	if (err) {
 		shell_error(sh, "Fail to send abort rsp %d", err);
 	} else {
@@ -1447,7 +1493,7 @@ static int cmd_goep_server_setpath(const struct shell *sh, size_t argc, char *ar
 		return SHELL_CMD_HELP_PRINTED;
 	}
 
-	err = bt_obex_setpath_rsp(&goep_app.goep.obex, rsp_code, goep_app.tx_buf);
+	err = bt_obex_setpath_rsp(&goep_app.server, rsp_code, goep_app.tx_buf);
 	if (err) {
 		shell_error(sh, "Fail to send setpath rsp %d", err);
 	} else {
@@ -1489,7 +1535,7 @@ static int cmd_goep_server_action(const struct shell *sh, size_t argc, char *arg
 		return SHELL_CMD_HELP_PRINTED;
 	}
 
-	err = bt_obex_action_rsp(&goep_app.goep.obex, rsp_code, goep_app.tx_buf);
+	err = bt_obex_action_rsp(&goep_app.server, rsp_code, goep_app.tx_buf);
 	if (err) {
 		shell_error(sh, "Fail to send action rsp %d", err);
 	} else {
@@ -1570,6 +1616,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(obex_client_cmds,
 );
 
 SHELL_STATIC_SUBCMD_SET_CREATE(obex_server_cmds,
+	SHELL_CMD_ARG(reg, NULL, "[UUID 128]", cmd_goep_server_reg, 1, 1),
+	SHELL_CMD_ARG(unreg, NULL, HELP_NONE, cmd_goep_server_unreg, 1, 0),
 	SHELL_CMD_ARG(conn, NULL, "<rsp: continue, success, error> <mopl> [rsp_code]",
 		      cmd_goep_server_conn, 3, 1),
 	SHELL_CMD_ARG(disconn, NULL, "<rsp: continue, success, error> [rsp_code]",
