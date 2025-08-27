@@ -141,7 +141,7 @@ Configuring a Debug Probe
 =========================
 
 For the RT1010, J61/J62 are the SWD isolation jumpers, J22 is the DFU
-mode jumper, and J16 is the 10 pin JTAG/SWD header.
+mode jumper, and J55 is the 10 pin JTAG/SWD header.
 
 .. include:: ../../common/rt1xxx-lpclink2-debug.rst
    :start-after: rt1xxx-lpclink2-probes
