@@ -33,7 +33,7 @@ if BOOTLOADER_MCUBOOT
 choice MCUBOOT_MODE
 	prompt "Mode of operation"
 	# Should be removed if board dts is updated
-	default MCUBOOT_MODE_SWAP_USING_MOVE if SOC_FAMILY_STM32
+	default MCUBOOT_MODE_SWAP_USING_MOVE if SOC_FAMILY_STM32 || SOC_FAMILY_ESPRESSIF_ESP32
 	default MCUBOOT_MODE_SWAP_USING_OFFSET
 	help
 	  The operating mode of MCUboot (which will also be propagated to the application).
