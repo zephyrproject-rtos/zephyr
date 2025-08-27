@@ -60,4 +60,9 @@ void dsa_tag_setup(const struct device *dev_cpu)
 	default:
 		LOG_ERR("DSA tag protocol %d not supported", cfg->tag_proto);
 	}
+
+	if (dsa_switch_ctx->dapi->connect_tag_protocol != NULL &&
+	    dsa_switch_ctx->dapi->connect_tag_protocol(dsa_switch_ctx, cfg->tag_proto) != 0) {
+		LOG_ERR("Failed to connect tag protocol");
+	}
 }
