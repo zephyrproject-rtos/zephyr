@@ -1,0 +1,81 @@
+# Copyright (c) 2025 Ambiq Micro Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    This binding gives a representation of SPI/DSPI/QSPI controller
+
+compatible: "ambiq,spi-dcif"
+
+include: [spi-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  disp-te:
+    type: boolean
+    description: |
+      Enable or Disable the TE feature.
+
+  pixfmt:
+    type: string
+    enum:
+      - "reserved"
+      - "rgb111"
+      - "rgb332"
+      - "rgb444"
+      - "bw"
+      - "rgb565"
+      - "RGB666"
+      - "rgb888"
+    description: |
+      index 0 - "reserved"
+      index 1 - "rgb111"
+      index 2 - "rgb332"
+      index 3 - "rgb444"
+      index 4 - "bw"
+      index 5 - "rgb565"
+      index 6 - "RGB666"
+      index 7 - "rgb888"
+      pixel format. Available formats in
+      modules\hal\ambiq\components\graphics\NemaGFX_SDK\headers\NemaDC\nema_dc_mipi.h
+
+  hactive:
+    type: int
+    description: |
+      Horizontal active.
+
+  hfp:
+    type: int
+    description: |
+      Horizontal front porch.
+
+  hbp:
+    type: int
+    description: |
+      Horizontal back porch.
+
+  hsync:
+    type: int
+    description: |
+      Horizontal sync length
+
+  vactive:
+    type: int
+    description: |
+      Vertical active.
+
+  vfp:
+    type: int
+    description: |
+      Vertical front porch.
+
+  vbp:
+    type: int
+    description: |
+      Vertical back porch.
+
+  vsync:
+    type: int
+    description: |
+      Vertical sync length

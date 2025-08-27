@@ -61,3 +61,20 @@ config SPI_AMBIQ_BLEIF_TIMING_TRACE
 	  trace purpose.
 
 endif # SPI_AMBIQ_BLEIF
+
+config SPI_AMBIQ_DCIF
+	bool "AMBIQ SPI/DSPI/QSPI interfaces of Display Controller driver"
+	default y
+	depends on DT_HAS_AMBIQ_SPI_DCIF_ENABLED
+	select GPIO
+	select AMBIQ_HAL
+	select AMBIQ_COMPONENT_USE_NEMASDK
+	help
+	  Enable driver for Ambiq SPI/DSPI/QSPI in controller mode.
+
+if SPI_AMBIQ_DCIF
+
+config SPI_EXTENDED_MODES
+	default y
+
+endif # SPI_AMBIQ_DCIF

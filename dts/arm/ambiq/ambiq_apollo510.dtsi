@@ -740,6 +740,23 @@
 			zephyr,pm-device-runtime-auto;
 		};
 
+		dc_spi: spi@DC_BASE_NAME {
+			compatible = "ambiq,spi-dcif";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <DC_REG_BASE DC_REG_SIZE>;
+			interrupts = <29 0>;/* DC interrupt */
+			status = "disabled";
+			hactive = <468>;/*Its value should be an integer multiple of 4.*/
+			hfp = <1>;
+			hbp = <1>;
+			hsync = <1>;
+			vactive = <468>;
+			vfp = <1>;
+			vbp = <1>;
+			vsync = <1>;
+		};
+
 		mipi_dsi: mipi_dsi@DSI_BASE_NAME {
 			compatible = "ambiq,mipi-dsi";
 			#address-cells = <1>;
