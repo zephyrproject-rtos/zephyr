@@ -4,33 +4,13 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-description: CHIPONE CO5300 Panel
+description: CHIPONE CO5300 Panel (MIPI-DSI)
 
 compatible: "chipone,co5300"
 
-include: [mipi-dsi-device.yaml, display-controller.yaml, pinctrl-device.yaml]
+include: ["mipi-dsi-device.yaml", "chipone,co5300-common.yaml"]
 
 properties:
-  reg:
-    type: array
-    required: true
-
-  reset-gpios:
-    type: phandle-array
-    description: |
-      The RESETn pin is asserted to disable the sensor causing a hard
-      reset.  The sensor receives this as an active-low signal.
-
-  rotation:
-    type: int
-    enum:
-      - 0
-      - 90
-      - 180
-      - 270
-    description: |
-      Display rotation (CW) in degrees.
-
   mode-flags:
     type: int
     description: |

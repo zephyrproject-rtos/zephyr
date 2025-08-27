@@ -1,0 +1,29 @@
+#
+# Copyright (c) 2025 Ambiq Micro Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: CHIPONE CO5300 Panel (SPI)
+
+compatible: "chipone,co5300"
+
+include: ["spi-device.yaml", "chipone,co5300-common.yaml"]
+
+properties:
+  pixel-format:
+    type: int
+    required: true
+    description:
+      Pixel format. Available formats in dt-bindings/mipi_dsi/mipi_dsi.h.
+
+  data-lines:
+    type: int
+    enum:
+      - 1
+      - 2
+      - 4
+    description: |
+      1 - SPI module
+      2 - DSPI module
+      4 - QSPI module
