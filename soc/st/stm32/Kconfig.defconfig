@@ -111,4 +111,14 @@ config VIDEO_BUFFER_POOL_ALIGN
 config STM32_BACKUP_PROTECTION
 	default y if !SOC_SERIES_STM32C0X && !SOC_SERIES_STM32WB0X
 
+if CRYPTO_STM32
+
+# Set the minimum required heap size to enable
+# AES CCM with Additional Data (AD) support
+# for running samples/drivers/crypto sample.
+config HEAP_MEM_POOL_SIZE
+	default 16 if $(dt_nodelabel_enabled,cryp) && $(dt_nodelabel_has_prop,cryp,gcm-ccm-supported)
+
+endif # CRYPTO_STM32
+
 endif # SOC_FAMILY_STM32
