@@ -70,6 +70,18 @@
 		};
 	};
 
+	pinmux_lpi2c15: pinmux_lpi2c15 {
+		group0 {
+			pinmux = <PMIC_I2C_SCL>,
+				<PMIC_I2C_SDA>;
+			bias-pull-up;
+			input-enable;
+			slew-rate = "normal";
+			drive-strength = "normal";
+			drive-open-drain;
+		};
+	};
+
 	flexio_pwm_default: flexio_pwm_default {
 		group0 {
 			pinmux = <FLEXIO_IO7_PIO2_7>;
