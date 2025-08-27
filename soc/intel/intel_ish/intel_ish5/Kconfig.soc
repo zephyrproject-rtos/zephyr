@@ -25,3 +25,7 @@ config SOC
 	default "intel_ish_5_4_1" if SOC_INTEL_ISH_5_4_1
 	default "intel_ish_5_6_0" if SOC_INTEL_ISH_5_6_0
 	default "intel_ish_5_8_0" if SOC_INTEL_ISH_5_8_0
+
+module=ISH_PM
+module-str=ish_pm
+source "subsys/logging/Kconfig.template.log_config"
