@@ -106,6 +106,10 @@
 	power-supply = "smps-direct";
 };
 
+&cryp {
+	status = "okay";
+};
+
 &usart3 {
 	pinctrl-0 = <&usart3_tx_pd8 &usart3_rx_pd9>;
 	pinctrl-names = "default";
