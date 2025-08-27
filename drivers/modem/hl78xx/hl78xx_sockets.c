@@ -18,6 +18,11 @@
 #include <zephyr/net/conn_mgr_connectivity.h>
 #include <zephyr/net/conn_mgr_monitor.h>
 
+#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS) && defined(CONFIG_MODEM_HL78XX_SOCKETS_SOCKOPT_TLS)
+#include "tls_internal.h"
+#include <zephyr/net/tls_credentials.h>
+#endif
+
 #include <string.h>
 #include <stdlib.h>
 #include "hl78xx.h"
@@ -39,6 +44,7 @@ LOG_MODULE_REGISTER(hl78xx_socket, CONFIG_MODEM_LOG_LEVEL);
 
 #define HL78XX_UART_PIPE_WORK_SOCKET_BUFFER_SIZE 32
 #define HL78XX_MAC_ADDR_SIZE                     6
+#define MODEM_MAX_HOSTNAME_LEN                   128
 
 RING_BUF_DECLARE(mdm_recv_pool, CONFIG_MODEM_HL78XX_UART_BUFFER_SIZES);
 
@@ -76,6 +82,9 @@ struct hl78xx_socket_data {
 	struct k_sem psm_cntrl_sem;
 
 	bool socket_data_error;
+
+	char tls_hostname[MODEM_MAX_HOSTNAME_LEN];
+	bool tls_hostname_set;
 };
 struct work_socket_data {
 	char buf[HL78XX_UART_PIPE_WORK_SOCKET_BUFFER_SIZE];
@@ -105,7 +114,10 @@ struct hl78xx_socket_data socket_data;
 
 static int offload_socket(int family, int type, int protom);
 static int socket_close(struct modem_socket *sock);
-
+#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS) && defined(CONFIG_MODEM_HL78XX_SOCKETS_SOCKOPT_TLS)
+static int map_credentials(struct modem_socket *sock, const void *optval, socklen_t optlen);
+static int hl78xx_configure_chipper_suit(void);
+#endif /* CONFIG_NET_SOCKETS_SOCKOPT_TLS */
 void hl78xx_on_kstatev_parser(struct hl78xx_data *data, int state)
 {
 #ifdef CONFIG_MODEM_HL78XX_LOG_CONTEXT_VERBOSE_DEBUG
@@ -862,7 +874,7 @@ static int create_socket(struct modem_socket *sock, const struct sockaddr *addr,
 	int af;
 	char cmd_buf[sizeof("AT+KTCPCFG=#,#,\"" MODEM_HL78XX_ADDRESS_FAMILY_FORMAT
 			    "\",#####,,,,#,,#") +
-		     NET_IPV6_ADDR_LEN];
+		     MDM_MAX_HOSTNAME_LEN + NET_IPV6_ADDR_LEN + MDM_MQTT_MAX_CLIENT_ID_LEN];
 	char ip_str[NET_IPV6_ADDR_LEN];
 	uint16_t dst_port = 0U;
 	bool udp_configproto = false;
@@ -891,8 +903,18 @@ static int create_socket(struct modem_socket *sock, const struct sockaddr *addr,
 		return -1;
 	}
 	if (!udp_configproto) {
-		snprintk(cmd_buf, sizeof(cmd_buf), "AT+KTCPCFG=%d,%d,\"%s\",%u,,,,%d,,%d", 1U, 0U,
-			 ip_str, dst_port, af, 0U);
+		if (sock->ip_proto == IPPROTO_TCP) {
+			mode = 0; /* TCP */
+		} else if (sock->ip_proto == IPPROTO_TLS_1_2) {
+			mode = 3; /* TLS */
+		} else {
+			LOG_ERR("Unsupported protocol: %d", sock->ip_proto);
+			errno = EPROTONOSUPPORT;
+			return -1;
+		}
+		snprintk(cmd_buf, sizeof(cmd_buf), "AT+KTCPCFG=1,%d,\"%s\",%u,,,,%d,%s,0", mode,
+			 mode == 3 ? socket_data.tls_hostname : ip_str, dst_port, af,
+			 mode == 3 ? "0" : "");
 		ret = modem_cmd_send_int(data, NULL, cmd_buf, strlen(cmd_buf), &ktcp_match, 1,
 					 false);
 		if (ret < 0) {
@@ -1029,8 +1051,10 @@ static int offload_connect(void *obj, const struct sockaddr *addr, socklen_t add
 	struct modem_socket *sock = (struct modem_socket *)obj;
 	int ret = 0;
 	int af;
-	char buf[sizeof("AT+KTCPCFG=#,#,\"" MODEM_HL78XX_ADDRESS_FAMILY_FORMAT
-			"\",#####,,,,#,,#\r")];
+	int mode;
+	char cmd_buf[sizeof("AT+KTCPCFG=#,#,\"" MODEM_HL78XX_ADDRESS_FAMILY_FORMAT
+			    "\",#####,,,,#,,#\r") +
+		     MODEM_MAX_HOSTNAME_LEN];
 	char ip_str[NET_IPV6_ADDR_LEN];
 	uint16_t dst_port = 0U;
 
@@ -1084,27 +1108,45 @@ static int offload_connect(void *obj, const struct sockaddr *addr, socklen_t add
 		errno = 0;
 		return 0;
 	}
+#ifdef CONFIG_MODEM_HL78XX_SOCKETS_SOCKOPT_TLS
+	ret = hl78xx_configure_chipper_suit();
+	if (ret < 0) {
+		LOG_ERR("Failed to configure chipper suit: %d", ret);
+		errno = ret;
+		return -1;
+	}
+#endif /* CONFIG_MODEM_HL78XX_SOCKETS_SOCKOPT_TLS */
 	ret = modem_context_sprint_ip_addr(addr, ip_str, sizeof(ip_str));
 	if (ret != 0) {
 		errno = -ret;
 		LOG_ERR("Error formatting IP string %d", ret);
 		return -1;
 	}
-	snprintk(buf, sizeof(buf), "AT+KTCPCFG=%d,%d,\"%s\",%u,,,,%d,,%d", 1U, 0U, ip_str, dst_port,
-		 af, 0U);
-	ret = modem_cmd_send_int(socket_data.mdata_global, NULL, buf, strlen(buf), &ktcp_match, 1,
-				 false);
+	if (sock->ip_proto == IPPROTO_TCP) {
+		mode = 0; /* TCP */
+	} else if (sock->ip_proto == IPPROTO_TLS_1_2) {
+		mode = 3; /* TLS */
+	} else {
+		LOG_ERR("Unsupported protocol: %d", sock->ip_proto);
+		errno = EPROTONOSUPPORT;
+		return -1;
+	}
+	snprintk(cmd_buf, sizeof(cmd_buf), "AT+KTCPCFG=1,%d,\"%s\",%u,,,,%d,%s,0", mode,
+		 mode == 3 ? socket_data.tls_hostname : ip_str, dst_port, af, mode == 3 ? "0" : "");
+
+	ret = modem_cmd_send_int(socket_data.mdata_global, NULL, cmd_buf, strlen(cmd_buf),
+				 &ktcp_match, 1, false);
 	if (ret < 0) {
-		LOG_ERR("%s ret:%d", buf, ret);
+		LOG_ERR("%s ret:%d", cmd_buf, ret);
 		errno = ret;
 		return -1;
 	}
 
-	snprintk(buf, sizeof(buf), "AT+KTCPCNX=%d", sock->id);
-	ret = modem_cmd_send_int(socket_data.mdata_global, NULL, buf, strlen(buf), &ok_match, 1,
-				 false);
+	snprintk(cmd_buf, sizeof(cmd_buf), "AT+KTCPCNX=%d", sock->id);
+	ret = modem_cmd_send_int(socket_data.mdata_global, NULL, cmd_buf, strlen(cmd_buf),
+				 &ok_match, 1, false);
 	if (ret < 0) {
-		LOG_ERR("%s ret:%d", buf, ret);
+		LOG_ERR("%s ret:%d", cmd_buf, ret);
 		errno = ret;
 		return -1;
 	}
@@ -1446,6 +1488,51 @@ cleanup:
 	return (ret < 0) ? -1 : sock_written;
 }
 
+#ifdef CONFIG_MODEM_HL78XX_SOCKETS_SOCKOPT_TLS
+static int offload_setsockopt(void *obj, int level, int optname, const void *optval,
+			      socklen_t optlen)
+{
+	struct modem_socket *sock = (struct modem_socket *)obj;
+
+	int ret;
+	/* Currently only TLS options are supported */
+	if (IS_ENABLED(CONFIG_NET_SOCKETS_SOCKOPT_TLS) && level == SOL_TLS) {
+		switch (optname) {
+		case TLS_SEC_TAG_LIST:
+			ret = map_credentials(sock, optval, optlen);
+			break;
+		case TLS_HOSTNAME:
+			if (optlen >= MODEM_MAX_HOSTNAME_LEN) {
+				return -EINVAL;
+			}
+
+			memset(socket_data.tls_hostname, 0, MODEM_MAX_HOSTNAME_LEN);
+			memcpy(socket_data.tls_hostname, optval, optlen);
+			socket_data.tls_hostname[optlen] = '\0';
+			socket_data.tls_hostname_set = true;
+
+			LOG_DBG("TLS hostname set to: %s", socket_data.tls_hostname);
+			ret = 0;
+			return 0;
+		case TLS_PEER_VERIFY:
+			if (*(const uint32_t *)optval != TLS_PEER_VERIFY_REQUIRED) {
+				LOG_WRN("Disabling peer verification is not supported");
+				return 0;
+			}
+			ret = 0;
+			break;
+		default:
+			LOG_DBG("Unsupported TLS option: %d", optname);
+			return -EINVAL;
+		}
+	} else {
+		return -EINVAL;
+	}
+
+	return ret;
+}
+#endif /* CONFIG_MODEM_HL78XX_SOCKETS_SOCKOPT_TLS */
+
 static ssize_t offload_sendto(void *obj, const void *buf, size_t len, int flags,
 			      const struct sockaddr *to, socklen_t tolen)
 {
@@ -1648,7 +1735,11 @@ static const struct socket_op_vtable offload_socket_fd_op_vtable = {
 	.accept = NULL,
 	.sendmsg = offload_sendmsg,
 	.getsockopt = NULL,
+	#ifdef CONFIG_MODEM_HL78XX_SOCKETS_SOCKOPT_TLS
+	.setsockopt = offload_setsockopt,
+	#else
 	.setsockopt = NULL,
+	#endif
 };
 /* clang-format on */
 static int hl78xx_init_sockets(const struct device *dev)
@@ -1710,6 +1801,147 @@ void tcp_notify_data(int socket_id, int tcp_notif)
 	}
 }
 
+#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS) && defined(CONFIG_MODEM_HL78XX_SOCKETS_SOCKOPT_TLS)
+static int hl78xx_configure_chipper_suit(void)
+{
+	const char *cmd_chipper_suit = "AT+KSSLCRYPTO=0,8,1,8192,4,4,3,0";
+
+	return modem_cmd_send_int(socket_data.mdata_global, NULL, cmd_chipper_suit,
+				  strlen(cmd_chipper_suit), &ok_match, 1, false);
+}
+
+/* send binary data via the K....STORE commands */
+static ssize_t hl78xx_send_cert(struct modem_socket *sock, const char *cert_data, size_t cert_len,
+				enum tls_credential_type cert_type)
+{
+	int ret;
+	char send_buf[sizeof("AT+KPRIVKSTORE=#,####\r\n")];
+	int sock_written = 0;
+
+	if (!sock) {
+		return -EINVAL;
+	}
+
+	if (cert_len == 0 || !cert_data) {
+		LOG_ERR("Invalid certificate data or length");
+		return -EINVAL;
+	}
+
+	__ASSERT_NO_MSG(cert_len <= MDM_MAX_CERT_LENGTH);
+	if (cert_type == TLS_CREDENTIAL_CA_CERTIFICATE ||
+	    cert_type == TLS_CREDENTIAL_SERVER_CERTIFICATE) {
+		snprintk(send_buf, sizeof(send_buf), "AT+KCERTSTORE=%d,%d", (cert_type - 1),
+			 cert_len);
+
+	} else if (cert_type == TLS_CREDENTIAL_PRIVATE_KEY) {
+		snprintk(send_buf, sizeof(send_buf), "AT+KPRIVKSTORE=0,%d", cert_len);
+
+	} else {
+		LOG_ERR("Unsupported certificate type: %d", cert_type);
+		return -EINVAL;
+	}
+
+	socket_data.socket_data_error = false;
+
+	if (k_mutex_lock(&socket_data.mdata_global->tx_lock, K_SECONDS(1)) < 0) {
+		errno = EBUSY;
+		return -1;
+	}
+	ret = modem_cmd_send_int(socket_data.mdata_global, NULL, send_buf, strlen(send_buf),
+				 connect_matches, ARRAY_SIZE(connect_matches), false);
+	if (ret < 0) {
+		LOG_ERR("Error sending AT command %d", ret);
+	}
+	if (socket_data.socket_data_error) {
+		ret = -ENODEV;
+		errno = ENODEV;
+		goto cleanup;
+	}
+	modem_pipe_attach(socket_data.mdata_global->chat.pipe, modem_pipe_callback,
+			  &socket_data.mdata_global->chat);
+	LOG_DBG("%d", __LINE__);
+	ret = send_data_buffer(cert_data, cert_len, &sock_written);
+	if (ret < 0) {
+		goto cleanup;
+	}
+	LOG_DBG("%d", __LINE__);
+	ret = k_sem_take(&socket_data.mdata_global->script_stopped_sem_tx_int, K_FOREVER);
+	if (ret < 0) {
+		goto cleanup;
+	}
+	LOG_DBG("%d", __LINE__);
+	ret = modem_pipe_transmit(socket_data.mdata_global->uart_pipe,
+				  (uint8_t *)socket_data.mdata_global->buffers.eof_pattern,
+				  socket_data.mdata_global->buffers.eof_pattern_size);
+	if (ret < 0) {
+		LOG_ERR("Error sending EOF pattern: %d", ret);
+	}
+	LOG_DBG("%d", __LINE__);
+	modem_chat_attach(&socket_data.mdata_global->chat, socket_data.mdata_global->uart_pipe);
+	ret = modem_cmd_send_int(socket_data.mdata_global, NULL, "", 0, &ok_match, 1, false);
+	if (ret < 0) {
+		LOG_ERR("Final confirmation failed: %d", ret);
+		goto cleanup;
+	}
+#ifdef CONFIG_MODEM_HL78XX_LOG_CONTEXT_VERBOSE_DEBUG
+	LOG_DBG("%d %d %d", __LINE__, sock_written, ret);
+#endif
+cleanup:
+	k_mutex_unlock(&socket_data.mdata_global->tx_lock);
+	return (ret < 0) ? -1 : sock_written;
+
+	return ret;
+}
+
+static int map_credentials(struct modem_socket *sock, const void *optval, socklen_t optlen)
+{
+	const sec_tag_t *sec_tags = (const sec_tag_t *)optval;
+	int ret = 0;
+	int tags_len;
+	sec_tag_t tag;
+	int i;
+	struct tls_credential *cert;
+
+	if ((optlen % sizeof(sec_tag_t)) != 0 || (optlen == 0)) {
+		return -EINVAL;
+	}
+
+	tags_len = optlen / sizeof(sec_tag_t);
+	/* For each tag, retrieve the credentials value and type: */
+	for (i = 0; i < tags_len; i++) {
+		tag = sec_tags[i];
+		cert = credential_next_get(tag, NULL);
+		while (cert != NULL) {
+			switch (cert->type) {
+			case TLS_CREDENTIAL_CA_CERTIFICATE:
+				LOG_DBG("TLS_CREDENTIAL_CA_CERTIFICATE tag: %d", tag);
+				break;
+			case TLS_CREDENTIAL_SERVER_CERTIFICATE:
+				LOG_DBG("TLS_CREDENTIAL_SERVER_CERTIFICATE tag: %d", tag);
+				break;
+			case TLS_CREDENTIAL_PRIVATE_KEY:
+				LOG_DBG("TLS_CREDENTIAL_PRIVATE_KEY tag: %d", tag);
+				break;
+			case TLS_CREDENTIAL_NONE:
+			case TLS_CREDENTIAL_PSK:
+			case TLS_CREDENTIAL_PSK_ID:
+			default:
+				/* Not handled */
+				return -EINVAL;
+			}
+
+			ret = hl78xx_send_cert(sock, cert->buf, cert->len, cert->type);
+			if (ret < 0) {
+				return ret;
+			}
+			cert = credential_next_get(tag, cert);
+		}
+	}
+
+	return 0;
+}
+#endif
+
 static void l4_event_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt_event,
 			     struct net_if *iface)
 {
@@ -1738,6 +1970,7 @@ static void l4_event_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt_e
 		break;
 	}
 }
+
 static void connectivity_event_handler(struct net_mgmt_event_callback *cb, uint64_t event,
 				       struct net_if *iface)
 {
@@ -1792,7 +2025,11 @@ static bool offload_is_supported(int family, int type, int proto)
 {
 	return (family == AF_INET || family == AF_INET6) &&
 	       (type == SOCK_DGRAM || type == SOCK_STREAM) &&
-	       (proto == IPPROTO_TCP || proto == IPPROTO_UDP);
+	       (proto == IPPROTO_TCP || proto == IPPROTO_UDP
+#if defined(CONFIG_MODEM_HL78XX_SOCKETS_SOCKOPT_TLS)
+		|| proto == IPPROTO_TLS_1_2
+#endif
+	       );
 }
 
 #define MODEM_HL78XX_DEFINE_INSTANCE(inst)                                                         \

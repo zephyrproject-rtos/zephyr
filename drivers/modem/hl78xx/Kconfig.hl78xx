@@ -774,6 +774,13 @@ config MODEM_HL78XX_SOCKET_RESTORE_ON_BOOT
 	  0 — Do not restore sockets on boot
 	  1 — Restore sockets on boot
 
+config MODEM_HL78XX_SOCKETS_SOCKOPT_TLS
+	bool "TLS for sockets"
+	depends on NET_SOCKETS_SOCKOPT_TLS
+	help
+	  This option enables TLS (Transport Layer Security) for sockets
+	  on the HL78xx modem.
+
 endif # MODEM_HL78XX_ADVANCED_SOCKET_CONFIG
 
 config MODEM_HL78XX_LOG_CONTEXT_VERBOSE_DEBUG

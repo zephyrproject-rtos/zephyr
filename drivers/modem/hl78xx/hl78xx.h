@@ -48,13 +48,16 @@
 
 #define MDM_KBND_BITMAP_MAX_ARRAY_SIZE 64
 
-#define MDM_MANUFACTURER_LENGTH 20
-#define MDM_MODEL_LENGTH        16
-#define MDM_REVISION_LENGTH     64
-#define MDM_IMEI_LENGTH         16
-#define MDM_IMSI_LENGTH         23
-#define MDM_ICCID_LENGTH        22
-#define MDM_APN_MAX_LENGTH      64
+#define MDM_MANUFACTURER_LENGTH    20
+#define MDM_MODEL_LENGTH           16
+#define MDM_REVISION_LENGTH        64
+#define MDM_IMEI_LENGTH            16
+#define MDM_IMSI_LENGTH            23
+#define MDM_ICCID_LENGTH           22
+#define MDM_APN_MAX_LENGTH         64
+#define MDM_MAX_CERT_LENGTH        4096
+#define MDM_MAX_HOSTNAME_LEN       128
+#define MDM_MQTT_MAX_CLIENT_ID_LEN 64
 
 #define ADDRESS_FAMILY_IP         "IP"
 #define ADDRESS_FAMILY_IP4        "IPV4"
