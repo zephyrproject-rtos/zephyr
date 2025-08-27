@@ -2016,7 +2016,7 @@ int net_pkt_copy(struct net_pkt *pkt_dst,
 	return 0;
 }
 
-#if defined(NET_PKT_HAS_CONTROL_BLOCK)
+#if defined(CONFIG_NET_PKT_CONTROL_BLOCK)
 static inline void clone_pkt_cb(struct net_pkt *pkt, struct net_pkt *clone_pkt)
 {
 	memcpy(net_pkt_cb(clone_pkt), net_pkt_cb(pkt), sizeof(clone_pkt->cb));
