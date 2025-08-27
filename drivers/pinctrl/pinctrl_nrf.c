@@ -557,6 +557,17 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 			input = NRF_GPIO_PIN_INPUT_CONNECT;
 			break;
 #endif /* defined(NRF_PSEL_TWIS) */
+#if DT_HAS_COMPAT_STATUS_OKAY(nordic_coresight_nrf)
+		/* Pin routing is controlled by secure domain, via UICR */
+		case NRF_FUN_TPIU_CLOCK:
+		case NRF_FUN_TPIU_DATA0:
+		case NRF_FUN_TPIU_DATA1:
+		case NRF_FUN_TPIU_DATA2:
+		case NRF_FUN_TPIU_DATA3:
+			dir = NRF_GPIO_PIN_DIR_OUTPUT;
+			input = NRF_GPIO_PIN_INPUT_DISCONNECT;
+			break;
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(nordic_coresight_nrf) */
 		default:
 			return -ENOTSUP;
 		}

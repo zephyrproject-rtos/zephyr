@@ -41,6 +41,9 @@ SKIP_SPU_PERIPH_PERM_COMPATS = {
     "nordic,nrf-temp",
     "nordic,nrf-vevif-task-tx",
     "nordic,nrf-vevif-task-rx",
+    # No retention in TDD so permissions can't be set outside of the TDD service
+    "nordic,coresight-nrf",
+    "nordic,nrf-tbm",
 }
 
 # Compatibles of global peripherals that should be assigned to the current core but do not have DMA
@@ -1018,6 +1021,11 @@ class NrfFun(int, enum.Enum):
     TDM_SDOUT = 76
     TDM_MCK = 77
     SPIM_CSN = 78
+    TPIU_CLOCK = 79
+    TPIU_DATA0 = 80
+    TPIU_DATA1 = 81
+    TPIU_DATA2 = 82
+    TPIU_DATA3 = 83
 
     # Value used to ignore the function field and only check (port, pin)
     IGNORE = -1
