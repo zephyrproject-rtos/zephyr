@@ -185,7 +185,7 @@ menu "On board MCUboot operation mode"
 choice MCUBOOT_BOOTLOADER_MODE
 	prompt "Application assumed MCUboot mode of operation"
 	# Should be removed if board dts is updated
-	default MCUBOOT_BOOTLOADER_MODE_SWAP_USING_MOVE if SOC_FAMILY_STM32
+	default MCUBOOT_BOOTLOADER_MODE_SWAP_USING_MOVE if SOC_FAMILY_STM32 || SOC_FAMILY_ESPRESSIF_ESP32
 	default MCUBOOT_BOOTLOADER_MODE_SWAP_USING_OFFSET
 	help
 	  Informs application build on assumed MCUboot mode of operation.
