@@ -515,7 +515,7 @@ class KconfigCheck(ComplianceTest):
         self.check_no_undef_outside_kconfig(kconf)
         self.check_disallowed_defconfigs(kconf)
 
-    def get_modules(self, modules_file, sysbuild_modules_file, settings_file):
+    def get_modules(self, _module_dirs_file, modules_file, sysbuild_modules_file, settings_file):
         """
         Get a list of modules and put them in a file that is parsed by
         Kconfig
@@ -700,13 +700,15 @@ class KconfigCheck(ComplianceTest):
         os.environ["KCONFIG_BINARY_DIR"] = kconfiglib_dir
         os.environ['DEVICETREE_CONF'] = "dummy"
         os.environ['TOOLCHAIN_HAS_NEWLIB'] = "y"
+        os.environ['KCONFIG_ENV_FILE'] = os.path.join(kconfiglib_dir, "kconfig_module_dirs.env")
 
         # Older name for DEVICETREE_CONF, for compatibility with older Zephyr
         # versions that don't have the renaming
         os.environ["GENERATED_DTS_BOARD_CONF"] = "dummy"
 
         # For multi repo support
-        self.get_modules(os.path.join(kconfiglib_dir, "Kconfig.modules"),
+        self.get_modules(os.environ['KCONFIG_ENV_FILE'],
+                         os.path.join(kconfiglib_dir, "Kconfig.modules"),
                          os.path.join(kconfiglib_dir, "Kconfig.sysbuild.modules"),
                          os.path.join(kconfiglib_dir, "settings_file.txt"))
         # For Kconfig.dts support
@@ -1365,13 +1367,17 @@ class KconfigBasicNoModulesCheck(KconfigBasicCheck):
     """
     name = "KconfigBasicNoModules"
     path_hint = "<zephyr-base>"
+    EMPTY_FILE_CONTENTS = "# Empty\n"
 
-    def get_modules(self, modules_file, sysbuild_modules_file, settings_file):
+    def get_modules(self, module_dirs_file, modules_file, sysbuild_modules_file, settings_file):
+        with open(module_dirs_file, 'w') as fp_module_file:
+            fp_module_file.write(self.EMPTY_FILE_CONTENTS)
+
         with open(modules_file, 'w') as fp_module_file:
-            fp_module_file.write("# Empty\n")
+            fp_module_file.write(self.EMPTY_FILE_CONTENTS)
 
         with open(sysbuild_modules_file, 'w') as fp_module_file:
-            fp_module_file.write("# Empty\n")
+            fp_module_file.write(self.EMPTY_FILE_CONTENTS)
 
 
 class KconfigHWMv2Check(KconfigBasicCheck):
