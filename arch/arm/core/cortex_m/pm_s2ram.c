@@ -7,6 +7,7 @@
 
 #include <zephyr/arch/cpu.h>
 #include <zephyr/linker/sections.h>
+#include <zephyr/toolchain.h>
 
 #include <zephyr/arch/common/pm_s2ram.h>
 
