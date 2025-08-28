@@ -794,6 +794,16 @@ enum gpio_int_trig {
 	GPIO_INT_TRIG_BOTH = GPIO_INT_LOW_0 | GPIO_INT_HIGH_1,
 	/* Trigger a system wakeup. */
 	GPIO_INT_TRIG_WAKE = GPIO_INT_WAKEUP,
+	/* Trigger a system wakeup when input state is (or transitions to)
+	 * physical low. (Edge Falling or Active Low)
+	 */
+	GPIO_INT_TRIG_WAKE_LOW = GPIO_INT_LOW_0 | GPIO_INT_WAKEUP,
+	/* Trigger a system wakeup when input state is (or transitions to)
+	 * physical high. (Edge Rising or Active High)
+	 */
+	GPIO_INT_TRIG_WAKE_HIGH = GPIO_INT_HIGH_1 | GPIO_INT_WAKEUP,
+	/* Trigger a system wakeup on pin rising or falling edge. */
+	GPIO_INT_TRIG_WAKE_BOTH = GPIO_INT_LOW_0 | GPIO_INT_HIGH_1 | GPIO_INT_WAKEUP,
 };
 
 __subsystem struct gpio_driver_api {
