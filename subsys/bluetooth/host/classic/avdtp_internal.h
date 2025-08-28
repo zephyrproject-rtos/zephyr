@@ -175,9 +175,7 @@ struct bt_avdtp_set_configuration_params {
 	uint8_t media_codec_type;
 	uint8_t codec_specific_ie_len;
 	uint8_t *codec_specific_ie;
-#ifdef CONFIG_BT_AVDTP_DELAY_REPORT
 	bool delay_report;
-#endif
 };
 
 /* avdtp_open, avdtp_close, avdtp_start, avdtp_suspend, avdtp_get_configuration */
@@ -272,10 +270,8 @@ struct bt_avdtp_ops_cb {
 
 	int (*abort_ind)(struct bt_avdtp *session, struct bt_avdtp_sep *sep, uint8_t *errcode);
 
-#ifdef CONFIG_BT_AVDTP_DELAY_REPORT
 	int (*delay_report_ind)(struct bt_avdtp *session, struct bt_avdtp_sep *sep,
 				struct net_buf *buf, uint8_t *errcode);
-#endif
 
 	/* stream l2cap is closed */
 	int (*stream_l2cap_disconnected)(struct bt_avdtp *session, struct bt_avdtp_sep *sep);

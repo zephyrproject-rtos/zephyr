@@ -510,13 +510,11 @@ struct bt_a2dp_cb a2dp_cb = {
 	.reconfig_req = app_reconfig_req,
 	.get_config_req = app_get_config_req,
 	.get_config_rsp = app_get_config_rsp,
-#ifdef CONFIG_BT_A2DP_DELAY_REPORT
 #if defined(CONFIG_BT_A2DP_SOURCE)
 	.delay_report_req = app_delay_report_req,
 #endif
 #if defined(CONFIG_BT_A2DP_SINK)
 	.delay_report_rsp = app_delay_report_rsp,
-#endif
 #endif
 };
 
@@ -849,7 +847,6 @@ static int cmd_send_media(const struct shell *sh, int32_t argc, char *argv[])
 	return 0;
 }
 
-#ifdef CONFIG_BT_A2DP_DELAY_REPORT
 static int cmd_send_delay_report(const struct shell *sh, int32_t argc, char *argv[])
 {
 	int err;
@@ -861,7 +858,6 @@ static int cmd_send_delay_report(const struct shell *sh, int32_t argc, char *arg
 
 	return 0;
 }
-#endif
 
 static int cmd_get_config(const struct shell *sh, int32_t argc, char *argv[])
 {
@@ -894,9 +890,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(a2dp_cmds,
 	SHELL_CMD_ARG(suspend, NULL, "\"suspend the stream\"", cmd_suspend, 1, 0),
 	SHELL_CMD_ARG(abort, NULL, "\"abort the stream\"", cmd_abort, 1, 0),
 	SHELL_CMD_ARG(send_media, NULL, HELP_NONE, cmd_send_media, 1, 0),
-#ifdef CONFIG_BT_A2DP_DELAY_REPORT
 	SHELL_CMD_ARG(send_delay_report, NULL, HELP_NONE, cmd_send_delay_report, 1, 0),
-#endif
 	SHELL_CMD_ARG(get_config, NULL, HELP_NONE, cmd_get_config, 1, 0),
 	SHELL_SUBCMD_SET_END
 );
