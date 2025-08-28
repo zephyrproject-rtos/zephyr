@@ -1442,40 +1442,6 @@ SHELL_CMD_ARG_REGISTER(cap_initiator, &cap_initiator_cmds,
 		       "Bluetooth CAP initiator shell commands",
 		       cmd_cap_initiator, 1, 1);
 
-static size_t nonconnectable_ad_data_add(struct bt_data *data_array, const size_t data_array_size)
-{
-#if defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
-	if (default_source.cap_source != NULL && default_source.is_cap) {
-		static uint8_t ad_cap_broadcast_announcement[5] = {
-			BT_UUID_16_ENCODE(BT_UUID_BROADCAST_AUDIO_VAL),
-		};
-
-		sys_put_le24(default_source.broadcast_id, &ad_cap_broadcast_announcement[2]);
-		data_array[0].type = BT_DATA_SVC_DATA16;
-		data_array[0].data_len = ARRAY_SIZE(ad_cap_broadcast_announcement);
-		data_array[0].data = ad_cap_broadcast_announcement;
-
-		return 1;
-	}
-#endif /* CONFIG_BT_BAP_BROADCAST_SOURCE */
-
-	return 0;
-}
-
-size_t cap_initiator_ad_data_add(struct bt_data *data_array, const size_t data_array_size,
-				 const bool discoverable, const bool connectable)
-{
-	if (!discoverable) {
-		return 0;
-	}
-
-	if (!connectable) {
-		return nonconnectable_ad_data_add(data_array, data_array_size);
-	}
-
-	return 0;
-}
-
 size_t cap_initiator_pa_data_add(struct bt_data *data_array, const size_t data_array_size)
 {
 #if defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
