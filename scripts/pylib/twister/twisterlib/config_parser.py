@@ -177,6 +177,9 @@ class TwisterConfigParser:
                 extracted_testsuite, v = extract_fields_from_arg_list(
                     {"CONF_FILE", "OVERLAY_CONFIG", "DTC_OVERLAY_FILE"}, v
                 )
+            elif k in ("harness", "harness_config"):
+                # Override common value with scenario value
+                d[k] = v
             if k in d:
                 if k == "filter":
                     d[k] = f"({d[k]}) and ({v})"
@@ -261,5 +264,4 @@ class TwisterConfigParser:
                         self.filename,
                         f"bad {kinfo['type']} value '{d[k]}' for key '{k}' in name '{name}'"
                     ) from None
-
         return d
