@@ -779,8 +779,11 @@ static int cmd_send_media(const struct shell *sh, int32_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	buf = net_buf_alloc(&a2dp_tx_pool, K_FOREVER);
-	net_buf_reserve(buf, BT_A2DP_STREAM_BUF_RESERVE);
+	buf = bt_a2dp_stream_create_pdu(&a2dp_tx_pool, K_FOREVER);
+	if (buf == NULL) {
+		shell_error(sh, "fail to allocate buffer");
+		return -ENOEXEC;
+	}
 
 	/* num of frames is 1 */
 	net_buf_add_u8(buf, (uint8_t)BT_A2DP_SBC_MEDIA_HDR_ENCODE(1, 0, 0, 0));
