@@ -67,10 +67,7 @@ static int icm45686_sample_fetch(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	err = icm45686_bus_read(dev,
-				REG_ACCEL_DATA_X1_UI,
-				edata->payload.buf,
-				sizeof(edata->payload.buf));
+	err = inv_imu_get_register_data(&data->driver, edata->payload.buf);
 
 	LOG_HEXDUMP_DBG(edata->payload.buf,
 			sizeof(edata->payload.buf),
@@ -293,24 +290,12 @@ static int icm45686_init(const struct device *dev)
 	/** Soft-reset sensor to restore config to defaults,
 	 * unless it's already handled by I3C initialization.
 	 */
-	if (data->rtio.type != ICM45686_BUS_I3C) {
-		err = reg_write(dev, REG_MISC2, REG_MISC2_SOFT_RST(1), 1);
-		if (err) {
-			LOG_ERR("Failed to write soft-reset: %d", err);
-			return err;
-		}
-		/* Wait for soft-reset to take effect */
-		k_sleep(K_MSEC(1));
 
-		/* A complete soft-reset clears the bit */
-		err = reg_read(dev, REG_MISC2, &read_val, 1);
-		if (err) {
-			LOG_ERR("Failed to read soft-reset: %d", err);
+	if (data->rtio.type != ICM45686_BUS_I3C) {
+		err = inv_imu_soft_reset(&data->driver);
+		if (err < 0) {
+			LOG_ERR("Soft reset failed err %d", err);
 			return err;
-		}
-		if ((read_val & REG_MISC2_SOFT_RST(1)) != 0) {
-			LOG_ERR("Soft-reset command failed");
-			return -EIO;
 		}
 	}
 
@@ -334,12 +319,6 @@ static int icm45686_init(const struct device *dev)
 		return -EIO;
 	}
 
-	err = inv_imu_soft_reset(&data->driver);
-	if (err < 0) {
-		LOG_ERR("Soft reset failed err %d", err);
-		return err;
-	}
-
 #ifdef CONFIG_TDK_APEX
         /* Initialize APEX */
         err = inv_imu_edmp_init_apex(&data->driver);
@@ -350,40 +329,47 @@ static int icm45686_init(const struct device *dev)
 #endif
 
 	/* Sensor Configuration */
-	val = REG_PWR_MGMT0_ACCEL_MODE(cfg->settings.accel.pwr_mode) |
-	      REG_PWR_MGMT0_GYRO_MODE(cfg->settings.gyro.pwr_mode);
-	err = reg_write(dev, REG_PWR_MGMT0, val, 1);
-	if (err) {
-		LOG_ERR("Failed to write Power settings: %d", err);
+	err = inv_imu_set_accel_mode(&data->driver, cfg->settings.accel.pwr_mode);
+	if (err < 0) {
+		LOG_ERR("Failed to set accel mode");
 		return err;
 	}
 
-	val = REG_ACCEL_CONFIG0_ODR(cfg->settings.accel.odr) |
-	      REG_ACCEL_CONFIG0_FS(cfg->settings.accel.fs);
-	err = reg_write(dev, REG_ACCEL_CONFIG0, val, 1);
-	if (err) {
-		LOG_ERR("Failed to write Accel settings: %d", err);
+	err = inv_imu_set_gyro_mode(&data->driver, cfg->settings.gyro.pwr_mode);
+	if (err < 0) {
+		LOG_ERR("Failed to set gyro mode");
 		return err;
 	}
 
-	val = REG_GYRO_CONFIG0_ODR(cfg->settings.gyro.odr) |
-	      REG_GYRO_CONFIG0_FS(cfg->settings.gyro.fs);
-	err = reg_write(dev, REG_GYRO_CONFIG0, val, 1);
-	if (err) {
-		LOG_ERR("Failed to write Gyro settings: %d", err);
+	err = inv_imu_set_accel_frequency(&data->driver, cfg->settings.accel.odr);
+	if (err < 0) {
+		LOG_ERR("Failed to set Accel frequency: %d", err);
 		return err;
 	}
+
+	err = inv_imu_set_accel_fsr(&data->driver, cfg->settings.accel.fs);
+	if (err < 0) {
+		LOG_ERR("Failed to set Accel fsr: %d", err);
+		return err;
+	}
+
+
+	err = inv_imu_set_gyro_frequency(&data->driver, cfg->settings.gyro.odr);
+	if (err < 0) {
+		LOG_ERR("Failed to set Gyro frequency: %d", err);
+		return err;
+	}
+
+	err = inv_imu_set_gyro_fsr(&data->driver, cfg->settings.gyro.fs);
+	if (err < 0) {
+		LOG_ERR("Failed to set Gyro fsr: %d", err);
+		return err;
+	}
+
 
 	/** Write Low-pass filter settings through indirect register access */
-	uint8_t gyro_lpf_write_array[] = REG_IREG_PREPARE_WRITE_ARRAY(
-						REG_IPREG_SYS1_OFFSET,
-						REG_IPREG_SYS1_REG_172,
-						REG_IPREG_SYS1_REG_172_GYRO_LPFBW_SEL(
-							cfg->settings.gyro.lpf));
-
-	err = icm45686_bus_write(dev, REG_IREG_ADDR_15_8, gyro_lpf_write_array,
-				 sizeof(gyro_lpf_write_array));
-	if (err) {
+	err = inv_imu_set_gyro_ln_bw(&data->driver, cfg->settings.gyro.lpf);
+	if (err < 0) {
 		LOG_ERR("Failed to set Gyro BW settings: %d", err);
 		return err;
 	}
@@ -393,15 +379,8 @@ static int icm45686_init(const struct device *dev)
 	 */
 	k_sleep(K_MSEC(1));
 
-	uint8_t accel_lpf_write_array[] = REG_IREG_PREPARE_WRITE_ARRAY(
-						REG_IPREG_SYS2_OFFSET,
-						REG_IPREG_SYS2_REG_131,
-						REG_IPREG_SYS2_REG_131_ACCEL_LPFBW_SEL(
-							cfg->settings.accel.lpf));
-
-	err = icm45686_bus_write(dev, REG_IREG_ADDR_15_8, accel_lpf_write_array,
-				 sizeof(accel_lpf_write_array));
-	if (err) {
+	inv_imu_set_accel_ln_bw(&data->driver, cfg->settings.accel.lpf);
+	if (err < 0) {
 		LOG_ERR("Failed to set Accel BW settings: %d", err);
 		return err;
 	}
