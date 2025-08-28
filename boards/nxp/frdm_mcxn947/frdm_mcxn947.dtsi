@@ -261,7 +261,7 @@ nxp_8080_touch_panel_i2c: &flexcomm2_lpi2c2 {
 	phy: ethernet-phy@0 {
 		compatible = "ethernet-phy";
 		reg = <0>;
-		status = "okay";
+		status = "disabled";
 	};
 };
 
