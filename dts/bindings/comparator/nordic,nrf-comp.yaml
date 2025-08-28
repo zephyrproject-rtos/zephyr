@@ -25,7 +25,7 @@ description: |
     &comp {
             status = "okay";
             main-mode = "SE";
-            psel = "AIN0";
+            psel = <NRF_COMP_AIN0>;
             refsel = "INT_1V2";
             sp-mode = "NORMAL";
             th-up = <36>;
@@ -39,7 +39,7 @@ description: |
     &comp {
             ...
             refsel = "AREF";
-            extrefsel = "AIN1";
+            extrefsel = <NRF_COMP_AIN1>;
             ...
     };
 
@@ -49,8 +49,8 @@ description: |
     &comp {
             status = "okay";
             main-mode = "DIFF";
-            psel = "AIN0";
-            extrefsel = "AIN1";
+            psel = <NRF_COMP_AIN0>;
+            extrefsel = <NRF_COMP_AIN1>;
             sp-mode = "NORMAL";
             enable-hyst;
             isource = "DISABLED";
@@ -68,30 +68,10 @@ properties:
       - "DIFF"
 
   psel:
-    type: string
-    enum:
-      - "AIN0"
-      - "AIN1"
-      - "AIN2"
-      - "AIN3"
-      - "AIN4"
-      - "AIN5"
-      - "AIN6"
-      - "AIN7"
-      - "VDD_DIV2"
-      - "VDDH_DIV5"
+    type: int
 
   extrefsel:
-    type: string
-    enum:
-      - "AIN0"
-      - "AIN1"
-      - "AIN2"
-      - "AIN3"
-      - "AIN4"
-      - "AIN5"
-      - "AIN6"
-      - "AIN7"
+    type: int
 
   refsel:
     type: string
