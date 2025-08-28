@@ -94,7 +94,8 @@ static int cmd_battery(const struct shell *sh, size_t argc, char **argv)
 		    volt.val1, volt.val2 / 10000);
 	shell_print(sh, "V-desired: %d.%02d V",
 		    v_desired.val1, v_desired.val2 / 10000);
-	shell_fprintf_normal(sh, "I:    %d mA", current.val1);
+	shell_fprintf_normal(sh, "I:    %lld mA",
+		    sensor_value_to_milli(&current));
 	if (current.val1 > 0) {
 		shell_fprintf_normal(sh, " (CHG)");
 	} else if (current.val1 < 0) {
