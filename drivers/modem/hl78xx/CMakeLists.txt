@@ -13,14 +13,21 @@ zephyr_library_sources(
 )
 
 add_subdirectory_ifdef(CONFIG_HL78XX_EVT_MONITOR hl78xx_evt_monitor)
+add_subdirectory_ifdef(CONFIG_MQTT_OFFLOAD_LIB mqtt_offload)
 
 zephyr_library_include_directories(
+  ./
   # IP headers
   ${ZEPHYR_BASE}/subsys/net/ip
   ${ZEPHYR_BASE}/subsys/net/lib/sockets
-  )
+)
 
-  zephyr_library_include_directories_ifdef(
-    CONFIG_NET_SOCKETS_SOCKOPT_TLS
-    ${ZEPHYR_BASE}/subsys/net/lib/tls_credentials
-  )
+zephyr_library_include_directories_ifdef(
+  CONFIG_NET_SOCKETS_SOCKOPT_TLS
+  ${ZEPHYR_BASE}/subsys/net/lib/tls_credentials
+)
+
+zephyr_library_include_directories_ifdef(
+  CONFIG_MQTT_LIB_CUSTOM_TRANSPORT
+  ${ZEPHYR_BASE}/subsys/net/lib/mqtt
+)

@@ -1,7 +1,7 @@
-#Sierra Wireless HL78XX driver driver options
+# Sierra Wireless HL78XX driver driver options
 
-#Copyright(c) 2025 Netfeasa Ltd.
-#SPDX - License - Identifier : Apache - 2.0
+# Copyright (c) 2025 Netfeasa Ltd.
+# SPDX-License-Identifier: Apache-2.0
 
 config MODEM_HL78XX
 	bool "HL78XX modem driver"
@@ -25,7 +25,8 @@ if MODEM_HL78XX
 
 choice MODEM_HL78XX_VARIANT
 	bool "Sierra Wireless hl78xx variant selection"
-	default MODEM_HL7812
+	default MODEM_HL7812 if DT_HAS_SWIR_HL7812_ENABLED
+	default MODEM_HL7800_1 if DT_HAS_SWIR_HL7800_ENABLED
 
 config MODEM_HL7812
 	bool "Sierra Wireless hl7812"
@@ -774,6 +775,8 @@ config MODEM_HL78XX_SOCKET_RESTORE_ON_BOOT
 	  0 — Do not restore sockets on boot
 	  1 — Restore sockets on boot
 
+endif # MODEM_HL78XX_ADVANCED_SOCKET_CONFIG
+
 config MODEM_HL78XX_SOCKETS_SOCKOPT_TLS
 	bool "TLS for sockets"
 	depends on NET_SOCKETS_SOCKOPT_TLS
@@ -781,7 +784,22 @@ config MODEM_HL78XX_SOCKETS_SOCKOPT_TLS
 	  This option enables TLS (Transport Layer Security) for sockets
 	  on the HL78xx modem.
 
-endif # MODEM_HL78XX_ADVANCED_SOCKET_CONFIG
+config MODEM_HL78XX_MQTT_OFFLOADING
+	bool "Use MQTT stack from modem"
+	depends on MODEM_HL7812
+	help
+	  This option enables MQTT offloading feature
+
+if MODEM_HL78XX_MQTT_OFFLOADING
+
+config MODEM_HL78XX_MQTT_MAX_DATA_LENGTH
+	int "Maximum payload size"
+	default 1024
+	range 1 1024
+	help
+	  The maximum payload size is 1024 bytes. All space characters are counted
+
+endif #MODEM_HL78XX_MQTT_OFFLOADING
 
 config MODEM_HL78XX_LOG_CONTEXT_VERBOSE_DEBUG
 bool "Verbose debug output in the HL78xx"
@@ -833,5 +851,5 @@ config MODEM_HL78XX_OFFLOAD_INIT_PRIORITY
 	  Make sure offload init priority higher than dev init priority
 
 rsource "hl78xx_evt_monitor/Kconfig.hl78xx_evt_monitor"
-
+rsource "mqtt_offload/Kconfig.mqtt_offload"
 endif # MODEM_HL78XX

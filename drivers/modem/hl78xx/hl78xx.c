@@ -461,7 +461,18 @@ static void hl78xx_on_socknotifydata(struct modem_chat *chat, char **argv, uint1
 #endif
 	socket_notify_data(socket_id, new_total);
 }
+#ifdef CONFIG_MODEM_HL78XX_MQTT_OFFLOADING
+static void hl78xx_on_mqttdata(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data)
+{
+	int socket_id = -1;
 
+	if (argc < 3) {
+		return;
+	}
+	socket_id = ATOI(argv[1], -1, "socket_id");
+	mqtt_notify_data(socket_id, argv[2], argv[3]);
+}
+#endif
 static void hl78xx_on_ktcpnotif(struct modem_chat *chat, char **argv, uint16_t argc,
 				void *user_data)
 {
@@ -725,6 +736,9 @@ MODEM_CHAT_MATCHES_DEFINE(unsol_matches, MODEM_CHAT_MATCH("+CREG: ", ",", hl78xx
 			  MODEM_CHAT_MATCH("+KSTATEV: ", ",", hl78xx_on_kstatev),
 			  MODEM_CHAT_MATCH("+KUDP_DATA: ", ",", hl78xx_on_socknotifydata),
 			  MODEM_CHAT_MATCH("+KTCP_DATA: ", ",", hl78xx_on_socknotifydata),
+#ifdef CONFIG_MODEM_HL78XX_MQTT_OFFLOADING
+			  MODEM_CHAT_MATCH("+KMQTT_DATA: ", ",", hl78xx_on_mqttdata),
+#endif /* CONFIG_MODEM_HL78XX_MQTT_OFFLOADING */
 			  MODEM_CHAT_MATCH("+KTCP_NOTIF: ", ",", hl78xx_on_ktcpnotif),
 			  MODEM_CHAT_MATCH("+KUDP_RCV: ", ",", hl78xx_on_udprcv),
 			  MODEM_CHAT_MATCH("+KBNDCFG: ", ",", hl78xx_on_kbndcfg),
@@ -870,7 +884,6 @@ int modem_cmd_send_int(struct hl78xx_data *data, modem_chat_script_callback scri
 						.abort_matches_size = ARRAY_SIZE(abort_matches),
 						.callback = script_user_callback,
 						.timeout = 1000};
-
 	ret = modem_chat_run_script(&data->chat, &chat_script);
 	if (ret < 0) {
 		LOG_ERR("%d %s Failed to run at command: %d", __LINE__, __func__, ret);
@@ -2410,6 +2423,7 @@ static int hl78xx_init(const struct device *dev)
 #endif
 	/* reset to default  */
 	data->buffers.eof_pattern_size = strlen(data->buffers.eof_pattern);
+	data->buffers.termination_pattern_size = strlen(data->buffers.termination_pattern);
 	memset(data->identity.apn, 0, MDM_APN_MAX_LENGTH);
 
 	/* GPIO validation */
@@ -2564,6 +2578,7 @@ static DEVICE_API(hl78xx, hl78xx_api) = {
 	static struct hl78xx_data hl78xx_data_##inst = {                                           \
 		.buffers.delimiter = "\r\n",                                                       \
 		.buffers.eof_pattern = EOF_PATTERN,                                                \
+		.buffers.termination_pattern = TERMINATION_PATTERN,                                \
 	};                                                                                         \
 	PM_DEVICE_DT_INST_DEFINE(inst, hl78xx_driver_pm_action);                                   \
 	DEVICE_DT_INST_DEFINE(inst, hl78xx_init, PM_DEVICE_DT_INST_GET(inst), &hl78xx_data_##inst, \
