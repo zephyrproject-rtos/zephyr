@@ -102,6 +102,7 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 			ngpios = <16>;
+			vbatts-pins = <2 3 4>;
 			status = "disabled";
 		};
 

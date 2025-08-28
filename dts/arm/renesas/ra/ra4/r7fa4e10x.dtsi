@@ -306,6 +306,7 @@
 	port-irq5-pins = <1 10>;
 	port-irq6-pins = <9>;
 	port-irq7-pins = <8>;
+	vbatts-pins = <2>;
 };
 
 &dac_global {
