@@ -4329,24 +4329,17 @@ static size_t nonconnectable_ad_data_add(struct bt_data *data_array, const size_
 	};
 	size_t ad_len = 0;
 
-	if (IS_ENABLED(CONFIG_BT_CAP_ACCEPTOR)) {
-		static const uint8_t ad_cap_announcement[3] = {
-			BT_UUID_16_ENCODE(BT_UUID_CAS_VAL),
-			BT_AUDIO_UNICAST_ANNOUNCEMENT_TARGETED,
-		};
-
-		__ASSERT(data_array_size > ad_len, "No space for AD_CAP_ANNOUNCEMENT");
-		data_array[ad_len].type = BT_DATA_SVC_DATA16;
-		data_array[ad_len].data_len = ARRAY_SIZE(ad_cap_announcement);
-		data_array[ad_len].data = &ad_cap_announcement[0];
-		ad_len++;
-	}
-
 #if defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
-	if (default_source.bap_source != NULL && !default_source.is_cap) {
+	if (default_source.bap_source != NULL) {
 		static uint8_t ad_bap_broadcast_announcement[5] = {
 			BT_UUID_16_ENCODE(BT_UUID_BROADCAST_AUDIO_VAL),
 		};
+
+		if (data_array_size <= ad_len) {
+			bt_shell_warn("No space for BT_UUID_BROADCAST_AUDIO_VAL");
+			return ad_len;
+		}
+
 		sys_put_le24(default_source.broadcast_id, &ad_bap_broadcast_announcement[2]);
 		data_array[ad_len].type = BT_DATA_SVC_DATA16;
 		data_array[ad_len].data_len = ARRAY_SIZE(ad_bap_broadcast_announcement);
@@ -4383,11 +4376,6 @@ size_t audio_ad_data_add(struct bt_data *data_array, const size_t data_array_siz
 		ad_len += connectable_ad_data_add(data_array, data_array_size);
 	} else {
 		ad_len += nonconnectable_ad_data_add(data_array, data_array_size);
-	}
-
-	if (IS_ENABLED(CONFIG_BT_CAP_INITIATOR)) {
-		ad_len += cap_initiator_ad_data_add(data_array, data_array_size, discoverable,
-						    connectable);
 	}
 
 	return ad_len;
