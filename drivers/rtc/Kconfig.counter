@@ -1,0 +1,12 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config RTC_COUNTER
+	bool "Real Time Clock driver using counter API"
+	default y
+	depends on DT_HAS_ZEPHYR_RTC_COUNTER_ENABLED
+	select COUNTER
+	help
+	  RTC driver applied for RTC device without broken-down time registers.
+	  Wraps the counter API to provide RTC functionality.
+	  Uses unix timestamp to convert between broken-down time and counter ticks.
