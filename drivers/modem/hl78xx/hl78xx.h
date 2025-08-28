@@ -81,11 +81,11 @@
 #define HL78XX_ACT_TYPE_RAT_MASK 4
 
 /* Modem Communication Patterns */
-#define EOF_PATTERN      "--EOF--Pattern--"
-#define EOF_PATTERN_GNSS "+++"
-#define CONNECT_STRING   "CONNECT"
-#define CME_ERROR_STRING "+CME ERROR: "
-#define OK_STRING        "OK"
+#define EOF_PATTERN         "--EOF--Pattern--"
+#define TERMINATION_PATTERN "+++"
+#define CONNECT_STRING      "CONNECT"
+#define CME_ERROR_STRING    "+CME ERROR: "
+#define OK_STRING           "OK"
 
 /* RAT (Radio Access Technology) commands */
 #define SET_RAT_M1_CMD_LEGACY    "AT+KSRAT=0"
@@ -299,6 +299,8 @@ struct modem_buffers {
 	uint8_t *argv[32];
 	uint8_t *eof_pattern;
 	uint8_t eof_pattern_size;
+	uint8_t *termination_pattern;
+	uint8_t termination_pattern_size;
 };
 
 struct modem_identity {
@@ -504,7 +506,22 @@ void socket_notify_data(int socket_id, int new_total);
  * @param tcp_notif Integer type. Indicates the cause of the TCP connection failure.
  */
 void tcp_notify_data(int socket_id, int tcp_notif);
-
+#ifdef CONFIG_MODEM_HL78XX_MQTT_OFFLOADING
+/**
+ * @brief Sends an MQTT notification with the specified topic and payload.
+ *
+ * This function publishes a message to an MQTT broker using the provided socket ID.
+ * The message is sent to the specified topic with the given payload.
+ *
+ * @param socket_id     The identifier of the socket used to communicate with the MQTT broker.
+ * @param mqtt_topic    The topic to which the MQTT message will be published.
+ * @param mqtt_payload  The payload of the MQTT message.
+ *
+ * @note Ensure that the socket is properly connected to the MQTT broker before calling this
+ * function.
+ */
+void mqtt_notify_data(int socket_id, const char *mqtt_topic, const char *mqtt_payload);
+#endif /* CONFIG_MODEM_HL78XX_MQTT_OFFLOADING */
 /**
  * @brief Send a command to the modem and wait for matching response(s).
  *
@@ -814,5 +831,7 @@ bool hl78xx_is_in_pwr_dwn(struct hl78xx_data *data);
  * @return bool Description of return value.
  */
 bool hl78xx_is_rsrp_valid(struct hl78xx_data *data);
-
+#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS) && defined(CONFIG_MODEM_HL78XX_SOCKETS_SOCKOPT_TLS)
+int hl78xx_configure_chipper_suit(void);
+#endif
 #endif /* HL78XX_H */
