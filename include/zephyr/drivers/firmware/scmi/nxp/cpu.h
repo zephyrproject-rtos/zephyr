@@ -23,6 +23,8 @@
 
 #define SCMI_CPU_MAX_PDCONFIGS_T 7U
 
+#define SCMI_CPU_IRQ_WAKE_NUM	22U
+
 /**
  * @struct scmi_cpu_sleep_mode_config
  *
@@ -50,6 +52,23 @@ struct scmi_cpu_pd_lpm_config {
 	uint32_t cpu_id;
 	uint32_t num_cfg;
 	struct scmi_pd_lpm_settings cfgs[SCMI_CPU_MAX_PDCONFIGS_T];
+};
+
+/**
+ * @struct scmi_cpu_irq_mask_config
+ *
+ * @param cpu_id value mean identifier for the cpu
+ * @param mask_idx represents Index of first mask to set
+ * @param number value to set the number of mask
+ * @param mask pointer to actually mask array value
+ *
+ * @brief Describes scmi cpu irq wake mask setting
+ */
+struct scmi_cpu_irq_mask_config {
+	uint32_t cpu_id;
+	uint32_t mask_idx;
+	uint32_t num_mask;
+	uint32_t mask[SCMI_CPU_IRQ_WAKE_NUM];
 };
 
 /**
@@ -93,4 +112,16 @@ int scmi_cpu_sleep_mode_set(struct scmi_cpu_sleep_mode_config *cfg);
  * @retval negative errno if failure
  */
 int scmi_cpu_pd_lpm_set(struct scmi_cpu_pd_lpm_config *cfg);
+
+/**
+ * @brief Send the SCMI_CPU_DOMAIN_MSG_CPU_IRQ_WAKE_SET command and get its reply
+ * This function enables the agent to set the mask for CPU IRQ wake-up, its aim to
+ * update current cpu cmc platform, cmc will mask interrupt if mask bit is 1
+ *
+ * @param cfg pointer to structure containing configuration to be set
+ *
+ * @retval 0 if successful
+ * @retval negative errno if failure
+ */
+int scmi_cpu_set_irq_mask(struct scmi_cpu_irq_mask_config *cfg);
 #endif /* _INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_SCMI_CPU_H_ */
