@@ -169,6 +169,7 @@ static int (*_stdout_hook)(int) = _stdout_hook_default;
 void __stdout_hook_install(int (*hook)(int))
 {
 	_stdout_hook = hook;
+	stdout->_file = 1; /* STDOUT_FILENO */
 }
 
 static unsigned char _stdin_hook_default(void)
@@ -181,6 +182,7 @@ static unsigned char (*_stdin_hook)(void) = _stdin_hook_default;
 void __stdin_hook_install(unsigned char (*hook)(void))
 {
 	_stdin_hook = hook;
+	stdin->_file = 0; /* STDIN_FILENO */
 }
 
 int z_impl_zephyr_read_stdin(char *buf, int nbytes)
