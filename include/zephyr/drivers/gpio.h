@@ -10,6 +10,7 @@
 /**
  * @file
  * @brief Public APIs for GPIO drivers
+ * @ingroup gpio_interface
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_GPIO_H_
@@ -37,6 +38,11 @@ extern "C" {
  * @version 1.0.0
  * @ingroup io_interfaces
  * @{
+ *
+ * @defgroup gpio_interface_ext Device-specific GPIO API extensions
+ *
+ * @{
+ * @}
  */
 
 /**

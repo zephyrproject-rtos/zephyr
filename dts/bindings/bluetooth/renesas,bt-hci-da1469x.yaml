@@ -8,4 +8,4 @@ properties:
   bt-hci-name:
     default: "BT DA1469x"
   bt-hci-bus:
-    default: "ipm"
+    default: "ipc"

@@ -41,44 +41,63 @@ choice
 	  the actual capabilities of the hardware.
 	  See 7.6.2.5 of IEEE 1588-2008 for more info.
 
-	config NET_GPTP_CLOCK_ACCURACY_UNKNOWN
-		bool "Unknown"
-	config NET_GPTP_CLOCK_ACCURACY_25NS
-		bool "25ns"
-	config NET_GPTP_CLOCK_ACCURACY_100NS
-		bool "100ns"
-	config NET_GPTP_CLOCK_ACCURACY_250NS
-		bool "250ns"
-	config NET_GPTP_CLOCK_ACCURACY_1US
-		bool "1us"
-	config NET_GPTP_CLOCK_ACCURACY_2_5US
-		bool "2.5us"
-	config NET_GPTP_CLOCK_ACCURACY_10US
-		bool "10us"
-	config NET_GPTP_CLOCK_ACCURACY_25US
-		bool "25us"
-	config NET_GPTP_CLOCK_ACCURACY_100US
-		bool "100us"
-	config NET_GPTP_CLOCK_ACCURACY_250US
-		bool "250us"
-	config NET_GPTP_CLOCK_ACCURACY_1MS
-		bool "1ms"
-	config NET_GPTP_CLOCK_ACCURACY_2_5MS
-		bool "1.5ms"
-	config NET_GPTP_CLOCK_ACCURACY_10MS
-		bool "10ms"
-	config NET_GPTP_CLOCK_ACCURACY_25MS
-		bool "25ms"
-	config NET_GPTP_CLOCK_ACCURACY_100MS
-		bool "100ms"
-	config NET_GPTP_CLOCK_ACCURACY_250MS
-		bool "250ms"
-	config NET_GPTP_CLOCK_ACCURACY_1S
-		bool "1s"
-	config NET_GPTP_CLOCK_ACCURACY_10S
-		bool "10s"
-	config NET_GPTP_CLOCK_ACCURACY_GT_10S
-		bool "> 10s"
+config NET_GPTP_CLOCK_ACCURACY_UNKNOWN
+	bool "Unknown"
+
+config NET_GPTP_CLOCK_ACCURACY_25NS
+	bool "25ns"
+
+config NET_GPTP_CLOCK_ACCURACY_100NS
+	bool "100ns"
+
+config NET_GPTP_CLOCK_ACCURACY_250NS
+	bool "250ns"
+
+config NET_GPTP_CLOCK_ACCURACY_1US
+	bool "1us"
+
+config NET_GPTP_CLOCK_ACCURACY_2_5US
+	bool "2.5us"
+
+config NET_GPTP_CLOCK_ACCURACY_10US
+	bool "10us"
+
+config NET_GPTP_CLOCK_ACCURACY_25US
+	bool "25us"
+
+config NET_GPTP_CLOCK_ACCURACY_100US
+	bool "100us"
+
+config NET_GPTP_CLOCK_ACCURACY_250US
+	bool "250us"
+
+config NET_GPTP_CLOCK_ACCURACY_1MS
+	bool "1ms"
+
+config NET_GPTP_CLOCK_ACCURACY_2_5MS
+	bool "2.5ms"
+
+config NET_GPTP_CLOCK_ACCURACY_10MS
+	bool "10ms"
+
+config NET_GPTP_CLOCK_ACCURACY_25MS
+	bool "25ms"
+
+config NET_GPTP_CLOCK_ACCURACY_100MS
+	bool "100ms"
+
+config NET_GPTP_CLOCK_ACCURACY_250MS
+	bool "250ms"
+
+config NET_GPTP_CLOCK_ACCURACY_1S
+	bool "1s"
+
+config NET_GPTP_CLOCK_ACCURACY_10S
+	bool "10s"
+
+config NET_GPTP_CLOCK_ACCURACY_GT_10S
+	bool "> 10s"
+
 endchoice
 
 config NET_GPTP_CLOCK_ACCURACY

@@ -5,6 +5,7 @@ config GPIO_RA_IOPORT
 	bool "Renesas RA GPIO IO port driver"
 	default y
 	depends on DT_HAS_RENESAS_RA_GPIO_IOPORT_ENABLED
+	select PINCTRL
 	help
 	  Enable the Renesas RA GPIO IO port driver.
 

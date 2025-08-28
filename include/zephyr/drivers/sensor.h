@@ -19,6 +19,10 @@
  * @version 1.0.0
  * @ingroup io_interfaces
  * @{
+ *
+ * @defgroup sensor_interface_ext Device-specific Sensor API extensions
+ * @{
+ * @}
  */
 
 #include <errno.h>

@@ -11,7 +11,9 @@ zephyr_compile_definitions(FSL_SDK_DRIVER_QUICK_ACCESS_ENABLE)
 
 zephyr_include_directories(.)
 
-zephyr_sources(soc.c)
+zephyr_sources(init.c)
+
+zephyr_sources_ifdef(CONFIG_MIPI_DSI	display_if.c)
 
 if(CONFIG_FLASH_MCUX_XSPI_XIP)
   zephyr_sources(flash_clock_setup.c)

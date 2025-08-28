@@ -316,10 +316,10 @@ function renderKconfigEntry(entry) {
 
     let locationPermalink = getGithubLink(entry.filename, entry.linenr, "blob", zephyr_version);
     if (locationPermalink) {
-        const locationPermalink = document.createElement('a');
-        locationPermalink.href = locationPermalink;
-        locationPermalink.appendChild(locationElement);
-        renderKconfigPropLiteralElement(props, 'Location', locationPermalink);
+        const locationPermalinkElement = document.createElement('a');
+        locationPermalinkElement.href = locationPermalink;
+        locationPermalinkElement.appendChild(locationElement);
+        renderKconfigPropLiteralElement(props, 'Location', locationPermalinkElement);
     } else {
         renderKconfigPropLiteralElement(props, 'Location', locationElement);
     }

@@ -34,6 +34,7 @@
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include "uart_stm32.h"
 
+#include <stm32_ll_bus.h>
 #include <stm32_ll_usart.h>
 #include <stm32_ll_lpuart.h>
 #if defined(CONFIG_PM) && defined(IS_UART_WAKEUP_FROMSTOP_INSTANCE)
@@ -1358,6 +1359,16 @@ static void uart_stm32_isr(const struct device *dev)
 #endif
 
 #ifdef CONFIG_UART_ASYNC_API
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	/* If both ASYNC and INTERRUPT modes are supported in this build,
+	 * check whether this instance is currently being used via the
+	 * interrupt-driven API. If it is, do not process interrupt flags
+	 * as the user callback invoked earlier is responsible for that.
+	 */
+	if (data->user_cb) {
+		return;
+	}
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 	if (LL_USART_IsEnabledIT_IDLE(usart) &&
 			LL_USART_IsActiveFlag_IDLE(usart)) {
 
@@ -2199,6 +2210,12 @@ static int uart_stm32_registers_configure(const struct device *dev)
 			LL_EXTI_EnableIT_0_31(BIT(config->wakeup_line));
 		}
 	}
+#if defined(CONFIG_SOC_SERIES_STM32U5X) && DT_HAS_COMPAT_STATUS_OKAY(st_stm32_lpuart)
+	if (config->wakeup_source) {
+		/* Allow LPUART to operate in STOP modes. */
+		LL_SRDAMR_GRP1_EnableAutonomousClock(LL_SRDAMR_GRP1_PERIPH_LPUART1AMEN);
+	}
+#endif
 #endif /* CONFIG_PM */
 
 	LL_USART_Enable(usart);

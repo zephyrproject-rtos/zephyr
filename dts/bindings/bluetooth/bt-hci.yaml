@@ -21,7 +21,6 @@ properties:
       - "i2c"
       - "smd"
       - "virtio"
-      - "ipm"    # Deprecated. "ipc" should be used instead.
       - "ipc"
   bt-hci-quirks:
     type: string-array

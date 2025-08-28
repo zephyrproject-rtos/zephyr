@@ -44,7 +44,6 @@ choice SETTINGS_BACKEND
 	default SETTINGS_NVS if NVS
 	default SETTINGS_FCB if FCB
 	default SETTINGS_FILE if FILE_SYSTEM
-	default SETTINGS_TFM_ITS if TFM_PARTITION_INTERNAL_TRUSTED_STORAGE
 	default SETTINGS_RETENTION if SETTINGS_SUPPORTED_RETENTION
 	default SETTINGS_NONE
 	help
@@ -128,6 +127,7 @@ config SETTINGS_CUSTOM
 config SETTINGS_TFM_ITS
 	bool "Internal Trusted Storage (ITS) settings backend"
 	depends on TFM_PARTITION_INTERNAL_TRUSTED_STORAGE
+	select EXPERIMENTAL
 	help
 	  Enables Internal Trusted Storage (ITS) Settings backend. Intended for use with boards
 	  using TF-M which cannot make use of persistent storage otherwise.

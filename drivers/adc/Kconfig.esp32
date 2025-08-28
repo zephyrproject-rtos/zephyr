@@ -13,7 +13,6 @@ if ADC_ESP32
 
 config ADC_ESP32_DMA
 	bool "ESP32 ADC DMA Support"
-	default n
 	depends on DT_HAS_ESPRESSIF_ESP32_GDMA_ENABLED
 	help
 	  Enable the ADC DMA mode for ADC instances

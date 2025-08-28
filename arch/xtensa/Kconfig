@@ -110,6 +110,13 @@ config XTENSA_BREAK_ON_UNRECOVERABLE_EXCEPTIONS
 	  encountered. This requires a debugger attached to catch
 	  the BREAK.
 
+config XTENSA_EXCEPTION_ENTER_GDB
+	bool "Start the GDB stub when an exception is hit"
+	depends on GDBSTUB
+	help
+	  When an exception like invalid address access or division by zero is
+	  hit, enter the GDB stub.
+
 menu "Xtensa HiFi Options"
 
 config XTENSA_CPU_HAS_HIFI

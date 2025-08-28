@@ -446,7 +446,7 @@ New Boards
 
 * Panasonic Corporation
 
-   * :zephyr:board:`panb511evb` (``panb511evb``)
+   * PAN B511 Evaluation Board (``panb511evb``)
 
 * Peregrine Consultoria e Servicos
 

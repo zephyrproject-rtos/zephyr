@@ -15,6 +15,10 @@
 extern "C" {
 #endif
 
+#define AVDTP_VERSION_1_3 0x0103 /**< AVDTP version 1.3 value */
+
+#define AVDTP_VERSION AVDTP_VERSION_1_3 /**< AVDTP version used by Zephyr */
+
 /**
  * @brief AVDTP error code
  */
@@ -118,6 +122,14 @@ enum bt_avdtp_service_category {
 	BT_AVDTP_SERVICE_MEDIA_CODEC = 0x07,
 	/** Delay Reporting */
 	BT_AVDTP_SERVICE_DELAY_REPORTING = 0x08,
+};
+
+/** @brief service category Recovery Capabilities type*/
+enum bt_avdtp_recovery_type {
+	/** Forbidden */
+	BT_AVDTP_RECOVERY_TYPE_FORBIDDEN = 0x00,
+	/** RFC2733 */
+	BT_ADVTP_RECOVERY_TYPE_RFC2733 = 0x01,
 };
 
 /** @brief AVDTP Stream End Point */

@@ -56,9 +56,9 @@ config LORAWAN_APP_CLOCK_SYNC_PERIODICITY
 
 config LORAWAN_FRAG_TRANSPORT
 	bool "Fragmented Data Block Transport"
-	select FLASH_MAP
-	select FLASH_PAGE_LAYOUT
-	select IMG_MANAGER
+	depends on FLASH_MAP
+	depends on FLASH_PAGE_LAYOUT
+	depends on IMG_MANAGER
 	help
 	  Enables the LoRaWAN Fragmented Data Block Transport service
 	  according to TS004-1.0.0 as published by the LoRa Alliance.

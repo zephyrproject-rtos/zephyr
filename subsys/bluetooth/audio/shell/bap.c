@@ -2384,7 +2384,7 @@ static uint16_t interval_to_sync_timeout(uint16_t interval)
 	return (uint16_t)timeout;
 }
 
-static bool scan_check_and_sync_broadcast(struct bt_data *data, void *user_data)
+static bool scan_check_and_get_broadcast_values(struct bt_data *data, void *user_data)
 {
 	struct bt_broadcast_info *sr_info = (struct bt_broadcast_info *)user_data;
 	struct bt_uuid_16 adv_uuid;
@@ -2427,17 +2427,11 @@ static void broadcast_scan_recv(const struct bt_le_scan_recv_info *info, struct 
 
 	sr_info.broadcast_id = BT_BAP_INVALID_BROADCAST_ID;
 
-	if ((auto_scan.broadcast_info.broadcast_id == BT_BAP_INVALID_BROADCAST_ID) &&
-	    (strlen(auto_scan.broadcast_info.broadcast_name) == 0U)) {
-		/* no op */
-		return;
-	}
-
 	if (!passes_scan_filter(info, ad)) {
 		return;
 	}
 
-	bt_data_parse(ad, scan_check_and_sync_broadcast, (void *)&sr_info);
+	bt_data_parse(ad, scan_check_and_get_broadcast_values, (void *)&sr_info);
 
 	/* Verify that it is a BAP broadcaster*/
 	if (sr_info.broadcast_id == BT_BAP_INVALID_BROADCAST_ID) {
@@ -2445,6 +2439,15 @@ static void broadcast_scan_recv(const struct bt_le_scan_recv_info *info, struct 
 	}
 
 	bt_addr_le_to_str(info->addr, addr_str, sizeof(addr_str));
+
+	bt_shell_print("Found broadcaster with ID 0x%06X (%s) and addr %s and sid 0x%02X ",
+		       sr_info.broadcast_id, sr_info.broadcast_name, addr_str, info->sid);
+
+	if ((auto_scan.broadcast_info.broadcast_id == BT_BAP_INVALID_BROADCAST_ID) &&
+	    (strlen(auto_scan.broadcast_info.broadcast_name) == 0U)) {
+		/* no op */
+		return;
+	}
 
 	if (sr_info.broadcast_id == auto_scan.broadcast_info.broadcast_id) {
 		identified_broadcast = true;
@@ -2461,10 +2464,6 @@ static void broadcast_scan_recv(const struct bt_le_scan_recv_info *info, struct 
 	    (auto_scan.broadcast_sink->pa_sync == NULL)) {
 		struct bt_le_per_adv_sync_param create_params = {0};
 		int err;
-
-		bt_shell_print(
-			"Found broadcaster with ID 0x%06X and addr %s and sid 0x%02X ",
-			sr_info.broadcast_id, addr_str, info->sid);
 
 		err = bt_le_scan_stop();
 		if (err != 0) {
@@ -4342,6 +4341,7 @@ static size_t nonconnectable_ad_data_add(struct bt_data *data_array, const size_
 
 			return 0;
 		}
+		bt_shell_print("Generated broadcast_id 0x%06X", broadcast_id);
 
 		sys_put_le24(broadcast_id, &ad_bap_broadcast_announcement[2]);
 		data_array[ad_len].type = BT_DATA_SVC_DATA16;

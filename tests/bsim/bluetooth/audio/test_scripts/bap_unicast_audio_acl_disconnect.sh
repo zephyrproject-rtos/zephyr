@@ -20,7 +20,7 @@ Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
 
 Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
   -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=1 -testid=unicast_server_acl_disconnect \
-  -RealEncryption=1 -rs=28 -D=2
+  -RealEncryption=1 -rs=28 -D=2 -start_offset=2e3
 
 # Simulation time should be larger than the WAIT_TIME in common.h
 Execute ./bs_2G4_phy_v1 -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} \

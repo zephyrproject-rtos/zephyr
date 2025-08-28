@@ -244,7 +244,7 @@ static void invoke_subevent_result_callback(struct bt_conn *conn,
 	} else
 #endif /* CONFIG_BT_CHANNEL_SOUNDING_TEST */
 	{
-		notify_cs_subevent_result(conn, p_result);
+		bt_conn_notify_cs_subevent_result(conn, p_result);
 	}
 }
 
@@ -425,9 +425,10 @@ void bt_hci_le_cs_read_remote_supported_capabilities_complete(struct net_buf *bu
 		remote_cs_capabilities.t_sw_time = evt->t_sw_time_supported;
 		remote_cs_capabilities.tx_snr_capability = evt->tx_snr_capability;
 
-		notify_remote_cs_capabilities(conn, BT_HCI_ERR_SUCCESS, &remote_cs_capabilities);
+		bt_conn_notify_remote_cs_capabilities(conn, BT_HCI_ERR_SUCCESS,
+						      &remote_cs_capabilities);
 	} else {
-		notify_remote_cs_capabilities(conn, evt->status, NULL);
+		bt_conn_notify_remote_cs_capabilities(conn, evt->status, NULL);
 	}
 
 	bt_conn_unref(conn);
@@ -502,9 +503,9 @@ void bt_hci_le_cs_read_remote_fae_table_complete(struct net_buf *buf)
 	if (evt->status == BT_HCI_ERR_SUCCESS) {
 		fae_table.remote_fae_table = evt->remote_fae_table;
 
-		notify_remote_cs_fae_table(conn, BT_HCI_ERR_SUCCESS, &fae_table);
+		bt_conn_notify_remote_cs_fae_table(conn, BT_HCI_ERR_SUCCESS, &fae_table);
 	} else {
-		notify_remote_cs_fae_table(conn, evt->status, NULL);
+		bt_conn_notify_remote_cs_fae_table(conn, evt->status, NULL);
 	}
 
 	bt_conn_unref(conn);
@@ -853,7 +854,7 @@ void bt_hci_le_cs_config_complete_event(struct net_buf *buf)
 
 	if (evt->status == BT_HCI_ERR_SUCCESS) {
 		if (evt->action == BT_HCI_LE_CS_CONFIG_ACTION_REMOVED) {
-			notify_cs_config_removed(conn, evt->config_id);
+			bt_conn_notify_cs_config_removed(conn, evt->config_id);
 			bt_conn_unref(conn);
 			return;
 		}
@@ -882,9 +883,9 @@ void bt_hci_le_cs_config_complete_event(struct net_buf *buf)
 		config.t_pm_time_us = evt->t_pm_time;
 		memcpy(config.channel_map, evt->channel_map, ARRAY_SIZE(config.channel_map));
 
-		notify_cs_config_created(conn, BT_HCI_ERR_SUCCESS, &config);
+		bt_conn_notify_cs_config_created(conn, BT_HCI_ERR_SUCCESS, &config);
 	} else {
-		notify_cs_config_created(conn, evt->status, NULL);
+		bt_conn_notify_cs_config_created(conn, evt->status, NULL);
 	}
 
 	bt_conn_unref(conn);
@@ -1263,7 +1264,7 @@ void bt_hci_le_cs_security_enable_complete(struct net_buf *buf)
 		return;
 	}
 
-	notify_cs_security_enable_available(conn, evt->status);
+	bt_conn_notify_cs_security_enable_available(conn, evt->status);
 
 	bt_conn_unref(conn);
 }
@@ -1313,9 +1314,9 @@ void bt_hci_le_cs_procedure_enable_complete(struct net_buf *buf)
 		params.procedure_count = sys_le16_to_cpu(evt->procedure_count);
 		params.max_procedure_len = sys_le16_to_cpu(evt->max_procedure_len);
 
-		notify_cs_procedure_enable_available(conn, BT_HCI_ERR_SUCCESS, &params);
+		bt_conn_notify_cs_procedure_enable_available(conn, BT_HCI_ERR_SUCCESS, &params);
 	} else {
-		notify_cs_procedure_enable_available(conn, evt->status, NULL);
+		bt_conn_notify_cs_procedure_enable_available(conn, evt->status, NULL);
 	}
 
 	bt_conn_unref(conn);

@@ -5,6 +5,22 @@
  */
 
 /**
+ * @file
+ * @brief Header file for extended sensor API of BMM350 sensor
+ * @ingroup bmm350_interface
+ */
+
+#ifndef ZEPHYR_INCLUDE_DRIVERS_SENSOR_BMM350_H_
+#define ZEPHYR_INCLUDE_DRIVERS_SENSOR_BMM350_H_
+
+/**
+ * @brief Bosch BMM350 3-Axis Magnetometer
+ * @defgroup bmm350_interface BMM350
+ * @ingroup sensor_interface_ext
+ * @{
+ */
+
+/**
  * @brief Performs a magnetic reset.
  *
  * The BMM350 has measures to recover from excessively strong
@@ -23,3 +39,9 @@
  * @return 0 if successful, negative errno code if failure.
  */
 int bmm350_magnetic_reset(const struct device *dev);
+
+/**
+ * @}
+ */
+
+#endif /* ZEPHYR_INCLUDE_DRIVERS_SENSOR_BMM350_H_ */

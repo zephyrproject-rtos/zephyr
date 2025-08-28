@@ -747,27 +747,24 @@ static int le_adv_update(struct bt_le_ext_adv *adv,
 			 const struct bt_data *sd, size_t sd_len,
 			 bool ext_adv, bool scannable)
 {
-	struct bt_ad d[2] = {};
-	size_t d_len;
 	int err;
+	struct bt_ad wrapper;
 
 	if (!(ext_adv && scannable)) {
-		d_len = 1;
-		d[0].data = ad;
-		d[0].len = ad_len;
+		wrapper.data = ad;
+		wrapper.len = ad_len;
 
-		err = set_ad(adv, d, d_len);
+		err = set_ad(adv, &wrapper, 1);
 		if (err) {
 			return err;
 		}
 	}
 
 	if (scannable) {
-		d_len = 1;
-		d[0].data = sd;
-		d[0].len = sd_len;
+		wrapper.data = sd;
+		wrapper.len = sd_len;
 
-		err = set_sd(adv, d, d_len);
+		err = set_sd(adv, &wrapper, 1);
 		if (err) {
 			return err;
 		}
@@ -891,7 +888,7 @@ static void le_adv_stop_free_conn(const struct bt_le_ext_adv *adv, uint8_t statu
 	}
 }
 
-int bt_le_adv_start_legacy(struct bt_le_ext_adv *adv,
+static int adv_start_legacy(struct bt_le_ext_adv *adv,
 			   const struct bt_le_adv_param *param,
 			   const struct bt_data *ad, size_t ad_len,
 			   const struct bt_data *sd, size_t sd_len)
@@ -1312,7 +1309,7 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
 	    BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
 		err = bt_le_adv_start_ext(adv, param, ad, ad_len, sd, sd_len);
 	} else {
-		err = bt_le_adv_start_legacy(adv, param, ad, ad_len, sd, sd_len);
+		err = adv_start_legacy(adv, param, ad, ad_len, sd, sd_len);
 	}
 
 	if (err) {
@@ -1498,6 +1495,7 @@ int bt_le_ext_adv_get_info(const struct bt_le_ext_adv *adv,
 	}
 
 	info->id = adv->id;
+	info->sid = adv->sid;
 	info->tx_power = adv->tx_power;
 	info->addr = &adv->random_addr;
 
@@ -1549,6 +1547,7 @@ int bt_le_ext_adv_create(const struct bt_le_adv_param *param,
 	}
 
 	adv->id = param->id;
+	adv->sid = param->sid;
 	adv->cb = cb;
 
 	err = le_ext_adv_param_set(adv, param, false);

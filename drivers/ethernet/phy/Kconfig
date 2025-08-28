@@ -30,8 +30,9 @@ config PHY_INIT_PRIORITY
 
 config PHY_GENERIC_MII
 	bool "Generic MII PHY Driver"
-	default y if DT_HAS_ETHERNET_PHY_ENABLED
-	depends on MDIO
+	default y
+	depends on DT_HAS_ETHERNET_PHY_ENABLED
+	select MDIO
 	help
 	  This is a generic MII PHY interface that communicates with the
 	  PHY using the MDIO bus.
@@ -40,6 +41,7 @@ config PHY_ADIN2111
 	bool "ADIN2111 PHY driver"
 	default y
 	depends on DT_HAS_ADI_ADIN2111_PHY_ENABLED || DT_HAS_ADI_ADIN1100_PHY_ENABLED
+	select MDIO
 	help
 	  Enable ADIN2111 PHY driver.
 
@@ -47,8 +49,9 @@ config PHY_MICROCHIP_KSZ8081
 	bool "Microchip KSZ8081 PHY Driver"
 	default y
 	depends on DT_HAS_MICROCHIP_KSZ8081_ENABLED
-	depends on MDIO
-	depends on GPIO
+	select MDIO
+	select GPIO if ($(dt_compat_any_has_prop,$(DT_COMPAT_MICROCHIP_KSZ8081),reset-gpios) || \
+			$(dt_compat_any_has_prop,$(DT_COMPAT_MICROCHIP_KSZ8081),int-gpios))
 	help
 	  Enable Microchip KSZ8081 Ethernet PHY Driver
 
@@ -56,8 +59,9 @@ config PHY_MICROCHIP_VSC8541
 	bool "Microchip VSC8541 PHY Driver"
 	default y
 	depends on DT_HAS_MICROCHIP_VSC8541_ENABLED
-	depends on MDIO
-	depends on GPIO
+	select MDIO
+	select GPIO if ($(dt_compat_any_has_prop,$(DT_COMPAT_MICROCHIP_VSC8541),reset-gpios) || \
+			$(dt_compat_any_has_prop,$(DT_COMPAT_MICROCHIP_VSC8541),int-gpios))
 	help
 	  Enable Microchip VSC8541 Ethernet PHY Driver
 
@@ -65,8 +69,9 @@ config PHY_TI_DP83825
 	bool "TI DP83825 PHY Driver"
 	default y
 	depends on DT_HAS_TI_DP83825_ENABLED
-	depends on MDIO
-	depends on GPIO
+	select MDIO
+	select GPIO if ($(dt_compat_any_has_prop,$(DT_COMPAT_TI_DP83825),reset-gpios) || \
+			$(dt_compat_any_has_prop,$(DT_COMPAT_TI_DP83825),int-gpios))
 	help
 	  Enable TI DP83825 Ethernet PHY Driver
 
@@ -74,8 +79,9 @@ config PHY_TI_DP83867
 	bool "TI DP83867 PHY Driver"
 	default y
 	depends on DT_HAS_TI_DP83867_ENABLED
-	depends on MDIO
-	depends on GPIO
+	select MDIO
+	select GPIO if ($(dt_compat_any_has_prop,$(DT_COMPAT_TI_DP83867),reset-gpios) || \
+			$(dt_compat_any_has_prop,$(DT_COMPAT_TI_DP83867),int-gpios))
 	help
 	  Enable TI DP83867 Ethernet PHY Driver
 
@@ -83,9 +89,9 @@ config PHY_REALTEK_RTL8211F
 	bool "Realtek RTL8211F PHY Driver"
 	default y
 	depends on DT_HAS_REALTEK_RTL8211F_ENABLED
-	depends on MDIO
-	depends on GPIO || (!$(dt_compat_any_has_prop,$(DT_COMPAT_REALTEK_RTL8211F),reset-gpios) && \
-			    !$(dt_compat_any_has_prop,$(DT_COMPAT_REALTEK_RTL8211F),int-gpios))
+	select MDIO
+	select GPIO if ($(dt_compat_any_has_prop,$(DT_COMPAT_REALTEK_RTL8211F),reset-gpios) || \
+			$(dt_compat_any_has_prop,$(DT_COMPAT_REALTEK_RTL8211F),int-gpios))
 	help
 	  Enable Realtek RTL8211F Ethernet PHY Driver
 
@@ -93,7 +99,7 @@ config PHY_QUALCOMM_AR8031
 	bool "Qualcomm Atheros AR8031 Ethernet PHY Driver"
 	default y
 	depends on DT_HAS_QCA_AR8031_ENABLED
-	depends on MDIO
+	select MDIO
 	help
 	  Enable Qualcomm Atheros AR8031 Ethernet PHY Driver
 

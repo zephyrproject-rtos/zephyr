@@ -395,6 +395,9 @@ static int bt_apollo_close(const struct device *dev)
 		return ret;
 	}
 
+	/* Stop RX thread */
+	k_thread_abort(&spi_rx_thread_data);
+
 	hci->recv = NULL;
 
 	return ret;

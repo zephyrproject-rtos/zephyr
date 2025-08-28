@@ -856,7 +856,7 @@ uint8_t ll_adv_aux_sr_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 		hdr_add_fields = 0U;
 
 		/* Add ADI if support enabled */
-		if (IS_ENABLED(CONFIG_BT_CTRL_ADV_ADI_IN_SCAN_RSP)) {
+		if (IS_ENABLED(CONFIG_BT_CTLR_ADV_ADI_IN_SCAN_RSP)) {
 			/* We need to get reference to ADI in auxiliary PDU */
 			hdr_add_fields |= ULL_ADV_PDU_HDR_FIELD_ADI;
 
@@ -886,7 +886,7 @@ uint8_t ll_adv_aux_sr_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 			goto sr_data_set_did_update;
 		}
 
-		if (IS_ENABLED(CONFIG_BT_CTRL_ADV_ADI_IN_SCAN_RSP)) {
+		if (IS_ENABLED(CONFIG_BT_CTLR_ADV_ADI_IN_SCAN_RSP)) {
 			(void)memcpy(&adi,
 				     &hdr_data[ULL_ADV_HDR_DATA_ADI_PTR_OFFSET],
 				     sizeof(struct pdu_adv_adi *));

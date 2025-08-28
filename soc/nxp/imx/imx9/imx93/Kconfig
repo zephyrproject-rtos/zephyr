@@ -24,3 +24,10 @@ config SOC_MIMX9352_M33
 config MCUX_CORE_SUFFIX
 	default "_ca55" if SOC_MIMX9352_A55
 	default "_cm33" if SOC_MIMX9352_M33
+
+if SOC_MIMX9352_M33
+
+config TRDC_MCUX_TRDC_1
+	default y
+	bool "Use TRDC_1 MCUX Driver"
+endif # SOC_MIMX9352_M33

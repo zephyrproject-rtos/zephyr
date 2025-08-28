@@ -3,7 +3,6 @@
 
 config INPUT_ESP32_TOUCH_SENSOR
 	bool "Espressif Touch Sensor input driver"
-	default n
 	depends on DT_HAS_ESPRESSIF_ESP32_TOUCH_ENABLED
 	help
 	  Enable support for Espressif Touch Sensor input driver.

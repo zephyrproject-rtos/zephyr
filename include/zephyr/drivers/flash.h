@@ -48,7 +48,13 @@ struct flash_pages_layout {
  * @since 1.2
  * @version 1.0.0
  * @ingroup io_interfaces
+ *
  * @{
+ *
+ * @defgroup flash_ex_op Extended Operations
+ * @brief Vendor-specific extended operations for flash drivers.
+ * @{
+ * @}
  */
 
 /**

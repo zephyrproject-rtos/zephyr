@@ -22,7 +22,6 @@ config ESP32_BT_RESERVE_DRAM
 
 config ESP32_REGION_1_NOINIT
 	bool "Use DRAM region 1 to spill noinit section"
-	default n
 	help
 	  ESP32 has two banks of size 192K and 128K which can be used
 	  as DRAM. Enabling this option would allocate .noinit sections
@@ -50,7 +49,6 @@ config ESP32_EMAC
 	bool
 	default y if ETH_ESP32
 	default y if MDIO_ESP32
-	default n
 	help
 	  Hidden option to enable the ESP32 Ethernet MAC driver.
 	  Both Ethernet and MDIO depend on this driver.

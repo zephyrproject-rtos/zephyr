@@ -39,6 +39,9 @@
 #define STM32_SRC_PLLI2S_R	(STM32_SRC_PLLI2S_Q + 1)
 /* CLK48MHz sources */
 #define STM32_SRC_CK48		(STM32_SRC_PLLI2S_R + 1)
+/** Bus clock */
+#define STM32_SRC_TIMPCLK1	(STM32_SRC_CK48 + 1)
+#define STM32_SRC_TIMPCLK2	(STM32_SRC_TIMPCLK1 + 1)
 
 /* I2S_CKIN not supported yet */
 /* #define STM32_SRC_I2S_CKIN	TBD */

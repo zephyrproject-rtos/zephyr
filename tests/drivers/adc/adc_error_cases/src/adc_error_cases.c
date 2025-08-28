@@ -24,11 +24,17 @@ static const struct adc_channel_cfg valid_channel_cfg = {
 	#endif
 };
 
+#if defined(CONFIG_SOC_FAMILY_SILABS_S2)
+#define VALID_RESOLUTION 12
+#else
+#define VALID_RESOLUTION 10
+#endif
+
 static const struct adc_sequence valid_seq = {
 	.buffer = m_sample_buffer,
 	.buffer_size = BUFFER_LEN * sizeof(m_sample_buffer),
 	.options = NULL,
-	.resolution = 10,
+	.resolution = VALID_RESOLUTION,
 	.oversampling = 0,
 	.channels = 1,
 };

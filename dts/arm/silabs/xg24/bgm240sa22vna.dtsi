@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2023 Fr. Sauter AG
+ * Copyright (c) 2025 Silicon Laboratories Inc.
+ * Copyright (c) 2025 Ephraim Westenberger
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <silabs/xg24/efr32bg24.dtsi>
+
+/ {
+	soc {
+		compatible = "silabs,bgm240sa22vna", "silabs,efr32bg24", "silabs,xg24",
+			     "silabs,efr32", "simple-bus";
+	};
+};
+
+&flash0 {
+	reg = <0x08000000 DT_SIZE_K(1536)>;
+};
+
+&sram0 {
+	reg = <0x20000000 DT_SIZE_K(256)>;
+};

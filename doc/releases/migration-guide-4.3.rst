@@ -34,6 +34,8 @@ Boards
 * NXP ``frdm_mcxa166`` is renamed to ``frdm_mcxa346``.
 * NXP ``frdm_mcxa276`` is renamed to ``frdm_mcxa266``.
 
+* Panasonic ``panb511evb`` is renamed to ``panb611evb``.
+
 Device Drivers and Devicetree
 *****************************
 
@@ -69,6 +71,14 @@ Bluetooth
 * :c:struct:`bt_conn_le_cs_main_mode` and :c:struct:`bt_conn_le_cs_sub_mode` have been replaced
   with :c:struct:`bt_conn_le_cs_mode`.
 
+Bluetooth Controller
+====================
+
+* The following Kconfig option have been renamed:
+
+    * :kconfig:option:`CONFIG_BT_CTRL_ADV_ADI_IN_SCAN_RSP` to
+      :kconfig:option:`CONFIG_BT_CTLR_ADV_ADI_IN_SCAN_RSP`
+
 .. zephyr-keep-sorted-start re(^\w)
 
 Bluetooth Audio
@@ -81,8 +91,17 @@ Bluetooth Audio
   :c:enumerator:`BT_AUDIO_CODEC_CFG_TARGET_PHY_2M`.
   The :c:macro:`BT_AUDIO_CODEC_CFG` macro defaults to these values.
   (:github:`93825``)
+* Setting the BGS role for GMAP now requires also supporting and implementing the
+  :kconfig:option:`CONFIG_BT_BAP_BROADCAST_ASSISTANT`.
+  See the :zephyr:code-sample:`bluetooth_bap_broadcast_assistant` sample as a reference.
 
 .. zephyr-keep-sorted-stop
+
+Bluetooth HCI
+=============
+
+* The deprecated ``ipm`` value was removed from ``bt-hci-bus`` devicetree property.
+  ``ipc`` should be used instead.
 
 Ethernet
 ========
@@ -134,6 +153,16 @@ Logging
   more generic script of :zephyr_file:`scripts/logging/dictionary/live_log_parser.py` should be
   used. The new script supports the same functionality (and more), but requires different command
   line arguments when invoked.
+
+Shell
+=====
+
+* The MQTT topics related to :kconfig:option:`SHELL_BACKEND_MQTT` have been renamed. Renamed
+  ``<device_id>_rx`` to ``<device_id>/sh/rx`` and ``<device_id>_tx`` to ``<device_id>/sh/rx``. The
+  part after the ``<device_id>`` is now configurable via :kconfig:option:`SHELL_MQTT_TOPIC_RX_ID`
+  and :kconfig:option:`SHELL_MQTT_TOPIC_TX_ID`. This allows keeping the previous topics for backward
+  compatibility.
+  (:github:`92677`).
 
 .. zephyr-keep-sorted-stop
 

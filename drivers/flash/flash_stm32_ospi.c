@@ -1702,11 +1702,21 @@ static void flash_stm32_ospi_pages_layout(const struct device *dev,
 }
 #endif
 
+static int flash_stm32_ospi_get_size(const struct device *dev, uint64_t *size)
+{
+	const struct flash_stm32_ospi_config *dev_cfg = dev->config;
+
+	*size = (uint64_t)dev_cfg->flash_size;
+
+	return 0;
+}
+
 static DEVICE_API(flash, flash_stm32_ospi_driver_api) = {
 	.read = flash_stm32_ospi_read,
 	.write = flash_stm32_ospi_write,
 	.erase = flash_stm32_ospi_erase,
 	.get_parameters = flash_stm32_ospi_get_parameters,
+	.get_size = flash_stm32_ospi_get_size,
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	.page_layout = flash_stm32_ospi_pages_layout,
 #endif

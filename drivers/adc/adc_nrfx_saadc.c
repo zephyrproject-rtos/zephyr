@@ -550,10 +550,11 @@ static void correct_single_ended(const struct adc_sequence *sequence, nrf_saadc_
 {
 	int16_t *sample = (int16_t *)buffer;
 	uint8_t selected_channels = sequence->channels;
-	uint8_t divide_single_ended_value = m_data.divide_single_ended_value;
+	uint8_t divide_mask = m_data.divide_single_ended_value;
+	uint8_t single_ended_mask = m_data.single_ended_channels;
 
 	if (m_data.internal_timer_enabled) {
-		if (selected_channels & divide_single_ended_value) {
+		if (selected_channels & divide_mask) {
 			for (int i = 0; i < num_samples; i++) {
 				sample[i] /= 2;
 			}
@@ -564,20 +565,22 @@ static void correct_single_ended(const struct adc_sequence *sequence, nrf_saadc_
 				}
 			}
 		}
-	} else {
-		uint8_t single_ended_channels = m_data.single_ended_channels;
+		return;
+	}
 
-		for (uint16_t channel_bit = BIT(0); channel_bit <= single_ended_channels;
-		     channel_bit <<= 1) {
-			if (channel_bit & selected_channels & single_ended_channels) {
-				if (channel_bit & divide_single_ended_value) {
-					*sample /= 2;
-				} else if (*sample < 0) {
-					*sample = 0;
-				}
-			}
-			sample++;
+	for (uint16_t channel_bit = BIT(0); channel_bit <= single_ended_mask; channel_bit <<= 1) {
+		if (!(channel_bit & selected_channels)) {
+			continue;
 		}
+
+		if (channel_bit & single_ended_mask) {
+			if (channel_bit & divide_mask) {
+				*sample /= 2;
+			} else if (*sample < 0) {
+				*sample = 0;
+			}
+		}
+		sample++;
 	}
 }
 

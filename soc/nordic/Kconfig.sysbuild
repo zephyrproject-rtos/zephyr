@@ -4,5 +4,6 @@
 config HAS_NORDIC_VPR_LAUNCHER_IMAGE
 	bool
 
+rsource "common/uicr/Kconfig.sysbuild"
 rsource "common/vpr/Kconfig.sysbuild"
 orsource "*/Kconfig.sysbuild"

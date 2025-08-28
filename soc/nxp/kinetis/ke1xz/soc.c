@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  * Copyright (c) 2019-2021 Vestas Wind Systems A/S
  *
  * Based on NXP k6x soc.c, which is:
@@ -141,6 +141,9 @@ __weak void clk_init(void)
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(adc0))
 	CLOCK_SetIpSrc(kCLOCK_Adc0,
 		       DT_CLOCKS_CELL(DT_NODELABEL(adc0), ip_source));
+#endif
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ewm0))
+	CLOCK_EnableClock(kCLOCK_Ewm0);
 #endif
 }
 

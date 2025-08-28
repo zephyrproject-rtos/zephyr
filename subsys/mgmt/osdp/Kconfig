@@ -18,14 +18,17 @@ if OSDP
 
 choice
 	prompt "OSDP Mode of Operation"
-	config OSDP_MODE_PD
-		bool "Configure OSDP in Peripheral Device mode"
-		help
-		  Configure this device to operate as a PD (Peripheral Device)
-	config OSDP_MODE_CP
-		bool "Configure OSDP in Control Panel mode"
-		help
-		  Configure this device to operate as a CP (Control Panel)
+
+config OSDP_MODE_PD
+	bool "Configure OSDP in Peripheral Device mode"
+	help
+	  Configure this device to operate as a PD (Peripheral Device)
+
+config OSDP_MODE_CP
+	bool "Configure OSDP in Control Panel mode"
+	help
+	  Configure this device to operate as a CP (Control Panel)
+
 endchoice
 
 config OSDP_UART_BAUD_RATE

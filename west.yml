@@ -122,7 +122,7 @@ manifest:
       groups:
         - hal
     - name: cmsis-dsp
-      revision: 2c014e93d75c4896df57f072b3f7d5d06e37f254
+      revision: 97512610ec92058f0119450b9e743eeb7e95b5c8
       path: modules/lib/cmsis-dsp
     - name: cmsis-nn
       revision: e9328d612ea3ea7d0d210d3ac16ea8667c01abdd
@@ -169,7 +169,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: aa5443a4eea6a49d58f808f41bceb5de19678fa6
+      revision: b04879d5bfc73eaed2a00e6827f346a9c2b88d5c
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -200,7 +200,7 @@ manifest:
       groups:
         - hal
     - name: hal_nordic
-      revision: 2f5d4e5868ab573eac932fa4bc142565073c3c04
+      revision: a6579483deb33112cc763d05a4a3f8085883c1ac
       path: modules/hal/nordic
       groups:
         - hal
@@ -210,7 +210,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: 54ebe9bfd5ecc96ee68ad54f710d92732bcc401d
+      revision: fc66564174efb80056851598d611b3353de2e374
       path: modules/hal/nxp
       groups:
         - hal
@@ -235,7 +235,7 @@ manifest:
       groups:
         - hal
     - name: hal_silabs
-      revision: 13343bccf850eb7b6541f6e71a8d2a880209850b
+      revision: 54cdbdb79c1ccd99b62a93d3af6caff79ab66197
       path: modules/hal/silabs
       groups:
         - hal
@@ -245,7 +245,7 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: 1e753266ddfb4b07a8a0b1ec566e9637ea45d5ef
+      revision: 611d54c237623ea71a367502bfbd736fc67ba15f
       path: modules/hal/stm32
       groups:
         - hal
@@ -334,7 +334,7 @@ manifest:
       revision: 40403f5f2805cca210d2a47c8717d89c4e816cda
       path: modules/bsim_hw_models/nrf_hw_models
     - name: nrf_wifi
-      revision: 787eea1a3c8dd13c86214e204a919e6f9bcebf91
+      revision: 5fffeab6496932abb10f9dae53ed3686967aa050
       path: modules/lib/nrf_wifi
     - name: open-amp
       revision: c30a6d8b92fcebdb797fc1a7698e8729e250f637
@@ -361,7 +361,7 @@ manifest:
       groups:
         - tee
     - name: trusted-firmware-m
-      revision: 021e2bbd50c215e41710a72e05abce3224f074a7
+      revision: cc800268f79779fa674b7085ecf507eb95b83ff9
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee

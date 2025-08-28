@@ -326,13 +326,14 @@
 		};
 
 		dma0: dma@f0c00000 {
-			compatible = "andestech,atcdmac300";
+			compatible = "andestech,atcdmacx00";
 			reg = <0xf0c00000 0x1000>;
 			interrupts = <10 1>;
 			interrupt-parent = <&plic0>;
 			dma-channels = <8>;
 			dma-requests = <16>;
 			chain-transfer = <1>;
+			max-data-width = <4>;
 			#dma-cells = <3>;
 			status = "disabled";
 		};

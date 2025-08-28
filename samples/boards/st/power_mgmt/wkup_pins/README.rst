@@ -13,6 +13,9 @@ a source to power on an STM32 SoC after Poweroff.
 The system will power off automatically ``WAIT_TIME_US`` us after boot.
 Press the user button designated in boards's devicetree overlay as "wkup-src" to power it on again.
 
+Note that Zephyr Poweroff is mapped to STM32 low-power mode with the lowest power consumption,
+which is either Standby or Shutdown depending on the SoC series.
+
 .. _gpio-as-a-wkup-pin-src-sample-requirements:
 
 Requirements

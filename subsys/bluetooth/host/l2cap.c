@@ -200,9 +200,11 @@ const char *bt_l2cap_chan_state_str(bt_l2cap_chan_state_t state)
 
 #if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
 #if defined(CONFIG_BT_L2CAP_LOG_LEVEL_DBG)
-void bt_l2cap_chan_set_state_debug(struct bt_l2cap_chan *chan,
-				   bt_l2cap_chan_state_t state,
-				   const char *func, int line)
+#define l2cap_chan_set_state(_chan, _state) \
+	l2cap_chan_set_state_debug(_chan, _state, __func__, __LINE__)
+
+static void l2cap_chan_set_state_debug(struct bt_l2cap_chan *chan, bt_l2cap_chan_state_t state,
+				       const char *func, int line)
 {
 	struct bt_l2cap_le_chan *le_chan = BT_L2CAP_LE_CHAN(chan);
 
@@ -244,8 +246,7 @@ void bt_l2cap_chan_set_state_debug(struct bt_l2cap_chan *chan,
 	le_chan->state = state;
 }
 #else
-void bt_l2cap_chan_set_state(struct bt_l2cap_chan *chan,
-			     bt_l2cap_chan_state_t state)
+static void l2cap_chan_set_state(struct bt_l2cap_chan *chan, bt_l2cap_chan_state_t state)
 {
 	BT_L2CAP_LE_CHAN(chan)->state = state;
 }
@@ -254,7 +255,7 @@ void bt_l2cap_chan_set_state(struct bt_l2cap_chan *chan,
 
 static void cancel_data_ready(struct bt_l2cap_le_chan *lechan);
 static bool chan_has_data(struct bt_l2cap_le_chan *lechan);
-void bt_l2cap_chan_del(struct bt_l2cap_chan *chan)
+static void l2cap_chan_del(struct bt_l2cap_chan *chan)
 {
 	const struct bt_l2cap_chan_ops *ops = chan->ops;
 	struct bt_l2cap_le_chan *le_chan = BT_L2CAP_LE_CHAN(chan);
@@ -284,7 +285,7 @@ void bt_l2cap_chan_del(struct bt_l2cap_chan *chan)
 destroy:
 #if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
 	/* Reset internal members of common channel */
-	bt_l2cap_chan_set_state(chan, BT_L2CAP_DISCONNECTED);
+	l2cap_chan_set_state(chan, BT_L2CAP_DISCONNECTED);
 	BT_L2CAP_LE_CHAN(chan)->psm = 0U;
 #endif
 	if (chan->destroy) {
@@ -305,11 +306,11 @@ static void l2cap_rtx_timeout(struct k_work *work)
 	LOG_ERR("chan %p timeout", chan);
 
 	bt_l2cap_chan_remove(conn, &chan->chan);
-	bt_l2cap_chan_del(&chan->chan);
+	l2cap_chan_del(&chan->chan);
 
 	/* Remove other channels if pending on the same ident */
 	while ((chan = l2cap_remove_ident(conn, chan->ident, chan->pending_req))) {
-		bt_l2cap_chan_del(&chan->chan);
+		l2cap_chan_del(&chan->chan);
 	}
 }
 
@@ -389,7 +390,7 @@ static bool l2cap_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 	if (L2CAP_LE_CID_IS_DYN(le_chan->rx.cid)) {
 		k_work_init(&le_chan->rx_work, l2cap_rx_process);
 		k_fifo_init(&le_chan->rx_queue);
-		bt_l2cap_chan_set_state(chan, BT_L2CAP_CONNECTING);
+		l2cap_chan_set_state(chan, BT_L2CAP_CONNECTING);
 	}
 #endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
 
@@ -451,7 +452,7 @@ void bt_l2cap_disconnected(struct bt_conn *conn)
 	}
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&conn->channels, chan, next, node) {
-		bt_l2cap_chan_del(chan);
+		l2cap_chan_del(chan);
 	}
 }
 
@@ -659,7 +660,7 @@ static void l2cap_le_encrypt_change(struct bt_l2cap_chan *chan, uint8_t status)
 	return;
 fail:
 	bt_l2cap_chan_remove(chan->conn, chan);
-	bt_l2cap_chan_del(chan);
+	l2cap_chan_del(chan);
 }
 #endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
 
@@ -1129,7 +1130,7 @@ static void le_conn_param_update_req(struct bt_l2cap *l2cap, uint8_t ident,
 		return;
 	}
 
-	accepted = le_param_req(conn, &param);
+	accepted = bt_conn_le_param_req(conn, &param);
 
 	rsp = net_buf_add(buf, sizeof(*rsp));
 	if (accepted) {
@@ -1447,7 +1448,7 @@ static uint16_t l2cap_chan_accept(struct bt_conn *conn,
 	le_chan->psm = server->psm;
 
 	/* Update state */
-	bt_l2cap_chan_set_state(*chan, BT_L2CAP_CONNECTED);
+	l2cap_chan_set_state(*chan, BT_L2CAP_CONNECTED);
 
 	return BT_L2CAP_LE_SUCCESS;
 }
@@ -1897,7 +1898,7 @@ static void le_disconn_req(struct bt_l2cap *l2cap, uint8_t ident,
 	rsp->dcid = sys_cpu_to_le16(chan->rx.cid);
 	rsp->scid = sys_cpu_to_le16(chan->tx.cid);
 
-	bt_l2cap_chan_del(&chan->chan);
+	l2cap_chan_del(&chan->chan);
 
 	l2cap_send_sig(conn, buf);
 }
@@ -1990,7 +1991,7 @@ static void le_ecred_conn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 				return;
 			}
 			bt_l2cap_chan_remove(conn, &chan->chan);
-			bt_l2cap_chan_del(&chan->chan);
+			l2cap_chan_del(&chan->chan);
 		}
 		break;
 	case BT_L2CAP_LE_SUCCESS:
@@ -2009,7 +2010,7 @@ static void le_ecred_conn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 			if (buf->len < sizeof(dcid)) {
 				LOG_ERR("Fewer dcid values than expected");
 				bt_l2cap_chan_remove(conn, &chan->chan);
-				bt_l2cap_chan_del(&chan->chan);
+				l2cap_chan_del(&chan->chan);
 				continue;
 			}
 
@@ -2024,7 +2025,7 @@ static void le_ecred_conn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 			 */
 			if (dcid == 0U) {
 				bt_l2cap_chan_remove(conn, &chan->chan);
-				bt_l2cap_chan_del(&chan->chan);
+				l2cap_chan_del(&chan->chan);
 				continue;
 			} else if (!L2CAP_LE_CID_IS_DYN(dcid) ||
 				   !IN_RANGE(mtu, BT_L2CAP_ECRED_MIN_MTU, BT_L2CAP_MAX_MTU) ||
@@ -2048,7 +2049,7 @@ static void le_ecred_conn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 				 * not used.
 				 */
 				bt_l2cap_chan_remove(conn, &chan->chan);
-				bt_l2cap_chan_del(&chan->chan);
+				l2cap_chan_del(&chan->chan);
 				bt_l2cap_chan_disconnect(c);
 				continue;
 			}
@@ -2062,7 +2063,7 @@ static void le_ecred_conn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 			chan->tx.mps = mps;
 
 			/* Update state */
-			bt_l2cap_chan_set_state(&chan->chan,
+			l2cap_chan_set_state(&chan->chan,
 						BT_L2CAP_CONNECTED);
 
 			if (chan->chan.ops->connected) {
@@ -2078,7 +2079,7 @@ static void le_ecred_conn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 	case BT_L2CAP_LE_ERR_PSM_NOT_SUPP:
 	default:
 		while ((chan = l2cap_remove_ident(conn, ident, BT_L2CAP_ECRED_CONN_REQ))) {
-			bt_l2cap_chan_del(&chan->chan);
+			l2cap_chan_del(&chan->chan);
 		}
 		break;
 	}
@@ -2154,7 +2155,7 @@ static void le_conn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 		chan->tx.mps = mps;
 
 		/* Update state */
-		bt_l2cap_chan_set_state(&chan->chan, BT_L2CAP_CONNECTED);
+		l2cap_chan_set_state(&chan->chan, BT_L2CAP_CONNECTED);
 
 		if (chan->chan.ops->connected) {
 			chan->chan.ops->connected(&chan->chan);
@@ -2173,7 +2174,7 @@ static void le_conn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 		bt_l2cap_chan_remove(conn, &chan->chan);
 		__fallthrough;
 	default:
-		bt_l2cap_chan_del(&chan->chan);
+		l2cap_chan_del(&chan->chan);
 	}
 }
 
@@ -2210,7 +2211,7 @@ static void le_disconn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 		return;
 	}
 
-	bt_l2cap_chan_del(&chan->chan);
+	l2cap_chan_del(&chan->chan);
 }
 
 static void le_credits(struct bt_l2cap *l2cap, uint8_t ident,
@@ -2270,7 +2271,7 @@ static void reject_cmd(struct bt_l2cap *l2cap, uint8_t ident,
 	struct bt_l2cap_le_chan *chan;
 
 	while ((chan = l2cap_remove_ident(conn, ident, ANY_OPCODE))) {
-		bt_l2cap_chan_del(&chan->chan);
+		l2cap_chan_del(&chan->chan);
 	}
 }
 #endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
@@ -2984,7 +2985,7 @@ static int l2cap_le_connect(struct bt_conn *conn, struct bt_l2cap_le_chan *ch,
 
 fail:
 	bt_l2cap_chan_remove(conn, &ch->chan);
-	bt_l2cap_chan_del(&ch->chan);
+	l2cap_chan_del(&ch->chan);
 	return err;
 }
 
@@ -3307,7 +3308,7 @@ int bt_l2cap_chan_disconnect(struct bt_l2cap_chan *chan)
 	req->scid = sys_cpu_to_le16(le_chan->rx.cid);
 
 	l2cap_chan_send_req(chan, buf, L2CAP_DISC_TIMEOUT);
-	bt_l2cap_chan_set_state(chan, BT_L2CAP_DISCONNECTING);
+	l2cap_chan_set_state(chan, BT_L2CAP_DISCONNECTING);
 
 	return 0;
 }

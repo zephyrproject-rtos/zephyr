@@ -953,7 +953,7 @@ struct bt_id_conflict {
  * must refuse bonds that conflict in the resolve list. Notably, this prevents
  * multiple local identities to bond with the same remote identity.
  */
-void find_rl_conflict(struct bt_keys *resident, void *user_data)
+static void find_rl_conflict(struct bt_keys *resident, void *user_data)
 {
 	struct bt_id_conflict *conflict = user_data;
 	bool addr_conflict;

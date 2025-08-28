@@ -32,6 +32,7 @@
 #define STM32_SRC_HSE		(STM32_SRC_HSI48 + 1)
 /** Peripheral bus clock */
 #define STM32_SRC_PCLK		(STM32_SRC_HSE + 1)
+#define STM32_SRC_TIMPCLK1	(STM32_SRC_PCLK + 1)
 
 /** @brief RCC_CCIPR register offset */
 #define CCIPR_REG		0x54

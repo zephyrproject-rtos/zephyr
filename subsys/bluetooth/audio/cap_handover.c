@@ -191,7 +191,7 @@ void bt_cap_handover_unicast_to_broadcast_reception_start(void)
 		}
 
 		member_param->addr = bt_addr_le_any;
-		member_param->adv_sid = proc_param->unicast_to_broadcast.sid;
+		member_param->adv_sid = adv_info.sid;
 		member_param->pa_interval = proc_param->unicast_to_broadcast.pa_interval;
 		member_param->broadcast_id = proc_param->unicast_to_broadcast.broadcast_id;
 		bt_addr_le_copy(&member_param->addr, adv_info.addr);
@@ -632,7 +632,6 @@ int bt_cap_handover_unicast_to_broadcast(
 	proc_param->unicast_to_broadcast.unicast_group = param->unicast_group;
 	proc_param->unicast_to_broadcast.ext_adv = param->ext_adv;
 	proc_param->unicast_to_broadcast.type = param->type;
-	proc_param->unicast_to_broadcast.sid = param->sid;
 	proc_param->unicast_to_broadcast.pa_interval = param->pa_interval;
 	proc_param->unicast_to_broadcast.broadcast_id = param->broadcast_id;
 

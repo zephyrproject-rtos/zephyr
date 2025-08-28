@@ -89,6 +89,10 @@ static int flash_esp32_read(const struct device *dev, off_t address, void *buffe
 {
 	int ret = 0;
 
+	if (length == 0U) {
+		return 0;
+	}
+
 #ifdef CONFIG_MCUBOOT
 	uint8_t *dest_ptr = (uint8_t *)buffer;
 	size_t remaining = length;

@@ -489,7 +489,7 @@ Bluetooth
     ``ticks_slot_window``. Implement continuous scanning with it.
   * Added support for considering the SDU interval, along with the packet
     sequence number and time stamps, in SDU fragmentation.
-  * Added a new ``BT_CTRL_TX_PWR_DBM`` option to set the TX power directly in
+  * Added a new ``BT_CTLR_TX_PWR_DBM`` option to set the TX power directly in
     dBm.
   * Optimized the RX path with support for piggy-backing notifications on
     already-allocated RX nodes.

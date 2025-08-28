@@ -31,4 +31,5 @@ supported:
   - usbd
   - sdhc
   - dac
+  - kpp
 vendor: nxp

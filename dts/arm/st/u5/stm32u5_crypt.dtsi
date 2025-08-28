@@ -14,13 +14,5 @@
 			interrupts = <93 0>;
 			status = "disabled";
 		};
-
-		hash: hash@420c0400 {
-			compatible = "st,stm32-hash";
-			reg = <0x420c0400 0x400>;
-			clocks = <&rcc STM32_CLOCK(AHB2, 17)>;
-			resets = <&rctl STM32_RESET(AHB2L, 17)>;
-			status = "disabled";
-		};
 	};
 };

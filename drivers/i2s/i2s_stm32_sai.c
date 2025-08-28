@@ -134,7 +134,6 @@ void HAL_SAI_TxCpltCallback(SAI_HandleTypeDef *hsai)
 	struct i2s_stm32_sai_data *dev_data = CONTAINER_OF(hsai, struct i2s_stm32_sai_data, hsai);
 	struct stream *stream = &dev_data->stream;
 	struct queue_item item;
-	void *mem_block_tmp;
 	int ret;
 
 	if (stream->state == I2S_STATE_ERROR) {
@@ -154,6 +153,7 @@ void HAL_SAI_TxCpltCallback(SAI_HandleTypeDef *hsai)
 
 	if (stream->last_block) {
 		LOG_DBG("TX Stopped ...");
+		stream->state = I2S_STATE_READY;
 		goto exit;
 	}
 
@@ -171,8 +171,6 @@ void HAL_SAI_TxCpltCallback(SAI_HandleTypeDef *hsai)
 		goto exit;
 	}
 
-	mem_block_tmp = stream->mem_block;
-
 	stream->mem_block = item.buffer;
 	stream->mem_block_len = item.size;
 
@@ -183,9 +181,9 @@ void HAL_SAI_TxCpltCallback(SAI_HandleTypeDef *hsai)
 		LOG_ERR("HAL_SAI_Transmit_DMA: <FAILED>");
 	}
 
-	k_mem_slab_free(stream->i2s_cfg.mem_slab, mem_block_tmp);
 exit:
-	/* EXIT */
+	/* Free memory slab & exit */
+	k_mem_slab_free(stream->i2s_cfg.mem_slab, stream->mem_block);
 }
 
 void HAL_SAI_ErrorCallback(SAI_HandleTypeDef *hsai)
@@ -337,7 +335,13 @@ static int i2s_stm32_sai_dma_init(const struct device *dev)
 		return -EIO;
 	}
 
-#ifndef CONFIG_SOC_SERIES_STM32H7X
+#if defined(CONFIG_SOC_SERIES_STM32N6X)
+	if (HAL_DMA_ConfigChannelAttributes(&dev_data->hdma, DMA_CHANNEL_SEC | DMA_CHANNEL_PRIV |
+					    DMA_CHANNEL_SRC_SEC | DMA_CHANNEL_DEST_SEC) != HAL_OK) {
+		LOG_ERR("HAL_DMA_ConfigChannelAttributes: <Failed>");
+		return -EIO;
+	}
+#elif !defined(CONFIG_SOC_SERIES_STM32H7X)
 	if (HAL_DMA_ConfigChannelAttributes(&dev_data->hdma, DMA_CHANNEL_NPRIV) != HAL_OK) {
 		LOG_ERR("HAL_DMA_ConfigChannelAttributes: <Failed>");
 		return -EIO;

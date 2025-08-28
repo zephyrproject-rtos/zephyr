@@ -6,6 +6,7 @@ tests:
   application_development.ram_context_for_isr:
     # Exclude mps3/corstone310 because it uses another mechanism to support relocation
     # of the vector table (CONFIG_ROMSTART_RELOCATION_ROM).
+    # (Temporarily) Exclude STM32C0 platforms as last IRQ in vector is always used.
     platform_exclude:
       - mps3/corstone310/an555
       - mps3/corstone310/fvp
@@ -19,3 +20,7 @@ tests:
       - hexiwear/mkw40z4
       - frdm_kw41z/mkw41z4
       - frdm_kl25z/mkl25z4
+      - stm32c0116_dk/stm32c011xx
+      - nucleo_c031c6/stm32c031xx
+      - nucleo_c071rb/stm32c071xx
+      - nucleo_c092rc/stm32c092xx

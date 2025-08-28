@@ -18,8 +18,8 @@ extern "C" {
 #endif
 
 /**
- * @brief MCUmgr mgmt API
- * @defgroup mcumgr_mgmt_api MCUmgr mgmt API
+ * @brief MCUmgr Management API
+ * @defgroup mcumgr_mgmt_api Management
  * @since 1.11
  * @version 1.0.0
  * @ingroup mcumgr
@@ -72,7 +72,9 @@ typedef int (*mgmt_handler_fn)(struct smp_streamer *ctxt);
  * Set use_custom_payload to true when using a user defined payload type
  */
 struct mgmt_handler {
+	/** Read handler */
 	mgmt_handler_fn mh_read;
+	/** Write handler */
 	mgmt_handler_fn mh_write;
 #if defined(CONFIG_MCUMGR_MGMT_HANDLER_USER_DATA)
 	void *user_data;

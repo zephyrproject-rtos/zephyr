@@ -8,9 +8,7 @@
 #define ZEPHYR_INCLUDE_DT_BINDINGS_GPIO_GPIO_H_
 
 /**
- * @brief GPIO Driver APIs
- * @defgroup gpio_interface GPIO Driver APIs
- * @ingroup io_interfaces
+ * @addtogroup gpio_interface
  * @{
  */
 

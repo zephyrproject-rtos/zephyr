@@ -830,9 +830,6 @@ struct bt_cap_handover_unicast_to_broadcast_param {
 	 */
 	struct bt_le_ext_adv *ext_adv;
 
-	/** The SID of the advertising set. */
-	uint8_t sid;
-
 	/** The periodic advertising interval configured for the advertising set. */
 	uint16_t pa_interval;
 

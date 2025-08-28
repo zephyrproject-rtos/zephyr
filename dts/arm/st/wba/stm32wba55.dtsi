@@ -10,3 +10,11 @@
 		compatible = "st,stm32wba55", "st,stm32wba", "simple-bus";
 	};
 };
+
+&pwr {
+	wkup-pin@2 {
+		reg = <0x2>;
+		wkup-gpios = <&gpioa 4 STM32_PWR_WKUP_EVT_SRC_0>,
+			     <&gpioc 13 STM32_PWR_WKUP_EVT_SRC_1>;
+	};
+};

@@ -1,11 +1,13 @@
 # Copyright (c) 2014-2015 Wind River Systems, Inc.
 # Copyright (c) 2016 Cadence Design Systems, Inc.
 # Copyright (c) 2019 Intel Corp.
+# Copyright (c) 2025 Espressif Systems (Shanghai) Co., Ltd.
 # SPDX-License-Identifier: Apache-2.0
 
 config ESP32_SYS_TIMER
 	bool "ESP32 sys-timer support (ESP32Cx series)"
-	depends on SOC_SERIES_ESP32C2 || SOC_SERIES_ESP32C3 || (SOC_SERIES_ESP32C6 && !SOC_ESP32C6_LPCORE)
+	depends on SOC_SERIES_ESP32C2 || SOC_SERIES_ESP32C3 || \
+		    (SOC_SERIES_ESP32C6 && !SOC_ESP32C6_LPCORE) || SOC_SERIES_ESP32H2
 	default y
 	select TICKLESS_CAPABLE
 	select TIMER_HAS_64BIT_CYCLE_COUNTER

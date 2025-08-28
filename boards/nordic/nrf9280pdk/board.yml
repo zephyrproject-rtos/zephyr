@@ -9,3 +9,10 @@ board:
       cpucluster: cpuppr
     - name: iron
       cpucluster: cpuapp
+  revision:
+    format: major.minor.patch
+    default: 0.2.0
+    exact: false
+    revisions:
+    - name: 0.1.0
+    - name: 0.2.0

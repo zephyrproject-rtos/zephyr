@@ -32,8 +32,8 @@
 / {
 	/*
 	 * Default SRAM planning when building for nRF54L10 with ARM TrustZone-M support.
-	 * - Lowest 96 kB SRAM allocated to Secure image (sram0_s).
-	 * - Upper 96 kB SRAM allocated to Non-Secure image (sram0_ns).
+	 * - Lowest 72 kB SRAM allocated to Secure image (sram0_s).
+	 * - Upper 72 kB SRAM allocated to Non-Secure image (sram0_ns).
 	 *
 	 * nRF54L10 has 192 kB of volatile memory (SRAM) but the last 42kB are reserved for
 	 * the FLPR MCU.
@@ -59,14 +59,11 @@
 };
 
 &cpuapp_rram {
-	/* TODO: revert this hack when TF-M update is available that fixes partition sizes */
-	reg = <0x0 DT_SIZE_K(1022)>;
-
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
-		/* nRF54L10 has 1022 kB of non volatile memory (RRAM) but the
+		/* nRF54L10 has 1012 kB of non volatile memory (RRAM) but the
 		 * last 62kB are reserved for the FLPR MCU.
 		 *
 		 * This static layout needs to be the same with the upstream TF-M layout in the
@@ -95,12 +92,12 @@
 
 		slot0_ns_partition: partition@6A000 {
 			label = "image-0-nonsecure";
-			reg = <0x0006A000 DT_SIZE_K(504)>;
+			reg = <0x0006A000 DT_SIZE_K(494)>;
 		};
 
-		storage_partition: partition@E8000 {
+		storage_partition: partition@E5800 {
 			label = "storage";
-			reg = <0x000E8000 DT_SIZE_K(32)>;
+			reg = <0x000E5800 DT_SIZE_K(32)>;
 		};
 	};
 };

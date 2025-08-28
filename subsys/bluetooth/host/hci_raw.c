@@ -150,6 +150,9 @@ struct net_buf *bt_buf_get_tx(enum bt_buf_type type, k_timeout_t timeout,
 
 struct net_buf *bt_buf_get_evt(uint8_t evt, bool discardable, k_timeout_t timeout)
 {
+	ARG_UNUSED(evt);
+	ARG_UNUSED(discardable);
+
 	return bt_buf_get_rx(BT_BUF_EVT, timeout);
 }
 

@@ -28,6 +28,7 @@
 #include <zephyr/platform/hooks.h>
 #include <ksched.h>
 #include <kthread.h>
+#include <ipi.h>
 #include <zephyr/sys/dlist.h>
 #include <kernel_internal.h>
 #include <zephyr/drivers/entropy.h>
@@ -656,6 +657,10 @@ void z_init_cpu(int id)
 				  _kernel.cpus[id].usage,
 				  sizeof(struct k_cycle_stats));
 #endif
+#endif
+
+#ifdef CONFIG_SCHED_IPI_SUPPORTED
+	sys_dlist_init(&_kernel.cpus[id].ipi_workq);
 #endif
 }
 

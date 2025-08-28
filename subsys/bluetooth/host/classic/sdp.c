@@ -1081,31 +1081,6 @@ out:
 		break;
 	}
 
-	/* If the attribute ID is out of range, the continuation state should be updated. */
-	if (attr_size == 0) {
-		sad->state->last_att = att_idx + 1;
-		sad->state->last_att_index = 0;
-	}
-
-	/* If the attribute index is out of range, increase the service
-	 * index and reset attribute index.
-	 */
-	if (sad->state->last_att >= sad->rec->attr_count) {
-		sad->state->current_svc++;
-		sad->state->last_att = 0;
-	}
-
-	/* End the search if:
-	 * 1. We have exhausted the packet
-	 * AND
-	 * 2. This packet doesn't contain the service element declaration header
-	 * AND
-	 * 3. This is not a dry-run (then we look for other attrs that match)
-	 */
-	if (sad->state->pkt_full && !sad->seq && sad->rsp_buf) {
-		return BT_SDP_ITER_STOP;
-	}
-
 	return BT_SDP_ITER_CONTINUE;
 }
 
@@ -1475,6 +1450,15 @@ static uint16_t sdp_svc_search_att_req(struct bt_sdp *sdp, struct net_buf *buf,
 
 		if (!record) {
 			continue;
+		}
+
+		/* reset the `state.last_att` and `state.last_att_index`
+		 * if the index of current record is not same with `state.current_svc`.
+		 */
+		if (state.current_svc != record->index) {
+			state.current_svc = record->index;
+			state.last_att = 0;
+			state.last_att_index = 0;
 		}
 
 		sending_len = create_attr_list(sdp, record, filter, num_filters, max_att_len,
@@ -1899,6 +1883,10 @@ static void sdp_client_params_iterator(struct bt_sdp_client *session)
 		sys_slist_remove(&session->reqs, NULL, &param->_node);
 		/* Invalidate cached param in context */
 		session->param = NULL;
+		if (session->rec_buf != NULL) {
+			net_buf_unref(session->rec_buf);
+			session->rec_buf = NULL;
+		}
 		/* Reset continuation state in current context */
 		(void)memset(&session->cstate, 0, sizeof(session->cstate));
 		/* Clear total length */
@@ -2106,7 +2094,11 @@ static int sdp_client_discover(struct bt_sdp_client *session)
 		param = session->param;
 	}
 
-	if (!param) {
+	if (param != NULL && session->rec_buf == NULL) {
+		session->rec_buf = net_buf_alloc(param->pool, K_FOREVER);
+	}
+
+	if (param == NULL || session->rec_buf == NULL) {
 		struct bt_l2cap_chan *chan = &session->chan.chan;
 
 		session->state = SDP_CLIENT_DISCONNECTING;
@@ -3208,7 +3200,8 @@ int bt_sdp_get_proto_param(const struct net_buf *buf, enum bt_sdp_proto proto,
 	struct bt_sdp_uuid_desc pd;
 	int res;
 
-	if (proto != BT_SDP_PROTO_RFCOMM && proto != BT_SDP_PROTO_L2CAP) {
+	if (proto != BT_SDP_PROTO_RFCOMM && proto != BT_SDP_PROTO_L2CAP &&
+	    proto != BT_SDP_PROTO_AVDTP) {
 		LOG_ERR("Invalid protocol specifier");
 		return -EINVAL;
 	}
@@ -3235,7 +3228,8 @@ int bt_sdp_get_addl_proto_param(const struct net_buf *buf, enum bt_sdp_proto pro
 	struct bt_sdp_uuid_desc pd;
 	int res;
 
-	if (proto != BT_SDP_PROTO_RFCOMM && proto != BT_SDP_PROTO_L2CAP) {
+	if (proto != BT_SDP_PROTO_RFCOMM && proto != BT_SDP_PROTO_L2CAP &&
+	    proto != BT_SDP_PROTO_AVDTP) {
 		LOG_ERR("Invalid protocol specifier");
 		return -EINVAL;
 	}

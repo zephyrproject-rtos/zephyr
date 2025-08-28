@@ -280,6 +280,28 @@ csi_i2c: &i2c1 {
 	status = "okay";
 };
 
+&timers1 {
+	st,prescaler = <9999>;
+	status = "okay";
+
+	pwm1: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim1_ch1_pe9>;
+		pinctrl-names = "default";
+	};
+};
+
+&timers15 {
+	st,prescaler = <9999>;
+	status = "okay";
+
+	pwm15: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim15_ch1_pc12>;
+		pinctrl-names = "default";
+	};
+};
+
 zephyr_udc0: &usbotg_hs1 {
 	status = "okay";
 };

@@ -664,7 +664,8 @@ static int set_location(void)
 
 	if (IS_ENABLED(CONFIG_BT_PAC_SNK_LOC)) {
 		err = bt_pacs_set_location(BT_AUDIO_DIR_SINK,
-					   BT_AUDIO_LOCATION_FRONT_CENTER);
+					   (BT_AUDIO_LOCATION_FRONT_LEFT |
+					    BT_AUDIO_LOCATION_FRONT_RIGHT));
 		if (err != 0) {
 			printk("Failed to set sink location (err %d)\n", err);
 			return err;
@@ -673,8 +674,7 @@ static int set_location(void)
 
 	if (IS_ENABLED(CONFIG_BT_PAC_SRC_LOC)) {
 		err = bt_pacs_set_location(BT_AUDIO_DIR_SOURCE,
-					   (BT_AUDIO_LOCATION_FRONT_LEFT |
-					    BT_AUDIO_LOCATION_FRONT_RIGHT));
+					   BT_AUDIO_LOCATION_FRONT_CENTER);
 		if (err != 0) {
 			printk("Failed to set source location (err %d)\n", err);
 			return err;

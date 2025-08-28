@@ -17,8 +17,21 @@ LOG_MODULE_REGISTER(pwm_rpi_pico, CONFIG_PWM_LOG_LEVEL);
 #include <hardware/pwm.h>
 #include <hardware/structs/pwm.h>
 
+/*
+ * pico-sdk defines PWM_NUM_SLICES with a 'u' suffix for unsigned, which
+ * doesn't work with LISTIFY later on in this file.
+ */
+#ifdef CONFIG_SOC_SERIES_RP2350
+#define PWM_RPI_PICO_NUM_SLICES 12
+#else
+#define PWM_RPI_PICO_NUM_SLICES 8
+#endif
+BUILD_ASSERT(NUM_PWM_SLICES == PWM_RPI_PICO_NUM_SLICES,
+			 "PWM_RPI_PICO_NUM_SLICES misconfigured for SOC");
+
 #define PWM_RPI_PICO_COUNTER_TOP_MAX    UINT16_MAX
-#define PWM_RPI_NUM_CHANNELS            (16U)
+#define PWM_RPI_NUM_CHANNELS            (2 * NUM_PWM_SLICES)
+
 
 struct pwm_rpi_slice_config {
 	uint8_t integral;
@@ -193,7 +206,7 @@ static int pwm_rpi_init(const struct device *dev)
 	return 0;
 }
 
-#define PWM_INST_RPI_SLICE_DIVIDER(idx, n)				   \
+#define PWM_INST_RPI_SLICE_DIVIDER(n, idx)				   \
 	{								   \
 		.integral = DT_INST_PROP_OR(idx, UTIL_CAT(divider_int_, n), 0),			   \
 		.frac = DT_INST_PROP_OR(idx, UTIL_CAT(divider_frac_, n), 0),			   \
@@ -206,14 +219,7 @@ static int pwm_rpi_init(const struct device *dev)
 		.pwm_controller = (pwm_hw_t *)DT_INST_REG_ADDR(idx),				   \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),					   \
 		.slice_configs = {								   \
-			PWM_INST_RPI_SLICE_DIVIDER(idx, 0),					   \
-			PWM_INST_RPI_SLICE_DIVIDER(idx, 1),					   \
-			PWM_INST_RPI_SLICE_DIVIDER(idx, 2),					   \
-			PWM_INST_RPI_SLICE_DIVIDER(idx, 3),					   \
-			PWM_INST_RPI_SLICE_DIVIDER(idx, 4),					   \
-			PWM_INST_RPI_SLICE_DIVIDER(idx, 5),					   \
-			PWM_INST_RPI_SLICE_DIVIDER(idx, 6),					   \
-			PWM_INST_RPI_SLICE_DIVIDER(idx, 7),					   \
+			LISTIFY(PWM_RPI_PICO_NUM_SLICES, PWM_INST_RPI_SLICE_DIVIDER, (,), idx)	   \
 		},										   \
 		.reset = RESET_DT_SPEC_INST_GET(idx),						   \
 		.clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(idx)),				   \
