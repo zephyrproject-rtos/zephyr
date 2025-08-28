@@ -194,6 +194,23 @@ static int siwx91x_disconnect_if_required(const struct device *dev,
 	return -EALREADY;
 }
 
+static uint32_t siwx91x_convert_timeout_ms(int timeout_sec)
+{
+	int64_t temp;
+
+	if (timeout_sec <= 0) {
+		return 0;
+	}
+
+	temp = (int64_t)timeout_sec * 1000;
+	if (temp > UINT32_MAX) {
+		LOG_WRN("clamp to maximum allowed");
+		return UINT32_MAX;
+	}
+
+	return (uint32_t)temp;
+}
+
 int siwx91x_connect(const struct device *dev, struct wifi_connect_req_params *params)
 {
 	sl_wifi_interface_t interface = sl_wifi_get_default_interface();
@@ -203,6 +220,7 @@ int siwx91x_connect(const struct device *dev, struct wifi_connect_req_params *pa
 		.credential_id = SL_NET_DEFAULT_WIFI_CLIENT_CREDENTIAL_ID,
 	};
 	struct siwx91x_dev *sidev = dev->data;
+	uint32_t timeout_ms = 0;
 	int ret;
 
 	if (sidev->state == WIFI_STATE_COMPLETED) {
@@ -286,10 +304,11 @@ int siwx91x_connect(const struct device *dev, struct wifi_connect_req_params *pa
 		wifi_config.channel.channel = 0;
 	}
 
-	wifi_config.ssid.length = params->ssid_length,
+	wifi_config.ssid.length = params->ssid_length;
 	memcpy(wifi_config.ssid.value, params->ssid, params->ssid_length);
+	timeout_ms = siwx91x_convert_timeout_ms(params->timeout);
 
-	ret = sl_wifi_connect(interface, &wifi_config, 0);
+	ret = sl_wifi_connect(interface, &wifi_config, timeout_ms);
 	if (ret != SL_STATUS_IN_PROGRESS) {
 		wifi_mgmt_raise_connect_result_event(sidev->iface, WIFI_STATUS_CONN_FAIL);
 		return -EIO;
