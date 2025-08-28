@@ -83,7 +83,8 @@ Display Connector J5
 Requirements
 ************
 
-Your board needs to have a ``mipi_dsi`` device tree label to work with this shield.
+Your board needs to have a ``mipi_dsi`` or ``spi`` device tree label to work with
+this shield.
 
 Usage
 *****
@@ -91,12 +92,21 @@ Usage
 The shield can be used in any application by setting ``SHIELD`` to
 ``ap510_disp`` and adding the necessary device tree properties.
 
-Set ``--shield "ap510_disp"`` when you invoke ``west build``. For example:
+Set ``--shield ap510_disp`` when you invoke ``west build``. For example:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/display
    :board: apollo510_evb
    :shield: ap510_disp
+   :goals: build
+
+If the user wants to drive the display with QSPI interface,
+set ``--shield ap510_disp_spi`` when you invoke ``west build``. For example:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/display
+   :board: apollo510_evb
+   :shield: ap510_disp_spi
    :goals: build
 
 References
