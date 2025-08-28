@@ -1,0 +1,29 @@
+# Copyright (c) 2025 Sentry Technologies ApS
+#
+# SPDX-License-Identifier: Apache-2.0
+
+compatible: "invensense,iim46234"
+
+include: invensense,iim4623x.yaml
+
+properties:
+  accel-fs:
+    type: int
+    default: 1
+    description: |
+      Specify the accelerometer range in g.
+      Default to the power-up default.
+    enum:
+      - 2
+      - 4
+      - 8
+
+  gyro-fs:
+    type: int
+    default: 2
+    description: |
+      Specify the gyroscope range in degrees per second.
+      Default to the power-up default.
+    enum:
+      - 250
+      - 480

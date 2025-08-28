@@ -1,0 +1,89 @@
+# Copyright (c) 2025 Sentry Technologies ApS
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  IIM-4623x family of 6-axis motion tracking devices. They combine multiple
+  3-axis gyroscopes and 3-axis accelerometers packaged in a small module.
+
+  The sensors can connect on either UART or SPI, but currently only SPI is
+  supported. It is worth noting that the device datasheet specifies a range
+  for the SPI clock frequency: 4 MHz <= f_sclk <= 12 MHz.
+  Additionally the device datasheet specifies operation using SPI mode 3:
+  CPOL=1, CPHA=1.
+
+  When setting the accel-bw and gyro-bw properties in a .dts or .dtsi file
+  you may include iim4623x.h and use the macros defined there.
+
+  Example:
+  #include <zephyr/dt-bindings/sensor/iim4623x.h>
+
+  &spi0 {
+    ...
+
+    iim4623x@0 {
+      ...
+
+      accel-bw = <IIM4623X_DT_ACCEL_BW_4>;
+      gyro-bw = <IIM4623X_DT_GYRO_BW_4>;
+    };
+  };
+
+include: [spi-device.yaml, sensor-device.yaml]
+
+properties:
+  int-gpios:
+    type: phandle-array
+    required: true
+    description: Interrupt gpio
+
+  reset-gpios:
+    type: phandle-array
+    required: true
+    description: Reset gpio
+
+  odr:
+    type: int
+    default: 1000
+    description: |
+      Specify the IMU output data rate in Hz.
+      Default to the power-up default.
+    enum:
+      - 1000
+      - 500
+      - 250
+      - 200
+      - 125
+      - 100
+      - 50
+      - 25
+      - 20
+      - 10
+
+  accel-bw:
+    type: int
+    default: 0
+    description: |
+      Specify the accelerometer bandwidth setting.
+      Consult the datasheet for figures regarding 3dB bandwidth,
+      noise bandwidth, and RMS noise.
+      Default to the power-up default.
+    enum:
+      - 0 # IIM4623X_DT_ACCEL_BW_4
+      - 1 # IIM4623X_DT_ACCEL_BW_5
+      - 2 # IIM4623X_DT_ACCEL_BW_6
+      - 3 # IIM4623X_DT_ACCEL_BW_7
+
+  gyro-bw:
+    type: int
+    default: 0
+    description: |
+      Specify the gyroscope bandwidth setting.
+      Consult the datasheet for figures regarding 3dB bandwidth,
+      noise bandwidth, and RMS noise.
+      Default to the power-up default.
+    enum:
+      - 0 # IIM4623X_DT_GYRO_BW_4
+      - 1 # IIM4623X_DT_GYRO_BW_5
+      - 2 # IIM4623X_DT_GYRO_BW_6
+      - 3 # IIM4623X_DT_GYRO_BW_7
