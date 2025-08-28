@@ -82,6 +82,10 @@ struct modem_chat_match {
 #define MODEM_CHAT_MATCH_DEFINE(_sym, _match, _separators, _callback)                              \
 	const static struct modem_chat_match _sym = MODEM_CHAT_MATCH(_match, _separators, _callback)
 
+#define MODEM_CHAT_MATCH_WILDCARD_DEFINE(_sym, _match, _separators, _callback)                     \
+	const static struct modem_chat_match _sym =                                                \
+		MODEM_CHAT_MATCH_WILDCARD(_match, _separators, _callback)
+
 /* Helper struct to match any response without callback. */
 extern const struct modem_chat_match modem_chat_any_match;
 
