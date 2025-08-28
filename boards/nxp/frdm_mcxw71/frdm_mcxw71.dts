@@ -18,6 +18,7 @@
 		blue-pwm-led = &blue_pwm_led;
 		green-pwm-led = &green_pwm_led;
 		red-pwm-led = &red_pwm_led;
+		rtc = &counter_rtc;
 	};
 
 	chosen {
@@ -220,5 +221,9 @@
 };
 
 &rtc {
+	status = "okay";
+};
+
+&counter_rtc {
 	status = "okay";
 };
