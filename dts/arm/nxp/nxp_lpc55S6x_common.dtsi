@@ -481,6 +481,24 @@
 		#pwm-cells = <3>;
 	};
 
+	rtc: rtc@2C000 {
+		compatible = "nxp,lpc-rtc";
+		reg = <0x2C000 0x1000>;
+		interrupts = <29 0>;
+		status = "disabled";
+
+		rtc_highres: rtc_highres {
+			compatible = "nxp,lpc-rtc-highres";
+			status = "disabled";
+		};
+
+		counter_rtc: counter_rtc {
+			compatible = "zephyr,rtc-counter";
+			alarms-count = <1>;
+			status = "disabled";
+		};
+	};
+
 	mrt: mrt@d000 {
 		compatible = "nxp,mrt";
 		reg = <0xd000 0x100>;
