@@ -379,6 +379,12 @@
 		interrupt-names = "alarm", "seconds";
 		clock-frequency = <32768>;
 		prescaler = <32768>;
+
+		counter_rtc: counter_rtc {
+			compatible = "zephyr,rtc-counter";
+			alarms-count = <1>;
+			status = "disabled";
+		};
 	};
 
 	ewm0: ewm@13000 {

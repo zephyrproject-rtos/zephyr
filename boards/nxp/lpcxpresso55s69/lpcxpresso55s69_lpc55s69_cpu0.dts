@@ -32,6 +32,7 @@
 		accel0 = &mma8652fc;
 		sdhc0 = &sdif;
 		mcuboot-button0 = &user_button_1;
+		rtc = &counter_rtc;
 	};
 
 	chosen {
@@ -224,5 +225,13 @@ i2s1: &flexcomm7 {
 };
 
 &mrt_channel0 {
+	status = "okay";
+};
+
+&rtc {
+	status = "okay";
+};
+
+&counter_rtc {
 	status = "okay";
 };
