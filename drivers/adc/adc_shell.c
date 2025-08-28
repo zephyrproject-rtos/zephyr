@@ -11,39 +11,30 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/devicetree.h>
 
-
 #define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(adc_shell);
 
-#define CMD_HELP_ACQ_TIME \
-	SHELL_HELP("Configure acquisition time", \
-		   "<time> <unit>\nunits: us, ns, ticks")
+#define CMD_HELP_ACQ_TIME                                                                          \
+	SHELL_HELP("Configure acquisition time", "<time> <unit>\nunits: us, ns, ticks")
 
-#define CMD_HELP_CHANNEL \
-	SHELL_HELP("Configure ADC channel", "<subcommand> [args]")
+#define CMD_HELP_CHANNEL SHELL_HELP("Configure ADC channel", "<subcommand> [args]")
 
-#define CMD_HELP_CH_ID \
-	SHELL_HELP("Configure channel id", "<channel_id>")
+#define CMD_HELP_CH_ID SHELL_HELP("Configure channel id", "<channel_id>")
 
-#define CMD_HELP_DIFF \
-	SHELL_HELP("Configure differential", "<0|1>")
+#define CMD_HELP_DIFF SHELL_HELP("Configure differential", "<0|1>")
 
-#define CMD_HELP_CH_NEG \
-	SHELL_HELP("Configure channel negative input", "<negative_input_id>")
+#define CMD_HELP_CH_NEG SHELL_HELP("Configure channel negative input", "<negative_input_id>")
 
-#define CMD_HELP_CH_POS \
-	SHELL_HELP("Configure channel positive input", "<positive_input_id>")
+#define CMD_HELP_CH_POS SHELL_HELP("Configure channel positive input", "<positive_input_id>")
 
-#define CMD_HELP_READ \
-	SHELL_HELP("Read adc value", "<channel>")
+#define CMD_HELP_READ SHELL_HELP("Read adc value", "<channel>")
 
-#define CMD_HELP_RES \
-	SHELL_HELP("Configure resolution", "<resolution>")
+#define CMD_HELP_RES SHELL_HELP("Configure resolution", "<resolution>")
 
-#define CMD_HELP_REF	SHELL_HELP("Configure reference", NULL)
-#define CMD_HELP_GAIN	SHELL_HELP("Configure gain", NULL)
-#define CMD_HELP_PRINT	SHELL_HELP("Print current configuration", NULL)
+#define CMD_HELP_REF   SHELL_HELP("Configure reference", NULL)
+#define CMD_HELP_GAIN  SHELL_HELP("Configure gain", NULL)
+#define CMD_HELP_PRINT SHELL_HELP("Print current configuration", NULL)
 
 static const char *cmd_adc_dev_get_help =
 	SHELL_HELP("Select subcommand for ADC property label", NULL);
@@ -70,6 +61,7 @@ static struct adc_hdl {
 	struct adc_channel_cfg channel_config;
 	uint8_t resolution;
 } adc_list[] = {
+	/* clang-format off */
 	/* zephyr-keep-sorted-start */
 	DT_FOREACH_STATUS_OKAY(adi_ad4114_adc, ADC_HDL_LIST_ENTRY)
 	DT_FOREACH_STATUS_OKAY(adi_ad559x_adc, ADC_HDL_LIST_ENTRY)
@@ -144,6 +136,7 @@ static struct adc_hdl {
 	DT_FOREACH_STATUS_OKAY(ti_ads7961, ADC_HDL_LIST_ENTRY)
 	DT_FOREACH_STATUS_OKAY(ti_cc13xx_cc26xx_adc, ADC_HDL_LIST_ENTRY)
 	DT_FOREACH_STATUS_OKAY(ti_cc32xx_adc, ADC_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(ti_cc35xx_adc, ADC_HDL_LIST_ENTRY)
 	DT_FOREACH_STATUS_OKAY(ti_lmp90077, ADC_HDL_LIST_ENTRY)
 	DT_FOREACH_STATUS_OKAY(ti_lmp90078, ADC_HDL_LIST_ENTRY)
 	DT_FOREACH_STATUS_OKAY(ti_lmp90079, ADC_HDL_LIST_ENTRY)
@@ -158,6 +151,7 @@ static struct adc_hdl {
 	DT_FOREACH_STATUS_OKAY(ti_tla2024, ADC_HDL_LIST_ENTRY)
 	DT_FOREACH_STATUS_OKAY(zephyr_adc_emul, ADC_HDL_LIST_ENTRY)
 	/* zephyr-keep-sorted-stop */
+	/* clang-format on */
 };
 
 static struct adc_hdl *get_adc(const char *device_label)
@@ -277,8 +271,7 @@ static int cmd_adc_ch_pos(const struct shell *sh, size_t argc, char **argv)
 #endif
 }
 
-static int cmd_adc_gain(const struct shell *sh, size_t argc, char **argv,
-			void *data)
+static int cmd_adc_gain(const struct shell *sh, size_t argc, char **argv, void *data)
 {
 	/* -2: index of ADC label name */
 	struct adc_hdl *adc = get_adc(argv[-2]);
@@ -291,8 +284,7 @@ static int cmd_adc_gain(const struct shell *sh, size_t argc, char **argv,
 	}
 
 	adc->channel_config.gain = gain;
-	int len = strlen(argv[0]) > CHOSEN_STR_LEN ? CHOSEN_STR_LEN
-						   : strlen(argv[0]);
+	int len = strlen(argv[0]) > CHOSEN_STR_LEN ? CHOSEN_STR_LEN : strlen(argv[0]);
 	memcpy(chosen_gain, argv[0], len);
 	chosen_gain[len] = '\0';
 	retval = adc_channel_setup(adc->dev, &adc->channel_config);
@@ -326,11 +318,9 @@ static int cmd_adc_acq(const struct shell *sh, size_t argc, char **argv)
 		adc->channel_config.acquisition_time =
 			ADC_ACQ_TIME(ADC_ACQ_TIME_NANOSECONDS, acq_time);
 	} else if (!strcmp(argv[2], "ticks")) {
-		adc->channel_config.acquisition_time =
-			ADC_ACQ_TIME(ADC_ACQ_TIME_TICKS, acq_time);
+		adc->channel_config.acquisition_time = ADC_ACQ_TIME(ADC_ACQ_TIME_TICKS, acq_time);
 	} else {
-		adc->channel_config.acquisition_time =
-			ADC_ACQ_TIME_DEFAULT;
+		adc->channel_config.acquisition_time = ADC_ACQ_TIME_DEFAULT;
 	}
 	retval = adc_channel_setup(adc->dev, &adc->channel_config);
 	LOG_DBG("Channel setup returned %i", retval);
@@ -359,8 +349,7 @@ static int cmd_adc_reso(const struct shell *sh, size_t argc, char **argv)
 	return retval;
 }
 
-static int cmd_adc_ref(const struct shell *sh, size_t argc, char **argv,
-		       void *data)
+static int cmd_adc_ref(const struct shell *sh, size_t argc, char **argv, void *data)
 {
 	/* -2 index of ADC label name */
 	struct adc_hdl *adc = get_adc(argv[-2]);
@@ -372,8 +361,7 @@ static int cmd_adc_ref(const struct shell *sh, size_t argc, char **argv,
 		return -ENODEV;
 	}
 
-	int len = strlen(argv[0]) > CHOSEN_STR_LEN ? CHOSEN_STR_LEN
-						   : strlen(argv[0]);
+	int len = strlen(argv[0]) > CHOSEN_STR_LEN ? CHOSEN_STR_LEN : strlen(argv[0]);
 	memcpy(chosen_reference, argv[0], len);
 	chosen_reference[len] = '\0';
 
@@ -400,10 +388,10 @@ static int cmd_adc_read(const struct shell *sh, size_t argc, char **argv)
 
 	adc->channel_config.channel_id = adc_channel_id;
 	const struct adc_sequence sequence = {
-		.channels	= BIT(adc->channel_config.channel_id),
-		.buffer		= m_sample_buffer,
-		.buffer_size	= sizeof(m_sample_buffer),
-		.resolution	= adc->resolution,
+		.channels = BIT(adc->channel_config.channel_id),
+		.buffer = m_sample_buffer,
+		.buffer_size = sizeof(m_sample_buffer),
+		.resolution = adc->resolution,
 	};
 
 	retval = adc_read(adc->dev, &sequence);
@@ -419,89 +407,75 @@ static int cmd_adc_print(const struct shell *sh, size_t argc, char **argv)
 	/* -1 index of ADC label name */
 	struct adc_hdl *adc = get_adc(argv[-1]);
 
-	shell_print(sh, "%s:\n"
-			   "Gain: %s\n"
-			   "Reference: %s\n"
-			   "Acquisition Time: %u\n"
-			   "Channel ID: %u\n"
-			   "Differential: %u\n"
-			   "Resolution: %u",
-			   adc->dev->name,
-			   chosen_gain,
-			   chosen_reference,
-			   adc->channel_config.acquisition_time,
-			   adc->channel_config.channel_id,
-			   adc->channel_config.differential,
-			   adc->resolution);
+	shell_print(sh,
+		    "%s:\n"
+		    "Gain: %s\n"
+		    "Reference: %s\n"
+		    "Acquisition Time: %u\n"
+		    "Channel ID: %u\n"
+		    "Differential: %u\n"
+		    "Resolution: %u",
+		    adc->dev->name, chosen_gain, chosen_reference,
+		    adc->channel_config.acquisition_time, adc->channel_config.channel_id,
+		    adc->channel_config.differential, adc->resolution);
 #if CONFIG_ADC_CONFIGURABLE_INPUTS
-	shell_print(sh, "Input positive: %u",
-		    adc->channel_config.input_positive);
+	shell_print(sh, "Input positive: %u", adc->channel_config.input_positive);
 	if (adc->channel_config.differential != 0) {
-		shell_print(sh, "Input negative: %u",
-			    adc->channel_config.input_negative);
+		shell_print(sh, "Input negative: %u", adc->channel_config.input_negative);
 	}
 #endif
 	return 0;
 }
 
-SHELL_SUBCMD_DICT_SET_CREATE(sub_ref_cmds, cmd_adc_ref,
-	(VDD_1, ADC_REF_VDD_1, "VDD"),
-	(VDD_1_2, ADC_REF_VDD_1_2, "VDD/2"),
-	(VDD_1_3, ADC_REF_VDD_1_3, "VDD/3"),
-	(VDD_1_4, ADC_REF_VDD_1_4, "VDD/4"),
-	(INTERNAL, ADC_REF_INTERNAL, "Internal"),
-	(EXTERNAL_0, ADC_REF_EXTERNAL0, "External, input 0"),
-	(EXTERNAL_1, ADC_REF_EXTERNAL1, "External, input 1")
-);
+SHELL_SUBCMD_DICT_SET_CREATE(sub_ref_cmds, cmd_adc_ref, (VDD_1, ADC_REF_VDD_1, "VDD"),
+			     (VDD_1_2, ADC_REF_VDD_1_2, "VDD/2"),
+			     (VDD_1_3, ADC_REF_VDD_1_3, "VDD/3"),
+			     (VDD_1_4, ADC_REF_VDD_1_4, "VDD/4"),
+			     (INTERNAL, ADC_REF_INTERNAL, "Internal"),
+			     (EXTERNAL_0, ADC_REF_EXTERNAL0, "External, input 0"),
+			     (EXTERNAL_1, ADC_REF_EXTERNAL1, "External, input 1"));
 
-SHELL_SUBCMD_DICT_SET_CREATE(sub_gain_cmds, cmd_adc_gain,
-	(GAIN_1_6, ADC_GAIN_1_6, "x 1/6"),
-	(GAIN_1_5, ADC_GAIN_1_5, "x 1/5"),
-	(GAIN_1_4, ADC_GAIN_1_4, "x 1/4"),
-	(GAIN_1_3, ADC_GAIN_1_3, "x 1/3"),
-	(GAIN_1_2, ADC_GAIN_1_2, "x 1/2"),
-	(GAIN_2_3, ADC_GAIN_2_3, "x 2/3"),
-	(GAIN_1, ADC_GAIN_1, "x 1"),
-	(GAIN_2, ADC_GAIN_2, "x 2"),
-	(GAIN_3, ADC_GAIN_3, "x 3"),
-	(GAIN_4, ADC_GAIN_4, "x 4"),
-	(GAIN_8, ADC_GAIN_8, "x 8"),
-	(GAIN_16, ADC_GAIN_16, "x 16"),
-	(GAIN_32, ADC_GAIN_32, "x 32"),
-	(GAIN_64, ADC_GAIN_64, "x 64")
-);
+SHELL_SUBCMD_DICT_SET_CREATE(sub_gain_cmds, cmd_adc_gain, (GAIN_1_6, ADC_GAIN_1_6, "x 1/6"),
+			     (GAIN_1_5, ADC_GAIN_1_5, "x 1/5"), (GAIN_1_4, ADC_GAIN_1_4, "x 1/4"),
+			     (GAIN_1_3, ADC_GAIN_1_3, "x 1/3"), (GAIN_1_2, ADC_GAIN_1_2, "x 1/2"),
+			     (GAIN_2_3, ADC_GAIN_2_3, "x 2/3"), (GAIN_1, ADC_GAIN_1, "x 1"),
+			     (GAIN_2, ADC_GAIN_2, "x 2"), (GAIN_3, ADC_GAIN_3, "x 3"),
+			     (GAIN_4, ADC_GAIN_4, "x 4"), (GAIN_8, ADC_GAIN_8, "x 8"),
+			     (GAIN_16, ADC_GAIN_16, "x 16"), (GAIN_32, ADC_GAIN_32, "x 32"),
+			     (GAIN_64, ADC_GAIN_64, "x 64"));
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_channel_cmds,
-	SHELL_CMD_ARG(id, NULL, CMD_HELP_CH_ID, cmd_adc_ch_id, 2, 0),
-	SHELL_CMD_ARG(differential, NULL, CMD_HELP_DIFF, cmd_adc_ch_diff, 2, 0),
-	SHELL_COND_CMD_ARG(CONFIG_ADC_CONFIGURABLE_INPUTS,
-		negative, NULL, CMD_HELP_CH_NEG, cmd_adc_ch_neg, 2, 0),
-	SHELL_COND_CMD_ARG(CONFIG_ADC_CONFIGURABLE_INPUTS,
-		positive, NULL, CMD_HELP_CH_POS, cmd_adc_ch_pos, 2, 0),
-	SHELL_SUBCMD_SET_END
-);
+			       SHELL_CMD_ARG(id, NULL, CMD_HELP_CH_ID, cmd_adc_ch_id, 2, 0),
+			       SHELL_CMD_ARG(differential, NULL, CMD_HELP_DIFF, cmd_adc_ch_diff, 2,
+					     0),
+			       SHELL_COND_CMD_ARG(CONFIG_ADC_CONFIGURABLE_INPUTS, negative, NULL,
+						  CMD_HELP_CH_NEG, cmd_adc_ch_neg, 2, 0),
+			       SHELL_COND_CMD_ARG(CONFIG_ADC_CONFIGURABLE_INPUTS, positive, NULL,
+						  CMD_HELP_CH_POS, cmd_adc_ch_pos, 2, 0),
+			       SHELL_SUBCMD_SET_END);
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_adc_cmds,
-	/* Alphabetically sorted. */
-	SHELL_CMD_ARG(acq_time, NULL, CMD_HELP_ACQ_TIME, cmd_adc_acq, 3, 0),
-	SHELL_CMD_ARG(channel, &sub_channel_cmds, CMD_HELP_CHANNEL, NULL, 3, 0),
-	SHELL_CMD(gain, &sub_gain_cmds, CMD_HELP_GAIN, NULL),
-	SHELL_CMD_ARG(print, NULL, CMD_HELP_PRINT, cmd_adc_print, 1, 0),
-	SHELL_CMD_ARG(read, NULL, CMD_HELP_READ, cmd_adc_read, 2, 0),
-	SHELL_CMD(reference, &sub_ref_cmds, CMD_HELP_REF, NULL),
-	SHELL_CMD_ARG(resolution, NULL, CMD_HELP_RES, cmd_adc_reso, 2, 0),
-	SHELL_SUBCMD_SET_END /* Array terminated. */
+			       /* Alphabetically sorted. */
+			       SHELL_CMD_ARG(acq_time, NULL, CMD_HELP_ACQ_TIME, cmd_adc_acq, 3, 0),
+			       SHELL_CMD_ARG(channel, &sub_channel_cmds, CMD_HELP_CHANNEL, NULL, 3,
+					     0),
+			       SHELL_CMD(gain, &sub_gain_cmds, CMD_HELP_GAIN, NULL),
+			       SHELL_CMD_ARG(print, NULL, CMD_HELP_PRINT, cmd_adc_print, 1, 0),
+			       SHELL_CMD_ARG(read, NULL, CMD_HELP_READ, cmd_adc_read, 2, 0),
+			       SHELL_CMD(reference, &sub_ref_cmds, CMD_HELP_REF, NULL),
+			       SHELL_CMD_ARG(resolution, NULL, CMD_HELP_RES, cmd_adc_reso, 2, 0),
+			       SHELL_SUBCMD_SET_END /* Array terminated. */
 );
 
 static void cmd_adc_dev_get(size_t idx, struct shell_static_entry *entry)
 {
 	if (idx < ARRAY_SIZE(adc_list)) {
-		entry->syntax  = adc_list[idx].dev->name;
+		entry->syntax = adc_list[idx].dev->name;
 		entry->handler = NULL;
-		entry->subcmd  = &sub_adc_cmds;
-		entry->help    = cmd_adc_dev_get_help;
+		entry->subcmd = &sub_adc_cmds;
+		entry->help = cmd_adc_dev_get_help;
 	} else {
-		entry->syntax  = NULL;
+		entry->syntax = NULL;
 	}
 }
 SHELL_DYNAMIC_CMD_CREATE(sub_adc_dev, cmd_adc_dev_get);

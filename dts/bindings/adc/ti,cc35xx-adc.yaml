@@ -1,0 +1,31 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: cc35xx ADC node
+
+compatible: "ti,cc35xx-adc"
+
+include: [pinctrl-device.yaml, adc-controller.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clkdiv:
+    required: true
+    type: int
+    description: Select ADC clock divider.
+
+  sample-period:
+    required: true
+    type: int
+    description: Sample period in ADC cycles (after clock divider)
+  vref-internal-mv:
+    required: true
+    type: int
+    description: This property sets the internal reference voltage (in millivolts)
+
+io-channel-cells:
+  - input

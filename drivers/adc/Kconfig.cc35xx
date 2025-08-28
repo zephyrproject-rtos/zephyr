@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_CC35XX
+	bool "CC35XX ADC driver"
+	default y
+	depends on DT_HAS_TI_CC35XX_ADC_ENABLED
+	help
+	  This option enables the CC35XX ADC driver.
+
+config ADC_CC35XX_DMA_DRIVEN
+	bool "DMA support for TI CC35XX ADC devices"
+	depends on ADC_CC35XX
+	select DMA
+	help
+	  DMA driven mode offloads data transfer tasks from the CPU
+	  and requires fewer interrupts to handle the ADC sequence mode.
+	  When DMA mode is used, the ADC internal gain is not compensated
+	  for measurement adjustment.
