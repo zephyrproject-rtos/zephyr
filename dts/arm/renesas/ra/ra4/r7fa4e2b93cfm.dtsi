@@ -370,6 +370,7 @@
 	port-irq6-pins = <9>;
 	port-irq7-pins = <8>;
 	port-irq14-pins = <3>;
+	/delete-property/ vbatts-pins;
 };
 
 &ioport8 {
