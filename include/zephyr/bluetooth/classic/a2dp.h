@@ -21,8 +21,6 @@
 extern "C" {
 #endif
 
-#define BT_A2DP_STREAM_BUF_RESERVE (12U + BT_L2CAP_BUF_SIZE(0))
-
 /** SBC IE length */
 #define BT_A2DP_SBC_IE_LENGTH      (4U)
 /** MPEG1,2 IE length */
@@ -854,6 +852,21 @@ uint32_t bt_a2dp_get_mtu(struct bt_a2dp_stream *stream);
  */
 int bt_a2dp_stream_send(struct bt_a2dp_stream *stream, struct net_buf *buf, uint16_t seq_num,
 			uint32_t ts);
+
+/**
+ * @brief Allocate a net_buf for bt_a2dp_stream_send
+ *
+ * This function allocates a buffer from the specified pool, reserves
+ * sufficient headroom for protocol headers required by L2CAP over Bluetooth, fills
+ * the AVDTP header.
+ *
+ * @param pool    The buffer pool to allocate from.
+ * @param timeout Non-negative waiting period to obtain a buffer or one of
+ *                the special values K_NO_WAIT and K_FOREVER.
+ *
+ * @return A newly allocated net_buf.
+ */
+struct net_buf *bt_a2dp_stream_create_pdu(struct net_buf_pool *pool, k_timeout_t timeout);
 
 #ifdef __cplusplus
 }
