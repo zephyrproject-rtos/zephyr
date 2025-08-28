@@ -133,30 +133,56 @@ static int a2dp_get_capabilities_ind(struct bt_avdtp *session, struct bt_avdtp_s
 	 * are not supported.
 	 */
 	struct bt_a2dp_ep *ep;
+	struct bt_avdtp_generic_service_cap *cap;
+	struct bt_avdtp_media_codec_capabilities *media_cap;
 
 	__ASSERT(sep, "Invalid sep");
 	*errcode = 0;
+
+	if (net_buf_tailroom(rsp_buf) < sizeof(*cap)) {
+		goto set_err_and_return;
+	}
+
 	/* Service Category: Media Transport */
-	net_buf_add_u8(rsp_buf, BT_AVDTP_SERVICE_MEDIA_TRANSPORT);
-	net_buf_add_u8(rsp_buf, 0);
-	/* Service Category: Media Codec */
-	net_buf_add_u8(rsp_buf, BT_AVDTP_SERVICE_MEDIA_CODEC);
+	cap = net_buf_add(rsp_buf, sizeof(*cap));
+
+	cap->service_category = BT_AVDTP_SERVICE_MEDIA_TRANSPORT;
+	cap->losc = 0;
+
 	ep = CONTAINER_OF(sep, struct bt_a2dp_ep, sep);
-	/* Length Of Service Capability */
-	net_buf_add_u8(rsp_buf, ep->codec_cap->len + 2U);
-	/* Media Type */
-	net_buf_add_u8(rsp_buf, sep->sep_info.media_type << 4U);
-	/* Media Codec Type */
-	net_buf_add_u8(rsp_buf, ep->codec_type);
+
+	if (net_buf_tailroom(rsp_buf) < ep->codec_cap->len + sizeof(*cap) + sizeof(*media_cap)) {
+		goto set_err_and_return;
+	}
+
+	/* Service Category: Media Codec */
+	cap = net_buf_add(rsp_buf, sizeof(*cap));
+	cap->service_category = BT_AVDTP_SERVICE_MEDIA_CODEC;
+	cap->losc = ep->codec_cap->len + 2U;
+
+	media_cap = net_buf_add(rsp_buf, sizeof(*media_cap));
+	media_cap->media_type = sep->sep_info.media_type << 4U;
+	media_cap->media_code_type = ep->codec_type;
 	/* Codec Info Element */
 	net_buf_add_mem(rsp_buf, &ep->codec_cap->codec_ie[0], ep->codec_cap->len);
 
 	if (get_all_caps && ep->delay_report) {
-		net_buf_add_u8(rsp_buf, BT_AVDTP_SERVICE_DELAY_REPORTING);
-		net_buf_add_u8(rsp_buf, 0);
+		if (net_buf_tailroom(rsp_buf) < sizeof(*cap)) {
+			goto set_err_and_return;
+		}
+
+		/* Service Category: Delay Report */
+		cap = net_buf_add(rsp_buf, sizeof(*cap));
+
+		cap->service_category = BT_AVDTP_SERVICE_DELAY_REPORTING;
+		cap->losc = 0;
 	}
 
 	return 0;
+
+set_err_and_return:
+	*errcode = BT_AVDTP_INVALID_CAPABILITIES;
+	return -ENOMEM;
 }
 
 #define IS_BIT_DUPLICATED(val) (((val) & ((val)-1)) != 0)
@@ -511,6 +537,8 @@ static int a2dp_get_config_ind(struct bt_avdtp *session, struct bt_avdtp_sep *se
 			       struct net_buf *rsp_buf, uint8_t *errcode)
 {
 	struct bt_a2dp_ep *ep;
+	struct bt_avdtp_generic_service_cap *cap;
+	struct bt_avdtp_media_codec_capabilities *media_cap;
 
 	__ASSERT(sep, "Invalid sep");
 
@@ -534,27 +562,50 @@ static int a2dp_get_config_ind(struct bt_avdtp *session, struct bt_avdtp_sep *se
 		}
 	}
 
+	if (net_buf_tailroom(rsp_buf) < sizeof(*cap)) {
+		goto set_err_and_return;
+	}
+
 	/* Service Category: Media Transport */
-	net_buf_add_u8(rsp_buf, BT_AVDTP_SERVICE_MEDIA_TRANSPORT);
-	net_buf_add_u8(rsp_buf, 0);
+	cap = net_buf_add(rsp_buf, sizeof(*cap));
+
+	cap->service_category = BT_AVDTP_SERVICE_MEDIA_TRANSPORT;
+	cap->losc = 0;
+
+	if (net_buf_tailroom(rsp_buf) < ep->stream->codec_config.len + sizeof(*cap) +
+	    sizeof(*media_cap)) {
+		goto set_err_and_return;
+	}
+
 	/* Service Category: Media Codec */
-	net_buf_add_u8(rsp_buf, BT_AVDTP_SERVICE_MEDIA_CODEC);
-	/* Length Of Service Capability */
-	net_buf_add_u8(rsp_buf, ep->stream->codec_config.len + 2U);
-	/* Media Type */
-	net_buf_add_u8(rsp_buf, sep->sep_info.media_type << 4U);
-	/* Media Codec Type */
-	net_buf_add_u8(rsp_buf, ep->codec_type);
+	cap = net_buf_add(rsp_buf, sizeof(*cap));
+	cap->service_category = BT_AVDTP_SERVICE_MEDIA_CODEC;
+	cap->losc = ep->stream->codec_config.len + 2U;
+
+	media_cap = net_buf_add(rsp_buf, sizeof(*media_cap));
+	media_cap->media_type = sep->sep_info.media_type << 4U;
+	media_cap->media_code_type = ep->codec_type;
 	/* Codec Info Element */
 	net_buf_add_mem(rsp_buf, &ep->stream->codec_config.codec_ie[0],
 			ep->stream->codec_config.len);
 
 	if (ep->stream->delay_report) {
-		net_buf_add_u8(rsp_buf, BT_AVDTP_SERVICE_DELAY_REPORTING);
-		net_buf_add_u8(rsp_buf, 0);
+		if (net_buf_tailroom(rsp_buf) < sizeof(*cap)) {
+			goto set_err_and_return;
+		}
+
+		/* Service Category: Delay Report */
+		cap = net_buf_add(rsp_buf, sizeof(*cap));
+
+		cap->service_category = BT_AVDTP_SERVICE_DELAY_REPORTING;
+		cap->losc = 0;
 	}
 
 	return 0;
+
+set_err_and_return:
+	*errcode = BT_AVDTP_INVALID_CAPABILITIES;
+	return -ENOMEM;
 }
 
 #ifdef CONFIG_BT_A2DP_SOURCE

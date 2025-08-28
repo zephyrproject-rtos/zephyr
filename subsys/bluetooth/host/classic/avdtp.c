@@ -2396,6 +2396,8 @@ static int avdtp_process_configure_command(struct bt_avdtp *session, uint8_t cmd
 					   struct bt_avdtp_set_configuration_params *param)
 {
 	struct net_buf *buf;
+	struct bt_avdtp_generic_service_cap *cap;
+	struct bt_avdtp_media_codec_capabilities *media_cap;
 
 	LOG_DBG("");
 	if (!param || !session) {
@@ -2411,33 +2413,55 @@ static int avdtp_process_configure_command(struct bt_avdtp *session, uint8_t cmd
 
 	/* Body of the message */
 	/* ACP Stream Endpoint ID */
+	__ASSERT_NO_MSG(net_buf_tailroom(buf) >= 1);
 	net_buf_add_u8(buf, (param->acp_stream_ep_id << 2U));
+
 	if (cmd == BT_AVDTP_SET_CONFIGURATION) {
+		if (net_buf_tailroom(buf) < sizeof(*cap) + 1) {
+			goto unref_and_return;
+		}
+
 		/* INT Stream Endpoint ID */
 		net_buf_add_u8(buf, (param->int_stream_endpoint_id << 2U));
+
 		/* Service Category: Media Transport */
-		net_buf_add_u8(buf, BT_AVDTP_SERVICE_MEDIA_TRANSPORT);
-		/* LOSC */
-		net_buf_add_u8(buf, 0);
+		cap = net_buf_add(buf, sizeof(*cap));
+		cap->service_category = BT_AVDTP_SERVICE_MEDIA_TRANSPORT;
+		cap->losc = 0;
 	}
+
+	if (net_buf_tailroom(buf) < param->codec_specific_ie_len + sizeof(*cap) +
+	    sizeof(*media_cap)) {
+		goto unref_and_return;
+	}
+
 	/* Service Category: Media Codec */
-	net_buf_add_u8(buf, BT_AVDTP_SERVICE_MEDIA_CODEC);
-	/* LOSC */
-	net_buf_add_u8(buf, param->codec_specific_ie_len + 2);
-	/* Media Type */
-	net_buf_add_u8(buf, param->media_type << 4U);
-	/* Media Codec Type */
-	net_buf_add_u8(buf, param->media_codec_type);
+	cap = net_buf_add(buf, sizeof(*cap));
+	cap->service_category = BT_AVDTP_SERVICE_MEDIA_CODEC;
+	cap->losc = param->codec_specific_ie_len + 2;
+
+	media_cap = net_buf_add(buf, sizeof(*media_cap));
+	media_cap->media_type = param->media_type << 4U;
+	media_cap->media_code_type = param->media_codec_type;
 	/* Codec Info Element */
 	net_buf_add_mem(buf, param->codec_specific_ie, param->codec_specific_ie_len);
 
 	if (param->delay_report) {
-		net_buf_add_u8(buf, BT_AVDTP_SERVICE_DELAY_REPORTING);
-		/* LOSC */
-		net_buf_add_u8(buf, 0);
+		if (net_buf_tailroom(buf) < sizeof(*cap)) {
+			goto unref_and_return;
+		}
+
+		/* Service Category: Delay Report */
+		cap = net_buf_add(buf, sizeof(*cap));
+		cap->service_category = BT_AVDTP_SERVICE_DELAY_REPORTING;
+		cap->losc = 0;
 	}
 
 	return avdtp_send_cmd(session, buf, &param->req);
+
+unref_and_return:
+	net_buf_unref(buf);
+	return -ENOMEM;
 }
 
 int bt_avdtp_set_configuration(struct bt_avdtp *session,
