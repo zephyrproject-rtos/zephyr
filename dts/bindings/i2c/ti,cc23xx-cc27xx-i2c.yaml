@@ -2,9 +2,9 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-description: TI CC23x0 I2C node
+description: TI CC23xx/CC27xx I2C node
 
-compatible: "ti,cc23x0-i2c"
+compatible: "ti,cc23xx-cc27xx-i2c"
 
 include: [i2c-controller.yaml, pinctrl-device.yaml, base.yaml]
 

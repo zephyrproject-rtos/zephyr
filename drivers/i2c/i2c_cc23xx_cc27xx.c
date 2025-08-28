@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT ti_cc23x0_i2c
+#define DT_DRV_COMPAT ti_cc23xx_cc27xx_i2c
 
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/i2c.h>
@@ -18,7 +18,7 @@
 
 #include <zephyr/logging/log.h>
 
-LOG_MODULE_REGISTER(i2c_cc23x0);
+LOG_MODULE_REGISTER(i2c_cc23xx_cc27xx);
 
 #include <driverlib/clkctl.h>
 #include <driverlib/i2c.h>
@@ -40,47 +40,47 @@ LOG_MODULE_REGISTER(i2c_cc23x0);
 
 /**
  * This structure holds the runtime state and configuration for an instance
- * of the CC23x0 I2C controller.
+ * of the LPF3 I2C controller.
  */
-struct i2c_cc23x0_data {
-	bool is_configured;              /* Indicates if the I2C controller has been configured */
-	struct k_sem sync_sem;           /* Semaphore used for blocking I2C operations */
-	struct k_mutex mutex;            /* Mutex for protecting against multiple I2C operations */
-	volatile int status;             /* Holds the current status of the I2C transaction */
-	struct i2c_msg *msgs;            /* Pointer to chain of messages provided by user */
-	uint8_t num_msgs;                /* Number of messages in the msgs chain */
+struct i2c_cc23xx_cc27xx_data {
+	bool is_configured;    /* Indicates if the I2C controller has been configured */
+	struct k_sem sync_sem; /* Semaphore used for blocking I2C operations */
+	struct k_sem lock;     /* Binary semaphore protecting against concurrent I2C operations */
+	volatile int status;   /* Holds the current status of the I2C transaction */
+	struct i2c_msg *msgs;  /* Pointer to chain of messages provided by user */
+	uint8_t num_msgs;      /* Number of messages in the msgs chain */
 	volatile uint8_t current_msg_index;       /* Index of the current message  */
 	volatile bool controller_is_transmitting; /* Flag indicating controller is transmitting */
 	uint32_t cfg;                             /* Cached configuration value for controller */
 	uint16_t addr;                            /* I2C target address */
-	bool  is_blocking;                        /* I2C synchronous mode */
+	bool is_blocking;                         /* I2C synchronous mode */
 #ifdef CONFIG_I2C_CALLBACK
-	i2c_callback_t cb;                      /* Callback function for asynchronous operations */
-	void *cb_data;                          /* User data for callback */
-#endif /* CONFIG_I2C_CALLBACK */
+	i2c_callback_t cb; /* Callback function for asynchronous operations */
+	void *cb_data;     /* User data for callback */
+#endif                     /* CONFIG_I2C_CALLBACK */
 #ifdef CONFIG_I2C_TARGET
-	struct i2c_target_config *target_cfg;   /* Pointer to target configuration */
-	volatile uint8_t target_state;          /* Current state in target mode */
+	struct i2c_target_config *target_cfg; /* Pointer to target configuration */
+	volatile uint8_t target_state;        /* Current state in target mode */
 #endif
 };
 
 /**
- *  Static configuration of an instance of the CC23x0 I2C driver.
+ *  Static configuration of an instance of the CC23xx/CC27xx I2C driver.
  */
-struct i2c_cc23x0_config {
+struct i2c_cc23xx_cc27xx_config {
 	uint32_t base;                         /* Base address of the I2C controller registers */
 	const struct pinctrl_dev_config *pcfg; /* Pin control configuration */
 };
 
 /**
- * @brief Acquire a lock on the power management policy state for the I2C CC23x0 driver.
+ * @brief Acquire a lock on the power management policy state for the I2C CC23xx/CC27xx driver.
  *
  * This function is used to lock the power management policy state to prevent
  * the device from entering low-power modes while an I2C transaction is in progress.
  *
- * @param data Pointer to the I2C CC23x0 driver data structure.
+ * @param data Pointer to the I2C CC23xx/CC27xx driver data structure.
  */
-static inline void i2c_cc23x0_pm_policy_state_lock_get(struct i2c_cc23x0_data *data)
+static inline void i2c_cc23xx_cc27xx_pm_policy_state_lock_get(struct i2c_cc23xx_cc27xx_data *data)
 {
 #ifdef CONFIG_PM_DEVICE
 	pm_policy_state_lock_get(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES);
@@ -98,7 +98,7 @@ static inline void i2c_cc23x0_pm_policy_state_lock_get(struct i2c_cc23x0_data *d
  *
  * @param data Pointer to the I2C driver data structure.
  */
-static inline void i2c_cc23x0_pm_policy_state_lock_put(struct i2c_cc23x0_data *data)
+static inline void i2c_cc23xx_cc27xx_pm_policy_state_lock_put(struct i2c_cc23xx_cc27xx_data *data)
 {
 #ifdef CONFIG_PM_DEVICE
 	pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
@@ -116,9 +116,9 @@ static inline void i2c_cc23x0_pm_policy_state_lock_put(struct i2c_cc23x0_data *d
  *
  * @return 0 on success, or a negative error code on failure.
  */
-static int i2c_cc23x0_get_config(const struct device *dev, uint32_t *config)
+static int i2c_cc23xx_cc27xx_get_config(const struct device *dev, uint32_t *config)
 {
-	struct i2c_cc23x0_data *data = dev->data;
+	struct i2c_cc23xx_cc27xx_data *data = dev->data;
 
 	if (!data->is_configured) {
 		LOG_ERR("I2C controller not configured");
@@ -131,7 +131,7 @@ static int i2c_cc23x0_get_config(const struct device *dev, uint32_t *config)
 }
 
 /**
- * @brief Primes an I2C transfer on the CC23x0 device.
+ * @brief Primes an I2C transfer on the CC23xx/CC27xx device.
  *
  * This function prepares the I2C hardware for a data transfer operation.
  * It configures the device with the specified message and target address,
@@ -149,11 +149,11 @@ static int i2c_cc23x0_get_config(const struct device *dev, uint32_t *config)
  *
  * @return 0 on success, or a negative error code on failure.
  */
-static int i2c_cc23x0_prime_transfer(const struct device *dev, struct i2c_msg *msg,
-									  uint16_t addr, uint8_t prevFlags)
+static int i2c_cc23xx_cc27xx_prime_transfer(const struct device *dev, struct i2c_msg *msg,
+					    uint16_t addr, uint8_t prevFlags)
 {
-	struct i2c_cc23x0_data *data = dev->data;
-	const struct i2c_cc23x0_config *config = dev->config;
+	struct i2c_cc23xx_cc27xx_data *data = dev->data;
+	const struct i2c_cc23xx_cc27xx_config *config = dev->config;
 	bool stopRequested = (msg->flags & I2C_MSG_STOP) != 0;
 	bool prevMsgWasTx = data->controller_is_transmitting;
 
@@ -221,11 +221,11 @@ static int i2c_cc23x0_prime_transfer(const struct device *dev, struct i2c_msg *m
 			if ((msg->len == 1) && (stopRequested)) {
 				/* Send START, read 1 data byte, and NACK */
 				I2CControllerCommand(config->base,
-							 I2C_CONTROLLER_CMD_BURST_RECEIVE_START_NACK);
+						     I2C_CONTROLLER_CMD_BURST_RECEIVE_START_NACK);
 			} else {
 				/* Start the I2C transfer in controller receive mode */
 				I2CControllerCommand(config->base,
-							 I2C_CONTROLLER_CMD_BURST_RECEIVE_START);
+						     I2C_CONTROLLER_CMD_BURST_RECEIVE_START);
 			}
 		}
 	}
@@ -235,7 +235,7 @@ static int i2c_cc23x0_prime_transfer(const struct device *dev, struct i2c_msg *m
 
 #ifdef CONFIG_I2C_TARGET
 /**
- * @brief Registers an I2C target device configuration for the CC23x0 I2C driver.
+ * @brief Registers an I2C target device configuration for the CC23xx/CC27xx I2C driver.
  *
  * This function sets up the specified I2C target configuration for the given device.
  * It enables the device to act as an I2C target with the provided configuration.
@@ -248,11 +248,11 @@ static int i2c_cc23x0_prime_transfer(const struct device *dev, struct i2c_msg *m
  *
  * @return 0 on success, negative error code on failure.
  */
-static int i2c_cc23x0_target_register(const struct device *dev,
-									  struct i2c_target_config *target_cfg)
+static int i2c_cc23xx_cc27xx_target_register(const struct device *dev,
+					     struct i2c_target_config *target_cfg)
 {
-	struct i2c_cc23x0_data *data = dev->data;
-	const struct i2c_cc23x0_config *config = dev->config;
+	struct i2c_cc23xx_cc27xx_data *data = dev->data;
+	const struct i2c_cc23xx_cc27xx_config *config = dev->config;
 
 	if (data->target_cfg != NULL) {
 		LOG_ERR("Only one target can be registered at a time");
@@ -273,7 +273,7 @@ static int i2c_cc23x0_target_register(const struct device *dev,
 	I2CTargetEnableInt(config->base, I2CTARGET_INT_FLAGS);
 
 	/* Disable standby and idle policy states */
-	i2c_cc23x0_pm_policy_state_lock_get(data);
+	i2c_cc23xx_cc27xx_pm_policy_state_lock_get(data);
 
 	/* Initialize target mode */
 	I2CTargetInit(config->base, (uint8_t)target_cfg->address);
@@ -298,11 +298,11 @@ static int i2c_cc23x0_target_register(const struct device *dev,
  *
  * @return 0 on success, or a negative error code on failure.
  */
-static int i2c_cc23x0_target_unregister(const struct device *dev,
-										struct i2c_target_config *cfg)
+static int i2c_cc23xx_cc27xx_target_unregister(const struct device *dev,
+					       struct i2c_target_config *cfg)
 {
-	struct i2c_cc23x0_data *data = dev->data;
-	const struct i2c_cc23x0_config *config = dev->config;
+	struct i2c_cc23xx_cc27xx_data *data = dev->data;
+	const struct i2c_cc23xx_cc27xx_config *config = dev->config;
 
 	if (data->target_cfg != cfg) {
 		LOG_ERR("Unregistering a different target");
@@ -317,7 +317,7 @@ static int i2c_cc23x0_target_unregister(const struct device *dev,
 	data->target_state = I2CTARGET_IDLE;
 
 	/* Re-enable standby and idle policy states */
-	i2c_cc23x0_pm_policy_state_lock_put(data);
+	i2c_cc23xx_cc27xx_pm_policy_state_lock_put(data);
 
 	return 0;
 }
@@ -337,13 +337,13 @@ static int i2c_cc23x0_target_unregister(const struct device *dev,
  *
  * @return 0 on success, negative error code on failure.
  */
-static int i2c_cc23x0_transfer_cb_controller(const struct device *dev, struct i2c_msg *msgs,
-						 uint8_t num_msgs, uint16_t addr, i2c_callback_t cb,
-						 void *userdata)
+static int i2c_cc23xx_cc27xx_transfer_cb_controller(const struct device *dev, struct i2c_msg *msgs,
+						    uint8_t num_msgs, uint16_t addr,
+						    i2c_callback_t cb, void *userdata)
 {
-	struct i2c_cc23x0_data *data = dev->data;
+	struct i2c_cc23xx_cc27xx_data *data = dev->data;
 
-	if (k_mutex_lock(&data->mutex, K_NO_WAIT) != 0) {
+	if (k_sem_take(&data->lock, K_NO_WAIT) != 0) {
 		LOG_ERR("I2C controller already busy with a transfer");
 		return -EWOULDBLOCK;
 	}
@@ -359,13 +359,13 @@ static int i2c_cc23x0_transfer_cb_controller(const struct device *dev, struct i2
 	/* Acquire the pm policy state lock to prevent the device from entering low-power modes
 	 * This constraint is released in the ISR after the final transfer has completed
 	 */
-	i2c_cc23x0_pm_policy_state_lock_get(data);
+	i2c_cc23xx_cc27xx_pm_policy_state_lock_get(data);
 
 	/* Start the first transfer but don't wait for completion. The I2C ISR will
 	 * handle submission of subsequent transfers and call the registered callback
 	 * when all transfers are complete or there was an error.
 	 */
-	int ret = i2c_cc23x0_prime_transfer(dev, msgs, addr, 0);
+	int ret = i2c_cc23xx_cc27xx_prime_transfer(dev, msgs, addr, 0);
 
 	return ret;
 }
@@ -386,15 +386,12 @@ static int i2c_cc23x0_transfer_cb_controller(const struct device *dev, struct i2
  *
  * @return 0 on success, negative error code on failure.
  */
-static int i2c_cc23x0_controller_transfer(const struct device *dev, struct i2c_msg *msgs,
-					  uint8_t num_msgs, uint16_t addr)
+static int i2c_cc23xx_cc27xx_controller_transfer(const struct device *dev, struct i2c_msg *msgs,
+						 uint8_t num_msgs, uint16_t addr)
 {
-	struct i2c_cc23x0_data *data = dev->data;
+	struct i2c_cc23xx_cc27xx_data *data = dev->data;
 
-	if (k_mutex_lock(&data->mutex, K_NO_WAIT) != 0) {
-		LOG_ERR("I2C controller already busy with a transfer");
-		return -EWOULDBLOCK;
-	}
+	k_sem_take(&data->lock, K_FOREVER);
 
 #ifdef CONFIG_I2C_CALLBACK
 	data->cb = NULL;
@@ -407,15 +404,15 @@ static int i2c_cc23x0_controller_transfer(const struct device *dev, struct i2c_m
 	data->is_blocking = true;
 
 	__ASSERT(k_sem_count_get(&data->sync_sem) == 0,
-	       "I2C semaphore already taken before transfer");
+		 "I2C semaphore already taken before transfer");
 
 	/* Acquire the pm policy state lock to prevent the device from entering low-power modes
 	 * This constraint is released in the ISR after the final transfer has completed
 	 */
-	i2c_cc23x0_pm_policy_state_lock_get(data);
+	i2c_cc23xx_cc27xx_pm_policy_state_lock_get(data);
 
 	/* Start the first transfer, subsequent transfers will be initiated from the ISR */
-	int ret = i2c_cc23x0_prime_transfer(dev, msgs, addr, 0);
+	int ret = i2c_cc23xx_cc27xx_prime_transfer(dev, msgs, addr, 0);
 
 	if (!ret) {
 		/* Wait for all transfers to complete. This gets posted in the
@@ -427,6 +424,15 @@ static int i2c_cc23x0_controller_transfer(const struct device *dev, struct i2c_m
 		/* The status of the transfer is stored in the data context */
 		ret = data->status;
 	}
+
+	/* Release the lock here in the calling thread context. For blocking
+	 * transfers the ISR only signals sync_sem; it does not release the
+	 * lock, because k_lock_unlock (and even k_sem_give used as a lock)
+	 * must be paired with the thread that acquired it when ownership
+	 * semantics matter. For the async path the ISR releases the lock
+	 * directly via k_sem_give, which is ISR-safe.
+	 */
+	k_sem_give(&data->lock);
 
 	return ret;
 }
@@ -444,10 +450,11 @@ static int i2c_cc23x0_controller_transfer(const struct device *dev, struct i2c_m
  *
  * @return 0 on success, or a negative error code on failure.
  */
-static int i2c_cc23x0_runtime_controller_configure(const struct device *dev, uint32_t dev_config)
+static int i2c_cc23xx_cc27xx_runtime_controller_configure(const struct device *dev,
+							  uint32_t dev_config)
 {
-	const struct i2c_cc23x0_config *config = dev->config;
-	struct i2c_cc23x0_data *data = dev->data;
+	const struct i2c_cc23xx_cc27xx_config *config = dev->config;
+	struct i2c_cc23xx_cc27xx_data *data = dev->data;
 	bool fast;
 
 #ifdef CONFIG_I2C_TARGET
@@ -500,15 +507,13 @@ static int i2c_cc23x0_runtime_controller_configure(const struct device *dev, uin
 	data->cfg = dev_config;
 	data->is_configured = true;
 
-	k_mutex_init(&data->mutex);
-
 	return 0;
 }
 
 #ifdef CONFIG_PM_DEVICE
 
 /**
- * @brief Handles power management actions for the CC23x0 I2C device.
+ * @brief Handles power management actions for the CC23xx/CC27xx I2C device.
  *
  * This function is called to perform specific power management actions
  * (such as suspend, resume, or turn off) on the given I2C device.
@@ -518,10 +523,10 @@ static int i2c_cc23x0_runtime_controller_configure(const struct device *dev, uin
  *
  * @return 0 on success, negative error code on failure.
  */
-static int i2c_cc23x0_pm_action(const struct device *dev, enum pm_device_action action)
+static int i2c_cc23xx_cc27xx_pm_action(const struct device *dev, enum pm_device_action action)
 {
-	const struct i2c_cc23x0_config *config = dev->config;
-	struct i2c_cc23x0_data *data = dev->data;
+	const struct i2c_cc23xx_cc27xx_config *config = dev->config;
+	struct i2c_cc23xx_cc27xx_data *data = dev->data;
 
 	/* Only perform actions if the I2C controller has been configured */
 	if (data->is_configured) {
@@ -559,10 +564,10 @@ static int i2c_cc23x0_pm_action(const struct device *dev, enum pm_device_action 
  *
  * @param dev Pointer to the device structure for the I2C driver instance.
  */
-static void i2c_cc23x0_isr_target(const struct device *dev)
+static void i2c_cc23xx_cc27xx_isr_target(const struct device *dev)
 {
-	const struct i2c_cc23x0_config *config = dev->config;
-	struct i2c_cc23x0_data *data = dev->data;
+	const struct i2c_cc23xx_cc27xx_config *config = dev->config;
+	struct i2c_cc23xx_cc27xx_data *data = dev->data;
 	int cb_status;
 
 	/* Get interrupt status and clear */
@@ -580,7 +585,9 @@ static void i2c_cc23x0_isr_target(const struct device *dev)
 			/* Call the write requested callback function */
 			cb_status = data->target_cfg->callbacks->write_requested(data->target_cfg);
 
-			/* Set the NACK bit (has no effect but might be worth tracking for the future) */
+			/* Set the NACK bit (has no effect but might be worth tracking for the
+			 * future)
+			 */
 			if (cb_status != 0) {
 				data->target_state |= I2CTARGET_RX_NACK_NEXT_BYTE;
 			} else {
@@ -600,7 +607,9 @@ static void i2c_cc23x0_isr_target(const struct device *dev)
 			cb_status = data->target_cfg->callbacks->write_received(data->target_cfg,
 										dataByte);
 
-			/* Set the NACK bit (has no effect but might be worth tracking for the future) */
+			/* Set the NACK bit (has no effect but might be worth tracking for the
+			 * future)
+			 */
 			if (cb_status != 0) {
 				data->target_state |= I2CTARGET_RX_NACK_NEXT_BYTE;
 			} else {
@@ -620,7 +629,8 @@ static void i2c_cc23x0_isr_target(const struct device *dev)
 		if (!(data->target_state & I2CTARGET_TRANSMITING)) {
 			data->target_state = I2CTARGET_TRANSMITING;
 			if (data->target_cfg->callbacks->read_requested != NULL) {
-				/* Call the read requested callback function (first byte requested) */
+				/* Call the read requested callback function (first byte requested)
+				 */
 				cb_status = data->target_cfg->callbacks->read_requested(
 					data->target_cfg, &dataByte);
 				if (cb_status != 0) {
@@ -633,7 +643,9 @@ static void i2c_cc23x0_isr_target(const struct device *dev)
 		} else if ((data->target_state & I2CTARGET_TRANSMITING) &&
 			   !(data->target_state & I2CTARGET_TX_IGNORE)) {
 			if (data->target_cfg->callbacks->read_processed != NULL) {
-				/* Call the read processed callback function (subsequent bytes requested) */
+				/* Call the read processed callback function (subsequent bytes
+				 * requested)
+				 */
 				cb_status = data->target_cfg->callbacks->read_processed(
 					data->target_cfg, &dataByte);
 				if (cb_status != 0) {
@@ -669,53 +681,58 @@ static void i2c_cc23x0_isr_target(const struct device *dev)
  *
  * @param dev Pointer to the device structure for the I2C controller.
  */
-static void i2c_cc23x0_controller_transfer_complete(const struct device *dev)
+static void i2c_cc23xx_cc27xx_controller_transfer_complete(const struct device *dev)
 {
-	const struct i2c_cc23x0_config *config = dev->config;
+	const struct i2c_cc23xx_cc27xx_config *config = dev->config;
 	bool completed = false;
-	struct i2c_cc23x0_data *data = dev->data;
+	struct i2c_cc23xx_cc27xx_data *data = dev->data;
 
 	/* Handle chained transactions in callback mode. */
 	data->current_msg_index++;
 	if ((data->current_msg_index < data->num_msgs) && !(data->status)) {
 		/* Send the next message */
-		(void)i2c_cc23x0_prime_transfer(dev, &data->msgs[data->current_msg_index],
-							 data->addr, data->msgs[data->current_msg_index-1].flags);
+		(void)i2c_cc23xx_cc27xx_prime_transfer(
+			dev, &data->msgs[data->current_msg_index], data->addr,
+			data->msgs[data->current_msg_index - 1].flags);
 	} else {
 		/* All messages have been sent, or there was an error */
 		completed = true;
 	}
 
 	if (completed) {
-		/* Post the semaphore to indicate completion (sync mode) */
-		if (data->is_blocking) {
-			k_sem_give(&(data->sync_sem));
-		}
-
 		/* Disable and clear any interrupts */
 		I2CControllerDisableInt(config->base);
 		I2CControllerClearInt(config->base);
 
 		/* Release the power dependency */
-		i2c_cc23x0_pm_policy_state_lock_put(data);
+		i2c_cc23xx_cc27xx_pm_policy_state_lock_put(data);
 
-		/* Release the mutex to allow other transfers */
-		k_mutex_unlock(&data->mutex);
-
+		if (data->is_blocking) {
+			/* Signal the blocked thread. The calling thread releases
+			 * the lock after k_sem_take(sync_sem) returns, so it is
+			 * not released here.
+			 */
+			k_sem_give(&data->sync_sem);
+		} else {
 #ifdef CONFIG_I2C_CALLBACK
-		/* Call the user callback function */
-		if (data->cb != NULL) {
-			data->cb(dev, data->status, data->cb_data);
-			data->cb = NULL;
-			data->cb_data = NULL;
-			data->current_msg_index = 0;
-		}
+			/* Call the user callback function */
+			if (data->cb != NULL) {
+				data->cb(dev, data->status, data->cb_data);
+				data->cb = NULL;
+				data->cb_data = NULL;
+				data->current_msg_index = 0;
+			}
 #endif /* CONFIG_I2C_CALLBACK */
+			/* No waiting thread for async transfers. Release the lock
+			 * here. k_sem_give is ISR-safe, unlike k_lock_unlock.
+			 */
+			k_sem_give(&data->lock);
+		}
 	}
 }
 
 /**
- * @brief Interrupt Service Routine (ISR) for the I2C controller on CC23x0 devices.
+ * @brief Interrupt Service Routine (ISR) for the I2C controller on CC23xx/CC27xx devices.
  *
  * This function handles I2C controller interrupts for the specified device.
  * It processes interrupt events such as data transmission, reception, and error
@@ -723,10 +740,10 @@ static void i2c_cc23x0_controller_transfer_complete(const struct device *dev)
  *
  * @param dev Pointer to the device structure for the I2C controller instance.
  */
-static void i2c_cc23x0_controller_isr(const struct device *dev)
+static void i2c_cc23xx_cc27xx_controller_isr(const struct device *dev)
 {
-	const struct i2c_cc23x0_config *config = dev->config;
-	struct i2c_cc23x0_data *data = dev->data;
+	const struct i2c_cc23xx_cc27xx_config *config = dev->config;
+	struct i2c_cc23xx_cc27xx_data *data = dev->data;
 	struct i2c_msg *msg = &data->msgs[data->current_msg_index];
 
 	/* Clear the interrupt */
@@ -743,8 +760,8 @@ static void i2c_cc23x0_controller_isr(const struct device *dev)
 	 * the error-handling block, but carry on reading instead.
 	 */
 	if ((status & (I2C_CSTA_ERR_M | I2C_CSTA_ARBLST_M)) &&
-		!(msg->len == 0 && data->controller_is_transmitting &&
-		  ((status & 0x1F) == (I2C_CSTA_ERR_M | I2C_CSTA_DATACKN_M)))) {
+	    !(msg->len == 0 && data->controller_is_transmitting &&
+	      ((status & 0x1F) == (I2C_CSTA_ERR_M | I2C_CSTA_DATACKN_M)))) {
 		/* Decode interrupt status */
 		if (status & I2C_CSTA_ARBLST_M) {
 			/* Arbitration lost */
@@ -769,7 +786,7 @@ static void i2c_cc23x0_controller_isr(const struct device *dev)
 		 * bit and complete the transfer immediately.
 		 */
 		I2CControllerCommand(config->base, I2C_CCTL_STOP_EN);
-		i2c_cc23x0_controller_transfer_complete(dev);
+		i2c_cc23xx_cc27xx_controller_transfer_complete(dev);
 	} else if ((msg->len != 0) && (data->controller_is_transmitting)) {
 		/* Just sent a byte */
 		msg->len--;
@@ -782,7 +799,7 @@ static void i2c_cc23x0_controller_isr(const struct device *dev)
 			I2CControllerCommand(config->base, I2C_CCTL_STOP_EN);
 		} else {
 			data->status = 0;
-			i2c_cc23x0_controller_transfer_complete(dev);
+			i2c_cc23xx_cc27xx_controller_transfer_complete(dev);
 		}
 	} else if ((msg->len != 0) && !(data->controller_is_transmitting)) {
 		/* Just received a byte */
@@ -803,7 +820,7 @@ static void i2c_cc23x0_controller_isr(const struct device *dev)
 			 * not get triggered again and we have to clean things up here
 			 */
 			data->status = 0;
-			i2c_cc23x0_controller_transfer_complete(dev);
+			i2c_cc23xx_cc27xx_controller_transfer_complete(dev);
 		} else {
 			/* Send RUN */
 			command = I2C_CCTL_RUN_EN;
@@ -815,12 +832,12 @@ static void i2c_cc23x0_controller_isr(const struct device *dev)
 	} else {
 		/* Getting here signals a stop condition was sent and the transaction is complete */
 		data->status = 0;
-		i2c_cc23x0_controller_transfer_complete(dev);
+		i2c_cc23xx_cc27xx_controller_transfer_complete(dev);
 	}
 }
 
 /**
- * @brief Interrupt Service Routine (ISR) for the CC23x0 I2C driver.
+ * @brief Interrupt Service Routine (ISR) for the CC23xx/CC27xx I2C driver.
  *
  * This function handles I2C-related interrupts for the specified device.
  * It is responsible for processing I2C events such as data transmission,
@@ -828,85 +845,86 @@ static void i2c_cc23x0_controller_isr(const struct device *dev)
  *
  * @param dev Pointer to the device structure for the I2C controller instance.
  */
-static void i2c_cc23x0_isr(const struct device *dev)
+static void i2c_cc23xx_cc27xx_isr(const struct device *dev)
 {
 #ifdef CONFIG_I2C_TARGET
-	struct i2c_cc23x0_data *data = dev->data;
+	struct i2c_cc23xx_cc27xx_data *data = dev->data;
 
 	if (data->target_cfg != NULL) {
 		/* Target mode */
-		i2c_cc23x0_isr_target(dev);
-	} else
-#endif /* CONFIG_I2C_TARGET */
-	{
-		/* Controller mode */
-		i2c_cc23x0_controller_isr(dev);
+		i2c_cc23xx_cc27xx_isr_target(dev);
+		return;
 	}
+#endif /* CONFIG_I2C_TARGET */
+	/* Controller mode */
+	i2c_cc23xx_cc27xx_controller_isr(dev);
 }
 
 /**
- * @brief I2C driver API structure for CC23x0 devices.
+ * @brief I2C driver API structure for CC23xx/CC27xx devices.
  *
  * This structure defines the set of function pointers implementing the
- * I2C driver operations for the CC23x0 series. It is used by the Zephyr
+ * I2C driver operations for the CC23xx/CC27xx series. It is used by the Zephyr
  * I2C subsystem to interface with the hardware-specific driver functions.
  */
-static const struct i2c_driver_api i2c_cc23x0_driver_api = {
-	.configure = i2c_cc23x0_runtime_controller_configure,
-	.transfer = i2c_cc23x0_controller_transfer,
-	.get_config = i2c_cc23x0_get_config,
+static DEVICE_API(i2c, i2c_cc23xx_cc27xx_driver_api) = {
+	.configure = i2c_cc23xx_cc27xx_runtime_controller_configure,
+	.transfer = i2c_cc23xx_cc27xx_controller_transfer,
+	.get_config = i2c_cc23xx_cc27xx_get_config,
 #ifdef CONFIG_I2C_CALLBACK
-	.transfer_cb = i2c_cc23x0_transfer_cb_controller,
+	.transfer_cb = i2c_cc23xx_cc27xx_transfer_cb_controller,
 #endif
 	.recover_bus = NULL, /* Not supported */
 #ifdef CONFIG_I2C_TARGET
-	.target_register = i2c_cc23x0_target_register,
-	.target_unregister = i2c_cc23x0_target_unregister,
+	.target_register = i2c_cc23xx_cc27xx_target_register,
+	.target_unregister = i2c_cc23xx_cc27xx_target_unregister,
 #endif
 };
 
-#define I2C_CC23X0_INIT_FUNC(id)                                                            \
-	static int i2c_cc23x0_init##id(const struct device *dev)                                \
-	{                                                                                       \
-		const struct i2c_cc23x0_config *config = dev->config;                               \
-																							\
-		int err;                                                                            \
-																							\
-		IRQ_CONNECT(DT_INST_IRQN(id), DT_INST_IRQ(id, priority), i2c_cc23x0_isr,            \
-				DEVICE_DT_INST_GET(id), 0);                                                 \
-																							\
-		irq_enable(DT_INST_IRQN(id));                                                       \
-																							\
-		err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);                     \
-		if (err < 0) {                                                                      \
-			LOG_ERR("Failed to configure pinctrl state\n");                                 \
-			return err;                                                                     \
-		}                                                                                   \
-																							\
-		/* Turn the peripheral on */                                                        \
-		CLKCTLEnable(CLKCTL_BASE, CLKCTL_I2C0);                                             \
-																							\
-		return 0;                                                                           \
+#define I2C_CC23XX_CC27XX_INIT_FUNC(id)                                                            \
+	static int i2c_cc23xx_cc27xx_init##id(const struct device *dev)                            \
+	{                                                                                          \
+		const struct i2c_cc23xx_cc27xx_config *config = dev->config;                       \
+                                                                                                   \
+		int err;                                                                           \
+                                                                                                   \
+		IRQ_CONNECT(DT_INST_IRQN(id), DT_INST_IRQ(id, priority), i2c_cc23xx_cc27xx_isr,    \
+			    DEVICE_DT_INST_GET(id), 0);                                            \
+                                                                                                   \
+		irq_enable(DT_INST_IRQN(id));                                                      \
+                                                                                                   \
+		err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);                    \
+		if (err < 0) {                                                                     \
+			LOG_ERR("Failed to configure pinctrl state\n");                            \
+			return err;                                                                \
+		}                                                                                  \
+                                                                                                   \
+		/* Turn the peripheral on */                                                       \
+		CLKCTLEnable(CLKCTL_BASE, CLKCTL_I2C0);                                            \
+                                                                                                   \
+		return 0;                                                                          \
 	}
 
-#define CC23X0_I2C(id)                                                                      \
-	I2C_CC23X0_INIT_FUNC(id);                                                               \
-	PM_DEVICE_DT_INST_DEFINE(id, i2c_cc23x0_pm_action);                                     \
-	PINCTRL_DT_INST_DEFINE(id);                                                             \
-																							\
-	static const struct i2c_cc23x0_config i2c_cc23x0_##id##_config = {                      \
-		.base = DT_INST_REG_ADDR(id),                                                       \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(id),                                         \
-	};                                                                                      \
-																							\
-	static struct i2c_cc23x0_data i2c_cc23x0_##id##_data = {                                \
-		.sync_sem = Z_SEM_INITIALIZER(i2c_cc23x0_##id##_data.sync_sem, 0, 1),               \
-		.status = 0,                                                                        \
-		.cfg = 0,                                                                           \
-	};                                                                                      \
-																							\
-	I2C_DEVICE_DT_INST_DEFINE(id, i2c_cc23x0_init##id, PM_DEVICE_DT_INST_GET(id),           \
-				  &i2c_cc23x0_##id##_data, &i2c_cc23x0_##id##_config, POST_KERNEL,          \
-				  CONFIG_I2C_INIT_PRIORITY, &i2c_cc23x0_driver_api);
+#define CC23XX_CC27XX_I2C(id)                                                                      \
+	I2C_CC23XX_CC27XX_INIT_FUNC(id);                                                           \
+	PM_DEVICE_DT_INST_DEFINE(id, i2c_cc23xx_cc27xx_pm_action);                                 \
+	PINCTRL_DT_INST_DEFINE(id);                                                                \
+                                                                                                   \
+	static const struct i2c_cc23xx_cc27xx_config i2c_cc23xx_cc27xx_##id##_config = {           \
+		.base = DT_INST_REG_ADDR(id),                                                      \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(id),                                        \
+	};                                                                                         \
+                                                                                                   \
+	static struct i2c_cc23xx_cc27xx_data i2c_cc23xx_cc27xx_##id##_data = {                     \
+		.sync_sem = Z_SEM_INITIALIZER(i2c_cc23xx_cc27xx_##id##_data.sync_sem, 0, 1),       \
+		.lock = Z_SEM_INITIALIZER(i2c_cc23xx_cc27xx_##id##_data.lock, 1, 1),               \
+		.status = 0,                                                                       \
+		.cfg = 0,                                                                          \
+	};                                                                                         \
+                                                                                                   \
+	I2C_DEVICE_DT_INST_DEFINE(id, i2c_cc23xx_cc27xx_init##id, PM_DEVICE_DT_INST_GET(id),       \
+				  &i2c_cc23xx_cc27xx_##id##_data,                                  \
+				  &i2c_cc23xx_cc27xx_##id##_config, POST_KERNEL,                   \
+				  CONFIG_I2C_INIT_PRIORITY, &i2c_cc23xx_cc27xx_driver_api);
 
-DT_INST_FOREACH_STATUS_OKAY(CC23X0_I2C);
+DT_INST_FOREACH_STATUS_OKAY(CC23XX_CC27XX_I2C);
