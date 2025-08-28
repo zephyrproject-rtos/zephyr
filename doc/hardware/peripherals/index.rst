@@ -43,6 +43,7 @@ Peripherals
    mdio.rst
    mspi.rst
    mbox.rst
+   opamp.rst
    pcie.rst
    peci.rst
    ps2.rst
