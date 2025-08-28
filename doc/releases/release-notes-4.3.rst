@@ -129,6 +129,13 @@ New APIs and options
     * :c:macro:`LOG_HEXDUMP_INF_RATELIMIT_RATE` - Rate-limited info hexdump macro (explicit rate)
     * :c:macro:`LOG_HEXDUMP_DBG_RATELIMIT_RATE` - Rate-limited debug hexdump macro (explicit rate)
 
+* Opamp
+
+  * Introduced opamp device driver APIs selected with :kconfig:option:`CONFIG_OPAMP`. It supports
+    initial configuration through Devicetree and runtime configuration through vendor specific APIs.
+  * Added support for NXP OPAMP :dtcompatible:`nxp,opamp`.
+  * Added support for NXP OPAMP_FAST :dtcompatible:`nxp,opamp_fast`.
+
 * Power management
 
    * :c:func:`pm_device_driver_deinit`
