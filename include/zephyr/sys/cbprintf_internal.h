@@ -561,9 +561,9 @@ extern "C" {
 #define Z_CBPRINTF_ARG_SIZE(v) z_cbprintf_cxx_arg_size(v)
 #else
 #define Z_CONSTIFY(v) ({ \
-	__auto_type _uv = (v); \
-	__typeof__(_uv) const _cv = _uv; \
-	_cv; \
+	__auto_type x_uv = (v); \
+	__typeof__(x_uv) const x_cv = x_uv; \
+	x_cv; \
 })
 #define Z_CBPRINTF_ARG_SIZE(v) ({\
 	__auto_type __v = Z_ARGIFY(Z_CONSTIFY(v)); \
