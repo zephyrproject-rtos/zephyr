@@ -56,6 +56,15 @@ Building the application for frdm_mcxn947/mcxn947/cpu0
    :goals: debug
    :west-args: --sysbuild
 
+Building the application for ek_ra8p1/r7ka8p1kflcac/cm85
+************************************************************
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/ipc/ipc_service/static_vrings
+   :board: ek_ra8p1/r7ka8p1kflcac/cm85
+   :goals: debug
+   :west-args: --sysbuild
+
 Open a serial terminal (minicom, putty, etc.) and connect the board with the
 following settings:
 
