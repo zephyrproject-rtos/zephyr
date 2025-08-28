@@ -77,37 +77,16 @@ static void icm45686_work_handler(struct k_work *work)
 
 #endif
 
-static int icm45686_enable_drdy(const struct device *dev, bool enable)
-{
-	uint8_t val;
-	int err;
-
-	err = icm45686_bus_read(dev, REG_INT1_CONFIG0, &val, 1);
-	if (err) {
-		return err;
-	}
-
-	val &= ~REG_INT1_CONFIG0_STATUS_EN_DRDY(true);
-	err = icm45686_bus_write(dev, REG_INT1_CONFIG0, &val, 1);
-	if (err) {
-		return err;
-	}
-
-	if (enable) {
-		val |= REG_INT1_CONFIG0_STATUS_EN_DRDY(true);
-	}
-
-	return icm45686_bus_write(dev, REG_INT1_CONFIG0, &val, 1);
-}
-
 int icm45686_trigger_set(const struct device *dev,
 			 const struct sensor_trigger *trig,
 			 sensor_trigger_handler_t handler)
 {
 	int err = 0;
 	struct icm45686_data *data = dev->data;
+	inv_imu_int_state_t int_config;
 
 	(void)k_mutex_lock(&data->triggers.lock, K_FOREVER);
+	memset(&int_config, INV_IMU_DISABLE, sizeof(int_config));
 
 	switch (trig->type) {
 	case SENSOR_TRIG_DATA_READY:
@@ -116,11 +95,10 @@ int icm45686_trigger_set(const struct device *dev,
 
 		if (handler) {
 			/* Enable data ready interrupt */
-			err = icm45686_enable_drdy(dev, true);
-		} else {
-			/* Disable data ready interrupt */
-			err = icm45686_enable_drdy(dev, false);
+			int_config.INV_FIFO_THS = INV_IMU_ENABLE;
+			int_config.INV_UI_DRDY = INV_IMU_ENABLE;
 		}
+		err = inv_imu_set_config_int(&data->driver, INV_IMU_INT1, &int_config);
 		break;
 	default:
 		err = -ENOTSUP;
@@ -136,6 +114,7 @@ int icm45686_trigger_init(const struct device *dev)
 {
 	const struct icm45686_config *cfg = dev->config;
 	struct icm45686_data *data = dev->data;
+	inv_imu_int_pin_config_t int_pin_config;
 	uint8_t val = 0;
 	int err;
 
@@ -197,18 +176,16 @@ int icm45686_trigger_init(const struct device *dev)
 		LOG_ERR("Failed to configure interrupt");
 	}
 
-	err = icm45686_bus_write(dev, REG_INT1_CONFIG0, &val, 1);
-	if (err) {
-		LOG_ERR("Failed to disable all INTs");
-	}
-
-	val = REG_INT1_CONFIG2_EN_OPEN_DRAIN(false) |
-	      REG_INT1_CONFIG2_EN_ACTIVE_HIGH(true);
-
-	err = icm45686_bus_write(dev, REG_INT1_CONFIG2, &val, 1);
-	if (err) {
-		LOG_ERR("Failed to configure INT as push-pull: %d", err);
-	}
+	/*
+         * Configure interrupts pins
+         * - Polarity High
+         * - Pulse mode
+         * - Push-Pull drive
+         */
+        int_pin_config.int_polarity = INTX_CONFIG2_INTX_POLARITY_HIGH;
+        int_pin_config.int_mode     = INTX_CONFIG2_INTX_MODE_PULSE;
+        int_pin_config.int_drive    = INTX_CONFIG2_INTX_DRIVE_PP;
+        err = inv_imu_set_pin_config_int(&data->driver, INV_IMU_INT1, &int_pin_config);
 
 	return err;
 }
