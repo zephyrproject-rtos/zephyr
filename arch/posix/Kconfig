@@ -41,6 +41,14 @@ config ARCH_POSIX_TRAP_ON_FATAL
 	  Raise a SIGTRAP signal on fatal error before exiting.
 	  This automatically suspends the target if a debugger is attached.
 
+config ARCH_POSIX_SPIN_ON_FATAL
+	bool "Spin endlessly on fatal error"
+	depends on !ARCH_POSIX_TRAP_ON_FATAL
+	help
+	  Spin endlessly on fatal error.
+	  This is useful when immediate termination is not desired,
+	  e.g. for flushing logs or manually attaching to the process.
+
 rsource "Kconfig.natsim_optional"
 
 endmenu

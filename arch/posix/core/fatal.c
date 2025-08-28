@@ -23,6 +23,12 @@ FUNC_NORETURN void arch_system_halt(unsigned int reason)
 		nsi_raise_sigtrap();
 	}
 
+	if (IS_ENABLED(CONFIG_ARCH_POSIX_SPIN_ON_FATAL)) {
+		for (;;) {
+			k_sleep(K_MSEC(1));
+		}
+	}
+
 	posix_print_error_and_exit("Exiting due to fatal error\n");
 	CODE_UNREACHABLE; /* LCOV_EXCL_LINE */
 }
