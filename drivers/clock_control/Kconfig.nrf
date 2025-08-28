@@ -323,6 +323,21 @@ config CLOCK_CONTROL_NRF_LFCLK_CLOCK_TIMEOUT_MS
 
 endif # CLOCK_CONTROL_NRF_LFCLK
 
+config CLOCK_CONTROL_NRF_COMMON
+	bool
+
+config CLOCK_CONTROL_NRF_HFCLK
+	bool "NRF HFCLK driver support"
+	depends on DT_HAS_NORDIC_NRF_CLOCK_HFCLK_ENABLED
+    select CLOCK_CONTROL_NRF_COMMON
+	default y
+
+config CLOCK_CONTROL_NRF_XO
+	bool "NRF XO driver support"
+	depends on DT_HAS_NORDIC_NRF_CLOCK_XO_ENABLED
+    select CLOCK_CONTROL_NRF_COMMON
+	default y
+
 config CLOCK_CONTROL_NRF_AUXPLL
 	bool "nRF Auxiliary PLL driver"
 	default y
