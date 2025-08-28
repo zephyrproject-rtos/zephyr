@@ -1280,7 +1280,6 @@ static void avdtp_abort_rsp(struct bt_avdtp *session, struct net_buf *buf, uint8
 	}
 }
 
-#ifdef CONFIG_BT_AVDTP_DELAY_REPORT
 static void avdtp_delay_report_cmd(struct bt_avdtp *session, struct net_buf *buf, uint8_t tid)
 {
 	int err = 0;
@@ -1336,7 +1335,6 @@ static void avdtp_delay_report_rsp(struct bt_avdtp *session, struct net_buf *buf
 		req->func(req, buf);
 	}
 }
-#endif
 
 static void avdtp_get_configuration_cmd(struct bt_avdtp *session, struct net_buf *buf, uint8_t tid)
 {
@@ -1542,7 +1540,7 @@ void (*cmd_handler[])(struct bt_avdtp *session, struct net_buf *buf, uint8_t tid
 	NULL,                            /* BT_AVDTP_SECURITY_CONTROL */
 	avdtp_get_all_capabilities_cmd,  /* BT_AVDTP_GET_ALL_CAPABILITIES */
 	/* BT_AVDTP_DELAYREPORT */
-	COND_CODE_1(CONFIG_BT_AVDTP_DELAY_REPORT, (avdtp_delay_report_cmd), (NULL)),
+	avdtp_delay_report_cmd,
 };
 
 void (*rsp_handler[])(struct bt_avdtp *session, struct net_buf *buf, uint8_t msg_type) = {
@@ -1558,8 +1556,7 @@ void (*rsp_handler[])(struct bt_avdtp *session, struct net_buf *buf, uint8_t msg
 	avdtp_abort_rsp,             /* BT_AVDTP_ABORT */
 	NULL,                        /* BT_AVDTP_SECURITY_CONTROL */
 	avdtp_get_capabilities_rsp,  /* BT_AVDTP_GET_ALL_CAPABILITIES */
-	/* BT_AVDTP_DELAYREPORT */
-	COND_CODE_1(CONFIG_BT_AVDTP_DELAY_REPORT, (avdtp_delay_report_rsp), (NULL)),
+	avdtp_delay_report_rsp,      /* BT_AVDTP_DELAYREPORT */
 };
 
 int bt_avdtp_l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
@@ -2013,9 +2010,6 @@ int bt_avdtp_parse_capability_codec(struct net_buf *buf, uint8_t *codec_type,
 		case BT_AVDTP_SERVICE_CONTENT_PROTECTION:
 		case BT_AVDTP_SERVICE_HEADER_COMPRESSION:
 		case BT_AVDTP_SERVICE_MULTIPLEXING:
-#ifndef CONFIG_BT_AVDTP_DELAY_REPORT
-		case BT_AVDTP_SERVICE_DELAY_REPORTING:
-#endif
 			if (buf->len < 1U) {
 				return -EINVAL;
 			}
@@ -2030,7 +2024,6 @@ int bt_avdtp_parse_capability_codec(struct net_buf *buf, uint8_t *codec_type,
 			}
 			break;
 
-#ifdef CONFIG_BT_AVDTP_DELAY_REPORT
 		case BT_AVDTP_SERVICE_DELAY_REPORTING:
 			if (buf->len < 1U) {
 				return -EINVAL;
@@ -2045,7 +2038,6 @@ int bt_avdtp_parse_capability_codec(struct net_buf *buf, uint8_t *codec_type,
 				*delay_report = true;
 			}
 			break;
-#endif
 
 		case BT_AVDTP_SERVICE_MEDIA_CODEC:
 			if (buf->len < 1U) {
@@ -2115,13 +2107,12 @@ static int avdtp_process_configure_command(struct bt_avdtp *session, uint8_t cmd
 	net_buf_add_u8(buf, param->media_codec_type);
 	/* Codec Info Element */
 	net_buf_add_mem(buf, param->codec_specific_ie, param->codec_specific_ie_len);
-#ifdef CONFIG_BT_AVDTP_DELAY_REPORT
+
 	if (param->delay_report) {
 		net_buf_add_u8(buf, BT_AVDTP_SERVICE_DELAY_REPORTING);
 		/* LOSC */
 		net_buf_add_u8(buf, 0);
 	}
-#endif
 
 	return avdtp_send_cmd(session, buf, &param->req);
 }
