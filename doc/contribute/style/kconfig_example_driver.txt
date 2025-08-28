@@ -1,0 +1,8 @@
+config ADC_ADI_AD405X
+	bool "AD405X (Analog Devices, Inc) ADC driver"
+
+config CAN_ADI_MAX32
+	bool "MAX32 (Analog Devices, Inc) CAN driver"
+
+config I2C_EMUL
+	bool "I2C emulator driver"
