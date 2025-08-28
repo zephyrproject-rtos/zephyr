@@ -215,8 +215,8 @@ static int spi_litex_xfer(const struct device *dev, const struct spi_config *con
 
 #if SPI_LITEX_ANY_HAS_IRQ
 	if (SPI_LITEX_HAS_IRQ) {
-		litex_write8(BIT(0), dev_config->master_ev_enable_addr);
 		litex_write8(BIT(0), dev_config->master_ev_pending_addr);
+		litex_write8(BIT(0), dev_config->master_ev_enable_addr);
 
 		spi_litex_spi_do_tx(dev);
 
