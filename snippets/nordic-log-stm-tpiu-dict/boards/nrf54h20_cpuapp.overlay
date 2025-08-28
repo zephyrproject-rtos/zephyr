@@ -1,0 +1,11 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&coresight {
+	status = "okay";
+	mode = "stm-tpiu";
+	pinctrl-0 = <&tpiu_default>;
+	pinctrl-names = "default";
+};
