@@ -102,7 +102,7 @@ def process_pr(gh, maintainer_file, number):
             for area_maintainer in area.maintainers:
                 found_maintainers[area_maintainer] += c
 
-            if 'Platform' in area.name:
+            if ('Platform' in area.name) and (len(area.maintainers) > 0):
                 is_instance = True
 
     area_counter = dict(sorted(area_counter.items(), key=lambda item: item[1], reverse=True))
