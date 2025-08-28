@@ -238,6 +238,11 @@ config USE_RA_FSP_CEU
 	help
 	  Enable RA FSP CEU driver
 
+config USE_RA_FSP_IPC
+	bool
+	help
+	  Enable RA FSP IPC driver
+
 endif # HAS_RENESAS_RA_FSP
 
 if HAS_RENESAS_RZ_FSP
