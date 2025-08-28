@@ -34,28 +34,31 @@ extern "C" {
  *  @param _role BT_AVDTP_SOURCE or BT_AVDTP_SINK.
  *  @param _codec value of enum bt_a2dp_codec_id.
  *  @param _capability the codec capability.
+ *  @param _delay_report delay report capability
  */
-#define BT_A2DP_EP_INIT(_role, _codec, _capability)                                                \
+#define BT_A2DP_EP_INIT(_role, _codec, _capability, _delay_report)                                 \
 	{                                                                                          \
 		.codec_type = _codec,                                                              \
 		.sep = {.sep_info = {.media_type = BT_AVDTP_AUDIO, .tsep = _role}},                \
 		.codec_cap = _capability, .stream = NULL,                                          \
-		COND_CODE_1(CONFIG_BT_A2DP_DELAY_REPORT, (.delay_report = true,), ())              \
+		.delay_report = _delay_report,                                                     \
 	}
 
 /** @brief define the audio sink endpoint
  *  @param _codec value of enum bt_a2dp_codec_id.
  *  @param _capability the codec capability.
+ *  @param _delay_report delay report capability
  */
-#define BT_A2DP_SINK_EP_INIT(_codec, _capability)                                                  \
-	BT_A2DP_EP_INIT(BT_AVDTP_SINK, _codec, _capability)
+#define BT_A2DP_SINK_EP_INIT(_codec, _capability, _delay_report)                                   \
+	BT_A2DP_EP_INIT(BT_AVDTP_SINK, _codec, _capability, _delay_report)
 
 /** @brief define the audio source endpoint
  *  @param _codec value of enum bt_a2dp_codec_id.
  *  @param _capability the codec capability.
+ *  @param _delay_report delay report capability
  */
-#define BT_A2DP_SOURCE_EP_INIT(_codec, _capability)                                                \
-	BT_A2DP_EP_INIT(BT_AVDTP_SOURCE, _codec, _capability)
+#define BT_A2DP_SOURCE_EP_INIT(_codec, _capability, _delay_report)                                 \
+	BT_A2DP_EP_INIT(BT_AVDTP_SOURCE, _codec, _capability, _delay_report)
 
 /** @brief define the SBC sink endpoint that can be used as
  * bt_a2dp_register_endpoint's parameter.
@@ -76,16 +79,17 @@ extern "C" {
  *               for example: A2DP_SBC_ALLOC_MTHD_LOUDNESS
  *  @param _min_bitpool sbc codec min bit pool. for example: 18
  *  @param _max_bitpool sbc codec max bit pool. for example: 35
+ *  @param _delay_report delay report capability
  *  @
  */
 #define BT_A2DP_SBC_SINK_EP(_name, _freq, _ch_mode, _blk_len, _subband, _alloc_mthd, _min_bitpool, \
-			    _max_bitpool)                                                          \
+			    _max_bitpool, _delay_report)                                           \
 	static struct bt_a2dp_codec_ie bt_a2dp_ep_cap_ie##_name = {                                \
 		.len = BT_A2DP_SBC_IE_LENGTH,                                                      \
 		.codec_ie = {_freq | _ch_mode, _blk_len | _subband | _alloc_mthd, _min_bitpool,    \
 			     _max_bitpool}};                                                       \
 	static struct bt_a2dp_ep _name =                                                           \
-		BT_A2DP_SINK_EP_INIT(BT_A2DP_SBC, (&bt_a2dp_ep_cap_ie##_name))
+		BT_A2DP_SINK_EP_INIT(BT_A2DP_SBC, (&bt_a2dp_ep_cap_ie##_name), _delay_report)
 
 /** @brief define the SBC source endpoint that can be used as bt_a2dp_register_endpoint's
  * parameter.
@@ -106,15 +110,16 @@ extern "C" {
  *               for example: A2DP_SBC_ALLOC_MTHD_LOUDNESS
  *  @param _min_bitpool sbc codec min bit pool. for example: 18
  *  @param _max_bitpool sbc codec max bit pool. for example: 35
+ *  @param _delay_report delay report capability
  */
 #define BT_A2DP_SBC_SOURCE_EP(_name, _freq, _ch_mode, _blk_len, _subband, _alloc_mthd,             \
-			      _min_bitpool, _max_bitpool)                                          \
+			      _min_bitpool, _max_bitpool, _delay_report)                           \
 	static struct bt_a2dp_codec_ie bt_a2dp_ep_cap_ie##_name = {                                \
 		.len = BT_A2DP_SBC_IE_LENGTH,                                                      \
 		.codec_ie = {_freq | _ch_mode, _blk_len | _subband | _alloc_mthd, _min_bitpool,    \
 			     _max_bitpool}};                                                       \
 	static struct bt_a2dp_ep _name =                                                           \
-		BT_A2DP_SOURCE_EP_INIT(BT_A2DP_SBC, &bt_a2dp_ep_cap_ie##_name)
+		BT_A2DP_SOURCE_EP_INIT(BT_A2DP_SBC, &bt_a2dp_ep_cap_ie##_name, _delay_report)
 
 /** @brief define the default SBC sink endpoint that can be used as
  * bt_a2dp_register_endpoint's parameter.
@@ -134,7 +139,7 @@ extern "C" {
 				     A2DP_SBC_ALLOC_MTHD_LOUDNESS,                                 \
 			     18U, 35U}};                                                           \
 	static struct bt_a2dp_ep _name =                                                           \
-		BT_A2DP_SINK_EP_INIT(BT_A2DP_SBC, &bt_a2dp_ep_cap_ie##_name)
+		BT_A2DP_SINK_EP_INIT(BT_A2DP_SBC, &bt_a2dp_ep_cap_ie##_name, true)
 
 /** @brief define the default SBC source endpoint that can be used as bt_a2dp_register_endpoint's
  * parameter.
@@ -155,7 +160,7 @@ extern "C" {
 			     18U, 35U},                                                            \
 	};                                                                                         \
 	static struct bt_a2dp_ep _name =                                                           \
-		BT_A2DP_SOURCE_EP_INIT(BT_A2DP_SBC, &bt_a2dp_ep_cap_ie##_name)
+		BT_A2DP_SOURCE_EP_INIT(BT_A2DP_SBC, &bt_a2dp_ep_cap_ie##_name, false)
 
 /** @brief define the SBC default configuration.
  *
@@ -320,10 +325,8 @@ struct bt_a2dp_codec_ie {
 
 /** @brief The endpoint configuration */
 struct bt_a2dp_codec_cfg {
-#ifdef CONFIG_BT_A2DP_DELAY_REPORT
 	/** the delay reporting configured state */
 	bool delay_report;
-#endif
 	/** The media codec configuration content */
 	struct bt_a2dp_codec_ie *codec_config;
 };
@@ -332,10 +335,8 @@ struct bt_a2dp_codec_cfg {
 struct bt_a2dp_ep {
 	/** Code Type @ref bt_a2dp_codec_type */
 	uint8_t codec_type;
-#ifdef CONFIG_BT_A2DP_DELAY_REPORT
 	/** Whether the endpoint has delay reporting service */
 	bool delay_report;
-#endif
 	/** Capabilities */
 	struct bt_a2dp_codec_ie *codec_cap;
 	/** AVDTP Stream End Point Identifier */
@@ -347,10 +348,8 @@ struct bt_a2dp_ep {
 struct bt_a2dp_ep_info {
 	/** Code Type @ref bt_a2dp_codec_type */
 	uint8_t codec_type;
-#ifdef CONFIG_BT_A2DP_DELAY_REPORT
 	/** Whether the endpoint has delay reporting service */
 	bool delay_report;
-#endif
 	/** Codec capabilities, if SBC, use function of a2dp_codec_sbc.h to parse it */
 	struct bt_a2dp_codec_ie codec_cap;
 	/** Stream End Point Information */
@@ -613,7 +612,6 @@ struct bt_a2dp_cb {
 	 */
 	void (*get_config_rsp)(struct bt_a2dp_stream *stream, struct bt_a2dp_codec_cfg *codec_cfg,
 			       uint8_t rsp_err_code);
-#ifdef CONFIG_BT_A2DP_DELAY_REPORT
 #ifdef CONFIG_BT_A2DP_SOURCE
 	/**
 	 * @brief Stream delay report is received
@@ -640,7 +638,6 @@ struct bt_a2dp_cb {
 	 *                          bt_a2dp_err_code or bt_avdtp_err_code
 	 */
 	void (*delay_report_rsp)(struct bt_a2dp_stream *stream, uint8_t rsp_err_code);
-#endif
 #endif
 };
 
@@ -718,10 +715,8 @@ struct bt_a2dp_stream {
 	struct bt_a2dp_ep *remote_ep;
 	/** remote endpoint's Stream End Point ID */
 	uint8_t remote_ep_id;
-#ifdef CONFIG_BT_A2DP_DELAY_REPORT
 	/** whether the delay report is configured on the stream */
 	bool delay_report;
-#endif
 	/** Audio stream operations */
 	struct bt_a2dp_stream_ops *ops;
 	/** the a2dp connection */
@@ -806,7 +801,6 @@ struct bt_a2dp_stream_ops {
 	 * @param stream Stream object.
 	 */
 	void (*sent)(struct bt_a2dp_stream *stream);
-#ifdef CONFIG_BT_A2DP_DELAY_REPORT
 	/**
 	 * @brief The delay report value is received
 	 *
@@ -817,7 +811,6 @@ struct bt_a2dp_stream_ops {
 	 * @param value The delay report value in 1/10 milliseconds.
 	 */
 	void (*delay_report)(struct bt_a2dp_stream *stream, uint16_t value);
-#endif
 #endif
 };
 
