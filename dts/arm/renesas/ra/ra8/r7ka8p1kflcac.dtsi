@@ -59,14 +59,6 @@
 			status = "disabled";
 		};
 
-		sdram: sdram-controller@40002000 {
-			compatible = "renesas,ra-sdram";
-			#address-cells = <1>;
-			#size-cells = <0>;
-			reg = <0x40002000 0xFFF>;
-			status = "disabled";
-		};
-
 		lcdif: display-controller@40342000 {
 			compatible = "renesas,ra-glcdc";
 			reg = <0x40342000 0x1454>;
