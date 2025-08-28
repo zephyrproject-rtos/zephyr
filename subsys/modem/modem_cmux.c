@@ -13,6 +13,7 @@ LOG_MODULE_REGISTER(modem_cmux, CONFIG_MODEM_CMUX_LOG_LEVEL);
 
 #include <string.h>
 
+#define MODEM_CMUX_SOF				(0xF9)
 #define MODEM_CMUX_FCS_POLYNOMIAL		(0xE0)
 #define MODEM_CMUX_FCS_INIT_VALUE		(0xFF)
 #define MODEM_CMUX_EA				(0x01)
@@ -282,7 +283,7 @@ static uint16_t modem_cmux_transmit_frame(struct modem_cmux *cmux,
 	data_len = MIN(data_len, CONFIG_MODEM_CMUX_MTU);
 
 	/* SOF */
-	buf[0] = 0xF9;
+	buf[0] = MODEM_CMUX_SOF;
 
 	/* DLCI Address (Max 63) */
 	buf[1] = 0x01 | (frame->cr << 1) | (frame->dlci_address << 2);
@@ -318,7 +319,7 @@ static uint16_t modem_cmux_transmit_frame(struct modem_cmux *cmux,
 
 	/* FCS and EOF will be put on the same call */
 	buf[0] = fcs;
-	buf[1] = 0xF9;
+	buf[1] = MODEM_CMUX_SOF;
 	ring_buf_put(&cmux->transmit_rb, buf, 2);
 	k_work_schedule(&cmux->transmit_work, K_NO_WAIT);
 	return data_len;
@@ -744,7 +745,7 @@ static void modem_cmux_process_received_byte(struct modem_cmux *cmux, uint8_t by
 
 	switch (cmux->receive_state) {
 	case MODEM_CMUX_RECEIVE_STATE_SOF:
-		if (byte == 0xF9) {
+		if (byte == MODEM_CMUX_SOF) {
 			cmux->receive_state = MODEM_CMUX_RECEIVE_STATE_RESYNC;
 			break;
 		}
@@ -756,7 +757,7 @@ static void modem_cmux_process_received_byte(struct modem_cmux *cmux, uint8_t by
 		 * Allow any number of consecutive flags (0xF9).
 		 * 0xF9 could also be a valid address field for DLCI 62.
 		 */
-		if (byte == 0xF9) {
+		if (byte == MODEM_CMUX_SOF) {
 			break;
 		}
 
@@ -813,7 +814,7 @@ static void modem_cmux_process_received_byte(struct modem_cmux *cmux, uint8_t by
 
 		if (cmux->frame.data_len > CONFIG_MODEM_CMUX_MTU) {
 			LOG_ERR("Too large frame");
-			cmux->receive_state = MODEM_CMUX_RECEIVE_STATE_DROP;
+			modem_cmux_drop_frame(cmux);
 			break;
 		}
 
@@ -838,7 +839,7 @@ static void modem_cmux_process_received_byte(struct modem_cmux *cmux, uint8_t by
 
 		if (cmux->frame.data_len > CONFIG_MODEM_CMUX_MTU) {
 			LOG_ERR("Too large frame");
-			cmux->receive_state = MODEM_CMUX_RECEIVE_STATE_DROP;
+			modem_cmux_drop_frame(cmux);
 			break;
 		}
 
@@ -846,7 +847,7 @@ static void modem_cmux_process_received_byte(struct modem_cmux *cmux, uint8_t by
 			LOG_ERR("Indicated frame data length %u exceeds receive buffer size %u",
 				cmux->frame.data_len, cmux->receive_buf_size);
 
-			cmux->receive_state = MODEM_CMUX_RECEIVE_STATE_DROP;
+			modem_cmux_drop_frame(cmux);
 			break;
 		}
 
@@ -873,7 +874,7 @@ static void modem_cmux_process_received_byte(struct modem_cmux *cmux, uint8_t by
 		if (cmux->receive_buf_len > cmux->receive_buf_size) {
 			LOG_WRN("Receive buffer overrun (%u > %u)",
 				cmux->receive_buf_len, cmux->receive_buf_size);
-			cmux->receive_state = MODEM_CMUX_RECEIVE_STATE_DROP;
+			modem_cmux_drop_frame(cmux);
 			break;
 		}
 
@@ -890,21 +891,16 @@ static void modem_cmux_process_received_byte(struct modem_cmux *cmux, uint8_t by
 		if (fcs != byte) {
 			LOG_WRN("Frame FCS error");
 
-			/* Drop frame */
-			cmux->receive_state = MODEM_CMUX_RECEIVE_STATE_DROP;
+			modem_cmux_drop_frame(cmux);
 			break;
 		}
 
 		cmux->receive_state = MODEM_CMUX_RECEIVE_STATE_EOF;
 		break;
 
-	case MODEM_CMUX_RECEIVE_STATE_DROP:
-		modem_cmux_drop_frame(cmux);
-		break;
-
 	case MODEM_CMUX_RECEIVE_STATE_EOF:
 		/* Validate byte is EOF */
-		if (byte != 0xF9) {
+		if (byte != MODEM_CMUX_SOF) {
 			/* Unexpected byte */
 			modem_cmux_drop_frame(cmux);
 			break;
