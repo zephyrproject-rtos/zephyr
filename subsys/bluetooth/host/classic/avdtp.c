@@ -719,6 +719,7 @@ static void avdtp_start_rsp(struct bt_avdtp *session, struct net_buf *buf, uint8
 	if (msg_type == BT_AVDTP_ACCEPT) {
 		bt_avdtp_set_state_lock(CTRL_REQ(req)->sep, AVDTP_STREAMING);
 	} else if (msg_type == BT_AVDTP_REJECT) {
+		bt_avdtp_set_state_lock(CTRL_REQ(req)->sep, AVDTP_OPEN);
 		avdtp_handle_reject(buf, req);
 	}
 
@@ -1083,6 +1084,7 @@ void bt_avdtp_l2cap_connected(struct bt_l2cap_chan *chan)
 void bt_avdtp_l2cap_disconnected(struct bt_l2cap_chan *chan)
 {
 	struct bt_avdtp *session = AVDTP_CHAN(chan);
+	struct bt_avdtp_sep *sep;
 
 	LOG_DBG("chan %p session %p", chan, session);
 	session->br_chan.chan.conn = NULL;
@@ -1098,6 +1100,13 @@ void bt_avdtp_l2cap_disconnected(struct bt_l2cap_chan *chan)
 		}
 	}
 
+	SYS_SLIST_FOR_EACH_CONTAINER(&seps, sep, _node) {
+		if (sep->state != AVDTP_IDLE) {
+			avdtp_sep_lock(sep);
+			bt_avdtp_set_state(sep, AVDTP_IDLE);
+			avdtp_sep_unlock(sep);
+		}
+	}
 	/* notify a2dp disconnect */
 	session->ops->disconnected(session);
 }
