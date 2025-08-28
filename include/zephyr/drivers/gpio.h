@@ -948,9 +948,11 @@ static inline int z_impl_gpio_pin_interrupt_configure(const struct device *port,
  *
  * This is equivalent to:
  *
- *     gpio_pin_interrupt_configure(spec->port, spec->pin, flags);
+ *     gpio_pin_interrupt_configure(spec->port, spec->pin, combined_flags);
  *
- * The <tt>spec->dt_flags</tt> value is not used.
+ * Where <tt>combined_flags</tt> is the combination of the <tt>flags</tt> argument
+ * and the <tt>GPIO_INT_WAKEUP</tt> flag from <tt>spec->dt_flags</tt> if set. Other
+ * flags from <tt>spec->dt_flags</tt> are ignored.
  *
  * @param spec GPIO specification from devicetree
  * @param flags interrupt configuration flags
@@ -959,7 +961,8 @@ static inline int z_impl_gpio_pin_interrupt_configure(const struct device *port,
 static inline int gpio_pin_interrupt_configure_dt(const struct gpio_dt_spec *spec,
 						  gpio_flags_t flags)
 {
-	return gpio_pin_interrupt_configure(spec->port, spec->pin, flags);
+	return gpio_pin_interrupt_configure(spec->port, spec->pin,
+					    flags | (spec->dt_flags & GPIO_INT_WAKEUP));
 }
 
 /**
