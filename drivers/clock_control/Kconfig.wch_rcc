@@ -5,3 +5,8 @@ config CLOCK_CONTROL_WCH_RCC
 	bool "WCH CH32V00x Reset and Clock Control (RCC) driver"
 	default y
 	depends on DT_HAS_WCH_RCC_ENABLED
+
+config CLOCK_CONTROL_WCH_CLOCK_CONTROLLER
+	bool "WCH clock control driver"
+	default y
+	depends on DT_HAS_WCH_CLOCK_CONTROLLER_ENABLED
