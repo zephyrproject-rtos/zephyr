@@ -28,3 +28,6 @@ anytree
 
 # Used to generate API coverage reports
 coverxygen
+
+# Used to generate Kconfig pages
+python-dotenv>=1.1.1
