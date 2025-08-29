@@ -13,7 +13,7 @@
 
 LOG_MODULE_REGISTER(cpu_freq_on_demand_test, LOG_LEVEL_INF);
 
-#define WAIT_US 1000
+#define WAIT_US 1000000
 
 /*
  * Test APIs of on_demand CPU frequency policy.
