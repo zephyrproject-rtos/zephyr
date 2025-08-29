@@ -10,6 +10,7 @@
 
 #include <zephyr/bluetooth/l2cap.h>
 #include <zephyr/sys/iterable_sections.h>
+#include <zephyr/sys/util.h>
 #include "l2cap_br_interface.h"
 
 #define BT_L2CAP_CID_BR_SIG             0x0001
@@ -177,12 +178,12 @@ struct bt_l2cap_disconn_rsp {
 
 #define BT_L2CAP_ECHO_REQ               0x08
 struct bt_l2cap_echo_req {
-	uint8_t data[0];
+	FLEXIBLE_ARRAY_DECLARE(uint8_t, data);
 } __packed;
 
 #define BT_L2CAP_ECHO_RSP               0x09
 struct bt_l2cap_echo_rsp {
-	uint8_t data[0];
+	FLEXIBLE_ARRAY_DECLARE(uint8_t, data);
 } __packed;
 
 #define BT_L2CAP_INFO_CONNLESS_MTU      0x0001
