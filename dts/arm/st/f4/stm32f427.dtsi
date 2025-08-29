@@ -9,6 +9,14 @@
 #include <zephyr/dt-bindings/memory-controller/stm32-fmc-sdram.h>
 
 / {
+	clocks {
+		pllsai: pllsai {
+			compatible = "st,stm32fx-pllsai-clock";
+			#clock-cells = <0>;
+			status = "disabled";
+		};
+	};
+
 	soc {
 		compatible = "st,stm32f427", "st,stm32f4", "simple-bus";
 
