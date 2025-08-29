@@ -346,11 +346,6 @@ static void shi_npcx_bad_received_data(const struct device *dev)
 	/* SHI receive bad data */
 	LOG_WRN("SHIBD");
 	LOG_HEXDUMP_DBG(data->in_msg, data->rx_ctx->len, "in_msg=");
-
-	/* Reset shi's state machine for error recovery */
-	shi_npcx_reset_prepare(dev);
-
-	LOG_DBG("END");
 }
 
 /*
