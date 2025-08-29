@@ -113,7 +113,7 @@
 		compatible = "st,lis2dh12", "st,lis2dh";
 		reg = <0x18>;
 		irq-gpios = <&gpio1 5 GPIO_ACTIVE_HIGH>,
-				<&gpio1 12 GPIO_ACTIVE_HIGH>;
+			    <&gpio1 12 GPIO_ACTIVE_HIGH>;
 		disconnect-sdo-sa0-pull-up;
 	};
 
