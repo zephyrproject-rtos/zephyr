@@ -1,0 +1,18 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/nxp-kinetis-gpio.h>
+
+/ {
+	aliases {
+		poweroff-wakeup-source = &user_button_2;
+	};
+};
+
+&gpio0 {
+	wakeup-source;
+	wakeup-line = <KINETIS_GPIO_20_FALLING_EDGE>;
+};

@@ -1,0 +1,44 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+sample:
+  name: Poweroff example for NXP MCUs
+common:
+  tags: power
+tests:
+  sample.boards.nxp.mcu.poweroff:
+    platform_allow:
+      - frdm_mcxa156
+      - frdm_mcxa153
+      - frdm_mcxa346
+      - frdm_mcxa266
+      - frdm_mcxn236/mcxn236
+      - frdm_mcxn947/mcxn947/cpu0
+      - mimxrt595_evk/mimxrt595s/cm33
+  sample.boards.nxp.mcu.poweroff.counter_wakeup:
+    platform_allow:
+      - frdm_mcxa156
+      - frdm_mcxa153
+      - frdm_mcxa346
+      - frdm_mcxa266
+      - frdm_mcxn947/mcxn947/cpu0
+      - mimxrt595_evk/mimxrt595s/cm33
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "Press 'enter' key to power off the system"
+        - "Will wakeup after 5 seconds"
+        - "Powering off"
+  sample.boards.nxp.mcu.poweroff.button_wakeup:
+    platform_allow:
+      - frdm_mcxn236/mcxn236
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "Press 'enter' key to power off the system"
+        - "Will wakeup after press wakeup button"
+        - "Powering off"

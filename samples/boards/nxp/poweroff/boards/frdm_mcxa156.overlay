@@ -1,0 +1,20 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		poweroff-wakeup-source = &lptmr0;
+	};
+};
+
+&lptmr0 {
+	status = "okay";
+	timer-mode-sel = <0>;
+	clk-source = <1>;
+	clock-frequency = <16384>;
+	resolution = <32>;
+	wakeup-source;
+};
