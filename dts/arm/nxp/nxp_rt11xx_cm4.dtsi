@@ -25,7 +25,8 @@
 	};
 
 	/*
-	 * SRAM0 & SRAM1 are available only to the M4 core. EDMA_LPSR interrupts are connected
+	 * SRAM0 & SRAM1 are TCMs for the M4 core, which the M7 can access through the OCRAM alias.
+	 * EDMA_LPSR interrupts are connected
 	 * to the M4 core alone, hence this EDMA controller has been designated M4 only.
 	 * GPIO's 9, 11 are available to both M4 and M7 cores, however the GPIO interrupts are
 	 * only accessible to the M4.
@@ -35,11 +36,13 @@
 	soc {
 		/delete-node/ dma-controller@40070000;
 
+		/* M4 ITCM RAM_L */
 		sram0: memory@1ffe0000 {
 			compatible = "mmio-sram";
 			reg = <0x1ffe0000 DT_SIZE_K(128)>;
 		};
 
+		/* M4 DTCM RAM_U */
 		sram1: memory@20000000 {
 			compatible = "zephyr,memory-region", "mmio-sram";
 			reg = <0x20000000 DT_SIZE_K(128)>;
