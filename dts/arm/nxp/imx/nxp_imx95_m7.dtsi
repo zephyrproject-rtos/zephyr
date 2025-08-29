@@ -612,6 +612,17 @@
 			status = "disabled";
 		};
 
+		lptmr1: timer@44300000 {
+			compatible = "nxp,lptmr-hw-timer";
+			reg = <0x44300000 DT_SIZE_K(4)>;
+			interrupts = <18 0>;
+			clocks = <&scmi_clk IMX95_CLK_LPTMR1>;
+			clock-frequency = <32768>;
+			clk-source = <2>;
+			prescale-glitch-filter = <0>;
+			status = "disabled";
+		};
+
 		lptmr2: timer@424d0000 {
 			compatible = "nxp,lptmr";
 			reg = <0x424d0000 DT_SIZE_K(4)>;
