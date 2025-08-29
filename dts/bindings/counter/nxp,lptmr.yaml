@@ -69,3 +69,14 @@ properties:
       for Time-Counter mode or for Pulse mode.
       0 <- LPTMR is configured for Time Counter Mode.
       1 <- LPTMR is configured for Pulse Mode.
+
+  wakeup-line:
+    type: int
+    description: |
+      On some NXP platforms, LPTMR can wake up the MCU from
+      lowpower mode, but the wakeup capability is configured
+      through a specific peripheral, such as the wakeup unit.
+      There is a special register in wakeup uint to configure
+      the wake-up function of LPTMR. The location of this
+      register is SoC specific. The user needs to specify the
+      index of the register through this property.
