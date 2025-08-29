@@ -8,7 +8,7 @@
 CONFIG_CORTEX_M_SYSTICK=y
 
 # Zephyr Kernel Configuration
-CONFIG_XIP=n
+CONFIG_XIP=y
 
 # Serial Driver
 CONFIG_SERIAL=y

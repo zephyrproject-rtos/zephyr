@@ -14,7 +14,8 @@
 	compatible = "beagle,pocketbeagle_2_m4";
 
 	chosen {
-		zephyr,sram = &sram0;
+		zephyr,sram = &sram_dcode;
+		zephyr,flash = &sram_icode;
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
 		zephyr,ipc = &ipc0;
