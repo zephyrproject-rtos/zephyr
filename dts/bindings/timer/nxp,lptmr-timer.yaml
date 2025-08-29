@@ -45,3 +45,8 @@ properties:
     description: |
       Configures the size of the prescaler in Time Counter mode and the width of the
       glitch filter in Pulse Counter mode.
+
+  resolution:
+    type: int
+    required: true
+    description: Represents the width of the timer in bits.

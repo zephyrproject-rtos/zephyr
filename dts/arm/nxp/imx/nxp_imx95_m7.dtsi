@@ -620,6 +620,7 @@
 			clock-frequency = <32768>;
 			clk-source = <2>;
 			prescale-glitch-filter = <0>;
+			resolution = <32>;
 			status = "disabled";
 		};
 
