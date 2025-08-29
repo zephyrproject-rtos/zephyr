@@ -12,12 +12,13 @@
 
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/iso.h>
+#include <zephyr/sys/util.h>
 
 /* GAP Service */
 /* commands */
 #define BTP_GAP_READ_SUPPORTED_COMMANDS		0x01
 struct btp_gap_read_supported_commands_rp {
-	uint8_t data[0];
+	FLEXIBLE_ARRAY_DECLARE(uint8_t, data);
 } __packed;
 
 #define BTP_GAP_READ_CONTROLLER_INDEX_LIST	0x02
@@ -360,7 +361,7 @@ struct btp_gap_big_create_sync_cmd {
 	uint32_t mse;
 	uint16_t sync_timeout;
 	uint8_t encryption;
-	uint8_t broadcast_code[0];
+	uint8_t broadcast_code[];
 } __packed;
 
 #define BTP_GAP_CREATE_BIG_ENC_DISABLE		0x00
@@ -377,7 +378,7 @@ struct btp_gap_create_big_cmd {
 	uint8_t packing;
 	uint8_t framing;
 	uint8_t encryption;
-	uint8_t broadcast_code[0];
+	uint8_t broadcast_code[];
 } __packed;
 
 #define BTP_GAP_BIS_BROADCAST			0x2e
