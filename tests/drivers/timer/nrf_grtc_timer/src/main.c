@@ -397,6 +397,13 @@ static void grtc_stress_test(bool busy_sim_en)
 	if (counter_dev) {
 		counter_stop(counter_dev);
 	}
+
+#ifdef CONFIG_COVERAGE
+	/* Wait a few seconds before exit, giving the test the
+	 * opportunity to dump some output before coverage data gets emitted
+	 */
+	k_sleep(K_MSEC(5000));
+#endif
 }
 
 ZTEST(nrf_grtc_timer, test_stress)
