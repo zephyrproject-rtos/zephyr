@@ -1583,6 +1583,18 @@ Documentation Infrastructure:
   tests:
     - drivers.fpga
 
+"Drivers: Firmware":
+  status: maintained
+  maintainers:
+    - LaurentiuM1234
+  files:
+    - drivers/firmware/
+    - include/zephyr/drivers/firmware/
+    - dts/bindings/firmware/
+    - doc/hardware/arch/arm-scmi.rst
+  labels:
+    - "area: Firmware"
+
 "Drivers: Flash":
   status: maintained
   maintainers:
