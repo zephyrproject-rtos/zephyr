@@ -37,6 +37,8 @@
 #define BROADCAST_STREAM_CNT 0
 #endif /* CONFIG_BT_BAP_BROADCAST_SOURCE */
 
+#define BT_BAP_PD_UNSET 0xFFFFFFFFU /* Valid value range uses 24 bits, but is stored in 32 */
+
 /* Temp struct declarations to handle circular dependencies */
 struct bt_bap_unicast_group;
 struct bt_bap_broadcast_source;
@@ -94,6 +96,11 @@ struct bt_bap_unicast_group {
 	/* The ISO API for CIG creation requires an array of pointers to ISO channels */
 	struct bt_iso_chan *cis[UNICAST_GROUP_STREAM_CNT];
 	sys_slist_t streams;
+
+	/* Configured sink presentation delay */
+	uint32_t sink_pd;
+	/* Configured source presentation delay */
+	uint32_t source_pd;
 };
 
 #if CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0
