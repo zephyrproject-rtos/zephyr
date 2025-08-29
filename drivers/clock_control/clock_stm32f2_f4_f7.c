@@ -169,6 +169,95 @@ void config_plli2s(void)
 
 #endif /* STM32_PLLI2S_ENABLED */
 
+#if defined(STM32_PLLSAI_ENABLED)
+
+/**
+ * @brief Return PLLSAI source
+ */
+__unused
+static uint32_t get_pllsai_source(void)
+{
+	/* Configure PLL source */
+	if (IS_ENABLED(STM32_PLLSAI_SRC_HSI)) {
+		return LL_RCC_PLLSOURCE_HSI;
+	} else if (IS_ENABLED(STM32_PLLSAI_SRC_HSE)) {
+		return LL_RCC_PLLSOURCE_HSE;
+	}
+
+	__ASSERT(0, "Invalid source");
+	return 0;
+}
+
+/**
+ * @brief Get the PLLSAI source frequency
+ */
+__unused
+uint32_t get_pllsaisrc_frequency(void)
+{
+	if (IS_ENABLED(STM32_PLLSAI_SRC_HSI)) {
+		return STM32_HSI_FREQ;
+	} else if (IS_ENABLED(STM32_PLLSAI_SRC_HSE)) {
+		return STM32_HSE_FREQ;
+	}
+
+	__ASSERT(0, "Invalid source");
+	return 0;
+}
+
+/**
+ * @brief Set up PLLSAI configuration
+ */
+__unused
+void config_pllsai(void)
+{
+	/*
+	 * In case there is no dedicated M_DIVISOR for PLLSAI, the input is shared
+	 * with PLL and PLLI2S. Ensure that if they exist, they have the same value
+	 */
+#if !defined(RCC_PLLSAICFGR_PLLSAIM)
+#if defined(STM32_PLL_M_DIVISOR) && (STM32_PLL_M_DIVISOR != STM32_PLLSAI_M_DIVISOR)
+#error "PLLSAI M divisor must have same value as PLL M divisor"
+#endif
+#endif
+
+#if STM32_PLLSAI_P_ENABLED
+#if defined(RCC_PLLSAICFGR_PLLSAIP)
+	LL_RCC_PLLSAI_ConfigDomain_48M(get_pllsai_source(),
+				       pllsaim(STM32_PLLSAI_M_DIVISOR),
+				       STM32_PLLSAI_N_MULTIPLIER,
+				       pllsaip(STM32_PLLSAI_P_DIVISOR));
+#else
+#error "PLLSAI do not have P output on this SOC"
+#endif
+#endif /* STM32_PLLSAI_P_ENABLED */
+
+#if STM32_PLLSAI_Q_ENABLED && STM32_PLLSAI_DIVQ_ENABLED
+#if defined(RCC_PLLSAICFGR_PLLSAIQ)
+	LL_RCC_PLLSAI_ConfigDomain_SAI(get_pllsai_source(),
+				       pllsaim(STM32_PLLSAI_M_DIVISOR),
+				       STM32_PLLSAI_N_MULTIPLIER,
+				       pllsaiq(STM32_PLLSAI_Q_DIVISOR),
+				       pllsaidivq(STM32_PLLSAI_DIVQ_DIVISOR));
+#else
+#error "PLLSAI do not have Q output on this SOC"
+#endif
+#endif /* STM32_PLLSAI_Q_ENABLED && STM32_PLLSAI_DIVQ_ENABLED */
+
+#if STM32_PLLSAI_R_ENABLED && STM32_PLLSAI_DIVR_ENABLED
+#if defined(RCC_PLLSAICFGR_PLLSAIR)
+	LL_RCC_PLLSAI_ConfigDomain_LTDC(get_pllsai_source(),
+					pllsaim(STM32_PLLSAI_M_DIVISOR),
+					STM32_PLLSAI_N_MULTIPLIER,
+					pllsair(STM32_PLLSAI_R_DIVISOR),
+					pllsaidivr(STM32_PLLSAI_DIVR_DIVISOR));
+#else
+#error "PLLSAI do not have R output on this SOC"
+#endif
+#endif /* STM32_PLLSAI_R_ENABLED && STM32_PLLSAI_DIVR_ENABLED */
+}
+
+#endif /* STM32_PLLSAI_ENABLED */
+
 /**
  * @brief Activate default clocks
  */
