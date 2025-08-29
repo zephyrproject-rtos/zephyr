@@ -42,7 +42,7 @@
 			compatible = "zephyr,memory-region", "mmio-dram";
 			reg = <0x9a000000 0x66000000>;
 			zephyr,memory-region = "DEVICE_REGION";
-			zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_IO) )>;
+			zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_IO)>;
 		};
 	};
 };
