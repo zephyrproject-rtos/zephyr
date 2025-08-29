@@ -356,7 +356,8 @@ void lll_scan_aux_isr_aux_setup(void *param)
 	aux_start_us -= EVENT_JITTER_US;
 
 	start_us = radio_tmr_start_us(0, aux_start_us);
-	LL_ASSERT(start_us == (aux_start_us + 1U));
+	LL_ASSERT_MSG(start_us == (aux_start_us + 1U), "aux_offset %u us, start_us %u != %u",
+		      aux_offset_us, start_us, (aux_start_us + 1U));
 
 	/* Setup header complete timeout */
 	hcto = start_us;
