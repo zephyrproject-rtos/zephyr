@@ -59,11 +59,11 @@
 };
 
 &gpiote {
-	status ="okay";
+	status = "okay";
 };
 
 &gpio0 {
-	status ="okay";
+	status = "okay";
 };
 
 &uart0 {
