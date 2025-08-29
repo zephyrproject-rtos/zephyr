@@ -1,0 +1,16 @@
+identifier: rpi_pico2/rp2350a/m33_cpu0
+name: Raspberry Pi Pico 2 (Cortex-M33 CPU0)
+type: mcu
+arch: arm
+flash: 4096
+ram: 256
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - clock
+  - counter
+  - hwinfo
+  - i2c
+  - pwm
+  - uart

@@ -19,6 +19,26 @@ config SOC_RP2350A_M33
 	select CPU_HAS_FPU
 	select ARMV8_M_DSP
 
+config SOC_RP2350A_M33_CPU0
+	select ARM
+	select ARM_TRUSTZONE_M
+	select CPU_CORTEX_M_HAS_SYSTICK
+	select CPU_CORTEX_M_HAS_VTOR
+	select CPU_CORTEX_M33
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_ARM_SAU
+	select CPU_HAS_FPU
+
+config SOC_RP2350A_M33_CPU1
+	select ARM
+	select ARM_TRUSTZONE_M
+	select CPU_CORTEX_M_HAS_SYSTICK
+	select CPU_CORTEX_M_HAS_VTOR
+	select CPU_CORTEX_M33
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_ARM_SAU
+	select CPU_HAS_FPU
+
 config SOC_RP2350B_M33
 	select ARM
 	select ARM_TRUSTZONE_M
@@ -32,10 +52,46 @@ config SOC_RP2350B_M33
 
 config RP2_REQUIRES_IMAGE_DEFINITION_BLOCK
 	bool
-	default y
+	# IMAGE_DEF should be used to define the image for booting CPU0
+	default y if !SOC_RP2350A_M33_CPU1
 	# Currently the IDF only supports using the Cortex-M33 cores. Enforce
 	# this at build configuration time.
 	depends on SOC_SERIES_RP2350 && CPU_CORTEX_M33
 	help
 	  Include an Image Definition Block (IMAGE_DEF) to enable the bootroom in
 	  RP23XX devices to consider this a valid image in flash.
+
+config SOC_RP2350_CPU1_ENABLE
+	bool "Boot the RP2350 CPU1"
+	default y if IPM || MBOX
+	depends on SOC_RP2350A_M33_CPU0
+	depends on $(dt_nodelabel_enabled,sram0_cpu1)
+	select SOC_LATE_INIT_HOOK
+	help
+	  If enabled, the second CPU will be powered up and pointed to its application
+	  entrypoint during SoC late init hook.
+
+config SOC_RP2350_CPU1_ENABLE_CHECK_VTOR
+	bool "Check VTOR before booting the second core"
+	default y
+	depends on SOC_RP2350_CPU1_ENABLE
+	help
+	  Verify that VTOR pointers are valid before booting the second CPU.
+
+if SOC_RP2350A_M33_CPU1
+
+# If a code partition is defined for the CPU1 core,
+# make sure we relocate the code to be stored in that partition
+# Use cpu1_slot0_partition alias to make init code copy this to the RAM
+# Running CPU1 from flash is not recommended due to
+# access conflicts with CPU0 writes
+DT_CHOSEN_CODE_PARTITION = zephyr,code-partition
+DT_CHOSEN_SRAM = zephyr,sram
+
+config BUILD_OUTPUT_ADJUST_LMA
+	default "$(dt_chosen_partition_addr_hex,$(DT_CHOSEN_CODE_PARTITION)) - \
+		 $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_SRAM))" if SOC_RP2350A_M33_CPU1 && \
+			$(dt_chosen_enabled,$(DT_CHOSEN_CODE_PARTITION)) && \
+			$(dt_chosen_enabled,$(DT_CHOSEN_SRAM))
+
+endif # SOC_RP2350A_M33_CPU1

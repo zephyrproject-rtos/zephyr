@@ -20,64 +20,21 @@
  * implemented) Hazard3 cores.
  */
 #include "rpi_pico2.dtsi"
+#include "rpi_pico2_split.dtsi"
+
+/delete-node/ &cpu0;
 
 / {
 	chosen {
-		zephyr,sram = &sram0;
-		zephyr,flash = &flash0;
-		zephyr,console = &uart0;
-		zephyr,shell-uart = &uart0;
+		zephyr,sram = &sram0_cpu1;
+		// Flash is only assigned to CPU0, CPU1 must
+		// execute from RAM to avoid access conflicts
+		// You can add a code-partition
+		// Then add image-source to the &cpu1_launcher on cpu0
+		// zephyr,code-partition = &cpu1_slot0_partition;
 	};
-
-	aliases {
-		watchdog0 = &wdt0;
-	};
-};
-
-&flash0 {
-	status = "okay";
-};
-
-&uart0 {
-	status = "okay";
-};
-
-gpio0_lo: &gpio0 {
-	status = "okay";
-};
-
-&spi0 {
-	status = "okay";
-};
-
-&i2c0 {
-	status = "okay";
-};
-
-&i2c1 {
-	status = "okay";
-};
-
-&adc {
-	status = "okay";
-};
-
-&pwm {
-	status = "okay";
-};
-
-&timer0 {
-	status = "okay";
-};
-
-&wdt0 {
-	status = "okay";
 };
 
 zephyr_udc0: &usbd {
-	status = "okay";
-};
-
-&led0 {
 	status = "okay";
 };
