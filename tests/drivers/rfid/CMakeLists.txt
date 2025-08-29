@@ -18,5 +18,4 @@ target_include_directories(app
 target_sources(app
   PRIVATE
     src/cr95hf_spi.c
-    mocks/spi_mock.c
 )

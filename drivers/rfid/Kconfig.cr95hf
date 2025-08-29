@@ -8,3 +8,10 @@ config RFID_CR95HF
 	depends on SPI || UART
 	help
 	  Enable support for the CR95HF RFID driver.
+
+config EMUL_CR95HF
+	bool "Support for CR95HF emulation"
+	depends on DT_HAS_ST_CR95HF_ENABLED
+	depends on SPI
+	help
+	  Enable support for the CR95HF emulation

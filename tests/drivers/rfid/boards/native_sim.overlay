@@ -12,12 +12,6 @@
 		#size-cells = <0>;
 		cs-gpios = <&gpio0 4 GPIO_ACTIVE_LOW>;
 
-		spi_emul: spi_emul@0 {
-			compatible = "zephyr,spi-emul";
-			reg = <0>;
-			status = "okay";
-		};
-
 		cr95hf: cr95hf@0 {
 			compatible = "st,cr95hf";
 			reg = <0>;
@@ -32,6 +26,5 @@
 &{/} {
 	aliases {
 		rfid = &cr95hf;
-		spi-emul = &spi_emul;
 	};
 };

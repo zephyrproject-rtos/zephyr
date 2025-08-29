@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#define DT_DRV_COMPAT zephyr_spi_emul
+#define DT_DRV_COMPAT st_cr95hf
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(spi_emul_cr95hf, LOG_LEVEL_DBG);
@@ -177,8 +177,6 @@ static int cr95hf_emul_init(const struct emul *cr95hf_emul, const struct device 
 #define DEFINE_SPI_EMUL(n)                                                                         \
 	static struct cr95hf_emul_data cr95hf_emul_data_##n;                                       \
 	EMUL_DT_INST_DEFINE(n, &cr95hf_emul_init, &cr95hf_emul_data_##n, NULL, &cr95hf_emul_api,   \
-			    NULL);                                                                 \
-	DEVICE_DT_INST_DEFINE(n, NULL, NULL, NULL, NULL, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,    \
-			      NULL)
+			    NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(DEFINE_SPI_EMUL)
