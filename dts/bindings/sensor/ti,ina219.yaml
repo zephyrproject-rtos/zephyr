@@ -5,21 +5,9 @@ description: Texas Instruments Bidirectional Current/Power Sensor
 
 compatible: "ti,ina219"
 
-include: [sensor-device.yaml, i2c-device.yaml]
+include: ti,ina2xx-common.yaml
 
 properties:
-  lsb-microamp:
-    type: int
-    required: true
-    description: |
-      Current LSB in microAmpere
-      Current LSB = max expected current [A] / 2^15
-      example: 100 -> ~3A
-  shunt-milliohm:
-    type: int
-    required: true
-    description: |
-      Value of the shunt resistor in milliOhm
   brng:
     type: int
     default: 1

@@ -1,11 +1,14 @@
 /*
- * Copyright (c) 2021 Leonard Pollak
+ * Copyright 2021 Leonard Pollak
+ * Copyright 2025 Nova Dynamics LLC
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_DRIVERS_SENSOR_INA219_INA219_H_
-#define ZEPHYR_DRIVERS_SENSOR_INA219_INA219_H_
+#ifndef ZEPHYR_DRIVERS_SENSOR_INA2XX_INA219_H_
+#define ZEPHYR_DRIVERS_SENSOR_INA2XX_INA219_H_
+
+#include "ina2xx_common.h"
 
 /* Device register addresses */
 #define INA219_REG_CONF		0x00
@@ -45,56 +48,17 @@
 #define INA219_WAIT_MSR_RETRY	100
 #define INA219_SCALING_FACTOR	4096000
 
-struct ina219_config {
-	struct i2c_dt_spec bus;
-	uint16_t current_lsb;
-	uint16_t r_shunt;
-	uint8_t brng;
-	uint8_t pg;
-	uint8_t badc;
-	uint8_t sadc;
-	uint8_t mode;
-};
-
 struct ina219_data {
-	uint16_t config;
 	uint16_t v_bus;
 	uint16_t power;
 	uint16_t current;
-	uint16_t calib;
 	uint32_t msr_delay;
 };
 
-static int ina219_init(const struct device *dev);
+struct ina219_config {
+	struct ina2xx_config common;
+	uint8_t badc;
+	uint8_t sadc;
+};
 
-static inline int ina219_conv_delay(uint8_t delay_idx)
-{
-	switch (delay_idx) {
-	case 0:
-		return 84;
-	case 1:
-		return 148;
-	case 2:
-		return 276;
-	case 3:
-		return 532;
-	case 9:
-		return 1060;
-	case 10:
-		return 2013;
-	case 11:
-		return 4260;
-	case 12:
-		return 8510;
-	case 13:
-		return 17020;
-	case 14:
-		return 34050;
-	case 15:
-		return 68100;
-	default:
-		return -EINVAL;
-	}
-}
-
-#endif /* ZEPHYR_DRIVERS_SENSOR_INA219_INA219_H_ */
+#endif /* ZEPHYR_DRIVERS_SENSOR_INA2XX_INA219_H_ */
