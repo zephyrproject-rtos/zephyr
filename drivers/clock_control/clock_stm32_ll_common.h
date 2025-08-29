@@ -42,12 +42,23 @@
 #define z_plli2s_r(v) LL_RCC_PLLI2SR_DIV_ ## v
 #define plli2sr(v) z_plli2s_r(v)
 
-#if defined(RCC_PLLSAI1M_DIV_1_16_SUPPORT)
-#define z_pllsai1_m(v) LL_RCC_PLLSAI1M_DIV_ ## v
-#else
-#define z_pllsai1_m(v) LL_RCC_PLLM_DIV_ ## v
-#endif
-#define pllsai1m(v) z_pllsai1_m(v)
+#define z_pllsai_m(v) LL_RCC_PLLM_DIV_ ## v
+#define pllsaim(v) z_pllsai_m(v)
+
+#define z_pllsai_p(v) LL_RCC_PLLSAIP_DIV_ ## v
+#define pllsaip(v) z_pllsai_p(v)
+
+#define z_pllsai_q(v) LL_RCC_PLLSAIQ_DIV_ ## v
+#define pllsaiq(v) z_pllsai_q(v)
+
+#define z_pllsai_divq(v) LL_RCC_PLLSAIDIVQ_DIV_ ## v
+#define pllsaidivq(v) z_pllsai_divq(v)
+
+#define z_pllsai_r(v) LL_RCC_PLLSAIR_DIV_ ## v
+#define pllsair(v) z_pllsai_r(v)
+
+#define z_pllsai_divr(v) LL_RCC_PLLSAIDIVR_DIV_ ## v
+#define pllsaidivr(v) z_pllsai_divr(v)
 
 #define z_pllsai1_p(v) LL_RCC_PLLSAI1P_DIV_ ## v
 #define pllsai1p(v) z_pllsai1_p(v)
@@ -91,6 +102,10 @@ void config_pll2(void);
 #endif
 #if defined(STM32_PLLI2S_ENABLED)
 void config_plli2s(void);
+#endif
+#if defined(STM32_PLLSAI_ENABLED)
+uint32_t get_pllsaisrc_frequency(void);
+void config_pllsai(void);
 #endif
 #if defined(STM32_PLLSAI1_ENABLED)
 uint32_t get_pllsai1src_frequency(void);
