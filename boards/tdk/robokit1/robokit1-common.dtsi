@@ -96,8 +96,8 @@
 	pinctrl-names = "default";
 	dmas = <&xdmac 0 DMA_PERID_SPI0_TX>, <&xdmac 1 DMA_PERID_SPI0_RX>;
 	dma-names = "tx", "rx";
-	cs-gpios =<&pioa 31 GPIO_ACTIVE_LOW>,
-				<&pioc 31 GPIO_ACTIVE_LOW>;
+	cs-gpios = <&pioa 31 GPIO_ACTIVE_LOW>,
+		   <&pioc 31 GPIO_ACTIVE_LOW>;
 	status = "okay";
 
 	icm42688: icm42688p@0 {
@@ -184,7 +184,6 @@ zephyr_udc0: &usbhs {
 	pinctrl-names = "default";
 	status = "okay";
 };
-
 
 &xdmac {
 	status = "okay";
