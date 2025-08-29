@@ -24,6 +24,18 @@ properties:
     description: |
       Describes an offset between inst index and actual GPIO port number.
 
+  wakeup-line:
+    type: int
+    description: |
+      On some NXP platforms, GPIO can wake up the MCU from low power mode,
+      but the wakeup capability is configured through a specific peripheral.
+      Such as the wakeup unit. We need to use the wakeup unit peripheral to
+      configure which GPIO and which signal can wake up the MCU from low power
+      mode.
+      Note: Users need to configure this property according to the options
+      provided in 'zephyr/dt-bindings/gpio/nxp-kinetis-gpio', The driver will
+      parses this property and configures the wakeup uint.
+
 gpio-cells:
   - pin
   - flags

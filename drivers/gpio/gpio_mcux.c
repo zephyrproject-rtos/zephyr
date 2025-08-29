@@ -39,6 +39,10 @@ struct gpio_mcux_config {
 	PORT_Type *port_base;
 	unsigned int flags;
 	uint32_t port_no;
+#if defined(CONFIG_PM) || defined(CONFIG_POWEROFF)
+	bool wakeup_source;
+	uint32_t wakeup_line;
+#endif
 };
 
 struct gpio_mcux_data {
@@ -208,6 +212,29 @@ static int gpio_mcux_port_configure(const struct device *dev, gpio_pin_t pin, gp
 
 	/* Accessing by pin, we only need to write one PCR register. */
 	port_base->PCR[pin] = (port_base->PCR[pin] & ~mask) | pcr;
+
+#if (defined(CONFIG_PM) || defined(CONFIG_POWEROFF)) &&	\
+	defined(FSL_FEATURE_SOC_WUU_COUNT)
+	uint8_t pin_index;
+	uint8_t wuu_reg_index;
+	uint8_t wakeup_signal_type;
+
+	KINETIS_GPIO_WAKEUP_SOURCE_DECODE(config->wakeup_line);
+
+	if ((config->wakeup_source) && (pin_index == pin)) {
+		wuu_external_wakeup_pin_config_t wakeup_pin_config;
+
+		wakeup_pin_config.edge = wakeup_signal_type;
+		wakeup_pin_config.event = kWUU_ExternalPinInterrupt;
+		wakeup_pin_config.mode = kWUU_ExternalPinActiveAlways;
+
+		if (WUU_GetExternalWakeUpPinsFlag(WUU0) == BIT(wuu_reg_index)) {
+			WUU_ClearExternalWakeUpPinsFlag(WUU0, BIT(wuu_reg_index));
+		}
+
+		WUU_SetExternalWakeUpPinsConfig(WUU0, wuu_reg_index, &wakeup_pin_config);
+	}
+#endif
 
 	return 0;
 }
@@ -411,6 +438,22 @@ static void gpio_mcux_port_isr(const struct device *dev)
 	ARG_UNUSED(config);
 #endif /* defined(GPIO_MCUX_HAS_INTERRUPT_CHANNEL_SELECT) || defined(PORT_HAS_NO_INTERRUPT) */
 
+#if (defined(CONFIG_PM) || defined(CONFIG_POWEROFF)) &&	\
+	defined(FSL_FEATURE_SOC_WUU_COUNT)
+
+	uint8_t pin_index;
+	uint8_t wuu_reg_index;
+	uint8_t wakeup_signal_type;
+
+	KINETIS_GPIO_WAKEUP_SOURCE_DECODE(config->wakeup_line);
+
+	if (config->wakeup_source) {
+		if (WUU_GetExternalWakeUpPinsFlag(WUU0) == BIT(wuu_reg_index)) {
+			WUU_ClearExternalWakeUpPinsFlag(WUU0, BIT(wuu_reg_index));
+		}
+	}
+#endif
+
 	gpio_fire_callbacks(&data->callbacks, dev, int_status);
 }
 
@@ -485,6 +528,16 @@ static DEVICE_API(gpio, gpio_mcux_driver_api) = {
 #endif /* CONFIG_GPIO_GET_DIRECTION */
 };
 
+#if (defined(CONFIG_PM) || defined(CONFIG_POWEROFF)) &&					\
+	defined(FSL_FEATURE_SOC_WUU_COUNT)
+#define GPIO_ENABLED_WAKEUP_FUNCTION(n)							\
+	.wakeup_source = DT_INST_PROP(n, wakeup_source),				\
+	IF_ENABLED(DT_INST_PROP(n, wakeup_source),					\
+		(.wakeup_line = DT_INST_PROP(n, wakeup_line),))
+#else
+#define GPIO_ENABLED_WAKEUP_FUNCTION(n)
+#endif
+
 #define GPIO_MCUX_IRQ_INIT(n)                                                                      \
 	do {                                                                                       \
 		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), gpio_mcux_port_isr,         \
@@ -510,6 +563,7 @@ static DEVICE_API(gpio, gpio_mcux_driver_api) = {
 		.flags = UTIL_AND(UTIL_OR(DT_INST_IRQ_HAS_IDX(n, 0), GPIO_HAS_SHARED_IRQ),         \
 				  GPIO_INT_ENABLE),                                                \
 		.port_no = GPIO_PORT_NUMBER(n),						\
+		GPIO_ENABLED_WAKEUP_FUNCTION(n)                                                    \
 	};                                                                                         \
                                                                                                    \
 	static struct gpio_mcux_data gpio_mcux_port##n##_data;                                     \
