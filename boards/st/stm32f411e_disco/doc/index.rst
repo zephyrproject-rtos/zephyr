@@ -77,6 +77,7 @@ Default Zephyr Peripheral Mapping:
 - LD4 : PD12 (PWM4 CH1)
 - LD5 : PD14 (PWM4 CH3)
 - LD6 : PD15 (PWM4 CH4)
+- SPI1: PE3, PA5, PA6, PA7 (CS, SCK, MISO, MOSI)
 
 System Clock
 ============
