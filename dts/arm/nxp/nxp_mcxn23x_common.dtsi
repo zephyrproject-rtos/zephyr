@@ -855,6 +855,7 @@
 		prescaler = <1>;
 		clk-source = <1>;
 		resolution = <32>;
+		wakeup-line = <6>;
 	};
 
 	lptmr1: lptmr@4b000 {
@@ -865,6 +866,7 @@
 		prescaler = <1>;
 		clk-source = <1>;
 		resolution = <32>;
+		wakeup-line = <7>;
 	};
 
 	mrt0: mrt@13000 {
@@ -960,6 +962,12 @@
 		nxp,tx-dma-channel = <2>;
 		nxp,rx-dma-channel = <3>;
 		status = "disabled";
+	};
+
+	spc: spc@40045000 {
+		compatible = "nxp,spc";
+		reg = <0x40045000 0x1000>;
+		wakeup-delay = <780>;
 	};
 };
 
