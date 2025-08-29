@@ -189,13 +189,13 @@ struct bt_avdtp_recovery_capabilities {
 struct bt_avdtp_media_codec_capabilities {
 	uint8_t media_type;
 	uint8_t media_code_type;
-	uint8_t media_codec_spec_info[0];
+	uint8_t media_codec_spec_info[];
 } __packed;
 
 struct bt_avdtp_content_protection_capabilities {
 	uint8_t cp_type_lsb;
 	uint8_t cp_type_msb;
-	uint8_t cp_type_spec_value[0];
+	uint8_t cp_type_spec_value[];
 } __packed;
 
 struct bt_avdtp_header_compression_capabilities {
