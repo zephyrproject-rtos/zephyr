@@ -64,6 +64,9 @@ config ESP32_WIFI_AP_STA_MODE
 	  The Station/AP coexistence mode allows the ESP32 to operate as both a station and
 	  an access point simultaneously.
 
+config WIFI_NM_MAX_MANAGED_INTERFACES
+	default 2
+
 config ESP32_WIFI_STA_RECONNECT
 	bool "WiFi connection retry"
 	help
