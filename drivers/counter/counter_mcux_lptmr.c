@@ -11,6 +11,7 @@
 #include <zephyr/drivers/counter.h>
 #include <zephyr/irq.h>
 #include <fsl_lptmr.h>
+#include <soc.h>
 
 struct mcux_lptmr_config {
 	struct counter_config_info info;
@@ -22,6 +23,10 @@ struct mcux_lptmr_config {
 	lptmr_pin_select_t pin;
 	lptmr_pin_polarity_t polarity;
 	void (*irq_config_func)(const struct device *dev);
+#if defined(CONFIG_PM) || defined(CONFIG_POWEROFF)
+	bool wakeup_source;
+	uint8_t wakeup_line;
+#endif
 };
 
 struct mcux_lptmr_data {
@@ -106,6 +111,13 @@ static uint32_t mcux_lptmr_get_top_value(const struct device *dev)
 	return (config->base->CMR & LPTMR_CMR_COMPARE_MASK) + 1U;
 }
 
+static uint32_t mcux_lptmr_get_freq(const struct device *dev)
+{
+	const struct mcux_lptmr_config *config = dev->config;
+
+	return config->info.freq;
+}
+
 static void mcux_lptmr_isr(const struct device *dev)
 {
 	const struct mcux_lptmr_config *config = dev->config;
@@ -141,6 +153,14 @@ static int mcux_lptmr_init(const struct device *dev)
 
 	LPTMR_SetTimerPeriod(config->base, config->info.max_top_value);
 
+#if (defined(CONFIG_PM) || defined(CONFIG_POWEROFF)) &&	\
+	defined(FSL_FEATURE_SOC_WUU_COUNT)
+	if (config->wakeup_source) {
+		WUU_SetInternalWakeUpModulesConfig(WUU0,
+			config->wakeup_line,
+			kWUU_InternalModuleInterrupt);
+	}
+#endif
 	config->irq_config_func(dev);
 
 	return 0;
@@ -153,7 +173,17 @@ static DEVICE_API(counter, mcux_lptmr_driver_api) = {
 	.set_top_value = mcux_lptmr_set_top_value,
 	.get_pending_int = mcux_lptmr_get_pending_int,
 	.get_top_value = mcux_lptmr_get_top_value,
+	.get_freq = mcux_lptmr_get_freq,
 };
+
+#if (defined(CONFIG_PM) || defined(CONFIG_POWEROFF)) &&				\
+	defined(FSL_FEATURE_SOC_WUU_COUNT)
+#define LPTMR_ENABLED_WAKEUP_FUNCTION(inst)					\
+	.wakeup_source = DT_INST_PROP(inst, wakeup_source),			\
+	.wakeup_line = DT_INST_PROP(inst, wakeup_line),
+#else
+#define LPTMR_ENABLED_WAKEUP_FUNCTION(inst)
+#endif
 
 #define COUNTER_MCUX_LPTMR_DEVICE_INIT(n)					\
 	static void mcux_lptmr_irq_config_##n(const struct device *dev)		\
@@ -193,6 +223,7 @@ static DEVICE_API(counter, mcux_lptmr_driver_api) = {
 		.prescaler_glitch = DT_INST_PROP(n, prescale_glitch_filter) +	\
 			DT_INST_PROP(n, timer_mode_sel) - 1,			\
 		.irq_config_func = mcux_lptmr_irq_config_##n,			\
+		LPTMR_ENABLED_WAKEUP_FUNCTION(n)				\
 	};									\
 										\
 	DEVICE_DT_INST_DEFINE(n, &mcux_lptmr_init, NULL,			\
