@@ -1,5 +1,5 @@
 /*
- * Copyright 2024  NXP
+ * Copyright 2024-2025 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr/init.h>
@@ -7,6 +7,7 @@
 #include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
 #include <fsl_clock.h>
 #include <fsl_spc.h>
+#include <fsl_vbat.h>
 #include <soc.h>
 
 /* Core clock frequency: 96MHz */
@@ -227,6 +228,7 @@ void board_early_init_hook(void)
  * 3 <- Combination of clocks configured in MRCC_LPTMR0_CLKSEL[MUX] field
  */
 #if DT_PROP(DT_NODELABEL(lptmr0), clk_source) == 0x1
+	VBAT_EnableFRO16k(VBAT0, true);
 	CLOCK_SetupFRO16KClocking(kCLKE_16K_SYSTEM | kCLKE_16K_COREMAIN);
 #elif DT_PROP(DT_NODELABEL(lptmr0), clk_source) == 0x3
 	CLOCK_SetClockDiv(kCLOCK_DivLPTMR0, 1u);
