@@ -309,9 +309,14 @@ __subsystem struct rfid_driver_api {
  */
 
 /**
- * @brief
+ * @brief Claim an RFID device.
  *
- * TODO
+ * This function is called to claim ownership of an RFID device,
+ * allowing the caller to perform operations on it.
+ * The device must be released after use by calling `rfid_release()`.
+ *
+ * @param dev The RFID device to claim.
+ * @return 0 on success.
  */
 __syscall rfid_proto_t rfid_claim(const struct device *dev);
 
@@ -323,9 +328,14 @@ static inline rfid_proto_t z_impl_rfid_claim(const struct device *dev)
 }
 
 /**
- * @brief
+ * @brief Release an RFID device.
  *
- * TODO
+ * This function is called to release ownership of an RFID device that was previously claimed
+ * using `rfid_claim()`.
+ * After calling this function, the device can be claimed by other callers.
+ *
+ * @param dev The RFID device to release.
+ * @return 0 on success.
  */
 __syscall rfid_proto_t rfid_release(const struct device *dev);
 
@@ -337,9 +347,17 @@ static inline rfid_proto_t z_impl_rfid_release(const struct device *dev)
 }
 
 /**
- * @brief
+ * @brief Load the specified RFID protocol on the device.
  *
- * TODO
+ * This function allows the caller to load a specific RFID protocol
+ * for communication with RFID tags. The device must support the
+ * requested protocol and mode. If successful, the device will be
+ * prepared to interact according to the specified protocol.
+ *
+ * @param dev The RFID device on which to load the protocol.
+ * @param proto The RFID protocol to be loaded.
+ * @param mode The communication mode to be used.
+ * @return 0 on success, or a negative error code on failure.
  */
 __syscall int rfid_load_protocol(const struct device *dev, rfid_proto_t proto, rfid_mode_t mode);
 
@@ -356,9 +374,18 @@ static inline int z_impl_rfid_load_protocol(const struct device *dev, rfid_proto
 }
 
 /**
- * @brief
+ * @brief Get RFID properties from the device.
  *
- * TODO
+ * This function retrieves the current properties of the specified RFID device,
+ * storing them in the provided struct array. The number of properties returned
+ * will depend on the device's capabilities and the length provided.
+ *
+ * @param dev The RFID device from which to retrieve properties.
+ * @param props Pointer to an array of rfid_property structures to fill with the
+ *              retrieved properties.
+ * @param props_len The length of the props array, indicating how many properties
+ *                  can be retrieved.
+ * @return 0 on success, or a negative error code on failure.
  */
 __syscall int rfid_get_properties(const struct device *dev, struct rfid_property *props,
 				  size_t props_len);
@@ -376,9 +403,19 @@ static inline int z_impl_rfid_get_properties(const struct device *dev, struct rf
 }
 
 /**
- * @brief
+ * @brief Set RFID properties on the device.
  *
- * TODO
+ * This function allows the caller to configure the specified RFID
+ * properties on the given RFID device. The properties provided in
+ * the props array will be set according to the device's capabilities.
+ * The number of properties to be set is indicated by props_len.
+ *
+ * @param dev The RFID device on which to set properties.
+ * @param props Pointer to an array of rfid_property structures containing
+ *              the properties to be set.
+ * @param props_len The length of the props array, indicating how many
+ *                  properties are to be set.
+ * @return 0 on success, or a negative error code on failure.
  */
 __syscall int rfid_set_properties(const struct device *dev, struct rfid_property *props,
 				  size_t props_len);
@@ -396,9 +433,20 @@ static inline int z_impl_rfid_set_properties(const struct device *dev, struct rf
 }
 
 /**
- * @brief
+ * @brief Send and receive data as an RFID initiator.
  *
- * TODO
+ * This function allows the caller to transmit data to an RFID target and
+ * receive a response. It operates in initiator mode, facilitating
+ * communication with RFID tags.
+ *
+ * @param dev The RFID device to perform the transceive operation.
+ * @param tx_data Pointer to the data to be transmitted.
+ * @param tx_len Length of the data to be transmitted.
+ * @param tx_last_bits Number of bits to be transmitted in the last byte.
+ * @param rx_data Pointer to a buffer where the received data will be stored.
+ * @param rx_len Pointer to a variable that holds the length of the received data.
+ *               It will be updated with the actual length received.
+ * @return 0 on success, or a negative error code on failure.
  */
 __syscall int rfid_initiator_transceive(const struct device *dev, const uint8_t *tx_data,
 					uint16_t tx_len, uint8_t tx_last_bits, uint8_t *rx_data,
@@ -418,9 +466,16 @@ static inline int z_impl_rfid_initiator_transceive(const struct device *dev, con
 }
 
 /**
- * @brief
+ * @brief Transmit data as an RFID target.
  *
- * TODO
+ * This function allows the caller to send data to an RFID initiator
+ * in target mode. It facilitates communication with RFID readers.
+ *
+ * @param dev The RFID device to perform the transmit operation.
+ * @param tx_data Pointer to the data to be transmitted.
+ * @param tx_len Length of the data to be transmitted.
+ * @param tx_last_bits Number of bits to be transmitted in the last byte.
+ * @return 0 on success, or a negative error code on failure.
  */
 __syscall int rfid_target_transmit(const struct device *dev, const uint8_t *tx_data,
 				   uint16_t tx_len, uint8_t tx_last_bits);
@@ -438,9 +493,17 @@ static inline int z_impl_rfid_target_transmit(const struct device *dev, const ui
 }
 
 /**
- * @brief
+ * @brief Receive data as an RFID target.
  *
- * TODO
+ * This function allows the caller to receive data from an RFID initiator
+ * while operating in target mode. It facilitates communication with RFID readers
+ * and processes incoming data.
+ *
+ * @param dev The RFID device to perform the receive operation.
+ * @param rx_data Pointer to a buffer where the received data will be stored.
+ * @param rx_len Pointer to a variable that holds the length of the received data.
+ *               It will be updated with the actual length received.
+ * @return 0 on success, or a negative error code on failure.
  */
 __syscall int rfid_target_receive(const struct device *dev, uint8_t *rx_data, uint16_t *rx_len);
 
@@ -457,9 +520,18 @@ static inline int z_impl_rfid_target_receive(const struct device *dev, uint8_t *
 }
 
 /**
- * @brief
+ * @brief Listen for RFID data.
  *
- * TODO
+ * This function allows the caller to listen for incoming RFID data
+ * on the specified protocol. It enables the device to receive data
+ * from RFID initiators.
+ *
+ * @param dev The RFID device to listen on.
+ * @param proto The RFID protocol to use for listening.
+ * @param rx_data Pointer to a buffer where the received data will be stored.
+ * @param rx_len Pointer to a variable that holds the length of the received data.
+ *               It will be updated with the actual length received.
+ * @return 0 on success, or a negative error code on failure.
  */
 __syscall int rfid_listen(const struct device *dev, rfid_proto_t proto, uint8_t *rx_data,
 			  uint16_t *rx_len);
@@ -477,9 +549,17 @@ static inline int z_impl_rfid_listen(const struct device *dev, rfid_proto_t prot
 }
 
 /**
- * @brief
+ * @brief Get the supported RFID protocols.
  *
- * TODO
+ * This function retrieves the protocols that the specified RFID
+ * device supports. The protocols can include various RFID standards
+ * and modes which the device is capable of handling. This is useful
+ * for determining the compatibility of the device with different
+ * RFID tags and systems.
+ *
+ * @param dev The RFID device from which to retrieve the supported protocols.
+ * @return A bitmask of supported RFID protocols on success, or a negative
+ *         error code on failure.
  */
 __syscall rfid_proto_t rfid_supported_protocols(const struct device *dev);
 
@@ -495,9 +575,18 @@ static inline rfid_proto_t z_impl_rfid_supported_protocols(const struct device *
 }
 
 /**
- * @brief
+ * @brief Get the supported RFID modes for a given protocol.
  *
- * TODO
+ * This function retrieves the modes that the specified RFID
+ * device supports for a particular protocol. The modes can
+ * include various operational configurations the device can
+ * handle, allowing for appropriate communication settings
+ * with different RFID systems.
+ *
+ * @param dev The RFID device from which to retrieve the supported modes.
+ * @param proto The RFID protocol for which to get supported modes.
+ * @return A bitmask of supported RFID modes on success, or a negative
+ *         error code on failure.
  */
 __syscall rfid_mode_t rfid_supported_modes(const struct device *dev, rfid_proto_t proto);
 

@@ -5,7 +5,7 @@
 menuconfig RFID
 	bool "RFID Drivers"
 	help
-		Enable RFID driver configuration.
+	  Enable RFID driver configuration.
 
 if RFID
 
@@ -17,7 +17,7 @@ config RFID_INIT_PRIORITY
 	int "Init priority"
 	default KERNEL_INIT_PRIORITY_DEVICE
 	help
-		Device driver initialization priority.
+	  Device driver initialization priority.
 
 source "drivers/rfid/Kconfig.cr95hf"
 
