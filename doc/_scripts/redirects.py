@@ -254,7 +254,7 @@ REDIRECTS = (
     ('samples/boards/mec15xxevb_assy6853/power_management/README', 'samples/boards/microchip/mec15xxevb_assy6853/power_management/README'),
     ('samples/boards/mimxrt1060_evk/system_off/README', 'samples/boards/nxp/mimxrt1060_evk/system_off/README'),
     ('samples/boards/mimxrt1170_evk_cm7/magic_addr/README', 'samples/boards/nxp/mimxrt1170_evk_cm7/magic_addr/README'),
-    ('samples/boards/mimxrt595_evk/system_off/README', 'samples/boards/nxp/mimxrt595_evk/system_off/README'),
+    ('samples/boards/mimxrt595_evk/system_off/README', 'samples/boards/nxp/poweroff/README'),
     ('samples/boards/nrf/battery/README', 'samples/boards/nordic/battery/README'),
     ('samples/boards/nrf/clock_skew/README', 'samples/boards/nordic/clock_skew/README'),
     ('samples/boards/nrf/dynamic_pinctrl/README', 'samples/boards/nordic/dynamic_pinctrl/README'),
