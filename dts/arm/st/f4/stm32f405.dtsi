@@ -12,6 +12,14 @@
 		zephyr,entropy = &rng;
 	};
 
+	clocks {
+		pllsai: pllsai {
+			#clock-cells = <0>;
+			compatible = "st,stm32f4-pllsai-clock";
+			status = "disabled";
+		};
+	};
+
 	soc {
 		compatible = "st,stm32f405", "st,stm32f4", "simple-bus";
 
