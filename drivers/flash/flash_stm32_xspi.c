@@ -568,11 +568,20 @@ static int stm32_xspi_write_enable(const struct device *dev,
 }
 
 /* Write Flash configuration register 2 with new dummy cycles */
-static int stm32_xspi_write_cfg2reg_dummy(XSPI_HandleTypeDef *hxspi,
+static int stm32_xspi_write_cfg2reg_dummy(const struct device *dev,
 					uint8_t nor_mode, uint8_t nor_rate)
 {
-	uint8_t transmit_data = SPI_NOR_CR2_DUMMY_CYCLES_66MHZ;
 	XSPI_RegularCmdTypeDef s_command = xspi_prepare_cmd(nor_mode, nor_rate);
+	const struct flash_stm32_xspi_config *dev_cfg = dev->config;
+	struct flash_stm32_xspi_data *dev_data = dev->data;
+	uint8_t transmit_data;
+
+	if (dev_cfg->max_frequency == MHZ(200)) {
+		/* Use memory default value */
+		return 0;
+	}
+
+	transmit_data = SPI_NOR_CR2_DUMMY_CYCLES_66MHZ;
 
 	/* Initialize the writing of configuration register 2 */
 	s_command.Instruction = (nor_mode == XSPI_SPI_MODE)
@@ -583,13 +592,13 @@ static int stm32_xspi_write_cfg2reg_dummy(XSPI_HandleTypeDef *hxspi,
 	s_command.DataLength = (nor_mode == XSPI_SPI_MODE) ? 1U
 			: ((nor_rate == XSPI_DTR_TRANSFER) ? 2U : 1U);
 
-	if (HAL_XSPI_Command(hxspi, &s_command,
+	if (HAL_XSPI_Command(&dev_data->hxspi, &s_command,
 		HAL_XSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
 		LOG_ERR("XSPI transmit cmd");
 		return -EIO;
 	}
 
-	if (HAL_XSPI_Transmit(hxspi, &transmit_data,
+	if (HAL_XSPI_Transmit(&dev_data->hxspi, &transmit_data,
 		HAL_XSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
 		LOG_ERR("XSPI transmit ");
 		return -EIO;
@@ -683,7 +692,7 @@ static int stm32_xspi_config_mem(const struct device *dev)
 	}
 
 	/* Write Configuration register 2 (with new dummy cycles) */
-	if (stm32_xspi_write_cfg2reg_dummy(&dev_data->hxspi,
+	if (stm32_xspi_write_cfg2reg_dummy(dev,
 		XSPI_SPI_MODE, XSPI_STR_TRANSFER) != 0) {
 		LOG_ERR("XSPI write CFGR2 failed");
 		return -EIO;
