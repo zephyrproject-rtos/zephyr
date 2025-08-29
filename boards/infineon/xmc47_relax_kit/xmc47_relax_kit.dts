@@ -57,7 +57,6 @@
 		zephyr,code-partition = &code_partition;
 		zephyr,canbus = &can_node1;
 	};
-
 };
 
 &psram1 {
