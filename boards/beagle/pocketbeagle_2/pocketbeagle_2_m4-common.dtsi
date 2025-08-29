@@ -12,7 +12,11 @@
 	compatible = "beagle,pocketbeagle_2_m4";
 
 	chosen {
-		zephyr,sram = &sram0;
+		/* Split and place TEXT and DATA in I-RAM and D-RAM respectively. `sram_icode`
+		 * is a section in internal SRAM, not an external flash.
+		 */
+		zephyr,flash = &sram_icode;
+		zephyr,sram = &sram_dcode;
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
 		zephyr,ipc = &ipc0;
