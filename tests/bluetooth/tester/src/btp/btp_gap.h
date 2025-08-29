@@ -11,12 +11,13 @@
 #include <stdint.h>
 
 #include <zephyr/bluetooth/addr.h>
+#include <zephyr/sys/util.h>
 
 /* GAP Service */
 /* commands */
 #define BTP_GAP_READ_SUPPORTED_COMMANDS		0x01
 struct btp_gap_read_supported_commands_rp {
-	uint8_t data[0];
+	FLEXIBLE_ARRAY_DECLARE(uint8_t, data);
 } __packed;
 
 #define BTP_GAP_READ_CONTROLLER_INDEX_LIST	0x02
