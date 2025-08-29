@@ -2508,6 +2508,52 @@ __syscall uint32_t k_event_wait_all(struct k_event *event, uint32_t events,
 				    bool reset, k_timeout_t timeout);
 
 /**
+ * @brief Wait for any of the specified events (safe version)
+ *
+ * This call is nearly identical to @ref k_event_wait with the main difference
+ * being that the safe version atomically clears received events from the
+ * event object. This mitigates the need for calling @ref k_event_clear, or
+ * passing a "reset" argument, since doing so may result in lost event
+ * information.
+ *
+ * @param event Address of the event object
+ * @param events Set of desired events on which to wait
+ * @param reset If true, clear the set of events tracked by the event object
+ *              before waiting. If false, do not clear the events.
+ * @param timeout Waiting period for the desired set of events or one of the
+ *                special values K_NO_WAIT and K_FOREVER.
+ *
+ * @retval set of matching events upon success
+ * @retval 0 if no matching event was received within the specified time
+ */
+__syscall uint32_t k_event_wait_safe(struct k_event *event, uint32_t events,
+				     bool reset, k_timeout_t timeout);
+
+/**
+ * @brief Wait for all of the specified events (safe version)
+ *
+ * This call is nearly identical to @ref k_event_wait_all with the main
+ * difference being that the safe version atomically clears received events
+ * from the event object. This mitigates the need for calling
+ * @ref k_event_clear, or passing a "reset" argument, since doing so may
+ * result in lost event information.
+ *
+ * @param event Address of the event object
+ * @param events Set of desired events on which to wait
+ * @param reset If true, clear the set of events tracked by the event object
+ *              before waiting. If false, do not clear the events.
+ * @param timeout Waiting period for the desired set of events or one of the
+ *                special values K_NO_WAIT and K_FOREVER.
+ *
+ * @retval set of matching events upon success
+ * @retval 0 if all matching events were not received within the specified time
+ */
+__syscall uint32_t k_event_wait_all_safe(struct k_event *event, uint32_t events,
+					 bool reset, k_timeout_t timeout);
+
+
+
+/**
  * @brief Test the events currently tracked in the event object
  *
  * @funcprops \isr_ok
