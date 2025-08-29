@@ -101,7 +101,6 @@ BUILD_ASSERT(!IS_ENABLED(CONFIG_PM_DEVICE_SYSTEM_MANAGED));
 #define SPIM_CROSS_DOMAIN_PINS_HANDLE 1
 #endif
 
-
 struct spi_nrfx_data {
 	struct spi_context ctx;
 	const struct device *dev;
@@ -293,8 +292,7 @@ static inline nrf_spim_bit_order_t get_nrf_spim_bit_order(uint16_t operation)
 	}
 }
 
-static int configure(const struct device *dev,
-		     const struct spi_config *spi_cfg)
+static int configure(const struct device *dev, const struct spi_config *spi_cfg)
 {
 	struct spi_nrfx_data *dev_data = dev->data;
 	const struct spi_nrfx_config *dev_config = dev->config;
@@ -467,14 +465,9 @@ static int anomaly_58_workaround_init(const struct device *dev)
 }
 #endif
 
-static void finish_transaction(const struct device *dev, int error)
+static void finish_transaction(const struct device *dev)
 {
 	struct spi_nrfx_data *dev_data = dev->data;
-	struct spi_context *ctx = &dev_data->ctx;
-
-	LOG_DBG("Transaction finished with status %d", error);
-
-	spi_context_complete(ctx, dev, error);
 	dev_data->busy = false;
 
 	if (dev_data->ctx.config->operation & SPI_LOCK_ON) {
@@ -485,7 +478,16 @@ static void finish_transaction(const struct device *dev, int error)
 	finalize_spi_transaction(dev, true);
 }
 
-static void transfer_next_chunk(const struct device *dev)
+static void finish_async_transaction(const struct device *dev, int error)
+{
+	struct spi_nrfx_data *dev_data = dev->data;
+	struct spi_context *ctx = &dev_data->ctx;
+	LOG_DBG("Transaction finished with status %d", error);
+	spi_context_complete(ctx, dev, error);
+	finish_transaction(dev);
+}
+
+static int transfer_next_chunk(const struct device *dev, nrfx_spim_xfer_desc_t *xfer)
 {
 	struct spi_nrfx_data *dev_data = dev->data;
 	const struct spi_nrfx_config *dev_config = dev->config;
@@ -493,142 +495,199 @@ static void transfer_next_chunk(const struct device *dev)
 	int error = 0;
 
 	size_t chunk_len = spi_context_max_continuous_chunk(ctx);
-
-	if (chunk_len > 0) {
-		nrfx_spim_xfer_desc_t xfer;
-		nrfx_err_t result;
-		const uint8_t *tx_buf = ctx->tx_buf;
-		uint8_t *rx_buf = ctx->rx_buf;
-
-		if (chunk_len > dev_config->max_chunk_len) {
-			chunk_len = dev_config->max_chunk_len;
-		}
-
-#ifdef SPI_BUFFER_IN_RAM
-		if (spi_context_tx_buf_on(ctx) &&
-		    !nrf_dma_accessible_check(&dev_config->spim.p_reg, tx_buf)) {
-
-			if (chunk_len > CONFIG_SPI_NRFX_RAM_BUFFER_SIZE) {
-				chunk_len = CONFIG_SPI_NRFX_RAM_BUFFER_SIZE;
-			}
-
-			memcpy(dev_data->tx_buffer, tx_buf, chunk_len);
-			tx_buf = dev_data->tx_buffer;
-		}
-
-		if (spi_context_rx_buf_on(ctx) &&
-		    !nrf_dma_accessible_check(&dev_config->spim.p_reg, rx_buf)) {
-
-			if (chunk_len > CONFIG_SPI_NRFX_RAM_BUFFER_SIZE) {
-				chunk_len = CONFIG_SPI_NRFX_RAM_BUFFER_SIZE;
-			}
-
-			rx_buf = dev_data->rx_buffer;
-		}
-#endif
-
-		dev_data->chunk_len = chunk_len;
-
-		xfer.tx_length = spi_context_tx_buf_on(ctx) ? chunk_len : 0;
-		xfer.rx_length = spi_context_rx_buf_on(ctx) ? chunk_len : 0;
-
-		error = dmm_buffer_out_prepare(dev_config->mem_reg, tx_buf, xfer.tx_length,
-					       (void **)&xfer.p_tx_buffer);
-		if (error != 0) {
-			goto out_alloc_failed;
-		}
-
-		error = dmm_buffer_in_prepare(dev_config->mem_reg, rx_buf, xfer.rx_length,
-					      (void **)&xfer.p_rx_buffer);
-		if (error != 0) {
-			goto in_alloc_failed;
-		}
-
-#ifdef CONFIG_SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58
-		if (xfer.rx_length == 1 && xfer.tx_length <= 1) {
-			if (dev_config->anomaly_58_workaround) {
-				anomaly_58_workaround_setup(dev);
-			} else {
-				LOG_WRN("Transaction aborted since it would trigger "
-					"nRF52832 PAN 58");
-				error = -EIO;
-			}
-		}
-#endif
-		if (error == 0) {
-			result = nrfx_spim_xfer(&dev_config->spim, &xfer, 0);
-			if (result == NRFX_SUCCESS) {
-				return;
-			}
-			error = -EIO;
-#ifdef CONFIG_SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58
-			anomaly_58_workaround_clear(dev_data);
-#endif
-		}
-
-		/* On nrfx_spim_xfer() error */
-		dmm_buffer_in_release(dev_config->mem_reg, rx_buf, xfer.rx_length,
-				      (void **)&xfer.p_rx_buffer);
-in_alloc_failed:
-		dmm_buffer_out_release(dev_config->mem_reg, (void **)&xfer.p_tx_buffer);
+	if (chunk_len == 0) {
+		return -EINVAL;
 	}
 
+	nrfx_err_t result;
+	const uint8_t *tx_buf = ctx->tx_buf;
+	uint8_t *rx_buf = ctx->rx_buf;
+
+	if (chunk_len > dev_config->max_chunk_len) {
+		chunk_len = dev_config->max_chunk_len;
+	}
+
+#ifdef SPI_BUFFER_IN_RAM
+	if (spi_context_tx_buf_on(ctx) &&
+	    !nrf_dma_accessible_check(&dev_config->spim.p_reg, tx_buf)) {
+
+		if (chunk_len > CONFIG_SPI_NRFX_RAM_BUFFER_SIZE) {
+			chunk_len = CONFIG_SPI_NRFX_RAM_BUFFER_SIZE;
+		}
+
+		memcpy(dev_data->tx_buffer, tx_buf, chunk_len);
+		tx_buf = dev_data->tx_buffer;
+	}
+
+	if (spi_context_rx_buf_on(ctx) &&
+	    !nrf_dma_accessible_check(&dev_config->spim.p_reg, rx_buf)) {
+
+		if (chunk_len > CONFIG_SPI_NRFX_RAM_BUFFER_SIZE) {
+			chunk_len = CONFIG_SPI_NRFX_RAM_BUFFER_SIZE;
+		}
+
+		rx_buf = dev_data->rx_buffer;
+	}
+#endif
+
+	dev_data->chunk_len = chunk_len;
+
+	xfer->tx_length = spi_context_tx_buf_on(ctx) ? chunk_len : 0;
+	xfer->rx_length = spi_context_rx_buf_on(ctx) ? chunk_len : 0;
+
+	error = dmm_buffer_out_prepare(dev_config->mem_reg, tx_buf, xfer->tx_length,
+				       (void **)&xfer->p_tx_buffer);
+	if (error != 0) {
+		goto out_alloc_failed;
+	}
+
+	error = dmm_buffer_in_prepare(dev_config->mem_reg, rx_buf, xfer->rx_length,
+				      (void **)&xfer->p_rx_buffer);
+	if (error != 0) {
+		goto in_alloc_failed;
+	}
+
+#ifdef CONFIG_SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58
+	if (xfer->rx_length == 1 && xfer->tx_length <= 1) {
+		if (dev_config->anomaly_58_workaround) {
+			anomaly_58_workaround_setup(dev);
+		} else {
+			LOG_WRN("Transaction aborted since it would trigger "
+				"nRF52832 PAN 58");
+			error = -EIO;
+		}
+	}
+#endif
+	if (error == 0) {
+		result = nrfx_spim_xfer(&dev_config->spim, xfer, 0);
+		if (result == NRFX_SUCCESS) {
+			return 0;
+		}
+		error = -EIO;
+#ifdef CONFIG_SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58
+		anomaly_58_workaround_clear(dev_data);
+#endif
+	}
+
+	/* On nrfx_spim_xfer() error */
+	dmm_buffer_in_release(dev_config->mem_reg, rx_buf, xfer->rx_length,
+			      (void **)&xfer->p_rx_buffer);
+in_alloc_failed:
+	dmm_buffer_out_release(dev_config->mem_reg, (void **)&xfer->p_tx_buffer);
+
 out_alloc_failed:
-	finish_transaction(dev, error);
+	return error;
+}
+
+static void finish_chunk_transfer(const struct device *dev, const nrfx_spim_xfer_desc_t *xfer)
+{
+	struct spi_nrfx_data *dev_data = dev->data;
+	const struct spi_nrfx_config *dev_config = dev->config;
+#ifdef CONFIG_SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58
+	anomaly_58_workaround_clear(dev_data);
+#endif
+
+	if (spi_context_tx_buf_on(&dev_data->ctx)) {
+		dmm_buffer_out_release(dev_config->mem_reg, (void *)xfer->p_tx_buffer);
+	}
+
+	if (spi_context_rx_buf_on(&dev_data->ctx)) {
+		dmm_buffer_in_release(dev_config->mem_reg, dev_data->ctx.rx_buf,
+				      dev_data->chunk_len, xfer->p_rx_buffer);
+	}
+
+#ifdef SPI_BUFFER_IN_RAM
+	if (spi_context_rx_buf_on(&dev_data->ctx) && xfer->p_rx_buffer != NULL &&
+	    xfer->p_rx_buffer != dev_data->ctx.rx_buf) {
+		(void)memcpy(dev_data->ctx.rx_buf, dev_data->rx_buffer, dev_data->chunk_len);
+	}
+#endif
+	spi_context_update_tx(&dev_data->ctx, 1, dev_data->chunk_len);
+	spi_context_update_rx(&dev_data->ctx, 1, dev_data->chunk_len);
 }
 
 static void event_handler(const nrfx_spim_evt_t *p_event, void *p_context)
 {
 	const struct device *dev = p_context;
 	struct spi_nrfx_data *dev_data = dev->data;
-	const struct spi_nrfx_config *dev_config = dev->config;
+	struct spi_context *ctx = &dev_data->ctx;
+	int error = 0;
+	bool async = false;
 
 	if (p_event->type == NRFX_SPIM_EVENT_DONE) {
-		/* Chunk length is set to 0 when a transaction is aborted
-		 * due to a timeout.
-		 */
-		if (dev_data->chunk_len == 0) {
-			finish_transaction(dev_data->dev, -ETIMEDOUT);
-			return;
+#ifdef CONFIG_SPI_ASYNC
+		async = dev_data->ctx.asynchronous;
+#else
+		async = false;
+#endif /* CONFIG_SPI_ASYNC */
+
+		if (async) {
+			/* Cleanup the current buffers being written/read */
+			finish_chunk_transfer(dev, &p_event->xfer_desc);
+			size_t chunk_left = spi_context_max_continuous_chunk(&dev_data->ctx);
+			if (chunk_left == 0) {
+				/* All chunks have been sent, complete the transaction */
+				finish_async_transaction(dev, 0);
+				return;
+			}
+			nrfx_spim_xfer_desc_t xfer = {0};
+			error = transfer_next_chunk(dev, &xfer);
+			if (error != 0) {
+				finish_async_transaction(dev, error);
+				return;
+			}
+		} else {
+			spi_context_complete(ctx, dev, 0);
 		}
-
-#ifdef CONFIG_SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58
-		anomaly_58_workaround_clear(dev_data);
-#endif
-
-		if (spi_context_tx_buf_on(&dev_data->ctx)) {
-			dmm_buffer_out_release(dev_config->mem_reg,
-					       (void **)p_event->xfer_desc.p_tx_buffer);
-		}
-
-		if (spi_context_rx_buf_on(&dev_data->ctx)) {
-			dmm_buffer_in_release(dev_config->mem_reg, dev_data->ctx.rx_buf,
-				dev_data->chunk_len, p_event->xfer_desc.p_rx_buffer);
-		}
-
-#ifdef SPI_BUFFER_IN_RAM
-		if (spi_context_rx_buf_on(&dev_data->ctx) &&
-		    p_event->xfer_desc.p_rx_buffer != NULL &&
-		    p_event->xfer_desc.p_rx_buffer != dev_data->ctx.rx_buf) {
-			(void)memcpy(dev_data->ctx.rx_buf,
-				     dev_data->rx_buffer,
-				     dev_data->chunk_len);
-		}
-#endif
-		spi_context_update_tx(&dev_data->ctx, 1, dev_data->chunk_len);
-		spi_context_update_rx(&dev_data->ctx, 1, dev_data->chunk_len);
-
-		transfer_next_chunk(dev_data->dev);
 	}
 }
 
-static int transceive(const struct device *dev,
-		      const struct spi_config *spi_cfg,
-		      const struct spi_buf_set *tx_bufs,
-		      const struct spi_buf_set *rx_bufs,
-		      bool asynchronous,
-		      spi_callback_t cb,
-		      void *userdata)
+static int transceive_sync(const struct device *dev)
+{
+	struct spi_nrfx_data *dev_data = dev->data;
+	const struct spi_nrfx_config *dev_config = dev->config;
+	int error = 0;
+	while (true) {
+		size_t chunk_len = spi_context_max_continuous_chunk(&dev_data->ctx);
+		if (chunk_len == 0) {
+			return 0;
+		}
+		nrfx_spim_xfer_desc_t xfer = {0};
+		error = transfer_next_chunk(dev, &xfer);
+		if (error != 0) {
+			return error;
+		}
+
+		error = spi_context_wait_for_completion(&dev_data->ctx);
+		if (error == -ETIMEDOUT) {
+			/* Abort the current transfer by deinitializing
+			 * the nrfx driver.
+			 */
+			nrfx_spim_uninit(&dev_config->spim);
+			dev_data->initialized = false;
+
+			/* Clean up the driver state. */
+#ifdef CONFIG_MULTITHREADING
+			k_sem_reset(&dev_data->ctx.sync);
+#else
+			dev_data->ctx.ready = 0;
+#endif /* CONFIG_MULTITHREADING */
+#ifdef CONFIG_SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58
+			anomaly_58_workaround_clear(dev_data);
+#endif
+		}
+
+		/* No matter what, cleanup the current buffers being written/read */
+		finish_chunk_transfer(dev, &xfer);
+		if (error != 0) {
+			return error;
+		}
+	}
+}
+
+static int transceive(const struct device *dev, const struct spi_config *spi_cfg,
+		      const struct spi_buf_set *tx_bufs, const struct spi_buf_set *rx_bufs,
+		      bool asynchronous, spi_callback_t cb, void *userdata)
 {
 	struct spi_nrfx_data *dev_data = dev->data;
 	const struct spi_nrfx_config *dev_config = dev->config;
@@ -666,38 +725,21 @@ static int transceive(const struct device *dev,
 		}
 		spi_context_cs_control(&dev_data->ctx, true);
 
-		transfer_next_chunk(dev);
-
-		error = spi_context_wait_for_completion(&dev_data->ctx);
-		if (error == -ETIMEDOUT) {
-			/* Set the chunk length to 0 so that event_handler()
-			 * knows that the transaction timed out and is to be
-			 * aborted.
-			 */
-			dev_data->chunk_len = 0;
-			/* Abort the current transfer by deinitializing
-			 * the nrfx driver.
-			 */
-			nrfx_spim_uninit(&dev_config->spim);
-			dev_data->initialized = false;
-
-			/* Make sure the transaction is finished (it may be
-			 * already finished if it actually did complete before
-			 * the nrfx driver was deinitialized).
-			 */
-			finish_transaction(dev, -ETIMEDOUT);
-
-			/* Clean up the driver state. */
-#ifdef CONFIG_MULTITHREADING
-			k_sem_reset(&dev_data->ctx.sync);
-#else
-			dev_data->ctx.ready = 0;
-#endif /* CONFIG_MULTITHREADING */
-#ifdef CONFIG_SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58
-			anomaly_58_workaround_clear(dev_data);
-#endif
-		} else if (error) {
-			finalize_spi_transaction(dev, true);
+		/* Split Async/Sync transfer handling pathways, because SPI on the nRF54H20 can
+		 * requires transfering out of slow memory (RAM3X domain). This allows
+		 * the synchronous thread to copy the data out of RAM3X instead of an ISR.
+		 */
+		if (asynchronous) {
+			/* kick off async transfer */
+			nrfx_spim_xfer_desc_t xfer = {0};
+			error = transfer_next_chunk(dev, &xfer);
+			if (error != 0) {
+				finish_transaction(dev);
+			}
+		} else {
+			error = transceive_sync(dev);
+			/* always finalize the transaction after a sync transfer */
+			finish_transaction(dev);
 		}
 	} else {
 		pm_device_runtime_put(dev);
@@ -886,9 +928,7 @@ static int spi_nrfx_deinit(const struct device *dev)
 	 * be deinitialized
 	 */
 	(void)pm_device_state_get(dev, &state);
-	return state == PM_DEVICE_STATE_SUSPENDED ||
-	       state == PM_DEVICE_STATE_OFF ?
-	       0 : -EBUSY;
+	return state == PM_DEVICE_STATE_SUSPENDED || state == PM_DEVICE_STATE_OFF ? 0 : -EBUSY;
 #else
 	/* PM suspend implementation does everything we need */
 	spim_suspend(dev);
