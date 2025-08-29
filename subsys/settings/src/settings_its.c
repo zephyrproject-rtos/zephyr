@@ -12,16 +12,12 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/psa/its_ids.h>
 
+#include "settings_its_priv.h"
+
 LOG_MODULE_DECLARE(settings, CONFIG_SETTINGS_LOG_LEVEL);
 
 K_MUTEX_DEFINE(worker_mutex);
 static struct k_work_delayable worker;
-
-struct setting_entry {
-	char name[SETTINGS_MAX_NAME_LEN];
-	char value[SETTINGS_MAX_VAL_LEN];
-	size_t val_len;
-};
 
 static struct setting_entry entries[CONFIG_SETTINGS_TFM_ITS_NUM_ENTRIES];
 static int entries_count;
