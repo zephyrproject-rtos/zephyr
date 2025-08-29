@@ -346,11 +346,11 @@ static void shi_npcx_bad_received_data(const struct device *dev)
 	/* SHI receive bad data */
 	LOG_WRN("SHIBD");
 	LOG_HEXDUMP_DBG(data->in_msg, data->rx_ctx->len, "in_msg=");
-
-	/* Reset shi's state machine for error recovery */
-	shi_npcx_reset_prepare(dev);
-
-	LOG_DBG("END");
+	/*
+	 * When unexpected data is received, continuously send the code EC_SHI_RX_BAD_DATA (0xFB)
+	 * to the host on the output line. The SHI state machine is reset when the CS pin is
+	 * de-asserted.
+	 */
 }
 
 /*
