@@ -36,7 +36,6 @@ struct uart_litex_device_config {
 
 struct uart_litex_data {
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	struct k_timer timer;
 	uart_irq_callback_user_data_t callback;
 	void *cb_data;
 #endif
@@ -94,20 +93,10 @@ static int uart_litex_poll_in(const struct device *dev, unsigned char *c)
 static void uart_litex_irq_tx_enable(const struct device *dev)
 {
 	const struct uart_litex_device_config *config = dev->config;
-	struct uart_litex_data *data = dev->data;
 
 	uint8_t enable = litex_read8(config->ev_enable_addr);
 
 	litex_write8(enable | UART_EV_TX, config->ev_enable_addr);
-
-	if (!litex_read8(config->txfull_addr)) {
-		/*
-		 * TX done event already generated an edge interrupt. Generate a
-		 * soft interrupt and have it call the callback function in
-		 * timer isr context.
-		 */
-		k_timer_start(&data->timer, K_NO_WAIT, K_NO_WAIT);
-	}
 }
 
 /**
@@ -298,13 +287,6 @@ static void uart_litex_irq_handler(const struct device *dev)
 
 	irq_unlock(key);
 }
-
-static void uart_litex_tx_soft_isr(struct k_timer *timer)
-{
-	const struct device *dev = k_timer_user_data_get(timer);
-
-	uart_litex_irq_handler(dev);
-}
 #endif	/* CONFIG_UART_INTERRUPT_DRIVEN */
 
 static DEVICE_API(uart, uart_litex_driver_api) = {
@@ -335,11 +317,6 @@ static int uart_litex_init(const struct device *dev)
 	litex_write8(UART_EV_TX | UART_EV_RX, config->ev_pending_addr);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	struct uart_litex_data *data = dev->data;
-
-	k_timer_init(&data->timer, &uart_litex_tx_soft_isr, NULL);
-	k_timer_user_data_set(&data->timer, (void *)dev);
-
 	config->config_func(dev);
 #endif
 
