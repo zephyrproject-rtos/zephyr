@@ -12,7 +12,7 @@
 
 / {
 	model = "Nordic NRF5340 BSIM NRF5340 Network";
-	compatible = "bsim,nrf5340-bsim-nrf5340-cpunet","bsim,nrf53";
+	compatible = "bsim,nrf5340-bsim-nrf5340-cpunet", "bsim,nrf53";
 
 	/* We need to remove aliases to nodes we delete */
 	aliases {
@@ -92,4 +92,4 @@
 /* We re-use the IPC shared buffer definition from the real HW. But note the start address of the
  * buffer won't be used.
  */
- #include <nordic/nrf5340_shared_sram_partition.dtsi>
+#include <nordic/nrf5340_shared_sram_partition.dtsi>
