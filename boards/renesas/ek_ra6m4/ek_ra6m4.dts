@@ -47,22 +47,22 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map =	<0 0 &ioport0 0 0>,	/* AN  */
-				<1 0 &ioport1 15 0>,	/* RST */
-				<2 0 &ioport2 5 0>,	/* CS   */
-				<3 0 &ioport2 4 0>,	/* SCK  */
-				<4 0 &ioport2 2 0>,	/* MISO */
-				<5 0 &ioport2 3 0>,	/* MOSI */
-							/* +3.3V */
-							/* GND */
-				<6 0 &ioport4 8 0>,	/* PWM  */
-				<7 0 &ioport4 9 0>,	/* INT  */
-				<8 0 &ioport6 14 0>,	/* RX   */
-				<9 0 &ioport6 13 0>,	/* TX   */
-				<10 0 &ioport5 12 0>,	/* SCL  */
-				<11 0 &ioport5 11 0>;	/* SDA  */
-							/* +5V */
-							/* GND */
+		gpio-map = <0 0 &ioport0 0 0>, /* AN  */
+			   <1 0 &ioport1 15 0>, /* RST */
+			   <2 0 &ioport2 5 0>, /* CS   */
+			   <3 0 &ioport2 4 0>, /* SCK  */
+			   <4 0 &ioport2 2 0>, /* MISO */
+			   <5 0 &ioport2 3 0>, /* MOSI */
+			   /* +3.3V */
+			   /* GND */
+			   <6 0 &ioport4 8 0>, /* PWM  */
+			   <7 0 &ioport4 9 0>, /* INT  */
+			   <8 0 &ioport6 14 0>, /* RX   */
+			   <9 0 &ioport6 13 0>, /* TX   */
+			   <10 0 &ioport5 12 0>, /* SCL  */
+			   <11 0 &ioport5 11 0>; /* SDA  */
+		/* +5V */
+		/* GND */
 	};
 
 	arduino_header: arduino-connector {
