@@ -12,15 +12,15 @@
 
 &pinctrl {
 	uart0_default: uart0_default {
-		 group1 {
-			 pinmux = <UART0_TX_GPIO1>;
-			 output-high;
-		 };
-		 group2 {
-			 pinmux = <UART0_RX_GPIO3>;
-			 bias-pull-up;
-		 };
-	 };
+		group1 {
+			pinmux = <UART0_TX_GPIO1>;
+			output-high;
+		};
+		group2 {
+			pinmux = <UART0_RX_GPIO3>;
+			bias-pull-up;
+		};
+	};
 
 	i2c0_default: i2c0_default {
 		group1 {
@@ -52,7 +52,6 @@
 			pinmux = <SPIM2_MOSI_GPIO19>;
 			output-low;
 		};
-
 	};
 
 	/* used for SK6812 */
