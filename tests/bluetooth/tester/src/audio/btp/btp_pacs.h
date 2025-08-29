@@ -11,7 +11,7 @@
 /* PACS commands */
 #define BTP_PACS_READ_SUPPORTED_COMMANDS			0x01
 struct btp_pacs_read_supported_commands_rp {
-	uint8_t data[0];
+	FLEXIBLE_ARRAY_DECLARE(uint8_t, data);
 } __packed;
 
 #define BTP_PACS_CHARACTERISTIC_SINK_PAC			0x01
