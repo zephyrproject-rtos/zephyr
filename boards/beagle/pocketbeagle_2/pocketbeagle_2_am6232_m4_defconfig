@@ -7,8 +7,9 @@
 # Platform Configuration
 CONFIG_CORTEX_M_SYSTICK=y
 
-# Zephyr Kernel Configuration
-CONFIG_XIP=n
+# XIP is required to place text and data sections in I-RAM and D-RAM
+# respectively.
+CONFIG_XIP=y
 
 # Serial Driver
 CONFIG_SERIAL=y
