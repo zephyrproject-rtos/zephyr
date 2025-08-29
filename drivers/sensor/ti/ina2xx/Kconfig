@@ -5,12 +5,20 @@
 config INA2XX
 	bool "INA2XX Current and Power Monitor"
 	default y
-	depends on DT_HAS_TI_INA226_ENABLED || DT_HAS_TI_INA230_ENABLED || DT_HAS_TI_INA236_ENABLED || DT_HAS_TI_INA237_ENABLED
+	depends on DT_HAS_TI_INA219_ENABLED || DT_HAS_TI_INA226_ENABLED || DT_HAS_TI_INA230_ENABLED || DT_HAS_TI_INA236_ENABLED || DT_HAS_TI_INA237_ENABLED
 	select I2C
 	help
 	  Enable driver for INA2XX Current and Power Monitor.
 
 if INA2XX
+
+config INA219
+	bool "INA219 Current/Power Monitor"
+	default y
+	depends on DT_HAS_TI_INA219_ENABLED
+	select I2C
+	help
+	  Enable driver for INA219 Bidirectional Current/Power Monitor.
 
 config INA226
 	bool "INA226 Current/Power Monitor"
