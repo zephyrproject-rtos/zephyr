@@ -42,14 +42,29 @@ config 3RD_LEVEL_INTERRUPTS
 config NUM_IRQS
 	default 250 # 2ND_LVL_ISR_TBL_OFFSET + MAX_IRQ_PER_AGGREGATOR * NUM_2ND_LEVEL_AGGREGATORS
 
+config MCUX_LPTMR_TIMER
+	default y
+
+config CORTEX_M_SYSTICK
+	default n if MCUX_LPTMR_TIMER
+
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default 800000000
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency) if CORTEX_M_SYSTICK
+	default $(dt_node_int_prop_int,/soc/timer@44300000,clock-frequency) if MCUX_LPTMR_TIMER
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default 1024 if MCUX_LPTMR_TIMER
+	default 1000 if CORTEX_M_SYSTICK
 
 config CACHE_MANAGEMENT
 	default y
 
 config ETH_NXP_IMX_MSGINTR
 	default 2
+
+config TICKLESS_KERNEL
+	default y
+
 if PM
 # PM code that runs from the idle loop has a large
 # footprint. Hence increase the size when PM is enabled.
