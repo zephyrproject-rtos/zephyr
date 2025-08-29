@@ -47,6 +47,8 @@ LOG_MODULE_REGISTER(main);
 #define CRYPTO_DEV_COMPAT ti_mspm0_aes
 #elif CONFIG_CRYPTO_MSPM0_AES_ADV
 #define CRYPTO_DEV_COMPAT ti_mspm0_aes_adv
+#elif DT_HAS_COMPAT_STATUS_OKAY(ti_cc35xx_hsm_crypto)
+#define CRYPTO_DEV_COMPAT ti_cc35xx_hsm_crypto
 #else
 #error "You need to enable one crypto device"
 #endif

@@ -1,0 +1,12 @@
+# Copyright (c) 2025 Conclusive Engineering Sp. z o.o.
+# SPDX-License-Identifier: Apache-2.0
+
+description: TI SimpleLink CC35xx HSM TRNG / Entropy
+
+compatible: "ti,cc35xx-hsm-trng"
+
+# properties:
+#   reg:
+#     required: true
+#     type: array
+#     description: Index of the HSM subsystem to use for entropy.

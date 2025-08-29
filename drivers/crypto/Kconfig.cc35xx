@@ -1,0 +1,11 @@
+# Copyright (c) 2025 Conclusive Engineering Sp. z o.o.
+# SPDX-License-Identifier: Apache-2.0
+
+config CRYPTO_TI_CC35XX
+	bool "TI Crypto driver"
+	default n
+	depends on DT_HAS_TI_CC35XX_HSM_CRYPTO_ENABLED
+	select TI_CC35XX_HSM
+	help
+	  This option enables the driver for the HSM Crypto submodule
+	  for TI SimpleLink CC35xx SoCs.
