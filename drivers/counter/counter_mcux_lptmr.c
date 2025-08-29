@@ -178,15 +178,17 @@ static DEVICE_API(counter, mcux_lptmr_driver_api) = {
 		.info = {							\
 			.max_top_value =					\
 				GENMASK(DT_INST_PROP(n, resolution) - 1, 0),	\
-			.freq = DT_INST_PROP(n, clock_frequency) /		\
-				DT_INST_PROP(n, prescaler),			\
+			.freq = COND_CODE_1(DT_NODE_HAS_PROP(n, prescale_glitch_filter),	\
+				(DT_INST_PROP(n, clock_frequency) /		\
+					(1 << (DT_INST_PROP(n, prescale_glitch_filter)))),		\
+				(DT_INST_PROP(n, clock_frequency))),	\
 			.flags = COUNTER_CONFIG_INFO_COUNT_UP,			\
 			.channels = 0,						\
 		},								\
 		.base = (LPTMR_Type *)DT_INST_REG_ADDR(n),			\
 		.clk_source = DT_INST_PROP(n, clk_source),			\
-		.bypass_prescaler_glitch =					\
-			1 - DT_INST_PROP(n, timer_mode_sel),			\
+		.bypass_prescaler_glitch = COND_CODE_1(DT_NODE_HAS_PROP(n, 		\
+			prescale_glitch_filter), (false), (true)),		\
 		.mode = DT_INST_PROP(n, timer_mode_sel),			\
 		.pin = DT_INST_PROP_OR(n, input_pin, 0),			\
 		.polarity = DT_INST_PROP(n, active_low),			\
@@ -200,6 +202,5 @@ static DEVICE_API(counter, mcux_lptmr_driver_api) = {
 		&mcux_lptmr_config_##n,						\
 		POST_KERNEL, CONFIG_COUNTER_INIT_PRIORITY,			\
 		&mcux_lptmr_driver_api);
-
 
 DT_INST_FOREACH_STATUS_OKAY(COUNTER_MCUX_LPTMR_DEVICE_INIT)
