@@ -59,11 +59,17 @@ static void kpp_work_handler(struct k_work *work)
 	struct kpp_data *drv_data = CONTAINER_OF(dwork, struct kpp_data, work);
 	const struct device *dev = drv_data->dev;
 	const struct kpp_config *config = dev->config;
+	status_t stable = kStatus_Success;
 
 	uint8_t read_keys_new[KPP_KEYPAD_COLUMNNUM_MAX];
 
 	/* Read the key press data */
-	KPP_keyPressScanning(config->base, read_keys_new, drv_data->clock_rate);
+	stable = KPP_keyPressScanning(config->base, read_keys_new, drv_data->clock_rate);
+
+	if (stable != kStatus_Success) {
+		k_work_schedule(&drv_data->work, K_MSEC(CONFIG_INPUT_KPP_PERIOD_MS));
+		return;
+	}
 
 	/* Analyze the keypad data */
 	for (int col = 0; col < INPUT_KPP_COLUMNNUM_MAX; col++) {
@@ -92,8 +98,8 @@ static void kpp_work_handler(struct k_work *work)
 				input_report_key(dev, INPUT_BTN_TOUCH, 0, true, K_FOREVER);
 				drv_data->key_pressed_number--;
 			}
-			drv_data->read_keys_old[col] = read_keys_new[col];
 		}
+		drv_data->read_keys_old[col] = read_keys_new[col];
 	}
 
 	if (drv_data->key_pressed_number == 0U) {
@@ -133,6 +139,7 @@ static int input_kpp_init(const struct device *dev)
 	const struct kpp_config *config = dev->config;
 	struct kpp_data *drv_data = dev->data;
 	kpp_config_t kppConfig;
+	status_t stable = kStatus_Success;
 
 	if (!device_is_ready(config->ccm_dev)) {
 		LOG_ERR("CCM driver is not installed");
@@ -155,9 +162,12 @@ static int input_kpp_init(const struct device *dev)
 	get_source_clk_rate(dev, &drv_data->clock_rate);
 
 	drv_data->dev = dev;
+	stable = KPP_keyPressScanning(config->base, drv_data->read_keys_old, drv_data->clock_rate);
 
-	/* Read the key press data */
-	KPP_keyPressScanning(config->base, drv_data->read_keys_old, drv_data->clock_rate);
+	if (stable != kStatus_Success) {
+		LOG_ERR("Kpp key status not stable");
+		return -EIO;
+	}
 
 	k_work_init_delayable(&drv_data->work, kpp_work_handler);
 
@@ -169,7 +179,7 @@ static int input_kpp_init(const struct device *dev)
 #define INPUT_KPP_INIT(n)                                                               \
 	static struct kpp_data kpp_data_##n;                                            \
                                                                                         \
-	PINCTRL_DT_INST_DEFINE(n);	                                                \
+	PINCTRL_DT_INST_DEFINE(n);                                                      \
                                                                                         \
 	static const struct kpp_config kpp_config_##n = {                               \
 		.base = (KPP_Type *)DT_INST_REG_ADDR(n),                                \
