@@ -38,11 +38,13 @@
 #define K_EVENT_WAIT_ALL      0x01   /* Wait for all events */
 #define K_EVENT_WAIT_MASK     0x01
 
-#define K_EVENT_WAIT_RESET    0x02   /* Reset events prior to waiting */
+#define K_EVENT_OPTION_RESET  0x02   /* Reset events prior to waiting */
+#define K_EVENT_OPTION_CLEAR  0x04   /* Clear events that are received */
 
 struct event_walk_data {
 	struct k_thread  *head;
 	uint32_t events;
+	uint32_t clear_events;
 };
 
 #ifdef CONFIG_OBJ_CORE_EVENT
@@ -77,7 +79,7 @@ void z_vrfy_k_event_init(struct k_event *event)
 #endif /* CONFIG_USERSPACE */
 
 /**
- * @brief determine if desired set of events been satisfied
+ * @brief determine the set of events that have been satisfied
  *
  * This routine determines if the current set of events satisfies the desired
  * set of events. If @a wait_condition is K_EVENT_WAIT_ALL, then at least
@@ -85,30 +87,47 @@ void z_vrfy_k_event_init(struct k_event *event)
  * wait_condition is not K_EVENT_WAIT_ALL, it is assumed to be K_EVENT_WAIT_ANY.
  * In the K_EVENT_WAIT_ANY case, the request is satisfied when any of the
  * current set of events are present in the desired set of events.
+ *
+ * @return event bits that satisfy the wait condition or zero
  */
-static bool are_wait_conditions_met(uint32_t desired, uint32_t current,
-				    unsigned int wait_condition)
+static uint32_t are_wait_conditions_met(uint32_t desired, uint32_t current,
+					unsigned int wait_condition)
 {
-	uint32_t  match = current & desired;
+	uint32_t match = current & desired;
 
-	if (wait_condition == K_EVENT_WAIT_ALL) {
-		return match == desired;
+	if ((wait_condition == K_EVENT_WAIT_ALL) && (match != desired)) {
+		/* special case for K_EVENT_WAIT_ALL */
+		return 0;
 	}
 
-	/* wait_condition assumed to be K_EVENT_WAIT_ANY */
-
-	return match != 0;
+	/* return the matched events for any wait condition */
+	return match;
 }
 
 static int event_walk_op(struct k_thread *thread, void *data)
 {
-	unsigned int      wait_condition;
+	uint32_t match;
+	unsigned int wait_condition;
 	struct event_walk_data *event_data = data;
 
 	wait_condition = thread->event_options & K_EVENT_WAIT_MASK;
 
-	if (are_wait_conditions_met(thread->events, event_data->events,
-				    wait_condition)) {
+	match = are_wait_conditions_met(thread->events, event_data->events,
+					wait_condition);
+	if (match != 0) {
+		/*
+		 * The wait conditions have been satisfied. So, set the
+		 * received events and then add this thread to the list
+		 * of threads to unpend.
+		 *
+		 * NOTE: thread event options can consume an event
+		 */
+		thread->events = match;
+		if (thread->event_options & K_EVENT_OPTION_CLEAR) {
+			event_data->clear_events |= match;
+		}
+		thread->next_event_link = event_data->head;
+		event_data->head = thread;
 
 		/*
 		 * Events create a list of threads to wake up. We do
@@ -117,13 +136,6 @@ static int event_walk_op(struct k_thread *thread, void *data)
 		 * have been processed.
 		 */
 		thread->no_wake_on_timeout = true;
-
-		/*
-		 * The wait conditions have been satisfied. Add this
-		 * thread to the list of threads to unpend.
-		 */
-		thread->next_event_link = event_data->head;
-		event_data->head = thread;
 		z_abort_timeout(&thread->base.timeout);
 	}
 
@@ -147,8 +159,7 @@ static uint32_t k_event_post_internal(struct k_event *event, uint32_t events,
 	previous_events = event->events & events_mask;
 	events = (event->events & ~events_mask) |
 		 (events & events_mask);
-	event->events = events;
-	data.events = events;
+
 	/*
 	 * Posting an event has the potential to wake multiple pended threads.
 	 * It is desirable to unpend all affected threads simultaneously. This
@@ -159,6 +170,8 @@ static uint32_t k_event_post_internal(struct k_event *event, uint32_t events,
 	 * 3. Ready each of the threads in the linked list
 	 */
 
+	data.events = events;
+	data.clear_events = 0;
 	z_sched_waitq_walk(&event->wait_q, event_walk_op, &data);
 
 	if (data.head != NULL) {
@@ -166,12 +179,14 @@ static uint32_t k_event_post_internal(struct k_event *event, uint32_t events,
 		struct k_thread *next;
 		do {
 			arch_thread_return_value_set(thread, 0);
-			thread->events = events;
 			next = thread->next_event_link;
 			z_sched_wake_thread(thread, false);
 			thread = next;
 		} while (thread != NULL);
 	}
+
+	/* stash any events not consumed */
+	event->events = data.events & ~data.clear_events;
 
 	z_reschedule(&event->lock, key);
 
@@ -262,20 +277,21 @@ static uint32_t k_event_wait_internal(struct k_event *event, uint32_t events,
 
 	k_spinlock_key_t  key = k_spin_lock(&event->lock);
 
-	if (options & K_EVENT_WAIT_RESET) {
+	if (options & K_EVENT_OPTION_RESET) {
 		event->events = 0;
 	}
 
 	/* Test if the wait conditions have already been met. */
-
-	if (are_wait_conditions_met(events, event->events, wait_condition)) {
-		rv = event->events;
+	rv = are_wait_conditions_met(events, event->events, wait_condition);
+	if (rv != 0) {
+		/* clear the events that are matched */
+		if (options & K_EVENT_OPTION_CLEAR) {
+			event->events &= ~rv;
+		}
 
 		k_spin_unlock(&event->lock, key);
 		goto out;
 	}
-
-	/* Match conditions have not been met. */
 
 	if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
 		k_spin_unlock(&event->lock, key);
@@ -299,10 +315,9 @@ static uint32_t k_event_wait_internal(struct k_event *event, uint32_t events,
 	}
 
 out:
-	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_event, wait, event,
-				       events, rv & events);
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_event, wait, event, events, rv);
 
-	return rv & events;
+	return rv;
 }
 
 /**
@@ -311,7 +326,7 @@ out:
 uint32_t z_impl_k_event_wait(struct k_event *event, uint32_t events,
 			     bool reset, k_timeout_t timeout)
 {
-	uint32_t options = reset ? K_EVENT_WAIT_RESET : 0;
+	uint32_t options = reset ? K_EVENT_OPTION_RESET : 0;
 
 	return k_event_wait_internal(event, events, options, timeout);
 }
@@ -331,7 +346,7 @@ uint32_t z_vrfy_k_event_wait(struct k_event *event, uint32_t events,
 uint32_t z_impl_k_event_wait_all(struct k_event *event, uint32_t events,
 				 bool reset, k_timeout_t timeout)
 {
-	uint32_t options = reset ? (K_EVENT_WAIT_RESET | K_EVENT_WAIT_ALL)
+	uint32_t options = reset ? (K_EVENT_OPTION_RESET | K_EVENT_WAIT_ALL)
 				 : K_EVENT_WAIT_ALL;
 
 	return k_event_wait_internal(event, events, options, timeout);
@@ -345,6 +360,45 @@ uint32_t z_vrfy_k_event_wait_all(struct k_event *event, uint32_t events,
 	return z_impl_k_event_wait_all(event, events, reset, timeout);
 }
 #include <zephyr/syscalls/k_event_wait_all_mrsh.c>
+#endif /* CONFIG_USERSPACE */
+
+uint32_t z_impl_k_event_wait_safe(struct k_event *event, uint32_t events,
+				  bool reset, k_timeout_t timeout)
+{
+	uint32_t options = reset ? (K_EVENT_OPTION_CLEAR | K_EVENT_OPTION_RESET)
+				 : K_EVENT_OPTION_CLEAR;
+
+	return k_event_wait_internal(event, events, options, timeout);
+}
+
+#ifdef CONFIG_USERSPACE
+uint32_t z_vrfy_k_event_wait_safe(struct k_event *event, uint32_t events,
+				  bool reset, k_timeout_t timeout)
+{
+	K_OOPS(K_SYSCALL_OBJ(event, K_OBJ_EVENT));
+	return z_impl_k_event_wait_safe(event, events, reset, timeout);
+}
+#include <zephyr/syscalls/k_event_wait_safe_mrsh.c>
+#endif /* CONFIG_USERSPACE */
+
+uint32_t z_impl_k_event_wait_all_safe(struct k_event *event, uint32_t events,
+				      bool reset, k_timeout_t timeout)
+{
+	uint32_t options = reset ? (K_EVENT_OPTION_CLEAR |
+				    K_EVENT_OPTION_RESET | K_EVENT_WAIT_ALL)
+				 : (K_EVENT_OPTION_CLEAR | K_EVENT_WAIT_ALL);
+
+	return k_event_wait_internal(event, events, options, timeout);
+}
+
+#ifdef CONFIG_USERSPACE
+uint32_t z_vrfy_k_event_wait_all_safe(struct k_event *event, uint32_t events,
+				      bool reset, k_timeout_t timeout)
+{
+	K_OOPS(K_SYSCALL_OBJ(event, K_OBJ_EVENT));
+	return z_impl_k_event_wait_all_safe(event, events, reset, timeout);
+}
+#include <zephyr/syscalls/k_event_wait_all_safe_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 #ifdef CONFIG_OBJ_CORE_EVENT
