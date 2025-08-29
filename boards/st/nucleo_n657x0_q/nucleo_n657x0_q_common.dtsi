@@ -97,12 +97,6 @@
 	status = "okay";
 };
 
-&ic3 {
-	pll-src = <1>;
-	ic-div = <6>;
-	status = "okay";
-};
-
 &ic6 {
 	pll-src = <3>;
 	ic-div = <2>;
@@ -231,7 +225,7 @@ zephyr_udc0: &usbotg_hs1 {
 		     &xspim_p2_io6_pn10 &xspim_p2_io7_pn11>;
 	pinctrl-names = "default";
 	clocks = <&rcc STM32_CLOCK(AHB5, 12)>,
-		 <&rcc STM32_SRC_IC3 XSPI1_SEL(2)>,
+		 <&rcc STM32_SRC_HCLK5 XSPI2_SEL(0)>,
 		 <&rcc STM32_CLOCK(AHB5, 13)>;
 	status = "okay";
 
