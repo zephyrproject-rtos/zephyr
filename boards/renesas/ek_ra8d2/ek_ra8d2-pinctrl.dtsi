@@ -1,0 +1,165 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	sci8_default: sci8_default {
+		group1 {
+			/* TX8 RX8 */
+			psels = <RA_PSEL(RA_PSEL_SCI_8, 13, 2)>,
+				<RA_PSEL(RA_PSEL_SCI_8, 13, 3)>;
+			drive-strength = "high";
+		};
+	};
+
+	sci7_default: sci7_default {
+		group1 {
+			/* TX7 RX7 */
+			psels = <RA_PSEL(RA_PSEL_SCI_7, 8, 9)>,
+				<RA_PSEL(RA_PSEL_SCI_7, 8, 8)>;
+			drive-strength = "high";
+		};
+	};
+
+	spi1_default: spi1_default {
+		group1 {
+			/* MISO1 MOSI1 SSLB0 */
+			psels = <RA_PSEL(RA_PSEL_SPI, 1, 0)>,
+				<RA_PSEL(RA_PSEL_SPI, 1, 1)>,
+				<RA_PSEL(RA_PSEL_SPI, 1, 3)>;
+			drive-strength = "high";
+		};
+
+		group2 {
+			/* RSPCK1 */
+			psels = <RA_PSEL(RA_PSEL_SPI, 1, 2)>;
+			drive-strength = "highspeed-high";
+		};
+	};
+
+	pwm1_default: pwm1_default {
+		group1 {
+			/* GTIOC1A GTIOC1B */
+			psels = <RA_PSEL(RA_PSEL_GPT1, 1, 5)>,
+				<RA_PSEL(RA_PSEL_GPT1, 1, 4)>;
+			drive-strength = "medium";
+		};
+	};
+
+	iic1_default: iic1_default {
+		group1 {
+			/* SCL1 SDA1*/
+			psels = <RA_PSEL(RA_PSEL_I2C, 5, 12)>,
+				<RA_PSEL(RA_PSEL_I2C, 5, 11)>;
+			drive-strength = "medium";
+		};
+	};
+
+	pwm12_default: pwm12_default {
+		group1 {
+			/* GTIOC12A */
+			psels = <RA_PSEL(RA_PSEL_GPT1, 5, 1)>;
+			drive-strength = "medium";
+		};
+	};
+
+	ceu_default: ceu_default {
+		group1 {
+			psels = <RA_PSEL(RA_PSEL_CEU, 4, 0)>, /* VIO_D0 */
+				<RA_PSEL(RA_PSEL_CEU, 9, 2)>, /* VIO_D1 */
+				<RA_PSEL(RA_PSEL_CEU, 4, 5)>, /* VIO_D2 */
+				<RA_PSEL(RA_PSEL_CEU, 4, 6)>, /* VIO_D3 */
+				<RA_PSEL(RA_PSEL_CEU, 7, 0)>, /* VIO_D4 */
+				<RA_PSEL(RA_PSEL_CEU, 7, 1)>, /* VIO_D5 */
+				<RA_PSEL(RA_PSEL_CEU, 7, 2)>, /* VIO_D6 */
+				<RA_PSEL(RA_PSEL_CEU, 7, 3)>, /* VIO_D7 */
+				<RA_PSEL(RA_PSEL_CEU, 11, 4)>, /* VIO_CLK */
+				<RA_PSEL(RA_PSEL_CEU, 11, 3)>, /* VIO_HD */
+				<RA_PSEL(RA_PSEL_CEU, 11, 2)>; /* VIO_VD */
+		};
+	};
+
+	usbhs_default: usbhs_default {
+		group1 {
+			psels = <RA_PSEL(RA_PSEL_USBHS, 4, 8)>; /* VBUS */
+			drive-strength = "high";
+		};
+	};
+
+	usbfs_default: usbfs_default {
+		group1 {
+			psels = <RA_PSEL(RA_PSEL_USBFS, 8, 15)>, /* USB_DM */
+				<RA_PSEL(RA_PSEL_USBFS, 8, 14)>, /* USB_DP */
+				<RA_PSEL(RA_PSEL_USBFS, 4, 7)>;	 /* VBUS */
+			drive-strength = "high";
+		};
+	};
+
+	sdram_default: sdram_default {
+		group1 {
+			psels = <RA_PSEL(RA_PSEL_BUS, 10, 3)>, /* SDRAM_A2 */
+				<RA_PSEL(RA_PSEL_BUS, 10, 2)>, /* SDRAM_A3 */
+				<RA_PSEL(RA_PSEL_BUS, 10, 1)>, /* SDRAM_A4 */
+				<RA_PSEL(RA_PSEL_BUS, 10, 0)>, /* SDRAM_A5 */
+				<RA_PSEL(RA_PSEL_BUS, 5, 3)>, /* SDRAM_A6 */
+				<RA_PSEL(RA_PSEL_BUS, 5, 4)>, /* SDRAM_A7 */
+				<RA_PSEL(RA_PSEL_BUS, 5, 5)>, /* SDRAM_A8 */
+				<RA_PSEL(RA_PSEL_BUS, 5, 6)>, /* SDRAM_A9 */
+				<RA_PSEL(RA_PSEL_BUS, 5, 7)>, /* SDRAM_A10 */
+				<RA_PSEL(RA_PSEL_BUS, 5, 8)>, /* SDRAM_A11 */
+				<RA_PSEL(RA_PSEL_BUS, 5, 9)>, /* SDRAM_A12 */
+				<RA_PSEL(RA_PSEL_BUS, 5, 10)>, /* SDRAM_A13 */
+				<RA_PSEL(RA_PSEL_BUS, 6, 8)>, /* SDRAM_A14 */
+				<RA_PSEL(RA_PSEL_BUS, 13, 0)>, /* SDRAM_A15 */
+				<RA_PSEL(RA_PSEL_BUS, 12, 15)>, /* SDRAM_A16 */
+				<RA_PSEL(RA_PSEL_BUS, 10, 9)>, /* SDRAM_CAS */
+				<RA_PSEL(RA_PSEL_BUS, 10, 6)>, /* SDRAM_CKE */
+				<RA_PSEL(RA_PSEL_BUS, 3, 2)>, /* SDRAM_DQ0 */
+				<RA_PSEL(RA_PSEL_BUS, 3, 1)>, /* SDRAM_DQ1 */
+				<RA_PSEL(RA_PSEL_BUS, 3, 0)>, /* SDRAM_DQ2 */
+				<RA_PSEL(RA_PSEL_BUS, 1, 12)>, /* SDRAM_DQ3 */
+				<RA_PSEL(RA_PSEL_BUS, 1, 13)>, /* SDRAM_DQ4 */
+				<RA_PSEL(RA_PSEL_BUS, 1, 14)>, /* SDRAM_DQ5 */
+				<RA_PSEL(RA_PSEL_BUS, 1, 15)>, /* SDRAM_DQ6 */
+				<RA_PSEL(RA_PSEL_BUS, 6, 9)>, /* SDRAM_DQ7 */
+				<RA_PSEL(RA_PSEL_BUS, 10, 11)>, /* SDRAM_DQ8 */
+				<RA_PSEL(RA_PSEL_BUS, 10, 12)>, /* SDRAM_DQ9 */
+				<RA_PSEL(RA_PSEL_BUS, 10, 13)>, /* SDRAM_DQ10 */
+				<RA_PSEL(RA_PSEL_BUS, 10, 14)>, /* SDRAM_DQ11 */
+				<RA_PSEL(RA_PSEL_BUS, 6, 10)>, /* SDRAM_DQ12 */
+				<RA_PSEL(RA_PSEL_BUS, 6, 11)>, /* SDRAM_DQ13 */
+				<RA_PSEL(RA_PSEL_BUS, 6, 12)>, /* SDRAM_DQ14 */
+				<RA_PSEL(RA_PSEL_BUS, 6, 13)>, /* SDRAM_DQ15 */
+				<RA_PSEL(RA_PSEL_BUS, 12, 14)>, /* SDRAM_DQ16 */
+				<RA_PSEL(RA_PSEL_BUS, 12, 13)>, /* SDRAM_DQ17 */
+				<RA_PSEL(RA_PSEL_BUS, 12, 12)>, /* SDRAM_DQ18 */
+				<RA_PSEL(RA_PSEL_BUS, 12, 11)>, /* SDRAM_DQ19 */
+				<RA_PSEL(RA_PSEL_BUS, 12, 10)>, /* SDRAM_DQ20 */
+				<RA_PSEL(RA_PSEL_BUS, 12, 9)>, /* SDRAM_DQ21 */
+				<RA_PSEL(RA_PSEL_BUS, 12, 8)>, /* SDRAM_DQ22 */
+				<RA_PSEL(RA_PSEL_BUS, 12, 7)>, /* SDRAM_DQ23 */
+				<RA_PSEL(RA_PSEL_BUS, 12, 6)>, /* SDRAM_DQ24 */
+				<RA_PSEL(RA_PSEL_BUS, 12, 5)>, /* SDRAM_DQ25 */
+				<RA_PSEL(RA_PSEL_BUS, 12, 4)>, /* SDRAM_DQ26 */
+				<RA_PSEL(RA_PSEL_BUS, 12, 3)>, /* SDRAM_DQ27 */
+				<RA_PSEL(RA_PSEL_BUS, 12, 2)>, /* SDRAM_DQ28 */
+				<RA_PSEL(RA_PSEL_BUS, 12, 1)>, /* SDRAM_DQ29 */
+				<RA_PSEL(RA_PSEL_BUS, 12, 0)>, /* SDRAM_DQ30 */
+				<RA_PSEL(RA_PSEL_BUS, 6, 7)>, /* SDRAM_DQ31 */
+				<RA_PSEL(RA_PSEL_BUS, 6, 14)>, /* SDRAM_DQM0 */
+				<RA_PSEL(RA_PSEL_BUS, 10, 5)>, /* SDRAM_DQM1 */
+				<RA_PSEL(RA_PSEL_BUS, 6, 15)>, /* SDRAM_DQM2 */
+				<RA_PSEL(RA_PSEL_BUS, 10, 4)>, /* SDRAM_DQM3 */
+				<RA_PSEL(RA_PSEL_BUS, 10, 10)>, /* SDRAM_RAS */
+				<RA_PSEL(RA_PSEL_BUS, 8, 13)>, /* SDRAM_CS */
+				<RA_PSEL(RA_PSEL_BUS, 10, 8)>; /* SDRAM_WE */
+			drive-strength = "high";
+		};
+
+		group2 {
+			psels = <RA_PSEL(RA_PSEL_BUS, 10, 15)>;	/* SDRAM_CLK */
+			drive-strength = "highspeed-high";
+		};
+	};
+};
