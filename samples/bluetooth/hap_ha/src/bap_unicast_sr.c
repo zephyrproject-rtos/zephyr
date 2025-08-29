@@ -35,10 +35,10 @@ NET_BUF_POOL_FIXED_DEFINE(tx_pool, CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT,
 
 static const struct bt_audio_codec_cap lc3_codec_cap = BT_AUDIO_CODEC_CAP_LC3(
 	BT_AUDIO_CODEC_CAP_FREQ_16KHZ | BT_AUDIO_CODEC_CAP_FREQ_24KHZ,
-	BT_AUDIO_CODEC_CAP_DURATION_10, BT_AUDIO_CODEC_CAP_CHAN_COUNT_SUPPORT(1), 40u, 60u, 1u,
+	BT_AUDIO_CODEC_CAP_DURATION_10, BT_AUDIO_CODEC_CAP_CHAN_COUNT_SUPPORT(1), 40u, 60u, CONFIG_MAX_CODEC_FRAMES_PER_SDU,
 	(BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL | BT_AUDIO_CONTEXT_TYPE_MEDIA));
 
-static struct bt_conn *default_conn;
+//static struct bt_conn *default_conn;
 static struct k_work_delayable audio_send_work;
 static struct bt_bap_stream streams[CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT +
 				    CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT];
@@ -360,51 +360,6 @@ static struct bt_bap_stream_ops stream_ops = {
 	.recv = stream_recv
 };
 
-static void connected(struct bt_conn *conn, uint8_t err)
-{
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
-	if (err != 0) {
-		printk("Failed to connect to %s %u %s\n", addr, err, bt_hci_err_to_str(err));
-
-		default_conn = NULL;
-		return;
-	}
-
-	printk("Connected: %s\n", addr);
-	default_conn = bt_conn_ref(conn);
-}
-
-static void disconnected(struct bt_conn *conn, uint8_t reason)
-{
-	char addr[BT_ADDR_LE_STR_LEN];
-	struct k_work_sync sync;
-
-	if (conn != default_conn) {
-		return;
-	}
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
-	printk("Disconnected: %s, reason 0x%02x %s\n", addr, reason, bt_hci_err_to_str(reason));
-
-	bt_conn_unref(default_conn);
-	default_conn = NULL;
-
-	if (IS_ENABLED(CONFIG_BT_ASCS_ASE_SRC)) {
-		/* reset data */
-		(void)memset(source_streams, 0, sizeof(source_streams));
-		configured_source_stream_count = 0U;
-		k_work_cancel_delayable_sync(&audio_send_work, &sync);
-	}
-}
-
-BT_CONN_CB_DEFINE(conn_callbacks) = {
-	.connected = connected,
-	.disconnected = disconnected,
-};
 
 static struct bt_pacs_cap cap_sink = {
 	.codec_cap = &lc3_codec_cap,
@@ -416,6 +371,7 @@ static struct bt_pacs_cap cap_source = {
 
 int bap_unicast_sr_init(void)
 {
+
 	const struct bt_pacs_register_param pacs_param = {
 		.snk_pac = true,
 		.snk_loc = true,
