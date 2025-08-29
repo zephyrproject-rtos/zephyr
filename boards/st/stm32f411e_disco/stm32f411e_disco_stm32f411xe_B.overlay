@@ -8,6 +8,7 @@
 	aliases {
 		/delete-property/ magn0;
 		accel0 = &lsm303dlhc_accel;
+		/delete-property/ gyro0;
 	};
 };
 
@@ -28,4 +29,9 @@
 		irq-gpios = <&gpioe 4 GPIO_ACTIVE_HIGH>,
 			  <&gpioe 5 GPIO_ACTIVE_HIGH>;
 	};
+};
+
+/* The B revision has the l3gd20 instead of i3g4250d, but no test board is available. */
+&spi1 {
+	/delete-node/ i3g4250d@0;
 };
