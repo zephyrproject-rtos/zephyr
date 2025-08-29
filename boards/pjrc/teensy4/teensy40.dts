@@ -63,7 +63,7 @@ zephyr_udc0: &usb1 {
 
 &lpuart6 {
 	status = "okay";
-	current-speed = < 115200 >;
+	current-speed = <115200>;
 };
 
 &edma0 {
