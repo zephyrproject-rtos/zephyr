@@ -44,7 +44,6 @@
 			gpios = <&gpio1 14 GPIO_ACTIVE_HIGH>;
 		};
 	};
-
 };
 
 &ecspi1 {
@@ -53,7 +52,7 @@
 	pinctrl-names = "default";
 	/* first cs is for on board MCP2518, the second for SPI on expansion header */
 	cs-gpios = <&gpio5 9 GPIO_ACTIVE_LOW>,
-				<&gpio2 20 GPIO_ACTIVE_LOW>;
+		   <&gpio2 20 GPIO_ACTIVE_LOW>;
 
 	/* CAN FD */
 	mcp2518: mcp2518@0 {
