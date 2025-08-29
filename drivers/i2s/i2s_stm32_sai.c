@@ -133,6 +133,7 @@ void HAL_SAI_TxCpltCallback(SAI_HandleTypeDef *hsai)
 {
 	struct i2s_stm32_sai_data *dev_data = CONTAINER_OF(hsai, struct i2s_stm32_sai_data, hsai);
 	struct stream *stream = &dev_data->stream;
+	void *mem_block_tmp = stream->mem_block;
 	struct queue_item item;
 	int ret;
 
@@ -183,7 +184,7 @@ void HAL_SAI_TxCpltCallback(SAI_HandleTypeDef *hsai)
 
 exit:
 	/* Free memory slab & exit */
-	k_mem_slab_free(stream->i2s_cfg.mem_slab, stream->mem_block);
+	k_mem_slab_free(stream->i2s_cfg.mem_slab, mem_block_tmp);
 }
 
 void HAL_SAI_ErrorCallback(SAI_HandleTypeDef *hsai)
