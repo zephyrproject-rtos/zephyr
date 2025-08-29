@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/{
+/ {
 	chosen {
 		zephyr,display = &rm67162_g1120b0mipi;
 		zephyr,touch = &ft3267_g1120b0mipi;
