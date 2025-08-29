@@ -79,9 +79,9 @@ static int uart_litex_poll_in(const struct device *dev, unsigned char *c)
 		 */
 		litex_write8(UART_EV_RX, config->ev_pending_addr);
 		return 0;
-	} else {
-		return -1;
 	}
+
+	return -1;
 }
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -171,11 +171,7 @@ static int uart_litex_irq_rx_ready(const struct device *dev)
 
 	pending = litex_read8(config->ev_pending_addr);
 
-	if (pending & UART_EV_RX) {
-		return 1;
-	} else {
-		return 0;
-	}
+	return (pending & UART_EV_RX) > 0;
 }
 
 /**
@@ -263,9 +259,8 @@ static void uart_litex_irq_callback_set(const struct device *dev,
 					uart_irq_callback_user_data_t cb,
 					void *cb_data)
 {
-	struct uart_litex_data *data;
+	struct uart_litex_data *data = dev->data;
 
-	data = dev->data;
 	data->callback = cb;
 	data->cb_data = cb_data;
 }
