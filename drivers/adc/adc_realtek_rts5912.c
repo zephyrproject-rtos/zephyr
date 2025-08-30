@@ -123,6 +123,7 @@ static int adc_rts5912_enable(const struct device *dev)
 	int64_t st = k_uptime_get();
 
 	regs->ctrl |= ADC_CTRL_EN;
+	k_msleep(20);
 	while ((k_uptime_get() - st) < RTS5912_ADC_ENABLE_TIMEOUT) {
 		if (regs->sts & ADC_STS_RDY) {
 			return 0;
