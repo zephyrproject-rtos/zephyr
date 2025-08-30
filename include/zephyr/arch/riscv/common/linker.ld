@@ -35,16 +35,22 @@
 #define ROM_END_OFFSET 0
 #endif
 
+#if CONFIG_USE_DT_CODE_PARTITION
+#define FLASH_LOAD_OFFSET DT_REG_ADDR(DT_CHOSEN(zephyr_code_partition))
+#define FLASH_LOAD_SIZE DT_REG_SIZE(DT_CHOSEN(zephyr_code_partition))
+#else
 #if defined(CONFIG_FLASH_LOAD_OFFSET)
 #define FLASH_LOAD_OFFSET CONFIG_FLASH_LOAD_OFFSET
 #else
 #define FLASH_LOAD_OFFSET 0
 #endif
+#define FLASH_LOAD_SIZE CONFIG_FLASH_LOAD_SIZE
+#endif
 
 #ifdef CONFIG_XIP
 
-#if CONFIG_FLASH_LOAD_SIZE > 0
-#define ROM_SIZE (CONFIG_FLASH_LOAD_SIZE - ROM_END_OFFSET)
+#if FLASH_LOAD_SIZE > 0
+#define ROM_SIZE (FLASH_LOAD_SIZE - ROM_END_OFFSET)
 #endif
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_CHOSEN(zephyr_flash), soc_nv_flash, okay)
