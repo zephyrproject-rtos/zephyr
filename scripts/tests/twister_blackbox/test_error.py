@@ -72,7 +72,7 @@ class TestError:
         args = []
         if testroot:
             args = ['-T', testroot]
-        args += ['-i', '--outdir', out_path, '--test', test, '-y'] + \
+        args += ['--detailed-test-id', '-i', '--outdir', out_path, '--test', test, '-y'] + \
                [val for pair in zip(
                    ['-p'] * len(test_platforms), test_platforms
                ) for val in pair]
@@ -98,7 +98,7 @@ class TestError:
     def test_overflow_as_errors(self, capfd, out_path, switch, expected):
         path = os.path.join(TEST_DATA, 'tests', 'qemu_overflow')
         test_platforms = ['qemu_x86']
-        args = ['--outdir', out_path, '-T', path, '-vv'] + \
+        args = ['--detailed-test-id', '--outdir', out_path, '-T', path, '-vv'] + \
                ['--build-only'] + \
                [val for pair in zip(
                    ['-p'] * len(test_platforms), test_platforms

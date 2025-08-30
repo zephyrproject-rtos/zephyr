@@ -59,7 +59,8 @@ class TestTestPlan:
     def test_subtest(self, out_path, test, expected_exception, expected_subtest_count):
         test_platforms = ['qemu_x86', 'intel_adl_crb']
         path = os.path.join(TEST_DATA, 'tests', 'dummy')
-        args = ['-i', '--outdir', out_path, '-T', path, '--sub-test', test, '-y'] + \
+        args = ['--detailed-test-id',
+                '-i', '--outdir', out_path, '-T', path, '--sub-test', test, '-y'] + \
                [val for pair in zip(
                    ['-p'] * len(test_platforms), test_platforms
                ) for val in pair]
