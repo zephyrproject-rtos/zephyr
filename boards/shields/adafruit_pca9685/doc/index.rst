@@ -12,6 +12,13 @@ UNO R3 compatible shield based on the NXP PCA9685 IC.
 More information about the shield can be found
 at the `Adafruit 16-channel PWM/Servo Shield webpage`_.
 
+.. figure:: adafruit_pca9685.webp
+   :align: center
+   :alt: Adafruit 16-channel PWM/Servo Shield
+
+   Adafruit 16-channel PWM/Servo Shield (Credit: Adafruit)
+
+
 Pins Assignments
 ================
 
