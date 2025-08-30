@@ -1,0 +1,38 @@
+/*
+ * Copyright (c) 2025, Silicon Laboratories Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Connect EXP4 (PC5) and EXP6 (PC3) of the Expansion Pin header
+ */
+
+&pinctrl {
+	usart0_default: usart0_default {
+		group0 {
+			pins = <USART0_TX_PC5>; /* WPK EXP4 (PC5) */
+			drive-push-pull;
+			output-high;
+		};
+		group1 {
+			pins = <USART0_RX_PC3>; /* WPK EXP6 (PC3) */
+			input-enable;
+			silabs,input-filter;
+		};
+	};
+};
+
+dut: &usart0 {
+	dmas = <&dma0 DMA_REQSEL_USART0TXBL>,
+	       <&dma0 DMA_REQSEL_USART0RXDATAV>;
+	dma-names = "tx", "rx";
+	pinctrl-0 = <&usart0_default>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&dma0 {
+	status = "okay";
+};
