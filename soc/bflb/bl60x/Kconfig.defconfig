@@ -5,9 +5,9 @@
 if SOC_SERIES_BL60X
 
 # On BL602 and BL604, not all values work, here is a list of some that work:
-# 5000, 1000, 100, 10, 1
+# 1000, 100, 10, 1
 config SYS_CLOCK_TICKS_PER_SEC
-	default 5000
+	default 1000
 
 config NUM_IRQS
 	default 80

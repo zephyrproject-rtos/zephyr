@@ -21,6 +21,8 @@
 #include <hbn_reg.h>
 #include <pds_reg.h>
 
+extern void soc_bflb_cache_invalidate(void);
+
 /* Set Embedded Flash Pullup */
 static void system_bor_init(void)
 {
@@ -51,6 +53,7 @@ void soc_early_init_hook(void)
 
 	key = irq_lock();
 
+	soc_bflb_cache_invalidate();
 
 	/* disable hardware_pullup_pull_down (reg_en_hw_pu_pd = 0) */
 	tmp = sys_read32(HBN_BASE + HBN_IRQ_MODE_OFFSET);
