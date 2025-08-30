@@ -42,13 +42,13 @@
 
 		joystick_up: joystick_up {
 			label = "User joystick UP";
-			gpios = <&pico_header  2 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			gpios = <&pico_header 2 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			zephyr,code = <INPUT_KEY_UP>;
 		};
 
 		joystick_down: joystick_down {
 			label = "User joystick DOWN";
-			gpios = <&pico_header  18 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			gpios = <&pico_header 18 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			zephyr,code = <INPUT_KEY_DOWN>;
 		};
 

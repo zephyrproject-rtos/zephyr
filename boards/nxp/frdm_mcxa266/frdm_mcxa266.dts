@@ -15,7 +15,7 @@
 	model = "NXP FRDM_MCXA266 board";
 	compatible = "nxp,mcxa266", "nxp,mcx";
 
-	aliases{
+	aliases {
 		led0 = &red_led;
 		led1 = &green_led;
 		led2 = &blue_led;
@@ -69,7 +69,6 @@
 			zephyr,code = <INPUT_KEY_1>;
 		};
 	};
-
 };
 
 &porta {

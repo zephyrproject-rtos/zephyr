@@ -8,7 +8,8 @@
 /* Assignments common to all Feather-based Particle mesh boards.
  *
  * NOTE: This file is replicated in particle_{argon,boron,xenon}.
- * Changes should be made in all instances. */
+ * Changes should be made in all instances.
+ */
 
 #include <nordic/nrf52840_partition.dtsi>
 #include "mesh_feather-pinctrl.dtsi"
@@ -71,28 +72,28 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map = <0 0 &gpio0 26 0>,   /* SDA */
-			   <1 0 &gpio0 27 0>,   /* SCL */
-			   <2 0 &gpio1 1 0>,    /* PWM3 */
-			   <3 0 &gpio1 2 0>,    /* PWM3 */
-			   <4 0 &gpio1 8 0>,    /* PWM1 */
-			   <5 0 &gpio1 10 0>,   /* PWM1 */
-			   <6 0 &gpio1 11 0>,   /* PWM1 */
-			   <7 0 &gpio1 12 0>,   /* PWM0 */
-			   <8 0 &gpio1 3 0>,    /* PWM1 */
-			   <9 0 &gpio0 6 0>,    /* TX */
-			   <10 0 &gpio0 8 0>,   /* RX */
-			   <11 0 &gpio1 14 0>,  /* MISO */
-			   <12 0 &gpio1 13 0>,  /* MOSI */
-			   <13 0 &gpio1 15 0>,  /* SCK */
-			   <14 0 &gpio0 31 0>,  /* SS */
-			   <15 0 &gpio0 30 0>,  /* ADC4 = AIN6 */
-			   <16 0 &gpio0 29 0>,  /* ADC3 = AIN5 */
-			   <17 0 &gpio0 28 0>,  /* ADC2 = AIN4 */
-			   <18 0 &gpio0 4 0>,   /* ADC1 = AIN2 */
-			   <19 0 &gpio0 3 0>,   /* ADC0 = AIN1 */
-			   <20 0 &gpio0 11 0>,  /* MODEn */
-			   <21 0 &gpio0 18 0>;  /* RESETn */
+		gpio-map = <0 0 &gpio0 26 0>, /* SDA */
+			   <1 0 &gpio0 27 0>, /* SCL */
+			   <2 0 &gpio1 1 0>, /* PWM3 */
+			   <3 0 &gpio1 2 0>, /* PWM3 */
+			   <4 0 &gpio1 8 0>, /* PWM1 */
+			   <5 0 &gpio1 10 0>, /* PWM1 */
+			   <6 0 &gpio1 11 0>, /* PWM1 */
+			   <7 0 &gpio1 12 0>, /* PWM0 */
+			   <8 0 &gpio1 3 0>, /* PWM1 */
+			   <9 0 &gpio0 6 0>, /* TX */
+			   <10 0 &gpio0 8 0>, /* RX */
+			   <11 0 &gpio1 14 0>, /* MISO */
+			   <12 0 &gpio1 13 0>, /* MOSI */
+			   <13 0 &gpio1 15 0>, /* SCK */
+			   <14 0 &gpio0 31 0>, /* SS */
+			   <15 0 &gpio0 30 0>, /* ADC4 = AIN6 */
+			   <16 0 &gpio0 29 0>, /* ADC3 = AIN5 */
+			   <17 0 &gpio0 28 0>, /* ADC2 = AIN4 */
+			   <18 0 &gpio0 4 0>, /* ADC1 = AIN2 */
+			   <19 0 &gpio0 3 0>, /* ADC0 = AIN1 */
+			   <20 0 &gpio0 11 0>, /* MODEn */
+			   <21 0 &gpio0 18 0>; /* RESETn */
 	};
 
 	feather_header: feather_connector {
@@ -100,27 +101,27 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map = <12 0 &gpio0 26 0>,  /* SDA */
-			   <13 0 &gpio0 27 0>,  /* SCL */
-			   <14 0 &gpio1 1 0>,   /* PWM3 */
-			   <15 0 &gpio1 2 0>,   /* PWM3 */
-			   <16 0 &gpio1 8 0>,   /* PWM1 */
-			   <17 0 &gpio1 10 0>,  /* PWM1 */
-			   <18 0 &gpio1 11 0>,  /* PWM1 */
-			   <19 0 &gpio1 12 0>,  /* PWM0 */
-			   <20 0 &gpio1 3 0>,   /* PWM1 */
+		gpio-map = <12 0 &gpio0 26 0>, /* SDA */
+			   <13 0 &gpio0 27 0>, /* SCL */
+			   <14 0 &gpio1 1 0>, /* PWM3 */
+			   <15 0 &gpio1 2 0>, /* PWM3 */
+			   <16 0 &gpio1 8 0>, /* PWM1 */
+			   <17 0 &gpio1 10 0>, /* PWM1 */
+			   <18 0 &gpio1 11 0>, /* PWM1 */
+			   <19 0 &gpio1 12 0>, /* PWM0 */
+			   <20 0 &gpio1 3 0>, /* PWM1 */
 			   /* 11 not connected */
-			   <10 0 &gpio0 6 0>,   /* TX */
-			   <9 0 &gpio0 8 0>,    /* RX */
-			   <8 0 &gpio1 14 0>,   /* MISO */
-			   <7 0 &gpio1 13 0>,   /* MOSI */
-			   <6 0 &gpio1 15 0>,   /* SCK */
-			   <5 0 &gpio0 31 0>,   /* SS */
-			   <4 0 &gpio0 30 0>,   /* ADC4 = AIN6 */
-			   <3 0 &gpio0 29 0>,   /* ADC3 = AIN5 */
-			   <2 0 &gpio0 28 0>,   /* ADC2 = AIN4 */
-			   <1 0 &gpio0 4 0>,    /* ADC1 = AIN2 */
-			   <0 0 &gpio0 3 0>;    /* ADC0 = AIN1 */
+			   <10 0 &gpio0 6 0>, /* TX */
+			   <9 0 &gpio0 8 0>, /* RX */
+			   <8 0 &gpio1 14 0>, /* MISO */
+			   <7 0 &gpio1 13 0>, /* MOSI */
+			   <6 0 &gpio1 15 0>, /* SCK */
+			   <5 0 &gpio0 31 0>, /* SS */
+			   <4 0 &gpio0 30 0>, /* ADC4 = AIN6 */
+			   <3 0 &gpio0 29 0>, /* ADC3 = AIN5 */
+			   <2 0 &gpio0 28 0>, /* ADC2 = AIN4 */
+			   <1 0 &gpio0 4 0>, /* ADC1 = AIN2 */
+			   <0 0 &gpio0 3 0>; /* ADC0 = AIN1 */
 	};
 };
 
@@ -153,7 +154,7 @@ arduino_i2c: &i2c0 { /* feather I2C */
 	pinctrl-names = "default", "sleep";
 };
 
-feather_i2c: &i2c0 { };
+feather_i2c: &i2c0 {};
 
 /* TWI1 used on Boron; also see mesh_feather_spi_spi1.dtsi */
 
@@ -175,11 +176,9 @@ feather_i2c: &i2c0 { };
 		t-enter-dpd = <10000>;
 		t-exit-dpd = <100000>;
 		jedec-id = [c2 20 16];
-		sfdp-bfp = [
-			e5 20 f1 ff  ff ff ff 01  44 eb 08 6b  08 3b 04 bb
-			ee ff ff ff  ff ff 00 ff  ff ff 00 ff  0c 20 0f 52
-			10 d8 00 ff
-		];
+		sfdp-bfp = [e5 20 f1 ff ff ff ff 01 44 eb 08 6b 08 3b 04 bb
+			    ee ff ff ff ff ff 00 ff ff ff 00 ff 0c 20 0f 52
+			    10 d8 00 ff];
 	};
 };
 

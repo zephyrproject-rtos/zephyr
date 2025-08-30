@@ -150,7 +150,6 @@
 	clock-source = "fixed";
 };
 
-
 /* RGB LED powered by FlexTimer 3, and PWM headers for channel 5 and 6 */
 &ftm3 {
 	status = "okay";
@@ -348,7 +347,6 @@ zephyr_udc0: &usbotg {
 		   <&gpiob 9 GPIO_ACTIVE_LOW>;
 	clock-frequency = <DT_FREQ_M(1)>;
 
-
 	fxos8700: fxos8700@0 {
 		compatible = "nxp,fxos8700";
 		reg = <0>;
@@ -368,7 +366,6 @@ zephyr_udc0: &usbotg {
 		int2-gpios = <&gpioe 6 GPIO_ACTIVE_LOW>;
 		status = "okay";
 	};
-
 };
 
 /* external spi */

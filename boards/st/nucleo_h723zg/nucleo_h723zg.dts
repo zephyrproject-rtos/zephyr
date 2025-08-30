@@ -116,11 +116,11 @@
 	clocks = <&pll>;
 	clock-frequency = <DT_FREQ_M(550)>;
 	d1cpre = <1>;
-	hpre = <2>;    /* HCLK: 275   MHz */
-	d1ppre = <2>;  /* APB1: 137.5 MHz */
+	hpre = <2>; /* HCLK: 275   MHz */
+	d1ppre = <2>; /* APB1: 137.5 MHz */
 	d2ppre1 = <2>; /* APB2: 137.5 MHz */
 	d2ppre2 = <2>; /* APB3: 137.5 MHz */
-	d3ppre = <2>;  /* APB4: 137.5 MHz */
+	d3ppre = <2>; /* APB4: 137.5 MHz */
 };
 
 &lpuart1 {

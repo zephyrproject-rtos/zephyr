@@ -129,7 +129,6 @@
 		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
 		zephyr,resolution = <16>;
 	};
-
 };
 
 &adc2 {

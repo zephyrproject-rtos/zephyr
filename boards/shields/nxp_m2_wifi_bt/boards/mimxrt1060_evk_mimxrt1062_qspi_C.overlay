@@ -49,10 +49,10 @@
 
 		group1 {
 			pinmux = <&iomuxc_gpio_b1_12_gpio2_io28>,
-				<&iomuxc_gpio_sd_b0_00_usdhc1_cmd>,
-				<&iomuxc_gpio_sd_b0_02_usdhc1_data0>,
-				<&iomuxc_gpio_sd_b0_03_usdhc1_data1>,
-				<&iomuxc_gpio_sd_b0_04_usdhc1_data2>;
+				 <&iomuxc_gpio_sd_b0_00_usdhc1_cmd>,
+				 <&iomuxc_gpio_sd_b0_02_usdhc1_data0>,
+				 <&iomuxc_gpio_sd_b0_03_usdhc1_data1>,
+				 <&iomuxc_gpio_sd_b0_04_usdhc1_data2>;
 			drive-strength = "r0";
 			input-schmitt-enable;
 			bias-pull-up;

@@ -10,14 +10,14 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map = <13 0 &gpioa 8 0>,	/* GPIO-A */
-			   <14 0 &gpiob 3 0>,	/* GPIO-B */
+		gpio-map = <13 0 &gpioa 8 0>, /* GPIO-A */
+			   <14 0 &gpiob 3 0>, /* GPIO-B */
 			   /* GPIO-C not connected */
-			   <16 0 &gpiob 5 0>,	/* GPIO-D */
-			   <17 0 &gpioa 13 0>,	/* GPIO-E */
-			   <18 0 &gpioa 14 0>,	/* GPIO-F */
-			   <19 0 &gpioa 12 0>,	/* GPIO-G */
-			   <20 0 &gpiob 4 0>;	/* GPIO-H */
+			   <16 0 &gpiob 5 0>, /* GPIO-D */
+			   <17 0 &gpioa 13 0>, /* GPIO-E */
+			   <18 0 &gpioa 14 0>, /* GPIO-F */
+			   <19 0 &gpioa 12 0>, /* GPIO-G */
+			   <20 0 &gpiob 4 0>; /* GPIO-H */
 	};
 };
 

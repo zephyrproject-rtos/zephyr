@@ -102,12 +102,10 @@
 		compatible = "jedec,spi-nor";
 		reg = <0>;
 		jedec-id = [c2 28 14];
-		sfdp-bfp = [
-			 e5 20 f1 ff  ff ff 7f 00  44 eb 08 6b  08 3b 04 bb
-			 ee ff ff ff  ff ff 00 ff  ff ff 00 ff  0c 20 0f 52
-			 10 d8 00 ff  23 72 f5 00  82 ed 04 b7  44 83 38 44
-			 30 b0 30 b0  f7 c4 d5 5c  00 be 29 ff  f0 d0 ff ff
-		];
+		sfdp-bfp = [e5 20 f1 ff ff ff 7f 00 44 eb 08 6b 08 3b 04 bb
+			    ee ff ff ff ff ff 00 ff ff ff 00 ff 0c 20 0f 52
+			    10 d8 00 ff 23 72 f5 00 82 ed 04 b7 44 83 38 44
+			    30 b0 30 b0 f7 c4 d5 5c 00 be 29 ff f0 d0 ff ff];
 		size = <0x800000>;
 		spi-max-frequency = <80000000>;
 	};
@@ -162,15 +160,15 @@
 
 	/* This set selects for ENV_I2C supporting Si7021, Si11330, BMP280 */
 	/*
-	location-scl = <GECKO_LOCATION(17) GECKO_PORT_C GECKO_PIN(5)>;
-	location-sda = <GECKO_LOCATION(17) GECKO_PORT_C GECKO_PIN(4)>;
-	*/
+	 * location-scl = <GECKO_LOCATION(17) GECKO_PORT_C GECKO_PIN(5)>;
+	 * location-sda = <GECKO_LOCATION(17) GECKO_PORT_C GECKO_PIN(4)>;
+	 */
 
 	/* This set selects for HALL_I2C supporting Si7210 */
 	/*
-	location-scl = <GECKO_LOCATION(8) GECKO_PORT_B GECKO_PIN(9)>;
-	location-sda = <GECKO_LOCATION(8) GECKO_PORT_B GECKO_PIN(8)>;
-	*/
+	 * location-scl = <GECKO_LOCATION(8) GECKO_PORT_B GECKO_PIN(9)>;
+	 * location-sda = <GECKO_LOCATION(8) GECKO_PORT_B GECKO_PIN(8)>;
+	 */
 };
 
 &rtcc0 {
@@ -228,7 +226,6 @@
 			reg = <0x000fe800 0x00001800>;
 			label = "storage";
 		};
-
 	};
 };
 

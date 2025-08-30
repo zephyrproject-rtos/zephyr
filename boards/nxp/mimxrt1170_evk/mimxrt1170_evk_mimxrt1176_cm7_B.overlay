@@ -25,7 +25,7 @@
 	/delete-node/ is25wp128@0;
 	status = "okay";
 	reg = <0x400cc000 0x4000>, <0x30000000 DT_SIZE_M(64)>;
-	w25q512nw:w25q512nw@0 {
+	w25q512nw: w25q512nw@0 {
 		compatible = "nxp,imx-flexspi-nor";
 		size = <DT_SIZE_M(64*8)>;
 		reg = <0>;
@@ -118,5 +118,4 @@ m2_hci_uart: &lpuart2 {
 		clocks = <&ccm IMX_CCM_SAI1_CLK 0x2004 4>;
 		clock-names = "mclk";
 	};
-
 };

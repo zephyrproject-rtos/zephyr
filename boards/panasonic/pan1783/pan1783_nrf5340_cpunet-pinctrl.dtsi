@@ -57,5 +57,4 @@
 			low-power-enable;
 		};
 	};
-
 };

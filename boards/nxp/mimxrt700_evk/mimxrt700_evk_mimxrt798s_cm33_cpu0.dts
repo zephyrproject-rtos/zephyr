@@ -74,15 +74,15 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map =	<0  0 &gpio1 14 0>,	/* Pin 1, LEDK */
-					<21 0 &gpio3 4 0>,	/* Pin 21, RESET */
-					<22 0 &gpio3 5 0>,	/* Pin 22, LPTE */
-					<26 0 &gpio0 6 0>,	/* Pin 26, CTP_I2C SDA */
-					<27 0 &gpio0 7 0>,	/* Pin 27, CTP_I2C SCL */
-					<28 0 &gpio3 8 0>,	/* Pin 28, CTP_RST */
-					<29 0 &gpio1 13 0>,	/* Pin 29, CTP_INT */
-					<32 0 &gpio1 10 0>,	/* Pin 32, PWR_EN */
-					<34 0 &gpio1 14 0>;	/* Pin 34, BL_PWM */
+		gpio-map = <0 0 &gpio1 14 0>, /* Pin 1, LEDK */
+			   <21 0 &gpio3 4 0>, /* Pin 21, RESET */
+			   <22 0 &gpio3 5 0>, /* Pin 22, LPTE */
+			   <26 0 &gpio0 6 0>, /* Pin 26, CTP_I2C SDA */
+			   <27 0 &gpio0 7 0>, /* Pin 27, CTP_I2C SCL */
+			   <28 0 &gpio3 8 0>, /* Pin 28, CTP_RST */
+			   <29 0 &gpio1 13 0>, /* Pin 29, CTP_INT */
+			   <32 0 &gpio1 10 0>, /* Pin 32, PWR_EN */
+			   <34 0 &gpio1 14 0>; /* Pin 34, BL_PWM */
 	};
 
 	en_mipi_display: enable-mipi-display {
@@ -111,7 +111,7 @@
 	wakeup-source;
 };
 
-&flexcomm0{
+&flexcomm0 {
 	status = "okay";
 };
 
@@ -131,7 +131,7 @@
 	pinctrl-names = "default";
 };
 
-&flexcomm2{
+&flexcomm2 {
 	status = "okay";
 };
 
@@ -152,7 +152,7 @@
 	};
 };
 
-&flexcomm8{
+&flexcomm8 {
 	status = "okay";
 };
 
