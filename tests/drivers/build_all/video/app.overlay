@@ -17,6 +17,12 @@
 		#clock-cells = <0>;
 	};
 
+	imx219_input_clock: imx219-input-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <24000000>;
+		#clock-cells = <0>;
+	};
+
 	test {
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -127,10 +133,16 @@
 				};
 			};
 
-			test_i2c_ov9655: ov9655@8 {
+			test_i2c_ov9655: ov9655@9 {
 				compatible = "ovti,ov9655";
-				reg = <0x8>;
+				reg = <0x9>;
 				reset-gpios = <&test_gpio 0 0>;
+			};
+
+			test_i2c_imx219: imx219@a {
+				compatible = "sony,imx219";
+				reg = <0xa>;
+				clocks = <&imx219_input_clock>;
 			};
 		};
 
