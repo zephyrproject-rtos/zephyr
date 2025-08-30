@@ -4,10 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_DRIVERS_SENSOR_INA23X_INA237_H_
-#define ZEPHYR_DRIVERS_SENSOR_INA23X_INA237_H_
+#ifndef ZEPHYR_DRIVERS_SENSOR_INA2XX_INA237_H_
+#define ZEPHYR_DRIVERS_SENSOR_INA2XX_INA237_H_
 
-#include "ina23x_trigger.h"
+#include "ina2xx_common.h"
+#include "ina2xx_trigger.h"
 
 #include <stdint.h>
 
@@ -38,26 +39,16 @@
 #define INA237_MANUFACTURER_ID 0x5449
 
 struct ina237_data {
+	struct ina2xx_data common;
 	const struct device *dev;
-	int16_t current;
-	uint16_t bus_voltage;
-	uint32_t power;
-	int16_t die_temp;
-#ifdef CONFIG_INA237_VSHUNT
-	int16_t shunt_voltage;
-#endif
 	enum sensor_channel chan;
-	struct ina23x_trigger trigger;
+	struct ina2xx_trigger trigger;
 };
 
 struct ina237_config {
-	struct i2c_dt_spec bus;
-	uint16_t config;
-	uint16_t adc_config;
-	uint32_t current_lsb;
-	uint16_t cal;
+	const struct ina2xx_config common;
 	const struct gpio_dt_spec alert_gpio;
 	uint16_t alert_config;
 };
 
-#endif /* ZEPHYR_DRIVERS_SENSOR_INA23X_INA237_H_ */
+#endif /* ZEPHYR_DRIVERS_SENSOR_INA2XX_INA237_H_ */
