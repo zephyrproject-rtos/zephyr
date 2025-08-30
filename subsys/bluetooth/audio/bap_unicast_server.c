@@ -106,6 +106,11 @@ int bt_bap_unicast_server_reconfig(struct bt_bap_stream *stream,
 
 	ep = stream->ep;
 
+	if (!bt_ascs_is_ase_ep(ep)) {
+		LOG_DBG("ep %p not in ASCS", ep);
+		return -EINVAL;
+	}
+
 	if (unicast_server_cb != NULL &&
 		unicast_server_cb->reconfig != NULL) {
 		err = unicast_server_cb->reconfig(stream, ep->dir, codec_cfg, &ep->qos_pref, &rsp);
@@ -125,6 +130,11 @@ int bt_bap_unicast_server_reconfig(struct bt_bap_stream *stream,
 int bt_bap_unicast_server_start(struct bt_bap_stream *stream)
 {
 	struct bt_bap_ep *ep = stream->ep;
+
+	if (!bt_ascs_is_ase_ep(ep)) {
+		LOG_DBG("ep %p not in ASCS", ep);
+		return -EINVAL;
+	}
 
 	if (ep->dir != BT_AUDIO_DIR_SINK) {
 		LOG_DBG("Invalid operation for stream %p with dir %u",
@@ -153,6 +163,12 @@ int bt_bap_unicast_server_metadata(struct bt_bap_stream *stream, const uint8_t m
 						     BT_BAP_ASCS_REASON_NONE);
 	int err;
 
+	ep = stream->ep;
+	if (!bt_ascs_is_ase_ep(ep)) {
+		LOG_DBG("ep %p not in ASCS", ep);
+		return -EINVAL;
+	}
+
 	if (meta_len > sizeof(ep->codec_cfg.meta)) {
 		return -ENOMEM;
 	}
@@ -169,20 +185,29 @@ int bt_bap_unicast_server_metadata(struct bt_bap_stream *stream, const uint8_t m
 		return err;
 	}
 
-	ep = stream->ep;
 	(void)memcpy(ep->codec_cfg.meta, meta, meta_len);
 
 	/* Set the state to the same state to trigger the notifications */
-	return ascs_ep_set_state(ep, ep->status.state);
+	return ascs_ep_set_state(ep, ep->state);
 }
 
 int bt_bap_unicast_server_disable(struct bt_bap_stream *stream)
 {
+	if (!bt_ascs_is_ase_ep(stream->ep)) {
+		LOG_DBG("ep %p not in ASCS", stream->ep);
+		return -EINVAL;
+	}
+
 	return bt_ascs_disable_ase(stream->ep);
 }
 
 int bt_bap_unicast_server_release(struct bt_bap_stream *stream)
 {
+	if (!bt_ascs_is_ase_ep(stream->ep)) {
+		LOG_DBG("ep %p not in ASCS", stream->ep);
+		return -EINVAL;
+	}
+
 	return bt_ascs_release_ase(stream->ep);
 }
 

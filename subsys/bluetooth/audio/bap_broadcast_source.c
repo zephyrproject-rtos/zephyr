@@ -85,9 +85,9 @@ static void broadcast_source_set_ep_state(struct bt_bap_ep *ep, uint8_t state)
 {
 	uint8_t old_state;
 
-	old_state = ep->status.state;
+	old_state = ep->state;
 
-	LOG_DBG("ep %p id 0x%02x %s -> %s", ep, ep->status.id, bt_bap_ep_state_str(old_state),
+	LOG_DBG("ep %p id 0x%02x %s -> %s", ep, ep->id, bt_bap_ep_state_str(old_state),
 		bt_bap_ep_state_str(state));
 
 	switch (old_state) {
@@ -121,7 +121,7 @@ static void broadcast_source_set_ep_state(struct bt_bap_ep *ep, uint8_t state)
 		return;
 	}
 
-	ep->status.state = state;
+	ep->state = state;
 }
 
 static void broadcast_source_set_state(struct bt_bap_broadcast_source *source, uint8_t state)
@@ -617,7 +617,7 @@ static enum bt_bap_ep_state broadcast_source_get_state(struct bt_bap_broadcast_s
 
 		SYS_SLIST_FOR_EACH_CONTAINER(&subgroup->streams, stream, _node) {
 			if (stream->ep != NULL) {
-				state = MAX(state, stream->ep->status.state);
+				state = MAX(state, stream->ep->state);
 			}
 		}
 	}
