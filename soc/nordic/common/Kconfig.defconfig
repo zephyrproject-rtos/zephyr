@@ -6,3 +6,6 @@ if RISCV_CORE_NORDIC_VPR
 rsource "vpr/Kconfig.defconfig"
 
 endif # RISCV_CORE_NORDIC_VPR
+
+config PM_DEVICE_RUNTIME_DEFAULT_ENABLE
+	default y if PM_DEVICE_RUNTIME
