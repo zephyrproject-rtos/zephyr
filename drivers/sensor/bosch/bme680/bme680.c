@@ -7,6 +7,7 @@
 /*
  * Copyright (c) 2018 Bosch Sensortec GmbH
  * Copyright (c) 2022, Leonard Pollak
+ * Copyright (c) 2025 Nordic Semiconductors ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -73,7 +74,7 @@ static void bme680_calc_temp(struct bme680_data *data, uint32_t adc_temp)
 	var3 = ((var1 >> 1) * (var1 >> 1)) >> 12;
 	var3 = ((var3) * ((int32_t)data->par_t3 << 4)) >> 14;
 	data->t_fine = var2 + var3;
-	data->calc_temp = ((data->t_fine * 5) + 128) >> 8;
+	data->reading.calc_temp = ((data->t_fine * 5) + 128) >> 8;
 }
 
 static void bme680_calc_press(struct bme680_data *data, uint32_t adc_press)
@@ -110,7 +111,7 @@ static void bme680_calc_press(struct bme680_data *data, uint32_t adc_press)
 		* (int32_t)(calc_press >> 8)
 		* (int32_t)data->par_p10) >> 17;
 
-	data->calc_press = calc_press
+	data->reading.calc_press = calc_press
 			   + ((var1 + var2 + var3
 			       + ((int32_t)data->par_p7 << 7)) >> 4);
 }
@@ -144,7 +145,7 @@ static void bme680_calc_humidity(struct bme680_data *data, uint16_t adc_humidity
 		calc_hum = 0;
 	}
 
-	data->calc_humidity = calc_hum;
+	data->reading.calc_humidity = calc_hum;
 }
 
 static void bme680_calc_gas_resistance(struct bme680_data *data, uint8_t gas_range,
@@ -168,7 +169,7 @@ static void bme680_calc_gas_resistance(struct bme680_data *data, uint8_t gas_ran
 		       ((int64_t)look_up1[gas_range])) >> 16;
 	var2 = (((int64_t)((int64_t)adc_gas_res << 15) - (int64_t)(16777216)) + var1);
 	var3 = (((int64_t)look_up2[gas_range] * (int64_t)var1) >> 9);
-	data->calc_gas_resistance = (uint32_t)((var3 + ((int64_t)var2 >> 1))
+	data->reading.calc_gas_resistance = (uint32_t)((var3 + ((int64_t)var2 >> 1))
 					    / (int64_t)var2);
 }
 
@@ -215,7 +216,7 @@ static uint8_t bme680_calc_gas_wait(uint16_t dur)
 	return durval;
 }
 
-static int bme680_sample_fetch(const struct device *dev,
+int bme680_sample_fetch(const struct device *dev,
 			       enum sensor_channel chan)
 {
 	struct bme680_data *data = dev->data;
@@ -282,31 +283,31 @@ static int bme680_channel_get(const struct device *dev,
 		 * data->calc_temp has a resolution of 0.01 degC.
 		 * So 5123 equals 51.23 degC.
 		 */
-		val->val1 = data->calc_temp / 100;
-		val->val2 = data->calc_temp % 100 * 10000;
+		val->val1 = data->reading.calc_temp / 100;
+		val->val2 = data->reading.calc_temp % 100 * 10000;
 		break;
 	case SENSOR_CHAN_PRESS:
 		/*
 		 * data->calc_press has a resolution of 1 Pa.
 		 * So 96321 equals 96.321 kPa.
 		 */
-		val->val1 = data->calc_press / 1000;
-		val->val2 = (data->calc_press % 1000) * 1000;
+		val->val1 = data->reading.calc_press / 1000;
+		val->val2 = (data->reading.calc_press % 1000) * 1000;
 		break;
 	case SENSOR_CHAN_HUMIDITY:
 		/*
 		 * data->calc_humidity has a resolution of 0.001 %RH.
 		 * So 46333 equals 46.333 %RH.
 		 */
-		val->val1 = data->calc_humidity / 1000;
-		val->val2 = (data->calc_humidity % 1000) * 1000;
+		val->val1 = data->reading.calc_humidity / 1000;
+		val->val2 = (data->reading.calc_humidity % 1000) * 1000;
 		break;
 	case SENSOR_CHAN_GAS_RES:
 		/*
 		 * data->calc_gas_resistance has a resolution of 1 ohm.
 		 * So 100000 equals 100000 ohms.
 		 */
-		val->val1 = data->calc_gas_resistance;
+		val->val1 = data->reading.calc_gas_resistance;
 		val->val2 = 0;
 		break;
 	default:
@@ -483,6 +484,10 @@ static int bme680_init(const struct device *dev)
 static DEVICE_API(sensor, bme680_api_funcs) = {
 	.sample_fetch = bme680_sample_fetch,
 	.channel_get = bme680_channel_get,
+#ifdef CONFIG_SENSOR_ASYNC_API
+	.submit = bme680_submit,
+	.get_decoder = bme680_get_decoder,
+#endif
 };
 
 /* Initializes a struct bme680_config for an instance on a SPI bus. */
