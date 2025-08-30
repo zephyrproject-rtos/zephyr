@@ -386,7 +386,13 @@ def kconfig_snippet(meta, path, kconfig_file=None, blobs=False, taint_blobs=Fals
     return '\n'.join(snippet)
 
 
-def process_kconfig(module, meta):
+def process_kconfig_module_dir(module, meta):
+    module_path = PurePath(module)
+    name_sanitized = meta['name-sanitized']
+    return f'ZEPHYR_{name_sanitized.upper()}_MODULE_DIR := {module_path.as_posix()}\n'
+
+
+def process_kconfig(module, meta, fallback):
     blobs = process_blobs(module, meta)
     taint_blobs = any(b['status'] != BLOB_NOT_PRESENT for b in blobs)
     section = meta.get('build', dict())
@@ -394,7 +400,11 @@ def process_kconfig(module, meta):
     module_yml = module_path.joinpath('zephyr/module.yml')
     kconfig_extern = section.get('kconfig-ext', False)
     name_sanitized = meta['name-sanitized']
-    snippet = f'ZEPHYR_{name_sanitized.upper()}_MODULE_DIR := {module_path.as_posix()}\n'
+
+    if fallback is True:
+        snippet = f'ZEPHYR_{name_sanitized.upper()}_MODULE_DIR := {module_path.as_posix()}\n'
+    else:
+        snippet = ""
 
     if kconfig_extern:
         return snippet + kconfig_snippet(meta, module_path, blobs=blobs, taint_blobs=taint_blobs)
@@ -413,13 +423,17 @@ def process_kconfig(module, meta):
         return snippet + '\n'.join(kconfig_module_opts(name_sanitized, blobs, taint_blobs)) + '\n'
 
 
-def process_sysbuildkconfig(module, meta):
+def process_sysbuildkconfig(module, meta, fallback):
     section = meta.get('build', dict())
     module_path = PurePath(module)
     module_yml = module_path.joinpath('zephyr/module.yml')
     kconfig_extern = section.get('sysbuild-kconfig-ext', False)
     name_sanitized = meta['name-sanitized']
-    snippet = f'ZEPHYR_{name_sanitized.upper()}_MODULE_DIR := {module_path.as_posix()}\n'
+
+    if fallback is True:
+        snippet = f'ZEPHYR_{name_sanitized.upper()}_MODULE_DIR := {module_path.as_posix()}\n'
+    else:
+        snippet = ""
 
     if kconfig_extern:
         return snippet + kconfig_snippet(meta, module_path, sysbuild=True)
@@ -830,6 +844,9 @@ def main():
     Process a list of projects and create Kconfig / CMake include files for
     projects which are also a Zephyr module''', allow_abbrev=False)
 
+    parser.add_argument('--kconfig-module-dirs-out',
+                        help="""File to write with resulting KConfig module directory
+                             statements.""")
     parser.add_argument('--kconfig-out',
                         help="""File to write with resulting KConfig import
                              statements.""")
@@ -866,25 +883,42 @@ def main():
                         help='Path to zephyr repository')
     args = parser.parse_args()
 
+
+    kconfig_module_dirs = ""
     kconfig = ""
     cmake = ""
     sysbuild_kconfig = ""
     sysbuild_cmake = ""
     settings = ""
     twister = ""
+    kconfig_module_fallback = True
+
+    if args.kconfig_module_dirs_out:
+        module_dir_kconfig_path = PurePath(args.kconfig_module_dirs_out)
+        snippet = f'source "{module_dir_kconfig_path.as_posix()}"\n'
+        kconfig = snippet
+        sysbuild_kconfig = snippet
+        kconfig_module_fallback = False
 
     west_projs = west_projects()
     modules = parse_modules(args.zephyr_base, None, west_projs,
                             args.modules, args.extra_modules)
 
     for module in modules:
-        kconfig += process_kconfig(module.project, module.meta)
+        if args.kconfig_module_dirs_out:
+            kconfig_module_dirs += process_kconfig_module_dir(module.project, module.meta)
+
+        kconfig += process_kconfig(module.project, module.meta, kconfig_module_fallback)
         cmake += process_cmake(module.project, module.meta)
         sysbuild_kconfig += process_sysbuildkconfig(
-            module.project, module.meta)
+            module.project, module.meta, kconfig_module_fallback)
         sysbuild_cmake += process_sysbuildcmake(module.project, module.meta)
         settings += process_settings(module.project, module.meta)
         twister += process_twister(module.project, module.meta)
+
+    if args.kconfig_module_dirs_out:
+        with open(args.kconfig_module_dirs_out, 'w', encoding="utf-8") as fp:
+            fp.write(kconfig_module_dirs)
 
     if args.kconfig_out:
         with open(args.kconfig_out, 'w', encoding="utf-8") as fp:

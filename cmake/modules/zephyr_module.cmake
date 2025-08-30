@@ -42,6 +42,7 @@ if(EXTRA_ZEPHYR_MODULES)
 endif()
 
 file(MAKE_DIRECTORY ${KCONFIG_BINARY_DIR})
+set(kconfig_module_dirs_file ${KCONFIG_BINARY_DIR}/Kconfig.module_dirs)
 set(kconfig_modules_file ${KCONFIG_BINARY_DIR}/Kconfig.modules)
 set(kconfig_sysbuild_file ${KCONFIG_BINARY_DIR}/Kconfig.sysbuild.modules)
 set(cmake_modules_file ${CMAKE_BINARY_DIR}/zephyr_modules.txt)
@@ -57,6 +58,7 @@ if(WEST OR ZEPHYR_MODULES)
     --zephyr-base=${ZEPHYR_BASE}
     ${ZEPHYR_MODULES_ARG}
     ${EXTRA_ZEPHYR_MODULES_ARG}
+    --kconfig-module-dirs-out ${kconfig_module_dirs_file}
     --kconfig-out ${kconfig_modules_file}
     --cmake-out ${cmake_modules_file}
     --sysbuild-kconfig-out ${kconfig_sysbuild_file}
