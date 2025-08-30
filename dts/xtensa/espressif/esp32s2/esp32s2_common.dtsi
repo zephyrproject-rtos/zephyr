@@ -260,9 +260,6 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x3f40f000 0x1000>;
-			interrupts = <I2S0_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>,
-				     <I2S0_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
-			interrupt-names = "rx", "tx";
 			interrupt-parent = <&intc>;
 			clocks = <&clock ESP32_I2S0_MODULE>;
 			unit = <0>;

@@ -17,9 +17,6 @@ properties:
   clocks:
     required: true
 
-  interrupts:
-    required: true
-
   interrupt-parent:
     required: true
 
@@ -28,3 +25,8 @@ properties:
     required: true
     description: I2S unit number.
       Possible values are 0,1,.. depending on chip.
+
+  full-duplex:
+    type: boolean
+    description: |
+      Indicates whether tx and rx channels must share WS and BCK lines.
