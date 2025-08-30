@@ -62,12 +62,30 @@ static int stm32_hash_handler(struct hash_ctx *ctx, struct hash_pkt *pkt, bool f
 
 	switch (session->algo) {
 	case CRYPTO_HASH_ALGO_SHA224:
-		status = HAL_HASHEx_SHA224_Start(&data->hhash, pkt->in_buf, pkt->in_len,
-						 pkt->out_buf, HAL_MAX_DELAY);
+#if defined(CONFIG_SOC_SERIES_STM32H7RSX)
+		/* Update configuration now for this session */
+		data->hhash.Init.Algorithm = HASH_ALGOSELECTION_SHA224;
+		if (HAL_HASH_SetConfig(&data->hhash, &data->hhash.Init) != HAL_OK) {
+			LOG_ERR("Peripheral algo config error");
+			return -EIO;
+		}
+#endif /* CONFIG_SOC_SERIES_STM32H7RSX */
+		LOG_DBG("HASH compute SHA224");
+		status = hal_func_hash_SHA224_start(&data->hhash, pkt->in_buf, pkt->in_len,
+						 pkt->out_buf);
 		break;
 	case CRYPTO_HASH_ALGO_SHA256:
-		status = HAL_HASHEx_SHA256_Start(&data->hhash, pkt->in_buf, pkt->in_len,
-						 pkt->out_buf, HAL_MAX_DELAY);
+#if defined(CONFIG_SOC_SERIES_STM32H7RSX)
+		/* Update configuration now for this session */
+		data->hhash.Init.Algorithm = HASH_ALGOSELECTION_SHA256;
+		if (HAL_HASH_SetConfig(&data->hhash, &data->hhash.Init) != HAL_OK) {
+			LOG_ERR("Peripheral algo config error");
+			return -EIO;
+		}
+#endif /* CONFIG_SOC_SERIES_STM32H7RSX */
+		LOG_DBG("HASH compute SHA256");
+		status = hal_func_hash_SHA256_start(&data->hhash, pkt->in_buf, pkt->in_len,
+						 pkt->out_buf);
 		break;
 	default:
 		k_sem_give(&data->device_sem);
@@ -161,6 +179,7 @@ static int crypto_stm32_hash_init(const struct device *dev)
 	k_sem_init(&data->session_sem, 1, 1);
 
 	data->hhash.Init.DataType = HASH_DATATYPE_8B;
+
 	if (HAL_HASH_Init(&data->hhash) != HAL_OK) {
 		LOG_ERR("Peripheral init error");
 		return -EIO;
@@ -175,7 +194,13 @@ static DEVICE_API(crypto, stm32_hash_funcs) = {
 	.query_hw_caps = stm32_hash_query_caps,
 };
 
-static struct crypto_stm32_hash_data crypto_stm32_hash_dev_data = {0};
+static struct crypto_stm32_hash_data crypto_stm32_hash_dev_data = {
+#if defined(CONFIG_SOC_SERIES_STM32H7RSX)
+	.hhash = {.Instance = (HASH_TypeDef *)DT_INST_REG_ADDR(0)}
+#else
+	0
+#endif /* CONFIG_SOC_SERIES_STM32H7RSX */
+};
 
 static const struct crypto_stm32_hash_config crypto_stm32_hash_dev_config = {
 	.reset = RESET_DT_SPEC_INST_GET(0),
