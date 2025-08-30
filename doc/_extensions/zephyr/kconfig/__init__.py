@@ -118,7 +118,7 @@ def kconfig_load(app: Sphinx) -> tuple[kconfiglib.Kconfig, dict[str, str]]:
         root_args = argparse.Namespace(**{'board_roots': [Path(ZEPHYR_BASE)],
                                           'soc_roots': [Path(ZEPHYR_BASE)], 'board': None,
                                           'board_dir': []})
-        v2_boards = list_boards.find_v2_boards(root_args).values()
+        v2_boards = list_boards.find_v2_boards(root_args)
 
         with open(Path(td) / "boards" / "Kconfig.boards", "w") as f:
             for board in v2_boards:
