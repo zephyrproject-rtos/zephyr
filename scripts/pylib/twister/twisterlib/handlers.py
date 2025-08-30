@@ -21,6 +21,7 @@ import sys
 import threading
 import time
 from contextlib import contextmanager
+from enum import Enum
 from pathlib import Path
 from queue import Empty, Queue
 
@@ -40,6 +41,7 @@ except ImportError:
 
 try:
     import pty
+
 except ImportError as capture_error:
     if os.name == "nt":  # "nt" means that program is running on Windows OS
         pass  # "--device-serial-pty" option is not supported on Windows OS
@@ -69,6 +71,11 @@ def terminate_process(proc):
 
 
 class Handler:
+    class FailureType(Enum):
+        TIMEOUT = "Timeout"
+        CRASH = "Crash"
+        FLASH = "Flash Error"
+        NONE = "None"
     def __init__(self, instance, type_str: str, options: argparse.Namespace,
                  generator_cmd: str | None = None, suite_name_check: bool = True):
         """Constructor
@@ -91,6 +98,9 @@ class Handler:
         self.generator_cmd = generator_cmd
         self.suite_name_check = suite_name_check
         self.ready = False
+        self.ignore_crash = False
+        self.ignore_unexpected_eof = False
+        self.execution_time = 0
 
         self.args = []
         self.terminated = False
@@ -104,7 +114,7 @@ class Handler:
         terminate_process(proc)
         self.terminated = True
 
-    def _verify_ztest_suite_name(self, harness_status, detected_suite_names, handler_time):
+    def _verify_ztest_suite_name(self, harness_status, detected_suite_names):
         """
         If test suite names was found in test's C source code, then verify if
         detected suite names from output correspond to expected suite names
@@ -117,7 +127,7 @@ class Handler:
                 harness_status != TwisterStatus.PASS:
             return
         if not detected_suite_names:
-            self._missing_suite_name(expected_suite_names, handler_time)
+            self._missing_suite_name(expected_suite_names)
             return
         # compare the expect and detect from end one by one without order
         _d_suite = detected_suite_names[-len(expected_suite_names):]
@@ -125,15 +135,15 @@ class Handler:
             set(_d_suite) != set(expected_suite_names)
             and not set(_d_suite).issubset(set(expected_suite_names))
         ):
-            self._missing_suite_name(expected_suite_names, handler_time)
+            self._missing_suite_name(expected_suite_names)
 
-    def _missing_suite_name(self, expected_suite_names, handler_time):
+    def _missing_suite_name(self, expected_suite_names):
         """
         Change result of performed test if problem with missing or unpropper
         suite name was occurred.
         """
         self.instance.status = TwisterStatus.FAIL
-        self.instance.execution_time = handler_time
+        self.instance.execution_time = self.execution_time
         for tc in self.instance.testcases:
             tc.status = TwisterStatus.FAIL
         self.instance.reason = "Testsuite mismatch"
@@ -142,21 +152,20 @@ class Handler:
             f" do not correspond with expected: {str(expected_suite_names)}",
         )
 
-    def _final_handle_actions(self, harness, handler_time):
+    def _final_handle_actions(self, harness):
 
         # only for Ztest tests:
         harness_class_name = type(harness).__name__
         if self.suite_name_check and harness_class_name == "Test":
             self._verify_ztest_suite_name(
                 harness.status,
-                harness.detected_suite_names,
-                handler_time
-            )
+                harness.detected_suite_names
+                )
             if self.instance.status == TwisterStatus.FAIL:
                 return
             if not harness.matched_run_id and harness.run_id_exists:
                 self.instance.status = TwisterStatus.FAIL
-                self.instance.execution_time = handler_time
+                self.instance.execution_time = self.execution_time
                 self.instance.reason = "RunID mismatch"
                 for tc in self.instance.testcases:
                     tc.status = TwisterStatus.FAIL
@@ -176,6 +185,39 @@ class Handler:
             build_dir = self.build_dir
         return build_dir
 
+    def _update_instance_info(self, harness, failure_type=FailureType.NONE):
+        self.instance.execution_time = self.execution_time
+        if (not self.terminated and self.returncode != 0 and not self.ignore_crash) or \
+            harness.status == TwisterStatus.NONE:
+
+            # In case of a crash, we set the status to Fail
+            self.instance.status = TwisterStatus.FAIL
+
+            # Depending on the failure type, we set the reason
+            if self.options.enable_valgrind and self.returncode == 2:
+                self.instance.reason = "Valgrind error"
+            elif failure_type == self.FailureType.TIMEOUT:
+                self.instance.reason = "Timeout"
+            elif failure_type == self.FailureType.FLASH:
+                self.instance.reason = "Timeout during flashing"
+
+            # In case none of the above applies, we set a generic error
+            if not self.instance.reason and self.returncode != 0:
+                self.instance.reason = f"Exited with {self.returncode}"
+            else:
+                self.instance.reason = self.instance.reason or "Unknown Error"
+        elif harness.status != TwisterStatus.NONE:
+            print("got in here with status " + str(harness.status))
+            self.instance.status = harness.status
+            if harness.status in [TwisterStatus.FAIL, TwisterStatus.ERROR]:
+                self.instance.reason = harness.reason
+        elif failure_type in [self.FailureType.TIMEOUT]:
+            self.instance.reason = "Timeout"
+        else:
+            self.instance.reason = "Unknown Error"
+
+        if self.instance.status in [TwisterStatus.ERROR, TwisterStatus.FAIL]:
+            self.instance.add_missing_case_status(TwisterStatus.BLOCK, self.instance.reason)
 
 class BinaryHandler(Handler):
     def __init__(
@@ -317,27 +359,6 @@ class BinaryHandler(Handler):
 
         return env
 
-    def _update_instance_info(self, harness, handler_time):
-        self.instance.execution_time = handler_time
-        if not self.terminated and self.returncode != 0:
-            self.instance.status = TwisterStatus.FAIL
-            if self.options.enable_valgrind and self.returncode == 2:
-                self.instance.reason = "Valgrind error"
-            else:
-                # When a process is killed, the default handler returns 128 + SIGTERM
-                # so in that case the return code itself is not meaningful
-                self.instance.reason = f"Failed (rc={self.returncode})"
-            self.instance.add_missing_case_status(TwisterStatus.BLOCK)
-        elif harness.status != TwisterStatus.NONE:
-            self.instance.status = harness.status
-            if harness.status == TwisterStatus.FAIL:
-                self.instance.reason = f"Failed harness:'{harness.reason}'"
-            self.instance.add_missing_case_status(TwisterStatus.BLOCK)
-        else:
-            self.instance.status = TwisterStatus.FAIL
-            self.instance.reason = "Timeout"
-            self.instance.add_missing_case_status(TwisterStatus.BLOCK, "Timeout")
-
     def handle(self, harness):
         robot_test = getattr(harness, "is_robot_test", False)
 
@@ -373,16 +394,16 @@ class BinaryHandler(Handler):
                 self.instance.reason = f"BinaryHandler returned {proc.returncode}"
             self.try_kill_process_by_pid()
 
-        handler_time = time.time() - start_time
+        self.execution_time = time.time() - start_time
 
         # FIXME: This is needed when killing the simulator, the console is
         # garbled and needs to be reset. Did not find a better way to do that.
         if sys.stdout.isatty():
             subprocess.call(["stty", "sane"], stdin=sys.stdout)
 
-        self._update_instance_info(harness, handler_time)
+        self._update_instance_info(harness)
 
-        self._final_handle_actions(harness, handler_time)
+        self._final_handle_actions(harness)
 
 
 class SimulationHandler(BinaryHandler):
@@ -607,20 +628,6 @@ class DeviceHandler(Handler):
 
         return command
 
-    def _update_instance_info(self, harness, handler_time, flash_error):
-        self.instance.execution_time = handler_time
-        if harness.status != TwisterStatus.NONE:
-            self.instance.status = harness.status
-            if harness.status == TwisterStatus.FAIL:
-                self.instance.reason = f"Failed harness:'{harness.reason}'"
-            self.instance.add_missing_case_status(TwisterStatus.BLOCK, harness.status)
-        elif not flash_error:
-            self.instance.status = TwisterStatus.FAIL
-            self.instance.reason = "Timeout"
-
-        if self.instance.status in [TwisterStatus.ERROR, TwisterStatus.FAIL]:
-            self.instance.add_missing_case_status(TwisterStatus.BLOCK, self.instance.reason)
-
     def _terminate_pty(self, ser_pty, ser_pty_process):
         logger.debug(f"Terminating serial-pty:'{ser_pty}'")
         terminate_process(ser_pty_process)
@@ -759,7 +766,7 @@ class DeviceHandler(Handler):
 
         d_log = f"{self.instance.build_dir}/device.log"
         logger.debug(f'Flash command: {command}', )
-        flash_error = False
+        failure_type = Handler.FailureType.NONE
         try:
             stdout = stderr = None
             with subprocess.Popen(command, stderr=subprocess.PIPE, stdout=subprocess.PIPE) as proc:
@@ -771,7 +778,7 @@ class DeviceHandler(Handler):
                     if proc.returncode != 0:
                         self.instance.status = TwisterStatus.ERROR
                         self.instance.reason = "Device issue (Flash error?)"
-                        flash_error = True
+                        failure_type = Handler.FailureType.FLASH
                         with open(d_log, "w") as dlog_fp:
                             dlog_fp.write(stderr.decode())
                         halt_monitor_evt.set()
@@ -781,7 +788,7 @@ class DeviceHandler(Handler):
                     (stdout, stderr) = proc.communicate()
                     self.instance.status = TwisterStatus.ERROR
                     self.instance.reason = "Device issue (Timeout)"
-                    flash_error = True
+                    failure_type = Handler.FailureType.FLASH
 
             with open(d_log, "w") as dlog_fp:
                 dlog_fp.write(stderr.decode())
@@ -790,7 +797,7 @@ class DeviceHandler(Handler):
             halt_monitor_evt.set()
             self.instance.status = TwisterStatus.ERROR
             self.instance.reason = "Device issue (Flash error)"
-            flash_error = True
+            failure_type = Handler.FailureType.FLASH
 
         if post_flash_script:
             timeout = 30
@@ -810,7 +817,7 @@ class DeviceHandler(Handler):
                 self._handle_serial_exception(e, hardware, serial_pty, ser_pty_process)
                 return
 
-        if not flash_error:
+        if failure_type != Handler.FailureType.FLASH:
             # Always wait at most the test timeout here after flashing.
             t.join(self.get_test_timeout())
         else:
@@ -832,11 +839,11 @@ class DeviceHandler(Handler):
         if serial_pty:
             self._terminate_pty(serial_pty, ser_pty_process)
 
-        handler_time = time.time() - start_time
+        self.execution_time = time.time() - start_time
 
-        self._update_instance_info(harness, handler_time, flash_error)
+        self._update_instance_info(harness, failure_type=failure_type)
 
-        self._final_handle_actions(harness, handler_time)
+        self._final_handle_actions(harness)
 
         if post_script:
             timeout = 30
@@ -879,10 +886,10 @@ class QEMUHandler(Handler):
         self.stderr_fn = os.path.join(instance.build_dir, "qemu.stderr")
 
         if instance.testsuite.ignore_qemu_crash:
-            self.ignore_qemu_crash = True
+            self.ignore_crash = True
             self.ignore_unexpected_eof = True
         else:
-            self.ignore_qemu_crash = False
+            self.ignore_crash = False
             self.ignore_unexpected_eof = False
 
     @staticmethod
@@ -905,13 +912,13 @@ class QEMUHandler(Handler):
         return fifo_in, fifo_out
 
     @staticmethod
-    def _thread_update_instance_info(handler, handler_time, status, reason):
-        handler.instance.execution_time = handler_time
+    def _thread_update_instance_info(handler, status, reason):
+        handler.instance.execution_time = handler.execution_time
         handler.instance.status = status
         if reason:
             handler.instance.reason = reason
         else:
-            handler.instance.reason = "Unknown"
+            handler.instance.reason = "Unknown Error"
 
     @staticmethod
     def _thread(handler, timeout, outdir, logfile, fifo_fn, pid_fn,
@@ -1027,12 +1034,13 @@ class QEMUHandler(Handler):
                             timeout_time = time.time() + 2
                 line = ""
 
-            handler_time = time.time() - start_time
+            handler.execution_time = time.time() - start_time
             logger.debug(
-                f"QEMU ({pid}) complete with {_status} ({_reason}) after {handler_time} seconds"
+                    f"QEMU ({pid}) complete with {_status} ({_reason}) "
+                    f"after {handler.execution_time} seconds"
             )
 
-            QEMUHandler._thread_update_instance_info(handler, handler_time, _status, _reason)
+            QEMUHandler._thread_update_instance_info(handler, _status, _reason)
 
         if pid:
             # Oh well, as long as it's dead! User probably sent Ctrl-C
@@ -1061,17 +1069,6 @@ class QEMUHandler(Handler):
 
         return command
 
-    def _update_instance_info(self, harness, is_timeout):
-        if (self.returncode != 0 and not self.ignore_qemu_crash) or \
-            harness.status == TwisterStatus.NONE:
-            self.instance.status = TwisterStatus.FAIL
-            if is_timeout:
-                self.instance.reason = "Timeout"
-            else:
-                if not self.instance.reason:
-                    self.instance.reason = f"Exited with {self.returncode}"
-            self.instance.add_missing_case_status(TwisterStatus.BLOCK)
-
     def handle(self, harness):
         self.run = True
 
@@ -1096,7 +1093,7 @@ class QEMUHandler(Handler):
 
         logger.debug(f"Running {self.name} ({self.type_str})")
 
-        is_timeout = False
+        failure_type = self.FailureType.NONE
         qemu_pid = None
 
         with open(self.stdout_fn, "w") as stdout_fp, \
@@ -1115,7 +1112,7 @@ class QEMUHandler(Handler):
                 # in that case kill -9 QEMU process directly and leave
                 # twister to judge testing result by console output
 
-                is_timeout = True
+                failure_type = self.FailureType.TIMEOUT
                 self.terminate(proc)
                 if harness.status == TwisterStatus.PASS:
                     self.returncode = 0
@@ -1141,9 +1138,9 @@ class QEMUHandler(Handler):
 
         logger.debug(f"return code from QEMU ({qemu_pid}): {self.returncode}")
 
-        self._update_instance_info(harness, is_timeout)
+        self._update_instance_info(harness, failure_type=failure_type)
 
-        self._final_handle_actions(harness, 0)
+        self._final_handle_actions(harness)
 
     def get_fifo(self):
         return self.fifo_fn
@@ -1219,13 +1216,13 @@ class QEMUWinHandler(Handler):
                 pass
 
     @staticmethod
-    def _monitor_update_instance_info(handler, handler_time, status, reason):
-        handler.instance.execution_time = handler_time
+    def _monitor_update_instance_info(handler, status, reason):
+        handler.instance.execution_time = handler.execution_time
         handler.instance.status = status
         if reason:
             handler.instance.reason = reason
         else:
-            handler.instance.reason = "Unknown"
+            handler.instance.reason = "Unknown Error"
 
     def _set_qemu_filenames(self, sysbuild_build_dir):
         # PID file will be created in the main sysbuild app's build dir
@@ -1241,17 +1238,6 @@ class QEMUWinHandler(Handler):
         command += ["-C", sysbuild_build_dir, "run"]
 
         return command
-
-    def _update_instance_info(self, harness, is_timeout):
-        if (self.returncode != 0 and not self.ignore_qemu_crash) or \
-            harness.status == TwisterStatus.NONE:
-            self.instance.status = TwisterStatus.FAIL
-            if is_timeout:
-                self.instance.reason = "Timeout"
-            else:
-                if not self.instance.reason:
-                    self.instance.reason = f"Exited with {self.returncode}"
-            self.instance.add_missing_case_status(TwisterStatus.BLOCK)
 
     def _enqueue_char(self, queue):
         while not self.stop_thread:
@@ -1373,11 +1359,12 @@ class QEMUWinHandler(Handler):
 
         self.stop_thread = True
 
-        handler_time = time.time() - start_time
+        self.execution_time = time.time() - start_time
         logger.debug(
-            f"QEMU ({self.pid}) complete with {_status} ({_reason}) after {handler_time} seconds"
+            f"QEMU ({self.pid}) complete with {_status} ({_reason}) "
+            f"after {self.execution_time} seconds"
         )
-        self._monitor_update_instance_info(self, handler_time, _status, _reason)
+        self._monitor_update_instance_info(self, _status, _reason)
         self._close_log_file(log_out_fp)
         self._stop_qemu_process(self.pid)
 
@@ -1389,7 +1376,7 @@ class QEMUWinHandler(Handler):
         self._set_qemu_filenames(domain_build_dir)
 
         logger.debug(f"Running {self.name} ({self.type_str})")
-        is_timeout = False
+        failure_type = self.FailureType.NONE
         self.stop_thread = False
         queue = Queue()
 
@@ -1408,6 +1395,7 @@ class QEMUWinHandler(Handler):
 
             if (thread_max_time - time.time()) < 0:
                 logger.debug("Timed out while monitoring QEMU output")
+                failure_type = self.FailureType.TIMEOUT
                 proc.terminate()
                 # sleep for a while before attempting to kill
                 time.sleep(0.5)
@@ -1426,9 +1414,9 @@ class QEMUWinHandler(Handler):
         os.close(self.pipe_handle)
         self.pipe_handle = None
 
-        self._update_instance_info(harness, is_timeout)
+        self._update_instance_info(harness, failure_type=failure_type)
 
-        self._final_handle_actions(harness, 0)
+        self._final_handle_actions(harness)
 
     def get_fifo(self):
         return self.fifo_fn
