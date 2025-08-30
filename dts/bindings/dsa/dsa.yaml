@@ -16,6 +16,7 @@ child-binding:
         - local-mac-address
         - phy-handle
         - phy-connection-type
+        - ptp-clock
 
   properties:
     reg:
