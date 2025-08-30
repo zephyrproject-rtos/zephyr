@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016 Freescale Semiconductor, Inc.
- * Copyright (c) 2019 NXP
+ * Copyright (c) 2019, 2025 NXP
  * Copyright (c) 2022 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -65,6 +65,10 @@ LOG_MODULE_REGISTER(i3c_mcux, CONFIG_I3C_MCUX_LOG_LEVEL);
 
 #define I3C_MAX_STOP_RETRIES 5
 
+#define I3C_TRANSFER_TIMEOUT_MSEC					\
+	COND_CODE_0(CONFIG_I3C_NXP_TRANSFER_TIMEOUT, (K_FOREVER),	\
+	(KMSEC(CONFIG_I3C_NXP_TRANSFER_TIMEOUT)))
+
 struct mcux_i3c_config {
 	/** Common I3C Driver Config */
 	struct i3c_driver_config common;
@@ -95,11 +99,26 @@ struct mcux_i3c_data {
 	/** Mutex to serialize access */
 	struct k_mutex lock;
 
+	/** Semaphore to synchronize data transfers */
+	struct k_sem device_sync_sem;
+
 	/** Condvar for waiting for bus to be in IDLE state */
 	struct k_condvar condvar;
 
 	/** I3C open drain clock frequency in Hz. */
 	uint32_t i3c_od_scl_hz;
+
+	/** Pointer to the buffer to send or receive data. */
+	uint8_t *xfer_buf;
+
+	/** Number of bytes remaining to transfer. */
+	size_t xfer_sz;
+
+	/** Transfer no-ending flag. */
+	bool xfer_noending;
+
+	/** Transfer direction. 0: write, 1: read*/
+	bool xfer_dir;
 
 #ifdef CONFIG_I3C_USE_IBI
 	struct {
@@ -886,86 +905,63 @@ static int mcux_i3c_recover_bus(const struct device *dev)
  * or time out.
  *
  * @param base Pointer to controller registers.
+ * @param data Pointer to controller device instance data.
  * @param buf Buffer to store data.
  * @param buf_sz Buffer size in bytes.
  *
  * @return Number of bytes read, or negative if error.
  */
-static int mcux_i3c_do_one_xfer_read(I3C_Type *base, uint8_t *buf, uint8_t buf_sz, bool ibi)
+static int mcux_i3c_do_one_xfer_read(I3C_Type *base, struct mcux_i3c_data *data,
+				     uint8_t *buf, uint8_t buf_sz, bool ibi)
 {
 	int ret = 0;
 	int offset = 0;
 
+	/*
+	 * Transfer data from FIFO into buffer. Read
+	 * in a loop until data is unavailable in the FIFO.
+	 * At that point, enable RX Ready interrupt and
+	 * wait for data to arrive.
+	 */
 	while (offset < buf_sz) {
-		/*
-		 * Transfer data from FIFO into buffer. Read
-		 * in a tight loop to reduce chance of losing
-		 * FIFO data when the i3c speed is high.
-		 */
-		while (offset < buf_sz) {
-			if (mcux_i3c_fifo_rx_count_get(base) == 0) {
+		if (mcux_i3c_fifo_rx_count_get(base) == 0) {
+			/* Enable Receive pending interrupt */
+			base->MINTSET |= I3C_MSTATUS_RXPEND_MASK;
+
+			/* Wait for data to arrive */
+			ret = k_sem_take(&data->device_sync_sem, I3C_TRANSFER_TIMEOUT_MSEC);
+			if (ret) {
 				break;
 			}
-			buf[offset++] = (uint8_t)base->MRDATAB;
 		}
-
-		/*
-		 * If controller says timed out, we abort the transaction.
-		 */
-		if (mcux_i3c_has_error(base)) {
-			if (mcux_i3c_error_is_timeout(base)) {
-				ret = -ETIMEDOUT;
-			}
-			/* clear error  */
-			base->MERRWARN = base->MERRWARN;
-
-			/* for ibi, ignore timeout err if any bytes were
-			 * read, since the code doesn't know how many
-			 * bytes will be sent by device. for regular
-			 * application read request, return err always.
-			 */
-			if ((ret == -ETIMEDOUT) && ibi && offset) {
-				break;
-			} else {
-				if (ret == -ETIMEDOUT) {
-					LOG_ERR("Timeout error");
-				}
-				goto one_xfer_read_out;
-			}
-		}
+		buf[offset++] = (uint8_t)base->MRDATAB;
 	}
 
-	ret = offset;
+	if (ret > 0) {
+		/* Return the number of bytes received */
+		ret = offset;
+	}
 
-one_xfer_read_out:
 	return ret;
 }
 
 /**
- * @brief Perform one write transaction.
+ * Write data to the Transmit FIFO
  *
- * This writes all data in @p buf to TX FIFO or time out
- * waiting for FIFO spaces.
  *
  * @param base Pointer to controller registers.
+ * @param data Pointer to controller device instance data.
  * @param buf Buffer containing data to be sent.
  * @param buf_sz Number of bytes in @p buf to send.
  * @param no_ending True if not to signal end of write message.
- *
- * @return Number of bytes written, or negative if error.
  */
-static int mcux_i3c_do_one_xfer_write(I3C_Type *base, uint8_t *buf, uint8_t buf_sz, bool no_ending)
+static void mcux_i3c_do_write(I3C_Type *base, struct mcux_i3c_data *data,
+			      uint8_t *buf, uint8_t buf_sz, bool no_ending)
 {
-	int offset = 0;
 	int remaining = buf_sz;
-	int ret = 0;
+	int offset = 0;
 
-	while (remaining > 0) {
-		ret = reg32_poll_timeout(&base->MDATACTRL, I3C_MDATACTRL_TXFULL_MASK, 0, 1000);
-		if (ret == -ETIMEDOUT) {
-			goto one_xfer_write_out;
-		}
-
+	while (remaining > 0 && ((base->MDATACTRL & I3C_MDATACTRL_TXFULL_MASK) == 0)) {
 		if ((remaining > 1) || no_ending) {
 			base->MWDATAB = (uint32_t)buf[offset];
 		} else {
@@ -976,9 +972,45 @@ static int mcux_i3c_do_one_xfer_write(I3C_Type *base, uint8_t *buf, uint8_t buf_
 		remaining -= 1;
 	}
 
-	ret = offset;
+	if (remaining) {
+		/* Store the buffer pointer and remaining amount of data to be sent */
+		data->xfer_sz = remaining;
+		data->xfer_buf = buf + offset;
+	}
+}
 
-one_xfer_write_out:
+/**
+ * @brief Perform one write transaction.
+ *
+ *
+ * @param base Pointer to controller registers.
+ * @param data Pointer to controller device instance data.
+ * @param buf Buffer containing data to be sent.
+ * @param buf_sz Number of bytes in @p buf to send.
+ * @param no_ending True if not to signal end of write message.
+ *
+ * @return Number of bytes written, or negative if error.
+ */
+static int mcux_i3c_do_one_xfer_write(I3C_Type *base, struct mcux_i3c_data *data,
+				      uint8_t *buf, uint8_t buf_sz, bool no_ending)
+{
+	int ret = 0;
+
+	mcux_i3c_do_write(base, data, buf, buf_sz, no_ending);
+
+	if (data->xfer_sz) {
+		data->xfer_noending = no_ending;
+		data->xfer_dir = I3C_MSG_WRITE;
+		/* Enable TX buffer ready interrupt */
+		base->MINTSET |= I3C_MSTATUS_TXNOTFULL_MASK;
+
+		/* Wait for the transfer to complete */
+		ret = k_sem_take(&data->device_sync_sem, I3C_TRANSFER_TIMEOUT_MSEC);
+	}
+
+	if (!ret) {
+		ret = buf_sz;
+	}
 	return ret;
 }
 
@@ -1024,9 +1056,9 @@ static int mcux_i3c_do_one_xfer(I3C_Type *base, struct mcux_i3c_data *data,
 	}
 
 	if (is_read) {
-		ret = mcux_i3c_do_one_xfer_read(base, buf, buf_sz, false);
+		ret = mcux_i3c_do_one_xfer_read(base, data, buf, buf_sz, false);
 	} else {
-		ret = mcux_i3c_do_one_xfer_write(base, buf, buf_sz, no_ending);
+		ret = mcux_i3c_do_one_xfer_write(base, data, buf, buf_sz, no_ending);
 	}
 
 	if (ret < 0) {
@@ -1367,7 +1399,7 @@ static int mcux_i3c_do_ccc(const struct device *dev,
 	/* Write the CCC code */
 	mcux_i3c_status_clear_all(base);
 	mcux_i3c_errwarn_clear_all_nowait(base);
-	ret = mcux_i3c_do_one_xfer_write(base, &payload->ccc.id, 1,
+	ret = mcux_i3c_do_one_xfer_write(base, data, &payload->ccc.id, 1,
 					 payload->ccc.data_len > 0);
 	if (ret < 0) {
 		LOG_ERR("CCC[0x%02x] %s command error (%d)",
@@ -1382,7 +1414,7 @@ static int mcux_i3c_do_ccc(const struct device *dev,
 	if (payload->ccc.data_len > 0) {
 		mcux_i3c_status_clear_all(base);
 		mcux_i3c_errwarn_clear_all_nowait(base);
-		ret = mcux_i3c_do_one_xfer_write(base, payload->ccc.data,
+		ret = mcux_i3c_do_one_xfer_write(base, data, payload->ccc.data,
 						 payload->ccc.data_len, false);
 		if (ret < 0) {
 			LOG_ERR("CCC[0x%02x] %s command payload error (%d)",
@@ -1518,7 +1550,7 @@ static void mcux_i3c_ibi_work(struct k_work *work)
 	case I3C_MSTATUS_IBITYPE_IBI:
 		target = i3c_dev_list_i3c_addr_find(dev, (uint8_t)ibiaddr);
 		if (target != NULL) {
-			ret = mcux_i3c_do_one_xfer_read(base, &payload[0],
+			ret = mcux_i3c_do_one_xfer_read(base, data, &payload[0],
 							sizeof(payload), true);
 			if (ret >= 0) {
 				payload_sz = (size_t)ret;
@@ -1801,10 +1833,11 @@ out:
  */
 static void mcux_i3c_isr(const struct device *dev)
 {
-#ifdef CONFIG_I3C_USE_IBI
 	const struct mcux_i3c_config *config = dev->config;
 	I3C_Type *base = config->base;
+	struct mcux_i3c_data *dev_data = dev->data;
 
+#ifdef CONFIG_I3C_USE_IBI
 	/* Target initiated IBIs */
 	if (mcux_i3c_status_is_set(base, I3C_MSTATUS_SLVSTART_MASK)) {
 		int err;
@@ -1827,9 +1860,30 @@ static void mcux_i3c_isr(const struct device *dev)
 			base->MINTSET = I3C_MINTCLR_SLVSTART_MASK;
 		}
 	}
-#else
-	ARG_UNUSED(dev);
 #endif
+	/* Return if TX or RX interrupts are not enabled */
+	if (!(base->MINTSET & (I3C_MSTATUS_TXNOTFULL_MASK | I3C_MSTATUS_RXPEND_MASK))) {
+		return;
+	}
+
+	if (dev_data->xfer_dir) {
+
+		/* Disable Receive pending interrupt */
+		base->MINTCLR = I3C_MSTATUS_RXPEND_MASK;
+		k_sem_give(&dev_data->device_sync_sem);
+	} else {
+		mcux_i3c_do_write(base, dev_data, dev_data->xfer_buf,
+				  dev_data->xfer_sz,
+				  dev_data->xfer_noending);
+
+		/* Check if we transfer is done */
+		if (dev_data->xfer_sz <= 0) {
+			/* Disable TX buffer ready interrupt */
+			base->MINTCLR = I3C_MSTATUS_TXNOTFULL_MASK;
+
+			k_sem_give(&dev_data->device_sync_sem);
+		}
+	}
 }
 
 /**
@@ -1966,6 +2020,7 @@ static int mcux_i3c_init(const struct device *dev)
 
 	k_mutex_init(&data->lock);
 	k_condvar_init(&data->condvar);
+	k_sem_init(&data->device_sync_sem, 0, K_SEM_MAX_LIMIT);
 
 	I3C_MasterGetDefaultConfig(&ctrl_config_hal);
 
