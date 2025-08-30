@@ -56,7 +56,7 @@ class TestDevice:
     def test_seed(self, capfd, out_path, seed):
         test_platforms = ['native_sim']
         path = os.path.join(TEST_DATA, 'tests', 'seed_native_sim')
-        args = ['--outdir', out_path, '-i', '-T', path, '-vv',] + \
+        args = ['--detailed-test-id', '--outdir', out_path, '-i', '-T', path, '-vv',] + \
                ['--seed', f'{seed[0]}'] + \
                [val for pair in zip(
                    ['-p'] * len(test_platforms), test_platforms
