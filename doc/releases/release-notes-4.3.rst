@@ -64,6 +64,8 @@ Removed APIs and options
 Deprecated APIs and options
 ===========================
 
+* :dtcompatible:`maxim,ds3231` is deprecated in favor of :dtcompatible:`maxim,ds3231-rtc`.
+
 New APIs and options
 ====================
 
