@@ -466,8 +466,11 @@
 				status = "disabled";
 			};
 
-			netc_switch: switch {
+			netc_switch: switch@4cc00000 {
 				compatible = "nxp,netc-switch";
+				reg = <0x4cc00000 0x40000>,
+					<0x4ca02000 0x1000>;
+				reg-names = "base", "pfconfig";
 				status = "disabled";
 				#address-cells = <1>;
 				#size-cells = <0>;
