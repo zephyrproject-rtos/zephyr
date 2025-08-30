@@ -296,23 +296,26 @@ struct bt_dev_le {
 	uint16_t		acl_mtu;
 	struct k_sem		acl_pkts;
 #endif /* CONFIG_BT_CONN */
+
 #if defined(CONFIG_BT_ISO)
 	uint16_t		iso_mtu;
 	uint8_t			iso_limit;
 	struct k_sem		iso_pkts;
 #endif /* CONFIG_BT_ISO */
+
 #if defined(CONFIG_BT_BROADCASTER)
 	uint16_t max_adv_data_len;
 #endif /* CONFIG_BT_BROADCASTER */
 
-#if defined(CONFIG_BT_SMP)
+#if defined(CONFIG_BT_PRIVACY)
 	/* Size of the controller resolving list */
 	uint8_t                    rl_size;
 	/* Number of entries in the resolving list. rl_entries > rl_size
 	 * means that host-side resolving is used.
 	 */
 	uint8_t                    rl_entries;
-#endif /* CONFIG_BT_SMP */
+#endif /* CONFIG_BT_PRIVACY */
+
 	/* List of `struct bt_conn` that have either pending data to send, or
 	 * something to process (e.g. a disconnection event).
 	 *
