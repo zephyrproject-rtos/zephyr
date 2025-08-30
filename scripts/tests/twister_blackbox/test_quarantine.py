@@ -16,7 +16,7 @@ import json
 
 # pylint: disable=duplicate-code
 # pylint: disable=no-name-in-module
-from conftest import ZEPHYR_BASE, TEST_DATA, testsuite_filename_mock
+from conftest import ZEPHYR_BASE, TEST_DATA, suite_filename_mock
 from twisterlib.testplan import TestPlan
 
 
@@ -32,7 +32,7 @@ class TestQuarantine:
     def teardown_class(cls):
         pass
 
-    @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', testsuite_filename_mock)
+    @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', suite_filename_mock)
     def test_quarantine_verify(self, out_path):
         test_platforms = ['qemu_x86', 'intel_adl_crb']
         path = os.path.join(TEST_DATA, 'tests', 'dummy')
@@ -78,7 +78,7 @@ class TestQuarantine:
             'quarantine',
         ],
     )
-    @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', testsuite_filename_mock)
+    @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', suite_filename_mock)
     def test_quarantine_list(self, capfd, out_path, test_path, test_platforms, quarantine_directory):
         args = ['--detailed-test-id', '--outdir', out_path, '-T', test_path] +\
                ['--quarantine-list', quarantine_directory] + \
