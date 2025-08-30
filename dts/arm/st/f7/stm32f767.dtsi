@@ -21,5 +21,18 @@
 			resets = <&rctl STM32_RESET(APB2, 26U)>;
 			status = "disabled";
 		};
+
+		mipi_dsi: dsihost@40016c00 {
+			compatible = "st,stm32-mipi-dsi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40016c00 0x800>;
+			clock-names = "dsiclk", "refclk", "pixelclk";
+			clocks = <&rcc STM32_CLOCK(APB2,  27)>,
+				 <&rcc STM32_SRC_HSE NO_SEL>,
+				 <&rcc STM32_SRC_PLLSAI_DIVR NO_SEL>;
+			resets = <&rctl STM32_RESET(APB2, 27)>;
+			status = "disabled";
+		};
 	};
 };
