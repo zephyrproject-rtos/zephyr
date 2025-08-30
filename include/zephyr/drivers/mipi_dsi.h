@@ -17,7 +17,7 @@
  * @defgroup mipi_dsi_interface MIPI-DSI driver APIs
  * @since 3.1
  * @version 0.8.0
- * @ingroup io_interfaces
+ * @ingroup display_interface
  * @{
  */
 #include <errno.h>
