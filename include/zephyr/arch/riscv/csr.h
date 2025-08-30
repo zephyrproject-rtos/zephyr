@@ -156,6 +156,17 @@
 #define IRQ_COP		12
 #define IRQ_HOST	13
 
+/* SMRNMI CSR addresses */
+#ifdef CONFIG_RISCV_ISA_EXT_SMRNMI
+#define CSR_MNSCRATCH 0x740
+#define CSR_MNEPC     0x741
+#define CSR_MNCAUSE   0x742
+#define CSR_MNSTATUS  0x744
+
+/* MNSTATUS bit fields */
+#define MNSTATUS_NMIE 0x00000008 /* NMI Enable (bit 3) */
+#endif                           /* CONFIG_RISCV_ISA_EXT_SMRNMI */
+
 #define DEFAULT_RSTVEC	0x00001000
 #define CLINT_BASE	0x02000000
 #define CLINT_SIZE	0x000c0000
