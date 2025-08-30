@@ -11,6 +11,14 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_A2DP_H_
 #define ZEPHYR_INCLUDE_BLUETOOTH_A2DP_H_
 
+/**
+ * @file
+ * @brief Advanced Audio Distribution Profile (A2DP)
+ * @defgroup bt_a2dp Advanced Audio Distribution Profile (A2DP)
+ * @ingroup bluetooth
+ * @{
+ */
+
 #include <stdint.h>
 
 #include <zephyr/bluetooth/bluetooth.h>
@@ -21,7 +29,10 @@
 extern "C" {
 #endif
 
-#define BT_A2DP_STREAM_BUF_RESERVE (12U + BT_L2CAP_BUF_SIZE(0))
+/** The reserved buf size that occupy the l2cap MTU */
+#define BT_A2DP_STREAM_BUF_MTU_RESERVE (12U) /* sizeof (struct bt_avdtp_media_hdr) */
+/** The reserved buf size when creating buf to send media data */
+#define BT_A2DP_STREAM_BUF_RESERVE (BT_A2DP_STREAM_BUF_MTU_RESERVE + BT_L2CAP_BUF_SIZE(0))
 
 /** SBC IE length */
 #define BT_A2DP_SBC_IE_LENGTH      (4U)
@@ -68,7 +79,7 @@ extern "C" {
  *  @param _freq sbc codec frequency.
  *               for example: A2DP_SBC_SAMP_FREQ_44100 | A2DP_SBC_SAMP_FREQ_48000
  *  @param _ch_mode sbc codec channel mode.
- *               for example: A2DP_SBC_CH_MODE_MONO | A2DP_SBC_CH_MODE_STREO
+ *               for example: A2DP_SBC_CH_MODE_MONO | A2DP_SBC_CH_MODE_STEREO
  *  @param _blk_len sbc codec block length.
  *               for example: A2DP_SBC_BLK_LEN_16
  *  @param _subband sbc codec subband.
@@ -98,7 +109,7 @@ extern "C" {
  *  @param _freq sbc codec frequency.
  *               for example: A2DP_SBC_SAMP_FREQ_44100 | A2DP_SBC_SAMP_FREQ_48000
  *  @param _ch_mode sbc codec channel mode.
- *               for example: A2DP_SBC_CH_MODE_MONO | A2DP_SBC_CH_MODE_STREO
+ *               for example: A2DP_SBC_CH_MODE_MONO | A2DP_SBC_CH_MODE_STEREO
  *  @param _blk_len sbc codec block length.
  *               for example: A2DP_SBC_BLK_LEN_16
  *  @param _subband sbc codec subband.
@@ -129,7 +140,7 @@ extern "C" {
 	static struct bt_a2dp_codec_ie bt_a2dp_ep_cap_ie##_name = {                                \
 		.len = BT_A2DP_SBC_IE_LENGTH,                                                      \
 		.codec_ie = {A2DP_SBC_SAMP_FREQ_44100 | A2DP_SBC_SAMP_FREQ_48000 |                 \
-				     A2DP_SBC_CH_MODE_MONO | A2DP_SBC_CH_MODE_STREO |              \
+				     A2DP_SBC_CH_MODE_MONO | A2DP_SBC_CH_MODE_STEREO |             \
 				     A2DP_SBC_CH_MODE_JOINT,                                       \
 			     A2DP_SBC_BLK_LEN_16 | A2DP_SBC_SUBBAND_8 |                            \
 				     A2DP_SBC_ALLOC_MTHD_LOUDNESS,                                 \
@@ -149,7 +160,7 @@ extern "C" {
 	static struct bt_a2dp_codec_ie bt_a2dp_ep_cap_ie##_name = {                                \
 		.len = BT_A2DP_SBC_IE_LENGTH,                                                      \
 		.codec_ie = {A2DP_SBC_SAMP_FREQ_44100 | A2DP_SBC_SAMP_FREQ_48000 |                 \
-				     A2DP_SBC_CH_MODE_MONO | A2DP_SBC_CH_MODE_STREO |              \
+				     A2DP_SBC_CH_MODE_MONO | A2DP_SBC_CH_MODE_STEREO |             \
 				     A2DP_SBC_CH_MODE_JOINT,                                       \
 			     A2DP_SBC_BLK_LEN_16 | A2DP_SBC_SUBBAND_8 |                            \
 				     A2DP_SBC_ALLOC_MTHD_LOUDNESS,                                 \
@@ -858,5 +869,9 @@ int bt_a2dp_stream_send(struct bt_a2dp_stream *stream, struct net_buf *buf, uint
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @}
+ */
 
 #endif /* ZEPHYR_INCLUDE_BLUETOOTH_A2DP_H_ */
