@@ -3,10 +3,14 @@ sample:
 tests:
   sample.sensor.apds9960:
     harness: console
-    platform_allow: reel_board
+    platform_allow:
+      - adafruit_qt_py_rp2040/rp2040
+      - reel_board
     integration_platforms:
       - reel_board
     tags: sensors
+    extra_args:
+      - platform:adafruit_qt_py_rp2040/rp2040:SHIELD="adafruit_apds9960"
     depends_on:
       - i2c
       - gpio
