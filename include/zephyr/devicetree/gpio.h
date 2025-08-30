@@ -30,18 +30,26 @@ extern "C" {
  *
  * Example devicetree fragment:
  *
- *     gpio1: gpio@... { };
+ * @code{.dts}
+ *     gpio1: gpio@... {
+ *             gpio-controller;
+ *     };
  *
- *     gpio2: gpio@... { };
+ *     gpio2: gpio@... {
+ *             gpio-controller;
+ *     };
  *
  *     n: node {
  *             gpios = <&gpio1 10 GPIO_ACTIVE_LOW>,
  *                     <&gpio2 30 GPIO_ACTIVE_HIGH>;
  *     };
+ * @endcode
  *
  * Example usage:
  *
+ * @code{.c}
  *     DT_GPIO_CTLR_BY_IDX(DT_NODELABEL(n), gpios, 1) // DT_NODELABEL(gpio2)
+ * @endcode
  *
  * @param node_id node identifier
  * @param gpio_pha lowercase-and-underscores GPIO property with
@@ -74,13 +82,16 @@ extern "C" {
  *
  * Example devicetree fragment:
  *
+ * @code{.dts}
  *     gpio1: gpio@... {
  *             compatible = "vnd,gpio";
+ *             gpio-controller;
  *             #gpio-cells = <2>;
  *     };
  *
  *     gpio2: gpio@... {
  *             compatible = "vnd,gpio";
+ *             gpio-controller;
  *             #gpio-cells = <2>;
  *     };
  *
@@ -88,17 +99,22 @@ extern "C" {
  *             gpios = <&gpio1 10 GPIO_ACTIVE_LOW>,
  *                     <&gpio2 30 GPIO_ACTIVE_HIGH>;
  *     };
+ * @endcode
  *
  * Bindings fragment for the vnd,gpio compatible:
  *
+ * @code{.yaml}
  *     gpio-cells:
  *       - pin
  *       - flags
+ * @endcode
  *
  * Example usage:
  *
+ * @code{.c}
  *     DT_GPIO_PIN_BY_IDX(DT_NODELABEL(n), gpios, 0) // 10
  *     DT_GPIO_PIN_BY_IDX(DT_NODELABEL(n), gpios, 1) // 30
+ * @endcode
  *
  * @param node_id node identifier
  * @param gpio_pha lowercase-and-underscores GPIO property with
@@ -130,13 +146,16 @@ extern "C" {
  *
  * Example devicetree fragment:
  *
+ * @code{.dts}
  *     gpio1: gpio@... {
  *             compatible = "vnd,gpio";
+ *             gpio-controller;
  *             #gpio-cells = <2>;
  *     };
  *
  *     gpio2: gpio@... {
  *             compatible = "vnd,gpio";
+ *             gpio-controller;
  *             #gpio-cells = <2>;
  *     };
  *
@@ -144,17 +163,22 @@ extern "C" {
  *             gpios = <&gpio1 10 GPIO_ACTIVE_LOW>,
  *                     <&gpio2 30 GPIO_ACTIVE_HIGH>;
  *     };
+ * @endcode
  *
  * Bindings fragment for the vnd,gpio compatible:
  *
+ * @code{.yaml}
  *     gpio-cells:
  *       - pin
  *       - flags
+ * @endcode
  *
  * Example usage:
  *
+ * @code{.c}
  *     DT_GPIO_FLAGS_BY_IDX(DT_NODELABEL(n), gpios, 0) // GPIO_ACTIVE_LOW
  *     DT_GPIO_FLAGS_BY_IDX(DT_NODELABEL(n), gpios, 1) // GPIO_ACTIVE_HIGH
+ * @endcode
  *
  * @param node_id node identifier
  * @param gpio_pha lowercase-and-underscores GPIO property with
@@ -184,8 +208,10 @@ extern "C" {
  *
  * Example devicetree fragment:
  *
+ * @code{.dts}
  *     gpio1: gpio@... {
  *       compatible = "vnd,gpio";
+ *       gpio-controller;
  *       #gpio-cells = <2>;
  *
  *       n1: node-1 {
@@ -200,17 +226,22 @@ extern "C" {
  *               output-low;
  *       };
  *     };
+ * @endcode
  *
  * Bindings fragment for the vnd,gpio compatible:
  *
+ * @code{.yaml}
  *     gpio-cells:
  *       - pin
  *       - flags
+ * @endcode
  *
  * Example usage:
  *
+ * @code{.c}
  *     DT_NUM_GPIO_HOGS(DT_NODELABEL(n1)) // 2
  *     DT_NUM_GPIO_HOGS(DT_NODELABEL(n2)) // 1
+ * @endcode
  *
  * @param node_id node identifier; may or may not be a GPIO hog node.
  * @return number of hogged GPIOs in the node
@@ -227,8 +258,10 @@ extern "C" {
  *
  * Example devicetree fragment:
  *
+ * @code{.dts}
  *     gpio1: gpio@... {
  *       compatible = "vnd,gpio";
+ *       gpio-controller;
  *       #gpio-cells = <2>;
  *
  *       n1: node-1 {
@@ -243,18 +276,23 @@ extern "C" {
  *               output-low;
  *       };
  *     };
+ * @endcode
  *
  * Bindings fragment for the vnd,gpio compatible:
  *
+ * @code{.yaml}
  *     gpio-cells:
  *       - pin
  *       - flags
+ * @endcode
  *
  * Example usage:
  *
+ * @code{.c}
  *     DT_GPIO_HOG_PIN_BY_IDX(DT_NODELABEL(n1), 0) // 0
  *     DT_GPIO_HOG_PIN_BY_IDX(DT_NODELABEL(n1), 1) // 1
  *     DT_GPIO_HOG_PIN_BY_IDX(DT_NODELABEL(n2), 0) // 3
+ * @endcode
  *
  * @param node_id node identifier
  * @param idx logical index into "gpios"
@@ -272,8 +310,10 @@ extern "C" {
  *
  * Example devicetree fragment:
  *
+ * @code{.dts}
  *     gpio1: gpio@... {
  *       compatible = "vnd,gpio";
+ *       gpio-controller;
  *       #gpio-cells = <2>;
  *
  *       n1: node-1 {
@@ -288,18 +328,23 @@ extern "C" {
  *               output-low;
  *       };
  *     };
+ * @endcode
  *
  * Bindings fragment for the vnd,gpio compatible:
  *
+ * @code{.yaml}
  *     gpio-cells:
  *       - pin
  *       - flags
+ * @endcode
  *
  * Example usage:
  *
+ * @code{.c}
  *     DT_GPIO_HOG_FLAGS_BY_IDX(DT_NODELABEL(n1), 0) // GPIO_ACTIVE_HIGH
  *     DT_GPIO_HOG_FLAGS_BY_IDX(DT_NODELABEL(n1), 1) // GPIO_ACTIVE_LOW
  *     DT_GPIO_HOG_FLAGS_BY_IDX(DT_NODELABEL(n2), 0) // GPIO_ACTIVE_HIGH
+ * @endcode
  *
  * @param node_id node identifier
  * @param idx logical index into "gpios"
