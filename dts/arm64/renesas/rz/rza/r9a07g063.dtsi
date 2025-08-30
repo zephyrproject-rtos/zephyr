@@ -570,5 +570,47 @@
 				status = "disabled";
 			};
 		};
+
+		gtm0: gtm@12801000 {
+			compatible = "renesas,rz-gtm";
+			reg = <0x12801000 0x400>;
+			channel = <0>;
+			interrupts = <GIC_SPI 46 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "overflow";
+			status = "disabled";
+
+			counter {
+				compatible = "renesas,rz-gtm-counter";
+				status = "disabled";
+			};
+		};
+
+		gtm1: gtm@12801400 {
+			compatible = "renesas,rz-gtm";
+			reg = <0x12801400 0x400>;
+			channel = <1>;
+			interrupts = <GIC_SPI 47 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "overflow";
+			status = "disabled";
+
+			counter {
+				compatible = "renesas,rz-gtm-counter";
+				status = "disabled";
+			};
+		};
+
+		gtm2: gtm@12801800 {
+			compatible = "renesas,rz-gtm";
+			reg = <0x12801800 0x400>;
+			channel = <2>;
+			interrupts = <GIC_SPI 48 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "overflow";
+			status = "disabled";
+
+			counter {
+				compatible = "renesas,rz-gtm-counter";
+				status = "disabled";
+			};
+		};
 	};
 };
