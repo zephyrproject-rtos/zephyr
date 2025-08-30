@@ -18,6 +18,11 @@ config BAP_BROADCAST_24_2_1
 	help
 	  Using the BAP_LC3_BROADCAST_PRESET_24_2_1 preset.
 
+config BAP_BROADCAST_441_2_1
+	bool "BAP_LC3_BROADCAST_PRESET_441_2_1 preset"
+	help
+	  Using the BAP_LC3_BROADCAST_PRESET_441_2_1 preset.
+
 endchoice
 
 config ENABLE_LC3
