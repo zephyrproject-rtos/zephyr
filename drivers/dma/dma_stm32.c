@@ -273,10 +273,9 @@ DMA_STM32_EXPORT_API int dma_stm32_configure(const struct device *dev,
 					     struct dma_config *config)
 {
 	const struct dma_stm32_config *dev_config = dev->config;
-	struct dma_stm32_stream *stream =
-				&dev_config->streams[id - STM32_DMA_STREAM_OFFSET];
 	DMA_TypeDef *dma = (DMA_TypeDef *)dev_config->base;
 	LL_DMA_InitTypeDef DMA_InitStruct;
+	struct dma_stm32_stream *stream;
 	int ret;
 
 	LL_DMA_StructInit(&DMA_InitStruct);
@@ -289,6 +288,7 @@ DMA_STM32_EXPORT_API int dma_stm32_configure(const struct device *dev,
 		return -EINVAL;
 	}
 
+	stream = &dev_config->streams[id];
 	if (stream->busy) {
 		LOG_ERR("dma stream %d is busy.", id);
 		return -EBUSY;
@@ -594,8 +594,8 @@ DMA_STM32_EXPORT_API int dma_stm32_start(const struct device *dev, uint32_t id)
 DMA_STM32_EXPORT_API int dma_stm32_stop(const struct device *dev, uint32_t id)
 {
 	const struct dma_stm32_config *config = dev->config;
-	struct dma_stm32_stream *stream = &config->streams[id - STM32_DMA_STREAM_OFFSET];
 	DMA_TypeDef *dma = (DMA_TypeDef *)(config->base);
+	struct dma_stm32_stream *stream;
 
 	/* Give channel from index 0 */
 	id = id - STM32_DMA_STREAM_OFFSET;
@@ -603,6 +603,8 @@ DMA_STM32_EXPORT_API int dma_stm32_stop(const struct device *dev, uint32_t id)
 	if (id >= config->max_streams) {
 		return -EINVAL;
 	}
+
+	stream = &config->streams[id];
 
 	if (stream->hal_override) {
 		stream->busy = false;
