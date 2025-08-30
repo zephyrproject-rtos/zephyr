@@ -15,7 +15,7 @@ import sys
 import json
 
 # pylint: disable=no-name-in-module
-from conftest import ZEPHYR_BASE, TEST_DATA, sample_filename_mock, testsuite_filename_mock
+from conftest import ZEPHYR_BASE, TEST_DATA, sample_filename_mock, suite_filename_mock
 from twisterlib.statuses import TwisterStatus
 from twisterlib.testplan import TestPlan
 
@@ -37,7 +37,7 @@ class TestTooling:
         ['1', '2'],
         ids=['single job', 'two jobs']
     )
-    @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', testsuite_filename_mock)
+    @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', suite_filename_mock)
     def test_jobs(self, out_path, jobs):
         test_platforms = ['qemu_x86', 'intel_adl_crb']
         path = os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic', 'group2')
@@ -103,7 +103,7 @@ class TestTooling:
         'flag',
         ['--ninja', '-N']
     )
-    @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', testsuite_filename_mock)
+    @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', suite_filename_mock)
     def test_ninja(self, capfd, out_path, test_path, test_platforms, flag):
         args = ['--outdir', out_path, '-T', test_path, flag] + \
                [val for pair in zip(

@@ -14,7 +14,7 @@ import sys
 import json
 
 # pylint: disable=no-name-in-module
-from conftest import ZEPHYR_BASE, TEST_DATA, testsuite_filename_mock
+from conftest import ZEPHYR_BASE, TEST_DATA, suite_filename_mock
 from twisterlib.testplan import TestPlan
 
 
@@ -30,7 +30,7 @@ class TestConfig:
     def teardown_class(cls):
         pass
 
-    @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', testsuite_filename_mock)
+    @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', suite_filename_mock)
     def test_alt_config_root(self, out_path):
         test_platforms = ['qemu_x86', 'intel_adl_crb']
         path = os.path.join(TEST_DATA, 'tests', 'dummy')
@@ -66,7 +66,7 @@ class TestConfig:
         ],
         ids=['smoke', 'acceptance']
     )
-    @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', testsuite_filename_mock)
+    @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', suite_filename_mock)
     def test_level(self, out_path, level, expected_tests):
         test_platforms = ['qemu_x86', 'intel_adl_crb']
         path = os.path.join(TEST_DATA, 'tests', 'dummy')
