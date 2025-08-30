@@ -14,6 +14,18 @@ updates:
           - "*"
 
   - package-ecosystem: "uv"
+    directory: "/scripts"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "ci: workflows: "
+    labels: []
+    groups:
+      ci-deps:
+        patterns:
+          - "*"
+
+  - package-ecosystem: "uv"
     directory: "/doc"
     schedule:
       interval: "weekly"
