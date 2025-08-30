@@ -50,37 +50,37 @@ Sample shell interaction
 
 .. code-block:: console
 
-   uart:~$ usbd defaults
-   dev: USB descriptors initialized
-   uart:~$ usbd config add 1
-   uart:~$ usbd class add foobaz 1
-   dev: added USB class foobaz to configuration 1
-   uart:~$ usbd init
+   *** Booting Zephyr OS build v4.2.0-1588-g83f1bd7341de ***
+   uart:~$ usbd defcfg
+   dev: added default string descriptors
+   dev: register FS loopback_0
+   dev: register HS loopback_0
    dev: USB initialized
    uart:~$ usbh init
    host: USB host initialized
    uart:~$ usbh enable
    host: USB host enabled
-   [611:00:28.620,000] <wrn> usbd_core: VBUS detected event
    uart:~$ usbh bus resume
    host: USB bus resumed
    uart:~$ usbd enable
-   host: USB device connected
    dev: USB enabled
-   uart:~$ usbh device descriptor device 0
-   host: transfer finished 0x20006250, err 0
-   00000000: 80 06 00 01 00 00 12 00                          |........         |
-   bLength			18
-   bDescriptorType		1
-   bcdUSB			200
-   bDeviceClass	        	239
-   bDeviceSubClass		2
-   bDeviceProtocol		1
-   bMaxPacketSize0		64
-   idVendor		        2fe3
-   idProduct		        ffff
-   bcdDevice		        301
-   iManufacturer		1
-   iProduct		        2
-   iSerial			3
-   bNumConfigurations           1
+   [160:04:13.870,000] <inf> usb_loopback: Enable loopback_0
+   uart:~$ usbh device list
+   1
+   uart:~$ usbh device descriptor device 1
+   host: USB device with address 1
+   bLength                 18
+   bDescriptorType         1
+   bcdUSB                  200
+   bDeviceClass            239
+   bDeviceSubClass         2
+   bDeviceProtocol         1
+   bMaxPacketSize0         64
+   idVendor                2fe3
+   idProduct               ffff
+   bcdDevice               402
+   iManufacturer           1
+   iProduct                2
+   iSerial                 3
+   bNumConfigurations      1
+   uart:~$
