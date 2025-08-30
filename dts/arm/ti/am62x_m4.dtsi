@@ -27,12 +27,21 @@
 
 	sram0: memory@0 {
 		compatible = "mmio-sram";
-		reg = <0x0 DT_SIZE_K(192)>;		/* 192 KB of SRAM (I-Code) */
-	};
+		reg = <0x0 DT_SIZE_K(256)>;
+		#address-cells = <0x1>;
+		#size-cells = <0x1>;
 
-	sram1: memory1@40000 {
-		compatible = "mmio-sram";
-		reg = <0x40000 DT_SIZE_K(64)>;		/* 64 KB of SRAM (D-Code) */
+		/* 192 KB of SRAM (I-Code) */
+		sram_icode: memory@0 {
+			device_type = "memory";
+			reg = <0x00000000 DT_SIZE_K(192)>;
+		};
+
+		/* 64 KB of SRAM (D-Code) */
+		sram_dcode: memory@30000 {
+			device_type = "memory";
+			reg = <0x30000 DT_SIZE_K(64)>;
+		};
 	};
 
 	sysclk: system-clock {
