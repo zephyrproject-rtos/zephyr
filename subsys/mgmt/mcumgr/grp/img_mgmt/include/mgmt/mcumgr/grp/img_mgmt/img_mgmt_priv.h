@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018-2021 mcumgr authors
- * Copyright (c) 2022-2023 Nordic Semiconductor ASA
+ * Copyright (c) 2022-2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -200,6 +200,13 @@ void img_mgmt_take_lock(void);
  *		other threads to use image management operations.
  */
 void img_mgmt_release_lock(void);
+
+/**
+ * @brief	Performs an erase of the pending upload slot but skips erasing sectors that are
+ *		already erased. Requires @CONFIG_MCUMGR_GRP_IMG_IMAGE_SKIP_ERASED_SECTORS be
+ *		enabled.
+ */
+int img_mgmt_erase_pending_upload_slot(void);
 
 #define ERASED_VAL_32(x) (((x) << 24) | ((x) << 16) | ((x) << 8) | (x))
 int img_mgmt_erased_val(int slot, uint8_t *erased_val);
