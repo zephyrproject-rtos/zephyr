@@ -1,0 +1,37 @@
+# Copyright (c) 2025 Titouan Christophe
+# SPDX-License-Identifier: Apache-2.0
+
+config NETMIDI2_HOST
+	bool "Network MIDI2 (UDP) host [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	select NET_UDP
+	select NET_SOCKETS
+	select NET_SOCKETS_SERVICE
+	depends on NET_IPV4 || NET_IPV6
+	imply NET_IPV4_MAPPING_TO_IPV6 if NET_IPV4 && NET_IPV6
+	help
+	  Host library of User Datagram Protocol for Universal MIDI Packets.
+	  Provides the following features:
+	  - Exposing an UMP endpoint over UDP
+	  - Accepting inbound client invitations
+	  - Sending/Receiving Universal MIDI packets
+	  Following "Network MIDI 2.0 (UDP) Transport Specification" v1.0
+
+if NETMIDI2_HOST
+config NETMIDI2_HOST_MAX_CLIENTS
+	int "Maximum number of clients supported by the Network MIDI2 host"
+	default 5
+
+config NETMIDI2_HOST_AUTH
+	bool "Support for authentication (shared key or user/password)"
+	select MBEDTLS
+	select MBEDTLS_CIPHER_CCM_ENABLED
+	select CRYPTO
+	select CRYPTO_MBEDTLS_SHIM
+
+module=NET_MIDI2
+module-dep=NET_LOG
+module-str=Log level for network MIDI2
+module-help=Enables midi2 debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+endif
