@@ -22,16 +22,24 @@ if((NOT DEFINED CONFIG_CUSTOM_SECTION_ALIGN) AND DEFINED  CONFIG_MPU_REQUIRES_PO
   # . = ALIGN( 1 << LOG2CEIL(region_size))
   # Handling this requires us to handle log2ceil() in iar linker since the size
   # isn't known until then.
-  set(MPU_ALIGN_BYTES ${region_min_align})
+
+  set(MPU_ALIGN "MAX(${region_min_align} , 2 << LOG2CEIL(@region_size@) )")
+  #if(ZEPHYR_TOOLCHAIN_VARIANT STREQUAL "iar")
+    # Ilink needs help with the align-to-power-of-2-of-region-size thing.
+    # So tag it with IAR_EVALUATE to be handled by iar_linker_evaluate.py
+    # Note that we need to escape the enclosing @ to get the evaluation
+    # order right
+    set(MPU_ALIGN "@(Z_EVALUATE:undef=0:expr=${MPU_ALIGN})@")
+  #endif()
+  zephyr_linker_include_var(VAR MPU_ALIGN VALUE "${MPU_ALIGN}")
   #message(WARNING "We can not handle . = ALIGN( 1 << LOG2CEIL(region_size))  ")
 else()
-  set(MPU_ALIGN_BYTES ${region_min_align})
+  zephyr_linker_include_var(VAR MPU_ALIGN VALUE "${region_min_align}")
 endif()
-# The APP_SHARED_ALIGN and SMEM_PARTITION_ALIGN macros are defined as
-# ". = ALIGN(...)" things.
-# the cmake generator stuff needs an align-size in bytes so:
-zephyr_linker_include_var(VAR APP_SHARED_ALIGN_BYTES VALUE ${region_min_align})
-zephyr_linker_include_var(VAR SMEM_PARTITION_ALIGN_BYTES VALUE ${MPU_ALIGN_BYTES})
+
+zephyr_linker_include_var(VAR APP_SHARED_ALIGN VALUE ${region_min_align})
+# Note that MPU_ALIGN (may) require an argument (region_size
+zephyr_linker_include_var(VAR SMEM_PARTITION_ALIGN VALUE "@MPU_ALIGN@")
 
 # Note, the `+ 0` in formulas below avoids errors in cases where a Kconfig
 #       variable is undefined and thus expands to nothing.
