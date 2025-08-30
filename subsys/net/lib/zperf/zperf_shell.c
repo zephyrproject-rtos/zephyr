@@ -1850,7 +1850,8 @@ void zperf_shell_init(void)
 {
 	int ret;
 
-	if (IS_ENABLED(MY_IP6ADDR_SET) && MY_IP6ADDR) {
+#if defined(MY_IP6ADDR_SET)
+	if (MY_IP6ADDR) {
 		ret = net_addr_pton(AF_INET6, MY_IP6ADDR,
 				    &in6_addr_my.sin6_addr);
 		if (ret < 0) {
@@ -1872,8 +1873,10 @@ void zperf_shell_init(void)
 				 net_sprint_ipv6_addr(&in6_addr_dst.sin6_addr));
 		}
 	}
+#endif
 
-	if (IS_ENABLED(MY_IP4ADDR_SET) && MY_IP4ADDR) {
+#if defined(MY_IP4ADDR_SET)
+	if (MY_IP4ADDR) {
 		ret = net_addr_pton(AF_INET, MY_IP4ADDR,
 				    &in4_addr_my.sin_addr);
 		if (ret < 0) {
@@ -1895,6 +1898,7 @@ void zperf_shell_init(void)
 				 net_sprint_ipv4_addr(&in4_addr_dst.sin_addr));
 		}
 	}
+#endif
 }
 
 #ifdef CONFIG_NET_ZPERF_SERVER
