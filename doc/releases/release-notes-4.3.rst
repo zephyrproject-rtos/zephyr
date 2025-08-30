@@ -137,6 +137,12 @@ New APIs and options
 
    * :kconfig:option:`CONFIG_SETTINGS_TFM_ITS`
 
+* USB
+
+  * Video
+
+    * :c:func:`uvc_add_format`
+
 .. zephyr-keep-sorted-stop
 
 New Boards
