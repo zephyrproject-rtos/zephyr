@@ -277,7 +277,7 @@ REDIRECTS = (
     ('samples/boards/stm32/power_mgmt/adc/README', 'samples/boards/st/power_mgmt/adc/README'),
     ('samples/boards/stm32/power_mgmt/blinky/README', 'samples/boards/st/power_mgmt/blinky/README'),
     ('samples/boards/stm32/power_mgmt/serial_wakeup/README', 'samples/boards/st/power_mgmt/serial_wakeup/README'),
-    ('samples/boards/stm32/power_mgmt/standby_shutdown/README', 'samples/boards/st/power_mgmt/standby_shutdown/README'),
+    ('samples/boards/stm32/power_mgmt/standby/README', 'samples/boards/st/power_mgmt/standby/README'),
     ('samples/boards/stm32/power_mgmt/stm32wb_ble/README', 'samples/boards/st/power_mgmt/stm32wb_ble/README'),
     ('samples/boards/stm32/power_mgmt/stop3/README', 'samples/boards/st/power_mgmt/stop3/README'),
     ('samples/boards/stm32/power_mgmt/suspend_to_ram/README', 'samples/boards/st/power_mgmt/suspend_to_ram/README'),
