@@ -16,7 +16,7 @@
  * @brief MIPI-DSI driver APIs
  * @defgroup mipi_dsi_interface MIPI-DSI driver APIs
  * @since 3.1
- * @version 0.1.0
+ * @version 0.8.0
  * @ingroup io_interfaces
  * @{
  */
