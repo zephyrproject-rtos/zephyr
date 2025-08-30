@@ -19,12 +19,12 @@ from conftest import (
     ZEPHYR_BASE,
     clear_log_in_test,
     sample_filename_mock,
-    testsuite_filename_mock
+    suite_filename_mock
 )
 from twisterlib.testplan import TestPlan
 
 
-@mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', testsuite_filename_mock)
+@mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', suite_filename_mock)
 class TestPrintOuts:
     TESTDATA_1 = [
         (
