@@ -1,0 +1,74 @@
+# Copyright (c) 2025, Alex Fabre
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Watchdog driver for external IC (TPS3851).
+
+  The TPS3851 combines a precision voltage
+  supervisor with a programmable watchdog timer.
+
+  This driver targets the watchdog timer functionality, as the voltage
+  supervisor part is a simple gpio read/write that does not necessarily
+  require a dedicated driver.
+
+  Key features:
+
+  - The watchdog timer has a dedicated watchdog output signal.
+  - The watchdog timeouts can be programmed either by an external
+  capacitor, or by factory-programmed default delay settings.
+  - Finally, the watchdog can also be enabled/disabled via a dedicated
+  logic pin.
+
+  Example:
+
+  ext_watchdog: ext_watchdog {
+    compatible = "ti,tps3851";
+    wdo-gpios = <&gpioi 11 GPIO_ACTIVE_LOW>;
+    wdi-gpios = <&gpioh 5 GPIO_ACTIVE_LOW>;
+    set1-gpios = <&gpioh 4 GPIO_ACTIVE_HIGH>;
+    timeout-period = <220>;
+  };
+
+compatible: "ti,tps3851"
+
+include: base.yaml
+
+properties:
+  wdo-gpios:
+    type: phandle-array
+    description: |
+      Optional GPIO used to catch watchdog output signal (timeout).
+      Goes low (asserts) when a watchdog timeout occurs.
+      This GPIO is optional because it may be routed to some hardware
+      logic directly.
+      When set, this GPIO calls the watchdog callback on falling-edge event.
+      This GPIO is considered to be configured ACTIVE_LOW in the dts.
+
+  wdi-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Watchdog input (feed). A falling edge must occur at
+      WDI before the timeout expires.
+      This GPIO is considered to be configured ACTIVE_LOW in the dts.
+
+  set1-gpios:
+    type: phandle-array
+    description: |
+      Optional GPIO used to enable (High) or disable (Low) the watchdog timer.
+      This GPIO is optional because it may be routed to HIGH by hardware
+      design directly.
+      This GPIO is considered to be configured ACTIVE_HIGH in the dts.
+
+  timeout-period:
+    type: int
+    required: true
+    description: |
+      The TPS3851 features three options for setting the watchdog timer.
+      1. Connecting a capacitor to the CWD pin: A formula
+         gives the timings according to the capacitor value.
+      2. Connecting a pullup resistor to VDD.
+      3. Leaving the CWD pin unconnected.
+
+      PS: Beware that two version of the IC exist: TPS3851xxxS with standard
+      timings formula and TPS3851xxxE with extended timings formula.
