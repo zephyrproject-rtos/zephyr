@@ -1,0 +1,126 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP PCA9422 PMIC
+
+  The PMIC has three buck converters, one buck-boost converter and four LDOs.
+  All need to be defined as children nodes, strictly following the BUCK1, BUCK2,
+  BUCK3, BUCKBOOST, LDO1, LDO2, LDO3 and LDO4 node names.
+  For example:
+
+  pmic@61 {
+    reg = <0x61>;
+    ...
+    regulators {
+      compatible = "nxp,pca9422-regulator";
+      BUCK1 {
+        /* all properties for BUCK1 */
+      };
+      BUCK2 {
+        /* all properties for BUCK2 */
+      };
+      BUCK3 {
+        /* all properties for BUCK2 */
+      };
+      BUCKBOOST {
+        /* all properties for BUCKBOOST */
+      };
+      LDO1 {
+        /* all properties for LDO1 */
+      };
+      LDO2 {
+        /* all properties for LDO2 */
+      };
+      LDO3 {
+        /* all properties for LDO3 */
+      };
+      LDO4 {
+        /* all properties for LDO4 */
+      };
+    };
+  }
+
+compatible: "nxp,pca9422-regulator"
+
+include: base.yaml
+
+properties:
+  nxp,enable-modesel-pins:
+    type: boolean
+    description:
+      When enabled, the PMIC will be configured to allow mode transition by using
+      the SLEEP_MODE0/STBY_MODE1 pins.
+
+  nxp,vsys-uvlo-sel-millivolt:
+    type: int
+    default: 2700
+    enum:
+      - 2600
+      - 2700
+      - 2800
+    description: |
+      VSYS UVLO (under voltage lock out) threshold, in millivolts. Defaults to
+      2700mV to match the IC default value.
+
+child-binding:
+  include:
+    - name: regulator.yaml
+      property-allowlist:
+        - regulator-always-on
+        - regulator-boot-on
+        - regulator-min-microvolt
+        - regulator-max-microvolt
+
+  description: Voltage output of PMIC controller regulator
+  properties:
+    low-power-mode:
+      type: string
+      default: "Normal"
+      enum:
+        - "Normal"
+        - "LPM1"
+        - "LPM2"
+        - "FLPM"
+      description: |
+        Regulator low power mode setting.
+
+        - Normal mode ("Normal")
+        - Low power mode at STANDBY mode and DPSTANDBY mode ("LPM1")
+        - Low power mode at DPSTANDBY mode ("LPM2")
+        - Forced low power mode ("FLPM")
+
+    enable-mode:
+      type: string
+      default: "All"
+      enum:
+        - "All"
+        - "Active/Sleep/Standby"
+        - "Active/Sleep"
+        - "Active"
+      description: |
+        Regulator enable mode setting.
+
+        - ON at ACTIVE, SLEEP, STANDBY and DPSTANDBY mode ("All")
+        - ON at ACTIVE, SLEEP and STANDBY modes, OFF at DPSTANDBY mode
+          ("Active/Sleep/Standby")
+        - ON at ACTIVE and SLEEP modes, OFF at STANDBY and DPSTANDBY mode
+          ("Active/Sleep")
+        - ON at ACTIVE mode, OFF at SLEEP, STANDBY and DPSTANDBY mode
+          ("Active")
+
+    nxp,active-microvolt:
+      type: int
+      description: |
+        The voltage level to be configured for active mode, in microvolts.
+
+    nxp,sleep-microvolt:
+      type: int
+      description: |
+        The voltage level to be configured for sleep mode, in microvolts.
+
+    nxp,standby-microvolt:
+      type: int
+      description: |
+        The voltage level to be configured for standby and dpstandby modes,
+        in microvolts.
