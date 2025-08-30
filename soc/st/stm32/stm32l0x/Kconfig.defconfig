@@ -14,4 +14,14 @@ config TASK_WDT_HW_FALLBACK_DELAY
 	depends on TASK_WDT_HW_FALLBACK
 	default 200
 
+# Reduce kernel stack sizes to fit in 8 KiB RAM
+config MAIN_STACK_SIZE
+	default 640 if SOC_STM32L053XX || SOC_STM32L031XX
+
+config IDLE_STACK_SIZE
+	default 200 if SOC_STM32L053XX || SOC_STM32L031XX
+
+config ISR_STACK_SIZE
+	  default 512 if SOC_STM32L053XX || SOC_STM32L031XX
+
 endif # SOC_SERIES_STM32L0X
