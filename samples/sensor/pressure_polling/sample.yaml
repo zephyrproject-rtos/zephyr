@@ -5,5 +5,10 @@ tests:
     build_only: true
     tags: sensors
     filter: dt_alias_exists("pressure-sensor")
+    platform_allow:
+      - nrf52dk/nrf52832
+      - adafruit_qt_py_rp2040/rp2040
     integration_platforms:
       - nrf52dk/nrf52832
+    extra_args:
+      - platform:adafruit_qt_py_rp2040/rp2040:SHIELD="adafruit_dps310"
