@@ -9,6 +9,8 @@
 #include <dt-bindings/pinctrl/bflb-common-pinctrl.h>
 #include <dt-bindings/pinctrl/bl61x-pinctrl.h>
 #include <dt-bindings/clock/bflb_bl61x_clock.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	#address-cells = <1>;
@@ -115,7 +117,7 @@
 			status = "okay";
 
 			gpio0: gpio@20000000 {
-				compatible = "bflb,gpio";
+				compatible = "bflb,bl61x-gpio";
 				reg = <0x20000000 0x1000>;
 				#gpio-cells = <2>;
 				#bflb,pin-cells = <2>;
