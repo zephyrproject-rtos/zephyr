@@ -11,3 +11,8 @@ config NXP_IRQSTEER
 		multiple interrupts from peripheral to one or
 		more CPU interrupt lines. This is used for CPUs
 		such as XTENSA DSPs.
+
+config USE_NXP_MCUX_SDK_IRQSTEER1
+	bool "Use IRQSTEER1 driver in NXP MCUX SDK"
+	default n
+	depends on NXP_IRQSTEER
