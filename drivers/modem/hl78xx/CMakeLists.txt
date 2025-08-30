@@ -12,6 +12,11 @@ zephyr_library_sources(
     hl78xx_apis.c
 )
 
+zephyr_library_sources_ifdef(
+    CONFIG_MODEM_HL78XX_AT_SHELL
+    hl78xx_at_shell.c
+)
+
 add_subdirectory_ifdef(CONFIG_HL78XX_EVT_MONITOR hl78xx_evt_monitor)
 add_subdirectory_ifdef(CONFIG_MQTT_OFFLOAD_LIB mqtt_offload)
 

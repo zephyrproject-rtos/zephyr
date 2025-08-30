@@ -2522,7 +2522,9 @@ static int hl78xx_init(const struct device *dev)
 	}
 
 	hl78xx_socket_init(data);
-
+#ifdef CONFIG_MODEM_HL78XX_AT_SHELL
+	hl78xx_at_shell_init(dev);
+#endif
 #ifndef CONFIG_PM_DEVICE
 	hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_RESUME);
 #else

@@ -834,4 +834,13 @@ bool hl78xx_is_rsrp_valid(struct hl78xx_data *data);
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS) && defined(CONFIG_MODEM_HL78XX_SOCKETS_SOCKOPT_TLS)
 int hl78xx_configure_chipper_suit(void);
 #endif
+#ifdef CONFIG_MODEM_HL78XX_AT_SHELL
+/**
+ * @brief Initialize the AT shell.
+ * @param dev The device structure.
+ * @return 0 on success, negative error code on failure.
+ */
+int hl78xx_at_shell_init(const struct device *dev);
+#endif /* CONFIG_MODEM_HL78XX_AT_SHELL */
+
 #endif /* HL78XX_H */
