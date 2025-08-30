@@ -3,17 +3,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/ {
-	chosen {
-		/*
-		 * Need to use external uart console
-		 * when using this pmod_sd
-		 */
-		zephyr,console = &uart9;
-		zephyr,shell-uart = &uart9;
-	};
-};
-
 &pinctrl {
 	pmod_sd_default: pmod_sd_default {
 		group1 {
@@ -32,44 +21,10 @@
 			drive-strength = "highspeed-high";
 		};
 	};
-
-	sci9_default: sci9_default {
-		group1 {
-			/* tx */
-			psels = <RA_PSEL(RA_PSEL_SCI_9, 2, 9)>;
-			drive-strength = "medium";
-		};
-
-		group2 {
-			/* rx */
-			psels = <RA_PSEL(RA_PSEL_SCI_9, 2, 8)>;
-		};
-	};
 };
 
 &pmod_sd_shield {
 	interrupt-names = "accs", "card", "dma-req";
 	interrupts = <84 12>, <85 12>, <86 12>;
 	pinctrl-0 = <&pmod_sd_default>;
-};
-
-&sci9 {
-	pinctrl-0 = <&sci9_default>;
-	pinctrl-names = "default";
-	interrupts = <87 1>, <88 1>, <89 1>, <90 1>;
-	interrupt-names = "rxi", "txi", "tei", "eri";
-	status = "okay";
-
-	uart9: uart {
-		current-speed = <115200>;
-		status = "okay";
-	};
-};
-
-&sci8 {
-	status = "disabled";
-
-	uart {
-		status = "disabled";
-	};
 };

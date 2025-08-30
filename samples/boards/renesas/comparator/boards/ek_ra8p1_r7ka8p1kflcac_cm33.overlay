@@ -1,0 +1,35 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		sample-comp = &acmphs0;
+	};
+};
+
+&pinctrl {
+	acmphs0_ivcmp3: acmphs0_ivcmp3 {
+		group1 {
+			/* CH0 IVCMP3 */
+			psels = <RA_PSEL(RA_PSEL_ACMPHS, 0, 1)>;
+			renesas,analog-enable;
+		};
+	};
+};
+
+&acmphs_global {
+	status = "okay";
+
+	acmphs0 {
+		pinctrl-0 = <&acmphs0_ivcmp3>;
+		pinctrl-names = "default";
+		interrupts = <90 12>;
+		interrupt-names = "hs";
+		reference-input-source = "ivref2";
+		compare-input-source = "ivcmp3";
+		noise-filter = <1>;
+		status = "okay";
+	};
+};
