@@ -62,6 +62,16 @@ static const struct ws2812_spi_cfg *dev_cfg(const struct device *dev)
 }
 
 /*
+ * Check if all enabled instances have a `bits-per-symbol` of 8.
+ * This allows the fast path to be used exclusively, removing the generic
+ * path logic from the build when it's not needed.
+ */
+#define WS2812_SPI_8BIT_SYMBOL_CHECK(idx) \
+	(DT_INST_PROP(idx, bits_per_symbol) == SPI_FRAME_BITS) &&
+#define WS2812_SPI_ALL_SYMBOLS_ARE_8_BITS \
+	(DT_INST_FOREACH_STATUS_OKAY(WS2812_SPI_8BIT_SYMBOL_CHECK) 1)
+
+/*
  * Serialize an 8-bit color value into the SPI buffer, MSbit first. Each of
  * the 8 data bits is represented by a N-bit symbol (`one_frame` for a '1' or
  * `zero_frame` for a '0'), which is then packed into the SPI buffer.
@@ -76,8 +86,10 @@ static inline void ws2812_spi_ser(uint8_t color, uint8_t one, uint8_t zero,
 		if (bits_per_symbol == SPI_FRAME_BITS) {
 			/* Fast path for the common 8-bit symbol case */
 			*(*buf)++ = pattern;
-		} else {
-			/* Generic path for N-bit symbols */
+		}
+#if !WS2812_SPI_ALL_SYMBOLS_ARE_8_BITS
+		else {
+			/* Generic path for N-bit symbols, compiled only when needed. */
 			for (int p = bits_per_symbol - 1; p >= 0; p--) {
 				if (pattern & BIT(p)) {
 					**buf |= *bit_mask;
@@ -92,6 +104,7 @@ static inline void ws2812_spi_ser(uint8_t color, uint8_t one, uint8_t zero,
 				}
 			}
 		}
+#endif
 	}
 }
 
