@@ -3208,7 +3208,7 @@ static void mfy_aux_offset_get(void *param)
 	id = TICKER_NULL;
 	ticks_to_expire = 0U;
 	ticks_current = adv->ticks_at_expire;
-	retry = 1U; /* Assert on first ticks_current change */
+	retry = 4U; /* Assert on 2 other adv set ticks_current change, and 2 scanners expiring */
 	do {
 		uint32_t volatile ret_cb;
 		uint32_t ticks_previous;
@@ -3323,10 +3323,11 @@ static void mfy_aux_offset_get(void *param)
 
 	/* Assertion check for delayed aux_offset calculations */
 	ticks_now = ticker_ticks_now_get();
-	ticks_elapsed = ticker_ticks_diff_get(ticks_now, ticks_current);
-	ticks_to_start = HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US) -
-			 HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
-	LL_ASSERT(ticks_elapsed < ticks_to_start);
+	ticks_elapsed = ticker_ticks_diff_get(ticks_now, adv->ticks_at_expire);
+	ticks_to_start = HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
+	LL_ASSERT_MSG((ticks_elapsed <= ticks_to_start), "%s overhead = %u (%u) us.",
+		      __func__, HAL_TICKER_TICKS_TO_US(ticks_elapsed),
+		      HAL_TICKER_TICKS_TO_US(ticks_to_start));
 }
 
 static void ticker_op_cb(uint32_t status, void *param)
