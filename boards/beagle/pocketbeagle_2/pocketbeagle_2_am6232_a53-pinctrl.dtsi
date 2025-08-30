@@ -37,4 +37,9 @@
 			K3_PINMUX(0x000c, PIN_OUTPUT, MUX_MODE_7)
 		>;
 	};
+
+	P1_02_AA19_gpio: P1-02-AA19-gpio-pins {
+		/* (AA19) RGMII2_TX_CTL.GPIO0_87 */
+		pinmux = <K3_PINMUX(0x0164, PIN_OUTPUT, MUX_MODE_7)>;
+	};
 };
