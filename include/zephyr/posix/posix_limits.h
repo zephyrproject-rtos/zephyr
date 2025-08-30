@@ -7,6 +7,8 @@
 #ifndef ZEPHYR_INCLUDE_ZEPHYR_POSIX_POSIX_LIMITS_H_
 #define ZEPHYR_INCLUDE_ZEPHYR_POSIX_POSIX_LIMITS_H_
 
+#if defined(_POSIX_C_SOURCE) || defined(__DOXYGEN__)
+
 /*
  * clang-format and checkpatch disagree on formatting here, so rely on checkpatch and disable
  * clang-format since checkpatch cannot be selectively disabled.
@@ -121,5 +123,7 @@
 #define SYMLINK_MAX              _POSIX_SYMLINK_MAX
 
 /* clang-format on */
+
+#endif
 
 #endif /* ZEPHYR_INCLUDE_ZEPHYR_POSIX_POSIX_LIMITS_H_ */
