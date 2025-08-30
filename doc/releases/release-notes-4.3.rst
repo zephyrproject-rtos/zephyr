@@ -91,6 +91,12 @@ New APIs and options
     * :c:struct:`bt_audio_codec_cfg` now contains a target_latency and a target_phy option
     * :c:func:`bt_bap_broadcast_source_foreach_stream`
 
+* CPUFreq
+
+  * Introduced experimental dynamic CPU frequency scaling subsystem
+
+    * :kconfig:option:`CONFIG_CPU_FREQ`
+
 * Display
 
   * :c:enumerator:`PIXEL_FORMAT_AL_88`
