@@ -267,6 +267,7 @@
 			compatible = "microchip,xec-basic-timer";
 			reg = <0x40000ca0 0x20>;
 			interrupts = <141 0>;
+			girqs = <23 5>;
 			clock-frequency = <48000000>;
 			prescaler = <0>;
 			max-value = <0xffffffff>;
@@ -488,21 +489,6 @@
 			interrupts = <87 0>;
 			status = "disabled";
 		};
-		rcid0: rcid@40001400 {
-			reg = <0x40001400 0x80>;
-			interrupts = <80 0>;
-			status = "disabled";
-		};
-		rcid1: rcid@40001480 {
-			reg = <0x40001480 0x80>;
-			interrupts = <81 0>;
-			status = "disabled";
-		};
-		rcid2: rcid@40001500 {
-			reg = <0x40001500 0x80>;
-			interrupts = <82 0>;
-			status = "disabled";
-		};
 		bbled0: bbled@4000b800 {
 			reg = <0x4000b800 0x100>;
 			interrupts = <83 0>;
@@ -516,16 +502,6 @@
 		bbled2: bbled@4000ba00 {
 			reg = <0x4000ba00 0x100>;
 			interrupts = <85 0>;
-			status = "disabled";
-		};
-		bbled3: bbled@4000bb00 {
-			reg = <0x4000bb00 0x100>;
-			interrupts = <86 0>;
-			status = "disabled";
-		};
-		bclink0: bclink@4000cd00 {
-			reg = <0x4000cd00 0x20>;
-			interrupts = <96 0>, <97 0>;
 			status = "disabled";
 		};
 		tfdp0: tfdp@40008c00 {
