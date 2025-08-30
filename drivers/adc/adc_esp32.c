@@ -19,12 +19,48 @@
 #include <esp_private/adc_share_hw_ctrl.h>
 
 #if defined(CONFIG_ADC_ESP32_DMA)
-#if !SOC_GDMA_SUPPORTED
-#error "SoCs without GDMA peripheral are not supported!"
-#endif
+#if SOC_GDMA_SUPPORTED
 #include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/dma/dma_esp32.h>
-#endif
+#else
+#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
+#include <soc/lldesc.h>
+
+#if CONFIG_SOC_SERIES_ESP32
+#include <zephyr/dt-bindings/interrupt-controller/esp-xtensa-intmux.h>
+
+#define ADC_DMA_I2S_HOST                 0
+#define ADC_DMA_INTR_MASK                BIT(9)
+#define ADC_DMA_DEV                      I2S_LL_GET_HW(ADC_DMA_I2S_HOST)
+#define ADC_DMA_CHANNEL                  0
+#define adc_dma_check_event(dev, mask)   (i2s_ll_get_intr_status(dev) & mask)
+#define adc_dma_digi_clr_intr(dev, mask) i2s_ll_clear_intr_status(dev, mask)
+
+#define I2S0_NODE_ID    DT_NODELABEL(i2s0)
+#define I2S0_DEV        ((const struct device *)DEVICE_DT_GET_OR_NULL(I2S0_NODE_ID))
+#define I2S0_CLK_DEV    ((const struct device *)DEVICE_DT_GET(DT_CLOCKS_CTLR(I2S0_NODE_ID)))
+#define I2S0_CLK_SUBSYS ((clock_control_subsys_t)DT_CLOCKS_CELL(I2S0_NODE_ID, offset))
+#endif /* CONFIG_SOC_SERIES_ESP32 */
+
+#if CONFIG_SOC_SERIES_ESP32S2
+#include <zephyr/dt-bindings/interrupt-controller/esp32s2-xtensa-intmux.h>
+
+#define ADC_DMA_SPI_HOST                 SPI3_HOST
+#define ADC_DMA_INTR_MASK                SPI_LL_INTR_IN_SUC_EOF
+#define ADC_DMA_DEV                      SPI_LL_GET_HW(ADC_DMA_SPI_HOST)
+#define ADC_DMA_CHANNEL                  (DT_PROP(DT_NODELABEL(spi3), dma_host) + 1)
+#define adc_dma_check_event(dev, mask)   spi_ll_get_intr(dev, mask)
+#define adc_dma_digi_clr_intr(dev, mask) spi_ll_clear_intr(dev, mask)
+
+#define SPI3_NODE_ID        DT_NODELABEL(spi3)
+#define SPI3_DEV            ((const struct device *)DEVICE_DT_GET_OR_NULL(SPI3_NODE_ID))
+#define SPI3_CLK_DEV        ((const struct device *)DEVICE_DT_GET(DT_CLOCKS_CTLR(SPI3_NODE_ID)))
+#define SPI3_CLK_SUBSYS     ((clock_control_subsys_t)DT_CLOCKS_CELL(SPI3_NODE_ID, offset))
+#define SPI3_DMA_CLK_SUBSYS ((clock_control_subsys_t)DT_PROP(SPI3_NODE_ID, dma_clk))
+#endif /* CONFIG_SOC_SERIES_ESP32 */
+
+#endif /* SOC_GDMA_SUPPORTED */
+#endif /* defined(CONFIG_ADC_ESP32_DMA) */
 
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
@@ -53,10 +89,10 @@ struct adc_esp32_conf {
 	adc_unit_t unit;
 	uint8_t channel_count;
 	const struct device *gpio_port;
-#if defined(CONFIG_ADC_ESP32_DMA)
+#if defined(CONFIG_ADC_ESP32_DMA) && SOC_GDMA_SUPPORTED
 	const struct device *dma_dev;
 	uint8_t dma_channel;
-#endif /* defined(CONFIG_ADC_ESP32_DMA) */
+#endif /* defined(CONFIG_ADC_ESP32_DMA) && SOC_GDMA_SUPPORTED */
 };
 
 struct adc_esp32_data {
@@ -70,8 +106,28 @@ struct adc_esp32_data {
 	adc_hal_dma_ctx_t adc_hal_dma_ctx;
 	uint8_t *dma_buffer;
 	struct k_sem dma_conv_wait_lock;
+#if !SOC_GDMA_SUPPORTED
+	lldesc_t dma_desc;
+	struct intr_handle_data_t *irq_handle;
+#endif /* !SOC_GDMA_SUPPORTED */
 #endif /* defined(CONFIG_ADC_ESP32_DMA) */
 };
+
+static void adc_hw_calibration(adc_unit_t unit)
+{
+#if SOC_ADC_CALIBRATION_V1_SUPPORTED
+	adc_hal_calibration_init(unit);
+	for (int j = 0; j < SOC_ADC_ATTEN_NUM; j++) {
+		adc_calc_hw_calibration_code(unit, j);
+#if SOC_ADC_CALIB_CHAN_COMPENS_SUPPORTED
+		/* Load the channel compensation from efuse */
+		for (int k = 0; k < SOC_ADC_CHANNEL_NUM(unit); k++) {
+			adc_load_hw_calibration_chan_compens(unit, k, j);
+		}
+#endif /* SOC_ADC_CALIB_CHAN_COMPENS_SUPPORTED */
+	}
+#endif /* SOC_ADC_CALIBRATION_V1_SUPPORTED */
+}
 
 /* Convert zephyr,gain property to the ESP32 attenuation */
 static inline int gain_to_atten(enum adc_gain gain, adc_atten_t *atten)
@@ -95,7 +151,7 @@ static inline int gain_to_atten(enum adc_gain gain, adc_atten_t *atten)
 	return 0;
 }
 
-#if !defined(CONFIG_ADC_ESP32_DMA)
+#ifndef CONFIG_ADC_ESP32_DMA
 
 /* Convert voltage by inverted attenuation to support zephyr gain values */
 static void atten_to_gain(adc_atten_t atten, uint32_t *val_mv)
@@ -129,25 +185,9 @@ static void atten_to_gain(adc_atten_t atten, uint32_t *val_mv)
 	*val_mv = (*val_mv * num) / den;
 }
 
-#endif /* !defined(CONFIG_ADC_ESP32_DMA) */
+#else
 
-static void adc_hw_calibration(adc_unit_t unit)
-{
-#if SOC_ADC_CALIBRATION_V1_SUPPORTED
-	adc_hal_calibration_init(unit);
-	for (int j = 0; j < SOC_ADC_ATTEN_NUM; j++) {
-		adc_calc_hw_calibration_code(unit, j);
-#if SOC_ADC_CALIB_CHAN_COMPENS_SUPPORTED
-		/* Load the channel compensation from efuse */
-		for (int k = 0; k < SOC_ADC_CHANNEL_NUM(unit); k++) {
-			adc_load_hw_calibration_chan_compens(unit, k, j);
-		}
-#endif /* SOC_ADC_CALIB_CHAN_COMPENS_SUPPORTED */
-	}
-#endif /* SOC_ADC_CALIBRATION_V1_SUPPORTED */
-}
-
-#if defined(CONFIG_ADC_ESP32_DMA)
+#if SOC_GDMA_SUPPORTED
 
 static void IRAM_ATTR adc_esp32_dma_conv_done(const struct device *dma_dev, void *user_data,
 					      uint32_t channel, int status)
@@ -161,11 +201,34 @@ static void IRAM_ATTR adc_esp32_dma_conv_done(const struct device *dma_dev, void
 	k_sem_give(&data->dma_conv_wait_lock);
 }
 
+#else
+
+static IRAM_ATTR void adc_esp32_dma_intr_handler(void *arg)
+{
+	if (arg == NULL) {
+		return;
+	}
+
+	const struct device *dev = arg;
+	struct adc_esp32_data *data = dev->data;
+
+	bool conv_completed = adc_dma_check_event(ADC_DMA_DEV, ADC_DMA_INTR_MASK);
+
+	if (conv_completed) {
+		adc_dma_digi_clr_intr(ADC_DMA_DEV, ADC_DMA_INTR_MASK);
+
+		k_sem_give(&data->dma_conv_wait_lock);
+	}
+}
+
+#endif /* SOC_GDMA_SUPPORTED */
+
 static int adc_esp32_dma_start(const struct device *dev, uint8_t *buf, size_t len)
 {
+#if SOC_GDMA_SUPPORTED
 	const struct adc_esp32_conf *conf = dev->config;
-
 	int err = 0;
+
 	struct dma_config dma_cfg = {0};
 	struct dma_status dma_status = {0};
 	struct dma_block_config dma_blk = {0};
@@ -208,10 +271,43 @@ static int adc_esp32_dma_start(const struct device *dev, uint8_t *buf, size_t le
 unlock:
 	irq_unlock(key);
 	return err;
+#else
+#if 0
+	struct adc_esp32_data *data = dev->data;
+	lldesc_t *dma_desc = &data->dma_desc;
+
+	memset(dma_desc, 0, sizeof(lldesc_t));
+	dma_desc->owner = 1;
+	dma_desc->sosf = 0;
+	dma_desc->buf = buf;
+	dma_desc->offset = 0;
+	dma_desc->length = len;
+	dma_desc->size = len;
+	dma_desc->eof = 0;
+
+#ifdef CONFIG_SOC_SERIES_ESP32
+	i2s_ll_clear_intr_status(ADC_DMA_DEV, ADC_DMA_INTR_MASK);
+	i2s_ll_enable_intr(ADC_DMA_DEV, ADC_DMA_INTR_MASK, true);
+
+	i2s_ll_rx_reset_dma(ADC_DMA_DEV);
+	i2s_ll_enable_dma(ADC_DMA_DEV, true);
+	i2s_ll_rx_start_link(ADC_DMA_DEV, (uint32_t)&data->dma_desc);
+#endif /* CONFIG_SOC_SERIES_ESP32 */
+
+#ifdef CONFIG_SOC_SERIES_ESP32S2
+	spi_ll_clear_intr(ADC_DMA_DEV, ADC_DMA_INTR_MASK);
+	spi_ll_enable_intr(ADC_DMA_DEV, ADC_DMA_INTR_MASK);
+	spi_dma_ll_rx_start(ADC_DMA_DEV, 0, &data->dma_desc);
+#endif /* CONFIG_SOC_SERIES_ESP32S2 */
+#endif
+
+	return 0;
+#endif /* SOC_GDMA_SUPPORTED */
 }
 
 static int adc_esp32_dma_stop(const struct device *dev)
 {
+#if SOC_GDMA_SUPPORTED
 	const struct adc_esp32_conf *conf = dev->config;
 	unsigned int key = irq_lock();
 	int err = 0;
@@ -223,6 +319,23 @@ static int adc_esp32_dma_stop(const struct device *dev)
 
 	irq_unlock(key);
 	return err;
+#else
+#if 0
+#ifdef CONFIG_SOC_SERIES_ESP32
+	i2s_ll_enable_intr(ADC_DMA_DEV, ADC_DMA_INTR_MASK, false);
+	i2s_ll_clear_intr_status(ADC_DMA_DEV, ADC_DMA_INTR_MASK);
+	i2s_ll_rx_stop_link(ADC_DMA_DEV);
+#endif /* CONFIG_SOC_SERIES_ESP32 */
+
+#ifdef CONFIG_SOC_SERIES_ESP32S2
+	spi_ll_disable_intr(ADC_DMA_DEV, ADC_DMA_INTR_MASK);
+	spi_ll_clear_intr(ADC_DMA_DEV, ADC_DMA_INTR_MASK);
+	spi_dma_ll_rx_stop(ADC_DMA_DEV, 0);
+#endif /* CONFIG_SOC_SERIES_ESP32S2 */
+#endif
+
+	return 0;
+#endif /* SOC_GDMA_SUPPORTED */
 }
 
 static int adc_esp32_fill_digi_pattern(const struct device *dev, const struct adc_sequence *seq,
@@ -312,10 +425,12 @@ static void adc_esp32_digi_start(const struct device *dev, void *pattern_config,
 	uint32_t number_of_adc_digi_samples = number_of_samplings * pattern_len;
 
 	adc_hal_dma_config_t adc_hal_dma_config = {
-		.dev = (void *)GDMA_LL_GET_HW(0),
+#if !SOC_GDMA_SUPPORTED
+		.dev = (void *)ADC_DMA_DEV,
+		.dma_chan = ADC_DMA_CHANNEL,
 		.eof_desc_num = 1,
 		.eof_step = 1,
-		.dma_chan = conf->dma_channel,
+#endif
 		.eof_num = number_of_adc_digi_samples,
 	};
 
@@ -325,12 +440,17 @@ static void adc_esp32_digi_start(const struct device *dev, void *pattern_config,
 	adc_hal_digi_init(&data->adc_hal_dma_ctx);
 	adc_hal_digi_controller_config(&data->adc_hal_dma_ctx, &adc_hal_digi_ctrlr_cfg);
 	adc_hal_digi_start(&data->adc_hal_dma_ctx, data->dma_buffer);
+
+	// dma_start(conf->dma_dev, conf->dma_channel);
+
 }
 
 static void adc_esp32_digi_stop(const struct device *dev)
 {
 	const struct adc_esp32_conf *conf = dev->config;
 	struct adc_esp32_data *data = dev->data;
+
+	// dma_stop(conf->dma_dev, conf->dma_channel);
 
 	adc_hal_digi_dis_intr(&data->adc_hal_dma_ctx, ADC_HAL_DMA_INTR_MASK);
 	adc_hal_digi_clr_intr(&data->adc_hal_dma_ctx, ADC_HAL_DMA_INTR_MASK);
@@ -364,7 +484,7 @@ static int adc_esp32_wait_for_dma_conv_done(const struct device *dev)
 	return err;
 }
 
-#endif /* defined(CONFIG_ADC_ESP32_DMA) */
+#endif /* CONFIG_ADC_ESP32_DMA */
 
 static int adc_esp32_read(const struct device *dev, const struct adc_sequence *seq)
 {
@@ -377,12 +497,12 @@ static int adc_esp32_read(const struct device *dev, const struct adc_sequence *s
 		return -ENOMEM;
 	}
 
-#if !defined(CONFIG_ADC_ESP32_DMA)
+#ifndef CONFIG_ADC_ESP32_DMA
 	if (seq->channels > BIT(channel_id)) {
 		LOG_ERR("Multi-channel readings not supported");
 		return -ENOTSUP;
 	}
-#endif /* !defined(CONFIG_ADC_ESP32_DMA) */
+#endif /* CONFIG_ADC_ESP32_DMA */
 
 	if (seq->options) {
 		if (seq->options->extra_samplings) {
@@ -390,12 +510,12 @@ static int adc_esp32_read(const struct device *dev, const struct adc_sequence *s
 			return -ENOTSUP;
 		}
 
-#if !defined(CONFIG_ADC_ESP32_DMA)
+#ifndef CONFIG_ADC_ESP32_DMA
 		if (seq->options->interval_us) {
 			LOG_ERR("Interval between samplings not supported");
 			return -ENOTSUP;
 		}
-#endif /* !defined(CONFIG_ADC_ESP32_DMA) */
+#endif /* CONFIG_ADC_ESP32_DMA */
 	}
 
 	if (!VALID_RESOLUTION(seq->resolution)) {
@@ -411,8 +531,7 @@ static int adc_esp32_read(const struct device *dev, const struct adc_sequence *s
 
 	data->resolution[channel_id] = seq->resolution;
 
-#if !defined(CONFIG_ADC_ESP32_DMA)
-
+#ifndef CONFIG_ADC_ESP32_DMA
 	uint32_t acq_raw;
 
 	adc_oneshot_hal_setup(&data->hal, channel_id);
@@ -455,7 +574,7 @@ static int adc_esp32_read(const struct device *dev, const struct adc_sequence *s
 	data->buffer = (uint16_t *)seq->buffer;
 	data->buffer[0] = acq_raw;
 
-#else /* !defined(CONFIG_ADC_ESP32_DMA) */
+#else /* CONFIG_ADC_ESP32_DMA */
 
 	int err = 0;
 	uint32_t adc_pattern_len, unit_attenuation;
@@ -498,29 +617,30 @@ static int adc_esp32_read(const struct device *dev, const struct adc_sequence *s
 		return -EINVAL;
 	}
 
+	adc_esp32_digi_start(dev, &adc_digi_pattern_config, adc_pattern_len, number_of_samplings,
+			     sample_freq_hz, unit_attenuation);
+
 	err = adc_esp32_dma_start(dev, data->dma_buffer, number_of_adc_dma_data_bytes);
 	if (err) {
 		return err;
 	}
-
-	adc_esp32_digi_start(dev, &adc_digi_pattern_config, adc_pattern_len, number_of_samplings,
-			     sample_freq_hz, unit_attenuation);
 
 	err = adc_esp32_wait_for_dma_conv_done(dev);
 	if (err) {
 		return err;
 	}
 
-	adc_esp32_digi_stop(dev);
 
 	err = adc_esp32_dma_stop(dev);
 	if (err) {
 		return err;
 	}
 
+	adc_esp32_digi_stop(dev);
+
 	adc_esp32_fill_seq_buffer(seq->buffer, data->dma_buffer, number_of_adc_samples);
 
-#endif /* !defined(CONFIG_ADC_ESP32_DMA) */
+#endif /* CONFIG_ADC_ESP32_DMA */
 
 	return 0;
 }
@@ -541,7 +661,6 @@ static int adc_esp32_channel_setup(const struct device *dev, const struct adc_ch
 {
 	const struct adc_esp32_conf *conf = (const struct adc_esp32_conf *)dev->config;
 	struct adc_esp32_data *data = (struct adc_esp32_data *)dev->data;
-	adc_atten_t old_atten = data->attenuation[cfg->channel_id];
 
 	if (cfg->channel_id >= conf->channel_count) {
 		LOG_ERR("Unsupported channel id '%d'", cfg->channel_id);
@@ -567,6 +686,9 @@ static int adc_esp32_channel_setup(const struct device *dev, const struct adc_ch
 		LOG_ERR("Unsupported gain value '%d'", cfg->gain);
 		return -ENOTSUP;
 	}
+
+#ifndef CONFIG_ADC_ESP32_DMA
+	adc_atten_t old_atten = data->attenuation[cfg->channel_id];
 
 	adc_oneshot_hal_chan_cfg_t config = {
 		.atten = data->attenuation[cfg->channel_id],
@@ -621,13 +743,12 @@ static int adc_esp32_channel_setup(const struct device *dev, const struct adc_ch
 						    &data->cal_handle[cfg->channel_id]);
 #endif /* ADC_CALI_SCHEME_LINE_FITTING_SUPPORTED */
 	}
-
-#if defined(CONFIG_ADC_ESP32_DMA)
+#else
 	if (!SOC_ADC_DIG_SUPPORTED_UNIT(conf->unit)) {
 		LOG_ERR("ADC2 dma mode is no longer supported, please use ADC1!");
 		return -EINVAL;
 	}
-#endif /* defined(CONFIG_ADC_ESP32_DMA) */
+#endif /* CONFIG_ADC_ESP32_DMA */
 
 	/* GPIO config for ADC mode */
 
@@ -660,7 +781,8 @@ static int adc_esp32_init(const struct device *dev)
 	const struct adc_esp32_conf *conf = (struct adc_esp32_conf *)dev->config;
 	uint32_t clock_src_hz;
 
-#if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
+
+#if SOC_ADC_DIG_CTRL_SUPPORTED && (!SOC_ADC_RTC_CTRL_SUPPORTED || CONFIG_ADC_ESP32_DMA)
 	if (!device_is_ready(conf->clock_dev)) {
 		return -ENODEV;
 	}
@@ -671,6 +793,12 @@ static int adc_esp32_init(const struct device *dev)
 	esp_clk_tree_src_get_freq_hz(ADC_DIGI_CLK_SRC_DEFAULT,
 				     ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clock_src_hz);
 
+	if (!device_is_ready(conf->gpio_port)) {
+		LOG_ERR("gpio0 port not ready");
+		return -ENODEV;
+	}
+
+#ifndef CONFIG_ADC_ESP32_DMA
 	adc_oneshot_hal_cfg_t config = {
 		.unit = conf->unit,
 		.work_mode = ADC_HAL_SINGLE_READ_MODE,
@@ -681,13 +809,8 @@ static int adc_esp32_init(const struct device *dev)
 	adc_oneshot_hal_init(&data->hal, &config);
 
 	sar_periph_ctrl_adc_oneshot_power_acquire();
-
-	if (!device_is_ready(conf->gpio_port)) {
-		LOG_ERR("gpio0 port not ready");
-		return -ENODEV;
-	}
-
-#if defined(CONFIG_ADC_ESP32_DMA)
+#else
+	sar_periph_ctrl_adc_continuous_power_acquire();
 
 	if (k_sem_init(&data->dma_conv_wait_lock, 0, 1)) {
 		LOG_ERR("dma_conv_wait_lock initialization failed!");
@@ -709,7 +832,53 @@ static int adc_esp32_init(const struct device *dev)
 	}
 	LOG_DBG("data->dma_buffer = 0x%08X", (unsigned int)data->dma_buffer);
 
-#endif /* defined(CONFIG_ADC_ESP32_DMA) */
+#ifdef CONFIG_SOC_SERIES_ESP32
+	const struct device *i2s0_dev = I2S0_DEV;
+
+	if (i2s0_dev != NULL) {
+		LOG_ERR("I2S0 not available");
+		return -ENODEV;
+	}
+
+	if (!device_is_ready(I2S0_CLK_DEV)) {
+		return -ENODEV;
+	}
+
+	clock_control_on(I2S0_CLK_DEV, I2S0_CLK_SUBSYS);
+	i2s_ll_enable_clock(ADC_DMA_DEV);
+
+	int err = esp_intr_alloc(I2S0_INTR_SOURCE, ESP_INTR_FLAG_IRAM | ESP_INTR_FLAG_INTRDISABLED,
+				 adc_esp32_dma_intr_handler, (void *)dev, &(data->irq_handle));
+	if (err != 0) {
+		LOG_ERR("Could not allocate interrupt (err %d)", err);
+		return err;
+	}
+#endif /* CONFIG_SOC_SERIES_ESP32S2 */
+
+#ifdef CONFIG_SOC_SERIES_ESP32S2
+	const struct device *spi3_dev = SPI3_DEV;
+
+	if (spi3_dev != NULL) {
+		LOG_ERR("SPI3 not available");
+		return -ENODEV;
+	}
+
+	if (!device_is_ready(SPI3_CLK_DEV)) {
+		return -ENODEV;
+	}
+
+	clock_control_on(SPI3_CLK_DEV, SPI3_CLK_SUBSYS);
+	clock_control_on(SPI3_CLK_DEV, SPI3_DMA_CLK_SUBSYS);
+
+	int err = esp_intr_alloc(SPI3_DMA_INTR_SOURCE,
+				 ESP_INTR_FLAG_IRAM | ESP_INTR_FLAG_INTRDISABLED,
+				 adc_esp32_dma_intr_handler, (void *)dev, &(data->irq_handle));
+	if (err != 0) {
+		LOG_ERR("Could not allocate interrupt (err %d)", err);
+		return err;
+	}
+#endif /* CONFIG_SOC_SERIES_ESP32S2 */
+#endif /* CONFIG_ADC_ESP32_DMA */
 
 	for (uint8_t i = 0; i < SOC_ADC_MAX_CHANNEL_NUM; i++) {
 		data->resolution[i] = ADC_RESOLUTION_MAX;
@@ -734,21 +903,16 @@ static DEVICE_API(adc, api_esp32_driver_api) = {
 	.ref_internal = ADC_ESP32_DEFAULT_VREF_INTERNAL,
 };
 
-#define ADC_ESP32_CONF_GPIO_PORT_INIT .gpio_port = DEVICE_DT_GET(DT_NODELABEL(gpio0)),
-
 #if defined(CONFIG_ADC_ESP32_DMA)
-
-#define ADC_ESP32_CONF_DMA_INIT(n)                                                                 \
-	.dma_dev = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, dmas),     \
-					(DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_IDX(n, 0))),           \
-					(NULL)),                          \
-		 .dma_channel = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, dmas), \
-					(DT_INST_DMAS_CELL_BY_IDX(n, 0, channel)),                 \
-					(0xff)),
+#if SOC_GDMA_SUPPORTED
+#define ADC_ESP32_CONF_INIT(n)                                                                     \
+	.dma_dev = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, dmas),                                     \
+			       (DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_IDX(n, 0))), (NULL)),           \
+	.dma_channel = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, dmas),                                 \
+				   (DT_INST_DMAS_CELL_BY_IDX(n, 0, channel)), (0xff))
 #else
-
-#define ADC_ESP32_CONF_DMA_INIT(inst)
-
+#define ADC_ESP32_CONF_INIT(n)
+#endif /* SOC_GDMA_SUPPORTED */
 #endif /* defined(CONFIG_ADC_ESP32_DMA) */
 
 #define ADC_ESP32_CHECK_CHANNEL_REF(chan)                                                          \
@@ -764,7 +928,8 @@ static DEVICE_API(adc, api_esp32_driver_api) = {
 		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(inst, offset),         \
 		.unit = DT_PROP(DT_DRV_INST(inst), unit) - 1,                                      \
 		.channel_count = DT_PROP(DT_DRV_INST(inst), channel_count),                        \
-		ADC_ESP32_CONF_GPIO_PORT_INIT ADC_ESP32_CONF_DMA_INIT(inst)};                      \
+		.gpio_port = DEVICE_DT_GET(DT_NODELABEL(gpio0)),                                   \
+		ADC_ESP32_CONF_INIT(inst)};                                                        \
                                                                                                    \
 	static struct adc_esp32_data adc_esp32_data_##inst = {                                     \
 		.hal =                                                                             \
