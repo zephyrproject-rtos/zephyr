@@ -1,9 +1,9 @@
 .. zephyr:code-sample:: bluetooth_ccp_call_control_client
-   :name: Call Control Profile (CCP) Call Control Server
+   :name: Call Control Profile (CCP) Call Control Client
    :relevant-api: bluetooth bt_ccp bt_tbs
 
-   CCP Call Control Server sample that registers one or more TBS bearers and advertises the
-   TBS UUID(s).
+   CCP Call Control Client sample that scans for the CCP servers to connect and discovers the
+   TBS and GTBS.
 
 Overview
 ********
