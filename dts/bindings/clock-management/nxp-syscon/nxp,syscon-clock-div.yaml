@@ -1,0 +1,25 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  LPC SYSCON divider clock node. Accepts one specifier, which sets the
+  integer factor to divide the input clock by. Setting this value to 0
+  has undefined behavior. The range of values supported is specific
+  to each clock node.
+
+compatible: "nxp,syscon-clock-div"
+
+include: [clock-node.yaml]
+
+properties:
+  reg:
+    required: true
+    description: |
+      Tuple containing address of register and width of the bitfield
+      to set to set the divider value
+
+  "#clock-cells":
+    const: 1
+
+clock-cells:
+  - divider
