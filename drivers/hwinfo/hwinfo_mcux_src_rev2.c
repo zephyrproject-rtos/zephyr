@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 NXP
+ * Copyright (c) 2022, 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,30 +10,27 @@
 #include <zephyr/drivers/hwinfo.h>
 #include <string.h>
 #include <zephyr/sys/byteorder.h>
-#include <fsl_soc_src.h>
 
 #ifdef CONFIG_CPU_CORTEX_M7
-#define MCUX_RESET_PIN_FLAG kSRC_M7CoreIppUserResetFlag
-#define MCUX_RESET_SOFTWARE_FLAG kSRC_M7CoreM7LockUpResetFlag
-#define MCUX_RESET_POR_FLAG kSRC_M7CoreIppResetFlag
-#define MCUX_RESET_WATCHDOG_FLAG (kSRC_M7CoreWdogResetFlag |			\
-				kSRC_M7CoreWdog3ResetFlag |			\
-				kSRC_M7CoreWdog4ResetFlag)
-#define MCUX_RESET_DEBUG_FLAG kSRC_M7CoreJtagResetFlag
-#define MCUX_RESET_SECURITY_FLAG kSRC_M7CoreCSUResetFlag
-#define MCUX_RESET_TEMPERATURE_FLAG kSRC_M7CoreTempsenseResetFlag
-#define MCUX_RESET_USER_FLAG kSRC_M7CoreM7RequestResetFlag
+#define MCUX_RESET_PIN_FLAG      SRC_SRSR_IPP_USER_RESET_B_M7_MASK
+#define MCUX_RESET_SOFTWARE_FLAG SRC_SRSR_M7_LOCKUP_M7_MASK
+#define MCUX_RESET_POR_FLAG      SRC_SRSR_IPP_RESET_B_M7_MASK
+#define MCUX_RESET_WATCHDOG_FLAG                                                                   \
+	(SRC_SRSR_WDOG_RST_B_M7_MASK | SRC_SRSR_WDOG3_RST_B_M7_MASK | SRC_SRSR_WDOG4_RST_B_M7_MASK)
+#define MCUX_RESET_DEBUG_FLAG       SRC_SRSR_JTAG_RST_B_M7_MASK
+#define MCUX_RESET_SECURITY_FLAG    SRC_SRSR_CSU_RESET_B_M7_MASK
+#define MCUX_RESET_TEMPERATURE_FLAG SRC_SRSR_TEMPSENSE_RST_B_M7_MASK
+#define MCUX_RESET_USER_FLAG        SRC_SRSR_M7_REQUEST_M7_MASK
 #elif defined(CONFIG_CPU_CORTEX_M4)
-#define MCUX_RESET_PIN_FLAG kSRC_M4CoreIppUserResetFlag
-#define MCUX_RESET_SOFTWARE_FLAG kSRC_M4CoreM7LockUpResetFlag
-#define MCUX_RESET_POR_FLAG kSRC_M4CoreIppResetFlag
-#define MCUX_RESET_WATCHDOG_FLAG (kSRC_M4CoreWdogResetFlag |			\
-				kSRC_M4CoreWdog3ResetFlag |			\
-				kSRC_M4CoreWdog4ResetFlag)
-#define MCUX_RESET_DEBUG_FLAG kSRC_M4CoreJtagResetFlag
-#define MCUX_RESET_SECURITY_FLAG kSRC_M4CoreCSUResetFlag
-#define MCUX_RESET_TEMPERATURE_FLAG kSRC_M4CoreTempsenseResetFlag
-#define MCUX_RESET_USER_FLAG kSRC_M4CoreM7RequestResetFlag
+#define MCUX_RESET_PIN_FLAG      SRC_SRSR_IPP_USER_RESET_B_M4_MASK
+#define MCUX_RESET_SOFTWARE_FLAG SRC_SRSR_M7_LOCKUP_M4_MASK
+#define MCUX_RESET_POR_FLAG      SRC_SRSR_IPP_RESET_B_M4_MASK
+#define MCUX_RESET_WATCHDOG_FLAG                                                                   \
+	(SRC_SRSR_WDOG_RST_B_M4_MASK | SRC_SRSR_WDOG3_RST_B_M4_MASK | SRC_SRSR_WDOG4_RST_B_M4_MASK)
+#define MCUX_RESET_DEBUG_FLAG       SRC_SRSR_JTAG_RST_B_M4_MASK
+#define MCUX_RESET_SECURITY_FLAG    SRC_SRSR_CSU_RESET_B_M4_MASK
+#define MCUX_RESET_TEMPERATURE_FLAG SRC_SRSR_TEMPSENSE_RST_B_M4_MASK
+#define MCUX_RESET_USER_FLAG        SRC_SRSR_M7_REQUEST_M4_MASK
 #else
 /* The SOCs currently supported have an M7 or M4 core */
 #error "MCUX SRC driver not supported for this CPU!"
@@ -44,7 +41,7 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1, "No nxp,imx-src compat
 int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 {
 	uint32_t flags = 0;
-	uint32_t reason = SRC_GetResetStatusFlags((SRC_Type *)DT_INST_REG_ADDR(0));
+	uint32_t reason = ((SRC_Type *)DT_INST_REG_ADDR(0))->SRSR;
 
 	if (reason & (MCUX_RESET_PIN_FLAG)) {
 		flags |= RESET_PIN;
@@ -78,9 +75,9 @@ int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 
 int z_impl_hwinfo_clear_reset_cause(void)
 {
-	uint32_t reason = SRC_GetResetStatusFlags((SRC_Type *)DT_INST_REG_ADDR(0));
+	uint32_t reason = ((SRC_Type *)DT_INST_REG_ADDR(0))->SRSR;
 
-	SRC_ClearGlobalSystemResetStatus((SRC_Type *)DT_INST_REG_ADDR(0), reason);
+	((SRC_Type *)DT_INST_REG_ADDR(0))->SRSR = reason;
 
 	return 0;
 }

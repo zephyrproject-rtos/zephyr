@@ -12,7 +12,6 @@ elseif(CONFIG_ARCH STREQUAL "arm")
   zephyr_library_sources(${MCUX_SDK_NG_DIR}/drivers/common/fsl_common_arm.c)
 endif()
 
-set_variable_ifdef(CONFIG_HWINFO_MCUX_SRC_V2    CONFIG_MCUX_COMPONENT_driver.src_2)
 set_variable_ifdef(CONFIG_GPIO_MCUX_IGPIO       CONFIG_MCUX_COMPONENT_driver.igpio)
 set_variable_ifdef(CONFIG_ADC_MCUX_LPADC        CONFIG_MCUX_COMPONENT_driver.lpadc)
 set_variable_ifdef(CONFIG_COUNTER_MCUX_CTIMER   CONFIG_MCUX_COMPONENT_driver.ctimer)
