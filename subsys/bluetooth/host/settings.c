@@ -180,7 +180,7 @@ static int set_setting(const char *name, size_t len_rd, settings_read_cb read_cb
 		return 0;
 	}
 
-#if defined(CONFIG_BT_DEVICE_NAME_DYNAMIC)
+#if defined(CONFIG_BT_SETTINGS_BT_NAME_STORE)
 	if (!strncmp(name, "name", len)) {
 		len = read_cb(cb_arg, &bt_dev.name, sizeof(bt_dev.name) - 1);
 		if (len < 0) {
@@ -414,10 +414,12 @@ int bt_settings_delete_hash(void)
 	return bt_settings_delete("hash", 0, NULL);
 }
 
+#if defined(CONFIG_BT_SETTINGS_BT_NAME_STORE)
 int bt_settings_store_name(const void *value, size_t val_len)
 {
 	return bt_settings_store("name", 0, NULL, value, val_len);
 }
+#endif
 
 int bt_settings_delete_name(void)
 {
