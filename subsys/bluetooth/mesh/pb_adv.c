@@ -634,6 +634,13 @@ static void gen_prov_start(struct prov_rx *rx, struct net_buf_simple *buf)
 		return;
 	}
 
+	if (link.rx.buf->len < buf->len) {
+		LOG_ERR("Invalid declared provisionig PDU length (%u > %u)", buf->len,
+			link.rx.buf->len);
+		prov_failed(PROV_ERR_NVAL_FMT);
+		return;
+	}
+
 	if (START_LAST_SEG(rx->gpc) > 0 && link.rx.buf->len <= 20U) {
 		LOG_ERR("Too small total length for multi-segment PDU");
 		prov_failed(PROV_ERR_NVAL_FMT);
