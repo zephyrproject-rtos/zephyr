@@ -33,7 +33,10 @@ static struct k_thread *main_thread;
  */
 void helper1(void *p1, void *p2, void *p3)
 {
-	while (1) {
+	/* Using volatile condition to prevent compilers from optimizing while(true) */
+	volatile bool condition = true;
+
+	while (condition) {
 	}
 }
 
