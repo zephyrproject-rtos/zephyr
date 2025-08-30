@@ -27,11 +27,15 @@ def find_in_config(config_file: Path | str, config_key: str) -> str:
 
 def match_lines(output_lines: list[str], searched_lines: list[str]) -> None:
     """Check all lines exist in the output"""
-    for sl in searched_lines:
-        assert any(sl in line for line in output_lines)
+    __tracebackhide__ = True  # pylint: disable=unused-variable
+    missing_lines = [sl for sl in searched_lines if not any(sl in line for line in output_lines)]
+    if missing_lines:
+        raise AssertionError(f"Missing lines: {missing_lines}")
 
 
 def match_no_lines(output_lines: list[str], searched_lines: list[str]) -> None:
     """Check lines not found in the output"""
-    for sl in searched_lines:
-        assert all(sl not in line for line in output_lines)
+    __tracebackhide__ = True  # pylint: disable=unused-variable
+    found_lines = [sl for sl in searched_lines if any(sl in line for line in output_lines)]
+    if found_lines:
+        raise AssertionError(f"Found lines that should not be present: {found_lines}")
