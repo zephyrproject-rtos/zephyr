@@ -6,16 +6,15 @@
 
 /**
  * @file
- * @ingroup lora_api
- * @brief Public LoRa driver APIs
+ * @ingroup lora_interface
+ * @brief Main header file for LoRa driver API.
  */
 #ifndef ZEPHYR_INCLUDE_DRIVERS_LORA_H_
 #define ZEPHYR_INCLUDE_DRIVERS_LORA_H_
 
 /**
- * @file
- * @brief Public LoRa APIs
- * @defgroup lora_api LoRa APIs
+ * @brief Interfaces for LoRa transceivers.
+ * @defgroup lora_interface LoRa
  * @since 2.2
  * @version 0.1.0
  * @ingroup io_interfaces

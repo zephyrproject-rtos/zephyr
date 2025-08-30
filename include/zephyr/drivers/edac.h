@@ -6,7 +6,8 @@
 
 /**
  * @file
- * @brief EDAC API header file
+ * @ingroup edac_interface
+ * @brief Main header file for EDAC (Error Detection and Correction) driver API.
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_EDAC_H_
@@ -17,7 +18,8 @@
 #include <sys/types.h>
 
 /**
- * @defgroup edac EDAC API
+ * @brief Interfaces for Error Detection and Correction (EDAC) controllers.
+ * @defgroup edac_interface EDAC
  * @since 2.5
  * @version 0.8.0
  * @ingroup io_interfaces

@@ -1,21 +1,22 @@
-/**
- * @file
- *
- * @brief Public APIs for MDIO drivers.
- */
-
 /*
  * Copyright (c) 2021 IP-Logix Inc.
  * Copyright 2023 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/**
+ * @file
+ * @ingroup mdio_interface
+ * @brief Main header file for MDIO (Management Data Input/Output) driver API.
+ */
+
 #ifndef ZEPHYR_INCLUDE_DRIVERS_MDIO_H_
 #define ZEPHYR_INCLUDE_DRIVERS_MDIO_H_
 
 /**
- * @brief MDIO Interface
- * @defgroup mdio_interface MDIO Interface
+ * @brief Interfaces for Management Data Input/Output (MDIO) controllers.
+ * @defgroup mdio_interface MDIO
  * @ingroup io_interfaces
  * @{
  */

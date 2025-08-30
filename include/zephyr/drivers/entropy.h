@@ -1,21 +1,23 @@
-/**
- * @file drivers/entropy.h
- *
- * @brief Public APIs for the entropy driver.
- */
-
 /*
  * Copyright (c) 2016 ARM Ltd.
  * Copyright (c) 2017 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef ZEPHYR_INCLUDE_DRIVERS_ENTROPY_H_
+
+/**
+ * @file
+ * @ingroup entropy_interface
+ * @brief Main header file for entropy driver API.
+ */
+
+
+ #ifndef ZEPHYR_INCLUDE_DRIVERS_ENTROPY_H_
 #define ZEPHYR_INCLUDE_DRIVERS_ENTROPY_H_
 
 /**
- * @brief Entropy Interface
- * @defgroup entropy_interface Entropy Interface
+ * @brief Interfaces for entropy hardware.
+ * @defgroup entropy_interface Entropy
  * @since 1.10
  * @version 1.0.0
  * @ingroup io_interfaces
