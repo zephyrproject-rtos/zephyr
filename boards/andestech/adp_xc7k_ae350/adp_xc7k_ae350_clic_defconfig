@@ -10,6 +10,3 @@ CONFIG_GPIO=y
 
 # PMP granularity options
 CONFIG_PMP_GRANULARITY=8
-
-# EXEC.IT options
-CONFIG_SOC_ANDES_V5_EXECIT=y
