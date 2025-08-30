@@ -1041,7 +1041,7 @@ config FPU
 
 config FPU_SHARING
 	bool "FPU register sharing"
-	depends on FPU && MULTITHREADING
+	depends on FPU
 	help
 	  This option enables preservation of the hardware floating point registers
 	  across context switches to allow multiple threads to perform concurrent
