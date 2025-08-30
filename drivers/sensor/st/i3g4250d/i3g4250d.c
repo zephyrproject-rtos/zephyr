@@ -213,8 +213,7 @@ static int i3g4250d_init(const struct device *dev)
 	static const struct i3g4250d_device_config i3g4250d_config_##inst = {    \
 		.spi = SPI_DT_SPEC_INST_GET(inst,                                    \
 					SPI_OP_MODE_MASTER | SPI_MODE_CPOL |                     \
-					SPI_MODE_CPHA | SPI_WORD_SET(8) | SPI_LINES_SINGLE,      \
-					0),                                                      \
+					SPI_MODE_CPHA | SPI_WORD_SET(8) | SPI_LINES_SINGLE)      \
 	};                                                                       \
 	SENSOR_DEVICE_DT_INST_DEFINE(inst,                                                   \
 				i3g4250d_init,                                               \

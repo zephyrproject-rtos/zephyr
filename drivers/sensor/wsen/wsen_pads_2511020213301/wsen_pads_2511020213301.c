@@ -481,7 +481,7 @@ static int pads_2511020213301_init(const struct device *dev)
 #define PADS_2511020213301_CONFIG_SPI(inst)                                                        \
 	{.bus_cfg =                                                                                \
 		 {                                                                                 \
-			 .spi = SPI_DT_SPEC_INST_GET(inst, PADS_2511020213301_SPI_OPERATION, 0),   \
+			 .spi = SPI_DT_SPEC_INST_GET(inst, PADS_2511020213301_SPI_OPERATION),      \
 		 },                                                                                \
 	 PADS_2511020213301_CONFIG_COMMON(inst)}
 
