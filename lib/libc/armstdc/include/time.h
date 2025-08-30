@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef LIB_LIBC_ARCMWDT_INCLUDE_TIME_H_
-#define LIB_LIBC_ARCMWDT_INCLUDE_TIME_H_
+#ifndef ZEPHYR_LIB_LIBC_ARMSTDC_INCLUDE_TIME_H_
+#define ZEPHYR_LIB_LIBC_ARMSTDC_INCLUDE_TIME_H_
 
 #include_next <time.h>
 #include <zephyr/posix/posix_time.h>
 
-#endif  /* LIB_LIBC_ARCMWDT_INCLUDE_TIME_H_ */
+#endif  /* ZEPHYR_LIB_LIBC_ARMSTDC_INCLUDE_TIME_H_ */

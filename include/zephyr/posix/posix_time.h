@@ -4,12 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_LIB_LIBC_COMMON_INCLUDE_TIME_H_
-#define ZEPHYR_LIB_LIBC_COMMON_INCLUDE_TIME_H_
-
-#include_next <time.h>
-
-#if !defined(CONFIG_TC_PROVIDES_POSIX_TIME_DEFS)
+#ifndef ZEPHYR_INCLUDE_ZEPHYR_POSIX_POSIX_TIME_H_
+#define ZEPHYR_INCLUDE_ZEPHYR_POSIX_POSIX_TIME_H_
 
 #if defined(_POSIX_C_SOURCE) || defined(__DOXYGEN__)
 
@@ -196,6 +192,4 @@ extern char *tzname[];
 
 #endif /* defined(_POSIX_C_SOURCE) || defined(__DOXYGEN__) */
 
-#endif /* !defined(CONFIG_TC_PROVIDES_POSIX_TIME_DEFS) */
-
-#endif /* ZEPHYR_LIB_LIBC_COMMON_INCLUDE_TIME_H_ */
+#endif /* ZEPHYR_INCLUDE_ZEPHYR_POSIX_POSIX_TIME_H_ */
