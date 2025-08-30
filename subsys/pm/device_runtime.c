@@ -321,6 +321,7 @@ static int put_sync_locked(const struct device *dev)
 	if (pm->base.usage == 0U) {
 		ret = pm->base.action_cb(dev, PM_DEVICE_ACTION_SUSPEND);
 		if (ret < 0) {
+			pm->base.usage++;
 			return ret;
 		}
 		pm->base.state = PM_DEVICE_STATE_SUSPENDED;
@@ -599,6 +600,109 @@ int pm_device_runtime_usage(const struct device *dev)
 
 	return dev->pm_base->usage;
 }
+
+void pm_device_runtime_reference_init(struct pm_device_runtime_reference *ref)
+{
+	k_sem_init(&ref->lock, 1, 1);
+	ref->active = false;
+}
+
+static bool reference_trylock(struct pm_device_runtime_reference *ref)
+{
+	if (k_is_in_isr() && k_sem_take(&ref->lock, K_NO_WAIT)) {
+		return false;
+	}
+
+	(void)k_sem_take(&ref->lock, K_FOREVER);
+	return true;
+}
+
+static void reference_unlock(struct pm_device_runtime_reference *ref)
+{
+	k_sem_give(&ref->lock);
+}
+
+int pm_device_runtime_request(const struct device *dev,
+			      struct pm_device_runtime_reference *ref)
+{
+	int ret;
+
+	if (!reference_trylock(ref)) {
+		return -EWOULDBLOCK;
+	}
+
+	if (ref->active) {
+		ret = 0;
+	} else {
+		ret = pm_device_runtime_get(dev);
+		if (ret == 0) {
+			ref->active = true;
+		}
+	}
+
+	reference_unlock(ref);
+	return ret;
+}
+
+int pm_device_runtime_release(const struct device *dev,
+			      struct pm_device_runtime_reference *ref)
+{
+	int ret;
+
+	if (!reference_trylock(ref)) {
+		return -EWOULDBLOCK;
+	}
+
+	if (!ref->active) {
+		ret = 0;
+	} else {
+		ret = pm_device_runtime_put(dev);
+		if (ret == 0) {
+			ref->active = false;
+		}
+	}
+
+	reference_unlock(ref);
+	return ret;
+}
+
+int pm_device_runtime_release_async(const struct device *dev,
+				    struct pm_device_runtime_reference *ref,
+				    k_timeout_t timeout)
+{
+	int ret;
+
+	if (!reference_trylock(ref)) {
+		return -EWOULDBLOCK;
+	}
+
+	if (!ref->active) {
+		ret = 0;
+	} else {
+		ret = pm_device_runtime_put_async(dev, timeout);
+		if (ret == 0) {
+			ref->active = false;
+		}
+	}
+
+	reference_unlock(ref);
+	return ret;
+}
+
+static int init_pm_device_runtime_reference_list(void)
+{
+	STRUCT_SECTION_FOREACH(pm_device_runtime_reference, ref) {
+		k_sem_init(&ref->lock, 1, 1);
+	}
+
+	return 0;
+}
+
+SYS_INIT(
+	init_pm_device_runtime_reference_list,
+	PRE_KERNEL_1,
+	CONFIG_KERNEL_INIT_PRIORITY_OBJECTS
+);
 
 #ifdef CONFIG_PM_DEVICE_RUNTIME_ASYNC
 #ifdef CONFIG_PM_DEVICE_RUNTIME_USE_DEDICATED_WQ

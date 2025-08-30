@@ -14,6 +14,7 @@ struct test_driver_data {
 	bool ongoing;
 	bool async;
 	struct k_sem sync;
+	int ret;
 };
 
 static int test_driver_action(const struct device *dev,
@@ -34,7 +35,7 @@ static int test_driver_action(const struct device *dev,
 
 	data->count++;
 
-	return 0;
+	return data->ret;
 }
 
 void test_driver_pm_async(const struct device *dev)
@@ -63,6 +64,13 @@ size_t test_driver_pm_count(const struct device *dev)
 	struct test_driver_data *data = dev->data;
 
 	return data->count;
+}
+
+void test_driver_pm_retval(const struct device *dev, int ret)
+{
+	struct test_driver_data *data = dev->data;
+
+	data->ret = ret;
 }
 
 int test_driver_init(const struct device *dev)
