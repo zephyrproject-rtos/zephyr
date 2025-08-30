@@ -1,0 +1,11 @@
+# RFID Subsystem configuration options
+
+# Copyright (c) 2023 Basalte bv
+# Copyright (c) 2025 Conny Marco Menebröcker
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Radio-Frequency Identification (RFID) subsystem [EXPERIMENTAL]"
+
+source "subsys/rfid/Kconfig.iso14443"
+
+endmenu
