@@ -15,6 +15,12 @@ touchscreen input is supported only on Capacitive Touch version.
 More information about the shield can be found
 at the `Adafruit 2.8" TFT Touch Shield v2 website`_.
 
+.. figure:: adafruit_2_8_tft_touch_v2.webp
+   :align: center
+   :alt: Adafruit 2.8" TFT Touch Shield v2
+
+   Adafruit 2.8" TFT Touch Shield v2 (Credit: Adafruit)
+
 Pins Assignment of the Adafruit 2.8" TFT Touch Shield v2
 ========================================================
 
