@@ -282,7 +282,6 @@ endif()
 if(CONFIG_SOC_SERIES_IMXRT118X)
   set(CONFIG_MCUX_COMPONENT_driver.ele_base_api ON)
   set(CONFIG_MCUX_COMPONENT_driver.anadig_pmu_1 ON)
-  set_variable_ifdef(CONFIG_HWINFO_MCUX_SRC_V2 CONFIG_MCUX_COMPONENT_driver.src_3)
   set_variable_ifdef(CONFIG_WDT_MCUX_RTWDOG	CONFIG_MCUX_COMPONENT_driver.src_3)
 endif()
 
