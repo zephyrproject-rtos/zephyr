@@ -24,3 +24,4 @@ tests:
       - nucleo_c031c6/stm32c031xx
       - nucleo_c071rb/stm32c071xx
       - nucleo_c092rc/stm32c092xx
+      - frdm_k32l2b3/k32l2b31a
