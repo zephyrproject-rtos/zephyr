@@ -2,7 +2,7 @@
 
 zephyr_library()
 
-zephyr_library_sources(ina2xx_common.c ina2xx_trigger.c)
+zephyr_library_sources(ina2xx_common.c ina2xx_fetch.c ina2xx_get.c ina2xx_trigger.c)
 zephyr_library_sources_ifdef(CONFIG_INA219 ina219.c)
 zephyr_library_sources_ifdef(CONFIG_INA226 ina226.c)
 zephyr_library_sources_ifdef(CONFIG_INA228 ina228.c)

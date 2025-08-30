@@ -17,6 +17,34 @@ LOG_MODULE_REGISTER(INA2XX, CONFIG_SENSOR_LOG_LEVEL);
  */
 #define INA2XX_MANUFACTURER_ID 0x5449
 
+
+void ina2xx_sensor_value_from_channel_s32(struct sensor_value *val,
+	const struct ina2xx_channel *ch, int32_t raw)
+{
+	const int32_t cooked = ((int32_t)(raw * ch->mult) / ch->div);
+
+	val->val1 = cooked / 1000000L;
+	val->val2 = cooked % 1000000L;
+}
+
+void ina2xx_sensor_value_from_channel_u32(struct sensor_value *val,
+	const struct ina2xx_channel *ch, uint32_t raw)
+{
+	const uint32_t cooked = ((uint32_t)(raw * ch->mult) / ch->div);
+
+	val->val1 = cooked / 1000000U;
+	val->val2 = cooked % 1000000U;
+}
+
+void ina2xx_sensor_value_from_channel_u64(struct sensor_value *val,
+	const struct ina2xx_channel *ch, uint64_t raw)
+{
+	const uint64_t cooked = ((uint64_t)(raw * ch->mult) / ch->div);
+
+	val->val1 = cooked / 1000000U;
+	val->val2 = cooked % 1000000U;
+}
+
 int ina2xx_reg_read_40(const struct i2c_dt_spec *bus, uint8_t reg, uint64_t *val)
 {
 	uint8_t data[5];
@@ -62,6 +90,41 @@ int ina2xx_reg_read_16(const struct i2c_dt_spec *bus, uint8_t reg, uint16_t *val
 	return ret;
 }
 
+int ina2xx_reg_read(const struct i2c_dt_spec *bus, const struct ina2xx_reg *reg, void *val)
+{
+	int ret;
+	union {
+		uint16_t u16;
+		uint32_t u32;
+		uint64_t u64;
+	} data;
+
+	switch (reg->size) {
+	case 16:
+		ret = ina2xx_reg_read_16(bus, reg->addr, &data.u16);
+		if (ret == 0) {
+			*(uint16_t *)val = data.u16 >> reg->shift;
+		}
+		break;
+	case 24:
+		ret = ina2xx_reg_read_24(bus, reg->addr, &data.u32);
+		if (ret == 0) {
+			*(uint32_t *)val = data.u32 >> reg->shift;
+		}
+		break;
+	case 40:
+		ret = ina2xx_reg_read_40(bus, reg->addr, &data.u64);
+		if (ret == 0) {
+			*(uint64_t *)val = data.u64 >> reg->shift;
+		}
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return ret;
+}
+
 int ina2xx_reg_write(const struct i2c_dt_spec *bus, uint8_t reg, uint16_t val)
 {
 	uint8_t tx_buf[3];
@@ -78,12 +141,12 @@ int ina2xx_attr_set(const struct device *dev, enum sensor_channel chan,
 	const struct ina2xx_config *config = dev->config;
 	uint16_t data = val->val1;
 
-	if (attr == SENSOR_ATTR_CONFIGURATION && config->config_reg >= 0) {
-		return ina2xx_reg_write(&config->bus, config->config_reg, data);
+	if (attr == SENSOR_ATTR_CONFIGURATION && config->config_reg->size != 0) {
+		return ina2xx_reg_write(&config->bus, config->config_reg->addr, data);
 	}
 
-	if (attr == SENSOR_ATTR_CALIBRATION && config->cal_reg >= 0) {
-		return ina2xx_reg_write(&config->bus, config->cal_reg, data);
+	if (attr == SENSOR_ATTR_CALIBRATION && config->cal_reg->size != 0) {
+		return ina2xx_reg_write(&config->bus, config->cal_reg->addr, data);
 	}
 
 	return -ENOTSUP;
@@ -96,8 +159,8 @@ int ina2xx_attr_get(const struct device *dev, enum sensor_channel chan,
 	uint16_t data;
 	int ret;
 
-	if (attr == SENSOR_ATTR_CONFIGURATION && config->config_reg >= 0) {
-		ret = ina2xx_reg_read_16(&config->bus, config->config_reg, &data);
+	if (attr == SENSOR_ATTR_CONFIGURATION && config->config_reg->size != 0) {
+		ret = ina2xx_reg_read_16(&config->bus, config->config_reg->addr, &data);
 		if (ret < 0) {
 			return ret;
 		}
@@ -105,8 +168,8 @@ int ina2xx_attr_get(const struct device *dev, enum sensor_channel chan,
 		return -ENOTSUP;
 	}
 
-	if (attr == SENSOR_ATTR_CALIBRATION && config->cal_reg >= 0) {
-		ret = ina2xx_reg_read_16(&config->bus, config->cal_reg, &data);
+	if (attr == SENSOR_ATTR_CALIBRATION && config->cal_reg->size != 0) {
+		ret = ina2xx_reg_read_16(&config->bus, config->cal_reg->addr, &data);
 		if (ret < 0) {
 			return ret;
 		}
@@ -131,8 +194,8 @@ int ina2xx_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	if (config->id_reg >= 0) {
-		ret = ina2xx_reg_read_16(&config->bus, config->id_reg, &id);
+	if (config->id_reg->size != 0) {
+		ret = ina2xx_reg_read_16(&config->bus, config->id_reg->addr, &id);
 		if (ret < 0) {
 			LOG_ERR("failed to read manufacturer register");
 			return ret;
@@ -144,24 +207,28 @@ int ina2xx_init(const struct device *dev)
 		}
 	}
 
-	if (config->config_reg >= 0) {
-		ret = ina2xx_reg_write(&config->bus, config->config_reg, config->config);
+	if (config->config_reg->size != 0) {
+		ret = ina2xx_reg_write(&config->bus,
+			config->config_reg->addr, config->config);
+
 		if (ret < 0) {
 			LOG_ERR("failed to write configuration register");
 			return ret;
 		}
 	}
 
-	if (config->adc_config_reg >= 0) {
-		ret = ina2xx_reg_write(&config->bus, config->adc_config_reg, config->adc_config);
+	if (config->adc_config_reg->size != 0) {
+		ret = ina2xx_reg_write(&config->bus,
+			config->adc_config_reg->addr, config->adc_config);
+
 		if (ret < 0) {
 			LOG_ERR("failed to write ADC configuration register");
 			return ret;
 		}
 	}
 
-	if (config->cal_reg >= 0) {
-		ret = ina2xx_reg_write(&config->bus, config->cal_reg, config->cal);
+	if (config->cal_reg->size != 0) {
+		ret = ina2xx_reg_write(&config->bus, config->cal_reg->addr, config->cal);
 		if (ret < 0) {
 			LOG_ERR("failed to write calibration register");
 			return ret;

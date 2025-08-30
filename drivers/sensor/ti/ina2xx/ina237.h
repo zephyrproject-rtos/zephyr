@@ -39,14 +39,8 @@
 #define INA237_MANUFACTURER_ID 0x5449
 
 struct ina237_data {
+	struct ina2xx_data common;
 	const struct device *dev;
-	int16_t current;
-	uint16_t bus_voltage;
-	uint32_t power;
-	int16_t die_temp;
-#ifdef CONFIG_INA237_VSHUNT
-	int16_t shunt_voltage;
-#endif
 	enum sensor_channel chan;
 	struct ina2xx_trigger trigger;
 };

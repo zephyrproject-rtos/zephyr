@@ -22,15 +22,4 @@
 #define INA226_REG_MANUFACTURER_ID	0xFE
 #define INA226_REG_DEVICE_ID		0xFF
 
-struct ina226_data {
-	const struct device *dev;
-	int16_t current;
-	uint16_t bus_voltage;
-	uint16_t power;
-#ifdef CONFIG_INA226_VSHUNT
-	int16_t shunt_voltage;
-#endif
-	enum sensor_channel chan;
-};
-
 #endif /* ZEPHYR_DRIVERS_SENSOR_INA2XX_INA226_H_ */
