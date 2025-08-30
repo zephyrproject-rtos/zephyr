@@ -1135,6 +1135,12 @@
 		};
 	};
 
+	src: reset-controller@44460000 {
+		compatible = "nxp,imx-src-rev2";
+		reg = <0x44460000 0xa4>;
+		status = "okay";
+	};
+
 	tpm1: pwm@4310000 {
 		compatible = "nxp,kinetis-tpm";
 		reg = <0x4310000 0x88>;
