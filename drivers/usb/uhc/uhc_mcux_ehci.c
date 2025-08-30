@@ -202,6 +202,10 @@ static usb_host_transfer_t *uhc_mcux_hal_init_transfer(const struct device *dev,
 	memcpy(mcux_xfer->setupPacket, xfer->setup_pkt, 8u);
 	if (xfer->buf != NULL) {
 		mcux_xfer->transferBuffer = uhc_mcux_nocache_alloc(mcux_xfer->transferLength);
+		if (mcux_xfer->transferBuffer == NULL)
+		{
+			LOG_ERR("Failed to allocate non-cached transfer buffer");
+		}
 	}
 #endif
 

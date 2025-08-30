@@ -10,9 +10,13 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/init.h>
 #include <zephyr/sys/iterable_sections.h>
+#include <zephyr/usb/usbh.h>
 
-#include "usbh_internal.h"
+#include "usbh_class.h"
+#include "usbh_class_api.h"
+#include "usbh_desc.h"
 #include "usbh_device.h"
+#include "usbh_internal.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(uhs, CONFIG_USBH_LOG_LEVEL);
@@ -43,7 +47,183 @@ static int usbh_event_carrier(const struct device *dev,
 	return err;
 }
 
-static void dev_connected_handler(struct usbh_contex *const ctx,
+/**
+ * @brief Enumerate device descriptors and match class drivers
+ *
+ * This function traverses the USB device descriptors, identifies class-specific
+ * descriptor segments, and attempts to match them with registered class drivers.
+ *
+ * @param ctx USB host context
+ * @param udev USB device to process
+ * @return 0 on success, negative errno on failure
+ */
+static int usbh_match_classes(struct usbh_context *const ctx,
+			      struct usb_device *udev)
+{
+	struct usb_cfg_descriptor *cfg_desc = udev->cfg_desc;
+
+	if (!cfg_desc) {
+		LOG_ERR("No configuration descriptor found");
+		return -EINVAL;
+	}
+
+	uint8_t *desc_buf_base = (uint8_t *)cfg_desc;
+	uint8_t *desc_buf_end = desc_buf_base + sys_le16_to_cpu(cfg_desc->wTotalLength);
+	uint8_t *current_desc = desc_buf_base + cfg_desc->bLength;  /* Skip config descriptor */
+	int matched_count = 0;
+
+	LOG_DBG("Starting class enumeration for device (total desc length: %d)",
+		sys_le16_to_cpu(cfg_desc->wTotalLength));
+
+	/* Main descriptor traversal loop - traverse entire descriptor */
+	while (current_desc < desc_buf_end) {
+		uint8_t *start_addr = current_desc;   /* Initialize to current descriptor */
+		uint8_t *end_addr = current_desc;     /* Initialize to current descriptor */
+		uint8_t *next_iad_addr = NULL;
+		struct usbh_class_filter device_info = {0};
+		bool found_iad = false;
+		bool found_interface = false;
+		struct usb_desc_header *iad_desc = NULL;
+		struct usb_desc_header *desc;
+		uint32_t mask;
+
+		/* Step 1: Find first IAD or interface descriptor from start_addr */
+		mask = BIT(USB_DESC_INTERFACE) | BIT(USB_DESC_INTERFACE_ASSOC);
+
+		desc = usbh_desc_get_by_type(start_addr, desc_buf_end, mask);
+		if (desc == NULL) {
+			LOG_ERR("No IAD or interface descriptor found - error condition");
+			break;
+		}
+		start_addr = (uint8_t *)desc;
+
+		if (desc->bDescriptorType == USB_DESC_INTERFACE_ASSOC) {
+			found_iad = true;
+			iad_desc = desc;
+		}
+
+		if (desc->bDescriptorType == USB_DESC_INTERFACE) {
+			struct usb_if_descriptor *if_desc = (void *)desc;
+
+			device_info.code_triple.dclass = if_desc->bInterfaceClass;
+			device_info.code_triple.sub = if_desc->bInterfaceSubClass;
+			device_info.code_triple.proto = if_desc->bInterfaceProtocol;
+			found_interface = true;
+		}
+
+		/* Step 2: Continue searching for subsequent descriptors to determine end_addr */
+		uint8_t *search_start = start_addr + ((struct usb_desc_header *)start_addr)->bLength;
+
+		/* Find next IAD */
+		mask = BIT(USB_DESC_INTERFACE_ASSOC);
+		desc = usbh_desc_get_by_type(search_start, desc_buf_end, mask);
+		next_iad_addr = (uint8_t *)desc;
+
+		/* Handle different cases and determine end_addr and device_info. */
+		if (!found_iad && next_iad_addr == NULL) {
+			/* Case 2a: No IAD in step 1, no IAD in subsequent descriptors */
+			end_addr = desc_buf_end;
+			/* device_info already saved in step 1 */
+		} else if (!found_iad && next_iad_addr) {
+			/* Case 2b: No IAD in step 1, found new IAD in subsequent descriptors */
+			end_addr = next_iad_addr;
+			/* device_info already saved in step 1 */
+		} else if (found_iad && next_iad_addr) {
+			/* Case 2c: Found IAD in step 1, found new IAD in subsequent descriptors */
+			end_addr = next_iad_addr;
+
+			/* Get class code from first interface after IAD */
+			mask = BIT(USB_DESC_INTERFACE);
+			desc = usbh_desc_get_by_type(search_start, end_addr, mask);
+			if (desc != NULL) {
+				struct usb_if_descriptor *if_desc = (void *)desc;
+
+				device_info.code_triple.dclass = if_desc->bInterfaceClass;
+				device_info.code_triple.sub = if_desc->bInterfaceSubClass;
+				device_info.code_triple.proto = if_desc->bInterfaceProtocol;
+			}
+		} else if (found_iad && !next_iad_addr) {
+			/* Case 2d: Found IAD in step 1, no new IAD in subsequent descriptors */
+			/* Get class code from first interface after IAD */
+			mask = BIT(USB_DESC_INTERFACE);
+			desc = usbh_desc_get_by_type(search_start, desc_buf_end, mask);
+			if (desc != NULL) {
+				struct usb_if_descriptor *if_desc = (void *)desc;
+
+				device_info.code_triple.dclass = if_desc->bInterfaceClass;
+				device_info.code_triple.sub = if_desc->bInterfaceSubClass;
+				device_info.code_triple.proto = if_desc->bInterfaceProtocol;
+
+				/* Search for interface descriptor with different class code after IAD */
+				uint8_t *next_search = (uint8_t *)desc + desc->bLength;
+				mask = BIT(USB_DESC_INTERFACE);
+				desc = usbh_desc_get_by_type(next_search, desc_buf_end, mask);
+				if (desc != NULL) {
+					struct usb_if_descriptor *if_desc = (void *)desc;
+
+					/* Only compare class code */
+					if (if_desc->bInterfaceClass != device_info.code_triple.dclass) {
+						end_addr = (uint8_t *)desc;
+					} else {
+						end_addr = desc_buf_end;
+					}
+				} else {
+					end_addr = desc_buf_end;
+				}
+			} else {
+				end_addr = desc_buf_end;
+			}
+		}
+
+		LOG_DBG("Found class segment: class=0x%02x, sub=0x%02x, proto=0x%02x, start=%p, end=%p",
+			device_info.code_triple.dclass, device_info.code_triple.sub,
+			device_info.code_triple.proto, start_addr, end_addr);
+
+		/* Step 3: Loop through registered class drivers and call usbh_match_class_driver */
+		struct usbh_class_data *cdata;
+		bool matched = false;
+
+		SYS_SLIST_FOR_EACH_CONTAINER(&ctx->class_list, cdata, node) {
+			/* Call usbh_match_class_driver with cdata and code */
+			if (usbh_class_is_matching(cdata, &device_info)) {
+				LOG_INF("Class driver %s matched for class 0x%02x",
+					cdata->name, device_info.code_triple.dclass);
+
+				/* Step 4: Call connected handler */
+				int ret = usbh_class_connected(udev, cdata, start_addr, end_addr);
+				if (ret == 0) {
+					LOG_INF("Class driver %s successfully claimed device", cdata->name);
+					matched = true;
+					matched_count++;
+				} else {
+					LOG_WRN("Class driver %s failed to claim device: %d",
+						cdata->name, ret);
+				}
+			}
+		}
+
+		if (!matched) {
+			LOG_DBG("No class driver matched for class 0x%02x",
+				device_info.code_triple.dclass);
+		}
+
+		/* Step 4: assign end_addr to current_desc and continue main loop */
+		current_desc = end_addr;
+
+		/* Ensure we advance to next valid descriptor */
+		if (current_desc < desc_buf_end) {
+			struct usb_desc_header *header = (struct usb_desc_header *)current_desc;
+			if (header->bLength == 0) {
+				break;
+			}
+		}
+	}
+
+	LOG_INF("Class enumeration completed: %d driver(s) matched", matched_count);
+	return 0;
+}
+
+static void dev_connected_handler(struct usbh_context *const ctx,
 				  const struct uhc_event *const event)
 {
 
@@ -71,11 +251,32 @@ static void dev_connected_handler(struct usbh_contex *const ctx,
 	if (usbh_device_init(ctx->root)) {
 		LOG_ERR("Failed to reset new USB device");
 	}
+
+	/* Now only consider about one device connected (root device) */
+	if (usbh_match_classes(ctx, ctx->root)) {
+		LOG_ERR("Failed to match classes");
+	}
 }
 
-static void dev_removed_handler(struct usbh_contex *const ctx)
+static void dev_removed_handler(struct usbh_context *const ctx)
 {
 	if (ctx->root != NULL) {
+		LOG_DBG("Device removed - notifying class drivers");
+
+		/* Notify all relevant class drivers that device is disconnected */
+		struct usbh_class_data *cdata;
+		SYS_SLIST_FOR_EACH_CONTAINER(&ctx->class_list, cdata, node) {
+			LOG_DBG("Calling disconnected for class driver: %s", cdata->name);
+			int ret = usbh_class_removed(ctx->root, cdata);
+			if (ret != 0) {
+				LOG_WRN("Class driver %s disconnected callback failed: %d", 
+					cdata->name, ret);
+			} else {
+				LOG_INF("Class driver %s successfully disconnected", cdata->name);
+			}
+		}
+
+		/* Free device resources */
 		usbh_device_free(ctx->root);
 		ctx->root = NULL;
 		LOG_DBG("Device removed");
@@ -84,7 +285,7 @@ static void dev_removed_handler(struct usbh_contex *const ctx)
 	}
 }
 
-static int discard_ep_request(struct usbh_contex *const ctx,
+static int discard_ep_request(struct usbh_context *const ctx,
 			      struct uhc_transfer *const xfer)
 {
 	const struct device *dev = ctx->dev;
@@ -97,7 +298,7 @@ static int discard_ep_request(struct usbh_contex *const ctx,
 	return uhc_xfer_free(dev, xfer);
 }
 
-static ALWAYS_INLINE int usbh_event_handler(struct usbh_contex *const ctx,
+static ALWAYS_INLINE int usbh_event_handler(struct usbh_context *const ctx,
 					    struct uhc_event *const event)
 {
 	int ret = 0;
@@ -141,7 +342,7 @@ static void usbh_bus_thread(void *p1, void *p2, void *p3)
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
 
-	struct usbh_contex *uhs_ctx;
+	struct usbh_context *uhs_ctx;
 	struct uhc_event event;
 
 	while (true) {
@@ -158,7 +359,7 @@ static void usbh_thread(void *p1, void *p2, void *p3)
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
 
-	struct usbh_contex *uhs_ctx;
+	struct usbh_context *uhs_ctx;
 	struct uhc_event event;
 	usbh_udev_cb_t cb;
 	int ret;
@@ -182,7 +383,10 @@ static void usbh_thread(void *p1, void *p2, void *p3)
 	}
 }
 
-int usbh_init_device_intl(struct usbh_contex *const uhs_ctx)
+/**
+ * @brief Initialize USB host controller and class drivers
+ */
+int usbh_init_device_intl(struct usbh_context *const uhs_ctx)
 {
 	int ret;
 
@@ -193,13 +397,18 @@ int usbh_init_device_intl(struct usbh_contex *const uhs_ctx)
 	}
 
 	sys_dlist_init(&uhs_ctx->udevs);
+	sys_slist_init(&uhs_ctx->class_list);
 
-	STRUCT_SECTION_FOREACH(usbh_class_data, cdata) {
-		/*
-		 * For now, we have not implemented any class drivers,
-		 * so just keep it as placeholder.
-		 */
-		break;
+	ret = usbh_register_all_classes(uhs_ctx);
+	if (ret != 0) {
+		LOG_ERR("Failed to auto-register class instances");
+		return ret;
+	}
+
+	ret = usbh_init_registered_classes(uhs_ctx);
+	if (ret != 0) {
+		LOG_ERR("Failed to initialize all registered class instances");
+		return ret;
 	}
 
 	return 0;
