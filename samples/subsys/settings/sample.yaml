@@ -1,10 +1,40 @@
 sample:
   name: Settings Sample
 
+common:
+  tags: settings
+  timeout: 20
+  harness: console
+  harness_config:
+    type: multi_line
+    regex:
+      - "subtree <alpha> handler registered: OK"
+      - "# iteration 0"
+      - "[.]*<alpha/length> value exist in the storage"
+      - "[.]*Can\\'t to load the <alpha/length> value as expected"
+      - "<gamma> = 0 \\(default\\)"
+      - "# iteration 1"
+      - "<alpha/length/2> = 59"
+      - "# iteration 2"
+      - "<alpha/length/1> = 42"
+      - "# iteration 3"
+      - "<alpha/beta/voltage> = -3100"
+      - "# iteration 4"
+      - "<alpha/beta/source> = abcd"
+      - "# iteration 5"
+      - "<alpha/angle/1> = 5"
+      - "<alpha/beta/source> is not compatible with the application"
+      - "direct.length = 100"
+      - "direct.length_1 = 46"
+      - "direct.length_2 = 54"
+      - "<gamma> = 5"
+      - "The settings destination off the key <alpha/beta/source> has got value:\
+        \ \"RT\""
+      - "String value \"rtos\" was retrieved from the settings destination off the\
+        \ key <alpha/beta/source>"
+
 tests:
   sample.subsys.settings:
-    tags: settings
-    timeout: 20
     filter: dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions")
     platform_exclude:
       - nucleo_h723zg
@@ -19,31 +49,13 @@ tests:
       - qemu_cortex_m0/nrf51822
     integration_platforms:
       - native_sim
-    harness: console
-    harness_config:
-      type: multi_line
-      regex:
-        - "subtree <alpha> handler registered: OK"
-        - "# iteration 0"
-        - "[.]*<alpha/length> value exist in the storage"
-        - "[.]*Can\\'t to load the <alpha/length> value as expected"
-        - "<gamma> = 0 \\(default\\)"
-        - "# iteration 1"
-        - "<alpha/length/2> = 59"
-        - "# iteration 2"
-        - "<alpha/length/1> = 42"
-        - "# iteration 3"
-        - "<alpha/beta/voltage> = -3100"
-        - "# iteration 4"
-        - "<alpha/beta/source> = abcd"
-        - "# iteration 5"
-        - "<alpha/angle/1> = 5"
-        - "<alpha/beta/source> is not compatible with the application"
-        - "direct.length = 100"
-        - "direct.length_1 = 46"
-        - "direct.length_2 = 54"
-        - "<gamma> = 5"
-        - "The settings destination off the key <alpha/beta/source> has got value:\
-        \ \"RT\""
-        - "String value \"rtos\" was retrieved from the settings destination off the\
-        \ key <alpha/beta/source>"
+
+  sample.subsys.settings.tfm-its:
+    tags:
+      - trusted-firmware-m
+    filter: CONFIG_TFM_PARTITION_INTERNAL_TRUSTED_STORAGE
+    integration_platforms:
+      - mps2/an521/cpu0/ns
+    extra_args:
+      - CONFIG_SETTINGS_TFM_ITS=y
+      - CONFIG_TFM_ITS_MAX_ASSET_SIZE_OVERRIDE=y
