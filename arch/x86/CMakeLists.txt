@@ -72,3 +72,35 @@ if(CONFIG_ARCH_HAS_TIMING_FUNCTIONS AND
     NOT CONFIG_BOARD_HAS_TIMING_FUNCTIONS)
 zephyr_library_sources_ifdef(CONFIG_TIMING_FUNCTIONS timing.c)
 endif()
+
+if(CONFIG_X86_CET)
+  zephyr_compile_options(-fcf-protection=full)
+
+  if(CONFIG_HW_SHADOW_STACK)
+    set(GEN_SHSTK_ARRAY ${ZEPHYR_BASE}/arch/x86/gen_static_shstk_array.py)
+
+    if(CONFIG_X86_64)
+      set(gen_shstk_array_arch_param --arch x86_64)
+
+      execute_process(
+        COMMAND
+        ${PYTHON_EXECUTABLE}
+        ${GEN_SHSTK_ARRAY}
+        --header-output ${PROJECT_BINARY_DIR}/include/generated/zephyr/x86_shstk.h
+        --config ${DOTCONFIG}
+        ${gen_shstk_array_arch_param}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+      )
+    else()
+      set(gen_shstk_array_arch_param --arch x86)
+    endif()
+
+    set_property(GLOBAL APPEND PROPERTY post_build_patch_elf_commands
+      COMMAND
+      ${PYTHON_EXECUTABLE}
+      ${GEN_SHSTK_ARRAY}
+      --kernel $<TARGET_FILE:${ZEPHYR_FINAL_EXECUTABLE}>
+      ${gen_shstk_array_arch_param}
+    )
+  endif()
+endif()
