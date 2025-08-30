@@ -8,9 +8,7 @@
 #define ZEPHYR_INCLUDE_DT_BINDINGS_MIPI_DBI_MIPI_DBI_H_
 
 /**
- * @brief MIPI-DBI driver APIs
- * @defgroup mipi_dbi_interface MIPI-DBI driver APIs
- * @ingroup io_interfaces
+ * @addtogroup mipi_dbi_interface
  * @{
  */
 
