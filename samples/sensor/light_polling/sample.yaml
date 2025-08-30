@@ -26,3 +26,8 @@ tests:
       - frdm_mcxw71/mcxw716c
     depends_on:
       - adc
+  sample.sensor.light_polling.shields:
+    platform_allow:
+      - adafruit_qt_py_rp2040/rp2040
+    extra_args:
+      - platform:adafruit_qt_py_rp2040/rp2040:SHIELD="adafruit_tsl2591"
