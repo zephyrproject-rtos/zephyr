@@ -1,0 +1,47 @@
+# Copyright (c) 2022-2025 Macronix International Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig SPI_NAND
+	bool "SPI NAND Flash"
+	default y
+	depends on DT_HAS_JEDEC_SPI_NAND_ENABLED
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_EXPLICIT_ERASE
+	select FLASH_HAS_PAGE_LAYOUT
+	select SPI
+
+if SPI_NAND
+
+config SPI_NAND_INIT_PRIORITY
+	int "SPI NAND init priority"
+	default 80
+	help
+	  Device driver initialization priority.
+	  Device is connected to SPI bus, it has to
+	  be initialized after SPI driver.
+
+config SPI_NAND_SOFTWARE_ECC
+	bool "Software ECC for SPI NAND flash"
+	help
+	  Enable this option to use software-based ECC (Error Correction Code)
+	  when accessing SPI NAND flash devices. This is useful for platforms
+	  that do not support hardware ECC, or when additional software control
+	  over ECC handling is required.
+
+config SPI_NAND_ECC_STEP_SIZE
+	int "ECC step size (bytes)"
+	default 512
+	depends on SPI_NAND_SOFTWARE_ECC
+	help
+	  Specifies the ECC (Error Correction Code) step size in bytes for SPI NAND
+	  flash operations. This value determines how many bytes of data are protected
+	  by one ECC block.
+
+config SPI_NAND_BCH_HEAP_SIZE
+	int "BCH heap size (bytes)"
+	default 51200
+	help
+	  Specify the heap size (in bytes) reserved for BCH (Bose-Chaudhuri-Hocquenghem)
+	  error correction in SPI NAND flash operations.
+
+endif # SPI_NAND
