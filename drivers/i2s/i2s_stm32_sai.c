@@ -155,6 +155,7 @@ void HAL_SAI_TxCpltCallback(SAI_HandleTypeDef *hsai)
 	if (stream->last_block) {
 		LOG_DBG("TX Stopped ...");
 		stream->state = I2S_STATE_READY;
+		stream->mem_block = NULL;
 		goto exit;
 	}
 
@@ -163,6 +164,7 @@ void HAL_SAI_TxCpltCallback(SAI_HandleTypeDef *hsai)
 	if (k_msgq_num_used_get(&stream->queue) == 0) {
 		LOG_DBG("Exit TX callback, no more data in the queue");
 		stream->state = I2S_STATE_READY;
+		stream->mem_block = NULL;
 		goto exit;
 	}
 
