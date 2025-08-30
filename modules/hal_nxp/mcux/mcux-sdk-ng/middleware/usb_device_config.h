@@ -122,6 +122,8 @@ BUILD_ASSERT(NUM_INSTS <= 1, "Only one USB device supported");
  */
 #define USB_DEVICE_CONFIG_SOF_NOTIFICATIONS (1U)
 
+#define USB_DEVICE_CONFIG_DETACH_ENABLE (1U)
+
 #endif
 
 #endif /* __USB_DEVICE_CONFIG_H__ */
