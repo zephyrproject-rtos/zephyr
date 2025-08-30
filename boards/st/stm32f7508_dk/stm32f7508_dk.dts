@@ -83,6 +83,15 @@
 	status = "okay";
 };
 
+&pllsai {
+	div-m = <25>;
+	mul-n = <384>;
+	div-r = <5>;
+	div-divr = <8>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
 &rcc {
 	clocks = <&pll>;
 	clock-frequency = <DT_FREQ_M(216)>;
