@@ -7,6 +7,12 @@
 #ifndef ZEPHYR_INCLUDE_ZEPHYR_POSIX_POSIX_LIMITS_H_
 #define ZEPHYR_INCLUDE_ZEPHYR_POSIX_POSIX_LIMITS_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#if defined(_POSIX_C_SOURCE) || defined(__DOXYGEN__)
+
 /*
  * clang-format and checkpatch disagree on formatting here, so rely on checkpatch and disable
  * clang-format since checkpatch cannot be selectively disabled.
@@ -121,5 +127,16 @@
 #define SYMLINK_MAX              _POSIX_SYMLINK_MAX
 
 /* clang-format on */
+
+#else
+
+/* FIXME: this should only be exposed when we define _POSIX_C_SOURCE or _XOPEN_SOURCE */
+#define PATH_MAX 256
+
+#endif
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ZEPHYR_INCLUDE_ZEPHYR_POSIX_POSIX_LIMITS_H_ */
