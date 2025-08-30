@@ -218,15 +218,18 @@ struct lwm2m_ctx {
 	sys_slist_t queued_messages;
 #endif
 	sys_slist_t observer;
+#if defined(CONFIG_LWM2M_ASYNC_RESPONSES)
+	sys_slist_t postponed_responses;
+#endif
 	struct k_mutex lock;
 	/** @endcond */
 
-	/** A pointer to currently processed request, for internal LwM2M engine
+	/** A pointer to currently processed message, for internal LwM2M engine
 	 *  use. The underlying type is ``struct lwm2m_message``, but since it's
 	 *  declared in a private header and not exposed to the application,
 	 *  it's stored as a void pointer.
 	 */
-	void *processed_req;
+	void *processed_msg;
 
 #if defined(CONFIG_LWM2M_DTLS_SUPPORT) || defined(__DOXYGEN__)
 	/**
@@ -1438,6 +1441,81 @@ int lwm2m_engine_start(struct lwm2m_ctx *client_ctx);
  *
  */
 void lwm2m_acknowledge(struct lwm2m_ctx *client_ctx);
+
+#if defined(CONFIG_LWM2M_ASYNC_RESPONSES) || defined(__DOXYGEN__)
+/**
+ * @brief Request LwM2M engine to handle the currently processed message
+ * asynchronously and postpone sending the response/notification.
+ *
+ * The application read/write/exec handler can use this function to notify the
+ * engine that the currently processed message should be handled asynchronously,
+ * for example when the requested data is not ready. If the request is accepted
+ * by the engine, the function will return a pointer to the opaque message
+ * context and the engine will defer sending the response until
+ * @ref lwm2m_response_resume is called by the application.
+ *
+ * @note The application takes full ownership of the message context returned
+ * by this function and is responsible for calling @ref lwm2m_response_resume
+ * respectively.
+ *
+ * @param[in] client_ctx LwM2M context
+ *
+ * @return A pointer to the opaque message context if the message can be handled
+ * asynchronously, NULL otherwise.
+ */
+void *lwm2m_response_postpone(struct lwm2m_ctx *client_ctx);
+
+/**
+ * @brief Resume asynchronous message handling and send asynchronous
+ * response/notification.
+ *
+ * Notify the LwM2M engine to resume processing of the asynchronous message and
+ * send an asynchronous response for the previously stored message context.
+ * The application should call this function when the action that lead to
+ * postponing the response is finished. After calling this function (regardless
+ * of the result msg_ctx should no longer by used by the application.
+ *
+ * The application should set the result parameter accordingly based on the
+ * result of the action that caused the delay. 0 indicates success and message
+ * processing will resume where it stopped. A negative error code should be
+ * provided to respond with an error message instead.
+ *
+ * @note When preparing the asynchronous response, the engine will resume the
+ * processing of the request at the resource that was last processed. The
+ * processing of the last processed resource depends on the type of the LwM2M
+ * operation:
+ * - For Write and Exec, the application handler for the said resource will
+ *   not be called again.
+ * - For Read, the resource read handler will be called and the application
+ *   should be ready to provide requested data this time.
+ *
+ * @param[in] client_ctx LwM2M context
+ * @param[in] msg_ctx Opaque message context returned by @ref lwm2m_response_postpone
+ * @param[in] result Result of the postponed action.
+ *
+ * @return 0 on success or negative error code in case of error.
+ */
+int lwm2m_response_resume(struct lwm2m_ctx *client_ctx, void *msg_ctx, int result);
+
+#else /* defined(CONFIG_LWM2M_ASYNC_RESPONSES) */
+
+static inline void *lwm2m_response_postpone(struct lwm2m_ctx *client_ctx)
+{
+	ARG_UNUSED(client_ctx);
+
+	return NULL;
+}
+
+static inline int lwm2m_response_resume(struct lwm2m_ctx *client_ctx,
+					void *msg_ctx, int result)
+{
+	ARG_UNUSED(client_ctx);
+	ARG_UNUSED(msg_ctx);
+	ARG_UNUSED(result);
+
+	return -ENOTSUP;
+}
+#endif /* defined(CONFIG_LWM2M_ASYNC_RESPONSES) */
 
 /*
  * LwM2M RD client flags, used to configure LwM2M session.
