@@ -19,7 +19,7 @@ LOG_MODULE_REGISTER(clk_mck, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 
 #define PMC_MCR_CSS_SHIFT	16
 
-#define MASTER_MAX_ID		4
+#define MASTER_MAX_ID		(SOC_NUM_CLOCK_MASTER - 1)
 
 #define to_clk_master(ptr) CONTAINER_OF(ptr, struct clk_master, clk)
 
@@ -38,7 +38,7 @@ struct clk_master {
 	uint8_t div;
 };
 
-static struct clk_master clocks_master[5];
+static struct clk_master clocks_master[SOC_NUM_CLOCK_MASTER];
 static uint32_t clocks_master_idx;
 
 static inline bool clk_master_ready(struct clk_master *master)
