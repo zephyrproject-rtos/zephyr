@@ -503,9 +503,14 @@ static int usbd_hid_init(struct usbd_class_data *const c_data)
 	const struct device *dev = usbd_class_get_private(c_data);
 	const struct hid_device_config *dcfg = dev->config;
 	struct usbd_hid_descriptor *const desc = dcfg->desc;
+	struct hid_device_data *const ddata = dev->data;
+
+	if (ddata->ops == NULL ||  ddata->rdesc == NULL || !ddata->rsize) {
+		LOG_ERR("HID device does not seem to be registered");
+		return -EINVAL;
+	}
 
 	LOG_DBG("HID class %s init", c_data->name);
-
 	if (dcfg->if_desc_data != NULL && desc->if0.iInterface == 0) {
 		if (usbd_add_descriptor(uds_ctx, dcfg->if_desc_data)) {
 			LOG_ERR("Failed to add interface string descriptor");
@@ -620,6 +625,56 @@ static int hid_dev_submit_report(const struct device *dev,
 	return 0;
 }
 
+static inline int hid_dev_set_out_polling(const struct device *dev,
+					  const unsigned int period)
+{
+	const struct hid_device_config *const dcfg = dev->config;
+	struct hid_device_data *const ddata = dev->data;
+	struct usbd_hid_descriptor *const desc = dcfg->desc;
+
+	if (atomic_test_bit(&ddata->state, HID_DEV_CLASS_ENABLED)) {
+		return -EBUSY;
+	}
+
+	if (USBD_SUPPORTS_HIGH_SPEED) {
+		if (desc->hs_out_ep.bLength == 0) {
+			/* This device does not have output reports. */
+			return -EINVAL;
+		}
+
+		desc->hs_out_ep.bInterval = USB_HS_INT_EP_INTERVAL(period);
+	} else {
+		if (desc->out_ep.bLength == 0) {
+			/* This device does not have output reports. */
+			return -EINVAL;
+		}
+
+		desc->out_ep.bInterval = USB_FS_INT_EP_INTERVAL(period);
+	}
+
+	return 0;
+}
+
+static inline int hid_dev_set_in_polling(const struct device *dev,
+					 const unsigned int period)
+{
+	const struct hid_device_config *const dcfg = dev->config;
+	struct hid_device_data *const ddata = dev->data;
+	struct usbd_hid_descriptor *const desc = dcfg->desc;
+
+	if (atomic_test_bit(&ddata->state, HID_DEV_CLASS_ENABLED)) {
+		return -EBUSY;
+	}
+
+	if (USBD_SUPPORTS_HIGH_SPEED) {
+		desc->hs_in_ep.bInterval = USB_HS_INT_EP_INTERVAL(period);
+	} else {
+		desc->in_ep.bInterval = USB_FS_INT_EP_INTERVAL(period);
+	}
+
+	return 0;
+}
+
 static int hid_dev_register(const struct device *dev,
 			    const uint8_t *const rdesc, const uint16_t rsize,
 			    const struct hid_device_ops *const ops)
@@ -694,6 +749,10 @@ struct usbd_class_api usbd_hid_api = {
 static const struct hid_device_driver_api hid_device_api = {
 	.submit_report = hid_dev_submit_report,
 	.dev_register = hid_dev_register,
+#if CONFIG_USBD_HID_SET_POLLING_PERIOD
+	.set_out_polling = hid_dev_set_out_polling,
+	.set_in_polling = hid_dev_set_in_polling,
+#endif
 };
 
 #include "usbd_hid_macros.h"
