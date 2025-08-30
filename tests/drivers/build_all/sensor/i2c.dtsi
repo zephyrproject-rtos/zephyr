@@ -1389,3 +1389,9 @@ test_i2c_mb7040: mb7040@ba {
 	reg = <0xba>;
 	status-gpios = <&test_gpio 0 0>;
 };
+
+test_i2c_hdc302x: hdc302x@bb {
+	compatible = "ti,hdc302x";
+	reg = <0xbb>;
+	int-gpios = <&test_gpio 0 0>;
+};
