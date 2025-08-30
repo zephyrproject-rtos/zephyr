@@ -640,10 +640,28 @@ class Build(Forceable):
         if user_args:
             cmake_opts.extend(shlex.split(user_args))
 
+        sysbuild_presets = SYSBUILD_PROJ_DIR / 'CMakePresets.json'
+        source_presets = pathlib.Path(self.source_dir) / 'CMakePresets.json'
+
         config_sysbuild = config_getboolean('sysbuild', False)
         if self.args.sysbuild or (config_sysbuild and not self.args.no_sysbuild):
             cmake_opts.extend([f'-S{SYSBUILD_PROJ_DIR}',
                                f'-DAPP_DIR:PATH={self.source_dir}'])
+            try:
+                # sysbuild has its own cmake project directory, so we need to
+                # copy the application's CMakePresets.json file and replace the paths
+                if source_presets.exists():
+                    with open(source_presets) as f:
+                        content = f.read()
+                    content = (content
+                        .replace("${sourceDir}", self.source_dir)
+                        .replace("${sourceParentDir}", str(pathlib.Path(self.source_dir).parent))
+                        .replace("${sourceDirName}", str(pathlib.Path(self.source_dir).name))
+                    )
+                    with open(sysbuild_presets, 'w') as f:
+                        f.write(content)
+            except Exception as e:
+                self.wrn(f'Failed to adopt CMakePresets.json to sysbuild: {e}')
         else:
             # self.args.no_sysbuild == True or config sysbuild False
             cmake_opts.extend([f'-S{self.source_dir}'])
@@ -660,6 +678,13 @@ class Build(Forceable):
         if cmake_opts:
             final_cmake_args.extend(cmake_opts)
         run_cmake(final_cmake_args, dry_run=self.args.dry_run)
+
+        # clean up the sysbuild CMakePresets.json file after each run
+        if sysbuild_presets.exists():
+            try:
+                sysbuild_presets.unlink()
+            except Exception as e:
+                self.wrn(f'Failed to remove sysbuild CMakePresets.json: {e}')
 
     def _run_pristine(self):
         self._banner(f'making build dir {self.build_dir} pristine')
