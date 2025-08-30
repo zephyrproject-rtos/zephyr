@@ -159,6 +159,16 @@ arduino_i2c: &flexcomm4 {
 		reg = <0x1d>;
 		int1-gpios = <&gpio1 19 GPIO_ACTIVE_LOW>;
 	};
+
+	audio_codec: wm8904@1a {
+		compatible = "wolfson,wm8904";
+		reg = <0x1a>;
+
+		clock-source = "MCLK";
+
+		clocks = <&syscon MCUX_AUDIO_MCLK>;
+		clock-names = "mclk";
+	};
 };
 
 arduino_serial: &flexcomm2 {

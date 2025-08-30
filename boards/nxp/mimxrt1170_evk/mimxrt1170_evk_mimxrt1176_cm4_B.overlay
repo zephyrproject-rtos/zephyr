@@ -13,6 +13,8 @@
 	aliases {
 		/delete-property/ magn0;
 		/delete-property/ accel0;
+		i2s-codec-tx = &sai1;
+		i2s-tx = &sai1;
 	};
 };
 
@@ -69,6 +71,14 @@
 &lpi2c5 {
 	/* FXOS accelerometer is not present in this board */
 	/delete-node/ fxos8700@1f;
+
+	audio_codec: wm8962@1a {
+		compatible = "wolfson,wm8962";
+		reg = <0x1a>;
+		clock-source = "MCLK";
+		clocks = <&ccm IMX_CCM_SAI1_CLK 0x2004 4>;
+		clock-names = "mclk";
+	};
 };
 
 /* Disable ethernet, as PHY is not supported */
