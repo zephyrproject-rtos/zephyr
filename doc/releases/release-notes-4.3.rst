@@ -137,6 +137,10 @@ New APIs and options
 
    * :kconfig:option:`CONFIG_SETTINGS_TFM_ITS`
 
+* Sys
+
+  * :c:func:`sys_count_bits`
+
 .. zephyr-keep-sorted-stop
 
 New Boards
