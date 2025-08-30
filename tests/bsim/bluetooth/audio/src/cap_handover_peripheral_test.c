@@ -241,6 +241,7 @@ static void stream_started_cb(struct bt_bap_stream *stream)
 
 	LOG_DBG("Started stream %p", stream);
 
+	UNSET_FLAG(test_stream->flag_audio_received);
 	SET_FLAG(flag_stream_started);
 }
 
@@ -748,10 +749,15 @@ static void create_and_sync_sink(void)
 
 static void wait_for_data(void)
 {
-	UNSET_FLAG(flag_audio_received);
-
 	LOG_DBG("Waiting for data");
-	WAIT_FOR_FLAG(flag_audio_received);
+
+	ARRAY_FOR_EACH_PTR(streams, test_stream) {
+		if (bap_stream_rx_can_recv(&test_stream->stream.bap_stream) &&
+		    audio_test_stream_is_streaming(test_stream)) {
+			WAIT_FOR_FLAG(test_stream->flag_audio_received);
+		}
+	}
+
 	LOG_DBG("Data received");
 }
 
