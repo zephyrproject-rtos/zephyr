@@ -58,11 +58,11 @@ struct tm *gmtime_r(const time_t *ZRESTRICT timep,
 char *asctime(const struct tm *timeptr);
 struct tm *localtime(const time_t *timer);
 char *ctime(const time_t *clock);
-char *asctime_r(const struct tm *ZRESTRICT tp, char *ZRESTRICT buf);
-char *ctime_r(const time_t *clock, char *buf);
 struct tm *localtime_r(const time_t *ZRESTRICT timer, struct tm *ZRESTRICT result);
 
 time_t time(time_t *tloc);
+
+#include <zephyr/posix/posix_time.h>
 
 #ifdef __cplusplus
 }

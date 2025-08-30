@@ -9,7 +9,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/posix/pwd.h>
 
-#ifdef CONFIG_POSIX_THREAD_SAFE_FUNCTIONS
+#ifdef CONFIG_POSIX_FILE_SYSTEM_R
 
 int getpwnam_r(const char *nam, struct passwd *pwd, char *buffer, size_t bufsize,
 	       struct passwd **result)
@@ -34,4 +34,4 @@ int getpwuid_r(uid_t uid, struct passwd *pwd, char *buffer, size_t bufsize, stru
 	return ENOSYS;
 }
 
-#endif /* CONFIG_POSIX_THREAD_SAFE_FUNCTIONS */
+#endif /* CONFIG_POSIX_FILE_SYSTEM_R */

@@ -9,7 +9,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/posix/grp.h>
 
-#ifdef CONFIG_POSIX_THREAD_SAFE_FUNCTIONS
+#ifdef CONFIG_POSIX_FILE_SYSTEM_R
 
 int getgrnam_r(const char *name, struct group *grp, char *buffer, size_t bufsize,
 	       struct group **result)
@@ -34,4 +34,4 @@ int getgrgid_r(gid_t gid, struct group *grp, char *buffer, size_t bufsize, struc
 	return ENOSYS;
 }
 
-#endif /* CONFIG_POSIX_THREAD_SAFE_FUNCTIONS */
+#endif /* CONFIG_POSIX_FILE_SYSTEM_R */
