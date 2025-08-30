@@ -15,11 +15,12 @@
  * initialization is performed.
  */
 
-#include <kernel_internal.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/linker/sections.h>
+#include <zephyr/arch/common/xip.h>
+#include <zephyr/arch/common/init.h>
 
 K_KERNEL_PINNED_STACK_ARRAY_DEFINE(z_initialization_process_stacks, CONFIG_MP_MAX_NUM_CPUS,
 				   CONFIG_INITIALIZATION_STACK_SIZE);
@@ -32,9 +33,9 @@ K_KERNEL_PINNED_STACK_ARRAY_DEFINE(z_initialization_process_stacks, CONFIG_MP_MA
  */
 void z_prep_c(void)
 {
-	z_bss_zero();
+	arch_bss_zero();
 
-	z_data_copy();
+	arch_data_copy();
 
 	z_cstart();
 	CODE_UNREACHABLE;

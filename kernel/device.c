@@ -13,6 +13,7 @@
 #include <zephyr/sys/kobject.h>
 #include <zephyr/internal/syscall_handler.h>
 #include <zephyr/toolchain.h>
+#include <zephyr/pm/device_runtime.h>
 
 /**
  * @brief Initialize state for all static devices.
@@ -26,6 +27,58 @@ void z_device_state_init(void)
 		k_object_init(dev);
 	}
 }
+
+
+int do_device_init(const struct device *dev)
+{
+	int rc = 0;
+
+	if (dev->ops.init != NULL) {
+		rc = dev->ops.init(dev);
+		/* Mark device initialized. If initialization
+		 * failed, record the error condition.
+		 */
+		if (rc != 0) {
+			if (rc < 0) {
+				rc = -rc;
+			}
+			if (rc > UINT8_MAX) {
+				rc = UINT8_MAX;
+			}
+			dev->state->init_res = rc;
+		}
+	}
+
+	dev->state->initialized = true;
+
+	if (rc == 0) {
+		/* Run automatic device runtime enablement */
+		(void)pm_device_runtime_auto_enable(dev);
+	}
+
+	return rc;
+}
+
+
+int z_impl_device_init(const struct device *dev)
+{
+	if (dev->state->initialized) {
+		return -EALREADY;
+	}
+
+	return do_device_init(dev);
+}
+
+#ifdef CONFIG_USERSPACE
+static inline int z_vrfy_device_init(const struct device *dev)
+{
+	K_OOPS(K_SYSCALL_OBJ_INIT(dev, K_OBJ_ANY));
+
+	return z_impl_device_init(dev);
+}
+#include <zephyr/syscalls/device_init_mrsh.c>
+#endif
+
 
 const struct device *z_impl_device_get_binding(const char *name)
 {

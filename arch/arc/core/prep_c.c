@@ -22,7 +22,8 @@
 #include <zephyr/arch/arc/v2/aux_regs.h>
 #include <zephyr/arch/arc/cluster.h>
 #include <zephyr/kernel_structs.h>
-#include <kernel_internal.h>
+#include <zephyr/arch/common/xip.h>
+#include <zephyr/arch/common/init.h>
 #include <zephyr/platform/hooks.h>
 #include <zephyr/arch/cache.h>
 
@@ -67,7 +68,7 @@ extern char __device_states_end[];
  */
 static void dev_state_zero(void)
 {
-	z_early_memset(__device_states_start, 0, __device_states_end - __device_states_start);
+	arch_early_memset(__device_states_start, 0, __device_states_end - __device_states_start);
 }
 #endif
 
@@ -91,11 +92,11 @@ void z_prep_c(void)
 	arc_cluster_scm_enable();
 #endif
 
-	z_bss_zero();
+	arch_bss_zero();
 #ifdef __CCAC__
 	dev_state_zero();
 #endif
-	z_data_copy();
+	arch_data_copy();
 #if CONFIG_ARCH_CACHE
 	arch_cache_init();
 #endif
