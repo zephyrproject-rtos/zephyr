@@ -48,8 +48,6 @@ size_t cap_acceptor_ad_data_add(struct bt_data data[], size_t data_size, bool di
 size_t bap_scan_delegator_ad_data_add(struct bt_data data[], size_t data_size);
 size_t gmap_ad_data_add(struct bt_data data[], size_t data_size);
 size_t pbp_ad_data_add(struct bt_data data[], size_t data_size);
-size_t cap_initiator_ad_data_add(struct bt_data *data_array, const size_t data_array_size,
-				 const bool discoverable, const bool connectable);
 size_t cap_initiator_pa_data_add(struct bt_data *data_array, const size_t data_array_size);
 
 #if defined(CONFIG_BT_AUDIO)
@@ -176,6 +174,7 @@ struct broadcast_source {
 	};
 	struct bt_audio_codec_cfg codec_cfg;
 	struct bt_bap_qos_cfg qos;
+	uint32_t broadcast_id;
 };
 
 struct broadcast_sink {
