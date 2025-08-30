@@ -368,6 +368,7 @@ execute_process(
   ${PYTHON_EXECUTABLE}
   ${ZEPHYR_BASE}/scripts/kconfig/kconfig.py
   --zephyr-base=${ZEPHYR_BASE}
+  --env-file=${KCONFIG_BINARY_DIR}/kconfig_module_dirs.env
   ${input_configs_flags}
   ${KCONFIG_ROOT}
   ${DOTCONFIG}

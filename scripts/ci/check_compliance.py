@@ -23,6 +23,7 @@ import textwrap
 import unidiff
 import yaml
 
+from dotenv import load_dotenv
 from yamllint import config, linter
 
 from junitparser import TestCase, TestSuite, JUnitXml, Skipped, Error, Failure
@@ -700,6 +701,10 @@ class KconfigCheck(ComplianceTest):
         self.get_modules(os.path.join(kconfiglib_dir, "Kconfig.modules"),
                          os.path.join(kconfiglib_dir, "Kconfig.sysbuild.modules"),
                          os.path.join(kconfiglib_dir, "settings_file.txt"))
+
+        # Import zephyr module paths into environmental values
+        load_dotenv(os.path.join(kconfiglib_dir, "kconfig_module_dirs.env"))
+
         # For Kconfig.dts support
         self.get_kconfig_dts(os.path.join(kconfiglib_dir, "Kconfig.dts"),
                              os.path.join(kconfiglib_dir, "settings_file.txt"))

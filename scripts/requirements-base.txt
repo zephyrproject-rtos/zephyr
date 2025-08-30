@@ -5,6 +5,7 @@
 
 # used by various build scripts
 pyelftools>=0.29
+python-dotenv>=1.1.1
 
 # used by dts generation to parse binding YAMLs, also used by
 # twister to parse YAMLs, by west, zephyr_module,...

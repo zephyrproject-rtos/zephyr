@@ -21,6 +21,8 @@ import re
 import sys
 import textwrap
 
+from dotenv import load_dotenv
+
 # Zephyr doesn't use tristate symbols. They're supported here just to make the
 # script a bit more generic.
 from kconfiglib import (
@@ -41,6 +43,9 @@ def main():
 
     if args.zephyr_base:
         os.environ['ZEPHYR_BASE'] = args.zephyr_base
+
+    if args.env_file:
+        load_dotenv(args.env_file)
 
     print("Parsing " + args.kconfig_file)
     kconf = Kconfig(args.kconfig_file, warn_to_stderr=False,
@@ -317,6 +322,8 @@ def parse_args():
                              " adjustments.")
     parser.add_argument("--zephyr-base",
                         help="Path to current Zephyr installation")
+    parser.add_argument("--env-file",
+                        help="Path to environment file to use")
     parser.add_argument("kconfig_file",
                         help="Top-level Kconfig file")
     parser.add_argument("config_out",
