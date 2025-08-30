@@ -1,0 +1,83 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: RX LVD voltage monitor
+
+compatible: "renesas,rx-lvd"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  channel:
+    type: int
+    description: RX LVD channel
+
+  lvd-action:
+    required: true
+    type: string
+    enum:
+      - "reset"
+      - "non-maskable-interrupt"
+      - "maskable-interrupt"
+      - "no-action"
+    description: |
+      Choose the action to be taken when the LVD is detected.
+
+  voltage-level:
+    required: true
+    type: int
+    description: |
+      Specifies the voltage detection level for each channel, as an integer
+      value that represents the voltage in hundredths of a volt.
+      Example:
+        - To set the voltage detection level to 3.00 V, specify '300'.
+        - To set the voltage detection level to 3.84 V, specify '384'.
+        - To set the voltage detection level to default value, specify '0xFFFF'
+      For specific voltage detection support levels of each RX MCU series,
+      please refer to the HWM.
+
+  lvd-support-cmpa2:
+    type: boolean
+    description: |
+      Specifies whether the RX LVD supports CMPA pin as target.
+      Note: For RX130 series, CMPA pin is available only for channel 1.
+
+  vdet-target:
+    required: true
+    type: string
+    enum:
+      - vcc
+      - cmpa
+    description: |
+      Specifies the target to be monitored for each channel.
+      Note: For RX130 series, CMPA pin is available only for channel 1.
+
+  lvd-trigger:
+    required: true
+    type: string
+    enum:
+      - "rising"
+      - "falling"
+      - "both"
+    description: |
+      Specifies the voltage detection conditions and influences interrupt conditions
+
+  lvd-stabilization:
+    type: int
+    enum: [0, 1]
+    description: |
+      Specifies the reset negation timing for each channel, with reset selected as processing.
+        - 0: After a LVD reset, negation occurs when a certain period elapses after the
+          monitored voltage goes above the voltage detection level.
+        - 1: Negation occurs when a certain period elapses after the LVD reset assertion.
+      Note: "a certain period" here means a wait time after a voltage monitoring reset.
+            Refer to the User's Manual: Hardware for details.
+
+  pinctrl-0:
+    description: Pin control for LVD when using CMPA pin as target
+
+  pinctrl-names:
+    description: Pin control names for LVD when using CMPA pin as target
