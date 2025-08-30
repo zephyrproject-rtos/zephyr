@@ -222,6 +222,7 @@ config MBEDTLS_INIT
 
 config MBEDTLS_SHELL
 	bool "mbed TLS shell"
+	default y if SHELL_ALL
 	depends on MBEDTLS
 	depends on SHELL
 	help

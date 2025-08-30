@@ -42,6 +42,7 @@ config HAWKBIT_AUTOHANDLER
 
 config HAWKBIT_SHELL
 	bool "hawkBit shell utilities"
+	default y if SHELL_ALL
 	depends on SHELL
 	depends on HAWKBIT_AUTOHANDLER
 	help

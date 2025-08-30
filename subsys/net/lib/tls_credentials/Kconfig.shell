@@ -3,6 +3,7 @@
 
 menuconfig TLS_CREDENTIALS_SHELL
 	bool "TLS credentials management shell"
+	default y if SHELL_ALL
 	depends on TLS_CREDENTIALS
 	depends on SHELL
 	depends on BASE64

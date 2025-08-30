@@ -90,6 +90,7 @@ config LLEXT_BUILD_PIC
 
 config LLEXT_SHELL
 	bool "llext shell commands"
+	default y if SHELL_ALL
 	depends on SHELL
 	help
 	  Manage llext with shell commands for loading, unloading, and introspection
