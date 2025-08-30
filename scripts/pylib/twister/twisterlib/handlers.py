@@ -9,6 +9,7 @@
 
 import argparse
 import contextlib
+import csv
 import logging
 import math
 import os
@@ -544,7 +545,19 @@ class DeviceHandler(Handler):
                 proc.communicate()
                 logger.error(f"{script} timed out")
 
+    def _create_flash_command(self, hardware):
+        command = next(csv.reader([self.options.flash_command]))
+        command.extend(['--build-dir', self.build_dir])
+
+        board_id = hardware.probe_id or hardware.id
+        if board_id:
+            command.extend(['--board-id', board_id])
+        return command
+
     def _create_command(self, runner, hardware):
+        if self.options.flash_command:
+            return self._create_flash_command(hardware)
+
         command = ["west", "flash", "--skip-rebuild", "-d", self.build_dir]
         command_extra_args = []
 
@@ -556,7 +569,7 @@ class DeviceHandler(Handler):
         # 3) Multiple values: --west-flash="--board-id=42,--erase"
         #    This results in options.west_flash == "--board-id=42 --erase"
         if self.options.west_flash and self.options.west_flash != []:
-            command_extra_args.extend(self.options.west_flash.split(','))
+            command_extra_args.extend(next(csv.reader([self.options.west_flash])))
 
         if runner:
             command.append("--runner")
