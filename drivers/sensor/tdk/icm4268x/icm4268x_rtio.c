@@ -45,9 +45,10 @@ static int icm4268x_rtio_sample_fetch(const struct device *dev, int16_t readings
 	return 0;
 }
 
-static void icm4268x_submit_one_shot(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
+void icm4268x_submit_one_shot_sync(struct rtio_iodev_sqe *iodev_sqe)
 {
 	const struct sensor_read_config *cfg = iodev_sqe->sqe.iodev->data;
+	const struct device *dev = cfg->sensor;
 	const struct sensor_chan_spec *const channels = cfg->channels;
 	const size_t num_channels = cfg->count;
 	uint32_t min_buf_len = sizeof(struct icm4268x_encoded_data);
@@ -84,21 +85,7 @@ static void icm4268x_submit_one_shot(const struct device *dev, struct rtio_iodev
 	rtio_iodev_sqe_ok(iodev_sqe, 0);
 }
 
-void icm4268x_submit_sync(struct rtio_iodev_sqe *iodev_sqe)
-{
-	const struct sensor_read_config *cfg = iodev_sqe->sqe.iodev->data;
-	const struct device *dev = cfg->sensor;
-
-	if (!cfg->is_streaming) {
-		icm4268x_submit_one_shot(dev, iodev_sqe);
-	} else if (IS_ENABLED(CONFIG_ICM4268X_STREAM)) {
-		icm4268x_submit_stream(dev, iodev_sqe);
-	} else {
-		rtio_iodev_sqe_err(iodev_sqe, -ENOTSUP);
-	}
-}
-
-void icm4268x_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
+static void icm4268x_submit_one_shot(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
 {
 	struct rtio_work_req *req = rtio_work_req_alloc();
 
@@ -109,8 +96,18 @@ void icm4268x_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
 		return;
 	}
 
-	rtio_work_req_submit(req, iodev_sqe, icm4268x_submit_sync);
+	rtio_work_req_submit(req, iodev_sqe, icm4268x_submit_one_shot_sync);
 }
 
-BUILD_ASSERT(sizeof(struct icm4268x_decoder_header) == 15,
-	"icm4268x_decoder_header size is not equal to 15");
+void icm4268x_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
+{
+	const struct sensor_read_config *cfg = iodev_sqe->sqe.iodev->data;
+
+	if (!cfg->is_streaming) {
+		icm4268x_submit_one_shot(dev, iodev_sqe);
+	} else if (IS_ENABLED(CONFIG_ICM4268X_STREAM)) {
+		icm4268x_submit_stream(dev, iodev_sqe);
+	} else {
+		rtio_iodev_sqe_err(iodev_sqe, -ENOTSUP);
+	}
+}
