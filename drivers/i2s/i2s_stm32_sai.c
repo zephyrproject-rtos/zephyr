@@ -131,6 +131,8 @@ exit:
 
 void HAL_SAI_TxCpltCallback(SAI_HandleTypeDef *hsai)
 {
+	LOG_WRN("HAL_SAI_TxCpltCallback");
+
 	struct i2s_stm32_sai_data *dev_data = CONTAINER_OF(hsai, struct i2s_stm32_sai_data, hsai);
 	struct stream *stream = &dev_data->stream;
 	struct queue_item item;
@@ -274,8 +276,14 @@ static int i2s_stm32_sai_dma_init(const struct device *dev)
 	/* HACK: This field is used to inform driver that it is overridden */
 	dma_cfg.linked_channel = STM32_DMA_HAL_OVERRIDE;
 
+#if defined(CONFIG_SOC_SERIES_STM32L4X)
+	/* Because of the STREAM OFFSET, the DMA channel given here is from 0 - 7 */
+	ret = dma_config(stream->dma_dev, (stream->dma_channel - 1) + STM32_DMA_STREAM_OFFSET,
+			 &dma_cfg);
+#else
 	/* Because of the STREAM OFFSET, the DMA channel given here is from 1 - 8 */
 	ret = dma_config(stream->dma_dev, stream->dma_channel + STM32_DMA_STREAM_OFFSET, &dma_cfg);
+#endif
 
 	if (ret != 0) {
 		LOG_ERR("Failed to configure DMA channel %d",
@@ -285,12 +293,18 @@ static int i2s_stm32_sai_dma_init(const struct device *dev)
 
 #if defined(CONFIG_SOC_SERIES_STM32H7X)
 	hdma->Instance = __LL_DMA_GET_STREAM_INSTANCE(stream->reg, stream->dma_channel);
-	hdma->Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD;
-	hdma->Init.MemDataAlignment = DMA_PDATAALIGN_HALFWORD;
-	hdma->Init.Priority = DMA_PRIORITY_HIGH;
 	hdma->Init.FIFOMode = DMA_FIFOMODE_DISABLE;
+#elif defined(CONFIG_SOC_SERIES_STM32L4X)
+	hdma->Instance = __LL_DMA_GET_CHANNEL_INSTANCE(stream->reg, (stream->dma_channel - 1));
 #else
 	hdma->Instance = LL_DMA_GET_CHANNEL_INSTANCE(stream->reg, stream->dma_channel);
+#endif
+
+#if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32L4X)
+	hdma->Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD;
+	hdma->Init.MemDataAlignment = DMA_MDATAALIGN_HALFWORD;
+	hdma->Init.Priority = DMA_PRIORITY_HIGH;
+#else
 	hdma->Init.BlkHWRequest = DMA_BREQ_SINGLE_BURST;
 	hdma->Init.SrcDataWidth = DMA_SRC_DATAWIDTH_HALFWORD;
 	hdma->Init.DestDataWidth = DMA_DEST_DATAWIDTH_HALFWORD;
@@ -304,10 +318,13 @@ static int i2s_stm32_sai_dma_init(const struct device *dev)
 	hdma->Init.Request = dma_cfg.dma_slot;
 	hdma->Init.Mode = DMA_NORMAL;
 
+	/* L4 how to get the request */
+	hdma->Init.Request = DMA_REQUEST_1;
+
 	if (stream->dma_cfg.channel_direction == (enum dma_channel_direction)MEMORY_TO_PERIPHERAL) {
 		hdma->Init.Direction = DMA_MEMORY_TO_PERIPH;
 
-#if defined(CONFIG_SOC_SERIES_STM32H7X)
+#if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32L4X)
 		hdma->Init.PeriphInc = DMA_PINC_DISABLE;
 		hdma->Init.MemInc = DMA_MINC_ENABLE;
 #else
@@ -319,7 +336,7 @@ static int i2s_stm32_sai_dma_init(const struct device *dev)
 	} else {
 		hdma->Init.Direction = DMA_PERIPH_TO_MEMORY;
 
-#if defined(CONFIG_SOC_SERIES_STM32H7X)
+#if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32L4X)
 		hdma->Init.PeriphInc = DMA_PINC_ENABLE;
 		hdma->Init.MemInc = DMA_MINC_DISABLE;
 #else
@@ -341,7 +358,7 @@ static int i2s_stm32_sai_dma_init(const struct device *dev)
 		LOG_ERR("HAL_DMA_ConfigChannelAttributes: <Failed>");
 		return -EIO;
 	}
-#elif !defined(CONFIG_SOC_SERIES_STM32H7X)
+#elif !defined(CONFIG_SOC_SERIES_STM32H7X) && !defined(CONFIG_SOC_SERIES_STM32L4X)
 	if (HAL_DMA_ConfigChannelAttributes(&dev_data->hdma, DMA_CHANNEL_NPRIV) != HAL_OK) {
 		LOG_ERR("HAL_DMA_ConfigChannelAttributes: <Failed>");
 		return -EIO;
@@ -456,21 +473,28 @@ static int i2s_stm32_sai_configure(const struct device *dev, enum i2s_dir dir,
 		return -EINVAL;
 	}
 
+	/* Not possible to control MCLK output from SAI configuration */
+#if !defined(CONFIG_SOC_SERIES_STM32L4X)
 	if (cfg->mclk_enable && stream->master) {
 		hsai->Init.MckOutput = SAI_MCK_OUTPUT_ENABLE;
 	} else {
 		hsai->Init.MckOutput = SAI_MCK_OUTPUT_DISABLE;
 	}
+#endif
 
 	if (cfg->mclk_div == (enum mclk_divider)MCLK_NO_DIV) {
 		hsai->Init.NoDivider = SAI_MASTERDIVIDER_DISABLED;
 	} else {
 		hsai->Init.NoDivider = SAI_MASTERDIVIDER_ENABLE;
+
+		/* MckOverSampling is not supported by all STM32L4xx MCUs */
+#if !defined(CONFIG_SOC_SERIES_STM32L4X)
 		if (cfg->mclk_div == (enum mclk_divider)MCLK_DIV_256) {
 			hsai->Init.MckOverSampling = SAI_MCK_OVERSAMPLING_DISABLE;
 		} else {
 			hsai->Init.MckOverSampling = SAI_MCK_OVERSAMPLING_ENABLE;
 		}
+#endif
 	}
 
 	/* AudioFrequency */
