@@ -351,6 +351,8 @@
 				reg = <0x5003c000 0x30>;
 				gpio-controller;
 				#gpio-cells = <2>;
+				silabs,wakeup-ints = <0>;
+				silabs,wakeup-pins = <5>;
 				status = "disabled";
 			};
 
@@ -359,6 +361,8 @@
 				reg = <0x5003c030 0x30>;
 				gpio-controller;
 				#gpio-cells = <2>;
+				silabs,wakeup-ints = <3>;
+				silabs,wakeup-pins = <1>;
 				status = "disabled";
 			};
 
@@ -367,6 +371,8 @@
 				reg = <0x5003c060 0x30>;
 				gpio-controller;
 				#gpio-cells = <2>;
+				silabs,wakeup-ints = <6>, <7>;
+				silabs,wakeup-pins = <0>, <5>;
 				status = "disabled";
 			};
 
@@ -375,6 +381,8 @@
 				reg = <0x5003c090 0x30>;
 				gpio-controller;
 				#gpio-cells = <2>;
+				silabs,wakeup-ints = <9>;
+				silabs,wakeup-pins = <2>;
 				status = "disabled";
 			};
 		};
