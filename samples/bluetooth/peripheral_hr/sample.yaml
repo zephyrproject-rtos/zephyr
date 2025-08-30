@@ -110,3 +110,16 @@ tests:
     depends_on: arduino_serial
     tags: bluetooth
     extra_args: SHIELD=frdm_kw41z
+  sample.bluetooth.peripheral_hr.stm32wba_stdby:
+    harness: bluetooth
+    platform_allow:
+      - nucleo_wba65ri
+      - nucleo_wba55cg
+    integration_platforms:
+      - nucleo_wba65ri
+    extra_configs:
+      - CONFIG_PM=y
+      - CONFIG_PM_S2RAM=y
+    extra_args: EXTRA_DTC_OVERLAY_FILE="boards/stm32wba_stdby.overlay"
+    tags: bluetooth
+    sysbuild: true
