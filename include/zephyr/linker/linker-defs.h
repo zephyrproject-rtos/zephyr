@@ -246,14 +246,21 @@ extern char __sg_size[];
  * with a MPU. Start and end will be aligned for memory management/protection
  * hardware for the target architecture.
  *
- * All the functions with '__nocache' keyword will be placed into this
- * section.
+ * All the variables with '__nocache' keyword will be placed into the nocache
+ * section, variables with '__nocache_load' keyword will be placed into the
+ * nocache section that is loaded from ROM.
  */
 #ifdef CONFIG_NOCACHE_MEMORY
 extern char _nocache_ram_start[];
 extern char _nocache_ram_end[];
 extern char _nocache_ram_size[];
-extern char _nocache_load_start[];
+extern char _nocache_noload_ram_start[];
+extern char _nocache_noload_ram_end[];
+extern char _nocache_noload_ram_size[];
+extern char _nocache_load_ram_start[];
+extern char _nocache_load_ram_end[];
+extern char _nocache_load_ram_size[];
+extern char _nocache_load_rom_start[];
 #endif /* CONFIG_NOCACHE_MEMORY */
 
 /* Memory owned by the kernel. Start and end will be aligned for memory
