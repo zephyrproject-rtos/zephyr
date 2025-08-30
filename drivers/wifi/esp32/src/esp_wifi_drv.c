@@ -13,9 +13,11 @@ LOG_MODULE_REGISTER(esp32_wifi, CONFIG_WIFI_LOG_LEVEL);
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/wifi_mgmt.h>
+#if defined(CONFIG_NET_CONNECTION_MANAGER_CONNECTIVITY_WIFI_MGMT)
+#include <zephyr/net/conn_mgr/connectivity_wifi_mgmt.h>
+#endif
 #if defined(CONFIG_ESP32_WIFI_AP_STA_MODE)
 #include <zephyr/net/wifi_nm.h>
-#include <zephyr/net/conn_mgr/connectivity_wifi_mgmt.h>
 #endif
 #include <zephyr/device.h>
 #include <soc.h>
@@ -993,6 +995,8 @@ NET_DEVICE_DT_INST_DEFINE(1,
 		NET_L2_GET_CTX_TYPE(ETHERNET_L2), NET_ETH_MTU);
 
 DEFINE_WIFI_NM_INSTANCE(esp32_wifi_nm, &esp32_wifi_mgmt);
+#endif
 
+#if defined(CONFIG_NET_CONNECTION_MANAGER_CONNECTIVITY_WIFI_MGMT)
 CONNECTIVITY_WIFI_MGMT_BIND(Z_DEVICE_DT_DEV_ID(DT_DRV_INST(0)));
 #endif
