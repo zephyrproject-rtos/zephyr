@@ -23,6 +23,8 @@ manifest:
       url-base: https://github.com/zephyrproject-rtos
     - name: babblesim
       url-base: https://github.com/BabbleSim
+    - name: bosch
+      url-base: https://github.com/boschsensortec
 
   group-filter: [-babblesim, -optional]
 
@@ -110,6 +112,13 @@ manifest:
       revision: da246018ebe031e4fe4a8228187fb459e9f3b2fa
       groups:
         - babblesim
+    - name: bhi2xy
+      repo-path: BHI2xy_SensorAPI
+      remote: bosch
+      path: modules/lib/bhi2xy
+      revision: 177681d120ac42760c9f19505697ccd5c7103e87
+      groups:
+        - bsec
     - name: bsim
       repo-path: babblesim-manifest
       revision: 2ba22a0608ad9f46da1b96ee5121af357053c791
