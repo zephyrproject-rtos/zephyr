@@ -54,6 +54,11 @@ static const struct arm_mpu_region mpu_regions[] = {
 			((uint32_t)&_image_rom_end_order),
 			MPUTYPE_READ_ONLY_PRIV),
 
+	MPU_REGION_ENTRY("PRIV_REGISTERS",
+			0xae000000,
+			REGION_8K,
+			MPUTYPE_PRIV_DEVICE),
+
 	MPU_REGION_ENTRY("REGISTERS",
 			0xf8000000,
 			REGION_128M,
