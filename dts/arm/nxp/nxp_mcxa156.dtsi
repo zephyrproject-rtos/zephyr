@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -412,6 +412,15 @@
 			interrupts = <65 0>;
 			status = "disabled";
 			#io-channel-cells = <2>;
+		};
+
+		opamp0: opamp@400b7000 {
+			compatible = "nxp,opamp";
+			reg = <0x400b7000 0x1000>;
+			status = "disabled";
+			#io-channel-cells = <1>;
+			operation-mode = "low_noise";
+			support-programmable-gain;
 		};
 
 		lpi2c0: i2c@4009a000 {
