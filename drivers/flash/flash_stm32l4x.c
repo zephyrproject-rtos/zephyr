@@ -7,7 +7,7 @@
  */
 
 #define LOG_DOMAIN flash_stm32l4
-#define LOG_LEVEL CONFIG_FLASH_LOG_LEVEL
+#define LOG_LEVEL  CONFIG_FLASH_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_DOMAIN);
 
@@ -21,12 +21,12 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 
 #include "flash_stm32.h"
 
-#if !defined(STM32L4R5xx) && !defined(STM32L4R7xx) && !defined(STM32L4R9xx) && \
-	!defined(STM32L4S5xx) && !defined(STM32L4S7xx) && !defined(STM32L4S9xx) && \
+#if !defined(STM32L4R5xx) && !defined(STM32L4R7xx) && !defined(STM32L4R9xx) &&                     \
+	!defined(STM32L4S5xx) && !defined(STM32L4S7xx) && !defined(STM32L4S9xx) &&                 \
 	!defined(STM32L4Q5xx) && !defined(STM32L4P5xx)
-#define STM32L4X_PAGE_SHIFT	11
+#define STM32L4X_PAGE_SHIFT 11
 #else
-#define STM32L4X_PAGE_SHIFT	12
+#define STM32L4X_PAGE_SHIFT 12
 #endif
 
 #if defined(FLASH_OPTR_DUALBANK) || defined(FLASH_STM32_DBANK)
@@ -69,13 +69,32 @@ static unsigned int get_page(off_t offset)
 
 static int write_dword(const struct device *dev, off_t offset, uint64_t val)
 {
+	int rc;
+
+#if defined(CONFIG_FLASH_STM32_ASYNC)
+	FLASH_STM32_PRIV(dev)->async_complete = false;
+	FLASH_STM32_PRIV(dev)->async_error = false;
+
+	HAL_FLASH_Program_IT(FLASH_TYPEPROGRAM_DOUBLEWORD, offset + FLASH_STM32_BASE_ADDRESS, val);
+	k_sem_take(&FLASH_STM32_PRIV(dev)->async_sem, K_FOREVER);
+	if (FLASH_STM32_PRIV(dev)->async_complete) {
+		LOG_DBG("Flash write successful. Wrote 0x%llx at 0x%lx", val,
+			offset + FLASH_STM32_BASE_ADDRESS);
+		rc = 0;
+	} else {
+		if (FLASH_STM32_PRIV(dev)->async_error) {
+			LOG_ERR("Flash write failed at 0x%x", FLASH_STM32_PRIV(dev)->async_ret);
+		}
+		rc = -EIO;
+	}
+#else /* CONFIG_FLASH_STM32_ASYNC */
+
 	volatile uint32_t *flash = (uint32_t *)(offset + FLASH_STM32_BASE_ADDRESS);
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
 #ifdef CONTROL_DCACHE
 	bool dcache_enabled = false;
 #endif /* CONTROL_DCACHE */
 	uint32_t tmp;
-	int rc;
 
 	/* if the control register is locked, do not fail silently */
 	if (regs->CR & FLASH_CR_LOCK) {
@@ -93,8 +112,7 @@ static int write_dword(const struct device *dev, off_t offset, uint64_t val)
 	 * It is allowed to write only zeros over an already written dword
 	 * See 3.3.7 in reference manual.
 	 */
-	if ((flash[0] != 0xFFFFFFFFUL ||
-	     flash[1] != 0xFFFFFFFFUL) && val != 0UL) {
+	if ((flash[0] != 0xFFFFFFFFUL || flash[1] != 0xFFFFFFFFUL) && val != 0UL) {
 		LOG_ERR("Word at offs %ld not erased", (long)offset);
 		return -EIO;
 	}
@@ -134,6 +152,7 @@ static int write_dword(const struct device *dev, off_t offset, uint64_t val)
 		regs->ACR |= FLASH_ACR_DCEN;
 	}
 #endif /* CONTROL_DCACHE */
+#endif /* !CONFIG_FLASH_STM32_ASYNC */
 
 	return rc;
 }
@@ -142,8 +161,9 @@ static int write_dword(const struct device *dev, off_t offset, uint64_t val)
 
 static int erase_page(const struct device *dev, unsigned int page)
 {
+#if defined(FLASH_OPTR_DUALBANK) || defined(FLASH_STM32_DBANK) || !defined(CONFIG_FLASH_STM32_ASYNC)
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
-	uint32_t tmp;
+#endif
 	uint16_t pages_per_bank;
 	int rc;
 
@@ -153,8 +173,7 @@ static int erase_page(const struct device *dev, unsigned int page)
 #elif defined(FLASH_OPTR_DUALBANK)
 	/* L4 series (2K page size) with configurable Dual Bank (default y) */
 	/* Dual Bank is only option for 1M devices */
-	if ((regs->OPTR & FLASH_OPTR_DUALBANK) ||
-	    (SOC_NV_FLASH_SIZE == (1024*1024))) {
+	if ((regs->OPTR & FLASH_OPTR_DUALBANK) || (SOC_NV_FLASH_SIZE == (1024 * 1024))) {
 		/* Dual Bank configuration (nbr pages = flash size / 2 / 2K) */
 		pages_per_bank = SOC_NV_FLASH_SIZE >> 12;
 	} else {
@@ -173,6 +192,38 @@ static int erase_page(const struct device *dev, unsigned int page)
 		return -ENOTSUP;
 	}
 #endif
+
+#if defined(CONFIG_FLASH_STM32_ASYNC)
+	FLASH_STM32_PRIV(dev)->async_complete = false;
+	FLASH_STM32_PRIV(dev)->async_error = false;
+
+	FLASH_EraseInitTypeDef erase_init = {
+		.TypeErase = FLASH_TYPEERASE_PAGES,
+#if defined(FLASH_OPTR_DUALBANK) || defined(FLASH_STM32_DBANK)
+		.Banks = page >= pages_per_bank ? FLASH_BANK_2 : FLASH_BANK_1,
+		.Page = page % pages_per_bank,
+#else
+		.Banks = FLASH_BANK_1,
+		.Page = page,
+#endif
+		.NbPages = 1,
+	};
+
+	HAL_FLASHEx_Erase_IT(&erase_init);
+	k_sem_take(&FLASH_STM32_PRIV(dev)->async_sem, K_FOREVER);
+	if (FLASH_STM32_PRIV(dev)->async_complete) {
+		LOG_DBG("Flash erase successful. Erased %d bytes at 0x%x", FLASH_PAGE_SIZE,
+			FLASH_STM32_PRIV(dev)->async_ret);
+		rc = 0;
+	} else {
+		if (FLASH_STM32_PRIV(dev)->async_error) {
+			LOG_ERR("Flash erase failed at 0x%x", FLASH_STM32_PRIV(dev)->async_ret);
+		}
+		rc = -EIO;
+	}
+#else /* CONFIG_FLASH_STM32_ASYNC */
+
+	uint32_t tmp;
 
 	/* if the control register is locked, do not fail silently */
 	if (regs->CR & FLASH_CR_LOCK) {
@@ -209,18 +260,17 @@ static int erase_page(const struct device *dev, unsigned int page)
 	rc = flash_stm32_wait_flash_idle(dev);
 
 	regs->CR &= ~FLASH_CR_PER;
+#endif /* !CONFIG_FLASH_STM32_ASYNC */
 
 	return rc;
 }
 
-int flash_stm32_block_erase_loop(const struct device *dev,
-				 unsigned int offset,
-				 unsigned int len)
+int flash_stm32_block_erase_loop(const struct device *dev, unsigned int offset, unsigned int len)
 {
 	int i, rc = 0;
 
 	i = get_page(offset);
-	for (; i <= get_page(offset + len - 1) ; ++i) {
+	for (; i <= get_page(offset + len - 1); ++i) {
 		rc = erase_page(dev, i);
 		if (rc < 0) {
 			break;
@@ -230,14 +280,13 @@ int flash_stm32_block_erase_loop(const struct device *dev,
 	return rc;
 }
 
-int flash_stm32_write_range(const struct device *dev, unsigned int offset,
-			    const void *data, unsigned int len)
+int flash_stm32_write_range(const struct device *dev, unsigned int offset, const void *data,
+			    unsigned int len)
 {
 	int i, rc = 0;
 
 	for (i = 0; i < len; i += 8, offset += 8U) {
-		rc = write_dword(dev, offset,
-				UNALIGNED_GET((const uint64_t *) data + (i >> 3)));
+		rc = write_dword(dev, offset, UNALIGNED_GET((const uint64_t *)data + (i >> 3)));
 		if (rc < 0) {
 			return rc;
 		}
@@ -246,8 +295,7 @@ int flash_stm32_write_range(const struct device *dev, unsigned int offset,
 	return rc;
 }
 
-int flash_stm32_option_bytes_write(const struct device *dev, uint32_t mask,
-				   uint32_t value)
+int flash_stm32_option_bytes_write(const struct device *dev, uint32_t mask, uint32_t value)
 {
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
 	int rc;
@@ -320,8 +368,7 @@ void flash_stm32_set_rdp_level(const struct device *dev, uint8_t level)
 }
 #endif /* CONFIG_FLASH_STM32_READOUT_PROTECTION */
 
-void flash_stm32_page_layout(const struct device *dev,
-			     const struct flash_pages_layout **layout,
+void flash_stm32_page_layout(const struct device *dev, const struct flash_pages_layout **layout,
 			     size_t *layout_size)
 {
 	static struct flash_pages_layout stm32l4_flash_layout = {
