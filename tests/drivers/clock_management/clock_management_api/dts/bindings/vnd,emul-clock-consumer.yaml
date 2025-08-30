@@ -1,0 +1,61 @@
+# Copyright 2024 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Binding for emulated clock consumer device. This device is used in testing
+  to verify that clock states are applied as expected.
+
+compatible: "vnd,emul-clock-consumer"
+
+include: [clock-device.yaml]
+
+properties:
+  default-freq:
+    type: int
+    required: true
+    description: |
+      Frequency this consumer expects to read when applying default clock
+      management state
+
+  shared-freq:
+    type: int
+    required: true
+    description: |
+      Frequency this consumer expects to read when applying shared clock
+      management state
+
+  locking-freq:
+    type: int
+    required: true
+    description: |
+      Frequency this consumer expects to read when applying locking clock
+      management state
+
+  freq-constraints-0:
+    type: array
+    required: true
+    description: |
+      Tuple of 2 values: the minimum frequency to request, and maximum frequency
+      to request
+
+  req-freq-0:
+    type: int
+    required: true
+    description: |
+      Frequency this consumer expects to read when applying the frequency
+      constraints
+
+  freq-constraints-1:
+    type: array
+    required: true
+    description: |
+      Tuple of 2 values: the minimum frequency to request and maximum frequency
+      to request
+
+  req-freq-1:
+    type: int
+    required: true
+    description: |
+      Frequency this consumer expects to read when applying the frequency
+      constraints
