@@ -114,6 +114,7 @@ static const char *const sensor_channel_name[SENSOR_CHAN_COMMON_COUNT] = {
 	[SENSOR_CHAN_GAME_ROTATION_VECTOR] = "game_rotation_vector",
 	[SENSOR_CHAN_GRAVITY_VECTOR] = "gravity_vector",
 	[SENSOR_CHAN_GBIAS_XYZ] = "gbias_xyz",
+	[SENSOR_CHAN_MASS] = "mass",
 	[SENSOR_CHAN_ALL] = "all",
 };
 
