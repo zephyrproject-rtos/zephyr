@@ -12,11 +12,6 @@ properties:
   interrupts:
     required: true
 
-  ti,vrefp:
-    type: int
-    required: true
-    description: Reference Voltage (in mV)
-
   ti,fifo:
     type: int
     required: true
