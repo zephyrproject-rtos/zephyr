@@ -1,0 +1,10 @@
+# Copyright (c) 2025 Mohammed Billoo <mab@mab-labs.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Maxim MAX17043 Fuel Gauge with ModelGauge. See more info at:
+  https://www.analog.com/media/en/technical-documentation/data-sheets/max17043-max17044.pdf
+
+compatible: "maxim,max17043"
+
+include: [i2c-device.yaml, fuel-gauge.yaml]
