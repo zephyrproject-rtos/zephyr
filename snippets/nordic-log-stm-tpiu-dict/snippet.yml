@@ -1,6 +1,6 @@
-name: nordic-log-stm
+name: nordic-log-stm-tpiu-dict
 append:
-  EXTRA_CONF_FILE: log_stm.conf
+  EXTRA_CONF_FILE: log_stm_dict.conf
 boards:
   /.*/nrf54h20/cpuapp/:
     append:

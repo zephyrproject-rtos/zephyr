@@ -13,7 +13,6 @@
 #include <zephyr/dt-bindings/misc/nordic-nrf-ficr-nrf54h20.h>
 #include <zephyr/dt-bindings/misc/nordic-domain-id-nrf54h20.h>
 #include <zephyr/dt-bindings/misc/nordic-owner-id-nrf54h20.h>
-#include <zephyr/dt-bindings/misc/nordic-tddconf.h>
 
 /delete-node/ &sw_pwm;
 
@@ -525,11 +524,11 @@
 				status = "disabled";
 				interrupts = <127 NRF_DEFAULT_IRQ_PRIORITY>;
 			};
-
-			tddconf: tddconf@1000 {
-				compatible = "nordic,nrf-tddconf";
-				reg = <0x1000 0x10>;
+			coresight: coresight@40000 {
+				compatible = "nordic,nrf-coresight";
+				reg = <0x40000 0x11000>;
 				status = "disabled";
+				nordic,clockpin-enable = <NRF_FUN_TPIU_CLOCK>;
 			};
 		};
 
