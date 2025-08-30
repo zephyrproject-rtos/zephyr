@@ -15,7 +15,19 @@ config SOC_MIMX94398_M33
 	bool
 	select SOC_MIMX94398
 	help
-	  NXP i.MX943 M33
+	  NXP i.MX943 Cortex-M33 Core1 in NETC MIX
+
+config SOC_MIMX94398_M7_0
+	bool
+	select SOC_MIMX94398
+	help
+	  NXP i.MX943 Cortex-M7 Core0 in M7MIX0
+
+config SOC_MIMX94398_M7_1
+	bool
+	select SOC_MIMX94398
+	help
+	  NXP i.MX943 Cortex-M7 Core1 in M7MIX1
 
 config SOC
 	default "mimx94398" if SOC_MIMX94398
