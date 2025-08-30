@@ -16,6 +16,15 @@ config ZMS
 
 if ZMS
 
+config ZMS_ID_64BIT
+	bool "64 bit ZMS IDs"
+	help
+	  When this option is true, the `zms_id_t` values passed to ZMS APIs will be 64 bit,
+	  as opposed to the default 32 bit.
+	  This option will also change the format of allocation table entries (ATEs) in memory
+	  to accommodate larger IDs. Currently, this will make ZMS unable to mount an existing
+	  file system if it has been initialized with a different ATE format.
+
 config ZMS_LOOKUP_CACHE
 	bool "ZMS lookup cache"
 	help
@@ -34,6 +43,7 @@ config ZMS_LOOKUP_CACHE_SIZE
 
 config ZMS_DATA_CRC
 	bool "ZMS data CRC"
+	depends on !ZMS_ID_64BIT
 
 config ZMS_CUSTOMIZE_BLOCK_SIZE
 	bool "Customize the size of the buffer used internally for reads and writes"
@@ -54,6 +64,7 @@ config ZMS_CUSTOM_BLOCK_SIZE
 config ZMS_LOOKUP_CACHE_FOR_SETTINGS
 	bool "ZMS Storage lookup cache optimized for settings"
 	depends on ZMS_LOOKUP_CACHE && SETTINGS_ZMS
+	depends on !ZMS_ID_64BIT
 	help
 	  Enable usage of lookup cache based on hashes to get, the best ZMS performance,
 	  provided that the ZMS is used only for the purpose of providing the settings
