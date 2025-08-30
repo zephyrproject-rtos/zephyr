@@ -26,21 +26,41 @@ LOG_MODULE_REGISTER(is31fl3194, CONFIG_LED_LOG_LEVEL);
 #define IS31FL3194_PROD_ID_REG		0x00
 #define IS31FL3194_CONF_REG		0x01
 #define IS31FL3194_CURRENT_REG		0x03
-#define IS31FL3194_OUT1_REG		0x10
-#define IS31FL3194_OUT2_REG		0x21
-#define IS31FL3194_OUT3_REG		0x32
 #define IS31FL3194_UPDATE_REG		0x40
+#define IS31FL3194_RESET_REG		0x4f
+
+#define IS31FL3194_REG_Px_BASE		0x10
+#define IS31FL3194_OFFSET_TS_T1_CFG	0x9
+#define IS31FL3194_OFFSET_T2_T3_CFG	0xA
+#define IS31FL3194_OFFSET_TP_T4_CFG	0xB
+#define IS31FL3194_OFFSET_CE_CFG	0xC
 
 #define IS31FL3194_PROD_ID_VAL		0xce
 #define IS31FL3194_CONF_ENABLE		0x01
+#define IS31FL3194_CONF_TOGETHER	FIELD_PREP(GENMASK(2, 1), 2)
+#define IS31FL3194_CONF_SINGLE		FIELD_PREP(GENMASK(2, 1), 0)
+#define IS31FL3194_CONF_OUTX_MASK	GENMASK(6, 4)
 #define IS31FL3194_UPDATE_VAL		0xc5
 
 #define IS31FL3194_CHANNEL_COUNT 3
 
-static const uint8_t led_channels[] = {
-	IS31FL3194_OUT1_REG,
-	IS31FL3194_OUT2_REG,
-	IS31FL3194_OUT3_REG
+#define IS31FL3194_BASE_ADDRESS(led) (IS31FL3194_REG_Px_BASE * (led + 1))
+#define IS31FL3194_LED_ADDRESS(led) (IS31FL3194_BASE_ADDRESS(led) + led)
+
+static const uint16_t is31fl3194_timings_ms[] = {
+	30, 130, 260, 380, 510, 0770, 1040, 1600, 2100, 2600, 3100, 4200, 5200, 6200, 7300, 8300,
+};
+
+enum is31fl3194_mode {
+	IS31FL3194_MODE_UNKNOWN = 0,
+	IS31FL3194_MODE_SINGLE,
+	IS31FL3194_MODE_RGB,
+};
+
+struct is31fl3194_data {
+	enum is31fl3194_mode mode;
+	uint8_t conf_reg;
+	uint8_t color[3];
 };
 
 struct is31fl3194_config {
@@ -78,20 +98,40 @@ static int is31fl3194_get_info(const struct device *dev,
 static int is31fl3194_set_color(const struct device *dev, uint32_t led, uint8_t num_colors,
 				const uint8_t *color)
 {
+	struct is31fl3194_data *data = dev->data;
 	const struct is31fl3194_config *config = dev->config;
 	const struct led_info *info = is31fl3194_led_to_info(config, led);
+	uint8_t conf_reg = data->conf_reg;
 	int ret;
+	uint8_t address;
 
 	if (info == NULL) {
 		return -ENODEV;
 	}
 
-	if (info->num_colors != 3) {
+	if (data->mode != IS31FL3194_MODE_RGB) {
 		return -ENOTSUP;
 	}
 
-	if (num_colors != 3) {
+	if (num_colors != info->num_colors) {
 		return -EINVAL;
+	}
+
+	if (conf_reg & (IS31FL3194_CONF_OUTX_MASK | IS31FL3194_CONF_TOGETHER)) {
+		/* OUTx to current level mode */
+		conf_reg &= ~IS31FL3194_CONF_OUTX_MASK;
+		/* For static brightness levels, we need to
+		 * be in single mode and set all 3 separately
+		 */
+		conf_reg &= ~IS31FL3194_CONF_TOGETHER;
+	}
+
+	if (conf_reg != data->conf_reg) {
+		data->conf_reg = conf_reg;
+		ret = i2c_reg_write_byte_dt(&config->bus, IS31FL3194_CONF_REG, data->conf_reg);
+		if (ret != 0) {
+			return ret;
+		}
 	}
 
 	for (int i = 0; i < 3; i++) {
@@ -112,7 +152,11 @@ static int is31fl3194_set_color(const struct device *dev, uint32_t led, uint8_t 
 			return -EINVAL;
 		}
 
-		ret = i2c_reg_write_byte_dt(&config->bus, led_channels[i], value);
+		/* Save color data so if user blinks we can use the same color */
+		data->color[i] = value;
+
+		address = IS31FL3194_LED_ADDRESS(i);
+		ret = i2c_reg_write_byte_dt(&config->bus, address, value);
 		if (ret != 0) {
 			break;
 		}
@@ -131,24 +175,188 @@ static int is31fl3194_set_color(const struct device *dev, uint32_t led, uint8_t 
 	return ret;
 }
 
-static int is31fl3194_set_brightness(const struct device *dev, uint32_t led, uint8_t value)
+static int is31fl3194_blink_one(const struct device *dev, uint32_t led, uint32_t delay_on,
+				uint32_t delay_off)
 {
+	struct is31fl3194_data *data = dev->data;
+	const struct is31fl3194_config *config = dev->config;
+	int ret;
+	uint8_t ts = 1;
+	uint8_t t1 = 0;
+	uint8_t t2 = 1;
+	uint8_t t3 = 0;
+	uint8_t t4 = 1;
+	uint8_t tp = 1;
+	uint8_t value;
+	uint8_t address;
+	uint8_t base;
+
+	/* Resolve the absolute port address from led offset and base address */
+	if (data->mode == IS31FL3194_MODE_RGB) {
+		/* When blinking in pattern mode, only the first P1 is used */
+		address = IS31FL3194_REG_Px_BASE + led;
+		base = IS31FL3194_REG_Px_BASE;
+	} else if (data->mode == IS31FL3194_MODE_SINGLE) {
+		address = IS31FL3194_LED_ADDRESS(led);
+		base = IS31FL3194_BASE_ADDRESS(led);
+	} else {
+		return -ENOTSUP;
+	}
+
+	LOG_DBG("Write: led %d, reg 0x%x, value 0x%x", led, address, data->color[led]);
+	ret = i2c_reg_write_byte_dt(&config->bus, address, data->color[led]);
+	if (ret != 0) {
+		return ret;
+	}
+
+	/* timings are shared between all channels in pattern mode so after setting the color,
+	 * only the first pattern timing registers needs to be set
+	 */
+	if ((data->mode == IS31FL3194_MODE_RGB) && led > 0) {
+		return 0;
+	}
+
+	for (int j = (ARRAY_SIZE(is31fl3194_timings_ms) - 1); j >= 0; j--) {
+		if (is31fl3194_timings_ms[j] < delay_on) {
+			t2 = j; /* hold (positive pulse) time */
+			break;
+		}
+	}
+
+	for (int j = (ARRAY_SIZE(is31fl3194_timings_ms) - 1); j >= 0; j--) {
+		if (is31fl3194_timings_ms[j] < delay_off) {
+			tp = j; /* off (negative pulse) time*/
+			break;
+		}
+	}
+
+	address = base | IS31FL3194_OFFSET_TS_T1_CFG;
+	value = t1 << 4 | ts;
+	LOG_DBG("%s: Write TST1: led %d, reg 0x%x, value 0x%x", dev->name, led, address, value);
+
+	ret = i2c_reg_write_byte_dt(&config->bus, address, value);
+	if (ret != 0) {
+		return ret;
+	}
+
+	address = base | IS31FL3194_OFFSET_T2_T3_CFG;
+	value = t3 << 4 | t2;
+	LOG_DBG("%s: Write T2T3: led %d, reg 0x%x, value 0x%x", dev->name, led, address, value);
+
+	ret = i2c_reg_write_byte_dt(&config->bus, address, value);
+	if (ret != 0) {
+		return ret;
+	}
+
+	address = base | IS31FL3194_OFFSET_TP_T4_CFG;
+	value = t4 << 4 | tp;
+	LOG_DBG("%s: Write TPT4: led %d, reg 0x%x, value 0x%x", dev->name, led, address, value);
+
+	ret = i2c_reg_write_byte_dt(&config->bus, address, value);
+	if (ret != 0) {
+		return ret;
+	}
+
+	address = IS31FL3194_UPDATE_REG + (led + 1);
+
+	LOG_DBG("%s: Write CU: led %d, reg 0x%x, value 0x%x",
+		dev->name, led, address, IS31FL3194_UPDATE_VAL);
+
+	return i2c_reg_write_byte_dt(&config->bus, address, IS31FL3194_UPDATE_VAL);
+}
+
+static int is31fl3194_blink(const struct device *dev, uint32_t led, uint32_t delay_on,
+			    uint32_t delay_off)
+{
+	struct is31fl3194_data *data = dev->data;
 	const struct is31fl3194_config *config = dev->config;
 	const struct led_info *info = is31fl3194_led_to_info(config, led);
+	uint8_t conf_reg = data->conf_reg;
+	uint8_t value;
+	int ret = -ENOTSUP;
+
+	if (info == NULL) {
+		return -ENODEV;
+	}
+
+	/* for both modes, we blink all at the same time to avoid color phase shifts
+	 * which will eventually occur from each channel's internal timers
+	 */
+	if (!(conf_reg & IS31FL3194_CONF_TOGETHER)) {
+		conf_reg |= IS31FL3194_CONF_TOGETHER;
+	}
+
+	if (data->mode == IS31FL3194_MODE_RGB) {
+		/* OUTx to pattern mode for all 3 channels */
+		if ((conf_reg & IS31FL3194_CONF_OUTX_MASK) != IS31FL3194_CONF_OUTX_MASK) {
+			conf_reg |= IS31FL3194_CONF_OUTX_MASK;
+		}
+	} else if (data->mode == IS31FL3194_MODE_SINGLE) {
+		/* OUTx to pattern mode for single channel */
+		value = FIELD_PREP((LSB_GET(IS31FL3194_CONF_OUTX_MASK) << led), 1);
+		if ((conf_reg & IS31FL3194_CONF_OUTX_MASK) != value) {
+			conf_reg |= value;
+		}
+	} else {
+		return -ENOTSUP;
+	}
+
+	if (conf_reg != data->conf_reg) {
+		data->conf_reg = conf_reg;
+		ret = i2c_reg_write_byte_dt(&config->bus, IS31FL3194_CONF_REG, data->conf_reg);
+		if (ret != 0) {
+			return ret;
+		}
+	}
+
+	if (data->mode == IS31FL3194_MODE_RGB) {
+		for (int i = 0; i < 3; i++) {
+			ret = is31fl3194_blink_one(dev, i, delay_on, delay_off);
+			if (ret != 0) {
+				return ret;
+			}
+		}
+	} else if (data->mode == IS31FL3194_MODE_SINGLE) {
+		ret = is31fl3194_blink_one(dev, led, delay_on, delay_off);
+	}
+
+	if (ret == 0) {
+		ret = i2c_reg_write_byte_dt(&config->bus,
+					    IS31FL3194_UPDATE_REG,
+					    IS31FL3194_UPDATE_VAL);
+	}
+
+	if (ret != 0) {
+		LOG_ERR("%s: LED write failed: %d", dev->name, ret);
+	}
+
+	return ret;
+}
+
+static int is31fl3194_set_brightness(const struct device *dev, uint32_t led, uint8_t value)
+{
+	struct is31fl3194_data *data = dev->data;
+	const struct is31fl3194_config *config = dev->config;
+	const struct led_info *info = is31fl3194_led_to_info(config, led);
+	uint8_t address = IS31FL3194_LED_ADDRESS(led);
 	int ret = 0;
 
 	if (info == NULL) {
 		return -ENODEV;
 	}
 
-	if (info->num_colors != 1) {
+	if (data->mode != IS31FL3194_MODE_SINGLE) {
 		return -ENOTSUP;
 	}
 
 	/* Rescale 0..100 to 0..255 */
 	value = value * 255 / LED_BRIGHTNESS_MAX;
 
-	ret = i2c_reg_write_byte_dt(&config->bus, led_channels[led], value);
+	/* save led value to re-use if user calls led_blink() */
+	data->color[led] = value;
+	LOG_DBG("%s: Write: led %d, reg 0x%x, value 0x%x", dev->name, led, address, value);
+
+	ret = i2c_reg_write_byte_dt(&config->bus, address, value);
 	if (ret == 0) {
 		ret = i2c_reg_write_byte_dt(&config->bus,
 					    IS31FL3194_UPDATE_REG,
@@ -193,6 +401,7 @@ static bool is31fl3194_count_colors(const struct device *dev,
 
 static int is31fl3194_check_config(const struct device *dev)
 {
+	struct is31fl3194_data *data = dev->data;
 	const struct is31fl3194_config *config = dev->config;
 	const struct led_info *info;
 	uint8_t rgb_counts[3] = { 0 };
@@ -216,6 +425,8 @@ static int is31fl3194_check_config(const struct device *dev)
 			}
 
 		}
+
+		data->mode = IS31FL3194_MODE_RGB;
 		break;
 	case 3:
 		/* check that each LED is single-color */
@@ -233,6 +444,8 @@ static int is31fl3194_check_config(const struct device *dev)
 				return -EINVAL;
 			}
 		}
+
+		data->mode = IS31FL3194_MODE_SINGLE;
 		break;
 	default:
 		LOG_ERR("%s: invalid number of LEDs %d (must be 1 or 3)",
@@ -245,6 +458,7 @@ static int is31fl3194_check_config(const struct device *dev)
 
 static int is31fl3194_init(const struct device *dev)
 {
+	struct is31fl3194_data *data = dev->data;
 	const struct is31fl3194_config *config = dev->config;
 	const struct led_info *info = NULL;
 	int i, ret;
@@ -259,6 +473,14 @@ static int is31fl3194_init(const struct device *dev)
 	if (!i2c_is_ready_dt(&config->bus)) {
 		LOG_ERR("%s: I2C device not ready", dev->name);
 		return -ENODEV;
+	}
+
+	/* reset configuration */
+	ret = i2c_reg_write_byte_dt(&config->bus, IS31FL3194_RESET_REG, IS31FL3194_UPDATE_VAL);
+
+	if (ret != 0) {
+		LOG_ERR("Failed to write reset key (%d)", ret);
+		return ret;
 	}
 
 	ret = i2c_reg_read_byte_dt(&config->bus, IS31FL3194_PROD_ID_REG, &prod_id);
@@ -295,14 +517,18 @@ static int is31fl3194_init(const struct device *dev)
 		return ret;
 	}
 
+	/* Set enable bit, on subsequent writes to change modes it will always be set */
+	data->conf_reg = IS31FL3194_CONF_ENABLE;
+
 	/* enable device */
-	return i2c_reg_write_byte_dt(&config->bus, IS31FL3194_CONF_REG, IS31FL3194_CONF_ENABLE);
+	return i2c_reg_write_byte_dt(&config->bus, IS31FL3194_CONF_REG, data->conf_reg);
 }
 
 static DEVICE_API(led, is31fl3194_led_api) = {
 	.set_brightness = is31fl3194_set_brightness,
 	.get_info = is31fl3194_get_info,
 	.set_color = is31fl3194_set_color,
+	.blink = is31fl3194_blink,
 };
 
 #define COLOR_MAPPING(led_node_id)						\
@@ -330,13 +556,14 @@ static DEVICE_API(led, is31fl3194_led_api) = {
 	BUILD_ASSERT(ARRAY_SIZE(is31fl3194_leds_##id) > 0,			\
 		     "No LEDs defined for " #id);				\
 										\
+	static struct is31fl3194_data is31fl3194_data_##id;			\
 	static const struct is31fl3194_config is31fl3194_config_##id = {	\
 		.bus = I2C_DT_SPEC_INST_GET(id),				\
 		.num_leds = ARRAY_SIZE(is31fl3194_leds_##id),			\
 		.led_infos = is31fl3194_leds_##id,				\
 		.current_limits = is31fl3194_currents_##id,			\
 	};									\
-	DEVICE_DT_INST_DEFINE(id, &is31fl3194_init, NULL, NULL,                 \
+	DEVICE_DT_INST_DEFINE(id, &is31fl3194_init, NULL, &is31fl3194_data_##id,\
 			      &is31fl3194_config_##id, POST_KERNEL,             \
 			      CONFIG_LED_INIT_PRIORITY, &is31fl3194_led_api);
 
