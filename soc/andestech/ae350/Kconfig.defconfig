@@ -48,9 +48,6 @@ if RISCV_HAS_CLIC
 config NUM_IRQS
 	default 48
 
-config RISCV_MCAUSE_EXCEPTION_MASK
-	default 0xFFF
-
 config ARCH_IRQ_VECTOR_TABLE_ALIGN
 	default 512 if RISCV_ISA_RV64I
 	default 256
