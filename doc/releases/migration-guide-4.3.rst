@@ -201,5 +201,15 @@ Silabs
 * The separate ``em3`` power state was removed from Series 2 SoCs. The system automatically
   transitions to EM2 or EM3 depending on hardware peripheral requests for the oscillators.
 
+Trusted Firmware-M
+==================
+
+* The signing process for BL2 (MCUboot) was updated. The boards that run using
+  TF-M NS and require BL2 must have their flash layout with the flash controller
+  information. This will ensures that when signing the hex/bin files all the
+  details will be present in the S and NS image. With this fixes, the image now
+  has the details to allow the FWU state machine be correct and allow FOTA.
+  (:github:`94470`)
+
 Architectures
 *************
