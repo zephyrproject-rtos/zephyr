@@ -5,7 +5,11 @@ description: iMX UART
 
 compatible: "nxp,imx-uart"
 
-include: [uart-controller.yaml, pinctrl-device.yaml, "nxp,rdc-policy.yaml"]
+include:
+  - name: uart-controller.yaml
+  - name: pinctrl-device.yaml
+  - name: uart-rs485-controller.yaml
+  - name: nxp,rdc-policy.yaml
 
 properties:
   reg:
