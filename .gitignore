@@ -55,6 +55,7 @@ doc/doc.warnings
 hide-defaults-note
 venv
 .venv
+.envrc
 .DS_Store
 .clangd
 new.info
