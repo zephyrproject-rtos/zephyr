@@ -61,7 +61,6 @@ struct stream {
 	uint32_t channel; /* stores the channel for dma */
 	struct dma_config dma_cfg;
 	struct dma_block_config dma_blk_cfg[CONFIG_SPI_MCUX_FLEXCOMM_DMA_MAX_BLOCKS];
-	int wait_for_dma_status;
 };
 #endif
 
@@ -148,6 +147,7 @@ static void spi_mcux_transfer_next_packet(const struct device *dev)
 		LOG_ERR("Transfer could not start");
 		spi_context_cs_control(&data->ctx, false);
 		spi_context_complete(&data->ctx, dev, -EIO);
+		pm_policy_device_power_lock_put(dev);
 	}
 }
 
@@ -330,9 +330,6 @@ static void spi_mcux_dma_callback(const struct device *dev, void *arg,
 	} else {
 		/* identify the origin of this callback */
 		if (channel == data->dma_tx.channel) {
-			if (status != data->dma_tx.wait_for_dma_status) {
-				return;
-			}
 			/* this part of the transfer ends */
 			data->status_flags |= SPI_MCUX_FLEXCOMM_DMA_TX_DONE_FLAG;
 		} else if (channel == data->dma_rx.channel) {
@@ -342,12 +339,14 @@ static void spi_mcux_dma_callback(const struct device *dev, void *arg,
 			data->status_flags |= SPI_MCUX_FLEXCOMM_DMA_RX_DONE_FLAG;
 			spi_context_cs_control(&data->ctx, false);
 			spi_context_complete(&data->ctx, spi_dev, 0);
+			pm_policy_device_power_lock_put(dev);
 		} else {
 			LOG_ERR("DMA callback channel %d is not valid.",
 								channel);
 			data->status_flags |= SPI_MCUX_FLEXCOMM_DMA_ERROR_FLAG;
 			spi_context_cs_control(&data->ctx, false);
 			spi_context_complete(&data->ctx, spi_dev, -EIO);
+			pm_policy_device_power_lock_put(dev);
 		}
 	}
 }
@@ -409,7 +408,6 @@ static int spi_mcux_dma_tx_load(const struct device *dev, const struct spi_confi
 		blk_cfg->source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
 		blk_cfg->block_size = sizeof(uint32_t);
 		blk_cfg->next_block = NULL;
-		data->dma_tx.wait_for_dma_status = DMA_STATUS_COMPLETE;
 	} else {
 		blk_cfg->block_size = len;
 		blk_cfg->next_block = blk_cfg + 1;
@@ -421,7 +419,6 @@ static int spi_mcux_dma_tx_load(const struct device *dev, const struct spi_confi
 			blk_cfg->source_address = (uint32_t)&data->dummy_tx_buffer;
 			blk_cfg->source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
 		}
-		data->dma_tx.wait_for_dma_status = DMA_STATUS_BLOCK;
 	}
 	return EXIT_SUCCESS;
 }
@@ -689,6 +686,10 @@ static int transceive_dma(const struct device *dev,
 		spi_context_update_rx(&data->ctx, data->word_size_bytes, data->transfer_len);
 		spi_context_cs_control(&data->ctx, false);
 		spi_context_complete(&data->ctx, dev, 0);
+		/* If asynchronous was true, set to false since transfer is done and we
+		 * want to release the power lock below.
+		 */
+		asynchronous = false;
 	} else {
 		/* Enable DMATX/RX. */
 		base->FIFOCFG |= SPI_FIFOCFG_DMARX_MASK | SPI_FIFOCFG_DMATX_MASK;
@@ -699,12 +700,21 @@ static int transceive_dma(const struct device *dev,
 		}
 	}
 
+	/* if asynchronous is true, spi_context_wait_for_completion() just returns 0
+	 * and spi_context_release() is a noop
+	 */
 	ret = spi_context_wait_for_completion(&data->ctx);
 
 out:
 	spi_context_release(&data->ctx, ret);
 
-	pm_policy_device_power_lock_put(dev);
+	if (!asynchronous || (ret != 0)) {
+		/* Only release the power lock if synchronous, or if an error occurred.
+		 * For asynchronous case, the power_lock is released in
+		 * when the transfer is done in the dma completion callback
+		 */
+		pm_policy_device_power_lock_put(dev);
+	}
 
 	return ret;
 }
@@ -917,7 +927,6 @@ static DEVICE_API(spi, spi_mcux_driver_api) = {
 		.dma_cfg = {						\
 			.channel_direction = LPC_DMA_SPI_MCUX_FLEXCOMM_TX,	\
 			.dma_callback = spi_mcux_dma_callback,		\
-			.complete_callback_en = true,			\
 			.block_count = 2,				\
 		}							\
 	},								\
