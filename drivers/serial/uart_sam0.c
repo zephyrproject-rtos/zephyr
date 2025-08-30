@@ -847,7 +847,7 @@ static int uart_sam0_irq_rx_ready(const struct device *dev)
 	const struct uart_sam0_dev_cfg *config = dev->config;
 	SercomUsart * const regs = config->regs;
 
-	return regs->INTFLAG.bit.RXC != 0;
+	return (regs->INTFLAG.bit.RXC != 0) && (regs->INTENSET.bit.RXC != 0);
 }
 
 static int uart_sam0_fifo_read(const struct device *dev, uint8_t *rx_data,
