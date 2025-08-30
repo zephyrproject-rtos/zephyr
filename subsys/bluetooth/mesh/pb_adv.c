@@ -522,7 +522,7 @@ static void gen_prov_cont(struct prov_rx *rx, struct net_buf_simple *buf)
 		return;
 	}
 
-	if (seg > link.rx.last_seg) {
+	if (seg > link.rx.last_seg || seg == 0) {
 		LOG_ERR("Invalid segment index %u", seg);
 		prov_failed(PROV_ERR_NVAL_FMT);
 		return;
