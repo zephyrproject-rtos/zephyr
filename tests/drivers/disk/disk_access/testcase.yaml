@@ -45,3 +45,11 @@ tests:
     platform_allow:
       - native_sim/native/64
       - native_sim
+  drivers.disk.renesas_sci_b_spi:
+    harness_config:
+      fixture: fixture_sdhc
+    filter: dt_compat_enabled("zephyr,sdmmc-disk") and dt_compat_enabled("renesas,ra-spi-sci-b")
+    platform_allow:
+      - ek_ra8m1
+      - ek_ra8d1
+      - mck_ra8t1
