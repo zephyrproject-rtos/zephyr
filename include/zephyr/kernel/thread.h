@@ -279,7 +279,8 @@ struct k_thread {
 #if defined(CONFIG_EVENTS)
 	struct k_thread *next_event_link;
 
-	uint32_t   events;
+	uint32_t   wevents; /* wait on */
+	uint32_t   revents; /* received */
 	uint32_t   event_options;
 
 	/** true if timeout should not wake the thread */
