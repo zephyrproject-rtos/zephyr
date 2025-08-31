@@ -106,6 +106,10 @@ struct smp_streamer {
  */
 int smp_process_request_packet(struct smp_streamer *streamer, void *req);
 
+#if defined(CONFIG_MCUMGR_TRANSPORT_FORWARD_TREE)
+int smp_ft_process_request_packet(struct smp_streamer *streamer, void *vreq);
+#endif
+
 /**
  * @brief Appends an "err" response
  *

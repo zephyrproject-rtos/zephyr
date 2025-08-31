@@ -56,7 +56,9 @@ static struct uart_mcumgr_rx_buf *uart_mcumgr_alloc_rx_buf(const struct device *
 
 	rx_buf = block;
 	rx_buf->length = 0;
+#if defined(CONFIG_MCUMGR_TRANSPORT_FORWARD_TREE)
 	rx_buf->dev = dev;
+#endif
 	return rx_buf;
 }
 
