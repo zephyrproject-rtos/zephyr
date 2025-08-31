@@ -1,0 +1,6 @@
+board:
+  name: rpi_debug_probe
+  full_name: Raspberry Pi Debug Probe
+  vendor: raspberrypi
+  socs:
+  - name: rp2040
