@@ -94,22 +94,22 @@ extern "C" {
 /**
  * @brief Indicates the presence of a block number in the PCB.
  */
-#define RFID_ISO14443_PCB_BLOCK_NUM  0x01U
+#define RFID_ISO14443_PCB_BLOCK_NUM 0x01U
 
 /**
  * @brief Indicates the presence of Node Addressing (NAD) in the PCB.
  */
-#define RFID_ISO14443_PCB_BLOCK_NAD  0x04U
+#define RFID_ISO14443_PCB_BLOCK_NAD 0x04U
 
 /**
  * @brief Indicates the presence of Card Identifier (CID) in the PCB.
  */
-#define RFID_ISO14443_PCB_BLOCK_CID  0x08U
+#define RFID_ISO14443_PCB_BLOCK_CID 0x08U
 
 /**
  * @brief I-Block type used for data transfer.
  */
-#define RFID_ISO14443_PCB_IBLOCK     0x00U
+#define RFID_ISO14443_PCB_IBLOCK 0x00U
 
 /**
  * @brief I-Block with fixed length.
@@ -124,7 +124,7 @@ extern "C" {
 /**
  * @brief R-Block type used for acknowledgment.
  */
-#define RFID_ISO14443_PCB_RBLOCK     0x80U
+#define RFID_ISO14443_PCB_RBLOCK 0x80U
 
 /**
  * @brief R-Block with fixed length.
@@ -139,7 +139,7 @@ extern "C" {
 /**
  * @brief S-Block type used for control messages.
  */
-#define RFID_ISO14443_PCB_SBLOCK     0xC0U
+#define RFID_ISO14443_PCB_SBLOCK 0xC0U
 
 /**
  * @brief S-Block with fixed length.
@@ -149,12 +149,12 @@ extern "C" {
 /**
  * @brief Mask for S-Block indicators.
  */
-#define RFID_ISO14443_PCB_SBLOCK_MASK     0x30U
+#define RFID_ISO14443_PCB_SBLOCK_MASK 0x30U
 
 /**
  * @brief S-Block indicating a request for a wait time extension (WTX).
  */
-#define RFID_ISO14443_PCB_SBLOCK_WTX      0x30U
+#define RFID_ISO14443_PCB_SBLOCK_WTX 0x30U
 
 /**
  * @brief S-Block indicating deselection of the card.

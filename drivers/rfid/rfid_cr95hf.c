@@ -101,6 +101,8 @@ static int rfid_cr95hf_transceive(const struct device *dev, bool release_cs)
 	struct rfid_cr95hf_data *data = dev->data;
 	int err;
 
+	LOG_DBG("snd_buffer[1]: %02X len: %02X", data->snd_buffer[1], data->spi_snd_buffer.len);
+
 	if (data->spi_snd_buffer.len > 0 && data->spi_rcv_buffer.len > 0) {
 		err = spi_transceive_dt(&config->spi, &data->spi_snd_buffer_arr,
 					&data->spi_rcv_buffer_arr);
@@ -186,6 +188,68 @@ static int rfid_cr95hf_init_spi(const struct device *dev)
 			return err;
 		}
 	}
+
+	rfid_cr95hf_IRQ_IN_pulse(irq_in);
+
+	uint8_t tries = 5;
+	uint8_t echo_resp = 0;
+
+	do {
+		/* Send Reset Command*/
+		data->snd_buffer[0] = 0x01; /* SPI control Byte: Reset*/
+		data->spi_snd_buffer.len = 1;
+		data->spi_rcv_buffer.len = 0;
+
+		err = rfid_cr95hf_transceive(dev, true);
+		if (err) {
+			LOG_ERR("Failed to send reset command (err %d)", err);
+			return err;
+		}
+
+		rfid_cr95hf_IRQ_IN_pulse(irq_in);
+
+		/* Send Echo */
+		data->snd_buffer[0] = 0x00; /* SPI control Byte: Send*/
+		data->snd_buffer[1] = 0x55; /* CMD: Echo */
+		data->spi_snd_buffer.len = 2;
+
+		err = rfid_cr95hf_transceive(dev, true);
+		if (err) {
+			LOG_ERR("Failed to send reset command (err %d)", err);
+			return err;
+		}
+
+		/* Receive Echo*/
+		data->snd_buffer[0] = 0x02; /* SPI control Byte: Send*/
+		data->spi_snd_buffer.len = 1;
+		data->spi_rcv_buffer.len = 2; /* Byte 0: Dummy Read; Byte 1: Echo Value*/
+
+		err = rfid_cr95hf_transceive(dev, true);
+		if (err) {
+			LOG_ERR("Failed to read echo (err %d)", err);
+			return err;
+		}
+
+		echo_resp = data->rcv_buffer[1];
+
+		LOG_DBG("Echo Response: %02X", echo_resp);
+		tries--;
+	} while (echo_resp != 0x55 && tries > 0);
+
+	if (tries == 0 && echo_resp != 0x55) {
+		LOG_ERR("Initialization Failed");
+		return -EIO;
+	}
+
+	return 0;
+}
+
+static int rfid_cr95hf_reset(const struct device *dev)
+{
+	struct rfid_cr95hf_data *data = dev->data;
+	const struct rfid_cr95hf_spi_config *config = dev->config;
+	int err = 0;
+	const struct gpio_dt_spec *irq_in = &config->irq_in;
 
 	rfid_cr95hf_IRQ_IN_pulse(irq_in);
 
@@ -402,6 +466,47 @@ static int rfid_cr95hf_response(const struct device *dev)
 	return 0;
 }
 
+/**
+ * @brief Sets the device to tag detector mode
+ *
+ * The device is in sleep mode until a tag is detected.
+ * If timeout is set to K_FOREVER, this function blocks until device wakes up.
+ * Wake up is detected by IRQ_OUT or if not configured by polling
+ */
+static int rfid_cr95hf_tag_detector(const struct device *dev, k_timeout_t timeout)
+{
+	struct rfid_cr95hf_data *data = dev->data;
+	int err;
+	uint8_t tag_detector_msg[17] = CR95HF_WFE_TAG_DETECTOR_ARRAY;
+
+	memcpy(data->snd_buffer, tag_detector_msg, 17);
+	data->spi_snd_buffer.len = 17;
+	data->spi_rcv_buffer.len = 0;
+
+	err = rfid_cr95hf_transceive(dev, true);
+	if (err) {
+		LOG_ERR("Failed to send tag detector command (err %d)", err);
+		return err;
+	}
+
+	/* Block until the CR95HF device has woken up */
+	err = rfid_cr95hf_wait(dev, timeout);
+	if (err) {
+		return err;
+	}
+
+	err = rfid_cr95hf_response(dev);
+	if (err) {
+		LOG_ERR("Failed to read response after wakeup (err %d)", err);
+		return err;
+	}
+
+	if (data->spi_rcv_buffer.len == 0) {
+		return -EAGAIN;
+	}
+	return 0;
+}
+
 static int rfid_cr95hf_claim(const struct device *dev)
 {
 	struct rfid_cr95hf_data *data = dev->data;
@@ -445,6 +550,20 @@ static int rfid_cr95hf_set_property(const struct device *dev, struct rfid_proper
 	case RFID_PROP_TIMEOUT:
 		data->timeout_us = prop->timeout_us;
 		return 0;
+
+	case RFID_PROP_SLEEP:
+		k_timeout_t tout;
+
+		if (prop->timeout_us == UINT32_MAX) {
+			tout = K_FOREVER;
+		} else {
+			tout = K_USEC(prop->timeout_us);
+		}
+
+		return rfid_cr95hf_tag_detector(dev, tout);
+
+	case RFID_PROP_RESET:
+		return rfid_cr95hf_reset(dev);
 
 	default:
 		break;

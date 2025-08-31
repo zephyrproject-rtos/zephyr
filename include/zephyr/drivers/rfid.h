@@ -166,6 +166,12 @@ enum rfid_property_type {
 
 	/** Response value to SelectA (field sel_res) */
 	RFID_PROP_SEL_RES,
+
+	/** Turn RFID device into Sleep mode */
+	RFID_PROP_SLEEP,
+
+	/** Reset and re-initialization of the RFID device */
+	RFID_PROP_RESET,
 };
 
 /**

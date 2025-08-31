@@ -9,8 +9,8 @@ Overview
 The RFID Subsystem provides APIs for RFID protocol standards.
 Currently, only ISO 14443A is implemented. The protocol utilizes the RFID driver API.
 
-Example
-*******
+Example (polling)
+*****************
 
 To read the UID of an RFID tag, the following steps are necessary:
 
@@ -80,6 +80,58 @@ you can print out the UID. The following example demonstrates this in a while lo
 					printk("%X", info.uid[i]);
 				}
 			}
+		}
+	}
+
+Example (sleep mode)
+********************
+
+If the RFID device support sleep mode you can use ``rfid_set_properties()`` to set the RFID device
+into sleep mode and wait for a tag. Here is an example for a CR95HF:
+
+.. code-block:: c
+
+	static void rfid_main(void *p1, void *p2, void *p3)
+	{
+		struct rfid_property props[1];
+
+		props[0].type = RFID_PROP_SLEEP;
+		/* refid_set_properties shall block until a tag is detected*/
+		props[0].timeout_us = UINT32_MAX;
+
+		props[1].type = RFID_PROP_RESET;
+
+
+		while(1) {
+			rfid_set_properties(rfid_dev, &props[0], 1);
+
+			if(props[0].status != 0)
+			{
+				/** Workaround for CR95HF:
+				* If the Tag is removed while rfid_iso14443a_sdd is not finished, the
+				* CR95HF seems to be in an internal state where Sleep Mode is not possible
+				* any longer. To leave that state, you have to re-represent the tag and
+				* wait for the end of communication or you have to reset the device.
+				*/
+				rfid_set_properties(rfid_dev, &props[1], 1);
+				continue;
+			}
+
+			rfid_load_protocol(rfid_dev, RFID_PROTO_ISO14443A,
+				RFID_MODE_INITIATOR | RFID_MODE_TX_106 | RFID_MODE_RX_106);
+
+			memset(&info, 0, sizeof(info));
+
+			if(rfid_iso14443a_request(rfid_dev,info.atqa,true) == 0) {
+				if(rfid_iso14443a_sdd(rfid_dev,(struct rfid_iso14443a_info *)&info) == 0) {
+					printk("UID: ");
+					for(int i = 0; i < info.uid_len; i++)
+					{
+						printk("%X",info.uid[i]);
+					}
+				}
+			}
+
 		}
 	}
 
