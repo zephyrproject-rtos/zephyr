@@ -86,6 +86,17 @@
 				int-gpios = <&test_gpio 0 0>;
 				sqw-frequency = <4096>;
 			};
+
+			test_ds3231: ds3231@a {
+				compatible = "maxim,ds3231-mfd";
+				reg = <0xa>;
+
+				test_ds3231_rtc: ds3231_rtc {
+					compatible = "maxim,ds3231-rtc";
+					isw-gpios = <&test_gpio 0 0>;
+					freq-32khz-gpios = <&test_gpio 0 0>;
+				};
+			};
 		};
 	};
 };
