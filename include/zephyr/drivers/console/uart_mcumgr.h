@@ -27,7 +27,9 @@ struct uart_mcumgr_rx_buf {
 	void *fifo_reserved;   /* 1st word reserved for use by fifo */
 	uint8_t data[CONFIG_UART_MCUMGR_RX_BUF_SIZE];
 	int length;
+#if defined(CONFIG_MCUMGR_TRANSPORT_FORWARD_TREE)
 	const struct device *dev;
+#endif
 };
 
 /** @typedef uart_mcumgr_recv_fn
