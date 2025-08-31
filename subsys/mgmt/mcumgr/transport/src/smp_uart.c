@@ -22,6 +22,9 @@
 
 BUILD_ASSERT(CONFIG_MCUMGR_TRANSPORT_UART_MTU != 0, "CONFIG_MCUMGR_TRANSPORT_UART_MTU must be > 0");
 
+static const struct device *const uart_mcumgr_dev =
+	DEVICE_DT_GET(DT_CHOSEN(zephyr_uart_mcumgr));
+
 struct device;
 
 static void smp_uart_process_rx_queue(struct k_work *work);
@@ -87,7 +90,7 @@ static int smp_uart_tx_pkt(struct net_buf *nb)
 {
 	int rc;
 
-	rc = uart_mcumgr_send(nb->data, nb->len);
+	rc = uart_mcumgr_send(uart_mcumgr_dev, nb->data, nb->len);
 	smp_packet_free(nb);
 
 	return rc;
@@ -103,7 +106,7 @@ static int smp_uart_init(void)
 	rc = smp_transport_init(&smp_uart_transport);
 
 	if (rc == 0) {
-		uart_mcumgr_register(smp_uart_rx_frag);
+		uart_mcumgr_register(uart_mcumgr_dev, smp_uart_rx_frag);
 #ifdef CONFIG_SMP_CLIENT
 		smp_client_transport.smpt = &smp_uart_transport;
 		smp_client_transport.smpt_type = SMP_SERIAL_TRANSPORT;
