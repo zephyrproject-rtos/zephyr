@@ -1,0 +1,10 @@
+# Copyright (c) 2025, Suraj Sonawane <surajsonawane0215@gmail.com@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config DAI_VIRTUAL
+	bool "Virtual DAI driver"
+	help
+	  Select this to enable support for a Virtual DAI driver.
+	  This driver is useful for debugging and rapid prototyping without
+	  real hardware. It simulates audio input/output behavior in software
+	  and is useful in memory-to-memory pipelines.
