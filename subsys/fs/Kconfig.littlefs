@@ -132,4 +132,10 @@ config FS_LITTLEFS_DISK_VERSION_NUMBER
 	help
 	  Set to 0 to use the latest littlefs disk version (LFS_DISK_VERSION).
 
+config FS_LITTLEFS_THREADSAFE
+	bool "Enabling locking on all littlefs APIs"
+	default 0
+	help
+	  Makes littlefs threadsafe by wrapping all public littlefs APIs in a lock
+
 endif # FILE_SYSTEM_LITTLEFS

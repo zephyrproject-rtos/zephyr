@@ -49,3 +49,7 @@ tests:
     extra_configs:
       - CONFIG_APP_TEST_CUSTOM=y
       - CONFIG_FS_LITTLEFS_FC_HEAP_SIZE=16384
+  filesystem.littlefs.api_lock:
+    timeout: 60
+    extra_configs:
+      - CONFIG_FS_LITTLEFS_THREADSAFE=y

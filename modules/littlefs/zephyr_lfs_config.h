@@ -73,6 +73,9 @@ extern "C"
 #define LFS_ASSERT(test) __ASSERT_NO_MSG(test)
 #endif
 
+#ifdef CONFIG_FS_LITTLEFS_THREADSAFE
+#define LFS_THREADSAFE
+#endif
 
 /* Builtin functions, these may be replaced by more efficient */
 /* toolchain-specific implementations. LFS_NO_INTRINSICS falls back to a more */

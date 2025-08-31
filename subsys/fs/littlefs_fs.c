@@ -1070,6 +1070,19 @@ static const struct fs_file_system_t littlefs_fs = {
 #define FS_DISK_VERSION(inst)
 #endif
 
+#define LITTLEFS_DEFINE_LOCK_FNS(inst) \
+K_MUTEX_DEFINE(littlefs_api_lock_##inst); \
+int littlefs_lock_##inst(const struct lfs_config *c) \
+{ \
+	ARG_UNUSED(c); \
+	return k_mutex_lock(&littlefs_api_lock_##inst, K_FOREVER); \
+} \
+int littlefs_unlock_##inst(const struct lfs_config *c) \
+{ \
+	ARG_UNUSED(c); \
+	return k_mutex_unlock(&littlefs_api_lock_##inst); \
+}
+
 #define DEFINE_FS(inst) \
 static uint8_t __aligned(4) \
 	read_buffer_##inst[DT_INST_PROP(inst, cache_size)]; \
@@ -1086,8 +1099,12 @@ BUILD_ASSERT((DT_INST_PROP(inst, cache_size) \
 	      % DT_INST_PROP(inst, read_size)) == 0); \
 BUILD_ASSERT((DT_INST_PROP(inst, cache_size) \
 	      % DT_INST_PROP(inst, prog_size)) == 0); \
+IF_ENABLED(CONFIG_FS_LITTLEFS_THREADSAFE, (LITTLEFS_DEFINE_LOCK_FNS(inst))) \
 static struct fs_littlefs fs_data_##inst = { \
 	.cfg = { \
+		IF_ENABLED(CONFIG_FS_LITTLEFS_THREADSAFE, ( \
+			.lock = littlefs_lock_##inst, \
+			.unlock = littlefs_unlock_##inst,)) \
 		.read_size = DT_INST_PROP(inst, read_size), \
 		.prog_size = DT_INST_PROP(inst, prog_size), \
 		.cache_size = DT_INST_PROP(inst, cache_size), \
