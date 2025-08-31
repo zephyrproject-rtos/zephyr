@@ -66,3 +66,25 @@ int xendom_populate_physmap(int domid, unsigned int extent_order,
 
 	return HYPERVISOR_memory_op(XENMEM_populate_physmap, &reservation);
 }
+
+int xendom_acquire_resource(domid_t domid, uint16_t type, uint32_t id, uint64_t frame,
+			    uint32_t *nr_frames, xen_pfn_t *frame_list)
+{
+	struct xen_mem_acquire_resource acquire_res = {
+		.domid = domid,
+		.type = type,
+		.id = id,
+		.pad = 0,
+		.frame = frame,
+		.nr_frames = *nr_frames,
+	};
+	int ret;
+
+	set_xen_guest_handle(acquire_res.frame_list, frame_list);
+
+	ret = HYPERVISOR_memory_op(XENMEM_acquire_resource, &acquire_res);
+
+	*nr_frames = acquire_res.nr_frames;
+
+	return ret;
+}
