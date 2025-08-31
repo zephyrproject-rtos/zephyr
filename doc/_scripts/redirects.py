@@ -168,6 +168,8 @@ REDIRECTS = (
     ('guides/west/zephyr-cmds', 'develop/west/zephyr-cmds'),
     ('guides/zephyr_cmake_package', 'build/zephyr_cmake_package'),
     ('hardware/peripherals/eeprom', 'hardware/peripherals/eeprom/index'),
+    ('hardware/peripherals/mipi_dbi', 'hardware/peripherals/display/index'),
+    ('hardware/peripherals/mipi_dsi', 'hardware/peripherals/display/index'),
     ('hardware/peripherals/sensor', 'hardware/peripherals/sensor/index'),
     ('kernel/libc/index', 'develop/languages/c/index'),
     ('reference/api/api_lifecycle', 'develop/api/api_lifecycle'),
