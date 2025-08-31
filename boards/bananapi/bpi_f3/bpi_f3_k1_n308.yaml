@@ -1,0 +1,9 @@
+identifier: bpi_f3/k1/n308
+name: Banana Pi BPI-F3
+type: mcu
+arch: riscv
+ram: 256
+toolchain:
+  - zephyr
+supported:
+  - uart
