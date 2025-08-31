@@ -40,8 +40,6 @@ Peripherals
    ipm.rst
    led.rst
    mdio.rst
-   mipi_dbi.rst
-   mipi_dsi.rst
    mspi.rst
    mbox.rst
    pcie.rst
