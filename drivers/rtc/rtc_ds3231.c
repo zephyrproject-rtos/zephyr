@@ -9,7 +9,7 @@
 /* TODO: handle century bit, external storage? */
 
 #include <zephyr/drivers/mfd/ds3231.h>
-#include <zephyr/drivers/rtc/rtc_ds3231.h>
+#include "rtc_ds3231.h"
 
 #include <zephyr/drivers/rtc.h>
 #include <zephyr/pm/device.h>
