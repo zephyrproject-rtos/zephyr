@@ -1,0 +1,17 @@
+# Copyright (c) 2025 Junhui Liu <junhui.liu@pigmoral.tech>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_K1_N308
+	select RISCV
+	select RISCV_PRIVILEGED
+	select RISCV_ISA_RV32I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_F
+	select RISCV_ISA_EXT_D
+	select RISCV_ISA_EXT_C
+	select RISCV_ISA_EXT_ZICSR
+	select RISCV_ISA_EXT_ZIFENCEI
+	select RISCV_HAS_CLIC
+	select INCLUDE_RESET_VECTOR
+	select ATOMIC_OPERATIONS_C
