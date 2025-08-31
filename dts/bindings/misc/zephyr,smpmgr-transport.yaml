@@ -1,0 +1,23 @@
+# Copyright (c) 2025 Freedom Veiculos Eletricos
+# SPDX-License-Identifier: Apache-2.0
+
+description: SMP MCUmgr Interface
+
+compatible: "zephyr,smpmgr-transport"
+
+include:
+  - name: base.yaml
+
+properties:
+  transport:
+    type: phandle
+    required: true
+    description: phandle to the transport node.
+
+  type:
+    type: string
+    required: true
+    enum:
+      - "serial"
+      - "ble"
+    description: define the transport type.
