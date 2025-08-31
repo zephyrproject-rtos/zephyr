@@ -1919,7 +1919,6 @@ Documentation Infrastructure:
   status: odd fixes
   files:
     - drivers/mipi_dsi/
-    - doc/hardware/peripherals/mipi_dsi.rst
     - include/zephyr/drivers/mipi_dsi.h
     - include/zephyr/drivers/mipi_dsi/
     - tests/drivers/mipi_dsi/
