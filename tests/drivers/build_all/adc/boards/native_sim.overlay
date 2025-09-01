@@ -398,6 +398,13 @@
 				boost-current-bias = <0>;
 				irq-gpios = <&test_gpio 0 0>;
 			};
+
+			test_spi_ad4170: ad4170@21 {
+				compatible = "adi,ad4170-adc";
+				reg = <0x21>;
+				spi-max-frequency = <0>;
+				#io-channel-cells = <1>;
+			};
 		};
 	};
 };
