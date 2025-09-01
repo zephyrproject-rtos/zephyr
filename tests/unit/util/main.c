@@ -681,6 +681,16 @@ ZTEST(util, test_DIV_ROUND_UP)
 	zassert_equal(DIV_ROUND_UP(0, 1), 0);
 	zassert_equal(DIV_ROUND_UP(1, 2), 1);
 	zassert_equal(DIV_ROUND_UP(3, 2), 2);
+	zassert_equal(DIV_ROUND_UP(-3, -2), 2);
+	zassert_equal(DIV_ROUND_UP(3, -2), 1);
+	zassert_equal(DIV_ROUND_UP(-3, 2), 1);
+}
+
+ZTEST(util, test_assert_DIV_ROUND_UP_and_DIV_ROUND_CLOSEST)
+{
+	ztest_set_assert_valid(true);
+	DIV_ROUND_UP(3, 0);
+	DIV_ROUND_CLOSEST(3, 0);
 }
 
 ZTEST(util, test_DIV_ROUND_CLOSEST)

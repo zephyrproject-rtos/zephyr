@@ -339,12 +339,18 @@ extern "C" {
 #define WB_DN(x) ROUND_DOWN(x, sizeof(void *))
 
 /**
- * @brief Divide and round up.
+ * @brief Divide and round up towards infinity, akin to ceil().
+ *
+ * @note Works with negative operands, asserts if denominator is zero.
  *
  * Example:
  * @code{.c}
+ * DIV_ROUND_UP(3, 0); // Asserts
  * DIV_ROUND_UP(1, 2); // 1
  * DIV_ROUND_UP(3, 2); // 2
+ * DIV_ROUND_UP(-3, -2); // 2
+ * DIV_ROUND_UP(3, -2); // 1
+ * DIV_ROUND_UP(-3, 2); // 1
  * @endcode
  *
  * @param n Numerator.
@@ -352,7 +358,11 @@ extern "C" {
  *
  * @return The result of @p n / @p d, rounded up.
  */
-#define DIV_ROUND_UP(n, d) (((n) + (d) - 1) / (d))
+#define DIV_ROUND_UP(n, d) ((d == 0)			\
+	? __ASSERT_NO_MSG(false)			\
+	: ((((n % d) == 0) || ((n < 0) ^ (d < 0)))	\
+		? (n / d)				\
+		: (n / d) + 1))
 
 /**
  * @brief Divide and round to the nearest integer.
@@ -369,10 +379,11 @@ extern "C" {
  *
  * @return The result of @p n / @p d, rounded to the nearest integer.
  */
-#define DIV_ROUND_CLOSEST(n, d)                                                                    \
-	(((((__typeof__(n))-1) < 0) && (((__typeof__(d))-1) < 0) && ((n) < 0) ^ ((d) < 0))         \
-		 ? ((n) - ((d) / 2)) / (d)                                                         \
-		 : ((n) + ((d) / 2)) / (d))
+#define DIV_ROUND_CLOSEST(n, d) ((d == 0)							\
+	? __ASSERT_NO_MSG(false)								\
+	: (((((__typeof__(n))-1) < 0) && (((__typeof__(d))-1) < 0) && ((n) < 0) ^ ((d) < 0))	\
+		? ((n) - ((d) / 2)) / (d)							\
+		: ((n) + ((d) / 2)) / (d)))
 
 #ifndef MAX
 /**
