@@ -56,7 +56,7 @@ class TestDevice:
     def test_seed(self, capfd, out_path, seed):
         test_platforms = ['native_sim']
         path = os.path.join(TEST_DATA, 'tests', 'seed_native_sim')
-        args = ['--detailed-test-id', '--outdir', out_path, '-i', '-T', path, '-vv',] + \
+        args = ['--no-detailed-test-id', '--outdir', out_path, '-i', '-T', path, '-vv',] + \
                ['--seed', f'{seed[0]}'] + \
                [val for pair in zip(
                    ['-p'] * len(test_platforms), test_platforms
@@ -72,5 +72,5 @@ class TestDevice:
 
         assert str(sys_exit.value) == '1'
 
-        expected_line = r'seed_native_sim.dummy FAILED Failed \(rc=1\) \(native (\d+\.\d+)s/seed: {} <host>\)'.format(seed[0])
+        expected_line = r'seed_native_sim.dummy\s+FAILED rc=1 \(native (\d+\.\d+)s/seed: {} <host>\)'.format(seed[0])
         assert re.search(expected_line, err)
