@@ -87,9 +87,7 @@
 			rgb-param = [40 02 14];
 			mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
 		};
-
 	};
-
 };
 
 &usb_serial {
