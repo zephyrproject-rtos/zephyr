@@ -171,7 +171,7 @@
 		writeoc = "pp4io";
 		readoc = "read4io";
 		sck-frequency = <8000000>;
-		jedec-id = [ c2 28 17  ];
+		jedec-id = [c2 28 17];
 		size = <67108864>;
 		has-dpd;
 		t-enter-dpd = <10000>;
