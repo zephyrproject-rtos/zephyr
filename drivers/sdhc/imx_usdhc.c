@@ -221,7 +221,7 @@ static void imx_usdhc_error_recovery(const struct device *dev)
 	if (((status & (uint32_t)kUSDHC_DataInhibitFlag) != 0U) ||
 	    (USDHC_GetAdmaErrorStatusFlags(base) != 0U)) {
 		/* Reset data line */
-		USDHC_Reset(base, kUSDHC_DataInhibitFlag, 100U);
+		USDHC_Reset(base, kUSDHC_ResetData, 100U);
 	}
 }
 
