@@ -207,7 +207,6 @@ class Handler:
             else:
                 self.instance.reason = self.instance.reason or "Unknown Error"
         elif harness.status != TwisterStatus.NONE:
-            print("got in here with status " + str(harness.status))
             self.instance.status = harness.status
             if harness.status in [TwisterStatus.FAIL, TwisterStatus.ERROR]:
                 self.instance.reason = harness.reason
