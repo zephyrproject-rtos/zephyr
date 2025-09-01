@@ -612,7 +612,7 @@ static int lsm9ds1_init(const struct device *dev)
 {
 	const struct lsm9ds1_config *cfg = dev->config;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
-	struct lsm9ds1_data *lsm9ds1 = dev->data;
+	struct lsm9ds1_data *data = dev->data;
 	uint8_t chip_id, fs;
 	int ret;
 
@@ -649,7 +649,7 @@ static int lsm9ds1_init(const struct device *dev)
 		return ret;
 	}
 
-	lsm9ds1->acc_gain = lsm9ds1_accel_fs_val_to_gain(fs);
+	data->acc_gain = lsm9ds1_accel_fs_val_to_gain(fs);
 
 	fs = cfg->gyro_range;
 	LOG_DBG("gyro range is %d", fs);
@@ -658,7 +658,7 @@ static int lsm9ds1_init(const struct device *dev)
 		LOG_ERR("failed to set gyroscope range %d\n", fs);
 		return ret;
 	}
-	lsm9ds1->gyro_gain = (lsm9ds1_gyro_fs_sens[fs] * GAIN_UNIT_G);
+	data->gyro_gain = (lsm9ds1_gyro_fs_sens[fs] * GAIN_UNIT_G);
 
 	return 0;
 }
