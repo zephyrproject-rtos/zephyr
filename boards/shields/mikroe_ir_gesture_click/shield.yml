@@ -1,0 +1,6 @@
+shield:
+  name: mikroe_ir_gesture_click
+  full_name: IR Gesture Click
+  vendor: mikroe
+  supported_features:
+    - sensor
