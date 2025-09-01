@@ -232,24 +232,26 @@
 			#io-channel-cells = <1>;
 		};
 
-		gmac: ethernet@40050000 {
-			compatible = "atmel,sam-gmac";
+		ethernet@40050000 {
+			compatible = "microchip,sam-ethernet-controller";
 			reg = <0x40050000 0x4000>;
 			clocks = <&pmc PMC_TYPE_PERIPHERAL 39>;
-			interrupts = <39 0>, <66 0>, <67 0>;
-			interrupt-names = "gmac", "q1", "q2";
-			num-queues = <3>;
-			local-mac-address = [00 00 00 00 00 00];
-			status = "disabled";
-		};
 
-		mdio: mdio@40050000 {
-			compatible = "atmel,sam-mdio";
-			reg = <0x40050000 0x4000>;
-			clocks = <&pmc PMC_TYPE_PERIPHERAL 39>;
-			status = "disabled";
-			#address-cells = <1>;
-			#size-cells = <0>;
+			gmac: ethernet {
+				compatible = "atmel,sam-gmac";
+				interrupts = <39 0>, <66 0>, <67 0>;
+				interrupt-names = "gmac", "q1", "q2";
+				num-queues = <3>;
+				local-mac-address = [00 00 00 00 00 00];
+				status = "disabled";
+			};
+
+			mdio: mdio {
+				compatible = "atmel,sam-mdio";
+				status = "disabled";
+				#address-cells = <1>;
+				#size-cells = <0>;
+			};
 		};
 
 		tc3: tc@40054000 {
