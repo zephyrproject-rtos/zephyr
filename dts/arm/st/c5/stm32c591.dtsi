@@ -1,0 +1,49 @@
+/*
+ * Copyright (c) 2026 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/c5/stm32c551.dtsi>
+
+/ {
+	soc {
+		compatible = "st,stm32c591", "st,stm32c5", "simple-bus";
+
+		pinctrl: pin-controller@42020000 {
+			gpiof: gpio@42021400 {
+				compatible = "st,stm32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x42021400 0x400>;
+				clocks = <&rcc STM32_CLOCK(AHB2, 5)>;
+			};
+
+			gpiog: gpio@42021800 {
+				compatible = "st,stm32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x42021800 0x400>;
+				clocks = <&rcc STM32_CLOCK(AHB2, 6)>;
+			};
+		};
+
+		usart6: serial@40006400 {
+			compatible = "st,stm32-usart", "st,stm32-uart";
+			reg = <0x40006400 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB1, 25)>;
+			resets = <&rctl STM32_RESET(APB1L, 25)>;
+			interrupts = <96 0>;
+			status = "disabled";
+		};
+
+		uart7: serial@40007800 {
+			compatible = "st,stm32-uart";
+			reg = <0x40007800 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB1, 30)>;
+			resets = <&rctl STM32_RESET(APB1L, 30)>;
+			interrupts = <97 0>;
+			status = "disabled";
+		};
+	};
+};
