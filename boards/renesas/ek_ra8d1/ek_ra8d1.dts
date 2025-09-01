@@ -49,22 +49,22 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map =	<0 0 &ioport0 4 0>,	/* AN  */
-				<1 0 &ioport5 7 0>,	/* RST */
-				<2 0 &ioport4 13 0>,	/* CS   */
-				<3 0 &ioport4 12 0>,	/* SCK  */
-				<4 0 &ioport4 10 0>,	/* MISO */
-				<5 0 &ioport4 11 0>,	/* MOSI */
-							/* +3.3V */
-							/* GND */
-				<6 0 &ioport9 7 0>,	/* PWM  */
-				<7 0 &ioport0 10 0>,	/* INT  */
-				<8 0 &ioport4 8 0>,	/* RX   */
-				<9 0 &ioport4 9 0>,	/* TX   */
-				<10 0 &ioport4 0 0>,	/* SCL  */
-				<11 0 &ioport4 1 0>;	/* SDA  */
-							/* +5V */
-							/* GND */
+		gpio-map = <0 0 &ioport0 4 0>,	/* AN  */
+			   <1 0 &ioport5 7 0>,	/* RST */
+			   <2 0 &ioport4 13 0>,	/* CS   */
+			   <3 0 &ioport4 12 0>,	/* SCK  */
+			   <4 0 &ioport4 10 0>,	/* MISO */
+			   <5 0 &ioport4 11 0>,	/* MOSI */
+			   /* +3.3V */
+			   /* GND */
+			   <6 0 &ioport9 7 0>,	/* PWM  */
+			   <7 0 &ioport0 10 0>,	/* INT  */
+			   <8 0 &ioport4 8 0>,	/* RX   */
+			   <9 0 &ioport4 9 0>,	/* TX   */
+			   <10 0 &ioport4 0 0>,	/* SCL  */
+			   <11 0 &ioport4 1 0>;	/* SDA  */
+		/* +5V */
+		/* GND */
 	};
 
 	buttons {
@@ -94,11 +94,11 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map =	<14 0 &ioport5 11 0>,	/* IIC_SDA */
-				<15 0 &ioport4 4 0>,	/* DISP_BLEN */
-				<16 0 &ioport5 12 0>,	/* IIC_SCL */
-				<17 0 &ioport5 10 0>,	/* DISP_INT */
-				<18 0 &ioporta 1 0>;	/* DISP_RST */
+		gpio-map = <14 0 &ioport5 11 0>,	/* IIC_SDA */
+			   <15 0 &ioport4 4 0>,	/* DISP_BLEN */
+			   <16 0 &ioport5 12 0>,	/* IIC_SCL */
+			   <17 0 &ioport5 10 0>,	/* DISP_INT */
+			   <18 0 &ioporta 1 0>;	/* DISP_RST */
 	};
 
 	ek_ra8d1_parallel_graphics_expansion: parallel-graphics-expansion {
@@ -399,12 +399,12 @@
 	bank@0 {
 		reg = <0>;
 		renesas,ra-sdram-timing = <SDRAM_TRAS_6CYCLES
-		SDRAM_TRCD_3CYCLES
-		SDRAM_TRP_3CYCLES
-		SDRAM_TWR_2CYCLES
-		SDRAM_TCL_3CYCLES
-		937
-		SDRAM_TREFW_8CYCLES>;
+					   SDRAM_TRCD_3CYCLES
+					   SDRAM_TRP_3CYCLES
+					   SDRAM_TWR_2CYCLES
+					   SDRAM_TCL_3CYCLES
+					   937
+					   SDRAM_TREFW_8CYCLES>;
 	};
 };
 
