@@ -906,64 +906,48 @@ static int arducam_mega_get_caps(const struct device *dev,
 
 static int arducam_mega_set_ctrl(const struct device *dev, uint32_t id)
 {
-	const struct arducam_mega_config *cfg = dev->config;
 	struct arducam_mega_data *drv_data = dev->data;
-	int ret = 0;
 
 	switch (id) {
 	case VIDEO_CID_EXPOSURE_AUTO:
-		ret |= arducam_mega_set_exposure_enable(dev, drv_data->ctrls.exp_auto.val);
-		break;
+		return arducam_mega_set_exposure_enable(dev, drv_data->ctrls.exp_auto.val);
 	case VIDEO_CID_EXPOSURE:
-		ret |= arducam_mega_set_exposure(dev, drv_data->ctrls.exposure.val);
-		break;
+		return arducam_mega_set_exposure(dev, drv_data->ctrls.exposure.val);
 	case VIDEO_CID_AUTOGAIN:
-		ret |= arducam_mega_set_gain_enable(dev, drv_data->ctrls.gain_auto.val);
-		break;
+		return arducam_mega_set_gain_enable(dev, drv_data->ctrls.gain_auto.val);
 	case VIDEO_CID_GAIN:
-		ret |= arducam_mega_set_gain(dev, drv_data->ctrls.gain.val);
-		break;
+		return arducam_mega_set_gain(dev, drv_data->ctrls.gain.val);
 	case VIDEO_CID_BRIGHTNESS:
-		ret |= arducam_mega_set_brightness(dev, drv_data->ctrls.brightness.val);
-		break;
+		return arducam_mega_set_brightness(dev, drv_data->ctrls.brightness.val);
 	case VIDEO_CID_SATURATION:
-		ret |= arducam_mega_set_saturation(dev, drv_data->ctrls.saturation.val);
-		break;
+		return arducam_mega_set_saturation(dev, drv_data->ctrls.saturation.val);
 	case VIDEO_CID_AUTO_WHITE_BALANCE:
-		ret |= arducam_mega_set_white_bal_enable(dev, drv_data->ctrls.whitebalauto.val);
-		break;
+		return arducam_mega_set_white_bal_enable(dev, drv_data->ctrls.whitebalauto.val);
 	case VIDEO_CID_WHITE_BALANCE_TEMPERATURE:
-		ret |= arducam_mega_set_white_bal(dev, drv_data->ctrls.whitebal.val);
-		break;
+		return arducam_mega_set_white_bal(dev, drv_data->ctrls.whitebal.val);
 	case VIDEO_CID_CONTRAST:
-		ret |= arducam_mega_set_contrast(dev, drv_data->ctrls.contrast.val);
-		break;
+		return arducam_mega_set_contrast(dev, drv_data->ctrls.contrast.val);
 	case VIDEO_CID_JPEG_COMPRESSION_QUALITY:
-		ret |= arducam_mega_set_JPEG_quality(dev, drv_data->ctrls.quality.val);
-		break;
+		return arducam_mega_set_JPEG_quality(dev, drv_data->ctrls.quality.val);
 	case VIDEO_CID_ARDUCAM_EV:
-		ret |= arducam_mega_set_EV(dev, drv_data->ctrls.ev.val);
-		break;
+		return arducam_mega_set_EV(dev, drv_data->ctrls.ev.val);
 	case VIDEO_CID_SHARPNESS:
-		ret |= arducam_mega_set_sharpness(dev, drv_data->ctrls.sharpness.val);
-		break;
+		return arducam_mega_set_sharpness(dev, drv_data->ctrls.sharpness.val);
 	case VIDEO_CID_ARDUCAM_COLOR_FX:
-		ret |= arducam_mega_set_special_effects(dev, drv_data->ctrls.support_special_effects.val);
-		break;
+		return arducam_mega_set_special_effects(dev, drv_data->ctrls.support_special_effects.val);
 	case VIDEO_CID_ARDUCAM_LOWPOWER:
-		ret |= arducam_mega_set_lowpower_enable(dev, drv_data->ctrls.lowpower.val);
-		break;
-	case VIDEO_CID_ARDUCAM_RESET:
+		return arducam_mega_set_lowpower_enable(dev, drv_data->ctrls.lowpower.val);
+	case VIDEO_CID_ARDUCAM_RESET: {
+		int ret;
 		drv_data->ctrls.reset.val = 0;
-		ret |= arducam_mega_soft_reset(dev);
-		ret |= arducam_mega_check_connection(dev);
-		break;
-
+		ret = arducam_mega_soft_reset(dev);
+		if (ret < 0)
+			return ret;
+		return arducam_mega_check_connection(dev);
+	}
 	default:
 		return -ENOTSUP;
 	}
-
-	return ret;
 }
 
 static const struct video_driver_api arducam_mega_driver_api = {
@@ -994,114 +978,114 @@ static int arducam_mega_controls(const struct device *dev)
 
 	ret = video_init_ctrl(&ctrls->reset, dev, VIDEO_CID_ARDUCAM_RESET,
 			      (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 0});
-	if (ret) {
+	if (ret < 0) {
 		return ret;
 	}	
 	ret = video_init_ctrl(&ctrls->brightness, dev, VIDEO_CID_BRIGHTNESS,
 			      (struct video_ctrl_range){.min = 0, .max = 8, .step = 1, .def = 0});
-	if (ret) {
+	if (ret < 0) {
 		return ret;
 	}
 	ret = video_init_ctrl(&ctrls->contrast, dev, VIDEO_CID_CONTRAST,
 			      (struct video_ctrl_range){.min = 0, .max = 6, .step = 1, .def = 0});
-	if (ret) {
+	if (ret < 0) {
 		return ret;
 	}
 	ret = video_init_ctrl(&ctrls->saturation, dev, VIDEO_CID_SATURATION,
 			      (struct video_ctrl_range){.min = 0, .max = 6, .step = 1, .def = 0});
-	if (ret) {
+	if (ret < 0) {
 		return ret;
 	}
 	ret = video_init_ctrl(&ctrls->ev, dev, VIDEO_CID_ARDUCAM_EV,
 			      (struct video_ctrl_range){.min = 0, .max = 6, .step = 1, .def = 0});
-	if (ret) {
+	if (ret < 0) {
 		return ret;
 	}
 	ret = video_init_ctrl(&ctrls->whitebal, dev, VIDEO_CID_WHITE_BALANCE_TEMPERATURE,
 			      (struct video_ctrl_range){.min = 0, .max = 4, .step = 1, .def = 0});
-	if (ret) {
+	if (ret < 0) {
 		return ret;
 	}
 	ret = video_init_ctrl(&ctrls->colorfx, dev, VIDEO_CID_ARDUCAM_COLOR_FX,
 			      (struct video_ctrl_range){.min = 0, .max = 9, .step = 1, .def = 0});
-	if (ret) {
+	if (ret < 0) {
 		return ret;
 	}
 	ret = video_init_ctrl(&ctrls->exp_auto, dev, VIDEO_CID_EXPOSURE_AUTO,
 			      (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 0});
-	if (ret) {
+	if (ret < 0) {
 		return ret;
 	}
 	ret = video_init_ctrl(&ctrls->gain_auto, dev, VIDEO_CID_AUTOGAIN,
 			      (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 0});
-	if (ret) {
+	if (ret < 0) {
 		return ret;
 	}
 	ret = video_init_ctrl(&ctrls->whitebalauto, dev, VIDEO_CID_AUTO_WHITE_BALANCE,
 			      (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 0});
-	if (ret) {
+	if (ret < 0) {
 		return ret;
 	}
 	ret = video_init_ctrl(&ctrls->sharpness, dev, VIDEO_CID_SHARPNESS,
 			      (struct video_ctrl_range){.min = 0, .max = 8, .step = 1, .def = 0});
-	if (ret) {
+	if (ret < 0) {
 		return ret;
 	}
 	ret = video_init_ctrl(&ctrls->gain, dev, VIDEO_CID_GAIN,
 			      (struct video_ctrl_range){.min = GAIN_MIN, .max = GAIN_MAX, .step = 1, .def = 0});
-	if (ret) {
+	if (ret < 0) {
 		return ret;
 	}
 	ret = video_init_ctrl(&ctrls->exposure, dev, VIDEO_CID_EXPOSURE,
 			      (struct video_ctrl_range){.min = GAIN_MIN, .max = EXPOSURE_MAX, .step = 1, .def = 0});
-	if (ret) {
+	if (ret < 0) {
 		return ret;
 	}
 	ret = video_init_ctrl(&ctrls->quality, dev, VIDEO_CID_JPEG_COMPRESSION_QUALITY,
 			      (struct video_ctrl_range){.min = 0, .max = 65535, .step = 1, .def = 0});
-	if (ret) {
+	if (ret < 0) {
 		return ret;
 	}
 	ret = video_init_ctrl(&ctrls->lowpower, dev, VIDEO_CID_ARDUCAM_LOWPOWER,
 			      (struct video_ctrl_range){.min = 0, .max = 65535, .step = 1, .def = 0});
-	if (ret) {
+	if (ret < 0) {
 		return ret;
 	}
 	/* Read only controls */
 	ret = video_init_ctrl(&ctrls->support_resolution, dev, VIDEO_CID_ARDUCAM_SUPP_RES,
 			      (struct video_ctrl_range){.min = 0, .max = 65535, .step = 1, .def = 0});
 	ctrls->support_resolution.flags |= VIDEO_CTRL_FLAG_READ_ONLY;
-	if (ret) {
+	if (ret < 0) {
 		return ret;
 	}
 	ret = video_init_ctrl(&ctrls->support_special_effects, dev, VIDEO_CID_ARDUCAM_SUPP_SP_EFF,
 			      (struct video_ctrl_range){.min = 0, .max = 65535, .step = 1, .def = 0});
 	ctrls->support_special_effects.flags |= VIDEO_CTRL_FLAG_READ_ONLY;
-	if (ret) {
+	if (ret < 0) {
 		return ret;
 	}
 	ret = video_init_ctrl(&ctrls->enable_focus, dev, VIDEO_CID_ARDUCAM_EN_FOCUS,
 			      (struct video_ctrl_range){.min = 0, .max = 65535, .step = 1, .def = 0});
 	ctrls->enable_focus.flags |= VIDEO_CTRL_FLAG_READ_ONLY;
-	if (ret) {
+	if (ret < 0) {
 		return ret;
 	}
 	ret = video_init_ctrl(&ctrls->enable_sharpness, dev, VIDEO_CID_ARDUCAM_EN_SHARPNESS,
 			      (struct video_ctrl_range){.min = 0, .max = 65535, .step = 1, .def = 0});
 	ctrls->enable_sharpness.flags |= VIDEO_CTRL_FLAG_READ_ONLY;
-	if (ret) {
+	if (ret < 0) {
 		return ret;
 	}
 	ret = video_init_ctrl(&ctrls->device_address, dev, VIDEO_CID_ARDUCAM_DEV_ADDR,
 			      (struct video_ctrl_range){.min = 0, .max = 65535, .step = 1, .def = 0});
 	ctrls->device_address.flags |= VIDEO_CTRL_FLAG_READ_ONLY;
-	if (ret) {
+	if (ret < 0) {
 		return ret;
 	}
 	ret = video_init_ctrl(&ctrls->camera_id, dev, VIDEO_CID_ARDUCAM_CAM_ID,
 			      (struct video_ctrl_range){.min = 0, .max = 65535, .step = 1, .def = 0});
 	ctrls->camera_id.flags |= VIDEO_CTRL_FLAG_READ_ONLY;
-	if (ret) {
+	if (ret < 0) {
 		return ret;
 	}
 	ret = video_init_int_menu_ctrl(&ctrls->linkfreq, dev, VIDEO_CID_LINK_FREQ,
@@ -1143,7 +1127,7 @@ static int arducam_mega_init(const struct device *dev)
 	arducam_mega_soft_reset(dev);
 	ret = arducam_mega_check_connection(dev);
 
-	if (ret) {
+	if (ret < 0) {
 		LOG_ERR("arducam mega camera not connection.\n");
 		return ret;
 	}
@@ -1164,12 +1148,12 @@ static int arducam_mega_init(const struct device *dev)
 	fmt.height = 240;
 	fmt.pitch = 320 * video_bits_per_pixel(VIDEO_PIX_FMT_RGB565) / BITS_PER_BYTE;
 	ret = arducam_mega_set_fmt(dev, &fmt);
-	if (ret) {
+	if (ret < 0) {
 		LOG_ERR("Unable to configure default format");
 		return -EIO;
 	}
 	ret = arducam_mega_controls(dev);
-	if (ret) {
+	if (ret < 0) {
 		LOG_ERR("Unable to initialize controls");
 		return -EIO;
 	}
