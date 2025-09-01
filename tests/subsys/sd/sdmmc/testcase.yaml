@@ -13,3 +13,4 @@ tests:
     min_ram: 32
     integration_platforms:
       - mimxrt1064_evk
+    build_only: true # Ambiq need insert sd card

@@ -12,3 +12,4 @@ tests:
     tags: sdhc
     integration_platforms:
       - mimxrt1064_evk
+    build_only: true # Ambiq need insert sd card
