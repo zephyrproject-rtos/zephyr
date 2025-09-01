@@ -143,14 +143,14 @@ arduino_i2c: &i2c0 {
 	pinctrl-1 = <&i2c0_sleep>;
 	pinctrl-names = "default", "sleep";
 	mma8642fc: mma8652fc@1d {
-		compatible = "nxp,fxos8700","nxp,mma8652fc";
+		compatible = "nxp,fxos8700", "nxp,mma8652fc";
 		reg = <0x1d>;
 		int1-gpios = <&gpio0 24 GPIO_ACTIVE_LOW>;
 		int2-gpios = <&gpio0 25 GPIO_ACTIVE_LOW>;
 	};
 
 	ti_hdc@43 {
-		compatible = "ti,hdc","ti,hdc1010";
+		compatible = "ti,hdc", "ti,hdc1010";
 		reg = <0x43>;
 		drdy-gpios = <&gpio0 22 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 	};
