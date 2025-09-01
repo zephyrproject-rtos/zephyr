@@ -403,9 +403,13 @@ static void i2s_esp32_tx_callback(void *arg, int status)
 
 	err = k_msgq_get(&stream->data->queue, &item, K_NO_WAIT);
 	if (err < 0) {
-		stream->data->state = I2S_STATE_ERROR;
-		LOG_ERR("TX queue empty: %d", err);
-		goto tx_disable;
+		/*
+		 * Stop DMA and transition to READY, so the next write()
+		 * can auto-kick TX without requiring a new START trigger.
+		 */
+		stream->data->state = I2S_STATE_READY;
+		stream->conf->stop_transfer(dev);
+		return;
 	}
 
 	mem_block_tmp = stream->data->mem_block;
@@ -459,7 +463,13 @@ static int i2s_esp32_tx_start_transfer(const struct device *dev)
 
 	err = k_msgq_get(&stream->data->queue, &item, K_NO_WAIT);
 	if (err < 0) {
-		return -ENOMEM;
+		/*
+		 * No data queued yet. Leave mem_block NULL and return success.
+		 * START will keep TX in READY; next write() will auto-kick TX.
+		 */
+		stream->data->mem_block = NULL;
+		stream->data->mem_block_len = 0;
+		return 0;
 	}
 
 	stream->data->mem_block = item.buffer;
@@ -1193,6 +1203,11 @@ static int i2s_esp32_trigger_stream(const struct device *dev, const struct i2s_e
 
 	switch (cmd) {
 	case I2S_TRIGGER_START:
+		/* if already streaming, treat as success */
+		if (stream->data->state == I2S_STATE_RUNNING) {
+			LOG_DBG("START ignored: already RUNNING");
+			return 0;
+		}
 		if (stream->data->state != I2S_STATE_READY) {
 			LOG_ERR("START - Invalid state: %d", (int)stream->data->state);
 			return -EIO;
@@ -1223,12 +1238,27 @@ static int i2s_esp32_trigger_stream(const struct device *dev, const struct i2s_e
 			return -EIO;
 		}
 		stream->data->last_block = false;
+		/*
+		 * If no mem_block was available (queue empty), stay READY.
+		 * The next write() will auto-kick TX into RUNNING.
+		 */
+		if (dir == I2S_DIR_TX && stream->data->mem_block == NULL &&
+		    !stream->data->dma_pending) {
+			stream->data->state = I2S_STATE_READY;
+			irq_unlock(key);
+			return 0;
+		}
 		stream->data->state = I2S_STATE_RUNNING;
 		irq_unlock(key);
 		break;
 
 	case I2S_TRIGGER_STOP:
 		key = irq_lock();
+		if (stream->data->state == I2S_STATE_READY) {
+			/* Already idle; treat STOP as success */
+			irq_unlock(key);
+			return 0;
+		}
 		if (stream->data->state != I2S_STATE_RUNNING) {
 			irq_unlock(key);
 			LOG_ERR("STOP - Invalid state: %d", (int)stream->data->state);
@@ -1249,9 +1279,49 @@ static int i2s_esp32_trigger_stream(const struct device *dev, const struct i2s_e
 
 	case I2S_TRIGGER_DRAIN:
 		key = irq_lock();
-		if (stream->data->state != I2S_STATE_RUNNING) {
+		int32_t st = stream->data->state;
+
+		if (st == I2S_STATE_READY) {
+#if I2S_ESP32_IS_DIR_EN(tx)
+			if (dir == I2S_DIR_TX) {
+				bool have_data = (k_msgq_num_used_get(&stream->data->queue) > 0);
+
+				/* If there's data queued and TX is idle, kick once and drain */
+				if (have_data && !stream->data->dma_pending) {
+					int kick = stream->conf->start_transfer(dev);
+
+					if (kick < 0) {
+						irq_unlock(key);
+						LOG_ERR("DRAIN - autostart failed: %d", kick);
+						return -EIO;
+					}
+					stream->data->last_block = false;
+					stream->data->stop_without_draining = false;
+					stream->data->state = I2S_STATE_STOPPING;
+					irq_unlock(key);
+					break;
+				}
+
+				/* Nothing to drain (idle and no queued blocks) */
+				if (!have_data && !stream->data->dma_pending) {
+					irq_unlock(key);
+					return 0;
+				}
+			}
+#endif /* I2S_ESP32_IS_DIR_EN(tx) */
+
+#if I2S_ESP32_IS_DIR_EN(rx)
+			if (dir == I2S_DIR_RX) {
+				/* If RX is idle and no DMA pending, nothing to drain */
+				if (!stream->data->dma_pending) {
+					irq_unlock(key);
+					return 0;
+				}
+			}
+#endif /* I2S_ESP32_IS_DIR_EN(rx) */
+		} else {
 			irq_unlock(key);
-			LOG_ERR("DRAIN - Invalid state: %d", (int)stream->data->state);
+			LOG_ERR("DRAIN - Invalid state: %d", (int)st);
 			return -EIO;
 		}
 
@@ -1458,6 +1528,36 @@ static int i2s_esp32_write(const struct device *dev, void *mem_block, size_t siz
 	if (err < 0) {
 		LOG_ERR("TX queue full");
 		return err;
+	}
+
+	/*
+	 * Auto-restart TX after an underrun or a START with no data:
+	 * If TX is in READY and no DMA is pending and there's no current block,
+	 * kick DMA immediately so we don't require a new START trigger.
+	 */
+	if (stream->data->state == I2S_STATE_READY && !stream->data->dma_pending &&
+	    stream->data->mem_block == NULL) {
+		unsigned int key = irq_lock();
+
+		if (stream->data->state == I2S_STATE_READY && !stream->data->dma_pending &&
+		    stream->data->mem_block == NULL) {
+			int kick = stream->conf->start_transfer(dev);
+
+			if (kick < 0) {
+				irq_unlock(key);
+				LOG_ERR("TX auto-restart failed: %d", kick);
+				return kick;
+			}
+			stream->data->last_block = false;
+			/*
+			 * If start_transfer pulled from the queue, we are RUNNING;
+			 * if not (shouldn't happen here), stay READY.
+			 */
+			if (stream->data->mem_block != NULL || stream->data->dma_pending) {
+				stream->data->state = I2S_STATE_RUNNING;
+			}
+		}
+		irq_unlock(key);
 	}
 
 	return 0;
