@@ -95,7 +95,6 @@
 			#include "v2m_musca_s1-common.dtsi"
 		};
 	};
-
 };
 
 &nvic {

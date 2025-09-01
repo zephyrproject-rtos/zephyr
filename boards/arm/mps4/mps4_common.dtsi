@@ -95,7 +95,7 @@
 		/* 0 - CONFIG_CORTEX_M_NULL_POINTER_EXCEPTION_PAGE_SIZE> */
 		reg = <0x0 0x400>;
 		zephyr,memory-region = "NULL_PTR_DETECT";
-		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_FLASH) )>;
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_FLASH)>;
 	};
 
 	/* DDR4 - 2G, alternates non-secure/secure every 256M */
