@@ -96,7 +96,7 @@
 		};
 	};
 
-	mspi0_default: mspi0_default{
+	mspi0_default: mspi0_default {
 		group1 {
 			pinmux = <MSPI0_0_P22>,
 				 <MSPI0_1_P26>,
@@ -113,7 +113,7 @@
 		};
 	};
 
-	bleif_default: bleif_default{
+	bleif_default: bleif_default {
 		group1 {
 			pinmux = <BLEIF_SCK_P30>,
 				 <BLEIF_MISO_P31>,
