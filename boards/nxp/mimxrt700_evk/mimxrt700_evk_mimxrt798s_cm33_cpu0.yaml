@@ -24,4 +24,5 @@ supported:
   - usb_device
   - watchdog
   - hwinfo
+  - flash
 vendor: nxp
