@@ -14,9 +14,9 @@
 #define ZEPHYR_INCLUDE_DRIVERS_FLASH_H_
 
 /**
- * @brief FLASH internal Interface
- * @defgroup flash_internal_interface FLASH internal Interface
- * @ingroup io_interfaces
+ * @brief Internal interfaces for flash memory controllers.
+ * @defgroup flash_internal_interface Flash Internal
+ * @ingroup flash_interface
  * @{
  */
 
@@ -43,8 +43,8 @@ struct flash_pages_layout {
  */
 
 /**
- * @brief FLASH Interface
- * @defgroup flash_interface FLASH Interface
+ * @brief Interfaces for flash memory controllers.
+ * @defgroup flash_interface Flash
  * @since 1.2
  * @version 1.0.0
  * @ingroup io_interfaces
@@ -94,8 +94,8 @@ struct flash_parameters {
 #define FLASH_ERASE_C_VAL_BIT		0x04
 #define FLASH_ERASE_UNIFORM_PAGE	0x08
 
-
-/* @brief Parser for flash_parameters for retrieving erase capabilities
+/**
+ * @brief Parser for flash_parameters for retrieving erase capabilities
  *
  * The functions parses flash_parameters type object and returns combination
  * of erase capabilities of 0 if device does not have any.
