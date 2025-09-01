@@ -42,7 +42,6 @@
 		sense-resistor-milli-ohms = <4>;
 		sense-gain-mult = <100>;
 	};
-
 };
 
 &cpu0 {
