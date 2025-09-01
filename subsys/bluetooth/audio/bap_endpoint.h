@@ -37,8 +37,6 @@
 #define BROADCAST_STREAM_CNT 0
 #endif /* CONFIG_BT_BAP_BROADCAST_SOURCE */
 
-#define BT_BAP_PD_UNSET 0xFFFFFFFFU /* Valid value range uses 24 bits, but is stored in 32 */
-
 /* Temp struct declarations to handle circular dependencies */
 struct bt_bap_unicast_group;
 struct bt_bap_broadcast_source;
