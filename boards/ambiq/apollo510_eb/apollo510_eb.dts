@@ -26,7 +26,6 @@
 		watchdog0 = &wdt0;
 		rtc = &rtc0;
 		sdhc0 = &sdio0;
-		sdhc1 = &sdio1;
 		eeprom-0 = &i2c_eeprom;
 	};
 
@@ -111,7 +110,7 @@
 	status = "okay";
 	mmc {
 		compatible = "zephyr,mmc-disk";
-	disk-name = "SD2";
+		disk-name = "SD2";
 		status = "okay";
 	};
 };
