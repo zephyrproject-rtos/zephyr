@@ -3259,7 +3259,7 @@ Modbus:
     - include/zephyr/modbus/
     - tests/subsys/modbus/
     - subsys/modbus/
-    - doc/services/modbus/
+    - doc/connectivity/modbus/
   labels:
     - "area: modbus"
   tests:
