@@ -1,0 +1,113 @@
+# Copyright (c) 2025 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Bindings for the ADI AD4170 Analog-to-Digital Converter.
+
+  This device is controlled over SPI and exposes one or more ADC input channels.
+  Each child node corresponds to a channel and supports standard ADC properties
+  such as gain, reference, resolution, and input configuration.
+
+  Example binding:
+
+  &spi0 {
+      status = "okay";
+      #address-cells = <1>;
+      #size-cells = <0>;
+
+      ad4170: ad4170@0 {
+          compatible = "adi,ad4170-adc";
+          reg = <0x0>;
+          spi-max-frequency = <100000000>;
+          spi-cpol;
+          spi-cpha;
+          status = "okay";
+
+          #address-cells = <1>;
+          #size-cells = <0>;
+          #io-channel-cells = <1>;
+
+          channel@1 {
+              reg = <1>;
+              zephyr,gain = "ADC_GAIN_1";
+              zephyr,reference = "ADC_REF_INTERNAL";
+              zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+              zephyr,resolution = <24>;
+              zephyr,input-positive = <AD4170_ADC_AIN0>;
+              zephyr,input-negative = <AD4170_ADC_AIN1>;
+          };
+
+          channel@2 {
+              reg = <2>;
+              zephyr,gain = "ADC_GAIN_1";
+              zephyr,reference = "ADC_REF_INTERNAL";
+              zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+              zephyr,resolution = <24>;
+              zephyr,input-positive = <AD4170_ADC_AIN12>;
+              zephyr,input-negative = <AD4170_ADC_AIN13>;
+          };
+      };
+  };
+
+  For input constants such as `AD4170_ADC_AIN0`, refer to the binding header:
+  `include/zephyr/dt-bindings/adc/ad4170-adc.h`
+
+compatible: adi,ad4170-adc
+
+include: [adc-controller.yaml, spi-device.yaml]
+
+properties:
+  bipolar:
+    type: boolean
+    description: |
+      If true, the ADC operates in bipolar mode, otherwise it operates in
+      unipolar mode.
+
+  adc-mode:
+    type: int
+    enum: [0, 1, 2, 3, 4]
+    default: 0
+    description: |
+      ADC Operating Mode. The default corresponds to the reset value of the
+      register field.
+      - 0 AD4170_CONTINUOUS_MODE (Default)
+      - 1 AD4170_SINGLE_MODE
+      - 2 AD4170_STANDBY_MODE
+      - 3 AD4170_POWER_DOWN_MODE
+      - 4 AD4170_IDLE_MODE
+
+  clock-select:
+    type: int
+    enum: [0, 1, 2, 3]
+    default: 0
+    description: |
+      ADC Clock Select. The default corresponds to the reset value of the
+      register field.
+      - 0 AD4170_CLKSEL_INT (Default)
+      - 1 AD4170_CLKSEL_INT_OUT
+      - 2 AD4170_CLKSEL_EXT
+      - 3 AD4170_CLKSEL_EXT_XTAL
+
+  clock-frequency:
+    type: int
+    description: |
+      Master clock frequency in Hertz (minimum 1000000, maximum 17000000). The
+      default is 16MHz, which corresponds to the internal clock frequency.
+    default: 16000000
+
+  filter-type:
+    type: int
+    enum: [0, 1, 2]
+    default: 0
+    description: |
+      ADC Filter Type. The default corresponds to the reset value of the
+      register field.
+      - 0 AD4170_SINC5_AVG (Default)
+      - 1 AD4170_SINC5
+      - 2 AD4170_SINC3
+
+  "#io-channel-cells":
+    const: 1
+
+io-channel-cells:
+  - input
