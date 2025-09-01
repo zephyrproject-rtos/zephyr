@@ -360,6 +360,12 @@ jobs:
             junit.html
             junit.xml
 
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() && (github.event_name == 'push') }}
+        uses: codecov/test-results-action@47f89e9acb64b76debcd5ea40642d25a4adced9f # v1.1.1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+
       - name: Publish Unit Test Results
         uses: EnricoMi/publish-unit-test-result-action@3a74b2957438d0b6e2e61d67b05318aa25c9e6c6 # v2.20.0
         with:
