@@ -73,21 +73,21 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map = <3  0 &gpiob 6  0>,  /* I2C1_SCL */
-			   <4  0 &gpiog 13  0>,  /* I2C1_SDA */
+		gpio-map = <3 0 &gpiob 6 0>,  /* I2C1_SCL */
+			   <4 0 &gpiog 13 0>,  /* I2C1_SDA */
 			   /* RESET is directly connected to MCU reset */
-			   <6  0 &mfx  12  0>,  /* PWDN_EN */
-			   <12 0 &gpioi  5  0>,  /* DCMI_VSYNC */
-			   <14 0 &gpioa  4  0>,  /* DCMI_HSYNC */
-			   <16 0 &gpioa  8  0>,  /* DCMI_PIXCK */
-			   <20 0 &gpioi  7  0>,  /* DCMI_D7 */
-			   <21 0 &gpiob  8  0>,  /* DCMI_D6 */
-			   <22 0 &gpioi  4  0>,  /* DCMI_D5 */
-			   <23 0 &gpioe  4  0>,  /* DCMI_D4 */
-			   <24 0 &gpioh 12  0>,  /* DCMI_D3 */
-			   <25 0 &gpioh 11  0>,  /* DCMI_D2 */
-			   <26 0 &gpioc  7  0>,  /* DCMI_D1 */
-			   <27 0 &gpioc  6  0>;  /* DCMI_D0 */
+			   <6 0 &mfx 12 0>,  /* PWDN_EN */
+			   <12 0 &gpioi 5 0>,  /* DCMI_VSYNC */
+			   <14 0 &gpioa 4 0>,  /* DCMI_HSYNC */
+			   <16 0 &gpioa 8 0>,  /* DCMI_PIXCK */
+			   <20 0 &gpioi 7 0>,  /* DCMI_D7 */
+			   <21 0 &gpiob 8 0>,  /* DCMI_D6 */
+			   <22 0 &gpioi 4 0>,  /* DCMI_D5 */
+			   <23 0 &gpioe 4 0>,  /* DCMI_D4 */
+			   <24 0 &gpioh 12 0>,  /* DCMI_D3 */
+			   <25 0 &gpioh 11 0>,  /* DCMI_D2 */
+			   <26 0 &gpioc 7 0>,  /* DCMI_D1 */
+			   <27 0 &gpioc 6 0>;  /* DCMI_D0 */
 	};
 
 	aliases {
@@ -239,15 +239,15 @@ st_cam_i2c: &i2c1 {
 
 &rtc {
 	clocks = <&rcc STM32_CLOCK(APB1, 28)>,
-				<&rcc STM32_SRC_LSE RTC_SEL(1)>;
+		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
 	status = "okay";
 };
 
 &sdmmc1 {
 	status = "okay";
 	pinctrl-0 = <&sdmmc1_d0_pc8 &sdmmc1_d1_pc9
-		&sdmmc1_d2_pc10 &sdmmc1_d3_pc11
-		&sdmmc1_ck_pc12 &sdmmc1_cmd_pd2>;
+		     &sdmmc1_d2_pc10 &sdmmc1_d3_pc11
+		     &sdmmc1_ck_pc12 &sdmmc1_cmd_pd2>;
 	pinctrl-names = "default";
 	disk-name = "SD";
 };
@@ -255,7 +255,7 @@ st_cam_i2c: &i2c1 {
 &adc1 {
 	status = "okay";
 	pinctrl-0 = <&adc1_in5_pa0 &adc1_in12_pa7 &adc1_in15_pb0
-			&adc1_in4_pc3 &adc1_in13_pc4>;
+		     &adc1_in4_pc3 &adc1_in13_pc4>;
 	pinctrl-names = "default";
 	st,adc-clock-source = "SYNC";
 	st,adc-prescaler = <1>;
@@ -264,7 +264,7 @@ st_cam_i2c: &i2c1 {
 zephyr_udc0: &usbotg_fs {
 	status = "okay";
 	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12
-			&usb_otg_fs_id_pa10>;
+		     &usb_otg_fs_id_pa10>;
 	pinctrl-names = "default";
 };
 
@@ -283,11 +283,11 @@ zephyr_udc0: &usbotg_fs {
 &octospi2 {
 	status = "okay";
 	pinctrl-0 = <&octospim_p2_clk_pi6 &octospim_p2_ncs_pg12
-			&octospim_p2_io0_pi11 &octospim_p2_io1_pi10
-			&octospim_p2_io2_pi9 &octospim_p2_io3_ph8
-			&octospim_p2_io4_ph9 &octospim_p2_io5_ph10
-			&octospim_p2_io6_pg9 &octospim_p2_io7_pg10
-			&octospim_p2_dqs_pg15>;
+		     &octospim_p2_io0_pi11 &octospim_p2_io1_pi10
+		     &octospim_p2_io2_pi9 &octospim_p2_io3_ph8
+		     &octospim_p2_io4_ph9 &octospim_p2_io5_ph10
+		     &octospim_p2_io6_pg9 &octospim_p2_io7_pg10
+		     &octospim_p2_dqs_pg15>;
 	pinctrl-names = "default";
 
 	mx25lm51245: ospi-nor-flash@0 {
@@ -299,33 +299,31 @@ zephyr_udc0: &usbotg_fs {
 		spi-bus-width = <OSPI_OPI_MODE>;
 		data-rate = <OSPI_STR_TRANSFER>;
 		four-byte-opcodes;
-		sfdp-bfp = [
-			53 46 44 50 06 01 02 ff
-			00 06 01 10 30 00 00 ff
-			c2 00 01 04 10 01 00 ff
-			84 00 01 02 c0 00 00 ff
-			00 00 00 00 00 00 00 00
-			00 00 00 00 00 00 00 00
-			e5 20 fb ff ff ff ff 1f
-			44 eb 08 6b 08 3b 04 bb
-			fe ff ff ff ff ff 00 ff
-			ff ff 44 eb 0c 20 0f 52
-			10 d8 00 ff d6 49 c5 00
-			81 df 04 e3 44 03 67 38
-			30 b0 30 b0 f7 bd d5 5c
-			4a 9e 29 ff f0 50 f9 85
-			00 00 00 00 00 00 00 00
-			00 00 00 00 00 00 00 00
-			00 00 00 00 00 00 00 00
-			00 00 00 00 00 00 00 00
-			00 00 00 00 00 00 00 00
-			00 00 00 00 00 00 00 00
-			00 00 00 00 00 00 00 00
-			00 00 00 00 00 00 00 00
-			00 00 00 00 00 00 00 00
-			00 00 00 00 00 00 00 00
-			7f ef ff ff 21 5c dc ff
-		];
+		sfdp-bfp = [53 46 44 50 06 01 02 ff
+			    00 06 01 10 30 00 00 ff
+			    c2 00 01 04 10 01 00 ff
+			    84 00 01 02 c0 00 00 ff
+			    00 00 00 00 00 00 00 00
+			    00 00 00 00 00 00 00 00
+			    e5 20 fb ff ff ff ff 1f
+			    44 eb 08 6b 08 3b 04 bb
+			    fe ff ff ff ff ff 00 ff
+			    ff ff 44 eb 0c 20 0f 52
+			    10 d8 00 ff d6 49 c5 00
+			    81 df 04 e3 44 03 67 38
+			    30 b0 30 b0 f7 bd d5 5c
+			    4a 9e 29 ff f0 50 f9 85
+			    00 00 00 00 00 00 00 00
+			    00 00 00 00 00 00 00 00
+			    00 00 00 00 00 00 00 00
+			    00 00 00 00 00 00 00 00
+			    00 00 00 00 00 00 00 00
+			    00 00 00 00 00 00 00 00
+			    00 00 00 00 00 00 00 00
+			    00 00 00 00 00 00 00 00
+			    00 00 00 00 00 00 00 00
+			    00 00 00 00 00 00 00 00
+			    7f ef ff ff 21 5c dc ff];
 
 		partitions {
 			compatible = "fixed-partitions";
