@@ -424,6 +424,24 @@ int bt_cap_unicast_group_foreach_stream(struct bt_cap_unicast_group *unicast_gro
 					bt_cap_unicast_group_foreach_stream_func_t func,
 					void *user_data);
 
+/** Structure holding information of audio stream endpoint */
+struct bt_cap_unicast_group_info {
+	/** Pointer to the underlying Basic Audio Profile unicast group */
+	const struct bt_bap_unicast_group *unicast_group;
+};
+
+/**
+ * @brief Return structure holding information of unicast group
+ *
+ * @param unicast_group The unicast group object.
+ * @param info          The structure object to be filled with the info.
+ *
+ * @retval 0 Success
+ * @retval -EINVAL  @p unicast_group or @p info are NULL
+ */
+int bt_cap_unicast_group_get_info(const struct bt_cap_unicast_group *unicast_group,
+				  struct bt_cap_unicast_group_info *info);
+
 /** Stream specific parameters for the bt_cap_initiator_unicast_audio_start() function */
 struct bt_cap_unicast_audio_start_stream_param {
 	/** Coordinated or ad-hoc set member. */
