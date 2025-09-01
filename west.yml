@@ -213,7 +213,7 @@ manifest:
         - hal
     - name: hal_nxp
       remote: verhaert
-      revision: 0713374d4bf4064b6e61cfa452f3ef7fdfe8f79b
+      revision: 68806e0cc8ba1ee0adbe2423a49285ee755a35fa
       path: modules/hal/nxp
       groups:
         - hal
