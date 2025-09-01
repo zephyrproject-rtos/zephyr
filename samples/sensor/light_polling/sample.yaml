@@ -15,19 +15,15 @@ tests:
       - nrf52dk/nrf52832
     harness: grove
     depends_on: adc
-  sample.sensor.light_polling.als_pt19:
+  sample.sensor.light_polling:
     tags:
       - drivers
       - sensor
       - light
-    platform_allow:
-      - frdm_mcxw71/mcxw716c
     integration_platforms:
       - frdm_mcxw71/mcxw716c
-    depends_on:
-      - adc
-  sample.sensor.light_polling.shields:
-    platform_allow:
-      - adafruit_qt_py_rp2040/rp2040
+      - adafruit_qt_py_rp2040/rp2040       # adafruit_tsl2591 shield
+      - mikroe_clicker_ra4m1/r7fa4m1ab3cfm # mikroe_ambient_2_click shield
     extra_args:
       - platform:adafruit_qt_py_rp2040/rp2040:SHIELD="adafruit_tsl2591"
+      - platform:mikroe_clicker_ra4m1/r7fa4m1ab3cfm:SHIELD="mikroe_ambient_2_click"
