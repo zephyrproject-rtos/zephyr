@@ -1,0 +1,19 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		light-sensor = &tsl2561_mikroe_illuminance_click;
+	};
+};
+
+&mikrobus_i2c {
+	status = "okay";
+
+	tsl2561_mikroe_illuminance_click: tsl2561@49 {
+		compatible = "ams,tsl2561";
+		reg = <0x49>;
+	};
+};
