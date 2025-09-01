@@ -84,7 +84,7 @@
 	arduino_CFG1_gpio: arduino_CFG1_gpio {
 		pinmux = <ARDUINO_PIN_3 ARDUINO_GPIO>;
 	};
-	arduino_CFG1_pwm: arduino_CFG1_pwm{
+	arduino_CFG1_pwm: arduino_CFG1_pwm {
 		pinmux = <ARDUINO_PIN_3 ARDUINO_PWM>;
 	};
 
