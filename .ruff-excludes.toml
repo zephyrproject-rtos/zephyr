@@ -529,10 +529,6 @@
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
     "UP038",    # https://docs.astral.sh/ruff/rules/non-pep604-isinstance
 ]
-"./scripts/kconfig/hardenconfig.py" = [
-    "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "UP032",    # https://docs.astral.sh/ruff/rules/f-string
-]
 "./scripts/kconfig/kconfigfunctions.py" = [
     "B011",     # https://docs.astral.sh/ruff/rules/assert-false
     "SIM114",   # https://docs.astral.sh/ruff/rules/if-with-same-arms

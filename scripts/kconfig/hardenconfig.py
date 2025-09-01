@@ -12,8 +12,9 @@ from kconfiglib import standard_kconfig
 def hardenconfig(kconf):
     kconf.load_config()
 
-    hardened_kconf_filename = os.path.join(os.environ['ZEPHYR_BASE'],
-                                           'scripts', 'kconfig', 'hardened.csv')
+    hardened_kconf_filename = os.path.join(
+        os.environ['ZEPHYR_BASE'], 'scripts', 'kconfig', 'hardened.csv'
+    )
 
     options = compare_with_hardened_conf(kconf, hardened_kconf_filename)
 
@@ -21,7 +22,6 @@ def hardenconfig(kconf):
 
 
 class Option:
-
     def __init__(self, name, recommended, current=None, symbol=None):
         self.name = name
         self.recommended = recommended
@@ -51,12 +51,24 @@ def compare_with_hardened_conf(kconf, hardened_kconf_filename):
                 except KeyError:
                     symbol = None
                     current = None
-                options.append(Option(name=name, current=current,
-                                  recommended=recommended, symbol=symbol))
+                options.append(
+                    Option(name=name, current=current, recommended=recommended, symbol=symbol)
+                )
     for node in kconf.node_iter():
         for select in node.selects:
-            if kconf.syms["EXPERIMENTAL"] in select or kconf.syms["DEPRECATED"] in select or kconf.syms["NOT_SECURE"] in select:
-                options.append(Option(name=node.item.name, current=node.item.str_value, recommended='n', symbol=node.item))
+            if (
+                kconf.syms["EXPERIMENTAL"] in select
+                or kconf.syms["DEPRECATED"] in select
+                or kconf.syms["NOT_SECURE"] in select
+            ):
+                options.append(
+                    Option(
+                        name=node.item.name,
+                        current=node.item.str_value,
+                        recommended='n',
+                        symbol=node.item,
+                    )
+                )
 
     return options
 
@@ -71,8 +83,9 @@ def display_results(options):
     # TODO: add command line option to show all results
     for opt in options:
         if opt.result == 'FAIL' and opt.symbol.visibility != 0:
-            print('CONFIG_{:<43}|{:^13}|{:^20}'.format(
-                opt.name, opt.current, opt.recommended), end='')
+            print(
+                'CONFIG_{:<43}|{:^13}|{:^20}'.format(opt.name, opt.current, opt.recommended), end=''
+            )
             print('||{:^28}\n'.format(opt.result), end='')
     print()
 
