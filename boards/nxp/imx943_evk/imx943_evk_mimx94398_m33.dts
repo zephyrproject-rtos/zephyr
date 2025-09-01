@@ -8,6 +8,7 @@
 
 #include <nxp/nxp_imx943_m33.dtsi>
 #include "imx943_evk-pinctrl.dtsi"
+#include "imx943_evk_mimx94398_cm.dtsi"
 
 / {
 	model = "NXP i.MX943 EVK board";
@@ -21,66 +22,11 @@
 		zephyr,console = &lpuart8;
 		zephyr,shell-uart = &lpuart8;
 	};
-};
 
-&emdio {
-	pinctrl-0 = <&emdio_default>;
-	pinctrl-names = "default";
-	status = "disabled";
-
-	phy0: phy@2 {
-		compatible = "ethernet-phy";
-		reg = <0x2>;
-		status = "disabled";
+	aliases {
+		i2s-codec-tx = &i2s1;
+		i2s-tx = &i2s1;
 	};
-
-	phy1: phy@3 {
-		compatible = "ethernet-phy";
-		reg = <0x3>;
-		status = "disabled";
-	};
-
-	phy2: phy@5 {
-		compatible = "realtek,rtl8211f";
-		reg = <0x5>;
-		status = "disabled";
-	};
-
-	phy3: phy@6 {
-		compatible = "realtek,rtl8211f";
-		reg = <0x6>;
-		status = "disabled";
-	};
-
-	phy4: phy@7 {
-		compatible = "realtek,rtl8211f";
-		reg = <0x7>;
-		status = "disabled";
-	};
-};
-
-&enetc_psi0 {
-	pinctrl-0 = <&eth2_default>;
-	pinctrl-names = "default";
-	phy-handle = <&phy2>;
-	phy-connection-type = "rgmii";
-	status = "disabled";
-};
-
-&enetc_psi1 {
-	pinctrl-0 = <&eth3_default>;
-	pinctrl-names = "default";
-	phy-handle = <&phy3>;
-	phy-connection-type = "rgmii";
-	status = "disabled";
-};
-
-&enetc_psi2 {
-	pinctrl-0 = <&eth4_default>;
-	pinctrl-names = "default";
-	phy-handle = <&phy4>;
-	phy-connection-type = "rgmii";
-	status = "disabled";
 };
 
 &flexio1 {
@@ -137,3 +83,24 @@
 	zephyr,random-mac-address;
 	status = "disabled";
 };
+
+&i2s1 {
+	mclk-output;
+	status = "okay";
+};
+
+&edma1 {
+	status = "okay";
+};
+
+//&lpi2c3 {
+//	status = "okay";
+//};
+//
+//&mux_pca9548a {
+//	status = "okay";
+//};
+//
+//&audio_codec {
+//	status = "okay";
+//};

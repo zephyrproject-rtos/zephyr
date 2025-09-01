@@ -418,6 +418,10 @@ static void enable_mclk_direction(const struct device *dev, bool dir)
 	uint32_t mask = dev_cfg->mclk_pin_mask;
 	uint32_t *base = (uint32_t *)(control_base + offset);
 
+	if ((control_base == 0) && (offset == 0) && (mask == 0)) {
+		return;
+	}
+
 	if (dir) {
 		*base |= mask;
 	} else {
@@ -1197,9 +1201,12 @@ static DEVICE_API(i2s, i2s_mcux_driver_api) = {
 		.pll_pd = DT_PHA_BY_NAME_OR(DT_DRV_INST(i2s_id), pll_clocks, pd, value, 0),        \
 		.pll_num = DT_PHA_BY_NAME_OR(DT_DRV_INST(i2s_id), pll_clocks, num, value, 0),      \
 		.pll_den = DT_PHA_BY_NAME_OR(DT_DRV_INST(i2s_id), pll_clocks, den, value, 0),      \
-		.mclk_control_base = DT_REG_ADDR(DT_PHANDLE(DT_DRV_INST(i2s_id), pinmuxes)),       \
-		.mclk_pin_mask = DT_PHA_BY_IDX(DT_DRV_INST(i2s_id), pinmuxes, 0, mask),            \
-		.mclk_pin_offset = DT_PHA_BY_IDX(DT_DRV_INST(i2s_id), pinmuxes, 0, offset),        \
+		.mclk_control_base = COND_CODE_1(DT_NODE_HAS_PROP(DT_DRV_INST(i2s_id), pinmuxes),  \
+				DT_REG_ADDR(DT_PHANDLE(DT_DRV_INST(i2s_id), pinmuxes)), (0)),      \
+		.mclk_pin_mask = COND_CODE_1(DT_NODE_HAS_PROP(DT_DRV_INST(i2s_id), pinmuxes),      \
+				DT_PHA_BY_IDX(DT_DRV_INST(i2s_id), pinmuxes, 0, mask), (0)),       \
+		.mclk_pin_offset = COND_CODE_1(DT_NODE_HAS_PROP(DT_DRV_INST(i2s_id), pinmuxes),    \
+				DT_PHA_BY_IDX(DT_DRV_INST(i2s_id), pinmuxes, 0, offset), (0)),     \
 		.mclk_output = DT_INST_PROP_OR(i2s_id, mclk_output, 0),                            \
 		.clk_sub_sys =                                                                     \
 			(clock_control_subsys_t)DT_INST_CLOCKS_CELL_BY_IDX(i2s_id, 0, name),       \
