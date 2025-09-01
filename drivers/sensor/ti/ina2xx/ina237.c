@@ -5,8 +5,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT ti_ina237
-
 #include "ina237.h"
 
 #include <zephyr/logging/log.h>
@@ -19,11 +17,15 @@ LOG_MODULE_DECLARE(INA2XX, CONFIG_SENSOR_LOG_LEVEL);
 /** @brief INA237 calibration scaling value (scaled by 10^-5) */
 #define INA237_CAL_SCALING 8192ULL
 
+/** @brief INA228 calibration scaling value (scaled by 10^-5) */
+#define INA228_CAL_SCALING (INA237_CAL_SCALING << 4)
+
 INA2XX_REG_DEFINE(ina237_config, INA237_REG_CONFIG, 16);
 INA2XX_REG_DEFINE(ina237_adc_config, INA237_REG_ADC_CONFIG, 16);
 INA2XX_REG_DEFINE(ina237_shunt_cal, INA237_REG_CALIB, 16);
 INA2XX_REG_DEFINE(ina237_mfr_id, INA237_REG_MANUFACTURER_ID, 16);
 
+#if DT_HAS_COMPAT_STATUS_OKAY(ti_ina237)
 INA2XX_CHANNEL_DEFINE(ina237_vshunt_standard, INA237_REG_SHUNT_VOLT, 16, 0, 5000, 1);
 INA2XX_CHANNEL_DEFINE(ina237_vshunt_precise, INA237_REG_SHUNT_VOLT, 16, 0, 1250, 1);
 INA2XX_CHANNEL_DEFINE(ina237_voltage, INA237_REG_BUS_VOLT, 16, 0, 3125, 1);
@@ -71,6 +73,89 @@ static int ina237_channel_get(const struct device *dev, enum sensor_channel chan
 
 	return 0;
 }
+#endif /* ti_ina237 */
+
+#if DT_HAS_COMPAT_STATUS_OKAY(ti_ina228)
+INA2XX_CHANNEL_DEFINE(ina228_vshunt_standard, INA237_REG_SHUNT_VOLT, 20, 4, 5, 16);
+INA2XX_CHANNEL_DEFINE(ina228_vshunt_precise, INA237_REG_SHUNT_VOLT, 20, 4, 125, 1600);
+INA2XX_CHANNEL_DEFINE(ina228_voltage, INA237_REG_BUS_VOLT, 20, 4, 3125, 16);
+INA2XX_CHANNEL_DEFINE(ina228_die_temp, INA237_REG_DIETEMP, 16, 0, 125000, 16);
+INA2XX_CHANNEL_DEFINE(ina228_current, INA237_REG_CURRENT, 20, 4, 1, 1);
+INA2XX_CHANNEL_DEFINE(ina228_power, INA237_REG_POWER, 24, 0, 16, 5);
+INA2XX_CHANNEL_DEFINE(ina228_energy, INA228_REG_ENERGY, 40, 0, 256, 5);
+INA2XX_CHANNEL_DEFINE(ina228_charge, INA228_REG_CHARGE, 40, 0, 1, 1);
+
+static struct ina2xx_channels ina228_channels = {
+	.voltage = &ina228_voltage,
+	.vshunt = &ina228_vshunt_standard,
+	.current = &ina228_current,
+	.power = &ina228_power,
+	.die_temp = &ina228_die_temp,
+	.energy = &ina228_energy,
+	.charge = &ina228_charge,
+};
+
+static int ina228_get_vshunt(const struct device *dev, struct sensor_value *val)
+{
+	const struct ina2xx_config *config = dev->config;
+	const struct ina2xx_channel *ch = config->channels->vshunt;
+	struct ina2xx_data *data = dev->data;
+	int32_t mult;
+	int32_t divisor;
+	union {
+		uint32_t u32;
+		int32_t s32;
+	} value;
+
+	value.u32 = sys_get_be24(data->vshunt) >> ch->shift;
+	value.s32 = sign_extend(value.u32, (23 - ch->shift));
+
+	/* Use the high precision scaling for VSHUNT */
+	if ((config->config & INA237_CFG_HIGH_PRECISION)) {
+		mult = ina228_vshunt_precise.mult;
+		divisor = ina228_vshunt_precise.div;
+	} else {
+		mult = ina228_vshunt_standard.mult;
+		divisor = ina228_vshunt_standard.div;
+	}
+
+	value.s32 = mult * value.s32 / divisor;
+
+	return sensor_value_from_micro(val, value.s32);
+}
+
+static int ina228_channel_get(const struct device *dev, enum sensor_channel chan,
+			      struct sensor_value *val)
+{
+	int ret;
+
+	if (chan == SENSOR_CHAN_VSHUNT) {
+		return ina228_get_vshunt(dev, val);
+	}
+
+	ret = ina2xx_channel_get(dev, chan, val);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return 0;
+}
+
+/**
+ * @brief Reset the INA228 accumulators.
+ */
+static int ina228_reset_accumulators(const struct device *dev)
+{
+	const struct ina2xx_config *config = dev->config;
+
+	if ((IS_ENABLED(CONFIG_INA2XX_HAS_CHANNEL_ENERGY)) ||
+	    (IS_ENABLED(CONFIG_INA2XX_HAS_CHANNEL_CHARGE))) {
+		return ina2xx_reg_write(&config->bus, config->config_reg->addr, BIT(14));
+	}
+
+	return 0;
+}
+#endif /* ti_ina228 */
 
 /**
  * @brief sensor operation mode check
@@ -114,6 +199,10 @@ static int ina237_trigg_one_shot_request(const struct device *dev, enum sensor_c
 	if (chan != SENSOR_CHAN_ALL && chan != SENSOR_CHAN_VOLTAGE && chan != SENSOR_CHAN_CURRENT &&
 		chan != SENSOR_CHAN_POWER &&
 		chan != SENSOR_CHAN_VSHUNT &&
+#if DT_HAS_COMPAT_STATUS_OKAY(ti_ina228)
+		chan != (enum sensor_channel)SENSOR_CHAN_INA2XX_ENERGY &&
+		chan != (enum sensor_channel)SENSOR_CHAN_INA2XX_CHARGE &&
+#endif /* ti_ina228 */
 		chan != SENSOR_CHAN_DIE_TEMP) {
 		return -ENOTSUP;
 	}
@@ -137,11 +226,27 @@ static int ina237_trigg_one_shot_request(const struct device *dev, enum sensor_c
  */
 static int ina237_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
+	int ret;
+
 	if (ina237_is_triggered_mode_set(dev)) {
-		return ina237_trigg_one_shot_request(dev, chan);
+		ret = ina237_trigg_one_shot_request(dev, chan);
 	} else {
-		return ina2xx_sample_fetch(dev, chan);
+		ret = ina2xx_sample_fetch(dev, chan);
 	}
+
+	if (ret < 0) {
+		return ret;
+	}
+
+#if DT_HAS_COMPAT_STATUS_OKAY(ti_ina228)
+	if ((chan == SENSOR_CHAN_ALL) ||
+		(chan == (enum sensor_channel)SENSOR_CHAN_INA2XX_ENERGY) ||
+		(chan == (enum sensor_channel)SENSOR_CHAN_INA2XX_CHARGE)) {
+		return ina228_reset_accumulators(dev);
+	}
+#endif /* ti_ina228 */
+
+	return 0;
 }
 
 static void ina237_trigger_work_handler(struct k_work *work)
@@ -224,6 +329,7 @@ static int ina237_trigger_set(const struct device *dev, const struct sensor_trig
 	return 0;
 }
 
+#if DT_HAS_COMPAT_STATUS_OKAY(ti_ina237)
 static DEVICE_API(sensor, ina237_driver_api) = {
 	.attr_set = ina2xx_attr_set,
 	.attr_get = ina2xx_attr_get,
@@ -231,6 +337,17 @@ static DEVICE_API(sensor, ina237_driver_api) = {
 	.sample_fetch = ina237_sample_fetch,
 	.channel_get = ina237_channel_get,
 };
+#endif /* ti_ina237 */
+
+#if DT_HAS_COMPAT_STATUS_OKAY(ti_ina228)
+static DEVICE_API(sensor, ina228_driver_api) = {
+	.attr_set = ina2xx_attr_set,
+	.attr_get = ina2xx_attr_get,
+	.trigger_set = ina237_trigger_set,
+	.sample_fetch = ina237_sample_fetch,
+	.channel_get = ina228_channel_get,
+};
+#endif /* ti_ina228 */
 
 /* Shunt calibration must be muliplied by 4 if high-prevision mode is selected */
 #define CAL_PRECISION_MULTIPLIER(inst) \
@@ -270,4 +387,30 @@ static DEVICE_API(sensor, ina237_driver_api) = {
 					&ina237_data_##inst, &ina237_config_##inst, POST_KERNEL,   \
 				    CONFIG_SENSOR_INIT_PRIORITY, &ina237_driver_api);
 
+#define INA228_DRIVER_INIT(inst)                                               \
+	static struct ina237_data ina228_data_##inst;                              \
+	static const struct ina237_config ina228_config_##inst = {                 \
+		.common = {                                                            \
+			.bus = I2C_DT_SPEC_INST_GET(inst),                                 \
+			.current_lsb = DT_INST_PROP(inst, current_lsb_microamps),          \
+			.adc_config = INA237_DT_ADC_CONFIG(inst),                          \
+			.cal = (INA237_DT_CAL(inst) * 16),                                 \
+			.id_reg = &ina237_mfr_id,                                          \
+			.config_reg = &ina237_config,                                      \
+			.adc_config_reg = &ina237_adc_config,                              \
+			.cal_reg = &ina237_shunt_cal,                                      \
+			.channels = &ina228_channels,                                      \
+		},                                                                     \
+	};                                                                         \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, &ina237_init, NULL,                     \
+				&ina228_data_##inst, &ina228_config_##inst, POST_KERNEL,       \
+				CONFIG_SENSOR_INIT_PRIORITY, &ina228_driver_api);
+
+
+#define DT_DRV_COMPAT ti_ina237
 DT_INST_FOREACH_STATUS_OKAY(INA237_DRIVER_INIT)
+#undef DT_DRV_COMPAT
+
+#define DT_DRV_COMPAT ti_ina228
+DT_INST_FOREACH_STATUS_OKAY(INA228_DRIVER_INIT)
+#undef DT_DRV_COMPAT
