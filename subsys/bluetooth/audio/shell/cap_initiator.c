@@ -1296,6 +1296,7 @@ static int cmd_broadcast_delete(const struct shell *sh, size_t argc, char *argv[
 	default_source.cap_source = NULL;
 	default_source.is_cap = false;
 	default_source.broadcast_id = BT_BAP_INVALID_BROADCAST_ID;
+	default_source.adv_sid = BT_GAP_SID_INVALID;
 
 	return 0;
 }
