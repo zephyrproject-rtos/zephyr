@@ -16,6 +16,10 @@ LOG_MODULE_REGISTER(stm32_backup_domain, CONFIG_SOC_LOG_LEVEL);
 #define ENABLE_BKUP_ACCESS	LL_PWR_EnableBkUpD3Access
 #define DISABLE_BKUP_ACCESS	LL_PWR_DisableBkUpD3Access
 #define IS_ENABLED_BKUP_ACCESS	LL_PWR_IsEnabledBkUpD3Access
+#elif defined(PWR_RTCCR_DRTCP)
+#define ENABLE_BKUP_ACCESS	LL_PWR_DisableRTCDomainWriteProtection
+#define DISABLE_BKUP_ACCESS	LL_PWR_EnableRTCDomainWriteProtection
+#define IS_ENABLED_BKUP_ACCESS	!LL_PWR_IsEnabledRTCDomainWriteProtection
 #else
 #define ENABLE_BKUP_ACCESS	LL_PWR_EnableBkUpAccess
 #define DISABLE_BKUP_ACCESS	LL_PWR_DisableBkUpAccess
