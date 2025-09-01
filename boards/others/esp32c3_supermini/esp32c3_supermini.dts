@@ -46,7 +46,6 @@
 			label = "Blue LED 0";
 		};
 	};
-
 };
 
 &spi2 {
@@ -55,13 +54,11 @@
 	status = "okay";
 	pinctrl-0 = <&spim2_default>;
 	pinctrl-names = "default";
-
 };
 
 &usb_serial {
 	status = "okay";
 };
-
 
 &i2c0 {
 	status = "okay";

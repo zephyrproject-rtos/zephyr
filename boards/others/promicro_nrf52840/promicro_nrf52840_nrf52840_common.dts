@@ -100,7 +100,6 @@
 	pinctrl-names = "default", "sleep";
 };
 
-
 &spi2 {
 	compatible = "nordic,nrf-spi";
 	status = "okay";
