@@ -22,24 +22,24 @@
 /* brown out detection */
 void system_BOD_init(void)
 {
-	uint32_t tmpVal = 0;
+	uint32_t tmp = 0;
 
 	/* disable BOD interrupt */
-	tmpVal = sys_read32(HBN_BASE + HBN_IRQ_MODE_OFFSET);
-	tmpVal &= ~HBN_IRQ_BOR_EN_MSK;
-	sys_write32(tmpVal, HBN_BASE + HBN_IRQ_MODE_OFFSET);
+	tmp = sys_read32(HBN_BASE + HBN_IRQ_MODE_OFFSET);
+	tmp &= ~HBN_IRQ_BOR_EN_MSK;
+	sys_write32(tmp, HBN_BASE + HBN_IRQ_MODE_OFFSET);
 
-	tmpVal = sys_read32(HBN_BASE + HBN_BOR_CFG_OFFSET);
+	tmp = sys_read32(HBN_BASE + HBN_BOR_CFG_OFFSET);
 	/* when brownout threshold, restart*/
-	tmpVal |= HBN_BOD_SEL_MSK;
+	tmp |= HBN_BOD_SEL_MSK;
 	/* set BOD threshold:
 	 * 0:2.05v,1:2.10v,2:2.15v....7:2.4v
 	 */
-	tmpVal &= ~HBN_BOD_VTH_MSK;
-	tmpVal |= (7 << HBN_BOD_VTH_POS);
+	tmp &= ~HBN_BOD_VTH_MSK;
+	tmp |= (7 << HBN_BOD_VTH_POS);
 	/* enable BOD */
-	tmpVal |= HBN_PU_BOD_MSK;
-	sys_write32(tmpVal, HBN_BASE + HBN_BOR_CFG_OFFSET);
+	tmp |= HBN_PU_BOD_MSK;
+	sys_write32(tmp, HBN_BASE + HBN_BOR_CFG_OFFSET);
 }
 
 static void clean_dcache(void)
@@ -66,7 +66,7 @@ static void clean_icache(void)
 
 static void enable_icache(void)
 {
-	uint32_t tmpVal = 0;
+	uint32_t tmp = 0;
 
 	__asm__ volatile (
 		"fence\n"
@@ -76,12 +76,12 @@ static void enable_icache(void)
 	);
 	__asm__ volatile(
 		"csrr %0, 0x7C1"
-		: "=r"(tmpVal));
-	tmpVal |= (1 << 0);
+		: "=r"(tmp));
+	tmp |= (1 << 0);
 	__asm__ volatile(
 		"csrw 0x7C1, %0"
 		:
-		: "r"(tmpVal));
+		: "r"(tmp));
 	__asm__ volatile (
 		"fence\n"
 		"fence.i\n"
@@ -90,7 +90,7 @@ static void enable_icache(void)
 
 static void enable_dcache(void)
 {
-	uint32_t tmpVal = 0;
+	uint32_t tmp = 0;
 
 	__asm__ volatile (
 		"fence\n"
@@ -100,12 +100,12 @@ static void enable_dcache(void)
 	);
 	__asm__ volatile(
 		"csrr %0, 0x7C1"
-		: "=r"(tmpVal));
-	tmpVal |= (1 << 1) | (1 << 2) | (1 << 3) | (1 << 4);
+		: "=r"(tmp));
+	tmp |= (1 << 1) | (1 << 2) | (1 << 3) | (1 << 4);
 	__asm__ volatile(
 		"csrw 0x7C1, %0"
 		:
-		: "r"(tmpVal));
+		: "r"(tmp));
 	__asm__ volatile (
 		"fence\n"
 		"fence.i\n"
@@ -114,7 +114,7 @@ static void enable_dcache(void)
 
 static void enable_branchpred(bool yes)
 {
-	uint32_t tmpVal = 0;
+	uint32_t tmp = 0;
 
 	__asm__ volatile (
 		"fence\n"
@@ -122,16 +122,16 @@ static void enable_branchpred(bool yes)
 	);
 	__asm__ volatile(
 		"csrr %0, 0x7C1"
-		: "=r"(tmpVal));
+		: "=r"(tmp));
 	if (yes) {
-		tmpVal |= (1 << 5) | (1 << 12);
+		tmp |= (1 << 5) | (1 << 12);
 	} else {
-		tmpVal &= ~((1 << 5) | (1 << 12));
+		tmp &= ~((1 << 5) | (1 << 12));
 	}
 	__asm__ volatile(
 		"csrw 0x7C1, %0"
 		:
-		: "r"(tmpVal));
+		: "r"(tmp));
 	__asm__ volatile (
 		"fence\n"
 		"fence.i\n"
@@ -140,48 +140,48 @@ static void enable_branchpred(bool yes)
 
 static void enable_thead_isa_ext(void)
 {
-	uint32_t tmpVal = 0;
+	uint32_t tmp = 0;
 
 	__asm__ volatile(
 		"csrr %0, 0x7C0"
-		: "=r"(tmpVal));
-	tmpVal |= (1 << 22);
+		: "=r"(tmp));
+	tmp |= (1 << 22);
 	__asm__ volatile(
 		"csrw 0x7C0, %0"
 		:
-		: "r"(tmpVal));
+		: "r"(tmp));
 }
 
 static void set_thead_enforce_aligned(bool enable)
 {
-	uint32_t tmpVal = 0;
+	uint32_t tmp = 0;
 
 	__asm__ volatile(
 		"csrr %0, 0x7C0"
-		: "=r"(tmpVal));
+		: "=r"(tmp));
 	if (enable) {
-		tmpVal &= ~(1 << 15);
+		tmp &= ~(1 << 15);
 	} else {
-		tmpVal |= (1 << 15);
+		tmp |= (1 << 15);
 	}
 	__asm__ volatile(
 		"csrw 0x7C0, %0"
 		:
-		: "r"(tmpVal));
+		: "r"(tmp));
 }
 
 static void disable_interrupt_autostacking(void)
 {
-	uint32_t tmpVal = 0;
+	uint32_t tmp = 0;
 
 	__asm__ volatile(
 		"csrr %0, 0x7E1"
-		: "=r"(tmpVal));
-	tmpVal &= ~(0x3 << 16);
+		: "=r"(tmp));
+	tmp &= ~(0x3 << 16);
 	__asm__ volatile(
 		"csrw 0x7E1, %0"
 		:
-		: "r"(tmpVal));
+		: "r"(tmp));
 }
 
 
