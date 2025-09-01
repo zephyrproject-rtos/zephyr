@@ -8,7 +8,7 @@
 
 #include <zephyr/logging/log.h>
 
-LOG_MODULE_REGISTER(INA2XX_TRIGGER, CONFIG_SENSOR_LOG_LEVEL);
+LOG_MODULE_DECLARE(INA2XX, CONFIG_SENSOR_LOG_LEVEL);
 
 static void ina2xx_gpio_callback(const struct device *port,
 				 struct gpio_callback *cb, uint32_t pin)
