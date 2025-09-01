@@ -31,7 +31,7 @@ K_KERNEL_PINNED_STACK_ARRAY_DEFINE(z_initialization_process_stacks, CONFIG_MP_MA
  *
  * @return N/A
  */
-void z_prep_c(void)
+FUNC_NORETURN void z_prep_c(void)
 {
 	arch_bss_zero();
 

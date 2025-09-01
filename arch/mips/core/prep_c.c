@@ -45,7 +45,7 @@ static void interrupt_init(void)
  * @return N/A
  */
 
-void z_prep_c(void)
+FUNC_NORETURN void z_prep_c(void)
 {
 #if defined(CONFIG_SOC_PREP_HOOK)
 	soc_prep_hook();
