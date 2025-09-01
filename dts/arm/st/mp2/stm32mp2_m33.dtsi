@@ -25,11 +25,13 @@
 	};
 
 	ddr_code: memory0@80100000 {
-		compatible = "mmio-sram";
+		compatible = "zephyr,memory-region", "mmio-sram";
+		zephyr,memory-region = "DDR_CODE";
 	};
 
 	ddr_sys: memory1@80a00000 {
-		compatible = "mmio-sram";
+		compatible = "zephyr,memory-region", "mmio-sram";
+		zephyr,memory-region = "DDR_SYS";
 	};
 
 	soc {

@@ -195,7 +195,8 @@
 	/* D1 domain, AXI SRAM (128KB with shared ITCM 192KB as `TCM_AXI_SHARED` is `000`) */
 	sram0: memory@24000000 {
 		reg = <0x24000000 DT_SIZE_K(320)>;
-		compatible = "mmio-sram";
+		compatible = "zephyr,memory-region", "mmio-sram";
+		zephyr,memory-region = "SRAM0";
 	};
 
 	/* D2 domain, AHB SRAM */

@@ -43,7 +43,8 @@
 		interrupt-parent = <&gic>;
 
 		sysram: memory@2ffe0000 {
-			compatible = "mmio-sram";
+			compatible = "zephyr,memory-region", "mmio-sram";
+			zephyr,memory-region = "SYSRAM";
 			reg = <0x2FFE0000 DT_SIZE_K(128)>;
 		};
 
@@ -257,12 +258,14 @@
 	};
 
 	ddr_code: memory@C0000000 {
-		compatible = "mmio-sram";
+		compatible = "zephyr,memory-region", "mmio-sram";
+		zephyr,memory-region = "DDR_CODE";
 		reg = <0xC0000000 0x10000000>;
 	};
 
 	ddr_data: memory@D0000000 {
-		compatible = "mmio-sram";
+		compatible = "zephyr,memory-region", "mmio-sram";
+		zephyr,memory-region = "DDR_DATA";
 		reg = <0xD0000000 0x10000000>;
 	};
 

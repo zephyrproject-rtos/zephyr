@@ -7,6 +7,11 @@
 #include <st/l4/stm32l4.dtsi>
 
 / {
+	sram1: memory@10000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		zephyr,memory-region = "SRAM1";
+	};
+
 	clocks {
 		pllsai2: pllsai2 {
 			#clock-cells = <0>;
