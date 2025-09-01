@@ -63,6 +63,8 @@
 #define SPI_FLASH_COMPAT renesas_rz_qspi_xspi
 #elif DT_HAS_COMPAT_STATUS_OKAY(renesas_rz_qspi_spibsc)
 #define SPI_FLASH_COMPAT renesas_rz_qspi_spibsc
+#elif DT_HAS_COMPAT_STATUS_OKAY(nxp_xspi_nor)
+#define SPI_FLASH_COMPAT nxp_xspi_nor
 #else
 #define SPI_FLASH_COMPAT invalid
 #endif
