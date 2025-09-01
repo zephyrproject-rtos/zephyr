@@ -390,7 +390,7 @@ class BinaryHandler(Handler):
             self.returncode = proc.returncode
             if proc.returncode != 0:
                 self.instance.status = TwisterStatus.ERROR
-                self.instance.reason = f"BinaryHandler returned {proc.returncode}"
+                self.instance.reason = f"rc={proc.returncode}"
             self.try_kill_process_by_pid()
 
         self.execution_time = time.time() - start_time
