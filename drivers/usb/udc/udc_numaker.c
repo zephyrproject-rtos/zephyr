@@ -42,6 +42,10 @@ LOG_MODULE_REGISTER(udc_numaker, CONFIG_UDC_DRIVER_LOG_LEVEL);
 #define NUMAKER_USBD_DMABUF_SIZE_CTRLOUT 64
 #define NUMAKER_USBD_DMABUF_SIZE_CTRLIN  64
 
+#if !defined(USBD_ATTR_PWRDN_Msk)
+#define USBD_ATTR_PWRDN_Msk BIT(9)
+#endif
+
 enum numaker_usbd_msg_type {
 	/* Setup packet received */
 	NUMAKER_USBD_MSG_TYPE_SETUP,
@@ -345,8 +349,8 @@ static int numaker_usbd_hw_setup(const struct device *dev)
 	reset_line_toggle_dt(&config->reset);
 
 	/* Initialize USBD engine */
-	/* NOTE: BSP USBD driver: ATTR = 0x7D0 */
-	base->ATTR = USBD_ATTR_BYTEM_Msk | BIT(9) | USBD_ATTR_USBEN_Msk | BIT(6) |
+	/* NOTE: Per USBD spec, BIT(6) is hidden. */
+	base->ATTR = USBD_ATTR_BYTEM_Msk | USBD_ATTR_PWRDN_Msk | USBD_ATTR_USBEN_Msk | BIT(6) |
 		     USBD_ATTR_PHYEN_Msk;
 
 	/* Set SE0 for S/W disconnect */
