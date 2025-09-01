@@ -8,7 +8,7 @@
 / {
 	model = "Silicon Labs EFR32BG22 Thunderboard (SLTB010A) using BRD4184B";
 	compatible = "silabs,efr32bg22c224f512im40", "silabs,sltb010a",
-		"silabs,efr32bg22";
+		     "silabs,efr32bg22";
 };
 
 &button0 {
