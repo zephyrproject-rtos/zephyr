@@ -1,0 +1,11 @@
+# STMicroelectronics STM32C531XX MCU
+
+# Copyright (c) 2026 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32C531XX
+
+config NUM_IRQS
+	default 89
+
+endif # SOC_STM32C531XX
