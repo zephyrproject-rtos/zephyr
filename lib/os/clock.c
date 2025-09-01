@@ -142,7 +142,7 @@ int z_impl_sys_clock_nanosleep(int clock_id, int flags, const struct timespec *r
 {
 	k_timepoint_t end;
 	k_timeout_t timeout;
-	struct timespec duration;
+	struct timespec duration = {};
 	const bool update_rmtp = rmtp != NULL;
 	const bool abstime = (flags & SYS_TIMER_ABSTIME) != 0;
 
