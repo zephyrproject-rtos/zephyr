@@ -1,26 +1,29 @@
-# Copyright 2024 NXP
+# Copyright 2024-2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 DT_CHOSEN_Z_FLASH := zephyr,flash
 DT_COMPAT_XSPI := nxp,xspi
 
 DT_CHOSEN_FLASH_NODE := $(dt_chosen_path,$(DT_CHOSEN_Z_FLASH))
-DT_CHOSEN_FLASH_PARENT := $(dt_node_parent,$(DT_CHOSEN_FLASH_NODE))
+DT_CHOSEN_FLASH_CTRL := $(dt_node_parent,$(DT_CHOSEN_FLASH_NODE))
+DT_CHOSEN_FLASH_CTRL_PARENT := $(dt_node_parent,$(DT_CHOSEN_FLASH_CTRL))
 
-DT_FLASH_PARENT_IS_XSPI := $(dt_node_has_compat,$(DT_CHOSEN_FLASH_PARENT),$(DT_COMPAT_XSPI))
-DT_FLASH_HAS_SIZE_PROP := $(dt_node_has_prop,$(DT_CHOSEN_FLASH_NODE),size)
+DT_FLASH_CTRL_PARENT_IS_XSPI := $(dt_node_has_compat,$(DT_CHOSEN_FLASH_CTRL_PARENT),$(DT_COMPAT_XSPI))
+DT_FLASH_CTRL_HAS_SIZE_PROP := $(dt_node_has_prop,$(DT_CHOSEN_FLASH_CTRL),size)
 
 config FLASH_BASE_ADDRESS
-	default $(dt_node_reg_addr_hex,$(DT_CHOSEN_FLASH_PARENT),1) \
-		if $(DT_FLASH_PARENT_IS_XSPI)
+	default $(dt_node_reg_addr_hex,$(DT_CHOSEN_FLASH_CTRL_PARENT),1) \
+		if $(DT_FLASH_CTRL_PARENT_IS_XSPI)
 	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))
 
 config FLASH_SIZE
-	default $(dt_node_int_prop_int,$(DT_CHOSEN_FLASH_NODE),size,Kb)
+	default $(dt_node_int_prop_int,$(DT_CHOSEN_FLASH_CTRL),size,K) \
+		if $(DT_FLASH_CTRL_HAS_SIZE_PROP)
+	default $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_FLASH),0,K)
 
 config FLASH_MCUX_XSPI_XIP
 	bool
-	default $(DT_FLASH_PARENT_IS_XSPI)
+	default $(DT_FLASH_CTRL_PARENT_IS_XSPI)
 	select XIP
 	help
 	  Allows the soc to safely initialize the clocks for the
