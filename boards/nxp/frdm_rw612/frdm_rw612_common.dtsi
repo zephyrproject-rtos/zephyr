@@ -53,8 +53,8 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xfffffff0>;
 		gpio-map-pass-thru = <0 0xf>;
-		gpio-map = <10  0 &hsgpio1 12 0>,  /* Pin 10, LCD and touch reset */
-			   <12  0 &hsgpio0 18 0>;  /* Pin 11, LCD touch INT */
+		gpio-map = <10 0 &hsgpio1 12 0>,  /* Pin 10, LCD and touch reset */
+			   <12 0 &hsgpio0 18 0>;  /* Pin 11, LCD touch INT */
 	};
 
 	arduino_header: arduino-connector {
@@ -161,23 +161,23 @@
 		};
 	};
 	aps6404l: aps6404l@2 {
-			compatible = "nxp,imx-flexspi-aps6404l";
-			/* APS6404L is 8MB, 64MBit pSRAM */
-			size = <DT_SIZE_M(8 * 8)>;
-			reg = <2>;
-			spi-max-frequency = <109000000>;
-			/* PSRAM cannot be enabled while board is in default XIP
-			 * configuration, as it will conflict with flash chip.
-			 */
-			status = "disabled";
-			cs-interval-unit = <1>;
-			cs-interval = <2>;
-			cs-hold-time = <3>;
-			cs-setup-time = <3>;
-			data-valid-time = <6>;
-			column-space = <0>;
-			ahb-write-wait-unit = <2>;
-			ahb-write-wait-interval = <0>;
+		compatible = "nxp,imx-flexspi-aps6404l";
+		/* APS6404L is 8MB, 64MBit pSRAM */
+		size = <DT_SIZE_M(8 * 8)>;
+		reg = <2>;
+		spi-max-frequency = <109000000>;
+		/* PSRAM cannot be enabled while board is in default XIP
+		 * configuration, as it will conflict with flash chip.
+		 */
+		status = "disabled";
+		cs-interval-unit = <1>;
+		cs-interval = <2>;
+		cs-hold-time = <3>;
+		cs-setup-time = <3>;
+		data-valid-time = <6>;
+		column-space = <0>;
+		ahb-write-wait-unit = <2>;
+		ahb-write-wait-interval = <0>;
 	};
 };
 

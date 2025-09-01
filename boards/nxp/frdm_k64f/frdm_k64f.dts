@@ -267,7 +267,6 @@ zephyr_udc0: &usbotg {
 	phy-connection-type = "rmii";
 };
 
-
 &enet_mdio {
 	status = "okay";
 	pinctrl-0 = <&pinmux_enet_mdio>;

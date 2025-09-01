@@ -145,7 +145,6 @@ arduino_i2c: &i2c0 {
 	};
 };
 
-
 arduino_spi: &spi0 {
 	status = "okay";
 	pinctrl-0 = <&spi0_default>;
@@ -230,6 +229,5 @@ zephyr_uhc0: &usbh {
 			label = "storage";
 			reg = <0x0006B000 DT_SIZE_K(84)>;
 		};
-
 	};
 };
