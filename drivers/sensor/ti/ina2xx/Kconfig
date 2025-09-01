@@ -1,4 +1,5 @@
 # Copyright 2021 The Chromium OS Authors
+# Copyright 2024 NXP
 # Copyright 2025 Nova Dynamics LLC
 #
 # SPDX-License-Identifier: Apache-2.0
@@ -6,7 +7,7 @@
 config INA2XX
 	bool "INA2XX Current and Power Monitor"
 	default y
-	depends on DT_HAS_TI_INA230_ENABLED || DT_HAS_TI_INA236_ENABLED || DT_HAS_TI_INA237_ENABLED
+	depends on DT_HAS_TI_INA226_ENABLED || DT_HAS_TI_INA230_ENABLED || DT_HAS_TI_INA236_ENABLED || DT_HAS_TI_INA237_ENABLED
 	select I2C
 	help
 	  Enable driver for INA2XX Current and Power Monitor.
@@ -33,6 +34,16 @@ config INA2XX_HAS_CHANNEL_ENERGY
 
 config INA2XX_HAS_CHANNEL_CHARGE
 	bool
+
+config INA226
+	bool "INA226 Current/Power Monitor"
+	default y
+	depends on DT_HAS_TI_INA226_ENABLED
+	select INA2XX_HAS_CHANNEL_BUS_VOLTAGE
+	select INA2XX_HAS_CHANNEL_CURRENT
+	select INA2XX_HAS_CHANNEL_POWER
+	help
+	  Enable driver for INA226 Bidirectional Current/Power Monitor.
 
 config INA230
 	bool "INA230"
