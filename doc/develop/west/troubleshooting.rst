@@ -221,3 +221,62 @@ This is intentional; it allows you to put your Zephyr applications in
 any directory and still use west to build, flash, and debug them, for example.
 
 To resolve this issue, unset :envvar:`ZEPHYR_BASE` and try again.
+
+Conflict with the STM32 VS Code extension
+*****************************************
+
+When building applications with Zephyr Workbench in VS Code, you may encounter
+errors if the `STM32 VS Code Extension <https://marketplace.visualstudio.com/items?itemName=STMicroelectronics.stm32-vscode-extension>`_
+is also enabled in the same workspace. Typical error messages include:
+
+.. code-block:: console
+
+   ERROR: it looks like . is a build directory: did you mean --build-dir . instead?
+   FATAL ERROR: refusing to proceed without --force due to above error
+
+or:
+
+.. code-block:: console
+
+   ERROR: source directory "." does not contain a CMakeLists.txt; is this really what you want to build?
+   FATAL ERROR: refusing to proceed without --force due to above error
+
+These errors occur because the STM32 extension modifies the integrated terminal
+environment and causes :command:`west build` to run from the build directory
+instead of the application root.
+
+To resolve the conflict, you can use one of the following approaches:
+
+#. **Disable or uninstall the STM32 extension** in VS Code for the current workspace:
+
+   :menuselection:`Extensions --> STM32 --> gear icon --> Disable (Workspace)`
+
+#. **Create a new application directory** if necessary. For example, if your
+   original ``blinky`` app is affected, create a fresh copy such as
+   ``blinky2`` and build that instead.
+
+#. **Remove generated build files** before retrying. If the workspace has been
+   corrupted by a failed build, CMake artifacts may appear directly inside your
+   application directory (for example, ``CMakeFiles/`` or ``CMakeCache.txt``):
+
+   .. code-block:: text
+
+      blinky/
+      ├── CMakeFiles/        <-- remove
+      ├── CMakeCache.txt     <-- remove
+      ├── src/
+      │   └── main.c
+      ├── CMakeLists.txt
+      ├── prj.conf
+      └── README.rst
+
+   These files should not be in the application directory. Delete them (or the
+   entire ``build/`` directory if one exists).
+
+.. note::
+
+   This conflict only affects VS Code workflows. Command-line builds from the
+   application root (or with ``-s <source-dir>``) work as expected. If you need
+   to keep the STM32 extension installed globally, we recommend disabling it
+   per-workspace when working with Zephyr Workbench.
+
