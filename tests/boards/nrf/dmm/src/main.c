@@ -28,7 +28,7 @@
 
 #if CONFIG_DCACHE
 BUILD_ASSERT(DMM_ALIGN_SIZE(DUT_CACHE) == CONFIG_DCACHE_LINE_SIZE);
-BUILD_ASSERT(DMM_ALIGN_SIZE(DUT_NOCACHE) == 1);
+BUILD_ASSERT(DMM_ALIGN_SIZE(DUT_NOCACHE) == sizeof(uint32_t));
 #endif
 
 struct dmm_test_region {
@@ -156,7 +156,7 @@ static void dmm_check_output_buffer(struct dmm_test_region *dtr, uint32_t *fill_
 	zassert_mem_equal(buf, data, size);
 
 	t = ts_get();
-	retval = dmm_buffer_out_release(dtr->mem_reg, buf);
+	retval = dmm_buffer_out_release(dtr->mem_reg, buf, size);
 	t = ts_from_get(t);
 	if (print_report) {
 		TC_PRINT("buffer out release buf:%p size:%d took %d.%dus (%d cycles)\n",
@@ -212,7 +212,7 @@ static void dmm_check_input_buffer(struct dmm_test_region *dtr, uint32_t *fill_v
 	}
 
 	t = ts_get();
-	retval = dmm_buffer_in_release(dtr->mem_reg, data, size, buf);
+	retval = dmm_buffer_in_release(dtr->mem_reg, data, size, buf, size);
 	t = ts_from_get(t);
 	if (print_report) {
 		TC_PRINT("buffer in release buf:%p size:%d took %d.%dus (%d cycles)\n",
