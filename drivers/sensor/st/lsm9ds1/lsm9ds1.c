@@ -8,6 +8,7 @@
 
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/pm/device.h>
 
 #include "lsm9ds1.h"
 #include <stmemsc.h>
@@ -570,6 +571,43 @@ static DEVICE_API(sensor, lsm9ds1_api_funcs) = {
 	.attr_set = lsm9ds1_attr_set,
 };
 
+#ifdef CONFIG_PM_DEVICE
+static int lsm9ds1_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	const struct lsm9ds1_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
+	struct lsm9ds1_data *data = dev->data;
+	int ret;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		ret = lsm9ds1_accel_set_odr_raw(dev, data->accel_odr);
+		if (ret < 0) {
+			LOG_ERR("Failed to resume accelerometer");
+			return ret;
+		}
+		ret = lsm9ds1_gyro_set_odr_raw(dev, data->gyro_odr);
+		if (ret < 0) {
+			LOG_ERR("Failed to resume gyroscope");
+			return ret;
+		}
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		ret = lsm9ds1_imu_data_rate_set(ctx, LSM9DS1_IMU_OFF);
+		if (ret < 0) {
+			LOG_ERR("Failed to suspend accelerometer and gyroscope");
+			return ret;
+		}
+
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif
+
 static int lsm9ds1_init(const struct device *dev)
 {
 	const struct lsm9ds1_config *cfg = dev->config;
@@ -651,8 +689,10 @@ static int lsm9ds1_init(const struct device *dev)
                                                                                                    \
 	static struct lsm9ds1_config lsm9ds1_config_##inst = LSM9DS1_CONFIG_I2C(inst);             \
                                                                                                    \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, lsm9ds1_init, NULL, &lsm9ds1_data_##inst,               \
-				     &lsm9ds1_config_##inst, POST_KERNEL,                          \
+	PM_DEVICE_DT_INST_DEFINE(inst, lsm9ds1_pm_action);                                         \
+                                                                                                   \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, lsm9ds1_init, PM_DEVICE_DT_INST_GET(inst),              \
+				     &lsm9ds1_data_##inst, &lsm9ds1_config_##inst, POST_KERNEL,    \
 				     CONFIG_SENSOR_INIT_PRIORITY, &lsm9ds1_api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(LSM9DS1_DEFINE);
