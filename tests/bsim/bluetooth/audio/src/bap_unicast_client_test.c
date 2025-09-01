@@ -623,6 +623,7 @@ static void codec_configure_streams(size_t stream_cnt)
 static void qos_configure_streams(struct bt_bap_unicast_group *unicast_group,
 				  size_t stream_cnt)
 {
+	struct bt_bap_unicast_group_info info;
 	int err;
 
 	UNSET_FLAG(flag_stream_qos_configured);
@@ -639,6 +640,23 @@ static void qos_configure_streams(struct bt_bap_unicast_group *unicast_group,
 
 	while (atomic_get(&flag_stream_qos_configured) != stream_cnt) {
 		(void)k_sleep(K_MSEC(1));
+	}
+
+	err = bt_bap_unicast_group_get_info(unicast_group, &info);
+	if (err != 0) {
+		FAIL("Unable to QoS configure streams: %d\n", err);
+		return;
+	}
+
+	if (info.sink_pd != preset_16_2_1.qos.pd) {
+		FAIL("Unexpected sink PD %u (expected %u)\n", info.sink_pd, preset_16_2_1.qos.pd);
+		return;
+	}
+
+	if (info.source_pd != preset_16_2_1.qos.pd) {
+		FAIL("Unexpected source PD %u (expected %u)\n", info.source_pd,
+		     preset_16_2_1.qos.pd);
+		return;
 	}
 }
 
