@@ -7,6 +7,7 @@ import csv
 import os
 
 from kconfiglib import standard_kconfig
+from tabulate import tabulate
 
 
 def hardenconfig(kconf):
@@ -74,19 +75,17 @@ def compare_with_hardened_conf(kconf, hardened_kconf_filename):
 
 
 def display_results(options):
-    # header
-    print('{:^50}|{:^13}|{:^20}'.format('name', 'current', 'recommended'), end='')
-    print('||{:^28}\n'.format('check result'), end='')
-    print('=' * 116)
+    table_data = []
+    headers = ['Name', 'Current', 'Recommended', 'Check result']
 
     # results, only printing options that have failed for now. It simplify the readability.
     # TODO: add command line option to show all results
     for opt in options:
         if opt.result == 'FAIL' and opt.symbol.visibility != 0:
-            print(
-                'CONFIG_{:<43}|{:^13}|{:^20}'.format(opt.name, opt.current, opt.recommended), end=''
-            )
-            print('||{:^28}\n'.format(opt.result), end='')
+            table_data.append([f'CONFIG_{opt.name}', opt.current, opt.recommended, opt.result])
+
+    if table_data:
+        print(tabulate(table_data, headers=headers, tablefmt='grid'))
     print()
 
 
