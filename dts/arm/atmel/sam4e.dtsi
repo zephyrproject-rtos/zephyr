@@ -165,24 +165,26 @@
 			status = "disabled";
 		};
 
-		gmac: ethernet@40034000 {
-			compatible = "atmel,sam-gmac";
+		ethernet@40034000 {
+			compatible = "microchip,sam-ethernet-controller";
 			reg = <0x40034000 0x4000>;
 			clocks = <&pmc PMC_TYPE_PERIPHERAL 44>;
-			interrupts = <44 0>;
-			interrupt-names = "gmac";
-			num-queues = <1>;
-			phy-connection-type = "mii";
-			status = "disabled";
-		};
 
-		mdio: mdio@40034000 {
-			compatible = "atmel,sam-mdio";
-			reg = <0x40034000 0x4000>;
-			clocks = <&pmc PMC_TYPE_PERIPHERAL 44>;
-			status = "disabled";
-			#address-cells = <1>;
-			#size-cells = <0>;
+			gmac: ethernet {
+				compatible = "atmel,sam-gmac";
+				interrupts = <44 0>;
+				interrupt-names = "gmac";
+				num-queues = <1>;
+				phy-connection-type = "mii";
+				status = "disabled";
+			};
+
+			mdio: mdio {
+				compatible = "atmel,sam-mdio";
+				status = "disabled";
+				#address-cells = <1>;
+				#size-cells = <0>;
+			};
 		};
 
 		pinctrl: pinctrl@400e0e00 {
