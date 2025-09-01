@@ -35,6 +35,7 @@ zephyr_library_sources_ifdef(CONFIG_FLASH_MCHP_NVMCTRL_G1 flash_mchp_nvmctrl_g1.
 zephyr_library_sources_ifdef(CONFIG_FLASH_MCUX_FLEXSPI_HYPERFLASH flash_mcux_flexspi_hyperflash.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_MCUX_FLEXSPI_MX25UM51345G flash_mcux_flexspi_mx25um51345g.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_MCUX_FLEXSPI_NOR flash_mcux_flexspi_nor.c)
+zephyr_library_sources_ifdef(CONFIG_FLASH_MCUX_XSPI flash_mcux_xspi.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_MSPI_ATXP032 flash_mspi_atxp032.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_MSPI_EMUL_DEVICE flash_mspi_emul_device.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_MSPI_IS25XX0XX flash_mspi_is25xX0xx.c)
@@ -106,6 +107,11 @@ if(CONFIG_FLASH_MCUX_FLEXSPI_XIP)
   endif()
 endif()
 
+if(CONFIG_FLASH_MCUX_XSPI_XIP)
+	zephyr_code_relocate(FILES flash_mcux_xspi.c LOCATION ${CONFIG_FLASH_MCUX_XSPI_XIP_MEM}_TEXT)
+	zephyr_code_relocate(FILES flash_mcux_xspi.c LOCATION ${CONFIG_FLASH_MCUX_XSPI_XIP_MEM}_RODATA)
+endif()
+
 if(CONFIG_SOC_FLASH_STM32)
   zephyr_library_sources_ifdef(CONFIG_FLASH_EX_OP_ENABLED flash_stm32_ex_op.c)
   if(CONFIG_SOC_SERIES_STM32H7X)
@@ -163,6 +169,11 @@ zephyr_library_include_directories_ifdef(
 
 zephyr_library_include_directories_ifdef(
   CONFIG_FLASH_MCUX_FLEXSPI_HYPERFLASH
+  ${ZEPHYR_BASE}/drivers/memc
+)
+
+zephyr_library_include_directories_ifdef(
+  CONFIG_FLASH_MCUX_XSPI
   ${ZEPHYR_BASE}/drivers/memc
 )
 

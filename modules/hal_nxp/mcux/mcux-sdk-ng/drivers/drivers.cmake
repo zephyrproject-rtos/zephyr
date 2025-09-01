@@ -155,6 +155,7 @@ set_variable_ifdef(CONFIG_OPAMP_MCUX_OPAMP_FAST     CONFIG_MCUX_COMPONENT_driver
 if(NOT CONFIG_SOC_MIMX9596)
   set_variable_ifdef(CONFIG_ETH_NXP_IMX_NETC          CONFIG_MCUX_COMPONENT_driver.netc_switch)
 endif()
+set_variable_ifdef(CONFIG_MEMC_MCUX_XSPI CONFIG_MCUX_COMPONENT_driver.xspi)
 
 set_variable_ifdef(CONFIG_SOC_SERIES_IMXRT10XX    CONFIG_MCUX_COMPONENT_driver.ocotp)
 set_variable_ifdef(CONFIG_SOC_SERIES_IMXRT11XX    CONFIG_MCUX_COMPONENT_driver.ocotp)
@@ -332,6 +333,13 @@ endif()
 if(CONFIG_SOC_MCXW236 OR CONFIG_SOC_MCXW235)
   set(CONFIG_MCUX_COMPONENT_driver.lpc_iocon ON)
   set(CONFIG_MCUX_COMPONENT_driver.romapi ON)
+endif()
+
+if((DEFINED CONFIG_FLASH_MCUX_XSPI_XIP) AND (DEFINED CONFIG_FLASH))
+  zephyr_code_relocate(FILES ${MCUX_SDK_NG_DIR}/drivers/xspi/fsl_xspi.c
+    LOCATION ${CONFIG_FLASH_MCUX_XSPI_XIP_MEM}_TEXT)
+  zephyr_code_relocate(FILES ${MCUX_SDK_NG_DIR}/drivers/xspi/fsl_xspi.c
+    LOCATION ${CONFIG_FLASH_MCUX_XSPI_XIP_MEM}_RODATA)
 endif()
 
 # Load all drivers
