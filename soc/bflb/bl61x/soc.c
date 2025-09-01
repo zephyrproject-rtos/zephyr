@@ -19,10 +19,75 @@
 #include <hbn_reg.h>
 #include <pds_reg.h>
 
+#define SYSMAP_BASE 0xEFFFF000UL
+#define SYSMAP_BASE_SHIFT        (12)
+#define SYSMAP_ATTR_STRONG_ORDER BIT(4)
+#define SYSMAP_ATTR_CACHE_ABLE   BIT(3)
+#define SYSMAP_ATTR_BUFFER_ABLE  BIT(2)
+#define SYSMAP_ADDR_OFFSET       0x0
+#define SYSMAP_FLAGS_OFFSET      0x4
+#define SYSMAP_ENTRY_OFFSET      0x8
+
+/* Initialize memory regions */
+void system_sysmap_init(void)
+{
+	uintptr_t sysmap_base = SYSMAP_BASE;
+
+	/* 1. 0x00000000~0x62FC0000: Strong-Order, Non-Cacheable, Non-Bufferable */
+	sys_write32(BL616_OCRAM_BUSREMAP_CACHEABLE_BASE >> SYSMAP_BASE_SHIFT,
+		    (sysmap_base + SYSMAP_ADDR_OFFSET));
+	sys_write32(SYSMAP_ATTR_STRONG_ORDER, (sysmap_base + SYSMAP_FLAGS_OFFSET));
+	sysmap_base += SYSMAP_ENTRY_OFFSET;
+
+	/* 2. ocram 0x62FC0000~0x63010000: Weak-Order, Cacheable, Bufferable */
+	sys_write32(BL616_WRAM_BUSREMAP_CACHEABLE_BASE >> SYSMAP_BASE_SHIFT,
+		    (sysmap_base + SYSMAP_ADDR_OFFSET));
+	sys_write32(SYSMAP_ATTR_CACHE_ABLE | SYSMAP_ATTR_BUFFER_ABLE,
+		    (sysmap_base + SYSMAP_FLAGS_OFFSET));
+	sysmap_base += SYSMAP_ENTRY_OFFSET;
+
+	/* 3. wram 0x63010000~0x63038000: Weak-Order, Cacheable, Bufferable */
+	sys_write32(BL616_WRAM_BUSREMAP_CACHEABLE_END
+		>> SYSMAP_BASE_SHIFT, (sysmap_base + SYSMAP_ADDR_OFFSET));
+	sys_write32(SYSMAP_ATTR_CACHE_ABLE | SYSMAP_ATTR_BUFFER_ABLE,
+		    (sysmap_base + SYSMAP_FLAGS_OFFSET));
+	sysmap_base += SYSMAP_ENTRY_OFFSET;
+
+	/* 4. rom/empty 0x63038000~0xA0000000: Strong-Order, Non-Cacheable, Non-Bufferable */
+	sys_write32(BL616_FLASH_XIP_BASE >> SYSMAP_BASE_SHIFT, (sysmap_base + SYSMAP_ADDR_OFFSET));
+	sys_write32(SYSMAP_ATTR_STRONG_ORDER, (sysmap_base + SYSMAP_FLAGS_OFFSET));
+	sysmap_base += SYSMAP_ENTRY_OFFSET;
+
+	/* 5. flash(2x32M) 0xA0000000~0xA4000000: Weak-Order, Cacheable, Non-Bufferable */
+	sys_write32(BL616_FLASH_XIP_BUSREMAP_END >> SYSMAP_BASE_SHIFT,
+		    (sysmap_base + SYSMAP_ADDR_OFFSET));
+	sys_write32(SYSMAP_ATTR_CACHE_ABLE, (sysmap_base + SYSMAP_FLAGS_OFFSET));
+	sysmap_base += SYSMAP_ENTRY_OFFSET;
+
+	/* 6. empty 0xA2000000~0xA8000000: Strong-Order, Non-Cacheable, Non-Bufferable */
+	sys_write32(BL616_PSRAM_BUSREMAP_BASE >> SYSMAP_BASE_SHIFT,
+		    (sysmap_base + SYSMAP_ADDR_OFFSET));
+	sys_write32(SYSMAP_ATTR_STRONG_ORDER, (sysmap_base + SYSMAP_FLAGS_OFFSET));
+	sysmap_base += SYSMAP_ENTRY_OFFSET;
+
+	/* 7. psram(128M (4M)) 0xA8000000~0xB0000000(0xA8400000):
+	 * Weak-Order, Cacheable, Bufferable
+	 */
+	sys_write32(BL616_PSRAM_BUSREMAP_END >> SYSMAP_BASE_SHIFT,
+		    (sysmap_base + SYSMAP_ADDR_OFFSET));
+	sys_write32(SYSMAP_ATTR_CACHE_ABLE | SYSMAP_ATTR_BUFFER_ABLE,
+		    (sysmap_base + SYSMAP_FLAGS_OFFSET));
+	sysmap_base += SYSMAP_ENTRY_OFFSET;
+
+	/* 8. others: Strong-Order, Non-Cacheable, Non-Bufferable */
+	sys_write32(0xFFFFF000U >> SYSMAP_BASE_SHIFT, (sysmap_base + SYSMAP_ADDR_OFFSET));
+	sys_write32(SYSMAP_ATTR_STRONG_ORDER, (sysmap_base + SYSMAP_FLAGS_OFFSET));
+}
+
 /* brown out detection */
 void system_BOD_init(void)
 {
-	uint32_t tmp = 0;
+	uint32_t tmp;
 
 	/* disable BOD interrupt */
 	tmp = sys_read32(HBN_BASE + HBN_IRQ_MODE_OFFSET);
@@ -66,7 +131,7 @@ static void clean_icache(void)
 
 static void enable_icache(void)
 {
-	uint32_t tmp = 0;
+	uint32_t tmp;
 
 	__asm__ volatile (
 		"fence\n"
@@ -90,7 +155,7 @@ static void enable_icache(void)
 
 static void enable_dcache(void)
 {
-	uint32_t tmp = 0;
+	uint32_t tmp;
 
 	__asm__ volatile (
 		"fence\n"
@@ -114,7 +179,7 @@ static void enable_dcache(void)
 
 static void enable_branchpred(bool yes)
 {
-	uint32_t tmp = 0;
+	uint32_t tmp;
 
 	__asm__ volatile (
 		"fence\n"
@@ -140,7 +205,7 @@ static void enable_branchpred(bool yes)
 
 static void enable_thead_isa_ext(void)
 {
-	uint32_t tmp = 0;
+	uint32_t tmp;
 
 	__asm__ volatile(
 		"csrr %0, 0x7C0"
@@ -154,7 +219,7 @@ static void enable_thead_isa_ext(void)
 
 static void set_thead_enforce_aligned(bool enable)
 {
-	uint32_t tmp = 0;
+	uint32_t tmp;
 
 	__asm__ volatile(
 		"csrr %0, 0x7C0"
@@ -172,7 +237,7 @@ static void set_thead_enforce_aligned(bool enable)
 
 static void disable_interrupt_autostacking(void)
 {
-	uint32_t tmp = 0;
+	uint32_t tmp;
 
 	__asm__ volatile(
 		"csrr %0, 0x7E1"
@@ -192,6 +257,7 @@ void soc_early_init_hook(void)
 
 	key = irq_lock();
 
+	system_sysmap_init();
 
 	/* turn off USB power */
 	sys_write32((1 << 5), PDS_BASE + PDS_USB_CTL_OFFSET);
