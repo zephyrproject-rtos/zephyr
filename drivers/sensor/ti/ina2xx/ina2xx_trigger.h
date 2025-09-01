@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022  Grinn
+ * Copyright 2022 Grinn
  *
  * SPDX-License-Identifier: Apache-2.0
  */
