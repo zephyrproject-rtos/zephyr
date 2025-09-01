@@ -9,7 +9,7 @@ description: |
 
 compatible: "ti,ina226"
 
-include: [sensor-device.yaml, i2c-device.yaml]
+include: ti,ina2xx-common.yaml
 
 properties:
   avg-count:
@@ -51,23 +51,3 @@ properties:
       - "Shunt Voltage, Continuous"
       - "Bus Voltage, Continuous"
       - "Shunt and Bus, Continuous"
-
-  current-lsb-microamps:
-    type: int
-    required: true
-    description: |
-      Current LSB value in microAmpere.
-      This value gives the measurement resolution for current measurement.
-      Formula: current-lsb [μA] = maximum expected current [μA] / 2^15
-      Higher resolution means lower range of current measurement, vice versa.
-
-      For example, if maximum expected current is 15 [A]:
-        then, current-lsb [μA] = 15000000 [μA] / 2^15 ~= 457.763 [μA].
-
-      Note: rounded values may be used for convenience, e.g. 500uA/LSB.
-
-  rshunt-micro-ohms:
-    type: int
-    required: true
-    description: |
-      Shunt resistor value in micro-ohms.
