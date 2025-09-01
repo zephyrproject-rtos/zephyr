@@ -4,6 +4,12 @@
  */
 
 / {
+	aliases {
+		stepper = &mikroe_h_bridge_4_click;
+	};
+};
+
+/ {
 	mikroe_h_bridge_4_click: h_bridge_4_click {
 		status = "okay";
 		compatible = "zephyr,h-bridge-stepper";
