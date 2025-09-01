@@ -38,7 +38,7 @@
 void __appcpu_start(void);
 static HDR_ATTR void (*_entry_point)(void) = &__appcpu_start;
 
-extern void z_prep_c(void);
+extern FUNC_NORETURN void z_prep_c(void);
 
 static void core_intr_matrix_clear(void)
 {

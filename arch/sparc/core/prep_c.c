@@ -20,7 +20,7 @@
  * This routine prepares for the execution of and runs C code.
  */
 
-void z_prep_c(void)
+FUNC_NORETURN void z_prep_c(void)
 {
 #if defined(CONFIG_SOC_PREP_HOOK)
 	soc_prep_hook();
