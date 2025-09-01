@@ -372,13 +372,42 @@ static int arducam_mega_set_sharpness(const struct device *dev, enum MEGA_SHARPN
                                        "sharpness level");
 }
 
-static int arducam_mega_set_special_effects(const struct device *dev, enum MEGA_COLOR_FX effect)
+static int arducam_mega_set_special_effects(const struct device *dev, enum video_colorfx effect)
 {
     const struct arducam_mega_config *cfg = dev->config;
+	typedef struct {
+        enum video_colorfx video_fx;
+        enum MEGA_COLOR_FX mega_fx;
+    } ColorFxMap;
+
+    static const ColorFxMap fx_map[] = {
+        { VIDEO_COLORFX_NONE,        MEGA_COLOR_FX_NONE },
+        { VIDEO_COLORFX_BW,          MEGA_COLOR_FX_BW },
+        { VIDEO_COLORFX_SEPIA,       MEGA_COLOR_FX_SEPIA },
+        { VIDEO_COLORFX_NEGATIVE,    MEGA_COLOR_FX_NEGATIVE },
+        { VIDEO_COLORFX_SKY_BLUE,    MEGA_COLOR_FX_BLUEISH },
+        { VIDEO_COLORFX_GRASS_GREEN, MEGA_COLOR_FX_GRASS_GREEN },
+        { VIDEO_COLORFX_VIVID,       MEGA_COLOR_FX_OVER_EXPOSURE }
+    };
+
+    uint8_t mega_effect = MEGA_COLOR_FX_NONE;
+    bool supported = false;
+
+    for (size_t i = 0; i < ARRAY_SIZE(fx_map); ++i) {
+        if (fx_map[i].video_fx == effect) {
+            mega_effect = fx_map[i].mega_fx;
+            supported = true;
+            break;
+        }
+    }
+
+    if (!supported) {
+        LOG_ERR("Unsupported color effect: %d", effect);
+    }
 
     return arducam_mega_write_reg_wait(&cfg->bus,
                                        CAM_REG_COLOR_EFFECT_CONTROL,
-                                       effect,
+                                       mega_effect,
                                        3,
                                        "special effects");
 }
@@ -998,7 +1027,7 @@ static int arducam_mega_set_ctrl(const struct device *dev, uint32_t id)
 		return arducam_mega_set_EV(dev, drv_data->ctrls.ev.val);
 	case VIDEO_CID_SHARPNESS:
 		return arducam_mega_set_sharpness(dev, drv_data->ctrls.sharpness.val);
-	case VIDEO_CID_ARDUCAM_COLOR_FX:
+	case VIDEO_CID_COLORFX:
 		return arducam_mega_set_special_effects(dev, drv_data->ctrls.support_special_effects.val);
 	case VIDEO_CID_ARDUCAM_LOWPOWER:
 		return arducam_mega_set_lowpower_enable(dev, drv_data->ctrls.lowpower.val);
