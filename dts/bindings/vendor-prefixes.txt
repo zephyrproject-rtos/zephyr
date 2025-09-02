@@ -549,6 +549,7 @@ prt	Protonic Holland
 ptc	Princeton Technology Corp.
 pulsedlight	PulsedLight, Inc
 purism	Purism, SPC
+puya	Puya Semiconductor (Shanghai) Co., Ltd
 qca	Qualcomm Atheros, Inc.
 qcom	Qualcomm Technologies, Inc
 qemu	QEMU, a generic and open source machine emulator and virtualizer
