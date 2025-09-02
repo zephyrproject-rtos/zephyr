@@ -43,6 +43,13 @@
 			};
 		};
 
+		aes: aes@40442000 {
+			compatible = "ti,mspm0-aes";
+			reg = <0x40442000 0x2000>;
+			interrupts = <28 0>;
+			status = "disabled";
+		};
+
 		tima0: tima@40860000 {
 			compatible = "ti,mspm0-timer";
 			reg = <0x40860000 0x2000>;
