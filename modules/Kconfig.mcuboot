@@ -60,7 +60,9 @@ config MCUBOOT_SIGNATURE_KEY_FILE
 	  config option can be a relative path from the MCUboot repository
 	  root.)
 
-	  If left empty, you must sign the Zephyr binaries manually.
+	  If left empty and MCUBOOT_GENERATE_UNSIGNED_IMAGE is not set, you
+	  must sign and prepare the Zephyr binaries manually to be bootable
+	  from MCUboot.
 
 config MCUBOOT_ENCRYPTION_KEY_FILE
 	string "Path to the mcuboot encryption key file"
@@ -167,7 +169,9 @@ config MCUBOOT_GENERATE_UNSIGNED_IMAGE
 	help
 	  Enabling this configuration allows automatic unsigned binary image
 	  generation when MCUboot signing key is not provided,
-	  i.e., MCUBOOT_SIGNATURE_KEY_FILE is left empty.
+	  i.e., MCUBOOT_SIGNATURE_KEY_FILE is left empty. A hash of the
+	  image will be generated and included in the unsigned image, instead
+	  of a signature.
 
 config MCUBOOT_GENERATE_CONFIRMED_IMAGE
 	bool "Also generate a padded, confirmed image"
