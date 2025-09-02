@@ -92,6 +92,13 @@
 			status = "disabled";
 		};
 
+		usart1: serial@50084000 {
+			compatible = "sifli,sf32lb-usart";
+			reg = <0x50084000 0x400>;
+			interrupts = <59 0>;
+			status = "disabled";
+		};
+
 		cfg: syscon@5000b000 {
 			compatible = "sifli,sf32lb-cfg", "syscon";
 			reg = <0x5000b000 0x1000>;
