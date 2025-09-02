@@ -1123,11 +1123,11 @@ config DCACHE_LINE_SIZE_DETECT
 config DCACHE_LINE_SIZE
 	int "d-cache line size"
 	depends on !DCACHE_LINE_SIZE_DETECT
+	default $(dt_node_int_prop_int,/cpus/cpu@0,d-cache-line-size) \
+		  if $(dt_node_has_prop,/cpus/cpu@0,d-cache-line-size)
 	default 0
 	help
-	  Size in bytes of a CPU d-cache line. If this is set to 0 the value is
-	  obtained from the 'd-cache-line-size' DT property instead if present.
-
+	  Size in bytes of a CPU d-cache line.
 
 	  Detect automatically at runtime by selecting DCACHE_LINE_SIZE_DETECT.
 
@@ -1149,10 +1149,11 @@ config ICACHE_LINE_SIZE_DETECT
 config ICACHE_LINE_SIZE
 	int "i-cache line size"
 	depends on !ICACHE_LINE_SIZE_DETECT
+	default $(dt_node_int_prop_int,/cpus/cpu@0,i-cache-line-size) \
+		  if $(dt_node_has_prop,/cpus/cpu@0,i-cache-line-size)
 	default 0
 	help
-	  Size in bytes of a CPU i-cache line. If this is set to 0 the value is
-	  obtained from the 'i-cache-line-size' DT property instead if present.
+	  Size in bytes of a CPU i-cache line.
 
 	  Detect automatically at runtime by selecting ICACHE_LINE_SIZE_DETECT.
 

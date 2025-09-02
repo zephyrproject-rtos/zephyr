@@ -74,8 +74,6 @@ const struct gpio_dt_spec mosi_pin = GPIO_DT_SPEC_GET_OR(DT_PATH(zephyr_user), m
 #define __NOCACHE
 #if CONFIG_DCACHE_LINE_SIZE != 0
 #define __BUF_ALIGN	__aligned(CONFIG_DCACHE_LINE_SIZE)
-#else
-#define __BUF_ALIGN	__aligned(DT_PROP_OR(DT_PATH(cpus, cpu_0), d_cache_line_size, 32))
 #endif
 #endif /* CONFIG_NOCACHE_MEMORY */
 
