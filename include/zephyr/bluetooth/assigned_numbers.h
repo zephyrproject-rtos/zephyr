@@ -1064,10 +1064,14 @@ enum bt_audio_codec_cap_chan_count {
 /** Maximum supported channel counts */
 #define BT_AUDIO_CODEC_CAP_CHAN_COUNT_MAX 8
 
-/** The minimum size of a Broadcast Name as defined by Bluetooth Assigned Numbers */
-#define BT_AUDIO_BROADCAST_NAME_LEN_MIN          4
-/** The maximum size of a Broadcast Name as defined by Bluetooth Assigned Numbers */
-#define BT_AUDIO_BROADCAST_NAME_LEN_MAX          128
+/** The minimum size in octets of a Broadcast Name */
+#define BT_AUDIO_BROADCAST_NAME_LEN_MIN  4U
+/** The maximum size in octets of a Broadcast Name */
+#define BT_AUDIO_BROADCAST_NAME_LEN_MAX  128U
+/** The minimum amount of characters of a Broadcast Name */
+#define BT_AUDIO_BROADCAST_NAME_CHAR_MIN 4U
+/** The maximum amount of characters of a Broadcast Name */
+#define BT_AUDIO_BROADCAST_NAME_CHAR_MAX 32U
 
 /**
  * @brief Codec configuration types
