@@ -3,6 +3,7 @@
 
 config SOC_FAMILY_SF32
 	bool
+	select HAS_SIFLI_HAL
 
 config SOC_FAMILY
 	default "sf32" if SOC_FAMILY_SF32
