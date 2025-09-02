@@ -64,6 +64,9 @@ Removed APIs and options
 Deprecated APIs and options
 ===========================
 
+* :c:enum:`bt_hci_bus` was deprecated as it was not used. :c:macro:`BT_DT_HCI_BUS_GET` should be
+  used instead.
+
 New APIs and options
 ====================
 
