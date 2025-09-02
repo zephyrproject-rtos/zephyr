@@ -54,9 +54,9 @@ struct mc_ksz8081_config {
 };
 
 /* arbitrarily defined internal driver flags */
-#define KSZ8081_DO_AUTONEG_FLAG 0x1
-#define KSZ8081_SILENCE_DEBUG_LOGS 0x2
-#define KSZ8081_LINK_STATE_VALID 0x3
+#define KSZ8081_DO_AUTONEG_FLAG BIT(0)
+#define KSZ8081_SILENCE_DEBUG_LOGS BIT(1)
+#define KSZ8081_LINK_STATE_VALID BIT(2)
 
 struct mc_ksz8081_data {
 	const struct device *dev;
