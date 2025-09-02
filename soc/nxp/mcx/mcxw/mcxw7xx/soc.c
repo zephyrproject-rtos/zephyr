@@ -15,9 +15,15 @@
 #include <fsl_ccm32k.h>
 #include <fsl_common.h>
 #include <fsl_clock.h>
+#include <fsl_wuu.h>
 
 extern uint32_t SystemCoreClock;
 extern void nxp_nbu_init(void);
+
+void mcxw7xx_set_wakeup(int32_t sig)
+{
+	WUU_SetInternalWakeUpModulesConfig(WUU0, sig, kWUU_InternalModuleInterrupt);
+}
 
 __weak void clock_init(void)
 {
@@ -233,6 +239,10 @@ void soc_early_init_hook(void)
 
 	/* Smart power switch initialization */
 	vbat_init();
+
+#if CONFIG_PM
+	nxp_mcxw7x_power_init();
+#endif
 
 	/* restore interrupt state */
 	irq_unlock(oldLevel);
