@@ -7,7 +7,7 @@
 
 #include <mem.h>
 
-#define BOOTSTRAP_SIZE    DT_SIZE_K(12)
+#define BOOTSTRAP_SIZE    DT_SIZE_K(16)
 #define SRAM0_SIZE       (DT_SIZE_K(256) - BOOTSTRAP_SIZE)
 
 / {
