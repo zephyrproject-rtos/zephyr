@@ -489,7 +489,7 @@ static DEVICE_API(sensor, bme680_api_funcs) = {
 #define BME680_CONFIG_SPI(inst)				\
 	{						\
 		.bus.spi = SPI_DT_SPEC_INST_GET(	\
-			inst, BME680_SPI_OPERATION, 0),	\
+			inst, BME680_SPI_OPERATION),	\
 		.bus_io = &bme680_bus_io_spi,		\
 	}
 

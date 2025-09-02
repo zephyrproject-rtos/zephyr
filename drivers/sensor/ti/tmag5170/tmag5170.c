@@ -555,8 +555,7 @@ static int tmag5170_init(const struct device *dev)
 		.bus = SPI_DT_SPEC_INST_GET(_num,					   \
 					   SPI_OP_MODE_MASTER |				   \
 					   SPI_TRANSFER_MSB |				   \
-					   SPI_WORD_SET(32),				   \
-					   0),						   \
+					   SPI_WORD_SET(32)),				   \
 		.magnetic_channels = DT_INST_ENUM_IDX(_num, magnetic_channels),		   \
 		.x_range = DT_INST_ENUM_IDX(_num, x_range),				   \
 		.y_range = DT_INST_ENUM_IDX(_num, y_range),				   \

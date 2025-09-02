@@ -128,7 +128,7 @@ static int mcp23sxx_bus_is_ready(const struct device *dev)
 		.bus = {                                                                      \
 			.spi = SPI_DT_SPEC_INST_GET(inst,                                     \
 				SPI_OP_MODE_MASTER | SPI_MODE_CPOL |                          \
-				SPI_MODE_CPHA | SPI_WORD_SET(8), 0)                           \
+				SPI_MODE_CPHA | SPI_WORD_SET(8))                              \
 		},                                                                            \
 		.gpio_int = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, {0}),                   \
 		.gpio_reset = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {0}),               \
