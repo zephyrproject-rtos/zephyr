@@ -1867,6 +1867,10 @@ static uint8_t set_extended_advertising(const void *cmd, uint16_t cmd_len, void 
 
 	LOG_DBG("ext adv settings: %u", cp->settings);
 
+	if (atomic_test_bit(&current_settings, BTP_GAP_SETTINGS_ADVERTISING)) {
+		return BTP_STATUS_FAILED;
+	}
+
 	if (cp->settings != 0) {
 		atomic_set_bit(&current_settings, BTP_GAP_SETTINGS_EXTENDED_ADVERTISING);
 	} else {
