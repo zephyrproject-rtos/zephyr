@@ -16,6 +16,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/types.h>
 
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/audio/audio.h>
@@ -1057,7 +1058,8 @@ static int codec_meta_get_broadcast_name(const uint8_t meta[], size_t meta_len,
 	}
 
 	ret = codec_meta_get_val(meta, meta_len, BT_AUDIO_METADATA_TYPE_BROADCAST_NAME, &data);
-	if (data == NULL) {
+	if (data == NULL ||
+	    !IN_RANGE(ret, BT_AUDIO_BROADCAST_NAME_LEN_MIN, BT_AUDIO_BROADCAST_NAME_LEN_MAX)) {
 		return -ENODATA;
 	}
 
@@ -1069,6 +1071,9 @@ static int codec_meta_get_broadcast_name(const uint8_t meta[], size_t meta_len,
 static int codec_meta_set_broadcast_name(uint8_t meta[], size_t meta_len, size_t meta_size,
 					 const uint8_t *broadcast_name, size_t broadcast_name_len)
 {
+	char broadcast_name_str[BT_AUDIO_BROADCAST_NAME_LEN_MAX + sizeof('\0')];
+	ssize_t char_cnt;
+
 	CHECKIF(meta == NULL) {
 		LOG_DBG("meta is NULL");
 		return -EINVAL;
@@ -1076,6 +1081,21 @@ static int codec_meta_set_broadcast_name(uint8_t meta[], size_t meta_len, size_t
 
 	CHECKIF(broadcast_name == NULL) {
 		LOG_DBG("broadcast_name is NULL");
+		return -EINVAL;
+	}
+
+	if (!IN_RANGE(broadcast_name_len, BT_AUDIO_BROADCAST_NAME_LEN_MIN,
+		      BT_AUDIO_BROADCAST_NAME_LEN_MAX)) {
+		LOG_DBG("Invalid broadcast name len %zu", broadcast_name_len);
+		return -EINVAL;
+	}
+
+	(void)memcpy(broadcast_name_str, broadcast_name, broadcast_name_len);
+	broadcast_name_str[broadcast_name_len] = '\0';
+	char_cnt = utf8_count_chars(broadcast_name_str);
+	if (!IN_RANGE(char_cnt, BT_AUDIO_BROADCAST_NAME_CHAR_MIN,
+		      BT_AUDIO_BROADCAST_NAME_CHAR_MAX)) {
+		LOG_DBG("Invalid broadcast name %s", broadcast_name_str);
 		return -EINVAL;
 	}
 
