@@ -18,13 +18,5 @@
 			interrupts = <79 0>;
 			status = "disabled";
 		};
-
-		hash: cryp@48021400 {
-			compatible = "st,stm32-cryp";
-			reg = <0x48021400 0x400>;
-			clocks = <&rcc STM32_CLOCK(AHB2, 5)>;
-			interrupts = <80 0>;
-			status = "disabled";
-		};
 	};
 };
