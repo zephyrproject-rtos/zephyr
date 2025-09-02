@@ -111,11 +111,12 @@ int dmm_buffer_out_prepare(void *region, void const *user_buffer, size_t user_le
  * @param region Memory region associated with device to release the buffer for.
  * @param buffer_out Bus address of the DMA output buffer previously prepared
  *                   with @ref dmm_buffer_out_prepare().
+ * @param user_length Length of the allocated buffer.
  *
  * @retval 0 If succeeded.
  * @retval -errno Negative errno code on failure.
  */
-int dmm_buffer_out_release(void *region, void *buffer_out);
+int dmm_buffer_out_release(void *region, void *buffer_out, size_t alloc_length);
 
 /**
  * @brief Prepare a DMA input buffer for the specified device
@@ -153,6 +154,7 @@ int dmm_buffer_in_prepare(void *region, void *user_buffer, size_t user_length, v
  * @param user_length Length of the buffer to be filled with data from the given device.
  * @param buffer_in Bus address of the DMA input buffer previously prepared
  *                  with @ref dmm_buffer_in_prepare().
+ * @param alloc_length Length of the allocated buffer.
  *
  * @note @p user_buffer and @p buffer_in arguments pair provided in this function call must match
  *       the arguments pair provided in prior call to @ref dmm_buffer_out_prepare()
@@ -161,7 +163,8 @@ int dmm_buffer_in_prepare(void *region, void *user_buffer, size_t user_length, v
  * @retval 0 If succeeded.
  * @retval -errno Negative errno code on failure.
  */
-int dmm_buffer_in_release(void *region, void *user_buffer, size_t user_length, void *buffer_in);
+int dmm_buffer_in_release(void *region, void *user_buffer, size_t user_length, void *buffer_in,
+			  size_t alloc_length);
 
 /**
  * @brief Initialize DMM.
@@ -184,10 +187,11 @@ static ALWAYS_INLINE int dmm_buffer_out_prepare(void *region, void const *user_b
 	return 0;
 }
 
-static ALWAYS_INLINE int dmm_buffer_out_release(void *region, void *buffer_out)
+static ALWAYS_INLINE int dmm_buffer_out_release(void *region, void *buffer_out, size_t alloc_length)
 {
 	ARG_UNUSED(region);
 	ARG_UNUSED(buffer_out);
+	ARG_UNUSED(alloc_length);
 	return 0;
 }
 
@@ -201,12 +205,13 @@ static ALWAYS_INLINE int dmm_buffer_in_prepare(void *region, void *user_buffer, 
 }
 
 static ALWAYS_INLINE int dmm_buffer_in_release(void *region, void *user_buffer, size_t user_length,
-					       void *buffer_in)
+					       void *buffer_in, size_t alloc_length)
 {
 	ARG_UNUSED(region);
 	ARG_UNUSED(user_buffer);
 	ARG_UNUSED(user_length);
 	ARG_UNUSED(buffer_in);
+	ARG_UNUSED(alloc_length);
 	return 0;
 }
 
