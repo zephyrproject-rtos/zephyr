@@ -284,6 +284,23 @@ static int pa_sync_term_req_cb(struct bt_conn *conn,
 	return 0;
 }
 
+static void stop_and_delete_broadcast_sink(void)
+{
+	int err;
+
+	err = bt_bap_broadcast_sink_stop(broadcast_sink);
+	if (err != 0) {
+		FAIL("Failed to stop broadcast sink: %d", err);
+	}
+
+	err = bt_bap_broadcast_sink_delete(broadcast_sink);
+	if (err != 0) {
+		FAIL("Failed to delete broadcast sink: %d", err);
+	}
+
+	broadcast_sink = NULL;
+}
+
 static int bis_sync_req_cb(struct bt_conn *conn,
 			   const struct bt_bap_scan_delegator_recv_state *recv_state,
 			   const uint32_t bis_sync_req[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS])
@@ -298,6 +315,10 @@ static int bis_sync_req_cb(struct bt_conn *conn,
 		SET_FLAG(flag_bis_sync_requested);
 	} else {
 		UNSET_FLAG(flag_bis_sync_requested);
+
+		if (broadcast_sink != NULL) {
+			stop_and_delete_broadcast_sink();
+		}
 	}
 
 	LOG_DBG("bis_sync_req 0x%08X", cached_bis_sync_req);
@@ -763,7 +784,7 @@ static void test_cap_handover_peripheral_unicast_to_broadcast(void)
 
 	WAIT_FOR_FLAG(flag_connected);
 
-	/* Wait until initiator is done starting streams */
+	/* Wait until initiator is done starting unicast streams */
 	WAIT_FOR_FLAG(flag_stream_started);
 	backchannel_sync_wait(CAP_INITIATOR_DEV_ID);
 
@@ -789,15 +810,25 @@ static void test_cap_handover_peripheral_unicast_to_broadcast(void)
 	/* let initiator know we have received what we wanted */
 	backchannel_sync_send(CAP_INITIATOR_DEV_ID);
 
+	/* Unset flag to reuse for new unicast streams */
+	UNSET_FLAG(flag_stream_started);
+
 	/* Wait for broadcast to be stopped */
 	WAIT_FOR_FLAG(flag_broadcast_stopped);
+
+	/* Wait for unicast to be started again */
+	WAIT_FOR_FLAG(flag_stream_started);
+
+	/* let initiator know we have received what we wanted */
+	wait_for_data();
+	backchannel_sync_send(CAP_INITIATOR_DEV_ID);
 
 	PASS("CAP acceptor unicast passed\n");
 }
 
 static const struct bst_test_instance test_cap_handover_peripheral[] = {
 	{
-		.test_id = "cap_handover_peripheral_unicast_to_broadcast",
+		.test_id = "cap_handover_peripheral",
 		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_cap_handover_peripheral_unicast_to_broadcast,
