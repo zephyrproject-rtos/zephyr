@@ -327,6 +327,11 @@ void riscv_idle(enum chip_pll_mode mode, unsigned int key)
 	 */
 	espi_ite_ec_enable_trans_irq(ESPI_ITE_SOC_DEV, true);
 #endif
+
+#if defined(CONFIG_I2C_TARGET) && defined(CONFIG_I2C_ITE_ENHANCE)
+	/* All I2C Channel idle state will affect CPU entering sleep */
+	IT8XXX2_SMB_SMB01CHS |= IT8XXX2_SMB_GEOIITSC;
+#endif
 	/* Chip doze after wfi instruction */
 	chip_pll_ctrl(mode);
 
@@ -350,6 +355,11 @@ void riscv_idle(enum chip_pll_mode mode, unsigned int key)
 			IT8XXX2_ECPM_PFACC2R |= PLL_FREQ_AUTO_CAL_START;
 		}
 	}
+
+#if defined(CONFIG_I2C_TARGET) && defined(CONFIG_I2C_ITE_ENHANCE)
+	/* All I2C Channel idle state will not affect CPU entering sleep */
+	IT8XXX2_SMB_SMB01CHS &= ~IT8XXX2_SMB_GEOIITSC;
+#endif
 
 #ifdef CONFIG_ESPI
 	/* CPU has been woken up, the interrupt is no longer needed */
