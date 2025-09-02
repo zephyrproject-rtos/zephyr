@@ -306,7 +306,7 @@ To disable TrustZone, it's necessary to change AT THE SAME TIME the ``TZEN``
 and ``RDP`` bits. ``TZEN`` needs to get set from 1 to 0 and ``RDP``,
 needs to be set from ``DC`` to ``AA`` (step 3 below).
 
-This is docummented in the `AN5347, in section 9`_, "TrustZone deactivation".
+This is documented in the `AN5347, in section 9`_, "TrustZone deactivation".
 
 However, it's possible that the ``RDP`` bit is not yet set to ``DC``, so you
 first need to set it to ``DC`` (step 2).

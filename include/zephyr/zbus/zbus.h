@@ -180,7 +180,7 @@ struct zbus_channel_observation_mask {
 };
 
 /**
- * @brief Structure for linking observers to chanels
+ * @brief Structure for linking observers to channels
  */
 struct zbus_channel_observation {
 	const struct zbus_channel *chan;

@@ -5,7 +5,7 @@ menuconfig RETENTION_BOOTLOADER_INFO
 	bool "Bootloader info"
 	help
 	  Adds a bootloader information sharing system which allows for
-	  retreiving data from the bootloader when data sharing is enabled.
+	  retrieving data from the bootloader when data sharing is enabled.
 
 if RETENTION_BOOTLOADER_INFO
 
