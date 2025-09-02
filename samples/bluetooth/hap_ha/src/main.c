@@ -48,7 +48,8 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_SCAN_SELF) || IS_ENABLED(CONFIG_SCAN_OFFLOAD),
 
 #define SEM_TIMEOUT                 K_SECONDS(60)
 #define BROADCAST_ASSISTANT_TIMEOUT K_SECONDS(120) /* 2 minutes */
-#define CONFIG_TARGET_BROADCAST_CHANNEL 1  /* TODO: should be configured from Kconfig - Doesn't show up in autoconf.h */
+/* TODO: should be configured from Kconfig - Doesn't show up in autoconf.h */
+#define CONFIG_TARGET_BROADCAST_CHANNEL 1  
 
 #define LOG_INTERVAL 1000U
 
@@ -1101,10 +1102,10 @@ static uint8_t csis_rsi_addata[BT_CSIP_RSI_SIZE];
 static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
 	BT_DATA_BYTES(BT_DATA_UUID16_ALL,
-        /* BT_UUID_16_ENCODE(BT_UUID_ASCS_VAL), */
-        BT_UUID_16_ENCODE(BT_UUID_BASS_VAL),
+		/* BT_UUID_16_ENCODE(BT_UUID_ASCS_VAL), */
+		BT_UUID_16_ENCODE(BT_UUID_BASS_VAL),
 		BT_UUID_16_ENCODE(BT_UUID_GTBS_VAL)),
-        /* BT_UUID_16_ENCODE(BT_UUID_PACS_VAL)), */
+		/* BT_UUID_16_ENCODE(BT_UUID_PACS_VAL)), */
 #if defined(CONFIG_BT_CSIP_SET_MEMBER)
     BT_DATA(BT_DATA_CSIS_RSI, csis_rsi_addata, ARRAY_SIZE(csis_rsi_addata)),
 #endif
@@ -1116,7 +1117,6 @@ static const struct bt_data ad[] = {
 
 static void adv_work_handler(struct k_work *work)
 {
-	printk("Advertisment thread\n");
 	int err;
 	size_t id_count = 0xFF;
 
@@ -1170,7 +1170,7 @@ static void adv_work_handler(struct k_work *work)
 				id_current--;
 			} /* else {
 				printk("\t\tNew id: %d\n", id);
-			}  */
+			} */
 		}
 
 		printk("Using current id: %u\n", id_current);
@@ -1226,7 +1226,8 @@ void bap_thread(void *p1, void *p2, void *p3)
 	uint8_t stream_count;
 	uint32_t sync_bitfield;
 
-	while (true) { 
+	while (true) 
+	{
 		switch (state) {
 		case BAP_STATE_RESET:
 
@@ -1237,7 +1238,7 @@ void bap_thread(void *p1, void *p2, void *p3)
 				continue;
 			}
 			state = BAP_STATE_WAIT_BA;
-			break; 
+			break;
 
 		case BAP_STATE_WAIT_BA:
 
@@ -1265,10 +1266,10 @@ void bap_thread(void *p1, void *p2, void *p3)
 
 				if (k_sem_take(&sem_past_request, K_NO_WAIT) == 0) {
 					state = BAP_STATE_PA_SYNC;
-					break;  
+					break;
 				}
 			}
-			
+
 			state = BAP_STATE_SCAN;
 			break;
 
@@ -1286,7 +1287,6 @@ void bap_thread(void *p1, void *p2, void *p3)
 				state = BAP_STATE_RESET;
 				break;
 			}
-			
 			bt_le_scan_stop();
 			pa_sync_create();
 			state = BAP_STATE_PA_SYNC;
@@ -1346,7 +1346,6 @@ void bap_thread(void *p1, void *p2, void *p3)
 				state = BAP_STATE_RESET;
 				break;
 			}
-			
 			sync_bitfield = select_bis_sync_bitfield(&base_recv_data, requested_bis_sync);
 			if (sync_bitfield == 0U) {
 				printk("No valid BIS sync found, resetting\n");
@@ -1359,7 +1358,6 @@ void bap_thread(void *p1, void *p2, void *p3)
 			break;
 
 		case BAP_STATE_SYNC_BIS:
-			
 			err = bt_bap_broadcast_sink_sync(broadcast_sink, sync_bitfield, bap_streams_p, sink_broadcast_code);
 			if (err != 0) {
 				printk("Unable to sync to broadcast source: %d\n", err);
@@ -1406,8 +1404,7 @@ static int hap_ha_init(void)
 
 	int err;
 
-	if (IS_ENABLED(CONFIG_HAP_HA_HEARING_AID_BINAURAL))
-	{
+	if (IS_ENABLED(CONFIG_HAP_HA_HEARING_AID_BINAURAL)) {
 		printk("%s: Binaural set up\n", __func__);
 		err = csip_set_member_init();
 		if (err != 0) {
@@ -1580,6 +1577,7 @@ BT_IAS_CB_DEFINE(ias_callbacks) = {
 int main(void)
 {
 	int err;
+	
 	conn_count_max = CONFIG_BT_MAX_CONN;
 
 	err = bt_enable(NULL);
@@ -1623,4 +1621,3 @@ int main(void)
                     5, 0, K_NO_WAIT); 
     return 0;
 }
- 
