@@ -120,6 +120,9 @@ static int mcux_pwm_set_cycles_internal(const struct device *dev, uint32_t chann
 
 		PWM_StartTimer(config->base, 1U << config->index);
 	} else {
+        // Wait until LDOK is cleared if it is already set.
+		while (config->base->MCTRL & PWM_MCTRL_LDOK(1U << config->index)) { k_yield(); }
+
 		/* Setup VALx values directly for edge aligned PWM */
 		if (channel == 0) {
 			/* Side A */
