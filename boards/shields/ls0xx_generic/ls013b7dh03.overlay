@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
+
 / {
 	chosen {
 		zephyr,display = &ls0xx_ls013b7dh03;
@@ -12,7 +14,7 @@
 
 &arduino_spi {
 	status = "okay";
-	cs-gpios = <&arduino_header 16 GPIO_ACTIVE_HIGH>; /* D10 */
+	cs-gpios = <&arduino_header ARDUINO_HEADER_R3_D10 GPIO_ACTIVE_HIGH>;
 
 	ls0xx_ls013b7dh03: ls0xx@0 {
 		compatible = "sharp,ls0xx";
@@ -20,8 +22,8 @@
 		reg = <0>;
 		width = <128>;
 		height = <128>;
-		extcomin-gpios = <&arduino_header 14 GPIO_ACTIVE_HIGH>; /* D8 */
+		extcomin-gpios = <&arduino_header ARDUINO_HEADER_R3_D8 GPIO_ACTIVE_HIGH>;
 		extcomin-frequency = <60>; /* required if extcomin-gpios is defined */
-		disp-en-gpios = <&arduino_header 12 GPIO_ACTIVE_HIGH>; /* D6 */
+		disp-en-gpios = <&arduino_header ARDUINO_HEADER_R3_D6 GPIO_ACTIVE_HIGH>;
 	};
 };
