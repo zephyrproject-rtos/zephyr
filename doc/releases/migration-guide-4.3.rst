@@ -26,6 +26,13 @@ Build System
 Kernel
 ******
 
+Base Libraries
+**************
+
+* UTF-8 utils declarations (:c:func:`utf8_trunc`, :c:func:`utf8_lcpy`) have
+  been moved from ``util.h`` to a separate
+  :zephyr_file:`include/zephyr/sys/util_utf8.h` file.
+
 Boards
 ******
 
