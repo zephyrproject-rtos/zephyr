@@ -734,7 +734,7 @@ static int cmd_page_info(const struct shell *sh, size_t argc, char *argv[])
 
 #if DT_HAS_COMPAT_STATUS_OKAY(fixed_partitions)
 #define PRINT_PARTITION_INFO(part)                                                                 \
-	shell_print(sh, "%-32s %-15s 0x%08x %d Kb", DT_NODE_FULL_NAME(part),                       \
+	shell_print(sh, "%-32s %-15s 0x%08x %d KiB", DT_NODE_FULL_NAME(part),                      \
 		    DT_PROP_OR(part, label, ""), DT_REG_ADDR(part), DT_REG_SIZE(part) / 1024);
 
 static int cmd_partitions(const struct shell *sh, size_t argc, char *argv[])
