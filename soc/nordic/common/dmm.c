@@ -136,6 +136,27 @@ static void dmm_buffer_free(struct dmm_heap *dh, void *buffer)
 	k_spin_unlock(&dh->lock, key);
 }
 
+static void dmm_memcpy(void *dst, const void *src, size_t len)
+{
+#define IS_ALIGNED32(x) IS_ALIGNED(x, sizeof(uint32_t))
+#define IS_ALIGNED64(x) IS_ALIGNED(x, sizeof(uint64_t))
+	if (IS_ALIGNED64(len) && IS_ALIGNED64(dst) && IS_ALIGNED64(src)) {
+		for (uint32_t i = 0; i < len / sizeof(uint64_t); i++) {
+			((uint64_t *)dst)[i] = ((uint64_t *)src)[i];
+		}
+		return;
+	}
+
+	if (IS_ALIGNED32(len) && IS_ALIGNED32(dst) && IS_ALIGNED32(src)) {
+		for (uint32_t i = 0; i < len / sizeof(uint32_t); i++) {
+			((uint32_t *)dst)[i] = ((uint32_t *)src)[i];
+		}
+		return;
+	}
+
+	memcpy(dst, src, len);
+}
+
 int dmm_buffer_out_prepare(void *region, void const *user_buffer, size_t user_length,
 			   void **buffer_out)
 {
@@ -172,7 +193,7 @@ int dmm_buffer_out_prepare(void *region, void const *user_buffer, size_t user_le
 			return -ENOMEM;
 		}
 		/* - copy user buffer contents into allocated buffer */
-		memcpy(*buffer_out, user_buffer, user_length);
+		dmm_memcpy(*buffer_out, user_buffer, user_length);
 	}
 
 	/* Check if device memory region is cacheable
@@ -281,7 +302,7 @@ int dmm_buffer_in_release(void *region, void *user_buffer, size_t user_length, v
 	 * If no, copy allocated buffer to the user buffer
 	 */
 	if (buffer_in != user_buffer) {
-		memcpy(user_buffer, buffer_in, user_length);
+		dmm_memcpy(user_buffer, buffer_in, user_length);
 	}
 	/* If yes, no action is needed */
 
