@@ -36,15 +36,6 @@ extern "C" {
  */
 
 /**
- * @cond INTERNAL_HIDDEN
- *
- */
-
-#define _CPU DT_PATH(cpus, cpu_0)
-
-/** @endcond */
-
-/**
  * @brief Enable the d-cache
  *
  * Enable the data cache
@@ -398,7 +389,6 @@ static ALWAYS_INLINE int sys_cache_instr_flush_and_invd_range(void *addr, size_t
  *
  * - At run-time when @kconfig{CONFIG_DCACHE_LINE_SIZE_DETECT} is set.
  * - At compile time using the value set in @kconfig{CONFIG_DCACHE_LINE_SIZE}.
- * - At compile time using the `d-cache-line-size` CPU0 property of the DT.
  * - 0 otherwise
  *
  * @retval size Size of the d-cache line.
@@ -408,10 +398,10 @@ static ALWAYS_INLINE size_t sys_cache_data_line_size_get(void)
 {
 #ifdef CONFIG_DCACHE_LINE_SIZE_DETECT
 	return cache_data_line_size_get();
-#elif (CONFIG_DCACHE_LINE_SIZE != 0)
+#elif defined(CONFIG_DCACHE_LINE_SIZE)
 	return CONFIG_DCACHE_LINE_SIZE;
 #else
-	return DT_PROP_OR(_CPU, d_cache_line_size, 0);
+	return 0;
 #endif
 }
 
@@ -425,7 +415,6 @@ static ALWAYS_INLINE size_t sys_cache_data_line_size_get(void)
  *
  * - At run-time when @kconfig{CONFIG_ICACHE_LINE_SIZE_DETECT} is set.
  * - At compile time using the value set in @kconfig{CONFIG_ICACHE_LINE_SIZE}.
- * - At compile time using the `i-cache-line-size` CPU0 property of the DT.
  * - 0 otherwise
  *
  * @retval size Size of the d-cache line.
@@ -435,10 +424,10 @@ static ALWAYS_INLINE size_t sys_cache_instr_line_size_get(void)
 {
 #ifdef CONFIG_ICACHE_LINE_SIZE_DETECT
 	return cache_instr_line_size_get();
-#elif (CONFIG_ICACHE_LINE_SIZE != 0)
+#elif defined(CONFIG_ICACHE_LINE_SIZE)
 	return CONFIG_ICACHE_LINE_SIZE;
 #else
-	return DT_PROP_OR(_CPU, i_cache_line_size, 0);
+	return 0;
 #endif
 }
 
