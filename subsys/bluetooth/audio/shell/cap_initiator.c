@@ -42,8 +42,6 @@
 #define UNICAST_SINK_SUPPORTED (CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0)
 #define UNICAST_SRC_SUPPORTED  (CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0)
 
-struct bt_cap_unicast_group *cap_unicast_group;
-
 #define CAP_UNICAST_CLIENT_STREAM_COUNT ARRAY_SIZE(unicast_streams)
 
 static void cap_discover_cb(struct bt_conn *conn, int err,
@@ -55,8 +53,7 @@ static void cap_discover_cb(struct bt_conn *conn, int err,
 		return;
 	}
 
-	bt_shell_print("discovery completed%s",
-		       csis_inst == NULL ? "" : " with CSIS");
+	bt_shell_print("discovery completed%s", csis_inst == NULL ? "" : " with CSIS");
 }
 
 static void cap_unicast_start_complete_cb(int err, struct bt_conn *conn)
@@ -90,13 +87,14 @@ static void unicast_stop_complete_cb(int err, struct bt_conn *conn)
 	} else {
 		bt_shell_print("Unicast stop completed");
 
-		if (cap_unicast_group != NULL) {
-			err = bt_cap_unicast_group_delete(cap_unicast_group);
+		if (default_unicast_group.is_cap && default_unicast_group.cap_group != NULL) {
+			err = bt_cap_unicast_group_delete(default_unicast_group.cap_group);
 			if (err != 0) {
 				bt_shell_error("Failed to delete unicast group %p: %d",
-					       cap_unicast_group, err);
+					       default_unicast_group.cap_group, err);
 			} else {
-				cap_unicast_group = NULL;
+				default_unicast_group.cap_group = NULL;
+				default_unicast_group.is_cap = false;
 			}
 		}
 	}
@@ -109,8 +107,7 @@ static struct bt_cap_initiator_cb cbs = {
 	.unicast_stop_complete = unicast_stop_complete_cb,
 };
 
-static int cmd_cap_initiator_discover(const struct shell *sh, size_t argc,
-				    char *argv[])
+static int cmd_cap_initiator_discover(const struct shell *sh, size_t argc, char *argv[])
 {
 	static bool cbs_registered;
 	int err;
@@ -145,13 +142,12 @@ static void populate_connected_conns(struct bt_conn *conn, void *data)
 	}
 }
 
-static int cmd_cap_initiator_unicast_start(const struct shell *sh, size_t argc,
-					   char *argv[])
+static int cmd_cap_initiator_unicast_start(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct bt_cap_unicast_group_stream_param
 		group_stream_params[CAP_UNICAST_CLIENT_STREAM_COUNT] = {0};
-	struct bt_cap_unicast_group_stream_pair_param
-		pair_params[CAP_UNICAST_CLIENT_STREAM_COUNT] = {0};
+	struct bt_cap_unicast_group_stream_pair_param pair_params[CAP_UNICAST_CLIENT_STREAM_COUNT] =
+		{0};
 	struct bt_cap_unicast_audio_start_stream_param
 		stream_param[CAP_UNICAST_CLIENT_STREAM_COUNT] = {0};
 	struct bt_conn *connected_conns[CONFIG_BT_MAX_CONN] = {0};
@@ -215,8 +211,8 @@ static int cmd_cap_initiator_unicast_start(const struct shell *sh, size_t argc,
 		}
 
 		if (err != 0) {
-			shell_error(sh, "Failed to parse argument: %s: %s (%d)",
-				    arg, argv[argn], err);
+			shell_error(sh, "Failed to parse argument: %s: %s (%d)", arg, argv[argn],
+				    err);
 
 			return err;
 		}
@@ -227,8 +223,7 @@ static int cmd_cap_initiator_unicast_start(const struct shell *sh, size_t argc,
 
 	/* Populate the array of connected connections */
 	(void)memset(connected_conns, 0, sizeof(connected_conns));
-	bt_conn_foreach(BT_CONN_TYPE_LE, populate_connected_conns,
-			(void *)connected_conns);
+	bt_conn_foreach(BT_CONN_TYPE_LE, populate_connected_conns, (void *)connected_conns);
 
 	start_param.count = 0U;
 	start_param.stream_params = stream_param;
@@ -244,15 +239,14 @@ static int cmd_cap_initiator_unicast_start(const struct shell *sh, size_t argc,
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0
 		conn_snk_cnt = sink_cnt;
 		for (size_t j = 0U; j < sink_cnt; j++) {
-			struct bt_cap_stream *stream =
-				&unicast_streams[start_param.count].stream;
+			struct bt_cap_stream *stream = &unicast_streams[start_param.count].stream;
 			struct shell_stream *uni_stream =
 				CONTAINER_OF(stream, struct shell_stream, stream);
 			struct bt_bap_ep *snk_ep = snks[bt_conn_index(conn)][j];
 
 			if (snk_ep == NULL) {
-				shell_info(sh, "Could only setup %zu/%zu sink endpoints",
-					   j, sink_cnt);
+				shell_info(sh, "Could only setup %zu/%zu sink endpoints", j,
+					   sink_cnt);
 				conn_snk_cnt = j;
 				break;
 			}
@@ -276,15 +270,14 @@ static int cmd_cap_initiator_unicast_start(const struct shell *sh, size_t argc,
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0
 		conn_src_cnt = source_cnt;
 		for (size_t j = 0U; j < source_cnt; j++) {
-			struct bt_cap_stream *stream =
-				&unicast_streams[start_param.count].stream;
+			struct bt_cap_stream *stream = &unicast_streams[start_param.count].stream;
 			struct shell_stream *uni_stream =
 				CONTAINER_OF(stream, struct shell_stream, stream);
 			struct bt_bap_ep *src_ep = srcs[bt_conn_index(conn)][j];
 
 			if (src_ep == NULL) {
-				shell_info(sh, "Could only setup %zu/%zu source endpoints",
-					   j, source_cnt);
+				shell_info(sh, "Could only setup %zu/%zu source endpoints", j,
+					   source_cnt);
 				conn_src_cnt = j;
 				break;
 			}
@@ -320,13 +313,15 @@ static int cmd_cap_initiator_unicast_start(const struct shell *sh, size_t argc,
 	group_param.params_count = pair_cnt;
 	group_param.params = pair_params;
 
-	if (cap_unicast_group == NULL) {
-		err = bt_cap_unicast_group_create(&group_param, &cap_unicast_group);
+	if (default_unicast_group.cap_group == NULL) {
+		err = bt_cap_unicast_group_create(&group_param, &default_unicast_group.cap_group);
 		if (err != 0) {
 			shell_print(sh, "Failed to create group: %d", err);
 
 			return -ENOEXEC;
 		}
+
+		default_unicast_group.is_cap = true;
 	}
 
 	shell_print(sh, "Starting %zu streams", start_param.count);
@@ -341,8 +336,7 @@ static int cmd_cap_initiator_unicast_start(const struct shell *sh, size_t argc,
 	return 0;
 }
 
-static int cmd_cap_initiator_unicast_list(const struct shell *sh, size_t argc,
-					  char *argv[])
+static int cmd_cap_initiator_unicast_list(const struct shell *sh, size_t argc, char *argv[])
 {
 	for (size_t i = 0U; i < ARRAY_SIZE(unicast_streams); i++) {
 		if (unicast_streams[i].stream.bap_stream.conn == NULL) {
@@ -354,8 +348,7 @@ static int cmd_cap_initiator_unicast_list(const struct shell *sh, size_t argc,
 	return 0;
 }
 
-static int cmd_cap_initiator_unicast_update(const struct shell *sh, size_t argc,
-					    char *argv[])
+static int cmd_cap_initiator_unicast_update(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct bt_cap_unicast_audio_update_stream_param
 		stream_params[CAP_UNICAST_CLIENT_STREAM_COUNT] = {0};
@@ -407,15 +400,14 @@ static int cmd_cap_initiator_unicast_update(const struct shell *sh, size_t argc,
 			struct bt_bap_ep_info ep_info;
 
 			if (err != 0) {
-				shell_error(sh, "Failed to parse stream argument %s: %d",
-					argv[i], err);
+				shell_error(sh, "Failed to parse stream argument %s: %d", argv[i],
+					    err);
 
 				return err;
 			}
 
 			if (!PART_OF_ARRAY(unicast_streams, stream)) {
-				shell_error(sh, "Pointer %p is not a CAP stream pointer",
-					stream);
+				shell_error(sh, "Pointer %p is not a CAP stream pointer", stream);
 
 				return -ENOEXEC;
 			}
@@ -461,8 +453,7 @@ static int cmd_cap_initiator_unicast_update(const struct shell *sh, size_t argc,
 	return err;
 }
 
-static int cmd_cap_initiator_unicast_stop(const struct shell *sh, size_t argc,
-					  char *argv[])
+static int cmd_cap_initiator_unicast_stop(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct bt_cap_stream *streams[CAP_UNICAST_CLIENT_STREAM_COUNT];
 	struct bt_cap_unicast_audio_stop_param param = {0};
@@ -554,7 +545,7 @@ static int cmd_cap_initiator_unicast_cancel(const struct shell *sh, size_t argc,
 	return 0;
 }
 
-static int cap_ac_unicast_start(const struct bap_unicast_ac_param *param,
+static int cap_ac_unicast_start(const struct cap_unicast_ac_param *param,
 				struct bt_conn *connected_conns[],
 				struct shell_stream *snk_uni_streams[], size_t snk_cnt,
 				struct shell_stream *src_uni_streams[], size_t src_cnt)
@@ -601,15 +592,15 @@ static int cap_ac_unicast_start(const struct bap_unicast_ac_param *param,
 	}
 
 	if (snk_ep_cnt != snk_cnt) {
-		bt_shell_error("Sink endpoint and stream count mismatch: %zu != %zu",
-			       snk_ep_cnt, snk_cnt);
+		bt_shell_error("Sink endpoint and stream count mismatch: %zu != %zu", snk_ep_cnt,
+			       snk_cnt);
 
 		return -ENOEXEC;
 	}
 
 	if (src_ep_cnt != src_cnt) {
-		bt_shell_error("Source  endpoint and stream count mismatch: %zu != %zu",
-			       src_ep_cnt, src_cnt);
+		bt_shell_error("Source  endpoint and stream count mismatch: %zu != %zu", src_ep_cnt,
+			       src_cnt);
 
 		return -ENOEXEC;
 	}
@@ -739,7 +730,80 @@ static int set_codec_config(const struct shell *sh, struct shell_stream *sh_stre
 	return 0;
 }
 
-int cap_ac_unicast(const struct shell *sh, const struct bap_unicast_ac_param *param)
+static int cap_ac_create_unicast_group(const struct cap_unicast_ac_param *param,
+				       struct shell_stream *snk_uni_streams[], size_t snk_cnt,
+				       struct shell_stream *src_uni_streams[], size_t src_cnt)
+{
+	struct bt_cap_unicast_group_stream_param snk_group_stream_params[BAP_UNICAST_AC_MAX_SNK] = {
+		0};
+	struct bt_cap_unicast_group_stream_param src_group_stream_params[BAP_UNICAST_AC_MAX_SRC] = {
+		0};
+	struct bt_cap_unicast_group_stream_pair_param pair_params[BAP_UNICAST_AC_MAX_PAIR] = {0};
+	struct bt_cap_unicast_group_param group_param = {0};
+	struct bt_bap_qos_cfg *snk_qos[BAP_UNICAST_AC_MAX_SNK];
+	struct bt_bap_qos_cfg *src_qos[BAP_UNICAST_AC_MAX_SRC];
+	size_t snk_stream_cnt = 0U;
+	size_t src_stream_cnt = 0U;
+	size_t pair_cnt = 0U;
+	int err;
+
+	for (size_t i = 0U; i < snk_cnt; i++) {
+		snk_qos[i] = &snk_uni_streams[i]->qos;
+	}
+
+	for (size_t i = 0U; i < src_cnt; i++) {
+		src_qos[i] = &src_uni_streams[i]->qos;
+	}
+
+	/* Create Group
+	 *
+	 * First setup the individual stream parameters and then match them in pairs by connection
+	 * and direction
+	 */
+	for (size_t i = 0U; i < snk_cnt; i++) {
+		snk_group_stream_params[i].qos_cfg = snk_qos[i];
+		snk_group_stream_params[i].stream =
+			cap_stream_from_shell_stream(snk_uni_streams[i]);
+	}
+	for (size_t i = 0U; i < src_cnt; i++) {
+		src_group_stream_params[i].qos_cfg = src_qos[i];
+		src_group_stream_params[i].stream =
+			cap_stream_from_shell_stream(src_uni_streams[i]);
+	}
+
+	for (size_t i = 0U; i < param->conn_cnt; i++) {
+		for (size_t j = 0; j < MAX(param->snk_cnt[i], param->src_cnt[i]); j++) {
+			if (param->snk_cnt[i] > j) {
+				pair_params[pair_cnt].tx_param =
+					&snk_group_stream_params[snk_stream_cnt++];
+			} else {
+				pair_params[pair_cnt].tx_param = NULL;
+			}
+
+			if (param->src_cnt[i] > j) {
+				pair_params[pair_cnt].rx_param =
+					&src_group_stream_params[src_stream_cnt++];
+			} else {
+				pair_params[pair_cnt].rx_param = NULL;
+			}
+
+			pair_cnt++;
+		}
+	}
+
+	group_param.packing = BT_ISO_PACKING_SEQUENTIAL;
+	group_param.params = pair_params;
+	group_param.params_count = pair_cnt;
+
+	err = bt_cap_unicast_group_create(&group_param, &default_unicast_group.cap_group);
+	if (err == 0) {
+		default_unicast_group.is_cap = true;
+	}
+
+	return err;
+}
+
+int cap_ac_unicast(const struct shell *sh, const struct cap_unicast_ac_param *param)
 {
 	/* Allocate params large enough for any params, but only use what is required */
 	struct bt_conn *connected_conns[BAP_UNICAST_AC_MAX_CONN] = {0};
@@ -750,7 +814,7 @@ int cap_ac_unicast(const struct shell *sh, const struct bap_unicast_ac_param *pa
 	size_t src_cnt = 0;
 	int err;
 
-	if (cap_unicast_group != NULL) {
+	if (default_unicast_group.cap_group != NULL) {
 		shell_error(sh, "Unicast Group already exist, please delete first");
 		return -ENOEXEC;
 	}
@@ -813,7 +877,7 @@ int cap_ac_unicast(const struct shell *sh, const struct bap_unicast_ac_param *pa
 		for (size_t j = 0U; j < param->src_cnt[i]; j++) {
 			struct shell_stream *src_uni_stream;
 
-			src_uni_stream = snk_uni_streams[src_cnt] = &unicast_streams[src_cnt];
+			src_uni_stream = src_uni_streams[src_cnt] = &unicast_streams[src_cnt];
 
 			err = set_codec_config(sh, src_uni_stream, &default_source_preset,
 					       param->conn_cnt, param->src_cnt[i],
@@ -828,7 +892,7 @@ int cap_ac_unicast(const struct shell *sh, const struct bap_unicast_ac_param *pa
 		}
 	}
 
-	err = bap_ac_create_unicast_group(param, snk_uni_streams, snk_cnt, src_uni_streams,
+	err = cap_ac_create_unicast_group(param, snk_uni_streams, snk_cnt, src_uni_streams,
 					  src_cnt);
 	if (err != 0) {
 		shell_error(sh, "Failed to create group: %d", err);
@@ -842,11 +906,12 @@ int cap_ac_unicast(const struct shell *sh, const struct bap_unicast_ac_param *pa
 	if (err != 0) {
 		shell_error(sh, "Failed to start unicast audio: %d", err);
 
-		err = bt_cap_unicast_group_delete(cap_unicast_group);
+		err = bt_cap_unicast_group_delete(default_unicast_group.cap_group);
 		if (err != 0) {
 			shell_error(sh, "Failed to delete group: %d", err);
 		} else {
-			cap_unicast_group = NULL;
+			default_unicast_group.cap_group = NULL;
+			default_unicast_group.is_cap = false;
 		}
 
 		return -ENOEXEC;
@@ -858,7 +923,7 @@ int cap_ac_unicast(const struct shell *sh, const struct bap_unicast_ac_param *pa
 #if UNICAST_SINK_SUPPORTED
 static int cmd_cap_ac_1(const struct shell *sh, size_t argc, char **argv)
 {
-	const struct bap_unicast_ac_param param = {
+	const struct cap_unicast_ac_param param = {
 		.name = "AC_1",
 		.conn_cnt = 1U,
 		.snk_cnt = {1U},
@@ -874,7 +939,7 @@ static int cmd_cap_ac_1(const struct shell *sh, size_t argc, char **argv)
 #if UNICAST_SRC_SUPPORTED
 static int cmd_cap_ac_2(const struct shell *sh, size_t argc, char **argv)
 {
-	const struct bap_unicast_ac_param param = {
+	const struct cap_unicast_ac_param param = {
 		.name = "AC_2",
 		.conn_cnt = 1U,
 		.snk_cnt = {0U},
@@ -890,7 +955,7 @@ static int cmd_cap_ac_2(const struct shell *sh, size_t argc, char **argv)
 #if UNICAST_SINK_SUPPORTED && UNICAST_SRC_SUPPORTED
 static int cmd_cap_ac_3(const struct shell *sh, size_t argc, char **argv)
 {
-	const struct bap_unicast_ac_param param = {
+	const struct cap_unicast_ac_param param = {
 		.name = "AC_3",
 		.conn_cnt = 1U,
 		.snk_cnt = {1U},
@@ -906,7 +971,7 @@ static int cmd_cap_ac_3(const struct shell *sh, size_t argc, char **argv)
 #if UNICAST_SINK_SUPPORTED
 static int cmd_cap_ac_4(const struct shell *sh, size_t argc, char **argv)
 {
-	const struct bap_unicast_ac_param param = {
+	const struct cap_unicast_ac_param param = {
 		.name = "AC_4",
 		.conn_cnt = 1,
 		.snk_cnt = {1U},
@@ -922,7 +987,7 @@ static int cmd_cap_ac_4(const struct shell *sh, size_t argc, char **argv)
 #if UNICAST_SINK_SUPPORTED && UNICAST_SRC_SUPPORTED
 static int cmd_cap_ac_5(const struct shell *sh, size_t argc, char **argv)
 {
-	const struct bap_unicast_ac_param param = {
+	const struct cap_unicast_ac_param param = {
 		.name = "AC_5",
 		.conn_cnt = 1U,
 		.snk_cnt = {1U},
@@ -939,7 +1004,7 @@ static int cmd_cap_ac_5(const struct shell *sh, size_t argc, char **argv)
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 1
 static int cmd_cap_ac_6_i(const struct shell *sh, size_t argc, char **argv)
 {
-	const struct bap_unicast_ac_param param = {
+	const struct cap_unicast_ac_param param = {
 		.name = "AC_6_I",
 		.conn_cnt = 1U,
 		.snk_cnt = {2U},
@@ -955,7 +1020,7 @@ static int cmd_cap_ac_6_i(const struct shell *sh, size_t argc, char **argv)
 #if CONFIG_BT_MAX_CONN >= 2
 static int cmd_cap_ac_6_ii(const struct shell *sh, size_t argc, char **argv)
 {
-	const struct bap_unicast_ac_param param = {
+	const struct cap_unicast_ac_param param = {
 		.name = "AC_6_II",
 		.conn_cnt = 2U,
 		.snk_cnt = {1U, 1U},
@@ -972,7 +1037,7 @@ static int cmd_cap_ac_6_ii(const struct shell *sh, size_t argc, char **argv)
 #if UNICAST_SINK_SUPPORTED && UNICAST_SRC_SUPPORTED
 static int cmd_cap_ac_7_i(const struct shell *sh, size_t argc, char **argv)
 {
-	const struct bap_unicast_ac_param param = {
+	const struct cap_unicast_ac_param param = {
 		.name = "AC_7_I",
 		.conn_cnt = 1U,
 		.snk_cnt = {1U}, /* TODO: These should be separate CIS */
@@ -987,7 +1052,7 @@ static int cmd_cap_ac_7_i(const struct shell *sh, size_t argc, char **argv)
 #if CONFIG_BT_MAX_CONN >= 2
 static int cmd_cap_ac_7_ii(const struct shell *sh, size_t argc, char **argv)
 {
-	const struct bap_unicast_ac_param param = {
+	const struct cap_unicast_ac_param param = {
 		.name = "AC_7_II",
 		.conn_cnt = 2U,
 		.snk_cnt = {1U, 0U},
@@ -1003,7 +1068,7 @@ static int cmd_cap_ac_7_ii(const struct shell *sh, size_t argc, char **argv)
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 1
 static int cmd_cap_ac_8_i(const struct shell *sh, size_t argc, char **argv)
 {
-	const struct bap_unicast_ac_param param = {
+	const struct cap_unicast_ac_param param = {
 		.name = "AC_8_I",
 		.conn_cnt = 1U,
 		.snk_cnt = {2U},
@@ -1019,7 +1084,7 @@ static int cmd_cap_ac_8_i(const struct shell *sh, size_t argc, char **argv)
 #if CONFIG_BT_MAX_CONN >= 2
 static int cmd_cap_ac_8_ii(const struct shell *sh, size_t argc, char **argv)
 {
-	const struct bap_unicast_ac_param param = {
+	const struct cap_unicast_ac_param param = {
 		.name = "AC_8_II",
 		.conn_cnt = 2U,
 		.snk_cnt = {1U, 1U},
@@ -1035,7 +1100,7 @@ static int cmd_cap_ac_8_ii(const struct shell *sh, size_t argc, char **argv)
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 1
 static int cmd_cap_ac_9_i(const struct shell *sh, size_t argc, char **argv)
 {
-	const struct bap_unicast_ac_param param = {
+	const struct cap_unicast_ac_param param = {
 		.name = "AC_9_I",
 		.conn_cnt = 1U,
 		.snk_cnt = {0U},
@@ -1051,7 +1116,7 @@ static int cmd_cap_ac_9_i(const struct shell *sh, size_t argc, char **argv)
 #if CONFIG_BT_MAX_CONN >= 2 && CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 1
 static int cmd_cap_ac_9_ii(const struct shell *sh, size_t argc, char **argv)
 {
-	const struct bap_unicast_ac_param param = {
+	const struct cap_unicast_ac_param param = {
 		.name = "AC_9_II",
 		.conn_cnt = 2U,
 		.snk_cnt = {0U, 0U},
@@ -1067,7 +1132,7 @@ static int cmd_cap_ac_9_ii(const struct shell *sh, size_t argc, char **argv)
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 1
 static int cmd_cap_ac_10(const struct shell *sh, size_t argc, char **argv)
 {
-	const struct bap_unicast_ac_param param = {
+	const struct cap_unicast_ac_param param = {
 		.name = "AC_10",
 		.conn_cnt = 1U,
 		.snk_cnt = {0U},
@@ -1083,7 +1148,7 @@ static int cmd_cap_ac_10(const struct shell *sh, size_t argc, char **argv)
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 1 && CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 1
 static int cmd_cap_ac_11_i(const struct shell *sh, size_t argc, char **argv)
 {
-	const struct bap_unicast_ac_param param = {
+	const struct cap_unicast_ac_param param = {
 		.name = "AC_11_I",
 		.conn_cnt = 1U,
 		.snk_cnt = {2U},
@@ -1101,7 +1166,7 @@ static int cmd_cap_ac_11_i(const struct shell *sh, size_t argc, char **argv)
 #if CONFIG_BT_MAX_CONN >= 2
 static int cmd_cap_ac_11_ii(const struct shell *sh, size_t argc, char **argv)
 {
-	const struct bap_unicast_ac_param param = {
+	const struct cap_unicast_ac_param param = {
 		.name = "AC_11_II",
 		.conn_cnt = 2U,
 		.snk_cnt = {1U, 1U},
@@ -1218,6 +1283,7 @@ static int cmd_broadcast_delete(const struct shell *sh, size_t argc, char *argv[
 
 	default_source.cap_source = NULL;
 	default_source.is_cap = false;
+	default_source.broadcast_id = BT_BAP_INVALID_BROADCAST_ID;
 
 	return 0;
 }
@@ -1230,10 +1296,10 @@ int cap_ac_broadcast(const struct shell *sh, size_t argc, char **argv,
 	uint8_t stereo_data[] = {
 		BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CFG_CHAN_ALLOC,
 				    BT_AUDIO_LOCATION_FRONT_RIGHT | BT_AUDIO_LOCATION_FRONT_LEFT)};
-	uint8_t right_data[] = {BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CFG_CHAN_ALLOC,
-						    BT_AUDIO_LOCATION_FRONT_RIGHT)};
-	uint8_t left_data[] = {BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CFG_CHAN_ALLOC,
-						   BT_AUDIO_LOCATION_FRONT_LEFT)};
+	uint8_t right_data[] = {
+		BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CFG_CHAN_ALLOC, BT_AUDIO_LOCATION_FRONT_RIGHT)};
+	uint8_t left_data[] = {
+		BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CFG_CHAN_ALLOC, BT_AUDIO_LOCATION_FRONT_LEFT)};
 	struct bt_cap_initiator_broadcast_subgroup_param subgroup_param = {0};
 	struct bt_cap_initiator_broadcast_create_param create_param = {0};
 	uint32_t broadcast_id = 0U;
@@ -1242,6 +1308,12 @@ int cap_ac_broadcast(const struct shell *sh, size_t argc, char **argv,
 
 	if (default_source.cap_source != NULL) {
 		shell_error(sh, "Broadcast Source already created, please delete first");
+		return -ENOEXEC;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_CAP_HANDOVER) && default_source.handover_in_progress) {
+		shell_info(sh, "CAP Handover in progress");
+
 		return -ENOEXEC;
 	}
 
@@ -1345,8 +1417,7 @@ static int cmd_cap_ac_14(const struct shell *sh, size_t argc, char **argv)
 static int cmd_cap_initiator(const struct shell *sh, size_t argc, char **argv)
 {
 	if (argc > 1) {
-		shell_error(sh, "%s unknown parameter: %s",
-			    argv[0], argv[1]);
+		shell_error(sh, "%s unknown parameter: %s", argv[0], argv[1]);
 	} else {
 		shell_error(sh, "%s Missing subcommand", argv[0]);
 	}
@@ -1438,8 +1509,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 #endif /* CONFIG_BT_BAP_BROADCAST_SOURCE */
 	SHELL_SUBCMD_SET_END);
 
-SHELL_CMD_ARG_REGISTER(cap_initiator, &cap_initiator_cmds,
-		       "Bluetooth CAP initiator shell commands",
+SHELL_CMD_ARG_REGISTER(cap_initiator, &cap_initiator_cmds, "Bluetooth CAP initiator shell commands",
 		       cmd_cap_initiator, 1, 1);
 
 size_t cap_initiator_pa_data_add(struct bt_data *data_array, const size_t data_array_size)
