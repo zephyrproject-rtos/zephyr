@@ -37,7 +37,7 @@
 				| (2 << MPU_RASR_TEX_Pos)) \
 	}
 
-extern uint32_t _image_rom_end_order;
+extern uint32_t _image_rom_mpu_rasr_size;
 static const struct arm_mpu_region mpu_regions[] = {
 	MPU_REGION_ENTRY("FLASH0",
 			0xc0000000,
@@ -51,7 +51,7 @@ static const struct arm_mpu_region mpu_regions[] = {
 
 	MPU_REGION_ENTRY("SRAM",
 			0x00000000,
-			((uint32_t)&_image_rom_end_order),
+			((uint32_t)&_image_rom_mpu_rasr_size),
 			MPUTYPE_READ_ONLY_PRIV),
 
 	MPU_REGION_ENTRY("REGISTERS",
