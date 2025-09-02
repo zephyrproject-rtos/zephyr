@@ -704,7 +704,7 @@ static int sdhc_spi_set_io(const struct device *dev, struct sdhc_io *ios)
 		if (ios->clock > cfg->spi_max_freq) {
 			return -ENOTSUP;
 		}
-		/* Because pointer comparision is used, we have to
+		/* Because pointer comparison is used, we have to
 		 * swap to a new configuration structure to reconfigure SPI.
 		 */
 		if (ios->clock != 0) {
