@@ -844,6 +844,8 @@ int tester_gap_create_adv_instance(struct bt_le_adv_param *param,
 	return err;
 }
 
+static struct bt_le_ext_adv *gap_ext_adv;
+
 static uint8_t start_advertising(const void *cmd, uint16_t cmd_len,
 				 void *rsp, uint16_t *rsp_len)
 {
@@ -897,17 +899,15 @@ static uint8_t start_advertising(const void *cmd, uint16_t cmd_len,
 		i += sd[sd_len].data_len;
 	}
 
-	struct bt_le_ext_adv *ext_adv = NULL;
-
 	err = tester_gap_create_adv_instance(&param, own_addr_type, ad, adv_len, sd,
-					     sd_len, NULL, &ext_adv);
+					     sd_len, NULL, &gap_ext_adv);
 	if (err != 0) {
 		return BTP_STATUS_FAILED;
 	}
 
 	if (IS_ENABLED(CONFIG_BT_EXT_ADV) &&
 	    atomic_test_bit(&current_settings, BTP_GAP_SETTINGS_EXTENDED_ADVERTISING)) {
-		err = bt_le_ext_adv_start(ext_adv, BT_LE_EXT_ADV_START_DEFAULT);
+		err = bt_le_ext_adv_start(gap_ext_adv, BT_LE_EXT_ADV_START_DEFAULT);
 	} else {
 		err = bt_le_adv_start(&param, ad, adv_len, sd_len ? sd : NULL, sd_len);
 	}
@@ -971,7 +971,13 @@ static uint8_t stop_advertising(const void *cmd, uint16_t cmd_len,
 	struct btp_gap_stop_advertising_rp *rp = rsp;
 	int err;
 
-	err = bt_le_adv_stop();
+	if (IS_ENABLED(CONFIG_BT_EXT_ADV) &&
+	    atomic_test_bit(&current_settings, BTP_GAP_SETTINGS_EXTENDED_ADVERTISING)) {
+		err = bt_le_ext_adv_stop(gap_ext_adv);
+	} else {
+		err = bt_le_adv_stop();
+	}
+
 	if (err < 0) {
 		tester_rsp(BTP_SERVICE_ID_GAP, BTP_GAP_STOP_ADVERTISING, BTP_STATUS_FAILED);
 		LOG_ERR("Failed to stop advertising: %d", err);
