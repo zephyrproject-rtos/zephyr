@@ -18,14 +18,6 @@
 extern "C" {
 #endif
 
-#ifdef CONFIG_MCUBOOT_BOOTLOADER_USES_SHA512
-#define IMAGE_TLV_SHA		IMAGE_TLV_SHA512
-#define IMAGE_SHA_LEN		64
-#else
-#define IMAGE_TLV_SHA		IMAGE_TLV_SHA256
-#define IMAGE_SHA_LEN		32
-#endif
-
 /**
  * @brief Ensures the spare slot (slot 1) is fully erased.
  *
