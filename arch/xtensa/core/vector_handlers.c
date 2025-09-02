@@ -653,7 +653,7 @@ void *xtensa_excint1_c(void *esf)
 		 * this code.
 		 *
 		 * Another intentionally ill is from xtensa_arch_kernel_oops.
-		 * Kernel OOPS has to be explicity raised so we can simply
+		 * Kernel OOPS has to be explicitly raised so we can simply
 		 * set the reason and continue.
 		 */
 		if (cause == EXCCAUSE_ILLEGAL) {

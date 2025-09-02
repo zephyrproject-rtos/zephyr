@@ -110,7 +110,7 @@ uart2: &scb2 {
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		/* Keep bootstrap_region node to know size, finaly it will
+		/* Keep bootstrap_region node to know size, finally it will
 		 * locate on beginning of code-partition. The BootROM copies
 		 * bootstrap application in RAM and launches it.
 		 */

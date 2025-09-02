@@ -45,7 +45,7 @@ bank), and ``PTA20`` is the pin 4 of ``gpioa_h`` (high bank).
 The GPIO controller provides the option to route external input pad interrupts
 to either the SIUL2 EIRQ or WKPU interrupt controllers, as supported by the SoC.
 By default, GPIO interrupts are routed to SIUL2 EIRQ interrupt controller,
-unless they are explicity configured to be directed to the WKPU interrupt
+unless they are explicitly configured to be directed to the WKPU interrupt
 controller, as outlined in :zephyr_file:`dts/bindings/gpio/nxp,s32-gpio.yaml`.
 
 To find information about which GPIOs are compatible with each interrupt
@@ -239,7 +239,7 @@ Ethernet
 
 This board has a single instance of Ethernet Media Access Controller (EMAC)
 interfacing with a `NXP TJA1103`_ 100Base-T1 Ethernet PHY. Currently, there is
-limited driver for this PHY that allows for overiding the default pin strapping configuration for
+limited driver for this PHY that allows for overriding the default pin strapping configuration for
 the PHY (RMII, master, autonomous mode enabled, polarity correction enabled)
 to slave mode.
 
