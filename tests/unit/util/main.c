@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/ztest.h>
-#include <zephyr/sys/util.h>
+#include <zephyr/sys/util_utf8.h>
 #include <stdio.h>
 #include <string.h>
 
