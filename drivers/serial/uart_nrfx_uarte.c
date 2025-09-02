@@ -1590,7 +1590,8 @@ static void endrx_isr(const struct device *dev)
 #ifdef CONFIG_HAS_NORDIC_DMM
 	const struct uarte_nrfx_config *config = dev->config;
 	int err =
-		dmm_buffer_in_release(config->mem_reg, async_rx->usr_buf, rx_amount, async_rx->buf);
+		dmm_buffer_in_release(config->mem_reg, async_rx->usr_buf, rx_amount,
+					async_rx->buf, async_rx->buf_len);
 
 	(void)err;
 	__ASSERT_NO_MSG(err == 0);
@@ -1740,7 +1741,8 @@ static void rxto_isr(const struct device *dev)
 
 	if (async_rx->buf) {
 #ifdef CONFIG_HAS_NORDIC_DMM
-		(void)dmm_buffer_in_release(config->mem_reg, async_rx->usr_buf, 0, async_rx->buf);
+		(void)dmm_buffer_in_release(config->mem_reg, async_rx->usr_buf, 0, async_rx->buf,
+					    async_rx->buf_len);
 		async_rx->buf = async_rx->usr_buf;
 #endif
 		rx_buf_release(dev, async_rx->buf);
@@ -1974,7 +1976,7 @@ static void uarte_nrfx_isr_async(const void *arg)
 		int ret;
 
 		ret = dmm_buffer_in_release(config->mem_reg, async_rx->usr_buf, async_rx->buf_len,
-					    async_rx->buf);
+					    async_rx->buf, async_rx->buf_len);
 
 		(void)ret;
 		__ASSERT_NO_MSG(ret == 0);

@@ -234,9 +234,9 @@ static int prepare_for_transfer(const struct device *dev,
 	return 0;
 
 buffers_set_failed:
-	dmm_buffer_in_release(dev_config->mem_reg, rx_buf, rx_buf_len, dmm_rx_buf);
+	dmm_buffer_in_release(dev_config->mem_reg, rx_buf, rx_buf_len, dmm_rx_buf, rx_buf_len);
 in_alloc_failed:
-	dmm_buffer_out_release(dev_config->mem_reg, (void *)dmm_tx_buf);
+	dmm_buffer_out_release(dev_config->mem_reg, (void *)dmm_tx_buf, tx_buf_len);
 out_alloc_failed:
 	return err;
 }
@@ -409,12 +409,13 @@ static void event_handler(const nrfx_spis_evt_t *p_event, void *p_context)
 		int err;
 
 
-		err = dmm_buffer_out_release(dev_config->mem_reg, p_event->p_tx_buf);
+		err = dmm_buffer_out_release(dev_config->mem_reg, p_event->p_tx_buf,
+					     p_event->tx_buf_size);
 		(void)err;
 		__ASSERT_NO_MSG(err == 0);
 
 		err = dmm_buffer_in_release(dev_config->mem_reg, dev_data->ctx.rx_buf,
-				      p_event->rx_amount, p_event->p_rx_buf);
+				      p_event->rx_amount, p_event->p_rx_buf, p_event->rx_buf_size);
 		__ASSERT_NO_MSG(err == 0);
 
 		spi_context_complete(&dev_data->ctx, dev_data->dev,

@@ -297,7 +297,7 @@ static void free_tx_buffer(struct tdm_drv_data *drv_data, struct tdm_buf *buf)
 {
 	const struct tdm_drv_cfg *drv_cfg = drv_data->drv_cfg;
 
-	(void)dmm_buffer_out_release(drv_cfg->mem_reg, buf->dmm_buf);
+	(void)dmm_buffer_out_release(drv_cfg->mem_reg, buf->dmm_buf, buf->size);
 	k_mem_slab_free(drv_data->tx.cfg.mem_slab, buf->mem_block);
 	LOG_DBG("Freed TX %p", buf->mem_block);
 }
@@ -306,7 +306,8 @@ static void free_rx_buffer(struct tdm_drv_data *drv_data, struct tdm_buf *buf)
 {
 	const struct tdm_drv_cfg *drv_cfg = drv_data->drv_cfg;
 
-	(void)dmm_buffer_in_release(drv_cfg->mem_reg, buf->mem_block, buf->size, buf->dmm_buf);
+	(void)dmm_buffer_in_release(drv_cfg->mem_reg, buf->mem_block, buf->size, buf->dmm_buf,
+				    buf->size);
 	k_mem_slab_free(drv_data->rx.cfg.mem_slab, buf->mem_block);
 	LOG_DBG("Freed RX %p", buf->mem_block);
 }
@@ -637,7 +638,8 @@ static int tdm_nrf_read(const struct device *dev, void **mem_block, size_t *size
 	LOG_DBG("Released RX %p", buf.mem_block);
 
 	if (ret == 0) {
-		(void)dmm_buffer_in_release(drv_cfg->mem_reg, buf.mem_block, buf.size, buf.dmm_buf);
+		(void)dmm_buffer_in_release(drv_cfg->mem_reg, buf.mem_block, buf.size, buf.dmm_buf,
+					    buf.size);
 		*mem_block = buf.mem_block;
 		*size = buf.size;
 	}

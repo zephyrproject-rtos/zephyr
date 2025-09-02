@@ -618,6 +618,7 @@ static int start_read(const struct device *dev,
 	uint8_t active_channel_cnt = 0U;
 	uint8_t channel_id = 0U;
 	void *samples_buffer;
+	size_t samples;
 
 	/* Signal an error if channel selection is invalid (no channels or
 	 * a non-existing one is selected).
@@ -688,12 +689,11 @@ static int start_read(const struct device *dev,
 
 	m_data.active_channel_cnt = active_channel_cnt;
 	m_data.user_buffer = sequence->buffer;
+	samples = m_data.internal_timer_enabled ?
+			 (1 + sequence->options->extra_samplings) : active_channel_cnt;
 
 	error = dmm_buffer_in_prepare(
-		m_data.mem_reg, m_data.user_buffer,
-		(m_data.internal_timer_enabled
-			 ? NRFX_SAADC_SAMPLES_TO_BYTES(1 + sequence->options->extra_samplings)
-			 : NRFX_SAADC_SAMPLES_TO_BYTES(active_channel_cnt)),
+		m_data.mem_reg, m_data.user_buffer, NRFX_SAADC_SAMPLES_TO_BYTES(samples),
 		&samples_buffer);
 	if (error != 0) {
 		LOG_ERR("DMM buffer allocation failed err=%d", error);
@@ -703,11 +703,7 @@ static int start_read(const struct device *dev,
 	/* Buffer is filled in chunks, each chunk composed of number of samples equal to number
 	 * of active channels. Buffer pointer is advanced and reloaded after each chunk.
 	 */
-	nrfx_err = nrfx_saadc_buffer_set(
-		samples_buffer,
-		(m_data.internal_timer_enabled
-			 ? (1 + sequence->options->extra_samplings)
-			 : active_channel_cnt));
+	nrfx_err = nrfx_saadc_buffer_set(samples_buffer, samples);
 	if (nrfx_err != NRFX_SUCCESS) {
 		LOG_ERR("Failed to set buffer: 0x%08x", nrfx_err);
 		return -EINVAL;
@@ -752,13 +748,13 @@ static void event_handler(const nrfx_saadc_evt_t *event)
 	nrfx_err_t err;
 
 	if (event->type == NRFX_SAADC_EVT_DONE) {
-		dmm_buffer_in_release(
-			m_data.mem_reg, m_data.user_buffer,
-			(m_data.internal_timer_enabled
+		size_t len = m_data.internal_timer_enabled
 				 ? NRFX_SAADC_SAMPLES_TO_BYTES(
 					   1 + m_data.ctx.sequence.options->extra_samplings)
-				 : NRFX_SAADC_SAMPLES_TO_BYTES(m_data.active_channel_cnt)),
-			event->data.done.p_buffer);
+				 : NRFX_SAADC_SAMPLES_TO_BYTES(m_data.active_channel_cnt);
+
+		dmm_buffer_in_release(
+			m_data.mem_reg, m_data.user_buffer, len, event->data.done.p_buffer, len);
 
 		if (has_single_ended(&m_data.ctx.sequence)) {
 			correct_single_ended(&m_data.ctx.sequence, m_data.user_buffer,
