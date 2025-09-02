@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/dt-bindings/display/ili9xxx.h>
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
 
 / {
 	chosen {
@@ -23,7 +24,7 @@
 	adafruit_2_8_tft_touch_v2_mipi_dbi: adafruit_2_8_tft_touch_v2_mipi_dbi {
 		compatible = "zephyr,mipi-dbi-spi";
 		spi-dev = <&arduino_spi>;
-		dc-gpios = <&arduino_header 15 GPIO_ACTIVE_HIGH>;	/* D9 */
+		dc-gpios = <&arduino_header ARDUINO_HEADER_R3_D9 GPIO_ACTIVE_HIGH>;
 		write-only;
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -48,8 +49,8 @@
 
 &arduino_spi {
 	status = "okay";
-	cs-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>,	/* D10 */
-		   <&arduino_header 10 GPIO_ACTIVE_LOW>;	/* D04 */
+	cs-gpios = <&arduino_header ARDUINO_HEADER_R3_D10 GPIO_ACTIVE_LOW>,
+		   <&arduino_header ARDUINO_HEADER_R3_D4 GPIO_ACTIVE_LOW>;
 
 	adafruit_2_8_tft_touch_v2_sdhc: sdhc@1 {
 		compatible = "zephyr,sdhc-spi-slot";
@@ -69,6 +70,6 @@
 		compatible = "focaltech,ft5336";
 		reg = <0x38>;
 		/* Uncomment if IRQ line is available (requires to solder jumper) */
-		/* int-gpios = <&arduino_header 13 GPIO_ACTIVE_LOW>; */ /* D7 */
+		/* int-gpios = <&arduino_header ARDUINO_HEADER_R3_D7 GPIO_ACTIVE_LOW>; */
 	};
 };

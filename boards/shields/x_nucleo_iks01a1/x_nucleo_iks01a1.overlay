@@ -4,6 +4,9 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
+
 / {
 	aliases {
 		accel0 = &lsm6ds0_x_nucleo_iks01a1;
@@ -25,7 +28,7 @@
 	lis3mdl_magn_x_nucleo_iks01a1: lis3mdl-magn@1e {
 		compatible = "st,lis3mdl-magn";
 		reg = <0x1e>;
-		irq-gpios = <&arduino_header 5 GPIO_ACTIVE_HIGH>; /* DRDY on A5 */
+		irq-gpios = <&arduino_header ARDUINO_HEADER_R3_A5 GPIO_ACTIVE_HIGH>;
 	};
 
 	lsm6ds0_x_nucleo_iks01a1: lsm6ds0@6b {

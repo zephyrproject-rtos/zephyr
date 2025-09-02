@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+ #include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
+
 / {
 	aliases {
 		rtc = &rtc0_adafruit_data_logger;
@@ -16,7 +18,7 @@
 		 * pins "L1" and "Digital I/O 3".
 		 */
 		green_led_adafruit_data_logger: led_1__adafruit_data_logger {
-			gpios = <&arduino_header 9 GPIO_ACTIVE_HIGH>; /* D3 */
+			gpios = <&arduino_header ARDUINO_HEADER_R3_D3 GPIO_ACTIVE_HIGH>;
 			label = "User LED1";
 		};
 		/*
@@ -24,7 +26,7 @@
 		 * pins "L2" and "Digital I/O 4".
 		 */
 		red_led_adafruit_data_logger: led_2_adafruit_data_logger {
-			gpios = <&arduino_header 10 GPIO_ACTIVE_HIGH>; /* D4 */
+			gpios = <&arduino_header ARDUINO_HEADER_R3_D4 GPIO_ACTIVE_HIGH>;
 			label = "User LED2";
 		};
 	};
@@ -33,7 +35,7 @@
 
 &arduino_spi {
 	status = "okay";
-	cs-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>; /* D10 */
+	cs-gpios = <&arduino_header ARDUINO_HEADER_R3_D10 GPIO_ACTIVE_LOW>;
 
 	sdhc0_adafruit_data_logger: sdhc@0 {
 		compatible = "zephyr,sdhc-spi-slot";
@@ -61,7 +63,8 @@
 		 * Interrupt connection must be manually established using a jumper wire between
 		 * pins "SQ" and "Digital I/O 7".
 		 */
-		int1-gpios = <&arduino_header 13 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>; /* D7 */
+		int1-gpios = <&arduino_header ARDUINO_HEADER_R3_D7
+			      (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 		status = "okay";
 	};
 };

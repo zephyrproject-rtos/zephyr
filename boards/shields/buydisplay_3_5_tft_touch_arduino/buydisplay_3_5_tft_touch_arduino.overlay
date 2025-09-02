@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/dt-bindings/display/ili9xxx.h>
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
 
 / {
 	chosen {
@@ -22,8 +23,8 @@
 
 	buydisplay_3_5_tft_touch_arduino_mipi_dbi {
 		compatible = "zephyr,mipi-dbi-spi";
-		dc-gpios = <&arduino_header 13 GPIO_ACTIVE_HIGH>; /* D7 */
-		reset-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>; /* D10 */
+		dc-gpios = <&arduino_header ARDUINO_HEADER_R3_D7 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&arduino_header ARDUINO_HEADER_R3_D10 GPIO_ACTIVE_LOW>;
 		spi-dev = <&arduino_spi>;
 		write-only;
 		#address-cells = <1>;
@@ -48,7 +49,7 @@
 
 &arduino_spi {
 	status = "okay";
-	cs-gpios = <&arduino_header 15 GPIO_ACTIVE_LOW>; /* D9 */
+	cs-gpios = <&arduino_header ARDUINO_HEADER_R3_D9 GPIO_ACTIVE_LOW>;
 };
 
 &arduino_i2c {
@@ -56,6 +57,6 @@
 		compatible = "focaltech,ft5336";
 		reg = <0x38>;
 		/* Uncomment if IRQ line is available (requires to solder jumper) */
-		/* int-gpios = <&arduino_header 11 GPIO_ACTIVE_LOW>; */ /* D5 */
+		/* int-gpios = <&arduino_header ARDUINO_HEADER_R3_D5 GPIO_ACTIVE_LOW>; */
 	};
 };

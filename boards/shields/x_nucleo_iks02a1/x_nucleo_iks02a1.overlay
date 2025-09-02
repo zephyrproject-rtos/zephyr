@@ -13,6 +13,8 @@
  * ISM330DHCX, IIS2MDC and IIS2DLPC sensors are accessible from the main board mcu.
  */
 
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
+
 / {
 	aliases {
 		accel0 = &iis2dlpc_19_x_nucleo_iks02a1;
@@ -25,20 +27,20 @@
 	iis2dlpc_19_x_nucleo_iks02a1: iis2dlpc@19 {
 		compatible = "st,iis2dlpc";
 		reg = <0x19>;
-		drdy-gpios =  <&arduino_header 4 GPIO_ACTIVE_HIGH>; /* A4 - INT2 */
+		drdy-gpios =  <&arduino_header ARDUINO_HEADER_R3_A4 GPIO_ACTIVE_HIGH>;
 		drdy-int =  <2>;
 	};
 
 	iis2mdc_x_nucleo_iks02a1: iis2mdc@1e {
 		compatible = "st,iis2mdc";
 		reg = <0x1e>;
-		drdy-gpios =  <&arduino_header 2 GPIO_ACTIVE_HIGH>; /* A2 */
+		drdy-gpios =  <&arduino_header ARDUINO_HEADER_R3_A2 GPIO_ACTIVE_HIGH>;
 	};
 
 	ism330dhcx_6b_x_nucleo_iks02a1: ism330dhcx@6b {
 		compatible = "st,ism330dhcx";
 		reg = <0x6b>;
-		drdy-gpios =  <&arduino_header 11 GPIO_ACTIVE_HIGH>; /* D5 - INT2 */
+		drdy-gpios =  <&arduino_header ARDUINO_HEADER_R3_D5 GPIO_ACTIVE_HIGH>;
 		int-pin = <2>;
 	};
 };

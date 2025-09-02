@@ -3,14 +3,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
+
 / {
 	npm1100_ek_pmic: pmic {
 		compatible = "nordic,npm1100";
 
-		nordic,iset-gpios = <&arduino_header 8 GPIO_ACTIVE_HIGH>; /* D2 */
+		nordic,iset-gpios = <&arduino_header ARDUINO_HEADER_R3_D2 GPIO_ACTIVE_HIGH>;
 
 		npm1100_ek_buck: BUCK {
-			nordic,mode-gpios = <&arduino_header 9 GPIO_ACTIVE_HIGH>; /* D3 */
+			nordic,mode-gpios = <&arduino_header ARDUINO_HEADER_R3_D3 GPIO_ACTIVE_HIGH>;
 		};
 	};
 };

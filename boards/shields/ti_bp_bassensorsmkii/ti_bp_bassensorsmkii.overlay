@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
+
 / {
 	aliases {
 		accel0 = &bmi160_ti_bp_bassensorsmkii;
@@ -16,7 +18,7 @@
 	bmi160_ti_bp_bassensorsmkii: bmi160@69 {
 		compatible = "bosch,bmi160";
 		reg = <0x69>;
-		int-gpios = <&arduino_header 8 GPIO_ACTIVE_HIGH>;
+		int-gpios = <&arduino_header ARDUINO_HEADER_R3_D2 GPIO_ACTIVE_HIGH>;
 	};
 
 	opt3001_ti_bp_bassensorsmkii: opt3001@44 {

@@ -4,10 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
+
 &arduino_spi {
 	status = "okay";
-	cs-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>,	/* D10 */
-		   <&arduino_header 12 GPIO_ACTIVE_LOW>;	/* D04 */
+	cs-gpios = <&arduino_header ARDUINO_HEADER_R3_D10 GPIO_ACTIVE_LOW>,
+		   <&arduino_header ARDUINO_HEADER_R3_D4 GPIO_ACTIVE_LOW>;
 
 	waveshare_epaper_sdhc: sdhc@1 {
 		compatible = "zephyr,sdhc-spi-slot";

@@ -15,6 +15,8 @@
  * declared in DTS file.
  */
 
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
+
 / {
 	aliases {
 		accel0 = &iis2dlpc_19_x_nucleo_iks02a1_shub;
@@ -27,14 +29,14 @@
 	iis2dlpc_19_x_nucleo_iks02a1_shub: iis2dlpc@19 {
 		compatible = "st,iis2dlpc";
 		reg = <0x19>;
-		drdy-gpios =  <&arduino_header 4 GPIO_ACTIVE_HIGH>; /* A4 - INT2 */
+		drdy-gpios =  <&arduino_header ARDUINO_HEADER_R3_A4 GPIO_ACTIVE_HIGH>;
 		drdy-int =  <2>;
 	};
 
 	ism330dhcx_6b_x_nucleo_iks02a1_shub: ism330dhcx@6b {
 		compatible = "st,ism330dhcx";
 		reg = <0x6b>;
-		drdy-gpios =  <&arduino_header 11 GPIO_ACTIVE_HIGH>; /* D5 - INT2 */
+		drdy-gpios =  <&arduino_header ARDUINO_HEADER_R3_D5 GPIO_ACTIVE_HIGH>;
 		int-pin = <2>;
 	};
 };

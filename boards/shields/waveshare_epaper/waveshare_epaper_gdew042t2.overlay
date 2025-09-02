@@ -4,6 +4,7 @@
  */
 
 #include "waveshare_epaper_common.dtsi"
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
 
 / {
 	chosen {
@@ -13,8 +14,8 @@
 	mipi_dbi_waveshare_epaper_gdew042t2 {
 		compatible = "zephyr,mipi-dbi-spi";
 		spi-dev = <&arduino_spi>;
-		dc-gpios = <&arduino_header 15 GPIO_ACTIVE_HIGH>;	/* D9 */
-		reset-gpios = <&arduino_header 14 GPIO_ACTIVE_LOW>;	/* D8 */
+		dc-gpios = <&arduino_header ARDUINO_HEADER_R3_D9 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&arduino_header ARDUINO_HEADER_R3_D8 GPIO_ACTIVE_LOW>;
 		write-only;
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -25,7 +26,7 @@
 			reg = <0>;
 			width = <400>;
 			height = <300>;
-			busy-gpios = <&arduino_header 13 GPIO_ACTIVE_LOW>; /* D7 */
+			busy-gpios = <&arduino_header ARDUINO_HEADER_R3_D7 GPIO_ACTIVE_LOW>;
 
 			softstart = [17 17 17];
 
