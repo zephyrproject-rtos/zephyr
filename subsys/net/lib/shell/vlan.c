@@ -45,18 +45,16 @@ static void iface_vlan_del_cb(struct net_if *iface, void *user_data)
 
 static void iface_vlan_cb(struct net_if *iface, void *user_data)
 {
+	struct virtual_interface_context *ctx;
 	struct net_shell_user_data *data = user_data;
 	const struct shell *sh = data->sh;
 	int *count = data->user_data;
 	char name[IFNAMSIZ];
 
-	if (net_if_l2(iface) != &NET_L2_GET_NAME(VIRTUAL)) {
+	if (!net_eth_is_vlan_interface(iface)) {
 		return;
 	}
 
-	if (!(net_virtual_get_iface_capabilities(iface) & VIRTUAL_INTERFACE_VLAN)) {
-		return;
-	}
 
 	if (*count == 0) {
 		PR("    Interface  Name        \tTag\tAttached\n");
@@ -64,9 +62,14 @@ static void iface_vlan_cb(struct net_if *iface, void *user_data)
 
 	(void)net_if_get_name(iface, name, sizeof(name));
 
-	PR("[%d] %p  %-12s\t%d\t%d\n", net_if_get_by_iface(iface), iface,
-	   name, net_eth_get_vlan_tag(iface),
-	   net_if_get_by_iface(net_eth_get_vlan_main(iface)));
+	ctx = net_if_l2_data(iface);
+	if (ctx->iface != NULL) {
+		PR("[%d] %p  %-12s\t%d\t%d\n", net_if_get_by_iface(iface), iface,
+		   name, net_eth_get_vlan_tag(iface),
+		   net_if_get_by_iface(net_eth_get_vlan_main(iface)));
+	} else {
+		PR("[%d] %p  %-12s\n", net_if_get_by_iface(iface), iface, name);
+	}
 
 	(*count)++;
 }
