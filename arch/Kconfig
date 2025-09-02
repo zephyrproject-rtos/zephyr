@@ -1105,9 +1105,12 @@ config CACHE_MANAGEMENT
 	  This option enables the cache management functions backed by arch or
 	  driver code.
 
+if CACHE_MANAGEMENT
+
+if DCACHE
+
 config DCACHE_LINE_SIZE_DETECT
 	bool "Detect d-cache line size at runtime"
-	depends on CACHE_MANAGEMENT && DCACHE
 	help
 	  This option enables querying some architecture-specific hardware for
 	  finding the d-cache line size at the expense of taking more memory and
@@ -1119,7 +1122,7 @@ config DCACHE_LINE_SIZE_DETECT
 
 config DCACHE_LINE_SIZE
 	int "d-cache line size"
-	depends on CACHE_MANAGEMENT && DCACHE && !DCACHE_LINE_SIZE_DETECT
+	depends on !DCACHE_LINE_SIZE_DETECT
 	default 0
 	help
 	  Size in bytes of a CPU d-cache line. If this is set to 0 the value is
@@ -1128,9 +1131,12 @@ config DCACHE_LINE_SIZE
 
 	  Detect automatically at runtime by selecting DCACHE_LINE_SIZE_DETECT.
 
+endif # DCACHE
+
+if ICACHE
+
 config ICACHE_LINE_SIZE_DETECT
 	bool "Detect i-cache line size at runtime"
-	depends on CACHE_MANAGEMENT && ICACHE
 	help
 	  This option enables querying some architecture-specific hardware for
 	  finding the i-cache line size at the expense of taking more memory and
@@ -1142,7 +1148,7 @@ config ICACHE_LINE_SIZE_DETECT
 
 config ICACHE_LINE_SIZE
 	int "i-cache line size"
-	depends on CACHE_MANAGEMENT && ICACHE && !ICACHE_LINE_SIZE_DETECT
+	depends on !ICACHE_LINE_SIZE_DETECT
 	default 0
 	help
 	  Size in bytes of a CPU i-cache line. If this is set to 0 the value is
@@ -1150,9 +1156,10 @@ config ICACHE_LINE_SIZE
 
 	  Detect automatically at runtime by selecting ICACHE_LINE_SIZE_DETECT.
 
+endif # ICACHE
+
 choice CACHE_TYPE
 	prompt "Cache type"
-	depends on CACHE_MANAGEMENT
 	default ARCH_CACHE
 
 config ARCH_CACHE
@@ -1166,6 +1173,8 @@ config EXTERNAL_CACHE
 	  External cache controller
 
 endchoice
+
+endif # CACHE_MANAGEMENT
 
 endmenu
 
