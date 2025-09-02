@@ -102,7 +102,51 @@ Assuming that the Corstone-300 FVP has been downloaded, installed and added to
 the ``PATH`` variable, then building and testing can be done with following
 commands.
 
+Build the sample for the FVP:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/modules/tflite-micro/tflm_ethosu
+   :board: mps3/corstone300/fvp
+   :goals: build
+
+Then run the image on the FVP:
+
 .. code-block:: bash
 
-    $ west build -b mps3/corstone300/fvp zephyr/samples/modules/tflite-micro/tflm_ethosu
-    $ FVP_Corstone_SSE-300_Ethos-U55 build/zephyr/zephyr.elf
+    FVP_Corstone_SSE-300_Ethos-U55 build/zephyr/zephyr.elf
+
+Configuring PMU Events via CMake
+********************************
+
+If ``CONFIG_SAMPLE_TFLM_ETHOSU_PMU`` is enabled, the sample reports
+per-inference PMU counters. You can override which PMU events are
+counted by setting CMake cache variables ``ETHOSU_PMU_EVENT_0`` ..
+``ETHOSU_PMU_EVENT_3`` (and ``_4`` .. ``_7`` when supported). Each value should
+be an event token from the PMU header (for example
+``ETHOSU_PMU_AXI0_RD_DATA_BEAT_RECEIVED``). Sensible defaults are provided by
+the sample CMake based on the target platform.
+
+For example, to enable the PMU instrumentation and override the first two
+events:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/modules/tflite-micro/tflm_ethosu
+   :board: mps3/corstone300/fvp
+   :goals: run
+   :gen-args: -DCONFIG_SAMPLE_TFLM_ETHOSU_PMU=y -DETHOSU_PMU_EVENT_0=ETHOSU_PMU_AXI0_RD_DATA_BEAT_RECEIVED -DETHOSU_PMU_EVENT_1=ETHOSU_PMU_AXI1_RD_DATA_BEAT_RECEIVED
+
+PMU report format
+*****************
+
+When enabled, the sample prints a short PMU report after each inference in a
+compact, machine-parseable style:
+
+.. code-block:: text
+
+   Ethos-U PMU report:
+   ethosu_pmu_cycle_cntr : 134869
+   ethosu_pmu_cntr0 : 133577
+   ethosu_pmu_cntr1 : 0
+   ethosu_pmu_cntr2 : 111744
+   ethosu_pmu_cntr3 : 0
+   # (if supported, counters 4..7 are also printed.)
