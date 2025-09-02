@@ -462,8 +462,6 @@ void lc3_enqueue_for_decoding(struct stream_rx *stream, const struct bt_iso_recv
 		data->ts = 0U;
 	}
 
-	//LOG_HEXDUMP_INF(buf->data, buf->len, "LC3: ");
-
 	k_fifo_put(&lc3_in_fifo, data);
 }
 

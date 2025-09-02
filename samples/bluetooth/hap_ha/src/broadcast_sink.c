@@ -1,6 +1,5 @@
 #define SEM_TIMEOUT                 K_SECONDS(60)
 #define BROADCAST_ASSISTANT_TIMEOUT K_SECONDS(120) /* 2 minutes */
-#define CONFIG_TARGET_BROADCAST_CHANNEL 1  //TODO: should be configured from Kconfig - Doesn't show up in autoconf.h
 
 #define LOG_INTERVAL 1000U
 
@@ -17,12 +16,12 @@
 
 
 #define BAP_THREAD_STACK_SIZE 2048
-#define THREAD_PRIORITY 5			//TODO: check on value
+#define THREAD_PRIORITY 5			/* TODO: check on value */
  
 K_THREAD_STACK_DEFINE(bap_stack, BAP_THREAD_STACK_SIZE);
- 
+
 struct k_thread bap_tid;
- 
+
 
 
 /* Sample assumes that we only have a single Scan Delegator receive state */
@@ -44,7 +43,7 @@ static uint8_t id_current;
 static uint8_t conn_count_max;
 static uint8_t volatile conn_count;
 
-/**	
+/**
  * The base_recv_cb() function will populate struct bis_audio_allocation with channel allocation
  * information for a BIS.
  *
@@ -89,9 +88,9 @@ static uint32_t
 	requested_bis_sync[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS]; /* holds data from bis_sync_req_cb */
 static uint8_t sink_broadcast_code[BT_ISO_BROADCAST_CODE_SIZE];
 
-static uint8_t get_stream_count(uint32_t bitfield);	
+static uint8_t get_stream_count(uint32_t bitfield);
 
-//BAP _ STREAM OPS CB
+/* BAP _ STREAM OPS CB */
 
 static void stream_connected_cb(struct bt_bap_stream *bap_stream)
 {
@@ -158,7 +157,7 @@ static struct bt_bap_stream_ops stream_ops = {
 };
 
 
-//BAP SNK CB
+/* BAP SNK CB */
 /**
  * This is called for each BIS in a subgroup
  *
@@ -171,7 +170,7 @@ static bool bis_get_channel_allocation_cb(const struct bt_bap_base_subgroup_bis 
 	struct base_subgroup_data *base_subgroup_bis = user_data;
 	struct bt_audio_codec_cfg codec_cfg;
 	int err;
-	
+
 	printk("%s: for each BIS in a subgroup\n", __func__);
 
 	err = bt_bap_base_subgroup_bis_codec_to_codec_cfg(bis, &codec_cfg);
@@ -348,7 +347,7 @@ static struct bt_bap_broadcast_sink_cb broadcast_sink_cbs = {
 	.stopped = broadcast_sink_stopped_cb,
 };
 
-//SCAN DELEGATOR 
+/* SCAN DELEGATOR */
 static void pa_timer_handler(struct k_work *work)
 {
 	if (req_recv_state != NULL) {
@@ -429,17 +428,10 @@ static int pa_sync_req_cb(struct bt_conn *conn,
 			  const struct bt_bap_scan_delegator_recv_state *recv_state,
 			  bool past_avail, uint16_t pa_interval)
 {
-/*     if (broadcast_assistant_conn == NULL) {
-        broadcast_assistant_conn = bt_conn_ref(conn);
-        k_sem_give(&sem_connected);
-    } */
-
 	struct bt_conn_info info;
 	bt_conn_get_info(conn, &info);
 	printk("\n\tPA sync from conn id: %d\n", info.id);
- 
- 
-	printk("\n\t %s \n", __func__);
+
 	printk("Received request to sync to PA (PAST %savailble): %u\n", past_avail ? "" : "not ",
 	       recv_state->pa_sync_state);
 
@@ -573,10 +565,10 @@ static int bis_sync_req_cb(struct bt_conn *conn,
 		}
 
 		/* The stream stopped callback will be called as part of this,
-		* and we do not need to wait for any events from the
-		* controller. Thus, when this returns, the `big_synced`
-		* is back to false.
-		*/
+		 * and we do not need to wait for any events from the
+		 * controller. Thus, when this returns, the `big_synced`
+		 * is back to false.
+		 */
 		err = bt_bap_broadcast_sink_stop(broadcast_sink);
 		if (err != 0) {
 			printk("Failed to stop Broadcast Sink: %d\n", err);
@@ -775,7 +767,7 @@ static struct bt_le_per_adv_sync_cb bap_pa_sync_cb = {
 };
 
 static int init_bap_sink(void)
-{ 
+{
 	printk("%s: initialise Scan delegator and callbacks for BAP Sink", __func__);
 	int err;
 
@@ -806,7 +798,6 @@ static int init_bap_sink(void)
 	if (IS_ENABLED(CONFIG_USE_USB_AUDIO_OUTPUT)) {
 		usb_init();
 	}
-	printk("\n\n%s: BAP SINK init finished. \n\n", __func__);
 
 	return 0;
 }
@@ -814,8 +805,6 @@ static int init_bap_sink(void)
 static int bap_sink_reset(void)
 {
 	int err;
-
-	printk("%s: BAP SINK reset\n", __func__);
 
 	req_recv_state = NULL;
 	big_synced = false;
@@ -914,7 +903,6 @@ static uint32_t select_bis_sync_bitfield(struct base_data *base_sg_data,
 
 #if defined(CONFIG_TARGET_BROADCAST_CHANNEL)
 
-	printk("CONFIG_TARGET CHANNEL TRUE\n");
 	for (int i = 0; i < CONFIG_BT_BAP_BASS_MAX_SUBGROUPS; i++) {
 		enum bt_audio_location combine_alloc = BT_AUDIO_LOCATION_MONO_AUDIO;
 		uint32_t combine_bis_sync = 0U;

@@ -98,7 +98,7 @@ void stream_rx_recv(struct bt_bap_stream *bap_stream, const struct bt_iso_recv_i
 		/* Invalid SDUs will trigger PLC */
 		lc3_enqueue_for_decoding(stream, info, buf);
 	}
-	
+
 }
 
 int stream_rx_started(struct bt_bap_stream *bap_stream)

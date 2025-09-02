@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-mainmenu "Bluetooth: Hearing Aid" 
+mainmenu "Bluetooth: Hearing Aid"
 
 menu "Zephyr"
 source "Kconfig.zephyr"

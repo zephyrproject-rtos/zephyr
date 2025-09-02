@@ -1,8 +1,8 @@
 /**
  * @file
- * @brief Bluetooth BAP Broadcast Sink 
+ * @brief Bluetooth BAP Broadcast Sink
  *
- * This files handles all the main functionalities of the broadcast sink and the broadcast assitant connection related functionality for the sample
+ * This file manages the core functionalities of the broadcast sink and handles connection-related logic for the broadcast assistant in the sample
  */
 
 #ifndef BROADCAST_SINK_H
@@ -40,7 +40,7 @@
 int init_bap_sink(void);
 int bap_sink_reset(void);
 int pa_sync_create(void);
- 
+
 extern struct bt_bap_stream *bap_streams_p[CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT];
 extern struct bt_bap_broadcast_sink *broadcast_sink;
 extern struct bt_conn *broadcast_assistant_conn;

@@ -56,5 +56,3 @@ tests:
     build_only: true
     extra_configs:
     - CONFIG_HAP_HA_SET_RANK=2
- 
- 
