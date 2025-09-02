@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
 
 / {
 	chosen {
@@ -13,8 +14,8 @@
 	mipi_dbi_st7789v_tl019fqv01 {
 		compatible = "zephyr,mipi-dbi-spi";
 		spi-dev = <&arduino_spi>;
-		dc-gpios = <&arduino_header 15 GPIO_ACTIVE_HIGH>;	/* D9 */
-		reset-gpios = <&arduino_header 14 GPIO_ACTIVE_LOW>;	/* D8 */
+		dc-gpios = <&arduino_header ARDUINO_HEADER_R3_D9 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&arduino_header ARDUINO_HEADER_R3_D8 GPIO_ACTIVE_LOW>;
 		write-only;
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -49,5 +50,5 @@
 
 &arduino_spi {
 	status = "okay";
-	cs-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>;	/* D10 */
+	cs-gpios = <&arduino_header ARDUINO_HEADER_R3_D10 GPIO_ACTIVE_LOW>;
 };
