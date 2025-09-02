@@ -234,6 +234,11 @@ manifest:
       revision: b547a36a722af7787e5f55b551fd6ce72dcba5a4
       groups:
         - hal
+    - name: hal_sifli
+      revision: 7be421088b6fa2910917f3f8b656ded01e21b4e8
+      path: modules/hal/sifli
+      groups:
+        - hal
     - name: hal_silabs
       revision: 5bbf64e7a9a6af9f7219a35c47129569edba1ef9
       path: modules/hal/silabs
