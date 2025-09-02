@@ -238,6 +238,9 @@ class Build(Forceable):
                 self.run_cmake = True
             else:
                 self._update_cache()
+                # Find board from cache if it wasn't specified
+                if not board:
+                    board, origin = self._find_board()
                 if (self.args.cmake or self.args.cmake_opts or
                         self.args.cmake_only or self.args.snippets or
                         self.args.shields or self.args.extra_conf_files or
