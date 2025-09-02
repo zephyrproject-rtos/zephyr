@@ -35,12 +35,12 @@ extern "C" {
  * Cache line alignment is required if region is cacheable and data cache is enabled.
  */
 #define DMM_REG_ALIGN_SIZE(node_id) \
-	(DMM_IS_REG_CACHEABLE(node_id) ? CONFIG_DCACHE_LINE_SIZE : sizeof(uint8_t))
+	(DMM_IS_REG_CACHEABLE(node_id) ? CONFIG_DCACHE_LINE_SIZE : sizeof(uint32_t))
 
 #else
 
 #define DMM_IS_REG_CACHEABLE(node_id) 0
-#define DMM_REG_ALIGN_SIZE(node_id) (sizeof(uint8_t))
+#define DMM_REG_ALIGN_SIZE(node_id) (sizeof(uint32_t))
 
 #endif /* CONFIG_DCACHE */
 
