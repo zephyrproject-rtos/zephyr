@@ -42,7 +42,7 @@ to the UART.
 With FUSE access in the host filesystem
 ---------------------------------------
 
-If you enable the :ref:`host FUSE filsystem access <native_fuse_flash>`
+If you enable the :ref:`host FUSE filesystem access <native_fuse_flash>`
 you will also have the flash filesystem mounted and accessible from your Linux host filesystem.
 
 Before starting a build, make sure that the i386 pkgconfig directory is in your

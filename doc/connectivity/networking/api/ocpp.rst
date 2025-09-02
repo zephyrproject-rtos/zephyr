@@ -25,7 +25,7 @@ with payload in json format. The library can be enabled with
 core profile is supported.
 
 OCPP charge point (CP) require a Central System (CS) server to connect, an open
-source SteVe server shall be setup locally for devlopment purpose, See
+source SteVe server shall be setup locally for development purpose, See
 `SteVe server <https://github.com/steve-community/steve/blob/master/README.md>`_
 for more information about the setup.
 
@@ -72,7 +72,7 @@ A filled CP, CS structure and user callback needs to be passed in ocpp_init.
    ret = ocpp_init(&cpi, &csi, user_notify_cb, NULL);
 
 A unique session must open for each physical connector before any ocpp
-transcation API call.
+transaction API call.
 
 .. code-block:: c
 

@@ -179,7 +179,7 @@ config HTTP_SERVER_RESTART_DELAY
 	range 1 60000
 	help
 	  In case server restarts for any reason, the server re-initialization
-	  will be delayed by this value (miliseconds). The delay is needed to
+	  will be delayed by this value (milliseconds). The delay is needed to
 	  allow any existing connections to finalize to avoid binding errors
 	  during initialization.
 

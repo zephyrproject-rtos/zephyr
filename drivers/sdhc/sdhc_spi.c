@@ -369,7 +369,7 @@ static int sdhc_spi_send_cmd(const struct device *dev, struct sdhc_command *cmd,
 	 * the maximum spi response length is 5 bytes, so we provide an
 	 * additional 5 bytes of data, leaving us with 13 bytes of 0xff.
 	 * Finally, we send a padding byte of all 0xff, to ensure that
-	 * the card recives at least one 0xff byte before next command.
+	 * the card receives at least one 0xff byte before next command.
 	 */
 
 	/* Note: we can discard CMD data as we send it,
