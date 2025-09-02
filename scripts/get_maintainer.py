@@ -109,6 +109,18 @@ def _parse_args():
         nargs="?",
         help="List all areas maintained by maintainer.")
 
+
+    area_parser = subparsers.add_parser(
+        "area",
+        help="List area(s) by name")
+    area_parser.add_argument(
+        "name",
+        metavar="AREA",
+        nargs="?",
+        help="List all areas with the given name.")
+
+    area_parser.set_defaults(cmd_fn=Maintainers._area_cmd)
+
     # New arguments for filtering
     areas_parser.add_argument(
         "--without-maintainers",
@@ -220,6 +232,12 @@ class Maintainers:
 
             self.areas[area_name] = area
 
+    def name2areas(self, name):
+        """
+        Returns a list of Area instances for the areas that match 'name'.
+        """
+        return [area for area in self.areas.values() if area.name == name]
+
     def path2areas(self, path):
         """
         Returns a list of Area instances for the areas that contain 'path',
@@ -261,6 +279,14 @@ class Maintainers:
     #
     # Command-line subcommands
     #
+
+    def _area_cmd(self, args):
+        # 'area' subcommand implementation
+
+        res = set()
+        areas = self.name2areas(args.name)
+        res.update(areas)
+        _print_areas(res)
 
     def _path_cmd(self, args):
         # 'path' subcommand implementation
