@@ -1,0 +1,21 @@
+# Copyright (c) 2025 Egis Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_EGIS_ET171
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default 100 if (!ICACHE || XIP)
+
+config MAIN_STACK_SIZE
+	default 2048
+
+config IDLE_STACK_SIZE
+	default 1536
+
+config DCACHE_LINE_SIZE
+	default $(dt_node_int_prop_int,/cpus/cpu@0,d-cache-line-size)
+
+config ICACHE_LINE_SIZE
+	default $(dt_node_int_prop_int,/cpus/cpu@0,i-cache-line-size)
+
+endif # SOC_EGIS_ET171
