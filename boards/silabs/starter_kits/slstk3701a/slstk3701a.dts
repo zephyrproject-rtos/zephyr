@@ -30,6 +30,15 @@
 		watchdog0 = &wdog0;
 	};
 
+	/* GPIOs that power up different sensors */
+	sensor_enable: sensor-enable {
+		compatible = "regulator-fixed";
+		regulator-name = "sensor_enable";
+		enable-gpios = <&gpiob 3 GPIO_ACTIVE_HIGH>;
+		regulator-boot-on;
+		startup-delay-us = <100000>;
+	};
+
 	leds {
 		compatible = "gpio-leds";
 
@@ -100,6 +109,12 @@
 	pinctrl-0 = <&i2c2_default>;
 	pinctrl-names = "default";
 	status = "okay";
+
+	si7210: si7210@30 {
+		compatible = "silabs,si7210";
+		reg = <0x30>;
+		vin-supply = <&sensor_enable>;
+	};
 };
 
 &rtcc0 {
