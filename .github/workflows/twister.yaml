@@ -44,7 +44,6 @@ jobs:
       BSIM_OUT_PATH: /data/bsim_west/bsim/
       BSIM_COMPONENTS_PATH: /data/bsim_west/bsim/components
       TESTS_PER_BUILDER: 500
-      COMMIT_RANGE: ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
       VENDOR_OPTIONS: ' --vendor ambiq'
       PLATFORM_OPTIONS: ' --platform apollo510_evb --platform apollo510_eb'
     steps:
@@ -98,7 +97,7 @@ jobs:
             fullrun=false
           fi
 
-          echo "fullrun=${fullrun}" >> $GITHUB_OUTPUT
+          echo "FULLRUN=${fullrun}" >> $GITHUB_OUTPUT
 
       - name: Set up Python
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
@@ -147,7 +146,7 @@ jobs:
           if [ "$FULLRUN" = "true" ]; then
             python3 ./scripts/ci/test_plan.py --no-detailed-test-id -t $TESTS_PER_BUILDER ${VENDOR_OPTIONS} ${PLATFORM_OPTIONS}
           else
-            python3 ./scripts/ci/test_plan.py -c origin/${BASE_REF}.. --no-detailed-test-id --pull-request -t $TESTS_PER_BUILDER ${VENDOR_OPTIONS} ${PLATFORM_OPTIONS}
+            python3 ./scripts/ci/test_plan.py -c ${BASE_SHA}.. --no-detailed-test-id --pull-request -t $TESTS_PER_BUILDER ${VENDOR_OPTIONS} ${PLATFORM_OPTIONS}
           fi
 
           if [ -s .testplan ]; then
@@ -198,7 +197,6 @@ jobs:
       WEEKLY_OPTIONS: ' --clobber-output -M --all --show-footprint --report-filtered -j 12'
       PR_OPTIONS: ' --clobber-output --integration -j 12'
       PUSH_OPTIONS: ' --clobber-output -M --show-footprint --report-filtered -j 12'
-      COMMIT_RANGE: ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
       LLVM_TOOLCHAIN_PATH: /usr/lib/llvm-20
       VENDOR_OPTIONS: ' --vendor ambiq'
       PLATFORM_OPTIONS: ' --platform apollo510_evb --platform apollo510_eb'
@@ -213,11 +211,10 @@ jobs:
             echo "BASE_REF=${{ github.event.pull_request.base.ref }}" >> $GITHUB_ENV
           else
             echo "GIT_REF=${{ github.sha }}" >> $GITHUB_ENV
-            # For workflow_dispatch, use input branch or default
-            if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            if [ "${{ github.event_name }}" = "workflow_dispatch" ] || [ "${{ github.event_name }}" = "schedule" ]; then
               echo "BASE_REF=${{ github.event.inputs.base || github.event.repository.default_branch }}" >> $GITHUB_ENV
             else
-              echo "BASE_REF=${{ github.ref_name }}" >> $GITHUB_ENV
+              echo "BASE_REF=${{ github.event.before }}" >> $GITHUB_ENV
             fi
           fi
 
@@ -229,12 +226,6 @@ jobs:
           else
             echo "DEVICE_TESTING=false" >> $GITHUB_ENV
           fi
-
-      - name: Print service information
-        run: |
-          echo "DEVICE_TESTING = ${DEVICE_TESTING}"
-          echo "BASE_REF = ${BASE_REF}"
-          echo "GIT_REF = ${GIT_REF}"
 
       - name: Checkout
         run: |
@@ -255,6 +246,7 @@ jobs:
           fi
           cd "zephyr"
           git fetch origin "${BASE_REF}"
+          echo "BASE_SHA=$(git rev-parse FETCH_HEAD)" >> $GITHUB_ENV
           git fetch origin "${GIT_REF}"
           git reset --hard "${GIT_REF}"
           git clean -fdx
@@ -319,7 +311,7 @@ jobs:
           if [ "$FULLRUN" = "true" ] && [ "${{github.event_name}}" = "workflow_dispatch" ]; then
             python3 ./scripts/ci/test_plan.py --no-detailed-test-id ${VENDOR_OPTIONS} ${PLATFORM_OPTIONS}
           else
-            python3 ./scripts/ci/test_plan.py -c origin/${BASE_REF}.. --pull-request --no-detailed-test-id ${VENDOR_OPTIONS} ${PLATFORM_OPTIONS}
+            python3 ./scripts/ci/test_plan.py -c ${BASE_SHA}.. --pull-request --no-detailed-test-id ${VENDOR_OPTIONS} ${PLATFORM_OPTIONS}
           fi
 
           ./scripts/twister --subset ${{matrix.subset}}/${{ strategy.job-total }} --load-tests testplan.json ${TWISTER_COMMON} ${PUSH_OPTIONS} ${TEST_OPTIONS}
@@ -336,7 +328,7 @@ jobs:
           if [ "$FULLRUN" = "true" ] && [ "${{github.event_name}}" = "workflow_dispatch" ]; then
             python3 ./scripts/ci/test_plan.py --no-detailed-test-id ${VENDOR_OPTIONS} ${PLATFORM_OPTIONS}
           else
-            python3 ./scripts/ci/test_plan.py -c origin/${BASE_REF}.. --pull-request --no-detailed-test-id ${VENDOR_OPTIONS} ${PLATFORM_OPTIONS}
+            python3 ./scripts/ci/test_plan.py -c ${BASE_SHA}.. --pull-request --no-detailed-test-id ${VENDOR_OPTIONS} ${PLATFORM_OPTIONS}
           fi
 
           ./scripts/twister --subset ${{matrix.subset}}/${{ strategy.job-total }} --load-tests testplan.json ${TWISTER_COMMON} ${PR_OPTIONS}
@@ -372,11 +364,12 @@ jobs:
             zephyr/twister-out/twister.xml
             zephyr/twister-out/twister.json
             zephyr/module_tests/twister.xml
-            testplan.json
+            zephyr/testplan.json
 
       - if: matrix.subset == 1 && github.event_name == 'push'
         name: Save the list of Python packages
         shell: bash
+        working-directory: zephyr
         run: |
           FREEZE_FILE="frozen-requirements.txt"
           timestamp="$(date)"
@@ -390,7 +383,7 @@ jobs:
         with:
           name: Frozen PIP package set
           path: |
-            frozen-requirements.txt
+            zephyr/frozen-requirements.txt
 
   twister-test-results:
     name: "Publish Unit Tests Results"
