@@ -6,6 +6,8 @@ zephyr_sources(soc.c)
 zephyr_sources_ifdef(CONFIG_SOC_MCXW716C mcxw71_platform_init.S)
 zephyr_sources_ifdef(CONFIG_SOC_MCXW727C mcxw72_platform_init.S)
 
+zephyr_sources_ifdef(CONFIG_PM power.c)
+
 zephyr_include_directories(./)
 
 set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld CACHE INTERNAL "")
