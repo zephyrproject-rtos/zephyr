@@ -1,0 +1,21 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&opamp0 {
+	enable-non-inverting-reference;
+	non-inverting-reference-source;
+	non-inverting-reference-source = "Input1";
+	enable-measure-reference;
+	enable-measure-output;
+	functional-mode = "inverting";
+	programmable-gain = "OPAMP_GAIN_1",
+			"OPAMP_GAIN_2",
+			"OPAMP_GAIN_4",
+			"OPAMP_GAIN_8",
+			"OPAMP_GAIN_16",
+			"OPAMP_GAIN_33",
+			"OPAMP_GAIN_64";
+};
