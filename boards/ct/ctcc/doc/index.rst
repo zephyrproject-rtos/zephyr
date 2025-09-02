@@ -194,7 +194,7 @@ with the additional step of connecting an external debugger.
 To test flashed software, plug in ``ctcc`` card to mPCIe/M.2 slot or use mPCIe/M.2 adapter to USB and plug such adapter to USB port.
 
    * For ``ctcc/nrf52840`` check on Linux system by entering ``lsusb`` command if the following device appears: ``NordicSemiconductor MCUBOOT`` or ``NordicSemiconductor USB-DEV`` (when booted into blinky example).
-   * For ``ctcc/nrf9161`` it's not possible to see a change in ``lsusb`` due to the on-board USB-UART converter. Intead, connect to the UART console using a terminal emulation program of your choice.
+   * For ``ctcc/nrf9161`` it's not possible to see a change in ``lsusb`` due to the on-board USB-UART converter. Instead, connect to the UART console using a terminal emulation program of your choice.
 
 References
 **********

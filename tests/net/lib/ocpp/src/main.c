@@ -85,7 +85,7 @@ int test_ocpp_init(void)
 
 	net_dhcpv4_start(net_if_get_default());
 
-	/* wait for device dhcp ip recive */
+	/* wait for device dhcp ip receive */
 	k_sleep(K_SECONDS(3));
 
 	ret = ocpp_init(&cpi,

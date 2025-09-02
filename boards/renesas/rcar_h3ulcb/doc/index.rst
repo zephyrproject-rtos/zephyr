@@ -9,7 +9,7 @@ dual lockstep Cortex |reg|-R7.
 
 Zephyr OS support is available for both Cortex |reg|-A cores & Cortex |reg|-R7 core.
 
-More information about the H3 SoC can be fount at `Renesas R-Car H3 chip`_.
+More information about the H3 SoC can be found at `Renesas R-Car H3 chip`_.
 
 Hardware
 ********

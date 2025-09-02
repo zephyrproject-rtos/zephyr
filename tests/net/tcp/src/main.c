@@ -1439,8 +1439,8 @@ send_next:
 			     "%s:%d unexpected sequence number in original FIN, got %d",
 			     __func__, __LINE__, get_rel_seq(th));
 		zassert_true(ntohl(th->th_ack) == 2,
-			     "%s:%d unexpected acknowlegdement in original FIN, got %d",
-			     __func__, __LINE__, ntohl(th->th_ack));
+			     "%s:%d unexpected acknowledgment in original FIN, got %d", __func__,
+			     __LINE__, ntohl(th->th_ack));
 		t_state = T_FIN_1;
 		/* retransmit the data that we already send*/
 		reply = prepare_data_packet(af, htons(MY_PORT),
@@ -1457,7 +1457,7 @@ send_next:
 			     "%s:%i unexpected sequence number in retransmitted FIN, got %d",
 			     __func__, __LINE__, get_rel_seq(th));
 		zassert_true(ntohl(th->th_ack) == 2,
-			     "%s:%i unexpected acknowlegdement in retransmitted FIN, got %d",
+			     "%s:%i unexpected acknowledgment in retransmitted FIN, got %d",
 			     __func__, __LINE__, ntohl(th->th_ack));
 		ack = ack + 1U;
 		t_state = T_FIN_2;
@@ -1575,8 +1575,8 @@ static void handle_data_during_fin1_test(sa_family_t af, struct tcphdr *th)
 			     "%s:%d unexpected sequence number in original FIN, got %d",
 			     __func__, __LINE__, get_rel_seq(th));
 		zassert_true(ntohl(th->th_ack) == 1,
-			     "%s:%d unexpected acknowlegdement in original FIN, got %d",
-			     __func__, __LINE__, ntohl(th->th_ack));
+			     "%s:%d unexpected acknowledgment in original FIN, got %d", __func__,
+			     __LINE__, ntohl(th->th_ack));
 
 		ack = ack + 1U;
 

@@ -266,7 +266,7 @@ you can copy it from the output of the last command.
 
    u-boot=> cp.b 0x48000000 0x7e0000 27240
 
-And finaly starting the M4-Core at the right memory address:
+And finally starting the M4-Core at the right memory address:
 
 .. code-block:: console
 

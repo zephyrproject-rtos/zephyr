@@ -31,10 +31,10 @@ config OCPP_WSREADER_THREAD_STACKSIZE
 	   OCPP websocket reader thread stacksize
 
 config OCPP_RECV_BUFFER_SIZE
-	int "OCPP websocket recive buffer size"
+	int "OCPP websocket receive buffer size"
 	default 2048
 	help
-	   OCPP websocket recive buffer size
+	   OCPP websocket receive buffer size
 
 config OCPP_INTERNAL_MSGQ_CNT
 	int "OCPP internal message queue count"
@@ -73,7 +73,7 @@ config OCPP_PROFILE_LOCAL_AUTH_LIST
 	help
 	  Enables the OCPP library to support the Local Authorization List
 	  functionality. Stores IdTag and its validity information in the
-	  persistent stroage. Charge Point may support this as optional.
+	  persistent storage. Charge Point may support this as optional.
 
 config OCPP_PROFILE_FIRMWARE_MGNT
 	bool "OCPP profile firmware management"

@@ -339,7 +339,7 @@ int main(void)
 		k_sleep(K_SECONDS(1));
 	}
 
-	/* User could trigger remote start/stop transcation from CS server */
+	/* User could trigger remote start/stop transaction from CS server */
 	k_sleep(K_SECONDS(1200));
 
 	return 0;
