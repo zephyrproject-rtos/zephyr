@@ -64,6 +64,9 @@ Removed APIs and options
 Deprecated APIs and options
 ===========================
 
+* :kconfig:option:`CONFIG_UTF8` has been deprecated, and the ``utf8`` API can be used without
+  enabling it.
+
 New APIs and options
 ====================
 
