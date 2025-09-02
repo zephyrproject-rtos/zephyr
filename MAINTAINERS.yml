@@ -1066,6 +1066,8 @@ Devicetree:
     - include/zephyr/dt-bindings/dt-util.h
     - dts/binding-template.yaml
     - dts/bindings/base/
+  files-exclude:
+    - dts/bindings/vendor-prefixes.txt
   labels:
     - "area: Devicetree"
   tests:
