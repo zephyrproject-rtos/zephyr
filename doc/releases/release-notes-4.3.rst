@@ -65,6 +65,8 @@ Deprecated APIs and options
 
 * :c:enum:`bt_hci_bus` was deprecated as it was not used. :c:macro:`BT_DT_HCI_BUS_GET` should be
   used instead.
+* :kconfig:option:`CONFIG_UTF8` has been deprecated, and the ``utf8`` API can be used without
+  enabling it.
 
 New APIs and options
 ====================
