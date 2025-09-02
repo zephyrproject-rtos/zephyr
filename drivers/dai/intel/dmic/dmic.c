@@ -314,8 +314,9 @@ static inline void dai_dmic_en_power(const struct dai_intel_dmic *dmic)
 
 #if defined(CONFIG_SOC_INTEL_ACE20_LNL) || defined(CONFIG_SOC_INTEL_ACE30) ||                      \
 	defined(CONFIG_SOC_INTEL_ACE40)
-	while (!(sys_read32(base + DMICLCTL_OFFSET) & DMICLCTL_CPA)) {
-		k_busy_wait(100);
+	if (!WAIT_FOR((sys_read32(base + DMICLCTL_OFFSET) & DMICLCTL_CPA) != 0, 1000,
+		      k_busy_wait(100))) {
+		LOG_ERR("power-up timeout");
 	}
 #endif
 }
