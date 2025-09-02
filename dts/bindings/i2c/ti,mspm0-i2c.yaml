@@ -1,0 +1,29 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: TI MSPM0 I2C
+
+compatible: "ti,mspm0-i2c"
+
+include: [i2c-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  merge-buf-size:
+    type: int
+    default: 32
+    description: |
+        Size of a buffer that the driver will allocate in RAM to merge
+        multiple same direction I2C messages that have no RESTART or STOP
+        flag between them (see e.g. the i2c_burst_write() function) into one
+        transfer on the bus.
