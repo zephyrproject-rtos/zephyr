@@ -44,6 +44,8 @@ description: |
         4 A4                     D1    7
         5 A5                     D0    6
 
+    Use ARDUINO_HEADER_R3_* constants in <zephyr/dt-bindings/gpio/arduino-header-r3.h> to refer to
+    specific pins using convenient constant names.
 
 compatible: "arduino-header-r3"
 
