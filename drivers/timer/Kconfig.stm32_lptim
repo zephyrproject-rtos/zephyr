@@ -53,7 +53,7 @@ config STM32_LPTIM_TICK_FREQ_RATIO_OVERRIDE
 	  For LPTIM configuration, a specific tick freq is advised
 	  depending on LPTIM input clock:
 	  - LSI(32KHz): 4000 ticks/sec
-	  - LSE(32678): 4096 ticks/sec
+	  - LSE(32768): 4096 ticks/sec
 	  To prevent misconfigurations, a dedicated check is implemented
 	  in the driver.
 	  This options allows to override this check
