@@ -2,7 +2,7 @@
  * @file
  * @brief Bluetooth BAP Broadcast Sink
  *
- * This file manages the core functionalities of the broadcast sink 
+ * This file manages the core functionalities of the broadcast sink
  * and handles connection-related logic for the broadcast assistant in the sample
  */
 

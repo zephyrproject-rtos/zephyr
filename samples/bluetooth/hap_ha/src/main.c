@@ -49,7 +49,7 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_SCAN_SELF) || IS_ENABLED(CONFIG_SCAN_OFFLOAD),
 #define SEM_TIMEOUT                 K_SECONDS(60)
 #define BROADCAST_ASSISTANT_TIMEOUT K_SECONDS(120) /* 2 minutes */
 /* TODO: should be configured from Kconfig - Doesn't show up in autoconf.h */
-#define CONFIG_TARGET_BROADCAST_CHANNEL 1  
+#define CONFIG_TARGET_BROADCAST_CHANNEL 1
 
 #define LOG_INTERVAL 1000U
 
@@ -1168,9 +1168,7 @@ static void adv_work_handler(struct k_work *work)
 					id_current = conn_count_max;
 				}
 				id_current--;
-			} /* else {
-				printk("\t\tNew id: %d\n", id);
-			} */
+			}
 		}
 
 		printk("Using current id: %u\n", id_current);
@@ -1226,8 +1224,7 @@ void bap_thread(void *p1, void *p2, void *p3)
 	uint8_t stream_count;
 	uint32_t sync_bitfield;
 
-	while (true) 
-	{
+	while (true) {
 		switch (state) {
 		case BAP_STATE_RESET:
 
@@ -1577,7 +1574,6 @@ BT_IAS_CB_DEFINE(ias_callbacks) = {
 int main(void)
 {
 	int err;
-	
 	conn_count_max = CONFIG_BT_MAX_CONN;
 
 	err = bt_enable(NULL);
