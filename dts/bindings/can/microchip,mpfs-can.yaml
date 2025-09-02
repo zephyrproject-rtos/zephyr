@@ -1,0 +1,38 @@
+#
+# Copyright (C) 2025 embedded brains GmbH & Co. KG
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: Microchip MPFS CAN Controller
+
+compatible: "microchip,mpfs-can"
+
+include: [can-controller.yaml, reset-device.yaml]
+
+properties:
+  reg:
+    type: array
+    required: true
+
+  interrupts:
+    required: true
+
+  clock-frequency:
+    description: |
+      The CAN module input clock is derived from the MSS PLL output.  The
+      supported frequencies in MHz are 8, 16, 24, 32, 40, 48, 56, 64, 72, and
+      80.
+    type: int
+    enum:
+      - 8000000
+      - 16000000
+      - 24000000
+      - 32000000
+      - 40000000
+      - 48000000
+      - 56000000
+      - 64000000
+      - 72000000
+      - 80000000
+    required: true
