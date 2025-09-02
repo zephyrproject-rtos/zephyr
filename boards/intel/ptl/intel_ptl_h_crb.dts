@@ -43,3 +43,7 @@
 &tco_wdt {
 	status = "okay";
 };
+
+&pwm0 {
+	status = "okay";
+};

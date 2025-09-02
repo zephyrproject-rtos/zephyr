@@ -13,7 +13,7 @@ K_FIFO_DEFINE(kfifo_c);
 
 struct k_fifo fifo_c;
 
-static K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
+static K_THREAD_STACK_DEFINE(tstack_cancel, STACK_SIZE);
 static struct k_thread thread;
 
 static void t_cancel_wait_entry(void *p1, void *p2, void *p3)
@@ -24,7 +24,7 @@ static void t_cancel_wait_entry(void *p1, void *p2, void *p3)
 
 static void tfifo_thread_thread(struct k_fifo *pfifo)
 {
-	k_tid_t tid = k_thread_create(&thread, tstack, STACK_SIZE,
+	k_tid_t tid = k_thread_create(&thread, tstack_cancel, STACK_SIZE,
 				      t_cancel_wait_entry, pfifo, NULL, NULL,
 				      K_PRIO_PREEMPT(0), 0, K_NO_WAIT);
 	uint32_t start_t = k_uptime_get_32();

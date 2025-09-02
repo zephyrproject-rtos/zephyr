@@ -24,6 +24,8 @@ extern "C" {
 /**
  * @brief Modem PPP
  * @defgroup modem_ppp Modem PPP
+ * @since 3.5
+ * @version 1.0.0
  * @ingroup modem
  * @{
  */

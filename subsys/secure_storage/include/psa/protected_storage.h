@@ -12,8 +12,7 @@
 /** @cond INTERNAL_HIDDEN */
 #ifdef CONFIG_SECURE_STORAGE_PS_IMPLEMENTATION_ITS
 #include "../internal/zephyr/secure_storage/its.h"
-#define ITS_UID (secure_storage_its_uid_t){.uid = uid, \
-					   .caller_id = SECURE_STORAGE_ITS_CALLER_PSA_PS}
+#define ITS_CALLER_ID SECURE_STORAGE_ITS_CALLER_PSA_PS
 #else
 #include "../internal/zephyr/secure_storage/ps.h"
 #endif
@@ -50,7 +49,7 @@ psa_status_t psa_ps_set(psa_storage_uid_t uid, size_t data_length,
 			const void *p_data, psa_storage_create_flags_t create_flags)
 {
 #ifdef CONFIG_SECURE_STORAGE_PS_IMPLEMENTATION_ITS
-	return secure_storage_its_set(ITS_UID, data_length, p_data, create_flags);
+	return secure_storage_its_set(ITS_CALLER_ID, uid, data_length, p_data, create_flags);
 #else
 	return secure_storage_ps_set(uid, data_length, p_data, create_flags);
 #endif
@@ -83,7 +82,8 @@ psa_status_t psa_ps_get(psa_storage_uid_t uid, size_t data_offset,
 			size_t data_size, void *p_data, size_t *p_data_length)
 {
 #ifdef CONFIG_SECURE_STORAGE_PS_IMPLEMENTATION_ITS
-	return secure_storage_its_get(ITS_UID, data_offset, data_size, p_data, p_data_length);
+	return secure_storage_its_get(ITS_CALLER_ID, uid, data_offset,
+				      data_size, p_data, p_data_length);
 #else
 	return secure_storage_ps_get(uid, data_offset, data_size, p_data, p_data_length);
 #endif
@@ -110,7 +110,7 @@ static ALWAYS_INLINE
 psa_status_t psa_ps_get_info(psa_storage_uid_t uid, struct psa_storage_info_t *p_info)
 {
 #ifdef CONFIG_SECURE_STORAGE_PS_IMPLEMENTATION_ITS
-	return secure_storage_its_get_info(ITS_UID, p_info);
+	return secure_storage_its_get_info(ITS_CALLER_ID, uid, p_info);
 #else
 	return secure_storage_ps_get_info(uid, p_info);
 #endif
@@ -138,7 +138,7 @@ static ALWAYS_INLINE
 psa_status_t psa_ps_remove(psa_storage_uid_t uid)
 {
 #ifdef CONFIG_SECURE_STORAGE_PS_IMPLEMENTATION_ITS
-	return secure_storage_its_remove(ITS_UID);
+	return secure_storage_its_remove(ITS_CALLER_ID, uid);
 #else
 	return secure_storage_ps_remove(uid);
 #endif

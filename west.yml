@@ -231,11 +231,11 @@ manifest:
         - hal
     - name: hal_rpi_pico
       path: modules/hal/rpi_pico
-      revision: 5a981c7c29e3846646549a1902183684f0147e1d
+      revision: b547a36a722af7787e5f55b551fd6ce72dcba5a4
       groups:
         - hal
     - name: hal_silabs
-      revision: 54cdbdb79c1ccd99b62a93d3af6caff79ab66197
+      revision: e4b3db7576e11240592f057bf1ee516360aee7ca
       path: modules/hal/silabs
       groups:
         - hal

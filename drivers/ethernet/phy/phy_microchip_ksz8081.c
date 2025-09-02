@@ -53,6 +53,11 @@ struct mc_ksz8081_config {
 #endif
 };
 
+/* arbitrarily defined internal driver flags */
+#define KSZ8081_DO_AUTONEG_FLAG 0x1
+#define KSZ8081_SILENCE_DEBUG_LOGS 0x2
+#define KSZ8081_LINK_STATE_VALID 0x3
+
 struct mc_ksz8081_data {
 	const struct device *dev;
 	struct phy_link_state state;
@@ -60,12 +65,14 @@ struct mc_ksz8081_data {
 	void *cb_data;
 	struct k_mutex mutex;
 	struct k_work_delayable phy_monitor_work;
+	uint8_t flags;
 };
 
 static int phy_mc_ksz8081_read(const struct device *dev,
 				uint16_t reg_addr, uint32_t *data)
 {
 	const struct mc_ksz8081_config *config = dev->config;
+	struct mc_ksz8081_data *dev_data = dev->data;
 	int ret;
 
 	/* Make sure excessive bits 16-31 are reset */
@@ -73,7 +80,12 @@ static int phy_mc_ksz8081_read(const struct device *dev,
 
 	ret = mdio_read(config->mdio_dev, config->addr, reg_addr, (uint16_t *)data);
 	if (ret) {
+		LOG_WRN("Failed to read from %s reg 0x%x", dev->name, reg_addr);
 		return ret;
+	}
+
+	if (!(dev_data->flags & KSZ8081_SILENCE_DEBUG_LOGS)) {
+		LOG_DBG("Read 0x%x from phy %d reg 0x%x", *data, config->addr, reg_addr);
 	}
 
 	return 0;
@@ -83,11 +95,17 @@ static int phy_mc_ksz8081_write(const struct device *dev,
 				uint16_t reg_addr, uint32_t data)
 {
 	const struct mc_ksz8081_config *config = dev->config;
+	struct mc_ksz8081_data *dev_data = dev->data;
 	int ret;
 
 	ret = mdio_write(config->mdio_dev, config->addr, reg_addr, (uint16_t)data);
 	if (ret) {
+		LOG_WRN("Failed to write to %s reg 0x%x", dev->name, reg_addr);
 		return ret;
+	}
+
+	if (!(dev_data->flags & KSZ8081_SILENCE_DEBUG_LOGS)) {
+		LOG_DBG("Wrote 0x%x to phy %d reg 0x%x", data, config->addr, reg_addr);
 	}
 
 	return 0;
@@ -96,57 +114,96 @@ static int phy_mc_ksz8081_write(const struct device *dev,
 static int phy_mc_ksz8081_autonegotiate(const struct device *dev)
 {
 	const struct mc_ksz8081_config *config = dev->config;
-	int ret;
+	struct mc_ksz8081_data *data = dev->data;
+	int ret = 0, attempts = 0;
 	uint32_t bmcr = 0;
-	uint32_t bmsr = 0;
+	uint32_t bmsr = 0, last_bmsr = 0;
 	uint16_t timeout = CONFIG_PHY_AUTONEG_TIMEOUT_MS / 100;
+
+	ret = k_mutex_lock(&data->mutex, K_FOREVER);
+	if (ret) {
+		LOG_ERR("PHY mutex lock error");
+		goto done;
+	}
 
 	/* Read control register to write back with autonegotiation bit */
 	ret = phy_mc_ksz8081_read(dev, MII_BMCR, &bmcr);
 	if (ret) {
-		LOG_ERR("Error reading phy (%d) basic control register", config->addr);
-		return ret;
+		goto done;
 	}
 
 	/* (re)start autonegotiation */
-	LOG_DBG("PHY (%d) is entering autonegotiation sequence", config->addr);
+	LOG_INF("PHY (%d) is entering autonegotiation sequence", config->addr);
 	bmcr |= MII_BMCR_AUTONEG_ENABLE | MII_BMCR_AUTONEG_RESTART;
 	bmcr &= ~MII_BMCR_ISOLATE;
 
 	ret = phy_mc_ksz8081_write(dev, MII_BMCR, bmcr);
 	if (ret) {
-		LOG_ERR("Error writing phy (%d) basic control register", config->addr);
-		return ret;
+		goto done;
 	}
 
 	/* TODO change this to GPIO interrupt driven */
+	data->flags |= KSZ8081_SILENCE_DEBUG_LOGS;
 	do {
 		if (timeout-- == 0) {
-			LOG_DBG("PHY (%d) autonegotiation timed out", config->addr);
+			LOG_ERR("PHY (%d) autonegotiation timed out", config->addr);
 			/* The value -ETIMEDOUT can be returned by PHY read/write functions, so
 			 * return -ENETDOWN instead to distinguish link timeout from PHY timeout.
 			 */
-			return -ENETDOWN;
+			ret = -ENETDOWN;
+			goto done;
 		}
 		k_msleep(100);
 
 		ret = phy_mc_ksz8081_read(dev, MII_BMSR, &bmsr);
 		if (ret) {
-			LOG_ERR("Error reading phy (%d) basic status register", config->addr);
-			return ret;
+			goto done;
 		}
+
+		if (last_bmsr != bmsr) {
+			LOG_DBG("phy %d autoneg BMSR: %x", config->addr, bmsr);
+		}
+
+		last_bmsr = bmsr;
+		attempts++;
 	} while (!(bmsr & MII_BMSR_AUTONEG_COMPLETE));
+	data->flags &= ~KSZ8081_SILENCE_DEBUG_LOGS;
 
-	LOG_DBG("PHY (%d) autonegotiation completed", config->addr);
+	LOG_DBG("PHY (%d) autonegotiation completed after %d checks", config->addr, attempts);
 
-	return 0;
+	data->flags &= ~KSZ8081_DO_AUTONEG_FLAG;
+
+done:
+	if (ret && ret != -ENETDOWN) {
+		LOG_ERR("Failed to configure %s for autonegotiation", dev->name);
+	}
+	/* Unlock mutex */
+	k_mutex_unlock(&data->mutex);
+	return ret;
 }
+
 
 static int phy_mc_ksz8081_get_link(const struct device *dev,
 					struct phy_link_state *state)
 {
+	struct mc_ksz8081_data *data = dev->data;
+	struct phy_link_state *link_state = &data->state;
+
+	if ((data->flags & KSZ8081_LINK_STATE_VALID) != KSZ8081_LINK_STATE_VALID) {
+		return -EIO;
+	}
+
+	state->speed = link_state->speed;
+	state->is_up = link_state->is_up;
+
+	return 0;
+}
+
+static int phy_mc_ksz8081_update_link(const struct device *dev)
+{
 	const struct mc_ksz8081_config *config = dev->config;
 	struct mc_ksz8081_data *data = dev->data;
+	struct phy_link_state *state = &data->state;
 	int ret;
 	uint32_t bmsr = 0;
 	uint32_t anar = 0;
@@ -156,14 +213,13 @@ static int phy_mc_ksz8081_get_link(const struct device *dev,
 	/* Lock mutex */
 	ret = k_mutex_lock(&data->mutex, K_FOREVER);
 	if (ret) {
-		LOG_ERR("PHY mutex lock error");
+		LOG_ERR("PHY %d mutex lock error", config->addr);
 		return ret;
 	}
 
 	/* Read link state */
 	ret = phy_mc_ksz8081_read(dev, MII_BMSR, &bmsr);
 	if (ret) {
-		LOG_ERR("Error reading phy (%d) basic status register", config->addr);
 		goto done;
 	}
 	state->is_up = bmsr & MII_BMSR_LINK_STATUS;
@@ -175,14 +231,12 @@ static int phy_mc_ksz8081_get_link(const struct device *dev,
 	/* Read currently configured advertising options */
 	ret = phy_mc_ksz8081_read(dev, MII_ANAR, &anar);
 	if (ret) {
-		LOG_ERR("Error reading phy (%d) advertising register", config->addr);
 		goto done;
 	}
 
 	/* Read link partner capability */
 	ret = phy_mc_ksz8081_read(dev, MII_ANLPAR, &anlpar);
 	if (ret) {
-		LOG_ERR("Error reading phy (%d) link partner register", config->addr);
 		goto done;
 	}
 
@@ -211,16 +265,14 @@ result:
 	}
 
 done:
+	if (ret) {
+		LOG_ERR("Failed to get %s state", dev->name);
+	}
 	k_mutex_unlock(&data->mutex);
 
 	return ret;
 }
 
-/*
- * Configuration set statically (DT) that should never change
- * This function is needed in case the PHY is reset then the next call
- * to configure the phy will ensure this configuration will be redone
- */
 static int phy_mc_ksz8081_static_cfg(const struct device *dev)
 {
 	const struct mc_ksz8081_config *config = dev->config;
@@ -267,7 +319,7 @@ static int phy_mc_ksz8081_static_cfg(const struct device *dev)
 }
 
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
-static int phy_ksz8081_reset_gpio(const struct mc_ksz8081_config *config)
+static int phy_mc_ksz8081_reset_gpio(const struct mc_ksz8081_config *config)
 {
 	int ret;
 
@@ -293,7 +345,7 @@ static int phy_ksz8081_reset_gpio(const struct mc_ksz8081_config *config)
 	return ret;
 }
 #else
-static int phy_ksz8081_reset_gpio(const struct mc_ksz8081_config *config)
+static int phy_mc_ksz8081_reset_gpio(const struct mc_ksz8081_config *config)
 {
 	ARG_UNUSED(config);
 
@@ -314,7 +366,7 @@ static int phy_mc_ksz8081_reset(const struct device *dev)
 		return ret;
 	}
 
-	ret = phy_ksz8081_reset_gpio(config);
+	ret = phy_mc_ksz8081_reset_gpio(config);
 	if (ret != -ENODEV) { /* On -ENODEV, attempt command-based reset */
 		goto done;
 	}
@@ -329,6 +381,11 @@ static int phy_mc_ksz8081_reset(const struct device *dev)
 	 */
 	k_busy_wait(500 * USEC_PER_MSEC);
 
+	/* After each reset we will apply the static cfg from DT */
+	ret = phy_mc_ksz8081_static_cfg(dev);
+	if (ret) {
+		goto done;
+	}
 done:
 	/* Unlock mutex */
 	k_mutex_unlock(&data->mutex);
@@ -338,9 +395,7 @@ done:
 static int phy_mc_ksz8081_cfg_link(const struct device *dev, enum phy_link_speed speeds,
 				   enum phy_cfg_link_flag flags)
 {
-	const struct mc_ksz8081_config *config = dev->config;
 	struct mc_ksz8081_data *data = dev->data;
-	struct phy_link_state state = {};
 	int ret;
 
 	if (flags & PHY_FLAG_AUTO_NEGOTIATION_DISABLED) {
@@ -352,11 +407,8 @@ static int phy_mc_ksz8081_cfg_link(const struct device *dev, enum phy_link_speed
 	ret = k_mutex_lock(&data->mutex, K_FOREVER);
 	if (ret) {
 		LOG_ERR("PHY mutex lock error");
-		goto done;
+		return ret;
 	}
-
-	/* We are going to reconfigure the phy, don't need to monitor until done */
-	k_work_cancel_delayable(&data->phy_monitor_work);
 
 	/* DT configurations */
 	ret = phy_mc_ksz8081_static_cfg(dev);
@@ -365,37 +417,18 @@ static int phy_mc_ksz8081_cfg_link(const struct device *dev, enum phy_link_speed
 	}
 
 	ret = phy_mii_set_anar_reg(dev, speeds);
-	if ((ret < 0) && (ret != -EALREADY)) {
-		LOG_ERR("Error setting ANAR register for phy (%d)", config->addr);
+	if (ret == -EALREADY) {
+		ret = 0;
+	}
+	if (ret < 0) {
 		goto done;
 	}
 
-	/* (re)do autonegotiation */
-	ret = phy_mc_ksz8081_autonegotiate(dev);
-	if (ret && (ret != -ENETDOWN)) {
-		LOG_ERR("Error in autonegotiation");
-		goto done;
-	}
-
-	/* Get link status */
-	ret = phy_mc_ksz8081_get_link(dev, &state);
-
-	if (ret == 0 && memcmp(&state, &data->state, sizeof(struct phy_link_state)) != 0) {
-		memcpy(&data->state, &state, sizeof(struct phy_link_state));
-		if (data->cb) {
-			data->cb(dev, &data->state, data->cb_data);
-		}
-	}
-
-	/* Log the results of the configuration */
-	LOG_INF("PHY %d is %s", config->addr, data->state.is_up ? "up" : "down");
-	if (data->state.is_up) {
-		LOG_INF("PHY (%d) Link speed %s Mb, %s duplex\n", config->addr,
-			(PHY_LINK_IS_SPEED_100M(data->state.speed) ? "100" : "10"),
-			PHY_LINK_IS_FULL_DUPLEX(data->state.speed) ? "full" : "half");
-	}
-
+	data->flags |= KSZ8081_DO_AUTONEG_FLAG;
 done:
+	if (ret) {
+		LOG_ERR("Failed to configure %s", dev->name);
+	}
 	/* Unlock mutex */
 	k_mutex_unlock(&data->mutex);
 
@@ -427,21 +460,88 @@ static void phy_mc_ksz8081_monitor_work_handler(struct k_work *work)
 	struct mc_ksz8081_data *data =
 		CONTAINER_OF(dwork, struct mc_ksz8081_data, phy_monitor_work);
 	const struct device *dev = data->dev;
-	struct phy_link_state state = {};
-	int rc;
+	const struct mc_ksz8081_config *config = dev->config;
+	struct phy_link_state state = data->state;
+	bool turn_on_logs = false;
+	int rc = 0;
 
-	rc = phy_mc_ksz8081_get_link(dev, &state);
+	if (!data->state.is_up) {
+		/* some overrides might need set on cold reset way late for some reason */
+		phy_mc_ksz8081_static_cfg(dev);
+	}
 
+	/* (re)do autonegotiation if needed */
+	if (data->flags & KSZ8081_DO_AUTONEG_FLAG) {
+		rc = phy_mc_ksz8081_autonegotiate(dev);
+	}
+	if (rc && (rc != -ENETDOWN)) {
+		LOG_ERR("Error in %s autonegotiation", dev->name);
+		data->flags &= ~KSZ8081_SILENCE_DEBUG_LOGS; /* get logs next time */
+		turn_on_logs = true;
+	}
+
+	data->flags &= ~KSZ8081_LINK_STATE_VALID;
+	rc = phy_mc_ksz8081_update_link(dev);
+	if (rc == 0) {
+		data->flags |= KSZ8081_LINK_STATE_VALID;
+	}
+	if (!turn_on_logs) {
+		turn_on_logs = (rc != 0);
+	}
 	if (rc == 0 && memcmp(&state, &data->state, sizeof(struct phy_link_state)) != 0) {
-		memcpy(&data->state, &state, sizeof(struct phy_link_state));
 		if (data->cb) {
 			data->cb(dev, &data->state, data->cb_data);
 		}
+		LOG_INF("PHY %d is %s", config->addr, data->state.is_up ? "up" : "down");
+		if (data->state.is_up) {
+			LOG_INF("PHY (%d) Link speed %s Mb, %s duplex\n", config->addr,
+				(PHY_LINK_IS_SPEED_100M(data->state.speed) ? "100" : "10"),
+				PHY_LINK_IS_FULL_DUPLEX(data->state.speed) ? "full" : "half");
+		}
+	}
+
+	if (turn_on_logs) {
+		/* something wrong, if it happens again, we'll get logs next time */
+		data->flags &= ~KSZ8081_SILENCE_DEBUG_LOGS;
+	} else {
+		/* everything is fine, don't need to spam annoying register logs */
+		data->flags |= KSZ8081_SILENCE_DEBUG_LOGS;
 	}
 
 	/* TODO change this to GPIO interrupt driven */
 	k_work_reschedule(&data->phy_monitor_work, K_MSEC(CONFIG_PHY_MONITOR_PERIOD));
 }
+
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
+static int ksz8081_init_int_gpios(const struct device *dev)
+{
+	const struct mc_ksz8081_config *config = dev->config;
+
+	if (config->interrupt_gpio.port == NULL) {
+		return 0;
+	}
+
+	/* Prevent NAND TREE mode */
+	return gpio_pin_configure_dt(&config->interrupt_gpio, GPIO_OUTPUT_ACTIVE);
+}
+#else
+#define ksz8081_init_int_gpios(dev) 0
+#endif
+
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
+static int ksz8081_init_reset_gpios(const struct device *dev)
+{
+	const struct mc_ksz8081_config *config = dev->config;
+
+	if (config->reset_gpio.port == NULL) {
+		return 0;
+	}
+
+	return gpio_pin_configure_dt(&config->reset_gpio, GPIO_OUTPUT_ACTIVE);
+}
+#else
+#define ksz8081_init_reset_gpios(dev) 0
+#endif
 
 static int phy_mc_ksz8081_init(const struct device *dev)
 {
@@ -451,35 +551,26 @@ static int phy_mc_ksz8081_init(const struct device *dev)
 
 	data->dev = dev;
 
+	k_busy_wait(100000);
+
 	ret = k_mutex_init(&data->mutex);
 	if (ret) {
 		return ret;
 	}
 
 	mdio_bus_enable(config->mdio_dev);
+	k_busy_wait(100000);
 
-#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
-	if (!config->interrupt_gpio.port) {
-		goto skip_int_gpio;
-	}
-
-	/* Prevent NAND TREE mode */
-	ret = gpio_pin_configure_dt(&config->interrupt_gpio, GPIO_OUTPUT_ACTIVE);
+	ret = ksz8081_init_int_gpios(dev);
 	if (ret) {
 		return ret;
 	}
 
-skip_int_gpio:
-#endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios) */
-
-#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
-	if (config->reset_gpio.port) {
-		ret = gpio_pin_configure_dt(&config->reset_gpio, GPIO_OUTPUT_ACTIVE);
-		if (ret) {
-			return ret;
-		}
+	ret = ksz8081_init_reset_gpios(dev);
+	if (ret) {
+		return ret;
 	}
-#endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios) */
+	k_busy_wait(100000);
 
 	/* Reset PHY */
 	ret = phy_mc_ksz8081_reset(dev);
@@ -487,10 +578,12 @@ skip_int_gpio:
 		return ret;
 	}
 
+	k_busy_wait(100000);
 	k_work_init_delayable(&data->phy_monitor_work,
 				phy_mc_ksz8081_monitor_work_handler);
 
 	/* Advertise default speeds */
+	k_busy_wait(100000);
 	phy_mc_ksz8081_cfg_link(dev, config->default_speeds, 0);
 
 	return 0;

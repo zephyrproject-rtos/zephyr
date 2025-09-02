@@ -1029,6 +1029,57 @@ config BOUNDS_CHECK_BYPASS_MITIGATION
 	  mitigations after bounds checking any array index parameters passed
 	  in from untrusted sources (user mode threads). When disabled, these
 	  macros do nothing.
+
+config HW_SHADOW_STACK
+	bool "Use hardware shadow stack mechanism to provide stack protection [EXPERIMENTAL]"
+	depends on ARCH_HAS_HW_SHADOW_STACK
+	select EXPERIMENTAL
+	help
+	  This option enables the use of hardware shadow stack to provide
+	  stack protection. When enabled, threads that provide a shadow stack
+	  will use the hardware shadow stack to store the return address of
+	  function calls. This will help to protect against return-oriented
+	  programming (ROP) attacks.
+
+	  Currently, not all threads created by the kernel will have a shadow
+	  stack. Indeed, threads need to manually attach a shadow stack to
+	  use this feature. See the documentation for more information.
+
+config HW_SHADOW_STACK_PERCENTAGE_SIZE
+	int "Percentage of the stack size used to define shadow stack size"
+	depends on HW_SHADOW_STACK
+	default 30
+	range 0 100
+	help
+	  This option specifies the percentage of the stack to be used for
+	  shadow stack. The value is a percentage of the total stack size.
+	  The default value is 30%, which means that the shadow stack size
+	  will be 30% of the stack size, in *addition* to the stack size.
+	  used for shadow stack. Note that this size is constrained by the
+	  HW_SHADOW_STACK_MIN_SIZE config option.
+
+config HW_SHADOW_STACK_MIN_SIZE
+	int "Minimum size of the hardware shadow stack"
+	depends on HW_SHADOW_STACK
+	default 256
+	help
+	  This option specifies the minimum size of the hardware shadow stack,
+	  in bytes, so that threads that use minimal stack size can still
+	  have a sensible shadow stack size. The default value is 256 bytes,
+	  which means that the shadow stack size will be at least 256 bytes,
+	  even if the percentage defined via HW_SHADOW_STACK_PERCENTAGE_SIZE
+	  would define a smaller size.
+
+config HW_SHADOW_STACK_ALLOW_REUSE
+	bool "Allow reuse of the shadow stack"
+	depends on HW_SHADOW_STACK
+	default y if ZTEST
+	help
+	  This option allows the reuse of the shadow stack. This is meant to
+	  accommodate thread reuse, when the same thread is created again,
+	  such as done by the test suite. It is not meant to be used to share
+	  the shadow stack between threads.
+
 endmenu
 
 rsource "Kconfig.mem_domain"

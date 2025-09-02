@@ -51,7 +51,7 @@ jobs:
         toolchains: all
 
     - name: Run Pytest For Twister Black Box Tests
-      if: ${{ startsWith(runner.os, 'ubuntu') }}
+      if: ${{ runner.os == 'Linux' }}
       working-directory: zephyr
       shell: bash
       env:
@@ -59,6 +59,7 @@ jobs:
         ZEPHYR_TOOLCHAIN_VARIANT: zephyr
       run: |
         export ZEPHYR_SDK_INSTALL_DIR=${{ github.workspace }}/zephyr-sdk
+        sudo apt-get install -y lcov
         echo "Run twister tests"
         source zephyr-env.sh
         PYTHONPATH="./scripts/tests" pytest ./scripts/tests/twister_blackbox/
