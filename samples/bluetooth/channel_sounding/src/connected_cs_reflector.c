@@ -195,7 +195,7 @@ int main(void)
 	struct bt_gatt_discover_params discover_params;
 	struct bt_gatt_write_params write_params;
 
-	printk("Starting Channel Sounding Demo\n");
+	printk("Starting Channel Sounding Demo in Reflector Role\n");
 
 	/* Initialize the Bluetooth Subsystem */
 	err = bt_enable(NULL);
