@@ -13,7 +13,7 @@
 	chosen {
 		zephyr,console = &uart6;
 		zephyr,shell-uart = &uart6;
-		zephyr,sram = &ddr0;
+		zephyr,sram = &a53_ddr_section;
 	};
 
 	aliases {
@@ -21,7 +21,20 @@
 	};
 
 	ddr0: memory@80000000 {
+		device_type = "memory";
 		reg = <0x80000000 DT_SIZE_M(512)>;
+		#address-cells = <0x1>;
+		#size-cells = <0x1>;
+
+		/* Loading and starting code at RAM start will cause any calls to
+		 * Arm Trusted Firmware-A (TFA) to fail. This is because as described
+		 * in the docs [0], the first 2MiB is reserved for TFA.
+		 *
+		 * [0]: https://software-dl.ti.com/mcu-plus-sdk/esd/AM62X/latest/exports/docs/api_guide_am62x/MEMORY_MAP.html
+		 */
+		a53_ddr_section: memory@80200000 {
+			reg = <0x80200000 DT_SIZE_M(512 - 2)>;
+		};
 	};
 
 	leds: leds {
