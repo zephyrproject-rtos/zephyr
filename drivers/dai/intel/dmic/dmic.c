@@ -315,7 +315,7 @@ static inline void dai_dmic_en_power(const struct dai_intel_dmic *dmic)
 #if defined(CONFIG_SOC_INTEL_ACE20_LNL) || defined(CONFIG_SOC_INTEL_ACE30) ||                      \
 	defined(CONFIG_SOC_INTEL_ACE40)
 	while (!(sys_read32(base + DMICLCTL_OFFSET) & DMICLCTL_CPA)) {
-		k_sleep(K_USEC(100));
+		k_busy_wait(100);
 	}
 #endif
 }
