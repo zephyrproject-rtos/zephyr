@@ -6,6 +6,6 @@
 #ifndef _SOC_SIFLI_SF32_SF32LB52X_SOC_H_
 #define _SOC_SIFLI_SF32_SF32LB52X_SOC_H_
 
-#include <cmsis_core_m_defaults.h>
+#include <register.h>
 
 #endif /* _SOC_SIFLI_SF32_SF32LB52X_SOC_H_ */
