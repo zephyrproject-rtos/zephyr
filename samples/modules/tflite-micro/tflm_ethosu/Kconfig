@@ -1,4 +1,4 @@
-# Copyright 2022 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# SPDX-FileCopyrightText: Copyright 2022, 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 # SPDX-License-Identifier: Apache-2.0
 
 config TAINT_BLOBS_TFLM
@@ -11,5 +11,12 @@ config TAINT_BLOBS_TFLM_ETHOSU
 	default y
 	depends on ETHOS_U_ARM || ETHOS_U_NUMAKER
 	select TAINT_BLOBS_TFLM
+
+config SAMPLE_TFLM_ETHOSU_PMU
+	bool "Enable Ethos-U PMU counters in sample"
+	depends on ETHOS_U
+	help
+	  Enable Ethos-U PMU counters for this sample. When enabled,
+	  the sample collects cycle and selected event counters per inference.
 
 source "Kconfig.zephyr"
