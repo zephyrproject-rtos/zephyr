@@ -2,11 +2,20 @@
  * Copyright (c) 2025 STMicroelectronics
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/**
+ * @file
+ * @brief Raspberry Pi CSI camera connector pin constants
+ * @ingroup raspberrypi-csi-connector
+ */
+
 #ifndef INCLUDE_ZEPHYR_DT_BINDINGS_GPIO_RASPBERRYPI_CSI_CONNECTOR_H_
 #define INCLUDE_ZEPHYR_DT_BINDINGS_GPIO_RASPBERRYPI_CSI_CONNECTOR_H_
 
 /**
- * @name CSI camera connector GPIO list
+ * @defgroup raspberrypi-csi-connector Raspberry Pi CSI connector
+ * @brief Constants for pins exposed on Raspberry Pi CSI camera connector
+ * @ingroup devicetree-gpio-pin-headers
  * @{
  */
 #define CSI_IO0	1	/**< GPIO0 */
