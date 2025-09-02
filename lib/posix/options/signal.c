@@ -175,3 +175,18 @@ int sigwait(const sigset_t *ZRESTRICT set, int *ZRESTRICT sig)
 	errno = ENOSYS;
 	return -1;
 }
+
+sighandler_t signal(int signum, sighandler_t handler)
+{
+	struct sigaction act, oact;
+
+	act.sa_handler = handler;
+	sigemptyset(&act.sa_mask);
+	act.sa_flags = 0;
+
+	if (sigaction(signum, &act, &oact) < 0) {
+		return SIG_ERR;
+	}
+
+	return oact.sa_handler;
+}
