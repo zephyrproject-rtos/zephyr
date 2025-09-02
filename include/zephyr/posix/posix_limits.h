@@ -90,7 +90,6 @@
 #define MQ_PRIO_MAX                   _POSIX_MQ_PRIO_MAX
 #define OPEN_MAX                      CONFIG_POSIX_OPEN_MAX
 #define PAGE_SIZE                     CONFIG_POSIX_PAGE_SIZE
-#define PAGESIZE                      CONFIG_POSIX_PAGE_SIZE
 #define PATH_MAX                      _POSIX_PATH_MAX
 #define PTHREAD_DESTRUCTOR_ITERATIONS _POSIX_THREAD_DESTRUCTOR_ITERATIONS
 #define PTHREAD_KEYS_MAX \
