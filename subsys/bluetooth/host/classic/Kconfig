@@ -629,6 +629,13 @@ config BT_OEBX_RSP_CODE_TO_STR
 
 endif # BT_GOEP
 
+config BT_BIP
+	bool "Bluetooth BIP Profile [EXPERIMENTAL]"
+	select BT_GOEP
+	select EXPERIMENTAL
+	help
+	  This option enables the BIP profile
+
 endif # BT_CLASSIC
 
 endmenu
