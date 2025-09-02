@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
+
 / {
 	chosen {
 		zephyr,display = &ssd1306_ssd1306_128x64_spi;
@@ -26,7 +28,7 @@
 		segment-remap;
 		com-invdir;
 		prechargep = <0x22>;
-		data-cmd-gpios = <&arduino_header 15 0>;
-		/* reset-gpios = <&arduino_header 14 GPIO_ACTIVE_LOW>; */
+		data-cmd-gpios = <&arduino_header ARDUINO_HEADER_R3_D9 0>;
+		/* reset-gpios = <&arduino_header ARDUINO_HEADER_R3_D8 GPIO_ACTIVE_LOW>; */
 	};
 };
