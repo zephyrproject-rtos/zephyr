@@ -1301,6 +1301,13 @@ isr_rx_next_subevent:
 
 	radio_switch_complete_and_disable();
 
+	/* Setup Access Address capture for subsequent subevent if there has been no anchor point
+	 * sync previously.
+	 */
+	if (radio_tmr_aa_restore() == 0U) {
+		radio_tmr_aa_capture();
+	}
+
 	/* PDU Header Complete TimeOut, calculate the absolute timeout in
 	 * microseconds by when a PDU header is to be received for each
 	 * subevent.
