@@ -1769,6 +1769,16 @@ int64_t video_get_csi_link_freq(const struct device *dev, uint8_t bpp, uint8_t l
 #define VIDEO_PIX_FMT_JPEG VIDEO_FOURCC('J', 'P', 'E', 'G')
 
 /**
+ * H264 with start code
+ */
+#define VIDEO_PIX_FMT_H264 VIDEO_FOURCC('H', '2', '6', '4')
+
+/**
+ * H264 without start code
+ */
+#define VIDEO_PIX_FMT_H264_NO_SC VIDEO_FOURCC('A', 'V', 'C', '1')
+
+/**
  * @}
  */
 
