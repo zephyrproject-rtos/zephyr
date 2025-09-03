@@ -7,6 +7,7 @@
 /* Common SoC definitions shared across all PIC32CM JH devices */
 
 #include <arm/armv6-m.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
 
 / {
 	cpus {
@@ -35,6 +36,14 @@
 
 		sram0: memory@20000000 {
 			compatible = "mmio-sram";
+		};
+
+		porta: gpio@41000000 {
+			compatible = "microchip,port-g1-gpio";
+			reg = <0x41000000 0x80>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			#microchip,pin-cells = <2>;
 		};
 	};
 };
