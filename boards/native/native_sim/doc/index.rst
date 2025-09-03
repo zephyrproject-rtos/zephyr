@@ -721,6 +721,7 @@ host libC (:kconfig:option:`CONFIG_EXTERNAL_LIBC`):
      FUSE, :ref:`Host based filesystem access <native_fuse_flash>`, :kconfig:option:`CONFIG_FUSE_FS_ACCESS`, All
      GPIO, GPIO emulator, :kconfig:option:`CONFIG_GPIO_EMUL`, All
      GPIO, SDL GPIO emulator, :kconfig:option:`CONFIG_GPIO_EMUL_SDL`, All
+     HWINFO, :kconfig:option:`CONFIG_HWINFO_NATIVE`, All
      I2C, I2C emulator, :kconfig:option:`CONFIG_I2C_EMUL`, All
      Input, Input SDL touch, :kconfig:option:`CONFIG_INPUT_SDL_TOUCH`, All
      Input, Linux evdev, :kconfig:option:`CONFIG_NATIVE_LINUX_EVDEV`, All

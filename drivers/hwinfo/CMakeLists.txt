@@ -40,3 +40,13 @@ zephyr_library_sources_ifdef(CONFIG_HWINFO_SILABS_S2   hwinfo_silabs_series2.c)
 zephyr_library_sources_ifdef(CONFIG_HWINFO_SMARTBOND   hwinfo_smartbond.c)
 zephyr_library_sources_ifdef(CONFIG_HWINFO_STM32       hwinfo_stm32.c)
 # zephyr-keep-sorted-stop
+
+if(CONFIG_HWINFO_NATIVE)
+  if(${CMAKE_HOST_SYSTEM_NAME} STREQUAL Linux)
+    zephyr_library_sources(hwinfo_native.c)
+
+    target_sources(native_simulator INTERFACE hwinfo_native_bottom.c)
+  else()
+    message(FATAL_ERROR "CONFIG_HWINFO_NATIVE is only available on Linux")
+  endif()
+endif()
