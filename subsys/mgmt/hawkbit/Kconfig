@@ -220,6 +220,11 @@ config HAWKBIT_REBOOT_COLD
 	help
 	  Do a cold reboot after the update.
 
+config HAWKBIT_REBOOT_NONE
+	bool "Don't reboot after update"
+	help
+	  Do not reboot after the update.
+
 endchoice
 
 config HEAP_MEM_POOL_ADD_SIZE_HAWKBIT

@@ -1209,6 +1209,11 @@ static bool send_request(struct hawkbit_context *hb_context, enum hawkbit_http_r
 void hawkbit_reboot(void)
 {
 	hawkbit_event_raise(HAWKBIT_EVENT_BEFORE_REBOOT);
+
+	if (IS_ENABLED(CONFIG_HAWKBIT_REBOOT_NONE)) {
+		return;
+	}
+
 	LOG_PANIC();
 	sys_reboot(IS_ENABLED(CONFIG_HAWKBIT_REBOOT_COLD) ? SYS_REBOOT_COLD : SYS_REBOOT_WARM);
 }
