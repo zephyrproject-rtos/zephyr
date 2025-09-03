@@ -3068,9 +3068,9 @@ LiteX Platforms:
     - tgorochowik
     - kgugala
     - fkokosinski
+    - maass-hamburg
   collaborators:
     - mateusz-holenko
-    - maass-hamburg
   files:
     - boards/enjoydigital/litex_vexriscv/
     - drivers/*/*litex*
