@@ -1,0 +1,45 @@
+# Copyright Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config USBH_CDC_ACM_CLASS
+	bool "USB host CDC ACM implementation [EXPERIMENTAL]"
+	depends on SERIAL
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_ASYNC
+	select UART_ASYNC_API
+	default y
+	help
+	  USB host CDC ACM class implementation.
+
+if USBH_CDC_ACM_CLASS
+
+config USBH_CDC_ACM_STACK_SIZE
+	int "USB host CDC ACM workqueue stack size"
+	default 1024
+	help
+	  USB host CDC ACM workqueue stack size.
+
+config USBH_CDC_ACM_BOUNCE
+	bool "Bounce buffers that are not DMA-able"
+	default y
+	help
+	  Use a bounce buffer when a buffer submitted to the UART asynchronous
+	  API is not DMA-able. When disabled, non DMA-able buffers are rejected
+	  and no bounce buffer pool is allocated.
+
+config USBH_CDC_ACM_BOUNCE_POOL_SIZE
+	int "USB host CDC ACM bounce buffer pool size per instance"
+	depends on USBH_CDC_ACM_BOUNCE
+	default 1024
+	help
+	  Size in bytes of the bounce buffer pool per instance, used when a
+	  buffer submitted to the UART asynchronous API is not DMA-able.
+
+module = USBH_CDC_ACM
+module-str = usbh-cdc-acm
+default-count = 1
+source "subsys/logging/Kconfig.template.log_config"
+source "subsys/usb/common/Kconfig.template.instances_count"
+
+endif
