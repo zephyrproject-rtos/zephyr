@@ -66,23 +66,38 @@ class Protectedmem(c.LittleEndianStructure):
     ]
 
 
-class Recovery(c.LittleEndianStructure):
+class Wdtstart(c.LittleEndianStructure):
     _pack_ = 1
     _fields_ = [
         ("ENABLE", c.c_uint32),
-        ("PROCESSOR", c.c_uint32),
-        ("INITSVTOR", c.c_uint32),
-        ("SIZE4KB", c.c_uint32),
+        ("INSTANCE", c.c_uint32),
+        ("CRV", c.c_uint32),
     ]
 
 
-class Its(c.LittleEndianStructure):
+class SecurestorageCrypto(c.LittleEndianStructure):
+    _pack_ = 1
+    _fields_ = [
+        ("APPLICATIONSIZE1KB", c.c_uint32),
+        ("RADIOCORESIZE1KB", c.c_uint32),
+    ]
+
+
+class SecurestorageIts(c.LittleEndianStructure):
+    _pack_ = 1
+    _fields_ = [
+        ("APPLICATIONSIZE1KB", c.c_uint32),
+        ("RADIOCORESIZE1KB", c.c_uint32),
+    ]
+
+
+class Securestorage(c.LittleEndianStructure):
     _pack_ = 1
     _fields_ = [
         ("ENABLE", c.c_uint32),
         ("ADDRESS", c.c_uint32),
-        ("APPLICATIONSIZE", c.c_uint32),
-        ("RADIOCORESIZE", c.c_uint32),
+        ("CRYPTO", SecurestorageCrypto),
+        ("ITS", SecurestorageIts),
     ]
 
 
@@ -104,6 +119,64 @@ class Mpcconf(c.LittleEndianStructure):
     ]
 
 
+class SecondaryTrigger(c.LittleEndianStructure):
+    _pack_ = 1
+    _fields_ = [
+        ("ENABLE", c.c_uint32),
+        ("RESETREAS", c.c_uint32),
+        ("RESERVED", c.c_uint32),
+    ]
+
+
+class SecondaryProtectedmem(c.LittleEndianStructure):
+    _pack_ = 1
+    _fields_ = [
+        ("ENABLE", c.c_uint32),
+        ("SIZE4KB", c.c_uint32),
+    ]
+
+
+class SecondaryWdtstart(c.LittleEndianStructure):
+    _pack_ = 1
+    _fields_ = [
+        ("ENABLE", c.c_uint32),
+        ("INSTANCE", c.c_uint32),
+        ("CRV", c.c_uint32),
+    ]
+
+
+class SecondaryPeriphconf(c.LittleEndianStructure):
+    _pack_ = 1
+    _fields_ = [
+        ("ENABLE", c.c_uint32),
+        ("ADDRESS", c.c_uint32),
+        ("MAXCOUNT", c.c_uint32),
+    ]
+
+
+class SecondaryMpcconf(c.LittleEndianStructure):
+    _pack_ = 1
+    _fields_ = [
+        ("ENABLE", c.c_uint32),
+        ("ADDRESS", c.c_uint32),
+        ("MAXCOUNT", c.c_uint32),
+    ]
+
+
+class Secondary(c.LittleEndianStructure):
+    _pack_ = 1
+    _fields_ = [
+        ("ENABLE", c.c_uint32),
+        ("PROCESSOR", c.c_uint32),
+        ("TRIGGER", SecondaryTrigger),
+        ("ADDRESS", c.c_uint32),
+        ("PROTECTEDMEM", SecondaryProtectedmem),
+        ("WDTSTART", SecondaryWdtstart),
+        ("PERIPHCONF", SecondaryPeriphconf),
+        ("MPCCONF", SecondaryMpcconf),
+    ]
+
+
 class Uicr(c.LittleEndianStructure):
     _pack_ = 1
     _fields_ = [
@@ -114,11 +187,14 @@ class Uicr(c.LittleEndianStructure):
         ("APPROTECT", Approtect),
         ("ERASEPROTECT", c.c_uint32),
         ("PROTECTEDMEM", Protectedmem),
-        ("RECOVERY", Recovery),
-        ("ITS", Its),
-        ("RESERVED2", c.c_uint32 * 7),
+        ("WDTSTART", Wdtstart),
+        ("RESERVED2", c.c_uint32),
+        ("SECURESTORAGE", Securestorage),
+        ("RESERVED3", c.c_uint32 * 5),
         ("PERIPHCONF", Periphconf),
         ("MPCCONF", Mpcconf),
+        ("SECONDARY", Secondary),
+        ("PADDING", c.c_uint32 * 15),
     ]
 
 
