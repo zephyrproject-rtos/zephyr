@@ -1206,7 +1206,10 @@ static int flash_stm32_xspi_read(const struct device *dev, off_t addr,
 
 	/* Do reads through memory-mapping instead of indirect */
 	if (!stm32_xspi_is_memorymap(dev)) {
+		xspi_lock_thread(dev);
 		ret = stm32_xspi_set_memorymap(dev);
+		xspi_unlock_thread(dev);
+
 		if (ret != 0) {
 			LOG_ERR("READ: failed to set memory mapped");
 			return ret;
