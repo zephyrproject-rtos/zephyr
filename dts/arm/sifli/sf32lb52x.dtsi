@@ -63,6 +63,22 @@
 		rcc: reset-clock-controller@50000000 {
 			compatible = "sifli,sf32lb-rcc";
 			reg = <0x50000000 0x1000>;
+
+			rcc_clk: clock-controller {
+				compatible = "sifli,sf32lb-rcc-clk";
+				clocks = <&lrc32>, <&lrc10>, <&hrc48>, <&hxt48>,
+					 <&lxt32>;
+				clock-names = "lrc32", "lrc10", "hrc48",
+					      "hxt48", "lxt32";
+				#clock-cells = <1>;
+				sifli,cfg = <&cfg>;
+				sifli,pmuc = <&pmuc>;
+
+				dll1: dll1 {
+					compatible = "sifli,sf32lb-dll";
+					status = "disabled";
+				};
+			};
 		};
 
 		cfg: syscon@5000b000 {
