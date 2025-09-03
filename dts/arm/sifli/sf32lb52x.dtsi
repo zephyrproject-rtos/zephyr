@@ -60,6 +60,11 @@
 	};
 
 	soc {
+		rcc: reset-clock-controller@50000000 {
+			compatible = "sifli,sf32lb-rcc";
+			reg = <0x50000000 0x1000>;
+		};
+
 		cfg: syscon@5000b000 {
 			compatible = "sifli,sf32lb-cfg", "syscon";
 			reg = <0x5000b000 0x1000>;
