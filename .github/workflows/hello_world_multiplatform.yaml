@@ -28,7 +28,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-22.04, ubuntu-24.04, macos-13, macos-14, windows-2022]
+        os: [ubuntu-22.04, ubuntu-24.04, ubuntu-24.04-arm, macos-13, macos-14, windows-2022]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
@@ -72,6 +72,8 @@ jobs:
             EXTRA_TWISTER_FLAGS="-P native_sim --build-only"
           elif [ "${{ runner.os }}" = "Windows" ]; then
             EXTRA_TWISTER_FLAGS="-P native_sim --short-build-path -O/tmp/twister-out"
+          elif [ "${{ runner.os }}-${{ runner.arch }}" == "Linux-ARM64" ]; then
+            EXTRA_TWISTER_FLAGS="--exclude-platform native_sim/native"
           fi
           ./scripts/twister --runtime-artifact-cleanup --force-color --inline-logs -T samples/hello_world -T samples/cpp/hello_world -v $EXTRA_TWISTER_FLAGS
 
