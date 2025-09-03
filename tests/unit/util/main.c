@@ -1081,4 +1081,27 @@ ZTEST(util, test_util_memeq)
 	zassert_false(mem_area_matching_2);
 }
 
+static void test_single_bitmask_find_gap(uint32_t mask, size_t num_bits, size_t total_bits,
+					 bool first_match, int exp_rv, int line)
+{
+	int rv;
+
+	rv = bitmask_find_gap(mask, num_bits, total_bits, first_match);
+	zassert_equal(rv, exp_rv, "%d Unexpected rv:%d (exp:%d)", line, rv, exp_rv);
+}
+
+ZTEST(util, test_bitmask_find_gap)
+{
+	test_single_bitmask_find_gap(0x0F0F070F, 6, 32, true, -1, __LINE__);
+	test_single_bitmask_find_gap(0x0F0F070F, 5, 32, true, 11, __LINE__);
+	test_single_bitmask_find_gap(0x030F070F, 5, 32, true, 26, __LINE__);
+	test_single_bitmask_find_gap(0x030F070F, 5, 32, false, 11, __LINE__);
+	test_single_bitmask_find_gap(0x0F0F070F, 5, 32, true, 11, __LINE__);
+	test_single_bitmask_find_gap(0x030F070F, 5, 32, true, 26, __LINE__);
+	test_single_bitmask_find_gap(0x030F070F, 5, 32, false, 11, __LINE__);
+	test_single_bitmask_find_gap(0x0, 1, 32, true, 0, __LINE__);
+	test_single_bitmask_find_gap(0x1F1F071F, 4, 32, true, 11, __LINE__);
+	test_single_bitmask_find_gap(0x0000000F, 2, 6, false, 4, __LINE__);
+}
+
 ZTEST_SUITE(util, NULL, NULL, NULL, NULL, NULL);
