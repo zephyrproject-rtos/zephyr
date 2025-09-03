@@ -453,7 +453,7 @@ jobs:
 
       - name: Merge Test Results
         run: |
-          junitparser merge artifacts/*/*/*/twister.xml junit.xml
+          junitparser merge artifacts/*/*/twister.xml junit.xml
           junit2html junit.xml junit.html
 
       - name: Upload Unit Test Results
@@ -476,7 +476,7 @@ jobs:
       - name: Analyze Twister Reports
         if: needs.twister-build.result == 'failure'
         run: |
-          ./zephyr/scripts/ci/twister_report_analyzer.py artifacts/*/*/*/twister.json --long-summary --platforms --output-md errors.md
+          ./zephyr/scripts/ci/twister_report_analyzer.py artifacts/*/*/twister.json --long-summary --platforms --output-md errors.md
           if [[ -s "errors.md" ]]; then
             echo '### Error Summary! 🚀' >> $GITHUB_STEP_SUMMARY
             cat errors.md  >> $GITHUB_STEP_SUMMARY
