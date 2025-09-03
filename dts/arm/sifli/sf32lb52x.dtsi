@@ -6,6 +6,8 @@
 #include <arm/armv8-m.dtsi>
 #include <freq.h>
 
+#include <zephyr/dt-bindings/clock/sf32lb52x-clocks.h>
+
 / {
 	cpus {
 		#address-cells = <1>;
@@ -79,6 +81,15 @@
 					status = "disabled";
 				};
 			};
+		};
+
+		pinctrl: pinctrl@50003000 {
+			compatible = "sifli,sf32lb52x-pinmux";
+			reg = <0x50003000 0x34>, <0x50003034 0xb4>;
+			reg-names = "pad_sa", "pad_pa";
+			clocks = <&rcc_clk SF32LB52X_CLOCK_PINMUX1>;
+			sifli,cfg = <&cfg>;
+			status = "disabled";
 		};
 
 		cfg: syscon@5000b000 {
