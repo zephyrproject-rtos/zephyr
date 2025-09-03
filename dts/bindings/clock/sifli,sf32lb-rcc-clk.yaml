@@ -1,0 +1,69 @@
+# Copyright (c) 2025 Core Devices LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  SiFli Reset and Clock Controller (RCC) is a multi-function peripheral in
+  charge of reset control and clock control for all SoC peripherals. This
+  binding represents the clock controller part. It is meant to be used as a
+  child node of the RCC node. This is due to the fact Zephyr does not allow
+  >1 device referencing to the same devicetree node (e.g. clock and reset
+  devices).
+
+  To specify the clocks in a peripheral, the standard clocks property needs
+  to be used, e.g.:
+
+    usart1: serial@xxx {
+        ...
+        /* cell encodes RCC register offset and control bit position */
+        clocks = <&rcc_clk SF32LB52X_CLOCK_USART1>;
+        ...
+    }
+
+  Predefined RCC clock cells are available in
+  include/zephyr/dts-bindings/clock/sf32lb{xxx}-clocks.h header files, where
+  {xxx} corresponds to the SoC series, e.g. sf32lb52x.
+
+compatible: "sifli,sf32lb-rcc-clk"
+
+include:
+  - base.yaml
+  - clock-controller.yaml
+  - sifli-sf32lb-cfg.yaml
+  - sifli-sf32lb-pmuc.yaml
+
+properties:
+  clocks:
+    required: true
+
+  clock-names:
+    required: true
+
+  "#clock-cells":
+    const: 1
+
+  sifli,cfg:
+    required: true
+
+  sifli,pmuc:
+    required: true
+
+  sifli,hdiv:
+    type: int
+    required: true
+    description: |
+      Divider for HCLK (0-255). fHCLK = clk_hpsys / HDIV.
+
+  sifli,pdiv1:
+    type: int
+    required: true
+    description: |
+      Divider for PCLK1 (0-7). fPCLK1 = fHCLK / 2^PDIV1.
+
+  sifli,pdiv2:
+    type: int
+    required: true
+    description: |
+      Divider for PCLK2 (0-7). fPCLK2 = fHCLK / 2^PDIV2.
+
+clock-cells:
+  - id
