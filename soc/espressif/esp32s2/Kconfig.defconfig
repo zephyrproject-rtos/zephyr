@@ -21,4 +21,7 @@ endchoice
 
 endif # PM && TICKLESS_KERNEL
 
+config SHARED_IRQ_MAX_NUM_CLIENTS
+	default 10
+
 endif # SOC_SERIES_ESP32S2
