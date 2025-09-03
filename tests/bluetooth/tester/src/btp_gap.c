@@ -1197,6 +1197,48 @@ static uint8_t br_start_discovery(const struct btp_gap_start_discovery_cmd *cp)
 }
 #endif /* CONFIG_BT_CLASSIC */
 
+static struct bt_le_scan_param scan_param = {
+	.type = BT_LE_SCAN_TYPE_PASSIVE,
+	.options = BT_LE_SCAN_OPT_FILTER_DUPLICATE,
+	.interval = BT_GAP_SCAN_FAST_INTERVAL,
+	.window = BT_GAP_SCAN_FAST_WINDOW,
+	.timeout = 0,
+	.interval_coded = 0,
+	.window_coded = 0,
+};
+
+#define MIN_SCAN_WINDOW   0x04
+#define MIN_SCAN_INTERVAL 0x04
+#define MAX_SCAN_INTERVAL 0x4000
+#define MAX_SCAN_WINDOW   0x4000
+static uint8_t set_le_discovery_params(const void *cmd, uint16_t cmd_len, void *rsp,
+				       uint16_t *rsp_len)
+{
+	const struct btp_gap_le_set_discovery_params_cmd *cp = cmd;
+
+	if (!IN_RANGE(cp->interval, MIN_SCAN_INTERVAL, MAX_SCAN_INTERVAL) ||
+	    !IN_RANGE(cp->window, MIN_SCAN_WINDOW, MAX_SCAN_WINDOW)) {
+		LOG_ERR("Invalid discovery parameters interval %u window %u", cp->interval,
+			cp->window);
+		return BTP_STATUS_FAILED;
+	}
+
+	/* 1M default we do not need to test for it */
+	if ((cp->phy & ~(BTP_GAP_PHY_LE_1M | BTP_GAP_PHY_LE_CODED)) != 0) {
+		LOG_ERR("Invalid PHY %u", cp->phy);
+		return BTP_STATUS_FAILED;
+	}
+
+	scan_param.interval = cp->interval;
+	scan_param.window = cp->window;
+
+	if ((cp->phy & BTP_GAP_PHY_LE_CODED) != 0) {
+		scan_param.options |= BT_LE_SCAN_OPT_CODED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
 static uint8_t start_discovery(const void *cmd, uint16_t cmd_len,
 			       void *rsp, uint16_t *rsp_len)
 {
@@ -1206,16 +1248,6 @@ static uint8_t start_discovery(const void *cmd, uint16_t cmd_len,
 		/* Start BR discovery*/
 		return br_start_discovery(cp);
 	}
-
-	struct bt_le_scan_param scan_param = {
-		.type     = BT_LE_SCAN_TYPE_PASSIVE,
-		.options  = BT_LE_SCAN_OPT_FILTER_DUPLICATE,
-		.interval = BT_GAP_SCAN_FAST_INTERVAL,
-		.window   = BT_GAP_SCAN_FAST_WINDOW,
-		.timeout = 0,
-		.interval_coded = 0,
-		.window_coded = 0,
-	};
 
 	if (cp->flags & BTP_GAP_DISCOVERY_FLAG_LE_ACTIVE_SCAN) {
 		scan_param.type = BT_LE_SCAN_TYPE_ACTIVE;
@@ -2963,6 +2995,11 @@ static const struct btp_handler handlers[] = {
 		.opcode = BTP_GAP_STOP_ADVERTISING,
 		.expect_len = 0,
 		.func = stop_advertising,
+	},
+	{
+		.opcode = BTP_GAP_SET_DISCOVERY_PARAMS,
+		.expect_len = sizeof(struct btp_gap_le_set_discovery_params_cmd),
+		.func = set_le_discovery_params,
 	},
 	{
 		.opcode = BTP_GAP_START_DISCOVERY,
