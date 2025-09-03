@@ -10,7 +10,6 @@
 #include <adi/max32/max32662-pinctrl.dtsi>
 #include <zephyr/dt-bindings/gpio/adi-max32-gpio.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
-#include <zephyr/dt-bindings/dma/max32662_dma.h>
 #include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
 
 / {
