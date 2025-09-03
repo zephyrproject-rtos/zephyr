@@ -239,3 +239,4 @@ jobs:
           verbose: true
           token: ${{ secrets.CODECOV_TOKEN }}
           files: coverage/reports/merged.xml
+          flags: unittests-coverage
