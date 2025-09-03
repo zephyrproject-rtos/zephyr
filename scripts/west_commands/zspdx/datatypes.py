@@ -81,8 +81,14 @@ class PackageConfig:
     # package revision
     revision: str = ""
 
+    # package supplier or vendor
+    supplier: str = ""
+
     # package external references
     externalReferences: list = field(default_factory=list)
+
+    # package external reference Comments
+    externalReferencesComment: list = field(default_factory=list)
 
     # the Package's declared license
     declaredLicense: str = "NOASSERTION"
