@@ -24,6 +24,33 @@
 		};
 	};
 
+	clocks {
+		lxt32: lxt32 {
+			compatible = "fixed-clock";
+			clock-frequency = <32768>;
+			#clock-cells = <0>;
+			status = "disabled";
+		};
+
+		lrc32: lrc32 {
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_K(32)>;
+			#clock-cells = <0>;
+		};
+
+		lrc10: lrc10 {
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_K(10)>;
+			#clock-cells = <0>;
+		};
+
+		hrc48: hrc48 {
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(48)>;
+			#clock-cells = <0>;
+		};
+	};
+
 	soc {
 		cfg: syscon@5000b000 {
 			compatible = "sifli,sf32lb-cfg", "syscon";
