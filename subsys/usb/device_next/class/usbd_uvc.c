@@ -694,7 +694,9 @@ static int uvc_get_vs_probe(const struct device *dev, struct net_buf *const buf,
 			    const struct usb_setup_packet *const setup)
 {
 	struct uvc_data *data = dev->data;
-	size_t size = MIN(sizeof(struct uvc_probe), net_buf_tailroom(buf));
+	const size_t size = MIN(net_buf_tailroom(buf),
+				MIN(sizeof(struct uvc_probe), setup->wLength));
+	struct uvc_probe probe = {0};
 	int ret;
 
 	switch (setup->bRequest) {
@@ -702,19 +704,18 @@ static int uvc_get_vs_probe(const struct device *dev, struct net_buf *const buf,
 		if (size < 1) {
 			return -ENOTSUP;
 		}
+
 		net_buf_add_u8(buf, UVC_INFO_SUPPORTS_GET);
 		return 0;
 	case UVC_GET_LEN:
 		if (size < 2) {
 			return -ENOTSUP;
 		}
+
 		net_buf_add_le16(buf, sizeof(struct uvc_probe));
 		return 0;
 	case UVC_GET_DEF:
-		if (size < sizeof(struct uvc_probe)) {
-			return -ENOTSUP;
-		}
-		net_buf_add_mem(buf, &data->default_probe, sizeof(data->default_probe));
+		net_buf_add_mem(buf, &data->default_probe, size);
 		return 0;
 	case UVC_GET_MIN:
 		__fallthrough;
@@ -723,16 +724,12 @@ static int uvc_get_vs_probe(const struct device *dev, struct net_buf *const buf,
 	case UVC_GET_MAX:
 		__fallthrough;
 	case UVC_GET_CUR:
-		if (size < sizeof(struct uvc_probe)) {
-			return -ENOTSUP;
-		}
-
-		ret = uvc_get_vs_probe_struct(dev, (struct uvc_probe *)buf->data, setup->bRequest);
+		ret = uvc_get_vs_probe_struct(dev, &probe, setup->bRequest);
 		if (ret != 0) {
 			return ret;
 		}
 
-		net_buf_add(buf, sizeof(struct uvc_probe));
+		net_buf_add_mem(buf, &probe, size);
 		return 0;
 	default:
 		return -EINVAL;
@@ -742,45 +739,41 @@ static int uvc_get_vs_probe(const struct device *dev, struct net_buf *const buf,
 static int uvc_set_vs_probe(const struct device *dev, const struct net_buf *const buf)
 {
 	struct uvc_data *data = dev->data;
-	struct uvc_probe *probe;
+	const size_t size = MIN(sizeof(struct uvc_probe), buf->len);
+	struct uvc_probe probe = {0};
 	struct uvc_probe max = {0};
 	int ret;
 
-	if (buf->len != sizeof(*probe)) {
-		LOG_ERR("Expected probe message of %u bytes got %u", sizeof(*probe), buf->len);
-		return -EINVAL;
-	}
-
-	probe = (struct uvc_probe *)buf->data;
+	memcpy(&probe, buf->data, size);
 
 	ret = uvc_get_vs_probe_struct(dev, &max, UVC_GET_MAX);
 	if (ret != 0) {
 		return ret;
 	}
 
-	if (probe->bFrameIndex > max.bFrameIndex) {
+	if (probe.bFrameIndex > max.bFrameIndex) {
 		LOG_WRN("The bFrameIndex %u requested is beyond the max %u",
-			probe->bFrameIndex, max.bFrameIndex);
+			probe.bFrameIndex, max.bFrameIndex);
 		return -ERANGE;
 	}
 
-	if (probe->bFormatIndex > max.bFormatIndex) {
+	if (probe.bFormatIndex > max.bFormatIndex) {
 		LOG_WRN("The bFormatIndex %u requested is beyond the max %u",
-			probe->bFormatIndex, max.bFormatIndex);
+			probe.bFormatIndex, max.bFormatIndex);
 		return -ERANGE;
 	}
 
-	if (probe->dwFrameInterval != 0) {
-		data->video_frmival.numerator = sys_le32_to_cpu(probe->dwFrameInterval);
+	if (probe.dwFrameInterval != 0) {
+		data->video_frmival.numerator = sys_le32_to_cpu(probe.dwFrameInterval);
 		data->video_frmival.denominator = USEC_PER_SEC * 100;
 	}
 
-	if (probe->bFrameIndex != 0) {
-		data->frame_id = probe->bFrameIndex;
+	if (probe.bFrameIndex != 0) {
+		data->frame_id = probe.bFrameIndex;
 	}
 
-	if (probe->bFormatIndex != 0) {
-		data->format_id = probe->bFormatIndex;
+	if (probe.bFormatIndex != 0) {
+		data->format_id = probe.bFormatIndex;
 	}
 
 	return 0;
@@ -920,7 +913,8 @@ static int uvc_get_vc_ctrl(const struct device *dev, struct net_buf *const buf,
 	const struct device *video_dev = data->video_dev;
 	struct video_ctrl_query cq = {.id = map->cid, .dev = video_dev};
 	struct video_control ctrl = {.id = map->cid};
-	size_t size = MIN(setup->wLength, net_buf_tailroom(buf));
+	const size_t size = MIN(net_buf_tailroom(buf),
+				MIN(sizeof(struct uvc_probe), setup->wLength));
 	int64_t val64;
 	int ret;
 
@@ -1112,7 +1106,8 @@ static int uvc_get_errno(const struct device *dev, struct net_buf *const buf,
 			       const struct usb_setup_packet *const setup)
 {
 	struct uvc_data *data = dev->data;
-	size_t size = MIN(setup->wLength, net_buf_tailroom(buf));
+	const size_t size = MIN(net_buf_tailroom(buf),
+				MIN(sizeof(struct uvc_probe), setup->wLength));
 
 	switch (setup->bRequest) {
 	case UVC_GET_INFO:
