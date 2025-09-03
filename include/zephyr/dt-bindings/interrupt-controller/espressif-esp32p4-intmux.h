@@ -1,6 +1,5 @@
-/*
+/**
  * Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
- *
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -159,7 +158,46 @@
  *
  * Zero will allocate low/medium levels of priority (ESP_INTR_FLAG_LOWMED).
  */
-#define IRQ_DEFAULT_PRIORITY 0
+#define IRQ_DEFAULT_PRIORITY 1 /**< Irq Default Priority */
+
+#define ESP_INTR_FLAG_SHARED (1 << 8) /**< Can be shared between ISRs */
+
+/**
+ * @brief CPU interrupt lines.
+ *
+ * 6 for "permanently disabled interrupt"
+ */
+#define ESP_CPU_IRQ_0  0  /**< CPU interrupt line 0 */
+#define ESP_CPU_IRQ_1  1  /**< CPU interrupt line 1 */
+#define ESP_CPU_IRQ_2  2  /**< CPU interrupt line 2 */
+#define ESP_CPU_IRQ_3  3  /**< CPU interrupt line 3 */
+#define ESP_CPU_IRQ_4  4  /**< CPU interrupt line 4 */
+#define ESP_CPU_IRQ_5  5  /**< CPU interrupt line 5 */
+#define ESP_CPU_IRQ_7  7  /**< CPU interrupt line 7 */
+#define ESP_CPU_IRQ_8  8  /**< CPU interrupt line 8 */
+#define ESP_CPU_IRQ_9  9  /**< CPU interrupt line 9 */
+#define ESP_CPU_IRQ_10 10 /**< CPU interrupt line 10 */
+#define ESP_CPU_IRQ_11 11 /**< CPU interrupt line 11 */
+#define ESP_CPU_IRQ_12 12 /**< CPU interrupt line 12 */
+#define ESP_CPU_IRQ_13 13 /**< CPU interrupt line 13 */
+#define ESP_CPU_IRQ_14 14 /**< CPU interrupt line 14 */
+#define ESP_CPU_IRQ_15 15 /**< CPU interrupt line 15 */
+#define ESP_CPU_IRQ_16 16 /**< CPU interrupt line 16 */
+#define ESP_CPU_IRQ_17 17 /**< CPU interrupt line 17 */
+#define ESP_CPU_IRQ_18 18 /**< CPU interrupt line 18 */
+#define ESP_CPU_IRQ_19 19 /**< CPU interrupt line 19 */
+#define ESP_CPU_IRQ_20 20 /**< CPU interrupt line 20 */
+#define ESP_CPU_IRQ_21 21 /**< CPU interrupt line 21 */
+#define ESP_CPU_IRQ_22 22 /**< CPU interrupt line 22 */
+#define ESP_CPU_IRQ_23 23 /**< CPU interrupt line 23 */
+#define ESP_CPU_IRQ_24 24 /**< CPU interrupt line 24 */
+#define ESP_CPU_IRQ_25 25 /**< CPU interrupt line 25 */
+#define ESP_CPU_IRQ_26 26 /**< CPU interrupt line 26 */
+#define ESP_CPU_IRQ_27 27 /**< CPU interrupt line 27 */
+#define ESP_CPU_IRQ_28 28 /**< CPU interrupt line 28 */
+#define ESP_CPU_IRQ_29 29 /**< CPU interrupt line 29 */
+#define ESP_CPU_IRQ_30 30 /**< CPU interrupt line 30 */
+#define ESP_CPU_IRQ_31 31 /**< CPU interrupt line 31 */
 
 /** @endcond */
 
