@@ -81,16 +81,13 @@ list(APPEND kernel_files
   condvar.c
   thread.c
   sched.c
+  pipe.c
   )
 
 if (CONFIG_SCHED_SCALABLE OR CONFIG_WAITQ_SCALABLE)
 list(APPEND kernel_files priority_queues.c)
 endif()
 
-# FIXME: Once the prior pipe implementation is removed, this should be included in the above list
-if(NOT CONFIG_PIPES)
-list(APPEND kernel_files pipe.c)
-endif() # NOT CONFIG_PIPES
 if(CONFIG_SMP)
 list(APPEND kernel_files
      smp.c
@@ -153,7 +150,6 @@ target_sources_ifdef(CONFIG_ATOMIC_OPERATIONS_C   kernel PRIVATE atomic_c.c)
 target_sources_ifdef(CONFIG_MMU                   kernel PRIVATE mmu.c)
 target_sources_ifdef(CONFIG_POLL                  kernel PRIVATE poll.c)
 target_sources_ifdef(CONFIG_EVENTS                kernel PRIVATE events.c)
-target_sources_ifdef(CONFIG_PIPES                 kernel PRIVATE pipes.c)
 target_sources_ifdef(CONFIG_SCHED_THREAD_USAGE    kernel PRIVATE usage.c)
 target_sources_ifdef(CONFIG_OBJ_CORE              kernel PRIVATE obj_core.c)
 
