@@ -1469,6 +1469,12 @@ int bt_avdtp_register_sep(uint8_t media_type, uint8_t sep_type, struct bt_avdtp_
 	}
 
 	k_sem_take(&avdtp_sem_lock, K_FOREVER);
+	if (sys_slist_find(&seps, &sep->_node, NULL)) {
+		k_sem_give(&avdtp_sem_lock);
+		LOG_ERR("Endpoint is already registered");
+		return -EEXIST;
+	}
+
 	/* the id allocation need be locked to protect it */
 	sep->sep_info.id = bt_avdtp_sep++;
 	sep->sep_info.inuse = 0U;
