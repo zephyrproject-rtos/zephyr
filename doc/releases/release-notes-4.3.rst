@@ -135,6 +135,11 @@ New APIs and options
   * :c:macro:`K_THREAD_HW_SHADOW_STACK_ATTACH`
   * :c:macro:`k_thread_hw_shadow_stack_attach`
 
+* LoRa/LoRaWAN
+
+   * Alternate backend available with :kconfig:option:`CONFIG_LORA_MODULE_BACKEND_LORA_BASICS_MODEM` (LoRa only)
+   * :c:func:`lora_airtime`
+
 * Logging:
 
   * Added rate-limited logging macros to prevent log flooding when messages are generated frequently.
