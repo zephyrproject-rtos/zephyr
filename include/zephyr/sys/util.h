@@ -435,6 +435,22 @@ extern "C" {
 #define IN_RANGE(val, min, max) ((val) >= (min) && (val) <= (max))
 
 /**
+ * Find number of contiguous bits which are not set in the bit mask (32 bits).
+ *
+ * It is possible to return immediately when requested number of bits is found or
+ * iterate over whole mask and return the best fit (smallest from available options).
+ *
+ * @param[in] mask 32 bit mask.
+ * @param[in] num_bits Number of bits to find.
+ * @param[in] total_bits Total number of LSB bits that can be used in the mask.
+ * @param[in] first_match If true returns when first match is found, else returns the best fit.
+ *
+ * @retval -1 Contiguous bits not found.
+ * @retval non-negative Starting index of the bits group.
+ */
+int bitmask_find_gap(uint32_t mask, size_t num_bits, size_t total_bits, bool first_match);
+
+/**
  * @brief Is @p x a power of two?
  * @param x value to check
  * @return true if @p x is a power of two, false otherwise
