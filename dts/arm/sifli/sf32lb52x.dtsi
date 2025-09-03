@@ -23,6 +23,13 @@
 			};
 		};
 	};
+
+	soc {
+		cfg: syscon@5000b000 {
+			compatible = "sifli,sf32lb-cfg", "syscon";
+			reg = <0x5000b000 0x1000>;
+		};
+	};
 };
 
 &nvic {
