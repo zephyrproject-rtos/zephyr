@@ -8,6 +8,6 @@ if(CONFIG_SOC_SERIES_BL60X OR CONFIG_SOC_SERIES_BL70X)
 zephyr_include_directories(e24)
 zephyr_sources(
 e24/soc_irq_privileged.c
-e24/cache.c
+e24/soc.c
 )
 endif()
