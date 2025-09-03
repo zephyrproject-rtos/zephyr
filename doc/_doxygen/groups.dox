@@ -54,9 +54,12 @@
 @brief MCUmgr
 @defgroup mcumgr MCUmgr
 @ingroup device_mgmt
+@{
+@}
 
 @brief Transport layers for MCUmgr: SMP, UART, etc.
 @defgroup mcumgr_transport Transport layers
+@ingroup mcumgr
 @{
 @}
 
