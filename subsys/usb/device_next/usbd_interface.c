@@ -94,7 +94,7 @@ static int usbd_interface_modify(struct usbd_context *const uds_ctx,
 				return ret;
 			}
 
-			LOG_INF("Modify interface %u ep 0x%02x by op %u ep_bm %x",
+			LOG_DBG("Modify interface %u ep 0x%02x by op %u ep_bm %x",
 				iface, ed->bEndpointAddress,
 				op, c_nd->ep_active);
 		}
@@ -183,7 +183,7 @@ int usbd_interface_set(struct usbd_context *const uds_ctx,
 		return ret;
 	}
 
-	LOG_INF("Set Interfaces %u, alternate %u -> %u", iface, cur_alt, alt);
+	LOG_DBG("Set Interfaces %u, alternate %u -> %u", iface, cur_alt, alt);
 	/*
 	 * Disable/enable endpoints even if the new alternate is the same as
 	 * the current one, forcing the endpoint to reset to defaults.
