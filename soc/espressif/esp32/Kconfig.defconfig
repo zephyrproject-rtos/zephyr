@@ -12,6 +12,9 @@ config MAIN_STACK_SIZE
 config BUILD_OUTPUT_UF2_FAMILY_ID
 	default "0x1c5f21b0"
 
+config SHARED_IRQ_MAX_NUM_CLIENTS
+	default 10
+
 if SMP
 
 config SCHED_CPU_MASK

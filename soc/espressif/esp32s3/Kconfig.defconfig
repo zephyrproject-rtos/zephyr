@@ -24,4 +24,56 @@ endchoice
 
 endif # PM && TICKLESS_KERNEL
 
+config SHARED_IRQ_MAX_NUM_CLIENTS
+	default 10
+
+# Multi-level interrupt hierarchy (level-2 bring-up; level-3 GPIO pin demux
+# is deferred):
+#   L1 = intc            : CPU interrupt line
+#   L2 = <periph>_intmux : INTMUX aggregator (peripheral sources -> one CPU line)
+#
+config MULTI_LEVEL_INTERRUPTS
+	default y
+
+config 2ND_LEVEL_INTERRUPTS
+	default y
+
+# Multilevel IRQ encoding is 8 bits per level: L1 (CPU interrupt line) in the
+# low 8 bits (esp32 has <= 32 lines), L2 (INTMUX source) in the next 8 bits
+# (peripheral sources are <= 54).
+config 1ST_LEVEL_INTERRUPT_BITS
+	default 8
+
+config 2ND_LEVEL_INTERRUPT_BITS
+	default 8
+
+config 2ND_LVL_ISR_TBL_OFFSET
+	default 32
+
+# Must exceed the highest INTMUX source hosted by any aggregator, since the
+# source number is the intra-aggregator index. Currently the highest is the
+# systimer alarm (SYSTIMER_TARGET2_EDGE_INTR_SOURCE = 59); 64 leaves headroom.
+# Bump this if a future aggregator hosts a source >= 64 (max source is 99).
+config MAX_IRQ_PER_AGGREGATOR
+	default 64
+
+config NUM_2ND_LEVEL_AGGREGATORS
+	default 4
+
+# UART aggregator sits on CPU interrupt line 5 (ESP_CPU_IRQ_L1_LVL_5).
+config 2ND_LVL_INTR_00_OFFSET
+	default 5
+
+# GPIO aggregator sits on CPU interrupt line 3 (ESP_CPU_IRQ_L1_LVL_3).
+config 2ND_LVL_INTR_01_OFFSET
+	default 3
+
+# systimer aggregator sits on CPU interrupt line 10 (ESP_CPU_IRQ_L1_EDG_10).
+config 2ND_LVL_INTR_02_OFFSET
+	default 10
+
+# Timer aggregator sits on CPU interrupt line 8 (ESP_CPU_IRQ_L1_LVL_8).
+config 2ND_LVL_INTR_03_OFFSET
+	default 8
+
 endif # SOC_SERIES_ESP32S3

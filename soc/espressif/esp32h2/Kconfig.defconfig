@@ -9,4 +9,7 @@ config NUM_IRQS
 config MAIN_STACK_SIZE
 	default 2048
 
+config SHARED_IRQ_MAX_NUM_CLIENTS
+	default 10
+
 endif # SOC_SERIES_ESP32H2
