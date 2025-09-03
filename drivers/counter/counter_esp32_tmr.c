@@ -14,11 +14,11 @@
 #include <hal/timer_ll.h>
 #include <hal/timer_types.h>
 #include <hal/timg_ll.h>
+#include <esp_cpu.h>
 
 #include <zephyr/drivers/counter.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/kernel.h>
-#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #include <zephyr/device.h>
 #include <zephyr/logging/log.h>
 
@@ -54,9 +54,7 @@ struct counter_esp32_config {
 	uint32_t group;
 	uint32_t index;
 	uint32_t prescaler;
-	int irq_source;
-	int irq_priority;
-	int irq_flags;
+	void (*irq_configure)(void);
 };
 
 struct counter_esp32_data {
@@ -146,15 +144,7 @@ static int counter_esp32_init(const struct device *dev)
 	esp_clk_tree_src_get_freq_hz(GPTIMER_CLK_SRC_DEFAULT,
 				     ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &data->clock_src_hz);
 
-	int ret = esp_intr_alloc(cfg->irq_source,
-				 ESP_PRIO_TO_FLAGS(cfg->irq_priority) |
-					 ESP_INT_FLAGS_CHECK(cfg->irq_flags) | ESP_INTR_FLAG_IRAM,
-				 (intr_handler_t)counter_esp32_isr, (void *)dev, NULL);
-
-	if (ret != 0) {
-		LOG_ERR("could not allocate interrupt (err %d)", ret);
-		return ret;
-	}
+	cfg->irq_configure();
 
 #if COUNTER_SLEEP_RETENTION_ENABLED
 	counter_esp32_sleep_retention_init(dev);
@@ -526,32 +516,42 @@ static void IRAM_ATTR counter_esp32_isr(void *arg)
 
 #define TIMER(idx)              DT_INST_PARENT(idx)
 
+/* clang-format off */
 #define ESP32_COUNTER_GET_CLK_DIV(idx)                                                             \
 	(((DT_PROP(TIMER(idx), prescaler) & UINT16_MAX) < 2)                                       \
-		 ? 2                                                                               \
-		 : (DT_PROP(TIMER(idx), prescaler) & UINT16_MAX))
+	   ? 2 : (DT_PROP(TIMER(idx), prescaler) & UINT16_MAX))
 
 #define ESP32_COUNTER_INIT(idx)                                                                    \
                                                                                                    \
+	static void counter_esp32_##idx##_irq_configure(void)                                      \
+	{                                                                                          \
+		IRQ_CONNECT(DT_IRQ_BY_IDX(TIMER(idx), 0, irq),                                     \
+			    DT_IRQ_BY_IDX(TIMER(idx), 0, priority),                                \
+			    counter_esp32_isr,                                                     \
+			    DEVICE_DT_INST_GET(idx),                                               \
+			    DT_IRQ_BY_IDX(TIMER(idx), 0, flags));                                  \
+		irq_matrix_enable(DT_IRQ_BY_IDX(TIMER(idx), 0, irq),                               \
+				  DT_IRQ_BY_IDX(TIMER(idx), 0, source));                           \
+	}                                                                                          \
 	static struct counter_esp32_data counter_data_##idx;                                       \
                                                                                                    \
 	static const struct counter_esp32_config counter_config_##idx = {                          \
 		.counter_info = {COND_CODE_1(CONFIG_COUNTER_64BITS_TICKS,                          \
 					(.max_top_value_64 = UINT64_MAX,),                         \
-					(.max_top_value = UINT32_MAX,)) .flags =        \
-							      COUNTER_CONFIG_INFO_COUNT_UP,        \
-						     .channels = 1},                               \
+					(.max_top_value = UINT32_MAX,))                            \
+					.flags = COUNTER_CONFIG_INFO_COUNT_UP,                     \
+					.channels = 1},                                            \
 			.clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(TIMER(idx))),                    \
 			.clock_subsys =                                                            \
 				(clock_control_subsys_t)DT_CLOCKS_CELL(TIMER(idx), offset),        \
-			.group = DT_PROP(TIMER(idx), group), .index = DT_PROP(TIMER(idx), index),  \
+			.group = DT_PROP(TIMER(idx), group),                                       \
+			.index = DT_PROP(TIMER(idx), index),                                       \
 			.prescaler = ESP32_COUNTER_GET_CLK_DIV(idx),                               \
-			.irq_source = DT_IRQ_BY_IDX(TIMER(idx), 0, irq),                           \
-			.irq_priority = DT_IRQ_BY_IDX(TIMER(idx), 0, priority),                    \
-			.irq_flags = DT_IRQ_BY_IDX(TIMER(idx), 0, flags)};                         \
+			.irq_configure = counter_esp32_##idx##_irq_configure};                     \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(idx, counter_esp32_init, NULL, &counter_data_##idx,                  \
 			      &counter_config_##idx, PRE_KERNEL_1, CONFIG_COUNTER_INIT_PRIORITY,   \
 			      &counter_api);
+/* clang-format on */
 
 DT_INST_FOREACH_STATUS_OKAY(ESP32_COUNTER_INIT);

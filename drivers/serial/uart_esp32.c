@@ -70,7 +70,8 @@
 #include <soc.h>
 #include <zephyr/drivers/uart.h>
 
-#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
+#include <esp_cpu.h>
+#include <esp_rom_sys.h>
 
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/pm/device.h>
@@ -103,11 +104,9 @@ struct uart_esp32_config {
 	const struct device *clock_dev;
 	const struct pinctrl_dev_config *pcfg;
 	const clock_control_subsys_t clock_subsys;
-	int irq_source;
-	int irq_priority;
-	int irq_flags;
 	bool tx_invert;
 	bool rx_invert;
+	void (*irq_configure)(void);
 #if CONFIG_UART_ASYNC_API
 	const struct device *dma_dev;
 	uint8_t tx_dma_channel;
@@ -1284,14 +1283,7 @@ static int uart_esp32_init(const struct device *dev)
 	}
 
 #if CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_ASYNC_API || CONFIG_PM
-	ret = esp_intr_alloc(config->irq_source,
-			     ESP_PRIO_TO_FLAGS(config->irq_priority) |
-				     ESP_INT_FLAGS_CHECK(config->irq_flags) | ESP_INTR_FLAG_IRAM,
-			     (intr_handler_t)uart_esp32_isr, (void *)dev, NULL);
-	if (ret < 0) {
-		LOG_ERR("Error allocating UART interrupt (%d)", ret);
-		return ret;
-	}
+	config->irq_configure();
 #endif
 #if CONFIG_UART_ASYNC_API
 	if (config->dma_dev) {
@@ -1358,6 +1350,23 @@ static DEVICE_API(uart, uart_esp32_api) = {
 #endif /*CONFIG_UART_ASYNC_API*/
 };
 
+#if CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_ASYNC_API || CONFIG_PM
+#define ESP_UART_IRQ_DEFINE(n)                                                                     \
+	static void uart_esp32_##n##_irq_configure(void)                                           \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, 0, irq), DT_INST_IRQ_BY_IDX(n, 0, priority),     \
+			    uart_esp32_isr, DEVICE_DT_INST_GET(n),                                 \
+			    DT_INST_IRQ_BY_IDX(n, 0, flags));                                      \
+		irq_matrix_enable(DT_INST_IRQ_BY_IDX(n, 0, irq),                                   \
+				  DT_INST_IRQ_BY_IDX(n, 0, source));                               \
+	}
+
+#define ESP_UART_IRQ_CFG(n) .irq_configure = uart_esp32_##n##_irq_configure,
+#else
+#define ESP_UART_IRQ_DEFINE(n)
+#define ESP_UART_IRQ_CFG(n)
+#endif
+
 #if CONFIG_UART_ASYNC_API
 #define ESP_UART_DMA_INIT(n)                                                                       \
 	.dma_dev = ESP32_DT_INST_DMA_CTLR(n, tx),                                                  \
@@ -1374,20 +1383,21 @@ static DEVICE_API(uart, uart_esp32_api) = {
 #define ESP_UART_UHCI_INIT(n)
 #endif
 
+/* clang-format off */
 #define ESP32_UART_INIT(idx)                                                                       \
                                                                                                    \
 	PINCTRL_DT_INST_DEFINE(idx);                                                               \
+	ESP_UART_IRQ_DEFINE(idx);                                                                  \
                                                                                                    \
 	static const DRAM_ATTR struct uart_esp32_config uart_esp32_cfg_port_##idx = {              \
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(idx)),                              \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),                                       \
 		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(idx, offset),          \
-		.irq_source = DT_INST_IRQ_BY_IDX(idx, 0, irq),                                     \
-		.irq_priority = DT_INST_IRQ_BY_IDX(idx, 0, priority),                              \
-		.irq_flags = DT_INST_IRQ_BY_IDX(idx, 0, flags),                                    \
 		.tx_invert = DT_INST_PROP_OR(idx, tx_invert, false),                               \
 		.rx_invert = DT_INST_PROP_OR(idx, rx_invert, false),                               \
-		ESP_UART_DMA_INIT(idx)};                                                           \
+		ESP_UART_IRQ_CFG(idx)                                                              \
+		ESP_UART_DMA_INIT(idx)                                                             \
+	};                                                                                         \
                                                                                                    \
 	static struct uart_esp32_data uart_esp32_data_##idx = {                                    \
 		.uart_config = {                                                                   \
@@ -1398,19 +1408,20 @@ static DEVICE_API(uart, uart_esp32_api) = {
 			.flow_ctrl = MAX(COND_CODE_1(DT_INST_PROP(idx, hw_rs485_hd_mode),          \
 							     (UART_CFG_FLOW_CTRL_RS485),           \
 							     (UART_CFG_FLOW_CTRL_NONE)),           \
-				 COND_CODE_1(DT_INST_PROP(idx, hw_flow_control),   \
+					 COND_CODE_1(DT_INST_PROP(idx, hw_flow_control),           \
 							     (UART_CFG_FLOW_CTRL_RTS_CTS),         \
-							     (UART_CFG_FLOW_CTRL_NONE)))},         \
-				.hal =                                                             \
-					{                                                          \
-						.dev = (uart_dev_t *)DT_INST_REG_ADDR(idx),        \
-					},                                                         \
-				ESP_UART_UHCI_INIT(idx)};                                          \
+							     (UART_CFG_FLOW_CTRL_NONE)))           \
+		},                                                                                 \
+		.hal = {                                                                           \
+			.dev = (uart_dev_t *)DT_INST_REG_ADDR(idx),                                \
+		},                                                                                 \
+		ESP_UART_UHCI_INIT(idx)};                                                          \
                                                                                                    \
 	PM_DEVICE_DT_INST_DEFINE(idx, uart_esp32_pm_action);                                       \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(idx, uart_esp32_init, PM_DEVICE_DT_INST_GET(idx),                    \
 			      &uart_esp32_data_##idx, &uart_esp32_cfg_port_##idx, PRE_KERNEL_1,    \
 			      CONFIG_SERIAL_INIT_PRIORITY, &uart_esp32_api);
+/* clang-format on */
 
 DT_INST_FOREACH_STATUS_OKAY(ESP32_UART_INIT);
