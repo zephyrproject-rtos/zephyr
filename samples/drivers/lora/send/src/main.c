@@ -49,6 +49,8 @@ int main(void)
 		return 0;
 	}
 
+	LOG_INF("Expected packet airtime: %u ms", lora_airtime(lora_dev, MAX_DATA_LEN));
+
 	while (1) {
 		ret = lora_send(lora_dev, data, MAX_DATA_LEN);
 		if (ret < 0) {
