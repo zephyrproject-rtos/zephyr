@@ -314,6 +314,7 @@ int netc_eth_init_common(const struct device *dev)
 	ep_config.si = config->si_idx;
 	ep_config.siConfig.txRingUse = 1;
 	ep_config.siConfig.rxRingUse = 1;
+	ep_config.siConfig.vlanCtrl = kNETC_ENETC_StanCVlan | kNETC_ENETC_StanSVlan;
 	ep_config.userData = data;
 	ep_config.reclaimCallback = NULL;
 	ep_config.msixEntry = &msix_entry[0];
