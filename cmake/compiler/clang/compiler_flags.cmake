@@ -104,6 +104,11 @@ set_compiler_property(PROPERTY warning_error_coding_guideline
 # No printf-return-value optimizations in clang
 set_compiler_property(PROPERTY no_printf_return_value)
 
+# Clang does not support "-Wno-volatile"
+set_property(TARGET compiler-cpp PROPERTY dialect_cpp2a "-std=c++2a" "-Wno-register")
+set_property(TARGET compiler-cpp PROPERTY dialect_cpp20 "-std=c++20" "-Wno-register")
+set_property(TARGET compiler-cpp PROPERTY dialect_cpp2b "-std=c++2b" "-Wno-register")
+
 ###################################################
 # This section covers all remaining C / C++ flags #
 ###################################################
