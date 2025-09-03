@@ -105,6 +105,20 @@ static inline bool usb_reqtype_is_to_device(const struct usb_setup_packet *setup
 #define USB_SREQ_GET_INTERFACE		0x0A
 #define USB_SREQ_SET_INTERFACE		0x0B
 #define USB_SREQ_SYNCH_FRAME		0x0C
+/** Additional Request Codes defined in USB 3.2 spec. Table 9-5 */
+#define USB_SREQ_SET_ENCRYPTION		0x0D
+#define USB_SREQ_GET_ENCRYPTION		0x0E
+#define USB_SREQ_SET_HANDSHAKE		0x0F
+#define USB_SREQ_GET_HANDSHAKE		0x10
+#define USB_SREQ_SET_CONNECTION		0x11
+#define USB_SREQ_SET_SECURITY_DATA	0x12
+#define USB_SREQ_GET_SECURITY_DATA	0x13
+#define USB_SREQ_SET_WUSB_DATA		0x14
+#define USB_SREQ_LOOPBACK_DATA_WRITE	0x15
+#define USB_SREQ_LOOPBACK_DATA_READ	0x16
+#define USB_SREQ_SET_INTERFACE_DS	0x17
+#define USB_SREQ_SET_SEL		0x30
+#define USB_SREQ_SET_ISOCH_DELAY	0x31
 
 /** Descriptor Types defined in spec. Table 9-5 */
 #define USB_DESC_DEVICE			1
@@ -121,6 +135,8 @@ static inline bool usb_reqtype_is_to_device(const struct usb_setup_packet *setup
 #define USB_DESC_INTERFACE_ASSOC	11
 #define USB_DESC_BOS			15
 #define USB_DESC_DEVICE_CAPABILITY	16
+#define USB_DESC_ENDPOINT_COMPANION	48
+#define USB_DESC_ISO_ENDPOINT_COMPANION	49
 
 /** Class-Specific Descriptor Types as defined by
  *  USB Common Class Specification
@@ -255,6 +271,23 @@ struct usb_association_descriptor {
 	uint8_t iFunction;
 } __packed;
 
+/** USB Endpoint Companion Descriptor defined in USB3 spec. Table 9-27. */
+struct usb_ss_endpoint_companion_descriptor {
+	uint8_t bLength;
+	uint8_t bDescriptorType;
+	uint8_t bMaxBurst;
+	uint8_t bmAttributes;
+	uint16_t wBytesPerInterval;
+} __packed;
+
+/** USB3 SET_SEL command payload from the host. Section 9.4.12. */
+struct usb_system_exit_latency {
+	uint8_t u1sel;
+	uint8_t u1pel;
+	uint16_t u2sel;
+	uint16_t u2pel;
+} __packed;
+
 /** USB Standard Configuration Descriptor Characteristics from Table 9-10 */
 #define USB_SCD_RESERVED	BIT(7)
 #define USB_SCD_SELF_POWERED	BIT(6)
@@ -277,7 +310,9 @@ struct usb_association_descriptor {
 #define USB_SRN_2_0			0x0200
 #define USB_SRN_2_0_1			0x0201
 #define USB_SRN_2_1			0x0210
-
+#define USB_SRN_3_0			0x0300
+#define USB_SRN_3_1			0x0310
+#define USB_SRN_3_2			0x0320
 #define USB_DEC_TO_BCD(dec)	((((dec) / 10) << 4) | ((dec) % 10))
 
 /** USB Device release number (bcdDevice Descriptor field) */
@@ -357,8 +392,14 @@ struct usb_association_descriptor {
 /** Calculate full speed isochronous endpoint bInterval from a value in microseconds */
 #define USB_FS_ISO_EP_INTERVAL(us)	CLAMP((ilog2((us) / 1000U) + 1U), 1U, 16U)
 
+/** Calculate super speed interrupt endpoint bInterval from a value in microseconds */
+#define USB_SS_INT_EP_INTERVAL(us)	CLAMP((ilog2((us) / 125U) + 1U), 1U, 16U)
+
 /** Calculate high speed isochronous endpoint bInterval from a value in microseconds */
 #define USB_HS_ISO_EP_INTERVAL(us)	CLAMP((ilog2((us) / 125U) + 1U), 1U, 16U)
+
+/** Calculate super speed isochronous endpoint bInterval from a value in microseconds */
+#define USB_SS_ISO_EP_INTERVAL(us)	CLAMP((ilog2((us) / 125U) + 1U), 1U, 16U)
 
 /** Get endpoint size field from Max Packet Size value */
 #define USB_MPS_EP_SIZE(mps)		((mps) & BIT_MASK(11))
