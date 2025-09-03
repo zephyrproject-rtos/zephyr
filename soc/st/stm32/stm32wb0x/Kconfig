@@ -9,8 +9,20 @@ config SOC_SERIES_STM32WB0X
 	select CPU_CORTEX_M_HAS_VTOR
 	select CPU_CORTEX_M_HAS_SYSTICK
 	select CPU_HAS_ARM_MPU
+	select HAS_PM
 	select HAS_STM32CUBE
 	select SOC_EARLY_INIT_HOOK
 	# WB0x has a ROM bootloader executed at reset,
 	# which makes the following option required
 	select INIT_ARCH_HW_AT_BOOT
+
+	# STM32WB0 series only supports suspend-to-RAM as low-power mode.
+	# Make sure that S2RAM support is enabled if Power Management is
+	# selected by the user. PM_DEVICE is also required because devices
+	# need to be reinitialized after resuming. CUSTOM_MARKING is enabled
+	# to use SoC-specific hardware registers for resume detection, and
+	# CORTEX_M_SYSTICK_RESET_BY_LOW_POWER is required because the SoC
+	# is reset upon wake-up from Deepstop.
+	select PM_DEVICE if PM
+	select PM_S2RAM if PM
+	select PM_S2RAM_CUSTOM_MARKING if PM
