@@ -1416,7 +1416,7 @@ void bt_le_adv_resume(void)
 	int err;
 
 	if (!adv) {
-		LOG_ERR("No valid legacy adv to resume");
+		LOG_DBG("No valid legacy adv to resume");
 		return;
 	}
 
