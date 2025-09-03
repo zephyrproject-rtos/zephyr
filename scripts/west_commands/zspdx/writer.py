@@ -74,12 +74,22 @@ def generateDowloadUrl(url, revision):
 #   2) pkg: Package object being described
 #   3) spdx_version: SPDX specification version
 def writePackageSPDX(f, pkg, spdx_version=SPDX_VERSION_2_3):
+    #update package meta data based on provided CPE reference
+    for ref in pkg.cfg.externalReferences:
+        if re.fullmatch(CPE23TYPE_REGEX, ref):
+            metadata = ref.split(':',6)
+            #metadata should now be array like:
+            #[cpe,2.3,a,arm,mbed_tls,3.5.1,*:*:*:*:*:*:*]
+            pkg.cfg.supplier = metadata[3]
+            pkg.cfg.name = metadata[4]
+            pkg.cfg.version = metadata[5]
+
     spdx_normalized_name = _normalize_spdx_name(pkg.cfg.name)
     spdx_normalize_spdx_id = _normalize_spdx_name(pkg.cfg.spdxID)
 
     f.write(f"""##### Package: {spdx_normalized_name}
 
-PackageName: {spdx_normalized_name}
+PackageName: {pkg.cfg.name}
 SPDXID: {spdx_normalize_spdx_id}
 PackageLicenseConcluded: {pkg.concludedLicense}
 """)
@@ -101,6 +111,9 @@ PackageCopyrightText: {pkg.cfg.copyrightText}
         f.write(f"PackageVersion: {pkg.cfg.version}\n")
     elif len(pkg.cfg.revision) > 0:
         f.write(f"PackageVersion: {pkg.cfg.revision}\n")
+
+    if len(pkg.cfg.supplier) > 0:
+        f.write(f"PackageSupplier: Organization: {pkg.cfg.supplier}\n")
 
     for ref in pkg.cfg.externalReferences:
         if re.fullmatch(CPE23TYPE_REGEX, ref):

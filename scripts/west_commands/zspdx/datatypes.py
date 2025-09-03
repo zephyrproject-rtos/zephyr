@@ -81,6 +81,9 @@ class PackageConfig:
     # package revision
     revision: str = ""
 
+    # package supplier or vendor
+    supplier: str = ""
+
     # package external references
     externalReferences: list = field(default_factory=list)
 
