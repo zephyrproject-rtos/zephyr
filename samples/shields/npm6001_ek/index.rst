@@ -20,7 +20,7 @@ Requirements
 The shield needs to be wired to a host board supporting the Arduino connector.
 Below you can find a wiring example for the nRF52840 DK:
 
-.. figure:: nrf52840dk_wiring.jpg
+.. figure:: doc/nrf52840dk_wiring.jpg
    :alt: nRF52840DK + nPM6001-EK wiring example
    :align: center
 
