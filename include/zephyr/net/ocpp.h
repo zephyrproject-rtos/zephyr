@@ -25,6 +25,7 @@
 #include <stdio.h>
 #include <zephyr/kernel.h>
 #include <zephyr/net/net_ip.h>
+#include <zephyr/net/tls_credentials.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -141,12 +142,23 @@ struct ocpp_cp_info {
 	char *meter_type;	/**< Main power meter type */
 };
 
+/** @brief TLS credentials information of the central system (CS) */
+struct ocpp_tls_credentials {
+	const sec_tag_t *sec_tag_list; /**< TLS Sec tag list */
+	char *tls_hostname; /**< TLS Hostname */
+	size_t sec_tag_list_size;  /**< Size of TLS Sec tag list */
+	size_t tls_hostname_size; /**< Size of TLS Hostname */
+};
+
 /** @brief Parameters for ocpp_init information about central system (CS) */
 struct ocpp_cs_info {
 	char *cs_ip;	/**< Central system IP address */
 	char *ws_url;	/**< Websocket url exclude ipaddr & port */
 	int port;	/**< Central system port number */
 	net_sa_family_t sa_family; /**< IP protocol family type 4/6 */
+#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
+	struct ocpp_tls_credentials creds; /**< Central system TLS Credentials */
+#endif
 };
 
 /** @brief Parameters opaque session handle for ocpp_* API */
