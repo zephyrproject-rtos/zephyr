@@ -20,9 +20,17 @@ tests:
     platform_allow:
       - qemu_cortex_m3
       - qemu_x86
-      - nrf52840dk/nrf52840
     integration_platforms:
       - qemu_cortex_m3
+  sample.bluetooth.observer.extended.bt_ll_sw_split:
+    harness: bluetooth
+    tags: bluetooth
+    extra_args:
+      - CONF_FILE="prj_extended.conf"
+      - EXTRA_CONF_FILE="overlay-bt_ll_sw_split.conf"
+    platform_allow:
+      - nrf52840dk/nrf52840
+    integration_platforms:
       - nrf52840dk/nrf52840
   sample.bluetooth.observer.extended.bbc_microbit.bt_ll_sw_split:
     harness: bluetooth
