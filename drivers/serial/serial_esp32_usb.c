@@ -13,8 +13,8 @@
 #include <zephyr/device.h>
 #include <errno.h>
 #include <soc.h>
-#include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
+#include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/sys/util.h>
 #include <esp_attr.h>
@@ -35,9 +35,9 @@
 struct serial_esp32_usb_config {
 	const struct device *clock_dev;
 	const clock_control_subsys_t clock_subsys;
-	int irq_source;
-	int irq_priority;
-	int irq_flags;
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	void (*irq_configure)(void);
+#endif
 };
 
 struct serial_esp32_usb_data {
@@ -112,12 +112,9 @@ static int serial_esp32_usb_init(const struct device *dev)
 #endif
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	ret = esp_intr_alloc(config->irq_source,
-			     ESP_PRIO_TO_FLAGS(config->irq_priority) |
-				     ESP_INT_FLAGS_CHECK(config->irq_flags) | ESP_INTR_FLAG_IRAM,
-			     (intr_handler_t)serial_esp32_usb_isr, (void *)dev, NULL);
+	config->irq_configure();
 #endif
-	return ret;
+	return 0;
 }
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -246,6 +243,13 @@ static void IRAM_ATTR serial_esp32_usb_isr(void *arg)
 	}
 }
 
+static void serial_esp32_usb_irq_configure(void)
+{
+	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, 0, irq), DT_INST_IRQ_BY_IDX(0, 0, priority),
+		    serial_esp32_usb_isr, DEVICE_DT_INST_GET(0), DT_INST_IRQ_BY_IDX(0, 0, flags) | ESP_INTR_FLAG_IRAM);
+	irq_matrix_enable(DT_INST_IRQ_BY_IDX(0, 0, irq), DT_INST_IRQ_BY_IDX(0, 0, source));
+}
+
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
 static DEVICE_API(uart, serial_esp32_usb_api) = {
@@ -273,9 +277,9 @@ static DEVICE_API(uart, serial_esp32_usb_api) = {
 static const DRAM_ATTR struct serial_esp32_usb_config serial_esp32_usb_cfg = {
 	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(0)),
 	.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(0, offset),
-	.irq_source = DT_INST_IRQ_BY_IDX(0, 0, irq),
-	.irq_priority = DT_INST_IRQ_BY_IDX(0, 0, priority),
-	.irq_flags = DT_INST_IRQ_BY_IDX(0, 0, flags)
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	.irq_configure = serial_esp32_usb_irq_configure,
+#endif
 };
 
 static struct serial_esp32_usb_data serial_esp32_usb_data_0;

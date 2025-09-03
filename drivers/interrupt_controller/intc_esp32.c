@@ -6,6 +6,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/irq.h>
+#include <zephyr/sw_isr_table.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -13,6 +14,7 @@
 #include <string.h>
 #include <soc.h>
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
+#include <esp_soc_irq.h>
 #include <esp_memory_utils.h>
 #include <esp_attr.h>
 #include <esp_cpu.h>
@@ -79,6 +81,7 @@ static bool non_iram_int_disabled_flag[CONFIG_MP_MAX_NUM_CPUS];
  */
 static uint8_t irq_line_total_clients[CONFIG_MP_MAX_NUM_CPUS][CONFIG_NUM_IRQS];
 static uint8_t irq_line_non_iram_clients[CONFIG_MP_MAX_NUM_CPUS][CONFIG_NUM_IRQS];
+
 /*
  * Reduce a (possibly multilevel-encoded) IRQ to its level-1 CPU interrupt line.
  * The per-line IRAM bookkeeping below is indexed by CPU line, and
@@ -364,7 +367,7 @@ static bool intr_has_handler(int intr, int cpu)
 
 	return r;
 }
-
+#if 0
 static bool is_vect_desc_usable(struct vector_desc_t *vd, int flags, int cpu, int force)
 {
 	/* Check if interrupt is not reserved by design */
@@ -698,6 +701,7 @@ int esp_intr_alloc_intrstatus(int source,
 
 	unsigned int key = irq_lock();
 	int cpu = esp_cpu_get_core_id();
+	int rc;
 	/* See if we can find an interrupt that matches the flags. */
 	int intr = get_available_int(flags, cpu, force, source);
 
@@ -741,13 +745,26 @@ int esp_intr_alloc_intrstatus(int source,
 		irq_disable(intr);
 
 		/* (Re-)set shared isr handler to new value. */
-		irq_connect_dynamic(intr, 0, (intc_dyn_handler_t)shared_intr_isr, vd, 0);
+		rc = irq_connect_dynamic(intr, 0, (intc_dyn_handler_t)shared_intr_isr, vd, flags);
+		if (rc < 0) {
+			vd->shared_vec_info = sv->next;
+			k_free(sv);
+			irq_unlock(key);
+			k_free(ret);
+			return rc;
+		}
 	} else {
 		/* Mark as unusable for other interrupt sources. This is ours now! */
 		vd->flags = VECDESC_FL_NONSHARED;
 		if (handler) {
 			irq_disable(intr);
-			irq_connect_dynamic(intr, 0, (intc_dyn_handler_t)handler, arg, 0);
+			rc = irq_connect_dynamic(intr, 0, (intc_dyn_handler_t)handler, arg, flags);
+			if (rc < 0) {
+				vd->flags &= ~VECDESC_FL_NONSHARED;
+				irq_unlock(key);
+				k_free(ret);
+				return rc;
+			}
 		}
 		if (flags & ESP_INTR_FLAG_EDGE) {
 			esp_cpu_intr_edge_ack(intr);
@@ -756,10 +773,8 @@ int esp_intr_alloc_intrstatus(int source,
 	}
 	if (flags & ESP_INTR_FLAG_IRAM) {
 		vd->flags |= VECDESC_FL_INIRAM;
-		non_iram_int_mask[cpu] &= ~(1 << intr);
 	} else {
 		vd->flags &= ~VECDESC_FL_INIRAM;
-		non_iram_int_mask[cpu] |= (1 << intr);
 	}
 	if (source >= 0) {
 		esp_rom_route_intr_matrix(cpu, source, intr);
@@ -846,14 +861,28 @@ int IRAM_ATTR esp_intr_set_in_iram(intr_handle_t handle, bool is_in_iram)
 		return -EINVAL;
 	}
 	unsigned int key = irq_lock();
-	uint32_t mask = (1 << vd->intno);
+	uint32_t old_flags = (vd->flags & VECDESC_FL_INIRAM) ? ESP_INTR_FLAG_IRAM : 0;
+	uint32_t new_flags = is_in_iram ? ESP_INTR_FLAG_IRAM : 0;
+	int rc;
+
+	if (old_flags != new_flags) {
+		rc = z_soc_irq_flags_clear(vd->intno, old_flags);
+		if (rc < 0) {
+			irq_unlock(key);
+			return rc;
+		}
+		rc = z_soc_irq_flags_apply(vd->intno, new_flags);
+		if (rc < 0) {
+			(void)z_soc_irq_flags_apply(vd->intno, old_flags);
+			irq_unlock(key);
+			return rc;
+		}
+	}
 
 	if (is_in_iram) {
 		vd->flags |= VECDESC_FL_INIRAM;
-		non_iram_int_mask[vd->cpu] &= ~mask;
 	} else {
 		vd->flags &= ~VECDESC_FL_INIRAM;
-		non_iram_int_mask[vd->cpu] |= mask;
 	}
 	irq_unlock(key);
 	return 0;
@@ -868,6 +897,10 @@ int esp_intr_free(intr_handle_t handle)
 	}
 
 	unsigned int key = irq_lock();
+	uint32_t clear_flags = (handle->vector_desc->flags & VECDESC_FL_INIRAM) ?
+				       ESP_INTR_FLAG_IRAM :
+				       0;
+
 	esp_intr_disable(handle);
 	if (handle->vector_desc->flags & VECDESC_FL_SHARED) {
 		/* Find and kill the shared int */
@@ -904,10 +937,17 @@ int esp_intr_free(intr_handle_t handle)
 		/* Disable interrupt to avoid assert at IRQ install */
 		irq_disable(handle->vector_desc->intno);
 
-		/* Reset IRQ handler */
-		irq_connect_dynamic(handle->vector_desc->intno, 0,
-				      (intc_dyn_handler_t)z_irq_spurious,
-				      (void *)((int)handle->vector_desc->intno), 0);
+		/* Reset IRQ handler without updating IRAM mask flags */
+#if defined(CONFIG_RISCV)
+		z_isr_install(handle->vector_desc->intno +
+				      CONFIG_RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET,
+			      (void (*)(const void *))z_irq_spurious,
+			      (void *)((intptr_t)handle->vector_desc->intno));
+#else
+		z_isr_install(handle->vector_desc->intno,
+			      (void (*)(const void *))z_irq_spurious,
+			      (void *)((intptr_t)handle->vector_desc->intno));
+#endif
 		/*
 		 * Theoretically, we could free the vector_desc... not sure if that's worth the
 		 * few bytes of memory we save.(We can also not use the same exit path for empty
@@ -919,9 +959,9 @@ int esp_intr_free(intr_handle_t handle)
 		handle->vector_desc->flags &= ~(VECDESC_FL_LEVEL_MASK << VECDESC_FL_LEVEL_SHIFT);
 #endif
 		handle->vector_desc->source = ETS_INTERNAL_UNUSED_INTR_SOURCE;
-		/* Also kill non_iram mask bit. */
-		non_iram_int_mask[handle->vector_desc->cpu] &= ~(1 << (handle->vector_desc->intno));
 	}
+
+	z_soc_irq_flags_clear(handle->vector_desc->intno, clear_flags);
 	irq_unlock(key);
 	k_free(handle);
 	return 0;
@@ -1031,7 +1071,7 @@ int IRAM_ATTR esp_intr_disable(intr_handle_t handle)
 	irq_unlock(key);
 	return 0;
 }
-
+#endif
 void IRAM_ATTR esp_intr_noniram_disable(void)
 {
 	unsigned int key = irq_lock();

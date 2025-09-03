@@ -35,15 +35,16 @@
 #endif
 
 #include "soc/gpio_periph.h"
+#include <esp_cpu.h>
+#include <esp_rom_sys.h>
 
 #include <stdint.h>
 #include <string.h>
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/mbox.h>
-#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
-#include <zephyr/sys/barrier.h>
 #include <soc.h>
+#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(mbox_esp32, CONFIG_MBOX_LOG_LEVEL);
@@ -58,12 +59,8 @@ struct esp32_mbox_memory {
 };
 
 struct esp32_mbox_config {
-	int irq_source_pro_cpu;
-	int irq_priority_pro_cpu;
-	int irq_flags_pro_cpu;
-	int irq_source_app_cpu;
-	int irq_priority_app_cpu;
-	int irq_flags_app_cpu;
+	void (*irq_configure_core_0)(void);
+	void (*irq_configure_core_1)(void);
 };
 
 struct esp32_mbox_data {
@@ -76,7 +73,7 @@ struct esp32_mbox_data {
 	struct esp32_mbox_control *control;
 };
 
-static void esp32_mbox_isr(const struct device *dev);
+static void esp32_mbox_isr(const void *arg);
 
 #if defined(MBOX_ESP32_LPCORE)
 static const struct device *s_mbox_dev;
@@ -106,8 +103,9 @@ LP_CORE_ISR_ATTR void ulp_lp_core_lp_pmu_intr_handler(void)
 }
 #endif
 
-IRAM_ATTR static void esp32_mbox_isr(const struct device *dev)
+IRAM_ATTR static void esp32_mbox_isr(const void *arg)
 {
+	const struct device *dev = (const struct device *)arg;
 	struct esp32_mbox_data *dev_data = (struct esp32_mbox_data *)dev->data;
 	struct mbox_msg msg;
 	uint32_t core_id = dev_data->this_core_id;
@@ -256,7 +254,6 @@ static int esp32_mbox_init(const struct device *dev)
 	struct esp32_mbox_data *data = (struct esp32_mbox_data *)dev->data;
 #if !defined(MBOX_ESP32_LPCORE)
 	struct esp32_mbox_config *cfg = (struct esp32_mbox_config *)dev->config;
-	int ret;
 #endif
 
 #if defined(MBOX_ESP32_LPCORE)
@@ -271,34 +268,31 @@ static int esp32_mbox_init(const struct device *dev)
 		data->control->busy[1] = 0;
 		barrier_dsync_fence_full();
 #if !defined(MBOX_ESP32_LPCORE)
-		ret = esp_intr_alloc(cfg->irq_source_pro_cpu,
-				     ESP_PRIO_TO_FLAGS(cfg->irq_priority_pro_cpu) |
-					     ESP_INT_FLAGS_CHECK(cfg->irq_flags_pro_cpu) |
-					     ESP_INTR_FLAG_IRAM,
-				     (intr_handler_t)esp32_mbox_isr, (void *)dev, NULL);
-#endif
+//		ret = esp_intr_alloc(cfg->irq_source_pro_cpu,
+//				     ESP_PRIO_TO_FLAGS(cfg->irq_priority_pro_cpu) |
+//					     ESP_INT_FLAGS_CHECK(cfg->irq_flags_pro_cpu) |
+//					     ESP_INTR_FLAG_IRAM,
+//				     (intr_handler_t)esp32_mbox_isr, (void *)dev, NULL);
+//#if !defined(CONFIG_SOC_ESP32C5_LPCORE) && !defined(CONFIG_SOC_ESP32C6_LPCORE)
+		cfg->irq_configure_core_0();
+//#endif
 #if defined(MBOX_ESP32_HPCORE)
 		SET_PERI_REG_MASK(PMU_HP_INT_ENA_REG, PMU_SW_INT_ENA);
 #endif
 	} else {
 #if defined(MBOX_ESP32_LPCORE)
 		s_mbox_dev = dev;
+#if defined(CONFIG_SOC_ESP32C5_LPCORE) || defined(CONFIG_SOC_ESP32C6_LPCORE)
+		ulp_lp_core_intr_set_handler(DT_INST_IRQ_BY_IDX(0, 1, source),
+					     (void (*)(void *))esp32_mbox_isr, (void *)dev);
 		ulp_lp_core_intr_enable();
 		ulp_lp_core_sw_intr_enable(true);
 #else
-		ret = esp_intr_alloc(cfg->irq_source_app_cpu,
-				     ESP_PRIO_TO_FLAGS(cfg->irq_priority_app_cpu) |
-					     ESP_INT_FLAGS_CHECK(cfg->irq_flags_app_cpu) |
-					     ESP_INTR_FLAG_IRAM,
-				     (intr_handler_t)esp32_mbox_isr, (void *)dev, NULL);
+		cfg->irq_configure_core_1();
 #endif
 	}
 
-#if defined(MBOX_ESP32_LPCORE)
 	return 0;
-#else
-	return ret;
-#endif
 }
 
 static DEVICE_API(mbox, esp32_mbox_driver_api) = {
@@ -313,15 +307,38 @@ static DEVICE_API(mbox, esp32_mbox_driver_api) = {
 
 #define ESP32_MBOX_SHM_ADDR_BY_IDX(idx) DT_REG_ADDR(DT_PHANDLE(DT_DRV_INST(idx), shared_memory))
 
+#if !defined(CONFIG_SOC_ESP32C6_LPCORE)
+#define ESP32_MBOX_IRQ(idx)                                                                        \
+	static void esp32_mbox_##idx##_irq_configure_0(void)                                       \
+	{                                                                                          \
+		irq_connect_dynamic(DT_INST_IRQ_BY_IDX(idx, 0, irq),                               \
+				    DT_INST_IRQ_BY_IDX(idx, 0, priority), esp32_mbox_isr,          \
+				    DEVICE_DT_INST_GET(idx), DT_INST_IRQ_BY_IDX(idx, 0, flags) | ESP_INTR_FLAG_IRAM);   \
+		irq_matrix_enable(DT_INST_IRQ_BY_IDX(idx, 0, irq),                                 \
+				  DT_INST_IRQ_BY_IDX(idx, 0, source));                             \
+	}                                                                                          \
+	static void esp32_mbox_##idx##_irq_configure_1(void)                                       \
+	{                                                                                          \
+		irq_connect_dynamic(DT_INST_IRQ_BY_IDX(idx, 1, irq),                               \
+				    DT_INST_IRQ_BY_IDX(idx, 1, priority), esp32_mbox_isr,          \
+				    DEVICE_DT_INST_GET(idx), DT_INST_IRQ_BY_IDX(idx, 1, flags) | ESP_INTR_FLAG_IRAM);   \
+		irq_matrix_enable(DT_INST_IRQ_BY_IDX(idx, 1, irq),                                 \
+				  DT_INST_IRQ_BY_IDX(idx, 1, source));                             \
+	}
+
+#define ESP32_MBOX_IRQ_CONFIG(idx)                                                                 \
+	.irq_configure_core_0 = esp32_mbox_##idx##_irq_configure_0,                                \
+	.irq_configure_core_1 = esp32_mbox_##idx##_irq_configure_1,
+
+#else
+#define ESP32_MBOX_IRQ(idx)
+#define ESP32_MBOX_IRQ_CONFIG(idx)
+#endif /* !CONFIG_SOC_ESP32C6_LPCORE */
+
 #define ESP32_MBOX_INIT(idx)                                                                       \
+	ESP32_MBOX_IRQ(idx)                                                                        \
 	static struct esp32_mbox_config esp32_mbox_device_cfg_##idx = {                            \
-		.irq_source_pro_cpu = DT_INST_IRQ_BY_IDX(idx, 0, irq),                             \
-		.irq_priority_pro_cpu = DT_INST_IRQ_BY_IDX(idx, 0, priority),                      \
-		.irq_flags_pro_cpu = DT_INST_IRQ_BY_IDX(idx, 0, flags),                            \
-		.irq_source_app_cpu = DT_INST_IRQ_BY_IDX(idx, 1, irq),                             \
-		.irq_priority_app_cpu = DT_INST_IRQ_BY_IDX(idx, 1, priority),                      \
-		.irq_flags_app_cpu = DT_INST_IRQ_BY_IDX(idx, 1, flags),                            \
-	};                                                                                         \
+		ESP32_MBOX_IRQ_CONFIG(idx)};                                                       \
 	static struct esp32_mbox_data esp32_mbox_device_data_##idx = {                             \
 		.shm_size = ESP32_MBOX_SHM_SIZE_BY_IDX(idx) / 2,                                   \
 		.shm.pro_cpu_shm = (uint8_t *)ESP32_MBOX_SHM_ADDR_BY_IDX(idx),                     \

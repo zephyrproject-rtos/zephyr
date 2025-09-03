@@ -12,14 +12,17 @@
 #include <hal/pcnt_types.h>
 
 #include <soc.h>
+#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #include <errno.h>
 #include <string.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control.h>
+
 #ifdef CONFIG_PCNT_ESP32_TRIGGER
-#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
+#include <esp_cpu.h>
+#include <esp_rom_sys.h>
 #endif /* CONFIG_PCNT_ESP32_TRIGGER */
 
 #include <zephyr/logging/log.h>
@@ -71,9 +74,9 @@ struct pcnt_esp32_config {
 	const struct pinctrl_dev_config *pincfg;
 	const struct device *clock_dev;
 	const clock_control_subsys_t clock_subsys;
-	const int irq_source;
-	const int irq_priority;
-	const int irq_flags;
+#ifdef CONFIG_PCNT_ESP32_TRIGGER
+	void (*irq_configure)(void);
+#endif
 	struct pcnt_esp32_unit_config *unit_config;
 	const int unit_len;
 };
@@ -322,7 +325,6 @@ static void IRAM_ATTR pcnt_esp32_isr(const struct device *dev)
 static int pcnt_esp32_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
 				  sensor_trigger_handler_t handler)
 {
-	int ret;
 	const struct pcnt_esp32_config *config = dev->config;
 	struct pcnt_esp32_data *data = (struct pcnt_esp32_data *const)(dev)->data;
 
@@ -341,15 +343,7 @@ static int pcnt_esp32_trigger_set(const struct device *dev, const struct sensor_
 	data->trigger_handler = handler;
 	data->trigger = trig;
 
-	ret = esp_intr_alloc(config->irq_source,
-			ESP_PRIO_TO_FLAGS(config->irq_priority) |
-			ESP_INT_FLAGS_CHECK(config->irq_flags) | ESP_INTR_FLAG_IRAM,
-			(intr_handler_t)pcnt_esp32_isr, (void *)dev, NULL);
-
-	if (ret != 0) {
-		LOG_ERR("pcnt isr registration failed (%d)", ret);
-		return ret;
-	}
+	config->irq_configure();
 
 	pcnt_ll_enable_intr(data->hal.dev, 1, true);
 
@@ -400,13 +394,22 @@ PINCTRL_DT_INST_DEFINE(0);
 
 static struct pcnt_esp32_unit_config unit_config[] = {DT_INST_FOREACH_CHILD(0, UNIT_CONFIG)};
 
+#ifdef CONFIG_PCNT_ESP32_TRIGGER
+static void pcnt_esp32_irq_configure(void)
+{
+	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, 0, irq), DT_INST_IRQ_BY_IDX(0, 0, priority),
+		    pcnt_esp32_isr, DEVICE_DT_INST_GET(0), DT_INST_IRQ_BY_IDX(0, 0, flags) | ESP_INTR_FLAG_IRAM);
+	irq_matrix_enable(DT_INST_IRQ_BY_IDX(0, 0, irq), DT_INST_IRQ_BY_IDX(0, 0, source));
+}
+#endif
+
 static struct pcnt_esp32_config pcnt_esp32_config = {
 	.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(0)),
 	.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(0, offset),
-	.irq_source = DT_INST_IRQ_BY_IDX(0, 0, irq),
-	.irq_priority = DT_INST_IRQ_BY_IDX(0, 0, priority),
-	.irq_flags = DT_INST_IRQ_BY_IDX(0, 0, flags),
+#ifdef CONFIG_PCNT_ESP32_TRIGGER
+	.irq_configure = pcnt_esp32_irq_configure,
+#endif
 	.unit_config = unit_config,
 	.unit_len = ARRAY_SIZE(unit_config),
 };

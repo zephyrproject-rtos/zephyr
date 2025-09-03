@@ -23,6 +23,8 @@
 #include <soc/rtc_cntl_reg.h>
 #endif
 
+#include <esp_cpu.h>
+
 #include <zephyr/device.h>
 #include <zephyr/drivers/counter.h>
 #include <zephyr/pm/device.h>
@@ -30,7 +32,6 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/esp32_clock_control.h>
-#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(esp32_counter_rtc, CONFIG_COUNTER_LOG_LEVEL);
@@ -39,9 +40,7 @@ static void counter_esp32_isr(void *arg);
 
 struct counter_esp32_config {
 	struct counter_config_info counter_info;
-	int irq_source;
-	int irq_priority;
-	int irq_flags;
+	void (*irq_configure)(void);
 	const struct device *clock_dev;
 };
 
@@ -79,23 +78,13 @@ static int counter_esp32_init(const struct device *dev)
 {
 	const struct counter_esp32_config *cfg = dev->config;
 	struct counter_esp32_data *data = dev->data;
-	int ret, flags;
 
 	/* RTC_SLOW_CLK is the default clk source */
 	clock_control_get_rate(cfg->clock_dev,
 			       (clock_control_subsys_t)ESP32_CLOCK_CONTROL_SUBSYS_RTC_SLOW,
 			       &data->clk_src_freq);
 
-	flags = ESP_PRIO_TO_FLAGS(cfg->irq_priority) | ESP_INT_FLAGS_CHECK(cfg->irq_flags) |
-		ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_IRAM;
-
-	ret = esp_intr_alloc(cfg->irq_source, flags,
-			     (intr_handler_t)counter_esp32_isr, (void *)dev, NULL);
-
-	if (ret != 0) {
-		LOG_ERR("could not allocate interrupt (err %d)", ret);
-		return ret;
-	}
+	cfg->irq_configure();
 
 	return pm_device_driver_init(dev, counter_esp32_pm_action);
 }
@@ -252,18 +241,21 @@ static uint32_t counter_esp32_get_freq(const struct device *dev)
 	return data->clk_src_freq;
 }
 
+static void counter_esp32_irq_configure(void)
+{
+	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, 0, irq), DT_INST_IRQ_BY_IDX(0, 0, priority),
+		    counter_esp32_isr, DEVICE_DT_INST_GET(0), DT_INST_IRQ_BY_IDX(0, 0, flags) | ESP_INTR_FLAG_IRAM);
+	irq_matrix_enable(DT_INST_IRQ_BY_IDX(0, 0, irq), DT_INST_IRQ_BY_IDX(0, 0, source));
+}
+
 static struct counter_esp32_data counter_data;
 
 static const struct counter_esp32_config counter_config = {
-	.counter_info = {
-		.max_top_value = UINT32_MAX,
-		.flags = COUNTER_CONFIG_INFO_COUNT_UP,
-		.channels = 1
-	},
+	.counter_info = {.max_top_value = UINT32_MAX,
+			 .flags = COUNTER_CONFIG_INFO_COUNT_UP,
+			 .channels = 1},
 	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(0)),
-	.irq_source = DT_INST_IRQ_BY_IDX(0, 0, irq),
-	.irq_priority = DT_INST_IRQ_BY_IDX(0, 0, priority),
-	.irq_flags = DT_INST_IRQ_BY_IDX(0, 0, flags)
+	.irq_configure = counter_esp32_irq_configure,
 };
 
 static DEVICE_API(counter, rtc_timer_esp32_api) = {

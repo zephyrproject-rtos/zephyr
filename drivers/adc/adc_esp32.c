@@ -13,6 +13,10 @@
 #include "adc_esp32.h"
 
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/irq.h>
+#if defined(CONFIG_ADC_ESP32_DMA) && !SOC_GDMA_SUPPORTED
+#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
+#endif
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(adc_esp32, CONFIG_ADC_LOG_LEVEL);
@@ -25,7 +29,7 @@ LOG_MODULE_REGISTER(adc_esp32, CONFIG_ADC_LOG_LEVEL);
 /* Default internal reference voltage */
 #define ADC_ESP32_DEFAULT_VREF_INTERNAL (1100)
 
-#define ADC_CLIP_MVOLT_12DB	2550
+#define ADC_CLIP_MVOLT_12DB 2550
 
 static void adc_hw_calibration(adc_unit_t unit)
 {
@@ -347,7 +351,6 @@ static int adc_esp32_init(const struct device *dev)
 	const struct adc_esp32_conf *conf = (struct adc_esp32_conf *)dev->config;
 	uint32_t clock_src_hz;
 
-
 #if SOC_ADC_DIG_CTRL_SUPPORTED && (!SOC_ADC_RTC_CTRL_SUPPORTED || CONFIG_ADC_ESP32_DMA)
 	if (!device_is_ready(conf->clock_dev)) {
 		return -ENODEV;
@@ -365,6 +368,10 @@ static int adc_esp32_init(const struct device *dev)
 	}
 
 #ifdef CONFIG_ADC_ESP32_DMA
+#if !SOC_GDMA_SUPPORTED
+	conf->irq_configure();
+#endif
+
 	int err = adc_esp32_dma_init(dev);
 
 	if (err < 0) {
@@ -410,9 +417,26 @@ static DEVICE_API(adc, api_esp32_driver_api) = {
 #define ADC_ESP32_CONF_INIT(n)                                                                     \
 	.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_IDX(n, 0)),                                  \
 	.dma_channel = DT_INST_DMAS_CELL_BY_IDX(n, 0, channel)
+#elif defined(CONFIG_ADC_ESP32_DMA) && !SOC_GDMA_SUPPORTED
+#define ADC_ESP32_CONF_INIT(n)                                                                     \
+	.irq_configure = adc_esp32_irq_configure_##n, .irq_num = DT_INST_IRQ_BY_IDX(n, 0, irq)
 #else
 #define ADC_ESP32_CONF_INIT(n)
 #endif /* defined(SOC_GDMA_SUPPORTED) && SOC_GDMA_SUPPORTED */
+
+#if defined(CONFIG_ADC_ESP32_DMA) && !SOC_GDMA_SUPPORTED
+#define ADC_ESP32_IRQ_CONFIGURE(n)                                                                 \
+	static void adc_esp32_irq_configure_##n(void)                                              \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, 0, irq), DT_INST_IRQ_BY_IDX(n, 0, priority),     \
+			    adc_esp32_dma_intr_handler, DEVICE_DT_INST_GET(n),                     \
+			    DT_INST_IRQ_BY_IDX(n, 0, flags) | ESP_INTR_FLAG_IRAM);                                      \
+		irq_matrix_enable(DT_INST_IRQ_BY_IDX(n, 0, irq),                                   \
+				  DT_INST_IRQ_BY_IDX(n, 0, source));                               \
+	}
+#else
+#define ADC_ESP32_IRQ_CONFIGURE(n)
+#endif
 
 #define ADC_ESP32_CHECK_CHANNEL_REF(chan)                                                          \
 	BUILD_ASSERT(DT_ENUM_HAS_VALUE(chan, zephyr_reference, adc_ref_internal),                  \
@@ -421,6 +445,7 @@ static DEVICE_API(adc, api_esp32_driver_api) = {
 #define ESP32_ADC_INIT(inst)                                                                       \
                                                                                                    \
 	DT_INST_FOREACH_CHILD(inst, ADC_ESP32_CHECK_CHANNEL_REF)                                   \
+	ADC_ESP32_IRQ_CONFIGURE(inst)                                                              \
                                                                                                    \
 	static const struct adc_esp32_conf adc_esp32_conf_##inst = {                               \
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(inst)),                             \

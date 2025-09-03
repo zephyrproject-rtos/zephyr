@@ -17,10 +17,9 @@
 LOG_MODULE_REGISTER(esp32_spi, CONFIG_SPI_LOG_LEVEL);
 
 #include <soc.h>
+#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #include <esp_memory_utils.h>
 #include <zephyr/drivers/spi.h>
-#include "spi_rtio.h"
-#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #ifdef SOC_GDMA_SUPPORTED
 #include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/dma/dma_esp32.h>
@@ -684,17 +683,7 @@ static int spi_esp32_init(const struct device *dev)
 	spi_ll_disable_int(cfg->spi);
 	spi_ll_clear_int_stat(cfg->spi);
 
-	err = esp_intr_alloc(cfg->irq_source,
-			ESP_PRIO_TO_FLAGS(cfg->irq_priority) |
-			ESP_INT_FLAGS_CHECK(cfg->irq_flags) | ESP_INTR_FLAG_IRAM,
-			(intr_handler_t)spi_esp32_isr,
-			(void *)dev,
-			NULL);
-
-	if (err != 0) {
-		LOG_ERR("could not allocate interrupt (err %d)", err);
-		return err;
-	}
+	cfg->irq_configure();
 #endif
 
 	err = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
@@ -1053,51 +1042,59 @@ static DEVICE_API(spi, spi_api) = {
 	.dma_clk_src = DT_INST_PROP(idx, dma_clk)
 #endif /* defined(SOC_GDMA_SUPPORTED) */
 
-#define ESP32_SPI_INIT(idx)	\
-				\
-	PINCTRL_DT_INST_DEFINE(idx);	\
-										\
-	static struct spi_esp32_data spi_data_##idx = {	\
-		SPI_CONTEXT_INIT_LOCK(spi_data_##idx, ctx),	\
-		SPI_CONTEXT_INIT_SYNC(spi_data_##idx, ctx),	\
-		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(idx), ctx)	\
-		.hal = {	\
-			.hw = (spi_dev_t *)DT_INST_REG_ADDR(idx),	\
-		},	\
-		.dev_config = {	\
-			.half_duplex = DT_INST_PROP(idx, half_duplex),	\
-			GET_AS_CS(idx)							\
-			.positive_cs = DT_INST_PROP(idx, positive_cs),	\
-			.no_compensate = DT_INST_PROP(idx, dummy_comp),	\
-			.sio = DT_INST_PROP(idx, sio)	\
-		}	\
-	};	\
-		\
-	static const struct spi_esp32_config spi_config_##idx = {	\
-		.spi = (spi_dev_t *)DT_INST_REG_ADDR(idx),	\
-			\
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(idx)),	\
-		.duty_cycle = 0, \
-		.input_delay_ns = 0, \
-		.irq_source = DT_INST_IRQ_BY_IDX(idx, 0, irq), \
-		.irq_priority = DT_INST_IRQ_BY_IDX(idx, 0, priority), \
-		.irq_flags = DT_INST_IRQ_BY_IDX(idx, 0, flags), \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),	\
-		.clock_subsys =	\
-			(clock_control_subsys_t)DT_INST_CLOCKS_CELL(idx, offset),	\
-		.use_iomux = DT_INST_PROP(idx, use_iomux),	\
-		.dma_enabled = DT_INST_PROP(idx, dma_enabled),	\
-		.dma_host = DT_INST_PROP(idx, dma_host),	\
-		SPI_DMA_CFG(idx),				\
-		.cs_setup = DT_INST_PROP_OR(idx, cs_setup_time, 0), \
-		.cs_hold = DT_INST_PROP_OR(idx, cs_hold_time, 0), \
-		.line_idle_low = DT_INST_PROP(idx, line_idle_low), \
-		.clock_source = SPI_CLK_SRC_DEFAULT,	\
-	};	\
-		\
-	SPI_DEVICE_DT_INST_DEFINE(idx, spi_esp32_init,	\
-			      NULL, &spi_data_##idx,	\
-			      &spi_config_##idx, POST_KERNEL,	\
-			      CONFIG_SPI_INIT_PRIORITY, &spi_api);
+#ifdef CONFIG_SPI_ESP32_INTERRUPT
+#define IRQ_CONFIG_FUNC(idx)                                                                       \
+	static void spi_esp32_##idx##_irq_configure(void)                                          \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(idx, 0, irq), DT_INST_IRQ_BY_IDX(idx, 0, priority), \
+			    spi_esp32_isr, DEVICE_DT_INST_GET(idx),                                \
+			    DT_INST_IRQ_BY_IDX(idx, 0, flags) | ESP_INTR_FLAG_IRAM);                                    \
+		irq_matrix_enable(DT_INST_IRQ_BY_IDX(idx, 0, irq),                                 \
+				  DT_INST_IRQ_BY_IDX(idx, 0, source));                             \
+	}
+#define IRQ_CONFIG(idx) .irq_configure = spi_esp32_##idx##_irq_configure
+#else
+#define IRQ_CONFIG_FUNC(idx)
+#define IRQ_CONFIG(idx)
+#endif /* CONFIG_SPI_ESP32_INTERRUPT */
+
+#define ESP32_SPI_INIT(idx)                                                                        \
+                                                                                                   \
+	PINCTRL_DT_INST_DEFINE(idx);                                                               \
+                                                                                                   \
+	IRQ_CONFIG_FUNC(idx)                                                                       \
+                                                                                                   \
+	static struct spi_esp32_data spi_data_##idx = {                                            \
+		SPI_CONTEXT_INIT_LOCK(spi_data_##idx, ctx),                                        \
+		SPI_CONTEXT_INIT_SYNC(spi_data_##idx, ctx),                                        \
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(idx), ctx).hal =                       \
+			{                                                                          \
+				.hw = (spi_dev_t *)DT_INST_REG_ADDR(idx),                          \
+			},                                                                         \
+		.dev_config = {.half_duplex = DT_INST_PROP(idx, half_duplex),                      \
+			       GET_AS_CS(idx).positive_cs = DT_INST_PROP(idx, positive_cs),        \
+			       .no_compensate = DT_INST_PROP(idx, dummy_comp),                     \
+			       .sio = DT_INST_PROP(idx, sio)}};                                    \
+                                                                                                   \
+	static const struct spi_esp32_config spi_config_##idx = {                                  \
+		.spi = (spi_dev_t *)DT_INST_REG_ADDR(idx),                                         \
+                                                                                                   \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(idx)),                              \
+		.duty_cycle = 0,                                                                   \
+		.input_delay_ns = 0,                                                               \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),                                       \
+		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(idx, offset),          \
+		.use_iomux = DT_INST_PROP(idx, use_iomux),                                         \
+		.dma_enabled = DT_INST_PROP(idx, dma_enabled),                                     \
+		.dma_host = DT_INST_PROP(idx, dma_host),                                           \
+		SPI_DMA_CFG(idx),                                                                  \
+		.cs_setup = DT_INST_PROP_OR(idx, cs_setup_time, 0),                                \
+		.cs_hold = DT_INST_PROP_OR(idx, cs_hold_time, 0),                                  \
+		.line_idle_low = DT_INST_PROP(idx, line_idle_low),                                 \
+		.clock_source = SPI_CLK_SRC_DEFAULT,                                               \
+		IRQ_CONFIG(idx)};                                                                  \
+                                                                                                   \
+	SPI_DEVICE_DT_INST_DEFINE(idx, spi_esp32_init, NULL, &spi_data_##idx, &spi_config_##idx,   \
+				  POST_KERNEL, CONFIG_SPI_INIT_PRIORITY, &spi_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ESP32_SPI_INIT)

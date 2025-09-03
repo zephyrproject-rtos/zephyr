@@ -14,7 +14,6 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/esp32_clock_control.h>
 
-#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #include <zephyr/device.h>
 #include <zephyr/logging/log.h>
 
@@ -31,9 +30,7 @@ struct esp32_xt_wdt_data {
 struct esp32_xt_wdt_config {
 	const struct device *clock_dev;
 	const clock_control_subsys_t clock_subsys;
-	int irq_source;
-	int irq_priority;
-	int irq_flags;
+	void (*irq_configure)(void);
 };
 
 static int esp32_xt_wdt_setup(const struct device *dev, uint8_t options)
@@ -117,24 +114,23 @@ static int esp32_xt_wdt_init(const struct device *dev)
 	xt_wdt_hal_config_t xt_wdt_hal_config = {
 		.timeout = ESP32_XT_WDT_MAX_TIMEOUT,
 	};
-	int err, flags = 0;
 
 	xt_wdt_hal_init(&data->hal, &xt_wdt_hal_config);
 	xt_wdt_hal_enable_backup_clk(&data->hal, ESP32_RTC_SLOW_CLK_SRC_RC_SLOW_FREQ/1000);
 
-	flags = ESP_PRIO_TO_FLAGS(cfg->irq_priority) | ESP_INT_FLAGS_CHECK(cfg->irq_flags) |
-		ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_IRAM;
-	err = esp_intr_alloc(cfg->irq_source, flags, (intr_handler_t)esp32_xt_wdt_isr, (void *)dev,
-			     NULL);
-	if (err) {
-		LOG_ERR("Failed to register ISR\n");
-		return -EFAULT;
-	}
+	cfg->irq_configure();
 
 	REG_WRITE(RTC_CNTL_INT_ENA_REG, 0);
 	REG_WRITE(RTC_CNTL_INT_CLR_REG, UINT32_MAX);
 
 	return 0;
+}
+
+static void esp32_xt_wdt_irq_configure(void)
+{
+	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, 0, irq), DT_INST_IRQ_BY_IDX(0, 0, priority),
+		    esp32_xt_wdt_isr, DEVICE_DT_INST_GET(0), DT_INST_IRQ_BY_IDX(0, 0, flags) | ESP_INTR_FLAG_IRAM);
+	irq_matrix_enable(DT_INST_IRQ_BY_IDX(0, 0, irq), DT_INST_IRQ_BY_IDX(0, 0, source));
 }
 
 static DEVICE_API(wdt, esp32_xt_wdt_api) = {
@@ -149,11 +145,9 @@ static struct esp32_xt_wdt_data esp32_xt_wdt_data0;
 static struct esp32_xt_wdt_config esp32_xt_wdt_config0 = {
 	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(0)),
 	.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(0, offset),
-	.irq_source = DT_INST_IRQ_BY_IDX(0, 0, irq),
-	.irq_priority = DT_INST_IRQ_BY_IDX(0, 0, priority),
-	.irq_flags = DT_INST_IRQ_BY_IDX(0, 0, flags)
+	.irq_configure = esp32_xt_wdt_irq_configure,
 };
-
+/* clang-format off */
 DEVICE_DT_DEFINE(DT_NODELABEL(xt_wdt),
 		 &esp32_xt_wdt_init,
 		 NULL,
@@ -162,7 +156,7 @@ DEVICE_DT_DEFINE(DT_NODELABEL(xt_wdt),
 		 POST_KERNEL,
 		 CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		 &esp32_xt_wdt_api);
-
+/* clang-format on */
 #if !(defined(CONFIG_SOC_SERIES_ESP32S2) ||	\
 	defined(CONFIG_SOC_SERIES_ESP32S3) ||   \
 	defined(CONFIG_SOC_SERIES_ESP32C3))

@@ -100,11 +100,6 @@ enum dma_channel_dir {
 	DMA_UNCONFIGURED
 };
 
-struct irq_config {
-	uint8_t irq_source;
-	uint8_t irq_priority;
-	int irq_flags;
-};
 
 /*
  * AXI DMA requires 8-byte aligned descriptors (16 bytes each); AHB-only SoCs
@@ -130,14 +125,13 @@ struct dma_esp32_channel {
 };
 
 struct dma_esp32_config {
-	struct irq_config *irq_config;
 	uint8_t irq_size;
-	void **irq_handlers;
 	uint8_t dma_channel_max;
 	uint8_t sram_alignment;
 	struct dma_esp32_channel dma_channel[DMA_MAX_CHANNEL * 2];
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
+	void (*irq_configure)(void);
 };
 
 /* LL wrappers: dual-bus SoCs have AHB and AXI; others use the unified API. */
@@ -808,11 +802,8 @@ static int dma_esp32_reload(const struct device *dev, uint32_t channel, uint32_t
 static int dma_esp32_configure_irq(const struct device *dev)
 {
 	struct dma_esp32_config *config = (struct dma_esp32_config *)dev->config;
-	struct dma_esp32_data *data = (struct dma_esp32_data *)dev->data;
-	struct irq_config *irq_cfg = (struct irq_config *)config->irq_config;
-	volatile uint32_t *status_reg;
-	uint32_t status_mask;
 
+#if 0
 	for (uint8_t i = 0; i < config->irq_size; i++) {
 #if DMA_ESP32_SHARED_IRQ
 		status_reg = gdma_ll_rx_get_interrupt_status_reg(data->hal.dev, i);
@@ -844,6 +835,8 @@ static int dma_esp32_configure_irq(const struct device *dev)
 			return ret;
 		}
 	}
+#endif
+	config->irq_configure();
 
 	return 0;
 }
@@ -979,12 +972,6 @@ static DEVICE_API(dma, dma_esp32_api) = {
 
 #endif
 
-#if DMA_ESP32_SHARED_IRQ
-#define ESP32_DMA_HANDLER(channel) dma_esp32_isr_##channel
-#else
-#define ESP32_DMA_HANDLER(channel) dma_esp32_isr_##channel##_rx, dma_esp32_isr_##channel##_tx
-#endif
-
 DMA_ESP32_DEFINE_IRQ_HANDLER(0)
 #if DMA_MAX_CHANNEL >= 2
 DMA_ESP32_DEFINE_IRQ_HANDLER(1)
@@ -999,52 +986,63 @@ DMA_ESP32_DEFINE_IRQ_HANDLER(3)
 DMA_ESP32_DEFINE_IRQ_HANDLER(4)
 #endif
 
-static void *irq_handlers[] = {
-	ESP32_DMA_HANDLER(0),
-#if DMA_MAX_CHANNEL >= 2
-	ESP32_DMA_HANDLER(1),
-#endif
-#if DMA_MAX_CHANNEL >= 3
-	ESP32_DMA_HANDLER(2),
-#endif
-#if DMA_MAX_CHANNEL >= 4
-	ESP32_DMA_HANDLER(3),
-#endif
-#if DMA_MAX_CHANNEL >= 5
-	ESP32_DMA_HANDLER(4),
-#endif
-};
+#if DMA_ESP32_SHARED_IRQ
+#define ESP32_DMA_HANDLER(channel) dma_esp32_isr_##channel
 
-#define IRQ_NUM(idx) DT_NUM_IRQS(DT_DRV_INST(idx))
-#define IRQ_ENTRY(n, idx)                                                                          \
-	{DT_INST_IRQ_BY_IDX(idx, n, irq), DT_INST_IRQ_BY_IDX(idx, n, priority),                    \
-	 DT_INST_IRQ_BY_IDX(idx, n, flags)},
+#define DMA_HANDLER_0 ESP32_DMA_HANDLER(0)
+#define DMA_HANDLER_1 ESP32_DMA_HANDLER(1)
+#define DMA_HANDLER_2 ESP32_DMA_HANDLER(2)
+#if DMA_MAX_CHANNEL >= 5
+#define DMA_HANDLER_3 ESP32_DMA_HANDLER(3)
+#define DMA_HANDLER_4 ESP32_DMA_HANDLER(4)
+#endif
+#else
+#define ESP32_DMA_HANDLER_RX(channel) dma_esp32_isr_##channel##_rx
+#define ESP32_DMA_HANDLER_TX(channel) dma_esp32_isr_##channel##_tx
+
+#define DMA_HANDLER_0 ESP32_DMA_HANDLER_RX(0)
+#define DMA_HANDLER_1 ESP32_DMA_HANDLER_TX(0)
+#define DMA_HANDLER_2 ESP32_DMA_HANDLER_RX(1)
+#define DMA_HANDLER_3 ESP32_DMA_HANDLER_TX(1)
+#define DMA_HANDLER_4 ESP32_DMA_HANDLER_RX(2)
+#define DMA_HANDLER_5 ESP32_DMA_HANDLER_TX(2)
+#if DMA_MAX_CHANNEL >= 5
+#define DMA_HANDLER_6 ESP32_DMA_HANDLER_RX(3)
+#define DMA_HANDLER_7 ESP32_DMA_HANDLER_TX(3)
+#define DMA_HANDLER_8 ESP32_DMA_HANDLER_RX(4)
+#define DMA_HANDLER_9 ESP32_DMA_HANDLER_TX(4)
+#endif
+#endif
+
+#define DMA_GET_HANDLER_NAME(n) UTIL_CAT(DMA_HANDLER_, n)
 
 /* clang-format off */
-#define DMA_ESP32_INIT(idx)                                                  \
-	static struct irq_config irq_config_##idx[] = {                      \
-		LISTIFY(IRQ_NUM(idx), IRQ_ENTRY, (), idx)                    \
-	};                                                                   \
-	static struct dma_esp32_config dma_config_##idx = {                  \
-		.irq_config = irq_config_##idx,                              \
-		.irq_size = IRQ_NUM(idx),                                    \
-		.irq_handlers = irq_handlers,                                \
-		.dma_channel_max = DT_INST_PROP(idx, dma_channels),          \
-		.sram_alignment =                                            \
-			DT_INST_PROP(idx, dma_buf_addr_alignment),           \
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(idx)),       \
-		.clock_subsys =                                              \
-			(void *)DT_INST_CLOCKS_CELL(idx, offset),            \
-	};                                                                   \
-	static struct dma_esp32_data dma_data_##idx = {                      \
-		.hal = {                                                     \
-			.dev = (void *)DT_INST_REG_ADDR(idx),                \
-		},                                                           \
-	};                                                                   \
-	DEVICE_DT_INST_DEFINE(idx, dma_esp32_init, NULL,                     \
-			      &dma_data_##idx, &dma_config_##idx,            \
-			      PRE_KERNEL_1, CONFIG_DMA_INIT_PRIORITY,        \
-			      &dma_esp32_api);
+#define DMA_IRQ_CONNECT(n, idx)                                                                    \
+	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(idx, n, irq), DT_INST_IRQ_BY_IDX(idx, n, priority),         \
+		    DMA_GET_HANDLER_NAME(n), DEVICE_DT_INST_GET(idx),                              \
+		    DT_INST_IRQ_BY_IDX(idx, n, flags) | ESP_INTR_FLAG_IRAM);                                            \
+	irq_matrix_enable(DT_INST_IRQ_BY_IDX(idx, n, irq), DT_INST_IRQ_BY_IDX(idx, n, source));
+
+#define DMA_ESP32_INIT(idx)                                                                        \
+	static void dma_esp32_##idx##_irq_configure(void)                                          \
+	{                                                                                          \
+		LISTIFY(DT_NUM_IRQS(DT_DRV_INST(idx)), DMA_IRQ_CONNECT, (), idx)                   \
+	}                                                                                          \
+	static struct dma_esp32_config dma_config_##idx = {                                        \
+		.dma_channel_max = DT_INST_PROP(idx, dma_channels),                                \
+		.sram_alignment = DT_INST_PROP(idx, dma_buf_addr_alignment),                       \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(idx)),                              \
+		.clock_subsys = (void *)DT_INST_CLOCKS_CELL(idx, offset),                          \
+		.irq_configure = dma_esp32_##idx##_irq_configure,                                  \
+	};                                                                                         \
+	static struct dma_esp32_data dma_data_##idx = {                                            \
+		.hal = {                                                                           \
+			.dev = (void *)DT_INST_REG_ADDR(idx),                                      \
+		},                                                                                 \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(idx, dma_esp32_init, NULL, &dma_data_##idx, &dma_config_##idx,       \
+			      PRE_KERNEL_1, CONFIG_DMA_INIT_PRIORITY, &dma_esp32_api);
 /* clang-format on */
 
 DT_INST_FOREACH_STATUS_OKAY(DMA_ESP32_INIT)
