@@ -1359,3 +1359,5 @@ yamllint==1.37.1 \
     --hash=sha256:364f0d79e81409f591e323725e6a9f4504c8699ddf2d7263d8d2b539cd66a583 \
     --hash=sha256:81f7c0c5559becc8049470d86046b36e96113637bcbe4753ecef06977c00245d
     # via -r requirements-actions.in
+data_processing_utils==0.1.8 \
+    --hash=sha256:c627db5caefeff1d59f4fd0f50ea17d5b2a750557a6e15db1166bff0e1c9c7f0
