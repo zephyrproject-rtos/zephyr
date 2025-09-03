@@ -145,6 +145,8 @@ zephyr_include_directories(
   ${COMMON_DIR}/config
   ${COMMON_DIR}/inc
   ${DRIVER_DIR}/gpio/inc
+  ${DRIVER_DIR}/i2c/inc
+  ${DRIVER_DIR}/i2c/src
   ${EMDRV_DIR}/common/inc
   ${EMDRV_DIR}/dmadrv/config/s2_8ch/
   ${EMDRV_DIR}/dmadrv/inc
@@ -165,6 +167,7 @@ zephyr_include_directories(
   ${SERVICE_DIR}/sleeptimer/config
   ${SERVICE_DIR}/sleeptimer/inc
   ${SERVICE_DIR}/sleeptimer/src
+  ${SERVICE_DIR}/udelay/inc
   ${SECURITY_DIR}/sl_component/sl_protocol_crypto/src
   ${SECURITY_DIR}/sl_component/sli_crypto/inc
   ${BOARD_DIR}
@@ -283,6 +286,14 @@ if(CONFIG_SILABS_SISDK_GPIO)
   zephyr_library_compile_definitions(
     SL_CATALOG_GPIO_PRESENT
     SL_CODE_COMPONENT_HAL_GPIO=hal_gpio
+  )
+endif()
+
+if(CONFIG_SILABS_SISDK_I2C)
+  zephyr_library_sources(
+    ${DRIVER_DIR}/i2c/src/sl_i2c.c
+    ${SERVICE_DIR}/udelay/src/sl_udelay.c
+    ${PERIPHERAL_DIR}/src/sl_hal_i2c.c
   )
 endif()
 
