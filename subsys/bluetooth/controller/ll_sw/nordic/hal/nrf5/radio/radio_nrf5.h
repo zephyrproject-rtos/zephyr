@@ -41,6 +41,8 @@
 #include "radio_nrf5340.h"
 #elif defined(CONFIG_SOC_SERIES_NRF54LX)
 #include "radio_nrf54lx.h"
+#elif defined(CONFIG_SOC_SERIES_NRF54HX)
+#include "radio_nrf54hx.h"
 #elif defined(CONFIG_BOARD_NRF52_BSIM)
 #include "radio_sim_nrf52.h"
 #elif defined(CONFIG_BOARD_NRF5340BSIM_NRF5340_CPUNET)
