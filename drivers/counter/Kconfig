@@ -12,6 +12,7 @@ if COUNTER
 
 config COUNTER_INIT_PRIORITY
 	int "Counter init priority"
+	default 40 if COUNTER_CC35XX_LGPT
 	default KERNEL_INIT_PRIORITY_DEVICE
 	help
 	  Counter driver device initialization priority.
@@ -56,6 +57,7 @@ source "drivers/counter/Kconfig.bee_timer"
 source "drivers/counter/Kconfig.bflb"
 source "drivers/counter/Kconfig.cc23x0_lgpt"
 source "drivers/counter/Kconfig.cc23x0_rtc"
+source "drivers/counter/Kconfig.cc35xx"
 source "drivers/counter/Kconfig.cmos"
 source "drivers/counter/Kconfig.dtmr_cmsdk_apb"
 source "drivers/counter/Kconfig.dw"

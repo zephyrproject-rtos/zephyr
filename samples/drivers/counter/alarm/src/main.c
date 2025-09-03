@@ -72,6 +72,8 @@ struct counter_alarm_cfg alarm_cfg;
 #define SAMPLE_TIMER DT_INST(0, renesas_rz_gtm_counter)
 #elif defined(CONFIG_COUNTER_CC23X0_RTC)
 #define SAMPLE_TIMER DT_NODELABEL(rtc0)
+#elif defined(CONFIG_COUNTER_CC35XX_LGPT)
+#define SAMPLE_TIMER DT_NODELABEL(timer0)
 #elif defined(CONFIG_COUNTER_RENESAS_RZ_CMTW)
 #define SAMPLE_TIMER DT_INST(0, renesas_rz_cmtw_counter)
 #elif defined(CONFIG_COUNTER_MCHP_SAM_PIT64B)

@@ -1,0 +1,9 @@
+# Copyright (c) 2025 Conclusive Engineering Sp. z o.o.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config COUNTER_CC35XX_LGPT
+	bool "TI CC35XX Counter Driver"
+	depends on DT_HAS_TI_CC35XX_LGPT_ENABLED
+	help
+	  Enables the Counter driver for TI CC35XX devices.
