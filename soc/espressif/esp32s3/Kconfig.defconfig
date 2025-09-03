@@ -24,4 +24,60 @@ endchoice
 
 endif # PM && TICKLESS_KERNEL
 
+# Multi-level interrupt hierarchy
+#   L1 = intc            : CPU interrupt line
+#   L2 = <periph>_intmux : INTMUX aggregator (peripheral sources -> one CPU line)
+#   L3 = <periph>_signal : Peripheral signal aggregator (peripheral signal -> one intmux handler)
+
+config MULTI_LEVEL_INTERRUPTS
+	default y
+
+config 2ND_LEVEL_INTERRUPTS
+	default y
+
+config 3RD_LEVEL_INTERRUPTS
+	default y
+
+config 1ST_LEVEL_INTERRUPT_BITS
+	default 8
+
+config 2ND_LEVEL_INTERRUPT_BITS
+	default 8
+
+config 3RD_LEVEL_INTERRUPT_BITS
+	default 8
+
+config 2ND_LVL_ISR_TBL_OFFSET
+	default 32
+
+config MAX_IRQ_PER_2ND_LEVEL_AGGREGATOR
+	default 100
+
+# One 2nd-level aggregator per distinct CPU interrupt line that hosts INTMUX
+# nodes in the devicetree. Each 2ND_LVL_INTR_NN_OFFSET is that aggregator's L1
+# CPU line; gen_isr_tables.py and the INTMUX dispatcher place a leaf ISR at
+# (2ND_LVL_ISR_TBL_OFFSET + NN * MAX_IRQ_PER_AGGREGATOR + source). The NN->line
+# mapping is an arbitrary bijection; only distinctness matters.
+config NUM_2ND_LEVEL_AGGREGATORS
+	default 1
+
+config MAX_IRQ_PER_3RD_LEVEL_AGGREGATOR
+	default 16
+
+config NUM_3RD_LEVEL_AGGREGATORS
+	default 1
+
+config 2ND_LVL_INTR_00_OFFSET
+	default 32
+
+config 3RD_LVL_ISR_TBL_OFFSET
+	default 131
+
+# Level-2 IRQ (INTMUX source) of the 3rd-level aggregator 0: LCD_CAM
+# (LCD_CAM_INTR_SOURCE). gen_isr_tables.py looks this up to place the LCD_CAM
+# flag leaves in the 3rd-level window (3RD_LVL_ISR_TBL_OFFSET).
+config 3RD_LVL_INTR_00_OFFSET
+	default 24
+
+
 endif # SOC_SERIES_ESP32S3

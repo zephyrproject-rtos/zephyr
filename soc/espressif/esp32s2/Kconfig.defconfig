@@ -21,4 +21,37 @@ endchoice
 
 endif # PM && TICKLESS_KERNEL
 
+config SHARED_IRQ_MAX_NUM_CLIENTS
+	default 10
+
+# Multi-level interrupt hierarchy
+#   L1 = intc            : CPU interrupt line
+#   L2 = <periph>_intmux : INTMUX aggregator (peripheral sources -> one CPU line)
+
+config MULTI_LEVEL_INTERRUPTS
+	default y
+
+config 2ND_LEVEL_INTERRUPTS
+	default y
+
+config 1ST_LEVEL_INTERRUPT_BITS
+	default 8
+
+config 2ND_LEVEL_INTERRUPT_BITS
+	default 8
+
+config 2ND_LVL_ISR_TBL_OFFSET
+	default 32
+
+# The whole interrupt matrix is one aggregator whose window is indexed by the
+# INTMUX source, so it must span every source (MAX_INTR_SOURCE).
+config MAX_IRQ_PER_2ND_LEVEL_AGGREGATOR
+	default 95
+
+config NUM_2ND_LEVEL_AGGREGATORS
+	default 1
+
+config 2ND_LVL_INTR_00_OFFSET
+	default 32
+
 endif # SOC_SERIES_ESP32S2

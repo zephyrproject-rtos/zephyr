@@ -73,6 +73,139 @@ static uint32_t non_iram_int_disabled[CONFIG_MP_MAX_NUM_CPUS];
 static bool non_iram_int_disabled_flag[CONFIG_MP_MAX_NUM_CPUS];
 
 /*
+ * Count connect-path clients per CPU IRQ line. All clients on a line must
+ * share the same IRAM capability; non_iram_int_mask is set while any
+ * non-IRAM client remains registered.
+ */
+static uint8_t irq_line_total_clients[CONFIG_MP_MAX_NUM_CPUS][CONFIG_NUM_IRQS];
+static uint8_t irq_line_non_iram_clients[CONFIG_MP_MAX_NUM_CPUS][CONFIG_NUM_IRQS];
+/*
+ * Reduce a (possibly multilevel-encoded) IRQ to its level-1 CPU interrupt line.
+ * The per-line IRAM bookkeeping below is indexed by CPU line, and
+ * non_iram_int_mask is a 32-bit mask of CPU lines, so an encoded IRQ (e.g. a
+ * level-2 leaf connected via IRQ_CONNECT(DT_IRQN(...))) must be decoded first.
+ */
+static inline unsigned int z_soc_irq_cpu_line(unsigned int irq)
+{
+#if defined(CONFIG_MULTI_LEVEL_INTERRUPTS)
+	if (irq_get_level(irq) != 1) {
+		return irq & BIT_MASK(CONFIG_1ST_LEVEL_INTERRUPT_BITS);
+	}
+#endif
+	return irq;
+}
+
+static void z_soc_irq_mask_update(int cpu, unsigned int irq)
+{
+	if (irq_line_non_iram_clients[cpu][irq] > 0) {
+		non_iram_int_mask[cpu] |= BIT(irq);
+	} else {
+		non_iram_int_mask[cpu] &= ~BIT(irq);
+	}
+}
+
+int z_soc_irq_flags_apply(unsigned int irq, uint32_t flags)
+{
+	int cpu = esp_cpu_get_core_id();
+	bool is_iram = (flags & ESP_INTR_FLAG_IRAM) != 0;
+
+	irq = z_soc_irq_cpu_line(irq);
+
+	if (irq >= CONFIG_NUM_IRQS) {
+		return -EINVAL;
+	}
+
+	if (irq_line_total_clients[cpu][irq] == UINT8_MAX) {
+		return -ENOMEM;
+	}
+
+	if (irq_line_total_clients[cpu][irq] > 0) {
+		if (is_iram && irq_line_non_iram_clients[cpu][irq] > 0) {
+			return -EINVAL;
+		}
+		if (!is_iram && irq_line_non_iram_clients[cpu][irq] == 0) {
+			return -EINVAL;
+		}
+	}
+
+	irq_line_total_clients[cpu][irq] ++;
+	if (!is_iram) {
+		irq_line_non_iram_clients[cpu][irq] ++;
+	}
+
+	z_soc_irq_mask_update(cpu, irq);
+	return 0;
+}
+
+int z_soc_irq_flags_clear(unsigned int irq, uint32_t flags)
+{
+	int cpu = esp_cpu_get_core_id();
+	bool is_iram = (flags & ESP_INTR_FLAG_IRAM) != 0;
+
+	irq = z_soc_irq_cpu_line(irq);
+
+	if (irq >= CONFIG_NUM_IRQS || irq_line_total_clients[cpu][irq] == 0) {
+		return -EINVAL;
+	}
+
+	irq_line_total_clients[cpu][irq] --;
+	if (!is_iram) {
+		if (irq_line_non_iram_clients[cpu][irq] == 0) {
+			return -EINVAL;
+		}
+		irq_line_non_iram_clients[cpu][irq] --;
+	}
+
+	z_soc_irq_mask_update(cpu, irq);
+	return 0;
+}
+
+int z_soc_irq_validate(void (*isr)(const void *parameter), uint32_t flags)
+{
+	if ((flags & ESP_INTR_FLAG_IRAM) && isr != NULL && !esp_ptr_in_iram(isr) &&
+		!esp_ptr_in_rtc_iram_fast(isr) && !esp_ptr_in_rom(isr)) {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+#if defined(CONFIG_ZTEST)
+uint8_t z_soc_irq_line_total_clients_get(unsigned int irq)
+{
+	int cpu = esp_cpu_get_core_id();
+
+	if (irq >= CONFIG_NUM_IRQS) {
+		return 0;
+	}
+
+	return irq_line_total_clients[cpu][irq];
+}
+
+uint8_t z_soc_irq_line_non_iram_clients_get(unsigned int irq)
+{
+	int cpu = esp_cpu_get_core_id();
+
+	if (irq >= CONFIG_NUM_IRQS) {
+		return 0;
+	}
+
+	return irq_line_non_iram_clients[cpu][irq];
+}
+
+uint32_t z_soc_irq_non_iram_int_mask_get(unsigned int irq)
+{
+	int cpu = esp_cpu_get_core_id();
+
+	if (irq >= CONFIG_NUM_IRQS) {
+		return 0;
+	}
+
+	return (non_iram_int_mask[cpu] >> irq) & 1U;
+}
+#endif
+
+/*
  * Inserts an item into vector_desc list so that the list is sorted
  * with an incrementing cpu.intno value.
  */
