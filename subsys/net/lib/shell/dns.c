@@ -65,7 +65,7 @@ static void dns_result_cb(enum dns_resolve_status status,
 					 info->ai_srv.priority,
 					 info->ai_srv.weight,
 					 info->ai_srv.port,
-					 info->ai_srv.targetlen,
+					 (int)info->ai_srv.targetlen,
 					 info->ai_srv.target);
 				break;
 			}
