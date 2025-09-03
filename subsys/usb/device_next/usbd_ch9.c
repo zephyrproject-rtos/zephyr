@@ -130,7 +130,7 @@ static int sreq_set_configuration(struct usbd_context *const uds_ctx)
 	const enum usbd_speed speed = usbd_bus_speed(uds_ctx);
 	int ret;
 
-	LOG_INF("Set Configuration Request value %u", setup->wValue);
+	LOG_DBG("Set Configuration Request value %u", setup->wValue);
 
 	/* Not specified if wLength is non-zero, treat as error */
 	if (setup->wValue > UINT8_MAX || setup->wLength) {
@@ -1115,7 +1115,7 @@ static struct net_buf *spool_data_out(struct net_buf *const buf)
 	struct udc_buf_info *bi;
 
 	while (next_buf) {
-		LOG_INF("spool %p", next_buf);
+		LOG_DBG("spool %p", next_buf);
 		next_buf = net_buf_frag_del(NULL, next_buf);
 		if (next_buf) {
 			bi = udc_get_buf_info(next_buf);
@@ -1154,7 +1154,7 @@ int usbd_handle_ctrl_xfer(struct usbd_context *const uds_ctx,
 		return err;
 	}
 
-	LOG_INF("Handle control %p ep 0x%02x, len %u, s:%u d:%u s:%u",
+	LOG_DBG("Handle control %p ep 0x%02x, len %u, s:%u d:%u s:%u",
 		buf, bi->ep, buf->len, bi->setup, bi->data, bi->status);
 
 	if (bi->setup && bi->ep == USB_CONTROL_EP_OUT) {
@@ -1212,7 +1212,7 @@ int usbd_handle_ctrl_xfer(struct usbd_context *const uds_ctx,
 
 	if (bi->status && bi->ep == USB_CONTROL_EP_OUT) {
 		if (ch9_get_ctrl_type(uds_ctx) == CTRL_AWAIT_STATUS_STAGE) {
-			LOG_INF("s-in-status finished");
+			LOG_DBG("s-in-status finished");
 		} else {
 			LOG_WRN("Awaited s-in-status not finished");
 		}
@@ -1226,7 +1226,7 @@ int usbd_handle_ctrl_xfer(struct usbd_context *const uds_ctx,
 		net_buf_unref(buf);
 
 		if (ch9_get_ctrl_type(uds_ctx) == CTRL_AWAIT_STATUS_STAGE) {
-			LOG_INF("s-(out)-status finished");
+			LOG_DBG("s-(out)-status finished");
 			if (unlikely(uds_ctx->ch9_data.post_status)) {
 				ret = post_status_stage(uds_ctx);
 			}
