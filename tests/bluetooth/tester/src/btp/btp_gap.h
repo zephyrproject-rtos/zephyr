@@ -138,6 +138,16 @@ struct btp_gap_stop_advertising_rp {
 #define BTP_GAP_DISCOVERY_FLAG_OWN_ID_ADDR	0x20
 #define BTP_GAP_DISCOVERY_FLAG_USE_FILTER_LIST	0x40
 
+#define BTP_GAP_PHY_LE_1M            0x01
+#define BTP_GAP_PHY_LE_CODED         0x02
+#define BTP_GAP_SET_DISCOVERY_PARAMS 0x2f
+struct btp_gap_le_set_discovery_params_cmd {
+	uint16_t interval;
+	uint16_t window;
+	uint8_t phy;   /* 1M and Coded */
+	uint8_t flags; /* For future use */
+} __packed;
+
 #define BTP_GAP_START_DISCOVERY			0x0c
 struct btp_gap_start_discovery_cmd {
 	uint8_t flags;
