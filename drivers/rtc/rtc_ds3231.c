@@ -74,9 +74,6 @@ static int rtc_ds3231_modify_register(const struct device *dev, uint8_t reg, uin
 		og_buf |= *buf;
 		*buf = og_buf;
 	}
-	if (err != 0) {
-		return err;
-	}
 	err = mfd_ds3231_i2c_set_registers(config->mfd, reg, buf, 1);
 	return err;
 }
