@@ -9,7 +9,7 @@ if(WIN32)
   message(STATUS "Detected Windows shell: ${_CURRENT_SHELL}")
 
   # Buffer toolchain path from environment variable
-  set(_XCDSC_REAL "$ENV{XCDSC_TOOLCHAIN_PATH}")
+  set(_XCDSC_REAL "${XCDSC_TOOLCHAIN_PATH}")
   if(NOT _XCDSC_REAL)
     message(FATAL_ERROR "XCDSC_TOOLCHAIN_PATH is not set in the environment.")
   endif()

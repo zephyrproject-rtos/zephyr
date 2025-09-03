@@ -1,7 +1,7 @@
 # Set default C compiler if not already set
 find_program(CMAKE_C_COMPILER xc-dsc-gcc PATHS ${XCDSC_TOOLCHAIN_PATH}/bin/ NO_DEFAULT_PATH )
 # XC-DSC toolchain does not support C++, so set CXX to fallback to gcc (or a dummy) # This prevents CMake errors if C++ is requested (even if unused)
-find_program(CMAKE_CXX_COMPILER gcc)
+find_program(CMAKE_CXX_COMPILER xc-dsc-gcc PATHS ${XCDSC_TOOLCHAIN_PATH}/bin/ NO_DEFAULT_PATH )
 # Set assembler explicitly
 find_program(CMAKE_ASM_COMPILER xc-dsc-gcc PATHS ${XCDSC_TOOLCHAIN_PATH}/bin/ NO_DEFAULT_PATH )
 # Target CPU (must match user platform)
