@@ -388,6 +388,16 @@ struct btp_gap_bis_broadcast_cmd {
 	uint8_t data[];
 } __packed;
 
+#define BTP_GAP_PHY_LE_1M            0x01
+#define BTP_GAP_PHY_LE_CODED         0x02
+#define BTP_GAP_SET_DISCOVERY_PARAMS 0x2f
+struct btp_gap_le_set_discovery_params_cmd {
+	uint16_t interval;
+	uint16_t window;
+	uint8_t phy;   /* 1M and Coded */
+	uint8_t flags; /* For future use */
+} __packed;
+
 #define BTP_GAP_SET_RPA_TIMEOUT                 0x30
 struct btp_gap_set_rpa_timeout_cmd {
 	uint16_t rpa_timeout;
