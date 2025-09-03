@@ -15,30 +15,53 @@
 
 / {
 	clocks {
+		clk_lsi: clk-lsi {
+			#clock-cells = <0>;
+			compatible = "wch,ch32-lsi-clock";
+			clock-frequency = <DT_FREQ_K(128)>;
+			status = "okay";
+		};
+
+
 		clk_hse: clk-hse {
 			#clock-cells = <0>;
-			compatible = "wch,ch32v00x-hse-clock";
+			compatible = "wch,ch32-hse-clock";
 			status = "disabled";
 		};
 
 		clk_hsi: clk-hsi {
 			#clock-cells = <0>;
-			compatible = "wch,ch32v00x-hsi-clock";
+			compatible = "wch,ch32-hsi-clock";
 			clock-frequency = <DT_FREQ_M(24)>;
-			status = "disabled";
-		};
-
-		clk_lsi: clk-lsi {
-			#clock-cells = <0>;
-			compatible = "fixed-clock";
-			clock-frequency = <DT_FREQ_K(128)>;
-			status = "disabled";
+			status = "okay";
 		};
 
 		pll: pll {
 			#clock-cells = <0>;
 			compatible = "wch,ch32v00x-pll-clock";
+			clocks = <&clk_hsi>;
+			mul = <2>;
 			status = "disabled";
+		};
+
+		clk_sys: clk-sys {
+			#clock-cells = <0>;
+			compatible = "wch,ch32-sys-clock";
+			clocks = <&clk_hsi>;
+		};
+
+		clk_hb: clk-hb {
+			#clock-cells = <0>;
+			compatible = "wch,ch32v00x-hb-clock";
+			clocks = <&clk_sys>;
+			div = <1>;
+		};
+
+		clk_adc: clk-adc {
+			#clock-cells = <0>;
+			compatible = "wch,ch32v003-adc-clock";
+			clocks = <&clk_hb>;
+			div = <2>;
 		};
 	};
 
@@ -141,9 +164,14 @@
 		};
 
 		rcc: rcc@40021000 {
-			compatible = "wch,rcc";
-			reg = <0x40021000 0x10>;
+			compatible = "wch,ch32v00x-rcc";
+			reg = <0x40021000 0x28>;
+			reg-names = "rcc";
 			#clock-cells = <1>;
+			clocks = <&clk_lsi>, <&clk_hse>, <&clk_hsi>, <&pll>,
+			         <&clk_sys>, <&clk_hb>, <&clk_adc>;
+			clock-names = "clk_lsi", "clk_hse", "clk_hsi", "pll",
+			              "clk_sys", "clk_hb", "clk_adc";
 			status = "okay";
 		};
 
