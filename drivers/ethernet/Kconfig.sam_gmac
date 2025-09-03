@@ -73,9 +73,10 @@ config ETH_SAM_GMAC_BUF_RX_COUNT
 	  and the other being processed by the higher layer networking stack.
 
 config ETH_SAM_GMAC_MAC_I2C_EEPROM
-	bool "Read from an I2C EEPROM"
+	bool "Read from an I2C EEPROM [DEPRECATED]"
+	select DEPRECATED
 	help
-	  Read MAC address from an I2C EEPROM.
+	  Read MAC address from an I2C EEPROM. This option is deprecated.
 
 if ETH_SAM_GMAC_MAC_I2C_EEPROM
 
