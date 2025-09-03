@@ -502,6 +502,32 @@
 			status = "disabled";
 		};
 
+		fdcan1: can@4000a000 {
+			compatible = "st,stm32-fdcan";
+			reg = <0x4000a000 0x400>, <0x4000ac00 0x350>;
+			reg-names = "m_can", "message_ram";
+			/* common clock FDCAN 1 & 2 */
+			clocks = <&rcc STM32_CLOCK(APB1_2, 8)>,
+				 <&rcc STM32_SRC_HSE FDCAN_SEL(0)>;
+			interrupts = <152 0>, <153 0>;
+			interrupt-names = "int0", "int1";
+			bosch,mram-cfg = <0x0 28 8 3 3 0 3 3>;
+			status = "disabled";
+		};
+
+		fdcan2: can@4000a400 {
+			compatible = "st,stm32-fdcan";
+			reg = <0x4000a400 0x400>, <0x4000ac00 0x6a0>;
+			reg-names = "m_can", "message_ram";
+			/* common clock FDCAN 1 & 2 */
+			clocks = <&rcc STM32_CLOCK(APB1_2, 8)>,
+				 <&rcc STM32_SRC_HSE FDCAN_SEL(0)>;
+			interrupts = <154 0>, <155 0>;
+			interrupt-names = "int0", "int1";
+			bosch,mram-cfg = <0x350 28 8 3 3 0 3 3>;
+			status = "disabled";
+		};
+
 		xspi1: spi@52005000 {
 			compatible = "st,stm32-xspi";
 			reg = <0x52005000 0x1000>, <0x90000000 DT_SIZE_M(256)>;
