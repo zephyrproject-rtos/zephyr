@@ -1,0 +1,10 @@
+# Copyright (c) 2025 Conclusive Engineering Sp. z o.o.
+# SPDX-License-Identifier: Apache-2.0
+
+config WDT_CC35XX
+	bool "Watchdog Driver for cc35xx family of MCUs"
+	default y
+	depends on DT_HAS_TI_CC35XX_WATCHDOG_ENABLED
+	select HAS_WDT_DISABLE_AT_BOOT
+	help
+	  Watchdog for cc35xx family of MCUs
