@@ -1466,8 +1466,9 @@ in a hardware map.
          --device-serial COM1
          --flash-command 'custom_flash_script.py,--flag,"complex,argument"'
 
-Would result in calling ``./custom_flash_script.py --flag complex,argument --build-dir
-<build directory> --board-id <board identification>``.
+Would result in calling ``./custom_flash_script.py
+--build-dir <build directory> --board-id <board identification>
+--flag complex,argument``.
 
 Fixtures
 +++++++++
