@@ -10,7 +10,6 @@
 #include <string.h>
 #include <ethernet/eth_stats.h>
 #include <zephyr/drivers/clock_control.h>
-#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/phy.h>
@@ -19,6 +18,7 @@
 #endif
 
 #include <esp_attr.h>
+#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #include <esp_mac.h>
 #include <hal/emac_hal.h>
 #include <hal/emac_ll.h>
@@ -569,7 +569,7 @@ FUNC_NORETURN static void eth_esp32_rx_thread(void *arg1, void *arg2, void *arg3
 	}
 }
 
-IRAM_ATTR static void eth_esp32_isr(void *arg)
+IRAM_ATTR static void eth_esp32_isr(const void *arg)
 {
 	const struct device *dev = arg;
 	struct eth_esp32_dev_data *const dev_data = dev->data;
@@ -658,15 +658,9 @@ int eth_esp32_initialize(const struct device *dev)
 	emac_hal_init(&dev_data->hal);
 
 	/* Configure ISR */
-	res = esp_intr_alloc(
-		DT_IRQ_BY_IDX(DT_NODELABEL(eth), 0, irq),
-		ESP_PRIO_TO_FLAGS(DT_IRQ_BY_IDX(DT_NODELABEL(eth), 0, priority)) |
-			ESP_INT_FLAGS_CHECK(DT_IRQ_BY_IDX(DT_NODELABEL(eth), 0, flags)) |
-			ESP_INTR_FLAG_IRAM,
-		eth_esp32_isr, (void *)(uintptr_t)dev, NULL);
-	if (res != 0) {
-		goto err;
-	}
+	IRQ_CONNECT(DT_IRQN(DT_NODELABEL(eth)), IRQ_DEFAULT_PRIORITY, eth_esp32_isr,
+		    DEVICE_DT_GET(DT_NODELABEL(eth)), ESP_INTR_FLAG_IRAM);
+	irq_enable(DT_IRQN(DT_NODELABEL(eth)));
 
 	/* Configure phy for Media-Independent Interface (MII) or
 	 * Reduced Media-Independent Interface (RMII) mode
