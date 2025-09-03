@@ -25,6 +25,21 @@
 #define SAMPLED_VALUE_MIN_FIELDS 2
 #define SAMPLED_VALUE_MAX_FIELDS 3
 
+struct json_ocpp_call_req_msg {
+	uint8_t call_req;
+	char *uid;
+	const char *action;
+	char *payload;
+	uint8_t count;
+};
+
+struct json_ocpp_call_res_msg {
+	uint8_t call_res;
+	char *uid;
+	char *payload;
+	uint8_t count;
+};
+
 struct json_common_payload_field {
 	int val1;
 	char *val2;
