@@ -165,6 +165,12 @@ New APIs and options
     * :c:macro:`LOG_HEXDUMP_INF_RATELIMIT_RATE` - Rate-limited info hexdump macro (explicit rate)
     * :c:macro:`LOG_HEXDUMP_DBG_RATELIMIT_RATE` - Rate-limited debug hexdump macro (explicit rate)
 
+* Management
+
+  * hawkBit
+
+    * :kconfig:option:`CONFIG_HAWKBIT_REBOOT_NONE`
+
 * Power management
 
    * :c:func:`pm_device_driver_deinit`
