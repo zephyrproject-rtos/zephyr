@@ -171,7 +171,7 @@ static inline uint32_t dai_dmic_base(const struct dai_intel_dmic *dmic)
 }
 
 #if CONFIG_DAI_DMIC_HAS_MULTIPLE_LINE_SYNC
-static inline void dai_dmic_set_sync_period(uint32_t period, const struct dai_intel_dmic *dmic)
+static inline int dai_dmic_set_sync_period(uint32_t period, const struct dai_intel_dmic *dmic)
 {
 	uint32_t val = CONFIG_DAI_DMIC_HW_IOCLK / period - 1;
 	uint32_t base = dai_dmic_base(dmic);
@@ -186,6 +186,7 @@ static inline void dai_dmic_set_sync_period(uint32_t period, const struct dai_in
 	if (!WAIT_FOR((sys_read32(base + DMICSYNC_OFFSET) & DMICSYNC_SYNCPU) == 0, 1000,
 		      k_sleep(K_USEC(100)))) {
 		LOG_ERR("poll timeout");
+		return -ETIMEDOUT;
 	}
 
 	sys_write32(sys_read32(base + DMICSYNC_OFFSET) | DMICSYNC_CMDSYNC,
@@ -196,6 +197,7 @@ static inline void dai_dmic_set_sync_period(uint32_t period, const struct dai_in
 	sys_write32(sys_read32(base + DMICSYNC_OFFSET) | DMICSYNC_CMDSYNC,
 		    base + DMICSYNC_OFFSET);
 #endif
+	return 0;
 }
 
 static inline void dai_dmic_clear_sync_period(const struct dai_intel_dmic *dmic)
@@ -236,7 +238,11 @@ static void dmic_sync_trigger(const struct dai_intel_dmic *dmic)
 
 #else /* CONFIG_DAI_DMIC_HAS_MULTIPLE_LINE_SYNC */
 
-static inline void dai_dmic_set_sync_period(uint32_t period, const struct dai_intel_dmic *dmic) {}
+static inline int dai_dmic_set_sync_period(uint32_t period, const struct dai_intel_dmic *dmic)
+{
+	return 0;
+}
+
 static inline void dai_dmic_clear_sync_period(const struct dai_intel_dmic *dmic) {}
 static inline void dai_dmic_sync_prepare(const struct dai_intel_dmic *dmic) {}
 static void dmic_sync_trigger(const struct dai_intel_dmic *dmic) {}
@@ -305,7 +311,7 @@ static inline void dai_dmic_program_channel_map(const struct dai_intel_dmic *dmi
 #endif /* CONFIG_SOC_INTEL_ACE20_LNL || CONFIG_SOC_INTEL_ACE30 || CONFIG_SOC_INTEL_ACE40 */
 }
 
-static inline void dai_dmic_en_power(const struct dai_intel_dmic *dmic)
+static inline int dai_dmic_en_power(const struct dai_intel_dmic *dmic)
 {
 	uint32_t base = dai_dmic_base(dmic);
 	/* Enable DMIC power */
@@ -317,8 +323,11 @@ static inline void dai_dmic_en_power(const struct dai_intel_dmic *dmic)
 	if (!WAIT_FOR((sys_read32(base + DMICLCTL_OFFSET) & DMICLCTL_CPA) != 0, 1000,
 		      k_busy_wait(100))) {
 		LOG_ERR("power-up timeout");
+		return -ETIMEDOUT;
 	}
 #endif
+
+	return 0;
 }
 
 static inline void dai_dmic_dis_power(const struct dai_intel_dmic *dmic)
@@ -331,24 +340,32 @@ static inline void dai_dmic_dis_power(const struct dai_intel_dmic *dmic)
 
 static int dai_dmic_probe(struct dai_intel_dmic *dmic)
 {
+	int res;
+
 	LOG_INF("dmic_probe()");
 
 	/* Set state, note there is no playback direction support */
 	dmic->state = DAI_STATE_NOT_READY;
 
 	/* Enable DMIC power */
-	dai_dmic_en_power(dmic);
+	res = dai_dmic_en_power(dmic);
+	if (res) {
+		return res;
+	}
 
 	/* Disable dynamic clock gating for dmic before touching any reg */
 	dai_dmic_dis_clk_gating(dmic);
 
 	/* DMIC Change sync period */
-	dai_dmic_set_sync_period(CONFIG_DAI_DMIC_PLATFORM_SYNC_PERIOD, dmic);
+	res = dai_dmic_set_sync_period(CONFIG_DAI_DMIC_PLATFORM_SYNC_PERIOD, dmic);
+	if (res) {
+		return res;
+	}
 
 	/* DMIC Owner Select to DSP */
 	dai_dmic_claim_ownership(dmic);
 
-	return 0;
+	return res;
 }
 
 static int dai_dmic_remove(struct dai_intel_dmic *dmic)
@@ -834,22 +851,24 @@ static int dai_dmic_remove_wrapper(const struct device *dev)
 
 static int dmic_pm_action(const struct device *dev, enum pm_device_action action)
 {
+	int ret = 0;
+
 	switch (action) {
 	case PM_DEVICE_ACTION_SUSPEND:
-		dai_dmic_remove_wrapper(dev);
+		ret = dai_dmic_remove_wrapper(dev);
 		break;
 	case PM_DEVICE_ACTION_RESUME:
-		dai_dmic_probe_wrapper(dev);
+		ret = dai_dmic_probe_wrapper(dev);
 		break;
 	case PM_DEVICE_ACTION_TURN_OFF:
 	case PM_DEVICE_ACTION_TURN_ON:
 		/* All device pm is handled during resume and suspend */
 		break;
 	default:
-		return -ENOTSUP;
+		ret = -ENOTSUP;
 	}
 
-	return 0;
+	return ret;
 }
 
 DEVICE_API(dai, dai_dmic_ops) = {
