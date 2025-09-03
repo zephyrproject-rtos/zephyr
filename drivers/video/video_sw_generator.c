@@ -16,6 +16,8 @@
 #include "video_ctrls.h"
 #include "video_device.h"
 
+#include "video_h264_test.h"
+
 LOG_MODULE_REGISTER(video_sw_generator, CONFIG_VIDEO_LOG_LEVEL);
 
 #define VIDEO_PATTERN_COLOR_BAR 0
@@ -66,6 +68,7 @@ static const struct video_format_cap fmts[] = {
 	VIDEO_SW_GENERATOR_FORMAT_CAP(VIDEO_PIX_FMT_SGRBG8),
 	VIDEO_SW_GENERATOR_FORMAT_CAP(VIDEO_PIX_FMT_SBGGR8),
 	VIDEO_SW_GENERATOR_FORMAT_CAP(VIDEO_PIX_FMT_SGBRG8),
+	VIDEO_SW_GENERATOR_FORMAT_CAP(VIDEO_PIX_FMT_H264),
 	{0},
 };
 
@@ -215,6 +218,31 @@ static uint16_t video_sw_generator_fill_bayer8(uint8_t *buffer, uint16_t width, 
 	return 2;
 }
 
+static uint16_t video_sw_generator_fill_h264(uint8_t *buffer, size_t buffer_size, uint32_t *bytes_filled)
+{
+	/* Static counter to track position */
+	static size_t position = 0;
+    size_t copy_size;
+
+	/* Calculate copy size */
+	size_t remaining = h264_test_data_len - position;
+	copy_size = (remaining > buffer_size) ? buffer_size : remaining;
+
+	/* Copy H.264 data chunk to buffer */
+	if (copy_size > 0) {
+		memcpy(buffer, &h264_test_data[position], copy_size);
+		position += copy_size;
+
+		/* Loop back to beginning when we reach the end */
+		if (position >= h264_test_data_len) {
+			position = 0;
+		}
+	}
+
+	*bytes_filled = copy_size;
+	return 1;
+}
+
 static int video_sw_generator_fill(const struct device *const dev, struct video_buffer *vbuf)
 {
 	struct video_sw_generator_data *data = dev->data;
@@ -258,6 +286,9 @@ static int video_sw_generator_fill(const struct device *const dev, struct video_
 		lines = video_sw_generator_fill_bayer8(vbuf->buffer, fmt->width, hflip,
 						       pattern_grbg_idx);
 		break;
+	case VIDEO_PIX_FMT_H264:
+		lines = video_sw_generator_fill_h264(vbuf->buffer, vbuf->size, &(vbuf->bytesused));
+		break;
 	default:
 		CODE_UNREACHABLE;
 		break;
@@ -267,17 +298,20 @@ static int video_sw_generator_fill(const struct device *const dev, struct video_
 		return -EINVAL;
 	}
 
-	/* How much was filled in so far */
-	vbuf->bytesused = data->fmt.pitch * lines;
+	/* Skip duplication for compressed formats */
+	if (video_bits_per_pixel(fmt->pixelformat) > 0) {
+		/* How much was filled in so far */
+		vbuf->bytesused = data->fmt.pitch * lines;
 
-	/* Duplicate the first line(s) all over the buffer */
-	for (int h = lines; h < data->fmt.height; h += lines) {
-		if (vbuf->size < vbuf->bytesused + pitch * lines) {
-			LOG_WRN("Generation stopped early: buffer too small");
-			break;
+		/* Duplicate the first line(s) all over the buffer */
+		for (int h = lines; h < data->fmt.height; h += lines) {
+			if (vbuf->size < vbuf->bytesused + pitch * lines) {
+				LOG_WRN("Generation stopped early: buffer too small");
+				break;
+			}
+			memcpy(vbuf->buffer + h * pitch, vbuf->buffer, pitch * lines);
+			vbuf->bytesused += pitch * lines;
 		}
-		memcpy(vbuf->buffer + h * pitch, vbuf->buffer, pitch * lines);
-		vbuf->bytesused += pitch * lines;
 	}
 
 	vbuf->timestamp = k_uptime_get_32();
@@ -473,10 +507,10 @@ static int video_sw_generator_init(const struct device *dev)
 
 #define VIDEO_SW_GENERATOR_DEFINE(n)                                                               \
 	static struct video_sw_generator_data video_sw_generator_data_##n = {                      \
-		.fmt.width = 320,                                                                  \
-		.fmt.height = 160,                                                                 \
-		.fmt.pitch = 320 * 2,                                                              \
-		.fmt.pixelformat = VIDEO_PIX_FMT_RGB565,                                           \
+		.fmt.width = 640,                                                                  \
+		.fmt.height = 320,                                                                 \
+		.fmt.pitch = 0,                                                                    \
+		.fmt.pixelformat = VIDEO_PIX_FMT_H264,                                             \
 		.frame_rate = DEFAULT_FRAME_RATE,                                                  \
 	};                                                                                         \
                                                                                                    \
