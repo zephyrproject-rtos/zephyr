@@ -49,10 +49,11 @@ endmacro()
 # - VERSION_CHECK              : This is the version check stage by CMake find package
 # - CANDIDATES_PREFERENCE_LIST : List of candidate to be preferred, if installed
 macro(check_zephyr_package)
-  set(options CHECK_ONLY SEARCH_PARENTS VERSION_CHECK)
-  set(single_args WORKSPACE_DIR ZEPHYR_BASE)
-  set(list_args CANDIDATES_PREFERENCE_LIST)
-  cmake_parse_arguments(CHECK_ZEPHYR_PACKAGE "${options}" "${single_args}" "${list_args}" ${ARGN})
+  set(zephyr_package_options CHECK_ONLY SEARCH_PARENTS VERSION_CHECK)
+  set(zephyr_package_single_args WORKSPACE_DIR ZEPHYR_BASE)
+  set(zephyr_package_list_args CANDIDATES_PREFERENCE_LIST)
+  cmake_parse_arguments(CHECK_ZEPHYR_PACKAGE "${zephyr_package_options}"
+                        "${zephyr_package_single_args}" "${zephyr_package_list_args}" ${ARGN})
 
   if(CHECK_ZEPHYR_PACKAGE_ZEPHYR_BASE)
     set(SEARCH_SETTINGS PATHS ${CHECK_ZEPHYR_PACKAGE_ZEPHYR_BASE} NO_DEFAULT_PATH)
