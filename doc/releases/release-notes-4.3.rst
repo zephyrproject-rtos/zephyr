@@ -172,6 +172,16 @@ New APIs and options
 
    * :kconfig:option:`CONFIG_SETTINGS_TFM_ITS`
 
+* Shell
+
+   * MQTT backend
+
+      * :kconfig:option:`CONFIG_SHELL_MQTT_TOPIC_RX_ID`
+      * :kconfig:option:`CONFIG_SHELL_MQTT_TOPIC_TX_ID`
+      * :kconfig:option:`CONFIG_SHELL_MQTT_CONNECT_TIMEOUT_MS`
+      * :kconfig:option:`CONFIG_SHELL_MQTT_WORK_DELAY_MS`
+      * :kconfig:option:`CONFIG_SHELL_MQTT_LISTEN_TIMEOUT_MS`
+
 .. zephyr-keep-sorted-stop
 
 New Boards
