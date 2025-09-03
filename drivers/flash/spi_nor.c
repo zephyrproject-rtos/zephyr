@@ -1376,7 +1376,7 @@ static int spi_nor_process_sfdp(const struct device *dev)
 
 		if (id == JESD216_SFDP_PARAM_ID_BFP) {
 			union {
-				uint32_t dw[MIN(php->len_dw, 20)];
+				uint32_t dw[20];
 				struct jesd216_bfp bfp;
 			} u_param;
 			const struct jesd216_bfp *bfp = &u_param.bfp;
