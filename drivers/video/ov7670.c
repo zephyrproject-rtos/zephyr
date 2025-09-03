@@ -50,8 +50,7 @@ struct ov7670_resolution_cfg {
 };
 
 /* Resolution settings for camera, based on those present in MCUX SDK */
-const struct ov7670_resolution_cfg OV7670_RESOLUTION_QCIF = {
-	.com7 = 0x2c,
+const struct ov7670_resolution_cfg OV7670_RESOLUTION_QCIF = {.com7 = 0x2c,
 	.com3 = 0x00,
 	.com14 = 0x11,
 	.scaling_xsc = 0x3a,
@@ -61,8 +60,7 @@ const struct ov7670_resolution_cfg OV7670_RESOLUTION_QCIF = {
 	.pclk_delay = 0x52
 };
 
-const struct ov7670_resolution_cfg OV7670_RESOLUTION_QVGA = {
-	.com7 = 0x14,
+const struct ov7670_resolution_cfg OV7670_RESOLUTION_QVGA = {.com7 = 0x14,
 	.com3 = 0x04,
 	.com14 = 0x19,
 	.scaling_xsc = 0x3a,
@@ -72,8 +70,7 @@ const struct ov7670_resolution_cfg OV7670_RESOLUTION_QVGA = {
 	.pclk_delay = 0x02
 };
 
-const struct ov7670_resolution_cfg OV7670_RESOLUTION_CIF = {
-	.com7 = 0x24,
+const struct ov7670_resolution_cfg OV7670_RESOLUTION_CIF = {.com7 = 0x24,
 	.com3 = 0x08,
 	.com14 = 0x11,
 	.scaling_xsc = 0x3a,
@@ -83,8 +80,7 @@ const struct ov7670_resolution_cfg OV7670_RESOLUTION_CIF = {
 	.pclk_delay = 0x02
 };
 
-const struct ov7670_resolution_cfg OV7670_RESOLUTION_VGA = {
-	.com7 = 0x04,
+const struct ov7670_resolution_cfg OV7670_RESOLUTION_VGA = {.com7 = 0x04,
 	.com3 = 0x00,
 	.com14 = 0x00,
 	.scaling_xsc = 0x3a,
@@ -94,7 +90,7 @@ const struct ov7670_resolution_cfg OV7670_RESOLUTION_VGA = {
 	.pclk_delay = 0x02
 };
 
-#define OV7670_REG8(addr)   ((addr) | VIDEO_REG_ADDR8_DATA8)
+#define OV7670_REG8(addr)         ((addr) | VIDEO_REG_ADDR8_DATA8)
 /* OV7670 registers */
 #define OV7670_PID                0x0A
 #define OV7670_COM7               0x12
@@ -185,7 +181,7 @@ const struct ov7670_resolution_cfg OV7670_RESOLUTION_VGA = {
 #define OV7670_HAECC6             0xA9
 
 /* OV7670 definitions */
-#define OV7670_PROD_ID 0x76
+#define OV7670_PROD_ID    0x76
 #define OV7670_MVFP_HFLIP 0x20
 #define OV7670_MVFP_VFLIP 0x10
 
@@ -194,7 +190,6 @@ const struct ov7670_resolution_cfg OV7670_RESOLUTION_VGA = {
 		.pixelformat = (format), .width_min = (width), .width_max = (width),               \
 		.height_min = (height), .height_max = (height), .width_step = 0, .height_step = 0  \
 	}
-
 
 static const struct video_format_cap fmts[] = {
 	OV7670_VIDEO_FORMAT_CAP(176, 144, VIDEO_PIX_FMT_RGB565), /* QCIF  */
@@ -216,7 +211,7 @@ static const struct video_reg8 ov7670_init_regtbl[] = {
 
 	/* configure the output timing */
 	/* PCLK does not toggle during horizontal blank, one PCLK, one pixel */
-	{OV7670_COM10, 0x20}, /* COM10 */
+	{OV7670_COM10, 0x03}, /* COM10 */
 	{OV7670_COM12, 0x00}, /* COM12,No HREF when VSYNC is low */
 	/* Brightness Control, with signal -128 to +128, 0x00 is middle value */
 	{OV7670_BRIGHT, 0x2f},
@@ -411,43 +406,45 @@ static int ov7670_set_fmt(const struct device *dev, struct video_format *fmt)
 				break;
 			}
 			/* Program resolution bytes settings */
-      ret = video_write_cci_reg(&config->bus, OV7670_REG8(OV7670_COM7),
-               resolution->com7);
+			ret = video_write_cci_reg(&config->bus, OV7670_REG8(OV7670_COM7),
+						  resolution->com7);
 			if (ret < 0) {
 				return ret;
 			}
 			ret = video_write_cci_reg(&config->bus, OV7670_REG8(OV7670_COM3),
-						    resolution->com3);
+						  resolution->com3);
 			if (ret < 0) {
 				return ret;
 			}
 			ret = video_write_cci_reg(&config->bus, OV7670_REG8(OV7670_COM14),
-						    resolution->com14);
+						  resolution->com14);
 			if (ret < 0) {
 				return ret;
 			}
 			ret = video_write_cci_reg(&config->bus, OV7670_REG8(OV7670_SCALING_XSC),
-						    resolution->scaling_xsc);
+						  resolution->scaling_xsc);
 			if (ret < 0) {
 				return ret;
 			}
 			ret = video_write_cci_reg(&config->bus, OV7670_REG8(OV7670_SCALING_YSC),
-						    resolution->scaling_ysc);
+						  resolution->scaling_ysc);
 			if (ret < 0) {
 				return ret;
 			}
 			ret = video_write_cci_reg(&config->bus, OV7670_REG8(OV7670_SCALING_DCWCTR),
-						    resolution->dcwctr);
+						  resolution->dcwctr);
 			if (ret < 0) {
 				return ret;
 			}
-			ret = video_write_cci_reg(&config->bus, OV7670_REG8(OV7670_SCALING_PCLK_DIV),
-						    resolution->pclk_div);
+			ret = video_write_cci_reg(&config->bus,
+						  OV7670_REG8(OV7670_SCALING_PCLK_DIV),
+						  resolution->pclk_div);
 			if (ret < 0) {
 				return ret;
 			}
-			ret = video_write_cci_reg(&config->bus, OV7670_REG8(OV7670_SCALING_PCLK_DELAY),
-						     resolution->pclk_delay);
+			ret = video_write_cci_reg(&config->bus,
+						  OV7670_REG8(OV7670_SCALING_PCLK_DELAY),
+						  resolution->pclk_delay);
 			return ret;
 		}
 		i++;
@@ -485,7 +482,7 @@ static int ov7670_init(const struct device *dev)
 {
 	const struct ov7670_config *config = dev->config;
 	int ret;
-	uint32_t pid;
+	uint8_t pid;
 	struct video_format fmt = {
 		.pixelformat = VIDEO_PIX_FMT_RGB565,
 		.width = 320,
@@ -536,10 +533,16 @@ static int ov7670_init(const struct device *dev)
 	 * To work around this, use a write then a read to interface with
 	 * registers.
 	 */
+	uint8_t cmd = OV7670_PID;
 
-	ret = video_read_cci_reg(&config->bus, OV7670_REG8(OV7670_PID), &pid);
+	ret = i2c_write_dt(&config->bus, &cmd, sizeof(cmd));
 	if (ret < 0) {
 		LOG_ERR("Could not request product ID: %d", ret);
+		return ret;
+	}
+	ret = i2c_read_dt(&config->bus, &pid, sizeof(pid));
+	if (ret < 0) {
+		LOG_ERR("Could not read product ID: %d", ret);
 		return ret;
 	}
 
@@ -564,7 +567,7 @@ static int ov7670_init(const struct device *dev)
 
 	/* Write initialization values to OV7670 */
 	ret = video_write_cci_multiregs8(&config->bus, ov7670_init_regtbl,
-        ARRAY_SIZE(ov7670_init_regtbl));
+					 ARRAY_SIZE(ov7670_init_regtbl));
 	if (ret < 0) {
 		return ret;
 	}
@@ -586,10 +589,10 @@ static int ov7670_set_ctrl(const struct device *dev, uint32_t id)
 
 	switch (id) {
 	case VIDEO_CID_HFLIP:
-		return video_modify_cci_reg(&config->bus, OV7670_REG8(OV7670_MVFP), OV7670_MVFP_HFLIP,
+		return i2c_reg_update_byte_dt(&config->bus, OV7670_MVFP, OV7670_MVFP_HFLIP,
 					      ctrls->hflip.val ? OV7670_MVFP_HFLIP : 0);
 	case VIDEO_CID_VFLIP:
-		return video_modify_cci_reg(&config->bus, OV7670_REG8(OV7670_MVFP), OV7670_MVFP_VFLIP,
+		return i2c_reg_update_byte_dt(&config->bus, OV7670_MVFP, OV7670_MVFP_VFLIP,
 					      ctrls->vflip.val ? OV7670_MVFP_VFLIP : 0);
 	default:
 		return -ENOTSUP;
