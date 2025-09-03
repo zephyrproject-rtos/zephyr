@@ -588,6 +588,10 @@ static void avdtp_process_configuration_cmd(struct bt_avdtp *session, struct net
 										 &avdtp_err_code);
 				}
 			}
+
+			if (reconfig == 0 && err == 0){
+				sep->session = session;
+			}
 		} else {
 			LOG_WRN("Invalid INT SEID");
 			err = -ENOTSUP;
@@ -845,6 +849,7 @@ static void avdtp_start_rsp(struct bt_avdtp *session, struct net_buf *buf, uint8
 	if (msg_type == BT_AVDTP_ACCEPT) {
 		bt_avdtp_set_state_lock(CTRL_REQ(req)->sep, AVDTP_STREAMING);
 	} else if (msg_type == BT_AVDTP_REJECT) {
+		bt_avdtp_set_state_lock(CTRL_REQ(req)->sep, AVDTP_OPEN);
 		avdtp_handle_reject(buf, req);
 	}
 
@@ -1210,6 +1215,7 @@ void bt_avdtp_l2cap_connected(struct bt_l2cap_chan *chan)
 void bt_avdtp_l2cap_disconnected(struct bt_l2cap_chan *chan)
 {
 	struct bt_avdtp *session = AVDTP_CHAN(chan);
+	struct bt_avdtp_sep *sep;
 
 	LOG_DBG("chan %p session %p", chan, session);
 	session->br_chan.chan.conn = NULL;
@@ -1225,6 +1231,16 @@ void bt_avdtp_l2cap_disconnected(struct bt_l2cap_chan *chan)
 		}
 	}
 
+	SYS_SLIST_FOR_EACH_CONTAINER(&seps, sep, _node) {
+		if (sep->state != AVDTP_IDLE && (&sep->session->br_chan.chan) == chan) {
+			avdtp_sep_lock(sep);
+			bt_avdtp_set_state(sep, AVDTP_IDLE);
+			avdtp_sep_unlock(sep);
+			session->ops->stream_l2cap_disconnected(session, sep);
+		}
+	}
+
+	session->br_chan.chan.conn = NULL;
 	/* notify a2dp disconnect */
 	session->ops->disconnected(session);
 }
@@ -1384,13 +1400,29 @@ int bt_avdtp_connect(struct bt_conn *conn, struct bt_avdtp *session)
 
 int bt_avdtp_disconnect(struct bt_avdtp *session)
 {
+	struct bt_avdtp_sep *sep;
+	int err;
+
 	if (!session) {
 		return -EINVAL;
 	}
 
 	LOG_DBG("session %p", session);
 
-	return bt_l2cap_chan_disconnect(&session->br_chan.chan);
+	SYS_SLIST_FOR_EACH_CONTAINER(&seps, sep, _node) {
+		if ((sep->state == AVDTP_OPEN || sep->state == AVDTP_STREAMING)
+			&& (sep->session) == session) {
+			err = avdtp_media_disconnect(sep);
+			if (err != 0){
+				LOG_ERR("fail to disconnect media connection");
+				return err;
+			}
+		}
+	}
+
+	err =  bt_l2cap_chan_disconnect(&session->br_chan.chan);
+
+	return err;
 }
 
 int bt_avdtp_l2cap_accept(struct bt_conn *conn, struct bt_l2cap_server *server,
@@ -1658,6 +1690,7 @@ static int avdtp_process_configure_command(struct bt_avdtp *session, uint8_t cmd
 		return -EINVAL;
 	}
 
+	param->sep->session = session;
 	buf = avdtp_create_pdu(BT_AVDTP_CMD, BT_AVDTP_PACKET_TYPE_SINGLE, cmd);
 	if (!buf) {
 		LOG_ERR("Error: No Buff available");
