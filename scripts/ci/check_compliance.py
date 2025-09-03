@@ -1264,6 +1264,8 @@ flagged.
         "FOO_SETTING_1",
         "FOO_SETTING_2",
         "GEN_UICR_GENERATE_PERIPHCONF", # Used in specialized build tool, not part of main Kconfig
+        "GEN_UICR_SECONDARY", # Used in specialized build tool, not part of main Kconfig
+        "GEN_UICR_SECONDARY_GENERATE_PERIPHCONF", # Used in specialized build tool, not part of main Kconfig
         "HEAP_MEM_POOL_ADD_SIZE_", # Used as an option matching prefix
         "HUGETLBFS",          # Linux, in boards/xtensa/intel_adsp_cavs25/doc
         "IAR_BUFFERED_WRITE",

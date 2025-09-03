@@ -166,5 +166,13 @@
 		periphconf_partition: partition@1ae000 {
 			reg = <0x1ae000 DT_SIZE_K(8)>;
 		};
+
+		secondary_partition: partition@1b0000 {
+			reg = <0x1b0000 DT_SIZE_K(64)>;
+		};
+
+		secondary_periphconf_partition: partition@1c0000 {
+			reg = <0x1c0000 DT_SIZE_K(8)>;
+		};
 	};
 };
