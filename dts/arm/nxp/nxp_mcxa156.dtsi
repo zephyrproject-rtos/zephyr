@@ -491,6 +491,7 @@
 			clk-source = <1>;
 			resolution = <32>;
 			status = "disabled";
+			wakeup-line = <6>;
 		};
 
 		ostimer0: timers@400ad000 {
@@ -521,6 +522,12 @@
 			interrupts = <60 0>;
 			status = "disabled";
 			clk-divider = <1>;
+		};
+
+		spc: spc@40090000 {
+			compatible = "nxp,spc";
+			reg = <0x40090000 0x1000>;
+			wakeup-delay = <91>;
 		};
 	};
 };

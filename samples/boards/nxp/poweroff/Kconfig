@@ -1,0 +1,30 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "NXP MCU POWER OFF DEMO"
+
+choice NXP_MCU_POWEROFF_WAKEUP_SOURCE
+	prompt "Select the wakeup source for poweroff"
+
+	config POWEROFF_COUNTER_WAKEUP
+		bool "Counter wakeup"
+		select COUNTER
+		depends on BOARD_FRDM_MCXA153 || BOARD_FRDM_MCXA156 ||	\
+				BOARD_FRDM_MCXA346 || BOARD_FRDM_MCXA266 ||	\
+				BOARD_FRDM_MCXN947 || BOARD_MIMXRT595_EVK
+		help
+		  Use counter to wake up device from poweroff.
+		  Selected by default for compatible boards.
+
+	config POWEROFF_BUTTON_WAKEUP
+		bool "Button wakeup"
+		select GPIO
+		depends on BOARD_FRDM_MCXN236
+		help
+		  Use on-board wakeup button to wake up device
+		  from poweroff.
+		  Selected by default for compatible boards.
+
+endchoice
+
+source "Kconfig.zephyr"
