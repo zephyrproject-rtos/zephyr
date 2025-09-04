@@ -244,6 +244,15 @@
 		};
 	};
 
+	pinmux_opamp0: pinmux_opamp0 {
+		group0 {
+			pinmux = <OPAMP0_INP0_PIO4_12>,
+					<OPAMP0_INP1_PIO4_13>;
+			drive-strength = "low";
+			slew-rate = "fast";
+		};
+	};
+
 	pinmux_flexcan0: pinmux_flexcan0 {
 		group0 {
 			pinmux = <CAN0_TXD_PIO1_10>,

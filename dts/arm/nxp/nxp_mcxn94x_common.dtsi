@@ -75,6 +75,30 @@
 		#io-channel-cells = <2>;
 	};
 
+	opamp0: opamp@40110000 {
+		compatible = "nxp,opamp";
+		reg = <0x40110000 0x1000>;
+		status = "disabled";
+		operation-mode = "low_noise";
+		clocks = <&syscon MCUX_OPAMP0_CLK>;
+	};
+
+	opamp1: opamp@40113000 {
+		compatible = "nxp,opamp";
+		reg = <0x40113000 0x1000>;
+		status = "disabled";
+		operation-mode = "low_noise";
+		clocks = <&syscon MCUX_OPAMP1_CLK>;
+	};
+
+	opamp2: opamp@40115000 {
+		compatible = "nxp,opamp";
+		reg = <0x40115000 0x1000>;
+		status = "disabled";
+		operation-mode = "low_noise";
+		clocks = <&syscon MCUX_OPAMP2_CLK>;
+	};
+
 	flexcan1: can@d8000 {
 		compatible = "nxp,flexcan";
 		reg = <0xd8000 0x4000>;
