@@ -78,6 +78,16 @@ zephyr_library_compile_definitions_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_WNM
   CONFIG_WNM
 )
 
+zephyr_library_compile_definitions_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_BGSCAN
+  CONFIG_BGSCAN
+)
+zephyr_library_compile_definitions_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_BGSCAN_SIMPLE
+  CONFIG_BGSCAN_SIMPLE
+)
+zephyr_library_compile_definitions_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_BGSCAN_LEARN
+  CONFIG_BGSCAN_LEARN
+)
+
 zephyr_library_include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/src
   ${HOSTAP_BASE}/
@@ -154,6 +164,16 @@ zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_MBO
 )
 zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_WNM
   ${WIFI_NM_WPA_SUPPLICANT_BASE}/wnm_sta.c
+)
+
+zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_BGSCAN
+  ${WIFI_NM_WPA_SUPPLICANT_BASE}/bgscan.c
+)
+zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_BGSCAN_SIMPLE
+  ${WIFI_NM_WPA_SUPPLICANT_BASE}/bgscan_simple.c
+)
+zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_BGSCAN_LEARN
+  ${WIFI_NM_WPA_SUPPLICANT_BASE}/bgscan_learn.c
 )
 
 zephyr_library_sources_ifdef(CONFIG_WPA_CLI
