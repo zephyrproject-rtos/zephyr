@@ -1,0 +1,6 @@
+board:
+  name: apex_pro_mini
+  full_name: Apex Pro Mini
+  vendor: steelseries
+  socs:
+    - name: stm32l412xx
