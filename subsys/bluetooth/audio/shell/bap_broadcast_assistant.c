@@ -176,11 +176,14 @@ static void bap_broadcast_assistant_recv_state_cb(
 		}
 
 		if (per_adv_sync && IS_ENABLED(CONFIG_BT_PER_ADV_SYNC_TRANSFER_SENDER)) {
+			uint8_t past_flags = BT_BAP_PAST_MATCHES_ADVA_IN_SOURCE;
+			uint8_t src_id = per_adv_sync->sid;
+
 			bt_shell_print("Sending PAST");
 
 			err = bt_le_per_adv_sync_transfer(per_adv_sync,
-							  conn,
-							  BT_UUID_BASS_VAL);
+				conn,
+				BT_BAP_PAST_SERVICE_DATA(past_flags, src_id));
 
 			if (err != 0) {
 				bt_shell_error("Could not transfer periodic adv sync: %d", err);
@@ -213,10 +216,14 @@ static void bap_broadcast_assistant_recv_state_cb(
 
 		if (ext_adv != NULL && IS_ENABLED(CONFIG_BT_PER_ADV) &&
 		    IS_ENABLED(CONFIG_BT_PER_ADV_SYNC_TRANSFER_SENDER)) {
+			uint8_t past_flags = BT_BAP_PAST_MATCHES_ADVA_IN_SOURCE;
+			uint8_t src_id = ext_adv->id;
+
 			bt_shell_print("Sending local PAST");
 
-			err = bt_le_per_adv_set_info_transfer(ext_adv, conn,
-							      BT_UUID_BASS_VAL);
+			err = bt_le_per_adv_set_info_transfer(ext_adv,
+				conn,
+				BT_BAP_PAST_SERVICE_DATA(past_flags, src_id));
 
 			if (err != 0) {
 				bt_shell_error("Could not transfer per adv set info: %d", err);

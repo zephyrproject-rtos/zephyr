@@ -179,8 +179,13 @@ static void bap_broadcast_assistant_recv_state_cb(
 
 #if defined(CONFIG_BT_PER_ADV_SYNC_TRANSFER_SENDER)
 	if (state->pa_sync_state == BT_BAP_PA_STATE_INFO_REQ) {
-		err = bt_le_per_adv_sync_transfer(g_pa_sync, conn,
-						  BT_UUID_BASS_VAL);
+		uint8_t past_flags = BT_BAP_PAST_MATCHES_ADVA_IN_SOURCE;
+		uint8_t src_id = g_pa_sync->sid;
+
+		err = bt_le_per_adv_sync_transfer(g_pa_sync,
+				conn,
+				BT_BAP_PAST_SERVICE_DATA(past_flags, src_id));
+
 		if (err != 0) {
 			FAIL("Could not transfer periodic adv sync: %d\n", err);
 			return;
