@@ -180,6 +180,21 @@ void smf_set_terminate(struct smf_ctx *ctx, int32_t val);
  */
 int32_t smf_run_state(struct smf_ctx *ctx);
 
+/**
+ * @brief Get the state that is currently executing. This may be a parent state.
+ *
+ * @param ctx State machine context
+ * @return    The state that is currently executing.
+ */
+static inline const struct smf_state *smf_get_executing(const struct smf_ctx *const ctx)
+{
+#ifdef CONFIG_SMF_ANCESTOR_SUPPORT
+		return ctx->executing;
+#else
+		return ctx->current;
+#endif /* CONFIG_SMF_ANCESTOR_SUPPORT */
+}
+
 #ifdef __cplusplus
 }
 #endif
