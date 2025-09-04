@@ -94,9 +94,5 @@ int scmi_power_state_set(struct scmi_power_state_config *cfg)
 		return ret;
 	}
 
-	if (status != SCMI_SUCCESS) {
-		return scmi_status_to_errno(status);
-	}
-
-	return 0;
+	return scmi_status_to_errno(status);
 }
