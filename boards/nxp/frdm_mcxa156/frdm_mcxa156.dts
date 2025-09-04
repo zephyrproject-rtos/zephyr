@@ -27,6 +27,7 @@
 		watchdog0 = &wwdt0;
 		ambient-temp0 = &p3t1755;
 		die-temp0 = &temp0;
+		qdec0 = &eqdc0;
 	};
 
 	chosen {

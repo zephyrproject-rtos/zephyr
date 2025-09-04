@@ -165,4 +165,13 @@
 			input-enable;
 		};
 	};
+	pinmux_eqdc0: pinmux_eqdc0 {
+		group0 {
+			pinmux = <TRIG_IN3_P3_8>,
+			<TRIG_IN2_P3_7>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+		};
+	};
 };

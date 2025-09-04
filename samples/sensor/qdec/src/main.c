@@ -8,6 +8,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/sys/printk.h>
+#include <zephyr/random/random.h>
 
 #define QUAD_ENC_EMUL_ENABLED \
 	DT_NODE_EXISTS(DT_ALIAS(qenca)) && DT_NODE_EXISTS(DT_ALIAS(qencb))
@@ -73,6 +74,7 @@ static void qenc_emulate_init(void) { };
 int main(void)
 {
 	struct sensor_value val;
+	struct sensor_value val2;
 	int rc;
 	const struct device *const dev = DEVICE_DT_GET(DT_ALIAS(qdec0));
 
@@ -91,7 +93,7 @@ int main(void)
 	for (int i = 0; i < 3; i++) {
 #endif
 		/* sleep first to gather position from first period */
-		k_msleep(1000);
+		k_msleep(sys_rand8_get() + 50);
 
 		rc = sensor_sample_fetch(dev);
 		if (rc != 0) {
@@ -105,7 +107,13 @@ int main(void)
 			return 0;
 		}
 
-		printk("Position = %d degrees\n", val.val1);
+		rc = sensor_channel_get(dev, SENSOR_CHAN_RPM, &val2);
+		if (rc != 0) {
+			printk("Failed to get data (%d)\n", rc);
+			return 0;
+		}
+
+		printk("Position = %d degrees; speed = %d.%06d\n", val.val1, val2.val1, abs(val2.val2));
 	}
 	return 0;
 }

@@ -120,6 +120,7 @@ set_variable_ifdef(CONFIG_MCUX_SDIF             CONFIG_MCUX_COMPONENT_driver.sdi
 set_variable_ifdef(CONFIG_MCUX_XBARA            CONFIG_MCUX_COMPONENT_driver.xbara)
 set_variable_ifdef(CONFIG_MCUX_XBARB            CONFIG_MCUX_COMPONENT_driver.xbarb)
 set_variable_ifdef(CONFIG_QDEC_MCUX             CONFIG_MCUX_COMPONENT_driver.enc)
+set_variable_ifdef(CONFIG_EQDC_MCUX             CONFIG_MCUX_COMPONENT_driver.eqdc)
 set_variable_ifdef(CONFIG_CRYPTO_MCUX_DCP       CONFIG_MCUX_COMPONENT_driver.dcp)
 set_variable_ifdef(CONFIG_DAC_MCUX_LPDAC        CONFIG_MCUX_COMPONENT_driver.dac_1)
 set_variable_ifdef(CONFIG_NXP_IRQSTEER          CONFIG_MCUX_COMPONENT_driver.irqsteer)

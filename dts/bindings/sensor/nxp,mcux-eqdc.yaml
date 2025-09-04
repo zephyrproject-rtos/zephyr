@@ -1,0 +1,44 @@
+# Copyright (c) 2022, Prevas A/S
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP MCUX eQDC
+
+compatible: "nxp,mcux-eqdc"
+
+include: [pinctrl-device.yaml, sensor-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  counts-per-revolution:
+    type: int
+    required: true
+    description: |
+      This is a number that is used to determine how many revolutions
+      were done based on the current counter's value.
+
+  prescaler-log2:
+    type: int
+    required: true
+    description: |
+      The prescaler applied to the clocks of the POSDPER & LASTEDGE counters.
+      Higher values mean that lower speeds will be able to be measured, 
+      while lower values mean that higher speeds will be measured more precisely.
+      The counters are 16-bit and they tick on every clock period.
+      For example, a value of 10 with a 96MHz clock would mean that the counters
+      would overrun at `(2^16 - 1) / (96e6 / 2^10)` ~= 0.7 seconds, so phase changes
+      that take longer than 0.7 seconds (we're talking about really slow moving parts here)
+      would not register on the sensor.
+
+  input-kind:
+    type: int
+    required: true
+    description: |
+      Choose 0 for inputs on P3_7 & P3_8 or 1 for inputs on P2_2 & P2_3
+
+  device-idx:
+    type: int
+    required: true
+    description: |
+      Device to use (eQDC0 or eQDC1)

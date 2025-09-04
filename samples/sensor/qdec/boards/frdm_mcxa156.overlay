@@ -1,0 +1,38 @@
+&eqdc0 {
+	status = "okay";
+	counts-per-revolution = < 12 >;
+	prescaler-log2 = < 10 >;
+	pinctrl-0 = < &pinmux_eqdc0 >;
+	pinctrl-names = "default";
+	device-idx = < 0 >;
+	input-kind = < 0 >;
+};
+
+&eqdc1 {
+	status = "okay";
+	counts-per-revolution = < 12 >;
+	prescaler-log2 = < 10 >;
+	pinctrl-0 = < &pinmux_eqdc1 >;
+	pinctrl-names = "default";
+	device-idx = < 1 >;
+	input-kind = < 1 >;
+};
+
+&pinctrl {
+	pinmux_eqdc0: pinmux_eqdc0 {
+		group0 {
+			pinmux = <TRIG_IN3_P3_8>,
+			<TRIG_IN2_P3_7>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+		};
+	};
+	pinmux_eqdc1: pinmux_eqdc1 {
+			pinmux = <TRIG_IN6_P2_2>,
+			<TRIG_IN7_P2_3>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+	};
+};
