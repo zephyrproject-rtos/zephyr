@@ -7,10 +7,10 @@
 #include <errno.h>
 
 #include <zephyr/kernel.h>
+#include <kernel_internal.h>
 #include <zephyr/sys/speculation.h>
 #include <zephyr/internal/syscall_handler.h>
 #include <kernel_arch_func.h>
-#include <ksched.h>
 #include <x86_mmu.h>
 
 BUILD_ASSERT((CONFIG_PRIVILEGED_STACK_SIZE > 0) &&
