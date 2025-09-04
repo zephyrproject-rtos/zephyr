@@ -151,30 +151,30 @@ LOG_MODULE_REGISTER(video_ov2640, CONFIG_VIDEO_LOG_LEVEL);
 #define REG32               0x32
 #define REG32_UXGA          0x36
 
-#define CIF_WIDTH				352
-#define CIF_HEIGHT				288
-#define HD_720_WIDTH			1280
-#define HD_720_HEIGHT			720
-#define HD_1080_WIDTH			1920
-#define HD_1080_HEIGHT			1080
-#define QCIF_WIDTH				176
-#define QCIF_HEIGHT				144
-#define QQCIF_WIDTH				88
-#define QQCIF_HEIGHT			72
-#define QQVGA_WIDTH				160
-#define QQVGA_HEIGHT			120
-#define QVGA_WIDTH				320
-#define QVGA_HEIGHT				240
-#define SVGA_WIDTH				800
-#define SVGA_HEIGHT				600
-#define SXGA_WIDTH				1280
-#define SXGA_HEIGHT				1024
-#define VGA_WIDTH				640
-#define VGA_HEIGHT				480
-#define UXGA_WIDTH				1600
-#define UXGA_HEIGHT				1200
-#define XGA_WIDTH				1024
-#define XGA_HEIGHT				768
+#define CIF_WIDTH      352
+#define CIF_HEIGHT     288
+#define HD_720_WIDTH   1280
+#define HD_720_HEIGHT  720
+#define HD_1080_WIDTH  1920
+#define HD_1080_HEIGHT 1080
+#define QCIF_WIDTH     176
+#define QCIF_HEIGHT    144
+#define QQCIF_WIDTH    88
+#define QQCIF_HEIGHT   72
+#define QQVGA_WIDTH    160
+#define QQVGA_HEIGHT   120
+#define QVGA_WIDTH     320
+#define QVGA_HEIGHT    240
+#define SVGA_WIDTH     800
+#define SVGA_HEIGHT    600
+#define SXGA_WIDTH     1280
+#define SXGA_HEIGHT    1024
+#define VGA_WIDTH      640
+#define VGA_HEIGHT     480
+#define UXGA_WIDTH     1600
+#define UXGA_HEIGHT    1200
+#define XGA_WIDTH      1024
+#define XGA_HEIGHT     768
 
 struct ov2640_reg {
 	uint8_t addr;
@@ -182,57 +182,57 @@ struct ov2640_reg {
 };
 
 struct ov2640_win_size {
-	char				*name;
-	uint32_t				width;
-	uint32_t				height;
-	const struct ov2640_reg	*regs;
-	uint32_t			regs_size;
+	char *name;
+	uint32_t width;
+	uint32_t height;
+	const struct ov2640_reg *regs;
+	uint32_t regs_size;
 };
 
-#define PER_SIZE_REG_SEQ(x, y, v_div, h_div, pclk_div)	\
-{ CTRLI, CTRLI_LP_DP | FIELD_PREP(GENMASK(5, 3), v_div) |	\
-		FIELD_PREP(GENMASK(2, 0), h_div)},		\
-{ ZMOW, FIELD_PREP(GENMASK(7, 0), (x) >> 2) },			\
-{ ZMOH, FIELD_PREP(GENMASK(7, 0), (y) >> 2) },			\
-{ ZMHH, FIELD_PREP(GENMASK(1, 0), (x) >> (8+2)) | FIELD_PREP(GENMASK(2, 2), (y) >> (8+2)) },	\
-{ R_DVP_SP, pclk_div },				\
-{ RESET, 0x00}
+#define OV2640_ZOOM_CONFIG(x, y, v_div, h_div, pclk_div)                                           \
+	{CTRLI,                                                                                    \
+	 CTRLI_LP_DP | FIELD_PREP(GENMASK(5, 3), v_div) | FIELD_PREP(GENMASK(2, 0), h_div)},       \
+		{ZMOW, FIELD_PREP(GENMASK(7, 0), (x) >> 2)},                                       \
+		{ZMOH, FIELD_PREP(GENMASK(7, 0), (y) >> 2)},                                       \
+		{ZMHH, FIELD_PREP(GENMASK(1, 0), (x) >> (8 + 2)) |                                 \
+			       FIELD_PREP(GENMASK(2, 2), (y) >> (8 + 2))},                         \
+		{R_DVP_SP, pclk_div}, {RESET, 0x00}
 
 static const struct ov2640_reg ov2640_qqvga_regs[] = {
-	PER_SIZE_REG_SEQ(QQVGA_WIDTH, QQVGA_HEIGHT, 3, 3, 8),
+	OV2640_ZOOM_CONFIG(QQVGA_WIDTH, QQVGA_HEIGHT, 3, 3, 8),
 };
 static const struct ov2640_reg ov2640_qcif_regs[] = {
-	PER_SIZE_REG_SEQ(QCIF_WIDTH, QCIF_HEIGHT, 3, 3, 4),
+	OV2640_ZOOM_CONFIG(QCIF_WIDTH, QCIF_HEIGHT, 3, 3, 4),
 };
 static const struct ov2640_reg ov2640_qvga_regs[] = {
-	PER_SIZE_REG_SEQ(QVGA_WIDTH, QVGA_HEIGHT, 2, 2, 4),
+	OV2640_ZOOM_CONFIG(QVGA_WIDTH, QVGA_HEIGHT, 2, 2, 4),
 };
 static const struct ov2640_reg ov2640_cif_regs[] = {
-	PER_SIZE_REG_SEQ(CIF_WIDTH, CIF_HEIGHT, 2, 2, 8),
+	OV2640_ZOOM_CONFIG(CIF_WIDTH, CIF_HEIGHT, 2, 2, 8),
 };
 static const struct ov2640_reg ov2640_vga_regs[] = {
-	PER_SIZE_REG_SEQ(VGA_WIDTH, VGA_HEIGHT, 0, 0, 2),
+	OV2640_ZOOM_CONFIG(VGA_WIDTH, VGA_HEIGHT, 0, 0, 2),
 };
 static const struct ov2640_reg ov2640_svga_regs[] = {
-	PER_SIZE_REG_SEQ(SVGA_WIDTH, SVGA_HEIGHT, 1, 1, 2),
+	OV2640_ZOOM_CONFIG(SVGA_WIDTH, SVGA_HEIGHT, 1, 1, 2),
 };
 static const struct ov2640_reg ov2640_xga_regs[] = {
-	PER_SIZE_REG_SEQ(XGA_WIDTH, XGA_HEIGHT, 0, 0, 2),
-	{ CTRLI,    0x00},
+	OV2640_ZOOM_CONFIG(XGA_WIDTH, XGA_HEIGHT, 0, 0, 2),
+	{CTRLI, 0x00},
 };
 static const struct ov2640_reg ov2640_sxga_regs[] = {
-	PER_SIZE_REG_SEQ(SXGA_WIDTH, SXGA_HEIGHT, 0, 0, 2),
-	{ CTRLI,    0x00},
-	{ R_DVP_SP, 2 | R_DVP_SP_AUTO_MODE },
+	OV2640_ZOOM_CONFIG(SXGA_WIDTH, SXGA_HEIGHT, 0, 0, 2),
+	{CTRLI, 0x00},
+	{R_DVP_SP, 2 | R_DVP_SP_AUTO_MODE},
 };
 static const struct ov2640_reg ov2640_uxga_regs[] = {
-	PER_SIZE_REG_SEQ(UXGA_WIDTH, UXGA_HEIGHT, 0, 0, 0),
-	{ CTRLI,    0x00},
-	{ R_DVP_SP, 0 | R_DVP_SP_AUTO_MODE },
+	OV2640_ZOOM_CONFIG(UXGA_WIDTH, UXGA_HEIGHT, 0, 0, 0),
+	{CTRLI, 0x00},
+	{R_DVP_SP, 0 | R_DVP_SP_AUTO_MODE},
 };
 
-#define OV2640_SIZE(n, w, h, r) \
-	{.name = n, .width = w , .height = h, .regs = r, .regs_size = ARRAY_SIZE(r) }
+#define OV2640_SIZE(n, w, h, r)                                                                    \
+	{.name = n, .width = w, .height = h, .regs = r, .regs_size = ARRAY_SIZE(r)}
 
 static const struct ov2640_win_size ov2640_supported_win_sizes[] = {
 	OV2640_SIZE("QQVGA", QQVGA_WIDTH, QQVGA_HEIGHT, ov2640_qqvga_regs),
@@ -429,60 +429,59 @@ static const struct ov2640_reg default_regs[] = {
 };
 
 static const struct ov2640_reg uxga_regs[] = {
-	{ BANK_SEL, BANK_SEL_SENSOR },
+	{BANK_SEL, BANK_SEL_SENSOR},
 	/* DSP input image resolution and window size control */
-	{ COM7,    COM7_RES_UXGA},
-	{ COM1,    0x0F }, /* UXGA=0x0F, SVGA=0x0A, CIF=0x06 */
-	{ REG32,   REG32_UXGA }, /* UXGA=0x36, SVGA/CIF=0x09 */
+	{COM7, COM7_RES_UXGA},
+	{COM1, 0x0F},        /* UXGA=0x0F, SVGA=0x0A, CIF=0x06 */
+	{REG32, REG32_UXGA}, /* UXGA=0x36, SVGA/CIF=0x09 */
 
-	{ HSTART,  0x11 }, /* UXGA=0x11, SVGA/CIF=0x11 */
-	{ HSTOP,   0x75 }, /* UXGA=0x75, SVGA/CIF=0x43 */
+	{HSTART, 0x11}, /* UXGA=0x11, SVGA/CIF=0x11 */
+	{HSTOP, 0x75},  /* UXGA=0x75, SVGA/CIF=0x43 */
 
-	{ VSTART,  0x01 }, /* UXGA=0x01, SVGA/CIF=0x00 */
-	{ VSTOP,   0x97 }, /* UXGA=0x97, SVGA/CIF=0x4b */
-	{ 0x3d,    0x34 }, /* UXGA=0x34, SVGA/CIF=0x38 */
+	{VSTART, 0x01}, /* UXGA=0x01, SVGA/CIF=0x00 */
+	{VSTOP, 0x97},  /* UXGA=0x97, SVGA/CIF=0x4b */
+	{0x3d, 0x34},   /* UXGA=0x34, SVGA/CIF=0x38 */
 
-	{ 0x35,    0x88 },
-	{ 0x22,    0x0a },
-	{ 0x37,    0x40 },
-	{ 0x34,    0xa0 },
-	{ 0x06,    0x02 },
-	{ 0x0d,    0xb7 },
-	{ 0x0e,    0x01 },
-	{ 0x42,    0x83 },
+	{0x35, 0x88},
+	{0x22, 0x0a},
+	{0x37, 0x40},
+	{0x34, 0xa0},
+	{0x06, 0x02},
+	{0x0d, 0xb7},
+	{0x0e, 0x01},
+	{0x42, 0x83},
 
 	/*
 	 * Set DSP input image size and offset.
 	 * The sensor output image can be scaled with OUTW/OUTH
 	 */
-	{ BANK_SEL, BANK_SEL_DSP },
-	{ R_BYPASS, R_BYPASS_DSP_BYPAS },
+	{BANK_SEL, BANK_SEL_DSP},
+	{R_BYPASS, R_BYPASS_DSP_BYPAS},
 
-	{ RESET,   RESET_DVP },
-	{ HSIZE8,  (UXGA_WIDTH>>3)}, /* Image Horizontal Size HSIZE[10:3] */
-	{ VSIZE8,  (UXGA_HEIGHT>>3)}, /* Image Vertical Size VSIZE[10:3] */
+	{RESET, RESET_DVP},
+	{HSIZE8, (UXGA_WIDTH >> 3)},  /* Image Horizontal Size HSIZE[10:3] */
+	{VSIZE8, (UXGA_HEIGHT >> 3)}, /* Image Vertical Size VSIZE[10:3] */
 
 	/* {HSIZE[11], HSIZE[2:0], VSIZE[2:0]} */
-	{ SIZEL,   ((UXGA_WIDTH>>6)&0x40) | ((UXGA_WIDTH&0x7)<<3) | (UXGA_HEIGHT&0x7)},
+	{SIZEL, ((UXGA_WIDTH >> 6) & 0x40) | ((UXGA_WIDTH & 0x7) << 3) | (UXGA_HEIGHT & 0x7)},
 
-	{ XOFFL,   0x00 }, /* OFFSET_X[7:0] */
-	{ YOFFL,   0x00 }, /* OFFSET_Y[7:0] */
-	{ HSIZE,   ((UXGA_WIDTH>>2)&0xFF) }, /* H_SIZE[7:0] real/4 */
-	{ VSIZE,   ((UXGA_HEIGHT>>2)&0xFF) }, /* V_SIZE[7:0] real/4 */
+	{XOFFL, 0x00},                        /* OFFSET_X[7:0] */
+	{YOFFL, 0x00},                        /* OFFSET_Y[7:0] */
+	{HSIZE, ((UXGA_WIDTH >> 2) & 0xFF)},  /* H_SIZE[7:0] real/4 */
+	{VSIZE, ((UXGA_HEIGHT >> 2) & 0xFF)}, /* V_SIZE[7:0] real/4 */
 
 	/* V_SIZE[8]/OFFSET_Y[10:8]/H_SIZE[8]/OFFSET_X[10:8] */
-	{ VHYX,    ((UXGA_HEIGHT>>3)&0x80) | ((UXGA_WIDTH>>7)&0x08) },
-	{ TEST,    (UXGA_WIDTH>>4)&0x80}, /* H_SIZE[9] */
+	{VHYX, ((UXGA_HEIGHT >> 3) & 0x80) | ((UXGA_WIDTH >> 7) & 0x08)},
+	{TEST, (UXGA_WIDTH >> 4) & 0x80}, /* H_SIZE[9] */
 
-	{ CTRL2,   CTRL2_DCW_EN | CTRL2_SDE_EN |
-		CTRL2_UV_AVG_EN | CTRL2_CMX_EN | CTRL2_UV_ADJ_EN },
+	{CTRL2, CTRL2_DCW_EN | CTRL2_SDE_EN | CTRL2_UV_AVG_EN | CTRL2_CMX_EN | CTRL2_UV_ADJ_EN},
 
 	/* H_DIVIDER/V_DIVIDER */
-	{ CTRLI,   CTRLI_LP_DP | 0x00},
+	{CTRLI, CTRLI_LP_DP | 0x00},
 	/* DVP prescaler */
-	{ R_DVP_SP, R_DVP_SP_AUTO_MODE | 0x04},
+	{R_DVP_SP, R_DVP_SP_AUTO_MODE | 0x04},
 
-	{ R_BYPASS, R_BYPASS_DSP_EN },
+	{R_BYPASS, R_BYPASS_DSP_EN},
 	/* Keep reset asserted as zoom config is coming next */
 	/* { RESET,    0x00 }, */
 	{0, 0},
@@ -556,24 +555,27 @@ struct ov2640_data {
 	}
 
 static const struct video_format_cap fmts[] = {
-	OV2640_VIDEO_FORMAT_CAP(QQVGA_WIDTH, QQVGA_HEIGHT, VIDEO_PIX_FMT_RGB565),   /* 160 x 120 QQVGA */
-	OV2640_VIDEO_FORMAT_CAP(QCIF_WIDTH, QCIF_HEIGHT, VIDEO_PIX_FMT_RGB565),   /* 176 x 144 QCIF  */
-	OV2640_VIDEO_FORMAT_CAP(CIF_WIDTH, CIF_HEIGHT, VIDEO_PIX_FMT_RGB565),   /* 352 x 288 CIF   */
-	OV2640_VIDEO_FORMAT_CAP(VGA_WIDTH, VGA_HEIGHT, VIDEO_PIX_FMT_RGB565),   /* 640 x 480 VGA   */
-	OV2640_VIDEO_FORMAT_CAP(SVGA_WIDTH, SVGA_HEIGHT, VIDEO_PIX_FMT_RGB565),   /* 800 x 600 SVGA  */
-	OV2640_VIDEO_FORMAT_CAP(XGA_WIDTH, XGA_HEIGHT, VIDEO_PIX_FMT_RGB565),  /* 1024 x 768 XVGA  */
-	OV2640_VIDEO_FORMAT_CAP(SXGA_WIDTH, SXGA_HEIGHT, VIDEO_PIX_FMT_RGB565), /* 1280 x 1024 SXGA  */
-	OV2640_VIDEO_FORMAT_CAP(UXGA_WIDTH, UXGA_HEIGHT, VIDEO_PIX_FMT_RGB565), /* 1600 x 1200 UXGA  */
-	OV2640_VIDEO_FORMAT_CAP(QQVGA_WIDTH, QQVGA_HEIGHT, VIDEO_PIX_FMT_JPEG),     /* 160 x 120 QQVGA */
-	OV2640_VIDEO_FORMAT_CAP(QCIF_WIDTH, QCIF_HEIGHT, VIDEO_PIX_FMT_JPEG),     /* 176 x 144 QCIF  */
-	OV2640_VIDEO_FORMAT_CAP(CIF_WIDTH, CIF_HEIGHT, VIDEO_PIX_FMT_JPEG),     /* 352 x 288 CIF   */
-	OV2640_VIDEO_FORMAT_CAP(VGA_WIDTH, VGA_HEIGHT, VIDEO_PIX_FMT_JPEG),     /* 640 x 480 VGA   */
-	OV2640_VIDEO_FORMAT_CAP(SVGA_WIDTH, SVGA_HEIGHT, VIDEO_PIX_FMT_JPEG),     /* 800 x 600 SVGA  */
-	OV2640_VIDEO_FORMAT_CAP(XGA_WIDTH, XGA_HEIGHT, VIDEO_PIX_FMT_JPEG),    /* 1024 x 768 XVGA  */
-	OV2640_VIDEO_FORMAT_CAP(SXGA_WIDTH, SXGA_HEIGHT, VIDEO_PIX_FMT_JPEG),   /* 1280 x 1024 SXGA  */
-	OV2640_VIDEO_FORMAT_CAP(UXGA_WIDTH, UXGA_HEIGHT, VIDEO_PIX_FMT_JPEG),   /* 1600 x 1200 UXGA  */
-	{ 0 }
-};
+	OV2640_VIDEO_FORMAT_CAP(QQVGA_WIDTH, QQVGA_HEIGHT,
+				VIDEO_PIX_FMT_RGB565), /* 160 x 120 QQVGA */
+	OV2640_VIDEO_FORMAT_CAP(QCIF_WIDTH, QCIF_HEIGHT, VIDEO_PIX_FMT_RGB565), /* 176 x 144 QCIF */
+	OV2640_VIDEO_FORMAT_CAP(CIF_WIDTH, CIF_HEIGHT, VIDEO_PIX_FMT_RGB565), /* 352 x 288 CIF   */
+	OV2640_VIDEO_FORMAT_CAP(VGA_WIDTH, VGA_HEIGHT, VIDEO_PIX_FMT_RGB565), /* 640 x 480 VGA   */
+	OV2640_VIDEO_FORMAT_CAP(SVGA_WIDTH, SVGA_HEIGHT, VIDEO_PIX_FMT_RGB565), /* 800 x 600 SVGA */
+	OV2640_VIDEO_FORMAT_CAP(XGA_WIDTH, XGA_HEIGHT, VIDEO_PIX_FMT_RGB565), /* 1024 x 768 XVGA  */
+	OV2640_VIDEO_FORMAT_CAP(SXGA_WIDTH, SXGA_HEIGHT,
+				VIDEO_PIX_FMT_RGB565), /* 1280 x 1024 SXGA  */
+	OV2640_VIDEO_FORMAT_CAP(UXGA_WIDTH, UXGA_HEIGHT,
+				VIDEO_PIX_FMT_RGB565), /* 1600 x 1200 UXGA  */
+	OV2640_VIDEO_FORMAT_CAP(QQVGA_WIDTH, QQVGA_HEIGHT,
+				VIDEO_PIX_FMT_JPEG),                          /* 160 x 120 QQVGA */
+	OV2640_VIDEO_FORMAT_CAP(QCIF_WIDTH, QCIF_HEIGHT, VIDEO_PIX_FMT_JPEG), /* 176 x 144 QCIF  */
+	OV2640_VIDEO_FORMAT_CAP(CIF_WIDTH, CIF_HEIGHT, VIDEO_PIX_FMT_JPEG),   /* 352 x 288 CIF   */
+	OV2640_VIDEO_FORMAT_CAP(VGA_WIDTH, VGA_HEIGHT, VIDEO_PIX_FMT_JPEG),   /* 640 x 480 VGA   */
+	OV2640_VIDEO_FORMAT_CAP(SVGA_WIDTH, SVGA_HEIGHT, VIDEO_PIX_FMT_JPEG), /* 800 x 600 SVGA  */
+	OV2640_VIDEO_FORMAT_CAP(XGA_WIDTH, XGA_HEIGHT, VIDEO_PIX_FMT_JPEG),   /* 1024 x 768 XVGA  */
+	OV2640_VIDEO_FORMAT_CAP(SXGA_WIDTH, SXGA_HEIGHT, VIDEO_PIX_FMT_JPEG), /* 1280 x 1024 SXGA */
+	OV2640_VIDEO_FORMAT_CAP(UXGA_WIDTH, UXGA_HEIGHT, VIDEO_PIX_FMT_JPEG), /* 1600 x 1200 UXGA */
+	{0}};
 
 static int ov2640_write_reg(const struct i2c_dt_spec *spec, uint8_t reg_addr,
 				uint8_t value)
@@ -857,10 +859,12 @@ static int ov2640_set_vertical_flip(const struct device *dev, int enable)
 static const struct ov2640_win_size *ov2640_select_win(uint32_t width, uint32_t height)
 {
 	int i;
+
 	for (i = 0; i < ARRAY_SIZE(ov2640_supported_win_sizes); i++) {
-		if (ov2640_supported_win_sizes[i].width  >= width &&
-		    ov2640_supported_win_sizes[i].height >= height)
+		if (ov2640_supported_win_sizes[i].width >= width &&
+		    ov2640_supported_win_sizes[i].height >= height) {
 			return &ov2640_supported_win_sizes[i];
+		}
 	}
 	return NULL;
 }
@@ -875,7 +879,8 @@ static int ov2640_set_resolution(const struct device *dev,
 	uint16_t h = img_height;
 
 	const struct ov2640_win_size *win = ov2640_select_win(w, h);
-	if (NULL == win) {
+
+	if (win == NULL) {
 		LOG_ERR("Couldn't find window size for desired resolution setting");
 		return -EINVAL;
 	}
