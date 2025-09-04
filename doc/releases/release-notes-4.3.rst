@@ -253,6 +253,11 @@ New APIs and options
       * :kconfig:option:`CONFIG_SHELL_MQTT_WORK_DELAY_MS`
       * :kconfig:option:`CONFIG_SHELL_MQTT_LISTEN_TIMEOUT_MS`
 
+* State Machine Framework
+
+  * :c:func:`smf_get_current_leaf_state`
+  * :c:func:`smf_get_current_executing_state`
+
 * Storage
 
     * :kconfig:option:`CONFIG_FILE_SYSTEM_SHELL_LS_SIZE`

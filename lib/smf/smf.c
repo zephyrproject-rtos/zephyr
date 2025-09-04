@@ -110,6 +110,7 @@ static bool smf_execute_all_entry_actions(struct smf_ctx *const ctx,
 
 			/* No need to continue if terminate was set */
 			if (internal->terminate) {
+				ctx->executing = ctx->current;
 				return true;
 			}
 		}
@@ -122,9 +123,12 @@ static bool smf_execute_all_entry_actions(struct smf_ctx *const ctx,
 
 		/* No need to continue if terminate was set */
 		if (internal->terminate) {
+			ctx->executing = ctx->current;
 			return true;
 		}
 	}
+
+	ctx->executing = ctx->current;
 
 	return false;
 }
@@ -165,6 +169,7 @@ static bool smf_execute_ancestor_run_actions(struct smf_ctx *const ctx)
 			}
 			/* No need to continue if terminate was set */
 			if (internal->terminate) {
+				ctx->executing = ctx->current;
 				return true;
 			}
 
@@ -176,6 +181,8 @@ static bool smf_execute_ancestor_run_actions(struct smf_ctx *const ctx)
 	}
 
 	/* All done executing the run actions */
+
+	ctx->executing = ctx->current;
 
 	return false;
 }
@@ -190,18 +197,23 @@ static bool smf_execute_ancestor_run_actions(struct smf_ctx *const ctx)
 static bool smf_execute_all_exit_actions(struct smf_ctx *const ctx, const struct smf_state *topmost)
 {
 	struct internal_ctx *const internal = (void *)&ctx->internal;
+	const struct smf_state *tmp_state = ctx->executing;
 
 	for (const struct smf_state *to_execute = ctx->current;
 	     to_execute != NULL && to_execute != topmost; to_execute = to_execute->parent) {
 		if (to_execute->exit) {
+			ctx->executing = to_execute;
 			to_execute->exit(ctx);
 
 			/* No need to continue if terminate was set in the exit action */
 			if (internal->terminate) {
+				ctx->executing = tmp_state;
 				return true;
 			}
 		}
 	}
+
+	ctx->executing = tmp_state;
 
 	return false;
 }
@@ -250,7 +262,9 @@ void smf_set_initial(struct smf_ctx *const ctx, const struct smf_state *init_sta
 	 * doesn't
 	 */
 	if (topmost->entry) {
+		ctx->executing = topmost;
 		topmost->entry(ctx);
+		ctx->executing = init_state;
 		if (internal->terminate) {
 			/* No need to continue if terminate was set */
 			return;
@@ -345,6 +359,7 @@ void smf_set_state(struct smf_ctx *const ctx, const struct smf_state *new_state)
 	/* update the state variables */
 	ctx->previous = ctx->current;
 	ctx->current = new_state;
+	ctx->executing = new_state;
 
 	/* call all entry actions (except those of topmost) */
 	if (smf_execute_all_entry_actions(ctx, new_state, topmost)) {
