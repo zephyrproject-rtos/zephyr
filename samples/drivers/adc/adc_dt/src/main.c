@@ -38,6 +38,9 @@ int main(void)
 		.buffer = &buf,
 		/* buffer size in bytes, not number of samples */
 		.buffer_size = sizeof(buf),
+#if DT_HAS_COMPAT_STATUS_OKAY(renesas_ra_adc)
+		.calibrate = true,
+#endif
 	};
 
 	/* Configure channels individually prior to sampling. */
