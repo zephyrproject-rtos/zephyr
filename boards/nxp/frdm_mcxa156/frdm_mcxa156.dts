@@ -231,6 +231,12 @@ zephyr_mipi_dbi_parallel: &flexio0_lcd {
 	pinctrl-names = "default";
 };
 
+&opamp0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_opamp0>;
+	pinctrl-names = "default";
+};
+
 &lpi2c0 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_lpi2c0>;
