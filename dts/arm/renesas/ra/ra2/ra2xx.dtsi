@@ -255,6 +255,17 @@
 			#size-cells = <1>;
 		};
 
+		adc0: adc@4005c000 {
+			compatible = "renesas,ra-adc";
+			reg = <0x4005c000 0x100>;
+			#io-channel-cells = <1>;
+			vref-mv = <3300>;
+			channel-available-mask = <0xff0001ff>;
+			reference = "external";
+			variant = <16>;
+			status = "disabled";
+		};
+
 		agt0: agt@40084000  {
 			compatible = "renesas,ra-agt";
 			channel = <0>;
