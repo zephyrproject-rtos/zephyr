@@ -13,7 +13,6 @@
  */
 
 #include <zephyr/kernel.h>
-#include <ksched.h>
 #include <zephyr/arch/x86/mmustructs.h>
 #include <kswap.h>
 #include <x86_mmu.h>
