@@ -11,13 +11,13 @@
  */
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
+#include <zephyr/irq.h>
 #include <zephyr/kernel_structs.h>
-#include <ksched.h>
 #include <ipi.h>
 #include <zephyr/init.h>
-#include <zephyr/irq.h>
 #include <zephyr/platform/hooks.h>
 #include <arc_irq_offload.h>
+#include <kernel_arch_func.h>
 
 volatile struct {
 	arch_cpustart_t fn;
