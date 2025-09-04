@@ -75,7 +75,7 @@ static int mcux_lpit_stop(const struct device *dev)
 	const struct mcux_lpit_config *config = dev->config;
 	uint8_t channel_id = LPIT_CHANNEL_ID(dev);
 
-	LPIT_DisableInterrupts(config->base, channel_id);
+	LPIT_DisableInterrupts(config->base, (1U << channel_id));
 	LPIT_StopTimer(config->base, channel_id);
 	return 0;
 }
