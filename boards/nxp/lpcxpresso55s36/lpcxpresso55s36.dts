@@ -208,3 +208,9 @@ zephyr_udc0: &usbfs {
 	pinctrl-0 = <&pinmux_dac0>;
 	pinctrl-names = "default";
 };
+
+&opamp0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_opamp0>;
+	pinctrl-names = "default";
+};
