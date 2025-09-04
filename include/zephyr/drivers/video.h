@@ -46,9 +46,9 @@ struct video_control;
  */
 enum video_buf_type {
 	/** input buffer type */
-	VIDEO_BUF_TYPE_INPUT,
+	VIDEO_BUF_TYPE_INPUT = 1,
 	/** output buffer type */
-	VIDEO_BUF_TYPE_OUTPUT,
+	VIDEO_BUF_TYPE_OUTPUT = 2,
 };
 
 /**
@@ -57,8 +57,8 @@ enum video_buf_type {
  * Used to configure frame format.
  */
 struct video_format {
-	/** type of the buffer */
-	enum video_buf_type type;
+	/** buffer type, see @ref video_buf_type */
+	uint8_t type;
 	/** FourCC pixel format value (\ref video_pixel_formats) */
 	uint32_t pixelformat;
 	/** frame width in pixels. */
@@ -114,8 +114,8 @@ struct video_format_cap {
  * Used to describe video endpoint capabilities.
  */
 struct video_caps {
-	/** type of the buffer */
-	enum video_buf_type type;
+	/** buffer type, see @ref video_buf_type */
+	uint8_t type;
 	/** list of video format capabilities (zero terminated). */
 	const struct video_format_cap *format_caps;
 	/** minimal count of video buffers to enqueue before being able to start
@@ -133,12 +133,12 @@ struct video_buffer {
 	/** Pointer to driver specific data. */
 	/* It must be kept as first field of the struct if used for @ref k_fifo APIs. */
 	void *driver_data;
-	/** type of the buffer */
-	enum video_buf_type type;
+	/** type of the buffer, see @ref video_buf_type */
+	uint8_t type;
 	/** pointer to the start of the buffer. */
 	uint8_t *buffer;
-	/** index of the buffer, optionally set by the application */
-	uint8_t index;
+	/** index of the buffer in the video buffer pool */
+	uint16_t index;
 	/** size of the buffer in bytes. */
 	uint32_t size;
 	/** number of bytes occupied by the valid data in the buffer. */
@@ -262,8 +262,8 @@ struct video_rect {
  * Used to describe the query and set selection target on a video device
  */
 struct video_selection {
-	/** buffer type, allow to select for device having both input and output */
-	enum video_buf_type type;
+	/** buffer type for device having both input and output, see @ref video_buf_type */
+	uint8_t type;
 	/** selection target enum */
 	enum video_selection_target target;
 	/** selection target rectangle */
