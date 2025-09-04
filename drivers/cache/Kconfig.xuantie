@@ -8,3 +8,14 @@ config CACHE_XTHEADCMO
 	depends on DT_HAS_XUANTIE_XTHEADCMO_ENABLED
 	help
 	  This option enables the CACHE driver for xuantie cores using the xtheadcmo extension
+
+if CACHE_XTHEADCMO
+
+config CACHE_XTHEADCMO_E907
+	bool "Additional xtheadcmo cache functions for E907 core"
+	default y
+	depends on SOC_SERIES_BL61X
+	help
+	  This option enables the additional xtheadcmo cache functions for the E907 cores
+
+endif # CACHE_XTHEADCMO
