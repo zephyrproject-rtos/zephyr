@@ -10,11 +10,11 @@
 /*
  * Flat Test Transition:
  *
- *	A_ENTRY --> A_RUN --> A_EXIT --> B_ENTRY --> B_RUN --|
- *	                                                     |
- *	|----------------------------------------------------|
- *	|
- *	|--> B_EXIT --> C_ENTRY --> C_RUN --> C_EXIT
+ * A_ENTRY --> A_RUN --> A_EXIT --> B_ENTRY --> B_RUN --|
+ *                                                      |
+ * |----------------------------------------------------|
+ * |
+ * |--> B_EXIT --> C_ENTRY --> C_RUN --> C_EXIT --> D_ENTRY
  *
  */
 
@@ -80,6 +80,11 @@ static struct test_object {
 
 static void state_a_entry(void *obj)
 {
+	zassert_equal(smf_get_current_executing_state(SMF_CTX(obj)), &test_states[STATE_A],
+				"Fail to get the currently-executing state at entry. Expected: State A");
+	zassert_equal(smf_get_current_leaf_state(SMF_CTX(obj)), &test_states[STATE_A],
+				"Fail to get the current leaf state at entry. Expected: State A");
+
 	struct test_object *o = TEST_OBJECT(obj);
 
 	o->tv_idx = 0;
@@ -96,6 +101,11 @@ static void state_a_entry(void *obj)
 
 static enum smf_state_result state_a_run(void *obj)
 {
+	zassert_equal(smf_get_current_executing_state(SMF_CTX(obj)), &test_states[STATE_A],
+				"Fail to get the currently-executing state at run. Expected: State A");
+	zassert_equal(smf_get_current_leaf_state(SMF_CTX(obj)), &test_states[STATE_A],
+				"Fail to get the current leaf state at run. Expected: State A");
+
 	struct test_object *o = TEST_OBJECT(obj);
 
 	o->tv_idx++;
@@ -110,6 +120,11 @@ static enum smf_state_result state_a_run(void *obj)
 
 static void state_a_exit(void *obj)
 {
+	zassert_equal(smf_get_current_executing_state(SMF_CTX(obj)), &test_states[STATE_A],
+				"Fail to get the currently-executing state at exit. Expected: State A");
+	zassert_equal(smf_get_current_leaf_state(SMF_CTX(obj)), &test_states[STATE_A],
+				"Fail to get the current leaf state at exit. Expected: State A");
+
 	struct test_object *o = TEST_OBJECT(obj);
 
 	o->tv_idx++;
@@ -121,6 +136,11 @@ static void state_a_exit(void *obj)
 
 static void state_b_entry(void *obj)
 {
+	zassert_equal(smf_get_current_executing_state(SMF_CTX(obj)), &test_states[STATE_B],
+				"Fail to get the currently-executing state at entry. Expected: State B");
+	zassert_equal(smf_get_current_leaf_state(SMF_CTX(obj)), &test_states[STATE_B],
+				"Fail to get the current leaf state at entry. Expected: State B");
+
 	struct test_object *o = TEST_OBJECT(obj);
 
 	o->tv_idx++;
@@ -132,6 +152,11 @@ static void state_b_entry(void *obj)
 
 static enum smf_state_result state_b_run(void *obj)
 {
+	zassert_equal(smf_get_current_executing_state(SMF_CTX(obj)), &test_states[STATE_B],
+				"Fail to get the currently-executing state at run. Expected: State B");
+	zassert_equal(smf_get_current_leaf_state(SMF_CTX(obj)), &test_states[STATE_B],
+				"Fail to get the current leaf state at run. Expected: State B");
+
 	struct test_object *o = TEST_OBJECT(obj);
 
 	o->tv_idx++;
@@ -151,6 +176,11 @@ static enum smf_state_result state_b_run(void *obj)
 
 static void state_b_exit(void *obj)
 {
+	zassert_equal(smf_get_current_executing_state(SMF_CTX(obj)), &test_states[STATE_B],
+				"Fail to get the currently-executing state at exit. Expected: State B");
+	zassert_equal(smf_get_current_leaf_state(SMF_CTX(obj)), &test_states[STATE_B],
+				"Fail to get the current leaf state at exit. Expected: State B");
+
 	struct test_object *o = TEST_OBJECT(obj);
 
 	o->tv_idx++;
@@ -161,6 +191,11 @@ static void state_b_exit(void *obj)
 
 static void state_c_entry(void *obj)
 {
+	zassert_equal(smf_get_current_executing_state(SMF_CTX(obj)), &test_states[STATE_C],
+				"Fail to get the currently-executing state at entry. Expected: State C");
+	zassert_equal(smf_get_current_leaf_state(SMF_CTX(obj)), &test_states[STATE_C],
+				"Fail to get the current leaf state at entry. Expected: State C");
+
 	struct test_object *o = TEST_OBJECT(obj);
 
 	o->tv_idx++;
@@ -171,6 +206,11 @@ static void state_c_entry(void *obj)
 
 static enum smf_state_result state_c_run(void *obj)
 {
+	zassert_equal(smf_get_current_executing_state(SMF_CTX(obj)), &test_states[STATE_C],
+				"Fail to get the currently-executing state at run. Expected: State C");
+	zassert_equal(smf_get_current_leaf_state(SMF_CTX(obj)), &test_states[STATE_C],
+				"Fail to get the current leaf state at run. Expected: State C");
+
 	struct test_object *o = TEST_OBJECT(obj);
 
 	o->tv_idx++;
@@ -184,6 +224,11 @@ static enum smf_state_result state_c_run(void *obj)
 
 static void state_c_exit(void *obj)
 {
+	zassert_equal(smf_get_current_executing_state(SMF_CTX(obj)), &test_states[STATE_C],
+				"Fail to get the currently-executing state at exit. Expected: State C");
+	zassert_equal(smf_get_current_leaf_state(SMF_CTX(obj)), &test_states[STATE_C],
+				"Fail to get the current leaf state at exit. Expected: State C");
+
 	struct test_object *o = TEST_OBJECT(obj);
 
 	o->tv_idx++;
