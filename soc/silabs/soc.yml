@@ -99,6 +99,9 @@ family:
       - name: efm32pg23
         socs:
           - name: efm32pg23b310f512im48
+      - name: bgm22
+        socs:
+          - name: bgm220sc22hna
   - name: silabs_siwx91x
     series:
       - name: siwg917
