@@ -209,3 +209,7 @@
 &wdog {
 	status = "okay";
 };
+
+&lpit0 {
+	status = "okay";
+};
