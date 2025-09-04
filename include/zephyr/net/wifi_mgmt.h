@@ -137,6 +137,8 @@ enum net_request_wifi_cmd {
 	NET_REQUEST_WIFI_CMD_AP_WPS_CONFIG,
 	/** Configure BSS maximum idle period */
 	NET_REQUEST_WIFI_CMD_BSS_MAX_IDLE_PERIOD,
+	/** Configure background scanning */
+	NET_REQUEST_WIFI_CMD_BGSCAN,
 	/** @cond INTERNAL_HIDDEN */
 	NET_REQUEST_WIFI_CMD_MAX
 	/** @endcond */
@@ -331,6 +333,11 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_NEIGHBOR_REP_COMPLETE);
 	(NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_BSS_MAX_IDLE_PERIOD)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_BSS_MAX_IDLE_PERIOD);
+
+#define NET_REQUEST_WIFI_BGSCAN					\
+	(NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_BGSCAN)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_BGSCAN);
 
 /** @cond INTERNAL_HIDDEN */
 
@@ -1393,6 +1400,32 @@ enum wifi_sap_iface_state {
 	WIFI_SAP_IFACE_ENABLED
 };
 
+#if defined(CONFIG_WIFI_NM_WPA_SUPPLICANT_BGSCAN) || defined(__DOXYGEN__)
+/** @brief Wi-Fi background scan implementation */
+enum wifi_bgscan_type {
+	/** None, background scan is disabled */
+	WIFI_BGSCAN_NONE = 0,
+	/** Simple, periodic scan based on signal strength */
+	WIFI_BGSCAN_SIMPLE,
+	/** Learn channels used by the network (experimental) */
+	WIFI_BGSCAN_LEARN,
+};
+
+/** @brief Wi-Fi background scan parameters */
+struct wifi_bgscan_params {
+	/** The type of background scanning */
+	enum wifi_bgscan_type type;
+	/** Short scan interval in seconds */
+	uint16_t short_interval;
+	/** Long scan interval in seconds */
+	uint16_t long_interval;
+	/** Signal strength threshold in dBm */
+	int8_t rssi_threshold;
+	/** Number of BSS Transition Management (BTM) queries */
+	uint16_t btm_queries;
+};
+#endif
+
 /* Extended Capabilities */
 enum wifi_ext_capab {
 	WIFI_EXT_CAPAB_20_40_COEX = 0,
@@ -1732,6 +1765,16 @@ struct wifi_mgmt_ops {
 	 */
 	int (*set_bss_max_idle_period)(const struct device *dev,
 			unsigned short bss_max_idle_period);
+#if defined(CONFIG_WIFI_NM_WPA_SUPPLICANT_BGSCAN) || defined(__DOXYGEN__)
+	/** Configure background scanning
+	 *
+	 * @param dev Pointer to the device structure for the driver instance.
+	 * @param params Background scanning configuration parameters
+	 *
+	 * @return 0 if ok, < 0 if error
+	 */
+	int (*set_bgscan)(const struct device *dev, struct wifi_bgscan_params *params);
+#endif
 };
 
 /** Wi-Fi management offload API */
