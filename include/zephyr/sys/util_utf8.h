@@ -15,7 +15,6 @@
 #define ZEPHYR_INCLUDE_SYS_UTIL_UFT8_H_
 
 #include <stddef.h>
-#include <sys/types.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -81,7 +80,7 @@ char *utf8_lcpy(char *dst, const char *src, size_t n);
  * @return Number of UTF-8 characters in @p s on success or (negative) error code
  *  otherwise.
  */
-ssize_t utf8_count_chars(const char *s);
+int utf8_count_chars(const char *s);
 
 #ifdef __cplusplus
 }
