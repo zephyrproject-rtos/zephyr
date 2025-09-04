@@ -136,6 +136,46 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 #endif /* CONFIG_SOC_FAMILY_MCXN */
 #endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(rtc), okay) */
 
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(opamp0), okay)
+	if ((uint32_t)sub_system == MCUX_OPAMP0_CLK) {
+#if defined(CONFIG_SOC_FAMILY_MCXA)
+		CLOCK_EnableClock(kCLOCK_GateOPAMP0);
+#else
+		CLOCK_EnableClock(kCLOCK_Opamp0);
+#endif
+	}
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(opamp1), okay)
+	if ((uint32_t)sub_system == MCUX_OPAMP1_CLK) {
+#if defined(CONFIG_SOC_FAMILY_MCXA)
+		CLOCK_EnableClock(kCLOCK_GateOPAMP1);
+#else
+		CLOCK_EnableClock(kCLOCK_Opamp1);
+#endif
+	}
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(opamp2), okay)
+	if ((uint32_t)sub_system == MCUX_OPAMP2_CLK) {
+#if defined(CONFIG_SOC_FAMILY_MCXA)
+		CLOCK_EnableClock(kCLOCK_GateOPAMP2);
+#else
+		CLOCK_EnableClock(kCLOCK_Opamp2);
+#endif
+	}
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(opamp3), okay)
+	if ((uint32_t)sub_system == MCUX_OPAMP3_CLK) {
+#if defined(CONFIG_SOC_FAMILY_MCXA)
+		CLOCK_EnableClock(kCLOCK_GateOPAMP3);
+#else
+		CLOCK_EnableClock(kCLOCK_Opamp3);
+#endif
+	}
+#endif
+
 	return 0;
 }
 
