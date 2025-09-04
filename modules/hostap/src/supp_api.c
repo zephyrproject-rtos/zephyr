@@ -799,15 +799,14 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 						   resp.network_id)) {
 					goto out;
 				}
-			} else {
-				if (!wpa_cli_cmd_v("set_network %d group CCMP", resp.network_id)) {
-					goto out;
-				}
+			}
 
-				if (!wpa_cli_cmd_v("set_network %d pairwise CCMP",
-						   resp.network_id)) {
-					goto out;
-				}
+			if (!wpa_cli_cmd_v("set_network %d group TKIP CCMP", resp.network_id)) {
+				goto out;
+			}
+
+			if (!wpa_cli_cmd_v("set_network %d pairwise TKIP CCMP", resp.network_id)) {
+				goto out;
 			}
 		} else if (params->security == WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL) {
 			if (!wpa_cli_cmd_v("set_network %d psk \"%s\"", resp.network_id,
