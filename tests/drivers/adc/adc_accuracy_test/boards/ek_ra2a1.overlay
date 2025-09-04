@@ -1,0 +1,44 @@
+/*
+ * Copyright (c) 2024-2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	zephyr,user {
+		io-channels = <&adc0 3>;
+		dac = <&dac0>;
+		dac-channel-id = <0>;
+		dac-resolution = <12>;
+	};
+};
+
+&pinctrl {
+	adc0_default: adc0_default {
+		group1 {
+			/* input */
+			psels = <RA_PSEL(RA_PSEL_ADC, 0, 15)>;
+			renesas,analog-enable;
+		};
+	};
+};
+
+&adc0 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	interrupts = <31 1>;
+	interrupt-names = "scanend";
+	status = "okay";
+
+	/*
+	 * Channel 3 is used in single ended mode, with 15 bit resolution
+	 */
+	channel@3 {
+		reg = <3>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_EXTERNAL0";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <15>;
+		zephyr,vref-mv = <3300>;
+	};
+};
