@@ -111,6 +111,12 @@ Bluetooth Audio
 * Setting the BGS role for GMAP now requires also supporting and implementing the
   :kconfig:option:`CONFIG_BT_BAP_BROADCAST_ASSISTANT`.
   See the :zephyr:code-sample:`bluetooth_bap_broadcast_assistant` sample as a reference.
+* The BAP Scan Delegator will no longer automatically update the PA sync state, and
+  :c:func:`bt_bap_scan_delegator_set_pa_state` must be used to update the state. If the
+  BAP Scan Delegator is used together with the BAP Broadcast Sink, then the PA state of the
+  receive state of a  :c:struct:`bt_bap_broadcast_sink` will still be automatically updated when the
+  PA state changes. (:github:`95453``)
+
 
 .. zephyr-keep-sorted-stop
 
