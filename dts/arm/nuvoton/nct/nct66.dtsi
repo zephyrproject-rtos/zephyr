@@ -374,6 +374,8 @@
 			status = "disabled";
 			#address-cells = <3>;
 			#size-cells = <0>;
+
+			bcr = <0x66>;	// Bit[7:6] = 01b, used to define controller roles
 		};
 
 		i3c6: i3c@40004a00 {
@@ -387,6 +389,8 @@
 			status = "disabled";
 			#address-cells = <3>;
 			#size-cells = <0>;
+
+			bcr = <0x66>;	// Bit[7:6] = 01b, used to define controller roles
 		};
 		
 		emac: ethernet@40018000 {

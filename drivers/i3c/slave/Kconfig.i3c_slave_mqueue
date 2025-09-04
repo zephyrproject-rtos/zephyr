@@ -1,0 +1,10 @@
+# I3C Slave mqueue configuration options
+
+# Copyright (c) 2021 Aspeed Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config I3C_SLAVE_MQUEUE
+	bool "I3C Slave MQueue driver"
+	default y
+	help
+	  Enable I3C slave mqueue driver

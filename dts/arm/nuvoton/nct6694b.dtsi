@@ -14,7 +14,7 @@
 		reg = <0x00080000 DT_SIZE_M(2)>;
 	};
 
-	sram0: memory@10008000 {
+	sram0: memory@10068000 {
 		compatible = "mmio-sram";
 		reg = <0x10068000 DT_SIZE_K(384)>;
 	};

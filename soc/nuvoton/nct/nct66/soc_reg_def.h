@@ -2219,6 +2219,26 @@ enum nct_i3c_mctrl_type {
 #define NCT_I3C_HDRCMD_CMD0		FIELD(0, 8)
 #define NCT_I3C_ID_ID			FIELD(0, 32)
 
+/* CTRL register options */
+#define CTRL_EVENT_NORMAL    0
+#define CTRL_EVENT_IBI       1
+#define CTRL_EVENT_CNTLR_REQ 2
+#define CTRL_EVENT_HJ        3
+
+/* STATUS register options */
+#define STATUS_EVDET_NONE            0
+#define STATUS_EVDET_REQ_NOT_SENT    1
+#define STATUS_EVDET_REQ_SENT_NACKED 2
+#define STATUS_EVDET_REQ_SENT_ACKED  3
+
+/* DMACTRL options */
+#define DMA_DMAFB_DISABLE		0x0
+#define DMA_DMAFB_EN_ONE_FRAME		0x1
+#define DMA_DMAFB_EN_MANUAL		0x2
+#define DMA_DMATB_DISABLE		0x0
+#define DMA_DMATB_EN_ONE_FRAME		0x1
+#define DMA_DMATB_EN_MANUAL		0x2
+
 struct pdma_dsct_reg {
 	volatile uint32_t CTL;
 	volatile uint32_t SA;

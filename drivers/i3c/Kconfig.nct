@@ -19,3 +19,21 @@ config I3C_NCT_DMA
 	default y
 	help
 	  Enable DMA support for nct I3C.
+
+config I3C_NCT_EXT_DEVICE
+	bool "Enable NCT I3C external device support"
+	depends on I3C
+	help
+	  Enable support for NCT I3C external device driver.
+
+comment "Initialization Priority"
+
+config I3C_TARGET_INIT_PRIORITY
+	int "I3C Target Init Priority"
+	# Default is just after CONFIG_KERNEL_INIT_PRIORITY_DEVICE
+	default 50
+	help
+	  This is for setting up I3C target device driver instance
+
+# to support 2.6 only
+source "drivers/i3c/slave/Kconfig"

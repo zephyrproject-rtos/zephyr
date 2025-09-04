@@ -1,0 +1,8 @@
+# Copyright (c) 2018, 
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nuvoton external i3c device to test i3c controller
+
+compatible: "nuvoton,nct-i3c-ext-device"
+
+include: [sensor-device.yaml, i3c-device.yaml]

@@ -35,8 +35,69 @@ properties:
   interrupts:
     required: true
 
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
   i3c-od-scl-hz:
     type: int
     description: |
       Open Drain Frequency for the I3C controller. When undefined, use
       the controller default or as specified by the I3C specification.
+
+  secondary:
+    type: boolean
+    description: Initialized as a secondary controller.
+
+  static-address:
+    type: int
+    description: |
+      Target static address.
+
+  tgt-pid:
+    type: array
+    description: |
+      Target 48-bit Provisioned ID.
+      array[0]: PID[47:33] MIPI manufacturer ID.
+                PID[32] ID type selector (i'b1 ramdom value, 1'b0 vendor fixed).
+      array[1]: PID[31:0] Random value or vendor fixed value.
+
+  bcr:
+    required: true
+    type: int
+    description: |
+      Bus Characteristics Register, used for bus enumeration with ENTDAA and
+      determine device role and capabilities of the device on the bus.
+
+  dcr:
+    type: int
+    description: |
+      Device Characteristics Register, used for bus enumeration with ENTDAA.
+
+  maximum-write:
+    type: int
+    default: 256
+    description: |
+      Maximum number of bytes that I3C controller may write to I3C target per message.
+      Range: 8 to 4095.
+
+  maximum-read:
+    type: int
+    default: 256
+    description: |
+      Maximum number of bytes that I3C controller may read from to I3C target per message.
+      Range: 8 to 4095.
+
+  ibi-append-pec:
+    type: boolean
+    description: |
+      Append PEC byte to the IBI data.
+
+  priv-xfer-pec:
+    type: boolean
+    description: |
+      Enable this option in slave mode if the i3c want to communicate with data that have PEC.
+      The PEC will auto append to the tail of the data when doing private transfer and verify
+      the PEC when receiving the data from master.

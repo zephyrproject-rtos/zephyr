@@ -1,0 +1,29 @@
+# Copyright (c) 2023 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: NUVOTON I3C MQueue device
+
+compatible: "i3c-slave-mqueue"
+
+include: base.yaml
+
+on-bus: i3c
+
+properties:
+    msg-size:
+      type: int
+      required: true
+      description: |
+        the size of the single message in byte, used to specify max read/write length
+
+    num-of-msgs:
+      type: int
+      required: true
+      description: |
+        number of the messages
+
+    mandatory-data-byte:
+      type: int
+      required: true
+      description: |
+        mandatory data byte (MDB), used to specify how slave provide response data

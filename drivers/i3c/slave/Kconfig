@@ -1,0 +1,24 @@
+# I3C Slave configuration options
+
+# Copyright (c) 2021 ASPEED Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+#
+# I3C slave options
+#
+menuconfig I3C_SLAVE
+	bool "I3C Slave Drivers"
+	help
+	  Enable I3C Slave Driver Configuration
+
+if I3C_SLAVE
+
+config I3C_SLAVE_INIT_PRIORITY
+	int "Init priority"
+	default 60
+	help
+	  I3C Slave device driver initialization priority.
+
+	source "drivers/i3c/slave/Kconfig.i3c_slave_mqueue"
+
+endif # I3C_SLAVE
