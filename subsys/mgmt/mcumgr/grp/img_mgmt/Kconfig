@@ -117,6 +117,20 @@ config MCUMGR_GRP_IMG_REJECT_DIRECT_XIP_MISMATCHED_SLOT
 	  The base address can be set, to an image binary header, with imgtool,
 	  using the --rom-fixed command line option.
 
+config MCUMGR_GRP_IMG_ALLOW_CONFIRM_NON_ACTIVE_SLOT
+	bool "Allow to confirm non-active slots of any image"
+	depends on MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT || \
+		   MCUBOOT_BOOTLOADER_MODE_RAM_LOAD_WITH_REVERT || \
+		   MCUBOOT_BOOTLOADER_MODE_SWAP_SCRATCH || \
+		   MCUBOOT_BOOTLOADER_MODE_SWAP_USING_MOVE || \
+		   MCUBOOT_BOOTLOADER_MODE_SWAP_USING_OFFSET
+	default y
+	help
+	  Allows to confirm non-active slot of any image.
+	  Normally it should not be allowed to confirm any slots via MCUmgr
+	  commands, to prevent confirming something that is broken and was not
+	  verified to boot correctly.
+
 config MCUMGR_GRP_IMG_FRUGAL_LIST
 	bool "Omit zero, empty or false values from status list"
 	help
