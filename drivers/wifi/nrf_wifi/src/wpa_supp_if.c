@@ -1578,6 +1578,7 @@ enum nrf_wifi_status nrf_wifi_parse_sband(
 	band->ht_cap.wpa_supp_ampdu_factor = event->ht_cap.nrf_wifi_ampdu_factor;
 	band->ht_cap.wpa_supp_ampdu_density = event->ht_cap.nrf_wifi_ampdu_density;
 
+#ifndef CONFIG_WIFI_NM_WPA_SUPPLICANT_AP
 	band->vht_cap.wpa_supp_vht_supported = event->vht_cap.nrf_wifi_vht_supported;
 	band->vht_cap.wpa_supp_cap = event->vht_cap.nrf_wifi_cap;
 
@@ -1585,6 +1586,7 @@ enum nrf_wifi_status nrf_wifi_parse_sband(
 	band->vht_cap.vht_mcs.rx_highest = event->vht_cap.vht_mcs.rx_highest;
 	band->vht_cap.vht_mcs.tx_mcs_map = event->vht_cap.vht_mcs.tx_mcs_map;
 	band->vht_cap.vht_mcs.tx_highest = event->vht_cap.vht_mcs.tx_highest;
+#endif /* !CONFIG_WIFI_NM_WPA_SUPPLICANT_AP */
 
 	band->band = event->band;
 
