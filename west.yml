@@ -175,7 +175,7 @@ manifest:
       groups:
         - hal
     - name: hal_ethos_u
-      revision: 50ddffca1cc700112f25ad9bc077915a0355ee5d
+      revision: fd5d5b7b36b209f2c48635de5d6c9b8dbf0bfff0
       path: modules/hal/ethos_u
       groups:
         - hal
