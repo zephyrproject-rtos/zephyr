@@ -71,7 +71,7 @@ Targets available
 ==================
 
 The default configuration file
-:zephyr_file:`boards/nxp/mcx_n9xx_evk/mcx_n9xx_evk_mcxn947_cpu0_defconfig`
+:zephyr_file:`boards/nxp/mcx_nx4x_evk/mcx_n9xx_evk_mcxn947_cpu0_defconfig`
 only enables the first core. CPU0 is the only target that can run standalone.
 
 CPU1 does not work without CPU0 enabling it.

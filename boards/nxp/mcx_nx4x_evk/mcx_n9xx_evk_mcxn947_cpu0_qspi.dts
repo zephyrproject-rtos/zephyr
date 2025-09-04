@@ -15,7 +15,6 @@
 
 / {
 	model = "NXP MCX-N9XX-EVK board, QSPI variant";
-	compatible = "nxp,mcxn947", "nxp,mcx";
 
 	chosen {
 		zephyr,flash = &w25q64jwtbjq;
