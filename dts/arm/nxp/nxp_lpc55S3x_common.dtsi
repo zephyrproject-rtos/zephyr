@@ -312,6 +312,33 @@
 		clocks = <&syscon MCUX_LPADC1_CLK>;
 	};
 
+	opamp0: opamp@400b4000 {
+		compatible = "nxp,opamp";
+		reg = <0x400b4000 0x1000>;
+		status = "disabled";
+		operation-mode = "low_noise";
+		clocks = <&syscon MCUX_OPAMP0_CLK>;
+		resets = <&reset NXP_SYSCON_RESET(3, 12)>;
+	};
+
+	opamp1: opamp@400b8000 {
+		compatible = "nxp,opamp";
+		reg = <0x400b8000 0x1000>;
+		status = "disabled";
+		operation-mode = "low_noise";
+		clocks = <&syscon MCUX_OPAMP1_CLK>;
+		resets = <&reset NXP_SYSCON_RESET(3, 13)>;
+	};
+
+	opamp2: opamp@400bb000 {
+		compatible = "nxp,opamp";
+		reg = <0x400bb000 0x1000>;
+		status = "disabled";
+		operation-mode = "low_noise";
+		clocks = <&syscon MCUX_OPAMP2_CLK>;
+		resets = <&reset NXP_SYSCON_RESET(3, 14)>;
+	};
+
 	dac0: dac@b2000 {
 		compatible = "nxp,lpdac";
 		reg = <0xb2000 0x1000>;
