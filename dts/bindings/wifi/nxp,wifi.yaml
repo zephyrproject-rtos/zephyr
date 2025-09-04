@@ -33,3 +33,9 @@ properties:
       This pin defaults to active high when consumed by the SD card. The
       property value should ensure the flags properly describe the signal
       that is presented to the driver.
+
+  oob-gpios:
+    type: phandle-array
+    description: |
+      Out of band wakeup gpio for IW416 SoC.
+      This GPIO will be used to reset IW416 controller from host side.

@@ -78,6 +78,10 @@ struct nxp_wifi_dev {
 
 int nxp_wifi_wlan_event_callback(enum wlan_event_reason reason, void *data);
 
+#ifdef CONFIG_NXP_IW416
+int nxp_wifi_oob_cpu_reset(uint8_t enable);
+#endif
+
 #if defined(CONFIG_NXP_WIFI_SHELL)
 void nxp_wifi_shell_register(struct nxp_wifi_dev *dev);
 #else
