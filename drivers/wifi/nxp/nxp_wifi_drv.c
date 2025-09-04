@@ -394,6 +394,44 @@ int nxp_wifi_wlan_event_callback(enum wlan_event_reason reason, void *data)
 	return 0;
 }
 
+#ifdef CONFIG_NXP_IW416
+int nxp_wifi_oob_cpu_reset(uint8_t enable)
+{
+	int err = 0;
+
+#if DT_NODE_HAS_PROP(DT_DRV_INST(0), oob_gpios)
+
+	struct gpio_dt_spec oob_reset = GPIO_DT_SPEC_GET(DT_DRV_INST(0), oob_gpios);
+
+	if (!gpio_is_ready_dt(&oob_reset)) {
+		LOG_ERR("Error: failed to configure oob reset %s pin %d", oob_reset.port->name,
+				oob_reset.pin);
+		return -EIO;
+	}
+
+	/* Configure reset gpio as output  */
+	err = gpio_pin_configure_dt(&oob_reset, GPIO_OUTPUT);
+	if (err) {
+		LOG_ERR("Error %d: failed to configure oob reset  %s pin %d", err,
+				oob_reset.port->name, oob_reset.pin);
+		return err;
+	}
+	if (enable) {
+		err = gpio_pin_set_dt(&oob_reset, 1);
+		if (err) {
+			return err;
+		}
+	} else {
+		err = gpio_pin_set_dt(&oob_reset, 0);
+		if (err) {
+			return err;
+		}
+	}
+#endif
+	return err;
+}
+#endif
+
 static int nxp_wifi_cpu_reset(uint8_t enable)
 {
 	int err = 0;
@@ -460,6 +498,12 @@ static int nxp_wifi_cpu_reset(uint8_t enable)
 	}
 	/* wait for reset done */
 	k_sleep(K_MSEC(100));
+#ifdef CONFIG_NXP_IW416
+	err = nxp_wifi_oob_cpu_reset(true);
+	if (err) {
+		return err;
+	}
+#endif
 #endif
 
 	return err;
@@ -2156,6 +2200,15 @@ static int nxp_wifi_dev_init(const struct device *dev)
 	}
 #endif
 #endif
+#endif
+
+#ifdef CONFIG_NXP_IW416
+	int ret = nxp_wifi_oob_cpu_reset(true);
+
+	if (ret) {
+		return ret;
+	}
+
 #endif
 	return 0;
 }
