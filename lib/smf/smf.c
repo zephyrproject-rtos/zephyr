@@ -136,7 +136,7 @@ static bool smf_execute_all_entry_actions(struct smf_ctx *const ctx,
  * @param target The run actions of this target's ancestors are executed
  * @return true if the state machine should terminate, else false
  */
-static bool smf_execute_ancestor_run_actions(struct smf_ctx *ctx)
+static bool smf_execute_ancestor_run_actions(struct smf_ctx *const ctx)
 {
 	struct internal_ctx *const internal = (void *)&ctx->internal;
 	/* Execute all run actions in reverse order */
@@ -213,7 +213,7 @@ static bool smf_execute_all_exit_actions(struct smf_ctx *const ctx, const struct
  *
  * @param ctx State machine context.
  */
-static void smf_clear_internal_state(struct smf_ctx *ctx)
+static void smf_clear_internal_state(struct smf_ctx *const ctx)
 {
 	struct internal_ctx *const internal = (void *)&ctx->internal;
 
@@ -223,7 +223,7 @@ static void smf_clear_internal_state(struct smf_ctx *ctx)
 	internal->new_state = false;
 }
 
-void smf_set_initial(struct smf_ctx *ctx, const struct smf_state *init_state)
+void smf_set_initial(struct smf_ctx *const ctx, const struct smf_state *init_state)
 {
 #ifdef CONFIG_SMF_INITIAL_TRANSITION
 	/*
@@ -376,7 +376,7 @@ void smf_set_state(struct smf_ctx *const ctx, const struct smf_state *new_state)
 #endif
 }
 
-void smf_set_terminate(struct smf_ctx *ctx, int32_t val)
+void smf_set_terminate(struct smf_ctx *const ctx, int32_t val)
 {
 	struct internal_ctx *const internal = (void *)&ctx->internal;
 
