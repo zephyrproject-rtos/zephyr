@@ -45,11 +45,7 @@ int scmi_cpu_sleep_mode_set(struct scmi_cpu_sleep_mode_config *cfg)
 		return ret;
 	}
 
-	if (status != SCMI_SUCCESS) {
-		return scmi_status_to_errno(status);
-	}
-
-	return 0;
+	return scmi_status_to_errno(status);
 }
 
 int scmi_cpu_pd_lpm_set(struct scmi_cpu_pd_lpm_config *cfg)
@@ -84,9 +80,5 @@ int scmi_cpu_pd_lpm_set(struct scmi_cpu_pd_lpm_config *cfg)
 		return ret;
 	}
 
-	if (status != SCMI_SUCCESS) {
-		return scmi_status_to_errno(status);
-	}
-
-	return 0;
+	return scmi_status_to_errno(status);
 }
