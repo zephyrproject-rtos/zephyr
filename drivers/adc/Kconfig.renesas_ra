@@ -6,7 +6,7 @@
 config ADC_RENESAS_RA
 	bool "Renesas RA ADC"
 	default y
-	depends on DT_HAS_RENESAS_RA_ADC_ENABLED
+	depends on DT_HAS_RENESAS_RA_ADC12_ENABLED || DT_HAS_RENESAS_RA_ADC16_ENABLED
 	select USE_RA_FSP_ADC
 	select PINCTRL
 	help
