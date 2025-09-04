@@ -172,7 +172,9 @@ jobs:
         fail_ci_if_error: false
         verbose: true
         token: ${{ secrets.CODECOV_TOKEN }}
-        files: zephyr/new.info
+        working-directory: zephyr
+        files: new.info
+        disable_search: true
         flags: doxygen-coverage
 
     - name: process-pr
