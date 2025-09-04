@@ -1,0 +1,33 @@
+# SPDX-License-Identifier: Apache-2.0
+
+# Enable MPU
+CONFIG_ARM_MPU=y
+
+# Enable HW stack protection
+CONFIG_HW_STACK_PROTECTION=y
+
+# enable uart driver
+CONFIG_SERIAL=y
+
+# Console
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y
+
+# Enable GPIO
+CONFIG_GPIO=y
+
+# Enable USB
+CONFIG_USB_DEVICE_STACK_NEXT=y
+CONFIG_CDC_ACM_SERIAL_INITIALIZE_AT_BOOT=y
+CONFIG_USBD_CDC_ACM_LOG_LEVEL_OFF=y
+
+# Enable input keyboard matrix
+CONFIG_INPUT=y
+CONFIG_INPUT_KEYMAP=y
+CONFIG_INPUT_GPIO_KBD_MATRIX=y
+# Required because rows are actually columns
+CONFIG_INPUT_KBD_MATRIX_16_BIT_ROW=y
+
+# Enable spi flash
+CONFIG_FLASH=y
+CONFIG_SPI_NOR_FLASH_LAYOUT_PAGE_SIZE=4096
