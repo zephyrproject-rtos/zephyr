@@ -1157,9 +1157,9 @@ TESTDATA_13 = [
         None,
         None,
         None,
-        'path to/flash_command,with,args,"1,2,3",4',
+        'path to/flash_command,with,args,"1, 2, 3",4',
         ['path to/flash_command', '--build-dir', '$build_dir', '--board-id',
-         12345, 'with', 'args', '1,2,3', '4']
+         12345, 'with', 'args', '1, 2, 3', '4']
     ),
 ]
 
