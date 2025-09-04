@@ -5473,6 +5473,17 @@ West:
   labels:
     - "platform: Raspberry Pi Pico"
 
+"West project: hal_sifli":
+  status: maintained
+  maintainers:
+    - gmarull
+  collaborators:
+    - cameled
+  files:
+    - modules/hal_sifli/
+  labels:
+    - "platform: SF32LB"
+
 "West project: hal_silabs":
   status: maintained
   maintainers:
