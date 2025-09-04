@@ -3,6 +3,9 @@
 
 if SOC_SERIES_NSIM_ARC_V_RMX
 
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)
+
 config RISCV_SOC_INTERRUPT_INIT
 	default y
 
