@@ -1,0 +1,44 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/adc/mcux-lpadc.h>
+
+/ {
+	zephyr,user {
+		opamp = <&opamp1>;
+		adc-read-delay-ms = <1>;
+		io-channels = <&lpadc1 0>;
+	};
+};
+
+/* OPAMP is in follower mode, and its output is Vref of OPAMP1/2/3 */
+&opamp0 {
+	functional-mode = "follower";
+	is-reference-source;
+	compensation-capcitor = <0>;
+};
+
+&opamp1 {
+	functional-mode = "inverting";
+	compensation-capcitor = <2>;
+};
+
+&lpadc1 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_EXTERNAL0";
+		zephyr,vref-mv = <3300>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <16>;
+		/* LPADC1 CH2A is internally connected to the OPAMP1 output. */
+		zephyr,input-positive = <MCUX_LPADC_CH2A>;
+	};
+};
