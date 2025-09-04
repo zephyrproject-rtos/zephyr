@@ -190,18 +190,23 @@ static bool smf_execute_ancestor_run_actions(struct smf_ctx *const ctx)
 static bool smf_execute_all_exit_actions(struct smf_ctx *const ctx, const struct smf_state *topmost)
 {
 	struct internal_ctx *const internal = (void *)&ctx->internal;
+	const struct smf_state *tmp_state = ctx->executing;
 
 	for (const struct smf_state *to_execute = ctx->current;
 	     to_execute != NULL && to_execute != topmost; to_execute = to_execute->parent) {
 		if (to_execute->exit) {
+			ctx->executing = to_execute;
 			to_execute->exit(ctx);
 
 			/* No need to continue if terminate was set in the exit action */
 			if (internal->terminate) {
+				ctx->executing = tmp_state;
 				return true;
 			}
 		}
 	}
+
+	ctx->executing = tmp_state;
 
 	return false;
 }
