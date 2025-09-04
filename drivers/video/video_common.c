@@ -66,10 +66,13 @@ static int find_contig_free_buffers(uint8_t count)
 static void release_buffer(uint16_t idx)
 {
 	if (video_buf[idx].buffer != NULL) {
-		VIDEO_COMMON_FREE(video_buf[idx].buffer);
+		if (video_buf[idx].memory == VIDEO_MEMORY_INTERNAL) {
+			VIDEO_COMMON_FREE(video_buf[idx].buffer);
+		}
 		video_buf[idx].buffer = NULL;
 	}
 
+	video_buf[idx].memory = 0;
 	video_buf[idx].size = 0;
 	video_buf[idx].bytesused = 0;
 	video_buf[idx].timestamp = 0;
@@ -107,7 +110,8 @@ int video_request_buffers(struct video_buffer_request *const vbr)
 {
 	if (vbr == NULL || vbr->size == 0 || vbr->count == 0 ||
 	    vbr->size > CONFIG_VIDEO_BUFFER_POOL_SZ_MAX ||
-	    vbr->count > CONFIG_VIDEO_BUFFER_POOL_NUM_MAX) {
+	    vbr->count > CONFIG_VIDEO_BUFFER_POOL_NUM_MAX ||
+	    (vbr->memory != VIDEO_MEMORY_INTERNAL && vbr->memory != VIDEO_MEMORY_EXTERNAL)) {
 		return -EINVAL;
 	}
 
@@ -126,19 +130,22 @@ int video_request_buffers(struct video_buffer_request *const vbr)
 	}
 
 	for (uint8_t i = 0; i < vbr->count; i++) {
-		mem = VIDEO_COMMON_HEAP_ALLOC(CONFIG_VIDEO_BUFFER_POOL_ALIGN, vbr->size,
-							vbr->timeout);
-		if (mem == NULL) {
-			release_buffers_range((uint16_t)start_idx, i);
-			k_mutex_unlock(&video_buffer_mutex);
+		if (vbr->memory == VIDEO_MEMORY_INTERNAL) {
+			mem = VIDEO_COMMON_HEAP_ALLOC(CONFIG_VIDEO_BUFFER_POOL_ALIGN, vbr->size,
+								vbr->timeout);
+			if (mem == NULL) {
+				release_buffers_range((uint16_t)start_idx, i);
+				k_mutex_unlock(&video_buffer_mutex);
 
-			return -ENOMEM;
+				return -ENOMEM;
+			}
 		}
 
 		idx = (uint16_t)start_idx + i;
 
 		video_buf[idx].index = (uint16_t)idx;
 		video_buf[idx].buffer = mem;
+		video_buf[idx].memory = vbr->memory;
 		video_buf[idx].size = vbr->size;
 		video_buf[idx].bytesused = 0;
 		video_buf[idx].timestamp = 0;
@@ -163,6 +170,10 @@ int video_enqueue(const struct device *const dev, const struct video_buffer *con
 	}
 
 	video_buf[buf->index].type = buf->type;
+
+	if (video_buf[buf->index].memory == VIDEO_MEMORY_EXTERNAL) {
+		video_buf[buf->index].buffer = buf->buffer;
+	}
 
 	int ret = api->enqueue(dev, &video_buf[buf->index]);
 	if (ret < 0) {
