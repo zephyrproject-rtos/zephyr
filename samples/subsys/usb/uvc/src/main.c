@@ -77,7 +77,7 @@ int main(void)
 
 	LOG_INF("The host selected format '%s' %ux%u, preparing %u buffers of %u bytes",
 		VIDEO_FOURCC_TO_STR(fmt.pixelformat), fmt.width, fmt.height,
-		CONFIG_VIDEO_BUFFER_POOL_NUM_MAX, fmt.pitch * fmt.height);
+		CONFIG_VIDEO_BUFFER_POOL_NUM_BUFS, fmt.pitch * fmt.height);
 
 	/* Size to allocate for each buffer */
 	if (caps.min_line_count == LINE_COUNT_HEIGHT) {
@@ -86,7 +86,7 @@ int main(void)
 		bsize = fmt.pitch * caps.min_line_count;
 	}
 
-	for (int i = 0; i < CONFIG_VIDEO_BUFFER_POOL_NUM_MAX; i++) {
+	for (int i = 0; i < CONFIG_VIDEO_BUFFER_POOL_NUM_BUFS; i++) {
 		vbuf = video_buffer_alloc(bsize, K_NO_WAIT);
 		if (vbuf == NULL) {
 			LOG_ERR("Could not allocate the video buffer");

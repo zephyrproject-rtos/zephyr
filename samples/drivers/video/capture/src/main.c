@@ -286,7 +286,7 @@ int main(void)
 	/* Request buffers */
 	struct video_buffer_request vbr = {
 		.memory = VIDEO_MEMORY_INTERNAL,
-		.count = CONFIG_VIDEO_BUFFER_POOL_NUM_MAX,
+		.count = CONFIG_VIDEO_BUFFER_POOL_NUM_BUFS,
 		.size = bsize,
 		.timeout = K_FOREVER,
 	};

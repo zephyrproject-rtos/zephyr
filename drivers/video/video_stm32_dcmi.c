@@ -24,7 +24,7 @@
 
 LOG_MODULE_REGISTER(video_stm32_dcmi, CONFIG_VIDEO_LOG_LEVEL);
 
-#if CONFIG_VIDEO_BUFFER_POOL_NUM_MAX < 2
+#if CONFIG_VIDEO_BUFFER_POOL_NUM_BUFS < 2
 #error "The minimum required number of buffers for video_stm32 is 2"
 #endif
 
