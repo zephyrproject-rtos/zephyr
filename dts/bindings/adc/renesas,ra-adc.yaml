@@ -32,5 +32,24 @@ properties:
       The ADC module will take multiple samples of an analog signal
       and averages them to reduce noise and enhance accuracy
 
+  reference:
+    type: string
+    enum:
+      - vdd
+      - internal
+      - external
+    default: vdd
+    description: |
+      ADC reference voltage source:
+        - vdd: use VDD as reference
+        - internal: use internal reference
+        - external: use external reference
+
+  variant:
+    type: int
+    enum: [12, 16]
+    default: 12
+    description: Select ADC variant for RA SoC
+
 io-channel-cells:
   - input
