@@ -1,0 +1,22 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+sample:
+  name: OPAMP output measurement sample
+tests:
+  sample.drivers.opamp.output_measure:
+    tags: opamp
+    depends_on: opamp
+    harness: console
+    harness_config:
+      type: multi_line
+      regex:
+        - "Set opamp inverting gain to: -?\\d+"
+        - "Set opamp non-inverting gain to: -?\\d+"
+        - "OPAMP output is: -?\\d+(mv)"
+    platform_allow:
+      - frdm_mcxa156
+      - frdm_mcxa346
+      - frdm_mcxa266
+      - frdm_mcxn947/mcxn947/cpu0
+      - lpcxpresso55s36
