@@ -304,6 +304,7 @@ static int app_setup_video_buffers(const struct device *const video_dev,
 
 	/* Request buffers */
 	struct video_buffer_request vbr = {
+		.memory = VIDEO_MEMORY_INTERNAL,
 		.count = CONFIG_VIDEO_BUFFER_POOL_NUM_MAX,
 		.size = fmt->size,
 		.timeout = K_NO_WAIT,
