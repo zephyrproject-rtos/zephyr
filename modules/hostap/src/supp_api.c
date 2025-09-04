@@ -1907,6 +1907,71 @@ int supplicant_set_bss_max_idle_period(const struct device *dev,
 	return wifi_mgmt_api->set_bss_max_idle_period(dev, bss_max_idle_period);
 }
 
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_BGSCAN
+int supplicant_set_bgscan(const struct device *dev, struct wifi_bgscan_params *params)
+{
+	struct wpa_supplicant *wpa_s;
+	struct wpa_ssid *ssid;
+	int ret = -1;
+
+	k_mutex_lock(&wpa_supplicant_mutex, K_FOREVER);
+
+	wpa_s = get_wpa_s_handle(dev);
+	if (wpa_s == NULL) {
+		wpa_printf(MSG_ERROR, "Interface %s not found", dev->name);
+		goto out;
+	}
+
+	ssid = wpa_s->current_ssid;
+	if (ssid == NULL) {
+		wpa_printf(MSG_ERROR, "SSID for %s not found", dev->name);
+		goto out;
+	}
+
+	switch (params->type) {
+	case WIFI_BGSCAN_SIMPLE:
+		if (!IS_ENABLED(CONFIG_WIFI_NM_WPA_SUPPLICANT_BGSCAN_SIMPLE)) {
+			wpa_printf(MSG_ERROR, "Invalid bgscan type, enable "
+					      "CONFIG_WIFI_NM_WPA_SUPPLICANT_BGSCAN_SIMPLE");
+			ret = -ENOTSUP;
+			goto out;
+		}
+		if (!wpa_cli_cmd_v("set_network %d bgscan \"simple:%d:%d:%d:%d\"", ssid->id,
+				   params->short_interval, params->rssi_threshold,
+				   params->long_interval, params->btm_queries)) {
+			goto out;
+		}
+		break;
+	case WIFI_BGSCAN_LEARN:
+		if (!IS_ENABLED(CONFIG_WIFI_NM_WPA_SUPPLICANT_BGSCAN_LEARN)) {
+			wpa_printf(MSG_ERROR, "Invalid bgscan type, enable "
+					      "CONFIG_WIFI_NM_WPA_SUPPLICANT_BGSCAN_LEARN");
+			ret = -ENOTSUP;
+			goto out;
+		}
+		if (!wpa_cli_cmd_v("set_network %d bgscan \"learn:%d:%d:%d\"", ssid->id,
+				   params->short_interval, params->rssi_threshold,
+				   params->long_interval)) {
+			goto out;
+		}
+		break;
+	case WIFI_BGSCAN_NONE:
+	default:
+		if (!wpa_cli_cmd_v("set_network %d bgscan \"\"", ssid->id)) {
+			goto out;
+		}
+		break;
+	}
+
+	ret = 0;
+
+out:
+	k_mutex_unlock(&wpa_supplicant_mutex);
+
+	return ret;
+}
+#endif
+
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_WNM
 int supplicant_btm_query(const struct device *dev, uint8_t reason)
 {
