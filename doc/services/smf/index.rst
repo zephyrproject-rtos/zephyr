@@ -551,7 +551,7 @@ state. The statechart for this test is below.
       STATE_B [shape = box];
       STATE_C [shape = box];
       STATE_D [shape = box];
-      DC[shape=point height=0 width=0 label=<>]
+      DC[shape=point height=0 width=0 label="" style="invis"]
 
       subgraph cluster_root {
          label = "ROOT";
