@@ -4,14 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* Common dts file to enable supported features for CPU 0.
- * This file is included by both the default variant
- * which is run from internal flash and the QSPI variant.
+/* Common dts file to enable supported features for CPU 0
+ * of all derivative parts.
  */
-/dts-v1/;
-
-#include <nxp/nxp_mcxn94x.dtsi>
-#include "mcx_n9xx_evk.dtsi"
 
 / {
 	cpus {
@@ -32,7 +27,6 @@
 
 	aliases {
 		watchdog0 = &wwdt0;
-		pwm-0 = &flexpwm1_pwm0;
 		pwm-1 = &sc_timer;
 		rtc = &rtc;
 	};
@@ -171,10 +165,6 @@
 	status = "okay";
 };
 
-&flexpwm1_pwm0 {
-	status = "okay";
-};
-
 &flexcan0 {
 	status = "okay";
 };
@@ -211,10 +201,6 @@ zephyr_udc0: &usb1 {
 	tx-d-cal = <4>;
 	tx-cal-45-dp-ohms = <7>;
 	tx-cal-45-dm-ohms = <7>;
-};
-
-&lpcmp2 {
-	status = "okay";
 };
 
 &lptmr0 {
