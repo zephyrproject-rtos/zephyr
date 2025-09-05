@@ -588,6 +588,10 @@ static void avdtp_process_configuration_cmd(struct bt_avdtp *session, struct net
 										 &avdtp_err_code);
 				}
 			}
+
+			if (!reconfig && err == 0) {
+				sep->session = session;
+			}
 		} else {
 			LOG_WRN("Invalid INT SEID");
 			err = -ENOTSUP;
@@ -1658,6 +1662,7 @@ static int avdtp_process_configure_command(struct bt_avdtp *session, uint8_t cmd
 		return -EINVAL;
 	}
 
+	param->sep->session = session;
 	buf = avdtp_create_pdu(BT_AVDTP_CMD, BT_AVDTP_PACKET_TYPE_SINGLE, cmd);
 	if (!buf) {
 		LOG_ERR("Error: No Buff available");
