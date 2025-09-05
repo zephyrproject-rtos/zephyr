@@ -448,6 +448,11 @@ void board_early_init_hook(void)
 	CLOCK_EnableClock(kCLOCK_Ewm0);
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(utick0))
+	/* Enable FRO 1MHz clock for UTICK */
+	CLOCK_SetupClockCtrl(kCLOCK_FRO1MHZ_ENA);
+#endif
+
 	/* Set SystemCoreClock variable. */
 	SystemCoreClock = CLOCK_INIT_CORE_CLOCK;
 }

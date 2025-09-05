@@ -73,6 +73,16 @@
 		};
 	};
 
+	utick0: utick@12000 {
+		compatible = "nxp,utick";
+		reg = <0x12000 0x20>;
+		interrupts = <29 0>;
+		clocks = <&syscon MCUX_UTICK0_CLK>;
+		clk-source = <2>;
+		clk-divider = <0>;
+		status = "disabled";
+	};
+
 	porta: pinmux@116000 {
 		compatible = "nxp,port-pinmux";
 		reg = <0x116000 0x1000>;

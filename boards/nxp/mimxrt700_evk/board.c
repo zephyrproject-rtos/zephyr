@@ -532,6 +532,13 @@ void board_early_init_hook(void)
 	CLOCK_EnableClock(kCLOCK_Acmp0);
 	RESET_ClearPeripheralReset(kACMP0_RST_SHIFT_RSTn);
 #endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(utick0))
+	/* Enable FRO1_DIV2 clock for UTICK */
+	CLOCK_AttachClk(kFRO1_DIV2_to_UTICK0_CLK);
+	/* Use 1MHz clock */
+	CLOCK_SetClkDiv(kCLOCK_DivUtick0Clk, 96U);
+#endif
 }
 
 static void GlikeyWriteEnable(GLIKEY_Type *base, uint8_t idx)
