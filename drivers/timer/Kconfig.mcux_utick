@@ -1,0 +1,22 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config MCUX_UTICK_TIMER
+	bool "MCUX Micro-Tick Timer"
+	default n
+	depends on DT_HAS_NXP_UTICK_ENABLED
+	select TICKLESS_CAPABLE
+	select SYSTEM_TIMER_HAS_DISABLE_SUPPORT
+	help
+	  This module implements a kernel device driver for the NXP MCUX Micro
+	  Tick timer and provides the standard "system clock driver" interfaces.
+
+if MCUX_UTICK_TIMER
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	int
+	default 1000000
+	help
+	  UTICK source frequency in Hz (e.g. 1 MHz). Must match real UTICK clock.
+
+endif

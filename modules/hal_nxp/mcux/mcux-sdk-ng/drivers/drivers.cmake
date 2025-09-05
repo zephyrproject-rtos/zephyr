@@ -42,6 +42,7 @@ set_variable_ifdef(CONFIG_SPI_MCUX_FLEXCOMM     CONFIG_MCUX_COMPONENT_driver.fle
 set_variable_ifdef(CONFIG_UART_MCUX_FLEXCOMM    CONFIG_MCUX_COMPONENT_driver.flexcomm)
 set_variable_ifdef(CONFIG_UART_MCUX_FLEXCOMM    CONFIG_MCUX_COMPONENT_driver.flexcomm_usart)
 set_variable_ifdef(CONFIG_MCUX_OS_TIMER         CONFIG_MCUX_COMPONENT_driver.ostimer)
+set_variable_ifdef(CONFIG_MCUX_UTICK_TIMER      CONFIG_MCUX_COMPONENT_driver.utick)
 set_variable_ifdef(CONFIG_PWM_MCUX_SCTIMER      CONFIG_MCUX_COMPONENT_driver.sctimer)
 set_variable_ifdef(CONFIG_PWM_MCUX_CTIMER       CONFIG_MCUX_COMPONENT_driver.ctimer)
 set_variable_ifdef(CONFIG_SOC_FLASH_LPC         CONFIG_MCUX_COMPONENT_driver.flashiap)
