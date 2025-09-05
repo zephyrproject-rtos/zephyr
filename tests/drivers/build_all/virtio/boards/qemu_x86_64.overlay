@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Antmicro <www.antmicro.com>
+ * Copyright (c) 2024-2025 Antmicro <www.antmicro.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,6 +21,22 @@
 		interrupt-parent = <&intc>;
 
 		status = "okay";
+	};
+
+	virtio_net: virtio_net {
+		compatible = "virtio,pci";
+
+		vendor-id = <0x1af4>;
+		device-id = <0x1000>;
+
+		interrupts = <0xb 0x0 0x0>;
+		interrupt-parent = <&intc>;
+
+		device {
+			compatible = "virtio,net";
+			status = "okay";
+			zephyr,random-mac-address;
+		};
 	};
 
 	virtio_entropy: virtio_entropy {
