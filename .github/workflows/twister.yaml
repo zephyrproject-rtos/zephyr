@@ -347,7 +347,7 @@ jobs:
 
       - name: Merge Test Results
         run: |
-          junitparser merge artifacts/*/*/twister.xml junit.xml
+          junitparser merge --glob artifacts/**/twister.xml junit.xml
           junit2html junit.xml junit.html
 
       - name: Upload Unit Test Results
