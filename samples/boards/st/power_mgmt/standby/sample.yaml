@@ -15,4 +15,3 @@ tests:
         - "Device ready: .*"
         - "Press and hold the user button to enter Standby Mode"
     filter: dt_compat_enabled("zephyr,power-state")
-    extra_args: "CONFIG_DEBUG=y"
