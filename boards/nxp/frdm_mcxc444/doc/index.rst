@@ -112,7 +112,7 @@ There are two options. The onboard debug circuit can be updated with Segger
 J-Link firmware by following the instructions in
 :ref:`mcu-link-jlink-onboard-debug-probe`.
 To be able to program the firmware, you need to put the board in ``DFU mode``
-by shortening the jumper JP1.
+by shortening the jumper JP2.
 The second option is to attach a :ref:`jlink-external-debug-probe` to the
 10-pin SWD connector (J10) of the board. Additionally, the jumper JP4 must
 be shortened.
