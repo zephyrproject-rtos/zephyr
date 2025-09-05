@@ -1,0 +1,12 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_MCXE
+	bool
+
+config SOC_FAMILY
+	default "mcxe" if SOC_FAMILY_MCXE
+
+# Source series Kconfig files first, so SOCs
+# can override the defaults given here
+rsource "*/Kconfig.soc"

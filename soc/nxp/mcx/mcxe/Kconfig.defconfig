@@ -1,0 +1,6 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+# Source series Kconfig files first, so SOCs
+# can override the defaults given here
+rsource "*/Kconfig.defconfig"
