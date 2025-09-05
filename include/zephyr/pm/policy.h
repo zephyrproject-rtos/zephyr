@@ -125,6 +125,9 @@ void pm_policy_state_lock_get(enum pm_state state, uint8_t substate_id);
  */
 void pm_policy_state_lock_put(enum pm_state state, uint8_t substate_id);
 
+void pm_policy_state_lock_get_list(struct pm_state_constraint_list* constraints);
+void pm_policy_state_lock_put_list(struct pm_state_constraint_list* constraints);
+
 /**
  * @brief Check if a power state lock is active (not allowed).
  *
