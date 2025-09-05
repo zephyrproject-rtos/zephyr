@@ -22,6 +22,7 @@ family:
   - name: mcxa156
   - name: mcxa346
   - name: mcxa266
+  - name: mcxa366
 - name: mcxw
   series:
   - name: mcxw2xx
@@ -64,6 +65,8 @@ runners:
       - qualifiers:
         - mcxa266
       - qualifiers:
+        - mcxa366
+      - qualifiers:
         - mcxw716c
       - qualifiers:
         - mcxw236
@@ -93,6 +96,8 @@ runners:
         - mcxa346
       - qualifiers:
         - mcxa266
+      - qualifiers:
+        - mcxa366
       - qualifiers:
         - mcxw716c
       - qualifiers:

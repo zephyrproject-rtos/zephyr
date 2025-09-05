@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <nxp/mcx/MCXA266VLQ-pinctrl.h>
+#include <nxp/mcx/MCXA366VLQ-pinctrl.h>
 
 &pinctrl {
 	pinmux_lpuart2: pinmux_lpuart2 {
@@ -69,16 +69,6 @@
 		};
 	};
 
-	pinmux_opamp0: pinmux_opamp0 {
-		group0 {
-			pinmux = <OPAMP0_INP_P2_12>,
-					<OPAMP0_INN_P2_13>,
-					<OPAMP0_OUT_P2_15>;
-			drive-strength = "low";
-			slew-rate = "fast";
-		};
-	};
-
 	pinmux_lpi2c1: pinmux_lpi2c1 {
 		group0 {
 			pinmux = <LPI2C1_SDA_P1_0>,
@@ -124,6 +114,26 @@
 			slew-rate = "fast";
 			drive-strength = "low";
 			input-enable;
+		};
+	};
+
+	pinmux_opamp0: pinmux_opamp0 {
+		group0 {
+			pinmux = <OPAMP0_INP_P2_12>,
+					<OPAMP0_INN_P2_13>,
+					<OPAMP0_OUT_P2_15>;
+			drive-strength = "low";
+			slew-rate = "fast";
+		};
+	};
+
+	pinmux_opamp1: pinmux_opamp1 {
+		group0 {
+			pinmux = <OPAMP1_INP_P2_16>,
+					<OPAMP1_INN_P2_17>,
+					<OPAMP1_OUT_P2_19>;
+			drive-strength = "low";
+			slew-rate = "fast";
 		};
 	};
 };

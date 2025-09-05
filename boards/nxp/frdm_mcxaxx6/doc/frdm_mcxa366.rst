@@ -1,32 +1,32 @@
-.. zephyr:board:: frdm_mcxa346
+.. zephyr:board:: frdm_mcxa366
 
 Overview
 ********
 
-FRDM-MCXA346 are compact and scalable development boards for rapid prototyping of
-MCX A16X MCUs. They offer industry standard headers for easy access to the MCUs I/Os,
+FRDM-MCXA366 are compact and scalable development boards for rapid prototyping of
+MCX A27X MCUs. They offer industry standard headers for easy access to the MCUs I/Os,
 integrated open-standard serial interfaces and an on-board MCU-Link debugger.
 MCX A Series are high-performance, low-power microcontrollers with MAU,SmartDMA and performance efficiency.
 
 Hardware
 ********
 
-- MCX-A346 Arm Cortex-M33 microcontroller running at 180 MHz
+- MCX-A366 Arm Cortex-M33 microcontroller running at 180 MHz
 - 1MB dual-bank on chip Flash
 - 256 KB RAM
 - 1x FlexCAN with FD, 1x RGB LED, 3x SW buttons
 - On-board MCU-Link debugger with CMSIS-DAP
 - Arduino Header, SmartDMA/Camera Header, mikroBUS
 
-For more information about the MCX-A346 SoC and FRDM-MCXA346 board, see:
+For more information about the MCX-A366 SoC and FRDM-MCXA366 board, see:
 
-- `MCX-A346 SoC Website`_
-- `MCX-A346 Datasheet`_
-- `MCX-A346 Reference Manual`_
-- `FRDM-MCXA346 Website`_
-- `FRDM-MCXA346 User Guide`_
-- `FRDM-MCXA346 Board User Manual`_
-- `FRDM-MCXA346 Schematics`_
+- `MCX-A366 SoC Website`_
+- `MCX-A366 Datasheet`_
+- `MCX-A366 Reference Manual`_
+- `FRDM-MCXA366 Website`_
+- `FRDM-MCXA366 User Guide`_
+- `FRDM-MCXA366 Board User Manual`_
+- `FRDM-MCXA366 Schematics`_
 
 Supported Features
 ==================
@@ -36,7 +36,7 @@ Supported Features
 Connections and IOs
 ===================
 
-The MCX-A346 SoC has 6 gpio controllers and has pinmux registers which
+The MCX-A366 SoC has 6 gpio controllers and has pinmux registers which
 can be used to configure the functionality of a pin.
 
 +------------+-----------------+----------------------------+
@@ -50,19 +50,17 @@ can be used to configure the functionality of a pin.
 System Clock
 ============
 
-The MCX-A346 SoC is configured to use FRO running at 180MHz as a source for
+The MCX-A366 SoC is configured to use FRO running at 180MHz as a source for
 the system clock.
 
 Serial Port
 ===========
 
-The FRDM-MCXA346 SoC has 6 LPUART  interfaces for serial communication.
+The FRDM-MCXA366 SoC has 6 LPUART  interfaces for serial communication.
 LPUART 2 is configured as UART for the console.
 
 Programming and Debugging
 *************************
-
-.. zephyr:board-supported-runners::
 
 Build and flash applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
@@ -111,6 +109,11 @@ Connect a USB cable from your PC to J15, and use the serial terminal of your cho
 - Parity: None
 - Stop bits: 1
 
+Programming and Debugging
+=========================
+
+.. zephyr:board-supported-runners::
+
 Flashing
 ========
 
@@ -118,7 +121,7 @@ Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: frdm_mcxa346
+   :board: frdm_mcxa366
    :goals: flash
 
 Open a serial terminal, reset the board (press the RESET button), and you should
@@ -127,7 +130,7 @@ see the following message in the terminal:
 .. code-block:: console
 
    *** Booting Zephyr OS build v3.6.0-4478-ge6c3a42f5f52 ***
-   Hello World! frdm_mcxa346/mcxa346
+   Hello World! frdm_mcxa366/mcxa366
 
 Debugging
 =========
@@ -136,7 +139,7 @@ Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: frdm_mcxa346/mcxa346
+   :board: frdm_mcxa366/mcxa366
    :goals: debug
 
 Open a serial terminal, step through the application in your debugger, and you
@@ -145,7 +148,7 @@ should see the following message in the terminal:
 .. code-block:: console
 
    *** Booting Zephyr OS build v3.6.0-4478-ge6c3a42f5f52 ***
-   Hello World! frdm_mcxa346/mcxa346
+   Hello World! frdm_mcxa366/mcxa366
 
 Troubleshooting
 ===============
@@ -156,23 +159,23 @@ Troubleshooting
 .. include:: ../../common/board-footer.rst
    :start-after: nxp-board-footer
 
-.. _MCX-A346 SoC Website:
-   https://www.nxp.com/products/processors-and-microcontrollers/arm-microcontrollers/general-purpose-mcus/mcx-arm-cortex-m/mcx-a-series-microcontrollers/mcx-a13x-14x-15x-mcus-with-arm-cortex-m33-scalable-device-options-low-power-and-intelligent-peripherals:MCX-A13X-A14X-A15X
+.. _MCX-A366 SoC Website:
+   https://www.nxp.com/products/MCX-A345-A346
 
-.. _MCX-A346 Datasheet:
-   https://www.nxp.com/docs/en/data-sheet/MCXAP100M96FS6.pdf
+.. _MCX-A366 Datasheet:
+   https://www.nxp.com/docs/en/data-sheet/MCXAP144M240F60.pdf
 
-.. _MCX-A346 Reference Manual:
-   https://www.nxp.com/webapp/Download?colCode=MCXAP100M96FS6RM
+.. _MCX-A366 Reference Manual:
+   https://www.nxp.com/docs/en/reference-manual/MCXAP144M240F60RM.pdf
 
-.. _FRDM-MCXA346 Website:
-   https://www.nxp.com/design/design-center/development-boards-and-designs/general-purpose-mcus/frdm-development-board-for-mcx-a144-5-6-a154-5-6-mcus:FRDM-MCXA346
+.. _FRDM-MCXA366 Website:
+   https://www.nxp.com/design/design-center/development-boards-and-designs/FRDM-MCXA346
 
-.. _FRDM-MCXA346 User Guide:
+.. _FRDM-MCXA366 User Guide:
    https://www.nxp.com/document/guide/getting-started-with-frdm-mcxa346:GS-FRDM-MCXA346
 
-.. _FRDM-MCXA346 Board User Manual:
-   https://www.nxp.com/docs/en/user-manual/UM12121.pdf
+.. _FRDM-MCXA366 Board User Manual:
+   https://www.nxp.com/docs/en/user-manual/UM12348.pdf
 
-.. _FRDM-MCXA346 Schematics:
-   https://www.nxp.com/webapp/Download?colCode=SPF-90841
+.. _FRDM-MCXA366 Schematics:
+   https://www.nxp.com/webapp/Download?colCode=FRDM-MCXA346-DESIGN-FILES
