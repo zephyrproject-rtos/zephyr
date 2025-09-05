@@ -26,6 +26,11 @@ Build System
 Kernel
 ******
 
+* :c:func:`device_init` Earlier releases returned a positive +errno value in case
+  of device init failure due to a bug. This is now fixed to return the correct
+  negative -errno value. Applications that implemented workarounds for this
+  issue should now update their code accordingly.
+
 Base Libraries
 **************
 
