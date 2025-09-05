@@ -59,3 +59,17 @@ properties:
     description: |
       Frequency this consumer expects to read when applying the frequency
       constraints
+
+  freq-constraints-2:
+    type: array
+    required: true
+    description: |
+      Tuple of 3 values: the minimum frequency to request, maximum frequency
+      to request, and the maximum acceptable rank for the clock request
+
+  req-freq-2:
+    type: int
+    required: true
+    description: |
+      Frequency this consumer expects to read when applying the frequency
+      constraints

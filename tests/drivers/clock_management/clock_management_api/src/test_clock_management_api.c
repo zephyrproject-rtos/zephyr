@@ -190,28 +190,34 @@ ZTEST(clock_management_api, test_setrate)
 	const struct clock_management_rate_req dev1_req0 = {
 		.min_freq = DT_PROP_BY_IDX(DT_NODELABEL(emul_dev1), freq_constraints_0, 0),
 		.max_freq = DT_PROP_BY_IDX(DT_NODELABEL(emul_dev1), freq_constraints_0, 1),
+		.max_rank = CLOCK_MANAGEMENT_ANY_RANK,
 	};
 	/* This request is designed to conflict with dev1_req0 */
 	const struct clock_management_rate_req invalid_req = {
 		.min_freq = DT_PROP_BY_IDX(DT_NODELABEL(emul_dev1), freq_constraints_0, 1) + 1,
 		.max_freq = DT_PROP_BY_IDX(DT_NODELABEL(emul_dev1), freq_constraints_0, 1) + 1,
+		.max_rank = CLOCK_MANAGEMENT_ANY_RANK,
 	};
 	const struct clock_management_rate_req dev1_req1 = {
 		.min_freq = DT_PROP_BY_IDX(DT_NODELABEL(emul_dev1), freq_constraints_1, 0),
 		.max_freq = DT_PROP_BY_IDX(DT_NODELABEL(emul_dev1), freq_constraints_1, 1),
+		.max_rank = CLOCK_MANAGEMENT_ANY_RANK,
 	};
 	const struct clock_management_rate_req dev2_req0 = {
 		.min_freq = DT_PROP_BY_IDX(DT_NODELABEL(emul_dev2), freq_constraints_0, 0),
 		.max_freq = DT_PROP_BY_IDX(DT_NODELABEL(emul_dev2), freq_constraints_0, 1),
+		.max_rank = CLOCK_MANAGEMENT_ANY_RANK,
 	};
 	const struct clock_management_rate_req dev2_req1 = {
 		.min_freq = DT_PROP_BY_IDX(DT_NODELABEL(emul_dev2), freq_constraints_1, 0),
 		.max_freq = DT_PROP_BY_IDX(DT_NODELABEL(emul_dev2), freq_constraints_1, 1),
+		.max_rank = CLOCK_MANAGEMENT_ANY_RANK,
 	};
 	/* Request that effectively clears any restrictions on the clock */
 	const struct clock_management_rate_req loose_req = {
 		.min_freq = 0,
 		.max_freq = INT32_MAX,
+		.max_rank = CLOCK_MANAGEMENT_ANY_RANK,
 	};
 	int dev1_req_freq0 = DT_PROP(DT_NODELABEL(emul_dev1), req_freq_0);
 	int dev2_req_freq0 = DT_PROP(DT_NODELABEL(emul_dev2), req_freq_0);
@@ -250,5 +256,43 @@ ZTEST(clock_management_api, test_setrate)
 	ret = clock_management_req_rate(dev2_out, &loose_req);
 	zassert_true(ret > 0, "Consumer 2 could not remove clock restrictions");
 }
+
+ZTEST(clock_management_api, test_ranked)
+{
+	int dev1_req_freq2 = DT_PROP(DT_NODELABEL(emul_dev1), req_freq_2);
+	int dev2_req_freq2 = DT_PROP(DT_NODELABEL(emul_dev2), req_freq_2);
+	const struct clock_management_rate_req dev2_req2 = {
+		.min_freq = DT_PROP_BY_IDX(DT_NODELABEL(emul_dev2), freq_constraints_2, 0),
+		.max_freq = DT_PROP_BY_IDX(DT_NODELABEL(emul_dev2), freq_constraints_2, 1),
+		.max_rank = DT_PROP_BY_IDX(DT_NODELABEL(emul_dev2), freq_constraints_2, 2),
+	};
+	const struct clock_management_rate_req dev1_req2 = {
+		.min_freq = DT_PROP_BY_IDX(DT_NODELABEL(emul_dev1), freq_constraints_2, 0),
+		.max_freq = DT_PROP_BY_IDX(DT_NODELABEL(emul_dev1), freq_constraints_2, 1),
+		.max_rank = DT_PROP_BY_IDX(DT_NODELABEL(emul_dev1), freq_constraints_2, 2),
+	};
+	/* Request that effectively clears any restrictions on the clock */
+	const struct clock_management_rate_req loose_req = {
+		.min_freq = 0,
+		.max_freq = INT32_MAX,
+		.max_rank = CLOCK_MANAGEMENT_ANY_RANK,
+	};
+	int ret;
+
+	/* Make ranked request for first consumer */
+	ret = clock_management_req_ranked(dev1_out, &dev1_req2);
+	zassert_equal(ret, dev1_req_freq2,
+		      "Consumer 1 got incorrect frequency for ranked request");
+	ret = clock_management_req_ranked(dev2_out, &dev2_req2);
+	zassert_equal(ret, dev2_req_freq2,
+		      "Consumer 2 got incorrect frequency for ranked request");
+	/* Clear restrictions on clock outputs */
+	ret = clock_management_req_rate(dev1_out, &loose_req);
+	zassert_true(ret > 0, "Consumer 1 could not remove clock restrictions");
+	ret = clock_management_req_rate(dev2_out, &loose_req);
+	zassert_true(ret > 0, "Consumer 2 could not remove clock restrictions");
+}
+
+
 
 ZTEST_SUITE(clock_management_api, NULL, NULL, reset_clock_states, NULL, NULL);

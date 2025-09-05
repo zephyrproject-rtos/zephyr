@@ -1,5 +1,6 @@
 /*
  * Copyright 2024 NXP
+ * Copyright (c) 2025, Tenstorrent AI ULC
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +11,7 @@
 		compatible = "clock-state";
 		clocks = <&ahbclkdiv 1 &fro_hf 1 &mainclksela 3 &mainclkselb 0>;
 		clock-frequency = <DT_FREQ_M(96)>;
+		rank = <2>;
 		locking-state;
 	};
 };
@@ -128,6 +130,25 @@
 	gate-offset = <0x6>;
 };
 
+/* Set the following ranking:
+ * - All other clocks
+ * - PLL1
+ * - FROHF
+ * - PLL0
+ */
+
+&pll1 {
+	clock-ranking = <1>;
+};
+
+&fro_hf {
+	clock-ranking = <2>;
+};
+
+&pll0 {
+	clock-ranking = <3>;
+};
+
 / {
 	/* Emulated device clock consumers */
 	emul_devices {
@@ -156,6 +177,13 @@
 			 */
 			freq-constraints-1 = <DT_FREQ_K(44100) DT_FREQ_K(44200)>;
 			req-freq-1 = <0>;
+			/*
+			 * Request broad range. Since we have ranked PLL1
+			 * highest, we expect that source to be used here even
+			 * though PLL0 would be more accurate.
+			 */
+			freq-constraints-2 = <DT_FREQ_K(99000) DT_FREQ_K(100100) 3>;
+			req-freq-2 = <DT_FREQ_K(100000)>;
 		};
 
 		emul_dev2: emul-dev2 {
@@ -180,6 +208,14 @@
 			/* Request constraints that static state 0 can satisfy */
 			freq-constraints-1 = <DT_FREQ_M(48) DT_FREQ_M(48)>;
 			req-freq-1 = <DT_FREQ_M(48)>;
+			/*
+			 * Request a range that should be satisfied by PLL1 or
+			 * PLL0. Since we have ranked FROHF higher than
+			 * PLL0 and PLL1 has conflicting constraints, we expect
+			 * FROHF to be used.
+			 */
+			freq-constraints-2 = <DT_FREQ_M(88) DT_FREQ_M(99) 3>;
+			req-freq-2 = <DT_FREQ_M(96)>;
 		};
 	};
 };

@@ -103,10 +103,12 @@ ZTEST(clock_management_minimal, test_rate_req)
 	const struct clock_management_rate_req dev1_slow_req = {
 		.min_freq = DT_PROP(DT_NODELABEL(emul_dev1), slow_request_freq),
 		.max_freq = DT_PROP(DT_NODELABEL(emul_dev1), slow_request_freq),
+		.max_rank = CLOCK_MANAGEMENT_ANY_RANK,
 	};
 	const struct clock_management_rate_req dev1_fast_req = {
 		.min_freq = DT_PROP(DT_NODELABEL(emul_dev1), fast_request_freq),
 		.max_freq = DT_PROP(DT_NODELABEL(emul_dev1), fast_request_freq),
+		.max_rank = CLOCK_MANAGEMENT_ANY_RANK,
 	};
 
 	int dev1_slow_freq = DT_PROP(DT_NODELABEL(emul_dev1), slow_request_freq);

@@ -1,5 +1,6 @@
 /*
  * Copyright 2024 NXP
+ * Copyright (c) 2025, Tenstorrent AI ULC
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,6 +23,7 @@
 				compatible = "vnd,emul-clock-div";
 				max-div = <64>;
 				#clock-cells = <1>;
+				clock-ranking = <1>;
 			};
 		};
 
@@ -34,6 +36,7 @@
 				compatible = "vnd,emul-clock-div";
 				max-div = <256>;
 				#clock-cells = <1>;
+				clock-ranking = <2>;
 			};
 		};
 
@@ -41,6 +44,14 @@
 			compatible = "fixed-clock";
 			clock-frequency = <100000000>;
 			#clock-cells = <0>;
+			clock-ranking = <3>;
+		};
+
+		emul_source4: emul-source4 {
+			compatible = "fixed-clock";
+			clock-frequency = <1500000>;
+			#clock-cells = <0>;
+			clock-ranking = <3>;
 		};
 
 		emul_mux1: emul-mux1 {
@@ -91,7 +102,7 @@
 
 		emul_mux2: emul-mux2 {
 			compatible = "vnd,emul-clock-mux";
-			inputs = <&emul_mux1 &emul_source3>;
+			inputs = <&emul_mux1 &emul_source3 &emul_source4>;
 			#clock-cells = <1>;
 
 			emul_dev2_out: emul-dev2-out {
@@ -154,6 +165,8 @@
 			freq-constraints-1 = <40000000 50000000>;
 			/* Not used */
 			req-freq-1 = <0>;
+			freq-constraints-2 = <1500000 1800000 1>;
+			req-freq-2 = <1666666>;
 			clock-state-names = "default", "invalid", "shared",
 					"locking";
 		};
@@ -173,6 +186,8 @@
 			req-freq-0 = <746268>;
 			freq-constraints-1 = <75000000 100000000>;
 			req-freq-1 = <100000000>;
+			freq-constraints-2 = <1500000 1640000 3>;
+			req-freq-2 = <1500000>;
 			clock-state-names = "default", "invalid", "shared",
 					"locking";
 		};
