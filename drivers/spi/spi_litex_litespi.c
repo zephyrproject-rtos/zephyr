@@ -28,6 +28,8 @@ LOG_MODULE_REGISTER(spi_litex_litespi);
 #define SPI_MAX_WORD_SIZE 32
 #define SPI_MAX_CS_SIZE   32
 
+#define SPIFLASH_MASTER_RXTX_SIZE 4
+
 #define SPI_LITEX_WIDTH BIT(0)
 #define SPI_LITEX_MASK  BIT(0)
 
@@ -35,7 +37,6 @@ struct spi_litex_dev_config {
 	uint32_t master_cs_addr;
 	uint32_t master_phyconfig_addr;
 	uint32_t master_rxtx_addr;
-	uint32_t master_rxtx_size;
 	uint32_t master_status_addr;
 	uint32_t phy_clk_divisor_addr;
 	bool phy_clk_divisor_exists;
@@ -158,7 +159,7 @@ static void spi_litex_spi_do_tx(const struct device *dev)
 	uint8_t len;
 	uint32_t txd = 0U;
 
-	len = MIN(spi_context_max_continuous_chunk(ctx), dev_config->master_rxtx_size);
+	len = min(spi_context_max_continuous_chunk(ctx), SPIFLASH_MASTER_RXTX_SIZE);
 	if (len != data->len) {
 		spiflash_len_mask_width_write(len * 8, SPI_LITEX_WIDTH, SPI_LITEX_MASK,
 					      dev_config->master_phyconfig_addr);
@@ -350,7 +351,7 @@ static void spi_litex_irq_handler(const struct device *dev)
 
 static int spi_litex_init(const struct device *dev)
 {
-	const struct spi_litex_dev_config *dev_config = dev->config;
+	__maybe_unused const struct spi_litex_dev_config *dev_config = dev->config;
 	struct spi_litex_data *data = dev->data;
 
 #if SPI_LITEX_ANY_HAS_IRQ
@@ -358,11 +359,6 @@ static int spi_litex_init(const struct device *dev)
 		dev_config->irq_config_func(dev);
 	}
 #endif /* SPI_LITEX_ANY_HAS_IRQ */
-
-	data->len = dev_config->master_rxtx_size;
-
-	spiflash_len_mask_width_write(data->len * 8, SPI_LITEX_WIDTH, SPI_LITEX_MASK,
-				      dev_config->master_phyconfig_addr);
 
 	spi_context_unlock_unconditionally(&data->ctx);
 
@@ -413,7 +409,6 @@ static DEVICE_API(spi, spi_litex_api) = {
 		.master_cs_addr = DT_INST_REG_ADDR_BY_NAME(n, master_cs),                          \
 		.master_phyconfig_addr = DT_INST_REG_ADDR_BY_NAME(n, master_phyconfig),            \
 		.master_rxtx_addr = DT_INST_REG_ADDR_BY_NAME(n, master_rxtx),                      \
-		.master_rxtx_size = DT_INST_REG_SIZE_BY_NAME(n, master_rxtx),                      \
 		.master_status_addr = DT_INST_REG_ADDR_BY_NAME(n, master_status),                  \
 		.phy_clk_divisor_exists = DT_INST_REG_HAS_NAME(n, phy_clk_divisor),                \
 		.phy_clk_divisor_addr = DT_INST_REG_ADDR_BY_NAME_OR(n, phy_clk_divisor, 0),        \
