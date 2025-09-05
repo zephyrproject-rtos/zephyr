@@ -49,6 +49,14 @@
 			clock-frequency = <DT_FREQ_M(48)>;
 			#clock-cells = <0>;
 		};
+
+		hxt48: hxt48 {
+			compatible = "sifli,sf32lb-hxt48";
+			clock-frequency = <DT_FREQ_M(48)>;
+			#clock-cells = <0>;
+			sifli,aon = <&aon>;
+			status = "disabled";
+		};
 	};
 
 	soc {
