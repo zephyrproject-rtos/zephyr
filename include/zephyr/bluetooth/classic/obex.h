@@ -1726,6 +1726,16 @@ int bt_obex_get_header_srm_param(struct net_buf *buf, uint8_t *srm_param);
  */
 int bt_obex_make_uuid(union bt_obex_uuid *uuid, const uint8_t *data, uint16_t len);
 
+/** @brief Check if the string is valid
+ *
+ *  @param id HEADER ID.
+ *  @param len The length of string.
+ *  @param str The address of string.
+ *
+ *  @return true if the string is valid or false otherwise.
+ */
+bool bt_obex_string_is_valid(uint8_t id, uint16_t len, const uint8_t *str);
+
 #ifdef __cplusplus
 }
 #endif
