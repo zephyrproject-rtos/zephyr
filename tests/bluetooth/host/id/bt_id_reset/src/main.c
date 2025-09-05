@@ -56,7 +56,7 @@ static int bt_addr_le_create_static_custom_fake(bt_addr_le_t *addr)
  *  Constraints:
  *   - Input address is NULL
  *   - Input IRK is NULL
- *   - 'BT_DEV_READY' flag is set in bt_dev.flags
+ *   - 'BT_DEV_OPEN' and 'BT_DEV_READY' flags are set in bt_dev.flags
  *   - bt_addr_le_create_static() returns a zero error code (success)
  *
  *  Expected behaviour:
@@ -71,6 +71,7 @@ ZTEST(bt_id_reset, test_reset_id_null_address)
 	bt_dev.id_count = 2;
 	input_id = bt_dev.id_count - 1; /* ID must not equal BT_ID_DEFAULT */
 	id_count = bt_dev.id_count;
+	atomic_set_bit(bt_dev.flags, BT_DEV_OPEN);
 	atomic_set_bit(bt_dev.flags, BT_DEV_READY);
 	bt_addr_le_create_static_fake.custom_fake = bt_addr_le_create_static_custom_fake;
 
@@ -93,7 +94,7 @@ ZTEST(bt_id_reset, test_reset_id_null_address)
  *  Constraints:
  *   - Input address is NULL
  *   - Input IRK is NULL
- *   - 'BT_DEV_READY' flag is set in bt_dev.flags
+ *   - 'BT_DEV_OPEN' and 'BT_DEV_READY' flags are set in bt_dev.flags
  *   - bt_addr_le_create_static() returns a zero error code (success)
  *
  *  Expected behaviour:
@@ -110,6 +111,7 @@ ZTEST(bt_id_reset, test_reset_id_null_address_with_no_duplication)
 
 	input_id = bt_dev.id_count - 1; /* ID must not equal BT_ID_DEFAULT */
 	id_count = bt_dev.id_count;
+	atomic_set_bit(bt_dev.flags, BT_DEV_OPEN);
 	atomic_set_bit(bt_dev.flags, BT_DEV_READY);
 	bt_addr_le_create_static_fake.custom_fake = bt_addr_le_create_static_custom_fake;
 
@@ -133,7 +135,7 @@ ZTEST(bt_id_reset, test_reset_id_null_address_with_no_duplication)
  *  Constraints:
  *   - Input address is NULL
  *   - Input IRK is NULL
- *   - 'BT_DEV_READY' flag is set in bt_dev.flags
+ *   - 'BT_DEV_OPEN' and 'BT_DEV_READY' flags are set in bt_dev.flags
  *   - bt_addr_le_create_static() returns a zero error code (success)
  *
  *  Expected behaviour:
@@ -150,6 +152,7 @@ ZTEST(bt_id_reset, test_reset_id_bt_addr_le_any_address)
 	bt_dev.id_count = 2;
 	input_id = bt_dev.id_count - 1; /* ID must not equal BT_ID_DEFAULT */
 	id_count = bt_dev.id_count;
+	atomic_set_bit(bt_dev.flags, BT_DEV_OPEN);
 	atomic_set_bit(bt_dev.flags, BT_DEV_READY);
 	bt_addr_le_create_static_fake.custom_fake = bt_addr_le_create_static_custom_fake;
 
@@ -172,7 +175,7 @@ ZTEST(bt_id_reset, test_reset_id_bt_addr_le_any_address)
  *  Constraints:
  *   - Input address is NULL
  *   - Input IRK is NULL
- *   - 'BT_DEV_READY' flag is set in bt_dev.flags
+ *   - 'BT_DEV_OPEN' and 'BT_DEV_READY' flags are set in bt_dev.flags
  *   - bt_addr_le_create_static() returns a non-zero error code (failure)
  *
  *  Expected behaviour:
@@ -187,6 +190,7 @@ ZTEST(bt_id_reset, test_reset_id_null_address_fails)
 	bt_dev.id_count = 2;
 	input_id = bt_dev.id_count - 1; /* ID must not equal BT_ID_DEFAULT */
 	id_count = bt_dev.id_count;
+	atomic_set_bit(bt_dev.flags, BT_DEV_OPEN);
 	atomic_set_bit(bt_dev.flags, BT_DEV_READY);
 	bt_addr_le_create_static_fake.return_val = -1;
 
@@ -206,7 +210,7 @@ ZTEST(bt_id_reset, test_reset_id_null_address_fails)
  *  Constraints:
  *   - Valid private random address is used
  *   - Input IRK is NULL
- *   - 'BT_DEV_READY' flag is set in bt_dev.flags
+ *   - 'BT_DEV_OPEN' and 'BT_DEV_READY' flags are set in bt_dev.flags
  *
  *  Expected behaviour:
  *   - The same address is used and loaded to bt_dev.id_addr[]
@@ -221,6 +225,7 @@ ZTEST(bt_id_reset, test_reset_id_valid_input_address)
 	bt_dev.id_count = 2;
 	input_id = bt_dev.id_count - 1; /* ID must not equal BT_ID_DEFAULT */
 	id_count = bt_dev.id_count;
+	atomic_set_bit(bt_dev.flags, BT_DEV_OPEN);
 	atomic_set_bit(bt_dev.flags, BT_DEV_READY);
 	/* Calling bt_addr_le_create_static() isn't expected */
 	bt_addr_le_create_static_fake.return_val = -1;
