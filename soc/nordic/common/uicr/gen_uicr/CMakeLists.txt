@@ -19,6 +19,17 @@ find_package(Zephyr
 
 project(uicr)
 
+# Function to parse a Kconfig value from a .config file
+function(parse_kconfig_value config_file config_name output_var)
+  file(STRINGS ${config_file} config_lines ENCODING "UTF-8")
+  foreach(line ${config_lines})
+    if("${line}" MATCHES "^${config_name}=\"(.*)\"$")
+      set(${output_var} "${CMAKE_MATCH_1}" PARENT_SCOPE)
+      return()
+    endif()
+  endforeach()
+endfunction()
+
 # Function to compute partition absolute address and size from devicetree
 function(compute_partition_address_and_size partition_nodelabel output_address_var output_size_var)
   dt_nodelabel(partition_path NODELABEL ${partition_nodelabel} REQUIRED)
@@ -62,7 +73,9 @@ if(CONFIG_GEN_UICR_GENERATE_PERIPHCONF)
     endif()
 
     if(EXISTS ${_dir}/zephyr/zephyr.dts)
-      list(APPEND periphconf_elfs ${_dir}/zephyr/zephyr.elf)
+      # Read CONFIG_KERNEL_BIN_NAME from the sibling's .config file
+      parse_kconfig_value(${_dir}/zephyr/.config CONFIG_KERNEL_BIN_NAME kernel_bin_name)
+      list(APPEND periphconf_elfs ${_dir}/zephyr/${kernel_bin_name}.elf)
     endif()
   endforeach()
 
