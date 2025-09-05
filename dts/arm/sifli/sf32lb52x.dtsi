@@ -74,6 +74,11 @@
 			compatible = "sifli,sf32lb-aon", "syscon";
 			reg = <0x500c0000 0x1000>;
 		};
+
+		pmuc: syscon@500ca000 {
+			compatible = "sifli,sf32lb-pmuc", "syscon";
+			reg = <0x500ca000 0x1000>;
+		};
 	};
 };
 
