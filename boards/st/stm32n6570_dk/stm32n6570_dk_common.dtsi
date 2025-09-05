@@ -29,6 +29,7 @@
 
 	aliases {
 		led0 = &green_led_1;
+		sw0 = &user_button;
 	};
 
 	lvgl_pointer {
@@ -56,6 +57,16 @@
 		red_led_1: led_2 {
 			gpios = <&gpiog 10 GPIO_ACTIVE_HIGH>;
 			label = "User LD2";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		user_button: button {
+			label = "User";
+			gpios = <&gpioc 13 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 
