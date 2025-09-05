@@ -63,6 +63,7 @@ ZTEST(bt_id_create, test_create_id_null_address)
 	int id_count, new_id;
 
 	id_count = bt_dev.id_count;
+	atomic_set_bit(bt_dev.flags, BT_DEV_OPEN);
 	atomic_set_bit(bt_dev.flags, BT_DEV_READY);
 	bt_addr_le_create_static_fake.custom_fake = bt_addr_le_create_static_custom_fake;
 
@@ -100,6 +101,7 @@ ZTEST(bt_id_create, test_create_id_null_address_with_no_duplication)
 	bt_addr_le_copy(&bt_dev.id_addr[0], BT_STATIC_RANDOM_LE_ADDR_1);
 
 	id_count = bt_dev.id_count;
+	atomic_set_bit(bt_dev.flags, BT_DEV_OPEN);
 	atomic_set_bit(bt_dev.flags, BT_DEV_READY);
 	bt_addr_le_create_static_fake.custom_fake = bt_addr_le_create_static_custom_fake;
 
@@ -136,6 +138,7 @@ ZTEST(bt_id_create, test_create_id_bt_addr_le_any_address)
 	bt_addr_le_t addr = bt_addr_le_any;
 
 	id_count = bt_dev.id_count;
+	atomic_set_bit(bt_dev.flags, BT_DEV_OPEN);
 	atomic_set_bit(bt_dev.flags, BT_DEV_READY);
 	bt_addr_le_create_static_fake.custom_fake = bt_addr_le_create_static_custom_fake;
 
@@ -170,6 +173,7 @@ ZTEST(bt_id_create, test_create_id_null_address_fails)
 	int id_count, err;
 
 	id_count = bt_dev.id_count;
+	atomic_set_bit(bt_dev.flags, BT_DEV_OPEN);
 	atomic_set_bit(bt_dev.flags, BT_DEV_READY);
 	bt_addr_le_create_static_fake.return_val = -1;
 
@@ -201,6 +205,7 @@ ZTEST(bt_id_create, test_create_id_valid_input_address)
 	bt_addr_le_t addr = *BT_STATIC_RANDOM_LE_ADDR_1;
 
 	id_count = bt_dev.id_count;
+	atomic_set_bit(bt_dev.flags, BT_DEV_OPEN);
 	atomic_set_bit(bt_dev.flags, BT_DEV_READY);
 	/* Calling bt_addr_le_create_static() isn't expected */
 	bt_addr_le_create_static_fake.return_val = -1;
@@ -238,6 +243,7 @@ ZTEST(bt_id_create, test_public_address)
 	}
 
 	id_count = bt_dev.id_count;
+	atomic_set_bit(bt_dev.flags, BT_DEV_OPEN);
 	atomic_set_bit(bt_dev.flags, BT_DEV_READY);
 	/* Calling bt_addr_le_create_static() isn't expected */
 	bt_addr_le_create_static_fake.return_val = -1;
