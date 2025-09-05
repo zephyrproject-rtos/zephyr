@@ -8,7 +8,9 @@ if(CONFIG_ARM)
   endif()
 endif()
 
-zephyr_library_sources_ifdef(CONFIG_PM_S2RAM pm_s2ram.c)
+if(NOT CONFIG_SOC_NRF54H20_PM_S2RAM_OVERRIDE)
+  zephyr_library_sources_ifdef(CONFIG_PM_S2RAM pm_s2ram.c)
+endif()
 
 zephyr_include_directories(.)
 
