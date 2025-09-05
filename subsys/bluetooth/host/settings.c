@@ -197,7 +197,7 @@ static int set_setting(const char *name, size_t len_rd, settings_read_cb read_cb
 	ssize_t len;
 	const char *next;
 
-	if (!atomic_test_bit(bt_dev.flags, BT_DEV_ENABLE)) {
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_OPEN)) {
 		/* The Bluetooth settings loader needs to communicate with the Bluetooth
 		 * controller to setup identities. This will not work before
 		 * bt_enable(). The doc on @ref bt_enable requires the "bt/" settings
@@ -309,7 +309,7 @@ static int commit_settings(void)
 
 	LOG_DBG("");
 
-	if (!atomic_test_bit(bt_dev.flags, BT_DEV_ENABLE)) {
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_OPEN)) {
 		/* The Bluetooth settings loader needs to communicate with the Bluetooth
 		 * controller to setup identities. This will not work before
 		 * bt_enable(). The doc on @ref bt_enable requires the "bt/" settings
@@ -346,7 +346,7 @@ static int commit_settings(void)
 		err = bt_setup_public_id_addr();
 		if (err) {
 			LOG_ERR("Unable to setup an identity address");
-			return err;
+			goto finalize;
 		}
 	}
 
@@ -354,24 +354,27 @@ static int commit_settings(void)
 		err = bt_setup_random_id_addr();
 		if (err) {
 			LOG_ERR("Unable to setup an identity address");
-			return err;
+			goto finalize;
 		}
 	}
 
-	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
-		bt_finalize_init();
+	err = 0;
+
+finalize:
+	bt_finalize_init(err);
+
+	if (err == 0) {
+		/* If any part of the Identity Information of the device has been
+		 * generated this Identity needs to be saved persistently.
+		 */
+		if (atomic_test_and_clear_bit(bt_dev.flags, BT_DEV_STORE_ID)) {
+			LOG_DBG("Storing Identity Information");
+			bt_settings_store_id();
+			bt_settings_store_irk();
+		}
 	}
 
-	/* If any part of the Identity Information of the device has been
-	 * generated this Identity needs to be saved persistently.
-	 */
-	if (atomic_test_and_clear_bit(bt_dev.flags, BT_DEV_STORE_ID)) {
-		LOG_DBG("Storing Identity Information");
-		bt_settings_store_id();
-		bt_settings_store_irk();
-	}
-
-	return 0;
+	return err;
 }
 
 SETTINGS_STATIC_HANDLER_DEFINE_WITH_CPRIO(bt, "bt", NULL, set_setting, commit_settings, NULL,
