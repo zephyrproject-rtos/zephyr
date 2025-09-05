@@ -63,7 +63,7 @@
 		status = "okay";
 		jedec-id = [2c 5b 1b];
 		erase-block-size = <4096>;
-		write-block-size = <1>;
+		write-block-size = <2>;
 
 		partitions {
 			compatible = "fixed-partitions";
