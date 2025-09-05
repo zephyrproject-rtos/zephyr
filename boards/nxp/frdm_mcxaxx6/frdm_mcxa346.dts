@@ -8,7 +8,7 @@
 
 #include <nxp/nxp_mcxa346.dtsi>
 #include "frdm_mcxa346-pinctrl.dtsi"
-#include "../common/frdm_mcxa266_a346_a366_common.dtsi"
+#include "board_common.dtsi"
 
 / {
 	model = "NXP FRDM_MCXA346 board";
