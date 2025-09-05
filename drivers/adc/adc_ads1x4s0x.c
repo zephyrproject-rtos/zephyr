@@ -431,6 +431,8 @@ struct ads1x4s0x_config {
 	const struct gpio_dt_spec gpio_start_sync;
 	int idac_current;
 	uint8_t vbias_level;
+	bool positive_ref_buf_disable;
+	bool negative_ref_buf_disable;
 	uint8_t channels;
 	uint8_t resolution;
 };
@@ -658,6 +660,8 @@ static int ads1x4s0x_channel_setup(const struct device *dev,
 		ADS1X4S0X_REGISTER_DATARATE_DR_SET(data_rate, acquisition_time_value);
 	}
 
+	uint8_t pos_ref_buf = config->positive_ref_buf_disable ? 0b1 : 0b0;
+	uint8_t neg_ref_buf = config->negative_ref_buf_disable ? 0b1 : 0b0;
 	switch (channel_cfg->reference) {
 	case ADC_REF_INTERNAL:
 		/* disable negative reference buffer */
@@ -668,19 +672,19 @@ static int ads1x4s0x_channel_setup(const struct device *dev,
 		ADS1X4S0X_REGISTER_REF_REFSEL_SET(reference_control, 0b10);
 		break;
 	case ADC_REF_EXTERNAL0:
-		/* enable negative reference buffer */
-		ADS1X4S0X_REGISTER_REF_NOT_REFN_BUF_SET(reference_control, 0b0);
-		/* enable positive reference buffer */
-		ADS1X4S0X_REGISTER_REF_NOT_REFP_BUF_SET(reference_control, 0b0);
-		/* use external reference 0*/
+		/* configure negative reference buffer */
+		ADS1X4S0X_REGISTER_REF_NOT_REFN_BUF_SET(reference_control, neg_ref_buf);
+		/* configure positive reference buffer */
+		ADS1X4S0X_REGISTER_REF_NOT_REFP_BUF_SET(reference_control, pos_ref_buf);
+		/* use external reference 0 */
 		ADS1X4S0X_REGISTER_REF_REFSEL_SET(reference_control, 0b00);
 		break;
 	case ADC_REF_EXTERNAL1:
-		/* enable negative reference buffer */
-		ADS1X4S0X_REGISTER_REF_NOT_REFN_BUF_SET(reference_control, 0b0);
-		/* enable positive reference buffer */
-		ADS1X4S0X_REGISTER_REF_NOT_REFP_BUF_SET(reference_control, 0b0);
-		/* use external reference 0*/
+		/* configure negative reference buffer */
+		ADS1X4S0X_REGISTER_REF_NOT_REFN_BUF_SET(reference_control, neg_ref_buf);
+		/* configure positive reference buffer */
+		ADS1X4S0X_REGISTER_REF_NOT_REFP_BUF_SET(reference_control, pos_ref_buf);
+		/* use external reference 1 */
 		ADS1X4S0X_REGISTER_REF_REFSEL_SET(reference_control, 0b01);
 		break;
 	default:
@@ -1583,6 +1587,10 @@ BUILD_ASSERT(CONFIG_ADC_INIT_PRIORITY > CONFIG_SPI_INIT_PRIORITY,
 		.gpio_start_sync = GPIO_DT_SPEC_INST_GET_OR(n, start_sync_gpios, {0}),            \
 		.idac_current = DT_INST_PROP(n, idac_current),                                    \
 		.vbias_level = DT_INST_PROP(n, vbias_level),                                      \
+		.positive_ref_buf_disable =                                                       \
+				DT_INST_PROP(n, positive_reference_buffer_disable),               \
+		.negative_ref_buf_disable =                                                       \
+				DT_INST_PROP(n, negative_reference_buffer_disable),               \
 		.resolution = res,                                                                \
 		.channels = ch,                                                                   \
 	};                                                                                        \
