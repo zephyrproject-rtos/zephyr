@@ -14,12 +14,14 @@
 	compatible = "nxp,imx943_evk";
 
 	chosen {
-		/* TCM */
 		zephyr,flash = &itcm;
 		zephyr,sram = &dtcm;
 
+		/* Note: please enable lpuart3 and disable lpuart8 for debugging via JTAG */
 		zephyr,console = &lpuart8;
 		zephyr,shell-uart = &lpuart8;
+		//zephyr,console = &lpuart3;
+		//zephyr,shell-uart = &lpuart3;
 	};
 };
 
@@ -105,7 +107,20 @@
 	status = "okay";
 };
 
+/* Note: Please disable lpuart8 when debugging with lpuart3 */
+/* GPIO_IO30(J51-18, M1_PWM_CX, LPUART3_TX)  --> RX of usb2serial converter  */
+/* GPIO_IO31(J44-10, M1_LED_TP1, LPUART3_RX) <-- TX of usb2serial converter  */
+/* GND(J45-12)                               --- GND of usb2serial converter */
+&lpuart3 {
+	status = "disabled";
+	//status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&lpuart3_default>;
+	pinctrl-names = "default";
+};
+
 &lpuart8 {
+	//status = "disabled";
 	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&lpuart8_default>;
