@@ -6,7 +6,7 @@
 
 #include <zephyr/sys/crc.h>
 
-uint16_t crc16(uint16_t poly, uint16_t seed, const uint8_t *src, size_t len)
+uint16_t __weak crc16(uint16_t poly, uint16_t seed, const uint8_t *src, size_t len)
 {
 	uint16_t crc = seed;
 	size_t i, j;
@@ -23,11 +23,10 @@ uint16_t crc16(uint16_t poly, uint16_t seed, const uint8_t *src, size_t len)
 		}
 	}
 
-
 	return crc;
 }
 
-uint16_t crc16_reflect(uint16_t poly, uint16_t seed, const uint8_t *src, size_t len)
+uint16_t __weak crc16_reflect(uint16_t poly, uint16_t seed, const uint8_t *src, size_t len)
 {
 	uint16_t crc = seed;
 	size_t i, j;
@@ -44,12 +43,10 @@ uint16_t crc16_reflect(uint16_t poly, uint16_t seed, const uint8_t *src, size_t 
 		}
 	}
 
-
 	return crc;
 }
 
-
-uint16_t crc16_ccitt(uint16_t seed, const uint8_t *src, size_t len)
+uint16_t __weak crc16_ccitt(uint16_t seed, const uint8_t *src, size_t len)
 {
 	for (; len > 0; len--) {
 		uint8_t e, f;
@@ -63,7 +60,7 @@ uint16_t crc16_ccitt(uint16_t seed, const uint8_t *src, size_t len)
 	return seed;
 }
 
-uint16_t crc16_itu_t(uint16_t seed, const uint8_t *src, size_t len)
+uint16_t __weak crc16_itu_t(uint16_t seed, const uint8_t *src, size_t len)
 {
 	for (; len > 0; len--) {
 		seed = (seed >> 8U) | (seed << 8U);
