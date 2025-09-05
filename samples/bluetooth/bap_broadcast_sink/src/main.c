@@ -52,7 +52,7 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_SCAN_SELF) || IS_ENABLED(CONFIG_SCAN_OFFLOAD),
 #endif /* CONFIG_SCAN_SELF */
 
 #define PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO 5 /* Set the timeout relative to interval */
-#define PA_SYNC_SKIP                5
+#define PA_SYNC_SKIP                0
 #define NAME_LEN                    sizeof(CONFIG_TARGET_BROADCAST_NAME) + 1
 #define BROADCAST_DATA_ELEMENT_SIZE sizeof(int16_t)
 
