@@ -29,6 +29,8 @@
 #include <zephyr/types.h>
 #include <zephyr/device.h>
 
+#include <zephyr/audio/audio_caps.h> /* Include common audio caps */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -328,6 +330,7 @@ __subsystem struct i2s_driver_api {
 	int (*write)(const struct device *dev, void *mem_block, size_t size);
 	int (*trigger)(const struct device *dev, enum i2s_dir dir,
 		       enum i2s_trigger_cmd cmd);
+	int (*get_caps)(const struct device *dev, struct audio_caps *caps);
 };
 /**
  * @endcond
@@ -535,6 +538,31 @@ static inline int z_impl_i2s_trigger(const struct device *dev,
 		(const struct i2s_driver_api *)dev->api;
 
 	return api->trigger(dev, dir, cmd);
+}
+
+/**
+ * @brief Get i2s capabilities
+ *
+ * @param dev Pointer to device structure
+ * @param caps Pointer to capabilities structure to populate
+ *
+ * @retval 0 on success
+ * @retval -ENOSYS if the get_caps is not implemented by the driver
+ * @retval -EINVAL if invalid parameters are provided (e.g., caps is NULL)
+ */
+static inline int i2s_get_caps(const struct device *dev, struct audio_caps *caps)
+{
+	struct i2s_driver_api *api = (struct i2s_driver_api *)dev->api;
+
+	if (api->get_caps == NULL) {
+		return -ENOSYS;
+	}
+
+	if (caps == NULL) {
+		return -EINVAL;
+	}
+
+	return api->get_caps(dev, caps);
 }
 
 /**
