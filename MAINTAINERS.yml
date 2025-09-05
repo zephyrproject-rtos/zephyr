@@ -3148,8 +3148,11 @@ MAINTAINERS file:
     - stephanosio
   files:
     - MAINTAINERS.yml
+    - scripts/get_maintainer.py
+    - scripts/set_assignees.py
+    - scripts/check_maintainers.py
   labels:
-    - "area: Process"
+    - "area: MAINTAINER File"
   description: >-
     Zephyr Maintainers File
 
