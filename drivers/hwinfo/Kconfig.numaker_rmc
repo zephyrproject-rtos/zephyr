@@ -4,7 +4,7 @@
 config HWINFO_NUMAKER_RMC
 	bool "NuMaker hwinfo backed up by RMC"
 	default y
-	depends on SOC_SERIES_M2L31X
+	depends on DT_HAS_NUVOTON_NUMAKER_RMC_ENABLED
 	select HWINFO_HAS_DRIVER
 	select HAS_NUMAKER_RMC
 	help

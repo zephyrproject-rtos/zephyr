@@ -4,7 +4,7 @@
 config HWINFO_NUMAKER
 	bool "NuMaker hwinfo"
 	default y
-	depends on SOC_SERIES_M46X || SOC_SERIES_M55M1X
+	depends on DT_HAS_NUVOTON_NUMAKER_FMC_ENABLED
 	select HWINFO_HAS_DRIVER
 	select HAS_NUMAKER_FMC
 	help
