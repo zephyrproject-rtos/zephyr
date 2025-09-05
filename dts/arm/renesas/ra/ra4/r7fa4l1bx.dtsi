@@ -559,6 +559,14 @@
 			status = "disabled";
 		};
 
+		rtc: rtc@40083000 {
+			compatible = "renesas,ra-rtc";
+			reg = <40083000 0x80>;
+			clocks = <&subclk>;
+			alarms-count = <1>;
+			status = "disabled";
+		};
+
 		option_setting_ofs_conf: option-setting-ofs-conf@100a100 {
 			compatible = "zephyr,memory-region";
 			reg = <0x0100a100 0x200>;
