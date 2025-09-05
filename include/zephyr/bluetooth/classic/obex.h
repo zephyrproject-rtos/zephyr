@@ -1736,6 +1736,15 @@ int bt_obex_make_uuid(union bt_obex_uuid *uuid, const uint8_t *data, uint16_t le
  */
 bool bt_obex_string_is_valid(uint8_t id, uint16_t len, const uint8_t *str);
 
+/** @brief Check whether the buf has the specified header
+ *
+ *  @param buf Buffer needs to be sent.
+ *  @param id The id of the header.
+ *
+ *  @return true if the header is found or false otherwise.
+ */
+bool bt_obex_has_header(struct net_buf *buf, uint8_t id);
+
 #ifdef __cplusplus
 }
 #endif
