@@ -9,6 +9,7 @@
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/uart.h>
+#include <zephyr/spinlock.h>
 #include <zephyr/sys/ring_buffer.h>
 #include <zephyr/sys/byteorder.h>
 
@@ -123,6 +124,7 @@ struct cdc_acm_uart_data {
 	struct k_work rx_fifo_work;
 	atomic_t state;
 	struct k_sem notif_sem;
+	struct k_spinlock lock;
 };
 
 static void cdc_acm_irq_rx_enable(const struct device *dev);
@@ -770,7 +772,7 @@ static int cdc_acm_fifo_fill(const struct device *dev,
 			     const int len)
 {
 	struct cdc_acm_uart_data *const data = dev->data;
-	unsigned int lock;
+	k_spinlock_key_t key;
 	uint32_t done;
 
 	if (!check_wq_ctx(dev)) {
@@ -779,9 +781,9 @@ static int cdc_acm_fifo_fill(const struct device *dev,
 		return 0;
 	}
 
-	lock = irq_lock();
+	key = k_spin_lock(&data->lock);
 	done = ring_buf_put(data->tx_fifo.rb, tx_data, len);
-	irq_unlock(lock);
+	k_spin_unlock(&data->lock, key);
 	if (done) {
 		data->tx_fifo.altered = true;
 	}
@@ -989,13 +991,13 @@ static int cdc_acm_poll_in(const struct device *dev, unsigned char *const c)
 static void cdc_acm_poll_out(const struct device *dev, const unsigned char c)
 {
 	struct cdc_acm_uart_data *const data = dev->data;
-	unsigned int lock;
+	k_spinlock_key_t key;
 	uint32_t wrote;
 
 	while (true) {
-		lock = irq_lock();
+		key = k_spin_lock(&data->lock);
 		wrote = ring_buf_put(data->tx_fifo.rb, &c, 1);
-		irq_unlock(lock);
+		k_spin_unlock(&data->lock, key);
 
 		if (wrote == 1) {
 			break;
