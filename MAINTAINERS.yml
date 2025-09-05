@@ -5331,6 +5331,7 @@ West:
     - jaz1-nordic
     - mif1-nordic
     - adamkondraciuk
+    - lstnl
   files:
     - modules/hal_nordic/
   labels:
@@ -6025,6 +6026,7 @@ nRF Platforms:
     - kl-cruz
     - magp-nordic
     - nika-nordic
+    - lstnl
   files:
     - boards/nordic/
     - drivers/*/*nrf*.c
