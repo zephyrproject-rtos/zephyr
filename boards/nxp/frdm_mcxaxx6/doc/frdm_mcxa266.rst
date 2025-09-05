@@ -11,18 +11,18 @@ MCX A Series are high-performance, low-power microcontrollers with MAU,SmartDMA 
 Hardware
 ********
 
-- MCX-A276 Arm Cortex-M33 microcontroller running at 180 MHz
+- MCX-A266 Arm Cortex-M33 microcontroller running at 180 MHz
 - 1MB dual-bank on chip Flash
 - 256 KB RAM
 - 1x FlexCAN with FD, 1x RGB LED, 3x SW buttons
 - On-board MCU-Link debugger with CMSIS-DAP
 - Arduino Header, SmartDMA/Camera Header, mikroBUS
 
-For more information about the MCX-A276 SoC and FRDM-MCXA266 board, see:
+For more information about the MCX-A266 SoC and FRDM-MCXA266 board, see:
 
-- `MCX-A276 SoC Website`_
-- `MCX-A276 Datasheet`_
-- `MCX-A276 Reference Manual`_
+- `MCX-A266 SoC Website`_
+- `MCX-A266 Datasheet`_
+- `MCX-A266 Reference Manual`_
 - `FRDM-MCXA266 Website`_
 - `FRDM-MCXA266 User Guide`_
 - `FRDM-MCXA266 Board User Manual`_
@@ -36,7 +36,7 @@ Supported Features
 Connections and IOs
 ===================
 
-The MCX-A276 SoC has 6 gpio controllers and has pinmux registers which
+The MCX-A266 SoC has 6 gpio controllers and has pinmux registers which
 can be used to configure the functionality of a pin.
 
 +------------+-----------------+----------------------------+
@@ -50,7 +50,7 @@ can be used to configure the functionality of a pin.
 System Clock
 ============
 
-The MCX-A276 SoC is configured to use FRO running at 180MHz as a source for
+The MCX-A266 SoC is configured to use FRO running at 180MHz as a source for
 the system clock.
 
 Serial Port
@@ -159,23 +159,23 @@ Troubleshooting
 .. include:: ../../common/board-footer.rst
    :start-after: nxp-board-footer
 
-.. _MCX-A276 SoC Website:
-   https://www.nxp.com/products/processors-and-microcontrollers/arm-microcontrollers/general-purpose-mcus/mcx-arm-cortex-m/mcx-a-series-microcontrollers/mcx-a13x-14x-15x-mcus-with-arm-cortex-m33-scalable-device-options-low-power-and-intelligent-peripherals:MCX-A13X-A14X-A15X
+.. _MCX-A266 SoC Website:
+   https://www.nxp.com/products/MCX-A345-A346
 
-.. _MCX-A276 Datasheet:
-   https://www.nxp.com/docs/en/data-sheet/MCXAP100M96FS6.pdf
+.. _MCX-A266 Datasheet:
+   https://www.nxp.com/docs/en/data-sheet/MCXAP144M240F60.pdf
 
-.. _MCX-A276 Reference Manual:
-   https://www.nxp.com/webapp/Download?colCode=MCXAP100M96FS6RM
+.. _MCX-A266 Reference Manual:
+   https://www.nxp.com/docs/en/reference-manual/MCXAP144M240F60RM.pdf
 
 .. _FRDM-MCXA266 Website:
-   https://www.nxp.com/design/design-center/development-boards-and-designs/general-purpose-mcus/frdm-development-board-for-mcx-a144-5-6-a154-5-6-mcus:FRDM-MCXA266
+   https://www.nxp.com/design/design-center/development-boards-and-designs/FRDM-MCXA346
 
 .. _FRDM-MCXA266 User Guide:
-   https://www.nxp.com/document/guide/getting-started-with-frdm-mcxa266:GS-FRDM-MCXA266
+   https://www.nxp.com/document/guide/getting-started-with-frdm-mcxa346:GS-FRDM-MCXA346
 
 .. _FRDM-MCXA266 Board User Manual:
-   https://www.nxp.com/docs/en/user-manual/UM12121.pdf
+   https://www.nxp.com/docs/en/user-manual/UM12348.pdf
 
 .. _FRDM-MCXA266 Schematics:
-   https://www.nxp.com/webapp/Download?colCode=SPF-90841
+   https://www.nxp.com/webapp/Download?colCode=FRDM-MCXA346-DESIGN-FILES

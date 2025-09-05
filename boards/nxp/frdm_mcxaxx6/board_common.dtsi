@@ -199,17 +199,6 @@
 	status = "okay";
 };
 
-/* OPAMP configuration */
-&opamp0 {
-	pinctrl-0 = <&pinmux_opamp0>;
-	pinctrl-names = "default";
-	status = "okay";
-};
-
-&opamp1 {
-	status = "okay";
-};
-
 /* Timer configurations */
 &ctimer0 {
 	status = "okay";
