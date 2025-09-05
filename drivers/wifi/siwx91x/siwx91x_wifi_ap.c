@@ -230,6 +230,11 @@ int siwx91x_ap_enable(const struct device *dev, struct wifi_connect_req_params *
 		siwx91x_ap_cfg.channel.channel = params->channel;
 	}
 
+	if (params->channel == 14) {
+		/* Disable HT on channel 14 */
+		siwx91x_ap_cfg.is_11n_enabled = 0;
+	}
+
 	ret = sl_wifi_start_ap(SL_WIFI_AP_INTERFACE | SL_WIFI_2_4GHZ_INTERFACE, &siwx91x_ap_cfg);
 	if (ret) {
 		LOG_ERR("Failed to enable AP mode: 0x%x", ret);
