@@ -549,7 +549,7 @@ static void dump_frame(uint8_t *buf)
 static void process(void)
 {
 	static const uint32_t *const etr_buf = (uint32_t *)(DT_REG_ADDR(ETR_BUFFER_NODE));
-	static uint32_t sync_cnt;
+	static uint32_t sync_cnt = CONFIG_NRF_ETR_SYNC_PERIOD;
 	uint32_t pending;
 
 	/* If function is called in panic mode then it may interrupt ongoing
@@ -766,6 +766,7 @@ int etr_process_init(void)
 	IRQ_CONNECT(DT_IRQN(DT_NODELABEL(tbm)), DT_IRQ(DT_NODELABEL(tbm), priority),
 			    nrfx_isr, nrfx_tbm_irq_handler, 0);
 	irq_enable(DT_IRQN(DT_NODELABEL(tbm)));
+	nrfx_tbm_start();
 
 #ifdef CONFIG_NRF_ETR_SHELL
 	uint32_t level = CONFIG_LOG_MAX_LEVEL;
@@ -789,7 +790,17 @@ int etr_process_init(void)
 	return 0;
 }
 
-SYS_INIT(etr_process_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+#define NRF_ETR_INIT_PRIORITY UTIL_INC(UTIL_INC(CONFIG_NRF_IRONSIDE_CALL_INIT_PRIORITY))
+
+SYS_INIT(etr_process_init, POST_KERNEL, NRF_ETR_INIT_PRIORITY);
+
+#if defined(CONFIG_NORDIC_VPR_LAUNCHER) && defined(CONFIG_LOG_FRONTEND_STMESP_FSC)
+/* TDD/ETR must be up and running before VPR cores are started as they write to
+ * ETR some vital initial data that cannot be lost.
+ */
+BUILD_ASSERT(CONFIG_NORDIC_VPR_LAUNCHER_INIT_PRIORITY > NRF_ETR_INIT_PRIORITY);
+#endif
+
 
 #ifdef CONFIG_NRF_ETR_SHELL
 
