@@ -478,6 +478,32 @@ struct bt_sdp_record {
 }
 
 /**
+ *  @brief SDP Supported Capabilities Attribute Declaration Macro.
+ *
+ *  Helper macro to declare supported capabilities of a profile/protocol.
+ *
+ *  @param _capabilities Capability mask as 8bit unsigned integer.
+ */
+#define BT_SDP_SUPPORTED_CAPABILITIES(_capabilities) \
+{ \
+	BT_SDP_ATTR_SUPPORTED_CAPABILITIES, \
+	{ BT_SDP_TYPE_SIZE(BT_SDP_UINT8), BT_SDP_ARRAY_8(_capabilities) } \
+}
+
+/**
+ *  @brief SDP Supported Functions Attribute Declaration Macro.
+ *
+ *  Helper macro to declare supported functions of a profile/protocol.
+ *
+ *  @param _functions Function mask as 32bit unsigned integer.
+ */
+#define BT_SDP_SUPPORTED_FUNCTIONS(_functions) \
+{ \
+	BT_SDP_ATTR_SUPPORTED_FUNCTIONS, \
+	{ BT_SDP_TYPE_SIZE(BT_SDP_UINT32), BT_SDP_ARRAY_32(_functions) } \
+}
+
+/**
  *  @brief SDP Service Declaration Macro.
  *
  *  Helper macro to declare a service.
@@ -639,6 +665,7 @@ int bt_sdp_discover_cancel(struct bt_conn *conn,
 /** @brief Protocols to be asked about specific parameters */
 enum bt_sdp_proto {
 	BT_SDP_PROTO_RFCOMM = 0x0003,
+	BT_SDP_PROTO_OBEX   = 0x0008,
 	BT_SDP_PROTO_AVDTP  = 0x0019,
 	BT_SDP_PROTO_L2CAP  = 0x0100,
 };
@@ -703,6 +730,28 @@ int bt_sdp_get_profile_version(const struct net_buf *buf, uint16_t profile,
  *  @return 0 on success if feature found and valid, negative in case any error
  */
 int bt_sdp_get_features(const struct net_buf *buf, uint16_t *features);
+
+/** @brief Get supported functions attribute value
+ *
+ *  Allows if exposed by remote retrieve supported functions attribute.
+ *
+ *  @param buf Buffer holding original raw record data from remote.
+ *  @param functions On success object to be populated with support functions.
+ *
+ *  @return 0 on success if feature found and valid, negative in case any error
+ */
+int bt_sdp_get_functions(const struct net_buf *buf, uint32_t *functions);
+
+/** @brief Get GOEP L2CAP PSM attribute value
+ *
+ *  Allows if exposed by remote retrieve supported GOEP L2CAP PSM attribute.
+ *
+ *  @param buf Buffer holding original raw record data from remote.
+ *  @param psm On success object to be populated with GOEP L2CAP PSM.
+ *
+ *  @return 0 on success if feature found and valid, negative in case any error
+ */
+int bt_sdp_get_goep_l2cap_psm(const struct net_buf *buf, uint16_t *psm);
 
 /** @brief Get Vendor ID
  *
