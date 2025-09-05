@@ -29,5 +29,7 @@ tests:
   sample.sensor.light_polling.shields:
     platform_allow:
       - adafruit_qt_py_rp2040/rp2040
+      - mikroe_clicker_ra4m1/r7fa4m1ab3cfm # mikroe_illuminance_click shield
     extra_args:
       - platform:adafruit_qt_py_rp2040/rp2040:SHIELD="adafruit_tsl2591"
+      - platform:mikroe_clicker_ra4m1/r7fa4m1ab3cfm:SHIELD="mikroe_illuminance_click"
