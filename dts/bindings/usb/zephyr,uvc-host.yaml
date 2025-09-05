@@ -1,0 +1,12 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  USB Video Class (UVC) host instance.
+
+  Each UVC instance added to the USB Host Controller (UHC) node will be visible
+  as a new camera from the host point of view.
+
+compatible: "zephyr,uvc-host"
+
+include: base.yaml
