@@ -1,7 +1,7 @@
 # Copyright (c) 2024 Synopsys, Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_SERIES_NSIM_ARC_V_RHX
+if SOC_SERIES_RHX
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)
@@ -21,4 +21,4 @@ config RISCV_PMP
 config RISCV_SOC_INTERRUPT_INIT
 	default y
 
-endif # SOC_SERIES_NSIM_ARC_V_RHX
+endif # SOC_SERIES_RHX
