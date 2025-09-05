@@ -50,5 +50,21 @@ properties:
     description: |
       bias voltage level: 0 - (AVDD+AVSS)/2, 1 - (AVDD+AVSS)/12
 
+  positive-reference-buffer-disable:
+    type: boolean
+    description: |
+      Disables the positive reference buffer for all channels. Recommended when using external
+      reference voltage and V(REFPx) is close to AVDD.
+
+      The positive reference buffer is enabled at reset.
+
+  negative-reference-buffer-disable:
+    type: boolean
+    description: |
+      Disables the negative reference buffer for all channels. Recommended when using external
+      reference voltage and V(REFNx) is close to AVSS.
+
+      The negative reference buffer is disabled at reset.
+
 io-channel-cells:
   - input
