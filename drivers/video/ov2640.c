@@ -482,8 +482,6 @@ static const struct ov2640_reg uxga_regs[] = {
 	{R_DVP_SP, R_DVP_SP_AUTO_MODE | 0x04},
 
 	{R_BYPASS, R_BYPASS_DSP_EN},
-	/* Keep reset asserted as zoom config is coming next */
-	/* { RESET,    0x00 }, */
 	{0, 0},
 };
 
@@ -858,9 +856,7 @@ static int ov2640_set_vertical_flip(const struct device *dev, int enable)
 
 static const struct ov2640_win_size *ov2640_select_win(uint32_t width, uint32_t height)
 {
-	int i;
-
-	for (i = 0; i < ARRAY_SIZE(ov2640_supported_win_sizes); i++) {
+	for (int i = 0; i < ARRAY_SIZE(ov2640_supported_win_sizes); i++) {
 		if (ov2640_supported_win_sizes[i].width >= width &&
 		    ov2640_supported_win_sizes[i].height >= height) {
 			return &ov2640_supported_win_sizes[i];
@@ -887,7 +883,7 @@ static int ov2640_set_resolution(const struct device *dev,
 	LOG_INF("Selected resolution %s", win->name);
 
 	/* Write DSP input registers */
-	ret |= ov2640_write_all(dev, uxga_regs, ARRAY_SIZE(uxga_regs));
+	ret = ov2640_write_all(dev, uxga_regs, ARRAY_SIZE(uxga_regs));
 	if (ret < 0) {
 		return ret;
 	}
