@@ -116,4 +116,6 @@ source "drivers/clock_control/Kconfig.it51xxx"
 
 source "drivers/clock_control/Kconfig.mchp"
 
+source "drivers/clock_control/Kconfig.sf32lb_hxt48"
+
 endif # CLOCK_CONTROL
