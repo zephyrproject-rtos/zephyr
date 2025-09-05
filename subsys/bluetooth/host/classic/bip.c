@@ -1873,8 +1873,8 @@ int bt_bip_get_capabilities(struct bt_bip_client *client, bool final, struct net
 	return bip_get(client, BT_BIP_HDR_TYPE_GET_CAPS, final, buf);
 }
 
-static int bip_get_or_put_rsp(struct bt_bip_server *server, bool is_get, uint8_t rsp_code,
-			      struct net_buf *buf)
+static int bip_get_or_put_rsp(struct bt_bip_server *server, bool is_get, const char *type,
+			      uint8_t rsp_code, struct net_buf *buf)
 {
 	int err;
 
@@ -1887,9 +1887,24 @@ static int bip_get_or_put_rsp(struct bt_bip_server *server, bool is_get, uint8_t
 		return -EINVAL;
 	}
 
+	if (server->_optype != NULL && strcmp(server->_optype, type) != 0) {
+		LOG_ERR("Invalid operation type %s != %s", server->_optype, type);
+		return -EINVAL;
+	}
+
 	if (is_get) {
+		if (server->_opcode != BT_OBEX_OPCODE_GET) {
+			LOG_ERR("Operation %u != %u", server->_opcode, BT_OBEX_OPCODE_GET);
+			return -EINVAL;
+		}
+
 		err = bt_obex_get_rsp(&server->_server, rsp_code, buf);
 	} else {
+		if (server->_opcode != BT_OBEX_OPCODE_PUT) {
+			LOG_ERR("Operation %u != %u", server->_opcode, BT_OBEX_OPCODE_PUT);
+			return -EINVAL;
+		}
+
 		err = bt_obex_put_rsp(&server->_server, rsp_code, buf);
 	}
 
@@ -1909,7 +1924,7 @@ static int bip_get_or_put_rsp(struct bt_bip_server *server, bool is_get, uint8_t
 
 int bt_bip_get_capabilities_rsp(struct bt_bip_server *server, uint8_t rsp_code, struct net_buf *buf)
 {
-	return bip_get_or_put_rsp(server, true, rsp_code, buf);
+	return bip_get_or_put_rsp(server, true, BT_BIP_HDR_TYPE_GET_CAPS, rsp_code, buf);
 }
 
 int bt_bip_get_image_list(struct bt_bip_client *client, bool final, struct net_buf *buf)
@@ -1919,7 +1934,7 @@ int bt_bip_get_image_list(struct bt_bip_client *client, bool final, struct net_b
 
 int bt_bip_get_image_list_rsp(struct bt_bip_server *server, uint8_t rsp_code, struct net_buf *buf)
 {
-	return bip_get_or_put_rsp(server, true, rsp_code, buf);
+	return bip_get_or_put_rsp(server, true, BT_BIP_HDR_TYPE_GET_IMAGE_LIST, rsp_code, buf);
 }
 
 int bt_bip_get_image_properties(struct bt_bip_client *client, bool final, struct net_buf *buf)
@@ -1930,7 +1945,8 @@ int bt_bip_get_image_properties(struct bt_bip_client *client, bool final, struct
 int bt_bip_get_image_properties_rsp(struct bt_bip_server *server, uint8_t rsp_code,
 				    struct net_buf *buf)
 {
-	return bip_get_or_put_rsp(server, true, rsp_code, buf);
+	return bip_get_or_put_rsp(server, true, BT_BIP_HDR_TYPE_GET_IMAGE_PROPERTIES, rsp_code,
+				  buf);
 }
 
 int bt_bip_get_image(struct bt_bip_client *client, bool final, struct net_buf *buf)
@@ -1940,7 +1956,7 @@ int bt_bip_get_image(struct bt_bip_client *client, bool final, struct net_buf *b
 
 int bt_bip_get_image_rsp(struct bt_bip_server *server, uint8_t rsp_code, struct net_buf *buf)
 {
-	return bip_get_or_put_rsp(server, true, rsp_code, buf);
+	return bip_get_or_put_rsp(server, true, BT_BIP_HDR_TYPE_GET_IMAGE, rsp_code, buf);
 }
 
 int bt_bip_get_linked_thumbnail(struct bt_bip_client *client, bool final, struct net_buf *buf)
@@ -1951,7 +1967,8 @@ int bt_bip_get_linked_thumbnail(struct bt_bip_client *client, bool final, struct
 int bt_bip_get_linked_thumbnail_rsp(struct bt_bip_server *server, uint8_t rsp_code,
 				    struct net_buf *buf)
 {
-	return bip_get_or_put_rsp(server, true, rsp_code, buf);
+	return bip_get_or_put_rsp(server, true, BT_BIP_HDR_TYPE_GET_LINKED_THUMBNAIL, rsp_code,
+				  buf);
 }
 
 int bt_bip_get_linked_attachment(struct bt_bip_client *client, bool final, struct net_buf *buf)
@@ -1962,7 +1979,8 @@ int bt_bip_get_linked_attachment(struct bt_bip_client *client, bool final, struc
 int bt_bip_get_linked_attachment_rsp(struct bt_bip_server *server, uint8_t rsp_code,
 				     struct net_buf *buf)
 {
-	return bip_get_or_put_rsp(server, true, rsp_code, buf);
+	return bip_get_or_put_rsp(server, true, BT_BIP_HDR_TYPE_GET_LINKED_ATTACHMENT, rsp_code,
+				  buf);
 }
 
 int bt_bip_get_partial_image(struct bt_bip_client *client, bool final, struct net_buf *buf)
@@ -1973,7 +1991,7 @@ int bt_bip_get_partial_image(struct bt_bip_client *client, bool final, struct ne
 int bt_bip_get_partial_image_rsp(struct bt_bip_server *server, uint8_t rsp_code,
 				 struct net_buf *buf)
 {
-	return bip_get_or_put_rsp(server, true, rsp_code, buf);
+	return bip_get_or_put_rsp(server, true, BT_BIP_HDR_TYPE_GET_PARTIAL_IMAGE, rsp_code, buf);
 }
 
 int bt_bip_get_monitoring_image(struct bt_bip_client *client, bool final, struct net_buf *buf)
@@ -1984,7 +2002,8 @@ int bt_bip_get_monitoring_image(struct bt_bip_client *client, bool final, struct
 int bt_bip_get_monitoring_image_rsp(struct bt_bip_server *server, uint8_t rsp_code,
 				    struct net_buf *buf)
 {
-	return bip_get_or_put_rsp(server, true, rsp_code, buf);
+	return bip_get_or_put_rsp(server, true, BT_BIP_HDR_TYPE_GET_MONITORING_IMAGE, rsp_code,
+				  buf);
 }
 
 int bt_bip_get_status(struct bt_bip_client *client, bool final, struct net_buf *buf)
@@ -1994,7 +2013,7 @@ int bt_bip_get_status(struct bt_bip_client *client, bool final, struct net_buf *
 
 int bt_bip_get_status_rsp(struct bt_bip_server *server, uint8_t rsp_code, struct net_buf *buf)
 {
-	return bip_get_or_put_rsp(server, true, rsp_code, buf);
+	return bip_get_or_put_rsp(server, true, BT_BIP_HDR_TYPE_GET_STATUS, rsp_code, buf);
 }
 
 int bt_bip_put_image(struct bt_bip_client *client, bool final, struct net_buf *buf)
@@ -2004,7 +2023,7 @@ int bt_bip_put_image(struct bt_bip_client *client, bool final, struct net_buf *b
 
 int bt_bip_put_image_rsp(struct bt_bip_server *server, uint8_t rsp_code, struct net_buf *buf)
 {
-	return bip_get_or_put_rsp(server, false, rsp_code, buf);
+	return bip_get_or_put_rsp(server, false, BT_BIP_HDR_TYPE_PUT_IMAGE, rsp_code, buf);
 }
 
 int bt_bip_put_linked_thumbnail(struct bt_bip_client *client, bool final, struct net_buf *buf)
@@ -2015,7 +2034,8 @@ int bt_bip_put_linked_thumbnail(struct bt_bip_client *client, bool final, struct
 int bt_bip_put_linked_thumbnail_rsp(struct bt_bip_server *server, uint8_t rsp_code,
 				    struct net_buf *buf)
 {
-	return bip_get_or_put_rsp(server, false, rsp_code, buf);
+	return bip_get_or_put_rsp(server, false, BT_BIP_HDR_TYPE_PUT_LINKED_THUMBNAIL, rsp_code,
+				  buf);
 }
 
 int bt_bip_put_linked_attachment(struct bt_bip_client *client, bool final, struct net_buf *buf)
@@ -2026,7 +2046,8 @@ int bt_bip_put_linked_attachment(struct bt_bip_client *client, bool final, struc
 int bt_bip_put_linked_attachment_rsp(struct bt_bip_server *server, uint8_t rsp_code,
 				     struct net_buf *buf)
 {
-	return bip_get_or_put_rsp(server, false, rsp_code, buf);
+	return bip_get_or_put_rsp(server, false, BT_BIP_HDR_TYPE_PUT_LINKED_ATTACHMENT, rsp_code,
+				  buf);
 }
 
 int bt_bip_remote_display(struct bt_bip_client *client, bool final, struct net_buf *buf)
@@ -2036,7 +2057,7 @@ int bt_bip_remote_display(struct bt_bip_client *client, bool final, struct net_b
 
 int bt_bip_remote_display_rsp(struct bt_bip_server *server, uint8_t rsp_code, struct net_buf *buf)
 {
-	return bip_get_or_put_rsp(server, false, rsp_code, buf);
+	return bip_get_or_put_rsp(server, false, BT_BIP_HDR_TYPE_REMOTE_DISPLAY, rsp_code, buf);
 }
 
 int bt_bip_delete_image(struct bt_bip_client *client, bool final, struct net_buf *buf)
@@ -2046,7 +2067,7 @@ int bt_bip_delete_image(struct bt_bip_client *client, bool final, struct net_buf
 
 int bt_bip_delete_image_rsp(struct bt_bip_server *server, uint8_t rsp_code, struct net_buf *buf)
 {
-	return bip_get_or_put_rsp(server, false, rsp_code, buf);
+	return bip_get_or_put_rsp(server, false, BT_BIP_HDR_TYPE_DELETE_IMAGE, rsp_code, buf);
 }
 
 int bt_bip_start_print(struct bt_bip_client *client, bool final, struct net_buf *buf)
@@ -2056,7 +2077,7 @@ int bt_bip_start_print(struct bt_bip_client *client, bool final, struct net_buf 
 
 int bt_bip_start_print_rsp(struct bt_bip_server *server, uint8_t rsp_code, struct net_buf *buf)
 {
-	return bip_get_or_put_rsp(server, false, rsp_code, buf);
+	return bip_get_or_put_rsp(server, false, BT_BIP_HDR_TYPE_START_PRINT, rsp_code, buf);
 }
 
 int bt_bip_start_archive(struct bt_bip_client *client, bool final, struct net_buf *buf)
@@ -2066,7 +2087,7 @@ int bt_bip_start_archive(struct bt_bip_client *client, bool final, struct net_bu
 
 int bt_bip_start_archive_rsp(struct bt_bip_server *server, uint8_t rsp_code, struct net_buf *buf)
 {
-	return bip_get_or_put_rsp(server, false, rsp_code, buf);
+	return bip_get_or_put_rsp(server, false, BT_BIP_HDR_TYPE_START_ARCHIVE, rsp_code, buf);
 }
 
 int bt_bip_add_header_image_desc(struct net_buf *buf, uint16_t len, const uint8_t *desc)
