@@ -28,7 +28,7 @@ int evtchn_close(evtchn_port_t port);
 int evtchn_set_priority(evtchn_port_t port, uint32_t priority);
 int notify_evtchn(evtchn_port_t port);
 
-/*
+/**
  * Allocate event-channel between caller and remote domain
  *
  * @param remote_dom - remote domain domid
@@ -37,7 +37,7 @@ int notify_evtchn(evtchn_port_t port);
 int alloc_unbound_event_channel(domid_t remote_dom);
 
 #ifdef CONFIG_XEN_DOM0
-/*
+/**
  * Allocate event-channel between remote domains. Can be used only from Dom0.
  *
  * @param dom - first remote domain domid (may be DOMID_SELF)
@@ -47,7 +47,7 @@ int alloc_unbound_event_channel(domid_t remote_dom);
 int alloc_unbound_event_channel_dom0(domid_t dom, domid_t remote_dom);
 #endif /* CONFIG_XEN_DOM0 */
 
-/*
+/**
  * Allocate local event channel, binded to remote port and attach specified callback
  * to it
  *
@@ -60,7 +60,7 @@ int alloc_unbound_event_channel_dom0(domid_t dom, domid_t remote_dom);
 int bind_interdomain_event_channel(domid_t remote_dom, evtchn_port_t remote_port,
 		evtchn_cb_t cb, void *data);
 
-/*
+/**
  * Bind user-defined handler to specified event-channel
  *
  * @param port - event channel number
@@ -70,15 +70,33 @@ int bind_interdomain_event_channel(domid_t remote_dom, evtchn_port_t remote_port
  */
 int bind_event_channel(evtchn_port_t port, evtchn_cb_t cb, void *data);
 
-/*
+/**
  * Unbind handler from event channel, substitute it with empty callback
  *
  * @param port - event channel number to unbind
  * @return - zero on success
  */
 int unbind_event_channel(evtchn_port_t port);
+
+/**
+ * Check if missed events are present on specified port.
+ * @param port - event channel number
+ * @return 1 if missed events are present, 0 otherwise
+ */
 int get_missed_events(evtchn_port_t port);
+
+/**
+ * Disable event processing on specified port.
+ * @param port - event channel number
+ * @return 0 on success, negative errno on error
+ */
 int mask_event_channel(evtchn_port_t port);
+
+/**
+ * Enable event processing on specified port.
+ * @param port - event channel number
+ * @return 0 on success, negative errno on error
+ */
 int unmask_event_channel(evtchn_port_t port);
 
 /**
@@ -87,6 +105,10 @@ int unmask_event_channel(evtchn_port_t port);
  */
 void clear_event_channel(evtchn_port_t port);
 
+/**
+ * Initialize Xen event channel driver, used on initialization
+ * @return - 0 on success, negative errno on error
+ */
 int xen_events_init(void);
 
 #endif /* __XEN_EVENTS_H__ */
