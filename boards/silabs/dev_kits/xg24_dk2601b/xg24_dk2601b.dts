@@ -86,11 +86,6 @@
 		};
 	};
 
-	wake_up_trigger: gpio-wake-up  {
-		compatible = "silabs,gecko-wake-up-trigger";
-		gpios = <&gpioa 5 GPIO_ACTIVE_LOW>;
-	};
-
 	sensor_enable: gpio_switch_0 {
 		compatible = "regulator-fixed";
 		regulator-boot-on;
