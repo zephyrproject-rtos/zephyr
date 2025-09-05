@@ -13,3 +13,10 @@ properties:
 
   interrupts:
     required: true
+
+  low-power-states:
+    type: phandles
+    description: |
+      power states which will put the uart into a "low power mode" in which it cannot
+      function with normal baud rate but will retain state
+      and activity on the RX line can cause wakeup if wakeup function is also enabled.
