@@ -933,6 +933,9 @@ struct bt_bip_client {
 	/** @internal Pending response callback */
 	void (*_rsp_cb)(struct bt_bip_client *client, uint8_t rsp_code, struct net_buf *buf);
 
+	/** @internal current request function type */
+	const char *_req_type;
+
 	/** @internal Node for linking in lists */
 	sys_snode_t _node;
 };
