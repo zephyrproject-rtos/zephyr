@@ -102,7 +102,7 @@ static void stm32_intc_gpio_isr(const void *exti_range)
 	uint32_t line_num;
 
 	/* see which bits are set */
-	for (uint8_t i = 0; i <= range->len; i++) {
+	for (uint8_t i = 0; i < range->len; i++) {
 		line_num = range->start + i;
 
 		/* check if interrupt is pending */
