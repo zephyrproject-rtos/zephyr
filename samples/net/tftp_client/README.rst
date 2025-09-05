@@ -44,7 +44,7 @@ The easiest way to setup this sample application is to build and run it
 as a native_sim application or as a QEMU target using the default configuration :file:`prj.conf`.
 This requires a small amount of setup described in :ref:`networking_with_eth_qemu`, :ref:`networking_with_qemu` and :ref:`networking_with_native_sim`.
 
-Build the tftp-client sample application for :ref:`native_sim <native_sim>` like this:
+Build the tftp-client sample application for :zephyr:board:`native_sim <native_sim>` like this:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/tftp_client
@@ -74,8 +74,8 @@ configurations in ``prj.conf``:
 Sample output
 ==================================
 
-This sample can be run on :ref:`native_sim<native_sim>` while running a TFTP server on the host
-machine.
+This sample can be run on :zephyr:board:`native_sim<native_sim>` while running a TFTP server on the
+host machine.
 
 Launch :command:`net-setup.sh` in net-tools:
 
