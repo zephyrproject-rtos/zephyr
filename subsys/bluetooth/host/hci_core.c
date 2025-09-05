@@ -4998,6 +4998,22 @@ int bt_configure_data_path(uint8_t dir, uint8_t id, uint8_t vs_config_len,
 /* Return `true` if a command was processed/sent */
 static bool process_pending_cmd(k_timeout_t timeout)
 {
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_OPEN)) {
+		struct net_buf *buf;
+
+		LOG_WRN("Dropping queued commands since HCI transport is closed");
+
+		while ((buf = k_fifo_get(&bt_dev.cmd_tx_queue, K_NO_WAIT))) {
+			if (cmd(buf)->sync) {
+				cmd(buf)->status = BT_HCI_ERR_UNSPECIFIED;
+				k_sem_give(cmd(buf)->sync);
+			}
+			net_buf_unref(buf);
+		}
+
+		return false;
+	}
+
 	if (!k_fifo_is_empty(&bt_dev.cmd_tx_queue)) {
 		if (k_sem_take(&bt_dev.ncmd_sem, timeout) == 0) {
 			hci_core_send_cmd();
