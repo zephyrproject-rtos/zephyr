@@ -4583,9 +4583,7 @@ int bt_enable(bt_ready_cb_t cb)
 
 	bt_monitor_new_index(BT_MONITOR_TYPE_PRIMARY, BT_HCI_BUS, BT_ADDR_ANY, BT_HCI_NAME);
 
-	atomic_clear_bit(bt_dev.flags, BT_DEV_DISABLE);
-
-	if (atomic_test_and_set_bit(bt_dev.flags, BT_DEV_ENABLE)) {
+	if (atomic_test_bit(bt_dev.flags, BT_DEV_OPEN)) {
 		return -EALREADY;
 	}
 
@@ -4629,6 +4627,8 @@ int bt_enable(bt_ready_cb_t cb)
 		return err;
 	}
 
+	atomic_set_bit(bt_dev.flags, BT_DEV_OPEN);
+
 	bt_monitor_send(BT_MONITOR_OPEN_INDEX, NULL, 0);
 
 	if (!cb) {
@@ -4643,12 +4643,9 @@ int bt_disable(void)
 {
 	int err;
 
-	if (atomic_test_and_set_bit(bt_dev.flags, BT_DEV_DISABLE)) {
+	if (!atomic_test_and_clear_bit(bt_dev.flags, BT_DEV_READY)) {
 		return -EALREADY;
 	}
-
-	/* Clear BT_DEV_READY before disabling HCI link */
-	atomic_clear_bit(bt_dev.flags, BT_DEV_READY);
 
 #if defined(CONFIG_BT_BROADCASTER)
 	bt_adv_reset_adv_pool();
@@ -4682,21 +4679,17 @@ int bt_disable(void)
 		hci_reset_complete();
 	}
 
+	/* Clear the flag early to prevent races with command queuing */
+	atomic_clear_bit(bt_dev.flags, BT_DEV_OPEN);
+
 	err = bt_hci_close(bt_dev.hci);
-	if (err == -ENOSYS) {
-		atomic_clear_bit(bt_dev.flags, BT_DEV_DISABLE);
-		atomic_set_bit(bt_dev.flags, BT_DEV_READY);
-		return -ENOTSUP;
-	}
-
 	if (err) {
-		LOG_ERR("HCI driver close failed (%d)", err);
-
-		/* Re-enable BT_DEV_READY to avoid inconsistent stack state */
+		/* Re-enable state bits to avoid inconsistent stack state */
+		atomic_set_bit(bt_dev.flags, BT_DEV_OPEN);
 		atomic_set_bit(bt_dev.flags, BT_DEV_READY);
-
 		return err;
 	}
+
 
 #if defined(CONFIG_BT_RECV_WORKQ_BT)
 	/* Abort RX thread */
@@ -4721,11 +4714,6 @@ int bt_disable(void)
 	}
 
 	bt_monitor_send(BT_MONITOR_CLOSE_INDEX, NULL, 0);
-
-	/* Clear BT_DEV_ENABLE here to prevent early bt_enable() calls, before disable is
-	 * completed.
-	 */
-	atomic_clear_bit(bt_dev.flags, BT_DEV_ENABLE);
 
 	return 0;
 }
