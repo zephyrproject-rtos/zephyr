@@ -141,7 +141,7 @@ static ZTEST(bt_id_delete, test_id_create_after_delete)
 {
 	int default_id;
 
-	atomic_set_bit(bt_dev.flags, BT_DEV_ENABLE);
+	atomic_set_bit(bt_dev.flags, BT_DEV_READY);
 
 	if (CONFIG_BT_ID_MAX < 2) {
 		ztest_test_skip();
