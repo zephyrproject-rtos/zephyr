@@ -122,6 +122,10 @@
 	status = "okay";
 };
 
+&cpu0 {
+	clock-frequency = <180000000>;
+};
+
 &i3c0 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_i3c0>;
