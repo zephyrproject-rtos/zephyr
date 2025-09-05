@@ -159,7 +159,7 @@ static const struct video_reg8 ov7670_init_regtbl[] = {
 
 	/* configure the output timing */
 	/* PCLK does not toggle during horizontal blank, one PCLK, one pixel */
-	{OV7670_COM10, 0x03}, /* COM10 */
+	{OV7670_COM10, 0x20}, /* COM10 */
 	{OV7670_COM12, 0x00}, /* COM12,No HREF when VSYNC is low */
 	/* Brightness Control, with signal -128 to +128, 0x00 is middle value */
 	{OV7670_BRIGHT, 0x2f},
@@ -409,7 +409,6 @@ static int ov7670_set_fmt(const struct device *dev, struct video_format *fmt)
 		}
 		i++;
 	}
-	k_msleep(100);
 
 	return 0;
 }
