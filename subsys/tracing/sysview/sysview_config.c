@@ -58,6 +58,10 @@ static void cbSendSystemDesc(void)
 				   CONFIG_SOC_FAMILY " " CONFIG_ARCH);
 	SEGGER_SYSVIEW_SendSysDesc("O=Zephyr");
 
+#ifdef CONFIG_BOARD_QUALIFIERS
+	SEGGER_SYSVIEW_SendSysDesc("C=" CONFIG_BOARD_QUALIFIERS);
+#endif
+
 #ifdef CONFIG_SYMTAB
 	char isr_desc[SEGGER_SYSVIEW_MAX_STRING_LEN];
 
