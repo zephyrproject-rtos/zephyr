@@ -56,6 +56,119 @@ static struct bt_obex_tlv tlvs[TLV_COUNT];
 static uint8_t tlv_buffers[TLV_COUNT][TLV_BUFFER_SIZE];
 static uint8_t tlv_count;
 
+static uint8_t bip_supported_caps;
+static uint16_t bip_supported_features;
+static uint32_t bip_supported_functions;
+static uint64_t bip_max_memory_space = 1024; /* 1024 bytes */
+
+static struct bt_sdp_attribute bip_responder_attrs[] = {
+	BT_SDP_NEW_SERVICE,
+	BT_SDP_LIST(
+		BT_SDP_ATTR_SVCLASS_ID_LIST,
+		BT_SDP_TYPE_SIZE_VAR(BT_SDP_SEQ8, 3),
+		BT_SDP_DATA_ELEM_LIST(
+		{
+			BT_SDP_TYPE_SIZE(BT_SDP_UUID16),
+			BT_SDP_ARRAY_16(BT_SDP_IMAGING_RESPONDER_SVCLASS)
+		},
+		)
+	),
+	BT_SDP_LIST(
+		BT_SDP_ATTR_PROTO_DESC_LIST,
+		BT_SDP_TYPE_SIZE_VAR(BT_SDP_SEQ8, 17),
+		BT_SDP_DATA_ELEM_LIST(
+		{
+			BT_SDP_TYPE_SIZE_VAR(BT_SDP_SEQ8, 3),
+			BT_SDP_DATA_ELEM_LIST(
+			{
+				BT_SDP_TYPE_SIZE(BT_SDP_UUID16),
+				BT_SDP_ARRAY_16(BT_SDP_PROTO_L2CAP)
+			},
+			)
+		},
+		{
+			BT_SDP_TYPE_SIZE_VAR(BT_SDP_SEQ8, 5),
+			BT_SDP_DATA_ELEM_LIST(
+			{
+				BT_SDP_TYPE_SIZE(BT_SDP_UUID16),
+				BT_SDP_ARRAY_16(BT_SDP_PROTO_RFCOMM)
+			},
+			{
+				BT_SDP_TYPE_SIZE(BT_SDP_UINT8),
+				&rfcomm_server.server.rfcomm.channel
+			},
+			)
+		},
+		{
+			BT_SDP_TYPE_SIZE_VAR(BT_SDP_SEQ8, 3),
+			BT_SDP_DATA_ELEM_LIST(
+			{
+				BT_SDP_TYPE_SIZE(BT_SDP_UUID16),
+				BT_SDP_ARRAY_16(BT_SDP_PROTO_OBEX)
+			},
+			)
+		},
+		)
+	),
+	BT_SDP_SERVICE_NAME("imaging"),
+	BT_SDP_LIST(
+		BT_SDP_ATTR_PROFILE_DESC_LIST,
+		BT_SDP_TYPE_SIZE_VAR(BT_SDP_SEQ8, 8),
+		BT_SDP_DATA_ELEM_LIST(
+		{
+			BT_SDP_TYPE_SIZE_VAR(BT_SDP_SEQ8, 6),
+			BT_SDP_DATA_ELEM_LIST(
+			{
+				BT_SDP_TYPE_SIZE(BT_SDP_UUID16),
+				BT_SDP_ARRAY_16(BT_SDP_IMAGING_SVCLASS)
+			},
+			{
+				BT_SDP_TYPE_SIZE(BT_SDP_UINT16),
+				BT_SDP_ARRAY_16(0x0102)
+			},
+			)
+		},
+		)
+	),
+	{
+		BT_SDP_ATTR_SUPPORTED_CAPABILITIES,
+		{
+			BT_SDP_TYPE_SIZE(BT_SDP_UINT8),
+			&bip_supported_caps,
+		},
+	},
+	{
+		BT_SDP_ATTR_SUPPORTED_FEATURES,
+		{
+			BT_SDP_TYPE_SIZE(BT_SDP_UINT16),
+			&bip_supported_features,
+		},
+	},
+	{
+		BT_SDP_ATTR_SUPPORTED_FUNCTIONS,
+		{
+			BT_SDP_TYPE_SIZE(BT_SDP_UINT32),
+			&bip_supported_functions,
+		},
+	},
+	{
+		BT_SDP_ATTR_TOTAL_IMAGING_DATA_CAPACITY,
+		{
+			BT_SDP_TYPE_SIZE(BT_SDP_UINT64),
+			&bip_max_memory_space,
+		},
+	},
+	{
+		BT_SDP_ATTR_GOEP_L2CAP_PSM,
+		{
+			BT_SDP_TYPE_SIZE(BT_SDP_UINT16),
+			&l2cap_server.server.l2cap.psm,
+		},
+	},
+};
+
+static struct bt_sdp_record bip_responder_rec = BT_SDP_RECORD(bip_responder_attrs);
+
 static struct bt_bip_app *bip_alloc(struct bt_conn *conn)
 {
 	if (bip_app.conn != NULL) {
@@ -1342,6 +1455,23 @@ static int cmd_add_header_srm_param(const struct shell *sh, size_t argc, char *a
 		shell_error(sh, "Fail to add header srm_param");
 	}
 	return err;
+}
+
+static int cmd_bip_client_set_feats_funcs(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err;
+
+	err = bt_bip_set_supported_features(&bip_app.bip, bip_supported_features);
+	if (err != 0) {
+		shell_error(sh, "Failed to set BIP supported features");
+	}
+
+	err = bt_bip_set_supported_functions(&bip_app.bip, bip_supported_functions);
+	if (err != 0) {
+		shell_error(sh, "Failed to set BIP supported functions");
+	}
+
+	return 0;
 }
 
 static int cmd_bip_client_conn(const struct shell *sh, size_t argc, char *argv[])
@@ -4075,6 +4205,194 @@ error_rsp:
 	return err;
 }
 
+static int cmd_bip_sdp_reg(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err;
+
+	static bool registered;
+
+	if (registered) {
+		shell_error(sh, "SDP record has been registered");
+		return -EINVAL;
+	}
+
+	err = bt_sdp_register_service(&bip_responder_rec);
+	if (err != 0) {
+		shell_error(sh, "Failed to register SDP record");
+		return err;
+	}
+
+	registered = true;
+
+	return err;
+}
+
+static int cmd_sdp_set_caps(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err = 0;
+
+	bip_supported_caps = shell_strtol(argv[1], 0, &err);
+	if (err != 0) {
+		shell_error(sh, "Invalid capabilities %d", err);
+		return err;
+	}
+
+	return 0;
+}
+
+static int cmd_sdp_set_features(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err = 0;
+
+	bip_supported_features = shell_strtol(argv[1], 0, &err);
+	if (err != 0) {
+		shell_error(sh, "Invalid features %d", err);
+		return err;
+	}
+
+	return 0;
+}
+
+static int cmd_sdp_set_functions(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err = 0;
+
+	bip_supported_functions = shell_strtol(argv[1], 0, &err);
+	if (err != 0) {
+		shell_error(sh, "Invalid functions %d", err);
+		return err;
+	}
+
+	return 0;
+}
+
+#define BIP_SDP_DISCOVER_BUF_LEN 512
+NET_BUF_POOL_FIXED_DEFINE(sdp_client_pool, CONFIG_BT_MAX_CONN, BIP_SDP_DISCOVER_BUF_LEN,
+			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
+
+static int bip_sdp_get_goep_l2cap_psm(const struct net_buf *buf, uint16_t *psm)
+{
+	int err;
+	struct bt_sdp_attribute attr;
+	struct bt_sdp_attr_value value;
+
+	err = bt_sdp_get_attr(buf, BT_SDP_ATTR_GOEP_L2CAP_PSM, &attr);
+	if (err != 0) {
+		return err;
+	}
+
+	err = bt_sdp_attr_read(&attr, NULL, &value);
+	if (err != 0) {
+		return err;
+	}
+
+	if ((value.type != BT_SDP_ATTR_VALUE_TYPE_UINT) || (value.uint.size != sizeof(*psm))) {
+		return -EINVAL;
+	}
+
+	*psm = value.uint.u16;
+	return 0;
+}
+
+static int bip_sdp_get_functions(const struct net_buf *buf, uint32_t *funcs)
+{
+	int err;
+	struct bt_sdp_attribute attr;
+	struct bt_sdp_attr_value value;
+
+	err = bt_sdp_get_attr(buf, BT_SDP_ATTR_SUPPORTED_FUNCTIONS, &attr);
+	if (err != 0) {
+		return err;
+	}
+
+	err = bt_sdp_attr_read(&attr, NULL, &value);
+	if (err != 0) {
+		return err;
+	}
+
+	if ((value.type != BT_SDP_ATTR_VALUE_TYPE_UINT) || (value.uint.size != sizeof(*funcs))) {
+		return -EINVAL;
+	}
+
+	*funcs = value.uint.u32;
+	return 0;
+}
+
+static uint8_t bip_discover_func(struct bt_conn *conn, struct bt_sdp_client_result *result,
+				 const struct bt_sdp_discover_params *params)
+{
+	int err;
+	uint16_t features = 0;
+	uint32_t functions = 0;
+	uint16_t rfcomm_channel = 0;
+	uint16_t l2cap_psm = 0;
+
+	if (result == NULL || result->resp_buf == NULL || conn == NULL || params == NULL) {
+		bt_shell_info("No record found");
+		return BT_SDP_DISCOVER_UUID_CONTINUE;
+	}
+
+	err = bt_sdp_get_proto_param(result->resp_buf, BT_SDP_PROTO_RFCOMM, &rfcomm_channel);
+	if (err != 0) {
+		bt_shell_error("Failed to get RFCOMM channel: %d", err);
+	} else {
+		bt_shell_info("Found RFCOMM channel %u", rfcomm_channel);
+	}
+
+	err = bip_sdp_get_goep_l2cap_psm(result->resp_buf, &l2cap_psm);
+	if (err != 0) {
+		bt_shell_error("Failed to get GOEP L2CAP PSM: %d", err);
+	} else {
+		bt_shell_info("Found GOEP L2CAP PSM %u", l2cap_psm);
+	}
+
+	err = bt_sdp_get_features(result->resp_buf, &features);
+	if (err != 0) {
+		bt_shell_error("Failed to get BIP features: %d", err);
+	} else {
+		bt_shell_info("Found BIP features 0x%08x", features);
+		bip_supported_features = features;
+	}
+
+	err = bip_sdp_get_functions(result->resp_buf, &functions);
+	if (err != 0) {
+		bt_shell_error("Failed to get BIP functions: %d", err);
+	} else {
+		bt_shell_info("Found BIP functions 0x%08x", functions);
+		bip_supported_functions = functions;
+	}
+
+	return BT_SDP_DISCOVER_UUID_CONTINUE;
+}
+
+static int cmd_sdp_discover(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err = 0;
+
+	static struct bt_sdp_discover_params sdp_bip_params;
+	static struct bt_uuid_16 uuid;
+
+	if (default_conn == NULL) {
+		shell_error(sh, "Not connected");
+		return -ENOEXEC;
+	}
+
+	uuid.uuid.type = BT_UUID_TYPE_16;
+	uuid.val = BT_SDP_IMAGING_SVCLASS;
+	sdp_bip_params.uuid = &uuid.uuid;
+	sdp_bip_params.func = bip_discover_func;
+	sdp_bip_params.pool = &sdp_client_pool;
+	sdp_bip_params.type = BT_SDP_DISCOVER_SERVICE_SEARCH_ATTR;
+
+	err = bt_sdp_discover(default_conn, &sdp_bip_params);
+	if (err != 0) {
+		shell_error(sh, "Failed to start SDP discovery %d", err);
+		return err;
+	}
+
+	return 0;
+}
+
 #define HELP_NONE ""
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
@@ -4136,7 +4454,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_SUBCMD_SET_END);
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
-	obex_client_cmds, SHELL_CMD_ARG(conn, NULL, "<type> [UUID 128]", cmd_bip_client_conn, 2, 1),
+	obex_client_cmds,
+	SHELL_CMD_ARG(set_feats_funcs, NULL, HELP_NONE, cmd_bip_client_set_feats_funcs, 1, 0),
+	SHELL_CMD_ARG(conn, NULL, "<type> [UUID 128]", cmd_bip_client_conn, 2, 1),
 	SHELL_CMD_ARG(disconn, NULL, HELP_NONE, cmd_bip_client_disconn, 1, 0),
 	SHELL_CMD_ARG(abort, NULL, HELP_NONE, cmd_bip_client_abort, 1, 0),
 	SHELL_CMD_ARG(get_caps, NULL, HELP_NONE, cmd_bip_client_get_caps, 1, 0),
@@ -4206,6 +4526,14 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      cmd_bip_server_start_archive, 2, 1),
 	SHELL_SUBCMD_SET_END);
 
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	bip_sdp_cmds, SHELL_CMD_ARG(reg, NULL, HELP_NONE, cmd_bip_sdp_reg, 1, 0),
+	SHELL_CMD_ARG(set_caps, NULL, "<capabilities>", cmd_sdp_set_caps, 2, 0),
+	SHELL_CMD_ARG(set_features, NULL, "<features>", cmd_sdp_set_features, 2, 0),
+	SHELL_CMD_ARG(set_functions, NULL, "<functions>", cmd_sdp_set_functions, 2, 0),
+	SHELL_CMD_ARG(discover, NULL, HELP_NONE, cmd_sdp_discover, 1, 0),
+	SHELL_SUBCMD_SET_END);
+
 static int cmd_alloc_buf(const struct shell *sh, size_t argc, char **argv)
 {
 	if (bip_app.tx_buf != NULL) {
@@ -4259,6 +4587,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD_ARG(add-header, &obex_add_header_cmds, "Adding header sets", cmd_common, 1, 0),
 	SHELL_CMD_ARG(client, &obex_client_cmds, "Client sets", cmd_common, 1, 0),
 	SHELL_CMD_ARG(server, &obex_server_cmds, "Server sets", cmd_common, 1, 0),
+	SHELL_CMD_ARG(sdp, &bip_sdp_cmds, "SDP sets", cmd_common, 1, 0),
 	SHELL_SUBCMD_SET_END);
 
 SHELL_CMD_ARG_REGISTER(bip, &bip_cmds, "Bluetooth BIP shell commands", cmd_common, 1, 1);
