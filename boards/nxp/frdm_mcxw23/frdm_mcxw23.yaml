@@ -1,0 +1,21 @@
+#
+# Copyright 2025 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: frdm_mcxw23
+name: NXP FRDM-MCXW23
+type: mcu
+arch: arm
+ram: 128
+flash: 1016
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - gpio
+  - uart
+  - counter
+  - flash
+vendor: nxp
