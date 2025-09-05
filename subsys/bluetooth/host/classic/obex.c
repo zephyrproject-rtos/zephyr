@@ -2479,7 +2479,7 @@ static bool bt_obex_unicode_is_valid(uint16_t len, const uint8_t *str)
 	return true;
 }
 
-static bool bt_obex_string_is_valid(uint8_t id, uint16_t len, const uint8_t *str)
+bool bt_obex_string_is_valid(uint8_t id, uint16_t len, const uint8_t *str)
 {
 	if (BT_OBEX_HEADER_ENCODING(id) == BT_OBEX_HEADER_ENCODING_UNICODE) {
 		return bt_obex_unicode_is_valid(len, str);
