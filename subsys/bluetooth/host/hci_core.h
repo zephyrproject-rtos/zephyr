@@ -36,9 +36,10 @@
 
 /* bt_dev flags: the flags defined here represent BT controller state */
 enum {
-	BT_DEV_ENABLE,
-	BT_DEV_DISABLE,
-	BT_DEV_READY,
+	BT_DEV_ENABLING,    /* Host stack is being enabled */
+	BT_DEV_DISABLING,   /* Host stack is being disabled */
+	BT_DEV_OPEN,        /* HCI transport is open */
+	BT_DEV_READY,       /* Host stack has completed init */
 	BT_DEV_PRESET_ID,
 	BT_DEV_HAS_PUB_KEY,
 
@@ -87,9 +88,8 @@ enum {
 };
 
 /* Flags which should not be cleared upon HCI_Reset */
-#define BT_DEV_PERSISTENT_FLAGS (BIT(BT_DEV_ENABLE) | \
-				 BIT(BT_DEV_PRESET_ID) | \
-				 BIT(BT_DEV_DISABLE))
+#define BT_DEV_PERSISTENT_FLAGS (BIT(BT_DEV_OPEN) | \
+				 BIT(BT_DEV_PRESET_ID))
 
 #if defined(CONFIG_BT_EXT_ADV_LEGACY_SUPPORT)
 /* Check the feature bit for extended or legacy advertising commands */
@@ -495,7 +495,7 @@ struct bt_keys *bt_id_find_conflict(struct bt_keys *candidate);
 int bt_setup_random_id_addr(void);
 int bt_setup_public_id_addr(void);
 
-void bt_finalize_init(void);
+void bt_finalize_init(int err);
 
 void bt_hci_host_num_completed_packets(struct net_buf *buf);
 

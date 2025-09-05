@@ -15,7 +15,6 @@
 #include <common/bt_settings_commit.h>
 #include <zephyr/bluetooth/mesh.h>
 
-#include "host/hci_core.h"
 #include "mesh.h"
 #include "subnet.h"
 #include "app_keys.h"
@@ -89,7 +88,7 @@ static int mesh_commit(void)
 		return 0;
 	}
 
-	if (!atomic_test_bit(bt_dev.flags, BT_DEV_ENABLE)) {
+	if (!bt_is_ready()) {
 		/* The Bluetooth Mesh settings loader calls bt_mesh_start() immediately
 		 * after loading the settings. This is not intended to work before
 		 * bt_enable(). The doc on @ref bt_enable requires the "bt/" settings
