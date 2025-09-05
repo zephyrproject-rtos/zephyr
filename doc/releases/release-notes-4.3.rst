@@ -48,6 +48,10 @@ https://docs.zephyrproject.org/latest/security/vulnerabilities.html
 API Changes
 ***********
 
+* Kernel
+
+  * :c:func:`device_init`
+
 * RTIO
 
   * :c:func:`rtio_is_spi`
