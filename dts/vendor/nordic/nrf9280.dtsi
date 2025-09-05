@@ -116,16 +116,12 @@
 			write-block-size = <16>;
 		};
 
-		cpuapp_uicr: uicr@fff8000 {
-			compatible = "nordic,nrf-uicr-v2";
+		uicr: uicr@fff8000 {
+			compatible = "nordic,nrf-uicr";
 			reg = <0xfff8000 DT_SIZE_K(2)>;
-			domain = <2>;
-		};
-
-		cpurad_uicr: uicr@fffa000 {
-			compatible = "nordic,nrf-uicr-v2";
-			reg = <0xfffa000 DT_SIZE_K(2)>;
-			domain = <3>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0xfff8000 DT_SIZE_K(2)>;
 		};
 
 		ficr: ficr@fffe000 {
@@ -356,6 +352,27 @@
 				reg = <0x3d000 0x1000>;
 				status = "disabled";
 				interrupts = <61 NRF_DEFAULT_IRQ_PRIORITY>;
+			};
+		};
+
+		tdd_peripherals: peripheral@bf000000 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0xbf000000 0x1000000>;
+
+			tbm: tbm@3000 {
+				compatible = "nordic,nrf-tbm";
+				reg = <0x3000 0x1000>;
+				status = "disabled";
+				interrupts = <127 NRF_DEFAULT_IRQ_PRIORITY>;
+			};
+
+			hsfll200: clock@4000 {
+				compatible = "nordic,nrf-hsfll-local";
+				#clock-cells = <0>;
+				reg = <0x4000 0x1000>;
+				clocks = <&fll16m>;
+				clock-frequency = <DT_FREQ_M(320)>;
 			};
 		};
 
