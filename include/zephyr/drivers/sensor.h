@@ -533,7 +533,7 @@ struct sensor_decoder_api {
 	 * @return >0 the number of decoded frames
 	 * @return <0 on error
 	 */
-	int (*decode)(const uint8_t *buffer, struct sensor_chan_spec channel, uint32_t *fit,
+	int (*decode)(const uint8_t *buffer, struct sensor_chan_spec chan_spec, uint32_t *fit,
 		      uint16_t max_count, void *data_out);
 
 	/**
