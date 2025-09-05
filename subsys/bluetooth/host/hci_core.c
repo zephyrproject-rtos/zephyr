@@ -400,6 +400,30 @@ struct net_buf *bt_hci_cmd_alloc(k_timeout_t timeout)
 	return buf;
 }
 
+/* Drop every queued command once the HCI transport has been closed,
+ * completing synchronous senders with an error.
+ */
+static void hci_cmd_queue_purge(void)
+{
+	struct net_buf *buf;
+
+	while (true) {
+		buf = k_fifo_get(&bt_dev.cmd_tx_queue, K_NO_WAIT);
+		if (buf == NULL) {
+			break;
+		}
+
+		LOG_WRN("Dropping queued command 0x%04x: HCI transport closed", cmd(buf)->opcode);
+
+		if (cmd(buf)->sync != NULL) {
+			cmd(buf)->status = BT_HCI_ERR_UNSPECIFIED;
+			k_sem_give(cmd(buf)->sync);
+		}
+
+		net_buf_unref(buf);
+	}
+}
+
 int bt_hci_cmd_send(uint16_t opcode, struct net_buf *buf)
 {
 	struct bt_hci_cmd_hdr *hdr;
@@ -454,6 +478,19 @@ int bt_hci_cmd_send(uint16_t opcode, struct net_buf *buf)
 	}
 
 	k_fifo_put(&bt_dev.cmd_tx_queue, buf);
+
+	/* bt_disable() clears BT_DEV_OPEN before purging the queue, so a
+	 * command queued by a sender that passed the check above just before
+	 * the transport was closed is either found by that purge or seen
+	 * here: take it back and fail the call. If the purge got to it first
+	 * it completes the command like any other queued one.
+	 */
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_OPEN) &&
+	    k_queue_remove(&bt_dev.cmd_tx_queue._queue, buf)) {
+		net_buf_unref(buf);
+		return -EHOSTDOWN;
+	}
+
 	bt_tx_irq_raise();
 
 	return 0;
@@ -521,6 +558,14 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 			 * Example: 0x0c03 represents HCI_Reset command.
 			 */
 			__maybe_unused bool success = process_pending_cmd(HCI_CMD_TIMEOUT);
+
+			if (!atomic_test_bit(bt_dev.flags, BT_DEV_OPEN)) {
+				/* The transport was closed while draining: the queue
+				 * has been purged, completing this command with an
+				 * error, so there is nothing left to send.
+				 */
+				break;
+			}
 
 			BT_ASSERT_MSG(success, "command opcode 0x%04x timeout", opcode);
 		} while (buf != cmd);
@@ -4989,8 +5034,12 @@ int bt_disable(void)
 		hci_reset_complete();
 	}
 
-	/* Clear the flag early to prevent races with command queuing */
+	/* Mark the transport closed before purging the command queue: a
+	 * command queued after this point is taken back by its sender (see
+	 * bt_hci_cmd_send()), so nothing is left behind for the next enable.
+	 */
 	atomic_clear_bit(bt_dev.flags, BT_DEV_OPEN);
+	hci_cmd_queue_purge();
 
 	err = bt_hci_close(bt_dev.hci);
 	if (err) {
@@ -5309,6 +5358,11 @@ int bt_configure_data_path(uint8_t dir, uint8_t id, uint8_t vs_config_len,
 /* Return `true` if a command was processed/sent */
 static bool process_pending_cmd(k_timeout_t timeout)
 {
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_OPEN)) {
+		hci_cmd_queue_purge();
+		return false;
+	}
+
 	if (!k_fifo_is_empty(&bt_dev.cmd_tx_queue)) {
 		if (k_sem_take(&bt_dev.ncmd_sem, timeout) == 0) {
 			hci_core_send_cmd();
