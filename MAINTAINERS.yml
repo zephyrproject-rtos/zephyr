@@ -221,9 +221,6 @@ ARM arch:
   maintainers:
     - wearyzen
   collaborators:
-    - microbuilder
-    - carlocaione
-    - galak
     - MaureenHelm
     - stephanosio
     - bbolen
@@ -241,9 +238,7 @@ ARM arch:
     - arch.arm
 
 ARM64 arch:
-  status: maintained
-  maintainers:
-    - carlocaione
+  status: odd fixes
   collaborators:
     - npitre
     - povergoing
@@ -674,7 +669,6 @@ Board/SoC configuration:
   maintainers:
     - tejlmand
   collaborators:
-    - galak
     - nashif
     - nordicjm
     - "57300"
@@ -803,7 +797,6 @@ CMSIS-DSP integration:
   maintainers:
     - stephanosio
   collaborators:
-    - galak
     - XenuIsWatching
   files:
     - modules/cmsis-dsp/
@@ -833,8 +826,6 @@ CMSIS-NN integration:
 Cache:
   status: maintained
   maintainers:
-    - carlocaione
-  collaborators:
     - nashif
   files:
     - include/zephyr/drivers/cache.h
@@ -1049,7 +1040,6 @@ Devicetree:
     - mbolivar
   collaborators:
     - decsny
-    - galak
     - rruuaanng
   files-regex:
     - ^dts/bindings/.*zephyr.*
@@ -1950,9 +1940,7 @@ Documentation Infrastructure:
     - drivers.mspi
 
 "Drivers: Mbox":
-  status: maintained
-  maintainers:
-    - carlocaione
+  status: odd fixes
   collaborators:
     - wearyzen
     - ithinuel
@@ -2031,9 +2019,7 @@ Documentation Infrastructure:
     - samples.drivers.peci
 
 "Drivers: PM CPU ops":
-  status: maintained
-  maintainers:
-    - carlocaione
+  status: odd fixes
   collaborators:
     - gdengi
     - nbalabak
@@ -2338,9 +2324,7 @@ Documentation Infrastructure:
     - drivers.stepper
 
 "Drivers: Syscon":
-  status: maintained
-  maintainers:
-    - carlocaione
+  status: odd fixes
   files:
     - include/zephyr/drivers/syscon.h
     - drivers/syscon/
@@ -2754,7 +2738,6 @@ IPC:
   maintainers:
     - doki-nordic
   collaborators:
-    - carlocaione
     - arnopo
   files:
     - include/zephyr/ipc/
@@ -3178,7 +3161,6 @@ MIPS arch:
 Memory Management:
   status: maintained
   maintainers:
-    - carlocaione
     - dcpleung
   files:
     - subsys/mem_mgmt/
@@ -4039,7 +4021,6 @@ RISCV arch:
     - mgielda
     - katsuster
     - edersondisouza
-    - carlocaione
     - npitre
     - ycsin
     - VynDragon
@@ -5129,7 +5110,6 @@ West:
   maintainers:
     - stephanosio
   collaborators:
-    - microbuilder
     - povergoing
   files:
     - modules/cmsis/
@@ -5577,7 +5557,6 @@ West:
 "West project: libmetal":
   status: odd fixes
   collaborators:
-    - carlocaione
     - arnopo
   files:
     - modules/Kconfig.libmetal
@@ -5735,7 +5714,6 @@ West:
 "West project: open-amp":
   status: odd fixes
   collaborators:
-    - carlocaione
     - uLipe
     - iuliana-prodan
   files:
@@ -5859,7 +5837,6 @@ West:
     - povergoing
     - sgrrzhf
   collaborators:
-    - carlocaione
     - wearyzen
     - ithinuel
   files:
