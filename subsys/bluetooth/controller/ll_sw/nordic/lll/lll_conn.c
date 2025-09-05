@@ -33,6 +33,7 @@
 #include "lll_df_types.h"
 #include "lll_df.h"
 #include "lll_conn.h"
+#include "lll_chan.h"
 
 #include "lll_internal.h"
 #include "lll_df_internal.h"
@@ -352,6 +353,13 @@ void lll_conn_isr_rx(void *param)
 
 	/* No Rx */
 	if (!trx_done) {
+		/* Increase bad channel count for missed anchor point only. Hence, we are not
+		 * counting incorrectly when being here due to pre-emption.
+		 */
+		if (trx_cnt == 0U) {
+			lll_chan_metrics_chan_bad();
+		}
+
 		radio_isr_set(isr_done, param);
 		radio_disable();
 
@@ -373,6 +381,8 @@ void lll_conn_isr_rx(void *param)
 
 	if (crc_ok) {
 		uint32_t err;
+
+		lll_chan_metrics_chan_good();
 
 		err = isr_rx_pdu(lll, pdu_data_rx, &is_rx_enqueue, &tx_release,
 				 &is_done);
@@ -403,6 +413,11 @@ void lll_conn_isr_rx(void *param)
 		/* CRC error countdown */
 		crc_expire--;
 		is_done = (crc_expire == 0U);
+
+		/* Increase bad channel count for consecutive CRC error */
+		if (is_done != 0U) {
+			lll_chan_metrics_chan_bad();
+		}
 	}
 
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX) && defined(CONFIG_BT_CTLR_LE_ENC)

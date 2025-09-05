@@ -331,6 +331,159 @@ static uint8_t chan_d(uint8_t n)
 }
 #endif /* CONFIG_BT_CTLR_ISO */
 
+#if defined(CONFIG_BT_CTLR_CHAN_METRICS_EVENT)
+#define CHM_SURVEY_CHAN_COUNT_MAX 37U
+
+static struct {
+	struct chan_metrics_chan {
+		uint16_t count;
+		uint16_t prev;
+		uint16_t good;
+	} chan[CHM_SURVEY_CHAN_COUNT_MAX];
+	uint8_t curr;
+	uint8_t req;
+	uint8_t ack;
+} chan_metrics;
+
+void lll_chan_metrics_init(void)
+{
+	for (int i = 0; i < CHM_SURVEY_CHAN_COUNT_MAX; i++) {
+		struct chan_metrics_chan *chan;
+
+		chan = &chan_metrics.chan[i];
+		chan->count = 0U;
+		chan->good = 0U;
+		chan->prev = 0U;
+	}
+}
+
+void lll_chan_metrics_chan_set(uint8_t chan)
+{
+	LL_ASSERT(chan < CHM_SURVEY_CHAN_COUNT_MAX);
+
+	chan_metrics.curr = chan;
+}
+
+bool lll_chan_metrics_is_notify(void)
+{
+	return chan_metrics.req != chan_metrics.ack;
+}
+
+bool lll_chan_metrics_notify_clear(void)
+{
+	if (lll_chan_metrics_is_notify()) {
+		chan_metrics.ack = chan_metrics.req;
+
+		return true;
+	}
+
+	return false;
+}
+
+static bool chan_metrics_notify_set(void)
+{
+	uint8_t req;
+
+	req = chan_metrics.req + 1U;
+	if (req != chan_metrics.ack) {
+		chan_metrics.req = req;
+
+		return true;
+	}
+
+	return false;
+}
+
+static struct chan_metrics_chan *chan_metrics_count_inc(void)
+{
+	struct chan_metrics_chan *chan;
+
+	/* Mitigate metrics overflow, half the collected good and count value */
+	chan = &chan_metrics.chan[chan_metrics.curr];
+	if (chan->count == UINT16_MAX) {
+		uint16_t diff;
+
+		/* Current consecutive bad versus good difference */
+		diff = chan->count - chan->prev;
+
+		/* Half the count and keep the current consecutive bad versus good difference */
+		chan->count >>= 1;
+		if (diff < chan->count) {
+			chan->prev = chan->count - diff;
+		} else {
+			chan->prev = 0U;
+		}
+
+		/* Half the good count */
+		chan->good >>= 1;
+	}
+
+	/* Increment the channel metrics count */
+	chan->count++;
+
+	return chan;
+}
+
+void lll_chan_metrics_chan_bad(void)
+{
+	struct chan_metrics_chan *chan;
+	uint16_t diff;
+
+	/* Increment the per channel metrics count */
+	chan = chan_metrics_count_inc();
+
+	/* Notify beyond a bad versus good difference */
+	diff = chan->count - chan->prev;
+	if (diff > CONFIG_BT_CTLR_CHAN_METRICS_BAD_COUNT) {
+		(void)chan_metrics_notify_set();
+
+		/* Reset consecutive bad versus good difference */
+		chan->prev = chan->count;
+	}
+}
+
+void lll_chan_metrics_chan_good(void)
+{
+	struct chan_metrics_chan *chan;
+
+	/* Increment the per channel metrics count */
+	chan = chan_metrics_count_inc();
+
+	/* Reset the consecutive bad versus good difference */
+	chan->prev = chan->count;
+
+	/* Increment good count */
+	chan->good++;
+}
+
+void lll_chan_metrics_print(void)
+{
+	const uint8_t max = 100U;
+
+	printk("%s:\n", __func__);
+	for (uint8_t i = 0; i < CHM_SURVEY_CHAN_COUNT_MAX; i++) {
+		struct chan_metrics_chan *chan;
+		uint8_t cnt;
+		char c;
+
+		chan = &chan_metrics.chan[i];
+		if (chan->count != 0U) {
+			cnt = chan->good * max / chan->count;
+			c = '*';
+		} else {
+			cnt = max;
+			c = '-';
+		}
+
+		printk("%02d: (%05u / %05u) %03u - ", i, chan->good, chan->count, cnt);
+		for (uint8_t j = 0; j < cnt; j++) {
+			printk("%c", c);
+		}
+		printk("\n");
+	}
+}
+#endif /* CONFIG_BT_CTLR_CHAN_METRICS_EVENT */
+
 #if defined(CONFIG_BT_CTLR_TEST)
 /* Refer to Bluetooth Specification v5.2 Vol 6, Part C, Section 3 LE Channel
  * Selection algorithm #2 sample data
