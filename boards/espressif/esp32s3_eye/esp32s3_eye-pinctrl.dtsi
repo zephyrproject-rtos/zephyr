@@ -50,6 +50,15 @@
 			input-enable;
 			bias-disable;
 		};
+	};
 
+	sdhc0_default: sdhc0_default {
+		group1 {
+			pinmux = <SDHC0_CMD_GPIO38>,
+				 <SDHC0_CLKOUT_GPIO39>,
+				 <SDHC0_DATA0_GPIO40>;
+			bias-pull-up;
+			output-high;
+		};
 	};
 };
