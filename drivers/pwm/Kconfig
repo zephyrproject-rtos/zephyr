@@ -22,6 +22,7 @@ config PWM_INIT_PRIORITY
 
 config PWM_SHELL
 	bool "PWM shell"
+	default y if SHELL_ALL
 	depends on SHELL
 	help
 	  Enable the PWM related shell commands.

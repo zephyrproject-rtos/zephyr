@@ -238,10 +238,12 @@ config NRF70_MAX_TX_PENDING_QLEN
 
 config NRF70_UTIL
 	depends on SHELL
+	default y if SHELL_ALL
 	bool "Utility shell in nRF70 driver"
 
 config NRF70_DEBUG_SHELL
 	depends on SHELL
+	default y if SHELL_ALL
 	bool "Debug shell in nRF70 driver"
 
 config NRF70_QSPI_LOW_POWER

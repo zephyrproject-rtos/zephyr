@@ -17,6 +17,7 @@ if FLASH_MAP
 
 config FLASH_MAP_SHELL
 	bool "Flash map shell interface"
+	default y if SHELL_ALL
 	depends on SHELL
 	imply FLASH_MAP_LABELS
 	help

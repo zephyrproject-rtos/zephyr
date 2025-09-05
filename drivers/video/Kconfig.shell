@@ -4,6 +4,7 @@
 config VIDEO_SHELL
 	bool "Video shell"
 	depends on SHELL
+	default y if SHELL_ALL
 	help
 	  This shell provides control and query commands for video drivers.
 
