@@ -27,6 +27,8 @@
 #include <errno.h>
 #include <zephyr/drivers/i2s.h>
 
+#include <zephyr/audio/audio_caps.h> /* Include common audio caps */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -332,6 +334,12 @@ typedef int (*audio_codec_register_done_callback_t)(
 	audio_codec_rx_done_callback_t rx_cb, void *rx_cb_user_data);
 
 /**
+ * @brief Callback API to get audio codec capabilities.
+ * See audio_codec_get_caps() for argument descriptions.
+ */
+typedef int (*audio_codec_get_caps_t)(const struct device *dev, struct audio_caps *caps);
+
+/**
  * Legacy struct tag alias for @ref audio_codec_driver_api for audio codec drivers that have not
  * been updated to use audio_codec_driver_api for their backend struct.
  *
@@ -395,6 +403,10 @@ __subsystem struct audio_codec_driver_api {
 	 * @driver_ops_optional @copybrief audio_codec_register_done_callback
 	 */
 	audio_codec_register_done_callback_t register_done_callback;
+	/**
+	 * @driver_ops_optional @copybrief audio_codec_get_caps
+	 */
+	audio_codec_get_caps_t get_caps;
 };
 
 /**
@@ -682,6 +694,31 @@ static inline int audio_codec_register_done_callback(const struct device *dev,
 	}
 
 	return api->register_done_callback(dev, tx_cb, tx_cb_user_data, rx_cb, rx_cb_user_data);
+}
+
+/**
+ * @brief Get i2s capabilities
+ *
+ * @param dev Pointer to device structure
+ * @param caps Pointer to capabilities structure to populate
+ *
+ * @retval 0 on success
+ * @retval -ENOSYS if the get_caps is not implemented by the driver
+ * @retval -EINVAL if invalid parameters are provided (e.g., caps is NULL)
+ */
+static inline int audio_codec_get_caps(const struct device *dev, struct audio_caps *caps)
+{
+	const struct audio_codec_driver_api *api = DEVICE_API_GET(audio_codec, dev);
+
+	if (api->get_caps == NULL) {
+		return -ENOSYS;
+	}
+
+	if (caps == NULL) {
+		return -EINVAL;
+	}
+
+	return api->get_caps(dev, caps);
 }
 
 #ifdef __cplusplus
