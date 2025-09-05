@@ -9,6 +9,10 @@
 #include <zephyr/dt-bindings/misc/nxp_rtxxx_dsp_ctrl.h>
 
 / {
+	aliases {
+		die-temp0 = &pmc_tmpsns;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -1105,6 +1109,31 @@
 		interrupts = <17 0>;
 		status = "disabled";
 	};
+
+	mbox4: mailbox@189000 {
+		#mbox-cells = <1>;
+
+		compatible = "nxp,mbox-imx-mu";
+		reg = <0x189000 0x1000>;
+
+		interrupts = <31 0>;
+		rx-channels = <4>;
+
+		status = "disabled";
+	};
+
+	pmc_tmpsns: pmc-tmpsns {
+		compatible = "nxp,pmc-tmpsns";
+		status = "disabled";
+	};
+};
+
+&systick {
+	/*
+	 * RT700 cm33_cpu0 relies by default on the OS Timer for system
+	 * clock implementation, so the SysTick node is not to be enabled.
+	 */
+	status = "disabled";
 };
 
 &xspi0 {
