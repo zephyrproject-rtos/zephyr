@@ -193,3 +193,7 @@
 	pinctrl-0 = <&pinmux_lpuart3>;
 	pinctrl-names = "default";
 };
+
+&cpu0 {
+	clock-frequency = <180000000>;
+};
