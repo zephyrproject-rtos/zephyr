@@ -727,7 +727,7 @@ static clock_freq_t syscon_lpc55sxx_pll_pdec_round_rate(const struct clk *clk_hw
 		}
 
 		/* Check rate we can produce with the input clock */
-		test_div = (CLAMP((input_clk / target_rate), 2, 62) & ~BIT(0));
+		test_div = (CLAMP(((input_clk + target_rate / 2) / target_rate), 2, 62) & ~BIT(0));
 		output_clk = input_clk / test_div;
 
 		if (abs(output_clk - target_rate) <= (target_rate / 100)) {
@@ -787,7 +787,7 @@ static clock_freq_t syscon_lpc55sxx_pll_pdec_set_rate(const struct clk *clk_hw,
 		}
 
 		/* Check rate we can produce with the input clock */
-		test_div = (CLAMP((input_clk / target_rate), 2, 62) & ~BIT(0));
+		test_div = (CLAMP(((input_clk + target_rate / 2) / target_rate), 2, 62) & ~BIT(0));
 		output_clk = input_clk / test_div;
 
 		if (abs(output_clk - target_rate) <= (target_rate / 100)) {

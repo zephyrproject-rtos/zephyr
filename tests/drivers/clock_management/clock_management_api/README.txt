@@ -66,3 +66,19 @@ The following tests will run, using the output clock with name "default":
   one of the statically defined constraints could satisfy this request, and such
   that the framework will now select the static state. No check is made if the
   first consumer is notified of this change.
+
+* Request the best ranked clock for the first consumer based on the
+  "freq-constraints-2" property present on that node. Verify that the resulting
+  frequency is "req-freq-2". Boards should define clock ranks so that the
+  framework will chose a clock that does not produce the most accurate frequency
+  possible for this request, to verify the framework handles ranks correctly.
+  The constraints of the "freq-constraints-2" node should be set such that
+  the second consumer will be unable to use the best ranked clock for its
+  request, as switching the first consumer to that clock would violate its
+  rank constraints. This can be accomplished either by limiting the frequency
+  range or the rank.
+
+* Request the best ranked clock for the second consumer based on the
+  "freq-constraints-2" property present on that node. Verify that the resulting
+  frequency is "req-freq-2". Boards may define the third element of the
+  "freq-constraints-2" to any value that allows the correct frequency to be set.
