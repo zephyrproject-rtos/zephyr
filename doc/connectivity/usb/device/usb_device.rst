@@ -459,7 +459,7 @@ Testing over USBIP in native_sim
 
 A virtual USB controller implemented through USBIP might be used to test the USB
 device stack. Follow the general build procedure to build the USB sample for
-the :ref:`native_sim <native_sim>` configuration.
+the :zephyr:board:`native_sim <native_sim>` configuration.
 
 Run built sample with:
 

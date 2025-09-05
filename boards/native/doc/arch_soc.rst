@@ -34,7 +34,7 @@ Types of POSIX arch based boards
 ================================
 
 Today there are two types of POSIX boards:
-:ref:`native_sim<native_sim>`, and the :ref:`bsim boards<bsim boards>`.
+:zephyr:board:`native_sim<native_sim>`, and the :ref:`bsim boards<bsim boards>`.
 While they share the main objectives and principles, the first is intended as
 a HW agnostic test platform which in some cases utilizes the host OS
 peripherals, while the second intend to simulate a particular HW platform,
@@ -320,8 +320,8 @@ Architecture and design
 
     Relationship between Zephyr, the native_sim target and the native simulator
 
-When building targeting Zephyr's :ref:`native_sim<native_sim>` board, we build our embedded SW,
-that is, our application, the Zephyr kernel, and any subsystems and drivers we have selected,
+When building targeting Zephyr's :zephyr:board:`native_sim<native_sim>` board, we build our embedded
+SW, that is, our application, the Zephyr kernel, and any subsystems and drivers we have selected,
 with the :ref:`POSIX architecture<posix_arch_design_archl>` and the
 :ref:`inf_clock<posix_arch_design_socl>` SOC layers.
 The result of this build is a pre-linked elf library, which contains what we can call the
@@ -449,9 +449,9 @@ Busy waits
 ==========
 
 Busy waits work thanks to logic provided by the board and native simulator.
-This does not need to be the same for all boards, but both :ref:`native_sim<native_sim>` and the
-:ref:`nrf*bsim boards<bsim boards>` work similarly through the combination of a board specific
-:c:func:`arch_busy_wait()` and an special fake HW timer provided by the native simulator.
+This does not need to be the same for all boards, but both :zephyr:board:`native_sim<native_sim>`
+and the :ref:`nrf*bsim boards<bsim boards>` work similarly through the combination of a board
+specific :c:func:`arch_busy_wait()` and an special fake HW timer provided by the native simulator.
 
 Please check the
 `native simulator busy wait design documentation <https://github.com/BabbleSim/native_simulator/blob/main/docs/Design.md#busy-waits>`_

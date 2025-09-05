@@ -46,7 +46,7 @@ Building and Running
 Running on native_sim
 =====================
 
-Running the test suite on :ref:`native_sim` relies on the `Linux SocketCAN`_ virtual CAN driver
+Running the test suite on :zephyr:board:`native_sim` relies on the `Linux SocketCAN`_ virtual CAN driver
 (vcan) providing a virtual CAN interface named ``zcan0``.
 
 On the host PC, a virtual SocketCAN interface needs to be created and brought up before running the
