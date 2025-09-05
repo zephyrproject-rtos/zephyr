@@ -499,8 +499,8 @@ Using Tracing
 The sample :zephyr_file:`samples/subsys/tracing` demonstrates tracing with
 different formats and backends.
 
-To get started, the simplest way is to use the CTF format with the :ref:`native_sim <native_sim>`
-port, build the sample as follows:
+To get started, the simplest way is to use the CTF format with the
+:zephyr:board:`native_sim <native_sim>` port, build the sample as follows:
 
 .. zephyr-app-commands::
    :tool: all

@@ -302,8 +302,9 @@ def get_catalog(generate_hw_features=False, hw_features_vendor_filter=None):
                     if node.matching_compat is None:
                         continue
 
-                    # skip "zephyr,xxx" compatibles
-                    if node.matching_compat.startswith("zephyr,"):
+                    # skip "zephyr,xxx" compatibles (unless board is native_sim, since in this
+                    # case the "zephyr,"-prefixed peripherals are legitimate)
+                    if node.matching_compat.startswith("zephyr,") and board.name != "native_sim":
                         continue
 
                     description = DeviceTreeUtils.get_cached_description(node)
