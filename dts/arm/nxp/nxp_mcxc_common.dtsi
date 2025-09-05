@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -189,6 +189,7 @@
 			interrupts = <15 0>;
 			status = "disabled";
 			#io-channel-cells = <1>;
+			has-differential-mode;
 		};
 
 		i2c0: i2c@40066000 {
