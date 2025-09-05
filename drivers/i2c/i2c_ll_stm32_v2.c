@@ -32,7 +32,11 @@ LOG_MODULE_REGISTER(i2c_ll_stm32_v2);
 #include "i2c_ll_stm32.h"
 #include "i2c-priv.h"
 
-#define I2C_STM32_TRANSFER_TIMEOUT_MSEC  500
+#if defined(CONFIG_I2C_STM32_V2_DMA)
+#include <stm32_cache.h>
+#endif /* CONFIG_I2C_STM32_V2_DMA */
+
+#define I2C_STM32_TRANSFER_TIMEOUT_MSEC 500
 
 #ifdef CONFIG_I2C_STM32_V2_TIMING
 /* Use the algorithm to calcuate the I2C timing */
