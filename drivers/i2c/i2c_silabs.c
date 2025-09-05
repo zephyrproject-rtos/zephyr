@@ -149,6 +149,7 @@ static int i2c_silabs_transfer_dma(const struct device *dev, struct i2c_msg *msg
 	data->callback_invoked = false;
 #endif
 	data->pm_lock_done = false;
+	uint8_t msgs_in_transfer = 1;
 	uint8_t i = 0;
 	int err = 0;
 
@@ -161,8 +162,21 @@ static int i2c_silabs_transfer_dma(const struct device *dev, struct i2c_msg *msg
 #endif /* CONFIG_I2C_TARGET */
 
 	while (i < num_msgs) {
-		data->last_transfer = (i + 1) == num_msgs;
-		if (msgs[i].flags & I2C_MSG_READ) {
+		/*  Combined DMA write-read (repeated start) */
+		if ((msgs[i].flags & I2C_MSG_WRITE) == 0 && (i + 1 < num_msgs) &&
+		    (msgs[i + 1].flags & I2C_MSG_READ)) {
+			msgs_in_transfer = 2;
+		}
+		data->last_transfer = (i + msgs_in_transfer) == num_msgs;
+
+		if (msgs_in_transfer == 2) {
+			if (sl_i2c_transfer_non_blocking(i2c_handle, msgs[i].buf, msgs[i].len,
+							 msgs[i + 1].buf, msgs[i + 1].len, NULL,
+							 NULL) != 0) {
+				k_sem_give(&data->bus_lock);
+				return -EIO;
+			}
+		} else if (msgs[i].flags & I2C_MSG_READ) {
 			/* Start DMA receive */
 			if (sl_i2c_receive_non_blocking(i2c_handle, msgs[i].buf, msgs[i].len, NULL,
 							NULL) != 0) {
@@ -190,7 +204,7 @@ static int i2c_silabs_transfer_dma(const struct device *dev, struct i2c_msg *msg
 				break;
 			}
 		}
-		i++;
+		i += msgs_in_transfer;
 	}
 
 	return err;
@@ -205,6 +219,7 @@ static int i2c_silabs_transfer_sync(const struct device *dev, struct i2c_msg *ms
 {
 	struct i2c_silabs_dev_data *data = dev->data;
 	sl_i2c_handle_t *i2c_handle = (sl_i2c_handle_t *)&data->i2c_instance;
+	uint8_t msgs_in_transfer = 1;
 	uint8_t i = 0;
 
 	/* Get the power management policy state lock */
@@ -213,6 +228,7 @@ static int i2c_silabs_transfer_sync(const struct device *dev, struct i2c_msg *ms
 	while (i < num_msgs) {
 		if ((msgs[i].flags & I2C_MSG_WRITE) == 0 && (i + 1 < num_msgs) &&
 		    (msgs[i + 1].flags & I2C_MSG_READ)) {
+			msgs_in_transfer = 2;
 			if (sl_i2c_transfer(i2c_handle, msgs[i].buf, msgs[i].len, msgs[i + 1].buf,
 					    msgs[i + 1].len) != 0) {
 				k_sem_give(&data->bus_lock);
@@ -232,7 +248,7 @@ static int i2c_silabs_transfer_sync(const struct device *dev, struct i2c_msg *ms
 				return -ETIMEDOUT;
 			}
 		}
-		i++;
+		i += msgs_in_transfer;
 	}
 
 	/* Release the bus lock semaphore */
@@ -435,7 +451,8 @@ void i2c_silabs_isr_handler(const struct device *dev)
 #else
 	sli_i2c_leader_dispatch_interrupt(sl_i2c_instance);
 #endif
-	if (sl_i2c_instance->transfer_event != SL_I2C_EVENT_IN_PROGRESS) {
+	if (sl_i2c_instance->transfer_event != SL_I2C_EVENT_IN_PROGRESS &&
+	    sl_i2c_instance->rstart == 0) {
 		if (!data->asynchronous) {
 			k_sem_give(&data->transfer_sem);
 		}
