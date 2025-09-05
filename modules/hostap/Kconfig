@@ -299,7 +299,35 @@ config EAP_ALL
 	select EAP_TTLS
 	select EAP_MSCHAPV2
 	default y
+
+config EAP_GPSK_SHA256
+	bool "EAP-GPSK SHA256 support"
+
 endif # WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
+
+config DRIVER_HOSTAP
+	bool "HostAP driver support"
+
+config DRIVER_NL80211
+	bool "NL80211 driver support"
+
+config DRIVER_NONE
+	bool "No driver support"
+
+config LIBNL32
+	bool "Netlink library support"
+
+config EAP
+	bool "EAP (Extensible Authentication Protocol) support"
+
+config IEEE80211W
+	bool "IEEE 802.11w (Protected Management Frames) support"
+
+config PEERKEY
+	bool "Peerkey support"
+
+config RADIUS_SERVER
+	bool "RADIUS server support"
 
 config WIFI_NM_WPA_SUPPLICANT_WPA3
 	bool "WPA3 support"
