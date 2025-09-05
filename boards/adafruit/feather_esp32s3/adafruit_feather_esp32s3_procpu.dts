@@ -25,8 +25,8 @@
 
 	chosen {
 		zephyr,sram = &sram1;
-		zephyr,console = &uart0;
-		zephyr,shell-uart = &uart0;
+		zephyr,console = &usb_serial;
+		zephyr,shell-uart = &usb_serial;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,bt-hci = &esp32_bt_hci;
@@ -79,7 +79,7 @@
 };
 
 &usb_serial {
-	status = "disabled";
+	status = "okay";
 };
 
 &uart0 {
