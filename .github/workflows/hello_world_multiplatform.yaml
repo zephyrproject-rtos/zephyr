@@ -75,7 +75,7 @@ jobs:
           elif [ "${{ runner.os }}-${{ runner.arch }}" == "Linux-ARM64" ]; then
             EXTRA_TWISTER_FLAGS="--exclude-platform native_sim/native"
           fi
-          ./scripts/twister --runtime-artifact-cleanup --force-color --inline-logs -T samples/hello_world -T samples/cpp/hello_world -v $EXTRA_TWISTER_FLAGS
+          west twister --runtime-artifact-cleanup --force-color --inline-logs -T samples/hello_world -T samples/cpp/hello_world -v $EXTRA_TWISTER_FLAGS
 
       - name: Upload artifacts
         if: failure()
