@@ -24,16 +24,6 @@ struct pm_state_device_constraint {
  */
 #define PM_CONSTRAINTS_NAME(node_id) _CONCAT(__devicepmconstraints_, node_id)
 
-/**
- * @brief initialize a device pm constraint with information from devicetree.
- *
- * @param node_id Node identifier.
- */
-#define PM_STATE_CONSTRAINT_INIT(node_id)                                     \
-	{                                                                     \
-		.state = PM_STATE_DT_INIT(node_id),                           \
-		.substate_id = DT_PROP_OR(node_id, substate_id, 0),           \
-	}
 
 /**
  * @brief Helper macro to define a device pm constraints.
