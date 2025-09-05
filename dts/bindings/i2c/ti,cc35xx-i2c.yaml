@@ -1,0 +1,18 @@
+description: TI CC35XX I2C controller
+
+compatible: "ti,cc35xx-i2c"
+
+include: [i2c-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
