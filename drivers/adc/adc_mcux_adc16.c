@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2018, 2020, NXP
+ * Copyright (c) 2017-2018, 2020, 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -102,7 +102,9 @@ static void adc_hw_trigger_enable(const struct device *dev)
 static int mcux_adc16_channel_setup(const struct device *dev,
 				    const struct adc_channel_cfg *channel_cfg)
 {
+	const struct mcux_adc16_config *config = dev->config;
 	uint8_t channel_id = channel_cfg->channel_id;
+	uint32_t channel_group = 0U;
 
 	if (channel_id > (ADC_SC1_ADCH_MASK >> ADC_SC1_ADCH_SHIFT)) {
 		LOG_ERR("Channel %d is not valid", channel_id);
@@ -115,7 +117,22 @@ static int mcux_adc16_channel_setup(const struct device *dev,
 	}
 
 	if (channel_cfg->differential) {
+#if defined(FSL_FEATURE_ADC16_HAS_DIFF_MODE) && FSL_FEATURE_ADC16_HAS_DIFF_MODE
+		/* Enable the differential conversion. */
+		config->base->SC1[channel_group] |= ADC_SC1_DIFF_MASK;
+#else
 		LOG_ERR("Differential channels are not supported");
+#endif
+	}
+
+	if (channel_cfg->reference == ADC_REF_EXTERNAL0) {
+		/* Select Vrefh and Vrefl as reference */
+		config->base->SC2 &= ~ADC_SC2_REFSEL_MASK;
+	} else if (channel_cfg->reference == ADC_REF_VDD_1) {
+		/* Select Valth and Valtl as reference */
+		config->base->SC2 |= ADC_SC2_REFSEL_MASK;
+	} else {
+		LOG_DBG("ref not support");
 		return -EINVAL;
 	}
 
