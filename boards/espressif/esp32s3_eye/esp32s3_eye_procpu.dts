@@ -21,6 +21,7 @@
 		watchdog0 = &wdt0;
 		sw0 = &button0;
 		led0 = &green_led;
+		sdhc0 = &sdhc0;
 	};
 
 	chosen {
@@ -32,6 +33,7 @@
 		zephyr,bt-hci = &esp32_bt_hci;
 		zephyr,display = &st7789v;
 		zephyr,camera = &lcd_cam;
+		zephyr,sdhc = &sdhc0;
 	};
 
 	buttons {
@@ -207,4 +209,21 @@
 
 &wifi {
 	status = "okay";
+};
+
+&sdhc {
+	sdhc0: sdhc@0 {
+		status = "okay";
+
+		pinctrl-0 = <&sdhc0_default>;
+		pinctrl-names = "default";
+		max-bus-freq = <52000000>;
+		bus-width = <1>;
+
+		mmc {
+			compatible = "zephyr,sdmmc-disk";
+			disk-name = "SD";
+			status = "okay";
+		};
+	};
 };
