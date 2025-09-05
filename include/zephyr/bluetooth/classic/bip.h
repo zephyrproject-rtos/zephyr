@@ -67,7 +67,7 @@ extern "C" {
  *
  * Byte sequence, length prefixed with a two-byte unsigned integer
  */
-#define BT_BIP_HEADER_ID_IMG_DESC   0x71
+#define BT_BIP_HEADER_ID_IMG_DESC 0x71
 
 /**
  * @brief Img-Handle header ID
@@ -286,6 +286,99 @@ enum __packed bt_bip_transport_state {
 };
 
 /**
+ * @brief BIP supported capabilities
+ *
+ * Defines the supported capabilities of the BIP device (responder).
+ * These capabilities indicate the primary BIP services that the device supports.
+ * Multiple capabilities can be combined using bitwise OR operations.
+ */
+enum __packed bt_bip_supported_capabilities {
+	/** @brief Generic imaging */
+	BT_BIP_SUPP_CAP_GENERIC_IMAGE = 0,
+	/** @brief Capturing */
+	BT_BIP_SUPP_CAP_CAPTURING = 1,
+	/** @brief Printing */
+	BT_BIP_SUPP_CAP_PRINTING = 2,
+	/** @brief Displaying */
+	BT_BIP_SUPP_CAP_DISPLAYING = 3,
+};
+
+/**
+ * @brief BIP supported features
+ *
+ * Defines the supported features of the BIP device (responder).
+ * These features indicate the primary BIP services that the device supports.
+ * Multiple features can be combined using bitwise OR operations.
+ */
+enum __packed bt_bip_supported_features {
+	/** @brief Image Push feature - allows pushing images to the peer device */
+	BT_BIP_SUPP_FEAT_IMAGE_PUSH = 0,
+	/** @brief Image Push Store feature - supports storing pushed images permanently */
+	BT_BIP_SUPP_FEAT_IMAGE_PUSH_STORE = 1,
+	/** @brief Image Push Print feature - supports printing pushed images directly */
+	BT_BIP_SUPP_FEAT_IMAGE_PUSH_PRINT = 2,
+	/** @brief Image Push Display feature - supports displaying pushed images */
+	BT_BIP_SUPP_FEAT_IMAGE_PUSH_DISPLAY = 3,
+	/** @brief Image Pull feature - allows pulling/retrieving images from the peer */
+	BT_BIP_SUPP_FEAT_IMAGE_PULL = 4,
+	/** @brief Advanced Image Printing feature - supports advanced printing operations */
+	BT_BIP_SUPP_FEAT_ADVANCED_IMAGE_PRINT = 5,
+	/** @brief Auto Archive feature - supports automatic archiving of images */
+	BT_BIP_SUPP_FEAT_AUTO_ARCHIVE = 6,
+	/** @brief Remote Camera feature - supports remote camera control and image capture */
+	BT_BIP_SUPP_FEAT_REMOTE_CAMERA = 7,
+	/** @brief Remote Display feature - supports remote display control */
+	BT_BIP_SUPP_FEAT_REMOTE_DISPLAY = 8,
+};
+
+/**
+ * @brief BIP supported functions
+ *
+ * Defines the supported functions of the BIP device (responder).
+ * These functions indicate the specific BIP operations that the device can perform.
+ * Multiple functions can be combined using bitwise OR operations.
+ *
+ * @note These values correspond to the BIP specification function definitions
+ *       and are used to determine which operations can be performed on the peer device.
+ */
+enum __packed bt_bip_supported_functions {
+	/** @brief Get Capabilities function - supports retrieving device capabilities */
+	BT_BIP_SUPP_FUNC_GET_CAPS = 0,
+	/** @brief Put Image function - supports receiving/storing images */
+	BT_BIP_SUPP_FUNC_PUT_IMAGE = 1,
+	/** @brief Put Linked Attachment function - supports receiving image attachments */
+	BT_BIP_SUPP_FUNC_PUT_LINKED_ATTACHMENT = 2,
+	/** @brief Put Linked Thumbnail function - supports receiving image thumbnails */
+	BT_BIP_SUPP_FUNC_PUT_LINKED_THUMBNAIL = 3,
+	/** @brief Remote Display function - supports remote display operations */
+	BT_BIP_SUPP_FUNC_REMOTE_DISPLAY = 4,
+	/** @brief Get Images List function - supports retrieving available image lists */
+	BT_BIP_SUPP_FUNC_GET_IMAGE_LIST = 5,
+	/** @brief Get Image Properties function - supports retrieving image metadata */
+	BT_BIP_SUPP_FUNC_GET_IMAGE_PROPERTIES = 6,
+	/** @brief Get Image function - supports retrieving/sending images */
+	BT_BIP_SUPP_FUNC_GET_IMAGE = 7,
+	/** @brief Get Linked Thumbnail function - supports retrieving image thumbnails */
+	BT_BIP_SUPP_FUNC_GET_LINKED_THUMBNAIL = 8,
+	/** @brief Get Linked Attachment function - supports retrieving image attachments */
+	BT_BIP_SUPP_FUNC_GET_LINKED_ATTACHMENT = 9,
+	/** @brief Delete Image function - supports deleting images on the peer device */
+	BT_BIP_SUPP_FUNC_DELETE_IMAGE = 10,
+	/** @brief Start Print function - supports initiating print operations */
+	BT_BIP_SUPP_FUNC_START_PRINT = 11,
+	/** @brief Get Partial Image function - supports retrieving partial image data */
+	BT_BIP_SUPP_FUNC_GET_PARTIAL_IMAGE = 12,
+	/** @brief Start Archive function - supports initiating archive operations */
+	BT_BIP_SUPP_FUNC_START_ARCHIVE = 13,
+	/** @brief Get Monitoring Image function - supports retrieving monitoring images from
+	 *  remote camera
+	 */
+	BT_BIP_SUPP_FUNC_GET_MONITORING_IMAGE = 14,
+	/** @brief Get Status function - supports retrieving device/operation status */
+	BT_BIP_SUPP_FUNC_GET_STATUS = 16,
+};
+
+/**
  * @brief BIP instance structure
  *
  * Main structure representing a BIP session
@@ -302,6 +395,15 @@ struct bt_bip {
 	/** @internal Transport state (atomic) */
 	atomic_t _transport_state;
 
+	/** @internal Responder supported capabilities */
+	uint8_t _supp_caps;
+
+	/** @internal Responder supported features */
+	uint16_t _supp_feats;
+
+	/** @internal Responder supported functions */
+	uint32_t _supp_funcs;
+
 	/** @internal List of clients */
 	sys_slist_t _clients;
 
@@ -311,6 +413,54 @@ struct bt_bip {
 	/** @internal Node for linking in lists */
 	sys_snode_t _node;
 };
+
+/**
+ * @brief Set supported capabilities of BIP responder
+ *
+ * Set the supported capabilities bitmask of peer BIP responder to local BIP initiator.
+ *
+ * @param bip BIP initiator instance
+ * @param capabilities Bitmask of supported capabilities. It is discovered from BIP responder
+ *                     by SDP discovery.
+ *
+ * @return 0 on success, negative error code on failure
+ *
+ * @note This function should be called before establishing any BIP OBEX connections.
+ * @note The capabilities value is typically obtained through SDP discovery.
+ */
+int bt_bip_set_supported_capabilities(struct bt_bip *bip, uint8_t capabilities);
+
+/**
+ * @brief Set supported features of BIP responder
+ *
+ * Set the supported features bitmask of peer BIP responder to local BIP initiator.
+ *
+ * @param bip BIP initiator instance
+ * @param features Bitmask of supported features. It is discovered from BIP responder
+ *                 by SDP discovery.
+ *
+ * @return 0 on success, negative error code on failure
+ *
+ * @note This function should be called before establishing any BIP OBEX connections.
+ * @note The features value is typically obtained through SDP discovery.
+ */
+int bt_bip_set_supported_features(struct bt_bip *bip, uint16_t features);
+
+/**
+ * @brief Set supported functions of BIP responder
+ *
+ * Set the supported functions bitmask of peer BIP responder to local BIP initiator.
+ *
+ * @param bip BIP initiator instance
+ * @param functions Bitmask of supported functions. It is discovered from BIP responder
+ *                  by SDP discovery.
+ *
+ * @return 0 on success, negative error code on failure
+ *
+ * @note This function should be called before establishing any BIP OBEX connections.
+ * @note The functions value is typically obtained through SDP discovery.
+ */
+int bt_bip_set_supported_functions(struct bt_bip *bip, uint32_t functions);
 
 /**
  * @brief BIP connection state
