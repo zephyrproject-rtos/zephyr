@@ -360,6 +360,9 @@ struct dw_i3c_xfer {
 struct dw_i3c_config {
 	struct i3c_driver_config common;
 	const struct device *clock;
+
+	/* Clock control subsys related struct */
+	clock_control_subsys_t clock_subsys;
 	uint32_t regs;
 
 	/* Initial clk configuration */
@@ -1420,7 +1423,7 @@ static int init_scl_timing(const struct device *dev)
 	uint32_t hcnt, lcnt;
 #endif /* CONFIG_I3C_CONTROLLER */
 
-	if (clock_control_get_rate(config->clock, NULL, &core_rate) != 0) {
+	if (clock_control_get_rate(config->clock, config->clock_subsys, &core_rate) != 0) {
 		LOG_ERR("%s: get clock rate failed", dev->name);
 		return -EINVAL;
 	}
@@ -2291,7 +2294,7 @@ static int dw_i3c_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	ret = clock_control_on(config->clock, NULL);
+	ret = clock_control_on(config->clock, config->clock_subsys);
 	if (ret < 0) {
 		return ret;
 	}
@@ -2498,6 +2501,9 @@ static DEVICE_API(i3c, dw_i3c_api) = {
 	static const struct dw_i3c_config dw_i3c_cfg_##n = {                                       \
 		.regs = DT_INST_REG_ADDR(n),                                                       \
 		.clock = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                    \
+		.clock_subsys = COND_CODE_1(DT_INST_PHA_HAS_CELL(n, clocks, clkid),                \
+				((clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, clkid)),           \
+				((clock_control_subsys_t)0)),                                      \
 		.od_thigh_max_ns = DT_INST_PROP(n, od_thigh_max_ns),                               \
 		.od_tlow_min_ns = DT_INST_PROP(n, od_tlow_min_ns),                                 \
 		.irq_config_func = &i3c_dw_irq_config_##n,                                         \
