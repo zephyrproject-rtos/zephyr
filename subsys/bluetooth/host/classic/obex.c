@@ -97,7 +97,7 @@ static bool bt_obex_has_header_cb(struct bt_obex_hdr *hdr, void *user_data)
 	return true;
 }
 
-static bool bt_obex_has_header(struct net_buf *buf, uint8_t id)
+bool bt_obex_has_header(struct net_buf *buf, uint8_t id)
 {
 	struct bt_obex_has_header data;
 	int err;
