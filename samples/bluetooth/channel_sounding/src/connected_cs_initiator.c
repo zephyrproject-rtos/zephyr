@@ -29,6 +29,7 @@ static ssize_t on_attr_write_cb(struct bt_conn *conn, const struct bt_gatt_attr 
 static struct bt_conn *connection;
 static uint8_t n_ap;
 static uint8_t latest_num_steps_reported;
+static uint16_t latest_procedure_counter = UINT16_MAX;
 static uint16_t latest_step_data_len;
 static uint8_t latest_local_steps[STEP_DATA_BUF_LEN];
 static uint8_t latest_peer_steps[STEP_DATA_BUF_LEN];
@@ -71,6 +72,13 @@ static void subevent_result_cb(struct bt_conn *conn, struct bt_conn_le_cs_subeve
 {
 	latest_num_steps_reported = result->header.num_steps_reported;
 	n_ap = result->header.num_antenna_paths;
+
+	if (result->header.procedure_counter == latest_procedure_counter) {
+		printk("The sample does not handle CS procedures with multiple CS subevents.\n");
+		latest_procedure_counter = result->header.procedure_counter;
+		return;
+	}
+	latest_procedure_counter = result->header.procedure_counter;
 
 	if (result->step_data_buf) {
 		if (result->step_data_buf->len <= STEP_DATA_BUF_LEN) {
