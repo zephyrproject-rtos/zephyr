@@ -1578,7 +1578,8 @@ static DEVICE_API(flash, flash_flexspi_nor_api) = {
 			.pages_size = SPI_NOR_SECTOR_SIZE,		\
 		},))							\
 		.flash_parameters = {					\
-			.write_block_size = NOR_WRITE_SIZE,		\
+			.write_block_size = DT_INST_PROP_OR(n,		\
+				write_block_size, NOR_WRITE_SIZE),	\
 			.erase_value = NOR_ERASE_VALUE,			\
 		},							\
 	};								\
