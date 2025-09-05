@@ -117,6 +117,17 @@ Ethernet
   the GPIO_ACTIVE_LOW flag when the reset is being used as active low. Previously the active-low
   nature was hard-coded into the driver. (:github:`91726`).
 
+* CRC checksum generation offloading to hardware is now explicitly disabled rather then explicitly
+  enabled in the Xilinx GEM Ethernet driver (:dtcompatible:`xlnx,gem`). By default, offloading is
+  now enabled by default to improve performance, however, offloading is always disabled for QEMU
+  targets due to the checksum generation in hardware not being emulated regardless of whether it
+  is explicitly disabled via the devicetree or not. (:github:`95435`)
+
+    * Replaced devicetree property ``rx-checksum-offload`` which enabled RX checksum offloading
+      ``disable-rx-checksum-offload`` which now actively disables it.
+    * Replaced devicetree property ``tx-checksum-offload`` which enabled TX checksum offloading
+      ``disable-tx-checksum-offload`` which now actively disables it.
+
 Networking
 **********
 
