@@ -26,6 +26,13 @@
 		};
 	};
 
+	firmware {
+		psci: psci {
+			compatible = "arm,psci-1.1";
+			method = "smc";
+		};
+	};
+
 	oc_sram: memory@70000000 {
 		reg = <0x70000000 DT_SIZE_K(64)>;
 	};
