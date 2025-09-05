@@ -99,8 +99,10 @@ enum dns_rr_type {
 
 enum dns_response_type {
 	DNS_RESPONSE_INVALID = -EINVAL,
-	DNS_RESPONSE_IP,
+	DNS_RESPONSE_IP = 1,
 	DNS_RESPONSE_DATA,
+	DNS_RESPONSE_TXT,
+	DNS_RESPONSE_SRV,
 	DNS_RESPONSE_CNAME_WITH_IP,
 	DNS_RESPONSE_CNAME_NO_IP
 };
@@ -320,6 +322,21 @@ static inline int dns_answer_rdlength(uint16_t dname_size,
 					     uint8_t *answer)
 {
 	return ntohs(UNALIGNED_GET((uint16_t *)(answer + dname_size + 8)));
+}
+
+static inline int dns_unpack_srv_priority(const uint8_t *srv)
+{
+	return ntohs(UNALIGNED_GET((uint16_t *)(srv + 0)));
+}
+
+static inline int dns_unpack_srv_weight(const uint8_t *srv)
+{
+	return ntohs(UNALIGNED_GET((uint16_t *)(srv + 2)));
+}
+
+static inline int dns_unpack_srv_port(const uint8_t *srv)
+{
+	return ntohs(UNALIGNED_GET((uint16_t *)(srv + 4)));
 }
 
 /**

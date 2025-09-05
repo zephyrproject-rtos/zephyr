@@ -2155,10 +2155,10 @@ static void eth0_irq_config(void)
 PINCTRL_DT_INST_DEFINE(0);
 
 static const struct eth_sam_dev_cfg eth0_config = {
-	.regs = (Gmac *)DT_INST_REG_ADDR(0),
+	.regs = (Gmac *)DT_REG_ADDR(DT_INST_PARENT(0)),
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 #ifdef CONFIG_SOC_FAMILY_ATMEL_SAM
-	.clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(0),
+	.clock_cfg = SAM_DT_CLOCK_PMC_CFG(0, DT_INST_PARENT(0)),
 #endif
 	.config_func = eth0_irq_config,
 	.phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(0, phy_handle))

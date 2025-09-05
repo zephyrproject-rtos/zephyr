@@ -852,6 +852,36 @@ static void unicast_client_ep_qos_update(struct bt_bap_ep *ep,
 	iso_io_qos->rtn = qos->rtn;
 }
 
+static void check_and_reset_group_pd(struct bt_bap_unicast_group *group, enum bt_audio_dir dir)
+{
+	bool dir_in_idle_or_config_state = true;
+	struct bt_bap_stream *stream;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&group->streams, stream, _node) {
+		if (stream->ep == NULL || stream->ep->dir != dir) {
+			continue;
+		}
+
+		if (stream->ep->status.state == BT_BAP_EP_STATE_IDLE ||
+		    stream->ep->status.state == BT_BAP_EP_STATE_CODEC_CONFIGURED) {
+			continue;
+		} else {
+			dir_in_idle_or_config_state = false;
+			break;
+		}
+	}
+
+	if (dir_in_idle_or_config_state) {
+		if (dir == BT_AUDIO_DIR_SINK) {
+			group->sink_pd = BT_BAP_PD_UNSET;
+		} else if (dir == BT_AUDIO_DIR_SOURCE) {
+			group->source_pd = BT_BAP_PD_UNSET;
+		} else {
+			__ASSERT(false, "Invalid dir %d", dir);
+		}
+	}
+}
+
 static void unicast_client_ep_config_state(struct bt_bap_ep *ep, struct net_buf_simple *buf)
 {
 	struct bt_bap_unicast_client_ep *client_ep =
@@ -932,6 +962,14 @@ static void unicast_client_ep_config_state(struct bt_bap_ep *ep, struct net_buf_
 	unicast_client_ep_set_codec_cfg(ep, cfg->codec.id, sys_le16_to_cpu(cfg->codec.cid),
 					sys_le16_to_cpu(cfg->codec.vid), cc, cfg->cc_len, NULL);
 
+	/* Every time a stream enters the codec configured state, there is a chance that all streams
+	 * in that direction has exited the QoS configured state, and we need to update the stored
+	 * presentation delay
+	 */
+	if (stream->group != NULL) {
+		check_and_reset_group_pd((struct bt_bap_unicast_group *)stream->group, ep->dir);
+	}
+
 	/* Notify upper layer */
 	if (stream->ops != NULL && stream->ops->configured != NULL) {
 		stream->ops->configured(stream, pref);
@@ -943,8 +981,10 @@ static void unicast_client_ep_config_state(struct bt_bap_ep *ep, struct net_buf_
 static void unicast_client_ep_qos_state(struct bt_bap_ep *ep, struct net_buf_simple *buf,
 					uint8_t old_state)
 {
+	const enum bt_audio_dir dir = ep->dir;
 	const struct bt_bap_stream_ops *ops;
 	struct bt_ascs_ase_status_qos *qos;
+	struct bt_bap_unicast_group *group;
 	struct bt_bap_stream *stream;
 
 	ep->receiver_ready = false;
@@ -1009,9 +1049,35 @@ static void unicast_client_ep_qos_state(struct bt_bap_ep *ep, struct net_buf_sim
 
 	LOG_DBG("dir %s cig 0x%02x cis 0x%02x codec 0x%02x interval %u "
 		"framing 0x%02x phy 0x%02x rtn %u latency %u pd %u",
-		bt_audio_dir_str(ep->dir), ep->cig_id, ep->cis_id, stream->codec_cfg->id,
+		bt_audio_dir_str(dir), ep->cig_id, ep->cis_id, stream->codec_cfg->id,
 		stream->qos->interval, stream->qos->framing, stream->qos->phy, stream->qos->rtn,
 		stream->qos->latency, stream->qos->pd);
+
+	__ASSERT_NO_MSG(stream->group != NULL);
+	group = (struct bt_bap_unicast_group *)stream->group;
+	if (dir == BT_AUDIO_DIR_SINK) {
+		if (group->sink_pd == BT_BAP_PD_UNSET) {
+			group->sink_pd = stream->qos->pd;
+		} else {
+			if (group->sink_pd != stream->qos->pd) {
+				LOG_WRN("Sink stream %p PD %u does not match the sink PD %u of the "
+					"group %p",
+					stream, stream->qos->pd, group->sink_pd, group);
+			}
+		}
+	} else if (dir == BT_AUDIO_DIR_SOURCE) {
+		if (group->source_pd == BT_BAP_PD_UNSET) {
+			group->source_pd = stream->qos->pd;
+		} else {
+			if (group->source_pd != stream->qos->pd) {
+				LOG_WRN("Source stream %p PD %u does not match the source PD %u of "
+					"the group %p",
+					stream, stream->qos->pd, group->source_pd, group);
+			}
+		}
+	} else {
+		__ASSERT(false, "Invalid dir %d", dir);
+	}
 
 	/* Disconnect ISO if connected */
 	if (bt_bap_stream_can_disconnect(stream)) {
@@ -2632,6 +2698,8 @@ static struct bt_bap_unicast_group *unicast_group_alloc(void)
 
 			group->allocated = true;
 			group->index = i;
+			group->sink_pd = BT_BAP_PD_UNSET;
+			group->source_pd = BT_BAP_PD_UNSET;
 
 			break;
 		}
@@ -3184,6 +3252,25 @@ int bt_bap_unicast_group_foreach_stream(struct bt_bap_unicast_group *unicast_gro
 	return 0;
 }
 
+int bt_bap_unicast_group_get_info(const struct bt_bap_unicast_group *unicast_group,
+				  struct bt_bap_unicast_group_info *info)
+{
+	if (unicast_group == NULL) {
+		LOG_DBG("unicast_group is NULL");
+		return -EINVAL;
+	}
+
+	if (info == NULL) {
+		LOG_DBG("info is NULL");
+		return -EINVAL;
+	}
+
+	info->sink_pd = unicast_group->sink_pd;
+	info->source_pd = unicast_group->source_pd;
+
+	return 0;
+}
+
 int bt_bap_unicast_client_config(struct bt_bap_stream *stream,
 				 const struct bt_audio_codec_cfg *codec_cfg)
 {
@@ -3224,11 +3311,15 @@ int bt_bap_unicast_client_config(struct bt_bap_stream *stream,
 
 int bt_bap_unicast_client_qos(struct bt_conn *conn, struct bt_bap_unicast_group *group)
 {
+	bool source_qos_configured_on_other_conn;
+	bool sink_qos_configured_on_other_conn;
 	struct bt_bap_stream *stream;
 	struct bt_ascs_config_op *op;
 	struct net_buf_simple *buf;
 	struct bt_bap_ep *ep;
 	bool conn_stream_found;
+	uint32_t source_pd;
+	uint32_t sink_pd;
 	int err;
 
 	if (conn == NULL) {
@@ -3237,18 +3328,55 @@ int bt_bap_unicast_client_qos(struct bt_conn *conn, struct bt_bap_unicast_group 
 		return -ENOTCONN;
 	}
 
+	if (group == NULL) {
+		LOG_DBG("group is NULL");
+
+		return -EINVAL;
+	}
+
+	/* Validate streams before starting the QoS execution */
+	source_qos_configured_on_other_conn = false;
+	sink_qos_configured_on_other_conn = false;
+
 	/* Used to determine if a stream for the supplied connection pointer
 	 * was actually found
 	 */
 	conn_stream_found = false;
+	SYS_SLIST_FOR_EACH_CONTAINER(&group->streams, stream, _node) {
+		enum bt_audio_dir dir;
 
-	/* Validate streams before starting the QoS execution */
+		if (stream->conn == conn) {
+			conn_stream_found = true;
+			continue;
+		}
+
+		ep = stream->ep;
+		dir = ep->dir;
+
+		if (ep->status.state >= BT_BAP_EP_STATE_QOS_CONFIGURED) {
+			if (dir == BT_AUDIO_DIR_SINK) {
+				sink_qos_configured_on_other_conn = true;
+			} else if (dir == BT_AUDIO_DIR_SOURCE) {
+				source_qos_configured_on_other_conn = true;
+			} else {
+				__ASSERT(false, "Invalid dir %d", dir);
+			}
+		}
+	}
+
+	if (!conn_stream_found) {
+		LOG_DBG("No streams in the group %p for conn %p", group, conn);
+		return -EINVAL;
+	}
+
+	source_pd = group->source_pd;
+	sink_pd = group->sink_pd;
+
 	SYS_SLIST_FOR_EACH_CONTAINER(&group->streams, stream, _node) {
 		if (stream->conn != conn) {
 			/* Channel not part of this ACL, skip */
 			continue;
 		}
-		conn_stream_found = true;
 
 		ep = stream->ep;
 		if (ep == NULL) {
@@ -3272,10 +3400,43 @@ int bt_bap_unicast_client_qos(struct bt_conn *conn, struct bt_bap_unicast_group 
 			return -EINVAL;
 		}
 
-		/* Verify ep->dir */
+		/* Verify ep->dir and presentation delay. If the group already has a configured
+		 * presentation delay in a direction, we compare the stream's presentation delay
+		 * with the group's presentation delay, and if they differ we reject the request.
+		 * As per the BAP spec section 7.1, all streams in a direction shall have the same
+		 * presentation delay. The group presentation delay is set once any endpoint in a
+		 * direction has changed state to "QoS configured" or "above", and cleared again if
+		 * all endpoints for that direction enters the codec configured or idle state.
+		 * The check for presentation delay is also conditional on whether other devices are
+		 * involved - If there is only a single connection that has ASEs in a QoS Configured
+		 * state or "above", then we can freely modify the presentation delay.
+		 */
 		switch (ep->dir) {
 		case BT_AUDIO_DIR_SINK:
+			if (sink_pd == BT_BAP_PD_UNSET) {
+				sink_pd = stream->qos->pd;
+			} else {
+				if (sink_qos_configured_on_other_conn &&
+				    sink_pd != stream->qos->pd) {
+					LOG_DBG("Sink stream %p did not have the same PD %u as "
+						"other sink streams %u",
+						stream, stream->qos->pd, sink_pd);
+					return -EINVAL;
+				}
+			}
+			break;
 		case BT_AUDIO_DIR_SOURCE:
+			if (source_pd == BT_BAP_PD_UNSET) {
+				source_pd = stream->qos->pd;
+			} else {
+				if (source_qos_configured_on_other_conn &&
+				    source_pd != stream->qos->pd) {
+					LOG_DBG("Source stream %p did not have the same PD %u as "
+						"other source streams %u",
+						stream, stream->qos->pd, source_pd);
+					return -EINVAL;
+				}
+			}
 			break;
 		default:
 			__ASSERT(false, "invalid endpoint dir: %u", ep->dir);
@@ -3289,11 +3450,6 @@ int bt_bap_unicast_client_qos(struct bt_conn *conn, struct bt_bap_unicast_group 
 			LOG_ERR("Could not find bap_iso for stream %p", stream);
 			return -EINVAL;
 		}
-	}
-
-	if (!conn_stream_found) {
-		LOG_DBG("No streams in the group %p for conn %p", group, conn);
-		return -EINVAL;
 	}
 
 	/* Generate the control point write */

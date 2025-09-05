@@ -341,6 +341,24 @@ struct gctrl_it51xxx_regs {
 
 /**
  *
+ * (22xxh) Battery-backed SRAM (BRAM) registers
+ *
+ */
+#ifndef __ASSEMBLER__
+/* Battery backed RAM indices. */
+#define BRAM_MAGIC_FIELD_OFFSET 0x7c
+
+enum bram_indices {
+	/* This field is used to indicate BRAM is valid or not. */
+	BRAM_IDX_VALID_FLAGS0 = BRAM_MAGIC_FIELD_OFFSET,
+	BRAM_IDX_VALID_FLAGS1,
+	BRAM_IDX_VALID_FLAGS2,
+	BRAM_IDX_VALID_FLAGS3
+};
+#endif /* !__ASSEMBLER__ */
+
+/**
+ *
  * (42xxh) SMBus Interface for target (SMB) registers
  *
  */

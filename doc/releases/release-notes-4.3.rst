@@ -64,6 +64,8 @@ Removed APIs and options
 Deprecated APIs and options
 ===========================
 
+* :dtcompatible:`maxim,ds3231` is deprecated in favor of :dtcompatible:`maxim,ds3231-rtc`.
+
 New APIs and options
 ====================
 
@@ -77,7 +79,17 @@ New APIs and options
 
 * Architectures
 
+  * :kconfig:option:`CONFIG_ARCH_HAS_HW_SHADOW_STACK`
   * :kconfig:option:`CONFIG_SRAM_SW_ISR_TABLE`
+
+  * x86 Intel CET support
+
+    * :kconfig:option:`CONFIG_X86_CET`
+    * :kconfig:option:`CONFIG_X86_CET_IBT`
+    * :kconfig:option:`CONFIG_X86_CET_SHADOW_STACK_ALIGNMENT`
+    * :kconfig:option:`CONFIG_X86_CET_SOC_PREPARE_SHADOW_STACK_SWITCH`
+    * :kconfig:option:`CONFIG_X86_CET_VERIFY_KERNEL_SHADOW_STACK`
+
   * ARM (Cortex-M) system state save/restore primitives
 
     * :c:func:`z_arm_save_scb_context` / :c:func:`z_arm_restore_scb_context`
@@ -90,7 +102,10 @@ New APIs and options
 
     * :c:struct:`bt_audio_codec_cfg` now contains a target_latency and a target_phy option
     * :c:func:`bt_bap_broadcast_source_foreach_stream`
+    * :c:func:`bt_cap_initiator_broadcast_foreach_stream`
     * :c:struct:`bt_bap_stream` now contains an ``iso`` field as a reference to the ISO channel
+    * :c:func:`bt_bap_unicast_group_get_info`
+    * :c:func:`bt_cap_unicast_group_get_info`
 
   * Host
 
@@ -107,6 +122,20 @@ New APIs and options
 
     * :kconfig:option:`CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_AL_88`
     * :kconfig:option:`CONFIG_SDL_DISPLAY_COLOR_TINT`
+
+* Kernel
+
+  * :kconfig:option:`CONFIG_HW_SHADOW_STACK`
+  * :kconfig:option:`CONFIG_HW_SHADOW_STACK_ALLOW_REUSE`
+  * :kconfig:option:`CONFIG_HW_SHADOW_STACK_MIN_SIZE`
+  * :kconfig:option:`CONFIG_HW_SHADOW_STACK_PERCENTAGE_SIZE`
+  * :c:macro:`K_THREAD_HW_SHADOW_STACK_SIZE`
+  * :c:macro:`K_KERNEL_HW_SHADOW_STACK_DECLARE`
+  * :c:macro:`K_KERNEL_HW_SHADOW_STACK_ARRAY_DECLARE`
+  * :c:macro:`K_THREAD_HW_SHADOW_STACK_DEFINE`
+  * :c:macro:`K_THREAD_HW_SHADOW_STACK_ARRAY_DEFINE`
+  * :c:macro:`K_THREAD_HW_SHADOW_STACK_ATTACH`
+  * :c:macro:`k_thread_hw_shadow_stack_attach`
 
 * Logging:
 
@@ -167,6 +196,9 @@ New Drivers
 
    * STM32 RTC driver has been updated to use the new STM32 EXTI interrupt controller API
 
+* Sensors
+
+   * :dtcompatible:`we,wsen-isds-2536030320001`
 
 New Samples
 ***********

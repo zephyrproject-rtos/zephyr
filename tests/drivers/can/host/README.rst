@@ -28,7 +28,7 @@ The Zephyr end of the CAN fixture can be configured as follows:
 
 The host end of the CAN fixture can be configured through python-can. Available configuration
 options depend on the type of host CAN adapter used. The python-can library provides a lot of
-flexibility for configuration as decribed in the `python-can configuration`_ page, all centered
+flexibility for configuration as described in the `python-can configuration`_ page, all centered
 around the concept of a configuration "context. The configuration context for this test suite can be
 configured as follows:
 

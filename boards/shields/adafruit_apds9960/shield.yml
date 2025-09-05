@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2025, Jonas Berg
+
+shield:
+  name: adafruit_apds9960
+  full_name: Adafruit APDS9960 Proximity, Light, RGB and Gesture Sensor Shield
+  vendor: adafruit
+  supported_features:
+    - sensor

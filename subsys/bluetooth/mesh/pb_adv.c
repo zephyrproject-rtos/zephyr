@@ -522,7 +522,7 @@ static void gen_prov_cont(struct prov_rx *rx, struct net_buf_simple *buf)
 		return;
 	}
 
-	if (seg > link.rx.last_seg) {
+	if (seg > link.rx.last_seg || seg == 0) {
 		LOG_ERR("Invalid segment index %u", seg);
 		prov_failed(PROV_ERR_NVAL_FMT);
 		return;
@@ -630,6 +630,13 @@ static void gen_prov_start(struct prov_rx *rx, struct net_buf_simple *buf)
 
 	if (link.rx.buf->len > link.rx.buf->size) {
 		LOG_ERR("Too large provisioning PDU (%u bytes)", link.rx.buf->len);
+		prov_failed(PROV_ERR_NVAL_FMT);
+		return;
+	}
+
+	if (link.rx.buf->len < buf->len) {
+		LOG_ERR("Invalid declared provisionig PDU length (%u > %u)", buf->len,
+			link.rx.buf->len);
 		prov_failed(PROV_ERR_NVAL_FMT);
 		return;
 	}

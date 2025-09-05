@@ -4,7 +4,9 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-description: Maxim DS3231 I2C RTC/TCXO
+# This binding is deprecated in favor of maxim,ds3231-rtc.
+
+description: Maxim DS3231 I2C RTC/TCXO.
 
 compatible: "maxim,ds3231"
 

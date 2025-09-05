@@ -24,3 +24,15 @@ spi-nor@1 {
 	size = <1048576>;
 	jedec-id = [00 11 22];
 };
+
+at25xv021a@2 {
+	compatible = "atmel,at25xv021a";
+	reg = <0x2>;
+	status = "okay";
+	spi-max-frequency = <5000000>;
+	jedec-id = [00 11 22];
+	size = <262144>;
+	page-size = <1>;
+	timeout = <1>;
+	timeout-erase = <1>;
+};

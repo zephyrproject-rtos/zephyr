@@ -35,7 +35,12 @@ enum comparator_trigger {
 	COMPARATOR_TRIGGER_BOTH_EDGES
 };
 
-/** Comparator callback template */
+/**
+ * @brief Comparator callback template
+ *
+ * @param dev Comparator device
+ * @param user_data Pointer to the user data that was provided when the trigger callback was set
+ */
 typedef void (*comparator_callback_t)(const struct device *dev, void *user_data);
 
 /** @cond INTERNAL_HIDDEN */

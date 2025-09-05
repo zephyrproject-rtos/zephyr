@@ -281,7 +281,7 @@ Running an applicatoin with FVP
 -------------------------------
 
 Here is the same example for running with FVP.
-Set the ``ARMFVP_BIN_PATH`` environemnt variable to the location of your FVP you have downloaded from `here <FVP_>`_
+Set the ``ARMFVP_BIN_PATH`` environment variable to the location of your FVP you have downloaded from `here <FVP_>`_
 
 .. code-block:: console
 

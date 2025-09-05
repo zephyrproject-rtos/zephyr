@@ -15,9 +15,9 @@
 #define ZEPHYR_INCLUDE_DRIVERS_USBC_USBC_TC_H_
 
 /**
- * @brief USB Type-C
+ * @brief Support for USB Type-C cables and connectors
  * @defgroup usb_type_c USB Type-C
- * @ingroup io_interfaces
+ * @ingroup usb_interfaces
  * @{
  */
 

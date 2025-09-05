@@ -316,7 +316,7 @@ static int uart_bt_workqueue_init(void)
 	return 0;
 }
 
-/** The work-queue is shared across all instances, hence we initialize it separatedly */
+/** The work-queue is shared across all instances, hence we initialize it separately */
 SYS_INIT(uart_bt_workqueue_init, POST_KERNEL, CONFIG_SERIAL_INIT_PRIORITY);
 
 static int uart_bt_init(const struct device *dev)

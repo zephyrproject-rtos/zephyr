@@ -293,6 +293,17 @@
 			status = "disabled";
 		};
 
+		pwm0: pwm@5d0000 {
+			compatible = "intel,blinky-pwm";
+			reg = <0x5d0000 0x500>;
+			reg-upper32 = <0x40>;
+			reg-offset = <0x434>;
+			clock-frequency = <32768>;
+			max-pins = <1>;
+			#pwm-cells = <2>;
+			status = "disabled";
+		};
+
 		rtc: counter: rtc@70 {
 			compatible = "motorola,mc146818";
 			reg = <0x70 0x0D 0x71 0x0D>;

@@ -52,8 +52,13 @@ if(NOT COMMAND compiler_file_path)
 
     compiler_simple_options(simple_options)
 
+    if(DEFINED CMAKE_C_COMPILER_TARGET)
+      set(target_flag "--target=${CMAKE_C_COMPILER_TARGET}")
+    endif()
+
     execute_process(
       COMMAND ${CMAKE_C_COMPILER} ${TOOLCHAIN_C_FLAGS} ${COMPILER_OPTIMIZATION_FLAG} ${simple_options}
+      ${target_flag}
       --print-file-name ${filename}
       OUTPUT_VARIABLE filepath
       OUTPUT_STRIP_TRAILING_WHITESPACE
@@ -80,10 +85,15 @@ if(NOT COMMAND compiler_set_linker_properties)
 
     compiler_simple_options(simple_options)
 
+    if(DEFINED CMAKE_C_COMPILER_TARGET)
+      set(target_flag "--target=${CMAKE_C_COMPILER_TARGET}")
+    endif()
+
     # Compute complete path to the runtime library using the
     # --print-libgcc-file-name compiler flag
     execute_process(
       COMMAND ${CMAKE_C_COMPILER} ${TOOLCHAIN_C_FLAGS} ${COMPILER_OPTIMIZATION_FLAG} ${simple_options}
+      ${target_flag}
       --print-libgcc-file-name
       OUTPUT_VARIABLE library_path
       OUTPUT_STRIP_TRAILING_WHITESPACE

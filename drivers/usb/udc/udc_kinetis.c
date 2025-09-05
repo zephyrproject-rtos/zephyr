@@ -326,10 +326,11 @@ static inline int work_handler_setup(const struct device *dev)
 	udc_ctrl_update_stage(dev, buf);
 
 	if (udc_ctrl_stage_is_data_out(dev)) {
+		size_t length = ROUND_UP(udc_data_stage_length(buf), USBFSOTG_EP0_SIZE);
+
 		/*  Allocate and feed buffer for data OUT stage */
 		LOG_DBG("s:%p|feed for -out-", buf);
-		err = usbfsotg_ctrl_feed_dout(dev, udc_data_stage_length(buf),
-					      false, true);
+		err = usbfsotg_ctrl_feed_dout(dev, length, false, true);
 		if (err == -ENOMEM) {
 			err = udc_submit_ep_event(dev, buf, err);
 		}
@@ -539,7 +540,7 @@ static ALWAYS_INLINE void isr_handle_xfer_done(const struct device *dev,
 	struct usbfsotg_data *priv = udc_get_private(dev);
 	uint8_t ep = stat_reg_get_ep(status);
 	bool odd = stat_reg_is_odd(status);
-	struct usbfsotg_bd *bd, *bd_op;
+	struct usbfsotg_bd *bd;
 	struct udc_ep_config *ep_cfg;
 	struct net_buf *buf;
 	uint8_t token_pid;
@@ -548,7 +549,6 @@ static ALWAYS_INLINE void isr_handle_xfer_done(const struct device *dev,
 
 	ep_cfg = udc_get_ep_cfg(dev, ep);
 	bd = usbfsotg_get_ebd(dev, ep_cfg, false);
-	bd_op = usbfsotg_get_ebd(dev, ep_cfg, true);
 	token_pid = bd->get.tok_pid;
 	len  = bd->get.bc;
 	data1 = bd->get.data1 ? true : false;
@@ -885,8 +885,12 @@ static int usbfsotg_ep_enable(const struct device *dev,
 		priv->busy[0] = false;
 		priv->busy[1] = false;
 		buf = udc_ctrl_alloc(dev, USB_CONTROL_EP_OUT, USBFSOTG_EP0_SIZE);
-		usbfsotg_bd_set_ctrl(bd_even, buf->size, buf->data, false);
+		if (buf == NULL) {
+			return -ENOMEM;
+		}
+
 		priv->out_buf[0] = buf;
+		usbfsotg_bd_set_ctrl(bd_even, USBFSOTG_EP0_SIZE, buf->data, false);
 	}
 
 	return 0;
@@ -954,8 +958,7 @@ static int usbfsotg_disable(const struct device *dev)
 	const struct usbfsotg_config *config = dev->config;
 	USB_Type *base = config->base;
 
-	/* disable USB and DP Pullup */
-	base->CTL  &= ~USB_CTL_USBENSOFEN_MASK;
+	/* Disable DP Pullup */
 	base->CONTROL &= ~USB_CONTROL_DPPULLUPNONOTG_MASK;
 
 	return 0;
@@ -1189,8 +1192,8 @@ static const struct udc_api usbfsotg_api = {
 		.irq_enable_func = udc_irq_enable_func##n,			\
 		.irq_disable_func = udc_irq_disable_func##n,			\
 		.num_of_eps = DT_INST_PROP(n, num_bidir_endpoints),		\
-		.ep_cfg_in = ep_cfg_out,					\
-		.ep_cfg_out = ep_cfg_in,					\
+		.ep_cfg_in = ep_cfg_in,						\
+		.ep_cfg_out = ep_cfg_out,					\
 	};									\
 										\
 	static struct usbfsotg_data priv_data_##n = {				\

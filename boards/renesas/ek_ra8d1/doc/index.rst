@@ -13,7 +13,7 @@ The key features of the EK-RA8D1 board are categorized in three groups as follow
 **MCU Native Pin Access**
 
 - 480MHz Arm Cortex-M85 based RA8D1 MCU in 224 pins, BGA package
-- Native pin acces througgh 2 x 50-pin, and 2 x 40-pin male headers
+- Native pin access through 2 x 50-pin, and 2 x 40-pin male headers
 - MCU current measurement points for precision current consumption measurement
 - Multiple clock sources - RA8D1 MCU oscillator and sub-clock oscillator crystals,
   providing precision 20.000MHz and 32,768 Hz refeence clocks.

@@ -23,12 +23,4 @@
 #define CLIC_INTCFG 0x800
 #define CLIC_CFG    0xc00
 
-/* CLIC relative CSR number */
-#define CSR_MTVT       (0x307)
-#define CSR_MNXTI      (0x345)
-#define CSR_MINTTHRESH (0x347)
-#define CSR_MISELECT   (0x350)
-#define CSR_MIREG      (0x351)
-#define CSR_MIREG2     (0x352)
-
 #endif /* _SIFIVE_CLIC_H */

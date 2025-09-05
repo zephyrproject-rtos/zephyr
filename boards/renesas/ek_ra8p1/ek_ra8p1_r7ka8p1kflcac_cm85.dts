@@ -273,7 +273,7 @@ zephyr_lcdif: &lcdif {};
 	auto-refresh-interval = <SDRAM_AUTO_REFREDSH_INTERVEL_10CYCLES>;
 	auto-refresh-count = <SDRAM_AUTO_REFREDSH_COUNT_8TIMES>;
 	precharge-cycle-count = <SDRAM_AUTO_PRECHARGE_CYCLE_3CYCLES>;
-	multiplex-addr-shift = "10-bit";
+	multiplex-addr-shift = "9-bit";
 	edian-mode = "little-endian";
 	continuous-access;
 	bus-width = "32-bit";

@@ -20,3 +20,4 @@
  * implemented) Hazard3 cores.
  */
 #include "rpi_pico2.dtsi"
+#include "../common/rpi_pico-led.dtsi"

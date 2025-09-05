@@ -1,0 +1,24 @@
+/*
+ * Copyright (c) 2025 Jonas Berg
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&zephyr_i2c {
+	status = "okay";
+
+	/* The shunt resistor on the board is 0.015 Ohm.
+	 * The default max shunt voltage is +/-163.84 mV,
+	 * resulting in a max current range of +/-10.92 Amps.
+	 * For this particular shield is the maximum current rated as 10 A.
+	 * Calculate the current LSB value as 10/2^15 A = 305 uA.
+	 * Round the current LSB value upwards to 500 uA.
+	 */
+	adafruit_ina237: ina237@40 {
+		status = "okay";
+		compatible = "ti,ina237";
+		reg = <0x40>;
+		rshunt-micro-ohms= <15000>;
+		current-lsb-microamps = <500>;
+	};
+};

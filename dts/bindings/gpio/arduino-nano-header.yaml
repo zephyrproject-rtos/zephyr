@@ -32,6 +32,8 @@ description: |
         11 D11                  3V3    -
         12 D12                  D13    13
 
+    Use ARDUINO_NANO_HEADER_* constants in <zephyr/dt-bindings/gpio/arduino-nano-header.h>
+    to refer to specific pins using convenient constant names.
 
 compatible: "arduino-nano-header"
 

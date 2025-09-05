@@ -5,6 +5,6 @@ if SOC_SILABS_XG28
 
 config NUM_IRQS
 	# must be >= the highest interrupt number used
-	default 79
+	default 78
 
 endif

@@ -405,8 +405,17 @@ static int explorir_m_init(const struct device *dev)
 	uart_irq_rx_enable(cfg->uart_dev);
 
 	val.val1 = EXPLORIR_M_MODE_POLL;
-	explorir_m_uart_transceive(dev, EXPLORIR_M_MODE_CHAR, &val, EXPLORIR_M_SET_VAL_ONE);
-	explorir_m_uart_transceive(dev, EXPLORIR_M_SCALING_CHAR, NULL, EXPLORIR_M_SET_NONE);
+	rc = explorir_m_uart_transceive(dev, EXPLORIR_M_MODE_CHAR, &val, EXPLORIR_M_SET_VAL_ONE);
+	if (rc != 0) {
+		LOG_ERR("Set mode failed: %d", rc);
+		return rc;
+	}
+
+	rc = explorir_m_uart_transceive(dev, EXPLORIR_M_SCALING_CHAR, NULL, EXPLORIR_M_SET_NONE);
+	if (rc != 0) {
+		LOG_ERR("Set scaling failed: %d", rc);
+		return rc;
+	}
 
 	return rc;
 }

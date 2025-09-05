@@ -88,7 +88,7 @@ int main(void)
 			return 1;
 		}
 
-		LOG_INF("Watchdog shall fire in ~%u miliseconds", WDT_WINDOW_MAX);
+		LOG_INF("Watchdog shall fire in ~%u milliseconds", WDT_WINDOW_MAX);
 		k_sleep(K_FOREVER);
 	} else {
 		bool test_passing = true;

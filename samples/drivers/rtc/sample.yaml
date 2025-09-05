@@ -6,8 +6,11 @@ tests:
       - stm32f3_disco
       - mimxrt700_evk/mimxrt798s/cm33_cpu0
       - mimxrt700_evk/mimxrt798s/cm33_cpu1
+      - adafruit_qt_py_rp2040/rp2040
     integration_platforms:
       - stm32f3_disco
+    extra_args:
+      - platform:adafruit_qt_py_rp2040/rp2040:SHIELD="sparkfun_rv8803"
     tags:
       - samples
       - rtc

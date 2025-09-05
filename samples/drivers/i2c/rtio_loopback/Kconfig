@@ -1,0 +1,14 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "I2C RTIO Loopback Test"
+
+config I2C_RTIO_LOOPBACK_DATA_READ_MAX_SIZE
+	int "Max data size used for testing I2C read transfers"
+	default 2
+
+config I2C_RTIO_LOOPBACK_DATA_WRITE_MAX_SIZE
+	int "Max data size used for testing I2C write transfers"
+	default 6
+
+source "Kconfig.zephyr"

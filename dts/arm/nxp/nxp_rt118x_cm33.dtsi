@@ -10,13 +10,13 @@
 
 / {
 	soc {
-		itcm: itcm@1ffe0000 {
+		itcm: memory@1ffe0000 {
 			compatible = "zephyr,memory-region", "nxp,imx-itcm";
 			reg = <0x1ffe0000 DT_SIZE_K(128)>;
 			zephyr,memory-region = "ITCM";
 		};
 
-		dtcm: dtcm@30000000 {
+		dtcm: memory@30000000 {
 			compatible = "zephyr,memory-region", "nxp,imx-dtcm";
 			reg = <0x30000000 DT_SIZE_K(128)>;
 			zephyr,memory-region = "DTCM";
@@ -26,7 +26,7 @@
 			ranges = <0x0 0x30484000 0x10000000>;
 		};
 
-		m7_itcm: itcm@303c0000 {
+		m7_itcm: memory@303c0000 {
 			compatible = "zephyr,memory-region", "mmio-sram";
 			zephyr,memory-region = "M7_ITCM";
 			reg = <0x303c0000 DT_SIZE_K(256)>;
@@ -36,11 +36,11 @@
 			ranges = <0x0 0x50000000 0x10000000>;
 		};
 
-		flexspi: spi@525e0000 {
+		flexspi: memory-controller@525e0000 {
 			reg = <0x525e0000 0x4000>, <0x38000000 DT_SIZE_M(128)>;
 		};
 
-		flexspi2: spi@545e0000 {
+		flexspi2: memory-controller@545e0000 {
 			reg = <0x545e0000 0x4000>, <0x14000000 DT_SIZE_M(64)>;
 		};
 	};

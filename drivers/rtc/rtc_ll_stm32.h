@@ -12,7 +12,7 @@
  * ES0584 / ES0631 §2.5.2; ES0632 §2.6.2 (both Rev. 2)
  * """
  * RTC interrupts cannot be reliably used for real-time
- * control functions, since some occurences of RTC
+ * control functions, since some occurrences of RTC
  * interrupts may be missed.
  * """
  * Since alarm IRQs are unreliable, don't allow RTC alarm

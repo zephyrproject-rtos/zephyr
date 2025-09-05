@@ -150,7 +150,7 @@ corner and going clockwise.
 PoE Board (B)
 -------------
 
-This board coverts power delivered over the Ethernet cable (PoE) to provide a
+This board converts power delivered over the Ethernet cable (PoE) to provide a
 power supply for the Ethernet Board (A). The main components of the PoE Board
 (B) are shown on the block diagram under `Functionality Overview`_.
 

@@ -4,18 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+ #include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
+
 / {
 	nrf_radio_coex: coex {
 		compatible = "nordic,nrf7002-coex";
 		status = "okay";
 
-		/* D2 */
-		status0-gpios = <&arduino_header 8 GPIO_ACTIVE_HIGH>;
-		/* D3 */
-		req-gpios = <&arduino_header 9 GPIO_ACTIVE_HIGH>;
-		/* D4 */
-		grant-gpios = <&arduino_header 10 (GPIO_PULL_DOWN | GPIO_ACTIVE_LOW)>;
-		/* D6 */
-		swctrl1-gpios = <&arduino_header 12 GPIO_ACTIVE_HIGH>;
+		status0-gpios = <&arduino_header ARDUINO_HEADER_R3_D2 GPIO_ACTIVE_HIGH>;
+		req-gpios = <&arduino_header ARDUINO_HEADER_R3_D3 GPIO_ACTIVE_HIGH>;
+		grant-gpios = <&arduino_header ARDUINO_HEADER_R3_D4
+			       (GPIO_PULL_DOWN | GPIO_ACTIVE_LOW)>;
+		swctrl1-gpios = <&arduino_header ARDUINO_HEADER_R3_D6 GPIO_ACTIVE_HIGH>;
 	};
 };

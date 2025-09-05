@@ -191,7 +191,7 @@ extern void pcie_conf_write(pcie_bdf_t bdf, unsigned int reg, uint32_t data);
 typedef bool (*pcie_scan_cb_t)(pcie_bdf_t bdf, pcie_id_t id, void *cb_data);
 
 enum {
-	/** Scan all available PCI host controllers and sub-busses */
+	/** Scan all available PCI host controllers and sub-buses */
 	PCIE_SCAN_RECURSIVE = BIT(0),
 	/** Do the callback for all endpoint types, including bridges */
 	PCIE_SCAN_CB_ALL = BIT(1),

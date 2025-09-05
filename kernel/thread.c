@@ -501,6 +501,70 @@ static char *setup_thread_stack(struct k_thread *new_thread,
 	return stack_ptr;
 }
 
+#ifdef CONFIG_HW_SHADOW_STACK
+static void setup_shadow_stack(struct k_thread *new_thread,
+			 k_thread_stack_t *stack)
+{
+	int ret = -ENOENT;
+
+	STRUCT_SECTION_FOREACH(_stack_to_hw_shadow_stack, stk_to_hw_shstk) {
+		if (stk_to_hw_shstk->stack == stack) {
+			ret = k_thread_hw_shadow_stack_attach(new_thread,
+							      stk_to_hw_shstk->shstk_addr,
+							      stk_to_hw_shstk->size);
+			if (ret != 0) {
+				LOG_ERR("Could not set thread %p shadow stack %p, got error %d",
+					new_thread, stk_to_hw_shstk->shstk_addr, ret);
+				k_panic();
+			}
+			break;
+		}
+	}
+
+	/* Check if the stack isn't in a stack array, and use the corresponding
+	 * shadow stack.
+	 */
+	if (ret != -ENOENT) {
+		return;
+	}
+
+	STRUCT_SECTION_FOREACH(_stack_to_hw_shadow_stack_arr, stk_to_hw_shstk) {
+		if ((uintptr_t)stack >= stk_to_hw_shstk->stack_addr &&
+		    (uintptr_t)stack < stk_to_hw_shstk->stack_addr +
+		    stk_to_hw_shstk->stack_size * stk_to_hw_shstk->nmemb) {
+			/* Now we have to guess which index of the stack array is being used */
+			uintptr_t stack_offset = (uintptr_t)stack - stk_to_hw_shstk->stack_addr;
+			uintptr_t stack_index = stack_offset / stk_to_hw_shstk->stack_size;
+			uintptr_t addr;
+
+			if (stack_index >= stk_to_hw_shstk->nmemb) {
+				LOG_ERR("Could not find shadow stack for thread %p, stack %p",
+					new_thread, stack);
+				k_panic();
+			}
+
+			addr = stk_to_hw_shstk->shstk_addr +
+				stk_to_hw_shstk->shstk_size * stack_index;
+			ret = k_thread_hw_shadow_stack_attach(new_thread,
+							      (arch_thread_hw_shadow_stack_t *)addr,
+							      stk_to_hw_shstk->shstk_size);
+			if (ret != 0) {
+				LOG_ERR("Could not set thread %p shadow stack 0x%lx, got error %d",
+					new_thread, stk_to_hw_shstk->shstk_addr, ret);
+				k_panic();
+			}
+			break;
+		}
+	}
+
+	if (ret == -ENOENT) {
+		LOG_ERR("Could not find shadow stack for thread %p, stack %p",
+			new_thread, stack);
+		k_panic();
+	}
+}
+#endif
+
 /*
  * The provided stack_size value is presumed to be either the result of
  * K_THREAD_STACK_SIZEOF(stack), or the size value passed to the instance
@@ -546,6 +610,10 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 	/* Initialize various struct k_thread members */
 	z_init_thread_base(&new_thread->base, prio, _THREAD_SLEEPING, options);
 	stack_ptr = setup_thread_stack(new_thread, stack, stack_size);
+
+#ifdef CONFIG_HW_SHADOW_STACK
+	setup_shadow_stack(new_thread, stack);
+#endif
 
 #ifdef CONFIG_KERNEL_COHERENCE
 	/* Check that the thread object is safe, but that the stack is

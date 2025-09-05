@@ -7,7 +7,7 @@
 #define ZEPHYR_INCLUDE_DT_BINDINGS_XG28_DMA_H_
 
 #include <zephyr/dt-bindings/dt-util.h>
-#include <zephyr/dt-bindings/dma/silabs/common-dma.h>
+#include "common-dma.h"
 
 /**
  *  Definition of Silabs LDMA request signal
@@ -57,5 +57,6 @@
 #define DMA_REQSEL_EUSART2TXFL        (FIELD_PREP(DMA_SRC_MASK, 18) | FIELD_PREP(DMA_SIG_MASK, 1))
 #define DMA_REQSEL_LESENSEFIFO        (FIELD_PREP(DMA_SRC_MASK, 19) | FIELD_PREP(DMA_SIG_MASK, 0))
 #define DMA_REQSEL_LCD                (FIELD_PREP(DMA_SRC_MASK, 20) | FIELD_PREP(DMA_SIG_MASK, 0))
+#define DMA_REQSEL_MVPREQ             (FIELD_PREP(DMA_SRC_MASK, 21) | FIELD_PREP(DMA_SIG_MASK, 0))
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_XG28_DMA_H_ */

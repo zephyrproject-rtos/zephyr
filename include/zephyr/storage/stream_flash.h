@@ -107,6 +107,15 @@ int stream_flash_init(struct stream_flash_ctx *ctx, const struct device *fdev,
 size_t stream_flash_bytes_written(const struct stream_flash_ctx *ctx);
 
 /**
+ * @brief Read number of bytes buffered for the next flash write.
+ *
+ * @param ctx context
+ *
+ * @return Number of payload bytes buffered for the next flash write.
+ */
+size_t stream_flash_bytes_buffered(const struct stream_flash_ctx *ctx);
+
+/**
  * @brief Process input buffers to be written to flash device in single blocks.
  * Will store remainder between calls.
  *

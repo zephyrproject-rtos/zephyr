@@ -56,6 +56,7 @@
 		compatible = "zephyr,mipi-dbi-spi";
 		spi-dev = <&st_morpho_lcd_spi>;
 		dc-gpios = <&st_morpho_header ST_MORPHO_R_25 GPIO_ACTIVE_HIGH>;
+		te-gpios = <&st_morpho_header ST_MORPHO_L_28 GPIO_ACTIVE_HIGH>;
 		reset-gpios = <&st_morpho_header ST_MORPHO_L_30 GPIO_ACTIVE_LOW>;
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -65,6 +66,10 @@
 			compatible = "ilitek,ili9341";
 			mipi-max-frequency = <DT_FREQ_M(32)>;
 			mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
+			/* Transmit on falling edge to avoid tearing, since display
+			 * reads pixels faster than we can transfer.
+			 */
+			te-mode = "MIPI_DBI_TE_FALLING_EDGE";
 			reg = <0>;
 			width = <240>;
 			height = <320>;

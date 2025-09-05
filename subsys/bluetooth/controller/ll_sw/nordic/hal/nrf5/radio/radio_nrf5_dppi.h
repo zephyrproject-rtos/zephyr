@@ -175,18 +175,6 @@ static inline void hal_trigger_crypt_ppi_disable(void)
 	nrf_ccm_subscribe_clear(NRF_CCM, NRF_CCM_TASK_START);
 }
 
-#if defined(CONFIG_BT_CTLR_PRIVACY)
-/*******************************************************************************
- * Trigger automatic address resolution on Bit counter match:
- * wire the RADIO EVENTS_BCMATCH event to the AAR TASKS_START task.
- */
-static inline void hal_trigger_aar_ppi_config(void)
-{
-	nrf_radio_publish_set(NRF_RADIO, NRF_RADIO_EVENT_BCMATCH, HAL_TRIGGER_AAR_PPI);
-	nrf_aar_subscribe_set(NRF_AAR, NRF_AAR_TASK_START, HAL_TRIGGER_AAR_PPI);
-}
-#endif /* CONFIG_BT_CTLR_PRIVACY */
-
 /* When hardware does not support Coded PHY we still allow the Controller
  * implementation to accept Coded PHY flags, but the Controller will use 1M
  * PHY on air. This is implementation specific feature.
@@ -228,6 +216,18 @@ static inline void hal_trigger_crypt_by_bcmatch_ppi_config(void)
 }
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RX */
 #endif /* CONFIG_BT_CTLR_LE_ENC || CONFIG_BT_CTLR_BROADCAST_ISO_ENC */
+
+#if defined(CONFIG_BT_CTLR_PRIVACY)
+/*******************************************************************************
+ * Trigger automatic address resolution on Bit counter match:
+ * wire the RADIO EVENTS_BCMATCH event to the AAR TASKS_START task.
+ */
+static inline void hal_trigger_aar_ppi_config(void)
+{
+	nrf_radio_publish_set(NRF_RADIO, NRF_RADIO_EVENT_BCMATCH, HAL_TRIGGER_AAR_PPI);
+	nrf_aar_subscribe_set(NRF_AAR, NRF_AAR_TASK_START, HAL_TRIGGER_AAR_PPI);
+}
+#endif /* CONFIG_BT_CTLR_PRIVACY */
 
 /******************************************************************************/
 #if !defined(CONFIG_BT_CTLR_TIFS_HW)

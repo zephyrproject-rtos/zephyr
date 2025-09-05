@@ -32,8 +32,6 @@ LOG_MODULE_REGISTER(net_ethernet_vlan, CONFIG_NET_L2_ETHERNET_LOG_LEVEL);
  */
 #if CONFIG_NET_VLAN_COUNT > 0
 
-#define MAX_VLAN_NAME_LEN MIN(sizeof("VLAN-<#####>"), \
-			      CONFIG_NET_INTERFACE_NAME_LEN)
 #define MAX_VIRT_NAME_LEN MIN(sizeof("<not attached>"), \
 			      CONFIG_NET_L2_VIRTUAL_MAX_NAME_LEN)
 
@@ -246,7 +244,7 @@ static bool enable_vlan_iface(struct vlan_context *ctx,
 			      struct net_if *iface)
 {
 	int iface_idx = net_if_get_by_iface(iface);
-	char name[MAX(MAX_VLAN_NAME_LEN, MAX_VIRT_NAME_LEN)];
+	char name[MAX_VIRT_NAME_LEN];
 	int ret;
 
 	if (iface_idx < 0) {
@@ -263,9 +261,6 @@ static bool enable_vlan_iface(struct vlan_context *ctx,
 
 	ctx->is_used = true;
 
-	snprintk(name, sizeof(name), "VLAN-%d", ctx->tag);
-	net_if_set_name(ctx->iface, name);
-
 	snprintk(name, sizeof(name), "VLAN to %d",
 		 net_if_get_by_iface(ctx->attached_to));
 	net_virtual_set_name(ctx->iface, name);
@@ -277,7 +272,7 @@ static bool disable_vlan_iface(struct vlan_context *ctx,
 			       struct net_if *iface)
 {
 	int iface_idx = net_if_get_by_iface(iface);
-	char name[MAX(MAX_VLAN_NAME_LEN, MAX_VIRT_NAME_LEN)];
+	char name[MAX_VIRT_NAME_LEN];
 
 	if (iface_idx < 0) {
 		return false;
@@ -285,9 +280,6 @@ static bool disable_vlan_iface(struct vlan_context *ctx,
 
 	(void)net_virtual_interface_attach(iface, NULL);
 	ctx->is_used = false;
-
-	snprintk(name, sizeof(name), "VLAN-<free>");
-	net_if_set_name(iface, name);
 
 	snprintk(name, sizeof(name), "<not attached>");
 	net_virtual_set_name(iface, name);
@@ -659,7 +651,7 @@ static int vlan_interface_attach(struct net_if *vlan_iface,
 static void vlan_iface_init(struct net_if *iface)
 {
 	struct vlan_context *ctx = net_if_get_device(iface)->data;
-	char name[MAX(MAX_VLAN_NAME_LEN, MAX_VIRT_NAME_LEN)];
+	char name[MAX_VIRT_NAME_LEN];
 
 	if (ctx->init_done) {
 		return;
@@ -667,9 +659,6 @@ static void vlan_iface_init(struct net_if *iface)
 
 	ctx->iface = iface;
 	net_if_flag_set(iface, NET_IF_NO_AUTO_START);
-
-	snprintk(name, sizeof(name), "VLAN-<free>");
-	net_if_set_name(iface, name);
 
 	snprintk(name, sizeof(name), "not attached");
 	net_virtual_set_name(iface, name);

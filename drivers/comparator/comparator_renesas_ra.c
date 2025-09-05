@@ -172,7 +172,7 @@ static int acmphs_renesas_ra_init(const struct device *dev)
 	}
 
 	/*
-	 * Once the analog comparator is configurate, the program must wait
+	 * Once the analog comparator is configured, the program must wait
 	 * for the ACMPHS stabilization time (300ns enabling + 200ns input switching)
 	 * before using the comparator.
 	 */

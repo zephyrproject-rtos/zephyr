@@ -1583,6 +1583,18 @@ Documentation Infrastructure:
   tests:
     - drivers.fpga
 
+"Drivers: Firmware":
+  status: maintained
+  maintainers:
+    - LaurentiuM1234
+  files:
+    - drivers/firmware/
+    - include/zephyr/drivers/firmware/
+    - dts/bindings/firmware/
+    - doc/hardware/arch/arm-scmi.rst
+  labels:
+    - "area: Firmware"
+
 "Drivers: Flash":
   status: maintained
   maintainers:
@@ -1907,7 +1919,6 @@ Documentation Infrastructure:
   status: odd fixes
   files:
     - drivers/mipi_dsi/
-    - doc/hardware/peripherals/mipi_dsi.rst
     - include/zephyr/drivers/mipi_dsi.h
     - include/zephyr/drivers/mipi_dsi/
     - tests/drivers/mipi_dsi/
@@ -3247,7 +3258,7 @@ Modbus:
     - include/zephyr/modbus/
     - tests/subsys/modbus/
     - subsys/modbus/
-    - doc/services/modbus/
+    - doc/connectivity/modbus/
   labels:
     - "area: modbus"
   tests:
@@ -3893,7 +3904,6 @@ Octavo Systems Platforms:
 Open AMP:
   status: maintained
   maintainers:
-    - carlocaione
     - iuliana-prodan
   collaborators:
     - uLipe
@@ -4610,11 +4620,11 @@ TDK Sensors:
 TI K3 Platforms:
   status: maintained
   maintainers:
-    - vaishnavachath
+    - glneo
   collaborators:
     - gramsay0
     - dnltz
-    - glneo
+    - vaishnavachath
   files:
     - boards/ti/*am62*/
     - drivers/*/*davinci*
@@ -5589,6 +5599,15 @@ West:
     - modules/littlefs/
   labels:
     - "area: Storage"
+
+"West project: lora-basics-modem":
+  status: maintained
+  maintainers:
+    - JordanYates
+  files:
+    - modules/lora-basics-modem/
+  labels:
+    - "area: LoRa"
 
 "West project: loramac-node":
   status: maintained

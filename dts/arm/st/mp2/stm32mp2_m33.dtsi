@@ -415,6 +415,21 @@
 			interrupt-names = "combined";
 			status = "disabled";
 		};
+
+		iwdg: iwdg4: watchdog@44040000 {
+			compatible = "st,stm32-watchdog";
+			reg = <0x44040000 DT_SIZE_K(1)>;
+			clocks = <&rcc STM32_CLOCK(IWDG4, STM32_CLK)>;
+			status = "disabled";
+		};
+
+		wwdg: wwdg1: watchdog@44050000 {
+			compatible = "st,stm32-window-watchdog";
+			reg = <0x44050000 DT_SIZE_K(1)>;
+			clocks = <&rcc STM32_CLOCK(WWDG1, STM32_CLK)>;
+			interrupts = <8 0>;
+			status = "disabled";
+		};
 	};
 
 	clocks {

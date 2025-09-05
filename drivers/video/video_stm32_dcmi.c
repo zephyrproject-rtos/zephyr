@@ -136,12 +136,9 @@ static int stm32_dma_init(const struct device *dev)
 	dma_cfg.user_data = &hdma;
 	/* HACK: This field is used to inform driver that it is overridden */
 	dma_cfg.linked_channel = STM32_DMA_HAL_OVERRIDE;
-	/* Because of the STREAM OFFSET, the DMA channel given here is from 1 - 8 */
-	ret = dma_config(config->dma.dma_dev,
-			config->dma.channel + STM32_DMA_STREAM_OFFSET, &dma_cfg);
+	ret = dma_config(config->dma.dma_dev, config->dma.channel, &dma_cfg);
 	if (ret != 0) {
-		LOG_ERR("Failed to configure DMA channel %d",
-			config->dma.channel + STM32_DMA_STREAM_OFFSET);
+		LOG_ERR("Failed to configure DMA channel %d", config->dma.channel);
 		return ret;
 	}
 
@@ -155,15 +152,10 @@ static int stm32_dma_init(const struct device *dev)
 	hdma.Init.MemDataAlignment	= DMA_MDATAALIGN_WORD;
 	hdma.Init.Mode			= DMA_CIRCULAR;
 	hdma.Init.Priority		= DMA_PRIORITY_HIGH;
+	hdma.Instance			= STM32_DMA_GET_INSTANCE(config->dma.reg,
+								 config->dma.channel);
 #if defined(CONFIG_SOC_SERIES_STM32F7X) || defined(CONFIG_SOC_SERIES_STM32H7X)
 	hdma.Init.FIFOMode		= DMA_FIFOMODE_DISABLE;
-#endif
-
-#if defined(CONFIG_SOC_SERIES_STM32F7X) || defined(CONFIG_SOC_SERIES_STM32H7X)
-	hdma.Instance = __LL_DMA_GET_STREAM_INSTANCE(config->dma.reg,
-						config->dma.channel);
-#elif defined(CONFIG_SOC_SERIES_STM32L4X)
-	hdma.Instance = __LL_DMA_GET_CHANNEL_INSTANCE(config->dma.reg, config->dma.channel);
 #endif
 
 	/* Initialize DMA HAL */

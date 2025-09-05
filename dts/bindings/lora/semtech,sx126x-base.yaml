@@ -59,3 +59,9 @@ properties:
     type: int
     description: |
       Startup delay to let the TCXO stabilize after TCXO power on.
+
+  rx-boosted:
+    type: boolean
+    description: |
+      Enable RX boosted mode, which increases the power consumption of
+      RX mode by ~2mA in exchange for ~3dB sensitivity improvement.

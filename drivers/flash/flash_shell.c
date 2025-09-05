@@ -732,6 +732,19 @@ static int cmd_page_info(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
+#if DT_HAS_COMPAT_STATUS_OKAY(fixed_partitions)
+#define PRINT_PARTITION_INFO(part)                                                                 \
+	shell_print(sh, "%-32s %-15s 0x%08x %d KiB", DT_NODE_FULL_NAME(part),                      \
+		    DT_PROP_OR(part, label, ""), DT_REG_ADDR(part), DT_REG_SIZE(part) / 1024);
+
+static int cmd_partitions(const struct shell *sh, size_t argc, char *argv[])
+{
+	DT_FOREACH_CHILD(DT_COMPAT_GET_ANY_STATUS_OKAY(fixed_partitions), PRINT_PARTITION_INFO);
+
+	return 0;
+}
+#endif
+
 static void device_name_get(size_t idx, struct shell_static_entry *entry);
 
 SHELL_DYNAMIC_CMD_CREATE(dsub_device_name, device_name_get);
@@ -773,6 +786,12 @@ SHELL_STATIC_SUBCMD_SET_CREATE(flash_cmds,
 	SHELL_CMD_ARG(page_info, &dsub_device_name,
 		"[<device>] <address>",
 		cmd_page_info, 2, 1),
+
+#if DT_HAS_COMPAT_STATUS_OKAY(fixed_partitions)
+	SHELL_CMD_ARG(partitions, &dsub_device_name,
+		"",
+		cmd_partitions, 0, 0),
+#endif
 
 #ifdef CONFIG_FLASH_SHELL_TEST_COMMANDS
 	SHELL_CMD_ARG(read_test, &dsub_device_name,

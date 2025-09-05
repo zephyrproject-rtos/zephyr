@@ -531,7 +531,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_cmd_draw,
 	SHELL_CMD_ARG(point, NULL, HELP_DRAW_POINT, cmd_draw_point, 3, 0),
 	SHELL_CMD_ARG(line, NULL, HELP_DRAW_LINE, cmd_draw_line, 5, 0),
 	SHELL_CMD_ARG(rect, NULL, HELP_DRAW_RECT, cmd_draw_rect, 5, 0),
-	SHELL_CMD_ARG(circle, NULL, HELP_DRAW_RECT, cmd_draw_circle, 4, 0),
+	SHELL_CMD_ARG(circle, NULL, HELP_DRAW_CIRCLE, cmd_draw_circle, 4, 0),
 	SHELL_SUBCMD_SET_END
 );
 

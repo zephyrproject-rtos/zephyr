@@ -8,8 +8,11 @@ tests:
       - gd32f450i_eval
       - native_sim
       - native_sim/native/64
+      - adafruit_qt_py_rp2040/rp2040
     integration_platforms:
       - native_sim/native/64
+    extra_args:
+      - platform:adafruit_qt_py_rp2040/rp2040:SHIELD="adafruit_24lc32"
     harness: console
     harness_config:
       type: one_line

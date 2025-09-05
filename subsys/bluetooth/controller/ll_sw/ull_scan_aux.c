@@ -1387,6 +1387,10 @@ static void flush_safe(void *param)
 		LL_ASSERT(!hdr->disabled_cb);
 		hdr->disabled_param = aux;
 		hdr->disabled_cb = done_disabled_cb;
+
+		/* NOTE: we are not forcing a lll_disable, we will let window
+		 *       close at its duration or when preempted.
+		 */
 	}
 }
 
@@ -2620,10 +2624,13 @@ static void flush_safe(void *param)
 	/* If chain is active we need to flush from disabled callback */
 	if (chain_is_in_list(scan_aux_set.active_chains, chain) &&
 	    ull_ref_get(&scan_aux_set.ull)) {
-
 		chain->next = scan_aux_set.flushing_chains;
 		scan_aux_set.flushing_chains = chain;
 		scan_aux_set.ull.disabled_cb = done_disabled_cb;
+
+		/* NOTE: we are not forcing a lll_disable, we will let window
+		 *       close at its duration or when preempted.
+		 */
 	} else {
 		flush(chain);
 	}

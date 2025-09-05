@@ -345,15 +345,24 @@ class BoardYmlCheck(ComplianceTest):
 
     def run(self):
         path = resolve_path_hint(self.path_hint)
+        module_ymls = [path / "zephyr" / "module.yml", path / "zephyr" / "module.yaml"]
 
         vendor_prefixes = {"others"}
         # add vendor prefixes from the main zephyr repo
         vendor_prefixes |= get_vendor_prefixes(ZEPHYR_BASE / "dts" / "bindings" / "vendor-prefixes.txt", self.error)
-
         # add vendor prefixes from the current repo
-        dts_roots = get_module_setting_root('dts', path / "zephyr" / "module.yml")
-        for dts_root in dts_roots:
-            vendor_prefix_file = dts_root / "dts" / "bindings" / "vendor-prefixes.txt"
+        dts_root = None
+        for module_yml in module_ymls:
+            if module_yml.is_file():
+                with module_yml.open('r', encoding='utf-8') as f:
+                    meta = yaml.load(f.read(), Loader=SafeLoader)
+                    section = meta.get('build', dict())
+                    build_settings = section.get('settings', None)
+                    if build_settings:
+                        dts_root = build_settings.get('dts_root', None)
+
+        if dts_root:
+            vendor_prefix_file = Path(dts_root) / "dts" / "bindings" / "vendor-prefixes.txt"
             if vendor_prefix_file.exists():
                 vendor_prefixes |= get_vendor_prefixes(vendor_prefix_file, self.error)
 
@@ -506,7 +515,7 @@ class KconfigCheck(ComplianceTest):
         self.check_no_undef_outside_kconfig(kconf)
         self.check_disallowed_defconfigs(kconf)
 
-    def get_modules(self, modules_file, sysbuild_modules_file, settings_file):
+    def get_modules(self, _module_dirs_file, modules_file, sysbuild_modules_file, settings_file):
         """
         Get a list of modules and put them in a file that is parsed by
         Kconfig
@@ -691,13 +700,15 @@ class KconfigCheck(ComplianceTest):
         os.environ["KCONFIG_BINARY_DIR"] = kconfiglib_dir
         os.environ['DEVICETREE_CONF'] = "dummy"
         os.environ['TOOLCHAIN_HAS_NEWLIB'] = "y"
+        os.environ['KCONFIG_ENV_FILE'] = os.path.join(kconfiglib_dir, "kconfig_module_dirs.env")
 
         # Older name for DEVICETREE_CONF, for compatibility with older Zephyr
         # versions that don't have the renaming
         os.environ["GENERATED_DTS_BOARD_CONF"] = "dummy"
 
         # For multi repo support
-        self.get_modules(os.path.join(kconfiglib_dir, "Kconfig.modules"),
+        self.get_modules(os.environ['KCONFIG_ENV_FILE'],
+                         os.path.join(kconfiglib_dir, "Kconfig.modules"),
                          os.path.join(kconfiglib_dir, "Kconfig.sysbuild.modules"),
                          os.path.join(kconfiglib_dir, "settings_file.txt"))
         # For Kconfig.dts support
@@ -1200,6 +1211,8 @@ flagged.
         "BOOT_DIRECT_XIP", # Used in sysbuild for MCUboot configuration
         "BOOT_DIRECT_XIP_REVERT", # Used in sysbuild for MCUboot configuration
         "BOOT_ENCRYPTION_KEY_FILE", # Used in sysbuild
+        "BOOT_ENCRYPT_ALG_AES_128", # Used in sysbuild
+        "BOOT_ENCRYPT_ALG_AES_256", # Used in sysbuild
         "BOOT_ENCRYPT_IMAGE", # Used in sysbuild
         "BOOT_FIRMWARE_LOADER", # Used in sysbuild for MCUboot configuration
         "BOOT_FIRMWARE_LOADER_BOOT_MODE", # Used in sysbuild for MCUboot configuration
@@ -1354,13 +1367,17 @@ class KconfigBasicNoModulesCheck(KconfigBasicCheck):
     """
     name = "KconfigBasicNoModules"
     path_hint = "<zephyr-base>"
+    EMPTY_FILE_CONTENTS = "# Empty\n"
 
-    def get_modules(self, modules_file, sysbuild_modules_file, settings_file):
+    def get_modules(self, module_dirs_file, modules_file, sysbuild_modules_file, settings_file):
+        with open(module_dirs_file, 'w') as fp_module_file:
+            fp_module_file.write(self.EMPTY_FILE_CONTENTS)
+
         with open(modules_file, 'w') as fp_module_file:
-            fp_module_file.write("# Empty\n")
+            fp_module_file.write(self.EMPTY_FILE_CONTENTS)
 
         with open(sysbuild_modules_file, 'w') as fp_module_file:
-            fp_module_file.write("# Empty\n")
+            fp_module_file.write(self.EMPTY_FILE_CONTENTS)
 
 
 class KconfigHWMv2Check(KconfigBasicCheck):
@@ -1395,10 +1412,6 @@ class SysbuildKconfigCheck(KconfigCheck):
         "OTHER_APP_IMAGE_NAME", # Used in sysbuild documentation as example
         "OTHER_APP_IMAGE_PATH", # Used in sysbuild documentation as example
         "SECOND_SAMPLE", # Used in sysbuild documentation
-        "SUIT_ENVELOPE", # Used by nRF runners to program provisioning data
-        "SUIT_MPI_APP_AREA_PATH", # Used by nRF runners to program provisioning data
-        "SUIT_MPI_GENERATE", # Used by nRF runners to program provisioning data
-        "SUIT_MPI_RAD_AREA_PATH", # Used by nRF runners to program provisioning data
         # zephyr-keep-sorted-stop
     }
 

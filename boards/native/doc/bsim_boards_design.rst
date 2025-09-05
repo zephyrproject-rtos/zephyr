@@ -335,7 +335,7 @@ Instead the equivalent ``bs_tests`` provided hooks should be used.
 
 Note also that, for AMP targets like the :ref:`nrf5340bsim <nrf5340bsim>`, each embedded MCU has
 its own separate ``bs_tests`` built with that MCU. You can select if and what test is used
-for each MCU separatedly with the command line options.
+for each MCU separately with the command line options.
 
 Command line argument parsing
 =============================

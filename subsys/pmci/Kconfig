@@ -3,7 +3,7 @@
 # Copyright (c) 2025 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-menu "Platform Management Communication Infrastruction (PMCI)"
+menu "Platform Management Communications Infrastructure (PMCI)"
 
 # zephyr-keep-sorted-start
 

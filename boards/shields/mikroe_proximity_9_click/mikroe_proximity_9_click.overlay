@@ -1,0 +1,20 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		prox-sensor0 = &vcnl4040_mikroe_proximity_9_click;
+	};
+};
+
+&mikrobus_i2c {
+	status = "okay";
+
+	vcnl4040_mikroe_proximity_9_click: vcnl4040@60 {
+		compatible = "vishay,vcnl4040";
+		reg = <0x60>;
+		int-gpios = <&mikrobus_header 7 GPIO_ACTIVE_LOW>;
+	};
+};

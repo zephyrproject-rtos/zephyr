@@ -238,8 +238,8 @@
 	status = "okay";
 };
 
-&pwm1 {
-	pinctrl-0 = <&pwm1_default>;
+&pwm0 {
+	pinctrl-0 = <&pwm0_default>;
 	pinctrl-names = "default";
 	interrupts = <63 1>, <64 1>;
 	interrupt-names = "gtioca", "overflow";
@@ -289,4 +289,22 @@ arduino_spi: &spi0 {};
 
 &wdt {
 	status = "okay";
+};
+
+&eth {
+	local-mac-address = [74 90 50 B0 6D 5D];
+	status = "okay";
+	phy-handle = <&phy>;
+};
+
+&mdio {
+	pinctrl-0 = <&ether_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	phy: ethernet-phy@0 {
+		compatible = "ethernet-phy";
+		reg = <0>;
+		status = "okay";
+	};
 };

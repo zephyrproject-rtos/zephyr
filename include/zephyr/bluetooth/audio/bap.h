@@ -54,6 +54,9 @@ extern "C" {
 /** An invalid Broadcast ID */
 #define BT_BAP_INVALID_BROADCAST_ID 0xFFFFFFFFU
 
+/** Value that represents an unset presentation delay value */
+#define BT_BAP_PD_UNSET 0xFFFFFFFFU
+
 /**
  * @brief Recommended connectable advertising parameters
  *
@@ -1743,6 +1746,33 @@ typedef bool (*bt_bap_unicast_group_foreach_stream_func_t)(struct bt_bap_stream 
 int bt_bap_unicast_group_foreach_stream(struct bt_bap_unicast_group *unicast_group,
 					bt_bap_unicast_group_foreach_stream_func_t func,
 					void *user_data);
+
+/** Structure holding information of audio stream endpoint */
+struct bt_bap_unicast_group_info {
+	/** Presentation delay for sink ASEs
+	 *
+	 * Will be @ref BT_BAP_PD_UNSET if no sink ASEs have been QoS configured
+	 */
+	uint32_t sink_pd;
+
+	/** Presentation delay for source ASEs
+	 *
+	 * Will be @ref BT_BAP_PD_UNSET if no source ASEs have been QoS configured
+	 */
+	uint32_t source_pd;
+};
+
+/**
+ * @brief Return structure holding information of unicast group
+ *
+ * @param unicast_group The unicast group object.
+ * @param info          The structure object to be filled with the info.
+ *
+ * @retval 0 Success
+ * @retval -EINVAL  @p unicast_group or @p info are NULL
+ */
+int bt_bap_unicast_group_get_info(const struct bt_bap_unicast_group *unicast_group,
+				  struct bt_bap_unicast_group_info *info);
 
 /** Unicast Client callback structure */
 struct bt_bap_unicast_client_cb {

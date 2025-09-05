@@ -54,7 +54,7 @@ config ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_ISOLATION
 
 config ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_SIZE
 	default 16
-	int "The count of net_buf available to be used simutaneously."
+	int "The count of net_buf available to be used simultaneously."
 
 if ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_STATIC
 

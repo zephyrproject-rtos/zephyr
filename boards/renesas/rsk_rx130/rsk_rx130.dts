@@ -14,7 +14,7 @@
 
 / {
 	model = "Renesas RSK+RX130-512KB KIT";
-	compatible = "renesas,rsk_rx130_512kb","renesas,rxv1";
+	compatible = "renesas,rsk_rx130_512kb";
 
 	chosen {
 		zephyr,sram = &sram0;

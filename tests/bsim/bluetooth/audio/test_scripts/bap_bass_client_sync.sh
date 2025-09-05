@@ -20,7 +20,8 @@ Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
 
 Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
   -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=1 \
-  -testid=bap_broadcast_assistant_client_sync -RealEncryption=1 -rs=46 -D=3
+  -testid=bap_broadcast_assistant_client_sync -RealEncryption=1 -rs=46 -D=3 \
+  -start_offset=2e3
 
 Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
   -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=2 -testid=bass_broadcaster \

@@ -237,7 +237,7 @@ void load_call_unload(const struct llext_test *test_case)
 
 /*
  * Attempt to load, list, list symbols, call a fn, and unload each
- * extension in the test table. This excercises loading, calling into, and
+ * extension in the test table. This exercises loading, calling into, and
  * unloading each extension which may itself excercise various APIs provided by
  * Zephyr.
  */

@@ -425,6 +425,8 @@ INT_DEMUX(253);
 INT_DEMUX(254);
 INT_DEMUX(255);
 
+#if !CONFIG_HAS_EXCEPT_VECTOR_TABLE
+
 const void *FixedVectors[] FVECT_SECT = {
 	/* 0x00-0x4c: Reserved, must be 0xff (according to e2 studio example) */
 	/* Reserved for OFSM */
@@ -475,6 +477,60 @@ const void *FixedVectors[] FVECT_SECT = {
 	INT_NonMaskableInterrupt,
 	_start,
 };
+
+#else
+
+/* The reset vector ALWAYS is at address 0xFFFFFFFC. Set it to point at
+ * the start routine (in reset.S)
+ */
+const FVECT_SECT void *resetVector = _start;
+
+/* Exception vector table
+ * (see rx-family-rxv2-instruction-set-architecture-users-manual-software)
+ */
+const void *ExceptVectors[] EXVECT_SECT = {
+	/* 0x00-0x4c: Reserved, must be 0xff (according to e2 studio example) */
+	(fp)0xFFFFFFFF,
+	(fp)0xFFFFFFFF,
+	(fp)0xFFFFFFFF,
+	(fp)0xFFFFFFFF,
+	(fp)0xFFFFFFFF,
+	(fp)0xFFFFFFFF,
+	(fp)0xFFFFFFFF,
+	(fp)0xFFFFFFFF,
+	(fp)0xFFFFFFFF,
+	(fp)0xFFFFFFFF,
+	(fp)0xFFFFFFFF,
+	(fp)0xFFFFFFFF,
+	(fp)0xFFFFFFFF,
+	(fp)0xFFFFFFFF,
+	(fp)0xFFFFFFFF,
+	(fp)0xFFFFFFFF,
+	(fp)0xFFFFFFFF,
+	(fp)0xFFFFFFFF,
+	(fp)0xFFFFFFFF,
+	(fp)0xFFFFFFFF,
+	/* 0x50: Privileged instruction exception */
+	INT_Excep_SuperVisorInst,
+	/* 0x54: Access exception */
+	INT_Excep_AccessInst,
+	/* 0x58: Reserved */
+	Dummy,
+	/* 0x5c: Undefined Instruction Exception */
+	INT_Excep_UndefinedInst,
+	/* 0x60: Reserved */
+	Dummy,
+	/* 0x64: Floating Point Exception */
+	INT_Excep_FloatingPoint,
+	/* 0x68-0x74: Reserved */
+	Dummy,
+	Dummy,
+	Dummy,
+	Dummy,
+	/* 0x78: Non-maskable interrupt */
+	INT_NonMaskableInterrupt,
+};
+#endif
 
 const fp RelocatableVectors[] RVECT_SECT = {
 	reserved_isr,  switch_isr_wrapper, INT_RuntimeFatalInterrupt,

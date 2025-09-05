@@ -10,7 +10,6 @@
 #include <zephyr/dt-bindings/pwm/pwm.h>
 
 #include "rpi_pico2-pinctrl.dtsi"
-#include "../common/rpi_pico-led.dtsi"
 
 / {
 	chosen {

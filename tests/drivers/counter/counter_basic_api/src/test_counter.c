@@ -126,6 +126,9 @@ static const struct device *const devices[] = {
 #ifdef CONFIG_COUNTER_MCUX_LPIT
 	DEVS_FOR_DT_COMPAT(nxp_lpit_channel)
 #endif
+#ifdef CONFIG_COUNTER_MCUX_FTM
+	DEVS_FOR_DT_COMPAT(nxp_ftm)
+#endif
 #ifdef CONFIG_COUNTER_RENESAS_RZ_GTM
 	DEVS_FOR_DT_COMPAT(renesas_rz_gtm_counter)
 #endif
@@ -453,7 +456,6 @@ static void test_single_shot_alarm_instance(const struct device *dev, bool set_t
 		zassert_equal(-EINVAL, err,
 			      "%s: Counter should return error because ticks"
 			      " exceeded the limit set alarm", dev->name);
-		cntr_alarm_cfg.ticks = ticks - 1;
 	}
 
 	cntr_alarm_cfg.ticks = ticks;

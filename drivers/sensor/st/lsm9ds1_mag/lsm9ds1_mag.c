@@ -337,7 +337,7 @@ static int lsm9ds1_mag_init(const struct device *dev)
 {
 	const struct lsm9ds1_mag_config *cfg = dev->config;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
-	struct lsm9ds1_mag_data *lsm9ds1_mag = dev->data;
+	struct lsm9ds1_mag_data *data = dev->data;
 	uint8_t chip_id, fs;
 	int ret;
 
@@ -366,7 +366,7 @@ static int lsm9ds1_mag_init(const struct device *dev)
 	}
 
 	if (cfg->mag_odr == LSM9DS1_MAG_POWER_DOWN) {
-		lsm9ds1_mag->powered_down = 1;
+		data->powered_down = 1;
 	}
 
 	fs = cfg->mag_range;
@@ -376,7 +376,7 @@ static int lsm9ds1_mag_init(const struct device *dev)
 		return ret;
 	}
 
-	lsm9ds1_mag->mag_gain = lsm9ds1_mag_fs_sens[fs];
+	data->mag_gain = lsm9ds1_mag_fs_sens[fs];
 
 	return 0;
 }

@@ -1005,6 +1005,31 @@ ZTEST(util, test_utf8_lcpy_null_termination)
 	zassert_str_equal(dest_str, expected_result, "Failed to truncate");
 }
 
+ZTEST(util, test_utf8_count_chars_ASCII)
+{
+	const char *test_str = "I have 15 char.";
+	ssize_t count = utf8_count_chars(test_str);
+
+	zassert_equal(count, 15, "Failed to count ASCII");
+}
+
+ZTEST(util, test_utf8_count_chars_non_ASCII)
+{
+	const char *test_str = "Hello دنیا!🌍";
+	ssize_t count = utf8_count_chars(test_str);
+
+	zassert_equal(count, 12, "Failed to count non-ASCII");
+}
+
+ZTEST(util, test_utf8_count_chars_invalid_utf)
+{
+	const char test_str[] = { (char)0x80, 0x00 };
+	ssize_t count = utf8_count_chars(test_str);
+	ssize_t expected_result = -EINVAL;
+
+	zassert_equal(count, expected_result, "Failed to detect invalid UTF");
+}
+
 ZTEST(util, test_util_eq)
 {
 	uint8_t src1[16];

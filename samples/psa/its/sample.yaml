@@ -2,6 +2,8 @@ sample:
   name: PSA ITS API sample
   description: Demonstration of PSA Internal Trusted Storage (ITS) API usage.
 common:
+  integration_platforms:
+    - native_sim
   tags:
     - psa.secure_storage
   timeout: 10

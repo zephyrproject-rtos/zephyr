@@ -229,6 +229,6 @@ Zephyr SDK installation
             the initial setup.
 
 .. _Zephyr SDK Releases: https://github.com/zephyrproject-rtos/sdk-ng/tags
-.. _Zephyr SDK Version Compatibility Matrix: https://github.com/zephyrproject-rtos/sdk-ng/wiki/Zephyr-SDK-Version-Compatibility-Matrix
+.. _Zephyr SDK Version Compatibility Matrix: https://github.com/zephyrproject-rtos/sdk-ng/wiki/Zephyr-Version-Compatibility#zephyr-sdk-version-compatibility-matrix
 
 .. toolchain_zephyr_sdk_install_end

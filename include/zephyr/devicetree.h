@@ -3818,6 +3818,134 @@
 	DT_PHA_HAS_CELL_AT_IDX(node_id, pha, 0, cell)
 
 /**
+ * @brief Iterate over all cells in a phandle array element by index
+ *
+ * This macro calls @p fn(cell_value) for each cell value in the
+ * phandle array element at index @p idx.
+ *
+ * In general, this macro expands to:
+ *
+ *     fn(node_id, pha, idx, cell[0]) fn(node_id, pha, idx, cell[1]) [...]
+ *     fn(node_id, pha, idx, cell[n-1])
+ *
+ * where `n` is the number of cells in @p pha, as it would be
+ * returned by `DT_PHA_NUM_CELLS_BY_IDX(node_id, pha, idx)`, and cell[x] is the NAME of the cell
+ * in the specifier.
+ *
+ * @param node_id node identifier
+ * @param pha lowercase-and-underscores property with type `phandle-array`
+ * @param idx index of the phandle array element
+ * @param fn macro to call for each cell value
+ */
+#define DT_FOREACH_PHA_CELL_BY_IDX(node_id, pha, idx, fn)	\
+	DT_CAT6(node_id, _P_, pha, _IDX_, idx, _FOREACH_CELL)(fn)
+
+/**
+ * @brief Iterate over all cells in a phandle array element by index with separator
+ *
+ * This is like DT_FOREACH_PHA_CELL_BY_IDX(), but @p sep is placed between
+ * each invocation of @p fn.
+ *
+ * @param node_id node identifier
+ * @param pha lowercase-and-underscores property with type `phandle-array`
+ * @param idx index of the phandle array element
+ * @param fn macro to call for each cell value
+ * @param sep separator (e.g. comma or semicolon)
+ */
+#define DT_FOREACH_PHA_CELL_BY_IDX_SEP(node_id, pha, idx, fn, sep)	\
+	DT_CAT6(node_id, _P_, pha, _IDX_, idx, _FOREACH_CELL_SEP)(fn, sep)
+
+/**
+ * @brief Get the number of cells in a phandle array element by index
+ *
+ * @param node_id node identifier
+ * @param pha lowercase-and-underscores property with type `phandle-array`
+ * @param idx index of the phandle array element
+ * @return number of cells in the element at index @p idx
+ */
+#define DT_PHA_NUM_CELLS_BY_IDX(node_id, pha, idx) \
+	DT_CAT6(node_id, _P_, pha, _IDX_, idx, _NUM_CELLS)
+
+/**
+ * @brief Get the name of a phandle array element by index
+ *
+ * This returns the name in the *-names property of the node
+ * corresponding to the index @p idx of @p pha
+ *
+ * @param node_id node identifier
+ * @param pha lowercase-and-underscores property with type `phandle-array`
+ * @param idx index of the phandle array element
+ * @return name of the element at index @p idx
+ */
+#define DT_PHA_ELEM_NAME_BY_IDX(node_id, pha, idx) \
+	DT_CAT6(node_id, _P_, pha, _IDX_, idx, _NAME)
+
+/**
+ * @brief Iterate over all cells in a phandle array element by name
+ *
+ * This macro calls @p fn(cell_value) for each cell value in the
+ * phandle array @p pha element with the given @p name in the *-names property.
+ *
+ * In general, this macro expands to:
+ *
+ *     fn(node_id, pha, name, cell[0]) fn(node_id, pha, idx, cell[1]) [...]
+ *     fn(node_id, pha, idx, cell[n-1])
+ *
+ * where `n` is the number of cells in @p pha, as it would be
+ * returned by `DT_PHA_NUM_CELLS_BY_NAME(node_id, pha, name)`, and cell[x] is the NAME of the cell
+ * in the specifier.
+ *
+ *
+ * @param node_id node identifier
+ * @param pha lowercase-and-underscores property with type `phandle-array`
+ * @param name lowercase-and-underscores name of the phandle array element
+ * @param fn macro to call for each cell value
+ */
+#define DT_FOREACH_PHA_CELL_BY_NAME(node_id, pha, name, fn)	\
+	DT_CAT6(node_id, _P_, pha, _NAME_, name, _FOREACH_CELL)(fn)
+
+/**
+ * @brief Iterate over all cells in a phandle array element by name with separator
+ *
+ * This is like DT_FOREACH_PHA_CELL_BY_NAME(), but @p sep is placed between
+ * each invocation of @p fn.
+ *
+ * @param node_id node identifier
+ * @param pha lowercase-and-underscores property with type `phandle-array`
+ * @param name lowercase-and-underscores name of the phandle array element
+ * @param fn macro to call for each cell value
+ * @param sep separator (e.g. comma or semicolon)
+ */
+#define DT_FOREACH_PHA_CELL_BY_NAME_SEP(node_id, pha, name, fn, sep)	\
+	DT_CAT6(node_id, _P_, pha, _NAME_, name, _FOREACH_CELL_SEP)(fn, sep)
+
+/**
+ * @brief Get the number of cells in a phandle array element by name
+ *
+ * @param node_id node identifier
+ * @param pha lowercase-and-underscores property with type `phandle-array`
+ * @param name lowercase-and-underscores name of the phandle array element
+ * @return number of cells in the element with the given @p name
+ */
+#define DT_PHA_NUM_CELLS_BY_NAME(node_id, pha, name) \
+	DT_CAT6(node_id, _P_, pha, _NAME_, name, _NUM_CELLS)
+
+/**
+ * @brief Get the index of a phandle array element by name
+ *
+ * This returns the index of the @p pha which has the name @p name in the corresponding
+ * *-names property.
+ *
+ * @param node_id node identifier
+ * @param pha lowercase-and-underscores property with type `phandle-array`
+ * @param name lowercase-and-underscores name of the phandle array element
+ * @return index of the element with the given @p name
+ */
+#define DT_PHA_ELEM_IDX_BY_NAME(node_id, pha, name) \
+	DT_CAT6(node_id, _P_, pha, _NAME_, name, _IDX)
+
+
+/**
  * @}
  */
 

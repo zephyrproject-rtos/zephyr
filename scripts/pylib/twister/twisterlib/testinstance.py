@@ -55,7 +55,7 @@ class TestInstance:
         self.platform: Platform = platform
 
         self._status = TwisterStatus.NONE
-        self.reason = "Unknown"
+        self.reason = None
         self.metrics = dict()
         self.handler = None
         self.recording = None

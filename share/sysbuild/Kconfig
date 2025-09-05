@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+source "$(KCONFIG_ENV_FILE)"
+
 config BOARD
 	string
 	default "$(BOARD)"
@@ -72,7 +74,7 @@ config WARN_DEPRECATED
 config NOT_SECURE
 	bool
 	help
-	  Symbol to be selected by a feature to inidicate that feature is
+	  Symbol to be selected by a feature to indicate that feature is
 	  not secure.
 
 rsource "images/Kconfig"

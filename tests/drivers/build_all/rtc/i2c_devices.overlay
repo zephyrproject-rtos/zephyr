@@ -13,7 +13,6 @@
 			gpio-controller;
 			reg = <0xdeadbeef 0x1000>;
 			#gpio-cells = <0x2>;
-			status = "okay";
 		};
 
 		test_i2c: i2c@11112222 {
@@ -21,19 +20,16 @@
 			#size-cells = <0>;
 			compatible = "vnd,i2c";
 			reg = <0x11112222 0x1000>;
-			status = "okay";
 			clock-frequency = <100000>;
 
 			test_am1805: am1805@0 {
 				compatible = "ambiq,am1805";
-				status = "okay";
 				reg = <0x0>;
 				am1805-gpios = <&test_gpio 0 0>;
 			};
 
 			test_pcf8523: pcf8523@1 {
 				compatible = "nxp,pcf8523";
-				status = "okay";
 				reg = <0x1>;
 				alarms-count = <1>;
 				battery-switch-over = "standard";
@@ -42,13 +38,11 @@
 
 			test_pcf8563: pcf8563@2 {
 				compatible = "nxp,pcf8563";
-				status = "okay";
 				reg = <0x2>;
 			};
 
 			test_rv3028: rv3028@3 {
 				compatible = "microcrystal,rv3028";
-				status = "okay";
 				reg = <0x3>;
 				clkout-frequency = <1>;
 				backup-switch-mode = "disabled";
@@ -58,7 +52,6 @@
 
 			test_rv8263: rv8263@4 {
 				compatible = "microcrystal,rv-8263-c8";
-				status = "okay";
 				reg = <0x4>;
 				int-gpios = <&test_gpio 0 0>;
 				clkout = <4096>;
@@ -66,13 +59,11 @@
 
 			test_ds1307: ds1307@5 {
 				compatible = "maxim,ds1307";
-				status = "okay";
 				reg = <0x5>;
 			};
 
 			test_rv8803: rv8803@6 {
 				compatible = "microcrystal,rv8803";
-				status = "okay";
 				reg = <0x6>;
 				int-gpios = <&test_gpio 0 0>;
 				clkout-frequency = <1024>;
@@ -80,23 +71,31 @@
 
 			test_bq32002: bq32002@7 {
 				compatible = "ti,bq32002";
-				status = "okay";
 				reg = <0x7>;
 				irq-frequency = <512>;
 			};
 			test_rx8130ce: rx8130ce-rtc@8 {
 				compatible = "epson,rx8130ce-rtc";
-				status = "okay";
 				reg = <0x8>;
 				irq-gpios = <&test_gpio 0 0>;
 			};
 
 			test_ds1337: ds1337@9 {
 				compatible = "maxim,ds1337";
-				status = "okay";
 				reg = <0x9>;
 				int-gpios = <&test_gpio 0 0>;
 				sqw-frequency = <4096>;
+			};
+
+			test_ds3231: ds3231@a {
+				compatible = "maxim,ds3231-mfd";
+				reg = <0xa>;
+
+				test_ds3231_rtc: ds3231_rtc {
+					compatible = "maxim,ds3231-rtc";
+					isw-gpios = <&test_gpio 0 0>;
+					freq-32khz-gpios = <&test_gpio 0 0>;
+				};
 			};
 		};
 	};

@@ -22,8 +22,11 @@ LOG_MODULE_REGISTER(gpio_silabs, CONFIG_GPIO_LOG_LEVEL);
 #define GET_SILABS_GPIO_INDEX(node_id)                                                             \
 	(DT_REG_ADDR(node_id) - DT_REG_ADDR(DT_NODELABEL(gpioa))) / SILABS_GPIO_PORT_ADDR_SPACE_SIZE
 
-#define NUMBER_OF_PORTS (SIZEOF_FIELD(GPIO_TypeDef, P) / SIZEOF_FIELD(GPIO_TypeDef, P[0]))
-#define NUM_IRQ_LINES   16
+#define NUMBER_OF_PORTS      (SIZEOF_FIELD(GPIO_TypeDef, P) / SIZEOF_FIELD(GPIO_TypeDef, P[0]))
+#define NUM_IRQ_LINES        16
+#define MAX_EM4_IRQ_PER_PORT 3
+#define EM4WU_TO_INT(wu)     ((wu) + NUM_IRQ_LINES)
+#define INT_TO_EM4WU(int_no) ((int_no) - NUM_IRQ_LINES)
 
 struct gpio_silabs_common_config {
 	/* IRQ configuration function */
@@ -39,6 +42,11 @@ struct gpio_silabs_common_data {
 	const struct device *ports[NUMBER_OF_PORTS];
 };
 
+struct gpio_silabs_em4wu_mapping {
+	uint8_t wu_no;
+	uint8_t pin;
+};
+
 struct gpio_silabs_port_config {
 	/* gpio_driver_config must be first */
 	struct gpio_driver_config common;
@@ -46,6 +54,10 @@ struct gpio_silabs_port_config {
 	sl_gpio_port_t gpio_index;
 	/* pointer to common device */
 	const struct device *common_dev;
+	/* Number of valid EM4 wakeup interrupt mappings */
+	int em4wu_pin_count;
+	/* EM4 wakeup interrupt mapping for GPIO pins */
+	struct gpio_silabs_em4wu_mapping em4wu_pins[MAX_EM4_IRQ_PER_PORT];
 };
 
 struct gpio_silabs_port_data {
@@ -253,6 +265,38 @@ static int interrupt_to_pin(int int_no)
 	return ROUND_DOWN(int_no, 4) + FIELD_GET(0xF << (offset * 4), reg);
 }
 
+static int gpio_silabs_pin_interrupt_configure_em4wu(sl_gpio_t *gpio, enum gpio_int_mode mode,
+						     enum gpio_int_trig trig)
+{
+	int32_t em4wu_no = sl_hal_gpio_get_em4_interrupt_number(gpio);
+	int32_t int_no = EM4WU_TO_INT(em4wu_no);
+
+	if (em4wu_no == SL_GPIO_INTERRUPT_UNAVAILABLE) {
+		LOG_ERR("Pin %u is not EM4 wakeup capable", gpio->pin);
+		return -EINVAL;
+	}
+
+	if (mode != GPIO_INT_MODE_DISABLED) {
+		if (trig == GPIO_INT_TRIG_BOTH) {
+			LOG_ERR("EM4 wakeup interrupt on pin %u can only trigger on one edge",
+				gpio->pin);
+			return -ENOTSUP;
+		}
+
+		sl_hal_gpio_configure_wakeup_em4_external_interrupt(gpio, em4wu_no,
+								    trig == GPIO_INT_TRIG_HIGH);
+	}
+
+	if (mode == GPIO_INT_MODE_DISABLED) {
+		sl_hal_gpio_disable_interrupts(BIT(int_no));
+		sl_hal_gpio_disable_pin_em4_wakeup(BIT(int_no));
+	} else {
+		sl_hal_gpio_enable_interrupts(BIT(int_no));
+	}
+
+	return 0;
+}
+
 static int gpio_silabs_pin_interrupt_configure(const struct device *dev, gpio_pin_t pin,
 					       enum gpio_int_mode mode, enum gpio_int_trig trig)
 {
@@ -264,10 +308,18 @@ static int gpio_silabs_pin_interrupt_configure(const struct device *dev, gpio_pi
 	sl_gpio_interrupt_flag_t flag = SL_GPIO_INTERRUPT_RISING_FALLING_EDGE;
 	uint32_t enabled_interrupts;
 	int32_t int_no = SL_GPIO_INTERRUPT_UNAVAILABLE;
+	bool em4_wakeup;
+
+	em4_wakeup = ((trig & GPIO_INT_WAKEUP) == GPIO_INT_WAKEUP);
+	trig &= ~GPIO_INT_WAKEUP;
 
 	if (mode == GPIO_INT_MODE_LEVEL) {
 		LOG_ERR("Level interrupt not supported on pin %u", pin);
 		return -ENOTSUP;
+	}
+
+	if (em4_wakeup) {
+		return gpio_silabs_pin_interrupt_configure_em4wu(&gpio, mode, trig);
 	}
 
 	enabled_interrupts = sl_hal_gpio_get_enabled_interrupts();
@@ -315,6 +367,25 @@ static int gpio_silabs_port_manage_callback(const struct device *dev, struct gpi
 	return gpio_manage_callback(&data->callbacks, cb, set);
 }
 
+static void gpio_silabs_em4wu_interrupt_to_port_pin(struct gpio_silabs_common_data *data,
+						    int int_no, int *port, int *pin)
+{
+	ARRAY_FOR_EACH(data->ports, p) {
+		const struct device *dev = data->ports[p];
+		const struct gpio_silabs_port_config *config = dev->config;
+
+		for (int i = 0; i < config->em4wu_pin_count; i++) {
+			const struct gpio_silabs_em4wu_mapping *em4wu = &config->em4wu_pins[i];
+
+			if (em4wu->wu_no == INT_TO_EM4WU(int_no)) {
+				*port = config->gpio_index;
+				*pin = em4wu->pin;
+				return;
+			}
+		}
+	}
+}
+
 static void gpio_silabs_common_isr(const struct device *dev)
 {
 	struct gpio_silabs_common_data *data = dev->data;
@@ -323,8 +394,15 @@ static void gpio_silabs_common_isr(const struct device *dev)
 
 	while (pending) {
 		int int_no = find_lsb_set(pending) - 1;
-		int port = interrupt_to_port(int_no);
-		int pin = interrupt_to_pin(int_no);
+		int port = -1;
+		int pin = -1;
+
+		if (int_no >= NUM_IRQ_LINES) {
+			gpio_silabs_em4wu_interrupt_to_port_pin(data, int_no, &port, &pin);
+		} else {
+			port = interrupt_to_port(int_no);
+			pin = interrupt_to_pin(int_no);
+		}
 
 		port_pin_masks[port] |= BIT(pin);
 		sl_hal_gpio_clear_interrupts(BIT(int_no));
@@ -385,11 +463,19 @@ static int gpio_silabs_common_init(const struct device *dev)
 	return 0;
 }
 
+#define EM4_WAKEUP_PIN(node, prop, idx)                                                            \
+	{                                                                                          \
+		.wu_no = DT_PROP_BY_IDX(node, prop, idx),                                          \
+		.pin = DT_PROP_BY_IDX(node, silabs_wakeup_pins, idx),                              \
+	},
+
 #define GPIO_PORT_INIT(n)                                                                          \
 	static const struct gpio_silabs_port_config gpio_silabs_port_config_##n = {                \
 		.common.port_pin_mask = (gpio_port_pins_t)(-1),                                    \
 		.gpio_index = GET_SILABS_GPIO_INDEX(n),                                            \
 		.common_dev = DEVICE_DT_GET(DT_PARENT(n)),                                         \
+		.em4wu_pin_count = DT_PROP_LEN(n, silabs_wakeup_ints),                             \
+		.em4wu_pins = {DT_FOREACH_PROP_ELEM(n, silabs_wakeup_ints, EM4_WAKEUP_PIN)},       \
 	};                                                                                         \
 	static struct gpio_silabs_port_data gpio_silabs_port_data_##n;                             \
 	DEVICE_DT_DEFINE(n, gpio_silabs_port_init, NULL, &gpio_silabs_port_data_##n,               \

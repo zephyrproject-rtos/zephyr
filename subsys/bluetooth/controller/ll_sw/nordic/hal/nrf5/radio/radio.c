@@ -150,20 +150,15 @@ void isr_radio(void)
 {
 	if (radio_has_disabled()) {
 		isr_cb(isr_cb_param);
+	} else {
+		/* Nothing to do here, we shall not get spurious Radio IRQ */
 	}
 }
 
 void radio_isr_set(radio_isr_cb_t cb, void *param)
 {
-	irq_disable(HAL_RADIO_IRQn);
-
 	isr_cb_param = param;
 	isr_cb = cb;
-
-	nrf_radio_int_enable(NRF_RADIO, HAL_RADIO_INTENSET_DISABLED_Msk);
-
-	NVIC_ClearPendingIRQ(HAL_RADIO_IRQn);
-	irq_enable(HAL_RADIO_IRQn);
 }
 
 void radio_setup(void)
@@ -197,7 +192,6 @@ void radio_setup(void)
 
 void radio_reset(void)
 {
-	irq_disable(HAL_RADIO_IRQn);
 
 	/* nRF SoC generic radio reset/initializations
 	 * Note: Only registers whose bits are partially modified across
@@ -572,6 +566,9 @@ void radio_disable(void)
 #if !defined(CONFIG_BT_CTLR_TIFS_HW)
 	hal_radio_sw_switch_cleanup();
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
+
+	/* Reset/disable PPI/DPPI */
+	radio_tmr_status_reset();
 
 	NRF_RADIO->SHORTS = 0;
 	nrf_radio_task_trigger(NRF_RADIO, NRF_RADIO_TASK_DISABLE);
@@ -2529,6 +2526,7 @@ void radio_ccm_disable(void)
 	nrf_ccm_task_trigger(NRF_CCM, NRF_CCM_TASK_STOP);
 	nrf_ccm_disable(NRF_CCM);
 }
+#endif /* CONFIG_BT_CTLR_LE_ENC || CONFIG_BT_CTLR_BROADCAST_ISO_ENC */
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 static uint8_t MALIGN(4) _aar_scratch[3];
@@ -2659,7 +2657,6 @@ uint8_t radio_ar_resolve(const uint8_t *addr)
 
 }
 #endif /* CONFIG_BT_CTLR_PRIVACY */
-#endif /* CONFIG_BT_CTLR_LE_ENC || CONFIG_BT_CTLR_BROADCAST_ISO_ENC */
 
 #if defined(CONFIG_BT_CTLR_DF_SUPPORT) && !defined(CONFIG_ZTEST)
 /* @brief Function configures CTE inline register to start sampling of CTE

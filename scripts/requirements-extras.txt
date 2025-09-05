@@ -6,6 +6,9 @@ anytree
 # to use in ./scripts for memory footprint, code coverage, etc.
 gitpython>=3.1.41
 
+# used by scripts/footprint/plot.py for generating plots of size reports
+plotly
+
 # helper for developers - check git commit messages
 gitlint
 

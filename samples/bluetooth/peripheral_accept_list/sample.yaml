@@ -1,5 +1,5 @@
 sample:
-  name: Bluetooh Peripheral Accept List
+  name: Bluetooth Peripheral Accept List
 tests:
   sample.bluetooth.peripheral_accept_list:
     harness: bluetooth

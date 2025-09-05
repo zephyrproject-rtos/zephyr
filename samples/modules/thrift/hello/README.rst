@@ -196,7 +196,7 @@ host OS:
     $ ./hello_server_ssl 0.0.0.0 ../native-cert.pem ../native-key.pem ../qemu-cert.pem
 
 
-Then, in annother terminal, run the corresponding ``hello/client`` sample:
+Then, in another terminal, run the corresponding ``hello/client`` sample:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/modules/thrift/hello/client

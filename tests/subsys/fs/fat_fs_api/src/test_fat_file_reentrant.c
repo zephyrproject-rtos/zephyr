@@ -74,7 +74,7 @@ static int test_reentrant_parallel_file_access(void)
 	zassert_ok(res, "Err: File 1 could not be opened [%d]\n", res);
 	TC_PRINT("File 1 opened 1\n");
 
-	/* Start 2nd file acces thread */
+	/* Start 2nd file access thread */
 	k_tid_t tid = k_thread_create(&tfile2_access_data, tfile2_access_stack_area,
 				      K_THREAD_STACK_SIZEOF(tfile2_access_stack_area),
 				      tfile2_access,

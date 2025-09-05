@@ -223,6 +223,7 @@
 	port-irq4-pins = <2>;
 	port-irq6-pins = <9>;
 	port-irq9-pins = <14>;
+	vbatts-pins = <2>;
 };
 
 &ioport5 {

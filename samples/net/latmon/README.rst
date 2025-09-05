@@ -101,7 +101,7 @@ Setup and Usage
 - **Run Latmus on the SUT**
 
   Request the appropriate options with `Latmus <https://evlproject.org/core/testing/#latmus-program>`_. Users
-  can for example modify the sampling period with the ``-p`` option or generate historgram data for
+  can for example modify the sampling period with the ``-p`` option or generate histogram data for
   postprocessing with the ``-g`` option,
 
 - **Monitor results from the SUT**

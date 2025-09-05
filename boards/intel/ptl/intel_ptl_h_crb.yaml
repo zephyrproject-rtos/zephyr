@@ -12,6 +12,7 @@ supported:
   - watchdog
   - uart
   - rtc
+  - pwm
 testing:
   ignore_tags:
     - net

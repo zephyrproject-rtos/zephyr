@@ -12,6 +12,7 @@
 
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/gpio/renesas-rtk0eg0019b01002bj.h>
 #include "rssk_ra2l1-pinctrl.dtsi"
 
 / {
@@ -62,6 +63,28 @@
 		sw1 = &button1;
 		watchdog0 = &wdt;
 	};
+
+	rtk0eg0019b01002bj_cn1: rtk0eg0019b01002bj-cn1 {
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <RTK0EG0019B01002BJ_CN1_LED_COL0 0 &ioport5 4 0>,
+			   <RTK0EG0019B01002BJ_CN1_LED_COL1 0 &ioport4 0 0>,
+			   <RTK0EG0019B01002BJ_CN1_LED_COL2 0 &ioport7 14 0>,
+			   <RTK0EG0019B01002BJ_CN1_LED_COL3 0 &ioport4 6 0>,
+			   <RTK0EG0019B01002BJ_CN1_LED_ROW0 0 &ioport4 14 0>,
+			   <RTK0EG0019B01002BJ_CN1_LED_ROW1 0 &ioport0 6 0>,
+			   <RTK0EG0019B01002BJ_CN1_LED_ROW2 0 &ioport7 8 0>,
+			   <RTK0EG0019B01002BJ_CN1_LED_ROW3 0 &ioport4 15 0>;
+	};
+};
+
+&ioport0 {
+	status = "okay";
+};
+
+&ioport1 {
+	status = "okay";
 };
 
 &ioport2 {
@@ -69,6 +92,18 @@
 };
 
 &ioport3 {
+	status = "okay";
+};
+
+&ioport4 {
+	status = "okay";
+};
+
+&ioport5 {
+	status = "okay";
+};
+
+&ioport7 {
 	status = "okay";
 };
 
@@ -98,3 +133,13 @@
 &wdt {
 	status = "okay";
 };
+
+&ctsu {
+	pinctrl-0 = <&ctsu_default>;
+	pinctrl-names = "default";
+	interrupts = <5 3>, <6 3>, <7 3>;
+	interrupt-names = "ctsuwr", "ctsurd", "ctsufn";
+	tscap-gpios = <&ioport1 12 0>;
+};
+
+rtk0eg0019b01002bj_ctsu: &ctsu {};

@@ -6,6 +6,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 source "Kconfig.constants"
+source "$(KCONFIG_ENV_FILE)"
 
 osource "$(APPLICATION_SOURCE_DIR)/VERSION"
 
@@ -1029,7 +1030,7 @@ config WARN_EXPERIMENTAL
 config NOT_SECURE
 	bool
 	help
-	  Symbol to be selected by a feature to inidicate that feature is
+	  Symbol to be selected by a feature to indicate that feature is
 	  not secure.
 
 config TAINT

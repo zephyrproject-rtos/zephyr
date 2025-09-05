@@ -87,6 +87,15 @@ config DNS_RESOLVER_MAX_NAME_LEN
 	  DNS server. For example if we query a DNS-SD service, then this value should
 	  be long enough to store the returned string.
 
+config DNS_RESOLVER_MAX_TEXT_LEN
+	int "Max length of the resolved DNS text string in a record"
+	range 1 $(UINT8_MAX)
+	default 255 if DNS_SD
+	default 64
+	help
+	  Max length of a buffer that is used to store text record string
+	  returned from a DNS server.
+
 menuconfig DNS_SERVER_IP_ADDRESSES
 	bool "Set DNS server IP addresses"
 	help
