@@ -86,6 +86,10 @@ static void bip_rfcomm_disconnected(struct bt_goep *goep)
 	}
 
 	sys_slist_init(&bip->_clients);
+	bip->role = BT_BIP_ROLE_UNKNOWN;
+	bip->_supp_caps = 0;
+	bip->_supp_feats = 0;
+	bip->_supp_funcs = 0;
 
 	if (bip->ops != NULL && bip->ops->disconnected != NULL) {
 		bip->ops->disconnected(bip);
@@ -215,6 +219,10 @@ static void bip_l2cap_disconnected(struct bt_goep *goep)
 	}
 
 	sys_slist_init(&bip->_clients);
+	bip->role = BT_BIP_ROLE_UNKNOWN;
+	bip->_supp_caps = 0;
+	bip->_supp_feats = 0;
+	bip->_supp_funcs = 0;
 
 	if (bip->ops != NULL && bip->ops->disconnected != NULL) {
 		bip->ops->disconnected(bip);
@@ -311,6 +319,51 @@ int bt_bip_l2cap_disconnect(struct bt_bip *bip)
 	}
 
 	return err;
+}
+
+int bt_bip_set_supported_capabilities(struct bt_bip *bip, uint8_t capabilities)
+{
+	if (bip == NULL) {
+		return -EINVAL;
+	}
+
+	if (bip->role != BT_BIP_ROLE_INITIATOR) {
+		LOG_ERR("Invalid role %u", bip->role);
+		return -EINVAL;
+	}
+
+	bip->_supp_caps = capabilities;
+	return 0;
+}
+
+int bt_bip_set_supported_features(struct bt_bip *bip, uint16_t features)
+{
+	if (bip == NULL) {
+		return -EINVAL;
+	}
+
+	if (bip->role != BT_BIP_ROLE_INITIATOR) {
+		LOG_ERR("Invalid role %u", bip->role);
+		return -EINVAL;
+	}
+
+	bip->_supp_feats = features;
+	return 0;
+}
+
+int bt_bip_set_supported_functions(struct bt_bip *bip, uint32_t functions)
+{
+	if (bip == NULL) {
+		return -EINVAL;
+	}
+
+	if (bip->role != BT_BIP_ROLE_INITIATOR) {
+		LOG_ERR("Invalid role %u", bip->role);
+		return -EINVAL;
+	}
+
+	bip->_supp_funcs = functions;
+	return 0;
 }
 
 static const struct bt_uuid_128 *image_push = BT_BIP_UUID_IMAGE_PUSH;
@@ -513,6 +566,7 @@ struct bip_required_hdr {
 struct bip_function {
 	const char *type;
 	bool op_get;
+	uint8_t func_bit;
 	uint32_t supported_features;
 	uint32_t required_appl_param_tag_id;
 	struct bip_required_hdr hdr;
@@ -540,85 +594,101 @@ struct bip_function {
 #define AP_SERVICE_ID                BIT(BT_BIP_APPL_PARAM_TAG_ID_SERVICE_ID)
 #define AP_STORE_FLAG                BIT(BT_BIP_APPL_PARAM_TAG_ID_STORE_FLAG)
 
+#define GET_CAPS_FUNC_BIT      BT_BIP_SUPP_FUNC_GET_CAPS
 #define GET_CAPS_SUPPORT_FEATS IMAGE_PUSH | IMAGE_PULL | IMAGE_PRINT | REMOTE_DISPLAY | ARCHIVED_OBJ
 #define GET_CAPS_REQUIRED_HDR  BT_OBEX_HEADER_ID_CONN_ID, BT_OBEX_HEADER_ID_TYPE
 #define GET_CAPS_AP            0
 
+#define GET_IMAGE_LIST_FUNC_BIT      BT_BIP_SUPP_FUNC_GET_IMAGE_LIST
 #define GET_IMAGE_LIST_SUPPORT_FEATS IMAGE_PULL | REMOTE_DISPLAY | ARCHIVED_OBJ
 #define GET_IMAGE_LIST_REQUIRED_HDR                                                                \
 	BT_OBEX_HEADER_ID_CONN_ID, BT_OBEX_HEADER_ID_TYPE, BT_OBEX_HEADER_ID_APP_PARAM,            \
 		BT_BIP_HEADER_ID_IMG_DESC
 #define GET_IMAGE_LIST_AP AP_RETURNED_HANDLES | AP_LIST_START_OFFSET | AP_LATEST_CAPTURED_IMAGES
 
+#define GET_IMAGE_PROPERTIES_FUNC_BIT      BT_BIP_SUPP_FUNC_GET_IMAGE_PROPERTIES
 #define GET_IMAGE_PROPERTIES_SUPPORT_FEATS IMAGE_PULL | REMOTE_CAMERA | ARCHIVED_OBJ
 #define GET_IMAGE_PROPERTIES_REQUIRED_HDR                                                          \
 	BT_OBEX_HEADER_ID_CONN_ID, BT_OBEX_HEADER_ID_TYPE, BT_BIP_HEADER_ID_IMG_HANDLE
 #define GET_IMAGE_PROPERTIES_AP 0
 
+#define GET_IMAGE_FUNC_BIT      BT_BIP_SUPP_FUNC_GET_IMAGE
 #define GET_IMAGE_SUPPORT_FEATS IMAGE_PULL | REMOTE_CAMERA | ARCHIVED_OBJ
 #define GET_IMAGE_REQUIRED_HDR                                                                     \
 	BT_OBEX_HEADER_ID_CONN_ID, BT_OBEX_HEADER_ID_TYPE, BT_BIP_HEADER_ID_IMG_DESC,              \
 		BT_BIP_HEADER_ID_IMG_HANDLE
 #define GET_IMAGE_AP 0
 
+#define GET_LINKED_THUMBNAIL_FUNC_BIT      BT_BIP_SUPP_FUNC_GET_LINKED_THUMBNAIL
 #define GET_LINKED_THUMBNAIL_SUPPORT_FEATS IMAGE_PULL | REMOTE_CAMERA | ARCHIVED_OBJ
 #define GET_LINKED_THUMBNAIL_REQUIRED_HDR                                                          \
 	BT_OBEX_HEADER_ID_CONN_ID, BT_OBEX_HEADER_ID_TYPE, BT_BIP_HEADER_ID_IMG_HANDLE
 #define GET_LINKED_THUMBNAIL_AP 0
 
+#define GET_LINKED_ATTACHMENT_FUNC_BIT      BT_BIP_SUPP_FUNC_GET_LINKED_ATTACHMENT
 #define GET_LINKED_ATTACHMENT_SUPPORT_FEATS IMAGE_PULL | ARCHIVED_OBJ
 #define GET_LINKED_ATTACHMENT_REQUIRED_HDR                                                         \
 	BT_OBEX_HEADER_ID_CONN_ID, BT_OBEX_HEADER_ID_TYPE, BT_BIP_HEADER_ID_IMG_HANDLE,            \
 		BT_OBEX_HEADER_ID_NAME
 #define GET_LINKED_ATTACHMENT_AP 0
 
+#define GET_PARTIAL_IMAGE_FUNC_BIT      BT_BIP_SUPP_FUNC_GET_PARTIAL_IMAGE
 #define GET_PARTIAL_IMAGE_SUPPORT_FEATS REFERENCED_OBJ
 #define GET_PARTIAL_IMAGE_REQUIRED_HDR                                                             \
 	BT_OBEX_HEADER_ID_CONN_ID, BT_OBEX_HEADER_ID_TYPE, BT_OBEX_HEADER_ID_NAME,                 \
 		BT_OBEX_HEADER_ID_APP_PARAM
 #define GET_PARTIAL_IMAGE_AP AP_PARTIAL_FILE_LEN | AP_PARTIAL_FILE_START_OFFSET
 
+#define GET_MONITORING_IMAGE_FUNC_BIT      BT_BIP_SUPP_FUNC_GET_MONITORING_IMAGE
 #define GET_MONITORING_IMAGE_SUPPORT_FEATS REMOTE_CAMERA
 #define GET_MONITORING_IMAGE_REQUIRED_HDR                                                          \
 	BT_OBEX_HEADER_ID_CONN_ID, BT_OBEX_HEADER_ID_TYPE, BT_OBEX_HEADER_ID_APP_PARAM
 #define GET_MONITORING_IMAGE_AP AP_STORE_FLAG
 
+#define GET_STATUS_FUNC_BIT      BT_BIP_SUPP_FUNC_GET_STATUS
 #define GET_STATUS_SUPPORT_FEATS IMAGE_PRINT | AUTO_ARCHIVE
 #define GET_STATUS_REQUIRED_HDR  BT_OBEX_HEADER_ID_CONN_ID, BT_OBEX_HEADER_ID_TYPE
 #define GET_STATUS_AP            0
 
+#define PUT_IMAGE_FUNC_BIT      BT_BIP_SUPP_FUNC_PUT_IMAGE
 #define PUT_IMAGE_SUPPORT_FEATS IMAGE_PUSH | REMOTE_DISPLAY
 #define PUT_IMAGE_REQUIRED_HDR                                                                     \
 	BT_OBEX_HEADER_ID_CONN_ID, BT_OBEX_HEADER_ID_TYPE, BT_OBEX_HEADER_ID_NAME,                 \
 		BT_BIP_HEADER_ID_IMG_DESC
 #define PUT_IMAGE_AP 0
 
+#define PUT_LINKED_THUMBNAIL_FUNC_BIT      BT_BIP_SUPP_FUNC_PUT_LINKED_THUMBNAIL
 #define PUT_LINKED_THUMBNAIL_SUPPORT_FEATS IMAGE_PUSH | REMOTE_DISPLAY
 #define PUT_LINKED_THUMBNAIL_REQUIRED_HDR                                                          \
 	BT_OBEX_HEADER_ID_CONN_ID, BT_OBEX_HEADER_ID_TYPE, BT_BIP_HEADER_ID_IMG_HANDLE
 #define PUT_LINKED_THUMBNAIL_AP 0
 
+#define PUT_LINKED_ATTACHMENT_FUNC_BIT      BT_BIP_SUPP_FUNC_PUT_LINKED_ATTACHMENT
 #define PUT_LINKED_ATTACHMENT_SUPPORT_FEATS IMAGE_PUSH | REMOTE_DISPLAY
 #define PUT_LINKED_ATTACHMENT_REQUIRED_HDR                                                         \
 	BT_OBEX_HEADER_ID_CONN_ID, BT_OBEX_HEADER_ID_TYPE, BT_BIP_HEADER_ID_IMG_HANDLE
 #define PUT_LINKED_ATTACHMENT_AP 0
 
+#define REMOTE_DISPLAY_FUNC_BIT      BT_BIP_SUPP_FUNC_REMOTE_DISPLAY
 #define REMOTE_DISPLAY_SUPPORT_FEATS REMOTE_DISPLAY
 #define REMOTE_DISPLAY_REQUIRED_HDR                                                                \
 	BT_OBEX_HEADER_ID_CONN_ID, BT_OBEX_HEADER_ID_TYPE, BT_BIP_HEADER_ID_IMG_HANDLE,            \
 		BT_OBEX_HEADER_ID_APP_PARAM
 #define REMOTE_DISPLAY_AP AP_REMOTE_DISPLAY
 
+#define DELETE_IMAGE_FUNC_BIT      BT_BIP_SUPP_FUNC_REMOTE_DISPLAY
 #define DELETE_IMAGE_SUPPORT_FEATS IMAGE_PULL | ARCHIVED_OBJ
 #define DELETE_IMAGE_REQUIRED_HDR                                                                  \
 	BT_OBEX_HEADER_ID_CONN_ID, BT_OBEX_HEADER_ID_TYPE, BT_BIP_HEADER_ID_IMG_HANDLE
 #define DELETE_IMAGE_AP 0
 
+#define START_PRINT_FUNC_BIT      BT_BIP_SUPP_FUNC_START_PRINT
 #define START_PRINT_SUPPORT_FEATS IMAGE_PRINT
 #define START_PRINT_REQUIRED_HDR                                                                   \
 	BT_OBEX_HEADER_ID_CONN_ID, BT_OBEX_HEADER_ID_TYPE, BT_OBEX_HEADER_ID_APP_PARAM
 #define START_PRINT_AP AP_SERVICE_ID
 
+#define START_ARCHIVE_FUNC_BIT      BT_BIP_SUPP_FUNC_START_ARCHIVE
 #define START_ARCHIVE_SUPPORT_FEATS AUTO_ARCHIVE
 #define START_ARCHIVE_REQUIRED_HDR                                                                 \
 	BT_OBEX_HEADER_ID_CONN_ID, BT_OBEX_HEADER_ID_TYPE, BT_OBEX_HEADER_ID_APP_PARAM
@@ -785,54 +855,63 @@ static bt_bip_client_cb_t bip_client_get_cb_start_archive(struct bt_bip_client *
 }
 
 static const struct bip_function bip_functions[] = {
-	{BT_BIP_HDR_TYPE_GET_CAPS, true, GET_CAPS_SUPPORT_FEATS, GET_CAPS_AP,
+	{BT_BIP_HDR_TYPE_GET_CAPS, true, GET_CAPS_FUNC_BIT, GET_CAPS_SUPPORT_FEATS, GET_CAPS_AP,
 	 BIP_REQUIRED_HDR_LIST(GET_CAPS_REQUIRED_HDR), bip_server_get_cb_get_caps,
 	 bip_client_get_cb_get_caps},
-	{BT_BIP_HDR_TYPE_GET_IMAGE_LIST, true, GET_IMAGE_LIST_SUPPORT_FEATS, GET_IMAGE_LIST_AP,
+	{BT_BIP_HDR_TYPE_GET_IMAGE_LIST, true, GET_IMAGE_LIST_FUNC_BIT,
+	 GET_IMAGE_LIST_SUPPORT_FEATS, GET_IMAGE_LIST_AP,
 	 BIP_REQUIRED_HDR_LIST(GET_IMAGE_LIST_REQUIRED_HDR), bip_server_get_cb_get_image_list,
 	 bip_client_get_cb_get_image_list},
-	{BT_BIP_HDR_TYPE_GET_IMAGE_PROPERTIES, true, GET_IMAGE_PROPERTIES_SUPPORT_FEATS,
-	 GET_IMAGE_PROPERTIES_AP, BIP_REQUIRED_HDR_LIST(GET_IMAGE_PROPERTIES_REQUIRED_HDR),
+	{BT_BIP_HDR_TYPE_GET_IMAGE_PROPERTIES, true, GET_IMAGE_PROPERTIES_FUNC_BIT,
+	 GET_IMAGE_PROPERTIES_SUPPORT_FEATS, GET_IMAGE_PROPERTIES_AP,
+	 BIP_REQUIRED_HDR_LIST(GET_IMAGE_PROPERTIES_REQUIRED_HDR),
 	 bip_server_get_cb_get_image_properties, bip_client_get_cb_get_image_properties},
-	{BT_BIP_HDR_TYPE_GET_IMAGE, true, GET_IMAGE_SUPPORT_FEATS, GET_IMAGE_AP,
+	{BT_BIP_HDR_TYPE_GET_IMAGE, true, GET_IMAGE_FUNC_BIT, GET_IMAGE_SUPPORT_FEATS, GET_IMAGE_AP,
 	 BIP_REQUIRED_HDR_LIST(GET_IMAGE_REQUIRED_HDR), bip_server_get_cb_get_image,
 	 bip_client_get_cb_get_image},
-	{BT_BIP_HDR_TYPE_GET_LINKED_THUMBNAIL, true, GET_LINKED_THUMBNAIL_SUPPORT_FEATS,
-	 GET_LINKED_THUMBNAIL_AP, BIP_REQUIRED_HDR_LIST(GET_LINKED_THUMBNAIL_REQUIRED_HDR),
+	{BT_BIP_HDR_TYPE_GET_LINKED_THUMBNAIL, true, GET_LINKED_THUMBNAIL_FUNC_BIT,
+	 GET_LINKED_THUMBNAIL_SUPPORT_FEATS, GET_LINKED_THUMBNAIL_AP,
+	 BIP_REQUIRED_HDR_LIST(GET_LINKED_THUMBNAIL_REQUIRED_HDR),
 	 bip_server_get_cb_get_linked_thumbnail, bip_client_get_cb_get_linked_thumbnail},
-	{BT_BIP_HDR_TYPE_GET_LINKED_ATTACHMENT, true, GET_LINKED_ATTACHMENT_SUPPORT_FEATS,
-	 GET_LINKED_ATTACHMENT_AP, BIP_REQUIRED_HDR_LIST(GET_LINKED_ATTACHMENT_REQUIRED_HDR),
+	{BT_BIP_HDR_TYPE_GET_LINKED_ATTACHMENT, true, GET_LINKED_ATTACHMENT_FUNC_BIT,
+	 GET_LINKED_ATTACHMENT_SUPPORT_FEATS, GET_LINKED_ATTACHMENT_AP,
+	 BIP_REQUIRED_HDR_LIST(GET_LINKED_ATTACHMENT_REQUIRED_HDR),
 	 bip_server_get_cb_get_linked_attachment, bip_client_get_cb_get_linked_attachment},
-	{BT_BIP_HDR_TYPE_GET_PARTIAL_IMAGE, true, GET_PARTIAL_IMAGE_SUPPORT_FEATS,
-	 GET_PARTIAL_IMAGE_AP, BIP_REQUIRED_HDR_LIST(GET_PARTIAL_IMAGE_REQUIRED_HDR),
-	 bip_server_get_cb_get_partial_image, bip_client_get_cb_get_partial_image},
-	{BT_BIP_HDR_TYPE_GET_MONITORING_IMAGE, true, GET_MONITORING_IMAGE_SUPPORT_FEATS,
-	 GET_MONITORING_IMAGE_AP, BIP_REQUIRED_HDR_LIST(GET_MONITORING_IMAGE_REQUIRED_HDR),
+	{BT_BIP_HDR_TYPE_GET_PARTIAL_IMAGE, true, GET_PARTIAL_IMAGE_FUNC_BIT,
+	 GET_PARTIAL_IMAGE_SUPPORT_FEATS, GET_PARTIAL_IMAGE_AP,
+	 BIP_REQUIRED_HDR_LIST(GET_PARTIAL_IMAGE_REQUIRED_HDR), bip_server_get_cb_get_partial_image,
+	 bip_client_get_cb_get_partial_image},
+	{BT_BIP_HDR_TYPE_GET_MONITORING_IMAGE, true, GET_MONITORING_IMAGE_FUNC_BIT,
+	 GET_MONITORING_IMAGE_SUPPORT_FEATS, GET_MONITORING_IMAGE_AP,
+	 BIP_REQUIRED_HDR_LIST(GET_MONITORING_IMAGE_REQUIRED_HDR),
 	 bip_server_get_cb_get_monitoring_image, bip_client_get_cb_get_monitoring_image},
-	{BT_BIP_HDR_TYPE_GET_STATUS, true, GET_STATUS_SUPPORT_FEATS, GET_STATUS_AP,
-	 BIP_REQUIRED_HDR_LIST(GET_STATUS_REQUIRED_HDR), bip_server_get_cb_get_status,
-	 bip_client_get_cb_get_status},
-	{BT_BIP_HDR_TYPE_PUT_IMAGE, false, PUT_IMAGE_SUPPORT_FEATS, PUT_IMAGE_AP,
-	 BIP_REQUIRED_HDR_LIST(PUT_IMAGE_REQUIRED_HDR), bip_server_get_cb_put_image,
+	{BT_BIP_HDR_TYPE_GET_STATUS, true, GET_STATUS_FUNC_BIT, GET_STATUS_SUPPORT_FEATS,
+	 GET_STATUS_AP, BIP_REQUIRED_HDR_LIST(GET_STATUS_REQUIRED_HDR),
+	 bip_server_get_cb_get_status, bip_client_get_cb_get_status},
+	{BT_BIP_HDR_TYPE_PUT_IMAGE, false, PUT_IMAGE_FUNC_BIT, PUT_IMAGE_SUPPORT_FEATS,
+	 PUT_IMAGE_AP, BIP_REQUIRED_HDR_LIST(PUT_IMAGE_REQUIRED_HDR), bip_server_get_cb_put_image,
 	 bip_client_get_cb_put_image},
-	{BT_BIP_HDR_TYPE_PUT_LINKED_THUMBNAIL, false, PUT_LINKED_THUMBNAIL_SUPPORT_FEATS,
-	 PUT_LINKED_THUMBNAIL_AP, BIP_REQUIRED_HDR_LIST(PUT_LINKED_THUMBNAIL_REQUIRED_HDR),
+	{BT_BIP_HDR_TYPE_PUT_LINKED_THUMBNAIL, false, PUT_LINKED_THUMBNAIL_FUNC_BIT,
+	 PUT_LINKED_THUMBNAIL_SUPPORT_FEATS, PUT_LINKED_THUMBNAIL_AP,
+	 BIP_REQUIRED_HDR_LIST(PUT_LINKED_THUMBNAIL_REQUIRED_HDR),
 	 bip_server_get_cb_put_linked_thumbnail, bip_client_get_cb_put_linked_thumbnail},
-	{BT_BIP_HDR_TYPE_PUT_LINKED_ATTACHMENT, false, PUT_LINKED_ATTACHMENT_SUPPORT_FEATS,
-	 PUT_LINKED_ATTACHMENT_AP, BIP_REQUIRED_HDR_LIST(PUT_LINKED_ATTACHMENT_REQUIRED_HDR),
+	{BT_BIP_HDR_TYPE_PUT_LINKED_ATTACHMENT, false, PUT_LINKED_ATTACHMENT_FUNC_BIT,
+	 PUT_LINKED_ATTACHMENT_SUPPORT_FEATS, PUT_LINKED_ATTACHMENT_AP,
+	 BIP_REQUIRED_HDR_LIST(PUT_LINKED_ATTACHMENT_REQUIRED_HDR),
 	 bip_server_get_cb_put_linked_attachment, bip_client_get_cb_put_linked_attachment},
-	{BT_BIP_HDR_TYPE_REMOTE_DISPLAY, false, REMOTE_DISPLAY_SUPPORT_FEATS, REMOTE_DISPLAY_AP,
+	{BT_BIP_HDR_TYPE_REMOTE_DISPLAY, false, REMOTE_DISPLAY_FUNC_BIT,
+	 REMOTE_DISPLAY_SUPPORT_FEATS, REMOTE_DISPLAY_AP,
 	 BIP_REQUIRED_HDR_LIST(REMOTE_DISPLAY_REQUIRED_HDR), bip_server_get_cb_remote_display,
 	 bip_client_get_cb_remote_display},
-	{BT_BIP_HDR_TYPE_DELETE_IMAGE, false, DELETE_IMAGE_SUPPORT_FEATS, DELETE_IMAGE_AP,
-	 BIP_REQUIRED_HDR_LIST(DELETE_IMAGE_REQUIRED_HDR), bip_server_get_cb_delete_image,
-	 bip_client_get_cb_delete_image},
-	{BT_BIP_HDR_TYPE_START_PRINT, false, START_PRINT_SUPPORT_FEATS, START_PRINT_AP,
-	 BIP_REQUIRED_HDR_LIST(START_PRINT_REQUIRED_HDR), bip_server_get_cb_start_print,
-	 bip_client_get_cb_start_print},
-	{BT_BIP_HDR_TYPE_START_ARCHIVE, false, START_ARCHIVE_SUPPORT_FEATS, START_ARCHIVE_AP,
-	 BIP_REQUIRED_HDR_LIST(START_ARCHIVE_REQUIRED_HDR), bip_server_get_cb_start_archive,
-	 bip_client_get_cb_start_archive},
+	{BT_BIP_HDR_TYPE_DELETE_IMAGE, false, DELETE_IMAGE_FUNC_BIT, DELETE_IMAGE_SUPPORT_FEATS,
+	 DELETE_IMAGE_AP, BIP_REQUIRED_HDR_LIST(DELETE_IMAGE_REQUIRED_HDR),
+	 bip_server_get_cb_delete_image, bip_client_get_cb_delete_image},
+	{BT_BIP_HDR_TYPE_START_PRINT, false, START_PRINT_FUNC_BIT, START_PRINT_SUPPORT_FEATS,
+	 START_PRINT_AP, BIP_REQUIRED_HDR_LIST(START_PRINT_REQUIRED_HDR),
+	 bip_server_get_cb_start_print, bip_client_get_cb_start_print},
+	{BT_BIP_HDR_TYPE_START_ARCHIVE, false, START_ARCHIVE_FUNC_BIT, START_ARCHIVE_SUPPORT_FEATS,
+	 START_ARCHIVE_AP, BIP_REQUIRED_HDR_LIST(START_ARCHIVE_REQUIRED_HDR),
+	 bip_server_get_cb_start_archive, bip_client_get_cb_start_archive},
 };
 
 static bool has_required_hdrs(struct net_buf *buf, const struct bip_required_hdr *hdr)
@@ -1179,6 +1258,60 @@ static int bip_check_who(const struct bt_uuid *uuid, struct net_buf *buf)
 	return 0;
 }
 
+#define BIP_FEAT_IMAGE_PUSH_BITS                                                                   \
+	(BIT(BT_BIP_SUPP_FEAT_IMAGE_PUSH) | BIT(BT_BIP_SUPP_FEAT_IMAGE_PUSH_STORE) |               \
+	 BIT(BT_BIP_SUPP_FEAT_IMAGE_PUSH_PRINT) | BIT(BT_BIP_SUPP_FEAT_IMAGE_PUSH_DISPLAY))
+
+#define BT_BIP_SUPP_FEAT_IMAGE_PRINT BT_BIP_SUPP_FEAT_ADVANCED_IMAGE_PRINT
+
+#define BIP_FEAT_IMAGE_PUSH(feature)     ((feature) & BIP_FEAT_IMAGE_PUSH_BITS) != 0
+#define BIP_FEAT_IMAGE_PULL(feature)     ((feature) & BIT(BT_BIP_SUPP_FEAT_IMAGE_PULL)) != 0
+#define BIP_FEAT_IMAGE_PRINT(feature)    ((feature) & BIT(BT_BIP_SUPP_FEAT_IMAGE_PRINT)) != 0
+#define BIP_FEAT_AUTO_ARCHIVE(feature)   ((feature) & BIT(BT_BIP_SUPP_FEAT_AUTO_ARCHIVE)) != 0
+#define BIP_FEAT_REMOTE_CAMERA(feature)  ((feature) & BIT(BT_BIP_SUPP_FEAT_REMOTE_CAMERA)) != 0
+#define BIP_FEAT_REMOTE_DISPLAY(feature) ((feature) & BIT(BT_BIP_SUPP_FEAT_REMOTE_DISPLAY)) != 0
+
+static int bip_check_features(struct bt_bip *bip, enum bt_bip_conn_type type)
+{
+	switch (type) {
+	case BT_BIP_PRIM_CONN_TYPE_IMAGE_PUSH:
+		if (BIP_FEAT_IMAGE_PUSH(bip->_supp_feats)) {
+			return 0;
+		}
+		break;
+	case BT_BIP_PRIM_CONN_TYPE_IMAGE_PULL:
+		if (BIP_FEAT_IMAGE_PULL(bip->_supp_feats)) {
+			return 0;
+		}
+		break;
+	case BT_BIP_PRIM_CONN_TYPE_ADVANCED_IMAGE_PRINTING:
+		if (BIP_FEAT_IMAGE_PRINT(bip->_supp_feats)) {
+			return 0;
+		}
+		break;
+	case BT_BIP_PRIM_CONN_TYPE_AUTO_ARCHIVE:
+		if (BIP_FEAT_AUTO_ARCHIVE(bip->_supp_feats)) {
+			return 0;
+		}
+		break;
+	case BT_BIP_PRIM_CONN_TYPE_REMOTE_CAMERA:
+		if (BIP_FEAT_REMOTE_CAMERA(bip->_supp_feats)) {
+			return 0;
+		}
+		break;
+	case BT_BIP_PRIM_CONN_TYPE_REMOTE_DISPLAY:
+		if (BIP_FEAT_REMOTE_DISPLAY(bip->_supp_feats)) {
+			return 0;
+		}
+		break;
+	case BT_BIP_2ND_CONN_TYPE_REFERENCED_OBJECTS:
+		break;
+	case BT_BIP_2ND_CONN_TYPE_ARCHIVED_OBJECTS:
+		break;
+	}
+	return -ENOTSUP;
+}
+
 static int bt_bip_client_connect(struct bt_bip *bip, struct bt_bip_client *client,
 				 enum bt_bip_conn_type type, struct bt_bip_client_cb *cb,
 				 struct net_buf *buf, struct bt_bip_server *primary_server)
@@ -1205,6 +1338,12 @@ static int bt_bip_client_connect(struct bt_bip *bip, struct bt_bip_client *clien
 			LOG_ERR("primary server should be NULL");
 			return -EINVAL;
 		}
+
+		err = bip_check_features(bip, type);
+		if (err != 0) {
+			LOG_ERR("Unsupported features for connection type %d", type);
+			return err;
+		}
 	} else {
 		struct bt_bip *primary_bip;
 
@@ -1215,6 +1354,18 @@ static int bt_bip_client_connect(struct bt_bip *bip, struct bt_bip_client *clien
 
 		if (primary_server == NULL || primary_server->_bip == NULL) {
 			LOG_ERR("Invalid primary client");
+			return -EINVAL;
+		}
+
+		if (type == BT_BIP_2ND_CONN_TYPE_REFERENCED_OBJECTS &&
+		    primary_server->_type != BT_BIP_PRIM_CONN_TYPE_ADVANCED_IMAGE_PRINTING) {
+			LOG_ERR("Invalid primary connection type for referenced objects");
+			return -EINVAL;
+		}
+
+		if (type == BT_BIP_2ND_CONN_TYPE_ARCHIVED_OBJECTS &&
+		    primary_server->_type != BT_BIP_PRIM_CONN_TYPE_AUTO_ARCHIVE) {
+			LOG_ERR("Invalid primary connection type for referenced objects");
 			return -EINVAL;
 		}
 
@@ -1599,6 +1750,11 @@ static int bip_client_get_req_cb(struct bt_bip_client *client, const char *type,
 		return -EINVAL;
 	}
 
+	if (client->_bip == NULL) {
+		LOG_ERR("Invalid BIP client context");
+		return -EINVAL;
+	}
+
 	*cb = NULL;
 	ARRAY_FOR_EACH(bip_functions, i) {
 		if (strcmp(bip_functions[i].type, type) != 0) {
@@ -1614,6 +1770,10 @@ static int bip_client_get_req_cb(struct bt_bip_client *client, const char *type,
 		}
 
 		if ((bip_functions[i].supported_features & BIT(client->_type)) == 0) {
+			continue;
+		}
+
+		if ((client->_bip->_supp_funcs & BIT(bip_functions[i].func_bit)) == 0) {
 			continue;
 		}
 
