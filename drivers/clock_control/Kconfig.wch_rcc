@@ -15,3 +15,8 @@ config CLOCK_CONTROL_WCH_RCC_CSS
 	bool "Clock Security system"
 	default y
 	depends on CLOCK_CONTROL_WCH_CH32V00X_RCC
+
+config CLOCK_WCH_CH32_MCO
+	bool "Micocontroller Clock Output Pin for WCH chips"
+	default y
+	depends on DT_HAS_WCH_CH32_CLOCK_MCO_ENABLED

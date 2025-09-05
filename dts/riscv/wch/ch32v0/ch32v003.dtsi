@@ -65,6 +65,13 @@
 		};
 	};
 
+	mcos {
+		mco: mco {
+			compatible = "wch,ch32-clock-mco";
+			status = "disabled";
+		};
+	};
+
 	soc {
 		sram0: memory@20000000 {
 			compatible = "mmio-sram";
