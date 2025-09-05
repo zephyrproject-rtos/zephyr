@@ -9,6 +9,7 @@ if(CONFIG_ARM)
 endif()
 
 zephyr_library_sources_ifdef(CONFIG_PM_S2RAM pm_s2ram.c)
+zephyr_library_sources_ifdef(CONFIG_CPU_FREQ cpu_freq.c)
 
 zephyr_include_directories(.)
 
