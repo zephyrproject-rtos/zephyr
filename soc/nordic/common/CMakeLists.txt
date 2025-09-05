@@ -23,7 +23,9 @@ if(CONFIG_NRF_PLATFORM_HALTIUM AND CONFIG_ARM)
     FILTER ".*\\.cache_retain_and_sleep"
     LOCATION PMLocalRamfunc_TEXT
   )
-  zephyr_library_sources_ifdef(CONFIG_PM_S2RAM haltium_pm_s2ram.c)
+  if(NOT CONFIG_SOC_NRF54H20_PM_S2RAM_OVERRIDE)
+    zephyr_library_sources_ifdef(CONFIG_PM_S2RAM haltium_pm_s2ram.c)
+  endif()
   zephyr_library_sources_ifdef(CONFIG_CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS nrf54hx_nrf92x_mpu_regions.c)
   zephyr_library_sources(soc_lrcconf.c)
 endif()
