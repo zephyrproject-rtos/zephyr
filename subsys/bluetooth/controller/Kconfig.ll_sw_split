@@ -1264,6 +1264,24 @@ config BT_CTLR_CONN_RSSI_EVENT
 	help
 	  Generate events for connection RSSI measurement.
 
+config BT_CTLR_CHAN_METRICS_EVENT
+	bool "Channel Metrics event"
+	depends on BT_CONN
+	help
+	  Generate events for channel usage metrics of connections, Connected
+	  Isochronous Streams, synchronized Broadcast Isochronous Groups,
+	  periodic advertising synchronizations and auxiliary channel scanning.
+	  Reception timeouts and CRC errors are reception failures.
+
+config BT_CTLR_CHAN_METRICS_BAD_COUNT
+	int "Channel bad count threshold"
+	depends on BT_CTLR_CHAN_METRICS_EVENT
+	range 1 $(UINT8_MAX)
+	default 3
+	help
+	  Set the number of consecutive failures on transmission acknowledgment or reception that
+	  will generate a channel metrics event.
+
 config BT_CTLR_ALLOW_SAME_PEER_CONN
 	bool "Allow connection requests from same peer"
 	depends on BT_MAX_CONN > 1

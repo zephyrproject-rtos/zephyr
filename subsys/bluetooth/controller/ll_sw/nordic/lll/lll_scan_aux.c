@@ -28,6 +28,7 @@
 #include "lll.h"
 #include "lll_vendor.h"
 #include "lll_clock.h"
+#include "lll_chan.h"
 #include "lll_filter.h"
 #include "lll_scan.h"
 #include "lll_scan_aux.h"
@@ -961,6 +962,17 @@ static void isr_rx(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 	/* Clear radio rx status and events */
 	lll_isr_rx_status_reset();
 
+#if defined(CONFIG_BT_CTLR_CHAN_METRICS_EVENT)
+	/* Increase good channel count for successful reception, else bad channel count for
+	 * reception timeout or CRC error.
+	 */
+	if (crc_ok != 0U) {
+		lll_chan_metrics_chan_good(lll_chan_get());
+	} else {
+		lll_chan_metrics_chan_bad(lll_chan_get());
+	}
+#endif /* CONFIG_BT_CTLR_CHAN_METRICS_EVENT */
+
 	/* No Rx */
 	if (unlikely(!trx_done || !crc_ok)) {
 		/* TODO: Combine the early exit with above if-then-else block
@@ -1684,6 +1696,17 @@ static void isr_rx_connect_rsp(void *param)
 
 	/* Clear radio rx status and events */
 	lll_isr_rx_status_reset();
+
+#if defined(CONFIG_BT_CTLR_CHAN_METRICS_EVENT)
+	/* Increase good channel count for successful reception, else bad channel count for
+	 * reception timeout or CRC error.
+	 */
+	if (crc_ok != 0U) {
+		lll_chan_metrics_chan_good(lll_chan_get());
+	} else {
+		lll_chan_metrics_chan_bad(lll_chan_get());
+	}
+#endif /* CONFIG_BT_CTLR_CHAN_METRICS_EVENT */
 
 	/* Get the reference to primary scanner's LLL context */
 	lll_aux = param;

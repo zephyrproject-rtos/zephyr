@@ -1550,6 +1550,17 @@ static void isr_rx(void *param)
 	/* Clear radio status and events */
 	lll_isr_rx_sub_status_reset();
 
+#if defined(CONFIG_BT_CTLR_CHAN_METRICS_EVENT)
+	/* Increase good channel count for successful reception, else bad channel count for
+	 * reception timeout or CRC error.
+	 */
+	if (crc_ok != 0U) {
+		lll_chan_metrics_chan_good(lll_chan_get());
+	} else {
+		lll_chan_metrics_chan_bad(lll_chan_get());
+	}
+#endif /* CONFIG_BT_CTLR_CHAN_METRICS_EVENT */
+
 	/* Initialize Close Isochronous Event */
 	ack_pending = 0U;
 	cie = 0U;

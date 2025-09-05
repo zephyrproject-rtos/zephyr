@@ -27,6 +27,7 @@
 #include "lll.h"
 #include "lll/lll_vendor.h"
 #include "lll_clock.h"
+#include "lll_chan.h"
 #include "lll_scan.h"
 #include "lll/lll_df_types.h"
 #include "lll_sync.h"
@@ -937,6 +938,25 @@ void ull_sync_iso_done(struct node_rx_event_done *done)
 			return;
 		}
 	}
+
+#if defined(CONFIG_BT_CONN)
+	/* Notification uses the PDU Rx pool of connections */
+	if (lll_chan_metrics_is_notify()) {
+		struct node_rx_pdu *rx;
+
+		rx = ll_pdu_rx_alloc();
+		if (rx) {
+			(void)lll_chan_metrics_notify_clear();
+
+			/* Prepare the rx packet structure */
+			rx->hdr.type = NODE_RX_TYPE_CHAN_METRICS;
+			rx->hdr.handle = NODE_RX_HANDLE_INVALID;
+
+			/* enqueue chan metrics structure into queue */
+			ll_rx_put_sched(rx->hdr.link, rx);
+		}
+	}
+#endif /* CONFIG_BT_CONN */
 
 	/* check if skip needs update */
 	lazy = 0U;

@@ -26,6 +26,7 @@
 
 #include "lll.h"
 #include "lll/lll_vendor.h"
+#include "lll_chan.h"
 #include "lll_scan.h"
 #include "lll_scan_aux.h"
 #include "lll/lll_df_types.h"
@@ -166,6 +167,28 @@ bool ull_scan_aux_lll_ext_hdr_is_complete(const struct pdu_adv *pdu)
 
 bool ull_scan_aux_ext_hdr_is_complete(const struct pdu_adv *pdu)
 	ALIAS_OF(ull_scan_aux_lll_ext_hdr_is_complete);
+
+#if defined(CONFIG_BT_CTLR_CHAN_METRICS_EVENT)
+static void chan_metrics_notify(void)
+{
+	/* Notification uses the PDU Rx pool of connections */
+	if (lll_chan_metrics_is_notify()) {
+		struct node_rx_pdu *rx;
+
+		rx = ll_pdu_rx_alloc();
+		if (rx) {
+			(void)lll_chan_metrics_notify_clear();
+
+			/* Prepare the rx packet structure */
+			rx->hdr.type = NODE_RX_TYPE_CHAN_METRICS;
+			rx->hdr.handle = NODE_RX_HANDLE_INVALID;
+
+			/* enqueue chan metrics structure into queue */
+			ll_rx_put_sched(rx->hdr.link, rx);
+		}
+	}
+}
+#endif /* CONFIG_BT_CTLR_CHAN_METRICS_EVENT */
 
 static void rx_release_put(struct node_rx_pdu *rx)
 {
@@ -1094,6 +1117,10 @@ ull_scan_aux_rx_flush:
 void ull_scan_aux_done(struct node_rx_event_done *done)
 {
 	struct ll_scan_aux_set *aux;
+
+#if defined(CONFIG_BT_CTLR_CHAN_METRICS_EVENT)
+	chan_metrics_notify();
+#endif /* CONFIG_BT_CTLR_CHAN_METRICS_EVENT */
 
 	/* Get reference to ULL context */
 	aux = CONTAINER_OF(done->param, struct ll_scan_aux_set, ull);
@@ -2445,6 +2472,10 @@ ull_scan_aux_rx_flush:
 void ull_scan_aux_done(struct node_rx_event_done *done)
 {
 	struct ll_scan_aux_chain *chain;
+
+#if defined(CONFIG_BT_CTLR_CHAN_METRICS_EVENT)
+	chan_metrics_notify();
+#endif /* CONFIG_BT_CTLR_CHAN_METRICS_EVENT */
 
 	/* Get reference to chain */
 	chain = CONTAINER_OF(done->extra.lll, struct ll_scan_aux_chain, lll);

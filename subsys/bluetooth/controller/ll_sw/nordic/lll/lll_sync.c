@@ -993,6 +993,17 @@ static void isr_rx_adv_sync_estab(void *param)
 	/* Clear radio rx status and events */
 	lll_isr_rx_status_reset();
 
+#if defined(CONFIG_BT_CTLR_CHAN_METRICS_EVENT)
+	/* Increase good channel count for successful reception, else bad channel count for
+	 * reception timeout or CRC error.
+	 */
+	if (crc_ok != 0U) {
+		lll_chan_metrics_chan_good(lll_chan_get());
+	} else {
+		lll_chan_metrics_chan_bad(lll_chan_get());
+	}
+#endif /* CONFIG_BT_CTLR_CHAN_METRICS_EVENT */
+
 	/* No Rx */
 	if (!trx_done) {
 		/* TODO: Combine the early exit with above if-then-else block
@@ -1082,6 +1093,17 @@ static void isr_rx_adv_sync(void *param)
 	/* Clear radio rx status and events */
 	lll_isr_rx_status_reset();
 
+#if defined(CONFIG_BT_CTLR_CHAN_METRICS_EVENT)
+	/* Increase good channel count for successful reception, else bad channel count for
+	 * reception timeout or CRC error.
+	 */
+	if (crc_ok != 0U) {
+		lll_chan_metrics_chan_good(lll_chan_get());
+	} else {
+		lll_chan_metrics_chan_bad(lll_chan_get());
+	}
+#endif /* CONFIG_BT_CTLR_CHAN_METRICS_EVENT */
+
 	/* No Rx */
 	if (!trx_done) {
 		/* TODO: Combine the early exit with above if-then-else block
@@ -1155,6 +1177,17 @@ static void isr_rx_aux_chain(void *param)
 
 	/* Clear radio rx status and events */
 	lll_isr_rx_status_reset();
+
+#if defined(CONFIG_BT_CTLR_CHAN_METRICS_EVENT)
+	/* Increase good channel count for successful reception, else bad channel count for
+	 * reception timeout or CRC error.
+	 */
+	if (crc_ok != 0U) {
+		lll_chan_metrics_chan_good(lll_chan_get());
+	} else {
+		lll_chan_metrics_chan_bad(lll_chan_get());
+	}
+#endif /* CONFIG_BT_CTLR_CHAN_METRICS_EVENT */
 
 	/* No Rx */
 	if (!trx_done) {

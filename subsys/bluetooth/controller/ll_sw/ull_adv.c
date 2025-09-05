@@ -1064,6 +1064,10 @@ uint8_t ll_adv_enable(uint8_t enable)
 #endif /* CONFIG_BT_CTLR_CONN_RSSI_EVENT */
 #endif /* CONFIG_BT_CTLR_CONN_RSSI */
 
+#if defined(CONFIG_BT_CTLR_CHAN_METRICS_EVENT)
+		conn_lll->periph.chan_curr = 0U;
+#endif /* CONFIG_BT_CTLR_CHAN_METRICS_EVENT */
+
 #if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
 		conn_lll->tx_pwr_lvl = RADIO_TXP_DEFAULT;
 #endif /* CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL */

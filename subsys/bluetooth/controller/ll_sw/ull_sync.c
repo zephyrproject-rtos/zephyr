@@ -1302,6 +1302,25 @@ void ull_sync_done(struct node_rx_event_done *done)
 	/* Get reference to ULL context */
 	sync = CONTAINER_OF(done->param, struct ll_sync_set, ull);
 
+#if defined(CONFIG_BT_CTLR_CHAN_METRICS_EVENT)
+	/* Notification uses the PDU Rx pool of connections */
+	if (lll_chan_metrics_is_notify()) {
+		struct node_rx_pdu *rx;
+
+		rx = ll_pdu_rx_alloc();
+		if (rx) {
+			(void)lll_chan_metrics_notify_clear();
+
+			/* Prepare the rx packet structure */
+			rx->hdr.type = NODE_RX_TYPE_CHAN_METRICS;
+			rx->hdr.handle = NODE_RX_HANDLE_INVALID;
+
+			/* enqueue chan metrics structure into queue */
+			ll_rx_put_sched(rx->hdr.link, rx);
+		}
+	}
+#endif /* CONFIG_BT_CTLR_CHAN_METRICS_EVENT */
+
 	/* Do nothing if local terminate requested or sync lost */
 	if (unlikely(sync->is_stop || !sync->timeout_reload)) {
 		return;

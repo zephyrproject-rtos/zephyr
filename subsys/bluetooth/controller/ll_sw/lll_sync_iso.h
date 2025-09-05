@@ -155,6 +155,11 @@ struct lll_sync_iso {
 	uint32_t aa_se;
 	uint8_t se;
 
+#if defined(CONFIG_BT_CTLR_CHAN_METRICS_EVENT)
+	/* Channel of the subevent being received */
+	uint8_t chan_curr;
+#endif /* CONFIG_BT_CTLR_CHAN_METRICS_EVENT */
+
 #if defined(CONFIG_BT_CTLR_SYNC_ISO_SE_B2B_RX)
 	/* Subevent whose radio enable is pre-armed back-to-back */
 	uint8_t se_b2b;

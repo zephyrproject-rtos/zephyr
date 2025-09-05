@@ -863,8 +863,22 @@ uint32_t lll_preempt_calc(struct ull_hdr *ull, uint8_t ticker_id,
 	return 0U;
 }
 
+#if defined(CONFIG_BT_CTLR_CHAN_METRICS_EVENT)
+/* Channel index of the current radio reception, attributes the channel metrics */
+static uint8_t chan_curr;
+
+uint8_t lll_chan_get(void)
+{
+	return chan_curr;
+}
+#endif /* CONFIG_BT_CTLR_CHAN_METRICS_EVENT */
+
 void lll_chan_set(uint32_t chan)
 {
+#if defined(CONFIG_BT_CTLR_CHAN_METRICS_EVENT)
+	chan_curr = chan;
+#endif /* CONFIG_BT_CTLR_CHAN_METRICS_EVENT */
+
 	switch (chan) {
 	case 37:
 		radio_freq_chan_set(2);
@@ -891,7 +905,6 @@ void lll_chan_set(uint32_t chan)
 
 	radio_whiten_iv_set(chan);
 }
-
 
 uint32_t lll_radio_is_idle(void)
 {

@@ -28,6 +28,7 @@
 
 #include "lll.h"
 #include "lll/lll_vendor.h"
+#include "lll_chan.h"
 #include "lll/lll_adv_types.h"
 #include "lll_adv.h"
 #include "lll/lll_adv_pdu.h"
@@ -708,6 +709,23 @@ void ull_scan_done(struct node_rx_event_done *done)
 	/* Get reference to ULL context */
 	scan = CONTAINER_OF(done->param, struct ll_scan_set, ull);
 	lll = &scan->lll;
+
+#if defined(CONFIG_BT_CTLR_CHAN_METRICS_EVENT)
+	/* Notification uses the PDU Rx pool of connections */
+	if (lll_chan_metrics_is_notify()) {
+		rx = ll_pdu_rx_alloc();
+		if (rx) {
+			(void)lll_chan_metrics_notify_clear();
+
+			/* Prepare the rx packet structure */
+			rx->hdr.type = NODE_RX_TYPE_CHAN_METRICS;
+			rx->hdr.handle = NODE_RX_HANDLE_INVALID;
+
+			/* enqueue chan metrics structure into queue */
+			ll_rx_put_sched(rx->hdr.link, rx);
+		}
+	}
+#endif /* CONFIG_BT_CTLR_CHAN_METRICS_EVENT */
 
 	if (likely(scan->duration_lazy || !lll->duration_reload ||
 		   lll->duration_expire)) {

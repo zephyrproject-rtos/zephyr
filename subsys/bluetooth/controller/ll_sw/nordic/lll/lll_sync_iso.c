@@ -758,6 +758,10 @@ static int prepare_cb_common(struct lll_prepare_param *p, bool is_resort)
 	radio_crc_configure(PDU_CRC_POLYNOMIAL, sys_get_le24(crc_init));
 	lll_chan_set(data_chan_use);
 
+#if defined(CONFIG_BT_CTLR_CHAN_METRICS_EVENT)
+	lll->chan_curr = data_chan_use;
+#endif /* CONFIG_BT_CTLR_CHAN_METRICS_EVENT */
+
 	/* By design, there shall always be one free node rx available for
 	 * setting up radio for new PDU reception.
 	 */
@@ -2722,12 +2726,28 @@ static void isr_rx(void *param)
 			crc_ok = 0U;
 		}
 
+#if defined(CONFIG_BT_CTLR_CHAN_METRICS_EVENT)
+		/* Increase bad channel count for reception timeout */
+		lll_chan_metrics_chan_bad(lll->chan_curr);
+#endif /* CONFIG_BT_CTLR_CHAN_METRICS_EVENT */
+
 		goto isr_rx_done;
 	}
 
 	crc_ok = radio_crc_is_valid();
 	phy_flags_rx = radio_phy_flags_rx_get();
 	lll->trx_cnt++;
+
+#if defined(CONFIG_BT_CTLR_CHAN_METRICS_EVENT)
+	/* Increase good channel count for successful reception, else bad channel count for CRC
+	 * error.
+	 */
+	if (crc_ok != 0U) {
+		lll_chan_metrics_chan_good(lll->chan_curr);
+	} else {
+		lll_chan_metrics_chan_bad(lll->chan_curr);
+	}
+#endif /* CONFIG_BT_CTLR_CHAN_METRICS_EVENT */
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_ISO_SEQUENTIAL) &&
 	    is_sequential_packing) {
@@ -3387,6 +3407,10 @@ isr_rx_next_subevent:
 	}
 
 	lll_chan_set(data_chan_use);
+
+#if defined(CONFIG_BT_CTLR_CHAN_METRICS_EVENT)
+	lll->chan_curr = data_chan_use;
+#endif /* CONFIG_BT_CTLR_CHAN_METRICS_EVENT */
 
 	/* Encryption */
 	if (IS_ENABLED(CONFIG_BT_CTLR_BROADCAST_ISO_ENC) &&

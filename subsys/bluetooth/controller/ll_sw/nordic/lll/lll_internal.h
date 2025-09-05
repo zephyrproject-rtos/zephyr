@@ -17,6 +17,7 @@ uint32_t lll_preempt_calc(struct ull_hdr *ull, uint8_t ticker_id,
 			  uint32_t ticks_at_event);
 
 void lll_chan_set(uint32_t chan);
+uint8_t lll_chan_get(void);
 
 void lll_isr_tx_status_reset(void);
 void lll_isr_rx_status_reset(void);
