@@ -5,4 +5,4 @@ if SOC_FAMILY_MCXE
 
 rsource "*/Kconfig"
 
-endif #SOC_FAMILY_MCXE
+endif # SOC_FAMILY_MCXE
