@@ -4,6 +4,7 @@
 
 menuconfig POSIX_MULTI_PROCESS
 	bool "POSIX multi-process support"
+	select NATIVE_LIBC_INCOMPATIBLE
 	help
 	  Support for multi-processing.
 

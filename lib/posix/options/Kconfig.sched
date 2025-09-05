@@ -6,6 +6,7 @@ menu "POSIX scheduler options"
 
 config POSIX_PRIORITY_SCHEDULING
 	bool "POSIX priority-based process scheduling"
+	select NATIVE_LIBC_INCOMPATIBLE
 	help
 	  This enables POSIX scheduling APIs (_POSIX_PRIORITY_SCHEDULING).
 

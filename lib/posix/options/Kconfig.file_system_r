@@ -6,6 +6,7 @@ config POSIX_FILE_SYSTEM_R
 	bool "Thread-Safe File System"
 	select FILE_SYSTEM
 	select FDTABLE
+	select NATIVE_LIBC_INCOMPATIBLE
 	help
 	  Select 'y' here and Zephyr will provide an implementation of the POSIX_FILE_SYSTEM_R
 	  Option Group, consisting of readdir_r().

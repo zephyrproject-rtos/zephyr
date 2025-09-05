@@ -7,6 +7,7 @@ menuconfig POSIX_FILE_SYSTEM
 	default y if POSIX_API
 	select FILE_SYSTEM
 	select FDTABLE
+	select NATIVE_LIBC_INCOMPATIBLE
 	help
 	  This enables POSIX style file system related APIs.
 

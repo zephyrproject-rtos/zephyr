@@ -6,6 +6,7 @@ menu "POSIX signals"
 
 config POSIX_REALTIME_SIGNALS
 	bool "POSIX realtime signals"
+	select NATIVE_LIBC_INCOMPATIBLE
 	help
 	  Enable support for POSIX realtime signals.
 

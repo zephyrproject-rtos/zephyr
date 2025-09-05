@@ -4,6 +4,7 @@
 
 menuconfig POSIX_SEMAPHORES
 	bool "POSIX semaphore support"
+	select NATIVE_LIBC_INCOMPATIBLE
 	help
 	  Enable this option for POSIX semaphore support.
 

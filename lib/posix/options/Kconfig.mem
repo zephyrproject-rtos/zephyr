@@ -18,6 +18,7 @@ config POSIX_SHARED_MEMORY_OBJECTS
 	select SYS_HASH_FUNC32_DJB2
 	select FDTABLE
 	select POSIX_MAPPED_FILES
+	select NATIVE_LIBC_INCOMPATIBLE
 	help
 	  Select 'y' here and Zephyr will provide implementations of shm_open() and shm_unlink().
 
@@ -27,6 +28,7 @@ config POSIX_SHARED_MEMORY_OBJECTS
 
 config POSIX_MAPPED_FILES
 	bool "POSIX memory-mapped files"
+	select NATIVE_LIBC_INCOMPATIBLE
 	help
 	  Select 'y' here and Zephyr will provide support for mmap(), msync(), and munmap().
 
@@ -41,6 +43,7 @@ if POSIX_MAPPED_FILES
 
 config POSIX_MEMLOCK
 	bool "POSIX memory locking"
+	select NATIVE_LIBC_INCOMPATIBLE
 	help
 	  Select 'y' here and Zephyr will provide support for mlockall() and munlockall().
 
@@ -55,6 +58,7 @@ config POSIX_MEMLOCK
 config POSIX_MEMLOCK_RANGE
 	bool "POSIX range memory locking"
 	imply DEMAND_PAGING
+	select NATIVE_LIBC_INCOMPATIBLE
 	help
 	  Select 'y' here and Zephyr will provide support for mlock() and munlock().
 
@@ -69,6 +73,7 @@ endif
 
 config POSIX_MEMORY_PROTECTION
 	bool "POSIX memory protection"
+	select NATIVE_LIBC_INCOMPATIBLE
 	help
 	  Select 'y' here and Zephyr will provide support for mprotect().
 
