@@ -29,6 +29,8 @@
 #include <zephyr/types.h>
 #include <zephyr/device.h>
 
+#include <zephyr/audio/audio_caps.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -361,6 +363,11 @@ __subsystem struct i2s_driver_api {
 	 */
 	int (*trigger)(const struct device *dev, enum i2s_dir dir,
 		       enum i2s_trigger_cmd cmd);
+	/**
+	 * @driver_ops_optional @copybrief i2s_get_caps
+	 * See i2s_get_caps() for arguments description.
+	 */
+	int (*get_caps)(const struct device *dev, struct audio_caps *caps, enum i2s_dir dir);
 };
 
 /** @} */
@@ -553,6 +560,35 @@ static inline int z_impl_i2s_trigger(const struct device *dev,
 				     enum i2s_trigger_cmd cmd)
 {
 	return DEVICE_API_GET(i2s, dev)->trigger(dev, dir, cmd);
+}
+
+/**
+ * @brief Get i2s capabilities
+ *
+ * @param dev Pointer to device structure
+ * @param caps Pointer to capabilities structure to populate
+ * @param dir Stream direction: RX, TX, or both, as defined by I2S_DIR_*.
+ *            The I2S_DIR_BOTH value may not be supported by some drivers.
+ *            For those, triggering need to be done separately for the RX
+ *            and TX streams.
+ *
+ * @retval 0 on success
+ * @retval -ENOSYS if the get_caps is not implemented by the driver
+ * @retval -EINVAL if invalid parameters are provided (e.g., caps is NULL)
+ */
+static inline int i2s_get_caps(const struct device *dev, struct audio_caps *caps, enum i2s_dir dir)
+{
+	const struct i2s_driver_api *api = DEVICE_API_GET(i2s, dev);
+
+	if (api->get_caps == NULL) {
+		return -ENOSYS;
+	}
+
+	if (caps == NULL) {
+		return -EINVAL;
+	}
+
+	return api->get_caps(dev, caps, dir);
 }
 
 /**
