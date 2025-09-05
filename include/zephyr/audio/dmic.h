@@ -38,6 +38,8 @@
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 
+#include <zephyr/audio/audio_caps.h> /* Include common audio caps */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -221,6 +223,7 @@ struct _dmic_ops {
 	int (*trigger)(const struct device *dev, enum dmic_trigger cmd);
 	int (*read)(const struct device *dev, uint8_t stream, void **buffer,
 			size_t *size, int32_t timeout);
+	int (*get_caps)(const struct device *dev, struct audio_caps *caps);
 };
 
 /**
@@ -344,6 +347,31 @@ static inline int dmic_read(const struct device *dev, uint8_t stream,
 		(const struct _dmic_ops *)dev->api;
 
 	return api->read(dev, stream, buffer, size, timeout);
+}
+
+/**
+ * @brief Get dmic capabilities
+ *
+ * @param dev Pointer to device structure
+ * @param caps Pointer to capabilities structure to populate
+ *
+ * @retval 0 on success
+ * @retval -ENOSYS if the get_caps is not implemented by the driver
+ * @retval -EINVAL if invalid parameters are provided (e.g., caps is NULL)
+ */
+static inline int dmic_get_caps(const struct device *dev, struct audio_caps *caps)
+{
+	struct _dmic_ops *api = (struct _dmic_ops *)dev->api;
+
+	if (api->get_caps == NULL) {
+		return -ENOSYS;
+	}
+
+	if (caps == NULL) {
+		return -EINVAL;
+	}
+
+	return api->get_caps(dev, caps);
 }
 
 #ifdef __cplusplus
