@@ -60,6 +60,7 @@ ZTEST(bt_id_create_privacy_enabled, test_create_id_valid_input_address_null_irk)
 	bt_addr_le_t addr = *BT_STATIC_RANDOM_LE_ADDR_1;
 
 	id_count = bt_dev.id_count;
+	atomic_set_bit(bt_dev.flags, BT_DEV_OPEN);
 	atomic_set_bit(bt_dev.flags, BT_DEV_READY);
 	bt_rand_fake.custom_fake = bt_rand_custom_fake;
 	/* Calling bt_addr_le_create_static() isn't expected */
@@ -102,6 +103,7 @@ ZTEST(bt_id_create_privacy_enabled, test_create_id_valid_input_address_cleared_i
 	uint8_t zero_irk[16] = {0};
 
 	id_count = bt_dev.id_count;
+	atomic_set_bit(bt_dev.flags, BT_DEV_OPEN);
 	atomic_set_bit(bt_dev.flags, BT_DEV_READY);
 	bt_rand_fake.custom_fake = bt_rand_custom_fake;
 	/* Calling bt_addr_le_create_static() isn't expected */
@@ -144,6 +146,7 @@ ZTEST(bt_id_create_privacy_enabled, test_create_id_valid_input_address_filled_ir
 	bt_addr_le_t addr = *BT_STATIC_RANDOM_LE_ADDR_1;
 
 	id_count = bt_dev.id_count;
+	atomic_set_bit(bt_dev.flags, BT_DEV_OPEN);
 	atomic_set_bit(bt_dev.flags, BT_DEV_READY);
 	bt_rand_fake.custom_fake = bt_rand_custom_fake;
 	/* Calling bt_addr_le_create_static() isn't expected */
