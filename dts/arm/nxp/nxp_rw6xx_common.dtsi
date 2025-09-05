@@ -272,6 +272,7 @@
 		dma-names = "rx", "tx";
 		zephyr,disabling-power-states = <&suspend &standby>;
 		power-domains = <&power_mode3_domain>;
+		low-power-states = <&suspend>;
 		status = "disabled";
 	};
 
@@ -286,6 +287,7 @@
 		dma-names = "rx", "tx";
 		zephyr,disabling-power-states = <&suspend &standby>;
 		power-domains = <&power_mode3_domain>;
+		low-power-states = <&suspend>;
 		status = "disabled";
 	};
 
@@ -300,6 +302,7 @@
 		dma-names = "rx", "tx";
 		zephyr,disabling-power-states = <&suspend &standby>;
 		power-domains = <&power_mode3_domain>;
+		low-power-states = <&suspend>;
 		status = "disabled";
 	};
 
@@ -314,6 +317,7 @@
 		dma-names = "rx", "tx";
 		zephyr,disabling-power-states = <&suspend &standby>;
 		power-domains = <&power_mode3_domain>;
+		low-power-states = <&suspend>;
 		status = "disabled";
 	};
 
