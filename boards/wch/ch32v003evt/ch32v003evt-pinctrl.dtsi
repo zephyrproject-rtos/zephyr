@@ -36,4 +36,13 @@
 			slew-rate = "max-speed-10mhz";
 		};
 	};
+
+	mco_default: mco_default {
+		group1 {
+			pinmux = <MCO_PC4>;
+			output-high;
+			drive-push-pull;
+			slew-rate = "max-speed-30mhz";
+		};
+	};
 };
