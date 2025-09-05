@@ -391,6 +391,12 @@ int bt_hci_cmd_send(uint16_t opcode, struct net_buf *buf)
 {
 	struct bt_hci_cmd_hdr *hdr;
 
+	/* Make sure the HCI transport is open before attempting anything else */
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_OPEN)) {
+		net_buf_unref(buf);
+		return -EHOSTDOWN;
+	}
+
 	if (!buf) {
 		buf = bt_hci_cmd_alloc(K_FOREVER);
 		if (!buf) {
