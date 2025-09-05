@@ -72,6 +72,10 @@
 	};
 };
 
+&cpu0 {
+	clock-frequency = <96000000>;
+};
+
 &ctimer0 {
 	status = "okay";
 };

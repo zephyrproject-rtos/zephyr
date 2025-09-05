@@ -202,6 +202,10 @@
 	pinctrl-names = "default";
 };
 
+&cpu0 {
+	clock-frequency = <180000000>;
+};
+
 &opamp0 {
 	pinctrl-0 = <&pinmux_opamp0>;
 	pinctrl-names = "default";
