@@ -75,3 +75,13 @@ long nsi_host_write(int fd, const void *buffer, unsigned long size)
 {
 	return write(fd, buffer, size);
 }
+
+char *nsi_host_getenv(const char *name)
+{
+	return getenv(name);
+}
+
+int nsi_host_setenv(const char *name, const char *value, int overwrite)
+{
+	return setenv(name, value, overwrite);
+}
