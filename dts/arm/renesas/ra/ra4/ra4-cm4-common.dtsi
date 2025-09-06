@@ -122,6 +122,16 @@
 			status = "disabled";
 		};
 
+		dma0: dma@40005000 {
+			compatible = "renesas,ra-dma";
+			reg = <0x40005000 0x100>, <0x40005200 0xa0>;
+			reg-names = "channel", "common";
+			clocks = <&iclk MSTPA 22>;
+			dma-channels = <4>;
+			#dma-cells = <2>;
+			status = "disabled";
+		};
+
 		pinctrl: pin-controller@40040800 {
 			compatible = "renesas,ra-pinctrl-pfs";
 			reg = <0x40040800 0x3c0>;
