@@ -4,7 +4,6 @@
  */
 
 #include <zephyr/kernel.h>
-#include <ksched.h>
 #include <zephyr/arch/cpu.h>
 #include <kernel_arch_data.h>
 #include <kernel_arch_func.h>

@@ -5,8 +5,8 @@
  */
 
 #include <zephyr/kernel.h>
+#include <kernel_internal.h>
 #include <SEGGER_SYSVIEW.h>
-#include <ksched.h>
 #ifdef CONFIG_SYMTAB
 #include <zephyr/debug/symtab.h>
 #include <zephyr/sw_isr_table.h>

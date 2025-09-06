@@ -17,6 +17,8 @@
 	(IS_ENABLED(CONFIG_IPI_OPTIMIZE) ? BIT(cpu_id) : IPI_ALL_CPUS_MASK)
 
 
+void z_sched_ipi(void);
+
 /* defined in ipi.c when CONFIG_SMP=y */
 #ifdef CONFIG_SMP
 void flag_ipi(uint32_t ipi_mask);

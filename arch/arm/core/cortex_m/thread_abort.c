@@ -19,7 +19,6 @@
 #include <zephyr/kernel.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/linker/sections.h>
-#include <ksched.h>
 #include <kswap.h>
 #include <zephyr/sys/__assert.h>
 

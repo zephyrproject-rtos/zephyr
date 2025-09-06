@@ -14,8 +14,8 @@
  */
 
 #include <zephyr/kernel.h>
+#include <kernel_internal.h>
 #include <zephyr/llext/symbol.h>
-#include <ksched.h>
 #include <zephyr/sys/barrier.h>
 #include <stdbool.h>
 #include <cmsis_core.h>
