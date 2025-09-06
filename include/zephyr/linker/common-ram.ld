@@ -151,3 +151,7 @@ ITERABLE_SECTION_RAM(scmi_protocol, Z_LINK_ITERABLE_SUBALIGN)
 #ifdef CONFIG_USERSPACE
 	PLACE_SYMBOL_HERE(_static_kernel_objects_end);
 #endif
+
+#if defined(CONFIG_PM_DEVICE_RUNTIME)
+	ITERABLE_SECTION_RAM(pm_device_runtime_reference, Z_LINK_ITERABLE_SUBALIGN)
+#endif
