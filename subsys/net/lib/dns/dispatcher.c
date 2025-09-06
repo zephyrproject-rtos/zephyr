@@ -29,7 +29,7 @@ NET_BUF_POOL_DEFINE(dns_msg_pool, DNS_RESOLVER_BUF_CTR,
 
 static struct socket_dispatch_table {
 	struct dns_socket_dispatcher *ctx;
-} dispatch_table[CONFIG_NET_SOCKETS_POLL_MAX];
+} dispatch_table[CONFIG_ZVFS_OPEN_MAX];
 
 static int dns_dispatch(struct dns_socket_dispatcher *dispatcher,
 			int sock, struct sockaddr *addr, size_t addrlen,
@@ -235,6 +235,11 @@ int dns_dispatcher_register(struct dns_socket_dispatcher *ctx)
 		entry->pair = ctx;
 
 		for (int i = 0; i < ctx->fds_len; i++) {
+			CHECKIF((int)ctx->fds[i].fd >= (int)ARRAY_SIZE(dispatch_table)) {
+				ret = -ERANGE;
+				goto out;
+			}
+
 			if (dispatch_table[ctx->fds[i].fd].ctx == NULL) {
 				dispatch_table[ctx->fds[i].fd].ctx = ctx;
 			}
@@ -267,6 +272,11 @@ int dns_dispatcher_register(struct dns_socket_dispatcher *ctx)
 	ctx->pair = NULL;
 
 	for (int i = 0; i < ctx->fds_len; i++) {
+		if ((int)ctx->fds[i].fd >= (int)ARRAY_SIZE(dispatch_table)) {
+			ret = -ERANGE;
+			goto out;
+		}
+
 		if (dispatch_table[ctx->fds[i].fd].ctx == NULL) {
 			dispatch_table[ctx->fds[i].fd].ctx = ctx;
 		}
@@ -288,6 +298,8 @@ out:
 
 int dns_dispatcher_unregister(struct dns_socket_dispatcher *ctx)
 {
+	int ret = 0;
+
 	k_mutex_lock(&lock, K_FOREVER);
 
 	(void)sys_slist_find_and_remove(&sockets, &ctx->node);
@@ -298,12 +310,18 @@ int dns_dispatcher_unregister(struct dns_socket_dispatcher *ctx)
 	ctx->sock = -1;
 
 	for (int i = 0; i < ctx->fds_len; i++) {
+		CHECKIF((int)ctx->fds[i].fd >= (int)ARRAY_SIZE(dispatch_table)) {
+			ret = -ERANGE;
+			goto out;
+		}
+
 		dispatch_table[ctx->fds[i].fd].ctx = NULL;
 	}
 
+out:
 	k_mutex_unlock(&lock);
 
-	return 0;
+	return ret;
 }
 
 void dns_dispatcher_init(void)
