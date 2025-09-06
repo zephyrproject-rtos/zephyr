@@ -33,8 +33,17 @@ int clock_getres(clockid_t clock_id, struct timespec *res)
 			     CONFIG_SYS_CLOCK_TICKS_PER_SEC <= NSEC_PER_SEC,
 		     "CONFIG_SYS_CLOCK_TICKS_PER_SEC must be > 0 and <= NSEC_PER_SEC");
 
-	if (!(clock_id == CLOCK_MONOTONIC || clock_id == CLOCK_REALTIME ||
-	      clock_id == CLOCK_PROCESS_CPUTIME_ID)) {
+	if (!(
+/* FIXME: this should check CONFIG_POSIX_ADVANCED_REALTIME */
+#if defined(_POSIX_MONOTONIC_CLOCK)
+		    clock_id == CLOCK_MONOTONIC ||
+#endif
+		    clock_id == CLOCK_REALTIME ||
+/* FIXME: this should check CONFIG_POSIX_ADVANCED_REALTIME */
+#if defined(_POSIX_CPUTIME)
+		    clock_id == CLOCK_PROCESS_CPUTIME_ID ||
+#endif
+		    false)) {
 		errno = EINVAL;
 		return -1;
 	}
@@ -117,6 +126,8 @@ int nanosleep(const struct timespec *rqtp, struct timespec *rmtp)
 	return 0;
 }
 
+/* FIXME: this should check CONFIG_POSIX_ADVANCED_REALTIME */
+#if defined(_POSIX_CPUTIME)
 int clock_getcpuclockid(pid_t pid, clockid_t *clock_id)
 {
 	/* We don't allow any process ID but our own.  */
@@ -128,3 +139,4 @@ int clock_getcpuclockid(pid_t pid, clockid_t *clock_id)
 
 	return 0;
 }
+#endif
