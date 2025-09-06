@@ -1,12 +1,21 @@
 # Copyright (c) 2021-2022, 2025 Arm Limited (or its affiliates). All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-find_program(
-  ARMFVP
-  PATHS ENV ARMFVP_BIN_PATH
-  NO_DEFAULT_PATH
-  NAMES ${ARMFVP_BIN_NAME}
-  )
+zephyr_get(ARMFVP_BIN_PATH)
+
+if(ARMFVP_BIN_PATH)
+  find_program(
+    ARMFVP
+    PATHS ${ARMFVP_BIN_PATH}
+    NO_DEFAULT_PATH
+    NAMES ${ARMFVP_BIN_NAME}
+    )
+else()
+  find_program(
+    ARMFVP
+    NAMES ${ARMFVP_BIN_NAME}
+    )
+endif()
 
 if(ARMFVP AND (DEFINED ARMFVP_MIN_VERSION))
   execute_process(
