@@ -165,6 +165,17 @@
 			status = "disabled";
 		};
 
+		spi0: spi@4000a200 {
+			compatible = "bflb,spi";
+			reg = <0x4000a200 0x100>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+
+			interrupts = <43 0>;
+			interrupt-parent = <&clic>;
+		};
+
 		flashctrl: flash-controller@4000b000 {
 			compatible = "bflb,flash-controller";
 			reg = <0x4000b000 0x1000>;
