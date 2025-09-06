@@ -19,7 +19,6 @@
 #include <fsl_cache.h>
 #endif
 
-#define NOR_WRITE_SIZE	1
 #define NOR_ERASE_VALUE	0xff
 
 #ifdef CONFIG_FLASH_MCUX_FLEXSPI_NOR_WRITE_BUFFER
@@ -1578,7 +1577,8 @@ static DEVICE_API(flash, flash_flexspi_nor_api) = {
 			.pages_size = SPI_NOR_SECTOR_SIZE,		\
 		},))							\
 		.flash_parameters = {					\
-			.write_block_size = NOR_WRITE_SIZE,		\
+			.write_block_size =				\
+				DT_INST_PROP(n, write_block_size),	\
 			.erase_value = NOR_ERASE_VALUE,			\
 		},							\
 	};								\
