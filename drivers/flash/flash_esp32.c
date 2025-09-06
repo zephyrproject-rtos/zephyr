@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Espressif Systems (Shanghai) Co., Ltd.
+ * Copyright (c) 2021-2025 Espressif Systems (Shanghai) Co., Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -39,6 +39,16 @@ struct flash_esp32_dev_config {
 };
 
 struct flash_esp32_dev_data {
+#ifdef CONFIG_ESP_FLASH_ASYNC
+	struct k_work work;
+	struct k_mutex lock;
+	const struct device *dev;
+	int type;
+	off_t addr;
+	size_t len;
+	void *buf;
+	int ret;
+#endif
 #ifdef CONFIG_MULTITHREADING
 	struct k_sem sem;
 #endif
@@ -141,17 +151,20 @@ static int flash_esp32_read(const struct device *dev, off_t address, void *buffe
 		}
 	}
 #else
-	flash_esp32_sem_take(dev);
 
+#if defined(CONFIG_MULTITHREADING) && !defined(CONFIG_ESP_FLASH_ASYNC)
+	flash_esp32_sem_take(dev);
+#endif
 	if (esp_flash_encryption_enabled()) {
 		ret = esp_flash_read_encrypted(NULL, address, buffer, length);
 	} else {
 		ret = esp_flash_read(NULL, buffer, address, length);
 	}
 
+#if defined(CONFIG_MULTITHREADING) && !defined(CONFIG_ESP_FLASH_ASYNC)
 	flash_esp32_sem_give(dev);
 #endif
-
+#endif
 	if (ret != 0) {
 		LOG_ERR("Flash read error: %d", ret);
 		return -EIO;
@@ -160,9 +173,7 @@ static int flash_esp32_read(const struct device *dev, off_t address, void *buffe
 	return 0;
 }
 
-static int flash_esp32_write(const struct device *dev,
-			     off_t address,
-			     const void *buffer,
+static int flash_esp32_write(const struct device *dev, off_t address, const void *buffer,
 			     size_t length)
 {
 	int ret = 0;
@@ -177,17 +188,19 @@ static int flash_esp32_write(const struct device *dev,
 
 	ret = esp_rom_flash_write(address, (void *)buffer, length, encrypt);
 #else
+#if defined(CONFIG_MULTITHREADING) && !defined(CONFIG_ESP_FLASH_ASYNC)
 	flash_esp32_sem_take(dev);
-
+#endif
 	if (esp_flash_encryption_enabled()) {
 		ret = esp_flash_write_encrypted(NULL, address, buffer, length);
 	} else {
 		ret = esp_flash_write(NULL, buffer, address, length);
 	}
 
+#if defined(CONFIG_MULTITHREADING) && !defined(CONFIG_ESP_FLASH_ASYNC)
 	flash_esp32_sem_give(dev);
 #endif
-
+#endif
 	if (ret != 0) {
 		LOG_ERR("Flash write error: %d", ret);
 		return -EIO;
@@ -203,9 +216,13 @@ static int flash_esp32_erase(const struct device *dev, off_t start, size_t len)
 #ifdef CONFIG_MCUBOOT
 	ret = esp_rom_flash_erase_range(start, len);
 #else
+#if defined(CONFIG_MULTITHREADING) && !defined(CONFIG_ESP_FLASH_ASYNC)
 	flash_esp32_sem_take(dev);
+#endif
 	ret = esp_flash_erase_region(NULL, start, len);
+#if defined(CONFIG_MULTITHREADING) && !defined(CONFIG_ESP_FLASH_ASYNC)
 	flash_esp32_sem_give(dev);
+#endif
 #endif
 	if (ret != 0) {
 		LOG_ERR("Flash erase error: %d", ret);
@@ -213,6 +230,83 @@ static int flash_esp32_erase(const struct device *dev, off_t start, size_t len)
 	}
 	return 0;
 }
+
+#ifdef CONFIG_ESP_FLASH_ASYNC
+static void flash_work_handler(struct k_work *work)
+{
+	struct flash_esp32_dev_data *data = CONTAINER_OF(work, struct flash_esp32_dev_data, work);
+
+	if (data->type == 0) {
+		data->ret = flash_esp32_read(data->dev, data->addr, data->buf, data->len);
+	} else if (data->type == 1) {
+		data->ret = flash_esp32_write(data->dev, data->addr, data->buf, data->len);
+	} else if (data->type == 2) {
+		data->ret = flash_esp32_erase(data->dev, data->addr, data->len);
+	} else {
+		data->ret = -1;
+	}
+
+	k_sem_give(&data->sem);
+}
+
+static int flash_esp32_read_async(const struct device *dev, off_t address,
+				     void *buffer, size_t length)
+{
+	struct flash_esp32_dev_data *data = dev->data;
+
+	k_mutex_lock(&data->lock, K_TIMEOUT_ABS_SEC(3));
+
+	data->dev = dev;
+	data->addr = address;
+	data->buf = buffer;
+	data->len = length;
+	data->type = 0;
+
+	k_work_submit(&data->work);
+	k_sem_take(&data->sem, FLASH_SEM_TIMEOUT);
+	k_mutex_unlock(&data->lock);
+
+	return data->ret;
+}
+
+static int flash_esp32_write_async(const struct device *dev, off_t address,
+				      const void *buffer, size_t length)
+{
+	struct flash_esp32_dev_data *data = dev->data;
+
+	k_mutex_lock(&data->lock, K_TIMEOUT_ABS_SEC(3));
+
+	data->dev = dev;
+	data->addr = address;
+	data->buf = (void *) buffer;
+	data->len = length;
+	data->type = 1;
+
+	k_work_submit(&data->work);
+	k_sem_take(&data->sem, FLASH_SEM_TIMEOUT);
+	k_mutex_unlock(&data->lock);
+
+	return 0;
+}
+static int flash_esp32_erase_async(const struct device *dev, off_t start, size_t len)
+{
+	struct flash_esp32_dev_data *data = dev->data;
+
+	k_mutex_lock(&data->lock, K_TIMEOUT_ABS_SEC(3));
+
+	data->addr = start;
+	data->len = len;
+	data->buf = NULL;
+	data->type = 2;
+
+	k_work_submit(&data->work);
+	k_sem_take(&data->sem, FLASH_SEM_TIMEOUT);
+	k_mutex_unlock(&data->lock);
+
+	return 0;
+}
+#endif
+
 
 #if CONFIG_FLASH_PAGE_LAYOUT
 static const struct flash_pages_layout flash_esp32_pages_layout = {
@@ -227,7 +321,7 @@ void flash_esp32_page_layout(const struct device *dev,
 	*layout = &flash_esp32_pages_layout;
 	*layout_size = 1;
 }
-#endif /* CONFIG_FLASH_PAGE_LAYOUT */
+#endif
 
 static const struct flash_parameters *
 flash_esp32_get_parameters(const struct device *dev)
@@ -240,18 +334,32 @@ flash_esp32_get_parameters(const struct device *dev)
 static int flash_esp32_init(const struct device *dev)
 {
 #ifdef CONFIG_MULTITHREADING
-	struct flash_esp32_dev_data *const dev_data = dev->data;
+	struct flash_esp32_dev_data *const data = dev->data;
 
-	k_sem_init(&dev_data->sem, 1, 1);
+#ifdef CONFIG_ESP_FLASH_ASYNC
+	k_sem_init(&data->sem, 0, 1);
+#else
+	k_sem_init(&data->sem, 1, 1);
+#endif
+
+#ifdef CONFIG_ESP_FLASH_ASYNC
+	k_mutex_init(&data->lock);
+	k_work_init(&data->work, flash_work_handler);
+#endif
 #endif /* CONFIG_MULTITHREADING */
-
 	return 0;
 }
 
 static DEVICE_API(flash, flash_esp32_driver_api) = {
+#ifdef CONFIG_ESP_FLASH_ASYNC
+	.read = flash_esp32_read_async,
+	.write = flash_esp32_write_async,
+	.erase = flash_esp32_erase_async,
+#else
 	.read = flash_esp32_read,
 	.write = flash_esp32_write,
 	.erase = flash_esp32_erase,
+#endif
 	.get_parameters = flash_esp32_get_parameters,
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 	.page_layout = flash_esp32_page_layout,

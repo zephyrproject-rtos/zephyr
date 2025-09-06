@@ -15,3 +15,10 @@ config MPU_ALLOW_FLASH_WRITE
 	bool "Add MPU access to write to flash"
 	help
 	  Enable this to allow MPU RWX access to flash memory
+
+config ESP_FLASH_ASYNC
+	bool "Use asynchronous work thread to execute the flash access operations"
+	depends on MULTITHREADING
+	help
+	  Enabling this makes the flash access operations deferred to the work thread.
+	  Meaning every flash read or write would be postponed and executed when available.
