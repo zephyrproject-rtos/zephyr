@@ -169,6 +169,10 @@ New APIs and options
 
    * :c:func:`pm_device_driver_deinit`
 
+* SPI
+
+   * :c:func:`spi_acquire`
+
 * Settings
 
    * :kconfig:option:`CONFIG_SETTINGS_TFM_ITS`
