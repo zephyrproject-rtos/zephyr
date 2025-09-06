@@ -12,7 +12,7 @@
 SECTION_DATA_PROLOGUE(.option_setting_osis, DT_REG_ADDR(DT_NODELABEL(option_setting_osis)),)
 {
 	KEEP(*(.option_setting_osis))
-} GROUP_LINK_IN(OFS_CONF_MEMORY)
+} GROUP_LINK_IN(OPTION_SETTING_OSIS_MEMORY)
 #endif
 
 #endif /* option_setting_ofs_conf */
