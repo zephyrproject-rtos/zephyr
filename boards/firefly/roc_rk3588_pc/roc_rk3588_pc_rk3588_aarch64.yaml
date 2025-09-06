@@ -1,13 +1,11 @@
-identifier: roc_rk3588_pc/rk3588/smp
-name: Rockchip ROC RK3588 PC SMP
+identifier: roc_rk3588_pc/rk3588_aarch64
+name: Rockchip ROC RK3588 PC
 type: mcu
 arch: arm64
 toolchain:
   - zephyr
   - cross-compile
 ram: 1024
-supported:
-  - smp
 testing:
   ignore_tags:
     - net
