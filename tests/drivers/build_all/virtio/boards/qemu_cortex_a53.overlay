@@ -18,3 +18,13 @@
 		status = "okay";
 	};
 };
+
+&virtio_mmio1 {
+	status = "okay";
+
+	virtio_net: virtio_net {
+		compatible = "virtio,net";
+		status = "okay";
+		zephyr,random-mac-address;
+	};
+};
