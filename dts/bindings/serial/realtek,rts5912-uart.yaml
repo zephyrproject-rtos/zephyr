@@ -22,3 +22,22 @@ properties:
 
   pinctrl-names:
     required: true
+
+  rx-gpios:
+    description: |
+      Select the wake up pin for uart rx,
+      gpioa = 0 ~ 15,
+      gpiob = 16 ~ 31,
+      gpioc = 32 ~ 47,
+      gpiod = 48 ~ 63,
+      gpioe = 64 ~ 79,
+      gpiof = 80 ~ 95,
+      gpiog = 96 ~ 111,
+      gpioh = 112 ~ 127,
+      gpioa = 128 ~ 131
+    type: phandle-array
+
+  uart-dev:
+    type: phandle
+    description: |
+      Get the device of the UART device
