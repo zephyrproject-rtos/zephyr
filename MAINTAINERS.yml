@@ -3125,7 +3125,7 @@ MAINTAINERS file:
   files:
     - MAINTAINERS.yml
   labels:
-    - "area: Process"
+    - "MAINTAINER FILE"
   description: >-
     Zephyr Maintainers File
 
