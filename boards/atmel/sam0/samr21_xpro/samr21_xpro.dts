@@ -59,46 +59,58 @@
 		compatible = "atmel-xplained-pro-header";
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
-		gpio-map-pass-thru = <0 0x3f>;		/*           Shared */
-		gpio-map =	<0  0 &porta  6 0>,	/* ADC6             */
-				<1  0 &porta  7 0>,	/* ADC7             */
-				<2  0 &porta 13 0>,	/* GPIO             */
-				<3  0 &porta 28 0>,	/* GPIO             */
-				<4  0 &porta 18 0>,	/* PWM_T0_W2        */
-				<5  0 &porta 19 0>,	/* PWM_T0_W3        */
-				<6  0 &porta 22 0>,	/* GPIO             */
-				<7  0 &porta 23 0>,	/* GPIO             */
-				<8  0 &porta 16 0>,	/* TWD1        EXT2 */
-				<9  0 &porta 17 0>,	/* TWCK1       EXT2 */
-				<10 0 &porta  5 0>,	/* RXD0             */
-				<11 0 &porta  4 0>,	/* TXD0             */
-				<12 0 &portb  3 0>,	/* SPI5(SS)         */
-				<13 0 &portb 22 0>,	/* SPI5(MOSI)  EXTx */
-				<14 0 &portb  2 0>,	/* SPI5(MISO)  EXTx */
-				<15 0 &portb 23 0>;	/* SPI5(SCK)   EXTx */
+		gpio-map-pass-thru = <0 0x3f>;
+
+		/* dts-format off */
+					       /*           Shared */
+		gpio-map = <0  0 &porta  6 0>, /* ADC6             */
+			   <1  0 &porta  7 0>, /* ADC7             */
+			   <2  0 &porta 13 0>, /* GPIO             */
+			   <3  0 &porta 28 0>, /* GPIO             */
+			   <4  0 &porta 18 0>, /* PWM_T0_W2        */
+			   <5  0 &porta 19 0>, /* PWM_T0_W3        */
+			   <6  0 &porta 22 0>, /* GPIO             */
+			   <7  0 &porta 23 0>, /* GPIO             */
+			   <8  0 &porta 16 0>, /* TWD1        EXT2 */
+			   <9  0 &porta 17 0>, /* TWCK1       EXT2 */
+			   <10 0 &porta  5 0>, /* RXD0             */
+			   <11 0 &porta  4 0>, /* TXD0             */
+			   <12 0 &portb  3 0>, /* SPI5(SS)         */
+			   <13 0 &portb 22 0>, /* SPI5(MOSI)  EXTx */
+			   <14 0 &portb  2 0>, /* SPI5(MISO)  EXTx */
+			   <15 0 &portb 23 0>; /* SPI5(SCK)   EXTx */
+					       /* GND              */
+					       /* +3.3V            */
+		/* dts-format on */
 	};
 
 	ext2_header: xplained-pro-connector2 {
 		compatible = "atmel-xplained-pro-header";
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
-		gpio-map-pass-thru = <0 0x3f>;		/*           Shared */
-		gpio-map =    /*<0  0 -      - 0>,	   -                */
-			      /*<1  0 -      - 0>,	   -                */
-				<2  0 &porta 15 0>,	/* GPIO             */
-			      /*<3  0 -      - 0>,	   -                */
-			      /*<4  0 -      - 0>,	   -                */
-			      /*<5  0 -      - 0>,	   -                */
-			      /*<6  0 -      - 0>,	   -                */
-				<7  0 &porta  8 0>,	/* GPIO             */
-				<8  0 &porta 16 0>,	/* TWD1        EXT1 */
-				<9  0 &porta 17 0>,	/* TWCK1       EXT1 */
-			      /*<11 0 -      - 0>,	   -                */
-			      /*<12 0 -      - 0>,	   -                */
-				<12 0 &porta 14 0>,	/* GPIO             */
-				<13 0 &portb 22 0>,	/* SPI5(MOSI)  EXTx */
-				<14 0 &portb  2 0>,	/* SPI5(MISO)  EXTx */
-				<15 0 &portb 23 0>;	/* SPI5(SCK)   EXTx */
+		gpio-map-pass-thru = <0 0x3f>;
+
+		/* dts-format off */
+						 /*           Shared */
+		gpio-map = /*<0  0 -       - 0>,    -                */
+			   /*<1  0 -       - 0>,    -                */
+			     <2  0 &porta 15 0>, /* GPIO             */
+			   /*<3  0 -       - 0>,    -                */
+			   /*<4  0 -       - 0>,    -                */
+			   /*<5  0 -       - 0>,    -                */
+			   /*<6  0 -       - 0>,    -                */
+			     <7  0 &porta  8 0>, /* GPIO             */
+			     <8  0 &porta 16 0>, /* TWD1        EXT1 */
+			     <9  0 &porta 17 0>, /* TWCK1       EXT1 */
+			   /*<10 0 -       - 0>,    -                */
+			   /*<11 0 -       - 0>,    -                */
+			     <12 0 &porta 14 0>, /* GPIO             */
+			     <13 0 &portb 22 0>, /* SPI5(MOSI)  EXTx */
+			     <14 0 &portb  2 0>, /* SPI5(MISO)  EXTx */
+			     <15 0 &portb 23 0>; /* SPI5(SCK)   EXTx */
+						 /* GND              */
+						 /* +3.3V            */
+		/* dts-format on */
 	};
 };
 
@@ -176,8 +188,8 @@
 		slptr-gpios = <&porta 20 GPIO_ACTIVE_HIGH>;
 		dig2-gpios = <&portb 17 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 		status = "okay";
-		tx-pwr-min = [01 11];	/* -17.0 dBm */
-		tx-pwr-max = [00 04];	/*   4.0 dBm */
+		tx-pwr-min = [01 11]; /* -17.0 dBm */
+		tx-pwr-max = [00 04]; /*   4.0 dBm */
 		tx-pwr-table = [00 01 03 04 05 05 06 06
 				07 07 07 08 08 09 09 0a
 				0a 0a 0b 0b 0b 0b 0c 0c
