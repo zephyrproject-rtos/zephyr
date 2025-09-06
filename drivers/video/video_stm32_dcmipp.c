@@ -34,6 +34,7 @@
 #define STM32_DCMIPP_HAS_PIXEL_PIPES
 #endif
 
+#if defined(STM32_DCMIPP_HAS_PIXEL_PIPES)
 /* Weak function declaration in order to interface with external ISP handler */
 void __weak stm32_dcmipp_isp_vsync_update(DCMIPP_HandleTypeDef *hdcmipp, uint32_t Pipe)
 {
@@ -53,6 +54,7 @@ int __weak stm32_dcmipp_isp_stop(void)
 {
 	return 0;
 }
+#endif
 
 LOG_MODULE_REGISTER(stm32_dcmipp, CONFIG_VIDEO_LOG_LEVEL);
 
@@ -132,6 +134,49 @@ struct stm32_dcmipp_config {
 #define STM32_DCMIPP_WIDTH_MAX	4094
 #define STM32_DCMIPP_HEIGHT_MAX	4094
 
+static void stm32_dcmipp_set_next_buffer_addr(struct stm32_dcmipp_pipe_data *pipe)
+{
+	struct stm32_dcmipp_data *dcmipp = pipe->dcmipp;
+#if defined(STM32_DCMIPP_HAS_PIXEL_PIPES)
+	struct video_format *fmt = &pipe->fmt;
+#endif
+	uint8_t *plane = pipe->next->buffer;
+
+	/* TODO - the HAL is missing a SetMemoryAddress for auxiliary addresses */
+	/* Update main buffer address */
+	if (pipe->id == DCMIPP_PIPE0) {
+		WRITE_REG(dcmipp->hdcmipp.Instance->P0PPM0AR1, (uint32_t)plane);
+	}
+#if defined(STM32_DCMIPP_HAS_PIXEL_PIPES)
+	else if (pipe->id == DCMIPP_PIPE1) {
+		WRITE_REG(dcmipp->hdcmipp.Instance->P1PPM0AR1, (uint32_t)plane);
+	} else {
+		WRITE_REG(dcmipp->hdcmipp.Instance->P2PPM0AR1, (uint32_t)plane);
+	}
+
+	if (pipe->id != DCMIPP_PIPE1) {
+		return;
+	}
+
+	if (fmt->pixelformat == VIDEO_PIX_FMT_NV12 || fmt->pixelformat == VIDEO_PIX_FMT_NV21 ||
+	    fmt->pixelformat == VIDEO_PIX_FMT_NV16 || fmt->pixelformat == VIDEO_PIX_FMT_NV61 ||
+	    fmt->pixelformat == VIDEO_PIX_FMT_YUV420 || fmt->pixelformat == VIDEO_PIX_FMT_YVU420) {
+		/* Y plane has 8 bit per pixel, next plane is located at off + width * height */
+		plane += (fmt->width * fmt->height);
+
+		WRITE_REG(dcmipp->hdcmipp.Instance->P1PPM1AR1, (uint32_t)plane);
+
+		if (fmt->pixelformat == VIDEO_PIX_FMT_YUV420 ||
+		    fmt->pixelformat == VIDEO_PIX_FMT_YVU420) {
+			/* In case of YUV420 / YVU420, U plane has half width / half height */
+			plane += (fmt->width * fmt->height) / 4;
+
+			WRITE_REG(dcmipp->hdcmipp.Instance->P1PPM2AR1, (uint32_t)plane);
+		}
+	}
+#endif
+}
+
 /* Callback getting called for each frame written into memory */
 void HAL_DCMIPP_PIPE_FrameEventCallback(DCMIPP_HandleTypeDef *hdcmipp, uint32_t Pipe)
 {
@@ -169,13 +214,14 @@ void HAL_DCMIPP_PIPE_VsyncEventCallback(DCMIPP_HandleTypeDef *hdcmipp, uint32_t 
 	struct stm32_dcmipp_data *dcmipp =
 			CONTAINER_OF(hdcmipp, struct stm32_dcmipp_data, hdcmipp);
 	struct stm32_dcmipp_pipe_data *pipe = dcmipp->pipe[Pipe];
-	int ret;
 
+#if defined(STM32_DCMIPP_HAS_PIXEL_PIPES)
 	/*
 	 * Let the external ISP handler know that a VSYNC happened a new statistics are
 	 * thus available
 	 */
 	stm32_dcmipp_isp_vsync_update(hdcmipp, Pipe);
+#endif
 
 	if (pipe->state != STM32_DCMIPP_RUNNING) {
 		return;
@@ -205,17 +251,8 @@ void HAL_DCMIPP_PIPE_VsyncEventCallback(DCMIPP_HandleTypeDef *hdcmipp, uint32_t 
 		return;
 	}
 
-	/*
-	 * TODO - we only support 1 buffer formats for the time being, setting of
-	 * MEMORY_ADDRESS_1 and MEMORY_ADDRESS_2 required depending on the pixelformat
-	 * for Pipe1
-	 */
-	ret = HAL_DCMIPP_PIPE_SetMemoryAddress(&dcmipp->hdcmipp, Pipe, DCMIPP_MEMORY_ADDRESS_0,
-					       (uint32_t)pipe->next->buffer);
-	if (ret != HAL_OK) {
-		LOG_ERR("Failed to update memory address");
-		return;
-	}
+	/* Update buffer address */
+	stm32_dcmipp_set_next_buffer_addr(pipe);
 }
 
 #if defined(STM32_DCMIPP_HAS_CSI)
@@ -439,7 +476,13 @@ static const struct stm32_dcmipp_mapping {
 	PIXEL_PIPE_FMT(ABGR32, ARGB8888, 0, (BIT(1) | BIT(2))),
 	PIXEL_PIPE_FMT(RGBA32, ARGB8888, 1, (BIT(1) | BIT(2))),
 	PIXEL_PIPE_FMT(BGRA32, RGBA888, 0, (BIT(1) | BIT(2))),
-	/* TODO - need to add the semiplanar & planar formats */
+	/* Multi-planes are only available on Pipe main (1) */
+	PIXEL_PIPE_FMT(NV12, YUV420_2, 0, BIT(1)),
+	PIXEL_PIPE_FMT(NV21, YUV420_2, 1, BIT(1)),
+	PIXEL_PIPE_FMT(NV16, YUV422_2, 0, BIT(1)),
+	PIXEL_PIPE_FMT(NV61, YUV422_2, 1, BIT(1)),
+	PIXEL_PIPE_FMT(YUV420, YUV420_3, 0, BIT(1)),
+	PIXEL_PIPE_FMT(YVU420, YUV420_3, 1, BIT(1)),
 #endif
 };
 
@@ -460,6 +503,9 @@ static const struct stm32_dcmipp_mapping {
 	 ((fmt) == VIDEO_PIX_FMT_GREY ||					\
 	  (fmt) == VIDEO_PIX_FMT_YUYV || (fmt) == VIDEO_PIX_FMT_YVYU ||		\
 	  (fmt) == VIDEO_PIX_FMT_VYUY || (fmt) == VIDEO_PIX_FMT_UYVY ||		\
+	  (fmt) == VIDEO_PIX_FMT_NV12 || (fmt) == VIDEO_PIX_FMT_NV21 ||		\
+	  (fmt) == VIDEO_PIX_FMT_NV16 || (fmt) == VIDEO_PIX_FMT_NV61 ||		\
+	  (fmt) == VIDEO_PIX_FMT_YUV420 || (fmt) == VIDEO_PIX_FMT_YVU420 ||	\
 	  (fmt) == VIDEO_PIX_FMT_XYUV32) ? VIDEO_COLORSPACE_YUV :		\
 										\
 	  VIDEO_COLORSPACE_RAW)
@@ -855,6 +901,98 @@ static int stm32_dcmipp_set_yuv_conversion(struct stm32_dcmipp_pipe_data *pipe,
 }
 #endif
 
+static int stm32_dcmipp_start_pipeline(const struct device *dev,
+				       struct stm32_dcmipp_pipe_data *pipe)
+{
+	const struct stm32_dcmipp_config *config = dev->config;
+	struct stm32_dcmipp_data *dcmipp = pipe->dcmipp;
+#if defined(STM32_DCMIPP_HAS_PIXEL_PIPES)
+	struct video_format *fmt = &pipe->fmt;
+#endif
+	int ret;
+
+#if defined(STM32_DCMIPP_HAS_PIXEL_PIPES)
+	if (fmt->pixelformat == VIDEO_PIX_FMT_YUV420 || fmt->pixelformat == VIDEO_PIX_FMT_YVU420) {
+		uint8_t *u_addr = pipe->next->buffer + fmt->width * fmt->height;
+		uint8_t *v_addr = u_addr + (fmt->width * fmt->height / 4);
+		DCMIPP_FullPlanarDstAddressTypeDef planar_addr = {
+			.YAddress = (uint32_t)pipe->next->buffer,
+			.UAddress = (uint32_t)u_addr,
+			.VAddress = (uint32_t)v_addr,
+		};
+
+		if (config->bus_type == VIDEO_BUS_TYPE_PARALLEL) {
+			ret = HAL_DCMIPP_PIPE_FullPlanarStart(&dcmipp->hdcmipp, pipe->id,
+							      &planar_addr, DCMIPP_MODE_CONTINUOUS);
+		}
+#if defined(STM32_DCMIPP_HAS_CSI)
+		else if (config->bus_type == VIDEO_BUS_TYPE_CSI2_DPHY) {
+			ret = HAL_DCMIPP_CSI_PIPE_FullPlanarStart(&dcmipp->hdcmipp, pipe->id,
+								  DCMIPP_VIRTUAL_CHANNEL0,
+								  &planar_addr,
+								  DCMIPP_MODE_CONTINUOUS);
+		}
+#endif
+		else {
+			LOG_ERR("Invalid bus_type");
+			ret = -EINVAL;
+		}
+	} else if (fmt->pixelformat == VIDEO_PIX_FMT_NV12 ||
+		   fmt->pixelformat == VIDEO_PIX_FMT_NV21 ||
+		   fmt->pixelformat == VIDEO_PIX_FMT_NV16 ||
+		   fmt->pixelformat == VIDEO_PIX_FMT_NV61) {
+		uint8_t *uv_addr = pipe->next->buffer + fmt->width * fmt->height;
+		DCMIPP_SemiPlanarDstAddressTypeDef semiplanar_addr = {
+			.YAddress = (uint32_t)pipe->next->buffer,
+			.UVAddress = (uint32_t)uv_addr,
+		};
+
+		if (config->bus_type == VIDEO_BUS_TYPE_PARALLEL) {
+			ret = HAL_DCMIPP_PIPE_SemiPlanarStart(&dcmipp->hdcmipp, pipe->id,
+							      &semiplanar_addr,
+							      DCMIPP_MODE_CONTINUOUS);
+		}
+#if defined(STM32_DCMIPP_HAS_CSI)
+		else if (config->bus_type == VIDEO_BUS_TYPE_CSI2_DPHY) {
+			ret = HAL_DCMIPP_CSI_PIPE_SemiPlanarStart(&dcmipp->hdcmipp, pipe->id,
+								  DCMIPP_VIRTUAL_CHANNEL0,
+								  &semiplanar_addr,
+								  DCMIPP_MODE_CONTINUOUS);
+		}
+#endif
+		else {
+			LOG_ERR("Invalid bus_type");
+			ret = -EINVAL;
+		}
+	} else {
+#endif
+		if (config->bus_type == VIDEO_BUS_TYPE_PARALLEL) {
+			ret = HAL_DCMIPP_PIPE_Start(&dcmipp->hdcmipp, pipe->id,
+						    (uint32_t)pipe->next->buffer,
+						    DCMIPP_MODE_CONTINUOUS);
+		}
+#if defined(STM32_DCMIPP_HAS_CSI)
+		else if (config->bus_type == VIDEO_BUS_TYPE_CSI2_DPHY) {
+			ret = HAL_DCMIPP_CSI_PIPE_Start(&dcmipp->hdcmipp, pipe->id,
+							DCMIPP_VIRTUAL_CHANNEL0,
+							(uint32_t)pipe->next->buffer,
+							DCMIPP_MODE_CONTINUOUS);
+		}
+#endif
+		else {
+			LOG_ERR("Invalid bus_type");
+			ret = -EINVAL;
+		}
+#if defined(STM32_DCMIPP_HAS_PIXEL_PIPES)
+	}
+#endif
+	if (ret != HAL_OK) {
+		return -EIO;
+	}
+
+	return 0;
+}
+
 static int stm32_dcmipp_stream_enable(const struct device *dev)
 {
 	struct stm32_dcmipp_pipe_data *pipe = dev->data;
@@ -942,7 +1080,16 @@ static int stm32_dcmipp_stream_enable(const struct device *dev)
 	pipe_cfg.FrameRate  = DCMIPP_FRAME_RATE_ALL;
 #if defined(STM32_DCMIPP_HAS_PIXEL_PIPES)
 	if (pipe->id == DCMIPP_PIPE1 || pipe->id == DCMIPP_PIPE2) {
-		pipe_cfg.PixelPipePitch = fmt->pitch;
+		if (fmt->pixelformat == VIDEO_PIX_FMT_NV12 ||
+		    fmt->pixelformat == VIDEO_PIX_FMT_NV21 ||
+		    fmt->pixelformat == VIDEO_PIX_FMT_NV16 ||
+		    fmt->pixelformat == VIDEO_PIX_FMT_NV61 ||
+		    fmt->pixelformat == VIDEO_PIX_FMT_YUV420 ||
+		    fmt->pixelformat == VIDEO_PIX_FMT_YVU420) {
+			pipe_cfg.PixelPipePitch = fmt->width;
+		} else {
+			pipe_cfg.PixelPipePitch = fmt->pitch;
+		}
 		pipe_cfg.PixelPackerFormat = mapping->pixels.dcmipp_format;
 	}
 #endif
@@ -1029,34 +1176,18 @@ static int stm32_dcmipp_stream_enable(const struct device *dev)
 			goto out;
 		}
 	}
-#endif
 
 	/* Initialize the external ISP handling stack */
 	ret = stm32_dcmipp_isp_init(&dcmipp->hdcmipp, config->source_dev);
 	if (ret < 0) {
 		goto out;
 	}
+#endif
 
 	/* Enable the DCMIPP Pipeline */
-	if (config->bus_type == VIDEO_BUS_TYPE_PARALLEL) {
-		ret = HAL_DCMIPP_PIPE_Start(&dcmipp->hdcmipp, pipe->id,
-					(uint32_t)pipe->next->buffer, DCMIPP_MODE_CONTINUOUS);
-	}
-#if defined(STM32_DCMIPP_HAS_CSI)
-	else if (config->bus_type == VIDEO_BUS_TYPE_CSI2_DPHY) {
-		ret = HAL_DCMIPP_CSI_PIPE_Start(&dcmipp->hdcmipp, pipe->id, DCMIPP_VIRTUAL_CHANNEL0,
-						(uint32_t)pipe->next->buffer,
-						DCMIPP_MODE_CONTINUOUS);
-	}
-#endif
-	else {
-		LOG_ERR("Invalid bus_type");
-		ret = -EINVAL;
-		goto out;
-	}
-	if (ret != HAL_OK) {
+	ret = stm32_dcmipp_start_pipeline(dev, pipe);
+	if (ret < 0) {
 		LOG_ERR("Failed to start the pipeline");
-		ret = -EIO;
 		goto out;
 	}
 
@@ -1082,11 +1213,13 @@ static int stm32_dcmipp_stream_enable(const struct device *dev)
 		}
 	}
 
+#if defined(STM32_DCMIPP_HAS_PIXEL_PIPES)
 	/* Start the external ISP handling */
 	ret = stm32_dcmipp_isp_start();
 	if (ret < 0) {
 		goto out;
 	}
+#endif
 
 	pipe->state = STM32_DCMIPP_RUNNING;
 	pipe->is_streaming = true;
@@ -1112,11 +1245,13 @@ static int stm32_dcmipp_stream_disable(const struct device *dev)
 		goto out;
 	}
 
+#if defined(STM32_DCMIPP_HAS_PIXEL_PIPES)
 	/* Stop the external ISP handling */
 	ret = stm32_dcmipp_isp_stop();
 	if (ret < 0) {
 		goto out;
 	}
+#endif
 
 	/* Disable the DCMIPP Pipeline */
 	if (config->bus_type == VIDEO_BUS_TYPE_PARALLEL) {
@@ -1175,7 +1310,6 @@ static int stm32_dcmipp_enqueue(const struct device *dev, struct video_buffer *v
 {
 	struct stm32_dcmipp_pipe_data *pipe = dev->data;
 	struct stm32_dcmipp_data *dcmipp = pipe->dcmipp;
-	int ret;
 
 	k_mutex_lock(&pipe->lock, K_FOREVER);
 
@@ -1186,13 +1320,7 @@ static int stm32_dcmipp_enqueue(const struct device *dev, struct video_buffer *v
 	if (pipe->state == STM32_DCMIPP_WAIT_FOR_BUFFER) {
 		LOG_DBG("Restart CPTREQ after wait for buffer");
 		pipe->next = vbuf;
-		ret = HAL_DCMIPP_PIPE_SetMemoryAddress(&dcmipp->hdcmipp, pipe->id,
-						       DCMIPP_MEMORY_ADDRESS_0,
-						       (uint32_t)pipe->next->buffer);
-		if (ret != HAL_OK) {
-			LOG_ERR("Failed to update memory address");
-			return -EIO;
-		}
+		stm32_dcmipp_set_next_buffer_addr(pipe);
 		if (pipe->id == DCMIPP_PIPE0) {
 			SET_BIT(dcmipp->hdcmipp.Instance->P0FCTCR, DCMIPP_P0FCTCR_CPTREQ);
 		}
