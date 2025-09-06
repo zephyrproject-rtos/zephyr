@@ -322,6 +322,10 @@ SECTIONS
 
     __data_region_end = .;
 
+#ifdef CONFIG_NOCACHE_MEMORY
+    _nocache_mpu_size_bits = (LOG2CEIL(_nocache_ram_size) - 1) << 1;
+#endif
+
 #if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_ocm), okay)
 GROUP_START(OCM)
 
