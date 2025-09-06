@@ -87,6 +87,11 @@ config UART_NS16550_ITE_HIGH_SPEED_BAUDRATE
 	  Enable IT8XXX2 specific baud rate configuration.
 	  This applies to high-speed baud rate configuration.
 
+config UART_NS16550_PXA
+	bool "PXA variant of NS16550"
+	help
+	  This enables support for PXA variant of NS16550.
+
 menu "NS16550 Workarounds"
 
 config UART_NS16550_WA_ISR_REENABLE_INTERRUPT
