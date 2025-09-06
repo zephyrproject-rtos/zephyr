@@ -7,6 +7,7 @@
 menuconfig POSIX_SINGLE_PROCESS
 	bool "POSIX single process support"
 	# imply COMMON_LIBC_MALLOC # for env.c
+	select NATIVE_LIBC_INCOMPATIBLE
 	help
 	  Select 'y' here to use confstr(), environ, errno, getenv(), setenv(), sysconf(), uname(),
 	  or unsetenv().

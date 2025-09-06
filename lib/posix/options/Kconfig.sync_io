@@ -6,6 +6,7 @@ menu "POSIX synchronized I/O"
 
 config POSIX_FSYNC
 	bool "Support for fsync()"
+	select NATIVE_LIBC_INCOMPATIBLE
 	help
 	  Select 'y' here and Zephyr will provide an implementation of fsync().
 

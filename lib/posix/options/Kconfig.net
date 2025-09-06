@@ -10,6 +10,7 @@ menuconfig POSIX_NETWORKING
 	select NET_INTERFACE_NAME
 	select NET_SOCKETPAIR
 	select NET_SOCKETS
+	select NATIVE_LIBC_INCOMPATIBLE
 	help
 	  Enable this option to support the POSIX networking API. This includes
 	  support for BSD Sockets.

@@ -6,6 +6,7 @@
 
 menuconfig POSIX_BARRIERS
 	bool "POSIX barriers"
+	select NATIVE_LIBC_INCOMPATIBLE
 	help
 	  Select 'y' here to enable POSIX barriers.
 

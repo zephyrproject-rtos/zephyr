@@ -4,6 +4,7 @@
 
 menuconfig POSIX_MESSAGE_PASSING
 	bool "POSIX message queue support"
+	select NATIVE_LIBC_INCOMPATIBLE
 	help
 	  This enabled POSIX message queue related APIs.
 

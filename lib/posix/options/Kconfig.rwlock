@@ -4,6 +4,7 @@
 
 menuconfig POSIX_READER_WRITER_LOCKS
 	bool "POSIX reader-writer locks"
+	select NATIVE_LIBC_INCOMPATIBLE
 	help
 	  Select 'y' here to enable POSIX reader-writer locks.
 
