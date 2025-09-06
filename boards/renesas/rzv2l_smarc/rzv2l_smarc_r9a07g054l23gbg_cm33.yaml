@@ -10,4 +10,5 @@ supported:
   - gpio
   - pwm
   - adc
+  - counter
 vendor: renesas
