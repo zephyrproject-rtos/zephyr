@@ -29,6 +29,8 @@ def parse_args(argv):
     )
 
     parser.add_argument("-p", "--pull-request", required=True, type=int, help="The PR number")
+    parser.add_argument("-o", "--org", default="zephyrproject-rtos", help="Github organization")
+    parser.add_argument("-r", "--repo", default="zephyr", help="Github repository")
 
     return parser.parse_args(argv)
 
@@ -63,9 +65,9 @@ def main(argv):
     token = os.environ.get('GITHUB_TOKEN', None)
     gh = github.Github(token)
 
-    print_rate_limit(gh, "zephyrproject-rtos")
+    print_rate_limit(gh, args.org)
 
-    repo = gh.get_repo("zephyrproject-rtos/zephyr")
+    repo = gh.get_repo(f"{args.org}/{args.repo}")
     pr = repo.get_pull(args.pull_request)
 
     workflow_delay(repo, pr)

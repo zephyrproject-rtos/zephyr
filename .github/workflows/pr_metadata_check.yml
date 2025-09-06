@@ -36,4 +36,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          python -u scripts/ci/do_not_merge.py -p "${{ github.event.pull_request.number }}"
+          python -u scripts/ci/do_not_merge.py \
+          -p "${{ github.event.pull_request.number }}" \
+          -o "${{ github.event.repository.owner.login }}" \
+          -r "${{ github.event.repository.name }}"
