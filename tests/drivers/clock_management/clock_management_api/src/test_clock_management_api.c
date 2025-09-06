@@ -36,6 +36,7 @@ static clock_management_state_t dev2_shared =
 static clock_management_state_t dev2_locking =
 	CLOCK_MANAGEMENT_DT_GET_STATE(DT_NODELABEL(emul_dev2), default, locking);
 
+
 /* Define a second output using the same clock as emul_dev1 */
 CLOCK_MANAGEMENT_DEFINE_OUTPUT(DT_PHANDLE_BY_IDX(DT_NODELABEL(emul_dev1), clock_outputs,
 		DT_CLOCK_OUTPUT_NAME_IDX(DT_NODELABEL(emul_dev1), default)),
@@ -293,6 +294,75 @@ ZTEST(clock_management_api, test_ranked)
 	zassert_true(ret > 0, "Consumer 2 could not remove clock restrictions");
 }
 
+#if DT_HAS_COMPAT_STATUS_OKAY(vnd_emul_clock_gateable)
+/* Only run this test if the gateable clock is present- this is all emulated,
+ * so it likely only needs to run on native_sim
+ */
 
+CLOCK_MANAGEMENT_DT_DEFINE_OUTPUT_BY_NAME(DT_NODELABEL(emul_dev3), default);
+
+static const struct clock_output *dev3_out =
+	CLOCK_MANAGEMENT_DT_GET_OUTPUT_BY_NAME(DT_NODELABEL(emul_dev3), default);
+
+/*
+ * Define a basic driver here for the gateable clock
+ */
+
+#define DT_DRV_COMPAT vnd_emul_clock_gateable
+
+static bool clock_is_gated;
+
+struct gateable_clock_data {
+	STANDARD_CLK_SUBSYS_DATA_DEFINE
+};
+
+static clock_freq_t gateable_clock_recalc_rate(const struct clk *clk_hw, clock_freq_t parent_rate)
+{
+	return clock_is_gated ? parent_rate : 0;
+}
+
+static int gateable_clock_onoff(const struct clk *clk_hw, bool on)
+{
+	clock_is_gated = !on;
+	return 0;
+}
+
+const struct clock_management_standard_api gateable_clock_api = {
+	.recalc_rate = gateable_clock_recalc_rate,
+	.shared.on_off = gateable_clock_onoff,
+};
+
+#define GATEABLE_CLOCK_DEFINE(inst)                                            \
+	static struct gateable_clock_data gate_clk_##inst = {                  \
+		STANDARD_CLK_SUBSYS_DATA_INIT(CLOCK_DT_GET(DT_INST_PARENT(inst))) \
+	};                                                                     \
+	CLOCK_DT_INST_DEFINE(inst,                                             \
+			     &gate_clk_##inst,                                 \
+			     &gateable_clock_api);
+
+DT_INST_FOREACH_STATUS_OKAY(GATEABLE_CLOCK_DEFINE)
+
+ZTEST(clock_management_api, test_onoff)
+{
+	/* First disable all unused clocks. We should see the gateable one switch off. */
+	clock_management_disable_unused();
+	zassert_true(clock_is_gated, "Emulated clock is unused but did not gate");
+	/* Now enable the clock for dev3 */
+	clock_management_on(dev3_out);
+	zassert_false(clock_is_gated, "Emulated clock is in use but gated");
+	/* Make sure the clock doesn't turn off now, it is in use */
+	clock_management_disable_unused();
+	zassert_false(clock_is_gated, "Emulated clock is in use but gated during disabled_unused");
+	/* Raise reference count to clock */
+	clock_management_on(dev3_out);
+	/* Lower reference count */
+	clock_management_off(dev3_out);
+	zassert_false(clock_is_gated, "Emulated clock should not gate, one reference still exists");
+	/* Turn off the clock */
+	clock_management_off(dev3_out);
+	zassert_true(clock_is_gated, "Emulated clock is off but did not gate");
+}
+
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(vnd_emul_clock_gateable) */
 
 ZTEST_SUITE(clock_management_api, NULL, NULL, reset_clock_states, NULL, NULL);
