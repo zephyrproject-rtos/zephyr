@@ -223,6 +223,46 @@
 		status = "disabled";
 	};
 
+	main_mcspi1: spi@20110000 {
+		compatible = "ti,omap-mcspi";
+		reg = <0x20110000 0x400>;
+		clock-frequency = <DT_FREQ_M(50)>;
+		ti,spi-num-cs = <4>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+	};
+
+	main_mcspi2: spi@20120000 {
+		compatible = "ti,omap-mcspi";
+		reg = <0x20120000 0x400>;
+		clock-frequency = <DT_FREQ_M(50)>;
+		ti,spi-num-cs = <4>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+	};
+
+	main_mcspi3: spi@20130000 {
+		compatible = "ti,omap-mcspi";
+		reg = <0x20130000 0x400>;
+		clock-frequency = <DT_FREQ_M(50)>;
+		ti,spi-num-cs = <4>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+	};
+
+	main_mcspi4: spi@20140000 {
+		compatible = "ti,omap-mcspi";
+		reg = <0x20140000 0x400>;
+		clock-frequency = <DT_FREQ_M(50)>;
+		ti,spi-num-cs = <4>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+	};
+
 	main_adc0: adc@28001000 {
 		compatible = "ti,am335x-adc";
 		reg = <0x28001000 DT_SIZE_K(1)>;
