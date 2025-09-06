@@ -1741,6 +1741,9 @@ void k_timer_init(struct k_timer *timer,
  * The timer's status is reset to zero and the timer begins counting down
  * using the new duration and period values.
  *
+ * This routine neither updates nor has any other effect on the specified
+ * timer if @a duration is K_FOREVER.
+ *
  * @param timer     Address of timer.
  * @param duration  Initial timer duration.
  * @param period    Timer period.
