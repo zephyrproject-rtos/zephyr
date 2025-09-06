@@ -65,6 +65,13 @@ void pm_policy_state_lock_get(enum pm_state state, uint8_t substate_id)
 #endif
 }
 
+void pm_policy_state_lock_get_list(struct pm_state_constraint_list* constraints) {
+	for (int i = 0; i < constraints->count; i++) {
+		pm_policy_state_lock_get(constraints->list[i].state,
+					 constraints->list[i].substate_id);
+	}
+}
+
 void pm_policy_state_lock_put(enum pm_state state, uint8_t substate_id)
 {
 #if DT_HAS_COMPAT_STATUS_OKAY(zephyr_power_state)
@@ -82,6 +89,13 @@ void pm_policy_state_lock_put(enum pm_state state, uint8_t substate_id)
 		}
 	}
 #endif
+}
+
+void pm_policy_state_lock_put_list(struct pm_state_constraint_list* constraints) {
+	for (int i = 0; i < constraints->count; i++) {
+		pm_policy_state_lock_put(constraints->list[i].state,
+					 constraints->list[i].substate_id);
+	}
 }
 
 bool pm_policy_state_lock_is_active(enum pm_state state, uint8_t substate_id)
