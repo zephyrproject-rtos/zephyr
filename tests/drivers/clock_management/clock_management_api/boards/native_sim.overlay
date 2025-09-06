@@ -54,6 +54,22 @@
 			clock-ranking = <3>;
 		};
 
+		test_emul_onoff_source: test-emul-onoff-source {
+			compatible = "fixed-clock";
+			clock-frequency = <50000000>;
+			#clock-cells = <0>;
+
+			test_emul_onoff_gate: test-emul-onoff-gate {
+				compatible = "vnd,emul-clock-gateable";
+				#clock-cells = <0>;
+
+				emul_dev3_out: emul-dev3-out {
+					compatible = "clock-output";
+					#clock-cells = <0>;
+				};
+			};
+		};
+
 		emul_mux1: emul-mux1 {
 			compatible = "vnd,emul-clock-mux";
 			inputs = <&emul_div1 &emul_div2>;
@@ -190,6 +206,22 @@
 			req-freq-2 = <1500000>;
 			clock-state-names = "default", "invalid", "shared",
 					"locking";
+		};
+
+		emul_dev3: emul-dev3 {
+			compatible = "vnd,emul-clock-consumer";
+			clock-outputs = <&emul_dev3_out>;
+			clock-output-names = "default";
+			/* Below properties aren't used on this node */
+			default-freq = <0>;
+			shared-freq = <0>;
+			locking-freq = <0>;
+			freq-constraints-0 = <0>;
+			req-freq-0 = <0>;
+			freq-constraints-1 = <0>;
+			req-freq-1 = <0>;
+			freq-constraints-2 = <0>;
+			req-freq-2 = <0>;
 		};
 	};
 };
