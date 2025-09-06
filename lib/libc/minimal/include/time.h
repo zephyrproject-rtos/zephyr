@@ -53,19 +53,23 @@ typedef _SUSECONDS_T_ suseconds_t;
  * results are always expressed as UTC.
  */
 struct tm *gmtime(const time_t *timep);
+#if __STDC_VERSION__ >= 202311L
 struct tm *gmtime_r(const time_t *ZRESTRICT timep,
 		    struct tm *ZRESTRICT result);
+#endif
 char *asctime(const struct tm *timeptr);
 struct tm *localtime(const time_t *timer);
 char *ctime(const time_t *clock);
-char *asctime_r(const struct tm *ZRESTRICT tp, char *ZRESTRICT buf);
-char *ctime_r(const time_t *clock, char *buf);
+#if __STDC_VERSION__ >= 202311L
 struct tm *localtime_r(const time_t *ZRESTRICT timer, struct tm *ZRESTRICT result);
+#endif
 
 time_t time(time_t *tloc);
 
 #ifdef __cplusplus
 }
 #endif
+
+#include <zephyr/posix/posix_time.h>
 
 #endif /* ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_STDIO_H_ */
