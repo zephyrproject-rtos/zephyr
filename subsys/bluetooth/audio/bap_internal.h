@@ -39,7 +39,22 @@
 #define BT_BAP_BASS_PA_REQ_SYNC_PAST          0x01
 #define BT_BAP_BASS_PA_REQ_SYNC               0x02
 
+#define BT_BAP_PAST_ADDR_TYPE_SHIFT           8
+#define BT_BAP_PAST_MASK               0xFF
+
 #define BT_BAP_BASS_VALID_OPCODE(opcode) ((opcode) <= BT_BAP_BASS_OP_REM_SRC)
+
+/* Pack addr_type + src_id into 16-bit Service Data */
+#define BT_BAP_PAST_SERVICE_DATA(addr_type, src_id) \
+    ((((uint16_t)(addr_type) & BT_BAP_PAST_MASK) << BT_BAP_PAST_ADDR_TYPE_SHIFT | ((uint16_t)(src_id) & BT_BAP_PAST_MASK))
+
+/* Extract addr_type from 16-bit Service Data */
+#define BT_BAP_PAST_GET_ADDR_TYPE(data) \
+    (((data) & BT_BAP_PAST_MASK) >> BT_BAP_PAST_ADDR_TYPE_SHIFT)
+
+/* Extract src_id (server ID) from 16-bit Service Data */
+#define BT_BAP_PAST_GET_SRC_ID(data) \
+    (((data) & BT_BAP_PAST_MASK))
 
 struct bt_bap_bass_cp_scan_stop {
 	uint8_t opcode;
