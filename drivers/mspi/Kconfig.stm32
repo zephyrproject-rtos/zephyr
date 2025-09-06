@@ -1,0 +1,14 @@
+# STM32 MSPI flash driver configuration options
+
+# Copyright (c) 2025 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+config MSPI_STM32
+	bool "STM32 XSPI Controller driver"
+	default y
+	depends on DT_HAS_ST_STM32_MSPI_CONTROLLER_ENABLED
+	select USE_STM32_HAL_XSPI
+	select USE_STM32_LL_DLYB
+	imply MSPI_XIP
+	help
+	  Enable driver for STM32 family of processors.
