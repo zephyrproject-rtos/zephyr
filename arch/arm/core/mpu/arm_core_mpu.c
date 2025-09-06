@@ -81,9 +81,15 @@ static const struct z_arm_mpu_partition static_regions[] = {
 #endif /* CONFIG_COVERAGE_GCOV && CONFIG_USERSPACE */
 #if defined(CONFIG_NOCACHE_MEMORY)
 	{
-		/* Special non-cacheable RAM area */
-		.start = (uint32_t)&_nocache_ram_start,
-		.size = (uint32_t)&_nocache_ram_size,
+		/* Region for non-cacheable unitialised data (.nocache) */
+		.start = (uint32_t)&_nocache_noload_ram_start,
+		.size = (uint32_t)&_nocache_noload_ram_size,
+		.attr = K_MEM_PARTITION_P_RW_U_NA_NOCACHE,
+	},
+	{
+		/* Region for non-cacheable initialised data (.nocache_load) */
+		.start = (uint32_t)&_nocache_load_ram_start,
+		.size = (uint32_t)&_nocache_load_ram_size,
 		.attr = K_MEM_PARTITION_P_RW_U_NA_NOCACHE,
 	},
 #endif /* CONFIG_NOCACHE_MEMORY */
