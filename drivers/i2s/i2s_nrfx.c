@@ -95,6 +95,26 @@ static void find_suitable_clock(const struct i2s_nrfx_drv_cfg *drv_cfg,
 	nrf_i2s_mck_t best_mck_cfg = 0;
 	uint32_t best_mck = 0;
 
+#if defined(CONFIG_I2S_NRFX_ALLOW_MCK_BYPASS) && NRF_I2S_HAS_CLKCONFIG
+	/* Check for bypass before calculating f_MCK */
+	for (r = 0; r < ARRAY_SIZE(ratios); ++r) {
+		if (i2s_cfg->frame_clk_freq * ratios[r].ratio_val == src_freq) {
+			LOG_INF("MCK bypass calculated");
+			best_r = r;
+			best_mck = src_freq;
+			best_diff = 0;
+
+			/* Set CONFIG.MCKFREQ register to non-zero reset value to
+			 * ensure peripheral functionality
+			 */
+			best_mck_cfg = NRF_I2S_MCK_32MDIV8;
+
+			config->enable_bypass = true;
+			break;
+		}
+	}
+#endif
+
 	for (r = 0; (best_diff != 0) && (r < ARRAY_SIZE(ratios)); ++r) {
 		/* Only multiples of the frame width can be used as ratios. */
 		if ((ratios[r].ratio_val % bits_per_frame) != 0) {
@@ -760,7 +780,7 @@ static int trigger_start(const struct device *dev)
 	nrf_i2s_clk_configure(drv_cfg->i2s.p_reg,
 			      drv_cfg->clk_src == ACLK ? NRF_I2S_CLKSRC_ACLK
 						       : NRF_I2S_CLKSRC_PCLK32M,
-			      false);
+			      nrfx_cfg->enable_bypass);
 #endif
 
 	/* If it is required to use certain HF clock, request it to be running
