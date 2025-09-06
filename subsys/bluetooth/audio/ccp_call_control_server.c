@@ -16,6 +16,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/check.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/util_utf8.h>
 
 LOG_MODULE_REGISTER(bt_ccp_call_control_server, CONFIG_BT_CCP_CALL_CONTROL_SERVER_LOG_LEVEL);
 

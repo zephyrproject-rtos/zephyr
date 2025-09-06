@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/ztest.h>
-#include <zephyr/sys/util.h>
+#include <zephyr/sys/util_utf8.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -1008,7 +1008,7 @@ ZTEST(util, test_utf8_lcpy_null_termination)
 ZTEST(util, test_utf8_count_chars_ASCII)
 {
 	const char *test_str = "I have 15 char.";
-	ssize_t count = utf8_count_chars(test_str);
+	int count = utf8_count_chars(test_str);
 
 	zassert_equal(count, 15, "Failed to count ASCII");
 }
@@ -1016,7 +1016,7 @@ ZTEST(util, test_utf8_count_chars_ASCII)
 ZTEST(util, test_utf8_count_chars_non_ASCII)
 {
 	const char *test_str = "Hello دنیا!🌍";
-	ssize_t count = utf8_count_chars(test_str);
+	int count = utf8_count_chars(test_str);
 
 	zassert_equal(count, 12, "Failed to count non-ASCII");
 }
@@ -1024,8 +1024,8 @@ ZTEST(util, test_utf8_count_chars_non_ASCII)
 ZTEST(util, test_utf8_count_chars_invalid_utf)
 {
 	const char test_str[] = { (char)0x80, 0x00 };
-	ssize_t count = utf8_count_chars(test_str);
-	ssize_t expected_result = -EINVAL;
+	int count = utf8_count_chars(test_str);
+	int expected_result = -EINVAL;
 
 	zassert_equal(count, expected_result, "Failed to detect invalid UTF");
 }
