@@ -568,9 +568,10 @@ static void transfer_next_chunk(const struct device *dev)
 
 		/* On nrfx_spim_xfer() error */
 		dmm_buffer_in_release(dev_config->mem_reg, rx_buf, xfer.rx_length,
-				      (void **)&xfer.p_rx_buffer);
+				      (void **)&xfer.p_rx_buffer, xfer.rx_length);
 in_alloc_failed:
-		dmm_buffer_out_release(dev_config->mem_reg, (void **)&xfer.p_tx_buffer);
+		dmm_buffer_out_release(dev_config->mem_reg, (void **)&xfer.p_tx_buffer,
+					xfer.tx_length);
 	}
 
 out_alloc_failed:
@@ -598,12 +599,14 @@ static void event_handler(const nrfx_spim_evt_t *p_event, void *p_context)
 
 		if (spi_context_tx_buf_on(&dev_data->ctx)) {
 			dmm_buffer_out_release(dev_config->mem_reg,
-					       (void **)p_event->xfer_desc.p_tx_buffer);
+					       (void **)p_event->xfer_desc.p_tx_buffer,
+					       dev_data->chunk_len);
 		}
 
 		if (spi_context_rx_buf_on(&dev_data->ctx)) {
 			dmm_buffer_in_release(dev_config->mem_reg, dev_data->ctx.rx_buf,
-				dev_data->chunk_len, p_event->xfer_desc.p_rx_buffer);
+				dev_data->chunk_len, p_event->xfer_desc.p_rx_buffer,
+				dev_data->chunk_len);
 		}
 
 #ifdef SPI_BUFFER_IN_RAM
