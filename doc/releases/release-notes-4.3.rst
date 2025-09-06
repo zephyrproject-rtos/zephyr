@@ -183,6 +183,10 @@ New APIs and options
       * :kconfig:option:`CONFIG_SHELL_MQTT_WORK_DELAY_MS`
       * :kconfig:option:`CONFIG_SHELL_MQTT_LISTEN_TIMEOUT_MS`
 
+* Toolchain
+
+  * :c:macro:`__deprecated_version`
+
 .. zephyr-keep-sorted-stop
 
 New Boards
