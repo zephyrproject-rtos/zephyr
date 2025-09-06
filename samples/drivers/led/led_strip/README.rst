@@ -99,4 +99,4 @@ References
 .. _LPD8806 datasheet: https://cdn-shop.adafruit.com/datasheets/lpd8806+english.pdf
 .. _APA102C datasheet: https://cdn-shop.adafruit.com/product-files/2477/APA102C-iPixelLED.pdf
 .. _blog post on WS2812 timing: https://wp.josh.com/2014/05/13/ws2812-neopixels-are-not-so-finicky-once-you-get-to-know-them/
-.. _RGB LED strips\: an overview: http://nut-bolt.nl/2012/rgb-led-strips/
+.. _RGB LED strips\: an overview: https://web.archive.org/web/20180919093752/http://nut-bolt.nl/2012/rgb-led-strips/
