@@ -20,6 +20,7 @@
  */
 
 #include <zephyr/drivers/clock_management/clock_driver.h>
+#include <zephyr/kernel.h>
 #include <errno.h>
 
 #ifdef __cplusplus
@@ -573,8 +574,13 @@ static inline int clock_management_set_callback(const struct clock_output *clk,
 		return -EINVAL;
 	}
 
+	extern struct k_mutex clock_management_mutex;
+
+	k_mutex_lock(&clock_management_mutex, K_FOREVER);
+
 	clk->cb->clock_callback = callback;
 	clk->cb->user_data = user_data;
+	k_mutex_unlock(&clock_management_mutex);
 	return 0;
 #else
 	return -ENOTSUP;
