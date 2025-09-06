@@ -87,6 +87,7 @@ source "drivers/pinctrl/Kconfig.sy1xx"
 source "drivers/pinctrl/Kconfig.realtek_rts5912"
 source "drivers/pinctrl/Kconfig.wch_20x_30x_afio"
 source "drivers/pinctrl/Kconfig.wch_00x_afio"
+source "drivers/pinctrl/Kconfig.sf32lb52x"
 
 rsource "renesas/Kconfig"
 

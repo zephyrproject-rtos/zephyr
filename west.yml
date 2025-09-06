@@ -23,6 +23,8 @@ manifest:
       url-base: https://github.com/zephyrproject-rtos
     - name: babblesim
       url-base: https://github.com/BabbleSim
+    - name: teslabs
+      url-base: https://github.com/teslabs
 
   group-filter: [-babblesim, -optional]
 
@@ -232,6 +234,12 @@ manifest:
     - name: hal_rpi_pico
       path: modules/hal/rpi_pico
       revision: b547a36a722af7787e5f55b551fd6ce72dcba5a4
+      groups:
+        - hal
+    - name: hal_sifli
+      revision: 0dbb0e8a5637e7c259476a844c5d3d91da5b265b
+      remote: teslabs
+      path: modules/hal/sifli
       groups:
         - hal
     - name: hal_silabs

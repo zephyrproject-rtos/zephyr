@@ -1,0 +1,12 @@
+# Copyright (c) Core Devices LLC
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_SF32LB
+	bool "SiFli SF32LB UART driver"
+	default y
+	depends on DT_HAS_SIFLI_SF32LB_USART_ENABLED
+	select SERIAL_HAS_DRIVER
+	select PINCTRL
+	select CLOCK_CONTROL
+	help
+	  This option enables the SiFli SF32LB UART driver.
