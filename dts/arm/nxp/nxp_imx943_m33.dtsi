@@ -113,6 +113,34 @@
 			status = "disabled";
 		};
 
+		edma4: dma@42df0000 {
+			compatible = "nxp,mcux-edma";
+			reg = <0x42df0000 0x210000>;
+			interrupt-parent = <&irqsteer_master2>;
+			interrupts = <0 0>, <1 0>,
+				<2 0>, <3 0>,
+				<4 0>, <5 0>,
+				<6 0>, <7 0>,
+				<8 0>, <9 0>,
+				<10 0>, <11 0>,
+				<12 0>, <13 0>,
+				<14 0>, <15 0>,
+				<16 0>, <17 0>,
+				<18 0>, <19 0>,
+				<20 0>, <21 0>,
+				<22 0>, <23 0>,
+				<24 0>, <25 0>,
+				<26 0>, <27 0>,
+				<28 0>, <29 0>,
+				<30 0>, <31 0>;
+			#dma-cells = <2>;
+			nxp,version = <5>;
+			dma-channels = <64>;
+			dma-requests = <123>;
+			no-error-irq;
+			status = "disabled";
+		};
+
 		lpuart3: serial@42570000 {
 			compatible = "nxp,imx-lpuart", "nxp,lpuart";
 			reg = <0x42570000 DT_SIZE_K(64)>;
@@ -158,6 +186,8 @@
 			reg = <0x426a0000 DT_SIZE_K(64)>;
 			interrupts = <79 3>;
 			clocks = <&scmi_clk IMX943_CLK_LPUART8>;
+			dmas = <&edma4 0 38>, <&edma4 1 39>;
+			dma-names = "tx", "rx";
 			status = "disabled";
 		};
 
@@ -373,6 +403,61 @@
 			reg = <0x44720000 DT_SIZE_K(64)>;
 			interrupts = <273 0>;
 			#mbox-cells = <1>;
+		};
+
+		irqsteer: interrupt-controller@44760000 {
+			compatible = "nxp,irqsteer-intc";
+			#size-cells = <0>;
+			#address-cells = <1>;
+			reg = <0 DT_SIZE_K(1)>;
+
+			irqsteer_master0: interrupt-controller@0 {
+				compatible = "nxp,irqsteer-master";
+				reg = <0>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts-extended = <&nvic 224 0>;
+			};
+
+			irqsteer_master1: interrupt-controller@1 {
+				compatible = "nxp,irqsteer-master";
+				reg = <1>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts-extended = <&nvic 225 0>;
+			};
+
+			irqsteer_master2: interrupt-controller@2 {
+				compatible = "nxp,irqsteer-master";
+				reg = <2>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts-extended = <&nvic 226 0>;
+			};
+
+			irqsteer_master3: interrupt-controller@3 {
+				compatible = "nxp,irqsteer-master";
+				reg = <3>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts-extended = <&nvic 227 0>;
+			};
+
+			irqsteer_master4: interrupt-controller@4 {
+				compatible = "nxp,irqsteer-master";
+				reg = <4>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts-extended = <&nvic 228 0>;
+			};
+
+			irqsteer_master5: interrupt-controller@5 {
+				compatible = "nxp,irqsteer-master";
+				reg = <5>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts-extended = <&nvic 229 0>;
+			};
 		};
 
 		gpio1: gpio@47400000 {
