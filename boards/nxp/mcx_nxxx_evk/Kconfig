@@ -2,4 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_MCX_N9XX_EVK
+	bool
+	select BOARD_EARLY_INIT_HOOK
+
+config BOARD_MCX_N5XX_EVK
+	bool
 	select BOARD_EARLY_INIT_HOOK

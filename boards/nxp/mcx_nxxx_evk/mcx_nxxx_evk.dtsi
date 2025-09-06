@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "mcx_n9xx_evk-pinctrl.dtsi"
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
@@ -205,11 +204,6 @@ nxp_8080_touch_panel_i2c: &flexcomm2_lpi2c2 {
 	};
 };
 
-&flexpwm1_pwm0 {
-	pinctrl-0 = <&pinmux_flexpwm1_pwm0>;
-	pinctrl-names = "default";
-};
-
 &usdhc0 {
 	pinctrl-0 = <&pinmux_usdhc0>;
 	pinctrl-1 = <&pinmux_usdhc0>;
@@ -238,11 +232,6 @@ zephyr_mipi_dbi_parallel: &flexio0_lcd {
 	cs-gpios = <&gpio0 12 GPIO_ACTIVE_HIGH>;
 	rs-gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
 	pinctrl-0 = <&pinmux_flexio_lcd>;
-	pinctrl-names = "default";
-};
-
-&lpcmp2 {
-	pinctrl-0 = <&pinmux_lpcmp2>;
 	pinctrl-names = "default";
 };
 
