@@ -1697,6 +1697,8 @@ void k_timer_init(struct k_timer *timer,
  * Attempting to start a timer that is already running is permitted.
  * The timer's status is reset to zero and the timer begins counting down
  * using the new duration and period values.
+ * The duration value must be different than K_FOREVER for the period to
+ * be updated.
  *
  * @param timer     Address of timer.
  * @param duration  Initial timer duration.
