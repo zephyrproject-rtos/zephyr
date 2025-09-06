@@ -17,3 +17,7 @@ properties:
 
   pinctrl-names:
     required: true
+
+  cs-gpios:
+    description: select the cs pin to support the espi wakeup
+    type: phandle-array
