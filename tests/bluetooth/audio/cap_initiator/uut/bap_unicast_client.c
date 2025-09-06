@@ -26,7 +26,7 @@
 static struct bt_bap_unicast_client_cb *unicast_client_cb;
 static struct bt_bap_unicast_group bap_unicast_group;
 
-bool bt_bap_ep_is_unicast_client(const struct bt_bap_ep *ep)
+bool bt_bap_unicast_client_has_ep(const struct bt_bap_ep *ep)
 {
 	return true;
 }
