@@ -86,6 +86,8 @@ extern "C" {
  *
  * Defined by the Supplement to the Bluetooth Core Specification (CSS), v11, Part B, Section 1.2.
  */
+/** Command not supported */
+#define BT_ATT_ERR_CMD_NOT_SUP			0xa0
 /** Write Request Rejected */
 #define BT_ATT_ERR_WRITE_REQ_REJECTED		0xfc
 /** Client Characteristic Configuration Descriptor Improperly Configured */
