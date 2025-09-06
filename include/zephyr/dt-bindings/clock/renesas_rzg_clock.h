@@ -17,15 +17,17 @@
 #define RZ_CLOCK_DIV_MASK  0xFFUL
 #define RZ_CLOCK_DIV_SHIFT 0UL
 
-#define RZ_IP_GTM   0UL /* General Timer */
-#define RZ_IP_GPT   1UL /* General PWM Timer */
-#define RZ_IP_SCIF  2UL /* Serial Communications Interface with FIFO */
-#define RZ_IP_RIIC  3UL /* I2C Bus Interface */
-#define RZ_IP_RSPI  4UL /* Renesas Serial Peripheral Interface */
-#define RZ_IP_MHU   5UL /* Message Handling Unit */
-#define RZ_IP_DMAC  6UL /* Direct Memory Access Controller */
-#define RZ_IP_CANFD 7UL /* CANFD Interface (RS-CANFD) */
-#define RZ_IP_ADC   8UL /* A/D Converter */
+#define RZ_IP_GTM   0UL  /* General Timer */
+#define RZ_IP_GPT   1UL  /* General PWM Timer */
+#define RZ_IP_SCI   2UL  /* Serial Communications Interface */
+#define RZ_IP_SCIF  3UL  /* Serial Communications Interface with FIFO */
+#define RZ_IP_RIIC  4UL  /* I2C Bus Interface */
+#define RZ_IP_RSPI  5UL  /* Renesas Serial Peripheral Interface */
+#define RZ_IP_MHU   6UL  /* Message Handling Unit */
+#define RZ_IP_DMAC  7UL  /* Direct Memory Access Controller */
+#define RZ_IP_CANFD 8UL  /* CANFD Interface (RS-CANFD) */
+#define RZ_IP_ADC   9UL  /* A/D Converter */
+#define RZ_IP_WDT   10UL /* Watchdog Timer */
 
 #define RZ_CLOCK_ICLK    0UL  /* Cortex-A55 Clock */
 #define RZ_CLOCK_I2CLK   1UL  /* Cortex-M33 Clock */
@@ -89,5 +91,11 @@
 
 /* DMAC */
 #define RZ_CLOCK_DMAC(ch) RZ_CLOCK(DMAC, ch, RZ_CLOCK_P3CLK, 1)
+
+/* SCI */
+#define RZ_CLOCK_SCI(ch) RZ_CLOCK(SCI, ch, RZ_CLOCK_P0CLK, 1)
+
+/* WDT */
+#define RZ_CLOCK_WDT(ch) RZ_CLOCK(WDT, ch, RZ_CLOCK_OSCCLK, 1)
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_RENESAS_RZG_CLOCK_H_ */

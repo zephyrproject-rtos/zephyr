@@ -1,0 +1,20 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RZ Clock Pulse Generator PLL Output
+
+compatible: "renesas,rz-cpg-pll"
+
+include: [clock-controller.yaml]
+
+properties:
+  clock-frequency:
+    type: int
+    description: PLL output clock frequency (Hz)
+    required: true
+
+  "#clock-cells":
+    const: 1
+
+clock-cells:
+  - postscaler
