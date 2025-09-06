@@ -186,6 +186,18 @@
 #define NRF_FUN_TDM_SDOUT        76U
 /** TDM MCK */
 #define NRF_FUN_TDM_MCK          77U
+/** MSPI version 2 Chip select */
+#define NRF_FUN_MSPI_CSN         78U
+/** MSPI version 2 Clock pin */
+#define NRF_FUN_MSPI_SCK         79U
+/** MSPI version 2 Data pin 0 */
+#define NRF_FUN_MSPI_DQ0         80U
+/** MSPI version 2 Data pin 1 */
+#define NRF_FUN_MSPI_DQ1         81U
+/** MSPI version 2 Data pin 2 */
+#define NRF_FUN_MSPI_DQ2         82U
+/** MSPI version 2 Data pin 3 */
+#define NRF_FUN_MSPI_DQ3         83U
 
 /** @} */
 
