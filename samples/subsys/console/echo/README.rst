@@ -33,6 +33,27 @@ board. Alternatively you can run this using QEMU, as described in
 Following the initial prompt given by the firmware, start pressing keys on a
 keyboard, and they will be echoed back to the terminal program you are using.
 
+Running on QEMU
+===============
+
+On QEMU you can use the VIRTIO console device. It is already configured in
+Zephyr. To use it, run:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/console/echo
+   :board: qemu_x86_64
+   :gen-args: -DDTC_OVERLAY_FILE=virtconsole.overlay -DEXTRA_CONF_FILE=overlay-virtconsole.conf
+   :goals: run
+   :compact:
+
+It is possible to use multiple inputs/outputs at once by configuring them
+in the ``overlay-virtconsole.conf`` file.
+
+* Add ``CONFIG_UART_VIRTIO_CONSOLE_F_MULTIPORT=y`` to enable the
+  multiport feature.
+* Configure more ports using the ``CONFIG_QEMU_EXTRA_FLAGS`` option.
+  Refer to the QEMU manual for details.
+
 Sample Output
 =============
 
