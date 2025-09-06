@@ -85,6 +85,23 @@
 		enable-gpios = <&gpioa 12 GPIO_ACTIVE_HIGH>;
 		status = "okay";
 	};
+
+	exp_header: exp-header {
+		compatible = "silabs,exp-header";
+		#gpio-cells = <2>;
+		gpio-map = <4 0 &gpiod 11 0>,
+			   <6 0 &gpiod 12 0>,
+			   <8 0 &gpiod 13 0>,
+			   <9 0 &gpiob 1 0>,
+			   <10 0 &gpiod 14 0>,
+			   <12 0 &gpiod 7 0>,
+			   <13 0 &gpioc 11 0>,
+			   <14 0 &gpiod 8 0>,
+			   <15 0 &gpiod 10 0>,
+			   <16 0 &gpiod 9 0>;
+		gpio-map-mask = <0xffffffff 0x0>;
+		gpio-map-pass-thru = <0x0 GPIO_DT_FLAGS_MASK>;
+	};
 };
 
 &timer0 {

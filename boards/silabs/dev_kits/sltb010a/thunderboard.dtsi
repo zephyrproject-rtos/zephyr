@@ -35,6 +35,13 @@
 		};
 	};
 
+	exp_header: exp-header {
+		compatible = "silabs,exp-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0x0>;
+		gpio-map-pass-thru = <0x0 GPIO_DT_FLAGS_MASK>;
+	};
+
 	wake_up_trigger: gpio-wake-up  {
 		compatible = "silabs,gecko-wake-up-trigger";
 		gpios = <&gpioa 5 GPIO_ACTIVE_LOW>;
