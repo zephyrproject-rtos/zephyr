@@ -23,41 +23,6 @@
 		IFX_CAT1_CLOCK_BLOCK_PERIPHERAL##gr##_24_5BIT = IFX_CAT1_PERIPHERAL_GROUP_ADJUST(  \
 			(gr), CY_SYSCLK_DIV_24_5_BIT) /*!< 24.5bit Peripheral Divider Group */
 
-enum ifx_cat1_resource {
-	IFX_CAT1_RSC_ADC,     /*!< Analog to digital converter */
-	IFX_CAT1_RSC_ADCMIC,  /*!< Analog to digital converter with Analog Mic support */
-	IFX_CAT1_RSC_BLESS,   /*!< Bluetooth communications block */
-	IFX_CAT1_RSC_CAN,     /*!< CAN communication block */
-	IFX_CAT1_RSC_CLKPATH, /*!< Clock Path. DEPRECATED. */
-	IFX_CAT1_RSC_CLOCK,   /*!< Clock */
-	IFX_CAT1_RSC_CRYPTO,  /*!< Crypto hardware accelerator */
-	IFX_CAT1_RSC_DAC,     /*!< Digital to analog converter */
-	IFX_CAT1_RSC_DMA,     /*!< DMA controller */
-	IFX_CAT1_RSC_DW,      /*!< Datawire DMA controller */
-	IFX_CAT1_RSC_ETH,     /*!< Ethernet communications block */
-	IFX_CAT1_RSC_GPIO,    /*!< General purpose I/O pin */
-	IFX_CAT1_RSC_I2S,     /*!< I2S communications block */
-	IFX_CAT1_RSC_I3C,     /*!< I3C communications block */
-	IFX_CAT1_RSC_KEYSCAN, /*!< KeyScan block */
-	IFX_CAT1_RSC_LCD,     /*!< Segment LCD controller */
-	IFX_CAT1_RSC_LIN,     /*!< LIN communications block */
-	IFX_CAT1_RSC_LPCOMP,  /*!< Low power comparator */
-	IFX_CAT1_RSC_LPTIMER, /*!< Low power timer */
-	IFX_CAT1_RSC_OPAMP,   /*!< Opamp */
-	IFX_CAT1_RSC_PDM,     /*!< PCM/PDM communications block */
-	IFX_CAT1_RSC_PTC,     /*!< Programmable Threshold comparator */
-	IFX_CAT1_RSC_SMIF,    /*!< Quad-SPI communications block */
-	IFX_CAT1_RSC_RTC,     /*!< Real time clock */
-	IFX_CAT1_RSC_SCB,     /*!< Serial Communications Block */
-	IFX_CAT1_RSC_SDHC,    /*!< SD Host Controller */
-	IFX_CAT1_RSC_SDIODEV, /*!< SDIO Device Block */
-	IFX_CAT1_RSC_TCPWM,   /*!< Timer/Counter/PWM block */
-	IFX_CAT1_RSC_TDM,     /*!< TDM block */
-	IFX_CAT1_RSC_UDB,     /*!< UDB Array */
-	IFX_CAT1_RSC_USB,     /*!< USB communication block */
-	IFX_CAT1_RSC_INVALID, /*!< Placeholder for invalid type */
-};
-
 enum ifx_cat1_clock_block {
 #if defined(CONFIG_SOC_FAMILY_INFINEON_CAT1A)
 	/* The first four items are here for backwards compatibility with old clock APIs */
@@ -291,8 +256,8 @@ struct ifx_cat1_clock {
 };
 
 struct ifx_cat1_resource_inst {
-	enum ifx_cat1_resource type; /* !< The resource block type */
-	uint8_t block_num;           /* !< The resource block index */
+	uint8_t type;      /* !< The resource block type */
+	uint8_t block_num; /* !< The resource block index */
 	/**
 	 * The channel number, if the resource type defines multiple channels
 	 * per block instance. Otherwise, 0
