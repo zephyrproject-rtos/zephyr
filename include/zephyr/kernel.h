@@ -2228,6 +2228,26 @@ static inline int z_impl_k_queue_is_empty(struct k_queue *queue)
 }
 
 /**
+ * @brief Query the length of a queue.
+ *
+ * Note that the length of the queue might already have changed by the time this
+ * function returns if other threads are also writing to or reading from the
+ * queue.
+ *
+ * @funcprops \isr_ok
+ *
+ * @param queue Address of the queue.
+ *
+ * @return Number of elements on the queue
+ */
+__syscall int k_queue_len(struct k_queue *queue);
+
+static inline int z_impl_k_queue_len(struct k_queue *queue)
+{
+	return sys_sflist_len(&queue->data_q);
+}
+
+/**
  * @brief Peek element at the head of queue.
  *
  * Return element from the head of queue without removing it.
@@ -2770,6 +2790,24 @@ struct k_fifo {
 	k_queue_is_empty(&(fifo)->_queue)
 
 /**
+ * @brief Query the length of a FIFO queue.
+ *
+ * Note that the length of the queue might already have changed by the time this
+ * function returns if other threads are also writing to or reading from the
+ * queue.
+ *
+ * @funcprops \isr_ok
+ *
+ * @param fifo Address of the queue.
+ *
+ * @return Number of elements on the queue
+ */
+#define k_fifo_len(fifo) \
+	({ \
+		k_queue_len(&(fifo)->_queue); \
+	})
+
+/**
  * @brief Peek element at the head of a FIFO queue.
  *
  * Return element from the head of FIFO queue without removing it. A usecase
@@ -2934,6 +2972,24 @@ struct k_lifo {
 	void *lg_ret = k_queue_get(&(lifo)->_queue, timeout); \
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_lifo, get, lifo, timeout, lg_ret); \
 	lg_ret; \
+	})
+
+/**
+ * @brief Query the length of a LIFO queue.
+ *
+ * Note that the length of the queue might already have changed by the time this
+ * function returns if other threads are also writing to or reading from the
+ * queue.
+ *
+ * @funcprops \isr_ok
+ *
+ * @param lifo Address of the queue.
+ *
+ * @return Number of elements on the queue
+ */
+#define k_lifo_len(lifo) \
+	({ \
+		k_queue_len(&(lifo)->_queue); \
 	})
 
 /**

@@ -115,3 +115,20 @@ ZTEST(queue_api_1cpu, test_queue_loop)
 		tqueue_read_write(&queue);
 	}
 }
+
+ZTEST(queue_api, test_queue_len)
+{
+	k_queue_init(&queue);
+
+	for (int i = 0; i < LIST_LEN; i++) {
+		zassert_equal(i, k_queue_len(&queue));
+		k_queue_append(&queue, (void *)&data[i]);
+	}
+
+	for (int i = 0; i < LIST_LEN; i++) {
+		zassert_equal(LIST_LEN - i, k_queue_len(&queue));
+		zassert_true(k_queue_remove(&queue, &data[i]));
+	}
+
+	zassert_equal(0, k_queue_len(&queue));
+}
