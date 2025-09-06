@@ -69,12 +69,12 @@ Another essential aspect of zbus is the observers. There are three types of obse
 
 * Listeners, a callback that the event dispatcher executes every time an observed channel is
   published or notified;
+* Message subscribers, a thread-based observer that relies internally on a FIFO where the event
+  dispatcher puts a copy of the message every time an observed channel is published or notified.
 * Subscriber, a thread-based observer that relies internally on a message queue where the event
   dispatcher puts a changed channel's reference every time an observed channel is published or
   notified. Note this kind of observer does not receive the message itself. It should read the
   message from the channel after receiving the notification;
-* Message subscribers, a thread-based observer that relies internally on a FIFO where the event
-  dispatcher puts a copy of the message every time an observed channel is published or notified.
 
 Channel observation structures define the relationship between a channel and its observers. For
 every observation, a pair channel/observer. Developers can statically allocate observation using the
