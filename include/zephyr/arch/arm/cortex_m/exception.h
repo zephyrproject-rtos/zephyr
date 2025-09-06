@@ -15,6 +15,9 @@
 #include <zephyr/devicetree.h>
 
 #include <zephyr/arch/arm/cortex_m/nvic.h>
+#ifndef _ASMLANGUAGE
+#include <zephyr/arch/arm/arm-m-switch.h>
+#endif
 
 /* for assembler, only works with constants */
 #define Z_EXC_PRIO(pri) (((pri) << (8 - NUM_IRQ_PRIO_BITS)) & 0xff)
@@ -125,7 +128,14 @@ struct arch_esf {
 
 extern uint32_t z_arm_coredump_fault_sp;
 
+#ifdef CONFIG_USE_SWITCH
+static inline void z_arm_exc_exit(void)
+{
+	arm_m_exc_tail();
+}
+#else
 extern void z_arm_exc_exit(void);
+#endif
 
 #ifdef __cplusplus
 }
