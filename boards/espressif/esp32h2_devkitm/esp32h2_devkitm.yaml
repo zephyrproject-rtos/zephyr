@@ -11,3 +11,4 @@ supported:
   - uart
   - counter
   - entropy
+  - spi
