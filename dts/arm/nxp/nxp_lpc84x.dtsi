@@ -1,0 +1,91 @@
+#include <arm/armv6-m.dtsi>
+#include <mem.h>
+
+#include <zephyr/dt-bindings/clock/lpc84x-clock.h>
+#include <zephyr/dt-bindings/pinctrl/lpc84x-pinctrl.h>
+
+/{
+	cpus{
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			compatible = "arm,cortex-m0+";
+			reg = <0>;
+		};
+	};
+
+	clock_setup: clock-setup {
+		compatible = "nxp,lpc-clock-init";
+		status = "okay";
+		enable-fro;
+		enable-froout;
+		fro-freq = "30M";
+		enable-sysosc;
+		mainclk-src = "fro";
+	};
+
+	sram0: memory@10000000 {
+		compatible = "mmio-sram";
+		reg = <0x10000000 DT_SIZE_K(8)>;
+	};
+
+	soc {
+		flash0: flash@0 {
+			compatible = "soc-nv-flash";
+			reg = <0 DT_SIZE_K(64)>;
+		};
+
+		uart0: serial@40064000 {
+			compatible = "nxp,lpc84x-uart";
+			reg = <0x40064000 0x4000>;
+			clk = <kCLOCK_Uart0>;
+			interrupts = <3 2>;
+			swm = <kSWM_USART0_TXD kSWM_USART0_RXD>;
+			status = "disabled";
+		};
+/*
+		gpio: gpio@a0000000 {
+			compatible = "nxp,lpc-gpio";
+			reg = <0xa0000000 0x2484>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			gpio0: gpio@0 {
+				compatible = "nxp,lpc-gpio-port";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0>;
+				status = "disabled";
+			};
+
+			gpio1: gpio@1 {
+				compatible = "nxp,lpc-gpio-port";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <1>;
+				status = "disabled";
+			};
+		};
+*/
+		gpio0: gpio0 {
+			compatible = "nxp,lpc84x-gpio";
+			port = <0>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
+		gpio1: gpio1 {
+			compatible = "nxp,lpc84x-gpio";
+			port = <1>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <2>;
+};

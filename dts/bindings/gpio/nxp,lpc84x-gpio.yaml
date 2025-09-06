@@ -1,0 +1,17 @@
+description: LPC84X GPIO node
+
+compatible: "nxp,lpc84x-gpio"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+  port:
+    type: int
+    required: true
+
+  "#gpio-cells":
+    const: 2
+
+gpio-cells:
+  - pin
+  - flags
