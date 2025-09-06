@@ -387,6 +387,12 @@ static int api_erase(const struct device *dev, off_t addr, size_t size)
 	return rc;
 }
 
+static int api_get_size(const struct device *dev, uint64_t *size)
+{
+	*size = dev_flash_size(dev);
+	return 0;
+}
+
 static const
 struct flash_parameters *api_get_parameters(const struct device *dev)
 {
@@ -771,6 +777,7 @@ static DEVICE_API(flash, drv_api) = {
 	.read = api_read,
 	.write = api_write,
 	.erase = api_erase,
+	.get_size = api_get_size,
 	.get_parameters = api_get_parameters,
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	.page_layout = api_page_layout,
