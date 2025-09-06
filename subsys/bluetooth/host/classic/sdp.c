@@ -1744,11 +1744,74 @@ static int sdp_client_ss_search(struct bt_sdp_client *session,
 	return bt_sdp_send(&session->chan.chan, buf, BT_SDP_SVC_SEARCH_REQ, session->tid);
 }
 
+static uint16_t sdp_clinet_get_attribute_id_list_len(struct bt_sdp_attribute_id_list *ids)
+{
+	uint16_t len = 0;
+
+	if (ids == NULL || ids->count == 0) {
+		return sizeof(uint8_t) + sizeof(uint32_t);
+	}
+
+	for (size_t i = 0; i < ids->count; i++) {
+		if (ids->ranges[i].beginning == ids->ranges[i].ending) {
+			len += sizeof(uint8_t) + sizeof(uint16_t);
+		} else {
+			len += sizeof(uint8_t) + sizeof(uint32_t);
+		}
+	}
+
+	return len;
+}
+
+static void sdp_clinet_add_attribute_id(struct net_buf *buf, struct bt_sdp_attribute_id_list *ids)
+{
+	uint16_t len;
+
+	len = sdp_clinet_get_attribute_id_list_len(ids);
+	/*
+	 * Sequence definition where data is sequence of elements and where
+	 * additional next byte points the size of elements within
+	 */
+	if (len > UINT8_MAX) {
+		net_buf_add_u8(buf, BT_SDP_SEQ8);
+		net_buf_add_u8(buf, len);
+	} else {
+		net_buf_add_u8(buf, BT_SDP_SEQ16);
+		net_buf_add_be16(buf, len);
+	}
+
+	if (ids == NULL || ids->count == 0) {
+		/* Data element definition for two following 16bits range elements */
+		net_buf_add_u8(buf, BT_SDP_UINT32);
+		/* Get all attributes. It enables filter out wanted only attributes */
+		net_buf_add_be16(buf, 0x0000);
+		net_buf_add_be16(buf, 0xffff);
+		return;
+	}
+
+	for (size_t i = 0; i < ids->count; i++) {
+		if (ids->ranges[i].beginning == ids->ranges[i].ending) {
+			/* Data element definition for one following 16bits range elements */
+			net_buf_add_u8(buf, BT_SDP_UINT16);
+			/* Get all attributes. It enables filter out wanted only attributes */
+			net_buf_add_be16(buf, ids->ranges[i].beginning);
+		} else {
+			/* Data element definition for two following 16bits range elements */
+			net_buf_add_u8(buf, BT_SDP_UINT32);
+			/* Get all attributes. It enables filter out wanted only attributes */
+			net_buf_add_be16(buf, ids->ranges[i].beginning);
+			net_buf_add_be16(buf, ids->ranges[i].ending);
+		}
+	}
+}
+
 /* ServiceAttribute PDU, ref to BT Core 5.4, Vol 3, part B, 4.6.1 */
 static int sdp_client_sa_search(struct bt_sdp_client *session,
 				const struct bt_sdp_discover_params *param)
 {
 	struct net_buf *buf;
+	uint16_t len;
+	uint16_t att_id_list_len;
 
 	/* Update context param directly. */
 	session->param = param;
@@ -1760,17 +1823,24 @@ static int sdp_client_sa_search(struct bt_sdp_client *session,
 
 	/* Set attribute max bytes count to be returned from server */
 	net_buf_add_be16(buf, net_buf_tailroom(session->rec_buf));
-	/*
-	 * Sequence definition where data is sequence of elements and where
-	 * additional next byte points the size of elements within
-	 */
-	net_buf_add_u8(buf, BT_SDP_SEQ8);
-	net_buf_add_u8(buf, 0x05);
-	/* Data element definition for two following 16bits range elements */
-	net_buf_add_u8(buf, BT_SDP_UINT32);
-	/* Get all attributes. It enables filter out wanted only attributes */
-	net_buf_add_be16(buf, 0x0000);
-	net_buf_add_be16(buf, 0xffff);
+
+	/* Check the tailroom of the buffer */
+	att_id_list_len = sdp_clinet_get_attribute_id_list_len(param->ids);
+	len = att_id_list_len;
+	if (att_id_list_len > UINT8_MAX) {
+		len += sizeof(uint8_t) + sizeof(uint16_t);
+	} else {
+		len += sizeof(uint8_t) + sizeof(uint8_t);
+	}
+	len += sizeof(session->cstate.length) + session->cstate.length;
+	if (len > net_buf_tailroom(buf)) {
+		LOG_ERR("No space to add attribute ID");
+		net_buf_unref(buf);
+		return -ENOMEM;
+	}
+
+	/* Add attribute ID List */
+	sdp_clinet_add_attribute_id(buf, param->ids);
 
 	/*
 	 * Update and validate PDU ContinuationState. Initial SSA Request has
@@ -1796,6 +1866,8 @@ static int sdp_client_ssa_search(struct bt_sdp_client *session,
 {
 	struct net_buf *buf;
 	uint8_t uuid128[BT_UUID_SIZE_128];
+	uint16_t len;
+	uint16_t att_id_list_len;
 
 	/* Update context param directly. */
 	session->param = param;
@@ -1833,17 +1905,24 @@ static int sdp_client_ssa_search(struct bt_sdp_client *session,
 
 	/* Set attribute max bytes count to be returned from server */
 	net_buf_add_be16(buf, net_buf_tailroom(session->rec_buf));
-	/*
-	 * Sequence definition where data is sequence of elements and where
-	 * additional next byte points the size of elements within
-	 */
-	net_buf_add_u8(buf, BT_SDP_SEQ8);
-	net_buf_add_u8(buf, 0x05);
-	/* Data element definition for two following 16bits range elements */
-	net_buf_add_u8(buf, BT_SDP_UINT32);
-	/* Get all attributes. It enables filter out wanted only attributes */
-	net_buf_add_be16(buf, 0x0000);
-	net_buf_add_be16(buf, 0xffff);
+
+	/* Check the tailroom of the buffer */
+	att_id_list_len = sdp_clinet_get_attribute_id_list_len(param->ids);
+	len = att_id_list_len;
+	if (att_id_list_len > UINT8_MAX) {
+		len += sizeof(uint8_t) + sizeof(uint16_t);
+	} else {
+		len += sizeof(uint8_t) + sizeof(uint8_t);
+	}
+	len += sizeof(session->cstate.length) + session->cstate.length;
+	if (len > net_buf_tailroom(buf)) {
+		LOG_ERR("No space to add attribute ID");
+		net_buf_unref(buf);
+		return -ENOMEM;
+	}
+
+	/* Add attribute ID List */
+	sdp_clinet_add_attribute_id(buf, param->ids);
 
 	/*
 	 * Update and validate PDU ContinuationState. Initial SSA Request has
@@ -2617,9 +2696,25 @@ static int sdp_client_discovery_start(struct bt_conn *conn,
 int bt_sdp_discover(struct bt_conn *conn,
 		    struct bt_sdp_discover_params *params)
 {
-	if (!params || !params->uuid || !params->func || !params->pool) {
+	if (params == NULL || params->uuid == NULL || params->func == NULL ||
+	    params->pool == NULL ||
+	    (params->ids != NULL && params->ids->count != 0 && params->ids->ranges == NULL)) {
 		LOG_WRN("Invalid user params");
 		return -EINVAL;
+	}
+
+	if (params->ids != NULL) {
+		for (size_t i = 0; i < params->ids->count; i++) {
+			struct bt_sdp_attribute_id_range *range;
+
+			range = &params->ids->ranges[i];
+			if (range->beginning <= range->ending) {
+				continue;
+			}
+
+			LOG_WRN("Invalid range %u > %u", range->beginning, range->ending);
+			return -EINVAL;
+		}
 	}
 
 	return sdp_client_discovery_start(conn, params);
