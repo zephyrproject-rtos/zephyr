@@ -49,10 +49,15 @@ extern "C" {
 #define BT_AUDIO_PD_MAX                          0xFFFFFFU
 /** Indicates that the unicast server does not have a preference for any retransmission number */
 #define BT_AUDIO_RTN_PREF_NONE                   0xFFU
-/** The minimum size of a Broadcast Name as defined by Bluetooth Assigned Numbers */
+/** The minimum size in octets of a Broadcast Name as defined by Bluetooth Assigned Numbers */
 #define BT_AUDIO_BROADCAST_NAME_LEN_MIN          4
-/** The maximum size of a Broadcast Name as defined by Bluetooth Assigned Numbers */
+/** The maximum size in octets of a Broadcast Name as defined by Bluetooth Assigned Numbers */
 #define BT_AUDIO_BROADCAST_NAME_LEN_MAX          128
+
+/** The minimum amount of characters of a Broadcast Name as defined by Bluetooth Assigned Numbers */
+#define BT_AUDIO_BROADCAST_NAME_CHAR_MIN 4
+/** The maximum amount of characters of a Broadcast Name as defined by Bluetooth Assigned Numbers */
+#define BT_AUDIO_BROADCAST_NAME_CHAR_MAX 32
 
 /** Size of the stream language value, e.g. "eng" */
 #define BT_AUDIO_LANG_SIZE 3
@@ -1456,7 +1461,9 @@ int bt_audio_codec_cfg_meta_get_broadcast_name(const struct bt_audio_codec_cfg *
  *
  * @param codec_cfg          The codec configuration to set data for.
  * @param broadcast_name     The broadcast name to set.
- * @param broadcast_name_len The length of @p broadcast_name.
+ * @param broadcast_name_len The length of @p broadcast_name. Shall be between
+ *                           @ref BT_AUDIO_BROADCAST_NAME_LEN_MIN and
+ *                           @ref BT_AUDIO_BROADCAST_NAME_LEN_MAX.
  *
  * @retval data_len The @p codec_cfg.data_len on success
  * @retval -EINVAL Arguments are invalid
@@ -2058,7 +2065,9 @@ int bt_audio_codec_cap_meta_get_broadcast_name(const struct bt_audio_codec_cap *
  *
  * @param codec_cap          The codec capability to set data for.
  * @param broadcast_name     The broadcast name to set.
- * @param broadcast_name_len The length of @p broadcast_name.
+ * @param broadcast_name_len The length of @p broadcast_name. Shall be between
+ *                           @ref BT_AUDIO_BROADCAST_NAME_LEN_MIN and
+ *                           @ref BT_AUDIO_BROADCAST_NAME_LEN_MAX.
  *
  * @retval data_len The @p codec_cap.data_len on success
  * @retval -EINVAL Arguments are invalid
