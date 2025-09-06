@@ -52,75 +52,87 @@
 		compatible = "atmel-xplained-pro-header";
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
-		gpio-map-pass-thru = <0 0x3f>;		/*           Shared */
-		gpio-map =	<0  0 &piob  2 0>,	/* AFE AD0          */
-				<1  0 &piob  3 0>,	/* AFE AD1          */
-				<2  0 &pioa 24 0>,	/* GPIO             */
-				<3  0 &pioa 25 0>,	/* GPIO             */
-				<4  0 &pioa 15 0>,	/* TIOA1            */
-				<5  0 &pioa 16 0>,	/* TIOB1            */
-				<6  0 &pioa 11 0>,	/* WKUP7            */
-				<7  0 &piod 25 0>,	/* GPIO             */
-				<8  0 &pioa  3 0>,	/* TWD0        EXTx */
-				<9  0 &pioa  4 0>,	/* TWCK0       EXTx */
-				<10 0 &pioa 21 0>,	/* RXD1             */
-				<11 0 &pioa 22 0>,	/* TXD1             */
-				<12 0 &piob 14 0>,	/* SPI(NPCS1)       */
-				<13 0 &pioa 13 0>,	/* SPI(MOSI)   EXTx */
-				<14 0 &pioa 12 0>,	/* SPI(MISO)   EXTx */
-				<15 0 &pioa 14 0>;	/* SPI(SCK)    EXTx */
-							/* GND              */
-							/* +3.3V            */
+		gpio-map-pass-thru = <0 0x3f>;
+
+		/* dts-format off */
+					      /*           Shared */
+		gpio-map = <0  0 &piob  2 0>, /* AFE AD0          */
+			   <1  0 &piob  3 0>, /* AFE AD1          */
+			   <2  0 &pioa 24 0>, /* GPIO             */
+			   <3  0 &pioa 25 0>, /* GPIO             */
+			   <4  0 &pioa 15 0>, /* TIOA1            */
+			   <5  0 &pioa 16 0>, /* TIOB1            */
+			   <6  0 &pioa 11 0>, /* WKUP7            */
+			   <7  0 &piod 25 0>, /* GPIO             */
+			   <8  0 &pioa  3 0>, /* TWD0        EXTx */
+			   <9  0 &pioa  4 0>, /* TWCK0       EXTx */
+			   <10 0 &pioa 21 0>, /* RXD1             */
+			   <11 0 &pioa 22 0>, /* TXD1             */
+			   <12 0 &piob 14 0>, /* SPI(NPCS1)       */
+			   <13 0 &pioa 13 0>, /* SPI(MOSI)   EXTx */
+			   <14 0 &pioa 12 0>, /* SPI(MISO)   EXTx */
+			   <15 0 &pioa 14 0>; /* SPI(SCK)    EXTx */
+					      /* GND              */
+					      /* +3.3V            */
+		/* dts-format on */
 	};
 
 	ext2_header: xplained-pro-connector2 {
 		compatible = "atmel-xplained-pro-header";
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
-		gpio-map-pass-thru = <0 0x3f>;		/*           Shared */
-		gpio-map =    /*<0  0 -      - 0>,	   -                */
-			      /*<1  0 -      - 0>,	   -                */
-				<2  0 &pioe  2 0>,	/* GPIO        EBDG */
-				<3  0 &piob  5 0>,	/* GPIO        EDBG */
-				<4  0 &piod 21 0>,	/* PWMHI1           */
-			      /*<5  0 -      - 0>,	   -                */
-				<6  0 &piod 29 0>,	/* GPIO        ETH  */
-				<7  0 &piob  4 0>,	/* GPIO             */
-				<8  0 &pioa  3 0>,	/* TWD0        EXTx */
-				<9  0 &pioa  4 0>,	/* TWCK0       EXTx */
-				<10 0 &pioa  5 0>,	/* URXD1       EXT3 */
-				<11 0 &pioa  6 0>,	/* UTXD1       EXT3 */
-				<12 0 &piod 23 0>,	/* GPIO             */
-				<13 0 &pioa 13 0>,	/* SPI(MOSI)   EXTx */
-				<14 0 &pioa 12 0>,	/* SPI(MISO)   EXTx */
-				<15 0 &pioa 14 0>;	/* SPI(SCK)    EXTx */
-							/* GND              */
-							/* +3.3V            */
+		gpio-map-pass-thru = <0 0x3f>;
+
+		/* dts-format off */
+						/*           Shared */
+		gpio-map = /*<0  0 -      - 0>,	   -                */
+			   /*<1  0 -      - 0>,	   -                */
+			     <2  0 &pioe  2 0>,	/* GPIO        EBDG */
+			     <3  0 &piob  5 0>,	/* GPIO        EDBG */
+			     <4  0 &piod 21 0>,	/* PWMHI1           */
+			   /*<5  0 -      - 0>,	   -                */
+			     <6  0 &piod 29 0>,	/* GPIO        ETH  */
+			     <7  0 &piob  4 0>,	/* GPIO             */
+			     <8  0 &pioa  3 0>,	/* TWD0        EXTx */
+			     <9  0 &pioa  4 0>,	/* TWCK0       EXTx */
+			     <10 0 &pioa  5 0>,	/* URXD1       EXT3 */
+			     <11 0 &pioa  6 0>,	/* UTXD1       EXT3 */
+			     <12 0 &piod 23 0>,	/* GPIO             */
+			     <13 0 &pioa 13 0>,	/* SPI(MOSI)   EXTx */
+			     <14 0 &pioa 12 0>,	/* SPI(MISO)   EXTx */
+			     <15 0 &pioa 14 0>;	/* SPI(SCK)    EXTx */
+						/* GND              */
+						/* +3.3V            */
+		/* dts-format on */
 	};
 
 	ext3_header: xplained-pro-connector3 {
 		compatible = "atmel-xplained-pro-header";
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
-		gpio-map-pass-thru = <0 0x3f>;		/*           Shared */
-		gpio-map =	<0  0 &pioa 17 0>,	/* AFE AD0          */
-				<1  0 &pioc 13 0>,	/* AFE AD6          */
-				<2  0 &piod 28 0>,	/* GPIO             */
-				<3  0 &piod 17 0>,	/* GPIO             */
-				<4  0 &piod 20 0>,	/* PWMH0            */
-				<5  0 &piod 24 0>,	/* PWML0            */
-				<6  0 &pioe  1 0>,	/* GPIO             */
-				<7  0 &piod 26 0>,	/* GPIO             */
-				<8  0 &pioa  3 0>,	/* TWD0        EXTx */
-				<9  0 &pioa  4 0>,	/* TWCK0       EXTx */
-				<10 0 &pioa  5 0>,	/* URXD1       EXT2 */
-				<11 0 &pioa  6 0>,	/* UTXD1       EXT2 */
-				<12 0 &piod 30 0>,	/* GPIO             */
-				<13 0 &pioa 13 0>,	/* SPI(MOSI)   EXTx */
-				<14 0 &pioa 12 0>,	/* SPI(MISO)   EXTx */
-				<15 0 &pioa 14 0>;	/* SPI(SCK)    EXTx */
-							/* GND              */
-							/* +3.3V            */
+		gpio-map-pass-thru = <0 0x3f>;
+
+		/* dts-format off */
+					      /*           Shared */
+		gpio-map = <0  0 &pioa 17 0>, /* AFE AD0          */
+			   <1  0 &pioc 13 0>, /* AFE AD6          */
+			   <2  0 &piod 28 0>, /* GPIO             */
+			   <3  0 &piod 17 0>, /* GPIO             */
+			   <4  0 &piod 20 0>, /* PWMH0            */
+			   <5  0 &piod 24 0>, /* PWML0            */
+			   <6  0 &pioe  1 0>, /* GPIO             */
+			   <7  0 &piod 26 0>, /* GPIO             */
+			   <8  0 &pioa  3 0>, /* TWD0        EXTx */
+			   <9  0 &pioa  4 0>, /* TWCK0       EXTx */
+			   <10 0 &pioa  5 0>, /* URXD1       EXT2 */
+			   <11 0 &pioa  6 0>, /* UTXD1       EXT2 */
+			   <12 0 &piod 30 0>, /* GPIO             */
+			   <13 0 &pioa 13 0>, /* SPI(MOSI)   EXTx */
+			   <14 0 &pioa 12 0>, /* SPI(MISO)   EXTx */
+			   <15 0 &pioa 14 0>; /* SPI(SCK)    EXTx */
+					      /* GND              */
+					      /* +3.3V            */
+		/* dts-format on */
 	};
 };
 
