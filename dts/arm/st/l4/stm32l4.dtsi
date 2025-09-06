@@ -35,7 +35,7 @@
 			device_type = "cpu";
 			compatible = "arm,cortex-m4f";
 			reg = <0>;
-			cpu-power-states = <&stop0 &stop1 &stop2>;
+			cpu-power-states = <&stop0 &stop1 &stop2 &standby>;
 		};
 
 		power-states {
@@ -45,18 +45,29 @@
 				substate-id = <1>;
 				min-residency-us = <500>;
 			};
+
 			stop1: state1 {
 				compatible = "zephyr,power-state";
 				power-state-name = "suspend-to-idle";
 				substate-id = <2>;
 				min-residency-us = <700>;
 			};
+
 			stop2: state2 {
 				compatible = "zephyr,power-state";
 				power-state-name = "suspend-to-idle";
 				substate-id = <3>;
 				min-residency-us = <1000>;
 			};
+
+			standby: state3 {
+				compatible = "zephyr,power-state";
+				power-state-name = "standby";
+				min-residency-us = <1000>;
+				exit-latency-us = <100>;
+				status = "disabled";
+			};
+
 		};
 	};
 
