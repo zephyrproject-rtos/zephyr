@@ -106,7 +106,7 @@ int bt_bap_unicast_server_reconfig(struct bt_bap_stream *stream,
 
 	ep = stream->ep;
 
-	if (!bt_ascs_is_ase_ep(ep)) {
+	if (!bt_ascs_has_ep(ep)) {
 		LOG_DBG("ep %p not in ASCS", ep);
 		return -EINVAL;
 	}
@@ -131,7 +131,7 @@ int bt_bap_unicast_server_start(struct bt_bap_stream *stream)
 {
 	struct bt_bap_ep *ep = stream->ep;
 
-	if (!bt_ascs_is_ase_ep(ep)) {
+	if (!bt_ascs_has_ep(ep)) {
 		LOG_DBG("ep %p not in ASCS", ep);
 		return -EINVAL;
 	}
@@ -164,7 +164,7 @@ int bt_bap_unicast_server_metadata(struct bt_bap_stream *stream, const uint8_t m
 	int err;
 
 	ep = stream->ep;
-	if (!bt_ascs_is_ase_ep(ep)) {
+	if (!bt_ascs_has_ep(ep)) {
 		LOG_DBG("ep %p not in ASCS", ep);
 		return -EINVAL;
 	}
@@ -193,7 +193,7 @@ int bt_bap_unicast_server_metadata(struct bt_bap_stream *stream, const uint8_t m
 
 int bt_bap_unicast_server_disable(struct bt_bap_stream *stream)
 {
-	if (!bt_ascs_is_ase_ep(stream->ep)) {
+	if (!bt_ascs_has_ep(stream->ep)) {
 		LOG_DBG("ep %p not in ASCS", stream->ep);
 		return -EINVAL;
 	}
@@ -203,7 +203,7 @@ int bt_bap_unicast_server_disable(struct bt_bap_stream *stream)
 
 int bt_bap_unicast_server_release(struct bt_bap_stream *stream)
 {
-	if (!bt_ascs_is_ase_ep(stream->ep)) {
+	if (!bt_ascs_has_ep(stream->ep)) {
 		LOG_DBG("ep %p not in ASCS", stream->ep);
 		return -EINVAL;
 	}
@@ -223,7 +223,7 @@ void bt_bap_unicast_server_foreach_ep(struct bt_conn *conn, bt_bap_ep_func_t fun
 	bt_ascs_foreach_ep(conn, func, user_data);
 }
 
-bool bt_bap_ep_is_unicast_server(const struct bt_bap_ep *ep)
+bool bt_bap_unicast_server_has_ep(const struct bt_bap_ep *ep)
 {
-	return bt_ascs_is_ase_ep(ep);
+	return bt_ascs_has_ep(ep);
 }
