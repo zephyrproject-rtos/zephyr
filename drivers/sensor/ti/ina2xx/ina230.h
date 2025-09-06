@@ -1,27 +1,23 @@
 /*
  * Copyright 2021 The Chromium OS Authors
- * Copyright (c) 2021 Grinn
+ * Copyright 2021 Grinn
+ * Copyright 2025 Nova Dynamics LLC
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_DRIVERS_SENSOR_INA23X_INA230_H_
-#define ZEPHYR_DRIVERS_SENSOR_INA23X_INA230_H_
+#ifndef ZEPHYR_DRIVERS_SENSOR_INA2XX_INA230_H_
+#define ZEPHYR_DRIVERS_SENSOR_INA2XX_INA230_H_
 
-#ifdef CONFIG_INA230_TRIGGER
 #include <stdbool.h>
-#endif
 #include <stdint.h>
 
 #include <zephyr/device.h>
-#ifdef CONFIG_INA230_TRIGGER
 #include <zephyr/drivers/gpio.h>
-#endif
-#include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/sensor.h>
-#ifdef CONFIG_INA230_TRIGGER
 #include <zephyr/kernel.h>
-#endif
+
+#include "ina2xx_common.h"
 
 #define INA230_REG_CONFIG          0x00
 #define INA230_REG_SHUNT_VOLT      0x01
@@ -49,22 +45,17 @@ struct ina230_data {
 };
 
 struct ina230_config {
-	struct i2c_dt_spec bus;
-	uint16_t config;
-	uint32_t current_lsb;
-	uint16_t cal;
+	struct ina2xx_config common;
 	uint8_t power_scale;
 	uint32_t uv_lsb;
-#ifdef CONFIG_INA230_TRIGGER
 	bool trig_enabled;
 	uint16_t mask;
 	const struct gpio_dt_spec alert_gpio;
 	uint16_t alert_limit;
-#endif /* CONFIG_INA230_TRIGGER */
 };
 
 int ina230_trigger_mode_init(const struct device *dev);
 int ina230_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
 		       sensor_trigger_handler_t handler);
 
-#endif /* ZEPHYR_DRIVERS_SENSOR_INA23X_INA230_H_ */
+#endif /* ZEPHYR_DRIVERS_SENSOR_INA2XX_INA230_H_ */
