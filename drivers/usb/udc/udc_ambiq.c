@@ -640,14 +640,11 @@ static int udc_ambiq_init(const struct device *dev)
 #endif
 
 	/* Enable Control Endpoints */
-	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_OUT, USB_EP_TYPE_CONTROL, EP0_MPS, 0)) {
+	if (udc_ep_enable_control(dev, EP0_MPS)) {
 		LOG_ERR("Failed to enable control endpoint");
 		return -EIO;
 	}
-	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_IN, USB_EP_TYPE_CONTROL, EP0_MPS, 0)) {
-		LOG_ERR("Failed to enable control endpoint");
-		return -EIO;
-	}
+
 	/* Connect and enable USB interrupt */
 	cfg->irq_enable_func(dev);
 
@@ -663,14 +660,11 @@ static int udc_ambiq_shutdown(const struct device *dev)
 	LOG_INF("shutdown");
 
 	/* Disable Control Endpoints */
-	if (udc_ep_disable_internal(dev, USB_CONTROL_EP_OUT)) {
+	if (udc_ep_disable_control(dev)) {
 		LOG_ERR("Failed to disable control endpoint");
 		return -EIO;
 	}
-	if (udc_ep_disable_internal(dev, USB_CONTROL_EP_IN)) {
-		LOG_ERR("Failed to disable control endpoint");
-		return -EIO;
-	}
+
 	/* Disable USB interrupt */
 	cfg->irq_disable_func(dev);
 	/* Assert USB PHY reset */
