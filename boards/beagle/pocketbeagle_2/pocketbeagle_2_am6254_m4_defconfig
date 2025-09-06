@@ -1,0 +1,18 @@
+# BeagleBoard.org PocketBeagle 2
+#
+# Copyright (c) 2025 Ayush Singh, BeagleBoard.org Foundation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# Platform Configuration
+CONFIG_CORTEX_M_SYSTICK=y
+
+# Zephyr Kernel Configuration
+CONFIG_XIP=n
+
+# Serial Driver
+CONFIG_SERIAL=y
+
+# Enable Console
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y
