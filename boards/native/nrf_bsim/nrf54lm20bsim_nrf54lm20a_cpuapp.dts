@@ -71,6 +71,11 @@
 	psa_rng: psa-rng {
 		status = "disabled";
 	};
+
+	/* Dummy, to be replaced by usbip-native-sim */
+	zephyr_udc0: udc0 {
+		compatible = "zephyr,native-posix-udc";
+	};
 };
 
 &grtc {
