@@ -154,12 +154,17 @@ int bt_bap_ep_get_info(const struct bt_bap_ep *ep, struct bt_bap_ep_info *info)
 				info->can_send = dir == BT_AUDIO_DIR_SINK;
 				info->can_recv = dir == BT_AUDIO_DIR_SOURCE;
 			}
-		} else if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_SERVER)) {
+		} else if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_SERVER) &&
+			   bt_bap_ep_is_unicast_server(ep)) {
 			/* dir is not initialized before the connection is set */
 			if (ep->stream->conn != NULL) {
 				info->can_send = dir == BT_AUDIO_DIR_SOURCE;
 				info->can_recv = dir == BT_AUDIO_DIR_SINK;
 			}
+		} else {
+			LOG_DBG("Invalid endpoint");
+
+			return -EINVAL;
 		}
 	}
 
