@@ -1198,6 +1198,24 @@ if(CONFIG_USERSPACE)
   set(PROCESS_GPERF ${ZEPHYR_BASE}/scripts/build/process_gperf.py)
 endif()
 
+if(CONFIG_CLOCK_MANAGEMENT_RUNTIME)
+  # clock_deps.c is generated from ${ZEPHYR_LINK_STAGE_EXECUTABLE} by
+  # gen_clock_deps.py
+  add_custom_command(
+    OUTPUT clock_deps.c
+    COMMAND
+    ${PYTHON_EXECUTABLE}
+    ${ZEPHYR_BASE}/scripts/build/gen_clock_deps.py
+    --output-source clock_deps.c
+    --kernel $<TARGET_FILE:${ZEPHYR_LINK_STAGE_EXECUTABLE}>
+    --zephyr-base ${ZEPHYR_BASE}
+    --start-symbol "$<TARGET_PROPERTY:linker,devices_start_symbol>"
+    VERBATIM
+    DEPENDS ${ZEPHYR_LINK_STAGE_EXECUTABLE}
+    )
+  set_property(GLOBAL APPEND PROPERTY GENERATED_APP_SOURCE_FILES clock_deps.c)
+endif()
+
 # @Intent: Obtain compiler specific flag for specifying the c standard
 zephyr_compile_options(
   $<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,cstd>${CSTD}>
@@ -1442,7 +1460,7 @@ if(CONFIG_USERSPACE)
   endforeach()
 endif()
 
-if(CONFIG_USERSPACE OR CONFIG_DEVICE_DEPS)
+if(CONFIG_USERSPACE OR CONFIG_DEVICE_DEPS OR CONFIG_CLOCK_MANAGEMENT_RUNTIME)
   configure_linker_script(
     ${ZEPHYR_CURRENT_LINKER_CMD}
     "${LINKER_PASS_${ZEPHYR_CURRENT_LINKER_PASS}_DEFINE}"
