@@ -874,6 +874,18 @@ static int region_map_update(uint32_t *ptables, uintptr_t start,
 		xtensa_dtlb_vaddr_invalidate((void *)page);
 	}
 
+	/**
+	 * We also need to update the kernel pagetables to
+	 * account for kernel-user (non-global) shared memory.
+	 *
+	 * The kernel pagetables still contain the original attributes,
+	 * when duplicating them to create a new pagetable we'll use those
+	 * instead and the ring will remain as SHARED_RING or collapse to KERNEL_RING.
+	 */
+	if ((ret == 0) && (ptables != xtensa_kernel_ptables)) {
+		ret = region_map_update(xtensa_kernel_ptables, start, size, ring, flags);
+	}
+
 	return ret;
 }
 
