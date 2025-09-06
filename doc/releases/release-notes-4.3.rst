@@ -165,6 +165,9 @@ New APIs and options
     * :c:macro:`LOG_HEXDUMP_INF_RATELIMIT_RATE` - Rate-limited info hexdump macro (explicit rate)
     * :c:macro:`LOG_HEXDUMP_DBG_RATELIMIT_RATE` - Rate-limited debug hexdump macro (explicit rate)
 
+  * :kconfig:option:`CONFIG_LOG_BACKEND_SHOW_TIMESTAMP`
+  * :kconfig:option:`CONFIG_LOG_BACKEND_SHOW_LEVEL`
+
 * Power management
 
    * :c:func:`pm_device_driver_deinit`
