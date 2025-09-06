@@ -3,7 +3,7 @@
 
 description: WCH CH32V20x/30x PLL
 
-compatible: "wch,ch32v20x_30x-pll-clock"
+compatible: "wch,ch32fv2x_v3x-pll-clock"
 
 include: [clock-controller.yaml, base.yaml]
 
@@ -37,3 +37,12 @@ properties:
       - 15  # x15
       - 16  # x16
       - 18  # x18
+
+  div:
+    type: int
+    required: true
+    description: |
+      PLL divider factor applied before the multiplication. Currently only affects the HSI
+    enum:
+      - 1 # /1
+      - 2 # /2
