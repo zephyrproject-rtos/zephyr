@@ -64,7 +64,7 @@
 	status = "okay";
 };
 
-&rcc {
+&clk_sys {
 	clocks = <&pll>;
 };
 
@@ -91,5 +91,12 @@
 	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&usart1_default>;
+	pinctrl-names = "default";
+};
+
+&mco {
+	status = "disabled";
+	clocks = <&clk_hse>;
+	pinctrl-0 = <&mco_default>;
 	pinctrl-names = "default";
 };
