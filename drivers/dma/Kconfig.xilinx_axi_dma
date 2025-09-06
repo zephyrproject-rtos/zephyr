@@ -14,9 +14,12 @@ config DMA_XILINX_AXI_DMA
 config DMA_XILINX_AXI_DMA_DISABLE_CACHE_WHEN_ACCESSING_SG_DESCRIPTORS
 	bool "Disable data cache while accessing Scatter-Gather Descriptors."
 	depends on DMA_XILINX_AXI_DMA
+	depends on CACHE_MANAGEMENT
+	depends on DCACHE
 	default n
 	help
-		Disable dcache while operating on Scatter-Gather descriptors.
+		Controls whether to explicitly flush or invalidate the data cache when accessing
+		DMA descriptors or buffers.
 		This allows the DMA to be used on architectures that do not provide
 		coherency for DMA accesses. If you are unsure whether you need this feature,
 		you should select n here.
@@ -67,19 +70,6 @@ config DMA_XILINX_AXI_DMA_LOCK_CHANNEL_IRQ
 		registered for the same channel.
 
 endchoice
-
-config DMA_XILINX_AXI_DMA_POLL_INTERVAL
-	int "Period of the timer used for polling the DMA in milliseconds"
-	depends on DMA_XILINX_AXI_DMA
-	default 100
-	help
-		On certain platforms (e.g., RISC-V), the DMA driver can sometimes miss interrupts.
-		This can cause the DMA driver to stop processing completed transactions.
-		In order to prevent this, the DMA driver periodically polls the DMA's registers and
-		determines whether it needs to handle outstanding transactions.
-		This configuration controls how often this happens.
-		Choose a larger value to minimize overhead and a smaller value to minimize
-		worst-case latency.
 
 config DMA_XILINX_AXI_DMA_INTERRUPT_THRESHOLD
 	int "Number of completed transactions after which to trigger an interrupt"
