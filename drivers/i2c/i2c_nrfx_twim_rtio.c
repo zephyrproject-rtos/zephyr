@@ -29,14 +29,33 @@ struct i2c_nrfx_twim_rtio_config {
 struct i2c_nrfx_twim_rtio_data {
 	uint8_t *user_rx_buf;
 	uint16_t user_rx_buf_size;
+	uint8_t *buf_ptr;
 };
 
 static bool i2c_nrfx_twim_rtio_msg_start(const struct device *dev, uint8_t flags, uint8_t *buf,
 					 size_t buf_len, uint16_t i2c_addr)
 {
 	const struct i2c_nrfx_twim_rtio_config *config = dev->config;
+	struct i2c_nrfx_twim_rtio_data *data = dev->data;
 	struct i2c_rtio *ctx = config->ctx;
 	int ret = 0;
+	uint8_t *dma_buf;
+
+	if (flags & I2C_MSG_READ) {
+		ret = dmm_buffer_in_prepare(config->common.mem_reg, buf, buf_len,
+						(void **)&dma_buf);
+	} else {
+		ret = dmm_buffer_out_prepare(config->common.mem_reg, buf, buf_len,
+						(void **)&dma_buf);
+	}
+
+	if (ret < 0) {
+		LOG_ERR("Failed to prepare buffer: %d", ret);
+		return false;
+	}
+
+	data->buf_ptr = buf;
+	buf = dma_buf;
 
 	ret = i2c_nrfx_twim_msg_transfer(dev, flags, buf, buf_len, i2c_addr);
 	if (ret != 0) {
@@ -188,6 +207,21 @@ static void event_handler(nrfx_twim_evt_t const *p_event, void *p_context)
 	const struct i2c_nrfx_twim_rtio_config *config = dev->config;
 	struct i2c_nrfx_twim_rtio_data *data = dev->data;
 	int status = p_event->type == NRFX_TWIM_EVT_DONE ? 0 : -EIO;
+	int ret = 0;
+
+	if (p_event->xfer_desc.type == NRFX_TWIM_XFER_TX) {
+		ret = dmm_buffer_out_release(config->common.mem_reg,
+			(void **)&p_event->xfer_desc.p_primary_buf);
+	} else {
+		ret = dmm_buffer_in_release(config->common.mem_reg, data->buf_ptr,
+			p_event->xfer_desc.primary_length,
+			p_event->xfer_desc.p_primary_buf);
+	}
+
+	if (ret < 0) {
+		i2c_nrfx_twim_rtio_complete(dev, ret);
+		return;
+	}
 
 	if (data->user_rx_buf) {
 		memcpy(data->user_rx_buf, config->common.msg_buf, data->user_rx_buf_size);
@@ -284,6 +318,7 @@ static int i2c_nrfx_twim_rtio_deinit(const struct device *dev)
 				.pcfg = PINCTRL_DT_DEV_CONFIG_GET(I2C(idx)),                       \
 				IF_ENABLED(USES_MSG_BUF(idx), (.msg_buf = MSG_BUF_SYM(idx),))      \
 				.max_transfer_size = MAX_TRANSFER_SIZE(idx),                       \
+				.mem_reg = DMM_DEV_TO_REG(I2C(idx)),				   \
 			},                                                                         \
 		.ctx = &_i2c##idx##_twim_rtio,                                                     \
 	};                                                                                         \
@@ -293,78 +328,7 @@ static int i2c_nrfx_twim_rtio_deinit(const struct device *dev)
 			     &twim_##idx##z_config, POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,         \
 			     &i2c_nrfx_twim_driver_api);
 
-#ifdef CONFIG_HAS_HW_NRF_TWIM0
-I2C_NRFX_TWIM_RTIO_DEVICE(0);
-#endif
+#define COND_I2C_NRF_TWIM_RTIO_DEVICE(unused, prefix, i, _) \
+	IF_ENABLED(CONFIG_HAS_HW_NRF_TWIM##prefix##i, (I2C_NRFX_TWIM_RTIO_DEVICE(prefix##i);))
 
-#ifdef CONFIG_HAS_HW_NRF_TWIM1
-I2C_NRFX_TWIM_RTIO_DEVICE(1);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_TWIM2
-I2C_NRFX_TWIM_RTIO_DEVICE(2);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_TWIM3
-I2C_NRFX_TWIM_RTIO_DEVICE(3);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_TWIM20
-I2C_NRFX_TWIM_RTIO_DEVICE(20);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_TWIM21
-I2C_NRFX_TWIM_RTIO_DEVICE(21);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_TWIM22
-I2C_NRFX_TWIM_RTIO_DEVICE(22);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_TWIM23
-I2C_NRFX_TWIM_RTIO_DEVICE(23);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_TWIM24
-I2C_NRFX_TWIM_RTIO_DEVICE(24);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_TWIM30
-I2C_NRFX_TWIM_RTIO_DEVICE(30);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_TWIM120
-I2C_NRFX_TWIM_RTIO_DEVICE(120);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_TWIM130
-I2C_NRFX_TWIM_RTIO_DEVICE(130);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_TWIM131
-I2C_NRFX_TWIM_RTIO_DEVICE(131);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_TWIM132
-I2C_NRFX_TWIM_RTIO_DEVICE(132);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_TWIM133
-I2C_NRFX_TWIM_RTIO_DEVICE(133);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_TWIM134
-I2C_NRFX_TWIM_RTIO_DEVICE(134);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_TWIM135
-I2C_NRFX_TWIM_RTIO_DEVICE(135);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_TWIM136
-I2C_NRFX_TWIM_RTIO_DEVICE(136);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_TWIM137
-I2C_NRFX_TWIM_RTIO_DEVICE(137);
-#endif
+NRFX_FOREACH_PRESENT(TWIM, COND_I2C_NRF_TWIM_RTIO_DEVICE, (), ())
