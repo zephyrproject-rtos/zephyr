@@ -1,0 +1,10 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config VIDEO_OV7675
+	bool "OV7675 CMOS digital image sensor"
+	select I2C
+	depends on DT_HAS_OVTI_OV7675_ENABLED
+	default y
+	help
+	  Enable driver for OV7675 CMOS digital image sensor device.
