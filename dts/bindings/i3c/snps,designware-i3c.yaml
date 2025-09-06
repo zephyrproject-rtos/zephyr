@@ -7,7 +7,7 @@ description: >
 
 compatible: "snps,designware-i3c"
 
-include: i3c-controller.yaml
+include: [i3c-controller.yaml, pinctrl-device.yaml]
 
 properties:
   clocks:
@@ -28,3 +28,6 @@ properties:
       Minimum low clock pulse length (ns) in Open-Drain mode.
       The default is value from Section 6.2 of the I3C
       Specifiction.
+
+  pinctrl-0:
+    required: true
