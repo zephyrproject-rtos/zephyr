@@ -11,6 +11,15 @@
  * the driver is going to achieve the zephyr API.
  */
 
+ /*
+  * The other spi_nxp_lpspi driver source files also use DT_DRV_COMPAT and it is used by the
+  * spi_context.h file to determine if the gpio cs code can be removed.
+  * If DT_DRV_COMPAT is not defined in this file, the gpio cs code may not be removed for this file
+  * but in the other spi_nxp_lpspi driver source files it may be removed and result in breakage of
+  * this driver. Do not remove DT_DRV_COMPAT from this file.
+  */
+#define DT_DRV_COMPAT nxp_lpspi
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(spi_lpspi, CONFIG_SPI_LOG_LEVEL);
 
