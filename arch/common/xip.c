@@ -9,6 +9,7 @@
 #include <zephyr/kernel.h>
 #include <kernel_internal.h>
 #include <zephyr/linker/linker-defs.h>
+#include <zephyr/arch/common/init.h>
 
 #ifdef CONFIG_REQUIRES_STACK_CANARIES
 #ifdef CONFIG_STACK_CANARIES_TLS
@@ -23,30 +24,30 @@ extern volatile uintptr_t __stack_chk_guard;
  *
  * This routine copies the data section from ROM to RAM.
  */
-void z_data_copy(void)
+void arch_data_copy(void)
 {
-	z_early_memcpy(&__data_region_start, &__data_region_load_start,
+	arch_early_memcpy(&__data_region_start, &__data_region_load_start,
 		       __data_region_end - __data_region_start);
 #ifdef CONFIG_ARCH_HAS_RAMFUNC_SUPPORT
-	z_early_memcpy(&__ramfunc_region_start, &__ramfunc_load_start,
+	arch_early_memcpy(&__ramfunc_region_start, &__ramfunc_load_start,
 		       __ramfunc_end - __ramfunc_region_start);
 #endif /* CONFIG_ARCH_HAS_RAMFUNC_SUPPORT */
 #ifdef CONFIG_ARCH_HAS_NOCACHE_MEMORY_SUPPORT
 #if CONFIG_NOCACHE_MEMORY
-	z_early_memcpy(&_nocache_load_ram_start, &_nocache_load_rom_start,
+	arch_early_memcpy(&_nocache_load_ram_start, &_nocache_load_rom_start,
 		       (uintptr_t) &_nocache_load_ram_size);
 #endif /* CONFIG_NOCACHE_MEMORY */
 #endif /* CONFIG_ARCH_HAS_NOCACHE_MEMORY_SUPPORT */
 #if DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_ccm))
-	z_early_memcpy(&__ccm_data_start, &__ccm_data_load_start,
+	arch_early_memcpy(&__ccm_data_start, &__ccm_data_load_start,
 		       __ccm_data_end - __ccm_data_start);
 #endif
 #if DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_itcm))
-	z_early_memcpy(&__itcm_start, &__itcm_load_start,
+	arch_early_memcpy(&__itcm_start, &__itcm_load_start,
 		       (uintptr_t) &__itcm_size);
 #endif
 #if DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_dtcm))
-	z_early_memcpy(&__dtcm_data_start, &__dtcm_data_load_start,
+	arch_early_memcpy(&__dtcm_data_start, &__dtcm_data_load_start,
 		       __dtcm_data_end - __dtcm_data_start);
 #endif
 #ifdef CONFIG_CODE_DATA_RELOCATION
@@ -74,7 +75,7 @@ void z_data_copy(void)
 	}
 	__stack_chk_guard = guard_copy;
 #else
-	z_early_memcpy(&_app_smem_start, &_app_smem_rom_start,
+	arch_early_memcpy(&_app_smem_start, &_app_smem_rom_start,
 		       _app_smem_end - _app_smem_start);
 #endif /* CONFIG_REQUIRES_STACK_CANARIES */
 #endif /* CONFIG_USERSPACE */
