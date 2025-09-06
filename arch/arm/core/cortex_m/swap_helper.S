@@ -2,6 +2,7 @@
  * Copyright (c) 2013-2014 Wind River Systems, Inc.
  * Copyright (c) 2017-2019 Nordic Semiconductor ASA.
  * Copyright (c) 2020 Stephanos Ioannidis <root@stephanos.io>
+ * Copyright 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -489,19 +490,164 @@ SECTION_FUNC(TEXT, z_arm_svc)
      * r8 - saved link register
      */
 .L_do_syscall:
+/*
+ * Build a privilege stack frame from the user stack frame, then switch PSP
+ * to it. This ensures return from SVC does not rely on the user stack.
+ *
+ * Layout of privilege stack created from user stack:
+ *
+ *  +------+-------------------------+------+-------------------------+--------------------------+
+ *  |  User stack                    |  Privilege stack               | Notes                    |
+ *  +------+-------------------------+------+-------------------------+--------------------------+
+ *  |Offset| contents                |Offset| contents                |                          |
+ *  +------+-------------------------+------+-------------------------+--------------------------+
+ *  |  0   | R0                   -> | 0    | R0                      | PSP switches from 0th    |
+ *  |      |                         |      |                         | offset of user stack to  |
+ *  |      |                         |      |                         | 0th offset of priv stack |
+ *  |  4   | R1                   -> | 4    | R1                      |                          |
+ *  |  8   | R2                   -> | 8    | R2                      |                          |
+ *  | 12   | R3                   -> |12    | R3                      |                          |
+ *  | 16   | R12                  -> |16    | R12                     |                          |
+ *  | 20   | LR                   -> |20    | LR                      |                          |
+ *  | 24   | Return Address      -x> |24    | z_arm_do_syscall        |return address in next sf |
+ *  | 28   | xPSR (w/ or w/o pad) -> |28    | xPSR (pad bit cleared)  |                          |
+ *  | --   | FP regs + FPSCR      -> |--    | FP regs + FPSCR         |                          |
+ *  | --   | optional PAD         -> |--    | PSP at time of SVC call |0th offset of priv stack  |
+ *  | --   | -                    -> |--    | Return Address from sf  |in z_arm_do_syscall       |
+ *  +------+-------------------------+------+-------------------------+--------------------------+
+ */
+ /* Start by fetching the top of privileged stack */
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
-    movs r3, #24
-    ldr r1, [r0, r3]   /* grab address of PC from stack frame */
-    mov r8, r1
+    ldr r1, =_kernel
+    ldr r1, [r1, #_kernel_offset_to_current]
+    adds r1, r1, #_thread_offset_to_priv_stack_start
+    ldr r1, [r1] /* bottom of priv stack */
+    ldr r3, =CONFIG_PRIVILEGED_STACK_SIZE
+    subs r3, #40 /* 32 for basic sf + 2 for original sp and pc */
+    add r1, r3
+    mov ip, r1
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
-    ldr r8, [r0, #24]   /* grab address of PC from stack frame */
+    ldr ip, =_kernel
+    ldr ip, [ip, #_kernel_offset_to_current]
+    ldr ip, [ip, #_thread_offset_to_priv_stack_start] /* bottom of priv stack */
+    add ip, #CONFIG_PRIVILEGED_STACK_SIZE
+#ifdef CONFIG_FPU_SHARING
+    /* Assess whether svc calling thread had been using the FP registers. */
+    tst lr, #_EXC_RETURN_FTYPE_Msk
+    bne .L_basic_stack_frame
+    mov r8, #104
+    b .L_stack_size_set
+.L_basic_stack_frame:
 #endif
+    mov r8, #32
+.L_stack_size_set:
+    sub ip, #8 /* z_arm_do_syscall will use this to get original sp and pc */
+    sub ip, r8 /* 32 for basic sf + 72 for the optional esf */
+
+#endif
+    /*
+     * At this point:
+     * r0 has PSP i.e. top of user stack
+     * ip has top of privilege stack
+     * r8 has stack frame size
+     */
+
+    push {r4-r7}
+    push {r2}
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+    mov  r2, r0 /* safe to use r2 since it is saved on MSP */
+
+    /* Check for padding in the sf */
+    ldr  r1, [r0, #28] /* grab xPSR from sf which has the pad bit */
+    movs r3, #1
+    lsls r3, r3, #9    /* Check if pad bit 9 is set */
+    tst  r1, r3
+    beq  .L_no_padding
+    /* special handling for padded sf */
+    bics r1, r3 /* clear the pad bit (priv stack is aligned and doesn't need it) */
+    adds r2, #36 /* psp + sf size + 4B of pad = original user stack pointer i.e. drop the sf */
+    b .L_save_user_sp
+.L_no_padding:
+    adds r2, #32 /* psp + sf size without pad = original user stack pointer i.e. drop the sf */
+.L_save_user_sp:
+    mov  r3, ip
+    str r2,[r3, #0]
+    str r2,[r3, #32] /* z_arm_do_syscall expects original sp at sp[0] after sf in un-stacked */
+    str r1,[r3, #28] /* sf of priv stack has the same xPSR as user stack but with 9th bit reset */
+
+    /* r0-r3, r12, LR from user stack sf are copied to sf of priv stack */
+    mov r1, r0
+    mov r2, r3
+    ldmia r1!, {r4-r7}
+    stmia r2!, {r4-r7}
+    ldmia r1!, {r4-r5}
+    stmia r2!, {r4-r5}
+
+    str r5, [r3, #36] /* z_arm_do_syscall expects original lr at sp[4] after sf in un-stacked */
+
     ldr r1, =z_arm_do_syscall
-#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
-    str r1, [r0, r3]   /* overwrite the PC to point to z_arm_do_syscall */
+    str r1, [r3, #24] /* Current sf should return to z_arm_do_syscall */
+    ldr r1, [r0, #24] /* grab address of PC from stack frame */
+    mov r8, r1 /* z_arm_do_syscall expects original pc (i.e. next instr to svc) to be in r8 */
+
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
-    str r1, [r0, #24]   /* overwrite the PC to point to z_arm_do_syscall */
+    mov  r2, r0 /* safe to use r2 since it is saved on MSP */
+
+    add r2, r8 /* psp + sf size without pad = original user stack pointer i.e. drop the sf */
+
+    /* Also, check for padding in the sf */
+    ldr  r1, [r0, #28] /* grab xPSR from sf which has the pad bit */
+    tst r1, #(1<<9) /* Check if pad bit 9 is set */
+    beq .L_no_padding
+    bics r1, #(1<<9) /* clear the pad bit (priv stack is aligned and doesn't need it) */
+    add  r2, #4 /* psp + sf size + 4B of pad = original user stack pointer i.e. drop the sf */
+.L_no_padding:
+    str r2,[ip, #0]
+    str r2,[ip, r8] /* z_arm_do_syscall expects original sp at sp[0] after sf in un-stacked */
+    str r1,[ip, #28] /* sf of priv stack has the same xPSR as user stack but with 9th bit reset */
+
+    /* r0-r3, r12, LR from user stack sf are copied to sf of priv stack */
+    mov r1, r0
+    mov r2, ip
+    ldmia r1!, {r4-r7}
+    stmia r2!, {r4-r7}
+    ldmia r1!, {r4-r5}
+    stmia r2!, {r4-r5}
+
+    add r8, #4
+    str r5, [ip, r8] /* z_arm_do_syscall expects original lr at sp[4] after sf in un-stacked */
+
+    ldr r1, =z_arm_do_syscall
+    str r1, [ip, #24] /* Current sf should return to z_arm_do_syscall */
+    ldr r1, [r0, #24] /* grab address of PC from stack frame */
+    mov r8, r1 /* z_arm_do_syscall expects original pc (i.e. next instr to svc) to be in r8 */
+
+    /* basic stack frame is copied at this point to privilege stack,
+     * now time to copy the fp context
+     */
+#ifdef CONFIG_FPU_SHARING
+    tst lr, #_EXC_RETURN_FTYPE_Msk
+    bne .L_skip_fp_copy
+    add r1, r0, #32
+    add r2, ip, #32
+
+    vldmia r1!, {s0-s15}
+    vstmia r2!, {s0-s15}
+
+    /* copy FPSCR + reserved (8 bytes) */
+    ldmia   r1!, {r4, r5}
+    stmia   r2!, {r4, r5}
+.L_skip_fp_copy:
 #endif
+
+#endif
+    pop {r2} /* restore CONTROL value */
+    pop {r4-r7}
+
+    /* Point PSP to privilege stack,
+     * note that r0 still has the old PSP
+     */
+    msr PSP, ip
 
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
     ldr r3, =K_SYSCALL_LIMIT
@@ -556,14 +702,12 @@ SECTION_FUNC(TEXT, z_arm_svc)
     isb
 
 #if defined(CONFIG_BUILTIN_STACK_GUARD)
-    /* Thread is now in privileged mode; after returning from SCVall it
-     * will use the default (user) stack before switching to the privileged
-     * stack to execute the system call. We need to protect the user stack
-     * against stack overflows until this stack transition.
-     */
-    ldr r1, [r0, #_thread_offset_to_stack_info_start]    /* stack_info.start */
-    msr PSPLIM, r1
-#endif /* CONFIG_BUILTIN_STACK_GUARD */
+    /* Set stack pointer limit (needed in privileged mode) */
+    ldr ip, =_kernel
+    ldr ip, [ip, #_kernel_offset_to_current]
+    ldr ip, [ip, #_thread_offset_to_priv_stack_start]    /* priv stack ptr */
+    msr PSPLIM, ip
+#endif
 
     /* return from SVC to the modified LR - z_arm_do_syscall */
     bx lr
