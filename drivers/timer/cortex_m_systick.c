@@ -107,7 +107,7 @@ static cycle_t cycle_pre_idle;
 
 #if defined(CONFIG_CORTEX_M_SYSTICK_LPM_TIMER_COUNTER)
 /* Idle timer value before entering the idle state. */
-static uint32_t idle_timer_pre_idle;
+static counter_ticks_t idle_timer_pre_idle;
 
 /* Idle timer used for timer while entering the idle state */
 static const struct device *idle_timer = DEVICE_DT_GET(DT_CHOSEN(zephyr_cortex_m_idle_timer));
@@ -151,7 +151,7 @@ uint64_t z_cms_lptim_hook_on_lpm_exit(void)
 	/**
 	 * Calculate how much time elapsed according to counter.
 	 */
-	uint32_t idle_timer_post, idle_timer_diff;
+	counter_ticks_t idle_timer_post, idle_timer_diff;
 
 	counter_get_value(idle_timer, &idle_timer_post);
 
