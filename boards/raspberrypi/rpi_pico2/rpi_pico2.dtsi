@@ -113,6 +113,10 @@ gpio0_lo: &gpio0 {
 	status = "okay";
 };
 
+&rng {
+	status = "okay";
+};
+
 zephyr_udc0: &usbd {
 	status = "okay";
 };
