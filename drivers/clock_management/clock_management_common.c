@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/kernel.h>
 #include <zephyr/drivers/clock_management.h>
 #include <zephyr/drivers/clock_management/clock_helpers.h>
 #include <string.h>
@@ -25,6 +26,8 @@ LOG_MODULE_REGISTER(clock_management, CONFIG_CLOCK_MANAGEMENT_LOG_LEVEL);
 #else
 #define GET_CLK_CORE(clk) ((const struct clk *)clk)
 #endif
+
+K_MUTEX_DEFINE(clock_management_mutex);
 
 /** Calculates clock rank factor, which scales with frequency */
 #define CLK_RANK(clk_hw, freq)                                                 \
@@ -958,15 +961,20 @@ static int clock_apply_state(const struct clk *clk_hw,
 int clock_management_get_rate(const struct clock_output *clk)
 {
 	const struct clock_output_data *data;
+	int ret;
 
 	if (!clk) {
 		return -EINVAL;
 	}
 
-	data = GET_CLK_CORE(clk)->hw_data;
+	k_mutex_lock(&clock_management_mutex, K_FOREVER);
 
+	data = GET_CLK_CORE(clk)->hw_data;
 	/* Read rate */
-	return clock_management_clk_rate(data->parent);
+	ret = clock_management_clk_rate(data->parent);
+
+	k_mutex_unlock(&clock_management_mutex);
+	return ret;
 }
 
 static int clock_management_onoff(const struct clk *clk_hw, bool on)
@@ -1034,8 +1042,14 @@ static int clock_management_onoff(const struct clk *clk_hw, bool on)
 int clock_management_on(const struct clock_output *clk)
 {
 	const struct clock_output_data *data = GET_CLK_CORE(clk)->hw_data;
+	int ret;
 
-	return clock_management_onoff(data->parent, true);
+	k_mutex_lock(&clock_management_mutex, K_FOREVER);
+
+	ret = clock_management_onoff(data->parent, true);
+
+	k_mutex_unlock(&clock_management_mutex);
+	return ret;
 }
 
 /**
@@ -1053,8 +1067,15 @@ int clock_management_on(const struct clock_output *clk)
 int clock_management_off(const struct clock_output *clk)
 {
 	const struct clock_output_data *data = GET_CLK_CORE(clk)->hw_data;
+	int ret;
 
-	return clock_management_onoff(data->parent, false);
+	k_mutex_lock(&clock_management_mutex, K_FOREVER);
+
+	ret = clock_management_onoff(data->parent, false);
+
+	k_mutex_unlock(&clock_management_mutex);
+	return ret;
+
 }
 
 /**
@@ -1089,6 +1110,8 @@ int clock_management_req_rate(const struct clock_output *clk,
 		return -EINVAL;
 	}
 
+	k_mutex_lock(&clock_management_mutex, K_FOREVER);
+
 	data = GET_CLK_CORE(clk)->hw_data;
 
  #ifdef CONFIG_CLOCK_MANAGEMENT_RUNTIME
@@ -1104,7 +1127,8 @@ int clock_management_req_rate(const struct clock_output *clk,
 	 */
 	if ((new_req.min_freq > req->max_freq) ||
 	    (new_req.max_freq < req->min_freq)) {
-		return -ENOENT;
+		ret = -ENOENT;
+		goto out;
 	}
 	/*
 	 * We now know the new constraint is compatible. Now, save the
@@ -1175,16 +1199,13 @@ int clock_management_req_rate(const struct clock_output *clk,
 	/* No best setting was found, try runtime clock setting */
 	ret = clock_management_round_internal(data->parent, combined_req,
 					      &best_rank, false);
-	if (ret < 0) {
-		return ret;
-	}
 out:
 	if (ret >= 0) {
 		/* A frequency was returned, check if it satisfies constraints */
 		if ((combined_req->min_freq > ret) ||
 		    (combined_req->max_freq < ret) ||
 		    (best_rank > combined_req->max_rank)) {
-			return -ENOENT;
+			ret = -ENOENT;
 		}
 	}
 #ifdef CONFIG_CLOCK_MANAGEMENT_SET_RATE
@@ -1195,11 +1216,15 @@ out:
 	}
 #endif
 #ifdef CONFIG_CLOCK_MANAGEMENT_RUNTIME
-	/* New clock state applied. Save the new combined constraint set. */
-	memcpy(data->combined_req, combined_req, sizeof(*data->combined_req));
-	/* Save the new constraint set for the consumer */
-	memcpy(clk->req, req, sizeof(*clk->req));
+	if (ret >= 0) {
+		/* New clock state applied. Save the new combined constraint set. */
+		memcpy(data->combined_req, combined_req, sizeof(*data->combined_req));
+		/* Save the new constraint set for the consumer */
+		memcpy(clk->req, req, sizeof(*clk->req));
+	}
 #endif
+
+	k_mutex_unlock(&clock_management_mutex);
 	return ret;
 }
 
@@ -1232,6 +1257,8 @@ int clock_management_req_ranked(const struct clock_output *clk,
 		return -EINVAL;
 	}
 
+	k_mutex_lock(&clock_management_mutex, K_FOREVER);
+
 	data = GET_CLK_CORE(clk)->hw_data;
 
  #ifdef CONFIG_CLOCK_MANAGEMENT_RUNTIME
@@ -1247,7 +1274,8 @@ int clock_management_req_ranked(const struct clock_output *clk,
 	 */
 	if ((new_req.min_freq > req->max_freq) ||
 	    (new_req.max_freq < req->min_freq)) {
-		return -ENOENT;
+		ret = -ENOENT;
+		goto out;
 	}
 	/*
 	 * We now know the new constraint is compatible. Now, save the
@@ -1314,16 +1342,13 @@ int clock_management_req_ranked(const struct clock_output *clk,
 	/* No best setting was found, try runtime clock setting */
 	ret = clock_management_round_internal(data->parent, combined_req,
 						&best_rank, true);
-	if (ret < 0) {
-		return ret;
-	}
 out:
 	if (ret >= 0) {
 		/* A frequency was returned, check if it satisfies constraints */
 		if ((combined_req->min_freq > ret) ||
 		    (combined_req->max_freq < ret) ||
 		    (best_rank > combined_req->max_rank)) {
-			return -ENOENT;
+			ret = -ENOENT;
 		}
 	}
 #ifdef CONFIG_CLOCK_MANAGEMENT_SET_RATE
@@ -1333,11 +1358,14 @@ out:
 	}
 #endif
 #ifdef CONFIG_CLOCK_MANAGEMENT_RUNTIME
-	/* New clock state applied. Save the new combined constraint set. */
-	memcpy(data->combined_req, combined_req, sizeof(*data->combined_req));
-	/* Save the new constraint set for the consumer */
-	memcpy(clk->req, req, sizeof(*clk->req));
+	if (ret >= 0) {
+		/* New clock state applied. Save the new combined constraint set. */
+		memcpy(data->combined_req, combined_req, sizeof(*data->combined_req));
+		/* Save the new constraint set for the consumer */
+		memcpy(clk->req, req, sizeof(*clk->req));
+	}
 #endif
+	k_mutex_unlock(&clock_management_mutex);
 	return ret;
 }
 
@@ -1365,10 +1393,13 @@ int clock_management_apply_state(const struct clock_output *clk,
 		return -EINVAL;
 	}
 
+	k_mutex_lock(&clock_management_mutex, K_FOREVER);
+
 	data = GET_CLK_CORE(clk)->hw_data;
 
 	if (state >= data->num_states) {
-		return -EINVAL;
+		ret = -EINVAL;
+		goto out;
 	}
 
 	clk_state = data->output_states[state];
@@ -1381,7 +1412,8 @@ int clock_management_apply_state(const struct clock_output *clk,
 	/* Make sure this state fits within other consumer's constraints */
 	if ((temp.min_freq > clk_state->frequency) ||
 	    (temp.max_freq < clk_state->frequency)) {
-		return -EINVAL;
+		ret = -EINVAL;
+		goto out;
 	}
 
 	/* Save new constraint set */
@@ -1390,8 +1422,9 @@ int clock_management_apply_state(const struct clock_output *clk,
 
 	ret = clock_apply_state(GET_CLK_CORE(clk), clk_state);
 	if (ret < 0) {
-		return ret;
+		goto out;
 	}
+	ret = clk_state->frequency;
 #ifdef CONFIG_CLOCK_MANAGEMENT_RUNTIME
 	if (clk_state->locking) {
 		/* Set a constraint based on this clock state */
@@ -1409,7 +1442,9 @@ int clock_management_apply_state(const struct clock_output *clk,
 		memcpy(clk->req, &constraint, sizeof(*clk->req));
 	}
 #endif
-	return clk_state->frequency;
+out:
+	k_mutex_unlock(&clock_management_mutex);
+	return ret;
 }
 
 #define CLOCK_STATE_NAME(node)                                                 \
