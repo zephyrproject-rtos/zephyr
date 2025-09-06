@@ -2800,8 +2800,20 @@ static uint16_t l2cap_br_conf_rsp_opt_flush_timeout(struct bt_l2cap_chan *chan, 
 
 	LOG_DBG("Flash timeout %u", opt_to->timeout);
 
-	opt_to->timeout = sys_cpu_to_le32(0xffff);
-	result = BT_L2CAP_CONF_UNACCEPT;
+	opt_to->timeout = sys_le16_to_cpu(opt_to->timeout);
+
+	if (opt_to->timeout == 0) {
+		/* 0 is illegal value */
+		LOG_ERR("Flush timeout cannot be 0");
+		result = BT_L2CAP_CONF_REJECT;
+		goto done;
+	}
+
+	/* For tx, only support the default value (0xFFFF - infinite amount of retransmissions) */
+	if (opt_to->timeout != 0xFFFF) {
+		result = BT_L2CAP_CONF_UNACCEPT;
+	}
+
 done:
 	return result;
 }
@@ -3894,8 +3906,21 @@ static uint16_t l2cap_br_conf_opt_flush_timeout(struct bt_l2cap_chan *chan, stru
 
 	LOG_DBG("Flush timeout %u", opt_to->timeout);
 
-	opt_to->timeout = sys_cpu_to_le16(0xffff);
-	result = BT_L2CAP_CONF_UNACCEPT;
+	opt_to->timeout = sys_le16_to_cpu(opt_to->timeout);
+
+	if (opt_to->timeout == 0) {
+		/* 0 is illegal value */
+		LOG_ERR("Flush timeout cannot be 0");
+		result = BT_L2CAP_CONF_REJECT;
+		goto done;
+	}
+
+	if (opt_to->timeout < CONFIG_BT_L2CAP_RX_FLUSH_TO) {
+		LOG_DBG("Flush timeout %u is too small", opt_to->timeout);
+		opt_to->timeout = sys_cpu_to_le16(CONFIG_BT_L2CAP_RX_FLUSH_TO);
+		result = BT_L2CAP_CONF_UNACCEPT;
+	}
+
 done:
 	return result;
 }
