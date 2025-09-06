@@ -1068,12 +1068,12 @@ TESTDATA_13 = [
          '--', '--dummy']
     ),
     (
-        '--dummy1,--dummy2',
+        '--dummy1,--dummy2,"--dummy, 3"',
         None,
         None,
         None,
         ['west', 'flash', '--skip-rebuild', '-d', '$build_dir',
-         '--', '--dummy1', '--dummy2']
+         '--', '--dummy1', '--dummy2', '--dummy, 3']
     ),
 
     (
