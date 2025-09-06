@@ -1218,6 +1218,11 @@ test_i2c_as6212: as6212@a3 {
 	reg = <0xa3>;
 };
 
+test_i2c_as6221: as6221@48 {
+	compatible = "ams,as6221";
+	reg = <0x48>;
+};
+
 test_i2c_p3t1755: p3t1755@a4 {
 	compatible = "nxp,p3t1755";
 	reg = <0xa4>;
