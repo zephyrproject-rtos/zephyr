@@ -23,3 +23,15 @@ tests:
             not CONFIG_CPU_HAS_DCACHE
     depends_on: dma
     harness: keyboard
+  sample.drivers.uart.async_api.stm32:
+    filter: CONFIG_SERIAL and
+            CONFIG_UART_ASYNC_API and
+            dt_chosen_enabled("zephyr,shell-uart") and CONFIG_SOC_FAMILY_STM32
+    harness: console
+    harness_config:
+      type: multi_line
+      regex:
+        - "Loop (.*) Sending (.*)"
+        - "RX is now enabled"
+        - "Loop (.*) Sending (.*)"
+        - "RX is now disabled"
