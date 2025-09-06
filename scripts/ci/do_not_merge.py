@@ -48,7 +48,7 @@ def workflow_delay(repo, pr):
         completed = set()
         for run in runs:
             print(f"{run.name}: {run.status} {run.conclusion} {run.html_url}")
-            if run.status == "completed" and run.conclusion == "success":
+            if run.status == "completed":
                 completed.add(run.name)
 
         if WAIT_FOR_WORKFLOWS.issubset(completed):
