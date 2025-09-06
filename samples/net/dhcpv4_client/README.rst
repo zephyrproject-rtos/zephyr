@@ -195,7 +195,7 @@ an ip address by typing:
 Arm FVP
 ========
 
-* :ref:`fvp_baser_aemv8r`
+* :zephyr:board:`fvp_baser_aemv8r`
 * :ref:`fvp_base_revc_2xaemv8a`
 
 This sample application running on Arm FVP board can negotiate IP
