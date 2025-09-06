@@ -5284,6 +5284,7 @@ static void vs_err_fatal_cpu_data_fill(bt_hci_vs_fatal_error_cpu_data *cpu_data,
 	cpu_data->a4 = sys_cpu_to_le32(esf->basic.a4);
 	cpu_data->ip = sys_cpu_to_le32(esf->basic.ip);
 	cpu_data->lr = sys_cpu_to_le32(esf->basic.lr);
+	cpu_data->pc = sys_cpu_to_le32(esf->basic.pc);
 	cpu_data->xpsr = sys_cpu_to_le32(esf->basic.xpsr);
 }
 #endif /* CONFIG_CPU_CORTEX_M */
