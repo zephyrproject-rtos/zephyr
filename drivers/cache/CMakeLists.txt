@@ -11,3 +11,10 @@ zephyr_library_sources_ifdef(CONFIG_USERSPACE		cache_handlers.c)
 zephyr_library_sources_ifdef(CONFIG_CACHE_NRF_CACHE	cache_nrf.c)
 zephyr_library_sources_ifdef(CONFIG_CACHE_NXP_XCACHE	cache_nxp_xcache.c)
 zephyr_library_sources_ifdef(CONFIG_CACHE_STM32	cache_stm32.c)
+zephyr_library_sources_ifdef(CONFIG_CACHE_XTHEADCMO	cache_xtheadcmo.c)
+
+if (CONFIG_CACHE_XTHEADCMO)
+
+zephyr_library_sources_ifdef(CONFIG_CACHE_XTHEADCMO_E907 cache_xtheadcmo_e907.c)
+
+endif() # CONFIG_CACHE_XTHEADCMO

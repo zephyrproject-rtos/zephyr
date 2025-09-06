@@ -91,6 +91,12 @@
 				#interrupt-cells = <2>;
 				interrupt-controller;
 			};
+
+			cache {
+				compatible = "xuantie,xtheadcmo";
+				dcache-line-size = <32>;
+				icache-line-size = <32>;
+			};
 		};
 	};
 
