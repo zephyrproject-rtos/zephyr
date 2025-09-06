@@ -1,0 +1,12 @@
+/*
+ * Copyright (c) 2025 Navimatix GmbH
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&zephyr_udc0 {
+	snippet_pjrc_teensy_bootloader_uart {
+		compatible = "zephyr,cdc-acm-uart";
+		label = "USB CDC-ACM";
+	};
+};
