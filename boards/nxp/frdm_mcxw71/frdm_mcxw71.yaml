@@ -15,6 +15,7 @@ supported:
   - flexio
   - gpio
   - i2c
+  - i3c
   - pinctrl
   - pwm
   - regulator

@@ -14,6 +14,7 @@
 #include <zephyr/irq.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/sys_io.h>
+#include <zephyr/kernel.h>
 
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/i3c.h>
@@ -447,6 +448,8 @@ static inline int mcux_i3c_status_wait_clear_timeout(I3C_Type *base, uint32_t ma
 						     uint32_t timeout_us)
 {
 	int ret;
+
+//	k_sleep(K_MSEC(40));
 
 	ret = mcux_i3c_status_wait_timeout(base, mask, timeout_us);
 	if (ret != 0) {
