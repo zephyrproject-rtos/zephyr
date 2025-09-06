@@ -62,6 +62,9 @@ Removed APIs and options
   PSA Crypto API is now the recommended cryptographic library for Zephyr.
 * The legacy pipe object API was removed. Use the new pipe API instead.
 
+* Removed deprecated property ``config`` and broken enum ``"Shutdown continuous"`` from
+  :dtcompatible:`ti,ina230`.
+
 Deprecated APIs and options
 ===========================
 
