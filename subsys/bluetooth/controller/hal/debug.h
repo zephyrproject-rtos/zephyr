@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Nordic Semiconductor ASA
+ * Copyright (c) 2016-2025 Nordic Semiconductor ASA
  * Copyright (c) 2016 Vinayak Kariappa Chettimada
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -7,25 +7,60 @@
 
 #include "common/assert.h"
 
-#ifdef CONFIG_BT_CTLR_ASSERT_HANDLER
+#if defined(CONFIG_BT_CTLR_ASSERT_HANDLER)
 void bt_ctlr_assert_handle(char *file, uint32_t line);
+
+#if defined(CONFIG_BT_CTLR_ASSERT_OPTIMIZE_FOR_SIZE)
+BUILD_ASSERT(IS_ENABLED(CONFIG_CPU_CORTEX_M));
+/* Generate assertion as undefined instruction exception.
+ */
+#define LL_ASSERT(x) \
+	do { \
+		if (unlikely(!(x))) { \
+			__asm__ inline volatile (".inst 0xde00\n"); \
+		} \
+	} while (0)
+
+#else /* !CONFIG_BT_CTLR_ASSERT_OPTIMIZE_FOR_SIZE */
+/* Generate assertion with file name and line number.
+ * NOTE: Variable code size increase per assertion check, depends on full file name path string
+ *       length.
+ */
 #define LL_ASSERT(cond) \
-		if (!(cond)) { \
+		if (unlikely(!(cond))) { \
 			BT_ASSERT_PRINT(cond); \
 			bt_ctlr_assert_handle(__FILE__, __LINE__); \
 		}
+#endif /* !CONFIG_BT_CTLR_ASSERT_OPTIMIZE_FOR_SIZE */
+
 #define LL_ASSERT_MSG(cond, fmt, ...) \
-		if (!(cond)) { \
+		if (unlikely(!(cond))) { \
 			BT_ASSERT_PRINT(cond); \
 			BT_ASSERT_PRINT_MSG(fmt, ##__VA_ARGS__); \
 			bt_ctlr_assert_handle(__FILE__, __LINE__); \
 		}
-#else
+
+#else /* !CONFIG_BT_CTLR_ASSERT_HANDLER */
+
+#if defined(CONFIG_BT_CTLR_ASSERT_OPTIMIZE_FOR_SIZE)
+BUILD_ASSERT(IS_ENABLED(CONFIG_CPU_CORTEX_M));
+/* Generate assertion as undefined instruction exception.
+ */
+#define LL_ASSERT(x) \
+	do { \
+		if (unlikely(!(x))) { \
+			__asm__ inline volatile (".inst 0xde00\n"); \
+		} \
+	} while (0)
+
+#else /* !CONFIG_BT_CTLR_ASSERT_OPTIMIZE_FOR_SIZE */
 #define LL_ASSERT(cond) \
 		BT_ASSERT(cond)
+#endif /* !CONFIG_BT_CTLR_ASSERT_OPTIMIZE_FOR_SIZE */
+
 #define LL_ASSERT_MSG(cond, fmt, ...) \
 		BT_ASSERT_MSG(cond, fmt, ##__VA_ARGS__)
-#endif
+#endif /* !CONFIG_BT_CTLR_ASSERT_HANDLER */
 
 /* Fatal asserts.
  * The Controller will otherwise misbehave causing memory leak or system-wide memory corruptions due
