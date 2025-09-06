@@ -1404,3 +1404,8 @@ test_i2c_wsen_isds_2536030320001: wsen_isds_2536030320001@bb {
 	events-interrupt-gpios = <&test_gpio 0 0>;
 	drdy-interrupt-gpios = <&test_gpio 0 0>;
 };
+
+test_i2c_veml6046: veml6046@bc {
+	compatible = "vishay,veml6046";
+	reg = <0xbc>;
+};
