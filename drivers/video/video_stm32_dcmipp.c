@@ -1620,65 +1620,63 @@ static void stm32_dcmipp_isr(const struct device *dev)
 #define STM32_DCMIPP_CSI_DT_PARAMS(inst)
 #endif
 
-#define STM32_DCMIPP_INIT(inst)									\
-	static void stm32_dcmipp_irq_config_##inst(const struct device *dev)			\
-	{											\
-		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority),			\
-			    stm32_dcmipp_isr, DEVICE_DT_INST_GET(inst), 0);			\
-		irq_enable(DT_INST_IRQN(inst));							\
-	}											\
-												\
-	static struct stm32_dcmipp_data stm32_dcmipp_data_##inst = {				\
-		.hdcmipp = {									\
-			.Instance = (DCMIPP_TypeDef *)DT_INST_REG_ADDR(inst),			\
-		},										\
-		.source_fmt = {									\
-			.pixelformat =								\
-				VIDEO_FOURCC_FROM_STR(						\
-						CONFIG_VIDEO_STM32_DCMIPP_SENSOR_PIXEL_FORMAT),	\
-			.width = CONFIG_VIDEO_STM32_DCMIPP_SENSOR_WIDTH,			\
-			.height = CONFIG_VIDEO_STM32_DCMIPP_SENSOR_HEIGHT,			\
-		},										\
-	};											\
-												\
-	PINCTRL_DT_INST_DEFINE(inst);								\
-												\
-	static const struct stm32_dcmipp_config stm32_dcmipp_config_##inst = {			\
-		.dcmipp_pclken =								\
-			{.bus = DT_CLOCKS_CELL_BY_NAME(DT_DRV_INST(inst), dcmipp, bus),		\
-			 .enr = DT_CLOCKS_CELL_BY_NAME(DT_DRV_INST(inst), dcmipp, bits)},	\
-		.dcmipp_pclken_ker =								\
-			{.bus = DT_CLOCKS_CELL_BY_NAME(DT_DRV_INST(inst), dcmipp_ker, bus),	\
-			 .enr = DT_CLOCKS_CELL_BY_NAME(DT_DRV_INST(inst), dcmipp_ker, bits)},	\
-		.irq_config = stm32_dcmipp_irq_config_##inst,					\
-		.pctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),					\
-		.source_dev = SOURCE_DEV(inst),							\
-		.reset_dcmipp = RESET_DT_SPEC_INST_GET_BY_IDX(inst, 0),				\
-		.bus_type = DT_PROP_OR(DT_INST_ENDPOINT_BY_ID(inst, 0, 0), bus_type,		\
-				       VIDEO_BUS_TYPE_PARALLEL),				\
-		STM32_DCMIPP_CSI_DT_PARAMS(inst)						\
-		.parallel.vs_polarity = DT_PROP_OR(DT_INST_ENDPOINT_BY_ID(inst, 0, 0),		\
-						    vsync_active, 0) ?				\
-						    DCMIPP_VSPOLARITY_HIGH :			\
-						    DCMIPP_VSPOLARITY_LOW,			\
-		.parallel.hs_polarity = DT_PROP_OR(DT_INST_ENDPOINT_BY_ID(n, 0, 0),		\
-						   hsync_active, 0) ?				\
-						    DCMIPP_HSPOLARITY_HIGH :			\
-						    DCMIPP_HSPOLARITY_LOW,			\
-		.parallel.pck_polarity = DT_PROP_OR(DT_INST_ENDPOINT_BY_ID(inst, 0, 0),		\
-						    pclk_sample, 0) ?				\
-						    DCMIPP_PCKPOLARITY_RISING :			\
-						    DCMIPP_PCKPOLARITY_FALLING,			\
-	};											\
-												\
-	DEVICE_DT_INST_DEFINE(inst, &stm32_dcmipp_init,						\
-		    NULL, &stm32_dcmipp_data_##inst,						\
-		    &stm32_dcmipp_config_##inst,						\
-		    POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY,					\
-		    NULL);									\
-												\
-	DT_FOREACH_CHILD_VARGS(DT_INST_PORT_BY_ID(inst, 1), DCMIPP_PIPE_INIT_DEFINE, inst);	\
-												\
+#define STM32_DCMIPP_INIT(inst)                                                                    \
+	static void stm32_dcmipp_irq_config_##inst(const struct device *dev)                       \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority), stm32_dcmipp_isr,     \
+			    DEVICE_DT_INST_GET(inst), 0);                                          \
+		irq_enable(DT_INST_IRQN(inst));                                                    \
+	}                                                                                          \
+                                                                                                   \
+	static struct stm32_dcmipp_data stm32_dcmipp_data_##inst = {                               \
+		.hdcmipp =                                                                         \
+			{                                                                          \
+				.Instance = (DCMIPP_TypeDef *)DT_INST_REG_ADDR(inst),              \
+			},                                                                         \
+		.source_fmt =                                                                      \
+			{                                                                          \
+				.pixelformat = VIDEO_FOURCC_FROM_STR(                              \
+					CONFIG_VIDEO_STM32_DCMIPP_SENSOR_PIXEL_FORMAT),            \
+				.width = CONFIG_VIDEO_STM32_DCMIPP_SENSOR_WIDTH,                   \
+				.height = CONFIG_VIDEO_STM32_DCMIPP_SENSOR_HEIGHT,                 \
+			},                                                                         \
+	};                                                                                         \
+                                                                                                   \
+	PINCTRL_DT_INST_DEFINE(inst);                                                              \
+                                                                                                   \
+	static const struct stm32_dcmipp_config stm32_dcmipp_config_##inst = {                     \
+		.dcmipp_pclken = {.bus = DT_CLOCKS_CELL_BY_NAME(DT_DRV_INST(inst), dcmipp, bus),   \
+				  .enr = DT_CLOCKS_CELL_BY_NAME(DT_DRV_INST(inst), dcmipp, bits)}, \
+		.dcmipp_pclken_ker = {.bus = DT_CLOCKS_CELL_BY_NAME(DT_DRV_INST(inst), dcmipp_ker, \
+								    bus),                          \
+				      .enr = DT_CLOCKS_CELL_BY_NAME(DT_DRV_INST(inst), dcmipp_ker, \
+								    bits)},                        \
+		.irq_config = stm32_dcmipp_irq_config_##inst,                                      \
+		.pctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                     \
+		.source_dev = SOURCE_DEV(inst),                                                    \
+		.reset_dcmipp = RESET_DT_SPEC_INST_GET_BY_IDX(inst, 0),                            \
+		.bus_type = DT_PROP_OR(DT_INST_ENDPOINT_BY_ID(inst, 0, 0), bus_type,               \
+				       VIDEO_BUS_TYPE_PARALLEL),                                   \
+		STM32_DCMIPP_CSI_DT_PARAMS(inst).parallel.vs_polarity =                            \
+			DT_PROP_OR(DT_INST_ENDPOINT_BY_ID(inst, 0, 0), vsync_active, 0)            \
+				? DCMIPP_VSPOLARITY_HIGH                                           \
+				: DCMIPP_VSPOLARITY_LOW,                                           \
+		.parallel.hs_polarity =                                                            \
+			DT_PROP_OR(DT_INST_ENDPOINT_BY_ID(inst, 0, 0), hsync_active, 0)            \
+				? DCMIPP_HSPOLARITY_HIGH                                           \
+				: DCMIPP_HSPOLARITY_LOW,                                           \
+		.parallel.pck_polarity =                                                           \
+			DT_PROP_OR(DT_INST_ENDPOINT_BY_ID(inst, 0, 0), pclk_sample, 0)             \
+				? DCMIPP_PCKPOLARITY_RISING                                        \
+				: DCMIPP_PCKPOLARITY_FALLING,                                      \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(inst, &stm32_dcmipp_init, NULL, &stm32_dcmipp_data_##inst,           \
+			      &stm32_dcmipp_config_##inst, POST_KERNEL,                            \
+			      CONFIG_VIDEO_INIT_PRIORITY, NULL);                                   \
+                                                                                                   \
+	DT_FOREACH_CHILD_VARGS(DT_INST_CHILD(inst, pipes), DCMIPP_PIPE_INIT_DEFINE, inst);         \
+                                                                                                   \
 	VIDEO_DEVICE_DEFINE(dcmipp_##inst, DEVICE_DT_INST_GET(inst), SOURCE_DEV(inst));
 
 DT_INST_FOREACH_STATUS_OKAY(STM32_DCMIPP_INIT)
