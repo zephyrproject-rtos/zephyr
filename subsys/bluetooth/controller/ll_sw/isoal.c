@@ -151,8 +151,8 @@ static bool isoal_get_time_diff(uint32_t time_before, uint32_t time_after, uint3
 {
 	bool valid = false;
 
-	LL_ASSERT(time_before <= ISOAL_TIME_WRAPPING_POINT_US);
-	LL_ASSERT(time_after <= ISOAL_TIME_WRAPPING_POINT_US);
+	LL_ASSERT_DBG(time_before <= ISOAL_TIME_WRAPPING_POINT_US);
+	LL_ASSERT_DBG(time_after <= ISOAL_TIME_WRAPPING_POINT_US);
 
 	if (time_before > time_after) {
 		if (time_before >= ISOAL_TIME_MID_POINT_US &&
@@ -225,13 +225,13 @@ static void isoal_sink_deallocate(isoal_sink_handle_t hdl)
 	if (hdl < ARRAY_SIZE(isoal_global.sink_allocated)) {
 		isoal_global.sink_allocated[hdl] = ISOAL_ALLOC_STATE_FREE;
 	} else {
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 	}
 
 	if (hdl < ARRAY_SIZE(isoal_global.sink_state)) {
 		(void)memset(&isoal_global.sink_state[hdl], 0, sizeof(struct isoal_sink));
 	} else {
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 	}
 }
 
@@ -350,7 +350,7 @@ isoal_status_t isoal_sink_create(
 			session->sdu_sync_const = group_sync_delay;
 		}
 	} else {
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 	}
 
 	/* Remember the platform-specific callbacks */
@@ -378,7 +378,7 @@ void isoal_sink_enable(isoal_sink_handle_t hdl)
 		/* Atomically enable */
 		isoal_global.sink_state[hdl].sdu_production.mode = ISOAL_PRODUCTION_MODE_ENABLED;
 	} else {
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 	}
 }
 
@@ -392,7 +392,7 @@ void isoal_sink_disable(isoal_sink_handle_t hdl)
 		/* Atomically disable */
 		isoal_global.sink_state[hdl].sdu_production.mode = ISOAL_PRODUCTION_MODE_DISABLED;
 	} else {
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 	}
 }
 
@@ -441,7 +441,7 @@ static isoal_status_t isoal_rx_allocate_sdu(struct isoal_sink *sink,
 		/* Nothing has been written into buffer yet */
 		sp->sdu_written   = 0;
 		sp->sdu_available = sdu->contents.size;
-		LL_ASSERT(sdu->contents.size > 0);
+		LL_ASSERT_ERR(sdu->contents.size > 0);
 
 		/* Get seq number from session counter */
 		sdu->sn = session->sn;
@@ -568,7 +568,7 @@ static isoal_status_t isoal_rx_buffered_emit_sdu(struct isoal_sink *sink, bool e
 #endif /* ISOAL_BUFFER_RX_SDUS_ENABLE */
 	} else {
 		/* Unreachable */
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 	}
 
 	return err;
@@ -653,7 +653,6 @@ static isoal_status_t isoal_rx_append_to_sdu(struct isoal_sink *sink,
 	handle_error_case = (is_end_fragment && (packet_available == 0));
 
 	pdu_payload = pdu_meta->pdu->payload + offset;
-	LL_ASSERT(pdu_payload);
 
 	/* While there is something left of the packet to consume */
 	err = ISOAL_STATUS_OK;
@@ -880,7 +879,7 @@ static isoal_status_t isoal_rx_unframed_consume(struct isoal_sink *sink,
 			/* Unsupported case */
 			err = ISOAL_STATUS_ERR_UNSPECIFIED;
 			LOG_ERR("Invalid unframed LLID (%d)", llid);
-			LL_ASSERT(0);
+			LL_ASSERT_ERR(0);
 		}
 		break;
 
@@ -1459,7 +1458,8 @@ static void isoal_source_deallocate(isoal_source_handle_t hdl)
 	if (hdl < ARRAY_SIZE(isoal_global.source_state)) {
 		source = &isoal_global.source_state[hdl];
 	} else {
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
+
 		return;
 	}
 
@@ -1477,7 +1477,7 @@ static void isoal_source_deallocate(isoal_source_handle_t hdl)
 	if (hdl < ARRAY_SIZE(isoal_global.source_allocated)) {
 		isoal_global.source_allocated[hdl] = ISOAL_ALLOC_STATE_FREE;
 	} else {
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 	}
 
 	(void)memset(source, 0, sizeof(struct isoal_source));
@@ -1594,7 +1594,7 @@ void isoal_source_enable(isoal_source_handle_t hdl)
 		/* Atomically enable */
 		isoal_global.source_state[hdl].pdu_production.mode = ISOAL_PRODUCTION_MODE_ENABLED;
 	} else {
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 	}
 }
 
@@ -1608,7 +1608,7 @@ void isoal_source_disable(isoal_source_handle_t hdl)
 		/* Atomically disable */
 		isoal_global.source_state[hdl].pdu_production.mode = ISOAL_PRODUCTION_MODE_DISABLED;
 	} else {
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 	}
 }
 
@@ -1770,7 +1770,7 @@ static isoal_status_t isoal_tx_allocate_pdu(struct isoal_source *source,
 		pp->pdu_written   = 0;
 		pp->pdu_available = available_len;
 		pp->pdu_allocated = 1U;
-		LL_ASSERT(available_len > 0);
+		LL_ASSERT_ERR(available_len > 0);
 
 		pp->pdu_cnt++;
 	}
@@ -1982,7 +1982,7 @@ static isoal_status_t isoal_tx_unframed_produce(isoal_source_handle_t source_hdl
 
 	packet_available = tx_sdu->size;
 	sdu_payload = tx_sdu->dbuf;
-	LL_ASSERT(sdu_payload);
+	LL_ASSERT_DBG(sdu_payload);
 
 	zero_length_sdu = (packet_available == 0 &&
 		tx_sdu->sdu_state == BT_ISO_SINGLE);
@@ -2468,12 +2468,12 @@ static uint16_t isoal_tx_framed_find_correct_tx_event(const struct isoal_source 
 		time_diff_valid = isoal_get_time_diff(time_stamp_selected,
 					actual_grp_ref_point, &time_diff);
 
-		LL_ASSERT(time_diff_valid);
-		LL_ASSERT(time_diff > 0);
+		LL_ASSERT_DBG(time_diff_valid);
+		LL_ASSERT_DBG(time_diff > 0);
 		/* Time difference must be less than the maximum possible
 		 * time-offset of 24-bits.
 		 */
-		LL_ASSERT(time_diff <= 0x00FFFFFF);
+		LL_ASSERT_DBG(time_diff <= 0x00FFFFFF);
 	}
 
 	*payload_number = next_payload_number;
@@ -2514,7 +2514,7 @@ static isoal_status_t isoal_tx_framed_produce(isoal_source_handle_t source_hdl,
 
 	packet_available = tx_sdu->size;
 	sdu_payload      = tx_sdu->dbuf;
-	LL_ASSERT(sdu_payload);
+	LL_ASSERT_DBG(sdu_payload);
 
 	zero_length_sdu = (packet_available == 0 &&
 		tx_sdu->sdu_state == BT_ISO_SINGLE);
@@ -2791,7 +2791,7 @@ static isoal_status_t isoal_tx_framed_event_prepare_handle(isoal_source_handle_t
 	}
 
 	/* Not possible to recover if allocation or emit fails here*/
-	LL_ASSERT(!(err || err_alloc));
+	LL_ASSERT_ERR(!(err || err_alloc));
 
 	if (pp->payload_number < last_event_payload + 1ULL) {
 		pp->payload_number = last_event_payload + 1ULL;

@@ -27,6 +27,20 @@ void bt_ctlr_assert_handle(char *file, uint32_t line);
 		BT_ASSERT_MSG(cond, fmt, ##__VA_ARGS__)
 #endif
 
+#if defined(CONFIG_CPU_CORTEX_M)
+#define HAL_DEBUG_LL_ASSERT(x) \
+	do { \
+		if (!(x)) { \
+			__asm__ inline volatile (".inst 0xde00\n"); \
+		} \
+	} while (0)
+#else
+#define HAL_DEBUG_LL_ASSERT(x) LL_ASSERT(x)
+#endif
+
+#define LL_ASSERT_ERR(cond) HAL_DEBUG_LL_ASSERT(cond)
+#define LL_ASSERT_DBG(cond) HAL_DEBUG_LL_ASSERT(cond)
+
 #if defined(CONFIG_BT_CTLR_ASSERT_VENDOR)
 #define LL_ASSERT_INFO1(cond, param) \
 		BT_ASSERT_VND(cond, param, 0)

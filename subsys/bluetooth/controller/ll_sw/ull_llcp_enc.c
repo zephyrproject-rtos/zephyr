@@ -187,7 +187,7 @@ static struct node_tx *llcp_lp_enc_tx(struct ll_conn *conn, struct proc_ctx *ctx
 
 	/* Allocate tx node */
 	tx = llcp_tx_alloc(conn, ctx);
-	LL_ASSERT(tx);
+	LL_ASSERT_DBG(tx);
 
 	pdu = (struct pdu_data *)tx->pdu;
 
@@ -206,7 +206,7 @@ static struct node_tx *llcp_lp_enc_tx(struct ll_conn *conn, struct proc_ctx *ctx
 		llcp_pdu_encode_pause_enc_rsp(pdu);
 		break;
 	default:
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 	}
 
 	ctx->tx_opcode = pdu->llctrl.opcode;
@@ -228,7 +228,7 @@ static void lp_enc_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 	/* Piggy-back on RX node */
 	ntf = ctx->node_ref.rx;
 	ctx->node_ref.rx = NULL;
-	LL_ASSERT(ntf);
+	LL_ASSERT_DBG(ntf);
 
 	ntf->hdr.type = NODE_RX_TYPE_DC_PDU;
 	ntf->hdr.handle = conn->lll.handle;
@@ -244,7 +244,7 @@ static void lp_enc_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 			ntf->hdr.type = NODE_RX_TYPE_ENC_REFRESH;
 		} else {
 			/* Should never happen */
-			LL_ASSERT(0);
+			LL_ASSERT_DBG(0);
 		}
 	} else {
 		llcp_pdu_encode_reject_ind(pdu, ctx->data.enc.error);
@@ -379,7 +379,7 @@ static inline uint8_t reject_error_code(struct pdu_data *pdu)
 #endif /* CONFIG_BT_CTLR_EXT_REJ_IND */
 	} else {
 		/* Called with an invalid PDU */
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 
 		/* Keep compiler happy */
 		error = BT_HCI_ERR_UNSPECIFIED;
@@ -639,7 +639,7 @@ static void lp_enc_execute_fsm(struct ll_conn *conn, struct proc_ctx *ctx, uint8
 		break;
 	default:
 		/* Unknown state */
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 	}
 }
 
@@ -705,7 +705,7 @@ static struct node_tx *llcp_rp_enc_tx(struct ll_conn *conn, struct proc_ctx *ctx
 
 	/* Allocate tx node */
 	tx = llcp_tx_alloc(conn, ctx);
-	LL_ASSERT(tx);
+	LL_ASSERT_DBG(tx);
 
 	pdu = (struct pdu_data *)tx->pdu;
 
@@ -732,7 +732,7 @@ static struct node_tx *llcp_rp_enc_tx(struct ll_conn *conn, struct proc_ctx *ctx
 		}
 		break;
 	default:
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 	}
 
 	ctx->tx_opcode = pdu->llctrl.opcode;
@@ -755,7 +755,7 @@ static void rp_enc_ntf_ltk(struct ll_conn *conn, struct proc_ctx *ctx)
 	/* Piggy-back on RX node */
 	ntf = ctx->node_ref.rx;
 	ctx->node_ref.rx = NULL;
-	LL_ASSERT(ntf);
+	LL_ASSERT_DBG(ntf);
 
 	piggy_back = (ntf->hdr.type != NODE_RX_TYPE_RETAIN);
 
@@ -780,7 +780,7 @@ static void rp_enc_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 	/* Piggy-back on RX node */
 	ntf = ctx->node_ref.rx;
 	ctx->node_ref.rx = NULL;
-	LL_ASSERT(ntf);
+	LL_ASSERT_DBG(ntf);
 
 	ntf->hdr.type = NODE_RX_TYPE_DC_PDU;
 	ntf->hdr.handle = conn->lll.handle;
@@ -795,7 +795,7 @@ static void rp_enc_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 		ntf->hdr.type = NODE_RX_TYPE_ENC_REFRESH;
 	} else {
 		/* Should never happen */
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 	}
 }
 
@@ -884,7 +884,7 @@ static void rp_enc_send_reject_ind(struct ll_conn *conn, struct proc_ctx *ctx, u
 			 */
 		} else {
 			/* Shouldn't happen */
-			LL_ASSERT(0);
+			LL_ASSERT_DBG(0);
 		}
 	}
 }
@@ -1232,7 +1232,7 @@ static void rp_enc_execute_fsm(struct ll_conn *conn, struct proc_ctx *ctx, uint8
 		break;
 	default:
 		/* Unknown state */
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 	}
 }
 
