@@ -8,4 +8,14 @@ if SOC_STM32F031X6
 config NUM_IRQS
 	default 28
 
+# Reduce kernel stack sizes to fit in 4 KiB RAM
+config MAIN_STACK_SIZE
+	default 512
+
+config IDLE_STACK_SIZE
+	default 150
+
+config ISR_STACK_SIZE
+	default 512
+
 endif # SOC_STM32F031X6
