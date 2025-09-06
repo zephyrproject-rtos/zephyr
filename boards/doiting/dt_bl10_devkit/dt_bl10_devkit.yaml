@@ -13,6 +13,7 @@ testing:
     - net
     - bluetooth
 supported:
+  - gpio
   - pinctrl
   - uart
 vendor: doiting
