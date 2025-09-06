@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2025 Jonas Berg
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&zephyr_i2c {
+	status = "okay";
+
+	sparkfun_ens160: ens160@53 {
+		status = "okay";
+		compatible = "sciosense,ens160";
+		reg = <0x53>;
+	};
+
+	sparkfun_bme280: bme280@77 {
+		status = "okay";
+		compatible = "bosch,bme280";
+		reg = <0x77>;
+	};
+};
