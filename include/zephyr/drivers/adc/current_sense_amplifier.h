@@ -18,6 +18,7 @@ struct current_sense_amplifier_dt_spec {
 	uint16_t sense_gain_div;
 	uint16_t noise_threshold;
 	int16_t zero_current_voltage_mv;
+	enum adc_gain gain_extended_range;
 	bool enable_calibration;
 };
 
@@ -40,6 +41,7 @@ struct current_sense_amplifier_dt_spec {
 		.sense_gain_div = DT_PROP(node_id, sense_gain_div),                                \
 		.noise_threshold = DT_PROP(node_id, zephyr_noise_threshold),                       \
 		.zero_current_voltage_mv = DT_PROP(node_id, zero_current_voltage_mv),              \
+		.gain_extended_range = DT_STRING_TOKEN_OR(node_id, gain_extended_range, 0xFF),     \
 		.enable_calibration = DT_PROP_OR(node_id, enable_calibration, false),              \
 	}
 
@@ -64,6 +66,31 @@ current_sense_amplifier_scale_dt(const struct current_sense_amplifier_dt_spec *s
 	tmp = tmp * 1000 * spec->sense_gain_div / spec->sense_milli_ohms / spec->sense_gain_mult;
 
 	*v_to_i = (int32_t)tmp;
+}
+
+/**
+ * @brief Calculates the actual amperage from the measured voltage
+ *
+ * @param spec Current sensor specification from Devicetree.
+ * @param microvolts Measured voltage in microvolts.
+ *
+ * @return int32_t Corresponding scaled output current in microamps.
+ */
+static inline int32_t
+current_sense_amplifier_scale_ua_dt(const struct current_sense_amplifier_dt_spec *spec,
+				    int32_t microvolts)
+{
+	int64_t temp = microvolts;
+	/* Perform all multiplications first to limit rounding errors.
+	 * Micro-volts/milli-ohms would result in milli-amps, scale by factor of 1,000.
+	 * Proof that the following cannot overflow:
+	 *    (millivolts * micro_scale) * max_gain <= INT64_MAX
+	 *          (INT32_MAX * 1000) * UINT16_MAX <= INT64_MAX
+	 *                                   ~2**57 <= 2**63
+	 */
+	int64_t scaled = temp * 1000 * spec->sense_gain_div;
+	/* Perform final divisions */
+	return scaled / spec->sense_gain_mult / spec->sense_milli_ohms;
 }
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_ADC_CURRENT_SENSE_AMPLIFIER_H_ */

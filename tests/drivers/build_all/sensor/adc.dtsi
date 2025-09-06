@@ -37,6 +37,14 @@ test_current: current_amp {
 	zero-current-voltage-mv = <0>;
 };
 
+test_current_alt_gain: current_amp_alt_gain {
+	compatible = "current-sense-amplifier";
+	io-channels = <&adc0 0>;
+	sense-resistor-milli-ohms = <2>;
+	sense-gain-mult = <50>;
+	gain-extended-range = "ADC_GAIN_1_6";
+};
+
 test_composite_fuel_gauge: composite_fuel_gauge {
 	compatible = "zephyr,fuel-gauge-composite";
 	status = "okay";
