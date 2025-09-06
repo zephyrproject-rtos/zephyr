@@ -3258,4 +3258,5 @@ int bt_ascs_unregister(void)
 
 	return err;
 }
+
 #endif /* BT_BAP_UNICAST_SERVER */
