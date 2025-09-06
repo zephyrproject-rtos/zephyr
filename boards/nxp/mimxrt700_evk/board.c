@@ -272,6 +272,8 @@ void board_early_init_hook(void)
 #endif
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(lpi2c15), okay)
+	CLOCK_AttachClk(kSENSE_BASE_to_LPI2C15);
+	CLOCK_SetClkDiv(kCLOCK_DivLpi2c15Clk, 2U);
 	CLOCK_EnableClock(kCLOCK_LPI2c15);
 	RESET_ClearPeripheralReset(kLPI2C15_RST_SHIFT_RSTn);
 #endif
