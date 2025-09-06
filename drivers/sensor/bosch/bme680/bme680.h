@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2018 Bosch Sensortec GmbH
  * Copyright (c) 2022, Leonard Pollak
+ * Copyright (c) 2025 Nordic Semiconductors ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +14,8 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/rtio/rtio.h>
 
 #define DT_DRV_COMPAT bosch_bme680
 
@@ -168,6 +171,26 @@ struct bme680_config {
 
 #define BME680_CONCAT_BYTES(msb, lsb) (((uint16_t)msb << 8) | (uint16_t)lsb)
 
+/* Convert to Q15.16 */
+#define BME680_TEMP_CONV      100
+#define BME680_TEMP_SHIFT     16
+/* Treat UQ24.8 as Q23.8
+ * Need to divide by 1000 to convert to kPa
+ */
+#define BME680_PRESS_CONV_KPA 1000
+#define BME680_PRESS_SHIFT    23
+/* Treat UQ22.10 as Q21.10 */
+#define BME680_HUM_SHIFT      21
+/* Gas resistance is reported as integer ohms (no scaling) */
+#define BME680_GAS_RES_SHIFT  0
+
+struct bme680_reading {
+	int32_t calc_temp;
+	uint32_t calc_press;
+	uint32_t calc_humidity;
+	uint32_t calc_gas_resistance;
+};
+
 struct bme680_data {
 	/* Compensation parameters. */
 	uint16_t par_h1;
@@ -199,10 +222,7 @@ struct bme680_data {
 	bool has_read_compensation;
 
 	/* Calculated sensor values. */
-	int32_t calc_temp;
-	uint32_t calc_press;
-	uint32_t calc_humidity;
-	uint32_t calc_gas_resistance;
+	struct bme680_reading reading;
 
 	/* Additional information */
 	uint8_t heatr_stab;
@@ -216,5 +236,32 @@ struct bme680_data {
 	uint8_t mem_page;
 #endif
 };
+
+/*
+ * RTIO
+ */
+
+struct bme680_decoder_header {
+	uint64_t timestamp;
+	/** Set if `temp` has data */
+	uint8_t has_temp: 1;
+	/** Set if `press` has data */
+	uint8_t has_press: 1;
+	/** Set if `humidity` has data */
+	uint8_t has_humidity: 1;
+	/** Set if `gas_res` has data */
+	uint8_t has_gas_res: 1;
+} __packed;
+
+struct bme680_encoded_data {
+	struct bme680_decoder_header header;
+	struct bme680_reading reading;
+};
+
+int bme680_get_decoder(const struct device *dev, const struct sensor_decoder_api **decoder);
+
+void bme680_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe);
+
+int bme680_sample_fetch(const struct device *dev, enum sensor_channel chan);
 
 #endif /* __ZEPHYR_DRIVERS_SENSOR_BME680_H__ */
