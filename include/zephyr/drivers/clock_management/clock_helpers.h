@@ -17,6 +17,13 @@
 
 #include <zephyr/drivers/clock_management/clock.h>
 
+/**
+ * @brief Clock Driver Interface
+ * @defgroup clock_driver_helpers Clock Driver Helpers
+ * @ingroup io_interfaces
+ * @{
+ */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -80,5 +87,9 @@ clock_freq_t clock_management_set_rate(const struct clk *clk_hw, clock_freq_t ra
 }
 #endif
 
+
+/**
+ * @}
+ */
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_CLOCK_MANAGEMENT_CLOCK_HELPERS_H_ */
