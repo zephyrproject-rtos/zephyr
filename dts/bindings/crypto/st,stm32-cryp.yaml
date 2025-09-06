@@ -6,3 +6,8 @@ description: STM32 Cryptographic Accelerator
 compatible: "st,stm32-cryp"
 
 include: st,stm32-crypto-common.yaml
+
+properties:
+  gcm-ccm-supported:
+    type: boolean
+    description: Enables AES GCM and CCM support.
