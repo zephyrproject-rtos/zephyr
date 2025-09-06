@@ -77,6 +77,7 @@
 		compatible = "atmel-xplained-pro-header";
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		// dts-format off
 		gpio-map-pass-thru = <0 0x3f>;		/*           Shared */
 		gpio-map =	<0  0 &pioc 31 0>,	/* AFE1 AD6         */
 				<1  0 &pioa 19 0>,	/* AFE0 AD8         */
@@ -96,12 +97,14 @@
 				<15 0 &piod 22 0>;	/* SPI0(SCK)   EXT2 */
 							/* GND              */
 							/* +3.3V            */
+		// dts-format on
 	};
 
 	ext2_header: xplained-pro-connector2 {
 		compatible = "atmel-xplained-pro-header";
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		// dts-format off
 		gpio-map-pass-thru = <0 0x3f>;		/*           Shared */
 		gpio-map =	<0  0 &piod 30 0>,	/* AFE0 AD0         */
 				<1  0 &pioc 13 0>,	/* AFE1 AD1         */
@@ -121,12 +124,14 @@
 				<15 0 &piod 22 0>;	/* SPI0(SCK)   EXT1 */
 							/* GND              */
 							/* +3.3V            */
+		// dts-format on
 	};
 
 	arduino_header: connector {
 		compatible = "arduino-header-r3";
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		// dts-format off
 		gpio-map-pass-thru = <0 0x3f>;				/*       Shared */
 		gpio-map =	<ARDUINO_HEADER_R3_A0 0 &piod 26 0>,	/* TD           */
 				<ARDUINO_HEADER_R3_A1  0 &pioc 31 0>,	/* AFE1 AD6   y */
@@ -150,6 +155,7 @@
 				<ARDUINO_HEADER_R3_D13 0 &piod 22 0>,	/* SPI0_SPCK  y */
 				<ARDUINO_HEADER_R3_D14 0 &pioa  3 0>,	/* TWD0       y */
 				<ARDUINO_HEADER_R3_D15 0 &pioa  4 0>;	/* TWCK0      y */
+		// dts-format on
 	};
 };
 
@@ -218,7 +224,6 @@
 &uart3 {
 	status = "okay";
 	current-speed = <115200>;
-
 
 	pinctrl-0 = <&uart3_default>;
 	pinctrl-names = "default";
@@ -357,29 +362,20 @@ zephyr_udc0: &usbhs {
 	};
 };
 
-ext1_spi: &spi0 {
-};
+ext1_spi: &spi0 {};
 
-ext1_i2c: &twihs0 {
-};
+ext1_i2c: &twihs0 {};
 
-ext1_serial: &usart0 {
-};
+ext1_serial: &usart0 {};
 
-ext2_spi: &spi0 {
-};
+ext2_spi: &spi0 {};
 
-ext2_i2c: &twihs0 {
-};
+ext2_i2c: &twihs0 {};
 
-ext2_serial: &usart1 {
-};
+ext2_serial: &usart1 {};
 
-arduino_spi: &spi0 {
-};
+arduino_spi: &spi0 {};
 
-arduino_i2c: &twihs0 {
-};
+arduino_i2c: &twihs0 {};
 
-arduino_serial: &uart3 {
-};
+arduino_serial: &uart3 {};

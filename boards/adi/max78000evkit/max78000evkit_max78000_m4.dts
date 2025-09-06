@@ -52,8 +52,8 @@
 		};
 
 		pb_wakeup: pb_wakeup {
-			gpios = <&gpio3 1 (GPIO_PULL_UP | GPIO_ACTIVE_LOW
-				| MAX32_GPIO_VSEL_VDDIOH)>;
+			gpios = <&gpio3 1
+				 (GPIO_PULL_UP | GPIO_ACTIVE_LOW | MAX32_GPIO_VSEL_VDDIOH)>;
 			label = "Wakeup";
 			zephyr,code = <INPUT_KEY_WAKEUP>;
 		};

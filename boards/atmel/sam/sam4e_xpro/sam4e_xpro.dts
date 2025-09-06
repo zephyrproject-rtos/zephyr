@@ -52,6 +52,7 @@
 		compatible = "atmel-xplained-pro-header";
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		// dts-format off
 		gpio-map-pass-thru = <0 0x3f>;		/*           Shared */
 		gpio-map =	<0  0 &piob  2 0>,	/* AFE AD0          */
 				<1  0 &piob  3 0>,	/* AFE AD1          */
@@ -71,12 +72,14 @@
 				<15 0 &pioa 14 0>;	/* SPI(SCK)    EXTx */
 							/* GND              */
 							/* +3.3V            */
+		// dts-format on
 	};
 
 	ext2_header: xplained-pro-connector2 {
 		compatible = "atmel-xplained-pro-header";
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		// dts-format off
 		gpio-map-pass-thru = <0 0x3f>;		/*           Shared */
 		gpio-map =    /*<0  0 -      - 0>,	   -                */
 			      /*<1  0 -      - 0>,	   -                */
@@ -96,12 +99,14 @@
 				<15 0 &pioa 14 0>;	/* SPI(SCK)    EXTx */
 							/* GND              */
 							/* +3.3V            */
+		// dts-format on
 	};
 
 	ext3_header: xplained-pro-connector3 {
 		compatible = "atmel-xplained-pro-header";
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		// dts-format off
 		gpio-map-pass-thru = <0 0x3f>;		/*           Shared */
 		gpio-map =	<0  0 &pioa 17 0>,	/* AFE AD0          */
 				<1  0 &pioc 13 0>,	/* AFE AD6          */
@@ -121,6 +126,7 @@
 				<15 0 &pioa 14 0>;	/* SPI(SCK)    EXTx */
 							/* GND              */
 							/* +3.3V            */
+		// dts-format on
 	};
 };
 
@@ -228,29 +234,20 @@
 	status = "okay";
 };
 
-ext1_spi: &spi0 {
-};
+ext1_spi: &spi0 {};
 
-ext1_i2c: &twi0 {
-};
+ext1_i2c: &twi0 {};
 
-ext1_serial: &usart1 {
-};
+ext1_serial: &usart1 {};
 
-ext2_spi: &spi0 {
-};
+ext2_spi: &spi0 {};
 
-ext2_i2c: &twi0 {
-};
+ext2_i2c: &twi0 {};
 
-ext2_serial: &uart1 {
-};
+ext2_serial: &uart1 {};
 
-ext3_spi: &spi0 {
-};
+ext3_spi: &spi0 {};
 
-ext3_i2c: &twi0 {
-};
+ext3_i2c: &twi0 {};
 
-ext3_serial: &uart1 {
-};
+ext3_serial: &uart1 {};

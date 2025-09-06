@@ -121,7 +121,7 @@
 };
 
 &trng {
-	status ="okay";
+	status = "okay";
 };
 
 &uclk {

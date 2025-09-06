@@ -10,7 +10,7 @@
 	uart1_default: uart1_default {
 		group0 {
 			pinmux = <&iomuxc_uart1_rxd_uart_rx_uart1_rx>,
-				<&iomuxc_uart1_txd_uart_tx_uart1_tx>;
+				 <&iomuxc_uart1_txd_uart_tx_uart1_tx>;
 			slew-rate = "slow";
 			drive-strength = "x1";
 		};
@@ -19,9 +19,9 @@
 	uart3_default: uart3_default {
 		group0 {
 			pinmux = <&iomuxc_uart3_txd_uart_tx_uart3_tx>,
-				<&iomuxc_uart3_rxd_uart_rx_uart3_rx>,
-				<&iomuxc_sd1_strobe_uart_cts_b_uart3_cts_b>,
-				<&iomuxc_sd1_reset_b_uart_rts_b_uart3_rts_b>;
+				 <&iomuxc_uart3_rxd_uart_rx_uart3_rx>,
+				 <&iomuxc_sd1_strobe_uart_cts_b_uart3_cts_b>,
+				 <&iomuxc_sd1_reset_b_uart_rts_b_uart3_rts_b>;
 			slew-rate = "slow";
 			drive-strength = "x1";
 		};
@@ -30,7 +30,7 @@
 	uart4_default: uart4_default {
 		group0 {
 			pinmux = <&iomuxc_uart4_rxd_uart_rx_uart4_rx>,
-				<&iomuxc_uart4_txd_uart_tx_uart4_tx>;
+				 <&iomuxc_uart4_txd_uart_tx_uart4_tx>;
 			bias-pull-up;
 			slew-rate = "slow";
 			drive-strength = "x1";
@@ -40,7 +40,7 @@
 	i2c1_default: i2c1_default {
 		group0 {
 			pinmux = <&iomuxc_i2c1_scl_i2c_scl_i2c1_scl>,
-				<&iomuxc_i2c1_sda_i2c_sda_i2c1_sda>;
+				 <&iomuxc_i2c1_sda_i2c_sda_i2c1_sda>;
 			bias-pull-up;
 			input-schmitt-enable;
 			slew-rate = "slow";
@@ -52,7 +52,7 @@
 	i2c2_default: i2c2_default {
 		group0 {
 			pinmux = <&iomuxc_i2c2_scl_i2c_scl_i2c2_scl>,
-				<&iomuxc_i2c2_sda_i2c_sda_i2c2_sda>;
+				 <&iomuxc_i2c2_sda_i2c_sda_i2c2_sda>;
 			bias-pull-up;
 			input-schmitt-enable;
 			slew-rate = "slow";
@@ -64,7 +64,7 @@
 	i2c3_default: i2c3_default {
 		group0 {
 			pinmux = <&iomuxc_i2c3_scl_i2c_scl_i2c3_scl>,
-				<&iomuxc_i2c3_sda_i2c_sda_i2c3_sda>;
+				 <&iomuxc_i2c3_sda_i2c_sda_i2c3_sda>;
 			bias-pull-up;
 			input-schmitt-enable;
 			slew-rate = "slow";
@@ -76,7 +76,7 @@
 	i2c4_default: i2c4_default {
 		group0 {
 			pinmux = <&iomuxc_i2c4_scl_i2c_scl_i2c4_scl>,
-				<&iomuxc_i2c4_sda_i2c_sda_i2c4_sda>;
+				 <&iomuxc_i2c4_sda_i2c_sda_i2c4_sda>;
 			bias-pull-up;
 			input-schmitt-enable;
 			slew-rate = "slow";

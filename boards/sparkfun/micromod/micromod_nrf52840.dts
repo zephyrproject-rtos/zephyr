@@ -139,7 +139,7 @@
 	pinctrl-1 = <&qspi_sleep>;
 	pinctrl-names = "default", "sleep";
 	w25q128jv: w25q128jv@0 {
-		status="okay";
+		status = "okay";
 		compatible = "nordic,qspi-nor";
 		reg = <0>;
 		writeoc = "pp4io";

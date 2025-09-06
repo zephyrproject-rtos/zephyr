@@ -18,7 +18,7 @@
 		reg = <0x6b>;
 		accel-odr = <0x02>;
 		gyro-odr = <0x02>;
-		int1-gpios =  <&arduino_header ARDUINO_HEADER_R3_D5 GPIO_ACTIVE_HIGH>;
+		int1-gpios = <&arduino_header ARDUINO_HEADER_R3_D5 GPIO_ACTIVE_HIGH>;
 		drdy-pin = <1>;
 	};
 };

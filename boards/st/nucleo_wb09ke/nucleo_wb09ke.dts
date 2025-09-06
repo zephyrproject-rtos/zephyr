@@ -28,7 +28,7 @@
 	};
 
 	leds: leds {
-		compatible ="gpio-leds";
+		compatible = "gpio-leds";
 
 		blue_led_1: led_0 {
 			gpios = <&gpiob 1 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
@@ -121,7 +121,7 @@
 	 * NO_SEL reflects STM32WB0's lack of RTC clock mux to configure.
 	 */
 	clocks = <&rcc STM32_CLOCK(APB0, 12)>,
-		<&rcc STM32_SRC_LSE NO_SEL>;
+		 <&rcc STM32_SRC_LSE NO_SEL>;
 	status = "okay";
 };
 
@@ -152,7 +152,7 @@
 	status = "okay";
 	/* Select 64MHz clock for SPI3 */
 	clocks = <&rcc STM32_CLOCK(APB1, 14)>,
-		<&rcc STM32_SRC_SYSCLK SPI3_I2S3_SEL(3)>;
+		 <&rcc STM32_SRC_SYSCLK SPI3_I2S3_SEL(3)>;
 };
 
 &timers2 {

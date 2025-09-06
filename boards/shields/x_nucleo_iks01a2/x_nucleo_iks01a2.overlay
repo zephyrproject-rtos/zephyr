@@ -34,7 +34,7 @@
 	};
 
 	lsm303agr_magn_1e_x_nucleo_iks01a2: lsm303agr-magn@1e {
-		compatible = "st,lis2mdl","st,lsm303agr-magn";
+		compatible = "st,lis2mdl", "st,lsm303agr-magn";
 		reg = <0x1e>;
 		irq-gpios = <&arduino_header ARDUINO_HEADER_R3_A3 GPIO_ACTIVE_HIGH>;
 	};

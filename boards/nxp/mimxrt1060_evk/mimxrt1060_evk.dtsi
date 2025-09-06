@@ -50,7 +50,7 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map =	<0  0 &gpio2 31 0>;	/* Pin 1, BL+ */
+		gpio-map = <0 0 &gpio2 31 0>;	/* Pin 1, BL+ */
 	};
 
 	/*
@@ -63,8 +63,8 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map =	<1  0 &gpio1 2 0>,	/* Pin 2, LCD touch RST */
-				<2  0 &gpio1 11 0>;	/* Pin 3, LCD touch INT */
+		gpio-map = <1 0 &gpio1 2 0>,	/* Pin 2, LCD touch RST */
+			   <2 0 &gpio1 11 0>;	/* Pin 3, LCD touch INT */
 	};
 
 	leds {

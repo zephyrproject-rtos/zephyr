@@ -59,6 +59,7 @@
 		compatible = "atmel-xplained-pro-header";
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		// dts-format off
 		gpio-map-pass-thru = <0 0x3f>;		/*           Shared */
 		gpio-map =	<0  0 &porta  6 0>,	/* ADC6             */
 				<1  0 &porta  7 0>,	/* ADC7             */
@@ -76,12 +77,14 @@
 				<13 0 &portb 22 0>,	/* SPI5(MOSI)  EXTx */
 				<14 0 &portb  2 0>,	/* SPI5(MISO)  EXTx */
 				<15 0 &portb 23 0>;	/* SPI5(SCK)   EXTx */
+		// dts-format on
 	};
 
 	ext2_header: xplained-pro-connector2 {
 		compatible = "atmel-xplained-pro-header";
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		// dts-format off
 		gpio-map-pass-thru = <0 0x3f>;		/*           Shared */
 		gpio-map =    /*<0  0 -      - 0>,	   -                */
 			      /*<1  0 -      - 0>,	   -                */
@@ -99,6 +102,7 @@
 				<13 0 &portb 22 0>,	/* SPI5(MOSI)  EXTx */
 				<14 0 &portb  2 0>,	/* SPI5(MISO)  EXTx */
 				<15 0 &portb 23 0>;	/* SPI5(SCK)   EXTx */
+		// dts-format on
 	};
 };
 
@@ -206,20 +210,15 @@ zephyr_udc0: &usb0 {
 	pinctrl-names = "default";
 };
 
-ext1_spi: &sercom5 {
-};
+ext1_spi: &sercom5 {};
 
-ext1_i2c: &sercom1 {
-};
+ext1_i2c: &sercom1 {};
 
-ext1_serial: &sercom0 {
-};
+ext1_serial: &sercom0 {};
 
-ext2_spi: &sercom5 {
-};
+ext2_spi: &sercom5 {};
 
-ext2_i2c: &sercom1 {
-};
+ext2_i2c: &sercom1 {};
 
 &flash0 {
 	partitions {

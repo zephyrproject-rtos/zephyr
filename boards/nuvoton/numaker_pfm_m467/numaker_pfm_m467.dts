@@ -22,7 +22,6 @@
 		sw1 = &user_button_2;
 	};
 
-
 	chosen {
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
@@ -31,7 +30,6 @@
 		zephyr,code-partition = &slot0_partition;
 		zephyr,canbus = &canfd0;
 	};
-
 
 	leds {
 		compatible = "gpio-leds";

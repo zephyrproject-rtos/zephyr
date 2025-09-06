@@ -103,7 +103,7 @@
 };
 
 &trng {
-	status ="okay";
+	status = "okay";
 };
 
 &adc0 {

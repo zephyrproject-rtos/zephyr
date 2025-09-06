@@ -45,7 +45,7 @@
 		};
 	};
 
-	 /* These aliases are provided for compatibility with samples */
+	/* These aliases are provided for compatibility with samples */
 	aliases {
 		led0 = &led1;
 		led1 = &led2;
@@ -143,11 +143,11 @@
 };
 
 &spi0a_mosi_p0_3 {
-	power-source=<MAX32_VSEL_VDDIOH>;
+	power-source = <MAX32_VSEL_VDDIOH>;
 };
 
 &spi0a_sck_p0_4 {
-	power-source=<MAX32_VSEL_VDDIOH>;
+	power-source = <MAX32_VSEL_VDDIOH>;
 };
 
 &spi0 {

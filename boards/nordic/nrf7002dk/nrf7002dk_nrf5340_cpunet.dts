@@ -32,13 +32,13 @@
 		compatible = "gpio-leds";
 
 		led0: led_0 {
-				gpios = <&gpio1 6 GPIO_ACTIVE_HIGH>;
-				label = "Green LED 0";
+			gpios = <&gpio1 6 GPIO_ACTIVE_HIGH>;
+			label = "Green LED 0";
 		};
 
 		led1: led_1 {
-				gpios = <&gpio1 7 GPIO_ACTIVE_HIGH>;
-				label = "Green LED 1";
+			gpios = <&gpio1 7 GPIO_ACTIVE_HIGH>;
+			label = "Green LED 1";
 		};
 	};
 
@@ -128,7 +128,7 @@
 	pinctrl-names = "default", "sleep";
 };
 
-arduino_serial: &uart0{};
+arduino_serial: &uart0 {};
 
 arduino_i2c: &i2c0 {
 	compatible = "nordic,nrf-twim";

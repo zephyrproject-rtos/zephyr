@@ -76,22 +76,22 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map =	<0 0 &gpio0 4 0>,	/* AN */
-				<1 0 &gpio1 6 0>,	/* RST */
-				<2 0 &gpio1 12 0>,	/* CS */
-				<3 0 &gpio1 15 0>,	/* SCK */
-				<4 0 &gpio1 14 0>,	/* MISO */
-				<5 0 &gpio1 13 0>,	/* MOSI */
-							/* +3.3V */
-							/* GND */
-				<6 0 &gpio1 7 0>,	/* PWM */
-				<7 0 &gpio1 4 0>,	/* INT */
-				<8 0 &gpio1 0 0>,	/* RX */
-				<9 0 &gpio1 1 0>,	/* TX */
-				<10 0 &gpio1 3 0>,	/* SCL */
-				<11 0 &gpio1 2 0>;	/* SDA */
-							/* +5V */
-							/* GND */
+		gpio-map = <0 0 &gpio0 4 0>,	/* AN */
+			   <1 0 &gpio1 6 0>,	/* RST */
+			   <2 0 &gpio1 12 0>,	/* CS */
+			   <3 0 &gpio1 15 0>,	/* SCK */
+			   <4 0 &gpio1 14 0>,	/* MISO */
+			   <5 0 &gpio1 13 0>,	/* MOSI */
+			   /* +3.3V */
+			   /* GND */
+			   <6 0 &gpio1 7 0>,	/* PWM */
+			   <7 0 &gpio1 4 0>,	/* INT */
+			   <8 0 &gpio1 0 0>,	/* RX */
+			   <9 0 &gpio1 1 0>,	/* TX */
+			   <10 0 &gpio1 3 0>,	/* SCL */
+			   <11 0 &gpio1 2 0>;	/* SDA */
+		/* +5V */
+		/* GND */
 	};
 
 	arduino_header: connector {
@@ -228,13 +228,11 @@
 		/* MX25R64 supports all readoc options */
 		readoc = "read4io";
 		sck-frequency = <8000000>;
-		jedec-id = [ c2 28 17  ];
-		sfdp-bfp = [
-			e5 20 f1 ff ff ff ff 03 44 eb 08 6b 08 3b 04 bb
-			ee ff ff ff ff ff 00 ff ff ff 00 ff 0c 20 0f 52
-			10 d8 00 ff 23 72 f5 00 82 ed 04 cc 44 83 68 44
-			30 b0 30 b0 f7 c4 d5 5c 00 be 29 ff f0 d0 ff ff
-		];
+		jedec-id = [c2 28 17];
+		sfdp-bfp = [e5 20 f1 ff ff ff ff 03 44 eb 08 6b 08 3b 04 bb
+			    ee ff ff ff ff ff 00 ff ff ff 00 ff 0c 20 0f 52
+			    10 d8 00 ff 23 72 f5 00 82 ed 04 cc 44 83 68 44
+			    30 b0 30 b0 f7 c4 d5 5c 00 be 29 ff f0 d0 ff ff];
 		size = <67108864>;
 		has-dpd;
 		t-enter-dpd = <10000>;

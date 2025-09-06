@@ -24,7 +24,6 @@
 		zephyr,code-partition = &slot0_partition;
 		watchdog0 = &wdt0;
 	};
-
 };
 
 arduino_spi: &spi0 {

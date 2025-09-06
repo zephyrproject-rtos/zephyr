@@ -82,7 +82,7 @@
 };
 
 &adc1 {
-	status ="okay";
+	status = "okay";
 };
 
 &uart0 {

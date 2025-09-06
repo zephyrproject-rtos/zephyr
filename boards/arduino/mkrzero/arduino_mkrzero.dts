@@ -54,7 +54,6 @@ zephyr_i2c: &sercom0 {
 		compatible = "atmel,atecc508";
 		reg = <0xc0>;
 	};
-
 };
 
 &sercom1 {

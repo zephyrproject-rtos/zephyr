@@ -14,15 +14,15 @@
 	compatible = "decawave,dwm1001";
 
 	chosen {
-		zephyr,console        = &uart0;
-		zephyr,shell-uart     = &uart0;
-		zephyr,uart-mcumgr    = &uart0;
-		zephyr,bt-mon-uart    = &uart0;
-		zephyr,bt-c2h-uart    = &uart0;
-		zephyr,sram           = &sram0;
-		zephyr,flash          = &flash0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,uart-mcumgr = &uart0;
+		zephyr,bt-mon-uart = &uart0;
+		zephyr,bt-c2h-uart = &uart0;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
-		zephyr,ieee802154     = &ieee802154;
+		zephyr,ieee802154 = &ieee802154;
 	};
 
 	leds {
@@ -64,20 +64,19 @@
 
 	/* These aliases are provided for compatibility with samples */
 	aliases {
-		sw0        = &button0;
-		led0       = &led0_red;
-		led1       = &led1_green;
-		led2       = &led2_red;
-		led3       = &led3_blue;
-		led0-red   = &led0_red;
+		sw0 = &button0;
+		led0 = &led0_red;
+		led1 = &led1_green;
+		led2 = &led2_red;
+		led3 = &led3_blue;
+		led0-red = &led0_red;
 		led1-green = &led1_green;
-		led2-red   = &led2_red;
-		led3-blue  = &led3_blue;
-		pwm-led0   = &pwm_led0_red;
+		led2-red = &led2_red;
+		led3-blue = &led3_blue;
+		pwm-led0 = &pwm_led0_red;
 		watchdog0 = &wdt0;
-		accel0     = &lis2dh12;
+		accel0 = &lis2dh12;
 	};
-
 };
 
 &reg {

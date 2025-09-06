@@ -28,7 +28,7 @@
 		zephyr,canbus = &flexcan1;
 	};
 
-	aliases{
+	aliases {
 		watchdog0 = &wwdt0;
 		pwm-0 = &flexpwm1_pwm0;
 		rtc = &rtc;
@@ -108,9 +108,9 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map =	<9  0 &gpio0 23 0>,	/* Pin 9, LCD touch INT */
-				<10  0 &gpio4 6 0>,	/* Pin 10, LCD backlight control */
-				<11  0 &gpio4 7 0>;	/* Pin 11, LCD and touch reset */
+		gpio-map = <9 0 &gpio0 23 0>,	/* Pin 9, LCD touch INT */
+			   <10 0 &gpio4 6 0>,	/* Pin 10, LCD backlight control */
+			   <11 0 &gpio4 7 0>;	/* Pin 11, LCD and touch reset */
 	};
 
 	dvp_20pin_connector: dvp-20pin-connector {
@@ -118,8 +118,8 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0x0 GPIO_DT_FLAGS_MASK>;
-		gpio-map =	<DVP_20PIN_PEN 0 &gpio1 19 0>,
-				<DVP_20PIN_PDN 0 &gpio1 18 0>;
+		gpio-map = <DVP_20PIN_PEN 0 &gpio1 19 0>,
+			   <DVP_20PIN_PDN 0 &gpio1 18 0>;
 	};
 };
 
