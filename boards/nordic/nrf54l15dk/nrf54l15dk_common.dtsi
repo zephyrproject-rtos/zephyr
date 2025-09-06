@@ -78,7 +78,6 @@
 		led1 = &led1;
 		led2 = &led2;
 		led3 = &led3;
-		pwm-led0 = &pwm_led1;
 		sw0 = &button0;
 		sw1 = &button1;
 		sw2 = &button2;
