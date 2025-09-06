@@ -114,6 +114,14 @@ if not west_found:
 else:
     exclude_patterns.append("**/*west-not-found*")
 
+# Ensure only one of the two top-level indexes ever gets included.
+# This is a workaround for Sphinx issuing INFO notices about being referenced in
+# multiple toctrees.
+if tags.has("convertimages"):  # pylint: disable=undefined-variable  # noqa: F821
+    exclude_patterns.append("index.rst")
+else:
+    exclude_patterns.append("index-tex.rst")
+
 pygments_style = "sphinx"
 highlight_language = "none"
 
