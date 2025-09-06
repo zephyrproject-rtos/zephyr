@@ -1,0 +1,8 @@
+extends: existence
+message: Use 'July 31, 2016' format, not '%s'.
+link: https://docs.microsoft.com/en-us/style-guide/a-z-word-list-term-collections/term-collections/date-time-terms
+ignorecase: true
+level: error
+nonword: true
+tokens:
+  - '\d{1,2} (?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)|May|Jun(?:e)|Jul(?:y)|Aug(?:ust)|Sep(?:tember)?|Oct(?:ober)|Nov(?:ember)?|Dec(?:ember)?) \d{4}'

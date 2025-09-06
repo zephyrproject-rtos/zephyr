@@ -1,0 +1,11 @@
+extends: existence
+message: "Try to avoid using first-person plural like '%s'."
+link: https://docs.microsoft.com/en-us/style-guide/grammar/person#avoid-first-person-plural
+level: warning
+ignorecase: true
+tokens:
+  - we
+  - we'(?:ve|re)
+  - ours?
+  - us
+  - let's
