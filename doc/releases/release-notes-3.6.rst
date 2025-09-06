@@ -18,8 +18,8 @@ Major enhancements with this release include:
 * Userspace support extended to Xtensa architecture.
 * Build system now supports Link Time Optimization (LTO), reducing the size of the final image.
 * Bluetooth Mesh protocol 1.1 now supported by default.
-* Major updates to the documentation of the :ref:`native simulator <native_sim>`, clarifying
-  supported peripherals and how to use them.
+* Major updates to the documentation of the :zephyr:board:`native simulator <native_sim>`,
+  clarifying supported peripherals and how to use them.
 * Over 30 new supported boards, spanning all Zephyr-supported architectures.
 
 An overview of the changes required or recommended when migrating your application from Zephyr
@@ -1301,7 +1301,7 @@ Additionally, the following changes in Zephyr were done:
 Tests and Samples
 *****************
 
-* :ref:`native_sim<native_sim>` has replaced ``native_posix`` as the default
+* :zephyr:board:`native_sim<native_sim>` has replaced ``native_posix`` as the default
   test platform.
   ``native_posix`` remains supported and used in testing but will be deprecated
   in a future release.

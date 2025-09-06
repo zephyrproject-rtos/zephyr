@@ -344,7 +344,7 @@ Boards & SoC Support
 
 * Added support for these POSIX boards:
 
-  * :ref:`native_sim(_64) <native_sim>`
+  * :zephyr:board:`native_sim(_64) <native_sim>`
   * nrf5340bsim_nrf5340_cpu(net|app). A simulated nrf5340 SOC, which uses Babblesim for its radio
     traffic.
 

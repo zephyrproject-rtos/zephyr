@@ -13,11 +13,11 @@ Supported methods to test zephyr bluetooth host:
 
 - Testing Zephyr Host Stack on QEMU
 
-- Testing Zephyr Host Stack on :ref:`native_sim <native_sim>`
+- Testing Zephyr Host Stack on :zephyr:board:`native_sim <native_sim>`
 
 - Testing Zephyr combined (controller + host) build on Real hardware (such as nRF52)
 
-For running with QEMU or :ref:`native_sim <native_sim>`, see :ref:`bluetooth_qemu_native`.
+For running with QEMU or :zephyr:board:`native_sim <native_sim>`, see :ref:`bluetooth_qemu_native`.
 
 .. contents::
     :local:
@@ -325,7 +325,7 @@ Testing Zephyr Host Stack on QEMU:
     	~/zephyrproject/build/zephyr/zephyr.elf -i SERVER_IP -l LOCAL_IP
 
 
-Testing Zephyr Host Stack on :ref:`native_sim <native_sim>`:
+Testing Zephyr Host Stack on :zephyr:board:`native_sim <native_sim>`:
 
 .. code-block::
 

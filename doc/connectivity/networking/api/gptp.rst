@@ -40,7 +40,7 @@ Boards supported:
 - :zephyr:board:`nucleo_h745zi_q`
 - :zephyr:board:`nucleo_f767zi`
 - :zephyr:board:`sam_e70_xplained`
-- :ref:`native_sim` (only usable for simple testing, limited capabilities
+- :zephyr:board:`native_sim` (only usable for simple testing, limited capabilities
   due to lack of hardware clock)
 - :zephyr:board:`qemu_x86` (emulated, limited capabilities due to lack of hardware clock)
 

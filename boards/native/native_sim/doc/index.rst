@@ -1,12 +1,4 @@
-.. _native_sim:
-
-native_sim
-##########
-
-.. contents::
-   :depth: 1
-   :backlinks: entry
-   :local:
+.. zephyr:board:: native_sim
 
 Overview
 ********
@@ -293,7 +285,9 @@ All times are kept in microseconds.
 Peripherals
 ***********
 
-The following peripherals are currently provided with this board:
+.. zephyr:board-supported-hw::
+
+Here are more details on the peripherals that are currently provided with this board:
 
 **Interrupt controller**
   A simple yet generic interrupt controller is provided. It can nest interrupts
