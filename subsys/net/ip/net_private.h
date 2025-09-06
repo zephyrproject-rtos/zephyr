@@ -183,25 +183,21 @@ extern void loopback_enable_address_swap(bool swap_addresses);
 #endif /* CONFIG_NET_TEST */
 
 #if defined(CONFIG_NET_NATIVE)
-enum net_verdict net_ipv4_input(struct net_pkt *pkt, bool is_loopback);
-enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback);
+enum net_verdict net_ipv4_input(struct net_pkt *pkt);
+enum net_verdict net_ipv6_input(struct net_pkt *pkt);
 extern void net_tc_tx_init(void);
 extern void net_tc_rx_init(void);
 #else
-static inline enum net_verdict net_ipv4_input(struct net_pkt *pkt,
-					      bool is_loopback)
+static inline enum net_verdict net_ipv4_input(struct net_pkt *pkt)
 {
 	ARG_UNUSED(pkt);
-	ARG_UNUSED(is_loopback);
 
 	return NET_CONTINUE;
 }
 
-static inline enum net_verdict net_ipv6_input(struct net_pkt *pkt,
-					      bool is_loopback)
+static inline enum net_verdict net_ipv6_input(struct net_pkt *pkt)
 {
 	ARG_UNUSED(pkt);
-	ARG_UNUSED(is_loopback);
 
 	return NET_CONTINUE;
 }
@@ -211,6 +207,7 @@ static inline void net_tc_rx_init(void) { }
 #endif
 enum net_verdict net_tc_try_submit_to_tx_queue(uint8_t tc, struct net_pkt *pkt,
 					       k_timeout_t timeout);
+bool net_tc_rx_is_current_thread(uint8_t tc);
 extern enum net_verdict net_tc_submit_to_rx_queue(uint8_t tc, struct net_pkt *pkt);
 extern enum net_verdict net_promisc_mode_input(struct net_pkt *pkt);
 
