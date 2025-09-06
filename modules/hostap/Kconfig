@@ -145,6 +145,27 @@ config WIFI_NM_WPA_SUPPLICANT_WNM
 	bool "Wireless Network Management support"
 	default y
 
+config WIFI_NM_WPA_SUPPLICANT_BGSCAN
+	bool "Background scanning (for roaming)"
+	default y
+	depends on WIFI_NM_WPA_SUPPLICANT_WNM
+
+if WIFI_NM_WPA_SUPPLICANT_BGSCAN
+
+choice WIFI_NM_WPA_SUPPLICANT_BGSCAN_TYPE
+	prompt "Background scanning implementation"
+	default WIFI_NM_WPA_SUPPLICANT_BGSCAN_SIMPLE
+
+config WIFI_NM_WPA_SUPPLICANT_BGSCAN_SIMPLE
+	bool "Simple"
+
+config WIFI_NM_WPA_SUPPLICANT_BGSCAN_LEARN
+	bool "Learning"
+
+endchoice # WIFI_NM_WPA_SUPPLICANT_BGSCAN_TYPE
+
+endif # WIFI_NM_WPA_SUPPLICANT_BGSCAN
+
 config WIFI_NM_WPA_SUPPLICANT_RRM
 	bool "Radio Resource Management support"
 	default y
