@@ -534,6 +534,15 @@
 			status = "disabled";
 		};
 
+		hash: hash@48020400 {
+			compatible = "st,stm32-hash";
+			reg = <0x48020400 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB3, 1)>;
+			resets = <&rctl STM32_RESET(AHB3, 1)>;
+			interrupts = <36 0>;
+			status = "disabled";
+		};
+
 		timers1: timers@42000000 {
 			compatible = "st,stm32-timers";
 			reg = <0x42000000 0x400>;
