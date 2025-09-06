@@ -18,6 +18,8 @@
 GTEXT(arch_pm_s2ram_suspend);
 #else
 
+#include <stdbool.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif

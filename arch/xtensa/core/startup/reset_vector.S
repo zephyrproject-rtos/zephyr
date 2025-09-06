@@ -12,6 +12,7 @@
 #include <xtensa/config/specreg.h>
 #include <xtensa/config/system.h>  /* for XSHAL_USE_ABSOLUTE_LITERALS only */
 #include <xtensa/xtruntime-core-state.h>
+#include <xtensa_s2ram.h>
 
 /*
  * The following reset vector avoids initializing certain registers already
@@ -359,6 +360,26 @@ _ResetHandler:
 	call0	xthal_core_restore_nw
 	/*  (does not return) */
 .Lcoldstart:
+#endif
+
+#ifdef CONFIG_PM_S2RAM
+	.weak p2sram_saved_area
+	.global	xthal_core_restore_nw
+	movi a2, p2sram_saved_area
+	beqz a2, .Lnop2sram_saved_area
+	l32i a1, a2, XTENSA_S2RAM_MAGIC_OFFSET
+	/* validate magic */
+	movi a3, S2RAM_MAGIC
+	bne a1, a3, .Lnop2sram_saved_area
+	/* load core_state address to a3 */
+	addi a3, a2, XTENSA_S2RAM_CORE_STATE_OFFSET
+	/* load flags to a2 */
+	movi a2, 0
+	call0	xthal_core_restore_nw
+	/*  (does not return) */
+	ill
+
+.Lnop2sram_saved_area:
 #endif
 
 #if XCHAL_HAVE_PREFETCH
