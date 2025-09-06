@@ -3258,4 +3258,9 @@ int bt_ascs_unregister(void)
 
 	return err;
 }
+
+bool bt_ascs_has_ep(const struct bt_bap_ep *ep)
+{
+	return PART_OF_ARRAY(ascs.ase_pool, ep);
+}
 #endif /* BT_BAP_UNICAST_SERVER */
