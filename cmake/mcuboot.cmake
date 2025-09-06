@@ -27,9 +27,11 @@ function(zephyr_mcuboot_tasks)
     if("${keyfile}" STREQUAL "")
       # No signature key file, no signed binaries. No error, though:
       # this is the documented behavior.
-      message(WARNING "Neither CONFIG_MCUBOOT_GENERATE_UNSIGNED_IMAGE or "
-                      "CONFIG_MCUBOOT_SIGNATURE_KEY_FILE are set, the generated build will not be "
-                      "bootable by MCUboot unless it is signed manually/externally.")
+      if(NOT CONFIG_MCUBOOT_SUPPRESS_WARNING_IMAGE_NOT_SIGNED)
+        message(WARNING "Neither CONFIG_MCUBOOT_GENERATE_UNSIGNED_IMAGE or "
+                        "CONFIG_MCUBOOT_SIGNATURE_KEY_FILE are set, the generated build will not be "
+                        "bootable by MCUboot unless it is signed manually/externally.")
+      endif()
       return()
     elseif(NOT (CONFIG_BUILD_OUTPUT_BIN OR CONFIG_BUILD_OUTPUT_HEX))
       message(FATAL_ERROR "Can't sign images for MCUboot: Neither "
