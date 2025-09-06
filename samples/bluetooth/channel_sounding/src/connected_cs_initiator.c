@@ -324,6 +324,12 @@ int main(void)
 	};
 
 	bt_le_cs_set_valid_chmap_bits(config_params.channel_map);
+	/* Disable a range of channels. This is done to limit the
+	 * number of steps in the procedure.
+	 */
+	for (uint8_t i = 0; i < 45; i++) {
+		BT_LE_CS_CHANNEL_BIT_SET_VAL(config_params.channel_map, i, 0);
+	}
 
 	err = bt_le_cs_create_config(connection, &config_params,
 				     BT_LE_CS_CREATE_CONFIG_CONTEXT_LOCAL_AND_REMOTE);
