@@ -78,6 +78,17 @@ struct zms_fs {
  */
 
 /**
+ * @brief ID type used in the ZMS API.
+ *
+ * @note The width of this type depends on @kconfig{CONFIG_ZMS_ID_64BIT}.
+ */
+#if CONFIG_ZMS_ID_64BIT
+typedef uint64_t zms_id_t;
+#else
+typedef uint32_t zms_id_t;
+#endif
+
+/**
  * @brief Mount a ZMS file system onto the device specified in `fs`.
  *
  * @param fs Pointer to the file system.
@@ -128,7 +139,7 @@ int zms_clear(struct zms_fs *fs);
  * @retval -EINVAL if `fs` is NULL or `len` is invalid.
  * @retval -ENOSPC if no space is left on the device.
  */
-ssize_t zms_write(struct zms_fs *fs, uint32_t id, const void *data, size_t len);
+ssize_t zms_write(struct zms_fs *fs, zms_id_t id, const void *data, size_t len);
 
 /**
  * @brief Delete an entry from the file system
@@ -142,7 +153,7 @@ ssize_t zms_write(struct zms_fs *fs, uint32_t id, const void *data, size_t len);
  * @retval -EIO if there is a memory read/write error.
  * @retval -EINVAL if `fs` is NULL.
  */
-int zms_delete(struct zms_fs *fs, uint32_t id);
+int zms_delete(struct zms_fs *fs, zms_id_t id);
 
 /**
  * @brief Read an entry from the file system.
@@ -161,7 +172,7 @@ int zms_delete(struct zms_fs *fs, uint32_t id);
  * @retval -ENOENT if there is no entry with the given `id`.
  * @retval -EINVAL if `fs` is NULL.
  */
-ssize_t zms_read(struct zms_fs *fs, uint32_t id, void *data, size_t len);
+ssize_t zms_read(struct zms_fs *fs, zms_id_t id, void *data, size_t len);
 
 /**
  * @brief Read a history entry from the file system.
@@ -182,7 +193,7 @@ ssize_t zms_read(struct zms_fs *fs, uint32_t id, void *data, size_t len);
  * @retval -ENOENT if there is no entry with the given `id` and history counter.
  * @retval -EINVAL if `fs` is NULL.
  */
-ssize_t zms_read_hist(struct zms_fs *fs, uint32_t id, void *data, size_t len, uint32_t cnt);
+ssize_t zms_read_hist(struct zms_fs *fs, zms_id_t id, void *data, size_t len, uint32_t cnt);
 
 /**
  * @brief Gets the length of the data that is stored in an entry with a given `id`
@@ -198,7 +209,7 @@ ssize_t zms_read_hist(struct zms_fs *fs, uint32_t id, void *data, size_t len, ui
  * @retval -ENOENT if there is no entry with the given id.
  * @retval -EINVAL if `fs` is NULL.
  */
-ssize_t zms_get_data_length(struct zms_fs *fs, uint32_t id);
+ssize_t zms_get_data_length(struct zms_fs *fs, zms_id_t id);
 
 /**
  * @brief Calculate the available free space in the file system.
