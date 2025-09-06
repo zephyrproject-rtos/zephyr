@@ -26,4 +26,5 @@ supported:
   - uart
   - dma
   - timer
+  - watchdog
 vendor: infineon
