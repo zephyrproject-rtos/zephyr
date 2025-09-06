@@ -25,6 +25,7 @@ static K_SEM_DEFINE(sem_written, 0, 1);
 
 static uint16_t step_data_attr_handle;
 static struct bt_conn *connection;
+static uint16_t latest_procedure_counter = UINT16_MAX;
 static uint8_t latest_local_steps[STEP_DATA_BUF_LEN];
 
 static const char sample_str[] = "CS Sample";
@@ -34,6 +35,13 @@ static const struct bt_data ad[] = {
 
 static void subevent_result_cb(struct bt_conn *conn, struct bt_conn_le_cs_subevent_result *result)
 {
+	if (result->header.procedure_counter == latest_procedure_counter) {
+		printk("The sample does not handle CS procedures with multiple CS subevents.\n");
+		latest_procedure_counter = result->header.procedure_counter;
+		return;
+	}
+	latest_procedure_counter = result->header.procedure_counter;
+
 	if (result->step_data_buf) {
 		if (result->step_data_buf->len <= STEP_DATA_BUF_LEN) {
 			memcpy(latest_local_steps, result->step_data_buf->data,
@@ -195,7 +203,7 @@ int main(void)
 	struct bt_gatt_discover_params discover_params;
 	struct bt_gatt_write_params write_params;
 
-	printk("Starting Channel Sounding Demo\n");
+	printk("Starting Channel Sounding Demo in Reflector Role\n");
 
 	/* Initialize the Bluetooth Subsystem */
 	err = bt_enable(NULL);
