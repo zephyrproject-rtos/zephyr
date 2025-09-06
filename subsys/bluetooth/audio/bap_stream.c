@@ -298,14 +298,13 @@ bool bt_bap_valid_qos_pref(const struct bt_bap_qos_cfg_pref *qos_pref)
 		return false;
 	}
 
-	if (qos_pref->pref_pd_min != BT_AUDIO_PD_PREF_NONE) {
 		/* If pref_pd_min != BT_AUDIO_PD_PREF_NONE then pd_min <= pref_pd_min <= pd_max */
-		if (!IN_RANGE(qos_pref->pref_pd_min, qos_pref->pd_min, qos_pref->pd_max)) {
-			LOG_DBG("Invalid combination of pref_pd_min %u, pd_min %u and pd_max: %u",
-				qos_pref->pref_pd_min, qos_pref->pd_min, qos_pref->pd_max);
+	if (qos_pref->pref_pd_min != BT_AUDIO_PD_PREF_NONE &&
+	    !IN_RANGE(qos_pref->pref_pd_min, qos_pref->pd_min, qos_pref->pd_max)) {
+		LOG_DBG("Invalid combination of pref_pd_min %u, pd_min %u and pd_max: %u",
+			qos_pref->pref_pd_min, qos_pref->pd_min, qos_pref->pd_max);
 
-			return false;
-		}
+		return false;
 	}
 
 	if (qos_pref->pref_pd_max != BT_AUDIO_PD_PREF_NONE) {
