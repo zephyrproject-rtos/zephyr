@@ -1,0 +1,69 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv7-m.dtsi>
+#include <zephyr/dt-bindings/clock/imx943_clock.h>
+#include <mem.h>
+#include <nxp/nxp_imx94x.dtsi>
+#include <freq.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m7";
+			reg = <0>;
+			clock-frequency = <DT_FREQ_M(800)>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+			d-cache-line-size = <32>;
+
+			mpu: mpu@e000ed90 {
+				compatible = "arm,armv7-mpu";
+				reg = <0xe000ed90 0x40>;
+			};
+		};
+	};
+
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		scmi_shmem0: memory@44611000 {
+			compatible = "arm,scmi-shmem";
+			reg = <0x44611000 0x80>;
+		};
+	};
+
+	soc {
+		itcm: itcm@00000000 {
+			compatible = "nxp,imx-itcm";
+			reg = <0x00000000 DT_SIZE_K(256)>;
+		};
+
+		dtcm: dtcm@20000000 {
+			compatible = "nxp,imx-dtcm";
+			reg = <0x20000000 DT_SIZE_K(256)>;
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <4>;
+};
+
+&scmi {
+	shmem = <&scmi_shmem0>;
+	mboxes = <&mu5 0>;
+};
+
+&mu5 {
+	status = "okay";
+};
