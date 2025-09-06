@@ -244,10 +244,10 @@ static struct bt_iso_chan_ops broadcast_source_iso_ops = {
 	.disconnected = broadcast_source_iso_disconnected,
 };
 
-bool bt_bap_ep_is_broadcast_src(const struct bt_bap_ep *ep)
+bool bt_bap_broadcast_source_has_ep(const struct bt_bap_ep *ep)
 {
 	for (int i = 0; i < ARRAY_SIZE(broadcast_source_eps); i++) {
-		if (PART_OF_ARRAY(broadcast_source_eps[i], ep)) {
+		if (IS_ARRAY_ELEMENT(broadcast_source_eps[i], ep)) {
 			return true;
 		}
 	}

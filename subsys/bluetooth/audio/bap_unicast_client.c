@@ -441,7 +441,7 @@ static struct bt_iso_chan_ops unicast_client_iso_ops = {
 	.disconnected = unicast_client_iso_disconnected,
 };
 
-bool bt_bap_ep_is_unicast_client(const struct bt_bap_ep *ep)
+bool bt_bap_unicast_client_has_ep(const struct bt_bap_ep *ep)
 {
 	for (size_t i = 0U; i < ARRAY_SIZE(uni_cli_insts); i++) {
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0

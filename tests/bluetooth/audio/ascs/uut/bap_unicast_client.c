@@ -12,7 +12,7 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/ztest_assert.h>
 
-bool bt_bap_ep_is_unicast_client(const struct bt_bap_ep *ep)
+bool bt_bap_unicast_client_has_ep(const struct bt_bap_ep *ep)
 {
 	return false;
 }
