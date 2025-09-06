@@ -2608,6 +2608,9 @@ destroy:
 	/* Reset internal members of common channel */
 	bt_l2cap_br_chan_set_state(chan, BT_L2CAP_DISCONNECTED);
 	BR_CHAN(chan)->psm = 0U;
+	if (L2CAP_BR_CID_IS_DYN(BR_CHAN(chan)->rx.cid)) {
+		BR_CHAN(chan)->rx.cid = 0U;
+	}
 #endif
 	if (chan->destroy) {
 		chan->destroy(chan);
