@@ -24,3 +24,6 @@ set(CPUNET_PM_DOMAIN_DYNAMIC_PARTITION remote CACHE INTERNAL "")
 sysbuild_add_dependencies(CONFIGURE ${DEFAULT_IMAGE} remote)
 # Add dependency so that the remote image is flashed first.
 sysbuild_add_dependencies(FLASH ${DEFAULT_IMAGE} remote)
+
+native_simulator_set_child_images(${DEFAULT_IMAGE} remote)
+native_simulator_set_final_executable(${DEFAULT_IMAGE})
