@@ -790,14 +790,15 @@ static bool cb_no_cqe_run;
 /**
  * Callback for testing with
  */
-void rtio_callback_chaining_cb(struct rtio *r, const struct rtio_sqe *sqe, void *arg0)
+void rtio_callback_chaining_cb(struct rtio *r, const struct rtio_sqe *sqe, int result, void *arg0)
 {
-	TC_PRINT("chaining callback with userdata %p\n", arg0);
+	TC_PRINT("chaining callback with result %d and userdata %p\n", result, arg0);
 }
 
-void rtio_callback_chaining_cb_no_cqe(struct rtio *r, const struct rtio_sqe *sqe, void *arg0)
+void rtio_callback_chaining_cb_no_cqe(struct rtio *r, const struct rtio_sqe *sqe,
+				      int result, void *arg0)
 {
-	TC_PRINT("Chaining callback with userdata %p (No CQE)\n", arg0);
+	TC_PRINT("Chaining callback with result %d and userdata %p (No CQE)\n", result, arg0);
 	cb_no_cqe_run = true;
 }
 
