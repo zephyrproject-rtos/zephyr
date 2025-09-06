@@ -75,5 +75,9 @@
 		storage_partition: partition@600000 {
 			reg = <0x600000 DT_SIZE_K(40)>;
 		};
+
+		periphconf_partition: partition@60a000 {
+			reg = <0x60a000 DT_SIZE_K(8)>;
+		};
 	};
 };

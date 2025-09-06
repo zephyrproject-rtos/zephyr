@@ -116,16 +116,12 @@
 			write-block-size = <16>;
 		};
 
-		cpuapp_uicr: uicr@fff8000 {
-			compatible = "nordic,nrf-uicr-v2";
+		uicr: uicr@fff8000 {
+			compatible = "nordic,nrf-uicr";
 			reg = <0xfff8000 DT_SIZE_K(2)>;
-			domain = <2>;
-		};
-
-		cpurad_uicr: uicr@fffa000 {
-			compatible = "nordic,nrf-uicr-v2";
-			reg = <0xfffa000 DT_SIZE_K(2)>;
-			domain = <3>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0xfff8000 DT_SIZE_K(2)>;
 		};
 
 		ficr: ficr@fffe000 {
