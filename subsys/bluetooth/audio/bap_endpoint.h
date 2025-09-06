@@ -225,3 +225,4 @@ static inline const char *bt_bap_ep_state_str(enum bt_bap_ep_state state)
 bool bt_bap_ep_is_broadcast_snk(const struct bt_bap_ep *ep);
 bool bt_bap_ep_is_broadcast_src(const struct bt_bap_ep *ep);
 bool bt_bap_ep_is_unicast_client(const struct bt_bap_ep *ep);
+bool bt_bap_ep_is_unicast_server(const struct bt_bap_ep *ep);
