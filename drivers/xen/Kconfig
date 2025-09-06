@@ -5,6 +5,27 @@ if XEN
 
 menu "Xen drivers"
 
+config XEN_DMOP
+	bool "Xen dmop hypercall wrappers"
+	default y
+	help
+	  Enable lightweight wrappers for Xen dm_op hypercalls used by
+	  Xen device backends. Disable to drop dmop.c from the build.
+
+config XEN_SCHED
+	bool "Xen scheduler helpers"
+	default y
+	help
+	  Enable small scheduler-related helpers for Xen guests.
+	  Disable to drop sched.c from the build.
+
+config XEN_XENSTORE
+	bool "Xenstore helpers"
+	default y
+	help
+	  Enable minimal Xenstore helpers for Xen guests/backends.
+	  Disable to drop xenstore.c from the build.
+
 config XEN_GRANT_TABLE
 	bool "Xen grant table driver"
 	depends on HEAP_MEM_POOL_SIZE > 0

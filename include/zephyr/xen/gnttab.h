@@ -6,7 +6,7 @@
 #ifndef __XEN_GNTTAB_H__
 #define __XEN_GNTTAB_H__
 
-#include <zephyr/xen/public/grant_table.h>
+#include <xen/public/grant_table.h>
 
 /*
  * Assigns gref and permits access to 4K page for specific domain.
@@ -41,22 +41,23 @@ int gnttab_end_access(grant_ref_t gref);
 int32_t gnttab_alloc_and_grant(void **map, bool readonly);
 
 /*
- * Provides interface to acquire free page, that can be used for
- * mapping of foreign frames. Should be freed by gnttab_put_page()
+ * Provides interface to acquire one or more pages that can be used for
+ * mapping of foreign frames. Should be released by gnttab_put_pages()
  * after usage.
  *
  * @return - pointer to page start address, that can be used as host_addr
  *           in struct gnttab_map_grant_ref, NULL on error.
  */
-void *gnttab_get_page(void);
+void *gnttab_get_pages(unsigned int npages);
 
 /*
- * Releases provided page, that was used for mapping foreign grant frame,
+ * Releases pages that were used for mapping foreign grant frames,
  * should be called after unmapping.
  *
- * @param page_addr - pointer to start address of used page.
+ * @param page_addr - pointer to start address of the allocated buffer.
+ * @param npages - number of pages allocated for the buffer.
  */
-void gnttab_put_page(void *page_addr);
+int gnttab_put_pages(void *page_addr, unsigned int npages);
 
 /*
  * Maps foreign grant ref to Zephyr address space.
@@ -66,15 +67,14 @@ void gnttab_put_page(void *page_addr);
  * @return - zero on success or negative errno on failure
  *           also per-page status will be set in map_ops[i].status (GNTST_*)
  *
- * To map foreign frame you need 4K-aligned 4K memory page, which will be
- * used as host_addr for grant mapping - it should be acquired by gnttab_get_page()
- * function.
+ * To map foreign frames you need 4K-aligned memory pages to be used as
+ * host_addr for grant mapping - acquire them via gnttab_get_pages().
  */
 int gnttab_map_refs(struct gnttab_map_grant_ref *map_ops, unsigned int count);
 
 /*
- * Unmap foreign grant refs. The gnttab_put_page() should be used after this for
- * each page, that was successfully unmapped.
+ * Unmap foreign grant refs. Use gnttab_put_pages() afterwards for the
+ * pages that were successfully unmapped.
  *
  * @param unmap_ops - array of prepared gnttab_unmap_grant_ref's for unmapping
  * @param count - number of grefs in unmap_ops array
