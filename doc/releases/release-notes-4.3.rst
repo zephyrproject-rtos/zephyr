@@ -115,6 +115,10 @@ New APIs and options
     * :c:struct:`bt_iso_sync_receiver_info` now contains a ``big_handle`` and a ``bis_number`` field
     * :c:struct:`bt_le_ext_adv_info` now contains an ``sid`` field with the Advertising Set ID.
 
+  * Services
+
+    * Introduced Alert Notification Service (ANS) :kconfig:option:`CONFIG_BT_ANS`
+
 * CPUFreq
 
   * Introduced experimental dynamic CPU frequency scaling subsystem
