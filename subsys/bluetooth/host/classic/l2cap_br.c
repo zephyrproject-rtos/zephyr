@@ -394,6 +394,11 @@ static uint8_t l2cap_br_get_ident(void)
 /* L2CAP channel wants to send a PDU */
 static bool chan_has_data(struct bt_l2cap_br_chan *br_chan)
 {
+	IF_ENABLED(CONFIG_BT_L2CAP_SEG_SEND, (
+		if (br_chan->chan.ops->seg_send) {
+			return true;
+		}
+	))
 	return !sys_slist_is_empty(&br_chan->_pdu_tx_queue);
 }
 
@@ -1594,6 +1599,72 @@ done:
 }
 #endif /* CONFIG_BT_L2CAP_RET_FC */
 
+#if defined(CONFIG_BT_L2CAP_SEG_SEND)
+static struct net_buf *l2cap_br_chan_send_seg_direct(struct bt_l2cap_br_chan *br_chan,
+						     size_t amount, size_t *length)
+{
+	struct net_buf *seg = br_chan->chan.ops->seg_send(&br_chan->chan);
+
+	LOG_DBG("seg_send callback returned %p", seg);
+
+	if (seg == NULL) {
+		LOG_DBG("no segment to send");
+		lower_data_ready(br_chan);
+		bt_tx_irq_raise();
+	} else {
+		struct bt_l2cap_hdr *hdr;
+		uint16_t pdu_data_len = seg->len;
+
+		LOG_DBG("Got seg/PDU to send, data len %u", pdu_data_len);
+
+		/* add PDU header */
+		hdr = net_buf_push(seg, sizeof(*hdr));
+		hdr->len = sys_cpu_to_le16(pdu_data_len - sizeof(*hdr));
+		hdr->cid = sys_cpu_to_le16(br_chan->tx.cid);
+
+		if (seg->user_data_size < sizeof(struct closure)) {
+			LOG_WRN("not enough room in user_data %d < %d pool %u", seg->user_data_size,
+				CONFIG_BT_CONN_TX_USER_DATA_SIZE, buf->pool_id);
+			return -EINVAL;
+		}
+		if (user_data_not_empty(seg)) {
+			/* There may be issues if user_data is not empty. */
+			LOG_WRN("user_data is not empty");
+		}
+		make_closure(seg->user_data, NULL, NULL);
+		if (amount < pdu_data_len) {
+			LOG_DBG("Putting segment on tx_queue due to fragmentation");
+			LOG_DBG("amount %u, acl_mtu %u, seg len %u", amount, bt_dev.le.acl_mtu,
+				pdu_data_len);
+			sys_slist_append(&br_chan->_pdu_tx_queue, &seg->node);
+			seg = net_buf_ref(seg);
+		} else {
+			/* Last/only PDU. remove the channel from the
+			 * ready list and put it at the back to give
+			 * other channels a chance to send.
+			 */
+			LOG_DBG("moving chan %p to end of ready list", br_chan);
+			lower_data_ready(br_chan);
+			/* directly append instead of calling raise_data_ready().
+			 * we just removed ourself from the list and this
+			 * thread is the non-preeemptable system workq thread.
+			 */
+			sys_slist_append(&br_chan->chan.conn->l2cap_data_ready,
+					 &br_chan->_pdu_ready);
+		}
+		/* This is used by `conn.c` to figure out if the PDU is done sending. */
+		*length = pdu_data_len;
+		if (pdu_data_len > amount) {
+			LOG_DBG("Sending PDU fragment of %u bytes", amount);
+		} else {
+			LOG_DBG("Sending PDU fragment of %u bytes", pdu_data_len);
+		}
+	}
+
+	return seg;
+}
+#endif /* CONFIG_BT_L2CAP_SEG_SEND */
+
 struct net_buf *l2cap_br_data_pull(struct bt_conn *conn, size_t amount, size_t *length)
 {
 	const sys_snode_t *pdu_ready = sys_slist_peek_head(&conn->l2cap_data_ready);
@@ -1636,6 +1707,14 @@ struct net_buf *l2cap_br_data_pull(struct bt_conn *conn, size_t amount, size_t *
 	 */
 	const sys_snode_t *tx_pdu = sys_slist_peek_head(&br_chan->_pdu_tx_queue);
 
+	IF_ENABLED(CONFIG_BT_L2CAP_SEG_SEND, (
+		/* If no PDU in the tx_queue, check if the application
+		 * has one for us to send.
+		 */
+		if ((tx_pdu == NULL) && (br_chan->chan.ops->seg_send != NULL)) {
+			return l2cap_br_chan_send_seg_direct(br_chan, amount, length);
+		}
+	))
 	__ASSERT(tx_pdu, "signaled ready but no PDUs in the TX queue");
 
 	struct net_buf *q_pdu = CONTAINER_OF(tx_pdu, struct net_buf, node);
@@ -4921,6 +5000,22 @@ int bt_l2cap_br_chan_send_cb(struct bt_l2cap_chan *chan, struct net_buf *buf, bt
 int bt_l2cap_br_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
 	return bt_l2cap_br_chan_send_cb(chan, buf, NULL, NULL);
+}
+
+int bt_l2cap_br_chan_send_ready(struct bt_l2cap_chan *chan)
+{
+	struct bt_l2cap_br_chan *br_chan;
+
+	if (!chan) {
+		return -EINVAL;
+	}
+
+	br_chan = BR_CHAN(chan);
+
+	LOG_DBG("chan %p", chan);
+
+	raise_data_ready(br_chan);
+	return 0;
 }
 
 static struct bt_l2cap_br_chan *bt_l2cap_br_lookup_ident(struct bt_conn *conn, uint8_t ident)

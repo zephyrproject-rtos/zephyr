@@ -711,12 +711,14 @@ static int send_buf(struct bt_conn *conn, struct net_buf *buf,
 
 	uint16_t frag_len = MIN(conn_mtu(conn), len);
 
+#if !CONFIG_BT_L2CAP_SEG_SEND
 	/* Check that buf->ref is 1 or 2. It would be 1 if this
 	 * was the only reference (e.g. buf was removed
 	 * from the conn tx_queue). It would be 2 if the
 	 * tx_data_pull kept it on the tx_queue for segmentation.
 	 */
 	__ASSERT_NO_MSG((buf->ref == 1) || (buf->ref == 2));
+#endif
 
 	/* The reference is always transferred to the frag, so when
 	 * the frag is destroyed, the parent reference is decremented.
