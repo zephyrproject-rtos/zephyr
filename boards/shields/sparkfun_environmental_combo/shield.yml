@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2025, Jonas Berg
+
+shield:
+  name: sparkfun_environmental_combo
+  full_name: SparkFun Environmental Combo Breakout with ENS160 and BME280
+  vendor: sparkfun
+  supported_features:
+    - sensor
