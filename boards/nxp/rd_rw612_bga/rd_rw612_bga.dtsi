@@ -113,6 +113,16 @@ arduino_i2c: &flexcomm2 {
 	#size-cells = <0>;
 	pinctrl-0 = <&pinmux_flexcomm2_i2c>;
 	pinctrl-names = "default";
+
+	audio_codec: wm8904@1a {
+		compatible = "wolfson,wm8904";
+		reg = <0x1a>;
+
+		clock-source = "MCLK";
+
+		clocks = <&clkctl1 MCUX_AUDIO_MCLK>;
+		clock-names = "mclk";
+	};
 };
 
 &flexcomm3 {
