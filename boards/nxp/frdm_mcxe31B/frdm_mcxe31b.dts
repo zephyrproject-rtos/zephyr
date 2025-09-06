@@ -1,0 +1,126 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_mcxe31b.dtsi>
+#include "frdm_mcxe31b-pinctrl.dtsi"
+#include <dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "NXP FRDM_MCXE31B board";
+	compatible = "nxp,mcxe31b";
+
+	aliases {
+		led0 = &red_led;
+		led1 = &green_led;
+		led2 = &blue_led;
+		sw0 = &user_button;
+	};
+
+	chosen {
+		zephyr,sram = &dtcm;
+		zephyr,flash = &program_flash;
+		zephyr,flash-controller = &flash;
+		zephyr,console = &lpuart_5;
+		zephyr,shell-uart = &lpuart_5;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		red_led: led_0 {
+			gpios = <&gpioc_h 0 GPIO_ACTIVE_LOW>;
+			label = "Red LED";
+		};
+		green_led: led_1 {
+			gpios = <&gpiob_h 6 GPIO_ACTIVE_LOW>;
+			label = "Green LED";
+		};
+		blue_led: led_2 {
+			gpios = <&gpioc_l 14 GPIO_ACTIVE_LOW>;
+			label = "Blue LED";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button: button_0 {
+			label = "User SW3";
+			gpios = <&gpiod_l 5 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+};
+
+&gpiob_h {
+	status = "okay";
+};
+
+&lpuart_5 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_lpuart_5>;
+	pinctrl-names = "default";
+};
+
+&gpioc_l {
+	status = "okay";
+};
+
+&gpioc_h {
+	status = "okay";
+};
+
+&gpiod_l {
+	status = "okay";
+};
+
+&eirq0 {
+	pinctrl-0 = <&eirq0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&firc {
+	status = "okay";
+	firc-div = "UnDiv";
+};
+
+&fxosc {
+	status = "okay";
+	freq = <16000000>;
+	workmode = "crystal";
+	delay = <49>;
+	overdrive = <12>;
+};
+
+&pll {
+	status = "okay";
+	workmode = "Integer";
+	prediv = <2>;
+	postdiv = <2>;
+	multiplier = <120>;
+	fracloopdiv = <0>;
+	stepsize = <0>;
+	stepnum = <0>;
+	accuracy = "Accuracy9";
+	outdiv = <3 3>;
+};
+
+&mc_cgm {
+	status = "okay";
+	max-ido-change = <50>;
+	step-duration = <1>;
+	clk-src-freq = <160000000>;
+	mux-0-dc-0-div = <1>;
+	mux-0-dc-1-div = <2>;
+	mux-0-dc-2-div = <4>;
+	mux-0-dc-3-div = <2>;
+	mux-0-dc-4-div = <4>;
+	mux-0-dc-5-div = <4>;
+	mux-0-dc-6-div = <1>;
+};
