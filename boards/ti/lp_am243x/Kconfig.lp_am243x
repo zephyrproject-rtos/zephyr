@@ -1,0 +1,9 @@
+# Texas Instruments Sitara AM243x LaunchPad
+#
+# Copyright (c) 2025 Texas Instruments Incorporated
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_LP_AM243X
+	select SOC_AM2434_M4 if BOARD_LP_AM243X_AM2434_M4
+	select SOC_AM2434_R5F0_0 if BOARD_LP_AM243X_AM2434_R5F0_0
