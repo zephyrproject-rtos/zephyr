@@ -8,7 +8,6 @@
 	};
 };
 
-
 &i2c2 {
 	eeprom1: eeprom@56 {
 		compatible = "zephyr,i2c-target-eeprom";
