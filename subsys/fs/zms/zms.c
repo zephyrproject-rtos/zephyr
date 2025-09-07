@@ -1498,9 +1498,11 @@ ssize_t zms_write(struct zms_fs *fs, uint32_t id, const void *data, size_t len)
 	}
 
 #ifdef CONFIG_ZMS_NO_DOUBLE_WRITE
+	uint64_t wlk_addr;
+
 	/* find latest entry with same id */
 #ifdef CONFIG_ZMS_LOOKUP_CACHE
-	uint64_t wlk_addr = fs->lookup_cache[zms_lookup_cache_pos(id)];
+	wlk_addr = fs->lookup_cache[zms_lookup_cache_pos(id)];
 
 	if (wlk_addr == ZMS_LOOKUP_CACHE_NO_ADDR) {
 		goto no_cached_entry;
