@@ -21,5 +21,6 @@
 		en-gpios = <&gpio2 1 0>;
 		msx-gpios = <&gpio3 0 0>, <&gpio4 1 0>;
 		counter = <&counter0>;
+		dual-edge-step;
 	};
 };
