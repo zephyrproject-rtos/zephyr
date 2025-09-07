@@ -9,7 +9,6 @@
 #include <zephyr/dt-bindings/regulator/nrf5x.h>
 
 / {
-
 	chosen {
 		zephyr,bt-hci = &bt_hci_controller;
 		zephyr,entropy = &rng;
@@ -388,7 +387,6 @@
 
 			#address-cells = <1>;
 			#size-cells = <1>;
-
 
 			flash0: flash@0 {
 				compatible = "soc-nv-flash";
