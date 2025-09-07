@@ -7,7 +7,7 @@
 
 / {
 	aliases {
-		stepper =  &allegro_a4979;
+		stepper = &allegro_a4979;
 	};
 };
 
