@@ -80,11 +80,9 @@ if(CONFIG_HAS_MCUX)
   # Load MCUX SDK NG code.
   include(../mcux/mcux-sdk-ng/basic.cmake)
 
-  if(${MCUX_DEVICE} MATCHES "S32K1")
-    set_variable_ifdef(CONFIG_PINCTRL CONFIG_MCUX_COMPONENT_driver.port)
-
+  if(CONFIG_SOC_SERIES_S32K1)
+    set(CONFIG_MCUX_COMPONENT_driver.port ON)
     set_variable_ifdef(CONFIG_CPU_HAS_NXP_SYSMPU CONFIG_MCUX_COMPONENT_driver.sysmpu)
-
     set_variable_ifdef(CONFIG_HAS_MCUX_CACHE CONFIG_MCUX_COMPONENT_driver.cache_lmem)
   endif()
 
