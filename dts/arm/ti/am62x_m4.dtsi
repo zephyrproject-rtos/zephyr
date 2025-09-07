@@ -13,7 +13,6 @@
 #include <ti/k3-am62-main.dtsi>
 
 / {
-
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;

@@ -32,7 +32,7 @@
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x0 DT_SIZE_K(32)>;
 		zephyr,memory-region = "ATCM";
-		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
 	};
 
 	btcm: memory@41010000 {
@@ -40,7 +40,7 @@
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x41010000 DT_SIZE_K(32)>;
 		zephyr,memory-region = "BTCM";
-		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
 	};
 
 	sram: memory@70080000 {

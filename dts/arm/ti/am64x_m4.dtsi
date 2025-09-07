@@ -12,7 +12,6 @@
 #include <ti/am64x_mcu.dtsi>
 
 / {
-
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
