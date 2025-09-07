@@ -43,40 +43,40 @@
 
 	def-io-conf-list {
 		pinmux = <&alt0_gpio_no_spip
-			   &alt0_gpio_no_fpip
-			   &alt1_no_pwrgd
-			   &alta_no_peci_en
-			   &altd_npsl_in1_sl
-			   &altd_npsl_in2_sl
-			   &altd_psl_in3_sl
-			   &altd_psl_in4_sl
-			   &alt7_no_ksi0_sl
-			   &alt7_no_ksi1_sl
-			   &alt7_no_ksi2_sl
-			   &alt7_no_ksi3_sl
-			   &alt7_no_ksi4_sl
-			   &alt7_no_ksi5_sl
-			   &alt7_no_ksi6_sl
-			   &alt7_no_ksi7_sl
-			   &alt8_no_kso00_sl
-			   &alt8_no_kso01_sl
-			   &alt8_no_kso02_sl
-			   &alt8_no_kso03_sl
-			   &alt8_no_kso04_sl
-			   &alt8_no_kso05_sl
-			   &alt8_no_kso06_sl
-			   &alt8_no_kso07_sl
-			   &alt9_no_kso08_sl
-			   &alt9_no_kso09_sl
-			   &alt9_no_kso10_sl
-			   &alt9_no_kso11_sl
-			   &alt9_no_kso12_sl
-			   &alt9_no_kso13_sl
-			   &alt9_no_kso14_sl
-			   &alt9_no_kso15_sl
-			   &alta_no_kso16_sl
-			   &alta_no_kso17_sl
-			   &altg_psl_gpo_sl>;
+			  &alt0_gpio_no_fpip
+			  &alt1_no_pwrgd
+			  &alta_no_peci_en
+			  &altd_npsl_in1_sl
+			  &altd_npsl_in2_sl
+			  &altd_psl_in3_sl
+			  &altd_psl_in4_sl
+			  &alt7_no_ksi0_sl
+			  &alt7_no_ksi1_sl
+			  &alt7_no_ksi2_sl
+			  &alt7_no_ksi3_sl
+			  &alt7_no_ksi4_sl
+			  &alt7_no_ksi5_sl
+			  &alt7_no_ksi6_sl
+			  &alt7_no_ksi7_sl
+			  &alt8_no_kso00_sl
+			  &alt8_no_kso01_sl
+			  &alt8_no_kso02_sl
+			  &alt8_no_kso03_sl
+			  &alt8_no_kso04_sl
+			  &alt8_no_kso05_sl
+			  &alt8_no_kso06_sl
+			  &alt8_no_kso07_sl
+			  &alt9_no_kso08_sl
+			  &alt9_no_kso09_sl
+			  &alt9_no_kso10_sl
+			  &alt9_no_kso11_sl
+			  &alt9_no_kso12_sl
+			  &alt9_no_kso13_sl
+			  &alt9_no_kso14_sl
+			  &alt9_no_kso15_sl
+			  &alta_no_kso16_sl
+			  &alta_no_kso17_sl
+			  &altg_psl_gpo_sl>;
 	};
 
 	soc {
@@ -396,7 +396,7 @@
 			status = "disabled";
 			buffer-rx-size = <128>;
 			buffer-tx-size = <128>;
-			shi-cs-wui =<&wui_io53>;
+			shi-cs-wui = <&wui_io53>;
 		};
 
 		espi0: espi@4000a000 {
