@@ -25,13 +25,13 @@
 		compatible = "arm,armv8-timer";
 		interrupt-parent = <&gic>;
 		interrupts = <GIC_PPI 13 IRQ_TYPE_LEVEL
-				 IRQ_DEFAULT_PRIORITY>,
-				<GIC_PPI 14 IRQ_TYPE_LEVEL
-				 IRQ_DEFAULT_PRIORITY>,
-				<GIC_PPI 11 IRQ_TYPE_LEVEL
-				 IRQ_DEFAULT_PRIORITY>,
-				<GIC_PPI 10 IRQ_TYPE_LEVEL
-				 IRQ_DEFAULT_PRIORITY>;
+			      IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 14 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 11 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 10 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>;
 	};
 
 	soc {
@@ -45,7 +45,7 @@
 		gic: interrupt-controller@f0000000 {
 			compatible = "arm,gic-v3", "arm,gic";
 			reg = <0xf0000000 0x1000>,
-				  <0xf0100000 0x20000>;
+			      <0xf0100000 0x20000>;
 			interrupt-controller;
 			#interrupt-cells = <4>;
 			status = "okay";
