@@ -486,7 +486,6 @@
 			#dma-cells = <2>;
 			status = "disabled";
 		};
-
 	};
 };
 
