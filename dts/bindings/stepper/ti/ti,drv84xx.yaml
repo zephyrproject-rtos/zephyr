@@ -31,8 +31,12 @@ compatible: "ti,drv84xx"
 
 include:
   - name: stepper-controller.yaml
+  - name: step-dir-timing.yaml
 
 properties:
+  step-width-ns:
+    default: 970
+
   fault-gpios:
     type: phandle-array
     description: Fault pin.
