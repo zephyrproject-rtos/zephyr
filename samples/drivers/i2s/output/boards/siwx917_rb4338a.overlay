@@ -28,7 +28,7 @@
 	pinctrl-0 = <&i2s0_default>;
 	pinctrl-names = "default";
 
-	dmas =  <&dma0 15>, <&dma0 14>;
+	dmas = <&dma0 15>, <&dma0 14>;
 	dma-names = "tx", "rx";
 };
 
