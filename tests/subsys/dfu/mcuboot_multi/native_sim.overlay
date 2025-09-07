@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 /delete-node/ &scratch_partition;
 /delete-node/ &storage_partition;
 
