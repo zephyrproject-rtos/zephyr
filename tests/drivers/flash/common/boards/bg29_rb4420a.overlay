@@ -12,7 +12,6 @@
 	dmas = <&dma0 DMA_REQSEL_MSCWDATA>;
 };
 
-
 /* Disable jedec spi nor flash to test internal flash */
 
 / {
