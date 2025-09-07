@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
- #include <zephyr/dt-bindings/gpio/renesas-rza2m-gpio.h>
+#include <zephyr/dt-bindings/gpio/renesas-rza2m-gpio.h>
 
 / {
 	resources {
