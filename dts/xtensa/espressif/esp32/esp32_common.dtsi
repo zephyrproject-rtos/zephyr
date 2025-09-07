@@ -160,9 +160,8 @@
 			status = "disabled";
 			shared-memory = <&ipmmem0>;
 			shared-memory-size = <0x400>;
-			interrupts =
-				<FROM_CPU_INTR0_SOURCE IRQ_DEFAULT_PRIORITY 0>,
-				<FROM_CPU_INTR1_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupts = <FROM_CPU_INTR0_SOURCE IRQ_DEFAULT_PRIORITY 0>,
+				     <FROM_CPU_INTR1_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
 		};
 
@@ -172,9 +171,8 @@
 			status = "disabled";
 			shared-memory = <&ipmmem0>;
 			shared-memory-size = <0x400>;
-			interrupts =
-				<FROM_CPU_INTR0_SOURCE IRQ_DEFAULT_PRIORITY 0>,
-				<FROM_CPU_INTR1_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupts = <FROM_CPU_INTR0_SOURCE IRQ_DEFAULT_PRIORITY 0>,
+				     <FROM_CPU_INTR1_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
 			#mbox-cells = <1>;
 		};
@@ -293,10 +291,8 @@
 			compatible = "simple-bus";
 			gpio-map-mask = <0xffffffe0 0xffffffc0>;
 			gpio-map-pass-thru = <0x1f 0x3f>;
-			gpio-map = <
-				0x00 0x0 &gpio0 0x0 0x0
-				0x20 0x0 &gpio1 0x0 0x0
-			>;
+			gpio-map = <0x00 0x0 &gpio0 0x0 0x0
+				    0x20 0x0 &gpio1 0x0 0x0>;
 			#gpio-cells = <2>;
 			#address-cells = <1>;
 			#size-cells = <1>;
