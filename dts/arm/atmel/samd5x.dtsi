@@ -85,10 +85,10 @@
 
 		id: device_id@8061fc {
 			compatible = "atmel,sam0-id";
-			reg =	<0x008061FC 0x4>,
-				<0x00806010 0x4>,
-				<0x00806014 0x4>,
-				<0x00806018 0x4>;
+			reg = <0x008061FC 0x4>,
+			      <0x00806010 0x4>,
+			      <0x00806014 0x4>,
+			      <0x00806018 0x4>;
 		};
 
 		mclk: mclk@40000800 {
@@ -113,7 +113,7 @@
 			#atmel,assigned-clock-cells = <1>;
 		};
 
-		nvmctrl: nvmctrl@41004000  {
+		nvmctrl: nvmctrl@41004000 {
 			compatible = "atmel,sam0-nvmctrl";
 			reg = <0x41004000 0x22>;
 			interrupts = <29 0>, <30 0>;
@@ -388,7 +388,7 @@
 			calib-offset = <14>;
 		};
 
-		dac0: dac@43002400{
+		dac0: dac@43002400 {
 			compatible = "atmel,samd5x-dac";
 			reg = <0x43002400 0x20>;
 

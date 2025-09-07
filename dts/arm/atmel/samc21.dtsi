@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
- #include <atmel/samc2x.dtsi>
+#include <atmel/samc2x.dtsi>
 
 / {
 	aliases {
