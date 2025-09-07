@@ -150,7 +150,7 @@
 			compatible = "renesas,ra-cgc-pclk-block";
 			reg = <0x4001e01c 4>, <0x40047000 4>, <0x40047004 4>,
 			      <0x40047008 4>;
-			reg-names = "MSTPA", "MSTPB","MSTPC",
+			reg-names = "MSTPA", "MSTPB", "MSTPC",
 				    "MSTPD";
 			#clock-cells = <0>;
 			clocks = <&hoco>;
@@ -216,7 +216,7 @@
 
 &ioport1 {
 	port-irqs = <&port_irq2 &port_irq3 &port_irq4
-	&port_irq5 &port_irq6 &port_irq7>;
+		     &port_irq5 &port_irq6 &port_irq7>;
 	port-irq-names = "port-irq2",
 			 "port-irq3",
 			 "port-irq4",
@@ -233,7 +233,7 @@
 
 &ioport2 {
 	port-irqs = <&port_irq0 &port_irq2 &port_irq3
-	&port_irq6>;
+		     &port_irq6>;
 	port-irq-names = "port-irq0",
 			 "port-irq2",
 			 "port-irq3",
@@ -254,7 +254,7 @@
 
 &ioport4 {
 	port-irqs = <&port_irq0 &port_irq1 &port_irq5
-	&port_irq7>;
+		     &port_irq7>;
 	port-irq-names = "port-irq0",
 			 "port-irq1",
 			 "port-irq5",
