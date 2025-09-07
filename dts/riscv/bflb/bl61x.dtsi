@@ -84,6 +84,7 @@
 
 			#address-cells = <1>;
 			#size-cells = <1>;
+
 			clic: clic@e0800000 {
 				compatible = "nuclei,eclic";
 				reg = <0xe0800000 0x10000>;
@@ -135,19 +136,19 @@
 			#clock-cells = <1>;
 			status = "okay";
 			clocks = <&clk_rc32m>, <&clk_crystal>,
-				<&clk_wifipll BL61X_WIFIPLL_320MHz>,
-				<&clk_wifipll BL61X_WIFIPLL_240MHz>,
-				<&clk_wifipll BL61X_WIFIPLL_OC_480MHz>,
-				<&clk_wifipll BL61X_WIFIPLL_OC_360MHz>,
-				<&clk_aupll BL61X_AUPLL_DIV1>, <&clk_aupll BL61X_AUPLL_DIV2>,
-				<&clk_root>, <&clk_bclk>, <&clk_flash>;
+				 <&clk_wifipll BL61X_WIFIPLL_320MHz>,
+				 <&clk_wifipll BL61X_WIFIPLL_240MHz>,
+				 <&clk_wifipll BL61X_WIFIPLL_OC_480MHz>,
+				 <&clk_wifipll BL61X_WIFIPLL_OC_360MHz>,
+				 <&clk_aupll BL61X_AUPLL_DIV1>, <&clk_aupll BL61X_AUPLL_DIV2>,
+				 <&clk_root>, <&clk_bclk>, <&clk_flash>;
 			clock-names = "rc32m", "crystal",
-				"wifipll_320",
-				"wifipll_240",
-				"wifipll_480",
-				"wifipll_360",
-				"aupll_div1", "aupll_div2",
-				"root", "bclk", "flash";
+				      "wifipll_320",
+				      "wifipll_240",
+				      "wifipll_480",
+				      "wifipll_360",
+				      "aupll_div1", "aupll_div2",
+				      "root", "bclk", "flash";
 		};
 
 		uart0: uart@2000a000 {
