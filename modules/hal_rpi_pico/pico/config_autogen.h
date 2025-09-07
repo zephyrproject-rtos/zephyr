@@ -42,7 +42,7 @@
 #define __always_inline ALWAYS_INLINE
 #endif /* __always_inline */
 
-/* Two definitions required for the flash driver */
+/* Definition required for the flash driver */
 #define __STRING(x) #x
 
 #endif
