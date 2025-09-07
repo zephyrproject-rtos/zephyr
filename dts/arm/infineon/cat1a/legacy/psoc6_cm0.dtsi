@@ -34,6 +34,7 @@
 				interrupts = <0 3>;
 				status = "okay";
 			};
+
 			intmux_ch1: interrupt-controller@1 {
 				compatible = "cypress,psoc6-intmux-ch";
 				reg = <0x1 1>;
@@ -42,6 +43,7 @@
 				interrupts = <1 3>;
 				status = "okay";
 			};
+
 			intmux_ch2: interrupt-controller@2 {
 				compatible = "cypress,psoc6-intmux-ch";
 				reg = <0x2 1>;
@@ -50,6 +52,7 @@
 				interrupts = <2 3>;
 				status = "okay";
 			};
+
 			intmux_ch3: interrupt-controller@3 {
 				compatible = "cypress,psoc6-intmux-ch";
 				reg = <0x3 1>;
@@ -58,6 +61,7 @@
 				interrupts = <3 3>;
 				status = "okay";
 			};
+
 			intmux_ch4: interrupt-controller@4 {
 				compatible = "cypress,psoc6-intmux-ch";
 				reg = <0x4 1>;
@@ -66,6 +70,7 @@
 				interrupts = <4 3>;
 				status = "okay";
 			};
+
 			intmux_ch5: interrupt-controller@5 {
 				compatible = "cypress,psoc6-intmux-ch";
 				reg = <0x5 1>;
@@ -74,6 +79,7 @@
 				interrupts = <5 3>;
 				status = "okay";
 			};
+
 			intmux_ch6: interrupt-controller@6 {
 				compatible = "cypress,psoc6-intmux-ch";
 				reg = <0x6 1>;
@@ -82,6 +88,7 @@
 				interrupts = <6 3>;
 				status = "okay";
 			};
+
 			intmux_ch7: interrupt-controller@7 {
 				compatible = "cypress,psoc6-intmux-ch";
 				reg = <0x7 1>;
@@ -90,6 +97,7 @@
 				interrupts = <7 3>;
 				status = "okay";
 			};
+
 			intmux_ch8: interrupt-controller@8 {
 				compatible = "cypress,psoc6-intmux-ch";
 				reg = <0x8 1>;
@@ -98,6 +106,7 @@
 				interrupts = <8 3>;
 				status = "okay";
 			};
+
 			intmux_ch9: interrupt-controller@9 {
 				compatible = "cypress,psoc6-intmux-ch";
 				reg = <0x9 1>;
@@ -106,6 +115,7 @@
 				interrupts = <9 3>;
 				status = "okay";
 			};
+
 			intmux_ch10: interrupt-controller@a {
 				compatible = "cypress,psoc6-intmux-ch";
 				reg = <0xa 1>;
@@ -114,6 +124,7 @@
 				interrupts = <10 3>;
 				status = "okay";
 			};
+
 			intmux_ch11: interrupt-controller@b {
 				compatible = "cypress,psoc6-intmux-ch";
 				reg = <0xb 1>;
@@ -122,6 +133,7 @@
 				interrupts = <11 3>;
 				status = "okay";
 			};
+
 			intmux_ch12: interrupt-controller@c {
 				compatible = "cypress,psoc6-intmux-ch";
 				reg = <0xc 1>;
@@ -130,6 +142,7 @@
 				interrupts = <12 3>;
 				status = "okay";
 			};
+
 			intmux_ch13: interrupt-controller@d {
 				compatible = "cypress,psoc6-intmux-ch";
 				reg = <0xd 1>;
@@ -138,6 +151,7 @@
 				interrupts = <13 3>;
 				status = "okay";
 			};
+
 			intmux_ch14: interrupt-controller@e {
 				compatible = "cypress,psoc6-intmux-ch";
 				reg = <0xe 1>;
@@ -146,6 +160,7 @@
 				interrupts = <14 3>;
 				status = "okay";
 			};
+
 			intmux_ch15: interrupt-controller@f {
 				compatible = "cypress,psoc6-intmux-ch";
 				reg = <0xf 1>;
@@ -154,6 +169,7 @@
 				interrupts = <15 3>;
 				status = "okay";
 			};
+
 			intmux_ch16: interrupt-controller@10 {
 				compatible = "cypress,psoc6-intmux-ch";
 				reg = <0x10 1>;
@@ -162,6 +178,7 @@
 				interrupts = <16 3>;
 				status = "okay";
 			};
+
 			intmux_ch17: interrupt-controller@11 {
 				compatible = "cypress,psoc6-intmux-ch";
 				reg = <0x11 1>;
@@ -170,6 +187,7 @@
 				interrupts = <17 3>;
 				status = "okay";
 			};
+
 			intmux_ch18: interrupt-controller@12 {
 				compatible = "cypress,psoc6-intmux-ch";
 				reg = <0x12 1>;
@@ -178,6 +196,7 @@
 				interrupts = <18 3>;
 				status = "okay";
 			};
+
 			intmux_ch19: interrupt-controller@13 {
 				compatible = "cypress,psoc6-intmux-ch";
 				reg = <0x13 1>;
@@ -186,6 +205,7 @@
 				interrupts = <19 3>;
 				status = "okay";
 			};
+
 			intmux_ch20: interrupt-controller@14 {
 				compatible = "cypress,psoc6-intmux-ch";
 				reg = <0x14 1>;
@@ -194,6 +214,7 @@
 				interrupts = <20 3>;
 				status = "okay";
 			};
+
 			intmux_ch21: interrupt-controller@15 {
 				compatible = "cypress,psoc6-intmux-ch";
 				reg = <0x15 1>;
@@ -202,6 +223,7 @@
 				interrupts = <21 3>;
 				status = "okay";
 			};
+
 			intmux_ch22: interrupt-controller@16 {
 				compatible = "cypress,psoc6-intmux-ch";
 				reg = <0x16 1>;
@@ -210,6 +232,7 @@
 				interrupts = <22 3>;
 				status = "okay";
 			};
+
 			intmux_ch23: interrupt-controller@17 {
 				compatible = "cypress,psoc6-intmux-ch";
 				reg = <0x17 1>;
@@ -218,6 +241,7 @@
 				interrupts = <23 3>;
 				status = "okay";
 			};
+
 			intmux_ch24: interrupt-controller@18 {
 				compatible = "cypress,psoc6-intmux-ch";
 				reg = <0x18 1>;
@@ -226,6 +250,7 @@
 				interrupts = <24 3>;
 				status = "okay";
 			};
+
 			intmux_ch25: interrupt-controller@19 {
 				compatible = "cypress,psoc6-intmux-ch";
 				reg = <0x19 1>;
@@ -234,6 +259,7 @@
 				interrupts = <25 3>;
 				status = "okay";
 			};
+
 			intmux_ch26: interrupt-controller@1a {
 				compatible = "cypress,psoc6-intmux-ch";
 				reg = <0x1a 1>;
@@ -242,6 +268,7 @@
 				interrupts = <26 3>;
 				status = "okay";
 			};
+
 			intmux_ch27: interrupt-controller@1b {
 				compatible = "cypress,psoc6-intmux-ch";
 				reg = <0x1b 1>;
@@ -250,6 +277,7 @@
 				interrupts = <27 3>;
 				status = "okay";
 			};
+
 			intmux_ch28: interrupt-controller@1c {
 				compatible = "cypress,psoc6-intmux-ch";
 				reg = <0x1c 1>;
@@ -258,6 +286,7 @@
 				interrupts = <28 3>;
 				status = "okay";
 			};
+
 			intmux_ch29: interrupt-controller@1d {
 				compatible = "cypress,psoc6-intmux-ch";
 				reg = <0x1d 1>;
@@ -266,6 +295,7 @@
 				interrupts = <29 3>;
 				status = "okay";
 			};
+
 			intmux_ch30: interrupt-controller@1e {
 				compatible = "cypress,psoc6-intmux-ch";
 				reg = <0x1e 1>;
@@ -274,6 +304,7 @@
 				interrupts = <30 3>;
 				status = "okay";
 			};
+
 			intmux_ch31: interrupt-controller@1f {
 				compatible = "cypress,psoc6-intmux-ch";
 				reg = <0x1f 1>;

@@ -113,6 +113,7 @@
 			status = "disabled";
 			#gpio-cells = <2>;
 		};
+
 		gpio_prt1: gpio@40410080 {
 			compatible = "infineon,cat1-gpio";
 			reg = <0x40410080 0x80>;
@@ -122,6 +123,7 @@
 			status = "disabled";
 			#gpio-cells = <2>;
 		};
+
 		gpio_prt2: gpio@40410100 {
 			compatible = "infineon,cat1-gpio";
 			reg = <0x40410100 0x80>;
@@ -131,6 +133,7 @@
 			status = "disabled";
 			#gpio-cells = <2>;
 		};
+
 		gpio_prt3: gpio@40410180 {
 			compatible = "infineon,cat1-gpio";
 			reg = <0x40410180 0x80>;
@@ -140,6 +143,7 @@
 			status = "disabled";
 			#gpio-cells = <2>;
 		};
+
 		gpio_prt4: gpio@40410200 {
 			compatible = "infineon,cat1-gpio";
 			reg = <0x40410200 0x80>;
@@ -149,6 +153,7 @@
 			status = "disabled";
 			#gpio-cells = <2>;
 		};
+
 		gpio_prt5: gpio@40410280 {
 			compatible = "infineon,cat1-gpio";
 			reg = <0x40410280 0x80>;
@@ -180,12 +185,14 @@
 			interrupts = <8 4>;
 			status = "disabled";
 		};
+
 		scb1: scb@405a0000 {
 			compatible = "infineon,cat1-scb";
 			reg = <0x405a0000 0xfd0>;
 			interrupts = <17 4>;
 			status = "disabled";
 		};
+
 		scb2: scb@405b0000 {
 			compatible = "infineon,cat1-scb";
 			reg = <0x405b0000 0xfd0>;
@@ -237,7 +244,6 @@
 					compatible = "infineon,tcpwm-counter";
 					status = "disabled";
 				};
-
 			};
 
 			tcpwm0_1: tcpwm0_1@404a0080 {
@@ -257,7 +263,6 @@
 					compatible = "infineon,tcpwm-counter";
 					status = "disabled";
 				};
-
 			};
 		};
 
@@ -283,7 +288,6 @@
 					compatible = "infineon,tcpwm-counter";
 					status = "disabled";
 				};
-
 			};
 
 			tcpwm1_1: tcpwm1_1@404a8080 {
@@ -303,7 +307,6 @@
 					compatible = "infineon,tcpwm-counter";
 					status = "disabled";
 				};
-
 			};
 
 			tcpwm1_2: tcpwm1_2@404a8100 {
@@ -323,7 +326,6 @@
 					compatible = "infineon,tcpwm-counter";
 					status = "disabled";
 				};
-
 			};
 
 			tcpwm1_3: tcpwm1_3@404a8180 {
@@ -343,7 +345,6 @@
 					compatible = "infineon,tcpwm-counter";
 					status = "disabled";
 				};
-
 			};
 
 			tcpwm1_4: tcpwm1_4@404a8200 {
@@ -363,7 +364,6 @@
 					compatible = "infineon,tcpwm-counter";
 					status = "disabled";
 				};
-
 			};
 
 			tcpwm1_5: tcpwm1_5@404a8280 {
@@ -383,7 +383,6 @@
 					compatible = "infineon,tcpwm-counter";
 					status = "disabled";
 				};
-
 			};
 
 			tcpwm1_6: tcpwm1_6@404a8300 {
@@ -403,7 +402,6 @@
 					compatible = "infineon,tcpwm-counter";
 					status = "disabled";
 				};
-
 			};
 		};
 
@@ -413,29 +411,29 @@
 			reg = <0x40180000 0x10000>;
 			dma-channels = <16>;
 			interrupts = <19 4>, /* CH0 */
-					     <20 4>, /* CH1 */
-					     <21 4>, /* CH2 */
-					     <22 4>, /* CH3 */
-					     <23 4>, /* CH4 */
-					     <24 4>, /* CH5 */
-					     <25 4>, /* CH6 */
-					     <26 4>, /* CH7 */
-					     <27 4>, /* CH8 */
-					     <28 4>, /* CH9 */
-					     <29 4>, /* CH10 */
-					     <30 4>, /* CH11 */
-					     <31 4>, /* CH12 */
-					     <32 4>, /* CH13 */
-					     <33 4>, /* CH14 */
-					     <34 4>; /* CH15 */
+				     <20 4>, /* CH1 */
+				     <21 4>, /* CH2 */
+				     <22 4>, /* CH3 */
+				     <23 4>, /* CH4 */
+				     <24 4>, /* CH5 */
+				     <25 4>, /* CH6 */
+				     <26 4>, /* CH7 */
+				     <27 4>, /* CH8 */
+				     <28 4>, /* CH9 */
+				     <29 4>, /* CH10 */
+				     <30 4>, /* CH11 */
+				     <31 4>, /* CH12 */
+				     <32 4>, /* CH13 */
+				     <33 4>, /* CH14 */
+				     <34 4>; /* CH15 */
 			status = "disabled";
 		};
+
 		bluetooth: btss@42000000 {
 			compatible = "infineon,cyw208xx-hci";
 			reg = <0x42000000 0x6186A0>;
 			interrupts = <16 4>;
 			status = "disabled";
 		};
-
 	};
 };
