@@ -7,7 +7,7 @@
 
 #include <ti/mspm0/mspm0.dtsi>
 
-/{
+/ {
 	clocks: clocks {
 		pll: pll {
 			compatible = "ti,mspm0-pll";
