@@ -7,10 +7,10 @@
 &i2s0_default {
 	group1 {
 		pinmux = <I2S0_O_WS_GPIO33>,
-				<I2S0_O_BCK_GPIO32>,
-				<I2S0_O_SD_GPIO27>,
-				<I2S0_I_WS_GPIO26>,
-				<I2S0_I_BCK_GPIO25>;
+			 <I2S0_O_BCK_GPIO32>,
+			 <I2S0_O_SD_GPIO27>,
+			 <I2S0_I_WS_GPIO26>,
+			 <I2S0_I_BCK_GPIO25>;
 		output-enable;
 	};
 	group2 {
@@ -23,7 +23,6 @@ i2s_rxtx: &i2s0 {
 	status = "okay";
 
 	interrupts = <I2S0_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>,
-		<I2S0_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+		     <I2S0_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 	interrupt-names = "tx", "rx";
-
 };

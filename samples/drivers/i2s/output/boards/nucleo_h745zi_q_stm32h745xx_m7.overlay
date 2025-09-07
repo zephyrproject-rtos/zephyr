@@ -24,7 +24,7 @@
 
 &sai1_b {
 	pinctrl-0 = <&sai1_mclk_b_pf7 &sai1_sd_b_pe3
-		 &sai1_fs_b_pf9 &sai1_sck_b_pf8>;
+		     &sai1_fs_b_pf9 &sai1_sck_b_pf8>;
 	pinctrl-names = "default";
 	status = "okay";
 	mclk-enable;
@@ -32,10 +32,10 @@
 	dma-names = "tx";
 };
 
-&dmamux1{
+&dmamux1 {
 	status = "okay";
 };
 
-&dma1{
+&dma1 {
 	status = "okay";
 };
