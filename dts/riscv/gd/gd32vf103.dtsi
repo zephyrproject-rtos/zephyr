@@ -53,7 +53,7 @@
 			#address-cells = <0>;
 			#interrupt-cells = <2>;
 			interrupt-controller;
-			reg =  <0xd2000000 0x2000>;
+			reg = <0xd2000000 0x2000>;
 		};
 
 		rcu: reset-clock-controller@40021000 {
