@@ -121,6 +121,7 @@
 			reg = <0x40118000 0x100>;
 			clocks = <&pclka MSTPB 31>;
 			status = "disabled";
+
 			uart {
 				compatible = "renesas,ra-sci-uart";
 				channel = <0>;
@@ -135,6 +136,7 @@
 			reg = <0x40118900 0x100>;
 			clocks = <&pclka MSTPB 22>;
 			status = "disabled";
+
 			uart {
 				compatible = "renesas,ra-sci-uart";
 				channel = <9>;
@@ -288,7 +290,7 @@
 			status = "disabled";
 		};
 
-		crc: crc@40108000{
+		crc: crc@40108000 {
 			compatible = "renesas,ra-crc";
 			reg = <0x40108000 0x1000>;
 			clocks = <&pclka MSTPC 1>;
