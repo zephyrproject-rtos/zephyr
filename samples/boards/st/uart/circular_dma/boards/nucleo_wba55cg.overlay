@@ -5,7 +5,7 @@
  */
 
 &usart1 {
-	dmas = <&gpdma1 0 12 (STM32_DMA_PERIPH_TX)
+	dmas = <&gpdma1 0 12 STM32_DMA_PERIPH_TX
 		&gpdma1 1 11 (STM32_DMA_MODE_CYCLIC | STM32_DMA_PERIPH_RX | STM32_DMA_MEM_8BITS)>;
 	dma-names = "tx", "rx";
 	fifo-enable;
