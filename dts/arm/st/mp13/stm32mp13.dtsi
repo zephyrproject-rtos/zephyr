@@ -42,7 +42,7 @@
 	soc {
 		interrupt-parent = <&gic>;
 
-		sysram: memory@2ffe0000  {
+		sysram: memory@2ffe0000 {
 			compatible = "mmio-sram";
 			reg = <0x2FFE0000 DT_SIZE_K(128)>;
 		};
@@ -148,7 +148,7 @@
 		};
 
 		exti: interrupt-controller@5000d000 {
-			compatible =  "st,stm32g0-exti","st,stm32-exti";
+			compatible = "st,stm32g0-exti", "st,stm32-exti";
 			interrupt-controller;
 			#interrupt-cells = <1>;
 			#address-cells = <1>;
@@ -267,7 +267,6 @@
 	};
 
 	clocks {
-
 		clk_hse: clk-hse {
 			#clock-cells = <0>;
 			compatible = "fixed-clock";

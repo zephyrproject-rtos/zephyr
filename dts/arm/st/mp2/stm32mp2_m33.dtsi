@@ -33,7 +33,7 @@
 	};
 
 	soc {
-		rcc: rcc@44200000  {
+		rcc: rcc@44200000 {
 			compatible = "st,stm32mp2-rcc";
 			clocks-controller;
 			#clock-cells = <2>;
@@ -53,9 +53,9 @@
 			reg = <0x46230000 DT_SIZE_K(1)>;
 			num-lines = <77>;
 			interrupts = <17 0>, <18 0>, <19 0>, <20 0>,
-					 <21 0>, <22 0>, <23 0>, <24 0>,
-					 <25 0>, <26 0>, <27 0>, <28 0>,
-					 <29 0>, <30 0>, <31 0>, <32 0>;
+				     <21 0>, <22 0>, <23 0>, <24 0>,
+				     <25 0>, <26 0>, <27 0>, <28 0>,
+				     <29 0>, <30 0>, <31 0>, <32 0>;
 			interrupt-names = "line0", "line1", "line2", "line3",
 					  "line4", "line5", "line6", "line7",
 					  "line8", "line9", "line10", "line11",
@@ -433,7 +433,6 @@
 	};
 
 	clocks {
-
 		clk_hse: clk-hse {
 			#clock-cells = <0>;
 			compatible = "fixed-clock";
