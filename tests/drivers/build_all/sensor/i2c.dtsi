@@ -29,7 +29,8 @@
 
 /****************************************
  * PLEASE KEEP REG ADDRESSES SEQUENTIAL *
- ***************************************/
+ **************************************
+ */
 
 test_i2c_adt7420: adt7420@0 {
 	compatible = "adi,adt7420";
@@ -528,14 +529,14 @@ test_i2c_itds_2533020201601: wsen_itds_2533020201601@4e {
 	drdy-interrupt-gpios = <&test_gpio 0 0>;
 	odr = "400";
 	tap-threshold = <0>, <0>, <6>;
-	tap-latency = < 5 >;
-	tap-shock = < 2 >;
-	tap-quiet = < 1 >;
-	tap-mode = < 1 >;
-	freefall-duration = < 6 >;
-	freefall-threshold = < 10 >;
-	delta-duration = < 1 >;
-	delta-threshold = < 4 >;
+	tap-latency = <5>;
+	tap-shock = <2>;
+	tap-quiet = <1>;
+	tap-mode = <1>;
+	freefall-duration = <6>;
+	freefall-threshold = <10>;
+	delta-duration = <1>;
+	delta-threshold = <4>;
 	op-mode = "high-perf";
 	power-mode = "normal";
 };
@@ -716,7 +717,7 @@ test_i2c_s11059: s11059@64 {
 test_i2c_wsen_pdus_25131308XXXXX: wsen_pdus_25131308XXXXX@65 {
 	compatible = "we,wsen-pdus-25131308XXXXX";
 	reg = <0x65>;
-	sensor-type = < 4 >;
+	sensor-type = <4>;
 };
 
 test_i2c_veml7700: veml7700@66 {
@@ -1127,7 +1128,7 @@ test_i2c_mmc56x3: mmc56x3@97 {
 test_i2c_tmp1075: tmp1075@98 {
 	compatible = "ti,tmp1075";
 	reg = <0x98>;
-	alert-gpios =  <&test_gpio 0 0>;
+	alert-gpios = <&test_gpio 0 0>;
 	conversion-rate = <220000>;
 	lower-threshold = <27>;
 	upper-threshold = <28>;
@@ -1395,12 +1396,12 @@ test_i2c_wsen_isds_2536030320001: wsen_isds_2536030320001@bb {
 	reg = <0xbb>;
 	accel-odr = "416";
 	gyro-odr = "416";
-	tap-threshold = < 9 >;
-	tap-latency = < 5 >;
-	tap-shock = < 2 >;
-	tap-quiet = < 1 >;
-	tap-mode = < 1 >;
-	tap-axis-enable = < 0 0 1 >;
+	tap-threshold = <9>;
+	tap-latency = <5>;
+	tap-shock = <2>;
+	tap-quiet = <1>;
+	tap-mode = <1>;
+	tap-axis-enable = <0 0 1>;
 	events-interrupt-gpios = <&test_gpio 0 0>;
 	drdy-interrupt-gpios = <&test_gpio 0 0>;
 };
