@@ -32,6 +32,7 @@
 				compatible = "zephyr,power-state";
 				power-state-name = "runtime-idle";
 			};
+
 			pstate_ps4_sleep: ps4_sleep {
 				compatible = "zephyr,power-state";
 				power-state-name = "suspend-to-idle";
@@ -45,7 +46,7 @@
 	 * It also protects against null pointer exceptions.
 	 */
 	nwp_reserved: memory@0 {
-		compatible = "zephyr,memory-region","mmio-sram";
+		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x00000000 DT_SIZE_K(1)>;
 		zephyr,memory-region = "NWP_RESERVED_RAM";
 	};
@@ -177,9 +178,7 @@
 				#gpio-cells = <2>;
 				ngpios = <16>;
 				gpio-reserved-ranges = <0 6>;
-				silabs,pads = [
-					ff ff ff ff  ff ff 01 02  03 04 05 06  07 ff ff 08
-				];
+				silabs,pads = [ff ff ff ff ff ff 01 02 03 04 05 06 07 ff ff 08];
 				status = "okay";
 			};
 
@@ -189,9 +188,7 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <16>;
-				silabs,pads = [
-					ff ff ff ff  ff ff ff ff  ff 00 00 00  00 00 00 09
-				];
+				silabs,pads = [ff ff ff ff ff ff ff ff ff 00 00 00 00 00 00 09];
 				status = "okay";
 			};
 
@@ -201,9 +198,7 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <16>;
-				silabs,pads = [
-					09 09 09 ff  ff ff ff ff  ff ff ff ff  ff ff 0a 0b
-				];
+				silabs,pads = [09 09 09 ff ff ff ff ff ff ff ff ff ff ff 0a 0b];
 				status = "okay";
 			};
 
@@ -213,9 +208,7 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <10>;
-				silabs,pads = [
-					0c 0d 0e 0f  10 11 12 13  14 15 ff ff  ff ff ff ff
-				];
+				silabs,pads = [0c 0d 0e 0f 10 11 12 13 14 15 ff ff ff ff ff ff];
 				status = "okay";
 			};
 		};
@@ -237,9 +230,7 @@
 				#gpio-cells = <2>;
 				ngpios = <12>;
 				gpio-reserved-ranges = <3 1>;
-				silabs,pads = [
-					16 17 18 19  1a 1b 1c 1d  1e 1f 20 21  ff ff ff ff
-				];
+				silabs,pads = [16 17 18 19 1a 1b 1c 1d 1e 1f 20 21 ff ff ff ff];
 				status = "okay";
 			};
 		};
@@ -298,7 +289,7 @@
 			interrupts = <33 0>;
 			interrupt-names = "dma0";
 			clocks = <&clock0 SIWX91X_CLK_DMA0>;
-			#dma-cells = < 1>;
+			#dma-cells = <1>;
 			dma-channels = <32>;
 			status = "disabled";
 		};
@@ -312,7 +303,7 @@
 			interrupt-names = "ulpdma";
 			clocks = <&clock0 SIWX91X_CLK_ULP_DMA>;
 			silabs,sram-region = <&sram_dma1>;
-			#dma-cells = < 1>;
+			#dma-cells = <1>;
 			dma-channels = <12>;
 			status = "disabled";
 		};
