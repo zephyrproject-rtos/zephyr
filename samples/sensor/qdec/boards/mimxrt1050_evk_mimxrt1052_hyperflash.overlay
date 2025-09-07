@@ -41,12 +41,15 @@
 	status = "okay";
 	pinctrl-0 = <&pinmux_qdec1>;
 	pinctrl-names = "default";
-	counts-per-revolution = < 120 >;
-	xbar = < &xbar1 >;
+	counts-per-revolution = <120>;
+	xbar = <&xbar1>;
 };
 
 &xbar1 {
 	status = "okay";
-	xbar-maps = < (21|0x100) (66|0x100) >, /* kXBARA1_InputIomuxXbarIn21 <-> kXBARA1_OutputEnc1PhaseAInput */
-		    < (22|0x100) (67|0x100) >; /* kXBARA1_InputIomuxXbarIn22 <-> kXBARA1_OutputEnc1PhaseBInput */
+	xbar-maps =
+		    /* kXBARA1_InputIomuxXbarIn21 <-> kXBARA1_OutputEnc1PhaseAInput */
+		    <(21 | 0x100) (66 | 0x100)>,
+		    /* kXBARA1_InputIomuxXbarIn22 <-> kXBARA1_OutputEnc1PhaseBInput */
+		    <(22 | 0x100) (67 | 0x100)>;
 };
