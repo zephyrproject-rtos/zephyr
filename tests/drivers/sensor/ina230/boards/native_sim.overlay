@@ -2,10 +2,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
- #include <zephyr/dt-bindings/sensor/ina230.h>
+#include <zephyr/dt-bindings/sensor/ina230.h>
 
- &i2c0 {
-	 status = "okay";
+&i2c0 {
+	status = "okay";
 
 	/* Datasheet example and Default DT Configuration Test */
 	ina230_default_test: ina230@40 {
