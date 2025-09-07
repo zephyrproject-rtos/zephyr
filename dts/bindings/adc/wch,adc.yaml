@@ -5,7 +5,7 @@ description: WCH CH32V00x ADC
 
 compatible: "wch,adc"
 
-include: [adc-controller.yaml, pinctrl-device.yaml]
+include: [adc-controller.yaml, pinctrl-device.yaml, reset-device.yaml]
 
 properties:
   reg:

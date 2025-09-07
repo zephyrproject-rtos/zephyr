@@ -5,7 +5,7 @@ description: WCH SPI
 
 compatible: "wch,spi"
 
-include: [spi-controller.yaml, pinctrl-device.yaml]
+include: [spi-controller.yaml, pinctrl-device.yaml, reset-device.yaml]
 
 properties:
   reg:

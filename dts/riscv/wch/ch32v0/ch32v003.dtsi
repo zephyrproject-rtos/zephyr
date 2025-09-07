@@ -11,6 +11,7 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/clock/ch32v00x-clocks.h>
+#include <zephyr/dt-bindings/reset/ch32v00x-reset.h>
 #include <zephyr/dt-bindings/dma/ch32v003-dma.h>
 
 / {
@@ -121,6 +122,7 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			clocks = <&rcc CH32V00X_CLOCK_AFIO>;
+			resets = <&rctl CH32_RESET(PB2, 0)>;
 			status = "okay";
 
 			gpioa: gpio@40010800 {
@@ -131,6 +133,7 @@
 				ngpios = <8>;
 				gpio-reserved-ranges = <0 1>, <3 5>;
 				clocks = <&rcc CH32V00X_CLOCK_IOPA>;
+				resets = <&rctl CH32_RESET(PB2, 2)>;
 			};
 
 			gpioc: gpio@40011000 {
@@ -140,6 +143,7 @@
 				#gpio-cells = <2>;
 				ngpios = <8>;
 				clocks = <&rcc CH32V00X_CLOCK_IOPC>;
+				resets = <&rctl CH32_RESET(PB2, 4)>;
 			};
 
 			gpiod: gpio@40011400 {
@@ -149,6 +153,7 @@
 				#gpio-cells = <2>;
 				ngpios = <8>;
 				clocks = <&rcc CH32V00X_CLOCK_IOPD>;
+				resets = <&rctl CH32_RESET(PB2, 5)>;
 			};
 		};
 
@@ -158,6 +163,7 @@
 			#size-cells = <0>;
 			reg = <0x40005400 0x400>;
 			clocks = <&rcc CH32V00X_CLOCK_I2C1>;
+			resets = <&rctl CH32_RESET(PB1, 21)>;
 			interrupt-parent = <&pfic>;
 			interrupts = <30>, <31>;
 		};
@@ -166,6 +172,7 @@
 			compatible = "wch,usart";
 			reg = <0x40013800 0x10>;
 			clocks = <&rcc CH32V00X_CLOCK_USART1>;
+			resets = <&rctl CH32_RESET(PB2, 14)>;
 			interrupt-parent = <&pfic>;
 			interrupts = <32>;
 		};
@@ -174,12 +181,21 @@
 			compatible = "wch,ch32v00x-rcc";
 			reg = <0x40021000 0x28>;
 			reg-names = "rcc";
+			#address-cells = <1>;
+			#size-cells = <1>;
 			#clock-cells = <1>;
 			clocks = <&clk_lsi>, <&clk_hse>, <&clk_hsi>, <&pll>,
 			         <&clk_sys>, <&clk_hb>, <&clk_adc>;
 			clock-names = "clk_lsi", "clk_hse", "clk_hsi", "pll",
 			              "clk_sys", "clk_hb", "clk_adc";
 			status = "okay";
+
+			rctl: reset-controler@0x0C {
+				compatible = "wch,ch32-rcc-rctl";
+				#reset-cells = <1>;
+				reg = <0x0C 0x08>;
+				status = "okay";
+			};
 		};
 
 		dma1: dma@40020000 {
@@ -198,6 +214,7 @@
 			prescaler = <1>;
 			channels = <4>;
 			clocks = <&rcc CH32V00X_CLOCK_TIM2>;
+			resets = <&rctl CH32_RESET(PB1, 0)>;
 			interrupt-parent = <&pfic>;
 			interrupts = <38>;
 			interrupt-names = "global";
@@ -215,6 +232,7 @@
 			compatible = "wch,spi";
 			reg = <0x40013000 0x24>;
 			clocks = <&rcc CH32V00X_CLOCK_SPI1>;
+			resets = <&rctl CH32_RESET(PB2, 12)>;
 			interrupt-parent = <&pfic>;
 			interrupts = <33>;
 			status = "disabled";
@@ -226,6 +244,7 @@
 			compatible = "wch,adc";
 			reg = <0x40012400 16>;
 			clocks = <&rcc CH32V00X_CLOCK_ADC1>;
+			resets = <&rctl CH32_RESET(PB2, 9)>;
 			interrupt-parent = <&pfic>;
 			interrupts = <29>;
 			#io-channel-cells = <1>;

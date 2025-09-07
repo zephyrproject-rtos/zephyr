@@ -5,7 +5,7 @@ description: WCH CH32V00x General-Purpose Input/Output (GPIO)
 
 compatible: "wch,gpio"
 
-include: [gpio-controller.yaml, base.yaml]
+include: [gpio-controller.yaml, base.yaml, reset-device.yaml]
 
 properties:
   reg:

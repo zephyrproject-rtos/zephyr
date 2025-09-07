@@ -5,7 +5,7 @@ description: WCH General-purpose Timer (GPTM) for PWM
 
 compatible: "wch,gptm"
 
-include: [base.yaml]
+include: [base.yaml, reset-device.yaml]
 
 properties:
   reg:
