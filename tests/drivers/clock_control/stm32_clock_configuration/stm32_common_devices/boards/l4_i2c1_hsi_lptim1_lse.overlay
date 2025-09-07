@@ -38,7 +38,6 @@
 	/delete-property/ clock-frequency;
 };
 
-
 /* Core set up
  * Aim of this part is to provide a base working clock config
  */
@@ -73,14 +72,14 @@
 	/delete-property/ clocks;
 	/* an extra clock at index 2 to check if switching clocks works */
 	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00200000>,
-			<&rcc STM32_SRC_HSI I2C1_SEL(2)>,
-			<&rcc STM32_SRC_SYSCLK I2C1_SEL(1)>;
+		 <&rcc STM32_SRC_HSI I2C1_SEL(2)>,
+		 <&rcc STM32_SRC_SYSCLK I2C1_SEL(1)>;
 	status = "okay";
 };
 
 &lptim1 {
 	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x80000000>,
-			<&rcc STM32_SRC_LSE LPTIM1_SEL(3)>;
+		 <&rcc STM32_SRC_LSE LPTIM1_SEL(3)>;
 	status = "okay";
 };
 
