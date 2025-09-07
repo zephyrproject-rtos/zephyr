@@ -1,7 +1,7 @@
 / {
 	reserved-memory {
-	/delete-node/ memory@2f0bf000;
-	/delete-node/ memory@2f0bf800;
+		/delete-node/ memory@2f0bf000;
+		/delete-node/ memory@2f0bf800;
 
 		cpuapp_cpurad_ipc_shm_a: memory@2f0bf000 {
 			reg = <0x2f0bf000 DT_SIZE_K(1)>;
@@ -26,7 +26,7 @@
 			dcache-alignment = <32>;
 			status = "okay";
 			mboxes = <&cpuapp_bellboard 20>,
-					<&cpurad_bellboard 14>;
+				 <&cpurad_bellboard 14>;
 		};
 	};
 };
