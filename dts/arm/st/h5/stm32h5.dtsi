@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 #include <arm/armv8-m.dtsi>
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/clock/stm32h5_clock.h>
@@ -93,6 +92,7 @@
 			clock-frequency = <DT_FREQ_K(32)>;
 			status = "disabled";
 		};
+
 		/* The pll scheme is similar to stm32u5 */
 		pll1: pll: pll {
 			#clock-cells = <0>;
@@ -597,11 +597,11 @@
 			#size-cells = <0>;
 			reg = <0x40013000 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB2, 12)>,
-				<&rcc STM32_SRC_PLL1_Q SPI1_SEL(0)>;
-			dmas = <&gpdma1 0 7 (STM32_DMA_PERIPH_TX |STM32_DMA_16BITS | \
-					STM32_DMA_PRIORITY_HIGH)
-				&gpdma1 1 6 (STM32_DMA_PERIPH_RX | STM32_DMA_16BITS | \
-					STM32_DMA_PRIORITY_HIGH)>;
+				 <&rcc STM32_SRC_PLL1_Q SPI1_SEL(0)>;
+			dmas = <&gpdma1 0 7 (STM32_DMA_PERIPH_TX | STM32_DMA_16BITS |
+				STM32_DMA_PRIORITY_HIGH)
+				&gpdma1 1 6 (STM32_DMA_PERIPH_RX | STM32_DMA_16BITS |
+				STM32_DMA_PRIORITY_HIGH)>;
 			dma-names = "tx", "rx";
 			interrupts = <55 3>;
 			status = "disabled";
@@ -613,11 +613,11 @@
 			#size-cells = <0>;
 			reg = <0x40003800 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 14)>,
-				<&rcc STM32_SRC_PLL1_Q SPI2_SEL(0)>;
-			dmas = <&gpdma1 2 9 (STM32_DMA_PERIPH_TX | STM32_DMA_16BITS | \
-					STM32_DMA_PRIORITY_HIGH)
-				&gpdma1 3 8 (STM32_DMA_PERIPH_RX | STM32_DMA_16BITS | \
-					STM32_DMA_PRIORITY_HIGH)>;
+				 <&rcc STM32_SRC_PLL1_Q SPI2_SEL(0)>;
+			dmas = <&gpdma1 2 9 (STM32_DMA_PERIPH_TX | STM32_DMA_16BITS |
+				STM32_DMA_PRIORITY_HIGH)
+				&gpdma1 3 8 (STM32_DMA_PERIPH_RX | STM32_DMA_16BITS |
+				STM32_DMA_PRIORITY_HIGH)>;
 			dma-names = "tx", "rx";
 			interrupts = <56 3>;
 			status = "disabled";
@@ -629,11 +629,11 @@
 			#size-cells = <0>;
 			reg = <0x40003c00 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 15)>,
-				<&rcc STM32_SRC_PLL1_Q SPI3_SEL(0)>;
-			dmas = <&gpdma1 4 11 (STM32_DMA_PERIPH_TX  | STM32_DMA_16BITS | \
-					STM32_DMA_PRIORITY_HIGH)
-				&gpdma1 5 10 (STM32_DMA_PERIPH_RX | STM32_DMA_16BITS | \
-					STM32_DMA_PRIORITY_HIGH)>;
+				 <&rcc STM32_SRC_PLL1_Q SPI3_SEL(0)>;
+			dmas = <&gpdma1 4 11 (STM32_DMA_PERIPH_TX | STM32_DMA_16BITS |
+				STM32_DMA_PRIORITY_HIGH)
+				&gpdma1 5 10 (STM32_DMA_PERIPH_RX | STM32_DMA_16BITS |
+				STM32_DMA_PRIORITY_HIGH)>;
 			dma-names = "tx", "rx";
 			interrupts = <57 3>;
 			status = "disabled";

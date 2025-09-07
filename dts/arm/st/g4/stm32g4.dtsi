@@ -6,7 +6,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 #include <arm/armv7-m.dtsi>
 #include <zephyr/dt-bindings/clock/stm32g4_clock.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
@@ -38,17 +37,18 @@
 
 		power-states {
 			stop0: state0 {
-					compatible = "zephyr,power-state";
-					power-state-name = "suspend-to-idle";
-					substate-id = <1>;
-					min-residency-us = <20>;
-				};
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				substate-id = <1>;
+				min-residency-us = <20>;
+			};
+
 			stop1: state1 {
-					compatible = "zephyr,power-state";
-					power-state-name = "suspend-to-idle";
-					substate-id = <2>;
-					min-residency-us = <100>;
-				};
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				substate-id = <2>;
+				min-residency-us = <100>;
+			};
 		};
 	};
 
@@ -663,7 +663,7 @@
 			interrupts = <94 0>;
 			clocks = <&rcc STM32_CLOCK(AHB1, 2)>;
 			dma-generators = <4>;
-			dma-requests= <111>;
+			dma-requests = <111>;
 			status = "disabled";
 		};
 
