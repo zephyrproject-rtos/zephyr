@@ -21,7 +21,7 @@
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	compatible = "zephyr,i2c-emul-controller";
 	smartbattery0: smartbattery@b {
-		compatible =  "sbs,default-sbs-gauge","sbs,sbs-gauge-new-api";
+		compatible = "sbs,default-sbs-gauge", "sbs,sbs-gauge-new-api";
 		reg = <0x0b>;
 		status = "okay";
 		battery-cutoff-support;
