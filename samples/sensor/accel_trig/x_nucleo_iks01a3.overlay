@@ -16,5 +16,5 @@
 	tap-shock = <0x03>;
 	tap-quiet = <0x03>;
 	tap-latency = <0x03>;
-	irq-gpios =  <&arduino_header 3 GPIO_ACTIVE_HIGH>; /* A3 */
+	irq-gpios = <&arduino_header 3 GPIO_ACTIVE_HIGH>; /* A3 */
 };
