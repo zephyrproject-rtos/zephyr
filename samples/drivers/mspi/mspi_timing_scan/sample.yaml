@@ -4,7 +4,6 @@ tests:
   sample.drivers.mspi.timing_scan.flash:
     tags:
       - mspi
-    filter: dt_compat_enabled("ambiq,mspi-device")
     harness: console
     harness_config:
       type: multi_line
@@ -26,7 +25,6 @@ tests:
   sample.drivers.mspi.timing_scan.memc:
     tags:
       - mspi
-    filter: dt_compat_enabled("ambiq,mspi-device")
     harness: console
     harness_config:
       type: multi_line
