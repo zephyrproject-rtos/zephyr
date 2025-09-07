@@ -9,7 +9,7 @@
  * https://github.com/zephyrproject-rtos/zephyr/pull/62776#issuecomment-1727846332
  */
 
- /{
+/ {
 	soc {
 		irqsteer: interrupt-controller@30a80000 {
 			compatible = "nxp,irqsteer-intc";
@@ -19,11 +19,11 @@
 			#address-cells = <1>;
 
 			master0: interrupt-controller@0 {
-			    compatible = "nxp,irqsteer-master";
-			    reg = <0>;
-			    interrupt-controller;
-			    #interrupt-cells = <1>;
-			    interrupts-extended = <&clic 19 0 0>;
+				compatible = "nxp,irqsteer-master";
+				reg = <0>;
+				interrupt-controller;
+				#interrupt-cells = <1>;
+				interrupts-extended = <&clic 19 0 0>;
 			};
 
 			master1: interrupt-controller@1 {
