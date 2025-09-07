@@ -13,7 +13,7 @@
 	local-mac-address = [06 00 00 00 00 01];
 };
 
-&mdio0  {
+&mdio0 {
 	status = "okay";
 
 	phy0: phy@0 {
