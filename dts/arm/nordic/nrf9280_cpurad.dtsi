@@ -7,11 +7,17 @@
 #include <nordic/nrf9280.dtsi>
 
 cpu: &cpurad {};
+
 systick: &cpurad_systick {};
+
 nvic: &cpurad_nvic {};
+
 cpuppr_vevif: &cpuppr_vevif_tx {};
+
 cpusys_vevif: &cpusys_vevif_tx {};
+
 wdt010: &cpurad_wdt010 {};
+
 wdt011: &cpurad_wdt011 {};
 
 /delete-node/ &cpuapp;
