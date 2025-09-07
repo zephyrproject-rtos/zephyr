@@ -8,7 +8,7 @@
 	pinmux_lpi2c3: pinmux_lpi2c3 {
 		group0 {
 			pinmux = <&iomuxc_gpio_ad_b1_06_lpi2c3_sda>,
-				<&iomuxc_gpio_ad_b1_07_lpi2c3_scl>;
+				 <&iomuxc_gpio_ad_b1_07_lpi2c3_scl>;
 			drive-strength = "r0-6";
 			drive-open-drain;
 			slew-rate = "slow";

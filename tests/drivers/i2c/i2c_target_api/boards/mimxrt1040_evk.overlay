@@ -4,13 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 /*
  * Note: this sample requires the board to be modified! Populate resistors
  * R362 and R356.
  * To test this sample, connect J17.9<->J17.3 (SDA), J17.10<->J17.6 (SCL)
  */
-
 
 &lpi2c1 {
 	status = "okay";
