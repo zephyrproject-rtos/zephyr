@@ -39,7 +39,7 @@
 		gic: interrupt-controller@94000000 {
 			compatible = "arm,gic-v3", "arm,gic";
 			reg = <0x94000000 0x10000>,
-			       <0x94100000 0x80000>;
+			      <0x94100000 0x80000>;
 			interrupt-controller;
 			#interrupt-cells = <4>;
 			status = "okay";
@@ -487,9 +487,9 @@
 			reg = <0x80001000 0x400>;
 			channel = <0>;
 			interrupts = <GIC_SPI 288 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 289 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 290 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 291 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				     <GIC_SPI 289 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 290 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 291 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "eri", "rxi", "txi", "tei";
 			status = "disabled";
 
@@ -505,9 +505,9 @@
 			reg = <0x80001400 0x400>;
 			channel = <1>;
 			interrupts = <GIC_SPI 292 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 293 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 294 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 295 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				     <GIC_SPI 293 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 294 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 295 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "eri", "rxi", "txi", "tei";
 			status = "disabled";
 
@@ -523,9 +523,9 @@
 			reg = <0x80001800 0x400>;
 			channel = <2>;
 			interrupts = <GIC_SPI 296 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 297 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 298 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 299 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				     <GIC_SPI 297 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 298 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 299 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "eri", "rxi", "txi", "tei";
 			status = "disabled";
 
@@ -541,9 +541,9 @@
 			reg = <0x80001c00 0x400>;
 			channel = <3>;
 			interrupts = <GIC_SPI 300 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 301 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 302 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 303 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				     <GIC_SPI 301 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 302 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 303 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "eri", "rxi", "txi", "tei";
 			status = "disabled";
 
@@ -559,9 +559,9 @@
 			reg = <0x80002000 0x400>;
 			channel = <4>;
 			interrupts = <GIC_SPI 304 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 305 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 306 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 307 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				     <GIC_SPI 305 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 306 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 307 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "eri", "rxi", "txi", "tei";
 			status = "disabled";
 
@@ -577,9 +577,9 @@
 			reg = <0x81001000 0x400>;
 			channel = <5>;
 			interrupts = <GIC_SPI 435 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 436 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 437 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 438 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				     <GIC_SPI 436 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 437 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 438 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "eri", "rxi", "txi", "tei";
 			status = "disabled";
 

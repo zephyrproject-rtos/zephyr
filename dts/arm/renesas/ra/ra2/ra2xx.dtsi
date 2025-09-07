@@ -152,6 +152,7 @@
 			reg = <0x40070000 0x20>;
 			clocks = <&pclkb MSTPB 31>;
 			status = "disabled";
+
 			uart {
 				compatible = "renesas,ra-sci-uart";
 				channel = <0>;
@@ -166,6 +167,7 @@
 			reg = <0x40070020 0x20>;
 			clocks = <&pclkb MSTPB 30>;
 			status = "disabled";
+
 			uart {
 				compatible = "renesas,ra-sci-uart";
 				channel = <1>;
@@ -180,6 +182,7 @@
 			reg = <0x40070040 0x20>;
 			clocks = <&pclkb MSTPB 29>;
 			status = "disabled";
+
 			uart {
 				compatible = "renesas,ra-sci-uart";
 				channel = <2>;
@@ -194,6 +197,7 @@
 			reg = <0x40070060 0x20>;
 			clocks = <&pclkb MSTPB 28>;
 			status = "disabled";
+
 			uart {
 				compatible = "renesas,ra-sci-uart";
 				channel = <3>;
@@ -208,6 +212,7 @@
 			reg = <0x40070120 0x20>;
 			clocks = <&pclkb MSTPB 22>;
 			status = "disabled";
+
 			uart {
 				compatible = "renesas,ra-sci-uart";
 				channel = <9>;
@@ -255,7 +260,7 @@
 			#size-cells = <1>;
 		};
 
-		agt0: agt@40084000  {
+		agt0: agt@40084000 {
 			compatible = "renesas,ra-agt";
 			channel = <0>;
 			reg = <0x40084000 0x100>;
@@ -285,7 +290,7 @@
 			};
 		};
 
-		crc: crc@40074000{
+		crc: crc@40074000 {
 			compatible = "renesas,ra-crc";
 			reg = <0x40074000 0x1000>;
 			clocks = <&pclkb MSTPC 1>;

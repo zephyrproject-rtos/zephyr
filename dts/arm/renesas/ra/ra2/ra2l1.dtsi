@@ -75,7 +75,7 @@
 			};
 		};
 
-		crc: crc@40074000{
+		crc: crc@40074000 {
 			compatible = "renesas,ra-crc";
 			reg = <0x40074000 0x1000>;
 			clocks = <&pclkb MSTPC 1>;
@@ -377,7 +377,7 @@
 			status = "disabled";
 		};
 
-		agt0: agt@40084000  {
+		agt0: agt@40084000 {
 			compatible = "renesas,ra-agt";
 			channel = <0>;
 			reg = <0x40084000 0x100>;
@@ -604,7 +604,7 @@
 			compatible = "renesas,ra-cgc-pclk-block";
 			reg = <0x4001e01c 4>, <0x40047000 4>, <0x40047004 4>,
 			      <0x40047008 4>;
-			reg-names = "MSTPA", "MSTPB","MSTPC",
+			reg-names = "MSTPA", "MSTPB", "MSTPC",
 				    "MSTPD";
 			#clock-cells = <0>;
 			clocks = <&hoco>;
