@@ -4,19 +4,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-&stop0{
+&stop0 {
 	compatible = "zephyr,power-state";
 	power-state-name = "suspend-to-idle";
 	substate-id = <1>;
 	min-residency-us = <500000>;
 };
-&stop1{
+&stop1 {
 	compatible = "zephyr,power-state";
 	power-state-name = "suspend-to-idle";
 	substate-id = <2>;
 	min-residency-us = <1000000>;
 };
-&stop2{
+&stop2 {
 	compatible = "zephyr,power-state";
 	power-state-name = "suspend-to-idle";
 	substate-id = <3>;
