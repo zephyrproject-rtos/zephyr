@@ -19,7 +19,6 @@
 	};
 
 	soc {
-
 		rpu0_ipi: zynqmp-ipi@ff310000 {
 			status = "disabled";
 			compatible = "xlnx,zynqmp-ipi-mailbox";
@@ -29,7 +28,7 @@
 			reg = <0xff310000 0x10000>;
 			reg-names = "host_ipi_reg";
 			interrupts = <GIC_SPI 33 IRQ_TYPE_LEVEL
-					IRQ_DEFAULT_PRIORITY>;
+				      IRQ_DEFAULT_PRIORITY>;
 			local-ipi-id = <1>;
 
 			rpu0_apu_mailbox: mailbox@ff990200 {
@@ -69,7 +68,7 @@
 			reg-names = "host_ipi_reg";
 
 			interrupts = <GIC_SPI 34 IRQ_TYPE_LEVEL
-					IRQ_DEFAULT_PRIORITY>;
+				      IRQ_DEFAULT_PRIORITY>;
 
 			rpu1_apu_mailbox: mailbox@ff990400 {
 				remote-ipi-id = <0>;
@@ -101,7 +100,7 @@
 		gic: interrupt-controller@f9000000 {
 			compatible = "arm,gic-v1", "arm,gic";
 			reg = <0xf9000000 0x1000>,
-					<0xf9001000 0x100>;
+			      <0xf9001000 0x100>;
 			interrupt-controller;
 			#interrupt-cells = <4>;
 			status = "okay";
