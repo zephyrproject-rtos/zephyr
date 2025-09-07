@@ -32,7 +32,7 @@
 	 * switch the reference source to VDD_ANA. The user needs to measure the
 	 * voltage of VDD_ANA pin to set the value of 'zephyr,vref-mv'.
 	 */
-	voltage-ref= <0>;
+	voltage-ref = <0>;
 
 	channel@0 {
 		reg = <0>;
