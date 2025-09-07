@@ -9,10 +9,10 @@
 &pinctrl {
 	/* I2C ports */
 	/omit-if-no-ref/ i2c08_scl_gpio212: i2c08_scl_gpio212 {
-		pinmux = < MCHP_XEC_PINMUX(0212, MCHP_AF1) >;
+		pinmux = <MCHP_XEC_PINMUX(0212, MCHP_AF1)>;
 	};
 
 	/omit-if-no-ref/ i2c08_sda_gpio211: i2c08_sda_gpio211 {
-		pinmux = < MCHP_XEC_PINMUX(0211, MCHP_AF1) >;
+		pinmux = <MCHP_XEC_PINMUX(0211, MCHP_AF1)>;
 	};
 };
