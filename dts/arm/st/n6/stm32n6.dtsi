@@ -256,7 +256,7 @@
 			axisram3: memory@34200000 {
 				compatible = "zephyr,memory-region", "mmio-sram";
 				zephyr,memory-region = "AXISRAM3";
-				zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
+				zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
 			};
 		};
 
@@ -271,7 +271,7 @@
 			axisram4: memory@34270000 {
 				compatible = "zephyr,memory-region", "mmio-sram";
 				zephyr,memory-region = "AXISRAM4";
-				zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
+				zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
 			};
 		};
 
@@ -286,7 +286,7 @@
 			axisram5: memory@342e0000 {
 				compatible = "zephyr,memory-region", "mmio-sram";
 				zephyr,memory-region = "AXISRAM5";
-				zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
+				zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
 			};
 		};
 
@@ -301,7 +301,7 @@
 			axisram6: memory@34350000 {
 				compatible = "zephyr,memory-region", "mmio-sram";
 				zephyr,memory-region = "AXISRAM6";
-				zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
+				zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
 			};
 		};
 
@@ -752,7 +752,7 @@
 
 			mac: ethernet {
 				compatible = "st,stm32n6-ethernet", "st,stm32h7-ethernet",
-					"st,stm32-ethernet";
+					     "st,stm32-ethernet";
 				interrupts = <179 0>;
 				clock-names = "mac-clk-tx", "mac-clk-rx";
 				clocks = <&rcc STM32_CLOCK(AHB5, 23)>,

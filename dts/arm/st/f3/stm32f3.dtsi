@@ -37,7 +37,6 @@
 		compatible = "mmio-sram";
 	};
 
-
 	clocks {
 		clk_hse: clk-hse {
 			#clock-cells = <0>;

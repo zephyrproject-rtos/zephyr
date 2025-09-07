@@ -28,6 +28,5 @@
 			resets = <&rctl STM32_RESET(APB2, 26U)>;
 			status = "disabled";
 		};
-
 	};
 };

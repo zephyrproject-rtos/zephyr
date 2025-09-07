@@ -29,11 +29,11 @@
 		xspi1: spi@420d3400 {
 			compatible = "st,stm32-xspi";
 			reg = <0x420d3400 0x400>,
-				<0xa0000000 DT_SIZE_M(256)>;
+			      <0xa0000000 DT_SIZE_M(256)>;
 			interrupts = <131 0>;
 			clock-names = "xspix", "xspi-ker";
 			clocks = <&rcc STM32_CLOCK(AHB2_2, 12)>,
-					 <&rcc STM32_SRC_SYSCLK HSPI_SEL(0)>;
+				 <&rcc STM32_SRC_SYSCLK HSPI_SEL(0)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
