@@ -139,7 +139,7 @@
 			status = "disabled";
 		};
 
-		wdt0: watchdog@60009048  {
+		wdt0: watchdog@60009048 {
 			compatible = "espressif,esp32-watchdog";
 			reg = <0x60009048 0x20>;
 			interrupts = <TG0_WDT_LEVEL_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
@@ -187,10 +187,9 @@
 			interrupts = <GPIO_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
 			ngpios = <32>;
-			gpio-reserved-ranges =
-					<6 2>,    /* GPIO6–7 */
-					<15 7>,   /* GPIO15–21 */
-					<28 4>;   /* GPIO28–31 */
+			gpio-reserved-ranges = <6 2>,    /* GPIO6–7 */
+					       <15 7>,   /* GPIO15–21 */
+					       <28 4>;   /* GPIO28–31 */
 		};
 
 		uart0: uart@60000000 {
@@ -234,13 +233,12 @@
 			compatible = "espressif,esp32-gdma";
 			reg = <0x60080000 DT_SIZE_K(4)>;
 			#dma-cells = <1>;
-			interrupts =
-				<DMA_IN_CH0_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>,
-				<DMA_OUT_CH0_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>,
-				<DMA_IN_CH1_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>,
-				<DMA_OUT_CH1_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>,
-				<DMA_IN_CH2_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>,
-				<DMA_OUT_CH2_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupts = <DMA_IN_CH0_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>,
+				     <DMA_OUT_CH0_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>,
+				     <DMA_IN_CH1_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>,
+				     <DMA_OUT_CH1_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>,
+				     <DMA_IN_CH2_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>,
+				     <DMA_OUT_CH2_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
 			clocks = <&clock ESP32_GDMA_MODULE>;
 			dma-channels = <6>;
