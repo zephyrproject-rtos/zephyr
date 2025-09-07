@@ -69,7 +69,7 @@
 				power-down-mode = <0>;
 			};
 
-			test_i2c_dacx0501:dacx0501@62 {
+			test_i2c_dacx0501: dacx0501@62 {
 				compatible = "ti,dacx0501";
 				status = "okay";
 				reg = <0x62>;
@@ -81,21 +81,21 @@
 				status = "okay";
 				compatible = "adi,ad5691";
 				reg = <0x4a>;
-				#io-channel-cells = < 1 >;
+				#io-channel-cells = <1>;
 			};
 
 			test_ad5692: ad5692@4b {
 				status = "okay";
 				compatible = "adi,ad5692";
 				reg = <0x4b>;
-				#io-channel-cells = < 1 >;
+				#io-channel-cells = <1>;
 			};
 
 			test_ad5693: ad5693@4c {
 				status = "okay";
 				compatible = "adi,ad5693";
 				reg = <0x4c>;
-				#io-channel-cells = < 1 >;
+				#io-channel-cells = <1>;
 			};
 		};
 

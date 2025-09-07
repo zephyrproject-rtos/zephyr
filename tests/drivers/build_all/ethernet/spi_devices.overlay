@@ -73,7 +73,7 @@
 				reset-gpios = <&test_gpio 0 0>;
 
 				port1 {
-					local-mac-address = [ CA 2F B7 10 23 63 ];
+					local-mac-address = [CA 2F B7 10 23 63];
 				};
 
 				mdio {
@@ -98,10 +98,10 @@
 				reset-gpios = <&test_gpio 0 0>;
 
 				port1 {
-					local-mac-address = [ CA 2F B7 10 23 63 ];
+					local-mac-address = [CA 2F B7 10 23 63];
 				};
 				port2 {
-					local-mac-address = [ 3C 82 D4 A2 29 8E ];
+					local-mac-address = [3C 82 D4 A2 29 8E];
 				};
 
 				mdio {
