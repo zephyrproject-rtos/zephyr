@@ -24,7 +24,7 @@
 	pinctrl-1 = <&mspi1_sleep>;
 	pinctrl-2 = <&mspi1_psram>;
 	pinctrl-3 = <&mspi1_flash>;
-	pinctrl-names = "default","sleep","psram","flash";
+	pinctrl-names = "default", "sleep", "psram", "flash";
 	status = "okay";
 
 	ce-gpios = <&gpio64_95 5 GPIO_ACTIVE_LOW>,
@@ -74,12 +74,11 @@
 		ambiq,timing-config-mask = <3>;
 		ambiq,timing-config = <0 8 0 0 0 0 0 0>;
 	};
-
 };
 
 &pinctrl {
 
-	mspi1_sleep: mspi1_sleep{
+	mspi1_sleep: mspi1_sleep {
 
 		group1 {
 			pinmux = <GPIO_P51>,
@@ -94,10 +93,9 @@
 				 <GPIO_P69>,
 				 <GPIO_P50>;
 		};
-
 	};
 
-	mspi1_psram: mspi1_psram{
+	mspi1_psram: mspi1_psram {
 
 		group1 {
 			pinmux = <MSPI1_0_P51>,
@@ -130,20 +128,19 @@
 		group4 {
 			pinmux = <GPIO_P50>;
 		};
-
 	};
 
-	mspi1_flash: mspi1_flash{
+	mspi1_flash: mspi1_flash {
 
 		group1 {
 			pinmux = <MSPI1_0_P51>,
-					<MSPI1_1_P52>,
-					<MSPI1_2_P53>,
-					<MSPI1_3_P54>,
-					<MSPI1_4_P55>,
-					<MSPI1_5_P56>,
-					<MSPI1_6_P57>,
-					<MSPI1_7_P58>;
+				 <MSPI1_1_P52>,
+				 <MSPI1_2_P53>,
+				 <MSPI1_3_P54>,
+				 <MSPI1_4_P55>,
+				 <MSPI1_5_P56>,
+				 <MSPI1_6_P57>,
+				 <MSPI1_7_P58>;
 			drive-strength = "0.75";
 			ambiq,iom-mspi = <0>;
 			ambiq,iom-num = <1>;
@@ -166,6 +163,5 @@
 		group4 {
 			pinmux = <GPIO_P69>;
 		};
-
 	};
 };
