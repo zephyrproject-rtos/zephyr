@@ -38,6 +38,7 @@
 				/* Typical value is 0.847us as per of Datasheet */
 				exit-latency-us = <1>;
 			};
+
 			/* Deep-sleep Mode */
 			suspend: suspend {
 				compatible = "zephyr,power-state";
@@ -218,7 +219,7 @@
 			status = "disabled";
 		};
 
-		wdt0: watchdog@40003000  {
+		wdt0: watchdog@40003000 {
 			compatible = "adi,max32-watchdog";
 			reg = <0x40003000 0x400>;
 			interrupts = <1 0>;
@@ -247,10 +248,12 @@
 			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 15>;
 			clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
 			prescaler = <1>;
+
 			counter {
 				compatible = "adi,max32-counter";
 				status = "disabled";
 			};
+
 			pwm {
 				compatible = "adi,max32-pwm";
 				status = "disabled";
@@ -266,10 +269,12 @@
 			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 16>;
 			clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
 			prescaler = <1>;
+
 			counter {
 				compatible = "adi,max32-counter";
 				status = "disabled";
 			};
+
 			pwm {
 				compatible = "adi,max32-pwm";
 				status = "disabled";
@@ -285,10 +290,12 @@
 			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 17>;
 			clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
 			prescaler = <1>;
+
 			counter {
 				compatible = "adi,max32-counter";
 				status = "disabled";
 			};
+
 			pwm {
 				compatible = "adi,max32-pwm";
 				status = "disabled";
@@ -304,10 +311,12 @@
 			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 18>;
 			clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
 			prescaler = <1>;
+
 			counter {
 				compatible = "adi,max32-counter";
 				status = "disabled";
 			};
+
 			pwm {
 				compatible = "adi,max32-pwm";
 				status = "disabled";

@@ -9,7 +9,6 @@
 / {
 	soc {
 		pinctrl: pin-controller@40008000 {
-
 			/omit-if-no-ref/ spixf_ss0_p0_0: spixf_ss0_p0_0 {
 				pinmux = <MAX32_PINMUX(0, 0, AF1)>;
 			};
