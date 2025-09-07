@@ -9,6 +9,6 @@
 		compatible = "test-pwm-loopback";
 		/* first index must be a 32-Bit timer */
 		pwms = <&pwm2 4 0 PWM_POLARITY_NORMAL>,
-			<&pwm3 2 0 PWM_POLARITY_NORMAL>;
+		       <&pwm3 2 0 PWM_POLARITY_NORMAL>;
 	};
 };
