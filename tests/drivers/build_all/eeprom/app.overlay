@@ -10,8 +10,8 @@
  * (and be extended to test) real hardware.
  */
 
- #include <freq.h>
- #include <mem.h>
+#include <freq.h>
+#include <mem.h>
 
 / {
 	test {
