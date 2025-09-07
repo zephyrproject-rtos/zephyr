@@ -15,5 +15,5 @@
 
 &gpiote130 {
 	status = "okay";
-	owned-channels = < 0 1 >;
+	owned-channels = <0 1>;
 };

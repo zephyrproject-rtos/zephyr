@@ -8,10 +8,10 @@
 	resources {
 		compatible = "test-gpio-basic-api";
 		out-gpios = <&fgpioa 14 0>; /* J1-16 */
-		in-gpios  = <&fgpioa 17 0>; /* J1-14 */
+		in-gpios = <&fgpioa 17 0>; /* J1-14 */
 	};
 };
 
-&fgpioa{
+&fgpioa {
 	status = "okay";
 };
