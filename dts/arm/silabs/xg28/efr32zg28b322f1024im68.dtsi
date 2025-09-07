@@ -10,8 +10,8 @@
 / {
 	soc {
 		compatible = "silabs,efr32zg28b322f1024im68",
-					 "silabs,efr32zg28", "silabs,efr32",
-					 "simple-bus";
+			     "silabs,efr32zg28", "silabs,efr32",
+			     "simple-bus";
 	};
 };
 
