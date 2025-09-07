@@ -5,17 +5,17 @@
 
 / {
 	test {
-		#address-cells = < 0x1 >;
-		#size-cells = < 0x1 >;
+		#address-cells = <0x1>;
+		#size-cells = <0x1>;
 
-		test_cpu_intc: interrupt-controller  {
+		test_cpu_intc: interrupt-controller {
 			compatible = "vnd,cpu-intc";
 			#address-cells = <0>;
-			#interrupt-cells = < 0x01 >;
+			#interrupt-cells = <0x01>;
 			interrupt-controller;
 		};
 
-		test_l1_irq: interrupt-controller@bbbbcccc  {
+		test_l1_irq: interrupt-controller@bbbbcccc {
 			compatible = "vnd,intc";
 			reg = <0xbbbbcccc 0x1000>;
 			interrupt-controller;
@@ -24,7 +24,7 @@
 			interrupt-parent = <&test_cpu_intc>;
 		};
 
-		test_l2_irq: interrupt-controller@bbbccccc  {
+		test_l2_irq: interrupt-controller@bbbccccc {
 			compatible = "vnd,intc";
 			reg = <0xbbbccccc 0x1000>;
 			interrupt-controller;
@@ -41,7 +41,7 @@
 			interrupt-names = "test";
 		};
 
-		test_l1_irq_inc: interrupt-controller@bbbbdccc  {
+		test_l1_irq_inc: interrupt-controller@bbbbdccc {
 			compatible = "vnd,intc";
 			reg = <0xbbbbdccc 0x10>;
 			interrupt-controller;
@@ -50,7 +50,7 @@
 			interrupt-parent = <&test_cpu_intc>;
 		};
 
-		test_l2_irq_inc: interrupt-controller@bbbbdcdc  {
+		test_l2_irq_inc: interrupt-controller@bbbbdcdc {
 			compatible = "vnd,intc";
 			reg = <0xbbbbdcdc 0x10>;
 			interrupt-controller;
