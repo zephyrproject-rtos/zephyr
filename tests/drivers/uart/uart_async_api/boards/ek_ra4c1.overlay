@@ -8,7 +8,7 @@
 		group1 {
 			/* tx rx */
 			psels = <RA_PSEL(RA_PSEL_SCI_9, 1, 9)>,
-			<RA_PSEL(RA_PSEL_SCI_9, 1, 10)>;
+				<RA_PSEL(RA_PSEL_SCI_9, 1, 10)>;
 		};
 	};
 };
