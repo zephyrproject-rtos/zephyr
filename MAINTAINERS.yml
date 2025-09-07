@@ -4193,6 +4193,7 @@ Renesas RA Platforms:
     - samples/boards/renesas/
     - tests/boards/renesas/
     - include/zephyr/drivers/misc/renesas_ra_external_interrupt/
+    - include/zephyr/drivers/misc/interconn/renesas_elc/
   labels:
     - "platform: Renesas RA"
   description: >-
