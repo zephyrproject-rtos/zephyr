@@ -40,20 +40,20 @@
 	arch_timer: timer {
 		compatible = "arm,armv8-timer";
 		interrupts = <GIC_PPI 13 IRQ_TYPE_LEVEL
-				  IRQ_DEFAULT_PRIORITY>,
-				 <GIC_PPI 14 IRQ_TYPE_LEVEL
-				  IRQ_DEFAULT_PRIORITY>,
-				 <GIC_PPI 11 IRQ_TYPE_LEVEL
-				  IRQ_DEFAULT_PRIORITY>,
-				 <GIC_PPI 10 IRQ_TYPE_LEVEL
-				  IRQ_DEFAULT_PRIORITY>;
+			      IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 14 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 11 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 10 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>;
 		interrupt-parent = <&gic>;
 	};
 
 	gic: interrupt-controller@1800000 {
 		compatible = "arm,gic-v3", "arm,gic";
 		reg = <0x01800000 0x10000>, /* GICD */
-			  <0x01880000 0xc0000>; /* GICR */
+		      <0x01880000 0xc0000>; /* GICR */
 		interrupt-controller;
 		#interrupt-cells = <4>;
 		status = "okay";

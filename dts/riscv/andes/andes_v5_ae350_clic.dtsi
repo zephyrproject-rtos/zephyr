@@ -7,7 +7,6 @@
 #include <riscv/andes/andes_v5_ae350.dtsi>
 
 / {
-
 	cpus {
 		/delete-node/ cpu@1;
 		/delete-node/ cpu@2;
@@ -21,6 +20,7 @@
 			/delete-node/ interrupt-controller;
 			#address-cells = <1>;
 			#size-cells = <1>;
+
 			clic0: interrupt-controller@e2000000 {
 				/delete-property/ #plic-target-cells;
 				compatible = "riscv,clic";
