@@ -44,12 +44,14 @@
 				substate-id = <1>;
 				min-residency-us = <100>;
 			};
+
 			stop1: state1 {
 				compatible = "zephyr,power-state";
 				power-state-name = "suspend-to-idle";
 				substate-id = <2>;
 				min-residency-us = <500>;
 			};
+
 			stop2: state2 {
 				compatible = "zephyr,power-state";
 				power-state-name = "suspend-to-idle";
@@ -480,7 +482,7 @@
 			clocks = <&rcc STM32_CLOCK(AHB1, 2)>;
 			dma-channels = <14>;
 			dma-generators = <4>;
-			dma-requests= <36>;
+			dma-requests = <36>;
 			status = "disabled";
 		};
 
@@ -583,7 +585,7 @@
 	ble_rf: ble_rf {
 		compatible = "st,stm32wb-rf";
 		clocks = <&rcc STM32_CLOCK(AHB3, 20)>,
-				<&rcc STM32_SRC_LSE RFWKP_SEL(1)>;
+			 <&rcc STM32_SRC_LSE RFWKP_SEL(1)>;
 	};
 
 	smbus1: smbus1 {

@@ -25,11 +25,11 @@
 		};
 
 		dmamux1: dmamux@40020800 {
-			dma-requests= <107>;
+			dma-requests = <107>;
 		};
 
 		dmamux2: dmamux@58025800 {
-			dma-requests= <107>;
+			dma-requests = <107>;
 		};
 
 		usbotg_hs: usb@40040000 {
@@ -62,7 +62,7 @@
 			interrupts = <92 0>;
 			clock-names = "ospix", "ospi-ker";
 			clocks = <&rcc STM32_CLOCK(AHB3, 14)>,
-				<&rcc STM32_SRC_PLL1_Q OSPI_SEL(1)>;
+				 <&rcc STM32_SRC_PLL1_Q OSPI_SEL(1)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
@@ -74,7 +74,7 @@
 			interrupts = <150 0>;
 			clock-names = "ospix", "ospi-ker";
 			clocks = <&rcc STM32_CLOCK(AHB3, 19)>,
-				<&rcc STM32_SRC_PLL1_Q OSPI_SEL(1)>;
+				 <&rcc STM32_SRC_PLL1_Q OSPI_SEL(1)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
@@ -167,7 +167,7 @@
 		compatible = "zephyr,memory-region";
 		reg = <0x70000000 DT_SIZE_M(256)>; /* max addressable area */
 		zephyr,memory-region = "EXTMEM2";
-		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_EXTMEM) )>;
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_EXTMEM)>;
 	};
 
 	otghs_fs_phy: otghs_fs_phy {

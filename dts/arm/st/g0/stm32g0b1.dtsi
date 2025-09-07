@@ -9,7 +9,6 @@
 #include <zephyr/dt-bindings/clock/stm32g0_b1x_c1x_clock.h>
 
 / {
-
 	clocks {
 		clk_hsi48: clk-hsi48 {
 			#clock-cells = <0>;
@@ -21,7 +20,6 @@
 
 	soc {
 		compatible = "st,stm32g0b1", "st,stm32g0", "simple-bus";
-
 
 		pinctrl: pin-controller@50000000 {
 			gpioe: gpio@50001000 {

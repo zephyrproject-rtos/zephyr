@@ -57,11 +57,11 @@
 		};
 
 		dmamux1: dmamux@40020800 {
-			dma-requests= <129>;
+			dma-requests = <129>;
 		};
 
 		dmamux2: dmamux@58025800 {
-			dma-requests= <129>;
+			dma-requests = <129>;
 		};
 
 		rng: rng@48021800 {
@@ -99,7 +99,7 @@
 			interrupts = <92 0>;
 			clock-names = "ospix", "ospi-ker";
 			clocks = <&rcc STM32_CLOCK(AHB3, 14)>,
-				<&rcc STM32_SRC_PLL1_Q OSPI_SEL(1)>;
+				 <&rcc STM32_SRC_PLL1_Q OSPI_SEL(1)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
@@ -111,7 +111,7 @@
 			interrupts = <150 0>;
 			clock-names = "ospix", "ospi-ker";
 			clocks = <&rcc STM32_CLOCK(AHB3, 19)>,
-				<&rcc STM32_SRC_PLL1_Q OSPI_SEL(1)>;
+				 <&rcc STM32_SRC_PLL1_Q OSPI_SEL(1)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";

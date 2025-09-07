@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 #include <arm/armv8-m.dtsi>
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 #include <zephyr/dt-bindings/clock/stm32wba_clock.h>
@@ -52,12 +51,14 @@
 				substate-id = <1>;
 				min-residency-us = <100>;
 			};
+
 			stop1: state1 {
 				compatible = "zephyr,power-state";
 				power-state-name = "suspend-to-idle";
 				substate-id = <2>;
 				min-residency-us = <500>;
 			};
+
 			standby: state2 {
 				compatible = "zephyr,power-state";
 				power-state-name = "suspend-to-ram";
@@ -82,7 +83,7 @@
 		reg = <0x48028000 DT_SIZE_K(16)>;
 		device_type = "memory";
 		zephyr,memory-region = "SRAM6";
-		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE) )>;
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)>;
 	};
 
 	clocks {

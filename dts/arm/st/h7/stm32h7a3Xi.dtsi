@@ -6,6 +6,7 @@
 
 #include <mem.h>
 #include <st/h7/stm32h7a3.dtsi>
+
 / {
 	soc {
 		flash-controller@52002000 {

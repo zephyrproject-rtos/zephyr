@@ -44,6 +44,7 @@
 				substate-id = <1>;
 				min-residency-us = <20>;
 			};
+
 			stop1: state1 {
 				compatible = "zephyr,power-state";
 				power-state-name = "suspend-to-idle";
@@ -464,7 +465,7 @@
 			interrupts = <11 0>;
 			dma-channels = <5>;
 			dma-generators = <4>;
-			dma-requests= <49>;
+			dma-requests = <49>;
 			status = "disabled";
 		};
 

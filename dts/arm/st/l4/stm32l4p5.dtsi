@@ -16,9 +16,11 @@
 	sram0: memory@20000000 {
 		reg = <0x20000000 DT_SIZE_K(128)>;
 	};
+
 	sram1: memory@10000000 {
 		reg = <0x10000000 DT_SIZE_K(64)>;
 	};
+
 	sram2: memory@20030000 {
 		reg = <0x20030000 DT_SIZE_K(128)>;
 	};
@@ -40,7 +42,6 @@
 
 	soc {
 		compatible = "st,stm32l4p5", "st,stm32l4", "simple-bus";
-
 
 		flash-controller@40022000 {
 			flash0: flash@8000000 {
@@ -344,7 +345,7 @@
 			clocks = <&rcc STM32_CLOCK(AHB1, 2)>;
 			dma-channels = <14>;
 			dma-generators = <4>;
-			dma-requests= <89>;
+			dma-requests = <89>;
 			status = "disabled";
 		};
 
@@ -396,8 +397,8 @@
 			interrupts = <71 0>;
 			clock-names = "ospix", "ospi-ker", "ospi-mgr";
 			clocks = <&rcc STM32_CLOCK(AHB3, 8)>,
-				<&rcc STM32_SRC_SYSCLK OSPI_SEL(0)>,
-				<&rcc STM32_CLOCK(AHB2, 20)>;
+				 <&rcc STM32_SRC_SYSCLK OSPI_SEL(0)>,
+				 <&rcc STM32_CLOCK(AHB2, 20)>;
 
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -410,8 +411,8 @@
 			interrupts = <76 0>;
 			clock-names = "ospix", "ospi-ker", "ospi-mgr";
 			clocks = <&rcc STM32_CLOCK(AHB3, 9)>,
-				<&rcc STM32_SRC_SYSCLK OSPI_SEL(0)>,
-				<&rcc STM32_CLOCK(AHB2, 20)>;
+				 <&rcc STM32_SRC_SYSCLK OSPI_SEL(0)>,
+				 <&rcc STM32_CLOCK(AHB2, 20)>;
 
 			#address-cells = <1>;
 			#size-cells = <0>;

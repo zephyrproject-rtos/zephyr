@@ -7,7 +7,6 @@
 #include <st/l4/stm32l4.dtsi>
 
 / {
-
 	clocks {
 		clk_hsi48: clk-hsi48 {
 			#clock-cells = <0>;
@@ -21,7 +20,6 @@
 		compatible = "st,stm32l431", "st,stm32l4", "simple-bus";
 
 		pinctrl: pin-controller@48000000 {
-
 			gpiod: gpio@48000c00 {
 				compatible = "st,stm32-gpio";
 				reg = <0x48000c00 0x400>;
@@ -37,7 +35,6 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 			};
-
 		};
 
 		rng: rng@50060800 {

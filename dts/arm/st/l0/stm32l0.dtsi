@@ -335,7 +335,7 @@
 			status = "disabled";
 		};
 
-		eeprom: eeprom@8080000{
+		eeprom: eeprom@8080000 {
 			compatible = "st,stm32-eeprom";
 			status = "disabled";
 		};

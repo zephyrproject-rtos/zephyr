@@ -67,7 +67,7 @@
 		/* spi5 is present on all STM32F427XX and derivates SoCs except
 		 * some vX variants. Delete node in vX.dtsi.
 		 */
-		 spi5: spi@40015000 {
+		spi5: spi@40015000 {
 			compatible = "st,stm32-spi";
 			#address-cells = <1>;
 			#size-cells = <0>;

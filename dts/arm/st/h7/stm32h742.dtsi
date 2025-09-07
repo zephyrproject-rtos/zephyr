@@ -22,11 +22,11 @@
 		};
 
 		dmamux1: dmamux@40020800 {
-			dma-requests= <107>;
+			dma-requests = <107>;
 		};
 
 		dmamux2: dmamux@58025800 {
-			dma-requests= <12>;
+			dma-requests = <12>;
 		};
 
 		usbotg_fs: usb@40080000 {
