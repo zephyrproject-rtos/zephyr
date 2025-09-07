@@ -8,7 +8,7 @@
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 
 &dtcm {
-	zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE) )>;
+	zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)>;
 };
 
-tst_dma0: &edma0 { };
+tst_dma0: &edma0 {};
