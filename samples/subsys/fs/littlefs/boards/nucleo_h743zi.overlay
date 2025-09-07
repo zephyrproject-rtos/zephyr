@@ -54,14 +54,14 @@
 		status = "okay";
 
 		partitions {
-			   compatible = "fixed-partitions";
-			   #address-cells = <1>;
-			   #size-cells = <1>;
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
 
-			   storage_partition: partition@0 {
-			       label = "storage";
-			       reg = <0 DT_SIZE_M(8)>;
-			   };
+			storage_partition: partition@0 {
+				label = "storage";
+				reg = <0 DT_SIZE_M(8)>;
+			};
 		};
 	};
 };
