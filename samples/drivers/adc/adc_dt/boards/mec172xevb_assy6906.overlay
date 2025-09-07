@@ -6,7 +6,7 @@
 
 / {
 	zephyr,user {
-		io-channels =  <&adc0 0>, <&adc0 3>, <&adc0 4>, <&adc0 5>;
+		io-channels = <&adc0 0>, <&adc0 3>, <&adc0 4>, <&adc0 5>;
 	};
 };
 &adc0 {

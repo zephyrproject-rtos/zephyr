@@ -12,7 +12,7 @@
 / {
 	spibb0: spibb0 {
 		compatible = "zephyr,spi-bitbang";
-		status="okay";
+		status = "okay";
 		#address-cells = <1>;
 		#size-cells = <0>;
 		clk-gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
