@@ -16,7 +16,7 @@
 	};
 };
 
-&gpio{
+&gpio {
 	status = "okay";
 };
 

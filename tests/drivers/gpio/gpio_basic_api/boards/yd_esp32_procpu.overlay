@@ -12,7 +12,6 @@
 	};
 };
 
-
 /*
  * Some notes about esp32 pins:
  *    GPIO pins 34-39 are not suitable for this test because:
