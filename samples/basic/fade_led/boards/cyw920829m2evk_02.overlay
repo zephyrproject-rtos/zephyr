@@ -23,14 +23,13 @@
 };
 
 &pwm0_0 {
-	status        = "okay";
-	pinctrl-0     = <&p1_1_pwm0_0>;
+	status = "okay";
+	pinctrl-0 = <&p1_1_pwm0_0>;
 	pinctrl-names = "default";
-	divider-type  = <CY_SYSCLK_DIV_16_BIT>;
-	divider-sel   = <1>;
-	divider-val   = <9599>;
+	divider-type = <CY_SYSCLK_DIV_16_BIT>;
+	divider-sel = <1>;
+	divider-val = <9599>;
 };
-
 
 &pinctrl {
 	p1_1_pwm0_0: p1_1_pwm0_0 {
