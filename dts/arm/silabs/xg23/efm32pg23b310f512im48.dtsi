@@ -10,10 +10,10 @@
 / {
 	soc {
 		compatible = "silabs,efm32pg23b310f512im48",
-					"silabs,efm32pg23",
-					"silabs,xg23",
-					"silabs,efm32",
-					"simple-bus";
+			     "silabs,efm32pg23",
+			     "silabs,xg23",
+			     "silabs,efm32",
+			     "simple-bus";
 	};
 };
 

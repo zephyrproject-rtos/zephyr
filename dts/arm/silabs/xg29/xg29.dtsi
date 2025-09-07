@@ -345,7 +345,7 @@
 			reg-names = "dbus", "abus";
 		};
 
-		dma0: dma@40040000{
+		dma0: dma@40040000 {
 			compatible = "silabs,ldma";
 			reg = <0x40040000 0x4000>;
 			interrupts = <26 0>;

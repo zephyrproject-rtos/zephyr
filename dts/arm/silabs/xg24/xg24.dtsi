@@ -24,16 +24,19 @@
 			compatible = "fixed-factor-clock";
 			clocks = <&hfxo>;
 		};
+
 		hfrcodpllrt: hfrcodpllrt {
 			#clock-cells = <0>;
 			compatible = "fixed-factor-clock";
 			clocks = <&hfrcodpll>;
 		};
+
 		sysclk: sysclk {
 			#clock-cells = <0>;
 			compatible = "fixed-factor-clock";
 			clocks = <&hfrcodpll>;
 		};
+
 		hclk: hclk {
 			#clock-cells = <0>;
 			compatible = "fixed-factor-clock";
@@ -41,6 +44,7 @@
 			/* Divider 1, 2, 4, 8, or 16 */
 			clock-div = <1>;
 		};
+
 		pclk: pclk {
 			#clock-cells = <0>;
 			compatible = "fixed-factor-clock";
@@ -48,6 +52,7 @@
 			/* Divider 1 or 2 */
 			clock-div = <2>;
 		};
+
 		lspclk: lspclk {
 			#clock-cells = <0>;
 			compatible = "fixed-factor-clock";
@@ -55,6 +60,7 @@
 			/* Fixed divider of 2 */
 			clock-div = <2>;
 		};
+
 		hclkdiv1024: hclkdiv1024 {
 			#clock-cells = <0>;
 			compatible = "fixed-factor-clock";
@@ -62,6 +68,7 @@
 			/* Fixed divider of 1024 */
 			clock-div = <1024>;
 		};
+
 		traceclk: traceclk {
 			#clock-cells = <0>;
 			compatible = "fixed-factor-clock";
@@ -69,61 +76,73 @@
 			/* Divider 1, 2, 3 or 4 */
 			clock-div = <1>;
 		};
+
 		em01grpaclk: em01grpaclk {
 			#clock-cells = <0>;
 			compatible = "fixed-factor-clock";
 			clocks = <&hfrcodpll>;
 		};
+
 		em01grpcclk: em01grpcclk {
 			#clock-cells = <0>;
 			compatible = "fixed-factor-clock";
 			clocks = <&hfrcodpll>;
 		};
+
 		iadcclk: iadcclk {
 			#clock-cells = <0>;
 			compatible = "fixed-factor-clock";
 			clocks = <&em01grpaclk>;
 		};
+
 		em23grpaclk: em23grpaclk {
 			#clock-cells = <0>;
 			compatible = "fixed-factor-clock";
 			clocks = <&lfrco>;
 		};
+
 		em4grpaclk: em4grpaclk {
 			#clock-cells = <0>;
 			compatible = "fixed-factor-clock";
 			clocks = <&lfrco>;
 		};
+
 		sysrtcclk: sysrtcclk {
 			#clock-cells = <0>;
 			compatible = "fixed-factor-clock";
 			clocks = <&lfrco>;
 		};
+
 		wdog0clk: wdog0clk {
 			#clock-cells = <0>;
 			compatible = "fixed-factor-clock";
 			clocks = <&lfrco>;
 		};
+
 		wdog1clk: wdog1clk {
 			#clock-cells = <0>;
 			compatible = "fixed-factor-clock";
 			clocks = <&lfrco>;
 		};
+
 		pcnt0clk: pcnt0clk {
 			#clock-cells = <0>;
 			compatible = "fixed-factor-clock";
 			clocks = <&em23grpaclk>;
 		};
+
 		eusart0clk: eusart0clk {
 			#clock-cells = <0>;
 			compatible = "fixed-factor-clock";
 			clocks = <&em01grpcclk>;
 		};
+
 		systickclk: systickclk {
 			#clock-cells = <0>;
 			compatible = "fixed-factor-clock";
 			clocks = <&hclk>;
 		};
+
 		vdac0clk: vdac0clk {
 			#clock-cells = <0>;
 			compatible = "fixed-factor-clock";
@@ -569,6 +588,7 @@
 			channel@0 {
 				reg = <0>;
 			};
+
 			channel@1 {
 				reg = <1>;
 			};
@@ -587,6 +607,7 @@
 			channel@0 {
 				reg = <0>;
 			};
+
 			channel@1 {
 				reg = <1>;
 			};
@@ -599,7 +620,6 @@
 		compatible = "silabs,gecko-hwinfo";
 		status = "disabled";
 	};
-
 };
 
 &nvic {
