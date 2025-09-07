@@ -6,3 +6,5 @@ description: NOR Flash devices ATXP032 on MSPI bus
 compatible: "mspi-atxp032"
 
 include: [mspi-device.yaml, "jedec,jesd216.yaml"]
+
+additional-property: true

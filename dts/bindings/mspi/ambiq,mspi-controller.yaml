@@ -51,3 +51,66 @@ properties:
     type: boolean
     description: |
         Define the Ambiq MSPI controller clock on D4 feature enable.
+
+child-binding:
+  properties:
+    mspi-io-mode:
+      type: string
+      required: true
+
+    mspi-data-rate:
+      type: string
+      required: true
+
+    mspi-hardware-ce-num:
+      type: int
+      required: true
+      description: |
+        It can be only CE0 or CE1,
+        but there could be multiple of CE0 or CE1 for a controller
+
+    rx-dummy:
+      type: int
+      required: true
+
+    tx-dummy:
+      type: int
+      required: true
+
+    read-command:
+      type: int
+      required: true
+
+    write-command:
+      type: int
+      required: true
+
+    command-length:
+      type: string
+      required: true
+
+    address-length:
+      type: string
+      required: true
+
+    ambiq,timing-config-mask:
+      type: int
+      required: true
+      description: |
+        It must be defined in the board DTS based on Soc series.
+
+    ambiq,timing-config:
+      type: array
+      default: [0, 0, 0, 0, 0, 0, 0]
+      description: |
+        Array of tuples to configure the timing parameters
+        default =
+        <
+          .ui8WriteLatency   = 0,
+          .ui8TurnAround     = 0,
+          .bTxNeg            = false,
+          .bRxNeg            = false,
+          .bRxCap            = false,
+          .ui32TxDQSDelay    = 0,
+          .ui32RxDQSDelay    = 0,
+        >
