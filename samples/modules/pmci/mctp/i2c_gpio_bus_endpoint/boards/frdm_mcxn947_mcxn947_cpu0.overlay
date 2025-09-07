@@ -2,7 +2,6 @@
 
 /* Sets up I2C and a GPIO on JP8 to use as our i2c bus for MCTP */
 
-
 &nxp_lcd_8080_connector {
 	status = "disabled";
 };
@@ -23,7 +22,6 @@
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 };
-
 
 / {
 	mctp_i2c: mctp_i2c {
