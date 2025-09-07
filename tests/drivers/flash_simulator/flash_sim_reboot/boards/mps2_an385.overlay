@@ -1,7 +1,7 @@
 #include <mem.h>
 
 / {
-	sram_203F0000:sram@203F0000 {
+	sram_203F0000: sram@203F0000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x203F0000 0x10000>;
 		zephyr,memory-region = "FlashSim";
