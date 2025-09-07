@@ -549,7 +549,9 @@ static void isr_tx(void *param)
 #if defined(CONFIG_BT_CTLR_PROFILE_ISR) || \
 	defined(HAL_RADIO_GPIO_HAVE_PA_PIN)
 	radio_tmr_end_capture();
-#endif /* CONFIG_BT_CTLR_PROFILE_ISR */
+#endif /* CONFIG_BT_CTLR_PROFILE_ISR ||
+	* HAL_RADIO_GPIO_HAVE_PA_PIN
+	*/
 
 #if defined(HAL_RADIO_GPIO_HAVE_LNA_PIN)
 	radio_gpio_lna_setup();
