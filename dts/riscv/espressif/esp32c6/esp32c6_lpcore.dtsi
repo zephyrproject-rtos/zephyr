@@ -41,7 +41,7 @@
 			compatible = "mmio-sram";
 			reg = <0x50000000 DT_SIZE_K(16)>;
 
-			shmlp: memory@50003fb0{
+			shmlp: memory@50003fb0 {
 				reg = <0x50003fb0 0x50>;
 			};
 		};
@@ -52,9 +52,8 @@
 			status = "disabled";
 			shared-memory = <&shmlp>;
 			shared-memory-size = <0x40>;
-			interrupts =
-				<PMU_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>,
-				<LP_CORE_PMU_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupts = <PMU_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>,
+				     <LP_CORE_PMU_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
 			#mbox-cells = <1>;
 		};
