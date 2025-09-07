@@ -6,10 +6,10 @@
 
 &rtc {
 	compatible = "st,stm32-rtc";
-	reg = < 0x40002800 0xc00 >;
-	interrupts = < 0x2 0x0 >;
-	clocks = < &rcc STM32_CLOCK_BUS_APB1 0x400 >, < &rcc STM32_SRC_LSE RTC_SEL(1)>;
-	prescaler = < 0x8000 >;
+	reg = <0x40002800 0xc00>;
+	interrupts = <0x2 0x0>;
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x400>, <&rcc STM32_SRC_LSE RTC_SEL(1)>;
+	prescaler = <0x8000>;
 	status = "okay";
 	wakeup-source;
 };
