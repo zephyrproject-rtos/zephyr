@@ -41,6 +41,7 @@
 				min-residency-us = <50>;
 				exit-latency-us = <5>;
 			};
+
 			/* Standby Mode */
 			standby: standby {
 				compatible = "zephyr,power-state";
@@ -48,6 +49,7 @@
 				min-residency-us = <1000>;
 				exit-latency-us = <20>;
 			};
+
 			/* Powerdown Mode */
 			powerdown: powerdown {
 				compatible = "zephyr,power-state";
@@ -70,21 +72,21 @@
 		clk_inro: clk_inro {
 			compatible = "fixed-clock";
 			#clock-cells = <0>;
-			clock-frequency = < DT_FREQ_K(8) >;
+			clock-frequency = <DT_FREQ_K(8)>;
 			status = "disabled";
 		};
 
 		clk_ibro: clk_ibro {
 			compatible = "fixed-clock";
 			#clock-cells = <0>;
-			clock-frequency = < 7372800 >;
+			clock-frequency = <7372800>;
 			status = "disabled";
 		};
 
 		clk_ertco: clk_ertco {
 			compatible = "fixed-clock";
 			#clock-cells = <0>;
-			clock-frequency = < 32768 >;
+			clock-frequency = <32768>;
 			status = "disabled";
 		};
 
@@ -183,7 +185,7 @@
 		status = "disabled";
 	};
 
-	wdt0: watchdog@3000  {
+	wdt0: watchdog@3000 {
 		compatible = "adi,max32-watchdog";
 		reg = <0x3000 0x400>;
 		interrupts = <1 0>;
@@ -200,11 +202,13 @@
 		clocks = <&gcr ADI_MAX32_CLOCK_BUS0 15>;
 		clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
 		prescaler = <1>;
+
 		pwm {
 			compatible = "adi,max32-pwm";
 			status = "disabled";
 			#pwm-cells = <3>;
 		};
+
 		counter {
 			compatible = "adi,max32-counter";
 			status = "disabled";
@@ -219,11 +223,13 @@
 		clocks = <&gcr ADI_MAX32_CLOCK_BUS0 16>;
 		clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
 		prescaler = <1>;
+
 		pwm {
 			compatible = "adi,max32-pwm";
 			status = "disabled";
 			#pwm-cells = <3>;
 		};
+
 		counter {
 			compatible = "adi,max32-counter";
 			status = "disabled";
@@ -238,11 +244,13 @@
 		clocks = <&gcr ADI_MAX32_CLOCK_BUS0 17>;
 		clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
 		prescaler = <1>;
+
 		pwm {
 			compatible = "adi,max32-pwm";
 			status = "disabled";
 			#pwm-cells = <3>;
 		};
+
 		counter {
 			compatible = "adi,max32-counter";
 			status = "disabled";
@@ -257,11 +265,13 @@
 		clocks = <&gcr ADI_MAX32_CLOCK_BUS0 18>;
 		clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
 		prescaler = <1>;
+
 		pwm {
 			compatible = "adi,max32-pwm";
 			status = "disabled";
 			#pwm-cells = <3>;
 		};
+
 		counter {
 			compatible = "adi,max32-counter";
 			status = "disabled";
@@ -276,11 +286,13 @@
 		clocks = <&gcr ADI_MAX32_CLOCK_BUS0 19>;
 		clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
 		prescaler = <1>;
+
 		pwm {
 			compatible = "adi,max32-pwm";
 			status = "disabled";
 			#pwm-cells = <3>;
 		};
+
 		counter {
 			compatible = "adi,max32-counter";
 			status = "disabled";
@@ -295,11 +307,13 @@
 		clocks = <&gcr ADI_MAX32_CLOCK_BUS0 20>;
 		clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
 		prescaler = <1>;
+
 		pwm {
 			compatible = "adi,max32-pwm";
 			status = "disabled";
 			#pwm-cells = <3>;
 		};
+
 		counter {
 			compatible = "adi,max32-counter";
 			status = "disabled";
@@ -312,6 +326,7 @@
 		interrupts = <24 0>;
 		status = "disabled";
 		prescaler = <1>;
+
 		counter {
 			compatible = "adi,max32-wut";
 			status = "disabled";
@@ -324,6 +339,7 @@
 		interrupts = <25 0>;
 		status = "disabled";
 		prescaler = <1>;
+
 		counter {
 			compatible = "adi,max32-wut";
 			status = "disabled";
