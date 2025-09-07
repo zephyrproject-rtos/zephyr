@@ -9,7 +9,6 @@
 / {
 	soc {
 		pinctrl: pin-controller@40008000 {
-
 			/omit-if-no-ref/ uart0a_rx_p0_0: uart0a_rx_p0_0 {
 				pinmux = <MAX32_PINMUX(0, 0, AF1)>;
 			};
