@@ -88,6 +88,7 @@
 			reg = <0x400a9000 0x1000>;
 			interrupt-names = "RELOAD-ERROR", "FAULT";
 			interrupts = <44 0>, <45 0>;
+
 			flexpwm0_pwm0: pwm0 {
 				compatible = "nxp,imx-pwm";
 				index = <0>;
@@ -203,7 +204,7 @@
 			status = "disabled";
 			clk-divider = <1>;
 			clk-source = <0>;
-			voltage-ref= <2>;
+			voltage-ref = <2>;
 			calibration-average = <128>;
 			power-level = <0>;
 			offset-value-a = <0>;

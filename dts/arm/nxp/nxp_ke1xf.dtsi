@@ -251,7 +251,7 @@
 			reg = <0x4007d000 0x1000>;
 
 			lpo: lpo128k {
-			/* LPO clock */
+				/* LPO clock */
 				compatible = "fixed-clock";
 				clock-frequency = <128000>;
 				#clock-cells = <0>;
