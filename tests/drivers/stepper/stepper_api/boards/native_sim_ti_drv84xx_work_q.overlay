@@ -7,7 +7,7 @@
 
 / {
 	aliases {
-		stepper =  &ti_drv84xx;
+		stepper = &ti_drv84xx;
 	};
 };
 
