@@ -30,7 +30,7 @@
 
 / {
 	aliases {
-	single-line-uart1 = &usart2;
-	single-line-uart2 = &lpuart1;
+		single-line-uart1 = &usart2;
+		single-line-uart2 = &lpuart1;
 	};
 };
