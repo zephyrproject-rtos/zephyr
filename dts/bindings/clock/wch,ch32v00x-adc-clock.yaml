@@ -3,20 +3,25 @@
 
 description: WCH CH32V003 ADC Peripheral Clock
 
-compatible: "wch,ch32v003-adc-clock"
+compatible: "wch,ch32v00x-adc-clock"
 
-include:
-  - name: wch,ch32v00x-adc-clock.yaml
-    property-blocklist:
-      - div
+include: [clock-controller.yaml, base.yaml]
 
 properties:
+  "#clock-cells":
+    const: 0
+
+  clocks:
+    type: phandle-array
+    required: true
+
   div:
     type: int
     required: true
     description: |
       ADC Clock source prescaler
     enum:
+      - 1
       - 2
       - 4
       - 6
@@ -29,3 +34,4 @@ properties:
       - 64
       - 96
       - 128
+

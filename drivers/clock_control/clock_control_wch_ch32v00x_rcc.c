@@ -115,6 +115,16 @@ static void wch_set_adc_prescaler(const struct clock_control_wch_config *config)
 	uint16_t clk_div = config->clocks_data[CH32_CLKID_CLK_ADC].clk_div;
 	uint32_t adcpre = 0;
 
+#ifndef CONFIG_SOC_CH32V003
+	if (clk_div == 1) {
+		config->rcc_regs->CFGR0 =
+			(config->rcc_regs->CFGR0 & ~RCC_ADCPRE) | RCC_CFGR0_ADC_CLK_MODE;
+		return;
+	} else {
+		config->rcc_regs->CFGR0 &= ~RCC_CFGR0_ADC_CLK_MODE;
+	}
+#endif /* !CONFIG_SOC_CH32V003 */
+
 	/* TODO: find better calculation than this lookup table */
 	switch (clk_div) {
 	case 2:
@@ -199,7 +209,7 @@ static int clock_control_wch_init(const struct device *dev)
 	}
 
 	/* Clear the interrupt flags. */
-	rcc_regs->INTR = RCC_CSSC | RCC_PLLRDYC | RCC_HSERDYC | RCC_LSIRDYC;
+	rcc_regs->INTR = RCC_CSSC | RCC_PLLRDYC | RCC_HSERDYC | RCC_HSIRDYC | RCC_LSIRDYC;
 
 	/* set prescaler */
 	wch_set_hb_prescaler(config);
