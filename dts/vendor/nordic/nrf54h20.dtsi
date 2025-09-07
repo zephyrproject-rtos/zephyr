@@ -138,6 +138,7 @@
 				min-residency-us = <1000>;
 				exit-latency-us = <7>;
 			};
+
 			s2ram: s2ram {
 				compatible = "zephyr,power-state";
 				power-state-name = "suspend-to-ram";
@@ -306,10 +307,12 @@
 				reg = <0xd000 0x1000>;
 				clocks = <&fll16m>;
 				clock-frequency = <DT_FREQ_M(320)>;
-				nordic,ficrs =
-					<&ficr NRF_FICR_TRIM_APPLICATION_HSFLL_TRIM_VSUP>,
-					<&ficr NRF_FICR_TRIM_APPLICATION_HSFLL_TRIM_COARSE_0>,
-					<&ficr NRF_FICR_TRIM_APPLICATION_HSFLL_TRIM_FINE_0>;
+				nordic,ficrs = <&ficr
+						NRF_FICR_TRIM_APPLICATION_HSFLL_TRIM_VSUP>,
+					       <&ficr
+						NRF_FICR_TRIM_APPLICATION_HSFLL_TRIM_COARSE_0>,
+					       <&ficr
+						NRF_FICR_TRIM_APPLICATION_HSFLL_TRIM_FINE_0>;
 				nordic,ficr-names = "vsup", "coarse", "fine";
 			};
 
@@ -361,10 +364,9 @@
 				status = "disabled";
 				clocks = <&fll16m>;
 				clock-frequency = <DT_FREQ_M(256)>;
-				nordic,ficrs =
-					<&ficr NRF_FICR_TRIM_RADIOCORE_HSFLL_TRIM_VSUP>,
-					<&ficr NRF_FICR_TRIM_RADIOCORE_HSFLL_TRIM_COARSE_1>,
-					<&ficr NRF_FICR_TRIM_RADIOCORE_HSFLL_TRIM_FINE_1>;
+				nordic,ficrs = <&ficr NRF_FICR_TRIM_RADIOCORE_HSFLL_TRIM_VSUP>,
+					       <&ficr NRF_FICR_TRIM_RADIOCORE_HSFLL_TRIM_COARSE_1>,
+					       <&ficr NRF_FICR_TRIM_RADIOCORE_HSFLL_TRIM_FINE_1>;
 				nordic,ficr-names = "vsup", "coarse", "fine";
 			};
 
@@ -588,7 +590,7 @@
 				#mbox-cells = <1>;
 			};
 
-			canpll: clock-controller@8c2000{
+			canpll: clock-controller@8c2000 {
 				compatible = "nordic,nrf-auxpll";
 				reg = <0x8c2000 0x1000>;
 				interrupts = <194 NRF_DEFAULT_IRQ_PRIORITY>;

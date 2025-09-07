@@ -855,7 +855,7 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			cpuapp_nvic: interrupt-controller@e000e100  {
+			cpuapp_nvic: interrupt-controller@e000e100 {
 				#address-cells = <1>;
 				compatible = "arm,v8m-nvic";
 				reg = <0xe000e100 0xc00>;
