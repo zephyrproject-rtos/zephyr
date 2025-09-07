@@ -17,7 +17,6 @@
 		pwm-led0 = &pwm_led_0;
 		pwm-0 = &pwm0;
 	};
-
 };
 
 &pwm0 {
