@@ -17,5 +17,4 @@
 		reg = <0x0>;
 		mspi-max-frequency = <48000000>;
 	};
-
 };
