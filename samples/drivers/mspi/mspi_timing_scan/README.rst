@@ -14,9 +14,9 @@ Building and Running
 
 The application will build only for a target that has a :ref:`devicetree <dt-guide>`
 ``flash0`` or ``psram0`` alias depending on the interface used.
-They refers to an entry with the following bindings as a compatible:
+They shall refer to a devicetree node with the following compatible string:
 
-* :dtcompatible:`ambiq,mspi-device`
+* :dtcompatible:`mspi-is25xX0xx` or :dtcompatible:`mspi-aps-z8`
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/mspi/mspi_timing_scan
