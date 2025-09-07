@@ -189,6 +189,18 @@ class Binding:
       If nodes with this binding's 'compatible' appear on a bus, a string
       describing the bus type (like "i2c"). None otherwise.
 
+    additional_property:
+      If true, a node with this binding's 'compatible' would inherits
+      bindings from its parent node's 'child-binding:', then the node's
+      final binding is built by merging this binding into that inherited
+      binding.
+
+      This lets a compatible-specific child binding extend the parent's
+      child-binding instead of replacing it. The inherited child-binding
+      is the merge base, and conflicting definitions are rejected except
+      that inherited 'required: true' is preserved. This does not merge
+      bindings from other compatible strings.
+
     child_binding:
       If this binding describes the properties of child nodes, then
       this is a Binding object for those children; it is None otherwise.
@@ -320,6 +332,11 @@ class Binding:
         "See the class docstring"
         return self.raw.get('on-bus')
 
+    @property
+    def additional_property(self) -> Optional[str]:
+        "See the class docstring"
+        return self.raw.get('additional-property', False)
+
     def _merge_includes(self, raw: dict, binding_path: Optional[str]) -> dict:
         # Constructor helper. Merges included files in
         # 'raw["include"]' into 'raw' using 'self._include_paths' as a
@@ -437,7 +454,8 @@ class Binding:
         # Allowed top-level keys. The 'include' key should have been
         # removed by _load_raw() already.
         ok_top = {"title", "description", "compatible", "bus",
-                  "on-bus", "properties", "child-binding", "examples"}
+                  "on-bus", "properties", "child-binding", "examples",
+                  "additional-property"}
 
         # Descriptive errors for legacy bindings.
         legacy_errors = {
@@ -476,12 +494,16 @@ class Binding:
             _err(f"malformed 'on-bus:' value in {self.path}, "
                  "expected string")
 
+        if ("additional-property" in raw
+            and not isinstance(raw["additional-property"], bool)):
+            _err(f"malformed 'additional-property:' value in {self.path}, "
+                 "expected boolean")
+
         self._check_properties()
 
         for key, val in raw.items():
-            if (key.endswith("-cells")
-                and not isinstance(val, list)
-                or not all(isinstance(elem, str) for elem in val)):
+            if (key.endswith("-cells") and not isinstance(val, list)
+                or isinstance(val, list) and not all(isinstance(elem, str) for elem in val)):
                 _err(f"malformed '{key}:' in {self.path}, "
                      "expected a list of strings")
 
@@ -1546,7 +1568,7 @@ class Node:
                 # that matching against bindings which do not specify a bus
                 # works the same way in Zephyr as it does elsewhere.
                 binding = None
-
+                bus = None
                 # Collect all available bindings for this compatible for warning purposes
                 available_bindings = [
                     (binding_bus, candidate_binding.path)
@@ -1587,7 +1609,13 @@ class Node:
                             )
                         continue
 
-                self._binding = binding
+                binding_from_parent = self._binding_from_parent()
+                if binding.additional_property and binding_from_parent:
+                    merged = deepcopy(binding_from_parent.raw)
+                    _merge_props(merged, binding.raw, bus, binding.path, True)
+                    self._binding = Binding(binding.path, self.edt._binding_fname2path, raw=merged)
+                else:
+                    self._binding = binding
                 return
         else:
             # No 'compatible' property. See if the parent binding has
