@@ -38,7 +38,7 @@
 
 / {
 	msc_disk0 {
-		status="okay";
+		status = "okay";
 		compatible = "zephyr,flash-disk";
 		partition = <&storage_partition>;
 		disk-name = "SD";

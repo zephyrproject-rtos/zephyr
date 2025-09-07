@@ -10,7 +10,6 @@
  * (and be extended to test) real hardware.
  */
 
-
 / {
 	sensing: sensing-node {
 		compatible = "zephyr,sensing";

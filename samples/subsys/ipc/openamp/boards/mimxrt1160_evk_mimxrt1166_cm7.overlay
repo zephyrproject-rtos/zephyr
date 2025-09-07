@@ -15,10 +15,10 @@
 	 * Define a subset of the OCRAM2 region for demo to use
 	 * Note that shared memory must have specific MPU attributes set.
 	 */
-	ocram2_overlay: memory@202c0000{
+	ocram2_overlay: memory@202c0000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x202c0000 DT_SIZE_K(16)>;
-		zephyr,memory-region="OCRAM2_OVERLAY";
-		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_IO) )>;
+		zephyr,memory-region = "OCRAM2_OVERLAY";
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_IO)>;
 	};
 };

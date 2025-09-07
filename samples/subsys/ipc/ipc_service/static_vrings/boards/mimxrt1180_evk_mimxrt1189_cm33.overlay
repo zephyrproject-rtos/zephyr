@@ -12,15 +12,15 @@
 	ocram2_ipc0: memory@20500000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x20500000 DT_SIZE_K(16)>;
-		zephyr,memory-region="OCRAM2_IPC0";
-		zephyr,memory-attr = <(DT_MEM_ARM(ATTR_MPU_IO))>;
+		zephyr,memory-region = "OCRAM2_IPC0";
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_IO)>;
 	};
 
 	ocram2_ipc1: memory@20504000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x20504000 DT_SIZE_K(16)>;
-		zephyr,memory-region="OCRAM2_IPC1";
-		zephyr,memory-attr = <(DT_MEM_ARM(ATTR_MPU_IO))>;
+		zephyr,memory-region = "OCRAM2_IPC1";
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_IO)>;
 	};
 
 	ipc {
