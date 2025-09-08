@@ -113,6 +113,8 @@ struct otbr_msg_ctx {
  */
 void openthread_border_router_post_message(struct otbr_msg_ctx *msg_context);
 
+bool openthread_border_router_check_packet_forwarding_rules(struct net_pkt *pkt);
+
 #ifdef __cplusplus
 }
 #endif
