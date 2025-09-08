@@ -37,13 +37,16 @@ USB interface without a separate JTAG debugger.
 Hardware
 ********
 
+.. include:: ../../../espressif/common/soc-esp32-features.rst
+   :start-after: espressif-soc-esp32-features
+
 Supported Features
-******************
+==================
 
 .. zephyr:board-supported-hw::
 
 Functionality Overview
-**********************
+======================
 
 The block diagram below shows the main components of ESP32-Ethernet-Kit
 and their interconnections.
@@ -55,7 +58,6 @@ and their interconnections.
 
     ESP32-Ethernet-Kit block diagram
 
-
 Functional Description
 ======================
 
@@ -63,7 +65,6 @@ The following figures and tables describe the key components, interfaces,
 and controls of the ESP32-Ethernet-Kit.
 
 .. _get-started-esp32-ethernet-kit-a-v1.2-layout:
-
 
 Ethernet Board (A)
 ------------------
@@ -187,9 +188,8 @@ PoE. When the Ethernet Board (A) detects 5 V power output from the PoE Board
 
 .. _get-started-esp32-ethernet-kit-v1.2-setup-options:
 
-
 Setup Options
-*************
+=============
 
 This section describes options to configure the ESP32-Ethernet-Kit hardware.
 
@@ -210,7 +210,6 @@ DIP SW   GPIO Pin
  3       GPIO15
  4       GPIO14
 =======  ================
-
 
 RMII Clock Selection
 ====================
@@ -267,13 +266,11 @@ sheet 2, location D2. Please note that if the APLL is already used for other
 purposes (e.g. I2S peripheral), then you have no choice but use an external
 RMII clock.
 
-
 GPIO Allocation
-***************
+===============
 
 This section describes allocation of ESP32 GPIOs to specific interfaces or
 functions of the ESP32-Ethernet-Kit.
-
 
 IP101GRI (PHY) Interface
 ========================
@@ -312,7 +309,6 @@ No.   ESP32 Pin (MAC)   IP101GRI (PHY)
     be selected from GPIO0, GPIO16 or GPIO17 and it can not be changed through
     GPIO Matrix.
 
-
 GPIO Header 1
 =============
 
@@ -329,7 +325,6 @@ No.   ESP32 Pin
  5    GPIO36
  6    GPIO39
 ====  ================
-
 
 GPIO Header 2
 =============
@@ -413,22 +408,8 @@ GPIO Allocation Summary
        to use these pins, please solder a module without PSRAM memory inside,
        e.g. the ESP32-WROOM-32D or ESP32-SOLO-1.
 
-System Requirements
-*******************
-
-Espressif HAL requires WiFi and Bluetooth binary blobs in order work. Run the command
-below to retrieve those files.
-
-.. code-block:: console
-
-   west blobs fetch hal_espressif
-
-.. note::
-
-   It is recommended running the command above after :file:`west update`.
-
 Enabling Ethernet
-*****************
+=================
 
 Enable Ethernet MAC, PHY and MDIO; add these to your device tree overlay:
 
@@ -455,10 +436,16 @@ Enable Ethernet in KConfig:
     CONFIG_NET_L2_ETHERNET=y
 
 Board Init
-**********
+==========
 
 RESET_N (GPIO5) is automatically set high to enable the Ethernet PHY
 during board initialization (board_init.c)
+
+System Requirements
+*******************
+
+.. include:: ../../../espressif/common/system-requirements.rst
+   :start-after: espressif-system-requirements
 
 Programming and Debugging
 *************************
@@ -484,4 +471,3 @@ References
 
 .. _`ESP32-Ethernet-Kit V1.2 Ethernet Board (A) Schematic`: https://dl.espressif.com/dl/schematics/SCH_ESP32-Ethernet-Kit_A_V1.2_20200528.pdf
 .. _`ESP32-WROVER-E Datasheet`: https://www.espressif.com/sites/default/files/documentation/esp32-wrover-e_esp32-wrover-ie_datasheet_en.pdf
-.. _`OpenOCD ESP32`: https://github.com/espressif/openocd-esp32/releases
