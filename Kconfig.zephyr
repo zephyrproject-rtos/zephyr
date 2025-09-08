@@ -3,6 +3,7 @@
 # Copyright (c) 2014-2015 Wind River Systems, Inc.
 # Copyright (c) 2016 Intel Corporation
 # Copyright (c) 2023 Nordic Semiconductor ASA
+# Copyright (c) 2025 Baumer (www.baumer.com)
 # SPDX-License-Identifier: Apache-2.0
 
 source "Kconfig.constants"
@@ -202,11 +203,19 @@ config CUSTOM_LINKER_SCRIPT
 	  linker script and avoid having to change the script provided by
 	  Zephyr.
 
-config KERNEL_ENTRY
-	string "Kernel entry symbol"
-	default "__start"
+config CUSTOM_SOC_KERNEL_ENTRY
+	bool "SOC has custom entry code before the arch/platform entry code"
+	default n
 	help
-	  Code entry symbol, to be set at linking phase.
+	  All startup code (typically __start in reset.S), must set the z_kernel_entry
+	  symbol to that entry point.
+	  If the SOC requires custom entry code to be executed before jumping
+	  to the architecture/platform specific entry code (typically start), this option
+	  must be enabled by the SOC relevant KConfig, to avoid duplicate
+	  definition of the z_kernel_entry symbol.
+	  SOCs not relying on architecture/platform entry code, but implementing
+	  their own independent entry code, leave this option disabled.
+
 
 config LINKER_SORT_BY_ALIGNMENT
 	bool "Sort input sections by alignment"

@@ -1,5 +1,7 @@
 /*
  * Copyright (c) 2016 Cadence Design Systems, Inc.
+ * Copyright (c) 2025 Baumer (www.baumer.com)
+ *
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -12,6 +14,12 @@
 #include <xtensa/config/specreg.h>
 #include <xtensa/config/system.h>  /* for XSHAL_USE_ABSOLUTE_LITERALS only */
 #include <xtensa/xtruntime-core-state.h>
+
+
+#if !defined(CONFIG_CUSTOM_SOC_KERNEL_ENTRY)
+GTEXT(z_kernel_entry)
+SET_SYM(z_kernel_entry, __start)
+#endif
 
 /*
  * The following reset vector avoids initializing certain registers already

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2010-2015 Wind River Systems, Inc.
+ * Copyright (c) 2025 Baumer (www.baumer.com)
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -39,6 +40,10 @@
 	GDATA(_gdt)
 #endif
 
+#if !defined(CONFIG_CUSTOM_SOC_KERNEL_ENTRY)
+GTEXT(z_kernel_entry)
+SET_SYM(z_kernel_entry, __start)
+#endif
 
 #if defined(CONFIG_X86_SSE)
 	GDATA(_sse_mxcsr_default_value)

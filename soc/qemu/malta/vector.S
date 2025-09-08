@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021 Antony Pavlov <antonynpavlov@gmail.com>
+ * Copyright (c) 2025 Baumer (www.baumer.com)
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +13,9 @@ GTEXT(__initialize)
 
 /* Exports */
 GTEXT(__start)
+
+GTEXT(z_kernel_entry)
+SET_SYM(z_kernel_entry, __start)
 
 SECTION_FUNC(vectors, __start)
 	/* Call into Zephyr initialization. */

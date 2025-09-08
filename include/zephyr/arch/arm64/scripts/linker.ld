@@ -75,7 +75,7 @@ MEMORY
 #endif
 }
 
-ENTRY(CONFIG_KERNEL_ENTRY)
+ENTRY(z_kernel_entry)
 
 SECTIONS
 {

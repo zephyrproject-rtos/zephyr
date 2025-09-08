@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021 Andes Technology Corporation
+ * Copyright (c) 2025 Baumer (www.baumer.com)
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +11,9 @@
 
 /* exports */
 GTEXT(entry)
+
+GTEXT(z_kernel_entry)
+SET_SYM(z_kernel_entry, entry)
 
 SECTION_FUNC(init, entry)
 	/* Disable linker relaxation before GP register initialization. */

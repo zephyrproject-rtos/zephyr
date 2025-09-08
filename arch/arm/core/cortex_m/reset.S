@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2013-2014 Wind River Systems, Inc.
+ * Copyright (c) 2025 Baumer (www.baumer.com)
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -33,6 +34,11 @@ GTEXT(z_arm_init_arch_hw_at_boot)
 #endif
 #if defined(CONFIG_PM_S2RAM)
 GTEXT(arch_pm_s2ram_resume)
+#endif
+
+#if !defined(CONFIG_CUSTOM_SOC_KERNEL_ENTRY)
+GTEXT(z_kernel_entry)
+SET_SYM(z_kernel_entry, __start)
 #endif
 
 /**

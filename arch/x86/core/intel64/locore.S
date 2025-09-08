@@ -1,5 +1,7 @@
 /*
  * Copyright (c) 2019 Intel Corporation
+ * Copyright (c) 2025 Baumer (www.baumer.com)
+ *
  * SPDX-License-Identifier: Apache-2.0
  */
 #define LOAPIC_BASE_ADDRESS DT_REG_ADDR(DT_NODELABEL(intc_loapic))
@@ -111,6 +113,12 @@
  * scribble over it with 8 0x90 bytes (which is the 1-byte NOP) and be
  * sure to get all of it without overwriting anything.
  */
+
+#if !defined(CONFIG_CUSTOM_SOC_KERNEL_ENTRY)
+GTEXT(z_kernel_entry)
+SET_SYM(z_kernel_entry, __start)
+#endif
+
 .section .locore,"ax"
 .code32
 .globl __start
