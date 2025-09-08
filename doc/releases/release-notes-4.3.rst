@@ -185,6 +185,11 @@ New APIs and options
 
 .. zephyr-keep-sorted-stop
 
+* Devicetree
+
+  * :c:macro:`DT_NODELABEL_C_TOKEN`
+  * :c:macro:`DT_NODELABEL_C_TOKEN_BY_IDX`
+
 New Boards
 **********
 
