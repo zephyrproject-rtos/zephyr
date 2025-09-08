@@ -958,9 +958,9 @@ static void eusart_configure_peripheral(const struct device *dev, bool enable)
 
 	EUSART_UartInitHf(config->eusart, &eusartInit);
 
-	if (IS_ENABLED(CONFIG_UART_SILABS_EUSART_ASYNC)) {
-		config->eusart->CFG1 |= EUSART_CFG1_RXTIMEOUT_ONEFRAME;
-	}
+#ifdef CONFIG_UART_SILABS_EUSART_ASYNC
+	config->eusart->CFG1 |= EUSART_CFG1_RXTIMEOUT_ONEFRAME;
+#endif
 
 	if (enable) {
 		EUSART_Enable(config->eusart, eusartEnable);
