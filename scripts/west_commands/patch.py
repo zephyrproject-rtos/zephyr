@@ -365,21 +365,14 @@ class Patch(WestCommand):
             apply_cmd_list = shlex.split(apply_cmd)
 
             self.dbg(f"reading patch file {pth}")
-            patch_file_data = None
-
+            expect_sha256 = patch_info["sha256sum"]
             try:
-                with open(patch_path, "rb") as pf:
-                    patch_file_data = pf.read()
+                actual_sha256 = self.get_file_sha256sum(patch_path)
             except Exception as e:
                 self.err(f"failed to read {pth}: {e}")
                 failed_patch = pth
                 break
 
-            self.dbg("checking patch integrity... ", end="")
-            expect_sha256 = patch_info["sha256sum"]
-            hasher = hashlib.sha256()
-            hasher.update(patch_file_data)
-            actual_sha256 = hasher.hexdigest()
             if actual_sha256 != expect_sha256:
                 self.dbg("FAIL")
                 self.err(
@@ -391,7 +384,6 @@ class Patch(WestCommand):
                 break
             self.dbg("OK")
             patch_count += 1
-            patch_file_data = None
 
             mod_path = Path(args.west_workspace) / mod
             patched_mods.add(mod)
@@ -529,12 +521,14 @@ class Patch(WestCommand):
 
     @staticmethod
     def get_file_sha256sum(filename: Path) -> str:
-        with open(filename, "rb") as fp:
-            # NOTE: If python 3.11 is the minimum, the following can be replaced with:
-            # digest = hashlib.file_digest(fp, "sha256")
-            digest = hashlib.new("sha256")
-            while chunk := fp.read(2**10):
-                digest.update(chunk)
+        # Read as text to normalize line endings
+        with open(filename, encoding="utf-8", newline=None) as fp:
+            content = fp.read()
+
+        # NOTE: If python 3.11 is the minimum, the following can be replaced with:
+        # digest = hashlib.file_digest(BytesIO(content_bytes), "sha256")
+        digest = hashlib.new("sha256")
+        digest.update(content.encode("utf-8"))
 
         return digest.hexdigest()
 
