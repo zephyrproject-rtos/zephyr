@@ -29,8 +29,10 @@
 #include <kernel_arch_data.h>
 #include <kernel_offsets.h>
 
+#if !(defined(CONFIG_CPU_CORTEX_M) && defined(CONFIG_USE_SWITCH))
 GEN_OFFSET_SYM(_thread_arch_t, basepri);
 GEN_OFFSET_SYM(_thread_arch_t, swap_return_value);
+#endif
 
 #if defined(CONFIG_CPU_AARCH32_CORTEX_A) || defined(CONFIG_CPU_AARCH32_CORTEX_R)
 GEN_OFFSET_SYM(_thread_arch_t, exception_depth);
