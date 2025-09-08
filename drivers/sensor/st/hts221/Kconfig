@@ -60,4 +60,13 @@ config HTS221_ODR
 	  Sensor output data rate expressed in samples per second.
 	  Data rates supported by the chip are 1, 7 and 12.5.
 
+config EMUL_HTS221
+	bool "Emulate a st hts221 sensor"
+	default y
+	depends on EMUL
+	depends on HTS221
+	
+	help
+	  This is an emulator for the st hts221 sensor.
+
 endif # HTS221
