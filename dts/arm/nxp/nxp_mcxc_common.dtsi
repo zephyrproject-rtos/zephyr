@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -321,6 +321,14 @@
 				reg = <1>;
 				status = "disabled";
 			};
+		};
+
+		cmp: cmp@40073000 {
+			compatible = "nxp,cmp";
+			reg = <0x40073000 0x1000>;
+			interrupts = <16 0>;
+			status = "disabled";
+			clocks = <&sim KINETIS_SIM_CMP_CLK 0 0>;
 		};
 	};
 };
