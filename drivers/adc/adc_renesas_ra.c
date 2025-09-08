@@ -98,16 +98,6 @@ static adc_sample_state_reg_t map_channel_to_sample_state_reg(uint8_t channel_id
 	return ADC_SAMPLE_STATE_CHANNEL_16_TO_31;
 }
 
-/**
- * @brief Setup channels before starting to scan ADC
- *
- * @param dev RA ADC device
- * @param channel_cfg channel configuration
- *
- * @return 0 on success
- * @return -ENOTSUP if channel id or differential is wrong value
- * @return -EINVAL if channel configuration is invalid
- */
 static int adc_ra_channel_setup(const struct device *dev, const struct adc_channel_cfg *channel_cfg)
 {
 	fsp_err_t fsp_err = FSP_SUCCESS;
@@ -199,9 +189,6 @@ static void renesas_ra_adc_callback(adc_callback_args_t *p_args)
 	}
 }
 
-/**
- * Voltage reference covert handler
- */
 static int adc_map_vref(const struct adc_ra_config *cfg, adc_extended_cfg_t *extend)
 {
 	switch (cfg->variant) {
@@ -240,15 +227,6 @@ static int adc_map_vref(const struct adc_ra_config *cfg, adc_extended_cfg_t *ext
 	}
 }
 
-/**
- * @brief Check if buffer in @p sequence is big enough to hold all ADC samples
- *
- * @param dev RA ADC device
- * @param sequence ADC sequence description
- *
- * @return 0 on success
- * @return -ENOMEM if buffer is not big enough
- */
 static int adc_ra_check_buffer_size(const struct device *dev, const struct adc_sequence *sequence)
 {
 	uint8_t channels = 0;
@@ -268,19 +246,6 @@ static int adc_ra_check_buffer_size(const struct device *dev, const struct adc_s
 	return 0;
 }
 
-/**
- * @brief Start processing read request
- *
- * @param dev RA ADC device
- * @param sequence ADC sequence description
- *
- * @return 0 on success
- * @return -ENOTSUP if requested resolution or channel is out side of supported
- *         range
- * @return -ENOMEM if buffer is not big enough
- *         (see @ref adc_ra_check_buffer_size)
- * @return other error code returned by adc_context_wait_for_completion
- */
 static int adc_ra_start_read(const struct device *dev, const struct adc_sequence *sequence)
 {
 	const struct adc_ra_config *config = dev->config;
@@ -336,20 +301,6 @@ static int adc_ra_start_read(const struct device *dev, const struct adc_sequence
 	return 0;
 }
 
-/**
- * @brief Start processing read request asynchronously
- *
- * @param dev RA ADC device
- * @param sequence ADC sequence description
- * @param async async pointer to asynchronous signal
- *
- * @return 0 on success
- * @return -ENOTSUP if requested resolution or channel is out side of supported
- *         range
- * @return -ENOMEM if buffer is not big enough
- *         (see @ref adc_ra_check_buffer_size)
- * @return other error code returned by adc_context_wait_for_completion
- */
 static int adc_ra_read_async(const struct device *dev, const struct adc_sequence *sequence,
 			     struct k_poll_signal *async)
 {
@@ -363,19 +314,6 @@ static int adc_ra_read_async(const struct device *dev, const struct adc_sequence
 	return err;
 }
 
-/**
- * @brief Start processing read request synchronously
- *
- * @param dev RA ADC device
- * @param sequence ADC sequence description
- *
- * @return 0 on success
- * @return -ENOTSUP if requested resolution or channel is out side of supported
- *         range
- * @return -ENOMEM if buffer is not big enough
- *         (see @ref adc_ra_check_buffer_size)
- * @return other error code returned by adc_context_wait_for_completion
- */
 static int adc_ra_read(const struct device *dev, const struct adc_sequence *sequence)
 {
 	return adc_ra_read_async(dev, sequence, NULL);
@@ -399,16 +337,6 @@ static void adc_context_update_buffer_pointer(struct adc_context *ctx, bool repe
 	}
 }
 
-/**
- * @brief Function called on init for each RA ADC device. It setups all
- *        channels to return constant 0 mV and create acquisition thread.
- *
- * @param dev RA ADC device
- *
- * @return -EIO if error
- *
- * @return 0 on success
- */
 static int adc_ra_init(const struct device *dev)
 {
 	const struct adc_ra_config *config = dev->config;
