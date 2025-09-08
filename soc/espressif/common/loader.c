@@ -23,6 +23,7 @@
 #include <bootloader_common.h>
 #include <esp_cpu.h>
 
+#include <zephyr/kernel_entry.h>
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/arch/common/init.h>
 
@@ -87,6 +88,7 @@
 
 void __start(void);
 static HDR_ATTR void (*_entry_point)(void) = &__start;
+K_ENTRY_DEFINE(__start);
 
 esp_image_header_t WORD_ALIGNED_ATTR bootloader_image_hdr;
 extern uint32_t _image_irom_start, _image_irom_size, _image_irom_vaddr;

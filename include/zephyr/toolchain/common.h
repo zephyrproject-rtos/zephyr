@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2010-2014 Wind River Systems, Inc.
  * Copyright (c) 2025 Siemens AG
+ * Copyright (c) 2025 Baumer (www.baumer.com)
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -53,6 +54,7 @@
 
 #ifdef _ASMLANGUAGE
   #define REQUIRES(sym) .set sym ## _Requires, sym
+  #define SET_SYM(sym, expr) .set sym, expr
 #else
   #define REQUIRES(sym) __asm__ (".set " # sym "_Requires, " # sym "\n\t");
 #endif

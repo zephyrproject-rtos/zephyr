@@ -20,6 +20,6 @@ config MULTI_LEVEL_INTERRUPTS
 config 2ND_LEVEL_INTERRUPTS
 	default n
 
-config KERNEL_ENTRY
-	default "__start"
+config K_ENTRY_SOC_CUSTOM_ARCH_EXTENSION
+	default y
 endif

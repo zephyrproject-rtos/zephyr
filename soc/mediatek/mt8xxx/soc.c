@@ -151,6 +151,8 @@ void mt8196_intc_init(void)
  */
 __asm__(".align 4\n\t"
 	".global mtk_adsp_boot_entry\n\t"
+	".global k_entry\n\t"
+	".set k_entry, mtk_adsp_boot_entry\n\t"
 	"mtk_adsp_boot_entry:\n\t"
 	"  movi  a0, 0x4002f\n\t" /* WOE|EXCM|INTLVL=15 */
 	"  wsr   a0, PS\n\t"

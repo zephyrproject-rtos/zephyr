@@ -1,8 +1,11 @@
 /*
  * Copyright (c) 2016 Cadence Design Systems, Inc.
+ * Copyright (c) 2025 Baumer (www.baumer.com)
+ *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/toolchain.h>
 #include <xtensa/coreasm.h>
 #include <xtensa/corebits.h>
 #include <xtensa/cacheasm.h>
@@ -12,6 +15,12 @@
 #include <xtensa/config/specreg.h>
 #include <xtensa/config/system.h>  /* for XSHAL_USE_ABSOLUTE_LITERALS only */
 #include <xtensa/xtruntime-core-state.h>
+
+
+#if !defined(CONFIG_K_ENTRY_SOC_CUSTOM_ARCH_EXTENSION)
+GTEXT(k_entry)
+SET_SYM(k_entry, __start)
+#endif
 
 /*
  * The following reset vector avoids initializing certain registers already

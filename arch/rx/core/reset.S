@@ -6,6 +6,11 @@
 
 #include <zephyr/toolchain.h>
 
+#if !defined(CONFIG_K_ENTRY_SOC_CUSTOM_ARCH_EXTENSION)
+GTEXT(k_entry)
+SET_SYM(k_entry, __start)
+#endif
+
 .list
 .section .text
 GTEXT(__start)

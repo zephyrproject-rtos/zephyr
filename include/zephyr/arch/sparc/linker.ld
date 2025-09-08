@@ -16,7 +16,7 @@
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/linker/linker-tool.h>
 
-ENTRY(CONFIG_KERNEL_ENTRY)
+ENTRY(k_entry)
 
 SECTIONS
     {

@@ -53,7 +53,7 @@ MEMORY
         IDT_LIST                : ORIGIN = 0xFFFFF7FF, LENGTH = 2K
     }
 
-ENTRY(CONFIG_KERNEL_ENTRY)
+ENTRY(k_entry)
 
 SECTIONS
     {

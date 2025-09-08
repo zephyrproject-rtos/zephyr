@@ -9,6 +9,9 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/arch/riscv/csr.h>
 
+GTEXT(k_entry)
+SET_SYM(k_entry, __nuclei_start)
+
 GTEXT(__nuclei_start)
 SECTION_FUNC(init, __nuclei_start)
 	/* Disable Global Interrupt */

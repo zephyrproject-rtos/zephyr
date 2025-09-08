@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019 Carlo Caione <ccaione@baylibre.com>
+ * Copyright (c) 2025 Baumer (www.baumer.com)
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -106,6 +107,11 @@ out:
  * privileged level. At this point, neither SP_EL0 nor SP_ELx point to a valid
  * area in SRAM.
  */
+
+#if !defined(CONFIG_K_ENTRY_SOC_CUSTOM_ARCH_EXTENSION)
+GTEXT(k_entry)
+SET_SYM(k_entry, __start)
+#endif
 
 GTEXT(__reset)
 SECTION_SUBSEC_FUNC(TEXT,_reset_section,__reset)

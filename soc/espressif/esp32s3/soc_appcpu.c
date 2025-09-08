@@ -11,6 +11,7 @@
 #include <xtensa/config/core-isa.h>
 #include <xtensa/corebits.h>
 
+#include <zephyr/kernel_entry.h>
 #include <zephyr/kernel_structs.h>
 #include <string.h>
 #include <zephyr/toolchain/gcc.h>
@@ -37,6 +38,7 @@
 
 void __appcpu_start(void);
 static HDR_ATTR void (*_entry_point)(void) = &__appcpu_start;
+K_ENTRY_DEFINE(__appcpu_start);
 
 extern FUNC_NORETURN void z_prep_c(void);
 

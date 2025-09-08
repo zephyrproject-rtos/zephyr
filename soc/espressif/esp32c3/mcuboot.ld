@@ -34,7 +34,7 @@ MEMORY
 }
 
 /*  Default entry point:  */
-ENTRY(CONFIG_KERNEL_ENTRY)
+ENTRY(k_entry)
 
 SECTIONS
 {
