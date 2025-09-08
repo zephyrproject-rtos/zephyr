@@ -14,5 +14,5 @@ tests:
       - lpcxpresso55s36
   drivers.build_all.opamp.nxp_opamp_fast:
     platform_allow:
-      - frdm_mcxa266
+      - frdm_mcxa366
       - frdm_mcxa346
