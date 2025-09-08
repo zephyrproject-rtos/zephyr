@@ -40,6 +40,7 @@
 	aliases {
 		led0 = &led1;
 		led1 = &led3;
+		watchdog0 = &iwdt;
 	};
 };
 
@@ -117,4 +118,10 @@
 			reg = <0X0 DT_SIZE_K(8)>;
 		};
 	};
+};
+
+&iwdt {
+	window-start = <0x3000>;
+	window-end = <0x0300>;
+	status = "okay";
 };
