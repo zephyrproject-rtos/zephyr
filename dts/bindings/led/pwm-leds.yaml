@@ -8,6 +8,8 @@ description: |
 
 compatible: "pwm-leds"
 
+include: base.yaml
+
 child-binding:
   description: PWM LED child node
 
