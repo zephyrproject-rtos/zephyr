@@ -3328,6 +3328,11 @@ int bt_bap_unicast_client_qos(struct bt_conn *conn, struct bt_bap_unicast_group 
 			continue;
 		}
 
+		if (stream->ep == NULL) {
+			/* Only consider configured streams */
+			continue;
+		}
+
 		ep = stream->ep;
 		dir = ep->dir;
 
