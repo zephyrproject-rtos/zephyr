@@ -48,9 +48,8 @@ properties:
 
 child-binding:
   child-binding:
-    child-binding:
-      include: video-interfaces.yaml
+    include: video-interfaces.yaml
 
-      properties:
-        bus-type:
-          required: true
+    properties:
+      bus-type:
+        required: true
