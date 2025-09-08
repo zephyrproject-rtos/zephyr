@@ -1,0 +1,36 @@
+description: DALI interface for nxp lpc11u6x
+
+compatible: "nxp,dali-lpc11u6x"
+
+include: base.yaml
+
+properties:
+  tx-rise-fall-delta-us:
+    type: int
+    description: |
+      The time difference of the delays for falling versus the delay for
+      rising edges when transmitting DALI frames. This value needs to be
+      set to transmit with correct bit timings.
+      The delay is measured in micro seconds.
+
+  rx-rise-fall-delta-us:
+    type: int
+    description: |
+      The time difference of the delays for falling versus the delay for
+      rising edges when receiving DALI frames. This value needs to be set
+      for correct identification of legal bit timings.
+      The delay is measured in micro seconds.
+
+  tx-rx-propagation-min-us:
+    type: int
+    description: |
+      The minimal time from a transmitted change to read observation. This
+      value needs to be set for proper collision detection.
+      The delay is measured in micro seconds.
+
+  tx-rx-propagation-max-us:
+    type: int
+    description: |
+      The maximal time from a transmitted change to read observation.
+      This value needs to be set for proper collision detection.
+      The delay is measured in micro seconds.
