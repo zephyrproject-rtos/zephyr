@@ -31,11 +31,6 @@ It features:
    The ESP32-C3 does not have native USB, it has an on-chip USB-serial converter
    instead.
 
-Supported Features
-==================
-
-.. zephyr:board-supported-hw::
-
 Connections and IOs
 ===================
 
@@ -50,11 +45,16 @@ See the following image:
 It also features a 0.42 inch OLED display, driven by a SSD1306-compatible chip.
 It is connected over I2C: SDA on GPIO5, SCL on GPIO6.
 
-Prerequisites
-=============
+Supported runners
+*****************
 
-Espressif HAL requires WiFi and Bluetooth binary blobs. Run the command below to
-retrieve those files.
+.. zephyr:board-supported-runners::
+
+System requirements
+*******************
+
+Espressif HAL requires WiFi and Bluetooth binary blobs in order work. Run the command
+below to retrieve those files.
 
 .. code-block:: console
 
@@ -69,68 +69,17 @@ Programming and Debugging
 
 .. zephyr:board-supported-runners::
 
-Standalone application
-======================
+.. include:: ../../../espressif/common/building-flashing.rst
+   :start-after: espressif-building-flashing
 
-The board can be loaded using a single binary image, without 2nd stage bootloader.
-It is the default option when building the application without additional configuration.
+.. include:: ../../../espressif/common/board-variants.rst
+   :start-after: espressif-board-variants
 
-.. note::
+Debugging
+=========
 
-   This mode does not provide any security features nor OTA updates.
-
-Use the following command to build a sample hello_world application:
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/hello_world
-   :board: esp32c3_042_oled
-   :goals: build
-
-Sysbuild
-========
-
-:ref:`sysbuild` makes it possible to build and flash all necessary images needed to
-bootstrap the board.
-
-By default, the ESP32 sysbuild configuration creates bootloader (MCUboot) and
-application images.
-
-To build the sample application using sysbuild, use this command:
-
-.. zephyr-app-commands::
-   :tool: west
-   :zephyr-app: samples/hello_world
-   :board: esp32c3_042_oled
-   :goals: build
-   :west-args: --sysbuild
-   :compact:
-
-Flashing
-========
-
-For the :code:`Hello, world!` application, follow the instructions below.
-Assuming the board is connected to ``/dev/ttyACM0`` on Linux.
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/hello_world
-   :board: esp32c3_042_oled
-   :goals: flash
-   :flash-args: --esp-device /dev/ttyACM0
-
-Since the Zephyr console is by default on the ``usb_serial`` device, we use
-the espressif monitor utility to connect to the console.
-
-.. code-block:: console
-
-   $ west espressif monitor -p /dev/ttyACM0
-
-After the board has automatically reset and booted, you should see the following
-message in the monitor:
-
-.. code-block:: console
-
-   ***** Booting Zephyr OS vx.x.x-xxx-gxxxxxxxxxxxx *****
-   Hello World! esp32c3_042_oled
+.. include:: ../../../espressif/common/openocd-debugging.rst
+   :start-after: espressif-openocd-debugging
 
 References
 **********
