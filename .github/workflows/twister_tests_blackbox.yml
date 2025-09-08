@@ -42,7 +42,6 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
         cache: pip
-        cache-dependency-path: scripts/requirements-actions.txt
 
     - name: Setup Zephyr project
       uses: zephyrproject-rtos/action-zephyr-setup@b2453c72966ee67b1433be22b250348d48283286 # v1.0.7
