@@ -252,7 +252,7 @@ static void eth_xlnx_gem_iface_init(struct net_if *iface)
 
 	/* Initialize TX-related semaphores */
 	k_sem_init(&dev_data->tx_done_sem, 0, 1);
-	k_sem_init(&dev_data->txbd_ring.ring_sem, 1, 1);
+	k_sem_init(&dev_data->tx_bd_ring.ring_sem, 1, 1);
 
 	/* Initialize the device's interrupt */
 	dev_conf->config_func(dev);
@@ -398,20 +398,20 @@ static int eth_xlnx_gem_send(const struct device *dev, struct net_pkt *pkt)
 		   dev_conf->tx_buffer_size);
 
 	if (dev_conf->defer_txd_to_queue) {
-		k_sem_take(&(dev_data->txbd_ring.ring_sem), K_FOREVER);
+		k_sem_take(&(dev_data->tx_bd_ring.ring_sem), K_FOREVER);
 	} else {
 		sys_write32(ETH_XLNX_GEM_IXR_TX_COMPLETE_BIT,
 			    dev_conf->base_addr + ETH_XLNX_GEM_IDR_OFFSET);
 	}
 
-	if (bds_reqd > dev_data->txbd_ring.free_bds) {
+	if (bds_reqd > dev_data->tx_bd_ring.free_bds) {
 		LOG_ERR("%s cannot TX, packet length %hu requires "
 			"%hhu BDs, current free count = %hhu",
 			dev->name, tx_data_length, bds_reqd,
-			dev_data->txbd_ring.free_bds);
+			dev_data->tx_bd_ring.free_bds);
 
 		if (dev_conf->defer_txd_to_queue) {
-			k_sem_give(&(dev_data->txbd_ring.ring_sem));
+			k_sem_give(&(dev_data->tx_bd_ring.ring_sem));
 		} else {
 			sys_write32(ETH_XLNX_GEM_IXR_TX_COMPLETE_BIT,
 				    dev_conf->base_addr + ETH_XLNX_GEM_IER_OFFSET);
@@ -422,15 +422,15 @@ static int eth_xlnx_gem_send(const struct device *dev, struct net_pkt *pkt)
 		return -EIO;
 	}
 
-	curr_bd_idx = first_bd_idx = dev_data->txbd_ring.next_to_use;
-	reg_ctrl = (uint32_t)(&dev_data->txbd_ring.first_bd[curr_bd_idx].ctrl);
+	curr_bd_idx = first_bd_idx = dev_data->tx_bd_ring.next_to_use;
+	reg_ctrl = (uint32_t)(&dev_data->tx_bd_ring.first_bd[curr_bd_idx].ctrl);
 
-	dev_data->txbd_ring.next_to_use = (first_bd_idx + bds_reqd) %
-					  dev_conf->txbd_count;
-	dev_data->txbd_ring.free_bds -= bds_reqd;
+	dev_data->tx_bd_ring.next_to_use = (first_bd_idx + bds_reqd) %
+					  dev_conf->tx_bd_count;
+	dev_data->tx_bd_ring.free_bds -= bds_reqd;
 
 	if (dev_conf->defer_txd_to_queue) {
-		k_sem_give(&(dev_data->txbd_ring.ring_sem));
+		k_sem_give(&(dev_data->tx_bd_ring.ring_sem));
 	} else {
 		sys_write32(ETH_XLNX_GEM_IXR_TX_COMPLETE_BIT,
 			    dev_conf->base_addr + ETH_XLNX_GEM_IER_OFFSET);
@@ -452,16 +452,16 @@ static int eth_xlnx_gem_send(const struct device *dev, struct net_pkt *pkt)
 			     tx_data_remaining : dev_conf->tx_buffer_size);
 
 		/* Update current BD's control word */
-		reg_val = sys_read32(reg_ctrl) & (ETH_XLNX_GEM_TXBD_WRAP_BIT |
-			  ETH_XLNX_GEM_TXBD_USED_BIT);
+		reg_val = sys_read32(reg_ctrl) & (ETH_XLNX_GEM_TX_BD_WRAP_BIT |
+			  ETH_XLNX_GEM_TX_BD_USED_BIT);
 		reg_val |= (tx_data_remaining < dev_conf->tx_buffer_size) ?
 			   tx_data_remaining : dev_conf->tx_buffer_size;
 		sys_write32(reg_val, reg_ctrl);
 
 		if (tx_data_remaining > dev_conf->tx_buffer_size) {
 			/* Switch to next BD */
-			curr_bd_idx = (curr_bd_idx + 1) % dev_conf->txbd_count;
-			reg_ctrl = (uint32_t)(&dev_data->txbd_ring.first_bd[curr_bd_idx].ctrl);
+			curr_bd_idx = (curr_bd_idx + 1) % dev_conf->tx_bd_count;
+			reg_ctrl = (uint32_t)(&dev_data->tx_bd_ring.first_bd[curr_bd_idx].ctrl);
 		}
 
 		tx_data_remaining -= (tx_data_remaining < dev_conf->tx_buffer_size) ?
@@ -469,7 +469,7 @@ static int eth_xlnx_gem_send(const struct device *dev, struct net_pkt *pkt)
 	} while (tx_data_remaining > 0);
 
 	/* Set the 'last' bit in the current BD's control word */
-	reg_val |= ETH_XLNX_GEM_TXBD_LAST_BIT;
+	reg_val |= ETH_XLNX_GEM_TX_BD_LAST_BIT;
 
 	/*
 	 * Clear the 'used' bits of all BDs involved in the current
@@ -480,7 +480,7 @@ static int eth_xlnx_gem_send(const struct device *dev, struct net_pkt *pkt)
 	 * flush all involved TX BDs' buffers from the L1 cache to
 	 * regular memory along the way.
 	 */
-	reg_val &= ~ETH_XLNX_GEM_TXBD_USED_BIT;
+	reg_val &= ~ETH_XLNX_GEM_TX_BD_USED_BIT;
 	sys_write32(reg_val, reg_ctrl);
 #ifdef CONFIG_DCACHE
 	sys_cache_data_flush_and_invd_range((void *)(dev_data->first_tx_buffer +
@@ -490,10 +490,10 @@ static int eth_xlnx_gem_send(const struct device *dev, struct net_pkt *pkt)
 
 	while (curr_bd_idx != first_bd_idx) {
 		curr_bd_idx = (curr_bd_idx != 0) ? (curr_bd_idx - 1) :
-			      (dev_conf->txbd_count - 1);
-		reg_ctrl = (uint32_t)(&dev_data->txbd_ring.first_bd[curr_bd_idx].ctrl);
+			      (dev_conf->tx_bd_count - 1);
+		reg_ctrl = (uint32_t)(&dev_data->tx_bd_ring.first_bd[curr_bd_idx].ctrl);
 		reg_val = sys_read32(reg_ctrl);
-		reg_val &= ~ETH_XLNX_GEM_TXBD_USED_BIT;
+		reg_val &= ~ETH_XLNX_GEM_TX_BD_USED_BIT;
 		sys_write32(reg_val, reg_ctrl);
 #ifdef CONFIG_DCACHE
 		sys_cache_data_flush_and_invd_range((void *)(dev_data->first_tx_buffer +
@@ -1387,21 +1387,21 @@ static void eth_xlnx_gem_configure_buffers(const struct device *dev)
 	 * can place packet data in the associated buffer. In the last BD,
 	 * the 'wrap' bit must be set.
 	 */
-	bdptr = dev_data->rxbd_ring.first_bd;
+	bdptr = dev_data->rx_bd_ring.first_bd;
 
-	for (buf_iter = 0; buf_iter < (dev_conf->rxbd_count - 1); buf_iter++) {
+	for (buf_iter = 0; buf_iter < (dev_conf->rx_bd_count - 1); buf_iter++) {
 		uint32_t addr = (uint32_t)dev_data->first_rx_buffer +
 				(buf_iter * dev_conf->rx_buffer_size);
 		/* Clear 'used' bit -> BD is owned by the controller */
-		bdptr->addr = addr & ~(ETH_XLNX_GEM_RXBD_USED_BIT | ETH_XLNX_GEM_RXBD_WRAP_BIT);
+		bdptr->addr = addr & ~(ETH_XLNX_GEM_RX_BD_USED_BIT | ETH_XLNX_GEM_RX_BD_WRAP_BIT);
 		bdptr->ctrl = 0x00000000;
 		++bdptr;
 	}
 
 	uint32_t last_rx_addr = (uint32_t)dev_data->first_rx_buffer +
 				(buf_iter * dev_conf->rx_buffer_size);
-	bdptr->addr = (((uint32_t)last_rx_addr) & ~ETH_XLNX_GEM_RXBD_USED_BIT) |
-		      ETH_XLNX_GEM_RXBD_WRAP_BIT;
+	bdptr->addr = (((uint32_t)last_rx_addr) & ~ETH_XLNX_GEM_RX_BD_USED_BIT) |
+		      ETH_XLNX_GEM_RX_BD_WRAP_BIT;
 	bdptr->ctrl = 0x00000000;
 
 	/*
@@ -1412,18 +1412,18 @@ static void eth_xlnx_gem_configure_buffers(const struct device *dev)
 	 * TX data to transmit. Indicate no data to transmit by setting
 	 * 'used' in all TX BDs. In the last BD, the 'wrap' bit must be set.
 	 */
-	bdptr = dev_data->txbd_ring.first_bd;
+	bdptr = dev_data->tx_bd_ring.first_bd;
 
-	for (buf_iter = 0; buf_iter < (dev_conf->txbd_count - 1); buf_iter++) {
+	for (buf_iter = 0; buf_iter < (dev_conf->tx_bd_count - 1); buf_iter++) {
 		bdptr->addr = (uint32_t)dev_data->first_tx_buffer +
 			      (buf_iter * dev_conf->tx_buffer_size);
-		bdptr->ctrl = ETH_XLNX_GEM_TXBD_USED_BIT;
+		bdptr->ctrl = ETH_XLNX_GEM_TX_BD_USED_BIT;
 		++bdptr;
 	}
 
 	bdptr->addr = (uint32_t)dev_data->first_tx_buffer +
 		      (buf_iter * (uint32_t)dev_conf->tx_buffer_size);
-	bdptr->ctrl = (ETH_XLNX_GEM_TXBD_WRAP_BIT | ETH_XLNX_GEM_TXBD_USED_BIT);
+	bdptr->ctrl = (ETH_XLNX_GEM_TX_BD_WRAP_BIT | ETH_XLNX_GEM_TX_BD_USED_BIT);
 
 #ifdef CONFIG_SOC_XILINX_ZYNQMP
 	/*
@@ -1433,23 +1433,23 @@ static void eth_xlnx_gem_configure_buffers(const struct device *dev)
 	 * BD indicate that there's no data to be transferred in there.
 	 */
 
-	bdptr = dev_data->rxbd_ring.tie_off_bd;
-	bdptr->addr = (uint32_t)dev_data->rx_tie_off_buffer | ETH_XLNX_GEM_RXBD_USED_BIT |
-		      ETH_XLNX_GEM_RXBD_WRAP_BIT;
+	bdptr = dev_data->rx_bd_ring.tie_off_bd;
+	bdptr->addr = (uint32_t)dev_data->rx_tie_off_buffer | ETH_XLNX_GEM_RX_BD_USED_BIT |
+		      ETH_XLNX_GEM_RX_BD_WRAP_BIT;
 	bdptr->ctrl = 0x00000000;
 
-	bdptr = dev_data->txbd_ring.tie_off_bd;
+	bdptr = dev_data->tx_bd_ring.tie_off_bd;
 	bdptr->addr = (uint32_t)dev_data->tx_tie_off_buffer;
-	bdptr->ctrl = ETH_XLNX_GEM_TXBD_WRAP_BIT | ETH_XLNX_GEM_TXBD_USED_BIT;
+	bdptr->ctrl = ETH_XLNX_GEM_TX_BD_WRAP_BIT | ETH_XLNX_GEM_TX_BD_USED_BIT;
 #endif /* CONFIG_SOC_XILINX_ZYNQMP */
 
 	/* Set free count/current index in the RX/TX BD ring data */
-	dev_data->rxbd_ring.next_to_process = 0;
-	dev_data->rxbd_ring.next_to_use     = 0;
-	dev_data->rxbd_ring.free_bds        = dev_conf->rxbd_count;
-	dev_data->txbd_ring.next_to_process = 0;
-	dev_data->txbd_ring.next_to_use     = 0;
-	dev_data->txbd_ring.free_bds        = dev_conf->txbd_count;
+	dev_data->rx_bd_ring.next_to_process = 0;
+	dev_data->rx_bd_ring.next_to_use     = 0;
+	dev_data->rx_bd_ring.free_bds        = dev_conf->rx_bd_count;
+	dev_data->tx_bd_ring.next_to_process = 0;
+	dev_data->tx_bd_ring.next_to_use     = 0;
+	dev_data->tx_bd_ring.free_bds        = dev_conf->tx_bd_count;
 
 	/*
 	 * Write pointers to the first RX/TX BD to the controller.
@@ -1459,16 +1459,16 @@ static void eth_xlnx_gem_configure_buffers(const struct device *dev)
 	 * registers must point to the single dummy tie-off BD for
 	 * both the RX and TX direction.
 	 */
-	sys_write32((uint32_t)dev_data->rxbd_ring.first_bd,
+	sys_write32((uint32_t)dev_data->rx_bd_ring.first_bd,
 		    dev_conf->base_addr + ETH_XLNX_GEM_RXQBASE_OFFSET);
-	sys_write32((uint32_t)dev_data->txbd_ring.first_bd,
+	sys_write32((uint32_t)dev_data->tx_bd_ring.first_bd,
 		    dev_conf->base_addr + ETH_XLNX_GEM_TXQBASE_OFFSET);
 #ifdef CONFIG_SOC_XILINX_ZYNQMP
 	sys_write32(0x00000000, dev_conf->base_addr + ETH_XLNX_GEM_RX1QBASEH_OFFSET);
-	sys_write32((uint32_t)dev_data->rxbd_ring.tie_off_bd,
+	sys_write32((uint32_t)dev_data->rx_bd_ring.tie_off_bd,
 		    dev_conf->base_addr + ETH_XLNX_GEM_RX1QBASEL_OFFSET);
 	sys_write32(0x00000000, dev_conf->base_addr + ETH_XLNX_GEM_TX1QBASEH_OFFSET);
-	sys_write32((uint32_t)dev_data->txbd_ring.tie_off_bd,
+	sys_write32((uint32_t)dev_data->tx_bd_ring.tie_off_bd,
 		    dev_conf->base_addr + ETH_XLNX_GEM_TX1QBASEL_OFFSET);
 #endif /* CONFIG_SOC_XILINX_ZYNQMP */
 }
@@ -1533,17 +1533,17 @@ static void eth_xlnx_gem_handle_rx_pending(const struct device *dev)
 	 */
 
 	while (1) {
-		curr_bd_idx = dev_data->rxbd_ring.next_to_process;
+		curr_bd_idx = dev_data->rx_bd_ring.next_to_process;
 		first_bd_idx = last_bd_idx = curr_bd_idx;
-		reg_addr = (uint32_t)(&dev_data->rxbd_ring.first_bd[first_bd_idx].addr);
-		reg_ctrl = (uint32_t)(&dev_data->rxbd_ring.first_bd[first_bd_idx].ctrl);
+		reg_addr = (uint32_t)(&dev_data->rx_bd_ring.first_bd[first_bd_idx].addr);
+		reg_ctrl = (uint32_t)(&dev_data->rx_bd_ring.first_bd[first_bd_idx].ctrl);
 
 		/*
 		 * Basic precondition checks for the current BD's
 		 * address and control words
 		 */
 		reg_val = sys_read32(reg_addr);
-		if ((reg_val & ETH_XLNX_GEM_RXBD_USED_BIT) == 0) {
+		if ((reg_val & ETH_XLNX_GEM_RX_BD_USED_BIT) == 0) {
 			/*
 			 * No new data contained in the current BD
 			 * -> break out of the RX loop
@@ -1551,7 +1551,7 @@ static void eth_xlnx_gem_handle_rx_pending(const struct device *dev)
 			break;
 		}
 		reg_val = sys_read32(reg_ctrl);
-		if ((reg_val & ETH_XLNX_GEM_RXBD_START_OF_FRAME_BIT) == 0) {
+		if ((reg_val & ETH_XLNX_GEM_RX_BD_START_OF_FRAME_BIT) == 0) {
 			/*
 			 * Although the current BD is marked as 'used', it
 			 * doesn't contain the SOF bit.
@@ -1568,21 +1568,21 @@ static void eth_xlnx_gem_handle_rx_pending(const struct device *dev)
 		 * of the received packet which spans multiple buffers.
 		 */
 		do {
-			reg_ctrl = (uint32_t)(&dev_data->rxbd_ring.first_bd[last_bd_idx].ctrl);
+			reg_ctrl = (uint32_t)(&dev_data->rx_bd_ring.first_bd[last_bd_idx].ctrl);
 			reg_val  = sys_read32(reg_ctrl);
 			rx_data_length = rx_data_remaining =
-					 (reg_val & ETH_XLNX_GEM_RXBD_FRAME_LENGTH_MASK);
-			if ((reg_val & ETH_XLNX_GEM_RXBD_END_OF_FRAME_BIT) == 0) {
-				last_bd_idx = (last_bd_idx + 1) % dev_conf->rxbd_count;
+					 (reg_val & ETH_XLNX_GEM_RX_BD_FRAME_LENGTH_MASK);
+			if ((reg_val & ETH_XLNX_GEM_RX_BD_END_OF_FRAME_BIT) == 0) {
+				last_bd_idx = (last_bd_idx + 1) % dev_conf->rx_bd_count;
 			}
-		} while ((reg_val & ETH_XLNX_GEM_RXBD_END_OF_FRAME_BIT) == 0);
+		} while ((reg_val & ETH_XLNX_GEM_RX_BD_END_OF_FRAME_BIT) == 0);
 
 		/*
 		 * Store the position of the first BD behind the end of the
 		 * frame currently being processed as 'next to process'
 		 */
-		dev_data->rxbd_ring.next_to_process = (last_bd_idx + 1) %
-						      dev_conf->rxbd_count;
+		dev_data->rx_bd_ring.next_to_process = (last_bd_idx + 1) %
+						      dev_conf->rx_bd_count;
 
 		/*
 		 * Allocate a destination packet from the network stack
@@ -1610,13 +1610,13 @@ static void eth_xlnx_gem_handle_rx_pending(const struct device *dev)
 			if (pkt != NULL) {
 #ifdef CONFIG_DCACHE
 				sys_cache_data_invd_range(
-					(void *)(dev_data->rxbd_ring.first_bd[curr_bd_idx].addr &
-					ETH_XLNX_GEM_RXBD_BUFFER_ADDR_MASK),
+					(void *)(dev_data->rx_bd_ring.first_bd[curr_bd_idx].addr &
+					ETH_XLNX_GEM_RX_BD_BUFFER_ADDR_MASK),
 					dev_conf->rx_buffer_size);
 #endif
 				net_pkt_write(pkt, (const void *)
-					      (dev_data->rxbd_ring.first_bd[curr_bd_idx].addr &
-					      ETH_XLNX_GEM_RXBD_BUFFER_ADDR_MASK),
+					      (dev_data->rx_bd_ring.first_bd[curr_bd_idx].addr &
+					      ETH_XLNX_GEM_RX_BD_BUFFER_ADDR_MASK),
 					      (rx_data_remaining < dev_conf->rx_buffer_size) ?
 					      rx_data_remaining : dev_conf->rx_buffer_size);
 			}
@@ -1628,13 +1628,13 @@ static void eth_xlnx_gem_handle_rx_pending(const struct device *dev)
 			 * processed, on to the next BD -> preserve the RX BD's
 			 * 'wrap' bit & address, but clear the 'used' bit.
 			 */
-			reg_addr = (uint32_t)(&dev_data->rxbd_ring.first_bd[curr_bd_idx].addr);
+			reg_addr = (uint32_t)(&dev_data->rx_bd_ring.first_bd[curr_bd_idx].addr);
 			reg_val	 = sys_read32(reg_addr);
-			reg_val &= ~ETH_XLNX_GEM_RXBD_USED_BIT;
+			reg_val &= ~ETH_XLNX_GEM_RX_BD_USED_BIT;
 			sys_write32(reg_val, reg_addr);
 
-			curr_bd_idx = (curr_bd_idx + 1) % dev_conf->rxbd_count;
-		} while (curr_bd_idx != ((last_bd_idx + 1) % dev_conf->rxbd_count));
+			curr_bd_idx = (curr_bd_idx + 1) % dev_conf->rx_bd_count;
+		} while (curr_bd_idx != ((last_bd_idx + 1) % dev_conf->rx_bd_count));
 
 		/* Propagate the received packet to the network stack */
 		if (pkt != NULL) {
@@ -1716,11 +1716,11 @@ static void eth_xlnx_gem_handle_tx_done(const struct device *dev)
 	 */
 
 	if (dev_conf->defer_txd_to_queue) {
-		k_sem_take(&(dev_data->txbd_ring.ring_sem), K_FOREVER);
+		k_sem_take(&(dev_data->tx_bd_ring.ring_sem), K_FOREVER);
 	}
 
-	curr_bd_idx = first_bd_idx = dev_data->txbd_ring.next_to_process;
-	reg_ctrl = (uint32_t)(&dev_data->txbd_ring.first_bd[curr_bd_idx].ctrl);
+	curr_bd_idx = first_bd_idx = dev_data->tx_bd_ring.next_to_process;
+	reg_ctrl = (uint32_t)(&dev_data->tx_bd_ring.first_bd[curr_bd_idx].ctrl);
 	reg_val  = sys_read32(reg_ctrl);
 
 	do {
@@ -1735,22 +1735,22 @@ static void eth_xlnx_gem_handle_tx_done(const struct device *dev)
 		 * Check if the BD we're currently looking at is the last BD
 		 * of the current transmission
 		 */
-		bd_is_last = ((reg_val & ETH_XLNX_GEM_TXBD_LAST_BIT) != 0) ? 1 : 0;
+		bd_is_last = ((reg_val & ETH_XLNX_GEM_TX_BD_LAST_BIT) != 0) ? 1 : 0;
 
 		/*
 		 * Reset control word of the current BD, clear everything but
 		 * the 'wrap' bit, then set the 'used' bit
 		 */
-		reg_val &= ETH_XLNX_GEM_TXBD_WRAP_BIT;
-		reg_val |= ETH_XLNX_GEM_TXBD_USED_BIT;
+		reg_val &= ETH_XLNX_GEM_TX_BD_WRAP_BIT;
+		reg_val |= ETH_XLNX_GEM_TX_BD_USED_BIT;
 		sys_write32(reg_val, reg_ctrl);
 
 		/* Move on to the next BD or break out of the loop */
 		if (bd_is_last == 1) {
 			break;
 		}
-		curr_bd_idx = (curr_bd_idx + 1) % dev_conf->txbd_count;
-		reg_ctrl = (uint32_t)(&dev_data->txbd_ring.first_bd[curr_bd_idx].ctrl);
+		curr_bd_idx = (curr_bd_idx + 1) % dev_conf->tx_bd_count;
+		reg_ctrl = (uint32_t)(&dev_data->tx_bd_ring.first_bd[curr_bd_idx].ctrl);
 		reg_val  = sys_read32(reg_ctrl);
 	} while (bd_is_last == 0 && curr_bd_idx != first_bd_idx);
 
@@ -1758,13 +1758,13 @@ static void eth_xlnx_gem_handle_tx_done(const struct device *dev)
 		LOG_WRN("%s TX done handling wrapped around", dev->name);
 	}
 
-	dev_data->txbd_ring.next_to_process =
-		(dev_data->txbd_ring.next_to_process + bds_processed) %
-		dev_conf->txbd_count;
-	dev_data->txbd_ring.free_bds += bds_processed;
+	dev_data->tx_bd_ring.next_to_process =
+		(dev_data->tx_bd_ring.next_to_process + bds_processed) %
+		dev_conf->tx_bd_count;
+	dev_data->tx_bd_ring.free_bds += bds_processed;
 
 	if (dev_conf->defer_txd_to_queue) {
-		k_sem_give(&(dev_data->txbd_ring.ring_sem));
+		k_sem_give(&(dev_data->tx_bd_ring.ring_sem));
 	}
 
 	/* Clear the TX status register */
