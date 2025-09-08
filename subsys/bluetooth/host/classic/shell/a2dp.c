@@ -433,11 +433,6 @@ void stream_suspended(struct bt_a2dp_stream *stream)
 	bt_shell_print("stream suspended");
 }
 
-void stream_aborted(struct bt_a2dp_stream *stream)
-{
-	bt_shell_print("stream aborted");
-}
-
 void sink_sbc_streamer_data(struct bt_a2dp_stream *stream, struct net_buf *buf,
 			uint16_t seq_num, uint32_t ts)
 {
@@ -595,7 +590,6 @@ static struct bt_a2dp_stream_ops stream_ops = {
 	.released = stream_released,
 	.started = stream_started,
 	.suspended = stream_suspended,
-	.aborted = stream_aborted,
 #if defined(CONFIG_BT_A2DP_SINK)
 	.recv = stream_recv,
 #endif
