@@ -15,5 +15,7 @@ tests:
       - b_u585i_iot02a
       - nrf9160dk/nrf9160
       - nrf5340dk/nrf5340/cpuapp
+      - apollo510_eb
+      - apollo510_evb
     integration_platforms:
       - nrf9160dk/nrf9160
