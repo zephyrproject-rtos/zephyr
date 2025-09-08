@@ -1296,6 +1296,17 @@ static inline bool net_ipv6_is_addr_mcast_scope_raw(const uint8_t *addr,
 }
 /** @endcond */
 
+/** @cond INTERNAL_HIDDEN */
+static inline int net_ipv6_get_addr_mcast_scope_raw(const uint8_t *addr)
+{
+	if (addr[0] == 0xff) {
+		return (addr[1] & 0xF);
+	}
+
+	return -1;
+}
+/** @endcond */
+
 /**
  * @brief Check if the IPv6 address is a given scope multicast
  * address (FFyx::).
@@ -1326,6 +1337,18 @@ static inline bool net_ipv6_is_same_mcast_scope(const struct in6_addr *addr_1,
 {
 	return (addr_1->s6_addr[0] == 0xff) && (addr_2->s6_addr[0] == 0xff) &&
 			(addr_1->s6_addr[1] == addr_2->s6_addr[1]);
+}
+
+/**
+ * @brief Returns the scope of the given IPv6 address.
+ *
+ * @param addr IPv6 address
+ *
+ * @return Scope of the address, -1 if address is not multicast.
+ */
+static inline int net_ipv6_get_addr_mcast_scope(const struct in6_addr *addr)
+{
+	return net_ipv6_get_addr_mcast_scope_raw(addr->s6_addr);
 }
 
 /** @cond INTERNAL_HIDDEN */
