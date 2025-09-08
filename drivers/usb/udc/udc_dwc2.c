@@ -129,6 +129,8 @@ struct udc_dwc2_data {
 	uint16_t dfifodepth;
 	uint16_t rxfifo_depth;
 	uint16_t max_txfifo_depth[16];
+	/* Endpoint TXFIFO number */
+	uint8_t txfnum[16];
 	uint16_t sof_num;
 	/* Configuration flags */
 	unsigned int dynfifosizing : 1;
@@ -1345,17 +1347,106 @@ static void dwc2_unset_unused_fifo(const struct device *dev)
 	struct udc_dwc2_data *const priv = udc_get_private(dev);
 	struct udc_ep_config *tmp;
 
-	for (uint8_t i = priv->ineps - 1U; i > 0; i--) {
+	for (uint8_t i = priv->numdeveps - 1U; i > 0; i--) {
 		tmp = udc_get_ep_cfg(dev, i | USB_EP_DIR_IN);
 
-		if (tmp->stat.enabled && (priv->txf_set & BIT(i))) {
+		if (tmp == NULL) {
+			continue;
+		}
+
+		if (tmp->stat.enabled && (priv->txf_set & BIT(priv->txfnum[i]))) {
 			return;
 		}
 
-		if (!tmp->stat.enabled && (priv->txf_set & BIT(i))) {
-			priv->txf_set &= ~BIT(i);
+		if (!tmp->stat.enabled && (priv->txf_set & BIT(priv->txfnum[i]))) {
+			LOG_DBG("Unset unused FIFO %u", priv->txfnum[i]);
+			priv->txf_set &= ~BIT(priv->txfnum[i]);
+			priv->txfnum[i] = 0xFFUL;
 		}
 	}
+}
+
+static int dwc2_update_txfaddr_txfdep(const struct device *dev,
+				      struct udc_ep_config *const cfg, uint32_t reqdep,
+				      uint32_t *txfaddr, uint32_t *txfdep)
+{
+	struct udc_dwc2_data *const priv = udc_get_private(dev);
+	int ret = 0;
+
+	for (uint8_t i = 0U; i < priv->numdeveps; i++) {
+		struct udc_ep_config *tmp = udc_get_ep_cfg(dev, i | USB_EP_DIR_IN);
+		uint8_t txfnum = priv->txfnum[i];
+
+		if (tmp && tmp->stat.enabled && (priv->txf_set & BIT(txfnum))) {
+			if (i > 0U) {
+				if (cfg->addr != tmp->addr) {
+					*txfaddr = dwc2_get_txfdep(dev, txfnum - 1) +
+						   dwc2_get_txfaddr(dev, txfnum - 1);
+				} else {
+					uint32_t curaddr = dwc2_get_txfaddr(dev, txfnum - 1);
+					uint32_t curdep = dwc2_get_txfdep(dev, txfnum - 1);
+
+					LOG_DBG("ep 0x%02x re-enable", cfg->addr);
+					if (*txfaddr != curaddr || reqdep > curdep) {
+						LOG_ERR("FIFO%u cannot be reused", txfnum);
+						ret = -ENOMEM;
+					}
+					break;
+				}
+			} else {
+				struct usb_dwc2_reg *const base = dwc2_get_base(dev);
+				uint32_t gnptxfsiz = sys_read32((mem_addr_t)&base->gnptxfsiz);
+
+				*txfaddr = usb_dwc2_get_gnptxfsiz_nptxfdep(gnptxfsiz) +
+					   usb_dwc2_get_gnptxfsiz_nptxfstaddr(gnptxfsiz);
+			}
+
+			/* Do not allocate TxFIFO outside the SPRAM */
+			if (*txfaddr + reqdep > priv->dfifodepth) {
+				/* TODO: reduce RX FIFO for new TX FIFO */
+				return -ENOMEM;
+			}
+		}
+	}
+
+	LOG_DBG("Find new TX FIFO addr 0x%04x", *txfaddr);
+	*txfdep = reqdep;
+	return ret;
+}
+
+static int dwc2_select_dedicated_fifo(const struct device *dev,
+				      struct udc_ep_config *const cfg,
+				      const uint32_t dep, const uint32_t addr)
+{
+	struct udc_dwc2_data *const priv = udc_get_private(dev);
+	uint8_t ep_idx = USB_EP_GET_IDX(cfg->addr);
+	uint32_t txff_depth = 0xFFFFUL;
+	int ret = -ENOMEM;
+
+	for (uint8_t i = 1; i < priv->numdeveps; i++) {
+		struct udc_ep_config *tmp = udc_get_ep_cfg(dev, i | USB_EP_DIR_IN);
+
+		if (tmp == NULL) {
+			continue;
+		}
+
+		if (!(priv->txf_set & BIT(i)) && (dep <= priv->max_txfifo_depth[i])) {
+			LOG_DBG("Find new TX FIFO %u for ep 0x%02x with depth %d",
+				i, cfg->addr, priv->max_txfifo_depth[i]);
+
+			if (txff_depth > priv->max_txfifo_depth[i]) {
+				/* Select the smallest available TX FIFO */
+				txff_depth = priv->max_txfifo_depth[i];
+				priv->txfnum[ep_idx] = i;
+			}
+			ret = 0;
+		}
+	}
+
+	if (ret) {
+		LOG_ERR("No available TX FIFO for ep 0x%02x", cfg->addr);
+	}
+	return ret;
 }
 
 /*
@@ -1371,9 +1462,10 @@ static int dwc2_set_dedicated_fifo(const struct device *dev,
 	uint8_t ep_idx = USB_EP_GET_IDX(cfg->addr);
 	const uint32_t addnl = USB_MPS_ADDITIONAL_TRANSACTIONS(cfg->mps);
 	uint32_t reqdep;
-	uint32_t txfaddr;
-	uint32_t txfdep;
+	uint32_t txfaddr = 0;
+	uint32_t txfdep = 0;
 	uint32_t tmp;
+	int ret;
 
 	/* Keep everything but FIFO number */
 	tmp = *diepctl & ~USB_DWC2_DEPCTL_TXFNUM_MASK;
@@ -1387,44 +1479,30 @@ static int dwc2_set_dedicated_fifo(const struct device *dev,
 	}
 
 	if (priv->dynfifosizing) {
-		if (priv->txf_set & ~BIT_MASK(ep_idx)) {
+		if (priv->txf_set & ~BIT_MASK(priv->txfnum[ep_idx])) {
 			dwc2_unset_unused_fifo(dev);
 		}
 
-		if ((ep_idx - 1) != 0U) {
-			txfaddr = dwc2_get_txfdep(dev, ep_idx - 2) +
-				  dwc2_get_txfaddr(dev, ep_idx - 2);
-		} else {
-			txfaddr = priv->rxfifo_depth +
-				MIN(UDC_DWC2_FIFO0_DEPTH, priv->max_txfifo_depth[0]);
-		}
+		ret = dwc2_update_txfaddr_txfdep(dev, cfg, reqdep, &txfaddr, &txfdep);
 
-		if (priv->txf_set & BIT(ep_idx)) {
-			uint32_t curaddr;
-
-			curaddr = dwc2_get_txfaddr(dev, ep_idx - 1);
-			txfdep = dwc2_get_txfdep(dev, ep_idx - 1);
-			if (txfaddr != curaddr || reqdep > txfdep) {
-				LOG_ERR("FIFO%u cannot be reused, new addr 0x%04x depth %u",
-					ep_idx, txfaddr, reqdep);
-				return -ENOMEM;
-			}
-		} else {
-			txfdep = reqdep;
+		if (ret) {
+			return -ENOMEM;
 		}
 
 		/* Make sure to not set TxFIFO greater than hardware allows */
-		if (txfdep > priv->max_txfifo_depth[ep_idx]) {
-			return -ENOMEM;
-		}
+		if (cfg->stat.enabled && (priv->txf_set & BIT(priv->txfnum[ep_idx]))) {
+			LOG_DBG("ep 0x%02x is re-enabled FIFO%u", cfg->addr, priv->txfnum[ep_idx]);
+		} else {
+			/* Select appropriate TX FIFO */
+			ret = dwc2_select_dedicated_fifo(dev, cfg, reqdep, txfaddr);
 
-		/* Do not allocate TxFIFO outside the SPRAM */
-		if (txfaddr + txfdep > priv->dfifodepth) {
-			return -ENOMEM;
+			if (ret) {
+				return -ENOMEM;
+			}
 		}
 
 		/* Set FIFO depth (32-bit words) and address */
-		dwc2_set_txf(dev, ep_idx - 1, txfdep, txfaddr);
+		dwc2_set_txf(dev, priv->txfnum[ep_idx] - 1, txfdep, txfaddr);
 	} else {
 		txfdep = dwc2_get_txfdep(dev, ep_idx - 1);
 		txfaddr = dwc2_get_txfaddr(dev, ep_idx - 1);
@@ -1433,16 +1511,18 @@ static int dwc2_set_dedicated_fifo(const struct device *dev,
 			return -ENOMEM;
 		}
 
+		priv->txfnum[ep_idx] = ep_idx;
 		LOG_DBG("Reuse FIFO%u addr 0x%08x depth %u", ep_idx, txfaddr, txfdep);
 	}
 
 	/* Assign FIFO to the IN endpoint */
-	*diepctl = tmp | usb_dwc2_set_depctl_txfnum(ep_idx);
-	priv->txf_set |= BIT(ep_idx);
-	dwc2_flush_tx_fifo(dev, ep_idx);
+	*diepctl = tmp | usb_dwc2_set_depctl_txfnum(priv->txfnum[ep_idx]);
+	priv->txf_set |= BIT(priv->txfnum[ep_idx]);
+	dwc2_flush_tx_fifo(dev, priv->txfnum[ep_idx]);
 
 	LOG_INF("Set FIFO%u (ep 0x%02x) addr 0x%04x depth %u size %u",
-		ep_idx, cfg->addr, txfaddr, txfdep, dwc2_ftx_avail(dev, ep_idx));
+		priv->txfnum[ep_idx], cfg->addr, txfaddr,
+		txfdep, dwc2_ftx_avail(dev, priv->txfnum[ep_idx]));
 
 	return 0;
 }
@@ -1450,6 +1530,7 @@ static int dwc2_set_dedicated_fifo(const struct device *dev,
 static int dwc2_ep_control_enable(const struct device *dev,
 				  struct udc_ep_config *const cfg)
 {
+	struct udc_dwc2_data *const priv = udc_get_private(dev);
 	mem_addr_t dxepctl0_reg;
 	uint32_t dxepctl0;
 
@@ -1480,6 +1561,8 @@ static int dwc2_ep_control_enable(const struct device *dev,
 		dwc2_flush_rx_fifo(dev);
 	} else {
 		dwc2_flush_tx_fifo(dev, 0);
+		priv->txfnum[0] = 0;
+		priv->txf_set |= BIT(0);
 	}
 
 	sys_write32(dxepctl0, dxepctl0_reg);
@@ -1563,8 +1646,9 @@ static int udc_dwc2_ep_activate(const struct device *dev,
 	}
 
 	for (uint8_t i = 1U; i < priv->ineps; i++) {
-		LOG_DBG("DIEPTXF%u %08x DIEPCTL%u %08x",
-			i, sys_read32((mem_addr_t)&base->dieptxf[i - 1U]), i, dxepctl);
+		LOG_DBG("DIEPCTL%u %08x DIEPTXF%u %08x DTXFSTS%u %u",
+			i, dxepctl, i, sys_read32((mem_addr_t)&base->dieptxf[i - 1]),
+			i, dwc2_ftx_avail(dev, i));
 	}
 
 	return 0;
@@ -1576,21 +1660,21 @@ static int dwc2_unset_dedicated_fifo(const struct device *dev,
 {
 	struct udc_dwc2_data *const priv = udc_get_private(dev);
 	uint8_t ep_idx = USB_EP_GET_IDX(cfg->addr);
+	uint8_t txfnum = priv->txfnum[ep_idx];
 
 	/* Clear FIFO number field */
 	*diepctl &= ~USB_DWC2_DEPCTL_TXFNUM_MASK;
 
 	if (priv->dynfifosizing) {
-		if (priv->txf_set & ~BIT_MASK(ep_idx)) {
+		if (priv->txf_set & ~BIT_MASK(txfnum)) {
 			LOG_WRN("Some of the FIFOs higher than %u are set, %lx",
-				ep_idx, priv->txf_set & ~BIT_MASK(ep_idx));
+				txfnum, priv->txf_set & ~BIT_MASK(txfnum));
 			return 0;
 		}
-
-		dwc2_set_txf(dev, ep_idx - 1, 0, 0);
+		dwc2_set_txf(dev, txfnum - 1, 0, 0);
 	}
 
-	priv->txf_set &= ~BIT(ep_idx);
+	priv->txf_set &= ~BIT(txfnum);
 
 	return 0;
 }
@@ -2218,7 +2302,7 @@ static int udc_dwc2_init_controller(const struct device *dev)
 	LOG_DBG("RX FIFO size %u bytes", priv->rxfifo_depth * 4);
 	for (uint8_t i = 1U; i < priv->ineps; i++) {
 		LOG_DBG("TX FIFO%u depth %u addr %u",
-			i, priv->max_txfifo_depth[i], dwc2_get_txfaddr(dev, i));
+			i, priv->max_txfifo_depth[i], dwc2_get_txfaddr(dev, i - 1));
 	}
 
 	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_OUT,
@@ -2469,6 +2553,7 @@ static int dwc2_driver_preinit(const struct device *dev)
 
 		config->ep_cfg_in[n].caps.in = 1;
 		config->ep_cfg_in[n].addr = USB_EP_DIR_IN | i;
+		priv->txfnum[i] = 0xFFUL;
 
 		LOG_DBG("Register ep 0x%02x (%u)", USB_EP_DIR_IN | i, n);
 		err = udc_register_ep(dev, &config->ep_cfg_in[n]);
