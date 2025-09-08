@@ -1,0 +1,13 @@
+sample:
+  description: Dali Zephyr driver application
+  name: dali-zephyr
+common:
+  build_only: true
+  integration_platforms:
+    - nucleo_f091rc
+    - nrf52840dk/nrf52840
+tests:
+  app.default: {}
+  app.debug:
+    extra_overlay_confs:
+      - debug.conf
