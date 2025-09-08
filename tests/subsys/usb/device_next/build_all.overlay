@@ -67,6 +67,21 @@
 		};
 	};
 
+	fstab {
+		compatible = "zephyr,fstab";
+		lfs1: lfs1 {
+			compatible = "zephyr,fstab,littlefs";
+			read-size = <32>;
+			prog-size = <32>;
+			cache-size = <256>;
+			lookahead-size = <64>;
+			block-cycles = <512>;
+			partition = <&storage_partition>;
+			mount-point = "/lfs1";
+			automount;
+			mtp-enabled;
+		};
+	};
 };
 
 &zephyr_udc0 {
