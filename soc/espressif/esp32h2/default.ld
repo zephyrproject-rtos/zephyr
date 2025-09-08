@@ -99,7 +99,7 @@ REGION_ALIAS("rtc_slow_seg", rtc_iram_seg );
 REGION_ALIAS("rtc_data_location", rtc_iram_seg );
 
 /*  Default entry point:  */
-ENTRY(CONFIG_KERNEL_ENTRY)
+ENTRY(z_kernel_entry)
 
 /* Heap size calculations */
 _heap_sentry = DRAM_RESERVED_START;

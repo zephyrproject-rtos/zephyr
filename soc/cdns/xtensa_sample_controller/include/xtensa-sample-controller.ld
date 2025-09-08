@@ -85,7 +85,7 @@ PHDRS
 
 
 /*  Default entry point:  */
-ENTRY(CONFIG_KERNEL_ENTRY)
+ENTRY(z_kernel_entry)
 
 /*  Memory boundary addresses:  */
 _memmap_mem_dram1_start = 0x3ffc0000;

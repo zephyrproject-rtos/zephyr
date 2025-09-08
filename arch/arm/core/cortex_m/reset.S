@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2013-2014 Wind River Systems, Inc.
  * Copyright 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+ * Copyright (c) 2025 Baumer (www.baumer.com)
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,7 +13,7 @@
  * Reset handler that prepares the system for running C code.
  */
 
-#include <zephyr/toolchain.h>
+#include <zephyr/kernel_entry.h>
 #include <zephyr/linker/sections.h>
 #include <zephyr/arch/cpu.h>
 #include "vector_table.h"
@@ -34,6 +35,10 @@ GTEXT(z_arm_init_arch_hw_at_boot)
 #endif
 #if defined(CONFIG_PM_S2RAM)
 GTEXT(arch_pm_s2ram_resume)
+#endif
+
+#if !defined(CONFIG_CUSTOM_SOC_KERNEL_ENTRY)
+SET_Z_KERNEL_ENTRY(__start)
 #endif
 
 /*

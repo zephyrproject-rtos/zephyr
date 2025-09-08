@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016, Wind River Systems, Inc.
+ * Copyright (c) 2025 Baumer (www.baumer.com)
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +13,8 @@
 
 #ifndef ZEPHYR_INCLUDE_KERNEL_H_
 #define ZEPHYR_INCLUDE_KERNEL_H_
+
+#include <zephyr/kernel_entry.h>
 
 #if !defined(_ASMLANGUAGE)
 #include <zephyr/kernel_includes.h>

@@ -118,7 +118,7 @@ MEMORY
 }
 
 /*  Default entry point:  */
-ENTRY(CONFIG_KERNEL_ENTRY)
+ENTRY(z_kernel_entry)
 
 /* Heap size calculations differs between the APPCPU and PROCPU */
 #ifdef CONFIG_SOC_ENABLE_APPCPU

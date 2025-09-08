@@ -25,9 +25,6 @@ config SMP
 config XTENSA_TIMER
 	default n
 
-config KERNEL_ENTRY
-	default "_MainEntry"
-
 config MULTI_LEVEL_INTERRUPTS
 	default y
 

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019-2020 Cobham Gaisler AB
+ * Copyright (c) 2025 Baumer (www.baumer.com)
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,7 +11,7 @@
  * instructions.
  */
 
-#include <zephyr/toolchain.h>
+#include <zephyr/kernel_entry.h>
 #include <zephyr/linker/sections.h>
 
 #define BAD_TRAP \
@@ -63,6 +64,10 @@
 
 GTEXT(__sparc_trap_table)
 GTEXT(__start)
+
+#if !defined(CONFIG_CUSTOM_SOC_KERNEL_ENTRY)
+SET_Z_KERNEL_ENTRY(__start)
+#endif
 
 SECTION_SUBSEC_FUNC(TEXT, traptable, __sparc_trap_table)
 __start:

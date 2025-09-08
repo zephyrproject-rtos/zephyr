@@ -1,15 +1,18 @@
 /*
  * Copyright (c) 2021 Andes Technology Corporation
+ * Copyright (c) 2025 Baumer (www.baumer.com)
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include "soc_v5.h"
 
-#include <zephyr/toolchain.h>
+#include <zephyr/kernel_entry.h>
 
 /* exports */
 GTEXT(entry)
+
+SET_Z_KERNEL_ENTRY(entry)
 
 SECTION_FUNC(init, entry)
 	/* Disable linker relaxation before GP register initialization. */
