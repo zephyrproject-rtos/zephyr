@@ -1,7 +1,7 @@
 .. _boards-raspberrypi:
 
-Raspberry Pi Foundation
-#######################
+Raspberry Pi
+############
 
 .. toctree::
    :maxdepth: 1
