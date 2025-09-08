@@ -24,6 +24,7 @@
  * @{
  */
 
+#include <errno.h>
 #include <zephyr/drivers/i2s.h>
 
 #ifdef __cplusplus
