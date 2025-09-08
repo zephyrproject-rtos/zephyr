@@ -12,11 +12,6 @@
  * - Wake-on-LAN interrupt not supported.
  * - Send function is not SMP-capable (due to single TX done semaphore).
  * - Interrupt-driven PHY management not supported - polling only.
- * - No explicit placement of the DMA memory area(s) in either a
- *   specific memory section or at a fixed memory location yet. This
- *   is not an issue as long as the controller is used in conjunction
- *   with the Cortex-R5 QEMU target or an actual R5 running without the
- *   MPU enabled.
  * - No detailed error handling when evaluating the Interrupt Status,
  *   RX Status and TX Status registers.
  */
@@ -25,6 +20,7 @@
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/sys/__assert.h>
+#include <zephyr/cache.h>
 
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/ethernet.h>
@@ -241,15 +237,9 @@ static void eth_xlnx_gem_iface_init(struct net_if *iface)
 	k_work_init_delayable(&dev_data->phy_poll_delayed_work,
 			      eth_xlnx_gem_poll_phy);
 
-	/* Initialize TX completion semaphore */
+	/* Initialize TX-related semaphores */
 	k_sem_init(&dev_data->tx_done_sem, 0, 1);
-
-	/*
-	 * Initialize semaphores in the RX/TX BD rings which have not
-	 * yet been initialized
-	 */
 	k_sem_init(&dev_data->txbd_ring.ring_sem, 1, 1);
-	/* RX BD ring semaphore is not required at the time being */
 
 	/* Initialize the device's interrupt */
 	dev_conf->config_func(dev);
@@ -447,7 +437,11 @@ static int eth_xlnx_gem_send(const struct device *dev, struct net_pkt *pkt)
 		net_pkt_read(pkt, (void *)tx_buffer_offs,
 			     (tx_data_remaining < dev_conf->tx_buffer_size) ?
 			     tx_data_remaining : dev_conf->tx_buffer_size);
-
+#ifdef CONFIG_CPU_HAS_DCACHE
+		arch_dcache_flush_range((void *)tx_buffer_offs,
+			(tx_data_remaining < dev_conf->tx_buffer_size) ?
+			tx_data_remaining : dev_conf->tx_buffer_size);
+#endif
 		/* Update current BD's control word */
 		reg_val = sys_read32(reg_ctrl) & (ETH_XLNX_GEM_TXBD_WRAP_BIT |
 			  ETH_XLNX_GEM_TXBD_USED_BIT);
@@ -806,6 +800,16 @@ static void eth_xlnx_gem_reset_hw(const struct device *dev)
 		    dev_conf->base_addr + ETH_XLNX_GEM_RXQBASE_OFFSET);
 	sys_write32(0x00000000,
 		    dev_conf->base_addr + ETH_XLNX_GEM_TXQBASE_OFFSET);
+#ifdef CONFIG_SOC_XILINX_ZYNQMP
+	sys_write32(0x00000000,
+		    dev_conf->base_addr + ETH_XLNX_GEM_RX1QBASEL_OFFSET);
+	sys_write32(0x00000000,
+		    dev_conf->base_addr + ETH_XLNX_GEM_RX1QBASEH_OFFSET);
+	sys_write32(0x00000000,
+		    dev_conf->base_addr + ETH_XLNX_GEM_TX1QBASEL_OFFSET);
+	sys_write32(0x00000000,
+		    dev_conf->base_addr + ETH_XLNX_GEM_TX1QBASEH_OFFSET);
+#endif
 }
 
 /**
@@ -1354,57 +1358,67 @@ static void eth_xlnx_gem_configure_buffers(const struct device *dev)
 
 	/*
 	 * Set initial RX BD data -> comp. Zynq-7000 TRM, Chapter 16.3.5,
-	 * "Receive Buffer Descriptor List". The BD ring data other than
-	 * the base RX/TX buffer pointers will be set in eth_xlnx_gem_-
-	 * iface_init()
+	 * "Receive Buffer Descriptor List". For RX BDs, the 'used' and
+	 * 'wrap' bits are located at [1:0] in the address word. The 'used'
+	 * bit must be cleared for all BDs, indicating that the controller
+	 * can place packet data in the associated buffer. In the last BD,
+	 * the 'wrap' bit must be set.
 	 */
 	bdptr = dev_data->rxbd_ring.first_bd;
 
 	for (buf_iter = 0; buf_iter < (dev_conf->rxbd_count - 1); buf_iter++) {
+		uint32_t addr = (uint32_t)dev_data->first_rx_buffer +
+				(buf_iter * dev_conf->rx_buffer_size);
 		/* Clear 'used' bit -> BD is owned by the controller */
-		bdptr->ctrl = 0;
-		bdptr->addr = (uint32_t)dev_data->first_rx_buffer +
-			      (buf_iter * (uint32_t)dev_conf->rx_buffer_size);
+		bdptr->addr = addr & ~(ETH_XLNX_GEM_RXBD_USED_BIT | ETH_XLNX_GEM_RXBD_WRAP_BIT);
+		bdptr->ctrl = 0x00000000;
 		++bdptr;
 	}
 
-	/*
-	 * For the last BD, bit [1] must be OR'ed in the buffer memory
-	 * address -> this is the 'wrap' bit indicating that this is the
-	 * last BD in the ring. This location is used as bits [1..0] can't
-	 * be part of the buffer address due to alignment requirements
-	 * anyways. Watch out: TX BDs handle this differently, their wrap
-	 * bit is located in the BD's control word!
-	 */
-	bdptr->ctrl = 0; /* BD is owned by the controller */
-	bdptr->addr = ((uint32_t)dev_data->first_rx_buffer +
-		      (buf_iter * (uint32_t)dev_conf->rx_buffer_size)) |
+	uint32_t last_rx_addr = (uint32_t)dev_data->first_rx_buffer +
+				(buf_iter * dev_conf->rx_buffer_size);
+	bdptr->addr = (((uint32_t)last_rx_addr) & ~ETH_XLNX_GEM_RXBD_USED_BIT) |
 		      ETH_XLNX_GEM_RXBD_WRAP_BIT;
+	bdptr->ctrl = 0x00000000;
 
 	/*
 	 * Set initial TX BD data -> comp. Zynq-7000 TRM, Chapter 16.3.5,
-	 * "Transmit Buffer Descriptor List". TX BD ring data has already
-	 * been set up in eth_xlnx_gem_iface_init()
+	 * "Transmit Buffer Descriptor List". For TX BDs, the 'used' and
+	 * 'wrap' bits are located at [31:30] in the control word. For TX
+	 * BDs, a set 'used' is the stop marker to iterate no further for
+	 * TX data to transmit. Indicate no data to transmit by setting
+	 * 'used' in all TX BDs. In the last BD, the 'wrap' bit must be set.
 	 */
 	bdptr = dev_data->txbd_ring.first_bd;
 
 	for (buf_iter = 0; buf_iter < (dev_conf->txbd_count - 1); buf_iter++) {
-		/* Set up the control word -> 'used' flag must be set. */
-		bdptr->ctrl = ETH_XLNX_GEM_TXBD_USED_BIT;
 		bdptr->addr = (uint32_t)dev_data->first_tx_buffer +
-			      (buf_iter * (uint32_t)dev_conf->tx_buffer_size);
+			      (buf_iter * dev_conf->tx_buffer_size);
+		bdptr->ctrl = ETH_XLNX_GEM_TXBD_USED_BIT;
 		++bdptr;
 	}
 
-	/*
-	 * For the last BD, set the 'wrap' bit indicating to the controller
-	 * that this BD is the last one in the ring. -> For TX BDs, the 'wrap'
-	 * bit isn't located in the address word, but in the control word
-	 * instead
-	 */
-	bdptr->ctrl = (ETH_XLNX_GEM_TXBD_WRAP_BIT | ETH_XLNX_GEM_TXBD_USED_BIT);
 	bdptr->addr = (uint32_t)dev_data->first_tx_buffer +
 		      (buf_iter * (uint32_t)dev_conf->tx_buffer_size);
+	bdptr->ctrl = (ETH_XLNX_GEM_TXBD_WRAP_BIT | ETH_XLNX_GEM_TXBD_USED_BIT);
+
+#ifdef CONFIG_SOC_XILINX_ZYNQMP
+	/*
+	 * On the UltraScale, configure the tie-off dummy buffer descriptors.
+	 * For both of them, set the 'wrap' bit, for the RX tie-off BD indicate
+	 * that this BD is not available for data reception, for the TX tie-off
+	 * BD indicate that there's no data to be transferred in there.
+	 */
+
+	bdptr = dev_data->rxbd_ring.tie_off_bd;
+	bdptr->addr = (uint32_t)dev_data->rx_tie_off_buffer | ETH_XLNX_GEM_RXBD_USED_BIT |
+		      ETH_XLNX_GEM_RXBD_WRAP_BIT;
+	bdptr->ctrl = 0x00000000;
+
+	bdptr = dev_data->txbd_ring.tie_off_bd;
+	bdptr->addr = (uint32_t)dev_data->tx_tie_off_buffer;
+	bdptr->ctrl = ETH_XLNX_GEM_TXBD_WRAP_BIT | ETH_XLNX_GEM_TXBD_USED_BIT;
+#endif /* CONFIG_SOC_XILINX_ZYNQMP */
 
 	/* Set free count/current index in the RX/TX BD ring data */
 	dev_data->rxbd_ring.next_to_process = 0;
@@ -1414,11 +1428,26 @@ static void eth_xlnx_gem_configure_buffers(const struct device *dev)
 	dev_data->txbd_ring.next_to_use     = 0;
 	dev_data->txbd_ring.free_bds        = dev_conf->txbd_count;
 
-	/* Write pointers to the first RX/TX BD to the controller */
+	/*
+	 * Write pointers to the first RX/TX BD to the controller.
+	 * On both the Zynq-7000 and the UltraScale, the legacy 32-bit
+	 * RXQBASE/TXQBASE registers are the effective registers.
+	 * On the UltraScale, the retrofitted 64-bit RXQBASE/TXQBASE
+	 * registers must point to the single dummy tie-off BD for
+	 * both the RX and TX direction.
+	 */
 	sys_write32((uint32_t)dev_data->rxbd_ring.first_bd,
 		    dev_conf->base_addr + ETH_XLNX_GEM_RXQBASE_OFFSET);
 	sys_write32((uint32_t)dev_data->txbd_ring.first_bd,
 		    dev_conf->base_addr + ETH_XLNX_GEM_TXQBASE_OFFSET);
+#ifdef CONFIG_SOC_XILINX_ZYNQMP
+	sys_write32(0x00000000, dev_conf->base_addr + ETH_XLNX_GEM_RX1QBASEH_OFFSET);
+	sys_write32((uint32_t)dev_data->rxbd_ring.tie_off_bd,
+		    dev_conf->base_addr + ETH_XLNX_GEM_RX1QBASEL_OFFSET);
+	sys_write32(0x00000000, dev_conf->base_addr + ETH_XLNX_GEM_TX1QBASEH_OFFSET);
+	sys_write32((uint32_t)dev_data->txbd_ring.tie_off_bd,
+		    dev_conf->base_addr + ETH_XLNX_GEM_TX1QBASEL_OFFSET);
+#endif /* CONFIG_SOC_XILINX_ZYNQMP */
 }
 
 /**
@@ -1556,6 +1585,13 @@ static void eth_xlnx_gem_handle_rx_pending(const struct device *dev)
 		 */
 		do {
 			if (pkt != NULL) {
+#ifdef CONFIG_CPU_HAS_DCACHE
+				arch_dcache_flush_range(
+					(void *)(dev_data->rxbd_ring.first_bd[curr_bd_idx].addr &
+					ETH_XLNX_GEM_RXBD_BUFFER_ADDR_MASK),
+					(rx_data_remaining < dev_conf->rx_buffer_size) ?
+					rx_data_remaining : dev_conf->rx_buffer_size);
+#endif
 				net_pkt_write(pkt, (const void *)
 					      (dev_data->rxbd_ring.first_bd[curr_bd_idx].addr &
 					      ETH_XLNX_GEM_RXBD_BUFFER_ADDR_MASK),
