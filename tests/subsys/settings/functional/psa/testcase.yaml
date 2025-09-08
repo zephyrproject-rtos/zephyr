@@ -1,0 +1,11 @@
+tests:
+  settings.functional.psa-its:
+    filter: CONFIG_TFM_PARTITION_INTERNAL_TRUSTED_STORAGE
+    integration_platforms:
+      - mps2/an521/cpu0/ns
+    tags:
+      - settings
+      - trusted-firmware-m
+    extra_args:
+      - CONFIG_SETTINGS_TFM_ITS=y
+      - CONFIG_TFM_ITS_MAX_ASSET_SIZE_OVERRIDE=y
