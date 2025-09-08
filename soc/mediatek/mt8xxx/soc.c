@@ -298,7 +298,7 @@ void c_boot(void)
 	 */
 	__asm__ volatile("wsr %0, VECBASE; rsync" :: "r"(&z_xtensa_vecbase));
 
-#ifdef CONFIG_SOC_SERIES_MT8195
+#if defined(CONFIG_SOC_SERIES_MT8195) || defined(CONFIG_SOC_MT8188)
 	mtk_adsp_cpu_freq_init();
 #endif
 
