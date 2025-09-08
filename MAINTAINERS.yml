@@ -6063,6 +6063,21 @@ nRF BSIM:
   tests:
     - boards.nrf52_bsim
 
+nRF IronSide SE Platforms:
+  status: maintained
+  maintainers:
+    - hakonfam
+  collaborators:
+    - "57300"
+    - jonathannilsen
+    - karstenkoenig
+    - SebastianBoe
+  files:
+    - soc/nordic/ironside/
+    - soc/nordic/common/uicr/
+  labels:
+    - "platform: nRF IronSide SE"
+
 nRF Platforms:
   status: maintained
   maintainers:
