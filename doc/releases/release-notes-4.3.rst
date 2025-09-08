@@ -146,6 +146,10 @@ New APIs and options
 
     * :kconfig:option:`CONFIG_CPU_FREQ`
 
+* Crypto
+
+  * :kconfig:option:`CONFIG_MBEDTLS_PSA_CRYPTO_BUILTIN_KEYS`
+
 * Display
 
   * :c:enumerator:`PIXEL_FORMAT_AL_88`
