@@ -1,0 +1,46 @@
+/*
+ * Copyright 2025 by Sven Hädrich <sven.haedrich@sevenlab.de>
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * use the DALI-interface via DALI 2 Click-(MIKROE-1581) adapter-board
+ * connect DALI Tx to D12
+ * connect DALI Rx to A0
+ */
+
+/ {
+	dali0: dali {
+		compatible = "zephyr,dali-pwm";
+		status = "okay";
+		counter = <&counter2>;
+		pwms = <&pwm3 1 PWM_USEC(41) PWM_POLARITY_NORMAL>;
+		rx-gpios = <&gpioa 0 GPIO_ACTIVE_HIGH>;
+		tx-flank-shift-us = <(-46)>;
+		rx-flank-shift-us = <(-68)>;
+		tx-rx-propagation-max-us = <2400>;
+		rx-max-latency-us = <80>;
+		rx-grey-area-us = <800>;
+	};
+};
+
+&timers2 {
+	// set timebase to 1us/1MHz
+	st,prescaler = <47>;
+	status = "okay";
+
+	counter2: counter {
+		compatible = "st,stm32-counter";
+		status = "okay";
+	};
+};
+
+&timers3 {
+	// set timebase to 1us/1MHz
+	st,prescaler = <47>;
+	status = "okay";
+
+	pwm3: pwm {
+		pinctrl-0 = <&tim3_ch1_pa6>;
+		pinctrl-names = "default";
+		status = "okay";
+	};
+};
