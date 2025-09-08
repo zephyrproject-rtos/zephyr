@@ -64,6 +64,16 @@
 	status = "okay";
 };
 
+&mtu1 {
+	status = "okay";
+	pinctrl-0 = <&pwm1_default>;
+	pinctrl-names = "default";
+
+	pwm1: pwm {
+		status = "okay";
+	};
+};
+
 &sci5 {
 	pinctrl-0 = <&sci5_default>;
 	pinctrl-names = "default";
