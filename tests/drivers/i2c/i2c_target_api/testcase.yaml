@@ -45,7 +45,7 @@ tests:
     platform_allow:
       - frdm_mcxn947/mcxn947/cpu0
       - mcx_n9xx_evk/mcxn947/cpu0
-      - mcxw72_evk/mcxw727c/cpu0
+      - mcxw72_evk
       - mimxrt1170_evk@B/mimxrt1176/cm7
       - mimxrt1170_evk/mimxrt1176/cm7
       - mimxrt1180_evk/mimxrt1189/cm33

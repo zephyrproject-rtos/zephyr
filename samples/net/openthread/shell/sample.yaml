@@ -30,8 +30,8 @@ tests:
       - CONFIG_NXP_MONOLITHIC_NBU=n
     platform_allow:
       - frdm_mcxw71
-      - mcxw72_evk/mcxw727c/cpu0
-      - frdm_mcxw72/mcxw727c/cpu0
+      - frdm_mcxw72
+      - mcxw72_evk
   sample.net.openthread.shell.esp:
     build_only: true
     extra_args:

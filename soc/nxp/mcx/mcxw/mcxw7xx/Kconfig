@@ -5,13 +5,12 @@
 rsource "../../../common/Kconfig.nbu"
 
 config MCUX_CORE_SUFFIX
-	default "_cm33_core0" if SOC_MCXW727C_CPU0
-	default "_cm33_core1" if SOC_MCXW727C_CPU1
+	default "_cm33_core0" if SOC_MCXW727C
 
 config SOC_MCXW716C
 	bool
 	select NXP_MULTICORE if NXP_NBU
 
-config SOC_MCXW727C_CPU0
+config SOC_MCXW727C
 	bool
 	select NXP_MULTICORE if NXP_NBU
