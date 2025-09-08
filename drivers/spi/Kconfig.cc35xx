@@ -1,0 +1,29 @@
+# Copyright (c) 2025-2026 Conclusive Engineering
+# SPDX-License-Identifier: Apache-2.0
+
+config SPI_CC35XX
+	bool "TI SimpleLink CC35xx SPI driver"
+	default y
+	depends on DT_HAS_TI_CC35XX_SPI_ENABLED
+	select PINCTRL
+	help
+	  Enable support for the TI SimpleLink CC35xx SPI peripheral
+
+if SPI_CC35XX
+
+config SPI_CC35XX_DMA_DRIVEN
+	bool "CC35XX SPI DMA support"
+	default n
+	select DMA
+	help
+	  Enables DMA for SPI transfers.
+
+config SPI_CC35XX_DMA_SCRATCH_BUFFER_SIZE
+	int "CC35XX SPI DMA scratch buffer size"
+	default 256
+	depends on SPI_CC35XX_DMA_DRIVEN
+	help
+	  Size of the per-instance SRAM scratch buffer used when TX data
+	  for a DMA transfer is not directly accessible by the DMA engine.
+
+endif # SPI_CC35XX
