@@ -188,6 +188,7 @@ static int cmd_ls(const struct shell *sh, size_t argc, char **argv)
 
 	while (1) {
 		struct fs_dirent entry;
+		const char *name_end;
 
 		err = fs_readdir(&dir, &entry);
 		if (err != 0) {
@@ -200,7 +201,12 @@ static int cmd_ls(const struct shell *sh, size_t argc, char **argv)
 			break;
 		}
 
-		shell_print(sh, "%s%s", entry.name, (entry.type == FS_DIR_ENTRY_DIR) ? "/" : "");
+		name_end = (entry.type == FS_DIR_ENTRY_DIR) ? "/" : "";
+		if (IS_ENABLED(CONFIG_FILE_SYSTEM_SHELL_LS_SIZE)) {
+			shell_print(sh, "%8zu %s%s", entry.size, entry.name, name_end);
+		} else {
+			shell_print(sh, "%s%s", entry.name, name_end);
+		}
 	}
 
 	fs_closedir(&dir);
