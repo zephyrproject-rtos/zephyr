@@ -17,4 +17,11 @@ config MMU
 config CACHE_MANAGEMENT
 	default y
 
+if NETWORKING
+
+config NET_L2_ETHERNET
+	default y
+
+endif # NETWORKING
+
 endif # SOC_SERIES_SAMA7G5
