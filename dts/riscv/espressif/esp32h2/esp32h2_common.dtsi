@@ -304,6 +304,8 @@
 			interrupts = <I2S1_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
 			clocks = <&clock ESP32_I2S1_MODULE>;
+			dmas = <&dma 2>, <&dma 3>;
+			dma-names = "rx", "tx";
 			unit = <0>;
 			status = "disabled";
 		};
