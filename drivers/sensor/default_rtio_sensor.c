@@ -252,8 +252,9 @@ static void sensor_submit_fallback_sync(struct rtio_iodev_sqe *iodev_sqe)
 
 			/* Convert to q31 using the shift */
 			q[sample_idx + sample] =
-				(((value_int * ((INT64_C(1) << 31) - 1))) >> header->shift)
-				+ (((value_frac_u * ((INT64_C(1) << 31) - 1)) / 1000000) >> header->shift);
+				(((value_int * ((INT64_C(1) << 31) - 1))) >> header->shift) +
+				(((value_frac_u * ((INT64_C(1) << 31) - 1)) / 1000000) >>
+				 header->shift);
 
 			LOG_DBG("value[%d]=%s%d.%06d, q[%d]@%p=%d, shift: %d",
 				sample, value_int < 0 ? "-" : "",
