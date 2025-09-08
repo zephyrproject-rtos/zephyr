@@ -17,6 +17,6 @@ tests:
     platform_allow:
       - frdm_mcxa156
       - frdm_mcxa346
-      - frdm_mcxa266
+      - frdm_mcxa366
       - frdm_mcxn947/mcxn947/cpu0
       - lpcxpresso55s36
