@@ -496,14 +496,13 @@ static int a2dp_close_ind(struct bt_avdtp *session, struct bt_avdtp_sep *sep, ui
 
 static int a2dp_abort_ind(struct bt_avdtp *session, struct bt_avdtp_sep *sep, uint8_t *errcode)
 {
-	struct bt_a2dp_ep *ep = CONTAINER_OF(sep, struct bt_a2dp_ep, sep);
 	bt_a2dp_ctrl_req_cb req_cb;
-	bt_a2dp_ctrl_done_cb done_cb;
 
 	__ASSERT(sep, "Invalid sep");
 	req_cb = a2dp_cb != NULL ? a2dp_cb->abort_req : NULL;
-	done_cb = (ep->stream != NULL && ep->stream->ops != NULL) ? ep->stream->ops->aborted : NULL;
-	return a2dp_ctrl_ind(session, sep, errcode, req_cb, done_cb, true);
+
+	/* When stream is released, the `stream->ops->released` will be called. */
+	return a2dp_ctrl_ind(session, sep, errcode, req_cb, NULL, true);
 }
 
 static int bt_a2dp_set_config_cb(struct bt_avdtp_req *req, struct net_buf *buf)
@@ -856,12 +855,10 @@ static int bt_a2dp_close_cb(struct bt_avdtp_req *req, struct net_buf *buf)
 
 static int bt_a2dp_abort_cb(struct bt_avdtp_req *req, struct net_buf *buf)
 {
-	struct bt_a2dp_ep *ep = CONTAINER_OF(CTRL_REQ(req)->sep, struct bt_a2dp_ep, sep);
 	bt_a2dp_rsp_cb rsp_cb = a2dp_cb != NULL ? a2dp_cb->abort_rsp : NULL;
-	bt_a2dp_done_cb done_cb =
-		(ep->stream != NULL && ep->stream->ops != NULL) ? ep->stream->ops->aborted : NULL;
 
-	return bt_a2dp_ctrl_cb(req, rsp_cb, done_cb, true);
+	/* When stream is released, the `stream->ops->released` will be called. */
+	return bt_a2dp_ctrl_cb(req, rsp_cb, NULL, true);
 }
 
 static int bt_a2dp_stream_ctrl_pre(struct bt_a2dp_stream *stream, bt_avdtp_func_t cb)
