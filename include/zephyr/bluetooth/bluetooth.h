@@ -46,6 +46,14 @@
 extern "C" {
 #endif
 
+#define DUM_DUM_val 5
+#define dum_dum_val 5
+
+enum my_dummy_enum {
+	dummy_val = 1,
+	DUMMY_VAL = 2,
+};
+
 /**
  * @brief Generic Access Profile (GAP)
  *
