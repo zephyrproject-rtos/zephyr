@@ -4,6 +4,7 @@
 config POWER_DOMAIN_NRFS_GDPWR
 	bool "NRFS Global Domain Power Request driver"
 	depends on DT_HAS_NORDIC_NRFS_GDPWR_ENABLED
+	depends on MULTITHREADING
 	select NRFS
 	select NRFS_GDPWR_SERVICE_ENABLED
 	default y
