@@ -35,6 +35,13 @@ config SPI_DW_HSSI
 config SPI_DW_ACCESS_WORD_ONLY
 	default y if SPI_DW
 
+if PM
+
+config PM_DEVICE
+	default y
+
+endif # PM
+
 if PM_DEVICE
 
 config PM_DEVICE_RUNTIME
