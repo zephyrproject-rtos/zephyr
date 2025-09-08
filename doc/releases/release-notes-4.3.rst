@@ -189,6 +189,10 @@ New APIs and options
       * :kconfig:option:`CONFIG_SHELL_MQTT_WORK_DELAY_MS`
       * :kconfig:option:`CONFIG_SHELL_MQTT_LISTEN_TIMEOUT_MS`
 
+* Storage
+
+    * :kconfig:option:`CONFIG_FILE_SYSTEM_SHELL_LS_SIZE`
+
 * Sys
 
   * :c:func:`sys_count_bits`
