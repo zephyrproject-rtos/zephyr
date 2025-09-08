@@ -1,0 +1,18 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&cmp {
+	positive-mux-input = "IN0"; /* PTC6 */
+	negative-mux-input = "IN7"; /* DAC */
+	dac-vref-source = "VIN2";
+	dac-value = <31>;
+	filter-count = <0x3>;
+	filter-period = <0xF>;
+	hysteresis-mode = "LEVEL2";
+	enable-high-speed-mode;
+	invert-output;
+	enable-pin-out;
+};
