@@ -22,6 +22,7 @@ config ESP32_BT_RESERVE_DRAM
 
 config ESP32_REGION_1_NOINIT
 	bool "Use DRAM region 1 to spill noinit section"
+	default y if !(SOC_ENABLE_APPCPU || SOC_ESP32_APPCPU)
 	help
 	  ESP32 has two banks of size 192K and 128K which can be used
 	  as DRAM. Enabling this option would allocate .noinit sections
