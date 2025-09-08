@@ -3,8 +3,6 @@
 Overview
 ********
 
-ESP-WROVER-KIT is an ESP32-based development board produced by `Espressif <https://www.espressif.com/>`_.
-
 ESP-WROVER-KIT features the following integrated components:
 
 - ESP32-WROVER-E module
@@ -25,11 +23,16 @@ Most of the ESP32 I/O pins are broken out to the board's pin headers for easy ac
 
 For more information, check `ESP32-WROVER-E Datasheet`_ and `ESP32 Datasheet`_.
 
+Hardware
+********
+
+.. include:: ../../../espressif/common/soc-esp32-features.rst
+   :start-after: espressif-soc-esp32-features
+
 Supported Features
 ==================
 
 .. zephyr:board-supported-hw::
-
 
 Functionality Overview
 ======================
@@ -160,7 +163,7 @@ The table below provides description in the following manner:
 .. _setup options:
 
 Setup Options
-*************
+=============
 
 There are three jumper blocks available to set up the board functionality. The most frequently
 required options are listed in the table below.
@@ -190,7 +193,7 @@ required options are listed in the table below.
 +--------+----------------+-------------------------------------------------------+
 
 Allocation of ESP32 Pins
-************************
+========================
 
 Some pins / terminals of ESP32 are allocated for use with the onboard or external hardware. If
 that hardware is not used, e.g., nothing is plugged into the Camera (JP4) header, then these
@@ -211,7 +214,7 @@ For more details on which pins are shared among which peripherals, please refer 
 the next section.
 
 Main I/O Connector / JP1
-************************
+========================
 
 The JP1 connector consists of 14x2 male pins whose functions are shown in the middle two “I/O”
 columns of the table below. The two “Shared With” columns on both sides describe where else on
@@ -261,7 +264,7 @@ Legend:
   - PSRAM - ESP32-WROVER-E's PSRAM
 
 32.768 kHz Oscillator
-*********************
+=====================
 
 +---+-----------+
 | . | ESP32 Pin |
@@ -279,7 +282,7 @@ Legend:
    them to positions R12 / R24.
 
 SPI Flash / JP2
-***************
+===============
 
 +---+--------------+
 | . | ESP32 Pin    |
@@ -304,7 +307,7 @@ SPI Flash / JP2
    module's flash bus from the pin header JP2.
 
 JTAG / JP2
-**********
+==========
 
 +---+---------------+-------------+
 | . | ESP32 Pin     | JTAG Signal |
@@ -321,7 +324,7 @@ JTAG / JP2
 +---+---------------+-------------+
 
 Camera / JP4
-************
+============
 
 +----+-----------+-----------------------------+
 | .  | ESP32 Pin | Camera Signal               |
@@ -366,7 +369,7 @@ Camera / JP4
 - Signals D0 .. D7 denote camera data bus
 
 RGB LED
-*******
+=======
 
 +----+-----------+---------+
 | .  | ESP32 Pin | RGB LED |
@@ -379,7 +382,7 @@ RGB LED
 +----+-----------+---------+
 
 MicroSD Card
-************
+============
 
 +---+---------------+----------------+
 | . | ESP32 Pin     | MicroSD Signal |
@@ -400,7 +403,7 @@ MicroSD Card
 +---+---------------+----------------+
 
 LCD / U5
-********
+========
 
 +---+-----------+------------+
 | . | ESP32 Pin | LCD Signal |
@@ -420,14 +423,8 @@ LCD / U5
 | 7 | GPIO5     | Backlight  |
 +---+-----------+------------+
 
-Start Application Development
-*****************************
-
-Before powering up your ESP-WROVER-KIT, please make sure that the board is in good
-condition with no obvious signs of damage.
-
 Initial Setup
-*************
+=============
 
 Please set only the following jumpers shown in the pictures below:
 
@@ -447,16 +444,8 @@ Turn the Power Switch to ON, the 5V Power On LED should light up.
 System Requirements
 *******************
 
-Espressif HAL requires WiFi and Bluetooth binary blobs in order work. Run the command
-below to retrieve those files.
-
-.. code-block:: console
-
-   west blobs fetch hal_espressif
-
-.. note::
-
-   It is recommended running the command above after :file:`west update`.
+.. include:: ../../../espressif/common/system-requirements.rst
+   :start-after: espressif-system-requirements
 
 Programming and Debugging
 *************************
@@ -472,7 +461,8 @@ Programming and Debugging
 Debugging
 =========
 
-ESP32 support on OpenOCD is available at `OpenOCD ESP32`_.
+.. include:: ../../../espressif/common/openocd-debugging.rst
+   :start-after: espressif-openocd-debugging
 
 On the ESP-WROVER-KIT board, the JTAG pins are connected internally to
 a USB serial port on the same device as the console.  These boards
@@ -483,27 +473,10 @@ headers are on the right side of the board as viewed from the power
 switch, next to similar headers for SPI and UART.  See
 `ESP-WROVER-32 V3 Getting Started Guide`_ for details.
 
-Here is an example for building the :zephyr:code-sample:`hello_world` application.
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/hello_world
-   :board: esp_wrover_kit/esp32/procpu
-   :goals: build flash
-   :gen-args: -DOPENOCD=<path/to/bin/openocd> -DOPENOCD_DEFAULT_PATH=<path/to/openocd/share/openocd/scripts>
-
-You can debug an application in the usual way. Here is an example for the :zephyr:code-sample:`hello_world` application.
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/hello_world
-   :board: esp_wrover_kit/esp32/procpu
-   :goals: debug
-
 References
 **********
 
 .. target-notes::
 
-.. _`ESP32 Datasheet`: https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_en.pdf (PDF)
 .. _`ESP32-WROVER-E Datasheet`: https://www.espressif.com/sites/default/files/documentation/esp32-wrover-e_esp32-wrover-ie_datasheet_en.pdf (PDF)
-.. _`OpenOCD ESP32`: https://github.com/espressif/openocd-esp32/releases
 .. _`ESP-WROVER-32 V3 Getting Started Guide`: https://docs.espressif.com/projects/esp-idf/en/latest/esp32/hw-reference/esp32/get-started-wrover-kit.html
