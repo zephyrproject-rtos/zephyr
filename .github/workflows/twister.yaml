@@ -200,7 +200,7 @@ jobs:
       LLVM_TOOLCHAIN_PATH: /usr/lib/llvm-20
       VENDOR_OPTIONS: ' --vendor ambiq'
       PLATFORM_OPTIONS: ' --platform apollo510_evb --platform apollo510_eb'
-      TEST_OPTIONS: ' --device-testing --hardware-map ${{ github.workspace }}/../../map.yml'
+      TEST_OPTIONS: '--west-flash --enable-slow --device-testing --hardware-map ${{ github.workspace }}/../../map.yml'
       FULLRUN: ${{ needs.twister-build-prep.outputs.fullrun }}
     steps:
       - name: Set event variables
