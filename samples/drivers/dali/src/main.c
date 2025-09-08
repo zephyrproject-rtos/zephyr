@@ -38,9 +38,9 @@ int main(void)
 
 	/* send on / off DALI frames */
 	for (;;) {
-		dali_send(dali_dev, &frame_recall_max, NULL, NULL);
-		k_sleep(K_MSEC(2000));
 		dali_send(dali_dev, &frame_off, NULL, NULL);
+		k_sleep(K_MSEC(2000));
+		dali_send(dali_dev, &frame_recall_max, NULL, NULL);
 		k_sleep(K_MSEC(2000));
 	}
 	return 0;

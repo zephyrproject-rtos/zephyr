@@ -1,0 +1,26 @@
+# Counter DALI configuration options
+
+# Copyright (c) 2025 by Sven Hädrich <sven.haedrich@sevenlab.de>
+# SPDX-License-Identifier: Apache-2.0
+
+config DALI_COUNTER
+	bool "Counter based DALI driver"
+	default y
+	depends on DT_HAS_ZEPHYR_DALI_COUNTER_ENABLED
+	select COUNTER
+	help
+	  Enable counter based DALI driver.
+
+config DALI_COUNTER_PRIORITY
+	int "DALI workqueue priority"
+	depends on DT_HAS_ZEPHYR_DALI_COUNTER_ENABLED
+	default 5
+	help
+	  The priority of the workqueue used for the DALI driver.
+
+config DALI_COUNTER_STACK_SIZE
+	int "DALI driver workqueue thread stack size"
+	depends on DT_HAS_ZEPHYR_DALI_COUNTER_ENABLED
+	default 768
+	help
+	  The thread stack size.

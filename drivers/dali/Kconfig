@@ -11,6 +11,7 @@ menuconfig DALI
 if DALI
 
 source "drivers/dali/Kconfig.lpc11u6x"
+source "drivers/dali/Kconfig.counter"
 source "drivers/dali/Kconfig.pwm"
 
 module = DALI_LOW_LEVEL
