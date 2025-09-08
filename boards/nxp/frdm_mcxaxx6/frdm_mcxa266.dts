@@ -8,7 +8,7 @@
 
 #include <nxp/nxp_mcxa266.dtsi>
 #include "frdm_mcxa266-pinctrl.dtsi"
-#include "../common/frdm_mcxa266_a346_a366_common.dtsi"
+#include "board_common.dtsi"
 #include <freq.h>
 
 / {
