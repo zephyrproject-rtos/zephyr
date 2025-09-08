@@ -36,7 +36,7 @@
 			label = "User LED2";
 		};
 
-		green_led_3: led_2 {
+		red_led_3: led_2 {
 			gpios = <&gpiob 11 GPIO_ACTIVE_HIGH>;
 			label = "User LED3";
 		};
