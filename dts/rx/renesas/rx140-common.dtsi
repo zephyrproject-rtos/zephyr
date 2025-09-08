@@ -695,5 +695,12 @@
 			zephyr,memory-region = "OFSM";
 			status = "okay";
 		};
+
+		iwdt: watchdog@88030 {
+			compatible = "renesas,rx-iwdt";
+			reg = <0x00088030 0x10>;
+			clocks = <&iwdtlsclk 0 0>;
+			status = "disabled";
+		};
 	};
 };
