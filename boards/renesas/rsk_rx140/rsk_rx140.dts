@@ -1,0 +1,82 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <renesas/r5f51406.dtsi>
+#include <dt-bindings/gpio/gpio.h>
+#include "rsk_rx140-pinctrl.dtsi"
+
+/ {
+	model = "Renesas RSK-RX140 KIT";
+	compatible = "renesas,rsk_rx140";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &code_flash;
+		zephyr,flash-controller = &flash;
+		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led1: led1 {
+			gpios = <&ioport0 4 GPIO_ACTIVE_LOW>;
+			label = "LED1";
+		};
+
+		led3: led3 {
+			gpios = <&ioport0 7 GPIO_ACTIVE_LOW>;
+			label = "LED3";
+		};
+	};
+
+	aliases {
+		led0 = &led1;
+		led1 = &led3;
+	};
+};
+
+&xtal {
+	clock-frequency = <DT_FREQ_M(8)>;
+	mosel = <0>;
+	#clock-cells = <0>;
+	status = "okay";
+};
+
+&subclk {
+	status = "okay";
+};
+
+&pll {
+	status = "okay";
+};
+
+&cmt {
+	clock-frequency = <3000000>;
+	status = "okay";
+};
+
+&ioport0 {
+	status = "okay";
+};
+
+&ioport3 {
+	status = "okay";
+};
+
+&sci1 {
+	pinctrl-0 = <&sci1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	uart1: uart {
+		current-speed = <115200>;
+		status = "okay";
+	};
+};
