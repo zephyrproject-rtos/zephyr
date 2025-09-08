@@ -31,6 +31,13 @@ properties:
       Disabled: External 32-kHz clock is used from CLK input pin
       Enabled:  Internal 32-kHz oscillator is enabled
 
+  en-clk-out:
+    type: boolean
+    description: |
+      clk pin is configured as output. Default disabled on reset.
+      Disabled: CLK pin is an input
+      Enabled: CLK pin is an output driven by the internal 32-kHz oscillator
+
   cp-return-1x:
     type: boolean
     description: |
