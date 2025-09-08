@@ -11,6 +11,7 @@
 #include <openthread/border_routing.h>
 #include <openthread/link.h>
 #include <openthread/mdns.h>
+#include <openthread/thread.h>
 #include <openthread/platform/infra_if.h>
 #include <openthread/platform/entropy.h>
 #include <platform-zephyr.h>
@@ -18,6 +19,8 @@
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/net_ip.h>
+#include <zephyr/net/net_pkt.h>
+#include <ipv6.h>
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/openthread.h>
 
@@ -384,3 +387,133 @@ static void openthread_border_router_check_for_dhcpv4_addr(struct net_if *iface,
 	*is_addr_present = true;
 }
 #endif /* CONFIG_NET_IPV4 */
+
+static bool openthread_border_router_has_multicast_listener(const uint8_t *address)
+{
+	otInstance *instance = openthread_get_default_instance();
+	otBackboneRouterMulticastListenerIterator iterator = 0;
+	otBackboneRouterMulticastListenerInfo info;
+
+	while (otBackboneRouterMulticastListenerGetNext(instance, &iterator, &info) ==
+	       OT_ERROR_NONE) {
+		if (net_ipv6_addr_cmp_raw(info.mAddress.mFields.m8, address)) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+static bool openthread_border_router_can_forward_multicast(struct net_pkt *pkt)
+{
+	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ipv6_access, struct net_ipv6_hdr);
+	otInstance *instance = openthread_get_default_instance();
+	struct net_ipv6_hdr *hdr;
+
+	hdr = (struct net_ipv6_hdr *)net_pkt_get_data(pkt, &ipv6_access);
+	if (hdr == NULL) {
+		return false;
+	}
+
+	if (net_ipv6_is_addr_mcast_raw(hdr->dst)) {
+		/* AIL to Thread network message */
+		if (net_pkt_orig_iface(pkt) == ail_iface_ptr) {
+			if (otBackboneRouterGetState(instance) ==
+			    OT_BACKBONE_ROUTER_STATE_SECONDARY ||
+			    otBackboneRouterGetState(instance) ==
+			    OT_BACKBONE_ROUTER_STATE_DISABLED) {
+				return false;
+			}
+			if (openthread_border_router_has_multicast_listener(hdr->dst)) {
+				return true;
+			}
+			return false;
+		/* Thread to AIL message*/
+		} else {
+			const otMeshLocalPrefix *ml_prefix = otThreadGetMeshLocalPrefix(instance);
+
+			if (net_ipv6_get_addr_mcast_scope_raw(hdr->dst) < 0x04) { /* admin local */
+				return false;
+			}
+			if (net_ipv6_is_prefix(hdr->src, ml_prefix->m8,
+					       sizeof(otIp6NetworkPrefix) * 8U)) {
+				return false;
+			}
+
+			return true;
+		}
+	}
+	return false;
+}
+
+static bool openthread_border_router_check_unicast_packet_forwarding_policy(struct net_pkt *pkt)
+{
+	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ipv6_access, struct net_ipv6_hdr);
+	struct net_ipv6_hdr *hdr;
+	otInstance *instance = openthread_get_default_instance();
+	otNetworkDataIterator iterator = OT_NETWORK_DATA_ITERATOR_INIT;
+	const otMeshLocalPrefix *mesh_local_prefix = otThreadGetMeshLocalPrefix(instance);
+	otBorderRouterConfig config;
+
+	hdr = (struct net_ipv6_hdr *)net_pkt_get_data(pkt, &ipv6_access);
+	if (hdr == NULL) {
+		return false;
+	}
+
+	/* An IPv6 packet with a link-local source address or a link-local destination address
+	 * is never forwarded.
+	 */
+	if (net_ipv6_is_ll_addr_raw(hdr->src) || net_ipv6_is_ll_addr_raw(hdr->dst)) {
+		return false;
+	}
+
+	/* An IPv6 packet with mesh-local source address or a mesh-lolcal destination address
+	 * is never forwarded between Thread network and AIL.
+	 */
+	if (mesh_local_prefix != NULL) {
+		if (net_ipv6_is_prefix(hdr->src, mesh_local_prefix->m8,
+				       sizeof(otIp6NetworkPrefix) * 8U) ||
+		    net_ipv6_is_prefix(hdr->dst, mesh_local_prefix->m8,
+				       sizeof(otIp6NetworkPrefix) * 8U)) {
+			return false;
+		}
+	}
+
+	/* Source address within the Thread network OMR prefix is never forwarded onto the
+	 * Thread network from outside Thread network.
+	 */
+
+	/* Destination address within the Thread network OMR prefix is never forwarded from the
+	 * Thread network outside Thread network.
+	 */
+
+	while (otNetDataGetNextOnMeshPrefix(instance, &iterator, &config) == OT_ERROR_NONE) {
+		if (config.mDp) {
+			continue;
+		}
+		if (net_pkt_orig_iface(pkt) == ail_iface_ptr) {
+			if (net_ipv6_is_prefix(hdr->src, config.mPrefix.mPrefix.mFields.m8,
+					       config.mPrefix.mLength)) {
+				return false;
+			}
+		} else {
+			if (net_ipv6_is_prefix(hdr->dst, config.mPrefix.mPrefix.mFields.m8,
+					       config.mPrefix.mLength)) {
+				return false;
+			}
+		}
+	}
+
+	return true;
+}
+
+bool openthread_border_router_check_packet_forwarding_rules(struct net_pkt *pkt)
+{
+	if (!openthread_border_router_can_forward_multicast(pkt)) {
+		if (!openthread_border_router_check_unicast_packet_forwarding_policy(pkt)) {
+			return false;
+		}
+	}
+
+	return true;
+}
