@@ -5,6 +5,10 @@
 #include <zephyr/init.h>
 #include <zephyr/drivers/timer/system_timer.h>
 
+#if defined(CONFIG_TEST)
+const int32_t z_sys_timer_irq_for_test = DT_IRQN(DT_NODELABEL(ostimer0));
+#endif
+
 #define OSTIMER64_BASE DT_REG_ADDR(DT_NODELABEL(ostimer64))
 #define OSTIMER_BASE DT_REG_ADDR(DT_NODELABEL(ostimer0))
 
