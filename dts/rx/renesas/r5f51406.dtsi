@@ -171,6 +171,7 @@
 				reg = <0xfffc0000 DT_SIZE_K(256)>;
 				write-block-size = <8>;
 				erase-block-size = <2048>;
+				programming-enable;
 			};
 
 			data_flash: flash@100000 {
