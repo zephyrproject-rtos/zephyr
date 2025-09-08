@@ -10,4 +10,5 @@ tests:
       - nrf52840dk/nrf52840
       - frdm_k64f
       - nucleo_c071rb
+      - rpi_debug_probe
     tags: dap
