@@ -1,0 +1,68 @@
+/*
+ * Copyright (c) 2025, Ambiq Micro Inc. <www.ambiq.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+		sram@2027F000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x2027F000 0x1000>;
+		zephyr,memory-region = "RetainedMem";
+		status = "okay";
+
+		retainedmem {
+			compatible = "zephyr,retained-ram";
+			status = "okay";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			boot_info0: boot_info@0 {
+				compatible = "zephyr,retention";
+				status = "okay";
+				reg = <0x0 0x1000>;
+			};
+		};
+	};
+
+	chosen {
+		zephyr,bootloader-info = &boot_info0;
+	};
+};
+
+
+&sram0 {
+	/* Shrink SRAM size to avoid overlap with retained memory region:
+	 * 2048 - 4 = 2044KB = 0x1FF000
+	 */
+	reg = <0x20080000 0x1FF000>;
+};
+
+/delete-node/ &boot_partition;
+/delete-node/ &slot0_partition;
+/delete-node/ &slot1_partition;
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0x00020000>;
+		};
+		/*
+		 * The case is not flexible, need to modify the slot_partition
+		 * to match the FLASH_MAX_APP_SIZE in the case.
+		 */
+		slot0_partition: partition@20000 {
+			label = "image-0";
+			reg = <0x00020000 0x00024000>;
+		};
+		slot1_partition: partition@44000 {
+			label = "image-1";
+			reg = <0x00044000 0x00024000>;
+		};
+	};
+};

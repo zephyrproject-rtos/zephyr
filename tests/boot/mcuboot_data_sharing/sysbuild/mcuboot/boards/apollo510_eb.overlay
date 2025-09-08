@@ -1,0 +1,8 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+#include "../../../boards/apollo510_eb.overlay"
+
+/ {
+	chosen {
+		zephyr,code-partition = &boot_partition;
+	};
+};
