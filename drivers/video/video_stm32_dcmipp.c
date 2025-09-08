@@ -1620,6 +1620,14 @@ static void stm32_dcmipp_isr(const struct device *dev)
 #define STM32_DCMIPP_CSI_DT_PARAMS(inst)
 #endif
 
+#if defined(STM32_DCMIPP_HAS_PIXEL_PIPES)
+#define STM32_DCMIPP_PIPES(inst) \
+	DT_FOREACH_CHILD_VARGS(DT_INST_CHILD(inst, pipes), DCMIPP_PIPE_INIT_DEFINE, inst)
+#else
+#define STM32_DCMIPP_PIPE_INIT(node_id, inst) DCMIPP_PIPE_INIT_DEFINE(node_id, inst)
+#define STM32_DCMIPP_PIPES(inst) STM32_DCMIPP_PIPE_INIT(DT_INST_CHILD(inst, pipe), inst)
+#endif
+
 #define STM32_DCMIPP_INIT(inst)									\
 	static void stm32_dcmipp_irq_config_##inst(const struct device *dev)			\
 	{											\
@@ -1677,7 +1685,7 @@ static void stm32_dcmipp_isr(const struct device *dev)
 		    POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY,					\
 		    NULL);									\
 												\
-	DT_FOREACH_CHILD_VARGS(DT_INST_PORT_BY_ID(inst, 1), DCMIPP_PIPE_INIT_DEFINE, inst);	\
+	STM32_DCMIPP_PIPES(inst)								\
 												\
 	VIDEO_DEVICE_DEFINE(dcmipp_##inst, DEVICE_DT_INST_GET(inst), SOURCE_DEV(inst));
 

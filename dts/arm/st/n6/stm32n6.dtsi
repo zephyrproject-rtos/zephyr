@@ -718,39 +718,28 @@
 				 <&rctl STM32_RESET(APB5, 6)>;
 			status = "disabled";
 
-			ports {
+			pipes {
+				compatible = "st,stm32-dcmipp-pipes";
 				#address-cells = <1>;
 				#size-cells = <0>;
 
-				port@0 {
+				pipe_dump: pipe@0 {
 					reg = <0>;
-
-					endpoint {
-						remote-endpoint-label = "";
-						bus-type = <VIDEO_BUS_TYPE_CSI2_DPHY>;
-					};
 				};
 
-				port@1 {
-					#address-cells = <1>;
-					#size-cells = <0>;
-
+				pipe_main: pipe@1 {
 					reg = <1>;
+				};
 
-					dcmipp_pipe_dump: endpoint@0 {
-						compatible = "st,stm32-dcmipp-pipe";
-						reg = <0>;
-					};
+				pipe_aux: pipe@2 {
+					reg = <2>;
+				};
+			};
 
-					dcmipp_pipe_main: endpoint@1 {
-						compatible = "st,stm32-dcmipp-pipe";
-						reg = <1>;
-					};
-
-					dcmipp_pipe_aux: endpoint@2 {
-						compatible = "st,stm32-dcmipp-pipe";
-						reg = <2>;
-					};
+			port {
+				endpoint {
+					remote-endpoint-label = "";
+					bus-type = <VIDEO_BUS_TYPE_CSI2_DPHY>;
 				};
 			};
 		};
