@@ -1405,3 +1405,9 @@ test_i2c_wsen_isds_2536030320001: wsen_isds_2536030320001@bb {
 	events-interrupt-gpios = <&test_gpio 0 0>;
 	drdy-interrupt-gpios = <&test_gpio 0 0>;
 };
+
+test_i2c_wsen_pdms_25131308XXX05: wsen_pdms_25131308XXX05@bc {
+	compatible = "we,wsen-pdms-25131308XXX05";
+	reg = <0xbc>;
+	sensor-type = <4>;
+};
