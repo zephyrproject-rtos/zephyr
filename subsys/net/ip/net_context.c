@@ -2335,6 +2335,11 @@ static void set_pkt_txtime(struct net_pkt *pkt, const struct msghdr *msghdr)
 static void set_pkt_hoplimit(struct net_pkt *pkt, const struct msghdr *msg_hdr)
 {
 	struct cmsghdr *cmsg;
+	const struct sockaddr_in6 *addr6 = NULL;
+
+	if (IS_ENABLED(CONFIG_NET_IPV4_MAPPING_TO_IPV6) && IS_ENABLED(CONFIG_NET_IPV6)) {
+		addr6 = msg_hdr->msg_name;
+	}
 
 	for (cmsg = CMSG_FIRSTHDR(msg_hdr); cmsg != NULL;
 	     cmsg = CMSG_NXTHDR(msg_hdr, cmsg)) {
@@ -2345,12 +2350,23 @@ static void set_pkt_hoplimit(struct net_pkt *pkt, const struct msghdr *msg_hdr)
 				net_pkt_set_ipv6_hop_limit(pkt, *(uint8_t *)CMSG_DATA(cmsg));
 				break;
 			}
-		} else {
-			if (cmsg->cmsg_len == CMSG_LEN(sizeof(int)) &&
-			    cmsg->cmsg_level == IPPROTO_IP &&
-			    cmsg->cmsg_type == IP_TTL) {
-				net_pkt_set_ipv4_ttl(pkt, *(uint8_t *)CMSG_DATA(cmsg));
-				break;
+		} else if (net_pkt_family(pkt) == AF_INET) {
+			if (addr6  == NULL ||
+			    (addr6 != NULL && !net_ipv6_addr_is_v4_mapped(&addr6->sin6_addr))) {
+				if (cmsg->cmsg_len == CMSG_LEN(sizeof(int)) &&
+				    cmsg->cmsg_level == IPPROTO_IP &&
+				    cmsg->cmsg_type == IP_TTL) {
+					net_pkt_set_ipv4_ttl(pkt, *(uint8_t *)CMSG_DATA(cmsg));
+					break;
+				}
+			} else if (addr6 != NULL &&
+				   net_ipv6_addr_is_v4_mapped(&addr6->sin6_addr)) {
+				if (cmsg->cmsg_len == CMSG_LEN(sizeof(int)) &&
+				    cmsg->cmsg_level == IPPROTO_IPV6 &&
+				    cmsg->cmsg_type == IPV6_HOPLIMIT) {
+					net_pkt_set_ipv4_ttl(pkt, *(uint8_t *)CMSG_DATA(cmsg));
+					break;
+				}
 			}
 		}
 	}
