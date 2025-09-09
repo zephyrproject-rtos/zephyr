@@ -108,11 +108,11 @@ sl_status_t siwx91x_wifi_module_stats_event_handler(sl_wifi_event_t event, void 
 }
 
 unsigned int siwx91x_on_join(sl_wifi_event_t event,
-			     char *result, uint32_t result_size, void *arg)
+			     const char *result, uint32_t result_size, void *arg)
 {
 	struct siwx91x_dev *sidev = arg;
 
-	if (*result != 'C') {
+	if (result_size == 0 || *result != 'C') {
 		/* TODO: report the real reason of failure */
 		wifi_mgmt_raise_connect_result_event(sidev->iface, WIFI_STATUS_CONN_FAIL);
 		sidev->state = WIFI_STATE_INACTIVE;
@@ -220,6 +220,7 @@ int siwx91x_connect(const struct device *dev, struct wifi_connect_req_params *pa
 		.credential_id = SL_NET_DEFAULT_WIFI_CLIENT_CREDENTIAL_ID,
 	};
 	struct siwx91x_dev *sidev = dev->data;
+	const char *join_success_res = "C";
 	uint32_t timeout_ms = 0;
 	int ret;
 
@@ -298,6 +299,10 @@ int siwx91x_connect(const struct device *dev, struct wifi_connect_req_params *pa
 		return -EINVAL;
 	}
 
+	if (params->timeout == SYS_FOREVER_MS) {
+		return -ENOTSUP;
+	}
+
 	if (params->channel != WIFI_CHANNEL_ANY) {
 		wifi_config.channel.channel = params->channel;
 	} else {
@@ -309,7 +314,10 @@ int siwx91x_connect(const struct device *dev, struct wifi_connect_req_params *pa
 	timeout_ms = siwx91x_convert_timeout_ms(params->timeout);
 
 	ret = sl_wifi_connect(interface, &wifi_config, timeout_ms);
-	if (ret != SL_STATUS_IN_PROGRESS) {
+	if (timeout_ms && ret == SL_STATUS_OK) {
+		siwx91x_on_join(SL_WIFI_JOIN_EVENT, join_success_res, strlen(join_success_res),
+				sidev);
+	} else if (ret != SL_STATUS_IN_PROGRESS) {
 		wifi_mgmt_raise_connect_result_event(sidev->iface, WIFI_STATUS_CONN_FAIL);
 		return -EIO;
 	}

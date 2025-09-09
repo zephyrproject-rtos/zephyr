@@ -581,7 +581,16 @@ struct wifi_connect_req_params {
 	enum wifi_mfp_options mfp;
 	/** BSSID */
 	uint8_t bssid[WIFI_MAC_ADDR_LEN];
-	/** Connect timeout in seconds, SYS_FOREVER_MS for no timeout */
+	/**
+	 * Connect timeout in seconds.
+	 *
+	 * - 0: Asynchronous connect (returns immediately, result via event).
+	 * - >0: Synchronous connect (blocks until success or timeout).
+	 * - SYS_FOREVER_MS: Wait indefinitely.
+	 *
+	 * Support for synchronous connect is driver-specific. If unsupported,
+	 * the field is ignored and connect is always asynchronous.
+	 */
 	int timeout;
 	/**
 	 * Anonymous identity used in EAP authentication (Phase 1) for Wi-Fi Enterprise networks.
