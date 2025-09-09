@@ -39,6 +39,7 @@ struct mchp_ksz9131_data {
 	struct k_work_delayable monitor_work;
 	struct phy_link_state state;
 	struct k_sem sem;
+	bool link_state_valid;
 };
 
 #define PHY_ID_KSZ9131     0x00221640
@@ -391,9 +392,25 @@ static int phy_mchp_ksz9131_gigabit(const struct device *dev, enum phy_link_spee
 
 static int phy_mchp_ksz9131_get_link(const struct device *dev, struct phy_link_state *state)
 {
+	struct mchp_ksz9131_data *const data = dev->data;
+	struct phy_link_state *link_state = &data->state;
+
+	if (!data->link_state_valid) {
+		return -EIO;
+	}
+
+	state->speed = link_state->speed;
+	state->is_up = link_state->is_up;
+
+	return 0;
+}
+
+static int phy_mchp_ksz9131_update_link(const struct device *dev)
+{
 	__maybe_unused const struct mchp_ksz9131_config *config = dev->config;
 	struct mchp_ksz9131_data *const data = dev->data;
 	struct phy_link_state old_state = data->state;
+	struct phy_link_state *state = &data->state;
 	int ret = 0;
 
 	k_sem_take(&data->sem, K_FOREVER);
@@ -438,7 +455,6 @@ static int phy_mchp_ksz9131_link_cb_set(const struct device *dev, phy_callback_t
 	data->cb = cb;
 	data->cb_data = user_data;
 
-	phy_mchp_ksz9131_get_link(dev, &data->state);
 	if (data->cb != NULL) {
 		data->cb(dev, &data->state, data->cb_data);
 	}
@@ -453,7 +469,7 @@ static void phy_mchp_ksz9131_monitor_work_handler(struct k_work *work)
 		CONTAINER_OF(dwork, struct mchp_ksz9131_data, monitor_work);
 	const struct device *dev = data->dev;
 	__maybe_unused const struct mchp_ksz9131_config *cfg = dev->config;
-	struct phy_link_state state = {};
+	struct phy_link_state state = data->state;
 	int ret;
 
 	if (USING_INTERRUPT_GPIO) {
@@ -463,10 +479,12 @@ static void phy_mchp_ksz9131_monitor_work_handler(struct k_work *work)
 		}
 	}
 
-	ret = phy_mchp_ksz9131_get_link(dev, &state);
-	if (ret == 0 && (state.speed != data->state.speed || state.is_up != data->state.is_up)) {
-		memcpy(&data->state, &state, sizeof(struct phy_link_state));
-		if (data->cb != NULL) {
+	data->link_state_valid = false;
+	ret = phy_mchp_ksz9131_update_link(dev);
+	if (ret == 0) {
+		data->link_state_valid = true;
+		if ((state.speed != data->state.speed || state.is_up != data->state.is_up) &&
+		    data->cb != NULL) {
 			data->cb(dev, &data->state, data->cb_data);
 		}
 	}
