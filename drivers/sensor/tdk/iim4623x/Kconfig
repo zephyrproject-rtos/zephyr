@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-config IIM4623X
+menuconfig IIM4623X
 	bool "TDK Invensense IIM4623x IMU sensor family"
 	default y
 	depends on DT_HAS_INVENSENSE_IIM46234_ENABLED || \
@@ -11,3 +11,13 @@ config IIM4623X
 	select SPI_RTIO
 	help
 	  Enable TDK Invensense IIM46234 IMU sensor family support.
+
+if IIM4623X
+
+config IIM4623X_STREAM
+	bool "Streaming mode"
+	select SENSOR_ASYNC_API
+	help
+	  Enable streaming of sensor data.
+
+endif # IIM4623X

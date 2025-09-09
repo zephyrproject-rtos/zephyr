@@ -11,6 +11,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/sensor.h>
 #include <zephyr/rtio/rtio.h>
 #include <zephyr/sys/atomic.h>
 
@@ -66,6 +67,45 @@ struct iim4623x_data {
 
 	/* Encoded data instance to support fetch/get API */
 	struct iim4623x_encoded_data edata;
+
+#ifdef CONFIG_IIM4623X_STREAM
+	struct {
+		enum sensor_stream_data_opt data_opt;
+		struct rtio_iodev_sqe *iodev_sqe;
+		bool drdy_en; /* TODO: consider FIFO triggers */
+	} stream;
+#endif
 };
+
+/* Perform byteswaps for all relevant values within the payload */
+static inline void iim4623x_payload_be_to_cpu(struct iim4623x_pck_strm_payload *payload)
+{
+	sys_be_to_cpu(&payload->timestamp, 8);
+	sys_be_to_cpu(&payload->accel.buf.x, 4);
+	sys_be_to_cpu(&payload->accel.buf.y, 4);
+	sys_be_to_cpu(&payload->accel.buf.z, 4);
+	sys_be_to_cpu(&payload->gyro.buf.x, 4);
+	sys_be_to_cpu(&payload->gyro.buf.y, 4);
+	sys_be_to_cpu(&payload->gyro.buf.z, 4);
+	sys_be_to_cpu(&payload->temp.buf, 4);
+}
+
+/* Calculate the checksum given a pointer to the preamble of a packet in a contigous buffer */
+static inline uint16_t iim4623x_calc_checksum(const uint8_t *packet)
+{
+	const uint8_t *head = &((struct iim4623x_pck_preamble *)packet)->type;
+	const uint8_t *end = (uint8_t *)IIM4623X_GET_POSTAMBLE(packet);
+	uint16_t sum = 0;
+
+	for (; head < end; head++) {
+		sum += *head;
+	}
+
+	return sum;
+}
+
+/* Prepare the private trx_buf with a command given a type and the payload blob */
+int iim4623x_prepare_cmd(const struct device *dev, uint8_t cmd_type, uint8_t *payload,
+			 size_t payload_len);
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_TDK_IIM4623X_H */
