@@ -23,74 +23,66 @@ static int iim4623x_rtio_submit_flush(struct rtio *ctx, int n_sqe)
 	return rtio_flush_completion_queue(ctx);
 }
 
-int iim4623x_bus_write(const struct device *dev, const uint8_t *buf, size_t len)
+int iim4623x_bus_prep_write(const struct device *dev, const uint8_t *buf, size_t len,
+			    struct rtio_sqe **cb_sqe)
 {
 	struct iim4623x_data *data = dev->data;
-	struct rtio *ctx = data->rtio.ctx;
-	struct rtio_iodev *iodev = data->rtio.iodev;
-	int ret;
-
-	if (!atomic_cas(&data->busy, 0, 1)) {
-		return -EBUSY;
-	}
-
-	struct rtio_sqe *wr_sqe = rtio_sqe_acquire(ctx);
+	struct rtio_sqe *wr_sqe = rtio_sqe_acquire(data->rtio.ctx);
 
 	if (!wr_sqe) {
-		ret = -ENOMEM;
-		goto out;
+		return -ENOMEM;
 	}
 
-	rtio_sqe_prep_write(wr_sqe, iodev, RTIO_PRIO_HIGH, buf, len, NULL);
+	rtio_sqe_prep_write(wr_sqe, data->rtio.iodev, RTIO_PRIO_HIGH, buf, len, NULL);
 
-	ret = iim4623x_rtio_submit_flush(ctx, 1);
+	if (!cb_sqe) {
+		return 1;
+	}
 
-out:
-	atomic_cas(&data->busy, 1, 0);
-	return ret;
+	wr_sqe->flags |= RTIO_SQE_CHAINED;
+
+	*cb_sqe = rtio_sqe_acquire(data->rtio.ctx);
+	if (!(*cb_sqe)) {
+		rtio_sqe_drop_all(data->rtio.ctx);
+		return -ENOMEM;
+	}
+
+	return 2;
 }
 
-int iim4623x_bus_read(const struct device *dev, uint8_t *buf, size_t len)
+int iim4623x_bus_prep_read(const struct device *dev, uint8_t *buf, size_t len,
+			   struct rtio_sqe **cb_sqe)
 {
 	struct iim4623x_data *data = dev->data;
-	struct rtio *ctx = data->rtio.ctx;
-	struct rtio_iodev *iodev = data->rtio.iodev;
-	int ret;
-
-	if (!atomic_cas(&data->busy, 0, 1)) {
-		return -EBUSY;
-	}
-
-	struct rtio_sqe *re_sqe = rtio_sqe_acquire(ctx);
+	struct rtio_sqe *re_sqe = rtio_sqe_acquire(data->rtio.ctx);
 
 	if (!re_sqe) {
-		rtio_sqe_drop_all(ctx);
-		ret = -ENOMEM;
-		goto out;
+		return -ENOMEM;
 	}
 
-	rtio_sqe_prep_read(re_sqe, iodev, RTIO_PRIO_HIGH, buf, len, NULL);
+	rtio_sqe_prep_read(re_sqe, data->rtio.iodev, RTIO_PRIO_HIGH, buf, len, NULL);
 
-	ret = iim4623x_rtio_submit_flush(ctx, 1);
+	if (!cb_sqe) {
+		return 1;
+	}
 
-out:
-	atomic_cas(&data->busy, 1, 0);
-	return ret;
+	re_sqe->flags |= RTIO_SQE_CHAINED;
+
+	*cb_sqe = rtio_sqe_acquire(data->rtio.ctx);
+	if (!(*cb_sqe)) {
+		rtio_sqe_drop_all(data->rtio.ctx);
+		return -ENOMEM;
+	}
+
+	return 2;
 }
 
-int iim4623x_bus_write_then_read(const struct device *dev, const uint8_t *wbuf, size_t wlen,
-				 uint8_t *rbuf, size_t rlen)
+int iim4623x_bus_prep_write_read(const struct device *dev, const uint8_t *wbuf, size_t wlen,
+				 uint8_t *rbuf, size_t rlen, struct rtio_sqe **cb_sqe)
 {
 	struct iim4623x_data *data = dev->data;
-	struct rtio *ctx = data->rtio.ctx;
 	struct rtio_iodev *iodev = data->rtio.iodev;
-	int ret;
-
-	if (!atomic_cas(&data->busy, 0, 1)) {
-		return -EBUSY;
-	}
-
-	__ASSERT(data->await_sqe == NULL, "Already awaiting completion");
+	struct rtio *ctx = data->rtio.ctx;
 
 	/* Acquisition order matters */
 	struct rtio_sqe *wr_sqe = rtio_sqe_acquire(ctx);
@@ -99,13 +91,10 @@ int iim4623x_bus_write_then_read(const struct device *dev, const uint8_t *wbuf, 
 
 	struct rtio_sqe *re_sqe = rtio_sqe_acquire(ctx);
 
-	struct rtio_sqe *de_sqe = rtio_sqe_acquire(ctx);
-
-	if (!wr_sqe || !re_sqe || !de_sqe || !data->await_sqe) {
+	if (!wr_sqe || !re_sqe || !data->await_sqe) {
 		rtio_sqe_drop_all(ctx);
 		data->await_sqe = NULL;
-		ret = -ENOMEM;
-		goto out;
+		return -ENOMEM;
 	}
 
 	/* Write */
@@ -118,22 +107,43 @@ int iim4623x_bus_write_then_read(const struct device *dev, const uint8_t *wbuf, 
 
 	/* Read */
 	rtio_sqe_prep_read(re_sqe, iodev, RTIO_PRIO_HIGH, rbuf, rlen, NULL);
+
+	if (!cb_sqe) {
+		return 3;
+	}
+
 	re_sqe->flags |= RTIO_SQE_CHAINED;
 
-	/**
-	 * Allow iim46234 to be ready for a new command
-	 * Refer to datasheet 5.3.1.4 which states 0.3ms after DRDY deasserts. It seems that it
-	 * takes ~3.1us from CS deassert until DRDY deasserts, so just use a single delay of >300us
-	 */
-	/**
-	 * TODO: it would be great if the delay could be scheduled to block the rtio context from
-	 * executing SQEs without also having to block the current thread
-	 */
-	rtio_sqe_prep_delay(de_sqe, K_USEC(400), NULL);
+	*cb_sqe = rtio_sqe_acquire(ctx);
+	if (!(*cb_sqe)) {
+		rtio_sqe_drop_all(ctx);
+		return -ENOMEM;
+	}
 
-	ret = iim4623x_rtio_submit_flush(ctx, 4);
+	return 4;
+}
 
-out:
+int iim4623x_bus_write_then_read(const struct device *dev, const uint8_t *wbuf, size_t wlen,
+				 uint8_t *rbuf, size_t rlen)
+{
+	struct iim4623x_data *data = dev->data;
+	int n_sqe;
+	int ret;
+
+	__ASSERT(data->await_sqe == NULL, "Already awaiting completion");
+
+	n_sqe = iim4623x_bus_prep_write_read(dev, wbuf, wlen, rbuf, rlen, NULL);
+	if (n_sqe < 0) {
+		return n_sqe;
+	}
+
+	if (!atomic_cas(&data->busy, 0, 1)) {
+		return -EBUSY;
+	}
+
+	ret = iim4623x_rtio_submit_flush(data->rtio.ctx, n_sqe);
+
 	atomic_cas(&data->busy, 1, 0);
+
 	return ret;
 }
