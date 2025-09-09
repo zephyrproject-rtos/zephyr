@@ -259,7 +259,7 @@ struct tcp { /* TCP connection */
 	sys_snode_t next;
 	struct net_context *context;
 	struct net_pkt *send_data;
-	struct net_pkt *queue_recv_data;
+	struct net_buf *queue_recv_data;
 	struct net_if *iface;
 	void *recv_user_data;
 	sys_slist_t send_queue;
