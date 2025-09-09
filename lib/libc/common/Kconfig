@@ -120,3 +120,9 @@ config COMMON_LIBC_REMOVE
 	default y if FILE_SYSTEM
 	help
 	  Common implementation of remove().
+
+config COMMON_LIBC_FCLOSE
+	bool "Common C library fclose"
+	default y if ZVFS && !MINIMAL_LIBC
+	help
+	  Enable the common C library implementation of fclose()
