@@ -52,7 +52,7 @@ LOG_MODULE_REGISTER(mdio_mchp_gmac_u2005, CONFIG_MDIO_LOG_LEVEL);
  * This structure contains the clock configuration parameters for the MDIO
  * peripheral.
  */
-typedef struct mchp_mdio_clock {
+typedef struct mdio_clock {
 	/* Clock driver */
 	const struct device *clock_dev;
 
@@ -61,14 +61,14 @@ typedef struct mchp_mdio_clock {
 
 	/* Main AHB clock subsystem. */
 	clock_control_subsys_t mclk_ahb_sys;
-} mchp_mdio_clock_t;
+} mdio_clock_t;
 
 /**
  * @brief Run time data structure for the MDIO device.
  *
  * This structure contains the run time parameters for the MDIO device.
  */
-struct mdio_mchp_dev_data {
+struct mdio_dev_data {
 	/* Semaphore to access registers */
 	struct k_sem sem;
 };
@@ -79,7 +79,7 @@ struct mdio_mchp_dev_data {
  * This structure contains the Device constant configuration parameters
  * for the MDIO device.
  */
-typedef struct mdio_mchp_dev_config {
+typedef struct mdio_dev_config {
 	/* Pin control structure */
 	const struct pinctrl_dev_config *pcfg;
 
@@ -87,8 +87,8 @@ typedef struct mdio_mchp_dev_config {
 	gmac_registers_t *const regs;
 
 	/* clock structure */
-	mchp_mdio_clock_t mdio_clock;
-} mdio_mchp_dev_config_t;
+	mdio_clock_t mdio_clock;
+} mdio_dev_config_t;
 
 /* clang-format off */
 #define MDIO_MCHP_CLOCK_DEFN(n)                                                             \
@@ -183,8 +183,8 @@ static inline int mdio_transfer(gmac_registers_t *regs, mdio_config_transfer_t *
 static int mdio_mchp_read(const struct device *dev, uint8_t prtad, uint8_t regad, uint16_t *data)
 {
 	int ret = MDIO_MCHP_ESUCCESS;
-	struct mdio_mchp_dev_data *const mdio_data = dev->data;
-	const struct mdio_mchp_dev_config *const cfg = dev->config;
+	struct mdio_dev_data *const mdio_data = dev->data;
+	const struct mdio_dev_config *const cfg = dev->config;
 	mdio_config_transfer_t cfg_xfer;
 
 	/* Take Semaphore */
@@ -220,8 +220,8 @@ static int mdio_mchp_read(const struct device *dev, uint8_t prtad, uint8_t regad
 static int mdio_mchp_write(const struct device *dev, uint8_t prtad, uint8_t regad, uint16_t data)
 {
 	int ret = MDIO_MCHP_ESUCCESS;
-	struct mdio_mchp_dev_data *const mdio_data = dev->data;
-	const struct mdio_mchp_dev_config *const cfg = dev->config;
+	struct mdio_dev_data *const mdio_data = dev->data;
+	const struct mdio_dev_config *const cfg = dev->config;
 	mdio_config_transfer_t cfg_xfer;
 
 	/* Take Semaphore */
@@ -259,8 +259,8 @@ static int mdio_mchp_read_c45(const struct device *dev, uint8_t prtad, uint8_t d
 			      uint16_t regad, uint16_t *data)
 {
 	int err = MDIO_MCHP_ESUCCESS;
-	struct mdio_mchp_dev_data *const mdio_data = dev->data;
-	const struct mdio_mchp_dev_config *const cfg = dev->config;
+	struct mdio_dev_data *const mdio_data = dev->data;
+	const struct mdio_dev_config *const cfg = dev->config;
 	mdio_config_transfer_t cfg_xfer;
 
 	/* Take Semaphore */
@@ -309,8 +309,8 @@ static int mdio_mchp_write_c45(const struct device *dev, uint8_t prtad, uint8_t 
 			       uint16_t regad, uint16_t data)
 {
 	int err = MDIO_MCHP_ESUCCESS;
-	struct mdio_mchp_dev_data *const mdio_data = dev->data;
-	const struct mdio_mchp_dev_config *const cfg = dev->config;
+	struct mdio_dev_data *const mdio_data = dev->data;
+	const struct mdio_dev_config *const cfg = dev->config;
 	mdio_config_transfer_t cfg_xfer;
 
 	/* Take Semaphore */
@@ -351,7 +351,7 @@ static int mdio_mchp_write_c45(const struct device *dev, uint8_t prtad, uint8_t 
  */
 static void mdio_mchp_bus_enable(const struct device *dev)
 {
-	const struct mdio_mchp_dev_config *const cfg = dev->config;
+	const struct mdio_dev_config *const cfg = dev->config;
 
 	cfg->regs->GMAC_NCR |= GMAC_NCR_MPE_Msk;
 }
@@ -365,7 +365,7 @@ static void mdio_mchp_bus_enable(const struct device *dev)
  */
 static void mdio_mchp_bus_disable(const struct device *dev)
 {
-	const struct mdio_mchp_dev_config *const cfg = dev->config;
+	const struct mdio_dev_config *const cfg = dev->config;
 
 	cfg->regs->GMAC_NCR &= ~GMAC_NCR_MPE_Msk;
 }
@@ -418,8 +418,8 @@ static inline int mdio_get_mck_clock_divisor(uint32_t mck)
  */
 static int mdio_mchp_initialize(const struct device *dev)
 {
-	const struct mdio_mchp_dev_config *const cfg = dev->config;
-	struct mdio_mchp_dev_data *const data = dev->data;
+	const struct mdio_dev_config *const cfg = dev->config;
+	struct mdio_dev_data *const data = dev->data;
 	int retval = MDIO_MCHP_ESUCCESS;
 	uint32_t clk_freq_hz = 0;
 	int mck_divisor;
@@ -430,16 +430,16 @@ static int mdio_mchp_initialize(const struct device *dev)
 
 		/* Enable clocks */
 		retval = clock_control_on(
-			((const mdio_mchp_dev_config_t *)(dev->config))->mdio_clock.clock_dev,
-			(((mdio_mchp_dev_config_t *)(dev->config))->mdio_clock.mclk_apb_sys));
+			((const mdio_dev_config_t *)(dev->config))->mdio_clock.clock_dev,
+			(((mdio_dev_config_t *)(dev->config))->mdio_clock.mclk_apb_sys));
 		if ((retval != 0) && (retval != -EALREADY)) {
 			LOG_ERR("Failed to enable the MCLK APB for Mdio: %d", retval);
 			break;
 		}
 
 		retval = clock_control_on(
-			((const mdio_mchp_dev_config_t *)(dev->config))->mdio_clock.clock_dev,
-			(((mdio_mchp_dev_config_t *)(dev->config))->mdio_clock.mclk_ahb_sys));
+			((const mdio_dev_config_t *)(dev->config))->mdio_clock.clock_dev,
+			(((mdio_dev_config_t *)(dev->config))->mdio_clock.mclk_ahb_sys));
 		if ((retval != 0) && (retval != -EALREADY)) {
 			LOG_ERR("Failed to enable the MCLK AHB for Mdio: %d", retval);
 			break;
@@ -447,8 +447,8 @@ static int mdio_mchp_initialize(const struct device *dev)
 
 		/* Get Clock frequency */
 		retval = clock_control_get_rate(
-			((const mdio_mchp_dev_config_t *)(dev->config))->mdio_clock.clock_dev,
-			(((mdio_mchp_dev_config_t *)(dev->config))->mdio_clock.mclk_apb_sys),
+			((const mdio_dev_config_t *)(dev->config))->mdio_clock.clock_dev,
+			(((mdio_dev_config_t *)(dev->config))->mdio_clock.mclk_apb_sys),
 			&clk_freq_hz);
 		if (retval < 0) {
 			LOG_ERR("ETH_MCHP_GET_CLOCK_FREQ Failed");
@@ -500,7 +500,7 @@ static const struct mdio_driver_api mdio_mchp_driver_api = {
 };
 
 #define MDIO_MCHP_CONFIG(n)                                                                        \
-	static const struct mdio_mchp_dev_config mdio_mchp_dev_config_##n = {                      \
+	static const struct mdio_dev_config mdio_dev_config_##n = {                      \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
 		.regs = (gmac_registers_t *)DT_INST_REG_ADDR(n),                                   \
 		MDIO_MCHP_CLOCK_DEFN(n)};
@@ -508,9 +508,9 @@ static const struct mdio_driver_api mdio_mchp_driver_api = {
 #define MDIO_MCHP_DEVICE(n)                                                                        \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
 	MDIO_MCHP_CONFIG(n);                                                                       \
-	static struct mdio_mchp_dev_data mdio_mchp_dev_data##n;                                    \
-	DEVICE_DT_INST_DEFINE(n, &mdio_mchp_initialize, NULL, &mdio_mchp_dev_data##n,              \
-			      &mdio_mchp_dev_config_##n, POST_KERNEL, CONFIG_MDIO_INIT_PRIORITY,   \
+	static struct mdio_dev_data mdio_dev_data##n;                                    \
+	DEVICE_DT_INST_DEFINE(n, &mdio_mchp_initialize, NULL, &mdio_dev_data##n,              \
+			      &mdio_dev_config_##n, POST_KERNEL, CONFIG_MDIO_INIT_PRIORITY,   \
 			      &mdio_mchp_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MDIO_MCHP_DEVICE)
