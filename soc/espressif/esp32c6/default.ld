@@ -321,6 +321,7 @@ SECTIONS
     *libzephyr.a:soc_random.*(.literal .text .literal.* .text.*)
 
     *libarch__riscv__core.a:(.literal .text .literal.* .text.*)
+    *libarch__common.a:(.literal .text .literal.* .text.*)
     *libkernel.a:(.literal .text .literal.* .text.*)
     *libgcc.a:lib2funcs.*(.literal .text .literal.* .text.*)
     *libdrivers__flash.a:flash_esp32.*(.literal .text .literal.* .text.*)
