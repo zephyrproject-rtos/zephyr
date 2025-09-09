@@ -17,7 +17,7 @@ natsort
 ply>=3.10
 psutil>=5.6.6
 pyelftools>=0.29
-pygithub
+pygithub>=2.7.0
 pykwalify
 pylint>=3
 pyserial
