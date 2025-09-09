@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2025 Antmicro
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #include <stdint.h>
 
 #include <zephyr/kernel.h>
@@ -9,18 +15,21 @@
 #undef stdout
 #undef stderr
 
-#define table_stride ROUND_UP(CONFIG_ZVFS_LIBC_FILE_SIZE, CONFIG_ZVFS_LIBC_FILE_ALIGN)
-#define table_data   ((uint8_t *)_k_mem_slab_buf_zvfs_libc_file_table)
-
-K_MEM_SLAB_DEFINE_STATIC(zvfs_libc_file_table, CONFIG_ZVFS_LIBC_FILE_SIZE, CONFIG_ZVFS_OPEN_MAX,
-			 CONFIG_ZVFS_LIBC_FILE_ALIGN);
-
 static char _stdin[CONFIG_ZVFS_LIBC_FILE_SIZE];
 static char _stdout[CONFIG_ZVFS_LIBC_FILE_SIZE];
 static char _stderr[CONFIG_ZVFS_LIBC_FILE_SIZE];
 FILE *const stdin = (FILE *)(&_stdin);
 FILE *const stdout = (FILE *)(&_stdout);
 FILE *const stderr = (FILE *)(&_stderr);
+
+#define table_stride ROUND_UP(CONFIG_ZVFS_LIBC_FILE_SIZE, CONFIG_ZVFS_LIBC_FILE_ALIGN)
+#define table_data   ((uint8_t *)_k_mem_slab_buf_zvfs_libc_file_table)
+
+K_MEM_SLAB_DEFINE_STATIC(zvfs_libc_file_table, CONFIG_ZVFS_LIBC_FILE_SIZE, CONFIG_ZVFS_OPEN_MAX,
+			 CONFIG_ZVFS_LIBC_FILE_ALIGN);
+
+static int file_to_fd[CONFIG_ZVFS_LIBC_FILE_SIZE];
+#define ptr_to_idx(fp) (POINTER_TO_INT((uint8_t *)fp - table_data) / table_stride)
 
 int zvfs_libc_file_alloc(int fd, const char *mode, FILE **fp, k_timeout_t timeout)
 {
@@ -33,6 +42,7 @@ int zvfs_libc_file_alloc(int fd, const char *mode, FILE **fp, k_timeout_t timeou
 	if (ret < 0) {
 		return ret;
 	}
+	file_to_fd[ptr_to_idx(*fp)] = fd;
 
 	zvfs_libc_file_alloc_cb(fd, mode, *fp);
 
@@ -41,7 +51,7 @@ int zvfs_libc_file_alloc(int fd, const char *mode, FILE **fp, k_timeout_t timeou
 
 void zvfs_libc_file_free(FILE *fp)
 {
-	if (fp == NULL) {
+	if ((fp == NULL) || (fp == stdin) || (fp == stdout) || (fp == stderr)) {
 		return;
 	}
 
@@ -50,9 +60,22 @@ void zvfs_libc_file_free(FILE *fp)
 
 FILE *zvfs_libc_file_from_fd(int fd)
 {
-	if ((fd < 0) || (fd >= CONFIG_ZVFS_OPEN_MAX)) {
+	if ((fd < 0) || (fd >= ARRAY_SIZE(file_to_fd))) {
 		return NULL;
 	}
+	switch (fd) {
+	case 0:
+		return stdin;
+	case 1:
+		return stdout;
+	case 2:
+		return stderr;
+	}
 
-	return (FILE *)&_k_mem_slab_buf_zvfs_libc_file_table[table_stride * fd];
+	for (int i = 0; i < ARRAY_SIZE(file_to_fd); i++) {
+		if (file_to_fd[i] == fd) {
+			return (FILE *)&_k_mem_slab_buf_zvfs_libc_file_table[table_stride * i];
+		}
+	}
+	return NULL;
 }
