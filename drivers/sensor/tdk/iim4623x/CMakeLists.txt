@@ -8,3 +8,7 @@ zephyr_library_sources(
   iim4623x.c
   iim4623x_bus.c
 )
+
+zephyr_library_sources_ifdef(CONFIG_SENSOR_ASYNC_API
+  iim4623x_decoder.c
+)

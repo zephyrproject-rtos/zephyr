@@ -9,6 +9,7 @@
 #include "iim4623x.h"
 #include "iim4623x_reg.h"
 #include "iim4623x_bus.h"
+#include "iim4623x_decoder.h"
 #include <zephyr/dt-bindings/sensor/iim4623x.h>
 
 #include <zephyr/device.h>
@@ -190,6 +191,17 @@ static int iim4623x_read_reg(const struct device *dev, uint8_t page, uint8_t reg
 	/* Copy register contents */
 	(void)memcpy(buf, packet->read_user_reg.reg_val, len);
 
+	/**
+	 * Allow iim46234 to be ready for a new command
+	 * Refer to datasheet 5.3.1.4 which states 0.3ms after DRDY deasserts. It seems that it
+	 * takes ~3.1us from CS deassert until DRDY deasserts, so just use a single delay of >300us
+	 */
+	/**
+	 * TODO: it would be great if the delay could be scheduled to block the rtio context from
+	 * executing SQEs without also having to block the current thread
+	 */
+	k_usleep(400);
+
 	return 0;
 }
 
@@ -241,6 +253,17 @@ static int iim4623x_write_reg(const struct device *dev, uint8_t reg, const uint8
 		LOG_ERR("Checking ack, ret: %d", ret);
 		return ret;
 	}
+
+	/**
+	 * Allow iim46234 to be ready for a new command
+	 * Refer to datasheet 5.3.1.4 which states 0.3ms after DRDY deasserts. It seems that it
+	 * takes ~3.1us from CS deassert until DRDY deasserts, so just use a single delay of >300us
+	 */
+	/**
+	 * TODO: it would be great if the delay could be scheduled to block the rtio context from
+	 * executing SQEs without also having to block the current thread
+	 */
+	k_usleep(400);
 
 	return 0;
 }
@@ -364,9 +387,164 @@ static int iim4623x_channel_get(const struct device *dev, enum sensor_channel ch
 	return ret;
 }
 
+#ifdef CONFIG_SENSOR_ASYNC_API
+static void iim4623x_complete_one_shot(struct rtio *ctx, const struct rtio_sqe *sqe, void *arg)
+{
+	struct rtio_iodev_sqe *iodev_sqe = (struct rtio_iodev_sqe *)sqe->userdata;
+	const struct device *dev = arg;
+	struct iim4623x_data *data = dev->data;
+	struct iim4623x_pck_resp *packet = (struct iim4623x_pck_resp *)data->trx_buf;
+	struct iim4623x_pck_postamble *postamble;
+	uint16_t checksum;
+	const uint32_t min_buf_len = sizeof(struct iim4623x_encoded_data);
+	struct iim4623x_encoded_data *edata;
+	uint32_t buf_len;
+	uint8_t *buf;
+	int ret;
+
+	/* Check reply */
+	if (sys_be16_to_cpu(packet->preamble.header) != IIM4623X_PCK_HEADER_RX) {
+		LOG_ERR("Bad reply header");
+		ret = -EIO;
+		goto out;
+	}
+
+	if (packet->preamble.type != IIM4623X_CMD_READ_USER_REGISTER) {
+		LOG_ERR("Bad reply cmd type, exp: 0x%.2x, got: 0x%.2x",
+			IIM4623X_CMD_READ_USER_REGISTER, packet->preamble.type);
+		ret = -EIO;
+		goto out;
+	}
+
+	if (packet->read_user_reg.addr != IIM4623X_REG_SENSOR_STATUS) {
+		LOG_ERR("Addr mismatch, reply_addr: 0x%.2x, reg: 0x%.2x",
+			packet->read_user_reg.addr, IIM4623X_REG_SENSOR_STATUS);
+		ret = -EIO;
+		goto out;
+	}
+
+	if (packet->read_user_reg.read_len != sizeof(struct iim4623x_pck_strm_payload)) {
+		LOG_ERR("Length mismatch, read_led: 0x%.2x, len: 0x%.2x",
+			packet->read_user_reg.read_len, sizeof(struct iim4623x_pck_strm_payload));
+		ret = -EIO;
+		goto out;
+	}
+
+	/* Locate postamble by advancing past the reply reg_val buffer */
+	postamble = IIM4623X_GET_POSTAMBLE(packet);
+
+	/* Verify checksum */
+	checksum = iim4623x_calc_checksum((uint8_t *)packet);
+	if (checksum != sys_be16_to_cpu(postamble->checksum)) {
+		LOG_ERR("Bad checksum, exp: 0x%.4x, got: 0x%.4x", checksum,
+			sys_be16_to_cpu(postamble->checksum));
+		ret = -EIO;
+		goto out;
+	}
+
+	/* Copy register contents */
+	ret = rtio_sqe_rx_buf(iodev_sqe, min_buf_len, min_buf_len, &buf, &buf_len);
+	if (ret || !buf || buf_len < min_buf_len) {
+		LOG_ERR("Failed to get a read buffer of size %u bytes", min_buf_len);
+		goto out;
+	}
+
+	edata = (struct iim4623x_encoded_data *)buf;
+
+	ret = iim4623x_encode(dev, edata);
+	if (ret) {
+		LOG_ERR("Failed encode one-shot, ret: %d", ret);
+		goto out;
+	}
+
+	(void)memcpy(&edata->payload, packet->read_user_reg.reg_val,
+		     sizeof(struct iim4623x_pck_strm_payload));
+
+	/* Convert wire endianness to cpu */
+	iim4623x_payload_be_to_cpu(&edata->payload);
+
+	edata->header.data_ready = true;
+
+out:
+	atomic_cas(&data->busy, 1, 0);
+
+	ret = rtio_flush_completion_queue(ctx);
+	if (ret) {
+		rtio_iodev_sqe_err(iodev_sqe, ret);
+	} else {
+		rtio_iodev_sqe_ok(iodev_sqe, 0);
+	}
+}
+
+static void iim4623x_oneshot_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
+{
+	struct iim4623x_data *data = dev->data;
+	struct rtio_sqe *comp_sqe;
+	/* TODO: read_len depends on enabled channels, just use worst case for simplicity */
+	const uint8_t read_len = sizeof(struct iim4623x_pck_strm_payload);
+	uint8_t cmd[] = {
+		0x00 /* reserved */,
+		read_len,
+		IIM4623X_REG_SENSOR_STATUS,
+		IIM4623X_PAGE_SENSOR_DATA,
+	};
+	int ret;
+
+	/**
+	 * TODO: this is actually kind of a bad idea since _if_ any of the SQEs are cancelled or
+	 * fail otherwise, the completion callback won't run and `busy` will be stuck forever. Use
+	 * something like: https://github.com/zephyrproject-rtos/zephyr/pull/93227 to improve error
+	 * handling.
+	 * Note that this is just one place in the driver where this is a problem.
+	 */
+	if (!atomic_cas(&data->busy, 0, 1)) {
+		LOG_ERR("Submit oneshot busy");
+		ret = -EBUSY;
+		goto err_out;
+	}
+
+	ret = iim4623x_prepare_cmd(dev, IIM4623X_CMD_READ_USER_REGISTER, cmd, ARRAY_SIZE(cmd));
+	if (ret < 0) {
+		LOG_ERR("Preparing cmd, ret: %d", ret);
+		goto err_out;
+	}
+
+	ret = iim4623x_bus_prep_write_read(dev, data->trx_buf, ret, data->trx_buf,
+					   IIM4623X_READ_REG_RESP_LEN(read_len), &comp_sqe);
+	if (ret < 0) {
+		LOG_ERR("Prepping read user register command, ret: %d", ret);
+		goto err_out;
+	}
+
+	rtio_sqe_prep_callback_no_cqe(comp_sqe, iim4623x_complete_one_shot, (void *)dev, iodev_sqe);
+
+	rtio_submit(data->rtio.ctx, 0);
+	return;
+
+err_out:
+	rtio_iodev_sqe_err(iodev_sqe, ret);
+}
+
+static void iim4623x_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
+{
+	const struct sensor_read_config *cfg = iodev_sqe->sqe.iodev->data;
+
+	if (!cfg->is_streaming) {
+		iim4623x_oneshot_submit(dev, iodev_sqe);
+	} else {
+		LOG_ERR("Streaming not supported");
+		rtio_iodev_sqe_err(iodev_sqe, -ENOTSUP);
+	}
+}
+#endif /* #ifdef CONFIG_SENSOR_ASYNC_API */
+
 static DEVICE_API(sensor, iim4623x_api) = {
 	.sample_fetch = iim4623x_sample_fetch,
 	.channel_get = iim4623x_channel_get,
+#ifdef CONFIG_SENSOR_ASYNC_API
+	.submit = iim4623x_submit,
+	.get_decoder = iim4623x_get_decoder,
+#endif /* #ifdef CONFIG_SENSOR_ASYNC_API */
 };
 
 static int iim4623x_init(const struct device *dev)
