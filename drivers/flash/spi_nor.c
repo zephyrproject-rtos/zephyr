@@ -1129,7 +1129,7 @@ static int spi_nor_write_protection_set(const struct device *dev,
 	const struct spi_nor_config *cfg = dev->config;
 
 #if ANY_INST_HAS_WP_GPIOS
-	if (DEV_CFG(dev)->wp_gpios_exist && write_protect == false) {
+	if (DEV_CFG(dev)->wp_gpios_exist && !write_protect) {
 		gpio_pin_set_dt(&(DEV_CFG(dev)->wp), 0);
 	}
 #endif
@@ -1141,7 +1141,7 @@ static int spi_nor_write_protection_set(const struct device *dev,
 	}
 
 #if ANY_INST_HAS_WP_GPIOS
-	if (DEV_CFG(dev)->wp_gpios_exist && write_protect == true) {
+	if (DEV_CFG(dev)->wp_gpios_exist && write_protect) {
 		gpio_pin_set_dt(&(DEV_CFG(dev)->wp), 1);
 	}
 #endif
