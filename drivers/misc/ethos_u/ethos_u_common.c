@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: <text>Copyright 2021-2022, 2024 Arm Limited and/or its
+ * SPDX-FileCopyrightText: <text>Copyright 2021-2022, 2024-2025 Arm Limited and/or its
  * affiliates <open-source-office@arm.com></text>
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -103,17 +103,40 @@ int ethosu_semaphore_give(void *sem)
 }
 
 #if defined(CONFIG_ETHOS_U_DCACHE)
-void ethosu_flush_dcache(uint32_t *p, size_t bytes)
+void ethosu_flush_dcache(const uint64_t *base_addr,
+						 const size_t *base_addr_size,
+						 int num_base_addr)
 {
-	if (p && bytes) {
-		sys_cache_data_flush_range((void *)p, bytes);
+	if (base_addr == NULL || base_addr_size == NULL || num_base_addr <= 0) {
+		return;
+	}
+
+	for (int i = 0; i < num_base_addr; i++) {
+		if (base_addr_size[i] == 0) {
+			continue;
+		}
+		/* Cast to (uintptr_t) avoids sign/width issues on 32-bit targets */
+		sys_cache_data_flush_range((void *)(uintptr_t)base_addr[i],
+								   base_addr_size[i]);
 	}
 }
 
-void ethosu_invalidate_dcache(uint32_t *p, size_t bytes)
+void ethosu_invalidate_dcache(const uint64_t *base_addr,
+							  const size_t *base_addr_size,
+							  int num_base_addr)
 {
-	if (p && bytes) {
-		sys_cache_data_invd_range((void *)p, bytes);
+	if (base_addr == NULL || base_addr_size == NULL || num_base_addr <= 0) {
+		return;
+	}
+
+	for (int i = 0; i < num_base_addr; i++) {
+		if (base_addr_size[i] == 0) {
+			continue;
+		}
+
+		/* Cast to (uintptr_t) avoids sign/width issues on 32-bit targets */
+		sys_cache_data_invd_range((void *)(uintptr_t)base_addr[i],
+								  base_addr_size[i]);
 	}
 }
 #endif
