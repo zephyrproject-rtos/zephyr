@@ -483,15 +483,13 @@ static int a2dp_suspend_ind(struct bt_avdtp *session, struct bt_avdtp_sep *sep, 
 
 static int a2dp_close_ind(struct bt_avdtp *session, struct bt_avdtp_sep *sep, uint8_t *errcode)
 {
-	struct bt_a2dp_ep *ep = CONTAINER_OF(sep, struct bt_a2dp_ep, sep);
 	bt_a2dp_ctrl_req_cb req_cb;
-	bt_a2dp_ctrl_done_cb done_cb;
 
 	__ASSERT(sep, "Invalid sep");
 	req_cb = a2dp_cb != NULL ? a2dp_cb->release_req : NULL;
-	done_cb =
-		(ep->stream != NULL && ep->stream->ops != NULL) ? ep->stream->ops->released : NULL;
-	return a2dp_ctrl_ind(session, sep, errcode, req_cb, done_cb, true);
+
+	/* When stream is released, the `stream->ops->released` will be called. */
+	return a2dp_ctrl_ind(session, sep, errcode, req_cb, NULL, true);
 }
 
 static int a2dp_abort_ind(struct bt_avdtp *session, struct bt_avdtp_sep *sep, uint8_t *errcode)
@@ -845,12 +843,10 @@ static int bt_a2dp_suspend_cb(struct bt_avdtp_req *req, struct net_buf *buf)
 
 static int bt_a2dp_close_cb(struct bt_avdtp_req *req, struct net_buf *buf)
 {
-	struct bt_a2dp_ep *ep = CONTAINER_OF(CTRL_REQ(req)->sep, struct bt_a2dp_ep, sep);
 	bt_a2dp_rsp_cb rsp_cb = a2dp_cb != NULL ? a2dp_cb->release_rsp : NULL;
-	bt_a2dp_done_cb done_cb =
-		(ep->stream != NULL && ep->stream->ops != NULL) ? ep->stream->ops->released : NULL;
 
-	return bt_a2dp_ctrl_cb(req, rsp_cb, done_cb, true);
+	/* When stream is released, the `stream->ops->released` will be called. */
+	return bt_a2dp_ctrl_cb(req, rsp_cb, NULL, true);
 }
 
 static int bt_a2dp_abort_cb(struct bt_avdtp_req *req, struct net_buf *buf)
@@ -997,7 +993,7 @@ int bt_a2dp_stream_send(struct bt_a2dp_stream *stream, struct net_buf *buf, uint
 }
 #endif
 
-int a2dp_stream_l2cap_disconnected(struct bt_avdtp *session, struct bt_avdtp_sep *sep)
+int a2dp_endpoint_released(struct bt_avdtp_sep *sep)
 {
 	struct bt_a2dp_ep *ep;
 
@@ -1036,7 +1032,6 @@ static const struct bt_avdtp_ops_cb signaling_avdtp_ops = {
 	.close_ind = a2dp_close_ind,
 	.suspend_ind = a2dp_suspend_ind,
 	.abort_ind = a2dp_abort_ind,
-	.stream_l2cap_disconnected = a2dp_stream_l2cap_disconnected,
 };
 
 int a2dp_accept(struct bt_conn *conn, struct bt_avdtp **session)
@@ -1125,6 +1120,7 @@ int bt_a2dp_register_ep(struct bt_a2dp_ep *ep, uint8_t media_type, uint8_t sep_t
 	ep->sep.media_data_cb = NULL;
 #endif
 
+	ep->sep.endpoint_released = a2dp_endpoint_released;
 	err = bt_avdtp_register_sep(media_type, sep_type, &(ep->sep));
 	if (err < 0) {
 		return err;
