@@ -307,7 +307,10 @@ void bt_ctlr_assert_handle(char *file, uint32_t line)
 	LOG_PANIC();
 
 	while (true) {
+		k_cpu_idle();
 	};
+
+	CODE_UNREACHABLE;
 }
 #endif /* CONFIG_BT_CTLR_ASSERT_HANDLER */
 
@@ -338,6 +341,7 @@ void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *esf)
 	LOG_PANIC();
 
 	while (true) {
+		k_cpu_idle();
 	};
 
 	CODE_UNREACHABLE;
