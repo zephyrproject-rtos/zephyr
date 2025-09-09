@@ -133,6 +133,17 @@
 	};
 };
 
+&sci2 {
+	pinctrl-0 = <&sci2_default>;
+	pinctrl-names = "default";
+
+	i2c2: i2c {
+		sda-output-delay = <300>;
+		noise-filter-clock-select = <1>;
+		bit-rate-modulation;
+	};
+};
+
 &sci7 {
 	pinctrl-0 = <&sci7_default>;
 	pinctrl-names = "default";
