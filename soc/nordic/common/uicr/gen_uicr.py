@@ -26,6 +26,8 @@ PERIPHCONF_SECTION = "uicr_periphconf_entry"
 ENABLED_VALUE = 0xFFFF_FFFF
 DISABLED_VALUE = 0xBD23_28A8
 
+KB_4 = 4096
+
 
 class ScriptError(RuntimeError): ...
 
@@ -429,6 +431,16 @@ def main() -> None:
         help="Size in bytes of cpurad_its_partition (decimal or 0x-prefixed hex)",
     )
     parser.add_argument(
+        "--protectedmem",
+        action="store_true",
+        help="Enable protected memory region in UICR",
+    )
+    parser.add_argument(
+        "--protectedmem-size-bytes",
+        type=int,
+        help="Protected memory size in bytes (must be divisible by 4096)",
+    )
+    parser.add_argument(
         "--secondary",
         action="store_true",
         help="Enable secondary firmware support in UICR",
@@ -534,6 +546,16 @@ def main() -> None:
             uicr.SECURESTORAGE.CRYPTO.RADIOCORESIZE1KB = args.cpurad_crypto_size // 1024
             uicr.SECURESTORAGE.ITS.APPLICATIONSIZE1KB = args.cpuapp_its_size // 1024
             uicr.SECURESTORAGE.ITS.RADIOCORESIZE1KB = args.cpurad_its_size // 1024
+
+        # Handle protected memory configuration
+        if args.protectedmem:
+            if args.protectedmem_size_bytes % KB_4 != 0:
+                raise ScriptError(
+                    f"Protected memory size ({args.protectedmem_size_bytes} bytes) "
+                    f"must be divisible by {KB_4}"
+                )
+            uicr.PROTECTEDMEM.ENABLE = ENABLED_VALUE
+            uicr.PROTECTEDMEM.SIZE4KB = args.protectedmem_size_bytes // KB_4
 
         # Process periphconf data first and configure UICR completely before creating hex objects
         periphconf_hex = IntelHex()
