@@ -259,9 +259,6 @@ struct bt_avdtp_ops_cb {
 	int (*suspend_ind)(struct bt_avdtp *session, struct bt_avdtp_sep *sep, uint8_t *errcode);
 
 	int (*abort_ind)(struct bt_avdtp *session, struct bt_avdtp_sep *sep, uint8_t *errcode);
-
-	/* stream l2cap is closed */
-	int (*stream_l2cap_disconnected)(struct bt_avdtp *session, struct bt_avdtp_sep *sep);
 };
 
 /** @brief Global AVDTP session structure. */
@@ -271,6 +268,7 @@ struct bt_avdtp {
 	const struct bt_avdtp_ops_cb *ops;
 	struct bt_avdtp_sep *current_sep;
 	struct k_work_delayable timeout_work;
+	struct k_work _release_work;
 	/* semaphore for lock/unlock */
 	struct k_sem sem_lock;
 	struct net_buf *reasm_buf;
