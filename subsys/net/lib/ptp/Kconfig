@@ -55,17 +55,18 @@ choice
 	help
 	  Specifies type of PTP Clock implemented on the target device
 
-	config PTP_ORDINARY_CLOCK
-		bool "Ordinary Clock"
+config PTP_ORDINARY_CLOCK
+	bool "Ordinary Clock"
 
-	config PTP_BOUNDARY_CLOCK
-		bool "Boundary Clock"
+config PTP_BOUNDARY_CLOCK
+	bool "Boundary Clock"
 
-	config PTP_TRANSPARENT_P2P_CLOCK
-		bool "Transparent Peer-to-Peer Clock"
+config PTP_TRANSPARENT_P2P_CLOCK
+	bool "Transparent Peer-to-Peer Clock"
 
-	config PTP_TRANSPARENT_E2E_CLOCK
-		bool "Transparent End-to-End Clock"
+config PTP_TRANSPARENT_E2E_CLOCK
+	bool "Transparent End-to-End Clock"
+
 endchoice
 
 config PTP_CLOCK_TYPE
@@ -89,13 +90,16 @@ choice
 	prompt "PTP Networking Protocol used by PTP Stack"
 	default PTP_UDP_IPv4_PROTOCOL
 
-	config PTP_UDP_IPv4_PROTOCOL
-		bool "UDP with IPv4"
-		select NET_IPV4_IGMP
+config PTP_UDP_IPv4_PROTOCOL
+	bool "UDP with IPv4"
+	depends on NET_IPV4
+	select NET_IPV4_IGMP
 
-	config PTP_UDP_IPv6_PROTOCOL
-		bool "UDP with IPv6"
-		select NET_IPV6_MLD
+config PTP_UDP_IPv6_PROTOCOL
+	bool "UDP with IPv6"
+	depends on NET_IPV6
+	select NET_IPV6_MLD
+
 endchoice
 
 choice
@@ -106,44 +110,63 @@ choice
 	  the actual capabilities of the hardware.
 	  See 7.6.2.5 of IEEE 1588-2019 for more info.
 
-	config PTP_CLOCK_ACCURACY_UNKNOWN
-		bool "Unknown"
-	config PTP_CLOCK_ACCURACY_25NS
-		bool "25ns"
-	config PTP_CLOCK_ACCURACY_100NS
-		bool "100ns"
-	config PTP_CLOCK_ACCURACY_250NS
-		bool "250ns"
-	config PTP_CLOCK_ACCURACY_1US
-		bool "1us"
-	config PTP_CLOCK_ACCURACY_2_5US
-		bool "2.5us"
-	config PTP_CLOCK_ACCURACY_10US
-		bool "10us"
-	config PTP_CLOCK_ACCURACY_25US
-		bool "25us"
-	config PTP_CLOCK_ACCURACY_100US
-		bool "100us"
-	config PTP_CLOCK_ACCURACY_250US
-		bool "250us"
-	config PTP_CLOCK_ACCURACY_1MS
-		bool "1ms"
-	config PTP_CLOCK_ACCURACY_2_5MS
-		bool "1.5ms"
-	config PTP_CLOCK_ACCURACY_10MS
-		bool "10ms"
-	config PTP_CLOCK_ACCURACY_25MS
-		bool "25ms"
-	config PTP_CLOCK_ACCURACY_100MS
-		bool "100ms"
-	config PTP_CLOCK_ACCURACY_250MS
-		bool "250ms"
-	config PTP_CLOCK_ACCURACY_1S
-		bool "1s"
-	config PTP_CLOCK_ACCURACY_10S
-		bool "10s"
-	config PTP_CLOCK_ACCURACY_GT_10S
-		bool "> 10s"
+config PTP_CLOCK_ACCURACY_UNKNOWN
+	bool "Unknown"
+
+config PTP_CLOCK_ACCURACY_25NS
+	bool "25ns"
+
+config PTP_CLOCK_ACCURACY_100NS
+	bool "100ns"
+
+config PTP_CLOCK_ACCURACY_250NS
+	bool "250ns"
+
+config PTP_CLOCK_ACCURACY_1US
+	bool "1us"
+
+config PTP_CLOCK_ACCURACY_2_5US
+	bool "2.5us"
+
+config PTP_CLOCK_ACCURACY_10US
+	bool "10us"
+
+config PTP_CLOCK_ACCURACY_25US
+	bool "25us"
+
+config PTP_CLOCK_ACCURACY_100US
+	bool "100us"
+
+config PTP_CLOCK_ACCURACY_250US
+	bool "250us"
+
+config PTP_CLOCK_ACCURACY_1MS
+	bool "1ms"
+
+config PTP_CLOCK_ACCURACY_2_5MS
+	bool "1.5ms"
+
+config PTP_CLOCK_ACCURACY_10MS
+	bool "10ms"
+
+config PTP_CLOCK_ACCURACY_25MS
+	bool "25ms"
+
+config PTP_CLOCK_ACCURACY_100MS
+	bool "100ms"
+
+config PTP_CLOCK_ACCURACY_250MS
+	bool "250ms"
+
+config PTP_CLOCK_ACCURACY_1S
+	bool "1s"
+
+config PTP_CLOCK_ACCURACY_10S
+	bool "10s"
+
+config PTP_CLOCK_ACCURACY_GT_10S
+	bool "> 10s"
+
 endchoice
 
 config PTP_CLOCK_ACCURACY
@@ -246,7 +269,6 @@ config PTP_PRE_TIME_TRANSMITTER_PRESENT
 
 config PTP_UNCALIBRATED_PRESENT
 	bool
-	default n
 
 config PTP_FOREIGN_TIME_TRANSMITTER_FEATURE
 	bool
@@ -266,14 +288,15 @@ choice PTP_DSCP_PRIORITY
 	prompt "Priority of PTP packets classification"
 	default PTP_DSCP_NONE_PRIORITY
 
-	config PTP_DSCP_HIGH_PRIORITY
-		bool "High priority of PTP packet classification"
+config PTP_DSCP_HIGH_PRIORITY
+	bool "High priority of PTP packet classification"
 
-	config PTP_DSCP_MEDIUM_PRIORITY
-		bool "Medium priority of PTP packet classification"
+config PTP_DSCP_MEDIUM_PRIORITY
+	bool "Medium priority of PTP packet classification"
 
-	config PTP_DSCP_NONE_PRIORITY
-		bool "Default priority of PTP packet classification"
+config PTP_DSCP_NONE_PRIORITY
+	bool "Default priority of PTP packet classification"
+
 endchoice
 
 config PTP_DSCP_VALUE

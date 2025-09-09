@@ -6,16 +6,17 @@
  */
 
 /**
- * @file drivers/cellular.h
- * @brief Public cellular network API
+ * @file
+ * @ingroup cellular_interface
+ * @brief Main header file for cellular modem driver API.
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_CELLULAR_H_
 #define ZEPHYR_INCLUDE_DRIVERS_CELLULAR_H_
 
 /**
- * @brief Cellular interface
- * @defgroup cellular_interface Cellular Interface
+ * @brief Interfaces for cellular modems.
+ * @defgroup cellular_interface Cellular
  * @ingroup io_interfaces
  * @{
  */
@@ -85,6 +86,35 @@ enum cellular_registration_status {
 	CELLULAR_REGISTRATION_REGISTERED_ROAMING,
 };
 
+/** Events emitted asynchronously by a cellular driver */
+enum cellular_event {
+	/** One or more modem-info field changed (e.g. IMSI became available). */
+	CELLULAR_EVENT_MODEM_INFO_CHANGED = BIT(0),
+};
+
+/* Opaque bit-mask large enough for all current & future events */
+typedef uint32_t cellular_event_mask_t;
+
+/** Payload for @ref CELLULAR_EVENT_MODEM_INFO_CHANGED. */
+struct cellular_evt_modem_info {
+	enum cellular_modem_info_type field; /**< Which field changed */
+};
+
+/**
+ * @brief Prototype for cellular event callbacks.
+ *
+ * @param dev       Cellular device that generated the event
+ * @param event     Which @ref cellular_event occurred
+ * @param payload   Pointer to the kind-specific payload
+ *                  (`NULL` if the kind defines no payload).
+ * @param user_data Pointer supplied when the callback was registered
+ *
+ * @note  The driver calls the callback directly from its own context.
+ *        Off-load heavy processing to a work-queue if required.
+ */
+typedef void (*cellular_event_cb_t)(const struct device *dev, enum cellular_event event,
+				    const void *payload, void *user_data);
+
 /** API for configuring networks */
 typedef int (*cellular_api_configure_networks)(const struct device *dev,
 					       const struct cellular_network *networks,
@@ -101,13 +131,20 @@ typedef int (*cellular_api_get_signal)(const struct device *dev,
 
 /** API for getting modem information */
 typedef int (*cellular_api_get_modem_info)(const struct device *dev,
-					   const enum cellular_modem_info_type type,
-					   char *info, size_t size);
+					   const enum cellular_modem_info_type type, char *info,
+					   size_t size);
 
 /** API for getting registration status */
 typedef int (*cellular_api_get_registration_status)(const struct device *dev,
 						    enum cellular_access_technology tech,
 						    enum cellular_registration_status *status);
+
+/** API for programming APN */
+typedef int (*cellular_api_set_apn)(const struct device *dev, const char *apn);
+
+/** API for registering an asynchronous callback */
+typedef int (*cellular_api_set_callback)(const struct device *dev, cellular_event_mask_t mask,
+					 cellular_event_cb_t cb, void *user_data);
 
 /** Cellular driver API */
 __subsystem struct cellular_driver_api {
@@ -116,6 +153,8 @@ __subsystem struct cellular_driver_api {
 	cellular_api_get_signal get_signal;
 	cellular_api_get_modem_info get_modem_info;
 	cellular_api_get_registration_status get_registration_status;
+	cellular_api_set_apn set_apn;
+	cellular_api_set_callback set_callback;
 };
 
 /**
@@ -248,6 +287,59 @@ static inline int cellular_get_registration_status(const struct device *dev,
 	}
 
 	return api->get_registration_status(dev, tech, status);
+}
+
+/**
+ * @brief Set the APN used for PDP context
+ *
+ * @details Drivers are expected to copy the string immediately and return
+ * once the request has been queued internally.
+ *
+ * @param dev Cellular device
+ * @param apn Zero-terminated APN string (max length is driver-specific)
+ *
+ * @retval 0 if successful.
+ * @retval -ENOSYS if API is not supported by cellular network device.
+ * @retval -EINVAL if APN string invalid or too long.
+ * @retval -EALREADY if APN identical to current one, nothing to do
+ * @retval -EBUSY if modem is already dialled, APN cannot be changed
+ * @retval Negative errno-code otherwise.
+ */
+static inline int cellular_set_apn(const struct device *dev, const char *apn)
+{
+	const struct cellular_driver_api *api = (const struct cellular_driver_api *)dev->api;
+
+	if (api->set_apn == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->set_apn(dev, apn);
+}
+
+/**
+ * @brief Subscribe to asynchronous cellular events.
+ *
+ * @param dev Cellular device
+ * @param mask Event mask to subscribe to
+ * @param cb Callback to call when the event occurs, or NULL to unsubscribe
+ * @param user_data Pointer to user data that will be passed to the callback
+ *
+ * @retval 0         Success
+ * @retval -ENOSYS   Driver does not support event callbacks
+ * @retval -EINVAL   Bad parameters
+ * @retval -ENOMEM   No space left for another subscriber
+ * @retval <0        Driver-specific error
+ */
+static inline int cellular_set_callback(const struct device *dev, cellular_event_mask_t mask,
+					cellular_event_cb_t cb, void *user_data)
+{
+	const struct cellular_driver_api *api = (const struct cellular_driver_api *)dev->api;
+
+	if (api->set_callback == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->set_callback(dev, mask, cb, user_data);
 }
 
 #ifdef __cplusplus

@@ -90,17 +90,12 @@
 	};
 };
 
-&clk_lsi {
-	status = "okay";
-};
-
 &clk_lse {
 	status = "okay";
 };
 
 &clk_hse {
 	status = "okay";
-	hse-div2;
 };
 
 &clk_hsi {
@@ -109,9 +104,9 @@
 
 &rcc {
 	clocks = <&clk_hse>;
-	clock-frequency = <DT_FREQ_M(16)>;
+	clock-frequency = <DT_FREQ_M(32)>; /* Lowest value to manage radio events */
 	ahb-prescaler = <1>;
-	ahb5-prescaler = <2>;
+	ahb5-prescaler = <1>;
 	apb1-prescaler = <1>;
 	apb2-prescaler = <2>;
 	apb7-prescaler = <1>;
@@ -123,13 +118,13 @@
 
 &rtc {
 	status = "okay";
-	clocks = <&rcc STM32_CLOCK_BUS_APB7 0x00200000>,
+	clocks = <&rcc STM32_CLOCK(APB7, 21)>,
 			<&rcc STM32_SRC_LSE RTC_SEL(1)>;
 	prescaler = <32768>;
 };
 
 &usart1 {
-	clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00004000>,
+	clocks = <&rcc STM32_CLOCK(APB2, 14)>,
 		 <&rcc STM32_SRC_HSI16 USART1_SEL(2)>;
 	pinctrl-0 = <&usart1_tx_pb12 &usart1_rx_pa8>;
 	pinctrl-1 = <&analog_pb12 &analog_pa8>;
@@ -139,7 +134,7 @@
 };
 
 &usart2 {
-	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00020000>,
+	clocks = <&rcc STM32_CLOCK(APB1, 17)>,
 		 <&rcc STM32_SRC_HSI16 USART2_SEL(2)>;
 	pinctrl-0 = <&usart2_tx_pa12 &usart2_rx_pb8>;
 	pinctrl-1 = <&analog_pa12 &analog_pb8>;
@@ -193,7 +188,7 @@
 };
 
 stm32_lp_tick_source: &lptim1 {
-	clocks = <&rcc STM32_CLOCK_BUS_APB7 0x00000800>,
+	clocks = <&rcc STM32_CLOCK(APB7, 11)>,
 		 <&rcc STM32_SRC_LSE LPTIM1_SEL(3)>;
 	status = "okay";
 };

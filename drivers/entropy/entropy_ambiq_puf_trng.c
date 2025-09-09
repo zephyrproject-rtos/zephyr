@@ -74,18 +74,20 @@ static int entropy_ambiq_get_trng(const struct device *dev, uint8_t *buffer, uin
 
 static int entropy_ambiq_trng_init(const struct device *dev)
 {
-	uint32_t ui32Status;
-	bool bPeripheralEnabled = false;
+	uint32_t status;
+	bool peripheral_enabled = false;
 
 	/* Check and Power on OTP if it is not already on. */
-	ui32Status = am_hal_pwrctrl_periph_enabled(AM_HAL_PWRCTRL_PERIPH_OTP, &bPeripheralEnabled);
-	if (AM_HAL_STATUS_SUCCESS != ui32Status) {
+	status = am_hal_pwrctrl_periph_enabled(AM_HAL_PWRCTRL_PERIPH_OTP, &peripheral_enabled);
+	if (status != AM_HAL_STATUS_SUCCESS) {
+		LOG_ERR("Failed to check OTP peripheral status, error: 0x%x", status);
 		return -EBUSY;
 	}
 
-	if (!bPeripheralEnabled) {
-		ui32Status = am_hal_pwrctrl_periph_enable(AM_HAL_PWRCTRL_PERIPH_OTP);
-		if (AM_HAL_STATUS_SUCCESS != ui32Status) {
+	if (!peripheral_enabled) {
+		status = am_hal_pwrctrl_periph_enable(AM_HAL_PWRCTRL_PERIPH_OTP);
+		if (status != AM_HAL_STATUS_SUCCESS) {
+			LOG_ERR("Failed to enable OTP peripheral, error: 0x%x", status);
 			return -EBUSY;
 		}
 	}

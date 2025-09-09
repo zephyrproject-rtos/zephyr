@@ -9,7 +9,8 @@
 
 /**
  * @file
- * @brief Public APIs for GPIO drivers
+ * @ingroup gpio_interface
+ * @brief Main header file for GPIO driver API.
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_GPIO_H_
@@ -31,12 +32,18 @@ extern "C" {
 #endif
 
 /**
- * @brief GPIO Driver APIs
- * @defgroup gpio_interface GPIO Driver APIs
+ * @brief Interfaces for General Purpose Input/Output (GPIO)
+ *        controllers.
+ * @defgroup gpio_interface GPIO
  * @since 1.0
  * @version 1.0.0
  * @ingroup io_interfaces
  * @{
+ *
+ * @defgroup gpio_interface_ext Device-specific GPIO API extensions
+ *
+ * @{
+ * @}
  */
 
 /**
@@ -788,6 +795,16 @@ enum gpio_int_trig {
 	GPIO_INT_TRIG_BOTH = GPIO_INT_LOW_0 | GPIO_INT_HIGH_1,
 	/* Trigger a system wakeup. */
 	GPIO_INT_TRIG_WAKE = GPIO_INT_WAKEUP,
+	/* Trigger a system wakeup when input state is (or transitions to)
+	 * physical low. (Edge Falling or Active Low)
+	 */
+	GPIO_INT_TRIG_WAKE_LOW = GPIO_INT_LOW_0 | GPIO_INT_WAKEUP,
+	/* Trigger a system wakeup when input state is (or transitions to)
+	 * physical high. (Edge Rising or Active High)
+	 */
+	GPIO_INT_TRIG_WAKE_HIGH = GPIO_INT_HIGH_1 | GPIO_INT_WAKEUP,
+	/* Trigger a system wakeup on pin rising or falling edge. */
+	GPIO_INT_TRIG_WAKE_BOTH = GPIO_INT_LOW_0 | GPIO_INT_HIGH_1 | GPIO_INT_WAKEUP,
 };
 
 __subsystem struct gpio_driver_api {
@@ -942,9 +959,11 @@ static inline int z_impl_gpio_pin_interrupt_configure(const struct device *port,
  *
  * This is equivalent to:
  *
- *     gpio_pin_interrupt_configure(spec->port, spec->pin, flags);
+ *     gpio_pin_interrupt_configure(spec->port, spec->pin, combined_flags);
  *
- * The <tt>spec->dt_flags</tt> value is not used.
+ * Where <tt>combined_flags</tt> is the combination of the <tt>flags</tt> argument
+ * and the <tt>GPIO_INT_WAKEUP</tt> flag from <tt>spec->dt_flags</tt> if set. Other
+ * flags from <tt>spec->dt_flags</tt> are ignored.
  *
  * @param spec GPIO specification from devicetree
  * @param flags interrupt configuration flags
@@ -953,7 +972,8 @@ static inline int z_impl_gpio_pin_interrupt_configure(const struct device *port,
 static inline int gpio_pin_interrupt_configure_dt(const struct gpio_dt_spec *spec,
 						  gpio_flags_t flags)
 {
-	return gpio_pin_interrupt_configure(spec->port, spec->pin, flags);
+	return gpio_pin_interrupt_configure(spec->port, spec->pin,
+					    flags | (spec->dt_flags & GPIO_INT_WAKEUP));
 }
 
 /**

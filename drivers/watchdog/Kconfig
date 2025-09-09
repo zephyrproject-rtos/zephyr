@@ -159,4 +159,6 @@ source "drivers/watchdog/Kconfig.nxp_ewm"
 
 source "drivers/watchdog/Kconfig.xilinx_wwdt"
 
+source "drivers/watchdog/Kconfig.ti_rti"
+
 endif # WATCHDOG

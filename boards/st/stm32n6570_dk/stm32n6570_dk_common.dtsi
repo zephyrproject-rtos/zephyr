@@ -144,12 +144,6 @@
 	status = "okay";
 };
 
-&ic3 {
-	pll-src = <1>;
-	ic-div = <6>;
-	status = "okay";
-};
-
 &ic4 {
 	pll-src = <2>;
 	ic-div = <32>;
@@ -280,6 +274,28 @@ csi_i2c: &i2c1 {
 	status = "okay";
 };
 
+&timers1 {
+	st,prescaler = <9999>;
+	status = "okay";
+
+	pwm1: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim1_ch1_pe9>;
+		pinctrl-names = "default";
+	};
+};
+
+&timers15 {
+	st,prescaler = <9999>;
+	status = "okay";
+
+	pwm15: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim15_ch1_pc12>;
+		pinctrl-names = "default";
+	};
+};
+
 zephyr_udc0: &usbotg_hs1 {
 	status = "okay";
 };
@@ -320,7 +336,7 @@ zephyr_udc0: &usbotg_hs1 {
 		     &xspim_p2_io6_pn10 &xspim_p2_io7_pn11>;
 	pinctrl-names = "default";
 	clocks = <&rcc STM32_CLOCK(AHB5, 12)>,
-		 <&rcc STM32_SRC_IC3 XSPI1_SEL(2)>,
+		 <&rcc STM32_SRC_HCLK5 XSPI2_SEL(0)>,
 		 <&rcc STM32_CLOCK(AHB5, 13)>;
 	status = "okay";
 

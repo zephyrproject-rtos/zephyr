@@ -250,3 +250,18 @@ config OPENTHREAD_MLE_CHILD_TIMEOUT
 	default 240
 	help
 	  The value of MLE child timeout in seconds.
+
+config OPENTHREAD_RCP_RESTORATION_MAX_COUNT
+	int "Openthread RCP restoration maximum count"
+	default 2
+	help
+	  The maximum number of attempts to restore the RCP connection.
+
+config OPENTHREAD_ROUTER_SELECTION_JITTER_OVERRIDE
+	bool "Override default router selection jitter"
+	depends on OPENTHREAD_FTD
+
+config OPENTHREAD_ROUTER_SELECTION_JITTER
+	int "OpenThread router selection jitter in seconds"
+	depends on OPENTHREAD_ROUTER_SELECTION_JITTER_OVERRIDE
+	default 120

@@ -7,7 +7,7 @@
 
 / {
 	aliases {
-		stepper =  &zephyr_h_bridge_stepper;
+		stepper = &zephyr_h_bridge_stepper;
 	};
 };
 

@@ -167,31 +167,6 @@ struct ll_conn {
 	struct ull_hdr  ull;
 	struct lll_conn lll;
 
-#if defined(CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER)
-	struct past_params past;
-#endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER */
-
-	struct ull_tx_q tx_q;
-	struct llcp_struct llcp;
-
-	struct {
-		uint8_t reason_final;
-		/* node rx type with dummy uint8_t to ensure room for terminate
-		 * reason.
-		 * HCI will reference the value using the pdu member of
-		 * struct node_rx_pdu.
-		 *
-		 */
-		struct {
-			struct node_rx_pdu rx;
-			uint8_t dummy_reason;
-		} node_rx;
-	} llcp_terminate;
-
-/*
- * TODO: all the following comes from the legacy LL llcp structure
- * and/or needs to be properly integrated in the control procedures
- */
 	union {
 		struct {
 #if defined(CONFIG_BT_CTLR_CONN_META)
@@ -220,13 +195,41 @@ struct ll_conn {
 #endif /* CONFIG_BT_CENTRAL */
 	};
 
+	struct ull_tx_q tx_q;
+	struct llcp_struct llcp;
+
+	/* ULL tracked connection event counter. Under LLL Prepare deferred cases this member
+	 * accumulates the connection event count, necessary for LLCP instant use in ULL.
+	 */
+	uint16_t event_counter;
+
 	/* Cancel the prepare in the instant a Connection Update takes place */
 	uint8_t cancel_prepare:1;
+
+	/*
+	 * TODO: all the following comes from the legacy LL llcp structure
+	 * and/or needs to be properly integrated in the control procedures
+	 */
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 	/* Pause Rx data PDU's */
 	uint8_t pause_rx_data:1;
 #endif /* CONFIG_BT_CTLR_LE_ENC */
+
+	/* Terminate Procedure reason and event memory per connection */
+	struct {
+		uint8_t reason_final;
+		/* node rx type with dummy uint8_t to ensure room for terminate
+		 * reason.
+		 * HCI will reference the value using the pdu member of
+		 * struct node_rx_pdu.
+		 *
+		 */
+		struct {
+			struct node_rx_pdu rx;
+			uint8_t dummy_reason;
+		} node_rx;
+	} llcp_terminate;
 
 #if defined(CONFIG_BT_CTLR_LE_PING)
 	uint16_t appto_reload;
@@ -244,6 +247,7 @@ struct ll_conn {
 	uint8_t phy_pref_tx:3;
 	uint8_t phy_pref_rx:3;
 #endif /* CONFIG_BT_CTLR_PHY */
+
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	uint16_t default_tx_octets;
 
@@ -251,6 +255,10 @@ struct ll_conn {
 	uint16_t default_tx_time;
 #endif /* CONFIG_BT_CTLR_PHY */
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+
+#if defined(CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER)
+	struct past_params past;
+#endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER */
 
 #if defined(CONFIG_BT_CTLR_CHECK_SAME_PEER_CONN)
 	uint8_t own_id_addr_type:1;
@@ -300,4 +308,9 @@ struct node_rx_pu {
 struct node_rx_sca {
 	uint8_t status;
 	uint8_t sca;
+};
+
+struct node_rx_path_loss {
+	uint8_t current_path_loss;
+	uint8_t zone_entered;
 };

@@ -34,6 +34,10 @@
 		};
 	};
 
+	cmc {
+		compatible = "nxp,cmc-reset-cause";
+	};
+
 	/* Dummy pinctrl node, filled with pin mux options at board level */
 	pinctrl: pinctrl {
 		compatible = "nxp,port-pinctrl";
@@ -681,6 +685,14 @@
 		clk-divider = <1>;
 	};
 
+	ewm0: ewm@c0000 {
+		compatible = "nxp,ewm";
+		reg = <0xc0000 0x6>;
+		interrupts = <100 0>;
+		status = "disabled";
+		clk-divider = <0x0>;
+	};
+
 	flexpwm0: flexpwm@ce000 {
 		compatible = "nxp,flexpwm";
 		reg = <0xce000 0x1000>;
@@ -826,6 +838,9 @@
 		reg = <0x111000 0x14>;
 		status = "disabled";
 		#nxp,reference-cells = <1>;
+		nxp,current-compensation-en;
+		nxp,internal-voltage-regulator-en;
+		nxp,chop-oscillator-en;
 		nxp,buffer-startup-delay-us = <400>;
 		nxp,bandgap-startup-time-us = <20>;
 		regulator-min-microvolt = <1000000>;

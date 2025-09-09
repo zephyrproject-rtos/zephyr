@@ -28,7 +28,7 @@
 	};
 
 	soc {
-		timg0: timg@40084000 {
+		timg0: timg0@40084000 {
 			compatible = "ti,mspm0-timer";
 			reg = <0x40084000 0x2000>;
 			clocks = <&ckm MSPM0_CLOCK_LFCLK>;
@@ -37,13 +37,62 @@
 			ti,clk-div = <1>;
 			status = "disabled";
 
-			counter0: counter {
+			counterg0: counterg0 {
 				compatible = "ti,mspm0-timer-counter";
 				resolution = <16>;
+				status = "disabled";
 			};
 		};
 
-		tima0: tima@40860000 {
+		timg6: timg6@40868000 {
+			compatible = "ti,mspm0-timer";
+			reg = <0x40868000 0x2000>;
+			interrupts = <17 0>;
+			clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
+			ti,clk-prescaler = <255>;
+			ti,clk-div = <1>;
+			status = "disabled";
+
+			counterg6: counterg6 {
+				compatible = "ti,mspm0-timer-counter";
+				resolution = <16>;
+				status = "disabled";
+			};
+		};
+
+		timg7: timg7@4086a000 {
+			compatible = "ti,mspm0-timer";
+			reg = <0x4086a000 0x2000>;
+			interrupts = <20 0>;
+			clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
+			ti,clk-prescaler = <255>;
+			ti,clk-div = <1>;
+			status = "disabled";
+
+			counterg7: counterg7 {
+				compatible = "ti,mspm0-timer-counter";
+				resolution = <16>;
+				status = "disabled";
+			};
+		};
+
+		timg12: timg12@40870000 {
+			compatible = "ti,mspm0-timer";
+			reg = <0x40870000 0x2000>;
+			interrupts = <21 0>;
+			clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
+			ti,clk-prescaler = <0>; /* None */
+			ti,clk-div = <1>;
+			status = "disabled";
+
+			counterg12: counterg12 {
+				compatible = "ti,mspm0-timer-counter";
+				resolution = <32>;
+				status = "disabled";
+			};
+		};
+
+		tima0: tima0@40860000 {
 			compatible = "ti,mspm0-timer";
 			reg = <0x40860000 0x2000>;
 			clocks = <&ckm MSPM0_CLOCK_MCLK>;
@@ -59,7 +108,7 @@
 			};
 		};
 
-		tima1: tima@40862000 {
+		tima1: tima1@40862000 {
 			compatible = "ti,mspm0-timer";
 			reg = <0x40862000 0x2000>;
 			clocks = <&ckm MSPM0_CLOCK_MCLK>;
@@ -73,6 +122,36 @@
 				#pwm-cells = <3>;
 				status = "disabled";
 			};
+		};
+
+		uart1: uart@40100000 {
+			compatible = "ti,mspm0-uart";
+			reg = <0x40100000 0x2000>;
+			interrupts = <13 0>;
+			current-speed = <115200>;
+			clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
+			clk-div = <1>;
+			status = "disabled";
+		};
+
+		uart2: uart@40102000 {
+			compatible = "ti,mspm0-uart";
+			reg = <0x40102000 0x2000>;
+			interrupts = <14 0>;
+			current-speed = <115200>;
+			clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
+			clk-div = <1>;
+			status = "disabled";
+		};
+
+		uart3: uart@40500000 {
+			compatible = "ti,mspm0-uart";
+			reg = <0x40500000 0x2000>;
+			interrupts = <3 0>;
+			current-speed = <115200>;
+			clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
+			clk-div = <1>;
+			status = "disabled";
 		};
 	};
 };

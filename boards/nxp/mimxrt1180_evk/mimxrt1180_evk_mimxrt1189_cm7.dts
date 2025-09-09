@@ -41,6 +41,10 @@
 	status = "okay";
 };
 
+&dac {
+	status = "okay";
+};
+
 &systick {
 	status = "okay";
 };
@@ -95,4 +99,8 @@ zephyr_udc1: &usb2{
 	tx-d-cal = <7>;
 	tx-cal-45-dp-ohms = <6>;
 	tx-cal-45-dm-ohms = <6>;
+};
+
+&kpp {
+	status = "okay";
 };

@@ -26,10 +26,24 @@
 #endif
 #define RAMABLE_REGION	RAM
 
-/* single bank configuration with 2 MB of code flash */
-#define ROM_START (DT_REG_ADDR(DT_NODELABEL(code_flash)))
+#if defined(CONFIG_ROM_END_OFFSET)
+#define ROM_END_OFFSET CONFIG_ROM_END_OFFSET
+#else
+#define ROM_END_OFFSET 0
+#endif
 
-#define ROM_SIZE  (DT_REG_SIZE(DT_NODELABEL(code_flash)))
+#if defined(CONFIG_FLASH_LOAD_OFFSET)
+#define FLASH_LOAD_OFFSET CONFIG_FLASH_LOAD_OFFSET
+#else
+#define FLASH_LOAD_OFFSET 0
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_flash), okay)
+#define ROM_START (CONFIG_FLASH_BASE_ADDRESS + FLASH_LOAD_OFFSET)
+#ifndef ROM_SIZE
+#define ROM_SIZE (DT_REG_SIZE(DT_CHOSEN(zephyr_flash)) - ROM_END_OFFSET)
+#endif
+#endif
 
 #define RAM_START (CONFIG_SRAM_BASE_ADDRESS)
 #define RAM_SIZE  (KB(CONFIG_SRAM_SIZE))
@@ -61,10 +75,22 @@ SECTIONS
 	. = ROM_START;   /* for kernel logging */
 	PLACE_SYMBOL_HERE(__rodata_region_start);
 
-	 .fvectors 0xFFFFFF80: AT(0xFFFFFF80)
+#if CONFIG_HAS_EXCEPT_VECTOR_TABLE
+	.exvectors 0xFFFFFF80: AT(0xFFFFFF80)
+	{
+		KEEP(*(.exvectors))
+	} GROUP_LINK_IN(ROMABLE_REGION)
+
+	 .fvectors 0xFFFFFFFC: AT(0xFFFFFFFC)
 	{
 		KEEP(*(.fvectors))
 	} GROUP_LINK_IN(ROMABLE_REGION)
+#else
+	.fvectors 0xFFFFFF80: AT(0xFFFFFF80)
+	{
+		KEEP(*(.fvectors))
+	} GROUP_LINK_IN(ROMABLE_REGION)
+#endif
 
 	SECTION_PROLOGUE(_TEXT_SECTION_NAME,ROM_START,)
 	{
@@ -156,6 +182,15 @@ SECTIONS
 		*(.jcr)
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
+#if DT_PROP(DT_NODELABEL(code_flash), programming_enable)
+	SECTION_PROLOGUE(.pfram,ALIGN(4),)
+	{
+		_PFRAM_start = .;
+		. += _RPFRAM_end - _RPFRAM_start;
+		_PFRAM_end = .;
+	} > ROMABLE_REGION
+#endif
+
 	/* TODO: is this section necessary? There is a similar section
 	 * (_CTOR_SECTION_NAME) in common-rom.ld. This seems to be for
 	 * C++ Constructors/Destructors? */
@@ -234,6 +269,18 @@ SECTIONS
 #include <snippets-data-sections.ld>
 
 	__data_region_end = .;
+
+#if DT_PROP(DT_NODELABEL(code_flash), programming_enable)
+
+	.rpfram ALIGN(4): AT(_PFRAM_start)
+	{
+		_RPFRAM_start = .;
+		*(PFRAM)
+		. = ALIGN(4);
+		_RPFRAM_end = .;
+	} > RAMABLE_REGION
+
+#endif
 
 	SECTION_PROLOGUE(_BSS_SECTION_NAME,,)
 	{

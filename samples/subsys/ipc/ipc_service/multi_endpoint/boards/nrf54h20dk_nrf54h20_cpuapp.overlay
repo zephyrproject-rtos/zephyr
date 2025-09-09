@@ -1,0 +1,50 @@
+/ {
+	reserved-memory {
+		/delete-node/ memory@2f0bf000;
+		/delete-node/ memory@2f0bf800;
+
+		cpuapp_cpurad_ipc_shm_a: memory@2f0bf000 {
+			reg = <0x2f0bf000 DT_SIZE_K(1)>;
+		};
+
+		cpurad_cpuapp_ipc_shm_a: memory@2f0bf400 {
+			reg = <0x2f0bf400 DT_SIZE_K(1)>;
+		};
+
+		cpuapp_cpurad_ipc_shm_b: memory@2f0bf800 {
+			reg = <0x2f0bf800 DT_SIZE_K(1)>;
+		};
+
+		cpurad_cpuapp_ipc_shm_b: memory@2f0bfC00 {
+			reg = <0x2f0bfC00 DT_SIZE_K(1)>;
+		};
+	};
+
+	ipc {
+		cpuapp_cpurad_ipc_b: ipc-2-3-b {
+			compatible = "zephyr,ipc-icbmsg";
+			dcache-alignment = <32>;
+			status = "okay";
+			mboxes = <&cpuapp_bellboard 20>,
+				 <&cpurad_bellboard 14>;
+		};
+	};
+};
+
+&cpuapp_bellboard {
+	nordic,interrupt-mapping = <0x146041 0x0>;
+};
+
+&ipc0 {
+	tx-region = <&cpuapp_cpurad_ipc_shm_a>;
+	rx-region = <&cpurad_cpuapp_ipc_shm_a>;
+};
+
+ipc1: &cpuapp_cpurad_ipc_b {
+	status = "okay";
+	mbox-names = "rx", "tx";
+	tx-region = <&cpuapp_cpurad_ipc_shm_b>;
+	rx-region = <&cpurad_cpuapp_ipc_shm_b>;
+	tx-blocks = <32>;
+	rx-blocks = <32>;
+};

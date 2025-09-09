@@ -40,6 +40,44 @@
 extern "C" {
 #endif
 
+/* Maximum and minimum value TIME_T can hold */
+#define SYS_TIME_T_MAX ((((time_t)1 << (8 * sizeof(time_t) - 2)) - 1) * 2 + 1)
+#define SYS_TIME_T_MIN (-SYS_TIME_T_MAX - 1)
+
+/* Converts ticks to seconds, discarding any fractional seconds */
+#define SYS_TICKS_TO_SECS(ticks)                                                                   \
+	(((uint64_t)(ticks) >= (uint64_t)K_TICKS_FOREVER) ? SYS_TIME_T_MAX                         \
+							  : k_ticks_to_sec_floor64(ticks))
+
+/* Converts ticks to nanoseconds, modulo NSEC_PER_SEC */
+#define SYS_TICKS_TO_NSECS(ticks)                                                                  \
+	(((uint64_t)(ticks) >= (uint64_t)K_TICKS_FOREVER)                                          \
+		 ? (NSEC_PER_SEC - 1)                                                              \
+		 : k_ticks_to_ns_floor32((uint64_t)(ticks) % CONFIG_SYS_CLOCK_TICKS_PER_SEC))
+
+/* Define a timespec */
+#define SYS_TIMESPEC(sec, nsec)                                                                    \
+	((struct timespec){                                                                        \
+		.tv_sec = (time_t)CLAMP((int64_t)(sec), SYS_TIME_T_MIN, SYS_TIME_T_MAX),           \
+		.tv_nsec = (long)(nsec),                                                           \
+	})
+
+/* Initialize a struct timespec object from a tick count */
+#define SYS_TICKS_TO_TIMESPEC(ticks) SYS_TIMESPEC(SYS_TICKS_TO_SECS(ticks), \
+						  SYS_TICKS_TO_NSECS(ticks))
+
+/* The semantic equivalent of K_NO_WAIT but expressed as a timespec object*/
+#define SYS_TIMESPEC_NO_WAIT SYS_TICKS_TO_TIMESPEC(0)
+
+/* The semantic equivalent of K_TICK_MIN but expressed as a timespec object */
+#define SYS_TIMESPEC_MIN SYS_TICKS_TO_TIMESPEC(K_TICK_MIN)
+
+/* The semantic equivalent of K_TICK_MAX but expressed as a timespec object */
+#define SYS_TIMESPEC_MAX SYS_TICKS_TO_TIMESPEC(K_TICK_MAX)
+
+/* The semantic equivalent of K_FOREVER but expressed as a timespec object*/
+#define SYS_TIMESPEC_FOREVER SYS_TIMESPEC(SYS_TIME_T_MAX, NSEC_PER_SEC - 1)
+
 /**
  * @defgroup timeutil_apis Time Utility APIs
  * @ingroup utilities
@@ -383,14 +421,25 @@ static inline bool timespec_normalize(struct timespec *ts)
 
 #if defined(CONFIG_SPEED_OPTIMIZATIONS) && HAS_BUILTIN(__builtin_add_overflow)
 
+	int64_t sec = 0;
 	int sign = (ts->tv_nsec >= 0) - (ts->tv_nsec < 0);
-	int64_t sec = (ts->tv_nsec >= (long)NSEC_PER_SEC) * (ts->tv_nsec / (long)NSEC_PER_SEC) +
-		      ((ts->tv_nsec < 0) && (ts->tv_nsec != LONG_MIN)) *
-			      DIV_ROUND_UP((unsigned long)-ts->tv_nsec, (long)NSEC_PER_SEC) +
-		      (ts->tv_nsec == LONG_MIN) * ((LONG_MAX / NSEC_PER_SEC) + 1);
-	bool overflow = __builtin_add_overflow(ts->tv_sec, sign * sec, &ts->tv_sec);
 
-	ts->tv_nsec -= sign * (long)NSEC_PER_SEC * sec;
+	/* only one of the following should be non-zero */
+	sec += (ts->tv_nsec >= (long)NSEC_PER_SEC) * (ts->tv_nsec / (long)NSEC_PER_SEC);
+	sec += ((sizeof(ts->tv_nsec) != sizeof(int64_t)) && (ts->tv_nsec != LONG_MIN) &&
+		(ts->tv_nsec < 0)) *
+	       DIV_ROUND_UP((unsigned long)-ts->tv_nsec, (long)NSEC_PER_SEC);
+	sec += ((sizeof(ts->tv_nsec) == sizeof(int64_t)) && (ts->tv_nsec != INT64_MIN) &&
+		(ts->tv_nsec < 0)) *
+	       DIV_ROUND_UP((uint64_t)-ts->tv_nsec, NSEC_PER_SEC);
+	sec += ((sizeof(ts->tv_nsec) != sizeof(int64_t)) && (ts->tv_nsec == LONG_MIN)) *
+	       ((LONG_MAX / NSEC_PER_SEC) + 1);
+	sec += ((sizeof(ts->tv_nsec) == sizeof(int64_t)) && (ts->tv_nsec == INT64_MIN)) *
+	       ((INT64_MAX / NSEC_PER_SEC) + 1);
+
+	ts->tv_nsec -= sec * sign * NSEC_PER_SEC;
+
+	bool overflow = __builtin_add_overflow(ts->tv_sec, sign * sec, &ts->tv_sec);
 
 	if (!overflow) {
 		__ASSERT_NO_MSG(timespec_is_valid(ts));
@@ -405,16 +454,12 @@ static inline bool timespec_normalize(struct timespec *ts)
 	if (ts->tv_nsec >= (long)NSEC_PER_SEC) {
 		sec = ts->tv_nsec / (long)NSEC_PER_SEC;
 	} else if (ts->tv_nsec < 0) {
-		if ((sizeof(ts->tv_nsec) == sizeof(uint32_t)) && (ts->tv_nsec == LONG_MIN)) {
-			sec = DIV_ROUND_UP(LONG_MAX / NSEC_PER_USEC, USEC_PER_SEC);
-		} else {
-			sec = DIV_ROUND_UP((unsigned long)-ts->tv_nsec, NSEC_PER_SEC);
-		}
+		sec = DIV_ROUND_UP((unsigned long)-ts->tv_nsec, NSEC_PER_SEC);
 	} else {
 		sec = 0;
 	}
 
-	if ((ts->tv_nsec < 0) && (ts->tv_sec < 0) && (ts->tv_sec - INT64_MIN < sec)) {
+	if ((ts->tv_nsec < 0) && (ts->tv_sec < 0) && (ts->tv_sec - SYS_TIME_T_MIN < sec)) {
 		/*
 		 * When `tv_nsec` is negative and `tv_sec` is already most negative,
 		 * further subtraction would cause integer overflow.
@@ -423,7 +468,7 @@ static inline bool timespec_normalize(struct timespec *ts)
 	}
 
 	if ((ts->tv_nsec >= (long)NSEC_PER_SEC) && (ts->tv_sec > 0) &&
-	    (INT64_MAX - ts->tv_sec < sec)) {
+	    (SYS_TIME_T_MAX - ts->tv_sec < sec)) {
 		/*
 		 * When `tv_nsec` is >= `NSEC_PER_SEC` and `tv_sec` is already most
 		 * positive, further addition would cause integer overflow.
@@ -444,7 +489,6 @@ static inline bool timespec_normalize(struct timespec *ts)
 	__ASSERT_NO_MSG(timespec_is_valid(ts));
 
 	return true;
-
 #endif
 }
 
@@ -476,12 +520,12 @@ static inline bool timespec_add(struct timespec *a, const struct timespec *b)
 
 #else
 
-	if ((a->tv_sec < 0) && (b->tv_sec < 0) && (INT64_MIN - a->tv_sec > b->tv_sec)) {
+	if ((a->tv_sec < 0) && (b->tv_sec < 0) && (SYS_TIME_T_MIN - a->tv_sec > b->tv_sec)) {
 		/* negative integer overflow would occur */
 		return false;
 	}
 
-	if ((a->tv_sec > 0) && (b->tv_sec > 0) && (INT64_MAX - a->tv_sec < b->tv_sec)) {
+	if ((a->tv_sec > 0) && (b->tv_sec > 0) && (SYS_TIME_T_MAX - a->tv_sec < b->tv_sec)) {
 		/* positive integer overflow would occur */
 		return false;
 	}
@@ -517,10 +561,8 @@ static inline bool timespec_negate(struct timespec *ts)
 
 #else
 
-	/* note: must check for 32-bit size here until #90029 is resolved */
-	if (((sizeof(ts->tv_sec) == sizeof(int32_t)) && (ts->tv_sec == INT32_MIN)) ||
-	    ((sizeof(ts->tv_sec) == sizeof(int64_t)) && (ts->tv_sec == INT64_MIN))) {
-		/* -INT64_MIN > INT64_MAX, so +ve integer overflow would occur */
+	if (ts->tv_sec == SYS_TIME_T_MIN) {
+		/* -SYS_TIME_T_MIN > SYS_TIME_T_MAX, so positive integer overflow would occur */
 		return false;
 	}
 
@@ -614,42 +656,30 @@ static inline bool timespec_equal(const struct timespec *a, const struct timespe
  * This function converts time durations expressed as Zephyr @ref k_timeout_t
  * objects to `struct timespec` objects.
  *
+ * @note This function will assert if assertions are enabled and @p timeout is not relative,
+ * (i.e. a timeout generated by `K_TIMEOUT_ABS_TICKS` or similar is used).
+ *
  * @param timeout the kernel timeout to convert
  * @param[out] ts the timespec to store the result
  */
 static inline void timespec_from_timeout(k_timeout_t timeout, struct timespec *ts)
 {
 	__ASSERT_NO_MSG(ts != NULL);
+	__ASSERT_NO_MSG(Z_IS_TIMEOUT_RELATIVE(timeout) ||
+			(IS_ENABLED(CONFIG_TIMEOUT_64BIT) &&
+			 K_TIMEOUT_EQ(timeout, (k_timeout_t){K_TICKS_FOREVER})));
 
-#if defined(CONFIG_SPEED_OPTIMIZATIONS)
-
-	uint64_t ns = k_ticks_to_ns_ceil64(timeout.ticks);
-
-	*ts = (struct timespec){
-		.tv_sec = (timeout.ticks == K_TICKS_FOREVER) * INT64_MAX +
-			  (timeout.ticks != K_TICKS_FOREVER) * (ns / NSEC_PER_SEC),
-		.tv_nsec = (timeout.ticks == K_TICKS_FOREVER) * (NSEC_PER_SEC - 1) +
-			   (timeout.ticks != K_TICKS_FOREVER) * (ns % NSEC_PER_SEC),
-	};
-
-#else
-
-	if (timeout.ticks == 0) {
-		/* This is equivalent to K_NO_WAIT, but without including <zephyr/kernel.h> */
-		ts->tv_sec = 0;
-		ts->tv_nsec = 0;
-	} else if (timeout.ticks == K_TICKS_FOREVER) {
-		/* This is roughly equivalent to K_FOREVER, but not including <zephyr/kernel.h> */
-		ts->tv_sec = (time_t)INT64_MAX;
-		ts->tv_nsec = NSEC_PER_SEC - 1;
+	/* equivalent of K_FOREVER without including kernel.h */
+	if (K_TIMEOUT_EQ(timeout, (k_timeout_t){K_TICKS_FOREVER})) {
+		/* duration == K_TICKS_FOREVER ticks */
+		*ts = SYS_TIMESPEC_FOREVER;
+		/* equivalent of K_NO_WAIT without including kernel.h */
+	} else if (K_TIMEOUT_EQ(timeout, (k_timeout_t){0})) {
+		/* duration <= 0 ticks */
+		*ts = SYS_TIMESPEC_NO_WAIT;
 	} else {
-		uint64_t ns = k_ticks_to_ns_ceil64(timeout.ticks);
-
-		ts->tv_sec = ns / NSEC_PER_SEC;
-		ts->tv_nsec = ns - ts->tv_sec * NSEC_PER_SEC;
+		*ts = SYS_TICKS_TO_TIMESPEC(timeout.ticks);
 	}
-
-#endif
 
 	__ASSERT_NO_MSG(timespec_is_valid(ts));
 }
@@ -657,80 +687,73 @@ static inline void timespec_from_timeout(k_timeout_t timeout, struct timespec *t
 /**
  * @brief Convert a timespec to a kernel timeout
  *
- * This function converts durations expressed as a `struct timespec` to Zephyr @ref k_timeout_t
- * objects.
+ * This function converts a time duration, @p req, expressed as a `timespec` object, to a Zephyr
+ * @ref k_timeout_t object.
  *
- * Given that the range of a `struct timespec` is much larger than the range of @ref k_timeout_t,
- * and also given that the functions are only intended to be used to convert time durations
- * (which are always positive), the function will saturate to @ref K_NO_WAIT if the `tv_sec` field
- * of @a ts is negative.
+ * If @p req contains a negative duration or if both `tv_sec` and `tv_nsec` fields are zero, this
+ * function will return @ref K_NO_WAIT.
  *
- * Similarly, if the duration is too large to fit in @ref k_timeout_t, the function will
- * saturate to @ref K_FOREVER.
+ * If @p req contains the maximum representable `timespec`, `{max(time_t), 999999999}`, then this
+ * function will return @ref K_FOREVER.
  *
- * @param ts the timespec to convert
- * @return the kernel timeout
+ * If @p req contains a value that is greater than the maximum equivalent tick duration, then this
+ * function will return the maximum representable tick duration (i.e. @p req will be rounded-down).
+ *
+ * Otherwise, this function will return the `k_timeout_t` that is rounded-up to a tick boundary.
+ *
+ * If @p rem is not `NULL`, it will be set to the remainder of the conversion, i.e. the difference
+ * between the requested duration and the converted duration as a `timespec` object, approximately
+ * as shown below.
+ *
+ * ```python
+ * rem = requested_duration - converted_duration
+ * ```
+ *
+ * @param req the requested `timespec` to convert
+ * @param[out] rem optional pointer to a `timespec` to store the remainder
+ * @return the corresponding kernel timeout
  */
-static inline k_timeout_t timespec_to_timeout(const struct timespec *ts)
+static inline k_timeout_t timespec_to_timeout(const struct timespec *req, struct timespec *rem)
 {
-	__ASSERT_NO_MSG((ts != NULL) && timespec_is_valid(ts));
+	k_timeout_t timeout;
 
-#if defined(CONFIG_SPEED_OPTIMIZATIONS)
+	__ASSERT_NO_MSG((req != NULL) && timespec_is_valid(req));
 
-	return (k_timeout_t){
-		/* note: must check for 32-bit size here until #90029 is resolved */
-		.ticks = ((sizeof(ts->tv_sec) == sizeof(int32_t) && (ts->tv_sec == INT32_MAX) &&
-			   (ts->tv_nsec == NSEC_PER_SEC - 1)) ||
-			  ((sizeof(ts->tv_sec) == sizeof(int64_t)) && (ts->tv_sec == INT64_MAX) &&
-			   (ts->tv_nsec == NSEC_PER_SEC - 1))) *
-				 K_TICKS_FOREVER +
-			 ((sizeof(ts->tv_sec) == sizeof(int32_t) && (ts->tv_sec == INT32_MAX) &&
-			   (ts->tv_nsec == NSEC_PER_SEC - 1)) ||
-			  ((sizeof(ts->tv_sec) == sizeof(int64_t)) && (ts->tv_sec != INT64_MAX) &&
-			   (ts->tv_sec >= 0))) *
-				 (IS_ENABLED(CONFIG_TIMEOUT_64BIT)
-					  ? (int64_t)(CLAMP(
-						    k_sec_to_ticks_floor64(ts->tv_sec) +
-							    k_ns_to_ticks_floor64(ts->tv_nsec),
-						    0, (uint64_t)INT64_MAX))
-					  : (uint32_t)(CLAMP(
-						    k_sec_to_ticks_floor64(ts->tv_sec) +
-							    k_ns_to_ticks_floor64(ts->tv_nsec),
-						    0, (uint64_t)UINT32_MAX)))};
-
-#else
-
-	if ((ts->tv_sec < 0) || (ts->tv_sec == 0 && ts->tv_nsec == 0)) {
-		/* This is equivalent to K_NO_WAIT, but without including <zephyr/kernel.h> */
-		return (k_timeout_t){
-			.ticks = 0,
-		};
-		/* note: must check for 32-bit size here until #90029 is resolved */
-	} else if (((sizeof(ts->tv_sec) == sizeof(int32_t)) && (ts->tv_sec == INT32_MAX) &&
-		    (ts->tv_nsec == NSEC_PER_SEC - 1)) ||
-		   ((sizeof(ts->tv_sec) == sizeof(int64_t)) && (ts->tv_sec == INT64_MAX) &&
-		    (ts->tv_nsec == NSEC_PER_SEC - 1))) {
-		/* This is equivalent to K_FOREVER, but not including <zephyr/kernel.h> */
-		return (k_timeout_t){
-			.ticks = K_TICKS_FOREVER,
-		};
-	} else {
-		if (IS_ENABLED(CONFIG_TIMEOUT_64BIT)) {
-			return (k_timeout_t){
-				.ticks = (int64_t)CLAMP(k_sec_to_ticks_floor64(ts->tv_sec) +
-								k_ns_to_ticks_floor64(ts->tv_nsec),
-							0, (uint64_t)INT64_MAX),
-			};
-		} else {
-			return (k_timeout_t){
-				.ticks = (uint32_t)CLAMP(k_sec_to_ticks_floor64(ts->tv_sec) +
-								 k_ns_to_ticks_floor64(ts->tv_nsec),
-							 0, (uint64_t)UINT32_MAX),
-			};
+	if (timespec_compare(req, &SYS_TIMESPEC_NO_WAIT) <= 0) {
+		if (rem != NULL) {
+			*rem = *req;
 		}
+		/* equivalent of K_NO_WAIT without including kernel.h */
+		timeout.ticks = 0;
+		return timeout;
 	}
 
-#endif
+	if (timespec_compare(req, &SYS_TIMESPEC_FOREVER) == 0) {
+		if (rem != NULL) {
+			*rem = SYS_TIMESPEC_NO_WAIT;
+		}
+		/* equivalent of K_FOREVER without including kernel.h */
+		timeout.ticks = K_TICKS_FOREVER;
+		return timeout;
+	}
+
+	if (timespec_compare(req, &SYS_TIMESPEC_MAX) >= 0) {
+		/* round down to align to max ticks */
+		timeout.ticks = K_TICK_MAX;
+	} else {
+		/* round up to align to next tick boundary */
+		timeout.ticks = CLAMP(k_ns_to_ticks_ceil64(req->tv_nsec) +
+					      k_sec_to_ticks_ceil64(req->tv_sec),
+				      K_TICK_MIN, K_TICK_MAX);
+	}
+
+	if (rem != NULL) {
+		timespec_from_timeout(timeout, rem);
+		timespec_sub(rem, req);
+		timespec_negate(rem);
+	}
+
+	return timeout;
 }
 
 /**

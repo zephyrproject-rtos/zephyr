@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 NXP
+ * Copyright 2023, 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,7 +20,6 @@
 #define NXP_VREF_MODE_STANDBY 0
 #define NXP_VREF_MODE_LOW_POWER 1
 #define NXP_VREF_MODE_HIGH_POWER 2
-#define NXP_VREF_MODE_INTERNAL_REGULATOR 3
 
 /** @} */
 

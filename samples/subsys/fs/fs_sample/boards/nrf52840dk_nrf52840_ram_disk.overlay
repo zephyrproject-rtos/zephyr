@@ -6,7 +6,7 @@
 
 / {
 	msc_disk0 {
-		status="okay";
+		status = "okay";
 		compatible = "zephyr,ram-disk";
 		/* Sample, to make things easier, mounts all FAT
 		 * systems at "SD".

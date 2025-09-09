@@ -25,6 +25,9 @@
 /* Low speed clocks defined in stm32_common_clocks.h */
 #define STM32_SRC_HSE		(STM32_SRC_LSI + 1)
 #define STM32_SRC_HSI		(STM32_SRC_HSE + 1)
+/** Bus clock */
+#define STM32_SRC_TIMPCLK1	(STM32_SRC_HSI + 1)
+#define STM32_SRC_TIMPCLK2	(STM32_SRC_TIMPCLK1 + 1)
 
 /** @brief RCC_CSR register offset */
 #define CSR_REG		0x34

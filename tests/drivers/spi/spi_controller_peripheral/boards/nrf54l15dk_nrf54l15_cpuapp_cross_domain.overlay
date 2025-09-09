@@ -68,6 +68,6 @@ dut_spis: &spi22 {
 	pinctrl-0 = <&spi22_default_alt>;
 	pinctrl-1 = <&spi22_sleep_alt>;
 	pinctrl-names = "default", "sleep";
-	/delete-property/rx-delay-supported;
-	/delete-property/rx-delay;
+	/delete-property/ rx-delay-supported;
+	/delete-property/ rx-delay;
 };

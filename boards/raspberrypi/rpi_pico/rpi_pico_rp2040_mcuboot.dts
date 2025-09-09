@@ -1,0 +1,9 @@
+#include "rpi_pico.dts"
+
+/delete-node/ &code_partition;
+#include <raspberrypi/partitions_2M_sysbuild.dtsi>
+/ {
+	chosen {
+		zephyr,code-partition = &slot0_partition;
+	};
+};

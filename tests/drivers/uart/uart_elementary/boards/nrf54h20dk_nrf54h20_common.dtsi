@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
 &cpuapp_dma_region {
-	status="okay";
+	status = "okay";
 };
 
 &pinctrl {
@@ -33,5 +33,4 @@ dut: &uart135 {
 	pinctrl-names = "default", "sleep";
 	current-speed = <115200>;
 	hw-flow-control;
-
 };

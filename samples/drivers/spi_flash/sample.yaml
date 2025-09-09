@@ -24,6 +24,24 @@ tests:
         - "Test 2: Flash write"
         - "Attempting to write 4 bytes"
         - "Data read matches data written. Good!!"
+  sample.drivers.spi.flash.stm32.memmap:
+    filter: dt_compat_enabled("st,stm32-qspi-nor")
+      or dt_compat_enabled("st,stm32-ospi-nor")
+      or dt_compat_enabled("st,stm32-xspi-nor")
+    integration_platforms:
+      - stm32h573i_dk
+    extra_configs:
+      - CONFIG_STM32_MEMMAP=y
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "Test 1: Flash erase"
+        - "Flash erase succeeded!"
+        - "Test 2: Flash write"
+        - "Attempting to write 4 bytes"
+        - "Data read matches data written. Good!!"
   sample.drivers.spi.flash.nrf54lm20:
     platform_allow:
       - nrf54lm20dk/nrf54lm20a/cpuapp

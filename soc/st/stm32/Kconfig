@@ -26,9 +26,17 @@ config USE_STM32_ASSERT
 
 config STM32_BACKUP_SRAM
 	bool "STM32 Backup SRAM"
+	default y
 	depends on DT_HAS_ST_STM32_BACKUP_SRAM_ENABLED
 	help
 	  Enable support for STM32 backup SRAM.
+
+config STM32_BACKUP_SRAM_INIT_PRIORITY
+	int "STM32 Backup SRAM init priority"
+	default APPLICATION_INIT_PRIORITY
+	depends on STM32_BACKUP_SRAM
+	help
+	  STM32 Backup SRAM device initialization priority.
 
 config STM32_ENABLE_DEBUG_SLEEP_STOP
 	bool "Allow debugger attach in stop/sleep Mode"

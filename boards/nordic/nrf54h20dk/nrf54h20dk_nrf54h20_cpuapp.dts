@@ -258,14 +258,14 @@ slot3_partition: &cpurad_slot1_partition {
 };
 
 &gpio6 {
-	status = "okay";
+	status = "disabled";
 };
 
 &exmif {
 	pinctrl-0 = <&exmif_default>;
 	pinctrl-1 = <&exmif_sleep>;
 	pinctrl-names = "default", "sleep";
-	status = "okay";
+	status = "disabled";
 
 	mx25uw63: mx25uw6345g@0 {
 		compatible = "mxicy,mx25u", "jedec,mspi-nor";
@@ -326,4 +326,21 @@ zephyr_udc0: &usbhs {
 &adc {
 	memory-regions = <&cpuapp_dma_region>;
 	status = "okay";
+};
+
+/* Trim this RAM block for making room on all run-time common S2RAM cpu context. */
+&cpuapp_ram0 {
+	reg = <0x22000000 (DT_SIZE_K(32)-32)>;
+	ranges = <0x0 0x22000000 (0x8000-0x20)>;
+};
+
+/ {
+	soc {
+		/* run-time common S2RAM cpu context RAM */
+		pm_s2ram: cpuapp_s2ram@22007fe0  {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x22007fe0 32>;
+			zephyr,memory-region = "pm_s2ram_context";
+		};
+	};
 };

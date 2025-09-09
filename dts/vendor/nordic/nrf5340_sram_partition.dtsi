@@ -1,0 +1,41 @@
+/*
+ * Copyright 2024 Embeint Inc
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	/* Default SRAM planning when building for nRF5340 with ARM TF-M support
+	 * - Lowest 256 kB SRAM allocated to Secure image (sram0_s)
+	 * - Upper 256 kB allocated to Non-Secure image (sram0_ns)
+	 * Of the memory allocated to the Non-Secure image
+	 * - 192 kB SRAM allocated to the Non-Secure application (sram0_ns_app).
+	 * - 64 kB allocated to shared memory (sram0_shared).
+	 *   (See nrf5340_shared_sram_partition.dtsi)
+	 */
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		sram0_image: image@20000000 {
+			/* Zephyr image(s) memory */
+			reg = <0x20000000 DT_SIZE_K(448)>;
+		};
+
+		sram0_s: image_s@20000000 {
+			/* Secure image memory */
+			reg = <0x20000000 0x40000>;
+		};
+
+		sram0_ns: image_ns@20040000 {
+			/* Non-Secure image memory */
+			reg = <0x20040000 0x40000>;
+		};
+
+		sram0_ns_app: image_ns_app@20040000 {
+			/* Non-Secure image memory */
+			reg = <0x20040000 0x30000>;
+		};
+	};
+};

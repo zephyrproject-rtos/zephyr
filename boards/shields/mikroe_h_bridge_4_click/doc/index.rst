@@ -33,5 +33,13 @@ Programming
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/stepper/generic
    :board: <board>
-   :west-args: --shield mikroe_h_bridge_4_click
+   :shield: mikroe_h_bridge_4_click
    :goals: build flash
+
+References
+**********
+
+.. target-notes::
+
+.. _Mikroe H-Bridge 4 click:
+   https://www.mikroe.com/h-bridge-4-click

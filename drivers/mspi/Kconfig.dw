@@ -1,4 +1,5 @@
 # Copyright (c) 2024 Nordic Semiconductor ASA
+# Copyright (c) 2025 Tenstorrent AI ULC
 # SPDX-License-Identifier: Apache-2.0
 
 config MSPI_DW
@@ -7,3 +8,24 @@ config MSPI_DW
 	depends on DT_HAS_SNPS_DESIGNWARE_SSI_ENABLED
 	select PINCTRL if $(dt_compat_any_has_prop,$(DT_COMPAT_SNPS_DESIGNWARE_SSI),pinctrl-0)
 	imply MSPI_XIP
+	imply MSPI_TIMING
+
+if MSPI_DW
+
+config MSPI_DW_TXD_DIV
+	int "Designware SSI TX Drive edge divisor"
+	default 4
+	help
+	  Division factor to apply to calculated BAUDR value when writing it
+	  to the TXD_DRIVE_EDGE register in DDR mode. Note that the maximum
+	  value of this register is (BAUDR / 2) - 1.
+
+config MSPI_DW_TXD_MUL
+	int "Designware SSI TX Drive edge multiplier"
+	default 1
+	help
+	  Multiplication factor to apply to calculated BAUDR value when writing
+	  it to the TXD_DRIVE_EDGE register in DDR mode. Note that the maximum
+	  value of this register is (BAUDR / 2) - 1.
+
+endif # MSPI_DW

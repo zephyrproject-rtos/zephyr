@@ -15,9 +15,10 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		cpu@0 {
+		cpu0: cpu@0 {
 			device_type = "cpu";
 			compatible = "arm,cortex-m7";
+			cpu-power-states = <&wait &stop &suspend>;
 			reg = <0>;
 
 			#address-cells = <1>;
@@ -26,6 +27,30 @@
 			mpu: mpu@e000ed90 {
 				compatible = "arm,armv7m-mpu";
 				reg = <0xe000ed90 0x40>;
+			};
+
+		};
+
+		power-states {
+			wait: power-state-wait {
+				compatible = "zephyr,power-state";
+				power-state-name = "runtime-idle";
+				min-residency-us = <100>;
+				exit-latency-us = <50>;
+			};
+
+			stop: power-state-stop {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				min-residency-us = <1000>;
+				exit-latency-us = <200>;
+			};
+
+			suspend: power-state-suspend {
+				compatible = "zephyr,power-state";
+				power-state-name = "standby";
+				min-residency-us = <5000>;
+				exit-latency-us = <1000>;
 			};
 		};
 	};

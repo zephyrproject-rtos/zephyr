@@ -5,7 +5,8 @@
 
 /****************************************
  * PLEASE KEEP REG ADDRESSES SEQUENTIAL *
- ***************************************/
+ **************************************
+ */
 
 max17048@0 {
 	compatible = "maxim,max17048";
@@ -22,5 +23,26 @@ bq27z746@1 {
 sbs-gauge-new-api@2 {
 	compatible = "sbs,sbs-gauge-new-api";
 	reg = <0x2>;
+	status = "okay";
+};
+
+axp2101@3 {
+	compatible = "x-powers,axp2101-fuel-gauge";
+	reg = <0x3>;
+	status = "okay";
+};
+
+lc709203f@4 {
+	compatible = "onnn,lc709203f";
+	reg = <0x4>;
+	status = "okay";
+	apa = "500mAh";
+	battery-profile = <0x01>;
+	thermistor;
+};
+
+sy24561@5 {
+	compatible = "silergy,sy24561";
+	reg = <0x5>;
 	status = "okay";
 };

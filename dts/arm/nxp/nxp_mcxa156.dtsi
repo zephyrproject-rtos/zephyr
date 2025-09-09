@@ -29,6 +29,10 @@
 		status = "okay";
 	};
 
+	cmc {
+		compatible = "nxp,cmc-reset-cause";
+	};
+
 	soc {
 		syscon: syscon@40000000 {
 			compatible = "nxp,lpc-syscon";
@@ -490,6 +494,13 @@
 			prescaler = <1>;
 			clk-source = <1>;
 			resolution = <32>;
+			status = "disabled";
+		};
+
+		ostimer0: timers@400ad000 {
+			compatible = "nxp,os-timer";
+			reg = <0x400ad000 0x1000>;
+			interrupts = <57 0>;
 			status = "disabled";
 		};
 

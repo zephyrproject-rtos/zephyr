@@ -6,17 +6,10 @@
 
 #define DT_DRV_COMPAT st_stm32_fmc_nor_psram
 
-#include <zephyr/device.h>
 #include <soc.h>
-#include <errno.h>
-
+#include <zephyr/device.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(memc_stm32_nor_psram, CONFIG_MEMC_LOG_LEVEL);
-
-/** SRAM base register offset, see FMC_Bank1_R_BASE */
-#define SRAM_OFFSET 0x0000UL
-/** SRAM extended mode register offset, see FMC_Bank1E_R_BASE */
-#define SRAM_EXT_OFFSET 0x0104UL
 
 /** FMC NOR/PSRAM controller bank configuration fields. */
 struct memc_stm32_nor_psram_bank_config {
@@ -27,8 +20,6 @@ struct memc_stm32_nor_psram_bank_config {
 
 /** FMC NOR/PSRAM controller configuration fields. */
 struct memc_stm32_nor_psram_config {
-	FMC_NORSRAM_TypeDef *nor_psram;
-	FMC_NORSRAM_EXTENDED_TypeDef *extended;
 	const struct memc_stm32_nor_psram_bank_config *banks;
 	size_t banks_len;
 };
@@ -37,12 +28,11 @@ static int memc_stm32_nor_init(const struct memc_stm32_nor_psram_config *config,
 			       const struct memc_stm32_nor_psram_bank_config *bank_config)
 {
 	FMC_NORSRAM_TimingTypeDef *ext_timing;
-	NOR_HandleTypeDef hnor = { 0 };
-
-	hnor.Instance = config->nor_psram;
-	hnor.Extended = config->extended;
-
-	memcpy(&hnor.Init, &bank_config->init, sizeof(hnor.Init));
+	NOR_HandleTypeDef hnor = {
+		.Instance = FMC_NORSRAM_DEVICE,
+		.Extended = FMC_NORSRAM_EXTENDED_DEVICE,
+		.Init = bank_config->init
+	};
 
 	if (bank_config->init.ExtendedMode == FMC_EXTENDED_MODE_ENABLE) {
 		ext_timing = (FMC_NORSRAM_TimingTypeDef *)&bank_config->timing_ext;
@@ -63,12 +53,11 @@ static int memc_stm32_psram_init(const struct memc_stm32_nor_psram_config *confi
 				 const struct memc_stm32_nor_psram_bank_config *bank_config)
 {
 	FMC_NORSRAM_TimingTypeDef *ext_timing;
-	SRAM_HandleTypeDef hsram = { 0 };
-
-	hsram.Instance = config->nor_psram;
-	hsram.Extended = config->extended;
-
-	memcpy(&hsram.Init, &bank_config->init, sizeof(hsram.Init));
+	SRAM_HandleTypeDef hsram = {
+		.Instance = FMC_NORSRAM_DEVICE,
+		.Extended = FMC_NORSRAM_EXTENDED_DEVICE,
+		.Init = bank_config->init
+	};
 
 	if (bank_config->init.ExtendedMode == FMC_EXTENDED_MODE_ENABLE) {
 		ext_timing = (FMC_NORSRAM_TimingTypeDef *)&bank_config->timing_ext;
@@ -88,21 +77,21 @@ static int memc_stm32_psram_init(const struct memc_stm32_nor_psram_config *confi
 static int memc_stm32_nor_psram_init(const struct device *dev)
 {
 	const struct memc_stm32_nor_psram_config *config = dev->config;
-	uint32_t memory_type;
+	const struct memc_stm32_nor_psram_bank_config *bank_config;
 	size_t bank_idx;
-	int ret = 0;
+	int ret;
 
 	for (bank_idx = 0U; bank_idx < config->banks_len; ++bank_idx) {
-		memory_type = config->banks[bank_idx].init.MemoryType;
+		bank_config = &config->banks[bank_idx];
 
-		switch (memory_type) {
+		switch (bank_config->init.MemoryType) {
 		case FMC_MEMORY_TYPE_NOR:
-			ret = memc_stm32_nor_init(config, &config->banks[bank_idx]);
+			ret = memc_stm32_nor_init(config, bank_config);
 			break;
 		case FMC_MEMORY_TYPE_PSRAM:
 			__fallthrough;
 		case FMC_MEMORY_TYPE_SRAM:
-			ret = memc_stm32_psram_init(config, &config->banks[bank_idx]);
+			ret = memc_stm32_psram_init(config, bank_config);
 			break;
 		default:
 			ret = -ENOTSUP;
@@ -112,13 +101,13 @@ static int memc_stm32_nor_psram_init(const struct device *dev)
 		if (ret < 0) {
 			LOG_ERR("Unable to initialize memory type: "
 				"0x%08X, NSBank: %d, err: %d",
-				memory_type, config->banks[bank_idx].init.NSBank, ret);
-			goto end;
+				bank_config->init.MemoryType,
+				bank_config->init.NSBank, ret);
+			return ret;
 		}
 	}
 
-end:
-	return ret;
+	return 0;
 }
 
 /** SDRAM bank/s configuration initialization macro. */
@@ -158,6 +147,12 @@ end:
 	  }                                                                     \
 	},
 
+#define BUILD_ASSERT_BANK_CONFIG(node_id)                                       \
+	BUILD_ASSERT(IS_FMC_NORSRAM_BANK(DT_REG_ADDR(node_id)),                 \
+		     "NSBank " STRINGIFY(DT_REG_ADDR(node_id)) " is not a NORSRAM bank");
+
+DT_INST_FOREACH_CHILD(0, BUILD_ASSERT_BANK_CONFIG);
+
 /** SRAM bank/s configuration. */
 static const struct memc_stm32_nor_psram_bank_config bank_config[] = {
 	DT_INST_FOREACH_CHILD(0, BANK_CONFIG)
@@ -165,9 +160,6 @@ static const struct memc_stm32_nor_psram_bank_config bank_config[] = {
 
 /** SRAM configuration. */
 static const struct memc_stm32_nor_psram_config config = {
-	.nor_psram = (FMC_NORSRAM_TypeDef *)(DT_REG_ADDR(DT_INST_PARENT(0)) + SRAM_OFFSET),
-	.extended = (FMC_NORSRAM_EXTENDED_TypeDef *)(DT_REG_ADDR(DT_INST_PARENT(0))
-								 + SRAM_EXT_OFFSET),
 	.banks = bank_config,
 	.banks_len = ARRAY_SIZE(bank_config),
 };

@@ -4,14 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @file
- * @brief Sample echo app for CDC ACM class
- *
- * Sample app for USB CDC ACM class driver. The received data is echoed back
- * to the serial port.
- */
-
 #include <sample_usbd.h>
 
 #include <stdio.h>
@@ -21,7 +13,6 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/ring_buffer.h>
 
-#include <zephyr/usb/usb_device.h>
 #include <zephyr/usb/usbd.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(cdc_acm_echo, LOG_LEVEL_INF);
@@ -48,7 +39,6 @@ static inline void print_baudrate(const struct device *dev)
 	}
 }
 
-#if defined(CONFIG_USB_DEVICE_STACK_NEXT)
 static struct usbd_context *sample_usbd;
 K_SEM_DEFINE(dtr_sem, 0, 1);
 
@@ -106,7 +96,6 @@ static int enable_usb_device_next(void)
 
 	return 0;
 }
-#endif /* defined(CONFIG_USB_DEVICE_STACK_NEXT) */
 
 static void interrupt_handler(const struct device *dev, void *user_data)
 {
@@ -178,37 +167,16 @@ int main(void)
 		return 0;
 	}
 
-#if defined(CONFIG_USB_DEVICE_STACK_NEXT)
-		ret = enable_usb_device_next();
-#else
-		ret = usb_enable(NULL);
-#endif
-
+	ret = enable_usb_device_next();
 	if (ret != 0) {
-		LOG_ERR("Failed to enable USB");
+		LOG_ERR("Failed to enable USB device support");
 		return 0;
 	}
 
 	ring_buf_init(&ringbuf, sizeof(ring_buffer), ring_buffer);
 
 	LOG_INF("Wait for DTR");
-
-#if defined(CONFIG_USB_DEVICE_STACK_NEXT)
 	k_sem_take(&dtr_sem, K_FOREVER);
-#else
-	while (true) {
-		uint32_t dtr = 0U;
-
-		uart_line_ctrl_get(uart_dev, UART_LINE_CTRL_DTR, &dtr);
-		if (dtr) {
-			break;
-		} else {
-			/* Give CPU resources to low priority threads. */
-			k_sleep(K_MSEC(100));
-		}
-	}
-#endif
-
 	LOG_INF("DTR set");
 
 	/* They are optional, we use them to test the interrupt endpoint */
@@ -225,11 +193,7 @@ int main(void)
 	/* Wait 100ms for the host to do all settings */
 	k_msleep(100);
 
-#ifndef CONFIG_USB_DEVICE_STACK_NEXT
-	print_baudrate(uart_dev);
-#endif
 	uart_irq_callback_set(uart_dev, interrupt_handler);
-
 	/* Enable rx interrupts */
 	uart_irq_rx_enable(uart_dev);
 

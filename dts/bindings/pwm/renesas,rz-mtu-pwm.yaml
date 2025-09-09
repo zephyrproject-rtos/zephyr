@@ -1,0 +1,28 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description:
+  Renesas RZ Multi-Function Timer Pulse Unit (MTU) PWM Controller.
+
+  There are two PWM modes in RZ, PWM mode 1 and PWM mode 2. In this version, we only
+  support PWM mode 1.
+  The PWM waveform is output from the MTIOCnA and MTIOCnC pins by coupling the TGRA
+  register to the TGRB register and the TGRC register to the TGRD register.
+
+compatible: "renesas,rz-mtu-pwm"
+
+include: [pwm-controller.yaml, pinctrl-device.yaml, base.yaml]
+
+properties:
+  "#pwm-cells":
+    const: 3
+    description: |
+      Number of items to expect in a PWM
+        - channel of the timer used for PWM
+        - period to set in ns
+        - flags : combination of standard flags like PWM_POLARITY_NORMAL
+
+pwm-cells:
+  - channel
+  - period
+  - flags

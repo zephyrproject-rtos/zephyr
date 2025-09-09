@@ -19,6 +19,9 @@ if(CONFIG_CMSIS_DSP)
     ${cmsis_glue_path}/CMSIS/Core/Include
   )
 
+  # Define ZEPHYR_INCLUDE_TOOLCHAIN_STDINT_H_ to avoid using Zephyr's stdint.h
+  zephyr_library_compile_definitions(ZEPHYR_INCLUDE_TOOLCHAIN_STDINT_H_)
+
   # Global Feature Definitions
   zephyr_library_compile_definitions_ifdef(CONFIG_CMSIS_DSP_NEON                  ARM_MATH_NEON)
   zephyr_library_compile_definitions_ifdef(CONFIG_CMSIS_DSP_NEON_EXPERIMENTAL     ARM_MATH_NEON_EXPERIMENTAL)

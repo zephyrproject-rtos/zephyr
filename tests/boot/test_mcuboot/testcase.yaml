@@ -48,40 +48,30 @@ tests:
       - vmu_rt1170/mimxrt1176/cm7
       - nrf52840dk/nrf52840
       - rd_rw612_bga
-      - nucleo_wba55cg
       - esp32_devkitc/esp32/procpu
       - esp32s2_saola
       - esp32s3_devkitm/esp32s3/procpu
       - esp32c3_devkitm
       - esp32c6_devkitc/esp32c6/hpcore
       - esp8684_devkitm
-      - apollo510_evb
-      - apollo510_eb
     integration_platforms:
       - frdm_k64f
+      - nrf52840dk/nrf52840
+  bootloader.mcuboot.assert:
+    platform_allow:
+      - b_u585i_iot02a
+    extra_configs:
+      - CONFIG_ASSERT=y
+  bootloader.mcuboot.swap_using_move:
+    platform_allow:
+      - frdm_k64f
+      - nrf5340dk/nrf5340/cpuapp
+      - nrf52840dk/nrf52840
+      - nucleo_wba55cg
+    integration_platforms:
+      - frdm_k64f
+      - nrf5340dk/nrf5340/cpuapp
       - nrf52840dk/nrf52840
     extra_args:
       - SB_CONFIG_MCUBOOT_MODE_SWAP_USING_MOVE=y
       - swapped_app_CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_USING_MOVE=y
-  bootloader.mcuboot.assert:
-    platform_allow:
-      - b_u585i_iot02a
-      - apollo510_evb
-      - apollo510_eb
-    extra_configs:
-      - CONFIG_ASSERT=y
-    extra_args:
-      - SB_CONFIG_MCUBOOT_MODE_SWAP_USING_MOVE=y
-      - swapped_app_CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_USING_MOVE=y
-  bootloader.mcuboot.swap_using_offset:
-    platform_allow:
-      - frdm_k64f
-      - nrf5340dk/nrf5340/cpuapp
-      - apollo510_evb
-      - apollo510_eb
-    integration_platforms:
-      - frdm_k64f
-      - nrf5340dk/nrf5340/cpuapp
-    extra_args:
-      - SB_CONFIG_MCUBOOT_MODE_SWAP_USING_OFFSET=y
-      - swapped_app_CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_USING_OFFSET=y

@@ -386,6 +386,12 @@ def kconfig_snippet(meta, path, kconfig_file=None, blobs=False, taint_blobs=Fals
     return '\n'.join(snippet)
 
 
+def process_kconfig_module_dir(module, meta):
+    module_path = PurePath(module)
+    name_sanitized = meta['name-sanitized']
+    return f'ZEPHYR_{name_sanitized.upper()}_MODULE_DIR={module_path.as_posix()}\n'
+
+
 def process_kconfig(module, meta):
     blobs = process_blobs(module, meta)
     taint_blobs = any(b['status'] != BLOB_NOT_PRESENT for b in blobs)
@@ -393,6 +399,7 @@ def process_kconfig(module, meta):
     module_path = PurePath(module)
     module_yml = module_path.joinpath('zephyr/module.yml')
     kconfig_extern = section.get('kconfig-ext', False)
+
     if kconfig_extern:
         return kconfig_snippet(meta, module_path, blobs=blobs, taint_blobs=taint_blobs)
 
@@ -408,8 +415,7 @@ def process_kconfig(module, meta):
                                blobs=blobs, taint_blobs=taint_blobs)
     else:
         name_sanitized = meta['name-sanitized']
-        snippet = kconfig_module_opts(name_sanitized, blobs, taint_blobs)
-        return '\n'.join(snippet) + '\n'
+        return '\n'.join(kconfig_module_opts(name_sanitized, blobs, taint_blobs)) + '\n'
 
 
 def process_sysbuildkconfig(module, meta):
@@ -417,6 +423,8 @@ def process_sysbuildkconfig(module, meta):
     module_path = PurePath(module)
     module_yml = module_path.joinpath('zephyr/module.yml')
     kconfig_extern = section.get('sysbuild-kconfig-ext', False)
+    name_sanitized = meta['name-sanitized']
+
     if kconfig_extern:
         return kconfig_snippet(meta, module_path, sysbuild=True)
 
@@ -431,7 +439,6 @@ def process_sysbuildkconfig(module, meta):
         if os.path.isfile(kconfig_file):
             return kconfig_snippet(meta, module_path, Path(kconfig_file))
 
-    name_sanitized = meta['name-sanitized']
     return (f'config ZEPHYR_{name_sanitized.upper()}_MODULE\n'
             f'   bool\n'
             f'   default y\n')
@@ -759,8 +766,10 @@ def parse_modules(zephyr_base, manifest=None, west_projs=None, modules=None,
     if extra_modules is None:
         extra_modules = []
         for var in ['EXTRA_ZEPHYR_MODULES', 'ZEPHYR_EXTRA_MODULES']:
-            if var in os.environ:
-                extra_modules.extend(PurePosixPath(p) for p in os.environ[var].split(';'))
+            extra_module = os.environ.get(var, None)
+            if not extra_module:
+                continue
+            extra_modules.extend(PurePosixPath(p) for p in extra_module.split(';'))
 
     Module = namedtuple('Module', ['project', 'meta', 'depends'])
 
@@ -860,6 +869,7 @@ def main():
                         help='Path to zephyr repository')
     args = parser.parse_args()
 
+    kconfig_module_dirs = ""
     kconfig = ""
     cmake = ""
     sysbuild_kconfig = ""
@@ -872,6 +882,7 @@ def main():
                             args.modules, args.extra_modules)
 
     for module in modules:
+        kconfig_module_dirs += process_kconfig_module_dir(module.project, module.meta)
         kconfig += process_kconfig(module.project, module.meta)
         cmake += process_cmake(module.project, module.meta)
         sysbuild_kconfig += process_sysbuildkconfig(
@@ -879,6 +890,16 @@ def main():
         sysbuild_cmake += process_sysbuildcmake(module.project, module.meta)
         settings += process_settings(module.project, module.meta)
         twister += process_twister(module.project, module.meta)
+
+    if args.kconfig_out or args.sysbuild_kconfig_out:
+        if args.kconfig_out:
+            kconfig_module_dirs_out = PurePath(args.kconfig_out).parent / 'kconfig_module_dirs.env'
+        elif args.sysbuild_kconfig_out:
+            kconfig_module_dirs_out = PurePath(args.sysbuild_kconfig_out).parent / \
+                                      'kconfig_module_dirs.env'
+
+        with open(kconfig_module_dirs_out, 'w', encoding="utf-8") as fp:
+            fp.write(kconfig_module_dirs)
 
     if args.kconfig_out:
         with open(args.kconfig_out, 'w', encoding="utf-8") as fp:

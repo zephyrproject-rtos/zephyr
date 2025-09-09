@@ -158,9 +158,15 @@ config LV_Z_INIT_PRIORITY
 	help
 	  Priority used for the automatic initialization of LVGL.
 
+config LV_Z_LVGL_MUTEX
+	bool "Provide LVGL API mutex (un)locking functions"
+	help
+	  LVGL API functions are not thread-safe, provide functions for locking and unlocking.
+
 config LV_Z_RUN_LVGL_ON_WORKQUEUE
 	bool "Use a dedicated workqueue to run LVGL core"
 	imply LV_Z_AUTO_INIT
+	imply LV_Z_LVGL_MUTEX
 	help
 	  Runs the LVGL in a separate workqueue automatically
 	  without requiring user to add a timed loop for that. User can

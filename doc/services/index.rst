@@ -8,6 +8,8 @@ OS Services
 
    binary_descriptors/index.rst
    console.rst
+   cpu_freq/index.rst
+   cpu_load/index.rst
    crypto/index
    debugging/index.rst
    device_mgmt/index
@@ -22,7 +24,6 @@ OS Services
    resource_management/index.rst
    mem_mgmt/index.rst
    net_buf/index.rst
-   modbus/index.rst
    modem/index.rst
    notify.rst
    pm/index.rst

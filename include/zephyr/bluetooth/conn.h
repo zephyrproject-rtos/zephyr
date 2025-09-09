@@ -273,6 +273,86 @@ struct bt_conn_le_read_all_remote_feat_complete {
 	const uint8_t *features;
 };
 
+#define BT_CONN_LE_FRAME_SPACE_TYPES_MASK_ACL_IFS                    \
+	(BT_HCI_LE_FRAME_SPACE_UPDATE_SPACING_TYPE_IFS_ACL_CP_MASK | \
+	 BT_HCI_LE_FRAME_SPACE_UPDATE_SPACING_TYPE_IFS_ACL_PC_MASK)
+
+#define BT_CONN_LE_FRAME_SPACE_TYPES_MASK_ACL                        \
+	(BT_HCI_LE_FRAME_SPACE_UPDATE_SPACING_TYPE_IFS_ACL_CP_MASK | \
+	 BT_HCI_LE_FRAME_SPACE_UPDATE_SPACING_TYPE_IFS_ACL_PC_MASK | \
+	 BT_HCI_LE_FRAME_SPACE_UPDATE_SPACING_TYPE_MCES_MASK)
+
+#define BT_CONN_LE_FRAME_SPACE_TYPES_MASK_CIS                     \
+	(BT_HCI_LE_FRAME_SPACE_UPDATE_SPACING_TYPE_IFS_CIS_MASK | \
+	 BT_HCI_LE_FRAME_SPACE_UPDATE_SPACING_TYPE_MSS_CIS_MASK)
+
+/** Maximum frame space in microseconds.
+ *  As defined in Bluetooth Core Specification, Vol 4, Part E, Section 7.8.151.
+ */
+#define BT_CONN_LE_FRAME_SPACE_MAX (10000U)
+
+/** Frame space update initiator. */
+enum bt_conn_le_frame_space_update_initiator {
+	/** Initiated by local host */
+	BT_CONN_LE_FRAME_SPACE_UPDATE_INITIATOR_LOCAL_HOST =
+		BT_HCI_LE_FRAME_SPACE_UPDATE_INITIATOR_LOCAL_HOST,
+	/** Initiated by local controller */
+	BT_CONN_LE_FRAME_SPACE_UPDATE_INITIATOR_LOCAL_CONTROLLER =
+		BT_HCI_LE_FRAME_SPACE_UPDATE_INITIATOR_LOCAL_CONTROLLER,
+	/** Initiated by peer */
+	BT_CONN_LE_FRAME_SPACE_UPDATE_INITIATOR_PEER =
+		BT_HCI_LE_FRAME_SPACE_UPDATE_INITIATOR_PEER
+};
+
+/** Frame space update params */
+struct bt_conn_le_frame_space_update_param {
+	/** Phy mask of the PHYs to be updated.
+	 *  Refer to BT_HCI_LE_FRAME_SPACE_UPDATE_PHY_* for values.
+	 */
+	uint8_t phys;
+	/** Spacing types mask of the spacing types to be updated.
+	 *  Refer to BT_HCI_LE_FRAME_SPACE_UPDATE_SPACING_TYPE_* and
+	 *  BT_CONN_LE_FRAME_SPACE_TYPES_MASK_* for values.
+	 */
+	uint16_t spacing_types;
+	/** Minimum frame space in microseconds.
+	 *  Bluetooth Core Specification, Vol 4, Part E, Section 7.8.151
+	 *  allows for a range of frame space from 0 to 10000 microseconds.
+	 *  The actual supported frame space values will be dependent on
+	 *  the controller's capabilities.
+	 */
+	uint16_t frame_space_min;
+	/** Maximum frame space in microseconds.
+	 *  Bluetooth Core Specification, Vol 4, Part E, Section 7.8.151
+	 *  allows for a range of frame space from 0 to 10000 microseconds.
+	 *  The actual supported frame space values will be dependent on
+	 *  the controller's capabilities.
+	 */
+	uint16_t frame_space_max;
+};
+
+/** Frame space updated callback params */
+struct bt_conn_le_frame_space_updated {
+	/** HCI Status from LE Frame Space Update Complete event.
+	 *  The remaining parameters will be invalid if status is not
+	 *  @ref BT_HCI_ERR_SUCCESS.
+	 */
+	uint8_t status;
+	/** Initiator of the frame space update. */
+	enum bt_conn_le_frame_space_update_initiator initiator;
+	/** Updated frame space in microseconds. */
+	uint16_t frame_space;
+	/** Phy mask of the PHYs updated.
+	 *  Refer to BT_HCI_LE_FRAME_SPACE_UPDATE_PHY_* for values.
+	 */
+	uint8_t phys;
+	/** Spacing types mask of the spacing types updated.
+	 *  Refer to BT_HCI_LE_FRAME_SPACE_UPDATE_SPACING_TYPE_* and
+	 *  BT_CONN_LE_FRAME_SPACE_TYPES_MASK_* for values.
+	 */
+	uint16_t spacing_types;
+};
+
 /** Connection Type */
 enum __packed bt_conn_type {
 	/** LE Connection Type */
@@ -439,26 +519,62 @@ struct bt_conn_le_cs_fae_table {
 	int8_t *remote_fae_table;
 };
 
-/** Channel sounding main mode */
-enum bt_conn_le_cs_main_mode {
-	/** Mode-1 (RTT) */
-	BT_CONN_LE_CS_MAIN_MODE_1 = BT_HCI_OP_LE_CS_MAIN_MODE_1,
-	/** Mode-2 (PBR) */
-	BT_CONN_LE_CS_MAIN_MODE_2 = BT_HCI_OP_LE_CS_MAIN_MODE_2,
-	/** Mode-3 (RTT and PBR) */
-	BT_CONN_LE_CS_MAIN_MODE_3 = BT_HCI_OP_LE_CS_MAIN_MODE_3,
-};
+/** @brief Extract main mode part from @ref bt_conn_le_cs_mode
+ *
+ * @private
+ *
+ * @param x @ref bt_conn_le_cs_mode value
+ * @retval 1 Matches @ref BT_HCI_OP_LE_CS_MAIN_MODE_1 (0x01)
+ * @retval 2 Matches @ref BT_HCI_OP_LE_CS_MAIN_MODE_2 (0x02)
+ * @retval 3 Matches @ref BT_HCI_OP_LE_CS_MAIN_MODE_3 (0x03)
+ *
+ * @note Returned values match the HCI main mode values.
+ */
+#define BT_CONN_LE_CS_MODE_MAIN_MODE_PART(x) ((x) & 0x3)
 
-/** Channel sounding sub mode */
-enum bt_conn_le_cs_sub_mode {
-	/** Unused */
-	BT_CONN_LE_CS_SUB_MODE_UNUSED = BT_HCI_OP_LE_CS_SUB_MODE_UNUSED,
-	/** Mode-1 (RTT) */
-	BT_CONN_LE_CS_SUB_MODE_1 = BT_HCI_OP_LE_CS_SUB_MODE_1,
-	/** Mode-2 (PBR) */
-	BT_CONN_LE_CS_SUB_MODE_2 = BT_HCI_OP_LE_CS_SUB_MODE_2,
-	/** Mode-3 (RTT and PBR) */
-	BT_CONN_LE_CS_SUB_MODE_3 = BT_HCI_OP_LE_CS_SUB_MODE_3,
+/** @brief Extract sub-mode part from @ref bt_conn_le_cs_mode
+ *
+ * @private
+ *
+ * @param x @ref bt_conn_le_cs_mode value
+ * @retval 0 Internal encoding for @ref BT_HCI_OP_LE_CS_SUB_MODE_UNUSED (0xFF)
+ * @retval 1 Matches @ref BT_HCI_OP_LE_CS_SUB_MODE_1 (0x01)
+ * @retval 2 Matches @ref BT_HCI_OP_LE_CS_SUB_MODE_2 (0x02)
+ * @retval 3 Matches @ref BT_HCI_OP_LE_CS_SUB_MODE_3 (0x03)
+ *
+ * @note The value 0 encodes HCI 0xFF. This allows @ref bt_conn_le_cs_mode to
+ * fit in one byte. To obtain the HCI sub-mode value, use `(sub_mode == 0 ? 0xFF
+ * : sub_mode)`, where `sub_mode` is the value returned by this macro.
+ */
+#define BT_CONN_LE_CS_MODE_SUB_MODE_PART(x)  (((x) >> 4) & 0x3)
+
+/** @brief Channel sounding mode (main and sub-mode)
+ *
+ * Represents the combination of Channel Sounding (CS) main mode and sub-mode.
+ *
+ * @note The underlying numeric values are an internal encoding and are
+ * not stable API. Do not assume a direct concatenation of HCI values
+ * when inspecting the raw enum value.
+ *
+ * @sa BT_CONN_LE_CS_MODE_MAIN_MODE_PART
+ * @sa BT_CONN_LE_CS_MODE_SUB_MODE_PART
+ */
+enum bt_conn_le_cs_mode {
+	/** Main mode 1 (RTT), sub-mode: unused */
+	BT_CONN_LE_CS_MAIN_MODE_1_NO_SUB_MODE = BT_HCI_OP_LE_CS_MAIN_MODE_1,
+	/** Main mode 2 (PBR), sub-mode: unused */
+	BT_CONN_LE_CS_MAIN_MODE_2_NO_SUB_MODE = BT_HCI_OP_LE_CS_MAIN_MODE_2,
+	/** Main mode 3 (RTT and PBR), sub-mode: unused */
+	BT_CONN_LE_CS_MAIN_MODE_3_NO_SUB_MODE = BT_HCI_OP_LE_CS_MAIN_MODE_3,
+	/** Main mode 2 (PBR), sub-mode 1 (RTT) */
+	BT_CONN_LE_CS_MAIN_MODE_2_SUB_MODE_1 = BT_HCI_OP_LE_CS_MAIN_MODE_2 |
+					      (BT_HCI_OP_LE_CS_SUB_MODE_1 << 4),
+	/** Main mode 2 (PBR), sub-mode 3 (RTT and PBR) */
+	BT_CONN_LE_CS_MAIN_MODE_2_SUB_MODE_3 = BT_HCI_OP_LE_CS_MAIN_MODE_2 |
+					      (BT_HCI_OP_LE_CS_SUB_MODE_3 << 4),
+	/** Main mode 3 (RTT and PBR), sub-mode 2 (PBR) */
+	BT_CONN_LE_CS_MAIN_MODE_3_SUB_MODE_2 = BT_HCI_OP_LE_CS_MAIN_MODE_3 |
+					      (BT_HCI_OP_LE_CS_SUB_MODE_2 << 4),
 };
 
 /** Channel sounding role */
@@ -517,10 +633,8 @@ enum bt_conn_le_cs_ch3c_shape {
 struct bt_conn_le_cs_config {
 	/** CS configuration ID */
 	uint8_t id;
-	/** Main CS mode type */
-	enum bt_conn_le_cs_main_mode main_mode_type;
-	/** Sub CS mode type */
-	enum bt_conn_le_cs_sub_mode sub_mode_type;
+	/** CS main and sub mode */
+	enum bt_conn_le_cs_mode mode;
 	/** Minimum number of CS main mode steps to be executed before a submode step is executed */
 	uint8_t min_main_mode_steps;
 	/** Maximum number of CS main mode steps to be executed before a submode step is executed */
@@ -815,6 +929,12 @@ struct bt_conn_br_info {
 	const bt_addr_t *dst; /**< Destination (Remote) BR/EDR address */
 };
 
+/** SCO Connection Info Structure */
+struct bt_conn_sco_info {
+	uint8_t link_type; /**< SCO link type */
+	uint8_t air_mode;  /**< SCO air mode (codec type) */
+};
+
 enum {
 	BT_CONN_ROLE_CENTRAL = 0,
 	BT_CONN_ROLE_PERIPHERAL = 1,
@@ -881,6 +1001,8 @@ struct bt_conn_info {
 		struct bt_conn_le_info le;
 		/** BR/EDR Connection specific Info. */
 		struct bt_conn_br_info br;
+		/** SCO Connection specific Info. */
+		struct bt_conn_sco_info sco;
 	};
 	/** Connection state. */
 	enum bt_conn_state state;
@@ -1224,6 +1346,23 @@ int bt_conn_le_subrate_request(struct bt_conn *conn,
  *  @return -EINVAL @p conn is not a valid @ref BT_CONN_TYPE_LE connection.
  */
 int bt_conn_le_read_all_remote_features(struct bt_conn *conn, uint8_t pages_requested);
+
+/** @brief Update frame space.
+ *
+ *  Request a change to the frame space parameters of a connection.
+ *  This function will trigger the frame_space_updated callback when the
+ *  procedure is completed.
+ *
+ *  @kconfig_dep{CONFIG_BT_FRAME_SPACE_UPDATE}.
+ *
+ *  @param conn   @ref BT_CONN_TYPE_LE connection object.
+ *  @param params Frame Space Update parameters.
+ *
+ *  @return Zero on success or (negative) error code on failure.
+ *  @return -EINVAL @p conn is not a valid @ref BT_CONN_TYPE_LE connection.
+ */
+int bt_conn_le_frame_space_update(struct bt_conn *conn,
+				  const struct bt_conn_le_frame_space_update_param *params);
 
 /** @brief Update the connection parameters.
  *
@@ -1949,6 +2088,26 @@ struct bt_conn_cb {
 		const struct bt_conn_le_read_all_remote_feat_complete *params);
 #endif /* CONFIG_BT_LE_EXTENDED_FEAT_SET */
 
+#if defined(CONFIG_BT_FRAME_SPACE_UPDATE)
+	/** @brief Frame Space Update Complete event.
+	 *
+	 *  This callback notifies the application that the frame space of
+	 *  the connection may have changed.
+	 *  The frame space update parameters will be invalid
+	 *  if status is not @ref BT_HCI_ERR_SUCCESS.
+	 *
+	 *  This callback can be triggered by calling @ref
+	 *  bt_conn_le_frame_space_update, by the procedure running
+	 *  autonomously in the controller or by the peer.
+	 *
+	 *  @param conn   Connection object.
+	 *  @param params New frame space update parameters.
+	 */
+	void (*frame_space_updated)(
+		struct bt_conn *conn,
+		const struct bt_conn_le_frame_space_updated *params);
+#endif /* CONFIG_BT_FRAME_SPACE_UPDATE */
+
 #if defined(CONFIG_BT_CHANNEL_SOUNDING)
 	/** @brief LE CS Read Remote Supported Capabilities Complete event.
 	 *
@@ -2058,8 +2217,10 @@ struct bt_conn_cb {
 	void (*role_changed)(struct bt_conn *conn, uint8_t status);
 #endif
 
+#if defined(CONFIG_BT_CONN_DYNAMIC_CALLBACKS)
 	/** @internal Internally used field for list handling */
 	sys_snode_t _node;
+#endif
 };
 
 /** @brief Register connection callbacks.

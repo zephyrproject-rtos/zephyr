@@ -1,0 +1,16 @@
+common:
+  tags:
+    - arm
+  platform_allow:
+    - mps3/corstone310/fvp
+    - mps3/corstone310/fvp/ns
+    - mps4/corstone315/fvp
+    - mps4/corstone320/fvp
+tests:
+  arch.arm.pacbti.standard:
+    # TODO: remove skip after Zephyr sdk makes GCC 14.3 as default
+    skip: true
+    extra_configs:
+      - CONFIG_ARM_PACBTI_STANDARD=y
+      - CONFIG_ARM_PAC_PER_THREAD=y
+      - CONFIG_USERSPACE=y

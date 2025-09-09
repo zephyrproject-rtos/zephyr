@@ -303,7 +303,7 @@
 		};
 
 		i2c0: i2c@5a010000 {
-			compatible = "silabs,gecko-i2c";
+			compatible = "silabs,i2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -314,7 +314,7 @@
 		};
 
 		i2c1: i2c@50068000 {
-			compatible = "silabs,gecko-i2c";
+			compatible = "silabs,i2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -336,7 +336,7 @@
 		};
 
 		gpio: gpio@5003c300 {
-			compatible = "silabs,gecko-gpio";
+			compatible = "silabs,gpio";
 			reg = <0x5003c300 0x440>;
 			interrupts = <26 2>, <25 2>;
 			interrupt-names = "GPIO_EVEN", "GPIO_ODD";
@@ -347,38 +347,42 @@
 			#size-cells = <1>;
 
 			gpioa: gpio@5003c000 {
-				compatible = "silabs,gecko-gpio-port";
+				compatible = "silabs,gpio-port";
 				reg = <0x5003c000 0x30>;
-				peripheral-id = <0>;
 				gpio-controller;
 				#gpio-cells = <2>;
+				silabs,wakeup-ints = <0>;
+				silabs,wakeup-pins = <5>;
 				status = "disabled";
 			};
 
 			gpiob: gpio@5003c030 {
-				compatible = "silabs,gecko-gpio-port";
+				compatible = "silabs,gpio-port";
 				reg = <0x5003c030 0x30>;
-				peripheral-id = <1>;
 				gpio-controller;
 				#gpio-cells = <2>;
+				silabs,wakeup-ints = <3>;
+				silabs,wakeup-pins = <1>;
 				status = "disabled";
 			};
 
 			gpioc: gpio@5003c060 {
-				compatible = "silabs,gecko-gpio-port";
+				compatible = "silabs,gpio-port";
 				reg = <0x5003c060 0x30>;
-				peripheral-id = <2>;
 				gpio-controller;
 				#gpio-cells = <2>;
+				silabs,wakeup-ints = <6>, <7>;
+				silabs,wakeup-pins = <0>, <5>;
 				status = "disabled";
 			};
 
 			gpiod: gpio@5003c090 {
-				compatible = "silabs,gecko-gpio-port";
+				compatible = "silabs,gpio-port";
 				reg = <0x5003c090 0x30>;
-				peripheral-id = <3>;
 				gpio-controller;
 				#gpio-cells = <2>;
+				silabs,wakeup-ints = <9>;
+				silabs,wakeup-pins = <2>;
 				status = "disabled";
 			};
 		};

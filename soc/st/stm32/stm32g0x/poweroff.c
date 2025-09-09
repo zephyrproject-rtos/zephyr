@@ -19,11 +19,15 @@ void z_sys_poweroff(void)
 {
 #ifdef CONFIG_STM32_WKUP_PINS
 	stm32_pwr_wkup_pin_cfg_pupd();
-
-	LL_PWR_ClearFlag_WU();
 #endif /* CONFIG_STM32_WKUP_PINS */
 
+	LL_PWR_ClearFlag_WU();
+
+#ifdef LL_PWR_MODE_SHUTDOWN
 	LL_PWR_SetPowerMode(LL_PWR_MODE_SHUTDOWN);
+#else
+	LL_PWR_SetPowerMode(LL_PWR_MODE_STANDBY);
+#endif
 	LL_LPM_EnableDeepSleep();
 	LL_DBGMCU_DisableDBGStandbyMode();
 

@@ -192,7 +192,7 @@ int z_impl_sys_clock_nanosleep(int clock_id, int flags, const struct timespec *r
 		(void)timespec_add(&duration, &rem);
 	}
 
-	timeout = timespec_to_timeout(&duration);
+	timeout = timespec_to_timeout(&duration, NULL);
 	end = sys_timepoint_calc(timeout);
 	do {
 		(void)k_sleep(timeout);

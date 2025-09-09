@@ -27,7 +27,7 @@ jobs:
       file_check: ${{ steps.check-doc-files.outputs.any_modified }}
     steps:
     - name: checkout
-      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
       with:
         ref: ${{ github.event.pull_request.head.sha }}
         fetch-depth: 0
@@ -78,7 +78,7 @@ jobs:
         echo "${HOME}/.local/bin" >> $GITHUB_PATH
 
     - name: checkout
-      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
       with:
         ref: ${{ github.event.pull_request.head.sha }}
         fetch-depth: 0
@@ -164,6 +164,19 @@ jobs:
         name: api-coverage
         path: zephyr/api-coverage.tar.xz
 
+    - name: Upload Doxygen coverage to Codecov
+      if: github.event_name == 'schedule'
+      uses: codecov/codecov-action@fdcc8476540edceab3de004e990f80d881c6cc00 # v5.5.0
+      with:
+        env_vars: OS,PYTHON
+        fail_ci_if_error: false
+        verbose: true
+        token: ${{ secrets.CODECOV_TOKEN }}
+        working-directory: zephyr
+        files: new.info
+        disable_search: true
+        flags: doxygen-coverage
+
     - name: process-pr
       if: github.event_name == 'pull_request'
       run: |
@@ -198,7 +211,7 @@ jobs:
 
     steps:
     - name: checkout
-      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
       with:
         path: zephyr
 

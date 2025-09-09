@@ -8,4 +8,6 @@ toolchain:
 supported:
   - uart
   - gpio
+  - pwm
+  - adc
 vendor: renesas

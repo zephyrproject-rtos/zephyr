@@ -164,7 +164,7 @@ static int acmphs_renesas_ra_init(const struct device *dev)
 		return ret;
 	}
 
-	data->fsp_config.p_context = dev;
+	data->fsp_config.p_context = (void *)dev;
 
 	fsp_err = R_ACMPHS_Open(&data->acmphs, &data->fsp_config);
 	if (FSP_SUCCESS != fsp_err) {
@@ -172,7 +172,7 @@ static int acmphs_renesas_ra_init(const struct device *dev)
 	}
 
 	/*
-	 * Once the analog comparator is configurate, the program must wait
+	 * Once the analog comparator is configured, the program must wait
 	 * for the ACMPHS stabilization time (300ns enabling + 200ns input switching)
 	 * before using the comparator.
 	 */

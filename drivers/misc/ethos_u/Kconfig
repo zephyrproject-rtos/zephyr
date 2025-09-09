@@ -18,3 +18,8 @@ config ETHOS_U_NUMAKER
 	  Enables Nuvoton NuMaker frontend of Arm Ethos-U NPU driver
 
 endchoice
+
+config ETHOS_U_DCACHE
+	bool "Override Ethos-U driver DCache functions"
+	depends on ETHOS_U
+	default y if CACHE_MANAGEMENT

@@ -59,6 +59,9 @@
 #elif DT_HAS_COMPAT_STATUS_OKAY(renesas_rz_gpt_pwm)
 #define PWM_DEV_NODE DT_INST(0, renesas_rz_gpt_pwm)
 
+#elif DT_HAS_COMPAT_STATUS_OKAY(renesas_rz_mtu_pwm)
+#define PWM_DEV_NODE DT_INST(0, renesas_rz_mtu_pwm)
+
 #else
 #error "Define a PWM device"
 #endif
@@ -75,6 +78,11 @@
 #define DEFAULT_PULSE_CYCLE 16384
 #define DEFAULT_PERIOD_NSEC 2000000
 #define DEFAULT_PULSE_NSEC 500000
+#elif defined(CONFIG_SOC_FAMILY_MCXW)
+#define DEFAULT_PERIOD_CYCLE 64000
+#define DEFAULT_PULSE_CYCLE 32000
+#define DEFAULT_PERIOD_NSEC 4000000
+#define DEFAULT_PULSE_NSEC 2000000
 #else
 #define DEFAULT_PERIOD_CYCLE 64000
 #define DEFAULT_PULSE_CYCLE 32000

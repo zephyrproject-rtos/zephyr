@@ -24,6 +24,7 @@ tests:
       - nucleo_f207zg
       - nucleo_f401re
       - nucleo_f429zi
+      - nucleo_h503rb
       - nucleo_wl55jc
       - nucleo_l073rz
       - nucleo_l152re
@@ -52,8 +53,8 @@ tests:
       - frdm_ke17z512
       - frdm_mcxn236
       - frdm_mcxa156
-      - frdm_mcxa166
-      - frdm_mcxa276
+      - frdm_mcxa346
+      - frdm_mcxa266
       - max32655evkit/max32655/m4
       - max32662evkit
       - max32666evkit/max32666/cpu0

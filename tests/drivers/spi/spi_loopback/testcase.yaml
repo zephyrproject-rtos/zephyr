@@ -34,6 +34,7 @@ tests:
     platform_allow:
       - robokit1
       - mimxrt1170_evk/mimxrt1176/cm7
+      - bg29_rb4420a
     integration_platforms:
       - robokit1
   drivers.spi.mcux_dspi_dma.loopback:
@@ -192,24 +193,30 @@ tests:
       - DTC_OVERLAY_FILE="boards/rpi_pico_pio.overlay"
       - EXTRA_CONF_FILE="overlay-rpi-pico-pio.conf"
     platform_allow: rpi_pico
-  drivers.spi.mcux_flexio_spi.loopback:
-    extra_args: DTC_OVERLAY_FILE="overlay-mcux-flexio-spi.overlay"
-    filter: CONFIG_DT_HAS_NXP_FLEXIO_ENABLED and
-            CONFIG_DT_HAS_NXP_FLEXIO_SPI_ENABLED
-    platform_allow:
-      - mimxrt1064_evk
-      - mimxrt1060_evk/mimxrt1062/qspi
-  drivers.spi.mimxrt1170_evk_mimxrt1176_cm7_flexio_spi.loopback:
-    extra_args: DTC_OVERLAY_FILE="boards/mimxrt1170_evk_mimxrt1176_cm7_flexio_spi.overlay"
+  drivers.spi.pio_spi_dma.loopback:
+    extra_args:
+      - DTC_OVERLAY_FILE="boards/rpi_pico_pio.overlay"
+      - EXTRA_DTC_OVERLAY_FILE="boards/rpi_pico_pio_dma.overlay"
+      - EXTRA_CONF_FILE="overlay-rpi-pico-pio.conf"
+    extra_configs:
+      - CONFIG_SPI_RPI_PICO_PIO_DMA=y
+    platform_allow: rpi_pico
+  drivers.spi.flexio_spi.loopback:
+    extra_args:
+      - platform:mimxrt1170_evk/mimxrt1176/cm7:DTC_OVERLAY_FILE="boards/mimxrt1170_evk_mimxrt1176_cm7_flexio_spi.overlay"
+      - platform:mimxrt1180_evk/mimxrt1189/cm33:DTC_OVERLAY_FILE="boards/mimxrt1180_evk_flexio_spi.overlay"
+      - platform:mimxrt1180_evk/mimxrt1189/cm7:DTC_OVERLAY_FILE="boards/mimxrt1180_evk_flexio_spi.overlay"
+      - platform:mimxrt1064_evk:DTC_OVERLAY_FILE="overlay-mcux-flexio-spi.overlay"
+      - platform:mimxrt1060_evk/mimxrt1062/qspi:DTC_OVERLAY_FILE="overlay-mcux-flexio-spi.overlay"
+      - platform:mimxrt1040_evk:DTC_OVERLAY_FILE="boards/mimxrt1040_evk_flexio_spi.overlay"
     filter: CONFIG_DT_HAS_NXP_FLEXIO_ENABLED and
             CONFIG_DT_HAS_NXP_FLEXIO_SPI_ENABLED
     platform_allow:
       - mimxrt1170_evk/mimxrt1176/cm7
-  drivers.spi.mimxrt1040evk_flexio_spi.loopback:
-    extra_args: DTC_OVERLAY_FILE="boards/mimxrt1040_evk_flexio_spi.overlay"
-    filter: CONFIG_DT_HAS_NXP_FLEXIO_ENABLED and
-            CONFIG_DT_HAS_NXP_FLEXIO_SPI_ENABLED
-    platform_allow:
+      - mimxrt1180_evk/mimxrt1189/cm33
+      - mimxrt1180_evk/mimxrt1189/cm7
+      - mimxrt1064_evk
+      - mimxrt1060_evk/mimxrt1062/qspi
       - mimxrt1040_evk
   drivers.spi.nrf54h_fast_2mhz:
     extra_args:
@@ -311,6 +318,7 @@ tests:
     platform_allow:
       - xg24_rb4187c
       - xg29_rb4412a
+      - bg29_rb4420a
     extra_configs:
       - CONFIG_SPI_SILABS_EUSART_DMA=n
       - CONFIG_SPI_ASYNC=n
@@ -319,6 +327,7 @@ tests:
     platform_allow:
       - xg24_rb4187c
       - xg29_rb4412a
+      - bg29_rb4420a
     extra_configs:
       - CONFIG_SPI_SILABS_EUSART_DMA=y
       - CONFIG_SPI_ASYNC=n
@@ -333,3 +342,10 @@ tests:
     extra_configs:
       - CONFIG_SPI_CC23X0_DMA_DRIVEN=y
       - CONFIG_SPI_ASYNC=n
+  drivers.spi.cs_loopback.disable_lpspi_dma:
+    extra_args: EXTRA_DTC_OVERLAY_FILE="overlay-cs-loopback-gpio.overlay"
+    extra_configs:
+      - CONFIG_SPI_NXP_LPSPI_DMA=n
+    platform_allow:
+      - frdm_mcxn947/mcxn947/cpu0
+      - mimxrt1050_evk/mimxrt1052/hyperflash

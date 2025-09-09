@@ -7,6 +7,7 @@
 #include <zephyr/ztest.h>
 
 #include <zephyr/kernel.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/bluetooth/buf.h>
 #include <zephyr/sys/byteorder.h>
 

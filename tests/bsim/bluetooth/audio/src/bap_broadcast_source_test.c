@@ -375,19 +375,7 @@ static int setup_extended_adv(struct bt_bap_broadcast_source *source, struct bt_
 		return err;
 	}
 
-	/* Start extended advertising */
-	err = bt_le_ext_adv_start(*adv, BT_LE_EXT_ADV_START_DEFAULT);
-	if (err) {
-		printk("Failed to start extended advertising: %d\n", err);
-		return err;
-	}
-
-	/* Enable Periodic Advertising */
-	err = bt_le_per_adv_start(*adv);
-	if (err) {
-		printk("Failed to enable periodic advertising: %d\n", err);
-		return err;
-	}
+	start_broadcast_adv(*adv);
 
 	return 0;
 }

@@ -974,17 +974,9 @@ static int ppp_driver_init(const struct device *dev)
 	return 0;
 }
 
-static inline struct net_linkaddr *ppp_get_mac(struct ppp_driver_context *ppp)
-{
-	(void)net_linkaddr_set(&ppp->ll_addr, ppp->mac_addr, sizeof(ppp->mac_addr));
-
-	return &ppp->ll_addr;
-}
-
 static void ppp_iface_init(struct net_if *iface)
 {
 	struct ppp_driver_context *ppp = net_if_get_device(iface)->data;
-	struct net_linkaddr *ll_addr;
 
 	LOG_DBG("[%p] iface %p", ppp, iface);
 
@@ -996,11 +988,6 @@ static void ppp_iface_init(struct net_if *iface)
 
 	ppp->init_done = true;
 	ppp->iface = iface;
-
-	/* The mac address is not really used but network interface expects
-	 * to find one.
-	 */
-	ll_addr = ppp_get_mac(ppp);
 
 	if (CONFIG_PPP_MAC_ADDR[0] != 0) {
 		if (net_bytes_from_str(ppp->mac_addr, sizeof(ppp->mac_addr),
@@ -1018,7 +1005,10 @@ use_random_mac:
 		ppp->mac_addr[5] = sys_rand8_get();
 	}
 
-	net_if_set_link_addr(iface, ll_addr->addr, ll_addr->len,
+	/* The MAC address is not really used, but the network interface expects to find one. */
+	(void)net_linkaddr_set(&ppp->ll_addr, ppp->mac_addr, sizeof(ppp->mac_addr));
+
+	net_if_set_link_addr(iface, ppp->ll_addr.addr, ppp->ll_addr.len,
 			     NET_LINK_ETHERNET);
 
 	if (IS_ENABLED(CONFIG_NET_PPP_CAPTURE)) {
@@ -1040,6 +1030,12 @@ use_random_mac:
 	}
 
 	memset(ppp->buf, 0, sizeof(ppp->buf));
+
+	/*
+	 * Set the point-to-point interface flag. This is needed at least for IPv6 neighbor
+	 * discovery to handle packets correctly.
+	 */
+	net_if_flag_set(iface, NET_IF_POINTOPOINT);
 
 #if defined(CONFIG_PPP_NET_IF_NO_AUTO_START)
 	/*

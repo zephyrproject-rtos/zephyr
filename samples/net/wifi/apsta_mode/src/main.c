@@ -18,16 +18,6 @@ LOG_MODULE_REGISTER(MAIN);
 	 NET_EVENT_WIFI_AP_ENABLE_RESULT | NET_EVENT_WIFI_AP_DISABLE_RESULT |                      \
 	 NET_EVENT_WIFI_AP_STA_CONNECTED | NET_EVENT_WIFI_AP_STA_DISCONNECTED)
 
-/* AP Mode Configuration */
-#define WIFI_AP_SSID       "ESP32-AP"
-#define WIFI_AP_PSK        ""
-#define WIFI_AP_IP_ADDRESS "192.168.4.1"
-#define WIFI_AP_NETMASK    "255.255.255.0"
-
-/* STA Mode Configuration */
-#define WIFI_SSID "SSID"     /* Replace `SSID` with WiFi ssid. */
-#define WIFI_PSK  "PASSWORD" /* Replace `PASSWORD` with Router password. */
-
 static struct net_if *ap_iface;
 static struct net_if *sta_iface;
 
@@ -36,16 +26,33 @@ static struct wifi_connect_req_params sta_config;
 
 static struct net_mgmt_event_callback cb;
 
+/* Check necessary definitions */
+
+BUILD_ASSERT(sizeof(CONFIG_WIFI_SAMPLE_AP_SSID) > 1,
+	     "CONFIG_WIFI_SAMPLE_AP_SSID is empty. Please set it in conf file.");
+
+BUILD_ASSERT(sizeof(CONFIG_WIFI_SAMPLE_SSID) > 1,
+	     "CONFIG_WIFI_SAMPLE_SSID is empty. Please set it in conf file.");
+
+#if WIFI_SAMPLE_DHCPV4_START
+BUILD_ASSERT(sizeof(CONFIG_WIFI_SAMPLE_AP_IP_ADDRESS) > 1,
+	     "CONFIG_WIFI_SAMPLE_AP_IP_ADDRESS is empty. Please set it in conf file.");
+
+BUILD_ASSERT(sizeof(CONFIG_WIFI_SAMPLE_AP_NETMASK) > 1,
+	     "CONFIG_WIFI_SAMPLE_AP_NETMASK is empty. Please set it in conf file.");
+
+#endif
+
 static void wifi_event_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt_event,
 			       struct net_if *iface)
 {
 	switch (mgmt_event) {
 	case NET_EVENT_WIFI_CONNECT_RESULT: {
-		LOG_INF("Connected to %s", WIFI_SSID);
+		LOG_INF("Connected to %s", CONFIG_WIFI_SAMPLE_SSID);
 		break;
 	}
 	case NET_EVENT_WIFI_DISCONNECT_RESULT: {
-		LOG_INF("Disconnected from %s", WIFI_SSID);
+		LOG_INF("Disconnected from %s", CONFIG_WIFI_SAMPLE_SSID);
 		break;
 	}
 	case NET_EVENT_WIFI_AP_ENABLE_RESULT: {
@@ -75,18 +82,19 @@ static void wifi_event_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt
 	}
 }
 
+#if CONFIG_WIFI_SAMPLE_DHCPV4_START
 static void enable_dhcpv4_server(void)
 {
 	static struct in_addr addr;
 	static struct in_addr netmaskAddr;
 
-	if (net_addr_pton(AF_INET, WIFI_AP_IP_ADDRESS, &addr)) {
-		LOG_ERR("Invalid address: %s", WIFI_AP_IP_ADDRESS);
+	if (net_addr_pton(AF_INET, CONFIG_WIFI_SAMPLE_AP_IP_ADDRESS, &addr)) {
+		LOG_ERR("Invalid address: %s", CONFIG_WIFI_SAMPLE_AP_IP_ADDRESS);
 		return;
 	}
 
-	if (net_addr_pton(AF_INET, WIFI_AP_NETMASK, &netmaskAddr)) {
-		LOG_ERR("Invalid netmask: %s", WIFI_AP_NETMASK);
+	if (net_addr_pton(AF_INET, CONFIG_WIFI_SAMPLE_AP_NETMASK, &netmaskAddr)) {
+		LOG_ERR("Invalid netmask: %s", CONFIG_WIFI_SAMPLE_AP_NETMASK);
 		return;
 	}
 
@@ -97,7 +105,8 @@ static void enable_dhcpv4_server(void)
 	}
 
 	if (!net_if_ipv4_set_netmask_by_addr(ap_iface, &addr, &netmaskAddr)) {
-		LOG_ERR("Unable to set netmask for AP interface: %s", WIFI_AP_NETMASK);
+		LOG_ERR("Unable to set netmask for AP interface: %s",
+			 CONFIG_WIFI_SAMPLE_AP_NETMASK);
 	}
 
 	addr.s4_addr[3] += 10; /* Starting IPv4 address for DHCPv4 address pool. */
@@ -109,6 +118,7 @@ static void enable_dhcpv4_server(void)
 
 	LOG_INF("DHCPv4 server started...\n");
 }
+#endif
 
 static int enable_ap_mode(void)
 {
@@ -118,21 +128,23 @@ static int enable_ap_mode(void)
 	}
 
 	LOG_INF("Turning on AP Mode");
-	ap_config.ssid = (const uint8_t *)WIFI_AP_SSID;
-	ap_config.ssid_length = strlen(WIFI_AP_SSID);
-	ap_config.psk = (const uint8_t *)WIFI_AP_PSK;
-	ap_config.psk_length = strlen(WIFI_AP_PSK);
+	ap_config.ssid = (const uint8_t *)CONFIG_WIFI_SAMPLE_AP_SSID;
+	ap_config.ssid_length = sizeof(CONFIG_WIFI_SAMPLE_AP_SSID) - 1;
+	ap_config.psk = (const uint8_t *)CONFIG_WIFI_SAMPLE_AP_PSK;
+	ap_config.psk_length = sizeof(CONFIG_WIFI_SAMPLE_AP_PSK) - 1;
 	ap_config.channel = WIFI_CHANNEL_ANY;
 	ap_config.band = WIFI_FREQ_BAND_2_4_GHZ;
 
-	if (strlen(WIFI_AP_PSK) == 0) {
+	if (sizeof(CONFIG_WIFI_SAMPLE_AP_PSK) == 1) {
 		ap_config.security = WIFI_SECURITY_TYPE_NONE;
 	} else {
 
 		ap_config.security = WIFI_SECURITY_TYPE_PSK;
 	}
 
+#if CONFIG_WIFI_SAMPLE_DHCPV4_START
 	enable_dhcpv4_server();
+#endif
 
 	int ret = net_mgmt(NET_REQUEST_WIFI_AP_ENABLE, ap_iface, &ap_config,
 			   sizeof(struct wifi_connect_req_params));
@@ -150,10 +162,10 @@ static int connect_to_wifi(void)
 		return -EIO;
 	}
 
-	sta_config.ssid = (const uint8_t *)WIFI_SSID;
-	sta_config.ssid_length = strlen(WIFI_SSID);
-	sta_config.psk = (const uint8_t *)WIFI_PSK;
-	sta_config.psk_length = strlen(WIFI_PSK);
+	sta_config.ssid = (const uint8_t *)CONFIG_WIFI_SAMPLE_SSID;
+	sta_config.ssid_length = sizeof(CONFIG_WIFI_SAMPLE_SSID) - 1;
+	sta_config.psk = (const uint8_t *)CONFIG_WIFI_SAMPLE_PSK;
+	sta_config.psk_length = sizeof(CONFIG_WIFI_SAMPLE_PSK) - 1;
 	sta_config.security = WIFI_SECURITY_TYPE_PSK;
 	sta_config.channel = WIFI_CHANNEL_ANY;
 	sta_config.band = WIFI_FREQ_BAND_2_4_GHZ;
@@ -163,7 +175,7 @@ static int connect_to_wifi(void)
 	int ret = net_mgmt(NET_REQUEST_WIFI_CONNECT, sta_iface, &sta_config,
 			   sizeof(struct wifi_connect_req_params));
 	if (ret) {
-		LOG_ERR("Unable to Connect to (%s)", WIFI_SSID);
+		LOG_ERR("Unable to Connect to (%s)", CONFIG_WIFI_SAMPLE_SSID);
 	}
 
 	return ret;

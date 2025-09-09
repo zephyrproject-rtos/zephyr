@@ -119,10 +119,12 @@ config BT_CTLR_LE_POWER_CONTROL_SUPPORT
 	bool
 
 config BT_CTLR_LE_PATH_LOSS_MONITORING_SUPPORT
-	depends on BT_CTLR_LE_POWER_CONTROL_SUPPORT
 	bool
 
 config BT_CTLR_SUBRATING_SUPPORT
+	bool
+
+config BT_CTLR_FRAME_SPACE_UPDATE_SUPPORT
 	bool
 
 config BT_CTLR_CHANNEL_SOUNDING_SUPPORT
@@ -134,16 +136,6 @@ config BT_CTLR_EXTENDED_FEAT_SET_SUPPORT
 # Virtual option that all local LL implementations should select
 config HAS_BT_CTLR
 	bool
-
-config BT_CTLR
-	bool "Bluetooth Controller [DEPRECATED]"
-	select HAS_BT_CTLR
-	select DEPRECATED
-	help
-	  Enables support for SoC native controller implementations. This option
-	  has been deprecated and should not be used anymore. Instead, the
-	  Kconfig options for specific Link Layer implementations should select
-	  the HAS_BT_CTLR option.
 
 config BT_LL_SW_SPLIT
 	bool "Software-based Bluetooth LE Link Layer"
@@ -614,7 +606,7 @@ config BT_CTLR_DATA_LENGTH
 config BT_CTLR_DATA_LENGTH_MAX
 	int "Maximum data length supported"
 	depends on BT_CTLR_DATA_LENGTH
-	default BT_BUF_ACL_RX_SIZE if BT_BUF_ACL_RX_SIZE < 251
+	default BT_BUF_ACL_RX_SIZE if BT_BUF_ACL_RX_SIZE <= 251
 	default 27
 	range 27 BT_BUF_ACL_RX_SIZE if BT_BUF_ACL_RX_SIZE < 251
 	range 27 251
@@ -664,7 +656,6 @@ config BT_CTLR_LE_PATH_LOSS_MONITORING
 	bool "LE Path Loss Monitoring Feature"
 	depends on BT_CTLR_LE_PATH_LOSS_MONITORING_SUPPORT
 	default y if BT_PATH_LOSS_MONITORING
-	select BT_CTLR_LE_POWER_CONTROL
 	help
 	  Enable support for LE Path Loss Monitoring feature that is defined in the
 	  Bluetooth Core specification, Version 5.4 | Vol 6, Part B, Section 4.6.32.
@@ -1166,6 +1157,14 @@ config BT_CTLR_SUBRATING
 	default y if BT_SUBRATING
 	help
 	  Enable support for Bluetooth v5.3 LE Connection Subrating
+	  in the Controller.
+
+config BT_CTLR_FRAME_SPACE_UPDATE
+	bool "Frame Space Update"
+	depends on BT_CTLR_FRAME_SPACE_UPDATE_SUPPORT
+	default y if BT_FRAME_SPACE_UPDATE
+	help
+	  Enable support for Bluetooth 6.0 Frame Space Update
 	  in the Controller.
 
 config BT_CTLR_CHANNEL_SOUNDING

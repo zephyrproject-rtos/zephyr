@@ -4,11 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/** @file icmp.h
+/**
+ * @file icmp.h
+ * @brief Header file for ICMP protocol support.
+ * @ingroup icmp
  *
- * @brief ICMP sending and receiving.
- *
- * @defgroup icmp Send and receive IPv4 or IPv6 ICMP Echo Request messages.
+ * @defgroup icmp ICMP
+ * @brief Send and receive IPv4 or IPv6 ICMP (Internet Control Message Protocol)
+ *        Echo Request messages.
  * @since 3.5
  * @version 0.8.0
  * @ingroup networking

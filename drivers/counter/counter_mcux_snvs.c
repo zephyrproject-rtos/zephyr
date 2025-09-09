@@ -9,7 +9,7 @@
 
 LOG_MODULE_REGISTER(mcux_snvs, CONFIG_COUNTER_LOG_LEVEL);
 
-#if CONFIG_COUNTER_MCUX_SNVS_SRTC
+#ifdef CONFIG_COUNTER_MCUX_SNVS_SRTC
 #define MCUX_SNVS_SRTC
 #define MCUX_SNVS_NUM_CHANNELS 2
 #else
@@ -29,6 +29,9 @@ struct mcux_snvs_config {
 	struct counter_config_info info;
 	SNVS_Type *base;
 	void (*irq_config_func)(const struct device *dev);
+#ifdef MCUX_SNVS_SRTC
+	bool wakeup_source;
+#endif
 };
 
 struct mcux_snvs_data {
@@ -276,9 +279,9 @@ static int mcux_snvs_init(const struct device *dev)
 	SNVS_LP_SRTC_GetDefaultConfig(&lp_srtc_config);
 	SNVS_LP_SRTC_Init(config->base, &lp_srtc_config);
 
-#if CONFIG_COUNTER_MCUX_SNVS_SRTC_WAKE
-	config->base->LPCR |= SNVS_LPCR_LPWUI_EN_MASK;
-#endif
+	if (config->wakeup_source) {
+		config->base->LPCR |= SNVS_LPCR_LPWUI_EN_MASK;
+	}
 
 	/* RTC should always run */
 	SNVS_LP_SRTC_StartTimer(config->base);
@@ -325,6 +328,9 @@ static struct mcux_snvs_config mcux_snvs_config_0 = {
 	},
 	.base = (SNVS_Type *)DT_REG_ADDR(DT_INST_PARENT(0)),
 	.irq_config_func = mcux_snvs_irq_config_0,
+#ifdef MCUX_SNVS_SRTC
+	.wakeup_source = DT_INST_PROP(0, wakeup_source),
+#endif
 };
 
 DEVICE_DT_INST_DEFINE(0, &mcux_snvs_init, NULL,

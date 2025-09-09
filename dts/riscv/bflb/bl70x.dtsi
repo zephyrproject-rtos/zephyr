@@ -1,0 +1,195 @@
+/*
+ * Copyright (c) 2024-2025 MASSDRIVER EI (massdriver.space)
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <freq.h>
+#include <mem.h>
+#include <dt-bindings/pinctrl/bflb-common-pinctrl.h>
+#include <dt-bindings/pinctrl/bl70x-pinctrl.h>
+#include <dt-bindings/clock/bflb_bl70x_clock.h>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	clocks {
+		clk_rc32m: clk-rc32m {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(32)>;
+			status = "okay";
+		};
+
+		clk_crystal: clk-crystal {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(32)>;
+			status = "okay";
+		};
+
+		clk_pll: clk-pll {
+			#clock-cells = <1>;
+			compatible = "bflb,bl70x-dll";
+			clocks = <&clk_crystal>;
+			status = "okay";
+		};
+
+		clk_root: clk-root {
+			#clock-cells = <0>;
+			compatible = "bflb,bl70x-root-clk";
+			clocks = <&clk_pll BL70X_DLL_144MHz>;
+			divider = <1>;
+			status = "okay";
+		};
+
+		clk_bclk: clk-bclk {
+			#clock-cells = <0>;
+			compatible = "bflb,bclk";
+			divider = <2>;
+			status = "okay";
+		};
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		timebase-frequency = <DT_FREQ_M(1)>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "sifive,e24", "riscv";
+			reg = <0>;
+			riscv,isa = "rv32imafcb";
+			hardware-exec-breakpoint-count = <4>;
+			status = "okay";
+
+			ictrl: interrupt-controller {
+				#address-cells = <0>;
+				#interrupt-cells = <1>;
+				compatible = "riscv,cpu-intc";
+				interrupt-controller;
+			};
+		};
+	};
+
+	soc {
+		compatible = "simple-bus";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		clic: clic@2000000 {
+			compatible = "sifive,clic-draft";
+			reg = <0x2000000 0x10000>;
+			#address-cells = <0>;
+			#interrupt-cells = <2>;
+
+			interrupt-controller;
+			interrupts-extended = <&ictrl 3 &ictrl 7 &ictrl 11 &ictrl 12>;
+			interrupt-names = "msip", /* Machine Software Interrupt */
+					  "mtip", /* Machine Timer interrupt    */
+					  "meip", /* Machine External Interrupt */
+					  "csip"; /* CLIC Software Interrupt    */
+		};
+
+		mtimer: timer@200bff8 {
+			compatible = "riscv,machine-timer";
+			reg = <0x200bff8 0x8 0x2004000 0x8>;
+			reg-names = "mtime", "mtimecmp";
+
+			interrupts-extended = <&ictrl 7>;
+		};
+
+		itcm: itcm@22014000 {
+			compatible = "zephyr,memory-region", "sifive,dtim0";
+			reg = <0x22014000 DT_SIZE_K(12)>;
+			zephyr,memory-region = "ITCM";
+		};
+
+		pinctrl: pin-controller@40000000 {
+			compatible = "bflb,pinctrl";
+			reg = <0x40000000 0x1000>;
+			ranges = <0x40000000 0x40000000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "okay";
+
+			gpio0: gpio@40000000 {
+				compatible = "bflb,gpio";
+				reg = <0x40000000 0x1000>;
+				#gpio-cells = <2>;
+				#bflb,pin-cells = <2>;
+				status = "disabled";
+
+				gpio-controller;
+				interrupts = <60 0>;
+				interrupt-parent = <&clic>;
+			};
+		};
+
+		clocks: clock-controller@40000000 {
+			compatible = "bflb,bl70x-clock-controller", "bflb,clock-controller";
+			reg = <0x40000000 DT_SIZE_K(4)>;
+			#clock-cells = <1>;
+			status = "okay";
+			clocks = <&clk_rc32m>, <&clk_crystal>, <&clk_root>, <&clk_bclk>,
+				<&clk_pll BL70X_DLL_144MHz>, <&clk_pll BL70X_DLL_96MHz>,
+				<&clk_pll BL70X_DLL_120MHz>, <&clk_pll BL70X_DLL_57MHz>;
+			clock-names = "rc32m", "crystal", "root", "bclk",
+				"dll_144", "dll_96",
+				"dll_120", "dll_57";
+		};
+
+		efuse: efuse@40007000 {
+			compatible = "bflb,efuse";
+			reg = <0x40007000 0x1000>;
+			status = "okay";
+			size = <128>;
+		};
+
+		uart0: uart@4000a000 {
+			compatible = "bflb,uart";
+			reg = <0x4000a000 0x100>;
+			interrupts = <45 0>;
+			interrupt-parent = <&clic>;
+			status = "disabled";
+		};
+
+		uart1: uart@4000a100 {
+			compatible = "bflb,uart";
+			reg = <0x4000a100 0x100>;
+			interrupts = <46 0>;
+			interrupt-parent = <&clic>;
+			status = "disabled";
+		};
+
+		flashctrl: flash-controller@4000b000 {
+			compatible = "bflb,flash-controller";
+			reg = <0x4000b000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "disabled";
+
+			interrupts = <39 0>;
+			interrupt-parent = <&clic>;
+		};
+
+		retram: memory@40010000 {
+			compatible = "mmio-sram";
+			reg = <0x40010000 DT_SIZE_K(4)>;
+		};
+
+		dtcm: dtcm@42017000 {
+			compatible = "zephyr,memory-region", "sifive,dtim0";
+			reg = <0x42017000 DT_SIZE_K(4)>;
+			zephyr,memory-region = "DTCM";
+		};
+
+		sram0: memory@42018000 {
+			compatible = "mmio-sram";
+			reg = <0x42018000 DT_SIZE_K(96)>;
+		};
+	};
+};

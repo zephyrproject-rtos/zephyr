@@ -1,0 +1,62 @@
+/*
+ * Copyright (c) 2025 Lena Voytek <lena@voytek.dev>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/esp-pinctrl-common.h>
+#include <dt-bindings/pinctrl/esp32-pinctrl.h>
+#include <zephyr/dt-bindings/pinctrl/esp32-gpio-sigmap.h>
+
+&pinctrl {
+	uart0_default: uart0_default {
+		group1 {
+			pinmux = <UART0_TX_GPIO1>;
+			output-high;
+		};
+
+		group2 {
+			pinmux = <UART0_RX_GPIO3>;
+			bias-pull-up;
+		};
+	};
+
+	uart1_default: uart1_default {
+		group1 {
+			pinmux = <UART1_TX_GPIO8>;
+			output-high;
+		};
+
+		group2 {
+			pinmux = <UART1_RX_GPIO7>;
+			bias-pull-up;
+		};
+	};
+
+	spim2_default: spim2_default {
+		group1 {
+			pinmux = <SPIM2_MISO_GPIO21>,
+					<SPIM2_SCLK_GPIO5>;
+		};
+
+		group2 {
+			pinmux = <SPIM2_MOSI_GPIO19>;
+			output-low;
+		};
+	};
+
+	spim3_ws2812_led: spi3_ws2812_led {
+		group1 {
+			pinmux = <SPIM3_MOSI_GPIO0>;
+		};
+	};
+
+	i2c0_default: i2c0_default {
+		group1 {
+			pinmux = <I2C0_SDA_GPIO22>,
+					<I2C0_SCL_GPIO20>;
+			drive-open-drain;
+			output-high;
+		};
+	};
+};

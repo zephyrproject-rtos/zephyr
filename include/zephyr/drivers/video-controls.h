@@ -10,14 +10,14 @@
 
 /**
  * @file
- *
- * @brief Public APIs for Video.
+ * @ingroup video_controls
+ * @brief Main header file for video controls driver API.
  */
 
 /**
  * @brief Video controls
  * @defgroup video_controls Video Controls
- * @ingroup io_interfaces
+ * @ingroup video_interface
  *
  * The Video control IDs (CIDs) are introduced with the same name as
  * Linux V4L2 subsystem and under the same class. This facilitates
@@ -84,13 +84,19 @@ extern "C" {
 /** Flip the image vertically: the top side becomes the bottom side */
 #define VIDEO_CID_VFLIP (VIDEO_CID_BASE + 21)
 
-/** Frequency of the power line to compensate for, avoiding flicker due to artificial lighting */
+/** Frequency of the power line to compensate for.
+ * Avoids flicker due to artificial lighting.
+ */
 #define VIDEO_CID_POWER_LINE_FREQUENCY (VIDEO_CID_BASE + 24)
+
+/**
+ * @brief Video power line frequency
+ */
 enum video_power_line_frequency {
-	VIDEO_CID_POWER_LINE_FREQUENCY_DISABLED = 0,
-	VIDEO_CID_POWER_LINE_FREQUENCY_50HZ = 1,
-	VIDEO_CID_POWER_LINE_FREQUENCY_60HZ = 2,
-	VIDEO_CID_POWER_LINE_FREQUENCY_AUTO = 3,
+	VIDEO_CID_POWER_LINE_FREQUENCY_DISABLED = 0, /**< Power line frequency disabled. */
+	VIDEO_CID_POWER_LINE_FREQUENCY_50HZ = 1,     /**< 50 Hz power line frequency. */
+	VIDEO_CID_POWER_LINE_FREQUENCY_60HZ = 2,     /**< 60 Hz power line frequency. */
+	VIDEO_CID_POWER_LINE_FREQUENCY_AUTO = 3,     /**< Automatic power line frequency. */
 };
 
 /** Enables automatic hue control by the device.
@@ -116,25 +122,29 @@ enum video_power_line_frequency {
 
 /** Selects a color effect. */
 #define VIDEO_CID_COLORFX (VIDEO_CID_BASE + 31)
+
+/**
+ * @brief Video color effects
+ */
 enum video_colorfx {
-	VIDEO_COLORFX_NONE = 0,
-	VIDEO_COLORFX_BW = 1,
-	VIDEO_COLORFX_SEPIA = 2,
-	VIDEO_COLORFX_NEGATIVE = 3,
-	VIDEO_COLORFX_EMBOSS = 4,
-	VIDEO_COLORFX_SKETCH = 5,
-	VIDEO_COLORFX_SKY_BLUE = 6,
-	VIDEO_COLORFX_GRASS_GREEN = 7,
-	VIDEO_COLORFX_SKIN_WHITEN = 8,
-	VIDEO_COLORFX_VIVID = 9,
-	VIDEO_COLORFX_AQUA = 10,
-	VIDEO_COLORFX_ART_FREEZE = 11,
-	VIDEO_COLORFX_SILHOUETTE = 12,
-	VIDEO_COLORFX_SOLARIZATION = 13,
-	VIDEO_COLORFX_ANTIQUE = 14,
+	VIDEO_COLORFX_NONE = 0,          /**< No color effect. */
+	VIDEO_COLORFX_BW = 1,            /**< Black and white effect. */
+	VIDEO_COLORFX_SEPIA = 2,         /**< Sepia tone effect. */
+	VIDEO_COLORFX_NEGATIVE = 3,      /**< Negative image effect. */
+	VIDEO_COLORFX_EMBOSS = 4,        /**< Emboss effect. */
+	VIDEO_COLORFX_SKETCH = 5,        /**< Sketch/drawing effect. */
+	VIDEO_COLORFX_SKY_BLUE = 6,      /**< Sky blue tint effect. */
+	VIDEO_COLORFX_GRASS_GREEN = 7,   /**< Grass green tint effect. */
+	VIDEO_COLORFX_SKIN_WHITEN = 8,   /**< Skin whitening effect. */
+	VIDEO_COLORFX_VIVID = 9,         /**< Vivid/bright color effect. */
+	VIDEO_COLORFX_AQUA = 10,         /**< Aqua (blue-green) effect. */
+	VIDEO_COLORFX_ART_FREEZE = 11,   /**< Art freeze/stylized effect. */
+	VIDEO_COLORFX_SILHOUETTE = 12,   /**< Silhouette effect. */
+	VIDEO_COLORFX_SOLARIZATION = 13, /**< Solarization effect. */
+	VIDEO_COLORFX_ANTIQUE = 14,      /**< Antique/vintage effect. */
 };
 
-/* Enable Automatic Brightness. */
+/** Enables automatic brightness. */
 #define VIDEO_CID_AUTOBRIGHTNESS (VIDEO_CID_BASE + 32)
 
 /** Switch the band-stop filter of a camera sensor on or off, or specify its strength.
@@ -176,11 +186,15 @@ enum video_colorfx {
  * Drivers should ignore such requests.
  */
 #define VIDEO_CID_EXPOSURE_AUTO (VIDEO_CID_CAMERA_CLASS_BASE + 1)
+
+/**
+ * @brief Video exposure type
+ */
 enum video_exposure_type {
-	VIDEO_EXPOSURE_AUTO = 0,
-	VIDEO_EXPOSURE_MANUAL = 1,
-	VIDEO_EXPOSURE_SHUTTER_PRIORITY = 2,
-	VIDEO_EXPOSURE_APERTURE_PRIORITY = 3
+	VIDEO_EXPOSURE_AUTO = 0,             /**< Automatic exposure. */
+	VIDEO_EXPOSURE_MANUAL = 1,           /**< Manual exposure. */
+	VIDEO_EXPOSURE_SHUTTER_PRIORITY = 2, /**< Shutter priority. */
+	VIDEO_EXPOSURE_APERTURE_PRIORITY = 3 /**< Aperture priority. */
 };
 
 /** Determines the exposure time of the camera sensor.
@@ -300,6 +314,10 @@ enum video_exposure_type {
  * @ref VIDEO_CAMERA_ORIENTATION_EXTERNAL orientation.
  */
 #define VIDEO_CID_CAMERA_ORIENTATION (VIDEO_CID_CAMERA_CLASS_BASE + 34)
+
+/**
+ * @brief Video camera orientation
+ */
 enum video_camera_orientation {
 	/** Camera installed on the user-facing side of a phone/tablet/laptop device */
 	VIDEO_CAMERA_ORIENTATION_FRONT = 0,

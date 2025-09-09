@@ -1,0 +1,13 @@
+# Renesas RX Family
+
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_RENESAS_RX
+	bool "Renesas RX ADC"
+	default y
+	depends on DT_HAS_RENESAS_RX_ADC_ENABLED
+	select USE_RX_RDP_ADC
+	select PINCTRL
+	help
+	  Enable Renesas RX ADC Driver.

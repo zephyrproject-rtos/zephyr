@@ -7,6 +7,8 @@
 #ifndef ZEPHYR_INCLUDE_POSIX_SYS_SYSCONF_H_
 #define ZEPHYR_INCLUDE_POSIX_SYS_SYSCONF_H_
 
+#include <limits.h>
+
 #include <zephyr/sys/util_macro.h>
 
 #ifdef __cplusplus
@@ -141,6 +143,13 @@ enum {
 	_SC_TZNAME_MAX,
 };
 
+/*
+ * clang-format and checkpatch disagree on formatting here, so rely on checkpatch and disable
+ * clang-format since checkpatch cannot be selectively disabled.
+ */
+
+/* clang-format off */
+
 #define __z_posix_sysconf_SC_ADVISORY_INFO (-1L)
 #define __z_posix_sysconf_SC_ASYNCHRONOUS_IO                                                       \
 	COND_CODE_1(CONFIG_POSIX_ASYNCHRONOUS_IO, (_POSIX_ASYNCHRONOUS_IO), (-1L))
@@ -237,7 +246,8 @@ enum {
 	COND_CODE_1(_POSIX2_C_DEV > 0, (_POSIX2_C_DEV), (-1))
 #define __z_posix_sysconf_SC_2_CHAR_TERM                  (-1L)
 #define __z_posix_sysconf_SC_COLL_WEIGHTS_MAX             _POSIX2_COLL_WEIGHTS_MAX
-#define __z_posix_sysconf_SC_DELAYTIMER_MAX               _POSIX_DELAYTIMER_MAX
+#define __z_posix_sysconf_SC_DELAYTIMER_MAX                                                        \
+	COND_CODE_1(CONFIG_POSIX_TIMERS, (CONFIG_POSIX_DELAYTIMER_MAX), (0))
 #define __z_posix_sysconf_SC_EXPR_NEST_MAX                _POSIX2_EXPR_NEST_MAX
 #define __z_posix_sysconf_SC_2_FORT_DEV                   (-1L)
 #define __z_posix_sysconf_SC_2_FORT_RUN                   (-1L)
@@ -266,38 +276,48 @@ enum {
 #define __z_posix_sysconf_SC_CLK_TCK                      (100L)
 #define __z_posix_sysconf_SC_GETGR_R_SIZE_MAX             (0L)
 #define __z_posix_sysconf_SC_GETPW_R_SIZE_MAX             (0L)
-#define __z_posix_sysconf_SC_AIO_LISTIO_MAX               AIO_LISTIO_MAX
-#define __z_posix_sysconf_SC_AIO_MAX                      AIO_MAX
-#define __z_posix_sysconf_SC_AIO_PRIO_DELTA_MAX           AIO_PRIO_DELTA_MAX
-#define __z_posix_sysconf_SC_ARG_MAX                      ARG_MAX
-#define __z_posix_sysconf_SC_ATEXIT_MAX                   ATEXIT_MAX
-#define __z_posix_sysconf_SC_CHILD_MAX                    CHILD_MAX
-#define __z_posix_sysconf_SC_HOST_NAME_MAX                HOST_NAME_MAX
-#define __z_posix_sysconf_SC_IOV_MAX                      IOV_MAX
-#define __z_posix_sysconf_SC_LOGIN_NAME_MAX               LOGIN_NAME_MAX
+#define __z_posix_sysconf_SC_AIO_LISTIO_MAX               _POSIX_AIO_LISTIO_MAX
+#define __z_posix_sysconf_SC_AIO_MAX                      _POSIX_AIO_MAX
+#define __z_posix_sysconf_SC_AIO_PRIO_DELTA_MAX           0
+#define __z_posix_sysconf_SC_ARG_MAX                      _POSIX_ARG_MAX
+#define __z_posix_sysconf_SC_ATEXIT_MAX                   32
+#define __z_posix_sysconf_SC_CHILD_MAX                    _POSIX_CHILD_MAX
+#define __z_posix_sysconf_SC_HOST_NAME_MAX                                                         \
+	COND_CODE_1(CONFIG_POSIX_NETWORKING, (CONFIG_POSIX_HOST_NAME_MAX), (0))
+#define __z_posix_sysconf_SC_IOV_MAX                      16 /* _XOPEN_IOV_MAX */
+#define __z_posix_sysconf_SC_LOGIN_NAME_MAX               _POSIX_LOGIN_NAME_MAX
 #define __z_posix_sysconf_SC_NGROUPS_MAX                  _POSIX_NGROUPS_MAX
-#define __z_posix_sysconf_SC_MQ_OPEN_MAX                  MQ_OPEN_MAX
-#define __z_posix_sysconf_SC_MQ_PRIO_MAX                  MQ_PRIO_MAX
-#define __z_posix_sysconf_SC_OPEN_MAX                     CONFIG_ZVFS_OPEN_MAX
-#define __z_posix_sysconf_SC_PAGE_SIZE                    PAGE_SIZE
-#define __z_posix_sysconf_SC_PAGESIZE                     PAGESIZE
-#define __z_posix_sysconf_SC_THREAD_DESTRUCTOR_ITERATIONS PTHREAD_DESTRUCTOR_ITERATIONS
-#define __z_posix_sysconf_SC_THREAD_KEYS_MAX              PTHREAD_KEYS_MAX
-#define __z_posix_sysconf_SC_THREAD_STACK_MIN             PTHREAD_STACK_MIN
-#define __z_posix_sysconf_SC_THREAD_THREADS_MAX           PTHREAD_THREADS_MAX
-#define __z_posix_sysconf_SC_RTSIG_MAX                    RTSIG_MAX
-#define __z_posix_sysconf_SC_SEM_NSEMS_MAX                SEM_NSEMS_MAX
-#define __z_posix_sysconf_SC_SEM_VALUE_MAX                SEM_VALUE_MAX
-#define __z_posix_sysconf_SC_SIGQUEUE_MAX                 SIGQUEUE_MAX
-#define __z_posix_sysconf_SC_STREAM_MAX                   STREAM_MAX
-#define __z_posix_sysconf_SC_SYMLOOP_MAX                  SYMLOOP_MAX
-#define __z_posix_sysconf_SC_TIMER_MAX                    TIMER_MAX
-#define __z_posix_sysconf_SC_TTY_NAME_MAX                 TTY_NAME_MAX
-#define __z_posix_sysconf_SC_TZNAME_MAX                   TZNAME_MAX
+#define __z_posix_sysconf_SC_MQ_OPEN_MAX                                                           \
+	COND_CODE_1(CONFIG_POSIX_MESSAGE_PASSING, (CONFIG_POSIX_MQ_OPEN_MAX), (0))
+#define __z_posix_sysconf_SC_MQ_PRIO_MAX                  _POSIX_MQ_PRIO_MAX
+#define __z_posix_sysconf_SC_OPEN_MAX                     CONFIG_POSIX_OPEN_MAX
+#define __z_posix_sysconf_SC_PAGE_SIZE                    CONFIG_POSIX_PAGE_SIZE
+#define __z_posix_sysconf_SC_PAGESIZE                     CONFIG_POSIX_PAGE_SIZE
+#define __z_posix_sysconf_SC_THREAD_DESTRUCTOR_ITERATIONS _POSIX_THREAD_DESTRUCTOR_ITERATIONS
+#define __z_posix_sysconf_SC_THREAD_KEYS_MAX                                                       \
+	COND_CODE_1(CONFIG_POSIX_THREADS, (CONFIG_POSIX_THREAD_KEYS_MAX), (0))
+#define __z_posix_sysconf_SC_THREAD_STACK_MIN             0
+#define __z_posix_sysconf_SC_THREAD_THREADS_MAX                                                    \
+	COND_CODE_1(CONFIG_POSIX_THREADS, (CONFIG_POSIX_THREAD_THREADS_MAX), (0))
+#define __z_posix_sysconf_SC_RTSIG_MAX                                                             \
+	COND_CODE_1(CONFIG_POSIX_REALTIME_SIGNALS, (CONFIG_POSIX_RTSIG_MAX), (0))
+#define __z_posix_sysconf_SC_SEM_NSEMS_MAX                                                         \
+	COND_CODE_1(CONFIG_POSIX_SEMAPHORES, (CONFIG_POSIX_SEM_NSEMS_MAX), (0))
+#define __z_posix_sysconf_SC_SEM_VALUE_MAX                                                         \
+	COND_CODE_1(CONFIG_POSIX_SEMAPHORES, (CONFIG_POSIX_SEM_VALUE_MAX), (0))
+#define __z_posix_sysconf_SC_SIGQUEUE_MAX                 _POSIX_SIGQUEUE_MAX
+#define __z_posix_sysconf_SC_STREAM_MAX                   _POSIX_STREAM_MAX
+#define __z_posix_sysconf_SC_SYMLOOP_MAX                  _POSIX_SYMLOOP_MAX
+#define __z_posix_sysconf_SC_TIMER_MAX                                                             \
+	COND_CODE_1(CONFIG_POSIX_TIMERS, (CONFIG_POSIX_TIMER_MAX), (0))
+#define __z_posix_sysconf_SC_TTY_NAME_MAX                 _POSIX_TTY_NAME_MAX
+#define __z_posix_sysconf_SC_TZNAME_MAX                   _POSIX_TZNAME_MAX
 
 #ifdef CONFIG_POSIX_SYSCONF_IMPL_MACRO
 #define sysconf(x) (long)CONCAT(__z_posix_sysconf, x)
 #endif
+
+/* clang-format on */
 
 #ifdef __cplusplus
 }

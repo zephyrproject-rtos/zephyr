@@ -237,7 +237,7 @@ void load_call_unload(const struct llext_test *test_case)
 
 /*
  * Attempt to load, list, list symbols, call a fn, and unload each
- * extension in the test table. This excercises loading, calling into, and
+ * extension in the test table. This exercises loading, calling into, and
  * unloading each extension which may itself excercise various APIs provided by
  * Zephyr.
  */
@@ -267,7 +267,8 @@ LLEXT_LOAD_UNLOAD(hello_world,
 	.kernel_only = true
 )
 
-#ifndef CONFIG_LLEXT_TYPE_ELF_SHAREDLIB
+/* When compiled with CCAC, init_fini's sections are unfixably out of order */
+#if !defined(CONFIG_LLEXT_TYPE_ELF_SHAREDLIB) && !defined(__CCAC__)
 static LLEXT_CONST uint8_t init_fini_ext[] ELF_ALIGN = {
 	#include "init_fini.inc"
 };
@@ -375,10 +376,24 @@ ZTEST(llext, test_inspect)
 	res = llext_load(ldr, "inspect", &ext, &ldr_parm);
 	zassert_ok(res, "load should succeed");
 
+	/* MWDT puts variables that are supposed to go into .bss into .data,
+	 * and, when Harvard / CCM is enabled, puts rodata in data-type sections.
+	 */
+#ifdef __CCAC__
+	do_inspect_checks(ldr, ext, LLEXT_MEM_DATA, ".data", "number_in_bss");
+#else
 	do_inspect_checks(ldr, ext, LLEXT_MEM_BSS, ".bss", "number_in_bss");
-	do_inspect_checks(ldr, ext, LLEXT_MEM_DATA, ".data", "number_in_data");
+#endif
+
+#if defined(CONFIG_HARVARD) && defined(__CCAC__)
+	do_inspect_checks(ldr, ext, LLEXT_MEM_DATA, ".rodata_in_data", "number_in_rodata");
+	do_inspect_checks(ldr, ext, LLEXT_MEM_DATA, ".my_rodata", "number_in_my_rodata");
+#else
 	do_inspect_checks(ldr, ext, LLEXT_MEM_RODATA, ".rodata", "number_in_rodata");
 	do_inspect_checks(ldr, ext, LLEXT_MEM_RODATA, ".my_rodata", "number_in_my_rodata");
+#endif
+
+	do_inspect_checks(ldr, ext, LLEXT_MEM_DATA, ".data", "number_in_data");
 	do_inspect_checks(ldr, ext, LLEXT_MEM_TEXT, ".text", "function_in_text");
 
 	max_alloc_bytes = ext->alloc_size;
@@ -526,7 +541,12 @@ ZTEST(llext, test_find_section)
 	llext_unload(&ext);
 }
 
+/* For Harvard architectures, the detached section must be placed in instruction memory. */
+#ifdef CONFIG_HARVARD
+static LLEXT_CONST uint8_t test_detached_ext[] Z_GENERIC_SECTION(.text) ELF_ALIGN = {
+#else
 static LLEXT_CONST uint8_t test_detached_ext[] ELF_ALIGN = {
+#endif
 	#include "detached_fn.inc"
 };
 
@@ -659,17 +679,33 @@ ZTEST(llext, test_ext_syscall_fail)
 }
 
 #ifdef CONFIG_LLEXT_HEAP_DYNAMIC
+#ifdef CONFIG_HARVARD
+#define TEST_LLEXT_INSTR_HEAP_DYNAMIC_SIZE KB(16)
+static uint8_t llext_instr_heap_data[TEST_LLEXT_INSTR_HEAP_DYNAMIC_SIZE] Z_GENERIC_SECTION(.rodata);
+#define TEST_LLEXT_DATA_HEAP_DYNAMIC_SIZE KB(48)
+static uint8_t llext_data_heap_data[TEST_LLEXT_DATA_HEAP_DYNAMIC_SIZE];
+#else
 #define TEST_LLEXT_HEAP_DYNAMIC_SIZE KB(64)
 static uint8_t llext_heap_data[TEST_LLEXT_HEAP_DYNAMIC_SIZE];
+#endif
 #endif
 
 static void *ztest_suite_setup(void)
 {
 #ifdef CONFIG_LLEXT_HEAP_DYNAMIC
+#ifdef CONFIG_HARVARD
+	zassert_ok(llext_heap_init_harvard(llext_instr_heap_data, sizeof(llext_instr_heap_data),
+					   llext_data_heap_data, sizeof(llext_data_heap_data)));
+	LOG_INF("Allocated LLEXT dynamic instruction heap of size %uKB\n",
+		(unsigned int)(sizeof(llext_instr_heap_data) / KB(1)));
+	LOG_INF("Allocated LLEXT dynamic data heap of size %uKB\n",
+		(unsigned int)(sizeof(llext_data_heap_data) / KB(1)));
+#else
 	/* Test runtime allocation of the LLEXT loader heap */
 	zassert_ok(llext_heap_init(llext_heap_data, sizeof(llext_heap_data)));
 	LOG_INF("Allocated LLEXT dynamic heap of size %uKB\n",
 			(unsigned int)(sizeof(llext_heap_data)/KB(1)));
+#endif
 #endif
 	return NULL;
 }

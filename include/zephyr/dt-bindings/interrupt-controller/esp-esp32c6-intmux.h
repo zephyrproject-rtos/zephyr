@@ -91,4 +91,11 @@
 
 #define ESP_INTR_FLAG_SHARED	(1<<8)	/* Interrupt can be shared between ISRs */
 
+/* LP Core intmux */
+#define LP_CORE_IO_INTR_SOURCE    0
+#define LP_CORE_I2C_INTR_SOURCE   1
+#define LP_CORE_UART_INTR_SOURCE  2
+#define LP_CORE_TIMER_INTR_SOURCE 3
+#define LP_CORE_PMU_INTR_SOURCE   5
+
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_INTERRUPT_CONTROLLER_ESP32C6_INTMUX_H_ */

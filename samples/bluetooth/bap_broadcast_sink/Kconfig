@@ -7,7 +7,8 @@ config SCAN_OFFLOAD
 	bool "Whether to wait for a Broadcast Assistant"
 	default y
 	# enable PAST support if we can
-	select BT_PER_ADV_SYNC_TRANSFER_RECEIVER if !BT_CTLR || BT_CTLR_SYNC_TRANSFER_RECEIVER_SUPPORT
+	select BT_PER_ADV_SYNC_TRANSFER_RECEIVER if (!HAS_BT_CTLR || \
+						     BT_CTLR_SYNC_TRANSFER_RECEIVER_SUPPORT)
 	help
 	  If set to true, the sample will start advertising connectable for
 	  Broadcast Assistants.

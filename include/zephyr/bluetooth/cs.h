@@ -246,10 +246,8 @@ enum bt_le_cs_test_override_8_cs_sync_payload_pattern {
 
 /** CS Test parameters */
 struct bt_le_cs_test_param {
-	/** CS mode to be used during the CS procedure. */
-	enum bt_conn_le_cs_main_mode main_mode;
-	/** CS sub-mode to be used during the CS procedure. */
-	enum bt_conn_le_cs_sub_mode sub_mode;
+	/** CS main and sub mode to be used during the CS procedure. */
+	enum bt_conn_le_cs_mode mode;
 	/** Number of main mode steps taken from the end of the last CS subevent
 	 * to be repeated at the beginning of the current CS subevent directly
 	 * after the last mode-0 step of that event.
@@ -481,10 +479,8 @@ enum bt_le_cs_create_config_context {
 struct bt_le_cs_create_config_params {
 	/** CS configuration ID */
 	uint8_t id;
-	/** Main CS mode type */
-	enum bt_conn_le_cs_main_mode main_mode_type;
-	/** Sub CS mode type */
-	enum bt_conn_le_cs_sub_mode sub_mode_type;
+	/** Main and sub CS mode */
+	enum bt_conn_le_cs_mode mode;
 	/** Minimum number of CS main mode steps to be executed before a submode step is executed */
 	uint8_t min_main_mode_steps;
 	/** Maximum number of CS main mode steps to be executed before a submode step is executed */

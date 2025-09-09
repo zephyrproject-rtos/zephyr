@@ -34,6 +34,7 @@
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include "uart_stm32.h"
 
+#include <stm32_ll_bus.h>
 #include <stm32_ll_usart.h>
 #include <stm32_ll_lpuart.h>
 #if defined(CONFIG_PM) && defined(IS_UART_WAKEUP_FROMSTOP_INSTANCE)
@@ -140,28 +141,34 @@ static void uart_stm32_pm_policy_state_lock_put(const struct device *dev)
 }
 #endif /* CONFIG_PM */
 
-static inline void uart_stm32_set_baudrate(const struct device *dev, uint32_t baud_rate)
+static inline int uart_stm32_set_baudrate(const struct device *dev, uint32_t baud_rate)
 {
 	const struct uart_stm32_config *config = dev->config;
 	USART_TypeDef *usart = config->usart;
 	struct uart_stm32_data *data = dev->data;
 
+	if (baud_rate == 0) {
+		return -EINVAL;
+	}
+
 	uint32_t clock_rate;
 
 	/* Get clock rate */
 	if (IS_ENABLED(STM32_UART_DOMAIN_CLOCK_SUPPORT) && (config->pclk_len > 1)) {
-		if (clock_control_get_rate(data->clock,
-					   (clock_control_subsys_t)&config->pclken[1],
-					   &clock_rate) < 0) {
+		int ret = clock_control_get_rate(data->clock,
+						 (clock_control_subsys_t)&config->pclken[1],
+						 &clock_rate);
+		if (ret < 0) {
 			LOG_ERR("Failed call clock_control_get_rate(pclken[1])");
-			return;
+			return ret;
 		}
 	} else {
-		if (clock_control_get_rate(data->clock,
-					   (clock_control_subsys_t)&config->pclken[0],
-					   &clock_rate) < 0) {
+		int ret = clock_control_get_rate(data->clock,
+						 (clock_control_subsys_t)&config->pclken[0],
+						 &clock_rate);
+		if (ret < 0) {
 			LOG_ERR("Failed call clock_control_get_rate(pclken[0])");
-			return;
+			return ret;
 		}
 	}
 
@@ -181,7 +188,7 @@ static inline void uart_stm32_set_baudrate(const struct device *dev, uint32_t ba
 
 		if (presc_idx == ARRAY_SIZE(LPUART_PRESCALER_TAB)) {
 			LOG_ERR("Unable to set %s to %d", dev->name, baud_rate);
-			return;
+			return -EINVAL;
 		}
 
 		presc_val = presc_idx << USART_PRESC_PRESCALER_Pos;
@@ -191,7 +198,7 @@ static inline void uart_stm32_set_baudrate(const struct device *dev, uint32_t ba
 		lpuartdiv = lpuartdiv_calc(clock_rate, baud_rate);
 		if (lpuartdiv < LPUART_BRR_MIN_VALUE || lpuartdiv > LPUART_BRR_MASK) {
 			LOG_ERR("Unable to set %s to %d", dev->name, baud_rate);
-			return;
+			return -EINVAL;
 		}
 #endif /* USART_PRESC_PRESCALER */
 		LL_LPUART_SetBaudRate(usart,
@@ -213,6 +220,17 @@ static inline void uart_stm32_set_baudrate(const struct device *dev, uint32_t ba
 		LL_USART_SetOverSampling(usart,
 					 LL_USART_OVERSAMPLING_16);
 #endif
+
+		uint32_t usartdiv = __LL_USART_DIV_SAMPLING16(clock_rate,
+#ifdef USART_PRESC_PRESCALER
+							      LL_USART_PRESCALER_DIV1,
+#endif
+							      baud_rate);
+		if (usartdiv < 16) {
+			LOG_ERR("Unable to set %s to %d", dev->name, baud_rate);
+			return -EINVAL;
+		}
+
 		LL_USART_SetBaudRate(usart,
 				     clock_rate,
 #ifdef USART_PRESC_PRESCALER
@@ -229,6 +247,8 @@ static inline void uart_stm32_set_baudrate(const struct device *dev, uint32_t ba
 #if HAS_LPUART
 	}
 #endif /* HAS_LPUART */
+
+	return 0;
 }
 
 static inline void uart_stm32_set_parity(const struct device *dev,
@@ -487,7 +507,7 @@ static inline enum uart_config_flow_control uart_stm32_ll2cfg_hwctrl(uint32_t fc
 	return UART_CFG_FLOW_CTRL_NONE;
 }
 
-static void uart_stm32_parameters_set(const struct device *dev,
+static int uart_stm32_parameters_set(const struct device *dev,
 				      const struct uart_config *cfg)
 {
 	const struct uart_stm32_config *config = dev->config;
@@ -501,6 +521,7 @@ static void uart_stm32_parameters_set(const struct device *dev,
 #if HAS_DRIVER_ENABLE
 	bool driver_enable = cfg->flow_ctrl == UART_CFG_FLOW_CTRL_RS485;
 #endif
+	int ret = 0;
 
 	if (cfg == uart_cfg) {
 		/* Called via (re-)init function, so the SoC either just booted,
@@ -512,7 +533,10 @@ static void uart_stm32_parameters_set(const struct device *dev,
 					 parity,
 					 stopbits);
 		uart_stm32_set_hwctrl(dev, flowctrl);
-		uart_stm32_set_baudrate(dev, cfg->baudrate);
+		ret = uart_stm32_set_baudrate(dev, cfg->baudrate);
+		if (ret < 0) {
+			return ret;
+		}
 	} else {
 		/* Called from application/subsys via uart_configure syscall */
 		if (parity != uart_stm32_get_parity(dev)) {
@@ -538,10 +562,15 @@ static void uart_stm32_parameters_set(const struct device *dev,
 #endif
 
 		if (cfg->baudrate != uart_cfg->baudrate) {
-			uart_stm32_set_baudrate(dev, cfg->baudrate);
+			ret = uart_stm32_set_baudrate(dev, cfg->baudrate);
+			if (ret < 0) {
+				return ret;
+			}
 			uart_cfg->baudrate = cfg->baudrate;
 		}
 	}
+
+	return 0;
 }
 
 #ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
@@ -598,7 +627,9 @@ static int uart_stm32_configure(const struct device *dev,
 	LL_USART_Disable(usart);
 
 	/* Set basic parameters, such as data-/stop-bit, parity, and baudrate */
-	uart_stm32_parameters_set(dev, cfg);
+	if (uart_stm32_parameters_set(dev, cfg) < 0) {
+		return -ENOTSUP;
+	}
 
 	LL_USART_Enable(usart);
 
@@ -1328,6 +1359,16 @@ static void uart_stm32_isr(const struct device *dev)
 #endif
 
 #ifdef CONFIG_UART_ASYNC_API
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	/* If both ASYNC and INTERRUPT modes are supported in this build,
+	 * check whether this instance is currently being used via the
+	 * interrupt-driven API. If it is, do not process interrupt flags
+	 * as the user callback invoked earlier is responsible for that.
+	 */
+	if (data->user_cb) {
+		return;
+	}
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 	if (LL_USART_IsEnabledIT_IDLE(usart) &&
 			LL_USART_IsActiveFlag_IDLE(usart)) {
 
@@ -2100,7 +2141,9 @@ static int uart_stm32_registers_configure(const struct device *dev)
 	LL_USART_SetTransferDirection(usart, LL_USART_DIRECTION_TX_RX);
 
 	/* Set basic parameters, such as data-/stop-bit, parity, and baudrate */
-	uart_stm32_parameters_set(dev, uart_cfg);
+	if (uart_stm32_parameters_set(dev, uart_cfg) < 0) {
+		return -EINVAL;
+	}
 
 	/* Enable the single wire / half-duplex mode */
 	if (config->single_wire) {
@@ -2167,6 +2210,12 @@ static int uart_stm32_registers_configure(const struct device *dev)
 			LL_EXTI_EnableIT_0_31(BIT(config->wakeup_line));
 		}
 	}
+#if defined(CONFIG_SOC_SERIES_STM32U5X) && DT_HAS_COMPAT_STATUS_OKAY(st_stm32_lpuart)
+	if (config->wakeup_source) {
+		/* Allow LPUART to operate in STOP modes. */
+		LL_SRDAMR_GRP1_EnableAutonomousClock(LL_SRDAMR_GRP1_PERIPH_LPUART1AMEN);
+	}
+#endif
 #endif /* CONFIG_PM */
 
 	LL_USART_Enable(usart);
@@ -2175,13 +2224,13 @@ static int uart_stm32_registers_configure(const struct device *dev)
 	/* Wait until TEACK flag is set */
 	while (!(LL_USART_IsActiveFlag_TEACK(usart))) {
 	}
-#endif /* !USART_ISR_TEACK */
+#endif /* USART_ISR_TEACK */
 
 #ifdef USART_ISR_REACK
 	/* Wait until REACK flag is set */
 	while (!(LL_USART_IsActiveFlag_REACK(usart))) {
 	}
-#endif /* !USART_ISR_REACK */
+#endif /* USART_ISR_REACK */
 
 	return 0;
 }
@@ -2252,13 +2301,11 @@ static void uart_stm32_suspend_setup(const struct device *dev)
 	LL_USART_ClearFlag_ORE(usart);
 }
 
-static int uart_stm32_pm_action(const struct device *dev,
-			       enum pm_device_action action)
+static int uart_stm32_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	const struct uart_stm32_config *config = dev->config;
 	struct uart_stm32_data *data = dev->data;
 	int err;
-
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
@@ -2268,21 +2315,34 @@ static int uart_stm32_pm_action(const struct device *dev,
 			return err;
 		}
 
-		/* Enable clock */
-		err = clock_control_on(data->clock,
-					(clock_control_subsys_t)&config->pclken[0]);
+		/* Enable bus clock */
+		err = clock_control_on(data->clock, (clock_control_subsys_t)&config->pclken[0]);
 		if (err < 0) {
 			LOG_ERR("Could not enable (LP)UART clock");
 			return err;
 		}
 
-		if ((IS_ENABLED(CONFIG_PM_S2RAM)) &&
-			(!LL_USART_IsEnabled(config->usart))) {
+		if (!LL_USART_IsEnabled(config->usart)) {
 			/* When exiting low power mode, check whether UART is enabled.
-			 * If not, it means we are exiting Suspend to RAM mode (STM32
-			 * Standby), and the driver needs to be reinitialized.
+			 * If not, it means the peripheral has been powered down
+			 * by the low-power mode. If suspend-to-RAM is enabled,
+			 * assume the entire SoC has been powered down and do a
+			 * full re-initialization. Otherwise, assume that the
+			 * low-power mode shut down power to the UART but not
+			 * critical peripherals (CPU, GPIO, RCC), which means
+			 * we only have to reconfigure this UART instance.
+			 *
+			 * STOP2 on STM32WLE5 is an example of such low-power mode.
 			 */
-			uart_stm32_init(dev);
+			if (IS_ENABLED(CONFIG_PM_S2RAM)) {
+				err = uart_stm32_init(dev);
+			} else {
+				err = uart_stm32_registers_configure(dev);
+			}
+
+			if (err < 0) {
+				return err;
+			}
 		}
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:

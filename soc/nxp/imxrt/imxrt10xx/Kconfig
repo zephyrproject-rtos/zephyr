@@ -11,20 +11,6 @@ config SOC_SERIES_IMXRT10XX
 	select CLOCK_CONTROL
 	select HAS_MCUX
 	select HAS_MCUX_CACHE
-	select HAS_MCUX_CCM if !SOC_MIMXRT1042
-	select HAS_MCUX_FLEXSPI
-	select HAS_MCUX_IGPIO
-	select HAS_MCUX_LPI2C if !SOC_MIMXRT1042
-	select HAS_MCUX_LPSPI if !SOC_MIMXRT1042
-	select HAS_MCUX_LPUART if !SOC_MIMXRT1042
-	select HAS_MCUX_GPT if !SOC_MIMXRT1042
-	select HAS_MCUX_TRNG if !SOC_MIMXRT1042
-	select HAS_MCUX_EDMA
-	select HAS_MCUX_GPC
-	select HAS_MCUX_IOMUXC
-	select HAS_MCUX_PMU
-	select HAS_MCUX_DCDC
-	select HAS_MCUX_USB_EHCI
 	select HAS_SWO
 	select HAS_PM
 	select SOC_RESET_HOOK
@@ -42,71 +28,32 @@ config SOC_MIMXRT1015
 	select CPU_HAS_ARM_MPU
 
 config SOC_MIMXRT1021
-	select HAS_MCUX_ENET
-	select HAS_MCUX_SEMC
 	select CPU_HAS_FPU_DOUBLE_PRECISION
 	select CPU_HAS_ARM_MPU
-	select HAS_MCUX_USDHC1
-	select HAS_MCUX_USDHC2
-	select HAS_MCUX_FLEXCAN
-	select HAS_MCUX_PWM
 
 config SOC_MIMXRT1024
-	select HAS_MCUX_ENET
-	select HAS_MCUX_SEMC
 	select CPU_HAS_FPU_DOUBLE_PRECISION
 	select CPU_HAS_ARM_MPU
-	select HAS_MCUX_USDHC1
-	select HAS_MCUX_USDHC2
-	select HAS_MCUX_FLEXCAN
 	select HAS_MCUX_SRC
 
 config SOC_MIMXRT1042
-	select HAS_MCUX_SEMC
 	select CPU_HAS_FPU_DOUBLE_PRECISION
 	select CPU_HAS_ARM_MPU
 
 config SOC_MIMXRT1052
-	select HAS_MCUX_ELCDIF
-	select HAS_MCUX_ENET
-	select HAS_MCUX_SEMC
 	select CPU_HAS_FPU_DOUBLE_PRECISION
 	select CPU_HAS_ARM_MPU
-	select HAS_MCUX_USDHC1
-	select HAS_MCUX_USDHC2
-	select HAS_MCUX_FLEXCAN
-	select HAS_MCUX_PWM
 	select HAS_MCUX_SRC
 
 config SOC_MIMXRT1062
-	select HAS_MCUX_ELCDIF
-	select HAS_MCUX_ENET
-	select HAS_MCUX_PWM
-	select HAS_MCUX_QTMR
-	select HAS_MCUX_SEMC
-	select HAS_MCUX_SNVS
 	select CPU_HAS_FPU_DOUBLE_PRECISION
 	select CPU_HAS_ARM_MPU
-	select HAS_MCUX_USDHC1
-	select HAS_MCUX_USDHC2
-	select HAS_MCUX_FLEXCAN
-	select HAS_MCUX_I2S
-	select HAS_MCUX_ADC_ETC
 	select HAS_MCUX_SRC
 
 config SOC_MIMXRT1064
-	select HAS_MCUX_ELCDIF
-	select HAS_MCUX_ENET
-	select HAS_MCUX_PWM
-	select HAS_MCUX_QTMR
-	select HAS_MCUX_SEMC
-	select HAS_MCUX_SNVS
 	select HAS_MCUX_SRC
 	select CPU_HAS_FPU_DOUBLE_PRECISION
 	select CPU_HAS_ARM_MPU
-	select HAS_MCUX_USDHC1
-	select HAS_MCUX_USDHC2
-	select HAS_MCUX_FLEXCAN
 	select HAS_SWO
 
 if SOC_SERIES_IMXRT10XX
@@ -136,5 +83,26 @@ config INIT_VIDEO_PLL
 	default y if DISPLAY_MCUX_ELCDIF
 	depends on !SOC_MIMXRT1011 && !SOC_MIMXRT1015 && \
 		   !SOC_MIMXRT1021 && !SOC_MIMXRT1024
+
+if PM
+
+config DCDC_TARGET_LOW_POWER_VOLTAGE
+	int "Target DCDC voltage in mV for low power mode"
+	default 1075
+	range 800 1575
+	help
+	  When entering suspend-to-idle drops to this target SOC voltage.
+	  If you are experiencing issues with low power mode stability,
+	  try raising this voltage value. Increment or decrement in steps of 25 mV.
+
+config DCDC_TARGET_NORMAL_VOLTAGE
+	int "Target DCDC voltage in mV for normal mode"
+	default 1275
+	range 800 1575
+	help
+	  When exiting suspend-to-idle raises to this SOC voltage.
+	  Increment or decrement in steps of 25 mV.
+
+endif # PM
 
 endif # SOC_SERIES_IMXRT10XX

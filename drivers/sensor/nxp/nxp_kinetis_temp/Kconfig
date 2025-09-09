@@ -15,8 +15,8 @@ if TEMP_KINETIS
 
 config TEMP_KINETIS_RESOLUTION
 	int "ADC resolution"
-	default 16 if HAS_MCUX_ADC16
-	default 12 if HAS_MCUX_ADC12
+	default 16 if ADC_MCUX_ADC16
+	default 12 if ADC_MCUX_ADC12
 	help
 	  ADC resolution to use for the temperature sensor and bandgap
 	  voltage readings.

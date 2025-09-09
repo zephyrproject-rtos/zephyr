@@ -114,6 +114,8 @@ static int counter_mspm0_set_alarm(const struct device *dev,
 	uint32_t top = counter_mspm0_get_top_value(dev);
 	uint32_t ticks = alarm_cfg->ticks;
 
+	ARG_UNUSED(chan_id);
+
 	if (alarm_cfg->ticks > top) {
 		return -EINVAL;
 	}
@@ -146,9 +148,13 @@ static int counter_mspm0_set_alarm(const struct device *dev,
 static int counter_mspm0_cancel_alarm(const struct device *dev, uint8_t chan_id)
 {
 	const struct counter_mspm0_config *config = dev->config;
+	struct counter_mspm0_data *data = dev->data;
+
+	ARG_UNUSED(chan_id);
 
 	DL_Timer_disableInterrupt(config->base,
 				  DL_TIMER_INTERRUPT_CC0_UP_EVENT);
+	data->alarm_cb = NULL;
 
 	return 0;
 }

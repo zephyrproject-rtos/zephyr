@@ -4,13 +4,22 @@
 menu "SiSDK configuration"
 	depends on HAS_SILABS_SISDK
 
+config SILABS_SISDK_GPIO
+	bool "Peripheral HAL for GPIO"
+
+config SILABS_SISDK_I2C
+	bool "Peripheral HAL for I2C"
+
 config SILABS_SISDK_LETIMER
 	bool "Peripheral HAL for LETIMER"
 
 config SILABS_SISDK_TIMER
 	bool "Peripheral HAL for TIMER"
 
-config RAIL_PA_CURVE_HEADER
+config SILABS_SISDK_VDAC
+	bool "Peripheral HAL for VDAC"
+
+config SILABS_SISDK_RAIL_PA_CURVE_HEADER
 	string "RAIL PA custom curve header file"
 	default "pa_curves_efr32.h"
 	help
@@ -18,7 +27,7 @@ config RAIL_PA_CURVE_HEADER
 	  See AN1127 for information on how to create a custom PA curve.
 	  The header file must be available on the include path.
 
-config RAIL_PA_CURVE_TYPES_HEADER
+config SILABS_SISDK_RAIL_PA_CURVE_TYPES_HEADER
 	string "RAIL PA curve types header file"
 	default "pa_curve_types_efr32.h"
 	help
@@ -26,12 +35,20 @@ config RAIL_PA_CURVE_TYPES_HEADER
 	  See AN1127 for information on how to create a custom PA curve.
 	  The header file must be available on the include path.
 
-config RAIL_PA_ENABLE_CALIBRATION
+config SILABS_SISDK_RAIL_PA_ENABLE_CALIBRATION
 	bool "RAIL PA: apply factory calibration offset"
 	default y
 	help
 	  Ensure that the PA power remains constant chip-to-chip by applying factory
 	  calibration. This option is enabled by default, and is recommended for all
 	  Series 2 devices.
+
+config SILABS_SISDK_RAIL_MULTIPROTOCOL
+	bool "Use RAIL Multiprotocol library"
+	depends on SOC_GECKO_USE_RAIL
+	help
+	  Enable the Silicon Labs RAIL multiprotocol library, which provides
+	  coexistence and arbitration between multiple wireless protocols (for
+	  example, Bluetooth LE and a proprietary 2.4 GHz stack) on Gecko SoCs.
 
 endmenu

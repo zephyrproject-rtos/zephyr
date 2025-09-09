@@ -18,7 +18,7 @@
 #define TEST_NODELABEL	DT_NODELABEL(test_nodelabel)
 #define TEST_INST	DT_INST(0, vnd_gpio_device)
 #define TEST_ARRAYS	DT_NODELABEL(test_arrays)
-#define TEST_PH	DT_NODELABEL(test_phandles)
+#define TEST_PH		DT_NODELABEL(test_phandles)
 #define TEST_INTC	DT_NODELABEL(test_intc)
 #define TEST_IRQ	DT_NODELABEL(test_irq)
 #define TEST_IRQ_EXT	DT_NODELABEL(test_irq_extended)
@@ -1113,6 +1113,65 @@ ZTEST(devicetree_api, test_phandles)
 	/* DT_PHANDLE_BY_NAME */
 	zassert_true(DT_SAME_NODE(DT_PHANDLE_BY_NAME(TEST_PH, foos, a), TEST_GPIO_1), "");
 	zassert_true(DT_SAME_NODE(DT_PHANDLE_BY_NAME(TEST_PH, foos, b_c), TEST_GPIO_2), "");
+
+	/* DT_PHA_NUM_CELLS_BY_IDX */
+	zassert_equal(DT_PHA_NUM_CELLS_BY_IDX(TEST_PH, foos, 0), 1);
+	zassert_equal(DT_PHA_NUM_CELLS_BY_IDX(TEST_PH, pha_gpios, 2), 1);
+	zassert_equal(DT_PHA_NUM_CELLS_BY_IDX(TEST_PH, pha_gpios, 3), 2);
+
+	/* DT_PHA_NUM_CELLS_BY_NAME */
+	zassert_equal(DT_PHA_NUM_CELLS_BY_NAME(TEST_PH, foos, a), 1);
+	zassert_equal(DT_PHA_NUM_CELLS_BY_NAME(TEST_PH, pwms, green), 3);
+	zassert_equal(DT_PHA_NUM_CELLS_BY_NAME(TEST_PH, pwms, red), 3);
+
+	/* DT_PHA_ELEM_NAME_BY_IDX */
+	zassert_str_equal(DT_PHA_ELEM_NAME_BY_IDX(TEST_PH, foos, 0), "A");
+	zassert_str_equal(DT_PHA_ELEM_NAME_BY_IDX(TEST_PH, foos, 1), "b-c");
+	zassert_str_equal(DT_PHA_ELEM_NAME_BY_IDX(TEST_PH, pwms, 0), "red");
+	zassert_str_equal(DT_PHA_ELEM_NAME_BY_IDX(TEST_PH, pwms, 1), "green");
+
+	/* DT_PHA_ELEM_IDX_BY_NAME */
+	zassert_equal(DT_PHA_ELEM_IDX_BY_NAME(TEST_PH, foos, a), 0);
+	zassert_equal(DT_PHA_ELEM_IDX_BY_NAME(TEST_PH, foos, b_c), 1);
+	zassert_equal(DT_PHA_ELEM_IDX_BY_NAME(TEST_PH, pwms, red), 0);
+	zassert_equal(DT_PHA_ELEM_IDX_BY_NAME(TEST_PH, pwms, green), 1);
+
+	/* DT_FOREACH_PHA_CELL_BY_IDX */
+	int chksum;
+
+#define ADD_TWO(node_id, pha, idx, x) (DT_PHA_BY_IDX(node_id, pha, idx, x) + 2) +
+	chksum = DT_FOREACH_PHA_CELL_BY_IDX(TEST_PH, pwms, 0, ADD_TWO) 0;
+	zassert_equal(chksum, 211 + 6);
+	chksum = DT_FOREACH_PHA_CELL_BY_IDX(TEST_PH, foos, 1, ADD_TWO) 0;
+	zassert_equal(chksum, 110 + 2);
+
+	/* DT_FOREACH_PHA_CELL_BY_IDX_SEP */
+	int cells_one[2] = {
+		DT_FOREACH_PHA_CELL_BY_IDX_SEP(TEST_PH, pha_gpios, 0, DT_PHA_BY_IDX, (,))
+	};
+	int cells_two[1] = {
+		DT_FOREACH_PHA_CELL_BY_IDX_SEP(TEST_PH, pha_gpios, 2, DT_PHA_BY_IDX, (,))
+	};
+
+	zassert_equal(cells_one[0], 50);
+	zassert_equal(cells_one[1], 60);
+	zassert_equal(cells_two[0], 70);
+
+	/* DT_FOREACH_PHA_CELL_BY_NAME */
+#define ADD_THREE(node_id, pha, idx, x) (DT_PHA_BY_NAME(node_id, pha, idx, x) + 3) +
+	chksum = DT_FOREACH_PHA_CELL_BY_NAME(TEST_PH, pwms, red, ADD_THREE) 0;
+	zassert_equal(chksum, 211 + 9);
+	chksum = DT_FOREACH_PHA_CELL_BY_NAME(TEST_PH, pwms, green, ADD_THREE) 0;
+	zassert_equal(chksum, 106 + 9);
+
+	/* DT_FOREACH_PHA_CELL_BY_NAME_SEP */
+	int cells_pwms[3] = {
+		DT_FOREACH_PHA_CELL_BY_NAME_SEP(TEST_PH, pwms, green, DT_PHA_BY_NAME, (,))
+	};
+
+	zassert_equal(cells_pwms[0], 5);
+	zassert_equal(cells_pwms[1], 100);
+	zassert_equal(cells_pwms[2], 1);
 
 	/* array initializers */
 	zassert_equal(gps[0].pin, 10, "");

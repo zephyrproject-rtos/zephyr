@@ -19,12 +19,6 @@
 			compatible = "soc-nv-flash";
 			reg = <0xc0000000 DT_SIZE_M(32)>;
 		};
-
-		sram0: memory@0 {
-			compatible = "mmio-sram";
-			reg = <0 DT_SIZE_M(64)>;
-		};
-
 		ocm: memory@fffc0000 {
 			compatible = "zephyr,memory-region", "xlnx,zynq-ocm";
 			reg = <0xfffc0000 DT_SIZE_K(256)>;
@@ -304,6 +298,31 @@
 					IRQ_DEFAULT_PRIORITY>;
 			reg = <0xfd070000 0x30000>;
 		};
-	};
 
+		spi0: spi@ff040000 {
+			compatible = "cdns,spi";
+			reg = <0xff040000 0x1000>;
+			status = "disabled";
+			interrupts = <GIC_SPI 19 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			fifo-width = <8>;
+			rx-fifo-depth = <128>;
+			tx-fifo-depth = <128>;
+		};
+
+		spi1: spi@ff050000 {
+			compatible = "cdns,spi";
+			reg = <0xff050000 0x1000>;
+			status = "disabled";
+			interrupts = <GIC_SPI 20 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			fifo-width = <8>;
+			rx-fifo-depth = <128>;
+			tx-fifo-depth = <128>;
+		};
+	};
 };

@@ -32,7 +32,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
     - name: Checkout
-      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
       with:
         path: zephyr
         fetch-depth: 0
@@ -51,7 +51,7 @@ jobs:
         toolchains: all
 
     - name: Run Pytest For Twister Black Box Tests
-      if: ${{ startsWith(runner.os, 'ubuntu') }}
+      if: ${{ runner.os == 'Linux' }}
       working-directory: zephyr
       shell: bash
       env:
@@ -59,6 +59,7 @@ jobs:
         ZEPHYR_TOOLCHAIN_VARIANT: zephyr
       run: |
         export ZEPHYR_SDK_INSTALL_DIR=${{ github.workspace }}/zephyr-sdk
+        sudo apt-get install -y lcov
         echo "Run twister tests"
         source zephyr-env.sh
         PYTHONPATH="./scripts/tests" pytest ./scripts/tests/twister_blackbox/

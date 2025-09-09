@@ -9,8 +9,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define BT_L2CAP_PSM_AVCTP 0x0017
-
 typedef enum __packed {
 	BT_AVCTP_IPID_NONE = 0b0,
 	BT_AVCTP_IPID_INVALID = 0b1,
@@ -82,6 +80,52 @@ struct bt_avctp_ops_cb {
 struct bt_avctp {
 	struct bt_l2cap_br_chan br_chan;
 	const struct bt_avctp_ops_cb *ops;
+	uint16_t pid;  /** Profile Identifier */
+};
+
+/**
+ * @brief AVCTP L2CAP Server structure
+ *
+ * This structure defines the L2CAP server used for AVCTP over L2CAP transport.
+ */
+struct bt_avctp_server {
+	/**
+	 * @brief L2CAP server parameters
+	 *
+	 * This field is used to register the L2CAP server. The `psm` field can be set
+	 * to a specific value (not recommended), or set to 0 to allow automatic PSM
+	 * allocation during registration via @ref bt_avctp_server_register.
+	 *
+	 * The `sec_level` field specifies the minimum required security level.
+	 *
+	 * @note The `struct bt_l2cap_server::accept` callback of `l2cap` can not be used
+	 * by AVCTP applications. Instead, use the `struct bt_avctp_server::accept`
+	 * callback defined in this structure.
+	 */
+	struct bt_l2cap_server l2cap;
+
+	/**
+	 * @brief Accept callback for incoming AVCTP connections
+	 *
+	 * This callback is invoked when a new incoming AVCTP connection is received.
+	 * The application is responsible for authorizing the connection and allocating
+	 * a new AVCTP session object.
+	 *
+	 * @warning The caller must ensure that the parent object of the AVCTP session
+	 * is properly zero-initialized before use.
+	 *
+	 * @param conn   The Bluetooth connection requesting authorization.
+	 * @param session Pointer to receive the allocated AVCTP session object.
+	 *
+	 * @retval 0        Success.
+	 * @retval -ENOMEM  No available space for a new session.
+	 * @retval -EACCES  Connection not authorized by the application.
+	 * @retval -EPERM   Encryption key size is insufficient.
+	 */
+	int (*accept)(struct bt_conn *conn, struct bt_avctp **session);
+
+	/** @brief Internal node for list management */
+	sys_snode_t node;
 };
 
 struct bt_avctp_event_cb {
@@ -92,10 +136,10 @@ struct bt_avctp_event_cb {
 int bt_avctp_init(void);
 
 /* Application register with AVCTP layer */
-int bt_avctp_register(const struct bt_avctp_event_cb *cb);
+int bt_avctp_server_register(struct bt_avctp_server *server);
 
 /* AVCTP connect */
-int bt_avctp_connect(struct bt_conn *conn, struct bt_avctp *session);
+int bt_avctp_connect(struct bt_conn *conn, uint16_t psm, struct bt_avctp *session);
 
 /* AVCTP disconnect */
 int bt_avctp_disconnect(struct bt_avctp *session);
@@ -104,6 +148,11 @@ int bt_avctp_disconnect(struct bt_avctp *session);
 struct net_buf *bt_avctp_create_pdu(struct bt_avctp *session, bt_avctp_cr_t cr,
 				    bt_avctp_pkt_type_t pkt_type, bt_avctp_ipid_t ipid,
 				    uint8_t tid, uint16_t pid);
+
+/* Set AVCTP header */
+void bt_avctp_set_header(struct bt_avctp_header *avctp_hdr, bt_avctp_cr_t cr,
+			 bt_avctp_pkt_type_t pkt_type, bt_avctp_ipid_t ipid,
+			 uint8_t tid, uint16_t pid);
 
 /* Send AVCTP PDU */
 int bt_avctp_send(struct bt_avctp *session, struct net_buf *buf);

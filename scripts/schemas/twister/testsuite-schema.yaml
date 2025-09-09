@@ -127,6 +127,9 @@ schema;scenario-schema:
                   required: true
                 "expected":
                   type: str
+        "display_capture_config":
+          type: str
+          required: false
         "type":
           type: str
           required: false

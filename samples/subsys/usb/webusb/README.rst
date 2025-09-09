@@ -1,31 +1,25 @@
 .. zephyr:code-sample:: webusb
    :name: WebUSB
-   :relevant-api: _usb_device_core_api
+   :relevant-api: usbd_api
 
    Receive and echo data from a web page using WebUSB API.
-
-For a deeper dive into the WebUSB, refer to
-https://developers.google.com/web/updates/2016/03/access-usb-devices-on-the-web
-
-WebUSB API Specification:
-https://wicg.github.io/webusb/
 
 Overview
 ********
 
-This simple echo application demonstrates the WebUSB sample application.
-This application receives the data and echoes back to the WebUSB
-based web application (web page) running in the browser at host.
-This application is intended for testing purposes only. For running
-real usecase, implement applications based on the WebUSB API.
-This sample can be found under :zephyr_file:`samples/subsys/usb/webusb` in the
+This sample demonstrates how to use the Binary Device Object Store (BOS),
+Microsoft OS 2.0 descriptors, and WebUSB descriptors to implement a WebUSB
+sample application. The sample USB function receives the data and echoes back
+to the WebUSB API based application running in the browser on your local host.
+This sample can be found at :zephyr_file:`samples/subsys/usb/webusb` in the
 Zephyr project tree.
 
 Requirements
 ************
 
-This project requires an USB device driver, which is available for multiple
-boards supported in Zephyr.
+This project requires a USB device controller driver using the UDC API.
+On your host computer, this project requires a web browser that supports the
+WebUSB API, such as Chromium or a Chromium-based browser.
 
 Building and Running
 ********************
@@ -38,54 +32,42 @@ Build and flash webusb sample with:
    :goals: flash
    :compact:
 
-Testing with the latest Google Chrome on host
-*********************************************
+Demonstration
+*************
 
-This sample application requires the latest Google Chrome, a web page
-based on WebUSB API to connect to the USB device and optionally
-http server running on localhost to serve the web page.
+The sample includes a simple WebUSB API application and can be found in the
+sample directory: :zephyr_file:`samples/subsys/usb/webusb/index.html`.
 
-WebUSB is a powerful new feature added to the Web and it is available
-only to secure origins. This means the web page/site that is used to
-connect to the device must be served over a secure connection (HTTPS).
+There are two ways to access this sample page:
 
-Follow these steps to run the demo on your host system:
+* Using browser go to :doc:`demo`
 
-#. Run the latest Google Chrome on host.
+* Start a web server in the sample directory:
 
-#. Implement a web app (web page) using WebUSB API and run
-   it on localhost.
+  .. code-block:: console
 
-   The sample can be found in the webusb sample directory:
-   :zephyr_file:`samples/subsys/usb/webusb/index.html`.
+     $ python -m http.server
 
-   This sample web page demonstrates how to create and use a WebUSB
-   interface, as well as demonstrate the communication between browser
-   and WebUSB enabled device.
-
-   There are two ways to access this sample page:
-
-   * Using Chrome browser go to :doc:`demo`
-
-   * Host the demo page locally: Start a web server
-     in the webusb sample directory.
-
-     .. code-block:: console
-
-        $ python -m http.server
-
-     Using Chrome browser open url http://localhost:8001/
+Then follow these steps:
 
 #. Connect the board to your host.
 
-#. Once the device is booted, you should see a notification from
-   Chrome: "Go to localhost to connect.". Click on the notification
-   to open demo page.
-   Note that at the moment WebUSB landing page notification is disabled
-   in Chrome on Windows. See https://github.com/WICG/webusb#implementation-status
+#. Once the device has booted, you may see a notification from the browser: "Go
+   to localhost to connect". Click on the notification to open the demo page.  If
+   there is no notification from the browser, open the URL http://localhost:8001/
+   in your browser.
 
 #. Click on the :guilabel:`Connect` button to connect to the device.
 
 #. Send some text to the device by clicking on the :guilabel:`Send` button.
-   The demo app will receive the same text from the device and display it in
-   the text area.
+   The demo application will receive the same text from the device and display
+   it in the text area.
+
+References
+***********
+
+WebUSB API Specification:
+https://wicg.github.io/webusb/
+
+Chrome for Developers, "Access USB Devices on the Web":
+https://developer.chrome.com/docs/capabilities/usb

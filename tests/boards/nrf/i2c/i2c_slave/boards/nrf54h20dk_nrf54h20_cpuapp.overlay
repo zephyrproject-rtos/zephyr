@@ -22,8 +22,9 @@
 
 	i2c131_default_alt: i2c131_default_alt {
 		group1 {
-/* Temporary workaround as it is currently not possible
- * to configure pins for TWIS with pinctrl. */
+			/* Temporary workaround as it is currently not possible
+			 * to configure pins for TWIS with pinctrl.
+			 */
 			psels = <NRF_PSEL(TWIM_SDA, 2, 9)>,
 				<NRF_PSEL(TWIM_SCL, 1, 3)>;
 			bias-pull-up;

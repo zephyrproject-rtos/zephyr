@@ -13,7 +13,7 @@
 		high-level;
 		low-level;
 		gpio-controller;
-		#gpio-cells = < 0x2 >;
-		phandle = < 0x1 >;
+		#gpio-cells = <0x2>;
+		phandle = <0x1>;
 	};
 };

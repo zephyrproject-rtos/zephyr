@@ -11,4 +11,11 @@ config TESTED_SPI_MODE
 		2: CPOL 1 (Active low), CPHA 0 (leading)
 		3: CPOL 1 (Active low), CPHA 1 (trailing)
 
+config PREALLOC_BUFFERS
+	bool "Preallocate buffers"
+	default y
+	help
+		Preallocate buffers used for transaction
+		using `memory-region` property.
+
 source "Kconfig.zephyr"

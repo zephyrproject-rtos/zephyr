@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2025 Jonas Berg
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		eeprom-0 = &eeprom_adafruit_24lc32;
+	};
+};
+
+&zephyr_i2c {
+	status = "okay";
+
+	eeprom_adafruit_24lc32: eeprom@50 {
+		status = "okay";
+		compatible = "atmel,at24lc32", "atmel,at24";
+		reg = <0x50>;
+		size = <DT_SIZE_K(4)>;
+		pagesize = <8>;
+		address-width = <16>;
+		timeout = <5>;
+	};
+};

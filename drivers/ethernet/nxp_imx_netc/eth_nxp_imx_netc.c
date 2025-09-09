@@ -314,6 +314,7 @@ int netc_eth_init_common(const struct device *dev)
 	ep_config.si = config->si_idx;
 	ep_config.siConfig.txRingUse = 1;
 	ep_config.siConfig.rxRingUse = 1;
+	ep_config.siConfig.vlanCtrl = kNETC_ENETC_StanCVlan | kNETC_ENETC_StanSVlan;
 	ep_config.userData = data;
 	ep_config.reclaimCallback = NULL;
 	ep_config.msixEntry = &msix_entry[0];
@@ -367,7 +368,6 @@ int netc_eth_init_common(const struct device *dev)
 
 int netc_eth_tx(const struct device *dev, struct net_pkt *pkt)
 {
-	const struct netc_eth_config *cfg = dev->config;
 	struct netc_eth_data *data = dev->data;
 	netc_buffer_struct_t buff = {.buffer = data->tx_buff, .length = sizeof(data->tx_buff)};
 	netc_frame_struct_t frame = {.buffArray = &buff, .length = 1};
@@ -376,6 +376,7 @@ int netc_eth_tx(const struct device *dev, struct net_pkt *pkt)
 	size_t pkt_len = net_pkt_get_len(pkt);
 #if defined(NETC_HAS_NO_SWITCH_TAG_SUPPORT)
 	struct ethernet_context *eth_ctx = net_if_l2_data(data->iface);
+	const struct netc_eth_config *cfg = dev->config;
 #endif
 	status_t result;
 	int ret;
@@ -387,18 +388,16 @@ int netc_eth_tx(const struct device *dev, struct net_pkt *pkt)
 
 	iface_dst = data->iface;
 
-	if (cfg->pseudo_mac) {
 #if defined(NETC_HAS_NO_SWITCH_TAG_SUPPORT)
+	if (cfg->pseudo_mac) {
 		/* DSA conduit port not used */
 		if (eth_ctx->dsa_port != DSA_CONDUIT_PORT) {
 			return -ENOSYS;
 		}
 		/* DSA driver redirects the iface */
 		iface_dst = pkt->iface;
-#else
-		return -ENOSYS;
-#endif
 	}
+#endif
 
 	k_mutex_lock(&data->tx_mutex, K_FOREVER);
 

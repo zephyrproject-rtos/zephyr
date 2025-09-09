@@ -31,7 +31,7 @@
 			compatible = "arm,cortex-m7";
 			d-cache-line-size = <32>;
 			reg = <0>;
-			cpu-power-states = <&idle &suspend>;
+			cpu-power-states = <&idle &suspend &off>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 
@@ -59,6 +59,12 @@
 				power-state-name = "suspend-to-idle";
 				exit-latency-us = <5000>;
 				min-residency-us = <10000>;
+			};
+			off: off {
+				/* PM_STATE_SOFT_OFF is entered only by calling pm_state_force */
+				status = "disabled";
+				compatible = "zephyr,power-state";
+				power-state-name = "soft-off";
 			};
 		};
 	};
@@ -319,6 +325,7 @@
 			snvs_rtc: rtc {
 				compatible = "nxp,imx-snvs-rtc";
 				interrupts = <46 0>;
+				wakeup-source;
 			};
 		};
 

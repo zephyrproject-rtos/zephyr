@@ -111,6 +111,10 @@ config X86_CPU_HAS_SSE42
 config X86_CPU_HAS_SSE4A
 	bool
 
+config X86_CPU_HAS_CET
+	select ARCH_HAS_HW_SHADOW_STACK if !USERSPACE && !DYNAMIC_THREAD_ALLOC
+	bool
+
 if FPU || X86_64
 
 config X86_MMX
@@ -491,6 +495,41 @@ config X86_EFI_CONSOLE
 config PRIVILEGED_STACK_SIZE
 	# Must be multiple of CONFIG_MMU_PAGE_SIZE
 	default 4096 if X86_MMU
+
+config X86_CET
+	bool "Control-flow Enforcement Technology"
+	depends on X86_CPU_HAS_CET
+	help
+	  This option enables Control-flow Enforcement Technology (CET) support.
+
+config X86_CET_IBT
+	bool "Indirect Branch Tracking"
+	depends on X86_CET && PICOLIBC_USE_MODULE
+	help
+	  This option enables Indirect Branch Tracking (IBT) support.
+
+config X86_CET_SHADOW_STACK_ALIGNMENT
+	int "Shadow Stack alignment"
+	default 4096
+	depends on HW_SHADOW_STACK
+	help
+	  This option sets the alignment of the Shadow Stack.
+
+config X86_CET_VERIFY_KERNEL_SHADOW_STACK
+	bool "Verify kernel shadow stack"
+	depends on HW_SHADOW_STACK
+	help
+	  When enabled, when a thread is swapped out, the kernel will verify
+	  if its shadow stack pointer is not null with shadow stack enabled -
+	  which would mean some attempt to tamper with the shadow stack.
+
+config X86_CET_SOC_PREPARE_SHADOW_STACK_SWITCH
+	bool "SOC prepare shadow stack switch"
+	depends on HW_SHADOW_STACK
+	help
+	  When enabled, call SoC code just before switching shadow stacks.
+	  Code should be provided via soc_prepare_shadow_stack_switch assembler
+	  macro.
 
 source "arch/x86/core/Kconfig.ia32"
 source "arch/x86/core/Kconfig.intel64"

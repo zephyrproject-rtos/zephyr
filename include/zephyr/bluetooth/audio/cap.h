@@ -414,15 +414,33 @@ typedef bool (*bt_cap_unicast_group_foreach_stream_func_t)(struct bt_cap_stream 
  *
  * @param unicast_group  The unicast group
  * @param func           The callback function
- * @param user_data      User specified data that sent to the callback function
+ * @param user_data      User specified data that is sent to the callback function
  *
  * @retval 0 Success (even if no streams exists in the group).
- * @retval -ECANCELED Iteration was stopped by the callback function before complete.
+ * @retval -ECANCELED The @p func returned true.
  * @retval -EINVAL @p unicast_group or @p func were NULL.
  */
 int bt_cap_unicast_group_foreach_stream(struct bt_cap_unicast_group *unicast_group,
 					bt_cap_unicast_group_foreach_stream_func_t func,
 					void *user_data);
+
+/** Structure holding information of audio stream endpoint */
+struct bt_cap_unicast_group_info {
+	/** Pointer to the underlying Basic Audio Profile unicast group */
+	const struct bt_bap_unicast_group *unicast_group;
+};
+
+/**
+ * @brief Return structure holding information of unicast group
+ *
+ * @param unicast_group The unicast group object.
+ * @param info          The structure object to be filled with the info.
+ *
+ * @retval 0 Success
+ * @retval -EINVAL  @p unicast_group or @p info are NULL
+ */
+int bt_cap_unicast_group_get_info(const struct bt_cap_unicast_group *unicast_group,
+				  struct bt_cap_unicast_group_info *info);
 
 /** Stream specific parameters for the bt_cap_initiator_unicast_audio_start() function */
 struct bt_cap_unicast_audio_start_stream_param {
@@ -812,55 +830,122 @@ int bt_cap_initiator_broadcast_audio_delete(struct bt_cap_broadcast_source *broa
 int bt_cap_initiator_broadcast_get_base(struct bt_cap_broadcast_source *broadcast_source,
 					struct net_buf_simple *base_buf);
 
-/** Parameters for  bt_cap_initiator_unicast_to_broadcast() */
-struct bt_cap_unicast_to_broadcast_param {
+/** Callback function for bt_cap_initiator_broadcast_foreach_stream()
+ *
+ * @param stream     The audio stream
+ * @param user_data  User data
+ *
+ * @retval true Stop iterating.
+ * @retval false Continue iterating.
+ */
+typedef bool (*bt_cap_initiator_broadcast_foreach_stream_func_t)(struct bt_cap_stream *stream,
+								 void *user_data);
+
+/**
+ * @brief Iterate through all streams in a broadcast source
+ *
+ * @param broadcast_source  The broadcast source.
+ * @param func              The callback function.
+ * @param user_data         User specified data that is sent to the callback function.
+ *
+ * @retval 0          Success (even if no streams exists in the group).
+ * @retval -ECANCELED The @p func returned true.
+ * @retval -EINVAL    @p broadcast_source or @p func were NULL.
+ */
+int bt_cap_initiator_broadcast_foreach_stream(struct bt_cap_broadcast_source *broadcast_source,
+					      bt_cap_initiator_broadcast_foreach_stream_func_t func,
+					      void *user_data);
+
+/** Parameters for  bt_cap_handover_unicast_to_broadcast() */
+struct bt_cap_handover_unicast_to_broadcast_param {
+	/** The type of the set. */
+	enum bt_cap_set_type type;
+
 	/** The source unicast group with the streams. */
-	struct bt_bap_unicast_group *unicast_group;
+	struct bt_cap_unicast_group *unicast_group;
 
 	/**
-	 * @brief Whether or not to encrypt the streams.
+	 * @brief The advertising set to use for the broadcast source
 	 *
-	 * If set to true, then the broadcast code in @p broadcast_code
-	 * will be used to encrypt the streams.
+	 * This shall remain valid until the procedure has completed.
+	 * If the advertising set is not started at the time of calling
+	 * bt_cap_handover_unicast_to_broadcast(),
+	 * the procedure will start the advertising set with @ref BT_LE_EXT_ADV_START_DEFAULT.
 	 */
-	bool encrypt;
+	struct bt_le_ext_adv *ext_adv;
+
+	/** The periodic advertising interval configured for the advertising set. */
+	uint16_t pa_interval;
+
+	/** The broadcast ID the advertising set is, or will be, using. */
+	uint32_t broadcast_id;
 
 	/**
-	 * @brief 16-octet broadcast code.
+	 * @brief Broadcast source parameters.
 	 *
-	 * Only valid if @p encrypt is true.
-	 *
-	 * If the value is a string or a the value is less than 16 octets,
-	 * the remaining octets shall be 0.
-	 *
-	 * Example:
-	 *   The string "Broadcast Code" shall be
-	 *   [42 72 6F 61 64 63 61 73 74 20 43 6F 64 65 00 00]
+	 * These parameters shall remain valid until the procedure has completed.
 	 */
-	uint8_t broadcast_code[BT_ISO_BROADCAST_CODE_SIZE];
+	struct bt_cap_initiator_broadcast_create_param *broadcast_create_param;
+};
+
+/** Callback structure for CAP procedures */
+struct bt_cap_handover_cb {
+	/**
+	 * @brief The unicast to broadcast handover procedure has finished
+	 *
+	 * @param err 0 if success else a negative errno value.
+	 * @param conn Pointer to the connection where the error occurred or NULL if local failure.
+	 * @param unicast_group NULL if the unicast group was deleted during the procedure, else
+	 *                      pointer to the unicast group provided in the parameters.
+	 * @param broadcast_source Pointer to newly created broadcast source, or NULL in case of an
+	 *                         error happening before it was created.
+	 */
+	void (*unicast_to_broadcast_complete)(int err, struct bt_conn *conn,
+					      struct bt_cap_unicast_group *unicast_group,
+					      struct bt_cap_broadcast_source *broadcast_source);
 };
 
 /**
- * @brief Hands over the data streams in a unicast group to a broadcast source.
+ * @brief Register Common Audio Profile Handover callbacks
  *
- * The streams in the unicast group will be stopped and the unicast group
- * will be deleted. This can only be done for source streams.
- *
- * @note @kconfig{CONFIG_BT_CAP_INITIATOR},
- * @kconfig{CONFIG_BT_BAP_UNICAST_CLIENT} and
- * @kconfig{CONFIG_BT_BAP_BROADCAST_SOURCE} must be enabled for this function
- * to be enabled.
- *
- * @param param         The parameters for the handover.
- * @param source        The resulting broadcast source.
+ * @param cb   The callback structure. Shall remain static.
  *
  * @return 0 on success or negative error value on failure.
  */
-int bt_cap_initiator_unicast_to_broadcast(const struct bt_cap_unicast_to_broadcast_param *param,
-					  struct bt_cap_broadcast_source **source);
+int bt_cap_handover_register_cb(const struct bt_cap_handover_cb *cb);
 
-/** Parameters for  bt_cap_initiator_broadcast_to_unicast() */
-struct bt_cap_broadcast_to_unicast_param {
+/**
+ * @brief Unregister Common Audio Profile Handover callbacks
+ *
+ * @param cb   The callback structure that was previously registered.
+ *
+ * @retval 0 Success
+ * @retval -EINVAL @p cb is NULL or @p cb was not registered
+ */
+int bt_cap_handover_unregister_cb(const struct bt_cap_handover_cb *cb);
+
+/**
+ * @brief Hands over the sink streams in a unicast group to a broadcast source.
+ *
+ * All streams in the provided unicast group will be stopped and released. The sink streams will be
+ * tranferred to a broadcast source, and the broadcast source information will be shared with
+ * all accepters that are currently receiving audio. Any stream that is not in the streaming state
+ * will only be released.
+ *
+ * bt_bap_broadcast_assistant_discover() must have been successfully perform for all members in @p
+ * param before starting this procedure.
+ *
+ * @kconfig_dep{CONFIG_BT_CAP_HANDOVER}
+ *
+ * @param param The parameters for the handover.
+ *
+ * @return 0 on success or negative error value on failure.
+ */
+int bt_cap_handover_unicast_to_broadcast(
+	const struct bt_cap_handover_unicast_to_broadcast_param *param);
+
+/** Parameters for  bt_cap_handover_broadcast_to_unicast() */
+struct bt_cap_handover_broadcast_to_unicast_param {
 	/**
 	 * @brief The source broadcast source with the streams.
 	 *
@@ -890,18 +975,16 @@ struct bt_cap_broadcast_to_unicast_param {
  * The streams in the broadcast source will be stopped and the broadcast source
  * will be deleted.
  *
- * @note @kconfig{CONFIG_BT_CAP_INITIATOR},
- * @kconfig{CONFIG_BT_BAP_UNICAST_CLIENT} and
- * @kconfig{CONFIG_BT_BAP_BROADCAST_SOURCE} must be enabled for this function
- * to be enabled.
+ * @kconfig_dep{CONFIG_BT_CAP_HANDOVER}
  *
  * @param[in]  param          The parameters for the handover.
  * @param[out] unicast_group  The resulting broadcast source.
  *
  * @return 0 on success or negative error value on failure.
  */
-int bt_cap_initiator_broadcast_to_unicast(const struct bt_cap_broadcast_to_unicast_param *param,
-					  struct bt_bap_unicast_group **unicast_group);
+int bt_cap_handover_broadcast_to_unicast(
+	const struct bt_cap_handover_broadcast_to_unicast_param *param,
+	struct bt_bap_unicast_group **unicast_group);
 
 /** Callback structure for CAP procedures */
 struct bt_cap_commander_cb {

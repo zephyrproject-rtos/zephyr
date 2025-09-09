@@ -20,8 +20,8 @@ family:
   socs:
   - name: mcxa153
   - name: mcxa156
-  - name: mcxa166
-  - name: mcxa276
+  - name: mcxa346
+  - name: mcxa266
 - name: mcxw
   socs:
   - name: mcxw716c
@@ -54,9 +54,9 @@ runners:
       - qualifiers:
         - mcxa156
       - qualifiers:
-        - mcxa166
+        - mcxa346
       - qualifiers:
-        - mcxa276
+        - mcxa266
       - qualifiers:
         - mcxw716c
     '--reset':
@@ -82,8 +82,8 @@ runners:
       - qualifiers:
         - mcxa156
       - qualifiers:
-        - mcxa166
+        - mcxa346
       - qualifiers:
-        - mcxa276
+        - mcxa266
       - qualifiers:
         - mcxw716c

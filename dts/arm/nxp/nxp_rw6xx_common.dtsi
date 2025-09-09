@@ -88,6 +88,13 @@
 		onoff-power-states = <&standby>;
 		#power-domain-cells = <0>;
 	};
+
+	xtal32: xtal32 {
+		compatible = "fixed-clock";
+		clock-frequency = <32768>;
+		#clock-cells = <0>;
+		status = "disabled";
+	};
 };
 
 &sram {
@@ -237,6 +244,15 @@
 		interrupts = <50 1>;
 		interrupt-names = "usb_otg";
 		num-bidir-endpoints = <8>;
+		power-domains = <&power_mode3_domain>;
+		status = "disabled";
+	};
+
+	usbh: usbh@145000 {
+		compatible = "nxp,uhc-ehci";
+		reg = <0x145000 0x200>;
+		interrupts = <50 1>;
+		interrupt-names = "usb_otg";
 		power-domains = <&power_mode3_domain>;
 		status = "disabled";
 	};

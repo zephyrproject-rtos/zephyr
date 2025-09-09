@@ -138,4 +138,14 @@ void ull_conn_resume_rx_data(struct ll_conn *conn);
 /**
  * @brief Check if the lower link layer transmit queue is empty
  */
-uint8_t ull_is_lll_tx_queue_empty(struct ll_conn *conn);
+bool ull_conn_lll_tx_queue_is_empty(struct ll_conn *conn);
+
+/**
+ * @brief Set path loss parameters
+ */
+void ull_path_loss_set_parameters(void);
+
+/**
+ * @brief Enable path loss reporting
+ */
+void ull_enable_path_loss_reporting(void);

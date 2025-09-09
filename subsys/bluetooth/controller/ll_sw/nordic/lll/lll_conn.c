@@ -69,6 +69,7 @@ static uint8_t crc_valid;
 static uint8_t is_aborted;
 static uint16_t tx_cnt;
 static uint16_t trx_cnt;
+static uint8_t trx_busy_iteration;
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 static uint8_t mic_state;
@@ -153,6 +154,7 @@ void lll_conn_prepare_reset(void)
 	crc_valid = 0U;
 	crc_expire = 0U;
 	is_aborted = 0U;
+	trx_busy_iteration = 0U;
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 	mic_state = LLL_CONN_MIC_NONE;
@@ -160,44 +162,68 @@ void lll_conn_prepare_reset(void)
 }
 
 #if defined(CONFIG_BT_CENTRAL)
+/* Number of times central event being aborted by same event instance be skipped */
+/* NOTE: Coded PHY S8 coding of 251 byte PDU at 7.5 ms connection interval need up to 4 events
+ *       to be skipped due to large connection event length.
+ */
+#define CENTRAL_TRX_BUSY_ITERATION_MAX MIN(4U, (EVENT_DEFER_MAX))
+
 int lll_conn_central_is_abort_cb(void *next, void *curr,
 				 lll_prepare_cb_t *resume_cb)
 {
 	struct lll_conn *lll = curr;
 
-	/* Do not abort if near supervision timeout */
-	if (lll->forced) {
-		return 0;
-	}
+	if (next != curr) {
+		/* Do not be aborted by a different event if near supervision timeout */
+		if ((lll->forced == 1U) && (trx_cnt < 1U)) {
+			return 0;
+		}
 
-	/* Do not be aborted by same event if a single central trx has not been
-	 * exchanged.
-	 */
-	if ((next == curr) && (trx_cnt < 1U)) {
+	} else if ((next == curr) && (trx_cnt < 1U) &&
+		   (trx_busy_iteration < CENTRAL_TRX_BUSY_ITERATION_MAX)) {
+		trx_busy_iteration++;
+
+		/* Do not be aborted by same event if a single central's Rx has not completed.
+		 * Cases where single trx duration can be greater than connection interval.
+		 */
 		return -EBUSY;
 	}
+
+	LL_ASSERT(trx_busy_iteration < CENTRAL_TRX_BUSY_ITERATION_MAX);
 
 	return -ECANCELED;
 }
 #endif /* CONFIG_BT_CENTRAL */
 
 #if defined(CONFIG_BT_PERIPHERAL)
+/* Number of times peripheral event being aborted by same event instance be skipped */
+/* NOTE: Coded PHY S8 coding of 251 byte PDU at 7.5 ms connection interval need up to 4 events
+ *       to be skipped due to large connection event length.
+ */
+#define PERIPHERAL_TRX_BUSY_ITERATION_MAX MIN(4U, (EVENT_DEFER_MAX))
+
 int lll_conn_peripheral_is_abort_cb(void *next, void *curr,
 				    lll_prepare_cb_t *resume_cb)
 {
 	struct lll_conn *lll = curr;
 
-	/* Do not abort if near supervision timeout */
-	if (lll->forced) {
-		return 0;
-	}
+	if (next != curr) {
+		/* Do not be aborted by a different event if near supervision timeout */
+		if ((lll->forced == 1U) && (tx_cnt < 1U)) {
+			return 0;
+		}
 
-	/* Do not be aborted by same event if a single peripheral trx has not
-	 * been exchanged.
-	 */
-	if ((next == curr) && (tx_cnt < 1U)) {
+	} else if ((next == curr) && (tx_cnt < 1U) &&
+		   (trx_busy_iteration < PERIPHERAL_TRX_BUSY_ITERATION_MAX)) {
+		trx_busy_iteration++;
+
+		/* Do not be aborted by same event if a single peripheral's Tx has not completed.
+		 * Cases where single trx duration can be greater than connection interval.
+		 */
 		return -EBUSY;
 	}
+
+	LL_ASSERT(trx_busy_iteration < PERIPHERAL_TRX_BUSY_ITERATION_MAX);
 
 	return -ECANCELED;
 }
@@ -254,13 +280,10 @@ void lll_conn_abort_cb(struct lll_prepare_param *prepare_param, void *param)
 #if defined(CONFIG_BT_PERIPHERAL)
 	if (lll->role == BT_HCI_ROLE_PERIPHERAL) {
 		/* Accumulate window widening */
-		lll->periph.window_widening_prepare_us +=
-		    lll->periph.window_widening_periodic_us *
-		    (prepare_param->lazy + 1);
-		if (lll->periph.window_widening_prepare_us >
-		    lll->periph.window_widening_max_us) {
-			lll->periph.window_widening_prepare_us =
-				lll->periph.window_widening_max_us;
+		lll->periph.window_widening_prepare_us += lll->periph.window_widening_periodic_us *
+							  (prepare_param->lazy + 1);
+		if (lll->periph.window_widening_prepare_us > lll->periph.window_widening_max_us) {
+			lll->periph.window_widening_prepare_us = lll->periph.window_widening_max_us;
 		}
 	}
 #endif /* CONFIG_BT_PERIPHERAL */
@@ -414,11 +437,27 @@ void lll_conn_isr_rx(void *param)
 		cte_len = 0U;
 	}
 
+#if defined(CONFIG_BT_PERIPHERAL)
+	/* Lets close early so that drift compensation is calculated before this event overlaps
+	 * with next interval.
+	 * TODO: Optimize, to improve throughput, by removing this early close and using the drift
+	 *       compensation value in the overlapping next interval, if under high throughput
+	 *       scenarios.
+	 */
+	is_done = is_done || ((lll->role == BT_HCI_ROLE_PERIPHERAL) &&
+			      (lll->periph.window_size_event_us != 0U));
+#endif /* CONFIG_BT_PERIPHERAL */
+
 	/* Decide on event continuation and hence Radio Shorts to use */
 	is_done = is_done || ((crc_ok) &&
 			      (pdu_data_rx->md == 0) &&
 			      (pdu_data_tx->md == 0) &&
 			      (pdu_data_tx->len == 0));
+	/* Do not continue anymore if this event had continued despite an abort requested by same
+	 * connection instance when overlapping due to connection event length being larger than
+	 * the connection interval.
+	 */
+	is_done = is_done || (trx_busy_iteration != 0U);
 
 	if (is_done) {
 		radio_isr_set(isr_done, param);

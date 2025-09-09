@@ -1,0 +1,21 @@
+# Copyright (c) 2025 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig GPIO_SILABS
+	bool "Silabs GPIO driver"
+	default y
+	depends on DT_HAS_SILABS_GPIO_ENABLED
+	select SILABS_SISDK_GPIO
+	help
+	  Enable the Silabs gpio driver.
+
+if GPIO_SILABS
+
+config GPIO_SILABS_COMMON_INIT_PRIORITY
+	int "Common initialization priority"
+	default 39
+	help
+	  Main GPIO controller has to initialized before the GPIO themselves.
+	  "GPIO_INIT_PRIORITY - 1" is usually the right value.
+
+endif # GPIO_SILABS

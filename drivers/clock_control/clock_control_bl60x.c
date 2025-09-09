@@ -816,6 +816,8 @@ static int clock_control_bl60x_init(const struct device *dev)
 
 	clock_control_bl60x_peripheral_clock_init();
 
+	clock_bflb_settle();
+
 	irq_unlock(key);
 
 	return 0;

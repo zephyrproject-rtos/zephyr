@@ -1236,6 +1236,7 @@ int cap_ac_broadcast(const struct shell *sh, size_t argc, char **argv,
 						   BT_AUDIO_LOCATION_FRONT_LEFT)};
 	struct bt_cap_initiator_broadcast_subgroup_param subgroup_param = {0};
 	struct bt_cap_initiator_broadcast_create_param create_param = {0};
+	uint32_t broadcast_id = 0U;
 	struct bt_le_ext_adv *adv;
 	int err;
 
@@ -1249,6 +1250,15 @@ int cap_ac_broadcast(const struct shell *sh, size_t argc, char **argv,
 		shell_error(sh, "Extended advertising set is NULL");
 		return -ENOEXEC;
 	}
+
+	err = bt_rand(&broadcast_id, BT_AUDIO_BROADCAST_ID_SIZE);
+	if (err != 0) {
+		bt_shell_error("Unable to generate broadcast ID: %d\n", err);
+
+		return -ENOEXEC;
+	}
+
+	shell_print(sh, "Generated broadcast_id 0x%06X", broadcast_id);
 
 	copy_broadcast_source_preset(&default_source, &default_broadcast_source_preset);
 	default_source.qos.sdu *= param->chan_cnt;
@@ -1278,6 +1288,7 @@ int cap_ac_broadcast(const struct shell *sh, size_t argc, char **argv,
 	err = bt_cap_initiator_broadcast_audio_create(&create_param, &default_source.cap_source);
 	if (err != 0) {
 		shell_error(sh, "Failed to create broadcast source: %d", err);
+
 		return -ENOEXEC;
 	}
 
@@ -1290,6 +1301,7 @@ int cap_ac_broadcast(const struct shell *sh, size_t argc, char **argv,
 		    "and update / set the base via `bt per-adv data`",
 		    param->name);
 	default_source.is_cap = true;
+	default_source.broadcast_id = broadcast_id;
 
 	return 0;
 }
@@ -1429,49 +1441,6 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 SHELL_CMD_ARG_REGISTER(cap_initiator, &cap_initiator_cmds,
 		       "Bluetooth CAP initiator shell commands",
 		       cmd_cap_initiator, 1, 1);
-
-static size_t nonconnectable_ad_data_add(struct bt_data *data_array, const size_t data_array_size)
-{
-#if defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
-	if (default_source.cap_source != NULL && default_source.is_cap) {
-		static uint8_t ad_cap_broadcast_announcement[5] = {
-			BT_UUID_16_ENCODE(BT_UUID_BROADCAST_AUDIO_VAL),
-		};
-		uint32_t broadcast_id;
-		int err;
-
-		err = bt_rand(&broadcast_id, BT_AUDIO_BROADCAST_ID_SIZE);
-		if (err) {
-			bt_shell_error("Unable to generate broadcast ID: %d\n", err);
-
-			return 0;
-		}
-
-		sys_put_le24(broadcast_id, &ad_cap_broadcast_announcement[2]);
-		data_array[0].type = BT_DATA_SVC_DATA16;
-		data_array[0].data_len = ARRAY_SIZE(ad_cap_broadcast_announcement);
-		data_array[0].data = ad_cap_broadcast_announcement;
-
-		return 1;
-	}
-#endif /* CONFIG_BT_BAP_BROADCAST_SOURCE */
-
-	return 0;
-}
-
-size_t cap_initiator_ad_data_add(struct bt_data *data_array, const size_t data_array_size,
-				 const bool discoverable, const bool connectable)
-{
-	if (!discoverable) {
-		return 0;
-	}
-
-	if (!connectable) {
-		return nonconnectable_ad_data_add(data_array, data_array_size);
-	}
-
-	return 0;
-}
 
 size_t cap_initiator_pa_data_add(struct bt_data *data_array, const size_t data_array_size)
 {

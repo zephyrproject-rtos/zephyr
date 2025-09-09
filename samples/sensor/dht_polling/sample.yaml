@@ -13,6 +13,11 @@ tests:
     filter: dt_alias_exists("dht0")
     integration_platforms:
       - nucleo_f401re
+    platform_allow:
+      - adafruit_qt_py_rp2040/rp2040
+      - nucleo_f401re
+    extra_args:
+      - platform:adafruit_qt_py_rp2040/rp2040:SHIELD="adafruit_aht20"
     harness: console
     harness_config:
       fixture: fixture_i2c_hs300x

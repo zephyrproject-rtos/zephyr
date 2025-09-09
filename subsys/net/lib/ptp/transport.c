@@ -15,11 +15,18 @@ LOG_MODULE_REGISTER(ptp_transport, CONFIG_PTP_LOG_LEVEL);
 
 #define INTERFACE_NAME_LEN (32)
 
+union mcast_addr {
+	struct in_addr ipv4;
+#if defined(CONFIG_PTP_UDP_IPv6_PROTOCOL)
+	struct in6_addr ipv6;
+#endif
+};
+
 #if CONFIG_PTP_UDP_IPv4_PROTOCOL
-static struct in_addr mcast_addr = {{{224, 0, 1, 129}}};
+static union mcast_addr mcast_addr = {.ipv4 = {{{224, 0, 1, 129}}}};
 #elif CONFIG_PTP_UDP_IPv6_PROTOCOL
-static struct in6_addr mcast_addr = {{{0xff, 0xe, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
-				       0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x1, 0x81}}};
+static union mcast_addr mcast_addr = {.ipv6 = {{{0xff, 0xe, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
+						 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x1, 0x81}}}};
 #else
 #error "Chosen PTP transport protocol not implemented"
 #endif
@@ -198,7 +205,7 @@ static int transport_send(int socket, int port, void *buf, int length, struct so
 		if (IS_ENABLED(CONFIG_PTP_UDP_IPv4_PROTOCOL)) {
 			m_addr.sa_family = AF_INET;
 			net_sin(&m_addr)->sin_port = htons(port);
-			net_sin(&m_addr)->sin_addr.s_addr = mcast_addr.s_addr;
+			net_sin(&m_addr)->sin_addr.s_addr = mcast_addr.ipv4.s_addr;
 
 		} else if (IS_ENABLED(CONFIG_PTP_UDP_IPv6_PROTOCOL)) {
 			m_addr.sa_family = AF_INET6;

@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2021 Sateesh Kotapati
+ * Copyright (c) 2025 Silicon Laboratories Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <silabs/xg22/efr32mg22.dtsi>
+#include <mem.h>
+
+/ {
+	soc {
+		compatible = "silabs,efr32mg22c224f512im40", "silabs,efr32mg22", "silabs,xg22",
+			     "silabs,efr32", "simple-bus";
+		model = "Silicon Labs EFR32MG22C224F512IM40 SoC";
+	};
+};
+
+&flash0 {
+	reg = <0x0 DT_SIZE_K(512)>;
+};
+
+&sram0 {
+	reg = <0x20000000 DT_SIZE_K(32)>;
+};

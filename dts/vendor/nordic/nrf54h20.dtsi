@@ -301,7 +301,7 @@
 			ranges = <0x0 0x52000000 0x1000000>;
 
 			cpuapp_hsfll: clock@d000 {
-				compatible = "nordic,nrf-hsfll-local";
+				compatible = "nordic,nrf-iron-hsfll-local";
 				#clock-cells = <0>;
 				reg = <0xd000 0x1000>;
 				clocks = <&fll16m>;
@@ -410,6 +410,16 @@
 				reg = <0x25000 0x1000>;
 				status = "disabled";
 				interrupts = <37 NRF_DEFAULT_IRQ_PRIORITY>;
+			};
+
+			gpiote0: gpiote@27000 {
+				compatible = "nordic,nrf-gpiote";
+				reg = <0x27000 0x1000>;
+				status = "disabled";
+				interrupts = <39 NRF_DEFAULT_IRQ_PRIORITY>;
+				instance = <0>;
+				no-port-event;
+				fixed-channels-supported;
 			};
 
 			timer020: timer@28000 {

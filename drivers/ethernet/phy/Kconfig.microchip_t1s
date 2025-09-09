@@ -5,7 +5,7 @@ config PHY_MICROCHIP_T1S
 	bool "Microchip 10BASE-T1S Ethernet PHYs Driver"
 	default y
 	depends on DT_HAS_MICROCHIP_T1S_PHY_ENABLED
-	depends on MDIO
+	select MDIO
 	select PHY_OA_TC14_PLCA_LIB
 	help
 	  Enable Microchip's LAN8650/1 Rev.B0/B1 Internal PHYs and

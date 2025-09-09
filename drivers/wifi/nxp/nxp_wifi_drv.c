@@ -579,6 +579,10 @@ static int nxp_wifi_start_ap(const struct device *dev, struct wifi_connect_req_p
 		wlan_uap_set_hidden_ssid(params->ignore_broadcast_ssid);
 	}
 
+	if (params->bandwidth == 0) {
+		params->bandwidth = WIFI_FREQ_BANDWIDTH_20MHZ;
+	}
+
 	switch (params->bandwidth) {
 	case WIFI_FREQ_BANDWIDTH_20MHZ:
 	case WIFI_FREQ_BANDWIDTH_40MHZ:
@@ -1945,7 +1949,7 @@ static NXP_WIFI_SET_FUNC_ATTR int nxp_wifi_send(const struct device *dev, struct
 #endif
 
 	/* Enqueue packet for transmission */
-	if (nxp_wifi_internal_tx(dev, pkt) != WM_SUCCESS) {
+	if (nxp_wifi_internal_tx(dev, pkt, 0) != WM_SUCCESS) {
 		goto out;
 	}
 

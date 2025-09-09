@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config USBD_MSC_CLASS
-	bool "USB Mass Storage Device class support [EXPERIMENTAL]"
+	bool "USB Mass Storage Device class support"
 	select DISK_ACCESS
 	help
 	  USB Mass Storage device class support.

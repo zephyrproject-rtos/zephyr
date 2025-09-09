@@ -1,0 +1,6 @@
+board:
+  name: fpb_rx261
+  full_name: RX261 Fast Prototyping Board
+  vendor: renesas
+  socs:
+  - name: r5f52618bgfp

@@ -13,7 +13,8 @@
 /**
  * @brief BBRAM emulator backend API
  * @defgroup bbram_emulator_backend BBRAM emulator backend API
- * @ingroup io_interfaces
+ * @ingroup io_emulators
+ * @ingroup bbram_interface
  * @{
  */
 

@@ -1,7 +1,7 @@
 .. _usb_hid_device:
 
-USB HID Class API
-#################
+USB HID Class API (deprecated)
+##############################
 
 USB device specific part for HID support defined in
 :zephyr_file:`include/zephyr/usb/class/usb_hid.h`.

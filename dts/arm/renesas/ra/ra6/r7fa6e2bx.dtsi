@@ -42,13 +42,6 @@
 			channel-available-mask = <0x139f7>;
 		};
 
-		id_code: id_code@100a120 {
-			compatible = "zephyr,memory-region";
-			reg = <0x0100a120 0x10>;
-			zephyr,memory-region = "ID_CODE";
-			status = "okay";
-		};
-
 		canfd_global: canfd_global@400b0000 {
 			compatible = "renesas,ra-canfd-global";
 			interrupts = <40 1>, <41 1>;
@@ -122,6 +115,45 @@
 			counter {
 				compatible = "renesas,ra-agt-counter";
 				status = "disabled";
+			};
+		};
+
+		option_setting_ofs_conf: option-setting-ofs-conf@100a100 {
+			compatible = "zephyr,memory-region";
+			reg = <0x0100a100 0x200>;
+			zephyr,memory-region = "OFS_CONF_MEMORY";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "okay";
+
+			option_setting_ofs0: option-setting-ofs0@100a100 {
+				compatible = "renesas,ofs-memory";
+				reg = <0x0100a100 0x4>;
+				status = "okay";
+			};
+
+			option_setting_osis: option-setting-osis@100a120 {
+				compatible = "renesas,ofs-memory";
+				reg = <0x0100a120 0x10>;
+				status = "okay";
+			};
+
+			option_setting_ofs1_sec: option-setting-ofs1-sec@100a200 {
+				compatible = "renesas,ofs-memory";
+				reg = <0x0100a200 0x4>;
+				status = "okay";
+			};
+
+			option_setting_bps_sec: option-setting-bps-sec@100a240 {
+				compatible = "renesas,ofs-memory";
+				reg = <0x0100a240 0x4>;
+				status = "okay";
+			};
+
+			option_setting_pbps_sec: option-setting-pbps-sec@100a260 {
+				compatible = "renesas,ofs-memory";
+				reg = <0x0100a260 0x4>;
+				status = "okay";
 			};
 		};
 	};
@@ -334,6 +366,7 @@
 	port-irq6-pins = <9>;
 	port-irq7-pins = <8>;
 	port-irq14-pins = <3>;
+	/delete-property/ vbatts-pins;
 };
 
 &ioport8 {

@@ -9,6 +9,7 @@ config NRF_RTC_TIMER
 	depends on SOC_COMPATIBLE_NRF
 	select TICKLESS_CAPABLE
 	select SYSTEM_TIMER_HAS_DISABLE_SUPPORT
+	select NRFX_PPI if SOC_NRF52832
 	depends on !$(dt_nodelabel_enabled,rtc1)
 	help
 	  This module implements a kernel device driver for the nRF Real Time
@@ -41,5 +42,11 @@ config NRF_RTC_TIMER_TRIGGER_OVERFLOW
 	help
 	  When enabled, a function can be used to trigger RTC overflow and
 	  effectively shift time into the future.
+
+config NRF_RTC_COUNTER_BIT_WIDTH
+	int
+	default 15 if SOC_NRF52832
+	default 24
+	range 15 24
 
 endif # NRF_RTC_TIMER

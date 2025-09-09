@@ -63,14 +63,14 @@ static int fake_driver_init(const struct device *dev)
 	static struct fake_driver_data fake_driver_data_##inst;                                    \
 	static void fake_driver_irq_config_func_##inst(void)                                       \
 	{                                                                                          \
-		IRQ_CONNECT(TEST_IRQ_NUM, TEST_IRQ_PRIO, fake_driver_isr,                          \
+		IRQ_CONNECT(TEST_IRQ_NUM, CONFIG_TEST_IRQ_PRIO, fake_driver_isr,                   \
 			    DEVICE_DT_INST_GET(inst), 0);                                          \
 		irq_enable(TEST_IRQ_NUM);                                                          \
 	}                                                                                          \
 	static struct fake_driver_config fake_driver_config_##inst = {                             \
 		.irq_config_func = fake_driver_irq_config_func_##inst,                             \
 		.irq_num = TEST_IRQ_NUM,                                                           \
-		.irq_priority = TEST_IRQ_PRIO,                                                     \
+		.irq_priority = CONFIG_TEST_IRQ_PRIO,                                              \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(inst, &fake_driver_init, NULL, &fake_driver_data_##inst,             \
 			      &fake_driver_config_##inst, PRE_KERNEL_1,                            \

@@ -6,6 +6,7 @@
 #include <arm/armv8-m.dtsi>
 #include <mem.h>
 #include <freq.h>
+#include <zephyr/dt-bindings/adc/adc.h>
 
 / {
 	compatible = "renesas,r9a07g054";
@@ -32,6 +33,17 @@
 	};
 
 	soc {
+		adc: adc@40059000 {
+			compatible = "renesas,rz-adc-c";
+			reg = <0x40059000 DT_SIZE_K(1)>;
+			interrupts = <347 3>;
+			interrupt-names = "scanend";
+			#io-channel-cells = <1>;
+			vref-mv = <1800>;
+			channel-available-mask = <0xFF>;
+			status = "disabled";
+		};
+
 		pinctrl: pin-controller@41030000 {
 			compatible = "renesas,rzv-pinctrl";
 			reg = <0x41030000 DT_SIZE_K(64)>;
@@ -538,6 +550,230 @@
 			interrupts = <400 1>, <401 1>, <402 1>, <403 1>, <404 1>;
 			interrupt-names = "eri", "bri", "rxi", "txi", "tei";
 			status = "disabled";
+		};
+
+		gpt32e0: gpt32e@40048000 {
+			compatible = "renesas,rz-gpt";
+			reg = <0x40048000 0xa4>;
+			channel = <0>;
+			interrupts = <218 1>, <219 1>, <220 1>, <221 1>, <222 1>,
+				     <223 1>, <224 1>, <225 1>, <226 1>, <227 1>;
+			interrupt-names = "ccmpa", "ccmpb", "cmpc", "cmpd", "cmpe",
+					  "cmpf", "adtrga", "adtrgb", "ovf", "unf";
+			prescaler = <1>;
+			status = "disabled";
+
+			pwm {
+				compatible = "renesas,rz-gpt-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		gpt32e1: gpt32e@40048100 {
+			compatible = "renesas,rz-gpt";
+			reg = <0x40048100 0xa4>;
+			channel = <1>;
+			interrupts = <231 1>, <232 1>, <233 1>, <234 1>, <235 1>,
+				     <236 1>, <237 1>, <238 1>, <239 1>, <240 1>;
+			interrupt-names = "ccmpa", "ccmpb", "cmpc", "cmpd", "cmpe",
+					  "cmpf", "adtrga", "adtrgb", "ovf", "unf";
+			prescaler = <1>;
+			status = "disabled";
+
+			pwm {
+				compatible = "renesas,rz-gpt-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		gpt32e2: gpt32e@40048200 {
+			compatible = "renesas,rz-gpt";
+			reg = <0x40048200 0xa4>;
+			channel = <2>;
+			interrupts = <244 1>, <245 1>, <246 1>, <247 1>, <248 1>,
+				     <249 1>, <250 1>, <251 1>, <252 1>, <253 1>;
+			interrupt-names = "ccmpa", "ccmpb", "cmpc", "cmpd", "cmpe",
+					  "cmpf", "adtrga", "adtrgb", "ovf", "unf";
+			prescaler = <1>;
+			status = "disabled";
+
+			pwm {
+				compatible = "renesas,rz-gpt-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		gpt32e3: gpt32e@40048300 {
+			compatible = "renesas,rz-gpt";
+			reg = <0x40048300 0xa4>;
+			channel = <3>;
+			interrupts = <257 1>, <258 1>, <259 1>, <260 1>, <261 1>,
+				     <262 1>, <263 1>, <264 1>, <265 1>, <266 1>;
+			interrupt-names = "ccmpa", "ccmpb", "cmpc", "cmpd", "cmpe",
+					  "cmpf", "adtrga", "adtrgb", "ovf", "unf";
+			prescaler = <1>;
+			status = "disabled";
+
+			pwm {
+				compatible = "renesas,rz-gpt-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		gpt32e4: gpt32e@40048400 {
+			compatible = "renesas,rz-gpt";
+			reg = <0x40048400 0xa4>;
+			channel = <4>;
+			interrupts = <270 1>, <271 1>, <272 1>, <273 1>, <274 1>,
+				     <275 1>, <276 1>, <277 1>, <278 1>, <279 1>;
+			interrupt-names = "ccmpa", "ccmpb", "cmpc", "cmpd", "cmpe",
+					  "cmpf", "adtrga", "adtrgb", "ovf", "unf";
+			prescaler = <1>;
+			status = "disabled";
+
+			pwm {
+				compatible = "renesas,rz-gpt-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		gpt32e5: gpt32e@40048500 {
+			compatible = "renesas,rz-gpt";
+			reg = <0x40048500 0xa4>;
+			channel = <5>;
+			interrupts = <283 1>, <284 1>, <285 1>, <286 1>, <287 1>,
+				     <288 1>, <289 1>, <290 1>, <291 1>, <292 1>;
+			interrupt-names = "ccmpa", "ccmpb", "cmpc", "cmpd", "cmpe",
+					  "cmpf", "adtrga", "adtrgb", "ovf", "unf";
+			prescaler = <1>;
+			status = "disabled";
+
+			pwm {
+				compatible = "renesas,rz-gpt-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		gpt32e6: gpt32e@40048600 {
+			compatible = "renesas,rz-gpt";
+			reg = <0x40048600 0xa4>;
+			channel = <6>;
+			interrupts = <296 1>, <297 1>, <298 1>, <299 1>, <300 1>,
+				     <301 1>, <302 1>, <303 1>, <304 1>, <305 1>;
+			interrupt-names = "ccmpa", "ccmpb", "cmpc", "cmpd", "cmpe",
+					  "cmpf", "adtrga", "adtrgb", "ovf", "unf";
+			prescaler = <1>;
+			status = "disabled";
+
+			pwm {
+				compatible = "renesas,rz-gpt-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		gpt32e7: gpt32e@40048700 {
+			compatible = "renesas,rz-gpt";
+			reg = <0x40048700 0xa4>;
+			channel = <7>;
+			interrupts = <309 1>, <310 1>, <311 1>, <312 1>, <313 1>,
+				     <314 1>, <315 1>, <316 1>, <317 1>, <318 1>;
+			interrupt-names = "ccmpa", "ccmpb", "cmpc", "cmpd", "cmpe",
+					  "cmpf", "adtrga", "adtrgb", "ovf", "unf";
+			prescaler = <1>;
+			status = "disabled";
+
+			pwm {
+				compatible = "renesas,rz-gpt-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		intc: intc@410b0000 {
+			compatible = "renesas,rz-intc";
+			reg = <0x410b0000 DT_SIZE_K(64)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupt-parent = <&nvic>;
+
+			irq0: irq@0 {
+				compatible = "renesas,rz-ext-irq";
+				reg = <0x0>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts = <1 1>;
+				status = "disabled";
+			};
+
+			irq1: irq@1 {
+				compatible = "renesas,rz-ext-irq";
+				reg = <0x1>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts = <2 1>;
+				status = "disabled";
+			};
+
+			irq2: irq@2 {
+				compatible = "renesas,rz-ext-irq";
+				reg = <0x2>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts = <3 1>;
+				status = "disabled";
+			};
+
+			irq3: irq@3 {
+				compatible = "renesas,rz-ext-irq";
+				reg = <0x3>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts = <4 1>;
+				status = "disabled";
+			};
+
+			irq4: irq@4 {
+				compatible = "renesas,rz-ext-irq";
+				reg = <0x4>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts = <5 1>;
+				status = "disabled";
+			};
+
+			irq5: irq@5 {
+				compatible = "renesas,rz-ext-irq";
+				reg = <0x5>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts = <6 1>;
+				status = "disabled";
+			};
+
+			irq6: irq@6 {
+				compatible = "renesas,rz-ext-irq";
+				reg = <0x6>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts = <7 1>;
+				status = "disabled";
+			};
+
+			irq7: irq@7 {
+				compatible = "renesas,rz-ext-irq";
+				reg = <0x7>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts = <8 1>;
+				status = "disabled";
+			};
 		};
 	};
 };

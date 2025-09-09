@@ -9,7 +9,6 @@ tests:
   drivers.watchdog.wdt_error_cases:
     platform_allow:
       - nrf5340dk/nrf5340/cpuapp
-      - nrf54l09pdk/nrf54l09/cpuapp
       - nrf54h20dk/nrf54h20/cpuapp
       - nrf54h20dk/nrf54h20/cpurad
       - nrf54l15dk/nrf54l15/cpuapp
@@ -18,7 +17,15 @@ tests:
       - nrf9280pdk/nrf9280/cpurad
       - ophelia4ev/nrf54l15/cpuapp
       - raytac_an54l15q_db/nrf54l15/cpuapp
+      - xg24_rb4187c
+      - xg27_dk2602a
     integration_platforms:
       - nrf54l15dk/nrf54l15/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
       - raytac_an54l15q_db/nrf54l15/cpuapp
+  drivers.watchdog.wdt_error_cases_pm:
+    platform_allow:
+      - xg24_rb4187c
+      - xg27_dk2602a
+    extra_configs:
+      - CONFIG_PM=y

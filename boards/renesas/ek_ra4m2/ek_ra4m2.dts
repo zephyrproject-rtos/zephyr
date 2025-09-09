@@ -56,6 +56,8 @@
 
 	aliases {
 		led0 = &led1;
+		led1 = &led2;
+		led2 = &led3;
 		sw0 = &button0;
 		sw1 = &button1;
 		watchdog0 = &wdt;

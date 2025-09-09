@@ -16,7 +16,7 @@
  * - Bit 8: Drive strength (0=NORMAL, 1=HIGH)
  * - Bit 9: Input type (0=SCHMITT, 1=CMOS)
  *
- * @ingroup gpio_interface
+ * @ingroup gpio_interface_ext
  * @{
  */
 

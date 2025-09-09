@@ -33,26 +33,26 @@ static int init_zms(void)
 }
 SYS_INIT(init_zms, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
 
+#ifdef CONFIG_SECURE_STORAGE_64_BIT_UID
+
 /* Bit position of the ITS caller ID in the ZMS entry ID. */
 #define ITS_CALLER_ID_POS 30
 /* Make sure that every ITS caller ID fits in ZMS entry IDs at the defined position. */
 BUILD_ASSERT(1 << (32 - ITS_CALLER_ID_POS) >= SECURE_STORAGE_ITS_CALLER_COUNT);
 
-static bool has_forbidden_bits_set(secure_storage_its_uid_t uid)
+static uint32_t zms_id_from(secure_storage_its_uid_t uid)
 {
-	if (uid.uid & GENMASK64(63, ITS_CALLER_ID_POS)) {
-		LOG_DBG("UID %u/0x%llx cannot be used as it has bits set past "
-			"the first " STRINGIFY(ITS_CALLER_ID_POS) " ones.",
-			uid.caller_id, (unsigned long long)uid.uid);
-		return true;
-	}
-	return false;
+	__ASSERT_NO_MSG(!(uid.uid & GENMASK64(63, ITS_CALLER_ID_POS)));
+	return (uint32_t)uid.uid | (uid.caller_id << ITS_CALLER_ID_POS);
 }
+#else
 
 static uint32_t zms_id_from(secure_storage_its_uid_t uid)
 {
-	return (uint32_t)uid.uid | (uid.caller_id << ITS_CALLER_ID_POS);
+	BUILD_ASSERT(sizeof(uid) == sizeof(uint32_t));
+	return *(uint32_t *)&uid;
 }
+#endif /* CONFIG_SECURE_STORAGE_64_BIT_UID */
 
 psa_status_t secure_storage_its_store_set(secure_storage_its_uid_t uid,
 					  size_t data_length, const void *data)
@@ -60,10 +60,6 @@ psa_status_t secure_storage_its_store_set(secure_storage_its_uid_t uid,
 	psa_status_t psa_ret;
 	ssize_t zms_ret;
 	const uint32_t zms_id = zms_id_from(uid);
-
-	if (has_forbidden_bits_set(uid)) {
-		return PSA_ERROR_INVALID_ARGUMENT;
-	}
 
 	zms_ret = zms_write(&s_zms, zms_id, data, data_length);
 	if (zms_ret == data_length) {
@@ -73,7 +69,7 @@ psa_status_t secure_storage_its_store_set(secure_storage_its_uid_t uid,
 	} else {
 		psa_ret = PSA_ERROR_STORAGE_FAILURE;
 	}
-	LOG_DBG("%s 0x%x with %zu bytes. (%zd)", (psa_ret == PSA_SUCCESS) ?
+	LOG_DBG("%s %#x with %zu bytes. (%zd)", (psa_ret == PSA_SUCCESS) ?
 		"Wrote" : "Failed to write", zms_id, data_length, zms_ret);
 	return psa_ret;
 }
@@ -85,10 +81,6 @@ psa_status_t secure_storage_its_store_get(secure_storage_its_uid_t uid, size_t d
 	ssize_t zms_ret;
 	const uint32_t zms_id = zms_id_from(uid);
 
-	if (has_forbidden_bits_set(uid)) {
-		return PSA_ERROR_INVALID_ARGUMENT;
-	}
-
 	zms_ret = zms_read(&s_zms, zms_id, data, data_size);
 	if (zms_ret > 0) {
 		*data_length = zms_ret;
@@ -98,7 +90,7 @@ psa_status_t secure_storage_its_store_get(secure_storage_its_uid_t uid, size_t d
 	} else {
 		psa_ret = PSA_ERROR_STORAGE_FAILURE;
 	}
-	LOG_DBG("%s 0x%x for up to %zu bytes. (%zd)", (psa_ret != PSA_ERROR_STORAGE_FAILURE) ?
+	LOG_DBG("%s %#x for up to %zu bytes. (%zd)", (psa_ret != PSA_ERROR_STORAGE_FAILURE) ?
 		"Read" : "Failed to read", zms_id, data_size, zms_ret);
 	return psa_ret;
 }
@@ -108,12 +100,8 @@ psa_status_t secure_storage_its_store_remove(secure_storage_its_uid_t uid)
 	int ret;
 	const uint32_t zms_id = zms_id_from(uid);
 
-	if (has_forbidden_bits_set(uid)) {
-		return PSA_ERROR_INVALID_ARGUMENT;
-	}
-
 	ret = zms_delete(&s_zms, zms_id);
-	LOG_DBG("%s 0x%x. (%d)", ret ? "Failed to delete" : "Deleted", zms_id, ret);
+	LOG_DBG("%s %#x. (%d)", ret ? "Failed to delete" : "Deleted", zms_id, ret);
 
 	return ret ? PSA_ERROR_STORAGE_FAILURE : PSA_SUCCESS;
 }

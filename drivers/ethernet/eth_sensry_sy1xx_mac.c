@@ -103,7 +103,7 @@ struct sy1xx_mac_dev_data {
 };
 
 /* prototypes */
-static int sy1xx_mac_set_mac_addr(const struct device *dev, uint8_t *mac_addr);
+static int sy1xx_mac_set_mac_addr(const struct device *dev);
 static int sy1xx_mac_set_promiscuous_mode(const struct device *dev, bool promiscuous_mode);
 static int sy1xx_mac_set_config(const struct device *dev, enum ethernet_config_type type,
 				const struct ethernet_config *config);
@@ -208,7 +208,6 @@ static int sy1xx_mac_start(const struct device *dev)
 		sys_rand_get(&data->mac_addr, 6);
 		/* Set MAC address locally administered, unicast (LAA) */
 		data->mac_addr[0] |= 0x02;
-
 	}
 
 	sy1xx_mac_set_mac_addr(dev);
@@ -312,7 +311,7 @@ static void sy1xx_mac_iface_init(struct net_if *iface)
 	struct sy1xx_mac_dev_config *cfg = (struct sy1xx_mac_dev_config *)dev->config;
 	struct sy1xx_mac_dev_data *const data = dev->data;
 
-	LOG_INF("Interface init %s (%.8x)", net_if_get_device(iface)->name, iface);
+	LOG_INF("Interface init %s (%p)", net_if_get_device(iface)->name, iface);
 
 	data->iface = iface;
 
@@ -571,7 +570,7 @@ const struct ethernet_api sy1xx_mac_driver_api = {
 		.base_addr = DT_INST_REG_ADDR_BY_NAME(n, data),                                    \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
 		.promiscuous_mode = DT_INST_PROP_OR(n, promiscuous_mode, false),                   \
-		.use_zephyr_random_mac = DT_INST_NODE_HAS_PROP(n, zephyr_random_mac_address),      \
+		.use_zephyr_random_mac = DT_INST_PROP(n, zephyr_random_mac_address),               \
 		.phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(0, phy_handle))};                         \
                                                                                                    \
 	static struct sy1xx_mac_dma_buffers __attribute__((section(".udma_access")))               \

@@ -524,10 +524,20 @@ config BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY
 	  that is part of PDU data.
 
 config BT_CTRL_ADV_ADI_IN_SCAN_RSP
+	bool "Include ADI in AUX_SCAN_RSP PDU [DEPRECATED]"
+	depends on BT_BROADCASTER && BT_CTLR_ADV_EXT
+	select BT_CTLR_ADV_ADI_IN_SCAN_RSP
+	select DEPRECATED
+	help
+	  DEPRECATED: Renamed as BT_CTLR_ADV_ADI_IN_SCAN_RSP.
+
+	  Enable ADI field in AUX_SCAN_RSP PDU.
+
+config BT_CTLR_ADV_ADI_IN_SCAN_RSP
 	bool "Include ADI in AUX_SCAN_RSP PDU"
 	depends on BT_BROADCASTER && BT_CTLR_ADV_EXT
 	help
-	  Enable ADI field in AUX_SCAN_RSP PDU
+	  Enable ADI field in AUX_SCAN_RSP PDU.
 
 config BT_CTLR_SCAN_AUX_USE_CHAINS
 	bool "Use new chains based implementation for following advertising chains"
@@ -1126,7 +1136,7 @@ config BT_CTLR_FORCE_MD_AUTO
 
 config BT_CTLR_CONN_RANDOM_FORCE
 	bool "Random forced scheduling for peripheral on missed anchor point"
-	depends on BT_PERIPHERAL
+	depends on BT_PERIPHERAL && (BT_MAX_CONN > 1)
 	default y
 	help
 	  When enabled, controller will have legacy behavior and randomly force
@@ -1259,7 +1269,6 @@ config BT_TICKER_REMAINDER_GET
 	depends on BT_TICKER_REMAINDER_SUPPORT
 	select BT_TICKER_NEXT_SLOT_GET
 	select BT_TICKER_NEXT_SLOT_GET_MATCH
-	default y
 	help
 	  This option enables ticker interface to iterate through active
 	  ticker nodes, returning tick to expire and remainder from a reference

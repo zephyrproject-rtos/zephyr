@@ -25,6 +25,7 @@ def fixture_adapter(tmp_path) -> HardwareAdapter:
         platform='platform',
         id='p_id',
         base_timeout=5.0,
+        flash_command='',
     )
     return HardwareAdapter(device_config)
 
@@ -179,6 +180,14 @@ def test_if_get_command_returns_proper_string_with_west_flash_extra_args(
         'west', 'flash', '--skip-rebuild', '--build-dir', 'build', '--runner', 'pyocd',
         '--', '--board-id=foobar', '--erase'
     ]
+
+
+def test_if_get_command_flash_command(device: HardwareAdapter) -> None:
+    device.device_config.build_dir = Path('build')
+    device.device_config.flash_command = ['flash_command', '--with-arg']
+    device.generate_command()
+    assert isinstance(device.command, list)
+    assert device.command == ['flash_command', '--build-dir', 'build', '--board-id', 'p_id', '--with-arg']
 
 
 def test_if_hardware_adapter_raises_exception_empty_command(device: HardwareAdapter) -> None:

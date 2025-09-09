@@ -14,6 +14,7 @@
 
 	chosen {
 		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
 		zephyr,itcm = &itcm;
 		zephyr,dtcm = &dtcm;
 		zephyr,sram = &sram0;
@@ -26,18 +27,30 @@
 	clock-frequency = <DT_FREQ_M(192)>;
 };
 
-&spi1 {
-	#address-cells = <1>;
-	#size-cells = <0>;
-	reg = <0x4000b000 0x1000 0x23000000 0xc00000>;
+&flashctrl {
+	flash0: flash@23000000 {
+		compatible = "soc-nv-flash", "issi,is25lp128";
+		reg = <0x23000000 (0x1000000 - 0x2000)>;
+		write-block-size = <256>;
+		erase-block-size = <DT_SIZE_K(4)>;
+		/* jedec-id = [96 60 18]; */
 
-	flash0: flash@0 {
-		compatible = "issi,is25lp128", "jedec,spi-nor";
-		status = "disabled";
-		size = <DT_SIZE_M(128)>;
-		jedec-id = [96 60 18];
-		reg = <0>;
-		spi-max-frequency = <DT_FREQ_M(133)>;
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			slot0_partition: partition@0 {
+				label = "image-0";
+				reg = <0x00000000 0x100000>;
+				read-only;
+			};
+
+			storage_partition: partition@100000 {
+				label = "storage";
+				reg = <0x00100000 (0xF00000 - 0x2000)>;
+			};
+		};
 	};
 };
 

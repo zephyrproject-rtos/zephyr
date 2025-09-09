@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 def test_sensor_shell_info(shell: Shell):
     logger.info('send "sensor info" command')
 
+    shell.wait_for_prompt()
     lines = shell.exec_command('sensor info')
     assert any(['device name: sensor@0' in line for line in lines]), 'expected response not found'
     assert any(['device name: sensor@1' in line for line in lines]), 'expected response not found'
@@ -25,6 +26,7 @@ def test_sensor_shell_get(shell: Shell):
     # for-loop in `parse_named_int()` will go through everything
     for channel in range(59):
         logger.info(f'channel {channel}')
+        shell.wait_for_prompt()
         lines = shell.exec_command(f'sensor get sensor@0 {channel}')
         assert any([f'channel type={channel}' in line for line in lines]), 'expected response not found'
 
@@ -34,9 +36,11 @@ def test_sensor_shell_get(shell: Shell):
 def test_sensor_shell_attr_get(shell: Shell):
     logger.info('send "sensor attr_get" command')
 
+    shell.wait_for_prompt()
     lines = shell.exec_command('sensor attr_get sensor@0 co2 sampling_frequency')
     assert any(['sensor@0(channel=co2, attr=sampling_frequency)' in line for line in lines]), 'expected response not found'
 
+    shell.wait_for_prompt()
     lines = shell.exec_command('sensor attr_get sensor@1 54 3')
     assert any(['sensor@1(channel=gauge_state_of_health, attr=slope_th)' in line for line in lines]), 'expected response not found'
 
@@ -46,10 +50,12 @@ def test_sensor_shell_attr_get(shell: Shell):
 def test_sensor_shell_attr_set(shell: Shell):
     logger.info('send "sensor attr_set" command')
 
+    shell.wait_for_prompt()
     lines = shell.exec_command('sensor attr_set sensor@0 co2 sampling_frequency 1')
     expected_line = 'sensor@0 channel=co2, attr=sampling_frequency set to value=1'
     assert any([expected_line in line for line in lines]), 'expected response not found'
 
+    shell.wait_for_prompt()
     lines = shell.exec_command('sensor attr_set sensor@1 54 3 1')
     expected_line = 'sensor@1 channel=gauge_state_of_health, attr=slope_th set to value=1'
     assert any([expected_line in line for line in lines]), 'expected response not found'
@@ -60,10 +66,12 @@ def test_sensor_shell_attr_set(shell: Shell):
 def test_sensor_shell_trig(shell: Shell):
     logger.info('send "sensor trig" command')
 
+    shell.wait_for_prompt()
     lines = shell.exec_command('sensor trig sensor@0 on data_ready')
     expected_line = 'Enabled trigger idx=1 data_ready on device sensor@0'
     assert any([expected_line in line for line in lines]), 'expected response not found'
 
+    shell.wait_for_prompt()
     lines = shell.exec_command('sensor trig sensor@0 off data_ready')
     expected_line = 'Disabled trigger idx=1 data_ready on device sensor@0'
     assert any([expected_line in line for line in lines]), 'expected response not found'

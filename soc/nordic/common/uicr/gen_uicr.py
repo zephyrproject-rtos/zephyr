@@ -7,24 +7,19 @@ from __future__ import annotations
 
 import argparse
 import ctypes as c
-import math
-import pickle
-import re
 import sys
-from collections import defaultdict
 from itertools import groupby
 
 from elftools.elf.elffile import ELFFile
 from intelhex import IntelHex
 
+# The UICR format version produced by this script
+UICR_FORMAT_VERSION_MAJOR = 2
+UICR_FORMAT_VERSION_MINOR = 0
+
 # Name of the ELF section containing PERIPHCONF entries.
 # Must match the name used in the linker script.
 PERIPHCONF_SECTION = "uicr_periphconf_entry"
-
-# Expected nodelabel of the UICR devicetree node, used to extract its location from the devicetree.
-UICR_NODELABEL = "uicr"
-# Nodelabel of the PERIPHCONF devicetree node, used to extract its location from the devicetree.
-PERIPHCONF_NODELABEL = "periphconf_partition"
 
 # Common values for representing enabled/disabled in the UICR format.
 ENABLED_VALUE = 0xFFFF_FFFF
@@ -45,6 +40,14 @@ class PeriphconfEntry(c.LittleEndianStructure):
 PERIPHCONF_ENTRY_SIZE = c.sizeof(PeriphconfEntry)
 
 
+class Version(c.LittleEndianStructure):
+    _pack_ = 1
+    _fields_ = [
+        ("MINOR", c.c_uint16),
+        ("MAJOR", c.c_uint16),
+    ]
+
+
 class Approtect(c.LittleEndianStructure):
     _pack_ = 1
     _fields_ = [
@@ -63,23 +66,38 @@ class Protectedmem(c.LittleEndianStructure):
     ]
 
 
-class Recovery(c.LittleEndianStructure):
+class Wdtstart(c.LittleEndianStructure):
     _pack_ = 1
     _fields_ = [
         ("ENABLE", c.c_uint32),
-        ("PROCESSOR", c.c_uint32),
-        ("INITSVTOR", c.c_uint32),
-        ("SIZE4KB", c.c_uint32),
+        ("INSTANCE", c.c_uint32),
+        ("CRV", c.c_uint32),
     ]
 
 
-class Its(c.LittleEndianStructure):
+class SecurestorageCrypto(c.LittleEndianStructure):
+    _pack_ = 1
+    _fields_ = [
+        ("APPLICATIONSIZE1KB", c.c_uint32),
+        ("RADIOCORESIZE1KB", c.c_uint32),
+    ]
+
+
+class SecurestorageIts(c.LittleEndianStructure):
+    _pack_ = 1
+    _fields_ = [
+        ("APPLICATIONSIZE1KB", c.c_uint32),
+        ("RADIOCORESIZE1KB", c.c_uint32),
+    ]
+
+
+class Securestorage(c.LittleEndianStructure):
     _pack_ = 1
     _fields_ = [
         ("ENABLE", c.c_uint32),
         ("ADDRESS", c.c_uint32),
-        ("APPLICATIONSIZE", c.c_uint32),
-        ("RADIOCORESIZE", c.c_uint32),
+        ("CRYPTO", SecurestorageCrypto),
+        ("ITS", SecurestorageIts),
     ]
 
 
@@ -101,21 +119,82 @@ class Mpcconf(c.LittleEndianStructure):
     ]
 
 
+class SecondaryTrigger(c.LittleEndianStructure):
+    _pack_ = 1
+    _fields_ = [
+        ("ENABLE", c.c_uint32),
+        ("RESETREAS", c.c_uint32),
+        ("RESERVED", c.c_uint32),
+    ]
+
+
+class SecondaryProtectedmem(c.LittleEndianStructure):
+    _pack_ = 1
+    _fields_ = [
+        ("ENABLE", c.c_uint32),
+        ("SIZE4KB", c.c_uint32),
+    ]
+
+
+class SecondaryWdtstart(c.LittleEndianStructure):
+    _pack_ = 1
+    _fields_ = [
+        ("ENABLE", c.c_uint32),
+        ("INSTANCE", c.c_uint32),
+        ("CRV", c.c_uint32),
+    ]
+
+
+class SecondaryPeriphconf(c.LittleEndianStructure):
+    _pack_ = 1
+    _fields_ = [
+        ("ENABLE", c.c_uint32),
+        ("ADDRESS", c.c_uint32),
+        ("MAXCOUNT", c.c_uint32),
+    ]
+
+
+class SecondaryMpcconf(c.LittleEndianStructure):
+    _pack_ = 1
+    _fields_ = [
+        ("ENABLE", c.c_uint32),
+        ("ADDRESS", c.c_uint32),
+        ("MAXCOUNT", c.c_uint32),
+    ]
+
+
+class Secondary(c.LittleEndianStructure):
+    _pack_ = 1
+    _fields_ = [
+        ("ENABLE", c.c_uint32),
+        ("PROCESSOR", c.c_uint32),
+        ("TRIGGER", SecondaryTrigger),
+        ("ADDRESS", c.c_uint32),
+        ("PROTECTEDMEM", SecondaryProtectedmem),
+        ("WDTSTART", SecondaryWdtstart),
+        ("PERIPHCONF", SecondaryPeriphconf),
+        ("MPCCONF", SecondaryMpcconf),
+    ]
+
+
 class Uicr(c.LittleEndianStructure):
     _pack_ = 1
     _fields_ = [
-        ("VERSION", c.c_uint32),
+        ("VERSION", Version),
         ("RESERVED", c.c_uint32),
         ("LOCK", c.c_uint32),
         ("RESERVED1", c.c_uint32),
         ("APPROTECT", Approtect),
         ("ERASEPROTECT", c.c_uint32),
         ("PROTECTEDMEM", Protectedmem),
-        ("RECOVERY", Recovery),
-        ("ITS", Its),
-        ("RESERVED2", c.c_uint32 * 7),
+        ("WDTSTART", Wdtstart),
+        ("RESERVED2", c.c_uint32),
+        ("SECURESTORAGE", Securestorage),
+        ("RESERVED3", c.c_uint32 * 5),
         ("PERIPHCONF", Periphconf),
         ("MPCCONF", Mpcconf),
+        ("SECONDARY", Secondary),
+        ("PADDING", c.c_uint32 * 15),
     ]
 
 
@@ -130,18 +209,6 @@ def main() -> None:
         ),
     )
     parser.add_argument(
-        "--in-config",
-        required=True,
-        type=argparse.FileType("r"),
-        help="Path to the .config file from the application build",
-    )
-    parser.add_argument(
-        "--in-edt-pickle",
-        required=True,
-        type=argparse.FileType("rb"),
-        help="Path to the edt.pickle file from the application build",
-    )
-    parser.add_argument(
         "--in-periphconf-elf",
         dest="in_periphconf_elfs",
         default=[],
@@ -154,66 +221,203 @@ def main() -> None:
         ),
     )
     parser.add_argument(
+        "--out-merged-hex",
+        required=True,
+        type=argparse.FileType("w", encoding="utf-8"),
+        help="Path to write the merged UICR+PERIPHCONF HEX file to",
+    )
+    parser.add_argument(
         "--out-uicr-hex",
         required=True,
         type=argparse.FileType("w", encoding="utf-8"),
-        help="Path to write the generated UICR HEX file to",
+        help="Path to write the UICR-only HEX file to",
     )
     parser.add_argument(
         "--out-periphconf-hex",
-        default=None,
         type=argparse.FileType("w", encoding="utf-8"),
-        help="Path to write the generated PERIPHCONF HEX file to",
+        help="Path to write the PERIPHCONF-only HEX file to",
+    )
+    parser.add_argument(
+        "--periphconf-address",
+        default=None,
+        type=lambda s: int(s, 0),
+        help="Absolute flash address of the PERIPHCONF partition (decimal or 0x-prefixed hex)",
+    )
+    parser.add_argument(
+        "--periphconf-size",
+        default=None,
+        type=lambda s: int(s, 0),
+        help="Size in bytes of the PERIPHCONF partition (decimal or 0x-prefixed hex)",
+    )
+    parser.add_argument(
+        "--uicr-address",
+        required=True,
+        type=lambda s: int(s, 0),
+        help="Absolute flash address of the UICR region (decimal or 0x-prefixed hex)",
+    )
+    parser.add_argument(
+        "--secondary",
+        action="store_true",
+        help="Enable secondary firmware support in UICR",
+    )
+    parser.add_argument(
+        "--secondary-address",
+        default=None,
+        type=lambda s: int(s, 0),
+        help="Absolute flash address of the secondary firmware (decimal or 0x-prefixed hex)",
+    )
+    parser.add_argument(
+        "--secondary-periphconf-address",
+        default=None,
+        type=lambda s: int(s, 0),
+        help=(
+            "Absolute flash address of the secondary PERIPHCONF partition "
+            "(decimal or 0x-prefixed hex)"
+        ),
+    )
+    parser.add_argument(
+        "--secondary-periphconf-size",
+        default=None,
+        type=lambda s: int(s, 0),
+        help="Size in bytes of the secondary PERIPHCONF partition (decimal or 0x-prefixed hex)",
+    )
+    parser.add_argument(
+        "--in-secondary-periphconf-elf",
+        dest="in_secondary_periphconf_elfs",
+        default=[],
+        action="append",
+        type=argparse.FileType("rb"),
+        help=(
+            "Path to an ELF file to extract secondary PERIPHCONF data from. "
+            "Can be provided multiple times. The secondary PERIPHCONF data from each ELF file "
+            "is combined in a single list which is sorted by ascending address and cleared "
+            "of duplicate entries."
+        ),
+    )
+    parser.add_argument(
+        "--out-secondary-periphconf-hex",
+        type=argparse.FileType("w", encoding="utf-8"),
+        help="Path to write the secondary PERIPHCONF-only HEX file to",
     )
     args = parser.parse_args()
 
     try:
+        # Validate argument dependencies
+        if args.out_periphconf_hex:
+            if args.periphconf_address is None:
+                raise ScriptError(
+                    "--periphconf-address is required when --out-periphconf-hex is used"
+                )
+            if args.periphconf_size is None:
+                raise ScriptError("--periphconf-size is required when --out-periphconf-hex is used")
+
+        # Validate secondary argument dependencies
+        if args.secondary and args.secondary_address is None:
+            raise ScriptError("--secondary-address is required when --secondary is used")
+
+        if args.out_secondary_periphconf_hex:
+            if args.secondary_periphconf_address is None:
+                raise ScriptError(
+                    "--secondary-periphconf-address is required when "
+                    "--out-secondary-periphconf-hex is used"
+                )
+            if args.secondary_periphconf_size is None:
+                raise ScriptError(
+                    "--secondary-periphconf-size is required when "
+                    "--out-secondary-periphconf-hex is used"
+                )
+
         init_values = DISABLED_VALUE.to_bytes(4, "little") * (c.sizeof(Uicr) // 4)
         uicr = Uicr.from_buffer_copy(init_values)
 
-        kconfig_str = args.in_config.read()
-        kconfig = parse_kconfig(kconfig_str)
+        uicr.VERSION.MAJOR = UICR_FORMAT_VERSION_MAJOR
+        uicr.VERSION.MINOR = UICR_FORMAT_VERSION_MINOR
 
-        edt = pickle.load(args.in_edt_pickle)
+        # Process periphconf data first and configure UICR completely before creating hex objects
+        periphconf_hex = IntelHex()
+        secondary_periphconf_hex = IntelHex()
 
-        try:
-            periphconf_partition = edt.label2node[PERIPHCONF_NODELABEL]
-        except LookupError as e:
-            raise ScriptError(
-                "Failed to find a PERIPHCONF partition in the devicetree. "
-                f"Expected a DT node with label '{PERIPHCONF_NODELABEL}'."
-            ) from e
+        if args.out_periphconf_hex:
+            periphconf_combined = extract_and_combine_periphconfs(args.in_periphconf_elfs)
 
-        flash_base_address = periphconf_partition.flash_controller.regs[0].addr
-        periphconf_address = flash_base_address + periphconf_partition.regs[0].addr
-        periphconf_size = periphconf_partition.regs[0].size
+            padding_len = args.periphconf_size - len(periphconf_combined)
+            periphconf_final = periphconf_combined + bytes([0xFF for _ in range(padding_len)])
 
-        periphconf_combined = extract_and_combine_periphconfs(args.in_periphconf_elfs)
-        padding_len = periphconf_size - len(periphconf_combined)
-        periphconf_final = periphconf_combined + bytes([0xFF for _ in range(padding_len)])
+            # Add periphconf data to periphconf hex object
+            periphconf_hex.frombytes(periphconf_final, offset=args.periphconf_address)
 
-        if kconfig.get("CONFIG_NRF_HALTIUM_UICR_PERIPHCONF") == "y":
+            # Configure UICR with periphconf settings
             uicr.PERIPHCONF.ENABLE = ENABLED_VALUE
-            uicr.PERIPHCONF.ADDRESS = periphconf_address
-            uicr.PERIPHCONF.MAXCOUNT = math.floor(periphconf_size / 8)
+            uicr.PERIPHCONF.ADDRESS = args.periphconf_address
 
-        try:
-            uicr_node = edt.label2node[UICR_NODELABEL]
-        except LookupError as e:
-            raise ScriptError(
-                "Failed to find UICR node in the devicetree. "
-                f"Expected a DT node with label '{UICR_NODELABEL}'."
-            ) from e
+            # MAXCOUNT is given in number of 8-byte peripheral
+            # configuration entries and periphconf_size is given in
+            # bytes. When setting MAXCOUNT based on the
+            # periphconf_size we must first assert that
+            # periphconf_size has not been misconfigured.
+            if args.periphconf_size % 8 != 0:
+                raise ScriptError(
+                    f"args.periphconf_size was {args.periphconf_size}, but must be divisible by 8"
+                )
 
+            uicr.PERIPHCONF.MAXCOUNT = args.periphconf_size // 8
+
+        # Handle secondary firmware configuration
+        if args.secondary:
+            uicr.SECONDARY.ENABLE = ENABLED_VALUE
+            uicr.SECONDARY.ADDRESS = args.secondary_address
+
+            # Handle secondary periphconf if provided
+            if args.out_secondary_periphconf_hex:
+                secondary_periphconf_combined = extract_and_combine_periphconfs(
+                    args.in_secondary_periphconf_elfs
+                )
+
+                padding_len = args.secondary_periphconf_size - len(secondary_periphconf_combined)
+                secondary_periphconf_final = secondary_periphconf_combined + bytes(
+                    [0xFF for _ in range(padding_len)]
+                )
+
+                # Add secondary periphconf data to secondary periphconf hex object
+                secondary_periphconf_hex.frombytes(
+                    secondary_periphconf_final, offset=args.secondary_periphconf_address
+                )
+
+                # Configure UICR with secondary periphconf settings
+                uicr.SECONDARY.PERIPHCONF.ENABLE = ENABLED_VALUE
+                uicr.SECONDARY.PERIPHCONF.ADDRESS = args.secondary_periphconf_address
+
+                # MAXCOUNT is given in number of 8-byte peripheral
+                # configuration entries and secondary_periphconf_size is given in
+                # bytes. When setting MAXCOUNT based on the
+                # secondary_periphconf_size we must first assert that
+                # secondary_periphconf_size has not been misconfigured.
+                if args.secondary_periphconf_size % 8 != 0:
+                    raise ScriptError(
+                        f"args.secondary_periphconf_size was {args.secondary_periphconf_size}, "
+                        f"but must be divisible by 8"
+                    )
+
+                uicr.SECONDARY.PERIPHCONF.MAXCOUNT = args.secondary_periphconf_size // 8
+
+        # Create UICR hex object with final UICR data
         uicr_hex = IntelHex()
-        uicr_hex.frombytes(bytes(uicr), offset=uicr_node.regs[0].addr)
+        uicr_hex.frombytes(bytes(uicr), offset=args.uicr_address)
 
-        uicr_hex.write_hex_file(args.out_uicr_hex)
+        # Create merged hex by combining UICR and periphconf hex objects
+        merged_hex = IntelHex()
+        merged_hex.fromdict(uicr_hex.todict())
 
-        if args.out_periphconf_hex is not None:
-            periphconf_hex = IntelHex()
-            periphconf_hex.frombytes(periphconf_final, offset=periphconf_address)
+        if args.out_periphconf_hex:
             periphconf_hex.write_hex_file(args.out_periphconf_hex)
+            merged_hex.fromdict(periphconf_hex.todict())
+
+        if args.out_secondary_periphconf_hex:
+            secondary_periphconf_hex.write_hex_file(args.out_secondary_periphconf_hex)
+            merged_hex.fromdict(secondary_periphconf_hex.todict())
+
+        merged_hex.write_hex_file(args.out_merged_hex)
+        uicr_hex.write_hex_file(args.out_uicr_hex)
 
     except ScriptError as e:
         print(f"Error: {e!s}")
@@ -253,17 +457,6 @@ def extract_and_combine_periphconfs(elf_files: list[argparse.FileType]) -> bytes
         final_periphconf[i] = entry
 
     return bytes(final_periphconf)
-
-
-def parse_kconfig(content: str) -> dict[str, str | None]:
-    result = defaultdict(None)
-    match_iter = re.finditer(
-        r"^(?P<config>(SB_)?CONFIG_[^=\s]+)=(?P<value>[^\s#])+$", content, re.MULTILINE
-    )
-    for match in match_iter:
-        result[match["config"]] = match["value"]
-
-    return result
 
 
 if __name__ == "__main__":

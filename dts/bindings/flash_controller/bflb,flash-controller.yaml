@@ -1,0 +1,5 @@
+description: Bouffalolab Flash Controller
+
+compatible: "bflb,flash-controller"
+
+include: flash-controller.yaml

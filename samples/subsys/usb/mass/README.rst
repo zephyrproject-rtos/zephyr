@@ -1,6 +1,6 @@
 .. zephyr:code-sample:: usb-mass
    :name: USB Mass Storage
-   :relevant-api: usbd_api usbd_msc_device _usb_device_core_api file_system_api
+   :relevant-api: usbd_api usbd_msc_device file_system_api
 
    Expose board's RAM or FLASH as a USB disk using USB Mass Storage driver.
 
@@ -43,9 +43,7 @@ for testing USB mass storage class implementation.
 FAT FS Example
 ==============
 
-If more than 96KiB are available, FAT files system can be used
-with a RAM-disk. Alternatively it is possible with the FLASH-based disk.
-In this example we will build the sample with a RAM-based disk:
+If more than 96KiB RAM are available, FAT files system can be used with a RAM-disk.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/usb/mass
@@ -54,10 +52,22 @@ In this example we will build the sample with a RAM-based disk:
    :goals: build
    :compact:
 
+Alternatively, FAT file system can be used on the SoC internal flash when the
+storage partition is large enough.
 
-In this example we will build the sample with a FLASH-based disk and FAT
-file system for Adafruit Feather nRF52840 Express.  This board configures
-to use the external 16 MiBi QSPI flash chip with a 2 MiBy FAT partition.
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/usb/mass
+   :board: frdm_k64f
+   :gen-args: -DEXTRA_DTC_OVERLAY_FILE="flashdisk.overlay" -DCONFIG_APP_MSC_STORAGE_FLASH_FATFS=y -DCONFIG_DISK_DRIVER_SDMMC=n
+   :goals: build
+   :compact:
+
+The internal flash storage partition on the SoC may be too small for the FAT
+file system. If the board has an external flash device, however, it can be used
+for the FAT file system. The sample includes a few board overlay files for
+configuring an external flash device. For example, there is an overlay file for
+Adafruit Feather nRF52840 Express that allows you to use an external 16 MiBy
+QSPI flash chip with a 2 MiBy FAT partition.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/usb/mass
@@ -156,9 +166,20 @@ the transfer speed over SPI is very slow.
 LittleFS Example
 ================
 
-This board configures to use the external 64 MiBi QSPI flash chip with a
-128 KiBy `littlefs`_ partition compatible with the one produced by the
-:zephyr:code-sample:`littlefs` sample.
+The sample can be built for any board that has a storage partition defined.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/usb/mass
+   :board: reel_board
+   :gen-args: -DEXTRA_DTC_OVERLAY_FILE="flashdisk.overlay" -DCONFIG_APP_MSC_STORAGE_FLASH_LITTLEFS=y
+   :goals: build
+   :compact:
+
+If more storage space is needed, the board can be configured to use an external
+flash device. This can be done using the same approach as in the FAT file
+system example. In this example, the nRF52840DK board is configured to use an
+external 64 MiB QSPI flash chip with a 128 KiBy `littlefs`_ partition
+compatible with the one produced by the :zephyr:code-sample:`littlefs` sample.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/usb/mass

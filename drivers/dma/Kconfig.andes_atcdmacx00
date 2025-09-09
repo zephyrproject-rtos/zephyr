@@ -1,0 +1,19 @@
+# Andestech ATCDMACx00 serial configuration options
+# Copyright (c) 2025 Andes Technology Corporation.
+
+# SPDX-License-Identifier: Apache-2.0
+
+
+config DMA_ANDES_ATCDMACX00
+	bool "Andes ATCDMACX00 DMA driver"
+	default y
+	depends on DT_HAS_ANDESTECH_ATCDMACX00_ENABLED
+	depends on !DCACHE || SOC_ANDES_V5_IOCP || NOCACHE_MEMORY
+	help
+	  Andes ATCDMACX00 DMA driver.
+
+if DMA_ANDES_ATCDMACX00
+config DMA_64BIT
+	default y
+	depends on 64BIT
+endif

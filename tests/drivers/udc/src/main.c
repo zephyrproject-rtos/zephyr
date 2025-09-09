@@ -576,7 +576,6 @@ ZTEST(udc_driver_test, test_udc_enabled)
 	test_udc_ep_halt(dev, &ed_bulk_out);
 	test_udc_ep_disable(dev, &ed_bulk_out);
 	test_udc_ep_dequeue(dev, &ed_bulk_out);
-	test_udc_ep_buf_free(dev, buf);
 
 	err = udc_shutdown(dev);
 	zassert_equal(err, -EBUSY, "Not failed to shoot-down UDC driver");

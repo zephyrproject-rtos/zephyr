@@ -1,9 +1,3 @@
-/**
- * @file
- *
- * @brief Public APIs for Video.
- */
-
 /*
  * Copyright (c) 2019 Linaro Limited.
  * Copyright 2025 NXP
@@ -11,12 +5,19 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/**
+ * @file
+ * @ingroup video_interface
+ * @brief Main header file for video driver API.
+ */
+
 #ifndef ZEPHYR_INCLUDE_VIDEO_H_
 #define ZEPHYR_INCLUDE_VIDEO_H_
 
 /**
- * @brief Video Interface
- * @defgroup video_interface Video Interface
+ * @brief Interfaces for video devices.
+ * @defgroup video_interface Video
  * @since 2.1
  * @version 1.1.0
  * @ingroup io_interfaces
@@ -57,7 +58,6 @@ enum video_buf_type {
 };
 
 /**
- * @struct video_format
  * @brief Video format structure
  *
  * Used to configure frame format.
@@ -82,7 +82,6 @@ struct video_format {
 };
 
 /**
- * @struct video_format_cap
  * @brief Video format capability
  *
  * Used to describe a video endpoint format capability.
@@ -105,7 +104,6 @@ struct video_format_cap {
 };
 
 /**
- * @struct video_caps
  * @brief Video format capabilities
  *
  * Used to describe video endpoint capabilities.
@@ -138,10 +136,9 @@ struct video_caps {
 };
 
 /**
- * @struct video_buffer
  * @brief Video buffer structure
  *
- * Represent a video frame.
+ * Represents a video frame.
  */
 struct video_buffer {
 	/** Pointer to driver specific data. */
@@ -171,9 +168,7 @@ struct video_buffer {
 };
 
 /**
- * @brief video_frmival_type enum
- *
- * Supported frame interval type of a video device.
+ * @brief Supported frame interval type of a video device.
  */
 enum video_frmival_type {
 	/** discrete frame interval type */
@@ -183,7 +178,6 @@ enum video_frmival_type {
 };
 
 /**
- * @struct video_frmival
  * @brief Video frame interval structure
  *
  * Used to describe a video frame interval.
@@ -196,7 +190,6 @@ struct video_frmival {
 };
 
 /**
- * @struct video_frmival_stepwise
  * @brief Video frame interval stepwise structure
  *
  * Used to describe the video frame interval stepwise type.
@@ -211,7 +204,6 @@ struct video_frmival_stepwise {
 };
 
 /**
- * @struct video_frmival_enum
  * @brief Video frame interval enumeration structure
  *
  * Used to describe the supported video frame intervals of a given video format.
@@ -231,19 +223,18 @@ struct video_frmival_enum {
 };
 
 /**
- * @brief video_event enum
+ * @brief Video signal result
  *
  * Identify video event.
  */
 enum video_signal_result {
-	VIDEO_BUF_DONE,
-	VIDEO_BUF_ABORTED,
-	VIDEO_BUF_ERROR,
+	VIDEO_BUF_DONE,    /**< Buffer is done */
+	VIDEO_BUF_ABORTED, /**< Buffer is aborted */
+	VIDEO_BUF_ERROR,   /**< Buffer is in error */
 };
 
 /**
- * @struct video_selection_target
- * @brief Video selection target enum
+ * @brief Video selection target
  *
  * Used to indicate which selection to query or set on a video device
  */
@@ -261,7 +252,6 @@ enum video_selection_target {
 };
 
 /**
- * @struct video_rect
  * @brief Description of a rectangle area.
  *
  * Used for crop/compose and possibly within drivers as well
@@ -278,7 +268,6 @@ struct video_rect {
 };
 
 /**
- * @struct video_selection
  * @brief Video selection (crop / compose) structure
  *
  * Used to describe the query and set selection target on a video device
@@ -1575,7 +1564,7 @@ int64_t video_get_csi_link_freq(const struct device *dev, uint8_t bpp, uint8_t l
  * @param pixfmt FourCC pixel format value (@ref video_pixel_formats).
  *
  * @retval 0 if the format is unhandled or if it is variable number of bits
- * @retval bit size of one pixel for this format
+ * @retval >0 bit size of one pixel for this format
  */
 static inline unsigned int video_bits_per_pixel(uint32_t pixfmt)
 {
@@ -1651,32 +1640,68 @@ static inline unsigned int video_bits_per_pixel(uint32_t pixfmt)
  */
 
 /**
- * @name MIPI CSI2 Data-types
+ * @name MIPI CSI-2 Data Types
+ * @brief Standard MIPI CSI-2 data type identifiers for camera sensor interfaces
+ *
+ * These constants define the data type field values used in MIPI CSI-2 packet headers to identify
+ * the format and encoding of transmitted image data. The data type field is 6 bits wide, allowing
+ * values from 0x00 to 0x3F.
  *
  * @{
  */
-#define VIDEO_MIPI_CSI2_DT_NULL	0x10
-#define VIDEO_MIPI_CSI2_DT_BLANKING	0x11
-#define VIDEO_MIPI_CSI2_DT_EMBEDDED_8	0x12
-#define VIDEO_MIPI_CSI2_DT_YUV420_8	0x18
-#define VIDEO_MIPI_CSI2_DT_YUV420_10	0x19
-#define VIDEO_MIPI_CSI2_DT_YUV420_CSPS_8	0x1c
-#define VIDEO_MIPI_CSI2_DT_YUV420_CSPS_10	0x1d
-#define VIDEO_MIPI_CSI2_DT_YUV422_8	0x1e
-#define VIDEO_MIPI_CSI2_DT_YUV422_10	0x1f
-#define VIDEO_MIPI_CSI2_DT_RGB444	0x20
-#define VIDEO_MIPI_CSI2_DT_RGB555	0x21
-#define VIDEO_MIPI_CSI2_DT_RGB565	0x22
-#define VIDEO_MIPI_CSI2_DT_RGB666	0x23
-#define VIDEO_MIPI_CSI2_DT_RGB888	0x24
-#define VIDEO_MIPI_CSI2_DT_RAW6		0x28
-#define VIDEO_MIPI_CSI2_DT_RAW7		0x29
-#define VIDEO_MIPI_CSI2_DT_RAW8		0x2a
-#define VIDEO_MIPI_CSI2_DT_RAW10	0x2b
-#define VIDEO_MIPI_CSI2_DT_RAW12	0x2c
-#define VIDEO_MIPI_CSI2_DT_RAW14	0x2d
 
-/* User-defined Data-Type range from 0x30 to 0x37 */
+/** NULL data type - used for padding or synchronization */
+#define VIDEO_MIPI_CSI2_DT_NULL                 0x10
+/** Blanking data - horizontal/vertical blanking information */
+#define VIDEO_MIPI_CSI2_DT_BLANKING             0x11
+/** Embedded 8-bit data - sensor metadata or configuration data */
+#define VIDEO_MIPI_CSI2_DT_EMBEDDED_8           0x12
+/** YUV 4:2:0 format with 8 bits per component */
+#define VIDEO_MIPI_CSI2_DT_YUV420_8             0x18
+/** YUV 4:2:0 format with 10 bits per component */
+#define VIDEO_MIPI_CSI2_DT_YUV420_10            0x19
+/** YUV 4:2:0 CSPS (Chroma Shifted Pixel Sampling) 8-bit format */
+#define VIDEO_MIPI_CSI2_DT_YUV420_CSPS_8	0x1c
+/** YUV 4:2:0 CSPS (Chroma Shifted Pixel Sampling) 10-bit format */
+#define VIDEO_MIPI_CSI2_DT_YUV420_CSPS_10	0x1d
+/** YUV 4:2:2 format with 8 bits per component */
+#define VIDEO_MIPI_CSI2_DT_YUV422_8             0x1e
+/** YUV 4:2:2 format with 10 bits per component */
+#define VIDEO_MIPI_CSI2_DT_YUV422_10            0x1f
+/** RGB format with 4 bits per color component */
+#define VIDEO_MIPI_CSI2_DT_RGB444               0x20
+/** RGB format with 5 bits per color component */
+#define VIDEO_MIPI_CSI2_DT_RGB555               0x21
+/** RGB format with 5-6-5 bits per R-G-B components */
+#define VIDEO_MIPI_CSI2_DT_RGB565               0x22
+/** RGB format with 6 bits per color component */
+#define VIDEO_MIPI_CSI2_DT_RGB666               0x23
+/** RGB format with 8 bits per color component */
+#define VIDEO_MIPI_CSI2_DT_RGB888               0x24
+/** Raw sensor data with 6 bits per pixel */
+#define VIDEO_MIPI_CSI2_DT_RAW6                 0x28
+/** Raw sensor data with 7 bits per pixel */
+#define VIDEO_MIPI_CSI2_DT_RAW7                 0x29
+/** Raw sensor data with 8 bits per pixel */
+#define VIDEO_MIPI_CSI2_DT_RAW8                 0x2a
+/** Raw sensor data with 10 bits per pixel */
+#define VIDEO_MIPI_CSI2_DT_RAW10                0x2b
+/** Raw sensor data with 12 bits per pixel */
+#define VIDEO_MIPI_CSI2_DT_RAW12                0x2c
+/** Raw sensor data with 14 bits per pixel */
+#define VIDEO_MIPI_CSI2_DT_RAW14                0x2d
+
+/**
+ * @brief User-defined data type generator macro
+ *
+ * Generates user-defined data type identifier for custom or proprietary formats.
+ * The MIPI CSI-2 specification reserves data types 0x30 to 0x37 for user-specific implementations.
+ *
+ * @note Parameter n must be in range 0-7 to generate valid user-defined data types
+ *
+ * @param n User-defined type index (0-7)
+ * @return Data type value in user-defined range (0x30-0x37)
+ */
 #define VIDEO_MIPI_CSI2_DT_USER(n)	(0x30 + (n))
 
 /**

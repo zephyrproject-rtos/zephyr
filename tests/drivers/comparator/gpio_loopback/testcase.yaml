@@ -13,11 +13,13 @@ tests:
       - xg24_dk2601b
       - xg24_rb4187c
       - xg29_rb4412a
+      - bg29_rb4420a
   drivers.comparator.gpio_loopback.mcux_acmp:
     platform_allow:
       - frdm_ke15z
   drivers.comparator.gpio_loopback.nrf_comp:
     extra_args:
+      - SNIPPET_ROOT="."
       - SNIPPET="gpio_loopback_nrf_comp"
     platform_allow:
       - nrf5340dk/nrf5340/cpuapp
@@ -27,6 +29,7 @@ tests:
       - ophelia4ev/nrf54l15/cpuapp
   drivers.comparator.gpio_loopback.nrf_lpcomp:
     extra_args:
+      - SNIPPET_ROOT="."
       - SNIPPET="gpio_loopback_nrf_lpcomp"
     platform_allow:
       - nrf5340dk/nrf5340/cpuapp

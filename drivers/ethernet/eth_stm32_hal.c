@@ -815,6 +815,12 @@ static void generate_mac(uint8_t *mac_addr)
 	result_mac_32_bits = crc32_ieee((uint8_t *)unique_device_ID_12_bytes, 12);
 	memcpy(&mac_addr[3], &result_mac_32_bits, 3);
 
+	/**
+	 * Set MAC address locally administered bit (LAA) as this is not assigned by the
+	 * manufacturer
+	 */
+	mac_addr[0] |= 0x02;
+
 #endif /* NODE_HAS_VALID_MAC_ADDR(DT_DRV_INST(0))) */
 #endif
 }
@@ -1503,14 +1509,7 @@ static int ptp_clock_stm32_rate_adjust(const struct device *dev, double ratio)
 	int key, ret;
 	uint32_t addend_val;
 
-	/* No change needed */
-	if (ratio == 1.0L) {
-		return 0;
-	}
-
 	key = irq_lock();
-
-	ratio *= (double)eth_dev_data->clk_ratio_adj;
 
 	/* Limit possible ratio */
 	if (ratio * 100 < CONFIG_ETH_STM32_HAL_PTP_CLOCK_ADJ_MIN_PCT ||
@@ -1518,9 +1517,6 @@ static int ptp_clock_stm32_rate_adjust(const struct device *dev, double ratio)
 		ret = -EINVAL;
 		goto error;
 	}
-
-	/* Save new ratio */
-	eth_dev_data->clk_ratio_adj = ratio;
 
 	/* Update addend register */
 	addend_val = UINT32_MAX * (double)eth_dev_data->clk_ratio * ratio;
@@ -1619,12 +1615,10 @@ static int ptp_stm32_init(const struct device *port)
 	 * clk_ratio is a ratio between desired PTP clock frequency and HCLK rate.
 	 * Because HCLK is defined by a physical oscillator, it might drift due
 	 * to manufacturing tolerances and environmental effects (e.g. temperature).
-	 * clk_ratio_adj compensates for such inaccuracies. It starts off as 1.0
-	 * and gets adjusted by calling ptp_clock_stm32_rate_adjust().
+	 * It gets adjusted by calling ptp_clock_stm32_rate_adjust().
 	 */
-	eth_dev_data->clk_ratio_adj = 1.0f;
 	addend_val =
-		UINT32_MAX * eth_dev_data->clk_ratio * eth_dev_data->clk_ratio_adj;
+		UINT32_MAX * eth_dev_data->clk_ratio;
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet)
 	heth->Instance->MACTSAR = addend_val;
 	heth->Instance->MACTSCR |= ETH_MACTSCR_TSADDREG;

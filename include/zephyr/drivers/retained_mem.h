@@ -6,7 +6,8 @@
 
 /**
  * @file
- * @brief Public API for retained memory drivers
+ * @ingroup retained_mem_interface
+ * @brief Main header file for retained memory driver API.
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_RETAINED_MEM_
@@ -28,8 +29,8 @@ BUILD_ASSERT(!(sizeof(off_t) > sizeof(size_t)),
 	     "Size of off_t must be equal or less than size of size_t");
 
 /**
- * @brief Retained memory driver interface
- * @defgroup retained_mem_interface Retained memory driver interface
+ * @brief Interfaces for retained memory.
+ * @defgroup retained_mem_interface Retained memory
  * @since 3.4
  * @version 0.8.0
  * @ingroup io_interfaces

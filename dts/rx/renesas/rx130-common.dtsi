@@ -22,7 +22,7 @@
 		#size-cells = <0>;
 
 		cpu0: cpu@0 {
-			compatible = "renesas,rx";
+			compatible = "renesas,rxv1";
 			device_type = "cpu";
 			reg = <0>;
 			status = "okay";
@@ -31,6 +31,8 @@
 
 	icu: interrupt-controller@87000 {
 		#interrupt-cells = <2>;
+		#address-cells = <1>;
+		#size-cells = <1>;
 		compatible = "renesas,rx-icu";
 		interrupt-controller;
 		reg = <0x0087000 0xff>,
@@ -40,7 +42,15 @@
 		      <0x0087500 0x0f>,
 		      <0x0087510 0x01>,
 		      <0x0087514 0x01>;
-		reg-names = "IR", "IER", "IPR", "FIR","IRQCR","IRQFLTE","IRQFLTC0";
+		reg-names = "IR", "IER", "IPR", "FIR", "IRQCR","IRQFLTE","IRQFLTC0";
+
+		swint1: swint1@872e0 {
+			compatible = "renesas,rx-swint";
+			reg = <0x000872e0 0x01>;
+			interrupts = <27 14>;
+			interrupt-parent = <&icu>;
+			status = "okay";
+		};
 	};
 
 	soc {
@@ -808,6 +818,18 @@
 			clocks = <&pclkb MSTPB 17>;
 			interrupts = <44 1>, <45 1>, <46 1>, <47 1>;
 			interrupt-names = "spei", "spri", "spti", "spii";
+			status = "disabled";
+		};
+
+		adc: adc@89000 {
+			compatible = "renesas,rx-adc";
+			interrupts= <102 1>;
+			interrupt-names = "s12adi0";
+			reg = <0x00089000 0x100>;
+			#io-channel-cells = <1>;
+			channel-available-mask = <0xffff00ff>;
+			vref-mv = <3300>;
+			channel-count = <24>;
 			status = "disabled";
 		};
 

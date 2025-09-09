@@ -11,11 +11,12 @@
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/iso.h>
+#include <zephyr/sys/util.h>
 
 /* BAP commands */
 #define BTP_BAP_READ_SUPPORTED_COMMANDS		0x01
 struct btp_bap_read_supported_commands_rp {
-	uint8_t data[0];
+	FLEXIBLE_ARRAY_DECLARE(uint8_t, data);
 } __packed;
 
 #define BTP_BAP_DISCOVER			0x02
@@ -31,7 +32,7 @@ struct btp_bap_send_cmd {
 	bt_addr_le_t address;
 	uint8_t ase_id;
 	uint8_t data_len;
-	uint8_t data[0];
+	uint8_t data[];
 } __packed;
 
 struct btp_bap_send_rp {
@@ -148,7 +149,7 @@ struct btp_bap_add_broadcast_src_cmd {
 	uint8_t padv_sync;
 	uint16_t padv_interval;
 	uint8_t num_subgroups;
-	uint8_t subgroups[0];
+	uint8_t subgroups[];
 } __packed;
 
 #define BTP_BAP_REMOVE_BROADCAST_SRC		0x15
@@ -164,7 +165,7 @@ struct btp_bap_modify_broadcast_src_cmd {
 	uint8_t padv_sync;
 	uint16_t padv_interval;
 	uint8_t num_subgroups;
-	uint8_t subgroups[0];
+	uint8_t subgroups[];
 } __packed;
 
 #define BTP_BAP_SET_BROADCAST_CODE		0x17
@@ -287,7 +288,7 @@ struct btp_bap_broadcast_receive_state_ev {
 	uint8_t pa_sync_state;
 	uint8_t big_encryption;
 	uint8_t num_subgroups;
-	uint8_t subgroups[0];
+	uint8_t subgroups[];
 } __packed;
 
 #define BTP_BAP_EV_PA_SYNC_REQ			0x8a

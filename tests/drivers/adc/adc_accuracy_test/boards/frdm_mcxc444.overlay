@@ -4,7 +4,7 @@
  * Copyright 2024 NXP
  */
 
- /* Please connect voltage reference to J4 pin 1 to run the test. */
+/* Please connect voltage reference to J4 pin 1 to run the test. */
 
 / {
 	zephyr,user {

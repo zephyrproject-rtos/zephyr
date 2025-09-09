@@ -31,8 +31,17 @@ static const struct gpio_dt_spec sw0 = GPIO_DT_SPEC_GET(DT_ALIAS(sw0), gpios);
 static const struct device *comp_dev = DEVICE_DT_GET(DT_NODELABEL(comp));
 #endif
 
-void print_reset_cause(uint32_t reset_cause)
+int print_reset_cause(uint32_t reset_cause)
 {
+	int32_t ret;
+	uint32_t supported;
+
+	ret = hwinfo_get_supported_reset_cause((uint32_t *) &supported);
+
+	if (ret || !(reset_cause & supported)) {
+		return -ENOTSUP;
+	}
+
 	if (reset_cause & RESET_DEBUG) {
 		printf("Reset by debugger.\n");
 	} else if (reset_cause & RESET_CLOCK) {
@@ -42,6 +51,8 @@ void print_reset_cause(uint32_t reset_cause)
 	} else  {
 		printf("Other wake up cause 0x%08X.\n", reset_cause);
 	}
+
+	return 0;
 }
 
 int main(void)
@@ -57,7 +68,12 @@ int main(void)
 
 	printf("\n%s system off demo\n", CONFIG_BOARD);
 	hwinfo_get_reset_cause(&reset_cause);
-	print_reset_cause(reset_cause);
+	rc = print_reset_cause(reset_cause);
+
+	if (rc < 0) {
+		printf("Reset cause not supported.\n");
+		return 0;
+	}
 
 	if (IS_ENABLED(CONFIG_APP_USE_RETAINED_MEM)) {
 		bool retained_ok = retained_validate();

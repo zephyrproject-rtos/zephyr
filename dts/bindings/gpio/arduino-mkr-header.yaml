@@ -33,6 +33,8 @@ description: |
         4  D4                   D7       7
         5  D5                   D6       6
 
+    Use ARDUINO_MKR_HEADER_* constants in <zephyr/dt-bindings/gpio/arduino-mkr-header.h> to refer to
+    specific pins using convenient constant names.
 
 compatible: "arduino-mkr-header"
 

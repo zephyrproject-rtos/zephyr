@@ -23,11 +23,24 @@ to the internet through a gateway.
 The Zephyr implementation is based on Semtech's `LoRaMac-node library`_, which
 is included as a Zephyr module.
 
+.. note::
+
+        ``LoRaMac-node`` has been deprecated by Semtech in favor of
+        `LoRa Basics Modem`_. Porting the Zephyr API's to use
+        ``LoRa Basics Modem`` as the backend is in progress.
+
+        Currently, only the base LoRa API is supported for the SX1261, SX1262,
+        SX1272 and SX1276 chipsets through
+        :kconfig:option:`CONFIG_LORA_MODULE_BACKEND_LORA_BASICS_MODEM`.
+
+
 The LoRaWAN specification is published by the `LoRa Alliance`_.
 
 .. _`Semtech Corporation`: https://www.semtech.com/
 
 .. _`LoRaMac-node library`: https://github.com/Lora-net/LoRaMac-node
+
+.. _`LoRa Basics Modem`: https://github.com/Lora-net/SWL2001
 
 .. _`LoRa Alliance`: https://lora-alliance.org/
 
@@ -82,7 +95,7 @@ API Reference
 LoRa PHY
 ========
 
-.. doxygengroup:: lora_api
+.. doxygengroup:: lora_interface
 
 LoRaWAN
 =======

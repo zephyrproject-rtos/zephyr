@@ -227,8 +227,18 @@ static int mipi_dsi_renesas_ra_init(const struct device *dev)
 #define RENESAS_RA_MIPI_PHYS_SETTING_DEFINE(n)                                                     \
 	static const mipi_phy_timing_t mipi_phy_##n##_timing = {                                   \
 		.t_init = CLAMP(DT_PROP(DT_INST_CHILD(n, phys_timing), t_init), 0, 0x7FFF),        \
-		.t_clk_prep = CLAMP(DT_PROP(DT_INST_CHILD(n, phys_timing), t_clk_prep), 0, 0xFF),  \
-		.t_hs_prep = CLAMP(DT_PROP(DT_INST_CHILD(n, phys_timing), t_hs_prep), 0, 0xFF),    \
+		.dphytim2_b =                                                                      \
+			{                                                                          \
+				.t_clk_prep =                                                      \
+					CLAMP(DT_PROP(DT_INST_CHILD(n, phys_timing), t_clk_prep),  \
+					      0, 0xFF),                                            \
+			},                                                                         \
+		.dphytim3_b =                                                                      \
+			{                                                                          \
+				.t_hs_prep =                                                       \
+					CLAMP(DT_PROP(DT_INST_CHILD(n, phys_timing), t_hs_prep),   \
+					      0, 0xFF),                                            \
+			},                                                                         \
 		.t_lp_exit = CLAMP(DT_PROP(DT_INST_CHILD(n, phys_timing), t_lp_exit), 0, 0xFF),    \
 		.dphytim4_b =                                                                      \
 			{                                                                          \
@@ -261,6 +271,7 @@ static int mipi_dsi_renesas_ra_init(const struct device *dev)
 			},                                                                         \
 		.lp_divisor = CLAMP(DT_INST_PROP(n, lp_divisor), 1, 32) - 1,                       \
 		.p_timing = &mipi_phy_##n##_timing,                                                \
+		.dsi_mode = true, /* enable DSI mode, disable CSI mode */                          \
 	};                                                                                         \
                                                                                                    \
 	mipi_phy_ctrl_t mipi_phy_##n##_ctrl;                                                       \
@@ -309,31 +320,31 @@ static int mipi_dsi_renesas_ra_init(const struct device *dev)
 		.dsi_ferr.irq = DT_INST_IRQ_BY_NAME(id, ferr, irq),                                \
 		.dsi_ppi.ipl = DT_INST_IRQ_BY_NAME(id, ppi, priority),                             \
 		.dsi_ppi.irq = DT_INST_IRQ_BY_NAME(id, ppi, irq),                                  \
-		.dsi_rxie = R_DSILINK_RXIER_BTAREND_Msk | R_DSILINK_RXIER_LRXHTO_Msk |             \
-			    R_DSILINK_RXIER_TATO_Msk | R_DSILINK_RXIER_RXRESP_Msk |                \
-			    R_DSILINK_RXIER_RXEOTP_Msk | R_DSILINK_RXIER_RXTE_Msk |                \
-			    R_DSILINK_RXIER_RXACK_Msk | R_DSILINK_RXIER_EXTEDET_Msk |              \
-			    R_DSILINK_RXIER_MLFERR_Msk | R_DSILINK_RXIER_ECCERRM_Msk |             \
-			    R_DSILINK_RXIER_UNEXERR_Msk | R_DSILINK_RXIER_WCERR_Msk |              \
-			    R_DSILINK_RXIER_CRCERR_Msk | R_DSILINK_RXIER_IBERR_Msk |               \
-			    R_DSILINK_RXIER_RXOVFERR_Msk | R_DSILINK_RXIER_PRTOERR_Msk |           \
-			    R_DSILINK_RXIER_NORESERR_Msk | R_DSILINK_RXIER_RSIZEERR_Msk |          \
-			    R_DSILINK_RXIER_ECCERRS_Msk | R_DSILINK_RXIER_RXAKE_Msk,               \
-		.dsi_ferrie = R_DSILINK_FERRIER_HTXTO_Msk | R_DSILINK_FERRIER_LRXHTO_Msk |         \
-			      R_DSILINK_FERRIER_TATO_Msk | R_DSILINK_FERRIER_ESCENT_Msk |          \
-			      R_DSILINK_FERRIER_SYNCESC_Msk | R_DSILINK_FERRIER_CTRL_Msk |         \
-			      R_DSILINK_FERRIER_CLP0_Msk | R_DSILINK_FERRIER_CLP1_Msk,             \
-		.dsi_plie = R_DSILINK_PLIER_DLULPENT_Msk | R_DSILINK_PLIER_DLULPEXT_Msk,           \
-		.dsi_vmie = R_DSILINK_VMIER_VBUFUDF_Msk | R_DSILINK_VMIER_VBUFOVF_Msk,             \
-		.dsi_sqch0ie = R_DSILINK_SQCH0IER_AACTFIN_Msk | R_DSILINK_SQCH0IER_ADESFIN_Msk |   \
-			       R_DSILINK_SQCH0IER_TXIBERR_Msk | R_DSILINK_SQCH0IER_RXFERR_Msk |    \
-			       R_DSILINK_SQCH0IER_RXFAIL_Msk | R_DSILINK_SQCH0IER_RXPFAIL_Msk |    \
-			       R_DSILINK_SQCH0IER_RXCORERR_Msk | R_DSILINK_SQCH0IER_RXAKE_Msk,     \
-		.dsi_sqch1ie = R_DSILINK_SQCH1IER_AACTFIN_Msk | R_DSILINK_SQCH1IER_ADESFIN_Msk |   \
-			       R_DSILINK_SQCH1IER_SIZEERR_Msk | R_DSILINK_SQCH1IER_TXIBERR_Msk |   \
-			       R_DSILINK_SQCH1IER_RXFERR_Msk | R_DSILINK_SQCH1IER_RXFAIL_Msk |     \
-			       R_DSILINK_SQCH1IER_RXPFAIL_Msk | R_DSILINK_SQCH1IER_RXCORERR_Msk |  \
-			       R_DSILINK_SQCH1IER_RXAKE_Msk,                                       \
+		.dsi_rxie = R_MIPI_DSI_RXIER_BTAREND_Msk | R_MIPI_DSI_RXIER_LRXHTO_Msk |           \
+			    R_MIPI_DSI_RXIER_TATO_Msk | R_MIPI_DSI_RXIER_RXRESP_Msk |              \
+			    R_MIPI_DSI_RXIER_RXEOTP_Msk | R_MIPI_DSI_RXIER_RXTE_Msk |              \
+			    R_MIPI_DSI_RXIER_RXACK_Msk | R_MIPI_DSI_RXIER_EXTEDET_Msk |            \
+			    R_MIPI_DSI_RXIER_MLFERR_Msk | R_MIPI_DSI_RXIER_ECCERRM_Msk |           \
+			    R_MIPI_DSI_RXIER_UNEXERR_Msk | R_MIPI_DSI_RXIER_WCERR_Msk |            \
+			    R_MIPI_DSI_RXIER_CRCERR_Msk | R_MIPI_DSI_RXIER_IBERR_Msk |             \
+			    R_MIPI_DSI_RXIER_RXOVFERR_Msk | R_MIPI_DSI_RXIER_PRTOERR_Msk |         \
+			    R_MIPI_DSI_RXIER_NORESERR_Msk | R_MIPI_DSI_RXIER_RSIZEERR_Msk |        \
+			    R_MIPI_DSI_RXIER_ECCERRS_Msk | R_MIPI_DSI_RXIER_RXAKE_Msk,             \
+		.dsi_ferrie = R_MIPI_DSI_FERRIER_HTXTO_Msk | R_MIPI_DSI_FERRIER_LRXHTO_Msk |       \
+			      R_MIPI_DSI_FERRIER_TATO_Msk | R_MIPI_DSI_FERRIER_ESCENT_Msk |        \
+			      R_MIPI_DSI_FERRIER_SYNCESC_Msk | R_MIPI_DSI_FERRIER_CTRL_Msk |       \
+			      R_MIPI_DSI_FERRIER_CLP0_Msk | R_MIPI_DSI_FERRIER_CLP1_Msk,           \
+		.dsi_plie = R_MIPI_DSI_PLIER_DLULPENT_Msk | R_MIPI_DSI_PLIER_DLULPEXT_Msk,         \
+		.dsi_vmie = R_MIPI_DSI_VMIER_VBUFUDF_Msk | R_MIPI_DSI_VMIER_VBUFOVF_Msk,           \
+		.dsi_sqch0ie = R_MIPI_DSI_SQCH0IER_AACTFIN_Msk | R_MIPI_DSI_SQCH0IER_ADESFIN_Msk | \
+			       R_MIPI_DSI_SQCH0IER_TXIBERR_Msk | R_MIPI_DSI_SQCH0IER_RXFERR_Msk |  \
+			       R_MIPI_DSI_SQCH0IER_RXFAIL_Msk | R_MIPI_DSI_SQCH0IER_RXPFAIL_Msk |  \
+			       R_MIPI_DSI_SQCH0IER_RXCORERR_Msk | R_MIPI_DSI_SQCH0IER_RXAKE_Msk,   \
+		.dsi_sqch1ie = R_MIPI_DSI_SQCH1IER_AACTFIN_Msk | R_MIPI_DSI_SQCH1IER_ADESFIN_Msk | \
+			       R_MIPI_DSI_SQCH1IER_SIZEERR_Msk | R_MIPI_DSI_SQCH1IER_TXIBERR_Msk | \
+			       R_MIPI_DSI_SQCH1IER_RXFERR_Msk | R_MIPI_DSI_SQCH1IER_RXFAIL_Msk |   \
+			       R_MIPI_DSI_SQCH1IER_RXPFAIL_Msk |                                   \
+			       R_MIPI_DSI_SQCH1IER_RXCORERR_Msk | R_MIPI_DSI_SQCH1IER_RXAKE_Msk,   \
 	};                                                                                         \
                                                                                                    \
 	static const struct mipi_dsi_renesas_ra_config ra_config_##id = {                          \
@@ -355,9 +366,9 @@ static int mipi_dsi_renesas_ra_init(const struct device *dev)
 				.vertical_sync_polarity = 1,                                       \
 				.horizontal_sync_polarity = 1,                                     \
 				.video_mode_delay = DT_INST_PROP(id, video_mode_delay),            \
-				.hsa_no_lp = R_DSILINK_VMSET0R_HSANOLP_Msk,                        \
-				.hbp_no_lp = R_DSILINK_VMSET0R_HBPNOLP_Msk,                        \
-				.hfp_no_lp = R_DSILINK_VMSET0R_HFPNOLP_Msk,                        \
+				.hsa_no_lp = R_MIPI_DSI_VMSET0R_HSANOLP_Msk,                       \
+				.hbp_no_lp = R_MIPI_DSI_VMSET0R_HBPNOLP_Msk,                       \
+				.hfp_no_lp = R_MIPI_DSI_VMSET0R_HFPNOLP_Msk,                       \
 				.ulps_wakeup_period = DT_INST_PROP(id, ulps_wakeup_period),        \
 				.continuous_clock = (1),                                           \
 				.hs_tx_timeout = 0,                                                \
@@ -374,7 +385,7 @@ static int mipi_dsi_renesas_ra_init(const struct device *dev)
 				.eotp_enable = (1),                                                \
 				.p_extend = &mipi_dsi_##id##_extended_cfg,                         \
 				.p_callback = mipi_dsi_callback,                                   \
-				.p_context = DEVICE_DT_INST_GET(id),                               \
+				.p_context = (void *)DEVICE_DT_INST_GET(id),                       \
 			},                                                                         \
 	};                                                                                         \
                                                                                                    \

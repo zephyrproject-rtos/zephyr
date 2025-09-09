@@ -295,7 +295,7 @@ bool log_backend_net_set_ip(const struct sockaddr *addr)
 }
 
 #if defined(CONFIG_NET_HOSTNAME_ENABLE)
-void log_backend_net_hostname_set(char *hostname, size_t len)
+void log_backend_net_hostname_set(const char *hostname, size_t len)
 {
 	(void)strncpy(dev_hostname, hostname, MIN(len, MAX_HOSTNAME_LEN));
 	log_output_hostname_set(&log_output_net, dev_hostname);

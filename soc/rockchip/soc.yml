@@ -8,3 +8,4 @@ family:
         socs:
           - name: rk3588s
           - name: rk3568
+          - name: rk3588

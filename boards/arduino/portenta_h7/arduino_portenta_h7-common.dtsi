@@ -114,7 +114,7 @@ zephyr_i2c: &i2c1 {
 &fdcan1 {
 	pinctrl-0 = <&fdcan1_rx_pb8 &fdcan1_tx_ph13>;
 	pinctrl-names = "default";
-	clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000100>,
+	clocks = <&rcc STM32_CLOCK(APB1_2, 8)>,
 		 <&rcc STM32_SRC_PLL1_Q FDCAN_SEL(1)>;
 };
 
@@ -185,6 +185,7 @@ zephyr_i2c: &i2c1 {
 		reg = <0>;
 		size = <DT_SIZE_M(128)>; /* 128 Mbits */
 		qspi-max-frequency = < 40000000 >;
+		cs-high-time = <2>; /* >= 30 ns */
 		sfdp-bfp = [ e5 20 f1 ff  ff ff ff 07  44 eb 08 6b  08 3b 04 bb
 			     fe ff ff ff  ff ff 00 ff  ff ff 44 eb  0c 20 0f 52
 			     10 d8 00 ff  82 41 bd 00  81 e5 7b c6  44 03 67 38

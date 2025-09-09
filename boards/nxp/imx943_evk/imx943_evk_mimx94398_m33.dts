@@ -28,15 +28,15 @@
 	pinctrl-names = "default";
 	status = "disabled";
 
-	phy0: phy@f {
+	phy0: phy@2 {
 		compatible = "ethernet-phy";
-		reg = <0xf>;
+		reg = <0x2>;
 		status = "disabled";
 	};
 
-	phy1: phy@10 {
+	phy1: phy@3 {
 		compatible = "ethernet-phy";
-		reg = <0x10>;
+		reg = <0x3>;
 		status = "disabled";
 	};
 
@@ -99,9 +99,39 @@
 	};
 };
 
+&lpi2c6 {
+	pinctrl-0 = <&lpi2c6_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &lpuart8 {
 	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&lpuart8_default>;
 	pinctrl-names = "default";
+};
+
+&switch_port0 {
+	zephyr,random-mac-address;
+	pinctrl-0 = <&eth0_default>;
+	pinctrl-names = "default";
+	phy-handle = <&phy0>;
+	phy-connection-type = "mii";
+	status = "disabled";
+};
+
+&switch_port1 {
+	zephyr,random-mac-address;
+	pinctrl-0 = <&eth1_default>;
+	pinctrl-names = "default";
+	phy-handle = <&phy1>;
+	phy-connection-type = "mii";
+	status = "disabled";
+};
+
+/* Internal port */
+&switch_port3 {
+	zephyr,random-mac-address;
+	status = "disabled";
 };

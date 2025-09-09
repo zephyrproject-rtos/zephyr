@@ -343,9 +343,23 @@ int bt_apollo_controller_init(spi_transmit_fun transmit)
 
 int bt_apollo_controller_deinit(void)
 {
-	int ret = -ENOTSUP;
+	int ret = 0;
 
-#if (CONFIG_SOC_SERIES_APOLLO3X)
+#if (CONFIG_SOC_SERIES_APOLLO4X)
+	/* Keep the Controller in resetting state */
+	gpio_pin_set_dt(&rst_gpio, 1);
+
+	/* Disable XO32MHz */
+	clock_control_off(clk32m_dev, (clock_control_subsys_t)CLOCK_CONTROL_AMBIQ_TYPE_HFXTAL_BLE);
+	/* Disable XO32kHz  */
+	clock_control_off(clk32k_dev, (clock_control_subsys_t)CLOCK_CONTROL_AMBIQ_TYPE_LFXTAL);
+
+	/* Disable GPIOs */
+	gpio_pin_configure_dt(&irq_gpio, GPIO_DISCONNECTED);
+	gpio_pin_configure_dt(&clkreq_gpio, GPIO_DISCONNECTED);
+	gpio_remove_callback(clkreq_gpio.port, &clkreq_gpio_cb);
+	gpio_remove_callback(irq_gpio.port, &irq_gpio_cb);
+#elif (CONFIG_SOC_SERIES_APOLLO3X)
 	irq_disable(DT_IRQN(SPI_DEV_NODE));
 
 	ret = am_apollo3_bt_controller_deinit();
@@ -355,7 +369,9 @@ int bt_apollo_controller_deinit(void)
 		ret = -EPERM;
 		LOG_ERR("BT controller deinitialization fails");
 	}
-#endif /* CONFIG_SOC_SERIES_APOLLO3X */
+#else
+	ret = -ENOTSUP;
+#endif /* CONFIG_SOC_SERIES_APOLLO4X */
 
 	return ret;
 }

@@ -43,8 +43,17 @@ The secure storage subsystem's implementation of the PSA Secure Storage API:
   Instead, the PS API directly calls into the Internal Trusted Storage (ITS) API
   (unless a `custom implementation <#whole-api>`_ of the PS API is provided).
 
-Below are some ways the implementation deviates from the specification
+Below are some ways the implementation purposefully deviates from the specification
 and an explanation why. This is not an exhaustive list.
+
+* The UID type is only 30 bits by default. (Against `2.5 UIDs <https://arm-software.github.io/psa-api/storage/1.0/overview/architecture.html#uids>`_.)
+
+  | This is an optimization done to make it more convenient to directly use the UIDs as
+    storage entry IDs (e.g., with :ref:`ZMS <zms_api>` when
+    :kconfig:option:`CONFIG_SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_ZMS` is enabled).
+  | Zephyr defines numerical ranges to be used by different users of the API which guarantees that
+    there are no collisions and that they all fit within 30 bits.
+    See the header files in :zephyr_file:`include/zephyr/psa` for more information.
 
 * The data stored in the ITS is by default encrypted and authenticated (Against ``1.`` in
   `3.2. Internal Trusted Storage requirements <https://arm-software.github.io/psa-api/storage/1.0/overview/requirements.html#internal-trusted-storage-requirements>`_.)

@@ -5,7 +5,6 @@
 set_property(TARGET linker PROPERTY cpp_base -Hcplus)
 
 check_set_linker_property(TARGET linker PROPERTY baremetal
-                          -Hlld
                           -Hnosdata
                           -Xtimer0 # to suppress the warning message
                           -Hnoxcheck_obj
@@ -15,6 +14,12 @@ check_set_linker_property(TARGET linker PROPERTY baremetal
                           -Hnoivt
                           -Hnocrt
 )
+
+if(CONFIG_ARC)
+  check_set_linker_property(TARGET linker APPEND PROPERTY baremetal
+                            -Hlld
+  )
+endif()
 
 # There are two options:
 # - We have full MWDT libc support and we link MWDT libc - this is default
@@ -35,6 +40,8 @@ check_set_linker_property(TARGET linker PROPERTY orphan_warning
 check_set_linker_property(TARGET linker PROPERTY orphan_error
                           ${LINKERFLAGPREFIX},--orphan-handling=error
 )
+
+set_property(TARGET linker PROPERTY partial_linking "-r")
 
 # Extra warnings options for twister run
 set_property(TARGET linker PROPERTY warnings_as_errors -Wl,--fatal-warnings)

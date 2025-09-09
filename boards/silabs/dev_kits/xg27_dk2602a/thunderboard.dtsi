@@ -73,10 +73,6 @@
 	swo-ref-frequency = <DT_FREQ_K(76800)>;
 };
 
-&pstate_em3 {
-	status = "disabled";
-};
-
 &usart0 {
 	status = "okay";
 	pinctrl-0 = <&usart0_default>;
@@ -119,7 +115,6 @@
 };
 
 &gpio {
-	location-swo = <0>;
 	status = "okay";
 };
 

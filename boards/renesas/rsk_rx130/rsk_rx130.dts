@@ -10,14 +10,16 @@
 #include <dt-bindings/gpio/gpio.h>
 #include "rsk_rx130_512kb-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/adc/adc.h>
 
 / {
 	model = "Renesas RSK+RX130-512KB KIT";
-	compatible = "renesas,rsk_rx130_512kb","renesas,rxv1";
+	compatible = "renesas,rsk_rx130_512kb";
 
 	chosen {
 		zephyr,sram = &sram0;
 		zephyr,flash = &code_flash;
+		zephyr,flash-controller = &flash;
 		zephyr,console = &uart1;
 		zephyr,shell-uart = &uart1;
 	};
@@ -123,4 +125,23 @@
 	pwm1: pwm {
 		status = "okay";
 	};
+};
+
+&data_flash {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		storage_partition: partition@0 {
+			label = "storage";
+			reg = <0X0 DT_SIZE_K(8)>;
+		};
+	};
+};
+
+&adc {
+	pinctrl-0 = <&adc_default>;
+	pinctrl-names = "default";
+	status = "okay";
 };

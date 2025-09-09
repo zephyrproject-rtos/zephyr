@@ -12,6 +12,11 @@
 	model = "KV260 Cortex-R5";
 	compatible = "xlnx,zynqmp-r5";
 
+	sram0: memory@0 {
+		compatible = "mmio-sram";
+		reg = <0 DT_SIZE_M(64)>;
+	};
+
 	chosen {
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
@@ -40,7 +45,7 @@
 
 &ttc0 {
 	status = "okay";
-	clock-frequency = <5000000>;
+	clock-frequency = <100000000>;
 };
 
 &psgpio {

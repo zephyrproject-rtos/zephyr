@@ -9,6 +9,19 @@ if SOC_FAMILY_RENESAS_RA
 config SERIES_SPECIFIC_SOC_INIT
 	bool "Use series specific initialize"
 
+config OUTPUT_RPD
+	bool "Build a Renesas Partition Data in rpd format"
+	depends on CPU_HAS_RENESAS_RA_IDAU
+	help
+	  Build a partition data zephyr/zephyr.rpd in the build directory.
+	  The name of this file can be customized with CONFIG_KERNEL_BIN_NAME.
+
+config CPU_HAS_RENESAS_RA_IDAU
+	bool
+	select CPU_HAS_TEE
+	help
+	  MCU implements the ARM Implementation-Defined Attribution Unit (IDAU).
+
 rsource "*/Kconfig"
 
 endif # SOC_FAMILY_RENESAS_RA

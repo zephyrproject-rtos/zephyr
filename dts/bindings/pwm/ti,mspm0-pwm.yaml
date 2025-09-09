@@ -7,7 +7,7 @@ description: |
 
   timer0: timer {
     pwm0: pwm {
-      compatible = "ti,mspm0g-timer-pwm";
+      compatible = "ti,mspm0-timer-pwm";
       #pwm-cells = <3>;
 
       ti,cc-index = <0>;

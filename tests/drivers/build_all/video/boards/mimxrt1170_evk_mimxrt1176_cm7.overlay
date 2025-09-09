@@ -66,8 +66,8 @@
 			reg = <0x33334444 0x200>;
 			status = "okay";
 			clocks = <&ccm IMX_CCM_MIPI_CSI2RX_ROOT_CLK 0 0>,
-			<&ccm IMX_CCM_MIPI_CSI2RX_UI_CLK 0 0>,
-			<&ccm IMX_CCM_MIPI_CSI2RX_ESC_CLK 0 0>;
+				 <&ccm IMX_CCM_MIPI_CSI2RX_UI_CLK 0 0>,
+				 <&ccm IMX_CCM_MIPI_CSI2RX_ESC_CLK 0 0>;
 
 			ports {
 				#address-cells = <1>;

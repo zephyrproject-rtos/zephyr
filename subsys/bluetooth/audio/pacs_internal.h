@@ -23,12 +23,12 @@ struct bt_pac_codec {
 struct bt_pac_ltv {
 	uint8_t  len;
 	uint8_t  type;
-	uint8_t  value[0];
+	uint8_t  value[];
 } __packed;
 
 struct bt_pac_ltv_data {
 	uint8_t  len;
-	struct bt_pac_ltv data[0];
+	struct bt_pac_ltv data[];
 } __packed;
 
 struct bt_pacs_read_rsp {

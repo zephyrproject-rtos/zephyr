@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2025 Silicon Laboratories Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		led0 = &led0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led0: led_0 {
+			gpios = <&gpioc 7 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&gpioc {
+	status = "okay";
+};

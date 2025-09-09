@@ -1,0 +1,31 @@
+# Copyright (c) 2025 Panasonic Industrial Devices Europe GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+# Workaround for not being able to have commas in macro arguments
+DT_CHOSEN_Z_CODE_PARTITION := zephyr,code-partition
+DT_CHOSEN_Z_SRAM_PARTITION := zephyr,sram-secure-partition
+
+if BOARD_PANB611EVB_NRF54L15_CPUAPP
+
+config ROM_START_OFFSET
+	default 0x800 if BOOTLOADER_MCUBOOT
+
+endif # BOARD_PANB611EVB_NRF54L15_CPUAPP
+
+if BOARD_PANB611EVB_NRF54L15_CPUAPP_NS
+
+config HAS_BT_CTLR
+	default BT
+
+config FLASH_LOAD_OFFSET
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_CODE_PARTITION))
+
+config FLASH_LOAD_SIZE
+	default $(dt_chosen_reg_size_hex,$(DT_CHOSEN_Z_CODE_PARTITION))
+
+# By default, if we build for a Non-Secure version of the board,
+# enable building with TF-M as the Secure Execution Environment.
+config BUILD_WITH_TFM
+	default y
+
+endif # BOARD_PANB611EVB_NRF54L15_CPUAPP_NS

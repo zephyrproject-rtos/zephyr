@@ -2,24 +2,24 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+from dataclasses import dataclass, field
 from enum import Enum
+from typing import Optional
 
 
 # DocumentConfig contains settings used to configure how the SPDX Document
 # should be built.
+@dataclass(eq=True)
 class DocumentConfig:
-    def __init__(self):
-        super().__init__()
+    # name of document
+    name: str = ""
 
-        # name of document
-        self.name = ""
+    # namespace for this document
+    namespace: str = ""
 
-        # namespace for this document
-        self.namespace = ""
-
-        # standardized DocumentRef- (including that prefix) that the other
-        # docs will use to refer to this one
-        self.docRefID = ""
+    # standardized DocumentRef- (including that prefix) that the other
+    # docs will use to refer to this one
+    docRefID: str = ""
 
 
 # Document contains the data assembled by the SBOM builder, to be used to
@@ -61,42 +61,40 @@ class Document:
 
 # PackageConfig contains settings used to configure how an SPDX Package should
 # be built.
+@dataclass(eq=True)
 class PackageConfig:
-    def __init__(self):
-        super().__init__()
+    # package name
+    name: str = ""
 
-        # package name
-        self.name = ""
+    # SPDX ID, including "SPDXRef-"
+    spdxID: str = ""
 
-        # SPDX ID, including "SPDXRef-"
-        self.spdxID = ""
+    # primary package purpose (ex. "LIBRARY", "APPLICATION", etc.)
+    primaryPurpose: str = ""
 
-        # primary package purpose (ex. "LIBRARY", "APPLICATION", etc.)
-        self.primaryPurpose = ""
+    # package URL
+    url: str = ""
 
-        # package URL
-        self.url = ""
+    # package version
+    version: str = ""
 
-        # package version
-        self.version = ""
+    # package revision
+    revision: str = ""
 
-        # package revision
-        self.revision = ""
+    # package external references
+    externalReferences: list = field(default_factory=list)
 
-        # package external references
-        self.externalReferences = []
+    # the Package's declared license
+    declaredLicense: str = "NOASSERTION"
 
-        # the Package's declared license
-        self.declaredLicense = "NOASSERTION"
+    # the Package's copyright text
+    copyrightText: str = "NOASSERTION"
 
-        # the Package's copyright text
-        self.copyrightText = "NOASSERTION"
-
-        # absolute path of the "root" directory on disk, to be used as the
-        # base directory from which this Package's Files will calculate their
-        # relative paths
-        # may want to note this in a Package comment field
-        self.relativeBaseDir = ""
+    # absolute path of the "root" directory on disk, to be used as the
+    # base directory from which this Package's Files will calculate their
+    # relative paths
+    # may want to note this in a Package comment field
+    relativeBaseDir: str = ""
 
 
 # Package contains the data assembled by the SBOM builder, to be used to
@@ -151,59 +149,55 @@ class RelationshipDataElementType(Enum):
 # RelationshipData contains the pre-analysis data about a relationship between
 # Files and/or Packages/targets. It is eventually parsed into a corresponding
 # Relationship after we have organized the SPDX Package and File data.
+@dataclass(eq=True)
 class RelationshipData:
-    def __init__(self):
-        super().__init__()
+    # for the "owner" element (e.g., the left side of the Relationship),
+    # is it a filename or a target name (e.g., a Package in the build doc)
+    ownerType: RelationshipDataElementType = RelationshipDataElementType.UNKNOWN
 
-        # for the "owner" element (e.g., the left side of the Relationship),
-        # is it a filename or a target name (e.g., a Package in the build doc)
-        self.ownerType = RelationshipDataElementType.UNKNOWN
+    # owner file absolute path (if ownerType is FILENAME)
+    ownerFileAbspath: str = ""
 
-        # owner file absolute path (if ownerType is FILENAME)
-        self.ownerFileAbspath = ""
+    # owner target name (if ownerType is TARGETNAME)
+    ownerTargetName: str = ""
 
-        # owner target name (if ownerType is TARGETNAME)
-        self.ownerTargetName = ""
+    # owner SPDX Document (if ownerType is DOCUMENT)
+    ownerDocument: Optional['Document'] = None
 
-        # owner SPDX Document (if ownerType is DOCUMENT)
-        self.ownerDocument = None
+    # for the "other" element (e.g., the right side of the Relationship),
+    # is it a filename or a target name (e.g., a Package in the build doc)
+    otherType: RelationshipDataElementType = RelationshipDataElementType.UNKNOWN
 
-        # for the "other" element (e.g., the right side of the Relationship),
-        # is it a filename or a target name (e.g., a Package in the build doc)
-        self.otherType = RelationshipDataElementType.UNKNOWN
+    # other file absolute path (if otherType is FILENAME)
+    otherFileAbspath: str = ""
 
-        # other file absolute path (if otherType is FILENAME)
-        self.otherFileAbspath = ""
+    # other target name (if otherType is TARGETNAME)
+    otherTargetName: str = ""
 
-        # other target name (if otherType is TARGETNAME)
-        self.otherTargetName = ""
+    # other package ID (if ownerType is DOCUMENT and otherType is PACKAGEID)
+    otherPackageID: str = ""
 
-        # other package ID (if ownerType is DOCUMENT and otherType is PACKAGEID)
-        self.otherPackageID = ""
-
-        # text string with Relationship type
-        # from table 68 in section 11.1 of SPDX spec v2.3
-        self.rlnType = ""
+    # text string with Relationship type
+    # from table 68 in section 11.1 of SPDX spec v2.3
+    rlnType: str = ""
 
 
 # Relationship contains the post-analysis, processed data about a relationship
 # in a form suitable for creating the actual SPDX Relationship in a particular
 # Document's context.
+@dataclass(eq=True)
 class Relationship:
-    def __init__(self):
-        super().__init__()
+    # SPDX ID for left side of relationship
+    # including "SPDXRef-" as well as "DocumentRef-" if needed
+    refA: str = ""
 
-        # SPDX ID for left side of relationship
-        # including "SPDXRef-" as well as "DocumentRef-" if needed
-        self.refA = ""
+    # SPDX ID for right side of relationship
+    # including "SPDXRef-" as well as "DocumentRef-" if needed
+    refB: str = ""
 
-        # SPDX ID for right side of relationship
-        # including "SPDXRef-" as well as "DocumentRef-" if needed
-        self.refB = ""
-
-        # text string with Relationship type
-        # from table 68 in section 11.1 of SPDX spec v2.3
-        self.rlnType = ""
+    # text string with Relationship type
+    # from table 68 in section 11.1 of SPDX spec v2.3
+    rlnType: str = ""
 
 
 # File contains the data needed to create a File element in the context of a

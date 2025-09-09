@@ -157,6 +157,40 @@ These commands will generate something similar to the output below::
     ========================================================================================
                                                                   21652
 
+
+Build Targets: ram_plot/rom_plot
+================================
+
+Similar to the ``ram_report`` and ``rom_report`` build targets, these targets generate memory usage
+reports in a sunburst chart as a visual representation.
+A user can click on segments to navigate through the directory structures, and hover over segments
+to get more details.
+
+Running the targets will first generate the CLI report and then open a browser window.
+
+.. zephyr-app-commands::
+    :tool: all
+    :zephyr-app: samples/hello_world
+    :board: reel_board
+    :goals: ram_plot
+
+.. image:: ram_plot.png
+   :align: center
+   :alt: RAM usage sunburst chart
+
+And similarly for the ROM usage.
+
+.. zephyr-app-commands::
+    :tool: all
+    :zephyr-app: samples/hello_world
+    :board: reel_board
+    :goals: rom_plot
+
+.. image:: rom_plot.png
+   :align: center
+   :alt: ROM usage sunburst chart
+
+
 Build Target: puncover
 ======================
 

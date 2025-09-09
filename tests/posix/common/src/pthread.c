@@ -6,6 +6,7 @@
 
 #include <pthread.h>
 #include <semaphore.h>
+#include <time.h>
 
 #include <zephyr/sys/util.h>
 #include <zephyr/ztest.h>
@@ -409,8 +410,8 @@ ZTEST(pthread, test_pthread_timedjoin)
 	};
 
 	/* setup timespecs when the thread is still running and when it is done */
-	clock_gettime(CLOCK_MONOTONIC, &not_done);
-	clock_gettime(CLOCK_MONOTONIC, &done);
+	clock_gettime(CLOCK_REALTIME, &not_done);
+	clock_gettime(CLOCK_REALTIME, &done);
 	not_done.tv_nsec += sleep_duration_ms / 2 * NSEC_PER_MSEC;
 	done.tv_nsec += sleep_duration_ms * 1.5 * NSEC_PER_MSEC;
 	while (not_done.tv_nsec >= NSEC_PER_SEC) {

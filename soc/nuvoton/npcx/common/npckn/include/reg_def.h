@@ -1955,4 +1955,8 @@ struct gdma_reg {
 #define NPCX_DMACTL_GDMAERR              20
 #define NPCX_DMACTL_BUSY_EN              23
 
+/* BBRM register fields */
+#define NPCX_BKUPSTS_VCC1_STS BIT(5)
+#define NPCX_BKUPSTS_IBBR     BIT(7)
+
 #endif /* _NUVOTON_NPCX_REG_DEF_H */

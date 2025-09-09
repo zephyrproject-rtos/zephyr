@@ -40,7 +40,6 @@
 				<NRF_PSEL(EXMIF_DQ7, 6, 4)>;
 		};
 	};
-
 };
 
 &gpio6 {

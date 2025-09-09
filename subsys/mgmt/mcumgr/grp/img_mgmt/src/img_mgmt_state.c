@@ -58,6 +58,11 @@ LOG_MODULE_DECLARE(mcumgr_img_grp, CONFIG_MCUMGR_GRP_IMG_LOG_LEVEL);
 #define DIRECT_XIP_BOOT_FOREVER		3
 #endif
 
+#if defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_FIRMWARE_UPDATER) && \
+	CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER > 1
+#warning "MCUmgr img mgmt only supports 1 image"
+#endif
+
 /**
  * Collects information about the specified image slot.
  */
@@ -196,7 +201,6 @@ int img_mgmt_get_next_boot_slot(int image, enum img_mgmt_next_boot_type *type)
 #else
 
 #if defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT)
-
 static int read_directxip_state(int slot)
 {
 	struct boot_swap_state bss;
@@ -229,6 +233,8 @@ static int read_directxip_state(int slot)
 }
 #endif /* defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT) */
 
+#if defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP) || \
+	defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT)
 int img_mgmt_get_next_boot_slot(int image, enum img_mgmt_next_boot_type *type)
 {
 	struct image_version aver;
@@ -301,11 +307,13 @@ out:
 
 	return return_slot;
 }
+#endif /* defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP) || \
+	* defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT)
+	*/
 #endif /* !defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP) && \
 	* !defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT) && \
 	* !defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_FIRMWARE_UPDATER)
 	*/
-
 
 /**
  * Indicates whether any image slot is pending (i.e., whether a test swap will
@@ -332,7 +340,8 @@ img_mgmt_slot_in_use(int slot)
 	int active_slot = img_mgmt_active_slot(image);
 
 #if !defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP) && \
-	!defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD)
+	!defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD) && \
+	!defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD_WITH_REVERT)
 	enum img_mgmt_next_boot_type type = NEXT_BOOT_TYPE_NORMAL;
 	int nbs = img_mgmt_get_next_boot_slot(image, &type);
 
@@ -426,8 +435,11 @@ static bool img_mgmt_state_encode_slot(struct smp_streamer *ctxt, uint32_t slot,
 	zcbor_state_t *zse = ctxt->writer->zs;
 	uint32_t flags;
 	char vers_str[IMG_MGMT_VER_MAX_STR_LEN];
-	uint8_t hash[IMAGE_HASH_LEN]; /* SHA256 hash */
-	struct zcbor_string zhash = { .value = hash, .len = IMAGE_HASH_LEN };
+	uint8_t hash[IMAGE_SHA_LEN];
+	struct zcbor_string zhash = {
+		.value = hash,
+		.len = IMAGE_SHA_LEN,
+	};
 	struct image_version ver;
 	bool ok;
 	int rc = img_mgmt_read_info(slot, &ver, hash, &flags);
@@ -494,6 +506,7 @@ failed:
 /**
  * Command handler: image state read
  */
+#if !defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_FIRMWARE_UPDATER)
 int
 img_mgmt_state_read(struct smp_streamer *ctxt)
 {
@@ -551,6 +564,43 @@ img_mgmt_state_read(struct smp_streamer *ctxt)
 
 	return ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
 }
+#else
+int
+img_mgmt_state_read(struct smp_streamer *ctxt)
+{
+	zcbor_state_t *zse = ctxt->writer->zs;
+	uint32_t i;
+	bool ok;
+
+	ok = zcbor_tstr_put_lit(zse, "images") &&
+	     zcbor_list_start_encode(zse, 2);
+
+	img_mgmt_take_lock();
+
+	for (i = 0; ok && i < CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER; i++) {
+		/* _a is active slot, _o is opposite slot */
+		int slot_a = img_mgmt_active_slot(i);
+		int slot_o = img_mgmt_get_opposite_slot(slot_a);
+		int flags_a = REPORT_SLOT_ACTIVE;
+		int flags_o = REPORT_SLOT_CONFIRMED;
+
+		ok = img_mgmt_state_encode_slot(ctxt, slot_o, flags_o) &&
+		     img_mgmt_state_encode_slot(ctxt, slot_a, flags_a);
+	}
+
+	/* Ending list encoding for two slots per image */
+	ok = ok && zcbor_list_end_encode(zse, 2);
+	/* splitStatus is always 0 so in frugal list it is not present at all */
+	if (!IS_ENABLED(CONFIG_MCUMGR_GRP_IMG_FRUGAL_LIST) && ok) {
+		ok = zcbor_tstr_put_lit(zse, "splitStatus") &&
+		     zcbor_int32_put(zse, 0);
+	}
+
+	img_mgmt_release_lock();
+
+	return ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
+}
+#endif /* !defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_FIRMWARE_UPDATER) */
 
 static int img_mgmt_set_next_boot_slot_common(int slot, int active_slot, bool confirm)
 {
@@ -733,14 +783,14 @@ img_mgmt_state_write(struct smp_streamer *ctxt)
 					     IMG_MGMT_ERR_INVALID_HASH);
 			goto end;
 		}
-	} else if (zhash.len != IMAGE_HASH_LEN) {
+	} else if (zhash.len != IMAGE_SHA_LEN) {
 		/* The img_mgmt_find_by_hash does exact length compare
 		 * so just fail here.
 		 */
 		ok = smp_add_cmd_err(zse, MGMT_GROUP_ID_IMAGE, IMG_MGMT_ERR_INVALID_HASH);
 		goto end;
 	} else {
-		uint8_t hash[IMAGE_HASH_LEN];
+		uint8_t hash[IMAGE_SHA_LEN];
 
 		memcpy(hash, zhash.value, zhash.len);
 

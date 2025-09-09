@@ -365,7 +365,7 @@ static int phy_adin2111_reset(const struct device *dev)
 static void invoke_link_cb(const struct device *dev)
 {
 	struct phy_adin2111_data *const data = dev->data;
-	struct phy_link_state state;
+	struct phy_link_state state = data->state;
 
 	if (data->cb == NULL) {
 		return;

@@ -52,6 +52,7 @@ static void test_prepare_nodata(void *dummy)
 
 	context_reset();
 
+	test_packet.hdr_len = sizeof(test_payload);
 	test_packet.offset = sizeof(test_payload);
 	test_in.offset = sizeof(test_payload);
 }
@@ -401,6 +402,18 @@ ZTEST(net_content_plain_text, test_get_string)
 			  "Invalid value parsed");
 	zassert_equal(test_in.offset, strlen(test_string) + 1,
 		      "Invalid packet offset");
+}
+
+ZTEST(net_content_plain_text, test_get_string_truncate)
+{
+	int ret;
+	static const char test_string[] = "test_string";
+	uint8_t buf[16];
+
+	test_payload_set(test_string);
+
+	ret = plain_text_reader.get_string(&test_in, buf, sizeof(test_string) - 1);
+	zassert_equal(ret, -ENOMEM, "Invalid error returned %d", ret);
 }
 
 ZTEST(net_content_plain_text_nodata, test_get_string_nodata)

@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -7,13 +7,11 @@
 #include <zephyr/dt-bindings/adc/mcux-lpadc.h>
 #include <zephyr/dt-bindings/regulator/nxp_vref.h>
 
-/* To do this test, connect LPADC0 channel 2A(J8 pin 28) to VREF_OUT (TP1) */
-
 / {
 	resources: resources {
 		compatible = "test-regulator-voltage";
 		regulators = <&vref>;
-		tolerance-microvolt = <10000>;
+		tolerance-microvolt = <30000>;
 		set-read-delay-ms = <1>;
 		adc-avg-count = <10>;
 		io-channels = <&lpadc0 0>;
@@ -23,7 +21,7 @@
 };
 
 &vref {
-	regulator-initial-mode = <NXP_VREF_MODE_INTERNAL_REGULATOR>;
+	regulator-initial-mode = <NXP_VREF_MODE_HIGH_POWER>;
 };
 
 &lpadc0 {
@@ -31,17 +29,22 @@
 	#size-cells = <0>;
 
 	/* In this case, the LPADC reference source cannot be set to VREFO,
-	 * switch the reference source to VDD_ANA.
+	 * switch the reference source to VDD_ANA. The user needs to measure the
+	 * voltage of VDD_ANA pin to set the value of 'zephyr,vref-mv'.
 	 */
-	voltage-ref= <2>;
+	voltage-ref = <2>;
 
 	channel@0 {
 		reg = <0>;
 		zephyr,gain = "ADC_GAIN_1";
 		zephyr,reference = "ADC_REF_EXTERNAL0";
-		zephyr,vref-mv = <3300>;
-		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		/* VDD_ANA is not accurate to 3300mV, after measurement,
+		 * the actual voltage is 3285mV.
+		 */
+		zephyr,vref-mv = <3285>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_TICKS, 7)>;
 		zephyr,resolution = <12>;
-		zephyr,input-positive = <MCUX_LPADC_CH2A>;
+		/* ADC0 channel 7 A-side is internally connected to VREFO. */
+		zephyr,input-positive = <MCUX_LPADC_CH7A>;
 	};
 };

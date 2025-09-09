@@ -214,8 +214,12 @@ static int slz_bt_send(const struct device *dev, struct net_buf *buf)
 
 	rv = hci_common_transport_receive(buf->data, buf->len, true);
 
+	if (rv != 0) {
+		return rv;
+	}
+
 	net_buf_unref(buf);
-	return rv;
+	return 0;
 }
 
 /**
@@ -327,6 +331,18 @@ deinit:
 	return ret;
 }
 
+static int slz_bt_close(const struct device *dev)
+{
+	k_thread_abort(&slz_ll_thread);
+	k_thread_abort(&slz_rx_thread);
+
+	sl_btctrl_deinit();
+
+	LOG_DBG("SiLabs BT HCI stopped");
+
+	return 0;
+}
+
 bool sli_pending_btctrl_events(void)
 {
 	return false; /* TODO: check if this should really return false! */
@@ -346,6 +362,7 @@ void BTLE_LL_EventRaise(uint32_t events)
 
 static DEVICE_API(bt_hci, drv) = {
 	.open           = slz_bt_open,
+	.close          = slz_bt_close,
 	.send           = slz_bt_send,
 };
 

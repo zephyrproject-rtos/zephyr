@@ -619,9 +619,14 @@ static int bt_spi_send(const struct device *dev, struct net_buf *buf)
 		}
 	}
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_hci_spi_v1) */
+
+	if (ret != 0) {
+		return ret;
+	}
+
 	net_buf_unref(buf);
 
-	return ret;
+	return 0;
 }
 
 static int bt_spi_open(const struct device *dev, bt_hci_recv_t recv)

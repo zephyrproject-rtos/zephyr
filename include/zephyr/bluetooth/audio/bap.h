@@ -54,6 +54,9 @@ extern "C" {
 /** An invalid Broadcast ID */
 #define BT_BAP_INVALID_BROADCAST_ID 0xFFFFFFFFU
 
+/** Value that represents an unset presentation delay value */
+#define BT_BAP_PD_UNSET 0xFFFFFFFFU
+
 /**
  * @brief Recommended connectable advertising parameters
  *
@@ -906,14 +909,12 @@ struct bt_bap_stream {
 	/** Stream user data */
 	void *user_data;
 
-#if defined(CONFIG_BT_BAP_UNICAST_CLIENT) || defined(__DOXYGEN__)
-	/**
-	 * @brief Audio ISO reference
+	/** ISO channel reference
 	 *
-	 * This is only used for Unicast Client streams, and is handled internally.
+	 * This will become valid once the stream is added to a group (bt_bap_unicast_group,
+	 * bt_bap_broadcast_source or bt_bap_broadcast_sink).
 	 */
-	struct bt_bap_iso *bap_iso;
-#endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
+	struct bt_iso_chan *iso;
 
 	/** Unicast or Broadcast group - Used internally */
 	void *group;
@@ -1746,6 +1747,33 @@ int bt_bap_unicast_group_foreach_stream(struct bt_bap_unicast_group *unicast_gro
 					bt_bap_unicast_group_foreach_stream_func_t func,
 					void *user_data);
 
+/** Structure holding information of audio stream endpoint */
+struct bt_bap_unicast_group_info {
+	/** Presentation delay for sink ASEs
+	 *
+	 * Will be @ref BT_BAP_PD_UNSET if no sink ASEs have been QoS configured
+	 */
+	uint32_t sink_pd;
+
+	/** Presentation delay for source ASEs
+	 *
+	 * Will be @ref BT_BAP_PD_UNSET if no source ASEs have been QoS configured
+	 */
+	uint32_t source_pd;
+};
+
+/**
+ * @brief Return structure holding information of unicast group
+ *
+ * @param unicast_group The unicast group object.
+ * @param info          The structure object to be filled with the info.
+ *
+ * @retval 0 Success
+ * @retval -EINVAL  @p unicast_group or @p info are NULL
+ */
+int bt_bap_unicast_group_get_info(const struct bt_bap_unicast_group *unicast_group,
+				  struct bt_bap_unicast_group_info *info);
+
 /** Unicast Client callback structure */
 struct bt_bap_unicast_client_cb {
 	/**
@@ -2428,6 +2456,32 @@ int bt_bap_broadcast_source_delete(struct bt_bap_broadcast_source *source);
 int bt_bap_broadcast_source_get_base(struct bt_bap_broadcast_source *source,
 				     struct net_buf_simple *base_buf);
 
+/**
+ * @brief Callback function for bt_bap_broadcast_source_foreach_stream()
+ *
+ * @param stream     The audio stream
+ * @param user_data  User data
+ *
+ * @retval true  Stop iterating.
+ * @retval false Continue iterating.
+ */
+typedef bool (*bt_bap_broadcast_source_foreach_stream_func_t)(struct bt_bap_stream *stream,
+							      void *user_data);
+
+/**
+ * @brief Iterate through all streams in a broadcast source
+ *
+ * @param source         The broadcast source
+ * @param func           The callback function
+ * @param user_data      User specified data that is sent to the callback function
+ *
+ * @retval 0          Success (even if no streams exists in the broadcast source).
+ * @retval -ECANCELED The @p func returned true.
+ * @retval -EINVAL    @p source or @p func were NULL.
+ */
+int bt_bap_broadcast_source_foreach_stream(struct bt_bap_broadcast_source *source,
+					   bt_bap_broadcast_source_foreach_stream_func_t func,
+					   void *user_data);
 /** @} */ /* End of bt_bap_broadcast_source */
 
 /**

@@ -9,6 +9,8 @@ zephyr_sources_ifdef(CONFIG_PM
   power.c
   )
 
+zephyr_sources_ifdef(CONFIG_POWEROFF poweroff.c)
+
 if(CONFIG_BT_STM32WBA)
   zephyr_include_directories(hci_if)
 

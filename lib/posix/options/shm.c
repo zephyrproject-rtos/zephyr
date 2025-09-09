@@ -20,7 +20,7 @@
 #include <zephyr/sys/fdtable.h>
 #include <zephyr/sys/hash_function.h>
 
-#define _page_size COND_CODE_1(CONFIG_MMU, (CONFIG_MMU_PAGE_SIZE), (PAGE_SIZE))
+#define _page_size COND_CODE_1(CONFIG_MMU, (CONFIG_MMU_PAGE_SIZE), (CONFIG_POSIX_PAGE_SIZE))
 
 static const struct fd_op_vtable shm_vtable;
 

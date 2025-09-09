@@ -8,10 +8,18 @@
 /**
  * @file
  * @brief UDP transport for the MCUmgr SMP protocol.
+ * @ingroup mcumgr_transport_udp
  */
 
 #ifndef ZEPHYR_INCLUDE_MGMT_SMP_UDP_H_
 #define ZEPHYR_INCLUDE_MGMT_SMP_UDP_H_
+
+/**
+ * @brief This allows to use the MCUmgr SMP protocol over UDP.
+ * @defgroup mcumgr_transport_udp UDP transport
+ * @ingroup mcumgr_transport
+ * @{
+ */
 
 #ifdef __cplusplus
 extern "C" {
@@ -41,5 +49,9 @@ int smp_udp_close(void);
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @}
+ */
 
 #endif

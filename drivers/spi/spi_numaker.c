@@ -129,7 +129,7 @@ static int spi_numaker_configure(const struct device *dev, const struct spi_conf
 	/* Enable the automatic hardware slave select function. Select the SS pin and configure as
 	 * low-active.
 	 */
-	if (data->ctx.num_cs_gpios == 0) {
+	if (UTIL_OR(IS_ENABLED(DT_SPI_CTX_HAS_NO_CS_GPIOS), (data->ctx.num_cs_gpios == 0))) {
 		SPI_EnableAutoSS(dev_cfg->spi, SPI_SS, SPI_SS_ACTIVE_LOW);
 	} else {
 		SPI_DisableAutoSS(dev_cfg->spi);
@@ -251,9 +251,7 @@ static int spi_numaker_transceive(const struct device *dev, const struct spi_con
 	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, spi_dfs);
 
 	/* if cs is defined: software cs control, set active true */
-	if (spi_cs_is_gpio(config)) {
-		spi_context_cs_control(&data->ctx, true);
-	}
+	spi_context_cs_control(&data->ctx, true);
 
 	/* transceive tx/rx data */
 	do {
@@ -264,9 +262,7 @@ static int spi_numaker_transceive(const struct device *dev, const struct spi_con
 	} while (spi_numaker_remain_words(data));
 
 	/* if cs is defined: software cs control, set active false */
-	if (spi_cs_is_gpio(config)) {
-		spi_context_cs_control(&data->ctx, false);
-	}
+	spi_context_cs_control(&data->ctx, false);
 	SPI_DISABLE(dev_cfg->spi);
 
 done:

@@ -1,0 +1,43 @@
+/*
+ * Copyright (c) 2022 Joylab AG
+ * Copyright (c) 2025 Tomas Jurena
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/arduino-nano-header.h>
+
+/ {
+	arduino_header: connector {
+		compatible = "arduino-nano-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <ARDUINO_NANO_HEADER_D0 0 &gpioa 10 0>,  /* D0 */
+			   <ARDUINO_NANO_HEADER_D1 0 &gpioa 9 0>,   /* D1 */
+			   <ARDUINO_NANO_HEADER_D2 0 &gpioa 12 0>,  /* D2 */
+			   <ARDUINO_NANO_HEADER_D3 0 &gpiob 0 0>,   /* D3 */
+			   <ARDUINO_NANO_HEADER_D4 0 &gpiob 7 0>,   /* D4 */
+			   <ARDUINO_NANO_HEADER_D5 0 &gpioa 6 0>,   /* D5 */
+			   <ARDUINO_NANO_HEADER_D6 0 &gpiob 1 0>,   /* D6 */
+			   <ARDUINO_NANO_HEADER_D7 0 &gpioc 14 0>,  /* D7 */
+			   <ARDUINO_NANO_HEADER_D8 0 &gpioc 15 0>,  /* D8 */
+			   <ARDUINO_NANO_HEADER_D9 0 &gpioa 8 0>,   /* D9 */
+			   <ARDUINO_NANO_HEADER_D10 0 &gpioa 11 0>, /* D10 */
+			   <ARDUINO_NANO_HEADER_D11 0 &gpiob 5 0>,  /* D11 */
+			   <ARDUINO_NANO_HEADER_D12 0 &gpiob 4 0>,  /* D12 */
+			   <ARDUINO_NANO_HEADER_D13 0 &gpiob 3 0>,  /* D13 */
+			   <ARDUINO_NANO_HEADER_A0 0 &gpioa 0 0>,  /* D14 / A0 */
+			   <ARDUINO_NANO_HEADER_A1 0 &gpioa 1 0>,  /* D15 / A1 */
+			   <ARDUINO_NANO_HEADER_A2 0 &gpioa 3 0>,  /* D16 / A2 */
+			   <ARDUINO_NANO_HEADER_A3 0 &gpioa 4 0>,  /* D17 / A3 */
+			   <ARDUINO_NANO_HEADER_A4 0 &gpioa 5 0>,  /* D18 / A4 */
+			   <ARDUINO_NANO_HEADER_A5 0 &gpioa 6 0>,  /* D19 / A5 */
+			   <ARDUINO_NANO_HEADER_A6 0 &gpioa 7 0>,  /* D20 / A6 */
+			   <ARDUINO_NANO_HEADER_A7 0 &gpioa 2 0>;  /* D21 / A7 */
+	};
+};
+
+arduino_spi: &spi1 {};
+arduino_serial: &usart1 {};
+arduino_i2c: &i2c1 {};

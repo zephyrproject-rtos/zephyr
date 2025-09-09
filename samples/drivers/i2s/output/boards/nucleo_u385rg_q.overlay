@@ -19,7 +19,7 @@
 /* 46.875KHz (6.29% Error) */
 &sai1_a {
 	pinctrl-0 = <&sai1_mclk_a_pb8 &sai1_sd_a_pc1
-		&sai1_fs_a_pa9 &sai1_sck_a_pb10>;
+		     &sai1_fs_a_pa9 &sai1_sck_a_pb10>;
 	pinctrl-names = "default";
 	status = "okay";
 	mclk-enable;
@@ -31,7 +31,7 @@
 	status = "okay";
 };
 
-&clk_msik{
+&clk_msik {
 	status = "okay";
 };
 

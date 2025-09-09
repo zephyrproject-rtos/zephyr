@@ -8,9 +8,15 @@
 #define ZEPHYR_INCLUDE_DRIVERS_PCIE_PCIE_H_
 
 /**
- * @brief PCIe Host Interface
- * @defgroup pcie_host_interface PCIe Host Interface
+ * @brief Interfaces for PCIe devices.
+ * @defgroup pcie_interface PCIe
  * @ingroup io_interfaces
+ * @{
+ * @}
+ *
+ * @brief Interfaces for PCIe Host.
+ * @defgroup pcie_host_interface PCIe Host
+ * @ingroup pcie_interface
  * @{
  */
 
@@ -191,7 +197,7 @@ extern void pcie_conf_write(pcie_bdf_t bdf, unsigned int reg, uint32_t data);
 typedef bool (*pcie_scan_cb_t)(pcie_bdf_t bdf, pcie_id_t id, void *cb_data);
 
 enum {
-	/** Scan all available PCI host controllers and sub-busses */
+	/** Scan all available PCI host controllers and sub-buses */
 	PCIE_SCAN_RECURSIVE = BIT(0),
 	/** Do the callback for all endpoint types, including bridges */
 	PCIE_SCAN_CB_ALL = BIT(1),
@@ -418,6 +424,7 @@ extern bool pcie_connect_dynamic_irq(pcie_bdf_t bdf,
 #define PCIE_CONF_CMDSTAT_IO		0x00000001U  /* I/O access enable */
 #define PCIE_CONF_CMDSTAT_MEM		0x00000002U  /* mem access enable */
 #define PCIE_CONF_CMDSTAT_MASTER	0x00000004U  /* bus master enable */
+#define PCIE_CONF_CMDSTAT_SERR		0x00000010U  /* SERR# enable */
 #define PCIE_CONF_CMDSTAT_INTERRUPT	0x00080000U  /* interrupt status */
 #define PCIE_CONF_CMDSTAT_CAPS		0x00100000U  /* capabilities list */
 

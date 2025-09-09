@@ -3,9 +3,6 @@
 
 config SOC_SERIES_LPC55XXX
 	select HAS_MCUX
-	select HAS_MCUX_FLEXCOMM
-	select HAS_MCUX_SYSCON
-	select HAS_MCUX_WWDT
 	select CPU_CORTEX_M_HAS_SYSTICK
 	select CPU_CORTEX_M_HAS_DWT
 	select SOC_RESET_HOOK
@@ -17,8 +14,6 @@ config SOC_LPC55S06
 	select CPU_HAS_FPU
 	select ARMV8_M_DSP
 	select ARM_TRUSTZONE_M
-	select HAS_MCUX_IAP if !TRUSTED_EXECUTION_NONSECURE
-	select HAS_MCUX_RNG
 
 config SOC_LPC55S16
 	select CPU_CORTEX_M33
@@ -27,9 +22,6 @@ config SOC_LPC55S16
 	select CPU_HAS_FPU
 	select ARMV8_M_DSP
 	select ARM_TRUSTZONE_M
-	select HAS_MCUX_IAP if !TRUSTED_EXECUTION_NONSECURE
-	select HAS_MCUX_MCAN
-	select HAS_MCUX_RNG
 
 config SOC_LPC55S26
 	select CPU_CORTEX_M33
@@ -37,11 +29,6 @@ config SOC_LPC55S26
 	select CPU_HAS_ARM_MPU
 	select CPU_HAS_FPU
 	select ARMV8_M_DSP
-	select HAS_MCUX_IAP
-	select HAS_MCUX_LPADC
-	select HAS_MCUX_LPC_DMA
-	select HAS_MCUX_RNG
-	select HAS_MCUX_SCTIMER
 
 config SOC_LPC55S28
 	select CPU_CORTEX_M33
@@ -49,11 +36,6 @@ config SOC_LPC55S28
 	select CPU_HAS_ARM_MPU
 	select CPU_HAS_FPU
 	select ARMV8_M_DSP
-	select HAS_MCUX_IAP
-	select HAS_MCUX_LPADC
-	select HAS_MCUX_LPC_DMA
-	select HAS_MCUX_RNG
-	select HAS_MCUX_SCTIMER
 
 config SOC_LPC55S36
 	select CPU_CORTEX_M33
@@ -62,8 +44,6 @@ config SOC_LPC55S36
 	select CPU_HAS_FPU
 	select ARMV8_M_DSP
 	select ARM_TRUSTZONE_M
-	select HAS_MCUX_MCAN
-	select HAS_MCUX_PWM
 
 config SOC_LPC55S69
 	select CPU_CORTEX_M33
@@ -74,13 +54,6 @@ config SOC_LPC55S69_CPU0
 	select CPU_HAS_FPU
 	select ARMV8_M_DSP
 	select ARM_TRUSTZONE_M
-	select HAS_MCUX_IAP
-	select HAS_MCUX_LPADC
-	select HAS_MCUX_LPC_DMA
-	select HAS_MCUX_USB_LPCIP3511
-	select HAS_MCUX_CTIMER
-	select HAS_MCUX_SCTIMER
-	select HAS_MCUX_RNG
 	select HAS_PM
 
 if SOC_SERIES_LPC55XXX

@@ -65,6 +65,15 @@
 			};
 		};
 
+		manual_flash_1k: manual-flash-1k@f010a6 {
+			compatible = "ite,it51xxx-manual-flash-1k";
+			reg = <0x00f010a6 0x5a
+			       0x00f01000 0xa6>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "disabled";
+		};
+
 		sram0: memory@800000 {
 			compatible = "mmio-sram";
 			reg = <0x800000 DT_SIZE_K(128)>;
@@ -962,6 +971,14 @@
 			#wuc-cells = <1>;
 		};
 
+		bbram: bb-ram@f02200 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			compatible = "ite,it8xxx2-bbram";
+			status = "okay";
+			reg = <0x00f02200 0x80>;
+		};
+
 		i2cbase: i2cbase@f04100 {
 			compatible = "ite,it51xxx-i2cbase";
 			reg = <0x00f04100 1
@@ -1238,7 +1255,9 @@
 				      IT51XXX_IRQ_PCH_P80 IRQ_TYPE_LEVEL_HIGH
 				      IT51XXX_IRQ_PMC2_IBF IRQ_TYPE_LEVEL_HIGH
 				      IT51XXX_IRQ_WKINTD IRQ_TYPE_LEVEL_HIGH
-				      IT51XXX_IRQ_PMC3_IBF IRQ_TYPE_LEVEL_HIGH>;
+				      IT51XXX_IRQ_PMC3_IBF IRQ_TYPE_LEVEL_HIGH
+				      IT51XXX_IRQ_PMC4_IBF IRQ_TYPE_LEVEL_HIGH
+				      IT51XXX_IRQ_PMC5_IBF IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-parent = <&intc>;
 			wucctrl = <&wuc_wu42>;
 			#address-cells = <1>;
@@ -1393,7 +1412,7 @@
 			compatible = "ite,it51xxx-spi";
 			reg = <0x00f02600 0x24>;
 			interrupt-parent = <&intc>;
-			interrupts = <IT51XXX_IRQ_SPI IRQ_TYPE_EDGE_RISING>;
+			interrupts = <IT51XXX_IRQ_SPI IRQ_TYPE_LEVEL_HIGH>;
 			clocks = <&ecpm IT51XXX_ECPM_CGCTRL3R_OFF BIT(1)>;
 			status = "disabled";
 		};

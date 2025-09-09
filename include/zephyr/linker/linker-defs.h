@@ -25,13 +25,22 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/offsets.h>
 
-/* We need to dummy out DT_NODE_HAS_STATUS when building the unittests.
+/* We need to dummy out DT_NODE_HAS_STATUS and DT_NODE_HAS_STATUS_OKAY when
+ * building the unittests.
  * Including devicetree.h would require generating dummy header files
  * to match what gen_defines creates, so it's easier to just dummy out
- * DT_NODE_HAS_STATUS. These are undefined at the end of the file.
+ * DT_NODE_HAS_STATUS and DT_NODE_HAS_STATUS_OKAY. These are undefined at the
+ * end of the file.
  */
 #ifdef ZTEST_UNITTEST
+#ifdef DT_NODE_HAS_STATUS
+#undef DT_NODE_HAS_STATUS
+#endif
 #define DT_NODE_HAS_STATUS(node, status) 0
+
+#ifdef DT_NODE_HAS_STATUS_OKAY
+#undef DT_NODE_HAS_STATUS_OKAY
+#endif
 #define DT_NODE_HAS_STATUS_OKAY(node) 0
 #else
 #include <zephyr/devicetree.h>
@@ -122,11 +131,11 @@ extern char __kernel_ram_start[];
 extern char __kernel_ram_end[];
 extern char __kernel_ram_size[];
 
-/* Used by z_bss_zero or arch-specific implementation */
+/* Used by arch_bss_zero or arch-specific implementation */
 extern char __bss_start[];
 extern char __bss_end[];
 
-/* Used by z_data_copy() or arch-specific implementation */
+/* Used by arch_data_copy() or arch-specific implementation */
 #ifdef CONFIG_XIP
 extern char __data_region_load_start[];
 extern char __data_region_start[];
@@ -237,14 +246,21 @@ extern char __sg_size[];
  * with a MPU. Start and end will be aligned for memory management/protection
  * hardware for the target architecture.
  *
- * All the functions with '__nocache' keyword will be placed into this
- * section.
+ * All the variables with '__nocache' keyword will be placed into the nocache
+ * section, variables with '__nocache_load' keyword will be placed into the
+ * nocache section that is loaded from ROM.
  */
 #ifdef CONFIG_NOCACHE_MEMORY
 extern char _nocache_ram_start[];
 extern char _nocache_ram_end[];
 extern char _nocache_ram_size[];
-extern char _nocache_load_start[];
+extern char _nocache_noload_ram_start[];
+extern char _nocache_noload_ram_end[];
+extern char _nocache_noload_ram_size[];
+extern char _nocache_load_ram_start[];
+extern char _nocache_load_ram_end[];
+extern char _nocache_load_ram_size[];
+extern char _nocache_load_rom_start[];
 #endif /* CONFIG_NOCACHE_MEMORY */
 
 /* Memory owned by the kernel. Start and end will be aligned for memory

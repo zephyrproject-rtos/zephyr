@@ -317,6 +317,7 @@ static void ase_enter_state_idle(struct bt_ascs_ase *ase)
 	__ASSERT_NO_MSG(stream != NULL);
 
 	ase->ep.receiver_ready = false;
+	stream->iso = NULL;
 
 	bt_bap_stream_detach(stream);
 
@@ -336,6 +337,7 @@ static void ase_enter_state_codec_configured(struct bt_ascs_ase *ase)
 	__ASSERT_NO_MSG(stream != NULL);
 
 	ase->ep.receiver_ready = false;
+	stream->iso = NULL;
 
 	ops = stream->ops;
 	if (ops != NULL && ops->configured != NULL) {
@@ -541,8 +543,9 @@ static void state_transition_work_handler(struct k_work *work)
 			/* Reschedule the state transition */
 			err = k_work_reschedule(d_work, K_MSEC(retry_delay_ms));
 			if (err >= 0) {
-				LOG_WRN("Out of buffers for ase state notification. "
-					"Will retry in %dms", retry_delay_ms);
+				LOG_DBG("Out of buffers for ase state notification. "
+					"Will retry in %dms",
+					retry_delay_ms);
 				return;
 			}
 		}
@@ -1490,8 +1493,9 @@ static void ascs_cp_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 	LOG_DBG("attr %p value 0x%04x", attr, value);
 }
 
-static int ascs_ep_set_codec(struct bt_bap_ep *ep, uint8_t id, uint16_t cid, uint16_t vid,
-			     const uint8_t *cc, uint8_t len, struct bt_bap_ascs_rsp *rsp)
+static int ascs_ep_set_codec(struct bt_bap_ep *ep, uint8_t target_latency, uint8_t target_phy,
+			     uint8_t id, uint16_t cid, uint16_t vid, const uint8_t *cc, uint8_t len,
+			     struct bt_bap_ascs_rsp *rsp)
 {
 	const struct bt_audio_codec_cap *codec_cap;
 	struct bt_audio_codec_cfg *codec_cfg;
@@ -1523,6 +1527,8 @@ static int ascs_ep_set_codec(struct bt_bap_ep *ep, uint8_t id, uint16_t cid, uin
 		return -ENOENT;
 	}
 
+	codec_cfg->target_latency = target_latency;
+	codec_cfg->target_phy = target_phy;
 	codec_cfg->id = id;
 	codec_cfg->cid = cid;
 	codec_cfg->vid = vid;
@@ -1545,8 +1551,8 @@ static int ase_config(struct bt_ascs_ase *ase, const struct bt_ascs_config *cfg)
 
 	LOG_DBG("ase %p latency 0x%02x phy 0x%02x codec 0x%02x "
 		"cid 0x%04x vid 0x%04x codec config len 0x%02x",
-		ase, cfg->latency, cfg->phy, cfg->codec.id, cfg->codec.cid, cfg->codec.vid,
-		cfg->cc_len);
+		ase, cfg->latency, cfg->phy, cfg->codec.id, sys_le16_to_cpu(cfg->codec.cid),
+		sys_le16_to_cpu(cfg->codec.vid), cfg->cc_len);
 
 	if (!IN_RANGE(cfg->latency, BT_ASCS_CONFIG_LATENCY_LOW, BT_ASCS_CONFIG_LATENCY_HIGH)) {
 		LOG_WRN("Invalid latency: 0x%02x", cfg->latency);
@@ -1589,9 +1595,9 @@ static int ase_config(struct bt_ascs_ase *ase, const struct bt_ascs_config *cfg)
 	 */
 	(void)memcpy(&codec_cfg, &ase->ep.codec_cfg, sizeof(codec_cfg));
 
-	err = ascs_ep_set_codec(&ase->ep, cfg->codec.id, sys_le16_to_cpu(cfg->codec.cid),
-				sys_le16_to_cpu(cfg->codec.vid), (const uint8_t *)cfg->cc,
-				cfg->cc_len, &rsp);
+	err = ascs_ep_set_codec(&ase->ep, cfg->latency, cfg->phy, cfg->codec.id,
+				sys_le16_to_cpu(cfg->codec.cid), sys_le16_to_cpu(cfg->codec.vid),
+				(const uint8_t *)cfg->cc, cfg->cc_len, &rsp);
 	if (err != 0) {
 		ascs_app_rsp_warn_valid(&rsp);
 		(void)memcpy(&ase->ep.codec_cfg, &codec_cfg, sizeof(codec_cfg));
@@ -1974,6 +1980,7 @@ static void ase_qos(struct bt_ascs_ase *ase, uint8_t cig_id, uint8_t cis_id,
 	/* QoS->QoS transition. Unbind ISO if CIG/CIS changed. */
 	if (ep->iso != NULL && (ep->cig_id != cig_id || ep->cis_id != cis_id)) {
 		bt_bap_iso_unbind_ep(ep->iso, ep);
+		stream->iso = NULL;
 	}
 
 	if (ep->iso == NULL) {
@@ -1997,6 +2004,7 @@ static void ase_qos(struct bt_ascs_ase *ase, uint8_t cig_id, uint8_t cis_id,
 		}
 
 		bt_bap_iso_bind_ep(iso, ep);
+		stream->iso = &iso->chan;
 		bt_bap_iso_unref(iso);
 	}
 

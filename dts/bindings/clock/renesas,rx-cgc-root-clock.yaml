@@ -43,7 +43,13 @@ properties:
     enum:
       - 0
       - 1
+      - 2
+      - 3
+      - 4
     description: |
       Drive Capacity Control (for Sub-Clock Oscillator only)
-      0: Drive capacity for standard CL.
-      1: Drive capacity for low CL.
+      0: Drive capacity for standard CL
+      1: Drive capacity for low CL (unsupported on rx261)
+      2: High-drive output for the low CL
+      3: Middle-drive output for the low CL
+      4: Low-drive output for the low CL

@@ -42,7 +42,6 @@ config BT_HCI_HOST
 	depends on !BT_HCI_RAW
 	select POLL
 
-
 config BT_HCI_TX_STACK_SIZE
 	# NOTE: This value is derived from other symbols and should only be
 	# changed if required by architecture
@@ -168,6 +167,35 @@ if BT_HCI_HOST
 
 rsource "../mesh/Kconfig"
 rsource "../audio/Kconfig"
+
+config BT_BUF_EVT_DISCARDABLE_SIZE
+	int "Maximum supported discardable HCI Event buffer length"
+	range 43 $(UINT8_MAX) if !BT_EXT_ADV
+	range 58 $(UINT8_MAX) if BT_EXT_ADV
+	# LE Extended Advertising Report event
+	default $(UINT8_MAX) if BT_CLASSIC
+	# Le Advertising Report event
+	default 43 if !BT_EXT_ADV
+	default 58 if BT_EXT_ADV
+	help
+	  Maximum support discardable HCI event size of buffers in the separate
+	  discardable event buffer pool. This value does not include the
+	  HCI Event header.
+	  The minimum size is set based on the Advertising Report. Setting
+	  the buffer size different than BT_BUF_EVT_RX_SIZE can save memory.
+
+config BT_BUF_EVT_DISCARDABLE_COUNT
+	int "Number of discardable HCI Event buffers"
+	range 1 $(UINT8_MAX)
+	default 20 if BT_MESH
+	default 3
+	help
+	  Number of buffers in a separate buffer pool for events which
+	  the HCI driver considers discardable. Examples of such events
+	  could be e.g. Advertising Reports. The benefit of having such
+	  a pool is that the if there is a heavy inflow of such events
+	  it will not cause the allocation for other critical events to
+	  block and may even eliminate deadlocks in some cases.
 
 config BT_HOST_CRYPTO
 	bool "Use crypto functionality implemented in the Bluetooth host"
@@ -760,7 +788,7 @@ config BT_MAX_PAIRED
 	int "Maximum number of paired devices"
 	default 0 if !BT_SMP
 	default 1
-	range 0 128
+	range 0 250
 	help
 	  Maximum number of paired Bluetooth devices. The minimum (and
 	  default) number is 1.

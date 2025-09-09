@@ -33,6 +33,9 @@
 #include <zephyr/usb/usbd.h>
 
 BUILD_ASSERT(strlen(CONFIG_BROADCAST_CODE) <= BT_ISO_BROADCAST_CODE_SIZE, "Invalid broadcast code");
+BUILD_ASSERT(IN_RANGE(strlen(CONFIG_BROADCAST_NAME), BT_AUDIO_BROADCAST_NAME_LEN_MIN,
+		      BT_AUDIO_BROADCAST_NAME_LEN_MAX),
+	     "Invalid broadcast name");
 
 /* When BROADCAST_ENQUEUE_COUNT > 1 we can enqueue enough buffers to ensure that
  * the controller is never idle
@@ -394,6 +397,14 @@ static void stream_started_cb(struct bt_bap_stream *stream)
 {
 	struct broadcast_source_stream *source_stream =
 		CONTAINER_OF(stream, struct broadcast_source_stream, stream);
+	struct bt_iso_info info;
+	int err;
+
+	err = bt_iso_chan_get_info(stream->iso, &info);
+	__ASSERT(err == 0, "Failed to get ISO chan info: %d", err);
+
+	printk("Stream %p started with BIG_Handle %u and BIS_Number %u\n", stream,
+	       info.broadcaster.big_handle, info.broadcaster.bis_number);
 
 	source_stream->seq_num = 0U;
 	source_stream->sent_cnt = 0U;
@@ -559,7 +570,7 @@ int main(void)
 		/* Broadcast Audio Streaming Endpoint advertising data */
 		NET_BUF_SIMPLE_DEFINE(ad_buf, BT_UUID_SIZE_16 + BT_AUDIO_BROADCAST_ID_SIZE);
 		NET_BUF_SIMPLE_DEFINE(base_buf, 128);
-		struct bt_data ext_ad[2];
+		struct bt_data ext_ad[3];
 		struct bt_data per_ad;
 		uint32_t broadcast_id;
 
@@ -602,7 +613,11 @@ int main(void)
 		ext_ad[0].data = ad_buf.data;
 		ext_ad[1] = (struct bt_data)BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME,
 						    sizeof(CONFIG_BT_DEVICE_NAME) - 1);
-		err = bt_le_ext_adv_set_data(adv, ext_ad, 2, NULL, 0);
+		/* Broadcast name used for scanning device that displays information on the */
+		/* available broadcast sources. */
+		ext_ad[2] = (struct bt_data)BT_DATA(BT_DATA_BROADCAST_NAME, CONFIG_BROADCAST_NAME,
+						    sizeof(CONFIG_BROADCAST_NAME) - 1);
+		err = bt_le_ext_adv_set_data(adv, ext_ad, 3, NULL, 0);
 		if (err != 0) {
 			printk("Failed to set extended advertising data: %d\n", err);
 			return 0;

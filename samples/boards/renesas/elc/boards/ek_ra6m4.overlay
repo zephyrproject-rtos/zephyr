@@ -9,7 +9,7 @@
 
 / {
 	aliases {
-		pwm-gen = &pwm1;
+		pwm-gen = &pwm0;
 		pwm-cap = &pwm4;
 		elc-link = &elc;
 	};
@@ -33,9 +33,9 @@
 	status = "okay";
 };
 
-&pwm1 {
+&pwm0 {
 	renesas-elcs = <&elc RA_ELC_PERIPHERAL_GPT_A RA_ELC_EVENT_ELC_SOFTWARE_EVENT_0>,
-			<&elc RA_ELC_PERIPHERAL_GPT_B RA_ELC_EVENT_ELC_SOFTWARE_EVENT_1>;
+		       <&elc RA_ELC_PERIPHERAL_GPT_B RA_ELC_EVENT_ELC_SOFTWARE_EVENT_1>;
 	renesas-elc-names = "start", "stop";
 	start-source = "GPT_SOURCE_GPT_A";
 	stop-source = "GPT_SOURCE_GPT_B";

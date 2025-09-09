@@ -28,8 +28,7 @@
 	airoc_wifi_host_wake: airoc_wifi_host_wake {
 		/* Assign GPIO24 to SIO (GPIO) for use as an interrupt source */
 		group1 {
-			/* Lacking a specific SIO pin definition, use the RP2040_PINMUX macro */
-			pinmux = <RP2XXX_PINMUX(24, RP2_PINCTRL_GPIO_FUNC_SIO)>;
+			pinmux = <GPIO_P24>;
 			input-enable;
 		};
 	};

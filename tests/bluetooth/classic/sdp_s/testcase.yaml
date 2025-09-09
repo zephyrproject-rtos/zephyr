@@ -11,7 +11,7 @@ tests:
     harness_config:
       pytest_dut_scope: session
       fixture: usb_hci
-    timeout: 60
+    timeout: 900
   bluetooth.classic.sdp.server.no_blobs:
     platform_allow:
       - mimxrt1170_evk@B/mimxrt1176/cm7

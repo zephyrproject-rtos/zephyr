@@ -6,12 +6,13 @@
 
 /**
  * @file
- * @brief Public APIs for MIPI-DBI drivers
+ * @ingroup mipi_dbi_interface
+ * @brief Main header file for MIPI-DBI (Display Bus Interface) driver API.
  *
  * MIPI-DBI defines the following 3 interfaces:
- * Type A: Motorola 6800 type parallel bus
- * Type B: Intel 8080 type parallel bus
- * Type C: SPI Type (1 bit bus) with 3 options:
+ * - Type A: Motorola 6800 type parallel bus
+ * - Type B: Intel 8080 type parallel bus
+ * - Type C: SPI Type (1 bit bus) with 3 options:
  *     1. 9 write clocks per byte, final bit is command/data selection bit
  *     2. Same as above, but 16 write clocks per byte
  *     3. 8 write clocks per byte. Command/data selected via GPIO pin
@@ -22,11 +23,11 @@
 #define ZEPHYR_INCLUDE_DRIVERS_MIPI_DBI_H_
 
 /**
- * @brief MIPI-DBI driver APIs
- * @defgroup mipi_dbi_interface MIPI-DBI driver APIs
+ * @brief Interfaces for MIPI-DBI (Display Bus Interface).
+ * @defgroup mipi_dbi_interface MIPI-DBI
  * @since 3.6
- * @version 0.1.0
- * @ingroup io_interfaces
+ * @version 0.8.0
+ * @ingroup display_interface
  * @{
  */
 

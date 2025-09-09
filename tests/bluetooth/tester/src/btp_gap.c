@@ -31,6 +31,7 @@
 #include <zephyr/net_buf.h>
 
 #include <hci_core.h>
+#include <iso_internal.h>
 
 #include "btp/btp.h"
 
@@ -830,7 +831,8 @@ int tester_gap_create_adv_instance(struct bt_le_adv_param *param,
 
 		err = bt_le_ext_adv_create(param, NULL, &ext_adv_sets[index]);
 		if (err != 0) {
-			return BTP_STATUS_FAILED;
+			LOG_ERR("Failed to create ext adv(err %d)", err);
+			return err;
 		}
 
 		err = bt_le_ext_adv_set_data(ext_adv_sets[index], ad, ad_len, sd_len ?
@@ -841,6 +843,8 @@ int tester_gap_create_adv_instance(struct bt_le_adv_param *param,
 
 	return err;
 }
+
+static struct bt_le_ext_adv *gap_ext_adv;
 
 static uint8_t start_advertising(const void *cmd, uint16_t cmd_len,
 				 void *rsp, uint16_t *rsp_len)
@@ -895,17 +899,15 @@ static uint8_t start_advertising(const void *cmd, uint16_t cmd_len,
 		i += sd[sd_len].data_len;
 	}
 
-	struct bt_le_ext_adv *ext_adv = NULL;
-
 	err = tester_gap_create_adv_instance(&param, own_addr_type, ad, adv_len, sd,
-					     sd_len, NULL, &ext_adv);
+					     sd_len, NULL, &gap_ext_adv);
 	if (err != 0) {
 		return BTP_STATUS_FAILED;
 	}
 
 	if (IS_ENABLED(CONFIG_BT_EXT_ADV) &&
 	    atomic_test_bit(&current_settings, BTP_GAP_SETTINGS_EXTENDED_ADVERTISING)) {
-		err = bt_le_ext_adv_start(ext_adv, BT_LE_EXT_ADV_START_DEFAULT);
+		err = bt_le_ext_adv_start(gap_ext_adv, BT_LE_EXT_ADV_START_DEFAULT);
 	} else {
 		err = bt_le_adv_start(&param, ad, adv_len, sd_len ? sd : NULL, sd_len);
 	}
@@ -969,7 +971,13 @@ static uint8_t stop_advertising(const void *cmd, uint16_t cmd_len,
 	struct btp_gap_stop_advertising_rp *rp = rsp;
 	int err;
 
-	err = bt_le_adv_stop();
+	if (IS_ENABLED(CONFIG_BT_EXT_ADV) &&
+	    atomic_test_bit(&current_settings, BTP_GAP_SETTINGS_EXTENDED_ADVERTISING)) {
+		err = bt_le_ext_adv_stop(gap_ext_adv);
+	} else {
+		err = bt_le_adv_stop();
+	}
+
 	if (err < 0) {
 		tester_rsp(BTP_SERVICE_ID_GAP, BTP_GAP_STOP_ADVERTISING, BTP_STATUS_FAILED);
 		LOG_ERR("Failed to stop advertising: %d", err);
@@ -1198,10 +1206,25 @@ static uint8_t start_discovery(const void *cmd, uint16_t cmd_len,
 		return br_start_discovery(cp);
 	}
 
-	/* Start LE scanning */
-	if (bt_le_scan_start(cp->flags & BTP_GAP_DISCOVERY_FLAG_LE_ACTIVE_SCAN ?
-			     BT_LE_SCAN_ACTIVE : BT_LE_SCAN_PASSIVE,
-			     device_found) < 0) {
+	struct bt_le_scan_param scan_param = {
+		.type     = BT_LE_SCAN_TYPE_PASSIVE,
+		.options  = BT_LE_SCAN_OPT_FILTER_DUPLICATE,
+		.interval = BT_GAP_SCAN_FAST_INTERVAL,
+		.window   = BT_GAP_SCAN_FAST_WINDOW,
+		.timeout = 0,
+		.interval_coded = 0,
+		.window_coded = 0,
+	};
+
+	if (cp->flags & BTP_GAP_DISCOVERY_FLAG_LE_ACTIVE_SCAN) {
+		scan_param.type = BT_LE_SCAN_TYPE_ACTIVE;
+	}
+
+	if (cp->flags & BTP_GAP_DISCOVERY_FLAG_USE_FILTER_LIST) {
+		scan_param.options |= BT_LE_SCAN_OPT_FILTER_ACCEPT_LIST;
+	}
+
+	if (bt_le_scan_start(&scan_param, device_found) < 0) {
 		LOG_ERR("Failed to start scanning");
 		return BTP_STATUS_FAILED;
 	}
@@ -1844,6 +1867,10 @@ static uint8_t set_extended_advertising(const void *cmd, uint16_t cmd_len, void 
 
 	LOG_DBG("ext adv settings: %u", cp->settings);
 
+	if (atomic_test_bit(&current_settings, BTP_GAP_SETTINGS_ADVERTISING)) {
+		return BTP_STATUS_FAILED;
+	}
+
 	if (cp->settings != 0) {
 		atomic_set_bit(&current_settings, BTP_GAP_SETTINGS_EXTENDED_ADVERTISING);
 	} else {
@@ -1961,10 +1988,38 @@ static void pa_sync_recv_cb(struct bt_le_per_adv_sync *sync,
 		     ev, sizeof(*ev) + ev->data_len);
 }
 
+static void pa_sync_biginfo_cb(struct bt_le_per_adv_sync *sync,
+			       const struct bt_iso_biginfo *biginfo)
+{
+	struct btp_gap_periodic_biginfo_ev ev;
+
+	LOG_DBG("");
+
+	bt_addr_le_copy(&ev.address, biginfo->addr);
+	ev.sync_handle = sys_cpu_to_le16(sync->handle);
+	ev.sid = biginfo->sid;
+	ev.num_bis = biginfo->num_bis;
+	ev.nse = biginfo->sub_evt_count;
+	ev.iso_interval = sys_cpu_to_le16(biginfo->iso_interval);
+	ev.bn = biginfo->burst_number;
+	ev.pto = biginfo->offset;
+	ev.irc = biginfo->rep_count;
+	ev.max_pdu = sys_cpu_to_le16(biginfo->max_pdu);
+	ev.sdu_interval = sys_cpu_to_le32(biginfo->sdu_interval);
+	ev.max_sdu = sys_cpu_to_le16(biginfo->max_sdu);
+	ev.phy = biginfo->phy;
+	ev.framing = biginfo->framing;
+	ev.encryption = biginfo->encryption ? BTP_GAP_EV_PERIODIC_BIGINFO_ENC_ENABLE :
+					      BTP_GAP_EV_PERIODIC_BIGINFO_ENC_DISABLE;
+
+	tester_event(BTP_SERVICE_ID_GAP, BTP_GAP_EV_PERIODIC_BIGINFO, &ev, sizeof(ev));
+}
+
 static struct bt_le_per_adv_sync_cb pa_sync_cb = {
 	.synced = pa_sync_synced_cb,
 	.term = pa_sync_terminated_cb,
 	.recv = pa_sync_recv_cb,
+	.biginfo = pa_sync_biginfo_cb,
 };
 
 #if defined(CONFIG_BT_PER_ADV)
@@ -1984,6 +2039,7 @@ int tester_gap_padv_configure(struct bt_le_ext_adv *ext_adv,
 						     BTP_GAP_ADDR_TYPE_IDENTITY, ad, 1, NULL, 0,
 						     NULL, &ext_adv);
 		if (err != 0) {
+			LOG_ERR("Failed to create adv instance (err %d)\n", err);
 			return -EINVAL;
 		}
 	}
@@ -1993,7 +2049,7 @@ int tester_gap_padv_configure(struct bt_le_ext_adv *ext_adv,
 	 */
 	err = bt_le_per_adv_set_param(ext_adv, param);
 	if (err != 0) {
-		LOG_DBG("Failed to set periodic advertising parameters (err %d)\n", err);
+		LOG_ERR("Failed to set periodic advertising parameters (err %d)\n", err);
 	}
 
 	return err;
@@ -2349,6 +2405,432 @@ static uint8_t set_rpa_timeout(const void *cmd, uint16_t cmd_len, void *rsp, uin
 }
 #endif /* defined(CONFIG_BT_RPA_TIMEOUT_DYNAMIC) */
 
+#if defined(CONFIG_BT_ISO_SYNC_RECEIVER) || defined(CONFIG_BT_ISO_BROADCASTER)
+static int bt_iso_chan_get_index(struct bt_iso_chan *chan);
+#endif /* defined(CONFIG_BT_ISO_SYNC_RECEIVER) || defined(CONFIG_BT_ISO_BROADCASTER) */
+
+#if defined(CONFIG_BT_ISO_SYNC_RECEIVER)
+static struct bt_iso_big *iso_sync_receiver_big;
+
+static void iso_sync_receiver_big_started_cb(struct bt_iso_big *big)
+{
+	__maybe_unused struct btp_gap_big_sync_established_ev ev;
+	struct bt_iso_info info;
+	struct bt_iso_chan *bis;
+	bool found = false;
+
+	if (big != iso_sync_receiver_big) {
+		return;
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&big->bis_channels, bis, node) {
+		int err = bt_iso_chan_get_info(bis, &info);
+
+		if (err != 0) {
+			LOG_DBG("Failed to get ISO chan info: %d", err);
+			continue;
+		}
+
+		if (info.type != BT_ISO_CHAN_TYPE_SYNC_RECEIVER) {
+			continue;
+		}
+
+		found = true;
+		break;
+	}
+
+	__ASSERT(found, "Failed to find the valid ISO info");
+
+	if (!found) {
+		LOG_ERR("Failed to find the valid ISO info");
+		return;
+	}
+
+	bt_addr_le_copy(&ev.address, &pa_sync->addr);
+	ev.latency = sys_cpu_to_le32(info.sync_receiver.latency);
+	ev.nse = info.max_subevent;
+	ev.bn = info.sync_receiver.bn;
+	ev.pto = sys_cpu_to_le32(info.sync_receiver.pto);
+	ev.irc = info.sync_receiver.irc;
+	ev.max_pdu = sys_cpu_to_le16(info.sync_receiver.max_pdu);
+	ev.iso_interval = sys_cpu_to_le16(info.iso_interval);
+
+	tester_event(BTP_SERVICE_ID_GAP, BTP_GAP_EV_BIG_SYNC_ESTABLISHED, &ev, sizeof(ev));
+}
+
+static void iso_sync_receiver_big_stopped_cb(struct bt_iso_big *big, uint8_t reason)
+{
+	struct btp_gap_big_sync_lost_ev ev;
+
+	if (big != iso_sync_receiver_big) {
+		return;
+	}
+
+	bt_addr_le_copy(&ev.address, &pa_sync->addr);
+	ev.reason = reason;
+
+	tester_event(BTP_SERVICE_ID_GAP, BTP_GAP_EV_BIG_SYNC_LOST, &ev, sizeof(ev));
+
+	iso_sync_receiver_big = NULL;
+}
+
+static struct bt_iso_big_cb iso_sync_receiver_big_cb = {
+	.started = iso_sync_receiver_big_started_cb,
+	.stopped = iso_sync_receiver_big_stopped_cb,
+};
+
+#define BIS_STREAM_DATA_LEN (CONFIG_BT_ISO_RX_MTU + \
+			     sizeof(struct btp_gap_bis_stream_received_ev))
+
+BUILD_ASSERT(BIS_STREAM_DATA_LEN < BTP_DATA_MAX_SIZE, "BIS stream data length exceeds BTP MTU");
+
+static struct net_buf_simple *iso_sync_receiver_buf = NET_BUF_SIMPLE(BIS_STREAM_DATA_LEN);
+
+static void iso_sync_receiver_recv(struct bt_iso_chan *chan, const struct bt_iso_recv_info *info,
+				   struct net_buf *buf)
+{
+	struct btp_gap_bis_stream_received_ev *ev;
+	int err;
+
+	if (pa_sync == NULL) {
+		return;
+	}
+
+	err = bt_iso_chan_get_index(chan);
+	if (err < 0) {
+		LOG_ERR("Failed to get BIS channel index: %d", err);
+		return;
+	}
+
+	/* cleanup */
+	net_buf_simple_init(iso_sync_receiver_buf, 0);
+
+	ev = net_buf_simple_add(iso_sync_receiver_buf, sizeof(*ev));
+
+	__ASSERT(buf->len <= net_buf_simple_tailroom(iso_sync_receiver_buf), "No more tailroom");
+
+	bt_addr_le_copy(&ev->address, &pa_sync->addr);
+	ev->bis_id = (uint8_t)err;
+	ev->data_len = buf->len;
+	ev->flags = info->flags;
+	ev->ts = sys_cpu_to_le32(info->ts);
+	ev->seq_num = sys_cpu_to_le16(info->seq_num);
+	net_buf_simple_add_mem(iso_sync_receiver_buf, buf->data, ev->data_len);
+
+	tester_event(BTP_SERVICE_ID_GAP, BTP_GAP_EV_BIS_STREAM_RECEIVED,
+		     iso_sync_receiver_buf->data, iso_sync_receiver_buf->len);
+}
+
+static void iso_sync_receiver_connected(struct bt_iso_chan *chan)
+{
+	const struct bt_iso_chan_path hci_path = {
+		.pid = BT_ISO_DATA_PATH_HCI,
+		.format = BT_HCI_CODING_FORMAT_TRANSPARENT,
+	};
+	int err;
+	struct btp_gap_bis_data_path_setup_ev ev;
+
+	if (pa_sync == NULL) {
+		return;
+	}
+
+	err = bt_iso_chan_get_index(chan);
+	if (err < 0) {
+		LOG_ERR("Failed to get BIS channel index: %d", err);
+		return;
+	}
+	ev.bis_id = (uint8_t)err;
+
+	err = bt_iso_setup_data_path(chan, BT_HCI_DATAPATH_DIR_CTLR_TO_HOST, &hci_path);
+	if (err != 0) {
+		LOG_ERR("Failed to setup ISO RX data path: %d", err);
+		return;
+	}
+
+	bt_addr_le_copy(&ev.address, &pa_sync->addr);
+
+	tester_event(BTP_SERVICE_ID_GAP, BTP_GAP_EV_BIS_DATA_PATH_SETUP, &ev, sizeof(ev));
+}
+
+static void iso_sync_receiver_disconnected(struct bt_iso_chan *chan, uint8_t reason)
+{
+	int err;
+
+	err = bt_iso_remove_data_path(chan, BT_HCI_DATAPATH_DIR_CTLR_TO_HOST);
+	if (err != 0) {
+		LOG_ERR("Failed to remove ISO RX data path: %d", err);
+	}
+}
+
+static struct bt_iso_chan_ops iso_sync_receiver_ops = {
+	.recv = iso_sync_receiver_recv,
+	.connected = iso_sync_receiver_connected,
+	.disconnected = iso_sync_receiver_disconnected,
+};
+#endif /* defined(CONFIG_BT_ISO_SYNC_RECEIVER) */
+
+#if defined(CONFIG_BT_ISO_BROADCASTER)
+static uint32_t bis_sn_last;
+static int64_t bis_sn_last_updated_ticks;
+static uint32_t bis_sdu_interval_us;
+
+static void iso_broadcaster_connected(struct bt_iso_chan *chan)
+{
+	int err;
+	const struct bt_iso_chan_path hci_path = {
+		.pid = BT_ISO_DATA_PATH_HCI,
+		.format = BT_HCI_CODING_FORMAT_TRANSPARENT,
+	};
+	struct btp_gap_bis_data_path_setup_ev ev;
+	struct bt_le_ext_adv *ext_adv = tester_gap_ext_adv_get(0);
+
+	err = bt_iso_chan_get_index(chan);
+	if (err < 0) {
+		LOG_ERR("Failed to get BIS channel index: %d", err);
+		return;
+	}
+	ev.bis_id = (uint8_t)err;
+
+	bis_sn_last = 0;
+	bis_sn_last_updated_ticks = k_uptime_ticks();
+
+	err = bt_iso_setup_data_path(chan, BT_HCI_DATAPATH_DIR_HOST_TO_CTLR, &hci_path);
+	if (err != 0) {
+		LOG_ERR("Failed to setup ISO TX data path: %d", err);
+		return;
+	}
+
+	bt_addr_le_copy(&ev.address, &ext_adv->random_addr);
+
+	tester_event(BTP_SERVICE_ID_GAP, BTP_GAP_EV_BIS_DATA_PATH_SETUP, &ev, sizeof(ev));
+}
+
+static void iso_broadcaster_disconnected(struct bt_iso_chan *chan, uint8_t reason)
+{
+	ARG_UNUSED(chan);
+	ARG_UNUSED(reason);
+}
+
+static struct bt_iso_chan_ops iso_broadcaster_ops = {
+	.connected = iso_broadcaster_connected,
+	.disconnected = iso_broadcaster_disconnected,
+};
+#endif /* defined(CONFIG_BT_ISO_BROADCASTER) */
+
+#if defined(CONFIG_BT_ISO_SYNC_RECEIVER) || defined(CONFIG_BT_ISO_BROADCASTER)
+static struct bt_iso_chan_qos bis_iso_qos;
+
+static struct bt_iso_chan bis_iso_chan = {
+	.qos = &bis_iso_qos,
+};
+
+#define DEFAULT_IO_QOS {.sdu = 40u, .phy = BT_GAP_LE_PHY_2M, .rtn = 2u,}
+
+#define BIS_ISO_CHAN_COUNT 1
+
+static struct bt_iso_chan *bis_channels[BIS_ISO_CHAN_COUNT] = { &bis_iso_chan };
+
+static int bt_iso_chan_get_index(struct bt_iso_chan *chan)
+{
+	ARRAY_FOR_EACH(bis_channels, index) {
+		if (bis_channels[index] == chan) {
+			return (int)index;
+		}
+	}
+	return -EINVAL;
+}
+#endif /* defined(CONFIG_BT_ISO_SYNC_RECEIVER) || defined(CONFIG_BT_ISO_BROADCASTER) */
+
+#if defined(CONFIG_BT_ISO_SYNC_RECEIVER)
+static struct bt_iso_chan_io_qos iso_sync_receiver_qos = DEFAULT_IO_QOS;
+
+static uint8_t big_create_sync(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
+{
+	int err;
+	const struct btp_gap_big_create_sync_cmd *cp = cmd;
+	struct bt_iso_big_sync_param param;
+
+	if ((cmd_len < sizeof(*cp)) ||
+	    (cmd_len != (sizeof(*cp) + sizeof(param.bcode) * cp->encryption))) {
+		LOG_ERR("Invalid cmd len");
+		return BTP_STATUS_FAILED;
+	}
+
+	if (!(cp->encryption == BTP_GAP_BIG_CREATE_SYNC_ENC_DISABLE ||
+	      cp->encryption == BTP_GAP_BIG_CREATE_SYNC_ENC_ENABLE)) {
+		LOG_ERR("Invalid encryption %u", cp->encryption);
+		return BTP_STATUS_FAILED;
+	}
+
+	if ((pa_sync == NULL) || !bt_addr_le_eq(&cp->address, &pa_sync->addr) ||
+	    (cp->sid != pa_sync->sid)) {
+		LOG_ERR("Invalid PA sync or SID");
+		return BTP_STATUS_FAILED;
+	}
+
+	if (cp->num_bis > ARRAY_SIZE(bis_channels)) {
+		LOG_ERR("BIS num exceeds %u > %u", cp->num_bis, ARRAY_SIZE(bis_channels));
+		return BTP_STATUS_FAILED;
+	}
+
+	bis_iso_qos.tx = NULL;
+	bis_iso_qos.rx = &iso_sync_receiver_qos;
+
+	bis_iso_chan.ops = &iso_sync_receiver_ops;
+
+	param.bis_channels = bis_channels;
+	param.num_bis = cp->num_bis;
+	param.bis_bitfield = sys_le32_to_cpu(cp->bis_bitfield);
+	param.mse = sys_le32_to_cpu(cp->mse);
+	param.sync_timeout = sys_le16_to_cpu(cp->sync_timeout);
+	param.encryption = cp->encryption == BTP_GAP_BIG_CREATE_SYNC_ENC_ENABLE;
+	if (param.encryption) {
+		memcpy(param.bcode, cp->broadcast_code, sizeof(param.bcode));
+	}
+
+	err = bt_iso_big_sync(pa_sync, &param, &iso_sync_receiver_big);
+	if (err != 0) {
+		LOG_ERR("Unable to sync to BIG (err %d)", err);
+		return BTP_STATUS_FAILED;
+	}
+
+	LOG_DBG("BIG syncing");
+
+	return BTP_STATUS_SUCCESS;
+}
+#endif /* defined(CONFIG_BT_ISO_SYNC_RECEIVER) */
+
+#if defined(CONFIG_BT_ISO_BROADCASTER)
+static struct bt_iso_chan_io_qos iso_broadcaster_qos = DEFAULT_IO_QOS;
+
+static struct bt_iso_big *iso_broadcaster_big;
+
+static uint8_t create_big(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
+{
+	int err;
+	const struct btp_gap_create_big_cmd *cp = cmd;
+	struct bt_iso_big_create_param param = {0};
+	struct bt_le_ext_adv *ext_adv = tester_gap_ext_adv_get(0);
+
+	if ((cmd_len < sizeof(*cp)) ||
+	    (cmd_len != (sizeof(*cp) + sizeof(param.bcode) * cp->encryption))) {
+		LOG_ERR("Invalid cmd len");
+		return BTP_STATUS_FAILED;
+	}
+
+	if (!(cp->encryption == BTP_GAP_CREATE_BIG_ENC_DISABLE ||
+	      cp->encryption == BTP_GAP_CREATE_BIG_ENC_ENABLE)) {
+		LOG_ERR("Invalid encryption %u", cp->encryption);
+		return BTP_STATUS_FAILED;
+	}
+
+	if ((ext_adv == NULL) || (cp->id != ext_adv->id)) {
+		LOG_ERR("Invalid extended adv");
+		return BTP_STATUS_FAILED;
+	}
+
+	if (cp->num_bis > ARRAY_SIZE(bis_channels)) {
+		LOG_ERR("BIS num exceeds %u > %u", cp->num_bis, ARRAY_SIZE(bis_channels));
+		return BTP_STATUS_FAILED;
+	}
+
+	bis_iso_qos.rx = NULL;
+	bis_iso_qos.tx = &iso_broadcaster_qos;
+	bis_iso_qos.tx->phy = cp->phy;
+	bis_iso_qos.tx->rtn = cp->rtn;
+	bis_iso_qos.tx->sdu = CONFIG_BT_ISO_TX_MTU;
+
+	bis_iso_chan.ops = &iso_broadcaster_ops;
+
+	param.bis_channels = bis_channels;
+	param.num_bis = cp->num_bis;
+	param.interval = sys_le32_to_cpu(cp->interval);
+	param.packing = cp->packing;
+	param.framing = cp->framing;
+	param.latency = sys_le16_to_cpu(cp->latency);
+
+	param.encryption = cp->encryption == BTP_GAP_CREATE_BIG_ENC_ENABLE;
+	if (param.encryption) {
+		memcpy(param.bcode, cp->broadcast_code, sizeof(param.bcode));
+	}
+
+	bis_sdu_interval_us = param.interval;
+
+	err = bt_iso_big_create(ext_adv, &param, &iso_broadcaster_big);
+	if (err != 0) {
+		LOG_ERR("Unable to create BIG (err %d)", err);
+		return BTP_STATUS_FAILED;
+	}
+
+	LOG_DBG("BIG created");
+
+	return BTP_STATUS_SUCCESS;
+}
+
+NET_BUF_POOL_FIXED_DEFINE(bis_tx_pool, BIS_ISO_CHAN_COUNT,
+			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
+			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
+
+static uint32_t get_next_sn(uint32_t last_sn, int64_t *last_ticks,
+			    uint32_t interval_us)
+{
+	int64_t uptime_ticks, delta_ticks;
+	uint64_t delta_us;
+	uint64_t sn_incr;
+	uint64_t next_sn;
+
+	/* Note: This does not handle wrapping of ticks when they go above
+	 * 2^(62-1)
+	 */
+	uptime_ticks = k_uptime_ticks();
+	delta_ticks = uptime_ticks - *last_ticks;
+	*last_ticks = uptime_ticks;
+
+	delta_us = k_ticks_to_us_near64((uint64_t)delta_ticks);
+	sn_incr = delta_us / interval_us;
+	next_sn = (sn_incr + last_sn);
+
+	return (uint32_t)next_sn;
+}
+
+static uint8_t bis_broadcast(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
+{
+	int err;
+	const struct btp_gap_bis_broadcast_cmd *cp = cmd;
+	struct net_buf *buf;
+
+	buf = net_buf_alloc(&bis_tx_pool, K_NO_WAIT);
+	if (buf == NULL) {
+		LOG_ERR("Failed to allocate buffer");
+		return BTP_STATUS_FAILED;
+	}
+
+	net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
+
+	if (cp->data_len > net_buf_tailroom(buf)) {
+		net_buf_unref(buf);
+		LOG_ERR("Data length exceeds buffer tailroom");
+		return BTP_STATUS_FAILED;
+	}
+
+	bis_sn_last = get_next_sn(bis_sn_last, &bis_sn_last_updated_ticks,
+				  bis_sdu_interval_us);
+
+	net_buf_add_mem(buf, cp->data, cp->data_len);
+
+	err = bt_iso_chan_send(&bis_iso_chan, buf, bis_sn_last);
+	if (err < 0) {
+		LOG_ERR("Unable to broadcast: %d", -err);
+		net_buf_unref(buf);
+		return BTP_STATUS_FAILED;
+	}
+
+	LOG_DBG("ISO broadcasting..., sn %u len %u", bis_sn_last, cp->data_len);
+
+	return BTP_STATUS_SUCCESS;
+}
+#endif /* defined(CONFIG_BT_ISO_BROADCASTER) */
+
 static const struct btp_handler handlers[] = {
 	{
 		.opcode = BTP_GAP_READ_SUPPORTED_COMMANDS,
@@ -2544,6 +3026,25 @@ static const struct btp_handler handlers[] = {
 		.func = set_rpa_timeout,
 	},
 #endif /* defined(CONFIG_BT_RPA_TIMEOUT_DYNAMIC) */
+#if defined(CONFIG_BT_ISO_SYNC_RECEIVER)
+	{
+		.opcode = BTP_GAP_BIG_CREATE_SYNC,
+		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
+		.func = big_create_sync,
+	},
+#endif /* defined(CONFIG_BT_ISO_SYNC_RECEIVER) */
+#if defined(CONFIG_BT_ISO_BROADCASTER)
+	{
+		.opcode = BTP_GAP_CREATE_BIG,
+		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
+		.func = create_big,
+	},
+	{
+		.opcode = BTP_GAP_BIS_BROADCAST,
+		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
+		.func = bis_broadcast,
+	},
+#endif /* defined(CONFIG_BT_ISO_BROADCASTER) */
 };
 
 uint8_t tester_init_gap(void)
@@ -2578,6 +3079,10 @@ uint8_t tester_init_gap(void)
 	if (IS_ENABLED(CONFIG_BT_PER_ADV)) {
 		bt_le_per_adv_sync_cb_register(&pa_sync_cb);
 	}
+
+#if defined(CONFIG_BT_ISO_SYNC_RECEIVER)
+	bt_iso_big_register_cb(&iso_sync_receiver_big_cb);
+#endif /* CONFIG_BT_ISO_SYNC_RECEIVER */
 
 	tester_register_command_handlers(BTP_SERVICE_ID_GAP, handlers,
 					 ARRAY_SIZE(handlers));

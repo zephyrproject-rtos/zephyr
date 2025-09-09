@@ -38,10 +38,16 @@ extern "C" {
 enum dns_query_type {
 	/** IPv4 query */
 	DNS_QUERY_TYPE_A = 1,
-	/** PTR query */
+	/** Canonical name query */
+	DNS_QUERY_TYPE_CNAME = 5,
+	/** Pointer query */
 	DNS_QUERY_TYPE_PTR = 12,
+	/** Text query */
+	DNS_QUERY_TYPE_TXT = 16,
 	/** IPv6 query */
-	DNS_QUERY_TYPE_AAAA = 28
+	DNS_QUERY_TYPE_AAAA = 28,
+	/** Service location query */
+	DNS_QUERY_TYPE_SRV = 33
 };
 
 /**
@@ -68,6 +74,13 @@ enum dns_server_source {
 #else
 #define DNS_MAX_NAME_SIZE 20
 #endif /* CONFIG_DNS_RESOLVER_MAX_NAME_LEN */
+
+/** Max size of the resolved txt record. */
+#if defined(CONFIG_DNS_RESOLVER_MAX_TEXT_LEN)
+#define DNS_MAX_TEXT_SIZE CONFIG_DNS_RESOLVER_MAX_TEXT_LEN
+#else
+#define DNS_MAX_TEXT_SIZE 64
+#endif /* CONFIG_DNS_RESOLVER_MAX_TEXT_LEN */
 
 /** @cond INTERNAL_HIDDEN */
 
@@ -267,17 +280,56 @@ int dns_dispatcher_unregister(struct dns_socket_dispatcher *ctx);
 /** @endcond */
 
 /**
+ * Enumerate the extensions that are available in the address info
+ */
+enum dns_resolve_extension {
+	DNS_RESOLVE_NONE = 0,
+	DNS_RESOLVE_TXT,
+	DNS_RESOLVE_SRV,
+};
+
+struct dns_resolve_txt {
+	size_t textlen;
+	char   text[DNS_MAX_TEXT_SIZE + 1];
+};
+
+struct dns_resolve_srv {
+	uint16_t priority;
+	uint16_t weight;
+	uint16_t port;
+	size_t   targetlen;
+	char     target[DNS_MAX_NAME_SIZE + 1];
+};
+
+/**
  * Address info struct is passed to callback that gets all the results.
  */
 struct dns_addrinfo {
-	/** IP address information */
-	struct sockaddr ai_addr;
-	/** Length of the ai_addr field */
-	socklen_t       ai_addrlen;
-	/** Address family of the address information */
-	uint8_t         ai_family;
-	/** Canonical name of the address */
-	char            ai_canonname[DNS_MAX_NAME_SIZE + 1];
+	/** Address family of the address information and discriminator */
+	uint8_t ai_family;
+
+	union {
+		struct {
+			/** Length of the ai_addr field or ai_canonname */
+			socklen_t ai_addrlen;
+
+			/* AF_INET or AF_INET6 address info */
+			struct sockaddr ai_addr;
+
+			/** AF_LOCAL Canonical name of the address */
+			char ai_canonname[DNS_MAX_NAME_SIZE + 1];
+		};
+
+		/* AF_UNSPEC extensions */
+		struct {
+			enum dns_resolve_extension ai_extension;
+
+			union {
+				struct dns_resolve_txt ai_txt;
+				struct dns_resolve_srv ai_srv;
+			};
+		};
+	};
 };
 
 /**

@@ -18,6 +18,18 @@ config REQUIRES_FLOAT_PRINTF
 	  Select a printf implementation that provides a complete
 	  implementation including floating point support.
 
+config LIBC_ALLOW_LESS_THAN_64BIT_TIME
+	bool "Don't require that time_t be at least 64-bits"
+	default y if NATIVE_LIBC
+	help
+	  When selected, time_t will not be required to be at least 64
+	  bits. Background: To avoid Y2038 issues time_t needs to be
+	  bigger than 32bits. But some C libraries do not provide or
+	  default to a type for time_t which is at least
+	  64bits. Enable this option if your C library defined time_t
+	  is more than 32bits (e.g. 48 bits) or are sure your project
+	  is not subject to Y2038 issues.
+
 config FULL_LIBC_SUPPORTED
 	bool
 	help
@@ -124,6 +136,7 @@ config ARCMWDT_LIBC
 	bool "ARC MWDT C library"
 	depends on "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "arcmwdt"
 	select STATIC_INIT_GNU
+	select LIBC_ALLOW_LESS_THAN_64BIT_TIME
 	help
 	  C library provided by ARC MWDT toolchain.
 

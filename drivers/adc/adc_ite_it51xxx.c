@@ -265,10 +265,7 @@ static int adc_it51xxx_start_read(const struct device *dev, const struct adc_seq
 {
 	const struct adc_it51xxx_cfg *config = dev->config;
 	struct adc_it51xxx_data *data = dev->data;
-	struct adc_context *ctx = &data->ctx;
-	uint32_t channels = ctx->sequence.channels;
 	uint32_t channel_mask = sequence->channels;
-	uint8_t channel_count = 0;
 
 	if (!channel_mask || channel_mask & ~BIT_MASK(config->channel_count)) {
 		LOG_ERR("Invalid selection of channels");
@@ -279,6 +276,21 @@ static int adc_it51xxx_start_read(const struct device *dev, const struct adc_seq
 		LOG_ERR("ADC resolution is not valid");
 		return -EINVAL;
 	}
+
+	data->buffer = sequence->buffer;
+
+	adc_context_start_read(&data->ctx, sequence);
+
+	return adc_context_wait_for_completion(&data->ctx);
+}
+
+static void adc_context_start_sampling(struct adc_context *ctx)
+{
+	struct adc_it51xxx_data *data = CONTAINER_OF(ctx, struct adc_it51xxx_data, ctx);
+	uint32_t channels = ctx->sequence.channels;
+	uint8_t channel_count = 0;
+
+	data->repeat_buffer = data->buffer;
 
 	/*
 	 * The ADC sampling of it51xxx needs to read each channel
@@ -294,21 +306,8 @@ static int adc_it51xxx_start_read(const struct device *dev, const struct adc_seq
 	}
 
 	if (check_buffer_size(&ctx->sequence, channel_count)) {
-		return -ENOMEM;
+		return;
 	}
-
-	data->buffer = sequence->buffer;
-
-	adc_context_start_read(&data->ctx, sequence);
-
-	return adc_context_wait_for_completion(&data->ctx);
-}
-
-static void adc_context_start_sampling(struct adc_context *ctx)
-{
-	struct adc_it51xxx_data *data = CONTAINER_OF(ctx, struct adc_it51xxx_data, ctx);
-
-	data->repeat_buffer = data->buffer;
 
 	adc_context_on_sampling_done(&data->ctx, DEVICE_DT_INST_GET(0));
 }

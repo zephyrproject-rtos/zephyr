@@ -1,24 +1,28 @@
-/**
- * @file drivers/sensor.h
- *
- * @brief Public APIs for the sensor driver.
- */
-
 /*
- * Copyright (c) 2016 Intel Corporation
- *
- * SPDX-License-Identifier: Apache-2.0
- */
+* Copyright (c) 2016 Intel Corporation
+*
+* SPDX-License-Identifier: Apache-2.0
+*/
 #ifndef ZEPHYR_INCLUDE_DRIVERS_SENSOR_H_
 #define ZEPHYR_INCLUDE_DRIVERS_SENSOR_H_
 
 /**
- * @brief Sensor Interface
- * @defgroup sensor_interface Sensor Interface
+ * @file
+ * @ingroup sensor_interface
+ * @brief Main header file for sensor driver API.
+ */
+
+/**
+ * @brief Interfaces for sensors.
+ * @defgroup sensor_interface Sensor
  * @since 1.2
  * @version 1.0.0
  * @ingroup io_interfaces
  * @{
+ *
+ * @defgroup sensor_interface_ext Device-specific Sensor API extensions
+ * @{
+ * @}
  */
 
 #include <errno.h>
@@ -923,22 +927,23 @@ static inline int z_impl_sensor_channel_get(const struct device *dev,
  * Generic data structure used for encoding the sample timestamp and number of channels sampled.
  */
 struct __attribute__((__packed__)) sensor_data_generic_header {
-	/* The timestamp at which the data was collected from the sensor */
+	/** The timestamp at which the data was collected from the sensor */
 	uint64_t timestamp_ns;
 
 	/*
-	 * The number of channels present in the frame. This will be the true number of elements in
-	 * channel_info and in the q31 values that follow the header.
+	 ** The number of channels present in the frame.
+	 * This will be the true number of elements in channel_info and in the q31 values that
+	 * follow the header.
 	 */
 	uint32_t num_channels;
 
-	/* Shift value for all samples in the frame */
+	/** Shift value for all samples in the frame */
 	int8_t shift;
 
 	/* This padding is needed to make sure that the 'channels' field is aligned */
 	int8_t _padding[sizeof(struct sensor_chan_spec) - 1];
 
-	/* Channels present in the frame */
+	/** Channels present in the frame */
 	struct sensor_chan_spec channels[0];
 };
 

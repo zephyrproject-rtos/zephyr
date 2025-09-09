@@ -18,6 +18,18 @@
 	status = "okay";
 };
 
+&uart1 {
+	interrupts = <29 IRQ_TYPE_LOWEST_EDGE_RISING 6>;
+
+	status = "disabled";
+};
+
+&uart2 {
+	interrupts = <30 IRQ_TYPE_LOWEST_EDGE_RISING 6>;
+
+	status = "disabled";
+};
+
 &i2c0 {
 	interrupts = <18 IRQ_TYPE_LOWEST_LEVEL_HIGH 2>;
 
@@ -50,6 +62,12 @@
 
 &spi1 {
 	interrupts = <24 IRQ_TYPE_LOWEST_LEVEL_HIGH 2>;
+
+	status = "disabled";
+};
+
+&dma0 {
+	interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_HIGH 2>;
 
 	status = "disabled";
 };

@@ -19,6 +19,15 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Modem Chat
+ * @defgroup modem_chat Modem Chat
+ * @since 3.5
+ * @version 1.0.0
+ * @ingroup modem
+ * @{
+ */
+
 struct modem_chat;
 
 /**
@@ -81,6 +90,10 @@ struct modem_chat_match {
 
 #define MODEM_CHAT_MATCH_DEFINE(_sym, _match, _separators, _callback)                              \
 	const static struct modem_chat_match _sym = MODEM_CHAT_MATCH(_match, _separators, _callback)
+
+#define MODEM_CHAT_MATCH_WILDCARD_DEFINE(_sym, _match, _separators, _callback)                     \
+	const static struct modem_chat_match _sym =                                                \
+		MODEM_CHAT_MATCH_WILDCARD(_match, _separators, _callback)
 
 /* Helper struct to match any response without callback. */
 extern const struct modem_chat_match modem_chat_any_match;
@@ -519,6 +532,10 @@ void modem_chat_script_set_callback(struct modem_chat_script *script,
  * @param timeout_s Timeout in seconds
  */
 void modem_chat_script_set_timeout(struct modem_chat_script *script, uint32_t timeout_s);
+
+/**
+ * @}
+ */
 
 #ifdef __cplusplus
 }

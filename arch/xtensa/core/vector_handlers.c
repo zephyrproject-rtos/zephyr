@@ -653,7 +653,7 @@ void *xtensa_excint1_c(void *esf)
 		 * this code.
 		 *
 		 * Another intentionally ill is from xtensa_arch_kernel_oops.
-		 * Kernel OOPS has to be explicity raised so we can simply
+		 * Kernel OOPS has to be explicitly raised so we can simply
 		 * set the reason and continue.
 		 */
 		if (cause == EXCCAUSE_ILLEGAL) {
@@ -678,6 +678,10 @@ skip_checks:
 		if (reason != K_ERR_KERNEL_OOPS) {
 			print_fatal_exception(print_stack, cause, is_dblexc, depc);
 		}
+#ifdef CONFIG_XTENSA_EXCEPTION_ENTER_GDB
+		extern void z_gdb_isr(struct arch_esf *esf);
+		z_gdb_isr((void *)print_stack);
+#endif
 
 		/* FIXME: legacy xtensa port reported "HW" exception
 		 * for all unhandled exceptions, which seems incorrect

@@ -25,5 +25,6 @@ source "drivers/fuel_gauge/bq27z746/Kconfig"
 source "drivers/fuel_gauge/composite/Kconfig"
 source "drivers/fuel_gauge/axp2101/Kconfig"
 source "drivers/fuel_gauge/lc709203f/Kconfig"
+source "drivers/fuel_gauge/sy24561/Kconfig"
 
 endif # FUEL_GAUGE

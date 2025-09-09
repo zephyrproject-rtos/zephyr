@@ -153,6 +153,7 @@ struct bt_avdtp_discover_params {
 struct bt_avdtp_get_capabilities_params {
 	struct bt_avdtp_req req;
 	uint8_t stream_endpoint_id;
+	bool get_all_caps;
 };
 
 struct bt_avdtp_set_configuration_params {
@@ -173,6 +174,54 @@ struct bt_avdtp_ctrl_params {
 	uint8_t acp_stream_ep_id;
 };
 
+struct bt_avdtp_generic_service_cap {
+	uint8_t service_category;
+	uint8_t losc;
+} __packed;
+
+/* avdtp service capabilities*/
+struct bt_avdtp_recovery_capabilities {
+	uint8_t recovery_type;
+	uint8_t MRWS;
+	uint8_t MNMP;
+} __packed;
+
+struct bt_avdtp_media_codec_capabilities {
+	uint8_t media_type;
+	uint8_t media_code_type;
+	uint8_t media_codec_spec_info[];
+} __packed;
+
+struct bt_avdtp_content_protection_capabilities {
+	uint8_t cp_type_lsb;
+	uint8_t cp_type_msb;
+	uint8_t cp_type_spec_value[];
+} __packed;
+
+struct bt_avdtp_header_compression_capabilities {
+#ifdef CONFIG_LITTLE_ENDIAN
+	uint8_t reserved : 5;
+	uint8_t recovery : 1;
+	uint8_t media : 1;
+	uint8_t backch : 1;
+#else
+	uint8_t backch : 1;
+	uint8_t media : 1;
+	uint8_t recovery : 1;
+	uint8_t reserved : 5;
+#endif /* CONFIG_LITTLE_ENDIAN */
+} __packed;
+
+struct bt_avdtp_multiplexing_capabilities {
+	uint8_t frag;
+	uint8_t tsid_media;
+	uint8_t tcid_media;
+	uint8_t tsid_reporting;
+	uint8_t tcid_reporting;
+	uint8_t tsid_recovery;
+	uint8_t tcid_recovery;
+} __packed;
+
 struct bt_avdtp_ops_cb {
 	void (*connected)(struct bt_avdtp *session);
 
@@ -183,13 +232,13 @@ struct bt_avdtp_ops_cb {
 	int (*discovery_ind)(struct bt_avdtp *session, uint8_t *errcode);
 
 	int (*get_capabilities_ind)(struct bt_avdtp *session, struct bt_avdtp_sep *sep,
-				    struct net_buf *rsp_buf, uint8_t *errcode);
+				    struct net_buf *rsp_buf, bool get_all_caps, uint8_t *errcode);
 
 	int (*set_configuration_ind)(struct bt_avdtp *session, struct bt_avdtp_sep *sep,
 				     uint8_t int_seid, struct net_buf *buf, uint8_t *errcode);
 
 	int (*re_configuration_ind)(struct bt_avdtp *session, struct bt_avdtp_sep *sep,
-				    uint8_t int_seid, struct net_buf *buf, uint8_t *errcode);
+				    struct net_buf *buf, uint8_t *errcode);
 
 	int (*open_ind)(struct bt_avdtp *session, struct bt_avdtp_sep *sep, uint8_t *errcode);
 

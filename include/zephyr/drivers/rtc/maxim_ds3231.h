@@ -207,9 +207,10 @@ extern "C" {
 #define MAXIM_DS3231_ALARM_FLAGS_AUTODISABLE BIT(7)
 
 /**
- * @brief RTC DS3231 Driver-Specific API
- * @defgroup rtc_ds3231_interface RTC DS3231 Interface
- * @ingroup io_interfaces
+ * @brief Interface for Maxim DS3231 RTC (using counter API).
+ * @defgroup rtc_ds3231_interface RTC DS3231 (legacy).
+ * @ingroup misc_interfaces
+ * @deprecated Use MFD driver instead. See `maxim,ds3231-rtc` compatible.
  * @{
  */
 

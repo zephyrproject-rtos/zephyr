@@ -13,6 +13,7 @@ config SPI_LARGE_BUFFER_SIZE
 
 config SPI_IDEAL_TRANSFER_DURATION_SCALING
 	int "Scaling factor to compare ideal and measured SPI transfer duration"
+	default 40 if SPI_NXP_LPSPI_DMA || SPI_MCUX_FLEXIO
 	default 8
 
 if SOC_SERIES_STM32H7X

@@ -3,6 +3,7 @@
  * Copyright (c) 2021 Nordic Semiconductor
  * Copyright (c) 2023 Arm Limited (or its affiliates). All rights reserved.
  * Copyright (c) 2025 Aerlync Labs Inc.
+ * Copyright 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1049,7 +1050,7 @@ static int add_pktinfo(struct net_context *ctx,
 		net_ipv6_addr_copy_raw((uint8_t *)&info.ipi6_addr, ipv6_hdr->dst);
 		info.ipi6_ifindex = ctx->iface;
 
-		ret = insert_pktinfo(msg, IPPROTO_IPV6, IPV6_RECVPKTINFO,
+		ret = insert_pktinfo(msg, IPPROTO_IPV6, IPV6_PKTINFO,
 				     &info, sizeof(info));
 
 		goto out;
@@ -1057,6 +1058,35 @@ static int add_pktinfo(struct net_context *ctx,
 
 out:
 	net_pkt_cursor_restore(pkt, &backup);
+
+	return ret;
+}
+
+static int add_hoplimit(struct net_context *ctx,
+			struct net_pkt *pkt,
+			struct msghdr *msg)
+{
+	int ret = -ENOTSUP;
+
+	if (IS_ENABLED(CONFIG_NET_IPV4) && net_pkt_family(pkt) == AF_INET) {
+		int ttl = net_pkt_ipv4_ttl(pkt);
+
+		ret = insert_pktinfo(msg, IPPROTO_IP, IP_TTL,
+				     &ttl, sizeof(ttl));
+
+		goto out;
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV6) && net_pkt_family(pkt) == AF_INET6) {
+		int hop_limit = net_pkt_ipv6_hop_limit(pkt);
+
+		ret = insert_pktinfo(msg, IPPROTO_IPV6, IPV6_HOPLIMIT,
+				     &hop_limit, sizeof(hop_limit));
+
+		goto out;
+	}
+
+out:
 
 	return ret;
 }
@@ -1227,6 +1257,13 @@ static ssize_t zsock_recv_dgram(struct net_context *ctx,
 				if (IS_ENABLED(CONFIG_NET_CONTEXT_RECV_PKTINFO) &&
 				    net_context_is_recv_pktinfo_set(ctx)) {
 					if (add_pktinfo(ctx, pkt, msg) < 0) {
+						msg->msg_flags |= ZSOCK_MSG_CTRUNC;
+					}
+				}
+
+				if (IS_ENABLED(CONFIG_NET_CONTEXT_RECV_HOPLIMIT) &&
+				    net_context_is_recv_hoplimit_set(ctx)) {
+					if (add_hoplimit(ctx, pkt, msg) < 0) {
 						msg->msg_flags |= ZSOCK_MSG_CTRUNC;
 					}
 				}
@@ -2584,6 +2621,23 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 
 			break;
 
+		case IP_RECVTTL:
+			if (IS_ENABLED(CONFIG_NET_IPV4) &&
+			    IS_ENABLED(CONFIG_NET_CONTEXT_RECV_HOPLIMIT)) {
+				ret = net_context_set_option(ctx,
+							     NET_OPT_RECV_HOPLIMIT,
+							     optval,
+							     optlen);
+				if (ret < 0) {
+					errno = -ret;
+					return -1;
+				}
+
+				return 0;
+			}
+
+			break;
+
 		case IP_MULTICAST_IF:
 			if (IS_ENABLED(CONFIG_NET_IPV4)) {
 				return ipv4_multicast_if(ctx, optval, optlen, false);
@@ -2692,6 +2746,23 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 			    IS_ENABLED(CONFIG_NET_CONTEXT_RECV_PKTINFO)) {
 				ret = net_context_set_option(ctx,
 							     NET_OPT_RECV_PKTINFO,
+							     optval,
+							     optlen);
+				if (ret < 0) {
+					errno  = -ret;
+					return -1;
+				}
+
+				return 0;
+			}
+
+			break;
+
+		case IPV6_RECVHOPLIMIT:
+			if (IS_ENABLED(CONFIG_NET_IPV6) &&
+			    IS_ENABLED(CONFIG_NET_CONTEXT_RECV_HOPLIMIT)) {
+				ret = net_context_set_option(ctx,
+							     NET_OPT_RECV_HOPLIMIT,
 							     optval,
 							     optlen);
 				if (ret < 0) {

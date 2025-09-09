@@ -1,0 +1,9 @@
+#include "rpi_pico_rp2040_w.dts"
+
+/delete-node/ &code_partition;
+#include <raspberrypi/partitions_2M_sysbuild.dtsi>
+/ {
+	chosen {
+		zephyr,code-partition = &slot0_partition;
+	};
+};

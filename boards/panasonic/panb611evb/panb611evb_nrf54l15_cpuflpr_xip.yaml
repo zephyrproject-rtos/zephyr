@@ -1,0 +1,18 @@
+# Copyright (c) 2025 Panasonic Industrial Devices Europe GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: panb611evb/nrf54l15/cpuflpr/xip
+name: PANB611-EVB-nRF54L15-Fast-Lightweight-Peripheral-Processor (RRAM XIP)
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+sysbuild: true
+ram: 68
+flash: 96
+supported:
+  - counter
+  - gpio
+  - i2c
+  - spi
+  - watchdog

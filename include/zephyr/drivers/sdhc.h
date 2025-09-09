@@ -6,7 +6,8 @@
 
 /**
  * @file
- * @brief SD Host Controller public API header file.
+ * @ingroup sdhc_interface
+ * @brief Main header file for SDHC (Secure Digital Host Controller) driver API.
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_SDHC_H_
@@ -17,8 +18,8 @@
 #include <zephyr/sd/sd_spec.h>
 
 /**
- * @brief SDHC interface
- * @defgroup sdhc_interface SDHC interface
+ * @brief Interfaces for Secure Digital Host Controllers (SDHC).
+ * @defgroup sdhc_interface SDHC
  * @since 3.1
  * @version 0.1.0
  * @ingroup io_interfaces

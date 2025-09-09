@@ -95,6 +95,9 @@ struct rtc_stm32_config {
 	struct counter_config_info counter_info;
 	LL_RTC_InitTypeDef ll_rtc_config;
 	const struct stm32_pclken *pclken;
+#if DT_INST_CLOCKS_CELL_BY_IDX(0, 1, bus) == STM32_SRC_HSE
+	uint32_t hse_prescaler;
+#endif
 };
 
 struct rtc_stm32_data {
@@ -587,9 +590,26 @@ static int rtc_stm32_init(const struct device *dev)
 	z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
 
 #if !defined(CONFIG_COUNTER_RTC_STM32_SAVE_VALUE_BETWEEN_RESETS)
+
+/* STM32C0 LL driver does not clear the CR register in LL_RTC_DeInit so it will loop forever waiting
+ * for a flag that will never be set when shadow registers are bypassed (BYPSHAD enabled).
+ */
+#if defined(RTC_CR_BYPSHAD) && defined(CONFIG_SOC_SERIES_STM32C0X)
+	if (LL_RTC_IsShadowRegBypassEnabled(RTC)) {
+		LL_RTC_DisableWriteProtection(RTC);
+		LL_RTC_DisableShadowRegBypass(RTC);
+		LL_RTC_EnableWriteProtection(RTC);
+	}
+#endif /* defined(RTC_CR_BYPSHAD) && defined(CONFIG_SOC_SERIES_STM32C0X) */
+
 	if (LL_RTC_DeInit(RTC) != SUCCESS) {
 		goto out_disable_bkup_access;
 	}
+#endif
+
+#if DT_INST_CLOCKS_CELL_BY_IDX(0, 1, bus) == STM32_SRC_HSE
+	/* Must be configured before selecting the RTC clock source */
+	LL_RCC_SetRTC_HSEPrescaler(cfg->hse_prescaler);
 #endif
 
 	if (LL_RTC_Init(RTC, ((LL_RTC_InitTypeDef *)
@@ -629,28 +649,65 @@ static struct rtc_stm32_data rtc_data;
 
 static const struct stm32_pclken rtc_clk[] = STM32_DT_INST_CLOCKS(0);
 
+#if DT_INST_CLOCKS_CELL_BY_IDX(0, 1, bus) == STM32_SRC_HSE
+#if STM32_HSE_FREQ % MHZ(1) != 0
+#error RTC clock source HSE frequency should be whole MHz
+#elif STM32_HSE_FREQ < MHZ(16) && defined(LL_RCC_RTC_HSE_DIV_16)
+#define RTC_HSE_PRESCALER LL_RCC_RTC_HSE_DIV_16
+#define RTC_HSE_FREQUENCY (STM32_HSE_FREQ / 16)
+#elif STM32_HSE_FREQ < MHZ(32) && defined(LL_RCC_RTC_HSE_DIV_32)
+#define RTC_HSE_PRESCALER LL_RCC_RTC_HSE_DIV_32
+#define RTC_HSE_FREQUENCY (STM32_HSE_FREQ / 32)
+#elif STM32_HSE_FREQ < MHZ(64) && defined(LL_RCC_RTC_HSE_DIV_64)
+#define RTC_HSE_PRESCALER LL_RCC_RTC_HSE_DIV_64
+#define RTC_HSE_FREQUENCY (STM32_HSE_FREQ / 64)
+#else
+#error RTC does not support HSE frequency
+#endif
+#define RTC_HSE_ASYNC_PRESCALER 125
+#define RTC_HSE_SYNC_PRESCALER  (RTC_HSE_FREQUENCY / RTC_HSE_ASYNC_PRESCALER)
+#endif /* DT_INST_CLOCKS_CELL_BY_IDX(0, 1, bus) == STM32_SRC_HSE */
+
 static const struct rtc_stm32_config rtc_config = {
 	.counter_info = {
 		.max_top_value = UINT32_MAX,
 #ifndef CONFIG_COUNTER_RTC_STM32_SUBSECONDS
 		/* freq = 1Hz for not subsec based driver */
 		.freq = RTCCLK_FREQ / ((RTC_ASYNCPRE + 1) * (RTC_SYNCPRE + 1)),
-#else /* !CONFIG_COUNTER_RTC_STM32_SUBSECONDS */
+#else /* CONFIG_COUNTER_RTC_STM32_SUBSECONDS */
 		.freq = RTCCLK_FREQ / (RTC_ASYNCPRE + 1),
 #endif /* CONFIG_COUNTER_RTC_STM32_SUBSECONDS */
 		.flags = COUNTER_CONFIG_INFO_COUNT_UP,
 		.channels = 1,
 	},
 	.ll_rtc_config = {
-		.AsynchPrescaler = RTC_ASYNCPRE,
+#if DT_INST_CLOCKS_CELL_BY_IDX(0, 1, bus) == STM32_SRC_LSI ||                                      \
+	DT_INST_CLOCKS_CELL_BY_IDX(0, 1, bus) == STM32_SRC_LSE
+		.AsynchPrescaler = DT_INST_PROP_OR(0, async_prescaler, RTC_ASYNCPRE),
 #if !defined(CONFIG_SOC_SERIES_STM32F1X)
 		.HourFormat = LL_RTC_HOURFORMAT_24HOUR,
-		.SynchPrescaler = RTC_SYNCPRE,
-#else /* CONFIG_SOC_SERIES_STM32F1X */
+		.SynchPrescaler = DT_INST_PROP_OR(0, sync_prescaler, RTC_SYNCPRE),
+#else  /* !CONFIG_SOC_SERIES_STM32F1X */
 		.OutPutSource = LL_RTC_CALIB_OUTPUT_NONE,
-#endif /* CONFIG_SOC_SERIES_STM32F1X */
+#endif /* !CONFIG_SOC_SERIES_STM32F1X */
+#elif DT_INST_CLOCKS_CELL_BY_IDX(0, 1, bus) == STM32_SRC_HSE
+		.AsynchPrescaler =
+			DT_INST_PROP_OR(0, async_prescaler, _HSE_ASYNC_PRESCALER - 1),
+#if !defined(CONFIG_SOC_SERIES_STM32F1X)
+		.HourFormat = LL_RTC_HOURFORMAT_24HOUR,
+		.SynchPrescaler =
+			DT_INST_PROP_OR(0, hse_prescaler, RTC_HSE_SYNC_PRESCALER - 1),
+#else  /* CONFIG_SOC_SERIES_STM32F1X */
+		.OutPutSource = LL_RTC_CALIB_OUTPUT_NONE,
+#endif /* !CONFIG_SOC_SERIES_STM32F1X */
+#else
+#error Invalid RTC SRC
+#endif
 	},
 	.pclken = rtc_clk,
+#if DT_INST_CLOCKS_CELL_BY_IDX(0, 1, bus) == STM32_SRC_HSE
+	.hse_prescaler = DT_INST_PROP_OR(0, hse_prescaler, RTC_HSE_PRESCALER),
+#endif
 };
 
 #ifdef CONFIG_PM_DEVICE

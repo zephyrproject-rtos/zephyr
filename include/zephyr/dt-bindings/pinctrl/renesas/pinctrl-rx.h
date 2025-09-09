@@ -16,10 +16,15 @@
 #define RX_PSEL_MASK 0x1f
 #define RX_PSEL_POS  9
 
-#define RX_PSEL_SCI_1 0xA
-#define RX_PSEL_SCI_6 0xB
-#define RX_PSEL_TMR   0x5
-#define RX_PSEL_POE   0x7
+#define RX_PSEL_RSCI      0xA
+#define RX_PSEL_RSCI_TXDB 0xC
+#define RX_PSEL_SCI_1     0xA
+#define RX_PSEL_SCI_5     0xA
+#define RX_PSEL_SCI_6     0xB
+#define RX_PSEL_SCI_12    0xC
+#define RX_PSEL_TMR       0x5
+#define RX_PSEL_POE       0x7
+#define RX_PSEL_ADC       0x0
 
 /* P0nPFS */
 #define RX_PSEL_P0nPFS_HIZ    0x0

@@ -8,11 +8,12 @@ DT_CHOSEN_Z_FLASH := zephyr,flash
 
 config TEST_DRIVER_FLASH_SIZE
 	int "Size of flash device under test"
-	default $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_FLASH),0) if SOC_FAMILY_STM32
+	default $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_FLASH),0) \
+		if (SOC_FAMILY_STM32 && !SOC_SERIES_STM32N6X)
 	default -1
 	help
 	  Expected flash device size the test will validate against. If the flash driver does not
 	  support the get_size() API, leave this set as -1 to skip the test.
-	  For the STM32 devices, the flash size is direclty given by the soc DTSI.
+	  For the STM32 devices, the flash size is directly given by the soc DTSI.
 
 source "Kconfig.zephyr"

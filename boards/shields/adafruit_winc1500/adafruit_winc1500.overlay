@@ -4,17 +4,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
+
 &arduino_spi {
 	status = "okay";
-	cs-gpios = <&arduino_header 16 0>;			/* D10 */
+	cs-gpios = <&arduino_header ARDUINO_HEADER_R3_D10 0>;
 
 	winc1500_adafruit_winc1500: winc1500@0 {
 		status = "ok";
 		compatible = "atmel,winc1500";
 		reg = <0x0>;
 		spi-max-frequency = <4000000>;
-		irq-gpios = <&arduino_header 13 GPIO_ACTIVE_LOW>;	/* D7 */
-		reset-gpios = <&arduino_header 11 GPIO_ACTIVE_LOW>;	/* D5 */
-		enable-gpios = <&arduino_header 12 0>;			/* D6 */
+		irq-gpios = <&arduino_header ARDUINO_HEADER_R3_D7 GPIO_ACTIVE_LOW>;
+		reset-gpios = <&arduino_header ARDUINO_HEADER_R3_D5 GPIO_ACTIVE_LOW>;
+		enable-gpios = <&arduino_header ARDUINO_HEADER_R3_D6 0>;
 	};
 };

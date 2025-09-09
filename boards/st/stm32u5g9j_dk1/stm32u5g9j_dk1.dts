@@ -257,6 +257,10 @@ zephyr_udc0: &usbotg_hs {
 	status = "okay";
 };
 
+&otghs_phy {
+	clock-reference = "SYSCFG_OTG_HS_PHY_CLK_16MHz";
+};
+
 &flash0 {
 	partitions {
 		compatible = "fixed-partitions";
@@ -289,7 +293,7 @@ zephyr_udc0: &usbotg_hs {
 };
 
 &rtc {
-	clocks =  <&rcc STM32_CLOCK_BUS_APB3 0x00200000>,
+	clocks =  <&rcc STM32_CLOCK(APB3, 21)>,
 			<&rcc STM32_SRC_LSE RTC_SEL(1)>;
 	status = "okay";
 };

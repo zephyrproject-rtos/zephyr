@@ -6,15 +6,17 @@
 
 /**
  * @file
- * @brief Public Platform Environment Control Interface driver APIs
+ * @ingroup peci_interface
+ * @brief Main header file for PECI (Platform Environment Control Interface) driver API.
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_PECI_H_
 #define ZEPHYR_INCLUDE_DRIVERS_PECI_H_
 
 /**
- * @brief PECI Interface 3.0
- * @defgroup peci_interface PECI Interface
+ * @brief Interfaces for Platform Environment Control Interface (PECI)
+ *        devices.
+ * @defgroup peci_interface PECI
  * @since 2.1
  * @version 1.0.0
  * @ingroup io_interfaces

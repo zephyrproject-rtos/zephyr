@@ -394,7 +394,6 @@ static struct net_buf *get_rx(uint8_t *msg)
 
 static int bt_hci_stm32wb0_send(const struct device *dev, struct net_buf *buf)
 {
-	int ret = 0;
 	uint8_t type = net_buf_pull_u8(buf);
 	uint8_t *hci_buffer = buf->data;
 
@@ -444,7 +443,7 @@ static int bt_hci_stm32wb0_send(const struct device *dev, struct net_buf *buf)
 	}
 	net_buf_unref(buf);
 
-	return ret;
+	return 0;
 }
 
 static int bt_hci_stm32wb0_open(const struct device *dev, bt_hci_recv_t recv)

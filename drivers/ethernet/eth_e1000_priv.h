@@ -102,7 +102,6 @@ struct e1000_dev {
 	uint8_t rxb[CONFIG_ETH_E1000_RX_QUEUE_SIZE][NET_ETH_MTU];
 #if defined(CONFIG_ETH_E1000_PTP_CLOCK)
 	const struct device *ptp_clock;
-	double clk_ratio;
 #endif
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
 	struct net_stats_eth stats;

@@ -38,6 +38,8 @@ subscribe to all notifications.
                         [<pa_interval>] [<sync_bis>] [<metadata>]
    add_broadcast_id  : Add a source by broadcast ID <broadcast_id> <sync_pa>
                         [<sync_bis>] [<metadata>]
+   add_broadcast_name: Add a source by broadcast name <broadcast_name> <sync_pa>
+                        [<sync_bis>] [<metadata>]
    add_pa_sync       : Add a PA sync as a source <sync_pa> <broadcast_id>
                         [bis_index [bis_index [bix_index [...]]]]>
    mod_src           : Set sync <src_id> <sync_pa> [<pa_interval> | "unknown"] [<sync_bis>]

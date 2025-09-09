@@ -153,7 +153,7 @@
 };
 
 &rtc {
-	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>,
+	clocks = <&rcc STM32_CLOCK(APB1, 28)>,
 		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
 	status = "okay";
 };
@@ -211,6 +211,7 @@ zephyr_udc0: &usbotg_fs {
 		reg = <0>;
 		size = <DT_SIZE_M(64)>; /* 64 Mbits */
 		qspi-max-frequency = <8000000>;
+		cs-high-time = <3>; /* >= 30 ns */
 		status = "okay";
 		spi-bus-width = <4>;
 		writeoc = "PP_1_4_4";

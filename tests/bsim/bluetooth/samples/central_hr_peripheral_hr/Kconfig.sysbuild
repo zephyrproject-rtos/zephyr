@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # source the samples' Kconfig.sysbuild, if any
-source "${ZEPHYR_BASE}/samples/bluetooth/central_hr/Kconfig.sysbuild"
+source "$(ZEPHYR_BASE)/samples/bluetooth/central_hr/Kconfig.sysbuild"
 
 config NATIVE_SIMULATOR_PRIMARY_MCU_INDEX
 	int

@@ -82,6 +82,7 @@
 		reg = <0>;
 		size = <DT_SIZE_M(128)>; /* 128 Mbits */
 		qspi-max-frequency = <80000000>;
+		cs-high-time = <4>; /* >= 50 ns */
 		jedec-id = [ef 40 18];
 		spi-bus-width = <4>;
 		writeoc = "PP_1_1_4";
@@ -124,7 +125,7 @@
 };
 
 &rtc {
-	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>,
+	clocks = <&rcc STM32_CLOCK(APB1, 28)>,
 		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
 	status = "okay";
 

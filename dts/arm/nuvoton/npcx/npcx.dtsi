@@ -325,7 +325,7 @@
 			compatible = "nuvoton,npcx-adc";
 			#io-channel-cells = <1>;
 			reg = <0x400d1000 0x2000>;
-			interrupts = <10 3>;
+			interrupts = <10 4>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB1 NPCX_PWDWN_CTL4 4>;
 			vref-mv = <2816>;
 			status = "disabled";
@@ -340,7 +340,7 @@
 		espi0: espi@4000a000 {
 			compatible = "nuvoton,npcx-espi";
 			reg = <0x4000a000 0x2000>;
-			interrupts = <18 3>; /* Interrupt for eSPI Bus */
+			interrupts = <18 4>; /* Interrupt for eSPI Bus */
 
 			/* clocks for eSPI modules */
 			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL6 7>;
@@ -366,11 +366,11 @@
 				    "pm_hcmd";
 
 			/* host sub-module IRQ and priority */
-			interrupts = <25 3>, /* KBC Input-Buf-Full (IBF) */
-				     <56 3>, /* KBC Output-Buf-Empty (OBE) */
-				     <26 3>, /* PMCH Input-Buf-Full (IBF) */
-				     <3 3>,  /* PMCH Output-Buf-Empty (OBE) */
-				     <6 3>;  /* Port80 FIFO Not Empty */
+			interrupts = <25 4>, /* KBC Input-Buf-Full (IBF) */
+				     <56 4>, /* KBC Output-Buf-Empty (OBE) */
+				     <26 4>, /* PMCH Input-Buf-Full (IBF) */
+				     <3 4>,  /* PMCH Output-Buf-Empty (OBE) */
+				     <6 4>;  /* Port80 FIFO Not Empty */
 			interrupt-names = "kbc_ibf", "kbc_obe", "pmch_ibf",
 					  "pmch_obe", "p80_fifo";
 
@@ -402,7 +402,7 @@
 		ps2_ctrl0: ps2@400b1000 {
 			compatible = "nuvoton,npcx-ps2-ctrl";
 			reg = <0x400b1000 0x1000>;
-			interrupts = <21 4>;
+			interrupts = <21 5>;
 			clocks = <&pcc NPCX_CLOCK_BUS_FREERUN NPCX_PWDWN_CTL1 3>;
 
 			/* PS2 Channels - Please use them as PS2 node */
@@ -444,7 +444,7 @@
 			reg = <0x400d4000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			interrupts = <4 4>;
+			interrupts = <4 5>;
 			clocks = <&pcc NPCX_CLOCK_BUS_FMCLK NPCX_PWDWN_CTL4 5>;
 			status = "disabled";
 		};
@@ -452,7 +452,7 @@
 		kbd: kbd@400a3000 {
 			compatible = "nuvoton,npcx-kbd";
 			reg = <0x400a3000 0x2000>;
-			interrupts = <49 4>;
+			interrupts = <49 5>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB1 NPCX_PWDWN_CTL1 0>;
 			wui-maps = <&wui_io31 &wui_io30 &wui_io27 &wui_io26
 				    &wui_io25 &wui_io24 &wui_io23 &wui_io22>;
@@ -464,7 +464,7 @@
 			reg = <0x400d2000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			interrupts = <57 3>;
+			interrupts = <57 4>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL4 7>;
 			status = "disabled";
 

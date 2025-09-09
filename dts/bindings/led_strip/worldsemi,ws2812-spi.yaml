@@ -1,4 +1,6 @@
 # Copyright (c) 2019, Nordic Semiconductor ASA
+# Copyright (c) 2025, Google LLC
+#
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
@@ -13,23 +15,37 @@ description: |
 
     - spi-max-frequency
     - spi-zero-frame
-    - spi-one-frame.
+    - spi-one-frame
+    - bits-per-symbol.
 
-  Use of this driver implies an 8x internal memory overhead (1 byte of
-  driver RAM overhead per bit of pixel data).
+  The internal memory overhead is determined by 'bits-per-symbol'.
+  For each bit of pixel data, the driver allocates N bits of RAM in
+  its buffer, where N is the value of this property.
 
 compatible: "worldsemi,ws2812-spi"
 
 include: [spi-device.yaml, ws2812.yaml]
 
 properties:
-
   spi-one-frame:
     type: int
     required: true
-    description: 8-bit SPI frame to shift out for a 1 pulse.
+    description: |
+      The pattern/symbol to represent a single '1' bit. The length is
+      defined by 'bits-per-symbol'.
 
   spi-zero-frame:
     type: int
     required: true
-    description: 8-bit SPI frame to shift out for a 0 pulse.
+    description: |
+      The pattern/symbol to represent a single '0' bit. The length is
+      defined by 'bits-per-symbol'.
+
+  bits-per-symbol:
+    type: int
+    default: 8
+    description: |
+      The number of SPI bits used to represent a single data bit (a symbol).
+      Must be between 3 and 8. The default value of 8 maintains backwards
+      compatibility, as the driver originally mapped each data bit to a full
+      8-bit SPI frame.

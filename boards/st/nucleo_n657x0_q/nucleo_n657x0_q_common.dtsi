@@ -23,17 +23,17 @@
 		compatible = "gpio-leds";
 
 		green_led: led_1 {
-			gpios = <&gpiog 0 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpiog 0 GPIO_ACTIVE_LOW>;
 			label = "User LD6";
 		};
 
 		blue_led: led_2 {
-			gpios = <&gpiog 8 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpiog 8 GPIO_ACTIVE_LOW>;
 			label = "User LD7";
 		};
 
 		red_led: led_3 {
-			gpios = <&gpiog 10 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpiog 10 GPIO_ACTIVE_LOW>;
 			label = "User LD5";
 		};
 	};
@@ -92,12 +92,6 @@
 };
 
 &ic2 {
-	pll-src = <1>;
-	ic-div = <6>;
-	status = "okay";
-};
-
-&ic3 {
 	pll-src = <1>;
 	ic-div = <6>;
 	status = "okay";
@@ -231,7 +225,7 @@ zephyr_udc0: &usbotg_hs1 {
 		     &xspim_p2_io6_pn10 &xspim_p2_io7_pn11>;
 	pinctrl-names = "default";
 	clocks = <&rcc STM32_CLOCK(AHB5, 12)>,
-		 <&rcc STM32_SRC_IC3 XSPI1_SEL(2)>,
+		 <&rcc STM32_SRC_HCLK5 XSPI2_SEL(0)>,
 		 <&rcc STM32_CLOCK(AHB5, 13)>;
 	status = "okay";
 

@@ -8,6 +8,7 @@
 #include <zephyr/irq.h>
 #include <kswap.h>
 #include <zephyr/tracing/tracing.h>
+#include <zephyr/drivers/clock_control/renesas_rx_cgc.h>
 
 typedef void (*fp)(void);
 extern void _start(void);
@@ -23,6 +24,14 @@ extern void z_rx_irq_exit(void);
 #define FVECT_SECT  __attribute__((section(".fvectors")))
 
 #define __ISR__ __attribute__((interrupt, naked))
+
+#define SET_OFS1_HOCO_BITS(reg, freq)                                                              \
+	((reg) & ~(0b11 << 12)) | ((((freq) == 24000000   ? 0b10                                   \
+				     : (freq) == 32000000 ? 0b11                                   \
+				     : (freq) == 48000000 ? 0b01                                   \
+				     : (freq) == 64000000 ? 0b00                                   \
+							  : 0b11)                                  \
+				    << 12))
 
 static ALWAYS_INLINE void REGISTER_SAVE(void)
 {
@@ -416,12 +425,16 @@ INT_DEMUX(253);
 INT_DEMUX(254);
 INT_DEMUX(255);
 
+#if !CONFIG_HAS_EXCEPT_VECTOR_TABLE
+
 const void *FixedVectors[] FVECT_SECT = {
 	/* 0x00-0x4c: Reserved, must be 0xff (according to e2 studio example) */
 	/* Reserved for OFSM */
 	(fp)0xFFFFFFFF,
 	(fp)0xFFFFFFFF,
-	(fp)0xFFFFFFFF,
+	(fp)(SET_OFS1_HOCO_BITS(
+		0xFFFFFFFF,
+		(RX_CGC_PROP_HAS_STATUS_OKAY_OR(DT_NODELABEL(hoco), clock_frequency, 32000000)))),
 	(fp)0xFFFFFFFF,
 	/* Reserved area */
 	(fp)0xFFFFFFFF,
@@ -464,6 +477,60 @@ const void *FixedVectors[] FVECT_SECT = {
 	INT_NonMaskableInterrupt,
 	_start,
 };
+
+#else
+
+/* The reset vector ALWAYS is at address 0xFFFFFFFC. Set it to point at
+ * the start routine (in reset.S)
+ */
+const FVECT_SECT void *resetVector = _start;
+
+/* Exception vector table
+ * (see rx-family-rxv2-instruction-set-architecture-users-manual-software)
+ */
+const void *ExceptVectors[] EXVECT_SECT = {
+	/* 0x00-0x4c: Reserved, must be 0xff (according to e2 studio example) */
+	(fp)0xFFFFFFFF,
+	(fp)0xFFFFFFFF,
+	(fp)0xFFFFFFFF,
+	(fp)0xFFFFFFFF,
+	(fp)0xFFFFFFFF,
+	(fp)0xFFFFFFFF,
+	(fp)0xFFFFFFFF,
+	(fp)0xFFFFFFFF,
+	(fp)0xFFFFFFFF,
+	(fp)0xFFFFFFFF,
+	(fp)0xFFFFFFFF,
+	(fp)0xFFFFFFFF,
+	(fp)0xFFFFFFFF,
+	(fp)0xFFFFFFFF,
+	(fp)0xFFFFFFFF,
+	(fp)0xFFFFFFFF,
+	(fp)0xFFFFFFFF,
+	(fp)0xFFFFFFFF,
+	(fp)0xFFFFFFFF,
+	(fp)0xFFFFFFFF,
+	/* 0x50: Privileged instruction exception */
+	INT_Excep_SuperVisorInst,
+	/* 0x54: Access exception */
+	INT_Excep_AccessInst,
+	/* 0x58: Reserved */
+	Dummy,
+	/* 0x5c: Undefined Instruction Exception */
+	INT_Excep_UndefinedInst,
+	/* 0x60: Reserved */
+	Dummy,
+	/* 0x64: Floating Point Exception */
+	INT_Excep_FloatingPoint,
+	/* 0x68-0x74: Reserved */
+	Dummy,
+	Dummy,
+	Dummy,
+	Dummy,
+	/* 0x78: Non-maskable interrupt */
+	INT_NonMaskableInterrupt,
+};
+#endif
 
 const fp RelocatableVectors[] RVECT_SECT = {
 	reserved_isr,  switch_isr_wrapper, INT_RuntimeFatalInterrupt,

@@ -1443,6 +1443,33 @@ work. It is equivalent to following west and twister commands.
   manually according to above example. This is because the serial port
   of the PTY is not fixed and being allocated in the system at runtime.
 
+If west is not available or does not know how to flash your system, a custom
+flash command can be specified using the ``flash-command`` flag. The script is
+called with a ``--build-dir`` with the path of the current build, as well as a
+``--board-id`` flag to identify the specific device when multiple are available
+in a hardware map.
+
+.. tabs::
+
+   .. group-tab:: Linux
+
+      .. code-block:: bash
+
+         twister -p npcx9m6f_evb --device-testing --device-serial /dev/ttyACM0
+         --flash-command './custom_flash_script.py,--flag,"complex, argument"'
+
+   .. group-tab:: Windows
+
+      .. note::
+
+         python .\scripts\twister -p npcx9m6f_evb --device-testing
+         --device-serial COM1
+         --flash-command 'custom_flash_script.py,--flag,"complex, argument"'
+
+Would result in calling ``./custom_flash_script.py
+--build-dir <build directory> --board-id <board identification>
+--flag "complex, argument"``.
+
 Fixtures
 +++++++++
 

@@ -4,53 +4,52 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/ {
-};
+/ {};
 
 &pinctrl {
 	shd_cs0_n_gpio055_sleep: shd_cs0_n_gpio055_sleep {
-		pinmux = < MCHP_XEC_PINMUX(055, MCHP_AF2) >;
+		pinmux = <MCHP_XEC_PINMUX(055, MCHP_AF2)>;
 		low-power-enable;
 	};
 	shd_clk_gpio056_sleep: shd_clk_gpio056_sleep {
-		pinmux = < MCHP_XEC_PINMUX(056, MCHP_AF2) >;
+		pinmux = <MCHP_XEC_PINMUX(056, MCHP_AF2)>;
 		low-power-enable;
 	};
 	shd_io0_gpio223_sleep: shd_io0_gpio223_sleep {
-		pinmux = < MCHP_XEC_PINMUX(0223, MCHP_AF1) >;
+		pinmux = <MCHP_XEC_PINMUX(0223, MCHP_AF1)>;
 		low-power-enable;
 	};
 	shd_io1_gpio224_sleep: shd_io1_gpio224_sleep {
-		pinmux = < MCHP_XEC_PINMUX(0224, MCHP_AF2) >;
+		pinmux = <MCHP_XEC_PINMUX(0224, MCHP_AF2)>;
 		low-power-enable;
 	};
 	shd_io2_gpio227_sleep: shd_io2_gpio227_sleep {
-		pinmux = < MCHP_XEC_PINMUX(0227, MCHP_AF1) >;
+		pinmux = <MCHP_XEC_PINMUX(0227, MCHP_AF1)>;
 		low-power-enable;
 	};
 	shd_io3_gpio016_sleep: shd_io3_gpio016_sleep {
-		pinmux = < MCHP_XEC_PINMUX(016, MCHP_AF2) >;
+		pinmux = <MCHP_XEC_PINMUX(016, MCHP_AF2)>;
 		low-power-enable;
 	};
 
 	gpio_off_gpio116: gpio_gpio116 {
-		pinmux = < MCHP_XEC_PINMUX(0116, MCHP_GPIO) >;
+		pinmux = <MCHP_XEC_PINMUX(0116, MCHP_GPIO)>;
 		low-power-enable;
 	};
 	gpio_off_gpio117: gpio_gpio117 {
-		pinmux = < MCHP_XEC_PINMUX(0117, MCHP_GPIO) >;
+		pinmux = <MCHP_XEC_PINMUX(0117, MCHP_GPIO)>;
 		low-power-enable;
 	};
 	gpio_off_gpio074: gpio_gpio074 {
-		pinmux = < MCHP_XEC_PINMUX(074, MCHP_GPIO) >;
+		pinmux = <MCHP_XEC_PINMUX(074, MCHP_GPIO)>;
 		low-power-enable;
 	};
 	gpio_off_gpio075: gpio_gpio075 {
-		pinmux = < MCHP_XEC_PINMUX(075, MCHP_GPIO) >;
+		pinmux = <MCHP_XEC_PINMUX(075, MCHP_GPIO)>;
 		low-power-enable;
 	};
 	gpio_off_gpio076: gpio_gpio076 {
-		pinmux = < MCHP_XEC_PINMUX(076, MCHP_GPIO) >;
+		pinmux = <MCHP_XEC_PINMUX(076, MCHP_GPIO)>;
 		low-power-enable;
 	};
 };
@@ -65,10 +64,10 @@
 	compatible = "microchip,xec-qmspi-ldma";
 	status = "okay";
 
-	pinctrl-0 = < &shd_cs0_n_gpio055
-		      &shd_clk_gpio056
-		      &shd_io0_gpio223
-		      &shd_io1_gpio224
-		      &shd_io2_gpio227
-		      &shd_io3_gpio016 >;
+	pinctrl-0 = <&shd_cs0_n_gpio055
+		     &shd_clk_gpio056
+		     &shd_io0_gpio223
+		     &shd_io1_gpio224
+		     &shd_io2_gpio227
+		     &shd_io3_gpio016>;
 };

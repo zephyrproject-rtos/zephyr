@@ -1,0 +1,9 @@
+# Adafruit Feather ESP32 board configuration
+
+# Copyright (c) 2025 Lena Voytek <lena@voytek.dev>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ADAFRUIT_FEATHER_ESP32
+	select SOC_ESP32_PICO_V3_02
+	select SOC_ESP32_PROCPU if BOARD_ADAFRUIT_FEATHER_ESP32_ESP32_PROCPU
+	select SOC_ESP32_APPCPU if BOARD_ADAFRUIT_FEATHER_ESP32_ESP32_APPCPU

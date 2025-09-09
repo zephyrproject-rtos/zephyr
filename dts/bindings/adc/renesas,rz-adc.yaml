@@ -19,6 +19,11 @@ properties:
     required: true
     description: Indicates the reference voltage of the ADC in mV.
 
+  unit:
+    type: int
+    description: Indicates the unit number of the ADC device.
+    required: true
+
   channel-available-mask:
     type: int
     required: true

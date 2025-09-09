@@ -391,6 +391,15 @@ struct bt_a2dp_discover_param {
 	 *  it save endpoint info internally.
 	 */
 	struct bt_avdtp_sep_info *seps_info;
+	/** The AVDTP version of the peer's A2DP sdp service.
+	 *  Stack uses it to determine using get_all_cap or get_cap cmd. When both
+	 *  versions are v1.3 or bigger version, get_all_cap is used, otherwise
+	 *  get_cap is used.
+	 *  It is the same value of the avdtp sepcificaiton's version value.
+	 *  For example: 0x0103 means version 1.3
+	 *  If the value is 0 (unknown), stack process it as less than v1.3
+	 */
+	uint16_t avdtp_version;
 	/** The max count of seps (stream endpoint) that can be got in this call route */
 	uint8_t sep_count;
 };
@@ -832,7 +841,6 @@ int bt_a2dp_stream_abort(struct bt_a2dp_stream *stream);
  */
 uint32_t bt_a2dp_get_mtu(struct bt_a2dp_stream *stream);
 
-#if defined(CONFIG_BT_A2DP_SOURCE)
 /** @brief send a2dp media data
  *
  * Only A2DP source side can call this function.
@@ -846,7 +854,6 @@ uint32_t bt_a2dp_get_mtu(struct bt_a2dp_stream *stream);
  */
 int bt_a2dp_stream_send(struct bt_a2dp_stream *stream, struct net_buf *buf, uint16_t seq_num,
 			uint32_t ts);
-#endif
 
 #ifdef __cplusplus
 }

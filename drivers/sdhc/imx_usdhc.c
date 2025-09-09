@@ -216,12 +216,16 @@ static void imx_usdhc_error_recovery(const struct device *dev)
 
 	if (status & kUSDHC_CommandInhibitFlag) {
 		/* Reset command line */
-		USDHC_Reset(base, kUSDHC_ResetCommand, 100U);
+		if (!USDHC_Reset(base, kUSDHC_ResetCommand, 100U)) {
+			LOG_ERR("Failed to reset command line");
+		}
 	}
 	if (((status & (uint32_t)kUSDHC_DataInhibitFlag) != 0U) ||
 	    (USDHC_GetAdmaErrorStatusFlags(base) != 0U)) {
 		/* Reset data line */
-		USDHC_Reset(base, kUSDHC_DataInhibitFlag, 100U);
+		if (!USDHC_Reset(base, kUSDHC_ResetData, 100U)) {
+			LOG_ERR("Failed to reset data line");
+		}
 	}
 }
 

@@ -699,17 +699,10 @@ static void isr_rx(void *param)
 			}
 
 			goto isr_rx_done;
-		} else {
-			/* Check if there are 2 free rx buffers, one will be
-			 * consumed to receive the current PDU, and the other
-			 * is to ensure a PDU can be setup for the radio DMA to
-			 * receive in the next sub_interval/iso_interval.
-			 */
-			node_rx = ull_iso_pdu_rx_alloc_peek(2U);
-			if (!node_rx) {
-				goto isr_rx_done;
-			}
 		}
+
+		node_rx = ull_iso_pdu_rx_alloc_peek(1U);
+		LL_ASSERT(node_rx);
 
 		pdu = (void *)node_rx->pdu;
 
@@ -717,6 +710,15 @@ static void isr_rx(void *param)
 		if (pdu->cstf && (pdu->cssn != lll->cssn_curr)) {
 			lll->cssn_next = pdu->cssn;
 			/* TODO: check same CSSN is used in every subevent */
+		}
+
+		/* Check if there are 2 free rx buffers, one will be
+		 * consumed to receive the current PDU, and the other
+		 * is to ensure a PDU can be setup for the radio DMA to
+		 * receive in the next sub_interval/iso_interval.
+		 */
+		if (ull_iso_pdu_rx_alloc_peek(2U) == NULL) {
+			goto isr_rx_done;
 		}
 
 		/* Check payload buffer overflow.
@@ -1299,6 +1301,13 @@ isr_rx_next_subevent:
 
 	radio_switch_complete_and_disable();
 
+	/* Setup Access Address capture for subsequent subevent if there has been no anchor point
+	 * sync previously.
+	 */
+	if (radio_tmr_aa_restore() == 0U) {
+		radio_tmr_aa_capture();
+	}
+
 	/* PDU Header Complete TimeOut, calculate the absolute timeout in
 	 * microseconds by when a PDU header is to be received for each
 	 * subevent.
@@ -1342,16 +1351,30 @@ isr_rx_next_subevent:
 		hcto -= radio_rx_chain_delay_get(lll->phy, PHY_FLAGS_S8);
 		hcto -= addr_us_get(lll->phy);
 		hcto -= radio_rx_ready_delay_get(lll->phy, PHY_FLAGS_S8);
+
 		overhead_us = radio_rx_chain_delay_get(lll->phy, PHY_FLAGS_S8);
 		overhead_us += addr_us_get(lll->phy);
 		overhead_us += radio_rx_ready_delay_get(lll->phy, PHY_FLAGS_S8);
 		overhead_us += (EVENT_CLOCK_JITTER_US << 1);
+
+		LL_ASSERT(EVENT_IFS_US > overhead_us);
+
 		jitter_max_us = (EVENT_IFS_US - overhead_us) >> 1;
-		jitter_max_us -= RANGE_DELAY_US + HAL_RADIO_TMR_START_DELAY_US;
+		jitter_max_us = (jitter_max_us * nse) / (lll->num_bis * lll->nse);
+		overhead_us = HAL_RADIO_TMR_START_DELAY_US;
+		if (jitter_max_us > overhead_us) {
+			jitter_max_us -= overhead_us;
+		} else {
+			jitter_max_us = 0U;
+		}
+
 		jitter_us = (EVENT_CLOCK_JITTER_US << 1) * nse;
 		if (jitter_us > jitter_max_us) {
 			jitter_us = jitter_max_us;
 		}
+
+		LL_ASSERT(hcto > jitter_us);
+
 		hcto -= jitter_us;
 
 		start_us = hcto;
@@ -1363,7 +1386,6 @@ isr_rx_next_subevent:
 		 * the current subevent we are listening.
 		 */
 		hcto += (jitter_us << 1);
-		hcto += RANGE_DELAY_US + HAL_RADIO_TMR_START_DELAY_US;
 	} else {
 		/* First subevent PDU was not received, hence setup radio packet
 		 * timer header complete timeout from where the first subevent

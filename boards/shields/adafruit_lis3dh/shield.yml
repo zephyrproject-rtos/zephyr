@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2025, Jonas Berg
+
+shield:
+  name: adafruit_lis3dh
+  full_name: Adafruit LIS3DH Triple-Axis Accelerometer Sensor Shield
+  vendor: adafruit
+  supported_features:
+    - sensor

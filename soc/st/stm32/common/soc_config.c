@@ -88,7 +88,7 @@ static int st_stm32_common_config(void)
 
 #else
 
-/* keeping in mind that debugging draws a lot of power we explcitly disable when not needed */
+/* keeping in mind that debugging draws a lot of power we explicitly disable when not needed */
 #if defined(CONFIG_SOC_SERIES_STM32F1X) || defined(CONFIG_SOC_SERIES_STM32L1X)
 	LL_DBGMCU_DisableDBGSleepMode();
 	LL_DBGMCU_DisableDBGStopMode();

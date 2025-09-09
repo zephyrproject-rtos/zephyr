@@ -1,0 +1,207 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <renesas/ra/ra4/r7fa4c1bd3cfp.dtsi>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/adc/adc.h>
+#include "ek_ra4c1-pinctrl.dtsi"
+
+/ {
+	model = "Renesas EK-RA4C1";
+	compatible = "renesas,ra4c1", "renesas,ra";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash-controller = &flash;
+		zephyr,flash = &flash0;
+		zephyr,console = &uart4;
+		zephyr,shell-uart = &uart4;
+		zephyr,canbus = &canfd0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led1: led1 {
+			gpios = <&ioport6 10 GPIO_ACTIVE_HIGH>;
+			label = "LED1";
+		};
+
+		led2: led2 {
+			gpios = <&ioport4 7 GPIO_ACTIVE_HIGH>;
+			label = "LED2";
+		};
+
+		led3: led3 {
+			gpios = <&ioport4 4 GPIO_ACTIVE_HIGH>;
+			label = "LED3";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		button0: s1 {
+			gpios = <&ioport5 13 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button switch 1";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		button1: s2 {
+			gpios = <&ioport1 5 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button switch 2";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+
+	aliases {
+		led0 = &led1;
+		sw0 = &button0;
+		sw1 = &button1;
+		watchdog0 = &wdt;
+	};
+};
+
+&xtal {
+	clock-frequency = <DT_FREQ_M(8)>;
+	mosel = <0>;
+	#clock-cells = <0>;
+	status = "okay";
+};
+
+&subclk {
+	status = "okay";
+};
+
+&pll {
+	clocks = <&xtal>;
+	div = <1>;
+	mul = <10 0>;
+	status = "okay";
+};
+
+&canfdclk {
+	clocks = <&pll>;
+	div = <2>;
+	status = "okay";
+};
+
+&sci4 {
+	pinctrl-0 = <&sci4_default>;
+	pinctrl-names = "default";
+	interrupts = <0 1>, <1 1>, <2 1>, <3 1>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
+	status = "okay";
+
+	uart4: uart {
+		current-speed = <115200>;
+		status = "okay";
+	};
+};
+
+&ioport0 {
+	status = "okay";
+};
+
+&ioport1 {
+	status = "okay";
+};
+
+&ioport4 {
+	status = "okay";
+};
+
+&ioport5 {
+	status = "okay";
+};
+
+&ioport6 {
+	status = "okay";
+};
+
+&spi0 {
+	interrupts = <4 1>, <5 1>, <6 1>, <7 1>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&adc0 {
+	interrupts = <8 1>;
+	interrupt-names = "scanend";
+	pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&port_irq0 {
+	interrupts = <9 12>;
+	status = "okay";
+};
+
+&port_irq15 {
+	interrupts = <10 12>;
+	status = "okay";
+};
+
+&pwm4 {
+	pinctrl-0 = <&pwm4_default>;
+	pinctrl-names = "default";
+	interrupts = <11 1>, <12 1>;
+	interrupt-names = "gtioca", "overflow";
+	divider = <RA_PWM_SOURCE_DIV_256>;
+	status = "okay";
+};
+
+&iic1 {
+	pinctrl-0 = <&iic1_default>;
+	pinctrl-names = "default";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clock-frequency = <DT_FREQ_M(1)>;
+	interrupts = <13 1>, <14 1>, <15 1>, <16 1>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
+	status = "okay";
+};
+
+&canfd_global {
+	interrupts = <17 1>, <18 1>;
+	interrupt-names = "rxf", "glerr";
+	status = "okay";
+
+	canfd0 {
+		interrupts = <19 12>, <20 12>, <21 12>;
+		interrupt-names = "err", "tx", "rx";
+		pinctrl-0 = <&canfd0_default>;
+		pinctrl-names = "default";
+		rx-max-filters = <16>;
+		status = "okay";
+
+		can-transceiver {
+			max-bitrate = <5000000>;
+		};
+	};
+};
+
+&wdt {
+	status = "okay";
+};
+
+&flash1 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		storage_partition: partition@0 {
+			label = "storage";
+			reg = <0x0 DT_SIZE_K(8)>;
+		};
+	};
+};

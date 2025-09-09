@@ -1,0 +1,37 @@
+#
+# Copyright (c) 2025 Embeint Inc
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if LORA_MODULE_BACKEND_LORA_BASICS_MODEM
+
+config LORA_BASICS_MODEM_ASYNC_RX_MAX_PAYLOAD
+	int "Maximum size payload that can be received by async RX"
+	default 256
+	help
+	  A buffer of this size is allocated on the system workqueue stack when
+	  running the async RX handler.
+
+choice LORA_BASICS_MODEM_RSSI_REPORT_TYPE
+	prompt "Type of RSSI to report to the application layer"
+	default LORA_BASICS_MODEM_RSSI_REPORT_TYPE_SIGNAL
+
+config LORA_BASICS_MODEM_RSSI_REPORT_TYPE_PACKET
+	bool "Report the packet RSSI (rssi_pkt_in_dbm)"
+	help
+	  The packet RSSI is the strength of the signal in the configured band.
+	  Once the LoRa signal goes below the noise floor, this value with stay
+	  at the signal strength of the noise floor.
+
+config LORA_BASICS_MODEM_RSSI_REPORT_TYPE_SIGNAL
+	bool "Report the signal RSSI (signal_rssi_pkt_in_dbm)"
+	help
+	  The signal RSSI is an estimate of the strength of the received LoRa
+	  signal. In contrast to the packet RSSI, this value will continue to
+	  decrease below the noise floor as the signal approaches the sensitivity
+	  limits of the receiver.
+
+endchoice
+
+endif

@@ -99,7 +99,7 @@
 			reg-names = "evt_itim", "sys_itim";
 			clocks = <&pcc NPCX_CLOCK_BUS_LFCLK NPCX_PWDWN_CTL4 0
 				  &pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL7 5>;
-			interrupts = <28 1>; /* Event timer interrupt */
+			interrupts = <28 2>; /* Event timer interrupt */
 			clock-frequency = <15000000>; /* Set for SYS_CLOCK_HW_CYCLES_PER_SEC */
 		};
 
@@ -107,7 +107,7 @@
 			compatible = "nuvoton,npcx-uart";
 			/* Index 0: UART1 register, Index 1: MDMA1 register */
 			reg = <0x400E0000 0x2000 0x40011100 0x100>;
-			interrupts = <33 3>;
+			interrupts = <33 4>;
 			/* Index 0: UART1 clock, Index 1: MDMA1 clock */
 			clocks = <&pcc NPCX_CLOCK_BUS_APB4 NPCX_PWDWN_CTL1 4
 				  &pcc NPCX_CLOCK_BUS_CORE NPCX_PWDWN_CTL9 0>;
@@ -119,7 +119,7 @@
 			compatible = "nuvoton,npcx-uart";
 			/* Index 0: UART2 register, Index 1: MDMA2 register */
 			reg = <0x400E2000 0x2000 0x40011200 0x100>;
-			interrupts = <32 3>;
+			interrupts = <32 4>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB4 NPCX_PWDWN_CTL7 6>;
 			uart-rx = <&wui_cr_sin2>;
 			status = "disabled";
@@ -129,7 +129,7 @@
 			compatible = "nuvoton,npcx-uart";
 			/* Index 0: UART3 register, Index 1: MDMA3 register */
 			reg = <0x400E4000 0x2000 0x40011300 0x100>;
-			interrupts = <38 3>;
+			interrupts = <38 4>;
 			/* Index 0: UART3 clock, Index 1: MDMA3 clock */
 			clocks = <&pcc NPCX_CLOCK_BUS_APB4 NPCX_PWDWN_CTL7 4
 				  &pcc NPCX_CLOCK_BUS_CORE NPCX_PWDWN_CTL9 2>;
@@ -141,7 +141,7 @@
 			compatible = "nuvoton,npcx-uart";
 			/* Index 0: UART4 register, Index 1: MDMA4 register */
 			reg = <0x400E6000 0x2000 0x40011400 0x100>;
-			interrupts = <39 3>;
+			interrupts = <39 4>;
 			/* Index 0: UART4 clock, Index 1: MDMA4 clock */
 			clocks = <&pcc NPCX_CLOCK_BUS_APB4 NPCX_PWDWN_CTL7 3
 				  &pcc NPCX_CLOCK_BUS_CORE NPCX_PWDWN_CTL9 3>;
@@ -301,7 +301,7 @@
 		i2c_ctrl0: i2c@40009000 {
 			compatible = "nuvoton,npcx-i2c-ctrl";
 			reg = <0x40009000 0x1000>;
-			interrupts = <13 3>;
+			interrupts = <13 4>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL3 0>;
 			smb-wui = <&wui_smb0>;
 			status = "disabled";
@@ -310,7 +310,7 @@
 		i2c_ctrl1: i2c@4000b000 {
 			compatible = "nuvoton,npcx-i2c-ctrl";
 			reg = <0x4000b000 0x1000>;
-			interrupts = <14 3>;
+			interrupts = <14 4>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL3 1>;
 			smb-wui = <&wui_smb1>;
 			status = "disabled";
@@ -319,7 +319,7 @@
 		i2c_ctrl2: i2c@400c0000 {
 			compatible = "nuvoton,npcx-i2c-ctrl";
 			reg = <0x400c0000 0x1000>;
-			interrupts = <36 3>;
+			interrupts = <36 4>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL3 2>;
 			smb-wui = <&wui_smb2>;
 			status = "disabled";
@@ -328,7 +328,7 @@
 		i2c_ctrl3: i2c@400c2000 {
 			compatible = "nuvoton,npcx-i2c-ctrl";
 			reg = <0x400c2000 0x1000>;
-			interrupts = <37 3>;
+			interrupts = <37 4>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL3 3>;
 			smb-wui = <&wui_smb3>;
 			status = "disabled";
@@ -337,7 +337,7 @@
 		i2c_ctrl4: i2c@40008000 {
 			compatible = "nuvoton,npcx-i2c-ctrl";
 			reg = <0x40008000 0x1000>;
-			interrupts = <19 3>;
+			interrupts = <19 4>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL3 4>;
 			smb-wui = <&wui_smb4>;
 			status = "disabled";
@@ -346,7 +346,7 @@
 		i2c_ctrl5: i2c@40017000 {
 			compatible = "nuvoton,npcx-i2c-ctrl";
 			reg = <0x40017000 0x1000>;
-			interrupts = <20 3>;
+			interrupts = <20 4>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL7 0>;
 			smb-wui = <&wui_smb5>;
 			status = "disabled";
@@ -355,7 +355,7 @@
 		i2c_ctrl6: i2c@40018000 {
 			compatible = "nuvoton,npcx-i2c-ctrl";
 			reg = <0x40018000 0x1000>;
-			interrupts = <16 3>;
+			interrupts = <16 4>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL7 1>;
 			smb-wui = <&wui_smb6>;
 			status = "disabled";
@@ -364,7 +364,7 @@
 		i2c_ctrl7: i2c@40019000 {
 			compatible = "nuvoton,npcx-i2c-ctrl";
 			reg = <0x40019000 0x1000>;
-			interrupts = <8 3>;
+			interrupts = <8 4>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL7 2>;
 			smb-wui = <&wui_smb7>;
 			status = "disabled";
@@ -381,7 +381,7 @@
 			compatible = "nuvoton,npcx-adc";
 			#io-channel-cells = <1>;
 			reg = <0x400d5000 0x2000>;
-			interrupts = <22 3>;
+			interrupts = <22 4>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB1 NPCX_PWDWN_CTL4 3>;
 			vref-mv = <3300>;
 			channel-count = <26>;
@@ -447,7 +447,7 @@
 			reg = <0x400f0000 0x2000>,
 			      <0x40011500 0x100>;
 
-			interrupts = <29 3>;
+			interrupts = <29 4>;
 
 			/* Reset controller */
 			resets = <&rctl NPCX_RESET_I3C_1>;
@@ -473,7 +473,7 @@
 			reg = <0x400f2000 0x2000>,
 			      <0x40011600 0x100>;
 
-			interrupts = <66 3>;
+			interrupts = <66 4>;
 
 			/* Reset controller */
 			resets = <&rctl NPCX_RESET_I3C_2>;
@@ -499,7 +499,7 @@
 			reg = <0x400f4000 0x2000>,
 			      <0x40011700 0x100>;
 
-			interrupts = <67 3>;
+			interrupts = <67 4>;
 
 			/* Reset controller */
 			resets = <&rctl NPCX_RESET_I3C_3>;

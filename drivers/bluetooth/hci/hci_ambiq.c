@@ -353,10 +353,13 @@ static int bt_apollo_send(const struct device *dev, struct net_buf *buf)
 
 	/* Send the SPI packet */
 	ret = spi_send_packet(buf->data, buf->len);
+	if (ret != 0) {
+		return ret;
+	}
 
 	net_buf_unref(buf);
 
-	return ret;
+	return 0;
 }
 
 static int bt_apollo_open(const struct device *dev, bt_hci_recv_t recv)
@@ -391,6 +394,9 @@ static int bt_apollo_close(const struct device *dev)
 	if (ret) {
 		return ret;
 	}
+
+	/* Stop RX thread */
+	k_thread_abort(&spi_rx_thread_data);
 
 	hci->recv = NULL;
 

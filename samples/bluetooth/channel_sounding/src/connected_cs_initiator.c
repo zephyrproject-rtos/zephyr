@@ -29,6 +29,7 @@ static ssize_t on_attr_write_cb(struct bt_conn *conn, const struct bt_gatt_attr 
 static struct bt_conn *connection;
 static uint8_t n_ap;
 static uint8_t latest_num_steps_reported;
+static uint16_t latest_procedure_counter = UINT16_MAX;
 static uint16_t latest_step_data_len;
 static uint8_t latest_local_steps[STEP_DATA_BUF_LEN];
 static uint8_t latest_peer_steps[STEP_DATA_BUF_LEN];
@@ -71,6 +72,13 @@ static void subevent_result_cb(struct bt_conn *conn, struct bt_conn_le_cs_subeve
 {
 	latest_num_steps_reported = result->header.num_steps_reported;
 	n_ap = result->header.num_antenna_paths;
+
+	if (result->header.procedure_counter == latest_procedure_counter) {
+		printk("The sample does not handle CS procedures with multiple CS subevents.\n");
+		latest_procedure_counter = result->header.procedure_counter;
+		return;
+	}
+	latest_procedure_counter = result->header.procedure_counter;
 
 	if (result->step_data_buf) {
 		if (result->step_data_buf->len <= STEP_DATA_BUF_LEN) {
@@ -241,6 +249,47 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 	}
 }
 
+struct bt_le_cs_create_config_params get_cs_config_params(void)
+{
+	/* Create config parameters that result in a limited number of CS steps per CS procedure.
+	 * This is achieved by setting channel_map_repetition = 1 and only enabling a limited set
+	 * of channels in the channel_map. This is required due to a limitation in the sample:
+	 *	The reflector uses a single GATT write operation to transfer all of the step data
+	 *	from one CS procedure to the initiator. This limits the amount of CS step data per
+	 *	CS procedure that will allow the sample to function to 512 bytes.
+	 * This method for limiting the amount of CS steps per CS procedure is chosen because it
+	 * will result in the same number of CS steps regardless of controller capabilities.
+	 * Other possible methods such as limiting the max_procedure_len in the procedure params
+	 * would yield different number of CS steps per CS procedure depending on the
+	 * timing parameters supported by the local and peer controller.
+	 */
+	struct bt_le_cs_create_config_params config_params = {
+		.id = CS_CONFIG_ID,
+		.mode = BT_CONN_LE_CS_MAIN_MODE_2_SUB_MODE_1,
+		.min_main_mode_steps = 2,
+		.max_main_mode_steps = 10,
+		.main_mode_repetition = 0,
+		.mode_0_steps = NUM_MODE_0_STEPS,
+		.role = BT_CONN_LE_CS_ROLE_INITIATOR,
+		.rtt_type = BT_CONN_LE_CS_RTT_TYPE_AA_ONLY,
+		.cs_sync_phy = BT_CONN_LE_CS_SYNC_1M_PHY,
+		.channel_map_repetition = 1,
+		.channel_selection_type = BT_CONN_LE_CS_CHSEL_TYPE_3B,
+		.ch3c_shape = BT_CONN_LE_CS_CH3C_SHAPE_HAT,
+		.ch3c_jump = 2,
+	};
+
+	memset(config_params.channel_map, 0, 10);
+	/* Enable 32 consecutive CS channels.
+	 * Start at i = 26 since channels 23, 24 and 25 are disallowed by spec.
+	 */
+	for (uint8_t i = 26; i < 62; i++) {
+		BT_LE_CS_CHANNEL_BIT_SET_VAL(config_params.channel_map, i, 1);
+	}
+
+	return config_params;
+}
+
 BT_CONN_CB_DEFINE(conn_cb) = {
 	.connected = connected_cb,
 	.disconnected = disconnected_cb,
@@ -307,27 +356,11 @@ int main(void)
 
 	k_sem_take(&sem_remote_capabilities_obtained, K_FOREVER);
 
-	struct bt_le_cs_create_config_params config_params = {
-		.id = CS_CONFIG_ID,
-		.main_mode_type = BT_CONN_LE_CS_MAIN_MODE_2,
-		.sub_mode_type = BT_CONN_LE_CS_SUB_MODE_1,
-		.min_main_mode_steps = 2,
-		.max_main_mode_steps = 10,
-		.main_mode_repetition = 0,
-		.mode_0_steps = NUM_MODE_0_STEPS,
-		.role = BT_CONN_LE_CS_ROLE_INITIATOR,
-		.rtt_type = BT_CONN_LE_CS_RTT_TYPE_AA_ONLY,
-		.cs_sync_phy = BT_CONN_LE_CS_SYNC_1M_PHY,
-		.channel_map_repetition = 1,
-		.channel_selection_type = BT_CONN_LE_CS_CHSEL_TYPE_3B,
-		.ch3c_shape = BT_CONN_LE_CS_CH3C_SHAPE_HAT,
-		.ch3c_jump = 2,
-	};
-
-	bt_le_cs_set_valid_chmap_bits(config_params.channel_map);
+	struct bt_le_cs_create_config_params config_params = get_cs_config_params();
 
 	err = bt_le_cs_create_config(connection, &config_params,
 				     BT_LE_CS_CREATE_CONFIG_CONTEXT_LOCAL_AND_REMOTE);
+
 	if (err) {
 		printk("Failed to create CS config (err %d)\n", err);
 		return 0;
@@ -342,15 +375,20 @@ int main(void)
 	}
 
 	k_sem_take(&sem_cs_security_enabled, K_FOREVER);
-
 	const struct bt_le_cs_set_procedure_parameters_param procedure_params = {
 		.config_id = CS_CONFIG_ID,
-		.max_procedure_len = 12,
+		.max_procedure_len = 0xffff,
 		.min_procedure_interval = 100,
 		.max_procedure_interval = 100,
 		.max_procedure_count = 0,
-		.min_subevent_len = 6750,
-		.max_subevent_len = 6750,
+		/* Use a relatively large subevent_len to make sure the CS procedure
+		 * will terminate due to running out of unused channels in the channel map
+		 * (and channel map repetitions) in the first CS subevent of the CS procedure.
+		 * This will limit the number of CS subevents per CS procedure to 1, which is
+		 * required by the design of the sample.
+		 */
+		.min_subevent_len = 50000,
+		.max_subevent_len = 50000,
 		.tone_antenna_config_selection = BT_LE_CS_TONE_ANTENNA_CONFIGURATION_A1_B1,
 		.phy = BT_LE_CS_PROCEDURE_PHY_1M,
 		.tx_power_delta = 0x80,

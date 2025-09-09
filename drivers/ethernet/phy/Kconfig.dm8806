@@ -7,7 +7,7 @@ menuconfig PHY_DM8806
 	bool "Davicom PHY DM8806 driver"
 	default y
 	depends on DT_HAS_DAVICOM_DM8806_PHY_ENABLED
-	depends on MDIO
+	select MDIO
 	help
 	  Enable driver for Davicom DM8806 PHY.
 

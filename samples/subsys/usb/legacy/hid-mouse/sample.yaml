@@ -1,0 +1,15 @@
+sample:
+  name: USB HID mouse sample
+common:
+  harness: button
+  filter: dt_alias_exists("sw0") and dt_alias_exists("led0")
+  depends_on:
+    - gpio
+tests:
+  sample.usb.legacy.hid-mouse:
+    depends_on:
+      - usb_device
+    build_only: true
+    platform_exclude:
+      - frdm_mcxn947/mcxn947/cpu0
+    tags: usb

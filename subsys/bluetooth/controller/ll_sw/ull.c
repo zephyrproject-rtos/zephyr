@@ -335,8 +335,9 @@ static struct k_sem sem_ticker_api_cb;
 static struct k_sem *sem_recv;
 
 /* Declare prepare-event FIFO: mfifo_prep.
- * Queue of struct node_rx_event_done
  */
+#define EVENT_PIPELINE_MAX (7U + (EVENT_DEFER_MAX))
+
 static MFIFO_DEFINE(prep, sizeof(struct lll_event), EVENT_PIPELINE_MAX);
 
 /* Declare done-event RXFIFO. This is a composite pool-backed MFIFO for rx_nodes.
@@ -371,12 +372,12 @@ static MFIFO_DEFINE(prep, sizeof(struct lll_event), EVENT_PIPELINE_MAX);
 #if !defined(VENDOR_EVENT_DONE_MAX)
 #if defined(CONFIG_BT_CTLR_ADV_EXT) && defined(CONFIG_BT_OBSERVER)
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
-#define EVENT_DONE_MAX 6
+#define EVENT_DONE_MAX (6U + EVENT_DEFER_MAX)
 #else /* !CONFIG_BT_CTLR_PHY_CODED */
-#define EVENT_DONE_MAX 5
+#define EVENT_DONE_MAX (5U + EVENT_DEFER_MAX)
 #endif /* !CONFIG_BT_CTLR_PHY_CODED */
 #else /* !CONFIG_BT_CTLR_ADV_EXT || !CONFIG_BT_OBSERVER */
-#define EVENT_DONE_MAX 4
+#define EVENT_DONE_MAX (4U + EVENT_DEFER_MAX)
 #endif /* !CONFIG_BT_CTLR_ADV_EXT || !CONFIG_BT_OBSERVER */
 #else
 #define EVENT_DONE_MAX VENDOR_EVENT_DONE_MAX
@@ -1409,6 +1410,7 @@ void ll_rx_dequeue(void)
 #if defined(CONFIG_BT_CTLR_DTM_HCI_DF_IQ_REPORT)
 	case NODE_RX_TYPE_DTM_IQ_SAMPLE_REPORT:
 #endif /* CONFIG_BT_CTLR_DTM_HCI_DF_IQ_REPORT */
+	case NODE_RX_TYPE_PATH_LOSS:
 
 	/* Ensure that at least one 'case' statement is present for this
 	 * code block.
@@ -1599,6 +1601,7 @@ void ll_rx_mem_release(void **node_rx)
 #if defined(CONFIG_BT_CTLR_ISO)
 		case NODE_RX_TYPE_ISO_PDU:
 #endif
+		case NODE_RX_TYPE_PATH_LOSS:
 
 		/* Ensure that at least one 'case' statement is present for this
 		 * code block.
@@ -2019,6 +2022,7 @@ int ull_disable(void *lll)
 	struct ull_hdr *hdr;
 	struct k_sem sem;
 	uint32_t ret;
+	int err;
 
 	hdr = HDR_LLL2ULL(lll);
 	if (!ull_ref_get(hdr)) {
@@ -2051,7 +2055,12 @@ int ull_disable(void *lll)
 			     &mfy);
 	LL_ASSERT(!ret);
 
-	return k_sem_take(&sem, ULL_DISABLE_TIMEOUT);
+	err = k_sem_take(&sem, ULL_DISABLE_TIMEOUT);
+	if (err != 0) {
+		return err;
+	}
+
+	return 0;
 }
 
 void *ull_pdu_rx_alloc_peek(uint8_t count)
@@ -2141,6 +2150,8 @@ void *ull_prepare_dequeue_iter(uint8_t *idx)
 
 void ull_prepare_dequeue(uint8_t caller_id)
 {
+	uint32_t param_normal_head_ticks = 0U;
+	uint32_t param_normal_next_ticks = 0U;
 	void *param_normal_head = NULL;
 	void *param_normal_next = NULL;
 	void *param_resume_head = NULL;
@@ -2177,6 +2188,7 @@ void ull_prepare_dequeue(uint8_t caller_id)
 
 	next = ull_prepare_dequeue_get();
 	while (next) {
+		uint32_t ticks = next->prepare_param.ticks_at_expire;
 		void *param = next->prepare_param.param;
 		uint8_t is_aborted = next->is_aborted;
 		uint8_t is_resume = next->is_resume;
@@ -2224,8 +2236,10 @@ void ull_prepare_dequeue(uint8_t caller_id)
 			if (!is_resume) {
 				if (!param_normal_head) {
 					param_normal_head = param;
+					param_normal_head_ticks = ticks;
 				} else if (!param_normal_next) {
 					param_normal_next = param;
+					param_normal_next_ticks = ticks;
 				}
 			} else {
 				if (!param_resume_head) {
@@ -2241,16 +2255,15 @@ void ull_prepare_dequeue(uint8_t caller_id)
 			 */
 			if (!next->is_aborted &&
 			    ((!next->is_resume &&
-			      ((next->prepare_param.param ==
-				param_normal_head) ||
-			       (next->prepare_param.param ==
-				param_normal_next))) ||
-			     (next->is_resume &&
-			      !param_normal_next &&
-			      ((next->prepare_param.param ==
-				param_resume_head) ||
-			       (next->prepare_param.param ==
-				param_resume_next))))) {
+			      (((next->prepare_param.param == param_normal_head) &&
+				(next->prepare_param.ticks_at_expire ==
+				 param_normal_head_ticks)) ||
+			       ((next->prepare_param.param == param_normal_next) &&
+				(next->prepare_param.ticks_at_expire ==
+				 param_normal_next_ticks)))) ||
+			     (next->is_resume && !param_normal_next &&
+			      ((next->prepare_param.param == param_resume_head) ||
+			       (next->prepare_param.param == param_resume_next))))) {
 				break;
 			}
 		}
@@ -2983,6 +2996,7 @@ static inline void rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 #if defined(CONFIG_BT_CTLR_SCAN_INDICATION)
 	case NODE_RX_TYPE_SCAN_INDICATION:
 #endif /* CONFIG_BT_CTLR_SCAN_INDICATION */
+	case NODE_RX_TYPE_PATH_LOSS:
 
 	case NODE_RX_TYPE_RELEASE:
 	{
@@ -3025,6 +3039,9 @@ static inline void rx_demux_event_done(memq_link_t *link,
 	if (ull_hdr) {
 		LL_ASSERT(ull_ref_get(ull_hdr));
 		ull_ref_dec(ull_hdr);
+	} else {
+		/* No reference count decrement, event placed back as resume event in the pipeline.
+		 */
 	}
 
 	/* Process role dependent event done */

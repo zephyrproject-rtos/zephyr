@@ -568,11 +568,20 @@ static int stm32_xspi_write_enable(const struct device *dev,
 }
 
 /* Write Flash configuration register 2 with new dummy cycles */
-static int stm32_xspi_write_cfg2reg_dummy(XSPI_HandleTypeDef *hxspi,
+static int stm32_xspi_write_cfg2reg_dummy(const struct device *dev,
 					uint8_t nor_mode, uint8_t nor_rate)
 {
-	uint8_t transmit_data = SPI_NOR_CR2_DUMMY_CYCLES_66MHZ;
 	XSPI_RegularCmdTypeDef s_command = xspi_prepare_cmd(nor_mode, nor_rate);
+	const struct flash_stm32_xspi_config *dev_cfg = dev->config;
+	struct flash_stm32_xspi_data *dev_data = dev->data;
+	uint8_t transmit_data;
+
+	if (dev_cfg->max_frequency == MHZ(200)) {
+		/* Use memory default value */
+		return 0;
+	}
+
+	transmit_data = SPI_NOR_CR2_DUMMY_CYCLES_66MHZ;
 
 	/* Initialize the writing of configuration register 2 */
 	s_command.Instruction = (nor_mode == XSPI_SPI_MODE)
@@ -583,13 +592,13 @@ static int stm32_xspi_write_cfg2reg_dummy(XSPI_HandleTypeDef *hxspi,
 	s_command.DataLength = (nor_mode == XSPI_SPI_MODE) ? 1U
 			: ((nor_rate == XSPI_DTR_TRANSFER) ? 2U : 1U);
 
-	if (HAL_XSPI_Command(hxspi, &s_command,
+	if (HAL_XSPI_Command(&dev_data->hxspi, &s_command,
 		HAL_XSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
 		LOG_ERR("XSPI transmit cmd");
 		return -EIO;
 	}
 
-	if (HAL_XSPI_Transmit(hxspi, &transmit_data,
+	if (HAL_XSPI_Transmit(&dev_data->hxspi, &transmit_data,
 		HAL_XSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
 		LOG_ERR("XSPI transmit ");
 		return -EIO;
@@ -683,7 +692,7 @@ static int stm32_xspi_config_mem(const struct device *dev)
 	}
 
 	/* Write Configuration register 2 (with new dummy cycles) */
-	if (stm32_xspi_write_cfg2reg_dummy(&dev_data->hxspi,
+	if (stm32_xspi_write_cfg2reg_dummy(dev,
 		XSPI_SPI_MODE, XSPI_STR_TRANSFER) != 0) {
 		LOG_ERR("XSPI write CFGR2 failed");
 		return -EIO;
@@ -1035,7 +1044,7 @@ static int flash_stm32_xspi_erase(const struct device *dev, off_t addr,
 			goto erase_end;
 		}
 	}
-#endif
+#endif /* CONFIG_STM32_MEMMAP */
 
 	XSPI_RegularCmdTypeDef cmd_erase = {
 		.OperationType = HAL_XSPI_OPTYPE_COMMON_CFG,
@@ -1173,7 +1182,7 @@ static int flash_stm32_xspi_read(const struct device *dev, off_t addr,
 {
 	const struct flash_stm32_xspi_config *dev_cfg = dev->config;
 	struct flash_stm32_xspi_data *dev_data = dev->data;
-	int ret;
+	int ret = 0;
 
 	if (!xspi_address_is_valid(dev, addr, size)) {
 		LOG_ERR("Error: address or size exceeds expected values: "
@@ -1186,29 +1195,31 @@ static int flash_stm32_xspi_read(const struct device *dev, off_t addr,
 		return 0;
 	}
 
-#ifdef CONFIG_STM32_MEMMAP
+#if defined(CONFIG_STM32_MEMMAP) || defined(CONFIG_STM32_APP_IN_EXT_FLASH)
 	ARG_UNUSED(dev_cfg);
 	ARG_UNUSED(dev_data);
-
-	xspi_lock_thread(dev);
+	/*
+	 * When the call is made by an app executing in external flash,
+	 * skip the memory-mapped mode check
+	 */
+#ifdef CONFIG_STM32_MEMMAP
 
 	/* Do reads through memory-mapping instead of indirect */
 	if (!stm32_xspi_is_memorymap(dev)) {
 		ret = stm32_xspi_set_memorymap(dev);
 		if (ret != 0) {
 			LOG_ERR("READ: failed to set memory mapped");
-			goto read_end;
+			return ret;
 		}
 	}
 
 	__ASSERT_NO_MSG(stm32_xspi_is_memorymap(dev));
-
+#endif /* CONFIG_STM32_MEMMAP */
 	uintptr_t mmap_addr = STM32_XSPI_BASE_ADDRESS + addr;
 
 	LOG_DBG("Memory-mapped read from 0x%08lx, len %zu", mmap_addr, size);
 	memcpy(data, (void *)mmap_addr, size);
-	ret = 0;
-	goto read_end;
+	return ret;
 #else
 	XSPI_RegularCmdTypeDef cmd = xspi_prepare_cmd(dev_cfg->data_mode, dev_cfg->data_rate);
 
@@ -1274,13 +1285,10 @@ static int flash_stm32_xspi_read(const struct device *dev, off_t addr,
 	xspi_lock_thread(dev);
 
 	ret = xspi_read_access(dev, &cmd, data, size);
-	goto read_end;
-#endif
-
-read_end:
 	xspi_unlock_thread(dev);
 
 	return ret;
+#endif /* CONFIG_STM32_MEMMAP || CONFIG_STM32_APP_IN_EXT_FLASH */
 }
 
 /* Function to write the flash (page program) : with possible OCTO/SPI and STR/DTR */
@@ -1563,11 +1571,21 @@ static void flash_stm32_xspi_pages_layout(const struct device *dev,
 }
 #endif
 
+static int flash_stm32_xspi_get_size(const struct device *dev, uint64_t *size)
+{
+	const struct flash_stm32_xspi_config *dev_cfg = dev->config;
+
+	*size = (uint64_t)dev_cfg->flash_size;
+
+	return 0;
+}
+
 static DEVICE_API(flash, flash_stm32_xspi_driver_api) = {
 	.read = flash_stm32_xspi_read,
 	.write = flash_stm32_xspi_write,
 	.erase = flash_stm32_xspi_erase,
 	.get_parameters = flash_stm32_xspi_get_parameters,
+	.get_size = flash_stm32_xspi_get_size,
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	.page_layout = flash_stm32_xspi_pages_layout,
 #endif
@@ -1977,12 +1995,9 @@ static int flash_stm32_xspi_dma_init(DMA_HandleTypeDef *hdma, struct stream *dma
 	dma_stream->cfg.user_data = hdma;
 	/* HACK: This field is used to inform driver that it is overridden */
 	dma_stream->cfg.linked_channel = STM32_DMA_HAL_OVERRIDE;
-	/* Because of the STREAM OFFSET, the DMA channel given here is from 1 - 8 */
-	ret = dma_config(dma_stream->dev,
-			 (dma_stream->channel + STM32_DMA_STREAM_OFFSET), &dma_stream->cfg);
+	ret = dma_config(dma_stream->dev, dma_stream->channel, &dma_stream->cfg);
 	if (ret != 0) {
-		LOG_ERR("Failed to configure DMA channel %d",
-			dma_stream->channel + STM32_DMA_STREAM_OFFSET);
+		LOG_ERR("Failed to configure DMA channel %d", dma_stream->channel);
 		return ret;
 	}
 

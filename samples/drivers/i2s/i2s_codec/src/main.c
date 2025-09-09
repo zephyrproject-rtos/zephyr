@@ -9,6 +9,7 @@
 #include <zephyr/audio/dmic.h>
 #include <zephyr/drivers/i2s.h>
 #include <zephyr/audio/codec.h>
+#include <zephyr/toolchain.h>
 #include <string.h>
 
 #ifndef CONFIG_USE_DMIC
@@ -32,7 +33,8 @@
 
 #define BLOCK_SIZE  (BYTES_PER_SAMPLE * SAMPLES_PER_BLOCK)
 #define BLOCK_COUNT (INITIAL_BLOCKS + 32)
-K_MEM_SLAB_DEFINE_STATIC(mem_slab, BLOCK_SIZE, BLOCK_COUNT, 4);
+
+K_MEM_SLAB_DEFINE_IN_SECT_STATIC(mem_slab, __nocache, BLOCK_SIZE, BLOCK_COUNT, 4);
 
 static bool configure_tx_streams(const struct device *i2s_dev, struct i2s_config *config)
 {
@@ -116,7 +118,11 @@ int main(void)
 	audio_cfg.dai_cfg.i2s.word_size = SAMPLE_BIT_WIDTH;
 	audio_cfg.dai_cfg.i2s.channels = 2;
 	audio_cfg.dai_cfg.i2s.format = I2S_FMT_DATA_FORMAT_I2S;
-	audio_cfg.dai_cfg.i2s.options = I2S_OPT_FRAME_CLK_MASTER;
+#ifdef CONFIG_USE_CODEC_CLOCK
+	audio_cfg.dai_cfg.i2s.options = I2S_OPT_FRAME_CLK_MASTER | I2S_OPT_BIT_CLK_MASTER;
+#else
+	audio_cfg.dai_cfg.i2s.options = I2S_OPT_FRAME_CLK_SLAVE | I2S_OPT_BIT_CLK_SLAVE;
+#endif
 	audio_cfg.dai_cfg.i2s.frame_clk_freq = SAMPLE_FREQUENCY;
 	audio_cfg.dai_cfg.i2s.mem_slab = &mem_slab;
 	audio_cfg.dai_cfg.i2s.block_size = BLOCK_SIZE;
@@ -126,7 +132,7 @@ int main(void)
 #if CONFIG_USE_DMIC
 	cfg.channel.req_num_chan = 2;
 	cfg.channel.req_chan_map_lo = dmic_build_channel_map(0, 0, PDM_CHAN_LEFT) |
-				      dmic_build_channel_map(1, 0, PDM_CHAN_RIGHT);
+				      dmic_build_channel_map(1, 1, PDM_CHAN_RIGHT);
 	cfg.streams[0].pcm_rate = SAMPLE_FREQUENCY;
 	cfg.streams[0].block_size = BLOCK_SIZE;
 
@@ -143,7 +149,11 @@ int main(void)
 	config.word_size = SAMPLE_BIT_WIDTH;
 	config.channels = NUMBER_OF_CHANNELS;
 	config.format = I2S_FMT_DATA_FORMAT_I2S;
+#ifdef CONFIG_USE_CODEC_CLOCK
+	config.options = I2S_OPT_BIT_CLK_SLAVE | I2S_OPT_FRAME_CLK_SLAVE;
+#else
 	config.options = I2S_OPT_BIT_CLK_MASTER | I2S_OPT_FRAME_CLK_MASTER;
+#endif
 	config.frame_clk_freq = SAMPLE_FREQUENCY;
 	config.mem_slab = &mem_slab;
 	config.block_size = BLOCK_SIZE;
@@ -168,7 +178,7 @@ int main(void)
 			uint32_t block_size = BLOCK_SIZE;
 			int i;
 
-			for (i = 0; i < 2; i++) {
+			for (i = 0; i < CONFIG_I2S_INIT_BUFFERS; i++) {
 #if CONFIG_USE_DMIC
 				/* If using DMIC, use a buffer (memory slab) from dmic_read */
 				ret = dmic_read(dmic_dev, 0, &mem_block, &block_size, TIMEOUT);
@@ -180,8 +190,12 @@ int main(void)
 				ret = i2s_write(i2s_dev_codec, mem_block, block_size);
 #else
 				/* If not using DMIC, play a sine wave 440Hz */
+
+				BUILD_ASSERT(
+					BLOCK_SIZE <= __16kHz16bit_stereo_sine_pcm_len,
+					"BLOCK_SIZE is bigger than test sine wave buffer size."
+				);
 				mem_block = (void *)&__16kHz16bit_stereo_sine_pcm;
-				block_size = __16kHz16bit_stereo_sine_pcm_len;
 
 				ret = i2s_buf_write(i2s_dev_codec, mem_block, block_size);
 #endif

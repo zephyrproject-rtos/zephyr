@@ -7,7 +7,8 @@
 
 /**
  * @file
- * @brief Public API for controlling linear strips of LEDs.
+ * @ingroup led_strip_interface
+ * @brief Main header file for LED strip driver API.
  *
  * This library abstracts the chipset drivers for individually
  * addressable strips of LEDs.
@@ -17,8 +18,8 @@
 #define ZEPHYR_INCLUDE_DRIVERS_LED_STRIP_H_
 
 /**
- * @brief LED Strip Interface
- * @defgroup led_strip_interface LED Strip Interface
+ * @brief Interfaces for LED strips.
+ * @defgroup led_strip_interface LED Strip
  * @ingroup io_interfaces
  * @{
  */

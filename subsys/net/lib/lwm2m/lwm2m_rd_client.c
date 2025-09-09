@@ -120,6 +120,7 @@ struct lwm2m_rd_client_info {
 	uint8_t engine_state;
 	uint8_t retries;
 	uint8_t retry_delay;
+	enum lwm2m_socket_states socket_state;
 
 	int64_t last_update;
 	int64_t last_tx;
@@ -168,6 +169,24 @@ struct lwm2m_message *lwm2m_get_ongoing_rd_msg(void)
 		return NULL;
 	}
 	return &client.rd_message;
+}
+
+static bool ongoing_traffic(void)
+{
+	switch (client.socket_state) {
+	case LWM2M_SOCKET_STATE_NO_DATA:
+	case LWM2M_SOCKET_STATE_LAST:
+		return false;
+	default:
+		return true;
+	}
+}
+
+void lwm2m_rd_client_hint_socket_state(struct lwm2m_ctx *ctx, enum lwm2m_socket_states state)
+{
+	if (ctx && client.ctx == ctx) {
+		client.socket_state = state;
+	}
 }
 
 void engine_update_tx_time(void)
@@ -1144,7 +1163,11 @@ static int64_t next_update(void)
 static int64_t next_rx_off(void)
 {
 	if (IS_ENABLED(CONFIG_LWM2M_QUEUE_MODE_ENABLED)) {
-		return client.last_tx + CONFIG_LWM2M_QUEUE_MODE_UPTIME * MSEC_PER_SEC;
+		if (!ongoing_traffic()) {
+			return client.last_tx + CONFIG_LWM2M_QUEUE_MODE_UPTIME * MSEC_PER_SEC;
+		} else {
+			return k_uptime_get() + CONFIG_LWM2M_QUEUE_MODE_UPTIME * MSEC_PER_SEC;
+		}
 	} else {
 		return next_update();
 	}

@@ -4,6 +4,7 @@
 
 # zephyr-keep-sorted-start
 add_subdirectory_ifdef(CONFIG_WSEN_HIDS_2525020210002 wsen_hids_2525020210002)
+add_subdirectory_ifdef(CONFIG_WSEN_ISDS_2536030320001 wsen_isds_2536030320001)
 add_subdirectory_ifdef(CONFIG_WSEN_ITDS_2533020201601 wsen_itds_2533020201601)
 add_subdirectory_ifdef(CONFIG_WSEN_PADS_2511020213301 wsen_pads_2511020213301)
 add_subdirectory_ifdef(CONFIG_WSEN_PDUS_25131308XXXXX wsen_pdus_25131308XXXXX)

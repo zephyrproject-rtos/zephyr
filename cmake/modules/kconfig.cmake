@@ -99,15 +99,9 @@ zephyr_file(CONF_FILES ${BOARD_EXTENSION_DIRS} KCONF board_extension_conf_files 
 # separated list instead.
 string(REPLACE ";" "?" DTS_ROOT_BINDINGS "${DTS_ROOT_BINDINGS}")
 
-# Export each `ZEPHYR_<module>_MODULE_DIR` to Kconfig.
-# This allows Kconfig files to refer relative from a modules root as:
-# source "$(ZEPHYR_FOO_MODULE_DIR)/Kconfig"
+# Export each `ZEPHYR_<module>_KCONFIG` to Kconfig.
 foreach(module_name ${ZEPHYR_MODULE_NAMES})
   zephyr_string(SANITIZE TOUPPER MODULE_NAME_UPPER ${module_name})
-  list(APPEND
-       ZEPHYR_KCONFIG_MODULES_DIR
-       "ZEPHYR_${MODULE_NAME_UPPER}_MODULE_DIR=${ZEPHYR_${MODULE_NAME_UPPER}_MODULE_DIR}"
-  )
 
   if(ZEPHYR_${MODULE_NAME_UPPER}_KCONFIG)
     list(APPEND
@@ -140,6 +134,7 @@ zephyr_get(APP_DIR VAR APP_DIR APPLICATION_SOURCE_DIR)
 
 set(COMMON_KCONFIG_ENV_SETTINGS
   PYTHON_EXECUTABLE=${PYTHON_EXECUTABLE}
+  KCONFIG_ENV_FILE=${KCONFIG_BINARY_DIR}/kconfig_module_dirs.env
   srctree=${ZEPHYR_BASE}
   KERNELVERSION=${KERNELVERSION}
   APPVERSION=${APP_VERSION_STRING}

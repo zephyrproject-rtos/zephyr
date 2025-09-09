@@ -203,8 +203,8 @@
 		};
 
 		adc: adc@40058000 {
-			compatible = "renesas,rz-adc";
-			reg = <0x40058000 0x80>;
+			compatible = "renesas,rz-adc-c";
+			reg = <0x40058000 DT_SIZE_K(4)>;
 			interrupts = <312 3>;
 			interrupt-names = "scanend";
 			#io-channel-cells = <1>;
@@ -832,9 +832,11 @@
 			};
 		};
 
-		intc: interrupt-controller@41060000 {
-			reg = <0x41060000 0x18>;
-			#address-cells = <0>;
+		intc: intc@41060000 {
+			compatible = "renesas,rz-intc";
+			reg = <0x41060000 DT_SIZE_K(64)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
 			interrupt-parent = <&nvic>;
 
 			nmi: nmi {
@@ -845,57 +847,72 @@
 				status = "disabled";
 			};
 
-			irq0: irq0 {
+			irq0: irq@0 {
 				compatible = "renesas,rz-ext-irq";
+				reg = <0x0>;
 				interrupt-controller;
 				#interrupt-cells = <2>;
 				interrupts = <1 1>;
 				status = "disabled";
 			};
-			irq1: irq1 {
+
+			irq1: irq@1 {
 				compatible = "renesas,rz-ext-irq";
+				reg = <0x1>;
 				interrupt-controller;
 				#interrupt-cells = <2>;
 				interrupts = <2 1>;
 				status = "disabled";
 			};
-			irq2: irq2 {
+
+			irq2: irq@2 {
 				compatible = "renesas,rz-ext-irq";
+				reg = <0x2>;
 				interrupt-controller;
 				#interrupt-cells = <2>;
 				interrupts = <3 1>;
 				status = "disabled";
 			};
-			irq3: irq3 {
+
+			irq3: irq@3 {
 				compatible = "renesas,rz-ext-irq";
+				reg = <0x3>;
 				interrupt-controller;
 				#interrupt-cells = <2>;
 				interrupts = <4 1>;
 				status = "disabled";
 			};
-			irq4: irq4 {
+
+			irq4: irq@4 {
 				compatible = "renesas,rz-ext-irq";
+				reg = <0x4>;
 				interrupt-controller;
 				#interrupt-cells = <2>;
 				interrupts = <5 1>;
 				status = "disabled";
 			};
-			irq5: irq5 {
+
+			irq5: irq@5 {
 				compatible = "renesas,rz-ext-irq";
+				reg = <0x5>;
 				interrupt-controller;
 				#interrupt-cells = <2>;
 				interrupts = <6 1>;
 				status = "disabled";
 			};
-			irq6: irq6 {
+
+			irq6: irq@6 {
 				compatible = "renesas,rz-ext-irq";
+				reg = <0x6>;
 				interrupt-controller;
 				#interrupt-cells = <2>;
 				interrupts = <7 1>;
 				status = "disabled";
 			};
-			irq7: irq7 {
+
+			irq7: irq@7 {
 				compatible = "renesas,rz-ext-irq";
+				reg = <0x7>;
 				interrupt-controller;
 				#interrupt-cells = <2>;
 				interrupts = <8 1>;

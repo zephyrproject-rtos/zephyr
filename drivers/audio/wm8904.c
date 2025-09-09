@@ -504,7 +504,7 @@ static int wm8904_configure(const struct device *dev, struct audio_codec_cfg *cf
 
 	wm8904_audio_fmt_config(dev, &cfg->dai_cfg, cfg->mclk_freq);
 
-	if ((cfg->dai_cfg.i2s.options & I2S_OPT_FRAME_CLK_MASTER) == I2S_OPT_FRAME_CLK_MASTER) {
+	if ((cfg->dai_cfg.i2s.options & I2S_OPT_FRAME_CLK_SLAVE) == 0) {
 		wm8904_set_master_clock(dev, &cfg->dai_cfg, cfg->mclk_freq);
 	} else {
 		/* BCLK/LRCLK default direction input */

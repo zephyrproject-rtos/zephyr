@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/dt-bindings/sensor/adxl372.h>
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
 
 
 &arduino_spi {
@@ -14,7 +15,7 @@
 		compatible = "adi,adxl372";
 		reg = <0x0>;
 		spi-max-frequency = <DT_FREQ_M(1)>;
-		int1-gpios = <&arduino_header 13 GPIO_ACTIVE_HIGH>;
+		int1-gpios = <&arduino_header ARDUINO_HEADER_R3_D7 GPIO_ACTIVE_HIGH>;
 		fifo-mode = <ADXL372_FIFO_MODE_STREAMED>;
 		fifo-watermark = <0x80>;
 		status = "okay";

@@ -369,7 +369,7 @@ static int sdhc_spi_send_cmd(const struct device *dev, struct sdhc_command *cmd,
 	 * the maximum spi response length is 5 bytes, so we provide an
 	 * additional 5 bytes of data, leaving us with 13 bytes of 0xff.
 	 * Finally, we send a padding byte of all 0xff, to ensure that
-	 * the card recives at least one 0xff byte before next command.
+	 * the card receives at least one 0xff byte before next command.
 	 */
 
 	/* Note: we can discard CMD data as we send it,
@@ -704,7 +704,7 @@ static int sdhc_spi_set_io(const struct device *dev, struct sdhc_io *ios)
 		if (ios->clock > cfg->spi_max_freq) {
 			return -ENOTSUP;
 		}
-		/* Because pointer comparision is used, we have to
+		/* Because pointer comparison is used, we have to
 		 * swap to a new configuration structure to reconfigure SPI.
 		 */
 		if (ios->clock != 0) {

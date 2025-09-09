@@ -154,7 +154,11 @@ class Sdk(WestCommand):
             metavar="toolchain_name",
             nargs="+",
             help="toolchain(s) to install (e.g. 'arm-zephyr-eabi'). "
-            "If this option is not given, toolchains for all architectures will be installed.",
+            "If this option is not given, toolchains for all architectures will be installed. "
+            "If you are unsure which one to install, install all toolchains. "
+            "This requires downloading several gigabytes and the corresponding disk space."
+            "Each Zephyr SDK release may include different toolchains; "
+            "see the release notes at https://github.com/zephyrproject-rtos/sdk-ng/releases.",
         )
         install_args_parser.add_argument(
             "-T",

@@ -317,4 +317,4 @@ We have two ready-to-build samples demonstrating use of the Zephyr CAN API:
 CAN Controller API Reference
 ****************************
 
-.. doxygengroup:: can_interface
+.. doxygengroup:: can_controller

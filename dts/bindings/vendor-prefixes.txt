@@ -208,6 +208,7 @@ element14	Element14 (A Premier Farnell Company)
 elgin	Elgin S/A.
 elida	Shenzhen Elida Technology Co., Ltd.
 elimo	Elimo Engineering Ltd.
+embedsky	Guangdong Embedsky Technology Co., Ltd.
 embest	Shenzhen Embest Technology Co., Ltd.
 emlid	Emlid, Ltd.
 emmicro	EM Microelectronic
@@ -594,7 +595,7 @@ sancloud	Sancloud Ltd
 sandisk	Sandisk Corporation
 satoz	Satoz International Co., Ltd
 sbs	Smart Battery System
-sc	Space Cubics, LLC
+sc	Space Cubics Inc.
 schindler	Schindler
 sciosense	Sciosense B.V.
 seagate	Seagate Technology PLC
@@ -646,7 +647,6 @@ solderparty	Solder Party AB
 solidrun	SolidRun
 solomon	Solomon Systech Limited
 sony	Sony Corporation
-spacecubics	Space Cubics, LLC
 spansion	Spansion Inc.
 sparkfun	SparkFun Electronics
 sprd	Spreadtrum Communications Inc.
@@ -772,6 +772,7 @@ xiphera	Xiphera Ltd.
 xlnx	Xilinx
 xnano	Xnano
 xptek	Shenzhen Xptek Technology Co., Ltd
+xuantie	Alibaba Xuantie
 xunlong	Shenzhen Xunlong Software CO.,Limited
 xylon	Xylon
 yamaha	Yamaha Corporation

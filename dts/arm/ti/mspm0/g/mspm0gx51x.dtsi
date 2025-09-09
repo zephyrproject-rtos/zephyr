@@ -1,3 +1,64 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
 #include <ti/mspm0/g/mspm0g.dtsi>
+
+/{
+	soc {
+		gpioc: gpio@400a4000 {
+			compatible = "ti,mspm0-gpio";
+			reg = <0x400a4000 0x2000>;
+			interrupts = <1 0>;
+			status = "disabled";
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+
+		timg8: timg8@40090000 {
+			compatible = "ti,mspm0-timer";
+			reg = <0x40090000 0x2000>;
+			interrupts = <2 0>;
+			clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
+			ti,clk-prescaler = <255>;
+			ti,clk-div = <1>;
+			status = "disabled";
+
+			counterg8: counterg8 {
+				compatible = "ti,mspm0-timer-counter";
+				resolution = <16>;
+				status = "disabled";
+			};
+		};
+
+		timg9: timg9@40092000 {
+			compatible = "ti,mspm0-timer";
+			reg = <0x40092000 0x2000>;
+			interrupts = <8 0>;
+			clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
+			ti,clk-prescaler = <255>;
+			ti,clk-div = <1>;
+			status = "disabled";
+
+			counterg9: counterg9 {
+				compatible = "ti,mspm0-timer-counter";
+				resolution = <16>;
+				status = "disabled";
+			};
+		};
+
+		timg14: timg14@40096000 {
+			compatible = "ti,mspm0-timer";
+			reg = <0x40096000 0x2000>;
+			interrupts = <22 0>;
+			clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
+			ti,clk-prescaler = <255>;
+			ti,clk-div = <1>;
+			status = "disabled";
+
+			counterg14: counterg14 {
+				compatible = "ti,mspm0-timer-counter";
+				resolution = <16>;
+				status = "disabled";
+			};
+		};
+	};
+};

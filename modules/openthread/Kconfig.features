@@ -55,6 +55,9 @@ config OPENTHREAD_BORDER_AGENT_EPHEMERAL_KEY_ENABLE
 config OPENTHREAD_BORDER_AGENT_ID
 	bool "Create and save border agent ID"
 
+config OPENTHREAD_BORDER_AGENT_MESHCOP_SERVICE
+	bool "Border agent meshcop service"
+
 config OPENTHREAD_BORDER_ROUTER
 	bool "Border Router support"
 
@@ -67,8 +70,14 @@ config OPENTHREAD_BORDER_ROUTING_COUNTERS
 config OPENTHREAD_BORDER_ROUTING_DHCP6_PD
 	bool "DHCPv6-PD support in border routing"
 
+config OPENTHREAD_BORDER_ROUTING_DHCP6_PD_CLIENT
+	bool "DHCPv6-PD client support in border routing"
+
 config OPENTHREAD_CHANNEL_MONITOR
 	bool "Channel monitor support"
+
+config OPENTHREAD_CHANNEL_MONITOR_AUTO_START
+	bool "Start channel monitor with interface"
 
 config OPENTHREAD_CHANNEL_MANAGER
 	bool "Channel manager support"
@@ -284,6 +293,11 @@ config OPENTHREAD_OTNS
 config OPENTHREAD_PING_SENDER
 	bool "Ping sender support"
 
+config OPENTHREAD_PLATFORM_RADIO_COEX_ENABLE
+	bool "Platform radio coexistence support"
+	help
+	  Enable radio coexistence support in the platform.
+
 config OPENTHREAD_PLATFORM_KEY_REF
 	bool "Platform cryptographic key reference support"
 	help
@@ -375,12 +389,18 @@ config OPENTHREAD_SRP_SERVER
 	select OPENTHREAD_NETDATA_PUBLISHER
 	select OPENTHREAD_ECDSA
 
+config OPENTHREAD_SRP_SERVER_FAST_START
+	bool "SRP server fast start"
+
 config OPENTHREAD_TIME_SYNC
 	bool "The time synchronization service feature [EXPERIMENTAL]"
 	select EXPERIMENTAL
 
 config OPENTHREAD_TREL
 	bool "TREL radio link for Thread over Infrastructure feature"
+
+config OPENTHREAD_TREL_MANAGE_DNSSD
+	bool "TREL to manage DNSSD and peer discovery"
 
 config OPENTHREAD_TX_BEACON_PAYLOAD
 	bool "TX beacon payload support"

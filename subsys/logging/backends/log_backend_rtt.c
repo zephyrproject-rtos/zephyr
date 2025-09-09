@@ -7,6 +7,7 @@
 #include <zephyr/logging/log_backend.h>
 #include <zephyr/logging/log_core.h>
 #include <zephyr/logging/log_output.h>
+#include <zephyr/logging/log_output_dict.h>
 #include <zephyr/logging/log_backend_std.h>
 #include <SEGGER_RTT.h>
 
@@ -311,7 +312,11 @@ static void dropped(const struct log_backend *const backend, uint32_t cnt)
 {
 	ARG_UNUSED(backend);
 
-	log_backend_std_dropped(&log_output_rtt, cnt);
+	if (IS_ENABLED(CONFIG_LOG_BACKEND_RTT_OUTPUT_DICTIONARY)) {
+		log_dict_output_dropped_process(&log_output_rtt, cnt);
+	} else {
+		log_backend_std_dropped(&log_output_rtt, cnt);
+	}
 }
 
 static void process(const struct log_backend *const backend,

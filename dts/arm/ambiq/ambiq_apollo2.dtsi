@@ -1,0 +1,98 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+#include <arm/armv7-m.dtsi>
+#include <mem.h>
+#include <freq.h>
+#include <apollo2/am_apollo2.h>
+
+/ {
+	clocks {
+		uartclk: apb-pclk {
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(24)>;
+			#clock-cells = <0>;
+		};
+
+		sys_clk: sys_clk {
+			compatible = "fixed-clock";
+			clock-frequency = <32768>;
+			#clock-cells = <0>;
+		};
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			compatible = "arm,cortex-m4f";
+			reg = <0>;
+			cpu-power-states = <&idle &suspend_to_ram>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			itm: itm@e0000000 {
+				compatible = "arm,armv7m-itm";
+				reg = <0xe0000000 0x1000>;
+				swo-ref-frequency = <DT_FREQ_M(6)>;
+			};
+		};
+
+		power-states {
+			idle: idle {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				min-residency-us = <100>;
+				exit-latency-us = <5>;
+			};
+
+			suspend_to_ram: suspend_to_ram {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-ram";
+				min-residency-us = <2000>;
+				exit-latency-us = <125>;
+			};
+		};
+	};
+
+	sram0: memory@APOLLO2_SRAM {
+		compatible = "mmio-sram";
+		reg = <APOLLO2_SRAM_BASE APOLLO2_SRAM_SIZE>;
+	};
+
+	soc {
+		compatible = "ambiq,apollo2", "ambiq,apollo2x", "simple-bus";
+
+		flash0: flash@APOLLO2_FLASH {
+			compatible = "soc-nv-flash";
+			reg = <APOLLO2_FLASH_BASE APOLLO2_FLASH_SIZE>;
+		};
+
+		uart0: uart@APOLLO2_UART0 {
+			compatible = "ambiq,pl011-uart", "arm,pl011";
+			reg = <APOLLO2_UART0_BASE APOLLO2_UART0_SIZE>;
+			interrupts = <APOLLO2_UART0_IRQ 0>;
+			interrupt-names = "UART0";
+			status = "disabled";
+			clocks = <&uartclk>;
+		};
+
+		uart1: uart@APOLLO2_UART1 {
+			compatible = "ambiq,pl011-uart", "arm,pl011";
+			reg = <APOLLO2_UART1_BASE APOLLO2_UART1_SIZE>;
+			interrupts = <APOLLO2_UART1_IRQ 0>;
+			interrupt-names = "UART1";
+			status = "disabled";
+			clocks = <&uartclk>;
+		};
+
+		pinctrl: pin-controller@APOLLO2_GPIO {
+			compatible = "ambiq,apollo2-pinctrl";
+			reg = <APOLLO2_GPIO_BASE APOLLO2_GPIO_SIZE>;
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};

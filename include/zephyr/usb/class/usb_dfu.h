@@ -37,6 +37,8 @@
  * @file
  * @brief USB Device Firmware Upgrade (DFU) public header
  *
+ * @deprecated This API is deprecated.
+ *
  * Header follows the Device Class Specification for
  * Device Firmware Upgrade Version 1.1
  */
@@ -47,36 +49,36 @@
 #include <zephyr/sys_clock.h>
 
 /** DFU Class Subclass */
-#define DFU_SUBCLASS			0x01
+#define DFU_SUBCLASS			0x01 __DEPRECATED_MACRO
 
 /** DFU Class runtime Protocol */
-#define DFU_RT_PROTOCOL			0x01
+#define DFU_RT_PROTOCOL			0x01 __DEPRECATED_MACRO
 
 /** DFU Class DFU mode Protocol */
-#define DFU_MODE_PROTOCOL		0x02
+#define DFU_MODE_PROTOCOL		0x02 __DEPRECATED_MACRO
 
 /**
  * @brief DFU Class Specific Requests
  */
-#define DFU_DETACH			0x00
-#define DFU_DNLOAD			0x01
-#define DFU_UPLOAD			0x02
-#define DFU_GETSTATUS			0x03
-#define DFU_CLRSTATUS			0x04
-#define DFU_GETSTATE			0x05
-#define DFU_ABORT			0x06
+#define DFU_DETACH			0x00 __DEPRECATED_MACRO
+#define DFU_DNLOAD			0x01 __DEPRECATED_MACRO
+#define DFU_UPLOAD			0x02 __DEPRECATED_MACRO
+#define DFU_GETSTATUS			0x03 __DEPRECATED_MACRO
+#define DFU_CLRSTATUS			0x04 __DEPRECATED_MACRO
+#define DFU_GETSTATE			0x05 __DEPRECATED_MACRO
+#define DFU_ABORT			0x06 __DEPRECATED_MACRO
 
 /** DFU FUNCTIONAL descriptor type */
-#define DFU_FUNC_DESC			0x21
+#define DFU_FUNC_DESC			0x21 __DEPRECATED_MACRO
 
 /** DFU attributes DFU Functional Descriptor */
-#define DFU_ATTR_WILL_DETACH		0x08
-#define DFU_ATTR_MANIFESTATION_TOLERANT	0x04
-#define DFU_ATTR_CAN_UPLOAD		0x02
-#define DFU_ATTR_CAN_DNLOAD		0x01
+#define DFU_ATTR_WILL_DETACH		0x08 __DEPRECATED_MACRO
+#define DFU_ATTR_MANIFESTATION_TOLERANT	0x04 __DEPRECATED_MACRO
+#define DFU_ATTR_CAN_UPLOAD		0x02 __DEPRECATED_MACRO
+#define DFU_ATTR_CAN_DNLOAD		0x01 __DEPRECATED_MACRO
 
 /** DFU Specification release */
-#define DFU_VERSION			0x0110
+#define DFU_VERSION			0x0110 __DEPRECATED_MACRO
 
 /** Run-Time Functional Descriptor */
 struct dfu_runtime_descriptor {
@@ -123,6 +125,6 @@ enum dfu_state {
 	dfuERROR,
 };
 
-void wait_for_usb_dfu(k_timeout_t delay);
+__deprecated void wait_for_usb_dfu(k_timeout_t delay);
 
 #endif /* ZEPHYR_INCLUDE_USB_CLASS_USB_DFU_H_ */

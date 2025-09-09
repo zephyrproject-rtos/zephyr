@@ -172,7 +172,6 @@ static int psoc6_bless_send(const struct device *dev, struct net_buf *buf)
 
 	if (k_sem_take(&psoc6_bless_operation_sem, K_MSEC(BLE_LOCK_TMOUT_MS)) != 0) {
 		LOG_ERR("Failed to acquire BLE DRV Semaphore");
-		net_buf_unref(buf);
 		return -EIO;
 	}
 

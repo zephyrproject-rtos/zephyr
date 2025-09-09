@@ -54,6 +54,12 @@ tests:
     extra_configs:
       - CONFIG_WIFI_NM_HOSTAPD_AP=y
       - CONFIG_WIFI_NM_WPA_SUPPLICANT_INF_MON=n
+  wifi.build.hostapd_ap_enterprise:
+    extra_configs:
+      - CONFIG_WIFI_NM_HOSTAPD_AP=y
+      - CONFIG_WIFI_NM_WPA_SUPPLICANT_INF_MON=n
+      - CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE=y
+      - CONFIG_WIFI_NM_HOSTAPD_CRYPTO_ENTERPRISE=y
   wifi.build.dpp:
     extra_configs:
       - CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP=y

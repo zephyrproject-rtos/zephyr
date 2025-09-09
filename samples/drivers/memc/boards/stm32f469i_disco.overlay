@@ -1,0 +1,11 @@
+/*
+ * Copyright Philippe Peurichard <p.peurichard@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		sram-ext = &sdram1;
+	};
+};

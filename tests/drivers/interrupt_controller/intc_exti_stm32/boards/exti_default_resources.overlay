@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 /**
  * NOTE: For this test, a _configurable_ EXTI line that doesn't conflict
  * with other users should be specified, along with the associated IRQn.

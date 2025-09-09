@@ -5,6 +5,7 @@
  */
 
 #include "adafruit_2_8_tft_touch_v2.dtsi"
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
 
 / {
 	/*
@@ -16,9 +17,9 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map = <10 0 &arduino_nano_header 4 0>,  /* D4  */
-			   <15 0 &arduino_nano_header 10 0>, /* D10 */
-			   <16 0 &arduino_nano_header 9 0>;  /* D9  */
+		gpio-map = <ARDUINO_HEADER_R3_D4 0 &arduino_nano_header 4 0>,
+			   <ARDUINO_HEADER_R3_D9 0 &arduino_nano_header 10 0>,
+			   <ARDUINO_HEADER_R3_D10 0 &arduino_nano_header 9 0>;
 	};
 };
 

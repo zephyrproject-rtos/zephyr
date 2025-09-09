@@ -24,4 +24,20 @@ Building and Running
 This sample can be found under :zephyr_file:`samples/bluetooth/peripheral_hr` in the
 Zephyr tree.
 
-See :zephyr:code-sample-category:`bluetooth` samples for details.
+Building a minimal variant
+--------------------------
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/bluetooth/peripheral_hr
+   :board: qemu_cortex_m3
+   :goals: build
+   :gen-args: -DCONF_FILE=prj_minimal.conf
+
+Building a minimal variant for bbc_microbit
+-------------------------------------------
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/bluetooth/peripheral_hr
+   :board: bbc_microbit
+   :goals: build
+   :gen-args: -DCONF_FILE=prj_minimal.conf -DEXTRA_CONF_FILE=overlay-bt_ll_sw_split-minimal.conf

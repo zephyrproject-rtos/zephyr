@@ -10,11 +10,9 @@ config SOC_SERIES_RW6XX
 	select CPU_HAS_ARM_SAU
 	select CPU_HAS_ARM_MPU
 	select CPU_HAS_FPU
-	select HAS_MCUX_OS_TIMER
 	select ARM_TRUSTZONE_M
 	select CPU_CORTEX_M_HAS_SYSTICK
 	select HAS_MCUX
-	select HAS_MCUX_FLEXCOMM
 	select HAS_MCUX_CACHE
 	select HAS_PM
 	select HAS_NXP_MONOLITHIC_NBU
@@ -54,10 +52,5 @@ endif # NXP_RW6XX_BOOT_HEADER
 
 rsource "../common/Kconfig.flexspi_xip"
 rsource "../common/Kconfig.nbu"
-
-config XTAL32K
-	bool "Use the External 32K clock"
-	help
-	  This clock is used by certain peripherals such as RTC.
 
 endif # SOC_SERIES_RW6XX

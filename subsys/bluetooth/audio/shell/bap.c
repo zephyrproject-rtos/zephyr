@@ -57,7 +57,7 @@
 #define IS_BAP_INITIATOR                                                                           \
 	(IS_ENABLED(CONFIG_BT_BAP_BROADCAST_SOURCE) || IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT))
 
-#define GENERATE_SINE_SUPPORTED (IS_ENABLED(CONFIG_LIBLC3) && !IS_ENABLED(CONFIG_USB_DEVICE_AUDIO))
+#define GENERATE_SINE_SUPPORTED (IS_ENABLED(CONFIG_LIBLC3) && !IS_ENABLED(CONFIG_USBD_AUDIO2_CLASS))
 
 #if defined(CONFIG_BT_BAP_UNICAST)
 
@@ -318,7 +318,7 @@ static int init_lc3_encoder(struct shell_stream *sh_stream)
 		return -EINVAL;
 	}
 
-	if (IS_ENABLED(CONFIG_USB_DEVICE_AUDIO)) {
+	if (IS_ENABLED(CONFIG_USBD_AUDIO2_CLASS)) {
 		const size_t frame_size = bap_usb_get_frame_size(sh_stream);
 
 		if (frame_size > sizeof(lc3_tx_buf)) {
@@ -337,7 +337,7 @@ static int init_lc3_encoder(struct shell_stream *sh_stream)
 
 	sh_stream->tx.lc3_encoder =
 		lc3_setup_encoder(sh_stream->lc3_frame_duration_us, sh_stream->lc3_freq_hz,
-				  IS_ENABLED(CONFIG_USB_DEVICE_AUDIO) ? USB_SAMPLE_RATE : 0,
+				  IS_ENABLED(CONFIG_USBD_AUDIO2_CLASS) ? USB_SAMPLE_RATE : 0,
 				  &sh_stream->tx.lc3_encoder_mem);
 	if (sh_stream->tx.lc3_encoder == NULL) {
 		bt_shell_error("Failed to setup LC3 encoder - wrong parameters?\n");
@@ -375,7 +375,7 @@ static bool encode_frame(struct shell_stream *sh_stream, uint8_t index, size_t f
 	const uint16_t octets_per_frame = sh_stream->lc3_octets_per_frame;
 	int lc3_ret;
 
-	if (IS_ENABLED(CONFIG_USB_DEVICE_AUDIO)) {
+	if (IS_ENABLED(CONFIG_USBD_AUDIO2_CLASS)) {
 		enum bt_audio_location chan_alloc;
 		int err;
 
@@ -432,7 +432,7 @@ static size_t encode_frame_block(struct shell_stream *sh_stream, size_t frame_cn
 
 static void do_lc3_encode(struct shell_stream *sh_stream, struct net_buf *out_buf)
 {
-	if (IS_ENABLED(CONFIG_USB_DEVICE_AUDIO) && !bap_usb_can_get_full_sdu(sh_stream)) {
+	if (IS_ENABLED(CONFIG_USBD_AUDIO2_CLASS) && !bap_usb_can_get_full_sdu(sh_stream)) {
 		/* No op - Will just send empty SDU */
 	} else {
 		size_t frame_cnt = 0U;
@@ -2384,7 +2384,7 @@ static uint16_t interval_to_sync_timeout(uint16_t interval)
 	return (uint16_t)timeout;
 }
 
-static bool scan_check_and_sync_broadcast(struct bt_data *data, void *user_data)
+static bool scan_check_and_get_broadcast_values(struct bt_data *data, void *user_data)
 {
 	struct bt_broadcast_info *sr_info = (struct bt_broadcast_info *)user_data;
 	struct bt_uuid_16 adv_uuid;
@@ -2427,17 +2427,11 @@ static void broadcast_scan_recv(const struct bt_le_scan_recv_info *info, struct 
 
 	sr_info.broadcast_id = BT_BAP_INVALID_BROADCAST_ID;
 
-	if ((auto_scan.broadcast_info.broadcast_id == BT_BAP_INVALID_BROADCAST_ID) &&
-	    (strlen(auto_scan.broadcast_info.broadcast_name) == 0U)) {
-		/* no op */
-		return;
-	}
-
 	if (!passes_scan_filter(info, ad)) {
 		return;
 	}
 
-	bt_data_parse(ad, scan_check_and_sync_broadcast, (void *)&sr_info);
+	bt_data_parse(ad, scan_check_and_get_broadcast_values, (void *)&sr_info);
 
 	/* Verify that it is a BAP broadcaster*/
 	if (sr_info.broadcast_id == BT_BAP_INVALID_BROADCAST_ID) {
@@ -2445,6 +2439,15 @@ static void broadcast_scan_recv(const struct bt_le_scan_recv_info *info, struct 
 	}
 
 	bt_addr_le_to_str(info->addr, addr_str, sizeof(addr_str));
+
+	bt_shell_print("Found broadcaster with ID 0x%06X (%s) and addr %s and sid 0x%02X ",
+		       sr_info.broadcast_id, sr_info.broadcast_name, addr_str, info->sid);
+
+	if ((auto_scan.broadcast_info.broadcast_id == BT_BAP_INVALID_BROADCAST_ID) &&
+	    (strlen(auto_scan.broadcast_info.broadcast_name) == 0U)) {
+		/* no op */
+		return;
+	}
 
 	if (sr_info.broadcast_id == auto_scan.broadcast_info.broadcast_id) {
 		identified_broadcast = true;
@@ -2461,10 +2464,6 @@ static void broadcast_scan_recv(const struct bt_le_scan_recv_info *info, struct 
 	    (auto_scan.broadcast_sink->pa_sync == NULL)) {
 		struct bt_le_per_adv_sync_param create_params = {0};
 		int err;
-
-		bt_shell_print(
-			"Found broadcaster with ID 0x%06X and addr %s and sid 0x%02X ",
-			sr_info.broadcast_id, addr_str, info->sid);
 
 		err = bt_le_scan_stop();
 		if (err != 0) {
@@ -2634,7 +2633,7 @@ static int init_lc3_decoder(struct shell_stream *sh_stream)
 	/* Create the decoder instance. This shall complete before stream_started() is called. */
 	sh_stream->rx.lc3_decoder =
 		lc3_setup_decoder(sh_stream->lc3_frame_duration_us, sh_stream->lc3_freq_hz,
-				  IS_ENABLED(CONFIG_USB_DEVICE_AUDIO) ? USB_SAMPLE_RATE : 0,
+				  IS_ENABLED(CONFIG_USBD_AUDIO2_CLASS) ? USB_SAMPLE_RATE : 0,
 				  &sh_stream->rx.lc3_decoder_mem);
 	if (sh_stream->rx.lc3_decoder == NULL) {
 		bt_shell_error("Failed to setup LC3 decoder - wrong parameters?\n");
@@ -2695,7 +2694,7 @@ static size_t decode_frame_block(struct lc3_data *data, size_t frame_cnt)
 		if (decode_frame(data, frame_cnt + decoded_frames)) {
 			decoded_frames++;
 
-			if (IS_ENABLED(CONFIG_USB_DEVICE_AUDIO)) {
+			if (IS_ENABLED(CONFIG_USBD_AUDIO2_CLASS)) {
 				enum bt_audio_location chan_alloc;
 				int err;
 
@@ -2723,7 +2722,7 @@ static size_t decode_frame_block(struct lc3_data *data, size_t frame_cnt)
 			/* If decoding failed, we clear the data to USB as it would contain
 			 * invalid data
 			 */
-			if (IS_ENABLED(CONFIG_USB_DEVICE_AUDIO)) {
+			if (IS_ENABLED(CONFIG_USBD_AUDIO2_CLASS)) {
 				bap_usb_clear_frames_to_usb();
 			}
 
@@ -3009,7 +3008,7 @@ static void stream_started_cb(struct bt_bap_stream *bap_stream)
 				return;
 			}
 
-			if (IS_ENABLED(CONFIG_USB_DEVICE_AUDIO)) {
+			if (IS_ENABLED(CONFIG_USBD_AUDIO2_CLASS)) {
 				/* Always mark as active when using USB */
 				sh_stream->tx.active = true;
 			}
@@ -3030,7 +3029,7 @@ static void stream_started_cb(struct bt_bap_stream *bap_stream)
 
 			sh_stream->rx.decoded_cnt = 0U;
 
-			if (IS_ENABLED(CONFIG_USB_DEVICE_AUDIO)) {
+			if (IS_ENABLED(CONFIG_USBD_AUDIO2_CLASS)) {
 				if ((sh_stream->lc3_chan_allocation &
 				     BT_AUDIO_LOCATION_FRONT_LEFT) != 0) {
 					if (usb_left_stream == NULL) {
@@ -3149,7 +3148,7 @@ static void clear_stream_data(struct shell_stream *sh_stream)
 	sh_stream->is_rx = sh_stream->is_tx = false;
 
 #if defined(CONFIG_LIBLC3)
-	if (IS_ENABLED(CONFIG_USB_DEVICE_AUDIO)) {
+	if (IS_ENABLED(CONFIG_USBD_AUDIO2_CLASS)) {
 		update_usb_streams(sh_stream);
 	}
 #endif /* CONFIG_LIBLC3 */
@@ -3267,6 +3266,7 @@ static int cmd_create_broadcast(const struct shell *sh, size_t argc,
 	struct bt_bap_broadcast_source_subgroup_param subgroup_param;
 	struct bt_bap_broadcast_source_param create_param = {0};
 	const struct named_lc3_preset *named_preset;
+	uint32_t broadcast_id = 0U;
 	int err;
 
 	if (default_source.bap_source != NULL) {
@@ -3325,6 +3325,15 @@ static int cmd_create_broadcast(const struct shell *sh, size_t argc,
 		}
 	}
 
+	err = bt_rand(&broadcast_id, BT_AUDIO_BROADCAST_ID_SIZE);
+	if (err != 0) {
+		bt_shell_error("Unable to generate broadcast ID: %d\n", err);
+
+		return -ENOEXEC;
+	}
+
+	shell_print(sh, "Generated broadcast_id 0x%06X", broadcast_id);
+
 	copy_broadcast_source_preset(&default_source, named_preset);
 
 	(void)memset(stream_params, 0, sizeof(stream_params));
@@ -3342,11 +3351,14 @@ static int cmd_create_broadcast(const struct shell *sh, size_t argc,
 	err = bt_bap_broadcast_source_create(&create_param, &default_source.bap_source);
 	if (err != 0) {
 		shell_error(sh, "Unable to create broadcast source: %d", err);
+
+		default_source.broadcast_id = BT_BAP_INVALID_BROADCAST_ID;
 		return err;
 	}
 
 	shell_print(sh, "Broadcast source created: preset %s",
 		    named_preset->name);
+	default_source.broadcast_id = broadcast_id;
 
 	if (default_stream == NULL) {
 		default_stream = bap_stream_from_shell_stream(&broadcast_source_streams[0]);
@@ -3891,6 +3903,8 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 		bt_bap_stream_cb_register(
 			bap_stream_from_shell_stream(&broadcast_source_streams[i]), &stream_ops);
 	}
+
+	default_source.broadcast_id = BT_BAP_INVALID_BROADCAST_ID;
 #endif /* CONFIG_BT_BAP_BROADCAST_SOURCE */
 
 #if defined(CONFIG_LIBLC3)
@@ -3917,7 +3931,7 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 
 #endif /* CONFIG_BT_AUDIO_TX */
 
-	if (IS_ENABLED(CONFIG_USB_DEVICE_AUDIO) &&
+	if (IS_ENABLED(CONFIG_USBD_AUDIO2_CLASS) &&
 	    (IS_ENABLED(CONFIG_BT_AUDIO_RX) || IS_ENABLED(CONFIG_BT_AUDIO_TX))) {
 		err = bap_usb_init();
 		__ASSERT(err == 0, "Failed to enable USB: %d", err);
@@ -4315,35 +4329,18 @@ static size_t nonconnectable_ad_data_add(struct bt_data *data_array, const size_
 	};
 	size_t ad_len = 0;
 
-	if (IS_ENABLED(CONFIG_BT_CAP_ACCEPTOR)) {
-		static const uint8_t ad_cap_announcement[3] = {
-			BT_UUID_16_ENCODE(BT_UUID_CAS_VAL),
-			BT_AUDIO_UNICAST_ANNOUNCEMENT_TARGETED,
-		};
-
-		__ASSERT(data_array_size > ad_len, "No space for AD_CAP_ANNOUNCEMENT");
-		data_array[ad_len].type = BT_DATA_SVC_DATA16;
-		data_array[ad_len].data_len = ARRAY_SIZE(ad_cap_announcement);
-		data_array[ad_len].data = &ad_cap_announcement[0];
-		ad_len++;
-	}
-
 #if defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
-	if (default_source.bap_source != NULL && !default_source.is_cap) {
+	if (default_source.bap_source != NULL) {
 		static uint8_t ad_bap_broadcast_announcement[5] = {
 			BT_UUID_16_ENCODE(BT_UUID_BROADCAST_AUDIO_VAL),
 		};
-		uint32_t broadcast_id;
-		int err;
 
-		err = bt_rand(&broadcast_id, BT_AUDIO_BROADCAST_ID_SIZE);
-		if (err != 0) {
-			bt_shell_error("Unable to generate broadcast ID: %d\n", err);
-
-			return 0;
+		if (data_array_size <= ad_len) {
+			bt_shell_warn("No space for BT_UUID_BROADCAST_AUDIO_VAL");
+			return ad_len;
 		}
 
-		sys_put_le24(broadcast_id, &ad_bap_broadcast_announcement[2]);
+		sys_put_le24(default_source.broadcast_id, &ad_bap_broadcast_announcement[2]);
 		data_array[ad_len].type = BT_DATA_SVC_DATA16;
 		data_array[ad_len].data_len = ARRAY_SIZE(ad_bap_broadcast_announcement);
 		data_array[ad_len].data = ad_bap_broadcast_announcement;
@@ -4379,11 +4376,6 @@ size_t audio_ad_data_add(struct bt_data *data_array, const size_t data_array_siz
 		ad_len += connectable_ad_data_add(data_array, data_array_size);
 	} else {
 		ad_len += nonconnectable_ad_data_add(data_array, data_array_size);
-	}
-
-	if (IS_ENABLED(CONFIG_BT_CAP_INITIATOR)) {
-		ad_len += cap_initiator_ad_data_add(data_array, data_array_size, discoverable,
-						    connectable);
 	}
 
 	return ad_len;

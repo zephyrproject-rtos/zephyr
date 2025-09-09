@@ -31,7 +31,7 @@
 	status = "okay";
 	psel = "AIN4";
 	refsel = "AREF";
-	extrefsel= "AIN3";
+	extrefsel = "AIN3";
 	sp-mode = "NORMAL";
 	th-up = <36>;
 	th-down = <30>;

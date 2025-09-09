@@ -267,13 +267,13 @@
 };
 
 stm32_lp_tick_source: &lptim1 {
-	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x80000000>,
+	clocks = <&rcc STM32_CLOCK(APB1, 31)>,
 		 <&rcc STM32_SRC_LSE LPTIM1_SEL(3)>;
 	status = "okay";
 };
 
 &rtc {
-	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>,
+	clocks = <&rcc STM32_CLOCK(APB1, 28)>,
 		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
 	status = "okay";
 };
@@ -330,6 +330,7 @@ zephyr_udc0: &usbotg_fs {
 		reg = <0>;
 		size = <DT_SIZE_M(64)>; /* 64 Mbits */
 		qspi-max-frequency = <50000000>;
+		cs-high-time = <2>; /* >= 30 ns */
 		status = "okay";
 
 		partitions {

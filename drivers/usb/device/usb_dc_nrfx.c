@@ -1914,7 +1914,7 @@ static int usb_init(void)
 		return -EIO;
 	}
 
-	/* Ignore the return value, as NRFX_ERROR_ALREADY_INITIALIZED is not
+	/* Ignore the return value, as NRFX_ERROR_ALREADY is not
 	 * a problem here.
 	 */
 	(void)nrfx_power_init(&power_config);

@@ -111,6 +111,20 @@ extern "C" {
  */
 #define BT_L2CAP_ECRED_MIN_MPS 64
 
+/** @brief L2CAP maximum MTU
+ *
+ *  The maximum MTU for an L2CAP Based Connection. This is the same with or without ECRED. This
+ *  requirement is taken from text in Core 3.A.4.22 and 3.A.4.26 v6.0.
+ */
+#define BT_L2CAP_MAX_MTU UINT16_MAX
+
+/** @brief L2CAP maximum MPS
+ *
+ *  The maximum MPS for an L2CAP Based Connection. This is the same with or without ECRED. This
+ *  requirement is taken from text in Core 3.A.4.22 and 3.A.4.26 v6.0.
+ */
+#define BT_L2CAP_MAX_MPS 65533
+
 /** @brief The maximum number of channels in ECRED L2CAP signaling PDUs
  *
  *  Currently, this is the maximum number of channels referred to in the
@@ -250,6 +264,8 @@ struct bt_l2cap_le_chan {
 	uint16_t			psm;
 	/** Helps match request context during CoC */
 	uint8_t				ident;
+	/** Opcode of the pending request. Used to match responses with requests. */
+	uint8_t                         pending_req;
 	bt_security_t			required_sec_level;
 
 	/* Response Timeout eXpired (RTX) timer */
@@ -259,8 +275,6 @@ struct bt_l2cap_le_chan {
 
 	/** @internal To be used with @ref bt_conn.upper_data_ready */
 	sys_snode_t			_pdu_ready;
-	/** @internal To be used with @ref bt_conn.upper_data_ready */
-	atomic_t			_pdu_ready_lock;
 	/** @internal Holds the length of the current PDU/segment */
 	size_t				_pdu_remaining;
 };

@@ -107,7 +107,7 @@ static int llext_load_elf_data(struct llext_loader *ldr, struct llext *ext)
 
 	size_t sect_map_sz = ext->sect_cnt * sizeof(ldr->sect_map[0]);
 
-	ldr->sect_map = llext_alloc(sect_map_sz);
+	ldr->sect_map = llext_alloc_data(sect_map_sz);
 	if (!ldr->sect_map) {
 		LOG_ERR("Failed to allocate section map, size %zu", sect_map_sz);
 		return -ENOMEM;
@@ -125,7 +125,7 @@ static int llext_load_elf_data(struct llext_loader *ldr, struct llext *ext)
 		size_t sect_hdrs_sz = ext->sect_cnt * sizeof(ext->sect_hdrs[0]);
 
 		ext->sect_hdrs_on_heap = true;
-		ext->sect_hdrs = llext_alloc(sect_hdrs_sz);
+		ext->sect_hdrs = llext_alloc_data(sect_hdrs_sz);
 		if (!ext->sect_hdrs) {
 			LOG_ERR("Failed to allocate section headers, size %zu", sect_hdrs_sz);
 			return -ENOMEM;
@@ -312,6 +312,21 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext,
 		 * regions.
 		 */
 		if (ldr_parm->section_detached && ldr_parm->section_detached(shdr)) {
+			if (mem_idx == LLEXT_MEM_TEXT &&
+			    !INSTR_FETCHABLE(llext_peek(ldr, shdr->sh_offset), shdr->sh_size)) {
+#ifdef CONFIG_ARC
+				LOG_ERR("ELF buffer's detached text section %s not in instruction "
+					"memory: %p-%p",
+					name, (void *)(llext_peek(ldr, shdr->sh_offset)),
+					(void *)((char *)llext_peek(ldr, shdr->sh_offset) +
+						 shdr->sh_size));
+				return -ENOEXEC;
+#else
+				LOG_WRN("Unknown if ELF buffer's detached text section %s is in "
+					"instruction memory; proceeding...",
+					name);
+#endif
+			}
 			continue;
 		}
 
@@ -571,7 +586,7 @@ static int llext_allocate_symtab(struct llext_loader *ldr, struct llext *ext)
 	struct llext_symtable *sym_tab = &ext->sym_tab;
 	size_t syms_size = sym_tab->sym_cnt * sizeof(struct llext_symbol);
 
-	sym_tab->syms = llext_alloc(syms_size);
+	sym_tab->syms = llext_alloc_data(syms_size);
 	if (!sym_tab->syms) {
 		return -ENOMEM;
 	}
@@ -604,7 +619,7 @@ static int llext_export_symbols(struct llext_loader *ldr, struct llext *ext,
 		return 0;
 	}
 
-	exp_tab->syms = llext_alloc(exp_tab->sym_cnt * sizeof(struct llext_symbol));
+	exp_tab->syms = llext_alloc_data(exp_tab->sym_cnt * sizeof(struct llext_symbol));
 	if (!exp_tab->syms) {
 		return -ENOMEM;
 	}

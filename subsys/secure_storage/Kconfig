@@ -25,6 +25,17 @@ module = SECURE_STORAGE
 module-str = secure_storage
 source "subsys/logging/Kconfig.template.log_config"
 
+config SECURE_STORAGE_64_BIT_UID
+	bool "Make psa_storage_uid_t 64-bit"
+	help
+	  Zephyr, by default, uses a 30-bit psa_storage_uid_t, which allows using only 32 bits to
+	  identify entries.
+	  UID ranges are defined for the different users of the API which guarantees that all the
+	  UIDs fit within 30 bits. See for example the zephyr/psa/key_ids.h header file.
+	  Enable this for backward compatibility if you are updating an existing installation with
+	  stored entries that was using Zephyr prior to 4.3 or if for some reason you need the full
+	  64-bit UID range.
+
 choice SECURE_STORAGE_ITS_IMPLEMENTATION
 	prompt "Internal Trusted Storage (ITS) API implementation"
 

@@ -5,7 +5,6 @@ menuconfig LLEXT
 	bool "Linkable loadable extensions"
 	select CACHE_MANAGEMENT if DCACHE
 	select KERNEL_WHOLE_ARCHIVE
-	depends on !HARVARD
 	help
 	  Enable the linkable loadable extension subsystem
 
@@ -58,10 +57,26 @@ config LLEXT_HEAP_DYNAMIC
 
 config LLEXT_HEAP_SIZE
 	int "llext heap memory size in kilobytes"
-	depends on !LLEXT_HEAP_DYNAMIC
+	depends on !LLEXT_HEAP_DYNAMIC && !HARVARD
 	default 8
 	help
 	  Heap size in kilobytes available to llext for dynamic allocation
+
+config LLEXT_INSTR_HEAP_SIZE
+	int "llext ICCM heap memory size in kilobytes"
+	depends on !LLEXT_HEAP_DYNAMIC && HARVARD
+	default 4
+	help
+	  ICCM heap size in kilobytes available to llext for dynamic allocation.
+	  Only executable sections will be placed in this heap.
+
+config LLEXT_DATA_HEAP_SIZE
+	int "llext DCCM heap memory size in kilobytes"
+	depends on !LLEXT_HEAP_DYNAMIC && HARVARD
+	default 8
+	help
+	  DCCM heap size in kilobytes available to llext for dynamic allocation.
+	  Extension data and metadata will be placed in this heap.
 
 config LLEXT_BUILD_PIC
 	bool "Use -fPIC when building LLEXT"

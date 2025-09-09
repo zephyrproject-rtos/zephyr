@@ -84,6 +84,11 @@ struct x86_tss64 {
 	 */
 
 	struct _cpu *cpu;
+#ifdef CONFIG_HW_SHADOW_STACK
+	uintptr_t *shstk_addr;
+	uintptr_t exception_shstk_addr;
+#endif
+
 #ifdef CONFIG_USERSPACE
 	/* Privilege mode stack pointer value when doing a system call */
 	char *psp;
@@ -133,6 +138,12 @@ struct _thread_arch {
 	/* SS and CS selectors for this thread when restoring context */
 	uint64_t ss;
 	uint64_t cs;
+#endif
+
+#ifdef CONFIG_HW_SHADOW_STACK
+	uintptr_t *shstk_addr;
+	uintptr_t *shstk_base;
+	size_t shstk_size;
 #endif
 
 	uint64_t rax;

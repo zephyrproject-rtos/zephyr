@@ -94,6 +94,11 @@ struct bt_bap_unicast_group {
 	/* The ISO API for CIG creation requires an array of pointers to ISO channels */
 	struct bt_iso_chan *cis[UNICAST_GROUP_STREAM_CNT];
 	sys_slist_t streams;
+
+	/* Configured sink presentation delay */
+	uint32_t sink_pd;
+	/* Configured source presentation delay */
+	uint32_t source_pd;
 };
 
 #if CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0
