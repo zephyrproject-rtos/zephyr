@@ -187,8 +187,6 @@ extern volatile uintptr_t __stack_chk_guard;
 #endif /* CONFIG_STACK_CANARIES_TLS */
 #endif /* CONFIG_REQUIRES_STACK_CANARIES */
 
-/* LCOV_EXCL_STOP */
-
 __pinned_bss
 bool z_sys_post_kernel;
 
