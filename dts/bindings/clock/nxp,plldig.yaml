@@ -1,0 +1,61 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: Phase-locked loop
+
+compatible: "nxp,plldig"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  workmode:
+    required: true
+    type: string
+    description: PLL work mode setting
+    enum: ["Integer", "Fractional", "SSCG"]
+
+  prediv:
+    required: true
+    type: int
+    description: Input Clock Predivider
+
+  postdiv:
+    required: true
+    type: int
+    description: VCO clock post divider for driving the PHI output clock.
+
+  multiplier:
+    required: true
+    type: int
+    description: Multiplication factor applied to the reference frequency
+
+  fracloopdiv:
+    required: true
+    type: int
+    description: Numerator Of Fractional Loop Division Factor.
+        Value should less than 18432.
+
+  stepsize:
+    required: true
+    type: int
+    description: For SSCG mode. Frequency Modulation Step Size
+
+  stepnum:
+    required: true
+    type: int
+    description: |
+      For SSCG mode. Number Of Steps Of Modulation Period Or Frequency Modulation
+
+  accuracy:
+    required: true
+    type: string
+    description: PLL unlock accuracy
+    enum: ["Accuracy9", "Accuracy17", "Accuracy33", "Accuracy5"]
+
+  outdiv:
+    required: true
+    type: array
+    description: PLL Output Divider

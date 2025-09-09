@@ -16,6 +16,14 @@ family:
   - name: mcxc142
   - name: mcxc242
   - name: mcxc444
+- name: mcxe
+  series:
+  - name: mcxe31x
+    socs:
+    - name: mcxe315
+    - name: mcxe316
+    - name: mcxe317
+    - name: mcxe31b
 - name: mcxa
   socs:
   - name: mcxa153
