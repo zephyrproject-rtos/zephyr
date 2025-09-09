@@ -1124,7 +1124,7 @@ static int spi_nor_erase(const struct device *dev, off_t addr, size_t size)
 static int spi_nor_write_protection_set(const struct device *dev,
 					bool write_protect)
 {
-	int ret;
+	int ret = 0;
 	const struct spi_nor_config *cfg = dev->config;
 
 #if ANY_INST_HAS_WP_GPIOS
@@ -1133,11 +1133,7 @@ static int spi_nor_write_protection_set(const struct device *dev,
 	}
 #endif
 
-	ret = spi_nor_cmd_write(dev, (write_protect) ?
-	      SPI_NOR_CMD_WRDI : SPI_NOR_CMD_WREN);
-
 	if (cfg->requires_ulbpr_exist
-	    && (ret == 0)
 	    && !write_protect) {
 		ret = spi_nor_cmd_write(dev, SPI_NOR_CMD_ULBPR);
 	}
