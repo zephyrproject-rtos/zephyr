@@ -13,6 +13,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/logging/log_ctrl.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
 
@@ -26,6 +27,7 @@
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/buf.h>
 #include <zephyr/bluetooth/hci_raw.h>
+#include <zephyr/bluetooth/hci_vs.h>
 
 #define LOG_MODULE_NAME hci_uart
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
@@ -281,49 +283,99 @@ static int h4_send(struct net_buf *buf)
 #if defined(CONFIG_BT_CTLR_ASSERT_HANDLER)
 void bt_ctlr_assert_handle(char *file, uint32_t line)
 {
-	uint32_t len = 0U, pos = 0U;
-
 	/* Disable interrupts, this is unrecoverable */
 	(void)irq_lock();
 
-	uart_irq_rx_disable(hci_uart_dev);
-	uart_irq_tx_disable(hci_uart_dev);
+	if (IS_ENABLED(CONFIG_BT_HCI_VS_FATAL_ERROR)) {
+		struct net_buf *buf;
 
-	if (file) {
-		while (file[len] != '\0') {
-			if (file[len] == '/') {
-				pos = len + 1;
+		/* Prepare vendor specific HCI error event */
+		buf = hci_vs_err_assert(file, line);
+		if (buf != NULL) {
+			uint32_t len;
+			uint8_t *data;
+
+			/* Disable interrupt driven, and use polling to be able to transmit while
+			 * being in highest priority ISR.
+			 */
+			uart_irq_rx_disable(hci_uart_dev);
+			uart_irq_tx_disable(hci_uart_dev);
+
+			/* Send the event over UART */
+			data = &buf->data[0];
+			len = buf->len;
+			while (len) {
+				uart_poll_out(hci_uart_dev, *data);
+				data++;
+				len--;
 			}
-			len++;
+		} else {
+			LOG_ERR("Can't create Fatal Error HCI event: %s at %d", __FILE__, __LINE__);
 		}
-		file += pos;
-		len -= pos;
+
+		LOG_ERR("Halting system");
+	} else {
+		LOG_ERR("Controller assert in: %s at %d", file, line);
 	}
 
-	uart_poll_out(hci_uart_dev, H4_EVT);
-	/* Vendor-Specific debug event */
-	uart_poll_out(hci_uart_dev, 0xff);
-	/* 0xAA + strlen + \0 + 32-bit line number */
-	uart_poll_out(hci_uart_dev, 1 + len + 1 + 4);
-	uart_poll_out(hci_uart_dev, 0xAA);
+	/* Flush the logs before locking the CPU */
+	LOG_PANIC();
 
-	if (len) {
-		while (*file != '\0') {
-			uart_poll_out(hci_uart_dev, *file);
-			file++;
-		}
-		uart_poll_out(hci_uart_dev, 0x00);
-	}
+	while (true) {
+		k_cpu_idle();
+	};
 
-	uart_poll_out(hci_uart_dev, line >> 0 & 0xff);
-	uart_poll_out(hci_uart_dev, line >> 8 & 0xff);
-	uart_poll_out(hci_uart_dev, line >> 16 & 0xff);
-	uart_poll_out(hci_uart_dev, line >> 24 & 0xff);
-
-	while (1) {
-	}
+	CODE_UNREACHABLE;
 }
 #endif /* CONFIG_BT_CTLR_ASSERT_HANDLER */
+
+#if defined(CONFIG_BT_HCI_VS_FATAL_ERROR)
+void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *esf)
+{
+	/* Disable interrupts, this is unrecoverable */
+	(void)irq_lock();
+
+	/* Generate an error event only when there is a stack frame */
+	if (esf != NULL) {
+		struct net_buf *buf;
+
+		/* Prepare vendor specific HCI error event */
+		buf = hci_vs_err_stack_frame(reason, esf);
+		if (buf != NULL) {
+			uint32_t len;
+			uint8_t *data;
+
+			/* Disable interrupt driven, and use polling to be able to transmit while
+			 * being in highest priority ISR.
+			 */
+			uart_irq_rx_disable(hci_uart_dev);
+			uart_irq_tx_disable(hci_uart_dev);
+
+			/* Send the event over UART */
+			data = &buf->data[0];
+			len = buf->len;
+			while (len) {
+				uart_poll_out(hci_uart_dev, *data);
+				data++;
+				len--;
+			}
+		} else {
+			LOG_ERR("Can't create Fatal Error HCI event.\n");
+		}
+	}
+
+	LOG_ERR("Halting system");
+
+	/* Flush the logs before locking the CPU */
+	LOG_PANIC();
+
+	while (true) {
+		k_cpu_idle();
+	};
+
+	CODE_UNREACHABLE;
+}
+#endif /* CONFIG_BT_HCI_VS_FATAL_ERROR */
 
 static int hci_uart_init(void)
 {
