@@ -13,13 +13,39 @@ config GEN_UICR_GENERATE_PERIPHCONF
 config GEN_UICR_SECONDARY
 	bool "Enable UICR.SECONDARY.ENABLE"
 
+if GEN_UICR_SECONDARY
+
 config GEN_UICR_SECONDARY_GENERATE_PERIPHCONF
 	bool "Generate SECONDARY.PERIPHCONF hex alongside UICR"
 	default y
-	depends on GEN_UICR_SECONDARY
 	help
 	  When enabled, the UICR generator will populate the
 	  secondary_periphconf_partition partition.
+
+choice GEN_UICR_SECONDARY_PROCESSOR
+	prompt "Secondary processor selection"
+	default GEN_UICR_SECONDARY_PROCESSOR_APPLICATION
+	help
+	  Processor to boot for the secondary firmware.
+
+config GEN_UICR_SECONDARY_PROCESSOR_APPLICATION
+	bool "APPLICATION processor"
+	help
+	  Boot secondary firmware on the APPLICATION processor.
+
+config GEN_UICR_SECONDARY_PROCESSOR_RADIOCORE
+	bool "RADIOCORE processor"
+	help
+	  Boot secondary firmware on the RADIOCORE processor.
+
+endchoice
+
+config GEN_UICR_SECONDARY_PROCESSOR_VALUE
+	hex
+	default 0xBD2328A8 if GEN_UICR_SECONDARY_PROCESSOR_APPLICATION
+	default 0x1730C77F if GEN_UICR_SECONDARY_PROCESSOR_RADIOCORE
+
+endif # GEN_UICR_SECONDARY
 
 endmenu
 
