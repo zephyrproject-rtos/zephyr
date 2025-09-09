@@ -857,8 +857,8 @@ static void check_and_reset_group_pd(struct bt_bap_unicast_group *group, enum bt
 			continue;
 		}
 
-		if (stream->ep->status.state == BT_BAP_EP_STATE_IDLE ||
-		    stream->ep->status.state == BT_BAP_EP_STATE_CODEC_CONFIGURED) {
+		if (stream->ep->state == BT_BAP_EP_STATE_IDLE ||
+		    stream->ep->state == BT_BAP_EP_STATE_CODEC_CONFIGURED) {
 			continue;
 		} else {
 			dir_in_idle_or_config_state = false;
@@ -3331,7 +3331,7 @@ int bt_bap_unicast_client_qos(struct bt_conn *conn, struct bt_bap_unicast_group 
 		ep = stream->ep;
 		dir = ep->dir;
 
-		if (ep->status.state >= BT_BAP_EP_STATE_QOS_CONFIGURED) {
+		if (ep->state >= BT_BAP_EP_STATE_QOS_CONFIGURED) {
 			if (dir == BT_AUDIO_DIR_SINK) {
 				sink_qos_configured_on_other_conn = true;
 			} else if (dir == BT_AUDIO_DIR_SOURCE) {
