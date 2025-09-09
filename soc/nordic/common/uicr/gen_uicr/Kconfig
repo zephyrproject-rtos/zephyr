@@ -32,6 +32,20 @@ config GEN_UICR_SECURESTORAGE
 	  - At least one subpartition must be defined
 	  - Combined subpartition sizes must equal secure_storage_partition size
 
+config GEN_UICR_PROTECTEDMEM
+	bool "Enable UICR.PROTECTEDMEM"
+	help
+	  When enabled, the UICR generator will configure the
+	  protected memory region.
+
+config GEN_UICR_PROTECTEDMEM_SIZE_BYTES
+	int "Protected memory size in bytes"
+	default 4096
+	depends on GEN_UICR_PROTECTEDMEM
+	help
+	  Size of the protected memory region in bytes.
+	  This value must be divisible by 4096 (4 kiB).
+
 config GEN_UICR_SECONDARY
 	bool "Enable UICR.SECONDARY.ENABLE"
 
