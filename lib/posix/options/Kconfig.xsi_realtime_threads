@@ -1,0 +1,24 @@
+# Copyright (c) 2024 Tenstorrent AI ULC
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config XSI_REALTIME_THREADS
+	bool "X/Open realtime threads"
+	depends on POSIX_THREADS
+	help
+	  Select 'y' here to enable the _POSIX_THREAD_PRIO_INHERIT, _POSIX_THREAD_PRIO_PROTECT,
+	  _POSIX_THREAD_PRIORITY_SCHEDULING, _POSIX_THREAD_ROBUST_PRIO_INHERIT, and
+	  _POSIX_THREAD_ROBUST_PRIO_PROTECT options.
+
+	  The feature test macro _XOPEN_REALTIME_THREADS will be defined to a value other than -1.
+
+	  For more information, please see
+	  https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap02.html
+
+if XSI_REALTIME_THREADS
+
+module = XSI_REALTIME_THREADS
+module-str = XSI Realtime Threads
+source "subsys/logging/Kconfig.template.log_config"
+
+endif

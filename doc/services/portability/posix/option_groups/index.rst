@@ -1069,6 +1069,10 @@ Enable this option with :kconfig:option:`CONFIG_POSIX_THREAD_PRIORITY_SCHEDULING
     pthread_setschedparam(),yes
     pthread_setschedprio(),yes
 
+.. _posix_option_thread_robust_prio_inherit:
+
+.. _posix_option_thread_robust_prio_protect:
+
 .. _posix_option_thread_safe_functions:
 
 _POSIX_THREAD_SAFE_FUNCTIONS
