@@ -2411,8 +2411,18 @@ static int context_sendto(struct net_context *context,
 	if (IS_ENABLED(CONFIG_NET_IPV4_MAPPING_TO_IPV6) &&
 	    IS_ENABLED(CONFIG_NET_IPV6) &&
 	    net_context_get_family(context) == AF_INET6 &&
+	    dst_addr != NULL &&
 	    dst_addr->sa_family == AF_INET) {
 		family = AF_INET;
+	} else if (IS_ENABLED(CONFIG_NET_IPV4_MAPPING_TO_IPV6) &&
+		   IS_ENABLED(CONFIG_NET_IPV6) && msghdr != NULL) {
+		const struct sockaddr_in6 *addr6 = msghdr->msg_name;
+
+		if (net_ipv6_addr_is_v4_mapped(&addr6->sin6_addr)) {
+			family = AF_INET;
+		} else {
+			family = net_context_get_family(context);
+		}
 	} else {
 		family = net_context_get_family(context);
 	}
@@ -2499,6 +2509,10 @@ static int context_sendto(struct net_context *context,
 			net_ipaddr_copy(&mapped.sin_addr,
 					(struct in_addr *)(&addr6->sin6_addr.s6_addr32[3]));
 			addr4 = &mapped;
+
+			/* For sendmsg(), the dst_addr is NULL so set it here.
+			 */
+			dst_addr = (const struct sockaddr *)addr4;
 		}
 
 		if (addrlen < sizeof(struct sockaddr_in)) {
