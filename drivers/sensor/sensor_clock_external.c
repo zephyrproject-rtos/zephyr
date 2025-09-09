@@ -40,17 +40,10 @@ int sensor_clock_get_cycles(uint64_t *cycles)
 	__ASSERT_NO_MSG(counter_is_counting_up(external_sensor_clock));
 
 	int rc;
-	const struct counter_driver_api *api =
-		(const struct counter_driver_api *)external_sensor_clock->api;
+	counter_ticks_t result;
 
-	if (api->get_value_64) {
-		rc = counter_get_value_64(external_sensor_clock, cycles);
-	} else {
-		uint32_t result_32;
-
-		rc = counter_get_value(external_sensor_clock, &result_32);
-		*cycles = (uint64_t)result_32;
-	}
+	rc = counter_get_value(external_sensor_clock, &result);
+	*cycles = (uint64_t)result;
 
 	return rc;
 }
