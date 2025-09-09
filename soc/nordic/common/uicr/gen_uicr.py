@@ -440,6 +440,12 @@ def main() -> None:
         help="Absolute flash address of the secondary firmware (decimal or 0x-prefixed hex)",
     )
     parser.add_argument(
+        "--secondary-processor",
+        default=0xBD2328A8,
+        type=lambda s: int(s, 0),
+        help="Processor to boot for the secondary firmware ",
+    )
+    parser.add_argument(
         "--secondary-periphconf-address",
         default=None,
         type=lambda s: int(s, 0),
@@ -562,6 +568,7 @@ def main() -> None:
         if args.secondary:
             uicr.SECONDARY.ENABLE = ENABLED_VALUE
             uicr.SECONDARY.ADDRESS = args.secondary_address
+            uicr.SECONDARY.PROCESSOR = args.secondary_processor
 
             # Handle secondary periphconf if provided
             if args.out_secondary_periphconf_hex:
