@@ -467,3 +467,29 @@ test_spi_icm42686: icm42686@38 {
 	spi-max-frequency = <24000000>;
 	int-gpios = <&test_gpio 0 0>;
 };
+
+test_spi_iim46230: iim46230@39 {
+	compatible = "invensense,iim46230";
+	reg = <0x39>;
+	spi-max-frequency = <12000000>;
+	int-gpios = <&test_gpio 0 GPIO_ACTIVE_HIGH>;
+	reset-gpios = <&test_gpio 1 GPIO_ACTIVE_LOW>;
+	odr = <1000>;
+	accel-fs = <8>;
+	gyro-fs = <480>;
+	accel-bw = <0>;
+	gyro-bw = <0>;
+};
+
+test_spi_iim46234: iim46234@3a {
+	compatible = "invensense,iim46234";
+	reg = <0x3a>;
+	spi-max-frequency = <12000000>;
+	int-gpios = <&test_gpio 0 GPIO_ACTIVE_HIGH>;
+	reset-gpios = <&test_gpio 1 GPIO_ACTIVE_LOW>;
+	odr = <1000>;
+	accel-fs = <8>;
+	gyro-fs = <480>;
+	accel-bw = <0>;
+	gyro-bw = <0>;
+};
