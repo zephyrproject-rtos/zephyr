@@ -67,6 +67,7 @@ endfunction()
 if(CMAKE_VERBOSE_MAKEFILE)
 endif()
 
+set(protectedmem_args)
 set(periphconf_args)
 set(periphconf_elfs)
 set(merged_hex_file ${APPLICATION_BINARY_DIR}/zephyr/${CONFIG_KERNEL_BIN_NAME}.hex)
@@ -78,6 +79,12 @@ set(secondary_periphconf_hex_file ${APPLICATION_BINARY_DIR}/zephyr/secondary_per
 # Get UICR absolute address from this image's devicetree
 dt_nodelabel(uicr_path NODELABEL "uicr" REQUIRED)
 dt_reg_addr(UICR_ADDRESS PATH ${uicr_path} REQUIRED)
+
+# Handle protected memory configuration
+if(CONFIG_GEN_UICR_PROTECTEDMEM)
+  list(APPEND protectedmem_args --protectedmem)
+  list(APPEND protectedmem_args --protectedmem-size-bytes ${CONFIG_GEN_UICR_PROTECTEDMEM_SIZE_BYTES})
+endif()
 
 # Handle secure storage configuration
 set(securestorage_args)
@@ -181,6 +188,7 @@ add_custom_command(
           --out-uicr-hex ${uicr_hex_file}
           ${periphconf_args}
           ${securestorage_args}
+          ${protectedmem_args}
           ${secondary_args}
   DEPENDS ${periphconf_elfs} ${secondary_periphconf_elfs}
   WORKING_DIRECTORY ${APPLICATION_BINARY_DIR}
