@@ -256,6 +256,7 @@ static uint32_t get_hclk_frequency(void)
 
 #if !defined(CONFIG_CPU_CORTEX_M4)
 
+__unused
 static int32_t prepare_regulator_voltage_scale(void)
 {
 	/* Make sure to put the CPU in highest Voltage scale during clock configuration */
@@ -271,6 +272,7 @@ static int32_t prepare_regulator_voltage_scale(void)
 	return 0;
 }
 
+__unused
 static int32_t optimize_regulator_voltage_scale(uint32_t sysclk_freq)
 {
 
@@ -1051,6 +1053,8 @@ int stm32_clock_control_init(const struct device *dev)
 {
 	int r = 0;
 
+#if !defined(CONFIG_STM32_APP_IN_EXT_FLASH)
+
 #if defined(CONFIG_CPU_CORTEX_M7)
 	uint32_t old_hclk_freq;
 	uint32_t new_hclk_freq;
@@ -1164,6 +1168,11 @@ int stm32_clock_control_init(const struct device *dev)
 
 	/* Update CMSIS variable */
 	SystemCoreClock = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
+	
+#else  /* defined(CONFIG_STM32_APP_IN_EXT_FLASH) */
+	/* Calculate SysClock based on RCC register config and clk_hse clock-frequency */
+	SystemCoreClock = HAL_RCC_GetSysClockFreq();
+#endif /* defined(CONFIG_STM32_APP_IN_EXT_FLASH) */
 
 	return r;
 }
