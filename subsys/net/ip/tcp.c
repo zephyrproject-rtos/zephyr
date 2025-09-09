@@ -797,7 +797,10 @@ static void tcp_conn_release(struct k_work *work)
 	tcp_pkt_unref(conn->send_data);
 
 	if (CONFIG_NET_TCP_RECV_QUEUE_TIMEOUT) {
-		tcp_pkt_unref(conn->queue_recv_data);
+		if (conn->queue_recv_data != NULL) {
+			net_buf_unref(conn->queue_recv_data);
+			conn->queue_recv_data = NULL;
+		}
 	}
 
 	(void)k_work_cancel_delayable(&conn->timewait_timer);
@@ -1136,8 +1139,7 @@ static size_t tcp_check_pending_data(struct tcp *conn, struct net_pkt *pkt,
 {
 	size_t pending_len = 0;
 
-	if (CONFIG_NET_TCP_RECV_QUEUE_TIMEOUT &&
-	    !net_pkt_is_empty(conn->queue_recv_data)) {
+	if (CONFIG_NET_TCP_RECV_QUEUE_TIMEOUT && conn->queue_recv_data != NULL) {
 		/* Some potentential cases:
 		 * Note: MI = MAX_INT
 		 * Packet | Queued| End off   | Gap size | Required handling
@@ -1159,10 +1161,10 @@ static size_t tcp_check_pending_data(struct tcp *conn, struct net_pkt *pkt,
 		int32_t gap_size;
 		uint32_t end_offset;
 
-		pending_seq = tcp_get_seq(conn->queue_recv_data->buffer);
+		pending_seq = tcp_get_seq(conn->queue_recv_data);
 		end_offset = expected_seq - pending_seq;
 		gap_size = (int32_t)(pending_seq - th_seq(th) - ((uint32_t)len));
-		pending_len = net_pkt_get_len(conn->queue_recv_data);
+		pending_len = net_buf_frags_len(conn->queue_recv_data);
 		if (end_offset < pending_len) {
 			if (end_offset) {
 				net_pkt_remove_tail(pkt, end_offset);
@@ -1173,15 +1175,15 @@ static size_t tcp_check_pending_data(struct tcp *conn, struct net_pkt *pkt,
 				expected_seq, pending_len);
 
 			net_buf_frag_add(pkt->buffer,
-					 conn->queue_recv_data->buffer);
-			conn->queue_recv_data->buffer = NULL;
+					 conn->queue_recv_data);
+			conn->queue_recv_data = NULL;
 
 			k_work_cancel_delayable(&conn->recv_queue_timer);
 		} else {
 			/* Check if the queued data is just a section of the incoming data */
 			if (gap_size <= 0) {
-				net_buf_unref(conn->queue_recv_data->buffer);
-				conn->queue_recv_data->buffer = NULL;
+				net_buf_unref(conn->queue_recv_data);
+				conn->queue_recv_data = NULL;
 
 				k_work_cancel_delayable(&conn->recv_queue_timer);
 			}
@@ -1770,11 +1772,11 @@ static void tcp_cleanup_recv_queue(struct k_work *work)
 	k_mutex_lock(&conn->lock, K_FOREVER);
 
 	NET_DBG("Cleanup recv queue conn %p len %zd seq %u", conn,
-		net_pkt_get_len(conn->queue_recv_data),
-		tcp_get_seq(conn->queue_recv_data->buffer));
+		net_buf_frags_len(conn->queue_recv_data),
+		tcp_get_seq(conn->queue_recv_data));
 
-	net_buf_unref(conn->queue_recv_data->buffer);
-	conn->queue_recv_data->buffer = NULL;
+	net_buf_unref(conn->queue_recv_data);
+	conn->queue_recv_data = NULL;
 
 	k_mutex_unlock(&conn->lock);
 }
@@ -2022,15 +2024,6 @@ static struct tcp *tcp_conn_alloc(void)
 
 	memset(conn, 0, sizeof(*conn));
 
-	if (CONFIG_NET_TCP_RECV_QUEUE_TIMEOUT) {
-		conn->queue_recv_data = tcp_rx_pkt_alloc(conn, 0);
-		if (conn->queue_recv_data == NULL) {
-			NET_ERR("Cannot allocate %s queue for conn %p", "recv",
-				conn);
-			goto fail;
-		}
-	}
-
 	conn->send_data = tcp_pkt_alloc(conn, 0);
 	if (conn->send_data == NULL) {
 		NET_ERR("Cannot allocate %s queue for conn %p", "send", conn);
@@ -2089,11 +2082,6 @@ out:
 	return conn;
 
 fail:
-	if (CONFIG_NET_TCP_RECV_QUEUE_TIMEOUT && conn->queue_recv_data) {
-		tcp_pkt_unref(conn->queue_recv_data);
-		conn->queue_recv_data = NULL;
-	}
-
 	k_mem_slab_free(&tcp_conns_slab, (void *)conn);
 	return NULL;
 }
@@ -2545,7 +2533,7 @@ static void tcp_queue_recv_data(struct tcp *conn, struct net_pkt *pkt,
 		NET_DBG("Queuing data: conn %p", conn);
 	}
 
-	if (!net_pkt_is_empty(conn->queue_recv_data)) {
+	if (conn->queue_recv_data != NULL) {
 		/* Place the data to correct place in the list. If the data
 		 * would not be sequential, then drop this packet.
 		 *
@@ -2575,9 +2563,9 @@ static void tcp_queue_recv_data(struct tcp *conn, struct net_pkt *pkt,
 		uint32_t end_offset;
 		size_t pending_len;
 
-		pending_seq = tcp_get_seq(conn->queue_recv_data->buffer);
+		pending_seq = tcp_get_seq(conn->queue_recv_data);
 		end_offset = seq - pending_seq;
-		pending_len = net_pkt_get_len(conn->queue_recv_data);
+		pending_len = net_buf_frags_len(conn->queue_recv_data);
 		if (end_offset < pending_len) {
 			if (end_offset < len) {
 				if (end_offset) {
@@ -2586,16 +2574,16 @@ static void tcp_queue_recv_data(struct tcp *conn, struct net_pkt *pkt,
 
 				/* Put new data before the pending data */
 				net_buf_frag_add(pkt->buffer,
-						 conn->queue_recv_data->buffer);
+						 conn->queue_recv_data);
 				NET_DBG("Adding at before queue, end_offset %i, pending_len %zu",
 					end_offset, pending_len);
-				conn->queue_recv_data->buffer = pkt->buffer;
+				conn->queue_recv_data = pkt->buffer;
 				inserted = true;
 			}
 		} else {
 			struct net_buf *last;
 
-			last = net_buf_frag_last(conn->queue_recv_data->buffer);
+			last = net_buf_frag_last(conn->queue_recv_data);
 			pending_seq = tcp_get_seq(last);
 
 			start_offset = pending_seq - seq_start;
@@ -2607,20 +2595,20 @@ static void tcp_queue_recv_data(struct tcp *conn, struct net_pkt *pkt,
 				/* The queued data is irrelevant since the new packet overlaps the
 				 * new packet, take the new packet as contents
 				 */
-				net_buf_unref(conn->queue_recv_data->buffer);
-				conn->queue_recv_data->buffer = pkt->buffer;
+				net_buf_unref(conn->queue_recv_data);
+				conn->queue_recv_data = pkt->buffer;
 				inserted = true;
 			} else {
 				if (end_offset < len) {
 					if (end_offset) {
-						net_pkt_remove_tail(conn->queue_recv_data,
-								    end_offset);
+						net_buf_remove_mem(conn->queue_recv_data,
+								   end_offset);
 					}
 
 					/* Put new data after pending data */
 					NET_DBG("Adding at end of queue, start %i, end %i, len %zu",
 						start_offset, end_offset, len);
-					net_buf_frag_add(conn->queue_recv_data->buffer,
+					net_buf_frag_add(conn->queue_recv_data,
 							 pkt->buffer);
 					inserted = true;
 				}
@@ -2629,18 +2617,18 @@ static void tcp_queue_recv_data(struct tcp *conn, struct net_pkt *pkt,
 
 		if (inserted) {
 			NET_DBG("All pending data: conn %p", conn);
-			if (check_seq_list(conn->queue_recv_data->buffer) == false) {
+			if (check_seq_list(conn->queue_recv_data) == false) {
 				NET_ERR("Incorrect order in out of order sequence for conn %p",
 					conn);
 				/* error in sequence list, drop it */
-				net_buf_unref(conn->queue_recv_data->buffer);
-				conn->queue_recv_data->buffer = NULL;
+				net_buf_unref(conn->queue_recv_data);
+				conn->queue_recv_data = NULL;
 			}
 		} else {
 			NET_DBG("Cannot add new data to queue");
 		}
 	} else {
-		net_pkt_append_buffer(conn->queue_recv_data, pkt->buffer);
+		conn->queue_recv_data = pkt->buffer;
 		inserted = true;
 	}
 
