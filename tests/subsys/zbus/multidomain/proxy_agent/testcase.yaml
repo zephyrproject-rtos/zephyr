@@ -1,0 +1,5 @@
+tests:
+  message_bus.zbus.multidomain.proxy_agent:
+    tags: zbus
+    integration_platforms:
+      - native_sim
