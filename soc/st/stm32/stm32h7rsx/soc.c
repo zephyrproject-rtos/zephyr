@@ -55,9 +55,14 @@ void soc_early_init_hook(void)
 #else
 	LL_PWR_ConfigSupply(LL_PWR_LDO_SUPPLY);
 #endif
+
+/* The chain-loaded application must not switch to LL_PWR_REGU_VOLTAGE_SCALE1, because the
+ * bootloader most likely setup a fast core clock. */
+#if !defined(CONFIG_STM32_APP_IN_EXT_FLASH)
 	LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE1);
 	while (LL_PWR_IsActiveFlag_VOSRDY() == 0) {
 	}
+#endif /* defined(CONFIG_STM32_APP_IN_EXT_FLASH) */
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(gpioo), okay) || DT_NODE_HAS_STATUS(DT_NODELABEL(gpiop), okay)
 	LL_PWR_EnableXSPIM1(); /* Required for powering GPIO O and P */
