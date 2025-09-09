@@ -1438,3 +1438,9 @@ test_i2c_veml6046: veml6046@bf {
 	compatible = "vishay,veml6046";
 	reg = <0xbf>;
 };
+
+test_i2c_wsen_pdms_25131308XXX05: wsen_pdms_25131308XXX05@c0 {
+	compatible = "we,wsen-pdms-25131308XXX05";
+	reg = <0xc0>;
+	sensor-type = <4>;
+};
