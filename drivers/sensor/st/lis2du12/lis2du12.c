@@ -158,6 +158,10 @@ static inline int lis2du12_reboot(const struct device *dev)
 	lis2du12_status_t status;
 	uint8_t tries = 10;
 
+	if (lis2du12_accel_set_odr_raw(dev, LIS2DU12_OFF) < 0) {
+		return -EIO;
+	}
+
 	if (lis2du12_init_set(ctx, LIS2DU12_RESET) < 0) {
 		return -EIO;
 	}
