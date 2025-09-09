@@ -30,14 +30,14 @@ jobs:
         run: |
           pip install -r scripts/requirements-actions.txt --require-hashes
 
-      - name: Fetch MAINTAINERS.yml from mainline
+      - name: Fetch MAINTAINERS.yml from pull request
         run: |
-          git fetch origin main
-          git show origin/main:MAINTAINERS.yml > mainline_MAINTAINERS.yml
+          git fetch origin pull/${{ github.event.pull_request.number }}/head
+          git show FETCH_HEAD:MAINTAINERS.yml > pr_MAINTAINERS.yml
 
       - name: Check maintainer file changes
         env:
           GITHUB_TOKEN: ${{ secrets.ZB_PR_ASSIGNER_GITHUB_TOKEN }}
         run: |
           python  ./scripts/ci/check_maintainer_changes.py  \
-            --repo zephyrproject-rtos/zephyr mainline_MAINTAINERS.yml MAINTAINERS.yml
+            --repo zephyrproject-rtos/zephyr MAINTAINERS.yml pr_MAINTAINERS.yml
