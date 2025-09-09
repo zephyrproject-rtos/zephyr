@@ -7,6 +7,8 @@
 
 #include <sifli/sf32lb52x.dtsi>
 #include <sifli/sf32lb52x-ram012.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 #include "sf32lb52_devkit_lcd-pinctrl.dtsi"
 
@@ -19,6 +21,37 @@
 		zephyr,code-partition = &code;
 		zephyr,console = &usart1;
 		zephyr,shell-uart = &usart1;
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		key1: key1 {
+			label = "KEY1";
+			gpios = <&gpioa_32_44 2 GPIO_ACTIVE_HIGH>;
+			zephyr,code = <INPUT_KEY_1>;
+		};
+
+		key2: key2 {
+			label = "KEY2";
+			gpios = <&gpioa_00_31 11 GPIO_ACTIVE_HIGH>;
+			zephyr,code = <INPUT_KEY_2>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led0 {
+			label = "LED0";
+			gpios = <&gpioa_00_31 26 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	aliases {
+		led0 = &led0;
+		sw0 = &key1;
+		sw1 = &key2;
 	};
 };
 
@@ -41,6 +74,14 @@
 		status = "okay";
 		clock-frequency = <DT_FREQ_M(240)>;
 	};
+};
+
+&gpioa_00_31 {
+	status = "okay";
+};
+
+&gpioa_32_44 {
+	status = "okay";
 };
 
 &mpi2 {
