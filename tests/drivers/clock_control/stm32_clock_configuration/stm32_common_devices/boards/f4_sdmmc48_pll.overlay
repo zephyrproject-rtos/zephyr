@@ -22,7 +22,7 @@
 };
 
 &sdmmc1 {
-	clocks = <&rcc STM32_CLOCK(APB2, 11U)>,
+	clocks = <&rcc STM32_CLOCK(APB2, 11)>,
 		 /* select one source for the sdmmc domain clock */
 		 <&rcc STM32_SRC_SYSCLK SDIO_SEL(1)>;
 	/*		 <&rcc STM32_SRC_CK48 SDIO_SEL(0)>; */
