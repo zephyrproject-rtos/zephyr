@@ -30,6 +30,11 @@ config USE_STM32_HAL_ADC_EX
 	  Enable STM32Cube Extended Analog-to-Digital Converter (ADC) HAL
 	  module driver
 
+config USE_STM32_HAL_AES
+	bool
+	help
+	  Enable STM32Cube AES hardware accelerator (AES) HAL module driver
+
 config USE_STM32_HAL_BSEC
 	bool
 	help
@@ -44,6 +49,11 @@ config USE_STM32_HAL_CAN
 	bool
 	help
 	  Enable STM32Cube Controller Area Network (CAN) HAL module driver
+
+config USE_STM32_HAL_CCB
+	bool
+	help
+	  Enable STM32Cube Coupling and Chaining Bridge (CCB) HAL module driver
 
 config USE_STM32_HAL_CEC
 	bool
@@ -79,6 +89,11 @@ config USE_STM32_HAL_CRC_EX
 	  Enable STM32Cube Extended Cyclic redundancy check calculation unit
 	  (CRC) HAL module driver
 
+config USE_STM32_HAL_CRS
+	bool
+	help
+	  Enable STM32Cube Clock recovery system (CRS) HAL module driver
+
 config USE_STM32_HAL_CRYP
 	bool
 	help
@@ -100,6 +115,11 @@ config USE_STM32_HAL_DAC_EX
 	help
 	  Enable STM32Cube Extended Digital-to-analog converter (DAC) HAL module
 	  driver
+
+config USE_STM32_HAL_DBGMCU
+	bool
+	help
+	  Enable STM32Cube debug support (DBGMCU) HAL module driver
 
 config USE_STM32_HAL_DCACHE
 	bool
@@ -204,6 +224,12 @@ config USE_STM32_HAL_FLASH_EX
 	bool
 	help
 	  Enable STM32Cube Extended Embedded Flash Memory (FLASH) HAL module
+	  driver
+
+config USE_STM32_HAL_FLASH_ITF
+	bool
+	help
+	  Enable STM32Cube Embedded Flash Memory option bytes (FLASH) HAL module
 	  driver
 
 config USE_STM32_HAL_FLASH_RAMFUNC
@@ -494,6 +520,11 @@ config USE_STM32_HAL_RAMECC
 	help
 	  Enable STM32Cube RAM ECC monitoring (RAMECC) HAL module driver
 
+config USE_STM32_HAL_RCC
+	bool
+	help
+	  Enable STM32Cube Reset and Clock Control (RCC) HAL module driver
+
 config USE_STM32_HAL_RIF
 	bool
 	help
@@ -528,6 +559,12 @@ config USE_STM32_HAL_SAI_EX
 	bool
 	help
 	  Enable STM32Cube Extended Serial audio interface (SAI) HAL module
+	  driver
+
+config USE_STM32_HAL_SBS
+	bool
+	help
+	  Enable STM32Cube System configuration, boot, and security (SBS) HAL module
 	  driver
 
 config USE_STM32_HAL_SD
@@ -605,6 +642,11 @@ config USE_STM32_HAL_SWPMI
 	help
 	  Enable STM32Cube Single Wire Protocol Master Interface (SWPMI) HAL
 	  module
+
+config USE_STM32_HAL_TAMP
+	bool
+	help
+	  Enable STM32Cube Tamper and backup registers (TAMP) HAL module driver
 
 config USE_STM32_HAL_TIM
 	bool
