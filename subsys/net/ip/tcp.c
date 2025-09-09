@@ -866,7 +866,9 @@ static void tcp_conn_release(struct k_work *work)
 	tcp_send_queue_flush(conn);
 
 	(void)k_work_cancel_delayable(&conn->send_data_timer);
-	tcp_pkt_unref(conn->send_data);
+	if (conn->send_data.frags != NULL) {
+		net_pkt_frag_unref(conn->send_data.frags);
+	}
 
 	if (CONFIG_NET_TCP_RECV_QUEUE_TIMEOUT) {
 		if (conn->queue_recv_data != NULL) {
@@ -1815,7 +1817,7 @@ static int tcp_send_data(struct tcp *conn)
 		goto out;
 	}
 
-	ret = tcp_pkt_peek(pkt, conn->send_data, conn->unacked_len, len);
+	ret = tcp_pkt_peek(pkt, &conn->send_data, conn->unacked_len, len);
 	if (ret < 0) {
 		tcp_pkt_unref(pkt);
 		ret = -ENOBUFS;
@@ -2155,12 +2157,7 @@ static struct tcp *tcp_conn_alloc(void)
 	}
 
 	memset(conn, 0, sizeof(*conn));
-
-	conn->send_data = tcp_pkt_alloc(conn, 0);
-	if (conn->send_data == NULL) {
-		NET_ERR("Cannot allocate %s queue for conn %p", "send", conn);
-		goto fail;
-	}
+	net_pkt_tx_init(&conn->send_data);
 
 	atomic_clear(&conn->backlog);
 
@@ -2214,10 +2211,6 @@ out:
 	NET_DBG("[%p] Allocated", conn);
 
 	return conn;
-
-fail:
-	k_mem_slab_free(&tcp_conns_slab, (void *)conn);
-	return NULL;
 }
 
 int net_tcp_get(struct net_context *context)
@@ -3304,7 +3297,7 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 			NET_DBG("[%p] len_acked=%u", conn, len_acked);
 
 			if ((conn->send_data_total < len_acked) ||
-					(tcp_pkt_pull(conn->send_data,
+					(tcp_pkt_pull(&conn->send_data,
 						      len_acked) < 0)) {
 				NET_ERR("[%p] Invalid len_acked=%u "
 					"(total=%zu)", conn, len_acked,
@@ -3815,7 +3808,7 @@ int net_tcp_queue(struct net_context *context, const void *data, size_t len,
 		for (int i = 0; i < msg->msg_iovlen; i++) {
 			int iovlen = MIN(msg->msg_iov[i].iov_len, len);
 
-			ret = tcp_pkt_append(conn->send_data,
+			ret = tcp_pkt_append(&conn->send_data,
 					     msg->msg_iov[i].iov_base,
 					     iovlen);
 			if (ret < 0) {
@@ -3834,7 +3827,7 @@ int net_tcp_queue(struct net_context *context, const void *data, size_t len,
 			}
 		}
 	} else {
-		ret = tcp_pkt_append(conn->send_data, data, len);
+		ret = tcp_pkt_append(&conn->send_data, data, len);
 		if (ret < 0) {
 			goto out;
 		}
