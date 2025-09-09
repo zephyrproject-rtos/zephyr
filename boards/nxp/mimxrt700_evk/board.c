@@ -8,6 +8,9 @@
 #include "fsl_clock.h"
 #include <soc.h>
 #include <fsl_glikey.h>
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(pmc_tmpsns), okay)
+#include "fsl_romapi_otp.h"
+#endif
 
 /*!< System oscillator settling time in us */
 #define SYSOSC_SETTLING_US 220U
@@ -531,6 +534,12 @@ void board_early_init_hook(void)
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(acmp), okay)
 	CLOCK_EnableClock(kCLOCK_Acmp0);
 	RESET_ClearPeripheralReset(kACMP0_RST_SHIFT_RSTn);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(pmc_tmpsns), okay)
+	POWER_DisablePD(kPDRUNCFG_PD_PMC_TEMPSNS);
+	POWER_ApplyPD();
+	otp_init(SystemCoreClock);
 #endif
 }
 
