@@ -463,7 +463,7 @@ test_spi_adxl366: adxl366@37 {
 
 test_spi_icm42686: icm42686@38 {
 	compatible = "invensense,icm42686", "invensense,icm4268x";
-	reg = <0x1a>;
+	reg = <0x38>;
 	spi-max-frequency = <24000000>;
 	int-gpios = <&test_gpio 0 0>;
 };
