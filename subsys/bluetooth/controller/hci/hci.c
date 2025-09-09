@@ -5273,9 +5273,9 @@ NET_BUF_POOL_FIXED_DEFINE(vs_err_tx_pool, 1, BT_BUF_EVT_RX_SIZE, 0, NULL);
  * the alias is defined here.
  */
 #if defined(CONFIG_CPU_CORTEX_M)
-typedef struct bt_hci_vs_fata_error_cpu_data_cortex_m bt_hci_vs_fatal_error_cpu_data;
+static struct net_buf *vs_err_evt_create(uint8_t subevt, uint8_t len);
 
-static void vs_err_fatal_cpu_data_fill(bt_hci_vs_fatal_error_cpu_data *cpu_data,
+static void vs_err_fatal_cpu_data_fill(struct bt_hci_vs_fatal_error_cpu_data_cortex_m *cpu_data,
 				       const struct arch_esf *esf)
 {
 	cpu_data->a1 = sys_cpu_to_le32(esf->basic.a1);
@@ -5287,7 +5287,35 @@ static void vs_err_fatal_cpu_data_fill(bt_hci_vs_fatal_error_cpu_data *cpu_data,
 	cpu_data->pc = sys_cpu_to_le32(esf->basic.pc);
 	cpu_data->xpsr = sys_cpu_to_le32(esf->basic.xpsr);
 }
-#endif /* CONFIG_CPU_CORTEX_M */
+
+struct net_buf *hci_vs_err_stack_frame(unsigned int reason, const struct arch_esf *esf)
+{
+	/* Prepare vendor specific HCI Fatal Error event */
+	struct bt_hci_vs_fatal_error_stack_frame *sf;
+	struct bt_hci_vs_fatal_error_cpu_data_cortex_m *cpu_data;
+	struct net_buf *buf;
+
+	buf = vs_err_evt_create(BT_HCI_EVT_VS_ERROR_DATA_TYPE_STACK_FRAME,
+				sizeof(*sf) + sizeof(*cpu_data));
+	if (buf != NULL) {
+		sf = net_buf_add(buf, (sizeof(*sf) + sizeof(*cpu_data)));
+		sf->reason = sys_cpu_to_le32(reason);
+		sf->cpu_type = BT_HCI_EVT_VS_ERROR_CPU_TYPE_CORTEX_M;
+
+		vs_err_fatal_cpu_data_fill((void *)sf->cpu_data, esf);
+	} else {
+		LOG_WRN("Can't create HCI Fatal Error event");
+	}
+
+	return buf;
+}
+
+#else /* !CONFIG_CPU_CORTEX_M */
+struct net_buf *hci_vs_err_stack_frame(unsigned int reason, const struct arch_esf *esf)
+{
+	return NULL;
+}
+#endif /* !CONFIG_CPU_CORTEX_M */
 
 static struct net_buf *vs_err_evt_create(uint8_t subevt, uint8_t len)
 {
@@ -5306,29 +5334,6 @@ static struct net_buf *vs_err_evt_create(uint8_t subevt, uint8_t len)
 
 		me = net_buf_add(buf, sizeof(*me));
 		me->subevent = subevt;
-	}
-
-	return buf;
-}
-
-struct net_buf *hci_vs_err_stack_frame(unsigned int reason, const struct arch_esf *esf)
-{
-	/* Prepare vendor specific HCI Fatal Error event */
-	struct bt_hci_vs_fatal_error_stack_frame *sf;
-	bt_hci_vs_fatal_error_cpu_data *cpu_data;
-	struct net_buf *buf;
-
-	buf = vs_err_evt_create(BT_HCI_EVT_VS_ERROR_DATA_TYPE_STACK_FRAME,
-				sizeof(*sf) + sizeof(*cpu_data));
-	if (buf != NULL) {
-		sf = net_buf_add(buf, (sizeof(*sf) + sizeof(*cpu_data)));
-		sf->reason = sys_cpu_to_le32(reason);
-		sf->cpu_type = BT_HCI_EVT_VS_ERROR_CPU_TYPE_CORTEX_M;
-
-		vs_err_fatal_cpu_data_fill(
-			(bt_hci_vs_fatal_error_cpu_data *)sf->cpu_data, esf);
-	} else {
-		LOG_ERR("Can't create HCI Fatal Error event");
 	}
 
 	return buf;

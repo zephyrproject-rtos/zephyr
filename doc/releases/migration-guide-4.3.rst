@@ -189,10 +189,13 @@ Bluetooth
 Bluetooth Controller
 ====================
 
-* The following Kconfig option have been renamed:
+* The following have been renamed:
 
     * :kconfig:option:`CONFIG_BT_CTRL_ADV_ADI_IN_SCAN_RSP` to
       :kconfig:option:`CONFIG_BT_CTLR_ADV_ADI_IN_SCAN_RSP`
+    * :c:struct:`bt_hci_vs_fata_error_cpu_data_cortex_m` to
+      :c:struct:`bt_hci_vs_fatal_error_cpu_data_cortex_m` and now contains the program counter
+      value.
 
    * :c:func:`bt_ctlr_set_public_addr` is deprecated. To set the public Bluetooth device address,
      sending a vendor specific HCI command with :c:struct:`bt_hci_cp_vs_write_bd_addr` can be used.

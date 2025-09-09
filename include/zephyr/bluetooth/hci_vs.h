@@ -225,7 +225,7 @@ struct bt_hci_evt_vs {
 #define BT_HCI_EVT_VS_ERROR_DATA_TYPE_STACK_FRAME   0x01
 #define BT_HCI_EVT_VS_ERROR_DATA_TYPE_CTRL_ASSERT   0x02
 #define BT_HCI_EVT_VS_ERROR_DATA_TYPE_TRACE         0x03
-struct bt_hci_vs_fata_error_cpu_data_cortex_m {
+struct bt_hci_vs_fatal_error_cpu_data_cortex_m {
 	uint32_t a1;
 	uint32_t a2;
 	uint32_t a3;
