@@ -36,6 +36,14 @@
 				channel = <4>;
 				status = "disabled";
 			};
+
+			i2c {
+				compatible = "renesas,ra-i2c-sci";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				channel = <4>;
+				status = "disabled";
+			};
 		};
 
 		trng: trng {

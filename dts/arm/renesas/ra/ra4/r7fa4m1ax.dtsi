@@ -58,6 +58,14 @@
 				channel = <2>;
 				status = "disabled";
 			};
+
+			i2c {
+				compatible = "renesas,ra-i2c-sci";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				channel = <2>;
+				status = "disabled";
+			};
 		};
 
 		adc@4005c000 {
