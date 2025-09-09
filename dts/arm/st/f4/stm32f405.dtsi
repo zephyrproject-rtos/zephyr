@@ -6,6 +6,7 @@
  */
 
 #include <st/f4/stm32f401.dtsi>
+#include <zephyr/dt-bindings/sensor/qdec_stm32.h>
 
 / {
 	chosen {
@@ -127,8 +128,8 @@
 
 			qdec {
 				compatible = "st,stm32-qdec";
-				status = "disabled";
 				st,input-filter-level = <NO_FILTER>;
+				status = "disabled";
 			};
 		};
 
