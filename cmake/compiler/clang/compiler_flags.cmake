@@ -3,6 +3,15 @@ include(${ZEPHYR_BASE}/cmake/compiler/gcc/compiler_flags.cmake)
 
 # Now, let's overwrite the flags that are different in clang.
 
+set_property(TARGET compiler-cpp PROPERTY dialect_cpp2a "-std=c++2a"
+  "-Wno-register" "-Wno-deprecated-volatile")
+set_property(TARGET compiler-cpp PROPERTY dialect_cpp20 "-std=c++20"
+  "-Wno-register" "-Wno-deprecated-volatile")
+set_property(TARGET compiler-cpp PROPERTY dialect_cpp2b "-std=c++2b"
+  "-Wno-register" "-Wno-deprecated-volatile")
+set_property(TARGET compiler-cpp PROPERTY dialect_cpp23 "-std=c++23"
+  "-Wno-register" "-Wno-deprecated-volatile")
+
 # No property flag, clang doesn't understand fortify at all
 set_compiler_property(PROPERTY security_fortify_compile_time)
 set_compiler_property(PROPERTY security_fortify_run_time)
