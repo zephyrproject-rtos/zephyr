@@ -9,3 +9,5 @@ board:
       cpucluster: a55
     - name: ddr
       cpucluster: m7
+    - name: flash
+      cpucluster: m7

@@ -13,3 +13,4 @@ tests:
       - mr_canhubk3
       - imx95_evk/mimx9596/m7
       - imx95_evk/mimx9596/m7/ddr
+      - imx95_evk/mimx9596/m7/flash
