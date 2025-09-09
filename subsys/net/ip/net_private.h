@@ -414,3 +414,10 @@ static inline void net_pkt_print_buffer_info(struct net_pkt *pkt, const char *st
 
 	printk("\n");
 }
+
+/**
+ * Initialize externally allocated TX packet.
+ *
+ * @param pkt The network packet to initialize.
+ */
+void net_pkt_tx_init(struct net_pkt *pkt);
