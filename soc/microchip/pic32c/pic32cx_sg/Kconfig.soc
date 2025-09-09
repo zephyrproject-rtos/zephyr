@@ -1,0 +1,17 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_MICROCHIP_PIC32CX_SG
+	bool
+
+config SOC_FAMILY
+	default "microchip_pic32cx_sg" if SOC_FAMILY_MICROCHIP_PIC32CX_SG
+
+# List of Peripheral IPs available in SOC_FAMILY_MICROCHIP_PIC32CX_SG family
+config PINCTRL_MCHP_PORT_U2210_2_2_0
+	bool
+	default y
+	help
+	  Enable PORT pinctrl peripheral IP version 2.2.0 (U2210).
+
+rsource "*/Kconfig.soc"
