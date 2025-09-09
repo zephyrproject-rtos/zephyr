@@ -256,6 +256,16 @@ def main() -> None:
         help="Absolute flash address of the UICR region (decimal or 0x-prefixed hex)",
     )
     parser.add_argument(
+        "--protectedmem",
+        action="store_true",
+        help="Enable protected memory region in UICR",
+    )
+    parser.add_argument(
+        "--protectedmem-size-bytes",
+        type=int,
+        help="Protected memory size in bytes (must be divisible by 4096)",
+    )
+    parser.add_argument(
         "--secondary",
         action="store_true",
         help="Enable secondary firmware support in UICR",
@@ -338,6 +348,16 @@ def main() -> None:
 
         uicr.VERSION.MAJOR = UICR_FORMAT_VERSION_MAJOR
         uicr.VERSION.MINOR = UICR_FORMAT_VERSION_MINOR
+
+        # Handle protected memory configuration
+        if args.protectedmem:
+            if args.protectedmem_size_bytes % 4096 != 0:
+                raise ScriptError(
+                    f"Protected memory size ({args.protectedmem_size_bytes} bytes) "
+                    f"must be divisible by 4096"
+                )
+            uicr.PROTECTEDMEM.ENABLE = ENABLED_VALUE
+            uicr.PROTECTEDMEM.SIZE4KB = args.protectedmem_size_bytes // 4096
 
         # Process periphconf data first and configure UICR completely before creating hex objects
         periphconf_hex = IntelHex()
