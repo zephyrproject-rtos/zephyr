@@ -2358,6 +2358,19 @@ int net_pkt_set_data(struct net_pkt *pkt,
 	return net_pkt_write(pkt, access->data, access->size);
 }
 
+void net_pkt_tx_init(struct net_pkt *pkt)
+{
+	memset(pkt, 0, sizeof(struct net_pkt));
+
+	pkt->atomic_ref = ATOMIC_INIT(1);
+	pkt->slab = &tx_pkts;
+
+	net_pkt_set_ipv6_next_hdr(pkt, 255);
+	net_pkt_set_priority(pkt, TX_DEFAULT_PRIORITY);
+	net_pkt_set_vlan_tag(pkt, NET_VLAN_TAG_UNSPEC);
+	net_pkt_cursor_init(pkt);
+}
+
 void net_pkt_init(void)
 {
 #if CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG
