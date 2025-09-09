@@ -25,6 +25,188 @@ static int zms_ate_valid_different_sector(struct zms_fs *fs, const struct zms_at
 					  uint8_t cycle_cnt);
 
 #ifdef CONFIG_ZMS_LOOKUP_CACHE
+BUILD_ASSERT(UINT32_MAX == ZMS_HEAD_ID);
+#define ZMS_DONT_KEEP_HISTORY 1
+
+static inline const char *get_fs_name(const struct zms_fs *fs)
+{
+	return (fs->name) ? fs->name : "?";
+}
+
+int zms_get_highest_id_in_use(const struct zms_fs *fs, uint32_t *id)
+{
+	if (!fs->highest_id_in_use_valid) {
+		return -ENOENT;
+	}
+	if (id) {
+		*id = fs->highest_id_in_use;
+	}
+	return 0;
+}
+
+int zms_get_lowest_id_in_use(const struct zms_fs *fs, uint32_t *id)
+{
+	if (!fs->lowest_id_in_use_valid) {
+		return -ENOENT;
+	}
+	if (id) {
+		*id = fs->lowest_id_in_use;
+	}
+	return 0;
+}
+
+int32_t zms_get_num_entries(const struct zms_fs *fs)
+{
+	return fs->num_valid_ates;
+}
+
+static int zms_ate_crc8_check(const struct zms_ate *entry);
+
+static void zms_invalidate_ate(struct zms_ate *ate)
+{
+	ate->len = 0;
+	if (zms_ate_crc8_check(ate)) {
+		return; // the existing CRC is already wrong / invalid
+	}
+	if (ate->crc8) {
+		const uint8_t lsb = LSB_GET(ate->crc8);
+		const uint8_t orig_crc = ate->crc8;
+		ate->crc8 = orig_crc & ~lsb; // make the lowest 1 bit -> 0
+		if (zms_ate_crc8_check(ate)) {
+			LOG_DBG("wrote invalid crc8 0x%x for id %u (by deleting 0x%x from 0x%x)",
+				ate->crc8, ate->id, lsb, orig_crc);
+			return;
+		} else {
+			LOG_ERR("%s: could not invalidate crc8 0x%x for id %u (by deleting 0x%x "
+				"from 0x%x)",
+				__func__, ate->crc8, ate->id, lsb, orig_crc);
+		}
+	}
+	// It should always be possible to write the all-0 ate
+	memset(ate, 0, sizeof(struct zms_ate));
+	if (zms_ate_crc8_check(ate)) {
+		LOG_DBG("wrote invalid all-0 ate");
+		return;
+	}
+	// This LOG_ERR() is never hit: the all-0 ate is in fact invalid
+	LOG_ERR("%s: all-0 ate was marked valid!", __func__);
+}
+
+static inline size_t zms_read_cache_pos(uint32_t id)
+{
+	return id % ZMS_READ_CACHE_SIZE;
+}
+
+static void zms_read_cache_update(struct zms_fs *fs, uint32_t id, uint64_t ate_addr,
+				  bool exists_now, bool existed_before)
+{
+	if (id == ZMS_HEAD_ID) {
+		return;
+	}
+	struct zms_read_cache_s *cp = &fs->last_read[zms_read_cache_pos(id)];
+	if (exists_now) {
+		cp->addr = ate_addr;
+		cp->id = id;
+		if (!fs->highest_id_in_use_valid || (id > fs->highest_id_in_use)) {
+			fs->highest_id_in_use = id;
+			fs->highest_id_in_use_valid = true;
+		}
+		if (!fs->lowest_id_in_use_valid || (id < fs->lowest_id_in_use)) {
+			fs->lowest_id_in_use = id;
+			fs->lowest_id_in_use_valid = true;
+		}
+	} else {
+		if (cp->id == id) {
+			cp->addr = ZMS_LOOKUP_CACHE_NO_ADDR;
+		}
+		if (fs->highest_id_in_use_valid && (id == fs->highest_id_in_use)) {
+			fs->highest_id_in_use_valid = (id > 0) && fs->lowest_id_in_use_valid &&
+						      (id > fs->lowest_id_in_use);
+			fs->highest_id_in_use = id - 1;
+		}
+		if (fs->lowest_id_in_use_valid && (id == fs->lowest_id_in_use)) {
+			fs->lowest_id_in_use_valid = (id < UINT32_MAX) &&
+						     fs->highest_id_in_use_valid &&
+						     (id < fs->highest_id_in_use);
+			fs->lowest_id_in_use = id + 1;
+		}
+	}
+	if (fs->num_valid_ates >= 0) {
+		int8_t d = (exists_now ? 1 : 0) - (existed_before ? 1 : 0);
+		fs->num_valid_ates += d;
+	}
+	bool strange = false;
+	if (fs->num_valid_ates > 0) {
+		if (!fs->highest_id_in_use_valid || !fs->lowest_id_in_use_valid) {
+			strange = true;
+		} else if (fs->num_valid_ates >
+			   (1 + fs->highest_id_in_use - fs->lowest_id_in_use)) {
+			strange = true;
+		}
+	} else if (fs->num_valid_ates < 0) {
+		strange = true;
+	} else if (fs->highest_id_in_use_valid || fs->lowest_id_in_use_valid) {
+		strange = true;
+	}
+	if (strange && fs->invalidate_old_ates) {
+		LOG_WRN("%s: %s: id: %u, e: %d, b: %d, num_valid_ates: %d, highest_id_in_use: %u "
+			"(%svalid), lowest_id_in_use: %u (%svalid)",
+			__func__, get_fs_name(fs), id, exists_now, existed_before,
+			fs->num_valid_ates, fs->highest_id_in_use,
+			fs->highest_id_in_use_valid ? "" : "in", fs->lowest_id_in_use,
+			fs->lowest_id_in_use_valid ? "" : "in");
+	}
+}
+
+static int zms_compute_prev_addr(struct zms_fs *fs, uint64_t *addr);
+static int zms_find_ate_with_id(struct zms_fs *fs, uint32_t id, uint64_t start_addr,
+				uint64_t end_addr, struct zms_ate *ate, uint64_t *ate_addr,
+				int32_t *loop_cnt, int32_t loop_cnt_max);
+
+static int zms_quick_find_ate_with_id(struct zms_fs *fs, uint32_t id, struct zms_ate *ate,
+				      uint64_t *ate_addr, int32_t *loop_cnt)
+{
+#define ID_MATCH_RANGE (10)
+	const uint32_t id_min = (id > ID_MATCH_RANGE) ? (id - ID_MATCH_RANGE) : 0;
+	const uint32_t id_max =
+		(id < UINT32_MAX - ID_MATCH_RANGE) ? (id + ID_MATCH_RANGE) : UINT32_MAX;
+	int found = 0;
+	int32_t loop_cnt_l = 0;
+	if (!loop_cnt) {
+		loop_cnt = &loop_cnt_l;
+	}
+	for (uint32_t i = id; i < (id + ZMS_READ_CACHE_SIZE); ++i) {
+		int rc = 0;
+		struct zms_read_cache_s *cp = &fs->last_read[zms_read_cache_pos(i)];
+		if ((cp->addr == ZMS_LOOKUP_CACHE_NO_ADDR) || (cp->id < id_min) ||
+		    (cp->id > id_max)) {
+			continue;
+		}
+		uint64_t start_addr = cp->addr;
+		if (id > cp->id) {
+			uint32_t d = id - cp->id;
+			if (d > ID_MATCH_RANGE) {
+				d = ID_MATCH_RANGE;
+			}
+			for (uint32_t j = 0; j < d; ++j) {
+				// TODO: this is a primitive heuristic; implement a real function
+				const uint64_t next_addr = start_addr - fs->ate_size;
+				uint64_t t = next_addr;
+				rc = zms_compute_prev_addr(fs, &t);
+				if ((rc < 0) || (t != start_addr)) {
+					break;
+				}
+				start_addr = next_addr;
+			}
+		}
+		found = zms_find_ate_with_id(fs, id, start_addr, start_addr, ate, ate_addr,
+					     loop_cnt, *loop_cnt + 2 * ID_MATCH_RANGE);
+		if (found) {
+			break;
+		}
+	}
+	return found;
+}
 
 static inline size_t zms_lookup_cache_pos(uint32_t id)
 {
@@ -50,11 +232,23 @@ static int zms_lookup_cache_rebuild(struct zms_fs *fs)
 	uint64_t *cache_entry;
 	uint8_t current_cycle;
 	struct zms_ate ate;
+	int32_t loop_count = 0;
 
 	memset(fs->lookup_cache, 0xff, sizeof(fs->lookup_cache));
+	for (int8_t i = 0; i < ZMS_READ_CACHE_SIZE; ++i) {
+		fs->last_read[i].addr = ZMS_LOOKUP_CACHE_NO_ADDR;
+		fs->last_read[i].id = UINT32_MAX;
+	}
+	fs->highest_id_in_use_valid = false;
+	fs->lowest_id_in_use_valid = false;
+	fs->num_valid_ates = 0;
+	fs->highest_id_in_use = UINT32_MAX;
+	fs->lowest_id_in_use = UINT32_MAX;
+
 	addr = fs->ate_wra;
 
 	while (true) {
+		++loop_count;
 		/* Make a copy of 'addr' as it will be advanced by zms_prev_ate() */
 		ate_addr = addr;
 		rc = zms_prev_ate(fs, &addr, &ate);
@@ -65,7 +259,7 @@ static int zms_lookup_cache_rebuild(struct zms_fs *fs)
 
 		cache_entry = &fs->lookup_cache[zms_lookup_cache_pos(ate.id)];
 
-		if (ate.id != ZMS_HEAD_ID && *cache_entry == ZMS_LOOKUP_CACHE_NO_ADDR) {
+		if (ate.id != ZMS_HEAD_ID) {
 			/* read the ate cycle only when we change the sector
 			 * or if it is the first read
 			 */
@@ -80,7 +274,14 @@ static int zms_lookup_cache_rebuild(struct zms_fs *fs)
 				}
 			}
 			if (zms_ate_valid_different_sector(fs, &ate, current_cycle)) {
-				*cache_entry = ate_addr;
+				if (*cache_entry == ZMS_LOOKUP_CACHE_NO_ADDR) {
+					*cache_entry = ate_addr;
+					LOG_DBG("%s: assigned cache entry %2d: id %10u -> "
+						"0x%llx",
+						get_fs_name(fs), cache_entry - fs->lookup_cache,
+						ate.id, ate_addr);
+				}
+				zms_read_cache_update(fs, ate.id, ate_addr, true, false);
 			}
 			previous_sector_num = SECTOR_NUM(ate_addr);
 		}
@@ -89,6 +290,7 @@ static int zms_lookup_cache_rebuild(struct zms_fs *fs)
 			break;
 		}
 	}
+	LOG_DBG("done for fs %s, loop_count: %d", get_fs_name(fs), loop_count);
 
 	return 0;
 }
@@ -103,6 +305,18 @@ static void zms_lookup_cache_invalidate(struct zms_fs *fs, uint32_t sector)
 			*cache_entry = ZMS_LOOKUP_CACHE_NO_ADDR;
 		}
 	}
+	for (int8_t i = 0; i < ZMS_READ_CACHE_SIZE; ++i) {
+		fs->last_read[i].addr = ZMS_LOOKUP_CACHE_NO_ADDR;
+		fs->last_read[i].id = UINT32_MAX;
+	}
+}
+
+#else /* CONFIG_ZMS_LOOKUP_CACHE */
+
+static inline const char *get_fs_name(const struct zms_fs *fs)
+{
+	ARG_UNUSED(fs);
+	return "?";
 }
 
 #endif /* CONFIG_ZMS_LOOKUP_CACHE */
@@ -343,8 +557,8 @@ static int zms_flash_erase_sector(struct zms_fs *fs, uint64_t addr)
 	addr &= ADDR_SECT_MASK;
 	offset = zms_addr_to_offset(fs, addr);
 
-	LOG_DBG("Erasing flash at offset 0x%lx ( 0x%llx ), len %u", (long)offset, addr,
-		fs->sector_size);
+	LOG_DBG("%s: erasing flash at offset 0x%lx ( 0x%llx ), len %u", get_fs_name(fs),
+		(long)offset, addr, fs->sector_size);
 
 #ifdef CONFIG_ZMS_LOOKUP_CACHE
 	zms_lookup_cache_invalidate(fs, SECTOR_NUM(addr));
@@ -356,7 +570,8 @@ static int zms_flash_erase_sector(struct zms_fs *fs, uint64_t addr)
 	}
 
 	if (zms_flash_cmp_const(fs, addr, fs->flash_parameters->erase_value, fs->sector_size)) {
-		LOG_ERR("Failure while erasing the sector at offset 0x%lx", (long)offset);
+		LOG_ERR("%s: %s: failure while erasing the sector at offset 0x%lx", __func__,
+			get_fs_name(fs), (long)offset);
 		rc = -ENXIO;
 	}
 
@@ -558,7 +773,7 @@ static int zms_recover_last_ate(struct zms_fs *fs, uint64_t *addr, uint64_t *dat
 	struct zms_ate end_ate;
 	int rc;
 
-	LOG_DBG("Recovering last ate from sector %llu", SECTOR_NUM(*addr));
+	LOG_DBG("%s: recovering last ate from sector %llu", get_fs_name(fs), SECTOR_NUM(*addr));
 
 	/* skip close and empty ATE */
 	*addr -= 2 * fs->ate_size;
@@ -711,7 +926,7 @@ static int zms_add_gc_done_ate(struct zms_fs *fs)
 {
 	struct zms_ate gc_done_ate;
 
-	LOG_DBG("Adding gc done ate at %llx", fs->ate_wra);
+	LOG_DBG("%s: adding gc done ate at %llx", get_fs_name(fs), fs->ate_wra);
 	gc_done_ate.id = ZMS_HEAD_ID;
 	gc_done_ate.len = 0U;
 	gc_done_ate.offset = (uint32_t)SECTOR_OFFSET(fs->data_wra);
@@ -732,7 +947,8 @@ static int zms_add_empty_ate(struct zms_fs *fs, uint64_t addr)
 
 	addr &= ADDR_SECT_MASK;
 
-	LOG_DBG("Adding empty ate at %llx", (uint64_t)(addr + fs->sector_size - fs->ate_size));
+	LOG_DBG("%s: adding empty ate at %llx", get_fs_name(fs),
+		(uint64_t)(addr + fs->sector_size - fs->ate_size));
 	empty_ate.id = ZMS_HEAD_ID;
 	empty_ate.len = 0xffff;
 	empty_ate.offset = 0U;
@@ -827,11 +1043,12 @@ static int zms_get_sector_header(struct zms_fs *fs, uint64_t addr, struct zms_at
  * @retval < 0 An error happened
  */
 static int zms_find_ate_with_id(struct zms_fs *fs, uint32_t id, uint64_t start_addr,
-				uint64_t end_addr, struct zms_ate *ate, uint64_t *ate_addr)
+				uint64_t end_addr, struct zms_ate *ate, uint64_t *ate_addr,
+				int32_t *loop_cnt, int32_t loop_cnt_max)
 {
 	int rc;
 	int previous_sector_num = ZMS_INVALID_SECTOR_NUM;
-	uint64_t wlk_prev_addr;
+	uint64_t wlk_prev_addr = ZMS_LOOKUP_CACHE_NO_ADDR;
 	uint64_t wlk_addr;
 	int prev_found = 0;
 	struct zms_ate wlk_ate;
@@ -839,12 +1056,24 @@ static int zms_find_ate_with_id(struct zms_fs *fs, uint32_t id, uint64_t start_a
 
 	wlk_addr = start_addr;
 
+	bool first_sect_border_seen = false;
+	uint32_t end_sect = ZMS_INVALID_SECTOR_NUM;
+	int32_t loop_cnt_l = 0;
+	if (!loop_cnt) {
+		loop_cnt = &loop_cnt_l;
+	}
+	if (loop_cnt_max && (*loop_cnt >= loop_cnt_max)) {
+		return 0;
+	}
+
 	do {
+		*loop_cnt += 1;
 		wlk_prev_addr = wlk_addr;
 		rc = zms_prev_ate(fs, &wlk_addr, &wlk_ate);
 		if (rc) {
 			return rc;
 		}
+		const int32_t prev_sect = SECTOR_NUM(wlk_prev_addr);
 		if (wlk_ate.id == id) {
 			/* read the ate cycle only when we change the sector or if it is
 			 * the first read ( previous_sector_num == ZMS_INVALID_SECTOR_NUM).
@@ -858,13 +1087,35 @@ static int zms_find_ate_with_id(struct zms_fs *fs, uint32_t id, uint64_t start_a
 				prev_found = 1;
 				break;
 			}
-			previous_sector_num = SECTOR_NUM(wlk_prev_addr);
+			previous_sector_num = prev_sect;
 		}
-	} while (wlk_addr != end_addr);
+		const int32_t current_sect = SECTOR_NUM(wlk_addr);
+		if (current_sect != prev_sect) {
+			if (first_sect_border_seen) {
+				if (current_sect == end_sect) {
+					break;
+				}
+			} else {
+				end_sect = current_sect;
+				first_sect_border_seen = true;
+			}
+		}
+	} while ((wlk_addr != end_addr) && (!loop_cnt_max || (*loop_cnt < loop_cnt_max)));
 
-	*ate = wlk_ate;
-	*ate_addr = wlk_prev_addr;
-
+	if (prev_found > 0) {
+		if (ate) {
+			*ate = wlk_ate;
+		}
+		if (ate_addr) {
+			*ate_addr = wlk_prev_addr;
+		}
+	}
+	if (*loop_cnt >= 100000) {
+		LOG_DBG("%s: loop_cnt: %d, id: %d, sa: 0x%llx, ea: 0x%llx, atea: 0x%llx, wa: "
+			"0x%llx, wpa: 0x%llx, first_sect_border_seen: %d @ 0x%x",
+			get_fs_name(fs), *loop_cnt, id, start_addr, end_addr, *ate_addr, wlk_addr,
+			wlk_prev_addr, first_sect_border_seen, end_sect);
+	}
 	return prev_found;
 }
 
@@ -947,7 +1198,11 @@ static int zms_gc(struct zms_fs *fs)
 			return rc;
 		}
 
-		if (!zms_ate_valid(fs, &gc_ate) || !gc_ate.len) {
+		if (!zms_ate_valid(fs, &gc_ate)) {
+			continue;
+		}
+		if (!gc_ate.len) {
+			zms_read_cache_update(fs, gc_ate.id, ZMS_LOOKUP_CACHE_NO_ADDR, false, true);
 			continue;
 		}
 
@@ -966,10 +1221,18 @@ static int zms_gc(struct zms_fs *fs)
 		/* Search for a previous valid ATE with the same ID. If it doesn't exist
 		 * then wlk_prev_addr will be equal to gc_prev_addr.
 		 */
-		rc = zms_find_ate_with_id(fs, gc_ate.id, wlk_addr, fs->ate_wra, &wlk_ate,
-					  &wlk_prev_addr);
-		if (rc < 0) {
-			return rc;
+#ifdef CONFIG_ZMS_LOOKUP_CACHE
+		if (fs->invalidate_old_ates) {
+			// no need to search: we know there is only max. 1 valid ate per id
+			rc = 0;
+		} else
+#endif
+		{
+			rc = zms_find_ate_with_id(fs, gc_ate.id, wlk_addr, fs->ate_wra, &wlk_ate,
+						  &wlk_prev_addr, NULL, 0);
+			if (rc < 0) {
+				return rc;
+			}
 		}
 
 		/* if walk_addr has reached the same address as gc_addr, a copy is
@@ -977,7 +1240,7 @@ static int zms_gc(struct zms_fs *fs)
 		 */
 		if (wlk_prev_addr == gc_prev_addr) {
 			/* copy needed */
-			LOG_DBG("Moving %d, len %d", gc_ate.id, gc_ate.len);
+			LOG_DBG("%s: moving %d, len %d", get_fs_name(fs), gc_ate.id, gc_ate.len);
 
 			if (gc_ate.len > ZMS_DATA_IN_ATE_SIZE) {
 				/* Copy Data only when len > 8
@@ -995,6 +1258,7 @@ static int zms_gc(struct zms_fs *fs)
 
 			gc_ate.cycle_cnt = previous_cycle;
 			zms_ate_crc8_update(&gc_ate);
+			zms_read_cache_update(fs, gc_ate.id, fs->ate_wra, true, true);
 			rc = zms_flash_ate_wrt(fs, &gc_ate);
 			if (rc) {
 				return rc;
@@ -1035,7 +1299,7 @@ int zms_clear(struct zms_fs *fs)
 	uint64_t addr;
 
 	if (!fs->ready) {
-		LOG_ERR("zms not initialized");
+		LOG_ERR("%s: %s: zms not initialized", __func__, get_fs_name(fs));
 		return -EACCES;
 	}
 
@@ -1101,7 +1365,9 @@ static int zms_init(struct zms_fs *fs)
 				zms_magic_exist = true;
 				/* Let's check that we support this ZMS version */
 				if (ZMS_GET_VERSION(empty_ate.metadata) != ZMS_DEFAULT_VERSION) {
-					LOG_ERR("ZMS Version is not supported");
+					LOG_ERR("%s: %s: ZMS Version %lu is not supported",
+						__func__, get_fs_name(fs),
+						ZMS_GET_VERSION(empty_ate.metadata));
 					rc = -EPROTONOSUPPORT;
 					goto end;
 				}
@@ -1157,7 +1423,9 @@ static int zms_init(struct zms_fs *fs)
 				zms_magic_exist = true;
 				/* Let's check the version */
 				if (ZMS_GET_VERSION(empty_ate.metadata) != ZMS_DEFAULT_VERSION) {
-					LOG_ERR("ZMS Version is not supported");
+					LOG_ERR("%s: %s: ZMS Version %lu is not supported",
+						__func__, get_fs_name(fs),
+						ZMS_GET_VERSION(empty_ate.metadata));
 					rc = -EPROTONOSUPPORT;
 					goto end;
 				}
@@ -1266,7 +1534,7 @@ static int zms_init(struct zms_fs *fs)
 
 		if (gc_done_marker) {
 			/* erase the next sector */
-			LOG_INF("GC Done marker found");
+			LOG_INF("%s: %s: GC Done marker found", __func__, get_fs_name(fs));
 			addr = fs->ate_wra & ADDR_SECT_MASK;
 			zms_sector_advance(fs, &addr);
 			rc = zms_flash_erase_sector(fs, addr);
@@ -1276,7 +1544,8 @@ static int zms_init(struct zms_fs *fs)
 			rc = zms_add_empty_ate(fs, addr);
 			goto end;
 		}
-		LOG_INF("No GC Done marker found: restarting gc");
+		LOG_INF("%s: %s: no GC Done marker found: restarting gc", __func__,
+			get_fs_name(fs));
 		rc = zms_flash_erase_sector(fs, fs->ate_wra);
 		if (rc) {
 			goto end;
@@ -1331,7 +1600,7 @@ int zms_mount(struct zms_fs *fs)
 
 	fs->flash_parameters = flash_get_parameters(fs->flash_device);
 	if (fs->flash_parameters == NULL) {
-		LOG_ERR("Could not obtain flash parameters");
+		LOG_ERR("%s: %s: could not obtain flash parameters", __func__, get_fs_name(fs));
 		return -EINVAL;
 	}
 
@@ -1340,7 +1609,7 @@ int zms_mount(struct zms_fs *fs)
 
 	/* check that the write block size is supported */
 	if (write_block_size > ZMS_BLOCK_SIZE || write_block_size == 0) {
-		LOG_ERR("Unsupported write block size");
+		LOG_ERR("%s: %s: unsupported write block size", __func__, get_fs_name(fs));
 		return -EINVAL;
 	}
 
@@ -1350,11 +1619,11 @@ int zms_mount(struct zms_fs *fs)
 	if (flash_params_get_erase_cap(fs->flash_parameters) & FLASH_ERASE_C_EXPLICIT) {
 		rc = flash_get_page_info_by_offs(fs->flash_device, fs->offset, &info);
 		if (rc) {
-			LOG_ERR("Unable to get page info");
+			LOG_ERR("%s: %s: unable to get page info", __func__, get_fs_name(fs));
 			return -EINVAL;
 		}
 		if (!fs->sector_size || fs->sector_size % info.size) {
-			LOG_ERR("Invalid sector size");
+			LOG_ERR("%s: %s: invalid sector size", __func__, get_fs_name(fs));
 			return -EINVAL;
 		}
 	}
@@ -1363,13 +1632,14 @@ int zms_mount(struct zms_fs *fs)
 	 * 1 close ATE, 1 empty ATE, 1 GC done ATE, 1 Delete ATE, 1 ID/Value ATE
 	 */
 	if (fs->sector_size < ZMS_MIN_ATE_NUM * fs->ate_size) {
-		LOG_ERR("Invalid sector size, should be at least %zu",
-			ZMS_MIN_ATE_NUM * fs->ate_size);
+		LOG_ERR("%s: %s: invalid sector size, should be at least %zu", __func__,
+			get_fs_name(fs), ZMS_MIN_ATE_NUM * fs->ate_size);
 	}
 
 	/* check the number of sectors, it should be at least 2 */
 	if (fs->sector_count < 2) {
-		LOG_ERR("Configuration error - sector count below minimum requirement (2)");
+		LOG_ERR("%s: %s: configuration error - sector count below minimum requirement (2)",
+			__func__, get_fs_name(fs));
 		return -EINVAL;
 	}
 
@@ -1382,9 +1652,12 @@ int zms_mount(struct zms_fs *fs)
 	/* zms is ready for use */
 	fs->ready = true;
 
-	LOG_INF("%u Sectors of %u bytes", fs->sector_count, fs->sector_size);
-	LOG_INF("alloc wra: %llu, %llx", SECTOR_NUM(fs->ate_wra), SECTOR_OFFSET(fs->ate_wra));
-	LOG_INF("data wra: %llu, %llx", SECTOR_NUM(fs->data_wra), SECTOR_OFFSET(fs->data_wra));
+	LOG_INF("%s: %s: %u Sectors of %u bytes", __func__, get_fs_name(fs), fs->sector_count,
+		fs->sector_size);
+	LOG_INF("%s: %s: alloc wra: %llu, %llx", __func__, get_fs_name(fs), SECTOR_NUM(fs->ate_wra),
+		SECTOR_OFFSET(fs->ate_wra));
+	LOG_INF("%s: %s: data wra: %llu, %llx", __func__, get_fs_name(fs), SECTOR_NUM(fs->data_wra),
+		SECTOR_OFFSET(fs->data_wra));
 
 	return 0;
 }
@@ -1397,9 +1670,10 @@ ssize_t zms_write(struct zms_fs *fs, uint32_t id, const void *data, size_t len)
 	uint64_t rd_addr;
 	uint32_t gc_count;
 	uint32_t required_space = 0U; /* no space, appropriate for delete ate */
+	int32_t loop_count = 0;
 
 	if (!fs->ready) {
-		LOG_ERR("zms not initialized");
+		LOG_ERR("%s: %s: zms not initialized", __func__, get_fs_name(fs));
 		return -EACCES;
 	}
 
@@ -1420,7 +1694,7 @@ ssize_t zms_write(struct zms_fs *fs, uint32_t id, const void *data, size_t len)
 	wlk_addr = fs->lookup_cache[zms_lookup_cache_pos(id)];
 
 	if (wlk_addr == ZMS_LOOKUP_CACHE_NO_ADDR) {
-		goto no_cached_entry;
+		wlk_addr = fs->ate_wra;
 	}
 #else
 	wlk_addr = fs->ate_wra;
@@ -1430,12 +1704,25 @@ ssize_t zms_write(struct zms_fs *fs, uint32_t id, const void *data, size_t len)
 #ifdef CONFIG_ZMS_NO_DOUBLE_WRITE
 	/* Search for a previous valid ATE with the same ID */
 	struct zms_ate wlk_ate;
-	int prev_found = zms_find_ate_with_id(fs, id, wlk_addr, fs->ate_wra, &wlk_ate, &rd_addr);
+	int prev_found = -1;
+	if (fs->invalidate_old_ates && fs->highest_id_in_use_valid &&
+	    (fs->highest_id_in_use < id)) {
+		prev_found = 0;
+	} else if (fs->invalidate_old_ates && fs->lowest_id_in_use_valid &&
+		   (fs->lowest_id_in_use > id)) {
+		prev_found = 0;
+	} else {
+		prev_found = zms_find_ate_with_id(fs, id, wlk_addr, fs->ate_wra, &wlk_ate, &rd_addr,
+						  &loop_count, 0);
+	}
 	if (prev_found < 0) {
 		return prev_found;
 	}
 
 	if (prev_found) {
+#ifdef ZMS_DONT_KEEP_HISTORY
+		const uint64_t ate_addr = rd_addr;
+#endif
 		/* previous entry found */
 		if (len > ZMS_DATA_IN_ATE_SIZE) {
 			rd_addr &= ADDR_SECT_MASK;
@@ -1448,8 +1735,26 @@ ssize_t zms_write(struct zms_fs *fs, uint32_t id, const void *data, size_t len)
 				/* skip delete entry as it is already the
 				 * last one
 				 */
+				zms_read_cache_update(fs, id, rd_addr, true, true);
 				return 0;
 			}
+#ifdef ZMS_DONT_KEEP_HISTORY
+			else {
+				if (fs->invalidate_old_ates) {
+					zms_invalidate_ate(&wlk_ate);
+					rc = zms_flash_al_wrt(fs, ate_addr, &wlk_ate,
+							      sizeof(wlk_ate));
+					if (rc < 0) {
+						return rc;
+					}
+					// Between invalidating an old entry in flash and until
+					// completing writing the new entry, there is a time where
+					// concurrent readers see an unexpected -ENOENT.
+					// TODO: we could try to protect this using a read mutex,
+					// but I consider that too expensive atm.
+				}
+			}
+#endif
 		} else if (len == wlk_ate.len) {
 			/* do not try to compare if lengths are not equal */
 			/* compare the data and if equal return 0 */
@@ -1458,24 +1763,42 @@ ssize_t zms_write(struct zms_fs *fs, uint32_t id, const void *data, size_t len)
 				if (!rc) {
 					return 0;
 				}
+#ifdef ZMS_DONT_KEEP_HISTORY
+				else if (fs->invalidate_old_ates) {
+					zms_invalidate_ate(&wlk_ate);
+					rc = zms_flash_al_wrt(fs, ate_addr, &wlk_ate,
+							      sizeof(wlk_ate));
+					if (rc < 0) {
+						return rc;
+					}
+				}
+#endif
 			} else {
 				rc = zms_flash_block_cmp(fs, rd_addr, data, len);
 				if (rc <= 0) {
 					return rc;
 				}
+#ifdef ZMS_DONT_KEEP_HISTORY
+				else if (fs->invalidate_old_ates) {
+					zms_invalidate_ate(&wlk_ate);
+					rc = zms_flash_al_wrt(fs, ate_addr, &wlk_ate,
+							      sizeof(wlk_ate));
+					if (rc < 0) {
+						return rc;
+					}
+				}
+#endif
 			}
 		}
 	} else {
 		/* skip delete entry for non-existing entry */
 		if (len == 0) {
+			zms_read_cache_update(fs, id, ZMS_LOOKUP_CACHE_NO_ADDR, false, false);
 			return 0;
 		}
 	}
 #endif
 
-#ifdef CONFIG_ZMS_LOOKUP_CACHE
-no_cached_entry:
-#endif
 	/* calculate required space if the entry contains data */
 	if (data_size) {
 		/* Leave space for delete ate */
@@ -1515,17 +1838,27 @@ no_cached_entry:
 		}
 		rc = zms_sector_close(fs);
 		if (rc) {
-			LOG_ERR("Failed to close the sector, returned = %d", rc);
+			LOG_ERR("%s: %s: failed to close the sector, returned = %d", __func__,
+				get_fs_name(fs), rc);
 			goto end;
 		}
 		rc = zms_gc(fs);
 		if (rc) {
-			LOG_ERR("Garbage collection failed, returned = %d", rc);
+			LOG_ERR("%s: %s: garbage collection failed, returned = %d", __func__,
+				get_fs_name(fs), rc);
 			goto end;
 		}
 		gc_count++;
 	}
 	rc = len;
+#ifdef CONFIG_ZMS_LOOKUP_CACHE
+	zms_read_cache_update(fs, id, fs->ate_wra, true, prev_found > 0);
+	LOG_DBG("%s: id: %u, len: %d, ate search loops: %d, gc loops: %d (max. %d), "
+		"num_valid_ates: %d, lowest id: %u, highest id: %u",
+		get_fs_name(fs), id, len, loop_count, gc_count, fs->sector_count,
+		fs->num_valid_ates, fs->lowest_id_in_use, fs->highest_id_in_use);
+#endif
+
 end:
 	k_mutex_unlock(&fs->zms_lock);
 	return rc;
@@ -1541,37 +1874,57 @@ ssize_t zms_read_hist(struct zms_fs *fs, uint32_t id, void *data, size_t len, ui
 	int rc;
 	int prev_found = 0;
 	uint64_t wlk_addr;
+	uint64_t end_addr;
 	uint64_t rd_addr = 0;
 	uint64_t wlk_prev_addr = 0;
 	uint32_t cnt_his;
 	struct zms_ate wlk_ate;
+	int32_t loop_count = 0;
 #ifdef CONFIG_ZMS_DATA_CRC
 	uint32_t computed_data_crc;
 #endif
 
 	if (!fs->ready) {
-		LOG_ERR("zms not initialized");
+		LOG_ERR("%s: %s: zms not initialized", __func__, get_fs_name(fs));
 		return -EACCES;
 	}
 
 	cnt_his = 0U;
 
 #ifdef CONFIG_ZMS_LOOKUP_CACHE
-	wlk_addr = fs->lookup_cache[zms_lookup_cache_pos(id)];
-
+	wlk_addr = ZMS_LOOKUP_CACHE_NO_ADDR;
+	if (fs->invalidate_old_ates) {
+		if (fs->highest_id_in_use_valid && (id > fs->highest_id_in_use)) {
+			return -ENOENT;
+		}
+		if (fs->lowest_id_in_use_valid && (id < fs->lowest_id_in_use)) {
+			return -ENOENT;
+		}
+		rc = zms_quick_find_ate_with_id(fs, id, NULL, &wlk_addr, &loop_count);
+		if (rc < 0) {
+			return rc;
+		}
+	}
 	if (wlk_addr == ZMS_LOOKUP_CACHE_NO_ADDR) {
-		rc = -ENOENT;
-		goto err;
+		wlk_addr = fs->lookup_cache[zms_lookup_cache_pos(id)];
+		if (wlk_addr == ZMS_LOOKUP_CACHE_NO_ADDR) {
+			rc = -ENOENT;
+			goto err;
+		}
+		end_addr = fs->ate_wra;
+	} else {
+		end_addr = wlk_addr;
 	}
 #else
 	wlk_addr = fs->ate_wra;
+	end_addr = wlk_addr;
 #endif
 
 	while (cnt_his <= cnt) {
 		wlk_prev_addr = wlk_addr;
 		/* Search for a previous valid ATE with the same ID */
-		prev_found = zms_find_ate_with_id(fs, id, wlk_addr, fs->ate_wra, &wlk_ate,
-						  &wlk_prev_addr);
+		prev_found = zms_find_ate_with_id(fs, id, wlk_addr, end_addr, &wlk_ate,
+						  &wlk_prev_addr, &loop_count, 0);
 		if (prev_found < 0) {
 			return prev_found;
 		}
@@ -1593,6 +1946,14 @@ ssize_t zms_read_hist(struct zms_fs *fs, uint32_t id, void *data, size_t len, ui
 			break;
 		}
 	}
+
+#ifdef CONFIG_ZMS_LOOKUP_CACHE
+	LOG_DBG("%s: id: %u, cnt: %d, addr: 0x%llx, ate loops: %d", get_fs_name(fs), id, cnt,
+		wlk_addr, loop_count);
+	if (cnt == 0) {
+		zms_read_cache_update(fs, id, rd_addr, prev_found > 0, true);
+	}
+#endif
 
 	if (((!prev_found) || (wlk_ate.id != id)) || (wlk_ate.len == 0U) || (cnt_his < cnt)) {
 		return -ENOENT;
@@ -1618,9 +1979,10 @@ ssize_t zms_read_hist(struct zms_fs *fs, uint32_t id, void *data, size_t len, ui
 		if (len >= wlk_ate.len) {
 			computed_data_crc = crc32_ieee(data, wlk_ate.len);
 			if (computed_data_crc != wlk_ate.data_crc) {
-				LOG_ERR("Invalid data CRC: ATE_CRC=0x%08X, "
+				LOG_ERR("%s: %s: invalid data CRC: ATE_CRC=0x%08X, "
 					"computed_data_crc=0x%08X",
-					wlk_ate.data_crc, computed_data_crc);
+					__func__, get_fs_name(fs), wlk_ate.data_crc,
+					computed_data_crc);
 				return -EIO;
 			}
 		}
@@ -1675,7 +2037,7 @@ ssize_t zms_calc_free_space(struct zms_fs *fs)
 	const uint32_t second_to_last_offset = (2 * fs->ate_size);
 
 	if (!fs->ready) {
-		LOG_ERR("zms not initialized");
+		LOG_ERR("%s: %s: zms not initialized", __func__, get_fs_name(fs));
 		return -EACCES;
 	}
 
@@ -1714,7 +2076,7 @@ ssize_t zms_calc_free_space(struct zms_fs *fs)
 		wlk_addr = step_addr;
 		/* Try to find if there is a previous valid ATE with same ID */
 		prev_found = zms_find_ate_with_id(fs, step_ate.id, wlk_addr, step_addr, &wlk_ate,
-						  &wlk_prev_addr);
+						  &wlk_prev_addr, NULL, 0);
 		if (prev_found < 0) {
 			return prev_found;
 		}
@@ -1773,7 +2135,7 @@ ssize_t zms_calc_free_space(struct zms_fs *fs)
 size_t zms_active_sector_free_space(struct zms_fs *fs)
 {
 	if (!fs->ready) {
-		LOG_ERR("ZMS not initialized");
+		LOG_ERR("%s: %s: ZMS not initialized", __func__, get_fs_name(fs));
 		return -EACCES;
 	}
 
@@ -1785,7 +2147,7 @@ int zms_sector_use_next(struct zms_fs *fs)
 	int ret;
 
 	if (!fs->ready) {
-		LOG_ERR("ZMS not initialized");
+		LOG_ERR("%s: %s: ZMS not initialized", __func__, get_fs_name(fs));
 		return -EACCES;
 	}
 
