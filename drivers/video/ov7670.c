@@ -4,8 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT ovti_ov7670
-
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/video.h>
@@ -20,12 +18,8 @@ LOG_MODULE_REGISTER(video_ov7670, CONFIG_VIDEO_LOG_LEVEL);
 
 struct ov7670_config {
 	struct i2c_dt_spec bus;
-#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
-	struct gpio_dt_spec reset;
-#endif
-#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(pwdn_gpios)
-	struct gpio_dt_spec pwdn;
-#endif
+	const struct gpio_dt_spec reset;
+	const struct gpio_dt_spec pwdn;
 };
 
 struct ov7670_ctrls {
@@ -133,22 +127,11 @@ struct ov7670_data {
 #define OV7670_MVFP_HFLIP 0x20
 #define OV7670_MVFP_VFLIP 0x10
 
-#define OV7670_VIDEO_FORMAT_CAP(width, height, format)                                             \
+#define OV767X_VIDEO_FORMAT_CAP(width, height, format)                                             \
 	{                                                                                          \
 		.pixelformat = (format), .width_min = (width), .width_max = (width),               \
 		.height_min = (height), .height_max = (height), .width_step = 0, .height_step = 0  \
 	}
-
-static const struct video_format_cap fmts[] = {
-	OV7670_VIDEO_FORMAT_CAP(176, 144, VIDEO_PIX_FMT_RGB565), /* QCIF  */
-	OV7670_VIDEO_FORMAT_CAP(320, 240, VIDEO_PIX_FMT_RGB565), /* QVGA  */
-	OV7670_VIDEO_FORMAT_CAP(352, 288, VIDEO_PIX_FMT_RGB565), /* CIF   */
-	OV7670_VIDEO_FORMAT_CAP(640, 480, VIDEO_PIX_FMT_RGB565), /* VGA   */
-	OV7670_VIDEO_FORMAT_CAP(176, 144, VIDEO_PIX_FMT_YUYV),   /* QCIF  */
-	OV7670_VIDEO_FORMAT_CAP(320, 240, VIDEO_PIX_FMT_YUYV),   /* QVGA  */
-	OV7670_VIDEO_FORMAT_CAP(352, 288, VIDEO_PIX_FMT_YUYV),   /* CIF   */
-	OV7670_VIDEO_FORMAT_CAP(640, 480, VIDEO_PIX_FMT_YUYV),   /* VGA   */
-	{0}};
 
 /*
  * This initialization table is based on the MCUX SDK driver for the OV7670.
@@ -159,7 +142,7 @@ static const struct video_reg8 ov7670_init_regtbl[] = {
 
 	/* configure the output timing */
 	/* PCLK does not toggle during horizontal blank, one PCLK, one pixel */
-	{OV7670_COM10, 0x20}, /* COM10 */
+	{OV7670_COM10, 0x03}, /* COM10 */
 	{OV7670_COM12, 0x00}, /* COM12,No HREF when VSYNC is low */
 	/* Brightness Control, with signal -128 to +128, 0x00 is middle value */
 	{OV7670_BRIGHT, 0x2f},
@@ -308,53 +291,67 @@ static const struct video_reg8 ov7670_init_regtbl[] = {
 	{0xb8, 0x0a},
 };
 
+#if DT_HAS_COMPAT_STATUS_OKAY(ovti_ov7670)
 /* Resolution settings for camera, based on those present in MCUX SDK */
 static const struct video_reg8 ov7670_regs_qcif[] = {
-	{OV7670_COM7,               0x2c},
-	{OV7670_COM3,               0x00},
-	{OV7670_COM14,              0x11},
-	{OV7670_SCALING_XSC,        0x3a},
-	{OV7670_SCALING_YSC,        0x35},
-	{OV7670_SCALING_DCWCTR,     0x11},
-	{OV7670_SCALING_PCLK_DIV,   0xf1},
+	{OV7670_COM7, 0x2c},
+	{OV7670_COM3, 0x00},
+	{OV7670_COM14, 0x11},
+	{OV7670_SCALING_XSC, 0x3a},
+	{OV7670_SCALING_YSC, 0x35},
+	{OV7670_SCALING_DCWCTR, 0x11},
+	{OV7670_SCALING_PCLK_DIV, 0xf1},
 	{OV7670_SCALING_PCLK_DELAY, 0x52},
 };
 
 static const struct video_reg8 ov7670_regs_qvga[] = {
-	{OV7670_COM7,               0x14},
-	{OV7670_COM3,               0x04},
-	{OV7670_COM14,              0x19},
-	{OV7670_SCALING_XSC,        0x3a},
-	{OV7670_SCALING_YSC,        0x35},
-	{OV7670_SCALING_DCWCTR,     0x11},
-	{OV7670_SCALING_PCLK_DIV,   0xf1},
+	{OV7670_COM7, 0x14},
+	{OV7670_COM3, 0x04},
+	{OV7670_COM14, 0x19},
+	{OV7670_SCALING_XSC, 0x3a},
+	{OV7670_SCALING_YSC, 0x35},
+	{OV7670_SCALING_DCWCTR, 0x11},
+	{OV7670_SCALING_PCLK_DIV, 0xf1},
 	{OV7670_SCALING_PCLK_DELAY, 0x02},
 };
 
 static const struct video_reg8 ov7670_regs_cif[] = {
-	{OV7670_COM7,               0x24},
-	{OV7670_COM3,               0x08},
-	{OV7670_COM14,              0x11},
-	{OV7670_SCALING_XSC,        0x3a},
-	{OV7670_SCALING_YSC,        0x35},
-	{OV7670_SCALING_DCWCTR,     0x11},
-	{OV7670_SCALING_PCLK_DIV,   0xf1},
+	{OV7670_COM7, 0x24},
+	{OV7670_COM3, 0x08},
+	{OV7670_COM14, 0x11},
+	{OV7670_SCALING_XSC, 0x3a},
+	{OV7670_SCALING_YSC, 0x35},
+	{OV7670_SCALING_DCWCTR, 0x11},
+	{OV7670_SCALING_PCLK_DIV, 0xf1},
 	{OV7670_SCALING_PCLK_DELAY, 0x02},
 };
 
 static const struct video_reg8 ov7670_regs_vga[] = {
-	{OV7670_COM7,               0x04},
-	{OV7670_COM3,               0x00},
-	{OV7670_COM14,              0x00},
-	{OV7670_SCALING_XSC,        0x3a},
-	{OV7670_SCALING_YSC,        0x35},
-	{OV7670_SCALING_DCWCTR,     0x11},
-	{OV7670_SCALING_PCLK_DIV,   0xf0},
+	{OV7670_COM7, 0x04},
+	{OV7670_COM3, 0x00},
+	{OV7670_COM14, 0x00},
+	{OV7670_SCALING_XSC, 0x3a},
+	{OV7670_SCALING_YSC, 0x35},
+	{OV7670_SCALING_DCWCTR, 0x11},
+	{OV7670_SCALING_PCLK_DIV, 0xf0},
 	{OV7670_SCALING_PCLK_DELAY, 0x02},
 };
 
+static const struct video_format_cap fmts[] = {
+	OV767X_VIDEO_FORMAT_CAP(176, 144, VIDEO_PIX_FMT_RGB565), /* QCIF  */
+	OV767X_VIDEO_FORMAT_CAP(320, 240, VIDEO_PIX_FMT_RGB565), /* QVGA  */
+	OV767X_VIDEO_FORMAT_CAP(352, 288, VIDEO_PIX_FMT_RGB565), /* CIF   */
+	OV767X_VIDEO_FORMAT_CAP(640, 480, VIDEO_PIX_FMT_RGB565), /* VGA   */
+	OV767X_VIDEO_FORMAT_CAP(176, 144, VIDEO_PIX_FMT_YUYV),   /* QCIF  */
+	OV767X_VIDEO_FORMAT_CAP(320, 240, VIDEO_PIX_FMT_YUYV),   /* QVGA  */
+	OV767X_VIDEO_FORMAT_CAP(352, 288, VIDEO_PIX_FMT_YUYV),   /* CIF   */
+	OV767X_VIDEO_FORMAT_CAP(640, 480, VIDEO_PIX_FMT_YUYV),   /* VGA   */
+	{0}};
+#endif
+
 static int ov7670_get_caps(const struct device *dev, struct video_caps *caps)
 {
+
 	caps->format_caps = fmts;
 	return 0;
 }
@@ -380,7 +377,8 @@ static int ov7670_set_fmt(const struct device *dev, struct video_format *fmt)
 
 	/* Set output resolution */
 	while (fmts[i].pixelformat) {
-		if (fmts[i].width_min == fmt->width && fmts[i].height_min == fmt->height &&
+		if (fmts[i].width_min == fmt->width &&
+		    fmts[i].height_min == fmt->height &&
 		    fmts[i].pixelformat == fmt->pixelformat) {
 			/* Set output format */
 			switch (fmts[i].width_min) {
@@ -566,27 +564,28 @@ static DEVICE_API(video, ov7670_api) = {
 	.set_ctrl = ov7670_set_ctrl,
 };
 
-#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
-#define OV7670_RESET_GPIO(inst) .reset = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {}),
-#else
-#define OV7670_RESET_GPIO(inst)
-#endif
+#define OV7670_INIT(n, id)                                \
+	static const struct ov7670_config ov7670_config_##n = {		\
+		.bus			= I2C_DT_SPEC_INST_GET(n),		\
+		.reset		=					\
+			GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {}),		\
+		.pwdn		=					\
+			GPIO_DT_SPEC_INST_GET_OR(n, pwdn_gpios, {}),		\
+	};									\
+										\
+	static struct ov7670_data ov7670_data_##n;        \
+										\
+	DEVICE_DT_INST_DEFINE(n,						\
+			      ov7670_init,					\
+			      NULL,                  \
+			      &ov7670##_data_##n,				\
+			      &ov7670##_config_##n,				\
+			      POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY,		\
+			      &ov7670_api);         \
+                                   \
+	VIDEO_DEVICE_DEFINE(ov7670_##n, DEVICE_DT_INST_GET(n), NULL); \
 
-#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(pwdn_gpios)
-#define OV7670_PWDN_GPIO(inst) .pwdn = GPIO_DT_SPEC_INST_GET_OR(inst, pwdn_gpios, {}),
-#else
-#define OV7670_PWDN_GPIO(inst)
-#endif
 
-#define OV7670_INIT(inst)                                                                          \
-	const struct ov7670_config ov7670_config_##inst = {.bus = I2C_DT_SPEC_INST_GET(inst),      \
-							   OV7670_RESET_GPIO(inst)                 \
-								   OV7670_PWDN_GPIO(inst)};        \
-	struct ov7670_data ov7670_data_##inst;                                                     \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, ov7670_init, NULL, &ov7670_data_##inst, &ov7670_config_##inst, \
-			      POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY, &ov7670_api);               \
-                                                                                                   \
-	VIDEO_DEVICE_DEFINE(ov7670_##inst, DEVICE_DT_INST_GET(inst), NULL);
-
-DT_INST_FOREACH_STATUS_OKAY(OV7670_INIT)
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT ovti_ov7670
+DT_INST_FOREACH_STATUS_OKAY_VARGS(OV7670_INIT, 7670)
