@@ -10,6 +10,7 @@
 #include "iim4623x_reg.h"
 #include "iim4623x_bus.h"
 #include "iim4623x_decoder.h"
+#include "iim4623x_stream.h"
 #include <zephyr/dt-bindings/sensor/iim4623x.h>
 
 #include <zephyr/device.h>
@@ -22,22 +23,8 @@
 
 LOG_MODULE_REGISTER(iim4623x, CONFIG_SENSOR_LOG_LEVEL);
 
-/* Calculate the checksum given a pointer to the preamble of a packet in a contigous buffer */
-static uint16_t iim4623x_calc_checksum(const uint8_t *packet)
-{
-	const uint8_t *head = &((struct iim4623x_pck_preamble *)packet)->type;
-	const uint8_t *end = (uint8_t *)IIM4623X_GET_POSTAMBLE(packet);
-	uint16_t sum = 0;
-
-	for (; head < end; head++) {
-		sum += *head;
-	}
-
-	return sum;
-}
-
-static int iim4623x_prepare_cmd(const struct device *dev, uint8_t cmd_type, uint8_t *payload,
-				size_t payload_len)
+int iim4623x_prepare_cmd(const struct device *dev, uint8_t cmd_type, uint8_t *payload,
+			 size_t payload_len)
 {
 	struct iim4623x_data *data = dev->data;
 	size_t out_buf_len = ARRAY_SIZE(data->trx_buf);
@@ -279,22 +266,13 @@ static void iim4623x_irq_handler(const struct device *port, struct gpio_callback
 	if (data->await_sqe) {
 		rtio_sqe_signal(data->await_sqe);
 		data->await_sqe = NULL;
+#ifdef CONFIG_IIM4623X_STREAM
+	} else if (data->stream.iodev_sqe) {
+		iim4623x_stream_event(data->dev);
+#endif
 	} else {
 		LOG_ERR("Spurious interrupt");
 	}
-}
-
-static void iim4623x_payload_be_to_cpu(struct iim4623x_pck_strm_payload *payload)
-{
-	/* Perform byteswaps for all relevant values within the payload */
-	sys_be_to_cpu(&payload->timestamp, 8);
-	sys_be_to_cpu(&payload->accel.buf.x, 4);
-	sys_be_to_cpu(&payload->accel.buf.y, 4);
-	sys_be_to_cpu(&payload->accel.buf.z, 4);
-	sys_be_to_cpu(&payload->gyro.buf.x, 4);
-	sys_be_to_cpu(&payload->gyro.buf.y, 4);
-	sys_be_to_cpu(&payload->gyro.buf.z, 4);
-	sys_be_to_cpu(&payload->temp.buf, 4);
 }
 
 static int iim4623x_sample_fetch(const struct device *dev, enum sensor_channel chan)
@@ -531,6 +509,8 @@ static void iim4623x_submit(const struct device *dev, struct rtio_iodev_sqe *iod
 
 	if (!cfg->is_streaming) {
 		iim4623x_oneshot_submit(dev, iodev_sqe);
+	} else if (IS_ENABLED(CONFIG_IIM4623X_STREAM)) {
+		iim4623x_stream_submit(dev, iodev_sqe);
 	} else {
 		LOG_ERR("Streaming not supported");
 		rtio_iodev_sqe_err(iodev_sqe, -ENOTSUP);

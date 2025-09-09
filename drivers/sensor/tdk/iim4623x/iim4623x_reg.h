@@ -203,6 +203,9 @@ enum iim4623x_cmd_error_code {
 #define IIM4623X_CMD_ENABLE_SENSORFT            0x2E
 #define IIM4623X_CMD_DISABLE_SENSORFT           0x2F
 
+/* The type field value of streaming mode data packets */
+#define IIM4623X_STRM_PCK_TYPE 0xAB
+
 /**
  * Describe the register map of the iim4623x.
  *
