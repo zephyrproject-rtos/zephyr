@@ -1,0 +1,21 @@
+tests:
+  message_bus.zbus.uart_backend:
+    tags: zbus
+    integration_platforms:
+      - native_sim
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: false
+      regex:
+        - ".* zbus_multidomain_uart: ACK callback not set, dropping ACK"
+        - ".* zbus_multidomain_uart: Failed to process received ACK: -1"
+        - ".* zbus_multidomain_uart: Invalid UART backend configuration"
+        - ".* zbus_multidomain_uart: Receive callback not set, dropping message"
+        - ".* zbus_multidomain_uart: Invalid message size: .*"
+        - ".* UART RX disabled, re-enabling"
+        - ".* zbus_multidomain_uart: Failed to process received message: -1"
+        - ".* Unknown message type: 99"
+        - ".* zbus_multidomain_uart: Invalid parameters to send message"
+        - ".* zbus_multidomain_uart: Invalid parameters to set ACK callback"
+        - ".* zbus_multidomain_uart: Invalid parameters to set receive callback"
