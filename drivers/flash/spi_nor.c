@@ -56,6 +56,7 @@ LOG_MODULE_REGISTER(spi_nor, CONFIG_FLASH_LOG_LEVEL);
 #define ANY_INST_HAS_FLSR \
 	DT_ANY_INST_HAS_BOOL_STATUS_OKAY(use_flag_status_register)
 #define ANY_INST_USE_FAST_READ DT_ANY_INST_HAS_BOOL_STATUS_OKAY(use_fast_read)
+#define ANY_INST_REQUIRES_ULBPR DT_ANY_INST_HAS_BOOL_STATUS_OKAY(requires_ulbpr)
 
 #ifdef CONFIG_SPI_NOR_ACTIVE_DWELL_MS
 #define ACTIVE_DWELL_MS CONFIG_SPI_NOR_ACTIVE_DWELL_MS
@@ -1133,7 +1134,8 @@ static int spi_nor_write_protection_set(const struct device *dev,
 	}
 #endif
 
-	if (cfg->requires_ulbpr_exist
+	if (IS_ENABLED(ANY_INST_REQUIRES_ULBPR)
+	    && cfg->requires_ulbpr_exist
 	    && !write_protect) {
 		ret = spi_nor_cmd_write(dev, SPI_NOR_CMD_ULBPR);
 	}
