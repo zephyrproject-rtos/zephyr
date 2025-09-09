@@ -43,8 +43,6 @@ struct uhc_dwc2_vendor_quirks {
 	int (*pre_hibernation_exit)(const struct device *dev);
 };
 
-#include "uhc_dwc2_vendor_quirks.h"
-
 /* Driver configuration per instance */
 struct uhc_dwc2_config {
 	/* Pointer to base address of DWC_OTG registers */
@@ -57,17 +55,19 @@ struct uhc_dwc2_config {
 	// FIFO config?
 	// Pipes or channels?
 
-	// size_t num_in_eps;
-	// size_t num_out_eps;
+	size_t num_in_eps;
+	size_t num_out_eps;
 	// struct udc_ep_config *ep_cfg_in;
 	// struct udc_ep_config *ep_cfg_out;
 	void (*make_thread)(const struct device *dev);
 	void (*irq_enable_func)(const struct device *dev);
 	void (*irq_disable_func)(const struct device *dev);
-	// uint32_t ghwcfg1;
-	// uint32_t ghwcfg2;
-	// uint32_t ghwcfg4;
+	uint32_t ghwcfg1;
+	uint32_t ghwcfg2;
+	uint32_t ghwcfg4;
 };
+
+#include "uhc_dwc2_vendor_quirks.h"
 
 #define UHC_DWC2_VENDOR_QUIRK_GET(n)                                            \
 	COND_CODE_1(DT_NODE_VENDOR_HAS_IDX(DT_DRV_INST(n), 1),                      \
