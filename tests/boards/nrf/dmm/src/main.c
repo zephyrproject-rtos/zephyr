@@ -337,6 +337,52 @@ ZTEST_USER_F(dmm, test_check_dev_nocache_out_preallocate)
 				user_data, sizeof(user_data), true, false, true);
 }
 
+ZTEST_USER_F(dmm, test_check_multiple_alloc_and_free)
+{
+	int retval;
+	uint8_t buf[256];
+	uint8_t buf2[32];
+	void *dmm_buf;
+	void *dmm_buf2;
+	void *mem_reg = fixture->regions[DMM_TEST_REGION_NOCACHE].mem_reg;
+	uintptr_t start_address;
+	uint32_t curr_use, max_use;
+
+	if (IS_ENABLED(CONFIG_DMM_STATS)) {
+		retval = dmm_stats_get(mem_reg, &start_address, &curr_use, &max_use);
+		zassert_ok(retval);
+	}
+
+	memset(buf, 0, sizeof(buf));
+	memset(buf2, 0, sizeof(buf2));
+
+	retval = dmm_buffer_out_prepare(mem_reg, (void *)buf, sizeof(buf), &dmm_buf);
+	zassert_ok(retval);
+	zassert_true(dmm_buf != NULL);
+
+	retval = dmm_buffer_out_prepare(mem_reg, (void *)buf2, sizeof(buf2), &dmm_buf2);
+	zassert_ok(retval);
+	zassert_true(dmm_buf2 != NULL);
+
+	retval = dmm_buffer_out_release(mem_reg, dmm_buf2);
+	zassert_ok(retval);
+	zassert_true(dmm_buf != NULL);
+
+	retval = dmm_buffer_out_release(mem_reg, dmm_buf);
+	zassert_ok(retval);
+	zassert_true(dmm_buf != NULL);
+
+	if (IS_ENABLED(CONFIG_DMM_STATS)) {
+		uint32_t curr_use2;
+
+		retval = dmm_stats_get(mem_reg, &start_address, &curr_use2, &max_use);
+		zassert_ok(retval);
+		zassert_equal(curr_use, curr_use2);
+		TC_PRINT("Stats start_address:%p current use:%d%% max use:%d%%\n",
+			(void *)start_address, curr_use2, max_use);
+	}
+}
+
 ZTEST_SUITE(dmm, NULL, test_setup, NULL, test_cleanup, NULL);
 
 int dmm_test_prepare(void)
