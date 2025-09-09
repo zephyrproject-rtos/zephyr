@@ -1,0 +1,21 @@
+tests:
+  message_bus.zbus.proxy_agent.proxy_agent:
+    tags: zbus
+    timeout: 180
+    integration_platforms:
+      - native_sim
+    platform_exclude:
+      - mps3/corstone300/fvp
+      - mps3/corstone310/fvp
+      - mps4/corstone315/fvp
+      - mps4/corstone320/fvp
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: false
+      regex:
+        - ".* Failed to send message via proxy agent .*"
+        - ".* Sent message pool full, cannot track message ID .*"
+        - ".* Unknown channel .*, cannot publish message"
+        - ".* Channel .* is not a shadow channel for this proxy agent, cannot publish message"
+        - ".* Received NACK for message ID .* remote processing failed"
