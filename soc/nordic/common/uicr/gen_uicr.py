@@ -426,6 +426,7 @@ def main() -> None:
 
 def extract_and_combine_periphconfs(elf_files: list[argparse.FileType]) -> bytes:
     combined_periphconf = []
+    ipcmap_index = 0
 
     for in_file in elf_files:
         elf = ELFFile(in_file)
@@ -436,6 +437,7 @@ def extract_and_combine_periphconfs(elf_files: list[argparse.FileType]) -> bytes
         conf_section_data = conf_section.data()
         num_entries = len(conf_section_data) // PERIPHCONF_ENTRY_SIZE
         periphconf = (PeriphconfEntry * num_entries).from_buffer_copy(conf_section_data)
+        ipcmap_index = adjust_ipcmap_entries(periphconf, offset_index=ipcmap_index)
         combined_periphconf.extend(periphconf)
 
     combined_periphconf.sort(key=lambda e: e.regptr)
@@ -457,6 +459,37 @@ def extract_and_combine_periphconfs(elf_files: list[argparse.FileType]) -> bytes
         final_periphconf[i] = entry
 
     return bytes(final_periphconf)
+
+
+# This workaround is currently needed to avoid conflicts in IPCMAP whenever more than
+# one image uses IPCMAP, because at the moment each image has no way of knowing which
+# IPCMAP channel indices it should use for the configuration it generates locally.
+#
+# What the workaround does is adjust all IPCMAP entries found in the periphconf by the
+# given index offset.
+#
+# The workaround assumes that IPCMAP entries are allocated sequentially starting from 0
+# in each image, it will probably not work for arbitrary IPCMAP entries.
+def adjust_ipcmap_entries(periphconf: c.Array[PeriphconfEntry], offset_index: int) -> int:
+    max_ipcmap_index = offset_index
+
+    for entry in sorted(periphconf, key=lambda e: e.regptr):
+        if IPCMAP_CHANNEL_START_ADDR <= entry.regptr < IPCMAP_CHANNEL_END_ADDR:
+            entry.regptr += offset_index * IPCMAP_CHANNEL_SIZE
+            entry_ipcmap_index = (entry.regptr - IPCMAP_CHANNEL_START_ADDR) // IPCMAP_CHANNEL_SIZE
+            max_ipcmap_index = max(max_ipcmap_index, entry_ipcmap_index)
+
+    return max_ipcmap_index + 1
+
+
+# Size of each IPCMAP.CHANNEL[i]
+IPCMAP_CHANNEL_SIZE = 8
+# Number of entries in IPCMAP.CHANNEL
+IPCMAP_CHANNEL_COUNT = 16
+# Address of IPCMAP.CHANNEL[0]
+IPCMAP_CHANNEL_START_ADDR = 0x5F92_3000 + 256 * 4
+# Address of IPCMAP.CHANNEL[channel count] + 1
+IPCMAP_CHANNEL_END_ADDR = IPCMAP_CHANNEL_START_ADDR + IPCMAP_CHANNEL_SIZE * IPCMAP_CHANNEL_COUNT
 
 
 if __name__ == "__main__":
