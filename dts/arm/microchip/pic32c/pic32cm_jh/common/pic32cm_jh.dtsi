@@ -38,12 +38,19 @@
 			compatible = "mmio-sram";
 		};
 
-		porta: gpio@41000000 {
-			compatible = "microchip,port-g1-gpio";
-			reg = <0x41000000 0x80>;
-			gpio-controller;
-			#gpio-cells = <2>;
-			#microchip,pin-cells = <2>;
+		pinctrl: pinctrl@41000000 {
+			compatible = "microchip,port-g1-pinctrl";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x41000000 0x41000000 0x180>;
+
+			porta: gpio@41000000 {
+				compatible = "microchip,port-g1-gpio";
+				reg = <0x41000000 0x80>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				#microchip,pin-cells = <2>;
+			};
 		};
 	};
 };
