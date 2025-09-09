@@ -155,6 +155,12 @@ static void zms_read_cache_update(struct zms_fs *fs, uint32_t id, uint64_t ate_a
 			fs->num_valid_ates, fs->highest_id_in_use,
 			fs->highest_id_in_use_valid ? "" : "in", fs->lowest_id_in_use,
 			fs->lowest_id_in_use_valid ? "" : "in");
+	} else {
+		LOG_DBG("%s: id: %u, e: %d, b: %d, num_valid_ates: %d, highest_id_in_use: %u "
+			"(%svalid), lowest_id_in_use: %u (%svalid)",
+			get_fs_name(fs), id, exists_now, existed_before, fs->num_valid_ates,
+			fs->highest_id_in_use, fs->highest_id_in_use_valid ? "" : "in",
+			fs->lowest_id_in_use, fs->lowest_id_in_use_valid ? "" : "in");
 	}
 }
 
@@ -1951,7 +1957,8 @@ ssize_t zms_read_hist(struct zms_fs *fs, uint32_t id, void *data, size_t len, ui
 	LOG_DBG("%s: id: %u, cnt: %d, addr: 0x%llx, ate loops: %d", get_fs_name(fs), id, cnt,
 		wlk_addr, loop_count);
 	if (cnt == 0) {
-		zms_read_cache_update(fs, id, rd_addr, prev_found > 0, true);
+		const bool e = (prev_found > 0) ? true : false;
+		zms_read_cache_update(fs, id, rd_addr, e, e);
 	}
 #endif
 
