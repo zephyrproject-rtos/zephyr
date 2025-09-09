@@ -7,6 +7,7 @@ tests:
     depends_on: adc
     platform_allow:
       - nucleo_l073rz
+      - nucleo_h753zi
       - disco_l475_iot1
       - cc3220sf_launchxl
       - cc3235sf_launchxl
