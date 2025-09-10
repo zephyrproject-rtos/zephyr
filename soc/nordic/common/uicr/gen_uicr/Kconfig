@@ -21,6 +21,24 @@ config GEN_UICR_SECONDARY_GENERATE_PERIPHCONF
 	  When enabled, the UICR generator will populate the
 	  secondary_periphconf_partition partition.
 
+config GEN_UICR_SECURESTORAGE
+	bool "Enable UICR.SECURESTORAGE"
+	default y
+	depends on $(dt_nodelabel_enabled,secure_storage_partition)
+	help
+	  When enabled, the UICR generator will configure the
+	  secure storage region based on device tree partitions.
+
+	  The following device tree partitions are used:
+	  - secure_storage_partition: Main secure storage partition (required)
+	  - cpuapp_crypto_partition: Application processor crypto storage (optional)
+	  - cpurad_crypto_partition: Radio core crypto storage (optional)
+	  - cpuapp_its_partition: Application processor internal trusted storage (optional)
+	  - cpurad_its_partition: Radio core internal trusted storage (optional)
+
+	  All partitions must be multiples of 1KB and laid out contiguously
+	  without gaps. Missing partitions are handled gracefully with zero size.
+
 endmenu
 
 source "Kconfig.zephyr"
