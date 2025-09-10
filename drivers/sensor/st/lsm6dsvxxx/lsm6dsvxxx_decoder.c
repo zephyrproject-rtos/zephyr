@@ -162,6 +162,7 @@ static int lsm6dsvxxx_decoder_get_frame_count(const uint8_t *buffer,
 		fifo_tag = (buffer[0] >> 3);
 
 		switch (fifo_tag) {
+		case LSM6DSVXXX_XL_HG_TAG:
 		case LSM6DSVXXX_XL_NC_TAG:
 			tot_accel_fifo_words++;
 			break;
@@ -523,6 +524,7 @@ static int lsm6dsvxxx_decode_fifo(const uint8_t *buffer, struct sensor_chan_spec
 		fifo_tag = (buffer[0] >> 3);
 
 		switch (fifo_tag) {
+		case LSM6DSVXXX_XL_HG_TAG:
 		case LSM6DSVXXX_XL_NC_TAG:
 			xl_count++;
 			skip = generate_accel_output(buffer, count, xl_count,

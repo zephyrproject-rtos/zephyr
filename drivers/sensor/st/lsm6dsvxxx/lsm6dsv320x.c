@@ -664,6 +664,7 @@ static void lsm6dsv320x_config_fifo(const struct device *dev, struct trigger_con
 	lsm6dsv320x_sflp_data_rate_t sflp_odr = LSM6DSV320X_SFLP_120Hz;
 	lsm6dsv320x_fifo_sflp_raw_t sflp_fifo = {0};
 	lsm6dsv320x_sflp_gbias_t gbias;
+	uint8_t xl_hg_batch = 0;
 
 	/* disable FIFO as first thing */
 	lsm6dsv320x_fifo_mode_set(ctx, LSM6DSV320X_BYPASS_MODE);
@@ -678,6 +679,7 @@ static void lsm6dsv320x_config_fifo(const struct device *dev, struct trigger_con
 		xl_batch = config->accel_batch;
 		gy_batch = config->gyro_batch;
 		temp_batch = config->temp_batch;
+		xl_hg_batch = (lsm6dsv320x_is_hg_fs(config->accel_range)) ? 1 : 0;
 
 		fifo_mode = LSM6DSV320X_STREAM_MODE;
 		fifo_wtm = config->fifo_wtm;
@@ -709,6 +711,7 @@ static void lsm6dsv320x_config_fifo(const struct device *dev, struct trigger_con
 	/* Set FIFO batch rates */
 	lsm6dsv320x_fifo_xl_batch_set(ctx, xl_batch);
 	data->accel_batch_odr = xl_batch;
+	lsm6dsv320x_fifo_hg_xl_batch_set(ctx, xl_hg_batch);
 	lsm6dsv320x_fifo_gy_batch_set(ctx, gy_batch);
 	data->gyro_batch_odr = gy_batch;
 #if defined(CONFIG_LSM6DSVXXX_ENABLE_TEMP)
