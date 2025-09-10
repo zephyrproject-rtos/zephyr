@@ -9,6 +9,7 @@
 #include <fsl_rtc.h>
 #include "fsl_power.h"
 #include <zephyr/logging/log.h>
+#include <soc.h>
 
 LOG_MODULE_REGISTER(mcux_rtc, CONFIG_COUNTER_LOG_LEVEL);
 
@@ -230,6 +231,12 @@ static DEVICE_API(counter, mcux_rtc_driver_api) = {
 	.get_top_value = mcux_lpc_rtc_get_top_value,
 };
 
+#ifdef NXP_ENABLE_WAKEUP_SIGNAL
+#define COUNTER_LPC_RTC_WAKEUP(n) NXP_ENABLE_WAKEUP_SIGNAL(DT_INST_IRQN(n))
+#else
+#define COUNTER_LPC_RTC_WAKEUP(n)
+#endif
+
 #define COUNTER_LPC_RTC_DEVICE(id)						\
 	static void mcux_lpc_rtc_irq_config_##id(const struct device *dev);	\
 	static const struct mcux_lpc_rtc_config mcux_lpc_rtc_config_##id = {	\
@@ -256,7 +263,7 @@ static DEVICE_API(counter, mcux_rtc_driver_api) = {
 			mcux_lpc_rtc_isr, DEVICE_DT_INST_GET(id), 0);		\
 		irq_enable(DT_INST_IRQN(id));					\
 		if (DT_INST_PROP(id, wakeup_source)) {				\
-			EnableDeepSleepIRQ(DT_INST_IRQN(id));			\
+			COUNTER_LPC_RTC_WAKEUP(id);				\
 		}								\
 	}
 
@@ -423,6 +430,11 @@ static DEVICE_API(counter, mcux_rtc_highres_driver_api) = {
 	.get_pending_int = mcux_lpc_rtc_highres_get_pending_int,
 	.get_top_value = mcux_lpc_rtc_highres_get_top_value,
 };
+#ifdef NXP_ENABLE_WAKEUP_SIGNAL
+#define COUNTER_LPC_RTC_HIGHRES_WAKEUP(n) NXP_ENABLE_WAKEUP_SIGNAL(DT_IRQN(DT_INST_PARENT(n)))
+#else
+#define COUNTER_LPC_RTC_HIGHRES_WAKEUP(n)
+#endif
 
 #define COUNTER_LPC_RTC_HIGHRES_IRQ_INIT(n)							\
 	do {											\
@@ -432,7 +444,7 @@ static DEVICE_API(counter, mcux_rtc_highres_driver_api) = {
 			DEVICE_DT_INST_GET(n), 0);						\
 		irq_enable(DT_IRQN(DT_INST_PARENT(n)));						\
 		if (DT_INST_PROP(n, wakeup_source)) {						\
-			EnableDeepSleepIRQ(DT_IRQN(DT_INST_PARENT(n)));				\
+			COUNTER_LPC_RTC_HIGHRES_WAKEUP(n);					\
 		}										\
 	} while (false)
 

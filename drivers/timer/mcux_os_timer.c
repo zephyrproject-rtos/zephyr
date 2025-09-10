@@ -20,6 +20,7 @@
 #if !defined(CONFIG_SOC_FAMILY_MCXN) && !defined(CONFIG_SOC_FAMILY_MCXA)
 #include "fsl_power.h"
 #endif
+#include <soc.h>
 
 #define CYC_PER_TICK                                                                               \
 	((uint32_t)((uint64_t)sys_clock_hw_cycles_per_sec() /                                      \
@@ -338,7 +339,9 @@ static int sys_clock_driver_init(void)
 #endif
 
 #if (DT_INST_PROP(0, wakeup_source))
-	EnableDeepSleepIRQ(DT_INST_IRQN(0));
+#ifdef NXP_ENABLE_WAKEUP_SIGNAL
+	NXP_ENABLE_WAKEUP_SIGNAL(DT_INST_IRQN(0));
+#endif
 #endif
 	return 0;
 }
