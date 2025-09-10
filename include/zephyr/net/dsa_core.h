@@ -15,6 +15,7 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/phy.h>
+#include <zephyr/net/ethernet.h>
 
 /**
  * @brief Distributed Switch Architecture (DSA)
@@ -31,12 +32,6 @@
 #define DSA_PORT_MAX_COUNT CONFIG_DSA_PORT_MAX_COUNT
 #else
 #define DSA_PORT_MAX_COUNT 0
-#endif
-
-#if defined(CONFIG_DSA_TAG_SIZE)
-#define DSA_TAG_SIZE CONFIG_DSA_TAG_SIZE
-#else
-#define DSA_TAG_SIZE 0
 #endif
 
 /** @endcond */
@@ -146,14 +141,6 @@ struct dsa_port_config {
 };
 
 /** @cond INTERNAL_HIDDEN */
-
-enum dsa_port_type {
-	NON_DSA_PORT,
-	DSA_CONDUIT_PORT,
-	DSA_USER_PORT,
-	DSA_CPU_PORT,
-	DSA_PORT,
-};
 
 /*
  * DSA port init
