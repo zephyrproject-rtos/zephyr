@@ -114,7 +114,7 @@ tests:
       - platform:ek_ra8d1:SHIELD=rtkmipilcdb00000be
       - platform:ek_ra8d1:SHIELD=rtk7eka6m3b00001bu
       - platform:nucleo_g071rb/stm32g071xx:SHIELD=x_nucleo_gfx01m2
-  sample.display.shield.test:
+  sample.display.shield.test: &display-shield-test
     # This test case is intended to verify support for shields on boards
     # known to support them. It is not intended to cover all combinations
     # of boards and shields, but rather serve as a method to test each
@@ -129,8 +129,13 @@ tests:
         - "Display sample for (.*)"
         - "Display starts"
         - "Display sample test mode done (.*)"
-    extra_args:
-      - platform:apollo510_evb/apollo510:SHIELD=ap510_disp
-      - platform:apollo510_evb/apollo510:SHIELD=ap510_disp_spi
     extra_configs:
       - CONFIG_TEST=y
+  sample.display.shield.test.dsi:
+    <<: *display-shield-test
+    extra_args:
+      - platform:apollo510_evb/apollo510:SHIELD=ap510_disp
+  sample.display.shield.test.spi:
+    <<: *display-shield-test
+    extra_args:
+      - platform:apollo510_evb/apollo510:SHIELD=ap510_disp_spi
