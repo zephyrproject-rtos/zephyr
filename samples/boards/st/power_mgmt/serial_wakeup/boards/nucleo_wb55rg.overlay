@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-&cpu0{
+&cpu0 {
 	/* USART Wakeup requires automatic HSI16 switch on in deepsleep mode
 	 * which isn't possible in Stop Mode 2.
 	 * Remove Stop Mode 2 from supported modes

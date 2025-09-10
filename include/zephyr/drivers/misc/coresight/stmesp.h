@@ -10,8 +10,8 @@
 #include <zephyr/devicetree.h>
 
 /**
- * @brief Coresight STMESP (STM Extended Stimulus Port) Interface
- * @defgroup stmsp_interface Coresight STMESP interface
+ * @brief Interfaces for Coresight STMESP (STM Extended Stimulus Port)
+ * @defgroup stmsp_interface Coresight STMESP
  * @ingroup misc_interfaces
  * @{
  */

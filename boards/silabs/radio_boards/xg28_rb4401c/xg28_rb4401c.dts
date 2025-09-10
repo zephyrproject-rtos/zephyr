@@ -85,6 +85,27 @@
 		regulator-name = "sensor_disp_enable";
 		status = "okay";
 	};
+
+	exp_header: exp-header {
+		compatible = "silabs,exp-header";
+		#gpio-cells = <2>;
+		gpio-map = <3 0 &gpioa 11 0>,
+			   <4 0 &gpiod 7 0>,
+			   <5 0 &gpioa 12 0>,
+			   <6 0 &gpiod 8 0>,
+			   <7 0 &gpioa 13 0>,
+			   <8 0 &gpiod 9 0>,
+			   <9 0 &gpioa 14 0>,
+			   <10 0 &gpiod 10 0>,
+			   <11 0 &gpiob 4 0>,
+			   <12 0 &gpiod 11 0>,
+			   <13 0 &gpiob 5 0>,
+			   <14 0 &gpiod 12 0>,
+			   <15 0 &gpioc 5 0>,
+			   <16 0 &gpioc 7 0>;
+		gpio-map-mask = <0xffffffff 0x0>;
+		gpio-map-pass-thru = <0x0 GPIO_DT_FLAGS_MASK>;
+	};
 };
 
 &bt_hci_silabs {
@@ -256,27 +277,21 @@
 			read-only;
 		};
 
-		/* Reserve 464 kB for the application in slot 0 */
+		/* Reserve 472 kB for the application in slot 0 */
 		slot0_partition: partition@c000 {
-			reg = <0x0000c000 DT_SIZE_K(464)>;
+			reg = <0x0000c000 DT_SIZE_K(472)>;
 			label = "image-0";
 		};
 
-		/* Reserve 464 kB for the application in slot 1 */
-		slot1_partition: partition@80000 {
-			reg = <0x00080000 DT_SIZE_K(464)>;
+		/* Reserve 472 kB for the application in slot 1 */
+		slot1_partition: partition@82000 {
+			reg = <0x00082000 DT_SIZE_K(472)>;
 			label = "image-1";
 		};
 
-		/* Reserve 32 kB for the scratch partition */
-		scratch_partition: partition@f00000 {
-			reg = <0x00f00000 DT_SIZE_K(32)>;
-			label = "image-scratch";
-		};
-
-		/* Set 16 kB of storage at the end of the 1024 kB of flash */
-		storage_partition: partition@7c000 {
-			reg = <0x0007c000 DT_SIZE_K(16)>;
+		/* Set 32 kB of storage at the end of the 1024 kB of flash */
+		storage_partition: partition@f8000 {
+			reg = <0x000f8000 DT_SIZE_K(32)>;
 			label = "storage";
 		};
 	};

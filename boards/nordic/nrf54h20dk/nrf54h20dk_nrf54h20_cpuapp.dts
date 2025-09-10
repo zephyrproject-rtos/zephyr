@@ -279,6 +279,13 @@ slot3_partition: &cpurad_slot1_partition {
 			30 b0 30 b0  f4 bd d5 5c  00 00 00 ff  10 10 00 20
 			00 00 00 00  00 00 7c 23  48 00 00 00  00 00 88 88
 		];
+		sfdp-ff05 = [
+			00 ee c0 69  72 72 71 71  00 d8 f7 f6  00 0a 00 00
+			14 45 98 80
+		];
+		sfdp-ff84 = [
+			43 06 0f 00  21 dc ff ff
+		];
 		size = <67108864>;
 		has-dpd;
 		t-enter-dpd = <10000>;

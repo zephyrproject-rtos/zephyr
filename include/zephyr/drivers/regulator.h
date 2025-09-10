@@ -7,12 +7,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @ingroup regulator_interface
+ * @brief Main header file for regulator driver API.
+ */
+
 #ifndef ZEPHYR_INCLUDE_DRIVERS_REGULATOR_H_
 #define ZEPHYR_INCLUDE_DRIVERS_REGULATOR_H_
 
 /**
- * @brief Regulator Interface
- * @defgroup regulator_interface Regulator Interface
+ * @brief Interfaces for regulators.
+ * @defgroup regulator_interface Regulator
  * @since 2.4
  * @version 0.1.0
  * @ingroup io_interfaces

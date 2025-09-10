@@ -10,7 +10,8 @@
 
 /****************************************
  * PLEASE KEEP REG ADDRESSES SEQUENTIAL *
- ***************************************/
+ **************************************
+ */
 
 test_spi_adxl362: adxl362@0 {
 	compatible = "adi,adxl362";
@@ -402,7 +403,7 @@ test_spi_ilps22qs: ilps22qs@30 {
 	status = "okay";
 };
 
-test_spi_icm45686:icm45686@31 {
+test_spi_icm45686: icm45686@31 {
 	compatible = "invensense,icm45686";
 	reg = <0x31>;
 	spi-max-frequency = <0>;
@@ -436,9 +437,9 @@ test_spi_ad2s1210: ad2s1210@35 {
 	compatible = "adi,ad2s1210";
 	reg = <0x35>;
 	spi-max-frequency = <0>;
-	sample-gpios = <&test_gpio 0 (GPIO_ACTIVE_LOW)>;
-	mode-gpios = <&test_gpio 1 (GPIO_ACTIVE_HIGH)>, <&test_gpio 2 (GPIO_ACTIVE_HIGH)>;
-	reset-gpios = <&test_gpio 7 (GPIO_ACTIVE_LOW)>;
+	sample-gpios = <&test_gpio 0 GPIO_ACTIVE_LOW>;
+	mode-gpios = <&test_gpio 1 GPIO_ACTIVE_HIGH>, <&test_gpio 2 GPIO_ACTIVE_HIGH>;
+	reset-gpios = <&test_gpio 7 GPIO_ACTIVE_LOW>;
 	clock-frequency = <8192000>;
 };
 

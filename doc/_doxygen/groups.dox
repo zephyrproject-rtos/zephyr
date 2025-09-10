@@ -11,14 +11,16 @@
 @{
 @}
 
-@brief Device Driver APIs
-@defgroup io_interfaces Device Driver APIs
+@defgroup io_interfaces Device Drivers
+@brief Interfaces to interact with various hardware peripherals.
+@details A collection of hardware-agnostic interfaces used to implement and interact with device
+         drivers.
 @{
 @}
 
-@brief Miscellaneous Drivers APIs
-@defgroup misc_interfaces Miscellaneous Drivers APIs
+@defgroup misc_interfaces Miscellaneous Devices
 @ingroup io_interfaces
+@brief Interfaces for hardware peripherals that do not have a dedicated driver class.
 @{
 @}
 
@@ -28,8 +30,8 @@
 @{
 @}
 
-@brief Multi Function Device Drivers APIs
-@defgroup mfd_interfaces Multi Function Device Drivers APIs
+@brief Interfaces for multi-function devices.
+@defgroup mfd_interfaces Multi-function Devices
 @ingroup io_interfaces
 @{
 @}
@@ -54,9 +56,12 @@
 @brief MCUmgr
 @defgroup mcumgr MCUmgr
 @ingroup device_mgmt
+@{
+@}
 
 @brief Transport layers for MCUmgr: SMP, UART, etc.
 @defgroup mcumgr_transport Transport layers
+@ingroup mcumgr
 @{
 @}
 

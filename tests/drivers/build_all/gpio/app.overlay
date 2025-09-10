@@ -612,8 +612,8 @@
 				#gpio-cells = <2>;
 				ngpios = <8>;
 				max22190-mode = <1>;
-				filter-wbes = <1 0 1 0  1 0 1 0>;
-				filter-fbps = <0 0 0 0  0 0 0 0>;
+				filter-wbes = <1 0 1 0 1 0 1 0>;
+				filter-fbps = <0 0 0 0 0 0 0 0>;
 				filter-delays = <50 100 400 800 1600 3200 12800 20000>;
 				drdy-gpios = <&test_gpio 0 0>;
 				fault-gpios = <&test_gpio 0 0>;
@@ -629,7 +629,7 @@
 				#gpio-cells = <2>;
 				ngpios = <8>;
 				max22190-mode = <1>;
-				filter-fbps = <0 0 0 0  0 0 0 0>;
+				filter-fbps = <0 0 0 0 0 0 0 0>;
 				filter-delays = <50 100 400 800 1600 3200 12800 20000>;
 				drdy-gpios = <&test_gpio 0 0>;
 				fault-gpios = <&test_gpio 0 0>;

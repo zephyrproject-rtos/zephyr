@@ -29,7 +29,6 @@
 			sof-synchronized;
 		};
 
-
 		/* USB Audio terminal from USB host to USB device */
 		out_terminal: out_terminal {
 			compatible = "zephyr,uac2-input-terminal";

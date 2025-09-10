@@ -7,6 +7,7 @@
 #include <mem.h>
 #include <freq.h>
 #include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 
 / {
 	compatible = "renesas,r9a07g054";
@@ -774,6 +775,58 @@
 				interrupts = <8 1>;
 				status = "disabled";
 			};
+		};
+
+		i2c0: i2c@40058000 {
+			compatible = "renesas,rz-riic";
+			channel = <0>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40058000 DT_SIZE_K(1)>;
+			interrupts = <348 1>, <349 1>, <350 1>, <351 1>,
+				     <352 1>, <353 1>, <354 1>, <355 1>;
+			interrupt-names = "rxi", "txi", "tei", "naki", "spi", "sti", "ali", "tmoi";
+			status = "disabled";
+		};
+
+		i2c1: i2c@40058400 {
+			compatible = "renesas,rz-riic";
+			channel = <1>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40058400 DT_SIZE_K(1)>;
+			interrupts = <356 1>, <357 1>, <358 1>, <359 1>,
+				     <360 1>, <361 1>, <362 1>, <363 1>;
+			interrupt-names = "rxi", "txi", "tei", "naki", "spi", "sti", "ali", "tmoi";
+			status = "disabled";
+		};
+
+		i2c2: i2c@40058800 {
+			compatible = "renesas,rz-riic";
+			channel = <2>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40058800 DT_SIZE_K(1)>;
+			interrupts = <364 1>, <365 1>, <366 1>, <367 1>,
+				     <368 1>, <369 1>, <370 1>, <371 1>;
+			interrupt-names = "rxi", "txi", "tei", "naki", "spi", "sti", "ali", "tmoi";
+			status = "disabled";
+		};
+
+		i2c3: i2c@40058c00 {
+			compatible = "renesas,rz-riic";
+			channel = <3>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40058c00 DT_SIZE_K(1)>;
+			interrupts = <372 1>, <373 1>, <374 1>, <375 1>,
+				     <376 1>, <377 1>, <378 1>, <379 1>;
+			interrupt-names = "rxi", "txi", "tei", "naki", "spi", "sti", "ali", "tmoi";
+			status = "disabled";
 		};
 	};
 };

@@ -56,6 +56,12 @@ config NRF_IRONSIDE_BOOT_REPORT
 	help
 	  Support for parsing the Boot Report populated by Nordic IronSide firmware.
 
+config NRF_IRONSIDE_BOOTMODE_SERVICE
+	bool "IronSide boot mode service"
+	select NRF_IRONSIDE_CALL
+	help
+	  Service used to reboot into secondary firmware boot mode.
+
 config NRF_IRONSIDE_DVFS_SERVICE
 	bool "IronSide DVFS service"
 	depends on SOC_NRF54H20_CPUAPP

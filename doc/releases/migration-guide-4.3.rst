@@ -26,8 +26,25 @@ Build System
 Kernel
 ******
 
+* :c:func:`device_init` Earlier releases returned a positive +errno value in case
+  of device init failure due to a bug. This is now fixed to return the correct
+  negative -errno value. Applications that implemented workarounds for this
+  issue should now update their code accordingly.
+
+Base Libraries
+**************
+
+* UTF-8 utils declarations (:c:func:`utf8_trunc`, :c:func:`utf8_lcpy`) have
+  been moved from ``util.h`` to a separate
+  :zephyr_file:`include/zephyr/sys/util_utf8.h` file.
+
 Boards
 ******
+
+* b_u585i_iot02a/ns: The flash layout was changed to be in sync with the upstream TF-M 2.2.1 board
+  configurations. The new layout expands the flash partitions, moving the secondary ones to the
+  external NOR flash. This change currently prevents upgrade from older Zephyr release images to
+  Zephyr 4.3 release images. More details in the TF-M migration and release notes.
 
 * mimxrt11x0: renamed lpadc1 to lpadc2 and renamed lpadc0 to lpadc1.
 
@@ -109,6 +126,17 @@ Ethernet
 * The :dtcompatible:`microchip,vsc8541` PHY driver now expects the reset-gpios entry to specify
   the GPIO_ACTIVE_LOW flag when the reset is being used as active low. Previously the active-low
   nature was hard-coded into the driver. (:github:`91726`).
+
+* CRC checksum generation offloading to hardware is now explicitly disabled rather then explicitly
+  enabled in the Xilinx GEM Ethernet driver (:dtcompatible:`xlnx,gem`). By default, offloading is
+  now enabled by default to improve performance, however, offloading is always disabled for QEMU
+  targets due to the checksum generation in hardware not being emulated regardless of whether it
+  is explicitly disabled via the devicetree or not. (:github:`95435`)
+
+    * Replaced devicetree property ``rx-checksum-offload`` which enabled RX checksum offloading
+      ``disable-rx-checksum-offload`` which now actively disables it.
+    * Replaced devicetree property ``tx-checksum-offload`` which enabled TX checksum offloading
+      ``disable-tx-checksum-offload`` which now actively disables it.
 
 Networking
 **********

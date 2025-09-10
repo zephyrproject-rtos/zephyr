@@ -23,6 +23,7 @@
 		zephyr,flash-controller = &flash1;
 		zephyr,flash = &flash0;
 		zephyr,entropy = &trng;
+		zephyr,crc = &crc;
 	};
 
 	leds {
@@ -213,4 +214,22 @@
 		reg = <0>;
 		status = "okay";
 	};
+};
+
+&qspi0 {
+	pinctrl-0 = <&qspi_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	mx25l25645g: qspi-nor-flash@60000000 {
+		compatible = "renesas,ra-qspi-nor";
+		reg = <0x60000000 DT_SIZE_M(32)>;
+		status = "okay";
+		write-block-size = <1>;
+		erase-block-size = <4096>;
+	};
+};
+
+&crc {
+	status = "okay";
 };

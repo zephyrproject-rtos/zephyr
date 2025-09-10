@@ -17,7 +17,7 @@
 
 &usart1 {
 	clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00004000>,
-		<&rcc STM32_SRC_CSI USART1_SEL(4)>;
+		 <&rcc STM32_SRC_CSI USART1_SEL(4)>;
 };
 
 &clk_hse {
@@ -44,7 +44,6 @@
 	/delete-property/ clocks;
 	status = "disabled";
 };
-
 
 &pll2 {
 	/delete-property/ div-m;

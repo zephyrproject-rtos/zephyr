@@ -30,6 +30,10 @@
 extern struct k_spinlock z_thread_monitor_lock;
 #endif /* CONFIG_THREAD_MONITOR */
 
+#ifdef CONFIG_MULTITHREADING
+extern struct k_thread z_idle_threads[CONFIG_MP_MAX_NUM_CPUS];
+#endif /* CONFIG_MULTITHREADING */
+
 void idle(void *unused1, void *unused2, void *unused3);
 
 /* clean up when a thread is aborted */
@@ -42,6 +46,7 @@ void z_thread_monitor_exit(struct k_thread *thread);
 	} while (false)
 #endif /* CONFIG_THREAD_MONITOR */
 
+void z_thread_abort(struct k_thread *thread);
 
 static inline void thread_schedule_new(struct k_thread *thread, k_timeout_t delay)
 {

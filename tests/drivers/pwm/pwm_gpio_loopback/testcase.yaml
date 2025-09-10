@@ -27,3 +27,7 @@ tests:
     platform_allow:
       - xg29_rb4412a
       - bg29_rb4420a
+
+  drivers.pwm.gpio_loopback.ifx:
+    platform_allow:
+      - cyw920829m2evk_02

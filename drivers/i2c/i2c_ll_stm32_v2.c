@@ -14,6 +14,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/kernel.h>
 #include <soc.h>
+#include <stm32_cache.h>
 #include <stm32_ll_i2c.h>
 #include <errno.h>
 #include <zephyr/drivers/i2c.h>

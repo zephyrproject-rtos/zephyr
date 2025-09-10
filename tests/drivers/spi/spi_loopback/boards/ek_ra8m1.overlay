@@ -3,16 +3,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
- #include <zephyr/dt-bindings/clock/ra_clock.h>
+#include <zephyr/dt-bindings/clock/ra_clock.h>
 
 &pinctrl {
 	spi0_default: spi0_default {
 		group1 {
 			/* MISO MOSI RSPCK SSL*/
 			psels = <RA_PSEL(RA_PSEL_SPI, 6, 9)>,
-			<RA_PSEL(RA_PSEL_SPI, 6, 11)>,
-			<RA_PSEL(RA_PSEL_SPI, 6, 10)>,
-			<RA_PSEL(RA_PSEL_SPI, 6, 12)>;
+				<RA_PSEL(RA_PSEL_SPI, 6, 11)>,
+				<RA_PSEL(RA_PSEL_SPI, 6, 10)>,
+				<RA_PSEL(RA_PSEL_SPI, 6, 12)>;
 		};
 	};
 };

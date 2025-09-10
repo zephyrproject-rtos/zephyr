@@ -1,6 +1,6 @@
 .. zephyr:code-sample:: lora-send
    :name: LoRa send
-   :relevant-api: lora_api
+   :relevant-api: lora_interface
 
    Transmit a preconfigured payload every second using the LoRa radio.
 

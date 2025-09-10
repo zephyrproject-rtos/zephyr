@@ -12,7 +12,7 @@
 			compatible = "zephyr,memory-region", "mmio-sram";
 			reg = <0x35870000 DT_SIZE_K(64)>;
 			zephyr,memory-region = "SRAMNOCACHE";
-			zephyr,memory-attr = <(DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE))>;
+			zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)>;
 		};
 	};
 };
@@ -22,9 +22,8 @@
 	reg = <0x35780000 DT_SIZE_K(960)>;
 };
 
-
 &edma5 {
 	status = "okay";
 };
 
-tst_dma0: &edma5 { };
+tst_dma0: &edma5 {};

@@ -7,9 +7,9 @@
 	mbox-consumer {
 		compatible = "vnd,mbox-consumer";
 		mboxes = <&cpuapp_bellboard 18>, <&cpuapp_bellboard 32>,
-				 <&cpuppr_vevif 15>, <&cpuppr_vevif 32>;
+			 <&cpuppr_vevif 15>, <&cpuppr_vevif 32>;
 		mbox-names = "remote_valid", "remote_incorrect",
-					 "local_valid", "local_incorrect";
+			     "local_valid", "local_incorrect";
 	};
 };
 

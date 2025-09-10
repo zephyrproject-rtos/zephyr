@@ -21,7 +21,7 @@ config IAR_DATA_INIT
 	select SKIP_BSS_CLEAR # IAR handles zeroing.
 	help
 	  IAR handles initialization of static variables.
-	  Instead of `z_prep_c` calling Zephyrs `z_data_copy`
+	  Instead of `z_prep_c` calling Zephyrs `arch_data_copy`
 	  we call IARs own proprietary initialization method
 	  which can save time and space.
 
@@ -29,7 +29,7 @@ config IAR_ZEPHYR_INIT
 	bool "Zephyr"
 	help
 	  Zephyr handles initialization of static variables.
-	  This is the regular `z_data_copy`.
+	  This is the regular `arch_data_copy`.
 
 endchoice
 

@@ -16,7 +16,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40005800 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB1, 22U)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 22)>;
 			interrupts = <24 0>;
 			interrupt-names = "combined";
 			status = "disabled";
@@ -27,7 +27,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40003800 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB1, 14U)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 14)>;
 			interrupts = <26 3>;
 			status = "disabled";
 		};
@@ -35,7 +35,7 @@
 		usart1: serial@40013800 {
 			compatible = "st,stm32-usart", "st,stm32-uart";
 			reg = <0x40013800 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB2, 14U)>;
+			clocks = <&rcc STM32_CLOCK(APB2, 14)>;
 			resets = <&rctl STM32_RESET(APB2, 14U)>;
 			interrupts = <27 0>;
 			status = "disabled";

@@ -1,13 +1,13 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
 &pinctrl {
-/* EVB's NU5: SS/CLK/MISO/MOSI */
+	/* EVB's NU5: SS/CLK/MISO/MOSI */
 	spi2_default: spi2_default {
 		group0 {
 			pinmux = <PA11MFP_SPI2_SS>,
-				<PA10MFP_SPI2_CLK>,
-				<PA9MFP_SPI2_MISO>,
-				<PA8MFP_SPI2_MOSI>;
+				 <PA10MFP_SPI2_CLK>,
+				 <PA9MFP_SPI2_MISO>,
+				 <PA8MFP_SPI2_MOSI>;
 		};
 	};
 };

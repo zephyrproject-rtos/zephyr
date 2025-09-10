@@ -6,18 +6,19 @@
 
 /**
  * @file
- * @brief Public APIs for the I2S (Inter-IC Sound) bus drivers.
+ * @ingroup i2s_interface
+ * @brief Main header file for I2S (Inter-IC Sound) driver API.
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_I2S_H_
 #define ZEPHYR_INCLUDE_DRIVERS_I2S_H_
 
 /**
- * @defgroup i2s_interface I2S Interface
+ * @defgroup i2s_interface I2S
  * @since 1.9
  * @version 1.0.0
  * @ingroup io_interfaces
- * @brief I2S (Inter-IC Sound) Interface
+ * @brief Interfaces for Inter-IC Sound (I2S) controllers.
  *
  * The I2S API provides support for the standard I2S interface standard as well
  * as common non-standard extensions such as PCM Short/Long Frame Sync,

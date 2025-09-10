@@ -221,9 +221,6 @@ ARM arch:
   maintainers:
     - wearyzen
   collaborators:
-    - microbuilder
-    - carlocaione
-    - galak
     - MaureenHelm
     - stephanosio
     - bbolen
@@ -241,9 +238,7 @@ ARM arch:
     - arch.arm
 
 ARM64 arch:
-  status: maintained
-  maintainers:
-    - carlocaione
+  status: odd fixes
   collaborators:
     - npitre
     - povergoing
@@ -674,7 +669,6 @@ Board/SoC configuration:
   maintainers:
     - tejlmand
   collaborators:
-    - galak
     - nashif
     - nordicjm
     - "57300"
@@ -803,7 +797,6 @@ CMSIS-DSP integration:
   maintainers:
     - stephanosio
   collaborators:
-    - galak
     - XenuIsWatching
   files:
     - modules/cmsis-dsp/
@@ -830,11 +823,20 @@ CMSIS-NN integration:
   tests:
     - libraries.cmsis_nn
 
+CRC:
+  status: maintained
+  maintainers:
+    - thenguyenyf
+  files:
+    - include/zephyr/sys/crc.h
+    - subsys/crc/
+    - tests/subsys/crc/
+  labels:
+    - "area: CRC"
+
 Cache:
   status: maintained
   maintainers:
-    - carlocaione
-  collaborators:
     - nashif
   files:
     - include/zephyr/drivers/cache.h
@@ -1049,7 +1051,6 @@ Devicetree:
     - mbolivar
   collaborators:
     - decsny
-    - galak
     - rruuaanng
   files-regex:
     - ^dts/bindings/.*zephyr.*
@@ -1268,6 +1269,19 @@ Documentation Infrastructure:
   tests:
     - drivers.can
     - canbus
+
+"Drivers: CRC":
+  status: maintained
+  maintainers:
+    - thenguyenyf
+  files:
+    - drivers/crc/
+    - dts/bindings/crc/
+    - include/zephyr/drivers/crc.h
+    - samples/drivers/crc/
+    - tests/drivers/crc/
+  labels:
+    - "area: CRC"
 
 "Drivers: Charger":
   status: maintained
@@ -1950,9 +1964,7 @@ Documentation Infrastructure:
     - drivers.mspi
 
 "Drivers: Mbox":
-  status: maintained
-  maintainers:
-    - carlocaione
+  status: odd fixes
   collaborators:
     - wearyzen
     - ithinuel
@@ -2031,9 +2043,7 @@ Documentation Infrastructure:
     - samples.drivers.peci
 
 "Drivers: PM CPU ops":
-  status: maintained
-  maintainers:
-    - carlocaione
+  status: odd fixes
   collaborators:
     - gdengi
     - nbalabak
@@ -2338,9 +2348,7 @@ Documentation Infrastructure:
     - drivers.stepper
 
 "Drivers: Syscon":
-  status: maintained
-  maintainers:
-    - carlocaione
+  status: odd fixes
   files:
     - include/zephyr/drivers/syscon.h
     - drivers/syscon/
@@ -2754,7 +2762,6 @@ IPC:
   maintainers:
     - doki-nordic
   collaborators:
-    - carlocaione
     - arnopo
   files:
     - include/zephyr/ipc/
@@ -3178,7 +3185,6 @@ MIPS arch:
 Memory Management:
   status: maintained
   maintainers:
-    - carlocaione
     - dcpleung
   files:
     - subsys/mem_mgmt/
@@ -4039,7 +4045,6 @@ RISCV arch:
     - mgielda
     - katsuster
     - edersondisouza
-    - carlocaione
     - npitre
     - ycsin
     - VynDragon
@@ -4200,6 +4205,7 @@ Renesas RA Platforms:
     - duynguyenxa
     - thaoluonguw
     - thenguyenyf
+    - khoa-nguyen-18
   files:
     - boards/arduino/uno_r4/
     - boards/renesas/*ra*/
@@ -4211,6 +4217,7 @@ Renesas RA Platforms:
     - samples/boards/renesas/
     - tests/boards/renesas/
     - include/zephyr/drivers/misc/renesas_ra_external_interrupt/
+    - include/zephyr/drivers/misc/interconn/renesas_elc/
   labels:
     - "platform: Renesas RA"
   description: >-
@@ -4928,7 +4935,6 @@ Utilities:
     - dcpleung
     - peter-mitsis
   files:
-    - lib/crc/
     - lib/utils/
     - tests/unit/timeutil/
     - tests/unit/time_units/
@@ -5129,7 +5135,6 @@ West:
   maintainers:
     - stephanosio
   collaborators:
-    - microbuilder
     - povergoing
   files:
     - modules/cmsis/
@@ -5345,13 +5350,13 @@ West:
     - nika-nordic
     - masz-nordic
   collaborators:
-    - hubertmis
     - nordic-krch
     - kl-cruz
     - magp-nordic
     - jaz1-nordic
     - mif1-nordic
     - adamkondraciuk
+    - lstnl
   files:
     - modules/hal_nordic/
   labels:
@@ -5577,7 +5582,6 @@ West:
 "West project: libmetal":
   status: odd fixes
   collaborators:
-    - carlocaione
     - arnopo
   files:
     - modules/Kconfig.libmetal
@@ -5735,7 +5739,6 @@ West:
 "West project: open-amp":
   status: odd fixes
   collaborators:
-    - carlocaione
     - uLipe
     - iuliana-prodan
   files:
@@ -5859,7 +5862,6 @@ West:
     - povergoing
     - sgrrzhf
   collaborators:
-    - carlocaione
     - wearyzen
     - ithinuel
   files:
@@ -6049,6 +6051,7 @@ nRF Platforms:
     - kl-cruz
     - magp-nordic
     - nika-nordic
+    - lstnl
   files:
     - boards/nordic/
     - drivers/*/*nrf*.c

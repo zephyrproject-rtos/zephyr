@@ -9,7 +9,7 @@
 / {
 	zephyr,user {
 		io-channels = <&sar_adc0 2>, <&sar_adc0 3>, <&sar_adc0 4>, <&sar_adc0 5>,
-				<&sar_adc1 3>, <&sar_adc1 4>, <&sar_adc1 5>, <&sar_adc1 6>;
+			      <&sar_adc1 3>, <&sar_adc1 4>, <&sar_adc1 5>, <&sar_adc1 6>;
 	};
 };
 
@@ -52,7 +52,6 @@
 		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
 		zephyr,resolution = <12>;
 	};
-
 };
 
 &sar_adc1 {

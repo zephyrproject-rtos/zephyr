@@ -19,6 +19,17 @@ find_package(Zephyr
 
 project(uicr)
 
+# Function to parse a Kconfig value from a .config file
+function(parse_kconfig_value config_file config_name output_var)
+  file(STRINGS ${config_file} config_lines ENCODING "UTF-8")
+  foreach(line ${config_lines})
+    if("${line}" MATCHES "^${config_name}=\"(.*)\"$")
+      set(${output_var} "${CMAKE_MATCH_1}" PARENT_SCOPE)
+      return()
+    endif()
+  endforeach()
+endfunction()
+
 # Function to compute partition absolute address and size from devicetree
 function(compute_partition_address_and_size partition_nodelabel output_address_var output_size_var)
   dt_nodelabel(partition_path NODELABEL ${partition_nodelabel} REQUIRED)
@@ -40,8 +51,10 @@ endif()
 set(periphconf_args)
 set(periphconf_elfs)
 set(merged_hex_file ${APPLICATION_BINARY_DIR}/zephyr/${CONFIG_KERNEL_BIN_NAME}.hex)
+set(secondary_periphconf_elfs)
 set(uicr_hex_file ${APPLICATION_BINARY_DIR}/zephyr/uicr.hex)
 set(periphconf_hex_file ${APPLICATION_BINARY_DIR}/zephyr/periphconf.hex)
+set(secondary_periphconf_hex_file ${APPLICATION_BINARY_DIR}/zephyr/secondary_periphconf.hex)
 
 # Get UICR absolute address from this image's devicetree
 dt_nodelabel(uicr_path NODELABEL "uicr" REQUIRED)
@@ -62,7 +75,16 @@ if(CONFIG_GEN_UICR_GENERATE_PERIPHCONF)
     endif()
 
     if(EXISTS ${_dir}/zephyr/zephyr.dts)
-      list(APPEND periphconf_elfs ${_dir}/zephyr/zephyr.elf)
+      # Read CONFIG_KERNEL_BIN_NAME from the sibling's .config file
+      parse_kconfig_value(${_dir}/zephyr/.config CONFIG_KERNEL_BIN_NAME kernel_bin_name)
+      set(kernel_elf_path ${_dir}/zephyr/${kernel_bin_name}.elf)
+
+      # Check if this is secondary firmware by looking for the marker file
+      if(EXISTS ${_dir}/is_secondary_firmware.txt)
+        list(APPEND secondary_periphconf_elfs ${kernel_elf_path})
+      else()
+        list(APPEND periphconf_elfs ${kernel_elf_path})
+      endif()
     endif()
   endforeach()
 
@@ -79,21 +101,46 @@ if(CONFIG_GEN_UICR_GENERATE_PERIPHCONF)
   endforeach()
 endif(CONFIG_GEN_UICR_GENERATE_PERIPHCONF)
 
-# Generate hex files (merged, uicr-only, and periphconf-only)
+if(CONFIG_GEN_UICR_SECONDARY)
+  set(secondary_args --secondary)
+
+  # Compute SECONDARY partition absolute address from this image's devicetree
+  compute_partition_address_and_size("secondary_partition" SECONDARY_ADDRESS SECONDARY_SIZE)
+
+  list(APPEND secondary_args
+    --secondary-address ${SECONDARY_ADDRESS}
+    )
+
+  if(CONFIG_GEN_UICR_SECONDARY_GENERATE_PERIPHCONF)
+    # Compute SECONDARY_PERIPHCONF absolute address and size from this image's devicetree
+    compute_partition_address_and_size("secondary_periphconf_partition" SECONDARY_PERIPHCONF_ADDRESS SECONDARY_PERIPHCONF_SIZE)
+
+    list(APPEND secondary_args --secondary-periphconf-address ${SECONDARY_PERIPHCONF_ADDRESS})
+    list(APPEND secondary_args --secondary-periphconf-size ${SECONDARY_PERIPHCONF_SIZE})
+    list(APPEND secondary_args --out-secondary-periphconf-hex ${secondary_periphconf_hex_file})
+
+    foreach(elf ${secondary_periphconf_elfs})
+      list(APPEND secondary_args --in-secondary-periphconf-elf ${elf})
+    endforeach()
+  endif()
+endif()
+
+# Generate hex files (merged, uicr-only, periphconf-only, and secondary-periphconf-only)
 add_custom_command(
-  OUTPUT ${merged_hex_file} ${uicr_hex_file} ${periphconf_hex_file}
+  OUTPUT ${merged_hex_file} ${uicr_hex_file} ${periphconf_hex_file} ${secondary_periphconf_hex_file}
   COMMAND ${CMAKE_COMMAND} -E env PYTHONPATH=${ZEPHYR_BASE}/scripts/dts/python-devicetree/src
           ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/soc/nordic/common/uicr/gen_uicr.py
           --uicr-address ${UICR_ADDRESS}
           --out-merged-hex ${merged_hex_file}
           --out-uicr-hex ${uicr_hex_file}
           ${periphconf_args}
-  DEPENDS ${periphconf_elfs}
+          ${secondary_args}
+  DEPENDS ${periphconf_elfs} ${secondary_periphconf_elfs}
   WORKING_DIRECTORY ${APPLICATION_BINARY_DIR}
-  COMMENT "Using gen_uicr.py to generate ${merged_hex_file} from ${periphconf_elfs}"
+  COMMENT "Using gen_uicr.py to generate ${merged_hex_file}, ${uicr_hex_file}, ${periphconf_hex_file}, and ${secondary_periphconf_hex_file} from ${periphconf_elfs} ${secondary_periphconf_elfs}"
 )
 
 # Add zephyr subdirectory to handle flash configuration with correct paths
 add_subdirectory(zephyr)
 
-add_custom_target(gen_uicr ALL DEPENDS ${merged_hex_file})
+add_custom_target(gen_uicr ALL DEPENDS ${merged_hex_file} ${uicr_hex_file} ${periphconf_hex_file} ${secondary_periphconf_hex_file})

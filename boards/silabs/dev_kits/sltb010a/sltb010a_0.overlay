@@ -17,3 +17,20 @@
 &sw_mic_enable {
 	enable-gpios = <&gpioa 0 GPIO_ACTIVE_HIGH>;
 };
+
+&exp_header {
+	gpio-map = <3 0 &gpioa 8 0>,
+		   <4 0 &gpioc 0 0>,
+		   <5 0 &gpioa 7 0>,
+		   <6 0 &gpioc 1 0>,
+		   <7 0 &gpioc 6 0>,
+		   <8 0 &gpioc 2 0>,
+		   <9 0 &gpioc 7 0>,
+		   <10 0 &gpiob 2 0>,
+		   <11 0 &gpiob 0 0>,
+		   <12 0 &gpioa 5 0>,
+		   <13 0 &gpiob 1 0>,
+		   <14 0 &gpioa 6 0>,
+		   <15 0 &gpiod 3 0>,
+		   <16 0 &gpiod 2 0>;
+};

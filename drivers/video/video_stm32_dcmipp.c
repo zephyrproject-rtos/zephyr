@@ -1588,6 +1588,8 @@ static void stm32_dcmipp_isr(const struct device *dev)
 	HAL_DCMIPP_IRQHandler(&dcmipp->hdcmipp);
 }
 
+#define SOURCE_DEV(inst) DEVICE_DT_GET(DT_NODE_REMOTE_DEVICE(DT_INST_ENDPOINT_BY_ID(inst, 0, 0)))
+
 #define DCMIPP_PIPE_INIT_DEFINE(node_id, inst)						\
 	static struct stm32_dcmipp_pipe_data stm32_dcmipp_pipe_##node_id = {		\
 		.id = DT_NODE_CHILD_IDX(node_id),					\
@@ -1598,9 +1600,9 @@ static void stm32_dcmipp_isr(const struct device *dev)
 			 &stm32_dcmipp_pipe_##node_id,					\
 			 &stm32_dcmipp_config_##inst,					\
 			 POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY,			\
-			 &stm32_dcmipp_driver_api);
-
-#define SOURCE_DEV(inst) DEVICE_DT_GET(DT_NODE_REMOTE_DEVICE(DT_INST_ENDPOINT_BY_ID(inst, 0, 0)))
+			 &stm32_dcmipp_driver_api);					\
+											\
+	VIDEO_DEVICE_DEFINE(dcmipp_##inst_pipe_##node_id, DEVICE_DT_GET(node_id), SOURCE_DEV(inst));
 
 #if defined(STM32_DCMIPP_HAS_CSI)
 #define STM32_DCMIPP_CSI_DT_PARAMS(inst)							\
@@ -1618,6 +1620,14 @@ static void stm32_dcmipp_isr(const struct device *dev)
 							    data_lanes, 1))),
 #else
 #define STM32_DCMIPP_CSI_DT_PARAMS(inst)
+#endif
+
+#if defined(STM32_DCMIPP_HAS_PIXEL_PIPES)
+#define STM32_DCMIPP_PIPES(inst) \
+	DT_FOREACH_CHILD_VARGS(DT_INST_CHILD(inst, pipes), DCMIPP_PIPE_INIT_DEFINE, inst)
+#else
+#define STM32_DCMIPP_PIPE_INIT(node_id, inst) DCMIPP_PIPE_INIT_DEFINE(node_id, inst)
+#define STM32_DCMIPP_PIPES(inst) STM32_DCMIPP_PIPE_INIT(DT_INST_CHILD(inst, pipe), inst)
 #endif
 
 #define STM32_DCMIPP_INIT(inst)									\
@@ -1661,7 +1671,7 @@ static void stm32_dcmipp_isr(const struct device *dev)
 						    vsync_active, 0) ?				\
 						    DCMIPP_VSPOLARITY_HIGH :			\
 						    DCMIPP_VSPOLARITY_LOW,			\
-		.parallel.hs_polarity = DT_PROP_OR(DT_INST_ENDPOINT_BY_ID(n, 0, 0),		\
+		.parallel.hs_polarity = DT_PROP_OR(DT_INST_ENDPOINT_BY_ID(inst, 0, 0),	        \
 						   hsync_active, 0) ?				\
 						    DCMIPP_HSPOLARITY_HIGH :			\
 						    DCMIPP_HSPOLARITY_LOW,			\
@@ -1677,8 +1687,6 @@ static void stm32_dcmipp_isr(const struct device *dev)
 		    POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY,					\
 		    NULL);									\
 												\
-	DT_FOREACH_CHILD_VARGS(DT_INST_PORT_BY_ID(inst, 1), DCMIPP_PIPE_INIT_DEFINE, inst);	\
-												\
-	VIDEO_DEVICE_DEFINE(dcmipp_##inst, DEVICE_DT_INST_GET(inst), SOURCE_DEV(inst));
+	STM32_DCMIPP_PIPES(inst)
 
 DT_INST_FOREACH_STATUS_OKAY(STM32_DCMIPP_INIT)

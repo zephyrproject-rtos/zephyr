@@ -1,6 +1,6 @@
 .. zephyr:code-sample:: lora-receive
    :name: LoRa receive
-   :relevant-api: lora_api
+   :relevant-api: lora_interface
 
    Receive packets in both synchronous and asynchronous mode using the LoRa
    radio.

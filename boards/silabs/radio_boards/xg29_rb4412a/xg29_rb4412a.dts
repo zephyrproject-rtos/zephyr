@@ -34,6 +34,7 @@
 		sw0 = &button0;
 		sw1 = &button1;
 		watchdog0 = &wdog0;
+		dht0 = &si7021;
 	};
 
 	leds {
@@ -78,6 +79,24 @@
 		compatible = "regulator-fixed";
 		enable-gpios = <&gpioc 7 GPIO_ACTIVE_HIGH>;
 		regulator-name = "sensor_enable";
+	};
+
+	exp_header: exp-header {
+		compatible = "silabs,exp-header";
+		#gpio-cells = <2>;
+		gpio-map = <4 0 &gpioc 0 0>,
+			   <6 0 &gpioc 1 0>,
+			   <7 0 &gpiob 0 0>,
+			   <8 0 &gpioc 2 0>,
+			   <9 0 &gpiob 1 0>,
+			   <10 0 &gpioc 3 0>,
+			   <12 0 &gpioa 5 0>,
+			   <13 0 &gpioa 8 0>,
+			   <14 0 &gpioa 6 0>,
+			   <15 0 &gpiob 2 0>,
+			   <16 0 &gpiob 3 0>;
+		gpio-map-mask = <0xffffffff 0x0>;
+		gpio-map-pass-thru = <0x0 GPIO_DT_FLAGS_MASK>;
 	};
 };
 
@@ -144,6 +163,7 @@
 	si7021: si7021@40 {
 		compatible = "silabs,si7006";
 		reg = <0x40>;
+		vin-supply = <&sensor_enable>;
 	};
 };
 

@@ -68,7 +68,19 @@ enum ironside_dvfs_oppoint {
  * specified value. It will block until the change is applied.
  *
  * @param dvfs_oppoint The new DVFS oppoint to set.
- * @return int 0 on success, negative error code on failure.
+ *
+ * @retval 0 on success.
+ * @retval -IRONSIDE_DVFS_ERROR_WRONG_OPPOINT if the requested DVFS oppoint is not allowed.
+ * @retval -IRONSIDE_DVFS_ERROR_BUSY if waiting for mutex lock timed out, or hardware is busy.
+ * @retval -IRONSIDE_DVFS_ERROR_OPPOINT_DATA if there is configuration error in the DVFS service.
+ * @retval -IRONSIDE_DVFS_ERROR_PERMISSION if the caller does not have permission to change the DVFS
+ * oppoint.
+ * @retval -IRONSIDE_DVFS_ERROR_NO_CHANGE_NEEDED if the requested DVFS oppoint is already set.
+ * @retval -IRONSIDE_DVFS_ERROR_TIMEOUT if the operation timed out, possibly due to a hardware
+ * issue.
+ * @retval -IRONSIDE_DVFS_ERROR_ISR_NOT_ALLOWED if the DVFS oppoint change operation is not allowed
+ * in the ISR context.
+ * @retval Positive error status if reported by IronSide call (see error codes in @ref call.h).
  */
 int ironside_dvfs_change_oppoint(enum ironside_dvfs_oppoint dvfs_oppoint);
 

@@ -30,8 +30,8 @@ def check_github_access(usernames, repo_fullname, token):
     missing_access = set()
     for username in usernames:
         try:
-            collab = repo.get_collaborator_permission(username)
-            # Permissions: admin, maintain, write, triage, read
+            collab = repo.get_collaborator_role_name(username)
+            # Roles: admin, maintain, write, triage, read
             if collab not in ("admin", "maintain", "write", "triage"):
                 missing_access.add(username)
         except Exception:

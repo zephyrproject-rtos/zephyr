@@ -6,15 +6,16 @@
 
 /**
  * @file
- * @brief Public LED driver APIs
+ * @ingroup led_interface
+ * @brief Main header file for LED driver API.
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_LED_H_
 #define ZEPHYR_INCLUDE_DRIVERS_LED_H_
 
 /**
- * @brief LED Interface
- * @defgroup led_interface LED Interface
+ * @brief Interfaces for Light-Emitting Diode (LED) controllers.
+ * @defgroup led_interface LED
  * @since 1.12
  * @version 1.0.0
  * @ingroup io_interfaces

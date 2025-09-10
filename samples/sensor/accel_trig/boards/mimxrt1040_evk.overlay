@@ -4,7 +4,6 @@
  * Copyright 2025 NXP
  */
 
-
 &fxls8974 {
 	status = "okay";
 	int1-gpios = <&gpio1 11 GPIO_ACTIVE_LOW>;

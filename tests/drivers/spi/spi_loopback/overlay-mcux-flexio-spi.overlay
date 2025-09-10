@@ -5,24 +5,22 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
- /* On RT1060 EVKC, SPI loopback test, short J17-9 and J17-10
-  * On RT1064 EVK,  SPI loopback test, short J24-9 and J24-10
-  */
+/* On RT1060 EVKC, SPI loopback test, short J17-9 and J17-10
+ * On RT1064 EVK,  SPI loopback test, short J24-9 and J24-10
+ */
 
 &pinctrl {
 	pinmux_flexio3spi0: pinmux_flexio3spi0 {
 		group0 {
-			pinmux =
-				<&iomuxc_gpio_ad_b0_03_gpio1_io03>, /* cs */
-				<&iomuxc_gpio_ad_b1_10_flexio3_flexio10>, /* sck */
-				<&iomuxc_gpio_ad_b1_00_flexio3_flexio00>, /* sdo */
-				<&iomuxc_gpio_ad_b1_01_flexio3_flexio01>; /* sdi */
+			pinmux = <&iomuxc_gpio_ad_b0_03_gpio1_io03>, /* cs */
+				 <&iomuxc_gpio_ad_b1_10_flexio3_flexio10>, /* sck */
+				 <&iomuxc_gpio_ad_b1_00_flexio3_flexio00>, /* sdo */
+				 <&iomuxc_gpio_ad_b1_01_flexio3_flexio01>; /* sdi */
 			drive-strength = "r0-6";
 			slew-rate = "slow";
 			nxp,speed = "150-mhz";
 		};
 	};
-
 };
 
 &flexio3 {
@@ -52,5 +50,4 @@
 			spi-max-frequency = <16000000>;
 		};
 	};
-
 };

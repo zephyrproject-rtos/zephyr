@@ -17,7 +17,7 @@
 		/delete-node/ mailbox@8b000;
 
 		/* Attach MBOX driver to Mailbox Unit */
-		mbox:mailbox0@5008b000 {
+		mbox: mailbox0@5008b000 {
 			compatible = "nxp,mbox-mailbox";
 			reg = <0x5008b000 0xEC>;
 			interrupts = <31 0>;

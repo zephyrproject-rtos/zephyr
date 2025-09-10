@@ -18,8 +18,8 @@ test_uart_pms7003: pms7003 {
 };
 
 grow_r502a {
-	#address-cells=<1>;
-	#size-cells=<0>;
+	#address-cells = <1>;
+	#size-cells = <0>;
 	test_uart_grow_r502a: grow_r502a@0 {
 		compatible = "hzgrow,r502a";
 		reg = <0x0>;

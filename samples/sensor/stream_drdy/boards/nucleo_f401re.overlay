@@ -5,7 +5,6 @@
  */
 #include <zephyr/dt-bindings/sensor/lsm6dsv16x.h>
 
-
 /*
  * Nucleo F401RE board + shield iks4a1
  *
@@ -25,7 +24,7 @@
 		reg = <0x6b>;
 		accel-odr = <LSM6DSV16X_DT_ODR_AT_120Hz>;
 		accel-range = <LSM6DSV16X_DT_FS_16G>;
-		int2-gpios =  <&arduino_header 10 GPIO_ACTIVE_HIGH>; /* D4 (PB5) */
+		int2-gpios = <&arduino_header 10 GPIO_ACTIVE_HIGH>; /* D4 (PB5) */
 		drdy-pin = <2>;
 		drdy-pulsed;
 	};

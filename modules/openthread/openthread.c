@@ -166,6 +166,22 @@ static void ot_joiner_start_handler(otError error, void *context)
 	}
 }
 
+static void ot_configure_instance(void)
+{
+#ifndef CONFIG_OPENTHREAD_COPROCESSOR_RCP
+	/* Configure Child Supervision and MLE Child timeouts. */
+	otChildSupervisionSetInterval(openthread_instance,
+				      CONFIG_OPENTHREAD_CHILD_SUPERVISION_INTERVAL);
+	otChildSupervisionSetCheckTimeout(openthread_instance,
+					  CONFIG_OPENTHREAD_CHILD_SUPERVISION_CHECK_TIMEOUT);
+	otThreadSetChildTimeout(openthread_instance, CONFIG_OPENTHREAD_MLE_CHILD_TIMEOUT);
+
+	if (IS_ENABLED(CONFIG_OPENTHREAD_ROUTER_SELECTION_JITTER_OVERRIDE)) {
+		otThreadSetRouterSelectionJitter(openthread_instance, OT_ROUTER_SELECTION_JITTER);
+	}
+#endif
+}
+
 static bool ot_setup_default_configuration(void)
 {
 	otExtendedPanId xpanid = {0};
@@ -355,10 +371,7 @@ int openthread_init(void)
 		}
 	}
 
-	if (IS_ENABLED(CONFIG_OPENTHREAD_ROUTER_SELECTION_JITTER_OVERRIDE)) {
-		otThreadSetRouterSelectionJitter(openthread_instance, OT_ROUTER_SELECTION_JITTER);
-	}
-
+	ot_configure_instance();
 	openthread_mutex_unlock();
 
 	(void)k_work_submit_to_queue(&openthread_work_q, &openthread_work);
@@ -405,13 +418,6 @@ int openthread_run(void)
 			goto exit;
 		}
 	}
-
-	/* Configure Child Supervision and MLE Child timeouts. */
-	otChildSupervisionSetInterval(openthread_instance,
-				      CONFIG_OPENTHREAD_CHILD_SUPERVISION_INTERVAL);
-	otChildSupervisionSetCheckTimeout(openthread_instance,
-					  CONFIG_OPENTHREAD_CHILD_SUPERVISION_CHECK_TIMEOUT);
-	otThreadSetChildTimeout(openthread_instance, CONFIG_OPENTHREAD_MLE_CHILD_TIMEOUT);
 
 	if (otDatasetIsCommissioned(openthread_instance)) {
 		/* OpenThread already has dataset stored - skip the

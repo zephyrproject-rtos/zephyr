@@ -1,0 +1,26 @@
+# Copyright (c) 2025 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig I2C_SILABS
+	bool "Silabs I2C_S2 driver"
+	default y
+	depends on DT_HAS_SILABS_I2C_ENABLED
+	select SILABS_SISDK_I2C
+	help
+		Enable I2C series 2 driver for the Silabs gecko SoC series.
+if I2C_SILABS
+
+config  I2C_SILABS_DMA
+	bool "DMA support for I2C operations"
+	depends on DMA
+	default y if $(dt_compat_any_has_prop,$(DT_COMPAT_SILABS_I2C),dmas)
+	help
+		Enable DMA mode for I2C DMA transfer.
+
+config I2C_SILABS_TIMEOUT
+	int "I2C operation timeout (milliseconds)"
+	default 1000
+	help
+		Specify the timeout value in milliseconds for I2C transfer.
+
+endif # I2C_SILABS

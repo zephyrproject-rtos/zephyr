@@ -25,14 +25,14 @@
 	};
 
 	test {
-		#address-cells = < 0x1 >;
-		#size-cells = < 0x1 >;
+		#address-cells = <0x1>;
+		#size-cells = <0x1>;
 		interrupt-parent = <&test_intc>;
 
-		test_cpu_intc: interrupt-controller  {
+		test_cpu_intc: interrupt-controller {
 			compatible = "vnd,cpu-intc";
 			#address-cells = <0>;
-			#interrupt-cells = < 0x01 >;
+			#interrupt-cells = <0x01>;
 			interrupt-controller;
 		};
 
@@ -98,7 +98,7 @@
 
 		test_enum_int_default_0: enum-4 {
 			compatible = "vnd,enum-int-required-false-holder";
-			val = < 5 >;
+			val = <5>;
 		};
 
 		test_enum_int_default_1: enum-5 {
@@ -130,31 +130,31 @@
 		 */
 		disabled-node@0 {
 			compatible = "vnd,disabled-compat";
-			reg = < 0x0 0x1000 >;
+			reg = <0x0 0x1000>;
 			status = "disabled";
 		};
 
 		reserved-node@0 {
 			compatible = "vnd,reserved-node";
-			reg = < 0x0 0x1000 >;
+			reg = <0x0 0x1000>;
 			status = "reserved";
 		};
 
 		disabled_gpio: gpio@0 {
 			compatible = "vnd,gpio-device";
 			gpio-controller;
-			reg = < 0x0 0x1000 >;
+			reg = <0x0 0x1000>;
 			interrupts = <3 1>;
-			#gpio-cells = < 0x2 >;
+			#gpio-cells = <0x2>;
 			status = "disabled";
 		};
 
 		reserved_gpio: gpio@1 {
 			compatible = "vnd,gpio-device";
 			gpio-controller;
-			reg = < 0x1 0x1000 >;
+			reg = <0x1 0x1000>;
 			interrupts = <3 1>;
-			#gpio-cells = < 0x2 >;
+			#gpio-cells = <0x2>;
 			status = "reserved";
 		};
 
@@ -168,10 +168,10 @@
 		test_nodelabel: TEST_NODELABEL_ALLCAPS: test_gpio_1: gpio@deadbeef {
 			compatible = "vnd,gpio-device";
 			gpio-controller;
-			reg = < 0xdeadbeef 0x1000 >;
-			#gpio-cells = < 0x2 >;
-			#foo-cells = < 0x1 >;
-			#baz-cells = < 0x1 >;
+			reg = <0xdeadbeef 0x1000>;
+			#gpio-cells = <0x2>;
+			#foo-cells = <0x1>;
+			#baz-cells = <0x1>;
 			interrupts = <4 3>;
 			status = "okay";
 			ngpios = <100>;
@@ -192,11 +192,11 @@
 		test_gpio_2: gpio@abcd1234 {
 			compatible = "vnd,gpio-device";
 			gpio-controller;
-			reg = < 0xabcd1234 0x500 0x98765432 0xff >;
+			reg = <0xabcd1234 0x500 0x98765432 0xff>;
 			reg-names = "one", "two";
-			#gpio-cells = < 0x2 >;
-			#foo-cells = < 0x1 >;
-			#baz-cells = < 0x1 >;
+			#gpio-cells = <0x2>;
+			#foo-cells = <0x1>;
+			#baz-cells = <0x1>;
 			interrupts = <5 2>;
 			status = "okay";
 			ngpios = <200>;
@@ -212,8 +212,8 @@
 		test_gpio_3: gpio@1234 {
 			compatible = "vnd,gpio-one-cell";
 			gpio-controller;
-			reg = < 0x1234 0x500 >;
-			#gpio-cells = < 0x1 >;
+			reg = <0x1234 0x500>;
+			#gpio-cells = <0x1>;
 			status = "okay";
 		};
 
@@ -228,18 +228,18 @@
 		};
 
 		test_i2c: i2c@11112222 {
-			#address-cells = < 1 >;
-			#size-cells = < 0 >;
+			#address-cells = <1>;
+			#size-cells = <0>;
 			compatible = "vnd,i2c";
-			reg = < 0x11112222 0x1000 >;
+			reg = <0x11112222 0x1000>;
 			status = "okay";
-			clock-frequency = < 100000 >;
+			clock-frequency = <100000>;
 			interrupts = <6 2 7 1>;
 			interrupt-names = "status", "error";
 
 			test-i2c-dev@10 {
 				compatible = "vnd,i2c-device";
-				reg = < 0x10 >;
+				reg = <0x10>;
 			};
 
 			gpio@11 {
@@ -276,33 +276,33 @@
 		};
 
 		test_i2c_no_reg: i2c {
-			#address-cells = < 1 >;
-			#size-cells = < 0 >;
+			#address-cells = <1>;
+			#size-cells = <0>;
 			compatible = "vnd,i2c";
 			status = "okay";
-			clock-frequency = < 100000 >;
+			clock-frequency = <100000>;
 
 			test-i2c-dev@12 {
 				compatible = "vnd,i2c-device";
-				reg = < 0x12 >;
+				reg = <0x12>;
 			};
 		};
 
 		test_i3c: i3c@88889999 {
-			#address-cells = < 3 >;
-			#size-cells = < 0 >;
+			#address-cells = <3>;
+			#size-cells = <0>;
 			compatible = "vnd,i3c";
-			reg = < 0x88889999 0x1000 >;
+			reg = <0x88889999 0x1000>;
 			status = "okay";
 
 			test-i3c-dev@420000ABCD12345678 {
 				compatible = "vnd,i3c-device";
-				reg = < 0x42 0xABCD 0x12345678 >;
+				reg = <0x42 0xABCD 0x12345678>;
 			};
 
 			test-i3c-i2c-dev@380000000000000050 {
 				compatible = "vnd,i3c-i2c-device";
-				reg = < 0x38 0x0 0x50 >;
+				reg = <0x38 0x0 0x50>;
 			};
 		};
 
@@ -319,30 +319,30 @@
 		};
 
 		test_spi: spi@33334444 {
-			#address-cells = < 1 >;
-			#size-cells = < 0 >;
+			#address-cells = <1>;
+			#size-cells = <0>;
 			compatible = "vnd,spi";
-			reg = < 0x33334444 0x1000 >;
+			reg = <0x33334444 0x1000>;
 			interrupts = <8 3 9 0 10 1>;
 			status = "okay";
-			clock-frequency = < 2000000 >;
+			clock-frequency = <2000000>;
 
 			cs-gpios = <&test_gpio_1 0x10 0x20>,
-					<&test_gpio_2 0x30 0x40>,
-					<&test_gpio_2 0x50 0x60>;
+				   <&test_gpio_2 0x30 0x40>,
+				   <&test_gpio_2 0x50 0x60>;
 
 			/* all vnd,spi-device instances should have CS */
 
 			test-spi-dev@0 {
 				compatible = "vnd,spi-device";
 				reg = <0>;
-				spi-max-frequency = < 2000000 >;
+				spi-max-frequency = <2000000>;
 			};
 
 			test-spi-dev@1 {
 				compatible = "vnd,spi-device";
 				reg = <1>;
-				spi-max-frequency = < 2000000 >;
+				spi-max-frequency = <2000000>;
 			};
 
 			gpio@2 {
@@ -355,12 +355,12 @@
 		};
 
 		test_spi_no_cs: spi@55556666 {
-			#address-cells = < 1 >;
-			#size-cells = < 0 >;
+			#address-cells = <1>;
+			#size-cells = <0>;
 			compatible = "vnd,spi";
-			reg = < 0x55556666 0x1000 >;
+			reg = <0x55556666 0x1000>;
 			status = "okay";
-			clock-frequency = < 2000000 >;
+			clock-frequency = <2000000>;
 
 			/*
 			 * There should only be one spi-device-2 node.
@@ -369,17 +369,17 @@
 			test_spi_dev_no_cs: test-spi-dev@0 {
 				compatible = "vnd,spi-device-2";
 				reg = <0>;
-				spi-max-frequency = < 2000000 >;
+				spi-max-frequency = <2000000>;
 			};
 		};
 
 		test_i2c_1: i2c@77778888 {
-			#address-cells = < 1 >;
-			#size-cells = < 0 >;
+			#address-cells = <1>;
+			#size-cells = <0>;
 			compatible = "vnd,i2c";
-			reg = < 0x77778888 0x1000 >;
+			reg = <0x77778888 0x1000>;
 			status = "okay";
-			clock-frequency = < 100000 >;
+			clock-frequency = <100000>;
 			interrupts = <11 3 12 2>;
 			interrupt-names = "status", "error";
 		};
@@ -420,7 +420,7 @@
 		/* there should only be one of these */
 		test_reg: reg-holder@9999aaaa {
 			compatible = "vnd,reg-holder";
-			reg = < 0x9999aaaa 0x1000 0xbbbbcccc 0x3f >;
+			reg = <0x9999aaaa 0x1000 0xbbbbcccc 0x3f>;
 			status = "okay";
 			reg-names = "first", "second";
 			misc-prop = <1234>;
@@ -431,7 +431,7 @@
 			status = "okay";
 		};
 
-		test_intc: interrupt-controller@bbbbcccc  {
+		test_intc: interrupt-controller@bbbbcccc {
 			compatible = "vnd,intc";
 			reg = <0xbbbbcccc 0x1000>;
 			interrupt-controller;
@@ -493,7 +493,7 @@
 		test_dma1: dma@44443333 {
 			compatible = "vnd,dma";
 			#dma-cells = <2>;
-			reg = < 0x44443333 0x1000 >;
+			reg = <0x44443333 0x1000>;
 			interrupts = <11 3>;
 			status = "okay";
 		};
@@ -501,7 +501,7 @@
 		test_dma2: dma@44442222 {
 			compatible = "vnd,dma";
 			#dma-cells = <2>;
-			reg = < 0x44442222 0x1000 >;
+			reg = <0x44442222 0x1000>;
 			interrupts = <12 3>;
 			status = "okay";
 		};
@@ -574,14 +574,14 @@
 		test_pwm1: pwm@55551111 {
 			compatible = "vnd,pwm";
 			#pwm-cells = <3>;
-			reg = < 0x55551111 0x1000 >;
+			reg = <0x55551111 0x1000>;
 			status = "okay";
 		};
 
 		test_pwm2: pwm@55552222 {
 			compatible = "vnd,pwm";
 			#pwm-cells = <3>;
-			reg = < 0x55552222 0x1000 >;
+			reg = <0x55552222 0x1000>;
 			status = "okay";
 		};
 
@@ -602,14 +602,14 @@
 
 		test_can0: can@55553333 {
 			compatible = "vnd,can-controller";
-			reg = < 0x55553333 0x1000 >;
+			reg = <0x55553333 0x1000>;
 			status = "okay";
 			phys = <&test_transceiver0>;
 		};
 
 		test_can1: can@55554444 {
 			compatible = "vnd,can-controller";
-			reg = < 0x55554444 0x1000 >;
+			reg = <0x55554444 0x1000>;
 			status = "okay";
 
 			can-transceiver {
@@ -620,7 +620,7 @@
 
 		test_can2: can@55555555 {
 			compatible = "vnd,can-controller";
-			reg = < 0x55555555 0x1000 >;
+			reg = <0x55555555 0x1000>;
 			status = "okay";
 
 			can-transceiver {
@@ -630,7 +630,7 @@
 
 		test_can3: can@55557777 {
 			compatible = "vnd,can-controller";
-			reg = < 0x55556666 0x1000 >;
+			reg = <0x55556666 0x1000>;
 			status = "okay";
 			phys = <&test_transceiver1>;
 		};
@@ -845,25 +845,25 @@
 		};
 
 		test-mtd@ffeeddcc {
-			reg = < 0xffeeddcc 0x1000 >;
-			#address-cells = < 1 >;
-			#size-cells = < 1 >;
+			reg = <0xffeeddcc 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
 
 			flash@20000000 {
 				compatible = "soc-nv-flash";
-				reg = < 0x20000000 0x100 >;
+				reg = <0x20000000 0x100>;
 				partitions {
 					compatible = "fixed-partitions";
-					#address-cells = < 1 >;
-					#size-cells = < 1 >;
+					#address-cells = <1>;
+					#size-cells = <1>;
 
 					partition@0 {
-						reg = < 0x0 0xc0 >;
+						reg = <0x0 0xc0>;
 						label = "test-partition-0";
 					};
 
 					partition@c0 {
-						reg = < 0xc0 0x40 >;
+						reg = <0xc0 0x40>;
 						label = "test-partition-1";
 					};
 
@@ -890,15 +890,15 @@
 		};
 
 		test-mtd@33221100 {
-			reg = < 0x33221100 0x1000 >;
+			reg = <0x33221100 0x1000>;
 
 			partitions {
 				compatible = "fixed-partitions";
-				#address-cells = < 1 >;
-				#size-cells = < 1 >;
+				#address-cells = <1>;
+				#size-cells = <1>;
 
 				partition@6ff80 {
-					reg = < 0x6ff80 0x80 >;
+					reg = <0x6ff80 0x80>;
 					label = "test-partition-2";
 				};
 			};
@@ -906,12 +906,12 @@
 	};
 
 	test_64 {
-		#address-cells = < 2 >;
-		#size-cells = < 0 >;
+		#address-cells = <2>;
+		#size-cells = <0>;
 
 		test_reg_64: reg-holder-64@ffffffff11223344 {
 			compatible = "vnd,reg-holder-64";
-			reg = < 0xffffffff 0x11223344>;
+			reg = <0xffffffff 0x11223344>;
 			status = "okay";
 			reg-names = "test_name";
 		};

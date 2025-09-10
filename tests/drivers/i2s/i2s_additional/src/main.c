@@ -19,7 +19,7 @@ LOG_MODULE_REGISTER(i2s_add, LOG_LEVEL_INF);
 #define NUMBER_OF_CHANNELS 2
 #define FRAME_CLK_FREQ 44100
 
-#define NUM_BLOCKS 20
+#define NUM_BLOCKS 4
 #define TIMEOUT 1000
 
 #define SAMPLES_COUNT 64
@@ -519,9 +519,9 @@ ZTEST(i2s_additional, test_02b_four_channels)
 #endif /* CONFIG_I2S_TEST_FOUR_CHANNELS_UNSUPPORTED */
 }
 
-/** @brief Test I2S transfer with eight channels.
+/** @brief Test I2S transfer with eight channels, 16 bit and 44.1 kHz.
  */
-ZTEST(i2s_additional, test_02c_eight_channels)
+ZTEST(i2s_additional, test_02c_eight_channels_default)
 {
 	struct i2s_config i2s_cfg = default_i2s_cfg;
 
@@ -533,6 +533,43 @@ ZTEST(i2s_additional, test_02c_eight_channels)
 	ret = i2s_configure(dev_i2s, I2S_DIR_TX, &i2s_cfg);
 	zassert_equal(ret, -EINVAL, "Unexpected result %d", ret);
 #else /* CONFIG_I2S_TEST_EIGHT_CHANNELS_UNSUPPORTED */
+
+	/* Select format that supports eight channels. */
+#if !defined(CONFIG_I2S_TEST_DATA_FORMAT_PCM_LONG_UNSUPPORTED)
+	i2s_cfg.format = I2S_FMT_DATA_FORMAT_PCM_LONG;
+	TC_PRINT("Selected format is I2S_FMT_DATA_FORMAT_PCM_LONG\n");
+#elif !defined(CONFIG_I2S_TEST_DATA_FORMAT_PCM_SHORT_UNSUPPORTED)
+	i2s_cfg.format = I2S_FMT_DATA_FORMAT_PCM_SHORT;
+	TC_PRINT("Selected format is I2S_FMT_DATA_FORMAT_PCM_SHORT\n");
+#else
+#error "Don't know what format supports eight channels."
+#endif
+
+	i2s_dir_both_transfer_long(&i2s_cfg);
+#endif /* CONFIG_I2S_TEST_EIGHT_CHANNELS_UNSUPPORTED */
+}
+
+/** @brief Test I2S transfer with eight channels, 32 bit and 48 kHz.
+ */
+ZTEST(i2s_additional, test_02d_eight_channels_high_throughput)
+{
+	struct i2s_config i2s_cfg = default_i2s_cfg;
+
+	i2s_cfg.channels = 8;
+	i2s_cfg.word_size = 32;
+	i2s_cfg.frame_clk_freq = 48000;
+
+#if defined(CONFIG_I2S_TEST_EIGHT_CHANNELS_UNSUPPORTED)
+	int ret;
+
+	ret = i2s_configure(dev_i2s, I2S_DIR_TX, &i2s_cfg);
+	zassert_equal(ret, -EINVAL, "Unexpected result %d", ret);
+#else /* CONFIG_I2S_TEST_EIGHT_CHANNELS_UNSUPPORTED */
+
+#if defined(CONFIG_I2S_TEST_EIGHT_CHANNELS_32B_48K_UNSUPPORTED)
+	/* Skip this test if driver supports 8ch but fails in this configuration. */
+	ztest_test_skip();
+#endif
 
 	/* Select format that supports eight channels. */
 #if !defined(CONFIG_I2S_TEST_DATA_FORMAT_PCM_LONG_UNSUPPORTED)

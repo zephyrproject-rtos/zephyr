@@ -5,7 +5,8 @@
 
 /****************************************
  * PLEASE KEEP REG ADDRESSES SEQUENTIAL *
- ***************************************/
+ **************************************
+ */
 
 max17048@0 {
 	compatible = "maxim,max17048";
@@ -43,5 +44,11 @@ lc709203f@4 {
 sy24561@5 {
 	compatible = "silergy,sy24561";
 	reg = <0x5>;
+	status = "okay";
+};
+
+bq40z50@6 {
+	compatible = "ti,bq40z50";
+	reg = <0x6>;
 	status = "okay";
 };

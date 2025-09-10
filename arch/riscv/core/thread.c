@@ -6,7 +6,7 @@
  */
 
 #include <zephyr/kernel.h>
-#include <ksched.h>
+#include <kernel_internal.h>
 #include <zephyr/arch/riscv/csr.h>
 #include <stdio.h>
 #include <pmp.h>

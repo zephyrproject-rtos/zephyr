@@ -1,0 +1,20 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config CRC_DRIVER_RENESAS_RA
+	bool
+	depends on DT_HAS_RENESAS_RA_CRC_ENABLED
+	default y
+	select CRC_DRIVER_HAS_CRC8
+	select CRC_DRIVER_HAS_CRC8_ROHC
+	select CRC_DRIVER_HAS_CRC8_CCITT
+	select CRC_DRIVER_HAS_CRC16
+	select CRC_DRIVER_HAS_CRC16_CCITT
+	select CRC_DRIVER_HAS_CRC16_ANSI
+	select CRC_DRIVER_HAS_CRC16_ITU_T
+	select CRC_DRIVER_HAS_CRC16_REFLECT
+	select CRC_DRIVER_HAS_CRC32_C
+	select CRC_DRIVER_HAS_CRC32_IEEE
+	select USE_RA_FSP_CRC
+	help
+	  Enable the driver implementation for Renesas RA microcontrollers

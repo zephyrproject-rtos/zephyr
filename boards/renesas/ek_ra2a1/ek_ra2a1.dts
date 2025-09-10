@@ -21,6 +21,7 @@
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
 		zephyr,entropy = &trng;
+		zephyr,crc = &crc;
 	};
 
 	leds {
@@ -160,4 +161,8 @@
 			hysteresis = <115>;
 		};
 	};
+};
+
+&crc {
+	status = "okay";
 };

@@ -21,6 +21,7 @@ Peripherals
    comparator.rst
    coredump.rst
    counter.rst
+   crc.rst
    dac.rst
    dma.rst
    display/index.rst

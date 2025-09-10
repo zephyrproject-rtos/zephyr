@@ -10,4 +10,5 @@ supported:
   - gpio
   - pwm
   - adc
+  - i2c
 vendor: renesas

@@ -2,20 +2,20 @@
 
 zephyr_library()
 
-if(CONFIG_ARMV8_1_M_PACBTI_STANDARD)
+if(CONFIG_ARM_PACBTI_STANDARD)
   zephyr_compile_options(-mbranch-protection=standard)
-elseif(CONFIG_ARMV8_1_M_PACBTI_PACRET)
+elseif(CONFIG_ARM_PACBTI_PACRET)
   zephyr_compile_options(-mbranch-protection=pac-ret)
-elseif(CONFIG_ARMV8_1_M_PACBTI_PACRET_LEAF)
+elseif(CONFIG_ARM_PACBTI_PACRET_LEAF)
   zephyr_compile_options(-mbranch-protection=pac-ret+leaf)
-elseif(CONFIG_ARMV8_1_M_PACBTI_BTI)
+elseif(CONFIG_ARM_PACBTI_BTI)
   zephyr_compile_options(-mbranch-protection=bti)
-elseif(CONFIG_ARMV8_1_M_PACBTI_PACRET_BTI)
+elseif(CONFIG_ARM_PACBTI_PACRET_BTI)
   zephyr_compile_options(-mbranch-protection=pac-ret+bti)
-elseif(CONFIG_ARMV8_1_M_PACBTI_PACRET_LEAF_BTI)
+elseif(CONFIG_ARM_PACBTI_PACRET_LEAF_BTI)
   zephyr_compile_options(-mbranch-protection=pac-ret+leaf+bti)
-elseif(CONFIG_ARMV8_1_M_PACBTI_NONE)
-  #TODO: Enable this after Zephyr SDK updates to GCC version >=14.2
+elseif(CONFIG_ARM_PACBTI_NONE)
+  #TODO: Enable this after Zephyr SDK updates to the latest GCC version
   # zephyr_compile_options(-mbranch-protection=none)
 endif()
 

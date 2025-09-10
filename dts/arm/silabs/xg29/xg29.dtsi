@@ -463,7 +463,7 @@
 		};
 
 		i2c0: i2c@5a010000 {
-			compatible = "silabs,gecko-i2c";
+			compatible = "silabs,i2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			reg = <0x5a010000 0x4000>;
 			interrupts = <32 2>;
@@ -475,7 +475,7 @@
 		};
 
 		i2c1: i2c@50068000 {
-			compatible = "silabs,gecko-i2c";
+			compatible = "silabs,i2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			reg = <0x50068000 0x4000>;
 			interrupts = <33 2>;

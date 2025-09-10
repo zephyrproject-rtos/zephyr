@@ -466,11 +466,23 @@ static void isr_tx(void *param)
 	struct node_rx_pdu *node_rx;
 	uint32_t hcto;
 
+	/* Call to ensure packet/event timer accumulates the elapsed time
+	 * under single timer use.
+	 */
+	(void)radio_is_tx_done();
+
 	/* Clear radio tx status and events */
 	lll_isr_tx_status_reset();
 
 	/* Close subevent, one tx-rx chain */
-	radio_switch_complete_and_disable();
+	if (IS_ENABLED(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)) {
+		/* Required under single time tIFS switching, to accumulate the packet
+		 * timer value at the time of clear on radio end.
+		 */
+		radio_switch_complete_end_capture_and_disable();
+	} else {
+		radio_switch_complete_and_disable();
+	}
 
 	/* Get reference to CIS LLL context */
 	cis_lll = param;
@@ -549,7 +561,9 @@ static void isr_tx(void *param)
 #if defined(CONFIG_BT_CTLR_PROFILE_ISR) || \
 	defined(HAL_RADIO_GPIO_HAVE_PA_PIN)
 	radio_tmr_end_capture();
-#endif /* CONFIG_BT_CTLR_PROFILE_ISR */
+#endif /* CONFIG_BT_CTLR_PROFILE_ISR ||
+	* HAL_RADIO_GPIO_HAVE_PA_PIN
+	*/
 
 #if defined(HAL_RADIO_GPIO_HAVE_LNA_PIN)
 	radio_gpio_lna_setup();

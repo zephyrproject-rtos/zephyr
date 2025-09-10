@@ -5,7 +5,6 @@
  */
 
 #include <zephyr/kernel.h>
-#include <ksched.h>
 #include <cmsis_os.h>
 #include <kernel_internal.h>
 

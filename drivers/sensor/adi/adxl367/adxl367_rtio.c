@@ -44,8 +44,9 @@ static void adxl367_submit_fetch(struct rtio_iodev_sqe *iodev_sqe)
 	}
 
 	enc_data->xyz.range = data->range;
+	bool check_temp_data_ready = false;
 
-	rc = adxl367_get_temp_data(dev, &enc_data->raw_temp);
+	rc = adxl367_get_temp_data(dev, &enc_data->raw_temp, check_temp_data_ready);
 	if (rc != 0) {
 		LOG_ERR("Failed to fetch temp samples");
 		rtio_iodev_sqe_err(iodev_sqe, rc);

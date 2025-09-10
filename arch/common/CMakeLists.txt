@@ -17,6 +17,9 @@ if(CONFIG_GEN_ISR_TABLES)
   )
 endif()
 
+zephyr_library_sources(init.c)
+zephyr_library_sources_ifdef(CONFIG_XIP xip.c)
+
 zephyr_library_sources_ifdef(
   CONFIG_ISR_TABLE_SHELL
   isr_tables_shell.c

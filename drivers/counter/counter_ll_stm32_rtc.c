@@ -590,6 +590,18 @@ static int rtc_stm32_init(const struct device *dev)
 	z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
 
 #if !defined(CONFIG_COUNTER_RTC_STM32_SAVE_VALUE_BETWEEN_RESETS)
+
+/* STM32C0 LL driver does not clear the CR register in LL_RTC_DeInit so it will loop forever waiting
+ * for a flag that will never be set when shadow registers are bypassed (BYPSHAD enabled).
+ */
+#if defined(RTC_CR_BYPSHAD) && defined(CONFIG_SOC_SERIES_STM32C0X)
+	if (LL_RTC_IsShadowRegBypassEnabled(RTC)) {
+		LL_RTC_DisableWriteProtection(RTC);
+		LL_RTC_DisableShadowRegBypass(RTC);
+		LL_RTC_EnableWriteProtection(RTC);
+	}
+#endif /* defined(RTC_CR_BYPSHAD) && defined(CONFIG_SOC_SERIES_STM32C0X) */
+
 	if (LL_RTC_DeInit(RTC) != SUCCESS) {
 		goto out_disable_bkup_access;
 	}

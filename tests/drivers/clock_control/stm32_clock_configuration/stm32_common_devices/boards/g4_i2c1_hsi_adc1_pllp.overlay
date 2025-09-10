@@ -33,7 +33,6 @@
 	/delete-property/ clock-frequency;
 };
 
-
 /* Core set up
  * Aim of this part is to provide a base working clock config
  */
@@ -62,13 +61,13 @@
 &i2c1 {
 	/delete-property/ clocks;
 	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00200000>,
-			<&rcc STM32_SRC_HSI I2C1_SEL(2)>;
+		 <&rcc STM32_SRC_HSI I2C1_SEL(2)>;
 	status = "okay";
 };
 
 &adc1 {
 	/* changes clock source for both ADC1 and ADC2 */
 	clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00002000>,
-			<&rcc STM32_SRC_PLL_P ADC12_SEL(1)>;
+		 <&rcc STM32_SRC_PLL_P ADC12_SEL(1)>;
 	status = "okay";
 };

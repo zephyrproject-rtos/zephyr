@@ -31,7 +31,7 @@
 	 * switch the reference source to VDDA. The user needs to measure the
 	 * voltage of VDDA pin to set the value of 'zephyr,vref-mv'.
 	 */
-	voltage-ref= <2>;
+	voltage-ref = <2>;
 
 	channel@0 {
 		reg = <0>;

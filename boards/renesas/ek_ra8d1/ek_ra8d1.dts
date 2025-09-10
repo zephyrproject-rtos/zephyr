@@ -26,6 +26,7 @@
 		zephyr,entropy = &trng;
 		zephyr,flash-controller = &flash1;
 		zephyr,canbus = &canfd0;
+		zephyr,crc = &crc;
 	};
 
 	leds {
@@ -485,6 +486,10 @@ pmod_sd_shield: &sdhc1 {};
 			};
 		};
 	};
+};
+
+&crc {
+	status = "okay";
 };
 
 mikrobus_serial: &uart3 {};

@@ -1,12 +1,4 @@
-.. _native_sim:
-
-native_sim
-##########
-
-.. contents::
-   :depth: 1
-   :backlinks: entry
-   :local:
+.. zephyr:board:: native_sim
 
 Overview
 ********
@@ -293,7 +285,9 @@ All times are kept in microseconds.
 Peripherals
 ***********
 
-The following peripherals are currently provided with this board:
+.. zephyr:board-supported-hw::
+
+Here are more details on the peripherals that are currently provided with this board:
 
 **Interrupt controller**
   A simple yet generic interrupt controller is provided. It can nest interrupts
@@ -721,6 +715,7 @@ host libC (:kconfig:option:`CONFIG_EXTERNAL_LIBC`):
      FUSE, :ref:`Host based filesystem access <native_fuse_flash>`, :kconfig:option:`CONFIG_FUSE_FS_ACCESS`, All
      GPIO, GPIO emulator, :kconfig:option:`CONFIG_GPIO_EMUL`, All
      GPIO, SDL GPIO emulator, :kconfig:option:`CONFIG_GPIO_EMUL_SDL`, All
+     HWINFO, :kconfig:option:`CONFIG_HWINFO_NATIVE`, All
      I2C, I2C emulator, :kconfig:option:`CONFIG_I2C_EMUL`, All
      Input, Input SDL touch, :kconfig:option:`CONFIG_INPUT_SDL_TOUCH`, All
      Input, Linux evdev, :kconfig:option:`CONFIG_NATIVE_LINUX_EVDEV`, All

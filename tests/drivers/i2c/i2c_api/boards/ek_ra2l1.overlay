@@ -16,7 +16,7 @@
 		group1 {
 			/* SCL0 SDA0 */
 			psels = <RA_PSEL(RA_PSEL_I2C, 4, 8)>,
-			<RA_PSEL(RA_PSEL_I2C, 4, 7)>;
+				<RA_PSEL(RA_PSEL_I2C, 4, 7)>;
 			drive-strength = "medium";
 		};
 	};

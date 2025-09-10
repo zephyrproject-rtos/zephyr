@@ -321,6 +321,7 @@ static int put_sync_locked(const struct device *dev)
 	if (pm->base.usage == 0U) {
 		ret = pm->base.action_cb(dev, PM_DEVICE_ACTION_SUSPEND);
 		if (ret < 0) {
+			pm->base.usage++;
 			return ret;
 		}
 		pm->base.state = PM_DEVICE_STATE_SUSPENDED;

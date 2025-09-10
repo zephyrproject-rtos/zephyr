@@ -24,7 +24,7 @@
 #include <esp_cpu.h>
 
 #include <zephyr/linker/linker-defs.h>
-#include <kernel_internal.h>
+#include <zephyr/arch/common/init.h>
 
 #if CONFIG_SOC_SERIES_ESP32C6
 #include <soc/hp_apm_reg.h>
@@ -270,7 +270,7 @@ void __start(void)
 			     "la gp, __global_pointer$\n"
 			     ".option pop");
 
-	z_bss_zero();
+	arch_bss_zero();
 
 #else /* xtensa */
 
@@ -279,7 +279,7 @@ void __start(void)
 	/* Move the exception vector table to IRAM. */
 	__asm__ __volatile__("wsr %0, vecbase" : : "r"(&_init_start));
 
-	z_bss_zero();
+	arch_bss_zero();
 
 	__asm__ __volatile__("" : : "g"(&__bss_start) : "memory");
 

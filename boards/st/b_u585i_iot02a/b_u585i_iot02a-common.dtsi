@@ -146,16 +146,6 @@ stm32_lp_tick_source: &lptim1 {
 		data-rate = <OSPI_DTR_TRANSFER>;
 		four-byte-opcodes;
 		status = "okay";
-
-		partitions {
-			compatible = "fixed-partitions";
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			partition@0 {
-				reg = <0x00000000 DT_SIZE_M(64)>;
-			};
-		};
 	};
 };
 

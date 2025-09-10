@@ -182,7 +182,6 @@
 
 			#include "i3c.dtsi"
 		};
-
 	};
 };
 

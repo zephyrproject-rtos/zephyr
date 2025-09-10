@@ -5,7 +5,7 @@
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
 VERBOSITY_LEVEL=2
-EXECUTE_TIMEOUT=60
+EXECUTE_TIMEOUT=120
 BSIM_EXE=./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf
 
 cd ${BSIM_OUT_PATH}/bin

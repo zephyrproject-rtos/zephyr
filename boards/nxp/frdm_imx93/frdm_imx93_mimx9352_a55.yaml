@@ -1,0 +1,25 @@
+#
+# Copyright 2025 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: frdm_imx93/mimx9352/a55
+name: NXP FRDM-IMX93 A55
+type: mcu
+arch: arm64
+toolchain:
+  - zephyr
+  - cross-compile
+ram: 1024
+supported:
+  - gpio
+  - uart
+  - i2c
+  - spi
+  - can
+  - net
+testing:
+  ignore_tags:
+    - bluetooth
+vendor: nxp

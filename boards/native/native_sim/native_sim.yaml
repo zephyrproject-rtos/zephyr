@@ -23,6 +23,7 @@ supported:
   - spi
   - gpio
   - rtc
+  - hwinfo
 testing:
   default: true
 vendor: zephyr

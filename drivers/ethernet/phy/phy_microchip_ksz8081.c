@@ -474,6 +474,7 @@ done:
 static int phy_mc_ksz8081_cfg_link(const struct device *dev, enum phy_link_speed speeds,
 				   enum phy_cfg_link_flag flags)
 {
+	__maybe_unused const struct mc_ksz8081_config *config = dev->config;
 	struct mc_ksz8081_data *data = dev->data;
 	int ret;
 

@@ -12,9 +12,9 @@
 	pinmux_flexio_spi0: pinmux_flexio_spi0 {
 		group0 {
 			pinmux = <FXIO_D6_PTA8>, /* cs */
-				<FXIO_D4_PTB8>, /* sck */
-				<FXIO_D7_PTC3>, /* sdo */
-				<FXIO_D1_PTB11>; /* sdi */
+				 <FXIO_D4_PTB8>, /* sck */
+				 <FXIO_D7_PTC3>, /* sdo */
+				 <FXIO_D1_PTB11>; /* sdi */
 			drive-strength = "low";
 			slew-rate = "slow";
 		};

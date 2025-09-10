@@ -11,18 +11,18 @@
 &pinctrl {
 	spi0_default: spi0_default {
 		group1 {
-				psels = <NRF_PSEL(SPIM_SCK, 1, 9)>,
-						<NRF_PSEL(SPIM_MOSI, 0, 11)>,
-						<NRF_PSEL(SPIM_MISO, 0, 12)>;
+			psels = <NRF_PSEL(SPIM_SCK, 1, 9)>,
+				<NRF_PSEL(SPIM_MOSI, 0, 11)>,
+				<NRF_PSEL(SPIM_MISO, 0, 12)>;
 		};
 	};
 
 	spi0_sleep: spi0_sleep {
 		group1 {
-				psels = <NRF_PSEL(SPIM_SCK, 1, 9)>,
-						<NRF_PSEL(SPIM_MOSI, 0, 11)>,
-						<NRF_PSEL(SPIM_MISO, 0, 12)>;
-						low-power-enable;
+			psels = <NRF_PSEL(SPIM_SCK, 1, 9)>,
+				<NRF_PSEL(SPIM_MOSI, 0, 11)>,
+				<NRF_PSEL(SPIM_MISO, 0, 12)>;
+			low-power-enable;
 		};
 	};
 };
@@ -44,12 +44,10 @@
 		has-dpd;
 		t-enter-dpd = <10000>;
 		t-exit-dpd = <45000>;
-		jedec-id = [ C2 23 15 ];
-		sfdp-bfp = [
-			e5 20 f1 ff  ff ff ff 00  44 eb 08 6b  08 3b 04 bb
-			ee ff ff ff  ff ff 00 ff  ff ff 00 ff  0c 20 0f 52
-			10 d8 00 ff  23 72 f1 00  82 ec 04 c2  44 83 48 44
-			30 b0 30 b0  f7 c4 d5 5c  00 be 29 ff  f0 d0 ff ff
-		];
+		jedec-id = [C2 23 15];
+		sfdp-bfp = [e5 20 f1 ff ff ff ff 00 44 eb 08 6b 08 3b 04 bb
+			    ee ff ff ff ff ff 00 ff ff ff 00 ff 0c 20 0f 52
+			    10 d8 00 ff 23 72 f1 00 82 ec 04 c2 44 83 48 44
+			    30 b0 30 b0 f7 c4 d5 5c 00 be 29 ff f0 d0 ff ff];
 	};
 };

@@ -475,13 +475,7 @@ zephyr_udc0: &usbotg_hs1 {
 };
 
 csi_interface: &dcmipp {
-	ports {
-		port@0 {
-			csi_ep_in: endpoint { };
-		};
-
-		port@1 {
-			csi_capture_port: endpoint@1 { };
-		};
+	port {
+		csi_ep_in: endpoint { };
 	};
 };

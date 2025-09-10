@@ -23,24 +23,24 @@
 	/* Define memory regions for IPC
 	 * Note that shared memory must have specific MPU attributes set.
 	 */
-	ocram2_ipc0: memory@202c0000{
+	ocram2_ipc0: memory@202c0000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x202c0000 DT_SIZE_K(32)>;
-		zephyr,memory-region="OCRAM2_IPC0";
-		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_IO))>;
+		zephyr,memory-region = "OCRAM2_IPC0";
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_IO)>;
 	};
-	ocram2_ipc1: memory@202c8000{
+	ocram2_ipc1: memory@202c8000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x202c8000 DT_SIZE_K(32)>;
-		zephyr,memory-region="OCRAM2_IPC1";
-		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_IO))>;
+		zephyr,memory-region = "OCRAM2_IPC1";
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_IO)>;
 	};
 
 	soc {
 		/delete-node/ gpt@400f0000;
 
 		/* Replace GPT2 with another GPT kernel timer */
-		gpt2_hw_timer:gpt@400f0000 {
+		gpt2_hw_timer: gpt@400f0000 {
 			compatible = "nxp,gpt-hw-timer";
 			reg = <0x400f0000 0x4000>;
 			interrupts = <120 0>;
@@ -51,7 +51,7 @@
 		/delete-node/ mailbox@40c4c000;
 
 		/* Attach MBOX driver to MU Unit */
-		mbox:mbox@40c4c000 {
+		mbox: mbox@40c4c000 {
 			compatible = "nxp,mbox-imx-mu";
 			reg = <0x40c4c000 0x4000>;
 			interrupts = <118 0>;

@@ -18,9 +18,9 @@
 		};
 	};
 
-	 /omit-if-no-ref/ uart4_default: uart4_default {
-		 group1 {
-			 pinmux = <UART4_TXD_EXP>;
+	/omit-if-no-ref/ uart4_default: uart4_default {
+		group1 {
+			pinmux = <UART4_TXD_EXP>;
 		};
 
 		group2 {
@@ -32,7 +32,7 @@
 	/omit-if-no-ref/ spi0_default: spi0_default {
 		group1 {
 			pinmux = <SPI3_SCK_EXP>, <SPI3_SS_EXP>,
-				  <SPI3_MOSI_EXP>;
+				 <SPI3_MOSI_EXP>;
 		};
 		group2 {
 			pinmux = <SPI3_MISO_EXP>;

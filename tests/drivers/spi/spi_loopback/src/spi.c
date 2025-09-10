@@ -74,8 +74,6 @@ const struct gpio_dt_spec mosi_pin = GPIO_DT_SPEC_GET_OR(DT_PATH(zephyr_user), m
 #define __NOCACHE
 #if CONFIG_DCACHE_LINE_SIZE != 0
 #define __BUF_ALIGN	__aligned(CONFIG_DCACHE_LINE_SIZE)
-#else
-#define __BUF_ALIGN	__aligned(DT_PROP_OR(DT_PATH(cpus, cpu_0), d_cache_line_size, 32))
 #endif
 #endif /* CONFIG_NOCACHE_MEMORY */
 
@@ -297,6 +295,9 @@ ZTEST(spi_loopback, test_spi_complete_multiple)
 /* same as the test_spi_complete_multiple test, but seeing if there is any unreasonable latency */
 ZTEST(spi_loopback, test_spi_complete_multiple_timed)
 {
+	/* Do not check timing when coverage is enabled */
+	Z_TEST_SKIP_IFDEF(CONFIG_COVERAGE);
+
 	struct spi_dt_spec *spec = loopback_specs[spec_idx];
 	const struct spi_buf_set tx = spi_loopback_setup_xfer(tx_bufs_pool, 2,
 							      buffer_tx, BUF_SIZE,
@@ -641,7 +642,7 @@ ZTEST(spi_loopback, test_spi_same_buf_cmd)
 	spi_loopback_compare_bufs(tx_data, buffer_rx, 1,
 				  buffer_print_tx, buffer_print_rx);
 
-	char zeros[BUF_SIZE - 1] = {0};
+	static const char zeros[BUF_SIZE - 1] = {0};
 
 	zassert_ok(memcmp(buffer_rx+1, zeros, BUF_SIZE - 1));
 }
@@ -687,7 +688,7 @@ ZTEST(spi_loopback, test_spi_word_size_9)
 {
 	struct spi_dt_spec *spec = loopback_specs[spec_idx];
 
-	static __BUF_ALIGN uint16_t tx_data_9[BUFWIDE_SIZE];
+	static __BUF_ALIGN __NOCACHE uint16_t tx_data_9[BUFWIDE_SIZE];
 
 	for (int i = 0; i < BUFWIDE_SIZE; i++) {
 		tx_data_9[i] = tx_data_16[i] & 0x1FF;
@@ -711,7 +712,7 @@ ZTEST(spi_loopback, test_spi_word_size_24)
 {
 	struct spi_dt_spec *spec = loopback_specs[spec_idx];
 
-	static __BUF_ALIGN uint32_t tx_data_24[BUFWIDE_SIZE];
+	static __BUF_ALIGN __NOCACHE uint32_t tx_data_24[BUFWIDE_SIZE];
 
 	for (int i = 0; i < BUFWIDE_SIZE; i++) {
 		tx_data_24[i] = tx_data_32[i] & 0xFFFFFF;

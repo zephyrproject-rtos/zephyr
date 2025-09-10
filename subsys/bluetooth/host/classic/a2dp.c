@@ -542,12 +542,12 @@ static int bt_a2dp_get_capabilities_cb(struct bt_avdtp_req *req, struct net_buf 
 	uint8_t codec_type;
 	uint8_t user_ret;
 
-	if (GET_CAP_REQ(req) != &a2dp->get_capabilities_param || buf == NULL) {
+	if (GET_CAP_REQ(req) != &a2dp->get_capabilities_param) {
 		return -EINVAL;
 	}
 
 	LOG_DBG("GET CAPABILITIES result:%d", req->status);
-	if (req->status) {
+	if ((req->status != 0) || (buf == NULL)) {
 		if ((a2dp->discover_cb_param != NULL) && (a2dp->discover_cb_param->cb != NULL)) {
 			a2dp->discover_cb_param->cb(a2dp, NULL, NULL);
 			a2dp->discover_cb_param = NULL;
@@ -651,13 +651,13 @@ static int bt_a2dp_discover_cb(struct bt_avdtp_req *req, struct net_buf *buf)
 	int err;
 
 	LOG_DBG("DISCOVER result:%d", req->status);
-	if (a2dp->discover_cb_param == NULL || buf == NULL) {
+	if (a2dp->discover_cb_param == NULL) {
 		return -EINVAL;
 	}
 
 	a2dp->peer_seps_count = 0U;
 
-	if (!(req->status)) {
+	if ((req->status == 0) && (buf != NULL)) {
 		if (a2dp->discover_cb_param->sep_count == 0) {
 			if (a2dp->discover_cb_param->cb != NULL) {
 				a2dp->discover_cb_param->cb(a2dp, NULL, NULL);

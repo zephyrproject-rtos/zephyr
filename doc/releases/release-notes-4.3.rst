@@ -60,6 +60,7 @@ Removed APIs and options
 
 * The TinyCrypt library was removed as the upstream version is no longer maintained.
   PSA Crypto API is now the recommended cryptographic library for Zephyr.
+* The legacy pipe object API was removed. Use the new pipe API instead.
 
 Deprecated APIs and options
 ===========================
@@ -114,6 +115,12 @@ New APIs and options
     * :c:struct:`bt_iso_sync_receiver_info` now contains a ``big_handle`` and a ``bis_number`` field
     * :c:struct:`bt_le_ext_adv_info` now contains an ``sid`` field with the Advertising Set ID.
 
+* CPUFreq
+
+  * Introduced experimental dynamic CPU frequency scaling subsystem
+
+    * :kconfig:option:`CONFIG_CPU_FREQ`
+
 * Display
 
   * :c:enumerator:`PIXEL_FORMAT_AL_88`
@@ -158,6 +165,12 @@ New APIs and options
     * :c:macro:`LOG_HEXDUMP_INF_RATELIMIT_RATE` - Rate-limited info hexdump macro (explicit rate)
     * :c:macro:`LOG_HEXDUMP_DBG_RATELIMIT_RATE` - Rate-limited debug hexdump macro (explicit rate)
 
+* Management
+
+  * hawkBit
+
+    * :kconfig:option:`CONFIG_HAWKBIT_REBOOT_NONE`
+
 * Power management
 
    * :c:func:`pm_device_driver_deinit`
@@ -165,6 +178,24 @@ New APIs and options
 * Settings
 
    * :kconfig:option:`CONFIG_SETTINGS_TFM_ITS`
+
+* Shell
+
+   * MQTT backend
+
+      * :kconfig:option:`CONFIG_SHELL_MQTT_TOPIC_RX_ID`
+      * :kconfig:option:`CONFIG_SHELL_MQTT_TOPIC_TX_ID`
+      * :kconfig:option:`CONFIG_SHELL_MQTT_CONNECT_TIMEOUT_MS`
+      * :kconfig:option:`CONFIG_SHELL_MQTT_WORK_DELAY_MS`
+      * :kconfig:option:`CONFIG_SHELL_MQTT_LISTEN_TIMEOUT_MS`
+
+* Storage
+
+    * :kconfig:option:`CONFIG_FILE_SYSTEM_SHELL_LS_SIZE`
+
+* Sys
+
+  * :c:func:`sys_count_bits`
 
 .. zephyr-keep-sorted-stop
 

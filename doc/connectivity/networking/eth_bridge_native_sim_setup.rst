@@ -8,12 +8,12 @@ Ethernet bridge with native_sim board
     :depth: 2
 
 This document describes how to set up a bridged Ethernet network between a (Linux) host
-and a Zephyr application running in a :ref:`native_sim <native_sim>` board.
+and a Zephyr application running in a :zephyr:board:`native_sim <native_sim>` board.
 
 This setup is useful when testing the Ethernet bridging feature that can be enabled with
 :kconfig:option:`CONFIG_NET_ETHERNET_BRIDGE` Kconfig option. In this setup, the net-tools
 configuration creates two host network interfaces ``zeth0`` and ``zeth1`` and connects them
-to Zephyr's :ref:`native_sim <native_sim>` application.
+to Zephyr's :zephyr:board:`native_sim <native_sim>` application.
 
 First create the host interfaces. In this example two interfaces are created.
 

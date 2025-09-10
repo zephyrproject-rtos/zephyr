@@ -6,15 +6,16 @@
 
 /**
  * @file
- * @brief Charger APIs
+ * @ingroup charger_interface
+ * @brief Main header file for battery charger driver API.
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_CHARGER_H_
 #define ZEPHYR_INCLUDE_DRIVERS_CHARGER_H_
 
 /**
- * @brief Charger Interface
- * @defgroup charger_interface Charger Interface
+ * @brief Interfaces for battery chargers.
+ * @defgroup charger_interface Battery Charger
  * @ingroup io_interfaces
  * @{
  */

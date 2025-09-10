@@ -13,7 +13,7 @@
 		uart4: serial@40004c00 {
 			compatible ="st,stm32-uart";
 			reg = <0x40004c00 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB1, 19U)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 19)>;
 			resets = <&rctl STM32_RESET(APB1, 19U)>;
 			interrupts = <52 0>;
 			status = "disabled";
@@ -22,7 +22,7 @@
 		uart5: serial@40005000 {
 			compatible = "st,stm32-uart";
 			reg = <0x40005000 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB1, 20U)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 20)>;
 			resets = <&rctl STM32_RESET(APB1, 20U)>;
 			interrupts = <53 0>;
 			status = "disabled";
@@ -31,7 +31,7 @@
 		uart7: serial@40007800 {
 			compatible = "st,stm32-uart";
 			reg = <0x40007800 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB1, 30U)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 30)>;
 			resets = <&rctl STM32_RESET(APB1, 30U)>;
 			interrupts = <82 0>;
 			status = "disabled";
@@ -40,7 +40,7 @@
 		uart8: serial@40007c00 {
 			compatible = "st,stm32-uart";
 			reg = <0x40007c00 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB1, 31U)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 31)>;
 			resets = <&rctl STM32_RESET(APB1, 31U)>;
 			interrupts = <83 0>;
 			status = "disabled";
@@ -49,7 +49,7 @@
 		uart9: serial@40011800 {
 			compatible = "st,stm32-uart";
 			reg = <0x40011800 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB2, 6U)>;
+			clocks = <&rcc STM32_CLOCK(APB2, 6)>;
 			resets = <&rctl STM32_RESET(APB2, 6U)>;
 			interrupts = <88 0>;
 			status = "disabled";
@@ -58,7 +58,7 @@
 		uart10: serial@40011c00 {
 			compatible = "st,stm32-uart";
 			reg = <0x40011c00 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB2, 7U)>;
+			clocks = <&rcc STM32_CLOCK(APB2, 7)>;
 			resets = <&rctl STM32_RESET(APB2, 7U)>;
 			interrupts = <89 0>;
 			status = "disabled";
@@ -67,7 +67,7 @@
 		dac1: dac@40007400 {
 			compatible = "st,stm32-dac";
 			reg = <0x40007400 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB1, 29U)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 29)>;
 			status = "disabled";
 			#io-channel-cells = <1>;
 		};
@@ -77,7 +77,7 @@
 			reg = <0x40006c00 0x400>;
 			interrupts = <74 0>, <75 0>, <76 0>, <77 0>;
 			interrupt-names = "TX", "RX0", "RX1", "SCE";
-			clocks = <&rcc STM32_CLOCK(APB1, 27U)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 27)>;
 			status = "disabled";
 		};
 	};

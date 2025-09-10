@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/{
+/ {
 	fake_comp: fake_comp {
 		compatible = "zephyr,fake-comp";
 		status = "okay";

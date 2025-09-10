@@ -10,8 +10,8 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 			port0-push-pull;
-			int-gpios = <&arduino_header 18 (GPIO_ACTIVE_LOW|GPIO_PULL_UP)>;
-			reset-gpios = <&arduino_header 19 (GPIO_ACTIVE_LOW|GPIO_PULL_UP)>;
+			int-gpios = <&arduino_header 18 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			reset-gpios = <&arduino_header 19 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 		};
 	};
 };
@@ -19,7 +19,7 @@
 / {
 	leds {
 		aw9523_led0: aw9523_led0 {
-			gpios = < &aw9523_gpio 8 0>;
+			gpios = <&aw9523_gpio 8 0>;
 		};
 	};
 

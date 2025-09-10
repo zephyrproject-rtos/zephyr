@@ -513,6 +513,20 @@ int sys_bitarray_alloc(sys_bitarray_t *bitarray, size_t num_bits,
 		goto out;
 	}
 
+	if (bitarray->num_bits <= 32) {
+		int off;
+
+		off = bitmask_find_gap(bitarray->bundles[0], num_bits, bitarray->num_bits, false);
+		if (off < 0) {
+			ret = -ENOSPC;
+		} else {
+			bitarray->bundles[0] |= BIT_MASK(num_bits) << off;
+			*offset = off;
+			ret = 0;
+		}
+		goto out;
+	}
+
 	bit_idx = 0;
 
 	/* Find the first non-allocated bit by looking at bundles
@@ -660,7 +674,16 @@ int sys_bitarray_free(sys_bitarray_t *bitarray, size_t num_bits,
 	 * (offset to offset + num_bits) are all allocated before we clear
 	 * them.
 	 */
-	if (match_region(bitarray, offset, num_bits, true, &bd, NULL)) {
+	if (bitarray->num_bits <= 32) {
+		uint32_t mask = BIT_MASK(num_bits) << offset;
+
+		if ((mask & bitarray->bundles[0]) != mask) {
+			ret = -EFAULT;
+		} else {
+			bitarray->bundles[0] &= ~mask;
+			ret = 0;
+		}
+	} else if (match_region(bitarray, offset, num_bits, true, &bd, NULL)) {
 		set_region(bitarray, offset, num_bits, false, &bd);
 		ret = 0;
 	} else {

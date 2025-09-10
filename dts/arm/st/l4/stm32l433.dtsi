@@ -16,7 +16,7 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				reg = <0x48000c00 0x400>;
-				clocks = <&rcc STM32_CLOCK(AHB2, 3U)>;
+				clocks = <&rcc STM32_CLOCK(AHB2, 3)>;
 			};
 
 			gpioe: gpio@48001000 {
@@ -24,7 +24,7 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				reg = <0x48001000 0x400>;
-				clocks = <&rcc STM32_CLOCK(AHB2, 4U)>;
+				clocks = <&rcc STM32_CLOCK(AHB2, 4)>;
 			};
 		};
 
@@ -34,7 +34,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40005800 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB1, 22U)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 22)>;
 			interrupts = <33 0>, <34 0>;
 			interrupt-names = "event", "error";
 			status = "disabled";
@@ -45,7 +45,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40003800 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB1, 14U)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 14)>;
 			interrupts = <36 5>;
 			status = "disabled";
 		};
@@ -53,7 +53,7 @@
 		usart3: serial@40004800 {
 			compatible = "st,stm32-usart", "st,stm32-uart";
 			reg = <0x40004800 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB1, 18U)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 18)>;
 			resets = <&rctl STM32_RESET(APB1L, 18U)>;
 			interrupts = <39 0>;
 			status = "disabled";
@@ -62,7 +62,7 @@
 		sdmmc1: sdmmc@40012800 {
 			compatible = "st,stm32-sdmmc";
 			reg = <0x40012800 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB2, 10U)>,
+			clocks = <&rcc STM32_CLOCK(APB2, 10)>,
 				 <&rcc STM32_SRC_HSI48 CLK48_SEL(0)>;
 			interrupts = <49 0>;
 			status = "disabled";

@@ -16,7 +16,7 @@
 #include <zephyr/toolchain/gcc.h>
 #include <zephyr/types.h>
 #include <zephyr/linker/linker-defs.h>
-#include <kernel_internal.h>
+#include <zephyr/arch/common/init.h>
 #include <zephyr/sys/util.h>
 
 #include <esp_private/system_internal.h>
@@ -38,7 +38,7 @@
 void __appcpu_start(void);
 static HDR_ATTR void (*_entry_point)(void) = &__appcpu_start;
 
-extern void z_prep_c(void);
+extern FUNC_NORETURN void z_prep_c(void);
 
 static void core_intr_matrix_clear(void)
 {
@@ -57,7 +57,7 @@ void IRAM_ATTR __appcpu_start(void)
 	__asm__ __volatile__("wsr %0, vecbase" : : "r"(&_init_start));
 
 	/* Zero out BSS.  Clobber _bss_start to avoid memset() elision. */
-	z_bss_zero();
+	arch_bss_zero();
 
 	__asm__ __volatile__("" : : "g"(&__bss_start) : "memory");
 

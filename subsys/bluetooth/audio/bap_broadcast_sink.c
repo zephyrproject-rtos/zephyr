@@ -228,13 +228,13 @@ static struct bt_bap_broadcast_sink *broadcast_sink_lookup_iso_chan(
 	return NULL;
 }
 
-static void broadcast_sink_set_ep_state(struct bt_bap_ep *ep, uint8_t state)
+static void broadcast_sink_set_ep_state(struct bt_bap_ep *ep, enum bt_bap_ep_state state)
 {
 	uint8_t old_state;
 
-	old_state = ep->status.state;
+	old_state = ep->state;
 
-	LOG_DBG("ep %p id 0x%02x %s -> %s", ep, ep->status.id, bt_bap_ep_state_str(old_state),
+	LOG_DBG("ep %p id 0x%02x %s -> %s", ep, ep->id, bt_bap_ep_state_str(old_state),
 		bt_bap_ep_state_str(state));
 
 	switch (old_state) {
@@ -262,7 +262,7 @@ static void broadcast_sink_set_ep_state(struct bt_bap_ep *ep, uint8_t state)
 		return;
 	}
 
-	ep->status.state = state;
+	ep->state = state;
 
 	if (state == BT_BAP_EP_STATE_IDLE) {
 		struct bt_bap_stream *stream = ep->stream;
@@ -337,7 +337,7 @@ static bool broadcast_sink_is_in_state(struct bt_bap_broadcast_sink *sink,
 	}
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&sink->streams, stream, _node) {
-		if (stream->ep != NULL && stream->ep->status.state != state) {
+		if (stream->ep != NULL && stream->ep->state != state) {
 			return false;
 		}
 	}
@@ -1096,22 +1096,6 @@ int bt_bap_broadcast_sink_create(struct bt_le_per_adv_sync *pa_sync, uint32_t br
 	return 0;
 }
 
-static uint8_t bit_count(uint32_t bitfield)
-{
-#ifdef POPCOUNT
-	return POPCOUNT(bitfield);
-#else
-	uint8_t cnt = 0U;
-
-	while (bitfield != 0U) {
-		cnt += bitfield & 1U;
-		bitfield >>= 1U;
-	}
-
-	return cnt;
-#endif
-}
-
 struct sync_base_info_data {
 	struct bt_audio_codec_cfg codec_cfgs[CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT];
 	struct bt_audio_codec_cfg *subgroup_codec_cfg;
@@ -1296,7 +1280,7 @@ int bt_bap_broadcast_sink_sync(struct bt_bap_broadcast_sink *sink, uint32_t inde
 	}
 
 	/* Validate that number of bits set is within supported range */
-	bis_count = bit_count(indexes_bitfield);
+	bis_count = sys_count_bits(&indexes_bitfield, sizeof(indexes_bitfield));
 	if (bis_count > CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT) {
 		LOG_DBG("Cannot sync to more than %d streams (%u was requested)",
 			CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT, bis_count);

@@ -255,8 +255,8 @@ int spi_rtio_copy(struct rtio *r,
 					    NULL);
 			tx++;
 			if (tx < tx_count) {
-				tx_buf = rx_bufs->buffers[rx].buf;
-				tx_len = rx_bufs->buffers[rx].len;
+				tx_buf = tx_bufs->buffers[tx].buf;
+				tx_len = tx_bufs->buffers[tx].len;
 			} else {
 				tx_buf = NULL;
 				tx_len = 0;

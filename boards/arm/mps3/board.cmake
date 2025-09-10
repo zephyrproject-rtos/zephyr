@@ -43,6 +43,11 @@ elseif(CONFIG_BOARD_MPS3_CORSTONE310_FVP OR CONFIG_BOARD_MPS3_CORSTONE310_FVP_NS
       -C cpu0.MPU_S=16
     )
   endif()
+  if(CONFIG_ARM_PAC OR CONFIG_ARM_BTI)
+    set(ARMFVP_FLAGS ${ARMFVP_FLAGS}
+      -C cpu0.CFGPACBTI=1
+    )
+  endif()
 endif()
 
 board_set_debugger_ifnset(qemu)

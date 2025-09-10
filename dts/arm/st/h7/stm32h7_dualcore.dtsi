@@ -19,7 +19,7 @@
 		mailbox: mailbox@58026400 {
 			compatible = "st,stm32-hsem-mailbox", "st,mbox-stm32-hsem";
 			reg = <0x58026400 0x400>;
-			clocks = <&rcc STM32_CLOCK(AHB4, 25U)>;
+			clocks = <&rcc STM32_CLOCK(AHB4, 25)>;
 			#mbox-cells = <1>;
 			status = "disabled";
 		};
@@ -27,5 +27,5 @@
 };
 
 &flash {
-	clocks = <&rcc STM32_CLOCK(AHB3, 8U)>;
+	clocks = <&rcc STM32_CLOCK(AHB3, 8)>;
 };

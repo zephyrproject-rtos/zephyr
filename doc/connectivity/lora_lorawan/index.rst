@@ -95,7 +95,7 @@ API Reference
 LoRa PHY
 ========
 
-.. doxygengroup:: lora_api
+.. doxygengroup:: lora_interface
 
 LoRaWAN
 =======

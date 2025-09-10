@@ -1456,7 +1456,7 @@ in a hardware map.
       .. code-block:: bash
 
          twister -p npcx9m6f_evb --device-testing --device-serial /dev/ttyACM0
-         --flash-command './custom_flash_script.py,--flag,"complex,argument"'
+         --flash-command './custom_flash_script.py,--flag,"complex, argument"'
 
    .. group-tab:: Windows
 
@@ -1464,10 +1464,11 @@ in a hardware map.
 
          python .\scripts\twister -p npcx9m6f_evb --device-testing
          --device-serial COM1
-         --flash-command 'custom_flash_script.py,--flag,"complex,argument"'
+         --flash-command 'custom_flash_script.py,--flag,"complex, argument"'
 
-Would result in calling ``./custom_flash_script.py --flag complex,argument --build-dir
-<build directory> --board-id <board identification>``.
+Would result in calling ``./custom_flash_script.py
+--build-dir <build directory> --board-id <board identification>
+--flag "complex, argument"``.
 
 Fixtures
 +++++++++

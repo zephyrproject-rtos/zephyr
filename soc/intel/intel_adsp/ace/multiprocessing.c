@@ -13,7 +13,6 @@
 #include <zephyr/pm/pm.h>
 #include <zephyr/pm/policy.h>
 #include <zephyr/pm/device_runtime.h>
-#include <ksched.h>
 
 #include <soc.h>
 #include <adsp_boot.h>

@@ -6,7 +6,7 @@
 To build any of the Bluetooth samples, follow the same steps as building
 any other Zephyr application. Refer to :ref:`bluetooth-dev` for more information.
 
-Many Bluetooth samples can be run on QEMU or :ref:`native_sim <native_sim>` with support for
+Many Bluetooth samples can be run on QEMU or :zephyr:board:`native_sim <native_sim>` with support for
 external Bluetooth Controllers. Refer to the :ref:`bluetooth-hw-setup` section
 for further details.
 
