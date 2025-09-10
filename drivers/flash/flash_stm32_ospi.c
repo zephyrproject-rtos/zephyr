@@ -2234,9 +2234,10 @@ static int spi_nor_process_bfp(const struct device *dev,
 }
 
 #ifdef CONFIG_PM_DEVICE
-static int ospi_suspend(const struct device *dev)
+static int ospi_pinctrl_and_clock_off(const struct device *dev)
 {
 	const struct flash_stm32_ospi_config *dev_cfg = dev->config;
+	int err;
 
 #if DT_CLOCKS_HAS_NAME(STM32_OSPI_NODE, ospi_mgr)
 	if (clock_control_off(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
@@ -2250,13 +2251,27 @@ static int ospi_suspend(const struct device *dev)
 		LOG_ERR("Could not enable OSPI clock");
 		return -EIO;
 	}
-	return 0;
+
+	err = pinctrl_apply_state(dev_cfg->pcfg, PINCTRL_STATE_SLEEP);
+	if (err == -ENOENT) {
+		/* Sleep state is optional */
+		err = 0;
+	}
+
+	return err;
 }
 #endif
 
-static int ospi_resume(const struct device *dev)
+static int ospi_pinctrl_and_clock_on(const struct device *dev)
 {
 	const struct flash_stm32_ospi_config *dev_cfg = dev->config;
+	int err;
+
+	err = pinctrl_apply_state(dev_cfg->pcfg, PINCTRL_STATE_DEFAULT);
+	if (err < 0) {
+		LOG_ERR("OSPI pinctrl setup failed (%d)", err);
+		return err;
+	}
 
 	/* Clock configuration */
 	if (clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
@@ -2303,13 +2318,6 @@ static int flash_stm32_ospi_init(const struct device *dev)
 		/* already the right config, continue */
 		LOG_ERR("OSPI mode SPI|DUAL|QUAD/DTR is not valid");
 		return -ENOTSUP;
-	}
-
-	/* Signals configuration */
-	ret = pinctrl_apply_state(dev_cfg->pcfg, PINCTRL_STATE_DEFAULT);
-	if (ret < 0) {
-		LOG_ERR("OSPI pinctrl setup failed (%d)", ret);
-		return ret;
 	}
 
 #if STM32_OSPI_USE_DMA
@@ -2385,7 +2393,7 @@ static int flash_stm32_ospi_init(const struct device *dev)
 
 #endif /* STM32_OSPI_USE_DMA */
 
-	ret = ospi_resume(dev);
+	ret = ospi_pinctrl_and_clock_on(dev);
 	if (ret < 0) {
 		LOG_ERR("OSPI clock activation failed (%d)", ret);
 		return ret;
@@ -2682,13 +2690,13 @@ static int flash_stm32_ospi_pm_action(const struct device *dev, enum pm_device_a
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
-		err = ospi_resume(dev);
+		err = ospi_pinctrl_and_clock_on(dev);
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
 #if CONFIG_FLASH_STM32_ERRATUM_U5_STOP2_3_CORRUPT_READ
 		dev_data->post_wakeup_dummy_read_needed = true;
 #endif
-		err = ospi_suspend(dev);
+		err = ospi_pinctrl_and_clock_off(dev);
 		break;
 	default:
 		return -ENOTSUP;
