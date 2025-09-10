@@ -18,6 +18,10 @@ properties:
     type: phandle-array
     description: GPIO for modem wake
 
+  mdm-ring-gpios:
+    type: phandle-array
+    description: GPIO for modem ring indicator
+
   cmux-enable-runtime-power-save:
     type: boolean
     description: Enable runtime power saving using CMUX PSC commands.
