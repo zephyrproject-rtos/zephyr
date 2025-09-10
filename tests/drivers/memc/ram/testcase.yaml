@@ -8,3 +8,5 @@ tests:
     depends_on: memc
     integration_platforms:
       - sam4s_xplained
+    extra_args:
+      - platform:da1469x_dk_pro:EXTRA_DTC_OVERLAY_FILE="da1469x_dk_pro_psram.overlay"
