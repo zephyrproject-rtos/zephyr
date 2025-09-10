@@ -270,7 +270,7 @@
 			clock-src = <&divn_clk>;
 			interrupts = <17 0>;
 			prescaler = <32>;
-			status = "disabled";
+			status = "reserved";
 		};
 
 		timer3: timer@50040a00 {
