@@ -15,5 +15,6 @@ supported:
   - pwm
   - sdhc
   - shell
+  - spi
   - uart
 vendor: microchip
