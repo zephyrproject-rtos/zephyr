@@ -44,6 +44,7 @@ from tempfile import TemporaryDirectory
 from typing import Any
 
 from docutils import nodes
+from dotenv import load_dotenv
 from sphinx.addnodes import pending_xref
 from sphinx.application import Sphinx
 from sphinx.builders import Builder
@@ -81,7 +82,8 @@ def kconfig_load(app: Sphinx) -> tuple[kconfiglib.Kconfig, kconfiglib.Kconfig, d
         sysbuild_kconfig = ""
         for module in modules:
             kconfig_module_dirs += zephyr_module.process_kconfig_module_dir(module.project,
-                                                                            module.meta)
+                                                                            module.meta,
+                                                                            False)
             kconfig += zephyr_module.process_kconfig(module.project, module.meta)
             sysbuild_kconfig += zephyr_module.process_sysbuildkconfig(module.project, module.meta)
 
@@ -155,7 +157,7 @@ def kconfig_load(app: Sphinx) -> tuple[kconfiglib.Kconfig, kconfiglib.Kconfig, d
 
         os.environ["BOARD"] = "boards"
         os.environ["KCONFIG_BOARD_DIR"] = str(Path(td) / "boards")
-        os.environ["KCONFIG_ENV_FILE"] = str(Path(td) / "kconfig_module_dirs.env")
+        load_dotenv(str(Path(td) / "kconfig_module_dirs.env"))
 
         # Sysbuild runs first
         os.environ["CONFIG_"] = "SB_CONFIG_"
