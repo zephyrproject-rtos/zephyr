@@ -74,3 +74,10 @@
 		status = "okay";
 	};
 };
+
+&rspi0 {
+	pinctrl-0 = <&rspi0_default>;
+	pinctrl-names = "default";
+	ssl-assert = <0>;
+	status = "okay";
+};
