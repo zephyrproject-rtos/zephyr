@@ -858,6 +858,25 @@
 			status = "disabled";
 		};
 
+		lvd0: lvd@800e0 {
+			compatible = "renesas,rx-lvd";
+			reg = <0x000800E0 0x02>;
+			channel = <0>;
+			interrupts = <88 1>;
+			interrupt-names = "lvd";
+			status = "disabled";
+		};
+
+		lvd1: lvd@800e2 {
+			compatible = "renesas,rx-lvd";
+			reg = <0x000800E2 0x02>;
+			channel = <1>;
+			interrupts = <89 1>;
+			interrupt-names = "lvd";
+			lvd-support-cmpa;
+			status = "disabled";
+		};
+
 		ofsm: ofsm@ffffff80 {
 			compatible = "zephyr,memory-region";
 			reg = <0xFFFFFF80 0x0F>;
