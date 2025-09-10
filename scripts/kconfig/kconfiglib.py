@@ -1579,6 +1579,22 @@ class Kconfig(object):
 
         return "Configuration saved to '{}'".format(filename)
 
+    def write_doc(self, filename=None, absolute=False):
+
+        if filename is None:
+            filename = standard_config_filename()+".md"
+
+        if absolute or os.name == "nt":
+            relpath_to_srctree = None
+        else:
+            output_dir = os.path.dirname(os.path.abspath(filename))
+            relpath_to_srctree = os.path.relpath(self.srctree or os.curdir, output_dir)
+
+        with self._open(filename, "w") as f:
+            f.write(self._doc_contents(relpath_to_srctree))
+
+        return "Documentation saved to '{}'".format(filename)
+
     def _config_contents(self, header):
         # write_config() helper. Returns the contents to write as a string,
         # with 'header' or KCONFIG_CONFIG_HEADER at the beginning.
@@ -1653,6 +1669,81 @@ class Kconfig(object):
 
                 add("\n#\n# {}\n#\n".format(node.prompt[0]))
                 after_end_comment = False
+
+    def _doc_contents(self, relpath_to_srctree):
+        # write_docs() helper. Returns the contents to write as a string.
+
+        for sym in self.unique_defined_syms:
+            sym._visited = False
+
+        doc_lists = {
+            "user": [],
+            "hidden": [],
+            "unset": []
+        }
+
+        node = self.top_node
+        while 1:
+            # Jump to the next node with an iterative tree walk
+            if node.list:
+                node = node.list
+            elif node.next:
+                node = node.next
+            else:
+                while node.parent:
+                    node = node.parent
+
+                    if node.next:
+                        node = node.next
+                        break
+                else:
+                    # No more nodes
+                    break
+
+            item = node.item
+            if item.__class__ is Symbol:
+                if item._visited:
+                    continue
+                item._visited = True
+
+                kind, doc_data = item.doc_data
+                if kind:
+                    doc_lists[kind].append(doc_data)
+
+        chunks = []
+        add = chunks.append
+
+        def write_block(title, entries):
+            SRCREF_TO_STR = {
+                SRCREF_DEFAULT: "default",
+                SRCREF_USER: "user set",
+                SRCREF_SELECT: "selected",
+                SRCREF_IMPLY: "implied"
+            }
+
+            add(f"\n## {title}\n\n")
+            add("| Name | Value | Source | Location |\n")
+            add("| ---- | ----: | :----: | -------- |\n")
+            for name, value, source, ref in entries:
+                name = f"`{name}`"
+                value_width = min(max(0, 16 - max(0, len(name) - 40)), 16)
+                if isinstance(ref, tuple):
+                    ref = doc_link_str(relpath_to_srctree, self.srctree, *ref)
+                elif source in (SRCREF_IMPLY, SRCREF_SELECT):
+                    ref = f"`{ref}`"
+                source = SRCREF_TO_STR[source]
+                
+                add(f"| {name:40} | {value:>{value_width}} | {source} | {ref} |\n")
+
+        write_block("User configuration", sorted(doc_lists["user"]))
+
+        write_block("Hidden configuration parameters", sorted(doc_lists["hidden"]))
+
+        add("\n## Unset values\n\n")
+        for name, _, _, _ in sorted(doc_lists["unset"]):
+            add(f"    # {name} is not set\n")
+
+        return "".join(chunks)
 
     def write_min_config(self, filename, header=None):
         """
@@ -4579,6 +4670,31 @@ class Symbol(object):
         return self._cached_vis
 
     @property
+    def doc_data(self):
+        """
+        Format: kind, (name, value, source, ref)
+        """
+        # _src_ref is determined when the value is calculated. This is a
+        # hidden function call due to property magic.
+        val = self.str_value
+        if not self._write_to_conf:
+            return None, None
+
+        name = self.kconfig.config_prefix + self.name
+
+        if not self._src_ref:
+            return "unset", (name, None, SRCREF_NONE, "")
+
+        if self.orig_type is STRING:
+            val = val.replace("_", "\\_")
+            value = f'"{(val)}"'
+        else:
+            value = val
+
+        vis = "hidden" if not self.visibility else "user"
+        return vis, (name, value, *self._src_ref)
+
+    @property
     def config_string(self):
         """
         See the class documentation.
@@ -6261,6 +6377,27 @@ def split_expr(expr, op):
     rec(expr)
     return res
 
+
+def doc_link_str(relpath_to_srctree, srctree, fn, ln):
+    if relpath_to_srctree:
+        # Relative paths requested
+        if os.path.isabs(fn):
+            fn = os.path.relpath(fn, srctree)
+        link_fn = os.path.join(relpath_to_srctree, fn)
+        disp_fn = link_fn
+    else:
+        # Absolute paths requested
+        if not os.path.isabs(fn):
+            fn = os.path.join(srctree, fn)
+        link_fn = fn
+        try:
+            disp_fn = os.path.relpath(fn, srctree)
+        except ValueError:
+            disp_fn = fn
+
+    disp_fn = disp_fn.replace("../", "").replace("_", "\\_")
+
+    return "[{}:{}](<{}#L{}>)".format(disp_fn, ln, link_fn, ln)
 
 def escape(s):
     r"""
