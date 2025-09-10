@@ -2216,6 +2216,7 @@ static int spi_nor_process_bfp(const struct device *dev,
 static int flash_stm32_ospi_suspend(const struct device *dev)
 {
 	const struct flash_stm32_ospi_config *dev_cfg = dev->config;
+	int err;
 
 #if DT_CLOCKS_HAS_NAME(STM32_OSPI_NODE, ospi_mgr)
 	if (clock_control_off(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
@@ -2229,7 +2230,14 @@ static int flash_stm32_ospi_suspend(const struct device *dev)
 		LOG_ERR("Could not enable OSPI clock");
 		return -EIO;
 	}
-	return 0;
+
+	err = pinctrl_apply_state(dev_cfg->pcfg, PINCTRL_STATE_SLEEP);
+	if (err == -ENOENT) {
+		/* Sleep state is optional */
+		err = 0;
+	}
+
+	return err;
 }
 
 #endif
@@ -2237,6 +2245,13 @@ static int flash_stm32_ospi_suspend(const struct device *dev)
 static int flash_stm32_ospi_activate(const struct device *dev)
 {
 	const struct flash_stm32_ospi_config *dev_cfg = dev->config;
+	int err;
+
+	err = pinctrl_apply_state(dev_cfg->pcfg, PINCTRL_STATE_DEFAULT);
+	if (err < 0) {
+		LOG_ERR("OSPI pinctrl setup failed (%d)", err);
+		return err;
+	}
 
 	/* Clock configuration */
 	if (clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
@@ -2283,13 +2298,6 @@ static int flash_stm32_ospi_init(const struct device *dev)
 		/* already the right config, continue */
 		LOG_ERR("OSPI mode SPI|DUAL|QUAD/DTR is not valid");
 		return -ENOTSUP;
-	}
-
-	/* Signals configuration */
-	ret = pinctrl_apply_state(dev_cfg->pcfg, PINCTRL_STATE_DEFAULT);
-	if (ret < 0) {
-		LOG_ERR("OSPI pinctrl setup failed (%d)", ret);
-		return ret;
 	}
 
 #if STM32_OSPI_USE_DMA
