@@ -18,4 +18,4 @@ zephyr_library_include_directories(
 
 set(SOC_LINKER_SCRIPT ${ZEPHYR_BASE}/include/zephyr/arch/posix/linker.ld CACHE INTERNAL "")
 
-zephyr_library_sources_ifdef(CONFIG_CPU_FREQ cpu_freq.c)
+zephyr_library_sources_ifdef(CONFIG_CPU_FREQ_PSTATE_SET_SOC cpu_freq.c)
