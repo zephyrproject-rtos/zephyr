@@ -880,6 +880,10 @@ python-debian==1.0.1 \
     --hash=sha256:3ada9b83a3d671b58081782c0969cffa0102f6ce433fbbc7cf21275b8b5cc771 \
     --hash=sha256:8f137c230c1d9279c2ac892b35915068b2aca090c9fd3da5671ff87af32af12c
     # via reuse
+python-dotenv==1.1.1 \
+    --hash=sha256:31f23644fe2602f88ff55e1f5c79ba497e01224ee7737937930c448e4d0e24dc \
+    --hash=sha256:a8a6399716257f45be6a007360200409fce5cda2661e3dec71d23dc15f6189ab
+    # via -r requirements-actions.in
 python-magic==0.4.27 ; sys_platform != 'win32' \
     --hash=sha256:c1ba14b08e4a5f5c31a302b7721239695b2f0f058d125bd5ce1ee36b9d9d3c3b \
     --hash=sha256:c212960ad306f700aa0d01e5d7a325d20548ff97eb9920dcd29513174f0294d3
