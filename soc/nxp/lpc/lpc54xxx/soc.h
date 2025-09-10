@@ -39,4 +39,9 @@
 #define IOCON_PIO_MODE_PULLUP	0x10u
 #define IOCON_PIO_MODE_PULLDOWN	0x08u
 
+/* Handle variation to implement Wakeup Interrupt */
+#define NXP_ENABLE_WAKEUP_SIGNAL(irqn) EnableDeepSleepIRQ(irqn)
+#define NXP_DISABLE_WAKEUP_SIGNAL(irqn) DisableDeepSleepIRQ(irqn)
+#define NXP_GET_WAKEUP_SIGNAL_STATUS(irqn) do { } while (0)
+
 #endif /* _SOC__H_ */

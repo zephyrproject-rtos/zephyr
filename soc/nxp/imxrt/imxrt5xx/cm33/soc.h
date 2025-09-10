@@ -18,6 +18,7 @@
 #ifndef _ASMLANGUAGE
 #include <zephyr/sys/util.h>
 #include <fsl_common.h>
+#include <fsl_power.h>
 
 #endif /* !_ASMLANGUAGE */
 
@@ -75,6 +76,11 @@
 /* Workaround to handle macro variation in the SDK */
 #ifndef INPUTMUX_PINTSEL_COUNT
 #define INPUTMUX_PINTSEL_COUNT INPUTMUX_PINT_SEL_COUNT
+
+/* Handle variation to implement Wakeup Interrupt */
+#define NXP_ENABLE_WAKEUP_SIGNAL(irqn) EnableDeepSleepIRQ(irqn)
+#define NXP_DISABLE_WAKEUP_SIGNAL(irqn) DisableDeepSleepIRQ(irqn)
+#define NXP_GET_WAKEUP_SIGNAL_STATUS(irqn) do { } while (0)
 
 #if CONFIG_MIPI_DSI
 void imxrt_pre_init_display_interface(void);

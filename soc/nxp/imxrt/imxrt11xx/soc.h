@@ -12,9 +12,15 @@
 #ifndef _ASMLANGUAGE
 
 #include <fsl_common.h>
+#include <fsl_gpc.h>
 
 /* Add include for DTS generated information */
 #include <zephyr/devicetree.h>
+
+/* Handle variation to implement Wakeup Interrupt */
+#define NXP_ENABLE_WAKEUP_SIGNAL(irqn) GPC_CM_EnableIrqWakeup(GPC_CPU_MODE_CTRL, irqn, true)
+#define NXP_DISABLE_WAKEUP_SIGNAL(irqn) GPC_CM_EnableIrqWakeup(GPC_CPU_MODE_CTRL, irqn, false)
+#define NXP_GET_WAKEUP_SIGNAL_STATUS(irqn) GPC_CM_GetIrqWakeupStatus(GPC_CPU_MODE_CTRL, irqn)
 
 #ifdef __cplusplus
 extern "C" {
