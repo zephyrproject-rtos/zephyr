@@ -147,7 +147,7 @@ config BT_LL_SW_SPLIT
 
 config BT_CTLR_HCI
 	bool "Host Controller Interface (HCI)"
-	default y
+	default y if BT_HCI_HOST || BT_HCI_RAW
 	depends on HAS_BT_CTLR
 	help
 	  Enable the Host Controller interface (HCI) in the Controller.

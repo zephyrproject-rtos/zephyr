@@ -40,6 +40,8 @@ endchoice
 config SYSTEM_WORKQUEUE_PRIORITY
 	range -256 -1
 
+rsource "common/Kconfig"
+
 if BT_HCI
 
 config BT_HCI_RAW
@@ -405,9 +407,7 @@ config BT_ISO_MAX_BIG
 endif # BT_ISO_BROADCAST
 endif # BT_ISO
 
-rsource "common/Kconfig"
 rsource "host/Kconfig"
-rsource "controller/Kconfig"
 rsource "crypto/Kconfig"
 rsource "lib/Kconfig"
 rsource "Kconfig.logging"
@@ -435,5 +435,7 @@ config BT_COMPANY_ID
 	  controlled by BT_CTLR_COMPANY_ID. The full list of Bluetooth
 	  Company Identifiers can be found here:
 	  https://www.bluetooth.com/specifications/assigned-numbers/company-identifiers
+
+rsource "controller/Kconfig"
 
 endif # BT

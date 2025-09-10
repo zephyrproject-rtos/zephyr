@@ -1,0 +1,10 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config BT_BROADCASTER
+	default y
+
+config BT_LL_SW_SPLIT
+	default y
+
+source "Kconfig.zephyr"
