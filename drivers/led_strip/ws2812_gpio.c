@@ -225,6 +225,10 @@ static const uint8_t ws2812_gpio_##idx##_color_mapping[] =		\
 		return gpio_pin_configure_dt(&cfg->gpio, GPIO_OUTPUT);	\
 	}								\
 									\
+	BUILD_ASSERT(WS2812_NUM_COLORS(idx) <= sizeof(struct led_rgb),  \
+		"Too many channels in color-mapping; "			\
+		"currently not supported by the ws2812_gpio driver");	\
+									\
 	WS2812_COLOR_MAPPING(idx);					\
 									\
 	static const struct ws2812_gpio_cfg ws2812_gpio_##idx##_cfg = { \
