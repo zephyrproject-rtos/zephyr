@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2024 NXP
+ * Copyright 2023-2025 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -7,6 +7,7 @@
 #define _SOC__H_
 
 #include <fsl_port.h>
+#include <soc_common.h>
 
 #define PORT_MUX_GPIO kPORT_MuxAsGpio
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, NXP
+ * Copyright 2017, 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,7 +18,7 @@
 #ifndef _ASMLANGUAGE
 #include <zephyr/sys/util.h>
 #include <fsl_common.h>
-
+#include <soc_common.h>
 
 #endif /* !_ASMLANGUAGE */
 
@@ -38,5 +38,11 @@
 #define IOCON_PIO_SLEW_STANDARD	0x00u
 #define IOCON_PIO_MODE_PULLUP	0x10u
 #define IOCON_PIO_MODE_PULLDOWN	0x08u
+
+/* Handle variation to implement Wakeup Interrupt */
+#undef NXP_ENABLE_WAKEUP_SIGNAL
+#undef NXP_DISABLE_WAKEUP_SIGNAL
+#define NXP_ENABLE_WAKEUP_SIGNAL(irqn) EnableDeepSleepIRQ(irqn)
+#define NXP_DISABLE_WAKEUP_SIGNAL(irqn) DisableDeepSleepIRQ(irqn)
 
 #endif /* _SOC__H_ */
