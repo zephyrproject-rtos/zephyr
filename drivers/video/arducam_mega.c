@@ -384,6 +384,7 @@ static int arducam_mega_set_special_effects(const struct device *dev, enum video
 
 	if (!supported) {
 		LOG_ERR("Unsupported color effect: %d", effect);
+		return -ENOTSUP;
 	}
 
 	return arducam_mega_write_reg_wait(&cfg->bus, CAM_REG_COLOR_EFFECT_CONTROL, mega_effect, 3,
