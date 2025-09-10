@@ -62,6 +62,7 @@ struct h4_data {
 		struct k_fifo   fifo;
 	} tx;
 
+	void *user_data;
 	bt_hci_recv_t recv;
 };
 
@@ -266,7 +267,7 @@ static void rx_thread(void *p1, void *p2, void *p3)
 			uart_irq_rx_enable(cfg->uart);
 
 			LOG_DBG("Calling bt_recv(%p)", buf);
-			h4->recv(dev, buf);
+			h4->recv(dev, buf, h4->user_data);
 
 			/* Give other threads a chance to run if the ISR
 			 * is receiving data so fast that rx.fifo never
@@ -502,7 +503,7 @@ int __weak bt_hci_transport_setup(const struct device *uart)
 	return 0;
 }
 
-static int h4_open(const struct device *dev, bt_hci_recv_t recv)
+static int h4_open(const struct device *dev, bt_hci_recv_t recv, void *user_data)
 {
 	const struct h4_config *cfg = dev->config;
 	struct h4_data *h4 = dev->data;
@@ -520,6 +521,7 @@ static int h4_open(const struct device *dev, bt_hci_recv_t recv)
 	}
 
 	h4->recv = recv;
+	h4->user_data = user_data;
 
 	uart_irq_callback_user_data_set(cfg->uart, bt_uart_isr, (void *)dev);
 
