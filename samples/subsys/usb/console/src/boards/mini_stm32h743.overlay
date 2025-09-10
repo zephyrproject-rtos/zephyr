@@ -1,0 +1,5 @@
+/ {
+	chosen {
+		zephyr,console = &board_cdc_acm_uart;
+	};
+};
