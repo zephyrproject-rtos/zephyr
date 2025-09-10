@@ -386,10 +386,13 @@ def kconfig_snippet(meta, path, kconfig_file=None, blobs=False, taint_blobs=Fals
     return '\n'.join(snippet)
 
 
-def process_kconfig_module_dir(module, meta):
+def process_kconfig_module_dir(module, meta, cmake_output):
     module_path = PurePath(module)
     name_sanitized = meta['name-sanitized']
-    return f'ZEPHYR_{name_sanitized.upper()}_MODULE_DIR={module_path.as_posix()}\n'
+
+    if cmake_output is False:
+        return f'ZEPHYR_{name_sanitized.upper()}_MODULE_DIR={module_path.as_posix()}\n'
+    return f'list(APPEND kconfig_env_dirs ZEPHYR_{name_sanitized.upper()}_MODULE_DIR={module_path.as_posix()})\n'
 
 
 def process_kconfig(module, meta):
@@ -870,6 +873,7 @@ def main():
     args = parser.parse_args()
 
     kconfig_module_dirs = ""
+    kconfig_module_dirs_cmake = "set(kconfig_env_dirs)\n"
     kconfig = ""
     cmake = ""
     sysbuild_kconfig = ""
@@ -882,7 +886,8 @@ def main():
                             args.modules, args.extra_modules)
 
     for module in modules:
-        kconfig_module_dirs += process_kconfig_module_dir(module.project, module.meta)
+        kconfig_module_dirs += process_kconfig_module_dir(module.project, module.meta, False)
+        kconfig_module_dirs_cmake += process_kconfig_module_dir(module.project, module.meta, True)
         kconfig += process_kconfig(module.project, module.meta)
         cmake += process_cmake(module.project, module.meta)
         sysbuild_kconfig += process_sysbuildkconfig(
@@ -894,12 +899,19 @@ def main():
     if args.kconfig_out or args.sysbuild_kconfig_out:
         if args.kconfig_out:
             kconfig_module_dirs_out = PurePath(args.kconfig_out).parent / 'kconfig_module_dirs.env'
+            kconfig_module_dirs_cmake_out = PurePath(args.kconfig_out).parent / \
+                                            'kconfig_module_dirs.cmake'
         elif args.sysbuild_kconfig_out:
             kconfig_module_dirs_out = PurePath(args.sysbuild_kconfig_out).parent / \
                                       'kconfig_module_dirs.env'
+            kconfig_module_dirs_cmake_out = PurePath(args.sysbuild_kconfig_out).parent / \
+                                      'kconfig_module_dirs.cmake'
 
         with open(kconfig_module_dirs_out, 'w', encoding="utf-8") as fp:
             fp.write(kconfig_module_dirs)
+
+        with open(kconfig_module_dirs_cmake_out, 'w', encoding="utf-8") as fp:
+            fp.write(kconfig_module_dirs_cmake)
 
     if args.kconfig_out:
         with open(args.kconfig_out, 'w', encoding="utf-8") as fp:
