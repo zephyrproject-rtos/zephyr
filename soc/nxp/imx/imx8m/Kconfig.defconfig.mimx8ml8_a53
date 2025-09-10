@@ -3,15 +3,6 @@
 
 if SOC_MIMX8ML8_A53
 
-# Workaround for not being able to have commas in macro arguments
-DT_CHOSEN_Z_FLASH := zephyr,flash
-
-config FLASH_SIZE
-	default $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_FLASH),0,K)
-
-config FLASH_BASE_ADDRESS
-	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))
-
 # Enable GIC Safe Configuration to run multiple OSes on Cortex-A Cores
 config GIC_SAFE_CONFIG
 	default y
