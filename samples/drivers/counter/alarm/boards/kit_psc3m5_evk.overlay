@@ -1,0 +1,27 @@
+/*
+ * Copyright (c) 2025 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pwm/pwm_ifx_tcpwm.h>
+
+&tcpwm0_0 {
+	status = "okay";
+	divider-type = <PWM_IFX_SYSCLK_DIV_16_BIT>;
+	divider-sel = <0>;
+	divider-val = <2399>;
+
+	counter0_0 {
+		status = "okay";
+		clocks = <&peri0_group4_16bit_0>;
+		clock-frequency = <20000>;
+	};
+};
+
+&peri0_group4_16bit_0 {
+	status = "okay";
+	scb-block = <0>;
+	div-value = <109>;
+};
