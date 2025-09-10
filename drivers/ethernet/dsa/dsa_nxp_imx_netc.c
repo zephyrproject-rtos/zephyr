@@ -7,7 +7,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(dsa_netc, CONFIG_ETHERNET_LOG_LEVEL);
 
-#include <zephyr/net/ethernet.h>
+#include <zephyr/net/dsa_core.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/ethernet/nxp_imx_netc.h>
 #include <zephyr/dt-bindings/ethernet/dsa_tag_proto.h>
