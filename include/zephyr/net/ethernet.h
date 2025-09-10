@@ -699,7 +699,7 @@ struct ethernet_context {
 	enum dsa_port_type dsa_port;
 
 	/** DSA switch context pointer */
-	struct dsa_switch_context *dsa_switch_ctx;
+	void *dsa_switch_ctx;
 #endif
 
 	/** Is network carrier up */
