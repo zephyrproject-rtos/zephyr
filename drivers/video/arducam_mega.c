@@ -6,21 +6,18 @@
 
 #define DT_DRV_COMPAT arducam_mega
 
-#include <zephyr/drivers/video/arducam_mega.h>
-
 #include <zephyr/device.h>
-#include <zephyr/drivers/video.h>
 #include <zephyr/drivers/spi.h>
-
+#include <zephyr/drivers/video-controls.h>
+#include <zephyr/drivers/video.h>
+#include <zephyr/drivers/video/arducam_mega.h>
 #include <zephyr/logging/log.h>
 
-#include <zephyr/drivers/video-controls.h>
 #include "video_common.h"
 #include "video_ctrls.h"
 #include "video_device.h"
 
 LOG_MODULE_REGISTER(mega_camera);
-
 
 #define ARDUCHIP_FIFO   0x04 /* FIFO and I2C control */
 #define ARDUCHIP_FIFO_2 0x07 /* FIFO and I2C control */
@@ -81,7 +78,7 @@ LOG_MODULE_REGISTER(mega_camera);
 #define CTR_GAIN         0X00
 
 #define AC_STACK_SIZE 4096
-#define AC_PRIORITY 5
+#define AC_PRIORITY   5
 
 K_THREAD_STACK_DEFINE(ac_stack_area, AC_STACK_SIZE);
 
@@ -150,11 +147,14 @@ struct arducam_mega_data {
 	uint8_t stream_on;
 };
 
-#define ARDUCAM_MEGA_VIDEO_FORMAT_CAP(width, height, format)                                   \
-	{                                                                                          \
-		.pixelformat = (format), .width_min = (width), .width_max = (width),               	   \
-		.height_min = (height), .height_max = (height), .width_step = 0, .height_step = 0      \
-	}
+#define ARDUCAM_MEGA_VIDEO_FORMAT_CAP(width, height, format)                                       \
+	{.pixelformat = (format),                                                                  \
+	 .width_min = (width),                                                                     \
+	 .width_max = (width),                                                                     \
+	 .height_min = (height),                                                                   \
+	 .height_max = (height),                                                                   \
+	 .width_step = 0,                                                                          \
+	 .height_step = 0}
 
 static struct video_format_cap fmts[] = {
 	ARDUCAM_MEGA_VIDEO_FORMAT_CAP(96, 96, VIDEO_PIX_FMT_RGB565),
@@ -212,7 +212,7 @@ static int arducam_mega_write_reg(const struct spi_dt_spec *spec, uint8_t reg_ad
 		if (!spi_write_dt(spec, &tx_bufs)) {
 			return 0;
 		}
-		// If writing failed wait 5ms before next attempt 
+		// If writing failed wait 5ms before next attempt
 		k_msleep(5);
 	}
 	LOG_ERR("failed to write 0x%x to 0x%x", value, reg_addr);
@@ -247,7 +247,7 @@ static int arducam_mega_read_reg(const struct spi_dt_spec *spec, uint8_t reg_add
 		if (!ret) {
 			return value;
 		}
-		// If reading failed wait 5ms before next attempt 
+		// If reading failed wait 5ms before next attempt
 		k_msleep(5);
 	}
 	LOG_ERR("failed to read 0x%x register", reg_addr);
@@ -288,373 +288,321 @@ static int arducam_mega_await_bus_idle(const struct spi_dt_spec *spec, uint8_t t
 	return 0;
 }
 
-static int arducam_mega_write_reg_wait(const struct arducam_mega_bus *bus,
-                                       uint16_t reg,
-                                       uint8_t value,
-                                       uint32_t idle_timeout_ms,
-                                       const char *label)
+static int arducam_mega_write_reg_wait(const struct arducam_mega_bus *bus, uint16_t reg,
+				       uint8_t value, uint32_t idle_timeout_ms, const char *label)
 {
-    int ret;
+	int ret;
 
-    ret = arducam_mega_await_bus_idle(bus, idle_timeout_ms);
-    if (ret < 0) {
-        LOG_ERR("Bus idle wait failed before writing %s", label);
-        return ret;
-    }
+	ret = arducam_mega_await_bus_idle(bus, idle_timeout_ms);
+	if (ret < 0) {
+		LOG_ERR("Bus idle wait failed before writing %s", label);
+		return ret;
+	}
 
-    ret = arducam_mega_write_reg(bus, reg, value);
-    if (ret < 0) {
-        LOG_ERR("Failed to write %s (reg 0x%04x)", label, reg);
-    }
+	ret = arducam_mega_write_reg(bus, reg, value);
+	if (ret < 0) {
+		LOG_ERR("Failed to write %s (reg 0x%04x)", label, reg);
+	}
 
-    return ret;
+	return ret;
 }
 
 static int arducam_mega_set_brightness(const struct device *dev, enum MEGA_BRIGHTNESS_LEVEL level)
 {
 	const struct arducam_mega_config *cfg = dev->config;
 
-    return arducam_mega_write_reg_wait(&cfg->bus,
-                                       CAM_REG_BRIGHTNESS_CONTROL,
-                                       level,
-                                       3,
-                                       "brightness level");
+	return arducam_mega_write_reg_wait(&cfg->bus, CAM_REG_BRIGHTNESS_CONTROL, level, 3,
+					   "brightness level");
 }
 
 static int arducam_mega_set_saturation(const struct device *dev, enum MEGA_SATURATION_LEVEL level)
 {
-    const struct arducam_mega_config *cfg = dev->config;
+	const struct arducam_mega_config *cfg = dev->config;
 
-    return arducam_mega_write_reg_wait(&cfg->bus,
-                                       CAM_REG_SATURATION_CONTROL,
-                                       level,
-                                       3,
-                                       "saturation level");
+	return arducam_mega_write_reg_wait(&cfg->bus, CAM_REG_SATURATION_CONTROL, level, 3,
+					   "saturation level");
 }
 
 static int arducam_mega_set_contrast(const struct device *dev, enum MEGA_CONTRAST_LEVEL level)
 {
-    const struct arducam_mega_config *cfg = dev->config;
+	const struct arducam_mega_config *cfg = dev->config;
 
-    return arducam_mega_write_reg_wait(&cfg->bus,
-                                       CAM_REG_CONTRAST_CONTROL,
-                                       level,
-                                       3,
-                                       "contrast level");
+	return arducam_mega_write_reg_wait(&cfg->bus, CAM_REG_CONTRAST_CONTROL, level, 3,
+					   "contrast level");
 }
 
 static int arducam_mega_set_EV(const struct device *dev, enum MEGA_EV_LEVEL level)
 {
-    const struct arducam_mega_config *cfg = dev->config;
+	const struct arducam_mega_config *cfg = dev->config;
 
-    return arducam_mega_write_reg_wait(&cfg->bus,
-                                       CAM_REG_EV_CONTROL,
-                                       level,
-                                       3,
-                                       "EV level");
+	return arducam_mega_write_reg_wait(&cfg->bus, CAM_REG_EV_CONTROL, level, 3, "EV level");
 }
 
 static int arducam_mega_set_sharpness(const struct device *dev, enum MEGA_SHARPNESS_LEVEL level)
 {
-    struct arducam_mega_data *drv_data = dev->data;
-    struct arducam_mega_ctrls *drv_ctrls = &drv_data->ctrls;
-    const struct arducam_mega_config *cfg = dev->config;
+	struct arducam_mega_data *drv_data = dev->data;
+	struct arducam_mega_ctrls *drv_ctrls = &drv_data->ctrls;
+	const struct arducam_mega_config *cfg = dev->config;
 
-    if (!drv_ctrls->enable_sharpness.val) {
-        LOG_ERR("This device does not support setting sharpness.");
-        return -ENOTSUP;
-    }
+	if (!drv_ctrls->enable_sharpness.val) {
+		LOG_ERR("This device does not support setting sharpness.");
+		return -ENOTSUP;
+	}
 
-    return arducam_mega_write_reg_wait(&cfg->bus,
-                                       CAM_REG_SHARPNESS_CONTROL,
-                                       level,
-                                       3,
-                                       "sharpness level");
+	return arducam_mega_write_reg_wait(&cfg->bus, CAM_REG_SHARPNESS_CONTROL, level, 3,
+					   "sharpness level");
 }
 
 static int arducam_mega_set_special_effects(const struct device *dev, enum video_colorfx effect)
 {
-    const struct arducam_mega_config *cfg = dev->config;
+	const struct arducam_mega_config *cfg = dev->config;
 	typedef struct {
-        enum video_colorfx video_fx;
-        enum MEGA_COLOR_FX mega_fx;
-    } ColorFxMap;
+		enum video_colorfx video_fx;
+		enum MEGA_COLOR_FX mega_fx;
+	} ColorFxMap;
 
-    static const ColorFxMap fx_map[] = {
-        { VIDEO_COLORFX_NONE,        MEGA_COLOR_FX_NONE },
-        { VIDEO_COLORFX_BW,          MEGA_COLOR_FX_BW },
-        { VIDEO_COLORFX_SEPIA,       MEGA_COLOR_FX_SEPIA },
-        { VIDEO_COLORFX_NEGATIVE,    MEGA_COLOR_FX_NEGATIVE },
-        { VIDEO_COLORFX_SKY_BLUE,    MEGA_COLOR_FX_BLUEISH },
-        { VIDEO_COLORFX_GRASS_GREEN, MEGA_COLOR_FX_GRASS_GREEN },
-        { VIDEO_COLORFX_VIVID,       MEGA_COLOR_FX_OVER_EXPOSURE }
-    };
+	static const ColorFxMap fx_map[] = {
+		{VIDEO_COLORFX_NONE, MEGA_COLOR_FX_NONE},
+		{VIDEO_COLORFX_BW, MEGA_COLOR_FX_BW},
+		{VIDEO_COLORFX_SEPIA, MEGA_COLOR_FX_SEPIA},
+		{VIDEO_COLORFX_NEGATIVE, MEGA_COLOR_FX_NEGATIVE},
+		{VIDEO_COLORFX_SKY_BLUE, MEGA_COLOR_FX_BLUEISH},
+		{VIDEO_COLORFX_GRASS_GREEN, MEGA_COLOR_FX_GRASS_GREEN},
+		{VIDEO_COLORFX_VIVID, MEGA_COLOR_FX_OVER_EXPOSURE},
+	};
 
-    uint8_t mega_effect = MEGA_COLOR_FX_NONE;
-    bool supported = false;
+	uint8_t mega_effect = MEGA_COLOR_FX_NONE;
+	bool supported = false;
 
-    for (size_t i = 0; i < ARRAY_SIZE(fx_map); ++i) {
-        if (fx_map[i].video_fx == effect) {
-            mega_effect = fx_map[i].mega_fx;
-            supported = true;
-            break;
-        }
-    }
+	for (size_t i = 0; i < ARRAY_SIZE(fx_map); ++i) {
+		if (fx_map[i].video_fx == effect) {
+			mega_effect = fx_map[i].mega_fx;
+			supported = true;
+			break;
+		}
+	}
 
-    if (!supported) {
-        LOG_ERR("Unsupported color effect: %d", effect);
-    }
+	if (!supported) {
+		LOG_ERR("Unsupported color effect: %d", effect);
+	}
 
-    return arducam_mega_write_reg_wait(&cfg->bus,
-                                       CAM_REG_COLOR_EFFECT_CONTROL,
-                                       mega_effect,
-                                       3,
-                                       "special effects");
+	return arducam_mega_write_reg_wait(&cfg->bus, CAM_REG_COLOR_EFFECT_CONTROL, mega_effect, 3,
+					   "special effects");
 }
 
 static int arducam_mega_set_output_format(const struct device *dev, int output_format)
 {
-    const struct arducam_mega_config *cfg = dev->config;
-    uint8_t format_val;
+	const struct arducam_mega_config *cfg = dev->config;
+	uint8_t format_val;
 
-    switch (output_format) {
-    case VIDEO_PIX_FMT_JPEG:
-        format_val = MEGA_PIXELFORMAT_JPG;
-        break;
-    case VIDEO_PIX_FMT_RGB565:
-        format_val = MEGA_PIXELFORMAT_RGB565;
-        break;
-    case VIDEO_PIX_FMT_YUYV:
-        format_val = MEGA_PIXELFORMAT_YUV;
-        break;
-    default:
-        LOG_ERR("Image format not supported");
-        return -ENOTSUP;
-    }
+	switch (output_format) {
+	case VIDEO_PIX_FMT_JPEG:
+		format_val = MEGA_PIXELFORMAT_JPG;
+		break;
+	case VIDEO_PIX_FMT_RGB565:
+		format_val = MEGA_PIXELFORMAT_RGB565;
+		break;
+	case VIDEO_PIX_FMT_YUYV:
+		format_val = MEGA_PIXELFORMAT_YUV;
+		break;
+	default:
+		LOG_ERR("Image format not supported");
+		return -ENOTSUP;
+	}
 
-    int ret = arducam_mega_write_reg_wait(&cfg->bus,
-                                       CAM_REG_FORMAT,
-                                       format_val,
-                                       3,
-                                       "output format");
-    if (ret < 0)
-        return ret;
+	int ret = arducam_mega_write_reg_wait(&cfg->bus, CAM_REG_FORMAT, format_val, 3,
+					      "output format");
+	if (ret < 0) {
+		return ret;
+	}
 
-    ret = arducam_mega_await_bus_idle(&cfg->bus, 30);
-    if (ret < 0) {
-        LOG_ERR("Bus idle wait failed after setting output format");
-    }
+	ret = arducam_mega_await_bus_idle(&cfg->bus, 30);
+	if (ret < 0) {
+		LOG_ERR("Bus idle wait failed after setting output format");
+	}
 
 	return ret;
 }
 
 static int arducam_mega_set_JPEG_quality(const struct device *dev, enum MEGA_IMAGE_QUALITY qc)
 {
-    const struct arducam_mega_config *cfg = dev->config;
-    struct arducam_mega_data *drv_data = dev->data;
+	const struct arducam_mega_config *cfg = dev->config;
+	struct arducam_mega_data *drv_data = dev->data;
 
-    LOG_DBG("%s: %d", __func__, qc);
+	LOG_DBG("%s: %d", __func__, qc);
 
-    if (drv_data->fmt.pixelformat != VIDEO_PIX_FMT_JPEG) {
-        LOG_ERR("Image format does not support setting JPEG quality");
-        return -ENOTSUP;
-    }
+	if (drv_data->fmt.pixelformat != VIDEO_PIX_FMT_JPEG) {
+		LOG_ERR("Image format does not support setting JPEG quality");
+		return -ENOTSUP;
+	}
 
-    return arducam_mega_write_reg_wait(&cfg->bus,
-                                       CAM_REG_IMAGE_QUALITY,
-                                       qc,
-                                       3,
-                                       "JPEG quality");
+	return arducam_mega_write_reg_wait(&cfg->bus, CAM_REG_IMAGE_QUALITY, qc, 3, "JPEG quality");
 }
 
 static int arducam_mega_set_white_bal_enable(const struct device *dev, int enable)
 {
 	const struct arducam_mega_config *cfg = dev->config;
 
-    uint8_t reg = CTR_WHITEBALANCE;
-    if (enable) {
-        reg |= 0x80;
-    }
+	uint8_t reg = CTR_WHITEBALANCE;
+	if (enable) {
+		reg |= 0x80;
+	}
 
-    int ret = arducam_mega_write_reg_wait(&cfg->bus,
-                                       CAM_REG_EXPOSURE_GAIN_WHITEBAL_ENABLE,
-                                       reg,
-                                       3,
-                                       "white balance enable");
-    if (ret < 0)
-        return ret;
+	int ret = arducam_mega_write_reg_wait(&cfg->bus, CAM_REG_EXPOSURE_GAIN_WHITEBAL_ENABLE, reg,
+					      3, "white balance enable");
+	if (ret < 0) {
+		return ret;
+	}
 
-    ret = arducam_mega_await_bus_idle(&cfg->bus, 10);
-    if (ret < 0) {
-        LOG_ERR("Bus idle wait failed after setting white balance");
-    }
+	ret = arducam_mega_await_bus_idle(&cfg->bus, 10);
+	if (ret < 0) {
+		LOG_ERR("Bus idle wait failed after setting white balance");
+	}
 
 	return ret;
 }
 
 static int arducam_mega_set_white_bal(const struct device *dev, enum MEGA_EV_LEVEL level)
 {
-    const struct arducam_mega_config *cfg = dev->config;
+	const struct arducam_mega_config *cfg = dev->config;
 
-    return arducam_mega_write_reg_wait(&cfg->bus,
-                                       CAM_REG_WHITEBALANCE_CONTROL,
-                                       level,
-                                       3,
-                                       "white balance level");
+	return arducam_mega_write_reg_wait(&cfg->bus, CAM_REG_WHITEBALANCE_CONTROL, level, 3,
+					   "white balance level");
 }
 
 static int arducam_mega_set_gain_enable(const struct device *dev, int enable)
 {
-    const struct arducam_mega_config *cfg = dev->config;
+	const struct arducam_mega_config *cfg = dev->config;
 
-    uint8_t reg = CTR_GAIN;
-    if (enable) {
-        reg |= 0x80;
-    }
+	uint8_t reg = CTR_GAIN;
+	if (enable) {
+		reg |= 0x80;
+	}
 
-    int ret = arducam_mega_write_reg_wait(&cfg->bus,
-                                       CAM_REG_EXPOSURE_GAIN_WHITEBAL_ENABLE,
-                                       reg,
-                                       3,
-                                       "gain enable");
-    if (ret < 0)
-        return ret;
+	int ret = arducam_mega_write_reg_wait(&cfg->bus, CAM_REG_EXPOSURE_GAIN_WHITEBAL_ENABLE, reg,
+					      3, "gain enable");
+	if (ret < 0) {
+		return ret;
+	}
 
-    ret = arducam_mega_await_bus_idle(&cfg->bus, 10);
-    if (ret < 0) {
-        LOG_ERR("Bus idle wait failed after setting gain enable");
-    }
+	ret = arducam_mega_await_bus_idle(&cfg->bus, 10);
+	if (ret < 0) {
+		LOG_ERR("Bus idle wait failed after setting gain enable");
+	}
 
 	return ret;
 }
 
 static int arducam_mega_set_lowpower_enable(const struct device *dev, int enable)
 {
-    const struct arducam_mega_config *cfg = dev->config;
-    const struct arducam_mega_data *drv_data = dev->data;
-    struct arducam_mega_ctrls *drv_ctrls = &drv_data->ctrls;
+	const struct arducam_mega_config *cfg = dev->config;
+	const struct arducam_mega_data *drv_data = dev->data;
+	struct arducam_mega_ctrls *drv_ctrls = &drv_data->ctrls;
 
-    if (drv_ctrls->camera_id.val == ARDUCAM_SENSOR_5MP_2 ||
-        drv_ctrls->camera_id.val == ARDUCAM_SENSOR_3MP_2) {
-        enable = !enable;
-    }
+	if (drv_ctrls->camera_id.val == ARDUCAM_SENSOR_5MP_2 ||
+	    drv_ctrls->camera_id.val == ARDUCAM_SENSOR_3MP_2) {
+		enable = !enable;
+	}
 
-    uint8_t reg_val = enable ? 0x07 : 0x05;
+	uint8_t reg_val = enable ? 0x07 : 0x05;
 
-    return arducam_mega_write_reg_wait(&cfg->bus,
-                                       CAM_REG_POWER_CONTROL,
-                                       reg_val,
-                                       3,
-                                       "lowpower enable");
+	return arducam_mega_write_reg_wait(&cfg->bus, CAM_REG_POWER_CONTROL, reg_val, 3,
+					   "lowpower enable");
 }
 
 static int arducam_mega_set_gain(const struct device *dev, uint16_t value)
 {
 	const struct arducam_mega_config *cfg = dev->config;
-    int ret;
+	int ret;
 
-    ret = arducam_mega_write_reg_wait(&cfg->bus,
-                                       CAM_REG_MANUAL_GAIN_BIT_9_8,
-                                       (value >> 8) & 0xFF,
-                                       3,
-                                       "gain bits [9:8]");
-    if (ret < 0)
-        return ret;
+	ret = arducam_mega_write_reg_wait(&cfg->bus, CAM_REG_MANUAL_GAIN_BIT_9_8,
+					  (value >> 8) & 0xFF, 3, "gain bits [9:8]");
+	if (ret < 0) {
+		return ret;
+	}
 
-    ret = arducam_mega_write_reg_wait(&cfg->bus,
-                                       CAM_REG_MANUAL_GAIN_BIT_7_0,
-                                       value & 0xFF,
-                                       10,
-                                       "gain bits [7:0]");
-    if (ret < 0)
-        return ret;
+	ret = arducam_mega_write_reg_wait(&cfg->bus, CAM_REG_MANUAL_GAIN_BIT_7_0, value & 0xFF, 10,
+					  "gain bits [7:0]");
+	if (ret < 0) {
+		return ret;
+	}
 
-    ret = arducam_mega_await_bus_idle(&cfg->bus, 10);
-    if (ret < 0) {
-        LOG_ERR("Bus idle wait failed after setting gain");
-    }
+	ret = arducam_mega_await_bus_idle(&cfg->bus, 10);
+	if (ret < 0) {
+		LOG_ERR("Bus idle wait failed after setting gain");
+	}
 
-    return ret;
+	return ret;
 }
 
 static int arducam_mega_set_exposure_enable(const struct device *dev, int enable)
 {
 	const struct arducam_mega_config *cfg = dev->config;
 
-    uint8_t reg = CTR_EXPOSURE;
-    if (enable) {
-        reg |= 0x80;
-    }
+	uint8_t reg = CTR_EXPOSURE;
+	if (enable) {
+		reg |= 0x80;
+	}
 
-    int ret = arducam_mega_write_reg_wait(&cfg->bus,
-                                       CAM_REG_EXPOSURE_GAIN_WHITEBAL_ENABLE,
-                                       reg,
-                                       3,
-                                       "exposure enable");
-    if (ret < 0)
-        return ret;
+	int ret = arducam_mega_write_reg_wait(&cfg->bus, CAM_REG_EXPOSURE_GAIN_WHITEBAL_ENABLE, reg,
+					      3, "exposure enable");
+	if (ret < 0) {
+		return ret;
+	}
 
-    ret = arducam_mega_await_bus_idle(&cfg->bus, 10);
-    if (ret < 0) {
-        LOG_ERR("Bus idle wait failed after setting exposure enable");
-    }
+	ret = arducam_mega_await_bus_idle(&cfg->bus, 10);
+	if (ret < 0) {
+		LOG_ERR("Bus idle wait failed after setting exposure enable");
+	}
 
 	return ret;
 }
 
 static int arducam_mega_set_exposure(const struct device *dev, uint32_t value)
 {
-    const struct arducam_mega_config *cfg = dev->config;
-    int ret;
+	const struct arducam_mega_config *cfg = dev->config;
+	int ret;
 
-    ret = arducam_mega_write_reg_wait(&cfg->bus,
-                                       CAM_REG_MANUAL_EXPOSURE_BIT_19_16,
-                                       (value >> 16) & 0xFF,
-                                       3,
-                                       "exposure bits [19:16]");
-    if (ret < 0)
-        return ret;
+	ret = arducam_mega_write_reg_wait(&cfg->bus, CAM_REG_MANUAL_EXPOSURE_BIT_19_16,
+					  (value >> 16) & 0xFF, 3, "exposure bits [19:16]");
+	if (ret < 0) {
+		return ret;
+	}
 
-    ret = arducam_mega_write_reg_wait(&cfg->bus,
-                                       CAM_REG_MANUAL_EXPOSURE_BIT_15_8,
-                                       (value >> 8) & 0xFF,
-                                       10,
-                                       "exposure bits [15:8]");
-    if (ret < 0)
-        return ret;
+	ret = arducam_mega_write_reg_wait(&cfg->bus, CAM_REG_MANUAL_EXPOSURE_BIT_15_8,
+					  (value >> 8) & 0xFF, 10, "exposure bits [15:8]");
+	if (ret < 0) {
+		return ret;
+	}
 
-    ret = arducam_mega_write_reg_wait(&cfg->bus,
-                                       CAM_REG_MANUAL_EXPOSURE_BIT_7_0,
-                                       value & 0xFF,
-                                       10,
-                                       "exposure bits [7:0]");
-    if (ret < 0)
-        return ret;
+	ret = arducam_mega_write_reg_wait(&cfg->bus, CAM_REG_MANUAL_EXPOSURE_BIT_7_0, value & 0xFF,
+					  10, "exposure bits [7:0]");
+	if (ret < 0) {
+		return ret;
+	}
 
-    ret = arducam_mega_await_bus_idle(&cfg->bus, 10);
-    if (ret < 0) {
-        LOG_ERR("Bus idle wait failed after setting exposure");
-    }
+	ret = arducam_mega_await_bus_idle(&cfg->bus, 10);
+	if (ret < 0) {
+		LOG_ERR("Bus idle wait failed after setting exposure");
+	}
 
-    return ret;
+	return ret;
 }
 
 static int arducam_mega_set_resolution(const struct device *dev, enum MEGA_RESOLUTION resolution)
 {
-    const struct arducam_mega_config *cfg = dev->config;
+	const struct arducam_mega_config *cfg = dev->config;
 
-    int ret = arducam_mega_write_reg_wait(&cfg->bus,
-                                       CAM_REG_CAPTURE_RESOLUTION,
-                                       resolution,
-                                       10,
-                                       "capture resolution");
-    if (ret < 0)
-        return ret;
+	int ret = arducam_mega_write_reg_wait(&cfg->bus, CAM_REG_CAPTURE_RESOLUTION, resolution, 10,
+					      "capture resolution");
+	if (ret < 0) {
+		return ret;
+	}
 
-    ret = arducam_mega_await_bus_idle(&cfg->bus, 10);
-    if (ret < 0) {
-        LOG_ERR("Bus idle wait failed after setting resolution");
-    }
+	ret = arducam_mega_await_bus_idle(&cfg->bus, 10);
+	if (ret < 0) {
+		LOG_ERR("Bus idle wait failed after setting resolution");
+	}
 
 	return ret;
 }
@@ -666,10 +614,10 @@ static int arducam_mega_check_connection(const struct device *dev)
 	struct arducam_mega_data *drv_data = dev->data;
 
 	int ret = arducam_mega_await_bus_idle(&cfg->bus, 255);
-    if (ret < 0) {
-        LOG_ERR("Bus idle wait failed during connection check");
-        return ret;
-    }
+	if (ret < 0) {
+		LOG_ERR("Bus idle wait failed during connection check");
+		return ret;
+	}
 
 	cam_id = arducam_mega_read_reg(&cfg->bus, CAM_REG_SENSOR_ID);
 	if (!(cam_id & 0x87)) {
@@ -678,84 +626,84 @@ static int arducam_mega_check_connection(const struct device *dev)
 	}
 
 	switch (cam_id) {
-		case ARDUCAM_SENSOR_5MP_1:
-			fmts[8] = (struct video_format_cap)ARDUCAM_MEGA_VIDEO_FORMAT_CAP(
-				2592, 1944, VIDEO_PIX_FMT_RGB565);
-			fmts[17] = (struct video_format_cap)ARDUCAM_MEGA_VIDEO_FORMAT_CAP(
-				2592, 1944, VIDEO_PIX_FMT_JPEG);
-			fmts[26] = (struct video_format_cap)ARDUCAM_MEGA_VIDEO_FORMAT_CAP(
-				2592, 1944, VIDEO_PIX_FMT_YUYV);
-			support_resolution[8] = MEGA_RESOLUTION_WQXGA2;
+	case ARDUCAM_SENSOR_5MP_1:
+		fmts[8] = (struct video_format_cap)ARDUCAM_MEGA_VIDEO_FORMAT_CAP(
+			2592, 1944, VIDEO_PIX_FMT_RGB565);
+		fmts[17] = (struct video_format_cap)ARDUCAM_MEGA_VIDEO_FORMAT_CAP(
+			2592, 1944, VIDEO_PIX_FMT_JPEG);
+		fmts[26] = (struct video_format_cap)ARDUCAM_MEGA_VIDEO_FORMAT_CAP(
+			2592, 1944, VIDEO_PIX_FMT_YUYV);
+		support_resolution[8] = MEGA_RESOLUTION_WQXGA2;
 
-			drv_data->ctrls.support_resolution.val = SUPPORT_RESOLUTION_5M;
-			drv_data->ctrls.support_special_effects.val = SUPPORT_SP_EFF_5M;
-			drv_data->ctrls.enable_focus.val = ENABLE_FOCUS_5M;
-			drv_data->ctrls.enable_sharpness.val = ENABLE_SHARPNESS_5M;
-			drv_data->ctrls.device_address.val = DEVICE_ADDRESS;
-			break;
-		case ARDUCAM_SENSOR_3MP_1:
-			fmts[8] = (struct video_format_cap)ARDUCAM_MEGA_VIDEO_FORMAT_CAP(
-				2048, 1536, VIDEO_PIX_FMT_RGB565);
-			fmts[17] = (struct video_format_cap)ARDUCAM_MEGA_VIDEO_FORMAT_CAP(
-				2048, 1536, VIDEO_PIX_FMT_JPEG);
-			fmts[26] = (struct video_format_cap)ARDUCAM_MEGA_VIDEO_FORMAT_CAP(
-				2048, 1536, VIDEO_PIX_FMT_YUYV);
-			support_resolution[8] = MEGA_RESOLUTION_QXGA;
-			drv_data->ctrls.support_resolution.val = SUPPORT_RESOLUTION_3M;
-			drv_data->ctrls.support_special_effects.val = SUPPORT_SP_EFF_3M;
-			drv_data->ctrls.enable_focus.val = ENABLE_FOCUS_3M;
-			drv_data->ctrls.enable_sharpness.val = ENABLE_SHARPNESS_3M;
-			drv_data->ctrls.device_address.val = DEVICE_ADDRESS;
-			break;
-		case ARDUCAM_SENSOR_5MP_2:
-			fmts[8] = (struct video_format_cap)ARDUCAM_MEGA_VIDEO_FORMAT_CAP(
-				2592, 1936, VIDEO_PIX_FMT_RGB565);
-			fmts[17] = (struct video_format_cap)ARDUCAM_MEGA_VIDEO_FORMAT_CAP(
-				2592, 1936, VIDEO_PIX_FMT_JPEG);
-			fmts[26] = (struct video_format_cap)ARDUCAM_MEGA_VIDEO_FORMAT_CAP(
-				2592, 1936, VIDEO_PIX_FMT_YUYV);
-			support_resolution[8] = MEGA_RESOLUTION_WQXGA2;
-			drv_data->ctrls.support_resolution.val = SUPPORT_RESOLUTION_5M;
-			drv_data->ctrls.support_special_effects.val = SUPPORT_SP_EFF_5M;
-			drv_data->ctrls.enable_focus.val = ENABLE_FOCUS_5M;
-			drv_data->ctrls.enable_sharpness.val = ENABLE_SHARPNESS_5M;
-			drv_data->ctrls.device_address.val = DEVICE_ADDRESS;
-			break;
-		case ARDUCAM_SENSOR_3MP_2:
-			fmts[8] = (struct video_format_cap)ARDUCAM_MEGA_VIDEO_FORMAT_CAP(
-				2048, 1536, VIDEO_PIX_FMT_RGB565);
-			fmts[17] = (struct video_format_cap)ARDUCAM_MEGA_VIDEO_FORMAT_CAP(
-				2048, 1536, VIDEO_PIX_FMT_JPEG);
-			fmts[26] = (struct video_format_cap)ARDUCAM_MEGA_VIDEO_FORMAT_CAP(
-				2048, 1536, VIDEO_PIX_FMT_YUYV);
-			support_resolution[8] = MEGA_RESOLUTION_QXGA;
+		drv_data->ctrls.support_resolution.val = SUPPORT_RESOLUTION_5M;
+		drv_data->ctrls.support_special_effects.val = SUPPORT_SP_EFF_5M;
+		drv_data->ctrls.enable_focus.val = ENABLE_FOCUS_5M;
+		drv_data->ctrls.enable_sharpness.val = ENABLE_SHARPNESS_5M;
+		drv_data->ctrls.device_address.val = DEVICE_ADDRESS;
+		break;
+	case ARDUCAM_SENSOR_3MP_1:
+		fmts[8] = (struct video_format_cap)ARDUCAM_MEGA_VIDEO_FORMAT_CAP(
+			2048, 1536, VIDEO_PIX_FMT_RGB565);
+		fmts[17] = (struct video_format_cap)ARDUCAM_MEGA_VIDEO_FORMAT_CAP(
+			2048, 1536, VIDEO_PIX_FMT_JPEG);
+		fmts[26] = (struct video_format_cap)ARDUCAM_MEGA_VIDEO_FORMAT_CAP(
+			2048, 1536, VIDEO_PIX_FMT_YUYV);
+		support_resolution[8] = MEGA_RESOLUTION_QXGA;
+		drv_data->ctrls.support_resolution.val = SUPPORT_RESOLUTION_3M;
+		drv_data->ctrls.support_special_effects.val = SUPPORT_SP_EFF_3M;
+		drv_data->ctrls.enable_focus.val = ENABLE_FOCUS_3M;
+		drv_data->ctrls.enable_sharpness.val = ENABLE_SHARPNESS_3M;
+		drv_data->ctrls.device_address.val = DEVICE_ADDRESS;
+		break;
+	case ARDUCAM_SENSOR_5MP_2:
+		fmts[8] = (struct video_format_cap)ARDUCAM_MEGA_VIDEO_FORMAT_CAP(
+			2592, 1936, VIDEO_PIX_FMT_RGB565);
+		fmts[17] = (struct video_format_cap)ARDUCAM_MEGA_VIDEO_FORMAT_CAP(
+			2592, 1936, VIDEO_PIX_FMT_JPEG);
+		fmts[26] = (struct video_format_cap)ARDUCAM_MEGA_VIDEO_FORMAT_CAP(
+			2592, 1936, VIDEO_PIX_FMT_YUYV);
+		support_resolution[8] = MEGA_RESOLUTION_WQXGA2;
+		drv_data->ctrls.support_resolution.val = SUPPORT_RESOLUTION_5M;
+		drv_data->ctrls.support_special_effects.val = SUPPORT_SP_EFF_5M;
+		drv_data->ctrls.enable_focus.val = ENABLE_FOCUS_5M;
+		drv_data->ctrls.enable_sharpness.val = ENABLE_SHARPNESS_5M;
+		drv_data->ctrls.device_address.val = DEVICE_ADDRESS;
+		break;
+	case ARDUCAM_SENSOR_3MP_2:
+		fmts[8] = (struct video_format_cap)ARDUCAM_MEGA_VIDEO_FORMAT_CAP(
+			2048, 1536, VIDEO_PIX_FMT_RGB565);
+		fmts[17] = (struct video_format_cap)ARDUCAM_MEGA_VIDEO_FORMAT_CAP(
+			2048, 1536, VIDEO_PIX_FMT_JPEG);
+		fmts[26] = (struct video_format_cap)ARDUCAM_MEGA_VIDEO_FORMAT_CAP(
+			2048, 1536, VIDEO_PIX_FMT_YUYV);
+		support_resolution[8] = MEGA_RESOLUTION_QXGA;
 
-			drv_data->ctrls.support_resolution.val = SUPPORT_RESOLUTION_3M;
-			drv_data->ctrls.support_special_effects.val = SUPPORT_SP_EFF_3M;
-			drv_data->ctrls.enable_focus.val = ENABLE_FOCUS_3M;
-			drv_data->ctrls.enable_sharpness.val = ENABLE_SHARPNESS_3M;
-			drv_data->ctrls.device_address.val = DEVICE_ADDRESS;
-			break;
-		default:
-			return -ENODEV;
+		drv_data->ctrls.support_resolution.val = SUPPORT_RESOLUTION_3M;
+		drv_data->ctrls.support_special_effects.val = SUPPORT_SP_EFF_3M;
+		drv_data->ctrls.enable_focus.val = ENABLE_FOCUS_3M;
+		drv_data->ctrls.enable_sharpness.val = ENABLE_SHARPNESS_3M;
+		drv_data->ctrls.device_address.val = DEVICE_ADDRESS;
+		break;
+	default:
+		return -ENODEV;
 	}
 	drv_data->ctrls.camera_id.val = cam_id;
 
 	return ret;
 }
 
-static int arducam_mega_set_fmt(const struct device *dev,
-				struct video_format *fmt)
+static int arducam_mega_set_fmt(const struct device *dev, struct video_format *fmt)
 {
 	struct arducam_mega_data *drv_data = dev->data;
 	uint16_t width, height;
 	int ret = 0;
 	int i = 0;
 
-	// We only support RGB565, JPEG, and YUYV pixel formats 
+	// We only support RGB565, JPEG, and YUYV pixel formats
 	if (fmt->pixelformat != VIDEO_PIX_FMT_RGB565 && fmt->pixelformat != VIDEO_PIX_FMT_JPEG &&
 	    fmt->pixelformat != VIDEO_PIX_FMT_YUYV) {
-		LOG_ERR("Arducam Mega camera only supports RGB565, JPG, and YUYV pixel formats!");
+		LOG_ERR("Arducam Mega camera only supports RGB565, JPG, and YUYV pixel "
+			"formats!");
 		return -ENOTSUP;
 	}
 
@@ -763,40 +711,39 @@ static int arducam_mega_set_fmt(const struct device *dev,
 	height = fmt->height;
 
 	if (!memcmp(&drv_data->fmt, fmt, sizeof(drv_data->fmt))) {
-		// nothing to do 
+		// nothing to do
 		return 0;
 	}
 
-	// Check if camera is capable of handling given format 
+	// Check if camera is capable of handling given format
 	while (fmts[i].pixelformat) {
 		if (fmts[i].width_min == width && fmts[i].height_min == height &&
 		    fmts[i].pixelformat == fmt->pixelformat) {
-			// Set output format 
+			// Set output format
 			int ret = arducam_mega_set_output_format(dev, fmt->pixelformat);
 			if (ret < 0) {
-                LOG_ERR("Failed to set output format");
-                return ret;
-            }
-			// Set window size 
+				LOG_ERR("Failed to set output format");
+				return ret;
+			}
+			// Set window size
 			ret = arducam_mega_set_resolution(
 				dev, support_resolution[i % SUPPORT_RESOLUTION_NUM]);
-		    if (ret < 0) {
-                LOG_ERR("Failed to set resolution");
-                return ret;
-            }
+			if (ret < 0) {
+				LOG_ERR("Failed to set resolution");
+				return ret;
+			}
 			drv_data->fmt = *fmt;
 			drv_data->fmt.pitch = drv_data->fmt.width * 2;
 			return ret;
 		}
 		i++;
 	}
-	// Camera is not capable of handling given format 
+	// Camera is not capable of handling given format
 	LOG_ERR("Image resolution not supported\n");
 	return -ENOTSUP;
 }
 
-static int arducam_mega_get_fmt(const struct device *dev,
-				struct video_format *fmt)
+static int arducam_mega_get_fmt(const struct device *dev, struct video_format *fmt)
 {
 	struct arducam_mega_data *drv_data = dev->data;
 
@@ -812,7 +759,8 @@ static void on_stream_schedule_timer_func(struct k_timer *timer)
 	k_work_submit_to_queue(&ac_work_q, &drv_data->buf_work);
 }
 
-static int arducam_mega_stream_start(const struct device *dev, bool enable, enum video_buf_type type)
+static int arducam_mega_stream_start(const struct device *dev, bool enable,
+				     enum video_buf_type type)
 {
 	struct arducam_mega_data *drv_data = dev->data;
 
@@ -820,15 +768,15 @@ static int arducam_mega_stream_start(const struct device *dev, bool enable, enum
 		return 0;
 	}
 
-	if(enable){
+	if (enable) {
 		drv_data->stream_on = 1;
 		drv_data->fifo_length = 0;
 		k_timer_start(&drv_data->stream_schedule_timer, K_MSEC(30), K_MSEC(30));
-	}else{
+	} else {
 		drv_data->stream_on = 0;
 		k_timer_stop(&drv_data->stream_schedule_timer);
 	}
-	
+
 	return 0;
 }
 
@@ -848,7 +796,7 @@ static int arducam_mega_flush(const struct device *dev, bool cancel)
 	struct arducam_mega_data *drv_data = dev->data;
 	struct video_buffer *vbuf;
 
-	// Clear fifo cache 
+	// Clear fifo cache
 	while (!k_fifo_is_empty(&drv_data->fifo_out)) {
 		vbuf = k_fifo_get(&drv_data->fifo_out, K_USEC(10));
 		if (vbuf != NULL) {
@@ -933,7 +881,6 @@ static void __buffer_work(struct k_work *work)
 
 	vbuf = k_fifo_get(&drv_data->fifo_in, K_FOREVER);
 
-
 	if (vbuf == NULL) {
 		return;
 	}
@@ -959,8 +906,7 @@ static void __buffer_work(struct k_work *work)
 	k_yield();
 }
 
-static int arducam_mega_enqueue(const struct device *dev,
-				struct video_buffer *vbuf)
+static int arducam_mega_enqueue(const struct device *dev, struct video_buffer *vbuf)
 {
 	struct arducam_mega_data *data = dev->data;
 
@@ -971,8 +917,8 @@ static int arducam_mega_enqueue(const struct device *dev,
 	return 0;
 }
 
-static int arducam_mega_dequeue(const struct device *dev,
-				struct video_buffer **vbuf, k_timeout_t timeout)
+static int arducam_mega_dequeue(const struct device *dev, struct video_buffer **vbuf,
+				k_timeout_t timeout)
 {
 	struct arducam_mega_data *data = dev->data;
 
@@ -987,8 +933,7 @@ static int arducam_mega_dequeue(const struct device *dev,
 	return 0;
 }
 
-static int arducam_mega_get_caps(const struct device *dev,
-				 struct video_caps *caps)
+static int arducam_mega_get_caps(const struct device *dev, struct video_caps *caps)
 {
 	/* Arducam in capture mode needs only one buffer allocated before starting */
 	caps->min_vbuf_count = 1;
@@ -1028,15 +973,17 @@ static int arducam_mega_set_ctrl(const struct device *dev, uint32_t id)
 	case VIDEO_CID_SHARPNESS:
 		return arducam_mega_set_sharpness(dev, drv_data->ctrls.sharpness.val);
 	case VIDEO_CID_COLORFX:
-		return arducam_mega_set_special_effects(dev, drv_data->ctrls.support_special_effects.val);
+		return arducam_mega_set_special_effects(
+			dev, drv_data->ctrls.support_special_effects.val);
 	case VIDEO_CID_ARDUCAM_LOWPOWER:
 		return arducam_mega_set_lowpower_enable(dev, drv_data->ctrls.lowpower.val);
 	case VIDEO_CID_ARDUCAM_RESET: {
 		int ret;
 		drv_data->ctrls.reset.val = 0;
 		ret = arducam_mega_soft_reset(dev);
-		if (ret < 0)
+		if (ret < 0) {
 			return ret;
+		}
 		return arducam_mega_check_connection(dev);
 	}
 	default:
@@ -1050,18 +997,18 @@ static const struct video_driver_api arducam_mega_driver_api = {
 	.set_ctrl = arducam_mega_set_ctrl,
 	.get_caps = arducam_mega_get_caps,
 	.set_stream = arducam_mega_stream_start,
-	.get_caps = arducam_mega_get_caps,
 	.flush = arducam_mega_flush,
 	.enqueue = arducam_mega_enqueue,
-	.dequeue = arducam_mega_dequeue
+	.dequeue = arducam_mega_dequeue,
 };
 
-#define ARDUCAM_MEGA_640_480_LINK_FREQ	120000000
-#define ARDUCAM_MEGA_640_480_LINK_FREQ_ID	0
-#define ARDUCAM_MEGA_1600_1200_LINK_FREQ	240000000
-#define ARDUCAM_MEGA_1600_1200_LINK_FREQ_ID	1
+#define ARDUCAM_MEGA_640_480_LINK_FREQ      120000000
+#define ARDUCAM_MEGA_640_480_LINK_FREQ_ID   0
+#define ARDUCAM_MEGA_1600_1200_LINK_FREQ    240000000
+#define ARDUCAM_MEGA_1600_1200_LINK_FREQ_ID 1
 const int64_t arducam_mega_link_frequency[] = {
-	ARDUCAM_MEGA_640_480_LINK_FREQ, ARDUCAM_MEGA_1600_1200_LINK_FREQ,
+	ARDUCAM_MEGA_640_480_LINK_FREQ,
+	ARDUCAM_MEGA_1600_1200_LINK_FREQ,
 };
 
 static int arducam_mega_controls(const struct device *dev)
@@ -1074,7 +1021,7 @@ static int arducam_mega_controls(const struct device *dev)
 			      (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 0});
 	if (ret < 0) {
 		return ret;
-	}	
+	}
 	ret = video_init_ctrl(&ctrls->brightness, dev, VIDEO_CID_BRIGHTNESS,
 			      (struct video_ctrl_range){.min = 0, .max = 8, .step = 1, .def = 0});
 	if (ret < 0) {
@@ -1125,66 +1072,76 @@ static int arducam_mega_controls(const struct device *dev)
 	if (ret < 0) {
 		return ret;
 	}
-	ret = video_init_ctrl(&ctrls->gain, dev, VIDEO_CID_GAIN,
-			      (struct video_ctrl_range){.min = GAIN_MIN, .max = GAIN_MAX, .step = 1, .def = 0});
+	ret = video_init_ctrl(
+		&ctrls->gain, dev, VIDEO_CID_GAIN,
+		(struct video_ctrl_range){.min = GAIN_MIN, .max = GAIN_MAX, .step = 1, .def = 0});
 	if (ret < 0) {
 		return ret;
 	}
 	ret = video_init_ctrl(&ctrls->exposure, dev, VIDEO_CID_EXPOSURE,
-			      (struct video_ctrl_range){.min = GAIN_MIN, .max = EXPOSURE_MAX, .step = 1, .def = 0});
+			      (struct video_ctrl_range){
+				      .min = GAIN_MIN, .max = EXPOSURE_MAX, .step = 1, .def = 0});
 	if (ret < 0) {
 		return ret;
 	}
-	ret = video_init_ctrl(&ctrls->quality, dev, VIDEO_CID_JPEG_COMPRESSION_QUALITY,
-			      (struct video_ctrl_range){.min = 0, .max = 65535, .step = 1, .def = 0});
+	ret = video_init_ctrl(
+		&ctrls->quality, dev, VIDEO_CID_JPEG_COMPRESSION_QUALITY,
+		(struct video_ctrl_range){.min = 0, .max = 65535, .step = 1, .def = 0});
 	if (ret < 0) {
 		return ret;
 	}
-	ret = video_init_ctrl(&ctrls->lowpower, dev, VIDEO_CID_ARDUCAM_LOWPOWER,
-			      (struct video_ctrl_range){.min = 0, .max = 65535, .step = 1, .def = 0});
+	ret = video_init_ctrl(
+		&ctrls->lowpower, dev, VIDEO_CID_ARDUCAM_LOWPOWER,
+		(struct video_ctrl_range){.min = 0, .max = 65535, .step = 1, .def = 0});
 	if (ret < 0) {
 		return ret;
 	}
 	/* Read only controls */
-	ret = video_init_ctrl(&ctrls->support_resolution, dev, VIDEO_CID_ARDUCAM_SUPP_RES,
-			      (struct video_ctrl_range){.min = 0, .max = 65535, .step = 1, .def = 0});
+	ret = video_init_ctrl(
+		&ctrls->support_resolution, dev, VIDEO_CID_ARDUCAM_SUPP_RES,
+		(struct video_ctrl_range){.min = 0, .max = 65535, .step = 1, .def = 0});
 	ctrls->support_resolution.flags |= VIDEO_CTRL_FLAG_READ_ONLY;
 	if (ret < 0) {
 		return ret;
 	}
-	ret = video_init_ctrl(&ctrls->support_special_effects, dev, VIDEO_CID_ARDUCAM_SUPP_SP_EFF,
-			      (struct video_ctrl_range){.min = 0, .max = 65535, .step = 1, .def = 0});
+	ret = video_init_ctrl(
+		&ctrls->support_special_effects, dev, VIDEO_CID_ARDUCAM_SUPP_SP_EFF,
+		(struct video_ctrl_range){.min = 0, .max = 65535, .step = 1, .def = 0});
 	ctrls->support_special_effects.flags |= VIDEO_CTRL_FLAG_READ_ONLY;
 	if (ret < 0) {
 		return ret;
 	}
-	ret = video_init_ctrl(&ctrls->enable_focus, dev, VIDEO_CID_ARDUCAM_EN_FOCUS,
-			      (struct video_ctrl_range){.min = 0, .max = 65535, .step = 1, .def = 0});
+	ret = video_init_ctrl(
+		&ctrls->enable_focus, dev, VIDEO_CID_ARDUCAM_EN_FOCUS,
+		(struct video_ctrl_range){.min = 0, .max = 65535, .step = 1, .def = 0});
 	ctrls->enable_focus.flags |= VIDEO_CTRL_FLAG_READ_ONLY;
 	if (ret < 0) {
 		return ret;
 	}
-	ret = video_init_ctrl(&ctrls->enable_sharpness, dev, VIDEO_CID_ARDUCAM_EN_SHARPNESS,
-			      (struct video_ctrl_range){.min = 0, .max = 65535, .step = 1, .def = 0});
+	ret = video_init_ctrl(
+		&ctrls->enable_sharpness, dev, VIDEO_CID_ARDUCAM_EN_SHARPNESS,
+		(struct video_ctrl_range){.min = 0, .max = 65535, .step = 1, .def = 0});
 	ctrls->enable_sharpness.flags |= VIDEO_CTRL_FLAG_READ_ONLY;
 	if (ret < 0) {
 		return ret;
 	}
-	ret = video_init_ctrl(&ctrls->device_address, dev, VIDEO_CID_ARDUCAM_DEV_ADDR,
-			      (struct video_ctrl_range){.min = 0, .max = 65535, .step = 1, .def = 0});
+	ret = video_init_ctrl(
+		&ctrls->device_address, dev, VIDEO_CID_ARDUCAM_DEV_ADDR,
+		(struct video_ctrl_range){.min = 0, .max = 65535, .step = 1, .def = 0});
 	ctrls->device_address.flags |= VIDEO_CTRL_FLAG_READ_ONLY;
 	if (ret < 0) {
 		return ret;
 	}
-	ret = video_init_ctrl(&ctrls->camera_id, dev, VIDEO_CID_ARDUCAM_CAM_ID,
-			      (struct video_ctrl_range){.min = 0, .max = 65535, .step = 1, .def = 0});
+	ret = video_init_ctrl(
+		&ctrls->camera_id, dev, VIDEO_CID_ARDUCAM_CAM_ID,
+		(struct video_ctrl_range){.min = 0, .max = 65535, .step = 1, .def = 0});
 	ctrls->camera_id.flags |= VIDEO_CTRL_FLAG_READ_ONLY;
 	if (ret < 0) {
 		return ret;
 	}
-	ret = video_init_int_menu_ctrl(&ctrls->linkfreq, dev, VIDEO_CID_LINK_FREQ,
-				       ARDUCAM_MEGA_640_480_LINK_FREQ_ID, arducam_mega_link_frequency,
-				       ARRAY_SIZE(arducam_mega_link_frequency));
+	ret = video_init_int_menu_ctrl(
+		&ctrls->linkfreq, dev, VIDEO_CID_LINK_FREQ, ARDUCAM_MEGA_640_480_LINK_FREQ_ID,
+		arducam_mega_link_frequency, ARRAY_SIZE(arducam_mega_link_frequency));
 	if (ret < 0) {
 		return ret;
 	}
@@ -1211,7 +1168,7 @@ static int arducam_mega_init(const struct device *dev)
 	k_fifo_init(&drv_data->fifo_out);
 	k_work_queue_init(&ac_work_q);
 	k_work_queue_start(&ac_work_q, ac_stack_area, K_THREAD_STACK_SIZEOF(ac_stack_area),
-		AC_PRIORITY, NULL);
+			   AC_PRIORITY, NULL);
 
 	k_timer_init(&drv_data->stream_schedule_timer, on_stream_schedule_timer_func, NULL);
 	drv_data->stream_schedule_timer.user_data = (void *)drv_data;
@@ -1254,25 +1211,22 @@ static int arducam_mega_init(const struct device *dev)
 	return ret;
 }
 
-#define ARDUCAM_MEGA_INIT(inst)                                                                     \
-	static const struct arducam_mega_config arducam_mega_cfg_##inst = {                        		\
-		.bus = SPI_DT_SPEC_INST_GET(inst,                                                  			\
-					    SPI_OP_MODE_MASTER | SPI_WORD_SET(8) |                 						\
-						    SPI_CS_ACTIVE_HIGH | SPI_LINES_SINGLE |        							\
-						    SPI_LOCK_ON,                                   							\
-					    0),                                                    						\
-	};                                                                                         		\
-                                                                                                    \
-	static struct arducam_mega_data arducam_mega_data_##inst = {.fmt = {VIDEO_BUF_TYPE_OUTPUT,		\
-																VIDEO_PIX_FMT_RGB565,				\
-																320,								\
-																240,								\
-																0 }}; 								\
-																									\
-	DEVICE_DT_INST_DEFINE(inst, &arducam_mega_init, NULL, &arducam_mega_data_##inst,           		\
-			      &arducam_mega_cfg_##inst, POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY,   				\
-			      &arducam_mega_driver_api);														\
-				  																					\
+#define ARDUCAM_MEGA_INIT(inst)                                                                    \
+	static const struct arducam_mega_config arducam_mega_cfg_##inst = {                        \
+		.bus = SPI_DT_SPEC_INST_GET(inst,                                                  \
+					    SPI_OP_MODE_MASTER | SPI_WORD_SET(8) |                 \
+						    SPI_CS_ACTIVE_HIGH | SPI_LINES_SINGLE |        \
+						    SPI_LOCK_ON,                                   \
+					    0),                                                    \
+	};                                                                                         \
+                                                                                                   \
+	static struct arducam_mega_data arducam_mega_data_##inst = {                               \
+		.fmt = {VIDEO_BUF_TYPE_OUTPUT, VIDEO_PIX_FMT_RGB565, 320, 240, 0}};                \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(inst, &arducam_mega_init, NULL, &arducam_mega_data_##inst,           \
+			      &arducam_mega_cfg_##inst, POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY,   \
+			      &arducam_mega_driver_api);                                           \
+                                                                                                   \
 	VIDEO_DEVICE_DEFINE(arducam_mega_##inst, DEVICE_DT_INST_GET(inst), NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(ARDUCAM_MEGA_INIT)
