@@ -45,6 +45,7 @@ zephyr_library_sources_ifdef(CONFIG_RTC_SF32LB rtc_sf32lb.c)
 zephyr_library_sources_ifdef(CONFIG_RTC_SILABS_SIWX91X rtc_silabs_siwx91x.c)
 zephyr_library_sources_ifdef(CONFIG_RTC_SMARTBOND rtc_smartbond.c)
 zephyr_library_sources_ifdef(CONFIG_RTC_STM32 rtc_stm32.c)
+zephyr_library_sources_ifdef(CONFIG_RTC_TI_CC35XX rtc_cc35xx.c)
 zephyr_library_sources_ifdef(CONFIG_RTC_TI_MSPM0 rtc_ti_mspm0.c)
 zephyr_library_sources_ifdef(CONFIG_RTC_XMC4XXX rtc_xmc4xxx.c)
 # zephyr-keep-sorted-stop

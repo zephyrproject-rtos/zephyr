@@ -1,0 +1,16 @@
+# Copyright (c) 2025 Conclusive Engineering Sp. z o.o.
+# SPDX-License-Identifier: Apache-2.0
+
+config RTC_TI_CC35XX
+	bool "TI Simplelink cc35xx RTC driver"
+	default y
+	depends on DT_HAS_TI_CC35XX_RTC_TIMER_ENABLED
+	help
+	  TI Simplelink cc35xx Real-Time Clock (RTC) driver.
+
+config RTC_TI_CC35XX_EPOCH_YEAR
+	int "Epoch year for TI cc35xx RTC"
+	default 2020
+	depends on RTC_TI_CC35XX
+	help
+	  TI Simplelink cc35xx RTC driver epoch year.
