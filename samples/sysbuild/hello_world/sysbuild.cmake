@@ -6,6 +6,7 @@ if(DEFINED SB_CONFIG_REMOTE_BOARD)
     APPLICATION remote
     SOURCE_DIR ${APP_DIR}/remote
     BOARD ${SB_CONFIG_REMOTE_BOARD}
+    BOARD_REVISION ${BOARD_REVISION}
   )
 
   add_dependencies(${DEFAULT_IMAGE} remote)
