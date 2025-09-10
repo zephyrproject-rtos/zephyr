@@ -149,6 +149,10 @@ static int sys_mm_drv_hpsram_pwr(uint32_t bank_idx, bool enable, bool non_blocki
 
 	HPSRAM_REGS(bank_idx)->HSxPGCTL = !enable;
 
+	if (enable) {
+		HPSRAM_REGS(bank_idx)->HSxRMCTL = IS_ENABLED(CONFIG_SRAM_RETENTION_MODE);
+	}
+
 	if (!non_blocking) {
 		while (HPSRAM_REGS(bank_idx)->HSxPGISTS == enable) {
 			k_busy_wait(1);
@@ -911,6 +915,7 @@ __imr void adsp_mm_restore_context(void *storage_buffer)
 		/* turn on memory bank power, wait till the power is on */
 		__ASSERT_NO_MSG(bank_idx <= ace_hpsram_get_bank_count());
 		HPSRAM_REGS(bank_idx)->HSxPGCTL = 0;
+		HPSRAM_REGS(bank_idx)->HSxRMCTL = IS_ENABLED(CONFIG_SRAM_RETENTION_MODE);
 		while (HPSRAM_REGS(bank_idx)->HSxPGISTS == 1) {
 			/* k_busy_wait cannot be used here - not available */
 		}
