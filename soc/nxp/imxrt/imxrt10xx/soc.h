@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, NXP
+ * Copyright 2017, 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,7 @@
 #define _SOC__H_
 
 #include <zephyr/sys/util.h>
+#include <fsl_gpc.h>
 
 #ifndef _ASMLANGUAGE
 
@@ -15,6 +16,11 @@
 
 /* Add include for DTS generated information */
 #include <zephyr/devicetree.h>
+
+/* Handle variation to implement Wakeup Interrupt */
+#define NXP_ENABLE_WAKEUP_SIGNAL(irqn) GPC_EnableIRQ(GPC, irqn)
+#define NXP_DISABLE_WAKEUP_SIGNAL(irqn) GPC_DisableIRQ(GPC, irqn)
+#define NXP_GET_WAKEUP_SIGNAL_STATUS(irqn) GPC_GetStatusFlag(GPC, irqn)
 
 #ifdef __cplusplus
 extern "C" {

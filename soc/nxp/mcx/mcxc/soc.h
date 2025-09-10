@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,6 +17,7 @@
 #ifndef _ASMLANGUAGE
 
 #include <fsl_common.h>
+#include <soc_common.h>
 
 #endif /* !_ASMLANGUAGE */
 
