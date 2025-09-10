@@ -4279,6 +4279,7 @@ class Symbol(object):
         "_cached_vis",
         "_dependents",
         "_old_val",
+        "_src_ref",
         "_visited",
         "_was_set",
         "_write_to_conf",
@@ -4340,6 +4341,7 @@ class Symbol(object):
             return self.name
 
         val = ""
+        self._src_ref = None
         # Warning: See Symbol._rec_invalidate(), and note that this is a hidden
         # function call (property magic)
         vis = self.visibility
@@ -4391,6 +4393,7 @@ class Symbol(object):
                     # specified in the assignment (with or without "0x", etc.)
                     val = self.user_value
                     use_defaults = False
+                    self._src_ref = SRCREF_USER, self.user_loc
 
             if use_defaults:
                 # No user value or invalid user value. Look at defaults.
@@ -4398,11 +4401,12 @@ class Symbol(object):
                 # Used to implement the warning below
                 has_default = False
 
-                for sym, cond, _ in self.defaults:
+                for sym, cond, loc in self.defaults:
                     if expr_value(cond):
                         has_default = self._write_to_conf = True
 
                         val = sym.str_value
+                        self._src_ref = SRCREF_DEFAULT, loc
 
                         if _is_base_n(val, base):
                             val_num = int(val, base)
@@ -4412,6 +4416,7 @@ class Symbol(object):
                         break
                 else:
                     val_num = 0  # strtoll() on empty string
+                    self._src_ref = SRCREF_DEFAULT, "_implicit_"
 
                 # This clamping procedure runs even if there's no default
                 if has_active_range:
@@ -4441,12 +4446,14 @@ class Symbol(object):
             if vis and self.user_value is not None:
                 # If the symbol is visible and has a user value, use that
                 val = self.user_value
+                self._src_ref = SRCREF_USER, self.user_loc
             else:
                 # Otherwise, look at defaults
-                for sym, cond, _ in self.defaults:
+                for sym, cond, loc in self.defaults:
                     if expr_value(cond):
                         val = sym.str_value
                         self._write_to_conf = True
+                        self._src_ref = SRCREF_DEFAULT, loc
                         break
 
         # env_var corresponds to SYMBOL_AUTO in the C implementation, and is
@@ -4465,6 +4472,11 @@ class Symbol(object):
         """
         See the class documentation.
         """
+        def nonzero_rev_dep_str(rev_deps):
+            return " || ".join(_parenthesize(subexpr, AND, standard_sc_expr_str)
+                               for subexpr in split_expr(rev_deps, OR)
+                               if expr_value(subexpr))
+
         if self._cached_tri_val is not None:
             return self._cached_tri_val
 
@@ -4492,17 +4504,19 @@ class Symbol(object):
             if vis and self.user_value is not None:
                 # If the symbol is visible and has a user value, use that
                 val = min(self.user_value, vis)
+                self._src_ref = SRCREF_USER, self.user_loc
 
             else:
                 # Otherwise, look at defaults and weak reverse dependencies
                 # (implies)
 
-                for default, cond, _ in self.defaults:
+                for default, cond, loc in self.defaults:
                     dep_val = expr_value(cond)
                     if dep_val:
                         val = min(expr_value(default), dep_val)
                         if val:
                             self._write_to_conf = True
+                            self._src_ref = SRCREF_DEFAULT, loc
                         break
 
                 # Weak reverse dependencies are only considered if our
@@ -4511,6 +4525,8 @@ class Symbol(object):
                 if dep_val and expr_value(self.direct_dep):
                     val = max(dep_val, val)
                     self._write_to_conf = True
+                    dep_str = nonzero_rev_dep_str(self.weak_rev_dep).replace("|", "\\|")
+                    self._src_ref = SRCREF_IMPLY, dep_str
 
             # Reverse (select-related) dependencies take precedence
             dep_val = expr_value(self.rev_dep)
@@ -4520,6 +4536,8 @@ class Symbol(object):
 
                 val = max(dep_val, val)
                 self._write_to_conf = True
+                dep_str = nonzero_rev_dep_str(self.rev_dep).replace("|", "\\|")
+                self._src_ref = SRCREF_SELECT, dep_str
 
             # m is promoted to y for (1) bool symbols and (2) symbols with a
             # weak_rev_dep (from imply) of y
@@ -4532,6 +4550,8 @@ class Symbol(object):
             # the visibility of choice symbols, so it's sufficient to just
             # check the visibility of the choice symbols themselves.
             val = 2 if self.choice.selection is self else 0
+            self._src_ref = self.choice._src_ref if self.choice.selection is self else None
+
 
         elif vis and self.user_value:
             # Visible choice symbol in m-mode choice, with set non-0 user value
@@ -4836,6 +4856,7 @@ class Symbol(object):
         self.user_value = \
         self.choice = \
         self.env_var = \
+        self._src_ref = \
         self._cached_str_val = self._cached_tri_val = self._cached_vis = \
         self._cached_assignable = None
 
@@ -5190,6 +5211,7 @@ class Choice(object):
         "_cached_selection",
         "_cached_vis",
         "_dependents",
+        "_src_ref",
         "_visited",
         "_was_set",
         "defaults",
@@ -5475,6 +5497,7 @@ class Choice(object):
 
         # Use the user selection if it's visible
         if self.user_selection and self.user_selection.visibility:
+            self._src_ref = SRCREF_USER, self.user_loc
             return self.user_selection
 
         # Otherwise, check if we have a default
@@ -5482,14 +5505,16 @@ class Choice(object):
 
     def _selection_from_defaults(self):
         # Check if we have a default
-        for sym, cond, _ in self.defaults:
+        for sym, cond, loc in self.defaults:
             # The default symbol must be visible too
             if expr_value(cond) and sym.visibility:
+                self._src_ref = SRCREF_DEFAULT, loc
                 return sym
 
         # Otherwise, pick the first visible symbol, if any
         for sym in self.syms:
             if sym.visibility:
+                self._src_ref = SRCREF_DEFAULT, "_implicit_"
                 return sym
 
         # Couldn't find a selection
@@ -7176,6 +7201,15 @@ _RELATIONS = frozenset({
     GREATER,
     GREATER_EQUAL,
 })
+
+# Kinds of source references
+(
+    SRCREF_NONE,
+    SRCREF_DEFAULT,
+    SRCREF_USER,
+    SRCREF_SELECT,
+    SRCREF_IMPLY,
+) = range(5)
 
 # Helper functions for getting compiled regular expressions, with the needed
 # matching function returned directly as a small optimization.
