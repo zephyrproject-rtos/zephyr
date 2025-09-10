@@ -19,26 +19,26 @@ struct native_sim_config {
 int cpu_freq_pstate_set(const struct pstate *state)
 {
 	if (state == NULL) {
-		LOG_ERR("pstate is NULL");
+		LOG_ERR("SoC pstate is NULL");
 		return -EINVAL;
 	}
 
 	int state_id = ((const struct native_sim_config *)state->config)->state_id;
 
-	LOG_DBG("Setting performance state: %d", state_id);
+	LOG_DBG("SoC setting performance state: %d", state_id);
 
 	switch (state_id) {
 	case 0:
-		LOG_DBG("Setting P-state 0: Nominal Mode");
+		LOG_DBG("SoC setting P-state 0: Nominal Mode");
 		break;
 	case 1:
-		LOG_DBG("Setting P-state 1: Low Power Mode");
+		LOG_DBG("SoC setting P-state 1: Low Power Mode");
 		break;
 	case 2:
-		LOG_DBG("Setting P-state 2: Ultra-low Power Mode");
+		LOG_DBG("SoC setting P-state 2: Ultra-low Power Mode");
 		break;
 	default:
-		LOG_ERR("Unsupported P-state: %d", state_id);
+		LOG_ERR("SoC unsupported P-state: %d", state_id);
 		return -1;
 	}
 
