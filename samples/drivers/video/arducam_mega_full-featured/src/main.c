@@ -15,16 +15,16 @@
 
 LOG_MODULE_REGISTER(main);
 
-#define SET_PICTURE_RESOLUTION   0X01
-#define SET_VIDEO_RESOLUTION     0X02
-#define GET_CAMERA_INFO          0X0F
-#define TAKE_PICTURE             0X10
-#define STOP_STREAM              0X21
-#define CONTROL_WRITE			 0xCC
-#define CONTROL_QUERY_GET		 0xCD
+#define SET_PICTURE_RESOLUTION 0X01
+#define SET_VIDEO_RESOLUTION   0X02
+#define GET_CAMERA_INFO        0X0F
+#define TAKE_PICTURE           0X10
+#define STOP_STREAM            0X21
+#define CONTROL_WRITE          0xCC
+#define CONTROL_QUERY_GET      0xCD
 
-#define TYPE_BUF_SIZE 8
-#define NAME_BUF_SIZE 20
+#define TYPE_BUF_SIZE  8
+#define NAME_BUF_SIZE  20
 #define QUERY_BUF_SIZE 800
 
 #define MSG_SIZE 12
@@ -74,7 +74,7 @@ static int set_mega_resolution(uint8_t sfmt)
 	struct video_format fmt = {.width = resolution_table[resolution][0],
 				   .height = resolution_table[resolution][1],
 				   .pixelformat = pixel_format_table[pixelformat - 1],
-					.type = type};
+				   .type = type};
 	current_resolution = resolution;
 	return video_set_format(video, &fmt);
 }
@@ -168,25 +168,14 @@ static void video_preview(void)
 
 static int get_video_query_info(uint32_t id)
 {
-    char str_buf[QUERY_BUF_SIZE];
-    uint32_t str_len;
-    int offset = 0;
+	char str_buf[QUERY_BUF_SIZE];
+	uint32_t str_len;
+	int offset = 0;
 
-    const char *type_names[] = {
-        "invalid",
-        "bool",
-        "int",
-        "int64",
-        "int64",
-        "menu",
-        "integer menu",
-        "string"
-    };
-    struct video_ctrl_query cq = {
-        .dev = video,
-        .id = id
-    };
-    struct video_control vc = {.id = cq.id, .val = 0};
+	const char *type_names[] = {"invalid", "bool", "int",          "int64",
+				    "int64",   "menu", "integer menu", "string"};
+	struct video_ctrl_query cq = {.dev = video, .id = id};
+	struct video_control vc = {.id = cq.id, .val = 0};
 
 	if (video_query_ctrl(&cq) != 0) {
 		LOG_ERR("Video control query did not find item with an id %d", cq.id);
@@ -208,13 +197,14 @@ static int get_video_query_info(uint32_t id)
 	}
 
 	offset += snprintf(str_buf + offset, QUERY_BUF_SIZE - offset,
-		"Video ctrl query result: %s 0x%08x %-8s (flags=0x%02x) : min=%d max=%d step=%d default=%d value=%d \r\n",
-		cq.name, cq.id, typebuf, cq.flags, cq.range.min, cq.range.max,
-		cq.range.step, cq.range.def, vc.val);
+			   "Video ctrl query result: %s 0x%08x %-8s (flags=0x%02x) : min=%d max=%d "
+			   "step=%d default=%d value=%d \r\n",
+			   cq.name, cq.id, typebuf, cq.flags, cq.range.min, cq.range.max,
+			   cq.range.step, cq.range.def, vc.val);
 
-    str_len = strlen(str_buf);
-    uart_packet_send(0x02, str_buf, str_len);
-    return 0;
+	str_len = strlen(str_buf);
+	uart_packet_send(0x02, str_buf, str_len);
+	return 0;
 }
 
 static uint8_t recv_process(uint8_t *buff)
@@ -222,43 +212,43 @@ static uint8_t recv_process(uint8_t *buff)
 	struct video_control ctrl = {.id = VIDEO_CID_BRIGHTNESS, .val = 1};
 
 	switch (buff[0]) {
-		case SET_PICTURE_RESOLUTION:
-			if (set_mega_resolution(buff[1]) == 0) {
-				take_picture_fmt = buff[1];
-			}
-			break;
-		case SET_VIDEO_RESOLUTION:
-			if (preview_on == 0) {
-				set_mega_resolution(buff[2] | 0x10);
-				video_stream_start(video, type);
-				capture_flag = 1;
-			}
-			preview_on = 1;
-			break;
-		case TAKE_PICTURE:
+	case SET_PICTURE_RESOLUTION:
+		if (set_mega_resolution(buff[1]) == 0) {
+			take_picture_fmt = buff[1];
+		}
+		break;
+	case SET_VIDEO_RESOLUTION:
+		if (preview_on == 0) {
+			set_mega_resolution(buff[2] | 0x10);
 			video_stream_start(video, type);
-			take_picture();
+			capture_flag = 1;
+		}
+		preview_on = 1;
+		break;
+	case TAKE_PICTURE:
+		video_stream_start(video, type);
+		take_picture();
+		video_stream_stop(video, type);
+		break;
+	case STOP_STREAM:
+		if (preview_on) {
+			uart_buffer_send(console, &head_and_tail[3], 2);
 			video_stream_stop(video, type);
-			break;
-		case STOP_STREAM:
-			if (preview_on) {
-				uart_buffer_send(console, &head_and_tail[3], 2);
-				video_stream_stop(video, type);
-				set_mega_resolution(take_picture_fmt);
-			}
-			preview_on = 0;
-			break;
-		case CONTROL_WRITE:
-			ctrl.id = (buff[1] << 24) | (buff[2] << 16) | (buff[3] << 8) | buff[4];
-			ctrl.val = (buff[5] << 24) | (buff[6] << 16) | (buff[7] << 8) | buff[8];
-			video_set_ctrl(video, &ctrl);
-			break;
-		case CONTROL_QUERY_GET:
-			uint32_t q_id = (buff[1] << 24) | (buff[2] << 16) | (buff[3] << 8) | buff[4];
-			get_video_query_info(q_id);
-			break;
-		default:
-			break;
+			set_mega_resolution(take_picture_fmt);
+		}
+		preview_on = 0;
+		break;
+	case CONTROL_WRITE:
+		ctrl.id = (buff[1] << 24) | (buff[2] << 16) | (buff[3] << 8) | buff[4];
+		ctrl.val = (buff[5] << 24) | (buff[6] << 16) | (buff[7] << 8) | buff[8];
+		video_set_ctrl(video, &ctrl);
+		break;
+	case CONTROL_QUERY_GET:
+		uint32_t q_id = (buff[1] << 24) | (buff[2] << 16) | (buff[3] << 8) | buff[4];
+		get_video_query_info(q_id);
+		break;
+	default:
+		break;
 	}
 
 	return buff[0];
@@ -284,7 +274,7 @@ int main(void)
 	uart_irq_rx_enable(console);
 
 	video = DEVICE_DT_GET(DT_NODELABEL(arducam_mega0));
-	
+
 	if (!device_is_ready(video)) {
 		LOG_ERR("Video device %s not ready.", video->name);
 		return -1;
