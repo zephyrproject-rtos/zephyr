@@ -16,47 +16,62 @@ from west.manifest import Manifest, ManifestProject
 
 TOP_DIR = os.path.join(os.path.dirname(__file__))
 sys.path.insert(0, os.path.join(TOP_DIR, "scripts"))
-from get_maintainer import Maintainers
+from get_maintainer import Maintainers  # noqa: E402
 
 zephyr_base = os.getenv('ZEPHYR_BASE', os.path.join(TOP_DIR, '..'))
+
 
 def log(s):
     if args.verbose > 0:
         print(s, file=sys.stdout)
 
+
 def parse_args():
     global args
     parser = argparse.ArgumentParser(
         description=__doc__,
-        formatter_class=argparse.RawDescriptionHelpFormatter, allow_abbrev=False)
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        allow_abbrev=False,
+    )
 
-    parser.add_argument("-M", "--maintainer-file", required=False, default="MAINTAINERS.yml",
-                        help="Maintainer file to be used.")
+    parser.add_argument(
+        "-M",
+        "--maintainer-file",
+        required=False,
+        default="MAINTAINERS.yml",
+        help="Maintainer file to be used.",
+    )
 
     group = parser.add_mutually_exclusive_group()
-    group.add_argument("-P", "--pull_request", required=False, default=None, type=int,
-                       help="Operate on one pull-request only.")
-    group.add_argument("-I", "--issue", required=False, default=None, type=int,
-                       help="Operate on one issue only.")
-    group.add_argument("-s", "--since", required=False,
-                       help="Process pull-requests since date.")
-    group.add_argument("-m", "--modules", action="store_true",
-                       help="Process pull-requests from modules.")
+    group.add_argument(
+        "-P",
+        "--pull_request",
+        required=False,
+        default=None,
+        type=int,
+        help="Operate on one pull-request only.",
+    )
+    group.add_argument(
+        "-I", "--issue", required=False, default=None, type=int, help="Operate on one issue only."
+    )
+    group.add_argument("-s", "--since", required=False, help="Process pull-requests since date.")
+    group.add_argument(
+        "-m", "--modules", action="store_true", help="Process pull-requests from modules."
+    )
 
-    parser.add_argument("-y", "--dry-run", action="store_true", default=False,
-                        help="Dry run only.")
+    parser.add_argument("-y", "--dry-run", action="store_true", default=False, help="Dry run only.")
 
-    parser.add_argument("-o", "--org", default="zephyrproject-rtos",
-                        help="Github organisation")
+    parser.add_argument("-o", "--org", default="zephyrproject-rtos", help="Github organisation")
 
-    parser.add_argument("-r", "--repo", default="zephyr",
-                        help="Github repository")
+    parser.add_argument("-r", "--repo", default="zephyr", help="Github repository")
 
-    parser.add_argument( "--updated-manifest", default=None,
-                        help="Updated manifest file to compare against current west.yml")
+    parser.add_argument(
+        "--updated-manifest",
+        default=None,
+        help="Updated manifest file to compare against current west.yml",
+    )
 
-    parser.add_argument("-v", "--verbose", action="count", default=0,
-                        help="Verbose Output")
+    parser.add_argument("-v", "--verbose", action="count", default=0, help="Verbose Output")
 
     args = parser.parse_args()
 
@@ -71,11 +86,9 @@ def process_manifest(old_manifest_file):
     old_projs = set((p.name, p.revision) for p in old_manifest.projects)
     new_projs = set((p.name, p.revision) for p in new_manifest.projects)
     # Removed projects
-    rprojs = set(filter(lambda p: p[0] not in list(p[0] for p in new_projs),
-        old_projs - new_projs))
+    rprojs = set(filter(lambda p: p[0] not in list(p[0] for p in new_projs), old_projs - new_projs))
     # Updated projects
-    uprojs = set(filter(lambda p: p[0] in list(p[0] for p in old_projs),
-        new_projs - old_projs))
+    uprojs = set(filter(lambda p: p[0] in list(p[0] for p in old_projs), new_projs - old_projs))
     # Added projects
     aprojs = new_projs - old_projs - uprojs
 
@@ -91,8 +104,8 @@ def process_manifest(old_manifest_file):
     log(f'manifest areas: {areas}')
     return areas
 
-def process_pr(gh, maintainer_file, number):
 
+def process_pr(gh, maintainer_file, number):
     gh_repo = gh.get_repo(f"{args.org}/{args.repo}")
     pr = gh_repo.get_pull(number)
 
@@ -113,21 +126,16 @@ def process_pr(gh, maintainer_file, number):
         return
 
     # areas where assignment happens if only area is affected
-    meta_areas = [
-            'Release Notes',
-            'Documentation',
-            'Samples'
-            ]
+    meta_areas = ['Release Notes', 'Documentation', 'Samples']
 
     for changed_file in fn:
-
         num_files += 1
         log(f"file: {changed_file.filename}")
 
         areas = []
-        if changed_file.filename in ['west.yml','submanifests/optional.yaml']:
+        if changed_file.filename in ['west.yml', 'submanifests/optional.yaml']:
             if not args.updated_manifest:
-                log("No updated manifest file provided, cannot process west.yml changes, skipping...")
+                log("No updated manifest, cannot process west.yml changes, skipping...")
                 continue
             parsed_areas = process_manifest(old_manifest_file=args.updated_manifest)
             for _area in parsed_areas:
@@ -177,7 +185,9 @@ def process_pr(gh, maintainer_file, number):
     collab = list(dict.fromkeys(collab))
     log(f"collab: {collab}")
 
-    _all_maintainers = dict(sorted(found_maintainers.items(), key=lambda item: item[1], reverse=True))
+    _all_maintainers = dict(
+        sorted(found_maintainers.items(), key=lambda item: item[1], reverse=True)
+    )
 
     log(f"Submitted by: {pr.user.login}")
     log(f"candidate maintainers: {_all_maintainers}")
@@ -233,10 +243,10 @@ def process_pr(gh, maintainer_file, number):
     # Set labels
     if labels:
         if len(labels) < 10:
-            for l in labels:
-                log(f"adding label {l}...")
+            for label in labels:
+                log(f"adding label {label}...")
                 if not args.dry_run:
-                    pr.add_to_labels(l)
+                    pr.add_to_labels(label)
         else:
             log("Too many labels to be applied")
 
@@ -249,10 +259,8 @@ def process_pr(gh, maintainer_file, number):
             existing_reviewers.add(review.user)
 
         rl = pr.get_review_requests()
-        page = 0
-        for r in rl:
+        for page, r in enumerate(rl):
             existing_reviewers |= set(r.get_page(page))
-            page += 1
 
         # check for reviewers that remove themselves from list of reviewer and
         # do not attempt to add them again based on MAINTAINERS file.
@@ -280,8 +288,10 @@ def process_pr(gh, maintainer_file, number):
             reviewer_vacancy = 15 - len(existing_reviewers)
             reviewers = reviewers[:reviewer_vacancy]
         else:
-            log("not adding reviewers because the existing reviewer count is greater than or "
-                "equal to 15. Adding maintainers of all areas as reviewers instead.")
+            log(
+                "not adding reviewers because the existing reviewer count is greater than or "
+                "equal to 15. Adding maintainers of all areas as reviewers instead."
+            )
             # FIXME: Here we could also add collaborators of the areas most
             # affected, i.e. the one with the final assigne.
             reviewers = list(_all_maintainers.keys())
@@ -394,8 +404,8 @@ def process_modules(gh, maintainers_file):
         repos[repo_name] = maintainers_file.areas[area]
 
     query = "is:open is:pr no:assignee"
-    for repo in repos:
-        query += f" repo:{repo}"
+    if repos:
+        query += ' ' + ' '.join(f"repo:{repo}" for repo in repos)
 
     issues = gh.search_issues(query=query)
     for issue in issues:
@@ -428,8 +438,10 @@ def main():
 
     token = os.environ.get('GITHUB_TOKEN', None)
     if not token:
-        sys.exit('Github token not set in environment, please set the '
-                 'GITHUB_TOKEN environment variable and retry.')
+        sys.exit(
+            'Github token not set in environment, please set the '
+            'GITHUB_TOKEN environment variable and retry.'
+        )
 
     gh = Github(token)
     maintainer_file = Maintainers(args.maintainer_file)
@@ -447,7 +459,10 @@ def main():
             today = datetime.date.today()
             since = today - datetime.timedelta(days=1)
 
-        common_prs = f'repo:{args.org}/{args.repo} is:open is:pr base:main -is:draft no:assignee created:>{since}'
+        common_prs = (
+            f'repo:{args.org}/{args.repo} is:open is:pr base:main '
+            f'-is:draft no:assignee created:>{since}'
+        )
         pulls = gh.search_issues(query=f'{common_prs}')
 
         for issue in pulls:
