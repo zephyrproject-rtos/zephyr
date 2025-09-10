@@ -28,6 +28,7 @@ struct dsa_tag_netc_to_port_header {
 struct net_if *dsa_tag_netc_recv(struct net_if *iface, struct net_pkt *pkt)
 {
 	struct ethernet_context *eth_ctx = net_if_l2_data(iface);
+	struct dsa_switch_context *dsa_switch_ctx = eth_ctx->dsa_switch_ctx;
 	uint16_t header_len = sizeof(struct dsa_tag_netc_to_host_header);
 	struct dsa_tag_netc_to_host_header *header;
 	struct net_if *iface_dst = iface;
@@ -40,7 +41,7 @@ struct net_if *dsa_tag_netc_recv(struct net_if *iface, struct net_pkt *pkt)
 
 	/* redirect to user port */
 	header = (struct dsa_tag_netc_to_host_header *)pkt->frags->data;
-	iface_dst = eth_ctx->dsa_switch_ctx->iface_user[header->tag.comTag.port];
+	iface_dst = dsa_switch_ctx->iface_user[header->tag.comTag.port];
 
 	/* drop tag */
 	ptr = net_buf_pull(pkt->frags, sizeof(netc_swt_tag_host_t));

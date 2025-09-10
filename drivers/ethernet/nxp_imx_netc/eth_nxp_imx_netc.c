@@ -78,6 +78,7 @@ static int netc_eth_rx(const struct device *dev)
 	struct net_if *iface_dst = data->iface;
 #if defined(NETC_HAS_NO_SWITCH_TAG_SUPPORT)
 	struct ethernet_context *ctx = net_if_l2_data(iface_dst);
+	struct dsa_switch_context *dsa_switch_ctx = ctx->dsa_switch_ctx;
 #endif
 	netc_frame_attr_t attr = {0};
 	struct net_pkt *pkt;
@@ -111,7 +112,7 @@ static int netc_eth_rx(const struct device *dev)
 
 #if defined(NETC_HAS_NO_SWITCH_TAG_SUPPORT)
 	if (ctx->dsa_port == DSA_CONDUIT_PORT) {
-		iface_dst = ctx->dsa_switch_ctx->iface_user[attr.srcPort];
+		iface_dst = dsa_switch_ctx->iface_user[attr.srcPort];
 	}
 #endif
 	/* Copy to pkt */
