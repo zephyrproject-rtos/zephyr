@@ -67,6 +67,7 @@ extern "C" {
 							   DT_REG_ADDR_RAW(node_id), \
 							   {}),		\
 			.delay = (delay_),				\
+			.cs_is_gpio = true,				\
 		},							\
 	}
 
