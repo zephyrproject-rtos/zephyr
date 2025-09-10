@@ -24,6 +24,8 @@ requests>=2.32.0
 semver
 tqdm>=4.67.1
 reuse
+copier
+copier-template-extensions
 
 # for ram/rom reports
 anytree
