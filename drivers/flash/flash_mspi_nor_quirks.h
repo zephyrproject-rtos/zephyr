@@ -70,6 +70,12 @@ static inline int mxicy_mx25r_post_switch_mode(const struct device *dev)
 		return 0;
 	}
 
+	/* Wait for previous write to finish */
+	rc = wait_until_ready(dev, K_USEC(1));
+	if (rc < 0) {
+		return rc;
+	}
+
 	/* Write enable */
 	rc = cmd_wren(dev);
 	if (rc < 0) {
