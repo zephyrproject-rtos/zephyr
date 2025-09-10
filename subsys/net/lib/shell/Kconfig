@@ -172,4 +172,11 @@ config NET_SHELL_REQUIRE_TX_THREAD
 	  Hidden symbol indicating that network shell requires separate TX
 	  thread due to possible deadlocks during shell/net stack operations.
 
+config NET_SHELL_QBV
+	bool "QBV Shell"
+	depends on NET_L2_ETHERNET_MGMT
+	help
+	  Enable QBV Shell.
+	  The QBV shell currently supports set/enable operations.
+
 endif # NET_SHELL
