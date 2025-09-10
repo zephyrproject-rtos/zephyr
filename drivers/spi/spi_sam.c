@@ -26,6 +26,30 @@ LOG_MODULE_REGISTER(spi_sam);
 #include <zephyr/sys/util.h>
 #include <soc.h>
 
+/* Adapt the hal_microchip for sam series */
+#ifdef CONFIG_MICROCHIP_SAM
+#undef  SPI_CR_SPIEN
+#define SPI_CR_SPIEN    SPI_CR_SPIEN_Msk
+#undef  SPI_CR_SPIDIS
+#define SPI_CR_SPIDIS   SPI_CR_SPIDIS_Msk
+#undef  SPI_MR_MSTR
+#define SPI_MR_MSTR     SPI_MR_MSTR_Msk
+#undef  SPI_MR_MODFDIS
+#define SPI_MR_MODFDIS  SPI_MR_MODFDIS_Msk
+#undef  SPI_MR_LLB
+#define SPI_MR_LLB      SPI_MR_LLB_Msk
+#undef  SPI_SR_RDRF
+#define SPI_SR_RDRF     SPI_SR_RDRF_Msk
+#undef  SPI_SR_TDRE
+#define SPI_SR_TDRE     SPI_SR_TDRE_Msk
+#undef  SPI_SR_TXEMPTY
+#define SPI_SR_TXEMPTY  SPI_SR_TXEMPTY_Msk
+#undef  SPI_CSR_CPOL
+#define SPI_CSR_CPOL    SPI_CSR_CPOL_Msk
+#undef  SPI_CSR_NCPHA
+#define SPI_CSR_NCPHA   SPI_CSR_NCPHA_Msk
+#endif
+
 #define SAM_SPI_CHIP_SELECT_COUNT			4
 
 /* Number of bytes in transfer before using DMA if available */
@@ -101,6 +125,21 @@ static int spi_sam_configure(const struct device *dev,
 	uint16_t spi_csr_idx = spi_cs_is_gpio(config) ? 0 : config->slave;
 	int div;
 
+#ifdef SOC_ATMEL_SAM_MCK_FREQ_HZ
+	uint32_t rate = SOC_ATMEL_SAM_MCK_FREQ_HZ;
+#else
+	uint32_t rate;
+	int ret;
+
+	ret = clock_control_get_rate(SAM_DT_PMC_CONTROLLER,
+				     (clock_control_subsys_t)&cfg->clock_cfg,
+				     &rate);
+	if (ret) {
+		return ret;
+	}
+#endif
+
+
 	if (spi_context_configured(&data->ctx, config)) {
 		return 0;
 	}
@@ -146,7 +185,7 @@ static int spi_sam_configure(const struct device *dev,
 	}
 
 	/* Use the requested or next highest possible frequency */
-	div = SOC_ATMEL_SAM_MCK_FREQ_HZ / config->frequency;
+	div = rate / config->frequency;
 	div = CLAMP(div, 1, UINT8_MAX);
 	spi_csr |= SPI_CSR_SCBR(div);
 
