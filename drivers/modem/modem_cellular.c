@@ -97,6 +97,7 @@ enum modem_cellular_event {
 	MODEM_CELLULAR_EVENT_PPP_DEAD,
 	MODEM_CELLULAR_EVENT_MODEM_READY,
 	MODEM_CELLULAR_EVENT_APN_SET,
+	MODEM_CELLULAR_EVENT_RING,
 };
 
 struct modem_cellular_event_cb {
@@ -172,6 +173,9 @@ struct modem_cellular_data {
 
 	struct k_mutex api_lock;
 	struct modem_cellular_event_cb cb;
+
+	/* Ring interrupt */
+	struct gpio_callback ring_gpio_cb;
 };
 
 struct modem_cellular_user_pipe {
@@ -188,6 +192,7 @@ struct modem_cellular_config {
 	struct gpio_dt_spec power_gpio;
 	struct gpio_dt_spec reset_gpio;
 	struct gpio_dt_spec wake_gpio;
+	struct gpio_dt_spec ring_gpio;
 	struct gpio_dt_spec dtr_gpio;
 	uint16_t power_pulse_duration_ms;
 	uint16_t reset_pulse_duration_ms;
@@ -289,6 +294,8 @@ static const char *modem_cellular_event_str(enum modem_cellular_event event)
 		return "modem ready";
 	case MODEM_CELLULAR_EVENT_APN_SET:
 		return "apn set";
+	case MODEM_CELLULAR_EVENT_RING:
+		return "RING";
 	}
 
 	return "";
@@ -1319,7 +1326,10 @@ static void modem_cellular_run_dial_script_event_handler(struct modem_cellular_d
 	case MODEM_CELLULAR_EVENT_SUSPEND:
 		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_INIT_POWER_OFF);
 		break;
-
+	case MODEM_CELLULAR_EVENT_RING:
+		LOG_INF("RING received!");
+		modem_pipe_open_async(data->uart_pipe);
+		break;
 	default:
 		break;
 	}
@@ -1364,7 +1374,10 @@ static void modem_cellular_await_registered_event_handler(struct modem_cellular_
 	case MODEM_CELLULAR_EVENT_SUSPEND:
 		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_INIT_POWER_OFF);
 		break;
-
+	case MODEM_CELLULAR_EVENT_RING:
+		LOG_INF("RING received!");
+		modem_pipe_open_async(data->uart_pipe);
+		break;
 	default:
 		break;
 	}
@@ -1413,7 +1426,10 @@ static void modem_cellular_carrier_on_event_handler(struct modem_cellular_data *
 		modem_ppp_release(data->ppp);
 		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_INIT_POWER_OFF);
 		break;
-
+	case MODEM_CELLULAR_EVENT_RING:
+		LOG_INF("RING received!");
+		modem_pipe_open_async(data->uart_pipe);
+		break;
 	default:
 		break;
 	}
@@ -2170,6 +2186,15 @@ static void net_mgmt_event_handler(struct net_mgmt_event_callback *cb, uint64_t 
 	}
 }
 
+static void modem_cellular_ring_gpio_callback(const struct device *dev, struct gpio_callback *cb,
+					      uint32_t pins)
+{
+	struct modem_cellular_data *data =
+		CONTAINER_OF(cb, struct modem_cellular_data, ring_gpio_cb);
+
+	modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_RING);
+}
+
 static void modem_cellular_init_apn(struct modem_cellular_data *data)
 {
 #ifdef CONFIG_MODEM_CELLULAR_APN
@@ -2214,6 +2239,33 @@ static int modem_cellular_init(const struct device *dev)
 
 	if (modem_cellular_gpio_is_enabled(&config->reset_gpio)) {
 		gpio_pin_configure_dt(&config->reset_gpio, GPIO_OUTPUT_ACTIVE);
+	}
+
+	if (modem_cellular_gpio_is_enabled(&config->ring_gpio)) {
+		int ret;
+
+		ret = gpio_pin_configure_dt(&config->ring_gpio, GPIO_INPUT);
+		if (ret < 0) {
+			LOG_ERR("Failed to configure ring GPIO (%d)", ret);
+			return ret;
+		}
+
+		gpio_init_callback(&data->ring_gpio_cb, modem_cellular_ring_gpio_callback,
+				   BIT(config->ring_gpio.pin));
+
+		ret = gpio_add_callback(config->ring_gpio.port, &data->ring_gpio_cb);
+		if (ret < 0) {
+			LOG_ERR("Failed to add ring GPIO callback (%d)", ret);
+			return ret;
+		}
+
+		ret = gpio_pin_interrupt_configure_dt(&config->ring_gpio, GPIO_INT_EDGE_TO_ACTIVE);
+		if (ret < 0) {
+			LOG_ERR("Failed to configure ring GPIO interrupt (%d)", ret);
+			return ret;
+		}
+
+		LOG_DBG("Ring GPIO interrupt configured");
 	}
 
 	if (modem_cellular_gpio_is_enabled(&config->dtr_gpio)) {
@@ -2987,6 +3039,7 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
 		.power_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_power_gpios, {}),                 \
 		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_reset_gpios, {}),                 \
 		.wake_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_wake_gpios, {}),                   \
+		.ring_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_ring_gpios, {}),                   \
 		.dtr_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_dtr_gpios, {}),                     \
 		.power_pulse_duration_ms = (power_ms),                                             \
 		.reset_pulse_duration_ms = (reset_ms),                                             \
