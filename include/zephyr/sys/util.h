@@ -402,6 +402,127 @@ extern "C" {
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 #endif
 
+#ifndef MAX_FROM_LIST
+/**
+ * @brief Returns the maximum of a single value (base case).
+ * @param a The value.
+ * @returns The value `a`.
+ */
+#define MAX_1(a) a
+
+/**
+ * @brief Returns the maximum of two values.
+ *
+ * @note Arguments are evaluated multiple times.
+ *
+ * @param a First value.
+ * @param b Second value.
+ * @returns Maximum value of @p a and @p b.
+ */
+#define MAX_2(a, b) ((a) > (b) ? (a) : (b))
+
+/**
+ * @brief Returns the maximum of three values.
+ * @note Arguments may be evaluated multiple times.
+ * @param a First value.
+ * @param b Second value.
+ * @param c Third value.
+ * @returns Maximum value of @p a, @p b, and @p c.
+ */
+#define MAX_3(a, b, c) MAX_2(a, MAX_2(b, c))
+
+/**
+ * @brief Returns the maximum of four values.
+ * @note Arguments may be evaluated multiple times.
+ * @param a First value.
+ * @param b Second value.
+ * @param c Third value.
+ * @param d Fourth value.
+ * @returns Maximum value of @p a, @p b, @p c, and @p d.
+ */
+#define MAX_4(a, b, c, d) MAX_2(MAX_2(a, b), MAX_2(c, d))
+
+/**
+ * @brief Returns the maximum of five values.
+ * @note Arguments may be evaluated multiple times.
+ */
+#define MAX_5(a, b, c, d, e) MAX_2(MAX_4(a, b, c, d), e)
+
+/**
+ * @brief Returns the maximum of six values.
+ * @note Arguments may be evaluated multiple times.
+ */
+#define MAX_6(a, b, c, d, e, f) MAX_2(MAX_5(a, b, c, d, e), f)
+
+/**
+ * @brief Returns the maximum of seven values.
+ * @note Arguments may be evaluated multiple times.
+ */
+#define MAX_7(a, b, c, d, e, f, g) MAX_2(MAX_6(a, b, c, d, e, f), g)
+
+/**
+ * @brief Returns the maximum of eight values.
+ * @note Arguments may be evaluated multiple times.
+ */
+#define MAX_8(a, b, c, d, e, f, g, h) MAX_2(MAX_7(a, b, c, d, e, f, g), h)
+
+/**
+ * @brief Returns the maximum of nine values.
+ * @note Arguments may be evaluated multiple times.
+ */
+#define MAX_9(a, b, c, d, e, f, g, h, i) MAX_2(MAX_8(a, b, c, d, e, f, g, h), i)
+
+/**
+ * @brief Returns the maximum of ten values.
+ * @note Arguments may be evaluated multiple times.
+ */
+#define MAX_10(a, b, c, d, e, f, g, h, i, j) MAX_2(MAX_9(a, b, c, d, e, f, g, h, i), j)
+
+/**
+ * @brief Helper macro to select the correct MAX_N macro.
+ *
+ * This macro uses the argument-counting trick to pick the correct
+ * `MAX_N` macro name from the arguments provided to `MAX_FROM_LIST`.
+ * The 10th argument (or 11th including `NAME`) effectively becomes the
+ * macro name to use.
+ *
+ * @param _1 Positional argument 1.
+ * @param _2 Positional argument 2.
+ * @param _3 Positional argument 3.
+ * @param _4 Positional argument 4.
+ * @param _5 Positional argument 5.
+ * @param _6 Positional argument 6.
+ * @param _7 Positional argument 7.
+ * @param _8 Positional argument 8.
+ * @param _9 Positional argument 9.
+ * @param _10 Positional argument 10.
+ * @param NAME The macro name to be selected.
+ * @param ... Additional arguments.
+ * @returns The selected macro name `NAME`.
+ */
+#define GET_MAX_MACRO(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, NAME, ...) NAME
+
+/**
+ * @brief Finds the maximum value from a list of 1 to 10 arguments.
+ *
+ * Dispatches to the appropriate `MAX_N` macro based on the number of
+ * arguments provided.
+ *
+ * Example Usage:
+ *   MAX_FROM_LIST(1, 5, 2)  // Expands to MAX_3(1, 5, 2)
+ *   MAX_FROM_LIST(10)       // Expands to MAX_1(10)
+ *
+ * @note Arguments may be evaluated multiple times by the underlying
+ *       `MAX_N` macros. Avoid expressions with side effects.
+ *
+ * @param ... A list of 1 to 10 values to compare.
+ * @returns The maximum value among the arguments.
+ */
+#define MAX_FROM_LIST(...)                                                     \
+	GET_MAX_MACRO(__VA_ARGS__, MAX_10, MAX_9, MAX_8, MAX_7, MAX_6, MAX_5, MAX_4, \
+		      MAX_3, MAX_2, MAX_1)(__VA_ARGS__)
+#endif
+
 #ifndef CLAMP
 /**
  * @brief Clamp a value to a given range.
