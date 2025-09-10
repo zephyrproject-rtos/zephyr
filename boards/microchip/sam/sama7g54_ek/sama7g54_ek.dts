@@ -164,6 +164,28 @@
 	};
 };
 
+&flx11 {
+	mchp,flexcom-mode = <SAM_FLEXCOM_MODE_SPI>;
+	status = "okay";
+
+	spi11: spi@400 {
+		pinctrl-0 = <&pinctrl_spi11_default>;
+		pinctrl-names = "default";
+		cs-gpios = <&piob 6 GPIO_ACTIVE_LOW>;
+		status = "okay";
+
+		nor_flash: sst26vf064@0 {
+			compatible = "jedec,spi-nor";
+			reg = <0>;
+			spi-max-frequency = <10000000>;
+			size = <DT_SIZE_M(64)>; /* 64 Mbits */
+			jedec-id = [bf 26 43];
+			requires-ulbpr;
+			status = "okay";
+		};
+	};
+};
+
 &gmac0 {
 	status = "okay";
 	pinctrl-names = "default";
@@ -358,6 +380,16 @@
 				 <PIN_PB28__SDMMC1_RSTN>,
 				 <PIN_PC5__SDMMC1_1V8SEL>,
 				 <PIN_PC4__SDMMC1_CD>;
+			bias-pull-up;
+		};
+	};
+
+	pinctrl_spi11_default: spi11_default {
+		group1 {
+			pinmux = <PIN_PB3__FLEXCOM11_IO0>,
+				 <PIN_PB4__FLEXCOM11_IO1>,
+				 <PIN_PB5__FLEXCOM11_IO2>,
+				 <PIN_PB6__GPIO>; /* GPIO CS */
 			bias-pull-up;
 		};
 	};
