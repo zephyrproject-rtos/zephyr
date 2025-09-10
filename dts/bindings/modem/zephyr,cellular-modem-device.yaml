@@ -18,6 +18,10 @@ properties:
     type: phandle-array
     description: GPIO for modem wake
 
+  mdm-ring-gpios:
+    type: phandle-array
+    description: GPIO for modem ring indicator
+
   mdm-dtr-gpios:
     type: phandle-array
     description: |
