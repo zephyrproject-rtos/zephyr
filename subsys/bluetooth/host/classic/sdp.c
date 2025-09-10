@@ -83,6 +83,18 @@ NET_BUF_POOL_FIXED_DEFINE(sdp_pool, CONFIG_BT_MAX_CONN, BT_L2CAP_BUF_SIZE(SDP_MT
 
 #define SDP_CLIENT_MTU 64
 
+#define SDP_SA_MAX_ATTR_BYTE_COUNT 0xffff
+#define SDP_SA_MIN_ATTR_BYTE_COUNT 0x0007
+
+#define SDP_SA_ATTR_BYTE_IN_RANGE(count) \
+	((count) >= SDP_SA_MIN_ATTR_BYTE_COUNT && (count) <= SDP_SA_MAX_ATTR_BYTE_COUNT)
+
+#define SDP_SSA_MAX_ATTR_BYTE_COUNT 0xffff
+#define SDP_SSA_MIN_ATTR_BYTE_COUNT 0x0007
+
+#define SDP_SSA_ATTR_BYTE_IN_RANGE(count) \
+	((count) >= SDP_SSA_MIN_ATTR_BYTE_COUNT && (count) <= SDP_SSA_MAX_ATTR_BYTE_COUNT)
+
 enum sdp_client_state {
 	SDP_CLIENT_RELEASED,
 	SDP_CLIENT_CONNECTING,
@@ -1273,6 +1285,10 @@ static uint16_t sdp_svc_att_req(struct bt_sdp *sdp, struct net_buf *buf, uint16_
 
 	svc_rec_hdl = net_buf_pull_be32(buf);
 	max_att_len = net_buf_pull_be16(buf);
+	if (!SDP_SA_ATTR_BYTE_IN_RANGE(max_att_len)) {
+		LOG_WRN("Invalid max attribute length %u", max_att_len);
+		return BT_SDP_INVALID_SYNTAX;
+	}
 
 	/* Set up the filters */
 	res = get_att_search_list(buf, filter, ARRAY_SIZE(filter), &num_filters);
@@ -1404,6 +1420,11 @@ static uint16_t sdp_svc_search_att_req(struct bt_sdp *sdp, struct net_buf *buf, 
 	}
 
 	max_att_len = net_buf_pull_be16(buf);
+	if (!SDP_SSA_ATTR_BYTE_IN_RANGE(max_att_len)) {
+		LOG_WRN("Invalid max attribute length %u", max_att_len);
+		return BT_SDP_INVALID_SYNTAX;
+	}
+
 	if (max_att_len < sizeof(*seq)) {
 		LOG_WRN("Invalid maximum attribute byte count %u < %u", max_att_len, sizeof(*seq));
 		return BT_SDP_INVALID_SYNTAX;
@@ -1860,13 +1881,19 @@ static int sdp_client_sa_search(struct bt_sdp_client *session,
 	/* Update context param directly. */
 	session->param = param;
 
+	len = net_buf_tailroom(session->rec_buf);
+	if (!SDP_SA_ATTR_BYTE_IN_RANGE(len)) {
+		LOG_WRN("No more space to start next SDP discovery");
+		return -ENOMEM;
+	}
+
 	buf = bt_sdp_create_pdu();
 
 	/* Add service record handle  */
 	net_buf_add_be32(buf, param->handle);
 
 	/* Set attribute max bytes count to be returned from server */
-	net_buf_add_be16(buf, net_buf_tailroom(session->rec_buf));
+	net_buf_add_be16(buf, len);
 
 	/* Check the tailroom of the buffer */
 	len = sdp_client_get_total_len(session, param);
@@ -1908,6 +1935,12 @@ static int sdp_client_ssa_search(struct bt_sdp_client *session,
 	/* Update context param directly. */
 	session->param = param;
 
+	len = net_buf_tailroom(session->rec_buf);
+	if (!SDP_SSA_ATTR_BYTE_IN_RANGE(len)) {
+		LOG_WRN("No more space to start next SDP discovery");
+		return -ENOMEM;
+	}
+
 	buf = bt_sdp_create_pdu();
 
 	/* BT_SDP_SEQ8 means length of sequence is on additional next byte */
@@ -1940,7 +1973,7 @@ static int sdp_client_ssa_search(struct bt_sdp_client *session,
 	}
 
 	/* Set attribute max bytes count to be returned from server */
-	net_buf_add_be16(buf, net_buf_tailroom(session->rec_buf));
+	net_buf_add_be16(buf, len);
 
 	/* Check the tailroom of the buffer */
 	len = sdp_client_get_total_len(session, param);
