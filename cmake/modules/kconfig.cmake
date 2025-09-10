@@ -132,10 +132,13 @@ endif()
 # APP_DIR: Path to the main image (sysbuild) or synonym for APPLICATION_SOURCE_DIR (non-sysbuild)
 zephyr_get(APP_DIR VAR APP_DIR APPLICATION_SOURCE_DIR)
 
+# Load the module Kconfig file into CMake
+include("${KCONFIG_BINARY_DIR}/kconfig_module_dirs.cmake")
+
 set(COMMON_KCONFIG_ENV_SETTINGS
   PYTHON_EXECUTABLE=${PYTHON_EXECUTABLE}
-  KCONFIG_ENV_FILE=${KCONFIG_BINARY_DIR}/kconfig_module_dirs.env
   srctree=${ZEPHYR_BASE}
+  ${kconfig_env_dirs}
   KERNELVERSION=${KERNELVERSION}
   APPVERSION=${APP_VERSION_STRING}
   APP_VERSION_EXTENDED_STRING=${APP_VERSION_EXTENDED_STRING}
