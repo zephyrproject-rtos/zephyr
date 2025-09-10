@@ -151,12 +151,12 @@
 
 		shm0: memory@3ffe5630 {
 			compatible = "mmio-sram";
-			reg = <0x3ffe5630 0x4000>;
+			reg = <0x3ffe5630 0x8000>;
 		};
 
-		ipm0: ipm@3ffe9630 {
+		ipm0: ipm@3ffed630 {
 			compatible = "espressif,esp32-ipm";
-			reg = <0x3ffe9630 0x8>;
+			reg = <0x3ffed630 0x8>;
 			status = "disabled";
 			shared-memory = <&ipmmem0>;
 			shared-memory-size = <0x400>;
@@ -166,9 +166,9 @@
 			interrupt-parent = <&intc>;
 		};
 
-		mbox0: mbox@3ffe9638 {
+		mbox0: mbox@3ffed638 {
 			compatible = "espressif,mbox-esp32";
-			reg = <0x3ffe9638 0x8>;
+			reg = <0x3ffed638 0x8>;
 			status = "disabled";
 			shared-memory = <&ipmmem0>;
 			shared-memory-size = <0x400>;
