@@ -372,7 +372,7 @@
 #define MBEDTLS_CIPHER_C
 #endif
 
-#if defined(CONFIG_MBEDTLS_MD)
+#if defined(CONFIG_MBEDTLS_MD_C)
 #define MBEDTLS_MD_C
 #endif
 
