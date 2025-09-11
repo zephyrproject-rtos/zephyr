@@ -63,6 +63,7 @@ struct rm3100_data {
 	} rtio;
 	struct {
 		uint8_t odr;
+		bool cmm_configured: 1;
 	} settings;
 #if defined(CONFIG_RM3100_STREAM)
 	struct rm3100_stream stream;

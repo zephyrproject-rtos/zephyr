@@ -118,15 +118,56 @@ static void rm3100_submit_one_shot(const struct device *dev, struct rtio_iodev_s
 
 static void rm3100_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
 {
+	struct rm3100_data *data = dev->data;
 	const struct sensor_read_config *cfg = iodev_sqe->sqe.iodev->data;
+	int err = 0;
+	uint8_t val = 0;
 
 	if (!cfg->is_streaming) {
-		rm3100_submit_one_shot(dev, iodev_sqe);
+		/* If streaming is enabled, we use POLL to perform an rtio one-shot
+		 * rather than enable CMM. As one-shots are controlled by the host,
+		 * a higher ODR accuracy and finer grain sampling control is achieved.
+		 */
+		if (IS_ENABLED(CONFIG_RM3100_STREAM)) {
+			/* Submit a one-shot request with gpio notify on completed */
+			for (size_t i = 0; i < cfg->count; i++) {
+				val |= rm3100_encode_channel(cfg->channels[i].chan_type) << 4;
+			}
+
+			err = rm3100_bus_write(dev, RM3100_REG_POLL, &val, 1);
+			if (err < 0) {
+				LOG_ERR("Failed to trigger POLL");
+				goto finish;
+			}
+
+			rm3100_stream_submit(dev, iodev_sqe);
+		} else {
+			rm3100_submit_one_shot(dev, iodev_sqe);
+		}
 	} else if (IS_ENABLED(CONFIG_RM3100_STREAM)) {
+		/* Configure CMM on the first enable of multishot streaming */
+		if ((iodev_sqe->sqe.flags & RTIO_SQE_MULTISHOT) &&
+		    !data->settings.cmm_configured) {
+			/** Enable Continuous measurement on all axis */
+			val = RM3100_CMM_ALL_AXIS;
+
+			err = rm3100_bus_write(dev, RM3100_REG_CMM, &val, 1);
+			if (err < 0) {
+				LOG_ERR("Failed to set sensor in Continuous Measurement Mode: %d",
+					err);
+				goto finish;
+			}
+			data->settings.cmm_configured = true;
+		}
 		rm3100_stream_submit(dev, iodev_sqe);
 	} else {
 		LOG_ERR("Streaming not supported");
-		rtio_iodev_sqe_err(iodev_sqe, -ENOTSUP);
+		err = -ENOTSUP;
+	}
+
+finish:
+	if (err) {
+		rtio_iodev_sqe_err(iodev_sqe, err);
 	}
 }
 
@@ -206,13 +247,22 @@ static int rm3100_init(const struct device *dev)
 		return err;
 	}
 
-	/** Enable Continuous measurement on all axis */
-	val = RM3100_CMM_ALL_AXIS;
+	/** if streaming mode is enabled with GPIO present,
+	 * CMM will only be configured on the first stream enable.
+	 * Otherwise one-shots will be triggered through
+	 * the POLL register.
+	 */
+	if (!IS_ENABLED(CONFIG_RM3100_STREAM)) {
+		/** Enable Continuous measurement on all axis */
+		val = RM3100_CMM_ALL_AXIS;
 
-	err = rm3100_bus_write(dev, RM3100_REG_CMM, &val, 1);
-	if (err < 0) {
-		LOG_ERR("Failed to set sensor in Continuous Measurement Mode: %d", err);
-		return err;
+		err = rm3100_bus_write(dev, RM3100_REG_CMM, &val, 1);
+		if (err < 0) {
+			LOG_ERR("Failed to set sensor in Continuous Measurement Mode: %d", err);
+			return err;
+		}
+
+		data->settings.cmm_configured = true;
 	}
 
 	return 0;
