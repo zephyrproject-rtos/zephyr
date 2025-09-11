@@ -140,7 +140,7 @@ ZTEST(posix_device_io, test_pselect)
 
 ZTEST(posix_device_io, test_pwrite)
 {
-	/* Zephyr does not yet support writing through a file descriptor */
+	/* stdout is not seekable, thus it does not support pwrite */
 	zexpect_equal(pwrite(STDOUT_FILENO, "x", 1, 0), -1);
 	zexpect_equal(errno, ENOTSUP, "%d", errno);
 }
@@ -149,8 +149,7 @@ ZTEST(posix_device_io, test_read)
 {
 	uint8_t buf[8];
 
-	/* reading from stdin does not work in Zephyr */
-	zassert_equal(read(STDIN_FILENO, buf, sizeof(buf)), 0);
+	zassert_equal(read(STDIN_FILENO, buf, sizeof(buf)), 8);
 }
 
 ZTEST(posix_device_io, test_select)
@@ -168,12 +167,7 @@ ZTEST(posix_device_io, test_select)
 
 ZTEST(posix_device_io, test_write)
 {
-/* write is only implemented in newlib and arcmwdt */
-#if defined(CONFIG_NEWLIB_LIBC) || defined(CONFIG_ARCMWDT_LIBC)
 	zexpect_equal(write(STDOUT_FILENO, "x", 1), 1);
-#else
-	zexpect_equal(write(STDOUT_FILENO, "x", 1), 0);
-#endif
 }
 
 ZTEST_SUITE(posix_device_io, NULL, NULL, NULL, NULL, NULL);
