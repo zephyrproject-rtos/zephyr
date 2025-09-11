@@ -41,8 +41,8 @@
 #define MBEDTLS_HAVE_ASM
 #endif
 
-#if defined(CONFIG_MBEDTLS_LMS)
-#define MBEDTLS_LMS_C
+#if defined($MBEDTLS_LMS)
+#define $MBEDTLS_LMS
 #endif
 
 #if defined(CONFIG_MBEDTLS_HAVE_TIME_DATE)
@@ -372,7 +372,7 @@
 #define MBEDTLS_CIPHER_C
 #endif
 
-#if defined(CONFIG_MBEDTLS_MD)
+#if defined(CONFIG_MBEDTLS_MD_C)
 #define MBEDTLS_MD_C
 #endif
 

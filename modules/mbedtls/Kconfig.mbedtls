@@ -12,7 +12,7 @@ menu "TLS"
 config MBEDTLS_TLS_VERSION_1_2
 	bool "Support for TLS 1.2 (DTLS 1.2)"
 	select MBEDTLS_CIPHER
-	select MBEDTLS_MD
+	select MBEDTLS_MD_C
 
 if MBEDTLS_TLS_VERSION_1_2
 
@@ -62,7 +62,7 @@ endif # MBEDTLS_RSA_C
 
 config MBEDTLS_KEY_EXCHANGE_ALL_ENABLED
 	bool "All available ciphersuite modes"
-	select MBEDTLS_MD
+	select MBEDTLS_MD_C
 	select MBEDTLS_RSA_C
 	select MBEDTLS_PKCS1_V15
 	select MBEDTLS_PKCS1_V21
@@ -101,7 +101,7 @@ config MBEDTLS_PSK_MAX_LEN
 
 config MBEDTLS_KEY_EXCHANGE_RSA_ENABLED
 	bool "RSA-only based ciphersuite modes"
-	depends on MBEDTLS_MD
+	depends on MBEDTLS_MD_C
 	depends on PSA_CRYPTO_CLIENT || MBEDTLS_PKCS1_V15 || MBEDTLS_PKCS1_V21
 	select PSA_WANT_KEY_TYPE_RSA_PUBLIC_KEY if PSA_CRYPTO_CLIENT
 	select PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_IMPORT if PSA_CRYPTO_CLIENT
@@ -381,7 +381,7 @@ config MBEDTLS_CTR_DRBG_ENABLED
 
 config MBEDTLS_HMAC_DRBG_ENABLED
 	bool "HMAC_DRBG random generator"
-	select MBEDTLS_MD
+	select MBEDTLS_MD_C
 
 comment "Other configurations"
 
@@ -389,7 +389,7 @@ config MBEDTLS_CIPHER
 	bool "generic cipher layer."
 	default y if PSA_WANT_ALG_CMAC
 
-config MBEDTLS_MD
+config MBEDTLS_MD_C
 	bool "generic message digest layer."
 
 config MBEDTLS_ASN1_PARSE_C
@@ -493,7 +493,7 @@ config MBEDTLS_HAVE_TIME_DATE
 
 config MBEDTLS_PKCS5_C
 	bool "Password-based encryption functions"
-	select MBEDTLS_MD
+	select MBEDTLS_MD_C
 	help
 	  Enable PKCS5 functions
 
