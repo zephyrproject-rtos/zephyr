@@ -1127,7 +1127,7 @@ static inline int sensor_read(struct rtio_iodev *iodev, struct rtio *ctx, uint8_
  * @return 0 on success
  * @return < 0 on error
  */
-static inline int sensor_read_async_mempool(struct rtio_iodev *iodev, struct rtio *ctx,
+static inline int sensor_read_async_mempool(const struct rtio_iodev *iodev, struct rtio *ctx,
 					    void *userdata)
 {
 	if (IS_ENABLED(CONFIG_USERSPACE)) {
