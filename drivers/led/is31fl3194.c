@@ -45,6 +45,15 @@ static const uint8_t led_channels[] = {
 	IS31FL3194_OUT3_REG
 };
 
+enum is31fl3194_mode {
+	IS31FL3194_MODE_SINGLE,
+	IS31FL3194_MODE_RGB,
+};
+
+struct is31fl3194_data {
+	enum is31fl3194_mode mode;
+};
+
 struct is31fl3194_config {
 	struct i2c_dt_spec bus;
 	uint8_t num_leds;
@@ -81,6 +90,7 @@ static int is31fl3194_get_info(const struct device *dev,
 static int is31fl3194_set_color(const struct device *dev, uint32_t led, uint8_t num_colors,
 				const uint8_t *color)
 {
+	struct is31fl3194_data *data = dev->data;
 	const struct is31fl3194_config *config = dev->config;
 	const struct led_info *info = is31fl3194_led_to_info(config, led);
 	int ret;
@@ -89,7 +99,7 @@ static int is31fl3194_set_color(const struct device *dev, uint32_t led, uint8_t 
 		return -ENODEV;
 	}
 
-	if (info->num_colors != 3) {
+	if (data->mode != IS31FL3194_MODE_RGB) {
 		return -ENOTSUP;
 	}
 
@@ -136,6 +146,7 @@ static int is31fl3194_set_color(const struct device *dev, uint32_t led, uint8_t 
 
 static int is31fl3194_set_brightness(const struct device *dev, uint32_t led, uint8_t value)
 {
+	struct is31fl3194_data *data = dev->data;
 	const struct is31fl3194_config *config = dev->config;
 	const struct led_info *info = is31fl3194_led_to_info(config, led);
 	int ret = 0;
@@ -144,7 +155,7 @@ static int is31fl3194_set_brightness(const struct device *dev, uint32_t led, uin
 		return -ENODEV;
 	}
 
-	if (info->num_colors != 1) {
+	if (data->mode != IS31FL3194_MODE_SINGLE) {
 		return -ENOTSUP;
 	}
 
@@ -196,6 +207,7 @@ static bool is31fl3194_count_colors(const struct device *dev,
 
 static int is31fl3194_check_config(const struct device *dev)
 {
+	struct is31fl3194_data *data = dev->data;
 	const struct is31fl3194_config *config = dev->config;
 	const struct led_info *info;
 	uint8_t rgb_counts[3] = { 0 };
@@ -219,6 +231,8 @@ static int is31fl3194_check_config(const struct device *dev)
 			}
 
 		}
+
+		data->mode = IS31FL3194_MODE_RGB;
 		break;
 	case 3:
 		/* check that each LED is single-color */
@@ -236,6 +250,8 @@ static int is31fl3194_check_config(const struct device *dev)
 				return -EINVAL;
 			}
 		}
+
+		data->mode = IS31FL3194_MODE_SINGLE;
 		break;
 	default:
 		LOG_ERR("%s: invalid number of LEDs %d (must be 1 or 3)",
@@ -347,6 +363,7 @@ static DEVICE_API(led, is31fl3194_led_api) = {
 	BUILD_ASSERT(ARRAY_SIZE(is31fl3194_leds_##id) > 0,			\
 		     "No LEDs defined for " #id);				\
 										\
+	static struct is31fl3194_data is31fl3194_data_##id;			\
 	static const struct is31fl3194_config is31fl3194_config_##id = {	\
 		.bus = I2C_DT_SPEC_INST_GET(id),				\
 		.num_leds = ARRAY_SIZE(is31fl3194_leds_##id),			\
@@ -354,7 +371,7 @@ static DEVICE_API(led, is31fl3194_led_api) = {
 		.current_limits = is31fl3194_currents_##id,			\
 		.gpio_enable = GPIO_DT_SPEC_INST_GET_OR(id, enable_gpios, {0}),	\
 	};									\
-	DEVICE_DT_INST_DEFINE(id, &is31fl3194_init, NULL, NULL,                 \
+	DEVICE_DT_INST_DEFINE(id, &is31fl3194_init, NULL, &is31fl3194_data_##id,\
 			      &is31fl3194_config_##id, POST_KERNEL,             \
 			      CONFIG_LED_INIT_PRIORITY, &is31fl3194_led_api);
 
