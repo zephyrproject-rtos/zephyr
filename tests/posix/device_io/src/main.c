@@ -32,13 +32,6 @@ ZTEST(posix_device_io, test_FD_CLR)
 	FD_CLR(0, &fds);
 }
 
-ZTEST(posix_device_io, test_FD_ISSET)
-{
-	fd_set fds;
-
-	zassert_false(FD_ISSET(0, &fds));
-}
-
 ZTEST(posix_device_io, test_FD_SET)
 {
 	fd_set fds;
@@ -112,73 +105,108 @@ ZTEST(posix_device_io, test_open)
 	zexpect_equal(errno, ENOENT);
 }
 
+#if (defined(CONFIG_POSIX_DEVICE_IO_STDIO_CONSOLE) &&                                              \
+	(CONFIG_POSIX_DEVICE_IO_STDIN_BUFSIZE + CONFIG_POSIX_DEVICE_IO_STDOUT_BUFSIZE > 0))
+#define STDIO_POLL
+#endif
+
 ZTEST(posix_device_io, test_poll)
 {
-	struct pollfd fds[1] = {{.fd = STDIN_FILENO, .events = POLLIN}};
+	struct pollfd fds[] = {
+		{.fd = STDIN_FILENO, .events = POLLIN},
+		{.fd = STDOUT_FILENO, .events = POLLOUT},
+		{.fd = STDERR_FILENO, .events = POLLOUT},
+	};
 
 	/*
 	 * Note: poll() is already exercised extensively in tests/posix/eventfd, but we should test
 	 * it here on device nodes as well.
 	 */
-	zexpect_equal(poll(fds, ARRAY_SIZE(fds), 0), 1);
+#ifdef STDIO_POLL
+	zexpect_equal(poll(fds, ARRAY_SIZE(fds), 0), 2);
+	/* stdin shouldn't have any bytes ready to read */
+	zexpect_equal(fds[0].revents, 0);
+	zexpect_equal(fds[1].revents, POLLOUT);
+	zexpect_equal(fds[2].revents, POLLOUT);
+#else
+	zexpect_equal(poll(fds, ARRAY_SIZE(fds), 0), 3);
+	zexpect_equal(fds[0].revents, POLLNVAL);
+	zexpect_equal(fds[1].revents, POLLNVAL);
+	zexpect_equal(fds[2].revents, POLLNVAL);
+#endif
 }
 
 ZTEST(posix_device_io, test_pread)
 {
 	uint8_t buf[8];
 
+	/* stdio is non-seekable */
 	zexpect_equal(pread(STDIN_FILENO, buf, sizeof(buf), 0), -1);
-	zexpect_equal(errno, ENOTSUP);
+	zexpect_equal(errno, ESPIPE);
 }
 
 ZTEST(posix_device_io, test_pselect)
 {
-	fd_set fds;
+	fd_set readfds;
+	fd_set writefds;
 	struct timespec timeout = {.tv_sec = 0, .tv_nsec = 0};
 
-	FD_ZERO(&fds);
-	FD_SET(STDIN_FILENO, &fds);
+	FD_ZERO(&readfds);
+	FD_SET(STDIN_FILENO, &readfds);
+	FD_ZERO(&writefds);
+	FD_SET(STDOUT_FILENO, &writefds);
+	FD_SET(STDERR_FILENO, &writefds);
 
-	/* Zephyr does not yet support select or poll on stdin */
-	zexpect_equal(pselect(STDIN_FILENO + 1, &fds, NULL, NULL, &timeout, NULL), -1);
-	zexpect_equal(errno, EBADF);
+#ifdef STDIO_POLL
+	zexpect_equal(pselect(STDERR_FILENO + 1, &readfds, &writefds, NULL, &timeout, NULL), 2);
+	zassert_false(FD_ISSET(STDIN_FILENO, &readfds));
+	zassert_true(FD_ISSET(STDOUT_FILENO, &writefds));
+	zassert_true(FD_ISSET(STDERR_FILENO, &writefds));
+#else
+	zexpect_equal(pselect(STDERR_FILENO + 1, &readfds, &writefds, NULL, &timeout, NULL), -1);
+	zassert_equal(errno, EBADF);
+#endif
 }
 
 ZTEST(posix_device_io, test_pwrite)
 {
-	/* Zephyr does not yet support writing through a file descriptor */
+	/* stdio is non-seekable */
 	zexpect_equal(pwrite(STDOUT_FILENO, "x", 1, 0), -1);
-	zexpect_equal(errno, ENOTSUP, "%d", errno);
-}
-
-ZTEST(posix_device_io, test_read)
-{
-	uint8_t buf[8];
-
-	/* reading from stdin does not work in Zephyr */
-	zassert_equal(read(STDIN_FILENO, buf, sizeof(buf)), 0);
+	zexpect_equal(errno, ESPIPE, "%d", errno);
 }
 
 ZTEST(posix_device_io, test_select)
 {
-	fd_set fds;
+	fd_set readfds;
+	fd_set writefds;
 	struct timeval timeout = {.tv_sec = 0, .tv_usec = 0};
 
-	FD_ZERO(&fds);
-	FD_SET(STDIN_FILENO, &fds);
+	FD_ZERO(&readfds);
+	FD_SET(STDIN_FILENO, &readfds);
+	FD_ZERO(&writefds);
+	FD_SET(STDOUT_FILENO, &writefds);
+	FD_SET(STDERR_FILENO, &writefds);
 
-	/* Zephyr does not yet support select or poll on stdin */
-	zassert_equal(select(STDIN_FILENO + 1, &fds, NULL, NULL, &timeout), -1);
-	zexpect_equal(errno, EBADF, "%d", errno);
+#ifdef STDIO_POLL
+	zassert_equal(select(STDERR_FILENO + 1, &readfds, &writefds, NULL, &timeout), 2);
+	zassert_false(FD_ISSET(STDIN_FILENO, &readfds));
+	zassert_true(FD_ISSET(STDOUT_FILENO, &writefds));
+	zassert_true(FD_ISSET(STDERR_FILENO, &writefds));
+#else
+	zassert_equal(select(STDERR_FILENO + 1, &readfds, &writefds, NULL, &timeout), -1);
+	zassert_equal(errno, EBADF);
+#endif
 }
 
 ZTEST(posix_device_io, test_write)
 {
-/* write is only implemented in newlib and arcmwdt */
-#if defined(CONFIG_NEWLIB_LIBC) || defined(CONFIG_ARCMWDT_LIBC)
-	zexpect_equal(write(STDOUT_FILENO, "x", 1), 1);
+	static const char msg[] = "Hello world!\n";
+
+#if defined(CONFIG_POSIX_DEVICE_IO_STDIO_CONSOLE) || defined(CONFIG_ARCMWDT_LIBC) ||               \
+	defined(CONFIG_MINIMAL_LIBC) || defined(CONFIG_NEWLIB_LIBC) || defined(CONFIG_PICOLIBC)
+	zexpect_equal(write(STDOUT_FILENO, msg, ARRAY_SIZE(msg)), ARRAY_SIZE(msg));
 #else
-	zexpect_equal(write(STDOUT_FILENO, "x", 1), 0);
+	zexpect_equal(write(STDOUT_FILENO, msg, ARRAY_SIZE(msg)), 0);
 #endif
 }
 
