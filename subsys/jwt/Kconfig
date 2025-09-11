@@ -21,7 +21,7 @@ config JWT_SIGN_RSA_LEGACY
 	depends on CSPRNG_AVAILABLE
 	select DEPRECATED
 	select MBEDTLS
-	select MBEDTLS_MD
+	select MBEDTLS_MD_C
 	select MBEDTLS_RSA_C
 	select MBEDTLS_PKCS1_V15
 	select MBEDTLS_PKCS1_V21
