@@ -339,6 +339,7 @@ SECTIONS
     *(.iram0.literal .iram.literal .iram.text.literal .iram0.text .iram.text)
     *libesp32.a:panic.*(.literal .text .literal.* .text.*)
     *librtc.a:(.literal .text .literal.* .text.*)
+    *libarch__common.a:init.*(.literal .text .literal.* .text.*)
     *libarch__xtensa__core.a:(.literal .text .literal.* .text.*)
     *libkernel.a:(.literal .text .literal.* .text.*)
     *libgcc.a:lib2funcs.*(.literal .text .literal.* .text.*)

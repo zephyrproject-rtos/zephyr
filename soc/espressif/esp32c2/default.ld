@@ -213,6 +213,7 @@ SECTIONS
     *libzephyr.a:soc_init.*(.literal .text .literal.* .text.*)
     *libzephyr.a:hw_init.*(.literal .text .literal.* .text.*)
     *libzephyr.a:soc_random.*(.literal .text .literal.* .text.*)
+    *libarch__common.a:init.*(.literal .text .literal.* .text.*)
     *libarch__riscv__core.a:(.literal .text .literal.* .text.*)
     *libkernel.a:(.literal .text .literal.* .text.*)
     *libgcc.a:lib2funcs.*(.literal .text .literal.* .text.*)
