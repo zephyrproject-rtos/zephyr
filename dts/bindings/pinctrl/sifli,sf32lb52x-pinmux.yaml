@@ -91,6 +91,14 @@ properties:
   sifli,cfg:
     required: true
 
+  "#sifli,pinmux-cells":
+    type: int
+    const: 2
+
+sifli,pinmux-cells:
+  - port
+  - offset
+
 child-binding:
   child-binding:
     include:

@@ -88,6 +88,7 @@
 			reg = <0x50003000 0x34>, <0x50003034 0xb4>;
 			reg-names = "pad_sa", "pad_pa";
 			clocks = <&rcc_clk SF32LB52X_CLOCK_PINMUX1>;
+			#sifli,pinmux-cells = <2>;
 			sifli,cfg = <&cfg>;
 			status = "disabled";
 		};
