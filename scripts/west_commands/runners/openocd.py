@@ -65,8 +65,9 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         if not path.exists(cfg.board_dir):
             # try to find the board support in-tree
             cfg_board_path = path.normpath(cfg.board_dir)
-            _temp_path = cfg_board_path.split("boards/")[1]
-            support = path.join(ZEPHYR_BASE, "boards", _temp_path, 'support')
+            boards_parent = cfg_board_path.split('boards')[0]
+            boards_and_below = path.relpath(cfg_board_path, boards_parent)
+            support = path.join(ZEPHYR_BASE, boards_and_below, 'support')
         else:
             support = path.join(cfg.board_dir, 'support')
 
