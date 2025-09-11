@@ -73,6 +73,9 @@ function(zephyr_mcuboot_tasks)
                             "APPLICATION_CONFIG_DIR=\"${APPLICATION_CONFIG_DIR}\" "
                             "and WEST_TOPDIR=\"${WEST_TOPDIR}\")")
       endif()
+
+      # Add key file as CMake dependency so a file change will rerun the build
+      set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${${file}})
     endforeach()
   endif()
 
