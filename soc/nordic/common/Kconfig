@@ -48,6 +48,11 @@ source "subsys/logging/Kconfig.template.log_config"
 
 endif # MRAM_LATENCY
 
+config MVDMA
+	depends on DT_HAS_NORDIC_NRF_MVDMA_ENABLED
+	default y
+	bool "nRF MVDMA driver"
+
 if HAS_NORDIC_DMM
 
 config DMM_HEAP_CHUNKS
