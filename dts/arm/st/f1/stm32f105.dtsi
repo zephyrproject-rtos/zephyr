@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/dt-bindings/clock/stm32f10x_clock.h>
+#include <zephyr/dt-bindings/sensor/qdec_stm32.h>
 #include <st/f1/stm32f1.dtsi>
 
 / {
@@ -114,6 +115,12 @@
 				compatible = "st,stm32-pwm";
 				status = "disabled";
 				#pwm-cells = <3>;
+			};
+
+			qdec {
+				compatible = "st,stm32-qdec";
+				st,input-filter-level = <NO_FILTER>;
+				status = "disabled";
 			};
 		};
 
