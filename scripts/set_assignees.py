@@ -10,7 +10,7 @@ import sys
 import time
 from collections import defaultdict
 
-from github import Github, GithubException
+from github import Auth, Github, GithubException
 from github.GithubException import UnknownObjectException
 from west.manifest import Manifest, ManifestProject
 
@@ -443,7 +443,7 @@ def main():
             'GITHUB_TOKEN environment variable and retry.'
         )
 
-    gh = Github(token)
+    gh = Github(auth=Auth.Token(token))
     maintainer_file = Maintainers(args.maintainer_file)
 
     if args.pull_request:

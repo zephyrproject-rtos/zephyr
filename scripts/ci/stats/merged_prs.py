@@ -8,7 +8,7 @@
 
 import sys
 import os
-from github import Github
+from github import Auth, Github
 import argparse
 from elasticsearch import Elasticsearch
 from elasticsearch.helpers import bulk
@@ -137,7 +137,7 @@ def main():
         sys.exit('Github token not set in environment, please set the '
                  'GITHUB_TOKEN environment variable and retry.')
 
-    gh = Github(token)
+    gh = Github(auth=Auth.Token(token))
     json_list = []
     gh_repo = gh.get_repo(args.repo)
 
