@@ -1,0 +1,17 @@
+tests:
+  usb.host.class_api:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+      - qemu_cortex_m3
+    integration_platforms:
+      - native_sim
+    tags: usb
+  usb.host.class_api.build_all:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim
+    tags: usb
+    build_only: true
