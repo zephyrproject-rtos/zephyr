@@ -44,6 +44,7 @@
 		compatible = "gpio-leds";
 
 		green_led_1: led_1 {
+			/* LD1 may conflict with SPI1 SCK on PA5 */
 			gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>;
 			label = "LD1";
 		};
@@ -103,6 +104,14 @@
 	apb3-prescaler = <2>;
 	st,psi-frequency = <144>;
 	st,psi-source = "HSE";
+};
+
+&spi1 {
+	/* SPI1 SCK may conflict with LD1 (Green LED) on PA5 */
+	pinctrl-0 = <&spi1_sck_pa5 &spi1_miso_pa6 &spi1_mosi_pa7>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpioc 9 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+	status = "okay";
 };
 
 &usart1 {
