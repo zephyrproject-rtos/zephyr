@@ -360,6 +360,14 @@ static int icm45686_one_shot_decode(const uint8_t *buffer,
 		out->header.base_timestamp_ns = edata->header.timestamp;
 		out->header.reading_count = 1;
 
+		err = icm45686_get_shift(chan_spec.chan_type,
+					 edata->header.accel_fs,
+					 edata->header.gyro_fs,
+					 &out->shift);
+		if (err != 0) {
+			return -EINVAL;
+		}
+
 		icm45686_convert_raw_to_q31(
 			edata,
 			chan_spec.chan_type - 3,
