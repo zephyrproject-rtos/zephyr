@@ -269,6 +269,15 @@ defines the following escalation process for resolving technical disagreements.
 
 Before escalation of technical disagreements, follow the steps below:
 
+- First, and most importantly, the contributor and person providing feedback should try to reach a
+  common understanding.
+
+  - Remember that written communication, especially in public forums, can be easily misunderstood.
+  - Consider contacting one another directly on Discord. A direct chat, or even better a one on one
+    call usually helps clarify the feedback and any constraints or considerations around the issue.
+  - Be kind to one another, and remember that, workload, time differences, and other circumstances
+    are likely complicating communication.
+
 - Resolve in the PR among assignee, maintainers and reviewer.
 
   - Assignee to act as moderator if applicable.
