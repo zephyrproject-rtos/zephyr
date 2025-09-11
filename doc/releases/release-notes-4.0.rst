@@ -1283,7 +1283,7 @@ Libraries / Subsystems
     enable TLS 1.3 support from Mbed TLS. When this is enabled the following
     new Kconfig symbols can also be enabled:
 
-    * :kconfig:option:`CONFIG_MBEDTLS_TLS_SESSION_TICKETS` to enable session tickets
+    * :kconfig:option:`CONFIG_MBEDTLS_SSL_SESSION_TICKETS` to enable session tickets
       (RFC 5077);
     * :kconfig:option:`CONFIG_MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_PSK_ENABLED`
       for TLS 1.3 PSK key exchange mode;
