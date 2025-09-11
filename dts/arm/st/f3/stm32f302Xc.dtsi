@@ -6,6 +6,7 @@
 
 #include <mem.h>
 #include <st/f3/stm32f302.dtsi>
+#include <zephyr/dt-bindings/adc/stm32l4_adc.h>
 
 / {
 	sram0: memory@20000000 {
@@ -45,6 +46,12 @@
 				compatible = "st,stm32-counter";
 				status = "disabled";
 			};
+
+			qdec {
+				compatible = "st,stm32-qdec";
+				st,input-filter-level = <NO_FILTER>;
+				status = "disabled";
+			};
 		};
 
 		timers4: timers@40000800 {
@@ -62,6 +69,12 @@
 				compatible = "st,stm32-pwm";
 				status = "disabled";
 				#pwm-cells = <3>;
+			};
+
+			qdec {
+				compatible = "st,stm32-qdec";
+				st,input-filter-level = <NO_FILTER>;
+				status = "disabled";
 			};
 		};
 
