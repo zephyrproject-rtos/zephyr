@@ -50,9 +50,7 @@ struct rm3100_stream {
 		struct {
 			bool drdy : 1;
 		} enabled;
-		struct {
-			enum sensor_stream_data_opt drdy;
-		} opt;
+		enum sensor_stream_data_opt opt;
 	} settings;
 };
 

@@ -32,7 +32,7 @@ static void rm3100_complete_result(struct rtio *ctx, const struct rtio_sqe *sqe,
 	if (!edata->header.events.drdy) {
 		LOG_ERR("Status register does not have DRDY bit set: 0x%02x",
 			edata->header.status);
-	} else if (data->stream.settings.opt.drdy == SENSOR_STREAM_DATA_INCLUDE) {
+	} else if (data->stream.settings.opt == SENSOR_STREAM_DATA_INCLUDE) {
 		edata->header.channels |= rm3100_encode_channel(SENSOR_CHAN_MAGN_XYZ);
 	}
 
@@ -185,7 +185,7 @@ static inline bool settings_changed(const struct rm3100_stream *a,
 				    const struct rm3100_stream *b)
 {
 	return (a->settings.enabled.drdy != b->settings.enabled.drdy) ||
-	       (a->settings.opt.drdy != b->settings.opt.drdy);
+	       (a->settings.opt != b->settings.opt);
 }
 
 void rm3100_stream_submit(const struct device *dev,
@@ -207,7 +207,7 @@ void rm3100_stream_submit(const struct device *dev,
 	data->stream.iodev_sqe = iodev_sqe;
 
 	data->stream.settings.enabled.drdy = true;
-	data->stream.settings.opt.drdy = read_config->triggers[0].opt;
+	data->stream.settings.opt = read_config->triggers[0].opt;
 
 	err = gpio_pin_interrupt_configure_dt(&cfg->int_gpio,
 						GPIO_INT_LEVEL_ACTIVE);
