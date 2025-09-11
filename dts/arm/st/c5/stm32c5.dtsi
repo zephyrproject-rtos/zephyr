@@ -6,6 +6,7 @@
 
 #include <arm/armv8-m.dtsi>
 #include <zephyr/dt-bindings/clock/stm32c5_clock.h>
+#include <zephyr/dt-bindings/dma/stm32_dma.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/reset/stm32c5_reset.h>
 #include <zephyr/dt-bindings/sensor/qdec_stm32.h>
@@ -173,6 +174,30 @@
 					};
 				};
 			};
+		};
+
+		lpdma1: dma@40020000 {
+			compatible = "st,stm32u5-dma";
+			#dma-cells = <3>;
+			reg = <0x40020000 0x1000>;
+			clocks = <&rcc STM32_CLOCK(AHB1, 0)>;
+			interrupts = <23 0>, <24 0>, <25 0>, <26 0>;
+			dma-channels = <4>;
+			dma-requests = <94>;
+			dma-offset = <0>;
+			status = "disabled";
+		};
+
+		lpdma2: dma@40021000 {
+			compatible = "st,stm32u5-dma";
+			#dma-cells = <3>;
+			reg = <0x40021000 0x1000>;
+			clocks = <&rcc STM32_CLOCK(AHB1, 1)>;
+			interrupts = <78 0>, <79 0>, <80 0>, <81 0>;
+			dma-channels = <4>;
+			dma-requests = <94>;
+			dma-offset = <0>;
+			status = "disabled";
 		};
 
 		lpuart1: serial@44002400 {
