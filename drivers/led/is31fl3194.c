@@ -18,6 +18,7 @@
 #include <zephyr/drivers/led.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/drivers/gpio.h>
 
 #include <zephyr/dt-bindings/led/led.h>
 
@@ -48,6 +49,7 @@ struct is31fl3194_config {
 	uint8_t num_leds;
 	const struct led_info *led_infos;
 	const uint8_t *current_limits;
+	struct gpio_dt_spec gpio_enable;
 };
 
 static const struct led_info *is31fl3194_led_to_info(const struct is31fl3194_config *config,
@@ -295,6 +297,13 @@ static int is31fl3194_init(const struct device *dev)
 		return ret;
 	}
 
+	if (config->gpio_enable.port && gpio_is_ready_dt(&config->gpio_enable)) {
+		/* Datasheet required 10uS delay before/after enable before any I2C operation */
+		k_usleep(10);
+		gpio_pin_configure_dt(&config->gpio_enable, GPIO_OUTPUT_ACTIVE);
+		k_usleep(10);
+	}
+
 	/* enable device */
 	return i2c_reg_write_byte_dt(&config->bus, IS31FL3194_CONF_REG, IS31FL3194_CONF_ENABLE);
 }
@@ -335,6 +344,7 @@ static DEVICE_API(led, is31fl3194_led_api) = {
 		.num_leds = ARRAY_SIZE(is31fl3194_leds_##id),			\
 		.led_infos = is31fl3194_leds_##id,				\
 		.current_limits = is31fl3194_currents_##id,			\
+		.gpio_enable = GPIO_DT_SPEC_INST_GET_OR(id, enable_gpios, {0}),	\
 	};									\
 	DEVICE_DT_INST_DEFINE(id, &is31fl3194_init, NULL, NULL,                 \
 			      &is31fl3194_config_##id, POST_KERNEL,             \
