@@ -6,8 +6,10 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_VIDEO_VIDEO_CTRLS_H_
 #define ZEPHYR_INCLUDE_DRIVERS_VIDEO_VIDEO_CTRLS_H_
 
+#include <stddef.h>
 #include <zephyr/device.h>
 #include <zephyr/sys/dlist.h>
+#include <zephyr/drivers/video-controls.h>
 
 /** Control is read-only */
 #define VIDEO_CTRL_FLAG_READ_ONLY  BIT(0)
@@ -37,6 +39,19 @@ enum video_ctrl_type {
 
 struct video_device;
 
+struct video_ctrl_config {
+	uint32_t id;
+	const char *name;
+	enum video_ctrl_type type;
+	unsigned long flags;
+	struct video_ctrl_range range;
+	union {
+		const char *const *menu;
+		const int64_t *int_menu;
+	};
+	size_t menu_len;
+};
+
 /**
  * @see video_control for the struct used in public API
  */
@@ -49,6 +64,7 @@ struct video_ctrl {
 
 	const struct video_device *vdev;
 	uint32_t id;
+	const char *name;
 	enum video_ctrl_type type;
 	unsigned long flags;
 	struct video_ctrl_range range;
@@ -62,6 +78,9 @@ struct video_ctrl {
 	};
 	sys_dnode_t node;
 };
+
+int video_init_custom_ctrl(struct video_ctrl *ctrl, const struct device *dev,
+			   const struct video_ctrl_config *cfg);
 
 int video_init_ctrl(struct video_ctrl *ctrl, const struct device *dev, uint32_t id,
 		    struct video_ctrl_range range);

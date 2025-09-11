@@ -15,6 +15,8 @@
 
 LOG_MODULE_REGISTER(video_ctrls, CONFIG_VIDEO_LOG_LEVEL);
 
+static inline const char *video_get_ctrl_name(uint32_t id);
+
 static inline const char *const *video_get_std_menu_ctrl(uint32_t id)
 {
 	static char const *const power_line_frequency[] = {
@@ -156,6 +158,7 @@ int video_init_ctrl(struct video_ctrl *ctrl, const struct device *dev, uint32_t 
 	ctrl->type = type;
 	ctrl->flags = flags;
 	ctrl->range = range;
+	ctrl->name = video_get_ctrl_name(id);
 
 	if (type == VIDEO_CTRL_TYPE_INTEGER64) {
 		ctrl->val64 = range.def64;
@@ -224,6 +227,39 @@ int video_init_int_menu_ctrl(struct video_ctrl *ctrl, const struct device *dev, 
 	ctrl->int_menu = menu;
 
 	return 0;
+}
+
+int video_init_custom_ctrl(struct video_ctrl *ctrl, const struct device *dev,
+			   const struct video_ctrl_config *cfg)
+{
+	if (!ctrl || !dev || !cfg) {
+		return -EINVAL;
+	}
+
+	if (cfg->id < VIDEO_CID_PRIVATE_BASE || cfg->name == NULL) {
+		return -EINVAL;
+	}
+
+	int ret = 0;
+
+	switch (cfg->type) {
+	case VIDEO_CTRL_TYPE_MENU:
+		ret = video_init_menu_ctrl(ctrl, dev, cfg->id, cfg->range.def, cfg->menu);
+		break;
+	case VIDEO_CTRL_TYPE_INTEGER_MENU:
+		ret = video_init_int_menu_ctrl(ctrl, dev, cfg->id, cfg->range.def, cfg->int_menu,
+					 cfg->menu_len);
+		break;
+	default:
+		ret = video_init_ctrl(ctrl, dev, cfg->id, cfg->range);
+		break;
+	}
+
+	ctrl->name = cfg->name;
+	ctrl->flags |= cfg->flags;
+	ctrl->type = cfg->type; // Override the type set in video_init_ctrl
+
+	return ret;
 }
 
 /* By definition, the cluster is in manual mode if the primary control value is 0 */
@@ -590,6 +626,9 @@ fill_query:
 		cq->int_menu = ctrl->int_menu;
 	}
 	cq->name = video_get_ctrl_name(cq->id);
+	if (cq->name == NULL) {
+		cq->name = ctrl->name;
+	}
 
 	return 0;
 }
