@@ -31,6 +31,7 @@ LOG_MODULE_REGISTER(is31fl3194, CONFIG_LED_LOG_LEVEL);
 #define IS31FL3194_OUT2_REG		0x21
 #define IS31FL3194_OUT3_REG		0x32
 #define IS31FL3194_UPDATE_REG		0x40
+#define IS31FL3194_RESET_REG		0x4f
 
 #define IS31FL3194_PROD_ID_VAL		0xce
 #define IS31FL3194_CONF_ENABLE		0x01
@@ -261,6 +262,13 @@ static int is31fl3194_init(const struct device *dev)
 	if (!i2c_is_ready_dt(&config->bus)) {
 		LOG_ERR("%s: I2C device not ready", dev->name);
 		return -ENODEV;
+	}
+
+	/* reset unknown state to default */
+	ret = i2c_reg_write_byte_dt(&config->bus, IS31FL3194_RESET_REG, IS31FL3194_UPDATE_VAL);
+	if (ret != 0) {
+		LOG_ERR("Failed to write reset key (%d)", ret);
+		return ret;
 	}
 
 	ret = i2c_reg_read_byte_dt(&config->bus, IS31FL3194_PROD_ID_REG, &prod_id);
