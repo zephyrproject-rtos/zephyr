@@ -31,6 +31,10 @@
 	status = "okay";
 };
 
+&mfd {
+	status = "okay";
+};
+
 &rtc {
 	status = "okay";
 };
