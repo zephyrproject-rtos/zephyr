@@ -19,12 +19,18 @@
 
 #include <zephyr/sys/util.h>
 #include <fsl_common.h>
+#include <fsl_power.h>
 
 /* CPU 0 has an instruction and data cache, provide the defines for XCACHE */
 #ifdef CONFIG_SOC_MIMXRT798S_CM33_CPU0
 #define NXP_XCACHE_INSTR XCACHE1
 #define NXP_XCACHE_DATA XCACHE0
 #endif
+
+/* Handle variation to implement Wakeup Interrupt */
+#define NXP_ENABLE_WAKEUP_SIGNAL(irqn) EnableDeepSleepIRQ(irqn)
+#define NXP_DISABLE_WAKEUP_SIGNAL(irqn) DisableDeepSleepIRQ(irqn)
+#define NXP_GET_WAKEUP_SIGNAL_STATUS(irqn) do { } while (0)
 
 #ifdef __cplusplus
 extern "C" {

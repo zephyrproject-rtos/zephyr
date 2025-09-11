@@ -18,6 +18,7 @@
 #ifndef _ASMLANGUAGE
 #include <zephyr/sys/util.h>
 #include <fsl_common.h>
+#include <fsl_power.h>
 
 /* Add include for DTS generated information */
 #include <zephyr/devicetree.h>
@@ -79,6 +80,11 @@
 #ifndef INPUTMUX_PINTSEL_COUNT
 #define INPUTMUX_PINTSEL_COUNT INPUTMUX_PINT_SEL_COUNT
 #endif
+
+/* Handle variation to implement Wakeup Interrupt */
+#define NXP_ENABLE_WAKEUP_SIGNAL(irqn) EnableDeepSleepIRQ(irqn)
+#define NXP_DISABLE_WAKEUP_SIGNAL(irqn) DisableDeepSleepIRQ(irqn)
+#define NXP_GET_WAKEUP_SIGNAL_STATUS(irqn) do { } while (0)
 
 #ifdef __cplusplus
 extern "C" {

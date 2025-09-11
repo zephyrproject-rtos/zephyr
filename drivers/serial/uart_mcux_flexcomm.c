@@ -1373,11 +1373,17 @@ DT_INST_FOREACH_STATUS_OKAY(UART_MCUX_FLEXCOMM_RX_TIMEOUT_FUNC);
 #endif /* CONFIG_UART_ASYNC_API */
 
 #if FC_UART_IS_WAKEUP
+#if NXP_ENABLE_WAKEUP_SIGNAL
+#define UART_MCUX_FLEXCOMM_WAKEUP_SIGNAL(n) NXP_ENABLE_WAKEUP_SIGNAL(DT_INST_IRQN(n))
+#else
+#define UART_MCUX_FLEXCOMM_WAKEUP_SIGNAL(n)
+#endif
+
 #define UART_MCUX_FLEXCOMM_WAKEUP_CFG_DEFINE(n)					\
 static void serial_mcux_flexcomm_##n##_wakeup_cfg(void)				\
 {										\
 	IF_ENABLED(DT_INST_PROP(n, wakeup_source), (				\
-		POWER_EnableWakeup(DT_INST_IRQN(n));				\
+		UART_MCUX_FLEXCOMM_WAKEUP_SIGNAL(n);				\
 	))									\
 }
 #define UART_MCUX_FLEXCOMM_WAKEUP_CFG_BIND(n)					\
