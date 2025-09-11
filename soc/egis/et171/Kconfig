@@ -1,0 +1,55 @@
+# Copyright (c) 2025 Egis Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_EGIS_ET171
+	imply XIP
+	select RISCV
+	select RISCV_PRIVILEGED
+	select RISCV_HAS_PLIC
+	select RISCV_SOC_HAS_GP_RELATIVE_ADDRESSING
+	select RISCV_ISA_RV32I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_C
+	select RISCV_ISA_EXT_ZICSR
+	select RISCV_ISA_EXT_ZIFENCEI
+	select ATOMIC_OPERATIONS_BUILTIN
+	select INCLUDE_RESET_VECTOR
+	select CPU_HAS_FPU
+	select CPU_HAS_DCACHE
+	select CPU_HAS_ICACHE
+	select RISCV_PMP
+	select HAS_FLASH_LOAD_OFFSET
+	select SOC_EARLY_INIT_HOOK
+
+config SOC_EGIS_ET171_HWDSP
+	bool "DSP ISA extension"
+	select RISCV_SOC_CONTEXT_SAVE
+	depends on !RISCV_GENERIC_TOOLCHAIN
+	help
+		This option enables the hardware DSP, in order to
+		support using the DSP instructions.
+
+config SOC_EGIS_ET171_PFT
+	bool "PowerBrake extension"
+	default y
+	select RISCV_SOC_CONTEXT_SAVE
+	help
+		The PowerBrake extension throttles performance by reducing instruction
+		executing rate.
+
+config SOC_EGIS_ET171_EXECIT
+	bool "EXEC.IT extension"
+	depends on RISCV_ISA_EXT_C
+	depends on !RISCV_GENERIC_TOOLCHAIN
+	depends on !LINKER_USE_NO_RELAX
+	help
+		The EXEC.IT extension (Execution on Instruction Table) generate
+		a look-up table and replaces suitable 32-bit instructions with
+		the 16-bit "exec.it <INDEX>".
+
+config SOC_EGIS_ET171_FIRMWARE_VERSION
+	hex "Firmware version"
+	default 0xAAAAAAAA
+	help
+	  Firmware version info of bin header
