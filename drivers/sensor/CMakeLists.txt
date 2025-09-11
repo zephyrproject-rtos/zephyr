@@ -83,6 +83,7 @@ zephyr_library_sources_ifdef(CONFIG_SENSOR_SHELL sensor_shell.c)
 zephyr_library_sources_ifdef(CONFIG_SENSOR_SHELL_STREAM sensor_shell_stream.c)
 zephyr_library_sources_ifdef(CONFIG_SENSOR_SHELL_BATTERY shell_battery.c)
 zephyr_library_sources_ifdef(CONFIG_SENSOR_ASYNC_API sensor_decoders_init.c default_rtio_sensor.c)
+zephyr_library_sources_ifdef(CONFIG_SENSOR_FETCH_GET_COMPAT sensor_fetch_get_compat.c)
 
 dt_has_chosen(has_zephyr_sensor_clock PROPERTY "zephyr,sensor-clock")
 

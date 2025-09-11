@@ -725,6 +725,62 @@ __subsystem struct sensor_driver_api {
 	sensor_submit_t submit;
 };
 
+#ifdef CONFIG_SENSOR_FETCH_GET_COMPAT
+
+struct sensor_fetch_get_compat {
+	const struct device *dev;
+	struct rtio_iodev *iodev;
+	struct rtio *rtio;
+	size_t buf_size;
+	uint8_t *buf;
+};
+
+#define SENSOR_FETCH_GET_COMPAT_INITIALIZER(_dev, _iodev, _rtio, _buf)                             \
+	{                                                                                          \
+		.dev = _dev,                                                                       \
+		.iodev = _iodev,                                                                   \
+		.rtio = &_rtio,                                                                    \
+		.buf_size = ARRAY_SIZE(_buf),                                                      \
+		.buf = _buf,                                                                       \
+	}
+
+#define SENSOR_FETCH_GET_COMPAT_DEFINE(name, ...)                                                  \
+	static const STRUCT_SECTION_ITERABLE(sensor_fetch_get_compat, name) =                      \
+		SENSOR_FETCH_GET_COMPAT_INITIALIZER(__VA_ARGS__)
+
+#define SENSOR_FETCH_GET_COMPAT_DT_NAME(node_id)                                                   \
+	_CONCAT(__sensor_fetch_get_compat, DEVICE_DT_NAME_GET(node_id))
+
+#define SENSOR_FETCH_GET_COMPAT_DT_DEFINE_IMPL(node_id)                                            \
+	SENSOR_DT_READ_IODEV(_CONCAT(SENSOR_FETCH_GET_COMPAT_DT_NAME(node_id), _iodev), node_id,   \
+			     {SENSOR_CHAN_ALL, 0});                                                \
+                                                                                                   \
+	RTIO_DEFINE(_CONCAT(SENSOR_FETCH_GET_COMPAT_DT_NAME(node_id), _rtio), 1, 1);               \
+                                                                                                   \
+	static uint8_t _CONCAT(SENSOR_FETCH_GET_COMPAT_DT_NAME(node_id),                           \
+			       _buffer)[DT_PROP(node_id, zephyr_fg_compat_size)] __aligned(4);     \
+                                                                                                   \
+	SENSOR_FETCH_GET_COMPAT_DEFINE(SENSOR_FETCH_GET_COMPAT_DT_NAME(node_id),                   \
+				       DEVICE_DT_GET(node_id),                                     \
+				       _CONCAT(&SENSOR_FETCH_GET_COMPAT_DT_NAME(node_id), _iodev), \
+				       _CONCAT(&SENSOR_FETCH_GET_COMPAT_DT_NAME(node_id), _rtio),  \
+				       _CONCAT(SENSOR_FETCH_GET_COMPAT_DT_NAME(node_id), _buffer))
+
+#define SENSOR_FETCH_GET_COMPAT_DT_DEFINE(node_id)                                                 \
+	COND_CODE_1(DT_NODE_HAS_PROP(node_id, zephyr_fg_compat_size),                              \
+		    (SENSOR_FETCH_GET_COMPAT_DT_DEFINE_IMPL(node_id)), ())
+
+int sensor_sample_fetch_compat(const struct device *dev);
+
+int sensor_channel_get_compat(const struct device *dev, enum sensor_channel chan,
+			      struct sensor_value *val);
+
+#else
+
+#define SENSOR_FETCH_GET_COMPAT_DT_DEFINE(node_id)
+
+#endif /* CONFIG_SENSOR_FETCH_GET_COMPAT */
+
 /**
  * @brief Set an attribute for a sensor
  *
@@ -850,6 +906,12 @@ static inline int z_impl_sensor_sample_fetch(const struct device *dev)
 	const struct sensor_driver_api *api =
 		(const struct sensor_driver_api *)dev->api;
 
+#ifdef CONFIG_SENSOR_FETCH_GET_COMPAT
+	if (api->sample_fetch == NULL) {
+		return sensor_sample_fetch_compat(dev);
+	}
+#endif
+
 	return api->sample_fetch(dev, SENSOR_CHAN_ALL);
 }
 
@@ -882,6 +944,12 @@ static inline int z_impl_sensor_sample_fetch_chan(const struct device *dev,
 {
 	const struct sensor_driver_api *api =
 		(const struct sensor_driver_api *)dev->api;
+
+#ifdef CONFIG_SENSOR_FETCH_GET_COMPAT
+	if (api->sample_fetch == NULL) {
+		return sensor_sample_fetch_compat(dev);
+	}
+#endif
 
 	return api->sample_fetch(dev, type);
 }
@@ -917,6 +985,12 @@ static inline int z_impl_sensor_channel_get(const struct device *dev,
 {
 	const struct sensor_driver_api *api =
 		(const struct sensor_driver_api *)dev->api;
+
+#ifdef CONFIG_SENSOR_FETCH_GET_COMPAT
+	if (api->channel_get == NULL) {
+		return sensor_channel_get_compat(dev, chan, val);
+	}
+#endif
 
 	return api->channel_get(dev, chan, val);
 }
@@ -1459,7 +1533,8 @@ struct sensor_info {
 	DEVICE_DT_DEFINE(node_id, init_fn, pm_device, data_ptr, cfg_ptr, level, prio, api_ptr,     \
 			 __VA_ARGS__);                                                             \
                                                                                                    \
-	SENSOR_INFO_DT_DEFINE(node_id);
+	SENSOR_INFO_DT_DEFINE(node_id);                                                            \
+	SENSOR_FETCH_GET_COMPAT_DT_DEFINE(node_id);
 
 /**
  * @brief Like SENSOR_DEVICE_DT_DEFINE() for an instance of a DT_DRV_COMPAT

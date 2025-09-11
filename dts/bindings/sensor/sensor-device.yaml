@@ -17,3 +17,8 @@ properties:
       This property is defined in the Generic Sensor Property Usages of the HID
       Usage Tables specification
       (https://usb.org/sites/default/files/hut1_3_0.pdf, section 22.5).
+  zephyr,fg-compat-size:
+    type: int
+    description: |
+      Buffer size to use for the fetch/get compatibility layer for this sensor
+      device.
