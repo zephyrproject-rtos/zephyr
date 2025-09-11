@@ -1,0 +1,23 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: GPIO-controlled LIN transceiver
+
+compatible: "lin-transceiver-gpio"
+
+include: lin-transceiver.yaml
+
+properties:
+  enable-gpios:
+    type: phandle-array
+    description: |
+      GPIO to use to enable/disable the CAN transceiver. This GPIO is driven
+      active when the CAN transceiver is enabled and inactive when the CAN
+      transceiver is disabled.
+
+  wakeup-gpios:
+    type: phandle-array
+    description: |
+      GPIO to use to wake up the LIN transceiver from standby. This GPIO is driven
+      inactive when the LIN transceiver is enabled and active when the LIN
+      transceiver is disabled.
