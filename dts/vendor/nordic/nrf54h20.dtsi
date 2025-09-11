@@ -744,6 +744,7 @@
 				power-domains = <&gdpwr_fast_active_1>;
 				endtx-stoptx-supported;
 				frame-timeout-supported;
+				zephyr,pm-device-runtime-auto;
 			};
 
 			spi121: spi@8e7000 {
@@ -1152,6 +1153,7 @@
 				nordic,clockpin-enable = <NRF_FUN_UART_TX>;
 				endtx-stoptx-supported;
 				frame-timeout-supported;
+				zephyr,pm-device-runtime-auto;
 			};
 
 			i2c131: i2c@9a6000 {
@@ -1287,6 +1289,7 @@
 				nordic,clockpin-enable = <NRF_FUN_UART_TX>;
 				endtx-stoptx-supported;
 				frame-timeout-supported;
+				zephyr,pm-device-runtime-auto;
 			};
 
 			i2c133: i2c@9b6000 {
@@ -1333,6 +1336,7 @@
 				nordic,clockpin-enable = <NRF_FUN_UART_TX>;
 				endtx-stoptx-supported;
 				frame-timeout-supported;
+				zephyr,pm-device-runtime-auto;
 			};
 
 			dppic135: dppic@9c1000 {
@@ -1421,6 +1425,7 @@
 				nordic,clockpin-enable = <NRF_FUN_UART_TX>;
 				endtx-stoptx-supported;
 				frame-timeout-supported;
+				zephyr,pm-device-runtime-auto;
 			};
 
 			i2c135: i2c@9c6000 {
@@ -1467,6 +1472,7 @@
 				nordic,clockpin-enable = <NRF_FUN_UART_TX>;
 				endtx-stoptx-supported;
 				frame-timeout-supported;
+				zephyr,pm-device-runtime-auto;
 			};
 
 			dppic136: dppic@9d1000 {
@@ -1602,6 +1608,7 @@
 				nordic,clockpin-enable = <NRF_FUN_UART_TX>;
 				endtx-stoptx-supported;
 				frame-timeout-supported;
+				zephyr,pm-device-runtime-auto;
 			};
 
 			tdm130: tdm@992000 {
