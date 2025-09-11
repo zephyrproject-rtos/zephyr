@@ -65,14 +65,14 @@
 #define MBEDTLS_SSL_PROTO_TLS1_2
 #endif
 
-#if defined(CONFIG_MBEDTLS_TLS_VERSION_1_3)
+#if defined(CONFIG_MBEDTLS_SSL_PROTO_TLS1_3)
 #define MBEDTLS_SSL_PROTO_TLS1_3
 #define MBEDTLS_SSL_KEEP_PEER_CERTIFICATE
 #define MBEDTLS_SSL_TLS1_3_COMPATIBILITY_MODE
 #endif
 
 #if defined(CONFIG_MBEDTLS_SSL_PROTO_TLS1_2) || \
-	defined(CONFIG_MBEDTLS_TLS_VERSION_1_3)
+	defined(CONFIG_MBEDTLS_SSL_PROTO_TLS1_3)
 
 /* Common modules required for TLS 1.2 and 1.3 */
 #define MBEDTLS_SSL_TLS_C
@@ -82,11 +82,11 @@
 /* This is not supported by Mbed TLS in TLS 1.3 mode
  * (see modules/crypto/mbedtls/docs/architecture/tls13-support.md).
  */
-#if !defined(CONFIG_MBEDTLS_TLS_VERSION_1_3)
+#if !defined(CONFIG_MBEDTLS_SSL_PROTO_TLS1_3)
 #define MBEDTLS_SSL_MAX_FRAGMENT_LENGTH
 #endif
 
-#endif /* CONFIG_MBEDTLS_SSL_PROTO_TLS1_2 || CONFIG_MBEDTLS_TLS_VERSION_1_3 */
+#endif /* CONFIG_MBEDTLS_SSL_PROTO_TLS1_2 || CONFIG_MBEDTLS_SSL_PROTO_TLS1_3 */
 
 #if defined(CONFIG_MBEDTLS_TLS_SESSION_TICKETS)
 #define MBEDTLS_SSL_SESSION_TICKETS
