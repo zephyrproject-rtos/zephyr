@@ -9,17 +9,17 @@ menu "Mbed TLS configuration"
 
 menu "TLS"
 
-config MBEDTLS_TLS_VERSION_1_2
+config MBEDTLS_SSL_PROTO_TLS1_2
 	bool "Support for TLS 1.2 (DTLS 1.2)"
 	select MBEDTLS_CIPHER
 	select MBEDTLS_MD_C
 
-if MBEDTLS_TLS_VERSION_1_2
+if MBEDTLS_SSL_PROTO_TLS1_2
 
 config MBEDTLS_DTLS
 	bool "Support for DTLS"
 
-endif # MBEDTLS_TLS_VERSION_1_2
+endif # MBEDTLS_SSL_PROTO_TLS1_2
 
 config MBEDTLS_TLS_VERSION_1_3
 	bool "Support for TLS 1.3"
@@ -31,12 +31,12 @@ config MBEDTLS_TLS_SESSION_TICKETS
 
 endif # MBEDTLS_TLS_VERSION_1_3
 
-if MBEDTLS_TLS_VERSION_1_2 || MBEDTLS_TLS_VERSION_1_3
+if MBEDTLS_SSL_PROTO_TLS1_2 || MBEDTLS_TLS_VERSION_1_3
 
 config MBEDTLS_SSL_ALPN
 	bool "Support for setting the supported Application Layer Protocols"
 
-endif # MBEDTLS_TLS_VERSION_1_2 || MBEDTLS_TLS_VERSION_1_3
+endif # MBEDTLS_SSL_PROTO_TLS1_2 || MBEDTLS_TLS_VERSION_1_3
 
 endmenu # TLS
 
@@ -516,7 +516,7 @@ endif # MBEDTLS_SSL_CACHE_C
 
 config MBEDTLS_SSL_EXTENDED_MASTER_SECRET
 	bool "(D)TLS Extended Master Secret extension"
-	depends on MBEDTLS_TLS_VERSION_1_2
+	depends on MBEDTLS_SSL_PROTO_TLS1_2
 	help
 	  Enable support for the (D)TLS Extended Master Secret extension
 	  which ensures that master secrets are different for every
