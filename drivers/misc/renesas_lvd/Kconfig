@@ -1,0 +1,22 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+# Renesas Low/Programmable Voltage Detection driver
+
+menuconfig RENESAS_LVD
+	bool "Renesas Low/Programmable Voltage Detection Drivers"
+	depends on SOC_FAMILY_RENESAS_RX
+	help
+	  Enable config options for Renesas Low/Programmable Voltage Detection
+
+if RENESAS_LVD
+
+config RENESAS_LVD_INIT_PRIORITY
+	int "Renesas Low/Programmable Voltage Detection initialization priority"
+	default KERNEL_INIT_PRIORITY_DEVICE
+	help
+	  System initialization priority for Renesas Low/Programmable Voltage Detection drivers.
+
+source "drivers/misc/renesas_lvd/Kconfig.renesas_rx_lvd"
+
+endif # RENESAS_LVD
