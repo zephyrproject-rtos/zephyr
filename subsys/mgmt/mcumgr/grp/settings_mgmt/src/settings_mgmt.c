@@ -433,15 +433,62 @@ end:
  */
 static int settings_mgmt_save(struct smp_streamer *ctxt)
 {
+	int rc;
+	zcbor_state_t *zse = ctxt->writer->zs;
+	zcbor_state_t *zsd = ctxt->reader->zs;
 	bool ok = true;
+	struct zcbor_string data = {0};
+	size_t decoded;
+	struct zcbor_string key = {0};
+	bool save_one = false;
+
+#ifdef CONFIG_MCUMGR_GRP_SETTINGS_BUFFER_TYPE_HEAP
+	char *key_name = NULL;
+#else
+	char key_name[CONFIG_MCUMGR_GRP_SETTINGS_NAME_LEN];
+#endif
+
+	struct zcbor_map_decode_key_val settings_save_decode[] = {
+		ZCBOR_MAP_DECODE_KEY_DECODER("name", zcbor_tstr_decode, &key),
+		ZCBOR_MAP_DECODE_KEY_DECODER("val", zcbor_bstr_decode, &data),
+	};
+
+	ok = zcbor_map_decode_bulk(zsd, settings_save_decode, ARRAY_SIZE(settings_save_decode),
+				   &decoded) == 0;
+
+	if (!ok) {
+		return MGMT_ERR_EINVAL;
+	}
+
+	save_one = (key.len > 0) && (data.len > 0);
+
+	if (save_one) {
+		if (key.len >= CONFIG_MCUMGR_GRP_SETTINGS_NAME_LEN) {
+			ok = smp_add_cmd_err(zse, MGMT_GROUP_ID_SETTINGS,
+					     SETTINGS_MGMT_ERR_KEY_TOO_LONG);
+			goto end;
+		}
+
+#ifdef CONFIG_MCUMGR_GRP_SETTINGS_BUFFER_TYPE_HEAP
+		key_name = (char *)malloc(key.len + 1);
+
+		if (key_name == NULL) {
+			return MGMT_ERR_ENOMEM;
+		}
+#endif
+		memcpy(key_name, key.value, key.len);
+		key_name[key.len] = 0;
+	}
 
 	if (IS_ENABLED(CONFIG_MCUMGR_GRP_SETTINGS_ACCESS_HOOK)) {
 		/* Send request to application to check if access should be allowed or not */
 		struct settings_mgmt_access settings_access_data = {
 			.access = SETTINGS_ACCESS_SAVE,
+			.name = save_one ? key_name : NULL,
+			.val = save_one ? data.value : NULL,
+			.val_length = save_one ? &data.len : NULL,
 		};
 
-		zcbor_state_t *zse = ctxt->writer->zs;
 		enum mgmt_cb_return status;
 		int32_t ret_rc;
 		uint16_t ret_group;
@@ -460,7 +507,26 @@ static int settings_mgmt_save(struct smp_streamer *ctxt)
 		}
 	}
 
-	settings_save();
+	if (save_one) {
+		rc = settings_save_one(key_name, data.value, data.len);
+
+		if (rc < 0) {
+			if (rc == -EINVAL) {
+				rc = SETTINGS_MGMT_ERR_ROOT_KEY_NOT_FOUND;
+			} else if (rc == -ENOENT) {
+				rc = SETTINGS_MGMT_ERR_KEY_NOT_FOUND;
+			} else if (rc == -ENOTSUP) {
+				rc = SETTINGS_MGMT_ERR_SAVE_NOT_SUPPORTED;
+			} else {
+				rc = SETTINGS_MGMT_ERR_UNKNOWN;
+			}
+
+			ok = smp_add_cmd_err(zse, MGMT_GROUP_ID_SETTINGS, (uint16_t)rc);
+			goto end;
+		}
+	} else {
+		settings_save();
+	}
 
 end:
 	return MGMT_RETURN_CHECK(ok);
