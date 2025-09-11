@@ -10,6 +10,12 @@
 	soc {
 		compatible = "st,stm32c591", "st,stm32c5", "simple-bus";
 
+		lpdma2: dma@40021000 {
+			interrupts = <78 0>, <79 0>, <80 0>, <81 0>,
+				     <82 0>, <83 0>, <84 0>, <85 0>;
+			dma-channels = <8>;
+		};
+
 		pinctrl: pin-controller@42020000 {
 			gpiof: gpio@42021400 {
 				compatible = "st,stm32-gpio";
