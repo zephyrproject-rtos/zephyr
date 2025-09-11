@@ -379,7 +379,7 @@ config MBEDTLS_CTR_DRBG_C
 	depends on MBEDTLS_CIPHER_AES_ENABLED
 	default y
 
-config MBEDTLS_HMAC_DRBG_ENABLED
+config MBEDTLS_HMAC_DRBG_C
 	bool "HMAC_DRBG random generator"
 	select MBEDTLS_MD_C
 
@@ -549,7 +549,7 @@ config MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG
 config MBEDTLS_PSA_CRYPTO_LEGACY_RNG
 	bool "Use legacy modules to generate random data"
 	select MBEDTLS_ENTROPY_C
-	select MBEDTLS_HMAC_DRBG_ENABLED if !MBEDTLS_CTR_DRBG_C
+	select MBEDTLS_HMAC_DRBG_C if !MBEDTLS_CTR_DRBG_C
 	# If there is any entropy driver in the system, then the choice would be
 	# CONFIG_MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG. If we fall here, then the only
 	# way to get some random data is to enable CONFIG_TEST_RANDOM_GENERATOR.
