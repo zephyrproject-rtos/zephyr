@@ -1330,6 +1330,7 @@ flagged.
         "STACK_SIZE",  # Used as an example in the Kconfig docs
         "STD_CPP",  # Referenced in CMake comment
         "TEST1",
+        "TFM_USE_TRUSTZONE", # TF-M board is Out-Of-Tree
         "TOOLCHAIN", # Defined in modules/hal_nxp/mcux/mcux-sdk-ng/basic.cmake.
                      # It is used by MCUX SDK cmake functions to add content
                      # based on current toolchain.
