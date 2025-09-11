@@ -47,19 +47,40 @@ static struct k_spinlock lock;
 
 #endif
 
+int pm_policy_state_id_get(enum pm_state state, uint8_t substate_id)
+{
+#if DT_HAS_COMPAT_STATUS_OKAY(zephyr_power_state)
+	for (size_t i = 0; i < ARRAY_SIZE(substates); i++) {
+		if (substates[i].state == state && (substates[i].substate_id == substate_id)) {
+			return i;
+		}
+	}
+#endif
+
+	return -ENOSYS;
+}
+
+void pm_policy_state_by_id_lock_get(int id)
+{
+#if DT_HAS_COMPAT_STATUS_OKAY(zephyr_power_state)
+	__ASSERT_NO_MSG((id >= 0) && (id < ARRAY_SIZE(substates)));
+	k_spinlock_key_t key = k_spin_lock(&lock);
+
+	if (lock_cnt[id] == 0) {
+		unlock_mask &= ~BIT(id);
+	}
+	lock_cnt[id]++;
+	k_spin_unlock(&lock, key);
+#endif
+}
+
 void pm_policy_state_lock_get(enum pm_state state, uint8_t substate_id)
 {
 #if DT_HAS_COMPAT_STATUS_OKAY(zephyr_power_state)
 	for (size_t i = 0; i < ARRAY_SIZE(substates); i++) {
 		if (substates[i].state == state &&
 		   (substates[i].substate_id == substate_id || substate_id == PM_ALL_SUBSTATES)) {
-			k_spinlock_key_t key = k_spin_lock(&lock);
-
-			if (lock_cnt[i] == 0) {
-				unlock_mask &= ~BIT(i);
-			}
-			lock_cnt[i]++;
-			k_spin_unlock(&lock, key);
+			pm_policy_state_by_id_lock_get(i);
 		}
 	}
 #endif
@@ -73,20 +94,28 @@ void pm_policy_state_constraints_get(struct pm_state_constraints *constraints)
 	}
 }
 
+void pm_policy_state_by_id_lock_put(int id)
+{
+#if DT_HAS_COMPAT_STATUS_OKAY(zephyr_power_state)
+	__ASSERT_NO_MSG((id >= 0) && (id < ARRAY_SIZE(substates)));
+	k_spinlock_key_t key = k_spin_lock(&lock);
+
+	__ASSERT(lock_cnt[id] > 0, "Unbalanced state lock get/put");
+	lock_cnt[id]--;
+	if (lock_cnt[id] == 0) {
+		unlock_mask |= BIT(id);
+	}
+	k_spin_unlock(&lock, key);
+#endif
+}
+
 void pm_policy_state_lock_put(enum pm_state state, uint8_t substate_id)
 {
 #if DT_HAS_COMPAT_STATUS_OKAY(zephyr_power_state)
 	for (size_t i = 0; i < ARRAY_SIZE(substates); i++) {
 		if (substates[i].state == state &&
 		   (substates[i].substate_id == substate_id || substate_id == PM_ALL_SUBSTATES)) {
-			k_spinlock_key_t key = k_spin_lock(&lock);
-
-			__ASSERT(lock_cnt[i] > 0, "Unbalanced state lock get/put");
-			lock_cnt[i]--;
-			if (lock_cnt[i] == 0) {
-				unlock_mask |= BIT(i);
-			}
-			k_spin_unlock(&lock, key);
+			pm_policy_state_by_id_lock_put(i);
 		}
 	}
 #endif
