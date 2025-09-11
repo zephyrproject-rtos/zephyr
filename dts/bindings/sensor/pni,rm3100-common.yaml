@@ -23,17 +23,17 @@ properties:
       The output data rate (ODR) of the sensor in Hz.
       Default is power-on setting.
     enum:
-      - 0x92 # RM33100_DT_ODR_600
-      - 0x93 # RM33100_DT_ODR_300
-      - 0x94 # RM33100_DT_ODR_150
-      - 0x95 # RM33100_DT_ODR_75
-      - 0x96 # RM33100_DT_ODR_37_5
-      - 0x97 # RM33100_DT_ODR_18
-      - 0x98 # RM33100_DT_ODR_9
-      - 0x99 # RM33100_DT_ODR_4_5
-      - 0x9A # RM33100_DT_ODR_2_3
-      - 0x9B # RM33100_DT_ODR_1_2
-      - 0x9C # RM33100_DT_ODR_0_6
-      - 0x9D # RM33100_DT_ODR_0_3
-      - 0x9E # RM33100_DT_ODR_0_015
-      - 0x9F # RM33100_DT_ODR_0_0075
+      - 0x92 # RM3100_DT_ODR_600
+      - 0x93 # RM3100_DT_ODR_300
+      - 0x94 # RM3100_DT_ODR_150
+      - 0x95 # RM3100_DT_ODR_75
+      - 0x96 # RM3100_DT_ODR_37_5
+      - 0x97 # RM3100_DT_ODR_18
+      - 0x98 # RM3100_DT_ODR_9
+      - 0x99 # RM3100_DT_ODR_4_5
+      - 0x9A # RM3100_DT_ODR_2_3
+      - 0x9B # RM3100_DT_ODR_1_2
+      - 0x9C # RM3100_DT_ODR_0_6
+      - 0x9D # RM3100_DT_ODR_0_3
+      - 0x9E # RM3100_DT_ODR_0_015
+      - 0x9F # RM3100_DT_ODR_0_0075
