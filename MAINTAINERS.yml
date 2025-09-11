@@ -3066,10 +3066,10 @@ LiteX Platforms:
   status: maintained
   maintainers:
     - tgorochowik
-    - kgugala
     - fkokosinski
     - maass-hamburg
   collaborators:
+    - kgugala
     - mateusz-holenko
   files:
     - boards/enjoydigital/litex_vexriscv/
