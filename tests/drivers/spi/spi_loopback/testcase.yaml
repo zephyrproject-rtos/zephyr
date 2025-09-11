@@ -58,6 +58,7 @@ tests:
     platform_allow:
       - b_u585i_iot02a
       - nucleo_c071rb
+      - nucleo_c5a3zg
       - nucleo_g071rb
       - nucleo_g474re
       - nucleo_f207zg
@@ -96,6 +97,7 @@ tests:
     platform_allow:
       - b_u585i_iot02a
       - nucleo_c071rb
+      - nucleo_c5a3zg
       - nucleo_f207zg
       - nucleo_f429zi
       - nucleo_f746zg
@@ -122,6 +124,7 @@ tests:
     platform_allow:
       - b_u585i_iot02a
       - nucleo_c071rb
+      - nucleo_c5a3zg
       - nucleo_f207zg
       - nucleo_f429zi
       - nucleo_f746zg
@@ -147,6 +150,7 @@ tests:
     platform_allow:
       - b_u585i_iot02a
       - nucleo_c071rb
+      - nucleo_c5a3zg
       - nucleo_f207zg
       - nucleo_f429zi
       - nucleo_f746zg
