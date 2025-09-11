@@ -1730,282 +1730,6 @@ int bt_sdp_register_service(struct bt_sdp_record *service)
 	return 0;
 }
 
-#define GET_PARAM(__node) \
-	CONTAINER_OF(__node, struct bt_sdp_discover_params, _node)
-
-/* ServiceSearch PDU, ref to BT Core 5.4, Vol 3, part B, 4.5.1 */
-static int sdp_client_ss_search(struct bt_sdp_client *session,
-				const struct bt_sdp_discover_params *param)
-{
-	struct net_buf *buf;
-	uint8_t uuid128[BT_UUID_SIZE_128];
-
-	/* Update context param directly. */
-	session->param = param;
-
-	buf = bt_sdp_create_pdu();
-
-	/* BT_SDP_SEQ8 means length of sequence is on additional next byte */
-	net_buf_add_u8(buf, BT_SDP_SEQ8);
-
-	switch (param->uuid->type) {
-	case BT_UUID_TYPE_16:
-		/* Seq length */
-		net_buf_add_u8(buf, sizeof(uint8_t) + BT_UUID_SIZE_16);
-		/* Seq type */
-		net_buf_add_u8(buf, BT_SDP_UUID16);
-		/* Seq value */
-		net_buf_add_be16(buf, BT_UUID_16(param->uuid)->val);
-		break;
-	case BT_UUID_TYPE_32:
-		net_buf_add_u8(buf, sizeof(uint8_t) + BT_UUID_SIZE_32);
-		net_buf_add_u8(buf, BT_SDP_UUID32);
-		net_buf_add_be32(buf, BT_UUID_32(param->uuid)->val);
-		break;
-	case BT_UUID_TYPE_128:
-		net_buf_add_u8(buf, sizeof(uint8_t) + BT_UUID_SIZE_128);
-		net_buf_add_u8(buf, BT_SDP_UUID128);
-		sys_memcpy_swap(uuid128, BT_UUID_128(param->uuid)->val, sizeof(uuid128));
-		net_buf_add_mem(buf, uuid128, sizeof(uuid128));
-		break;
-	default:
-		LOG_ERR("Unknown UUID type %u", param->uuid->type);
-		net_buf_unref(buf);
-		return -EINVAL;
-	}
-
-	/* Set maximum number of service record handles */
-	net_buf_add_be16(buf, net_buf_tailroom(session->rec_buf) / SDP_RECORD_HANDLE_SIZE);
-	/*
-	 * Update and validate PDU ContinuationState. Initial SSA Request has
-	 * zero length continuation state since no interaction has place with
-	 * server so far, otherwise use the original state taken from remote's
-	 * last response PDU that is cached by SDP client context.
-	 */
-	if (session->cstate.length == 0U) {
-		net_buf_add_u8(buf, 0x00);
-	} else {
-		net_buf_add_u8(buf, session->cstate.length);
-		net_buf_add_mem(buf, session->cstate.data, session->cstate.length);
-	}
-
-	session->tid++;
-
-	return bt_sdp_send(&session->chan.chan, buf, BT_SDP_SVC_SEARCH_REQ, session->tid);
-}
-
-static uint16_t sdp_client_get_attribute_id_list_len(struct bt_sdp_attribute_id_list *ids)
-{
-	uint16_t len = 0;
-
-	if (ids == NULL || ids->count == 0) {
-		return sizeof(uint8_t) + sizeof(uint32_t);
-	}
-
-	for (size_t i = 0; i < ids->count; i++) {
-		if (ids->ranges[i].beginning == ids->ranges[i].ending) {
-			len += sizeof(uint8_t) + sizeof(uint16_t);
-		} else {
-			len += sizeof(uint8_t) + sizeof(uint32_t);
-		}
-	}
-
-	return len;
-}
-
-static void sdp_client_add_attribute_id(struct net_buf *buf, struct bt_sdp_attribute_id_list *ids)
-{
-	uint16_t len;
-
-	len = sdp_client_get_attribute_id_list_len(ids);
-	/*
-	 * Sequence definition where data is sequence of elements and where
-	 * additional next byte points the size of elements within
-	 */
-	if (len > UINT8_MAX) {
-		net_buf_add_u8(buf, BT_SDP_SEQ16);
-		net_buf_add_be16(buf, len);
-	} else {
-		net_buf_add_u8(buf, BT_SDP_SEQ8);
-		net_buf_add_u8(buf, len);
-	}
-
-	if (ids == NULL || ids->count == 0) {
-		/* Data element definition for two following 16bits range elements */
-		net_buf_add_u8(buf, BT_SDP_UINT32);
-		/* Get all attributes. It enables filter out wanted only attributes */
-		net_buf_add_be16(buf, 0x0000);
-		net_buf_add_be16(buf, 0xffff);
-		return;
-	}
-
-	for (size_t i = 0; i < ids->count; i++) {
-		if (ids->ranges[i].beginning == ids->ranges[i].ending) {
-			/* Data element definition for one following 16bits range elements */
-			net_buf_add_u8(buf, BT_SDP_UINT16);
-			/* Get all attributes. It enables filter out wanted only attributes */
-			net_buf_add_be16(buf, ids->ranges[i].beginning);
-		} else {
-			/* Data element definition for two following 16bits range elements */
-			net_buf_add_u8(buf, BT_SDP_UINT32);
-			/* Get all attributes. It enables filter out wanted only attributes */
-			net_buf_add_be16(buf, ids->ranges[i].beginning);
-			net_buf_add_be16(buf, ids->ranges[i].ending);
-		}
-	}
-}
-
-static uint16_t sdp_client_get_total_len(struct bt_sdp_client *session,
-					 const struct bt_sdp_discover_params *param)
-{
-	uint16_t len;
-
-	len = sdp_client_get_attribute_id_list_len(param->ids);
-	if (len > UINT8_MAX) {
-		len += sizeof(uint8_t) + sizeof(uint16_t);
-	} else {
-		len += sizeof(uint8_t) + sizeof(uint8_t);
-	}
-	len += sizeof(session->cstate.length) + session->cstate.length;
-
-	return len;
-}
-
-/* ServiceAttribute PDU, ref to BT Core 5.4, Vol 3, part B, 4.6.1 */
-static int sdp_client_sa_search(struct bt_sdp_client *session,
-				const struct bt_sdp_discover_params *param)
-{
-	struct net_buf *buf;
-	uint16_t len;
-
-	/* Update context param directly. */
-	session->param = param;
-
-	len = net_buf_tailroom(session->rec_buf);
-	if (!SDP_SA_ATTR_BYTE_IN_RANGE(len)) {
-		LOG_WRN("No more space to start next SDP discovery");
-		return -ENOMEM;
-	}
-
-	buf = bt_sdp_create_pdu();
-
-	/* Add service record handle  */
-	net_buf_add_be32(buf, param->handle);
-
-	/* Set attribute max bytes count to be returned from server */
-	net_buf_add_be16(buf, len);
-
-	/* Check the tailroom of the buffer */
-	len = sdp_client_get_total_len(session, param);
-	if (len > net_buf_tailroom(buf)) {
-		LOG_ERR("No space to add attribute ID");
-		net_buf_unref(buf);
-		return -ENOMEM;
-	}
-
-	/* Add attribute ID List */
-	sdp_client_add_attribute_id(buf, param->ids);
-
-	/*
-	 * Update and validate PDU ContinuationState. Initial SSA Request has
-	 * zero length continuation state since no interaction has place with
-	 * server so far, otherwise use the original state taken from remote's
-	 * last response PDU that is cached by SDP client context.
-	 */
-	if (session->cstate.length == 0U) {
-		net_buf_add_u8(buf, 0x00);
-	} else {
-		net_buf_add_u8(buf, session->cstate.length);
-		net_buf_add_mem(buf, session->cstate.data, session->cstate.length);
-	}
-
-	session->tid++;
-
-	return bt_sdp_send(&session->chan.chan, buf, BT_SDP_SVC_ATTR_REQ, session->tid);
-}
-
-/* ServiceSearchAttribute PDU, ref to BT Core 4.2, Vol 3, part B, 4.7.1 */
-static int sdp_client_ssa_search(struct bt_sdp_client *session,
-				 const struct bt_sdp_discover_params *param)
-{
-	struct net_buf *buf;
-	uint8_t uuid128[BT_UUID_SIZE_128];
-	uint16_t len;
-
-	/* Update context param directly. */
-	session->param = param;
-
-	len = net_buf_tailroom(session->rec_buf);
-	if (!SDP_SSA_ATTR_BYTE_IN_RANGE(len)) {
-		LOG_WRN("No more space to start next SDP discovery");
-		return -ENOMEM;
-	}
-
-	buf = bt_sdp_create_pdu();
-
-	/* BT_SDP_SEQ8 means length of sequence is on additional next byte */
-	net_buf_add_u8(buf, BT_SDP_SEQ8);
-
-	switch (param->uuid->type) {
-	case BT_UUID_TYPE_16:
-		/* Seq length */
-		net_buf_add_u8(buf, sizeof(uint8_t) + BT_UUID_SIZE_16);
-		/* Seq type */
-		net_buf_add_u8(buf, BT_SDP_UUID16);
-		/* Seq value */
-		net_buf_add_be16(buf, BT_UUID_16(param->uuid)->val);
-		break;
-	case BT_UUID_TYPE_32:
-		net_buf_add_u8(buf, sizeof(uint8_t) + BT_UUID_SIZE_32);
-		net_buf_add_u8(buf, BT_SDP_UUID32);
-		net_buf_add_be32(buf, BT_UUID_32(param->uuid)->val);
-		break;
-	case BT_UUID_TYPE_128:
-		net_buf_add_u8(buf, sizeof(uint8_t) + BT_UUID_SIZE_128);
-		net_buf_add_u8(buf, BT_SDP_UUID128);
-		sys_memcpy_swap(uuid128, BT_UUID_128(param->uuid)->val, sizeof(uuid128));
-		net_buf_add_mem(buf, uuid128, sizeof(uuid128));
-		break;
-	default:
-		LOG_ERR("Unknown UUID type %u", param->uuid->type);
-		net_buf_unref(buf);
-		return -EINVAL;
-	}
-
-	/* Set attribute max bytes count to be returned from server */
-	net_buf_add_be16(buf, len);
-
-	/* Check the tailroom of the buffer */
-	len = sdp_client_get_total_len(session, param);
-	if (len > net_buf_tailroom(buf)) {
-		LOG_ERR("No space to add attribute ID");
-		net_buf_unref(buf);
-		return -ENOMEM;
-	}
-
-	/* Add attribute ID List */
-	sdp_client_add_attribute_id(buf, param->ids);
-
-	/*
-	 * Update and validate PDU ContinuationState. Initial SSA Request has
-	 * zero length continuation state since no interaction has place with
-	 * server so far, otherwise use the original state taken from remote's
-	 * last response PDU that is cached by SDP client context.
-	 */
-	if (session->cstate.length == 0U) {
-		net_buf_add_u8(buf, 0x00);
-	} else {
-		net_buf_add_u8(buf, session->cstate.length);
-		net_buf_add_mem(buf, session->cstate.data,
-				session->cstate.length);
-	}
-
-	session->tid++;
-
-	return bt_sdp_send(&session->chan.chan, buf, BT_SDP_SVC_SEARCH_ATTR_REQ,
-			   session->tid);
-}
-
 static int sdp_client_discover(struct bt_sdp_client *session);
 
 static void sdp_client_params_iterator(struct bt_sdp_client *session)
@@ -2264,6 +1988,305 @@ static int sdp_client_notify_result(struct bt_sdp_client *session,
 	return 0;
 }
 
+static int sdp_client_ssa_sa_notify(struct bt_sdp_client *session)
+{
+	return sdp_client_notify_result(session, UUID_PARTIAL_RESOLVED);
+}
+
+#define GET_PARAM(__node) \
+	CONTAINER_OF(__node, struct bt_sdp_discover_params, _node)
+
+/* ServiceSearch PDU, ref to BT Core 5.4, Vol 3, part B, 4.5.1 */
+static int sdp_client_ss_search(struct bt_sdp_client *session,
+				const struct bt_sdp_discover_params *param)
+{
+	struct net_buf *buf;
+	uint8_t uuid128[BT_UUID_SIZE_128];
+
+	/* Update context param directly. */
+	session->param = param;
+
+	buf = bt_sdp_create_pdu();
+
+	/* BT_SDP_SEQ8 means length of sequence is on additional next byte */
+	net_buf_add_u8(buf, BT_SDP_SEQ8);
+
+	switch (param->uuid->type) {
+	case BT_UUID_TYPE_16:
+		/* Seq length */
+		net_buf_add_u8(buf, sizeof(uint8_t) + BT_UUID_SIZE_16);
+		/* Seq type */
+		net_buf_add_u8(buf, BT_SDP_UUID16);
+		/* Seq value */
+		net_buf_add_be16(buf, BT_UUID_16(param->uuid)->val);
+		break;
+	case BT_UUID_TYPE_32:
+		net_buf_add_u8(buf, sizeof(uint8_t) + BT_UUID_SIZE_32);
+		net_buf_add_u8(buf, BT_SDP_UUID32);
+		net_buf_add_be32(buf, BT_UUID_32(param->uuid)->val);
+		break;
+	case BT_UUID_TYPE_128:
+		net_buf_add_u8(buf, sizeof(uint8_t) + BT_UUID_SIZE_128);
+		net_buf_add_u8(buf, BT_SDP_UUID128);
+		sys_memcpy_swap(uuid128, BT_UUID_128(param->uuid)->val, sizeof(uuid128));
+		net_buf_add_mem(buf, uuid128, sizeof(uuid128));
+		break;
+	default:
+		LOG_ERR("Unknown UUID type %u", param->uuid->type);
+		net_buf_unref(buf);
+		return -EINVAL;
+	}
+
+	/* Set maximum number of service record handles */
+	net_buf_add_be16(buf, net_buf_tailroom(session->rec_buf) / SDP_RECORD_HANDLE_SIZE);
+	/*
+	 * Update and validate PDU ContinuationState. Initial SSA Request has
+	 * zero length continuation state since no interaction has place with
+	 * server so far, otherwise use the original state taken from remote's
+	 * last response PDU that is cached by SDP client context.
+	 */
+	if (session->cstate.length == 0U) {
+		net_buf_add_u8(buf, 0x00);
+	} else {
+		net_buf_add_u8(buf, session->cstate.length);
+		net_buf_add_mem(buf, session->cstate.data, session->cstate.length);
+	}
+
+	session->tid++;
+
+	return bt_sdp_send(&session->chan.chan, buf, BT_SDP_SVC_SEARCH_REQ, session->tid);
+}
+
+static uint16_t sdp_client_get_attribute_id_list_len(struct bt_sdp_attribute_id_list *ids)
+{
+	uint16_t len = 0;
+
+	if (ids == NULL || ids->count == 0) {
+		return sizeof(uint8_t) + sizeof(uint32_t);
+	}
+
+	for (size_t i = 0; i < ids->count; i++) {
+		if (ids->ranges[i].beginning == ids->ranges[i].ending) {
+			len += sizeof(uint8_t) + sizeof(uint16_t);
+		} else {
+			len += sizeof(uint8_t) + sizeof(uint32_t);
+		}
+	}
+
+	return len;
+}
+
+static void sdp_client_add_attribute_id(struct net_buf *buf, struct bt_sdp_attribute_id_list *ids)
+{
+	uint16_t len;
+
+	len = sdp_client_get_attribute_id_list_len(ids);
+	/*
+	 * Sequence definition where data is sequence of elements and where
+	 * additional next byte points the size of elements within
+	 */
+	if (len > UINT8_MAX) {
+		net_buf_add_u8(buf, BT_SDP_SEQ16);
+		net_buf_add_be16(buf, len);
+	} else {
+		net_buf_add_u8(buf, BT_SDP_SEQ8);
+		net_buf_add_u8(buf, len);
+	}
+
+	if (ids == NULL || ids->count == 0) {
+		/* Data element definition for two following 16bits range elements */
+		net_buf_add_u8(buf, BT_SDP_UINT32);
+		/* Get all attributes. It enables filter out wanted only attributes */
+		net_buf_add_be16(buf, 0x0000);
+		net_buf_add_be16(buf, 0xffff);
+		return;
+	}
+
+	for (size_t i = 0; i < ids->count; i++) {
+		if (ids->ranges[i].beginning == ids->ranges[i].ending) {
+			/* Data element definition for one following 16bits range elements */
+			net_buf_add_u8(buf, BT_SDP_UINT16);
+			/* Get all attributes. It enables filter out wanted only attributes */
+			net_buf_add_be16(buf, ids->ranges[i].beginning);
+		} else {
+			/* Data element definition for two following 16bits range elements */
+			net_buf_add_u8(buf, BT_SDP_UINT32);
+			/* Get all attributes. It enables filter out wanted only attributes */
+			net_buf_add_be16(buf, ids->ranges[i].beginning);
+			net_buf_add_be16(buf, ids->ranges[i].ending);
+		}
+	}
+}
+
+static uint16_t sdp_client_get_total_len(struct bt_sdp_client *session,
+					 const struct bt_sdp_discover_params *param)
+{
+	uint16_t len;
+
+	len = sdp_client_get_attribute_id_list_len(param->ids);
+	if (len > UINT8_MAX) {
+		len += sizeof(uint8_t) + sizeof(uint16_t);
+	} else {
+		len += sizeof(uint8_t) + sizeof(uint8_t);
+	}
+	len += sizeof(session->cstate.length) + session->cstate.length;
+
+	return len;
+}
+
+/* ServiceAttribute PDU, ref to BT Core 5.4, Vol 3, part B, 4.6.1 */
+static int sdp_client_sa_search(struct bt_sdp_client *session,
+				const struct bt_sdp_discover_params *param)
+{
+	struct net_buf *buf;
+	uint16_t len;
+
+	/* Update context param directly. */
+	session->param = param;
+
+	len = net_buf_tailroom(session->rec_buf);
+	if (!SDP_SA_ATTR_BYTE_IN_RANGE(len)) {
+		LOG_WRN("No more space to start next SDP discovery");
+		return -ENOMEM;
+	}
+
+	buf = bt_sdp_create_pdu();
+
+	/* Add service record handle  */
+	net_buf_add_be32(buf, param->handle);
+
+	/* Set attribute max bytes count to be returned from server */
+	net_buf_add_be16(buf, len);
+
+	/* Check the tailroom of the buffer */
+	len = sdp_client_get_total_len(session, param);
+	if (len > net_buf_tailroom(buf)) {
+		LOG_ERR("No space to add attribute ID");
+		net_buf_unref(buf);
+		return -ENOMEM;
+	}
+
+	/* Add attribute ID List */
+	sdp_client_add_attribute_id(buf, param->ids);
+
+	/*
+	 * Update and validate PDU ContinuationState. Initial SSA Request has
+	 * zero length continuation state since no interaction has place with
+	 * server so far, otherwise use the original state taken from remote's
+	 * last response PDU that is cached by SDP client context.
+	 */
+	if (session->cstate.length == 0U) {
+		net_buf_add_u8(buf, 0x00);
+	} else {
+		net_buf_add_u8(buf, session->cstate.length);
+		net_buf_add_mem(buf, session->cstate.data, session->cstate.length);
+	}
+
+	session->tid++;
+
+	return bt_sdp_send(&session->chan.chan, buf, BT_SDP_SVC_ATTR_REQ, session->tid);
+}
+
+/* ServiceSearchAttribute PDU, ref to BT Core 4.2, Vol 3, part B, 4.7.1 */
+static int sdp_client_ssa_search(struct bt_sdp_client *session,
+				 const struct bt_sdp_discover_params *param)
+{
+	struct net_buf *buf;
+	uint8_t uuid128[BT_UUID_SIZE_128];
+	uint16_t len;
+
+	/* Update context param directly. */
+	session->param = param;
+
+	len = net_buf_tailroom(session->rec_buf);
+	if (!SDP_SSA_ATTR_BYTE_IN_RANGE(len)) {
+		int err;
+
+		LOG_WRN("No more space to start next SDP discovery");
+
+		if (session->rec_buf->len == 0) {
+			return -ENOMEM;
+		}
+
+		/* Notify current received data */
+		err = sdp_client_ssa_sa_notify(session);
+		if (err != 0) {
+			LOG_ERR("Failed to notify received data: %d", err);
+			return err;
+		}
+
+		len = net_buf_tailroom(session->rec_buf);
+		if (!SDP_SSA_ATTR_BYTE_IN_RANGE(len)) {
+			LOG_WRN("No more space of buffer for SDP discovery");
+			return -ENOMEM;
+		}
+	}
+
+	buf = bt_sdp_create_pdu();
+
+	/* BT_SDP_SEQ8 means length of sequence is on additional next byte */
+	net_buf_add_u8(buf, BT_SDP_SEQ8);
+
+	switch (param->uuid->type) {
+	case BT_UUID_TYPE_16:
+		/* Seq length */
+		net_buf_add_u8(buf, sizeof(uint8_t) + BT_UUID_SIZE_16);
+		/* Seq type */
+		net_buf_add_u8(buf, BT_SDP_UUID16);
+		/* Seq value */
+		net_buf_add_be16(buf, BT_UUID_16(param->uuid)->val);
+		break;
+	case BT_UUID_TYPE_32:
+		net_buf_add_u8(buf, sizeof(uint8_t) + BT_UUID_SIZE_32);
+		net_buf_add_u8(buf, BT_SDP_UUID32);
+		net_buf_add_be32(buf, BT_UUID_32(param->uuid)->val);
+		break;
+	case BT_UUID_TYPE_128:
+		net_buf_add_u8(buf, sizeof(uint8_t) + BT_UUID_SIZE_128);
+		net_buf_add_u8(buf, BT_SDP_UUID128);
+		sys_memcpy_swap(uuid128, BT_UUID_128(param->uuid)->val, sizeof(uuid128));
+		net_buf_add_mem(buf, uuid128, sizeof(uuid128));
+		break;
+	default:
+		LOG_ERR("Unknown UUID type %u", param->uuid->type);
+		net_buf_unref(buf);
+		return -EINVAL;
+	}
+
+	/* Set attribute max bytes count to be returned from server */
+	net_buf_add_be16(buf, len);
+
+	/* Check the tailroom of the buffer */
+	len = sdp_client_get_total_len(session, param);
+	if (len > net_buf_tailroom(buf)) {
+		LOG_ERR("No space to add attribute ID");
+		net_buf_unref(buf);
+		return -ENOMEM;
+	}
+
+	/* Add attribute ID List */
+	sdp_client_add_attribute_id(buf, param->ids);
+
+	/*
+	 * Update and validate PDU ContinuationState. Initial SSA Request has
+	 * zero length continuation state since no interaction has place with
+	 * server so far, otherwise use the original state taken from remote's
+	 * last response PDU that is cached by SDP client context.
+	 */
+	if (session->cstate.length == 0U) {
+		net_buf_add_u8(buf, 0x00);
+	} else {
+		net_buf_add_u8(buf, session->cstate.length);
+		net_buf_add_mem(buf, session->cstate.data,
+				session->cstate.length);
+	}
+
+	session->tid++;
+
+	return bt_sdp_send(&session->chan.chan, buf, BT_SDP_SVC_SEARCH_ATTR_REQ,
+			   session->tid);
+}
+
 static int sdp_client_discover(struct bt_sdp_client *session)
 {
 	const struct bt_sdp_discover_params *param;
@@ -2421,11 +2444,6 @@ static int sdp_client_receive_ss(struct bt_sdp_client *session, struct net_buf *
 	sdp_client_params_iterator(session);
 
 	return 0;
-}
-
-static int sdp_client_ssa_sa_notify(struct bt_sdp_client *session)
-{
-	return sdp_client_notify_result(session, UUID_PARTIAL_RESOLVED);
 }
 
 static int sdp_client_receive_ssa_sa(struct bt_sdp_client *session, struct net_buf *buf)
