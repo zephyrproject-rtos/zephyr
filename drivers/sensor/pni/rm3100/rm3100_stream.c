@@ -32,7 +32,7 @@ static void rm3100_complete_result(struct rtio *ctx, const struct rtio_sqe *sqe,
 	if (!edata->header.events.drdy) {
 		LOG_ERR("Status register does not have DRDY bit set: 0x%02x",
 			edata->header.status);
-	} else if (data->stream.settings.opt == SENSOR_STREAM_DATA_INCLUDE) {
+	} else if (data->stream.settings.opt != SENSOR_STREAM_DATA_DROP) {
 		edata->header.channels |= rm3100_encode_channel(SENSOR_CHAN_MAGN_XYZ);
 	}
 
