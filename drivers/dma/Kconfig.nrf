@@ -1,0 +1,6 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config DMA_NRF_MVDMA
+	depends on DT_HAS_NORDIC_NRF_MVDMA_ENABLED
+	bool "nRF MVDMA driver"
