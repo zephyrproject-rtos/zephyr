@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		commander = &lin_skeleton0;
+		responder = &lin_skeleton1;
+	};
+
+	lin_skeleton0: lin_skeleton0 {
+		compatible = "zephyr,lin-skeleton";
+	};
+
+	lin_skeleton1: lin_skeleton1 {
+		compatible = "zephyr,lin-skeleton";
+	};
+};
