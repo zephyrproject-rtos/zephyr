@@ -1932,17 +1932,26 @@ static int sdp_client_notify_result(struct bt_sdp_client *session,
 				buf = net_buf_alloc(session->param->pool, K_NO_WAIT);
 				if (buf != NULL) {
 					if (net_buf_tailroom(buf) < len) {
-						LOG_ERR("No more buffer space for SDP discover. "
-							"Need to increase buffer size of the "
-							"receiving pool.");
-						net_buf_unref(buf);
-						return -ENOMEM;
+						goto no_more_space;
 					}
+
 					net_buf_add_mem(buf, src, len);
+					if (net_buf_tailroom(buf) <=
+					    net_buf_tailroom(session->rec_buf)) {
+						goto no_more_space;
+					}
+
 					net_buf_unref(session->rec_buf);
 					session->rec_buf = buf;
 					LOG_DBG("Continue discovery with new buf %p", buf);
 					return 0;
+
+no_more_space:
+					LOG_ERR("Allocated buffer has not more space for the next "
+						"SDP discover. Need to increase date size of the "
+						"receiving pool.");
+					net_buf_unref(buf);
+					return -ENOMEM;
 				}
 
 				net_buf_reset(session->rec_buf);
