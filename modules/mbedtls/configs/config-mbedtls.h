@@ -337,7 +337,7 @@
 #define MBEDTLS_CTR_DRBG_C
 #endif
 
-#if defined(CONFIG_MBEDTLS_HMAC_DRBG_ENABLED)
+#if defined(CONFIG_MBEDTLS_HMAC_DRBG_C)
 #define MBEDTLS_HMAC_DRBG_C
 #endif
 
