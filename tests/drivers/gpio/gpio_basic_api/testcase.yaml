@@ -66,6 +66,8 @@ tests:
       - mimxrt1060_evk@C/mimxrt1062/qspi
       - lpcxpresso55s69/lpc55s69/cpu0
       - lpcxpresso55s36
+      - frdm_mcxw23
+      - mcxw23_evk
   drivers.gpio.2pin_arduino_customized:
     min_flash: 34
     depends_on:
@@ -85,6 +87,8 @@ tests:
       - nucleo_h745zi_q/stm32h745xx/m7
       - nucleo_h745zi_q/stm32h745xx/m4
       - stm32mp257f_ev1/stm32mp257fxx/m33
+      - frdm_mcxw23
+      - mcxw23_evk
     integration_platforms:
       - mimxrt595_evk/mimxrt595s/cm33
   drivers.gpio.st_2pin_arduino:
