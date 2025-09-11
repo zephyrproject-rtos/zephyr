@@ -600,7 +600,7 @@ config MBEDTLS_PSA_CRYPTO_CLIENT
 	depends on BUILD_WITH_TFM || MBEDTLS_PSA_CRYPTO_C
 	select PSA_CRYPTO_CLIENT
 
-config MBEDTLS_LMS
+config MBEDTLS_LMS_C
 	bool "Support LMS signature schemes"
 	depends on MBEDTLS_PSA_CRYPTO_CLIENT
 	depends on MBEDTLS_SHA256

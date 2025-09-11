@@ -41,7 +41,7 @@
 #define MBEDTLS_HAVE_ASM
 #endif
 
-#if defined(CONFIG_MBEDTLS_LMS)
+#if defined(CONFIG_MBEDTLS_LMS_C)
 #define MBEDTLS_LMS_C
 #endif
 
