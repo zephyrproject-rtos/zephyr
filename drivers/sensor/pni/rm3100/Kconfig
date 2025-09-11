@@ -6,8 +6,10 @@ config RM3100
 	bool "RM3100 3-Axis Magnetometer"
 	default y
 	depends on DT_HAS_PNI_RM3100_ENABLED
-	select I2C
-	select I2C_RTIO
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_PNI_RM3100),spi)
+	select SPI_RTIO if $(dt_compat_on_bus,$(DT_COMPAT_PNI_RM3100),spi)
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_PNI_RM3100),i2c)
+	select I2C_RTIO if $(dt_compat_on_bus,$(DT_COMPAT_PNI_RM3100),i2c)
 	select SENSOR_ASYNC_API
 	help
 	  Enable driver for PNI RM3100 high-accuracy 3-axis magnetometer.
