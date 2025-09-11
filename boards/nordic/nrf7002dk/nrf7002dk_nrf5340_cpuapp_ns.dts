@@ -7,6 +7,8 @@
 /dts-v1/;
 #include <nordic/nrf5340_cpuappns_qkaa.dtsi>
 #include "nrf5340_cpuapp_common.dtsi"
+#include "nordic/nrf5340_sram_partition.dtsi"
+#include "nordic/nrf5340_cpuapp_ns_partition.dtsi"
 
 / {
 	model = "Nordic NRF5340 DK NRF5340 Application";
