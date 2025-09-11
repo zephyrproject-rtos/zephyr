@@ -1,0 +1,32 @@
+# Copyright (c) 2025 Anthony Williams <anthony289478@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    PNI RM3100 3-axis Magnetometer.
+
+    The RM3100 can use either I2C or SPI as a communication bus.
+    When using SPI, the device only supports SPI mode 0 or 3.
+    When setting the odr property in a .dts or .dtsi file you may include rm3100.h
+    and use the macros defined there.
+
+    Example:
+    #include <zephyr/dt-bindings/sensor/rm3100.h>
+
+    &spi0 {
+        cs-gpios = <&arduino_header 10 GPIO_ACTIVE_LOW>;
+        rm3100@0 {
+            compatible = "pni,rm3100";
+            reg = <0x0>;
+            spi-max-frequency = <8000000>;
+
+            // Enable SPI mode 3. Remove to use mode 0.
+            spi-cpol;
+            spi-pha;
+
+            odr = <RM3100_DT_ODR_600>;
+        };
+    };
+
+compatible: "pni,rm3100"
+
+include: ["spi-device.yaml", "pni,rm3100-common.yaml"]
