@@ -119,7 +119,7 @@ PackageCopyrightText: {pkg.cfg.copyrightText}
         if re.fullmatch(CPE23TYPE_REGEX, ref):
             f.write(f"ExternalRef: SECURITY cpe23Type {ref}\n")
         elif re.fullmatch(PURL_REGEX, ref):
-            f.write(f"ExternalRef: PACKAGE_MANAGER purl {ref}\n")
+            f.write(f"ExternalRef: PACKAGE-MANAGER purl {ref}\n")
         else:
             log.wrn(f"Unknown external reference ({ref})")
 
