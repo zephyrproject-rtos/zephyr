@@ -23,15 +23,15 @@ static inline int z_vrfy_zephyr_fputc(int c, FILE *stream)
 #include <zephyr/syscalls/zephyr_fputc_mrsh.c>
 #endif
 
-#ifndef CONFIG_ZVFS
 static int picolibc_put(char a, FILE *f)
 {
 	zephyr_fputc(a, f);
 	return 0;
 }
 
-static LIBC_DATA FILE __stdout = FDEV_SETUP_STREAM(picolibc_put, NULL, NULL, 0);
-static LIBC_DATA FILE __stdin = FDEV_SETUP_STREAM(NULL, NULL, NULL, 0);
+#ifndef CONFIG_ZVFS
+static LIBC_DATA FILE __stdout = FDEV_SETUP_STREAM(picolibc_put, NULL, NULL, _FDEV_SETUP_WRITE);
+static LIBC_DATA FILE __stdin = FDEV_SETUP_STREAM(NULL, NULL, NULL, _FDEV_SETUP_READ);
 #endif
 
 #ifdef __strong_reference
@@ -48,28 +48,27 @@ STDIO_ALIAS(stderr);
 
 void __stdout_hook_install(int (*hook)(int))
 {
+	_stdout_hook = hook;
 #ifdef CONFIG_ZVFS
+	stdout->put = picolibc_put;
+	stdout->flags |= _FDEV_SETUP_WRITE;
+
 	struct __file_bufio *bp = (struct __file_bufio *)stdout;
 
 	bp->ptr = INT_TO_POINTER(1 /* STDOUT_FILENO */);
 	bp->bflags |= _FDEV_SETUP_WRITE;
-#else
-	__stdout.flags |= _FDEV_SETUP_WRITE;
 #endif
-
-	_stdout_hook = hook;
 }
 
 void __stdin_hook_install(unsigned char (*hook)(void))
 {
+	stdin->get = (int (*)(FILE *))hook;
 #ifdef CONFIG_ZVFS
+	stdin->flags |= _FDEV_SETUP_READ;
 	struct __file_bufio *bp = (struct __file_bufio *)stdin;
 
 	bp->bflags |= _FDEV_SETUP_READ;
 	/* bp->get = (int (*)(FILE *))hook; */
 	bp->ptr = INT_TO_POINTER(0 /* STDIN_FILENO */);
-#else
-	__stdin.get = (int (*)(FILE *)) hook;
-	__stdin.flags |= _FDEV_SETUP_READ;
 #endif
 }

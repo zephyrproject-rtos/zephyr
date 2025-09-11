@@ -593,11 +593,26 @@ int zvfs_ioctl(int fd, unsigned long request, va_list args)
  * fd operations for stdio/stdout/stderr
  */
 
+int z_impl_zephyr_read_stdin(char *buf, int nbytes);
 int z_impl_zephyr_write_stdout(const char *buf, int nbytes);
 
 static ssize_t stdinout_read_vmeth(void *obj, void *buffer, size_t count)
 {
-	return 0;
+#if defined(CONFIG_NEWLIB_LIBC) || defined(CONFIG_ARCMWDT_LIBC)
+	return z_impl_zephyr_read_stdin(buffer, count);
+#else
+	int r = 0;
+
+	while (r < count) {
+		int c = getchar();
+
+		if (c == '\n' || c == '\r') {
+			break;
+		}
+		((char *)buffer)[r++] = c;
+	}
+	return r;
+#endif
 }
 
 static ssize_t stdinout_write_vmeth(void *obj, const void *buffer, size_t count)
@@ -605,7 +620,7 @@ static ssize_t stdinout_write_vmeth(void *obj, const void *buffer, size_t count)
 #if defined(CONFIG_NEWLIB_LIBC) || defined(CONFIG_ARCMWDT_LIBC)
 	return z_impl_zephyr_write_stdout(buffer, count);
 #else
-	return 0;
+	return printf("%.*s", (int)count, (const char *)buffer);
 #endif
 }
 
