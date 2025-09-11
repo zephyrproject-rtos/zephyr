@@ -15,7 +15,6 @@ config CLOCK_CONTROL_INFINEON_CAT1
 config CLOCK_CONTROL_IFX_CAT1_FIXED_CLOCK
 	bool "Infineon CAT1 Fixed clock driver"
 	default y
-	depends on SOC_FAMILY_INFINEON_CAT1
 	depends on DT_HAS_INFINEON_FIXED_CLOCK_ENABLED
 	help
 	  This option enables the Fixed clock driver for Infineon CAT1 family.
@@ -23,7 +22,6 @@ config CLOCK_CONTROL_IFX_CAT1_FIXED_CLOCK
 config CLOCK_CONTROL_IFX_CAT1_FIXED_FACTOR_CLOCK
 	bool "Infineon CAT1 Fixed factor clock driver"
 	default y
-	depends on SOC_FAMILY_INFINEON_CAT1
 	depends on DT_HAS_INFINEON_FIXED_FACTOR_CLOCK_ENABLED
 	help
 	  This option enables the Fixed clock driver for Infineon CAT1 family.
@@ -31,7 +29,6 @@ config CLOCK_CONTROL_IFX_CAT1_FIXED_FACTOR_CLOCK
 config CLOCK_CONTROL_IFX_CAT1_PERI_CLOCK
 	bool "Infineon CAT1 Fixed clock driver"
 	default y
-	depends on SOC_FAMILY_INFINEON_CAT1
 	depends on DT_HAS_INFINEON_CAT1_PERI_DIV_ENABLED
 	help
 	  This option enables the Peripheral clock driver for Infineon CAT1 family.
