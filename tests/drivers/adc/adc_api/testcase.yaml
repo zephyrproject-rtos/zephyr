@@ -77,9 +77,13 @@ tests:
       - frdm_k82f
   drivers.adc.dma_espressif:
     extra_args:
-      - platform:esp32s3_devkitc/esp32s3/procpu:DTC_OVERLAY_FILE="boards/esp32s3_devkitc_procpu.overlay"
       - EXTRA_CONF_FILE="overlay-dma-esp32.conf"
     depends_on:
-      - dma
+      - adc
     platform_allow:
+      - esp32_devkitc/esp32/procpu
+      - esp32c3_devkitm
+      - esp32c6_devkitc/esp32c6/hpcore
+      - esp32h2_devkitm
+      - esp32s2_devkitc
       - esp32s3_devkitc/esp32s3/procpu
