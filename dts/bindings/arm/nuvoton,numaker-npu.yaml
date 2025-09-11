@@ -19,19 +19,3 @@ properties:
 
   clocks:
     required: true
-
-  flush-mask:
-    type: int
-    default: 2
-    description: |
-      Base pointer cache flush mask passed to ethos-u core driver
-      ethosu_set_basep_cache_mask(). Default is to follow ethos-u
-      core driver for scratch region.
-
-  invalidate-mask:
-    type: int
-    default: 2
-    description: |
-      Base pointer cache invalidation mask passed to ethos-u core driver
-      ethosu_set_basep_cache_mask(). Default is to follow ethos-u
-      core driver for scratch region.
