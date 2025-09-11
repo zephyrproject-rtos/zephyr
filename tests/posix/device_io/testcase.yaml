@@ -12,6 +12,10 @@ tests:
   portability.posix.device_io:
     extra_configs:
       - CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE=256
+  portability.posix.device_io.tty_stdio:
+    filter: CONFIG_UART_CONSOLE
+    extra_configs:
+      - CONFIG_CONSOLE_SUBSYS=y
   portability.posix.device_io.armclang_std_libc:
     toolchain_allow: armclang
     extra_configs:
