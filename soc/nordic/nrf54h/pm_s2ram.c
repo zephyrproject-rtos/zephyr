@@ -7,6 +7,7 @@
 #include <zephyr/arch/common/pm_s2ram.h>
 #include <zephyr/linker/sections.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/drivers/dma/dma_nrf_mvdma.h>
 #include <hal/nrf_resetinfo.h>
 #include "pm_s2ram.h"
 #include "power.h"
@@ -249,6 +250,9 @@ int soc_s2ram_suspend(pm_s2ram_system_off_fn_t system_off)
 	mpu_restore(&backup_data.mpu_context);
 	nvic_restore(&backup_data.nvic_context);
 	scb_restore(&backup_data.scb_context);
+	if (IS_ENABLED(CONFIG_DMA_NRF_MVDMA)) {
+		nrf_mvdma_resume();
+	}
 
 	return ret;
 }
