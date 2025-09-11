@@ -19,4 +19,5 @@ supported:
   - adc
   - spi
   - sdhc
+  - lin
 vendor: renesas
