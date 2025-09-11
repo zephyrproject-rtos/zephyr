@@ -16,7 +16,7 @@ config MBEDTLS_SSL_PROTO_TLS1_2
 
 if MBEDTLS_SSL_PROTO_TLS1_2
 
-config MBEDTLS_DTLS
+config MBEDTLS_SSL_PROTO_DTLS
 	bool "Support for DTLS"
 
 endif # MBEDTLS_SSL_PROTO_TLS1_2
@@ -666,7 +666,7 @@ endif # MBEDTLS_PSA_CRYPTO_C
 
 config MBEDTLS_SSL_DTLS_CONNECTION_ID
 	bool "DTLS Connection ID extension"
-	depends on MBEDTLS_DTLS
+	depends on MBEDTLS_SSL_PROTO_DTLS
 	help
 	  Enable support for the DTLS Connection ID extension
 	  which allows to identify DTLS connections across changes
