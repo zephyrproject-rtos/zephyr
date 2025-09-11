@@ -108,7 +108,7 @@ static void rm3100_stream_get_data(const struct device *dev)
 
 	uint8_t val;
 
-	val = RM3100_REG_STATUS;
+	val = RM3100_REG_STATUS | REG_READ_BIT;
 
 	rtio_sqe_prep_tiny_write(status_wr_sqe,
 				 data->rtio.iodev,
@@ -124,10 +124,13 @@ static void rm3100_stream_get_data(const struct device *dev)
 			   &edata->header.status,
 			   sizeof(edata->header.status),
 			   NULL);
-	status_rd_sqe->iodev_flags |= RTIO_IODEV_I2C_STOP | RTIO_IODEV_I2C_RESTART;
+
+	if (rtio_is_i2c(data->rtio.type)) {
+		status_rd_sqe->iodev_flags |= RTIO_IODEV_I2C_STOP | RTIO_IODEV_I2C_RESTART;
+	}
 	status_rd_sqe->flags |= RTIO_SQE_CHAINED;
 
-	val = RM3100_REG_MX;
+	val = RM3100_REG_MX | REG_READ_BIT;
 
 	rtio_sqe_prep_tiny_write(write_sqe,
 				 data->rtio.iodev,
@@ -143,7 +146,9 @@ static void rm3100_stream_get_data(const struct device *dev)
 			   edata->payload,
 			   sizeof(edata->payload),
 			   NULL);
-	read_sqe->iodev_flags |= RTIO_IODEV_I2C_STOP | RTIO_IODEV_I2C_RESTART;
+	if (rtio_is_i2c(data->rtio.type)) {
+		read_sqe->iodev_flags |= RTIO_IODEV_I2C_STOP | RTIO_IODEV_I2C_RESTART;
+	}
 	read_sqe->flags |= RTIO_SQE_CHAINED;
 
 	rtio_sqe_prep_callback_no_cqe(complete_sqe,
