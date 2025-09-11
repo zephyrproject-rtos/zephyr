@@ -1,0 +1,28 @@
+# Copyright (c) 2025 Core Devices LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: SF32LB GPIO (parent)
+
+compatible: "sifli,sf32lb-gpio-parent"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  ranges:
+    type: array
+    required: true
+
+  "#address-cells":
+    const: 1
+
+  "#size-cells":
+    const: 1
+
+  clocks:
+    required: true
+
+  interrupts:
+    required: true
