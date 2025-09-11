@@ -15,6 +15,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/arch/cpu.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/debug/sparse.h>
 
 #ifdef __cplusplus
@@ -34,6 +35,17 @@ extern "C" {
  * @ingroup os_services
  * @{
  */
+
+/** @brief Token used to ensure that variable is aligned and padded to the data cache line. */
+#ifndef __cacheline_aligned
+#if	defined(CONFIG_DCACHE) && !defined(CONFIG_DCACHE_LINE_SIZE_DETECT)
+#define __cacheline_aligned \
+	__attribute__((__section__(".data_cache" __FILE__ STRINGIFY(__LINE__)))) \
+	__aligned(CONFIG_DCACHE_LINE_SIZE)
+#else
+#define __cacheline_aligned
+#endif
+#endif
 
 /**
  * @brief Enable the d-cache
