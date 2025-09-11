@@ -112,8 +112,9 @@ static void usbh_class_probe_function(struct usb_device *const udev,
 		}
 
 		if (!usbh_class_is_matching(c_node->filters, filtered_data)) {
-			LOG_DBG("Class %s not matching interface %u",
-				c_data->name, iface);
+			LOG_DBG("Class %s not matching interface %u (%u %u %u)",
+				c_data->name, iface,
+				filtered_data->class, filtered_data->sub, filtered_data->proto);
 			continue;
 		}
 
@@ -135,19 +136,19 @@ static void usbh_class_probe_function(struct usb_device *const udev,
 void usbh_class_probe_device(struct usb_device *const udev)
 {
 	const struct usb_desc_header *desc = udev->cfg_desc;
-	struct usbh_class_filter filtered_val;
+	struct usbh_class_filter filtered_data;
 	uint8_t iface;
 	int ret;
 
 	/* To support single-function devices, match against the entire device */
 
-	filtered_val.vid = udev->dev_desc.idVendor;
-	filtered_val.pid = udev->dev_desc.idProduct;
-	filtered_val.class = udev->dev_desc.bDeviceClass;
-	filtered_val.sub = udev->dev_desc.bDeviceSubClass;
-	filtered_val.proto = udev->dev_desc.bDeviceProtocol;
+	filtered_data.vid = udev->dev_desc.idVendor;
+	filtered_data.pid = udev->dev_desc.idProduct;
+	filtered_data.class = udev->dev_desc.bDeviceClass;
+	filtered_data.sub = udev->dev_desc.bDeviceSubClass;
+	filtered_data.proto = udev->dev_desc.bDeviceProtocol;
 
-	usbh_class_probe_function(udev, &filtered_val, USBH_CLASS_IFNUM_DEVICE);
+	usbh_class_probe_function(udev, &filtered_data, USBH_CLASS_IFNUM_DEVICE);
 
 	/* To support multi-function devices, match against each function */
 
@@ -157,14 +158,14 @@ void usbh_class_probe_device(struct usb_device *const udev)
 			break;
 		}
 
-		ret = usbh_desc_get_iface_info(desc, &filtered_val, &iface);
+		ret = usbh_desc_get_iface_info(desc, &filtered_data, &iface);
 		if (ret != 0) {
 			LOG_ERR("Failed to collect class codes for matching interface %u",
 				iface);
 			continue;
 		}
 
-		usbh_class_probe_function(udev, &filtered_val, iface);
+		usbh_class_probe_function(udev, &filtered_data, iface);
 	}
 }
 
@@ -182,12 +183,17 @@ bool usbh_class_is_matching(const struct usbh_class_filter *const filter_rules,
 
 		if (rule->flags & USBH_CLASS_MATCH_VID_PID &&
 		    (filtered_data->vid != rule->vid || filtered_data->pid != rule->pid)) {
+			LOG_DBG("VID:PID %04x:%04x != %04x:%04x, skipping",
+		    		filtered_data->vid, filtered_data->pid, rule->vid, rule->pid);
 			continue;
 		}
 
 		if (rule->flags & USBH_CLASS_MATCH_CODE_TRIPLE &&
 		    (filtered_data->class != rule->class || filtered_data->sub != rule->sub ||
 		     filtered_data->proto != rule->proto)) {
+			LOG_DBG("Code triple (%d %d %d) != (%d %d %d), skipping",
+				filtered_data->class, filtered_data->sub, filtered_data->proto,
+				rule->class, rule->sub, rule->proto);
 			continue;
 		}
 
