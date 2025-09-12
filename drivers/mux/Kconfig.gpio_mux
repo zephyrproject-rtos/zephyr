@@ -1,0 +1,11 @@
+# Copyright NXP 2025
+# SPDX-License-Identifier: Apache-2.0
+
+config MUX_GPIO_MUX
+	bool "GPIO-based External multiplexor driver"
+	default y
+	depends on DT_HAS_GPIO_MUX_ENABLED
+	select GPIO
+	help
+	  This driver uses GPIOs to control the select lines of
+	  an external multiplexor circuit.
