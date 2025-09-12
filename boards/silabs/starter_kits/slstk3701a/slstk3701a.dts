@@ -72,6 +72,27 @@
 	};
 };
 
+&usart1 {
+	compatible = "silabs,usart-spi";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	cs-gpios = <&gpioc 14 GPIO_ACTIVE_HIGH>;
+	pinctrl-0 = <&usart1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	lpm013m126a: lpm013m126a@0 {
+		compatible = "jdi,lpm013m126a";
+		reg = <0>;
+		spi-max-frequency = <2000000>;
+		width = <176>;
+		height = <176>;
+		disp-gpios = <&gpioa 9 GPIO_ACTIVE_HIGH>;
+		extcomin-gpios = <&gpioa 11 GPIO_ACTIVE_HIGH>;
+		extcomin-frequency = <60>;
+	};
+};
+
 &usart0 {
 	current-speed = <115200>;
 	pinctrl-0 = <&usart0_default>;
