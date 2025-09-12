@@ -535,8 +535,12 @@ void lll_conn_isr_rx(void *param)
 
 	/* assert if radio packet ptr is not set and radio started tx */
 	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
-		LL_ASSERT_MSG(!radio_is_ready(), "%s: Radio ISR latency: %u", __func__,
-			      lll_prof_latency_get());
+		if (radio_is_ready()) {
+			lll_prof_cputime_capture();
+			LL_ASSERT_MSG(false, "%s: %u %u %u Radio ISR latency: %u (%u)", __func__,
+				      trx_cnt, crc_ok, pdu_data_rx->len,
+				      lll_prof_latency_get(), lll_prof_cputime_get());
+		}
 	} else {
 		LL_ASSERT_ERR(!radio_is_ready());
 	}
