@@ -36,10 +36,6 @@ UART/serial and console
 SMP protocol specification by MCUmgr subsystem of Zephyr uses basic framing
 of data to allow multiplexing of UART channel. Multiplexing requires
 prefixing each frame with two byte marker and terminating it with newline.
-Currently MCUmgr imposes a 127 byte limit on frame size, although there
-are no real protocol constraints that require that limit.
-The limit includes the prefix and the newline character, so the allowed payload
-size is actually 124 bytes.
 
 Although no such transport exists in Zephyr, it is possible to implement
 MCUmgr client/server over UART transport that does not have framing at all,
