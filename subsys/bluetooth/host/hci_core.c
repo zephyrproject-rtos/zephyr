@@ -282,6 +282,8 @@ void bt_send_one_host_num_completed_packets(uint16_t handle)
 	BT_ASSERT_MSG(err == 0, "Unable to send Host NCP (err %d)", err);
 }
 
+#include "bt_taskq.h"
+
 #if defined(CONFIG_BT_TESTING)
 __weak void bt_testing_trace_event_acl_pool_destroy(struct net_buf *buf)
 {

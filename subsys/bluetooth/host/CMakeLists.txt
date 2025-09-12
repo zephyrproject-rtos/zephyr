@@ -11,6 +11,7 @@ zephyr_library_sources_ifdef(CONFIG_BT_MONITOR          monitor.c)
 zephyr_library_sources_ifdef(CONFIG_BT_SETTINGS         settings.c)
 zephyr_library_sources_ifdef(CONFIG_BT_HOST_CCM         aes_ccm.c)
 zephyr_library_sources_ifdef(CONFIG_BT_LONG_WQ          long_wq.c)
+zephyr_library_sources(bt_taskq.c)
 
 if(CONFIG_BT_HCI_HOST)
   zephyr_library_sources(
