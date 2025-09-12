@@ -23,7 +23,4 @@ CONFIG_POWER_SUPPLY_SMPS_1V8_SUPPLIES_EXT_AND_LDO=y
 # Don't start M4 during the M7 boot (this is what the original Opta does)
 CONFIG_STM32H7_BOOT_M4_AT_INIT=n
 
-# Enable console
-CONFIG_SERIAL=y
-CONFIG_CONSOLE=y
-CONFIG_UART_CONSOLE=y
+# On M7, USB CDC ACM is used as the UART console backend by default
