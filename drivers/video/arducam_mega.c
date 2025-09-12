@@ -1123,20 +1123,6 @@ static int arducam_mega_controls(const struct device *dev)
 	if (ret < 0) {
 		return ret;
 	}
-	ret = video_init_ctrl(
-		&ctrls->device_address, dev, VIDEO_CID_ARDUCAM_DEV_ADDR,
-		(struct video_ctrl_range){.min = 0, .max = 65535, .step = 1, .def = 0});
-	ctrls->device_address.flags |= VIDEO_CTRL_FLAG_READ_ONLY;
-	if (ret < 0) {
-		return ret;
-	}
-	ret = video_init_ctrl(
-		&ctrls->camera_id, dev, VIDEO_CID_ARDUCAM_CAM_ID,
-		(struct video_ctrl_range){.min = 0, .max = 65535, .step = 1, .def = 0});
-	ctrls->camera_id.flags |= VIDEO_CTRL_FLAG_READ_ONLY;
-	if (ret < 0) {
-		return ret;
-	}
 	ret = video_init_int_menu_ctrl(
 		&ctrls->linkfreq, dev, VIDEO_CID_LINK_FREQ, ARDUCAM_MEGA_640_480_LINK_FREQ_ID,
 		arducam_mega_link_frequency, ARRAY_SIZE(arducam_mega_link_frequency));
