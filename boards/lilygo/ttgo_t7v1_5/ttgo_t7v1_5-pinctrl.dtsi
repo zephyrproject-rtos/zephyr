@@ -14,6 +14,7 @@
 			pinmux = <UART0_TX_GPIO1>;
 			output-high;
 		};
+
 		group2 {
 			pinmux = <UART0_RX_GPIO3>;
 			bias-pull-up;
@@ -25,6 +26,7 @@
 			pinmux = <SPIM3_MISO_GPIO19>,
 				 <SPIM3_SCLK_GPIO18>;
 		};
+
 		/* GPIO5 is CS */
 		group2 {
 			pinmux = <SPIM3_MOSI_GPIO23>;

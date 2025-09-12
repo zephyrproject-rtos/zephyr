@@ -31,6 +31,7 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		green_led: led_0 {
 			gpios = <&pioc 8 GPIO_ACTIVE_LOW>;
 			label = "User LED";

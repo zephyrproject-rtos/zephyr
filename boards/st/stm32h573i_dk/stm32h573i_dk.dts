@@ -13,6 +13,7 @@
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 #include <zephyr/dt-bindings/memory-controller/stm32-fmc-nor-psram.h>
 #include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
+
 / {
 	model = "STMicroelectronics STM32H573I DISCOVERY KIT board";
 	compatible = "st,stm32h573i-dk";
@@ -83,7 +84,7 @@
 		reg = <0x90000000 DT_SIZE_M(64)>;
 		zephyr,memory-region = "EXTMEM";
 		/* The ATTR_MPU_EXTMEM attribut causing a MPU FAULT */
-		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_IO) )>;
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_IO)>;
 	};
 
 	lvgl_pointer {
@@ -359,7 +360,7 @@
 
 &fdcan1 {
 	clocks = <&rcc STM32_CLOCK(APB1_2, 9)>,
-		<&rcc STM32_SRC_PLL1_Q FDCAN_SEL(1)>;
+		 <&rcc STM32_SRC_PLL1_Q FDCAN_SEL(1)>;
 	pinctrl-0 = <&fdcan1_rx_pa11 &fdcan1_tx_pa12>;
 	pinctrl-names = "default";
 	status = "okay";
@@ -418,7 +419,6 @@
 	disk-name = "SD";
 	status = "okay";
 };
-
 
 zephyr_udc0: &usb {
 	pinctrl-0 = <&usb_dm_pa11 &usb_dp_pa12>;

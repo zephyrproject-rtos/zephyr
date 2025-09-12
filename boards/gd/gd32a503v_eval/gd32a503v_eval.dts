@@ -22,10 +22,12 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led1: led1 {
 			gpios = <&gpioc 0 GPIO_ACTIVE_LOW>;
 			label = "LED1";
 		};
+
 		led2: led2 {
 			gpios = <&gpioc 1 GPIO_ACTIVE_LOW>;
 			label = "LED2";
@@ -92,7 +94,7 @@
 	cs-gpios = <&gpioa 1 GPIO_ACTIVE_LOW>;
 
 	nor_flash: gd25q16@0 {
-		compatible ="jedec,spi-nor";
+		compatible = "jedec,spi-nor";
 		size = <0x1000000>;
 		reg = <0>;
 		spi-max-frequency = <4000000>;

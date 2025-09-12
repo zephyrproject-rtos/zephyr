@@ -13,6 +13,7 @@
 / {
 	model = "STMicroelectronics STM32MP157-DK2 board";
 	compatible = "st,stm32mp157c-dk2";
+
 	chosen {
 		/*
 		 * By default, Zephyr console and shell are assigned to
@@ -50,25 +51,28 @@
 		led0 = &red_led_1;
 		sw0 = &user_button;
 	};
-
 };
 
 &rcc {
 	clock-frequency = <DT_FREQ_M(209)>;
 };
 
-&spi4_miso_pe13{ slew-rate = "very-high-speed"; };
+&spi4_miso_pe13 {
+	slew-rate = "very-high-speed";
+};
 
-&spi4{
+&spi4 {
 	pinctrl-0 = <&spi4_nss_pe11 &spi4_sck_pe12
 		     &spi4_miso_pe13 &spi4_mosi_pe14>;
 	pinctrl-names = "default";
 	status = "okay";
 };
 
-&spi5_miso_pf8{ slew-rate = "very-high-speed"; };
+&spi5_miso_pf8 {
+	slew-rate = "very-high-speed";
+};
 
-&spi5{
+&spi5 {
 	pinctrl-0 = <&spi5_nss_pf6 &spi5_sck_pf7
 		     &spi5_miso_pf8 &spi5_mosi_pf9>;
 	pinctrl-names = "default";

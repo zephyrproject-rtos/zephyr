@@ -9,6 +9,7 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
+		/* dts-format off */
 		gpio-map = /*      GND */                    <1 0  &gpio 10 0>, /* ADC      */
 			   /*      GND */                    <3 0  &gpio  8 0>, /* PB_IN    */
 			   /*      GND */                                       /* RESET/EN */
@@ -24,11 +25,16 @@
 			   /*       NC */                    <25 0 &gpio  3 0>; /* I2S_DIN  */
 			   /*       NC */                                       /* 5V       */
 			   /*       NC */                                       /* BAT      */
+		/* dts-format on */
 	};
 };
 
 m5stack_mbus_i2c0: &i2c0 {};
+
 m5stack_mbus_i2c1: &i2c1 {};
+
 m5stack_mbus_uart0: &uart0 {};
+
 m5stack_mbus_uart1: &uart1 {};
+
 m5stack_mbus_spi: &spi2 {};

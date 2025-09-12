@@ -24,14 +24,17 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		red_led: led_0 {
 			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
 			label = "LED0";
 		};
+
 		green_led: led_1 {
 			gpios = <&gpio2 24 GPIO_ACTIVE_LOW>;
 			label = "LED1";
 		};
+
 		blue_led: led_2 {
 			gpios = <&gpio2 25 GPIO_ACTIVE_LOW>;
 			label = "LED2";
@@ -40,11 +43,13 @@
 
 	buttons {
 		compatible = "gpio-keys";
+
 		pb1: pb1 {
 			gpios = <&gpio1 14 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "SW3";
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		pb2: pb2 {
 			gpios = <&gpio1 15 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "SW4";
@@ -58,7 +63,7 @@
 		led2 = &blue_led;
 		sw0 = &pb1;
 		sw1 = &pb2;
-	 };
+	};
 
 	feather_header: feather_connector {
 		compatible = "adafruit-feather-header";

@@ -29,13 +29,11 @@
 		zephyr,ipc = &mailbox_b;
 	};
 
-
 	sdram0: memory@80000000 {
 		/* Winbond W9825G6KH-5I */
 		device_type = "memory";
 		reg = <0x80000000 DT_SIZE_M(64)>;
 	};
-
 };
 
 &lpuart1 {

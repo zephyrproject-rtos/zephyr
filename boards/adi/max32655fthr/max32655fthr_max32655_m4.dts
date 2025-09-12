@@ -24,14 +24,17 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led1: led_1 {
 			gpios = <&gpio0 18 GPIO_ACTIVE_LOW>;
 			label = "Red LED";
 		};
+
 		led2: led_2 {
 			gpios = <&gpio0 19 GPIO_ACTIVE_LOW>;
 			label = "Blue LED";
 		};
+
 		led3: led_3 {
 			gpios = <&gpio0 26 GPIO_ACTIVE_LOW>;
 			label = "Green LED";
@@ -40,19 +43,22 @@
 
 	buttons {
 		compatible = "gpio-keys";
+
 		pb1: pb1 {
 			gpios = <&gpio0 2 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "SW2";
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		pb2: pb2 {
 			gpios = <&gpio0 3 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "SW3";
 			zephyr,code = <INPUT_KEY_1>;
 		};
+
 		pb_wakeup: pb_wakeup {
-			gpios = <&gpio3 1 (GPIO_PULL_UP | GPIO_ACTIVE_LOW
-					| MAX32_GPIO_VSEL_VDDIOH)>;
+			gpios = <&gpio3 1
+				 (GPIO_PULL_UP | GPIO_ACTIVE_LOW | MAX32_GPIO_VSEL_VDDIOH)>;
 			label = "Wakeup";
 			zephyr,code = <INPUT_KEY_WAKEUP>;
 		};
@@ -75,26 +81,26 @@
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
 		gpio-map = <12 0 &gpio0 31 0>,  /* SDA */
-				<13 0 &gpio0 30 0>,  /* SCL */
-				<14 0 &gpio1 9 0>,  /* GPIO */
-				<15 0 &gpio1 8 0>,  /* GPIO */
-				<16 0 &gpio0 20 0>,   /* GPIO */
-				<17 0 &gpio0 24 0>,   /* GPIO */
-				<18 0 &gpio0 25 0>,   /* GPIO */
-				<19 0 &gpio1 7 0>,   /* GPIO */
-				<20 0 &gpio1 6 0>,   /* GPIO */
-				/* 11 not connected */
-				<10 0 &gpio2 7 0>,  /* TX */
-				<9 0 &gpio2 6 0>,   /* RX */
-				<8 0 &gpio0 22 0>,   /* MISO */
-				<7 0 &gpio0 21 0>,   /* MOSI */
-				<6 0 &gpio0 23 0>,   /* SCK */
-				<5 0 &gpio2 5 0>,   /* AIN5 */
-				<4 0 &gpio2 4 0>,   /* AIN4 */
-				<3 0 &gpio2 3 0>,   /* AIN3 */
-				<2 0 &gpio2 2 0>,   /* AIN2 */
-				<1 0 &gpio2 1 0>,   /* AIN1 */
-				<0 0 &gpio2 0 0>;   /* AIN0 */
+			   <13 0 &gpio0 30 0>,  /* SCL */
+			   <14 0 &gpio1 9 0>,  /* GPIO */
+			   <15 0 &gpio1 8 0>,  /* GPIO */
+			   <16 0 &gpio0 20 0>,   /* GPIO */
+			   <17 0 &gpio0 24 0>,   /* GPIO */
+			   <18 0 &gpio0 25 0>,   /* GPIO */
+			   <19 0 &gpio1 7 0>,   /* GPIO */
+			   <20 0 &gpio1 6 0>,   /* GPIO */
+			   /* 11 not connected */
+			   <10 0 &gpio2 7 0>,  /* TX */
+			   <9 0 &gpio2 6 0>,   /* RX */
+			   <8 0 &gpio0 22 0>,   /* MISO */
+			   <7 0 &gpio0 21 0>,   /* MOSI */
+			   <6 0 &gpio0 23 0>,   /* SCK */
+			   <5 0 &gpio2 5 0>,   /* AIN5 */
+			   <4 0 &gpio2 4 0>,   /* AIN4 */
+			   <3 0 &gpio2 3 0>,   /* AIN3 */
+			   <2 0 &gpio2 2 0>,   /* AIN2 */
+			   <1 0 &gpio2 1 0>,   /* AIN1 */
+			   <0 0 &gpio2 0 0>;   /* AIN0 */
 	};
 };
 

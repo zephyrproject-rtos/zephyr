@@ -25,6 +25,7 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led0: led_0 {
 			gpios = <&gpio0 5 GPIO_ACTIVE_HIGH>;
 			label = "Blue LED";
@@ -46,6 +47,7 @@
 /* disabled (used by Flash ROM by default) */
 &spi0 {
 	reg = <0x10014000 0x1000 0x20010000 0x3c0900>;
+
 	flash0: flash@0 {
 		compatible = "issi,is25lp032", "jedec,spi-nor";
 		status = "disabled";

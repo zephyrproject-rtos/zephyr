@@ -52,7 +52,7 @@
 				read-only;
 			};
 
-			slot0_partition: partition@E000  {
+			slot0_partition: partition@E000 {
 				label = "image-0";
 				reg = <0x0000E000 (DT_SIZE_M(64) - DT_SIZE_K(56))>;
 				read-only;

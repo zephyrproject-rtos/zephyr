@@ -33,6 +33,7 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		yellow_led_1: led_1 {
 			gpios = <&piod 22 GPIO_ACTIVE_LOW>;
 			label = "LED 1";
@@ -41,6 +42,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button: button_1 {
 			label = "User Button";
 			gpios = <&pioa 2 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
@@ -229,6 +231,7 @@
 
 	pinctrl-0 = <&hsmci_default>;
 	pinctrl-names = "default";
+
 	mmc {
 		compatible = "zephyr,sdmmc-disk";
 		disk-name = "SD";
@@ -240,29 +243,20 @@
 	status = "okay";
 };
 
-ext1_spi: &spi0 {
-};
+ext1_spi: &spi0 {};
 
-ext1_i2c: &twi0 {
-};
+ext1_i2c: &twi0 {};
 
-ext1_serial: &usart1 {
-};
+ext1_serial: &usart1 {};
 
-ext2_spi: &spi0 {
-};
+ext2_spi: &spi0 {};
 
-ext2_i2c: &twi0 {
-};
+ext2_i2c: &twi0 {};
 
-ext2_serial: &uart1 {
-};
+ext2_serial: &uart1 {};
 
-ext3_spi: &spi0 {
-};
+ext3_spi: &spi0 {};
 
-ext3_i2c: &twi0 {
-};
+ext3_i2c: &twi0 {};
 
-ext3_serial: &uart1 {
-};
+ext3_serial: &uart1 {};

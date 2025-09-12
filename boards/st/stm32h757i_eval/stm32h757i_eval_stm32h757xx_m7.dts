@@ -11,7 +11,6 @@
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 #include "stm32h757i_eval.dtsi"
 
-
 / {
 	model = "STMicroelectronics STM32H757I Eval board";
 	compatible = "st,stm32h757i-eval";
@@ -31,7 +30,7 @@
 		device_type = "memory";
 		reg = <0xd0000000 DT_SIZE_M(32)>;
 		zephyr,memory-region = "SDRAM2";
-		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
 	};
 
 	ext_memory: memory@90000000 {
@@ -39,7 +38,7 @@
 		reg = <0x90000000 DT_SIZE_M(64)>; /* 512 Mbits */
 		zephyr,memory-region = "EXTMEM";
 		/* The ATTR_MPU_EXTMEM attribut causing a MPU FAULT */
-		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_IO) )>;
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_IO)>;
 	};
 
 	leds {
@@ -224,17 +223,17 @@
 
 zephyr_udc0: &usbotg_hs {
 	pinctrl-0 = <&usb_otg_hs_ulpi_ck_pa5
-			&usb_otg_hs_ulpi_d0_pa3
-			&usb_otg_hs_ulpi_d1_pb0
-			&usb_otg_hs_ulpi_d2_pb1
-			&usb_otg_hs_ulpi_d3_pb10
-			&usb_otg_hs_ulpi_d4_pb11
-			&usb_otg_hs_ulpi_d5_pb12
-			&usb_otg_hs_ulpi_d6_pb13
-			&usb_otg_hs_ulpi_d7_pb5
-			&usb_otg_hs_ulpi_stp_pc0
-			&usb_otg_hs_ulpi_dir_pi11
-			&usb_otg_hs_ulpi_nxt_ph4>;
+		     &usb_otg_hs_ulpi_d0_pa3
+		     &usb_otg_hs_ulpi_d1_pb0
+		     &usb_otg_hs_ulpi_d2_pb1
+		     &usb_otg_hs_ulpi_d3_pb10
+		     &usb_otg_hs_ulpi_d4_pb11
+		     &usb_otg_hs_ulpi_d5_pb12
+		     &usb_otg_hs_ulpi_d6_pb13
+		     &usb_otg_hs_ulpi_d7_pb5
+		     &usb_otg_hs_ulpi_stp_pc0
+		     &usb_otg_hs_ulpi_dir_pi11
+		     &usb_otg_hs_ulpi_nxt_ph4>;
 	pinctrl-names = "default";
 	maximum-speed = "high-speed";
 	/* Include the USB1ULPIEN clock enable bit */
@@ -247,12 +246,12 @@ zephyr_udc0: &usbotg_hs {
 &sdmmc1 {
 	status = "okay";
 	clocks = <&rcc STM32_CLOCK(AHB3, 16)>,
-			<&rcc STM32_SRC_PLL2_R SDMMC_SEL(1)>;
+		 <&rcc STM32_SRC_PLL2_R SDMMC_SEL(1)>;
 	pinctrl-0 = <&sdmmc1_d0_pc8 &sdmmc1_d1_pc9
-			&sdmmc1_d2_pc10 &sdmmc1_d3_pc11
-			&sdmmc1_d4_pb8 &sdmmc1_d5_pb9
-			&sdmmc1_d6_pc6 &sdmmc1_d7_pc7
-			&sdmmc1_ck_pc12 &sdmmc1_cmd_pd2>;
+		     &sdmmc1_d2_pc10 &sdmmc1_d3_pc11
+		     &sdmmc1_d4_pb8 &sdmmc1_d5_pb9
+		     &sdmmc1_d6_pc6 &sdmmc1_d7_pc7
+		     &sdmmc1_ck_pc12 &sdmmc1_cmd_pd2>;
 	pinctrl-names = "default";
 	cd-gpios = <&gpioi 8 GPIO_ACTIVE_LOW>;
 	disk-name = "SD";

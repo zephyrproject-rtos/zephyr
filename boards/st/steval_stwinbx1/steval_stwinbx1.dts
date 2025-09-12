@@ -5,9 +5,9 @@
  */
 
 /dts-v1/;
- #include <st/u5/stm32u585Xi.dtsi>
- #include <st/u5/stm32u585aiixq-pinctrl.dtsi>
- #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <st/u5/stm32u585Xi.dtsi>
+#include <st/u5/stm32u585aiixq-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "STMicroelectronics STEVAL-STWINBX1 Development kit";
@@ -138,7 +138,7 @@
 
 stm32_lp_tick_source: &lptim1 {
 	clocks = <&rcc STM32_CLOCK(APB3, 11)>,
-		<&rcc STM32_SRC_LSE LPTIM1_SEL(3)>;
+		 <&rcc STM32_SRC_LSE LPTIM1_SEL(3)>;
 	status = "okay";
 };
 
@@ -239,7 +239,6 @@ stm32_lp_tick_source: &lptim1 {
 	};
 };
 
-
 &aes {
 	status = "okay";
 };
@@ -293,8 +292,8 @@ zephyr_udc0: &usbotg_fs {
 &sdmmc1 {
 	status = "okay";
 	pinctrl-0 = <&sdmmc1_d0_pc8 &sdmmc1_d1_pc9
-		&sdmmc1_d2_pc10 &sdmmc1_d3_pc11
-		&sdmmc1_ck_pc12 &sdmmc1_cmd_pd2>;
+		     &sdmmc1_d2_pc10 &sdmmc1_d3_pc11
+		     &sdmmc1_ck_pc12 &sdmmc1_cmd_pd2>;
 	pinctrl-names = "default";
 	cd-gpios = <&gpiog 1 GPIO_ACTIVE_LOW>;
 	bus-width = <4>;

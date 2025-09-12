@@ -32,10 +32,12 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led0: led_0 {
 			gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
 			label = "Green LED";
 		};
+
 		led1: led_1 {
 			gpios = <&gpio0 6 GPIO_ACTIVE_HIGH>;
 			label = "Red LED";
@@ -44,11 +46,13 @@
 
 	keys {
 		compatible = "gpio-keys";
+
 		btn0: btn_0 {
 			gpios = <&gpio0 15 BTN_GPIO_FLAGS>;
 			label = "Push button 1";
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		btn1: btn_1 {
 			gpios = <&gpio0 14 BTN_GPIO_FLAGS>;
 			label = "Push button 2";
@@ -93,7 +97,7 @@
 &spi0 {
 	status = "okay";
 	pinctrl-0 = <&spi0_sck_default &spi0_mosi_default
-				 &spi0_miso_default &spi0_cs_default>;
+		     &spi0_miso_default &spi0_cs_default>;
 	pinctrl-names = "default";
 	cs-gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
 };

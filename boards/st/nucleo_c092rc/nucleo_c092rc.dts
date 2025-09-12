@@ -79,10 +79,12 @@
 		reg = <0x2>;
 		wkup-gpios = <&gpioc 13 STM32_PWR_WKUP_PIN_NOT_MUXED>;
 	};
+
 	wkup-pin@5 {
 		reg = <0x5>;
 		wkup-gpios = <&gpioc 5 STM32_PWR_WKUP_PIN_NOT_MUXED>;
 	};
+
 	wkup-pin@6 {
 		reg = <0x6>;
 		wkup-gpios = <&gpiob 5 STM32_PWR_WKUP_PIN_NOT_MUXED>;

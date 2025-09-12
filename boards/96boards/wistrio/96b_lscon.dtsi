@@ -22,4 +22,5 @@
 };
 
 lscon_96b_i2c0: &i2c1 {};
+
 lscon_96b_uart0: &usart1 {};

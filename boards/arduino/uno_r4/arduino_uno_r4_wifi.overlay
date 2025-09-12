@@ -15,6 +15,7 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led: led {
 			gpios = <&arduino_header ARDUINO_HEADER_R3_D13 GPIO_ACTIVE_HIGH>;
 		};
@@ -23,6 +24,7 @@
 	pwm_leds {
 		compatible = "pwm-leds";
 		status = "disabled";
+
 		pwm_led: pwm_led {
 			pwms = <&arduino_pwm ARDUINO_HEADER_R3_D13 PWM_MSEC(1) PWM_POLARITY_NORMAL>;
 			label = "PWM_LED";
@@ -118,5 +120,7 @@
 };
 
 zephyr_i2c: &iic0 {};
+
 arduino_i2c: &iic1 {};
+
 arduino_spi: &spi0 {};

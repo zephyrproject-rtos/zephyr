@@ -3,14 +3,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 #include <nxp/mcx/MCXA153VLH-pinctrl.h>
 
 &pinctrl {
 	pinmux_flexpwm0_pwm0: pinmux_flexpwm0_pwm0 {
 		group0 {
 			pinmux = <PWM0_A0_P3_6>,
-				<PWM0_B0_P3_7>;
+				 <PWM0_B0_P3_7>;
 			slew-rate = "fast";
 			drive-strength = "low";
 		};
@@ -19,12 +18,13 @@
 	pinmux_i3c0: pinmux_i3c0 {
 		group0 {
 			pinmux = <I3C0_SDA_P0_16>,
-				<I3C0_SCL_P0_17>;
+				 <I3C0_SCL_P0_17>;
 			slew-rate = "fast";
 			drive-strength = "low";
 			input-enable;
 			bias-pull-up;
 		};
+
 		group1 {
 			pinmux = <I3C0_PUR_P1_11>;
 			slew-rate = "fast";
@@ -36,7 +36,7 @@
 	pinmux_lpadc0: pinmux_lpadc0 {
 		group0 {
 			pinmux = <ADC0_A0_P2_0>,
-				<ADC0_A1_P2_1>;
+				 <ADC0_A1_P2_1>;
 			slew-rate = "fast";
 			drive-strength = "low";
 		};
@@ -54,7 +54,7 @@
 	pinmux_lpi2c0: pinmux_lpi2c0 {
 		group0 {
 			pinmux = <LPI2C0_SDA_P1_8>,
-			    <LPI2C0_SCL_P1_9>;
+				 <LPI2C0_SCL_P1_9>;
 			slew-rate = "fast";
 			drive-strength = "low";
 			input-enable;
@@ -78,7 +78,7 @@
 	pinmux_lpuart0: pinmux_lpuart0 {
 		group0 {
 			pinmux = <LPUART0_RXD_P0_2>,
-				<LPUART0_TXD_P0_3>;
+				 <LPUART0_TXD_P0_3>;
 			drive-strength = "low";
 			slew-rate = "fast";
 			input-enable;
@@ -88,7 +88,7 @@
 	pinmux_lpuart2: pinmux_lpuart2 {
 		group0 {
 			pinmux = <LPUART2_RXD_P3_14>,
-				<LPUART2_TXD_P3_15>;
+				 <LPUART2_TXD_P3_15>;
 			drive-strength = "low";
 			slew-rate = "fast";
 			input-enable;

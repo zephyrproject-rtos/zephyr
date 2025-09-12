@@ -8,7 +8,7 @@
 		group1 {
 			/* tx rx */
 			psels = <RA_PSEL(RA_PSEL_SCI_0, 4, 11)>,
-			<RA_PSEL(RA_PSEL_SCI_0, 4, 10)>;
+				<RA_PSEL(RA_PSEL_SCI_0, 4, 10)>;
 		};
 	};
 
@@ -16,9 +16,9 @@
 		group1 {
 			/* MISO MOSI RSPCK SSL */
 			psels = <RA_PSEL(RA_PSEL_SPI, 1, 10)>,
-			<RA_PSEL(RA_PSEL_SPI, 1, 9)>,
-			<RA_PSEL(RA_PSEL_SPI, 1, 11)>,
-			<RA_PSEL(RA_PSEL_SPI, 3, 1)>;
+				<RA_PSEL(RA_PSEL_SPI, 1, 9)>,
+				<RA_PSEL(RA_PSEL_SPI, 1, 11)>,
+				<RA_PSEL(RA_PSEL_SPI, 3, 1)>;
 		};
 	};
 
@@ -26,7 +26,7 @@
 		group1 {
 			/* CRX0 CTX0 */
 			psels = <RA_PSEL(RA_PSEL_CANFD, 4, 2)>,
-			<RA_PSEL(RA_PSEL_CANFD, 4, 1)>;
+				<RA_PSEL(RA_PSEL_CANFD, 4, 1)>;
 			drive-strength = "high";
 		};
 	};
@@ -59,11 +59,11 @@
 		group1 {
 			/* QSPICLK QSSL QIO0 QIO1 QIO2 QIO3 */
 			psels = <RA_PSEL(RA_PSEL_QSPI, 1, 0)>,
-			<RA_PSEL(RA_PSEL_QSPI, 1, 12)>,
-			<RA_PSEL(RA_PSEL_QSPI, 1, 2)>,
-			<RA_PSEL(RA_PSEL_QSPI, 1, 1)>,
-			<RA_PSEL(RA_PSEL_QSPI, 1, 4)>,
-			<RA_PSEL(RA_PSEL_QSPI, 1, 3)>;
+				<RA_PSEL(RA_PSEL_QSPI, 1, 12)>,
+				<RA_PSEL(RA_PSEL_QSPI, 1, 2)>,
+				<RA_PSEL(RA_PSEL_QSPI, 1, 1)>,
+				<RA_PSEL(RA_PSEL_QSPI, 1, 4)>,
+				<RA_PSEL(RA_PSEL_QSPI, 1, 3)>;
 		};
 	};
 };
