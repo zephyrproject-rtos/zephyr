@@ -307,7 +307,7 @@ static int arducam_mega_write_reg_wait(const struct arducam_mega_bus *bus, uint1
 	return ret;
 }
 
-static int arducam_mega_set_brightness(const struct device *dev, enum MEGA_BRIGHTNESS_LEVEL level)
+static int arducam_mega_set_brightness(const struct device *dev, enum mega_brightness_level level)
 {
 	const struct arducam_mega_config *cfg = dev->config;
 
@@ -315,7 +315,7 @@ static int arducam_mega_set_brightness(const struct device *dev, enum MEGA_BRIGH
 					   "brightness level");
 }
 
-static int arducam_mega_set_saturation(const struct device *dev, enum MEGA_SATURATION_LEVEL level)
+static int arducam_mega_set_saturation(const struct device *dev, enum mega_saturation_level level)
 {
 	const struct arducam_mega_config *cfg = dev->config;
 
@@ -323,7 +323,7 @@ static int arducam_mega_set_saturation(const struct device *dev, enum MEGA_SATUR
 					   "saturation level");
 }
 
-static int arducam_mega_set_contrast(const struct device *dev, enum MEGA_CONTRAST_LEVEL level)
+static int arducam_mega_set_contrast(const struct device *dev, enum mega_contrast_level level)
 {
 	const struct arducam_mega_config *cfg = dev->config;
 
@@ -331,14 +331,14 @@ static int arducam_mega_set_contrast(const struct device *dev, enum MEGA_CONTRAS
 					   "contrast level");
 }
 
-static int arducam_mega_set_EV(const struct device *dev, enum MEGA_EV_LEVEL level)
+static int arducam_mega_set_EV(const struct device *dev, enum mega_ev_level level)
 {
 	const struct arducam_mega_config *cfg = dev->config;
 
 	return arducam_mega_write_reg_wait(&cfg->bus, CAM_REG_EV_CONTROL, level, 3, "EV level");
 }
 
-static int arducam_mega_set_sharpness(const struct device *dev, enum MEGA_SHARPNESS_LEVEL level)
+static int arducam_mega_set_sharpness(const struct device *dev, enum mega_sharpness_level level)
 {
 	struct arducam_mega_data *drv_data = dev->data;
 	struct arducam_mega_ctrls *drv_ctrls = &drv_data->ctrls;
@@ -356,12 +356,10 @@ static int arducam_mega_set_sharpness(const struct device *dev, enum MEGA_SHARPN
 static int arducam_mega_set_special_effects(const struct device *dev, enum video_colorfx effect)
 {
 	const struct arducam_mega_config *cfg = dev->config;
-	typedef struct {
+	static const struct {
 		enum video_colorfx video_fx;
-		enum MEGA_COLOR_FX mega_fx;
-	} ColorFxMap;
-
-	static const ColorFxMap fx_map[] = {
+		enum mega_color_fx mega_fx;
+	} fx_map[] = {
 		{VIDEO_COLORFX_NONE, MEGA_COLOR_FX_NONE},
 		{VIDEO_COLORFX_BW, MEGA_COLOR_FX_BW},
 		{VIDEO_COLORFX_SEPIA, MEGA_COLOR_FX_SEPIA},
@@ -425,7 +423,7 @@ static int arducam_mega_set_output_format(const struct device *dev, int output_f
 	return ret;
 }
 
-static int arducam_mega_set_JPEG_quality(const struct device *dev, enum MEGA_IMAGE_QUALITY qc)
+static int arducam_mega_set_JPEG_quality(const struct device *dev, enum mega_image_quality qc)
 {
 	const struct arducam_mega_config *cfg = dev->config;
 	struct arducam_mega_data *drv_data = dev->data;
@@ -463,7 +461,7 @@ static int arducam_mega_set_white_bal_enable(const struct device *dev, int enabl
 	return ret;
 }
 
-static int arducam_mega_set_white_bal(const struct device *dev, enum MEGA_EV_LEVEL level)
+static int arducam_mega_set_white_bal(const struct device *dev, enum mega_ev_level level)
 {
 	const struct arducam_mega_config *cfg = dev->config;
 
@@ -590,7 +588,7 @@ static int arducam_mega_set_exposure(const struct device *dev, uint32_t value)
 	return ret;
 }
 
-static int arducam_mega_set_resolution(const struct device *dev, enum MEGA_RESOLUTION resolution)
+static int arducam_mega_set_resolution(const struct device *dev, enum mega_resolution resolution)
 {
 	const struct arducam_mega_config *cfg = dev->config;
 
@@ -881,7 +879,6 @@ static void __buffer_work(struct k_work *work)
 	struct video_buffer *vbuf;
 
 	vbuf = k_fifo_get(&drv_data->fifo_in, K_FOREVER);
-
 	if (vbuf == NULL) {
 		return;
 	}
