@@ -65,6 +65,7 @@ May include isr_tables.c etc."
 set_property(GLOBAL PROPERTY GENERATED_KERNEL_SOURCE_FILES "")
 
 add_custom_target(code_data_relocation_target)
+add_custom_target(clock_management_header_target)
 
 # The zephyr/runners.yaml file in the build directory is used to
 # configure the scripts/west_commands/runners Python package used

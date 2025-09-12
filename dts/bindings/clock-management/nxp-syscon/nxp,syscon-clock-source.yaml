@@ -1,0 +1,42 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  LPC SYSCON Clock source node. This node accepts one specifier, which
+  either gates the clock (when set to 0), or ungates the clock (when set to 1).
+  Other specifier values may cause undefined behavior.
+
+compatible: "nxp,syscon-clock-source"
+
+include: [clock-node.yaml]
+
+properties:
+  reg:
+    required: true
+    description: |
+      Tuple containing address of register and width of the bitfield
+      to set to enable the clock source
+
+  frequency:
+    type: int
+    required: true
+    description: |
+      frequency this clock source provides, in Hz
+
+  offset:
+    type: int
+    required: true
+    description: |
+      Offset of bitfield within register to set to enable clock
+
+  pdown-mask:
+    type: int
+    default: 0
+    description: |
+      Mask to set in power control registers to power down the clock source
+
+  "#clock-cells":
+    const: 1
+
+clock-cells:
+  - gate
