@@ -39,6 +39,7 @@ config DSA_TAG_SIZE
 config DSA_TAG_PROTOCOL_NETC
 	bool "Tag protocol - NETC"
 	default y
+	select NET_PKT_CONTROL_BLOCK
 	depends on $(dt_compat_any_has_prop,$(DSA_PORT_COMPAT),dsa-tag-protocol,1)
 	help
 	  NXP NETC tag protocol.

@@ -763,6 +763,7 @@ config NET_PKT_CONTROL_BLOCK
 config NET_PKT_CONTROL_BLOCK_SIZE
 	int "Size of pkt control block in bytes"
 	depends on NET_PKT_CONTROL_BLOCK
+	default 1 if DSA_TAG_PROTOCOL_NETC
 	default 1
 	help
 	  Size of pkt control block in bytes if there are no other specific control blocks
