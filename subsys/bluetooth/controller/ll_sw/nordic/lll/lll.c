@@ -335,7 +335,12 @@ int lll_init(void)
 #endif /* !CONFIG_BT_CTLR_DYNAMIC_INTERRUPTS */
 
 	/* Enable Radio interrupt on radio state disabled; after tx or rx or explicitly disabled */
+#if defined(CONFIG_BT_CTLR_TIFS_PLLEN)
+	nrf_radio_int_enable(NRF_RADIO, (HAL_RADIO_INTENSET_END_Msk |
+					 HAL_RADIO_INTENSET_DISABLED_Msk));
+#else /* !CONFIG_BT_CTLR_TIFS_PLLEN */
 	nrf_radio_int_enable(NRF_RADIO, HAL_RADIO_INTENSET_DISABLED_Msk);
+#endif /* !CONFIG_BT_CTLR_TIFS_PLLEN */
 
 	/* Enable IRQs */
 	irq_enable(HAL_RADIO_IRQn);

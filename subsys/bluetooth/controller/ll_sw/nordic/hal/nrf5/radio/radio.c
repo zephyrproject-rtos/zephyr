@@ -152,8 +152,20 @@ NRF_DT_CHECK_GPIO_CTLR_IS_SOC(FEM_NODE, pdn_gpios, "pdn-gpios");
 static radio_isr_cb_t isr_cb;
 static void           *isr_cb_param;
 
+/* Radio was disabling when the next radio event was being setup, its DISABLED event is stale */
+static uint8_t is_disabled_stale;
+
 void isr_radio(void)
 {
+	if (is_disabled_stale != 0U) {
+		if (NRF_RADIO->EVENTS_DISABLED == 0U) {
+			return;
+		}
+
+		is_disabled_stale = 0U;
+		nrf_radio_event_clear(NRF_RADIO, NRF_RADIO_EVENT_DISABLED);
+	}
+
 	if (radio_has_disabled()) {
 		isr_cb(isr_cb_param);
 	} else {
@@ -198,6 +210,16 @@ void radio_setup(void)
 
 void radio_reset(void)
 {
+
+	/* Previous radio event closed on its END event while the radio is still disabling, its
+	 * DISABLED event shall not be handled by the radio ISR of this radio event.
+	 */
+	if (NRF_RADIO->STATE != RADIO_STATE_STATE_Disabled) {
+		is_disabled_stale = 1U;
+	} else {
+		is_disabled_stale = 0U;
+		nrf_radio_event_clear(NRF_RADIO, NRF_RADIO_EVENT_DISABLED);
+	}
 
 	/* nRF SoC generic radio reset/initializations
 	 * Note: Only registers whose bits are partially modified across
@@ -568,6 +590,9 @@ void radio_disable(void)
 	/* Reset/disable PPI/DPPI */
 	radio_tmr_status_reset();
 
+	/* DISABLED event is for the radio ISR of the radio event disabling the radio */
+	is_disabled_stale = 0U;
+
 	NRF_RADIO->SHORTS = 0;
 	nrf_radio_task_trigger(NRF_RADIO, NRF_RADIO_TASK_DISABLE);
 }
@@ -651,7 +676,13 @@ uint32_t radio_is_tx_done(void)
 
 uint32_t radio_has_disabled(void)
 {
-	return (NRF_RADIO->EVENTS_DISABLED != 0);
+#if defined(CONFIG_BT_CTLR_TIFS_PLLEN)
+	if (NRF_RADIO->EVENTS_END != 0U) {
+		return 1U;
+	}
+#endif /* CONFIG_BT_CTLR_TIFS_PLLEN */
+
+	return (NRF_RADIO->EVENTS_DISABLED != 0U);
 }
 
 uint32_t radio_is_idle(void)
@@ -956,7 +987,11 @@ void radio_switch_complete_and_rx(uint8_t phy_rx)
 			    NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk |
 			    RADIO_SHORTS_DISABLED_RXEN_Msk;
 #else /* !CONFIG_BT_CTLR_TIFS_HW */
+#if defined(CONFIG_BT_CTLR_TIFS_PLLEN)
+	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_PLLEN_Msk;
+#else /* !CONFIG_BT_CTLR_TIFS_PLLEN */
 	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk;
+#endif /* !CONFIG_BT_CTLR_TIFS_PLLEN */
 
 	/* NOTE: As Tx chain delays are negligible constant values (~1 us)
 	 *	 across nRF5x radios, sw_switch assumes the 1M chain delay for
@@ -975,7 +1010,11 @@ void radio_switch_complete_and_tx(uint8_t phy_rx, uint8_t flags_rx,
 			    NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk |
 			    RADIO_SHORTS_DISABLED_TXEN_Msk;
 #else /* !CONFIG_BT_CTLR_TIFS_HW */
+#if defined(CONFIG_BT_CTLR_TIFS_PLLEN)
+	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_PLLEN_Msk;
+#else /* !CONFIG_BT_CTLR_TIFS_PLLEN */
 	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk;
+#endif /* !CONFIG_BT_CTLR_TIFS_PLLEN */
 
 	sw_switch(SW_SWITCH_RX, SW_SWITCH_TX, phy_rx, flags_rx, phy_tx, flags_tx,
 		  END_EVT_DELAY_DISABLED);
@@ -990,7 +1029,11 @@ void radio_switch_complete_with_delay_compensation_and_tx(
 	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk |
 			    RADIO_SHORTS_DISABLED_TXEN_Msk;
 #else /* !CONFIG_BT_CTLR_TIFS_HW */
+#if defined(CONFIG_BT_CTLR_TIFS_PLLEN)
+	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_PLLEN_Msk;
+#else /* !CONFIG_BT_CTLR_TIFS_PLLEN */
 	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk;
+#endif /* !CONFIG_BT_CTLR_TIFS_PLLEN */
 
 	sw_switch(SW_SWITCH_RX, SW_SWITCH_TX, phy_rx, flags_rx, phy_tx, flags_tx, end_delay_en);
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
@@ -1004,7 +1047,11 @@ void radio_switch_complete_and_b2b_tx(uint8_t phy_curr, uint8_t flags_curr,
 			    NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk |
 			    RADIO_SHORTS_DISABLED_TXEN_Msk;
 #else /* !CONFIG_BT_CTLR_TIFS_HW */
+#if defined(CONFIG_BT_CTLR_TIFS_PLLEN)
+	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_PLLEN_Msk;
+#else /* !CONFIG_BT_CTLR_TIFS_PLLEN */
 	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk;
+#endif /* !CONFIG_BT_CTLR_TIFS_PLLEN */
 
 	sw_switch(SW_SWITCH_TX, SW_SWITCH_TX, phy_curr, flags_curr, phy_next, flags_next,
 		  END_EVT_DELAY_DISABLED);
@@ -1019,7 +1066,11 @@ void radio_switch_complete_and_b2b_rx(uint8_t phy_curr, uint8_t flags_curr,
 			    NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk |
 			    RADIO_SHORTS_DISABLED_RXEN_Msk;
 #else /* !CONFIG_BT_CTLR_TIFS_HW */
+#if defined(CONFIG_BT_CTLR_TIFS_PLLEN)
+	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_PLLEN_Msk;
+#else /* !CONFIG_BT_CTLR_TIFS_PLLEN */
 	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk;
+#endif /* !CONFIG_BT_CTLR_TIFS_PLLEN */
 
 	sw_switch(SW_SWITCH_RX, SW_SWITCH_RX, phy_curr, flags_curr, phy_next, flags_next,
 		  END_EVT_DELAY_DISABLED);
@@ -1031,7 +1082,8 @@ void radio_switch_complete_and_b2b_tx_disable(void)
 #if defined(CONFIG_BT_CTLR_TIFS_HW)
 	NRF_RADIO->SHORTS = (RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk);
 #else /* CONFIG_BT_CTLR_TIFS_HW */
-	NRF_RADIO->SHORTS = (RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk);
+	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk;
+
 	hal_radio_sw_switch_b2b_tx_disable(sw_tifs_toggle);
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 }
@@ -1041,7 +1093,8 @@ void radio_switch_complete_and_b2b_rx_disable(void)
 #if defined(CONFIG_BT_CTLR_TIFS_HW)
 	NRF_RADIO->SHORTS = (RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk);
 #else /* CONFIG_BT_CTLR_TIFS_HW */
-	NRF_RADIO->SHORTS = (RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk);
+	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk;
+
 	hal_radio_sw_switch_b2b_rx_disable(sw_tifs_toggle);
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 }
@@ -1051,7 +1104,8 @@ void radio_switch_complete_and_disable(void)
 #if defined(CONFIG_BT_CTLR_TIFS_HW)
 	NRF_RADIO->SHORTS = (RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk);
 #else /* CONFIG_BT_CTLR_TIFS_HW */
-	NRF_RADIO->SHORTS = (RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk);
+	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk;
+
 	hal_radio_sw_switch_disable();
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 }
@@ -1816,6 +1870,7 @@ void radio_tmr_stop(void)
 #if defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
 #if defined(CONFIG_NRF_SYS_EVENT)
 	(void)nrf_sys_event_release_global_constlat();
+
 #else /* !CONFIG_NRF_SYS_EVENT */
 	/* Refer to nRF54L Product Specifications for below quirks.
 	 * FIXME: Use on off service design to share these request with application implementations.
