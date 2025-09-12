@@ -40,7 +40,7 @@
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x20280000 0x100000>;
 		zephyr,memory-region = "SRAM_NO_CACHE";
-		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE) )>;
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)>;
 	};
 
 	leds {
@@ -84,6 +84,7 @@
 	pwmleds: pwmleds {
 		compatible = "pwm-leds";
 		status = "disabled";
+
 		pwm_led0: pwm_led_0 {
 			pwms = <&pwm2 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 			label = "PWM_LED";
@@ -149,7 +150,7 @@
 	pinctrl-0 = <&mspi0_default>;
 	pinctrl-1 = <&mspi0_sleep>;
 	pinctrl-2 = <&mspi0_psram>;
-	pinctrl-names = "default","sleep","psram";
+	pinctrl-names = "default", "sleep", "psram";
 	status = "disabled";
 	zephyr,pm-device-runtime-auto;
 
@@ -190,7 +191,7 @@
 	pinctrl-0 = <&mspi1_default>;
 	pinctrl-1 = <&mspi1_sleep>;
 	pinctrl-2 = <&mspi1_flash>;
-	pinctrl-names = "default","sleep","flash";
+	pinctrl-names = "default", "sleep", "flash";
 	status = "okay";
 	zephyr,pm-device-runtime-auto;
 
@@ -230,6 +231,7 @@
 	txdelay = <0>;
 	rxdelay = <0>;
 	status = "okay";
+
 	mmc {
 		compatible = "zephyr,mmc-disk";
 		disk-name = "SD2";
@@ -246,8 +248,8 @@
 };
 
 zephyr_udc0: &usb {
-	vddusb33-gpios = <&gpio64_95 27 (GPIO_PULL_UP)>;
-	vddusb0p9-gpios = <&gpio64_95 26 (GPIO_PULL_UP)>;
+	vddusb33-gpios = <&gpio64_95 27 GPIO_PULL_UP>;
+	vddusb0p9-gpios = <&gpio64_95 26 GPIO_PULL_UP>;
 	status = "okay";
 };
 

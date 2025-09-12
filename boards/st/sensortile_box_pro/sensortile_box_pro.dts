@@ -62,8 +62,8 @@
 
 	sd_card: sd-card {
 		compatible = "st,stile_sd_card";
-		en-sd-gpios = <&gpioh 10 (GPIO_ACTIVE_HIGH)>;
-		sel-sd-gpios = <&gpioh 8 (GPIO_ACTIVE_HIGH)>;
+		en-sd-gpios = <&gpioh 10 GPIO_ACTIVE_HIGH>;
+		sel-sd-gpios = <&gpioh 8 GPIO_ACTIVE_HIGH>;
 	};
 
 	aliases {

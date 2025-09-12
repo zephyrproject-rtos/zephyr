@@ -28,6 +28,7 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		back_led: led_3 {
 			gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
 			label = "User D13 green";
@@ -36,6 +37,7 @@
 
 	pwmleds {
 		compatible = "pwm-leds";
+
 		back_pwm_led: pwm_led_3 {
 			pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 		};
@@ -70,12 +72,10 @@
 				border-waveform = <0x71>;
 				dummy-line = <0x1a>;
 				gate-line-width = <0x08>;
-				lut = [
-					22 55 AA 55 AA 55 AA 11
-					00 00 00 00 00 00 00 00
-					1E 1E 1E 1E 1E 1E 1E 1E
-					01 00 00 00 00
-				];
+				lut = [22 55 AA 55 AA 55 AA 11
+				       00 00 00 00 00 00 00 00
+				       1E 1E 1E 1E 1E 1E 1E 1E
+				       01 00 00 00 00];
 			};
 
 			partial {
@@ -85,12 +85,10 @@
 				border-waveform = <0x71>;
 				dummy-line = <0x1a>;
 				gate-line-width = <0x08>;
-				lut = [
-					18 00 00 00 00 00 00 00
-					00 00 00 00 00 00 00 00
-					0F 01 00 00 00 00 00 00
-					00 00 00 00 00
-				];
+				lut = [18 00 00 00 00 00 00 00
+				       00 00 00 00 00 00 00 00
+				       0F 01 00 00 00 00 00 00
+				       00 00 00 00 00];
 			};
 		};
 	};

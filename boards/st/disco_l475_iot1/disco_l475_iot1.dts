@@ -189,7 +189,9 @@
 	status = "okay";
 };
 
-&spi3_miso_pc11 { slew-rate = "very-high-speed"; };
+&spi3_miso_pc11 {
+	slew-rate = "very-high-speed";
+};
 
 &spi3 {
 	status = "okay";

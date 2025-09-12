@@ -23,10 +23,12 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led_1: led_1 {
 			gpios = <&gpiod 8 GPIO_ACTIVE_HIGH>;
 			label = "LED-1";
 		};
+
 		led_2: led_2 {
 			gpios = <&gpiod 9 GPIO_ACTIVE_HIGH>;
 			label = "LED-2";
@@ -186,11 +188,13 @@ zephyr_udc0: &usb {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+
 		boot_partition: partition@0 {
 			label = "mcuboot";
 			reg = <0x00000000 0x00010000>;
 			read-only;
 		};
+
 		/*
 		 * The flash starting at 0x00010000 and ending at
 		 * 0x0001ffff (sectors 16-31) is reserved for use
@@ -200,14 +204,17 @@ zephyr_udc0: &usb {
 			label = "image-0";
 			reg = <0x00020000 0x00008000>;
 		};
+
 		slot1_partition: partition@28000 {
 			label = "image-1";
 			reg = <0x00028000 0x00008000>;
 		};
+
 		storage_partition: partition@30000 {
 			label = "storage";
 			reg = <0x00030000 0x00002000>;
 		};
+
 		scratch_partition: partition@32000 {
 			label = "image-scratch";
 			reg = <0x00032000 0x00008000>;
@@ -222,6 +229,7 @@ zephyr_udc0: &usb {
 &timers1 {
 	st,prescaler = <10000>;
 	status = "okay";
+
 	pwm1: pwm {
 		pinctrl-0 = <&tim1_ch1_pe9 &tim1_ch2n_pe10 &tim1_ch2_pe11
 			     &tim1_ch3n_pe12 &tim1_ch3_pe13 &tim1_ch4_pe14>;
@@ -233,6 +241,7 @@ zephyr_udc0: &usb {
 &timers4 {
 	st,prescaler = <10000>;
 	status = "okay";
+
 	pwm4: pwm {
 		pinctrl-0 = <&tim4_ch2_pd13 &tim4_ch3_pd14 &tim4_ch4_pd15>;
 		pinctrl-names = "default";

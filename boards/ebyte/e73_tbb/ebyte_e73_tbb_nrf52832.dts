@@ -28,10 +28,12 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led0: led_0 {
 			gpios = <&gpio0 17 GPIO_ACTIVE_LOW>;
 			label = "Red LED1";
 		};
+
 		led1: led_1 {
 			gpios = <&gpio0 18 GPIO_ACTIVE_LOW>;
 			label = "Red LED2";
@@ -40,6 +42,7 @@
 
 	pwmleds {
 		compatible = "pwm-leds";
+
 		pwm_led0: pwm_led_0 {
 			pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 		};
@@ -47,11 +50,13 @@
 
 	buttons {
 		compatible = "gpio-keys";
+
 		button0: button_0 {
 			gpios = <&gpio0 14 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button SW1";
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		button1: button_1 {
 			gpios = <&gpio0 13 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button SW2";
@@ -104,7 +109,6 @@
 };
 
 &flash0 {
-
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
@@ -114,18 +118,22 @@
 			label = "mcuboot";
 			reg = <0x00000000 0xc000>;
 		};
+
 		slot0_partition: partition@c000 {
 			label = "image-0";
 			reg = <0x0000C000 0x32000>;
 		};
+
 		slot1_partition: partition@3e000 {
 			label = "image-1";
 			reg = <0x0003E000 0x32000>;
 		};
+
 		scratch_partition: partition@70000 {
 			label = "image-scratch";
 			reg = <0x00070000 0xa000>;
 		};
+
 		storage_partition: partition@7a000 {
 			label = "storage";
 			reg = <0x0007a000 0x00006000>;

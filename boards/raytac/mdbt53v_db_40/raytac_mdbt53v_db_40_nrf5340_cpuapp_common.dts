@@ -7,7 +7,6 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-
 	chosen {
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
@@ -21,6 +20,7 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led0: led_0 {
 			gpios = <&gpio0 28 GPIO_ACTIVE_LOW>;
 			label = "Green LED 0";
@@ -29,6 +29,7 @@
 
 	pwmleds {
 		compatible = "pwm-leds";
+
 		pwm_led0: pwm_led_0 {
 			pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 		};
@@ -36,16 +37,19 @@
 
 	buttons {
 		compatible = "gpio-keys";
+
 		button0: button_0 {
 			gpios = <&gpio0 24 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button 1";
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		button1: button_1 {
 			gpios = <&gpio0 8 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button 2";
 			zephyr,code = <INPUT_KEY_1>;
 		};
+
 		button2: button_2 {
 			gpios = <&gpio0 23 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button 3";
@@ -56,6 +60,7 @@
 	gpio_fwd: nrf-gpio-forwarder {
 		compatible = "nordic,nrf-gpio-forwarder";
 		status = "okay";
+
 		uart {
 			gpios = <&gpio1 1 0>, <&gpio1 0 0>, <&gpio0 11 0>, <&gpio0 10 0>;
 		};

@@ -100,7 +100,6 @@ uart2: &scb2 {
 	status = "okay";
 };
 
-
 &qspi_flash {
 	flash0: flash@8000000 {
 		compatible = "soc-nv-flash";

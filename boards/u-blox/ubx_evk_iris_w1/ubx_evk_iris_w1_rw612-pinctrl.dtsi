@@ -7,7 +7,6 @@
 #include <nxp/rw/RW612-pinctrl.h>
 
 &pinctrl {
-
 	// default-UART
 	pinmux_flexcomm3_usart: pinmux_flexcomm3_usart {
 		group0 {

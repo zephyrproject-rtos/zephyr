@@ -64,18 +64,18 @@
 		reg = <0xa0000000 DT_SIZE_M(128)>;
 		zephyr,memory-region = "EXTMEM";
 		/* The ATTR_MPU_EXTMEM attribut causing a MPU FAULT */
-		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_IO) )>;
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_IO)>;
 	};
 };
 
 &ltdc {
 	pinctrl-0 = <&ltdc_r0_pc6 &ltdc_r1_pc7 &ltdc_r2_pe15 &ltdc_r3_pd8
-			&ltdc_r4_pd9 &ltdc_r5_pd10 &ltdc_r6_pd11 &ltdc_r7_pd12
-			&ltdc_g0_pc8 &ltdc_g1_pc9 &ltdc_g2_pe9 &ltdc_g3_pe10
-			&ltdc_g4_pe11 &ltdc_g5_pe12 &ltdc_g6_pe13 &ltdc_g7_pe14
-			&ltdc_b0_pb9 &ltdc_b1_pb2 &ltdc_b2_pd14 &ltdc_b3_pd15
-			&ltdc_b4_pd0 &ltdc_b5_pd1 &ltdc_b6_pe7 &ltdc_b7_pe8
-			&ltdc_de_pd6 &ltdc_clk_pd3 &ltdc_hsync_pe0 &ltdc_vsync_pd13>;
+		     &ltdc_r4_pd9 &ltdc_r5_pd10 &ltdc_r6_pd11 &ltdc_r7_pd12
+		     &ltdc_g0_pc8 &ltdc_g1_pc9 &ltdc_g2_pe9 &ltdc_g3_pe10
+		     &ltdc_g4_pe11 &ltdc_g5_pe12 &ltdc_g6_pe13 &ltdc_g7_pe14
+		     &ltdc_b0_pb9 &ltdc_b1_pb2 &ltdc_b2_pd14 &ltdc_b3_pd15
+		     &ltdc_b4_pd0 &ltdc_b5_pd1 &ltdc_b6_pe7 &ltdc_b7_pe8
+		     &ltdc_de_pd6 &ltdc_clk_pd3 &ltdc_hsync_pe0 &ltdc_vsync_pd13>;
 	pinctrl-names = "default";
 	disp-on-gpios = <&gpioe 4 GPIO_ACTIVE_HIGH>;
 	bl-ctrl-gpios = <&gpioe 6 GPIO_ACTIVE_HIGH>;
@@ -229,10 +229,10 @@
 /* Connected to onboard 4-Gbyte eMMC flash memory */
 &sdmmc1 {
 	pinctrl-0 = <&sdmmc1_d0_pc8 &sdmmc1_d1_pc9
-		&sdmmc1_d2_pc10 &sdmmc1_d3_pc11
-		&sdmmc1_d4_pb8 &sdmmc1_d5_pb9
-		&sdmmc1_d6_pc6 &sdmmc1_d7_pc7
-		&sdmmc1_ck_pc12 &sdmmc1_cmd_pd2>;
+		     &sdmmc1_d2_pc10 &sdmmc1_d3_pc11
+		     &sdmmc1_d4_pb8 &sdmmc1_d5_pb9
+		     &sdmmc1_d6_pc6 &sdmmc1_d7_pc7
+		     &sdmmc1_ck_pc12 &sdmmc1_cmd_pd2>;
 	pinctrl-names = "default";
 	/* disabled due to conflicting pins pc6, pc7, pc8
 	 * pc9 and pb9 with LTDC node.
@@ -333,14 +333,14 @@ zephyr_udc0: &usbotg_hs {
 
 &xspi1 {
 	clocks = <&rcc STM32_CLOCK(AHB2_2, 12)>,
-			 <&rcc STM32_SRC_PLL2_Q HSPI_SEL(2)>;
+		 <&rcc STM32_SRC_PLL2_Q HSPI_SEL(2)>;
 
 	pinctrl-0 = <&hspi1_dqs0_pi2 &hspi1_ncs_ph9
-		&hspi1_io0_ph10 &hspi1_io1_ph11
-		&hspi1_io2_ph12 &hspi1_io3_ph13
-		&hspi1_io4_ph14 &hspi1_io5_ph15
-		&hspi1_io6_pi0 &hspi1_io7_pi1
-		&hspi1_clk_pi3>;
+		     &hspi1_io0_ph10 &hspi1_io1_ph11
+		     &hspi1_io2_ph12 &hspi1_io3_ph13
+		     &hspi1_io4_ph14 &hspi1_io5_ph15
+		     &hspi1_io6_pi0 &hspi1_io7_pi1
+		     &hspi1_clk_pi3>;
 	pinctrl-names = "default";
 	status = "okay";
 
@@ -368,8 +368,8 @@ zephyr_udc0: &usbotg_hs {
 };
 
 &rtc {
-	clocks =  <&rcc STM32_CLOCK(APB3, 21)>,
-			  <&rcc STM32_SRC_LSE RTC_SEL(1)>;
+	clocks = <&rcc STM32_CLOCK(APB3, 21)>,
+		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
 	status = "okay";
 };
 

@@ -26,7 +26,6 @@
 			gpios = <&gpiob 8 GPIO_ACTIVE_HIGH>;
 			label = "User LD2";
 		};
-
 	};
 
 	pwmleds {
@@ -36,7 +35,6 @@
 			pwms = <&pwm4 3 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 		};
 	};
-
 
 	aliases {
 		led0 = &green_led;
@@ -55,7 +53,7 @@
 
 stm32_lp_tick_source: &lptim1 {
 	clocks = <&rcc STM32_CLOCK(APB1, 31)>,
-			 <&rcc STM32_SRC_LSI LPTIM1_SEL(3)>;
+		 <&rcc STM32_SRC_LSI LPTIM1_SEL(3)>;
 	status = "okay";
 };
 

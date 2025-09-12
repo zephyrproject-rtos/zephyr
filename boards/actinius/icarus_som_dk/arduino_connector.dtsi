@@ -40,14 +40,16 @@
 		compatible = "arduino,uno-adc";
 		#io-channel-cells = <1>;
 		io-channel-map = <0 &adc 2>,	/* A0 = P0.15 = AIN2 */
-				<1 &adc 3>,	/* A1 = P0.16 = AIN3 */
-				<2 &adc 4>,	/* A2 = P0.17 = AIN4 */
-				<3 &adc 5>,	/* A3 = P0.18 = AIN5 */
-				<4 &adc 6>,	/* A4 = P0.19 = AIN6 */
-				<5 &adc 7>;	/* A5 = P0.20 = AIN7 */
+				 <1 &adc 3>,	/* A1 = P0.16 = AIN3 */
+				 <2 &adc 4>,	/* A2 = P0.17 = AIN4 */
+				 <3 &adc 5>,	/* A3 = P0.18 = AIN5 */
+				 <4 &adc 6>,	/* A4 = P0.19 = AIN6 */
+				 <5 &adc 7>;	/* A5 = P0.20 = AIN7 */
 	};
 };
 
-arduino_serial: &uart0 { };
-arduino_i2c: &i2c2 { };
-arduino_spi: &spi3 { };
+arduino_serial: &uart0 {};
+
+arduino_i2c: &i2c2 {};
+
+arduino_spi: &spi3 {};

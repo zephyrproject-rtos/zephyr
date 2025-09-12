@@ -97,9 +97,8 @@
 	lis3dh: lis3dh@19 {
 		compatible = "st,lis3dh", "st,lis2dh";
 		reg = <0x19>;
-		irq-gpios =
-			<&gpio0 11 GPIO_ACTIVE_HIGH>,
-			<&gpio0 12 GPIO_ACTIVE_HIGH>;
+		irq-gpios = <&gpio0 11 GPIO_ACTIVE_HIGH>,
+			    <&gpio0 12 GPIO_ACTIVE_HIGH>;
 	};
 
 	sht4x: sht4x@44 {

@@ -28,16 +28,19 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led0: led_0 {
 			/* NINA-B1 GPIO_1 */
 			gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
 			label = "Red LED";
 		};
+
 		led1: led_1 {
 			/* NINA-B4 GPIO_7 */
 			gpios = <&gpio1 1 GPIO_ACTIVE_LOW>;
 			label = "Green LED";
 		};
+
 		led2: led_2 {
 			/*NINA-B1 GPIO_8 */
 			gpios = <&gpio1 0 GPIO_ACTIVE_LOW>;
@@ -47,12 +50,15 @@
 
 	pwmleds {
 		compatible = "pwm-leds";
+
 		red_pwm_led: red_pwm_led {
 			pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 		};
+
 		green_pwm_led: green_pwm_led {
 			pwms = <&pwm0 1 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 		};
+
 		blue_pwm_led: blue_pwm_led {
 			pwms = <&pwm0 2 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 		};
@@ -60,12 +66,14 @@
 
 	buttons {
 		compatible = "gpio-keys";
+
 		button0: button_0 {
 			/* EVK-NINA-B4 SW1 button */
 			gpios = <&gpio1 1 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button switch 0";
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		button1: button_1 {
 			/* EVK-NINA-B4 SW2 button */
 			gpios = <&gpio0 2 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
@@ -221,18 +229,22 @@ arduino_spi: &spi2 {
 			label = "mcuboot";
 			reg = <0x00000000 0xC000>;
 		};
+
 		slot0_partition: partition@c000 {
 			label = "image-0";
 			reg = <0x0000C000 0x32000>;
 		};
+
 		slot1_partition: partition@3e000 {
 			label = "image-1";
 			reg = <0x0003E000 0x32000>;
 		};
+
 		scratch_partition: partition@70000 {
 			label = "image-scratch";
 			reg = <0x00070000 0xA000>;
 		};
+
 		storage_partition: partition@7a000 {
 			label = "storage";
 			reg = <0x0007A000 0x00006000>;

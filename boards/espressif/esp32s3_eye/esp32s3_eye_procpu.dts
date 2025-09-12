@@ -38,6 +38,7 @@
 
 	buttons {
 		compatible = "gpio-keys";
+
 		button0: button_0 {
 			gpios = <&gpio0 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "BOOT Button";
@@ -74,8 +75,9 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		green_led: led0 {
-			gpios =  <&gpio0 3 GPIO_OPEN_DRAIN>;
+			gpios = <&gpio0 3 GPIO_OPEN_DRAIN>;
 			label = "Power LED";
 		};
 	};
@@ -125,31 +127,34 @@
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	pinctrl-0 = <&i2c1_default>;
 	pinctrl-names = "default";
+
 	ov2640: ov2640@30 {
-			compatible = "ovti,ov2640";
-			reg = <0x30>;
-			status = "okay";
-			clock-rate-control = <0x80>;
-			port {
-					ov2640_ep_out: endpoint {
-							remote-endpoint = <&dvp_ep_in>;
-					};
+		compatible = "ovti,ov2640";
+		reg = <0x30>;
+		status = "okay";
+		clock-rate-control = <0x80>;
+
+		port {
+			ov2640_ep_out: endpoint {
+				remote-endpoint = <&dvp_ep_in>;
 			};
+		};
 	};
 };
 
 &lcd_cam {
 	status = "okay";
-	cam-clk = < 10000000 >;
+	cam-clk = <10000000>;
 	pinctrl-0 = <&lcd_cam_default>;
 	pinctrl-names = "default";
 	source = <&ov2640>;
 	dmas = <&dma 2>;
 	dma-names = "rx";
+
 	port {
-			dvp_ep_in: endpoint {
-					remote-endpoint = <&ov2640_ep_out>;
-			};
+		dvp_ep_in: endpoint {
+			remote-endpoint = <&ov2640_ep_out>;
+		};
 	};
 };
 

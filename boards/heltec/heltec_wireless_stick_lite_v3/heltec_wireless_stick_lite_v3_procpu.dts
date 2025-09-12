@@ -45,6 +45,7 @@
 
 	pwmleds {
 		compatible = "pwm-leds";
+
 		pwm_led_white: pwm_led_gpio0_35 {
 			label = "White PWM LED";
 			pwms = <&ledc0 0 PWM_MSEC(10) PWM_POLARITY_NORMAL>;
@@ -53,6 +54,7 @@
 
 	buttons {
 		compatible = "gpio-keys";
+
 		button0: button_0 {
 			gpios = <&gpio0 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "USER SW";
@@ -82,7 +84,7 @@
 };
 
 &adc1 {
-	status ="okay";
+	status = "okay";
 };
 
 &uart0 {
@@ -106,6 +108,7 @@
 	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
+
 	channel0@0 {
 		reg = <0x0>;
 		timer = <0>;
@@ -124,6 +127,7 @@
 	status = "okay";
 	pinctrl-0 = <&spim2_default>;
 	pinctrl-names = "default";
+
 	lora0: lora@0 {
 		compatible = "semtech,sx1262";
 		reg = <0>;

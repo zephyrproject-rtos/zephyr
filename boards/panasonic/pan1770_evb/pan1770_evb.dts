@@ -29,18 +29,22 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		evb_led1: evb_led_1 {
 			gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
 			label = "LED1 on EVB";
 		};
+
 		evb_led2: evb_led_2 {
 			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
 			label = "LED2 on EVB";
 		};
+
 		evb_led3: evb_led_3 {
 			gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
 			label = "LED3 on EVB";
 		};
+
 		evb_led4: evb_led_4 {
 			gpios = <&gpio0 16 GPIO_ACTIVE_LOW>;
 			label = "LED4 on EVB";
@@ -49,6 +53,7 @@
 
 	pwmleds {
 		compatible = "pwm-leds";
+
 		pwm_evb_led1: pwm_evb_led_1 {
 			pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 		};
@@ -56,21 +61,25 @@
 
 	buttons {
 		compatible = "gpio-keys";
+
 		evb_sw1: evb_sw_1 {
 			gpios = <&gpio0 11 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "SW1 on EVB";
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		evb_sw2: evb_sw_2 {
 			gpios = <&gpio0 12 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "SW2 on EVB";
 			zephyr,code = <INPUT_KEY_1>;
 		};
+
 		evb_sw3: evb_sw_3 {
 			gpios = <&gpio0 24 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "SW3 on EVB";
 			zephyr,code = <INPUT_KEY_2>;
 		};
+
 		evb_sw4: evb_sw_4 {
 			gpios = <&gpio0 25 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "SW4 on EVB";
@@ -249,7 +258,6 @@ arduino_spi: &spi3 {
 };
 
 &flash0 {
-
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
@@ -259,18 +267,22 @@ arduino_spi: &spi3 {
 			label = "mcuboot";
 			reg = <0x000000000 0x0000C000>;
 		};
+
 		slot0_partition: partition@c000 {
 			label = "image-0";
 			reg = <0x0000C000 0x00067000>;
 		};
+
 		slot1_partition: partition@73000 {
 			label = "image-1";
 			reg = <0x00073000 0x00067000>;
 		};
+
 		scratch_partition: partition@da000 {
 			label = "image-scratch";
 			reg = <0x000da000 0x0001e000>;
 		};
+
 		storage_partition: partition@f8000 {
 			label = "storage";
 			reg = <0x000f8000 0x00008000>;

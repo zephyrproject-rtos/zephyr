@@ -60,7 +60,7 @@
 		reg = <0xd0000000 DT_SIZE_M(16)>;
 		zephyr,memory-region = "SDRAM2";
 		/* Frame buffer memory cache will cause screen flickering. */
-		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE) )>;
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)>;
 	};
 
 	octo_nor: memory@90000000 {
@@ -68,7 +68,7 @@
 		reg = <0x90000000 DT_SIZE_M(64)>;
 		zephyr,memory-region = "EXTMEM";
 		/* The ATTR_MPU_EXTMEM attribut causing a MPU FAULT */
-		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_IO) )>;
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_IO)>;
 	};
 
 	transceiver0: can-phy0 {
@@ -83,21 +83,21 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map = <3  0 &gpiod 12  0>,  /* I2C4_SCL */
-			   <4  0 &gpiod 13  0>,  /* I2C4_SDA */
-			   <5  0 &gpioa  0  0>,  /* RESET# */
-			   <6  0 &gpioa  7  0>,  /* PWDN_EN */
-			   <12 0 &gpiob  7  0>,  /* DCMI_VSYNC */
-			   <14 0 &gpioa  4  0>,  /* DCMI_HSYNC */
-			   <16 0 &gpioa  6  0>,  /* DCMI_PIXCK */
-			   <20 0 &gpiob  9  0>,  /* DCMI_D7 */
-			   <21 0 &gpiob  8  0>,  /* DCMI_D6 */
-			   <22 0 &gpiod  3  0>,  /* DCMI_D5 */
-			   <23 0 &gpioc 11  0>,  /* DCMI_D4 */
-			   <24 0 &gpioc  9  0>,  /* DCMI_D3 */
-			   <25 0 &gpiog 10  0>,  /* DCMI_D2 */
-			   <26 0 &gpioc  7  0>,  /* DCMI_D1 */
-			   <27 0 &gpioc  6  0>;  /* DCMI_D0 */
+		gpio-map = <3 0 &gpiod 12 0>,  /* I2C4_SCL */
+			   <4 0 &gpiod 13 0>,  /* I2C4_SDA */
+			   <5 0 &gpioa 0 0>,  /* RESET# */
+			   <6 0 &gpioa 7 0>,  /* PWDN_EN */
+			   <12 0 &gpiob 7 0>,  /* DCMI_VSYNC */
+			   <14 0 &gpioa 4 0>,  /* DCMI_HSYNC */
+			   <16 0 &gpioa 6 0>,  /* DCMI_PIXCK */
+			   <20 0 &gpiob 9 0>,  /* DCMI_D7 */
+			   <21 0 &gpiob 8 0>,  /* DCMI_D6 */
+			   <22 0 &gpiod 3 0>,  /* DCMI_D5 */
+			   <23 0 &gpioc 11 0>,  /* DCMI_D4 */
+			   <24 0 &gpioc 9 0>,  /* DCMI_D3 */
+			   <25 0 &gpiog 10 0>,  /* DCMI_D2 */
+			   <26 0 &gpioc 7 0>,  /* DCMI_D1 */
+			   <27 0 &gpioc 6 0>;  /* DCMI_D0 */
 	};
 
 	aliases {
@@ -217,13 +217,13 @@
 		bank@1 {
 			reg = <1>;
 			st,sdram-control = <STM32_FMC_SDRAM_NC_9
-						STM32_FMC_SDRAM_NR_12
-						STM32_FMC_SDRAM_MWID_16
-						STM32_FMC_SDRAM_NB_4
-						STM32_FMC_SDRAM_CAS_2
-						STM32_FMC_SDRAM_SDCLK_PERIOD_3
-						STM32_FMC_SDRAM_RBURST_ENABLE
-						STM32_FMC_SDRAM_RPIPE_2>;
+					    STM32_FMC_SDRAM_NR_12
+					    STM32_FMC_SDRAM_MWID_16
+					    STM32_FMC_SDRAM_NB_4
+					    STM32_FMC_SDRAM_CAS_2
+					    STM32_FMC_SDRAM_SDCLK_PERIOD_3
+					    STM32_FMC_SDRAM_RBURST_ENABLE
+					    STM32_FMC_SDRAM_RPIPE_2>;
 			st,sdram-timing = <2 7 4 7 2 2 2>;
 		};
 	};

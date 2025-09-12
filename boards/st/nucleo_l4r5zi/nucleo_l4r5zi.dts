@@ -56,8 +56,8 @@
 		status = "disabled";
 
 		red_pwm_led: red_pwm_led {
-			pwms = <&pwm1 2 PWM_MSEC(20) (PWM_POLARITY_NORMAL |
-						      STM32_PWM_COMPLEMENTARY)>;
+			pwms = <&pwm1 2 PWM_MSEC(20)
+				(PWM_POLARITY_NORMAL | STM32_PWM_COMPLEMENTARY)>;
 		};
 	};
 

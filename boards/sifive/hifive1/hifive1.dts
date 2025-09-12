@@ -31,14 +31,17 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led0: led_0 {
 			gpios = <&gpio0 19 GPIO_ACTIVE_LOW>;
 			label = "Green LED";
 		};
+
 		led1: led_1 {
 			gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
 			label = "Blue LED";
 		};
+
 		led2: led_2 {
 			gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
 			label = "Red LED";
@@ -47,14 +50,17 @@
 
 	pwmleds {
 		compatible = "pwm-leds";
+
 		pwmled0: pwmled_0 {
 			pwms = <&pwm1 1 PWM_MSEC(20)>;
 			label = "Green LED";
 		};
+
 		pwmled1: pwmled_1 {
 			pwms = <&pwm1 2 PWM_MSEC(20)>;
 			label = "Blue LED";
 		};
+
 		pwmled2: pwmled_2 {
 			pwms = <&pwm1 3 PWM_MSEC(20)>;
 			label = "Red LED";
@@ -105,6 +111,7 @@
 /* disabled (used by Flash ROM by default) */
 &spi0 {
 	reg = <0x10014000 0x1000 0x20400000 0xc00000>;
+
 	flash0: flash@0 {
 		compatible = "issi,is25lp128", "jedec,spi-nor";
 		status = "disabled";

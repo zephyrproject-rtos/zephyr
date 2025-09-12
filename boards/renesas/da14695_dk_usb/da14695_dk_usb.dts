@@ -25,6 +25,7 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		red_led: led_0 {
 			gpios = <&gpio1 1 GPIO_ACTIVE_HIGH>;
 		};
@@ -32,6 +33,7 @@
 
 	buttons {
 		compatible = "gpio-keys";
+
 		button0: button_0 {
 			gpios = <&gpio0 6 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
 			label = "Push button switch K1";
@@ -44,22 +46,22 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map =	<0 0 &gpio1 9 0>,	/* AN  */
-				<1 0 &gpio0 12 0>,	/* RST */
-				<2 0 &gpio0 20 0>,	/* CS   */
-				<3 0 &gpio0 21 0>,	/* SCK  */
-				<4 0 &gpio0 24 0>,	/* MISO */
-				<5 0 &gpio0 26 0>,	/* MOSI */
-							/* +3.3V */
-							/* GND */
-				<6 0 &gpio1 1 0>,	/* PWM  */
-				<7 0 &gpio0 27 0>,	/* INT  */
-				<8 0 &gpio0 28 0>,	/* RX   */
-				<9 0 &gpio0 29 0>,	/* TX   */
-				<10 0 &gpio0 30 0>,	/* SCL  */
-				<11 0 &gpio0 31 0>;	/* SDA  */
-							/* +5V */
-							/* GND */
+		gpio-map = <0 0 &gpio1 9 0>,	/* AN  */
+			   <1 0 &gpio0 12 0>,	/* RST */
+			   <2 0 &gpio0 20 0>,	/* CS   */
+			   <3 0 &gpio0 21 0>,	/* SCK  */
+			   <4 0 &gpio0 24 0>,	/* MISO */
+			   <5 0 &gpio0 26 0>,	/* MOSI */
+			   /* +3.3V */
+			   /* GND */
+			   <6 0 &gpio1 1 0>,	/* PWM  */
+			   <7 0 &gpio0 27 0>,	/* INT  */
+			   <8 0 &gpio0 28 0>,	/* RX   */
+			   <9 0 &gpio0 29 0>,	/* TX   */
+			   <10 0 &gpio0 30 0>,	/* SCL  */
+			   <11 0 &gpio0 31 0>;	/* SDA  */
+		/* +5V */
+		/* GND */
 	};
 
 	mikrobus_2_header: mikrobus-connector-2 {
@@ -67,22 +69,22 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map =	<0 0 &gpio0 25 0>,	/* AN  */
-				<1 0 &gpio0 12 0>,	/* RST */
-				<2 0 &gpio1 2 0>,	/* CS   */
-				<3 0 &gpio1 3 0>,	/* SCK  */
-				<4 0 &gpio1 4 0>,	/* MISO */
-				<5 0 &gpio1 5 0>,	/* MOSI */
-							/* +3.3V */
-							/* GND */
-				<6 0 &gpio1 6 0>,	/* PWM  */
-				<7 0 &gpio1 7 0>,	/* INT  */
-				<8 0 &gpio1 8 0>,	/* RX   */
-				<9 0 &gpio0 17 0>,	/* TX   */
-				<10 0 &gpio0 18 0>,	/* SCL  */
-				<11 0 &gpio0 19 0>;	/* SDA  */
-							/* +5V */
-							/* GND */
+		gpio-map = <0 0 &gpio0 25 0>,	/* AN  */
+			   <1 0 &gpio0 12 0>,	/* RST */
+			   <2 0 &gpio1 2 0>,	/* CS   */
+			   <3 0 &gpio1 3 0>,	/* SCK  */
+			   <4 0 &gpio1 4 0>,	/* MISO */
+			   <5 0 &gpio1 5 0>,	/* MOSI */
+			   /* +3.3V */
+			   /* GND */
+			   <6 0 &gpio1 6 0>,	/* PWM  */
+			   <7 0 &gpio1 7 0>,	/* INT  */
+			   <8 0 &gpio1 8 0>,	/* RX   */
+			   <9 0 &gpio0 17 0>,	/* TX   */
+			   <10 0 &gpio0 18 0>,	/* SCL  */
+			   <11 0 &gpio0 19 0>;	/* SDA  */
+		/* +5V */
+		/* GND */
 	};
 
 	aliases {
@@ -114,14 +116,17 @@
 			label = "mcuboot";
 			reg = <0x000002400 0x00009c00>;
 		};
+
 		slot0_partition: partition@c000 {
 			label = "image-0";
 			reg = <0x0000c000 0x00076000>;
 		};
+
 		slot1_partition: partition@82000 {
 			label = "image-1";
 			reg = <0x00082000 0x00076000>;
 		};
+
 		storage_partition: partition@f8000 {
 			label = "storage";
 			reg = <0x000f8000 0x00008000>;
@@ -218,7 +223,6 @@ zephyr_udc0: &usbd {
 &bt_hci_da1469x {
 	status = "okay";
 };
-
 
 mikrobus_1_i2c: &i2c {};
 

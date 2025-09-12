@@ -39,26 +39,32 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		green_led: green_led {
 			gpios = <&gpiob 3 GPIO_ACTIVE_HIGH>;
 			label = "Green";
 		};
+
 		red_led: red_led {
 			gpios = <&gpiob 4 GPIO_ACTIVE_HIGH>;
 			label = "Red";
 		};
+
 		blue_led: blue_led {
 			gpios = <&gpioc 7 GPIO_ACTIVE_HIGH>;
 			label = "Blue";
 		};
+
 		wifi_led: wifi_led {
 			gpios = <&gpiob 2 GPIO_ACTIVE_HIGH>;
 			label = "Wi-Fi";
 		};
+
 		azure_led: azure_led {
 			gpios = <&gpioa 15 GPIO_ACTIVE_HIGH>;
 			label = "Azure";
 		};
+
 		user_led: user_led {
 			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
 			label = "User";
@@ -67,12 +73,15 @@
 
 	pwmleds {
 		compatible = "pwm-leds";
+
 		red_pwm_led: red_pwm_led {
 			pwms = <&pwm3 1 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 		};
+
 		green_pwm_led: green_pwm_led {
 			pwms = <&pwm2 2 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 		};
+
 		blue_pwm_led: blue_pwm_led {
 			pwms = <&pwm3 2 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 		};
@@ -80,6 +89,7 @@
 
 	buttons {
 		compatible = "gpio-keys";
+
 		button_a: button_a {
 			gpios = <&gpioa 4 (GPIO_ACTIVE_LOW | GPIO_PULL_DOWN)>;
 			label = "Button A";
@@ -92,7 +102,6 @@
 			zephyr,code = <INPUT_KEY_B>;
 		};
 	};
-
 };
 
 &clk_lsi {
@@ -127,7 +136,6 @@
 	current-speed = <115200>;
 	status = "okay";
 };
-
 
 &usart6 {
 	pinctrl-0 = <&usart6_tx_pa11 &usart6_rx_pa12>;

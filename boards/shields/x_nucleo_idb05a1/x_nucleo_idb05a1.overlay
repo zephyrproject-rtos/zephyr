@@ -7,10 +7,10 @@
 #include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
 
 / {
-	 chosen {
-		 zephyr,bt-hci = &spbtle_rf_x_nucleo_idb05a1;
-	 };
- };
+	chosen {
+		zephyr,bt-hci = &spbtle_rf_x_nucleo_idb05a1;
+	};
+};
 
 &arduino_spi {
 	cs-gpios = <&arduino_header ARDUINO_HEADER_R3_A1 GPIO_ACTIVE_LOW>;

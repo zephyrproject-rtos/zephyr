@@ -35,5 +35,7 @@
 };
 
 feather_serial: &usart3 {};
+
 feather_i2c: &i2c1 {};
+
 feather_spi: &spi2 {};

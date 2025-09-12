@@ -85,12 +85,14 @@
 
 &flexio1 {
 	status = "okay";
+
 	/* Signal can be checked by the connector J44 Pin10(M1_LED_TP1) via logic analyzer */
 	flexio1_pwm: flexio1_pwm {
 		compatible = "nxp,flexio-pwm";
 		#pwm-cells = <3>;
 		pinctrl-0 = <&flexio1_io5_default>;
 		pinctrl-names = "default";
+
 		pwm_1 {
 			pin-id = <5>;
 			prescaler = <1>;

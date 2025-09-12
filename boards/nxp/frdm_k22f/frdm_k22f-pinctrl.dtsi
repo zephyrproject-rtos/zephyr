@@ -6,18 +6,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 #include <nxp/kinetis/MK22FN512VLH12-pinctrl.h>
 
 &pinctrl {
 	ftm0_default: ftm0_default {
 		group0 {
 			pinmux = <FTM0_CH6_PTA1>,
-				<FTM0_CH7_PTA2>;
+				 <FTM0_CH7_PTA2>;
 			drive-strength = "low";
 			bias-pull-up;
 			slew-rate = "fast";
 		};
+
 		group1 {
 			pinmux = <FTM0_CH5_PTD5>;
 			drive-strength = "low";
@@ -28,7 +28,7 @@
 	i2c0_default: i2c0_default {
 		group0 {
 			pinmux = <I2C0_SCL_PTB2>,
-				<I2C0_SDA_PTB3>;
+				 <I2C0_SDA_PTB3>;
 			drive-strength = "low";
 			drive-open-drain;
 			slew-rate = "fast";
@@ -38,9 +38,9 @@
 	spi0_default: spi0_default {
 		group0 {
 			pinmux = <SPI0_PCS4_PTC0>,
-				<SPI0_SCK_PTD1>,
-				<SPI0_SIN_PTD3>,
-				<SPI0_SOUT_PTD2>;
+				 <SPI0_SCK_PTD1>,
+				 <SPI0_SIN_PTD3>,
+				 <SPI0_SOUT_PTD2>;
 			drive-strength = "low";
 			slew-rate = "fast";
 		};
@@ -49,7 +49,7 @@
 	uart1_default: uart1_default {
 		group0 {
 			pinmux = <UART1_RX_PTE1>,
-				<UART1_TX_PTE0>;
+				 <UART1_TX_PTE0>;
 			drive-strength = "low";
 			slew-rate = "fast";
 		};
@@ -58,10 +58,9 @@
 	uart2_default: uart2_default {
 		group0 {
 			pinmux = <UART2_RX_PTD2>,
-				<UART2_TX_PTD3>;
+				 <UART2_TX_PTD3>;
 			drive-strength = "low";
 			slew-rate = "fast";
 		};
 	};
-
 };

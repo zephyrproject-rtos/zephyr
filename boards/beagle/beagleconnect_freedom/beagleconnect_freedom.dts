@@ -38,6 +38,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		button0: button_0 {
 			gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_0>;
@@ -68,6 +69,7 @@
 
 	leds: leds {
 		compatible = "gpio-leds";
+
 		led0: led_0 {
 			gpios = <&gpio0 18 GPIO_ACTIVE_HIGH>; // 2.4GHz TX/RX
 		};
@@ -161,12 +163,12 @@
 &spi0 {
 	status = "okay";
 	pinctrl-0 = <&spi0_sck_default &spi0_mosi_default
-		&spi0_miso_default &spi0_cs0_default
-		&spi0_cs1_default &spi0_cs2_default>;
+		     &spi0_miso_default &spi0_cs0_default
+		     &spi0_cs1_default &spi0_cs2_default>;
 	pinctrl-names = "default";
 	cs-gpios = <&gpio0 8 GPIO_ACTIVE_LOW>, // SPI flash
-		<&gpio0 28 GPIO_ACTIVE_LOW>,  // mikroBUS port 1
-		<&gpio0 27 GPIO_ACTIVE_LOW>;  // mikroBUS port 2
+		   <&gpio0 28 GPIO_ACTIVE_LOW>,  // mikroBUS port 1
+		   <&gpio0 27 GPIO_ACTIVE_LOW>;  // mikroBUS port 2
 
 	spi_flash0: gd25q16c@0 {
 		compatible = "jedec,spi-nor";

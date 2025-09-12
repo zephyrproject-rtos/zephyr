@@ -12,32 +12,33 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map =
-			<ARDUINO_HEADER_R3_A0 0 &pico_header 26 0>,
-			<ARDUINO_HEADER_R3_A1 0 &pico_header 27 0>,
-			<ARDUINO_HEADER_R3_A2 0 &pico_header 28 0>,
-			<ARDUINO_HEADER_R3_A3 0 &pico_header 13 0>,
-			<ARDUINO_HEADER_R3_A4 0 &pico_header 14 0>,
-			<ARDUINO_HEADER_R3_A5 0 &pico_header 15 0>,
-			<ARDUINO_HEADER_R3_D0 0 &pico_header 1 0>,
-			<ARDUINO_HEADER_R3_D1 0 &pico_header 0 0>,
-			<ARDUINO_HEADER_R3_D2 0 &pico_header 4 0>,
-			<ARDUINO_HEADER_R3_D3 0 &pico_header 5 0>,
-			<ARDUINO_HEADER_R3_D4 0 &pico_header 6 0>,
-			<ARDUINO_HEADER_R3_D5 0 &pico_header 7 0>,
-			<ARDUINO_HEADER_R3_D6 0 &pico_header 8 0>,
-			<ARDUINO_HEADER_R3_D7 0 &pico_header 9 0>,
-			<ARDUINO_HEADER_R3_D8 0 &pico_header 2 0>,
-			<ARDUINO_HEADER_R3_D9 0 &pico_header 3 0>,
-			<ARDUINO_HEADER_R3_D10 0 &pico_header 17 0>,
-			<ARDUINO_HEADER_R3_D11 0 &pico_header 19 0>,
-			<ARDUINO_HEADER_R3_D12 0 &pico_header 16 0>,
-			<ARDUINO_HEADER_R3_D13 0 &pico_header 18 0>,
-			<ARDUINO_HEADER_R3_D14 0 &pico_header 20 0>,
-			<ARDUINO_HEADER_R3_D15 0 &pico_header 21 0>;
+		gpio-map = <ARDUINO_HEADER_R3_A0 0 &pico_header 26 0>,
+			   <ARDUINO_HEADER_R3_A1 0 &pico_header 27 0>,
+			   <ARDUINO_HEADER_R3_A2 0 &pico_header 28 0>,
+			   <ARDUINO_HEADER_R3_A3 0 &pico_header 13 0>,
+			   <ARDUINO_HEADER_R3_A4 0 &pico_header 14 0>,
+			   <ARDUINO_HEADER_R3_A5 0 &pico_header 15 0>,
+			   <ARDUINO_HEADER_R3_D0 0 &pico_header 1 0>,
+			   <ARDUINO_HEADER_R3_D1 0 &pico_header 0 0>,
+			   <ARDUINO_HEADER_R3_D2 0 &pico_header 4 0>,
+			   <ARDUINO_HEADER_R3_D3 0 &pico_header 5 0>,
+			   <ARDUINO_HEADER_R3_D4 0 &pico_header 6 0>,
+			   <ARDUINO_HEADER_R3_D5 0 &pico_header 7 0>,
+			   <ARDUINO_HEADER_R3_D6 0 &pico_header 8 0>,
+			   <ARDUINO_HEADER_R3_D7 0 &pico_header 9 0>,
+			   <ARDUINO_HEADER_R3_D8 0 &pico_header 2 0>,
+			   <ARDUINO_HEADER_R3_D9 0 &pico_header 3 0>,
+			   <ARDUINO_HEADER_R3_D10 0 &pico_header 17 0>,
+			   <ARDUINO_HEADER_R3_D11 0 &pico_header 19 0>,
+			   <ARDUINO_HEADER_R3_D12 0 &pico_header 16 0>,
+			   <ARDUINO_HEADER_R3_D13 0 &pico_header 18 0>,
+			   <ARDUINO_HEADER_R3_D14 0 &pico_header 20 0>,
+			   <ARDUINO_HEADER_R3_D15 0 &pico_header 21 0>;
 	};
 };
 
 arduino_spi: &pico_spi {};
+
 arduino_i2c: &pico_i2c0 {};
+
 arduino_serial: &pico_serial {};

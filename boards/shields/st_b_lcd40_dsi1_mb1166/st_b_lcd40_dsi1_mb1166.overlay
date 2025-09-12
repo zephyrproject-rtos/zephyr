@@ -20,6 +20,7 @@
 
 &zephyr_mipi_dsi {
 	status = "okay";
+
 	otm8009a: otm8009a@0 {
 		status = "okay";
 		compatible = "orisetech,otm8009a";
@@ -39,6 +40,7 @@
 	width = <800>;
 	height = <480>;
 	pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
+
 	/* orisetech, otm8009a */
 	display-timings {
 		compatible = "zephyr,panel-timing";

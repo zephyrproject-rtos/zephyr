@@ -43,7 +43,7 @@
 		compatible = "zephyr,memory-region";
 		reg = <0x90000000 DT_SIZE_M(32)>;
 		zephyr,memory-region = "PSRAM";
-		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE) )>;
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)>;
 	};
 
 	leds: leds {
@@ -75,8 +75,8 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map = <CSI_IO0  0 &gpioc 8  0>,
-			   <CSI_IO1  0 &gpiod 2  0>;
+		gpio-map = <CSI_IO0 0 &gpioc 8 0>,
+			   <CSI_IO1 0 &gpiod 2 0>;
 	};
 };
 
@@ -250,8 +250,8 @@ csi_i2c: &i2c1 {
 	clocks = <&rcc STM32_CLOCK(AHB5, 7)>,
 		 <&rcc STM32_SRC_IC4 SDMMC2_SEL(2)>;
 	pinctrl-0 = <&sdmmc2_d0_pc4 &sdmmc2_d1_pc5
-			&sdmmc2_d2_pc0 &sdmmc2_d3_pe4
-			&sdmmc2_ck_pc2 &sdmmc2_cmd_pc3>;
+		     &sdmmc2_d2_pc0 &sdmmc2_d3_pe4
+		     &sdmmc2_ck_pc2 &sdmmc2_cmd_pc3>;
 	pinctrl-names = "default";
 	bus-width = <4>;
 	cd-gpios = <&gpion 12 GPIO_ACTIVE_HIGH>;
@@ -448,12 +448,12 @@ zephyr_udc0: &usbotg_hs1 {
 	clocks = <&rcc STM32_CLOCK(APB5, 1)>,
 		 <&rcc STM32_SRC_IC16 LTDC_SEL(2)>;
 	pinctrl-0 = <&ltdc_r0_pg0 &ltdc_r1_pd9 &ltdc_r2_pd15 &ltdc_r3_pb4
-			&ltdc_r4_ph4 &ltdc_r5_pa15 &ltdc_r6_pg11 &ltdc_r7_pd8
-			&ltdc_g0_pg12 &ltdc_g1_pg1 &ltdc_g2_pa1 &ltdc_g3_pa0
-			&ltdc_g4_pb15 &ltdc_g5_pb12 &ltdc_g6_pb11 &ltdc_g7_pg8
-			&ltdc_b0_pg15 &ltdc_b1_pa7 &ltdc_b2_pb2 &ltdc_b3_pg6
-			&ltdc_b4_ph3 &ltdc_b5_ph6 &ltdc_b6_pa8 &ltdc_b7_pa2
-			&ltdc_de_pg13 &ltdc_clk_pb13 &ltdc_hsync_pb14 &ltdc_vsync_pe11>;
+		     &ltdc_r4_ph4 &ltdc_r5_pa15 &ltdc_r6_pg11 &ltdc_r7_pd8
+		     &ltdc_g0_pg12 &ltdc_g1_pg1 &ltdc_g2_pa1 &ltdc_g3_pa0
+		     &ltdc_g4_pb15 &ltdc_g5_pb12 &ltdc_g6_pb11 &ltdc_g7_pg8
+		     &ltdc_b0_pg15 &ltdc_b1_pa7 &ltdc_b2_pb2 &ltdc_b3_pg6
+		     &ltdc_b4_ph3 &ltdc_b5_ph6 &ltdc_b6_pa8 &ltdc_b7_pa2
+		     &ltdc_de_pg13 &ltdc_clk_pb13 &ltdc_hsync_pb14 &ltdc_vsync_pe11>;
 	pinctrl-names = "default";
 	disp-on-gpios = <&gpioq 3 GPIO_ACTIVE_HIGH>;
 	bl-ctrl-gpios = <&gpioq 6 GPIO_ACTIVE_HIGH>;
@@ -487,6 +487,6 @@ zephyr_udc0: &usbotg_hs1 {
 
 csi_interface: &dcmipp {
 	port {
-		csi_ep_in: endpoint { };
+		csi_ep_in: endpoint {};
 	};
 };

@@ -23,6 +23,7 @@
 	/* Note TCA9538 does not have configurable internal pull ups/ downs */
 	buttons {
 		compatible = "gpio-keys";
+
 		boot_button0: boot_button {
 			gpios = <&gpio1 11 GPIO_ACTIVE_LOW>;
 			label = "Bootloader button (S4)";
@@ -56,18 +57,22 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led1: led_1 {
 			gpios = <&gpio_exp0 4 GPIO_ACTIVE_LOW>;
 			label = "Blue LED 1";
 		};
+
 		led2: led_2 {
 			gpios = <&gpio_exp0 5 GPIO_ACTIVE_LOW>;
 			label = "Blue LED 2";
 		};
+
 		led3: led_3 {
 			gpios = <&gpio_exp0 6 GPIO_ACTIVE_LOW>;
 			label = "Blue LED 3";
 		};
+
 		led4: led_4 {
 			gpios = <&gpio_exp0 7 GPIO_ACTIVE_LOW>;
 			label = "Blue LED 4";
@@ -85,6 +90,7 @@
 	gpio_fwd: nrf-gpio-forwarder {
 		compatible = "nordic,nrf-gpio-forwarder";
 		status = "okay";
+
 		uart {
 			gpios = <&gpio1 8 0>, <&gpio1 10 0>, <&gpio1 7 0>, <&gpio1 9 0>;
 		};
@@ -173,6 +179,7 @@
 	pinctrl-0 = <&i2c1_default>;
 	pinctrl-1 = <&i2c1_sleep>;
 	pinctrl-names = "default", "sleep";
+
 	at24c256@50 {
 		compatible = "atmel,at24c256", "atmel,at24";
 		reg = <0x50>;
@@ -229,6 +236,7 @@
 	pinctrl-0 = <&spi2_default>;
 	pinctrl-1 = <&spi2_sleep>;
 	pinctrl-names = "default", "sleep";
+
 	enc424j600@0 {
 		compatible = "microchip,enc424j600";
 		reg = <0>;
@@ -245,11 +253,13 @@
 	pinctrl-0 = <&spi3_default>;
 	pinctrl-1 = <&spi3_sleep>;
 	pinctrl-names = "default", "sleep";
+
 	sdhc0: sdhc@0 {
 		reg = <0>;
 		compatible = "zephyr,sdhc-spi-slot";
 		status = "okay";
 		spi-max-frequency = <8000000>;
+
 		mmc {
 			compatible = "zephyr,sdmmc-disk";
 			disk-name = "SD";
@@ -295,6 +305,7 @@
 	pinctrl-0 = <&qspi_default>;
 	pinctrl-1 = <&qspi_sleep>;
 	pinctrl-names = "default", "sleep";
+
 	mx25r64: mx25r6435f@0 {
 		compatible = "nordic,qspi-nor";
 		reg = <0>;
@@ -304,12 +315,10 @@
 		readoc = "read4io";
 		sck-frequency = <8000000>;
 		jedec-id = [c2 28 17];
-		sfdp-bfp = [
-			e5 20 f1 ff  ff ff ff 03  44 eb 08 6b  08 3b 04 bb
-			ee ff ff ff  ff ff 00 ff  ff ff 00 ff  0c 20 0f 52
-			10 d8 00 ff  23 72 f5 00  82 ed 04 cc  44 83 68 44
-			30 b0 30 b0  f7 c4 d5 5c  00 be 29 ff  f0 d0 ff ff
-		];
+		sfdp-bfp = [e5 20 f1 ff ff ff ff 03 44 eb 08 6b 08 3b 04 bb
+			    ee ff ff ff ff ff 00 ff ff ff 00 ff 0c 20 0f 52
+			    10 d8 00 ff 23 72 f5 00 82 ed 04 cc 44 83 68 44
+			    30 b0 30 b0 f7 c4 d5 5c 00 be 29 ff f0 d0 ff ff];
 		size = <67108864>;
 		has-dpd;
 		t-enter-dpd = <10000>;
@@ -328,10 +337,12 @@
 			label = "mcuboot";
 			reg = <0x00000000 0x00010000>;
 		};
+
 		/* 640K */
 		slot0_partition: partition@10000 {
 			label = "image-0";
 		};
+
 		/* 256K */
 		slot0_ns_partition: partition@b0000 {
 			label = "image-0-nonsecure";
@@ -363,15 +374,18 @@
 		slot1_partition: partition@0 {
 			label = "image-1";
 		};
+
 		/* 256K */
 		slot1_ns_partition: partition@A0000 {
 			label = "image-1-nonsecure";
 		};
+
 		/* 128K */
 		scratch_partition: partition@e0000 {
 			label = "image-scratch";
 			reg = <0x000e0000 0x00020000>;
 		};
+
 		/* 7MB */
 		lfs_partition: partition@100000 {
 			label = "lfs_storage";

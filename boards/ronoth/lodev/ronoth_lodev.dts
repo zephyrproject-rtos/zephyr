@@ -30,6 +30,7 @@
 	 */
 	leds {
 		compatible = "gpio-leds";
+
 		red_led_0: led_0 {
 			gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>;
 			label = "User LD2";
@@ -39,6 +40,7 @@
 	/* Arbitrarily use PC9 as a button input. */
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button: button {
 			label = "User";
 			gpios = <&gpioc 9 GPIO_ACTIVE_LOW>;
@@ -52,25 +54,25 @@
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
 		gpio-map =	/*	<0 0 -      - 0>,		 3.3V */
-		/*	<1 0 -      - 0>,		 GND */
-			<2 0 &gpioc 1 0>,		/* PC1 */
-			<3 0 &gpioc 0 0>,		/* PC0 */
-			<4 0 &gpiob 8 0>,		/* PB8 */
-		/*	<5 0 -      - 0>,		 BOOT0 */
-			<6 0 &gpiob 7 0>,		/* PB7 */
-			<7 0 &gpiob 6 0>,		/* PB6 */
-			<8 0 &gpiob 5 0>,		/* PB5 */
-			<9 0 &gpiod 2 0>,		/* PD2 */
-			<10 0 &gpioc 12 0>,		/* PC12 */
-			<11 0 &gpioc 11 0>,		/* PC11 */
-			<12 0 &gpioc 10 0>,		/* PC10 */
-			<13 0 &gpioa 14 0>,		/* PA14 / SWCLK */
-			<14 0 &gpioa 13 0>,		/* PA13 / SWDIO */
-			<15 0 &gpioa 12 0>,		/* PA12 */
-			<16 0 &gpioa 11 0>,		/* PA11 */
-			<17 0 &gpioa 9 0>,		/* PA9 (UART1 Rx connected to USB) */
-			<18 0 &gpioa 10 0>,		/* PA10 (UART1 Tx connected to USB) */
-			<19 0 &gpioa 8 0>;		/* PA8 */
+			   /*	<1 0 -      - 0>,		 GND */
+			   <2 0 &gpioc 1 0>,		/* PC1 */
+			   <3 0 &gpioc 0 0>,		/* PC0 */
+			   <4 0 &gpiob 8 0>,		/* PB8 */
+			   /*	<5 0 -      - 0>,		 BOOT0 */
+			   <6 0 &gpiob 7 0>,		/* PB7 */
+			   <7 0 &gpiob 6 0>,		/* PB6 */
+			   <8 0 &gpiob 5 0>,		/* PB5 */
+			   <9 0 &gpiod 2 0>,		/* PD2 */
+			   <10 0 &gpioc 12 0>,		/* PC12 */
+			   <11 0 &gpioc 11 0>,		/* PC11 */
+			   <12 0 &gpioc 10 0>,		/* PC10 */
+			   <13 0 &gpioa 14 0>,		/* PA14 / SWCLK */
+			   <14 0 &gpioa 13 0>,		/* PA13 / SWDIO */
+			   <15 0 &gpioa 12 0>,		/* PA12 */
+			   <16 0 &gpioa 11 0>,		/* PA11 */
+			   <17 0 &gpioa 9 0>,		/* PA9 (UART1 Rx connected to USB) */
+			   <18 0 &gpioa 10 0>,		/* PA10 (UART1 Tx connected to USB) */
+			   <19 0 &gpioa 8 0>;		/* PA8 */
 	};
 
 	cn7_header: lodev_connector_2 {
@@ -78,26 +80,26 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map =		<0 0 &gpioc 2 0>,		/* PC2 */
-			<1 0 &gpioc 3 0>,		/* PC3 */
-		/*	<2 0 -      - 0>,		 nRESET */
-			<3 0 &gpioa 0 0>,		/* PA0 */
-			<4 0 &gpioa 2 0>,		/* PA2 */
-			<4 0 &gpioa 3 0>,		/* PA3 */
-			<6 0 &gpioa 4 0>,		/* PA4 */
-			<7 0 &gpioa 5 0>,		/* PA5 - connected to red LED1 */
-			<8 0 &gpioa 6 0>,		/* PA6 */
-			<9 0 &gpioa 7 0>,		/* PA7 */
-			<10 0 &gpioc 4 0>,		/* PC4 */
-			<11 0 &gpioc 5 0>,		/* PC5 */
-			<12 0 &gpiob 0 0>,		/* PB0 */
-			<13 0 &gpiob 1 0>,		/* PB1 */
-			<14 0 &gpioc 6 0>,		/* PC6 */
-			<15 0 &gpioc 7 0>,		/* PC7 */
-			<16 0 &gpioc 8 0>,		/* PC8 */
-			<17 0 &gpioc 9 0>,		/* PC9 */
-		/*	<18 0 -      - 0>,		 GND */
-			<19 0 &gpioa 1 0>;		/* PA1 (also used in S76S as "RF FEM CPS" */
+		gpio-map = <0 0 &gpioc 2 0>,		/* PC2 */
+			   <1 0 &gpioc 3 0>,		/* PC3 */
+			   /*	<2 0 -      - 0>,		 nRESET */
+			   <3 0 &gpioa 0 0>,		/* PA0 */
+			   <4 0 &gpioa 2 0>,		/* PA2 */
+			   <4 0 &gpioa 3 0>,		/* PA3 */
+			   <6 0 &gpioa 4 0>,		/* PA4 */
+			   <7 0 &gpioa 5 0>,		/* PA5 - connected to red LED1 */
+			   <8 0 &gpioa 6 0>,		/* PA6 */
+			   <9 0 &gpioa 7 0>,		/* PA7 */
+			   <10 0 &gpioc 4 0>,		/* PC4 */
+			   <11 0 &gpioc 5 0>,		/* PC5 */
+			   <12 0 &gpiob 0 0>,		/* PB0 */
+			   <13 0 &gpiob 1 0>,		/* PB1 */
+			   <14 0 &gpioc 6 0>,		/* PC6 */
+			   <15 0 &gpioc 7 0>,		/* PC7 */
+			   <16 0 &gpioc 8 0>,		/* PC8 */
+			   <17 0 &gpioc 9 0>,		/* PC9 */
+			   /*	<18 0 -      - 0>,		 GND */
+			   <19 0 &gpioa 1 0>;		/* PA1 (also used in S76S as "RF FEM CPS" */
 	};
 
 	aliases {

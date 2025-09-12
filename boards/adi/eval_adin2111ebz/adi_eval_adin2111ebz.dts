@@ -23,22 +23,27 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		blue_led: uC_led1 {
 			gpios = <&gpiob 6 GPIO_ACTIVE_LOW>;
 			label = "Debug led uC1";
 		};
+
 		net_red_led: led_NET1 {
 			gpios = <&gpiob 10 GPIO_ACTIVE_LOW>;
 			label = "NET led 1";
 		};
+
 		net_green_led: led_NET2 {
 			gpios = <&gpiob 11 GPIO_ACTIVE_LOW>;
 			label = "NET led 2";
 		};
+
 		mod_red_led: led_MOD1 {
 			gpios = <&gpioe 2 GPIO_ACTIVE_LOW>;
 			label = "Mod led 1";
 		};
+
 		mod_green_led: led_MOD2 {
 			gpios = <&gpioe 6 GPIO_ACTIVE_LOW>;
 			label = "Mod led 2";
@@ -101,10 +106,12 @@
 			label = "image-0";
 			reg = <0x00020000 DT_SIZE_K(432)>;
 		};
+
 		slot1_partition: partition@8c000 {
 			label = "image-1";
 			reg = <0x0008C000 DT_SIZE_K(432)>;
 		};
+
 		scratch_partition: partition@f8000 {
 			label = "image-scratch";
 			reg = <0x000F8000 DT_SIZE_K(16)>;
@@ -162,9 +169,9 @@
 	cs-gpios = <&gpiob 12 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 	status = "okay";
 	dmas = <&dmamux1 2 13 (STM32_DMA_MEMORY_TO_PERIPH | STM32_DMA_MEM_INC |
-		       STM32_DMA_MEM_8BITS | STM32_DMA_PERIPH_8BITS)>,
-		       <&dmamux1 3 12 (STM32_DMA_PERIPH_TO_MEMORY | STM32_DMA_MEM_INC |
-		       STM32_DMA_MEM_8BITS | STM32_DMA_PERIPH_8BITS)>;
+		STM32_DMA_MEM_8BITS | STM32_DMA_PERIPH_8BITS)>,
+	       <&dmamux1 3 12 (STM32_DMA_PERIPH_TO_MEMORY | STM32_DMA_MEM_INC |
+		STM32_DMA_MEM_8BITS | STM32_DMA_PERIPH_8BITS)>;
 	dma-names = "tx", "rx";
 
 	adin2111: adin2111@0 {
@@ -177,11 +184,13 @@
 		spi-oa-protection;
 
 		port1 {
-			local-mac-address = [ 00 E0 22 FE DA C9 ];
+			local-mac-address = [00 E0 22 FE DA C9];
 		};
+
 		port2 {
-			local-mac-address = [ 00 E0 22 FE DA D9 ];
+			local-mac-address = [00 E0 22 FE DA D9];
 		};
+
 		mdio {
 			compatible = "adi,adin2111-mdio";
 			#address-cells = <1>;
@@ -193,6 +202,7 @@
 				compatible = "adi,adin2111-phy";
 				status = "okay";
 			};
+
 			ethernet-phy@2 {
 				reg = <0x2>;
 				compatible = "adi,adin2111-phy";

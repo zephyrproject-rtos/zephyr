@@ -24,9 +24,9 @@
  */
 #define MCO1_SEL_HSI48 4
 
- /* See reference manual (RM0433 Rev 8) page 391:
-  *   0100: division by 4
-  */
+/* See reference manual (RM0433 Rev 8) page 391:
+ *   0100: division by 4
+ */
 #define MCO1_PRE_DIV_4 4
 
 &mco1 {

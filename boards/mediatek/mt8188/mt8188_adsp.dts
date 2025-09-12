@@ -4,15 +4,15 @@
 #include <mem.h>
 
 /dts-v1/;
-/ {
 
+/ {
 	#address-cells = <1>;
 	#size-cells = <1>;
 
 	sram0: memory@4e100000 {
-		 device_type = "memory";
-		 compatible = "mmio-sram";
-		 reg = <0x4e100000 DT_SIZE_K(512)>;
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0x4e100000 DT_SIZE_K(512)>;
 	};
 
 	dram0: memory@60000000 {
@@ -76,6 +76,7 @@
 		};
 	}; /* soc */
 
-	chosen { };
-	aliases { };
+	chosen {};
+
+	aliases {};
 };

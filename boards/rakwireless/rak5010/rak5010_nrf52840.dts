@@ -23,6 +23,7 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led0: led_0 {
 			gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
 			label = "Green LED 0";
@@ -62,6 +63,7 @@
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
+
 	modem: modem {
 		compatible = "quectel,bg95";
 		mdm-power-gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
@@ -85,6 +87,7 @@
 	pinctrl-0 = <&i2c1_default>;
 	pinctrl-1 = <&i2c1_sleep>;
 	pinctrl-names = "default", "sleep";
+
 	opt3001@44 {
 		compatible = "ti,opt3001";
 		reg = <0x44>;
@@ -109,6 +112,7 @@
 	pinctrl-0 = <&qspi_default>;
 	pinctrl-1 = <&qspi_sleep>;
 	pinctrl-names = "default", "sleep";
+
 	is25wp064a: is25wp064a@0 {
 		compatible = "nordic,qspi-nor";
 		reg = <0>;

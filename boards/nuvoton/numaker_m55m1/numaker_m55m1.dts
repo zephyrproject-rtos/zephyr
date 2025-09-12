@@ -48,11 +48,13 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		btn0: btn0 {
 			label = "BTN0";
 			gpios = <&gpioi 11 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		btn1: btn1 {
 			label = "BTN1";
 			gpios = <&gpioh 1 GPIO_ACTIVE_LOW>;

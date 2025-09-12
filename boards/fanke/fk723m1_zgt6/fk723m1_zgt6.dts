@@ -118,10 +118,10 @@ zephyr_udc0: &usbotg_hs {
 
 &sdmmc1 {
 	pinctrl-0 = <&sdmmc1_d0_pc8 &sdmmc1_d1_pc9 &sdmmc1_d2_pc10
-		&sdmmc1_d3_pc11 &sdmmc1_ck_pc12 &sdmmc1_cmd_pd2>;
+		     &sdmmc1_d3_pc11 &sdmmc1_ck_pc12 &sdmmc1_cmd_pd2>;
 	pinctrl-names = "default";
 	clocks = <&rcc STM32_CLOCK(AHB3, 16)>,
-		<&rcc STM32_SRC_PLL1_Q SDMMC_SEL(0)>;
+		 <&rcc STM32_SRC_PLL1_Q SDMMC_SEL(0)>;
 	disk-name = "SD";
 	status = "okay";
 	bus-width = <4>;
@@ -129,8 +129,8 @@ zephyr_udc0: &usbotg_hs {
 
 &octospi1 {
 	pinctrl-0 = <&octospim_p1_ncs_pg6 &octospim_p1_clk_pf10
-		&octospim_p1_io0_pf8 &octospim_p1_io1_pf9
-		&octospim_p1_io2_pf7 &octospim_p1_io3_pf6>;
+		     &octospim_p1_io0_pf8 &octospim_p1_io1_pf9
+		     &octospim_p1_io2_pf7 &octospim_p1_io3_pf6>;
 	pinctrl-names = "default";
 	status = "okay";
 

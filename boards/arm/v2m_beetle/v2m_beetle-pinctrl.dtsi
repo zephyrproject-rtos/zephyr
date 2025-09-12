@@ -33,6 +33,7 @@
 		group1 {
 			pinmux = <SPI0_SS_EXP>, <SPI0_MOSI_EXP>, <SPI0_SCK_EXP>;
 		};
+
 		group2 {
 			pinmux = <SPI0_MISO_EXP>;
 			input-enable;
@@ -42,8 +43,8 @@
 	/omit-if-no-ref/ spi1_default: spi1_default {
 		group1 {
 			pinmux = <SPI1_SCK_EXP>, <SPI1_SS_EXP>, <SPI0_MOSI_EXP>;
-
 		};
+
 		group2 {
 			pinmux = <SPI1_MISO_EXP>;
 			input-enable;

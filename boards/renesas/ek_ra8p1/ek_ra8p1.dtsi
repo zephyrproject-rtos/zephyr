@@ -203,11 +203,11 @@
 	bank@0 {
 		reg = <0>;
 		renesas,ra-sdram-timing = <SDRAM_TRAS_6CYCLES
-					SDRAM_TRCD_3CYCLES
-					SDRAM_TRP_3CYCLES
-					SDRAM_TWR_2CYCLES
-					SDRAM_TCL_3CYCLES
-					937
-					SDRAM_TREFW_8CYCLES>;
+					   SDRAM_TRCD_3CYCLES
+					   SDRAM_TRP_3CYCLES
+					   SDRAM_TWR_2CYCLES
+					   SDRAM_TCL_3CYCLES
+					   937
+					   SDRAM_TREFW_8CYCLES>;
 	};
 };

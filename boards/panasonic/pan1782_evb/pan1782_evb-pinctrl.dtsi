@@ -13,6 +13,7 @@
 		group1 {
 			psels = <NRF_PSEL(UART_TX, 1, 9)>;
 		};
+
 		group2 {
 			psels = <NRF_PSEL(UART_RX, 0, 3)>;
 			bias-pull-up;
@@ -124,5 +125,4 @@
 			low-power-enable;
 		};
 	};
-
 };
