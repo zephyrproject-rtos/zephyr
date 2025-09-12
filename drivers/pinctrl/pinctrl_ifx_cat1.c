@@ -12,7 +12,7 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <cy_gpio.h>
 
-#define GPIO_PORT_OR_NULL(node_id) \
+#define GPIO_PORT_OR_NULL(node_id)                                                                 \
 	COND_CODE_1(DT_NODE_EXISTS(node_id), ((GPIO_PRT_Type *)DT_REG_ADDR(node_id)), (NULL))
 
 /* @brief Array containing pointers to each GPIO port.
@@ -83,6 +83,39 @@ static uint32_t soc_gpio_get_drv_mode(uint32_t flags)
 	return drv_mode;
 }
 
+#if defined(CONFIG_SOC_SERIES_PSE84)
+static uint32_t soc_gpio_get_drv_strength(uint32_t flags)
+{
+	uint32_t drv_strength_idx = 0;
+	uint32_t drv_strength = CY_GPIO_DRIVE_1_8;
+	uint32_t _flags;
+
+	_flags = ((flags & SOC_GPIO_FLAGS_MASK) >> SOC_GPIO_FLAGS_POS);
+	drv_strength_idx = (_flags & SOC_GPIO_DRIVESTRENGTH) >> SOC_GPIO_DRIVESTRENGTH_POS;
+
+	switch (drv_strength_idx) {
+	case 0:
+		drv_strength = CY_GPIO_DRIVE_FULL;
+		break;
+	case 1:
+		drv_strength = CY_GPIO_DRIVE_1_2;
+		break;
+	case 2:
+		drv_strength = CY_GPIO_DRIVE_1_4;
+		break;
+	case 3:
+		drv_strength = CY_GPIO_DRIVE_1_8;
+		break;
+
+	default:
+		drv_strength = CY_GPIO_DRIVE_1_8;
+		break;
+	}
+
+	return drv_strength;
+}
+#endif
+
 int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintptr_t reg)
 {
 	ARG_UNUSED(reg);
@@ -112,6 +145,11 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 			/* do nothing */
 			break;
 		}
+
+#if defined(CONFIG_SOC_SERIES_PSE84)
+		Cy_GPIO_SetDriveSel(gpio_ports[port_num], pin_num,
+				    soc_gpio_get_drv_strength(pins[i].pincfg));
+#endif
 	}
 
 	return 0;
