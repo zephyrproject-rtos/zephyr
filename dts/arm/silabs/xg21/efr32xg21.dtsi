@@ -20,6 +20,11 @@
 			pa-ramp-time-us = <10>;
 			pa-voltage-mv = <3300>;
 
+			bt_hci_silabs: bt_hci_silabs {
+				compatible = "silabs,bt-hci-efr32";
+				status = "disabled";
+			};
+
 			pti: pti {
 				compatible = "silabs,pti";
 				clock-frequency = <DT_FREQ_K(1600)>;
