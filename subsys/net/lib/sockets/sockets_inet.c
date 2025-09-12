@@ -482,6 +482,8 @@ int zsock_accept_ctx(struct net_context *parent, struct sockaddr *addr,
 		return -1;
 	}
 
+	net_tcp_conn_accepted(ctx);
+
 	fd = zvfs_reserve_fd();
 	if (fd < 0) {
 		zsock_flush_queue(ctx);
