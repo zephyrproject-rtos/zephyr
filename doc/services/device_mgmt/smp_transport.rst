@@ -25,7 +25,7 @@ If an SMP request or response is too large to fit in a single GATT command, the
 sender fragments it across several packets.  No additional framing is
 introduced when a request or response is fragmented; the payload is simply
 split among several packets. Since GATT guarantees ordered delivery of
-packets, the SMP header in the first fragment contains sufficient information
+packets, the SMP header in the first frame contains sufficient information
 for reassembly.
 
 .. _mcumgr_smp_transport_uart:
