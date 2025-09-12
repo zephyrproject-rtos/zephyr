@@ -213,9 +213,20 @@ static inline int usbhs_enable_core(const struct device *dev)
 	return 0;
 }
 
+static inline int usbhs_enable_pullup(const struct device *dev)
+{
+	/* Core is ready to handle connection, enable D+ pull-up */
+	nrfs_usb_dplus_pullup_enable((void *)dev);
+
+	return 0;
+}
+
 static inline int usbhs_disable_core(const struct device *dev)
 {
 	NRF_USBHS_Type *wrapper = USBHS_DT_WRAPPER_REG_ADDR(0);
+
+	/* Disable D+ pull-up until next post enable quirk */
+	nrfs_usb_dplus_pullup_disable((void *)dev);
 
 	/* Disable interrupts */
 	wrapper->INTENCLR = 1UL;
@@ -299,6 +310,7 @@ static inline int usbhs_pre_hibernation_exit(const struct device *dev)
 	const struct dwc2_vendor_quirks dwc2_vendor_quirks_##n = {		\
 		.init = usbhs_enable_nrfs_service,				\
 		.pre_enable = usbhs_enable_core,				\
+		.post_enable = usbhs_enable_pullup,				\
 		.disable = usbhs_disable_core,					\
 		.shutdown = usbhs_disable_nrfs_service,				\
 		.irq_clear = usbhs_irq_clear,					\
