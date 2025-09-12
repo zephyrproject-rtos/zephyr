@@ -3,9 +3,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
-#include <nxp/mcx/MCXN947VDF-pinctrl.h>
-
 &pinctrl {
 	pinmux_flexcomm1_lpspi: pinmux_flexcomm1_lpspi {
 		group0 {
@@ -74,6 +71,7 @@
 			slew-rate = "fast";
 			drive-strength = "low";
 		};
+
 		group1 {
 			pinmux = <FLEXSPI0_A_DATA2_PIO3_10>,
 					<FLEXSPI0_A_DATA3_PIO3_11>;
@@ -114,6 +112,7 @@
 			drive-strength = "low";
 			input-enable;
 		};
+
 		mac_group {
 			pinmux = <ENET0_RXDV_PIO1_13>,
 				<ENET0_RXD0_PIO1_14>,
@@ -125,33 +124,6 @@
 			slew-rate = "fast";
 			drive-strength = "low";
 			input-enable;
-		};
-	};
-
-	pinmux_flexpwm1_pwm0: pinmux_flexpwm1_pwm0 {
-		group0 {
-			pinmux = <PWM1_A0_PIO2_6>,
-				<PWM1_B0_PIO2_7>;
-			slew-rate = "fast";
-			drive-strength = "low";
-		};
-	};
-
-	pinmux_flexpwm1_pwm1: pinmux_flexpwm1_pwm1 {
-		group0 {
-			pinmux = <PWM1_A1_PIO2_4>,
-				<PWM1_B1_PIO2_5>;
-			slew-rate = "fast";
-			drive-strength = "low";
-		};
-	};
-
-	pinmux_flexpwm1_pwm2: pinmux_flexpwm1_pwm2 {
-		group0 {
-			pinmux = <PWM1_A2_PIO2_2>,
-				<PWM1_B2_PIO2_3>;
-			slew-rate = "fast";
-			drive-strength = "low";
 		};
 	};
 
@@ -167,6 +139,7 @@
 			bias-pull-up;
 			input-enable;
 		};
+
 		group1 {
 			pinmux = <SDHC0_CLK_PIO2_4>;
 			slew-rate = "fast";
@@ -182,15 +155,6 @@
 				<ADC0_B1_PIO4_19>;
 			slew-rate = "fast";
 			drive-strength = "low";
-		};
-	};
-
-	pinmux_lpcmp2: pinmux_lpcmp2 {
-		group0 {
-			pinmux = <CMP2_IN0_PIO1_2>;
-			drive-strength = "low";
-			slew-rate = "fast";
-			bias-pull-up;
 		};
 	};
 
@@ -213,6 +177,7 @@
 			input-enable;
 			bias-pull-up;
 		};
+
 		group1 {
 			pinmux = <I3C1_PUR_PIO1_11>;
 			slew-rate = "fast";
@@ -255,6 +220,7 @@
 			drive-strength = "low";
 			input-enable;
 		};
+
 		group1 {
 			pinmux = <FLEXIO0_D0_PIO0_8>;
 			slew-rate = "fast";
@@ -262,6 +228,7 @@
 			input-enable;
 			bias-pull-up;
 		};
+
 		group2 {
 			pinmux = <FLEXIO0_D1_PIO0_9>;
 			slew-rate = "slow";

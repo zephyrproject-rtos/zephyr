@@ -10,5 +10,4 @@
 
 / {
 	model = "NXP MCX-N9XX-EVK board";
-	compatible = "nxp,mcxn947", "nxp,mcx";
 };
