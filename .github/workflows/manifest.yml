@@ -24,7 +24,7 @@ jobs:
           BASE_REF: ${{ github.base_ref }}
         working-directory: zephyrproject/zephyr
         run: |
-          pip install west==1.4.0
+          pip install -r scripts/requirements-west.txt --require-hashes
           git config --global user.email "you@example.com"
           git config --global user.name "Your Name"
           west init -l . || true
