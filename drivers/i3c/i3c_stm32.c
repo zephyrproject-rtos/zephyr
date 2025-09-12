@@ -115,6 +115,7 @@ struct i3c_stm32_config {
 	I3C_TypeDef *i3c;                      /* Pointer to I3C module base addr */
 	irq_config_func_t irq_config_func;     /* IRQ config function */
 	const struct stm32_pclken *pclken;     /* Pointer to peripheral clock configuration */
+	size_t pclk_len;
 	const struct pinctrl_dev_config *pcfg; /* Pointer to pin control configuration */
 };
 
@@ -569,9 +570,18 @@ static int i3c_stm32_config_clk_wave(const struct device *dev)
 	uint32_t i2c_bus_freq = data->drv_data.ctrl_config.scl.i2c;
 	uint32_t i3c_bus_freq = data->drv_data.ctrl_config.scl.i3c;
 
-	if (clock_control_get_rate(clk, (clock_control_subsys_t)&cfg->pclken[0], &i3c_clock) < 0) {
-		LOG_ERR("Failed call clock_control_get_rate(pclken[0])");
-		return -EIO;
+	if (cfg->pclk_len > 1) {
+		if (clock_control_get_rate(clk, (clock_control_subsys_t)&cfg->pclken[1],
+					   &i3c_clock) < 0) {
+			LOG_ERR("Failed call clock_control_get_rate(pclken[1])");
+			return -EIO;
+		}
+	} else {
+		if (clock_control_get_rate(clk, (clock_control_subsys_t)&cfg->pclken[0],
+					   &i3c_clock) < 0) {
+			LOG_ERR("Failed call clock_control_get_rate(pclken[0])");
+			return -EIO;
+		}
 	}
 
 	uint8_t scll_od = 0;
@@ -2191,6 +2201,7 @@ static DEVICE_API(i3c, i3c_stm32_driver_api) = {
 		.i3c = (I3C_TypeDef *)DT_INST_REG_ADDR(index),                                     \
 		.irq_config_func = STM32_I3C_IRQ_HANDLER_FUNCTION(index),                          \
 		.pclken = pclken_##index,                                                          \
+		.pclk_len = DT_INST_NUM_CLOCKS(index),                                             \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),                                     \
 		.drv_cfg.dev_list.i3c = i3c_stm32_dev_arr_##index,                                 \
 		.drv_cfg.dev_list.num_i3c = ARRAY_SIZE(i3c_stm32_dev_arr_##index),                 \
