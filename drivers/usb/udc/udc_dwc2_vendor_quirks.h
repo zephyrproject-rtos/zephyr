@@ -13,6 +13,13 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/usb/udc.h>
 
+#define UDC_DWC2_IRQ_FLAGS_TYPE0(n)	0
+#define UDC_DWC2_IRQ_FLAGS_TYPE1(n)	DT_INST_IRQ(n, type)
+#define DW_IRQ_FLAGS(n) \
+	_CONCAT(UDC_DWC2_IRQ_FLAGS_TYPE, DT_INST_IRQ_HAS_CELL(n, type))(n)
+
+void udc_dwc2_isr_handler(const struct device *dev);
+
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_fsotg)
 
 #include <zephyr/sys/sys_io.h>
@@ -92,11 +99,30 @@ static inline int stm32f4_fsotg_disable_phy(const struct device *dev)
 		return stm32f4_fsotg_enable_clk(&stm32f4_clk_##n);		\
 	}									\
 										\
+	static int stm32f4_fsotg_irq_enable_func_##n(const struct device *dev)	\
+	{									\
+		IRQ_CONNECT(DT_INST_IRQN(n),					\
+			    DT_INST_IRQ(n, priority),				\
+			    udc_dwc2_isr_handler,				\
+			    DEVICE_DT_INST_GET(n),				\
+			    DW_IRQ_FLAGS(n));					\
+										\
+		irq_enable(DT_INST_IRQN(n));					\
+		return 0;							\
+	}									\
+										\
+	static int stm32f4_fsotg_irq_disable_func_##n(const struct device *dev)	\
+	{									\
+		irq_disable(DT_INST_IRQN(n));					\
+		return 0;							\
+	}									\
 	const struct dwc2_vendor_quirks dwc2_vendor_quirks_##n = {		\
 		.pre_enable = stm32f4_fsotg_enable_clk_##n,			\
 		.post_enable = stm32f4_fsotg_enable_phy,			\
 		.disable = stm32f4_fsotg_disable_phy,				\
 		.irq_clear = NULL,						\
+		.irq_enable_func = stm32f4_fsotg_irq_enable_func_##n,		\
+		.irq_disable_func = stm32f4_fsotg_irq_disable_func_##n,		\
 	};
 
 
@@ -296,6 +322,23 @@ static inline int usbhs_pre_hibernation_exit(const struct device *dev)
 }
 
 #define QUIRK_NRF_USBHS_DEFINE(n)						\
+	static int nrf_usbhs_irq_enable_func_##n(const struct device *dev)	\
+	{									\
+		IRQ_CONNECT(DT_INST_IRQN(n),					\
+			    DT_INST_IRQ(n, priority),				\
+			    udc_dwc2_isr_handler,				\
+			    DEVICE_DT_INST_GET(n),				\
+			    DW_IRQ_FLAGS(n));					\
+										\
+		irq_enable(DT_INST_IRQN(n));					\
+		return 0;							\
+	}									\
+										\
+	static int nrf_usbhs_irq_disable_func_##n(const struct device *dev)	\
+	{									\
+		irq_disable(DT_INST_IRQN(n));					\
+		return 0;							\
+	}									\
 	const struct dwc2_vendor_quirks dwc2_vendor_quirks_##n = {		\
 		.init = usbhs_enable_nrfs_service,				\
 		.pre_enable = usbhs_enable_core,				\
@@ -306,6 +349,8 @@ static inline int usbhs_pre_hibernation_exit(const struct device *dev)
 		.is_phy_clk_off = usbhs_is_phy_clk_off,				\
 		.post_hibernation_entry = usbhs_post_hibernation_entry,		\
 		.pre_hibernation_exit = usbhs_pre_hibernation_exit,		\
+		.irq_enable_func = nrf_usbhs_irq_enable_func_##n,		\
+		.irq_disable_func = nrf_usbhs_irq_disable_func_##n,		\
 	};
 
 DT_INST_FOREACH_STATUS_OKAY(QUIRK_NRF_USBHS_DEFINE)
@@ -494,16 +539,35 @@ static inline int usbhs_pre_hibernation_exit(const struct device *dev)
 	return 0;
 }
 
-#define QUIRK_NRF_USBHS_DEFINE(n)						\
-	struct dwc2_vendor_quirks dwc2_vendor_quirks_##n = {			\
-		.init = usbhs_init_vreg_and_clock,				\
-		.pre_enable = usbhs_enable_core,				\
-		.disable = usbhs_disable_core,					\
-		.shutdown = usbhs_disable_vreg,					\
-		.caps = usbhs_init_caps,					\
-		.is_phy_clk_off = usbhs_is_phy_clk_off,				\
-		.post_hibernation_entry = usbhs_post_hibernation_entry,		\
-		.pre_hibernation_exit = usbhs_pre_hibernation_exit,		\
+#define QUIRK_NRF_USBHS_DEFINE(n)							\
+	static int nrf_usbhs_nrf54l_irq_enable_func_##n(const struct device *dev)	\
+	{										\
+		IRQ_CONNECT(DT_INST_IRQN(n),						\
+			    DT_INST_IRQ(n, priority),					\
+			    udc_dwc2_isr_handler,					\
+			    DEVICE_DT_INST_GET(n),					\
+			    DW_IRQ_FLAGS(n));						\
+											\
+		irq_enable(DT_INST_IRQN(n));						\
+		return 0;								\
+	}										\
+											\
+	static int nrf_usbhs_nrf54l_irq_disable_func_##n(const struct device *dev)	\
+	{										\
+		irq_disable(DT_INST_IRQN(n));						\
+		return 0;								\
+	}										\
+	struct dwc2_vendor_quirks dwc2_vendor_quirks_##n = {				\
+		.init = usbhs_init_vreg_and_clock,					\
+		.pre_enable = usbhs_enable_core,					\
+		.disable = usbhs_disable_core,						\
+		.shutdown = usbhs_disable_vreg,						\
+		.caps = usbhs_init_caps,						\
+		.is_phy_clk_off = usbhs_is_phy_clk_off,					\
+		.post_hibernation_entry = usbhs_post_hibernation_entry,			\
+		.pre_hibernation_exit = usbhs_pre_hibernation_exit,			\
+		.irq_enable_func = nrf_usbhs_nrf54l_irq_enable_func_##n,		\
+		.irq_disable_func = nrf_usbhs_nrf54l_irq_disable_func_##n,		\
 	};
 
 DT_INST_FOREACH_STATUS_OKAY(QUIRK_NRF_USBHS_DEFINE)

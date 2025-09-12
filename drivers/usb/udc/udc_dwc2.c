@@ -2255,7 +2255,6 @@ static int udc_dwc2_init_controller(const struct device *dev)
 
 static int udc_dwc2_enable(const struct device *dev)
 {
-	const struct udc_dwc2_config *const config = dev->config;
 	struct usb_dwc2_reg *const base = dwc2_get_base(dev);
 	int err;
 
@@ -2272,7 +2271,7 @@ static int udc_dwc2_enable(const struct device *dev)
 
 	/* Enable global interrupt */
 	sys_set_bits((mem_addr_t)&base->gahbcfg, USB_DWC2_GAHBCFG_GLBINTRMASK);
-	config->irq_enable_func(dev);
+	dwc2_quirk_irq_enable_func(dev);
 
 	/* Disable soft disconnect */
 	sys_clear_bits((mem_addr_t)&base->dctl, USB_DWC2_DCTL_SFTDISCON);
@@ -2289,7 +2288,6 @@ static int udc_dwc2_enable(const struct device *dev)
 
 static int udc_dwc2_disable(const struct device *dev)
 {
-	const struct udc_dwc2_config *const config = dev->config;
 	struct udc_dwc2_data *const priv = udc_get_private(dev);
 	struct usb_dwc2_reg *const base = dwc2_get_base(dev);
 	mem_addr_t dctl_reg = (mem_addr_t)&base->dctl;
@@ -2308,7 +2306,7 @@ static int udc_dwc2_disable(const struct device *dev)
 		return -EIO;
 	}
 
-	config->irq_disable_func(dev);
+	dwc2_quirk_irq_disable_func(dev);
 
 	if (priv->hibernated) {
 		dwc2_exit_hibernation(dev, false, true);
@@ -3079,7 +3077,7 @@ static void dwc2_handle_goutnakeff(const struct device *dev)
 	k_spin_unlock(&priv->lock, key);
 }
 
-static void udc_dwc2_isr_handler(const struct device *dev)
+void udc_dwc2_isr_handler(const struct device *dev)
 {
 	const struct udc_dwc2_config *const config = dev->config;
 	struct usb_dwc2_reg *const base = config->base;
@@ -3284,7 +3282,6 @@ static ALWAYS_INLINE void dwc2_thread_handler(void *const arg)
 	const struct device *dev = (const struct device *)arg;
 	struct usb_dwc2_reg *const base = dwc2_get_base(dev);
 	struct udc_dwc2_data *const priv = udc_get_private(dev);
-	const struct udc_dwc2_config *const config = dev->config;
 	struct udc_ep_config *ep_cfg;
 	const uint32_t hibernation_exit_events = (BIT(DWC2_DRV_EVT_HIBERNATION_EXIT_BUS_RESET) |
 						  BIT(DWC2_DRV_EVT_HIBERNATION_EXIT_HOST_RESUME));
@@ -3365,11 +3362,11 @@ static ALWAYS_INLINE void dwc2_thread_handler(void *const arg)
 			      BIT(DWC2_DRV_EVT_ENTER_HIBERNATION));
 
 		if (priv->hibernated) {
-			config->irq_disable_func(dev);
+			dwc2_quirk_irq_disable_func(dev);
 
 			dwc2_handle_hibernation_exit(dev, true, false);
 
-			config->irq_enable_func(dev);
+			dwc2_quirk_irq_enable_func(dev);
 		} else {
 			sys_set_bits((mem_addr_t)&base->dctl, USB_DWC2_DCTL_RMTWKUPSIG);
 
@@ -3384,7 +3381,7 @@ static ALWAYS_INLINE void dwc2_thread_handler(void *const arg)
 	}
 
 	if (evt & BIT(DWC2_DRV_EVT_ENTER_HIBERNATION)) {
-		config->irq_disable_func(dev);
+		dwc2_quirk_irq_disable_func(dev);
 
 		prev = k_event_clear(&priv->drv_evt, BIT(DWC2_DRV_EVT_ENTER_HIBERNATION));
 
@@ -3393,14 +3390,14 @@ static ALWAYS_INLINE void dwc2_thread_handler(void *const arg)
 			dwc2_enter_hibernation(dev);
 		}
 
-		config->irq_enable_func(dev);
+		dwc2_quirk_irq_enable_func(dev);
 	}
 
 	if (evt & hibernation_exit_events) {
 		bool bus_reset;
 
 		LOG_DBG("Hibernation exit event");
-		config->irq_disable_func(dev);
+		dwc2_quirk_irq_disable_func(dev);
 
 		prev = k_event_clear(&priv->drv_evt, hibernation_exit_events);
 		bus_reset = prev & BIT(DWC2_DRV_EVT_HIBERNATION_EXIT_BUS_RESET);
@@ -3409,7 +3406,7 @@ static ALWAYS_INLINE void dwc2_thread_handler(void *const arg)
 			dwc2_handle_hibernation_exit(dev, false, bus_reset);
 		}
 
-		config->irq_enable_func(dev);
+		dwc2_quirk_irq_enable_func(dev);
 	}
 
 	if (evt & BIT(DWC2_DRV_EVT_ENUM_DONE)) {
@@ -3454,11 +3451,6 @@ static const struct udc_api udc_dwc2_api = {
 	COND_CODE_1(DT_INST_PINCTRL_HAS_NAME(n, default),			\
 		    ((void *)PINCTRL_DT_INST_DEV_CONFIG_GET(n)), (NULL))
 
-#define UDC_DWC2_IRQ_FLAGS_TYPE0(n)	0
-#define UDC_DWC2_IRQ_FLAGS_TYPE1(n)	DT_INST_IRQ(n, type)
-#define DW_IRQ_FLAGS(n) \
-	_CONCAT(UDC_DWC2_IRQ_FLAGS_TYPE, DT_INST_IRQ_HAS_CELL(n, type))(n)
-
 /*
  * A UDC driver should always be implemented as a multi-instance
  * driver, even if your platform does not require it.
@@ -3490,22 +3482,6 @@ static const struct udc_api udc_dwc2_api = {
 		k_thread_name_set(&priv->thread_data, dev->name);		\
 	}									\
 										\
-	static void udc_dwc2_irq_enable_func_##n(const struct device *dev)	\
-	{									\
-		IRQ_CONNECT(DT_INST_IRQN(n),					\
-			    DT_INST_IRQ(n, priority),				\
-			    udc_dwc2_isr_handler,				\
-			    DEVICE_DT_INST_GET(n),				\
-			    DW_IRQ_FLAGS(n));					\
-										\
-		irq_enable(DT_INST_IRQN(n));					\
-	}									\
-										\
-	static void udc_dwc2_irq_disable_func_##n(const struct device *dev)	\
-	{									\
-		irq_disable(DT_INST_IRQN(n));					\
-	}									\
-										\
 	static struct udc_ep_config ep_cfg_out[DT_INST_PROP(n, num_out_eps)];	\
 	static struct udc_ep_config ep_cfg_in[DT_INST_PROP(n, num_in_eps)];	\
 										\
@@ -3517,8 +3493,6 @@ static const struct udc_api udc_dwc2_api = {
 		.make_thread = udc_dwc2_make_thread_##n,			\
 		.base = (struct usb_dwc2_reg *)UDC_DWC2_DT_INST_REG_ADDR(n),	\
 		.pcfg = UDC_DWC2_PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
-		.irq_enable_func = udc_dwc2_irq_enable_func_##n,		\
-		.irq_disable_func = udc_dwc2_irq_disable_func_##n,		\
 		.quirks = UDC_DWC2_VENDOR_QUIRK_GET(n),				\
 		.ghwcfg1 = DT_INST_PROP(n, ghwcfg1),				\
 		.ghwcfg2 = DT_INST_PROP(n, ghwcfg2),				\
