@@ -19,6 +19,7 @@
 		zephyr,flash = &flash0;
 		zephyr,shell-uart = &usart4;
 		zephyr,sram = &sram0;
+		zephyr,display = &lpm013m126;
 	};
 
 	/* These aliases are provided for compatibility with samples */
@@ -69,6 +70,27 @@
 			label = "User Push Button 1";
 			zephyr,code = <INPUT_KEY_1>;
 		};
+	};
+};
+
+&usart1 {
+	compatible = "silabs,usart-spi";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	cs-gpios = <&gpioc 14 GPIO_ACTIVE_HIGH>;
+	pinctrl-0 = <&usart1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	lpm013m126: lpm013m126@0 {
+		compatible = "jdi,lpm013m126";
+		reg = <0>;
+		height = <176>;
+		width = <176>;
+		spi-max-frequency = <2000000>;
+		disp-gpios = <&gpioa 9 GPIO_ACTIVE_HIGH>;
+		extcomin-gpios = <&gpioa 11 GPIO_ACTIVE_HIGH>;
+		extcomin-frequency = <60>;
 	};
 };
 
