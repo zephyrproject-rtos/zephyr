@@ -30,6 +30,7 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		cap_mis_led: led_0 {
 			gpios = <&porta 23 GPIO_ACTIVE_HIGH>;
 			label = "CAP_MIS";
@@ -42,7 +43,6 @@
 		sense-resistor-milli-ohms = <4>;
 		sense-gain-mult = <100>;
 	};
-
 };
 
 &cpu0 {

@@ -22,6 +22,7 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		user_led: led {
 			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
 			label = "User LED";
@@ -30,6 +31,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button: button {
 			label = "KEY";
 			gpios = <&gpioa 0 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
@@ -46,7 +48,6 @@
 };
 
 &flash0 {
-
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
@@ -68,10 +69,12 @@
 			label = "image-0";
 			reg = <0x00020000 DT_SIZE_K(128)>;
 		};
+
 		slot1_partition: partition@40000 {
 			label = "image-1";
 			reg = <0x00040000 DT_SIZE_K(128)>;
 		};
+
 		scratch_partition: partition@60000 {
 			label = "image-scratch";
 			reg = <0x00060000 DT_SIZE_K(128)>;

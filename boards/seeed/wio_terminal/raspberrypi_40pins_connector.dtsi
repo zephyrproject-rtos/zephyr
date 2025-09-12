@@ -41,6 +41,9 @@
 };
 
 raspberrypi_serial: &sercom2 {};
+
 raspberrypi_i2c0: &sercom4 {};
+
 raspberrypi_i2c1: &sercom3 {};
+
 raspberrypi_spi: &sercom5 {};

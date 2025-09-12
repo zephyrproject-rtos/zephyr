@@ -35,11 +35,13 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		/* green led */
 		led0: led_0 {
 			gpios = <&gpio0 29 0>;
 			label = "USR1 LED";
 		};
+
 		/* blue led */
 		led1: led_1 {
 			gpios = <&gpio0 28 0>;
@@ -49,6 +51,7 @@
 
 	buttons {
 		compatible = "gpio-keys";
+
 		button0: button_0 {
 			/* gpio flags need validation */
 			gpios = <&gpio0 27 GPIO_ACTIVE_LOW>;
@@ -96,7 +99,6 @@
 };
 
 &flash0 {
-
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
@@ -106,14 +108,17 @@
 			label = "mcuboot";
 			reg = <0x00000000 0xa000>;
 		};
+
 		slot0_partition: partition@a000 {
 			label = "image-0";
 			reg = <0x0000a000 0x33000>;
 		};
+
 		slot1_partition: partition@3d000 {
 			label = "image-1";
 			reg = <0x0003d000 0x33000>;
 		};
+
 		scratch_partition: partition@70000 {
 			label = "image-scratch";
 			reg = <0x00070000 0xa000>;

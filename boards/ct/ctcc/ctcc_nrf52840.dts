@@ -19,15 +19,17 @@
 	};
 
 	leds {
-		 compatible = "gpio-leds";
-		 led1: led_1 {
-			 gpios = <&gpio0 23 GPIO_ACTIVE_LOW>;
-			 label = "LED 1";
-		 };
-		 led2: led_2 {
-			 gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
-			 label = "LED 2";
-		 };
+		compatible = "gpio-leds";
+
+		led1: led_1 {
+			gpios = <&gpio0 23 GPIO_ACTIVE_LOW>;
+			label = "LED 1";
+		};
+
+		led2: led_2 {
+			gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
+			label = "LED 2";
+		};
 	};
 
 	aliases {
@@ -39,7 +41,6 @@
 };
 
 &flash0 {
-
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
@@ -49,14 +50,17 @@
 			label = "mcuboot";
 			reg = <0x00000000 0x00012000>;
 		};
+
 		slot0_partition: partition@12000 {
 			label = "image-0";
 			reg = <0x00012000 0x00076000>;
 		};
+
 		slot1_partition: partition@88000 {
 			label = "image-1";
 			reg = <0x00088000 0x00074000>;
 		};
+
 		storage_partition: partition@fc000 {
 			label = "storage";
 			reg = <0x000fc000 0x00004000>;

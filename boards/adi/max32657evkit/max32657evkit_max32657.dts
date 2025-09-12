@@ -10,11 +10,11 @@
 #include "max32657evkit_max32657_common.dtsi"
 
 / {
-	 chosen {
-		 zephyr,sram = &secure_ram;
-		 zephyr,flash = &flash0;
-		 zephyr,code-partition = &slot0_partition;
-	 };
+	chosen {
+		zephyr,sram = &secure_ram;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+	};
 
 	reserved-memory {
 		#address-cells = <1>;

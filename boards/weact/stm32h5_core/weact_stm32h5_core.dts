@@ -49,8 +49,8 @@
 
 &sdmmc1 {
 	pinctrl-0 = <&sdmmc1_d0_pc8 &sdmmc1_d1_pc9
-				&sdmmc1_d2_pc10 &sdmmc1_d3_pc11
-				&sdmmc1_ck_pc12 &sdmmc1_cmd_pd2>;
+		     &sdmmc1_d2_pc10 &sdmmc1_d3_pc11
+		     &sdmmc1_ck_pc12 &sdmmc1_cmd_pd2>;
 	cd-gpios = <&gpioa 8 GPIO_ACTIVE_LOW>;
 	pinctrl-names = "default";
 	cd-gpios = <&gpioa 8 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
@@ -100,13 +100,13 @@
 
 &rtc {
 	clocks = <&rcc STM32_CLOCK(APB3, 21)>,
-			<&rcc STM32_SRC_LSE RTC_SEL(1)>;
+		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
 	status = "okay";
 };
 
 stm32_lp_tick_source: &lptim4 {
 	clocks = <&rcc STM32_CLOCK(APB3, 13)>,
-			<&rcc STM32_SRC_LSI LPTIM4_SEL(4)>;
+		 <&rcc STM32_SRC_LSI LPTIM4_SEL(4)>;
 	status = "okay";
 };
 
@@ -136,7 +136,7 @@ stm32_lp_tick_source: &lptim4 {
 	pinctrl-0 = <&fdcan1_rx_pb8 &fdcan1_tx_pb7>;
 	pinctrl-names = "default";
 	clocks = <&rcc STM32_CLOCK(APB1_2, 9)>,
-		<&rcc STM32_SRC_PLL1_Q FDCAN_SEL(1)>;
+		 <&rcc STM32_SRC_PLL1_Q FDCAN_SEL(1)>;
 	clk-divider = <2>;
 	status = "okay";
 };

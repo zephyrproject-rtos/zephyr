@@ -25,6 +25,7 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led_0: led_0 {
 			gpios = <&gpio_led0 0>;
 			label = "USERLED0";
@@ -38,6 +39,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button_0: button_0 {
 			label = "USERPB0";
 			gpios = <&gpio_button 0>;

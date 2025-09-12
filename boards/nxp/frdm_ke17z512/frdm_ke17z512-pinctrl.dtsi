@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 #include <nxp/kinetis/MKE17Z512VLL9-pinctrl.h>
 
 &pinctrl {
@@ -20,7 +19,7 @@
 	lpuart2_default: lpuart2_default {
 		group0 {
 			pinmux = <LPUART2_TX_PTE12>,
-					<LPUART2_RX_PTD17>;
+				 <LPUART2_RX_PTD17>;
 			drive-strength = "low";
 			slew-rate = "slow";
 		};
@@ -29,8 +28,8 @@
 	ftm2_default: ftm2_default {
 		group0 {
 			pinmux = <FTM2_CH0_PTD10>,
-				<FTM2_CH2_PTD12>,
-				<FTM2_CH3_PTD5>;
+				 <FTM2_CH2_PTD12>,
+				 <FTM2_CH3_PTD5>;
 			drive-strength = "low";
 			slew-rate = "slow";
 		};
@@ -39,7 +38,7 @@
 	lpi2c0_default: lpi2c0_default {
 		group0 {
 			pinmux = <LPI2C0_SDA_PTA2>,
-				<LPI2C0_SCL_PTA3>;
+				 <LPI2C0_SCL_PTA3>;
 			bias-pull-up;
 			drive-strength = "low";
 			slew-rate = "slow";
@@ -49,7 +48,7 @@
 	lpi2c1_default: lpi2c1_default {
 		group0 {
 			pinmux = <LPI2C1_SDA_PTE0>,
-				<LPI2C1_SCL_PTE1>;
+				 <LPI2C1_SCL_PTE1>;
 			bias-pull-up;
 			drive-strength = "low";
 			slew-rate = "slow";
@@ -59,7 +58,7 @@
 	uart1_default: uart1_default {
 		group0 {
 			pinmux = <SCI1_RX_PTC16>,
-				<SCI1_TX_PTC17>;
+				 <SCI1_TX_PTC17>;
 			drive-strength = "low";
 			slew-rate = "slow";
 		};
@@ -68,9 +67,9 @@
 	lpspi0_default: lpspi0_default {
 		group0 {
 			pinmux = <LPSPI0_SCK_PTE0>,
-				<LPSPI0_SIN_PTE1>,
-				<LPSPI0_SOUT_PTE2>,
-				<LPSPI0_PCS2_PTE6>;
+				 <LPSPI0_SIN_PTE1>,
+				 <LPSPI0_SOUT_PTE2>,
+				 <LPSPI0_PCS2_PTE6>;
 			bias-pull-up;
 			drive-strength = "low";
 			slew-rate = "slow";
@@ -80,7 +79,7 @@
 	flexio_pwm_default: flexio_pwm_default {
 		group0 {
 			pinmux = <FXIO_D3_PTD5>,
-				<FXIO_D5_PTD3>;
+				 <FXIO_D5_PTD3>;
 			drive-strength = "low";
 			slew-rate = "slow";
 		};

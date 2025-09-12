@@ -6,7 +6,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 #include <nxp/kinetis/MK82FN256VLL15-pinctrl.h>
 
 &pinctrl {
@@ -21,8 +20,8 @@
 	ftm3_default: ftm3_default {
 		group0 {
 			pinmux = <FTM3_CH4_PTC8>,
-				<FTM3_CH5_PTC9>,
-				<FTM3_CH6_PTC10>;
+				 <FTM3_CH5_PTC9>,
+				 <FTM3_CH6_PTC10>;
 			drive-strength = "low";
 			slew-rate = "fast";
 		};
@@ -31,7 +30,7 @@
 	i2c0_default: i2c0_default {
 		group0 {
 			pinmux = <I2C0_SCL_PTB2>,
-				<I2C0_SDA_PTB3>;
+				 <I2C0_SDA_PTB3>;
 			drive-strength = "low";
 			drive-open-drain;
 			slew-rate = "fast";
@@ -41,7 +40,7 @@
 	i2c3_default: i2c3_default {
 		group0 {
 			pinmux = <I2C3_SCL_PTA2>,
-				<I2C3_SDA_PTA1>;
+				 <I2C3_SDA_PTA1>;
 			drive-strength = "low";
 			drive-open-drain;
 			bias-pull-up;
@@ -52,7 +51,7 @@
 	lpuart0_default: lpuart0_default {
 		group0 {
 			pinmux = <LPUART0_RX_PTB16>,
-				<LPUART0_TX_PTB17>;
+				 <LPUART0_TX_PTB17>;
 			drive-strength = "low";
 			slew-rate = "fast";
 		};
@@ -61,7 +60,7 @@
 	lpuart4_default: lpuart4_default {
 		group0 {
 			pinmux = <LPUART4_RX_PTC14>,
-				<LPUART4_TX_PTC15>;
+				 <LPUART4_TX_PTC15>;
 			drive-strength = "low";
 			slew-rate = "fast";
 		};
@@ -70,9 +69,9 @@
 	spi0_default: spi0_default {
 		group0 {
 			pinmux = <SPI0_SCK_PTD1>,
-				<SPI0_SOUT_PTD2>,
-				<SPI0_SIN_PTD3>,
-				<SPI0_PCS1_PTD4>;
+				 <SPI0_SOUT_PTD2>,
+				 <SPI0_SIN_PTD3>,
+				 <SPI0_PCS1_PTD4>;
 			drive-strength = "low";
 			slew-rate = "fast";
 		};
@@ -81,12 +80,11 @@
 	spi1_default: spi1_default {
 		group0 {
 			pinmux = <SPI1_SCK_PTE1>,
-				<SPI1_SOUT_PTE2>,
-				<SPI1_SIN_PTE4>,
-				<SPI1_PCS0_PTE5>;
+				 <SPI1_SOUT_PTE2>,
+				 <SPI1_SIN_PTE4>,
+				 <SPI1_PCS0_PTE5>;
 			drive-strength = "low";
 			slew-rate = "fast";
 		};
 	};
-
 };

@@ -60,6 +60,7 @@
 
 	keys {
 		compatible = "gpio-keys";
+
 		key_1: button_1 {
 			label = "User KEY1";
 			gpios = <&gpioc 2 GPIO_PULL_DOWN>;
@@ -103,22 +104,26 @@
 			label = "mcuboot";
 			reg = <0x00000000 0x10000>;
 		};
+
 		slot0_partition: partition@10000 {
 			label = "image-0";
 			reg = <0x10000 0x70000>;
 		};
+
 		slot1_partition: partition@80000 {
 			label = "image-1";
 			reg = <0x80000 0x70000>;
 		};
+
 		scratch_partition: partition@f0000 {
 			label = "image-scratch";
 			reg = <0xf0000 0x4000>;
 		};
+
 		storage_partition: partition@f4000 {
 			label = "storage";
 			reg = <0xf4000 0x0000b000>;
-		/* region <0xff000 0x1000> is reserved for Telink B91 SDK's data */
+			/* region <0xff000 0x1000> is reserved for Telink B91 SDK's data */
 		};
 	};
 };

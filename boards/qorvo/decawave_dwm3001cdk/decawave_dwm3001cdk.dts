@@ -14,11 +14,11 @@
 	compatible = "decawave,dwm3001";
 
 	chosen {
-		zephyr,console        = &uart0;
-		zephyr,shell-uart     = &uart0;
-		zephyr,uart-mcumgr    = &uart0;
-		zephyr,bt-mon-uart    = &uart0;
-		zephyr,bt-c2h-uart    = &uart0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,uart-mcumgr = &uart0;
+		zephyr,bt-mon-uart = &uart0;
+		zephyr,bt-c2h-uart = &uart0;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
@@ -27,6 +27,7 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		// led from top of board down
 		// D20: something related to jlink, red
 		// D13: DW3000 tx(red)/rx(green)
@@ -34,14 +35,17 @@
 			gpios = <&gpio0 04 GPIO_ACTIVE_LOW>;
 			label = "D9 green LED";
 		};
+
 		led1: led_1 {
 			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
 			label = "D12 red LED";
 		};
+
 		led2: led_2 {
 			gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
 			label = "D11 red LED";
 		};
+
 		led3: led_3 {
 			gpios = <&gpio0 05 GPIO_ACTIVE_LOW>;
 			label = "D10 blue LED";
@@ -50,6 +54,7 @@
 
 	buttons {
 		compatible = "gpio-keys";
+
 		// SW1 is connected to P0.18, which by default is nRESET and
 		// will reset the board
 		button2: button_2 {
@@ -61,15 +66,14 @@
 
 	/* These aliases are provided for compatibility with samples */
 	aliases {
-		sw0        = &button2;
-		led0       = &led0;
-		led1       = &led1;
-		led2       = &led2;
-		led3       = &led3;
-		watchdog0  = &wdt0;
-		accel0     = &lis2dh12;
+		sw0 = &button2;
+		led0 = &led0;
+		led1 = &led1;
+		led2 = &led2;
+		led3 = &led3;
+		watchdog0 = &wdt0;
+		accel0 = &lis2dh12;
 	};
-
 };
 
 &uicr {
@@ -105,6 +109,7 @@
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-1 = <&i2c0_sleep>;
 	pinctrl-names = "default", "sleep";
+
 	lis2dh12: lis2dh12@19 {
 		compatible = "st,lis2dh12", "st,lis2dh";
 		reg = <0x19>;
@@ -136,14 +141,17 @@
 			label = "mcuboot";
 			reg = <0x00000000 0xC000>;
 		};
+
 		slot0_partition: partition@c000 {
 			label = "image-0";
 			reg = <0x0000C000 0x38000>;
 		};
+
 		slot1_partition: partition@44000 {
 			label = "image-1";
 			reg = <0x00044000 0x36000>;
 		};
+
 		storage_partition: partition@7a000 {
 			label = "storage";
 			reg = <0x0007A000 0x00006000>;

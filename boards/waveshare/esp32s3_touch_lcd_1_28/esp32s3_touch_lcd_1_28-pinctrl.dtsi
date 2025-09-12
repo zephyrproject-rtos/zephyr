@@ -8,7 +8,6 @@
 #include <zephyr/dt-bindings/pinctrl/esp32s3-gpio-sigmap.h>
 
 &pinctrl {
-
 	i2c1_default: i2c1_default {
 		group1 {
 			pinmux = <I2C1_SDA_GPIO6>, <I2C1_SCL_GPIO7>;
@@ -29,6 +28,7 @@
 		group1 {
 			pinmux = <SPIM2_MISO_GPIO12>, <SPIM2_SCLK_GPIO10>, <SPIM2_CSEL_GPIO9>;
 		};
+
 		group2 {
 			pinmux = <SPIM2_MOSI_GPIO11>;
 			output-low;
@@ -40,6 +40,7 @@
 			pinmux = <UART0_TX_GPIO43>;
 			output-high;
 		};
+
 		group2 {
 			pinmux = <UART0_RX_GPIO44>;
 			bias-pull-up;

@@ -9,6 +9,7 @@
 #include <nordic/nrf52840_qiaa.dtsi>
 #include "raytac_mdbt50q_cx_40_dongle_nrf52840-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+
 / {
 	model = "raytac_mdbt50q_cx_40_dongle_nrf52840";
 	compatible = "raytac,raytac-mdbt50q-cx-40-dongle-nrf52840";
@@ -62,7 +63,7 @@
 		led0 = &led0_d1;
 		led1 = &led1_d2;
 		led0-green = &led0_d1;
-		led1-red   = &led1_d2;
+		led1-red = &led1_d2;
 		pwm-led0 = &d1_pwm_led;
 		pwm-led1 = &d2_pwm_led;
 		red-pwm-led = &d2_pwm_led;

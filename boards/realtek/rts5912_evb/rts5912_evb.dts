@@ -9,6 +9,7 @@
 #include <realtek/ec/rts5912.dtsi>
 #include <realtek/ec/rts5912-pinctrl.dtsi>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+
 / {
 	model = "Realtek RTS5912 Evaluation Board";
 	compatible = "realtek,rts5912-evb";
@@ -24,11 +25,11 @@
 &adc0 {
 	status = "okay";
 	pinctrl-0 = <&adc0_gpio074 &adc1_gpio075
-		&adc2_gpio076 &adc3_gpio077
-		&adc4_gpio078 &adc5_gpio079
-		&adc6_gpio080 &adc7_gpio081
-		&adc8_gpio082 &adc9_gpio054
-		&adc10_gpio098 &adc11_gpio024>;
+		     &adc2_gpio076 &adc3_gpio077
+		     &adc4_gpio078 &adc5_gpio079
+		     &adc6_gpio080 &adc7_gpio081
+		     &adc8_gpio082 &adc9_gpio054
+		     &adc10_gpio098 &adc11_gpio024>;
 	pinctrl-names = "default";
 };
 
@@ -75,9 +76,9 @@
 
 &espi0 {
 	status = "okay";
-	pinctrl-0 = < &espi_alert_gpio003 &espi_cs_gpio004
-				&espi_io3_gpio005 &espi_io2_gpio006
-				&espi_io1_gpio007 &espi_io0_gpio008
-				&espi_clk_gpio009 &espi_reset_gpio020>;
+	pinctrl-0 = <&espi_alert_gpio003 &espi_cs_gpio004
+		     &espi_io3_gpio005 &espi_io2_gpio006
+		     &espi_io1_gpio007 &espi_io0_gpio008
+		     &espi_clk_gpio009 &espi_reset_gpio020>;
 	pinctrl-names = "default";
 };

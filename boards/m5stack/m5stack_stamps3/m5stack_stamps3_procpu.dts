@@ -91,16 +91,17 @@
 	status = "disabled";
 	#address-cells = <1>;
 	#size-cells = <0>;
+
 	channel0@0 {
 		reg = <0x0>;
 		timer = <0>;
 	};
+
 	channel0@1 {
 		reg = <0x1>;
 		timer = <0>;
 	};
 };
-
 
 &spi2 {
 	#address-cells = <1>;
@@ -124,9 +125,9 @@
 		spi-max-frequency = <WS2812C_SPI_FREQ>;
 
 		chain-length = <1>;
-		color-mapping =	<LED_COLOR_ID_GREEN>,
-			<LED_COLOR_ID_RED>,
-			<LED_COLOR_ID_BLUE>;
+		color-mapping = <LED_COLOR_ID_GREEN>,
+				<LED_COLOR_ID_RED>,
+				<LED_COLOR_ID_BLUE>;
 		spi-one-frame = <WS2812C_ONE_FRAME>;
 		spi-zero-frame = <WS2812C_ZERO_FRAME>;
 		reset-delay = <250>;

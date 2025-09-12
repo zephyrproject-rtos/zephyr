@@ -7,9 +7,9 @@
 #include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
 
 / {
-	 chosen {
-		 zephyr,bt-hci = &hci_spi;
-	 };
+	chosen {
+		zephyr,bt-hci = &hci_spi;
+	};
 };
 
 &arduino_spi {
