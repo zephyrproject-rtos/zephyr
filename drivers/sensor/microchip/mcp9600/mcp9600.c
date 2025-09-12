@@ -51,11 +51,76 @@ struct mcp9600_config {
 	const struct i2c_dt_spec bus;
 };
 
+static int mcp9600_reg_write(const struct device *dev, uint8_t start, uint8_t *buf, int size)
+{
+	const struct mcp9600_config *cfg = dev->config;
+
+	return i2c_burst_write_dt(&cfg->bus, start, buf, size);
+}
+
 static int mcp9600_reg_read(const struct device *dev, uint8_t start, uint8_t *buf, int size)
 {
 	const struct mcp9600_config *cfg = dev->config;
 
 	return i2c_burst_read_dt(&cfg->bus, start, buf, size);
+}
+
+static int mcp9600_attr_set(const struct device *dev, enum sensor_channel chan,
+			    enum sensor_attribute attr, const struct sensor_value *val)
+{
+	uint8_t tc_cfg = val->val1 & 0xFF;
+	uint8_t dev_cfg = val->val2 & 0xFF;
+	int ret;
+
+	if (chan != SENSOR_CHAN_AMBIENT_TEMP) {
+		return -ENOTSUP;
+	}
+
+	if (attr != SENSOR_ATTR_CONFIGURATION) {
+		return -ENOTSUP;
+	}
+
+	ret = mcp9600_reg_write(dev, MCP9600_REG_TC_CONFIG, &tc_cfg, 1);
+	if (ret < 0) {
+		return -EIO;
+	}
+
+	ret = mcp9600_reg_write(dev, MCP9600_REG_DEV_CONFIG, &dev_cfg, 1);
+	if (ret < 0) {
+		return -EIO;
+	}
+
+	return 0;
+}
+
+static int mcp9600_attr_get(const struct device *dev, enum sensor_channel chan,
+			    enum sensor_attribute attr, struct sensor_value *val)
+{
+	uint8_t tc_cfg, dev_cfg;
+	int ret;
+
+	if (chan != SENSOR_CHAN_AMBIENT_TEMP) {
+		return -ENOTSUP;
+	}
+
+	if (attr != SENSOR_ATTR_CONFIGURATION) {
+		return -ENOTSUP;
+	}
+
+	ret = mcp9600_reg_read(dev, MCP9600_REG_TC_CONFIG, &tc_cfg, 1);
+	if (ret < 0) {
+		return -EIO;
+	}
+
+	ret = mcp9600_reg_read(dev, MCP9600_REG_DEV_CONFIG, &dev_cfg, 1);
+	if (ret < 0) {
+		return -EIO;
+	}
+
+	val->val1 = tc_cfg;
+	val->val2 = dev_cfg;
+
+	return 0;
 }
 
 static int mcp9600_sample_fetch(const struct device *dev, enum sensor_channel chan)
@@ -107,6 +172,8 @@ static int mcp9600_channel_get(const struct device *dev, enum sensor_channel cha
 static DEVICE_API(sensor, mcp9600_api) = {
 	.sample_fetch = mcp9600_sample_fetch,
 	.channel_get = mcp9600_channel_get,
+	.attr_set = mcp9600_attr_set,
+	.attr_get = mcp9600_attr_get,
 };
 
 static int mcp9600_init(const struct device *dev)
