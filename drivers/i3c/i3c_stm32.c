@@ -2169,8 +2169,6 @@ static DEVICE_API(i3c, i3c_stm32_driver_api) = {
 #define STM32_I3C_IRQ_HANDLER_DECL(index)                                                          \
 	static void i3c_stm32_irq_config_func_##index(const struct device *dev)
 
-#define STM32_I3C_IRQ_HANDLER_FUNCTION(index) .irq_config_func = i3c_stm32_irq_config_func_##index,
-
 #define STM32_I3C_IRQ_HANDLER(index)                                                               \
 	static void i3c_stm32_irq_config_func_##index(const struct device *dev)                    \
 	{                                                                                          \
@@ -2189,7 +2187,8 @@ static DEVICE_API(i3c, i3c_stm32_driver_api) = {
                                                                                                    \
 	static const struct i3c_stm32_config i3c_stm32_cfg_##index = {                             \
 		.i3c = (I3C_TypeDef *)DT_INST_REG_ADDR(index),                                     \
-		STM32_I3C_IRQ_HANDLER_FUNCTION(index).pclken = pclken_##index,                     \
+		.irq_config_func = i3c_stm32_irq_config_func_##index,                              \
+		.pclken = pclken_##index,                                                          \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),                                     \
 		.drv_cfg.dev_list.i3c = i3c_stm32_dev_arr_##index,                                 \
 		.drv_cfg.dev_list.num_i3c = ARRAY_SIZE(i3c_stm32_dev_arr_##index),                 \
