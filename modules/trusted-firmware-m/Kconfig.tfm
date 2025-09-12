@@ -10,19 +10,19 @@ config ZEPHYR_TRUSTED_FIRMWARE_M_MODULE
 
 config TFM_BOARD
 	string
-	default "nxp/lpcxpresso55s69" if BOARD_LPCXPRESSO55S69_LPC55S69_CPU0_NS
+	default "adi/max32657" if BOARD_MAX32657EVKIT_MAX32657_NS
 	default "arm/mps2/an521" if BOARD_MPS2_AN521_CPU0_NS
-	default "arm/mps3/corstone300/fvp"   if BOARD_MPS3_CORSTONE300_FVP_NS
 	default "arm/mps3/corstone300/an547" if BOARD_MPS3_CORSTONE300_AN547_NS
 	default "arm/mps3/corstone300/an552" if BOARD_MPS3_CORSTONE300_AN552_NS
+	default "arm/mps3/corstone300/fvp" if BOARD_MPS3_CORSTONE300_FVP_NS
 	default "arm/mps3/corstone310/an555" if BOARD_MPS3_CORSTONE310_AN555_NS
-	default "arm/mps3/corstone310/fvp"   if BOARD_MPS3_CORSTONE310_FVP_NS
+	default "arm/mps3/corstone310/fvp" if BOARD_MPS3_CORSTONE310_FVP_NS
+	default "arm/musca_b1" if BOARD_V2M_MUSCA_B1
+	default "arm/musca_s1" if BOARD_V2M_MUSCA_S1
+	default "nxp/lpcxpresso55s69" if BOARD_LPCXPRESSO55S69_LPC55S69_CPU0_NS
 	default "stm/b_u585i_iot02a" if BOARD_B_U585I_IOT02A
 	default "stm/nucleo_l552ze_q" if BOARD_NUCLEO_L552ZE_Q
 	default "stm/stm32l562e_dk" if BOARD_STM32L562E_DK
-	default "arm/musca_b1" if BOARD_V2M_MUSCA_B1
-	default "arm/musca_s1" if BOARD_V2M_MUSCA_S1
-	default "adi/max32657" if BOARD_MAX32657EVKIT_MAX32657_NS
 	default "$(ZEPHYR_BASE)/modules/trusted-firmware-m/nordic/nrf9160" if SOC_NRF9160
 	default "$(ZEPHYR_BASE)/modules/trusted-firmware-m/nordic/nrf9120" if SOC_NRF9120
 	default "$(ZEPHYR_BASE)/modules/trusted-firmware-m/nordic/nrf5340_cpuapp" if SOC_NRF5340_CPUAPP
