@@ -43,10 +43,10 @@ extern "C" {
 #define DEVICE_ADDRESS 0x78
 
 /**
- * @enum MEGA_CONTRAST_LEVEL
+ * @enum mega_contrast_level
  * @brief Configure camera contrast level
  */
-enum MEGA_CONTRAST_LEVEL {
+enum mega_contrast_level {
 	MEGA_CONTRAST_LEVEL_NEGATIVE_3 = 6, /**<Level -3 */
 	MEGA_CONTRAST_LEVEL_NEGATIVE_2 = 4, /**<Level -2 */
 	MEGA_CONTRAST_LEVEL_NEGATIVE_1 = 2, /**<Level -1 */
@@ -57,10 +57,10 @@ enum MEGA_CONTRAST_LEVEL {
 };
 
 /**
- * @enum MEGA_EV_LEVEL
+ * @enum mega_ev_level
  * @brief Configure camera EV level
  */
-enum MEGA_EV_LEVEL {
+enum mega_ev_level {
 	MEGA_EV_LEVEL_NEGATIVE_3 = 6, /**<Level -3 */
 	MEGA_EV_LEVEL_NEGATIVE_2 = 4, /**<Level -2 */
 	MEGA_EV_LEVEL_NEGATIVE_1 = 2, /**<Level -1 */
@@ -71,10 +71,10 @@ enum MEGA_EV_LEVEL {
 };
 
 /**
- * @enum MEGA_SATURATION_LEVEL
+ * @enum mega_saturation_level
  * @brief Configure camera saturation  level
  */
-enum MEGA_SATURATION_LEVEL {
+enum mega_saturation_level {
 	MEGA_SATURATION_LEVEL_NEGATIVE_3 = 6, /**<Level -3 */
 	MEGA_SATURATION_LEVEL_NEGATIVE_2 = 4, /**<Level -2 */
 	MEGA_SATURATION_LEVEL_NEGATIVE_1 = 2, /**<Level -1 */
@@ -85,10 +85,10 @@ enum MEGA_SATURATION_LEVEL {
 };
 
 /**
- * @enum MEGA_BRIGHTNESS_LEVEL
+ * @enum mega_brightness_level
  * @brief Configure camera brightness level
  */
-enum MEGA_BRIGHTNESS_LEVEL {
+enum mega_brightness_level {
 	MEGA_BRIGHTNESS_LEVEL_NEGATIVE_4 = 8, /**<Level -4 */
 	MEGA_BRIGHTNESS_LEVEL_NEGATIVE_3 = 6, /**<Level -3 */
 	MEGA_BRIGHTNESS_LEVEL_NEGATIVE_2 = 4, /**<Level -2 */
@@ -101,10 +101,10 @@ enum MEGA_BRIGHTNESS_LEVEL {
 };
 
 /**
- * @enum MEGA_SHARPNESS_LEVEL
+ * @enum mega_sharpness_level
  * @brief Configure camera Sharpness level
  */
-enum MEGA_SHARPNESS_LEVEL {
+enum mega_sharpness_level {
 	MEGA_SHARPNESS_LEVEL_AUTO = 0, /**<Sharpness Auto */
 	MEGA_SHARPNESS_LEVEL_1,        /**<Sharpness Level 1 */
 	MEGA_SHARPNESS_LEVEL_2,        /**<Sharpness Level 2 */
@@ -117,10 +117,10 @@ enum MEGA_SHARPNESS_LEVEL {
 };
 
 /**
- * @enum MEGA_COLOR_FX
+ * @enum mega_color_fx
  * @brief Configure special effects
  */
-enum MEGA_COLOR_FX {
+enum mega_color_fx {
 	MEGA_COLOR_FX_NONE = 0,      /**< no effect   */
 	MEGA_COLOR_FX_BLUEISH,       /**< cool light   */
 	MEGA_COLOR_FX_REDISH,        /**< warm   */
@@ -133,10 +133,10 @@ enum MEGA_COLOR_FX {
 };
 
 /**
- * @enum MEGA_WHITE_BALANCE
+ * @enum mega_white_balance
  * @brief Configure white balance mode
  */
-enum MEGA_WHITE_BALANCE {
+enum mega_white_balance {
 	MEGA_WHITE_BALANCE_MODE_DEFAULT = 0, /**< Auto */
 	MEGA_WHITE_BALANCE_MODE_SUNNY,       /**< Sunny */
 	MEGA_WHITE_BALANCE_MODE_OFFICE,      /**< Office */
@@ -145,10 +145,10 @@ enum MEGA_WHITE_BALANCE {
 };
 
 /**
- * @enum MEGA_IMAGE_QUALITY
+ * @enum mega_image_quality
  * @brief Configure JPEG image quality
  */
-enum MEGA_IMAGE_QUALITY {
+enum mega_image_quality {
 	HIGH_QUALITY = 0,
 	DEFAULT_QUALITY = 1,
 	LOW_QUALITY = 2,
@@ -162,20 +162,20 @@ enum {
 };
 
 /**
- * @enum MEGA_PIXELFORMAT
+ * @enum mega_pixelformat
  * @brief Configure camera pixel format
  */
-enum MEGA_PIXELFORMAT {
+enum mega_pixelformat {
 	MEGA_PIXELFORMAT_JPG = 0X01,
 	MEGA_PIXELFORMAT_RGB565 = 0X02,
 	MEGA_PIXELFORMAT_YUV = 0X03,
 };
 
 /**
- * @enum MEGA_RESOLUTION
+ * @enum mega_resolution
  * @brief Configure camera resolution
  */
-enum MEGA_RESOLUTION {
+enum mega_resolution {
 	MEGA_RESOLUTION_QQVGA = 0x00,   /**<160x120 */
 	MEGA_RESOLUTION_QVGA = 0x01,    /**<320x240*/
 	MEGA_RESOLUTION_VGA = 0x02,     /**<640x480*/
