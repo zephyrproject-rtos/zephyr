@@ -50,4 +50,5 @@ config IPC_SERVICE_BACKEND_ICMSG_ME_FOLLOWER
 
 rsource "Kconfig.icmsg_me"
 rsource "Kconfig.icbmsg"
+rsource "Kconfig.intel_adsp"
 rsource "Kconfig.rpmsg"
