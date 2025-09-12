@@ -5,7 +5,7 @@ description: Microchip MEC5 GPIO
 
 compatible: "microchip,mec5-gpio"
 
-include: [gpio-controller.yaml, base.yaml]
+include: ["gpio-controller.yaml", "base.yaml", "microchip,dmec-ecia-girq.yaml"]
 
 properties:
   reg:
