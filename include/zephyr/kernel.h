@@ -1614,10 +1614,16 @@ const char *k_thread_state_str(k_tid_t thread_id, char *buf, size_t buf_size);
  */
 
 /**
- * @cond INTERNAL_HIDDEN
+ * @brief Kernel timer structure
+ *
+ * This structure is used to represent a kernel timer.
+ * All the members are internal and should not be accessed directly.
  */
-
 struct k_timer {
+	/**
+	 * @cond INTERNAL_HIDDEN
+	 */
+
 	/*
 	 * _timeout structure must be first here if we want to use
 	 * dynamic timer allocation. timeout.node is used in the double-linked
@@ -1648,8 +1654,14 @@ struct k_timer {
 #ifdef CONFIG_OBJ_CORE_TIMER
 	struct k_obj_core  obj_core;
 #endif
+	/**
+	 * INTERNAL_HIDDEN @endcond
+	 */
 };
 
+/**
+ * @cond INTERNAL_HIDDEN
+ */
 #define Z_TIMER_INITIALIZER(obj, expiry, stop) \
 	{ \
 	.timeout = { \
