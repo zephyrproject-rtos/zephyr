@@ -165,6 +165,7 @@ menu "Bluetooth Host"
 
 if BT_HCI_HOST
 
+rsource "Kconfig.bt_taskq"
 rsource "../mesh/Kconfig"
 rsource "../audio/Kconfig"
 
