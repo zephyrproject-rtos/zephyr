@@ -171,6 +171,7 @@
 
 		espi0: espi0@400b1000 {
 			compatible = "realtek,rts5912-espi";
+			cs-gpios = <&gpioa 4 0>;
 			status = "disabled";
 
 			reg = <0x400b1000 0x200		/* espi target */
@@ -229,7 +230,7 @@
 				<216 0>, <217 0>, <218 0>,
 				<219 0>, <147 0>, <148 0>,
 				<149 0>, <152 0>, <153 0>,
-				<166 0>, <220 0>;
+				<166 0>, <220 0>, <4 0>;
 
 			interrupt-names = "bus-rst", "periph-ch", "vw-ch",
 				"vw-idx2", "vw-idx3", "vw-idx7",
@@ -244,7 +245,7 @@
 				"emi4", "emi5", "emi6",
 				"emi7", "oob_tx", "oob_rx",
 				"oob_chg", "maf_tr", "flash_chg",
-				"port80", "mbx";
+				"port80", "mbx", "cs_low";
 
 		};
 
