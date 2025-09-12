@@ -3511,20 +3511,26 @@ static inline unsigned int z_impl_k_sem_count_get(struct k_sem *sem)
 #if defined(CONFIG_SCHED_IPI_SUPPORTED) || defined(__DOXYGEN__)
 struct k_ipi_work;
 
-/**
- * @cond INTERNAL_HIDDEN
- */
 
 typedef void (*k_ipi_func_t)(struct k_ipi_work *work);
 
+/**
+ * @brief IPI work item structure
+ *
+ * This structure is used to represent an IPI work item.
+ * All the members are internal and should not be accessed directly.
+ */
 struct k_ipi_work {
-	sys_dnode_t        node[CONFIG_MP_MAX_NUM_CPUS];   /* Node in IPI work queue */
+/**
+ * @cond INTERNAL_HIDDEN
+ */
+	sys_dnode_t    node[CONFIG_MP_MAX_NUM_CPUS];   /* Node in IPI work queue */
 	k_ipi_func_t   func;     /* Function to execute on target CPU */
 	struct k_event event;    /* Event to signal when processed */
 	uint32_t       bitmask;  /* Bitmask of targeted CPUs */
+/** INTERNAL_HIDDEN @endcond */
 };
 
-/** @endcond */
 
 /**
  * @brief Initialize the specified IPI work item
