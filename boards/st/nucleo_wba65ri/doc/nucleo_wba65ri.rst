@@ -152,6 +152,19 @@ Supported Features
 
 .. zephyr:board-supported-hw::
 
+Bluetooth and IEEE 802.15.4 support
+-----------------------------------
+
+BLE and IEEE 802.15.4 support are enabled on nucleo_wba65ri. To build a zephyr sample using this board
+you first need to install Bluetooth and/or IEEE 802.15.4 Controller libraries available in Zephyr as
+binary blobs.
+
+To fetch Binary Blobs:
+
+.. code-block:: console
+
+   west blobs fetch hal_stm32
+
 Connections and IOs
 ===================
 
