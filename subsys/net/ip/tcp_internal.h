@@ -157,14 +157,15 @@ static inline int net_tcp_connect(struct net_context *context,
  * @brief Set TCP socket into listening state
  *
  * @param context Network context
+ * @param backlog The size of the pending connections backlog.
  *
  * @return 0 if successful, -EOPNOTSUPP if the context was not for TCP,
  *         -EPROTONOSUPPORT if TCP is not supported
  */
 #if defined(CONFIG_NET_NATIVE_TCP)
-int net_tcp_listen(struct net_context *context);
+int net_tcp_listen(struct net_context *context, int backlog);
 #else
-static inline int net_tcp_listen(struct net_context *context)
+static inline int net_tcp_listen(struct net_context *context, int backlog)
 {
 	ARG_UNUSED(context);
 
@@ -462,6 +463,21 @@ int net_tcp_endpoint_copy(struct net_context *ctx,
 			  struct sockaddr *local,
 			  struct sockaddr *peer,
 			  socklen_t *addrlen);
+
+/**
+ * @brief Notify TCP layer that connection has been accepted by the application
+ *        layer.
+ *
+ * @param child_ctx Network context of the child connection
+ */
+#if defined(CONFIG_NET_NATIVE_TCP)
+void net_tcp_conn_accepted(struct net_context *child_ctx);
+#else
+static inline void net_tcp_conn_accepted(struct net_context *child_ctx)
+{
+	ARG_UNUSED(child_ctx);
+}
+#endif
 
 #ifdef __cplusplus
 }

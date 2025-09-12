@@ -1236,8 +1236,6 @@ static inline struct net_context *find_context(void *conn_handler)
 
 int net_context_listen(struct net_context *context, int backlog)
 {
-	ARG_UNUSED(backlog);
-
 	NET_ASSERT(PART_OF_ARRAY(contexts, context));
 
 	if (!net_context_is_used(context)) {
@@ -1252,7 +1250,7 @@ int net_context_listen(struct net_context *context, int backlog)
 
 	k_mutex_lock(&context->lock, K_FOREVER);
 
-	if (net_tcp_listen(context) >= 0) {
+	if (net_tcp_listen(context, backlog) >= 0) {
 		k_mutex_unlock(&context->lock);
 		return 0;
 	}

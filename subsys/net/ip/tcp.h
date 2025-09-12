@@ -55,12 +55,13 @@ int net_tcp_put(struct net_context *context);
 
 /**
  * @brief Listen for an incoming TCP connection
+ * @param backlog The size of the pending connections backlog.
  *
  * @param context Network context
  *
  * @return 0 if successful, < 0 on error
  */
-int net_tcp_listen(struct net_context *context);
+int net_tcp_listen(struct net_context *context, int backlog);
 
 /**
  * @brief Register an accept callback

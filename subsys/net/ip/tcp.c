@@ -87,6 +87,40 @@ static const char *tcp_state_to_str(enum tcp_state state, bool prefix);
 int (*tcp_send_cb)(struct net_pkt *pkt) = NULL;
 size_t (*tcp_recv_cb)(struct tcp *conn, struct net_pkt *pkt) = NULL;
 
+static bool tcp_backlog_is_full(struct tcp *conn)
+{
+	return atomic_get(&conn->backlog) <= 0;
+}
+
+static void tcp_backlog_dec(struct tcp *conn)
+{
+	atomic_dec(&conn->backlog);
+}
+
+static void tcp_backlog_inc(struct tcp *conn)
+{
+	atomic_inc(&conn->backlog);
+}
+
+void net_tcp_conn_accepted(struct net_context *child_ctx)
+{
+	struct tcp *conn = child_ctx->tcp;
+
+	if (net_context_get_state(child_ctx) == NET_CONTEXT_LISTENING ||
+	    conn == NULL) {
+		return;
+	}
+
+	k_mutex_lock(&conn->lock, K_FOREVER);
+
+	if (conn->accepted_conn != NULL) {
+		tcp_backlog_inc(conn->accepted_conn);
+		conn->accepted_conn = NULL;
+	}
+
+	k_mutex_unlock(&conn->lock);
+}
+
 static uint32_t tcp_get_seq(struct net_buf *buf)
 {
 	return *(uint32_t *)net_buf_user_data(buf);
@@ -752,6 +786,26 @@ static void tcp_send_queue_flush(struct tcp *conn)
 	}
 }
 
+static void tcp_conn_clear_accepted(struct tcp *accepted_conn)
+{
+	struct tcp *conn;
+
+	k_mutex_lock(&tcp_lock, K_FOREVER);
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&tcp_conns, conn, next) {
+		k_mutex_lock(&conn->lock, K_FOREVER);
+
+		if (net_context_get_state(conn->context) != NET_CONTEXT_LISTENING &&
+		    conn->accepted_conn == accepted_conn) {
+			conn->accepted_conn = NULL;
+		}
+
+		k_mutex_unlock(&conn->lock);
+	}
+
+	k_mutex_unlock(&tcp_lock);
+}
+
 static void tcp_conn_release(struct k_work *work)
 {
 	struct tcp *conn = CONTAINER_OF(work, struct tcp, conn_release);
@@ -770,7 +824,25 @@ static void tcp_conn_release(struct k_work *work)
 		tcp_pkt_unref(pkt);
 	}
 
+	if (net_context_get_state(conn->context) == NET_CONTEXT_LISTENING) {
+		/* If listening context, loop over active connections and clear
+		 * any `accepted_conn` backpointer if set to current context.
+		 */
+
+		tcp_conn_clear_accepted(conn);
+	}
+
 	k_mutex_lock(&conn->lock, K_FOREVER);
+
+	if (net_context_get_state(conn->context) != NET_CONTEXT_LISTENING &&
+	    conn->accepted_conn != NULL) {
+		/* If for non-listening context `accepted_conn` pointer is still
+		 * set - the connection hasn't been passed to the application yet.
+		 * Therefore, need to increment back the backlog parameter here.
+		 */
+		tcp_backlog_inc(conn->accepted_conn);
+		conn->accepted_conn = NULL;
+	}
 
 	if (conn->context->conn_handler) {
 		net_conn_unregister(conn->context->conn_handler);
@@ -2097,6 +2169,8 @@ static struct tcp *tcp_conn_alloc(void)
 		goto fail;
 	}
 
+	atomic_clear(&conn->backlog);
+
 	k_mutex_init(&conn->lock);
 	k_fifo_init(&conn->recv_data);
 	k_sem_init(&conn->connect_sem, 0, K_SEM_MAX_LIMIT);
@@ -2239,6 +2313,14 @@ static enum net_verdict tcp_recv(struct net_conn *net_conn,
 	if (th_flags(th) & SYN && !(th_flags(th) & ACK)) {
 		struct tcp *conn_old = ((struct net_context *)user_data)->tcp;
 
+		if (tcp_backlog_is_full(conn_old)) {
+			/* If the connection backlog is full, ignore the SYN
+			 * packet (same behavior as on Linux). Retransmitted SYN
+			 * attempts may be successful later.
+			 */
+			goto out;
+		}
+
 		conn = tcp_conn_new(pkt);
 		if (!conn) {
 			NET_ERR("Cannot allocate a new TCP connection");
@@ -2254,6 +2336,7 @@ in:
 		net_tcp_reply_rst(pkt);
 	}
 
+out:
 	return verdict;
 }
 
@@ -2990,6 +3073,14 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 	switch (conn->state) {
 	case TCP_LISTEN:
 		if (FL(&fl, ==, SYN)) {
+			/* Decrement the connection backlog as soon as SYN arrives,
+			 * otherwise it'd be possible to overflow the backlog
+			 * while waiting for final handshake ACK
+			 */
+			if (conn->accepted_conn != NULL) {
+				tcp_backlog_dec(conn->accepted_conn);
+			}
+
 			/* Make sure our MSS is also sent in the ACK */
 			conn->send_options.mss_found = true;
 			conn_ack(conn, th_seq(th) + 1); /* capture peer's isn */
@@ -3027,9 +3118,6 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 			tcp_conn_ref(conn);
 			net_context_set_state(conn->context,
 					      NET_CONTEXT_CONNECTED);
-
-			/* Make sure the accept_cb is only called once. */
-			conn->accepted_conn = NULL;
 
 			if (accept_cb == NULL) {
 				/* In case of no accept_cb registered,
@@ -3653,8 +3741,26 @@ int net_tcp_put(struct net_context *context)
 	return 0;
 }
 
-int net_tcp_listen(struct net_context *context)
+int net_tcp_listen(struct net_context *context, int backlog)
 {
+	struct tcp *conn = context->tcp;
+
+	if (conn == NULL) {
+		return -ENOENT;
+	}
+
+	if (backlog <= 0) {
+		backlog = 1;
+	}
+
+	if (backlog > CONFIG_NET_MAX_CONN) {
+		backlog = CONFIG_NET_MAX_CONN;
+	}
+
+	(void)atomic_set(&conn->backlog, backlog);
+
+	NET_DBG("[%p] backlog set to %d", conn, backlog);
+
 	/* when created, tcp connections are in state TCP_LISTEN */
 	net_context_set_state(context, NET_CONTEXT_LISTENING);
 
