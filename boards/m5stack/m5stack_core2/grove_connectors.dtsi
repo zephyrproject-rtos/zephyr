@@ -11,9 +11,10 @@
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
 		gpio-map = <0 0 &gpio1 1 0>,    /* D0/SCL/RX */
-				<1 0 &gpio1 0 0>;    /* D1/SDA/TX */
+			   <1 0 &gpio1 0 0>;    /* D1/SDA/TX */
 	};
 };
 
 zephyr_i2c: &i2c1 {};
+
 grove_uart: &uart1 {};

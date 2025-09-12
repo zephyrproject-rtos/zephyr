@@ -8,7 +8,6 @@
 #include <st/h5/stm32h503Xb.dtsi>
 #include <st/h5/stm32h503cbtx-pinctrl.dtsi>
 
-
 / {
 	model = "TQ H503A board";
 	compatible = "embedsky,tq-h503a";

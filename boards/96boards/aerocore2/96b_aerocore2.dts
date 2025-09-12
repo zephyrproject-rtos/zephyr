@@ -23,10 +23,12 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		yellow_led_1: led_1 {
 			gpios = <&gpioe 10 GPIO_ACTIVE_HIGH>;
 			label = "USR1 LED";
 		};
+
 		blue_led_2: led_2 {
 			gpios = <&gpioe 9 GPIO_ACTIVE_HIGH>;
 			label = "USR2 LED";
@@ -39,7 +41,6 @@
 		volt-sensor0 = &vref;
 		volt-sensor1 = &vbat;
 	};
-
 };
 
 &clk_lsi {
@@ -103,7 +104,9 @@
 	status = "okay";
 };
 
-&spi1_nss_pa4 { slew-rate = "very-high-speed"; };
+&spi1_nss_pa4 {
+	slew-rate = "very-high-speed";
+};
 
 &spi1 {
 	pinctrl-0 = <&spi1_nss_pa4 &spi1_sck_pa5
@@ -112,7 +115,9 @@
 	status = "okay";
 };
 
-&spi2_nss_pb12 { slew-rate = "very-high-speed"; };
+&spi2_nss_pb12 {
+	slew-rate = "very-high-speed";
+};
 
 &spi2 {
 	pinctrl-0 = <&spi2_nss_pb12 &spi2_sck_pb13
@@ -127,7 +132,9 @@
 	status = "okay";
 };
 
-&spi4_nss_pe11 { slew-rate = "very-high-speed"; };
+&spi4_nss_pe11 {
+	slew-rate = "very-high-speed";
+};
 
 &spi4 {
 	pinctrl-0 = <&spi4_nss_pe11 &spi4_sck_pe12

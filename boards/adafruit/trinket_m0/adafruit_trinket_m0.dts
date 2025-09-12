@@ -31,6 +31,7 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led0: led_0 {
 			gpios = <&porta 10 0>;
 			label = "LED";

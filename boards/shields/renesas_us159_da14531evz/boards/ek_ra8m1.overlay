@@ -11,11 +11,12 @@
 			psels = <RA_PSEL(RA_PSEL_SCI_0, 6, 9)>;
 			drive-strength = "medium";
 		};
+
 		group2 {
 			/* rx, rts, cts */
 			psels = <RA_PSEL(RA_PSEL_SCI_0, 6, 10)>,
-					<RA_PSEL(RA_PSEL_SCI_0, 6, 12)>,
-					<RA_PSEL(RA_PSEL_SCI_0, 6, 13)>;
+				<RA_PSEL(RA_PSEL_SCI_0, 6, 12)>,
+				<RA_PSEL(RA_PSEL_SCI_0, 6, 13)>;
 		};
 	};
 };
@@ -24,6 +25,7 @@
 	pinctrl-0 = <&sci0_default>;
 	pinctrl-names = "default";
 	status = "okay";
+
 	uart0: uart {
 		current-speed = <115200>;
 		hw-flow-control;

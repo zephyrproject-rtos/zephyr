@@ -16,7 +16,7 @@
 };
 
 &cpu0 {
-	 clock-frequency = <100000000>;
+	clock-frequency = <100000000>;
 };
 
 &soc {

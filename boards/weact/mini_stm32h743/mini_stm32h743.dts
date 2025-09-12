@@ -22,6 +22,7 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		user_led: led {
 			gpios = <&gpioe 3 GPIO_ACTIVE_HIGH>;
 			label = "User LED";
@@ -30,6 +31,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button: button {
 			label = "User PB";
 			gpios = <&gpioc 13 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
@@ -88,21 +90,21 @@
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
 
-		gpio-map = <3  0 &gpiob 9  0>,  /* DVP_SDA (I2C1_SDA) */
-			   <5  0 &gpiob 8  0>,  /* DVP_SCL (I2C1_SCL) */
-			   <7  0 &gpiob 7  0>,  /* DVP_VSYNC */
-			   <8  0 &gpioa 7  0>,  /* DVP_PWDN */
-			   <9  0 &gpioa 4  0>,  /* DVP_HSYNC */
-			   <12 0 &gpioe 6  0>,  /* DVP_D7 */
-			   <13 0 &gpioa 8  0>,  /* DVP_XCLK (RCC_MCO1) */
-			   <14 0 &gpioe 5  0>,  /* DVP_D6 */
-			   <16 0 &gpiod 3  0>,  /* DVP_D5 */
-			   <17 0 &gpioa 6  0>,  /* DVP_PCLK */
-			   <18 0 &gpioe 4  0>,  /* DVP_D4 */
-			   <19 0 &gpioc 6  0>,  /* DVP_D0 */
-			   <20 0 &gpioe 1  0>,  /* DVP_D3 */
-			   <21 0 &gpioc 7  0>,  /* DVP_D1 */
-			   <22 0 &gpioe 0  0>;  /* DVP_D2 */
+		gpio-map = <3 0 &gpiob 9 0>,  /* DVP_SDA (I2C1_SDA) */
+			   <5 0 &gpiob 8 0>,  /* DVP_SCL (I2C1_SCL) */
+			   <7 0 &gpiob 7 0>,  /* DVP_VSYNC */
+			   <8 0 &gpioa 7 0>,  /* DVP_PWDN */
+			   <9 0 &gpioa 4 0>,  /* DVP_HSYNC */
+			   <12 0 &gpioe 6 0>,  /* DVP_D7 */
+			   <13 0 &gpioa 8 0>,  /* DVP_XCLK (RCC_MCO1) */
+			   <14 0 &gpioe 5 0>,  /* DVP_D6 */
+			   <16 0 &gpiod 3 0>,  /* DVP_D5 */
+			   <17 0 &gpioa 6 0>,  /* DVP_PCLK */
+			   <18 0 &gpioe 4 0>,  /* DVP_D4 */
+			   <19 0 &gpioc 6 0>,  /* DVP_D0 */
+			   <20 0 &gpioe 1 0>,  /* DVP_D3 */
+			   <21 0 &gpioc 7 0>,  /* DVP_D1 */
+			   <22 0 &gpioe 0 0>;  /* DVP_D2 */
 	};
 };
 
@@ -161,8 +163,8 @@ zephyr_udc0: &usbotg_fs {
 &quadspi {
 	pinctrl-names = "default";
 	pinctrl-0 = <&quadspi_clk_pb2 &quadspi_bk1_ncs_pb6
-		&quadspi_bk1_io0_pd11 &quadspi_bk1_io1_pd12
-		&quadspi_bk1_io2_pe2 &quadspi_bk1_io3_pd13>;
+		     &quadspi_bk1_io0_pd11 &quadspi_bk1_io1_pd12
+		     &quadspi_bk1_io2_pe2 &quadspi_bk1_io3_pd13>;
 	flash-id = <1>;
 	status = "okay";
 
@@ -180,6 +182,7 @@ zephyr_udc0: &usbotg_fs {
 			compatible = "fixed-partitions";
 			#address-cells = <1>;
 			#size-cells = <1>;
+
 			slot0_partition: partition@0 {
 				reg = <0x00000000 DT_SIZE_M(8)>;
 			};
@@ -192,6 +195,7 @@ zephyr_udc0: &usbotg_fs {
 	cs-gpios = <&gpiod 6 GPIO_ACTIVE_LOW>;
 	pinctrl-names = "default";
 	status = "okay";
+
 	w25q64_spi: spi-nor-flash@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;
@@ -202,10 +206,12 @@ zephyr_udc0: &usbotg_fs {
 		has-dpd;
 		t-enter-dpd = <3500>;
 		t-exit-dpd = <3500>;
+
 		partitions {
 			compatible = "fixed-partitions";
 			#address-cells = <1>;
 			#size-cells = <1>;
+
 			storage_partition: partition@0 {
 				label = "storage";
 				reg = <0x00000000 DT_SIZE_M(8)>;

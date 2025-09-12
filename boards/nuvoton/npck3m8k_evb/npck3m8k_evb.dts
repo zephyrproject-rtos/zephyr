@@ -138,8 +138,7 @@
 		     &kso04_05_06_07_gpb4_b5_b6_b7 /* KS004/05/06/07 PINB4/B5/B6/B7 */
 		     &kso08_09_gpc0_c1 /* KSO08/09 PINC0/C1 */
 		     &kso10_11_gpc2_c3 /* KSO10/11 PINC2/C3 */
-		     &kso12_gp64 /* KSO12 PIN64 */
-		     >;
+		     &kso12_gp64 /* KSO12 PIN64 */ >;
 	pinctrl-names = "default";
 	row-size = <8>;
 	col-size = <13>;

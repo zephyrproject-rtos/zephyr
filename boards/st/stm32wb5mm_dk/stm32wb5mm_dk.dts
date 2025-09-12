@@ -30,8 +30,8 @@
 		gpios = <&gpioa 7 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
 		chain-length = <1>;
 		color-mapping = <LED_COLOR_ID_BLUE
-				LED_COLOR_ID_GREEN
-				LED_COLOR_ID_RED>;
+				 LED_COLOR_ID_GREEN
+				 LED_COLOR_ID_RED>;
 		status = "disabled";
 	};
 
@@ -101,7 +101,6 @@
 	current-speed = <115200>;
 	status = "okay";
 };
-
 
 &lpuart1 {
 	pinctrl-0 = <&lpuart1_tx_pa2 &lpuart1_rx_pa3>;
@@ -197,8 +196,8 @@ zephyr_udc0: &usb {
 		compatible = "st,ism330dhcx";
 		reg = <0x6b>;
 		drdy-gpios = <&gpiod 2 GPIO_ACTIVE_HIGH>;
-		accel-odr= <ISM330DHCX_DT_ODR_52Hz>;
-		gyro-odr= <ISM330DHCX_DT_ODR_26H>;
+		accel-odr = <ISM330DHCX_DT_ODR_52Hz>;
+		gyro-odr = <ISM330DHCX_DT_ODR_26H>;
 	};
 };
 

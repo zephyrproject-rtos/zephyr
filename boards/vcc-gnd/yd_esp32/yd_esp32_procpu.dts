@@ -23,6 +23,7 @@
 
 	buttons {
 		compatible = "gpio-keys";
+
 		button0: button_0 {
 			gpios = <&gpio0 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "BOOT Button";

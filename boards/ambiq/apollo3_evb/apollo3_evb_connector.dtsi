@@ -11,57 +11,58 @@
 		gpio-map-mask = <0xffffffff 0xffffff80>;
 		gpio-map-pass-thru = <0 0x7f>;
 		gpio-map = <0 0 &gpio0_31 0 0>, /* IOS_SPI_SCK, IOS_I2C_SCL */
-			<1 0 &gpio0_31 1 0>, /* IOS_SPI_MOSI, IOS_I2C_SDA */
-			<2 0 &gpio0_31 2 0>, /* IOS_SPI_MISO */
-			<3 0 &gpio0_31 3 0>, /* IOS_CE */
-			<4 0 &gpio0_31 4 0>, /* IOS_INT */
-			<5 0 &gpio0_31 5 0>, /* IOM0_SPI_SCK, IOM0_I2C_SCL */
-			<6 0 &gpio0_31 6 0>, /* IOM0_SPI_MISO, IOM0_I2C_SDA */
-			<7 0 &gpio0_31 7 0>, /* IOM0_SPI_MOSI */
-			<8 0 &gpio0_31 8 0>, /* IOM1_SPI_SCK, IOM1_I2C_SCL */
-			<9 0 &gpio0_31 9 0>, /* IOM1_SPI_MISO, IOM1_I2C_SDA */
-			<10 0 &gpio0_31 10 0>, /* LED0, IOM1_SPI_MOSI */
-			<11 0 &gpio0_31 11 0>, /* DISP_RESET */
-			<12 0 &gpio0_31 12 0>, /* MSPI0_CE0 */
-			<13 0 &gpio0_31 13 0>, /* IOM0_CS */
-			<14 0 &gpio0_31 14 0>, /* LED3 */
-			<15 0 &gpio0_31 15 0>, /* LED2 */
-			<16 0 &gpio0_31 16 0>, /* BUTTON0 */
-			<17 0 &gpio0_31 17 0>, /* LED4 */
-			<18 0 &gpio0_31 18 0>, /* BUTTON1 */
-			<19 0 &gpio0_31 19 0>, /* BUTTON2 */
-			<20 0 &gpio0_31 20 0>, /* SWDCK */
-			<21 0 &gpio0_31 21 0>, /* SWDIO */
-			<22 0 &gpio0_31 22 0>, /* MSPI0_D0, UART0_TX */
-			<23 0 &gpio0_31 23 0>, /* MSPI0_D3, UART0_RX */
-			<24 0 &gpio0_31 24 0>, /* MSPI0_SCK */
-			<25 0 &gpio0_31 25 0>, /* IOM2_MISO_SCK, IOM2_I2C_SDA */
-			<26 0 &gpio0_31 26 0>, /* MSPI0_D1 */
-			<27 0 &gpio0_31 27 0>, /* IOM2_SPI_SCK, IOM2_I2C_SCL*/
-			<28 0 &gpio0_31 28 0>, /* MSPI0_CE0 */
-			<29 0 &gpio0_31 29 0>, /* IOM3_CS */
-			<30 0 &gpio0_31 30 0>, /* LED1 */
-			<31 0 &gpio0_31 31 0>, /* DISP_3V3_EN */
-			<32 0 &gpio32_63 0 0>, /* BLEIF_MOSI */
-			<33 0 &gpio32_63 1 0>, /* BLEIF_CSN */
-			<34 0 &gpio32_63 2 0>, /* IOM1_CS */
-			<35 0 &gpio32_63 3 0>, /* BLEIF_STATUS */
-			<36 0 &gpio32_63 4 0>, /* PDM_DATA */
-			<37 0 &gpio32_63 5 0>, /* PDM_CLK */
-			<38 0 &gpio32_63 6 0>, /* DISP_TE */
-			<39 0 &gpio32_63 7 0>, /* DISP_PWR_EN */
-			<40 0 &gpio32_63 8 0>, /* IOM4_SPI_MISO, IOM4_I2C_SDA */
-			<41 0 &gpio32_63 9 0>, /* SWO */
-			<42 0 &gpio32_63 10 0>, /* IOM3_I2C_SCL  */
-			<43 0 &gpio32_63 11 0>, /* IOM3_I2C_SDA */
-			<44 0 &gpio32_63 12 0>, /* IOM4_SPI_MOSI */
-			<45 0 &gpio32_63 13 0>, /* DISP_2V8_EN */
-			<46 0 &gpio32_63 14 0>, /* ACC_INT */
-			<47 0 &gpio32_63 15 0>, /* IOM5_SPI_MOSI */
-			<48 0 &gpio32_63 16 0>, /* IOM5_I2C_SCL */
-			<49 0 &gpio32_63 17 0>; /* IOM5_I2C_SDA */
+			   <1 0 &gpio0_31 1 0>, /* IOS_SPI_MOSI, IOS_I2C_SDA */
+			   <2 0 &gpio0_31 2 0>, /* IOS_SPI_MISO */
+			   <3 0 &gpio0_31 3 0>, /* IOS_CE */
+			   <4 0 &gpio0_31 4 0>, /* IOS_INT */
+			   <5 0 &gpio0_31 5 0>, /* IOM0_SPI_SCK, IOM0_I2C_SCL */
+			   <6 0 &gpio0_31 6 0>, /* IOM0_SPI_MISO, IOM0_I2C_SDA */
+			   <7 0 &gpio0_31 7 0>, /* IOM0_SPI_MOSI */
+			   <8 0 &gpio0_31 8 0>, /* IOM1_SPI_SCK, IOM1_I2C_SCL */
+			   <9 0 &gpio0_31 9 0>, /* IOM1_SPI_MISO, IOM1_I2C_SDA */
+			   <10 0 &gpio0_31 10 0>, /* LED0, IOM1_SPI_MOSI */
+			   <11 0 &gpio0_31 11 0>, /* DISP_RESET */
+			   <12 0 &gpio0_31 12 0>, /* MSPI0_CE0 */
+			   <13 0 &gpio0_31 13 0>, /* IOM0_CS */
+			   <14 0 &gpio0_31 14 0>, /* LED3 */
+			   <15 0 &gpio0_31 15 0>, /* LED2 */
+			   <16 0 &gpio0_31 16 0>, /* BUTTON0 */
+			   <17 0 &gpio0_31 17 0>, /* LED4 */
+			   <18 0 &gpio0_31 18 0>, /* BUTTON1 */
+			   <19 0 &gpio0_31 19 0>, /* BUTTON2 */
+			   <20 0 &gpio0_31 20 0>, /* SWDCK */
+			   <21 0 &gpio0_31 21 0>, /* SWDIO */
+			   <22 0 &gpio0_31 22 0>, /* MSPI0_D0, UART0_TX */
+			   <23 0 &gpio0_31 23 0>, /* MSPI0_D3, UART0_RX */
+			   <24 0 &gpio0_31 24 0>, /* MSPI0_SCK */
+			   <25 0 &gpio0_31 25 0>, /* IOM2_MISO_SCK, IOM2_I2C_SDA */
+			   <26 0 &gpio0_31 26 0>, /* MSPI0_D1 */
+			   <27 0 &gpio0_31 27 0>, /* IOM2_SPI_SCK, IOM2_I2C_SCL*/
+			   <28 0 &gpio0_31 28 0>, /* MSPI0_CE0 */
+			   <29 0 &gpio0_31 29 0>, /* IOM3_CS */
+			   <30 0 &gpio0_31 30 0>, /* LED1 */
+			   <31 0 &gpio0_31 31 0>, /* DISP_3V3_EN */
+			   <32 0 &gpio32_63 0 0>, /* BLEIF_MOSI */
+			   <33 0 &gpio32_63 1 0>, /* BLEIF_CSN */
+			   <34 0 &gpio32_63 2 0>, /* IOM1_CS */
+			   <35 0 &gpio32_63 3 0>, /* BLEIF_STATUS */
+			   <36 0 &gpio32_63 4 0>, /* PDM_DATA */
+			   <37 0 &gpio32_63 5 0>, /* PDM_CLK */
+			   <38 0 &gpio32_63 6 0>, /* DISP_TE */
+			   <39 0 &gpio32_63 7 0>, /* DISP_PWR_EN */
+			   <40 0 &gpio32_63 8 0>, /* IOM4_SPI_MISO, IOM4_I2C_SDA */
+			   <41 0 &gpio32_63 9 0>, /* SWO */
+			   <42 0 &gpio32_63 10 0>, /* IOM3_I2C_SCL  */
+			   <43 0 &gpio32_63 11 0>, /* IOM3_I2C_SDA */
+			   <44 0 &gpio32_63 12 0>, /* IOM4_SPI_MOSI */
+			   <45 0 &gpio32_63 13 0>, /* DISP_2V8_EN */
+			   <46 0 &gpio32_63 14 0>, /* ACC_INT */
+			   <47 0 &gpio32_63 15 0>, /* IOM5_SPI_MOSI */
+			   <48 0 &gpio32_63 16 0>, /* IOM5_I2C_SCL */
+			   <49 0 &gpio32_63 17 0>; /* IOM5_I2C_SDA */
 	};
 };
 
 ambiq_spi0: &iom0 {};
+
 ambiq_i2c3: &iom3 {};

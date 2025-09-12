@@ -6,7 +6,7 @@
 
 #include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
 
-/{
+/ {
 	chosen {
 		zephyr,display = &st7796s;
 		zephyr,touch = &gt911_lcd_par_s035;
@@ -22,6 +22,7 @@
 
 &nxp_8080_touch_panel_i2c {
 	status = "okay";
+
 	gt911_lcd_par_s035: gt911-lcd_par_s035@5d {
 		compatible = "goodix,gt911";
 		reg = <0x5d>;
@@ -34,6 +35,7 @@
 	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
+
 	st7796s: st7796s@0 {
 		compatible = "sitronix,st7796s";
 		reg = <0>;

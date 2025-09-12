@@ -9,7 +9,7 @@
 	emdio_default: emdio_default {
 		group1 {
 			pinmux = <&iomuxc_enet1_mdc_netc_mdc_netc_mdc>,
-				<&iomuxc_enet1_mdio_netc_mdio_netc_mdio>;
+				 <&iomuxc_enet1_mdio_netc_mdio_netc_mdio>;
 			bias-pull-down;
 			slew-rate = "slightly_fast";
 			drive-strength = "x6";
@@ -19,43 +19,43 @@
 	eth0_default: eth0_default {
 		group1 {
 			pinmux = <&iomuxc_enet1_rx_ctl_eth_rgmii_rx_ctl_eth0_rgmii_rx_ctl>,
-				<&iomuxc_enet1_rd0_eth_rgmii_rd_eth0_rgmii_rd0>,
-				<&iomuxc_enet1_rd1_eth_rgmii_rd_eth0_rgmii_rd1>,
-				<&iomuxc_enet1_rd2_eth_rgmii_rd_eth0_rgmii_rd2>,
-				<&iomuxc_enet1_rd3_eth_rgmii_rd_eth0_rgmii_rd3>,
-				<&iomuxc_enet1_tx_ctl_eth_rgmii_tx_ctl_eth0_rgmii_tx_ctl>,
-				<&iomuxc_enet1_td0_eth_rgmii_td_eth0_rgmii_td0>,
-				<&iomuxc_enet1_td1_eth_rgmii_td_eth0_rgmii_td1>,
-				<&iomuxc_enet1_td2_eth_rgmii_td_eth0_rgmii_td2>,
-				<&iomuxc_enet1_td3_eth_rgmii_td_eth0_rgmii_td3>;
+				 <&iomuxc_enet1_rd0_eth_rgmii_rd_eth0_rgmii_rd0>,
+				 <&iomuxc_enet1_rd1_eth_rgmii_rd_eth0_rgmii_rd1>,
+				 <&iomuxc_enet1_rd2_eth_rgmii_rd_eth0_rgmii_rd2>,
+				 <&iomuxc_enet1_rd3_eth_rgmii_rd_eth0_rgmii_rd3>,
+				 <&iomuxc_enet1_tx_ctl_eth_rgmii_tx_ctl_eth0_rgmii_tx_ctl>,
+				 <&iomuxc_enet1_td0_eth_rgmii_td_eth0_rgmii_td0>,
+				 <&iomuxc_enet1_td1_eth_rgmii_td_eth0_rgmii_td1>,
+				 <&iomuxc_enet1_td2_eth_rgmii_td_eth0_rgmii_td2>,
+				 <&iomuxc_enet1_td3_eth_rgmii_td_eth0_rgmii_td3>;
 			bias-pull-down;
 			slew-rate = "slightly_fast";
 			drive-strength = "x6";
 		};
+
 		group2 {
 			pinmux = <&iomuxc_enet1_rxc_eth_rgmii_rx_clk_eth0_rgmii_rx_clk>,
-				<&iomuxc_enet1_txc_eth_rgmii_tx_clk_eth0_rgmii_tx_clk>;
+				 <&iomuxc_enet1_txc_eth_rgmii_tx_clk_eth0_rgmii_tx_clk>;
 			bias-pull-down;
 			slew-rate = "fast";
 			drive-strength = "x6";
 		};
-
 	};
 
 	flexspi_default: flexspi_default {
 		group0 {
 			pinmux = <&iomuxc_xspi1_sclk_flexspi_a_sclk_flexspi1_a_sclk>,
-				<&iomuxc_xspi1_ss0_b_flexspi_a_ss_b_flexspi1_a_ss0_b>,
-				<&iomuxc_xspi1_ss1_b_flexspi_a_ss_b_flexspi1_a_ss1_b>,
-				<&iomuxc_xspi1_dqs_flexspi_a_dqs_flexspi1_a_dqs>,
-				<&iomuxc_xspi1_data0_flexspi_a_data_bit_flexspi1_a_data_bit0>,
-				<&iomuxc_xspi1_data1_flexspi_a_data_bit_flexspi1_a_data_bit1>,
-				<&iomuxc_xspi1_data2_flexspi_a_data_bit_flexspi1_a_data_bit2>,
-				<&iomuxc_xspi1_data3_flexspi_a_data_bit_flexspi1_a_data_bit3>,
-				<&iomuxc_xspi1_data4_flexspi_a_data_bit_flexspi1_a_data_bit4>,
-				<&iomuxc_xspi1_data5_flexspi_a_data_bit_flexspi1_a_data_bit5>,
-				<&iomuxc_xspi1_data6_flexspi_a_data_bit_flexspi1_a_data_bit6>,
-				<&iomuxc_xspi1_data7_flexspi_a_data_bit_flexspi1_a_data_bit7>;
+				 <&iomuxc_xspi1_ss0_b_flexspi_a_ss_b_flexspi1_a_ss0_b>,
+				 <&iomuxc_xspi1_ss1_b_flexspi_a_ss_b_flexspi1_a_ss1_b>,
+				 <&iomuxc_xspi1_dqs_flexspi_a_dqs_flexspi1_a_dqs>,
+				 <&iomuxc_xspi1_data0_flexspi_a_data_bit_flexspi1_a_data_bit0>,
+				 <&iomuxc_xspi1_data1_flexspi_a_data_bit_flexspi1_a_data_bit1>,
+				 <&iomuxc_xspi1_data2_flexspi_a_data_bit_flexspi1_a_data_bit2>,
+				 <&iomuxc_xspi1_data3_flexspi_a_data_bit_flexspi1_a_data_bit3>,
+				 <&iomuxc_xspi1_data4_flexspi_a_data_bit_flexspi1_a_data_bit4>,
+				 <&iomuxc_xspi1_data5_flexspi_a_data_bit_flexspi1_a_data_bit5>,
+				 <&iomuxc_xspi1_data6_flexspi_a_data_bit_flexspi1_a_data_bit6>,
+				 <&iomuxc_xspi1_data7_flexspi_a_data_bit_flexspi1_a_data_bit7>;
 			bias-pull-down;
 			slew-rate = "slightly_fast";
 			drive-strength = "x4";
@@ -65,7 +65,7 @@
 	lpi2c5_default: lpi2c5_default {
 		group0 {
 			pinmux = <&iomuxc_gpio_io23_lpi2c_scl_lpi2c5_scl>,
-				<&iomuxc_gpio_io22_lpi2c_sda_lpi2c5_sda>;
+				 <&iomuxc_gpio_io22_lpi2c_sda_lpi2c5_sda>;
 			drive-open-drain;
 			slew-rate = "slightly_fast";
 			drive-strength = "x4";
@@ -76,7 +76,7 @@
 	lpi2c7_default: lpi2c7_default {
 		group0 {
 			pinmux = <&iomuxc_gpio_io09_lpi2c_scl_lpi2c7_scl>,
-				<&iomuxc_gpio_io08_lpi2c_sda_lpi2c7_sda>;
+				 <&iomuxc_gpio_io08_lpi2c_sda_lpi2c7_sda>;
 			drive-open-drain;
 			slew-rate = "slightly_fast";
 			drive-strength = "x4";
@@ -87,9 +87,9 @@
 	lpspi1_default: lpspi1_default {
 		group0 {
 			pinmux = <&iomuxc_sai1_txfs_lpspi_pcs_lpspi1_pcs0>,
-				<&iomuxc_sai1_txd0_lpspi_sck_lpspi1_sck>,
-				<&iomuxc_sai1_txc_lpspi_sin_lpspi1_sin>,
-				<&iomuxc_sai1_rxd0_lpspi_sout_lpspi1_sout>;
+				 <&iomuxc_sai1_txd0_lpspi_sck_lpspi1_sck>,
+				 <&iomuxc_sai1_txc_lpspi_sin_lpspi1_sin>,
+				 <&iomuxc_sai1_rxd0_lpspi_sout_lpspi1_sout>;
 			bias-pull-down;
 			slew-rate = "slightly_fast";
 			drive-strength = "x4";
@@ -99,7 +99,7 @@
 	lpuart1_default: lpuart1_default {
 		group0 {
 			pinmux = <&iomuxc_uart1_rxd_lpuart_rx_lpuart1_rx>,
-				<&iomuxc_uart1_txd_lpuart_tx_lpuart1_tx>;
+				 <&iomuxc_uart1_txd_lpuart_tx_lpuart1_tx>;
 			bias-pull-up;
 			slew-rate = "slightly_fast";
 			drive-strength = "x4";
@@ -109,7 +109,7 @@
 	lpuart3_default: lpuart3_default {
 		group0 {
 			pinmux = <&iomuxc_gpio_io15_lpuart_rx_lpuart3_rx>,
-				<&iomuxc_gpio_io14_lpuart_tx_lpuart3_tx>;
+				 <&iomuxc_gpio_io14_lpuart_tx_lpuart3_tx>;
 			bias-pull-up;
 			slew-rate = "slightly_fast";
 			drive-strength = "x4";
@@ -119,7 +119,7 @@
 	lpuart5_default: lpuart5_default {
 		group0 {
 			pinmux = <&iomuxc_gpio_io01_lpuart_rx_lpuart5_rx>,
-				<&iomuxc_gpio_io00_lpuart_tx_lpuart5_tx>;
+				 <&iomuxc_gpio_io00_lpuart_tx_lpuart5_tx>;
 			bias-pull-up;
 			slew-rate = "slightly_fast";
 			drive-strength = "x4";
@@ -142,7 +142,7 @@
 	tpm2_default: tpm2_default {
 		group0 {
 			pinmux = <&iomuxc_i2c2_scl_tpm_ch_tpm2_ch2>,
-				<&iomuxc_i2c2_sda_tpm_ch_tpm2_ch3>;
+				 <&iomuxc_i2c2_sda_tpm_ch_tpm2_ch3>;
 			drive-open-drain;
 			slew-rate = "slightly_fast";
 			drive-strength = "x4";

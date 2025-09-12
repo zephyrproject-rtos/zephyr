@@ -106,7 +106,7 @@
 	hwctrl = "disabled";
 };
 
-&eth_p2_2_rxd0{
+&eth_p2_2_rxd0 {
 	drive-strength = "strong-medium-edge";
 	hwctrl = "disabled";
 };

@@ -16,7 +16,7 @@
 	model = "NXP FRDM_MCXA156 board";
 	compatible = "nxp,mcxa156", "nxp,mcx";
 
-	aliases{
+	aliases {
 		led0 = &red_led;
 		led1 = &green_led;
 		led2 = &blue_led;
@@ -42,14 +42,17 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		red_led: led_0 {
 			gpios = <&gpio3 12 GPIO_ACTIVE_LOW>;
 			label = "Red LED";
 		};
+
 		green_led: led_1 {
 			gpios = <&gpio3 13 GPIO_ACTIVE_LOW>;
 			label = "Green LED";
 		};
+
 		blue_led: led_2 {
 			gpios = <&gpio3 0 GPIO_ACTIVE_LOW>;
 			label = "Blue LED";
@@ -58,11 +61,13 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button_2: button_2 {
 			label = "User SW2";
 			gpios = <&gpio1 7 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		user_button_3: button_3 {
 			label = "User SW3";
 			gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
@@ -78,9 +83,9 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map =	<9  0 &gpio2 15 0>,	/* Pin 9, LCD touch INT */
-				<10  0 &gpio3 22 0>,	/* Pin 10, LCD backlight control */
-				<11  0 &gpio3 0 0>;	/* Pin 11, LCD and touch reset */
+		gpio-map = <9 0 &gpio2 15 0>,	/* Pin 9, LCD touch INT */
+			   <10 0 &gpio3 22 0>,	/* Pin 10, LCD backlight control */
+			   <11 0 &gpio3 0 0>;	/* Pin 11, LCD and touch reset */
 	};
 
 	arduino_header: arduino-connector {
@@ -275,14 +280,17 @@ zephyr_udc0: &usb {
 			reg = <0x00000000 DT_SIZE_K(64)>;
 			read-only;
 		};
+
 		slot0_partition: partition@10000 {
 			label = "image-0";
 			reg = <0x00010000 DT_SIZE_K(424)>;
 		};
+
 		slot1_partition: partition@7a000 {
 			label = "image-1";
 			reg = <0x0007a000 DT_SIZE_K(424)>;
 		};
+
 		storage_partition: partition@e4000 {
 			label = "storage";
 			reg = <0x000e4000 DT_SIZE_K(112)>;

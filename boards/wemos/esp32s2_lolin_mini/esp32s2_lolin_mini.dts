@@ -31,14 +31,16 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		user_led: led {
-			gpios =  <&gpio0 15 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio0 15 GPIO_ACTIVE_HIGH>;
 			label = "LED1";
 		};
 	};
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button: user_button {
 			label = "0";
 			gpios = <&gpio0 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;

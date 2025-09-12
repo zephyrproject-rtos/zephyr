@@ -155,7 +155,7 @@
 		status = "okay";
 		reg = <0x19>;
 		irq-gpios = <&gpioe 4 GPIO_ACTIVE_HIGH>,
-			  <&gpioe 5 GPIO_ACTIVE_HIGH>;
+			    <&gpioe 5 GPIO_ACTIVE_HIGH>;
 	};
 };
 

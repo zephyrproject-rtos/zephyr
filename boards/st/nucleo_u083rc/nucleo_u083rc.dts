@@ -149,11 +149,11 @@
 
 stm32_lp_tick_source: &lptim1 {
 	clocks = <&rcc STM32_CLOCK(APB1, 31)>,
-		<&rcc STM32_SRC_LSI LPTIM1_SEL(1)>;
+		 <&rcc STM32_SRC_LSI LPTIM1_SEL(1)>;
 	status = "okay";
 };
 
-&spi1{
+&spi1 {
 	pinctrl-0 = <&spi1_sck_pa5 &spi1_miso_pa6 &spi1_mosi_pa7>;
 	cs-gpios = <&gpiob 6 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 	pinctrl-names = "default";
@@ -170,7 +170,7 @@ stm32_lp_tick_source: &lptim1 {
 
 &rng {
 	clocks = <&rcc STM32_CLOCK(AHB1, 18)>,
-		<&rcc STM32_SRC_HSI48 CLK48_SEL(1)>;
+		 <&rcc STM32_SRC_HSI48 CLK48_SEL(1)>;
 	status = "okay";
 };
 

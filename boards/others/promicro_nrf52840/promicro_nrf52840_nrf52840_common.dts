@@ -23,6 +23,7 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led0: led_0 {
 			gpios = <&gpio0 15 GPIO_ACTIVE_HIGH>;
 			label = "Red LED";
@@ -31,6 +32,7 @@
 
 	pwmleds {
 		compatible = "pwm-leds";
+
 		red_pwm_led: led_pwm_0 {
 			pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 			label = "Red PWM LED";
@@ -99,7 +101,6 @@
 	pinctrl-1 = <&pwm0_sleep>;
 	pinctrl-names = "default", "sleep";
 };
-
 
 &spi2 {
 	compatible = "nordic,nrf-spi";
