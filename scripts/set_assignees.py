@@ -8,7 +8,7 @@ import sys
 import os
 import time
 import datetime
-from github import Github, GithubException
+from github import Auth, Github, GithubException
 from github.GithubException import UnknownObjectException
 from collections import defaultdict
 from west.manifest import Manifest
@@ -355,7 +355,7 @@ def main():
         sys.exit('Github token not set in environment, please set the '
                  'GITHUB_TOKEN environment variable and retry.')
 
-    gh = Github(token)
+    gh = Github(auth=Auth.Token(token))
     maintainer_file = Maintainers(args.maintainer_file)
 
     if args.pull_request:
