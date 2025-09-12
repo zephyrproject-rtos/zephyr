@@ -24,7 +24,7 @@ menuconfig MCUMGR_GRP_SHELL
 	  physical interfaces outside of the scope of the user.
 	  It is possible to use additional shell backends in coordination
 	  with this handler and they will not interfere.
-	  The MCUMGR_GRP_SHELL_BACKEND_DUMMY_BUF_SIZE will affect how many characters
+	  The SHELL_BACKEND_DUMMY_BUF_SIZE will affect how many characters
 	  will be returned from command output, if your output gets cut, then
 	  increase the value. Remember to set MCUMGR_TRANSPORT_NETBUF_SIZE accordingly.
 	  Note that maximum length of shell command accepted is regulated by

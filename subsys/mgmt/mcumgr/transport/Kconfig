@@ -45,8 +45,8 @@ config MCUMGR_TRANSPORT_NETBUF_SIZE
 	  The size, in bytes, of each mcumgr buffer.  This value must satisfy
 	  the following relation:
 	  MCUMGR_TRANSPORT_NETBUF_SIZE >= transport-specific-MTU + transport-overhead
-	  In case when MCUMGR_TRANSPORT_SHELL is enabled this value should be set to
-	  at least MCUMGR_GRP_SHELL_BACKEND_DUMMY_BUF_SIZE + 32.
+	  In case when MCUMGR_GRP_SHELL is enabled this value should be set to
+	  at least SHELL_BACKEND_DUMMY_BUF_SIZE + 32.
 
 config MCUMGR_TRANSPORT_NETBUF_MIN_USER_DATA_SIZE
 	int
