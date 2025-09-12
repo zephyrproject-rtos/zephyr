@@ -415,11 +415,17 @@ ZTEST(fatal_exception, test_fatal)
 
 #ifdef CONFIG_USERSPACE
 
+	/* on arc, this fails with an MPU error instead of a stack
+	 * overflow because the priv stack is merged into the defined
+	 * stack.
+	 */
+#if !defined(CONFIG_ARC)
 	TC_PRINT("test stack HW-based overflow - user 1\n");
 	check_stack_overflow(stack_hw_overflow, K_USER);
 
 	TC_PRINT("test stack HW-based overflow - user 2\n");
 	check_stack_overflow(stack_hw_overflow, K_USER);
+#endif
 
 	TC_PRINT("test stack HW-based overflow - user priv stack 1\n");
 	check_stack_overflow(user_priv_stack_hw_overflow, K_USER);
