@@ -17,49 +17,49 @@ extern uint32_t SystemCoreClock;
 
 void board_early_init_hook(void)
 {
-	uint32_t coreFreq;
-	spc_active_mode_core_ldo_option_t ldoOption;
-	spc_sram_voltage_config_t sramOption;
+	uint32_t core_freq;
+	spc_active_mode_core_ldo_option_t ldo_option;
+	spc_sram_voltage_config_t sram_option;
 
 	/* Get the CPU Core frequency */
-	coreFreq = CLOCK_GetCoreSysClkFreq();
+	core_freq = CLOCK_GetCoreSysClkFreq();
 
 	/* The flow of increasing voltage and frequency */
-	if (coreFreq <= BOARD_BOOTCLOCKFROHF180M_CORE_CLOCK) {
+	if (core_freq <= BOARD_BOOTCLOCKFROHF180M_CORE_CLOCK) {
 		/* Set the LDO_CORE VDD regulator level */
-		ldoOption.CoreLDOVoltage = kSPC_CoreLDO_OverDriveVoltage;
-		ldoOption.CoreLDODriveStrength = kSPC_CoreLDO_NormalDriveStrength;
-		(void)SPC_SetActiveModeCoreLDORegulatorConfig(SPC0, &ldoOption);
+		ldo_option.CoreLDOVoltage = kSPC_CoreLDO_OverDriveVoltage;
+		ldo_option.CoreLDODriveStrength = kSPC_CoreLDO_NormalDriveStrength;
+		(void)SPC_SetActiveModeCoreLDORegulatorConfig(SPC0, &ldo_option);
 		/* Configure Flash to support different voltage level and frequency */
 		FMU0->FCTRL =
 			(FMU0->FCTRL & ~((uint32_t)FMU_FCTRL_RWSC_MASK)) | (FMU_FCTRL_RWSC(0x4U));
 		/* Specifies the operating voltage for the SRAM's read/write timing margin */
-		sramOption.operateVoltage = kSPC_sramOperateAt1P2V;
-		sramOption.requestVoltageUpdate = true;
-		(void)SPC_SetSRAMOperateVoltage(SPC0, &sramOption);
+		sram_option.operateVoltage = kSPC_sramOperateAt1P2V;
+		sram_option.requestVoltageUpdate = true;
+		(void)SPC_SetSRAMOperateVoltage(SPC0, &sram_option);
 	}
 
 	/*!< Set up system dividers */
 	CLOCK_SetClockDiv(kCLOCK_DivAHBCLK, 1U); /* !< Set SYSCON.AHBCLKDIV divider to value 1 */
 	CLOCK_SetClockDiv(kCLOCK_DivFRO_HF, 1U); /* !< Set SYSCON.FROHFDIV divider to value 1 */
 	CLOCK_SetupFROHFClocking(BOARD_BOOTCLOCKFROHF180M_CORE_CLOCK); /*!< Enable FRO HF */
-	CLOCK_SetupFRO12MClocking();             /*!< Setup FRO12M clock */
+	CLOCK_SetupFRO12MClocking();                                   /*!< Setup FRO12M clock */
 
 	CLOCK_AttachClk(kFRO_HF_to_MAIN_CLK); /* !< Switch MAIN_CLK to kFRO_HF */
 
 	/* The flow of decreasing voltage and frequency */
-	if (coreFreq > BOARD_BOOTCLOCKFROHF180M_CORE_CLOCK) {
+	if (core_freq > BOARD_BOOTCLOCKFROHF180M_CORE_CLOCK) {
 		/* Configure Flash to support different voltage level and frequency */
 		FMU0->FCTRL =
 			(FMU0->FCTRL & ~((uint32_t)FMU_FCTRL_RWSC_MASK)) | (FMU_FCTRL_RWSC(0x4U));
 		/* Specifies the operating voltage for the SRAM's read/write timing margin */
-		sramOption.operateVoltage = kSPC_sramOperateAt1P2V;
-		sramOption.requestVoltageUpdate = true;
-		(void)SPC_SetSRAMOperateVoltage(SPC0, &sramOption);
+		sram_option.operateVoltage = kSPC_sramOperateAt1P2V;
+		sram_option.requestVoltageUpdate = true;
+		(void)SPC_SetSRAMOperateVoltage(SPC0, &sram_option);
 		/* Set the LDO_CORE VDD regulator level */
-		ldoOption.CoreLDOVoltage = kSPC_CoreLDO_OverDriveVoltage;
-		ldoOption.CoreLDODriveStrength = kSPC_CoreLDO_NormalDriveStrength;
-		(void)SPC_SetActiveModeCoreLDORegulatorConfig(SPC0, &ldoOption);
+		ldo_option.CoreLDOVoltage = kSPC_CoreLDO_OverDriveVoltage;
+		ldo_option.CoreLDODriveStrength = kSPC_CoreLDO_NormalDriveStrength;
+		(void)SPC_SetActiveModeCoreLDORegulatorConfig(SPC0, &ldo_option);
 	}
 
 	/*!< Set up clock selectors - Attach clocks to the peripheries */
@@ -157,7 +157,6 @@ void board_early_init_hook(void)
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(wwdt0))
 	CLOCK_SetClockDiv(kCLOCK_DivWWDT0, 1u);
 #endif
-
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ctimer0))
 	CLOCK_SetClockDiv(kCLOCK_DivCTIMER0, 1u);
