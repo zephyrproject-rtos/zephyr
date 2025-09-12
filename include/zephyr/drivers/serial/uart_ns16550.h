@@ -20,4 +20,11 @@
  */
 #define CMD_SET_DLF	0x01
 
+/**
+ * @brief Get the device address from uart_ns16550.
+ *
+ * @param dev UART device instance
+ */
+uint32_t uart_ns16550_get_port(const struct device *dev);
+
 #endif /* ZEPHYR_INCLUDE_DRIVERS_SERIAL_UART_NS16550_H_ */
