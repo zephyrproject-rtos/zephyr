@@ -13,7 +13,7 @@ if(CONFIG_USB_DEVICE_DRIVER)
   set_variable_ifdef(CONFIG_USB_DC_NXP_LPCIP3511 CONFIG_MCUX_COMPONENT_middleware.usb.device.ip3511fs)
 
   # For soc.c build pass
-  zephyr_include_directories(.)
+  zephyr_include_directories(${CMAKE_CURRENT_LIST_DIR})
   zephyr_include_directories(${MCUX_SDK_NG_DIR}/middleware/usb/device)
   zephyr_include_directories(${MCUX_SDK_NG_DIR}/middleware/usb/phy)
   zephyr_include_directories(${MCUX_SDK_NG_DIR}/middleware/usb/include)
@@ -30,7 +30,7 @@ if(CONFIG_UDC_DRIVER)
   set_variable_ifdef(CONFIG_UDC_NXP_IP3511 CONFIG_MCUX_COMPONENT_middleware.usb.device.ip3511fs)
 
   # For soc.c build pass
-  zephyr_include_directories(.)
+  zephyr_include_directories(${CMAKE_CURRENT_LIST_DIR})
   zephyr_include_directories(${MCUX_SDK_NG_DIR}/middleware/usb/device)
   zephyr_include_directories(${MCUX_SDK_NG_DIR}/middleware/usb/phy)
   zephyr_include_directories(${MCUX_SDK_NG_DIR}/middleware/usb/include)
@@ -47,7 +47,7 @@ if(CONFIG_UHC_DRIVER)
   set_variable_ifdef(CONFIG_UHC_NXP_OHCI CONFIG_MCUX_COMPONENT_middleware.usb.host.ohci)
   set_variable_ifdef(CONFIG_UHC_NXP_IP3516HS CONFIG_MCUX_COMPONENT_middleware.usb.host.ip3516hs)
   # For soc.c build pass
-  zephyr_include_directories(.)
+  zephyr_include_directories(${CMAKE_CURRENT_LIST_DIR})
   zephyr_include_directories(${MCUX_SDK_NG_DIR}/middleware/usb/phy)
   zephyr_include_directories(${MCUX_SDK_NG_DIR}/middleware/usb/include)
 endif()
