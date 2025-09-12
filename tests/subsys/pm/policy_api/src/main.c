@@ -71,14 +71,12 @@ ZTEST(policy_api, test_pm_policy_next_state_default)
 	zassert_equal(next->state, PM_STATE_SUSPEND_TO_RAM);
 }
 
-/**
- * @brief Test the behavior of pm_policy_next_state() when
- * states are allowed/disallowed and CONFIG_PM_POLICY_DEFAULT=y.
- */
-ZTEST(policy_api, test_pm_policy_next_state_default_allowed)
+static void pm_policy_next_state_default_allowed(bool use_by_id)
 {
 	bool active;
 	const struct pm_state_info *next;
+	int id = pm_policy_state_id_get(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES);
+	int id_1 = pm_policy_state_id_get(PM_STATE_RUNTIME_IDLE, 1);
 
 	/* initial state: PM_STATE_RUNTIME_IDLE allowed
 	 * next state: PM_STATE_RUNTIME_IDLE
@@ -92,7 +90,12 @@ ZTEST(policy_api, test_pm_policy_next_state_default_allowed)
 	/* disallow PM_STATE_RUNTIME_IDLE
 	 * next state: NULL (active)
 	 */
-	pm_policy_state_lock_get(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES);
+	if (use_by_id) {
+		zassert_true(id < 0);
+		pm_policy_state_by_id_lock_get(id_1);
+	} else {
+		pm_policy_state_lock_get(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES);
+	}
 
 	active = pm_policy_state_lock_is_active(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES);
 	zassert_true(active);
@@ -103,7 +106,11 @@ ZTEST(policy_api, test_pm_policy_next_state_default_allowed)
 	/* allow PM_STATE_RUNTIME_IDLE again
 	 * next state: PM_STATE_RUNTIME_IDLE
 	 */
-	pm_policy_state_lock_put(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES);
+	if (use_by_id) {
+		pm_policy_state_by_id_lock_put(id_1);
+	} else {
+		pm_policy_state_lock_put(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES);
+	}
 
 	active = pm_policy_state_lock_is_active(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES);
 	zassert_false(active);
@@ -123,7 +130,11 @@ ZTEST(policy_api, test_pm_policy_next_state_default_allowed)
 	/* disallow PM_STATE_RUNTIME_IDLE and substate 1
 	 * next state: NULL (active)
 	 */
-	pm_policy_state_lock_get(PM_STATE_RUNTIME_IDLE, 1);
+	if (use_by_id) {
+		pm_policy_state_by_id_lock_get(id_1);
+	} else {
+		pm_policy_state_lock_get(PM_STATE_RUNTIME_IDLE, 1);
+	}
 
 	active = pm_policy_state_lock_is_active(PM_STATE_RUNTIME_IDLE, 1);
 	zassert_true(active);
@@ -134,13 +145,27 @@ ZTEST(policy_api, test_pm_policy_next_state_default_allowed)
 	/* allow PM_STATE_RUNTIME_IDLE and substate 1 again
 	 * next state: PM_STATE_RUNTIME_IDLE
 	 */
-	pm_policy_state_lock_put(PM_STATE_RUNTIME_IDLE, 1);
+	if (use_by_id) {
+		pm_policy_state_by_id_lock_put(id_1);
+	} else {
+		pm_policy_state_lock_put(PM_STATE_RUNTIME_IDLE, 1);
+	}
 
 	active = pm_policy_state_lock_is_active(PM_STATE_RUNTIME_IDLE, 1);
 	zassert_false(active);
 
 	next = pm_policy_next_state(0U, k_us_to_ticks_floor32(110000));
 	zassert_equal(next->state, PM_STATE_RUNTIME_IDLE);
+}
+
+/**
+ * @brief Test the behavior of pm_policy_next_state() when
+ * states are allowed/disallowed and CONFIG_PM_POLICY_DEFAULT=y.
+ */
+ZTEST(policy_api, test_pm_policy_next_state_default_allowed)
+{
+	pm_policy_next_state_default_allowed(true);
+	pm_policy_next_state_default_allowed(false);
 }
 
 /** Flag to indicate number of times callback has been called */
