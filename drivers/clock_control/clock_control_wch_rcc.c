@@ -18,6 +18,7 @@
 
 #define WCH_RCC_CLOCK_ID_OFFSET(id) (((id) >> 5) & 0xFF)
 #define WCH_RCC_CLOCK_ID_BIT(id)    ((id) & 0x1F)
+#define WCH_RCC_PLLMUL_VAL(mul)     (((mul) << 0x12) & RCC_PLLMULL)
 #define WCH_RCC_SYSCLK              DT_PROP(DT_NODELABEL(cpu0), clock_frequency)
 
 #if DT_NODE_HAS_COMPAT(DT_INST_CLOCKS_CTLR(0), wch_ch32v00x_pll_clock) ||                          \
@@ -33,6 +34,8 @@
 #elif DT_NODE_HAS_COMPAT(DT_INST_CLOCKS_CTLR(0), wch_ch32v00x_hsi_clock)
 #define WCH_RCC_SRC_IS_HSI 1
 #endif
+
+static const uint8_t pllmul_lut[] = {2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 18};
 
 struct clock_control_wch_rcc_config {
 	RCC_TypeDef *regs;
@@ -155,7 +158,16 @@ static int clock_control_wch_rcc_init(const struct device *dev)
 		} else if (IS_ENABLED(WCH_RCC_PLL_SRC_IS_HSI)) {
 			RCC->CFGR0 &= ~RCC_PLLSRC;
 		}
-		RCC->CFGR0 |= (config->mul == 18 ? 0xF : (config->mul - 2)) << 0x12;
+
+		uint8_t pllmul = 0x0; /* Default Reset Value */
+
+		for (size_t i = 0; i < ARRAY_SIZE(pllmul_lut); i++) {
+			if (pllmul_lut[i] == config->mul) {
+				pllmul = i;
+			}
+		}
+		RCC->CFGR0 &= ~RCC_PLLMULL;
+		RCC->CFGR0 |= WCH_RCC_PLLMUL_VAL(pllmul);
 		RCC->CTLR |= RCC_PLLON;
 		while ((RCC->CTLR & RCC_PLLRDY) == 0) {
 		}
