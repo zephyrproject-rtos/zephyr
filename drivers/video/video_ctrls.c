@@ -152,13 +152,14 @@ int video_init_ctrl(struct video_ctrl *ctrl, const struct device *dev, uint32_t 
 	ctrl->cluster = NULL;
 	ctrl->is_auto = false;
 	ctrl->has_volatiles = false;
-	ctrl->menu = NULL;
 	ctrl->vdev = vdev;
-	ctrl->id = id;
-	ctrl->type = type;
-	ctrl->flags = flags;
-	ctrl->range = range;
-	ctrl->name = video_get_ctrl_name(id);
+	ctrl->cfg.id = id;
+	ctrl->cfg.type = type;
+	ctrl->cfg.flags = flags;
+	ctrl->cfg.range = range;
+	ctrl->cfg.name = video_get_ctrl_name(id);
+	ctrl->cfg.menu = NULL;
+	ctrl->cfg.menu_len = 0;
 
 	if (type == VIDEO_CTRL_TYPE_INTEGER64) {
 		ctrl->val64 = range.def64;
@@ -168,7 +169,7 @@ int video_init_ctrl(struct video_ctrl *ctrl, const struct device *dev, uint32_t 
 
 	/* Insert in an ascending order of ctrl's id */
 	SYS_DLIST_FOR_EACH_CONTAINER(&vdev->ctrls, vc, node) {
-		if (vc->id > ctrl->id) {
+		if (vc->cfg.id > ctrl->cfg.id) {
 			sys_dlist_insert(&vc->node, &ctrl->node);
 			return 0;
 		}
@@ -202,7 +203,8 @@ int video_init_menu_ctrl(struct video_ctrl *ctrl, const struct device *dev, uint
 		return ret;
 	}
 
-	ctrl->menu = _menu;
+	ctrl->cfg.menu = _menu;
+	ctrl->cfg.menu_len = sz;
 
 	return 0;
 }
@@ -224,7 +226,8 @@ int video_init_int_menu_ctrl(struct video_ctrl *ctrl, const struct device *dev, 
 		return ret;
 	}
 
-	ctrl->int_menu = menu;
+	ctrl->cfg.int_menu = menu;
+	ctrl->cfg.menu_len = menu_len;
 
 	return 0;
 }
@@ -255,9 +258,9 @@ int video_init_custom_ctrl(struct video_ctrl *ctrl, const struct device *dev,
 		break;
 	}
 
-	ctrl->name = cfg->name;
-	ctrl->flags |= cfg->flags;
-	ctrl->type = cfg->type; // Override the type set in video_init_ctrl
+	ctrl->cfg.name = cfg->name;
+	ctrl->cfg.flags |= cfg->flags;
+	ctrl->cfg.type = cfg->type; // Override the type set in video_init_ctrl
 
 	return ret;
 }
@@ -265,7 +268,7 @@ int video_init_custom_ctrl(struct video_ctrl *ctrl, const struct device *dev,
 /* By definition, the cluster is in manual mode if the primary control value is 0 */
 static inline bool is_cluster_manual(const struct video_ctrl *primary)
 {
-	return primary->type == VIDEO_CTRL_TYPE_INTEGER64 ? primary->val64 == 0 : primary->val == 0;
+	return primary->cfg.type == VIDEO_CTRL_TYPE_INTEGER64 ? primary->val64 == 0 : primary->val == 0;
 }
 
 void video_cluster_ctrl(struct video_ctrl *ctrls, uint8_t sz)
@@ -277,7 +280,7 @@ void video_cluster_ctrl(struct video_ctrl *ctrls, uint8_t sz)
 	for (uint8_t i = 0; i < sz; i++) {
 		ctrls[i].cluster_sz = sz;
 		ctrls[i].cluster = ctrls;
-		if (ctrls[i].flags & VIDEO_CTRL_FLAG_VOLATILE) {
+		if (ctrls[i].cfg.flags & VIDEO_CTRL_FLAG_VOLATILE) {
 			has_volatiles = true;
 		}
 	}
@@ -295,12 +298,12 @@ void video_auto_cluster_ctrl(struct video_ctrl *ctrls, uint8_t sz, bool set_vola
 
 	ctrls->is_auto = true;
 	ctrls->has_volatiles = set_volatile;
-	ctrls->flags |= VIDEO_CTRL_FLAG_UPDATE;
+	ctrls->cfg.flags |= VIDEO_CTRL_FLAG_UPDATE;
 
 	/* If the cluster is in automatic mode, mark all manual controls inactive and volatile */
 	for (uint8_t i = 1; i < sz; i++) {
 		if (!is_cluster_manual(ctrls)) {
-			ctrls[i].flags |= VIDEO_CTRL_FLAG_INACTIVE |
+			ctrls[i].cfg.flags |= VIDEO_CTRL_FLAG_INACTIVE |
 					  (set_volatile ? VIDEO_CTRL_FLAG_VOLATILE : 0);
 		}
 	}
@@ -312,7 +315,7 @@ static int video_find_ctrl(const struct device *dev, uint32_t id, struct video_c
 
 	while (vdev) {
 		SYS_DLIST_FOR_EACH_CONTAINER(&vdev->ctrls, *ctrl, node) {
-			if ((*ctrl)->id == id) {
+			if ((*ctrl)->cfg.id == id) {
 				return 0;
 			}
 		}
@@ -336,12 +339,12 @@ int video_get_ctrl(const struct device *dev, struct video_control *control)
 		return ret;
 	}
 
-	if (ctrl->flags & VIDEO_CTRL_FLAG_WRITE_ONLY) {
+	if (ctrl->cfg.flags & VIDEO_CTRL_FLAG_WRITE_ONLY) {
 		LOG_ERR("Control id 0x%x is write-only\n", control->id);
 		return -EACCES;
 	}
 
-	if (ctrl->flags & VIDEO_CTRL_FLAG_VOLATILE) {
+	if (ctrl->cfg.flags & VIDEO_CTRL_FLAG_VOLATILE) {
 		if (DEVICE_API_GET(video, ctrl->vdev->dev)->get_volatile_ctrl == NULL) {
 			return -ENOSYS;
 		}
@@ -349,14 +352,14 @@ int video_get_ctrl(const struct device *dev, struct video_control *control)
 		/* Call driver's get_volatile_ctrl */
 		ret = DEVICE_API_GET(video, ctrl->vdev->dev)
 			      ->get_volatile_ctrl(ctrl->vdev->dev,
-						  ctrl->cluster ? ctrl->cluster->id : ctrl->id);
+						  ctrl->cluster ? ctrl->cluster->cfg.id : ctrl->cfg.id);
 		if (ret) {
 			return ret;
 		}
 	}
 
 	/* Give the control's current value to user */
-	if (ctrl->type == VIDEO_CTRL_TYPE_INTEGER64) {
+	if (ctrl->cfg.type == VIDEO_CTRL_TYPE_INTEGER64) {
 		control->val64 = ctrl->val64;
 	} else {
 		control->val = ctrl->val;
@@ -381,31 +384,31 @@ int video_set_ctrl(const struct device *dev, struct video_control *control)
 		return ret;
 	}
 
-	if (ctrl->flags & VIDEO_CTRL_FLAG_READ_ONLY) {
+	if (ctrl->cfg.flags & VIDEO_CTRL_FLAG_READ_ONLY) {
 		LOG_ERR("Control id 0x%x is read-only\n", control->id);
 		return -EACCES;
 	}
 
-	if (ctrl->flags & VIDEO_CTRL_FLAG_INACTIVE) {
+	if (ctrl->cfg.flags & VIDEO_CTRL_FLAG_INACTIVE) {
 		LOG_ERR("Control id 0x%x is inactive\n", control->id);
 		return -EACCES;
 	}
 
-	if (ctrl->type == VIDEO_CTRL_TYPE_INTEGER64
-		    ? !IN_RANGE(control->val64, ctrl->range.min64, ctrl->range.max64)
-		    : !IN_RANGE(control->val, ctrl->range.min, ctrl->range.max)) {
+	if (ctrl->cfg.type == VIDEO_CTRL_TYPE_INTEGER64
+		    ? !IN_RANGE(control->val64, ctrl->cfg.range.min64, ctrl->cfg.range.max64)
+		    : !IN_RANGE(control->val, ctrl->cfg.range.min, ctrl->cfg.range.max)) {
 		LOG_ERR("Control value is invalid\n");
 		return -EINVAL;
 	}
 
 	/* No new value */
-	if (ctrl->type == VIDEO_CTRL_TYPE_INTEGER64 ? ctrl->val64 == control->val64
+	if (ctrl->cfg.type == VIDEO_CTRL_TYPE_INTEGER64 ? ctrl->val64 == control->val64
 						    : ctrl->val == control->val) {
 		return 0;
 	}
 
 	/* Backup the control's value then set it to the new value */
-	if (ctrl->type == VIDEO_CTRL_TYPE_INTEGER64) {
+	if (ctrl->cfg.type == VIDEO_CTRL_TYPE_INTEGER64) {
 		val64 = ctrl->val64;
 		ctrl->val64 = control->val64;
 	} else {
@@ -426,7 +429,7 @@ int video_set_ctrl(const struct device *dev, struct video_control *control)
 		}
 
 		ret = DEVICE_API_GET(video, ctrl->vdev->dev)
-			      ->get_volatile_ctrl(ctrl->vdev->dev, ctrl->id);
+			      ->get_volatile_ctrl(ctrl->vdev->dev, ctrl->cfg.id);
 		if (ret) {
 			goto restore;
 		}
@@ -436,7 +439,7 @@ int video_set_ctrl(const struct device *dev, struct video_control *control)
 	if (DEVICE_API_GET(video, ctrl->vdev->dev)->set_ctrl) {
 		ret = DEVICE_API_GET(video, ctrl->vdev->dev)
 				     ->set_ctrl(ctrl->vdev->dev,
-						ctrl->cluster ? ctrl->cluster->id : ctrl->id);
+						ctrl->cluster ? ctrl->cluster->cfg.id : ctrl->cfg.id);
 		if (ret) {
 			goto restore;
 		}
@@ -449,7 +452,7 @@ int video_set_ctrl(const struct device *dev, struct video_control *control)
 				/* Automatic mode: set the inactive and volatile flags of the manual
 				 * controls
 				 */
-				ctrl->cluster[i].flags |=
+				ctrl->cluster[i].cfg.flags |=
 					VIDEO_CTRL_FLAG_INACTIVE |
 					(ctrl->cluster->has_volatiles ? VIDEO_CTRL_FLAG_VOLATILE
 								      : 0);
@@ -457,7 +460,7 @@ int video_set_ctrl(const struct device *dev, struct video_control *control)
 				/* Manual mode: clear the inactive and volatile flags of the manual
 				 * controls
 				 */
-				ctrl->cluster[i].flags &=
+				ctrl->cluster[i].cfg.flags &=
 					~(VIDEO_CTRL_FLAG_INACTIVE | VIDEO_CTRL_FLAG_VOLATILE);
 			}
 		}
@@ -467,7 +470,7 @@ int video_set_ctrl(const struct device *dev, struct video_control *control)
 
 restore:
 	/* Restore the old control's value */
-	if (ctrl->type == VIDEO_CTRL_TYPE_INTEGER64) {
+	if (ctrl->cfg.type == VIDEO_CTRL_TYPE_INTEGER64) {
 		ctrl->val64 = val64;
 	} else {
 		ctrl->val = val;
@@ -599,7 +602,7 @@ int video_query_ctrl(struct video_ctrl_query *cq)
 		vdev = video_find_vdev(cq->dev);
 		while (vdev != NULL) {
 			SYS_DLIST_FOR_EACH_CONTAINER(&vdev->ctrls, ctrl, node) {
-				if (ctrl->id > cq->id) {
+				if (ctrl->cfg.id > cq->id) {
 					goto fill_query;
 				}
 			}
@@ -616,18 +619,18 @@ int video_query_ctrl(struct video_ctrl_query *cq)
 	}
 
 fill_query:
-	cq->id = ctrl->id;
-	cq->type = ctrl->type;
-	cq->flags = ctrl->flags;
-	cq->range = ctrl->range;
+	cq->id = ctrl->cfg.id;
+	cq->type = ctrl->cfg.type;
+	cq->flags = ctrl->cfg.flags;
+	cq->range = ctrl->cfg.range;
 	if (cq->type == VIDEO_CTRL_TYPE_MENU) {
-		cq->menu = ctrl->menu;
+		cq->menu = ctrl->cfg.menu;
 	} else if (cq->type == VIDEO_CTRL_TYPE_INTEGER_MENU) {
-		cq->int_menu = ctrl->int_menu;
+		cq->int_menu = ctrl->cfg.int_menu;
 	}
 	cq->name = video_get_ctrl_name(cq->id);
 	if (cq->name == NULL) {
-		cq->name = ctrl->name;
+		cq->name = ctrl->cfg.name;
 	}
 
 	return 0;

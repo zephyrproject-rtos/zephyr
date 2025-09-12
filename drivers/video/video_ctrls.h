@@ -63,18 +63,10 @@ struct video_ctrl {
 	bool has_volatiles;
 
 	const struct video_device *vdev;
-	uint32_t id;
-	const char *name;
-	enum video_ctrl_type type;
-	unsigned long flags;
-	struct video_ctrl_range range;
+	struct video_ctrl_config cfg;
 	union {
 		int32_t val;
 		int64_t val64;
-	};
-	union {
-		const char *const *menu;
-		const int64_t *int_menu;
 	};
 	sys_dnode_t node;
 };
