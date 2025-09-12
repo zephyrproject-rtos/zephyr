@@ -26,7 +26,6 @@
 extern "C" {
 #endif
 
-#define SMP_SHELL_RX_BUF_SIZE	127
 
 /** @brief Data used by SMP shell */
 struct smp_shell_data {

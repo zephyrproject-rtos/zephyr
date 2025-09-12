@@ -25,7 +25,7 @@ LOG_MODULE_REGISTER(shell_uart);
 
 #ifdef CONFIG_MCUMGR_TRANSPORT_SHELL
 NET_BUF_POOL_DEFINE(smp_shell_rx_pool, CONFIG_MCUMGR_TRANSPORT_SHELL_RX_BUF_COUNT,
-		    SMP_SHELL_RX_BUF_SIZE, 0, NULL);
+		    CONFIG_MCUMGR_TRANSPORT_SHELL_MTU, 0, NULL);
 #endif /* CONFIG_MCUMGR_TRANSPORT_SHELL */
 
 static void async_callback(const struct device *dev, struct uart_event *evt, void *user_data)
