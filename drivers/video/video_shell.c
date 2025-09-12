@@ -651,7 +651,7 @@ static int video_shell_get_ctrl_by_name(struct video_ctrl_query *cq, char const 
 			return -ENOENT;
 		}
 
-		video_shell_convert_ctrl_name(name, ctrl_name, sizeof(ctrl_name));
+		video_shell_convert_ctrl_name(cq->name, ctrl_name, sizeof(ctrl_name));
 		if (strcmp(ctrl_name, name) == 0) {
 			break;
 		}
