@@ -22,5 +22,6 @@ source "subsys/logging/Kconfig.template.log_config"
 
 source "drivers/mux/Kconfig.reg_mux"
 source "drivers/mux/Kconfig.nxp_inputmux"
+source "drivers/mux/Kconfig.gpio_mux"
 
 endif # MUX_CONTROL
