@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (c) 2023 Nordic Semiconductor ASA
+ * Copyright (c) 2023-2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,6 +25,7 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/iso.h>
+#include <zephyr/kernel.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/sys/atomic_types.h>
 #include <zephyr/sys/byteorder.h>
@@ -32,8 +33,10 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/sys_clock.h>
+#include <zephyr/toolchain.h>
 
 #include "common/bt_shell_private.h"
+#include "shell/bt.h"
 
 #define SHELL_PRINT_INDENT_LEVEL_SIZE 2
 #define MAX_CODEC_FRAMES_PER_SDU      4U
@@ -58,6 +61,9 @@ size_t cap_initiator_pa_data_add(struct bt_data *data_array, const size_t data_a
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/bap_lc3_preset.h>
 #include <zephyr/bluetooth/audio/cap.h>
+
+#define PA_SYNC_IDX_NONE 0xFF
+BUILD_ASSERT(PA_SYNC_IDX_NONE > ARRAY_SIZE(per_adv_syncs));
 
 unsigned long bap_get_stats_interval(void);
 
@@ -176,7 +182,9 @@ struct broadcast_source {
 	};
 	struct bt_audio_codec_cfg codec_cfg;
 	struct bt_bap_qos_cfg qos;
-	uint32_t broadcast_id;
+	uint32_t broadcast_id; /* BT_BAP_INVALID_BROADCAST_ID when not in use */
+	uint8_t addr_type;
+	uint8_t adv_sid; /* BT_GAP_SID_INVALID when not in use */
 };
 
 struct broadcast_sink {
@@ -195,6 +203,30 @@ struct unicast_group {
 		struct bt_bap_unicast_group *bap_group;
 		struct bt_cap_unicast_group *cap_group;
 	};
+};
+
+struct broadcast_assistant_recv_state {
+	/* Number of receive state on the remote device */
+	uint8_t recv_state_count;
+
+#if defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
+	/* Contains the src_id representing our local default_broadcast */
+	uint8_t default_source_src_id;
+	uint8_t default_source_subgroup_count;
+	bool default_source_big_synced;
+#endif /* CONFIG_BT_BAP_BROADCAST_SOURCE */
+};
+
+struct scan_delegator_sync_state {
+	bool pa_syncing;
+	bool past_avail;
+	uint8_t src_id;
+	uint8_t pa_sync_idx; /* index to per_adv_syncs - PA_SYNC_IDX_NONE if not set */
+	uint16_t pa_interval;
+	struct k_work_delayable pa_timer;
+	struct bt_conn *conn;
+	const struct bt_bap_scan_delegator_recv_state *recv_state;
+	uint8_t broadcast_code[BT_ISO_BROADCAST_CODE_SIZE];
 };
 
 #define BAP_UNICAST_AC_MAX_CONN   2U
@@ -238,6 +270,14 @@ extern struct named_lc3_preset default_source_preset;
 int cap_ac_unicast(const struct shell *sh, const struct cap_unicast_ac_param *param);
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
 #endif /* CONFIG_BT_BAP_UNICAST */
+
+#if defined(CONFIG_BT_BAP_BROADCAST_ASSISTANT)
+extern struct broadcast_assistant_recv_state broadcast_assistant_recv_states[CONFIG_BT_MAX_CONN];
+#endif /* CONFIG_BT_BAP_BROADCAST_ASSISTANT */
+#if defined(CONFIG_BT_BAP_SCAN_DELEGATOR)
+extern struct scan_delegator_sync_state
+	scan_delegator_sync_states[CONFIG_BT_BAP_SCAN_DELEGATOR_RECV_STATE_COUNT];
+#endif /* CONFIG_BT_BAP_SCAN_DELEGATOR */
 
 static inline void print_qos(const struct bt_bap_qos_cfg *qos)
 {

@@ -47,15 +47,24 @@ static void unicast_to_broadcast_complete_cb(int err, struct bt_conn *conn,
 		bt_shell_print("Unicast to broadcast handover was cancelled for conn %p", conn);
 
 		default_source.broadcast_id = BT_BAP_INVALID_BROADCAST_ID;
+		default_source.adv_sid = BT_GAP_SID_INVALID;
 	} else if (err != 0) {
 		bt_shell_error("Unicast to broadcast handover failed for conn %p (%d)", conn, err);
 
 		default_source.broadcast_id = BT_BAP_INVALID_BROADCAST_ID;
+		default_source.adv_sid = BT_GAP_SID_INVALID;
 	} else {
 		bt_shell_print(
 			"Unicast to broadcast handover completed with new broadcast source %p",
 			(void *)broadcast_source);
+	}
 
+	if (unicast_group == NULL) {
+		default_unicast_group.is_cap = false;
+		default_unicast_group.cap_group = NULL;
+	}
+
+	if (broadcast_source != NULL) {
 		default_source.cap_source = broadcast_source;
 		default_source.is_cap = true;
 	}
@@ -75,12 +84,17 @@ static void broadcast_to_unicast_complete_cb(int err, struct bt_conn *conn,
 		bt_shell_print("Broadcast to unicast handover completed with new group %p",
 			       (void *)unicast_group);
 	}
-}
 
-static struct bt_cap_handover_cb cbs = {
-	.unicast_to_broadcast_complete = unicast_to_broadcast_complete_cb,
-	.broadcast_to_unicast_complete = broadcast_to_unicast_complete_cb,
-};
+	if (broadcast_source == NULL) {
+		default_source.cap_source = NULL;
+		default_source.is_cap = false;
+	}
+
+	if (unicast_group != NULL) {
+		default_unicast_group.is_cap = true;
+		default_unicast_group.cap_group = unicast_group;
+	}
+}
 
 struct cap_unicast_group_stream_lookup {
 	struct bt_cap_stream *active_sink_streams[CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT];
@@ -97,6 +111,11 @@ static bool unicast_group_foreach_stream_cb(struct bt_cap_stream *cap_stream, vo
 	if (bap_stream->ep != NULL) {
 		struct bt_bap_ep_info ep_info;
 		int err;
+
+		if (broadcast_assistant_recv_states[bt_conn_index(bap_stream->conn)]
+			    .recv_state_count == 0U) {
+			return true; /* stor iterating as it does not have a (discovered) BASS */
+		}
 
 		err = bt_bap_ep_get_info(bap_stream->ep, &ep_info);
 		__ASSERT_NO_MSG(err == 0);
@@ -116,9 +135,15 @@ static int register_callbacks(void)
 	static bool registered;
 
 	if (!registered) {
-		const int err = bt_cap_handover_register_cb(&cbs);
+		static struct bt_cap_handover_cb cbs = {
+			.unicast_to_broadcast_complete = unicast_to_broadcast_complete_cb,
+			.broadcast_to_unicast_complete = broadcast_to_unicast_complete_cb,
+		};
+		int err;
 
+		err = bt_cap_handover_register_cb(&cbs);
 		if (err != 0) {
+			bt_shell_error("Failed to register CAP handover callbacks: %d", err);
 			return err;
 		}
 
@@ -130,6 +155,8 @@ static int register_callbacks(void)
 
 static int cmd_cap_handover_unicast_to_broadcast(const struct shell *sh, size_t argc, char *argv[])
 {
+	/* TODO: The static structs should be shared with the CAP initiator to reduce memory usage
+	 */
 	static struct bt_cap_initiator_broadcast_stream_param
 		stream_params[CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT];
 	static struct bt_cap_initiator_broadcast_subgroup_param subgroup_param = {0};
@@ -139,12 +166,19 @@ static int cmd_cap_handover_unicast_to_broadcast(const struct shell *sh, size_t 
 	struct cap_unicast_group_stream_lookup lookup_data = {0};
 	struct bt_le_ext_adv *adv = adv_sets[selected_adv];
 	const struct named_lc3_preset *named_preset;
+	struct bt_le_ext_adv_info adv_info;
 	uint32_t broadcast_id = 0U;
 	int err;
 
 	if (adv == NULL) {
 		shell_error(sh, "Extended advertising set is NULL");
 
+		return -ENOEXEC;
+	}
+
+	err = bt_le_ext_adv_get_info(adv, &adv_info);
+	if (err != 0) {
+		shell_error(sh, "Failed to get adv info: %d\n", err);
 		return -ENOEXEC;
 	}
 
@@ -223,15 +257,21 @@ static int cmd_cap_handover_unicast_to_broadcast(const struct shell *sh, size_t 
 
 	err = register_callbacks();
 	if (err != 0) {
-		shell_error(sh, "Failed to register callbacks: %d", err);
-
 		return -ENOEXEC;
 	}
 
 	/* Lookup all active sink streams */
 	err = bt_cap_unicast_group_foreach_stream(default_unicast_group.cap_group,
 						  unicast_group_foreach_stream_cb, &lookup_data);
-	__ASSERT_NO_MSG(err == 0);
+	if (err == -ECANCELED) {
+		shell_error(sh, "BASS not discovered on all streams");
+
+		return -ENOEXEC;
+	} else if (err != 0) {
+		shell_error(sh, "Failed to iterate on all streams: %d", err);
+
+		return -ENOEXEC;
+	}
 
 	if (lookup_data.active_sink_streams_cnt == 0U) {
 		shell_error(sh, "No active sink streams in group, cannot handover");
@@ -285,6 +325,8 @@ static int cmd_cap_handover_unicast_to_broadcast(const struct shell *sh, size_t 
 
 	default_source.handover_in_progress = true;
 	default_source.broadcast_id = broadcast_id;
+	default_source.addr_type = adv_info.addr->type;
+	default_source.adv_sid = adv_info.sid;
 
 	return 0;
 }
@@ -318,7 +360,7 @@ static bool cap_initiator_broadcast_foreach_stream_cb(struct bt_cap_stream *cap_
 	return false;
 }
 
-static void populate_connected_sink_conns(struct bt_conn *conn, void *data)
+static void populate_active_stream_conns(struct bt_conn *conn, void *data)
 {
 	struct bt_conn **connected_conns = (struct bt_conn **)data;
 
@@ -331,7 +373,6 @@ static void populate_connected_sink_conns(struct bt_conn *conn, void *data)
 		}
 
 		if (connected_conns[i] == NULL) {
-
 			connected_conns[i] = conn;
 			return;
 		}
@@ -340,29 +381,24 @@ static void populate_connected_sink_conns(struct bt_conn *conn, void *data)
 
 static int cmd_cap_handover_broadcast_to_unicast(const struct shell *sh, size_t argc, char *argv[])
 {
-	struct bt_cap_unicast_audio_start_stream_param
-		stream_params[CONFIG_BT_MAX_CONN * CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT] = {
-			0};
-	struct bt_cap_unicast_group_stream_param
-		group_stream_params[CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT] = {0};
-	struct bt_cap_unicast_group_stream_pair_param
-		pair_params[CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT] = {0};
-	struct bt_cap_unicast_audio_start_param audio_start_param = {0};
+
+	static struct bt_cap_commander_broadcast_reception_stop_param reception_stop_param;
+	static struct bt_cap_commander_broadcast_reception_stop_member_param
+		reception_stop_member_param[CONFIG_BT_MAX_CONN];
+	static struct bt_cap_unicast_audio_start_stream_param
+		stream_params[CONFIG_BT_MAX_CONN * CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT];
+	static struct bt_cap_unicast_group_stream_param
+		group_stream_params[CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT];
+	static struct bt_cap_unicast_group_stream_pair_param
+		pair_params[CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT];
+	static struct bt_cap_unicast_audio_start_param audio_start_param;
 	struct bt_cap_handover_broadcast_to_unicast_param param = {0};
-	struct bt_conn *connected_conns[CONFIG_BT_MAX_CONN] = {0};
-	struct bt_cap_unicast_group_param group_param = {0};
-	struct bt_le_ext_adv *adv = adv_sets[selected_adv];
+	struct bt_conn *active_stream_conns[CONFIG_BT_MAX_CONN] = {0};
+	static struct bt_cap_unicast_group_param group_param;
 	const struct named_lc3_preset *named_preset;
-	struct bt_le_ext_adv_info adv_info;
 	unsigned long conn_cnt = 1U;
 	bool all_conn = false;
 	int err;
-
-	if (adv == NULL) {
-		shell_error(sh, "No advertising set");
-
-		return -ENOEXEC;
-	}
 
 	if (default_source.cap_source == NULL || !default_source.is_cap) {
 		shell_error(sh, "No CAP broadcast source");
@@ -376,12 +412,13 @@ static int cmd_cap_handover_broadcast_to_unicast(const struct shell *sh, size_t 
 		return -ENOEXEC;
 	}
 
-	err = bt_le_ext_adv_get_info(adv, &adv_info);
-	if (err != 0) {
-		shell_error(sh, "Failed to get adv info: %d\n", err);
-		return -ENOEXEC;
-	}
-
+	(void)memset(&reception_stop_param, 0, sizeof((reception_stop_param)));
+	(void)memset(&reception_stop_member_param, 0, sizeof((reception_stop_member_param)));
+	(void)memset(&stream_params, 0, sizeof((stream_params)));
+	(void)memset(&group_stream_params, 0, sizeof((group_stream_params)));
+	(void)memset(&pair_params, 0, sizeof((pair_params)));
+	(void)memset(&group_param, 0, sizeof((group_param)));
+	(void)memset(&audio_start_param, 0, sizeof((audio_start_param)));
 	audio_start_param.type = BT_CAP_SET_TYPE_AD_HOC;
 
 	named_preset = &default_broadcast_source_preset;
@@ -436,11 +473,10 @@ static int cmd_cap_handover_broadcast_to_unicast(const struct shell *sh, size_t 
 	}
 
 	/* Populate the array of connected connections and verify conn_cnt */
-	(void)memset(connected_conns, 0, sizeof(connected_conns));
-	bt_conn_foreach(BT_CONN_TYPE_LE, populate_connected_sink_conns, (void *)connected_conns);
-	for (size_t i = 0U; i < ARRAY_SIZE(connected_conns); i++) {
-
-		if (connected_conns[i] == NULL) {
+	(void)memset(active_stream_conns, 0, sizeof(active_stream_conns));
+	bt_conn_foreach(BT_CONN_TYPE_LE, populate_active_stream_conns, (void *)active_stream_conns);
+	for (size_t i = 0U; i < ARRAY_SIZE(active_stream_conns); i++) {
+		if (active_stream_conns[i] == NULL) {
 			if (conn_cnt > (i + 1)) {
 				shell_error(sh,
 					    "Cannot perform action on %lu connections, only %zu "
@@ -451,6 +487,14 @@ static int cmd_cap_handover_broadcast_to_unicast(const struct shell *sh, size_t 
 			}
 
 			break;
+		}
+
+		if (broadcast_assistant_recv_states[bt_conn_index(active_stream_conns[i])]
+			    .recv_state_count == 0U) {
+			shell_error(sh, "Conn %p has not discovered BASS, cannot perform handover",
+				    active_stream_conns[i]);
+
+			return -ENOEXEC;
 		}
 
 		if (all_conn) {
@@ -471,9 +515,6 @@ static int cmd_cap_handover_broadcast_to_unicast(const struct shell *sh, size_t 
 		return -ENOEXEC;
 	}
 
-	audio_start_param.stream_params = stream_params;
-	audio_start_param.count = 0U;
-
 	struct cap_broadcast_source_stream_lookup lookup_data = {0};
 	err = bt_cap_initiator_broadcast_foreach_stream(
 		default_source.cap_source, cap_initiator_broadcast_foreach_stream_cb, &lookup_data);
@@ -483,6 +524,8 @@ static int cmd_cap_handover_broadcast_to_unicast(const struct shell *sh, size_t 
 		return -ENOEXEC;
 	}
 
+	audio_start_param.stream_params = stream_params;
+	audio_start_param.count = 0U;
 	if (lookup_data.cnt == 1U || conn_cnt == 1U) {
 		/* If there is a single BIS, we attempt to setup a sink stream to all connected
 		 * devices
@@ -514,16 +557,16 @@ static int cmd_cap_handover_broadcast_to_unicast(const struct shell *sh, size_t 
 					lookup_data.streams[j], struct shell_stream, stream);
 
 				struct bt_bap_ep *snk_ep =
-					snks[bt_conn_index(connected_conns[i])][j];
+					snks[bt_conn_index(active_stream_conns[i])][j];
 
 				if (snk_ep == NULL) {
 					shell_info(sh,
 						   "Could only setup %zu/%zu sink endpoints on %p",
-						   j, lookup_data.cnt, connected_conns[i]);
+						   j, lookup_data.cnt, active_stream_conns[i]);
 					break;
 				}
 
-				stream_param->member.member = connected_conns[i];
+				stream_param->member.member = active_stream_conns[i];
 				stream_param->stream = lookup_data.streams[j];
 				stream_param->ep = snk_ep;
 				copy_unicast_stream_preset(sh_stream, &default_sink_preset);
@@ -541,20 +584,45 @@ static int cmd_cap_handover_broadcast_to_unicast(const struct shell *sh, size_t 
 		}
 	} else {
 		/* If there are multiple BIS and multiple ACL, then we attempt to set up one BIS per
-		 * ACL */
+		 * ACL
+		 */
+		shell_error(sh, "NOT YET IMPLEMENTED: %d\n", err);
+		/* TODO: Support these cases*/
+
+		return -ENOEXEC;
 	}
 
 	group_param.params = pair_params;
 	group_param.params_count = audio_start_param.count;
 	group_param.packing = BT_ISO_PACKING_SEQUENTIAL;
 
-	param.adv_type = adv_info.addr->type;
-	param.adv_sid = adv_info.sid;
+	reception_stop_param.type = BT_CAP_SET_TYPE_AD_HOC;
+	reception_stop_param.param = reception_stop_member_param;
+	reception_stop_param.count = conn_cnt;
+	for (size_t i = 0; i < conn_cnt; i++) {
+		const struct broadcast_assistant_recv_state *recv_state =
+			&broadcast_assistant_recv_states[bt_conn_index(active_stream_conns[i])];
+
+		if (!recv_state->default_source_big_synced) {
+			shell_error(sh, "Conn %p is not BIG synced to us, cannot perform handover",
+				    active_stream_conns[i]);
+
+			return -ENOEXEC;
+		}
+
+		reception_stop_param.param[i].member.member = active_stream_conns[i];
+		reception_stop_param.param[i].src_id = recv_state->default_source_src_id;
+		reception_stop_param.param[i].num_subgroups =
+			recv_state->default_source_subgroup_count;
+	}
+
+	param.adv_type = default_source.addr_type;
+	param.adv_sid = default_source.adv_sid;
 	param.broadcast_id = default_source.broadcast_id;
 	param.broadcast_source = default_source.cap_source;
 	param.unicast_group_param = &group_param;
 	param.unicast_start_param = &audio_start_param;
-	param.reception_stop_param = NULL; /* may be NULL */
+	param.reception_stop_param = &reception_stop_param;
 
 	err = bt_cap_handover_broadcast_to_unicast(&param);
 	if (err != 0) {

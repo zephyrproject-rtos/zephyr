@@ -5,7 +5,7 @@
 
 /*
  * Copyright (c) 2020 Intel Corporation
- * Copyright (c) 2022-2023 Nordic Semiconductor ASA
+ * Copyright (c) 2022-2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -390,7 +390,6 @@ static bool encode_frame(struct shell_stream *sh_stream, uint8_t index, size_t f
 			false;
 		}
 
-		/* TODO: Move the following to a function in bap_usb.c*/
 		bap_usb_get_frame(sh_stream, chan_alloc, lc3_tx_buf);
 	} else {
 		/* Generate sine wave */
@@ -2485,6 +2484,8 @@ static void bap_pa_sync_synced_cb(struct bt_le_per_adv_sync *sync,
 		}
 	}
 
+	/* TODO: Need to set sync_states.pa_sync here */
+
 	clear_auto_scan();
 }
 
@@ -3326,10 +3327,17 @@ static int cmd_start_broadcast(const struct shell *sh, size_t argc,
 			       char *argv[])
 {
 	struct bt_le_ext_adv *adv = adv_sets[selected_adv];
+	struct bt_le_ext_adv_info adv_info;
 	int err;
 
 	if (adv == NULL) {
 		shell_info(sh, "Extended advertising set is NULL");
+		return -ENOEXEC;
+	}
+
+	err = bt_le_ext_adv_get_info(adv, &adv_info);
+	if (err != 0) {
+		shell_error(sh, "Failed to get adv info: %d\n", err);
 		return -ENOEXEC;
 	}
 
@@ -3343,6 +3351,9 @@ static int cmd_start_broadcast(const struct shell *sh, size_t argc,
 		shell_error(sh, "Unable to start broadcast source: %d", err);
 		return err;
 	}
+
+	default_source.addr_type = adv_info.addr->type;
+	default_source.adv_sid = adv_info.sid;
 
 	return 0;
 }
@@ -3361,6 +3372,8 @@ static int cmd_stop_broadcast(const struct shell *sh, size_t argc, char *argv[])
 		shell_error(sh, "Unable to stop broadcast source: %d", err);
 		return err;
 	}
+
+	default_source.adv_sid = BT_GAP_SID_INVALID;
 
 	return 0;
 }
@@ -3860,6 +3873,7 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	default_source.broadcast_id = BT_BAP_INVALID_BROADCAST_ID;
+	default_source.adv_sid = BT_GAP_SID_INVALID;
 #endif /* CONFIG_BT_BAP_BROADCAST_SOURCE */
 
 #if defined(CONFIG_LIBLC3)
