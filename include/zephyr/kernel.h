@@ -2411,7 +2411,17 @@ __syscall int k_futex_wake(struct k_futex *futex, bool wake_all);
  * @ingroup event_apis
  */
 
+/**
+ * @brief Kernel Event structure
+ *
+ * This structure is used to represent kernel events. All the members
+ * are internal and should not be accessed directly.
+ */
+
 struct k_event {
+/**
+ * @cond INTERNAL_HIDDEN
+ */
 	_wait_q_t         wait_q;
 	uint32_t          events;
 	struct k_spinlock lock;
@@ -2421,8 +2431,15 @@ struct k_event {
 #ifdef CONFIG_OBJ_CORE_EVENT
 	struct k_obj_core obj_core;
 #endif
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
 
 };
+
+/**
+ * @cond INTERNAL_HIDDEN
+ */
 
 #define Z_EVENT_INITIALIZER(obj) \
 	{ \
@@ -2430,6 +2447,9 @@ struct k_event {
 	.events = 0, \
 	.lock = {}, \
 	}
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
 
 /**
  * @brief Initialize an event object
