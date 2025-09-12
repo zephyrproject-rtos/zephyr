@@ -58,6 +58,7 @@ config BT_LLL_VENDOR_NORDIC
 	select BT_CTLR_XTAL_ADVANCED_SUPPORT
 	select BT_CTLR_SCHED_ADVANCED_SUPPORT
 	select BT_CTLR_TIFS_HW_SUPPORT
+	select BT_CTLR_TIFS_PLLEN_SUPPORT if SOC_COMPATIBLE_NRF54LX
 	select BT_CTLR_ULL_LLL_PRIO_SUPPORT
 
 	select BT_TICKER_REMAINDER_SUPPORT if !SOC_COMPATIBLE_NRF54LX
@@ -122,6 +123,9 @@ config BT_CTLR_SCHED_ADVANCED_SUPPORT
 	bool
 
 config BT_CTLR_TIFS_HW_SUPPORT
+	bool
+
+config BT_CTLR_TIFS_PLLEN_SUPPORT
 	bool
 
 config BT_CTLR_ULL_LLL_PRIO_SUPPORT
@@ -1020,7 +1024,21 @@ config BT_CTLR_TIFS_HW
 	depends on BT_CTLR_TIFS_HW_SUPPORT && !BT_CTLR_RADIO_ENABLE_FAST
 	default y
 	help
-	  Enable use of hardware accelerated tIFS Trx switching.
+	  Enable use of hardware accelerated tIFS Trx switching using TIFS feature in the Radio
+	  hardware peripheral. Otherwise, software based normal or fast radio enable time tIFS Trx
+	  switching is used, which is needed for asymmetric PHY usage.
+
+config BT_CTLR_TIFS_PLLEN
+	bool "Software based tIFS Trx switching using Radio PLLEN state"
+	depends on !BT_CTLR_TIFS_HW && BT_CTLR_TIFS_PLLEN_SUPPORT
+	default y if BT_CTLR_TIFS_LOWEST
+	help
+	  Enable use of software based radio PLLEN settling time based tIFS Trx switching.
+
+config BT_CTLR_TIFS_LOWEST
+	bool "Lowest tIFS Trx switching"
+	help
+	  Enable lowest tIFS Trx switching.
 
 config BT_CTLR_SW_SWITCH_SINGLE_TIMER
 	bool "Single TIMER tIFS Trx SW switching"
@@ -1207,6 +1225,10 @@ config BT_CTLR_CONN_INTERVAL_LOW_LATENCY
 config BT_CTLR_EVENT_IFS_LOW_LAT_US
 	prompt "Low latency tIFS value in microseconds" if BT_CTLR_CONN_INTERVAL_LOW_LATENCY
 	int
+	range 16 150 if BT_CTLR_TIFS_PLLEN
+	range 52 150 if BT_CTLR_CONN_INTERVAL_LOW_LATENCY
+	range 150 150
+	default 16 if BT_CTLR_TIFS_PLLEN
 	default 52 if BT_CTLR_CONN_INTERVAL_LOW_LATENCY
 	default 150
 	help
