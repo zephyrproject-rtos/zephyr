@@ -39,6 +39,9 @@
 #define CH32V30x 1
 #if defined(CONFIG_SOC_CH32V303)
 #define CH32V30x_D8 1
+#elif defined(CONFIG_SOC_CH32V307)
+#define CH32V30x_D8C 1
+#endif
 #include <ch32fun.h>
 #endif /* defined(CONFIG_SOC_SERIES_QINGKE_V4F) */
 
