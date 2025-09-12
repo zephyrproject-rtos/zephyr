@@ -18,6 +18,7 @@
 
 &subghzspi {
 	status = "okay";
+
 	lora: radio@0 {
 		status = "okay";
 		tx-enable-gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>; /* FE_CTRL1 */
