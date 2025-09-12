@@ -3,6 +3,7 @@
 
 config SOC_SERIES_LPC55XXX
 	select HAS_MCUX
+	select HAS_SWO
 	select CPU_CORTEX_M_HAS_SYSTICK
 	select CPU_CORTEX_M_HAS_DWT
 	select SOC_RESET_HOOK

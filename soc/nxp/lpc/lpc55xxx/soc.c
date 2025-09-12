@@ -433,6 +433,12 @@ DT_FOREACH_STATUS_OKAY(nxp_ctimer_pwm, CTIMER_CLOCK_SETUP)
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(opamp2))
 	POWER_DisablePD(kPDRUNCFG_PD_OPAMP2);
 #endif
+
+#ifdef CONFIG_LOG_BACKEND_SWO
+	CLOCK_AttachClk(kTRACE_DIV_to_TRACE);
+	CLOCK_SetClkDiv(kCLOCK_DivArmTrClkDiv, 1U, true);
+#endif
+
 }
 
 /**
