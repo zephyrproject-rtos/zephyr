@@ -602,6 +602,8 @@ MODEM_CHAT_MATCH_DEFINE(ccid_match __maybe_unused, "+CCID: ", "", modem_cellular
 MODEM_CHAT_MATCH_DEFINE(cimi_match __maybe_unused, "", "", modem_cellular_chat_on_imsi);
 MODEM_CHAT_MATCH_DEFINE(cgmi_match __maybe_unused, "", "", modem_cellular_chat_on_cgmi);
 MODEM_CHAT_MATCH_DEFINE(cgmr_match __maybe_unused, "", "", modem_cellular_chat_on_cgmr);
+MODEM_CHAT_MATCH_DEFINE(creg_match __maybe_unused, "+CREG: ", ",", modem_cellular_chat_on_cxreg);
+MODEM_CHAT_MATCH_DEFINE(cereg_match __maybe_unused, "+CEREG: ", ",", modem_cellular_chat_on_cxreg);
 
 MODEM_CHAT_MATCHES_DEFINE(unsol_matches,
 			  MODEM_CHAT_MATCH("+CREG: ", ",", modem_cellular_chat_on_cxreg),
@@ -621,7 +623,7 @@ MODEM_CHAT_MATCHES_DEFINE(dial_abort_matches,
 #if DT_HAS_COMPAT_STATUS_OKAY(swir_hl7800) || DT_HAS_COMPAT_STATUS_OKAY(sqn_gm02s) || \
 	DT_HAS_COMPAT_STATUS_OKAY(quectel_eg800q) || DT_HAS_COMPAT_STATUS_OKAY(quectel_eg25_g) || \
 	DT_HAS_COMPAT_STATUS_OKAY(quectel_bg95) || DT_HAS_COMPAT_STATUS_OKAY(quectel_bg96) || \
-	DT_HAS_COMPAT_STATUS_OKAY(simcom_a76xx)
+	DT_HAS_COMPAT_STATUS_OKAY(quectel_eg915u) || DT_HAS_COMPAT_STATUS_OKAY(simcom_a76xx)
 MODEM_CHAT_MATCH_DEFINE(connect_match, "CONNECT", "", NULL);
 #endif
 
@@ -2365,6 +2367,47 @@ MODEM_CHAT_SCRIPT_DEFINE(quectel_eg800q_periodic_chat_script,
 			 modem_cellular_chat_callback_handler, 4);
 #endif
 
+#if DT_HAS_COMPAT_STATUS_OKAY(quectel_eg915u)
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(quectel_eg915u_init_chat_script_cmds,
+			     MODEM_CHAT_SCRIPT_CMD_RESP("AT", ok_match),
+			     MODEM_CHAT_SCRIPT_CMD_RESP("ATE0", ok_match),
+			     MODEM_CHAT_SCRIPT_CMD_RESP("AT+CPIN?", ok_match),
+			     MODEM_CHAT_SCRIPT_CMD_RESP("AT+CMEE=1", ok_match),
+			     MODEM_CHAT_SCRIPT_CMD_RESP("AT+CREG?", creg_match),
+			     MODEM_CHAT_SCRIPT_CMD_RESP("AT+CEREG?", cereg_match),
+			     MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGSN", imei_match),
+			     MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
+			     MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGMM", cgmm_match),
+			     MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
+			     MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGMI", cgmi_match),
+			     MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
+			     MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGMR", cgmr_match),
+			     MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
+			     MODEM_CHAT_SCRIPT_CMD_RESP("AT+CIMI", cimi_match),
+			     MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
+			     MODEM_CHAT_SCRIPT_CMD_RESP("AT+CMUX=0,0,5,127", ok_match));
+
+MODEM_CHAT_SCRIPT_DEFINE(quectel_eg915u_init_chat_script, quectel_eg915u_init_chat_script_cmds,
+			 abort_matches, modem_cellular_chat_callback_handler, 30);
+
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(quectel_eg915u_dial_chat_script_cmds,
+			      MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CGACT=0,1", allow_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=1", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT", 500),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("ATD*99***1#", connect_match),);
+
+MODEM_CHAT_SCRIPT_DEFINE(quectel_eg915u_dial_chat_script, quectel_eg915u_dial_chat_script_cmds,
+			 dial_abort_matches, modem_cellular_chat_callback_handler, 10);
+
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(quectel_eg915u_periodic_chat_script_cmds,
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CEREG?", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CSQ", csq_match));
+
+MODEM_CHAT_SCRIPT_DEFINE(quectel_eg915u_periodic_chat_script,
+			 quectel_eg915u_periodic_chat_script_cmds, abort_matches,
+			 modem_cellular_chat_callback_handler, 4);
+#endif
+
 #if DT_HAS_COMPAT_STATUS_OKAY(simcom_sim7080)
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(simcom_sim7080_init_chat_script_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT", 100),
@@ -2962,6 +3005,25 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
 				       &quectel_eg800q_dial_chat_script,                           \
 				       &quectel_eg800q_periodic_chat_script, NULL)
 
+#define MODEM_CELLULAR_DEVICE_QUECTEL_EG915U(inst)                                                 \
+	MODEM_PPP_DEFINE(MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 98, 1500, 64);                 \
+                                                                                                   \
+	static struct modem_cellular_data MODEM_CELLULAR_INST_NAME(data, inst) = {                 \
+		.chat_delimiter = "\r",                                                            \
+		.chat_filter = "\n",                                                               \
+		.ppp = &MODEM_CELLULAR_INST_NAME(ppp, inst),                                       \
+	};                                                                                         \
+                                                                                                   \
+	MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst,                                            \
+						  (user_pipe_0, 3),                                \
+						  (user_pipe_1, 4))                                \
+                                                                                                   \
+	MODEM_CELLULAR_DEFINE_INSTANCE(inst, 2000, 500, 15000, 3000, false,                        \
+				       NULL,                                                       \
+				       &quectel_eg915u_init_chat_script,                           \
+				       &quectel_eg915u_dial_chat_script,                           \
+				       &quectel_eg915u_periodic_chat_script, NULL)
+
 #define MODEM_CELLULAR_DEVICE_SIMCOM_SIM7080(inst)                                                 \
 	MODEM_PPP_DEFINE(MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 98, 1500, 64);                 \
                                                                                                    \
@@ -3166,6 +3228,10 @@ DT_INST_FOREACH_STATUS_OKAY(MODEM_CELLULAR_DEVICE_QUECTEL_EG25_G)
 
 #define DT_DRV_COMPAT quectel_eg800q
 DT_INST_FOREACH_STATUS_OKAY(MODEM_CELLULAR_DEVICE_QUECTEL_EG800Q)
+#undef DT_DRV_COMPAT
+
+#define DT_DRV_COMPAT quectel_eg915u
+DT_INST_FOREACH_STATUS_OKAY(MODEM_CELLULAR_DEVICE_QUECTEL_EG915U)
 #undef DT_DRV_COMPAT
 
 #define DT_DRV_COMPAT simcom_sim7080
