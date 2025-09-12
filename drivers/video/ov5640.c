@@ -99,6 +99,8 @@ LOG_MODULE_REGISTER(video_ov5640, CONFIG_VIDEO_LOG_LEVEL);
 #define SDE_CTRL10_REG 0x558a
 #define SDE_CTRL11_REG 0x558b
 
+#define DATA_ORDER_REG 0x4745
+
 #define DEFAULT_MIPI_CHANNEL 0
 
 #define PI 3.141592654
@@ -128,6 +130,8 @@ struct ov5640_config {
 	struct gpio_dt_spec powerdown_gpio;
 #endif
 	int bus_type;
+	int bus_width;
+	int data_shift;
 };
 
 struct ov5640_mipi_frmrate_config {
@@ -1335,6 +1339,33 @@ static int ov5640_init(const struct device *dev)
 			LOG_ERR("Unable to initialize the sensor with DVP parameters");
 			return -EIO;
 		}
+
+		/*
+		 * Select the DVP data order using bits [2:1] of DATA_ORDER_REG:
+		 *   00 : 10-bit bus uses Data lines [9:0] or 8-bit bus uses Data lines [9:2]
+		 *   x1 : 8-bit bus uses Data lines [7:0]
+		 *   10 : Not supported by this driver
+		 */
+		uint8_t data_order = 0;
+
+		if ((cfg->bus_width == 10 && cfg->data_shift == 0) ||
+		    (cfg->bus_width == 8 && cfg->data_shift == 2)) {
+			data_order = 0;
+		} else if (cfg->bus_width == 8 && cfg->data_shift == 0) {
+			data_order = BIT(1);
+		} else {
+			LOG_ERR("Invalid DVP config: width=%u shift=%u", cfg->bus_width,
+				cfg->data_shift);
+			return -ENOTSUP;
+		}
+
+		/* Set DVP data order */
+		ret = video_modify_cci_reg(&cfg->i2c, OV5640_REG8(DATA_ORDER_REG), BIT(2) | BIT(1),
+					   data_order);
+		if (ret) {
+			LOG_ERR("Unable to set DVP data order");
+			return -EIO;
+		}
 	} else {
 		/* Set virtual channel */
 		ret = video_modify_cci_reg(&cfg->i2c, OV5640_REG8(0x4814), 3U << 6,
@@ -1392,15 +1423,19 @@ static int ov5640_init(const struct device *dev)
 #define OV5640_GET_POWERDOWN_GPIO(n)
 #endif
 
+#define OV5640_EP_PROP_OR(n, prop, default)                                                        \
+	DT_PROP_OR(DT_CHILD(DT_INST_CHILD(n, port), endpoint), prop, default)
+
 #define OV5640_INIT(n)                                                                             \
 	static struct ov5640_data ov5640_data_##n;                                                 \
                                                                                                    \
 	static const struct ov5640_config ov5640_cfg_##n = {                                       \
 		.i2c = I2C_DT_SPEC_INST_GET(n),                                                    \
-		OV5640_GET_RESET_GPIO(n)							   \
-		OV5640_GET_POWERDOWN_GPIO(n)							   \
-		.bus_type = DT_PROP_OR(DT_CHILD(DT_INST_CHILD(n, port), endpoint), bus_type,       \
-				       VIDEO_BUS_TYPE_CSI2_DPHY),                                  \
+		.bus_type = OV5640_EP_PROP_OR(n, bus_type, VIDEO_BUS_TYPE_CSI2_DPHY),              \
+		.bus_width = OV5640_EP_PROP_OR(n, bus_width, 10),                                  \
+		.data_shift = OV5640_EP_PROP_OR(n, data_shift, 0),                                 \
+		OV5640_GET_RESET_GPIO(n)                                                           \
+		OV5640_GET_POWERDOWN_GPIO(n)                                                       \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, &ov5640_init, NULL, &ov5640_data_##n, &ov5640_cfg_##n,            \
