@@ -28,11 +28,6 @@
 	};
 
 	soc {
-		flash0: flash@0 {
-			compatible = "soc-nv-flash";
-			write-block-size = <8>;
-		};
-
 		sram0: memory@20000000 {
 			compatible = "mmio-sram";
 		};
@@ -79,6 +74,31 @@
 			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBA_SERCOM1>,
 				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_SERCOM1_CORE>;
 			clock-names = "mclk", "gclk";
+		};
+
+		nvmctrl: nvmctrl@41004000 {
+			compatible = "microchip,nvmctrl-g1-flash";
+			status = "okay";
+			reg = <0x41004000 0x30>;
+			interrupts = <29 0>, <30 0>;
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBB_NVMCTRL>;
+			clock-names = "mclk";
+			lock-regions = <32>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash0: flash@0 {
+				compatible = "soc-nv-flash";
+				write-block-size = <8>;
+				erase-block-size = <8192>;
+			};
+
+			userrow: nvmuserrow@804000 {
+				compatible = "soc-nv-flash";
+				reg = <0x00804000 0x200>;
+				write-block-size = <8>;
+				erase-block-size = <512>;
+			};
 		};
 
 		pinctrl: pinctrl@41008000 {
