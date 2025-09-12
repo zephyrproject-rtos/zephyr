@@ -158,6 +158,10 @@ stm32_lp_tick_source: &lptim1 {
 	status = "okay";
 };
 
+&ieee802154 {
+	status = "okay";
+};
+
 &flash0 {
 	partitions {
 		compatible = "fixed-partitions";
