@@ -1,0 +1,58 @@
+# bt_taskq configuration options
+
+# Copyright (c) 2025 Nordic Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+choice BT_TASKQ_CONTEXT
+	prompt "bt_taskq thread selection"
+	# nRF51 is too small to have a dedicated thread
+	default BT_TASKQ_SYSTEM_WORKQUEUE if SOC_SERIES_NRF51X
+	default BT_TASKQ_DEDICATED
+	help
+	  Selects in which context the bt_taskq runs.
+
+	  bt_taskq work is quick and non-blocking and must not be
+	  blocked by other work. It should be on a work queue that
+	  is exclusively for non-blocking work.
+
+config BT_TASKQ_DEDICATED
+	bool "Dedicated thread"
+	help
+	  When this option is selected, the bt_taskq runs on a
+	  dedicated thread. This is the default and safe option.
+
+config BT_TASKQ_SYSTEM_WORKQUEUE
+	bool "System workqueue"
+	help
+	  When this option is selected, the bt_taskq is the system
+	  workqueue.
+
+	  WARNING: This is safe only if there is no blocking work on
+	  the system workqueue.
+
+	  This is currently NEVER SAFE to use as the Host itself
+	  puts blocking work on the system workqueue. For now, this
+	  option exists for users that need to free up RAM by not
+	  having an extra thread and are willing to accept the risk
+	  of deadlocks. When using this option, it is advised to
+	  have a watchdog to recover from deadlocks. Risk of
+	  deadlocks can be mitigated by being mindful of buffers and
+	  whole-system analysis.
+
+endchoice
+
+config BT_TASKQ_STACK_SIZE_WITH_PROMPT
+	bool "bt_taskq thread stack size override"
+	depends on BT_TASKQ_DEDICATED
+
+config BT_TASKQ_STACK_SIZE
+	int
+	default 1024
+	prompt "bt_taskq thread stack size" if BT_TASKQ_STACK_SIZE_WITH_PROMPT
+
+config BT_TASKQ_THREAD_PRIO
+	# Hidden option
+	int
+	# -1 is the least urgent cooperative priority.
+	# tx_processor() needs a cooperative thread for now.
+	default -1

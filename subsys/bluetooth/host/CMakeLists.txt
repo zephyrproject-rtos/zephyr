@@ -14,6 +14,7 @@ zephyr_library_sources_ifdef(CONFIG_BT_LONG_WQ          long_wq.c)
 
 if(CONFIG_BT_HCI_HOST)
   zephyr_library_sources(
+    bt_taskq.c
     uuid.c
     addr.c
     buf.c
