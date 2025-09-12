@@ -1,16 +1,18 @@
 /*
  * Copyright (c) 2020 TriaGnoSys GmbH
  * Copyright (c) 2021 Safran Passenger Innovations Germany GmbH
+ * Copyright (c) 2025 Silicon Laboratories Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <arm/armv8-m.dtsi>
+#include <freq.h>
+#include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/clock/silabs/xg21-clock.h>
 #include <zephyr/dt-bindings/dma/silabs/xg21-dma.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
-#include <freq.h>
 
 / {
 	chosen {
@@ -19,77 +21,97 @@
 	};
 
 	clocks {
-		sysclk: sysclk {
-			#clock-cells = <0>;
-			compatible = "fixed-factor-clock";
-			clocks = <&hfrcodpll>;
-		};
-		hclk: hclk {
-			#clock-cells = <0>;
-			compatible = "fixed-factor-clock";
-			clocks = <&sysclk>;
-			/* Divider 1, 2, or 4 */
-			clock-div = <1>;
-		};
-		pclk: pclk {
-			#clock-cells = <0>;
-			compatible = "fixed-factor-clock";
-			clocks = <&hclk>;
-			/* Divider 1 or 2 */
-			clock-div = <2>;
-		};
-		lspclk: lspclk {
-			#clock-cells = <0>;
-			compatible = "fixed-factor-clock";
-			clocks = <&pclk>;
-			/* Divider 1 or 2 */
-			clock-div = <2>;
-		};
-		hclkdiv1024: hclkdiv1024 {
-			#clock-cells = <0>;
-			compatible = "fixed-factor-clock";
-			clocks = <&hclk>;
-			/* Fixed divider of 1024 */
-			clock-div = <1024>;
-		};
-		traceclk: traceclk {
-			#clock-cells = <0>;
-			compatible = "fixed-factor-clock";
-			clocks = <&hclk>;
-		};
 		em01grpaclk: em01grpaclk {
-			#clock-cells = <0>;
 			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
 			clocks = <&hfrcodpll>;
 		};
-		iadcclk: iadcclk {
-			#clock-cells = <0>;
+
+		em23grpaclk: em23grpaclk {
 			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&lfrco>;
+		};
+
+		em4grpaclk: em4grpaclk {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&lfrco>;
+		};
+
+		hclk: hclk {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clock-div = <1>;
+			clocks = <&sysclk>;
+		};
+
+		hclkdiv1024: hclkdiv1024 {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clock-div = <1024>;
+			clocks = <&hclk>;
+		};
+
+		iadcclk: iadcclk {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
 			clocks = <&em01grpaclk>;
 		};
-		em23grpaclk: em23grpaclk {
-			#clock-cells = <0>;
+
+		lspclk: lspclk {
 			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clock-div = <2>;
+			clocks = <&pclk>;
+		};
+
+		pclk: pclk {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clock-div = <2>;
+			clocks = <&hclk>;
+		};
+
+		prortcclk: prortcclk {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
 			clocks = <&lfrco>;
 		};
-		em4grpaclk: em4grpaclk {
-			#clock-cells = <0>;
-			compatible = "fixed-factor-clock";
-			clocks = <&lfrco>;
-		};
+
 		rtccclk: rtccclk {
-			#clock-cells = <0>;
 			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
 			clocks = <&lfrco>;
 		};
+
+		sysclk: sysclk {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&hfrcodpll>;
+		};
+
+		systickclk: systickclk {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&hclk>;
+		};
+
+		traceclk: traceclk {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&hclk>;
+		};
+
 		wdog0clk: wdog0clk {
-			#clock-cells = <0>;
 			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
 			clocks = <&lfrco>;
 		};
+
 		wdog1clk: wdog1clk {
-			#clock-cells = <0>;
 			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
 			clocks = <&lfrco>;
 		};
 	};
@@ -99,116 +121,209 @@
 		#size-cells = <0>;
 
 		cpu0: cpu@0 {
-			device_type = "cpu";
-			compatible = "arm,cortex-m33f";
+			compatible = "arm,cortex-m33";
 			reg = <0>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-
-			mpu: mpu@e000ed90 {
-				compatible = "arm,armv8m-mpu";
-				reg = <0xe000ed90 0x40>;
-			};
+			/*
+			 * The minimum residency and exit latency is managed by sl_power_manager
+			 * on S2 devices.
+			 */
+			cpu-power-states = <&pstate_em1 &pstate_em2 &pstate_em4>;
+			device_type = "cpu";
 
 			itm: itm@e0000000 {
 				compatible = "arm,armv8m-itm";
 				reg = <0xe0000000 0x1000>;
 			};
+
+			mpu: mpu@e000ed90 {
+				compatible = "arm,armv8m-mpu";
+				reg = <0xe000ed90 0x40>;
+			};
+		};
+
+		power-states {
+			pstate_em1: em1 {
+				compatible = "zephyr,power-state";
+				power-state-name = "runtime-idle";
+			};
+
+			pstate_em2: em2 {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+			};
+
+			pstate_em4: em4 {
+				compatible = "zephyr,power-state";
+				power-state-name = "soft-off";
+				status = "disabled";
+			};
 		};
 	};
 
-	sram0: memory@20000000 {
-		device_type = "memory";
-		compatible = "mmio-sram";
+	hwinfo: hwinfo {
+		compatible = "silabs,gecko-hwinfo";
+		status = "disabled";
 	};
 
 	soc {
 		cmu: clock@50008000 {
 			compatible = "silabs,series-clock";
 			reg = <0x50008000 0x4000>;
-			interrupts = <48 2>;
-			interrupt-names = "cmu";
-			status = "okay";
 			#clock-cells = <2>;
-		};
-
-		fsrco: fsrco@50018000 {
-			#clock-cells = <0>;
-			compatible = "fixed-clock";
-			reg = <0x50018000 0x4000>;
-			clock-frequency = <DT_FREQ_M(20)>;
+			interrupt-names = "cmu";
+			interrupts = <48 2>;
+			status = "okay";
 		};
 
 		clk_hfxo: hfxo: hfxo@5000c000 {
-			#clock-cells = <0>;
 			compatible = "silabs,hfxo";
 			reg = <0x5000c000 0x4000>;
-			interrupts = <45 0>;
-			interrupt-names = "hfxo";
+			#clock-cells = <0>;
 			clock-frequency = <DT_FREQ_K(38400)>;
 			ctune = <140>;
+			interrupt-names = "hfxo00";
+			interrupts = <45 2>;
 			precision = <50>;
+			status = "disabled";
+		};
+
+		hfrcodpll: hfrcodpll@50010000 {
+			compatible = "silabs,series2-hfrcodpll";
+			reg = <0x50010000 0x4000>;
+			#clock-cells = <0>;
+			clock-frequency = <DT_FREQ_M(19)>;
+			interrupt-names = "hfrco0";
+			interrupts = <46 2>;
+		};
+
+		fsrco: fsrco@50018000 {
+			compatible = "fixed-clock";
+			reg = <0x50018000 0x4000>;
+			#clock-cells = <0>;
+			clock-frequency = <DT_FREQ_M(20)>;
 		};
 
 		lfxo: lfxo@50020000 {
-			#clock-cells = <0>;
 			compatible = "silabs,series2-lfxo";
 			reg = <0x50020000 0x4000>;
+			#clock-cells = <0>;
 			clock-frequency = <32768>;
 			ctune = <63>;
+			interrupt-names = "lfxo";
+			interrupts = <22 2>;
 			precision = <50>;
 			timeout = <4096>;
 			status = "disabled";
 		};
 
-		hfrcodpll: hfrcodpll@50010000 {
-			#clock-cells = <0>;
-			compatible = "silabs,series2-hfrcodpll";
-			reg = <0x50010000 0x4000>;
-			clock-frequency = <DT_FREQ_M(19)>;
-		};
-
-		hfrcoem23: hfrcoem23@5a014000 {
-			#clock-cells = <0>;
-			compatible = "silabs,series2-hfrcoem23";
-			reg = <0x5a014000 0x4000>;
-			clock-frequency = <DT_FREQ_M(19)>;
-		};
-
 		lfrco: lfrco@50024000 {
-			#clock-cells = <0>;
 			compatible = "silabs,series2-lfrco";
 			reg = <0x50024000 0x4000>;
+			#clock-cells = <0>;
 			clock-frequency = <32768>;
+			interrupt-names = "lfrco";
+			interrupts = <23 2>;
 		};
 
 		ulfrco: ulfrco@50028000 {
-			#clock-cells = <0>;
 			compatible = "fixed-clock";
 			reg = <0x50028000 0x4000>;
-			clock-frequency = <1000>;
-		};
-
-		clkin0: clkin0@5003c46c {
 			#clock-cells = <0>;
-			compatible = "fixed-clock";
-			reg = <0x5003c46c 0x4>;
-			clock-frequency = <DT_FREQ_M(38)>;
+			clock-frequency = <1000>;
+			interrupt-names = "ulfrco";
+			interrupts = <24 2>;
 		};
 
 		msc: flash-controller@50030000 {
 			compatible = "silabs,series2-flash-controller";
-			reg = <0x50030000 0x31a4>;
-			interrupts = <51 0>;
-
+			reg = <0x50030000 0x4000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+			interrupt-names = "msc";
+			interrupts = <51 2>;
 
 			flash0: flash@0 {
 				compatible = "soc-nv-flash";
-				write-block-size = <4>;
 				erase-block-size = <8192>;
+				write-block-size = <4>;
 			};
+		};
+
+		gpio: gpio@5003c000 {
+			compatible = "silabs,gpio";
+			reg = <0x5003c000 0x4000>;
+			ranges;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			clocks = <&cmu CLOCK_AUTO CLOCK_BRANCH_PCLK>;
+			interrupt-names = "gpio_odd", "gpio_even";
+			interrupts = <25 2>, <26 2>;
+
+			gpioa: gpio@5003c000 {
+				compatible = "silabs,gpio-port";
+				reg = <0x5003c000 0x30>;
+				#gpio-cells = <2>;
+				gpio-controller;
+				silabs,wakeup-ints = <0>;
+				silabs,wakeup-pins = <5>;
+				status = "disabled";
+			};
+
+			gpiob: gpio@5003c030 {
+				compatible = "silabs,gpio-port";
+				reg = <0x5003c030 0x30>;
+				#gpio-cells = <2>;
+				gpio-controller;
+				silabs,wakeup-ints = <3>;
+				silabs,wakeup-pins = <1>;
+				status = "disabled";
+			};
+
+			gpioc: gpio@5003c060 {
+				compatible = "silabs,gpio-port";
+				reg = <0x5003c060 0x30>;
+				#gpio-cells = <2>;
+				gpio-controller;
+				silabs,wakeup-ints = <6>, <7>;
+				silabs,wakeup-pins = <0>, <5>;
+				status = "disabled";
+			};
+
+			gpiod: gpio@5003c090 {
+				compatible = "silabs,gpio-port";
+				reg = <0x5003c090 0x30>;
+				#gpio-cells = <2>;
+				gpio-controller;
+				silabs,wakeup-ints = <9>;
+				silabs,wakeup-pins = <2>;
+				status = "disabled";
+			};
+		};
+
+		pinctrl: pin-controller@5003c440 {
+			compatible = "silabs,dbus-pinctrl";
+			reg = <0x5003c440 0x0bc0>, <0x5003c320 0x40>;
+			reg-names = "dbus", "abus";
+		};
+
+		clkin0: clkin0@5003c46c {
+			compatible = "fixed-clock";
+			reg = <0x5003c46c 0x04>;
+			#clock-cells = <0>;
+			clock-frequency = <DT_FREQ_M(38)>;
+		};
+
+		dma0: dma@50040000 {
+			compatible = "silabs,ldma";
+			reg = <0x50040000 0x4000>;
+			#dma-cells = <1>;
+			clocks = <&cmu CLOCK_AUTO CLOCK_BRANCH_HCLK>;
+			dma-channels = <8>;
+			interrupt-names = "ldma";
+			interrupts = <21 2>;
+			status = "disabled";
 		};
 
 		timer0: timer@50048000 {
@@ -217,6 +332,7 @@
 			channels = <3>;
 			clocks = <&cmu CLOCK_AUTO CLOCK_BRANCH_EM01GRPACLK>;
 			counter-size = <32>;
+			interrupt-names = "timer0";
 			interrupts = <6 2>;
 			status = "disabled";
 
@@ -233,6 +349,7 @@
 			channels = <3>;
 			clocks = <&cmu CLOCK_AUTO CLOCK_BRANCH_EM01GRPACLK>;
 			counter-size = <16>;
+			interrupt-names = "timer1";
 			interrupts = <7 2>;
 			status = "disabled";
 
@@ -249,6 +366,7 @@
 			channels = <3>;
 			clocks = <&cmu CLOCK_AUTO CLOCK_BRANCH_EM01GRPACLK>;
 			counter-size = <16>;
+			interrupt-names = "timer2";
 			interrupts = <8 2>;
 			status = "disabled";
 
@@ -265,6 +383,7 @@
 			channels = <3>;
 			clocks = <&cmu CLOCK_AUTO CLOCK_BRANCH_EM01GRPACLK>;
 			counter-size = <16>;
+			interrupt-names = "timer3";
 			interrupts = <9 2>;
 			status = "disabled";
 
@@ -275,156 +394,62 @@
 			};
 		};
 
-		usart0: usart@50058000 { /* USART0 */
+		usart0: usart@50058000 {
 			compatible = "silabs,usart-uart";
-			reg = <0x50058000 0x400>;
-			interrupts = <11 0>, <12 0>;
-			interrupt-names = "rx", "tx";
+			reg = <0x50058000 0x4000>;
 			clocks = <&cmu CLOCK_AUTO CLOCK_BRANCH_PCLK>;
+			interrupt-names = "rx", "tx";
+			interrupts = <11 2>, <12 2>;
 			status = "disabled";
 		};
 
-		usart1: usart@5005c000 { /* USART1 */
+		usart1: usart@5005c000 {
 			compatible = "silabs,usart-uart";
-			reg = <0x5005c000 0x400>;
+			reg = <0x5005c000 0x4000>;
+			clocks = <&cmu CLOCK_AUTO CLOCK_BRANCH_PCLK>;
+			interrupt-names = "rx", "tx";
 			interrupts = <13 2>, <14 2>;
-			interrupt-names = "rx", "tx";
-			clocks = <&cmu CLOCK_AUTO CLOCK_BRANCH_PCLK>;
 			status = "disabled";
 		};
 
-		usart2: usart@50060000 { /* USART2 */
+		usart2: usart@50060000 {
 			compatible = "silabs,usart-uart";
-			reg = <0x50060000 0x400>;
-			interrupts = <15 2>, <16 2>;
-			interrupt-names = "rx", "tx";
+			reg = <0x50060000 0x4000>;
 			clocks = <&cmu CLOCK_AUTO CLOCK_BRANCH_PCLK>;
+			interrupt-names = "rx", "tx";
+			interrupts = <15 2>, <16 2>;
 			status = "disabled";
 		};
 
-		i2c0: i2c@5a010000 {
-			compatible = "silabs,i2c";
-			clock-frequency = <I2C_BITRATE_STANDARD>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			reg = <0x5a010000 0x400>;
-			interrupts = <27 2>;
-			clocks = <&cmu CLOCK_AUTO CLOCK_BRANCH_LSPCLK>;
+		burtc0: burtc@50064000 {
+			compatible = "silabs,gecko-burtc";
+			reg = <0x50064000 0x4000>;
+			clocks = <&cmu CLOCK_AUTO CLOCK_BRANCH_EM4GRPACLK>;
+			interrupt-names = "burtc";
+			interrupts = <18 2>;
 			status = "disabled";
 		};
 
 		i2c1: i2c@50068000 {
 			compatible = "silabs,i2c";
-			clock-frequency = <I2C_BITRATE_STANDARD>;
+			reg = <0x50068000 0x4000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x50068000 0x400>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			clocks = <&cmu CLOCK_AUTO CLOCK_BRANCH_PCLK>;
+			interrupt-names = "i2c1";
 			interrupts = <28 2>;
-			clocks = <&cmu CLOCK_AUTO CLOCK_BRANCH_PCLK>;
 			status = "disabled";
 		};
 
-		rtcc0: rtcc@58000000 {
+		rtcc0: stimer0: rtcc@58000000 {
 			compatible = "silabs,gecko-stimer";
-			reg = <0x58000000 0x400>;
-			interrupts = <10 2>;
-			interrupt-names = "rtcc";
+			reg = <0x58000000 0x4000>;
 			clock-frequency = <32768>;
-			prescaler = <1>;
 			clocks = <&cmu CLOCK_AUTO CLOCK_BRANCH_RTCCCLK>;
-			status = "disabled";
-		};
-
-		gpio: gpio@5003c300 {
-			compatible = "silabs,gpio";
-			reg = <0x5003c300 0x440>;
-			interrupts = <26 2>, <25 2>;
-			interrupt-names = "GPIO_EVEN", "GPIO_ODD";
-			clocks = <&cmu CLOCK_AUTO CLOCK_BRANCH_PCLK>;
-
-			ranges;
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			gpioa: gpio@5003c000 {
-				compatible = "silabs,gpio-port";
-				reg = <0x5003c000 0x30>;
-				gpio-controller;
-				#gpio-cells = <2>;
-				silabs,wakeup-ints = <0>;
-				silabs,wakeup-pins = <5>;
-				status = "disabled";
-			};
-
-			gpiob: gpio@5003c030 {
-				compatible = "silabs,gpio-port";
-				reg = <0x5003c030 0x30>;
-				gpio-controller;
-				#gpio-cells = <2>;
-				silabs,wakeup-ints = <3>;
-				silabs,wakeup-pins = <1>;
-				status = "disabled";
-			};
-
-			gpioc: gpio@5003c060 {
-				compatible = "silabs,gpio-port";
-				reg = <0x5003c060 0x30>;
-				gpio-controller;
-				#gpio-cells = <2>;
-				silabs,wakeup-ints = <6>, <7>;
-				silabs,wakeup-pins = <0>, <5>;
-				status = "disabled";
-			};
-
-			gpiod: gpio@5003c090 {
-				compatible = "silabs,gpio-port";
-				reg = <0x5003c090 0x30>;
-				gpio-controller;
-				#gpio-cells = <2>;
-				silabs,wakeup-ints = <9>;
-				silabs,wakeup-pins = <2>;
-				status = "disabled";
-			};
-		};
-
-		pinctrl: pin-controller@5003c440 {
-			compatible = "silabs,dbus-pinctrl";
-			reg = <0x5003c440 0xbc0>, <0x5003c320 0x40>;
-			reg-names = "dbus", "abus";
-		};
-
-		se: semailbox@5c000000 {
-			compatible = "silabs,gecko-semailbox";
-			reg = <0x5c000000 0x80>;
-			interrupts = <0 3>, <1 3>, <2 3>;
-			interrupt-names = "SETAMPERHOST", "SEMBRX", "SEMBTX";
-			status = "okay";
-		};
-
-		dma0: dma@40040000{
-			compatible = "silabs,ldma";
-			reg = <0x40040000 0x4000>;
-			interrupts = <21 0>;
-			#dma-cells = <1>;
-			dma-channels = <8>;
-			status = "disabled";
-		};
-
-		wdog0: wdog@5a018000 {
-			compatible = "silabs,gecko-wdog";
-			reg = <0x5a018000 0x2C>;
-			peripheral-id = <0>;
-			interrupts = <43 2>;
-			clocks = <&cmu CLOCK_AUTO CLOCK_BRANCH_WDOG0CLK>;
-			status = "disabled";
-		};
-
-		wdog1: wdog@5a01c000 {
-			compatible = "silabs,gecko-wdog";
-			reg = <0x5a01c000 0x2C>;
-			peripheral-id = <1>;
-			interrupts = <44 2>;
-			clocks = <&cmu CLOCK_AUTO CLOCK_BRANCH_WDOG1CLK>;
+			interrupt-names = "rtcc";
+			interrupts = <10 2>;
+			prescaler = <1>;
 			status = "disabled";
 		};
 
@@ -432,6 +457,7 @@
 			compatible = "silabs,series2-letimer";
 			reg = <0x5a000000 0x4000>;
 			clocks = <&cmu CLOCK_AUTO CLOCK_BRANCH_EM23GRPACLK>;
+			interrupt-names = "letimer0";
 			interrupts = <19 2>;
 			status = "disabled";
 
@@ -442,21 +468,85 @@
 			};
 		};
 
+		adc0: adc@5a004000 {
+			compatible = "silabs,gecko-iadc";
+			reg = <0x5a004000 0x4000>;
+			#io-channel-cells = <1>;
+			clocks = <&cmu CLOCK_AUTO CLOCK_BRANCH_IADCCLK>;
+			interrupt-names = "iadc";
+			interrupts = <50 2>;
+			status = "disabled";
+		};
+
 		acmp0: acmp@5a008000 {
 			compatible = "silabs,acmp";
 			reg = <0x5a008000 0x4000>;
+			interrupt-names = "acmp0";
 			interrupts = <41 2>;
-			clocks = <&cmu CLOCK_AUTO CLOCK_BRANCH_EM01GRPACLK>;
 			status = "disabled";
 		};
 
 		acmp1: acmp@5a00c000 {
 			compatible = "silabs,acmp";
 			reg = <0x5a00c000 0x4000>;
+			interrupt-names = "acmp1";
 			interrupts = <42 2>;
-			clocks = <&cmu CLOCK_AUTO CLOCK_BRANCH_EM01GRPACLK>;
 			status = "disabled";
 		};
+
+		i2c0: i2c@5a010000 {
+			compatible = "silabs,i2c";
+			reg = <0x5a010000 0x4000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			clocks = <&cmu CLOCK_AUTO CLOCK_BRANCH_LSPCLK>;
+			interrupt-names = "i2c0";
+			interrupts = <27 2>;
+			status = "disabled";
+		};
+
+		hfrcoem23: hfrcoem23@5a014000 {
+			compatible = "silabs,series2-hfrcoem23";
+			reg = <0x5a014000 0x4000>;
+			#clock-cells = <0>;
+			clock-frequency = <DT_FREQ_M(19)>;
+			interrupt-names = "hfrcoem23";
+			interrupts = <47 2>;
+		};
+
+		wdog0: wdog@5a018000 {
+			compatible = "silabs,gecko-wdog";
+			reg = <0x5a018000 0x4000>;
+			clocks = <&cmu CLOCK_AUTO CLOCK_BRANCH_WDOG0CLK>;
+			interrupt-names = "wdog0";
+			interrupts = <43 2>;
+			peripheral-id = <0>;
+			status = "disabled";
+		};
+
+		wdog1: wdog@5a01c000 {
+			compatible = "silabs,gecko-wdog";
+			reg = <0x5a01c000 0x4000>;
+			clocks = <&cmu CLOCK_AUTO CLOCK_BRANCH_WDOG1CLK>;
+			interrupt-names = "wdog1";
+			interrupts = <44 2>;
+			peripheral-id = <1>;
+			status = "disabled";
+		};
+
+		se: semailbox@5c000000 {
+			compatible = "silabs,gecko-semailbox";
+			reg = <0x5c000000 0x4000>;
+			interrupt-names = "setamperhost", "sembrx", "sembtx";
+			interrupts = <0 2>, <1 2>, <2 2>;
+			status = "disabled";
+		};
+	};
+
+	sram0: memory@20000000 {
+		compatible = "mmio-sram";
+		device_type = "memory";
 	};
 };
 
