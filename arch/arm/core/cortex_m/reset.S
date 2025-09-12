@@ -101,6 +101,13 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
 #endif /* CONFIG_INIT_ARCH_HW_AT_BOOT */
 
 #if defined(CONFIG_PM_S2RAM)
+#if DT_NODE_EXISTS(DT_NODELABEL(pm_s2ram_stack)) &&\
+	DT_NODE_HAS_COMPAT(DT_NODELABEL(pm_s2ram_stack), zephyr_memory_region)
+    /* If the assumption that the interrupt stack may be safely used is not met,
+     * use a predefined memory region to execute the S2RAM logic.
+     */
+    ldr r0, =DT_REG_ADDR(DT_NODELABEL(pm_s2ram_stack)) + DT_REG_SIZE(DT_NODELABEL(pm_s2ram_stack))
+#else
     /*
      * Temporarily set MSP to interrupt stack so that arch_pm_s2ram_resume can
      * use stack for calling pm_s2ram_mark_check_and_clear.
@@ -113,6 +120,7 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
      * a short while, there is no change in behavior in either of the paths.
      */
     ldr r0, =z_interrupt_stacks + CONFIG_ISR_STACK_SIZE + MPU_GUARD_ALIGN_AND_SIZE
+#endif
     msr msp, r0
 
     bl arch_pm_s2ram_resume
