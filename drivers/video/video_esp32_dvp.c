@@ -386,6 +386,16 @@ static int video_esp32_init(const struct device *dev)
 		return -ENODEV;
 	}
 
+	if (!device_is_ready(cfg->source_dev)) {
+		LOG_ERR("Source device not ready");
+		return -ENODEV;
+	}
+
+	if (video_get_format(dev, &data->video_format) < 0) {
+		LOG_ERR("Failed to get default format from source device");
+		return -EINVAL;
+	}
+
 	return 0;
 }
 
