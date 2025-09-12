@@ -1,0 +1,17 @@
+description: Add DTR (Data Terminal Ready) output to a UART device
+
+compatible: "zephyr,uart-dtr"
+
+include: base.yaml
+
+on-bus: uart
+bus: uart
+
+properties:
+  dtr-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      DTR (Data Terminal Ready) GPIO pin.
+      When the UART is powered, the DTR signal is active (logical high) and when the UART is
+      powered down, the DTR signal is inactive (logical low).
