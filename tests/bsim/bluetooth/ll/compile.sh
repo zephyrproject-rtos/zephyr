@@ -19,6 +19,7 @@ app=tests/bsim/bluetooth/ll/advx conf_overlay=overlay-scan_aux_use_chains.conf c
 
 app=tests/bsim/bluetooth/ll/conn conf_file=prj_split.conf compile
 app=tests/bsim/bluetooth/ll/conn conf_file=prj_split_1ms.conf compile
+app=tests/bsim/bluetooth/ll/conn conf_file=prj_split_1ms_pllen.conf compile
 app=tests/bsim/bluetooth/ll/conn conf_file=prj_split_tx_defer.conf compile
 app=tests/bsim/bluetooth/ll/conn conf_file=prj_split_privacy.conf compile
 app=tests/bsim/bluetooth/ll/conn conf_file=prj_split_low_lat.conf compile
