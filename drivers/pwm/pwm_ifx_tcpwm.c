@@ -83,6 +83,8 @@ static int ifx_tcpwm_pwm_set_cycles(const struct device *dev, uint32_t channel,
 				    uint32_t period_cycles, uint32_t pulse_cycles,
 				    pwm_flags_t flags)
 {
+	ARG_UNUSED(channel);
+
 	const struct ifx_tcpwm_pwm_config *config = dev->config;
 	uint32_t pwm_status;
 	uint32_t ctrl_temp;
@@ -153,6 +155,8 @@ static int ifx_tcpwm_pwm_set_cycles(const struct device *dev, uint32_t channel,
 static int ifx_tcpwm_pwm_get_cycles_per_sec(const struct device *dev, uint32_t channel,
 					    uint64_t *cycles)
 {
+	ARG_UNUSED(channel);
+
 	const struct ifx_tcpwm_pwm_config *config = dev->config;
 
 	*cycles = Cy_SysClk_PeriphGetFrequency(config->divider_type, config->divider_sel);
