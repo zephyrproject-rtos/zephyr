@@ -43,6 +43,9 @@ static int test_dac_to_adc(void)
 	struct adc_sequence sequence = {
 		.buffer      = &sample_buffer,
 		.buffer_size = sizeof(sample_buffer),
+#if DT_HAS_COMPAT_STATUS_OKAY(renesas_ra_adc)
+		.calibrate = true,
+#endif
 	};
 
 	const struct device *dac_dev = init_dac();
