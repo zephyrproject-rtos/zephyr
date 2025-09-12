@@ -73,6 +73,12 @@
 			clocks = <&hclk>;
 		};
 
+		prortcclk: prortcclk {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&lfrco>;
+		};
+
 		rtccclk: rtccclk {
 			compatible = "fixed-factor-clock";
 			#clock-cells = <0>;
@@ -83,6 +89,12 @@
 			compatible = "fixed-factor-clock";
 			#clock-cells = <0>;
 			clocks = <&hfrcodpll>;
+		};
+
+		systickclk: systickclk {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&hclk>;
 		};
 
 		traceclk: traceclk {
@@ -113,6 +125,11 @@
 			reg = <0>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+			/*
+			 * The minimum residency and exit latency is managed by sl_power_manager
+			 * on S2 devices.
+			 */
+			cpu-power-states = <&pstate_em1 &pstate_em2 &pstate_em4>;
 			device_type = "cpu";
 
 			itm: itm@e0000000 {
@@ -123,6 +140,24 @@
 			mpu: mpu@e000ed90 {
 				compatible = "arm,armv8m-mpu";
 				reg = <0xe000ed90 0x40>;
+			};
+		};
+
+		power-states {
+			pstate_em1: em1 {
+				compatible = "zephyr,power-state";
+				power-state-name = "runtime-idle";
+			};
+
+			pstate_em2: em2 {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+			};
+
+			pstate_em4: em4 {
+				compatible = "zephyr,power-state";
+				power-state-name = "soft-off";
+				status = "disabled";
 			};
 		};
 	};
@@ -386,6 +421,15 @@
 			status = "disabled";
 		};
 
+		burtc0: burtc@50064000 {
+			compatible = "silabs,gecko-burtc";
+			reg = <0x50064000 0x4000>;
+			clocks = <&cmu CLOCK_AUTO CLOCK_BRANCH_EM4GRPACLK>;
+			interrupt-names = "burtc";
+			interrupts = <18 2>;
+			status = "disabled";
+		};
+
 		i2c1: i2c@50068000 {
 			compatible = "silabs,i2c";
 			reg = <0x50068000 0x4000>;
@@ -395,6 +439,17 @@
 			clocks = <&cmu CLOCK_AUTO CLOCK_BRANCH_PCLK>;
 			interrupt-names = "i2c1";
 			interrupts = <28 2>;
+			status = "disabled";
+		};
+
+		rtcc0: stimer0: rtcc@58000000 {
+			compatible = "silabs,gecko-stimer";
+			reg = <0x58000000 0x4000>;
+			clock-frequency = <32768>;
+			clocks = <&cmu CLOCK_AUTO CLOCK_BRANCH_RTCCCLK>;
+			interrupt-names = "rtcc";
+			interrupts = <10 2>;
+			prescaler = <1>;
 			status = "disabled";
 		};
 
@@ -411,6 +466,16 @@
 				#pwm-cells = <3>;
 				status = "disabled";
 			};
+		};
+
+		adc0: adc@5a004000 {
+			compatible = "silabs,gecko-iadc";
+			reg = <0x5a004000 0x4000>;
+			#io-channel-cells = <1>;
+			clocks = <&cmu CLOCK_AUTO CLOCK_BRANCH_IADCCLK>;
+			interrupt-names = "iadc";
+			interrupts = <50 2>;
+			status = "disabled";
 		};
 
 		acmp0: acmp@5a008000 {
