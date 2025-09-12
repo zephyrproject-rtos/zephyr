@@ -15,14 +15,20 @@
 	chosen {
 		zephyr,console = &uart20;
 		zephyr,shell-uart = &uart20;
-		zephyr,code-partition = &slot0_partition;
-		zephyr,flash = &cpuapp_rram;
-		zephyr,sram = &cpuapp_sram;
 		zephyr,uart-mcumgr = &uart20;
 		zephyr,bt-mon-uart = &uart20;
 		zephyr,bt-c2h-uart = &uart20;
 		zephyr,flash-controller = &rram_controller;
+		zephyr,flash = &cpuapp_rram;
 		zephyr,ieee802154 = &ieee802154;
+		zephyr,boot-mode = &boot_mode0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,sram = &cpuapp_sram;
+	};
+
+	aliases {
+		mcuboot-button0 = &button0;
+		mcuboot-led0 = &led0;
 	};
 };
 
@@ -32,7 +38,7 @@
 
 &lfxo {
 	load-capacitors = "internal";
-	load-capacitance-femtofarad = <15500>;
+	load-capacitance-femtofarad = <17000>;
 };
 
 &hfxo {
@@ -60,6 +66,10 @@
 };
 
 &uart20 {
+	status = "okay";
+};
+
+&nfct {
 	status = "okay";
 };
 
@@ -99,6 +109,16 @@
 	status = "okay";
 };
 
+&gpregret1 {
+	status = "okay";
+
+	boot_mode0: boot_mode@0 {
+		compatible = "zephyr,retention";
+		status = "okay";
+		reg = <0x0 0x1>;
+	};
+};
+
 &spi00 {
 	status = "okay";
 
@@ -124,6 +144,7 @@
 		has-dpd;
 		t-enter-dpd = <10000>;
 		t-exit-dpd = <35000>;
+		reset-gpios = <&gpio2 6 GPIO_ACTIVE_LOW>;
 	};
 };
 
