@@ -8,7 +8,6 @@
 #include "hifive_unleashed.dtsi"
 
 / {
-
 	cpus {
 		cpu@1 {
 			status = "disabled";
@@ -26,5 +25,4 @@
 			status = "disabled";
 		};
 	};
-
 };

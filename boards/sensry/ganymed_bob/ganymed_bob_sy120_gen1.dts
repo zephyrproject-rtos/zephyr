@@ -9,14 +9,12 @@
 #include "ganymed_bob_sy120-pinctrl.dtsi"
 
 / {
-
 	chosen {
 		zephyr,code-partition = &l2_ram_text;
 		zephyr,sram = &l2_ram_data;
 
 		zephyr,console = &uart0;
 	};
-
 };
 
 &mdio0 {

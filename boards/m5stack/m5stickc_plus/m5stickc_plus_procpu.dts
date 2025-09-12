@@ -42,7 +42,7 @@
 		compatible = "gpio-leds";
 
 		red_led: led_0 {
-			gpios =  <&gpio0 10 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio0 10 GPIO_ACTIVE_HIGH>;
 			label = "Red - LED0";
 		};
 	};
@@ -55,6 +55,7 @@
 			gpios = <&gpio1 5 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		user_button_1: button_1 {
 			label = "User button 1";
 			gpios = <&gpio1 7 GPIO_ACTIVE_LOW>;
@@ -155,6 +156,7 @@
 				regulator-init-microvolt = <3000000>;
 			};
 		};
+
 		axp192_gpio: axp192_gpio {
 			compatible = "x-powers,axp192-gpio";
 			gpio-controller;
@@ -182,7 +184,7 @@
 	#size-cells = <0>;
 	status = "okay";
 	pinctrl-0 = <&spim2_miso_gpio12 &spim2_mosi_gpio11
-				&spim2_sclk_gpio14 &spim2_csel_gpio16>;
+		     &spim2_sclk_gpio14 &spim2_csel_gpio16>;
 	pinctrl-names = "default";
 };
 

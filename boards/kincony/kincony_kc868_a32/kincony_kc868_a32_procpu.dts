@@ -44,35 +44,35 @@
 	pinctrl-names = "default";
 
 	i2c0_pcf8574@21 {
-		 compatible = "nxp,pcf857x";
-		 reg = <0x21>;
-		 gpio-controller;
-		 #gpio-cells = <2>;
-		 ngpios = <8>;
+		compatible = "nxp,pcf857x";
+		reg = <0x21>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <8>;
 	};
 
 	i2c0_pcf8574@22 {
-		 compatible = "nxp,pcf857x";
-		 reg = <0x22>;
-		 gpio-controller;
-		 #gpio-cells = <2>;
-		 ngpios = <8>;
+		compatible = "nxp,pcf857x";
+		reg = <0x22>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <8>;
 	};
 
 	i2c0_pcf8574@24 {
-		 compatible = "nxp,pcf857x";
-		 reg = <0x24>;
-		 gpio-controller;
-		 #gpio-cells = <2>;
-		 ngpios = <8>;
+		compatible = "nxp,pcf857x";
+		reg = <0x24>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <8>;
 	};
 
 	i2c0_pcf8574@25 {
-		 compatible = "nxp,pcf857x";
-		 reg = <0x25>;
-		 gpio-controller;
-		 #gpio-cells = <2>;
-		 ngpios = <8>;
+		compatible = "nxp,pcf857x";
+		reg = <0x25>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <8>;
 	};
 };
 
@@ -168,6 +168,7 @@
 
 &flash0 {
 	status = "okay";
+
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
@@ -194,8 +195,8 @@
 
 		/* Reserve 256kB for the scratch partition */
 		scratch_partition: partition@210000 {
-			   label = "image-scratch";
-			   reg = <0x00210000 0x00040000>;
+			label = "image-scratch";
+			reg = <0x00210000 0x00040000>;
 		};
 
 		storage_partition: partition@250000 {

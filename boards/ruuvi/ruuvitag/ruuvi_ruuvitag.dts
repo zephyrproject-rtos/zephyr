@@ -35,10 +35,12 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led0: led_0 {
 			gpios = <&gpio0 17 GPIO_ACTIVE_LOW>;
 			label = "Red LED 0";
 		};
+
 		led1: led_1 {
 			gpios = <&gpio0 19 GPIO_ACTIVE_LOW>;
 			label = "Green LED 1";
@@ -47,6 +49,7 @@
 
 	buttons {
 		compatible = "gpio-keys";
+
 		button0: button_0 {
 			gpios = <&gpio0 13 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button switch 0";
@@ -88,6 +91,7 @@
 	pinctrl-0 = <&spi0_default>;
 	pinctrl-1 = <&spi0_sleep>;
 	pinctrl-names = "default", "sleep";
+
 	bme280@0 {
 		compatible = "bosch,bme280";
 		reg = <0>;
@@ -98,13 +102,11 @@
 		compatible = "st,lis2dh", "st,lis2dh12";
 		reg = <1>;
 		spi-max-frequency = <10000000>;
-		irq-gpios =  <&gpio0 2 GPIO_ACTIVE_HIGH>, <&gpio0 6 GPIO_ACTIVE_HIGH>;
+		irq-gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>, <&gpio0 6 GPIO_ACTIVE_HIGH>;
 	};
 };
 
-
 &flash0 {
-
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
@@ -114,14 +116,17 @@
 			label = "mcuboot";
 			reg = <0x00000000 0xc000>;
 		};
+
 		slot0_partition: partition@c000 {
 			label = "image-0";
 			reg = <0x0000C000 0x32000>;
 		};
+
 		slot1_partition: partition@3e000 {
 			label = "image-1";
 			reg = <0x0003E000 0x32000>;
 		};
+
 		scratch_partition: partition@70000 {
 			label = "image-scratch";
 			reg = <0x00070000 0xa000>;

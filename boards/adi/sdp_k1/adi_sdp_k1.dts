@@ -24,18 +24,22 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		status_led: led_ds3 {
 			gpios = <&gpiok 4 GPIO_ACTIVE_HIGH>;
 			label = "Status DS3";
 		};
+
 		green_led_1: led_ds4 {
 			gpios = <&gpiok 5 GPIO_ACTIVE_HIGH>;
 			label = "User LD1";
 		};
+
 		orange_led_2: led_ds5 {
 			gpios = <&gpiok 6 GPIO_ACTIVE_HIGH>;
 			label = "User LD2";
 		};
+
 		red_led_3: led_ds6 {
 			gpios = <&gpiok 7 GPIO_ACTIVE_HIGH>;
 			label = "User LD3";
@@ -44,7 +48,7 @@
 
 	otghs_ulpi_phy: otghs_ulpis_phy {
 		compatible = "usb-ulpi-phy";
-		reset-gpios = <&gpiod 7 (GPIO_ACTIVE_LOW)>;
+		reset-gpios = <&gpiod 7 GPIO_ACTIVE_LOW>;
 		#phy-cells = <0>;
 	};
 

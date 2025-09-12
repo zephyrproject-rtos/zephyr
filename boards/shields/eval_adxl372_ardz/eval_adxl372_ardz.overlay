@@ -7,7 +7,6 @@
 #include <zephyr/dt-bindings/sensor/adxl372.h>
 #include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
 
-
 &arduino_spi {
 	status = "okay";
 

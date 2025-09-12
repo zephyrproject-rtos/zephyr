@@ -36,6 +36,7 @@
 	pwm_leds {
 		compatible = "pwm-leds";
 		status = "disabled";
+
 		pwm_led0: pwm_led_0 {
 			pwms = <&pwm 9 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 			label = "PWM_LED";
@@ -163,8 +164,8 @@
 			gpios = <&gpio0 12 GPIO_ACTIVE_HIGH>;
 			chain-length = <1>;
 			color-mapping = <LED_COLOR_ID_GREEN
-					LED_COLOR_ID_RED
-					LED_COLOR_ID_BLUE>;
+					 LED_COLOR_ID_RED
+					 LED_COLOR_ID_BLUE>;
 			reset-delay = <280>;
 			frequency = <800000>;
 		};

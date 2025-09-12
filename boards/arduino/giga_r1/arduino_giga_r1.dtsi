@@ -14,12 +14,15 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		red_led: led_0 {
 			gpios = <&gpioi 12 GPIO_ACTIVE_LOW>;
 		};
+
 		green_led: led_1 {
 			gpios = <&gpioj 13 GPIO_ACTIVE_LOW>;
 		};
+
 		blue_led: led_2 {
 			gpios = <&gpioe 3 GPIO_ACTIVE_LOW>;
 		};
@@ -27,6 +30,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button: button_0 {
 			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
 			zephyr,code = <INPUT_KEY_0>;
@@ -52,8 +56,8 @@ sdhc: &sdmmc1 {
 	interrupts = <49 0>;
 	interrupt-names = "event";
 	pinctrl-0 = <&sdmmc1_d0_pc8 &sdmmc1_d1_pc9
-			&sdmmc1_d2_pc10 &sdmmc1_d3_pc11
-			&sdmmc1_ck_pc12 &sdmmc1_cmd_pd2>;
+		     &sdmmc1_d2_pc10 &sdmmc1_d3_pc11
+		     &sdmmc1_ck_pc12 &sdmmc1_cmd_pd2>;
 	pinctrl-names = "default";
 	sdhi-on-gpios = <&gpiob 10 GPIO_ACTIVE_HIGH>;
 	min-bus-freq = <DT_FREQ_K(400)>;

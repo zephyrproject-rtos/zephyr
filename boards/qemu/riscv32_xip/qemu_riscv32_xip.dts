@@ -19,7 +19,6 @@
 		zephyr,sram = &dtim;
 		zephyr,flash = &flash0;
 	};
-
 };
 
 &gpio0 {
@@ -39,6 +38,7 @@
 	#address-cells = <1>;
 	#size-cells = <0>;
 	reg = <0x10014000 0x1000 0x20400000 0xc00000>;
+
 	flash0: flash@0 {
 		compatible = "issi,is25lp128", "jedec,spi-nor";
 		size = <134217728>;

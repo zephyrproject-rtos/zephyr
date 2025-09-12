@@ -14,7 +14,7 @@
 		spi-max-frequency = <DT_FREQ_M(2)>;
 		gp1-gpios = <&arduino_header ARDUINO_HEADER_R3_D8
 			     (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
-		gp0-gpios = <&arduino_header ARDUINO_HEADER_R3_D9 (GPIO_PULL_DOWN)>;
+		gp0-gpios = <&arduino_header ARDUINO_HEADER_R3_D9 GPIO_PULL_DOWN>;
 		conversion-gpios = <&arduino_header ARDUINO_HEADER_R3_D6
 				    (GPIO_ACTIVE_HIGH | MAX32_GPIO_VSEL_VDDIOH)>;
 		#address-cells = <1>;

@@ -20,6 +20,7 @@
 
 &enet1g_mdio {
 	status = "okay";
+
 	enet1g_phy: phy@1 {
 		status = "okay";
 	};
