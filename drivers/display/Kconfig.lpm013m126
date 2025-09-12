@@ -1,0 +1,10 @@
+# Copyright (c) 2025 Silicon Signals Pvt. Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config LPM013M126
+	bool "LPM013M126 memory display controller driver"
+	default y
+	depends on DT_HAS_JDI_LPM013M126_ENABLED
+	select SPI
+	help
+		Enable driver for JDI memory display series LPM013M126
