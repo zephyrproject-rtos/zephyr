@@ -29,6 +29,17 @@ tests:
       tests_scripts:
         - tests_scripts/basic_conn_split_1ms.sh
 
+  tests.bsim.bluetooth.ll.conn.split_1ms_pllen:
+    platform_allow:
+      - nrf52_bsim
+      - nrf5340bsim/nrf5340/cpunet
+    extra_args: CONF_FILE=prj_split_1ms_pllen.conf
+    harness_config:
+      fixture: bsim_multi_test
+      bsim_exe_name: tests_bsim_bluetooth_ll_conn_prj_split_1ms_pllen_conf
+      tests_scripts:
+        - tests_scripts/basic_conn_split_1ms_pllen.sh
+
   tests.bsim.bluetooth.ll.conn.split_tx_defer:
     platform_allow:
       - nrf52_bsim

@@ -100,6 +100,8 @@
  */
 #define NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk HAL_RADIO_SHORTS_TRX_PHYEND_DISABLE_Msk
 
+#define NRF_RADIO_SHORTS_TRX_END_PLLEN_Msk   HAL_RADIO_SHORTS_TRX_PHYEND_PLLEN_Msk
+
 /* Delay of EVENTS_PHYEND event on receive PDU without CTE included when CTEINLINE is enabled */
 #define RADIO_EVENTS_PHYEND_DELAY_US 16
 
@@ -121,6 +123,8 @@
  * This is a default shortcut used to automatically disable Radio after end of PDU.
  */
 #define NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk HAL_RADIO_SHORTS_TRX_END_DISABLE_Msk
+
+#define NRF_RADIO_SHORTS_TRX_END_PLLEN_Msk   HAL_RADIO_SHORTS_TRX_PHYEND_PLLEN_Msk
 #endif /* !CONFIG_BT_CTLR_DF */
 
 #define HAL_EVENT_TIMER_TRX_CC_OFFSET          0
@@ -190,6 +194,8 @@
  */
 #define NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk HAL_RADIO_SHORTS_TRX_PHYEND_DISABLE_Msk
 
+#define NRF_RADIO_SHORTS_TRX_END_PLLEN_Msk   HAL_RADIO_SHORTS_TRX_PHYEND_PLLEN_Msk
+
 /* Delay of EVENTS_PHYEND event on receive PDU without CTE included when CTEINLINE is enabled */
 #define RADIO_EVENTS_PHYEND_DELAY_US 16
 
@@ -211,6 +217,8 @@
  * This is a default shortcut used to automatically disable Radio after end of PDU.
  */
 #define NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk HAL_RADIO_SHORTS_TRX_END_DISABLE_Msk
+
+#define NRF_RADIO_SHORTS_TRX_END_PLLEN_Msk   HAL_RADIO_SHORTS_TRX_PHYEND_PLLEN_Msk
 #endif /* !CONFIG_BT_CTLR_DF */
 
 #define HAL_EVENT_TIMER_TRX_CC_OFFSET          0
