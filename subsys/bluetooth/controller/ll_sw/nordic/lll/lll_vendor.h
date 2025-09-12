@@ -43,6 +43,26 @@
 #define EVENT_OVERHEAD_START_US       275 /* 9 RTC ticks */
 #endif /* !CONFIG_BT_CTLR_ADV_EXT */
 
+/* Lowest ACL peripheral connection intervals possible on 2M PHY, nRF52x SoC:
+ *
+ *                                                 nRF52/nRF53  nRF54L (128 MHz)
+ * 1. Radio settling time:                               41 us   41 us
+ * 2. +/- 16 us sleep clock jitter:                      32 us   32 us
+ * 3. Window Widening, depends on sleep clock accuracy:   x us    x us
+ * 4. 27 byte PDU on 2M PHY:                            168 us  168 us
+ * 5. tIFS component, Rx chain delay:                    10 us   10 us
+ * 6. tIFS component, Tx settling time:                  41 us   11 us
+ * 7. 27 bytes PDU on 2M PHY:                           168 us  168 us
+ * 8. Tx chain delay:                                     1 us    1 us
+ * 9. EVENT_OVERHEAD_RESUME_US                          123 us   92 us
+ *
+ * Total:                                               706 us  523 us
+ *
+ * In theory, a 750 us connection interval should achieve a stable throughput
+ * with high radio utilization on a 64 MHz ARM Cortex-M4 CPU in nRF52x SoC.
+ *
+ */
+
 /* Worst-case time margin needed after event end-time in the air
  * (done/preempt race margin + power-down/chain delay)
  */
