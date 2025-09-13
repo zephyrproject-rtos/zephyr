@@ -7,6 +7,7 @@
  */
 
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/sensor/iis3dwb.h>
 
 /****************************************
  * PLEASE KEEP REG ADDRESSES SEQUENTIAL *
@@ -466,4 +467,15 @@ test_spi_icm42686: icm42686@38 {
 	reg = <0x38>;
 	spi-max-frequency = <24000000>;
 	int-gpios = <&test_gpio 0 0>;
+};
+
+test_spi_iis3dwb: iis3dwb@39 {
+	compatible = "st,iis3dwb";
+	reg = <0x39>;
+	spi-max-frequency = <0>;
+	int1-gpios = <&test_gpio 0 0>;
+	int2-gpios = <&test_gpio 0 0>;
+	range = <IIS3DWB_DT_FS_16G>;
+	odr = <IIS3DWB_DT_ODR_26k7Hz>;
+	filter = <IIS3DWB_DT_HP_ODR_DIV_800>;
 };
