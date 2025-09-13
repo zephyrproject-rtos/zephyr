@@ -22,8 +22,8 @@ properties:
   op-mode:
     type: string
     enum:
-      - "MSPI_CONTROLLER"
-      - "MSPI_PERIPHERAL"
+      - "MSPI_OP_MODE_CONTROLLER"
+      - "MSPI_OP_MODE_PERIPHERAL"
     description: |
       Indicate MSPI controller or peripheral mode of the controller.
       The controller driver may use this during initialization.

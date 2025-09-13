@@ -19,6 +19,7 @@
  */
 
 /* CTRLR0 - Control Register 0 */
+#define CTRLR0_SSIISMST_BIT	BIT(31)
 #define CTRLR0_SPI_FRF_MASK	COND_CODE_1(SSI_VERSION_2, GENMASK(22, 21), GENMASK(23, 22))
 #define CTRLR0_SPI_FRF_STANDARD	0UL
 #define CTRLR0_SPI_FRF_DUAL	1UL
@@ -171,6 +172,22 @@
 #define XIP_WRITE_CTRL_FRF_DUAL		1UL
 #define XIP_WRITE_CTRL_FRF_QUAD		2UL
 #define XIP_WRITE_CTRL_FRF_OCTAL	3UL
+
+/* DMACR - DMA Control Register */
+#define DMA_CR_ATW_MASK		 GENMASK(4, 3)
+#define DMA_CR_ATW_1_BYTE		   0UL
+#define DMA_CR_ATW_2_BYTE		   1UL
+#define DMA_CR_ATW_3_BYTE		   2UL
+#define DMA_CR_ATW_4_BYTE		   3UL
+#define DMA_CR_IDMAE_EN_BIT		BIT(2)
+#define DMA_CR_TDMAE_EN_BIT		BIT(1)
+#define DMA_CR_RDMAE_EN_BIT		BIT(0)
+
+/* DMATDLR - DMA Transmit Data Level */
+#define DMA_TDLR_DMATDL_MASK		 GENMASK(3, 0)
+
+/* DMARDLR - DMA Receive Data Level */
+#define DMA_RDLR_DMARDL_MASK		 GENMASK(3, 0)
 
 /* Register access helpers. */
 #define USES_AUX_REG(inst) + DT_INST_PROP(inst, aux_reg_enable)
