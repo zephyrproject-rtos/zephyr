@@ -13,4 +13,6 @@ supported:
   - entropy
   - adc
   - octospi
+  - can
+  - canfd
 vendor: st
