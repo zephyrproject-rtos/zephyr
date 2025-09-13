@@ -43,6 +43,16 @@ extern "C" {
 #endif
 
 /**
+ * @brief Max and min Open Drain timings.
+ *        Standard I3C SDR and I2C FM speed
+ */
+#define I3C_OD_TLOW_MIN_NS           200
+#define I3C_OD_THIGH_MAX_NS          41
+#define I3C_OD_FIRST_BC_THIGH_MIN_NS 200
+#define I3C_SDR_FREQ_HZ              12500000
+#define I3C_I2C_FM_SCL_FREQ_HZ       400000
+
+/**
  * @name Bus Characteristic Register (BCR)
  * @anchor I3C_BCR
  *
@@ -463,6 +473,22 @@ struct i3c_config_controller {
 		/** SCL frequency (in Hz) for I2C transfers. */
 		uint32_t i2c;
 	} scl;
+
+	struct {
+		/**
+		 * Requested minimum SCL Open Drain High period in Nanoseconds
+		 *
+		 * Note:
+		 * - For the first broadcast message, spec requires tHIGH_OD >= 200 ns.
+		 * - For normal messages, tHIGH_OD must not exceed 41 ns (spec max).
+		 */
+		uint32_t high_ns;
+
+		/**
+		 * Requested minimum SCL Open-Drain LOW period in nanoseconds.
+		 */
+		uint32_t low_ns;
+	} scl_od;
 
 	/**
 	 * Bit mask of supported HDR modes (0 - 7).

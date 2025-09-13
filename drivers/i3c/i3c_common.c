@@ -1350,6 +1350,24 @@ int i3c_bus_init(const struct device *dev, const struct i3c_dev_list *dev_list)
 	bool need_daa = true;
 	bool need_aasa = true;
 	struct i3c_ccc_events i3c_events;
+	struct i3c_config_controller ctrl_cfg;
+
+	/* Retrieve the active controller configuration */
+	ret = i3c_config_get(dev, I3C_CONFIG_CONTROLLER, &ctrl_cfg);
+	if (ret != 0) {
+		LOG_ERR("Failed to retrieve controller configuration");
+		return ret;
+	}
+
+	/* Set OD timings for Slow speed */
+	ctrl_cfg.scl_od.high_ns = I3C_OD_FIRST_BC_THIGH_MIN_NS;
+	ctrl_cfg.scl_od.low_ns  = I3C_OD_TLOW_MIN_NS;
+
+	ret = i3c_configure(dev, I3C_CONFIG_CONTROLLER, &ctrl_cfg);
+	if (ret != 0) {
+		LOG_ERR("Open Drain Slow speed set failed");
+		return ret;
+	}
 
 #ifdef CONFIG_I3C_INIT_RSTACT
 	/*
@@ -1378,6 +1396,14 @@ int i3c_bus_init(const struct device *dev, const struct i3c_dev_list *dev_list)
 
 	if (i3c_bus_rstdaa_all(dev) != 0) {
 		LOG_DBG("Broadcast RSTDAA was NACK.");
+	}
+
+	/* Set OD timings for Normal speed */
+	ctrl_cfg.scl_od.high_ns = I3C_OD_THIGH_MAX_NS;
+	ret = i3c_configure(dev, I3C_CONFIG_CONTROLLER, &ctrl_cfg);
+	if (ret != 0) {
+		LOG_ERR("Open Drain Normal speed set failed");
+		return ret;
 	}
 
 	/*
