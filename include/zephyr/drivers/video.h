@@ -24,11 +24,12 @@
  * @{
  */
 
-#include <zephyr/device.h>
 #include <stddef.h>
-#include <zephyr/kernel.h>
 
+#include <zephyr/device.h>
+#include <zephyr/kernel.h>
 #include <zephyr/types.h>
+#include <zephyr/rtio/rtio.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -52,19 +53,32 @@ struct video_control;
  */
 enum video_buf_type {
 	/** input buffer type */
-	VIDEO_BUF_TYPE_INPUT,
+	VIDEO_BUF_TYPE_INPUT = 1,
 	/** output buffer type */
-	VIDEO_BUF_TYPE_OUTPUT,
+	VIDEO_BUF_TYPE_OUTPUT = 2,
 };
 
 /**
+ * @brief video_buf_memory enum
+ *
+ * Memory type of a buffer
+ */
+enum video_buf_memory {
+	/** buffer is from the internal video heap */
+	VIDEO_MEMORY_INTERNAL = 1,
+	/** buffer is provided by application */
+	VIDEO_MEMORY_EXTERNAL = 2,
+};
+
+/**
+ * @struct video_format
  * @brief Video format structure
  *
  * Used to configure frame format.
  */
 struct video_format {
-	/** type of the buffer */
-	enum video_buf_type type;
+	/** buffer type, see @ref video_buf_type */
+	uint8_t type;
 	/** FourCC pixel format value (\ref video_pixel_formats) */
 	uint32_t pixelformat;
 	/** frame width in pixels. */
@@ -109,8 +123,8 @@ struct video_format_cap {
  * Used to describe video endpoint capabilities.
  */
 struct video_caps {
-	/** type of the buffer */
-	enum video_buf_type type;
+	/** buffer type, see @ref video_buf_type */
+	uint8_t type;
 	/** list of video format capabilities (zero terminated). */
 	const struct video_format_cap *format_caps;
 	/** minimal count of video buffers to enqueue before being able to start
@@ -144,12 +158,14 @@ struct video_buffer {
 	/** Pointer to driver specific data. */
 	/* It must be kept as first field of the struct if used for @ref k_fifo APIs. */
 	void *driver_data;
-	/** type of the buffer */
-	enum video_buf_type type;
+	/** type of the buffer, see @ref video_buf_type */
+	uint8_t type;
+	/** memory type of the buffer, see @ref video_buf_memory */
+	uint8_t memory;
 	/** pointer to the start of the buffer. */
 	uint8_t *buffer;
-	/** index of the buffer, optionally set by the application */
-	uint8_t index;
+	/** index of the buffer in the video buffer pool */
+	uint16_t index;
 	/** size of the buffer in bytes. */
 	uint32_t size;
 	/** number of bytes occupied by the valid data in the buffer. */
@@ -165,6 +181,24 @@ struct video_buffer {
 	 * the frame in bytes.
 	 */
 	uint16_t line_offset;
+};
+
+/**
+ * @brief Video buffer request structure
+ *
+ * Represents a buffer request from application
+ */
+struct video_buffer_request {
+	/** memory type of the requested buffers, see @ref video_buf_memory */
+	uint8_t memory;
+	/** number of requested buffers */
+	uint8_t count;
+	/** size of a requested buffer */
+	size_t size;
+	/** timeout when allocating buffers of type @ref VIDEO_MEMORY_INTERNAL */
+	k_timeout_t timeout;
+	/** index of the 1st succesfully requested buffer, returned to application */
+	uint16_t start_index;
 };
 
 /**
@@ -273,8 +307,8 @@ struct video_rect {
  * Used to describe the query and set selection target on a video device
  */
 struct video_selection {
-	/** buffer type, allow to select for device having both input and output */
-	enum video_buf_type type;
+	/** buffer type for device having both input and output, see @ref video_buf_type */
+	uint8_t type;
 	/** selection target enum */
 	enum video_selection_target target;
 	/** selection target rectangle */
@@ -305,22 +339,8 @@ typedef int (*video_api_frmival_t)(const struct device *dev, struct video_frmiva
  */
 typedef int (*video_api_enum_frmival_t)(const struct device *dev, struct video_frmival_enum *fie);
 
-/**
- * @typedef video_api_enqueue_t
- * @brief Enqueue a buffer in the driver’s incoming queue.
- *
- * See video_enqueue() for argument descriptions.
- */
-typedef int (*video_api_enqueue_t)(const struct device *dev, struct video_buffer *buf);
-
-/**
- * @typedef video_api_dequeue_t
- * @brief Dequeue a buffer from the driver’s outgoing queue.
- *
- * See video_dequeue() for argument descriptions.
- */
-typedef int (*video_api_dequeue_t)(const struct device *dev, struct video_buffer **buf,
-				   k_timeout_t timeout);
+typedef void (*video_api_iodev_submit_t)(const struct device *dev,
+					 struct rtio_iodev_sqe *iodev_sqe);
 
 /**
  * @typedef video_api_flush_t
@@ -386,8 +406,6 @@ __subsystem struct video_driver_api {
 	video_api_set_stream_t set_stream;
 	video_api_get_caps_t get_caps;
 	/* optional callbacks */
-	video_api_enqueue_t enqueue;
-	video_api_dequeue_t dequeue;
 	video_api_flush_t flush;
 	video_api_ctrl_t set_ctrl;
 	video_api_ctrl_t get_volatile_ctrl;
@@ -397,6 +415,7 @@ __subsystem struct video_driver_api {
 	video_api_enum_frmival_t enum_frmival;
 	video_api_selection_t set_selection;
 	video_api_selection_t get_selection;
+	video_api_iodev_submit_t iodev_submit;
 };
 
 /**
@@ -549,6 +568,17 @@ static inline int video_enum_frmival(const struct device *dev, struct video_frmi
 }
 
 /**
+ * @brief Request a number of video buffers.
+ *
+ * Request a number of @ref video_buffer from the video buffer pool
+ *
+ * @param vbr Pointer to the @ref video_buffer_request.
+ *
+ * @retval 0 on success, otherwise a negative errno code.
+ */
+int video_request_buffers(struct video_buffer_request *const vbr);
+
+/**
  * @brief Enqueue a video buffer.
  *
  * Enqueue an empty (capturing) or filled (output) video buffer in the driver’s
@@ -561,21 +591,7 @@ static inline int video_enum_frmival(const struct device *dev, struct video_frmi
  * @retval -EINVAL If parameters are invalid.
  * @retval -EIO General input / output error.
  */
-static inline int video_enqueue(const struct device *dev, struct video_buffer *buf)
-{
-	const struct video_driver_api *api = (const struct video_driver_api *)dev->api;
-
-	__ASSERT_NO_MSG(dev != NULL);
-	__ASSERT_NO_MSG(buf != NULL);
-	__ASSERT_NO_MSG(buf->buffer != NULL);
-
-	api = (const struct video_driver_api *)dev->api;
-	if (api->enqueue == NULL) {
-		return -ENOSYS;
-	}
-
-	return api->enqueue(dev, buf);
-}
+int video_enqueue(const struct device *const dev, const struct video_buffer *const buf);
 
 /**
  * @brief Dequeue a video buffer.
@@ -583,29 +599,13 @@ static inline int video_enqueue(const struct device *dev, struct video_buffer *b
  * Dequeue a filled (capturing) or displayed (output) buffer from the driver’s
  * endpoint outgoing queue.
  *
- * @param dev Pointer to the device structure for the driver instance.
  * @param buf Pointer a video buffer pointer.
- * @param timeout Timeout
  *
- * @retval 0 Is successful.
- * @retval -EINVAL If parameters are invalid.
- * @retval -EIO General input / output error.
+ * @retval The RTIO completion event with the completed buffer.
  */
-static inline int video_dequeue(const struct device *dev, struct video_buffer **buf,
-				k_timeout_t timeout)
-{
-	const struct video_driver_api *api;
+struct rtio_cqe *video_dequeue(void);
 
-	__ASSERT_NO_MSG(dev != NULL);
-	__ASSERT_NO_MSG(buf != NULL);
-
-	api = (const struct video_driver_api *)dev->api;
-	if (api->dequeue == NULL) {
-		return -ENOSYS;
-	}
-
-	return api->dequeue(dev, buf, timeout);
-}
+void video_rtio_cqe_release(struct rtio_cqe *cqe);
 
 /**
  * @brief Flush endpoint buffers.
@@ -873,34 +873,6 @@ static inline int video_get_selection(const struct device *dev, struct video_sel
 
 	return api->get_selection(dev, sel);
 }
-
-/**
- * @brief Allocate aligned video buffer.
- *
- * @param size Size of the video buffer (in bytes).
- * @param align Alignment of the requested memory, must be a power of two.
- * @param timeout Timeout duration or K_NO_WAIT
- *
- * @retval pointer to allocated video buffer
- */
-struct video_buffer *video_buffer_aligned_alloc(size_t size, size_t align, k_timeout_t timeout);
-
-/**
- * @brief Allocate video buffer.
- *
- * @param size Size of the video buffer (in bytes).
- * @param timeout Timeout duration or K_NO_WAIT
- *
- * @retval pointer to allocated video buffer
- */
-struct video_buffer *video_buffer_alloc(size_t size, k_timeout_t timeout);
-
-/**
- * @brief Release a video buffer.
- *
- * @param buf Pointer to the video buffer to release.
- */
-void video_buffer_release(struct video_buffer *buf);
 
 /**
  * @brief Search for a format that matches in a list of capabilities

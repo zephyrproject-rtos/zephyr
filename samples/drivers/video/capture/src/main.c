@@ -19,7 +19,7 @@
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 #else
-LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
+LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 #endif
 
 #if !DT_HAS_CHOSEN(zephyr_camera)
@@ -283,25 +283,24 @@ int main(void)
 		bsize = fmt.pitch * caps.min_line_count;
 	}
 
-	/* Alloc video buffers and enqueue for capture */
-	if (caps.min_vbuf_count > CONFIG_VIDEO_BUFFER_POOL_NUM_MAX ||
-	    bsize > CONFIG_VIDEO_BUFFER_POOL_SZ_MAX) {
-		LOG_ERR("Not enough buffers or memory to start streaming");
+	/* Request buffers */
+	struct video_buffer_request vbr = {
+		.memory = VIDEO_MEMORY_INTERNAL,
+		.count = CONFIG_VIDEO_BUFFER_POOL_NUM_BUFS,
+		.size = bsize,
+		.timeout = K_FOREVER,
+	};
+
+	err = video_request_buffers(&vbr);
+	if (err || vbr.count < caps.min_vbuf_count) {
+		LOG_ERR("Unable to request buffers or not enough buffers to start streaming");
 		return 0;
 	}
 
-	for (i = 0; i < CONFIG_VIDEO_BUFFER_POOL_NUM_MAX; i++) {
-		/*
-		 * For some hardwares, such as the PxP used on i.MX RT1170 to do image rotation,
-		 * buffer alignment is needed in order to achieve the best performance
-		 */
-		vbuf = video_buffer_aligned_alloc(bsize, CONFIG_VIDEO_BUFFER_POOL_ALIGN,
-							K_FOREVER);
-		if (vbuf == NULL) {
-			LOG_ERR("Unable to alloc video buffer");
-			return 0;
-		}
-		vbuf->type = type;
+	/* Enqueue buffers */
+	vbuf->type = type;
+	for (i = 0; i < vbr.count; i++) {
+		vbuf->index = vbr.start_index++;
 		video_enqueue(video_dev, vbuf);
 	}
 
@@ -314,13 +313,15 @@ int main(void)
 	LOG_INF("Capture started");
 
 	/* Grab video frames */
-	vbuf->type = type;
 	while (1) {
-		err = video_dequeue(video_dev, &vbuf, K_FOREVER);
-		if (err) {
-			LOG_ERR("Unable to dequeue video buf");
+		struct rtio_cqe *cqe = video_dequeue();
+		struct video_buffer *vbuf = cqe->userdata;
+
+		if (cqe->result != 0) {
+			LOG_ERR("The video buffer of size %u completed with errors", vbuf->size);
 			return 0;
 		}
+
 
 		LOG_DBG("Got frame %u! size: %u; timestamp %u ms",
 			frame++, vbuf->bytesused, vbuf->timestamp);
@@ -337,10 +338,6 @@ int main(void)
 		video_display_frame(display_dev, vbuf, fmt);
 #endif
 
-		err = video_enqueue(video_dev, vbuf);
-		if (err) {
-			LOG_ERR("Unable to requeue video buf");
-			return 0;
-		}
+		video_rtio_cqe_release(cqe);
 	}
 }
