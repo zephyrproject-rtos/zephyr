@@ -807,24 +807,39 @@ enum gpio_int_trig {
 	GPIO_INT_TRIG_WAKE_BOTH = GPIO_INT_LOW_0 | GPIO_INT_HIGH_1 | GPIO_INT_WAKEUP,
 };
 
+/**
+ * @endcond
+ */
+
+ /**
+  * @driver_api{GPIO}
+  */
 __subsystem struct gpio_driver_api {
+	/** @copydoc gpio_pin_configure */
 	int (*pin_configure)(const struct device *port, gpio_pin_t pin,
 			     gpio_flags_t flags);
-#ifdef CONFIG_GPIO_GET_CONFIG
+#if defined(CONFIG_GPIO_GET_CONFIG) || defined(__DOXYGEN__)
+	/** @copydoc gpio_pin_get_config */
 	int (*pin_get_config)(const struct device *port, gpio_pin_t pin,
 			      gpio_flags_t *flags);
 #endif
+	/** @copydoc gpio_port_get_raw */
 	int (*port_get_raw)(const struct device *port,
 			    gpio_port_value_t *value);
+	/** @copydoc gpio_port_set_masked_raw */
 	int (*port_set_masked_raw)(const struct device *port,
 				   gpio_port_pins_t mask,
 				   gpio_port_value_t value);
+	/** @copydoc gpio_port_set_bits_raw */
 	int (*port_set_bits_raw)(const struct device *port,
 				 gpio_port_pins_t pins);
+	/** @copydoc gpio_port_clear_bits_raw */
 	int (*port_clear_bits_raw)(const struct device *port,
 				   gpio_port_pins_t pins);
+	/** @copydoc gpio_port_toggle_bits */
 	int (*port_toggle_bits)(const struct device *port,
 				gpio_port_pins_t pins);
+	/** @copydoc gpio_pin_interrupt_configure */
 	int (*pin_interrupt_configure)(const struct device *port,
 				       gpio_pin_t pin,
 				       enum gpio_int_mode mode,
@@ -832,16 +847,14 @@ __subsystem struct gpio_driver_api {
 	int (*manage_callback)(const struct device *port,
 			       struct gpio_callback *cb,
 			       bool set);
+	/** @copydoc gpio_get_pending_int */
 	uint32_t (*get_pending_int)(const struct device *dev);
-#ifdef CONFIG_GPIO_GET_DIRECTION
+#if defined(CONFIG_GPIO_GET_DIRECTION) || defined(__DOXYGEN__)
+	/** @copydoc gpio_port_get_direction */
 	int (*port_get_direction)(const struct device *port, gpio_port_pins_t map,
 				  gpio_port_pins_t *inputs, gpio_port_pins_t *outputs);
 #endif /* CONFIG_GPIO_GET_DIRECTION */
 };
-
-/**
- * @endcond
- */
 
 /**
  * @brief Validate that GPIO port is ready.
@@ -1079,6 +1092,8 @@ static inline int gpio_pin_configure_dt(const struct gpio_dt_spec *spec,
  * If @p inputs or @p outputs is NULL, then this function does not get the
  * respective input or output direction information.
  *
+ * @kconfig_dep{CONFIG_GPIO_GET_DIRECTION}
+ *
  * @param port Pointer to the device structure for the driver instance.
  * @param map Bitmap of pin directions to query.
  * @param inputs Pointer to a variable where input directions will be stored.
@@ -1205,6 +1220,8 @@ static inline int gpio_pin_is_output_dt(const struct gpio_dt_spec *spec)
 
 /**
  * @brief Get a configuration of a single pin.
+ *
+ * @kconfig_dep{CONFIG_GPIO_GET_CONFIG}
  *
  * @param port Pointer to device structure for the driver instance.
  * @param pin Pin number which configuration is get.
