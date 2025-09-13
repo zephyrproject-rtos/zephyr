@@ -185,7 +185,7 @@ M4F Core
 ========
 
 The board supports debugging M4 core from the A53 cores running Linux. Since the target needs
-superuser privilege, openocd needs to be launched separately for now:
+superuser privilege, OpenOCD needs to be launched separately for now:
 
 .. code-block:: console
 
@@ -197,6 +197,47 @@ Start debugging
 .. zephyr-app-commands::
    :board: pocketbeagle_2/am6254/m4
    :goals: debug
+
+MSPM0L1105
+==========
+
+Before beginning to debug, the devicetree overlay ``k3-am62-pocketbeagle2-mspm0swd.dtbo`` needs to be
+applied to enable the SWD pins. This can be done by adding the following entry to
+:file:`/boot/firmware/extlinux/extlinux.conf`:
+
+.. code-block:: console
+
+   label msmp0
+       kernel /Image.gz
+       append console=ttyS2,115200n8 earlycon=ns16550a,mmio32,0x02860000 root=/dev/mmcblk1p3 ro rootfstype=ext4 fsck.repair=yes resume=/dev/mmcblk1p2 rootwait net.ifnames=0
+       fdtdir /
+       fdtoverlays /overlays/k3-am62-pocketbeagle2-mspm0swd.dtbo
+
+After saving changes to :file:`/boot/firmware/extlinux/extlinux.conf`, this boot entry can be
+selected using one of the following ways:
+
+- Setting it as default entry in :file:`/boot/firmware/extlinux/extlinux.conf`.
+- Selecting the entry over UART in the bootmenu.
+
+The board supports debugging MSPM0L1105 from the A53 cores running Linux. Since OpenOCD shipped
+with Zephyr does not support sysfsgpio driver, OpenOCD needs to be launched separately for now:
+
+.. code-block:: console
+
+   openocd -f board/beagle/pocketbeagle_2/support/mspm0l1105.cfg
+
+Start debugging
+
+.. zephyr-app-commands::
+   :board: pocketbeagle_2/mspm0l1105
+   :goals: debug
+
+.. note::
+   The MSPM0 ADC EEPROM firmware shipped by default disables SWD debugging. So for the above
+   instructions to work, a firmware that enables SWD debugging needs to be flashed. This can be done
+   by using linux FW UPLOAD API exposed at ``/sys/class/firmware/mspm0l1105``.
+
+   Alternatively, one can get the same effect by doing a power-on-reset on the MSPM0l1105.
 
 References
 **********
