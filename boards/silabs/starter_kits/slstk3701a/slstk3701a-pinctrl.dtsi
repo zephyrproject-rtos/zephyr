@@ -52,4 +52,15 @@
 				<GECKO_LOC(UART_RX, 4)>;
 		};
 	};
+
+	usart1_default: usart1_default {
+		group1 {
+			psels = <GECKO_PSEL(SPIM_SCK, C, 15)>,
+				<GECKO_PSEL(SPIM_MISO, A, 0)>,
+				<GECKO_PSEL(SPIM_MOSI, A, 14)>,
+				<GECKO_LOC(SPI_SCK, 3)>,
+				<GECKO_LOC(SPI_MISO, 0)>,
+				<GECKO_LOC(SPI_MOSI, 6)>;
+		};
+	};
 };
