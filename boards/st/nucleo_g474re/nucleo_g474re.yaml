@@ -15,7 +15,6 @@ supported:
   - pwm
   - i2c
   - gpio
-  - usb device
   - counter
   - spi
   - watchdog
