@@ -32,7 +32,7 @@ static void rm3100_complete_result(struct rtio *ctx, const struct rtio_sqe *sqe,
 	if (!edata->header.events.drdy) {
 		LOG_ERR("Status register does not have DRDY bit set: 0x%02x",
 			edata->header.status);
-	} else if (data->stream.settings.opt.drdy == SENSOR_STREAM_DATA_INCLUDE) {
+	} else if (data->stream.settings.opt != SENSOR_STREAM_DATA_DROP) {
 		edata->header.channels |= rm3100_encode_channel(SENSOR_CHAN_MAGN_XYZ);
 	}
 
@@ -108,7 +108,7 @@ static void rm3100_stream_get_data(const struct device *dev)
 
 	uint8_t val;
 
-	val = RM3100_REG_STATUS;
+	val = RM3100_REG_STATUS | REG_READ_BIT;
 
 	rtio_sqe_prep_tiny_write(status_wr_sqe,
 				 data->rtio.iodev,
@@ -124,10 +124,13 @@ static void rm3100_stream_get_data(const struct device *dev)
 			   &edata->header.status,
 			   sizeof(edata->header.status),
 			   NULL);
-	status_rd_sqe->iodev_flags |= RTIO_IODEV_I2C_STOP | RTIO_IODEV_I2C_RESTART;
+
+	if (rtio_is_i2c(data->rtio.type)) {
+		status_rd_sqe->iodev_flags |= RTIO_IODEV_I2C_STOP | RTIO_IODEV_I2C_RESTART;
+	}
 	status_rd_sqe->flags |= RTIO_SQE_CHAINED;
 
-	val = RM3100_REG_MX;
+	val = RM3100_REG_MX | REG_READ_BIT;
 
 	rtio_sqe_prep_tiny_write(write_sqe,
 				 data->rtio.iodev,
@@ -143,7 +146,9 @@ static void rm3100_stream_get_data(const struct device *dev)
 			   edata->payload,
 			   sizeof(edata->payload),
 			   NULL);
-	read_sqe->iodev_flags |= RTIO_IODEV_I2C_STOP | RTIO_IODEV_I2C_RESTART;
+	if (rtio_is_i2c(data->rtio.type)) {
+		read_sqe->iodev_flags |= RTIO_IODEV_I2C_STOP | RTIO_IODEV_I2C_RESTART;
+	}
 	read_sqe->flags |= RTIO_SQE_CHAINED;
 
 	rtio_sqe_prep_callback_no_cqe(complete_sqe,
@@ -180,7 +185,7 @@ static inline bool settings_changed(const struct rm3100_stream *a,
 				    const struct rm3100_stream *b)
 {
 	return (a->settings.enabled.drdy != b->settings.enabled.drdy) ||
-	       (a->settings.opt.drdy != b->settings.opt.drdy);
+	       (a->settings.opt != b->settings.opt);
 }
 
 void rm3100_stream_submit(const struct device *dev,
@@ -191,21 +196,14 @@ void rm3100_stream_submit(const struct device *dev,
 	const struct rm3100_config *cfg = dev->config;
 	int err;
 
-	if ((read_config->count != 1) ||
-	    (read_config->triggers[0].trigger != SENSOR_TRIG_DATA_READY)) {
-		LOG_ERR("Only SENSOR_TRIG_DATA_READY is supported");
-		rtio_iodev_sqe_err(iodev_sqe, -ENOTSUP);
-		return;
-	}
-
 	/* Store context for next submission (handled within callbacks) */
 	data->stream.iodev_sqe = iodev_sqe;
 
 	data->stream.settings.enabled.drdy = true;
-	data->stream.settings.opt.drdy = read_config->triggers[0].opt;
+	data->stream.settings.opt = read_config->triggers[0].opt;
 
 	err = gpio_pin_interrupt_configure_dt(&cfg->int_gpio,
-						GPIO_INT_LEVEL_ACTIVE);
+					      GPIO_INT_LEVEL_ACTIVE);
 	if (err) {
 		LOG_ERR("Failed to enable interrupts");
 
