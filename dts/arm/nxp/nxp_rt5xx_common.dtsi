@@ -160,6 +160,15 @@
 		#reset-cells = <1>;
 	};
 
+	inputmux: mux@26000 {
+		compatible = "nxp,inputmux";
+		reg = <0x26000 0x800>;
+		#mux-control-cells = <2>;
+		#mux-state-cells = <3>;
+		clocks = <&clkctl1 MCUX_INPUTMUX_CLK>;
+		resets = <&rstctl1 NXP_SYSCON_RESET(2, 31)>;
+	};
+
 	uuid: uuid@2f50 {
 		compatible = "nxp,lpc-uid";
 		reg = <0x2f50 0x10>;
@@ -241,6 +250,7 @@
 		interrupts = <14 0>;
 		clocks = <&clkctl1 MCUX_FLEXCOMM0_CLK>;
 		resets = <&rstctl1 NXP_SYSCON_RESET(0, 8)>;
+		mux-states = <&inputmux 0x740 0x3 0x3>;
 		status = "disabled";
 	};
 
@@ -358,6 +368,9 @@
 		interrupts = <64 0>;
 		clocks = <&clkctl1 MCUX_FLEXCOMM12_CLK>;
 		resets = <&rstctl1 NXP_SYSCON_RESET(0, 20)>;
+		mux-states = <&inputmux 0x744 0xc 0x3>,
+			     <&inputmux 0x358 0x1 0x1>,
+			     <&inputmux 0x35c 0x1 0x1>;
 		status = "disabled";
 	};
 
