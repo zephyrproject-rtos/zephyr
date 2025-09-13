@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2021 Linaro Limited
  * Copyright (c) 2024 STMicroelectronics
+ * Copyright (c) 2025 ZAL Zentrum für Angewandte Luftfahrtforschung GmbH
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +10,7 @@
 #include <st/u5/stm32u585aiixq-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 
 / {
 	leds {
@@ -41,6 +43,13 @@
 		volt-sensor0 = &vref1;
 		volt-sensor1 = &vbat4;
 		eeprom-0 = &eeprom0;
+	};
+
+	psram: memory@90000000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x90000000 DT_SIZE_M(8)>;
+		zephyr,memory-region = "PSRAM";
+		zephyr,memory-attr = <(DT_MEM_ARM(ATTR_MPU_RAM))>;
 	};
 };
 
@@ -122,6 +131,27 @@ stm32_lp_tick_source: &lptim1 {
 		status = "okay";
 		pinctrl-0 = <&tim3_ch2_pe4>;
 		pinctrl-names = "default";
+	};
+};
+
+&octospi1 {
+	pinctrl-0 = <&octospim_p1_clk_pb10 &octospim_p1_ncs_pb11
+		     &octospim_p1_io0_pf8 &octospim_p1_io1_pf9
+		     &octospim_p1_io2_pf7 &octospim_p1_io3_pf6
+		     &octospim_p1_io4_ph2 &octospim_p1_io5_pi0
+		     &octospim_p1_io6_pc3 &octospim_p1_io7_pd7
+		     &octospim_p1_dqs_pe3>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	memc: aps6408l: memory@0 {
+		compatible = "st,stm32-ospi-psram";
+		reg = <0>;
+		size = <DT_SIZE_M(64)>; /* 64 Mbits */
+		max-frequency = <DT_FREQ_M(133)>;
+		fixed-latency;
+		burst-length = <3>;
+		status = "okay";
 	};
 };
 
