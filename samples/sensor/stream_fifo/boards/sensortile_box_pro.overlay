@@ -20,16 +20,16 @@
 	lsm6dsv16x_0: lsm6dsv16x@0 {
 		compatible = "st,lsm6dsv16x";
 
-		accel-odr = <LSM6DSV16X_DT_ODR_AT_480Hz>;
+		accel-odr = <LSM6DSVXXX_DT_ODR_AT_480Hz>;
 		accel-range = <LSM6DSV16X_DT_FS_16G>;
-		gyro-odr = <LSM6DSV16X_DT_ODR_AT_480Hz>;
+		gyro-odr = <LSM6DSVXXX_DT_ODR_AT_480Hz>;
 		gyro-range = <LSM6DSV16X_DT_FS_500DPS>;
 		fifo-watermark = <64>;
-		accel-fifo-batch-rate = <LSM6DSV16X_DT_XL_BATCHED_AT_15Hz>;
-		gyro-fifo-batch-rate = <LSM6DSV16X_DT_GY_BATCHED_AT_15Hz>;
-		temp-fifo-batch-rate = <LSM6DSV16X_DT_TEMP_BATCHED_AT_15Hz>;
+		accel-fifo-batch-rate = <LSM6DSVXXX_DT_XL_BATCHED_AT_15Hz>;
+		gyro-fifo-batch-rate = <LSM6DSVXXX_DT_GY_BATCHED_AT_15Hz>;
+		temp-fifo-batch-rate = <LSM6DSVXXX_DT_TEMP_BATCHED_AT_15Hz>;
 
-		sflp-odr = <LSM6DSV16X_DT_SFLP_ODR_AT_15Hz>;
-		sflp-fifo-enable = <LSM6DSV16X_DT_SFLP_FIFO_GAME_ROTATION_GRAVITY_GBIAS>;
+		sflp-odr = <LSM6DSVXXX_DT_SFLP_ODR_AT_15Hz>;
+		sflp-fifo-enable = <LSM6DSVXXX_DT_SFLP_FIFO_GAME_ROTATION_GRAVITY_GBIAS>;
 	};
 };
