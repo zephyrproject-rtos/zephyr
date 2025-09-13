@@ -391,6 +391,8 @@ static int spi_nor_access(const struct device *const dev,
 	bool is_addressed = (access & NOR_ACCESS_ADDRESSED) != 0U;
 	bool is_write = (access & NOR_ACCESS_WRITE) != 0U;
 	bool has_dummy = (access & NOR_ACCESS_DUMMY_BYTE) != 0U;
+	bool is_sfdp_reading = ((opcode & SPI_NOR_CMD_RDID) != 0U)
+		|| ((opcode & JESD216_CMD_READ_SFDP) != 0U);
 	uint8_t buf[6] = {opcode};
 	struct spi_buf spi_buf_tx[2] = {
 		{
@@ -453,6 +455,15 @@ static int spi_nor_access(const struct device *const dev,
 
 	if (is_write) {
 		return spi_write_dt(&driver_cfg->spi, &tx_set);
+	}
+
+	if (is_sfdp_reading &&
+	    (driver_cfg->spi.config.frequency > JESD216_CMD_READ_SFDP_MAX_FREQUENCY)) {
+		struct spi_config spi_config_sfdp = driver_cfg->spi.config;
+
+		spi_config_sfdp.frequency = JESD216_CMD_READ_SFDP_MAX_FREQUENCY;
+
+		return spi_transceive(driver_cfg->spi.bus, &spi_config_sfdp, &tx_set, &rx_set);
 	}
 
 	return spi_transceive_dt(&driver_cfg->spi, &tx_set, &rx_set);
