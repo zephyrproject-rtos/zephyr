@@ -1,0 +1,18 @@
+common:
+  filter: CONFIG_MCUX_UTICK_TIMER
+  vendor_allow:
+    - nxp
+  tags:
+    - drivers
+    - timer
+  timeout: 60
+tests:
+  drivers.timer.utick_timer:
+    integration_platforms:
+      - frdm_mcxa153
+    platform_allow:
+      - frdm_mcxa153
+      - frdm_mcxn236
+      - frdm_mcxn947
+      - mimxrt798s/cm33_cpu0
+    extra_args: EXTRA_CONF_FILE="boards/common.conf"
