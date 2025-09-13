@@ -136,6 +136,10 @@ static struct bt_conn sco_conns[CONFIG_BT_MAX_SCO_CONN];
 #endif /* CONFIG_BT_CLASSIC */
 #endif /* CONFIG_BT_CONN */
 
+#if defined(CONFIG_BT_HOOK_CONN_LTK_REQUEST)
+static bt_conn_ltk_request_cb_t *ltk_request_cb;
+#endif
+
 #if defined(CONFIG_BT_CONN_TX)
 static void frag_destroy(struct net_buf *buf);
 
@@ -509,6 +513,48 @@ void bt_conn_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 		__ASSERT(false, "Invalid connection type %u", conn->type);
 	}
 }
+
+#if defined(CONFIG_BT_HOOK_CONN_LTK_REQUEST)
+int bt_conn_register_ltk_request_cb(bt_conn_ltk_request_cb_t cb)
+{
+	if (cb == NULL) {
+		return -EINVAL;
+	}
+
+	if (atomic_ptr_cas((atomic_ptr_t *)&ltk_request_cb, (atomic_ptr_val_t)NULL,
+			   (atomic_ptr_val_t)cb)) {
+		return 0;
+	}
+
+	return -EALREADY;
+}
+
+int bt_conn_unregister_ltk_request_cb(bt_conn_ltk_request_cb_t cb)
+{
+	if (cb == NULL) {
+		return -EINVAL;
+	}
+
+	if (atomic_ptr_cas((atomic_ptr_t *)&ltk_request_cb, (atomic_ptr_val_t)cb,
+			   (atomic_ptr_val_t)NULL)) {
+		return 0;
+	}
+
+	return -ENOENT;
+}
+
+bool bt_conn_invoke_ltk_request_cb(struct bt_conn *conn, uint64_t rand, uint16_t ediv)
+{
+	bt_conn_ltk_request_cb_t *cb =
+		(bt_conn_ltk_request_cb_t *)atomic_ptr_get((atomic_ptr_t *)&ltk_request_cb);
+
+	if (cb == NULL) {
+		return false;
+	}
+
+	return cb(conn, rand, ediv);
+}
+#endif /* CONFIG_BT_HOOK_CONN_LTK_REQUEST */
 
 static bool dont_have_tx_context(struct bt_conn *conn)
 {
