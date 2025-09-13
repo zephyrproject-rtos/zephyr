@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Espressif Systems (Shanghai) Co., Ltd.
+ * Copyright (c) 2022-2025 Espressif Systems (Shanghai) Co., Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -150,5 +150,9 @@
 };
 
 &wifi {
+	status = "okay";
+};
+
+zephyr_udc0: &usb_otg {
 	status = "okay";
 };

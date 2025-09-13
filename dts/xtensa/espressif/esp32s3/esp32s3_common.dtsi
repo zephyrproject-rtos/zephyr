@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Espressif Systems (Shanghai) Co., Ltd.
+ * Copyright (c) 2022-2025 Espressif Systems (Shanghai) Co., Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -396,6 +396,20 @@
 			interrupts = <USB_SERIAL_JTAG_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
 			clocks = <&clock ESP32_USB_MODULE>;
+		};
+
+		usb_otg: usb_otg@60080000 {
+			compatible = "espressif,esp32-usb-otg", "snps,dwc2";
+			reg = <0x60080000 DT_SIZE_K(256)>;
+			status = "disabled";
+			interrupts = <USB_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupt-parent = <&intc>;
+			clocks = <&clock ESP32_USB_MODULE>;
+			num-out-eps = <6>;
+			num-in-eps = <6>;
+			ghwcfg1 = <0x00000000>;
+			ghwcfg2 = <0x224dd930>;
+			ghwcfg4 = <0xd3f0a030>;
 		};
 
 		timer0: counter@6001f000 {
