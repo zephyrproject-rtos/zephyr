@@ -12,6 +12,7 @@
 
 &flexio {
 	status = "okay";
+
 	flexio0_pwm: flexio0_pwm {
 		compatible = "nxp,flexio-pwm";
 		#pwm-cells = <3>;

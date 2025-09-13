@@ -13,6 +13,7 @@
 			 <I2S0_I_BCK_GPIO10>;
 		output-enable;
 	};
+
 	group2 {
 		pinmux = <I2S0_I_SD_GPIO18>;
 		input-enable;

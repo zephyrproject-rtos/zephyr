@@ -13,6 +13,7 @@
 &wut0 {
 	status = "okay";
 	wakeup-source;
+
 	counter_wut0: counter {
 		status = "okay";
 	};

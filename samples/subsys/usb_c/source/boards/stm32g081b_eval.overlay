@@ -14,6 +14,7 @@
 
 	pwmleds {
 		compatible = "pwm-leds";
+
 		pwm_ctl: g0 {
 			pwms = <&pwm15 1 PWM_USEC(50) PWM_POLARITY_INVERTED>;
 			label = "PWM CTL";

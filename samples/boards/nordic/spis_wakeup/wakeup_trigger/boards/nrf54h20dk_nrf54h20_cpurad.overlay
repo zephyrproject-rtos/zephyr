@@ -10,6 +10,7 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led1: led_1 {
 			gpios = <&gpio9 1 GPIO_ACTIVE_HIGH>;
 			label = "Green LED 1";
@@ -60,6 +61,7 @@
 	wake-gpios = <&gpio0 4 GPIO_ACTIVE_HIGH>;
 	zephyr,pm-device-runtime-auto;
 	memory-regions = <&cpurad_dma_region>;
+
 	spim_dt: spi-device@0 {
 		compatible = "vnd,spi-device";
 		reg = <0>;

@@ -6,6 +6,7 @@
 
 &timer0 {
 	status = "okay";
+
 	counter0: counter {
 		status = "okay";
 	};

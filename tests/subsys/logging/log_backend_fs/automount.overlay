@@ -5,9 +5,11 @@
  */
 
 /delete-node/ &lfs1;
+
 / {
 	fstab {
 		compatible = "zephyr,fstab";
+
 		lfs1: lfs1 {
 			compatible = "zephyr,fstab,littlefs";
 			mount-point = "/lfs1";

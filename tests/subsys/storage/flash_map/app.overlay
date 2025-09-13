@@ -22,6 +22,7 @@
 				label = "disabled_a";
 				reg = <0x00000000 0x00001000>;
 			};
+
 			disabled_b: partition@1000 {
 				label = "disabled_b";
 				reg = <0x00001000 0x00001000>;

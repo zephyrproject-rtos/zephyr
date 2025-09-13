@@ -35,12 +35,14 @@
 		sck-pin = <4>;
 		pinctrl-0 = <&pinmux_flexio_spi0>;
 		pinctrl-names = "default";
+
 		slow@0 {
 			status = "okay";
 			compatible = "test-spi-loopback-slow";
 			reg = <0>;
 			spi-max-frequency = <500000>;
 		};
+
 		fast@0 {
 			compatible = "test-spi-loopback-fast";
 			reg = <0>;

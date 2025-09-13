@@ -5,5 +5,5 @@
 
 &tddconf {
 	status = "okay";
-	etrsources = <(NRF_TDDCONF_SOURCE_STMMAINCORE)>;
+	etrsources = <NRF_TDDCONF_SOURCE_STMMAINCORE>;
 };
