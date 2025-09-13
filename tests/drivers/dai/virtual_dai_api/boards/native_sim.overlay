@@ -1,0 +1,12 @@
+/*
+ * Copyright (c) 2025, Suraj Sonawane <surajsonawane0215@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	virtual_dai: virtual_dai {
+		compatible = "zephyr,virtual-dai";
+		dai-index = <7>;
+		status = "okay";
+	};
+};
