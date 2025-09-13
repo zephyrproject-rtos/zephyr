@@ -220,7 +220,7 @@ SECTION_FUNC(exception.entry, _isr_wrapper)
 	bnez t1, no_fp
 	/* determine if this is an Illegal Instruction exception */
 	csrr t2, mcause
-	li t1, CONFIG_RISCV_MCAUSE_EXCEPTION_MASK
+	li t1, RISCV_MCAUSE_EXC_MASK
 	and t2, t2, t1
 	li t1, 2		/* 2 = illegal instruction */
 	bne t1, t2, no_fp
@@ -348,7 +348,7 @@ no_fp:	/* increment _current->arch.exception_depth */
 	 * to report the exception.
 	 */
 	csrr t0, mcause
-	li t2, CONFIG_RISCV_MCAUSE_EXCEPTION_MASK
+	li t2, RISCV_MCAUSE_EXC_MASK
 	and t0, t0, t2
 
 	/*
@@ -639,7 +639,7 @@ on_irq_stack:
 
 	/* Get IRQ causing interrupt */
 	csrr a0, mcause
-	li t0, CONFIG_RISCV_MCAUSE_EXCEPTION_MASK
+	li t0, RISCV_MCAUSE_EXC_MASK
 	and a0, a0, t0
 
 	/*
