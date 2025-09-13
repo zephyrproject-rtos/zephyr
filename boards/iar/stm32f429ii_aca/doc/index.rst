@@ -6,7 +6,7 @@ Overview
 The IAR STM32F429II-ACA evaluation board features an ARM Cortex-M4 based STM32F429II MCU.
 Here are some highlights of the STM32F429II-ACA board:
 
-- STM32 microcontroller in LQFP144 package
+- STM32 microcontroller in LQFP176 package
 - JTAG/SWD debugger/programmer interface
 - Flexible board power supply
 
@@ -34,7 +34,7 @@ Hardware
 
 The STM32F429II-ACA evaluation board provides the following hardware components:
 
-- STM32F429II in LQFP144 package
+- STM32F429II in LQFP176 package
 - ARM |reg| 32-bit Cortex |reg| -M4 CPU with FPU
 - 180 MHz max CPU frequency
 - VDD from 1.8 V to 3.6 V
@@ -80,17 +80,22 @@ Default Zephyr Peripheral Mapping:
 Serial Port
 ===========
 
-By default, the STM32F429II-ACA evaluation board has no physical serial port available.
+The ``stm32f429ii_aca`` board has no physical serial port available.
 The board has up to 8 UARTs, of which none are used.
 
 USB Port
 ========
 
-The STM32F429II-ACA evaluation board has a USB HS capable Mini-USB port. It is connected to the on-chip
-OTG_HS peripheral.
+The ``stm32f429ii_aca`` board has a USB HS capable Mini-USB port.
+It is connected to the on-chip OTG_HS peripheral.
 
 Programming and Debugging
 *************************
+
+The ``stm32f429ii_aca`` board supports the runners and associated west
+commands listed below.
+
+.. zephyr:board-supported-runners::
 
 Applications for the ``stm32f429ii_aca`` board configuration can be built
 and flashed in the usual way (see :ref:`build_an_application` and
@@ -99,20 +104,13 @@ and flashed in the usual way (see :ref:`build_an_application` and
 Flashing
 ========
 
-In order to flash this board using west, an external debug probe such as a Segger J-Link
-has to be connected through the JTAG/SWD connector on the board.
-By default, the board is set to be flashed using the jlink runner.
-Alternatively, openocd, or pyocd can also be used as runners to flash the board using
-the ``--runner`` (or ``-r``) option:
+The IAR STM32F429II-ACA board has a MIPI20 connector to an JTAG/SWD interface
+that can be used to program the MCU and then debug the application. This
+interface can be used with an external debug probe such as a Segger J-Link.
 
-.. code-block:: console
-
-   $ west flash --runner openocd
-   $ west flash --runner pyocd
-
-First, connect the STM32F429II-ACA evaluation board to your host computer using
-your debug probe through the JTAG/SWD connector to prepare it for flashing.
-Then build and flash your application.
+In preparation for flashing, connect the ``stm32f429ii_aca`` board's MIPI20
+DEBUG/TRACE interface to your external debug probe and then connect the debug
+probe to your host computer.
 
 Here is an example for the :zephyr:code-sample:`blinky` application.
 
@@ -121,7 +119,16 @@ Here is an example for the :zephyr:code-sample:`blinky` application.
    :board: stm32f429ii_aca
    :goals: build flash
 
-LED0 should then begin to blink continuously with a 1-second delay.
+LED1 should then begin to blink continuously with a 1-second delay.
+
+By default, the board uses the jlink runner for flashing operations.
+Alternative runners for openocd or pyocd are also available and they are
+accessible through the ``--runner`` (or ``-r``) option:
+
+.. code-block:: console
+
+   $ west flash --runner openocd
+   $ west flash --runner pyocd
 
 References
 **********
@@ -129,7 +136,7 @@ References
 .. target-notes::
 
 .. _stm32f429ii-aca-schematics:
-   https://iar.my.salesforce.com/sfc/p/#30000000YATY/a/Qx000000vZVh/EzlIqYKIBVXN8PN4Q8MgtowSZrR_vZarwLiNJXw7UJw
+   https://mypages.iar.com/s/article/Schematics-for-IAR-Academy-STM32F429II-ACA-evaluation-board
 
 .. _STM32F429II on www.st.com:
    https://www.st.com/en/microcontrollers-microprocessors/stm32f429ii.html
