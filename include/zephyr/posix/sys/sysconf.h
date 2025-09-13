@@ -181,7 +181,7 @@ enum {
 	COND_CODE_1(CONFIG_NET_SOCKETS_PACKET, (_POSIX_RAW_SOCKETS), (-1L))
 #define __z_posix_sysconf_SC_RE_DUP_MAX _POSIX_RE_DUP_MAX
 #define __z_posix_sysconf_SC_READER_WRITER_LOCKS                                                   \
-	COND_CODE_1(CONFIG_POSIX_READER_WRITER_LOCKS, (_POSIX_READER_WRITER_LOCKS), (-1L))
+	COND_CODE_1(CONFIG_POSIX_RW_LOCKS, (_POSIX_READER_WRITER_LOCKS), (-1L))
 #define __z_posix_sysconf_SC_REALTIME_SIGNALS      (-1L)
 #define __z_posix_sysconf_SC_REGEXP                (-1L)
 #define __z_posix_sysconf_SC_SAVED_IDS             (-1L)
