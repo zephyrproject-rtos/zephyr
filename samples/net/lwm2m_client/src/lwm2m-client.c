@@ -199,6 +199,11 @@ static int lwm2m_setup(void)
 	/* IPSO: Timer object */
 	init_timer_object();
 
+	if (IS_ENABLED(CONFIG_LWM2M_ASYNC_RESPONSES)) {
+		/* IPSO: Generic sensor object implementing async operations */
+		init_generic_async_object();
+	}
+
 	return 0;
 }
 
