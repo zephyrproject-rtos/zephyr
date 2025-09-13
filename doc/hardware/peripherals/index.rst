@@ -52,6 +52,7 @@ Peripherals
    regulators.rst
    reset.rst
    retained_mem.rst
+   rfid.rst
    sdhc.rst
    sensor/index.rst
    sent.rst
