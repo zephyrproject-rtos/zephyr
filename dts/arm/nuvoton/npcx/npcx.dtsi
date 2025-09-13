@@ -468,6 +468,22 @@
 			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL4 7>;
 			status = "disabled";
 		};
+
+		gdma0: dma@40011000 {
+			compatible = "nuvoton,npcx-gdma";
+			reg = <0x40011000 0x40>;
+			chan-offset = <0x20>;
+
+			interrupts = <12 3>;
+			clocks = <&pcc NPCX_CLOCK_BUS_AHB6 NPCX_PWDWN_CTL3 7>;
+
+			dma-channels = <2>;
+
+			#dma-cells = <2>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
 	};
 
 	soc-if {
