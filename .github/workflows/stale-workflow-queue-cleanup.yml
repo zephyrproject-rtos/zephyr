@@ -2,7 +2,6 @@ name: Stale Workflow Queue Cleanup
 
 on:
   workflow_dispatch:
-    branches: [main]
   schedule:
   # everyday at 15:00
   - cron: '0 15 * * *'
@@ -18,6 +17,7 @@ jobs:
   cleanup:
     name: Cleanup
     runs-on: ubuntu-24.04
+    if: github.ref == 'refs/heads/main'
     permissions:
       actions: write # to delete stale workflow runs
 
