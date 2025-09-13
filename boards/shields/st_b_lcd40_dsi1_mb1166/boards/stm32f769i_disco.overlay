@@ -1,0 +1,44 @@
+/*
+ * Copyright (c) 2025 STMicroelectronics.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&sdram1 {
+	/* Frame buffer memory when cached causes screen flickering. */
+	zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)>;
+};
+
+&zephyr_lcd_controller {
+	ext-sdram = <&sdram1>;
+	def-back-color-red = <0>;
+	def-back-color-green = <0>;
+	def-back-color-blue = <0>;
+	status = "okay";
+};
+
+&pllsai {
+	div-m = <25>;
+	mul-n = <384>;
+	div-r = <5>;
+	div-divr = <8>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&zephyr_mipi_dsi {
+	/* DSI HOST dedicated PLL
+	 * F_VCO = CLK_IN / pll-idf * 2 * pll-ndiv
+	 * PHI = F_VCO / 2 / (1 << pll-odf) = lane_byte_clk
+	 *     = 25 MHz / 5 * 2 * 100 / 2 / (1<<0) / 8 = 62.5 MHz
+	 */
+	pll-ndiv = <100>;
+	pll-idf = <5>;
+	pll-odf = <0>;
+
+	vs-active-high;
+	hs-active-high;
+	de-active-high;
+
+	status = "okay";
+};

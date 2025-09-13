@@ -10,6 +10,7 @@
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 #include "arduino_r3_connector.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/mipi_dsi/mipi_dsi.h>
 
 / {
 	model = "STMicroelectronics STM32F769I DISCOVERY board";
@@ -70,6 +71,20 @@
 	lvgl_pointer {
 		compatible = "zephyr,lvgl-pointer-input";
 		input = <&ft6202>;
+	};
+
+	dsi_lcd_qsh_030: connector_dsi_lcd {
+		compatible = "st,dsi-lcd-qsh-030";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <4 0 &gpioi 13 0>,	/* LCD_INT */
+			   <39 0 &gpiod 11 0>,	/* SPDIF_I2S */
+			   <40 0 &gpiob 7 0>,	/* I2C4_SDA */
+			   <44 0 &gpiod 12 0>,	/* I2C4_SCL */
+			   <49 0 &gpioj 2 0>,	/* DSI_TE */
+			   <53 0 &gpioi 14 0>,	/* BL_CTRL */
+			   <57 0 &gpioj 15 0>;	/* DSI_RESET */
 	};
 
 	aliases {
@@ -136,7 +151,7 @@ arduino_serial: &usart6 {};
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
-&i2c4 {
+qsh_030_i2c: &i2c4 {
 	pinctrl-0 = <&i2c4_scl_pd12 &i2c4_sda_pb7>;
 	pinctrl-names = "default";
 	status = "okay";
@@ -284,3 +299,7 @@ zephyr_udc0: &usbotg_hs {
 	phys = <&otghs_ulpi_phy>;
 	status = "okay";
 };
+
+/* alias used by display shields */
+zephyr_mipi_dsi: &mipi_dsi {};
+zephyr_lcd_controller: &ltdc {};

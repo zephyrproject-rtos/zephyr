@@ -13,6 +13,12 @@
 		plli2s: plli2s {
 			compatible = "st,stm32f411-plli2s-clock";
 		};
+
+		pllsai: pllsai {
+			compatible = "st,stm32fx-pllsai-clock";
+			#clock-cells = <0>;
+			status = "disabled";
+		};
 	};
 
 	soc {
