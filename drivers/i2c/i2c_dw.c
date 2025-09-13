@@ -11,7 +11,6 @@
 #ifdef CONFIG_CPU_CORTEX_M
 #include <cmsis_core.h>
 #endif
-#include <soc.h>
 
 #include <stddef.h>
 #include <zephyr/types.h>
