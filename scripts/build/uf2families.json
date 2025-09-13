@@ -75,6 +75,11 @@
         "description": "Microchip (Atmel) SAMD51"
     },
     {
+        "id": "0x33006680",
+        "short_name": "SAME51",
+        "description": "Microchip (Atmel) SAME51"
+    },
+    {
         "id": "0x57755a57",
         "short_name": "STM32F4",
         "description": "ST STM32F4xx"
