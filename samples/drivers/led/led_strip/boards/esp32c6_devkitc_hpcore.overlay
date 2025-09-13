@@ -20,6 +20,7 @@
 				 <I2S_O_BCK_GPIO4>,
 				 <I2S_O_SD_GPIO8>;
 		};
+
 		group2 {
 			pinmux = <I2S_I_SD_GPIO2>;
 		};

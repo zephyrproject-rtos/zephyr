@@ -19,7 +19,6 @@
 };
 
 &mspi1 {
-
 	pinctrl-0 = <&mspi1_default>;
 	pinctrl-1 = <&mspi1_sleep>;
 	pinctrl-2 = <&mspi1_psram>;
@@ -77,9 +76,7 @@
 };
 
 &pinctrl {
-
 	mspi1_sleep: mspi1_sleep {
-
 		group1 {
 			pinmux = <GPIO_P51>,
 				 <GPIO_P52>,
@@ -96,7 +93,6 @@
 	};
 
 	mspi1_psram: mspi1_psram {
-
 		group1 {
 			pinmux = <MSPI1_0_P51>,
 				 <MSPI1_1_P52>,
@@ -131,7 +127,6 @@
 	};
 
 	mspi1_flash: mspi1_flash {
-
 		group1 {
 			pinmux = <MSPI1_0_P51>,
 				 <MSPI1_1_P52>,
