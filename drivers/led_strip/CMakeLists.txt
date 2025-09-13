@@ -11,3 +11,4 @@ zephyr_library_sources_ifdef(CONFIG_WS2812_STRIP_RPI_PICO_PIO	ws2812_rpi_pico_pi
 zephyr_library_sources_ifdef(CONFIG_TLC5971_STRIP       tlc5971.c)
 zephyr_library_sources_ifdef(CONFIG_TLC59731_STRIP      tlc59731.c)
 zephyr_library_sources_ifdef(CONFIG_MODULINO_SMARTLEDS modulino_smartleds.c)
+zephyr_library_sources_ifdef(CONFIG_LED_STRIP_SHELL     led_strip_shell.c)
