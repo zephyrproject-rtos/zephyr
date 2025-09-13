@@ -8,7 +8,6 @@ name: Bug Snapshot
 
 on:
   workflow_dispatch:
-    branches: [main]
   schedule:
   # Run daily at 00:05
   - cron: '5 00 * * *'
@@ -20,7 +19,7 @@ jobs:
   make_bugs_pickle:
     name: Make bugs pickle
     runs-on: ubuntu-24.04
-    if: github.repository_owner == 'zephyrproject-rtos'
+    if: github.repository_owner == 'zephyrproject-rtos' && github.ref == 'refs/heads/main'
 
     steps:
     - name: Checkout
