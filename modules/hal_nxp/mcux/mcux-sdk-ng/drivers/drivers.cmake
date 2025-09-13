@@ -307,5 +307,10 @@ if((DEFINED CONFIG_FLASH_MCUX_FLEXSPI_XIP) AND (DEFINED CONFIG_FLASH))
     LOCATION ${CONFIG_FLASH_MCUX_FLEXSPI_XIP_MEM}_TEXT)
 endif()
 
+if(CONFIG_SOC_MCXW236 OR CONFIG_SOC_MCXW235)
+  set(CONFIG_MCUX_COMPONENT_driver.lpc_iocon ON)
+  set(CONFIG_MCUX_COMPONENT_driver.romapi ON)
+endif()
+
 # Load all drivers
 mcux_load_all_cmakelists_in_directory(${SdkRootDirPath}/drivers)
