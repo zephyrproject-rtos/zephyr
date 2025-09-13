@@ -27,6 +27,7 @@
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,flash-controller = &flashctl;
 	};
 
 	leds {
@@ -59,12 +60,17 @@
 
 		slot0_partition: partition@8000 {
 			label = "image-0";
-			reg = <0x00008000 0x1c000>;
+			reg = <0x00008000 0x18000>;
 		};
 
-		slot1_partition: partition@24000 {
+		slot1_partition: partition@20000 {
 			label = "image-1";
-			reg = <0x00024000 0x1c000>;
+			reg = <0x00020000 0x18000>;
+		};
+
+		storage_partition: partition@38000 {
+			label = "storage";
+			reg = <0x00038000 0x8000>;
 		};
 	};
 };
