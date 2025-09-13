@@ -1505,7 +1505,12 @@ ssize_t zms_write(struct zms_fs *fs, uint32_t id, const void *data, size_t len)
 	wlk_addr = fs->lookup_cache[zms_lookup_cache_pos(id)];
 
 	if (wlk_addr == ZMS_LOOKUP_CACHE_NO_ADDR) {
-		goto no_cached_entry;
+		if (len > 0) {
+			goto no_cached_entry;
+		} else {
+			/* skip delete entry for non-existing entry */
+			return 0;
+		}
 	}
 #else
 	wlk_addr = fs->ate_wra;
