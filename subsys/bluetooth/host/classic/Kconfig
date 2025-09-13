@@ -466,6 +466,12 @@ config BT_A2DP_SINK
 	help
 	  This option enables the A2DP profile sink function
 
+config BT_A2DP_EP_DELAY_REPORT
+	bool "Default A2DP Endpoints' Delay Report Capability [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  This option controls A2DP endpoints' default delay report capability
+
 endif # BT_A2DP
 
 config BT_AVCTP

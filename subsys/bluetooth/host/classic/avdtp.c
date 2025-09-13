@@ -274,6 +274,7 @@ static struct net_buf *avdtp_create_pdu(uint8_t msg_type, uint8_t sig_id, uint8_
 		return NULL;
 	}
 
+	__ASSERT_NO_MSG(net_buf_tailroom(buf) >= sizeof(*hdr));
 	hdr = net_buf_add(buf, sizeof(*hdr));
 
 	hdr->hdr = AVDTP_MSG_PREP(msg_type) | AVDTP_PKT_PREP(BT_AVDTP_PACKET_TYPE_SINGLE) |
@@ -540,6 +541,8 @@ static void avdtp_discover_cmd(struct bt_avdtp *session, struct net_buf *buf, ui
 		}
 
 		LOG_DBG("discover err code:%d", error_code);
+
+		__ASSERT_NO_MSG(net_buf_tailroom(rsp_buf) >= 1);
 		net_buf_add_u8(rsp_buf, error_code);
 	} else {
 		struct bt_avdtp_sep_data sep_data;
@@ -550,7 +553,10 @@ static void avdtp_discover_cmd(struct bt_avdtp *session, struct net_buf *buf, ui
 			sep_data.id = sep->sep_info.id;
 			sep_data.tsep = sep->sep_info.tsep;
 			sep_data.media_type = sep->sep_info.media_type;
-			net_buf_add_mem(rsp_buf, &sep_data, sizeof(sep_data));
+
+			if (net_buf_tailroom(rsp_buf) >= sizeof(sep_data)) {
+				net_buf_add_mem(rsp_buf, &sep_data, sizeof(sep_data));
+			}
 		}
 	}
 
@@ -654,6 +660,8 @@ static void avdtp_get_caps_cmd_internal(struct bt_avdtp *session, struct net_buf
 		}
 
 		LOG_DBG("get cap err code:%d", error_code);
+
+		__ASSERT_NO_MSG(net_buf_tailroom(rsp_buf) >= 1);
 		net_buf_add_u8(rsp_buf, error_code);
 	}
 
@@ -861,6 +869,8 @@ static void avdtp_process_configuration_cmd(struct bt_avdtp *session, struct net
 		}
 
 		LOG_DBG("set configuration err code:%d", avdtp_err_code);
+
+		__ASSERT_NO_MSG(net_buf_tailroom(rsp_buf) >= 2);
 		/* error Service Category*/
 		net_buf_add_u8(rsp_buf, service_category);
 		/* ERROR CODE */
@@ -966,6 +976,8 @@ static void avdtp_open_cmd(struct bt_avdtp *session, struct net_buf *buf, uint8_
 		}
 
 		LOG_DBG("open_ind err code:%d", avdtp_err_code);
+
+		__ASSERT_NO_MSG(net_buf_tailroom(rsp_buf) >= 1);
 		net_buf_add_u8(rsp_buf, avdtp_err_code);
 	} else {
 		session->current_sep = sep;
@@ -1059,6 +1071,8 @@ static void avdtp_start_cmd(struct bt_avdtp *session, struct net_buf *buf, uint8
 		}
 
 		LOG_DBG("start err code:%d", avdtp_err_code);
+
+		__ASSERT_NO_MSG(net_buf_tailroom(rsp_buf) >= 2);
 		net_buf_add_u8(rsp_buf, acp_seid);
 		net_buf_add_u8(rsp_buf, avdtp_err_code);
 	}
@@ -1132,6 +1146,8 @@ static void avdtp_close_cmd(struct bt_avdtp *session, struct net_buf *buf, uint8
 		}
 
 		LOG_DBG("close err code:%d", avdtp_err_code);
+
+		__ASSERT_NO_MSG(net_buf_tailroom(rsp_buf) >= 1);
 		net_buf_add_u8(rsp_buf, avdtp_err_code);
 	} else {
 		bt_avdtp_set_state(sep, AVDTP_CLOSING);
@@ -1206,6 +1222,8 @@ static void avdtp_suspend_cmd(struct bt_avdtp *session, struct net_buf *buf, uin
 		}
 
 		LOG_DBG("suspend err code:%d", avdtp_err_code);
+
+		__ASSERT_NO_MSG(net_buf_tailroom(rsp_buf) >= 2);
 		net_buf_add_u8(rsp_buf, acp_seid);
 		net_buf_add_u8(rsp_buf, avdtp_err_code);
 	}
@@ -1275,6 +1293,8 @@ static void avdtp_abort_cmd(struct bt_avdtp *session, struct net_buf *buf, uint8
 		}
 
 		LOG_DBG("abort err code:%d", avdtp_err_code);
+
+		__ASSERT_NO_MSG(net_buf_tailroom(rsp_buf) >= 1);
 		net_buf_add_u8(rsp_buf, avdtp_err_code);
 	}
 
@@ -1328,6 +1348,124 @@ static void avdtp_abort_rsp(struct bt_avdtp *session, struct net_buf *buf, uint8
 
 	if (req->func != NULL) {
 		req->func(req, NULL);
+	}
+}
+
+static void avdtp_delay_report_cmd(struct bt_avdtp *session, struct net_buf *buf, uint8_t tid)
+{
+	int err = 0;
+	struct bt_avdtp_sep *sep;
+	struct net_buf *rsp_buf;
+	uint8_t avdtp_err_code = 0;
+
+	sep = avdtp_get_cmd_sep(buf, &avdtp_err_code);
+
+	if ((sep == NULL) || (session->ops->delay_report_ind == NULL)) {
+		err = -ENOTSUP;
+	} else {
+		if ((sep->state &
+		     (AVDTP_CONFIGURED | AVDTP_OPENING | AVDTP_OPEN | AVDTP_STREAMING)) == 0) {
+			err = -ENOTSUP;
+			avdtp_err_code = BT_AVDTP_BAD_STATE;
+		} else {
+			err = session->ops->delay_report_ind(session, sep, buf, &avdtp_err_code);
+		}
+	}
+
+	rsp_buf = avdtp_create_pdu(err ? BT_AVDTP_REJECT : BT_AVDTP_ACCEPT, BT_AVDTP_DELAYREPORT,
+				   tid);
+	if (!rsp_buf) {
+		return;
+	}
+
+	if (err != 0) {
+		if (avdtp_err_code == 0) {
+			avdtp_err_code = BT_AVDTP_BAD_ACP_SEID;
+		}
+
+		LOG_DBG("delay report err code:%d", avdtp_err_code);
+
+		__ASSERT_NO_MSG(net_buf_tailroom(rsp_buf) >= 1);
+		net_buf_add_u8(rsp_buf, avdtp_err_code);
+	}
+
+	(void)avdtp_send_rsp(session, rsp_buf);
+}
+
+static void avdtp_delay_report_rsp(struct bt_avdtp *session, struct net_buf *buf, uint8_t msg_type)
+{
+	struct bt_avdtp_req *req = session->req;
+
+	if (req == NULL) {
+		return;
+	}
+
+	k_work_cancel_delayable(&session->timeout_work);
+	avdtp_set_status(req, buf, msg_type);
+	bt_avdtp_clear_req(session);
+
+	if (req->func != NULL) {
+		req->func(req, buf);
+	}
+}
+
+static void avdtp_get_configuration_cmd(struct bt_avdtp *session, struct net_buf *buf, uint8_t tid)
+{
+	int err = 0;
+	struct net_buf *rsp_buf;
+	struct bt_avdtp_sep *sep;
+	uint8_t error_code = 0;
+
+	sep = avdtp_get_cmd_sep(buf, &error_code);
+
+	if ((sep == NULL) || (session->ops->get_configuration_ind == NULL)) {
+		err = -ENOTSUP;
+	} else {
+		rsp_buf = avdtp_create_pdu(BT_AVDTP_ACCEPT, BT_AVDTP_GET_CONFIGURATION, tid);
+		if (!rsp_buf) {
+			return;
+		}
+
+		err = session->ops->get_configuration_ind(session, sep, rsp_buf, &error_code);
+		if (err != 0) {
+			net_buf_unref(rsp_buf);
+		}
+	}
+
+	if (err != 0) {
+		rsp_buf = avdtp_create_pdu(BT_AVDTP_REJECT, BT_AVDTP_GET_CONFIGURATION, tid);
+		if (!rsp_buf) {
+			return;
+		}
+
+		if (error_code == 0) {
+			error_code = BT_AVDTP_BAD_ACP_SEID;
+		}
+
+		LOG_DBG("get config err code:%d", error_code);
+
+		__ASSERT_NO_MSG(net_buf_tailroom(rsp_buf) >= 1);
+		net_buf_add_u8(rsp_buf, error_code);
+	}
+
+	(void)avdtp_send_rsp(session, rsp_buf);
+}
+
+static void avdtp_get_configuration_rsp(struct bt_avdtp *session, struct net_buf *buf,
+					uint8_t msg_type)
+{
+	struct bt_avdtp_req *req = session->req;
+
+	if (req == NULL) {
+		return;
+	}
+
+	k_work_cancel_delayable(&session->timeout_work);
+	avdtp_set_status(req, buf, msg_type);
+	bt_avdtp_clear_req(session);
+
+	if (req->func != NULL) {
+		req->func(req, buf);
 	}
 }
 
@@ -1462,7 +1600,7 @@ void (*cmd_handler[])(struct bt_avdtp *session, struct net_buf *buf, uint8_t tid
 	avdtp_discover_cmd,              /* BT_AVDTP_DISCOVER */
 	avdtp_get_capabilities_cmd,      /* BT_AVDTP_GET_CAPABILITIES */
 	avdtp_set_configuration_cmd,     /* BT_AVDTP_SET_CONFIGURATION */
-	NULL,                            /* BT_AVDTP_GET_CONFIGURATION */
+	avdtp_get_configuration_cmd,     /* BT_AVDTP_GET_CONFIGURATION */
 	avdtp_re_configure_cmd,          /* BT_AVDTP_RECONFIGURE */
 	avdtp_open_cmd,                  /* BT_AVDTP_OPEN */
 	avdtp_start_cmd,                 /* BT_AVDTP_START */
@@ -1471,14 +1609,14 @@ void (*cmd_handler[])(struct bt_avdtp *session, struct net_buf *buf, uint8_t tid
 	avdtp_abort_cmd,                 /* BT_AVDTP_ABORT */
 	NULL,                            /* BT_AVDTP_SECURITY_CONTROL */
 	avdtp_get_all_capabilities_cmd,  /* BT_AVDTP_GET_ALL_CAPABILITIES */
-	NULL,                            /* BT_AVDTP_DELAYREPORT */
+	avdtp_delay_report_cmd,          /* BT_AVDTP_DELAYREPORT */
 };
 
 void (*rsp_handler[])(struct bt_avdtp *session, struct net_buf *buf, uint8_t msg_type) = {
 	avdtp_discover_rsp,          /* BT_AVDTP_DISCOVER */
 	avdtp_get_capabilities_rsp,  /* BT_AVDTP_GET_CAPABILITIES */
 	avdtp_set_configuration_rsp, /* BT_AVDTP_SET_CONFIGURATION */
-	NULL,                        /* BT_AVDTP_GET_CONFIGURATION */
+	avdtp_get_configuration_rsp, /* BT_AVDTP_GET_CONFIGURATION */
 	avdtp_re_configure_rsp,      /* BT_AVDTP_RECONFIGURE */
 	avdtp_open_rsp,              /* BT_AVDTP_OPEN */
 	avdtp_start_rsp,             /* BT_AVDTP_START */
@@ -1487,7 +1625,7 @@ void (*rsp_handler[])(struct bt_avdtp *session, struct net_buf *buf, uint8_t msg
 	avdtp_abort_rsp,             /* BT_AVDTP_ABORT */
 	NULL,                        /* BT_AVDTP_SECURITY_CONTROL */
 	avdtp_get_capabilities_rsp,  /* BT_AVDTP_GET_ALL_CAPABILITIES */
-	NULL,                        /* BT_AVDTP_DELAYREPORT */
+	avdtp_delay_report_rsp,      /* BT_AVDTP_DELAYREPORT */
 };
 
 static int avdtp_rel_and_return(struct bt_avdtp *session)
@@ -1580,6 +1718,10 @@ static int bt_avdtp_l2cap_frags_recv(struct bt_avdtp *session, struct net_buf *b
 		if (total_len > net_buf_tailroom(sdu_buf)) {
 			LOG_ERR("Not enough buffer space");
 			return avdtp_rel_and_return(session);
+		}
+
+		if (net_buf_tailroom(sdu_buf) < sizeof(*single_hdr)) {
+			goto avdtp_rel_and_return(session);
 		}
 
 		single_hdr = net_buf_add(sdu_buf, sizeof(*single_hdr));
@@ -1962,6 +2104,7 @@ int bt_avdtp_get_capabilities(struct bt_avdtp *session,
 		return -ENOMEM;
 	}
 
+	__ASSERT_NO_MSG(net_buf_tailroom(buf) >= 1);
 	/* Body of the message */
 	net_buf_add_u8(buf, (param->stream_endpoint_id << 2U));
 
@@ -1969,7 +2112,8 @@ int bt_avdtp_get_capabilities(struct bt_avdtp *session,
 }
 
 int bt_avdtp_parse_capability_codec(struct net_buf *buf, uint8_t *codec_type,
-				    uint8_t **codec_info_element, uint16_t *codec_info_element_len)
+				    uint8_t **codec_info_element, uint16_t *codec_info_element_len,
+				    bool *delay_report)
 {
 	uint8_t data;
 	uint8_t length;
@@ -1977,6 +2121,10 @@ int bt_avdtp_parse_capability_codec(struct net_buf *buf, uint8_t *codec_type,
 	if (!buf) {
 		LOG_DBG("Error: buf not valid");
 		return -EINVAL;
+	}
+
+	if (delay_report != NULL) {
+		*delay_report = false;
 	}
 
 	while (buf->len) {
@@ -1988,7 +2136,6 @@ int bt_avdtp_parse_capability_codec(struct net_buf *buf, uint8_t *codec_type,
 		case BT_AVDTP_SERVICE_CONTENT_PROTECTION:
 		case BT_AVDTP_SERVICE_HEADER_COMPRESSION:
 		case BT_AVDTP_SERVICE_MULTIPLEXING:
-		case BT_AVDTP_SERVICE_DELAY_REPORTING:
 			if (buf->len < 1U) {
 				return -EINVAL;
 			}
@@ -2000,6 +2147,21 @@ int bt_avdtp_parse_capability_codec(struct net_buf *buf, uint8_t *codec_type,
 				}
 
 				net_buf_pull_mem(buf, length);
+			}
+			break;
+
+		case BT_AVDTP_SERVICE_DELAY_REPORTING:
+			if (buf->len < 1U) {
+				return -EINVAL;
+			}
+
+			length = net_buf_pull_u8(buf);
+			if (length != 0) {
+				return -EINVAL;
+			}
+
+			if (delay_report != NULL) {
+				*delay_report = true;
 			}
 			break;
 
@@ -2037,6 +2199,8 @@ static int avdtp_process_configure_command(struct bt_avdtp *session, uint8_t cmd
 					   struct bt_avdtp_set_configuration_params *param)
 {
 	struct net_buf *buf;
+	struct bt_avdtp_generic_service_cap *cap;
+	struct bt_avdtp_media_codec_capabilities *media_cap;
 
 	LOG_DBG("");
 	if (!param || !session) {
@@ -2052,27 +2216,55 @@ static int avdtp_process_configure_command(struct bt_avdtp *session, uint8_t cmd
 
 	/* Body of the message */
 	/* ACP Stream Endpoint ID */
+	__ASSERT_NO_MSG(net_buf_tailroom(buf) >= 1);
 	net_buf_add_u8(buf, (param->acp_stream_ep_id << 2U));
+
 	if (cmd == BT_AVDTP_SET_CONFIGURATION) {
+		if (net_buf_tailroom(buf) < sizeof(*cap) + 1) {
+			goto uref_and_return;
+		}
+
 		/* INT Stream Endpoint ID */
 		net_buf_add_u8(buf, (param->int_stream_endpoint_id << 2U));
+
 		/* Service Category: Media Transport */
-		net_buf_add_u8(buf, BT_AVDTP_SERVICE_MEDIA_TRANSPORT);
-		/* LOSC */
-		net_buf_add_u8(buf, 0);
+		cap = net_buf_add(buf, sizeof(*cap));
+		cap->service_category = BT_AVDTP_SERVICE_MEDIA_TRANSPORT;
+		cap->losc = 0;
 	}
+
+	if (net_buf_tailroom(buf) < param->codec_specific_ie_len + sizeof(*cap) +
+	    sizeof(*media_cap)) {
+		goto uref_and_return;
+	}
+
 	/* Service Category: Media Codec */
-	net_buf_add_u8(buf, BT_AVDTP_SERVICE_MEDIA_CODEC);
-	/* LOSC */
-	net_buf_add_u8(buf, param->codec_specific_ie_len + 2);
-	/* Media Type */
-	net_buf_add_u8(buf, param->media_type << 4U);
-	/* Media Codec Type */
-	net_buf_add_u8(buf, param->media_codec_type);
+	cap = net_buf_add(buf, sizeof(*cap));
+	cap->service_category = BT_AVDTP_SERVICE_MEDIA_CODEC;
+	cap->losc = param->codec_specific_ie_len + 2;
+
+	media_cap = net_buf_add(buf, sizeof(*media_cap));
+	media_cap->media_type = param->media_type << 4U;
+	media_cap->media_code_type = param->media_codec_type;
 	/* Codec Info Element */
 	net_buf_add_mem(buf, param->codec_specific_ie, param->codec_specific_ie_len);
 
+	if (param->delay_report) {
+		if (net_buf_tailroom(buf) < sizeof(*cap)) {
+			goto uref_and_return;
+		}
+
+		/* Service Category: Delay Report */
+		cap = net_buf_add(buf, sizeof(*cap));
+		cap->service_category = BT_AVDTP_SERVICE_DELAY_REPORTING;
+		cap->losc = 0;
+	}
+
 	return avdtp_send_cmd(session, buf, &param->req);
+
+uref_and_return:
+	net_buf_unref(buf);
+	return -ENOMEM;
 }
 
 int bt_avdtp_set_configuration(struct bt_avdtp *session,
@@ -2127,6 +2319,7 @@ static int bt_avdtp_ctrl(struct bt_avdtp *session, struct bt_avdtp_ctrl_params *
 
 	/* Body of the message */
 	/* ACP Stream Endpoint ID */
+	__ASSERT_NO_MSG(net_buf_tailroom(buf) >= 1);
 	net_buf_add_u8(buf, (param->acp_stream_ep_id << 2U));
 
 	return avdtp_send_cmd(session, buf, &param->req);
@@ -2163,7 +2356,46 @@ int bt_avdtp_abort(struct bt_avdtp *session, struct bt_avdtp_ctrl_params *param)
 {
 	return bt_avdtp_ctrl(session, param, BT_AVDTP_ABORT,
 			     AVDTP_CONFIGURED | AVDTP_OPENING | AVDTP_OPEN | AVDTP_STREAMING |
-				     AVDTP_CLOSING);
+			     AVDTP_CLOSING);
+}
+
+int bt_avdtp_get_configuration(struct bt_avdtp *session, struct bt_avdtp_ctrl_params *param)
+{
+	return bt_avdtp_ctrl(session, param, BT_AVDTP_GET_CONFIGURATION,
+			     AVDTP_CONFIGURED | AVDTP_OPENING | AVDTP_OPEN | AVDTP_STREAMING |
+			     AVDTP_CLOSING);
+}
+
+int bt_avdtp_delay_report(struct bt_avdtp *session, struct bt_avdtp_delay_report_params *param)
+{
+	struct net_buf *buf;
+
+	CHECKIF(param == NULL || session == NULL || param->sep == NULL) {
+		LOG_DBG("Error: parameters not valid");
+		return -EINVAL;
+	}
+
+	if (param->sep->sep_info.tsep != BT_AVDTP_SINK) {
+		LOG_ERR("Delay report is only supported for sink endpoint");
+		return -ENOTSUP;
+	}
+
+	if (!(param->sep->state & (AVDTP_CONFIGURED | AVDTP_OPENING | AVDTP_OPEN |
+	      AVDTP_STREAMING))) {
+		return -EINVAL;
+	}
+
+	buf = avdtp_create_pdu(BT_AVDTP_CMD, BT_AVDTP_DELAYREPORT, avdtp_get_tid(session));
+	if (!buf) {
+		LOG_ERR("Error: No Buff available");
+		return -ENOMEM;
+	}
+
+	__ASSERT_NO_MSG(net_buf_tailroom(buf) >= 3);
+	net_buf_add_u8(buf, (param->acp_stream_ep_id << 2U));
+	net_buf_add_be16(buf, param->delay_report);
+
+	return avdtp_send_cmd(session, buf, &param->req);
 }
 
 int bt_avdtp_send_media_data(struct bt_avdtp_sep *sep, struct net_buf *buf)
