@@ -17,6 +17,7 @@
 #include <zephyr/drivers/regulator.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/opamp.h>
 
 #define LOG_LEVEL CONFIG_ADC_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -48,6 +49,17 @@ struct mcux_lpadc_config {
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
 	int32_t ref_supply_val;
+	const struct device *opamp;
+	uint8_t opamp_channel; /* ADC channel index that samples OPAMP output */
+	uint32_t sample_max;   /* Upper bound of ideal sample range */
+	uint32_t sample_min;   /* Lower bound of ideal sample range */
+	/* Optional list of programmable OPAMP gain enum values from DT */
+	const enum opamp_gain *opamp_gains;
+	uint8_t opamp_gain_count;
+	/* vVref in mV for the OPAMP output channel
+	 * (from that channel node's zephyr,vref-mv)
+	 */
+	uint16_t opamp_vref_mv;
 };
 
 struct mcux_lpadc_data {
@@ -57,6 +69,14 @@ struct mcux_lpadc_data {
 	uint16_t *repeat_buffer;
 	uint32_t channels;
 	lpadc_conv_command_config_t cmd_config[CONFIG_LPADC_CHANNEL_COUNT];
+	/* OPAMP gain control context */
+	uint8_t current_gain_index;
+	int desired_gain_index;
+	/* Precomputed raw thresholds corresponding to
+	 * config->ideal_sample_range (mV)
+	 */
+	uint16_t sample_min_raw;
+	uint16_t sample_max_raw;
 };
 
 static int mcux_lpadc_acquisition_time_setup(const struct device *dev, uint16_t acq_time,
@@ -119,6 +139,25 @@ static int mcux_lpadc_acquisition_time_setup(const struct device *dev, uint16_t 
 
 	return 0;
 }
+
+/* Compute 0-based position of channel ch within enabled mask. -1 if not present. */
+static int mcux_lpadc_channel_position(uint32_t mask, uint8_t ch)
+{
+	if ((mask & BIT(ch)) == 0U) {
+		return -1;
+	}
+
+	int pos = 0;
+
+	for (uint8_t i = 0; i < ch; i++) {
+		if (mask & BIT(i)) {
+			pos++;
+		}
+	}
+
+	return pos;
+}
+
 
 static int mcux_lpadc_channel_setup(const struct device *dev,
 				const struct adc_channel_cfg *channel_cfg)
@@ -334,6 +373,26 @@ static int mcux_lpadc_start_read(const struct device *dev,
 
 	data->buffer = sequence->buffer;
 
+	/* Precompute raw thresholds for OPAMP channel once per read,
+	 * based on current resolution, reference voltage.
+	 */
+	if (config->opamp) {
+		/* Determine effective output width of values we push into the buffer */
+		uint32_t max_count = (sequence->resolution < 15) ? 0x0FFF : 0xFFFF;
+
+		if (config->opamp_vref_mv > 0) {
+			/* raw = mv * max_count / vref */
+			data->sample_min_raw = config->sample_min * max_count /
+					config->opamp_vref_mv;
+			data->sample_max_raw = config->sample_max * max_count /
+					config->opamp_vref_mv;
+		} else {
+			/* If vref is unknown, fall back to full range */
+			data->sample_min_raw = 0u;
+			data->sample_max_raw = (uint16_t)max_count;
+		}
+	}
+
 	adc_context_start_read(&data->ctx, sequence);
 	int error = adc_context_wait_for_completion(&data->ctx);
 
@@ -371,6 +430,25 @@ static void mcux_lpadc_start_channel(const struct device *dev)
 
 	LOG_DBG("Starting channel %d, input %d", first_channel,
 		data->cmd_config[first_channel].channelNumber);
+
+	/* Apply any pending OPAMP gain change synchronously at the start of
+	 * the next sampling round, so the adjustment takes effect immediately.
+	 * If queued k_work to set the OPAMP gain after a round ended in ISR
+	 * may cause the opamp gain to not change successfully before the next round.
+	 */
+	if (config->opamp && config->opamp_gains && data->desired_gain_index >= 0 &&
+		(uint8_t)data->desired_gain_index < config->opamp_gain_count) {
+		int idx = data->desired_gain_index;
+		int ret = opamp_set_gain(config->opamp, config->opamp_gains[idx]);
+
+		if (ret == 0) {
+			data->current_gain_index = (uint8_t)idx;
+			data->desired_gain_index = -1;
+			LOG_DBG("OPAMP gain set to index %d\r\n", idx);
+		} else {
+			LOG_DBG("OPAMP gain set failed: %d\r\n", ret);
+		}
+	}
 
 	LPADC_GetDefaultConvTriggerConfig(&trigger_config);
 
@@ -465,6 +543,33 @@ static void mcux_lpadc_isr(const struct device *dev)
 	 * to issue new trigger
 	 */
 	if (data->channels == 0) {
+		/* End of one round: decide whether to adjust OPAMP gain */
+		if (config->opamp && config->opamp_gain_count > 0U && config->opamp_gains != NULL) {
+			int pos = mcux_lpadc_channel_position(data->ctx.sequence.channels,
+						config->opamp_channel);
+
+			if (pos >= 0) {
+				uint16_t sample = data->repeat_buffer[pos];
+				int new_index = (int)data->current_gain_index;
+
+				if (sample < data->sample_min_raw) {
+					if ((data->current_gain_index + 1U) <
+							config->opamp_gain_count) {
+						new_index = (int)(data->current_gain_index + 1U);
+					}
+				} else if (sample > data->sample_max_raw) {
+					if (data->current_gain_index > 0U) {
+						new_index = (int)(data->current_gain_index - 1U);
+					}
+				}
+				if (new_index != (int)data->current_gain_index) {
+					/* Stage desired gain; it will be applied synchronously
+					 * at the start of the next sampling round.
+					 */
+					data->desired_gain_index = new_index;
+				}
+			}
+		}
 		adc_context_on_sampling_done(&data->ctx, dev);
 	}
 }
@@ -544,6 +649,10 @@ static int mcux_lpadc_init(const struct device *dev)
 	config->irq_config_func(dev);
 	data->dev = dev;
 
+	/* Initialize OPAMP gain control context */
+	data->current_gain_index = 0U;
+	data->desired_gain_index = -1;
+
 	adc_context_unlock_unconditionally(&data->ctx);
 
 	return 0;
@@ -556,6 +665,23 @@ static DEVICE_API(adc, mcux_lpadc_driver_api) = {
 	.read_async = mcux_lpadc_read_async,
 #endif
 };
+
+#define OPAMP_NODE(n) DT_INST_PHANDLE(n, nxp_opamps)
+/* Helpers to select the ADC child node matching channel reg value */
+#define LPADC_FOREACH_INPUT(node, ch) \
+	IF_ENABLED(IS_EQ(DT_REG_ADDR_RAW(node), ch), (node))
+#define OPAMP_CH_ID(n) DT_PHA_BY_IDX(DT_DRV_INST(n), nxp_opamps, 0, channel_id)
+#define OPAMP_CH_NODE(n) DT_FOREACH_CHILD_VARGS(DT_DRV_INST(n),	\
+	LPADC_FOREACH_INPUT, OPAMP_CH_ID(n))
+#define OPAMP_GAINS_INIT(n)								\
+	.opamp_gains = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, nxp_opamps),		\
+		(COND_CODE_1(DT_NODE_HAS_PROP(OPAMP_NODE(n), programmable_gain),	\
+		((const enum opamp_gain[]){DT_FOREACH_PROP_ELEM_SEP(OPAMP_NODE(n),	\
+		programmable_gain, DT_ENUM_IDX_BY_IDX, (,))}), (NULL))), (NULL)),	\
+											\
+	.opamp_gain_count = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, nxp_opamps),		\
+		(COND_CODE_1(DT_NODE_HAS_PROP(OPAMP_NODE(n), programmable_gain),	\
+		(DT_PROP_LEN(OPAMP_NODE(n), programmable_gain)), (0))), (0)),
 
 #define LPADC_MCUX_INIT(n)						\
 									\
@@ -580,6 +706,18 @@ static DEVICE_API(adc, mcux_lpadc_driver_api) = {
 						DT_INST_NODE_HAS_PROP(n, nxp_references),\
 						(DT_PHA(DT_DRV_INST(n), nxp_references, vref_mv)), \
 						(0)),\
+		.opamp = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, nxp_opamps),			\
+			(DEVICE_DT_GET(DT_INST_PHANDLE_BY_IDX(n, nxp_opamps, 0))), (NULL)),	\
+		.opamp_channel = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, nxp_opamps),		\
+			(DT_PHA_BY_IDX(DT_DRV_INST(n), nxp_opamps, 0, channel_id)), (0)),	\
+		.opamp_vref_mv = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, nxp_opamps),		\
+			(COND_CODE_1(DT_NODE_EXISTS(OPAMP_CH_NODE(n)),				\
+			(DT_PROP_OR(OPAMP_CH_NODE(n), zephyr_vref_mv, 0)), (0))), (0)),		\
+		.sample_min = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, ideal_sample_range),		\
+			(DT_PROP_BY_IDX(DT_DRV_INST(n), ideal_sample_range, 0)), (INT32_MIN)),	\
+		.sample_max = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, ideal_sample_range),		\
+			(DT_PROP_BY_IDX(DT_DRV_INST(n), ideal_sample_range, 1)), (UINT32_MAX)),	\
+			OPAMP_GAINS_INIT(n)							\
 	};									\
 	static struct mcux_lpadc_data mcux_lpadc_data_##n = {	\
 		ADC_CONTEXT_INIT_TIMER(mcux_lpadc_data_##n, ctx),	\
