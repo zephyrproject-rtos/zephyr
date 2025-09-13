@@ -34,6 +34,8 @@
 #define FLASH_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(renesas_ra_ospi_b_nor)
 #elif DT_HAS_COMPAT_STATUS_OKAY(renesas_ra_qspi_nor)
 #define FLASH_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(renesas_ra_qspi_nor)
+#elif DT_HAS_COMPAT_STATUS_OKAY(sifli_sf32lb_mpi_qspi_nor)
+#define FLASH_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(sifli_sf32lb_mpi_qspi_nor)
 #else
 #error Unsupported flash driver
 #define FLASH_NODE DT_INVALID_NODE
