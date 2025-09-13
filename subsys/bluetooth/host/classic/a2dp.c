@@ -97,7 +97,7 @@ static void a2dp_connected(struct bt_avdtp *session)
 
 	/* notify a2dp app the connection. */
 	if ((a2dp_cb != NULL) && (a2dp_cb->connected != NULL)) {
-		a2dp_cb->connected(a2dp, 0);
+		a2dp_cb->connected(session->br_chan.chan.conn, a2dp, 0);
 	}
 }
 
