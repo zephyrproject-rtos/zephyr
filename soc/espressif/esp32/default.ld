@@ -407,6 +407,8 @@ SECTIONS
     *libzephyr.a:flash_brownout_hook.*(.literal .literal.* .text .text.*)
     *libzephyr.a:flash_ops.*(.literal .literal.* .text .text.*)
     *libzephyr.a:flash_qio_mode.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:esp_flash_api.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:flash_mmap.*(.literal .text .literal.* .text.*)
 
     /* [mapping:esp_system] */
     *libzephyr.a:esp_err.*(.literal .literal.* .text .text.*)
@@ -497,7 +499,6 @@ SECTIONS
     *libzephyr.a:flash_partitions.*(.literal .text .literal.* .text.*)
     *libzephyr.a:spi_flash_hal.*(.literal .literal.* .text .text.*)
     *libzephyr.a:spi_flash_hal_common.*(.literal .literal.* .text .text.*)
-    *libzephyr.a:esp_flash_api.*(.literal .text .literal.* .text.*)
     *libzephyr.a:esp_flash_spi_init.*(.literal .text .literal.* .text.*)
 
     *libzephyr.a:secure_boot.*(.literal .text .literal.* .text.*)
@@ -640,6 +641,8 @@ SECTIONS
     *libzephyr.a:flash_brownout_hook.*(.rodata .rodata.*)
     *libzephyr.a:flash_ops.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
     *libzephyr.a:flash_qio_mode.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
+    *libzephyr.a:flash_mmap.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
+    *libzephyr.a:esp_flash_api.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
 
     /* [mapping:esp_mm] */
     *libzephyr.a:esp_cache.*(.rodata .rodata.*)
@@ -709,7 +712,6 @@ SECTIONS
 
     *libzephyr.a:periph_ctrl.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
 
-    *libzephyr.a:esp_flash_api.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
     *libzephyr.a:esp_flash_spi_init.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
 
     . = ALIGN(4);
