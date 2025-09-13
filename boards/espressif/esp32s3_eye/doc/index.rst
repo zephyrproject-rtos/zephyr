@@ -118,7 +118,7 @@ Components on the ESP32-S3-EYE-SUB Sub Board
    * - LCD_RST
      - LCD_RST testing point. You can use it to reset the LCD display with control signals.
 
-System requirements
+System Requirements
 *******************
 
 Espressif HAL requires WiFi and Bluetooth binary blobs in order work. Run the command
@@ -132,10 +132,13 @@ below to retrieve those files.
 
    It is recommended running the command above after :file:`west update`.
 
-Building and Flashing
-*********************
+Supported Runners
+*****************
 
 .. zephyr:board-supported-runners::
+
+Programming and Debugging
+*************************
 
 .. include:: ../../../espressif/common/building-flashing.rst
    :start-after: espressif-building-flashing
@@ -144,7 +147,7 @@ Building and Flashing
    :start-after: espressif-board-variants
 
 Debugging
-*********
+=========
 
 .. include:: ../../../espressif/common/openocd-debugging.rst
    :start-after: espressif-openocd-debugging

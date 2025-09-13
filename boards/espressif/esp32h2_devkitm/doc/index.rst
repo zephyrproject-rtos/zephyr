@@ -83,7 +83,7 @@ Supported Features
 
 .. zephyr:board-supported-hw::
 
-System requirements
+System Requirements
 *******************
 
 Espressif HAL requires Bluetooth binary blobs in order work. Run the command
@@ -97,10 +97,13 @@ below to retrieve those files.
 
    It is recommended running the command above after :file:`west update`.
 
-Runners
-*******
+Supported Runners
+*****************
 
 .. zephyr:board-supported-runners::
+
+Programming and Debugging
+*************************
 
 .. include:: ../../../espressif/common/building-flashing.rst
    :start-after: espressif-building-flashing
@@ -109,7 +112,7 @@ Runners
    :start-after: espressif-board-variants
 
 Debugging
-*********
+=========
 
 .. include:: ../../../espressif/common/openocd-debugging.rst
    :start-after: espressif-openocd-debugging
