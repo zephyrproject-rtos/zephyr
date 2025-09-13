@@ -154,6 +154,8 @@ set_variable_ifdef(CONFIG_SOC_SERIES_IMXRT11XX    CONFIG_MCUX_COMPONENT_driver.o
 set_variable_ifdef(CONFIG_SOC_FAMILY_KINETIS      CONFIG_MCUX_COMPONENT_driver.port)
 set_variable_ifdef(CONFIG_SOC_FAMILY_MCXW         CONFIG_MCUX_COMPONENT_driver.ccm32k)
 set_variable_ifdef(CONFIG_SOC_SERIES_IMXRT5XX     CONFIG_MCUX_COMPONENT_driver.iap3)
+set_variable_ifdef(CONFIG_SOC_SERIES_LPC84X       CONFIG_MCUX_COMPONENT_driver.lpc_iocon_lite)
+set_variable_ifdef(CONFIG_SOC_SERIES_LPC84X       CONFIG_MCUX_COMPONENT_driver.lpc_gpio)
 
 if(CONFIG_DMA_MCUX_SMARTDMA)
   set(CONFIG_MCUX_COMPONENT_driver.smartdma ON)
