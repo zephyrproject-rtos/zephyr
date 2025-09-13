@@ -31,7 +31,7 @@ args = parse_args()
 
 NEEDED = ["A0SAVE", "CPU"]
 if args.mmu:
-    NEEDED += ["DBLEXC", "DEPC_SAVE", "EXCCAUSE_SAVE"]
+    NEEDED += ["DBLEXC", "DEPC_SAVE"]
 if args.flush_reg:
     NEEDED += ["FLUSH"]
 
