@@ -86,9 +86,51 @@ Programming and Debugging
 The LP_EM_CC2340R5 requires an external debug probe such as the LP-XDS110 or
 LP-XDS110ET.
 
-Currently there is no debug support in Zephyr for the LP_EM_CC2340R5, and the
-built binaries for this target must be flashed/debugged using either Uniflash
-or Code Composer Studio.
+Alternativly a J-Link could be used on the J4 header, in combination with a 3.3V
+power supply over the pinheader.
+Debugging and flashing is currently only tested using a J-Link on the J4 header.
+
+To get a console, connect an external USB to UART converter with:
+
++----+-------+
+| TX | DIO22 |
++----+-------+
+| RX | DIO20 |
++----+-------+
+
+Then you can connect to it from you PC:
+
+.. code-block:: console
+
+   $ microcom -p <tty_device>
+
+Replace :code:`<tty_device>` with the port of your USB to UART converter.
+For example, :code:`/dev/ttyUSB0`.
+
+Flashing
+========
+
+Applications for the ``CC2340R5 LaunchPad`` board configuration can be built and
+flashed in the usual way (see :ref:`build_an_application` and
+:ref:`application_run` for more details).
+
+Here is an example for the :zephyr:code-sample:`hello_world` application.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: lp_em_cc2340r5
+   :goals: build flash
+
+Debugging
+=========
+
+You can debug an application in the usual way. Here is an example for the
+:zephyr:code-sample:`hello_world` application.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: lp_em_cc2340r5
+   :goals: debug
 
 References
 **********
