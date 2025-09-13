@@ -8,9 +8,19 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(step_dir_stepper, CONFIG_STEPPER_LOG_LEVEL);
 
+static inline void step_pulse_timer_expiry_fn(struct k_timer *timer)
+{
+	struct step_dir_stepper_common_data *data =
+		CONTAINER_OF(timer, struct step_dir_stepper_common_data, step_pulse_timer);
+	const struct step_dir_stepper_common_config *config = data->dev->config;
+
+	gpio_pin_set_dt(&config->step_pin, 0);
+}
+
 static inline int step_dir_stepper_perform_step(const struct device *dev)
 {
 	const struct step_dir_stepper_common_config *config = dev->config;
+	struct step_dir_stepper_common_data *data = dev->data;
 	int ret;
 
 	ret = gpio_pin_toggle_dt(&config->step_pin);
@@ -20,11 +30,7 @@ static inline int step_dir_stepper_perform_step(const struct device *dev)
 	}
 
 	if (!config->dual_edge) {
-		ret = gpio_pin_toggle_dt(&config->step_pin);
-		if (ret < 0) {
-			LOG_ERR("Failed to toggle step pin: %d", ret);
-			return ret;
-		}
+		k_timer_start(&data->step_pulse_timer, K_NSEC(data->step_width_ns), K_NO_WAIT);
 	}
 
 	return 0;
@@ -184,6 +190,7 @@ void stepper_handle_timing_signal(const struct device *dev)
 int step_dir_stepper_common_init(const struct device *dev)
 {
 	const struct step_dir_stepper_common_config *config = dev->config;
+	struct step_dir_stepper_common_data *data = dev->data;
 	int ret;
 
 	if (!gpio_is_ready_dt(&config->step_pin) || !gpio_is_ready_dt(&config->dir_pin)) {
@@ -212,12 +219,11 @@ int step_dir_stepper_common_init(const struct device *dev)
 	}
 
 #ifdef CONFIG_STEPPER_STEP_DIR_GENERATE_ISR_SAFE_EVENTS
-	struct step_dir_stepper_common_data *data = dev->data;
-
 	k_msgq_init(&data->event_msgq, data->event_msgq_buffer, sizeof(enum stepper_event),
 		    CONFIG_STEPPER_STEP_DIR_EVENT_QUEUE_LEN);
 	k_work_init(&data->event_callback_work, stepper_work_event_handler);
 #endif /* CONFIG_STEPPER_STEP_DIR_GENERATE_ISR_SAFE_EVENTS */
+	k_timer_init(&data->step_pulse_timer, step_pulse_timer_expiry_fn, NULL);
 
 	return 0;
 }
@@ -262,6 +268,11 @@ int step_dir_stepper_common_set_microstep_interval(const struct device *dev,
 
 	if (microstep_interval_ns == 0) {
 		LOG_ERR("Step interval cannot be zero");
+		return -EINVAL;
+	}
+
+	if (microstep_interval_ns < 2 * data->step_width_ns) {
+		LOG_ERR("Step interval too small for configured step width");
 		return -EINVAL;
 	}
 

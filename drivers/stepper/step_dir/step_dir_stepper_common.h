@@ -78,7 +78,8 @@ struct step_dir_stepper_common_data {
 	void *event_cb_user_data;
 
 	struct k_work_delayable stepper_dwork;
-
+	uint32_t step_width_ns;
+	struct k_timer step_pulse_timer;
 #ifdef CONFIG_STEP_DIR_STEPPER_COUNTER_TIMING
 	struct counter_top_cfg counter_top_cfg;
 	bool counter_running;
@@ -100,6 +101,7 @@ struct step_dir_stepper_common_data {
 #define STEP_DIR_STEPPER_DT_COMMON_DATA_INIT(node_id)                                              \
 	{                                                                                          \
 		.dev = DEVICE_DT_GET(node_id),                                                     \
+		.step_width_ns = DT_PROP(node_id, step_width_ns),                                  \
 	}
 
 /**
