@@ -3058,11 +3058,11 @@ LiteX Platforms:
   status: maintained
   maintainers:
     - tgorochowik
-    - kgugala
     - fkokosinski
-  collaborators:
-    - mateusz-holenko
     - maass-hamburg
+  collaborators:
+    - kgugala
+    - mateusz-holenko
   files:
     - boards/enjoydigital/litex_vexriscv/
     - drivers/*/*litex*
