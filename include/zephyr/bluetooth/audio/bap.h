@@ -163,6 +163,31 @@ extern "C" {
 	((_bis_bitfield) == 0U || (_bis_bitfield) == BT_BAP_BIS_SYNC_NO_PREF ||                    \
 	 BT_ISO_VALID_BIS_BITFIELD(_bis_bitfield))
 
+/*
+ * past_addr_type possible values
+ * bit0 = Adv Address != ADV_EXT_IND
+ * bit1 = Adv Address != Source_Address
+ * bits2..7 = reserved (0)
+ */
+#define PAST_FORWARD_SYNC  0x0002
+#define PAST_MIMIC_DEVICE  0x0001
+
+/**
+ * @brief Helper to pack addr_type and src_id
+ *
+ * @param past_addr_type past_addr_types bits0..7
+ * @param src_id past_addr_types bits8..15
+ */
+#define BT_BAP_PAST_SERVICE_DATA(past_addr_type, src_id) \
+	(((uint16_t)(src_id) & 0xFF) << 8 \
+	| ((uint16_t)(past_addr_type) & 0xFF))
+
+/* Extract BAP addr_type from 16-bit Service Data */
+#define BT_BAP_PAST_GET_SRC_ID(data) (((data) & 0xFF) >> 8)
+
+/* Extract BAP src_id (server ID) from 16-bit Service Data */
+#define BT_BAP_PAST_GET_ADDR_TYPE(data) (((data) & 0xFF))
+
 /**
  * @brief Helper to declare elements of bt_bap_qos_cfg
  *

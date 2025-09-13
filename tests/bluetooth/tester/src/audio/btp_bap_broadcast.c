@@ -1818,7 +1818,12 @@ uint8_t btp_bap_broadcast_assistant_send_past(const void *cmd, uint16_t cmd_len,
 	/* If octet 0 is set to 0, it means AdvA in PAST matches AdvA in ADV_EXT_IND.
 	 * Octet 1 shall be set to Source_ID.
 	 */
-	service_data = cp->src_id << 8;
+	uint8_t past_addr_type = PAST_FORWARD_SYNC;
+	uint8_t src_id = g_pa_sync->sid;
+
+	err = bt_le_per_adv_sync_transfer(g_pa_sync,
+			conn,
+			BT_BAP_PAST_SERVICE_DATA(past_addr_type, src_id));
 
 	err = bt_le_per_adv_sync_transfer(pa_sync, conn, service_data);
 	if (err != 0) {
