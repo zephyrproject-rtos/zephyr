@@ -132,6 +132,10 @@ def main():
     print(kconf.write_config(args.config_out))
     print(kconf.write_autoconf(args.header_out))
 
+    # Write documentation, if requested
+    if args.doc_out:
+        print(kconf.write_doc(args.doc_out, args.doc_with_absolute_paths))
+
     # Write the list of parsed Kconfig files to a file
     write_kconfig_filenames(kconf, args.kconfig_list_out)
 
@@ -317,6 +321,11 @@ def parse_args():
                              " adjustments.")
     parser.add_argument("--zephyr-base",
                         help="Path to current Zephyr installation")
+    parser.add_argument("--doc-out",
+                        help="Output documentation file in Markdown format")
+    parser.add_argument("--doc-with-absolute-paths",
+                        action="store_true",
+                        help="Output documentation links with absolute paths")
     parser.add_argument("kconfig_file",
                         help="Top-level Kconfig file")
     parser.add_argument("config_out",
