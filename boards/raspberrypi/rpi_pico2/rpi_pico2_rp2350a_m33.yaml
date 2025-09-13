@@ -12,6 +12,7 @@ supported:
   - clock
   - counter
   - dma
+  - entropy
   - gpio
   - hwinfo
   - i2c
