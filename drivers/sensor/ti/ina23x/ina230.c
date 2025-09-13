@@ -24,46 +24,76 @@ LOG_MODULE_REGISTER(INA230, CONFIG_SENSOR_LOG_LEVEL);
 #define INA230_POWER_SCALING 25
 #define INA236_POWER_SCALING 32
 
+/** Maximum duration to poll for conversion done after expected sample duration */
+#define INA_POLL_TIMEOUT_MS 10
+
 static int ina230_channel_get(const struct device *dev, enum sensor_channel chan,
 			      struct sensor_value *val)
 {
 	struct ina230_data *data = dev->data;
 	const struct ina230_config *const config = dev->config;
-	uint32_t bus_uv, power_uw;
-	int32_t current_ua;
+	int32_t val_micro;
 
 	switch (chan) {
 	case SENSOR_CHAN_VOLTAGE:
-		bus_uv = data->bus_voltage * config->uv_lsb;
-
-		/* convert to fractional volts (units for voltage channel) */
-		val->val1 = bus_uv / 1000000U;
-		val->val2 = bus_uv % 1000000U;
+		val_micro = data->bus_voltage * config->uv_lsb;
 		break;
-
 	case SENSOR_CHAN_CURRENT:
-		/* see datasheet "Programming" section for reference */
-		current_ua = data->current * config->current_lsb;
-
-		/* convert to fractional amperes */
-		val->val1 = current_ua / 1000000L;
-		val->val2 = current_ua % 1000000L;
+		val_micro = data->current * config->current_lsb;
 		break;
-
 	case SENSOR_CHAN_POWER:
-		power_uw = data->power * config->power_scale * config->current_lsb;
-
-		/* convert to fractional watts */
-		val->val1 = (int32_t)(power_uw / 1000000U);
-		val->val2 = (int32_t)(power_uw % 1000000U);
-
+		val_micro = data->power * config->power_scale * config->current_lsb;
 		break;
-
 	default:
 		return -ENOTSUP;
 	}
 
-	return 0;
+	return sensor_value_from_micro(val, val_micro);
+}
+
+static int ina230_adc_run(const struct device *dev)
+{
+	const struct ina230_config *config = dev->config;
+	bool in_shutdown = config->adc_mode == 0;
+	uint16_t reg;
+	int ret, i;
+
+	/* Modes 5 through 7 are continuously sampling */
+	if (config->adc_mode >= 5) {
+		return 0;
+	}
+
+	/* If idling in shutdown, update to single shot triggered */
+	reg = in_shutdown ? (config->config | 3) : config->config;
+
+	/* Write the configuration register to force a sample */
+	ret = ina23x_reg_write(&config->bus, INA230_REG_CONFIG, reg);
+	if (ret < 0) {
+		LOG_ERR("Failed to trigger sample");
+		return ret;
+	}
+
+	/* Wait until we expect the sampling to be complete */
+	k_sleep(K_USEC(config->conv_duration_us));
+
+	/* Poll conversion complete bit */
+	for (i = 0; i < INA_POLL_TIMEOUT_MS; i++) {
+		ret = ina23x_reg_read_16(&config->bus, INA230_REG_MASK, &reg);
+		if ((ret != 0) || (reg & INA230_REG_MASK_CNVR)) {
+			break;
+		}
+		k_sleep(K_MSEC(1));
+	}
+	if (i == INA_POLL_TIMEOUT_MS) {
+		ret = -EAGAIN;
+	}
+
+	if (in_shutdown) {
+		/* Return to shutdown mode */
+		(void)ina23x_reg_write(&config->bus, INA230_REG_CONFIG, config->config);
+	}
+
+	return ret;
 }
 
 static int ina230_sample_fetch(const struct device *dev, enum sensor_channel chan)
@@ -77,10 +107,17 @@ static int ina230_sample_fetch(const struct device *dev, enum sensor_channel cha
 		return -ENOTSUP;
 	}
 
+	/* Run the ADC to get new data */
+	ret = ina230_adc_run(dev);
+	if (ret < 0) {
+		LOG_ERR("Failed to run sample");
+		return ret;
+	}
+
 	if ((chan == SENSOR_CHAN_ALL) || (chan == SENSOR_CHAN_VOLTAGE)) {
 		ret = ina23x_reg_read_16(&config->bus, INA230_REG_BUS_VOLT, &data->bus_voltage);
 		if (ret < 0) {
-			LOG_ERR("Failed to read bus voltage");
+			LOG_ERR("Failed to read %s", "bus voltage");
 			return ret;
 		}
 	}
@@ -88,7 +125,7 @@ static int ina230_sample_fetch(const struct device *dev, enum sensor_channel cha
 	if ((chan == SENSOR_CHAN_ALL) || (chan == SENSOR_CHAN_CURRENT)) {
 		ret = ina23x_reg_read_16(&config->bus, INA230_REG_CURRENT, &data->current);
 		if (ret < 0) {
-			LOG_ERR("Failed to read current");
+			LOG_ERR("Failed to read %s", "current");
 			return ret;
 		}
 	}
@@ -96,7 +133,7 @@ static int ina230_sample_fetch(const struct device *dev, enum sensor_channel cha
 	if ((chan == SENSOR_CHAN_ALL) || (chan == SENSOR_CHAN_POWER)) {
 		ret = ina23x_reg_read_16(&config->bus, INA230_REG_POWER, &data->power);
 		if (ret < 0) {
-			LOG_ERR("Failed to read power");
+			LOG_ERR("Failed to read %s", "power");
 			return ret;
 		}
 	}
@@ -241,29 +278,38 @@ static DEVICE_API(sensor, ina230_driver_api) = {
 
 #ifdef CONFIG_INA230_TRIGGER
 #define INA230_CFG_IRQ(inst)                                                                       \
-	.trig_enabled = true, .mask = DT_INST_PROP(inst, mask),                                    \
-	.alert_limit = DT_INST_PROP(inst, alert_limit),                                            \
-	.alert_gpio = GPIO_DT_SPEC_INST_GET(inst, alert_gpios)
+	.alert_gpio = GPIO_DT_SPEC_INST_GET(inst, alert_gpios),                                    \
+	.alert_limit = DT_INST_PROP(inst, alert_limit), .mask = DT_INST_PROP(inst, mask),          \
+	.trig_enabled = true,
 #else
 #define INA230_CFG_IRQ(inst)
 #endif /* CONFIG_INA230_TRIGGER */
 
+#define CONV_DURATION_US(inst)                                                                     \
+	((DT_INST_PROP(inst, vbus_conversion_time_us) +                                            \
+	  DT_INST_PROP(inst, vshunt_conversion_time_us)) *                                         \
+	 DT_INST_PROP(inst, avg_count))
+
 #define INA230_DRIVER_INIT(inst, type)                                                             \
+	BUILD_ASSERT(DT_INST_ENUM_HAS_VALUE(inst, adc_mode, invalid) == false);                    \
 	static struct ina230_data drv_data_##type##inst;                                           \
 	static const struct ina230_config drv_config_##type##inst = {                              \
 		.bus = I2C_DT_SPEC_INST_GET(inst),                                                 \
+		.current_lsb = DT_INST_PROP(inst, current_lsb_microamps) *                         \
+			       COND_CODE_1(DT_INST_PROP(inst, direction_invert), (-1), (1)),       \
+		.uv_lsb = type##_BUS_VOLTAGE_UV_LSB,                                               \
+		.conv_duration_us = CONV_DURATION_US(inst),                                        \
 		.config = (DT_INST_PROP_OR(inst, high_precision, 0) << 12) |                       \
-			  DT_INST_PROP(inst, config) | (DT_INST_ENUM_IDX(inst, avg_count) << 9) |  \
+			  (DT_INST_ENUM_IDX(inst, avg_count) << 9) |                               \
 			  (DT_INST_ENUM_IDX(inst, vbus_conversion_time_us) << 6) |                 \
 			  (DT_INST_ENUM_IDX(inst, vshunt_conversion_time_us) << 3) |               \
 			  DT_INST_ENUM_IDX(inst, adc_mode),                                        \
-		.current_lsb = DT_INST_PROP(inst, current_lsb_microamps),                          \
-		.uv_lsb = type##_BUS_VOLTAGE_UV_LSB,                                               \
-		.power_scale = type##_POWER_SCALING,                                               \
 		.cal = (uint16_t)(((INA230_CAL_SCALING * 10000000ULL) /                            \
 				   ((uint64_t)DT_INST_PROP(inst, current_lsb_microamps) *          \
 				    DT_INST_PROP(inst, rshunt_micro_ohms))) >>                     \
 				  (DT_INST_PROP_OR(inst, high_precision, 0) << 1)),                \
+		.power_scale = type##_POWER_SCALING,                                               \
+		.adc_mode = DT_INST_ENUM_IDX(inst, adc_mode),                                      \
 		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, alert_gpios), (INA230_CFG_IRQ(inst)),      \
 			    ())};   \
 	SENSOR_DEVICE_DT_INST_DEFINE(inst, &ina230_init, NULL, &drv_data_##type##inst,             \

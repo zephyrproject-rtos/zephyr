@@ -34,6 +34,8 @@
 #define INA236_REG_MANUFACTURER_ID 0x3E
 #define INA236_REG_DEVICE_ID       0x3F
 
+#define INA230_REG_MASK_CNVR BIT(3)
+
 struct ina230_data {
 	const struct device *dev;
 	int16_t current;
@@ -50,16 +52,18 @@ struct ina230_data {
 
 struct ina230_config {
 	struct i2c_dt_spec bus;
+	int32_t current_lsb;
+	uint32_t uv_lsb;
+	uint32_t conv_duration_us;
 	uint16_t config;
-	uint32_t current_lsb;
 	uint16_t cal;
 	uint8_t power_scale;
-	uint32_t uv_lsb;
+	uint8_t adc_mode;
 #ifdef CONFIG_INA230_TRIGGER
-	bool trig_enabled;
-	uint16_t mask;
 	const struct gpio_dt_spec alert_gpio;
 	uint16_t alert_limit;
+	uint16_t mask;
+	bool trig_enabled;
 #endif /* CONFIG_INA230_TRIGGER */
 };
 
