@@ -31,6 +31,9 @@ set_compiler_property(PROPERTY save_temps -save-temps)
 # clang doesn't handle the -T flag
 set_compiler_property(PROPERTY linker_script -Wl,-T)
 
+# clang flag to disable macro backtrace in diagnostics (can't fully disable it, so limit to 1)
+set_compiler_property(PROPERTY no_track_macro_expansion "-fmacro-backtrace-limit=1")
+
 #######################################################
 # This section covers flags related to warning levels #
 #######################################################
