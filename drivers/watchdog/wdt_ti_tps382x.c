@@ -13,9 +13,17 @@
 
 LOG_MODULE_REGISTER(wdt_ti_tps382x, CONFIG_WDT_LOG_LEVEL);
 
+/* Minimum WDI pulse duration */
+#define WDI_PULSE_DURATION_NS (100)
+
 struct ti_tps382x_config {
-	struct gpio_dt_spec wdi_gpio;
-	int timeout;
+	/* Watchdog input. */
+	const struct gpio_dt_spec wdi_gpio;
+	/* Watchdog maximum feed timeout in milliseconds.
+	 * This value is fixed and determined by hardware
+	 * design around CWD pin.
+	 */
+	const uint32_t timeout;
 };
 
 static int ti_tps382x_init(const struct device *dev)
@@ -32,9 +40,11 @@ static int ti_tps382x_init(const struct device *dev)
 
 static int ti_tps382x_setup(const struct device *dev, uint8_t options)
 {
+	ARG_UNUSED(options);
+
 	const struct ti_tps382x_config *config = dev->config;
 
-	return gpio_pin_configure_dt(&config->wdi_gpio, GPIO_OUTPUT);
+	return gpio_pin_configure_dt(&config->wdi_gpio, GPIO_OUTPUT_INACTIVE);
 }
 
 static int ti_tps382x_disable(const struct device *dev)
@@ -47,14 +57,13 @@ static int ti_tps382x_disable(const struct device *dev)
 	return gpio_pin_configure_dt(&config->wdi_gpio, GPIO_INPUT);
 }
 
-static int ti_tps382x_install_timeout(const struct device *dev,
-				      const struct wdt_timeout_cfg *cfg)
+static int ti_tps382x_install_timeout(const struct device *dev, const struct wdt_timeout_cfg *cfg)
 {
 	const struct ti_tps382x_config *config = dev->config;
 
 	if (cfg->window.max != config->timeout) {
-		LOG_ERR("Upper limit of watchdog timeout must be %d not %u",
-			config->timeout, cfg->window.max);
+		LOG_ERR("Upper limit of watchdog timeout must be %d not %u", config->timeout,
+			cfg->window.max);
 		return -EINVAL;
 	} else if (cfg->window.min != 0) {
 		LOG_ERR("Window timeouts not supported");
@@ -69,9 +78,26 @@ static int ti_tps382x_install_timeout(const struct device *dev,
 
 static int ti_tps382x_feed(const struct device *dev, int channel_id)
 {
+	ARG_UNUSED(channel_id);
+
 	const struct ti_tps382x_config *config = dev->config;
 
-	return gpio_pin_toggle_dt(&config->wdi_gpio);
+	/* A ACTIVE edge must occur at WDI before the timeout (tWD) expires. */
+	if (gpio_pin_set_dt(&config->wdi_gpio, 1)) {
+		LOG_ERR("Unable to set WDI");
+		return -EIO;
+	}
+
+	/* Minimum WDI pulse duration */
+	k_sleep(K_NSEC(WDI_PULSE_DURATION_NS));
+
+	/* Set WDI back to INACTIVE to get ready for next feed */
+	if (gpio_pin_set_dt(&config->wdi_gpio, 0)) {
+		LOG_ERR("Unable to reset WDI");
+		return -EIO;
+	}
+
+	return 0;
 }
 
 static DEVICE_API(wdt, ti_tps382x_api) = {
@@ -81,16 +107,13 @@ static DEVICE_API(wdt, ti_tps382x_api) = {
 	.feed = ti_tps382x_feed,
 };
 
-#define WDT_TI_TPS382X_INIT(n)                                                \
-	static const struct ti_tps382x_config ti_tps382x_##n##config = {      \
-		.wdi_gpio = GPIO_DT_SPEC_INST_GET(n, wdi_gpios),              \
-		.timeout = DT_INST_PROP(n, timeout_period),                   \
-	};                                                                    \
-                                                                              \
-	DEVICE_DT_INST_DEFINE(                                                \
-		n, ti_tps382x_init, NULL, NULL, &ti_tps382x_##n##config,      \
-		POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,              \
-		&ti_tps382x_api                                               \
-	);
+#define WDT_TI_TPS382X_INIT(n)                                                                     \
+	static const struct ti_tps382x_config ti_tps382x_##n##config = {                           \
+		.wdi_gpio = GPIO_DT_SPEC_INST_GET(n, wdi_gpios),                                   \
+		.timeout = DT_INST_PROP(n, timeout_period),                                        \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, ti_tps382x_init, NULL, NULL, &ti_tps382x_##n##config,             \
+			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &ti_tps382x_api);
 
 DT_INST_FOREACH_STATUS_OKAY(WDT_TI_TPS382X_INIT);
