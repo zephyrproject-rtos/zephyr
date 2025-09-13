@@ -1,0 +1,17 @@
+sample:
+  name: STM32 System PM Standby State
+tests:
+  sample.boards.stm32.power_mgmt.standby:
+    platform_allow:
+      - nucleo_l476rg
+    tags:
+      - power
+    harness: console
+    harness_config:
+      type: multi_line
+      regex:
+        - "Reset cause: Reset pin"
+        - "Device ready: .*"
+        - "Press and hold the user button to enter Standby Mode"
+    filter: dt_compat_enabled("zephyr,power-state")
+    extra_args: "CONFIG_DEBUG=y"
