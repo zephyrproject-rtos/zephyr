@@ -757,9 +757,41 @@ static int flash_flexspi_nor_4byte_enable(struct flash_flexspi_nor_data *data,
 	if (en4b & BIT(6)) {
 		/* Flash is always in 4 byte mode. We just need to configure LUT */
 		return 0;
-	} else if (en4b & BIT(5)) {
-		/* Dedicated vendor instruction set, which we don't support. Exit here */
-		return -ENOTSUP;
+	} else if (en4b & BIT(0)) {
+		/* Issue instruction 0xB7 */
+		flexspi_lut[SCRATCH_CMD][0] = FLEXSPI_LUT_SEQ(
+				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0xB7,
+				kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0x0);
+		ret = memc_flexspi_set_device_config(&data->controller,
+					&config,
+					(uint32_t *)flexspi_lut,
+					FLEXSPI_INSTR_END * MEMC_FLEXSPI_CMD_PER_SEQ,
+					data->port);
+		if (ret < 0) {
+			return ret;
+		}
+		transfer.dataSize = 0;
+		transfer.seqIndex = SCRATCH_CMD;
+		transfer.cmdType = kFLEXSPI_Command;
+		return memc_flexspi_transfer(&data->controller, &transfer);
+	} else if (en4b & BIT(1)) {
+		/* Issue write enable, then instruction 0xB7 */
+		flash_flexspi_nor_write_enable(data);
+		flexspi_lut[SCRATCH_CMD][0] = FLEXSPI_LUT_SEQ(
+				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0xB7,
+				kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0x0);
+		ret = memc_flexspi_set_device_config(&data->controller,
+					&config,
+					(uint32_t *)flexspi_lut,
+					FLEXSPI_INSTR_END * MEMC_FLEXSPI_CMD_PER_SEQ,
+					data->port);
+		if (ret < 0) {
+			return ret;
+		}
+		transfer.dataSize = 0;
+		transfer.seqIndex = SCRATCH_CMD;
+		transfer.cmdType = kFLEXSPI_Command;
+		return memc_flexspi_transfer(&data->controller, &transfer);
 	} else if (en4b & BIT(4)) {
 		/* Set bit 0 of 16 bit configuration register */
 		flexspi_lut[SCRATCH_CMD][0] = FLEXSPI_LUT_SEQ(
@@ -789,43 +821,14 @@ static int flash_flexspi_nor_4byte_enable(struct flash_flexspi_nor_data *data,
 		transfer.seqIndex = SCRATCH_CMD2;
 		transfer.cmdType = kFLEXSPI_Read;
 		return memc_flexspi_transfer(&data->controller, &transfer);
-	} else if (en4b & BIT(1)) {
-		/* Issue write enable, then instruction 0xB7 */
-		flash_flexspi_nor_write_enable(data);
-		flexspi_lut[SCRATCH_CMD][0] = FLEXSPI_LUT_SEQ(
-				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0xB7,
-				kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0x0);
-		ret = memc_flexspi_set_device_config(&data->controller,
-					&config,
-					(uint32_t *)flexspi_lut,
-					FLEXSPI_INSTR_END * MEMC_FLEXSPI_CMD_PER_SEQ,
-					data->port);
-		if (ret < 0) {
-			return ret;
-		}
-		transfer.dataSize = 0;
-		transfer.seqIndex = SCRATCH_CMD;
-		transfer.cmdType = kFLEXSPI_Command;
-		return memc_flexspi_transfer(&data->controller, &transfer);
-	} else if (en4b & BIT(0)) {
-		/* Issue instruction 0xB7 */
-		flexspi_lut[SCRATCH_CMD][0] = FLEXSPI_LUT_SEQ(
-				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0xB7,
-				kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0x0);
-		ret = memc_flexspi_set_device_config(&data->controller,
-					&config,
-					(uint32_t *)flexspi_lut,
-					FLEXSPI_INSTR_END * MEMC_FLEXSPI_CMD_PER_SEQ,
-					data->port);
-		if (ret < 0) {
-			return ret;
-		}
-		transfer.dataSize = 0;
-		transfer.seqIndex = SCRATCH_CMD;
-		transfer.cmdType = kFLEXSPI_Command;
-		return memc_flexspi_transfer(&data->controller, &transfer);
 	}
-	/* Other methods not supported */
+
+	/* Other methods not supported. Include:
+	 *
+	 *	BIT(2): 8-bit volatile extended address register used to define A[31:24] bits.
+	 *	BIT(3): 8-bit volatile bank register used to define A[31:24] bits.
+	 *	BIT(5): Dedicated vendor instruction set.
+	 */
 	return -ENOTSUP;
 }
 
