@@ -9,8 +9,6 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/hci.h>
 
-#define NAME_LEN 30
-
 static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 			 struct net_buf_simple *ad)
 {
@@ -22,6 +20,8 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 }
 
 #if defined(CONFIG_BT_EXT_ADV)
+#define NAME_LEN 30
+
 static bool data_cb(struct bt_data *data, void *user_data)
 {
 	char *name = user_data;
@@ -86,7 +86,7 @@ static struct bt_le_scan_cb scan_callbacks = {
 };
 #endif /* CONFIG_BT_EXT_ADV */
 
-int observer_start(void)
+static int scan_start(void)
 {
 	/* 30 ms continuous active scanning with duplicate filtering. */
 	struct bt_le_scan_param scan_param = {
@@ -98,16 +98,45 @@ int observer_start(void)
 	int err;
 
 #if defined(CONFIG_BT_EXT_ADV)
+	scan_param.options |= BT_LE_SCAN_OPT_CODED;
+#endif /* CONFIG_BT_EXT_ADV */
+
+scan_start_retry:
+	printk("Starting scanning...\n");
+	err = bt_le_scan_start(&scan_param, device_found);
+	if (err) {
+		if ((scan_param.options & BT_LE_SCAN_OPT_CODED) != 0U) {
+			printk("Failed to start scanning with Coded PHY (err %d), retrying "
+			       "without...\n", err);
+
+			scan_param.options &= ~BT_LE_SCAN_OPT_CODED;
+
+			goto scan_start_retry;
+		}
+
+		printk("Start scanning failed (err %d)\n", err);
+
+		return err;
+	}
+
+	printk("success.\n");
+
+	return 0;
+}
+
+int observer_start(void)
+{
+	int err;
+
+#if defined(CONFIG_BT_EXT_ADV)
 	bt_le_scan_cb_register(&scan_callbacks);
 	printk("Registered scan callbacks\n");
 #endif /* CONFIG_BT_EXT_ADV */
 
-	err = bt_le_scan_start(&scan_param, device_found);
-	if (err) {
-		printk("Start scanning failed (err %d)\n", err);
+	err = scan_start();
+	if (err != 0) {
 		return err;
 	}
-	printk("Started scanning...\n");
 
 	return 0;
 }
