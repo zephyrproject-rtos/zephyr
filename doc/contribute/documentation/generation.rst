@@ -79,8 +79,7 @@ Our documentation processing has been tested to run with:
 * Doxygen version 1.8.13
 * Graphviz 2.43
 * Latexmk version 4.56
-* All Python dependencies listed in the repository file
-  ``doc/requirements.txt``
+* All Python dependencies listed in :zephyr_file:`doc/requirements.in`
 
 In order to install the documentation tools, first install Zephyr as
 described in :ref:`getting_started`. Then install additional tools
@@ -98,7 +97,7 @@ as described below:
 
       .. code-block:: console
 
-         pip install -U -r ~/zephyrproject/zephyr/doc/requirements.txt
+         pip install -U -r ~/zephyrproject/zephyr/doc/requirements.in
 
       On Ubuntu Linux:
 
@@ -133,7 +132,7 @@ as described below:
 
       .. code-block:: console
 
-         pip install -U -r ~/zephyrproject/zephyr/doc/requirements.txt
+         pip install -U -r ~/zephyrproject/zephyr/doc/requirements.in
 
       Use ``brew`` and ``tlmgr`` to install the tools:
 
@@ -149,7 +148,7 @@ as described below:
 
       .. code-block:: console
 
-         pip install -U -r %HOMEPATH$\zephyrproject\zephyr\doc\requirements.txt
+         pip install -U -r %HOMEPATH$\zephyrproject\zephyr\doc\requirements.in
 
       Open a ``cmd.exe`` window as **Administrator** and run the following command:
 
