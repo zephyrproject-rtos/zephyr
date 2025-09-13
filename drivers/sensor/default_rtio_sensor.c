@@ -247,15 +247,17 @@ static void sensor_submit_fallback_sync(struct rtio_iodev_sqe *iodev_sqe)
 				continue;
 			}
 
-			/* Convert the value to micro-units */
-			int64_t value_u = sensor_value_to_micro(&value[sample]);
+			int64_t value_int = value[sample].val1;
+			int64_t value_frac_u = value[sample].val2;
 
 			/* Convert to q31 using the shift */
 			q[sample_idx + sample] =
-				((value_u * ((INT64_C(1) << 31) - 1)) / 1000000) >> header->shift;
+				(((value_int * ((INT64_C(1) << 31) - 1))) >> header->shift) +
+				(((value_frac_u * ((INT64_C(1) << 31) - 1)) / 1000000) >>
+				 header->shift);
 
 			LOG_DBG("value[%d]=%s%d.%06d, q[%d]@%p=%d, shift: %d",
-				sample, value_u < 0 ? "-" : "",
+				sample, value_int < 0 ? "-" : "",
 				abs((int)value[sample].val1), abs((int)value[sample].val2),
 				(int)(sample_idx + sample), (void *)&q[sample_idx + sample],
 				q[sample_idx + sample], header->shift);
