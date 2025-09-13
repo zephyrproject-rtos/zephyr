@@ -248,6 +248,15 @@
 		};
 	};
 
+	swext: swext {
+		compatible = "nordic,nrfs-swext";
+		status = "disabled";
+		max-current-ua = <7500>;
+		current-limit-ua = <7500>;
+		zephyr,pm-device-runtime-auto;
+		#power-domain-cells = <0>;
+	};
+
 	soc {
 		#address-cells = <1>;
 		#size-cells = <1>;
