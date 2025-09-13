@@ -3304,6 +3304,10 @@ int lwm2m_perform_composite_read_op(struct lwm2m_message *msg, uint16_t content_
 
 		ret = lwm2m_perform_read_object_instance(msg, obj_inst, &num_read);
 		if (ret == -ENOMEM) {
+			if (num_read > 0) {
+				/* Return what we have read so far */
+				goto put_end;
+			}
 			return ret;
 		}
 	}
@@ -3312,6 +3316,7 @@ int lwm2m_perform_composite_read_op(struct lwm2m_message *msg, uint16_t content_
 		return -ENOENT;
 	}
 
+put_end:
 	/* Add object end mark */
 	if (engine_put_end(&msg->out, &msg->path) < 0) {
 		return -ENOMEM;
