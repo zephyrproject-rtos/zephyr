@@ -3477,6 +3477,61 @@ int bt_sdp_get_features(const struct net_buf *buf, uint16_t *features)
 	return sdp_get_u16_data(&attr, features);
 }
 
+static int sdp_get_u32_data(const struct bt_sdp_attr_item *attr, uint32_t *u32)
+{
+	const uint8_t *p;
+
+	if (u32 == NULL) {
+		LOG_ERR("Invalid pointer.");
+		return -EINVAL;
+	}
+
+	/* assert 16bit can be read safely */
+	if (attr->len != (sizeof(uint8_t) + sizeof(*u32))) {
+		LOG_ERR("Invalid data length %u", attr->len);
+		return -EMSGSIZE;
+	}
+
+	p = attr->val;
+	__ASSERT(p != NULL, "attr->val cannot be NULL");
+	if (p[0] != BT_SDP_UINT32) {
+		LOG_ERR("Invalid DTD 0x%02x", p[0]);
+		return -EINVAL;
+	}
+
+	*u32 = sys_get_be32(++p);
+
+	return 0;
+}
+
+int bt_sdp_get_functions(const struct net_buf *buf, uint32_t *functions)
+{
+	struct bt_sdp_attr_item attr;
+	int err;
+
+	err = bt_sdp_get_attr(buf, &attr, BT_SDP_ATTR_SUPPORTED_FUNCTIONS);
+	if (err < 0) {
+		LOG_WRN("Attribute 0x%04x not found, err %d", BT_SDP_ATTR_SUPPORTED_FUNCTIONS, err);
+		return err;
+	}
+
+	return sdp_get_u32_data(&attr, functions);
+}
+
+int bt_sdp_get_goep_l2cap_psm(const struct net_buf *buf, uint16_t *psm)
+{
+	struct bt_sdp_attr_item attr;
+	int err;
+
+	err = bt_sdp_get_attr(buf, &attr, BT_SDP_ATTR_GOEP_L2CAP_PSM);
+	if (err < 0) {
+		LOG_WRN("Attribute 0x%04x not found, err %d", BT_SDP_ATTR_GOEP_L2CAP_PSM, err);
+		return err;
+	}
+
+	return sdp_get_u16_data(&attr, psm);
+}
+
 int bt_sdp_get_vendor_id(const struct net_buf *buf, uint16_t *vendor_id)
 {
 	struct bt_sdp_attr_item attr;
