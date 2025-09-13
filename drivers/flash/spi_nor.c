@@ -56,6 +56,7 @@ LOG_MODULE_REGISTER(spi_nor, CONFIG_FLASH_LOG_LEVEL);
 #define ANY_INST_HAS_FLSR \
 	DT_ANY_INST_HAS_BOOL_STATUS_OKAY(use_flag_status_register)
 #define ANY_INST_USE_FAST_READ DT_ANY_INST_HAS_BOOL_STATUS_OKAY(use_fast_read)
+#define ANY_INST_REQUIRES_ULBPR DT_ANY_INST_HAS_BOOL_STATUS_OKAY(requires_ulbpr)
 
 #ifdef CONFIG_SPI_NOR_ACTIVE_DWELL_MS
 #define ACTIVE_DWELL_MS CONFIG_SPI_NOR_ACTIVE_DWELL_MS
@@ -1124,26 +1125,22 @@ static int spi_nor_erase(const struct device *dev, off_t addr, size_t size)
 static int spi_nor_write_protection_set(const struct device *dev,
 					bool write_protect)
 {
-	int ret;
-	const struct spi_nor_config *cfg = dev->config;
+	int ret = 0;
 
 #if ANY_INST_HAS_WP_GPIOS
-	if (DEV_CFG(dev)->wp_gpios_exist && write_protect == false) {
+	if (DEV_CFG(dev)->wp_gpios_exist && !write_protect) {
 		gpio_pin_set_dt(&(DEV_CFG(dev)->wp), 0);
 	}
 #endif
 
-	ret = spi_nor_cmd_write(dev, (write_protect) ?
-	      SPI_NOR_CMD_WRDI : SPI_NOR_CMD_WREN);
-
-	if (cfg->requires_ulbpr_exist
-	    && (ret == 0)
+	if (IS_ENABLED(ANY_INST_REQUIRES_ULBPR)
+	    && DEV_CFG(dev)->requires_ulbpr_exist
 	    && !write_protect) {
 		ret = spi_nor_cmd_write(dev, SPI_NOR_CMD_ULBPR);
 	}
 
 #if ANY_INST_HAS_WP_GPIOS
-	if (DEV_CFG(dev)->wp_gpios_exist && write_protect == true) {
+	if (DEV_CFG(dev)->wp_gpios_exist && write_protect) {
 		gpio_pin_set_dt(&(DEV_CFG(dev)->wp), 1);
 	}
 #endif
