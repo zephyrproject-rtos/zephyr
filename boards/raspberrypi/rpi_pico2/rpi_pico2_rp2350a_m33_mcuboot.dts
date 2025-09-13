@@ -24,6 +24,7 @@
 /* Partitioning for the RP2350A-M33 board using 4M flash.
  */
 #include <raspberrypi/partitions_4M_sysbuild.dtsi>
+
 / {
 	chosen {
 		zephyr,code-partition = &slot0_partition;

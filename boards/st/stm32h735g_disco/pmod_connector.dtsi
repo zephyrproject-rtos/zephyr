@@ -16,7 +16,7 @@
 			   <3 0 &gpiof 8 0>,	/* IO4 */
 			   <4 0 &gpioh 12 0>,	/* IO5 */
 			   <5 0 &gpioh 1 0>;	/* IO6 */
-						/* IO7 - not connected */
-						/* IO8 - not connected */
+		/* IO7 - not connected */
+		/* IO8 - not connected */
 	};
 };

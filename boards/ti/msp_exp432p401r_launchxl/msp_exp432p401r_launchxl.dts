@@ -7,8 +7,8 @@
 
 / {
 	model = "TI MSP-EXP432P401R LaunchXL";
-	compatible = "ti,msp-exp432p401r-launchxl","ti,msp432p401r",
-						"ti,msp432p4xx";
+	compatible = "ti,msp-exp432p401r-launchxl", "ti,msp432p401r",
+		     "ti,msp432p4xx";
 
 	chosen {
 		zephyr,sram = &sram0;

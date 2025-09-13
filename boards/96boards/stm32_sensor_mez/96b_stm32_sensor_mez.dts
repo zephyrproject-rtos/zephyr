@@ -22,14 +22,17 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		red_led_0: led_0 {
 			gpios = <&gpiod 10 GPIO_ACTIVE_HIGH>;
 			label = "User LD0";
 		};
+
 		green_led_1: led_1 {
 			gpios = <&gpiod 11 GPIO_ACTIVE_HIGH>;
 			label = "User LD1";
 		};
+
 		blue_led_2: led_2 {
 			gpios = <&gpiod 12 GPIO_ACTIVE_HIGH>;
 			label = "User LD2";
@@ -38,6 +41,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button: button {
 			label = "Key";
 			gpios = <&gpiod 13 GPIO_ACTIVE_LOW>;
@@ -133,7 +137,9 @@
 	status = "okay";
 };
 
-&spi1_nss_pa4 { slew-rate = "very-high-speed"; };
+&spi1_nss_pa4 {
+	slew-rate = "very-high-speed";
+};
 
 &spi1 {
 	pinctrl-0 = <&spi1_nss_pa4 &spi1_sck_pa5
@@ -142,7 +148,9 @@
 	status = "okay";
 };
 
-&spi2_nss_pb9 { slew-rate = "very-high-speed"; };
+&spi2_nss_pb9 {
+	slew-rate = "very-high-speed";
+};
 
 &spi2 {
 	pinctrl-0 = <&spi2_nss_pb9 &spi2_sck_pd3
@@ -152,7 +160,9 @@
 	/* status = "okay"; */
 };
 
-&spi4_nss_pe11 { slew-rate = "very-high-speed"; };
+&spi4_nss_pe11 {
+	slew-rate = "very-high-speed";
+};
 
 &spi4 {
 	pinctrl-0 = <&spi4_nss_pe11 &spi4_sck_pe12

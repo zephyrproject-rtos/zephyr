@@ -195,12 +195,23 @@
 			status = "disabled";
 		};
 
+		dma0: dma@4000a000 {
+			compatible = "renesas,ra-dma";
+			reg = <0x4000a000 0x200>, <0x4000a800 0xa0>;
+			reg-names = "channel", "common";
+			clocks = <&iclk MSTPA 22>;
+			dma-channels = <8>;
+			#dma-cells = <2>;
+			status = "disabled";
+		};
+
 		iic0: iic0@4025e000 {
 			compatible = "renesas,ra-iic";
 			channel = <0>;
 			reg = <0x4025E000 0x100>;
 			status = "disabled";
 		};
+
 		iic1: iic1@4025e100 {
 			compatible = "renesas,ra-iic";
 			channel = <1>;
@@ -217,6 +228,7 @@
 			reg = <0x40358000 0x100>;
 			clocks = <&sciclk MSTPB 31>;
 			status = "disabled";
+
 			uart {
 				compatible = "renesas,ra8-uart-sci-b";
 				channel = <0>;
@@ -239,6 +251,7 @@
 			reg = <0x40358100 0x100>;
 			clocks = <&sciclk MSTPB 30>;
 			status = "disabled";
+
 			uart {
 				compatible = "renesas,ra8-uart-sci-b";
 				channel = <1>;
@@ -261,6 +274,7 @@
 			reg = <0x40358200 0x100>;
 			clocks = <&sciclk MSTPB 29>;
 			status = "disabled";
+
 			uart {
 				compatible = "renesas,ra8-uart-sci-b";
 				channel = <2>;
@@ -283,6 +297,7 @@
 			reg = <0x40358300 0x100>;
 			clocks = <&sciclk MSTPB 28>;
 			status = "disabled";
+
 			uart {
 				compatible = "renesas,ra8-uart-sci-b";
 				channel = <3>;
@@ -305,6 +320,7 @@
 			reg = <0x40358400 0x100>;
 			clocks = <&sciclk MSTPB 27>;
 			status = "disabled";
+
 			uart {
 				compatible = "renesas,ra8-uart-sci-b";
 				channel = <4>;
@@ -327,6 +343,7 @@
 			reg = <0x40358900 0x100>;
 			clocks = <&sciclk MSTPB 22>;
 			status = "disabled";
+
 			uart {
 				compatible = "renesas,ra8-uart-sci-b";
 				channel = <9>;
@@ -1003,7 +1020,6 @@
 				status = "okay";
 			};
 		};
-
 	};
 
 	usbfs_phy: usbfs-phy {

@@ -31,7 +31,6 @@
 	};
 
 	soc {
-
 		system: system@4001e000 {
 			compatible = "renesas,ra-system";
 			reg = <0x4001e000 0x1000>;
@@ -127,19 +126,30 @@
 			status = "disabled";
 		};
 
+		dma0: dma@40005000 {
+			compatible = "renesas,ra-dma";
+			reg = <0x40005000 0x200>, <0x40005200 0xa0>;
+			reg-names = "channel", "common";
+			clocks = <&iclk MSTPA 22>;
+			dma-channels = <8>;
+			#dma-cells = <2>;
+			status = "disabled";
+		};
+
 		pinctrl: pin-contrller@40040800 {
 			compatible = "renesas,ra-pinctrl-pfs";
 			reg = <0x40040800 0x3c0>;
 			status = "okay";
 		};
 
-		sci0: sci0@40070000  {
+		sci0: sci0@40070000 {
 			compatible = "renesas,ra-sci";
 			interrupts = <0 1>, <1 1>, <2 1>, <3 1>;
 			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x40070000 0x20>;
 			clocks = <&pclka MSTPB 31>;
 			status = "disabled";
+
 			uart {
 				compatible = "renesas,ra-sci-uart";
 				channel = <0>;
@@ -147,11 +157,12 @@
 			};
 		};
 
-		sci1: sci1@40070020  {
+		sci1: sci1@40070020 {
 			compatible = "renesas,ra-sci";
 			reg = <0x40070020 0x20>;
 			clocks = <&pclka MSTPB 30>;
 			status = "disabled";
+
 			uart {
 				compatible = "renesas,ra-sci-uart";
 				channel = <1>;
@@ -164,6 +175,7 @@
 			reg = <0x40070040 0x20>;
 			clocks = <&pclka MSTPB 29>;
 			status = "disabled";
+
 			uart {
 				compatible = "renesas,ra-sci-uart";
 				channel = <2>;
@@ -171,11 +183,12 @@
 			};
 		};
 
-		sci3: sci3@40070060  {
+		sci3: sci3@40070060 {
 			compatible = "renesas,ra-sci";
 			reg = <0x40070060 0x20>;
 			clocks = <&pclka MSTPB 27>;
 			status = "disabled";
+
 			uart {
 				compatible = "renesas,ra-sci-uart";
 				channel = <3>;
@@ -183,11 +196,12 @@
 			};
 		};
 
-		sci4: sci4@40070080  {
+		sci4: sci4@40070080 {
 			compatible = "renesas,ra-sci";
 			reg = <0x40070080 0x20>;
 			clocks = <&pclka MSTPB 26>;
 			status = "disabled";
+
 			uart {
 				compatible = "renesas,ra-sci-uart";
 				channel = <4>;
@@ -195,13 +209,14 @@
 			};
 		};
 
-		sci8: sci8@40070100  {
+		sci8: sci8@40070100 {
 			compatible = "renesas,ra-sci";
 			interrupts = <20 1>, <21 1>, <22 1>, <23 1>;
 			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x40070100 0x20>;
 			clocks = <&pclka MSTPB 23>;
 			status = "disabled";
+
 			uart {
 				compatible = "renesas,ra-sci-uart";
 				channel = <8>;
@@ -209,13 +224,14 @@
 			};
 		};
 
-		sci9: sci9@40070120  {
+		sci9: sci9@40070120 {
 			compatible = "renesas,ra-sci";
 			interrupts = <24 1>, <25 1>, <26 1>, <27 1>;
 			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x40070120 0x20>;
 			clocks = <&pclka MSTPB 22>;
 			status = "disabled";
+
 			uart {
 				compatible = "renesas,ra-sci-uart";
 				channel = <9>;
@@ -257,7 +273,7 @@
 			status = "disabled";
 		};
 
-		agt0: agt@40084000  {
+		agt0: agt@40084000 {
 			compatible = "renesas,ra-agt";
 			channel = <0>;
 			reg = <0x40084000 0x100>;
@@ -307,7 +323,7 @@
 			status = "disabled";
 		};
 
-		crc: crc@40074000{
+		crc: crc@40074000 {
 			compatible = "renesas,ra-crc";
 			reg = <0x40074000 0x1000>;
 			clocks = <&pclka MSTPC 1>;

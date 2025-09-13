@@ -22,10 +22,12 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		orange_led_1: led_1 {
 			gpios = <&gpioc 12 GPIO_ACTIVE_HIGH>;
 			label = "DATA LD1";
 		};
+
 		red_led_2: led_2 {
 			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
 			label = "STAT LD2";

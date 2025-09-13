@@ -2,7 +2,7 @@
 
 #include <ti/mspm0/g/mspm0g.dtsi>
 
-/{
+/ {
 	soc {
 		gpioc: gpio@400a4000 {
 			compatible = "ti,mspm0-gpio";

@@ -24,16 +24,19 @@
 			compatible = "fixed-factor-clock";
 			clocks = <&hfxo>;
 		};
+
 		hfrcodpllrt: hfrcodpllrt {
 			#clock-cells = <0>;
 			compatible = "fixed-factor-clock";
 			clocks = <&hfrcodpll>;
 		};
+
 		sysclk: sysclk {
 			#clock-cells = <0>;
 			compatible = "fixed-factor-clock";
 			clocks = <&hfrcodpll>;
 		};
+
 		hclk: hclk {
 			#clock-cells = <0>;
 			compatible = "fixed-factor-clock";
@@ -41,6 +44,7 @@
 			/* Divisors 1, 2, 4, 8, 16 allowed */
 			clock-div = <1>;
 		};
+
 		pclk: pclk {
 			#clock-cells = <0>;
 			compatible = "fixed-factor-clock";
@@ -48,6 +52,7 @@
 			/* Divisors 1, 2 allowed */
 			clock-div = <2>;
 		};
+
 		lspclk: lspclk {
 			#clock-cells = <0>;
 			compatible = "fixed-factor-clock";
@@ -55,6 +60,7 @@
 			/* Fixed divisor of 2 */
 			clock-div = <2>;
 		};
+
 		hclkdiv1024: hclkdiv1024 {
 			#clock-cells = <0>;
 			compatible = "fixed-factor-clock";
@@ -62,6 +68,7 @@
 			/* Fixed divisor of 1024 */
 			clock-div = <1024>;
 		};
+
 		traceclk: traceclk {
 			#clock-cells = <0>;
 			compatible = "fixed-factor-clock";
@@ -69,46 +76,55 @@
 			/* Divisors 1, 2, 3, 4 allowed */
 			clock-div = <1>;
 		};
+
 		em01grpaclk: em01grpaclk {
 			#clock-cells = <0>;
 			compatible = "fixed-factor-clock";
 			clocks = <&hfrcodpll>;
 		};
+
 		em01grpbclk: em01grpbclk {
 			#clock-cells = <0>;
 			compatible = "fixed-factor-clock";
 			clocks = <&hfrcodpll>;
 		};
+
 		iadcclk: iadcclk {
 			#clock-cells = <0>;
 			compatible = "fixed-factor-clock";
 			clocks = <&em01grpaclk>;
 		};
+
 		em23grpaclk: em23grpaclk {
 			#clock-cells = <0>;
 			compatible = "fixed-factor-clock";
 			clocks = <&lfrco>;
 		};
+
 		em4grpaclk: em4grpaclk {
 			#clock-cells = <0>;
 			compatible = "fixed-factor-clock";
 			clocks = <&lfrco>;
 		};
+
 		rtccclk: rtccclk {
 			#clock-cells = <0>;
 			compatible = "fixed-factor-clock";
 			clocks = <&lfrco>;
 		};
+
 		wdog0clk: wdog0clk {
 			#clock-cells = <0>;
 			compatible = "fixed-factor-clock";
 			clocks = <&lfrco>;
 		};
+
 		systickclk: systickclk {
 			#clock-cells = <0>;
 			compatible = "fixed-factor-clock";
 			clocks = <&hclk>;
 		};
+
 		eusart0clk: eusart0clk {
 			#clock-cells = <0>;
 			compatible = "fixed-factor-clock";
@@ -119,6 +135,7 @@
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
+
 		cpu0: cpu@0 {
 			device_type = "cpu";
 			compatible = "arm,cortex-m33";
@@ -471,7 +488,7 @@
 			clock-frequency = <DT_FREQ_M(38)>;
 		};
 
-		dma0: dma@40040000{
+		dma0: dma@40040000 {
 			compatible = "silabs,ldma";
 			reg = <0x40040000 0x4000>;
 			interrupts = <26 0>;

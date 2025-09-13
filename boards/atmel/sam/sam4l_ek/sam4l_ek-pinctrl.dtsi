@@ -29,17 +29,20 @@
 				 <PA7B_USART0_TXD>;
 		};
 	};
+
 	usart0_hw_ctrl_flow: usart0_hw_ctrl_flow {
 		group1 {
 			pinmux = <PC2C_USART0_RXD>,
 				 <PC7B_USART2_RTS>;
 			bias-pull-up;
 		};
+
 		group2 {
 			pinmux = <PA7B_USART0_TXD>,
 				 <PC8E_USART2_CTS>;
 		};
 	};
+
 	usart2_default: usart2_default {
 		group1 {
 			pinmux = <PC11B_USART2_RXD>,

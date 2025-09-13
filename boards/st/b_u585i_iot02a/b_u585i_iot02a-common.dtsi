@@ -35,7 +35,6 @@
 		};
 	};
 
-
 	aliases {
 		watchdog0 = &iwdg;
 		die-temp0 = &die_temp;
@@ -163,7 +162,7 @@ stm32_lp_tick_source: &lptim1 {
 	clock-frequency = <I2C_BITRATE_FAST>;
 
 	veml6030@10 {
-		compatible ="vishay,veml7700";
+		compatible = "vishay,veml7700";
 		reg = <0x10>;
 		status = "okay";
 	};
@@ -171,22 +170,22 @@ stm32_lp_tick_source: &lptim1 {
 	iis2mdc@1e {
 		compatible = "st,iis2mdc";
 		reg = <0x1e>;
-		drdy-gpios =  <&gpiod 10 GPIO_ACTIVE_HIGH>;
+		drdy-gpios = <&gpiod 10 GPIO_ACTIVE_HIGH>;
 	};
 
 	ism330dhcx@6b {
 		compatible = "st,ism330dhcx";
 		reg = <0x6b>;
-		drdy-gpios =  <&gpioe 11 GPIO_ACTIVE_HIGH>;
+		drdy-gpios = <&gpioe 11 GPIO_ACTIVE_HIGH>;
 	};
 
 	lps22hh@5d {
 		compatible = "st,lps22hh";
 		reg = <0x5d>;
-		drdy-gpios =  <&gpiog 2 GPIO_ACTIVE_HIGH>;
+		drdy-gpios = <&gpiog 2 GPIO_ACTIVE_HIGH>;
 	};
 
-	eeprom0:eeprom@56 {
+	eeprom0: eeprom@56 {
 		compatible = "atmel,at24";
 		reg = <0x56>;
 		status = "okay";

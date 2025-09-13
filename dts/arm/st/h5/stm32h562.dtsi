@@ -264,7 +264,7 @@
 			interrupts = <78 0>;
 			clock-names = "xspix", "xspi-ker";
 			clocks = <&rcc STM32_CLOCK(AHB4, 20)>,
-				<&rcc STM32_SRC_PLL1_Q OCTOSPI1_SEL(1)>;
+				 <&rcc STM32_SRC_PLL1_Q OCTOSPI1_SEL(1)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
@@ -279,9 +279,9 @@
 			vref-mv = <3300>;
 			#io-channel-cells = <1>;
 			resolutions = <STM32_ADC_RES(12, 0x00)
-					STM32_ADC_RES(10, 0x01)
-					STM32_ADC_RES(8, 0x02)
-					STM32_ADC_RES(6, 0x03)>;
+				       STM32_ADC_RES(10, 0x01)
+				       STM32_ADC_RES(8, 0x02)
+				       STM32_ADC_RES(6, 0x03)>;
 			sampling-times = <3 7 13 25 48 93 248 641>;
 			st,adc-sequencer = "FULLY_CONFIGURABLE";
 			st,adc-oversampler = "OVERSAMPLER_MINIMAL";

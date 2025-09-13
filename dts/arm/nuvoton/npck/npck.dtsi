@@ -428,10 +428,10 @@
 
 			/* clocks for host sub-modules */
 			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL5 3>,
-				<&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL5 4>,
-				<&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL5 5>,
-				<&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL5 6>,
-				<&pcc NPCX_CLOCK_BUS_APB1 NPCX_PWDWN_CTL5 7>;
+				 <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL5 4>,
+				 <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL5 5>,
+				 <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL5 6>,
+				 <&pcc NPCX_CLOCK_BUS_APB1 NPCX_PWDWN_CTL5 7>;
 		};
 
 		/* I2c Controllers - Do not use them as i2c node directly */

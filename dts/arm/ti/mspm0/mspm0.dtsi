@@ -9,7 +9,7 @@
 #include <zephyr/dt-bindings/clock/mspm0_clock.h>
 #include <freq.h>
 
-/{
+/ {
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;

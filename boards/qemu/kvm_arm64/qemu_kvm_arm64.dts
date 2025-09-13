@@ -31,7 +31,6 @@
 			compatible = "mmio-sram";
 			reg = <0x0 0x40000000 0x0 DT_SIZE_M(128)>;
 		};
-
 	};
 };
 

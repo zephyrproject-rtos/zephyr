@@ -143,6 +143,16 @@
 			status = "disabled";
 		};
 
+		dma0: dma@40005000 {
+			compatible = "renesas,ra-dma";
+			reg = <0x40005000 0x200>, <0x40005200 0xa0>;
+			reg-names = "channel", "common";
+			clocks = <&iclk MSTPA 22>;
+			dma-channels = <8>;
+			#dma-cells = <2>;
+			status = "disabled";
+		};
+
 		pinctrl: pin-controller@4001F800 {
 			compatible = "renesas,ra-pinctrl-pfs";
 			reg = <0x4001F800 0x3c0>;
@@ -681,7 +691,7 @@
 			compatible = "renesas,ra-cgc-pclk-block";
 			reg = <0x40084000 4>, <0x40084004 4>, <0x40084008 4>,
 			      <0x4008400c 4>, <0x40084010 4>;
-			reg-names = "MSTPA", "MSTPB","MSTPC",
+			reg-names = "MSTPA", "MSTPB", "MSTPC",
 				    "MSTPD", "MSTPE";
 			#clock-cells = <0>;
 			clocks = <&pll>;
@@ -775,7 +785,7 @@
 
 &ioport0 {
 	port-irqs = <&port_irq6 &port_irq7 &port_irq8
-	&port_irq9 &port_irq10 &port_irq11>;
+		     &port_irq9 &port_irq10 &port_irq11>;
 	port-irq-names = "port-irq6",
 			 "port-irq7",
 			 "port-irq8",
@@ -792,7 +802,7 @@
 
 &ioport1 {
 	port-irqs = <&port_irq0 &port_irq1 &port_irq2
-	&port_irq3 &port_irq4>;
+		     &port_irq3 &port_irq4>;
 	port-irq-names = "port-irq0",
 			 "port-irq1",
 			 "port-irq2",
@@ -807,7 +817,7 @@
 
 &ioport2 {
 	port-irqs = <&port_irq0 &port_irq1 &port_irq2
-	&port_irq3 &port_irq12>;
+		     &port_irq3 &port_irq12>;
 	port-irq-names = "port-irq0",
 			 "port-irq1",
 			 "port-irq2",
@@ -822,7 +832,7 @@
 
 &ioport3 {
 	port-irqs = <&port_irq5 &port_irq6
-	&port_irq8 &port_irq9>;
+		     &port_irq8 &port_irq9>;
 	port-irq-names = "port-irq5",
 			 "port-irq6",
 			 "port-irq8",
@@ -835,8 +845,8 @@
 
 &ioport4 {
 	port-irqs = <&port_irq0 &port_irq4 &port_irq5
-	&port_irq6 &port_irq7 &port_irq8
-	&port_irq9 &port_irq14 &port_irq15>;
+		     &port_irq6 &port_irq7 &port_irq8
+		     &port_irq9 &port_irq14 &port_irq15>;
 	port-irq-names = "port-irq0",
 			 "port-irq4",
 			 "port-irq5",
@@ -859,7 +869,7 @@
 
 &ioport5 {
 	port-irqs = <&port_irq11 &port_irq12 &port_irq13
-	&port_irq14>;
+		     &port_irq14>;
 	port-irq-names = "port-irq11",
 			 "port-irq12",
 			 "port-irq13",

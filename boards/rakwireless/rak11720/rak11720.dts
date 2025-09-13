@@ -37,10 +37,12 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		blue_led: led_2 {
 			gpios = <&gpio32_63 13 GPIO_ACTIVE_HIGH>;
 			label = "Blue LED";
 		};
+
 		green_led: led_1 {
 			gpios = <&gpio32_63 12 GPIO_ACTIVE_HIGH>;
 			label = "Green LED";
@@ -66,10 +68,12 @@
 			label = "mcuboot";
 			reg = <0x0000c000 0xc000>;
 		};
+
 		slot0_partition: partition@18000 {
 			label = "image-0";
 			reg = <0x00018000 0x72000>;
 		};
+
 		slot1_partition: partition@8a000 {
 			label = "image-1";
 			reg = <0x0008a000 0x72000>;

@@ -38,4 +38,5 @@
 };
 
 arduino_serial: &usart2 {};
+
 arduino_i2c: &i2c1 {};

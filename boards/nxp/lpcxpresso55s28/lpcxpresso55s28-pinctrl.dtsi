@@ -6,14 +6,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 #include <nxp/lpc/LPC55S28JBD100-pinctrl.h>
 
 &pinctrl {
 	pinmux_flexcomm0_usart: pinmux_flexcomm0_usart {
 		group0 {
 			pinmux = <FC0_RXD_SDA_MOSI_DATA_PIO0_29>,
-				<FC0_TXD_SCL_MISO_WS_PIO0_30>;
+				 <FC0_TXD_SCL_MISO_WS_PIO0_30>;
 			slew-rate = "standard";
 		};
 	};
@@ -21,7 +20,7 @@
 	pinmux_flexcomm4_i2c: pinmux_flexcomm4_i2c {
 		group0 {
 			pinmux = <FC4_RXD_SDA_MOSI_DATA_PIO1_21>,
-				<FC4_TXD_SCL_MISO_WS_PIO1_20>;
+				 <FC4_TXD_SCL_MISO_WS_PIO1_20>;
 			slew-rate = "standard";
 		};
 	};
@@ -29,9 +28,9 @@
 	pinmux_hs_lspi: pinmux_hs_lspi {
 		group0 {
 			pinmux = <HS_SPI_MOSI_PIO0_26>,
-				<HS_SPI_SSEL1_PIO1_1>,
-				<HS_SPI_SCK_PIO1_2>,
-				<HS_SPI_MISO_PIO1_3>;
+				 <HS_SPI_SSEL1_PIO1_1>,
+				 <HS_SPI_SCK_PIO1_2>,
+				 <HS_SPI_MISO_PIO1_3>;
 			bias-pull-up;
 			slew-rate = "standard";
 		};
@@ -40,7 +39,7 @@
 	pinmux_lpadc0: pinmux_lpadc0 {
 		group0 {
 			pinmux = <ADC0_CH0_PIO0_23>,
-				<ADC0_CH1_PIO0_10>;
+				 <ADC0_CH1_PIO0_10>;
 			slew-rate = "standard";
 			nxp,analog-mode;
 		};
@@ -49,8 +48,8 @@
 	pinmux_usbhfs: pinmux_usbhfs {
 		group0 {
 			pinmux = <USB0_VBUS_PIO0_22>,
-				<USB0_OVERCURRENTN_PIO0_28>,
-				<USB0_PORTPWRN_PIO1_12>;
+				 <USB0_OVERCURRENTN_PIO0_28>,
+				 <USB0_PORTPWRN_PIO1_12>;
 			bias-pull-up;
 			slew-rate = "standard";
 		};
@@ -59,7 +58,7 @@
 	pinmux_usbhhs: pinmux_usbhhs {
 		group0 {
 			pinmux = <USB1_OVERCURRENTN_PIO1_30>,
-				<USB1_PORTPWRN_PIO1_29>;
+				 <USB1_PORTPWRN_PIO1_29>;
 			bias-pull-up;
 			slew-rate = "standard";
 		};
@@ -68,18 +67,18 @@
 	pinmux_sdif_default: pinmux_sdif_default {
 		group0 {
 			pinmux = <SDIF_SD0_D0_PIO0_24>,
-				<SDIF_SD0_D1_PIO0_25>,
-				<SDIF_SD0_D2_PIO0_31>,
-				<SD0_CLK_PIO0_7>,
-				<SD0_CMD_PIO0_8>,
-				<SD0_POW_EN_PIO0_9>,
-				<SDIF_SD0_D3_PIO1_0>;
+				 <SDIF_SD0_D1_PIO0_25>,
+				 <SDIF_SD0_D2_PIO0_31>,
+				 <SD0_CLK_PIO0_7>,
+				 <SD0_CMD_PIO0_8>,
+				 <SD0_POW_EN_PIO0_9>,
+				 <SDIF_SD0_D3_PIO1_0>;
 			slew-rate = "fast";
 		};
 
 		group1 {
 			pinmux = <SD0_WR_PRT_PIO0_15>,
-				<SD0_CARD_DET_N_PIO0_17>;
+				 <SD0_CARD_DET_N_PIO0_17>;
 			slew-rate = "standard";
 		};
 	};

@@ -7,7 +7,6 @@
 #include <st/l4/stm32l4.dtsi>
 
 / {
-
 	clocks {
 		clk_hsi48: clk-hsi48 {
 			#clock-cells = <0>;

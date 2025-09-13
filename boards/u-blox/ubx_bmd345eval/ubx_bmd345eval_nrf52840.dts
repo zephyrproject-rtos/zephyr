@@ -28,18 +28,22 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led0: led_0 {
 			gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
 			label = "Red LED 0";
 		};
+
 		led1: led_1 {
 			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
 			label = "Red LED 1";
 		};
+
 		led2: led_2 {
 			gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
 			label = "Green LED 2";
 		};
+
 		led3: led_3 {
 			gpios = <&gpio0 16 GPIO_ACTIVE_LOW>;
 			label = "Green LED 3";
@@ -48,6 +52,7 @@
 
 	pwmleds {
 		compatible = "pwm-leds";
+
 		pwm_led0: pwm_led_0 {
 			pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 		};
@@ -55,21 +60,25 @@
 
 	buttons {
 		compatible = "gpio-keys";
+
 		button0: button_0 {
 			gpios = <&gpio0 11 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button switch 0";
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		button1: button_1 {
 			gpios = <&gpio0 12 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button switch 1";
 			zephyr,code = <INPUT_KEY_1>;
 		};
+
 		button2: button_2 {
 			gpios = <&gpio0 24 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button switch 2";
 			zephyr,code = <INPUT_KEY_2>;
 		};
+
 		button3: button_3 {
 			gpios = <&gpio0 25 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button switch 3";
@@ -83,38 +92,38 @@
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
 		gpio-map = <ARDUINO_HEADER_R3_A0 0 &gpio0 3 0>,
-			<ARDUINO_HEADER_R3_A1 0 &gpio0 4 0>,
-			<ARDUINO_HEADER_R3_A2 0 &gpio0 28 0>,
-			<ARDUINO_HEADER_R3_A3 0 &gpio0 29 0>,
-			<ARDUINO_HEADER_R3_A4 0 &gpio0 30 0>,
-			<ARDUINO_HEADER_R3_A5 0 &gpio0 31 0>,
-			<ARDUINO_HEADER_R3_D0 0 &gpio1 1 0>,
-			/* not present */    /* D1 */
-			<ARDUINO_HEADER_R3_D2 0 &gpio1 3 0>,
-			/* not present */    /* D3 */
-			/* not present */    /* D4 */
-			/* not present */    /* D5 */
-			<ARDUINO_HEADER_R3_D6 0 &gpio1 7 0>,
-			<ARDUINO_HEADER_R3_D7 0 &gpio1 8 0>,
-			<ARDUINO_HEADER_R3_D8 0 &gpio1 10 0>,
-			<ARDUINO_HEADER_R3_D9 0 &gpio1 11 0>,
-			<ARDUINO_HEADER_R3_D10 0 &gpio1 12 0>,
-			<ARDUINO_HEADER_R3_D11 0 &gpio1 13 0>,
-			<ARDUINO_HEADER_R3_D12 0 &gpio1 14 0>,
-			<ARDUINO_HEADER_R3_D13 0 &gpio1 15 0>,
-			<ARDUINO_HEADER_R3_D14 0 &gpio0 26 0>,
-			<ARDUINO_HEADER_R3_D15 0 &gpio0 27 0>;
+			   <ARDUINO_HEADER_R3_A1 0 &gpio0 4 0>,
+			   <ARDUINO_HEADER_R3_A2 0 &gpio0 28 0>,
+			   <ARDUINO_HEADER_R3_A3 0 &gpio0 29 0>,
+			   <ARDUINO_HEADER_R3_A4 0 &gpio0 30 0>,
+			   <ARDUINO_HEADER_R3_A5 0 &gpio0 31 0>,
+			   <ARDUINO_HEADER_R3_D0 0 &gpio1 1 0>,
+			   /* not present */    /* D1 */
+			   <ARDUINO_HEADER_R3_D2 0 &gpio1 3 0>,
+			   /* not present */    /* D3 */
+			   /* not present */    /* D4 */
+			   /* not present */    /* D5 */
+			   <ARDUINO_HEADER_R3_D6 0 &gpio1 7 0>,
+			   <ARDUINO_HEADER_R3_D7 0 &gpio1 8 0>,
+			   <ARDUINO_HEADER_R3_D8 0 &gpio1 10 0>,
+			   <ARDUINO_HEADER_R3_D9 0 &gpio1 11 0>,
+			   <ARDUINO_HEADER_R3_D10 0 &gpio1 12 0>,
+			   <ARDUINO_HEADER_R3_D11 0 &gpio1 13 0>,
+			   <ARDUINO_HEADER_R3_D12 0 &gpio1 14 0>,
+			   <ARDUINO_HEADER_R3_D13 0 &gpio1 15 0>,
+			   <ARDUINO_HEADER_R3_D14 0 &gpio0 26 0>,
+			   <ARDUINO_HEADER_R3_D15 0 &gpio0 27 0>;
 	};
 
 	arduino_adc: analog-connector {
 		compatible = "arduino,uno-adc";
 		#io-channel-cells = <1>;
 		io-channel-map = <0 &adc 1>,    /* A0 = P0.3 = AIN1 */
-			<1 &adc 2>,    /* A1 = P0.4 = AIN2 */
-			<2 &adc 4>,    /* A2 = P0.28 = AIN4 */
-			<3 &adc 5>,    /* A3 = P0.29 = AIN5 */
-			<4 &adc 6>,    /* A4 = P0.30 = AIN6 */
-			<5 &adc 7>;    /* A5 = P0.31 = AIN7 */
+				 <1 &adc 2>,    /* A1 = P0.4 = AIN2 */
+				 <2 &adc 4>,    /* A2 = P0.28 = AIN4 */
+				 <3 &adc 5>,    /* A3 = P0.29 = AIN5 */
+				 <4 &adc 6>,    /* A4 = P0.30 = AIN6 */
+				 <5 &adc 7>;    /* A5 = P0.31 = AIN7 */
 	};
 
 	nrf_radio_fem: fem {
@@ -244,6 +253,7 @@ arduino_spi: &spi3 {
 	pinctrl-0 = <&qspi_default>;
 	pinctrl-1 = <&qspi_sleep>;
 	pinctrl-names = "default", "sleep";
+
 	mx25r64: mx25r6435f@0 {
 		compatible = "nordic,qspi-nor";
 		reg = <0>;
@@ -253,16 +263,14 @@ arduino_spi: &spi3 {
 		readoc = "read4io";
 		sck-frequency = <8000000>;
 		jedec-id = [c2 28 17];
-		sfdp-bfp = [
-			e5 20 f1 ff  ff ff ff 03
-			44 eb 08 6b  08 3b 04 bb
-			ee ff ff ff  ff ff 00 ff
-			ff ff 00 ff  0c 20 0f 52
-			10 d8 00 ff  23 72 f5 00
-			82 ed 04 cc  44 83 68 44
-			30 b0 30 b0  f7 c4 d5 5c
-			00 be 29 ff  f0 d0 ff ff
-		];
+		sfdp-bfp = [e5 20 f1 ff ff ff ff 03
+			    44 eb 08 6b 08 3b 04 bb
+			    ee ff ff ff ff ff 00 ff
+			    ff ff 00 ff 0c 20 0f 52
+			    10 d8 00 ff 23 72 f5 00
+			    82 ed 04 cc 44 83 68 44
+			    30 b0 30 b0 f7 c4 d5 5c
+			    00 be 29 ff f0 d0 ff ff];
 		size = <67108864>;
 		has-dpd;
 		t-enter-dpd = <10000>;

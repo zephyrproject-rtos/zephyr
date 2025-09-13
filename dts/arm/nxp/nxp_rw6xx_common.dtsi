@@ -46,6 +46,7 @@
 				min-residency-us = <0>;
 				exit-latency-us = <0>;
 			};
+
 			/* Suspend mode maps to Power Mode 2 */
 			suspend: suspend {
 				compatible = "nxp,pdcfg-power", "zephyr,power-state";
@@ -53,11 +54,12 @@
 				min-residency-us = <600>;
 				exit-latency-us = <0>;
 				deep-sleep-config = <0x180000>,
-							<0x0>,
-							<0x4>,
-							<0x100>,
-							<0x0>;
+						    <0x0>,
+						    <0x4>,
+						    <0x100>,
+						    <0x0>;
 			};
+
 			/* This is the setting for Sleep Mode */
 			standby: standby {
 				compatible = "nxp,pdcfg-power", "zephyr,power-state";
@@ -66,10 +68,10 @@
 				min-residency-us = <6000>;
 				exit-latency-us = <0>;
 				deep-sleep-config = <0x180000>,
-							<0x0>,
-							<0x4>,
-							<0x100>,
-							<0x0>;
+						    <0x0>,
+						    <0x4>,
+						    <0x100>,
+						    <0x0>;
 				status = "disabled";
 			};
 		};
@@ -122,10 +124,10 @@
 	#size-cells = <1>;
 
 	smu1_data: memory@0 {
-		compatible = "zephyr,memory-region","mmio-sram";
+		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x0 DT_SIZE_K(510)>;
 		zephyr,memory-region = "SMU1";
-		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
 	};
 };
 
@@ -134,10 +136,10 @@
 	#size-cells = <1>;
 
 	smu2_data: memory@0 {
-		compatible = "zephyr,memory-region","mmio-sram";
+		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x0 DT_SIZE_K(140)>;
 		zephyr,memory-region = "SMU2";
-		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
 	};
 };
 
@@ -184,11 +186,13 @@
 	pmu: pmu@31000 {
 		reg = <0x31000 0x130>;
 		compatible = "nxp,rw-pmu";
+
 		pin0: pin0 {
 			compatible = "nxp,aon-wakeup-pin";
 			interrupts = <100 0>;
 			status = "disabled";
 		};
+
 		pin1: pin1 {
 			compatible = "nxp,aon-wakeup-pin";
 			interrupts = <101 0>;
@@ -345,7 +349,7 @@
 		#interrupt-cells = <1>;
 		#address-cells = <0>;
 		interrupts = <4 2>, <5 2>, <6 2>, <7 2>,
-			<35 2>, <36 2>, <37 2>, <38 2>;
+			     <35 2>, <36 2>, <37 2>, <38 2>;
 		num-lines = <8>;
 		num-inputs = <64>;
 		power-domains = <&power_mode3_domain>;
@@ -386,6 +390,7 @@
 		reg = <0x30000 0x1000>;
 		interrupts = <32 0>;
 		status = "disabled";
+
 		rtc_highres: rtc_highres {
 			compatible = "nxp,lpc-rtc-highres";
 			status = "disabled";
@@ -472,16 +477,19 @@
 			reg = <0>;
 			status = "disabled";
 		};
+
 		mrt0_channel1: mrt0_channel@1 {
 			compatible = "nxp,mrt-channel";
 			reg = <1>;
 			status = "disabled";
 		};
+
 		mrt0_channel2: mrt0_channel@2 {
 			compatible = "nxp,mrt-channel";
 			reg = <2>;
 			status = "disabled";
 		};
+
 		mrt0_channel3: mrt0_channel@3 {
 			compatible = "nxp,mrt-channel";
 			reg = <3>;
@@ -506,16 +514,19 @@
 			reg = <0>;
 			status = "disabled";
 		};
+
 		mrt1_channel1: mrt1_channel@1 {
 			compatible = "nxp,mrt-channel";
 			reg = <1>;
 			status = "disabled";
 		};
+
 		mrt1_channel2: mrt1_channel@2 {
 			compatible = "nxp,mrt-channel";
 			reg = <2>;
 			status = "disabled";
 		};
+
 		mrt1_channel3: mrt1_channel@3 {
 			compatible = "nxp,mrt-channel";
 			reg = <3>;
@@ -524,8 +535,8 @@
 	};
 
 	dmic0: dmic@121000 {
-		#address-cells=<1>;
-		#size-cells=<0>;
+		#address-cells = <1>;
+		#size-cells = <0>;
 		compatible = "nxp,dmic";
 		reg = <0x121000 0x1000>;
 		interrupts = <25 0>;
@@ -620,6 +631,7 @@
 		compatible = "nxp,enet";
 		reg = <0x138000 0x700>;
 		clocks = <&clkctl1 MCUX_ENET_CLK>;
+
 		enet_mac: ethernet {
 			compatible = "nxp,enet-mac";
 			interrupts = <115 0>;
@@ -629,6 +641,7 @@
 			status = "disabled";
 			power-domains = <&power_mode3_domain>;
 		};
+
 		enet_mdio: mdio {
 			compatible = "nxp,enet-mdio";
 			status = "disabled";
@@ -636,6 +649,7 @@
 			#size-cells = <0>;
 			power-domains = <&power_mode3_domain>;
 		};
+
 		enet_ptp_clock: ptp-clock {
 			compatible = "nxp,enet-ptp-clock";
 			interrupts = <116 0>;

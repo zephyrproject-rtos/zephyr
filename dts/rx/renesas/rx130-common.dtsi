@@ -42,7 +42,7 @@
 		      <0x0087500 0x0f>,
 		      <0x0087510 0x01>,
 		      <0x0087514 0x01>;
-		reg-names = "IR", "IER", "IPR", "FIR", "IRQCR","IRQFLTE","IRQFLTC0";
+		reg-names = "IR", "IER", "IPR", "FIR", "IRQCR", "IRQFLTE", "IRQFLTC0";
 
 		swint1: swint1@872e0 {
 			compatible = "renesas,rx-swint";
@@ -227,7 +227,7 @@
 			status = "disabled";
 		};
 
-		port_irq7: external-interrupt@87507  {
+		port_irq7: external-interrupt@87507 {
 			compatible = "renesas,rx-external-interrupt";
 			reg = <0x00087507 0x1>;
 			interrupts = <71 12>;
@@ -270,7 +270,7 @@
 			reg-names = "PDR", "PODR", "PIDR", "PMR", "ODR0", "ODR1", "PCR", "DSCR";
 			pinmux = <&pinmux1>;
 			port-irqs = <&port_irq2 &port_irq3 &port_irq4
-			&port_irq5 &port_irq6 &port_irq7>;
+				     &port_irq5 &port_irq6 &port_irq7>;
 			port-irq-names = "port-irq2",
 					 "port-irq3",
 					 "port-irq4",
@@ -449,8 +449,8 @@
 			reg-names = "PDR", "PODR", "PIDR", "PMR", "ODR0", "PCR", "DSCR";
 			pinmux = <&pinmuxd>;
 			port-irqs = <&port_irq0 &port_irq1 &port_irq2
-			&port_irq3 &port_irq4 &port_irq5
-			&port_irq6 &port_irq7>;
+				     &port_irq3 &port_irq4 &port_irq5
+				     &port_irq6 &port_irq7>;
 			port-irq-names = "port-irq0",
 					 "port-irq1",
 					 "port-irq2",
@@ -625,15 +625,15 @@
 				interrupt-names = "tgia", "tgib", "tgic", "tgid", "tgiv";
 				clocks = <&pclkb MSTPA 9>;
 				reg-names = "TCR", "TMDR", "TIOR", "TIER",
-				"TSR", "TGR", "TCNT", "NFCR";
-				reg =	<0x00088700 0x01>,
-					<0x00088701 0x01>,
-					<0x00088702 0x02>,
-					<0x00088704 0x01>,
-					<0x00088705 0x01>,
-					<0x00088708 0x8>,
-					<0x00088706 0x02>,
-					<0x00088690 0x01>;
+					    "TSR", "TGR", "TCNT", "NFCR";
+				reg = <0x00088700 0x01>,
+				      <0x00088701 0x01>,
+				      <0x00088702 0x02>,
+				      <0x00088704 0x01>,
+				      <0x00088705 0x01>,
+				      <0x00088708 0x8>,
+				      <0x00088706 0x02>,
+				      <0x00088690 0x01>;
 				bit-idx = <0>;
 
 				pwm {
@@ -650,16 +650,16 @@
 				interrupts = <121 1>, <122 1>, <123 1>;
 				interrupt-names = "tgia", "tgib", "tgiv";
 				clocks = <&pclkb MSTPA 9>;
-				reg =	<0x00088780 0x01>,
-					<0x00088781 0x01>,
-					<0x00088782 0x01>,
-					<0x00088784 0x01>,
-					<0x00088785 0x01>,
-					<0x00088788 0x4>,
-					<0x00088786 0x02>,
-					<0x00088691 0x01>;
+				reg = <0x00088780 0x01>,
+				      <0x00088781 0x01>,
+				      <0x00088782 0x01>,
+				      <0x00088784 0x01>,
+				      <0x00088785 0x01>,
+				      <0x00088788 0x4>,
+				      <0x00088786 0x02>,
+				      <0x00088691 0x01>;
 				reg-names = "TCR", "TMDR", "TIOR", "TIER",
-				"TSR", "TGR", "TCNT", "NFCR";
+					    "TSR", "TGR", "TCNT", "NFCR";
 				bit-idx = <1>;
 
 				pwm {
@@ -676,16 +676,16 @@
 				interrupts = <125 1>, <126 1>, <127 1>;
 				interrupt-names = "tgia", "tgib", "tgiv";
 				clocks = <&pclkb MSTPA 9>;
-				reg =	<0x00088800 0x01>,
-					<0x00088801 0x01>,
-					<0x00088802 0x01>,
-					<0x00088804 0x01>,
-					<0x00088805 0x01>,
-					<0x00088808 0x4>,
-					<0x00088806 0x02>,
-					<0x00088692 0x01>;
+				reg = <0x00088800 0x01>,
+				      <0x00088801 0x01>,
+				      <0x00088802 0x01>,
+				      <0x00088804 0x01>,
+				      <0x00088805 0x01>,
+				      <0x00088808 0x4>,
+				      <0x00088806 0x02>,
+				      <0x00088692 0x01>;
 				reg-names = "TCR", "TMDR", "TIOR", "TIER",
-				"TSR", "TGR", "TCNT", "NFCR";
+					    "TSR", "TGR", "TCNT", "NFCR";
 				bit-idx = <2>;
 
 				pwm {
@@ -702,16 +702,16 @@
 				interrupts = <129 1>, <130 1>, <131 1>, <132 1>, <133 1>;
 				interrupt-names = "tgia", "tgib", "tgic", "tgid", "tgiv";
 				clocks = <&pclkb MSTPA 9>;
-				reg =	<0x00088600 0x01>,
-					<0x00088602 0x01>,
-					<0x00088604 0x02>,
-					<0x00088608 0x01>,
-					<0x0008862c 0x1>,
-					<0x00088618 0x8>,
-					<0x00088610 0x02>,
-					<0x00088693 0x01>;
+				reg = <0x00088600 0x01>,
+				      <0x00088602 0x01>,
+				      <0x00088604 0x02>,
+				      <0x00088608 0x01>,
+				      <0x0008862c 0x1>,
+				      <0x00088618 0x8>,
+				      <0x00088610 0x02>,
+				      <0x00088693 0x01>;
 				reg-names = "TCR", "TMDR", "TIOR", "TIER",
-				"TSR", "TGR", "TCNT", "NFCR";
+					    "TSR", "TGR", "TCNT", "NFCR";
 				bit-idx = <6>;
 
 				pwm {
@@ -728,16 +728,16 @@
 				interrupts = <134 1>, <135 1>, <136 1>, <137 1>, <138 1>;
 				interrupt-names = "tgia", "tgib", "tgic", "tgid", "tgiv";
 				clocks = <&pclkb MSTPA 9>;
-				reg =	<0x00088601 0x01>,
-					<0x00088603 0x01>,
-					<0x00088606 0x02>,
-					<0x00088609 0x01>,
-					<0x0008862c 0x1>,
-					<0x0008861c 0x8>,
-					<0x00088612 0x02>,
-					<0x00088694 0x01>;
+				reg = <0x00088601 0x01>,
+				      <0x00088603 0x01>,
+				      <0x00088606 0x02>,
+				      <0x00088609 0x01>,
+				      <0x0008862c 0x1>,
+				      <0x0008861c 0x8>,
+				      <0x00088612 0x02>,
+				      <0x00088694 0x01>;
 				reg-names = "TCR", "TMDR", "TIOR", "TIER",
-				"TSR", "TGR", "TCNT", "NFCR";
+					    "TSR", "TGR", "TCNT", "NFCR";
 				bit-idx = <7>;
 
 				pwm {
@@ -823,7 +823,7 @@
 
 		adc: adc@89000 {
 			compatible = "renesas,rx-adc";
-			interrupts= <102 1>;
+			interrupts = <102 1>;
 			interrupt-names = "s12adi0";
 			reg = <0x00089000 0x100>;
 			#io-channel-cells = <1>;

@@ -10,6 +10,7 @@
 		group1 {
 			pinmux = <UART0_TX_P0>;
 		};
+
 		group2 {
 			pinmux = <UART0_RX_P1>;
 			input-enable;
@@ -36,6 +37,7 @@
 		group1 {
 			pinmux = <SPI0_CSN_P17>, <SPI0_SCK_P18>, <SPI0_TX_P19>;
 		};
+
 		group2 {
 			pinmux = <SPI0_RX_P16>;
 			input-enable;
