@@ -69,6 +69,7 @@ jobs:
         with:
           app-path: zephyr
           toolchains: all
+          enable-ccache: false
 
       - name: Environment Setup
         working-directory: zephyr
