@@ -1,0 +1,9 @@
+# Copyright (c) 2025 Core Devices LLC
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_SF32LB_RCC
+	bool "SF32LB clock control RCC driver"
+	default y
+	depends on DT_HAS_SIFLI_SF32LB_RCC_CLK_ENABLED
+	help
+	  Enable clock control driver for SiFli SF32LB RCC.
