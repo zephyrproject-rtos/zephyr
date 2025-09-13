@@ -58,3 +58,7 @@
 	pinctrl-names = "default", "sleep";
 	memory-regions = <&dma_fast_region>;
 };
+
+cycle_timer: &timer120 {
+	status = "okay";
+};
