@@ -85,7 +85,7 @@ enum os_mgmt_info_formats {
 	OS_MGMT_INFO_FORMAT_USER_CUSTOM_START = BIT(9), /**< Custom user-level start bit */
 };
 
-/* Structure provided in the #MGMT_EVT_OP_OS_MGMT_INFO_CHECK notification callback */
+/** Structure provided in the #MGMT_EVT_OP_OS_MGMT_INFO_CHECK notification callback */
 struct os_mgmt_info_check {
 	/** Input format string from the mcumgr client */
 	struct zcbor_string *format;
@@ -99,7 +99,7 @@ struct os_mgmt_info_check {
 	bool *custom_os_name;
 };
 
-/* Structure provided in the MGMT_EVT_OP_OS_MGMT_INFO_APPEND notification callback */
+/** Structure provided in the MGMT_EVT_OP_OS_MGMT_INFO_APPEND notification callback */
 struct os_mgmt_info_append {
 	/** The format bitmask from the processed commands, the bits should be cleared once
 	 * processed, note that if all_format_specified is specified, the corresponding bits here
@@ -121,7 +121,7 @@ struct os_mgmt_info_append {
 	 * memory error to the client
 	 */
 	uint16_t buffer_size;
-	/* If there has been prior output, must be set to true if a response has been output */
+	/** If there has been prior output, must be set to true if a response has been output */
 	bool *prior_output;
 };
 
