@@ -677,6 +677,36 @@ struct sensor_read_config {
 	RTIO_IODEV_DEFINE(name, &__sensor_iodev_api, _CONCAT(&__sensor_read_config_, name))
 
 /**
+ * @brief Define a reading instance of a sensor, but allows for a NULL sensor device
+ *
+ * Use this macro to generate a @ref rtio_iodev for reading specific channels. Example:
+ *
+ * @code(.c)
+ * SENSOR_DT_READ_IODEV_OR_NULL(icm42688_accelgyro, DT_NODELABEL(icm42688),
+ *     { SENSOR_CHAN_ACCEL_XYZ, 0 },
+ *     { SENSOR_CHAN_GYRO_XYZ, 0 });
+ *
+ * int main(void) {
+ *   if (!SENSOR_IODEV_IS_NULL(iodev)) {
+ *     sensor_read_async_mempool(&icm42688_accelgyro, &rtio);
+ *   }
+ * }
+ * @endcode
+ */
+#define SENSOR_IODEV_IS_NULL(iodev) (!_CONCAT(__sensor_read_config_, iodev).sensor)
+
+#define SENSOR_DT_READ_IODEV_OR_NULL(name, dt_node, ...)                                          \
+	static struct sensor_chan_spec _CONCAT(__channel_array_, name)[] = {__VA_ARGS__};          \
+	static struct sensor_read_config _CONCAT(__sensor_read_config_, name) = {                  \
+		.sensor = DEVICE_DT_GET_OR_NULL(dt_node),                                          \
+		.is_streaming = false,                                                             \
+		.channels = _CONCAT(__channel_array_, name),                                       \
+		.count = ARRAY_SIZE(_CONCAT(__channel_array_, name)),                              \
+		.max = ARRAY_SIZE(_CONCAT(__channel_array_, name)),                                \
+	};                                                                                         \
+	RTIO_IODEV_DEFINE(name, &__sensor_iodev_api, _CONCAT(&__sensor_read_config_, name))
+
+/**
  * @brief Define a stream instance of a sensor
  *
  * Use this macro to generate a @ref rtio_iodev for starting a stream that's triggered by specific
