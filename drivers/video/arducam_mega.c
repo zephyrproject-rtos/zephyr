@@ -751,7 +751,7 @@ static int arducam_mega_get_fmt(const struct device *dev, struct video_format *f
 	return 0;
 }
 
-static void on_stream_schedule_timer_func(struct k_timer *timer)
+static void arducam_mega_stream_schedule(struct k_timer *timer)
 {
 	struct arducam_mega_data *drv_data = timer->user_data;
 
@@ -870,7 +870,7 @@ static int arducam_mega_fifo_read(const struct device *dev, struct video_buffer 
 	return ret;
 }
 
-static void __buffer_work(struct k_work *work)
+static void arducam_mega_buffer_work(struct k_work *work)
 {
 	struct k_work *dwork = work;
 	struct arducam_mega_data *drv_data =
@@ -1154,10 +1154,10 @@ static int arducam_mega_init(const struct device *dev)
 	k_work_queue_start(&ac_work_q, ac_stack_area, K_THREAD_STACK_SIZEOF(ac_stack_area),
 			   AC_PRIORITY, NULL);
 
-	k_timer_init(&drv_data->stream_schedule_timer, on_stream_schedule_timer_func, NULL);
+	k_timer_init(&drv_data->stream_schedule_timer, arducam_mega_stream_schedule, NULL);
 	drv_data->stream_schedule_timer.user_data = (void *)drv_data;
 
-	k_work_init(&drv_data->buf_work, __buffer_work);
+	k_work_init(&drv_data->buf_work, arducam_mega_buffer_work);
 
 	arducam_mega_soft_reset(dev);
 	ret = arducam_mega_check_connection(dev);
