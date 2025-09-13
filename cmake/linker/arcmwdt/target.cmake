@@ -112,7 +112,6 @@ endfunction(toolchain_ld_link_elf)
 # linker options of temporary linkage for code generation
 macro(toolchain_ld_baremetal)
   zephyr_ld_options(
-    -Hlld
     -Hnosdata
     -Xtimer0 # to suppress the warning message
     -Hnoxcheck_obj
@@ -122,6 +121,12 @@ macro(toolchain_ld_baremetal)
     -Hnoivt
     -Hnocrt
   )
+
+  if(CONFIG_ARC)
+    zephyr_ld_options(
+      -Hlld
+    )
+  endif()
 
   # There are two options:
   # - We have full MWDT libc support and we link MWDT libc - this is default
