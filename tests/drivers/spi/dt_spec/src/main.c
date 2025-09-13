@@ -15,7 +15,7 @@ LOG_MODULE_REGISTER(test, CONFIG_LOG_DEFAULT_LEVEL);
 ZTEST(spi_dt_spec, test_dt_spec)
 {
 	const struct spi_dt_spec spi_cs =
-		SPI_DT_SPEC_GET(DT_NODELABEL(test_spi_dev_cs), 0, 0);
+		SPI_DT_SPEC_GET(DT_NODELABEL(test_spi_dev_cs), 0);
 
 	LOG_DBG("spi_cs.bus = %p", spi_cs.bus);
 	LOG_DBG("spi_cs.config.cs.gpio.port = %p", spi_cs.config.cs.gpio.port);
@@ -27,7 +27,7 @@ ZTEST(spi_dt_spec, test_dt_spec)
 	zassert_equal(spi_cs.config.cs.gpio.pin, 0x10, "");
 
 	const struct spi_dt_spec spi_no_cs =
-		SPI_DT_SPEC_GET(DT_NODELABEL(test_spi_dev_no_cs), 0, 0);
+		SPI_DT_SPEC_GET(DT_NODELABEL(test_spi_dev_no_cs), 0);
 
 	LOG_DBG("spi_no_cs.bus = %p", spi_no_cs.bus);
 	LOG_DBG("spi_no_cs.config.cs.gpio.port = %p", spi_no_cs.config.cs.gpio.port);
