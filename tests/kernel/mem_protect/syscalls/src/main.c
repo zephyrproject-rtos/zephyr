@@ -15,6 +15,9 @@
 
 #if defined(CONFIG_BOARD_FVP_BASE_REVC_2XAEMV8A)
 #define SLEEP_MS_LONG	30000
+#elif defined(CONFIG_BOARD_INTEL_ADSP_ACE30_PTL_SIM) ||                                            \
+	defined(CONFIG_BOARD_INTEL_ADSP_ACE40_NVL_SIM)
+#define SLEEP_MS_LONG	300
 #else
 #define SLEEP_MS_LONG	15000
 #endif
