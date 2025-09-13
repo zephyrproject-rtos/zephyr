@@ -35,6 +35,7 @@ tests:
       - robokit1
       - mimxrt1170_evk/mimxrt1176/cm7
       - bg29_rb4420a
+      - xg29_rb4412a
     integration_platforms:
       - robokit1
   drivers.spi.mcux_dspi_dma.loopback:
