@@ -31,4 +31,10 @@
 		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
 		zephyr,resolution = <12>;
 	};
+
+	dmas = <&dma 2>;
+};
+
+&dma {
+	status = "okay";
 };
