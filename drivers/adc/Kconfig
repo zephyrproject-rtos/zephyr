@@ -104,6 +104,8 @@ source "drivers/adc/Kconfig.ads1112"
 
 source "drivers/adc/Kconfig.ads1119"
 
+source "drivers/adc/Kconfig.ads1219"
+
 source "drivers/adc/Kconfig.ads7052"
 
 source "drivers/adc/Kconfig.ads1x4s0x"
