@@ -1009,7 +1009,7 @@ static void avdtp_open_rsp(struct bt_avdtp *session, struct net_buf *buf, uint8_
 	}
 }
 
-static void avdtp_handle_reject(struct net_buf *buf, struct bt_avdtp_req *req)
+static void avdtp_handle_reject_with_acp_seid(struct net_buf *buf, struct bt_avdtp_req *req)
 {
 	if (buf->len > 1U) {
 		uint8_t acp_seid;
@@ -1082,14 +1082,24 @@ static void avdtp_start_rsp(struct bt_avdtp *session, struct net_buf *buf, uint8
 
 	k_work_cancel_delayable(&session->timeout_work);
 
-	if (msg_type == BT_AVDTP_ACCEPT) {
-		bt_avdtp_set_state_lock(CTRL_REQ(req)->sep, AVDTP_STREAMING);
-	} else if (msg_type == BT_AVDTP_REJECT) {
-		avdtp_handle_reject(buf, req);
+	if (msg_type == BT_AVDTP_REJECT) {
+		avdtp_handle_reject_with_acp_seid(buf, req);
 	}
 
 	if (req->status == BT_AVDTP_SUCCESS) {
 		avdtp_set_status(req, buf, msg_type);
+	}
+
+	if (req->status == BT_AVDTP_SUCCESS) {
+		bt_avdtp_set_state_lock(CTRL_REQ(req)->sep, AVDTP_STREAMING);
+	} else {
+		/* From spec, if start cmd's initiator is sink, the endpoint state is set as
+		 * AVDTP_STREAMING after sending start cmd. So if cmd fail, need to change back
+		 * as AVDTP_OPEN.
+		 */
+		if (CTRL_REQ(req)->sep->sep_info.tsep == BT_AVDTP_SINK) {
+			bt_avdtp_set_state_lock(CTRL_REQ(req)->sep, AVDTP_OPEN);
+		}
 	}
 
 	bt_avdtp_clear_req(session);
@@ -1229,14 +1239,16 @@ static void avdtp_suspend_rsp(struct bt_avdtp *session, struct net_buf *buf, uin
 
 	k_work_cancel_delayable(&session->timeout_work);
 
-	if (msg_type == BT_AVDTP_ACCEPT) {
-		bt_avdtp_set_state_lock(CTRL_REQ(req)->sep, AVDTP_OPEN);
-	} else if (msg_type == BT_AVDTP_REJECT) {
-		avdtp_handle_reject(buf, req);
+	if (msg_type == BT_AVDTP_REJECT) {
+		avdtp_handle_reject_with_acp_seid(buf, req);
 	}
 
 	if (req->status == BT_AVDTP_SUCCESS) {
 		avdtp_set_status(req, buf, msg_type);
+	}
+
+	if (req->status == BT_AVDTP_SUCCESS) {
+		bt_avdtp_set_state_lock(CTRL_REQ(req)->sep, AVDTP_OPEN);
 	}
 
 	bt_avdtp_clear_req(session);
@@ -1305,6 +1317,8 @@ static void avdtp_abort_rsp(struct bt_avdtp *session, struct net_buf *buf, uint8
 	if (msg_type == BT_AVDTP_ACCEPT) {
 		uint8_t pre_state = CTRL_REQ(req)->sep->state;
 
+		req->status = BT_AVDTP_SUCCESS;
+
 		bt_avdtp_set_state_lock(CTRL_REQ(req)->sep, AVDTP_ABORTING);
 
 		/* release stream */
@@ -1316,8 +1330,9 @@ static void avdtp_abort_rsp(struct bt_avdtp *session, struct net_buf *buf, uint8
 		 * releasing l2cap channel.
 		 */
 		bt_avdtp_set_state_lock(CTRL_REQ(req)->sep, AVDTP_IDLE);
-	} else if (msg_type == BT_AVDTP_REJECT) {
-		avdtp_handle_reject(buf, req);
+	} else {
+		/* Spec only allows accept, spec doesn't define the packet format of reject. */
+		req->status = BT_AVDTP_BAD_STATE;
 	}
 
 	if (req->status == BT_AVDTP_SUCCESS) {
