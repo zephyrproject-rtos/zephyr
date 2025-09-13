@@ -53,3 +53,12 @@ properties:
     description: |
       Specifies whether the measure negative gain resistor ladder
       voltage switch is on or off for ADC channel.
+
+  "#nxp,opamp-cells":
+    type: int
+    const: 1
+    description: |
+      Number of items to expect in a opamp specifier.
+
+nxp,opamp-cells:
+  - channel_id
