@@ -197,6 +197,10 @@ New APIs and options
 
   * :c:func:`sys_count_bits`
 
+* Task Watchdog
+
+  * :kconfig:option:`CONFIG_TASK_WDT_DUMMY`
+
 .. zephyr-keep-sorted-stop
 
 New Boards
