@@ -28,19 +28,23 @@ void log_dict_output_msg_process(const struct log_output *output,
 
 	output_hdr.source = (source != NULL) ? log_source_id(source) : 0U;
 
-	log_output_write(output->func, (uint8_t *)&output_hdr, sizeof(output_hdr),
-			 (void *)output->control_block->ctx);
+	// TODO: what do we do if all of this doesn't fit into output-buf?
+
+	memcpy(&output->buf[output->control_block->offset], &output_hdr, sizeof(output_hdr));
+	output->control_block->offset += sizeof(output_hdr);
 
 	size_t len;
 	uint8_t *data = log_msg_get_package(msg, &len);
 
 	if (len > 0U) {
-		log_output_write(output->func, data, len, (void *)output->control_block->ctx);
+		memcpy(&output->buf[output->control_block->offset], data, len);
+		output->control_block->offset += len;
 	}
 
 	data = log_msg_get_data(msg, &len);
 	if (len > 0U) {
-		log_output_write(output->func, data, len, (void *)output->control_block->ctx);
+		memcpy(&output->buf[output->control_block->offset], data, len);
+		output->control_block->offset += len;
 	}
 
 	log_output_flush(output);
