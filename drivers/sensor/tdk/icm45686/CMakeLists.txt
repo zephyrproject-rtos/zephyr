@@ -6,6 +6,7 @@ zephyr_library()
 zephyr_library_include_directories(.)
 zephyr_library_sources(
 	icm45686.c
+	icm45686_bus.c
 )
 zephyr_library_sources_ifdef(CONFIG_SENSOR_ASYNC_API
 	icm45686_decoder.c
