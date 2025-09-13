@@ -1,0 +1,23 @@
+# Copyright 2025 Core Devices LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: SiFli SF32LB Memory Peripheral Interface (MPI)
+
+compatible: "sifli,sf32lb-mpi"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  "#address-cells":
+    required: true
+    const: 1
+
+  "#size-cells":
+    required: true
+    const: 1

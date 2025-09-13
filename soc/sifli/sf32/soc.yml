@@ -1,0 +1,16 @@
+# Copyright (c) 2025 Core Devices LLC
+# SPDX-License-Identifier: Apache-2.0
+
+family:
+- name: sf32
+  series:
+  - name: sf32lb52x
+    socs:
+    - name: sf32lb520u36
+    - name: sf32lb523ub6
+    - name: sf32lb525uc6
+    - name: sf32lb527ud6
+    - name: sf32lb52bu36
+    - name: sf32lb52eub6
+    - name: sf32lb52guc6
+    - name: sf32lb52jud6

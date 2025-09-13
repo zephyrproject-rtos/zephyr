@@ -1,0 +1,13 @@
+# Copyright (c) 2025 Core Devices LLC
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_SF32LB52X
+	select ARM
+	# NOTE: Star-MC1, Cortex-M33 compatible
+	select CPU_CORTEX_M33
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_FPU
+	select ARMV8_M_DSP
+	select CPU_HAS_ICACHE
+	select CPU_HAS_DCACHE
+	select SOC_EARLY_INIT_HOOK

@@ -1,0 +1,239 @@
+# Copyright (c) 2025 Core Devices LLC
+# SPDX-License-Identifier: Apache-2.0
+
+config ZEPHYR_HAL_SIFLI_MODULE
+	bool
+
+config HAS_SIFLI_HAL
+	bool
+	select HAS_CMSIS_CORE
+
+if HAS_SIFLI_HAL
+
+config USE_SIFLI_HAL
+	bool "SiFli HAL"
+	help
+	  Enable SiFli HAL module
+
+if USE_SIFLI_HAL
+
+config USE_SIFLI_HAL_ADC
+	bool "ADC SiFli HAL module"
+	help
+	  Enable ADC SiFli HAL module driver
+
+config USE_SIFLI_HAL_AES
+	bool "AES SiFli HAL module"
+	help
+	  Enable AES SiFli HAL module driver
+
+config USE_SIFLI_HAL_AON
+	bool "AON SiFli HAL module"
+	help
+	  Enable AON SiFli HAL module driver
+
+config USE_SIFLI_HAL_ATIM
+	bool "ATIM SiFli HAL module"
+	depends on SOC_SERIES_SF32LB52X
+	help
+	  Enable ATIM SiFli HAL module driver
+
+config USE_SIFLI_HAL_AUDCODEC
+	bool "AUDCODEC SiFli HAL module"
+	depends on SOC_SERIES_SF32LB52X
+	help
+	  Enable AUDCODEC SiFli HAL module driver
+
+config USE_SIFLI_HAL_AUDPRC
+	bool "AUDPRC SiFli HAL module"
+	depends on SOC_SERIES_SF32LB52X
+	help
+	  Enable AUDPRC SiFli HAL module driver
+
+config USE_SIFLI_HAL_BUSMON
+	bool "BUSMON SiFli HAL module"
+	help
+	  Enable BUSMON SiFli HAL module driver
+
+config USE_SIFLI_HAL_CACHE
+	bool "CACHE SiFli HAL module"
+	help
+	  Enable CACHE SiFli HAL module driver
+
+config USE_SIFLI_HAL_CRC
+	bool "CRC SiFli HAL module"
+	help
+	  Enable CRC SiFli HAL module driver
+
+config USE_SIFLI_HAL_DMA
+	bool "DMA SiFli HAL module"
+	help
+	  Enable DMA SiFli HAL module driver
+
+config USE_SIFLI_HAL_EPIC
+	bool "EPIC SiFli HAL module"
+	help
+	  Enable EPIC SiFli HAL module driver
+
+config USE_SIFLI_HAL_EZIP
+	bool "EZIP SiFli HAL module"
+	help
+	  Enable EZIP SiFli HAL module driver
+
+config USE_SIFLI_HAL_EXTDMA
+	bool "EXTDMA SiFli HAL module"
+	help
+	  Enable EXTDMA SiFli HAL module driver
+
+config USE_SIFLI_HAL_GPIO
+	bool "GPIO SiFli HAL module"
+	help
+	  Enable GPIO SiFli HAL module driver
+
+config USE_SIFLI_HAL_GPT
+	bool "GPT SiFli HAL module"
+	help
+	  Enable GPT SiFli HAL module driver
+
+config USE_SIFLI_HAL_HASH
+	bool "HASH SiFli HAL module"
+	depends on SOC_SERIES_SF32LB52X
+	help
+	  Enable HASH SiFli HAL module driver
+
+config USE_SIFLI_HAL_HCD
+	bool "HCD SiFli HAL module"
+	help
+	  Enable HCD SiFli HAL module driver
+
+config USE_SIFLI_HAL_I2C
+	bool "I2C SiFli HAL module"
+	help
+	  Enable I2C SiFli HAL module driver
+
+config USE_SIFLI_HAL_I2S
+	bool "I2S SiFli HAL module"
+	help
+	  Enable I2S SiFli HAL module driver
+
+config USE_SIFLI_HAL_LCD
+	bool "LCD SiFli HAL module"
+	help
+	  Enable LCD SiFli HAL module driver
+
+config USE_SIFLI_HAL_LCPU_CONFIGURE
+	bool "LCPU_CONFIGURE SiFli HAL module"
+	help
+	  Enable LCPU_CONFIGURE SiFli HAL module
+
+config USE_SIFLI_HAL_LCPU_PATCH
+	bool "LCPU_PATCH SiFli HAL module"
+	help
+	  Enable LCPU_PATCH SiFli HAL module
+
+config USE_SIFLI_HAL_LRC_CAL
+	bool "LRC_CAL SiFli HAL module"
+	help
+	  Enable LRC_CAL SiFli HAL module
+
+config USE_SIFLI_HAL_LPTIM
+	bool "LPTIM SiFli HAL module"
+	help
+	  Enable LPTIM SiFli HAL module driver
+
+config USE_SIFLI_HAL_MAILBOX
+	bool "MAILBOX SiFli HAL module"
+	help
+	  Enable MAILBOX SiFli HAL module driver
+
+config USE_SIFLI_HAL_MATH
+	bool "MATH SiFli HAL module"
+	help
+	  Enable MATH SiFli HAL module driver
+
+config USE_SIFLI_HAL_MMC
+	bool "MMC SiFli HAL module"
+	help
+	  Enable MMC SiFli HAL module driver
+
+config USE_SIFLI_HAL_MPI
+	bool "MPI SiFli HAL module"
+	depends on SOC_SERIES_SF32LB52X
+	help
+	  Enable MPI SiFli HAL module driver
+
+config USE_SIFLI_HAL_PCD
+	bool "PCD SiFli HAL module"
+	help
+	  Enable PCD SiFli HAL module driver
+
+config USE_SIFLI_HAL_PDM
+	bool "PDM SiFli HAL module"
+	help
+	  Enable PDM SiFli HAL module driver
+
+config USE_SIFLI_HAL_PINMUX
+	bool "PINMUX SiFli HAL module"
+	help
+	  Enable PINMUX SiFli HAL module driver
+
+config USE_SIFLI_HAL_PTC
+	bool "PTC SiFli HAL module"
+	help
+	  Enable PTC SiFli HAL module driver
+
+config USE_SIFLI_HAL_RNG
+	bool "RNG SiFli HAL module"
+	help
+	  Enable RNG SiFli HAL module driver
+
+config USE_SIFLI_HAL_RTC
+	bool "RTC SiFli HAL module"
+	help
+	  Enable RTC SiFli HAL module driver
+
+config USE_SIFLI_HAL_SD
+	bool "SD SiFli HAL module"
+	depends on SOC_SERIES_SF32LB52X
+	help
+	  Enable SD SiFli HAL module driver
+
+config USE_SIFLI_HAL_SDHCI
+	bool "SDHCI SiFli HAL module"
+	help
+	  Enable SDHCI SiFli HAL module driver
+
+config USE_SIFLI_HAL_SECU
+	bool "SECU SiFli HAL module"
+	depends on SOC_SERIES_SF32LB52X
+	help
+	  Enable SECU SiFli HAL module driver
+
+config USE_SIFLI_HAL_SPI
+	bool "SPI SiFli HAL module"
+	help
+	  Enable SPI SiFli HAL module driver
+
+config USE_SIFLI_HAL_SYSTEM_CONFIG
+	bool "SYSTEM_CONFIG SiFli HAL module"
+	help
+	  Enable SYSTEM_CONFIG SiFli HAL module
+
+config USE_SIFLI_HAL_TSEN
+	bool "TSEN SiFli HAL module"
+	help
+	  Enable TSEN SiFli HAL module driver
+
+config USE_SIFLI_HAL_UART
+	bool "UART SiFli HAL module"
+	help
+	  Enable UART SiFli HAL module driver
+
+config USE_SIFLI_HAL_WDT
+	bool "WDT SiFli HAL module"
+	help
+	  Enable WDT SiFli HAL module driver
+
+endif # USE_SIFLI_HAL
+
+endif # HAS_SIFLI_HAL

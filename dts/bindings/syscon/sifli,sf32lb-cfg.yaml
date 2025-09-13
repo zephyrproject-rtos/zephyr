@@ -1,0 +1,12 @@
+# Copyright (c) 2025 Core Devices LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: SiFli System Configuration (HPSYS_CFG)
+
+compatible: "sifli,sf32lb-cfg"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

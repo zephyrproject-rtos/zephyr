@@ -1,0 +1,12 @@
+# Copyright (c) 2025 Core Devices LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: SiFli SF32LB PMUC
+
+compatible: "sifli,sf32lb-pmuc"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
