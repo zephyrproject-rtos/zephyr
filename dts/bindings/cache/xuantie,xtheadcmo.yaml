@@ -1,0 +1,43 @@
+#
+# Copyright (c) 2025 MASSDRIVER EI <massdriver.space>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: |
+  Xuantie T-HEAD xtheadcmo extension cache control.
+
+  xtheadcmo is documented at: https://github.com/XUANTIE-RV/thead-extension-spec
+  It is a RISC-V extension that manages the CPU cache on T-HEAD cores.
+  The node should be added in the CPU group and provide cache line sizes:
+
+  cpus {
+
+    ...
+
+    cpu0: cpu@0 {
+
+      ...
+
+      cache {
+        compatible = "xuantie,xtheadcmo";
+        dcache-line-size = <32>;
+        icache-line-size = <32>;
+      };
+    }
+  };
+
+  The cache configuration is specific to the platform, this only provides controls for it.
+
+compatible: "xuantie,xtheadcmo"
+
+include: base.yaml
+
+properties:
+  dcache-line-size:
+    type: int
+    description: Size of data cache line in bytes
+
+  icache-line-size:
+    type: int
+    description: Size of data cache line in bytes
