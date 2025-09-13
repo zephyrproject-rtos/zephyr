@@ -267,6 +267,44 @@ ZTEST(util, test_z_max_z_min_z_clamp) {
 	zassert_equal(inc_func(false), 8, "Unexpected return value");
 }
 
+ZTEST(util, test_max_from_list_macro) {
+	/* Test with one argument */
+	zassert_equal(MAX_FROM_LIST(10), 10, "Should return the single value.");
+
+	/* Test with two arguments */
+	zassert_equal(MAX_FROM_LIST(10, 20), 20, "Should return 20.");
+	zassert_equal(MAX_FROM_LIST(30, 15), 30, "Should return 30.");
+
+	/* Test with three arguments */
+	zassert_equal(MAX_FROM_LIST(10, 5, 20), 20, "Should return 20.");
+	zassert_equal(MAX_FROM_LIST(30, 15, 25), 30, "Should return 30.");
+	zassert_equal(MAX_FROM_LIST(5, 40, 35), 40, "Should return 40.");
+
+	/* Test with five arguments */
+	zassert_equal(MAX_FROM_LIST(10, 50, 20, 5, 30), 50, "Should return 50.");
+
+	/* Test with seven arguments */
+	zassert_equal(MAX_FROM_LIST(10, 50, 20, 5, 30, 45, 25), 50, "Should return 50.");
+
+	/* Test with eight arguments */
+	zassert_equal(MAX_FROM_LIST(1, 2, 3, 4, 5, 6, 7, 8), 8, "Should return 8.");
+	zassert_equal(MAX_FROM_LIST(10, 5, 20, 15, 30, 25, 35, 40), 40, "Should return 40.");
+
+	/* Test with nine arguments */
+	zassert_equal(MAX_FROM_LIST(1, 2, 3, 4, 5, 6, 7, 8, 9), 9, "Should return 9.");
+	zassert_equal(MAX_FROM_LIST(10, 5, 20, 15, 30, 25, 35, 40, 45), 45, "Should return 45.");
+
+	/* Test with ten arguments */
+	zassert_equal(MAX_FROM_LIST(1, 2, 3, 4, 5, 6, 7, 8, 9, 10), 10, "Should return 10.");
+	zassert_equal(MAX_FROM_LIST(10, 9, 8, 7, 6, 5, 4, 3, 2, 1), 10, "Should return 10.");
+	zassert_equal(MAX_FROM_LIST(5, 15, 25, 35, 45, 55, 65, 75, 85, 95),
+		95, "Should return 95.");
+
+	/* Test with various values */
+	zassert_equal(MAX_FROM_LIST(25600, 12800, 9800), 25600, "Should return 25600.");
+	zassert_equal(MAX_FROM_LIST(9800, 25600, 12800), 25600, "Should return 25600.");
+}
+
 ZTEST(util, test_CLAMP) {
 	zassert_equal(CLAMP(5, 3, 7), 5, "Unexpected clamp result");
 	zassert_equal(CLAMP(3, 3, 7), 3, "Unexpected clamp result");
