@@ -28,6 +28,11 @@ LOG_LEVEL_SET(CONFIG_MSPI_LOG_LEVEL);
 
 #define MSPI_BUSY            BIT(2)
 
+#define MSPI_LOG_HANDLE(mspi_dev)                                                                \
+		COND_CODE_1(CONFIG_LOG,                                                          \
+			(((const struct mspi_ambiq_config *)mspi_dev->config)->log),             \
+			())
+
 typedef int  (*mspi_ambiq_pwr_func_t)(void);
 typedef void (*irq_config_func_t)(void);
 
@@ -476,8 +481,9 @@ static inline int mspi_verify_device(const struct device      *controller,
 				     const struct mspi_dev_id *dev_id)
 {
 	const struct mspi_ambiq_config *cfg = controller->config;
+
 	int device_index = cfg->mspicfg.num_periph;
-	int ret = 0;
+	int ret          = 0;
 
 	for (int i = 0; i < cfg->mspicfg.num_periph; i++) {
 		if (dev_id->ce.port == cfg->mspicfg.ce_group[i].port &&
@@ -498,67 +504,72 @@ static inline int mspi_verify_device(const struct device      *controller,
 
 static int mspi_ambiq_deinit(const struct device *controller)
 {
-	const struct mspi_ambiq_config *cfg = controller->config;
 	struct mspi_ambiq_data *data = controller->data;
+
 	int ret = 0;
 
 	if (!data->mspiHandle) {
-		LOG_INST_ERR(cfg->log, "%u, the mspi not yet initialized.", __LINE__);
+		LOG_INST_ERR(MSPI_LOG_HANDLE(controller), "%u, the mspi not yet initialized.",
+							  __LINE__);
 		return -ENODEV;
 	}
 
 	if (k_mutex_lock(&data->lock, K_MSEC(CONFIG_MSPI_COMPLETION_TIMEOUT_TOLERANCE))) {
-		LOG_INST_ERR(cfg->log, "%u, fail to gain controller access.", __LINE__);
+		LOG_INST_ERR(MSPI_LOG_HANDLE(controller), "%u, fail to gain controller access.",
+							  __LINE__);
 		return -EBUSY;
 	}
 
 	ret = pm_device_runtime_get(controller);
 	if (ret) {
-		LOG_INST_ERR(cfg->log, "%u, failed pm_device_runtime_get.", __LINE__);
+		LOG_INST_ERR(MSPI_LOG_HANDLE(controller), "%u, failed pm_device_runtime_get.",
+							  __LINE__);
 		goto e_deinit_return;
 	}
 
 	ret = pm_device_runtime_disable(controller);
 	if (ret) {
-		LOG_INST_ERR(cfg->log, "%u, failed pm_device_runtime_disable.", __LINE__);
+		LOG_INST_ERR(MSPI_LOG_HANDLE(controller), "%u, failed pm_device_runtime_disable.",
+							  __LINE__);
 		goto e_deinit_return;
 	}
 
 	ret = am_hal_mspi_interrupt_disable(data->mspiHandle, 0xFFFFFFFF);
 	if (ret) {
-		LOG_INST_ERR(cfg->log, "%u, fail to disable interrupt, code:%d.",
-			     __LINE__, ret);
+		LOG_INST_ERR(MSPI_LOG_HANDLE(controller), "%u, fail to disable interrupt, code:%d.",
+							  __LINE__, ret);
 		ret = -EHOSTDOWN;
 		goto e_deinit_return;
 	}
 
 	ret = am_hal_mspi_interrupt_clear(data->mspiHandle, 0xFFFFFFFF);
 	if (ret) {
-		LOG_INST_ERR(cfg->log, "%u, fail to clear interrupt, code:%d.",
-			     __LINE__, ret);
+		LOG_INST_ERR(MSPI_LOG_HANDLE(controller), "%u, fail to clear interrupt, code:%d.",
+							  __LINE__, ret);
 		ret = -EHOSTDOWN;
 		goto e_deinit_return;
 	}
 
 	ret = am_hal_mspi_disable(data->mspiHandle);
 	if (ret) {
-		LOG_INST_ERR(cfg->log, "%u, fail to disable MSPI, code:%d.",
-			     __LINE__, ret);
+		LOG_INST_ERR(MSPI_LOG_HANDLE(controller), "%u, fail to disable MSPI, code:%d.",
+							  __LINE__, ret);
 		ret = -EHOSTDOWN;
 		goto e_deinit_return;
 	}
 
 	ret = am_hal_mspi_power_control(data->mspiHandle, AM_HAL_SYSCTRL_DEEPSLEEP, false);
 	if (ret) {
-		LOG_INST_ERR(cfg->log, "%u, fail to power off MSPI, code:%d.",
-			     __LINE__, ret);
+		LOG_INST_ERR(MSPI_LOG_HANDLE(controller), "%u, fail to power off MSPI, code:%d.",
+							  __LINE__, ret);
 		ret = -EHOSTDOWN;
 		goto e_deinit_return;
 	}
 
 	ret = am_hal_mspi_deinitialize(data->mspiHandle);
 	if (ret) {
-		LOG_INST_ERR(cfg->log, "%u, fail to deinit MSPI.", __LINE__);
+		LOG_INST_ERR(MSPI_LOG_HANDLE(controller), "%u, fail to deinit MSPI, code:%d.",
+							  __LINE__, ret);
 		ret = -ENODEV;
 		goto e_deinit_return;
 	}
@@ -573,10 +584,10 @@ e_deinit_return:
 static int mspi_xfer_config(const struct device    *controller,
 			    const struct mspi_xfer *xfer)
 {
-	const struct mspi_ambiq_config *cfg = controller->config;
-	struct mspi_ambiq_data *data = controller->data;
-	am_hal_mspi_dev_config_t hal_dev_cfg = data->hal_dev_cfg;
-	am_hal_mspi_request_e eRequest;
+	struct mspi_ambiq_data  *data         = controller->data;
+	am_hal_mspi_dev_config_t hal_dev_cfg  = data->hal_dev_cfg;
+	am_hal_mspi_request_e    eRequest;
+
 	int ret = 0;
 
 	if (data->scramble_cfg.enable) {
@@ -587,15 +598,15 @@ static int mspi_xfer_config(const struct device    *controller,
 
 	ret = am_hal_mspi_disable(data->mspiHandle);
 	if (ret) {
-		LOG_INST_ERR(cfg->log, "%u, fail to disable MSPI, code:%d.",
-			     __LINE__, ret);
+		LOG_INST_ERR(MSPI_LOG_HANDLE(controller), "%u, fail to disable MSPI, code:%d.",
+							  __LINE__, ret);
 		return -EHOSTDOWN;
 	}
 
 	ret = am_hal_mspi_control(data->mspiHandle, eRequest, NULL);
 	if (ret) {
-		LOG_INST_ERR(cfg->log, "%u,Unable to complete scramble config:%d.",
-			     __LINE__, data->scramble_cfg.enable);
+		LOG_INST_ERR(MSPI_LOG_HANDLE(controller), "%u, fail to turn scramble:%d.",
+							  __LINE__, data->scramble_cfg.enable);
 		return -EHOSTDOWN;
 	}
 
@@ -606,7 +617,8 @@ static int mspi_xfer_config(const struct device    *controller,
 		/* TODO - buggy, cmd can not be changed here */
 	}
 	if (cmd_length > AM_HAL_MSPI_INSTR_2_BYTE + 1) {
-		LOG_INST_ERR(cfg->log, "%u, cmd_length is too large.", __LINE__);
+		LOG_INST_ERR(MSPI_LOG_HANDLE(controller), "%u, cmd_length is too large.",
+							  __LINE__);
 		return -ENOTSUP;
 	}
 	if (cmd_length == 0) {
@@ -617,7 +629,8 @@ static int mspi_xfer_config(const struct device    *controller,
 	}
 
 	if (xfer->addr_length > AM_HAL_MSPI_ADDR_4_BYTE + 1) {
-		LOG_INST_ERR(cfg->log, "%u, addr_length is too large.", __LINE__);
+		LOG_INST_ERR(MSPI_LOG_HANDLE(controller), "%u, addr_length is too large.",
+							  __LINE__);
 		return -ENOTSUP;
 	}
 	if (xfer->addr_length == 0) {
@@ -636,15 +649,15 @@ static int mspi_xfer_config(const struct device    *controller,
 
 	ret = am_hal_mspi_device_configure(data->mspiHandle, &hal_dev_cfg);
 	if (ret) {
-		LOG_INST_ERR(cfg->log, "%u, fail to configure MSPI, code:%d.",
-			     __LINE__, ret);
+		LOG_INST_ERR(MSPI_LOG_HANDLE(controller), "%u, fail to configure MSPI, code:%d.",
+							  __LINE__, ret);
 		return -EHOSTDOWN;
 	}
 
 	ret = am_hal_mspi_enable(data->mspiHandle);
 	if (ret) {
-		LOG_INST_ERR(cfg->log, "%u, fail to enable MSPI, code:%d.",
-			     __LINE__, ret);
+		LOG_INST_ERR(MSPI_LOG_HANDLE(controller), "%u, fail to enable MSPI, code:%d.",
+							  __LINE__, ret);
 		return -EHOSTDOWN;
 	}
 
@@ -652,19 +665,24 @@ static int mspi_xfer_config(const struct device    *controller,
 	return ret;
 }
 
+#ifdef CONFIG_PM_DEVICE
+#define PINCTRL_STATE_START PINCTRL_STATE_PRIV_START
 static int mspi_ambiq_pm_action(const struct device *controller, enum pm_device_action action)
 {
 	const struct mspi_ambiq_config *cfg  = controller->config;
 	struct mspi_ambiq_data         *data = controller->data;
-	int                             ret  = 0;
+
+	int ret = 0;
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
-		/* Set pins to active state */
-		ret = pinctrl_apply_state(cfg->pcfg,
-					  PINCTRL_STATE_PRIV_START + data->dev_id->dev_idx);
-		if (ret < 0) {
-			return ret;
+		if (data->dev_id) {
+			/* Set pins to active state */
+			ret = pinctrl_apply_state(cfg->pcfg,
+						  PINCTRL_STATE_START + data->dev_id->dev_idx);
+			if (ret < 0) {
+				return ret;
+			}
 		}
 		ret = am_hal_mspi_power_control(data->mspiHandle, AM_HAL_SYSCTRL_WAKE, true);
 		if (ret) {
@@ -702,14 +720,17 @@ static int mspi_ambiq_pm_action(const struct device *controller, enum pm_device_
 
 	return ret;
 }
+#else
+#define PINCTRL_STATE_START PINCTRL_STATE_PRIV_START - 1
+#endif
 
 static int mspi_ambiq_config(const struct mspi_dt_spec *spec)
 {
-	const struct mspi_cfg *config = &spec->config;
-	const struct mspi_ambiq_config *cfg = spec->bus->config;
-	struct mspi_ambiq_data *data = spec->bus->data;
-	am_hal_mspi_config_t *hal_cfg = &data->hal_cfg;
-	am_hal_mspi_dqs_t dqs_cfg;
+	const struct mspi_cfg          *config  = &spec->config;
+	const struct mspi_ambiq_config *cfg     = spec->bus->config;
+	struct mspi_ambiq_data         *data    = spec->bus->data;
+	am_hal_mspi_config_t           *hal_cfg = &data->hal_cfg;
+	am_hal_mspi_dqs_t               dqs_cfg;
 
 	int ret = 0;
 
@@ -823,10 +844,11 @@ static int mspi_ambiq_dev_config(const struct device         *controller,
 				 const enum mspi_dev_cfg_mask param_mask,
 				 const struct mspi_dev_cfg   *dev_cfg)
 {
-	const struct mspi_ambiq_config *cfg = controller->config;
-	struct mspi_ambiq_data *data = controller->data;
-	am_hal_mspi_dev_config_t hal_dev_cfg = data->hal_dev_cfg;
-	am_hal_mspi_rxcfg_t hal_rx_cfg = data->hal_rx_cfg;
+	const struct mspi_ambiq_config *cfg         = controller->config;
+	struct mspi_ambiq_data         *data        = controller->data;
+	am_hal_mspi_dev_config_t        hal_dev_cfg = data->hal_dev_cfg;
+	am_hal_mspi_rxcfg_t             hal_rx_cfg  = data->hal_rx_cfg;
+
 	int ret = 0;
 
 	if (data->dev_id != dev_id) {
@@ -839,6 +861,8 @@ static int mspi_ambiq_dev_config(const struct device         *controller,
 		if (ret) {
 			goto e_return;
 		}
+
+		data->dev_id = (struct mspi_dev_id *)dev_id;
 
 		ret = pm_device_runtime_get(controller);
 		if (ret) {
@@ -855,7 +879,6 @@ static int mspi_ambiq_dev_config(const struct device         *controller,
 	if (param_mask == MSPI_DEVICE_CONFIG_NONE &&
 	    !cfg->mspicfg.sw_multi_periph) {
 		/* Do nothing except obtaining the controller lock */
-		data->dev_id = (struct mspi_dev_id *)dev_id;
 		return ret;
 
 	} else if (param_mask != MSPI_DEVICE_CONFIG_ALL) {
@@ -1064,7 +1087,7 @@ static int mspi_ambiq_dev_config(const struct device         *controller,
 			ret = am_hal_mspi_control(data->mspiHandle,
 						  AM_HAL_MSPI_REQ_SET_INSTR_ADDR_LEN, &ia_cfg);
 			if (ret) {
-				LOG_INST_ERR(cfg->log, "%u, failed to configure device.",
+				LOG_INST_ERR(cfg->log, "%u, failed to configure addr_length.",
 					     __LINE__);
 				ret = -EHOSTDOWN;
 				goto e_return;
@@ -1100,17 +1123,14 @@ static int mspi_ambiq_dev_config(const struct device         *controller,
 
 	} else {
 
-		if (data->dev_id != dev_id) {
-			ret = pinctrl_apply_state(cfg->pcfg,
-						  PINCTRL_STATE_PRIV_START + dev_id->dev_idx);
-			if (ret) {
-				goto e_return;
-			}
+		ret = pinctrl_apply_state(cfg->pcfg,
+					  PINCTRL_STATE_START + dev_id->dev_idx);
+		if (ret) {
+			goto e_return;
 		}
 
 		if (memcmp(&data->dev_cfg, dev_cfg, sizeof(struct mspi_dev_cfg)) == 0) {
 			/** Nothing to config */
-			data->dev_id = (struct mspi_dev_id *)dev_id;
 			return ret;
 		}
 
@@ -1274,7 +1294,6 @@ static int mspi_ambiq_dev_config(const struct device         *controller,
 			goto e_return;
 		}
 		data->dev_cfg = *dev_cfg;
-		data->dev_id  = (struct mspi_dev_id *)dev_id;
 	}
 	data->hal_dev_cfg = hal_dev_cfg;
 	data->hal_rx_cfg  = hal_rx_cfg;
@@ -1297,7 +1316,8 @@ static int mspi_ambiq_xip_config(const struct device       *controller,
 	struct mspi_ambiq_data         *data = controller->data;
 	am_hal_mspi_request_e           eRequest;
 	am_hal_mspi_xip_config_t        hal_xip_cfg = data->hal_xip_cfg;
-	int                             ret         = 0;
+
+	int ret = 0;
 
 	if (dev_id != data->dev_id) {
 		LOG_INST_ERR(cfg->log, "%u, dev_id don't match.", __LINE__);
@@ -1348,18 +1368,19 @@ static int mspi_ambiq_scramble_config(const struct device            *controller
 				      const struct mspi_dev_id       *dev_id,
 				      const struct mspi_scramble_cfg *scramble_cfg)
 {
-	const struct mspi_ambiq_config *cfg         = controller->config;
-	struct mspi_ambiq_data         *data        = controller->data;
-	am_hal_mspi_xip_config_t        hal_xip_cfg = data->hal_xip_cfg;
-	am_hal_mspi_request_e           eRequest;
-	int                             ret = 0;
+	struct mspi_ambiq_data  *data        = controller->data;
+	am_hal_mspi_xip_config_t hal_xip_cfg = data->hal_xip_cfg;
+	am_hal_mspi_request_e    eRequest;
+
+	int ret = 0;
 
 	if (mspi_is_inp(controller)) {
 		return -EBUSY;
 	}
 
 	if (dev_id != data->dev_id) {
-		LOG_INST_ERR(cfg->log, "%u, dev_id don't match.", __LINE__);
+		LOG_INST_ERR(MSPI_LOG_HANDLE(controller), "%u, dev_id don't match.",
+							  __LINE__);
 		return -ESTALE;
 	}
 
@@ -1374,15 +1395,16 @@ static int mspi_ambiq_scramble_config(const struct device            *controller
 
 	ret = am_hal_mspi_control(data->mspiHandle, AM_HAL_MSPI_REQ_SCRAMBLE_CONFIG, &hal_xip_cfg);
 	if (ret) {
-		LOG_INST_ERR(cfg->log, "%u, fail to configure scramble, code:%d.",
+		LOG_INST_ERR(MSPI_LOG_HANDLE(controller),
+			     "%u, fail to configure scramble, code:%d.",
 			     __LINE__, ret);
 		return -EHOSTDOWN;
 	}
 
 	ret = am_hal_mspi_control(data->mspiHandle, eRequest, NULL);
 	if (ret) {
-		LOG_INST_ERR(cfg->log, "%u, fail to set scramble enable:%d.",
-			     __LINE__, scramble_cfg->enable);
+		LOG_INST_ERR(MSPI_LOG_HANDLE(controller), "%u, fail to set scramble enable:%d.",
+							  __LINE__, scramble_cfg->enable);
 		return -EHOSTDOWN;
 	}
 
@@ -1396,26 +1418,28 @@ static int mspi_ambiq_timing_config(const struct device      *controller,
 				    const uint32_t            param_mask,
 				    void                     *timing_cfg)
 {
-	const struct mspi_ambiq_config *cfg         = controller->config;
-	struct mspi_ambiq_data         *data        = controller->data;
-	am_hal_mspi_dev_config_t        hal_dev_cfg = data->hal_dev_cfg;
-	struct mspi_ambiq_timing_cfg   *time_cfg    = timing_cfg;
-	am_hal_mspi_timing_scan_t       hal_timing  = data->hal_timing;
-	int                             ret         = 0;
+	struct mspi_ambiq_data       *data        = controller->data;
+	am_hal_mspi_dev_config_t      hal_dev_cfg = data->hal_dev_cfg;
+	struct mspi_ambiq_timing_cfg *time_cfg    = timing_cfg;
+	am_hal_mspi_timing_scan_t     hal_timing  = data->hal_timing;
+
+	int ret = 0;
 
 	if (mspi_is_inp(controller)) {
 		return -EBUSY;
 	}
 
 	if (dev_id != data->dev_id) {
-		LOG_INST_ERR(cfg->log, "%u, dev_id don't match.", __LINE__);
+		LOG_INST_ERR(MSPI_LOG_HANDLE(controller), "%u, dev_id don't match.",
+							  __LINE__);
 		return -ESTALE;
 	}
 
 	if ((param_mask & (~(MSPI_AMBIQ_SET_RLC |
 			     MSPI_AMBIQ_SET_TXDQSDLY |
 			     MSPI_AMBIQ_SET_RXDQSDLY)))) {
-		LOG_INST_ERR(cfg->log, "%u, config type not supported.", __LINE__);
+		LOG_INST_ERR(MSPI_LOG_HANDLE(controller), "%u, config type not supported.",
+							  __LINE__);
 		return -EINVAL;
 	}
 
@@ -1443,7 +1467,8 @@ static int mspi_ambiq_timing_config(const struct device      *controller,
 	ret = am_hal_mspi_control(data->mspiHandle,
 				  AM_HAL_MSPI_REQ_TIMING_SCAN_SET, &hal_timing);
 	if (ret) {
-		LOG_INST_ERR(cfg->log, "%u, fail to configure timing.", __LINE__);
+		LOG_INST_ERR(MSPI_LOG_HANDLE(controller), "%u, fail to configure timing.",
+							  __LINE__);
 		return -EHOSTDOWN;
 	}
 
@@ -1458,7 +1483,8 @@ static int mspi_ambiq_get_channel_status(const struct device *controller, uint8_
 
 	const struct mspi_ambiq_config *cfg  = controller->config;
 	struct mspi_ambiq_data         *data = controller->data;
-	int                             ret  = 0;
+
+	int ret = 0;
 
 	if (sys_read32(cfg->reg_base) & MSPI_BUSY) {
 		ret = -EBUSY;
@@ -1480,11 +1506,12 @@ static int mspi_ambiq_get_channel_status(const struct device *controller, uint8_
 static void mspi_ambiq_isr(const struct device *dev)
 {
 	struct mspi_ambiq_data *data = dev->data;
-	uint32_t                ui32Status;
 
-	am_hal_mspi_interrupt_status_get(data->mspiHandle, &ui32Status, false);
-	am_hal_mspi_interrupt_clear(data->mspiHandle, ui32Status);
-	am_hal_mspi_interrupt_service(data->mspiHandle, ui32Status);
+	uint32_t status;
+
+	am_hal_mspi_interrupt_status_get(data->mspiHandle, &status, false);
+	am_hal_mspi_interrupt_clear(data->mspiHandle, status);
+	am_hal_mspi_interrupt_service(data->mspiHandle, status);
 }
 
 /** Manage sync dma transceive */
@@ -1499,13 +1526,12 @@ static void hal_mspi_callback(void *pCallbackCtxt, uint32_t status)
 static int mspi_pio_prepare(const struct device        *controller,
 			    am_hal_mspi_pio_transfer_t *trans)
 {
-	const struct mspi_ambiq_config *cfg        = controller->config;
-	struct mspi_ambiq_data         *data       = controller->data;
-	const struct mspi_xfer         *xfer       = &data->ctx.xfer;
-	am_hal_mspi_instr_e             eInstrCfg  = data->hal_dev_cfg.eInstrCfg;
-	am_hal_mspi_addr_e              eAddrCfg   = data->hal_dev_cfg.eAddrCfg;
-	uint8_t                         cmd_length = xfer->cmd_length;
-	int                             ret        = 0;
+	struct mspi_ambiq_data *data       = controller->data;
+	const struct mspi_xfer *xfer       = &data->ctx.xfer;
+	am_hal_mspi_instr_e     eInstrCfg  = data->hal_dev_cfg.eInstrCfg;
+	am_hal_mspi_addr_e      eAddrCfg   = data->hal_dev_cfg.eAddrCfg;
+	uint8_t                 cmd_length = xfer->cmd_length;
+	int                     ret        = 0;
 
 	trans->bScrambling  = false;
 	trans->bSendAddr    = (xfer->addr_length != 0);
@@ -1519,7 +1545,8 @@ static int mspi_pio_prepare(const struct device        *controller,
 		cmd_length *= 2;
 	}
 	if (cmd_length > AM_HAL_MSPI_INSTR_2_BYTE + 1) {
-		LOG_INST_ERR(cfg->log, "%u, invalid cmd_length.", __LINE__);
+		LOG_INST_ERR(MSPI_LOG_HANDLE(controller), "%u, invalid cmd_length.",
+							  __LINE__);
 		return -ENOTSUP;
 	}
 
@@ -1528,7 +1555,8 @@ static int mspi_pio_prepare(const struct device        *controller,
 	}
 
 	if (xfer->addr_length > AM_HAL_MSPI_ADDR_4_BYTE + 1) {
-		LOG_INST_ERR(cfg->log, "%u, invalid addr_length.", __LINE__);
+		LOG_INST_ERR(MSPI_LOG_HANDLE(controller), "%u, invalid addr_length.",
+							  __LINE__);
 		return -ENOTSUP;
 	}
 
@@ -1548,7 +1576,9 @@ static int mspi_pio_prepare(const struct device        *controller,
 		ret = am_hal_mspi_control(data->mspiHandle, AM_HAL_MSPI_REQ_SET_INSTR_ADDR_LEN,
 					  &pConfig);
 		if (ret) {
-			LOG_INST_ERR(cfg->log, "%u, failed to configure device.", __LINE__);
+			LOG_INST_ERR(MSPI_LOG_HANDLE(controller),
+				     "%u, failed to set instr/addr length.",
+				     __LINE__);
 			ret = -EHOSTDOWN;
 		}
 
@@ -1566,14 +1596,13 @@ static int mspi_pio_transceive(const struct device          *controller,
 			       mspi_callback_handler_t       cb,
 			       struct mspi_callback_context *cb_ctx)
 {
-	const struct mspi_ambiq_config *cfg  = controller->config;
-	struct mspi_ambiq_data         *data = controller->data;
-	struct mspi_context            *ctx  = &data->ctx;
-	const struct mspi_xfer_packet  *packet;
-	uint32_t                        packet_idx;
-	am_hal_mspi_pio_transfer_t      trans;
-	int                             ret      = 0;
-	int                             cfg_flag = 0;
+	struct mspi_ambiq_data        *data = controller->data;
+	struct mspi_context           *ctx  = &data->ctx;
+	const struct mspi_xfer_packet *packet;
+	uint32_t                       packet_idx;
+	am_hal_mspi_pio_transfer_t     trans;
+	int                            ret      = 0;
+	int                            cfg_flag = 0;
 
 	if (xfer->num_packet == 0 ||
 	    !xfer->packets ||
@@ -1627,7 +1656,9 @@ static int mspi_pio_transceive(const struct device          *controller,
 
 		ret = am_hal_mspi_interrupt_enable(data->mspiHandle, AM_HAL_MSPI_INT_DMACMP);
 		if (ret) {
-			LOG_INST_ERR(cfg->log, "%u, failed to enable interrupt.", __LINE__);
+			LOG_INST_ERR(MSPI_LOG_HANDLE(controller),
+				     "%u, failed to enable interrupt. code:%d",
+				     __LINE__, ret);
 			ret = -EHOSTDOWN;
 			goto pio_err;
 		}
@@ -1681,12 +1712,11 @@ static int mspi_dma_transceive(const struct device          *controller,
 			       mspi_callback_handler_t       cb,
 			       struct mspi_callback_context *cb_ctx)
 {
-	const struct mspi_ambiq_config *cfg  = controller->config;
-	struct mspi_ambiq_data         *data = controller->data;
-	struct mspi_context            *ctx  = &data->ctx;
-	am_hal_mspi_dma_transfer_t      trans;
-	int                             ret      = 0;
-	int                             cfg_flag = 0;
+	struct mspi_ambiq_data    *data = controller->data;
+	struct mspi_context       *ctx  = &data->ctx;
+	am_hal_mspi_dma_transfer_t trans;
+	int                        ret      = 0;
+	int                        cfg_flag = 0;
 
 	if (xfer->num_packet == 0 ||
 	    !xfer->packets ||
@@ -1712,7 +1742,9 @@ static int mspi_dma_transceive(const struct device          *controller,
 
 	ret = am_hal_mspi_interrupt_enable(data->mspiHandle, AM_HAL_MSPI_INT_DMACMP);
 	if (ret) {
-		LOG_INST_ERR(cfg->log, "%u, failed to enable interrupt.", __LINE__);
+		LOG_INST_ERR(MSPI_LOG_HANDLE(controller),
+			     "%u, failed to enable interrupt. code:%d",
+			     __LINE__, ret);
 		ret = -EHOSTDOWN;
 		goto dma_err;
 	}
@@ -1781,13 +1813,13 @@ static int mspi_ambiq_transceive(const struct device      *controller,
 				 const struct mspi_dev_id *dev_id,
 				 const struct mspi_xfer   *xfer)
 {
-	const struct mspi_ambiq_config *cfg    = controller->config;
-	struct mspi_ambiq_data         *data   = controller->data;
-	mspi_callback_handler_t         cb     = NULL;
-	struct mspi_callback_context   *cb_ctx = NULL;
+	struct mspi_ambiq_data       *data   = controller->data;
+	mspi_callback_handler_t       cb     = NULL;
+	struct mspi_callback_context *cb_ctx = NULL;
 
 	if (dev_id != data->dev_id) {
-		LOG_INST_ERR(cfg->log, "%u, dev_id don't match.", __LINE__);
+		LOG_INST_ERR(MSPI_LOG_HANDLE(controller), "%u, dev_id don't match.",
+							  __LINE__);
 		return -ESTALE;
 	}
 
@@ -1811,7 +1843,6 @@ static int mspi_ambiq_register_callback(const struct device          *controller
 					mspi_callback_handler_t       cb,
 					struct mspi_callback_context *ctx)
 {
-	const struct mspi_ambiq_config *cfg  = controller->config;
 	struct mspi_ambiq_data         *data = controller->data;
 
 	if (mspi_is_inp(controller)) {
@@ -1819,12 +1850,14 @@ static int mspi_ambiq_register_callback(const struct device          *controller
 	}
 
 	if (dev_id != data->dev_id) {
-		LOG_INST_ERR(cfg->log, "%u, dev_id don't match.", __LINE__);
+		LOG_INST_ERR(MSPI_LOG_HANDLE(controller), "%u, dev_id don't match.",
+							  __LINE__);
 		return -ESTALE;
 	}
 
 	if (evt_type != MSPI_BUS_XFER_COMPLETE) {
-		LOG_INST_ERR(cfg->log, "%u, callback types not supported.", __LINE__);
+		LOG_INST_ERR(MSPI_LOG_HANDLE(controller), "%u, callback types not supported.",
+							  __LINE__);
 		return -ENOTSUP;
 	}
 
