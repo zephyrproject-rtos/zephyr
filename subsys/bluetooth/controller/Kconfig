@@ -1188,6 +1188,18 @@ rsource "Kconfig.df"
 rsource "Kconfig.ll_sw_split"
 rsource "Kconfig.dtm"
 
+config BT_CTLR_ASSERT_DEBUG
+	bool "Development asserts"
+	default y
+	help
+	  This option enables development asserts used for code coverage.
+
+	  The Controller will continue to function without memory leak or corruption with these
+	  assertion checks disabled. Example, run-time mis-aligned memory access etc. which do
+	  otherwise implicitly cause CPU fault during development testing. But these type of
+	  asserted are essentially required for debugging, code and unit test coverage during
+	  development cycle.
+
 config BT_CTLR_ASSERT_HANDLER
 	bool "Application Defined Assertion Handler"
 	help

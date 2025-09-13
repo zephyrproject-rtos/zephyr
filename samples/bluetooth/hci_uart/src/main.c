@@ -13,6 +13,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/logging/log_ctrl.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
 
@@ -26,6 +27,7 @@
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/buf.h>
 #include <zephyr/bluetooth/hci_raw.h>
+#include <zephyr/bluetooth/hci_vs.h>
 
 #define LOG_MODULE_NAME hci_uart
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
@@ -281,47 +283,48 @@ static int h4_send(struct net_buf *buf)
 #if defined(CONFIG_BT_CTLR_ASSERT_HANDLER)
 void bt_ctlr_assert_handle(char *file, uint32_t line)
 {
-	uint32_t len = 0U, pos = 0U;
-
 	/* Disable interrupts, this is unrecoverable */
 	(void)irq_lock();
 
-	uart_irq_rx_disable(hci_uart_dev);
-	uart_irq_tx_disable(hci_uart_dev);
+#if defined(CONFIG_BT_HCI_VS_FATAL_ERROR)
+	/* Prepare vendor specific HCI debug event */
+	struct net_buf *buf;
 
-	if (file) {
-		while (file[len] != '\0') {
-			if (file[len] == '/') {
-				pos = len + 1;
-			}
-			len++;
+	buf = hci_vs_err_assert(file, line);
+	if (buf != NULL) {
+		uint32_t len;
+		uint8_t *data;
+
+		/* Disable interrupt driven, and use polling to be able to transmit while being in
+		 * highest priority ISR.
+		 */
+		uart_irq_rx_disable(hci_uart_dev);
+		uart_irq_tx_disable(hci_uart_dev);
+
+		/* Send the event over UART */
+		data = &buf->data[0];
+		len = buf->len;
+		while (len) {
+			uart_poll_out(hci_uart_dev, *data);
+			data++;
+			len--;
 		}
-		file += pos;
-		len -= pos;
+	} else {
+		LOG_ERR("Can't create Fatal Error HCI event: %s at %d", __FILE__, __LINE__);
 	}
 
-	uart_poll_out(hci_uart_dev, H4_EVT);
-	/* Vendor-Specific debug event */
-	uart_poll_out(hci_uart_dev, 0xff);
-	/* 0xAA + strlen + \0 + 32-bit line number */
-	uart_poll_out(hci_uart_dev, 1 + len + 1 + 4);
-	uart_poll_out(hci_uart_dev, 0xAA);
+	LOG_ERR("Halting system");
 
-	if (len) {
-		while (*file != '\0') {
-			uart_poll_out(hci_uart_dev, *file);
-			file++;
-		}
-		uart_poll_out(hci_uart_dev, 0x00);
-	}
+#else /* !CONFIG_BT_HCI_VS_FATAL_ERROR */
+	LOG_ERR("Controller assert in: %s at %d", file, line);
 
-	uart_poll_out(hci_uart_dev, line >> 0 & 0xff);
-	uart_poll_out(hci_uart_dev, line >> 8 & 0xff);
-	uart_poll_out(hci_uart_dev, line >> 16 & 0xff);
-	uart_poll_out(hci_uart_dev, line >> 24 & 0xff);
+#endif /* !CONFIG_BT_HCI_VS_FATAL_ERROR */
 
-	while (1) {
-	}
+	/* Flush the logs before locking the CPU */
+	LOG_PANIC();
+
+	while (true) {
+	};
 }
 #endif /* CONFIG_BT_CTLR_ASSERT_HANDLER */
 

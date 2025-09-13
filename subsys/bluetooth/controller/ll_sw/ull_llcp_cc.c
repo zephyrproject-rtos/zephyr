@@ -65,7 +65,7 @@ static void cc_ntf_established(struct ll_conn *conn, struct proc_ctx *ctx)
 
 	/* Allocate ntf node */
 	ntf = ctx->node_ref.rx;
-	LL_ASSERT(ntf);
+	LL_ASSERT_DBG(ntf);
 	ctx->node_ref.rx = NULL;
 
 	piggy_back = (ntf->hdr.type != NODE_RX_TYPE_RETAIN);
@@ -146,7 +146,7 @@ static void llcp_rp_cc_tx_rsp(struct ll_conn *conn, struct proc_ctx *ctx)
 
 	/* Allocate tx node */
 	tx = llcp_tx_alloc(conn, ctx);
-	LL_ASSERT(tx);
+	LL_ASSERT_DBG(tx);
 
 	pdu = (struct pdu_data *)tx->pdu;
 	conn_event_count = ctx->data.cis_create.conn_event_count;
@@ -201,7 +201,7 @@ static void llcp_rp_cc_tx_reject(struct ll_conn *conn, struct proc_ctx *ctx, uin
 
 	/* Allocate tx node */
 	tx = ctx->node_ref.tx;
-	LL_ASSERT(tx);
+	LL_ASSERT_DBG(tx);
 	ctx->node_ref.tx = NULL;
 
 	pdu = (struct pdu_data *)tx->pdu;
@@ -221,7 +221,7 @@ static void rp_cc_ntf_create(struct ll_conn *conn, struct proc_ctx *ctx)
 
 	ntf = ctx->node_ref.rx;
 	ctx->node_ref.rx = NULL;
-	LL_ASSERT(ntf);
+	LL_ASSERT_DBG(ntf);
 
 	ntf->hdr.type = NODE_RX_TYPE_CIS_REQUEST;
 	ntf->hdr.handle = conn->lll.handle;
@@ -490,7 +490,7 @@ static void rp_cc_state_wait_rx_cis_ind(struct ll_conn *conn, struct proc_ctx *c
 		}
 		/* If we get to here the CIG_ID referred in req/acquire has become void/invalid */
 		/* This cannot happen unless the universe has started to deflate */
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 	case RP_CC_EVT_REJECT:
 		/* Handle CIS creation rejection */
 		break;
@@ -656,7 +656,7 @@ static void rp_cc_execute_fsm(struct ll_conn *conn, struct proc_ctx *ctx, uint8_
 		break;
 	default:
 		/* Unknown state */
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 	}
 }
 
@@ -767,7 +767,7 @@ static void lp_cc_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
 
 	/* Allocate tx node */
 	tx = llcp_tx_alloc(conn, ctx);
-	LL_ASSERT(tx);
+	LL_ASSERT_DBG(tx);
 
 	pdu = (struct pdu_data *)tx->pdu;
 
@@ -781,7 +781,7 @@ static void lp_cc_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
 		break;
 	default:
 		/* Unknown opcode */
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 		break;
 	}
 
@@ -929,7 +929,7 @@ static void lp_cc_st_idle(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t ev
 			break;
 		default:
 			/* Unknown procedure */
-			LL_ASSERT(0);
+			LL_ASSERT_DBG(0);
 			break;
 		}
 		break;
@@ -971,7 +971,7 @@ static void cc_prepare_cis_ind(struct ll_conn *conn, struct proc_ctx *ctx)
 				    &ctx->data.cis_create.cis_offset_max,
 				    &ctx->data.cis_create.conn_event_count,
 				    ctx->data.cis_create.aa);
-	LL_ASSERT(!err);
+	LL_ASSERT_DBG(!err);
 
 	ctx->state = LP_CC_STATE_WAIT_INSTANT;
 	ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_UNUSED;
@@ -1054,7 +1054,7 @@ static void lp_cc_st_wait_rx_cis_rsp_cancel(struct ll_conn *conn, struct proc_ct
 	case LP_CC_EVT_CIS_RSP:
 		/* Allocate tx node */
 		tx = llcp_tx_alloc(conn, ctx);
-		LL_ASSERT(tx);
+		LL_ASSERT_DBG(tx);
 
 		pdu = (struct pdu_data *)tx->pdu;
 
@@ -1177,7 +1177,7 @@ static void lp_cc_execute_fsm(struct ll_conn *conn, struct proc_ctx *ctx, uint8_
 		break;
 	default:
 		/* Unknown state */
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 		break;
 	}
 }
