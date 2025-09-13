@@ -1,5 +1,6 @@
 &timers2 {
 	st,prescaler = <79>;
+
 	counter {
 		status = "okay";
 	};
@@ -7,6 +8,7 @@
 
 &timers16 {
 	st,prescaler = <79>;
+
 	counter {
 		status = "okay";
 	};
@@ -14,6 +16,7 @@
 
 &timers17 {
 	st,prescaler = <79>;
+
 	counter {
 		status = "okay";
 	};
