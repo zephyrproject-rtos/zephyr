@@ -178,22 +178,22 @@
 #define BASE_ADDR(dev) (mm_reg_t)DEVICE_MMIO_GET(dev)
 
 #if AUX_REG_INSTANCES != 0
-static uint32_t aux_reg_read(const struct device *dev, uint32_t off)
+static uint32_t mspi_dw_aux_reg_read(const struct device *dev, uint32_t off)
 {
 	return sys_in32(BASE_ADDR(dev) + off/4);
 }
-static void aux_reg_write(uint32_t data, const struct device *dev, uint32_t off)
+static void mspi_dw_aux_reg_write(uint32_t data, const struct device *dev, uint32_t off)
 {
 	sys_out32(data, BASE_ADDR(dev) + off/4);
 }
 #endif
 
 #if AUX_REG_INSTANCES != DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT)
-static uint32_t reg_read(const struct device *dev, uint32_t off)
+static uint32_t mspi_dw_reg_read(const struct device *dev, uint32_t off)
 {
 	return sys_read32(BASE_ADDR(dev) + off);
 }
-static void reg_write(uint32_t data, const struct device *dev, uint32_t off)
+static void mspi_dw_reg_write(uint32_t data, const struct device *dev, uint32_t off)
 {
 	sys_write32(data, BASE_ADDR(dev) + off);
 }
@@ -205,10 +205,10 @@ static void reg_write(uint32_t data, const struct device *dev, uint32_t off)
 #define DEFINE_REG_ACCESS(inst)
 #define DEFINE_MM_REG_RD(reg, off) \
 	static inline uint32_t read_##reg(const struct device *dev) \
-	{ return reg_read(dev, off); }
+	{ return mspi_dw_reg_read(dev, off); }
 #define DEFINE_MM_REG_WR(reg, off) \
 	static inline void write_##reg(const struct device *dev, uint32_t data) \
-	{ reg_write(data, dev, off); }
+	{ mspi_dw_reg_write(data, dev, off); }
 
 #elif AUX_REG_INSTANCES == DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT)
 /* If all instances use aux-reg access. */
@@ -216,10 +216,10 @@ static void reg_write(uint32_t data, const struct device *dev, uint32_t off)
 #define DEFINE_REG_ACCESS(inst)
 #define DEFINE_MM_REG_RD(reg, off) \
 	static inline uint32_t read_##reg(const struct device *dev) \
-	{ return aux_reg_read(dev, off); }
+	{ return mspi_dw_aux_reg_read(dev, off); }
 #define DEFINE_MM_REG_WR(reg, off) \
 	static inline void write_##reg(const struct device *dev, uint32_t data) \
-	{ aux_reg_write(data, dev, off); }
+	{ mspi_dw_aux_reg_write(data, dev, off); }
 
 #else
 /* If register access varies by instance. */
