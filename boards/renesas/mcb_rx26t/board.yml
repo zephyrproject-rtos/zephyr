@@ -1,0 +1,6 @@
+board:
+  name: mcb_rx26t
+  full_name: RX26T Motor Control Board
+  vendor: renesas
+  socs:
+  - name: r5f526tfddfp
