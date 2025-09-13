@@ -4,11 +4,12 @@
  *
  */
 
+#include <xen/public/xen.h>
+#include <xen/public/domctl.h>
+
 #include <zephyr/arch/arm64/hypercall.h>
 #include <zephyr/xen/dom0/domctl.h>
 #include <zephyr/xen/generic.h>
-#include <zephyr/xen/public/domctl.h>
-#include <zephyr/xen/public/xen.h>
 
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
@@ -123,12 +124,12 @@ int xen_domctl_get_paging_mempool_size(int domid, uint64_t *size_mb)
 	return 0;
 }
 
-int xen_domctl_set_paging_mempool_size(int domid, uint64_t size_mb)
+int xen_domctl_set_paging_mempool_size(int domid, uint64_t size)
 {
 	xen_domctl_t domctl = {
 		.cmd = XEN_DOMCTL_set_paging_mempool_size,
 		.domain = domid,
-		.u.paging_mempool.size = size_mb,
+		.u.paging_mempool.size = size,
 	};
 
 	return do_domctl(&domctl);
@@ -273,15 +274,23 @@ int xen_domctl_max_vcpus(int domid, int max_vcpus)
 	return do_domctl(&domctl);
 }
 
-int xen_domctl_createdomain(int domid, struct xen_domctl_createdomain *config)
+int xen_domctl_createdomain(int *domid, struct xen_domctl_createdomain *config)
 {
-	xen_domctl_t domctl = {
-		.cmd = XEN_DOMCTL_createdomain,
-		.domain = domid,
-		.u.createdomain = *config,
-	};
+	int ret;
+	xen_domctl_t domctl;
 
-	return do_domctl(&domctl);
+	if (!domid || !config) {
+		return -EINVAL;
+	}
+
+	domctl.cmd = XEN_DOMCTL_createdomain,
+	domctl.domain = *domid,
+	domctl.u.createdomain = *config,
+
+	ret = do_domctl(&domctl);
+	*domid = domctl.domain;
+
+	return ret;
 }
 
 int xen_domctl_destroydomain(int domid)
@@ -303,4 +312,20 @@ int xen_domctl_cacheflush(int domid,  struct xen_domctl_cacheflush *cacheflush)
 	};
 
 	return do_domctl(&domctl);
+}
+
+int xen_domctl_getvcpu(int domid, uint32_t vcpu, struct xen_domctl_getvcpuinfo *info)
+{
+	int ret;
+	xen_domctl_t domctl = {
+		.cmd = XEN_DOMCTL_getvcpuinfo,
+		.domain = domid,
+		.u.getvcpuinfo.vcpu = vcpu,
+	};
+
+	ret = do_domctl(&domctl);
+	if (ret >= 0) {
+		*info = domctl.u.getvcpuinfo;
+	}
+	return ret;
 }
