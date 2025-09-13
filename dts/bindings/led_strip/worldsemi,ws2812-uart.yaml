@@ -1,0 +1,104 @@
+# Copyright (c) 2025 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Worldsemi WS2812 LED strip, UART binding
+
+  Driver bindings for Worldsemi WS2812 and compatible LED strips using a UART
+  peripheral.
+
+  The driver encodes each WS2812 data bit into a multi-bit "symbol" that is
+  transmitted via a UART. The signal timing is achieved through a combination
+  of this node's properties:
+    - one-symbol,
+    - zero-symbol,
+    - bits-per-symbol,
+  and the parent UART's configuration:
+    - current-speed (baudrate),
+    - data-bits,
+    - tx-invert (to produce the required idle-low signal),
+    - stop-bits (must be "1" if set),
+    - parity (must be "none" if set).
+
+  The driver employs a UART frame-aware packing strategy, reusing the UART's
+  hardware start and stop bits as part of the on-wire symbol. This packing
+  scheme imposes a configuration constraint: the total number of bits in a
+  UART frame must be an integer multiple of `bits-per-symbol`.
+
+  Since the UART must be configured with one start bit, one stop bit, and no
+  parity, this means the total frame size, `(2 + data-bits)`, must be evenly
+  divisible by `bits-per-symbol`.
+
+  To meet the timing requirements of the WS2812 protocol, the UART controller
+  must support high-speed operation, typically 2.4 MHz or higher. The parent
+  UART's `current-speed` (baudrate) property should be configured as close as
+  possible to the ideal rate, calculated as `bits-per-symbol` times the
+  WS2812's data rate (typically 800 kHz). For example, with a
+  `bits-per-symbol` of 3, the target baudrate is 2.4 MHz.
+
+  The internal memory buffer size is determined by `bits-per-symbol`. For
+  each bit of pixel data, the driver generates a symbol of N bits (where N
+  is the value of `bits-per-symbol`), which are then packed into the buffer.
+
+  An example of an overlay:
+
+  &uart1 {
+      status = "okay";
+      /* Target baudrate is 800kHz * 3 = 2.4MHz. 2.5MHz is a close value. */
+      current-speed = <2500000>;
+      /* Frame constraint: (1 start + 7 data + 1 stop) = 9 bits total. */
+      data-bits = <7>;
+      /* tx-invert is required to create an idle-low signal. */
+      tx-invert;
+
+      led_strip: ws2812-strip {
+          compatible = "worldsemi,ws2812-uart";
+          status = "okay";
+
+          /* Timing based on 2.5MHz baudrate (400ns per bit):
+           * T1H for '1' bit (2 high bits) = 2 * 400ns = 800ns.
+           * T0H for '0' bit (1 high bit) = 1 * 400ns = 400ns.
+           */
+          one-symbol = <6>;   /* 0b110 */
+          zero-symbol = <4>;  /* 0b100 */
+          bits-per-symbol = <3>;
+
+          chain-length = <8>;
+          reset-delay = <50>;
+          color-mapping = <LED_COLOR_ID_GREEN
+                           LED_COLOR_ID_RED
+                           LED_COLOR_ID_BLUE>;
+      };
+  };
+
+compatible: "worldsemi,ws2812-uart"
+
+include: [ws2812.yaml, uart-device.yaml]
+
+on-bus: uart
+
+properties:
+  one-symbol:
+    type: int
+    required: true
+    description: |
+      The bit pattern that represents a single WS2812 '1' bit. The length of
+      the pattern is defined by 'bits-per-symbol'. The pattern's MSB must be
+      1 (to align with the UART start bit) and its LSB must be 0 (to align
+      with the UART stop bit).
+
+  zero-symbol:
+    type: int
+    required: true
+    description: |
+      The bit pattern that represents a single WS2812 '0' bit. The length of
+      the pattern is defined by 'bits-per-symbol'. The pattern's MSB must be
+      1 (to align with the UART start bit) and its LSB must be 0 (to align
+      with the UART stop bit).
+
+  bits-per-symbol:
+    type: int
+    required: true
+    description: |
+      The number of UART bits used to represent a single WS2812 data bit.
+      The value must be between 3 and 10, inclusive.

@@ -2,7 +2,7 @@ description: Test serial port
 
 compatible: "vnd,serial"
 
-include: uart-controller.yaml
+include: [uart-controller.yaml, uart-controller-pin-inversion.yaml]
 
 properties:
   baud-rate:
