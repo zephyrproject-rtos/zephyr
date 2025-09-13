@@ -394,6 +394,7 @@ our $Attribute	= qr{
 			__pure|
 			__noclone|
 			__deprecated|
+			__deprecated_version|
 			__read_mostly|
 			__ro_after_init|
 			__kprobes|
