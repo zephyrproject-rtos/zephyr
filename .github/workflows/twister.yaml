@@ -142,7 +142,11 @@ jobs:
       CCACHE_IGNOREOPTIONS: '-specs=* --specs=*'
       BSIM_OUT_PATH: /opt/bsim/
       BSIM_COMPONENTS_PATH: /opt/bsim/components
-      TWISTER_COMMON: ' --test-config tests/test_config_ci.yaml --force-color --inline-logs -v -N -M --retry-failed 3 --timeout-multiplier 2 '
+      TWISTER_COMMON: >
+        --test-config tests/test_config_ci.yaml
+        --force-color --inline-logs
+        -v -N -M --retry-failed 3 --timeout-multiplier 2
+        --quarantine-list scripts/ci/quarantine.yaml
       WEEKLY_OPTIONS: ' -M --build-only --all --show-footprint --report-filtered -j 32'
       PR_OPTIONS: ' --clobber-output --integration -j 16'
       PUSH_OPTIONS: ' --clobber-output -M --show-footprint --report-filtered -j 16'
@@ -276,6 +280,14 @@ jobs:
             fi
           fi
 
+      - if: matrix.subset == 1 && github.event_name == 'schedule'
+        name: Verify quarantine with Twister
+        id: run_quarantine_verify
+        run: |
+          export ZEPHYR_BASE=${PWD}
+          export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
+          ./scripts/twister --quarantine-verify ${TWISTER_COMMON} ${WEEKLY_OPTIONS} --outdir quarantine_verify --report-suffix quarantine
+
       - name: Print ccache stats
         if: always()
         run: |
@@ -291,6 +303,7 @@ jobs:
             twister-out/twister.xml
             twister-out/twister.json
             module_tests/twister.xml
+            quarantine_verify/twister_quarantine.xml
             testplan.json
 
       - if: matrix.subset == 1 && github.event_name == 'push'
