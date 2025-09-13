@@ -1,6 +1,9 @@
 # Copyright (c) 2025 Würth Elektronik eiSos GmbH & Co. KG
 # SPDX-License-Identifier: Apache-2.0
 
+config HW_STACK_PROTECTION
+	default ARCH_HAS_STACK_PROTECTION
+
 if BOARD_OPHELIA4EV_NRF54L15_CPUAPP
 
 config ROM_START_OFFSET
