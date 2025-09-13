@@ -16,6 +16,26 @@
 			#size-cells = <1>;
 		};
 
+		mbox0: ipc@400200c0 {
+			compatible = "renesas,ra-ipc-mbox";
+			reg = <0x400200c0 0x20>, <0x40020100 0x20>;
+			reg-names = "ipc00", "ipc10";
+			unit = <0>;
+			channel-mask = <0xff>;
+			#mbox-cells = <1>;
+			status = "disabled";
+		};
+
+		mbox1: ipc@400200e0 {
+			compatible = "renesas,ra-ipc-mbox";
+			reg = <0x400200e0 0x20>, <0x40020120 0x20>;
+			reg-names = "ipc01", "ipc11";
+			unit = <1>;
+			channel-mask = <0xff>;
+			#mbox-cells = <1>;
+			status = "disabled";
+		};
+
 		sdram: sdram-controller@40002000 {
 			compatible = "renesas,ra-sdram";
 			#address-cells = <1>;
