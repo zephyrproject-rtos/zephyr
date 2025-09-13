@@ -16,6 +16,10 @@
 
 #define SCMI_POWER_STATE_SET_FLAGS_ASYNC BIT(0)
 
+/* SCMI power domain states */
+#define SCMI_POWER_STATE_GENERIC_ON    0x00000000U
+#define SCMI_POWER_STATE_GENERIC_oFF   0x40000000U
+
 /**
  * @struct scmi_power_state_config
  *
