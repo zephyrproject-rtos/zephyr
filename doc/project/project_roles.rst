@@ -292,7 +292,7 @@ Roles / Permissions
     Supportive Roles QA/Validation                                      x                        x
         ..           DevOps                   **x**
         ..           System Admin             **x**                                      x
-        ..           Release Engineering      **x**      **x**          x
+        ..           Release Engineering                 **x**          x
 
     ================ =================== =========== ================ =========== =========== ============
 
