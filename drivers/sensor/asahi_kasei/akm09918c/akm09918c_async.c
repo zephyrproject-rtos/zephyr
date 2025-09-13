@@ -71,7 +71,8 @@ void akm09918c_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe
 	}
 }
 
-void akm09918_after_start_cb(struct rtio *rtio_ctx, const struct rtio_sqe *sqe, void *arg0)
+void akm09918_after_start_cb(struct rtio *rtio_ctx, const struct rtio_sqe *sqe,
+			     int result, void *arg0)
 {
 	const struct rtio_iodev_sqe *parent_iodev_sqe = (struct rtio_iodev_sqe *)arg0;
 	const struct sensor_read_config *cfg = parent_iodev_sqe->sqe.iodev->data;
@@ -150,7 +151,7 @@ void akm09918_async_fetch(struct k_work *work)
 	rtio_submit(data->rtio_ctx, 0);
 }
 
-void akm09918_complete_cb(struct rtio *rtio_ctx, const struct rtio_sqe *sqe, void *arg0)
+void akm09918_complete_cb(struct rtio *rtio_ctx, const struct rtio_sqe *sqe, int result, void *arg0)
 {
 	struct rtio_iodev_sqe *parent_iodev_sqe = (struct rtio_iodev_sqe *)arg0;
 	struct rtio_sqe *parent_sqe = &parent_iodev_sqe->sqe;
