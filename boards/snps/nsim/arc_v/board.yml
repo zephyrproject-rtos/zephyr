@@ -4,3 +4,4 @@ board:
   vendor: snps
   socs:
   - name: rmx100
+  - name: rhx100
