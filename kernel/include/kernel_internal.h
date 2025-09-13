@@ -185,6 +185,11 @@ void z_mem_manage_boot_finish(void);
 
 bool z_handle_obj_poll_events(sys_dlist_t *events, uint32_t state);
 
+/**
+ * @brief Resets thread longest frame usage data for specified thread
+ */
+void z_sched_thread_reset_long_frame(struct k_thread *thread);
+
 #ifdef CONFIG_PM
 
 /* When the kernel is about to go idle, it calls this function to notify the
