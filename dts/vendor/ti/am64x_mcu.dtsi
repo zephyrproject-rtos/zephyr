@@ -61,4 +61,24 @@
 		ngpios = <23>;
 		status = "disabled";
 	};
+
+	mcu_mcspi0: spi@4b00000 {
+		compatible = "ti,omap-mcspi";
+		reg = <0x4b00000 0x400>;
+		clock-frequency = <DT_FREQ_M(50)>;
+		ti,spi-num-cs = <4>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+	};
+
+	mcu_mcspi1: spi@4b10000 {
+		compatible = "ti,omap-mcspi";
+		reg = <0x4b10000 0x400>;
+		clock-frequency = <DT_FREQ_M(50)>;
+		ti,spi-num-cs = <4>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+	};
 };
