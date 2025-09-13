@@ -15,6 +15,12 @@
 					       MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),),	\
 			())
 
+#define CONFIGURE_GCLK(idx, div, src)								\
+		PMC_REGS->PMC_PCR = PMC_PCR_CMD(1) | PMC_PCR_GCLKEN(1) | PMC_PCR_EN(1) |	\
+				    PMC_PCR_GCLKDIV((div) - 1) | (src) |			\
+				    PMC_PCR_PID(idx);
+
+
 static const struct arm_mmu_region mmu_regions[] = {
 	MMU_REGION_FLAT_ENTRY("vectors", CONFIG_KERNEL_VM_BASE, 0x1000,
 			      MT_STRONGLY_ORDERED | MPERM_R | MPERM_X),
@@ -35,6 +41,12 @@ static const struct arm_mmu_region mmu_regions[] = {
 
 	MMU_REGION_FLAT_ENTRY("sckc", SCKC_BASE_ADDRESS, 0x4,
 			      MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),
+
+	MMU_REGION_FLAT_ENTRY("tc0", TC0_BASE_ADDRESS, 0x100,
+			      MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),
+
+	MMU_REGION_FLAT_ENTRY("tc1", TC1_BASE_ADDRESS, 0x100,
+			      MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),
 };
 
 const struct arm_mmu_config mmu_config = {
@@ -50,7 +62,11 @@ void relocate_vector_table(void)
 void soc_early_init_hook(void)
 {
 	/* Enable Generic clock for PIT64B0 for system tick */
-	PMC_REGS->PMC_PCR = PMC_PCR_CMD(1) | PMC_PCR_GCLKEN(1) | PMC_PCR_EN(1) |
-			    PMC_PCR_GCLKDIV(40 - 1) | PMC_PCR_GCLKCSS_SYSPLL |
-			    PMC_PCR_PID(ID_PIT64B0);
+	CONFIGURE_GCLK(ID_PIT64B0, 40, PMC_PCR_GCLKCSS_SYSPLL);
+
+	/* Enable Generic clock for TC0 channels, frequency is 66.667MHz */
+	CONFIGURE_GCLK(ID_TC0_CHANNEL0, 6, PMC_PCR_GCLKCSS_SYSPLL);
+
+	/* Enable Generic clock for TC1 channels, frequency is 66.667MHz */
+	CONFIGURE_GCLK(ID_TC1_CHANNEL0, 6, PMC_PCR_GCLKCSS_SYSPLL);
 }
