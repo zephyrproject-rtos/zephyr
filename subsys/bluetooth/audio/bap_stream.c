@@ -531,8 +531,11 @@ void bt_bap_stream_detach(struct bt_bap_stream *stream)
 		stream->conn = NULL;
 	}
 	stream->codec_cfg = NULL;
-	stream->ep->stream = NULL;
-	stream->ep = NULL;
+
+	if (stream->ep != NULL) {
+		stream->ep->stream = NULL;
+		stream->ep = NULL;
+	}
 
 	if (!is_broadcast) {
 		const int err = bt_bap_stream_disconnect(stream);
