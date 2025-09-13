@@ -152,6 +152,10 @@ if(CONFIG_SENSOR_ASYNC_API)
   zephyr_iterable_section(NAME sensor_decoder_api KVMA RAM_REGION GROUP RODATA_REGION)
 endif()
 
+if(CONFIG_ADC_STREAM)
+  zephyr_iterable_section(NAME adc_decoder_api KVMA RAM_REGION GROUP RODATA_REGION)
+endif()
+
 if(CONFIG_MCUMGR)
   zephyr_iterable_section(NAME mcumgr_handler KVMA RAM_REGION GROUP RODATA_REGION)
 endif()
