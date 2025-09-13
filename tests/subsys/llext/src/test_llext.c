@@ -267,8 +267,7 @@ LLEXT_LOAD_UNLOAD(hello_world,
 	.kernel_only = true
 )
 
-/* When compiled with CCAC, init_fini's sections are unfixably out of order */
-#if !defined(CONFIG_LLEXT_TYPE_ELF_SHAREDLIB) && !defined(__CCAC__)
+#if !defined(CONFIG_LLEXT_TYPE_ELF_SHAREDLIB)
 static LLEXT_CONST uint8_t init_fini_ext[] ELF_ALIGN = {
 	#include "init_fini.inc"
 };
