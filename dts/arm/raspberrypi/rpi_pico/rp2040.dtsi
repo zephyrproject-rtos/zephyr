@@ -435,6 +435,34 @@
 			alarms-count = <1>;
 			status = "disabled";
 		};
+
+		sio: sio@d0000000 {
+			compatible = "raspberrypi,pico-sio";
+			reg = <0xd0000000 0x180>;
+
+			mbox: mbox {
+				compatible = "raspberrypi,pico-mbox";
+				interrupts = <15 RPI_PICO_DEFAULT_IRQ_PRIORITY>,
+					     <16 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
+				interrupt-names = "mbox0", "mbox1";
+				fifo-depth = <8>;
+				#mbox-cells = <0>;
+				status = "okay";
+			};
+		};
+
+		ipc: ipc {
+			/*
+			 * The zephyr,mbox-ipm driver expects two mailbox
+			 * channels, but the mailbox block in the RP2040
+			 * implements a single instance per core. Point the
+			 * two driver channels to the same single mbox.
+			 */
+			compatible = "zephyr,mbox-ipm";
+			mboxes = <&mbox>, <&mbox>;
+			mbox-names = "tx", "rx";
+			status = "okay";
+		};
 	};
 
 	pinctrl: pin-controller {
