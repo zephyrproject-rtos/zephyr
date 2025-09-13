@@ -71,7 +71,7 @@
 	status = "okay";
 };
 
-&rcc {
+&clk_sys {
 	clocks = <&pll>;
 };
 

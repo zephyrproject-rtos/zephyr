@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2025 Fiona Behrens
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_RESET_CH32V00X_RESET_H
+#define ZEPHYR_INCLUDE_DT_BINDINGS_RESET_CH32V00X_RESET_H
+
+#include "ch32-common.h"
+
+#define CH32_RESET_BUS_PB2 0
+#define CH32_RESET_BUS_PB1 1
+
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_RESET_CH32V00X_RESET_H */
