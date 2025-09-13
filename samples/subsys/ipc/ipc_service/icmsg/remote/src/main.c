@@ -117,6 +117,7 @@ static int send_for_time(struct ipc_ept *ep, const int64_t sending_time_ms)
 }
 
 static struct ipc_ept_cfg ep_cfg = {
+	.name = "sample",
 	.cb = {
 		.bound    = ep_bound,
 		.received = ep_recv,
