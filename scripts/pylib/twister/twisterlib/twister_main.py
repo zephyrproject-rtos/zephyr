@@ -33,6 +33,24 @@ def init_color(colorama_strip):
     colorama.init(strip=colorama_strip)
 
 
+def catch_system_exit_exception(func):
+    """Decorator to catch SystemExit exception."""
+
+    def _inner(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except SystemExit as exc:
+            if isinstance(exc.code, int):
+                return exc.code
+            if exc.code is None:
+                return 0
+            # if exc.code is not int/None consider it is not zero
+            return 1
+
+    return _inner
+
+
+@catch_system_exit_exception
 def twister(options: argparse.Namespace, default_options: argparse.Namespace) -> int:
     start_time = time.time()
 
@@ -120,7 +138,7 @@ def twister(options: argparse.Namespace, default_options: argparse.Namespace) ->
             if i.status in [TwisterStatus.SKIP,TwisterStatus.FILTER]:
                 if options.platform and not tplan.check_platform(i.platform, options.platform):
                     continue
-                # Filtered tests should be visable only when verbosity > 1
+                # Filtered tests should be visible only when verbosity > 1
                 if options.verbose < 2 and i.status == TwisterStatus.FILTER:
                     continue
                 res = i.reason
