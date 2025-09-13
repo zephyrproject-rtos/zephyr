@@ -120,6 +120,8 @@ struct udc_ep_config {
 	uint8_t attributes;
 	/** Maximum packet size */
 	uint16_t mps;
+	/** Maximum possible MPS within all interface settings */
+	uint16_t m_mps;
 	/** Polling interval */
 	uint8_t interval;
 };
@@ -291,6 +293,14 @@ struct udc_data {
 	struct net_buf *setup;
 	/** Driver private data */
 	void *priv;
+#if CONFIG_UDC_DRIVER_REQUIRES_MEMORY_STATS
+	/** RX FIFO size reported by the higher layer */
+	size_t rx_size;
+	/** TX FIFO size reported by the higher layer */
+	size_t tx_size;
+	/** Maximum RX TPL reported by the higher layer */
+	uint16_t rx_m_tpl;
+#endif
 };
 
 /**
@@ -301,6 +311,22 @@ struct udc_data {
  * @version 0.1.0
  * @{
  */
+
+/**
+ * UDC driver initialization arguments
+ */
+struct udc_init_args {
+	/** Event callback from the higher layer (USB device stack) */
+	udc_event_cb_t event_cb;
+	/** Opaque pointer to higher layer context */
+	void *const event_ctx;
+	/* Required RX FIFO size */
+	size_t rx_size;
+	/* Required TX FIFO size */
+	size_t tx_size;
+	/** Maximum possible RX TPL */
+	uint16_t rx_m_tpl;
+};
 
 /**
  * @brief Checks whether the controller is initialized.
@@ -352,15 +378,13 @@ static inline bool udc_is_suspended(const struct device *dev)
  * power state of the bus and signal power state changes.
  *
  * @param[in] dev       Pointer to device struct of the driver instance
- * @param[in] event_cb  Event callback from the higher layer (USB device stack)
- * @param[in] event_ctx Opaque pointer to higher layer context
+ * @param[in] args      Initialization arguments
  *
  * @return 0 on success, all other values should be treated as error.
  * @retval -EINVAL on parameter error (no callback is passed)
  * @retval -EALREADY already initialized
  */
-int udc_init(const struct device *dev,
-	     udc_event_cb_t event_cb, const void *const event_ctx);
+int udc_init(const struct device *dev, const struct udc_init_args *const args);
 
 /**
  * @brief Enable USB device controller
@@ -558,6 +582,7 @@ int udc_ep_try_config(const struct device *dev,
  * @param[in] ep         Endpoint address (same as bEndpointAddress)
  * @param[in] attributes Endpoint attributes (same as bmAttributes)
  * @param[in] mps        Maximum packet size (same as wMaxPacketSize)
+ * @param[in] m_mps      Maximum possible wMaxPacketSize within interface settings
  * @param[in] interval   Polling interval (same as bInterval)
  *
  * @return 0 on success, all other values should be treated as error.
@@ -570,6 +595,7 @@ int udc_ep_enable(const struct device *dev,
 		  const uint8_t ep,
 		  const uint8_t attributes,
 		  const uint16_t mps,
+		  const uint16_t m_mps,
 		  const uint8_t interval);
 
 /**
