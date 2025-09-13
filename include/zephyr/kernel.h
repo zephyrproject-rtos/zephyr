@@ -927,7 +927,7 @@ __syscall void k_thread_priority_set(k_tid_t thread, int prio);
 
 #ifdef CONFIG_SCHED_DEADLINE
 /**
- * @brief Set deadline expiration time for scheduler
+ * @brief Set relative deadline expiration time for scheduler
  *
  * This sets the "deadline" expiration as a time delta from the
  * current time, in the same units used by k_cycle_get_32().  The
@@ -951,8 +951,7 @@ __syscall void k_thread_priority_set(k_tid_t thread, int prio);
  * above this call, which is simply input to the priority selection
  * logic.
  *
- * @note You should enable @kconfig{CONFIG_SCHED_DEADLINE} in your project
- * configuration.
+ * @kconfig_dep{CONFIG_SCHED_DEADLINE}
  *
  * @param thread A thread on which to set the deadline
  * @param deadline A time delta, in cycle units
@@ -961,7 +960,7 @@ __syscall void k_thread_priority_set(k_tid_t thread, int prio);
 __syscall void k_thread_deadline_set(k_tid_t thread, int deadline);
 
 /**
- * @brief Set deadline expiration time for scheduler
+ * @brief Set absolute deadline expiration time for scheduler
  *
  * This sets the "deadline" expiration as a timestamp in the same
  * units used by k_cycle_get_32(). The scheduler (when deadline scheduling
@@ -985,7 +984,7 @@ __syscall void k_thread_deadline_set(k_tid_t thread, int deadline);
  *
  * @note Even if a provided timestamp is in the past, the kernel will
  * still schedule threads with deadlines in order from the earliest to
- * the latest
+ * the latest.
  *
  * @note Despite the API naming, the scheduler makes no guarantees
  * the thread WILL be scheduled within that deadline, nor does it take
@@ -995,8 +994,7 @@ __syscall void k_thread_deadline_set(k_tid_t thread, int deadline);
  * above this call, which is simply input to the priority selection
  * logic.
  *
- * @note You should enable @kconfig_dep{CONFIG_SCHED_DEADLINE} in your project
- * configuration.
+ * @kconfig_dep{CONFIG_SCHED_DEADLINE}
  *
  * @param thread A thread on which to set the deadline
  * @param deadline A timestamp, in cycle units
