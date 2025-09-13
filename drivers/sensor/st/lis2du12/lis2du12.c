@@ -55,36 +55,6 @@ static int lis2du12_accel_range_to_fs_val(int32_t range)
 	return -EINVAL;
 }
 
-static inline int lis2du12_reboot(const struct device *dev)
-{
-	const struct lis2du12_config *cfg = dev->config;
-	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
-	lis2du12_status_t status;
-	uint8_t tries = 10;
-
-	if (lis2du12_init_set(ctx, LIS2DU12_RESET) < 0) {
-		return -EIO;
-	}
-
-	do {
-		if (!--tries) {
-			LOG_ERR("sw reset timed out");
-			return -ETIMEDOUT;
-		}
-		k_usleep(50);
-
-		if (lis2du12_status_get(ctx, &status) < 0) {
-			return -EIO;
-		}
-	} while (status.sw_reset != 0);
-
-	if (lis2du12_init_set(ctx, LIS2DU12_DRV_RDY) < 0) {
-		return -EIO;
-	}
-
-	return 0;
-}
-
 static int lis2du12_accel_set_fs_raw(const struct device *dev, uint8_t fs)
 {
 	const struct lis2du12_config *cfg = dev->config;
@@ -176,6 +146,40 @@ static int lis2du12_accel_config(const struct device *dev,
 	default:
 		LOG_WRN("Accel attribute %d not supported.", attr);
 		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
+static inline int lis2du12_reboot(const struct device *dev)
+{
+	const struct lis2du12_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
+	lis2du12_status_t status;
+	uint8_t tries = 10;
+
+	if (lis2du12_accel_set_odr_raw(dev, LIS2DU12_OFF) < 0) {
+		return -EIO;
+	}
+
+	if (lis2du12_init_set(ctx, LIS2DU12_RESET) < 0) {
+		return -EIO;
+	}
+
+	do {
+		if (!--tries) {
+			LOG_ERR("sw reset timed out");
+			return -ETIMEDOUT;
+		}
+		k_usleep(50);
+
+		if (lis2du12_status_get(ctx, &status) < 0) {
+			return -EIO;
+		}
+	} while (status.sw_reset != 0);
+
+	if (lis2du12_init_set(ctx, LIS2DU12_DRV_RDY) < 0) {
+		return -EIO;
 	}
 
 	return 0;
