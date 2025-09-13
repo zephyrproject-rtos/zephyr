@@ -10,6 +10,7 @@
 		group1 {
 			pinmux = <UART1_TX_GPIO5>;
 		};
+
 		group2 {
 			pinmux = <UART1_RX_GPIO6>;
 			bias-pull-up;
