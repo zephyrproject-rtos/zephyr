@@ -299,4 +299,19 @@ ACPI_MADT_LOCAL_APIC *acpi_local_apic_get(int cpu_num);
  */
 int acpi_invoke_method(char *path, ACPI_OBJECT_LIST *arg_list, ACPI_OBJECT *ret_obj);
 
-#endif
+#if defined(CONFIG_ACPI_POWEROFF) || defined(__DOXYGEN__)
+/**
+ * @brief system level poweroff by setting it to soft off.
+ * Requires @kconfig{CONFIG_ACPI_POWEROFF} to be enabled.
+ *
+ * @return -EINVAL if the pm1_cnt address is not available.
+ */
+int acpi_poweroff(void);
+#else
+static inline int acpi_poweroff(void)
+{
+	return -ENOTSUP;
+}
+#endif /* CONFIG_ACPI_POWEROFF */
+
+#endif /* ZEPHYR_INCLUDE_DRIVERS_ACPI_H_ */
