@@ -182,6 +182,20 @@ Logging
   used. The new script supports the same functionality (and more), but requires different command
   line arguments when invoked.
 
+Mbed TLS
+========
+
+* In order to improve the 1:1 matching between Zephyr Kconfig and Mbed TLS build symbols, following
+  Kconfigs were renamed:
+  * :kconfig:option:`MBEDTLS_MD` -> :kconfig:option:`MBEDTLS_MD_C`
+  * :kconfig:option:`MBEDTLS_LMS` -> :kconfig:option:`MBEDTLS_LMS_C`
+  * :kconfig:option:`MBEDTLS_TLS_VERSION_1_2` -> :kconfig:option:`MBEDTLS_SSL_PROTO_TLS1_2`
+  * :kconfig:option:`MBEDTLS_DTLS` -> :kconfig:option:`MBEDTLS_SSL_PROTO_DTLS`
+  * :kconfig:option:`MBEDTLS_TLS_VERSION_1_3` -> :kconfig:option:`MBEDTLS_SSL_PROTO_TLS1_3`
+  * :kconfig:option:`MBEDTLS_TLS_SESSION_TICKETS` -> :kconfig:option:`MBEDTLS_SSL_SESSION_TICKETS`
+  * :kconfig:option:`MBEDTLS_CTR_DRBG_ENABLED` -> :kconfig:option:`MBEDTLS_CTR_DRBG_C`
+  * :kconfig:option:`MBEDTLS_HMAC_DRBG_ENABLED` -> :kconfig:option:`MBEDTLS_HMAC_DRBG_C`
+
 Secure storage
 ==============
 
