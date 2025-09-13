@@ -10,6 +10,8 @@ config UART_IMX
 	select PINCTRL
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
+	select SERIAL_SUPPORT_RS485
+	depends on HAS_IMX_HAL
 	help
 	  This option enables the UART driver for NXP i.MX7
 	  family processors.
