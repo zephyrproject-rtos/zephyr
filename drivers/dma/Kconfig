@@ -98,5 +98,6 @@ source "drivers/dma/Kconfig.nxp_sdma"
 source "drivers/dma/Kconfig.wch"
 
 source "drivers/dma/Kconfig.ti_cc23x0"
+source "drivers/dma/Kconfig.ti_mspm0"
 
 endif # DMA
