@@ -466,6 +466,7 @@ static int imx335_init(const struct device *dev)
 		gpio_pin_set_dt(&cfg->reset_gpio, 0);
 
 		k_sleep(K_USEC(600)); /* T4 */
+		k_sleep(K_USEC(400)); /* Extra delay needed after T4 */
 	}
 #endif
 
