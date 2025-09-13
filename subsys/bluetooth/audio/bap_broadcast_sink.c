@@ -70,8 +70,8 @@ static struct bt_bap_scan_delegator_mod_src_param mod_src_param;
 
 static void broadcast_sink_cleanup(struct bt_bap_broadcast_sink *sink);
 
-static bool find_recv_state_by_sink_cb(const struct bt_bap_scan_delegator_recv_state *recv_state,
-				       void *user_data)
+static bool find_recv_state_by_src_id_cb(const struct bt_bap_scan_delegator_recv_state *recv_state,
+					 void *user_data)
 {
 	const struct bt_bap_broadcast_sink *sink = user_data;
 
@@ -83,26 +83,27 @@ static bool find_recv_state_by_sink_cb(const struct bt_bap_scan_delegator_recv_s
 	return false;
 }
 
-static bool find_recv_state_by_pa_sync_cb(const struct bt_bap_scan_delegator_recv_state *recv_state,
-					  void *user_data)
+static bool
+find_recv_state_by_sink_fields_cb(const struct bt_bap_scan_delegator_recv_state *recv_state,
+				  void *user_data)
 {
-	struct bt_le_per_adv_sync *sync = user_data;
+	const struct bt_bap_broadcast_sink *sink = user_data;
 	struct bt_le_per_adv_sync_info sync_info;
 	int err;
 
-	err = bt_le_per_adv_sync_get_info(sync, &sync_info);
+	err = bt_le_per_adv_sync_get_info(sink->pa_sync, &sync_info);
 	if (err != 0) {
 		LOG_DBG("Failed to get sync info: %d", err);
 
 		return false;
 	}
 
-	if (bt_addr_le_eq(&recv_state->addr, &sync_info.addr) &&
-	    recv_state->adv_sid == sync_info.sid) {
-		return true;
-	}
-
-	return false;
+	/* BAP 6.5.4 states that the combined Source_Address_Type, Source_Adv_SID, and Broadcast_ID
+	 * fields are what makes a receive state unique.
+	 */
+	return recv_state->addr.type == sync_info.addr.type &&
+	       recv_state->adv_sid == sync_info.sid &&
+	       recv_state->broadcast_id == sink->broadcast_id;
 };
 
 static void update_recv_state_big_synced(const struct bt_bap_broadcast_sink *sink)
@@ -110,7 +111,7 @@ static void update_recv_state_big_synced(const struct bt_bap_broadcast_sink *sin
 	const struct bt_bap_scan_delegator_recv_state *recv_state;
 	int err;
 
-	recv_state = bt_bap_scan_delegator_find_state(find_recv_state_by_sink_cb, (void *)sink);
+	recv_state = bt_bap_scan_delegator_find_state(find_recv_state_by_src_id_cb, (void *)sink);
 	if (recv_state == NULL) {
 		LOG_WRN("Failed to find receive state for sink %p", sink);
 
@@ -156,7 +157,7 @@ static void update_recv_state_big_cleared(const struct bt_bap_broadcast_sink *si
 	bool sink_is_streaming = false;
 	int err;
 
-	recv_state = bt_bap_scan_delegator_find_state(find_recv_state_by_sink_cb, (void *)sink);
+	recv_state = bt_bap_scan_delegator_find_state(find_recv_state_by_src_id_cb, (void *)sink);
 	if (recv_state == NULL) {
 		/* This is likely due to the receive state being removed while we are BIG synced */
 		LOG_DBG("Could not find receive state for sink %p", sink);
@@ -489,6 +490,8 @@ static void broadcast_sink_add_src(struct bt_bap_broadcast_sink *sink)
 
 	bt_addr_le_copy(&add_src_param.addr, &sync_info.addr);
 	add_src_param.sid = sync_info.sid;
+	/* When a broadcast sink is created we always assume the PA sync provided is synced */
+	add_src_param.pa_state = BT_BAP_PA_STATE_SYNCED;
 	add_src_param.broadcast_id = sink->broadcast_id;
 	/* Will be updated when we receive the BASE */
 	add_src_param.encrypt_state = BT_BAP_BIG_ENC_STATE_NO_ENC;
@@ -542,7 +545,7 @@ static void update_recv_state_base(const struct bt_bap_broadcast_sink *sink,
 	const struct bt_bap_scan_delegator_recv_state *recv_state;
 	int err;
 
-	recv_state = bt_bap_scan_delegator_find_state(find_recv_state_by_sink_cb, (void *)sink);
+	recv_state = bt_bap_scan_delegator_find_state(find_recv_state_by_src_id_cb, (void *)sink);
 	if (recv_state == NULL) {
 		LOG_WRN("Failed to find receive state for sink %p", sink);
 
@@ -745,12 +748,23 @@ static void pa_recv(struct bt_le_per_adv_sync *sync,
 	bt_data_parse(buf, pa_decode_base, (void *)sink);
 }
 
+static void pa_synced_cb(struct bt_le_per_adv_sync *sync,
+			 struct bt_le_per_adv_sync_synced_info *info)
+{
+	struct bt_bap_broadcast_sink *sink = broadcast_sink_get_by_pa(sync);
+
+	if (sink != NULL) {
+		bt_bap_scan_delegator_set_pa_state(sink->bass_src_id, BT_BAP_PA_STATE_SYNCED);
+	}
+}
+
 static void pa_term_cb(struct bt_le_per_adv_sync *sync,
 		       const struct bt_le_per_adv_sync_term_info *info)
 {
 	struct bt_bap_broadcast_sink *sink = broadcast_sink_get_by_pa(sync);
 
 	if (sink != NULL) {
+		bt_bap_scan_delegator_set_pa_state(sink->bass_src_id, BT_BAP_PA_STATE_NOT_SYNCED);
 		sink->pa_sync = NULL;
 		sink->base_size = 0U;
 	}
@@ -763,7 +777,7 @@ static void update_recv_state_encryption(const struct bt_bap_broadcast_sink *sin
 
 	__ASSERT(sink->big == NULL, "Encryption state shall not be updated while synced");
 
-	recv_state = bt_bap_scan_delegator_find_state(find_recv_state_by_sink_cb, (void *)sink);
+	recv_state = bt_bap_scan_delegator_find_state(find_recv_state_by_src_id_cb, (void *)sink);
 	if (recv_state == NULL) {
 		LOG_WRN("Failed to find receive state for sink %p", sink);
 
@@ -1073,8 +1087,8 @@ int bt_bap_broadcast_sink_create(struct bt_le_per_adv_sync *pa_sync, uint32_t br
 	sink->broadcast_id = broadcast_id;
 	sink->pa_sync = pa_sync;
 
-	recv_state = bt_bap_scan_delegator_find_state(find_recv_state_by_pa_sync_cb,
-						      (void *)pa_sync);
+	recv_state =
+		bt_bap_scan_delegator_find_state(find_recv_state_by_sink_fields_cb, (void *)sink);
 	if (recv_state == NULL) {
 		broadcast_sink_add_src(sink);
 	} else {
@@ -1088,8 +1102,26 @@ int bt_bap_broadcast_sink_create(struct bt_le_per_adv_sync *pa_sync, uint32_t br
 		}
 
 		sink->bass_src_id = recv_state->src_id;
+		if (recv_state->pa_sync_state != BT_BAP_PA_STATE_SYNCED) {
+			int err;
+
+			/* When a broadcast sink is created we always assume the PA sync provided is
+			 * synced
+			 */
+			err = bt_bap_scan_delegator_set_pa_state(sink->bass_src_id,
+								 BT_BAP_PA_STATE_SYNCED);
+			if (err != 0) {
+				LOG_DBG("Failed to set PA state: %d", err);
+
+				broadcast_sink_cleanup(sink);
+
+				return err;
+			}
+		}
+
 		atomic_set_bit(sink->flags, BT_BAP_BROADCAST_SINK_FLAG_SRC_ID_VALID);
 	}
+
 	atomic_set_bit(sink->flags, BT_BAP_BROADCAST_SINK_FLAG_INITIALIZED);
 
 	*out_sink = sink;
@@ -1416,6 +1448,7 @@ int bt_bap_broadcast_sink_delete(struct bt_bap_broadcast_sink *sink)
 static int broadcast_sink_init(void)
 {
 	static struct bt_le_per_adv_sync_cb cb = {
+		.synced = pa_synced_cb,
 		.recv = pa_recv,
 		.biginfo = biginfo_recv,
 		.term = pa_term_cb,
