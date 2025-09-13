@@ -80,7 +80,9 @@
 #define AIO_LISTIO_MAX                _POSIX_AIO_LISTIO_MAX
 #define AIO_MAX                       _POSIX_AIO_MAX
 #define AIO_PRIO_DELTA_MAX            (0)
+#ifndef ARG_MAX
 #define ARG_MAX                       _POSIX_ARG_MAX
+#endif
 #define ATEXIT_MAX                    (32)
 #define DELAYTIMER_MAX \
 	COND_CODE_1(CONFIG_POSIX_TIMERS, (CONFIG_POSIX_DELAYTIMER_MAX), (0))
@@ -90,10 +92,14 @@
 #define MQ_OPEN_MAX \
 	COND_CODE_1(CONFIG_POSIX_MESSAGE_PASSING, (CONFIG_POSIX_MQ_OPEN_MAX), (0))
 #define MQ_PRIO_MAX                   _POSIX_MQ_PRIO_MAX
+#ifndef OPEN_MAX
 #define OPEN_MAX                      CONFIG_POSIX_OPEN_MAX
+#endif
 #define PAGE_SIZE                     CONFIG_POSIX_PAGE_SIZE
 #define PAGESIZE                      CONFIG_POSIX_PAGE_SIZE
+#ifndef PATH_MAX
 #define PATH_MAX                      _POSIX_PATH_MAX
+#endif
 #define PTHREAD_DESTRUCTOR_ITERATIONS _POSIX_THREAD_DESTRUCTOR_ITERATIONS
 #define PTHREAD_KEYS_MAX \
 	COND_CODE_1(CONFIG_POSIX_THREADS, (CONFIG_POSIX_THREAD_KEYS_MAX), (0))
