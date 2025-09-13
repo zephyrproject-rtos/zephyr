@@ -135,6 +135,7 @@ config MODEM_CMD_HANDLER
 config MODEM_CMD_HANDLER_MAX_PARAM_COUNT
 	int "Maximum number of params parsed per command"
 	depends on MODEM_CMD_HANDLER
+	default 14 if MODEM_SIM7080
 	default 6
 	help
 	  This option sets the maximum number of parameters which may be
@@ -194,6 +195,6 @@ source "drivers/modem/Kconfig.cellular"
 source "drivers/modem/Kconfig.at_shell"
 
 source "drivers/modem/Kconfig.hl7800"
-source "drivers/modem/Kconfig.simcom-sim7080"
+source "drivers/modem/simcom/Kconfig"
 
 endif # MODEM
