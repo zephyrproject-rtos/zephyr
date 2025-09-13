@@ -5,7 +5,7 @@
 
 /*
  * Copyright (c) 2020 Intel Corporation
- * Copyright (c) 2022-2023 Nordic Semiconductor ASA
+ * Copyright (c) 2022-2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -61,24 +61,24 @@
 
 #if defined(CONFIG_BT_BAP_UNICAST)
 
-struct shell_stream unicast_streams[CONFIG_BT_MAX_CONN *
-				    MAX(UNICAST_SERVER_STREAM_COUNT, UNICAST_CLIENT_STREAM_COUNT)];
+struct shell_stream unicast_streams[CONFIG_BT_MAX_CONN * MAX(UNICAST_SERVER_STREAM_COUNT,
+							     UNICAST_CLIENT_STREAM_COUNT)] = {0};
 
 #if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
-struct bt_bap_unicast_group *default_unicast_group;
+struct unicast_group default_unicast_group = {0};
 static struct bt_bap_unicast_client_cb unicast_client_cbs;
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0
-struct bt_bap_ep *snks[CONFIG_BT_MAX_CONN][CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT];
+struct bt_bap_ep *snks[CONFIG_BT_MAX_CONN][CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT] = {0};
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0 */
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0
-struct bt_bap_ep *srcs[CONFIG_BT_MAX_CONN][CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT];
+struct bt_bap_ep *srcs[CONFIG_BT_MAX_CONN][CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT] = {0};
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0 */
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
 #endif /* CONFIG_BT_BAP_UNICAST */
 
 #if defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
-struct shell_stream broadcast_source_streams[CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT];
-struct broadcast_source default_source;
+struct shell_stream broadcast_source_streams[CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT] = {0};
+struct broadcast_source default_source = {0};
 #endif /* CONFIG_BT_BAP_BROADCAST_SOURCE */
 #if defined(CONFIG_BT_BAP_BROADCAST_SINK)
 static struct shell_stream broadcast_sink_streams[CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT];
@@ -186,6 +186,11 @@ struct shell_stream *shell_stream_from_bap_stream(struct bt_bap_stream *bap_stre
 struct bt_bap_stream *bap_stream_from_shell_stream(struct shell_stream *sh_stream)
 {
 	return &sh_stream->stream.bap_stream;
+}
+
+struct bt_cap_stream *cap_stream_from_shell_stream(struct shell_stream *sh_stream)
+{
+	return &sh_stream->stream;
 }
 
 unsigned long bap_get_stats_interval(void)
@@ -385,7 +390,6 @@ static bool encode_frame(struct shell_stream *sh_stream, uint8_t index, size_t f
 			false;
 		}
 
-		/* TODO: Move the following to a function in bap_usb.c*/
 		bap_usb_get_frame(sh_stream, chan_alloc, lc3_tx_buf);
 	} else {
 		/* Generate sine wave */
@@ -812,73 +816,6 @@ static int set_metadata(struct bt_audio_codec_cfg *codec_cfg, const char *meta_s
 }
 
 #if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
-int bap_ac_create_unicast_group(const struct bap_unicast_ac_param *param,
-				struct shell_stream *snk_uni_streams[], size_t snk_cnt,
-				struct shell_stream *src_uni_streams[], size_t src_cnt)
-{
-	struct bt_bap_unicast_group_stream_param snk_group_stream_params[BAP_UNICAST_AC_MAX_SNK] = {
-		0};
-	struct bt_bap_unicast_group_stream_param src_group_stream_params[BAP_UNICAST_AC_MAX_SRC] = {
-		0};
-	struct bt_bap_unicast_group_stream_pair_param pair_params[BAP_UNICAST_AC_MAX_PAIR] = {0};
-	struct bt_bap_unicast_group_param group_param = {0};
-	struct bt_bap_qos_cfg *snk_qos[BAP_UNICAST_AC_MAX_SNK];
-	struct bt_bap_qos_cfg *src_qos[BAP_UNICAST_AC_MAX_SRC];
-	size_t snk_stream_cnt = 0U;
-	size_t src_stream_cnt = 0U;
-	size_t pair_cnt = 0U;
-
-	for (size_t i = 0U; i < snk_cnt; i++) {
-		snk_qos[i] = &snk_uni_streams[i]->qos;
-	}
-
-	for (size_t i = 0U; i < src_cnt; i++) {
-		src_qos[i] = &src_uni_streams[i]->qos;
-	}
-
-	/* Create Group
-	 *
-	 * First setup the individual stream parameters and then match them in pairs by connection
-	 * and direction
-	 */
-	for (size_t i = 0U; i < snk_cnt; i++) {
-		snk_group_stream_params[i].qos = snk_qos[i];
-		snk_group_stream_params[i].stream =
-			bap_stream_from_shell_stream(snk_uni_streams[i]);
-	}
-	for (size_t i = 0U; i < src_cnt; i++) {
-		src_group_stream_params[i].qos = src_qos[i];
-		src_group_stream_params[i].stream =
-			bap_stream_from_shell_stream(src_uni_streams[i]);
-	}
-
-	for (size_t i = 0U; i < param->conn_cnt; i++) {
-		for (size_t j = 0; j < MAX(param->snk_cnt[i], param->src_cnt[i]); j++) {
-			if (param->snk_cnt[i] > j) {
-				pair_params[pair_cnt].tx_param =
-					&snk_group_stream_params[snk_stream_cnt++];
-			} else {
-				pair_params[pair_cnt].tx_param = NULL;
-			}
-
-			if (param->src_cnt[i] > j) {
-				pair_params[pair_cnt].rx_param =
-					&src_group_stream_params[src_stream_cnt++];
-			} else {
-				pair_params[pair_cnt].rx_param = NULL;
-			}
-
-			pair_cnt++;
-		}
-	}
-
-	group_param.packing = BT_ISO_PACKING_SEQUENTIAL;
-	group_param.params = pair_params;
-	group_param.params_count = pair_cnt;
-
-	return bt_bap_unicast_group_create(&group_param, &default_unicast_group);
-}
-
 static uint8_t stream_dir(const struct bt_bap_stream *stream)
 {
 	if (stream->conn) {
@@ -1492,7 +1429,7 @@ static int create_unicast_group(const struct shell *sh)
 		return err;
 	}
 
-	err = bt_bap_unicast_group_create(&group_param, &default_unicast_group);
+	err = bt_bap_unicast_group_create(&group_param, &default_unicast_group.bap_group);
 	if (err != 0) {
 		shell_error(sh, "Unable to create default unicast group: %d", err);
 
@@ -1514,7 +1451,7 @@ static int reconfig_unicast_group(const struct shell *sh)
 		return err;
 	}
 
-	err = bt_bap_unicast_group_reconfig(default_unicast_group, &group_param);
+	err = bt_bap_unicast_group_reconfig(default_unicast_group.bap_group, &group_param);
 	if (err != 0) {
 		shell_error(sh, "Unable to create default unicast group: %d", err);
 
@@ -1538,7 +1475,13 @@ static int cmd_qos(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	if (default_unicast_group == NULL) {
+	if (default_unicast_group.is_cap) {
+		shell_error(sh, "Cannot perform action on CAP unicast group");
+
+		return -ENOEXEC;
+	}
+
+	if (default_unicast_group.bap_group == NULL) {
 		err = create_unicast_group(sh);
 		if (err != 0) {
 			return err;
@@ -1550,7 +1493,7 @@ static int cmd_qos(const struct shell *sh, size_t argc, char *argv[])
 		}
 	}
 
-	err = bt_bap_stream_qos(default_conn, default_unicast_group);
+	err = bt_bap_stream_qos(default_conn, default_unicast_group.bap_group);
 	if (err) {
 		shell_error(sh, "Unable to setup QoS: %d", err);
 		return -ENOEXEC;
@@ -2440,8 +2383,11 @@ static void broadcast_scan_recv(const struct bt_le_scan_recv_info *info, struct 
 
 	bt_addr_le_to_str(info->addr, addr_str, sizeof(addr_str));
 
-	bt_shell_print("Found broadcaster with ID 0x%06X (%s) and addr %s and sid 0x%02X ",
-		       sr_info.broadcast_id, sr_info.broadcast_name, addr_str, info->sid);
+	bt_shell_print("Found broadcaster with ID 0x%06X (%s) and addr %s and sid 0x%02X (scanning "
+		       "for 0x%06X (%s))",
+		       sr_info.broadcast_id, sr_info.broadcast_name, addr_str, info->sid,
+		       auto_scan.broadcast_info.broadcast_id,
+		       auto_scan.broadcast_info.broadcast_name);
 
 	if ((auto_scan.broadcast_info.broadcast_id == BT_BAP_INVALID_BROADCAST_ID) &&
 	    (strlen(auto_scan.broadcast_info.broadcast_name) == 0U)) {
@@ -2455,10 +2401,12 @@ static void broadcast_scan_recv(const struct bt_le_scan_recv_info *info, struct 
 		   is_substring(auto_scan.broadcast_info.broadcast_name, sr_info.broadcast_name)) {
 		auto_scan.broadcast_info.broadcast_id = sr_info.broadcast_id;
 		identified_broadcast = true;
-
-		bt_shell_print("Found matched broadcast name '%s' with address %s",
-			       sr_info.broadcast_name, addr_str);
+	} else {
+		/* no op */
+		return;
 	}
+
+	bt_shell_print("Found matched broadcast with address %s", addr_str);
 
 	if (identified_broadcast && (auto_scan.broadcast_sink != NULL) &&
 	    (auto_scan.broadcast_sink->pa_sync == NULL)) {
@@ -2535,6 +2483,8 @@ static void bap_pa_sync_synced_cb(struct bt_le_per_adv_sync *sync,
 			bt_shell_print("Sink is already created");
 		}
 	}
+
+	/* TODO: Need to set sync_states.pa_sync here */
 
 	clear_auto_scan();
 }
@@ -3177,7 +3127,7 @@ static void stream_released_cb(struct bt_bap_stream *stream)
 	bt_shell_print("Stream %p released\n", stream);
 
 #if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
-	if (default_unicast_group != NULL) {
+	if (default_unicast_group.bap_group != NULL && !default_unicast_group.is_cap) {
 		bool group_can_be_deleted = true;
 
 		for (size_t i = 0U; i < ARRAY_SIZE(unicast_streams); i++) {
@@ -3202,12 +3152,12 @@ static void stream_released_cb(struct bt_bap_stream *stream)
 
 			bt_shell_print("All streams released, deleting group\n");
 
-			err = bt_bap_unicast_group_delete(default_unicast_group);
+			err = bt_bap_unicast_group_delete(default_unicast_group.bap_group);
 
 			if (err != 0) {
 				bt_shell_error("Failed to delete unicast group: %d", err);
 			} else {
-				default_unicast_group = NULL;
+				default_unicast_group.bap_group = NULL;
 			}
 		}
 	}
@@ -3271,6 +3221,12 @@ static int cmd_create_broadcast(const struct shell *sh, size_t argc,
 
 	if (default_source.bap_source != NULL) {
 		shell_info(sh, "Broadcast source already created");
+		return -ENOEXEC;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_CAP_HANDOVER) && default_source.handover_in_progress) {
+		shell_info(sh, "CAP Handover in progress");
+
 		return -ENOEXEC;
 	}
 
@@ -3371,10 +3327,17 @@ static int cmd_start_broadcast(const struct shell *sh, size_t argc,
 			       char *argv[])
 {
 	struct bt_le_ext_adv *adv = adv_sets[selected_adv];
+	struct bt_le_ext_adv_info adv_info;
 	int err;
 
 	if (adv == NULL) {
 		shell_info(sh, "Extended advertising set is NULL");
+		return -ENOEXEC;
+	}
+
+	err = bt_le_ext_adv_get_info(adv, &adv_info);
+	if (err != 0) {
+		shell_error(sh, "Failed to get adv info: %d\n", err);
 		return -ENOEXEC;
 	}
 
@@ -3388,6 +3351,9 @@ static int cmd_start_broadcast(const struct shell *sh, size_t argc,
 		shell_error(sh, "Unable to start broadcast source: %d", err);
 		return err;
 	}
+
+	default_source.addr_type = adv_info.addr->type;
+	default_source.adv_sid = adv_info.sid;
 
 	return 0;
 }
@@ -3406,6 +3372,8 @@ static int cmd_stop_broadcast(const struct shell *sh, size_t argc, char *argv[])
 		shell_error(sh, "Unable to stop broadcast source: %d", err);
 		return err;
 	}
+
+	default_source.adv_sid = BT_GAP_SID_INVALID;
 
 	return 0;
 }
@@ -3905,6 +3873,7 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	default_source.broadcast_id = BT_BAP_INVALID_BROADCAST_ID;
+	default_source.adv_sid = BT_GAP_SID_INVALID;
 #endif /* CONFIG_BT_BAP_BROADCAST_SOURCE */
 
 #if defined(CONFIG_LIBLC3)
