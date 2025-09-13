@@ -12,6 +12,7 @@
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include <mem.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
+#include <freq.h>
 
 / {
 	cpus {
@@ -21,7 +22,7 @@
 		cpu0: cpu@0 {
 			compatible = "arm,cortex-m33f";
 			reg = <0>;
-			cpu-power-states = <&idle &suspend_to_ram>;
+			cpu-power-states = <&idle>;
 		};
 
 		power-states {
@@ -31,11 +32,6 @@
 				min-residency-us = <100000000>;
 			};
 
-			suspend_to_ram: suspend_to_ram {
-				compatible = "zephyr,power-state";
-				power-state-name = "suspend-to-ram";
-				min-residency-us = <250000000>;
-			};
 		};
 	};
 
@@ -279,7 +275,7 @@
 			compatible = "ns16550";
 			reg = <0x40010100 0x100>;
 			reg-shift = <2>;
-			clock-frequency = <25000000>;
+			clock-frequency = <DT_FREQ_M(100)>;
 			interrupts = <191 0>;
 			status = "disabled";
 		};
@@ -291,6 +287,7 @@
 			clocks = <&sccon RTS5912_SCCON_UART UART0_CLKPWR>;
 			clock-names = "uart0";
 			status = "disabled";
+			uart-dev = <&uart0>;
 		};
 
 		pinctrl: pin-controller@40090000 {
