@@ -47,6 +47,8 @@ enum cipher_mode {
 	CRYPTO_CIPHER_MODE_CTR = 3,
 	CRYPTO_CIPHER_MODE_CCM = 4,
 	CRYPTO_CIPHER_MODE_GCM = 5,
+	CRYPTO_CIPHER_MODE_CFB = 6,
+	CRYPTO_CIPHER_MODE_OFB = 7,
 };
 
 /* Forward declarations */
@@ -57,7 +59,7 @@ struct cipher_pkt;
 typedef int (*block_op_t)(struct cipher_ctx *ctx, struct cipher_pkt *pkt);
 
 /* Function signatures for encryption/ decryption using standard cipher modes
- * like  CBC, CTR, CCM.
+ * like  CBC, CTR, CCM, CFB, OFB.
  */
 typedef int (*cbc_op_t)(struct cipher_ctx *ctx, struct cipher_pkt *pkt,
 			uint8_t *iv);
@@ -71,6 +73,10 @@ typedef int (*ccm_op_t)(struct cipher_ctx *ctx, struct cipher_aead_pkt *pkt,
 typedef int (*gcm_op_t)(struct cipher_ctx *ctx, struct cipher_aead_pkt *pkt,
 			 uint8_t *nonce);
 
+typedef int (*cfb_op_t)(struct cipher_ctx *ctx, struct cipher_pkt *pkt, uint8_t *iv);
+
+typedef int (*ofb_op_t)(struct cipher_ctx *ctx, struct cipher_pkt *pkt, uint8_t *iv);
+
 struct cipher_ops {
 
 	enum cipher_mode cipher_mode;
@@ -81,6 +87,8 @@ struct cipher_ops {
 		ctr_op_t	ctr_crypt_hndlr;
 		ccm_op_t	ccm_crypt_hndlr;
 		gcm_op_t	gcm_crypt_hndlr;
+		cfb_op_t	cfb_crypt_hndlr;
+		ofb_op_t	ofb_crypt_hndlr;
 	};
 };
 
