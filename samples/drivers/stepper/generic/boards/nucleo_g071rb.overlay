@@ -1,6 +1,14 @@
 / {
 	aliases {
 		stepper = &h_bridge_stepper;
+		stepper-motion-control = &stepper_motion_control;
+	};
+};
+
+&timers7 {
+	st,prescaler = <79>;
+	counter: counter {
+		status = "okay";
 	};
 };
 
@@ -14,5 +22,12 @@
 			<&gpioc 7 GPIO_ACTIVE_HIGH>,	/* D9 */
 			<&gpiob 0 GPIO_ACTIVE_HIGH>,	/* D10 */
 			<&gpioa 7 GPIO_ACTIVE_HIGH>;	/* D11 */
+	};
+
+	stepper_motion_control: stepper_motion_control {
+		compatible = "zephyr,stepper-motion-control";
+		status = "okay";
+		counter = <&counter>;
+		stepper = <&h_bridge_stepper>;
 	};
 };

@@ -5,7 +5,6 @@
 
 #define DT_DRV_COMPAT allegro_a4979
 
-#include <zephyr/kernel.h>
 #include <zephyr/drivers/stepper.h>
 #include <zephyr/drivers/gpio.h>
 #include "../step_dir/step_dir_stepper_common.h"
@@ -22,11 +21,10 @@ struct a4979_config {
 };
 
 struct a4979_data {
-	const struct step_dir_stepper_common_data common;
-	enum stepper_micro_step_resolution micro_step_res;
+	enum stepper_drv_micro_step_resolution micro_step_res;
 };
 
-STEP_DIR_STEPPER_STRUCT_CHECK(struct a4979_config, struct a4979_data);
+STEP_DIR_STEPPER_STRUCT_CHECK(struct a4979_config);
 
 static int a4979_set_microstep_pin(const struct device *dev, const struct gpio_dt_spec *pin,
 				   int value)
@@ -92,7 +90,7 @@ static int a4979_stepper_disable(const struct device *dev)
 }
 
 static int a4979_stepper_set_micro_step_res(const struct device *dev,
-					    const enum stepper_micro_step_resolution micro_step_res)
+				const enum stepper_drv_micro_step_resolution micro_step_res)
 {
 	const struct a4979_config *config = dev->config;
 	struct a4979_data *data = dev->data;
@@ -102,19 +100,19 @@ static int a4979_stepper_set_micro_step_res(const struct device *dev,
 	uint8_t m1_value = 0;
 
 	switch (micro_step_res) {
-	case STEPPER_MICRO_STEP_1:
+	case STEPPER_DRV_MICRO_STEP_1:
 		m0_value = 0;
 		m1_value = 0;
 		break;
-	case STEPPER_MICRO_STEP_2:
+	case STEPPER_DRV_MICRO_STEP_2:
 		m0_value = 1;
 		m1_value = 0;
 		break;
-	case STEPPER_MICRO_STEP_4:
+	case STEPPER_DRV_MICRO_STEP_4:
 		m0_value = 0;
 		m1_value = 1;
 		break;
-	case STEPPER_MICRO_STEP_16:
+	case STEPPER_DRV_MICRO_STEP_16:
 		m0_value = 1;
 		m1_value = 1;
 		break;
@@ -137,7 +135,7 @@ static int a4979_stepper_set_micro_step_res(const struct device *dev,
 }
 
 static int a4979_stepper_get_micro_step_res(const struct device *dev,
-					    enum stepper_micro_step_resolution *micro_step_res)
+					    enum stepper_drv_micro_step_resolution *micro_step_res)
 {
 	struct a4979_data *data = dev->data;
 
@@ -222,20 +220,13 @@ static int a4979_init(const struct device *dev)
 	return 0;
 }
 
-static DEVICE_API(stepper, a4979_stepper_api) = {
+static DEVICE_API(stepper_drv, a4979_stepper_api) = {
 	.enable = a4979_stepper_enable,
 	.disable = a4979_stepper_disable,
-	.move_by = step_dir_stepper_common_move_by,
-	.move_to = step_dir_stepper_common_move_to,
-	.is_moving = step_dir_stepper_common_is_moving,
-	.set_reference_position = step_dir_stepper_common_set_reference_position,
-	.get_actual_position = step_dir_stepper_common_get_actual_position,
-	.set_microstep_interval = step_dir_stepper_common_set_microstep_interval,
-	.run = step_dir_stepper_common_run,
-	.stop = step_dir_stepper_common_stop,
 	.set_micro_step_res = a4979_stepper_set_micro_step_res,
 	.get_micro_step_res = a4979_stepper_get_micro_step_res,
-	.set_event_callback = step_dir_stepper_common_set_event_callback,
+	.step = step_dir_stepper_common_step,
+	.set_direction = step_dir_stepper_common_set_direction,
 };
 
 #define A4979_DEVICE(inst)                                                                         \
@@ -249,7 +240,6 @@ static DEVICE_API(stepper, a4979_stepper_api) = {
 	};                                                                                         \
                                                                                                    \
 	static struct a4979_data a4979_data_##inst = {                                             \
-		.common = STEP_DIR_STEPPER_DT_INST_COMMON_DATA_INIT(inst),                         \
 		.micro_step_res = DT_INST_PROP(inst, micro_step_res),                              \
 	};                                                                                         \
                                                                                                    \
