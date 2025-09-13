@@ -167,7 +167,8 @@ struct pm_state_info {
 };
 
 /**
- * Power state information needed to lock a power state.
+ * Information needed to be able to reference a power state as a constraint
+ * on some device or system functions.
  */
 struct pm_state_constraint {
 	 /**
@@ -182,6 +183,11 @@ struct pm_state_constraint {
 	  * @see pm_state
 	  **/
 	uint8_t substate_id;
+};
+
+struct pm_state_constraint_list {
+	struct pm_state_constraint *list;
+	size_t count;
 };
 
 /** @cond INTERNAL_HIDDEN */
@@ -358,6 +364,34 @@ struct pm_state_constraint {
 			Z_PM_STATE_FROM_DT_CPU, (), node_id)		       \
 	}
 
+/**
+ * @brief initialize a device pm constraint with information from devicetree.
+ *
+ * @param node_id Node identifier.
+ */
+#define PM_STATE_CONSTRAINT_INIT(node_id)                                     \
+	{                                                                     \
+		.state = PM_STATE_DT_INIT(node_id),                           \
+		.substate_id = DT_PROP_OR(node_id, substate_id, 0),           \
+	}
+
+#define PM_STATE_CONSTRAINT_REF(node_id, phandle, idx)                        \
+	PM_STATE_CONSTRAINT_INIT(DT_PHANDLE_BY_IDX(node_id, phandle, idx))
+
+#define PM_STATE_CONSTRAINTS_LIST_NAME(node_id, phandles)                     \
+	node_id ## _ ## phandles ## _constraints
+
+#define PM_STATE_CONSTRAINTS_LIST_DEFINE(node_id, phandles)                                \
+	struct pm_state_constraint PM_STATE_CONSTRAINTS_LIST_NAME(node_id, phandles)[] =   \
+	{                                                                                  \
+		DT_FOREACH_PROP_ELEM_SEP(node_id, phandles, PM_STATE_CONSTRAINT_REF, (,))  \
+	}
+
+#define PM_STATE_CONSTRAINTS_LIST_GET(node_id, phandles)                                   \
+	{                                                                                  \
+		.list = PM_STATE_CONSTRAINTS_LIST_NAME(node_id, phandles),                 \
+		.count = DT_PROP_LEN(node_id, phandles),                                   \
+	}
 
 #if defined(CONFIG_PM) || defined(__DOXYGEN__)
 /**
@@ -382,6 +416,9 @@ uint8_t pm_state_cpu_get_all(uint8_t cpu, const struct pm_state_info **states);
  * @return Pointer to the power state structure or NULL if state is not found.
  */
 const struct pm_state_info *pm_state_get(uint8_t cpu, enum pm_state state, uint8_t substate_id);
+
+bool pm_state_in_constraints(const struct pm_state_constraint_list *constraints,
+			     const struct pm_state_constraint match);
 /**
  * @}
  */
@@ -407,6 +444,14 @@ static inline const struct pm_state_info *pm_state_get(uint8_t cpu,
 	return NULL;
 }
 
+static inline bool pm_state_in_constraints(struct pm_state_constraint_list *constraints,
+					   struct pm_state_constraint match)
+{
+	ARG_UNUSED(constraints_list);
+	ARG_UNUSED(match);
+
+	return false;
+}
 #endif /* CONFIG_PM */
 
 #ifdef __cplusplus
