@@ -317,18 +317,18 @@ struct net_pkt {
 	uint16_t vlan_tci;
 #endif /* CONFIG_NET_VLAN */
 
-#if defined(NET_PKT_HAS_CONTROL_BLOCK)
-	/* TODO: Evolve this into a union of orthogonal
-	 *       control block declarations if further L2
-	 *       stacks require L2-specific attributes.
-	 */
+#if defined(CONFIG_NET_PKT_CONTROL_BLOCK)
+	/* Control block which could be used by any layer */
+	union {
+		uint8_t cb[CONFIG_NET_PKT_CONTROL_BLOCK_SIZE];
 #if defined(CONFIG_IEEE802154)
-	/* The following structure requires a 4-byte alignment
-	 * boundary to avoid padding.
-	 */
-	struct net_pkt_cb_ieee802154 cb;
+		/* The following structure requires a 4-byte alignment
+		 * boundary to avoid padding.
+		 */
+		struct net_pkt_cb_ieee802154 cb_ieee802154;
 #endif /* CONFIG_IEEE802154 */
-#endif /* NET_PKT_HAS_CONTROL_BLOCK */
+	} cb;
+#endif /* CONFIG_NET_PKT_CONTROL_BLOCK */
 
 	/** Network packet priority, can be left out in which case packet
 	 * is not prioritised.
@@ -1463,7 +1463,7 @@ static inline void net_pkt_set_ppp(struct net_pkt *pkt,
 }
 #endif /* CONFIG_NET_L2_PPP */
 
-#if defined(NET_PKT_HAS_CONTROL_BLOCK)
+#if defined(CONFIG_NET_PKT_CONTROL_BLOCK)
 static inline void *net_pkt_cb(struct net_pkt *pkt)
 {
 	return &pkt->cb;
