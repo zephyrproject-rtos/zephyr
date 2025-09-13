@@ -841,6 +841,10 @@ static void avdtp_process_configuration_cmd(struct bt_avdtp *session, struct net
 										 &avdtp_err_code);
 				}
 			}
+
+			if (!reconfig && err == 0) {
+				sep->session = session;
+			}
 		} else {
 			LOG_WRN("Invalid INT SEID");
 			err = -ENOTSUP;
@@ -2050,6 +2054,7 @@ static int avdtp_process_configure_command(struct bt_avdtp *session, uint8_t cmd
 		return -ENOMEM;
 	}
 
+	param->sep->session = session;
 	/* Body of the message */
 	/* ACP Stream Endpoint ID */
 	net_buf_add_u8(buf, (param->acp_stream_ep_id << 2U));
