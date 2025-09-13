@@ -8,7 +8,6 @@
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <soc.h>
-#include <mec_ecia_api.h>
 #include <mec_ecs_api.h>
 
 static void mec5_soc_init_debug_interface(void)
@@ -35,7 +34,7 @@ static void mec5_soc_init_debug_interface(void)
 int mec5_soc_common_init(void)
 {
 	mec5_soc_init_debug_interface();
-	mec_hal_ecia_init(MEC5_ECIA_DIRECT_BITMAP, 1, 0);
+	soc_ecia_init(MCHP_MEC_ECIA_GIRQ_AGGR_ONLY_BM, MCHP_MEC_ECIA_GIRQ_DIRECT_CAP_BM, 0);
 
 	return 0;
 }
