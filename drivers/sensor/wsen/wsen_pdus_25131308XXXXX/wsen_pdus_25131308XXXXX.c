@@ -61,14 +61,15 @@ static int pdus_25131308XXXXX_channel_get(const struct device *dev, enum sensor_
 
 	switch (chan) {
 	case SENSOR_CHAN_AMBIENT_TEMP: {
-		int32_t temperature_mega = ((int32_t)(data->temperature - T_MIN_VAL_PDUS)) * 4272;
+		int32_t temperature_mega =
+			((int32_t)(data->temperature - T_MIN_TYP_VAL_PDUS)) * 4272;
 
 		value->val1 = temperature_mega / 1000000;
 		value->val2 = temperature_mega % 1000000;
 		break;
 	}
 	case SENSOR_CHAN_PRESS: {
-		int32_t pressure_temp = ((int32_t)(data->pressure - P_MIN_VAL_PDUS));
+		int32_t pressure_temp = ((int32_t)(data->pressure - P_MIN_TYP_VAL_PDUS));
 
 		/*
 		 * these values are conversion factors based on the sensor type defined in the user
@@ -114,10 +115,9 @@ static int pdus_25131308XXXXX_channel_get(const struct device *dev, enum sensor_
 	return 0;
 }
 
-static DEVICE_API(sensor, pdus_25131308XXXXX_driver_api) = {
-	.sample_fetch = pdus_25131308XXXXX_sample_fetch,
-	.channel_get = pdus_25131308XXXXX_channel_get
-};
+static DEVICE_API(sensor,
+		  pdus_25131308XXXXX_driver_api) = {.sample_fetch = pdus_25131308XXXXX_sample_fetch,
+						    .channel_get = pdus_25131308XXXXX_channel_get};
 
 static int pdus_25131308XXXXX_init(const struct device *dev)
 {
