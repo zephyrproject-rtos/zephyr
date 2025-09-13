@@ -3,7 +3,7 @@
 
 description: Nordic nRF family NFCT (Near Field Communication Tag)
 
-compatible: "nordic,nrf-nfct-v2"
+compatible: "nordic,nrf54h-nfct"
 
 include: nordic,nrf-nfct.yaml
 
