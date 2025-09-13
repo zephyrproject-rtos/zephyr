@@ -81,7 +81,7 @@ PHDRS
 
 
 /*  Default entry point:  */
-ENTRY(CONFIG_KERNEL_ENTRY)
+ENTRY(z_kernel_entry)
 
 _rom_store_table = 0;
 PROVIDE(_memmap_vecbase_reset = 0x00002000);

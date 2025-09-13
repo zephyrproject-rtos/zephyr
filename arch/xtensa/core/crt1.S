@@ -1,5 +1,7 @@
 /*
  * Copyright (c) 2016 Cadence Design Systems, Inc.
+ * Copyright (c) 2025 Baumer (www.baumer.com)
+ *
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -7,6 +9,7 @@
  * Control arrives here at _start from the reset vector.
  */
 
+#include <zephyr/kernel_entry.h>
 #include <xtensa/coreasm.h>
 
 /* Exports */
@@ -20,6 +23,10 @@
  *   z_cstart		Entry point into Zephyr C domain
  *   __stack		from linker script (see LSP Ref Manual)
  */
+
+#if !defined(CONFIG_CUSTOM_SOC_KERNEL_ENTRY)
+SET_Z_KERNEL_ENTRY(__start)
+#endif
 
 .global __start
 .type	z_prep_c, @function

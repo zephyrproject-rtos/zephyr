@@ -34,7 +34,7 @@ MEMORY
 }
 
 /*  Default entry point:  */
-ENTRY(CONFIG_KERNEL_ENTRY)
+ENTRY(z_kernel_entry)
 
 SECTIONS
 {

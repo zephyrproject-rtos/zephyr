@@ -1,10 +1,11 @@
 /*
  * Copyright (c) 2018 Foundries.io Ltd
+ * Copyright (c) 2025 Baumer (www.baumer.com)
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/toolchain.h>
+#include <zephyr/kernel_entry.h>
 
 /* Imports */
 GTEXT(__initialize)
@@ -12,6 +13,9 @@ GTEXT(_isr_wrapper)
 
 /* Exports */
 GTEXT(__start)
+
+SET_Z_KERNEL_ENTRY(__start)
+
 
 /*
  * Interrupts work the same way for both the RI5CY and ZERO-RISCY cores

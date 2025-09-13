@@ -84,7 +84,7 @@ MEMORY
     IDT_LIST  (wx)      : ORIGIN = 0xFFFFF7FF, LENGTH = 2K
 }
 
-ENTRY(CONFIG_KERNEL_ENTRY)
+ENTRY(z_kernel_entry)
 
 SECTIONS
     {

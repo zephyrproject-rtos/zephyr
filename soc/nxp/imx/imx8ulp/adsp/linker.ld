@@ -138,7 +138,7 @@ _rom_store_table = 0;
 
 PROVIDE(_memmap_vecbase_reset = XCHAL_VECBASE_RESET_PADDR);
 
-ENTRY(CONFIG_KERNEL_ENTRY)
+ENTRY(z_kernel_entry)
 
 /* Various memory-map dependent cache attribute settings: */
 _memmap_cacheattr_wb_base = 0x44024000;

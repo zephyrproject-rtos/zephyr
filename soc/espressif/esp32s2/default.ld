@@ -109,7 +109,7 @@ MEMORY
 }
 
 /* Default entry point:  */
-ENTRY(CONFIG_KERNEL_ENTRY)
+ENTRY(z_kernel_entry)
 
 _rom_store_table = 0;
 

@@ -3,8 +3,8 @@
 
 if SOC_GD32VF103
 
-config KERNEL_ENTRY
-	default "__nuclei_start"
+config CUSTOM_SOC_KERNEL_ENTRY
+	default y
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	# This value should be the CPU frequency divided by 4.

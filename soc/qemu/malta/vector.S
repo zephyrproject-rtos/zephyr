@@ -1,10 +1,11 @@
 /*
  * Copyright (c) 2021 Antony Pavlov <antonynpavlov@gmail.com>
+ * Copyright (c) 2025 Baumer (www.baumer.com)
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/toolchain.h>
+#include <zephyr/kernel_entry.h>
 #include <mips/regdef.h>
 
 /* Imports */
@@ -12,6 +13,8 @@ GTEXT(__initialize)
 
 /* Exports */
 GTEXT(__start)
+
+SET_Z_KERNEL_ENTRY(__start)
 
 SECTION_FUNC(vectors, __start)
 	/* Call into Zephyr initialization. */

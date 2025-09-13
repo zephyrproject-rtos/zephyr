@@ -20,6 +20,6 @@ config MULTI_LEVEL_INTERRUPTS
 config 2ND_LEVEL_INTERRUPTS
 	default n
 
-config KERNEL_ENTRY
+config CUSTOM_SOC_KERNEL_ENTRY
 	default "__start"
 endif

@@ -109,7 +109,7 @@ PHDRS
 PROVIDE(_memmap_reset_vector = XCHAL_RESET_VECTOR0_PADDR_IRAM);
 PROVIDE(_memmap_vecbase_reset = XCHAL_VECBASE_RESET_PADDR_IRAM);
 
-ENTRY(CONFIG_KERNEL_ENTRY)
+ENTRY(z_kernel_entry)
 
 /* Various memory-map dependent cache attribute settings: */
 _memmap_cacheattr_wb_base = 0x00000012;

@@ -159,7 +159,7 @@ _rom_store_table = 0;
 /* ABI0 does not use Window base */
 PROVIDE(_memmap_vecbase_reset = XCHAL_WINDOW_VECTORS_PADDR);
 
-ENTRY(CONFIG_KERNEL_ENTRY)
+ENTRY(z_kernel_entry)
 
 /* Various memory-map dependent cache attribute settings: */
 _memmap_cacheattr_wb_base = 0x44024000;

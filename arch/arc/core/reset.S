@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2014 Wind River Systems, Inc.
+ * Copyright (c) 2025 Baumer (www.baumer.com)
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,7 +12,7 @@
  * Reset handler that prepares the system for running C code.
  */
 
-#include <zephyr/toolchain.h>
+#include <zephyr/kernel_entry.h>
 #include <zephyr/linker/sections.h>
 #include <zephyr/arch/cpu.h>
 #include <swap_macros.h>
@@ -32,6 +33,10 @@ GDATA(_VectorTable)
 
 GTEXT(__reset)
 GTEXT(__start)
+
+#if !defined(CONFIG_CUSTOM_SOC_KERNEL_ENTRY)
+SET_Z_KERNEL_ENTRY(__start)
+#endif
 
 /**
  * @brief Reset vector
