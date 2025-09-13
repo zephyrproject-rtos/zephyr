@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config MP_MAX_NUM_CPUS
-	default 2
+	default 1
 
 configdefault HEAP_MEM_POOL_ADD_SIZE_ACPI
 	default 32768

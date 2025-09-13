@@ -6,7 +6,7 @@ config BUILD_OUTPUT_STRIPPED
 	default y
 
 config MP_MAX_NUM_CPUS
-	default 2
+	default 1
 
 # TSC on this board is 2.9 GHz, HPET is 19.2 MHz
 config SYS_CLOCK_HW_CYCLES_PER_SEC
