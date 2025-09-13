@@ -1,10 +1,5 @@
 # Copyright (c) 2025 David Schneider
 # SPDX-License-Identifier: Apache-2.0
 
-config BOARD_RP2040_PLUS
-	bool
-	select RP2_FLASH_W25Q080
-
 config BOARD_RP2040_PLUS_16MB
-	bool
-	select RP2_FLASH_W25Q080
+	select SOC_RP2040
