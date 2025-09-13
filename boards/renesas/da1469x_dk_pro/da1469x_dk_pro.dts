@@ -79,6 +79,7 @@
 		led0 = &red_led;
 		watchdog0 = &wdog;
 		sw0 = &user_button;
+		rtc = &rtc;
 	};
 
 	sysclk: system-clock {
