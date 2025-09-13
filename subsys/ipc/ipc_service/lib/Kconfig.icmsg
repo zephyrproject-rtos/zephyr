@@ -52,11 +52,11 @@ config IPC_SERVICE_BACKEND_ICMSG_WQ_STACK_SIZE
 config IPC_SERVICE_BACKEND_ICMSG_WQ_PRIORITY
 	int "Priority of RX work queue thread"
 	default -1
-	range -256 -1
 	help
 	  Priority of the ICMSG RX work queue thread.
-	  The ICMSG library in its simplicity requires the workqueue to execute
-	  at a cooperative priority.
+	  NOTE: If set to a preemptive priority then icmsg can no longer
+	  support icmsg_close(). This removes the ability to call
+	  deregister_ept() for some IPC backends.
 
 endif
 

@@ -55,6 +55,9 @@ static const uint8_t magic[] = {0x45, 0x6d, 0x31, 0x6c, 0x31, 0x4b,
 static K_THREAD_STACK_DEFINE(icmsg_stack, CONFIG_IPC_SERVICE_BACKEND_ICMSG_WQ_STACK_SIZE);
 static struct k_work_q icmsg_workq;
 static struct k_work_q *const workq = &icmsg_workq;
+#if CONFIG_IPC_SERVICE_BACKEND_ICMSG_WQ_PRIORITY >= 0
+#define ICMSG_CLOSE_NOT_SUPPORTED
+#endif
 #else /* defined(CONFIG_IPC_SERVICE_BACKEND_ICMSG_WQ_ENABLE) */
 static struct k_work_q *const workq = &k_sys_work_q;
 #endif /* defined(CONFIG_IPC_SERVICE_BACKEND_ICMSG_WQ_ENABLE) */
@@ -475,6 +478,10 @@ int icmsg_close(const struct icmsg_config_t *conf,
 {
 	int ret = 0;
 	enum icmsg_state old_state;
+
+#if defined(ICMSG_CLOSE_NOT_SUPPORTED)
+	return -ENOTSUP;
+#endif
 
 	if (conf->unbound_mode != ICMSG_UNBOUND_MODE_DISABLE &&
 	    (UNBOUND_ENABLED || UNBOUND_DETECT)) {
