@@ -151,6 +151,26 @@
 			drive-strength = "x4";
 		};
 	};
+
+	lpuart11_default: lpuart11_default {
+		group0 {
+			pinmux = <&iomuxc_gpio_io25_lpuart_rx_lpuart11_rx>,
+				<&iomuxc_gpio_io24_lpuart_tx_lpuart11_tx>;
+			bias-pull-up;
+			slew-rate = "slightly_fast";
+			drive-strength = "x4";
+		};
+	};
+
+	lpuart12_default: lpuart12_default {
+		group0 {
+			pinmux = <&iomuxc_gpio_io27_lpuart_rx_lpuart12_rx>,
+				<&iomuxc_gpio_io26_lpuart_tx_lpuart12_tx>;
+			bias-pull-up;
+			slew-rate = "slightly_fast";
+			drive-strength = "x4";
+		};
+	};
 };
 
 &eth2_default_group1 {
