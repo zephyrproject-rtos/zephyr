@@ -24,15 +24,27 @@ ZTEST(cpu_freq_soc, test_soc_pstates)
 
 	zassert_true(ARRAY_SIZE(soc_pstates_dt) > 0, "No p-states defined in devicetree");
 
-	LOG_INF("%d p-states defined for %s", ARRAY_SIZE(soc_pstates_dt), CONFIG_BOARD_TARGET);
+	LOG_INF("%zu p-states defined for %s", ARRAY_SIZE(soc_pstates_dt), CONFIG_BOARD_TARGET);
 
 	zassert_equal(cpu_freq_pstate_set(NULL), -EINVAL, "Expected -EINVAL for NULL pstate");
 
 	for (int i = 0; i < ARRAY_SIZE(soc_pstates_dt); i++) {
 		const struct pstate *state = soc_pstates_dt[i];
 
+#if defined(CONFIG_SMP) && (CONFIG_MP_MAX_NUM_CPUS > 1)
+		/*
+		 * Lock the scheduler to ensure that the current thread
+		 * does not migrate to another CPU.
+		 */
+		k_sched_lock();
+#endif
+
 		/* Set performance state using pstate driver */
 		ret = cpu_freq_pstate_set(state);
+
+#if defined(CONFIG_SMP) && (CONFIG_MP_MAX_NUM_CPUS > 1)
+		k_sched_unlock();
+#endif
 		zassert_equal(ret, 0, "Failed to set p-state %d", i);
 	}
 }
