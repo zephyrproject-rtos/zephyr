@@ -11,6 +11,7 @@
 #include <zephyr/kernel.h>
 /* For z_stack_space_get() */
 #include <kernel_internal.h>
+#include <ksched.h>
 #include <zephyr/debug/thread_analyzer.h>
 #include <zephyr/debug/stack.h>
 #include <zephyr/kernel.h>
@@ -170,6 +171,11 @@ static void thread_analyze_cb(const struct k_thread *cthread, void *user_data)
 	ARG_UNUSED(ret);
 
 	cb(&info);
+
+#ifdef CONFIG_THREAD_ANALYZER_LONG_FRAME_PER_INTERVAL
+	z_sched_thread_reset_long_frame(thread);
+#endif
+
 }
 
 K_KERNEL_STACK_ARRAY_DECLARE(z_interrupt_stacks, CONFIG_MP_MAX_NUM_CPUS,
