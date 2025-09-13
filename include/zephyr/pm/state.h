@@ -9,6 +9,7 @@
 
 #include <zephyr/sys/util.h>
 #include <zephyr/devicetree.h>
+#include <errno.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -382,6 +383,26 @@ uint8_t pm_state_cpu_get_all(uint8_t cpu, const struct pm_state_info **states);
  * @return Pointer to the power state structure or NULL if state is not found.
  */
 const struct pm_state_info *pm_state_get(uint8_t cpu, enum pm_state state, uint8_t substate_id);
+
+/**
+ * @brief Convert a pm_state enum value to its string representation.
+ *
+ * @param state Power state.
+ *
+ * @return A constant string representing the state.
+ */
+const char *pm_state_to_str(enum pm_state state);
+
+
+/**
+ * @brief Parse a string and convert it to a pm_state enum value.
+ *
+ * @param name Input string (e.g., "suspend-to-ram").
+ * @param out Pointer to store the parsed pm_state value.
+ *
+ * @return 0 on success, -EINVAL if the string is invalid or NULL.
+ */
+int pm_state_from_str(const char *name, enum pm_state *out);
 /**
  * @}
  */
