@@ -18,6 +18,7 @@
 #include "nwp.h"
 #include "sl_wifi_callback_framework.h"
 #ifdef CONFIG_BT_SILABS_SIWX91X
+#include "sl_si91x_ble.h"
 #include "rsi_ble_common_config.h"
 #endif
 #include "sl_si91x_power_manager.h"
@@ -336,6 +337,9 @@ static int siwg917_nwp_init(void)
 	__maybe_unused sl_wifi_performance_profile_t performance_profile = {
 		.profile = SI91X_POWER_PROFILE};
 
+	__maybe_unused sl_bt_performance_profile_t bt_performance_profile = {
+		.profile = SI91X_POWER_PROFILE};
+
 	siwx91x_get_nwp_config(&network_config, WIFI_STA_MODE, false, 0);
 	/* TODO: If sl_net_*_profile() functions will be needed for WiFi then call
 	 * sl_net_set_profile() here. Currently these are unused.
@@ -346,6 +350,13 @@ static int siwg917_nwp_init(void)
 	}
 
 	if (IS_ENABLED(CONFIG_SOC_SIWX91X_PM_BACKEND_PMGR)) {
+		if (IS_ENABLED(CONFIG_BT_SILABS_SIWX91X)) {
+			status = sl_si91x_bt_set_performance_profile(&bt_performance_profile);
+			if (status != SL_STATUS_OK) {
+				LOG_ERR("Failed to initiate power save in BLE mode");
+				return -EINVAL;
+			}
+		}
 		status = sl_wifi_set_performance_profile(&performance_profile);
 		if (status != SL_STATUS_OK) {
 			return -EINVAL;
