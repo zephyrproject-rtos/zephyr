@@ -385,7 +385,7 @@ class Walker:
                 if not self.setupZephyrDocument(content["zephyr"], content["modules"]):
                     return False
         except (FileNotFoundError, yaml.YAMLError):
-            log.err("cannot find a valid zephyr_meta.yml required for SPDX generation; bailing")
+            log.err("cannot find a valid zephyr.meta required for SPDX generation; bailing")
             return False
 
         self.setupAppDocument()
