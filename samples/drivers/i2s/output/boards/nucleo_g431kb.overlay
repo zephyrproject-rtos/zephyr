@@ -1,0 +1,40 @@
+/*
+ * Copyright (c) 2025 Mario Paja
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		i2s-tx = &sai1_a;
+	};
+};
+
+&pll {
+	/* 44.1KHz (-0.03% Error) */
+	div-q = <8>;
+};
+
+/* MCLK is not enabled */
+/* SAI1_A MCLK (PB8) is not available on the Arduino Nano header */
+&sai1_a {
+	pinctrl-0 = <&sai1_sd_a_pa10 &sai1_fs_a_pa9 &sai1_sck_a_pa8>;
+	pinctrl-names = "default";
+	status = "okay";
+	mclk-divider = "div-256";
+	dma-names = "tx";
+};
+
+&dma1{
+	status = "okay";
+};
+
+&dmamux1{
+	status = "okay";
+};
+
+/* I2C2 SCL conflicts with SAI1_A FS */
+/* I2C2 SDA conflicts with SAI1_A SCK */
+&i2c2 {
+	status = "disabled";
+};
