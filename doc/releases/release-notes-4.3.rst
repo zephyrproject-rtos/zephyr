@@ -143,6 +143,9 @@ New APIs and options
   * :c:macro:`K_THREAD_HW_SHADOW_STACK_ARRAY_DEFINE`
   * :c:macro:`K_THREAD_HW_SHADOW_STACK_ATTACH`
   * :c:macro:`k_thread_hw_shadow_stack_attach`
+  * :c:func:`k_fifo_len`
+  * :c:func:`k_lifo_len`
+  * :c:func:`k_queue_len`
 
 * Logging:
 
