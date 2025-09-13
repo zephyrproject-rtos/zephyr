@@ -1,0 +1,31 @@
+# Copyright (c) 2025 Fiona Behrens
+# SPDX-License-Identifier: Apache-2.0
+
+description: WCH CH32FV2x CH32V3x Reset and Clock Control (RCC)
+
+compatible: "wch,ch32fv2x_v3x-rcc"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  "#clock-cells":
+    const: 1
+
+  hb-prescaler:
+    type: int
+    required: true
+    description: |
+      Prescaler for the HB HCLK
+    enum:
+      - 1 # Off
+      - 2 # /2
+      - 4 # /4
+      - 8 # /8
+      - 16 # /16
+      - 64 # /64
+      - 128 # /128
+      - 256 # /256
+      - 512 # /512
+
+clock-cells:
+  - id
