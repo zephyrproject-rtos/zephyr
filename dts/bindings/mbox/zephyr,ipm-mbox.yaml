@@ -1,0 +1,17 @@
+# Copyright (c) 2025 Dmitrii Sharshakov <d3dx12.xx@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Mailbox driver based on Zephyr's IPM subsystem.
+
+compatible: "zephyr,ipm-mbox"
+
+include: [base.yaml, mailbox-controller.yaml]
+
+properties:
+  channels:
+    type: int
+    required: true
+    description: Number of channels to support.
+
+mbox-cells:
+  - channel
