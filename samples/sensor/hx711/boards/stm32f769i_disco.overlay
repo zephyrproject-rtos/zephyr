@@ -1,0 +1,45 @@
+/*
+ * Copyright (c) 2020 George Gkinis
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		hx711-sensor = &hx711_label;
+	};
+
+	hx711_label: hx711_node {
+		compatible = "avia,hx711";
+		gain = <64>;
+		rate-hz = <80>;
+		dout-gpios = <&gpioj 3 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+		sck-gpios = <&gpiof 7 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+		rate-gpios = <&gpiof 0 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+	};
+
+	hx712_label: hx712_node {
+		compatible = "avia,hx712", "avia,hx710";
+		status = "disabled";
+		dout-gpios = <&gpioj 3 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+		sck-gpios = <&gpiof 7 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+	};
+
+	hx717_label: hx717_node {
+		compatible = "avia,hx717";
+		status = "disabled";
+		gain = <128>;
+		rate-hz = <80>;
+		dout-gpios = <&gpioj 3 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+		sck-gpios = <&gpiof 7 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+		rate-gpios =
+				<&gpiof 0 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>,
+				<&gpiof 1 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+	};
+
+	hx71708_label: hx71708_node {
+		compatible = "avia,hx71708";
+		status = "disabled";
+		dout-gpios = <&gpioj 3 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+		sck-gpios = <&gpiof 7 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+	};
+};
