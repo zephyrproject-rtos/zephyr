@@ -103,6 +103,27 @@ typedef int (*_poller_cb_t)(struct k_poll_event *event, uint32_t state);
  * @{
  */
 
+/**
+ * @brief Resets thread longest frame usage data for specified thread
+ *
+ * This routine resets the longest frame value statistic
+ * after printing to zero, enabling observation of the
+ * longest frame from the most recent interval rather than
+ * the longest frame since startup.
+ *
+ * @param thread Pointer to the thread to reset counter.
+ *
+ * @note @kconfig{CONFIG_THREAD_ANALYZER_LONG_FRAME_PER_INTERVAL} must
+ * be set for this function to be effective.
+ */
+static inline void
+	k_thread_runtime_stats_longest_frame_reset(__maybe_unused struct k_thread *thread)
+{
+#ifdef CONFIG_SCHED_THREAD_USAGE_ANALYSIS
+	thread->base.usage.longest = 0ULL;
+#endif
+}
+
 typedef void (*k_thread_user_cb_t)(const struct k_thread *thread,
 				   void *user_data);
 
