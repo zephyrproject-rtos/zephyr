@@ -25,7 +25,7 @@ source "drivers/sdhc/Kconfig.stm32"
 
 config SDHC_INIT_PRIORITY
 	int "SDHC driver init priority"
-	default 85
+	default 75
 	help
 	  SDHC driver system init priority
 
