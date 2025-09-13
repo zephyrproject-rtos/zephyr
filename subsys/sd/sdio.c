@@ -589,10 +589,10 @@ int sdio_card_init(struct sd_card *card)
 		 * If card and host support 1.8V, perform voltage switch sequence now.
 		 * note that we skip this switch if the UHS protocol is not enabled.
 		 */
-		if ((card->flags & SD_1800MV_FLAG) &&
-			(!card->host_props.is_spi) &&
-			(card->host_props.host_caps.vol_180_support) &&
-			IS_ENABLED(CONFIG_SD_UHS_PROTOCOL)) {
+		if (IS_ENABLED(CONFIG_SD_UHS_PROTOCOL) &&
+		    (card->flags & SD_1800MV_FLAG) &&
+		    (!card->host_props.is_spi) &&
+		    (card->host_props.host_caps.vol_180_support)) {
 			ret = sdmmc_switch_voltage(card);
 			if (ret) {
 				/* Disable host support for 1.8 V */
