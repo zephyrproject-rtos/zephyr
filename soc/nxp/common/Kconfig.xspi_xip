@@ -8,7 +8,6 @@ DT_CHOSEN_FLASH_NODE := $(dt_chosen_path,$(DT_CHOSEN_Z_FLASH))
 DT_CHOSEN_FLASH_PARENT := $(dt_node_parent,$(DT_CHOSEN_FLASH_NODE))
 
 DT_FLASH_PARENT_IS_XSPI := $(dt_node_has_compat,$(DT_CHOSEN_FLASH_PARENT),$(DT_COMPAT_XSPI))
-DT_FLASH_HAS_SIZE_PROP := $(dt_node_has_prop,$(DT_CHOSEN_FLASH_NODE),size)
 
 config FLASH_BASE_ADDRESS
 	default $(dt_node_reg_addr_hex,$(DT_CHOSEN_FLASH_PARENT),1) \
