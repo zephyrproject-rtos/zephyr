@@ -39,3 +39,13 @@ config RP2_REQUIRES_IMAGE_DEFINITION_BLOCK
 	help
 	  Include an Image Definition Block (IMAGE_DEF) to enable the bootroom in
 	  RP23XX devices to consider this a valid image in flash.
+
+config RP2350_SIGNING_KEY
+	string "Secure boot signing key"
+	help
+	  Provide a path to the private key to sign the image for secure boot.
+	  The key must be in PEM format and match the expectations of the
+	  picotool utility. Please see picotool documentation for details.
+	  Setting this config option enables west sign command
+	  to produce a signed ELF file. If this is not provided west sign
+	  cannot be used.
