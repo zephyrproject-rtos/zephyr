@@ -8,6 +8,8 @@ menu "GATT Services"
 
 rsource "Kconfig.dis"
 
+rsource "Kconfig.gap_default"
+
 rsource "Kconfig.cts"
 
 rsource "Kconfig.hrs"
