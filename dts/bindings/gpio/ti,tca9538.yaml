@@ -38,6 +38,10 @@ properties:
       enabling interrupts. Setting corresponding mask bits to logic
       0 to enable the interrupts.
 
+  has-pud:
+    type: boolean
+    description: Supports pull-up/pull-down resistors
+
 gpio-cells:
   - pin
   - flags
