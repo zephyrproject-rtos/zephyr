@@ -1,0 +1,76 @@
+# Copyright (C) 2025 Savoir-faire Linux, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  STM32 DMA controller V3.
+
+  This DMA controller is what is used in the STM32MP2 series SoCs in the form
+  of HPDMA, high-performance DMA. It supports 16 independent DMA channels
+  and 256 DMA requests from peripherals.
+  DMA clients connected to the STM32 HPDMA controller must use a three-cell
+  specifier for each channel.
+
+  It is a phandle to the STM32 DMA3 controller plus the following three integer
+  cells:
+  1. channel: The DMA channel number (0 to 15)
+  2. request: The DMA request line number (0 to 255)
+  3. channel-config: A 32-bit mask specifying the DMA channel configuration
+  which is device dependent (see 'dma_stm32.h'):
+  - bit 5: Cyclic Mode
+            0x0: STM32_DMA_MODE_NORMAL
+            0x1: STM32_DMA_MODE_CYCLIC
+  - bits 6-7: Direction
+            0x0: STM32_DMA_MEMORY_TO_MEMORY: MEM to MEM
+            0x1: STM32_DMA_MEMORY_TO_PERIPH: MEM to PERIPH
+            0x2: STM32_DMA_PERIPH_TO_MEMORY: PERIPH to MEM
+            0x3: reserved for PERIPH to PERIPH
+  - bit 9: Peripheral Address Increment
+            0x0: STM32_DMA_PERIPH_NO_INC: no address increment between transfers
+            0x1: STM32_DMA_PERIPH_INC: increment address between transfers
+  - bit 10: Memory Address Increment
+            0x0: STM32_DMA_MEM_NO_INC: no address increment between transfers
+            0x1: STM32_DMA_MEM_INC: increment address between transfers
+  - bits 11-12: Peripheral Data Size
+            0x0: STM32_DMA_PERIPH_8BITS: Byte (8 bits)
+            0x1: STM32_DMA_PERIPH_16BITS: Half-word (16 bits)
+            0x2: STM32_DMA_PERIPH_32BITS: Word (32 bits)
+            0x3: STM32_DMA_PERIPH_64BITS: Double-word (64 bits)
+  - bits 13-14: Memory Data Size
+            0x0: STM32_DMA_MEM_8BITS: Byte (8 bits)
+            0x1: STM32_DMA_MEM_16BITS: Half-word (16 bits)
+            0x2: STM32_DMA_MEM_32BITS: Word (32 bits)
+            0x3: STM32_DMA_MEM_64BITS: Double-word (64 bits)
+  - bit 15: Reserved
+  - bits 16-17: Priority Level
+            0x0: STM32_DMA_PRIORITY_LOW: Low
+            0x1: STM32_DMA_PRIORITY_MEDIUM: Medium
+            0x2: STM32_DMA_PRIORITY_HIGH: High
+            0x3: STM32_DMA_PRIORITY_VERY_HIGH: Very High
+
+  For the client part, example for stm32mp257f-ev1 on the CM33 using the HPDMA3
+  instance:
+    rx using channel 0 with request 17 for uart5_rx
+    tx using channel 1 with request 18 for uart5_tx
+    uart5 {
+      dmas = <&hpdma3 0 18 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH)>,
+             <&hpdma3 1 17 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH)>;
+      dma-names = "tx", "rx";
+    };
+
+compatible: "st,stm32-dma-v3"
+
+include:
+  - name: st,stm32-dma.yaml
+
+properties:
+  "#dma-cells":
+    const: 3
+
+# Parameter syntax of stm32 follows the dma client dts syntax
+# in the Linux kernel declared in
+# https://git.kernel.org/pub/scm/linux/kernel/git/devicetree/devicetree-rebasing.git/plain/Bindings/dma/stm32/st,stm32-dma3.yaml
+
+dma-cells:
+  - channel
+  - slot
+  - channel-config
