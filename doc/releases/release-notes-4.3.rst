@@ -146,6 +146,8 @@ New APIs and options
 
 * Logging:
 
+  * :kconfig:option:`CONFIG_LOG_BACKEND_SWO_SYNC_PACKETS`
+
   * Added rate-limited logging macros to prevent log flooding when messages are generated frequently.
 
     * :c:macro:`LOG_ERR_RATELIMIT` - Rate-limited error logging macro (convenience)
