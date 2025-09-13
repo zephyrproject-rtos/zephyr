@@ -347,6 +347,8 @@ static int a2dp_process_config_ind(struct bt_avdtp *session, struct bt_avdtp_sep
 		err = a2dp_cb->reconfig_req(stream, &cfg, &rsp_err_code);
 		if (err) {
 			*errcode = rsp_err_code;
+		} else {
+			stream->codec_config = *cfg.codec_config;
 		}
 	}
 
