@@ -18,6 +18,10 @@ menuconfig LSM6DSO16IS
 
 if LSM6DSO16IS
 
+config LSM6DSO16IS_ISPU_ENABLE
+	bool "ISPU Enable"
+	select USE_ST_MEMS_ISPU
+
 choice LSM6DSO16IS_TRIGGER_MODE
 	prompt "Trigger mode"
 	help
