@@ -41,6 +41,23 @@ config ARCH_POSIX_TRAP_ON_FATAL
 	  Raise a SIGTRAP signal on fatal error before exiting.
 	  This automatically suspends the target if a debugger is attached.
 
+config ARCH_POSIX_FORCE_64BIT_TIME_T
+	bool "Set _TIME_BITS=64"
+	help
+	  This is a workaround option which will force the host glibc to use the 64bit time_t API
+	  also when building the 32bit variant for x86.
+	  Enabling this option avoids the Y2038 issue.
+	  Note only the embedded code time_t is forced to be 64bits.
+	  Note this would cause trouble if linking from the embedded side into another pre-compiled
+	  library whose interface uses a 32bit time_t.
+	  When this option is set you must *not* link to another library in the host side in which the
+	  embedded code directly calls any API which uses time_t or a derived type, when that host library
+	  has been built with the default time_t size of 32bits. This includes code which may be built
+	  with the native_simulator runner, and libraries provided by your OS distribution.
+	  Note glibc supports _TIME_BITS since glibc 2.34. Earlier version will just ignore this.
+	  This option is only relevant when building with CONFIG_EXTERNAL_LIBC and not setting
+	  CONFIG_64BIT.
+
 rsource "Kconfig.natsim_optional"
 
 endmenu
