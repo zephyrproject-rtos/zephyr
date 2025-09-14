@@ -245,6 +245,9 @@ static int video_esp32_get_caps(const struct device *dev, struct video_caps *cap
 {
 	const struct video_esp32_config *config = dev->config;
 
+	/* Two buffers are needed to perform transfers */
+	caps->min_vbuf_count = 2;
+
 	/* ESP32 produces full frames */
 	caps->min_line_count = caps->max_line_count = LINE_COUNT_HEIGHT;
 
