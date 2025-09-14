@@ -102,6 +102,8 @@ family:
       - name: bgm22
         socs:
           - name: bgm220sc22hna
+          - name: bgm220pc22hna
+          - name: bgm220pc22wga
   - name: silabs_siwx91x
     series:
       - name: siwg917
