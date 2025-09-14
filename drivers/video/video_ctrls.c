@@ -119,6 +119,12 @@ static inline void set_type_flag(struct video_ctrl *ctrl)
 	case VIDEO_CID_LINK_FREQ:
 		ctrl->type = VIDEO_CTRL_TYPE_INTEGER_MENU;
 		break;
+	case VIDEO_CID_PAN_RELATIVE:
+	case VIDEO_CID_TILT_RELATIVE:
+	case VIDEO_CID_FOCUS_RELATIVE:
+	case VIDEO_CID_IRIS_RELATIVE:
+	case VIDEO_CID_ZOOM_RELATIVE:
+		ctrl->flags |= VIDEO_CTRL_FLAG_WRITE_ONLY | VIDEO_CTRL_FLAG_EXECUTE_ON_WRITE;
 	default:
 		if (ctrl->id < VIDEO_CID_PRIVATE_BASE) {
 			ctrl->type = VIDEO_CTRL_TYPE_INTEGER;
@@ -324,8 +330,9 @@ int video_set_ctrl(const struct device *dev, struct video_control *control)
 	}
 
 	/* No new value */
-	if (ctrl->type == VIDEO_CTRL_TYPE_INTEGER64 ? ctrl->val64 == control->val64
-						    : ctrl->val == control->val) {
+	bool no_changed = ctrl->type == VIDEO_CTRL_TYPE_INTEGER64 ? ctrl->val64 == control->val64
+							       : ctrl->val == control->val;
+	if (no_changed && !(ctrl->flags & VIDEO_CTRL_FLAG_EXECUTE_ON_WRITE)) {
 		return 0;
 	}
 
