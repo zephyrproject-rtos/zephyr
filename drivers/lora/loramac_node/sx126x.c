@@ -9,6 +9,7 @@
 #include <zephyr/drivers/lora.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/kernel.h>
+#include <zephyr/sys/clock.h>
 
 #include <sx126x/sx126x.h>
 
@@ -54,7 +55,7 @@ static const struct sx126x_config dev_config = {
 
 static struct sx126x_data dev_data;
 
-void SX126xWaitOnBusy(void);
+int SX126xWaitOnBusy(void);
 
 #define MODE(m) [MODE_##m] = #m
 static const char *const mode_names[] = {
@@ -132,7 +133,10 @@ static int sx126x_spi_transceive(uint8_t *req_tx, uint8_t *req_rx,
 	}
 
 	if (req_len >= 1 && req_tx[0] != RADIO_SET_SLEEP) {
-		SX126xWaitOnBusy();
+		ret = SX126xWaitOnBusy();
+		if (ret) {
+			return ret;
+		}
 	}
 	return ret;
 }
@@ -362,11 +366,18 @@ void SX126xSetRfTxPower(int8_t power)
 	sx126x_set_tx_params(power, RADIO_RAMP_40_US);
 }
 
-void SX126xWaitOnBusy(void)
+int SX126xWaitOnBusy(void)
 {
-	while (sx126x_is_busy(&dev_data)) {
+	k_timepoint_t busy_timeout = sys_timepoint_calc(K_SECONDS(1));
+
+	do {
+		if (!sx126x_is_busy(&dev_data)) {
+			return 0;
+		}
 		k_sleep(K_MSEC(1));
-	}
+	} while (!sys_timepoint_expired(busy_timeout));
+	LOG_ERR("wait on busy timed out");
+	return -ETIMEDOUT;
 }
 
 void SX126xWakeup(void)
@@ -395,7 +406,10 @@ void SX126xWakeup(void)
 	}
 
 	LOG_DBG("Waiting for device...");
-	SX126xWaitOnBusy();
+	if (SX126xWaitOnBusy() < 0) {
+		return;
+	}
+
 	LOG_DBG("Device ready");
 	/* This function is only called from sleep mode
 	 * All edges on the SS SPI pin will transition the modem to
