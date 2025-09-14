@@ -15,8 +15,8 @@
 
 LOG_MODULE_REGISTER(nxp_siul2_gpio, CONFIG_GPIO_LOG_LEVEL);
 
-#ifdef CONFIG_NXP_S32_EIRQ
-#include <zephyr/drivers/interrupt_controller/intc_eirq_nxp_s32.h>
+#ifdef CONFIG_NXP_SIUL2_EIRQ
+#include <zephyr/drivers/interrupt_controller/intc_nxp_siul2_eirq.h>
 #endif
 #ifdef CONFIG_NXP_S32_WKPU
 #include <zephyr/drivers/interrupt_controller/intc_wkpu_nxp_s32.h>
@@ -35,7 +35,7 @@ LOG_MODULE_REGISTER(nxp_siul2_gpio, CONFIG_GPIO_LOG_LEVEL);
 #define PORT_READ(p)      sys_read32(config->port_base + SIUL2_MSCR(p))
 #define PORT_WRITE(p, v)  sys_write32((v), config->port_base + SIUL2_MSCR(p))
 
-#if defined(CONFIG_NXP_S32_EIRQ) || defined(CONFIG_NXP_S32_WKPU)
+#if defined(CONFIG_NXP_SIUL2_EIRQ) || defined(CONFIG_NXP_S32_WKPU)
 #define NXP_SIUL2_GPIO_LINE_NOT_FOUND 0xff
 
 struct gpio_nxp_siul2_irq_map {
@@ -55,7 +55,7 @@ struct gpio_nxp_siul2_config {
 	struct gpio_driver_config common;
 	mem_addr_t gpio_base;
 	mem_addr_t port_base;
-#ifdef CONFIG_NXP_S32_EIRQ
+#ifdef CONFIG_NXP_SIUL2_EIRQ
 	struct gpio_nxp_siul2_irq_config *eirq_info;
 #endif
 #ifdef CONFIG_NXP_S32_WKPU
@@ -67,7 +67,7 @@ struct gpio_nxp_siul2_data {
 	/* gpio_driver_data needs to be first */
 	struct gpio_driver_data common;
 
-#if defined(CONFIG_NXP_S32_EIRQ) || defined(CONFIG_NXP_S32_WKPU)
+#if defined(CONFIG_NXP_SIUL2_EIRQ) || defined(CONFIG_NXP_S32_WKPU)
 	sys_slist_t callbacks;
 #if defined(CONFIG_NXP_S32_WKPU)
 	uint32_t pin_wkpu_mask;
@@ -192,7 +192,7 @@ static int nxp_siul2_gpio_port_toggle_bits(const struct device *port,
 	return 0;
 }
 
-#if defined(CONFIG_NXP_S32_EIRQ) || defined(CONFIG_NXP_S32_WKPU)
+#if defined(CONFIG_NXP_SIUL2_EIRQ) || defined(CONFIG_NXP_S32_WKPU)
 
 static uint8_t nxp_siul2_gpio_pin_to_line(const struct gpio_nxp_siul2_irq_config *irq_cfg,
 					uint8_t pin)
@@ -216,19 +216,19 @@ static void nxp_siul2_gpio_isr(uint8_t pin, void *arg)
 	gpio_fire_callbacks(&data->callbacks, dev, BIT(pin));
 }
 
-#if defined(CONFIG_NXP_S32_EIRQ)
-static int nxp_siul2_gpio_eirq_get_trigger(enum eirq_nxp_s32_trigger *eirq_trigger,
+#if defined(CONFIG_NXP_SIUL2_EIRQ)
+static int nxp_siul2_gpio_eirq_get_trigger(enum nxp_siul2_eirq_trigger *eirq_trigger,
 					 enum gpio_int_trig trigger)
 {
 	switch (trigger) {
 	case GPIO_INT_TRIG_LOW:
-		*eirq_trigger = EIRQ_NXP_S32_FALLING_EDGE;
+		*eirq_trigger = NXP_SIUl2_EIRQ_FALLING_EDGE;
 		break;
 	case GPIO_INT_TRIG_HIGH:
-		*eirq_trigger = EIRQ_NXP_S32_RISING_EDGE;
+		*eirq_trigger = NXP_SIUl2_EIRQ_RISING_EDGE;
 		break;
 	case GPIO_INT_TRIG_BOTH:
-		*eirq_trigger = EIRQ_NXP_S32_BOTH_EDGES;
+		*eirq_trigger = NXP_SIUl2_EIRQ_BOTH_EDGES;
 		break;
 	default:
 		return -ENOTSUP;
@@ -245,7 +245,7 @@ static int nxp_siul2_gpio_config_eirq(const struct device *dev,
 	const struct gpio_nxp_siul2_config *config = dev->config;
 	const struct gpio_nxp_siul2_irq_config *irq_cfg = config->eirq_info;
 	uint8_t irq_line;
-	enum eirq_nxp_s32_trigger eirq_trigger;
+	enum nxp_siul2_eirq_trigger eirq_trigger;
 
 	if (irq_cfg == NULL) {
 		LOG_ERR("external interrupt controller not available or enabled");
@@ -266,23 +266,23 @@ static int nxp_siul2_gpio_config_eirq(const struct device *dev,
 	}
 
 	if (mode == GPIO_INT_MODE_DISABLED) {
-		eirq_nxp_s32_disable_interrupt(irq_cfg->ctrl, irq_line);
-		eirq_nxp_s32_unset_callback(irq_cfg->ctrl, irq_line);
+		nxp_siul2_eirq_disable_interrupt(irq_cfg->ctrl, irq_line);
+		nxp_siul2_eirq_unset_callback(irq_cfg->ctrl, irq_line);
 	} else {
 		if (nxp_siul2_gpio_eirq_get_trigger(&eirq_trigger, trig)) {
 			return -ENOTSUP;
 		}
-		if (eirq_nxp_s32_set_callback(irq_cfg->ctrl, irq_line, pin,
+		if (nxp_siul2_eirq_set_callback(irq_cfg->ctrl, irq_line, pin,
 					nxp_siul2_gpio_isr, (void *)dev)) {
 			LOG_ERR("pin %d is already in use", pin);
 			return -EBUSY;
 		}
-		eirq_nxp_s32_enable_interrupt(irq_cfg->ctrl, irq_line, eirq_trigger);
+		nxp_siul2_eirq_enable_interrupt(irq_cfg->ctrl, irq_line, eirq_trigger);
 	}
 
 	return 0;
 }
-#endif /* CONFIG_NXP_S32_EIRQ */
+#endif /* CONFIG_NXP_SIUL2_EIRQ */
 
 #if defined(CONFIG_NXP_S32_WKPU)
 static int nxp_siul2_gpio_wkpu_get_trigger(enum wkpu_nxp_s32_trigger *wkpu_trigger,
@@ -365,7 +365,7 @@ static int nxp_siul2_gpio_pin_interrupt_configure(const struct device *dev,
 	}
 #endif
 
-#if defined(CONFIG_NXP_S32_EIRQ)
+#if defined(CONFIG_NXP_SIUL2_EIRQ)
 	return nxp_siul2_gpio_config_eirq(dev, pin, mode, trig);
 #endif
 }
@@ -377,7 +377,7 @@ static int nxp_siul2_gpio_manage_callback(const struct device *dev,
 
 	return gpio_manage_callback(&data->callbacks, cb, set);
 }
-#endif /* defined(CONFIG_NXP_S32_EIRQ) || defined(CONFIG_NXP_S32_WKPU) */
+#endif /* defined(CONFIG_NXP_SIUL2_EIRQ) || defined(CONFIG_NXP_S32_WKPU) */
 
 #ifdef CONFIG_GPIO_GET_CONFIG
 static int nxp_siul2_gpio_pin_get_config(const struct device *dev,
@@ -469,7 +469,7 @@ static DEVICE_API(gpio, gpio_nxp_siul2_driver_api) = {
 	.port_set_bits_raw = nxp_siul2_gpio_port_set_bits_raw,
 	.port_clear_bits_raw = nxp_siul2_gpio_port_clear_bits_raw,
 	.port_toggle_bits = nxp_siul2_gpio_port_toggle_bits,
-#if defined(CONFIG_NXP_S32_EIRQ) || defined(CONFIG_NXP_S32_WKPU)
+#if defined(CONFIG_NXP_SIUL2_EIRQ) || defined(CONFIG_NXP_S32_WKPU)
 	.pin_interrupt_configure = nxp_siul2_gpio_pin_interrupt_configure,
 	.manage_callback = nxp_siul2_gpio_manage_callback,
 #endif
@@ -506,7 +506,7 @@ static DEVICE_API(gpio, gpio_nxp_siul2_driver_api) = {
 			& ~(GPIO_NXP_SIUL2_RESERVED_PIN_MASK(n))),		\
 		(GPIO_PORT_PIN_MASK_FROM_DT_INST(n)))
 
-#ifdef CONFIG_NXP_S32_EIRQ
+#ifdef CONFIG_NXP_SIUL2_EIRQ
 #define GPIO_NXP_SIUL2_EIRQ_NODE(n)						\
 	DT_INST_PHANDLE(n, interrupt_parent)
 
@@ -541,7 +541,7 @@ static DEVICE_API(gpio, gpio_nxp_siul2_driver_api) = {
 #else
 #define GPIO_NXP_SIUL2_SET_EIRQ_INFO(n)
 #define GPIO_NXP_SIUL2_GET_EIRQ_INFO(n)
-#endif /* CONFIG_NXP_S32_EIRQ */
+#endif /* CONFIG_NXP_SIUL2_EIRQ */
 
 #ifdef CONFIG_NXP_S32_WKPU
 #define GPIO_NXP_SIUL2_WKPU_NODE(n) DT_INST_PHANDLE(n, nxp_wkpu)

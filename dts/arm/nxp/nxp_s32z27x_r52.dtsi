@@ -231,7 +231,7 @@
 			#size-cells = <1>;
 
 			eirq0: eirq0@40520010 {
-				compatible = "nxp,s32-siul2-eirq";
+				compatible = "nxp,siul2-eirq";
 				reg = <0x40520010 0xb4>;
 				#address-cells = <0>;
 				interrupts = <GIC_SPI 514 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
@@ -283,7 +283,7 @@
 			#size-cells = <1>;
 
 			eirq1: eirq1@40d20010 {
-				compatible = "nxp,s32-siul2-eirq";
+				compatible = "nxp,siul2-eirq";
 				reg = <0x40d20010 0xb4>;
 				#address-cells = <0>;
 				interrupts = <GIC_SPI 515 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
@@ -359,7 +359,7 @@
 			#size-cells = <1>;
 
 			eirq4: eirq4@42520010 {
-				compatible = "nxp,s32-siul2-eirq";
+				compatible = "nxp,siul2-eirq";
 				reg = <0x42520010 0xb4>;
 				#address-cells = <0>;
 				interrupts = <GIC_SPI 516 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
@@ -433,7 +433,7 @@
 			#size-cells = <1>;
 
 			eirq5: eirq5@42d20010 {
-				compatible = "nxp,s32-siul2-eirq";
+				compatible = "nxp,siul2-eirq";
 				reg = <0x42d20010 0xb4>;
 				#address-cells = <0>;
 				interrupts = <GIC_SPI 517 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
