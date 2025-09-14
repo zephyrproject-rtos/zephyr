@@ -1317,7 +1317,12 @@ void ull_conn_done(struct node_rx_event_done *done)
 	}
 #endif /* CONFIG_BT_CTLR_CONN_RSSI_EVENT */
 
-	if (lll_chan_metrics_is_notify()) {
+	/* Generate the Channel Metrics every 256 connection events */
+	static uint8_t x;
+
+	x++;
+	if (lll_chan_metrics_is_notify() ||
+	    (IS_ENABLED(CONFIG_BT_CTLR_CHAN_METRICS_EVENT) && (x == 0U))) {
 		struct node_rx_pdu *rx;
 
 		rx = ll_pdu_rx_alloc();
