@@ -90,6 +90,15 @@ config SPI_STATS
 	help
 	  Enable SPI device statistics.
 
+config SPI_SHELL_NUM_EMPTY_INSTANCES
+	int "Number of empty instances in the SPI shell"
+	depends on SPI_SHELL
+	default 32
+	help
+	  The number of empty instances in the SPI shell. Increase it, if you
+	  are using many SPI devices and see "ERROR: not enough space" error
+	  messages when using SPI shell.
+
 module = SPI
 module-str = spi
 source "subsys/logging/Kconfig.template.log_config"
