@@ -10,6 +10,7 @@ common:
     - simulation
   integration_platforms:
     - qemu_cortex_m0
+  min_ram: 16
 tests:
   portability.xsi.single_process:
     extra_configs:
@@ -31,7 +32,6 @@ tests:
     extra_configs:
       - CONFIG_NEWLIB_LIBC=y
       - CONFIG_NEWLIB_LIBC_MIN_REQUIRED_HEAP_SIZE=256
-    min_ram: 24
   portability.xsi.single_process.picolibc:
     tags: picolibc
     filter: CONFIG_PICOLIBC_SUPPORTED
