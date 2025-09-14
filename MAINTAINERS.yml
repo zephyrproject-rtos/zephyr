@@ -690,7 +690,6 @@ Bootloaders:
 Bouffalolab Platforms:
   status: maintained
   maintainers:
-    - nandojve
     - VynDragon
   files:
     - boards/bflb/
@@ -5266,7 +5265,6 @@ West:
 "West project: hal_bouffalolab":
   status: maintained
   maintainers:
-    - nandojve
     - VynDragon
   files:
     - modules/hal_bouffalolab/
