@@ -129,7 +129,7 @@ int video_init_ctrl(struct video_ctrl *ctrl, const struct device *dev, uint32_t 
 {
 	int ret;
 	uint32_t flags;
-	enum video_ctrl_type type;
+	enum video_ctrl_type type = VIDEO_CTRL_TYPE_INTEGER;
 	struct video_ctrl *vc;
 	struct video_device *vdev;
 
@@ -168,6 +168,10 @@ int video_init_ctrl(struct video_ctrl *ctrl, const struct device *dev, uint32_t 
 		ctrl->val64 = range.def64;
 	} else {
 		ctrl->val = range.def;
+	}
+
+	if (type == VIDEO_CTRL_TYPE_BUTTON) {
+		ctrl->flags |= VIDEO_CTRL_FLAG_WRITE_ONLY | VIDEO_CTRL_FLAG_EXECUTE_ON_WRITE;
 	}
 
 	/* Insert in an ascending order of ctrl's id */
