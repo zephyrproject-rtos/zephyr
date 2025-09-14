@@ -19,6 +19,11 @@
 #define VIDEO_CTRL_FLAG_INACTIVE   BIT(3)
 /** Control that affects other controls, e.g. the primary control of a cluster */
 #define VIDEO_CTRL_FLAG_UPDATE     BIT(4)
+/**
+ * Control is executed immediately when set, and driver callback is invoked even if the value
+ * hasn't changed
+ */
+#define VIDEO_CTRL_FLAG_EXECUTE_ON_WRITE BIT(5)
 
 enum video_ctrl_type {
 	/** Boolean type */
