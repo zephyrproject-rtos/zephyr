@@ -2675,9 +2675,8 @@ Formatted Output:
 GD32 Platforms:
   status: maintained
   maintainers:
-    - nandojve
-  collaborators:
     - soburi
+  collaborators:
     - cameled
   files:
     - boards/gd/
@@ -5315,8 +5314,6 @@ West:
 "West project: hal_gigadevice":
   status: maintained
   maintainers:
-    - nandojve
-  collaborators:
     - soburi
   files:
     - modules/hal_gigadevice/
