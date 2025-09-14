@@ -5,7 +5,9 @@
 
 import argparse
 import datetime
+import hashlib
 import os
+import re
 import sys
 import time
 from collections import defaultdict
@@ -25,6 +27,49 @@ def log(s):
     if args.verbose > 0:
         print(s, file=sys.stdout)
 
+
+SIGN_PREFIX = "<!--bot-signature:"
+SIGN_SUFFIX = "-->"
+
+def normalize(text: str) -> str:
+    text = text.replace('\r\n', '\n').strip()
+    text = re.sub(r'[ \t]+', ' ', text)
+    text = re.sub(r'\n{3,}', '\n\n', text)
+    return text
+
+def make_signature(body: str, tag: str = "default") -> str:
+    h = hashlib.sha256(normalize(body).encode("utf-8")).hexdigest()[:16]
+    return f"{SIGN_PREFIX}{tag}:{h}{SIGN_SUFFIX}"
+
+def post_or_update_signed_comment(pr, body: str, tag: str = "default", update_if_found=True):
+    issue = pr.as_issue()
+    sig = make_signature(body, tag)
+    signed_body = f"{body}\n\n{sig}"
+
+    # Try to detect the bot/user login for “same author” filtering
+    try:
+        me = pr.base.repo._requester._Requester__authorizationProvider.user.login
+    except Exception:
+        me = None
+
+    existing = None
+    for c in issue.get_comments():
+        if me and c.user.login != me:
+            continue
+        if sig in c.body:
+            existing = c
+            break
+
+    if existing:
+        if update_if_found and normalize(existing.body) != normalize(signed_body):
+            existing.edit(signed_body)
+            print("Updated existing signed comment.")
+            return existing
+        print("Signed comment already present, skipping.")
+        return existing
+
+    # No signed comment found → create new
+    return issue.create_comment(signed_body)
 
 def parse_args():
     global args
@@ -250,6 +295,7 @@ def process_pr(gh, maintainer_file, number):
         else:
             log("Too many labels to be applied")
 
+    reviewers_added = False
     if collab:
         reviewers = []
         existing_reviewers = set()
@@ -297,15 +343,19 @@ def process_pr(gh, maintainer_file, number):
             reviewers = list(_all_maintainers.keys())
 
         if reviewers:
+            reviewers_added = True
             try:
                 log(f"adding reviewers {reviewers}...")
                 if not args.dry_run:
                     pr.create_review_request(reviewers=reviewers)
             except GithubException:
-                log("can't add reviewer")
+                log("can't add reviewers")
+        else:
+            log("no reviewers to add")
 
     ms = []
     # assignees
+    assignees_added = False
     if assignees and (not pr.assignee or args.dry_run):
         try:
             for assignee in assignees:
@@ -315,11 +365,35 @@ def process_pr(gh, maintainer_file, number):
             log("Error: Unknown user")
 
         for mm in ms:
+            assignees_added = True
             log(f"Adding assignee {mm}...")
             if not args.dry_run:
-                pr.add_to_assignees(mm)
+                try:
+                    pr.add_to_assignees(mm)
+                except GithubException:
+                    log("can't add assignees.")
     else:
         log("not setting assignee")
+
+
+    teams = [
+            "release",
+            ]
+    if not (assignees_added or reviewers_added):
+        log("No assignees or reviewers could be found, adding triage team")
+        # if we could not find any assignees or reviewers, add a comment to the PR
+        # and add release as reviewer to make sure someone looks at it.
+        if not args.dry_run:
+            team = teams[0]
+            # Use a comment with a signature so that we can update it if needed
+            comment = (
+                f"Could not find any assignees or reviewers for this PR, adding "
+                f"@zephyrproject-rtos/{team} as reviewer to make sure someone looks at it. "
+                f"@zephyrproject-rtos/{team}, please triage and assign this PR "
+                f"appropriately. Thanks!"
+            )
+            post_or_update_signed_comment(pr, comment, tag="triage")
+            pr.create_review_request(team_reviewers=teams)
 
     time.sleep(1)
 
