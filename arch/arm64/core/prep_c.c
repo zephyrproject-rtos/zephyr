@@ -14,6 +14,8 @@
  * initialization is performed.
  */
 
+#include "kernel_arch_func.h"
+
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/platform/hooks.h>
 #include <zephyr/arch/cache.h>
