@@ -1,10 +1,10 @@
-# Copyright 2022-2024 NXP
+# Copyright 2022-2025 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 
-description: NXP S32 SIUL2 External Interrupts Request controller
+description: NXP SIUL2 External Interrupts Request controller
 
-compatible: "nxp,s32-siul2-eirq"
+compatible: "nxp,siul2-eirq"
 
 include: [interrupt-controller.yaml, pinctrl-device.yaml, base.yaml]
 
@@ -32,7 +32,7 @@ properties:
 
 child-binding:
   description: |
-    NXP S32 SIUL2 External Interrupt configuration. Specific filter requirements
+    NXP SIUL2 External Interrupt configuration. Specific filter requirements
     for each interrupt can be specified by adding a child node to the interrupt
     controller, labeled `irq_<interrupt-number>`. For example:
 
