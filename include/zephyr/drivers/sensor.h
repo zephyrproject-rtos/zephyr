@@ -1454,13 +1454,11 @@ struct sensor_info {
  * @param api_ptr Provides an initial pointer to the API function struct used
  * by the driver. Can be NULL.
  */
-#define SENSOR_DEVICE_DT_DEFINE(node_id, init_fn, pm_device,		\
-				data_ptr, cfg_ptr, level, prio,		\
-				api_ptr, ...)				\
-	DEVICE_DT_DEFINE(node_id, init_fn, pm_device,			\
-			 data_ptr, cfg_ptr, level, prio,		\
-			 api_ptr, __VA_ARGS__);				\
-									\
+#define SENSOR_DEVICE_DT_DEFINE(node_id, init_fn, pm_device, data_ptr, cfg_ptr, level, prio,       \
+				api_ptr, ...)                                                      \
+	DEVICE_DT_DEFINE(node_id, init_fn, pm_device, data_ptr, cfg_ptr, level, prio, api_ptr,     \
+			 __VA_ARGS__);                                                             \
+                                                                                                   \
 	SENSOR_INFO_DT_DEFINE(node_id);
 
 /**
