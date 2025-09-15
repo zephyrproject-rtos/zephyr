@@ -463,10 +463,10 @@
 			status = "disabled";
 		};
 
-		option_setting_ofs_in_rom: option-setting-ofs-in-rom@400 {
+		option-setting-ofs-in-rom@400 {
 			reg = <0x00000400 0x3c>;
 			#address-cells = <1>;
-			#size-cells = <0>;
+			#size-cells = <1>;
 
 			option_setting_ofs0: option-setting-ofs0@400 {
 				compatible = "renesas,ofs-memory";
@@ -487,16 +487,15 @@
 			};
 		};
 
-		option_setting_ofs_conf: option-setting-ofs-conf@1010008 {
-			compatible = "zephyr,memory-region";
+		option-setting-ofs-conf@1010008 {
 			reg = <0x01010008 0x2c>;
-			zephyr,memory-region = "OFS_CONF_MEMORY";
 			#address-cells = <1>;
-			#size-cells = <0>;
+			#size-cells = <1>;
 			status = "okay";
 
 			option_setting_osis: option-setting-osis@1010018 {
-				compatible = "renesas,ofs-memory";
+				compatible = "zephyr,memory-region";
+				zephyr,memory-region = "OFS_OSIS_MEMORY";
 				reg = <0x01010018 0x1c>;
 				status = "okay";
 			};
