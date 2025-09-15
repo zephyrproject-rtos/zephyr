@@ -119,8 +119,23 @@ static void rm3100_submit_one_shot(const struct device *dev, struct rtio_iodev_s
 static void rm3100_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
 {
 	const struct sensor_read_config *cfg = iodev_sqe->sqe.iodev->data;
+	int err = 0;
+	uint8_t val = 0;
 
-	if (!cfg->is_streaming) {
+	if (IS_ENABLED(CONFIG_RM3100_HAS_TRIGGER) && !cfg->is_streaming) {
+		/* Submit a one-shot request with gpio notify on completed */
+		for (size_t i = 0; i < cfg->count; i++) {
+			val |= rm3100_encode_channel(cfg->channels[i].chan_type) << 4;
+		}
+
+		err = rm3100_bus_write(dev, RM3100_REG_POLL, &val, 1);
+		if (err < 0) {
+			LOG_ERR("Failed to trigger POLL");
+			rtio_iodev_sqe_err(iodev_sqe, err);
+		} else {
+			rm3100_stream_submit(dev, iodev_sqe);
+		}
+	} else if (!cfg->is_streaming) {
 		rm3100_submit_one_shot(dev, iodev_sqe);
 	} else if (IS_ENABLED(CONFIG_RM3100_STREAM)) {
 		rm3100_stream_submit(dev, iodev_sqe);
@@ -168,7 +183,7 @@ static int rm3100_init(const struct device *dev)
 	}
 	LOG_DBG("RM3100 chip ID confirmed: 0x%02x", val);
 
-	if (IS_ENABLED(CONFIG_RM3100_STREAM)) {
+	if (IS_ENABLED(CONFIG_RM3100_HAS_TRIGGER)) {
 		err = rm3100_stream_init(dev);
 		if (err < 0) {
 			LOG_ERR("Failed to set up stream config: %d", err);
@@ -206,13 +221,15 @@ static int rm3100_init(const struct device *dev)
 		return err;
 	}
 
-	/** Enable Continuous measurement on all axis */
-	val = RM3100_CMM_ALL_AXIS;
+	if (IS_ENABLED(CONFIG_RM3100_STREAM) || !IS_ENABLED(CONFIG_RM3100_HAS_TRIGGER)) {
+		/** Enable Continuous measurement on all axis */
+		val = RM3100_CMM_ALL_AXIS;
 
-	err = rm3100_bus_write(dev, RM3100_REG_CMM, &val, 1);
-	if (err < 0) {
-		LOG_ERR("Failed to set sensor in Continuous Measurement Mode: %d", err);
-		return err;
+		err = rm3100_bus_write(dev, RM3100_REG_CMM, &val, 1);
+		if (err < 0) {
+			LOG_ERR("Failed to set sensor in Continuous Measurement Mode: %d", err);
+			return err;
+		}
 	}
 
 	return 0;
