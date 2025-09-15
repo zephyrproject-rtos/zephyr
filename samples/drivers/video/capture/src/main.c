@@ -151,55 +151,56 @@ int main(void)
 	}
 
 	/* Set the crop setting if necessary */
-#if CONFIG_VIDEO_SOURCE_CROP_WIDTH && CONFIG_VIDEO_SOURCE_CROP_HEIGHT
-	sel.target = VIDEO_SEL_TGT_CROP;
-	sel.rect.left = CONFIG_VIDEO_SOURCE_CROP_LEFT;
-	sel.rect.top = CONFIG_VIDEO_SOURCE_CROP_TOP;
-	sel.rect.width = CONFIG_VIDEO_SOURCE_CROP_WIDTH;
-	sel.rect.height = CONFIG_VIDEO_SOURCE_CROP_HEIGHT;
-	if (video_set_selection(video_dev, &sel)) {
-		LOG_ERR("Unable to set selection crop");
-		return 0;
-	}
-	LOG_INF("Selection crop set to (%u,%u)/%ux%u",
-		sel.rect.left, sel.rect.top, sel.rect.width, sel.rect.height);
-#endif
+	if (CONFIG_VIDEO_SOURCE_CROP_WIDTH > 0) {
+		struct video_selection sel = {
+			.target = VIDEO_SEL_TGT_CROP,
+			.rect.left = CONFIG_VIDEO_SOURCE_CROP_LEFT,
+			.rect.top = CONFIG_VIDEO_SOURCE_CROP_TOP,
+			.rect.width = CONFIG_VIDEO_SOURCE_CROP_WIDTH,
+			.rect.height = CONFIG_VIDEO_SOURCE_CROP_HEIGHT,
+			.type = VIDEO_BUF_TYPE_OUTPUT,
+		};
 
-#if CONFIG_VIDEO_FRAME_HEIGHT || CONFIG_VIDEO_FRAME_WIDTH
-#if CONFIG_VIDEO_FRAME_HEIGHT
-	fmt.height = CONFIG_VIDEO_FRAME_HEIGHT;
-#endif
-
-#if CONFIG_VIDEO_FRAME_WIDTH
-	fmt.width = CONFIG_VIDEO_FRAME_WIDTH;
-#endif
-
-	/*
-	 * Check (if possible) if targeted size is same as crop
-	 * and if compose is necessary
-	 */
-	sel.target = VIDEO_SEL_TGT_CROP;
-	err = video_get_selection(video_dev, &sel);
-	if (err < 0 && err != -ENOSYS) {
-		LOG_ERR("Unable to get selection crop");
-		return 0;
-	}
-
-	if (err == 0 && (sel.rect.width != fmt.width || sel.rect.height != fmt.height)) {
-		sel.target = VIDEO_SEL_TGT_COMPOSE;
-		sel.rect.left = 0;
-		sel.rect.top = 0;
-		sel.rect.width = fmt.width;
-		sel.rect.height = fmt.height;
-		err = video_set_selection(video_dev, &sel);
-		if (err < 0 && err != -ENOSYS) {
-			LOG_ERR("Unable to set selection compose");
+		if (video_set_selection(video_dev, &sel)) {
+			LOG_ERR("Unable to set selection crop");
 			return 0;
 		}
-	}
-#endif
 
-	if (strcmp(CONFIG_VIDEO_PIXEL_FORMAT, "")) {
+		LOG_INF("Selection crop set to (%u,%u)/%ux%u",
+			sel.rect.left, sel.rect.top, sel.rect.width, sel.rect.height);
+
+		/*
+		 * Check (if possible) if targeted size is same as crop
+		 * and if compose is necessary
+		 */
+		sel.target = VIDEO_SEL_TGT_CROP;
+		err = video_get_selection(video_dev, &sel);
+		if (err < 0 && err != -ENOSYS) {
+			LOG_ERR("Unable to get selection crop");
+			return 0;
+		}
+
+		if (err == 0 && (sel.rect.width != fmt.width || sel.rect.height != fmt.height)) {
+			sel.target = VIDEO_SEL_TGT_COMPOSE;
+			sel.rect.left = 0;
+			sel.rect.top = 0;
+			sel.rect.width = fmt.width;
+			sel.rect.height = fmt.height;
+			err = video_set_selection(video_dev, &sel);
+			if (err < 0 && err != -ENOSYS) {
+				LOG_ERR("Unable to set selection compose");
+				return 0;
+			}
+		}
+	}
+
+	if (CONFIG_VIDEO_FRAME_HEIGHT > 0) {
+		fmt.height = CONFIG_VIDEO_FRAME_HEIGHT;
+	}
+	if (CONFIG_VIDEO_FRAME_WIDTH > 0) {
+		fmt.width = CONFIG_VIDEO_FRAME_WIDTH;
+	}
+	if (strcmp(CONFIG_VIDEO_PIXEL_FORMAT, "") != 0) {
 		fmt.pixelformat = VIDEO_FOURCC_FROM_STR(CONFIG_VIDEO_PIXEL_FORMAT);
 	}
 
