@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2018, 2020, NXP
+ * Copyright (c) 2017-2018, 2020, 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +14,7 @@
 #endif
 
 #include <fsl_adc16.h>
+#include <zephyr/dt-bindings/adc/mcux-adc16.h>
 
 #define LOG_LEVEL CONFIG_ADC_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -44,6 +45,8 @@ struct mcux_adc16_config {
 	bool high_speed;	/* ADC enable high speed mode*/
 	bool continuous_convert; /* ADC enable continuous convert*/
 	const struct pinctrl_dev_config *pincfg;
+	/* Whether this instance supports differential mode. */
+	bool supports_diff;
 };
 
 #ifdef CONFIG_ADC_MCUX_ADC16_ENABLE_EDMA
@@ -67,6 +70,8 @@ struct mcux_adc16_data {
 	uint16_t *repeat_buffer;
 	uint32_t channels;
 	uint8_t channel_id;
+	/* Bitmask of channels requested as differential by user config */
+	uint32_t diff_channels;
 };
 
 #ifdef CONFIG_ADC_MCUX_ADC16_HW_TRIGGER
@@ -99,23 +104,68 @@ static void adc_hw_trigger_enable(const struct device *dev)
 }
 #endif
 
+static int mcux_adc16_acquisition_time_setup(const struct device *dev, uint16_t acq_time)
+{
+	const struct mcux_adc16_config *config = dev->config;
+	uint32_t acquisition_time_value = ADC_ACQ_TIME_VALUE(acq_time);
+	uint8_t acquisition_time_unit = ADC_ACQ_TIME_UNIT(acq_time);
+
+	if (acquisition_time_value == ADC_ACQ_TIME_DEFAULT) {
+		return 0;
+	}
+
+	if (acquisition_time_unit == ADC_ACQ_TIME_TICKS) {
+		/* acquisition_time_value must directly match ADLSTS field encoding (0..3). */
+		if (acquisition_time_value > MCUX_ADC16_ACQUISITION_TIME_6CYCLE) {
+			LOG_ERR("Invalid acquisition time ticks value: %u", acquisition_time_value);
+			return -EINVAL;
+		}
+		config->base->CFG2 = ((config->base->CFG2 & ~ADC_CFG2_ADLSTS_MASK) |
+					ADC_CFG2_ADLSTS(acquisition_time_value));
+	} else {
+		LOG_ERR("Acquisition time unit not support");
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
 static int mcux_adc16_channel_setup(const struct device *dev,
 				    const struct adc_channel_cfg *channel_cfg)
 {
+	const struct mcux_adc16_config *config = dev->config;
 	uint8_t channel_id = channel_cfg->channel_id;
+	int ret;
 
 	if (channel_id > (ADC_SC1_ADCH_MASK >> ADC_SC1_ADCH_SHIFT)) {
 		LOG_ERR("Channel %d is not valid", channel_id);
 		return -EINVAL;
 	}
 
-	if (channel_cfg->acquisition_time != ADC_ACQ_TIME_DEFAULT) {
-		LOG_ERR("Invalid channel acquisition time");
-		return -EINVAL;
+	ret = mcux_adc16_acquisition_time_setup(dev, channel_cfg->acquisition_time);
+	if (ret) {
+		LOG_ERR("ADC16 acquisition time setting failed");
+		return ret;
 	}
 
 	if (channel_cfg->differential) {
-		LOG_ERR("Differential channels are not supported");
+		if (!config->supports_diff) {
+			LOG_ERR("Differential channels are not supported on %s", dev->name);
+			return -ENOTSUP;
+		}
+		/* Record user's differential request for this channel */
+		((struct mcux_adc16_data *)dev->data)->diff_channels |= BIT(channel_id);
+	}
+
+	if (channel_cfg->reference == ADC_REF_EXTERNAL0) {
+		/* Select Vrefh and Vrefl as reference */
+		config->base->SC2 &= ~ADC_SC2_REFSEL_MASK;
+	} else if (channel_cfg->reference == ADC_REF_VDD_1) {
+		/* Select Valth and Valtl as reference */
+		config->base->SC2 = ((config->base->SC2 & ~ADC_SC2_REFSEL_MASK) |
+					ADC_SC2_REFSEL(1));
+	} else {
+		LOG_DBG("ref not support");
 		return -EINVAL;
 	}
 
@@ -257,9 +307,13 @@ static void mcux_adc16_start_channel(const struct device *dev)
 
 	LOG_DBG("Starting channel %d", data->channel_id);
 
-#if defined(FSL_FEATURE_ADC16_HAS_DIFF_MODE) && FSL_FEATURE_ADC16_HAS_DIFF_MODE
-	channel_config.enableDifferentialConversion = false;
-#endif
+	/* Configure differential per channel if supported/requested */
+	if (config->supports_diff && (data->diff_channels & BIT(data->channel_id))) {
+		channel_config.enableDifferentialConversion = true;
+	} else {
+		channel_config.enableDifferentialConversion = false;
+	}
+
 	channel_config.enableInterruptOnConversionCompleted = true;
 	channel_config.channelNumber = data->channel_id;
 	ADC16_SetChannelConfig(config->base, channel_group, &channel_config);
@@ -484,6 +538,7 @@ static DEVICE_API(adc, mcux_adc16_driver_api) = {
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
 		.continuous_convert =				\
 			DT_INST_PROP(n, continuous_convert),	\
+		.supports_diff = DT_INST_PROP(n, has_differential_mode),\
 		ADC16_MCUX_EDMA_INIT(n)				\
 	};								\
 									\
@@ -491,6 +546,7 @@ static DEVICE_API(adc, mcux_adc16_driver_api) = {
 		ADC_CONTEXT_INIT_TIMER(mcux_adc16_data_##n, ctx),	\
 		ADC_CONTEXT_INIT_LOCK(mcux_adc16_data_##n, ctx),	\
 		ADC_CONTEXT_INIT_SYNC(mcux_adc16_data_##n, ctx),	\
+		.diff_channels = 0U,					\
 		ADC16_MCUX_EDMA_DATA(n)					\
 	};								\
 									\
