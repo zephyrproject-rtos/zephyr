@@ -981,7 +981,7 @@ static int uvc_get_vc_ctrl(const struct device *dev, struct net_buf *const buf,
 	}
 
 	if (size < map->size) {
-		LOG_WRN("Buffer too small (%u bytes) or unexpected size requested (%u bytes)",
+		LOG_WRN("Buffer too small (%zu bytes) or unexpected size requested (%u bytes)",
 			net_buf_tailroom(buf), setup->wLength);
 		return -ENOTSUP;
 	}
@@ -1985,7 +1985,7 @@ static int uvc_reset_transfer(const struct device *dev)
 	struct net_buf *buf;
 	int ret;
 
-	LOG_DBG("Stream restarted, terminating the transfer after %u bytes", data->vbuf_offset);
+	LOG_DBG("Stream restarted, terminating the transfer after %zu bytes", data->vbuf_offset);
 
 	buf = net_buf_alloc_len(&uvc_buf_pool, 0, K_NO_WAIT);
 	if (buf == NULL) {
@@ -2047,7 +2047,7 @@ static int uvc_flush_vbuf(const struct device *dev, struct video_buffer *const v
 	bi = (struct uvc_buf_info *)udc_get_buf_info(buf);
 	bi->udc.ep = uvc_get_bulk_in(dev);
 
-	LOG_DBG("Video buffer %p, offset %u/%u, size %u",
+	LOG_DBG("Video buffer %p, offset %zu/%u, size %d",
 		vbuf, data->vbuf_offset, vbuf->bytesused, buf->len);
 
 	/* End-of-Transfer condition */
