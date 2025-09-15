@@ -241,6 +241,22 @@ File-System
 - :kconfig:option:`CONFIG_FILE_SYSTEM`
 - :kconfig:option:`CONFIG_FILE_SYSTEM_SHELL`
 
+Activate all available command groups by default
+================================================
+
+To interactively explore all available shell commands, it may be useful to
+activate all of them by default. It can be done by selecting
+:kconfig:option:`CONFIG_SHELL_ALL`. If this option is selected, the shell
+commands are available, when the respective module is activated. For example,
+if :kconfig:option:`CONFIG_SHELL_ALL` is selected, then
+:kconfig:option:`CONFIG_SENSOR_SHELL` is activated by default, when
+:kconfig:option`CONFIG_SENSOR` is activated.
+
+.. note::
+	This option is intended for exploration and early app developement. It will
+	usually significantly increase the size of the binary. For most apps it is
+	not necessary to activate it in the final build.
+
 Creating commands
 =================
 
