@@ -542,6 +542,8 @@ static int llext_count_export_syms(struct llext_loader *ldr, struct llext *ext)
 	size_t ent_size = ldr->sects[LLEXT_MEM_SYMTAB].sh_entsize;
 	size_t syms_size = ldr->sects[LLEXT_MEM_SYMTAB].sh_size;
 	int sym_cnt = syms_size / sizeof(elf_sym_t);
+	elf_shdr_t *str_region = ldr->sects + LLEXT_MEM_STRTAB;
+	size_t str_reg_size = str_region->sh_size;
 	const char *name;
 	elf_sym_t sym;
 	int i, ret;
@@ -566,6 +568,12 @@ static int llext_count_export_syms(struct llext_loader *ldr, struct llext *ext)
 		ret = llext_read(ldr, &sym, ent_size);
 		if (ret != 0) {
 			return ret;
+		}
+
+		if (sym.st_name >= str_reg_size) {
+			LOG_ERR("Invalid symbol name index %d in symbol %d",
+				sym.st_name, i);
+			return -ENOEXEC;
 		}
 
 		uint32_t stt = ELF_ST_TYPE(sym.st_info);
