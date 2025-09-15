@@ -397,6 +397,8 @@ static int rfid_cr95hf_wait(const struct device *dev, k_timeout_t timeout)
 	struct rfid_cr95hf_data *data = dev->data;
 	int ret = 0;
 
+	k_sleep(K_NSEC(1));
+
 	/* Function blocks until wakeup of CR95HF*/
 	if (config->irq_out.port == NULL) {
 		LOG_DBG("Polling");
