@@ -765,6 +765,9 @@ static void uart_silabs_isr(const struct device *dev)
 	}
 #endif
 #ifdef CONFIG_UART_SILABS_USART_ASYNC
+	if (!data->dma_tx.dma_dev) {
+		return;
+	}
 	if (flags & USART_IF_TCMP1) {
 
 		data->dma_rx.timeout_cnt++;

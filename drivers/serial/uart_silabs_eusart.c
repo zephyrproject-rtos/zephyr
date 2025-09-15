@@ -778,7 +778,9 @@ static void eusart_isr(const struct device *dev)
 	}
 #endif
 #ifdef CONFIG_UART_SILABS_EUSART_ASYNC
-
+	if (!data->dma_tx.dma_dev) {
+		return;
+	}
 	if (flags & EUSART_IF_RXTO) {
 		if (data->dma_rx.timeout == 0) {
 			eusart_dma_rx_flush(data);
