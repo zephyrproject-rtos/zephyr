@@ -1,5 +1,10 @@
 tests:
-  message_bus.zbus.uart_backend:
+  message_bus.zbus.multidomain.uart_backend:
+    platform_exclude:
+      - mps3/corstone300/fvp
+      - mps3/corstone310/fvp
+      - mps4/corstone315/fvp
+      - mps4/corstone320/fvp
     tags: zbus
     timeout: 180
     integration_platforms:
