@@ -1,0 +1,57 @@
+# Copyright (c) 2025, FocalTech Systems CO.,Ltd
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: ft9001_eval
+  full_name: FocalTech FT9001 Evaluation Board
+  vendor: focaltech
+  socs:
+    - name: ft9001
+      variants:
+        - name: ft9001
+          cpuclusters:
+            - name: cpu0
+              arch: arm
+              cpu: cortex-m4f
+  revisions:
+    - name: "1.0.0"
+      default: true
+
+toolchains:
+  - zephyr
+  - gnuarmemb
+  - xtools
+
+# Memory configuration based on dtsi
+flash: 2048KB  # 2MB as defined in dtsi: DT_SIZE_K(2048)
+ram: 256KB     # Total: SRAM0 (224KB) + SRAMD0 (32KB)
+
+# Memory regions from dtsi
+memory:
+  sram0:
+    base: 0x20000000
+    size: 224KB
+  sramd0:
+    base: 0x1fff8000  
+    size: 32KB
+    type: dtcm
+  flash0:
+    base: 0x10000000
+    size: 2048KB
+
+# Features supported by hardware (from dtsi analysis)
+supported:
+  - gpio        # 8 GPIO ports (eport0-7)
+  - serial      # 2 USART controllers
+  - watchdog    # WDT controller
+  - counter     # Timer/Counter
+  - flash       # Flash controller  
+  - pinctrl     # Pin controller
+  - reset       # Reset controller
+  - clock       # Clock/Power management
+
+# SoC specifications
+soc:
+  cpu_freq: 160000000  # 160MHz as defined in dtsi
+  architecture: armv7-m
+  fpu: true           # Cortex-M4F has FPU
