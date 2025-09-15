@@ -593,15 +593,22 @@ int i2c_stm32_error(const struct device *dev)
 	I2C_TypeDef *i2c = cfg->i2c;
 
 #if defined(CONFIG_I2C_TARGET)
-	if (data->slave_attached && !data->master_active) {
-		/* No need for a slave error function right now. */
-		return 0;
+	i2c_target_error_cb_t error_cb = NULL;
+
+	if (data->slave_attached && !data->master_active &&
+	    data->slave_cfg != NULL && data->slave_cfg->callbacks != NULL) {
+		error_cb = data->slave_cfg->callbacks->error;
 	}
 #endif
 
 	if (LL_I2C_IsActiveFlag_ARLO(i2c)) {
 		LL_I2C_ClearFlag_ARLO(i2c);
 		data->current.is_arlo = 1U;
+#if defined(CONFIG_I2C_TARGET)
+		if (error_cb != NULL) {
+			error_cb(data->slave_cfg, I2C_ERROR_ARBITRATION);
+		}
+#endif
 		goto end;
 	}
 
@@ -613,6 +620,12 @@ int i2c_stm32_error(const struct device *dev)
 	if (LL_I2C_IsActiveFlag_BERR(i2c)) {
 		LL_I2C_ClearFlag_BERR(i2c);
 		data->current.is_err = 1U;
+#if defined(CONFIG_I2C_TARGET)
+		if (error_cb != NULL) {
+			error_cb(data->slave_cfg, I2C_ERROR_GENERIC);
+		}
+#endif
+		goto end;
 	}
 
 #if defined(CONFIG_SMBUS_STM32_SMBALERT)
@@ -627,6 +640,11 @@ int i2c_stm32_error(const struct device *dev)
 
 	return 0;
 end:
+#if defined(CONFIG_I2C_TARGET)
+	if (data->slave_attached && !data->master_active) {
+		return -EIO;
+	}
+#endif
 	i2c_stm32_disable_transfer_interrupts(dev);
 	/* Wakeup thread */
 	k_sem_give(&data->device_sync_sem);
