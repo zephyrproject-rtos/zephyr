@@ -752,6 +752,14 @@ static int nrf_wifi_drv_main_zep(const struct device *dev)
 
 	/* Setup the linkage between the FMAC and the VIF contexts */
 	vif_ctx_zep->rpu_ctx_zep = &rpu_drv_priv_zep.rpu_ctx_zep;
+#ifndef CONFIG_NRF70_RADIO_TEST
+	k_work_init_delayable(&vif_ctx_zep->scan_timeout_work,
+			      nrf_wifi_scan_timeout_work);
+	k_work_init(&vif_ctx_zep->disp_scan_res_work,
+		    nrf_wifi_disp_scan_res_work_handler);
+
+	vif_ctx_zep->bss_max_idle_period = USHRT_MAX;
+#endif /* !CONFIG_NRF70_RADIO_TEST */
 
 	if (fixed_vif_cnt++ > 0) {
 		/* FMAC is already initialized for VIF-0 */
@@ -835,7 +843,6 @@ static int nrf_wifi_drv_main_zep(const struct device *dev)
 
 	rpu_drv_priv_zep.fmac_priv = nrf_wifi_rt_fmac_init();
 #endif /* CONFIG_NRF70_RADIO_TEST */
-
 	if (rpu_drv_priv_zep.fmac_priv == NULL) {
 		LOG_ERR("%s: nrf_wifi_fmac_init failed",
 			__func__);
@@ -864,17 +871,10 @@ static int nrf_wifi_drv_main_zep(const struct device *dev)
 		LOG_ERR("%s: nrf_wifi_fmac_dev_add_zep failed", __func__);
 		goto fmac_deinit;
 	}
-#else
-	k_work_init_delayable(&vif_ctx_zep->scan_timeout_work,
-			      nrf_wifi_scan_timeout_work);
-	k_work_init(&vif_ctx_zep->disp_scan_res_work,
-		    nrf_wifi_disp_scan_res_work_handler);
 #endif /* CONFIG_NRF70_RADIO_TEST */
 
 	k_mutex_init(&rpu_drv_priv_zep.rpu_ctx_zep.rpu_lock);
-#ifndef CONFIG_NRF70_RADIO_TEST
-	vif_ctx_zep->bss_max_idle_period = USHRT_MAX;
-#endif /* !CONFIG_NRF70_RADIO_TEST */
+
 	return 0;
 #ifdef CONFIG_NRF70_RADIO_TEST
 fmac_deinit:
