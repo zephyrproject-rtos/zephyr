@@ -42,7 +42,7 @@ LOG_MODULE_REGISTER(net_ctx, CONFIG_NET_CONTEXT_LOG_LEVEL);
 #include "pmtu.h"
 
 #if defined(CONFIG_NET_TCP)
-#include "tcp.h"
+#include "tcp_internal.h"
 #endif
 
 #ifdef CONFIG_NET_INITIAL_MCAST_TTL
