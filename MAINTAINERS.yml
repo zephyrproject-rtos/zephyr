@@ -4662,6 +4662,7 @@ TI K3 Platforms:
     - dts/arm/ti/am6*
     - dts/arm/ti/j7*
     - dts/bindings/*/ti,k3*
+    - dts/vendor/ti/
     - soc/ti/k3/
   labels:
     - "platform: TI K3"
