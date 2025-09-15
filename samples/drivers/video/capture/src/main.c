@@ -27,7 +27,7 @@ LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
 #endif
 
 #if DT_HAS_CHOSEN(zephyr_display)
-static inline int display_setup(const struct device *const display_dev, const uint32_t pixfmt)
+static inline int app_setup_display(const struct device *const display_dev, const uint32_t pixfmt)
 {
 	struct display_capabilities capabilities;
 	int ret = 0;
@@ -74,9 +74,9 @@ static inline int display_setup(const struct device *const display_dev, const ui
 	return ret;
 }
 
-static inline void video_display_frame(const struct device *const display_dev,
-				       const struct video_buffer *const vbuf,
-				       const struct video_format fmt)
+static inline void app_display_frame(const struct device *const display_dev,
+				     const struct video_buffer *const vbuf,
+				     const struct video_format fmt)
 {
 	struct display_buffer_descriptor buf_desc = {
 		.buf_size = vbuf->bytesused,
@@ -264,7 +264,7 @@ int main(void)
 		return 0;
 	}
 
-	err = display_setup(display_dev, fmt.pixelformat);
+	err = app_setup_display(display_dev, fmt.pixelformat);
 	if (err) {
 		LOG_ERR("Unable to set up display");
 		return err;
@@ -322,7 +322,7 @@ int main(void)
 #endif
 
 #if DT_HAS_CHOSEN(zephyr_display)
-		video_display_frame(display_dev, vbuf, fmt);
+		app_display_frame(display_dev, vbuf, fmt);
 #endif
 
 		err = video_enqueue(video_dev, vbuf);
