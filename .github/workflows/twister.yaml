@@ -65,7 +65,7 @@ jobs:
 
       - name: Setup Zephyr project
         if: github.event_name == 'pull_request'
-        uses: zephyrproject-rtos/action-zephyr-setup@6a744370a22e4ecb24f5dda3c7e80ff3e0a3b847 # v1.0.8
+        uses: zephyrproject-rtos/action-zephyr-setup@c125c5ebeeadbd727fa740b407f862734af1e52a # v1.0.9
         with:
           app-path: zephyr
           toolchains: all
