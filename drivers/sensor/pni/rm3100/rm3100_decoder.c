@@ -222,7 +222,9 @@ static int rm3100_decoder_decode(const uint8_t *buffer,
 static bool rm3100_decoder_has_trigger(const uint8_t *buffer,
 					enum sensor_trigger_type trigger)
 {
-	return false;
+	const struct rm3100_encoded_data *edata = (const struct rm3100_encoded_data *)buffer;
+
+	return edata->header.events.drdy && trigger == SENSOR_TRIG_DATA_READY;
 }
 
 SENSOR_DECODER_API_DT_DEFINE() = {
