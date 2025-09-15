@@ -30,6 +30,10 @@
 			compatible = "nordic,wlan";
 		};
 
+		wlan1: wlan1 {
+			compatible = "nordic,wlan";
+		};
+
 		wifi-max-tx-pwr-2g-dsss = <21>;
 		wifi-max-tx-pwr-2g-mcs0 = <16>;
 		wifi-max-tx-pwr-2g-mcs7 = <16>;
