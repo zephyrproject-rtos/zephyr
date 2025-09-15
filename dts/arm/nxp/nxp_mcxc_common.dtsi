@@ -202,6 +202,7 @@
 			interrupts = <15 0>;
 			status = "disabled";
 			#io-channel-cells = <1>;
+			has-differential-mode;
 		};
 
 		i2c0: i2c@40066000 {
