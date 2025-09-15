@@ -2,12 +2,13 @@
  * Copyright (c) 2021 The Chromium OS Authors
  * Copyright (c) 2020 Linaro Limited
  * Copyright (c) 2024 STMicroelectronics
+ * Copyright (c) 2025 Mario Paja
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <arm/armv8-m.dtsi>
-#include <zephyr/dt-bindings/clock/stm32l4_clock.h>
+#include <zephyr/dt-bindings/clock/stm32l5_clock.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
