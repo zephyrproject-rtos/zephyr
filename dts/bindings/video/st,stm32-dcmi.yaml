@@ -48,7 +48,12 @@ properties:
 
   snapshot-mode:
     type: boolean
-    description: set the driver into snapshot mode, default is off.
+    description: Set DCMI to Snapshot mode, instead of the default Capture mode.
+
+  snapshot-timeout:
+    type: int
+    description: Set capture timeout in microseconds, default is 1000.
+    default: 1000
 
 child-binding:
   child-binding:
