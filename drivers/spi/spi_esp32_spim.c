@@ -27,6 +27,11 @@ LOG_MODULE_REGISTER(esp32_spi, CONFIG_SPI_LOG_LEVEL);
 #include "spi_context.h"
 #include "spi_esp32_spim.h"
 
+#if defined(CONFIG_SOC_SERIES_ESP32S2) && defined(CONFIG_ADC_ESP32_DMA) &&                         \
+	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(spi3)) && DT_PROP(DT_NODELABEL(spi3), dma_enabled)
+#error "spi3 must not have dma-enabled if ADC_ESP32_DMA is enabled for ESP32-S2"
+#endif
+
 #define SPI_DMA_MAX_BUFFER_SIZE 4092
 
 #define SPI_DMA_RX 0
