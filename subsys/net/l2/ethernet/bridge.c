@@ -339,27 +339,32 @@ static enum net_verdict bridge_iface_process(struct net_if *iface,
 {
 	struct eth_bridge_iface_context *ctx = net_if_get_device(iface)->data;
 	struct net_if *orig_iface;
-	struct net_pkt *send_pkt;
-	size_t count;
+	struct net_pkt *send_pkt = pkt;
+	int fwd_iface_num = 0;
 
 	/* Drop all link-local packets for now. */
 	if (is_link_local_addr((struct net_eth_addr *)net_pkt_lladdr_dst(pkt))) {
 		NET_DBG("DROP: lladdr");
-		goto out;
+		net_pkt_unref(pkt);
+		return NET_OK;
 	}
 
 	lock_bridge(ctx);
 
-	/* Keep the original packet interface so that we can send to each
-	 * bridged interface.
-	 */
 	orig_iface = net_pkt_orig_iface(pkt);
 
-	count = ctx->count;
+	/* Get interface number to forward */
+	ARRAY_FOR_EACH(ctx->eth_iface, i) {
+		if (ctx->eth_iface[i] != NULL && ctx->eth_iface[i] != orig_iface) {
+			/* Skip it if not up */
+			if (!net_if_flag_is_set(ctx->eth_iface[i], NET_IF_UP)) {
+				continue;
+			}
+			fwd_iface_num++;
+		}
+	}
 
-	/* Pass the data to all the Ethernet interface except the originator
-	 * Ethernet interface.
-	 */
+	/* Forward pkt to other interfaces */
 	ARRAY_FOR_EACH(ctx->eth_iface, i) {
 		if (ctx->eth_iface[i] != NULL && ctx->eth_iface[i] != orig_iface) {
 			/* Skip it if not up */
@@ -370,16 +375,12 @@ static enum net_verdict bridge_iface_process(struct net_if *iface,
 			/* Clone the packet if we have more than two interfaces in the bridge
 			 * because the first send might mess the data part of the message.
 			 */
-			if (count > 2) {
+			if (fwd_iface_num > 1) {
 				send_pkt = net_pkt_clone(pkt, K_NO_WAIT);
 				if (send_pkt == NULL) {
 					NET_DBG("DROP: clone failed");
 					break;
 				}
-
-				net_pkt_ref(send_pkt);
-			} else {
-				send_pkt = net_pkt_ref(pkt);
 			}
 
 			net_pkt_set_family(send_pkt, AF_UNSPEC);
@@ -390,16 +391,15 @@ static enum net_verdict bridge_iface_process(struct net_if *iface,
 				is_send ? "Send" : "Recv",
 				net_if_get_by_iface(ctx->eth_iface[i]),
 				send_pkt, (int)atomic_get(&send_pkt->atomic_ref));
-
-			net_pkt_unref(send_pkt);
 		}
 	}
 
-	unlock_bridge(ctx);
+	/* Free pkt if cloned pkt is used to send */
+	if (send_pkt != pkt) {
+		net_pkt_unref(pkt);
+	}
 
-out:
-	/* The packet was cloned by the caller so remove it here. */
-	net_pkt_unref(pkt);
+	unlock_bridge(ctx);
 
 	return NET_OK;
 }
