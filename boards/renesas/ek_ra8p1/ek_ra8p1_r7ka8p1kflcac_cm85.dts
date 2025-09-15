@@ -25,6 +25,10 @@
 	};
 };
 
+&button0 {
+	status = "okay";
+};
+
 &sci8 {
 	pinctrl-0 = <&sci8_default>;
 	pinctrl-names = "default";
