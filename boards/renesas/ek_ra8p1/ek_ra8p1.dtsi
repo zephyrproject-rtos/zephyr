@@ -143,6 +143,12 @@
 
 &ioport1 {
 	status = "okay";
+
+	mipi_dphy_gpio: mipi-dphy-enable {
+		gpio-hog;
+		gpios = <8 GPIO_ACTIVE_LOW>;
+		output-low;
+	};
 };
 
 &ioport2 {
