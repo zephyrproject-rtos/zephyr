@@ -10,13 +10,9 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
-#if defined(CONFIG_LIBSBC_ENCODER)
 #include "sbc_encoder.h"
-#endif
-#if defined(CONFIG_LIBSBC_DECODER)
 #include "oi_codec_sbc.h"
 #include "oi_status.h"
-#endif
 
 /** @brief SBC channel mode */
 enum __packed sbc_ch_mode {
@@ -37,8 +33,6 @@ enum __packed sbc_alloc_mthd {
 	/** SNR allocation method */
 	SBC_ALLOC_MTHD_SNR,
 };
-
-#if defined(CONFIG_LIBSBC_ENCODER)
 
 /** @brief SBC encoder */
 struct sbc_encoder {
@@ -112,9 +106,6 @@ int sbc_frame_bytes(struct sbc_encoder *encoder);
  *  @return The encoded size of one frame in bytes or (negative) error code otherwise.
  */
 int sbc_frame_encoded_bytes(struct sbc_encoder *encoder);
-#endif
-
-#if defined(CONFIG_LIBSBC_DECODER)
 
 /** @brief SBC decoder */
 struct sbc_decoder {
@@ -145,5 +136,4 @@ int sbc_setup_decoder(struct sbc_decoder *decoder);
  */
 int sbc_decode(struct sbc_decoder *decoder, const void **in_data, uint32_t *in_size,
 		void *out_data, uint32_t *out_size);
-#endif
 #endif /* ZEPHYR_INCLUDE_LIB_SBC_H_ */
