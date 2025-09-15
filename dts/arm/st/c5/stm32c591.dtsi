@@ -10,6 +10,24 @@
 	soc {
 		compatible = "st,stm32c591", "st,stm32c5", "simple-bus";
 
+		adc3: adc@4202d800 {
+			compatible = "st,stm32n6-adc", "st,stm32-adc";
+			reg = <0x4202d800 0x100>;
+			clocks = <&rcc STM32_CLOCK(AHB2, 24)>,
+				 <&rcc STM32_SRC_PSIS ADCDAC_SEL(1)>;
+			clock-names = "adcx", "adc_ker";
+			interrupts = <98 0>;
+			#io-channel-cells = <1>;
+			st,adc-resolutions = <12 10 8 6>;
+			sampling-times = <3 5 8 13 25 48 139 289>;
+			st,adc-sequencer = "programmable";
+			st,adc-oversampler = "extended";
+			st,adc-internal-regulator = "startup-hw-status";
+			st,adc-has-deep-powerdown;
+			st,adc-has-channel-preselection;
+			status = "disabled";
+		};
+
 		lpdma2: dma@40021000 {
 			interrupts = <78 0>, <79 0>, <80 0>, <81 0>,
 				     <82 0>, <83 0>, <84 0>, <85 0>;
