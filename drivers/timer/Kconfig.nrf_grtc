@@ -56,4 +56,8 @@ config NRF_GRTC_TIMER_AUTO_KEEP_ALIVE
 	  This feature prevents the SYSCOUNTER from sleeping when any core is in
 	  active state.
 
+config NRF_GRTC_TIMER_ISR_DIRECT
+	bool "Use direct ISR"
+	default y if !MULTITHREADING
+
 endif # NRF_GRTC_TIMER
