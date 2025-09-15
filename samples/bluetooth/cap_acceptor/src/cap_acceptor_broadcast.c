@@ -256,6 +256,20 @@ static void syncable_cb(struct bt_bap_broadcast_sink *sink, const struct bt_iso_
 	}
 }
 
+static void sink_stopped_cb(struct bt_bap_broadcast_sink *sink, uint8_t reason)
+{
+	int err;
+
+	LOG_INF("Broadcast sink stopped with reason %u", reason);
+
+	err = bt_bap_broadcast_sink_delete(sink);
+	if (err != 0) {
+		LOG_ERR("Failed to delete Broadcast Sink: %d", err);
+	} else {
+		broadcast_sink.bap_broadcast_sink = NULL;
+	}
+}
+
 static void pa_timer_handler(struct k_work *work)
 {
 	atomic_clear_bit(flags, FLAG_PA_SYNCING);
@@ -467,7 +481,7 @@ static int bis_sync_req_cb(struct bt_conn *conn,
 		return -ENOMEM;
 	}
 
-	if (broadcast_sink.requested_bis_sync != new_bis_sync_req) {
+	if (broadcast_sink.requested_bis_sync == new_bis_sync_req) {
 		return 0; /* no op */
 	}
 
@@ -722,6 +736,7 @@ int init_cap_acceptor_broadcast(void)
 		static struct bt_bap_broadcast_sink_cb broadcast_sink_cbs = {
 			.base_recv = base_recv_cb,
 			.syncable = syncable_cb,
+			.stopped = sink_stopped_cb,
 		};
 		static struct bt_bap_stream_ops broadcast_stream_ops = {
 			.started = broadcast_stream_started_cb,
