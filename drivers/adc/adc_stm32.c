@@ -57,6 +57,22 @@ LOG_MODULE_REGISTER(adc_stm32);
 
 #include <zephyr/linker/linker-defs.h>
 
+#if defined(CONFIG_STM32_HAL2)
+#define STM32_ADC_DECIMAL_NB_TO_CHANNEL	LL_ADC_DECIMAL_NB_TO_CHANNEL
+#define STM32_ADC_COMMON_INSTANCE	ADC_COMMON_INSTANCE
+#define STM32_IN_ADC_SINGLE_ENDED	LL_ADC_IN_SINGLE_ENDED
+#define STM32_ADC_OVS_REG_CONTINUED	LL_ADC_OVS_REG_CONTINUED
+#else /* CONFIG_STM32_HAL2 */
+#define STM32_ADC_DECIMAL_NB_TO_CHANNEL	__LL_ADC_DECIMAL_NB_TO_CHANNEL
+#define STM32_ADC_COMMON_INSTANCE	__LL_ADC_COMMON_INSTANCE
+#if defined(LL_ADC_SINGLE_ENDED)
+#define STM32_IN_ADC_SINGLE_ENDED	LL_ADC_SINGLE_ENDED
+#endif /* LL_ADC_SINGLE_ENDED */
+#if defined(LL_ADC_OVS_GRP_REGULAR_CONTINUED)
+#define STM32_ADC_OVS_REG_CONTINUED	LL_ADC_OVS_GRP_REGULAR_CONTINUED
+#endif /* LL_ADC_OVS_GRP_REGULAR_CONTINUED */
+#endif /* CONFIG_STM32_HAL2 */
+
 /* Here are some redefinitions of ADC versions for better readability */
 #if defined(CONFIG_SOC_SERIES_STM32F3X)
 #if defined(ADC1_V2_5)
@@ -295,7 +311,8 @@ static void adc_stm32_enable_dma_support(ADC_TypeDef *adc)
 	if (LL_ADC_REG_GetDMATransfer(adc) != LL_ADC_REG_DMA_TRANSFER_UNLIMITED) {
 		LL_ADC_REG_SetDMATransfer(adc, LL_ADC_REG_DMA_TRANSFER_UNLIMITED);
 	}
-#elif defined(CONFIG_SOC_SERIES_STM32H7X) || \
+#elif defined(CONFIG_SOC_SERIES_STM32C5X) || \
+	defined(CONFIG_SOC_SERIES_STM32H7X) || \
 	defined(CONFIG_SOC_SERIES_STM32N6X) || \
 	defined(CONFIG_SOC_SERIES_STM32U3X) || \
 	defined(CONFIG_SOC_SERIES_STM32U5X)
@@ -607,18 +624,23 @@ static void adc_stm32_calibration_measure(ADC_TypeDef *adc, uint32_t *calibratio
 }
 #endif
 
-static void adc_stm32_calibration_start(const struct device *dev, bool single_ended)
+static void adc_stm32_calibration_start(const struct device *dev, __maybe_unused bool single_ended)
 {
 	const struct adc_stm32_cfg *config =
 		(const struct adc_stm32_cfg *)dev->config;
 	ADC_TypeDef *adc = config->base;
-#if defined(LL_ADC_SINGLE_ENDED) && defined(LL_ADC_DIFFERENTIAL_ENDED)
-	uint32_t calib_type = single_ended ? LL_ADC_SINGLE_ENDED : LL_ADC_DIFFERENTIAL_ENDED;
-#else
-	ARG_UNUSED(single_ended);
-#endif
+	__maybe_unused uint32_t calib_type;
 
-#if defined(STM32F3XX_ADC) || \
+#if defined(STM32_IN_ADC_SINGLE_ENDED)
+#if defined(LL_ADC_DIFFERENTIAL_ENDED)
+	calib_type = single_ended ? STM32_IN_ADC_SINGLE_ENDED : LL_ADC_DIFFERENTIAL_ENDED;
+#else /* LL_ADC_DIFFERENTIAL_ENDED */
+	calib_type = STM32_IN_ADC_SINGLE_ENDED;
+#endif /* LL_ADC_DIFFERENTIAL_ENDED */
+#endif /* STM32_IN_ADC_SINGLE_ENDED */
+
+#if defined(CONFIG_SOC_SERIES_STM32C5X) || \
+	defined(STM32F3XX_ADC) || \
 	defined(CONFIG_SOC_SERIES_STM32L4X) || \
 	defined(CONFIG_SOC_SERIES_STM32L5X) || \
 	defined(CONFIG_SOC_SERIES_STM32H5X) || \
@@ -637,7 +659,6 @@ static void adc_stm32_calibration_start(const struct device *dev, bool single_en
 
 	LL_ADC_StartCalibration(adc);
 #elif defined(CONFIG_SOC_SERIES_STM32U5X)
-	ARG_UNUSED(calib_type);
 	if (adc != ADC4) {
 		uint32_t dev_id = LL_DBGMCU_GetDeviceID();
 		uint32_t rev_id = LL_DBGMCU_GetRevisionID();
@@ -665,15 +686,14 @@ static void adc_stm32_calibration_start(const struct device *dev, bool single_en
 #elif defined(CONFIG_SOC_SERIES_STM32N6X)
 	uint32_t calibration_factor;
 
-	ARG_UNUSED(calib_type);
 	/* Start ADC calibration */
-	LL_ADC_StartCalibration(adc, LL_ADC_SINGLE_ENDED);
+	LL_ADC_StartCalibration(adc, STM32_IN_ADC_SINGLE_ENDED);
 	/* Disable additional offset before calibration start */
 	LL_ADC_DisableCalibrationOffset(adc);
 
 	adc_stm32_calibration_measure(adc, &calibration_factor);
 
-	LL_ADC_SetCalibrationFactor(adc, LL_ADC_SINGLE_ENDED, calibration_factor);
+	LL_ADC_SetCalibrationFactor(adc, STM32_IN_ADC_SINGLE_ENDED, calibration_factor);
 	LL_ADC_StopCalibration(adc);
 #endif
 	/* Make sure ADCAL is cleared before returning for proper operations
@@ -863,7 +883,7 @@ static int adc_stm32_oversampling(const struct device *dev, uint8_t ratio)
 		adc_stm32_oversampling_scope(adc, LL_ADC_OVS_DISABLE);
 		return 0;
 	} else if (ratio < ARRAY_SIZE(table_oversampling_shift)) {
-		adc_stm32_oversampling_scope(adc, LL_ADC_OVS_GRP_REGULAR_CONTINUED);
+		adc_stm32_oversampling_scope(adc, STM32_ADC_OVS_REG_CONTINUED);
 	} else {
 		LOG_ERR("Invalid oversampling");
 		return -EINVAL;
@@ -981,15 +1001,11 @@ static int adc_stm32_preselection_setup(const struct device *dev, uint32_t chann
 {
 	const struct adc_stm32_cfg *config = (const struct adc_stm32_cfg *)dev->config;
 	ADC_TypeDef *adc = config->base;
-	uint32_t channel = __LL_ADC_DECIMAL_NB_TO_CHANNEL(channel_id);
+	uint32_t channel = STM32_ADC_DECIMAL_NB_TO_CHANNEL(channel_id);
 	int err;
 
 	if (!config->has_channel_preselection ||
-#ifdef CONFIG_SOC_SERIES_STM32H7X
-	    (LL_ADC_GetChannelPreselection(adc, channel) & channel) == channel) {
-#else
-	    (LL_ADC_GetChannelPreselection(adc) & channel) == channel) {
-#endif
+	    (stm32_reg_read(&adc->PCSEL) & channel) == channel) {
 		/* Nothing to configure */
 		return 0;
 	}
@@ -1025,7 +1041,7 @@ static int set_sequencer(const struct device *dev)
 		      channels &= ~BIT(channel_id), channel_index++) {
 		channel_id = find_lsb_set(channels) - 1;
 
-		uint32_t channel = __LL_ADC_DECIMAL_NB_TO_CHANNEL(channel_id);
+		uint32_t channel = STM32_ADC_DECIMAL_NB_TO_CHANNEL(channel_id);
 
 		channels_mask |= channel;
 
@@ -1086,7 +1102,7 @@ static int set_inj_sequencer(const struct device *dev)
 
 	for (uint8_t i = 0; i < channel_count && channels != 0; i++) {
 		uint8_t channel_id = find_lsb_set(channels) - 1;
-		uint32_t channel = __LL_ADC_DECIMAL_NB_TO_CHANNEL(channel_id);
+		uint32_t channel = STM32_ADC_DECIMAL_NB_TO_CHANNEL(channel_id);
 
 		LL_ADC_INJ_SetSequencerRanks(adc, table_inj_rank[i], channel);
 
@@ -1540,7 +1556,7 @@ static int adc_stm32_sampling_time_setup(const struct device *dev, uint8_t id,
 	case 0:
 #if ANY_NUM_COMMON_SAMPLING_TIME_CHANNELS_IS(0)
 		LL_ADC_SetChannelSamplingTime(adc,
-					      __LL_ADC_DECIMAL_NB_TO_CHANNEL(id),
+					      STM32_ADC_DECIMAL_NB_TO_CHANNEL(id),
 					      (uint32_t)acq_time_index);
 #endif
 		break;
@@ -1572,7 +1588,7 @@ static int adc_stm32_sampling_time_setup(const struct device *dev, uint8_t id,
 			/* 1st reg is empty or value matches 1st reg */
 			data->acq_time_index[0] = acq_time_index;
 			LL_ADC_SetChannelSamplingTime(adc,
-						      __LL_ADC_DECIMAL_NB_TO_CHANNEL(id),
+						      STM32_ADC_DECIMAL_NB_TO_CHANNEL(id),
 						      LL_ADC_SAMPLINGTIME_COMMON_1);
 			LL_ADC_SetSamplingTimeCommonChannels(adc,
 							     LL_ADC_SAMPLINGTIME_COMMON_1,
@@ -1582,7 +1598,7 @@ static int adc_stm32_sampling_time_setup(const struct device *dev, uint8_t id,
 			/* 2nd reg is empty or value matches 2nd reg */
 			data->acq_time_index[1] = acq_time_index;
 			LL_ADC_SetChannelSamplingTime(adc,
-						      __LL_ADC_DECIMAL_NB_TO_CHANNEL(id),
+						      STM32_ADC_DECIMAL_NB_TO_CHANNEL(id),
 						      LL_ADC_SAMPLINGTIME_COMMON_2);
 			LL_ADC_SetSamplingTimeCommonChannels(adc,
 							     LL_ADC_SAMPLINGTIME_COMMON_2,
@@ -1604,8 +1620,8 @@ static int adc_stm32_sampling_time_setup(const struct device *dev, uint8_t id,
 #if ANY_ADC_HAS_DIFFERENTIAL_SUPPORT
 static int set_channel_differential_mode(ADC_TypeDef *adc, uint8_t channel_id, bool differential)
 {
-	const uint32_t mode = differential ? LL_ADC_DIFFERENTIAL_ENDED : LL_ADC_SINGLE_ENDED;
-	const uint32_t channel = __LL_ADC_DECIMAL_NB_TO_CHANNEL(channel_id);
+	const uint32_t mode = differential ? LL_ADC_DIFFERENTIAL_ENDED : STM32_IN_ADC_SINGLE_ENDED;
+	const uint32_t channel = STM32_ADC_DECIMAL_NB_TO_CHANNEL(channel_id);
 	int err;
 
 	/* The ADC must be disabled to change the single ended / differential mode setting. The
@@ -1844,12 +1860,12 @@ static int adc_stm32_set_clock(const struct device *dev)
 	if (adc_stm32_is_clk_sync(config)) {
 		LL_ADC_SetClock(adc, config->clk_prescaler);
 	} else {
-		LL_ADC_SetCommonClock(__LL_ADC_COMMON_INSTANCE(adc),
+		LL_ADC_SetCommonClock(STM32_ADC_COMMON_INSTANCE(adc),
 				      config->clk_prescaler);
 		LL_ADC_SetClock(adc, LL_ADC_CLOCK_ASYNC);
 	}
 #else
-	LL_ADC_SetCommonClock(__LL_ADC_COMMON_INSTANCE(adc),
+	LL_ADC_SetCommonClock(STM32_ADC_COMMON_INSTANCE(adc),
 			      config->clk_prescaler);
 
 #ifdef CONFIG_SOC_SERIES_STM32H7X
