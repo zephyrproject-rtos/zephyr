@@ -236,7 +236,7 @@
 		spi-max-frequency = <DT_FREQ_M(104)>;
 		wp-gpios = <&gpioe 3 0>;
 		reset-gpios = <&gpioe 0 0>;
-		size = <0x2000000>;
+		size = <DT_SIZE_M(32)>;
 		jedec-id = [c2 25 36];
 	};
 };

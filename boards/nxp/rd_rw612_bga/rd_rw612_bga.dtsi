@@ -147,7 +147,7 @@ arduino_i2c: &flexcomm2 {
 		size = <DT_SIZE_M(64 * 8)>;
 		status = "okay";
 		jedec-id = [c2 25 3a];
-		erase-block-size = <4096>;
+		erase-block-size = <DT_SIZE_K(4)>;
 		write-block-size = <1>;
 
 		partitions {

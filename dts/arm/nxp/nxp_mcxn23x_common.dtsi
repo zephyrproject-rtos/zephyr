@@ -537,7 +537,7 @@
 		flash: flash@0 {
 			compatible = "soc-nv-flash";
 			reg = <0 DT_SIZE_M(1)>;
-			erase-block-size = <8192>;
+			erase-block-size = <DT_SIZE_K(8)>;
 			/* MCXN23x ROM Flash API supports writing of 128B pages. */
 			write-block-size = <128>;
 		};
