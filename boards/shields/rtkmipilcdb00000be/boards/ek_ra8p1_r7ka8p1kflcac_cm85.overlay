@@ -1,0 +1,38 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&mipi_dphy_gpio {
+	/delete-property/ output-low;
+	output-high;
+};
+
+&renesas_mipi_i2c {
+	clock-frequency = <DT_FREQ_K(100)>;
+};
+
+&zephyr_lcdif {
+	input-pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+};
+
+&zephyr_mipi_dsi {
+	pll-div = <3>;
+	pll-mul-int = <125>;
+	pll-mul-frac = "0.00";
+	pll-out-div = <1>;
+	lp-divisor = <5>;
+	ulps-wakeup-period = <97>;
+	video-mode-delay = <186>;
+	timing = <1183 11 26 40>;
+
+	phys-timing {
+		t-init = <74999>;
+		t-clk-prep = <9>;
+		t-hs-prep = <6>;
+		t-lp-exit = <7>;
+		dphytim4 = <28 1 20 7>;
+		dphytim5 = <19 8 12>;
+	};
+};
