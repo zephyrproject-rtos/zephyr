@@ -53,9 +53,11 @@
 
 #if defined(CONFIG_NOCACHE_MEMORY)
 #define __nocache __in_section_unique(_NOCACHE_SECTION_NAME)
+#define __nocache_load __in_section_unique(_NOCACHE_LOAD_SECTION_NAME)
 #define __nocache_noinit __nocache
 #else
 #define __nocache
+#define __nocache_load
 #define __nocache_noinit __noinit
 #endif /* CONFIG_NOCACHE_MEMORY */
 
