@@ -1,11 +1,11 @@
 /*
- * Copyright 2022-2024 NXP
+ * Copyright 2022-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_SOC_NXP_S32_COMMON_SIUL2_PINCTRL_H_
-#define ZEPHYR_SOC_NXP_S32_COMMON_SIUL2_PINCTRL_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_PINCTRL_PINCTRL_NXP_SIUL2_COMMON_H_
+#define ZEPHYR_INCLUDE_DRIVERS_PINCTRL_PINCTRL_NXP_SIUL2_COMMON_H_
 
 #include <zephyr/devicetree.h>
 #include <zephyr/types.h>
@@ -33,7 +33,7 @@ typedef struct {
  * @param idx Property entry index.
  */
 #define Z_PINCTRL_STATE_PIN_INIT(group, prop, idx)                                                 \
-	{NXP_S32_PINMUX_INIT(group, DT_PROP_BY_IDX(group, prop, idx))},
+	{NXP_SIUL2_PINMUX_INIT(group, DT_PROP_BY_IDX(group, prop, idx))},
 
 /**
  * @brief Utility macro to initialize state pins contained in a given property.
@@ -49,4 +49,4 @@ typedef struct {
 
 /** @endcond */
 
-#endif /* ZEPHYR_SOC_NXP_S32_COMMON_SIUL2_PINCTRL_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_PINCTRL_PINCTRL_NXP_SIUL2_COMMON_H_ */

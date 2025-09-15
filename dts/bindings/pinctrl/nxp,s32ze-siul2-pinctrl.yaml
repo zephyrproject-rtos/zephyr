@@ -1,10 +1,10 @@
-# Copyright 2022, 2024 NXP
+# Copyright 2022, 2024-2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  NXP S32 Pin Controller for S32Z/E SoCs
+  NXP SIUL2 Pin Controller for S32Z/E SoCs
 
-  The NXP S32 pin controller is a singleton node responsible for controlling
+  The NXP SIUL2 pin controller is a singleton node responsible for controlling
   the pin function selection and pin properties. This node, labeled 'pinctrl' in
   the SoC's devicetree, will define pin configurations in pin groups. Each group
   within the pin configuration defines the pin configuration for a peripheral,
@@ -65,14 +65,14 @@ description: |
   - Safe Mode is always kept as reset value (disabled).
   - Receiver Select is always kept as reset value (enables the differential vref based receiver).
 
-compatible: "nxp,s32ze-pinctrl"
+compatible: "nxp,s32ze-siul2-pinctrl"
 
 include: base.yaml
 
 child-binding:
-  description: NXP S32 pin controller pin group.
+  description: NXP SIUL2 pin controller pin group.
   child-binding:
-    description: NXP S32 pin controller pin configuration node.
+    description: NXP SIUL2 pin controller pin configuration node.
 
     include:
       - name: pincfg-node.yaml
