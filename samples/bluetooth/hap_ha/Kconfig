@@ -1,5 +1,6 @@
 #
 # Copyright (c) 2022 Codecoup
+# Copyright (c) 2025 Demant A/S
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -48,5 +49,4 @@ config HAP_HA_HEARING_AID_RIGHT
 	bool "Right Ear"
 
 endchoice # HAP_HA_HEARING_AID_LOCATION
-
 endmenu
