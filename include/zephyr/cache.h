@@ -285,6 +285,47 @@ static ALWAYS_INLINE int z_impl_sys_cache_data_invd_range(void *addr, size_t siz
 }
 
 /**
+ * @brief Invalidate an address range in the d-cache with automatic alignment
+ *
+ * Invalidate all data cache lines that contain the specified address range.
+ *
+ * @warning the cache operations act on cache line. When multiple data structures
+ *       share the same cache line being invalidated, all the portions of the
+ *       non-read-only data structures sharing the same line will be
+ *       invalidated as well. This is a destructive process that could lead to
+ *       data loss and/or corruption.
+ *
+ * @param addr Starting address to invalidate.
+ * @param size Range size.
+ *
+ * @retval 0 If succeeded.
+ * @retval -ENOTSUP If not supported.
+ * @retval -errno Negative errno for other failures.
+ */
+static ALWAYS_INLINE int sys_cache_data_invd_range_aligned(void *addr, size_t size)
+{
+#if defined(CONFIG_CACHE_MANAGEMENT) && defined(CONFIG_DCACHE)
+#ifdef CONFIG_DCACHE_LINE_SIZE_DETECT
+	const size_t line_size = cache_data_line_size_get();
+#elif (CONFIG_DCACHE_LINE_SIZE != 0)
+	static const size_t line_size = CONFIG_DCACHE_LINE_SIZE;
+#elif DT_NODE_HAS_PROP(_CPU, d_cache_line_size)
+	static const size_t line_size = DT_PROP(_CPU, d_cache_line_size);
+#else
+	static const size_t line_size = 0;
+	ARG_UNUSED(addr);
+	ARG_UNUSED(size);
+
+	return -ENOTSUP;
+#endif
+	const size_t pre_len = (((size_t)addr) % line_size);
+	const size_t post_len = (line_size - ((((size_t)addr) + size) % line_size)) % line_size;
+
+	return cache_data_invd_range((void *)(((size_t)addr) - pre_len), pre_len + size + post_len);
+#endif
+}
+
+/**
  * @brief Invalidate an address range in the i-cache
  *
  * Invalidate the specified address range of the instruction cache.
