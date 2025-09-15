@@ -109,7 +109,6 @@ int main(void)
 	};
 	unsigned int frame = 0;
 	size_t bsize;
-	int i = 0;
 	int ret;
 
 	/* When the video shell is enabled, do not run the capture loop */
@@ -134,14 +133,13 @@ int main(void)
 	}
 
 	LOG_INF("- Capabilities:");
-	while (caps.format_caps[i].pixelformat) {
+	for (int i = 0; caps.format_caps[i].pixelformat; i++) {
 		const struct video_format_cap *fcap = &caps.format_caps[i];
-		/* fourcc to string */
+
 		LOG_INF("  %s width [%u; %u; %u] height [%u; %u; %u]",
 			VIDEO_FOURCC_TO_STR(fcap->pixelformat),
 			fcap->width_min, fcap->width_max, fcap->width_step,
 			fcap->height_min, fcap->height_max, fcap->height_step);
-		i++;
 	}
 
 	/* Get default/native format */
@@ -253,10 +251,11 @@ int main(void)
 	}
 
 	/* Set controls */
-	struct video_control ctrl = {.id = VIDEO_CID_HFLIP, .val = 1};
 	int tp_set_ret = -ENOTSUP;
 
 	if (IS_ENABLED(CONFIG_VIDEO_CTRL_HFLIP)) {
+		struct video_control ctrl = {.id = VIDEO_CID_HFLIP, .val = 1};
+
 		ret = video_set_ctrl(video_dev, &ctrl);
 		if (ret < 0) {
 			LOG_ERR("Failed to set horizontal flip");
@@ -265,7 +264,8 @@ int main(void)
 	}
 
 	if (IS_ENABLED(CONFIG_VIDEO_CTRL_VFLIP)) {
-		ctrl.id = VIDEO_CID_VFLIP;
+		struct video_control ctrl = {.id = VIDEO_CID_VFLIP, .val = 1};
+
 		ret = video_set_ctrl(video_dev, &ctrl);
 		if (ret < 0) {
 			LOG_ERR("Failed to set vertical flip");
@@ -274,7 +274,8 @@ int main(void)
 	}
 
 	if (IS_ENABLED(CONFIG_TEST)) {
-		ctrl.id = VIDEO_CID_TEST_PATTERN;
+		struct video_control ctrl = {.id = VIDEO_CID_TEST_PATTERN, .val = 1};
+
 		ret = video_set_ctrl(video_dev, &ctrl);
 		if (ret < 0 && ret != -ENOTSUP) {
 			LOG_WRN("Failed to set the test pattern");
@@ -311,7 +312,7 @@ int main(void)
 		return 0;
 	}
 
-	for (i = 0; i < CONFIG_VIDEO_BUFFER_POOL_NUM_MAX; i++) {
+	for (int i = 0; i < CONFIG_VIDEO_BUFFER_POOL_NUM_MAX; i++) {
 		/*
 		 * For some hardwares, such as the PxP used on i.MX RT1170 to do image rotation,
 		 * buffer alignment is needed in order to achieve the best performance
