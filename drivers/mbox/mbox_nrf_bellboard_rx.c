@@ -141,6 +141,8 @@ static DEVICE_API(mbox, bellboard_rx_driver_api) = {
 	.set_enabled = bellboard_rx_set_enabled,
 };
 
+#if defined(CONFIG_GEN_SW_ISR_TABLE)
+
 #define BELLBOARD_IRQ_CONFIGURE(name, idx)                                                         \
 	COND_CODE_1(DT_INST_IRQ_HAS_NAME(0, name),                                                 \
 		    (IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, name, irq),                                \
@@ -148,6 +150,32 @@ static DEVICE_API(mbox, bellboard_rx_driver_api) = {
 				 (const void *)idx, 0);                                            \
 		     irq_enable(DT_INST_IRQ_BY_NAME(0, name, irq));),                              \
 		    ())
+
+#else
+
+#define BELLBOARD_IRQ_FUN(name, idx)                                                               \
+	COND_CODE_1(DT_INST_IRQ_HAS_NAME(0, name), (                                               \
+		ISR_DIRECT_DECLARE(bellboard_rx_##idx##_isr)                                       \
+		{                                                                                  \
+			bellboard_rx_isr((const void *)idx);                                       \
+			return 1;                                                                  \
+		}                                                                                  \
+		), ())
+
+BELLBOARD_IRQ_FUN(irq0, 0)
+BELLBOARD_IRQ_FUN(irq1, 1)
+BELLBOARD_IRQ_FUN(irq2, 2)
+BELLBOARD_IRQ_FUN(irq3, 3)
+
+#define BELLBOARD_IRQ_CONFIGURE(name, idx)                                                         \
+	COND_CODE_1(DT_INST_IRQ_HAS_NAME(0, name),                                                 \
+		    (IRQ_DIRECT_CONNECT(DT_INST_IRQ_BY_NAME(0, name, irq),                         \
+					DT_INST_IRQ_BY_NAME(0, name, priority),                    \
+					bellboard_rx_##idx##_isr, 0);                              \
+		     irq_enable(DT_INST_IRQ_BY_NAME(0, name, irq));),                              \
+		    ())
+
+#endif /* CONFIG_GEN_SW_ISR_TABLE */
 
 static int bellboard_rx_init(const struct device *dev)
 {
