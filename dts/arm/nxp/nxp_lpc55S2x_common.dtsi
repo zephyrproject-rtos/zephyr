@@ -41,7 +41,6 @@
 			itm: itm@e0000000 {
 				compatible = "arm,armv8m-itm";
 				reg = <0xe0000000 0x1000>;
-				swo-ref-frequency = <150000000>;
 			};
 		};
 	};
