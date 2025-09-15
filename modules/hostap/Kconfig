@@ -319,6 +319,7 @@ config WIFI_NM_WPA_SUPPLICANT_WPA3
 
 config WIFI_NM_WPA_SUPPLICANT_AP
 	bool "SoftAP mode support based on WPA supplicant"
+	default y if WIFI_USAGE_MODE_AP || WIFI_USAGE_MODE_STA_AP
 
 config WIFI_NM_WPA_SUPPLICANT_WPS
 	bool "WPS support"
