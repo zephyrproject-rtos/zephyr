@@ -2689,6 +2689,7 @@ static void l2cap_br_conn_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 
 	br_chan = BR_CHAN(chan);
 	br_chan->required_sec_level = server->sec_level;
+	br_chan->psm = psm;
 
 	l2cap_br_chan_add(conn, chan, l2cap_br_chan_destroy);
 	BR_CHAN(chan)->tx.cid = scid;
