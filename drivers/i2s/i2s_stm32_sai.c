@@ -287,7 +287,7 @@ static int i2s_stm32_sai_dma_init(const struct device *dev)
 	hdma->Init.Mode = DMA_NORMAL;
 
 #if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32L4X) ||                  \
-	defined(CONFIG_SOC_SERIES_STM32G4X)
+	defined(CONFIG_SOC_SERIES_STM32G4X) || defined(CONFIG_SOC_SERIES_STM32L5X)
 	hdma->Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD;
 	hdma->Init.MemDataAlignment = DMA_MDATAALIGN_HALFWORD;
 	hdma->Init.Priority = DMA_PRIORITY_HIGH;
@@ -312,7 +312,7 @@ static int i2s_stm32_sai_dma_init(const struct device *dev)
 		hdma->Init.Direction = DMA_MEMORY_TO_PERIPH;
 
 #if !defined(CONFIG_SOC_SERIES_STM32H7X) && !defined(CONFIG_SOC_SERIES_STM32L4X) &&                \
-	!defined(CONFIG_SOC_SERIES_STM32G4X)
+	!defined(CONFIG_SOC_SERIES_STM32G4X) && !defined(CONFIG_SOC_SERIES_STM32L5X)
 		hdma->Init.SrcInc = DMA_SINC_INCREMENTED;
 		hdma->Init.DestInc = DMA_DINC_FIXED;
 #endif
@@ -322,7 +322,7 @@ static int i2s_stm32_sai_dma_init(const struct device *dev)
 		hdma->Init.Direction = DMA_PERIPH_TO_MEMORY;
 
 #if !defined(CONFIG_SOC_SERIES_STM32H7X) && !defined(CONFIG_SOC_SERIES_STM32L4X) &&                \
-	!defined(CONFIG_SOC_SERIES_STM32G4X)
+	!defined(CONFIG_SOC_SERIES_STM32G4X) && !defined(CONFIG_SOC_SERIES_STM32L5X)
 		hdma->Init.SrcInc = DMA_SINC_FIXED;
 		hdma->Init.DestInc = DMA_DINC_INCREMENTED;
 #endif
@@ -342,7 +342,7 @@ static int i2s_stm32_sai_dma_init(const struct device *dev)
 		return -EIO;
 	}
 #elif !defined(CONFIG_SOC_SERIES_STM32H7X) && !defined(CONFIG_SOC_SERIES_STM32L4X) &&              \
-	!defined(CONFIG_SOC_SERIES_STM32G4X)
+	!defined(CONFIG_SOC_SERIES_STM32G4X) && !defined(CONFIG_SOC_SERIES_STM32L5X)
 	if (HAL_DMA_ConfigChannelAttributes(&dev_data->hdma, DMA_CHANNEL_NPRIV) != HAL_OK) {
 		LOG_ERR("HAL_DMA_ConfigChannelAttributes: <Failed>");
 		return -EIO;
