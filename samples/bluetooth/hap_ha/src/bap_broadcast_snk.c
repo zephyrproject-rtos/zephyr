@@ -51,7 +51,6 @@ static volatile bool big_synced;
 static volatile bool base_received;
 static struct bt_bap_stream *bap_streams_p[CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT];
 
-
 /**
  * The base_recv_cb() function will populate struct bis_audio_allocation with channel allocation
  * information for a BIS.
@@ -635,7 +634,6 @@ static bool scan_check_and_sync_broadcast(struct bt_data *data, void *user_data)
 	return false;
 }
 
-
 static void bap_pa_sync_synced_cb(struct bt_le_per_adv_sync *sync,
 				  struct bt_le_per_adv_sync_synced_info *info)
 {
@@ -689,49 +687,6 @@ static struct bt_le_per_adv_sync_cb bap_pa_sync_cb = {
 	.synced = bap_pa_sync_synced_cb,
 	.term = bap_pa_sync_terminated_cb,
 };
-
-static uint32_t keep_n_least_significant_ones(uint32_t bitfield, uint8_t n)
-{
-	uint32_t result = 0U;
-
-	for (uint8_t i = 0; i < n && bitfield != 0; i++) {
-		uint32_t lsb = bitfield & -bitfield; /* extract lsb */
-
-		result |= lsb;
-		bitfield &= ~lsb; /* clear the extracted bit */
-	}
-
-	return result;
-}
-
-static uint32_t select_bis_sync_bitfield(struct base_data *base_sg_data,
-					 uint32_t bis_sync_req[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS])
-
-{
-	uint32_t result = 0U;
-
-	bool bis_sync_req_no_pref = false;
-
-	for (uint8_t i = 0; i < CONFIG_BT_BAP_BASS_MAX_SUBGROUPS; i++) {
-		if (bis_sync_req[i] != 0) {
-			if (bis_sync_req[i] == BT_BAP_BIS_SYNC_NO_PREF) {
-				bis_sync_req_no_pref = true;
-			}
-			result |=
-				bis_sync_req[i] & base_sg_data->subgroup_bis[i].bis_index_bitfield;
-		}
-	}
-
-	if (bis_sync_req_no_pref) {
-		/** Keep the CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT least significant bits
-		 * of bitfield, as that is the maximum number of BISes we can sync to
-		 */
-		result = keep_n_least_significant_ones(result,
-						       CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT);
-	}
-
-	return result;
-}
 
 static int pa_sync_create(void)
 {
@@ -1002,3 +957,4 @@ int init_bap_sink(void)
 
 	return 0;
 }
+
