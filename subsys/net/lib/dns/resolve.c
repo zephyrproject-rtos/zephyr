@@ -7,6 +7,7 @@
 /*
  * Copyright (c) 2017 Intel Corporation
  * Copyright (c) 2024 Nordic Semiconductor
+ * Copyright 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1526,6 +1527,12 @@ static int dns_read(struct dns_resolve_context *ctx,
 	    query_idx > CONFIG_DNS_NUM_CONCUR_QUERIES) {
 		goto quit;
 	}
+
+#if defined(CONFIG_DNS_RESOLVER_PACKET_FORWARDING)
+	if (ctx->pkt_fw_cb != NULL) {
+		ctx->pkt_fw_cb(dns_data, data_len, ctx->queries[query_idx].user_data);
+	}
+#endif /* CONFIG_DNS_RESOLVER_PACKET_FORWARDING */
 
 	invoke_query_callback(ret, NULL, &ctx->queries[query_idx]);
 
