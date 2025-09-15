@@ -411,7 +411,7 @@ static int video_esp32_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	if (video_get_format(cfg->source_dev, &data->video_format) < 0) {
+	if (video_get_format(dev, &data->video_format) < 0) {
 		LOG_ERR("Failed to get format from source device");
 		return -EINVAL;
 	}

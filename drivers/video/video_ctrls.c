@@ -248,7 +248,7 @@ int video_init_custom_ctrl(struct video_ctrl *ctrl, const struct device *dev,
 		break;
 	case VIDEO_CTRL_TYPE_INTEGER_MENU:
 		ret = video_init_int_menu_ctrl(ctrl, dev, cfg->id, cfg->range.def, cfg->int_menu,
-					 cfg->menu_len);
+					       cfg->menu_len);
 		break;
 	default:
 		ret = video_init_ctrl(ctrl, dev, cfg->id, cfg->range);
@@ -399,8 +399,9 @@ int video_set_ctrl(const struct device *dev, struct video_control *control)
 	}
 
 	/* No new value */
-	if (ctrl->type == VIDEO_CTRL_TYPE_INTEGER64 ? ctrl->val64 == control->val64
-						    : ctrl->val == control->val) {
+	if (!(ctrl->flags & VIDEO_CTRL_FLAG_VOLATILE) &&
+		(ctrl->type == VIDEO_CTRL_TYPE_INTEGER64 ? ctrl->val64 == control->val64
+							 : ctrl->val == control->val)) {
 		return 0;
 	}
 
@@ -435,8 +436,8 @@ int video_set_ctrl(const struct device *dev, struct video_control *control)
 	/* Call driver's set_ctrl */
 	if (DEVICE_API_GET(video, ctrl->vdev->dev)->set_ctrl) {
 		ret = DEVICE_API_GET(video, ctrl->vdev->dev)
-				     ->set_ctrl(ctrl->vdev->dev,
-						ctrl->cluster ? ctrl->cluster->id : ctrl->id);
+			      ->set_ctrl(ctrl->vdev->dev,
+					 ctrl->cluster ? ctrl->cluster->id : ctrl->id);
 		if (ret) {
 			goto restore;
 		}
