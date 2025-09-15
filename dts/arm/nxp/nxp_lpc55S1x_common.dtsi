@@ -10,6 +10,7 @@
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 #include <mem.h>
+#include <freq.h>
 #include <zephyr/dt-bindings/reset/nxp_syscon_reset_common.h>
 
 / {

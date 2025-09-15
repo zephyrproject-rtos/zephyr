@@ -179,7 +179,7 @@
 
 &lpspi3 {
 	status = "disabled";
-	clock-frequency = <1000000>;
+	clock-frequency = <DT_FREQ_M(1)>;
 	pinctrl-0 = <&spi3_default>;
 	pinctrl-names = "default";
 };

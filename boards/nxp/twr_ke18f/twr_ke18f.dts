@@ -151,7 +151,7 @@
 };
 
 &cpu0 {
-	clock-frequency = <120000000>;
+	clock-frequency = <DT_FREQ_M(120)>;
 };
 
 &idle {
@@ -173,7 +173,7 @@
 
 	sosc_clk {
 		status = "okay";
-		clock-frequency = <8000000>;
+		clock-frequency = <DT_FREQ_M(8)>;
 	};
 
 	pll {

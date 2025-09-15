@@ -90,7 +90,7 @@
 zephyr_lcdif: &lcdif {};
 
 zephyr_mipi_dsi: &mipi_dsi {
-	dphy-ref-frequency = <24000000>;
+	dphy-ref-frequency = <DT_FREQ_M(24)>;
 };
 
 &lpuart1 {
