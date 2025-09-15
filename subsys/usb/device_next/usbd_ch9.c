@@ -590,7 +590,7 @@ static void string_ascii7_to_utf16le(struct usbd_desc_node *const dn,
 		ascii7_str = (uint8_t *)dn->ptr;
 	}
 
-	LOG_DBG("wLength %u, bLength %u, tailroom %u",
+	LOG_DBG("wLength %u, bLength %u, tailroom %zu",
 		wLength, head.bLength, net_buf_tailroom(buf));
 
 	len = MIN(net_buf_tailroom(buf), MIN(head.bLength,  wLength));
@@ -771,8 +771,7 @@ static int sreq_get_desc_bos(struct usbd_context *const uds_ctx,
 
 	desc_fill_bos_root(uds_ctx, &bos);
 	len = MIN(net_buf_tailroom(buf), MIN(setup->wLength, bos.wTotalLength));
-
-	LOG_DBG("wLength %u, bLength %u, wTotalLength %u, tailroom %u",
+	LOG_DBG("wLength %u, bLength %u, wTotalLength %u, tailroom %zu",
 		setup->wLength, bos.bLength, bos.wTotalLength, net_buf_tailroom(buf));
 
 	net_buf_add_mem(buf, &bos, MIN(len, bos.bLength));
@@ -784,7 +783,7 @@ static int sreq_get_desc_bos(struct usbd_context *const uds_ctx,
 
 	SYS_DLIST_FOR_EACH_CONTAINER(&uds_ctx->descriptors, desc_nd, node) {
 		if (desc_nd->bDescriptorType == USB_DESC_BOS) {
-			LOG_DBG("bLength %u, len %u, tailroom %u",
+			LOG_DBG("bLength %u, len %zu, tailroom %zu",
 				desc_nd->bLength, len, net_buf_tailroom(buf));
 			net_buf_add_mem(buf, desc_nd->ptr, MIN(len, desc_nd->bLength));
 
