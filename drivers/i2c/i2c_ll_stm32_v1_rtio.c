@@ -453,31 +453,53 @@ int i2c_stm32_error(const struct device *dev)
 
 #if defined(CONFIG_I2C_TARGET)
 	struct i2c_stm32_data *data = dev->data;
+	i2c_target_error_cb_t error_cb = NULL;
 
-	if (data->slave_attached && !data->master_active) {
-		/* No need for a target error function right now. */
-		return 0;
+	if (data->slave_attached && !data->master_active &&
+	    data->slave_cfg != NULL && data->slave_cfg->callbacks != NULL) {
+		error_cb = data->slave_cfg->callbacks->error;
 	}
 #endif
 
 	if (LL_I2C_IsActiveFlag_AF(i2c)) {
 		LL_I2C_ClearFlag_AF(i2c);
 		LL_I2C_GenerateStopCondition(i2c);
+#if defined(CONFIG_I2C_TARGET)
+		if (error_cb != NULL) {
+			error_cb(data->slave_cfg, I2C_ERROR_GENERIC);
+		}
+#endif
 		goto error;
 	}
 	if (LL_I2C_IsActiveFlag_ARLO(i2c)) {
 		LL_I2C_ClearFlag_ARLO(i2c);
+#if defined(CONFIG_I2C_TARGET)
+		if (error_cb != NULL) {
+			error_cb(data->slave_cfg, I2C_ERROR_ARBITRATION);
+		}
+#endif
 		goto error;
 	}
 
 	if (LL_I2C_IsActiveFlag_BERR(i2c)) {
 		LL_I2C_ClearFlag_BERR(i2c);
+#if defined(CONFIG_I2C_TARGET)
+		if (error_cb != NULL) {
+			error_cb(data->slave_cfg, I2C_ERROR_GENERIC);
+		}
+#endif
 		goto error;
 	}
 
 	return 0;
 error:
+#if defined(CONFIG_I2C_TARGET)
+	if (!data->slave_attached || data->master_active) {
+		i2c_stm32_master_mode_end(dev, -EIO);
+	}
+#else
 	i2c_stm32_master_mode_end(dev, -EIO);
+#endif
 	return -EIO;
 
 }
