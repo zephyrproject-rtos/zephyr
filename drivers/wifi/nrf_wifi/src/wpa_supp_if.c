@@ -447,7 +447,10 @@ void *nrf_wifi_wpa_supp_dev_init(void *supp_drv_if_ctx, const char *iface_name,
 				 struct zep_wpa_supp_dev_callbk_fns *supp_callbk_fns)
 {
 	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = NULL;
-	const struct device *device = DEVICE_DT_GET(DT_CHOSEN(zephyr_wifi));
+	/* Get device for each interface */
+	int if_idx = net_if_get_by_name(iface_name);
+	struct net_if *iface = net_if_get_by_index(if_idx);
+	const struct device *device = net_if_get_device(iface);
 
 	if (!device) {
 		LOG_ERR("%s: Interface %s not found", __func__, iface_name);
