@@ -376,7 +376,7 @@ bool hostapd_ap_reg_domain(const struct device *dev,
 		return false;
 	}
 
-	return hostapd_cli_cmd_v(iface->ctrl_conn, "set country_code %s", reg_domain->country_code);
+	return hostapd_cli_cmd_v("set country_code %s", reg_domain->country_code);
 }
 
 static int hapd_config_chan_center_seg0(struct hostapd_iface *iface,
