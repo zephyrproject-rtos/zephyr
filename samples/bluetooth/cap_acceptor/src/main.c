@@ -33,13 +33,12 @@
 
 LOG_MODULE_REGISTER(cap_acceptor, LOG_LEVEL_INF);
 
-#define SUPPORTED_DURATION  (BT_AUDIO_CODEC_CAP_DURATION_7_5 | BT_AUDIO_CODEC_CAP_DURATION_10)
-#define MAX_CHAN_PER_STREAM BT_AUDIO_CODEC_CAP_CHAN_COUNT_SUPPORT(2)
-#define SUPPORTED_FREQ      BT_AUDIO_CODEC_CAP_FREQ_ANY
-#define SEM_TIMEOUT         K_SECONDS(5)
-#define MAX_SDU             155U
-#define MIN_SDU             30U
-#define FRAMES_PER_SDU      2
+#define SUPPORTED_DURATION (BT_AUDIO_CODEC_CAP_DURATION_7_5 | BT_AUDIO_CODEC_CAP_DURATION_10)
+#define SUPPORTED_FREQ     BT_AUDIO_CODEC_CAP_FREQ_ANY
+#define SEM_TIMEOUT        K_SECONDS(5)
+#define MAX_SDU            155U
+#define MIN_SDU            30U
+#define FRAMES_PER_SDU     2
 
 static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
@@ -217,7 +216,7 @@ static int reset_cap_acceptor(void)
 
 /** Register the PAC records for PACS */
 static int register_pac(enum bt_audio_dir dir, enum bt_audio_context context,
-			struct bt_pacs_cap *cap)
+			struct bt_pacs_cap *cap, enum bt_audio_location locations)
 {
 	int err;
 
@@ -228,7 +227,7 @@ static int register_pac(enum bt_audio_dir dir, enum bt_audio_context context,
 		return err;
 	}
 
-	err = bt_pacs_set_location(dir, BT_AUDIO_LOCATION_MONO_AUDIO);
+	err = bt_pacs_set_location(dir, locations);
 	if (err != 0) {
 		LOG_ERR("Failed to set location: %d", err);
 
@@ -254,9 +253,6 @@ static int register_pac(enum bt_audio_dir dir, enum bt_audio_context context,
 
 static int init_cap_acceptor(void)
 {
-	static const struct bt_audio_codec_cap lc3_codec_cap = BT_AUDIO_CODEC_CAP_LC3(
-		SUPPORTED_FREQ, SUPPORTED_DURATION, MAX_CHAN_PER_STREAM, MIN_SDU, MAX_SDU,
-		FRAMES_PER_SDU, (SINK_CONTEXT | SOURCE_CONTEXT));
 	const struct bt_pacs_register_param pacs_param = {
 		.snk_pac = true,
 		.snk_loc = true,
@@ -281,12 +277,17 @@ static int init_cap_acceptor(void)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_PAC_SNK)) {
+		static const struct bt_audio_codec_cap lc3_codec_cap_sink =
+			BT_AUDIO_CODEC_CAP_LC3(SUPPORTED_FREQ, SUPPORTED_DURATION,
+					       BT_AUDIO_CODEC_CAP_CHAN_COUNT_SUPPORT(2), MIN_SDU,
+					       MAX_SDU, FRAMES_PER_SDU, SINK_CONTEXT);
 		static struct bt_pacs_cap sink_cap = {
-			.codec_cap = &lc3_codec_cap,
+			.codec_cap = &lc3_codec_cap_sink,
 		};
 		int err;
 
-		err = register_pac(BT_AUDIO_DIR_SINK, SINK_CONTEXT, &sink_cap);
+		err = register_pac(BT_AUDIO_DIR_SINK, SINK_CONTEXT, &sink_cap,
+				   BT_AUDIO_LOCATION_FRONT_LEFT | BT_AUDIO_LOCATION_FRONT_RIGHT);
 		if (err != 0) {
 			LOG_ERR("Failed to register sink capabilities: %d", err);
 
@@ -295,12 +296,17 @@ static int init_cap_acceptor(void)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_PAC_SRC)) {
+		static const struct bt_audio_codec_cap lc3_codec_cap_source =
+			BT_AUDIO_CODEC_CAP_LC3(SUPPORTED_FREQ, SUPPORTED_DURATION,
+					       BT_AUDIO_CODEC_CAP_CHAN_COUNT_SUPPORT(1), MIN_SDU,
+					       MAX_SDU, FRAMES_PER_SDU, SOURCE_CONTEXT);
 		static struct bt_pacs_cap source_cap = {
-			.codec_cap = &lc3_codec_cap,
+			.codec_cap = &lc3_codec_cap_source,
 		};
 		int err;
 
-		err = register_pac(BT_AUDIO_DIR_SOURCE, SOURCE_CONTEXT, &source_cap);
+		err = register_pac(BT_AUDIO_DIR_SOURCE, SOURCE_CONTEXT, &source_cap,
+				   BT_AUDIO_LOCATION_FRONT_CENTER);
 		if (err != 0) {
 			LOG_ERR("Failed to register sink capabilities: %d", err);
 
