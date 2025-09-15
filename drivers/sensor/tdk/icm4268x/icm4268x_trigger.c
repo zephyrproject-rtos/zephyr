@@ -130,6 +130,7 @@ int icm4268x_trigger_init(const struct device *dev)
 
 	data->dev = dev;
 	gpio_pin_configure_dt(&cfg->gpio_int1, GPIO_INPUT);
+	(void)atomic_set(&data->state, ICM4268X_STREAM_OFF);
 	gpio_init_callback(&data->gpio_cb, icm4268x_gpio_callback, BIT(cfg->gpio_int1.pin));
 	res = gpio_add_callback(cfg->gpio_int1.port, &data->gpio_cb);
 
@@ -147,7 +148,7 @@ int icm4268x_trigger_init(const struct device *dev)
 #elif defined(CONFIG_ICM4268X_TRIGGER_GLOBAL_THREAD)
 	data->work.handler = icm4268x_work_handler;
 #endif
-	return gpio_pin_interrupt_configure_dt(&cfg->gpio_int1, GPIO_INT_EDGE_TO_ACTIVE);
+	return 0;
 }
 
 int icm4268x_trigger_enable_interrupt(const struct device *dev, struct icm4268x_cfg *new_cfg)
