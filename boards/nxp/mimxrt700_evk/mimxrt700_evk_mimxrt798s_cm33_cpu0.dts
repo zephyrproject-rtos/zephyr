@@ -334,7 +334,7 @@ zephyr_lcdif: &lcdif {};
 		spi-max-frequency = <DT_FREQ_M(200)>;
 		status = "okay";
 		jedec-id = [c2 81 3a];
-		erase-block-size = <4096>;
+		erase-block-size = <DT_SIZE_K(4)>;
 		write-block-size = <2>;
 	};
 };

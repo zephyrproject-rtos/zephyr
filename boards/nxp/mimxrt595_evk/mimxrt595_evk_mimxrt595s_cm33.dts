@@ -403,7 +403,7 @@ zephyr_udc0: &usbhs {
 		spi-max-frequency = <DT_FREQ_M(200)>;
 		status = "okay";
 		jedec-id = [c2 81 3a];
-		erase-block-size = <4096>;
+		erase-block-size = <DT_SIZE_K(4)>;
 		write-block-size = <2>; /* FLASH_MCUX_FLEXSPI_MX25UM51345G_OPI_DTR set */
 
 		partitions {
