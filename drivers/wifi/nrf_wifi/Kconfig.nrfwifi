@@ -108,6 +108,15 @@ config NRF70_AP_MODE
 	depends on WIFI_NM_WPA_SUPPLICANT_AP
 	default y if WIFI_USAGE_MODE_AP || WIFI_USAGE_MODE_STA_AP
 
+config NRF70_ENABLE_DUAL_VIF
+	bool "Dual virtual Wi-Fi interfaces"
+	default y if WIFI_NM_MAX_MANAGED_INTERFACES = 2
+	depends on (WIFI_NRF7002 || WIFI_NRF7001) && NET_L2_ETHERNET
+	help
+	  Enable support for two virtual Wi-Fi interfaces (VIFs).
+	  When enabled, the driver can operate two VIFs simultaneously,
+	  allowing use cases such as one interface in AP mode and another in STA mode.
+
 config NRF70_P2P_MODE
 	bool "P2P support in driver"
 
