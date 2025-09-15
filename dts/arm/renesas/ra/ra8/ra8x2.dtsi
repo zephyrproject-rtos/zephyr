@@ -269,6 +269,7 @@
 		sci0: sci0@40358000 {
 			compatible = "renesas,ra-sci";
 			reg = <0x40358000 0x100>;
+			channel = <0>;
 			clocks = <&sciclk MSTPB 31>;
 			status = "disabled";
 
@@ -294,11 +295,17 @@
 				overrun-character = <0x00>;
 				status = "disabled";
 			};
+
+			lin {
+				compatible = "renesas,ra-lin-sci-b";
+				status = "disabled";
+			};
 		};
 
 		sci1: sci1@40358100 {
 			compatible = "renesas,ra-sci";
 			reg = <0x40358100 0x100>;
+			channel = <1>;
 			clocks = <&sciclk MSTPB 30>;
 			status = "disabled";
 
@@ -324,11 +331,17 @@
 				overrun-character = <0x00>;
 				status = "disabled";
 			};
+
+			lin {
+				compatible = "renesas,ra-lin-sci-b";
+				status = "disabled";
+			};
 		};
 
 		sci2: sci2@40358200 {
 			compatible = "renesas,ra-sci";
 			reg = <0x40358200 0x100>;
+			channel = <2>;
 			clocks = <&sciclk MSTPB 29>;
 			status = "disabled";
 
@@ -354,11 +367,17 @@
 				overrun-character = <0x00>;
 				status = "disabled";
 			};
+
+			lin {
+				compatible = "renesas,ra-lin-sci-b";
+				status = "disabled";
+			};
 		};
 
 		sci3: sci3@40358300 {
 			compatible = "renesas,ra-sci";
 			reg = <0x40358300 0x100>;
+			channel = <3>;
 			clocks = <&sciclk MSTPB 28>;
 			status = "disabled";
 
@@ -384,11 +403,17 @@
 				overrun-character = <0x00>;
 				status = "disabled";
 			};
+
+			lin {
+				compatible = "renesas,ra-lin-sci-b";
+				status = "disabled";
+			};
 		};
 
 		sci4: sci4@40358400 {
 			compatible = "renesas,ra-sci";
 			reg = <0x40358400 0x100>;
+			channel = <4>;
 			clocks = <&sciclk MSTPB 27>;
 			status = "disabled";
 
@@ -414,11 +439,17 @@
 				overrun-character = <0x00>;
 				status = "disabled";
 			};
+
+			lin {
+				compatible = "renesas,ra-lin-sci-b";
+				status = "disabled";
+			};
 		};
 
 		sci5: sci5@40358500 {
 			compatible = "renesas,ra-sci";
 			reg = <0x40358500 0x100>;
+			channel = <5>;
 			clocks = <&sciclk MSTPB 26>;
 			status = "disabled";
 
@@ -444,11 +475,17 @@
 				overrun-character = <0x00>;
 				status = "disabled";
 			};
+
+			lin {
+				compatible = "renesas,ra-lin-sci-b";
+				status = "disabled";
+			};
 		};
 
 		sci6: sci6@40358600 {
 			compatible = "renesas,ra-sci";
 			reg = <0x40358600 0x100>;
+			channel = <6>;
 			clocks = <&sciclk MSTPB 25>;
 			status = "disabled";
 
@@ -474,11 +511,17 @@
 				overrun-character = <0x00>;
 				status = "disabled";
 			};
+
+			lin {
+				compatible = "renesas,ra-lin-sci-b";
+				status = "disabled";
+			};
 		};
 
 		sci7: sci7@40358700 {
 			compatible = "renesas,ra-sci";
 			reg = <0x40358700 0x100>;
+			channel = <7>;
 			clocks = <&sciclk MSTPB 24>;
 			status = "disabled";
 
@@ -504,11 +547,17 @@
 				overrun-character = <0x00>;
 				status = "disabled";
 			};
+
+			lin {
+				compatible = "renesas,ra-lin-sci-b";
+				status = "disabled";
+			};
 		};
 
 		sci8: sci8@40358800 {
 			compatible = "renesas,ra-sci";
 			reg = <0x40358800 0x100>;
+			channel = <8>;
 			clocks = <&sciclk MSTPB 23>;
 			status = "disabled";
 
@@ -534,11 +583,17 @@
 				overrun-character = <0x00>;
 				status = "disabled";
 			};
+
+			lin {
+				compatible = "renesas,ra-lin-sci-b";
+				status = "disabled";
+			};
 		};
 
 		sci9: sci9@40358900 {
 			compatible = "renesas,ra-sci";
 			reg = <0x40358900 0x100>;
+			channel = <9>;
 			clocks = <&sciclk MSTPB 22>;
 			status = "disabled";
 
@@ -562,6 +617,11 @@
 				#size-cells = <0>;
 				channel = <9>;
 				overrun-character = <0x00>;
+				status = "disabled";
+			};
+
+			lin {
+				compatible = "renesas,ra-lin-sci-b";
 				status = "disabled";
 			};
 		};
