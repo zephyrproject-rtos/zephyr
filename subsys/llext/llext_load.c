@@ -744,6 +744,25 @@ static int llext_copy_symbols(struct llext_loader *ldr, struct llext *ext,
 	return 0;
 }
 
+static int llext_validate_sections_name(struct llext_loader *ldr, struct llext *ext)
+{
+	const elf_shdr_t *shstrtab = ldr->sects + LLEXT_MEM_SHSTRTAB;
+	size_t shstrtab_size = shstrtab->sh_size;
+	int i;
+
+	for (i = 0; i < ext->sect_cnt; i++) {
+		elf_shdr_t *shdr = ext->sect_hdrs + i;
+
+		if (shdr->sh_name >= shstrtab_size) {
+			LOG_ERR("Invalid section name index %d in section %d",
+				shdr->sh_name, i);
+			return -ENOEXEC;
+		}
+	}
+
+	return 0;
+}
+
 /*
  * Load a valid ELF as an extension
  */
@@ -787,6 +806,12 @@ int do_llext_load(struct llext_loader *ldr, struct llext *ext,
 	ret = llext_copy_strings(ldr, ext, ldr_parm);
 	if (ret != 0) {
 		LOG_ERR("Failed to copy ELF string sections, ret %d", ret);
+		goto out;
+	}
+
+	ret = llext_validate_sections_name(ldr, ext);
+	if (ret != 0) {
+		LOG_ERR("Failed to validate ELF section names, ret %d", ret);
 		goto out;
 	}
 
