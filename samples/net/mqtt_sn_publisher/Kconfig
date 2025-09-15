@@ -9,7 +9,7 @@ config NET_SAMPLE_MQTT_SN_STATIC_GATEWAY
 	bool "Whether to statically define the Gateway. Will use Search procedure if False."
 
 config NET_SAMPLE_MQTT_SN_GATEWAY_IP
-	string "IP of the MQTT-SN gateway. Only used if NET_SAMPLE_MQTT_SN_STATIC_GATEWAY=n."
+	string "IP of the MQTT-SN gateway"
 	depends on NET_SAMPLE_MQTT_SN_STATIC_GATEWAY
 
 config NET_SAMPLE_MQTT_SN_GATEWAY_PORT
