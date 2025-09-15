@@ -1,4 +1,4 @@
-name: Pull Request Assigner
+name: Pull Request/Issue Assigner
 
 on:
   pull_request_target:
@@ -20,7 +20,7 @@ permissions:
 
 jobs:
   assignment:
-    name: Pull Request Assignment
+    name: Pull Request/Issue Assignment
     if: github.event.pull_request.draft == false
     runs-on: ubuntu-24.04
     permissions:
@@ -39,6 +39,8 @@ jobs:
         python-version: 3.12
 
     - name: Fetch west.yml from pull request
+      if: >
+        github.event_name == 'pull_request_target'
       run: |
         git fetch origin pull/${{ github.event.pull_request.number }}/head
         git show FETCH_HEAD:west.yml > pr_west.yml
