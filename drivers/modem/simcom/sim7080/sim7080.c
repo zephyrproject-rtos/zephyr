@@ -649,7 +649,7 @@ static int modem_setup(void)
 	ret = modem_boot(true);
 	if (ret < 0) {
 		LOG_ERR("Booting modem failed!!");
-		goto error;
+		return ret;
 	}
 
 	ret = modem_cmd_handler_setup_cmds(&mctx.iface, &mctx.cmd_handler, setup_cmds,
@@ -657,13 +657,13 @@ static int modem_setup(void)
 					   MDM_REGISTRATION_TIMEOUT);
 	if (ret < 0) {
 		LOG_ERR("Failed to send init commands!");
-		goto error;
+		return ret;
 	}
 
 	if (strcmp(mdata.mdm_model, "SIMCOM_SIM7080") != 0) {
 		LOG_ERR("Wrong modem model: %s", mdata.mdm_model);
 		ret = -EINVAL;
-		goto error;
+		return ret;
 	}
 
 #if IS_ENABLED(CONFIG_MODEM_SIMCOM_SIM7080_BOOT_TYPE_CONSTRAINED)
@@ -674,7 +674,6 @@ static int modem_setup(void)
 #error No boot type selected
 #endif
 
-error:
 	return ret;
 }
 
