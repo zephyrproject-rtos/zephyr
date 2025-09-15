@@ -36,6 +36,12 @@ ExternalZephyrProject_Add(
 	BOARD_REVISION ${BOARD_REVISION}
 )
 
+# Configure BabbleSim multi-core setup for nrf5340bsim targets
+if("${SB_CONFIG_REMOTE_BOARD}" MATCHES "nrf5340bsim")
+  native_simulator_set_child_images(${DEFAULT_IMAGE} remote_app)
+  native_simulator_set_final_executable(${DEFAULT_IMAGE})
+endif()
+
 # Setup PM partitioning for remote
 set_property(GLOBAL APPEND PROPERTY PM_DOMAINS REMOTE)
 set_property(GLOBAL APPEND PROPERTY PM_REMOTE_IMAGES remote_app)
