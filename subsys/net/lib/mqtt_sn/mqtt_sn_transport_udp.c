@@ -79,7 +79,7 @@ static int tp_udp_init(struct mqtt_sn_transport *transport)
 		}
 
 		if (out != NULL) {
-			LOG_DBG("Binding to Brodcast IP %s:%u", out, port);
+			LOG_DBG("Binding to Broadcast IP %s:%u", out, port);
 		}
 	}
 
