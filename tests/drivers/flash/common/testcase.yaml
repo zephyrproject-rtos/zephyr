@@ -216,3 +216,9 @@ tests:
       - it515xx_evb
     extra_args:
       - DTC_OVERLAY_FILE="./boards/it8xxx2_indirect.overlay"
+  drivers.flash.common.it515xx_m1k:
+    build_only: true
+    platform_allow:
+      - it515xx_evb
+    extra_args:
+      - DTC_OVERLAY_FILE="./boards/it515xx_m1k.overlay"
