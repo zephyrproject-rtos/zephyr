@@ -25,9 +25,11 @@ int hostapd_ap_config_params(const struct device *dev, struct wifi_ap_config_par
  * @brief Set Wi-Fi AP region domain
  *
  * @param reg_domain region domain parameters
+ * @param dev Wi-Fi device
  * @return true for OK; false for ERROR
  */
-bool hostapd_ap_reg_domain(struct wifi_reg_domain *reg_domain);
+bool hostapd_ap_reg_domain(const struct device *dev,
+	struct wifi_reg_domain *reg_domain);
 
 #ifdef CONFIG_WIFI_NM_HOSTAPD_WPS
 /** Start AP WPS PBC/PIN
