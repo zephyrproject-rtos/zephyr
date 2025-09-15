@@ -1,0 +1,18 @@
+# Copyright (c) 2025 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32 embedded USB PHY
+
+compatible: "st,stm32-embedded-usb-phy"
+
+include: phy-controller.yaml
+
+properties:
+  high-speed:
+    type: boolean
+    description: |
+      Set this property to indicate the instance is a High-Speed USB PHY.
+      Otherwise, the instance is treated as a Full-Speed USB PHY.
+
+  "#phy-cells":
+    const: 0
