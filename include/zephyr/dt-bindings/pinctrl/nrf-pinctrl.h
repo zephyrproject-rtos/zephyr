@@ -186,6 +186,8 @@
 #define NRF_FUN_TDM_SDOUT        76U
 /** TDM MCK */
 #define NRF_FUN_TDM_MCK          77U
+/** SPI master CSN */
+#define NRF_FUN_SPIM_CSN 78U
 
 /** @} */
 
