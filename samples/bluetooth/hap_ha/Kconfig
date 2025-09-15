@@ -49,4 +49,4 @@ config HAP_HA_HEARING_AID_RIGHT
 
 endchoice # HAP_HA_HEARING_AID_LOCATION
 
-endmenu
+endmenu 
