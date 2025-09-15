@@ -46,11 +46,11 @@ static const nrf_gpio_pin_drive_t drive_modes[NRF_DRIVE_COUNT] = {
 #define NRF_PSEL_UART(reg, line) ((NRF_UARTE_Type *)reg)->PSEL.line
 #endif
 
-#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_spi) || defined(CONFIG_NRFX_SPI)
-#define NRF_PSEL_SPIM(reg, line) ((NRF_SPI_Type *)reg)->PSEL##line
-#elif DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_spim) || defined(CONFIG_NRFX_SPIM)
+#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_spim) || defined(CONFIG_NRFX_SPIM)
 #include <hal/nrf_spim.h>
 #define NRF_PSEL_SPIM(reg, line) ((NRF_SPIM_Type *)reg)->PSEL.line
+#elif DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_spi) || defined(CONFIG_NRFX_SPI)
+#define NRF_PSEL_SPIM(reg, line) ((NRF_SPI_Type *)reg)->PSEL##line
 #endif
 
 #if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_spis) || defined(CONFIG_NRFX_SPIS)
@@ -265,6 +265,14 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 			dir = NRF_GPIO_PIN_DIR_INPUT;
 			input = NRF_GPIO_PIN_INPUT_CONNECT;
 			break;
+#if defined(NRF_SPIM_HAS_HW_CSN) && NRF_SPIM_HAS_HW_CSN
+		case NRF_FUN_SPIM_CSN:
+			NRF_PSEL_SPIM(reg, CSN) = psel;
+			write = 1U;
+			dir = NRF_GPIO_PIN_DIR_OUTPUT;
+			input = NRF_GPIO_PIN_INPUT_DISCONNECT;
+			break;
+#endif
 #endif /* defined(NRF_PSEL_SPIM) */
 #if defined(NRF_PSEL_SPIS)
 		case NRF_FUN_SPIS_SCK:
