@@ -9,6 +9,7 @@
 #include <dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <mem.h>
+#include <freq.h>
 
 / {
 	cpus {
@@ -512,7 +513,7 @@
 			reg = <0x424d0000 DT_SIZE_K(4)>;
 			interrupts = <63 0>;
 			clocks = <&scmi_clk IMX95_CLK_LPTMR2>;
-			clock-frequency = <32000>;
+			clock-frequency = <DT_FREQ_K(32)>;
 			clk-source = <2>;
 			prescaler = <1>;
 			resolution = <32>;

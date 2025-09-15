@@ -5,6 +5,7 @@
  */
 
 #include <mem.h>
+#include <freq.h>
 #include <arm/armv7-m.dtsi>
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/clock/imx_ccm.h>
@@ -43,7 +44,7 @@
 			itm: itm@e0000000 {
 				compatible = "arm,armv7m-itm";
 				reg = <0xe0000000 0x1000>;
-				swo-ref-frequency = <132000000>;
+				swo-ref-frequency = <DT_FREQ_M(132)>;
 			};
 		};
 
@@ -73,13 +74,13 @@
 
 	sysclk: system-clock {
 		compatible = "fixed-clock";
-		clock-frequency = <600000000>;
+		clock-frequency = <DT_FREQ_M(600)>;
 		#clock-cells = <0>;
 	};
 
 	xtal: clock-xtal {
 		compatible = "fixed-clock";
-		clock-frequency = <24000000>;
+		clock-frequency = <DT_FREQ_M(24)>;
 		#clock-cells = <0>;
 	};
 
@@ -92,7 +93,7 @@
 	/* USB PLL (selected to be FLEXSPI clock source) will be left unchanged */
 	usbclk: usbpll-clock {
 		compatible = "fixed-clock";
-		clock-frequency = <480000000>;
+		clock-frequency = <DT_FREQ_M(480)>;
 		#clock-cells = <0>;
 	};
 
@@ -172,7 +173,7 @@
 			compatible = "nxp,imx-gpt";
 			reg = <0x401f0000 0x4000>;
 			interrupts = <101 0>;
-			gptfreq = <25000000>;
+			gptfreq = <DT_FREQ_M(25)>;
 			clocks = <&ccm IMX_CCM_GPT_CLK 0x68 24>;
 		};
 
@@ -914,8 +915,8 @@
 			clocks = <&ccm IMX_CCM_USDHC1_CLK 0 0>;
 			max-current-330 = <1020>;
 			max-current-180 = <1020>;
-			max-bus-freq = <208000000>;
-			min-bus-freq = <400000>;
+			max-bus-freq = <DT_FREQ_M(208)>;
+			min-bus-freq = <DT_FREQ_K(400)>;
 		};
 
 		usdhc2: usdhc@402c4000 {
@@ -926,8 +927,8 @@
 			clocks = <&ccm IMX_CCM_USDHC2_CLK 0 0>;
 			max-current-330 = <120>;
 			max-current-180 = <45>;
-			max-bus-freq = <198000000>;
-			min-bus-freq = <400000>;
+			max-bus-freq = <DT_FREQ_M(198)>;
+			min-bus-freq = <DT_FREQ_K(400)>;
 		};
 
 		csi: csi@402bc000 {

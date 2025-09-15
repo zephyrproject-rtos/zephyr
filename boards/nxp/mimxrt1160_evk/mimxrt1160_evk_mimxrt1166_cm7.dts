@@ -146,7 +146,7 @@ nxp_csi: &csi {};
 zephyr_lcdif: &lcdif {};
 
 zephyr_mipi_dsi: &mipi_dsi {
-	dphy-ref-frequency = <24000000>;
+	dphy-ref-frequency = <DT_FREQ_M(24)>;
 };
 
 nxp_mipi_i2c: &lpi2c5 {

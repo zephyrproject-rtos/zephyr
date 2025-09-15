@@ -9,6 +9,7 @@
 #include <zephyr/dt-bindings/rdc/imx_rdc.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <mem.h>
+#include <freq.h>
 
 / {
 	cpus {
