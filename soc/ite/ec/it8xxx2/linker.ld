@@ -280,13 +280,12 @@ SECTIONS
 #include <zephyr/linker/cplusplus-rom.ld>
 	__rodata_region_end = .;
 
-	/* For non-XIP system, __rom_region_end symbol should be set to
-	 * the end of common ROMABLE_REGIONs (text and rodata) instead of
-	 * the linker script end, so it wouldn't mistakenly contain
-	 * RAMABLE_REGION in it.
-	 */
 #ifndef CONFIG_XIP
-#ifdef CONFIG_RISCV_PMP
+	/*
+	 * Include a padding section here to make sure that the LMA address
+	 * of the sections in the RAMABLE_REGION are aligned with those
+	 * section's VMA alignment requirements.
+	 */
 	SECTION_PROLOGUE(rom_mpu_padding,,)
 	{
 		MPU_ALIGN(__rodata_region_end - __rom_region_start);
@@ -300,11 +299,11 @@ SECTIONS
 		. = ALIGN(0x1000);
 #endif
 	} GROUP_LINK_IN(ROMABLE_REGION)
-#endif /* CONFIG_RISCV_PMP */
-
+#else
+	MPU_ALIGN(__rodata_region_end - __rom_region_start);
+#endif
 	__rom_region_end = .;
 	__rom_region_size = __rom_region_end - __rom_region_start;
-#endif /* CONFIG_XIP */
     GROUP_END(ROMABLE_REGION)
 
     GROUP_START(RAMABLE_REGION)
@@ -486,10 +485,6 @@ SECTIONS
     /* Sections generated from 'zephyr,memory-region' nodes */
     LINKER_DT_SECTIONS()
 
-/* Because ROMABLE_REGION != RAMABLE_REGION in XIP-system, it is valid
- * to set __rom_region_end symbol at the end of linker script and
- * doesn't mistakenly contain the RAMABLE_REGION in it.
- */
 #ifdef CONFIG_XIP
 /* Must be last in romable region */
 SECTION_PROLOGUE(.last_section,(NOLOAD),)
@@ -498,8 +493,7 @@ SECTION_PROLOGUE(.last_section,(NOLOAD),)
 
 /* To provide the image size as a const expression,
  * calculate this value here. */
-__rom_region_end = LOADADDR(.last_section);
-__rom_region_size = __rom_region_end - __rom_region_start;
+_flash_used = LOADADDR(.last_section) + SIZEOF(.last_section) - __rom_region_start;
 #endif
 
 }
