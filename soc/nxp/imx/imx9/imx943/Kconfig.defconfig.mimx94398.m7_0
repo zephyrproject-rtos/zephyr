@@ -26,4 +26,11 @@ config ETH_NXP_IMX_MSGINTR
 config CACHE_MANAGEMENT
 	default n
 
+if PM
+
+config IDLE_STACK_SIZE
+	default 640
+
+endif
+
 endif # SOC_MIMX94398_M7_0
