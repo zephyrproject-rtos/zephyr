@@ -220,6 +220,9 @@ config LV_Z_PXP_INTERRUPT_PRIORITY
 	help
 	  Sets the interrupt priority for PXP
 
+config LV_USE_THEME_DEFAULT
+	bool "Use the default theme"
+
 rsource "Kconfig.memory"
 rsource "Kconfig.input"
 rsource "Kconfig.shell"
