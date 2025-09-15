@@ -295,7 +295,7 @@
 	};
 
 	otghs_fs_phy: otghs_fs_phy {
-		compatible = "usb-nop-xceiv";
+		compatible = "st,stm32-embedded-usb-phy";
 		#phy-cells = <0>;
 	};
 };
