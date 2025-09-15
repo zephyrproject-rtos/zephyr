@@ -58,8 +58,7 @@ static inline int app_setup_display(const struct device *const display_dev, cons
 	default:
 		return -ENOTSUP;
 	}
-
-	if (ret) {
+	if (ret < 0) {
 		LOG_ERR("Unable to set display format");
 		return ret;
 	}
@@ -74,9 +73,9 @@ static inline int app_setup_display(const struct device *const display_dev, cons
 	return ret;
 }
 
-static inline void app_display_frame(const struct device *const display_dev,
-				     const struct video_buffer *const vbuf,
-				     const struct video_format fmt)
+static int app_display_frame(const struct device *const display_dev,
+			     const struct video_buffer *const vbuf,
+			     const struct video_format fmt)
 {
 	struct display_buffer_descriptor buf_desc = {
 		.buf_size = vbuf->bytesused,
@@ -85,7 +84,7 @@ static inline void app_display_frame(const struct device *const display_dev,
 		.height = vbuf->bytesused / fmt.pitch,
 	};
 
-	display_write(display_dev, 0, vbuf->line_offset, &buf_desc, vbuf->buffer);
+	return display_write(display_dev, 0, vbuf->line_offset, &buf_desc, vbuf->buffer);
 }
 #endif
 
@@ -105,7 +104,7 @@ int main(void)
 	};
 	unsigned int frame = 0;
 	int i = 0;
-	int err;
+	int ret;
 
 	/* When the video shell is enabled, do not run the capture loop */
 	if (IS_ENABLED(CONFIG_VIDEO_SHELL)) {
@@ -122,7 +121,8 @@ int main(void)
 	LOG_INF("Video device: %s", video_dev->name);
 
 	/* Get capabilities */
-	if (video_get_caps(video_dev, &caps)) {
+	ret = video_get_caps(video_dev, &caps);
+	if (ret < 0) {
 		LOG_ERR("Unable to retrieve video capabilities");
 		return 0;
 	}
@@ -139,7 +139,8 @@ int main(void)
 	}
 
 	/* Get default/native format */
-	if (video_get_format(video_dev, &fmt)) {
+	ret = video_get_format(video_dev, &fmt);
+	if (ret < 0) {
 		LOG_ERR("Unable to retrieve video format");
 		return 0;
 	}
@@ -155,7 +156,8 @@ int main(void)
 			.type = VIDEO_BUF_TYPE_OUTPUT,
 		};
 
-		if (video_set_selection(video_dev, &sel)) {
+		ret = video_set_selection(video_dev, &sel);
+		if (ret < 0) {
 			LOG_ERR("Unable to set selection crop");
 			return 0;
 		}
@@ -168,20 +170,20 @@ int main(void)
 		 * and if compose is necessary
 		 */
 		sel.target = VIDEO_SEL_TGT_CROP;
-		err = video_get_selection(video_dev, &sel);
-		if (err < 0 && err != -ENOSYS) {
+		ret = video_get_selection(video_dev, &sel);
+		if (ret < 0 && ret != -ENOSYS) {
 			LOG_ERR("Unable to get selection crop");
 			return 0;
 		}
 
-		if (err == 0 && (sel.rect.width != fmt.width || sel.rect.height != fmt.height)) {
+		if (ret == 0 && (sel.rect.width != fmt.width || sel.rect.height != fmt.height)) {
 			sel.target = VIDEO_SEL_TGT_COMPOSE;
 			sel.rect.left = 0;
 			sel.rect.top = 0;
 			sel.rect.width = fmt.width;
 			sel.rect.height = fmt.height;
-			err = video_set_selection(video_dev, &sel);
-			if (err < 0 && err != -ENOSYS) {
+			ret = video_set_selection(video_dev, &sel);
+			if (ret < 0 && ret != -ENOSYS) {
 				LOG_ERR("Unable to set selection compose");
 				return 0;
 			}
@@ -201,12 +203,19 @@ int main(void)
 	LOG_INF("- Video format: %s %ux%u",
 		VIDEO_FOURCC_TO_STR(fmt.pixelformat), fmt.width, fmt.height);
 
-	if (video_set_compose_format(video_dev, &fmt)) {
+	ret = video_set_compose_format(video_dev, &fmt);
+	if (ret < 0) {
 		LOG_ERR("Unable to set format");
 		return 0;
 	}
 
-	if (!video_get_frmival(video_dev, &frmival)) {
+	ret = video_get_frmival(video_dev, &frmival);
+	if (ret == -ENOTSUP || ret == -ENOSYS) {
+		LOG_WRN("The video source does not support frame rate control");
+	} else if (ret < 0) {
+		LOG_ERR("Error while getting the frame interval");
+		return ret;
+	} else {
 		LOG_INF("- Default frame rate : %f fps",
 			1.0 * frmival.denominator / frmival.numerator);
 	}
@@ -229,7 +238,7 @@ int main(void)
 	const struct device *last_dev = NULL;
 	struct video_ctrl_query cq = {.dev = video_dev, .id = VIDEO_CTRL_FLAG_NEXT_CTRL};
 
-	while (!video_query_ctrl(&cq)) {
+	while (video_query_ctrl(&cq) == 0) {
 		if (cq.dev != last_dev) {
 			last_dev = cq.dev;
 			LOG_INF("\t\tdevice: %s", cq.dev->name);
@@ -243,17 +252,29 @@ int main(void)
 	int tp_set_ret = -ENOTSUP;
 
 	if (IS_ENABLED(CONFIG_VIDEO_CTRL_HFLIP)) {
-		video_set_ctrl(video_dev, &ctrl);
+		ret = video_set_ctrl(video_dev, &ctrl);
+		if (ret < 0) {
+			LOG_ERR("Failed to set horizontal flip");
+			return 0;
+		}
 	}
 
 	if (IS_ENABLED(CONFIG_VIDEO_CTRL_VFLIP)) {
 		ctrl.id = VIDEO_CID_VFLIP;
-		video_set_ctrl(video_dev, &ctrl);
+		ret = video_set_ctrl(video_dev, &ctrl);
+		if (ret < 0) {
+			LOG_ERR("Failed to set vertical flip");
+			return 0;
+		}
 	}
 
 	if (IS_ENABLED(CONFIG_TEST)) {
 		ctrl.id = VIDEO_CID_TEST_PATTERN;
-		tp_set_ret = video_set_ctrl(video_dev, &ctrl);
+		ret = video_set_ctrl(video_dev, &ctrl);
+		if (ret < 0 && ret != -ENOTSUP) {
+			LOG_WRN("Failed to set the test pattern");
+		}
+		tp_set_ret = ret;
 	}
 
 #if DT_HAS_CHOSEN(zephyr_display)
@@ -264,10 +285,10 @@ int main(void)
 		return 0;
 	}
 
-	err = app_setup_display(display_dev, fmt.pixelformat);
-	if (err) {
+	ret = app_setup_display(display_dev, fmt.pixelformat);
+	if (ret < 0) {
 		LOG_ERR("Unable to set up display");
-		return err;
+		return 0;
 	}
 #endif
 
@@ -290,11 +311,16 @@ int main(void)
 			return 0;
 		}
 		vbuf->type = VIDEO_BUF_TYPE_OUTPUT;
-		video_enqueue(video_dev, vbuf);
+		ret = video_enqueue(video_dev, vbuf);
+		if (ret < 0) {
+			LOG_ERR("Failed to enqueue video buffer");
+			return 0;
+		}
 	}
 
 	/* Start video capture */
-	if (video_stream_start(video_dev, VIDEO_BUF_TYPE_OUTPUT)) {
+	ret = video_stream_start(video_dev, VIDEO_BUF_TYPE_OUTPUT);
+	if (ret < 0) {
 		LOG_ERR("Unable to start capture (interface)");
 		return 0;
 	}
@@ -304,8 +330,8 @@ int main(void)
 	/* Grab video frames */
 	vbuf->type = VIDEO_BUF_TYPE_OUTPUT;
 	while (1) {
-		err = video_dequeue(video_dev, &vbuf, K_FOREVER);
-		if (err) {
+		ret = video_dequeue(video_dev, &vbuf, K_FOREVER);
+		if (ret < 0) {
 			LOG_ERR("Unable to dequeue video buf");
 			return 0;
 		}
@@ -322,11 +348,14 @@ int main(void)
 #endif
 
 #if DT_HAS_CHOSEN(zephyr_display)
-		app_display_frame(display_dev, vbuf, fmt);
+		ret = app_display_frame(display_dev, vbuf, fmt);
+		if (ret != 0) {
+			LOG_WRN("Failed to display this frame");
+		}
 #endif
 
-		err = video_enqueue(video_dev, vbuf);
-		if (err) {
+		ret = video_enqueue(video_dev, vbuf);
+		if (ret < 0) {
 			LOG_ERR("Unable to requeue video buf");
 			return 0;
 		}
