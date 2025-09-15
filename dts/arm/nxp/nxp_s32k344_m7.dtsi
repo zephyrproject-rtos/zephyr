@@ -35,7 +35,7 @@
 
 	/* Dummy pinctrl node, filled with pin mux options at board level */
 	pinctrl: pinctrl {
-		compatible = "nxp,s32k3-pinctrl";
+		compatible = "nxp,s32k3-siul2-pinctrl";
 		status = "okay";
 	};
 

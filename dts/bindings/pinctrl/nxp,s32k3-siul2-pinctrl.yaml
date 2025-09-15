@@ -1,10 +1,10 @@
-# Copyright 2023 NXP
+# Copyright 2023, 2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  NXP S32 Pin Controller for S32K3 SoCs
+  NXP SIUL2 Pin Controller for S32K3 SoCs
 
-  The NXP S32 pin controller is a singleton node responsible for controlling
+  The NXP SIUL2 pin controller is a singleton node responsible for controlling
   the pin function selection and pin properties. This node, labeled 'pinctrl' in
   the SoC's devicetree, will define pin configurations in pin groups. Each group
   within the pin configuration defines the pin configuration for a peripheral,
@@ -65,14 +65,14 @@ description: |
     - Pad Keeping (disabled)
     - Input Filter (disabled).
 
-compatible: "nxp,s32k3-pinctrl"
+compatible: "nxp,s32k3-siul2-pinctrl"
 
 include: base.yaml
 
 child-binding:
-  description: NXP S32 pin controller pin group.
+  description: NXP SIUL2 pin controller pin group.
   child-binding:
-    description: NXP S32 pin controller pin configuration node.
+    description: NXP SIUL2 pin controller pin configuration node.
 
     include:
       - name: pincfg-node.yaml
@@ -89,8 +89,8 @@ child-binding:
         type: array
         description: |
           An array of pins sharing the same group properties. The pins must be
-          defined using the S32_PINMUX macros that encodes all the pin muxing
-          information in a 32-bit value.
+          defined using the macros from the SoC package header. These macros
+          encode all the pin muxing information in a 32-bit value.
 
       slew-rate:
         type: string
