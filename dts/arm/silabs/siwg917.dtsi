@@ -385,6 +385,8 @@
 			silabs,channel-group = <0>;
 			silabs,max-channel-count = <2>;
 			clocks = <&clock0 SIWX91X_CLK_I2S0>, <&clock0 SIWX91X_CLK_STATIC_I2S0>;
+			power-domains = <&siwx91x_soc_pd>;
+			zephyr,pm-device-runtime-auto;
 			status = "disabled";
 		};
 
@@ -399,6 +401,8 @@
 			silabs,max-channel-count = <1>;
 			clocks = <&clock0 SIWX91X_CLK_ULP_I2S>,
 				 <&clock0 SIWX91X_CLK_STATIC_ULP_I2S>;
+			power-domains = <&siwx91x_soc_pd>;
+			zephyr,pm-device-runtime-auto;
 			status = "disabled";
 		};
 
