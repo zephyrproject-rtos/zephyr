@@ -207,6 +207,12 @@ static int llext_find_tables(struct llext_loader *ldr, struct llext *ext)
 		return -ENOEXEC;
 	}
 
+	if (ldr->sects[LLEXT_MEM_SYMTAB].sh_entsize != sizeof(elf_sym_t) ||
+	    ldr->sects[LLEXT_MEM_SYMTAB].sh_size % ldr->sects[LLEXT_MEM_SYMTAB].sh_entsize != 0) {
+		LOG_ERR("Invalid symbol table");
+		return -ENOEXEC;
+	}
+
 	return 0;
 }
 
