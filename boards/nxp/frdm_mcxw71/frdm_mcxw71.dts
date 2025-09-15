@@ -162,7 +162,7 @@
 		/* this is the default (reset) mode for this flash */
 		mxicy,mx25r-power-mode = "low-power";
 		/* 8 MHz for low power mode */
-		spi-max-frequency = <8000000>;
+		spi-max-frequency = <DT_FREQ_M(8)>;
 	};
 };
 

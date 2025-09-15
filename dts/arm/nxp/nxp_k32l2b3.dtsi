@@ -5,6 +5,7 @@
  */
 
 #include <mem.h>
+#include <freq.h>
 #include <arm/armv6-m.dtsi>
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/clock/kinetis_sim.h>
@@ -281,7 +282,7 @@
 			compatible = "nxp,lptmr";
 			reg = <0x40040000 0x1000>;
 			interrupts = <28 0>;
-			clock-frequency = <1000>;
+			clock-frequency = <DT_FREQ_K(1)>;
 			prescaler = <1>;
 			prescale-glitch-filter = <1>;
 			clk-source = <1>;

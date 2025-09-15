@@ -114,7 +114,7 @@ arduino_serial: &uart3 {
 };
 
 &cpu0 {
-	clock-frequency = <120000000>;
+	clock-frequency = <DT_FREQ_M(120)>;
 };
 
 &adc0 {
@@ -173,7 +173,7 @@ arduino_spi: &spi0 {
 			disk-name = "SD";
 			status = "okay";
 		};
-		spi-max-frequency = <24000000>;
+		spi-max-frequency = <DT_FREQ_M(24)>;
 	};
 };
 

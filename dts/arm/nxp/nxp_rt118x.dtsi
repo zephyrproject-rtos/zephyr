@@ -54,7 +54,7 @@
 	/* USB PLL */
 	usbclk: usbpll-clock {
 		compatible = "fixed-clock";
-		clock-frequency = <24000000>;
+		clock-frequency = <DT_FREQ_M(24)>;
 		#clock-cells = <0>;
 	};
 };
@@ -113,7 +113,7 @@
 
 		lpo: lpo32k {
 			compatible = "fixed-clock";
-			clock-frequency = <32000>;
+			clock-frequency = <DT_FREQ_K(32)>;
 			#clock-cells = <0>;
 		};
 	};
@@ -356,7 +356,7 @@
 		compatible = "nxp,imx-gpt";
 		reg = <0x46c0000 0x4000>;
 		interrupts = <209 0>;
-		gptfreq = <240000000>;
+		gptfreq = <DT_FREQ_M(240)>;
 		clocks = <&ccm IMX_CCM_GPT1_CLK 0x41 0>;
 		status = "disabled";
 	};
@@ -365,7 +365,7 @@
 		compatible = "nxp,imx-gpt";
 		reg = <0x2ec0000 0x4000>;
 		interrupts = <210 0>;
-		gptfreq = <240000000>;
+		gptfreq = <DT_FREQ_M(240)>;
 		clocks = <&ccm IMX_CCM_GPT2_CLK 0x41 0>;
 	};
 
@@ -906,7 +906,7 @@
 		compatible = "nxp,lptmr";
 		reg = <0x4300000 0x1000>;
 		interrupts = <18 0>;
-		clock-frequency = <80000000>;
+		clock-frequency = <DT_FREQ_M(80)>;
 		prescaler = <1>;
 		clk-source = <0>;
 		resolution = <32>;
@@ -917,7 +917,7 @@
 		compatible = "nxp,lptmr";
 		reg = <0x24d0000 0x1000>;
 		interrupts = <67 0>;
-		clock-frequency = <80000000>;
+		clock-frequency = <DT_FREQ_M(80)>;
 		prescaler = <1>;
 		clk-source = <0>;
 		resolution = <32>;
@@ -928,7 +928,7 @@
 		compatible = "nxp,lptmr";
 		reg = <0x2cd0000 0x1000>;
 		interrupts = <150 0>;
-		clock-frequency = <80000000>;
+		clock-frequency = <DT_FREQ_M(80)>;
 		prescaler = <1>;
 		clk-source = <0>;
 		resolution = <32>;
@@ -1235,8 +1235,8 @@
 		clocks = <&ccm IMX_CCM_USDHC1_CLK 0 0>;
 		max-current-330 = <1020>;
 		max-current-180 = <1020>;
-		max-bus-freq = <208000000>;
-		min-bus-freq = <400000>;
+		max-bus-freq = <DT_FREQ_M(208)>;
+		min-bus-freq = <DT_FREQ_K(400)>;
 	};
 
 	usdhc2: memory-controller@2860000 {
@@ -1247,8 +1247,8 @@
 		clocks = <&ccm IMX_CCM_USDHC2_CLK 0 0>;
 		max-current-330 = <1020>;
 		max-current-180 = <1020>;
-		max-bus-freq = <208000000>;
-		min-bus-freq = <400000>;
+		max-bus-freq = <DT_FREQ_M(208)>;
+		min-bus-freq = <DT_FREQ_K(400)>;
 	};
 
 	edma3: dma-controller@4000000 {

@@ -5,6 +5,7 @@
  */
 
 #include <mem.h>
+#include <freq.h>
 #include <arm/armv8-m.dtsi>
 #include <zephyr/dt-bindings/clock/scg_k4.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
@@ -295,7 +296,7 @@
 		compatible = "nxp,lptmr";
 		reg = <0x2d000 0x10>;
 		interrupts = <34 0>;
-		clock-frequency = <32000>;
+		clock-frequency = <DT_FREQ_K(32)>;
 		clk-source = <2>;
 		prescaler = <1>;
 		resolution = <32>;
@@ -306,7 +307,7 @@
 		compatible = "nxp,lptmr";
 		reg = <0x2e000 0x10>;
 		interrupts = <35 0>;
-		clock-frequency = <32000>;
+		clock-frequency = <DT_FREQ_K(32)>;
 		clk-source = <2>;
 		prescaler = <1>;
 		resolution = <32>;

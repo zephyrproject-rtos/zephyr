@@ -400,7 +400,7 @@ zephyr_udc0: &usbhs {
 		/* MX25UM51245G is 64MB, 512MBit flash part */
 		size = <DT_SIZE_M(64 * 8)>;
 		reg = <0>;
-		spi-max-frequency = <200000000>;
+		spi-max-frequency = <DT_FREQ_M(200)>;
 		status = "okay";
 		jedec-id = [c2 81 3a];
 		erase-block-size = <4096>;
@@ -453,7 +453,7 @@ zephyr_udc0: &usbhs {
 		/* APS6408L is 8MB, 64MBit pSRAM */
 		size = <DT_SIZE_M(8 * 8)>;
 		reg = <0>;
-		spi-max-frequency = <198000000>;
+		spi-max-frequency = <DT_FREQ_M(198)>;
 		status = "okay";
 		cs-interval-unit = <1>;
 		cs-interval = <5>;

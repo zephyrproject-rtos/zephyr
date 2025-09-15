@@ -6,6 +6,7 @@
 
 #include <arm/armv8-m.dtsi>
 #include <mem.h>
+#include <freq.h>
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 
 / {
