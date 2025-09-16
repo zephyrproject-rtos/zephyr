@@ -431,44 +431,44 @@ static const struct ov2640_reg default_regs[] = {
 };
 
 static const struct ov2640_reg uxga_regs[] = {
-	{ BANK_SEL, BANK_SEL_SENSOR },
+	{BANK_SEL, BANK_SEL_SENSOR},
 	/* DSP input image resolution and window size control */
-	{ COM7,    COM7_RES_UXGA},
-	{ COM1,    0x0F }, /* UXGA=0x0F, SVGA=0x0A, CIF=0x06 */
-	{ REG32,   REG32_UXGA }, /* UXGA=0x36, SVGA/CIF=0x09 */
+	{COM7, COM7_RES_UXGA},
+	{COM1, 0x0F},        /* UXGA=0x0F, SVGA=0x0A, CIF=0x06 */
+	{REG32, REG32_UXGA}, /* UXGA=0x36, SVGA/CIF=0x09 */
 
-	{ HSTART,  0x11 }, /* UXGA=0x11, SVGA/CIF=0x11 */
-	{ HSTOP,   0x75 }, /* UXGA=0x75, SVGA/CIF=0x43 */
+	{HSTART, 0x11}, /* UXGA=0x11, SVGA/CIF=0x11 */
+	{HSTOP, 0x75},  /* UXGA=0x75, SVGA/CIF=0x43 */
 
-	{ VSTART,  0x01 }, /* UXGA=0x01, SVGA/CIF=0x00 */
-	{ VSTOP,   0x97 }, /* UXGA=0x97, SVGA/CIF=0x4b */
-	{ 0x3d,    0x34 }, /* UXGA=0x34, SVGA/CIF=0x38 */
+	{VSTART, 0x01}, /* UXGA=0x01, SVGA/CIF=0x00 */
+	{VSTOP, 0x97},  /* UXGA=0x97, SVGA/CIF=0x4b */
+	{0x3d, 0x34},   /* UXGA=0x34, SVGA/CIF=0x38 */
 
-	{ 0x35,    0x88 },
-	{ 0x22,    0x0a },
-	{ 0x37,    0x40 },
-	{ 0x34,    0xa0 },
-	{ 0x06,    0x02 },
-	{ 0x0d,    0xb7 },
-	{ 0x0e,    0x01 },
-	{ 0x42,    0x83 },
+	{0x35, 0x88},
+	{0x22, 0x0a},
+	{0x37, 0x40},
+	{0x34, 0xa0},
+	{0x06, 0x02},
+	{0x0d, 0xb7},
+	{0x0e, 0x01},
+	{0x42, 0x83},
 
 	/*
 	 * Set DSP input image size and offset.
 	 * The sensor output image can be scaled with OUTW/OUTH
 	 */
-	{ BANK_SEL, BANK_SEL_DSP },
-	{ R_BYPASS, R_BYPASS_DSP_BYPAS },
+	{BANK_SEL, BANK_SEL_DSP},
+	{R_BYPASS, R_BYPASS_DSP_BYPAS},
 
-	{ RESET,   RESET_DVP },
+	{RESET, RESET_DVP},
 	{HSIZE8, (UXGA_WIDTH >> 3)},  /* Image Horizontal Size HSIZE[10:3] */
 	{VSIZE8, (UXGA_HEIGHT >> 3)}, /* Image Vertical Size VSIZE[10:3] */
 
 	/* {HSIZE[11], HSIZE[2:0], VSIZE[2:0]} */
 	{SIZEL, ((UXGA_WIDTH >> 6) & 0x40) | ((UXGA_WIDTH & 0x7) << 3) | (UXGA_HEIGHT & 0x7)},
 
-	{ XOFFL,   0x00 }, /* OFFSET_X[7:0] */
-	{ YOFFL,   0x00 }, /* OFFSET_Y[7:0] */
+	{XOFFL, 0x00},                        /* OFFSET_X[7:0] */
+	{YOFFL, 0x00},                        /* OFFSET_Y[7:0] */
 	{HSIZE, ((UXGA_WIDTH >> 2) & 0xFF)},  /* H_SIZE[7:0] real/4 */
 	{VSIZE, ((UXGA_HEIGHT >> 2) & 0xFF)}, /* V_SIZE[7:0] real/4 */
 
@@ -476,15 +476,14 @@ static const struct ov2640_reg uxga_regs[] = {
 	{VHYX, ((UXGA_HEIGHT >> 3) & 0x80) | ((UXGA_WIDTH >> 7) & 0x08)},
 	{TEST, (UXGA_WIDTH >> 4) & 0x80}, /* H_SIZE[9] */
 
-	{ CTRL2,   CTRL2_DCW_EN | CTRL2_SDE_EN |
-		CTRL2_UV_AVG_EN | CTRL2_CMX_EN | CTRL2_UV_ADJ_EN },
+	{CTRL2, CTRL2_DCW_EN | CTRL2_SDE_EN | CTRL2_UV_AVG_EN | CTRL2_CMX_EN | CTRL2_UV_ADJ_EN},
 
 	/* H_DIVIDER/V_DIVIDER */
-	{ CTRLI,   CTRLI_LP_DP | 0x00},
+	{CTRLI, CTRLI_LP_DP | 0x00},
 	/* DVP prescaler */
-	{ R_DVP_SP, R_DVP_SP_AUTO_MODE | 0x04},
+	{R_DVP_SP, R_DVP_SP_AUTO_MODE | 0x04},
 
-	{ R_BYPASS, R_BYPASS_DSP_EN },
+	{R_BYPASS, R_BYPASS_DSP_EN},
 	{0, 0},
 };
 
@@ -872,8 +871,7 @@ static const struct ov2640_win_size *ov2640_select_win(uint32_t width, uint32_t 
 	return NULL;
 }
 
-static int ov2640_set_resolution(const struct device *dev,
-				uint16_t img_width, uint16_t img_height)
+static int ov2640_set_resolution(const struct device *dev, uint16_t img_width, uint16_t img_height)
 {
 	int ret = 0;
 	const struct ov2640_config *cfg = dev->config;
