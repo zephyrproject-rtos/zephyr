@@ -288,7 +288,7 @@ int main(void)
 			return 0;
 		}
 
-		LOG_DBG("Got frame %u! size: %u; timestamp %u ms",
+		LOG_INF("Got frame %u! size: %u; timestamp %u ms",
 			frame++, vbuf->bytesused, vbuf->timestamp);
 
 #ifdef CONFIG_TEST
