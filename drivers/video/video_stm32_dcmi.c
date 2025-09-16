@@ -306,6 +306,9 @@ static int video_stm32_dcmi_get_caps(const struct device *dev, struct video_caps
 {
 	const struct video_stm32_dcmi_config *config = dev->config;
 
+	/* 2 buffers are needed for DCMI_MODE_CONTINUOUS */
+	caps->min_vbuf_count = 2;
+
 	/* DCMI produces full frames */
 	caps->min_line_count = caps->max_line_count = LINE_COUNT_HEIGHT;
 
