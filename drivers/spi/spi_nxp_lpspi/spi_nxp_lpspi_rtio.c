@@ -113,16 +113,6 @@ static inline bool lpspi_rtio_is_done_rx(const struct device *dev)
 
 static void lpspi_rtio_iodev_complete(const struct device *dev, int status);
 
-static inline uint8_t rx_fifo_cur_len(LPSPI_Type *base)
-{
-	return (base->FSR & LPSPI_FSR_RXCOUNT_MASK) >> LPSPI_FSR_RXCOUNT_SHIFT;
-}
-
-static inline uint8_t tx_fifo_cur_len(LPSPI_Type *base)
-{
-	return (base->FSR & LPSPI_FSR_TXCOUNT_MASK) >> LPSPI_FSR_TXCOUNT_SHIFT;
-}
-
 static inline void lpspi_rtio_fetch_rx_fifo(const struct device *dev, uint8_t *buf, size_t offset,
 					    size_t fetch_len)
 {
