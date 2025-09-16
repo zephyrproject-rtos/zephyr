@@ -94,11 +94,18 @@ int eth_bridge_iface_add(struct net_if *br, struct net_if *iface)
 	int count = 0;
 	int ret;
 
+#if defined(CONFIG_NET_DSA) && !defined(CONFIG_NET_DSA_DEPRECATED)
+	if (net_if_l2(iface) != &NET_L2_GET_NAME(ETHERNET) ||
+	    (eth_ctx->dsa_port != DSA_USER_PORT &&
+	     !(net_eth_get_hw_capabilities(iface) & ETHERNET_PROMISC_MODE))) {
+		return -EINVAL;
+	}
+#else
 	if (net_if_l2(iface) != &NET_L2_GET_NAME(ETHERNET) ||
 	    !(net_eth_get_hw_capabilities(iface) & ETHERNET_PROMISC_MODE)) {
 		return -EINVAL;
 	}
-
+#endif
 	if (net_if_l2(br) != &NET_L2_GET_NAME(VIRTUAL) ||
 	    !(net_virtual_get_iface_capabilities(br) & VIRTUAL_INTERFACE_BRIDGE)) {
 		return -EINVAL;
@@ -134,6 +141,17 @@ int eth_bridge_iface_add(struct net_if *br, struct net_if *iface)
 		return -ENOMEM;
 	}
 
+#if defined(CONFIG_NET_DSA) && !defined(CONFIG_NET_DSA_DEPRECATED)
+	if (eth_ctx->dsa_port != DSA_USER_PORT) {
+		ret = net_eth_promisc_mode(iface, true);
+		if (ret != 0 && ret != -EALREADY) {
+			NET_DBG("iface %d promiscuous mode failed: %d",
+				net_if_get_by_iface(iface), ret);
+			eth_bridge_iface_remove(br, iface);
+			return ret;
+		}
+	}
+#else
 	ret = net_eth_promisc_mode(iface, true);
 	if (ret != 0 && ret != -EALREADY) {
 		/* Ignore any errors when using native-sim driver,
@@ -148,6 +166,7 @@ int eth_bridge_iface_add(struct net_if *br, struct net_if *iface)
 		}
 	}
 
+#endif
 	NET_DBG("iface %d added to bridge %d", net_if_get_by_iface(iface),
 		net_if_get_by_iface(br));
 
