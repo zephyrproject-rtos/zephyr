@@ -29,7 +29,7 @@ LOG_MODULE_REGISTER(eth_stm32_hal_ptp, CONFIG_ETHERNET_LOG_LEVEL);
 #define ETH_STM32_PTP_NOT_CONFIGURED HAL_ETH_PTP_NOT_CONFIGURED
 #endif /* stm32F7x or sm32F4x */
 
-bool eth_is_ptp_pkt(struct net_if *iface, struct net_pkt *pkt)
+bool eth_stm32_is_ptp_pkt(struct net_if *iface, struct net_pkt *pkt)
 {
 	if (ntohs(NET_ETH_HDR(pkt)->type) != NET_ETH_PTYPE_PTP) {
 		return false;
