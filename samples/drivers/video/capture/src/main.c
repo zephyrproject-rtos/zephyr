@@ -27,6 +27,11 @@ static inline int app_setup_display(const struct device *const display_dev, cons
 
 	LOG_INF("Display device: %s", display_dev->name);
 
+	if (!device_is_ready(display_dev)) {
+		LOG_ERR("%s: display device not ready.", display_dev->name);
+		return -ENOSYS;
+	}
+
 	display_get_capabilities(display_dev, &capabilities);
 
 	LOG_INF("- Capabilities:");
@@ -68,62 +73,100 @@ static inline int app_setup_display(const struct device *const display_dev, cons
 
 static int app_display_frame(const struct device *const display_dev,
 			     const struct video_buffer *const vbuf,
-			     const struct video_format fmt)
+			     const struct video_format *const fmt)
 {
 	struct display_buffer_descriptor buf_desc = {
 		.buf_size = vbuf->bytesused,
-		.width = fmt.width,
+		.width = fmt->width,
 		.pitch = buf_desc.width,
-		.height = vbuf->bytesused / fmt.pitch,
+		.height = vbuf->bytesused / fmt->pitch,
 	};
 
 	return display_write(display_dev, 0, vbuf->line_offset, &buf_desc, vbuf->buffer);
 }
 #endif
 
-int main(void)
+static int app_setup_video_selection(const struct device *const video_dev,
+				     const struct video_format *const fmt)
 {
-	struct video_buffer *vbuf = &(struct video_buffer){};
-	const struct device *video_dev;
-	struct video_format fmt = {
+	struct video_selection sel = {
 		.type = VIDEO_BUF_TYPE_OUTPUT,
 	};
-	struct video_caps caps = {
-		.type = VIDEO_BUF_TYPE_OUTPUT,
-	};
-	struct video_frmival frmival = {};
-	struct video_frmival_enum fie = {
-		.format = &fmt,
-	};
-	unsigned int frame = 0;
-	int i = 0;
 	int ret;
 
-	/* When the video shell is enabled, do not run the capture loop */
-	if (IS_ENABLED(CONFIG_VIDEO_SHELL)) {
-		LOG_INF("Letting the user control the device with the video shell");
-		return 0;
+	/* Set the crop setting only if configured */
+	if (CONFIG_VIDEO_SOURCE_CROP_WIDTH > 0) {
+		sel.target = VIDEO_SEL_TGT_CROP;
+		sel.rect.left = CONFIG_VIDEO_SOURCE_CROP_LEFT;
+		sel.rect.top = CONFIG_VIDEO_SOURCE_CROP_TOP;
+		sel.rect.width = CONFIG_VIDEO_SOURCE_CROP_WIDTH;
+		sel.rect.height = CONFIG_VIDEO_SOURCE_CROP_HEIGHT;
+
+		ret = video_set_selection(video_dev, &sel);
+		if (ret < 0) {
+			LOG_ERR("Unable to set selection crop");
+			return ret;
+		}
+
+		LOG_INF("Crop window set to (%u,%u)/%ux%u",
+			sel.rect.left, sel.rect.top, sel.rect.width, sel.rect.height);
 	}
 
-	video_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_camera));
-	if (!device_is_ready(video_dev)) {
-		LOG_ERR("%s: video device is not ready", video_dev->name);
-		return 0;
+	/*
+	 * Check (if possible) if targeted size is same as crop
+	 * and if compose is necessary
+	 */
+	sel.target = VIDEO_SEL_TGT_CROP;
+	ret = video_get_selection(video_dev, &sel);
+	if (ret < 0 && ret != -ENOSYS) {
+		LOG_ERR("Unable to get selection crop");
+		return ret;
 	}
+
+	if (ret == 0 && (sel.rect.width != fmt->width || sel.rect.height != fmt->height)) {
+		sel.target = VIDEO_SEL_TGT_COMPOSE;
+		sel.rect.left = 0;
+		sel.rect.top = 0;
+		sel.rect.width = fmt->width;
+		sel.rect.height = fmt->height;
+
+		ret = video_set_selection(video_dev, &sel);
+		if (ret < 0 && ret != -ENOSYS) {
+			LOG_ERR("Unable to set selection compose");
+			return ret;
+		}
+
+		LOG_INF("Compose window set to (%u,%u)/%ux%u",
+			sel.rect.left, sel.rect.top, sel.rect.width, sel.rect.height);
+	}
+
+	return 0;
+}
+
+static int app_query_video_info(const struct device *const video_dev,
+				struct video_caps *const caps,
+				struct video_format *const fmt)
+{
+	int ret;
 
 	LOG_INF("Video device: %s", video_dev->name);
 
+	if (!device_is_ready(video_dev)) {
+		LOG_ERR("%s: video device is not ready", video_dev->name);
+		return -ENOSYS;
+	}
+
 	/* Get capabilities */
-	ret = video_get_caps(video_dev, &caps);
+	ret = video_get_caps(video_dev, caps);
 	if (ret < 0) {
 		LOG_ERR("Unable to retrieve video capabilities");
-		return 0;
+		return ret;
 	}
 
 	LOG_INF("- Capabilities:");
-	while (caps.format_caps[i].pixelformat) {
-		const struct video_format_cap *fcap = &caps.format_caps[i];
-		/* fourcc to string */
+	for (int i = 0; caps->format_caps[i].pixelformat; i++) {
+		const struct video_format_cap *fcap = &caps->format_caps[i];
+
 		LOG_INF("  %s width [%u; %u; %u] height [%u; %u; %u]",
 			VIDEO_FOURCC_TO_STR(fcap->pixelformat),
 			fcap->width_min, fcap->width_max, fcap->width_step,
@@ -132,74 +175,63 @@ int main(void)
 	}
 
 	/* Get default/native format */
-	ret = video_get_format(video_dev, &fmt);
+	ret = video_get_format(video_dev, fmt);
 	if (ret < 0) {
 		LOG_ERR("Unable to retrieve video format");
-		return 0;
 	}
 
-	/* Set the crop setting if necessary */
-	if (CONFIG_VIDEO_SOURCE_CROP_WIDTH > 0 || CONFIG_VIDEO_SOURCE_CROP_HEIGHT > 0) {
-		struct video_selection sel = {
-			.target = VIDEO_SEL_TGT_CROP,
-			.rect.left = CONFIG_VIDEO_SOURCE_CROP_LEFT,
-			.rect.top = CONFIG_VIDEO_SOURCE_CROP_TOP,
-			.rect.width = CONFIG_VIDEO_SOURCE_CROP_WIDTH,
-			.rect.height = CONFIG_VIDEO_SOURCE_CROP_HEIGHT,
-			.type = VIDEO_BUF_TYPE_OUTPUT,
-		};
-
-		ret = video_set_selection(video_dev, &sel);
-		if (ret < 0) {
-			LOG_ERR("Unable to set selection crop");
-			return 0;
-		}
-
-		LOG_INF("Selection crop set to (%u,%u)/%ux%u",
-			sel.rect.left, sel.rect.top, sel.rect.width, sel.rect.height);
-
-		/*
-		 * Check (if possible) if targeted size is same as crop
-		 * and if compose is necessary
-		 */
-		sel.target = VIDEO_SEL_TGT_CROP;
-		ret = video_get_selection(video_dev, &sel);
-		if (ret < 0 && ret != -ENOSYS) {
-			LOG_ERR("Unable to get selection crop");
-			return 0;
-		}
-
-		if (ret == 0 && (sel.rect.width != fmt.width || sel.rect.height != fmt.height)) {
-			sel.target = VIDEO_SEL_TGT_COMPOSE;
-			sel.rect.left = 0;
-			sel.rect.top = 0;
-			sel.rect.width = fmt.width;
-			sel.rect.height = fmt.height;
-			ret = video_set_selection(video_dev, &sel);
-			if (ret < 0 && ret != -ENOSYS) {
-				LOG_ERR("Unable to set selection compose");
-				return 0;
-			}
-		}
-	}
-
+	/* Adjust video format according to the configuration */
 	if (CONFIG_VIDEO_FRAME_HEIGHT > 0) {
-		fmt.height = CONFIG_VIDEO_FRAME_HEIGHT;
+		fmt->height = CONFIG_VIDEO_FRAME_HEIGHT;
 	}
 	if (CONFIG_VIDEO_FRAME_WIDTH > 0) {
-		fmt.width = CONFIG_VIDEO_FRAME_WIDTH;
+		fmt->width = CONFIG_VIDEO_FRAME_WIDTH;
 	}
 	if (strcmp(CONFIG_VIDEO_PIXEL_FORMAT, "") != 0) {
-		fmt.pixelformat = VIDEO_FOURCC_FROM_STR(CONFIG_VIDEO_PIXEL_FORMAT);
+		fmt->pixelformat = VIDEO_FOURCC_FROM_STR(CONFIG_VIDEO_PIXEL_FORMAT);
 	}
 
-	LOG_INF("- Video format: %s %ux%u",
-		VIDEO_FOURCC_TO_STR(fmt.pixelformat), fmt.width, fmt.height);
+	return 0;
+}
 
-	ret = video_set_compose_format(video_dev, &fmt);
+static int app_setup_video_format(const struct device *const video_dev,
+				  struct video_format *const fmt)
+{
+	int ret;
+
+	LOG_INF("- Video format: %s %ux%u",
+		VIDEO_FOURCC_TO_STR(fmt->pixelformat), fmt->width, fmt->height);
+
+	ret = video_set_compose_format(video_dev, fmt);
 	if (ret < 0) {
 		LOG_ERR("Unable to set format");
-		return 0;
+		return ret;
+	}
+
+	return 0;
+}
+
+static int app_setup_video_frmival(const struct device *const video_dev,
+				   struct video_format *const fmt)
+{
+	struct video_frmival frmival = {};
+	struct video_frmival_enum fie = {
+		.format = fmt,
+	};
+	int ret;
+
+	LOG_INF("- Supported frame intervals for the default format:");
+
+	while (video_enum_frmival(video_dev, &fie) == 0) {
+		if (fie.type == VIDEO_FRMIVAL_TYPE_DISCRETE) {
+			LOG_INF("   %u/%u", fie.discrete.numerator, fie.discrete.denominator);
+		} else {
+			LOG_INF("   [min = %u/%u; max = %u/%u; step = %u/%u]",
+				fie.stepwise.min.numerator, fie.stepwise.min.denominator,
+				fie.stepwise.max.numerator, fie.stepwise.max.denominator,
+				fie.stepwise.step.numerator, fie.stepwise.step.denominator);
+		}
+		fie.index++;
 	}
 
 	ret = video_get_frmival(video_dev, &frmival);
@@ -213,18 +245,12 @@ int main(void)
 			1.0 * frmival.denominator / frmival.numerator);
 	}
 
-	LOG_INF("- Supported frame intervals for the default format:");
-	while (video_enum_frmival(video_dev, &fie) == 0) {
-		if (fie.type == VIDEO_FRMIVAL_TYPE_DISCRETE) {
-			LOG_INF("   %u/%u", fie.discrete.numerator, fie.discrete.denominator);
-		} else {
-			LOG_INF("   [min = %u/%u; max = %u/%u; step = %u/%u]",
-				fie.stepwise.min.numerator, fie.stepwise.min.denominator,
-				fie.stepwise.max.numerator, fie.stepwise.max.denominator,
-				fie.stepwise.step.numerator, fie.stepwise.step.denominator);
-		}
-		fie.index++;
-	}
+	return 0;
+}
+
+static int app_setup_video_controls(const struct device *const video_dev)
+{
+	int ret;
 
 	/* Get supported controls */
 	LOG_INF("- Supported controls:");
@@ -247,7 +273,7 @@ int main(void)
 		ret = video_set_ctrl(video_dev, &ctrl);
 		if (ret < 0) {
 			LOG_ERR("Failed to set horizontal flip");
-			return 0;
+			return ret;
 		}
 	}
 
@@ -256,7 +282,7 @@ int main(void)
 		ret = video_set_ctrl(video_dev, &ctrl);
 		if (ret < 0) {
 			LOG_ERR("Failed to set vertical flip");
-			return 0;
+			return ret;
 		}
 	}
 
@@ -266,16 +292,96 @@ int main(void)
 		if (ret < 0 && ret != -ENOTSUP) {
 			LOG_WRN("Failed to set the test pattern");
 		}
-		tp_set_ret = ret;
+	}
+
+	return 0;
+}
+
+static int app_setup_video_buffers(const struct device *const video_dev,
+				   struct video_caps *const caps,
+				   struct video_format *const fmt)
+{
+	int ret;
+
+	/* Alloc video buffers and enqueue for capture */
+	if (caps->min_vbuf_count > CONFIG_VIDEO_BUFFER_POOL_NUM_MAX ||
+	    fmt->size > CONFIG_VIDEO_BUFFER_POOL_SZ_MAX) {
+		LOG_ERR("Not enough buffers or memory to start streaming");
+		return -EINVAL;
+	}
+
+	for (int i = 0; i < CONFIG_VIDEO_BUFFER_POOL_NUM_MAX; i++) {
+		struct video_buffer *vbuf;
+
+		/*
+		 * For some hardwares, such as the PxP used on i.MX RT1170 to do image rotation,
+		 * buffer alignment is needed in order to achieve the best performance
+		 */
+		vbuf = video_buffer_aligned_alloc(fmt->size, CONFIG_VIDEO_BUFFER_POOL_ALIGN,
+						  K_NO_WAIT);
+		if (vbuf == NULL) {
+			LOG_ERR("Unable to alloc video buffer");
+			return -ENOMEM;
+		}
+
+		vbuf->type = VIDEO_BUF_TYPE_OUTPUT;
+
+		ret = video_enqueue(video_dev, vbuf);
+		if (ret < 0) {
+			LOG_ERR("Failed to enqueue video buffer");
+			return ret;
+		}
+	}
+
+	return 0;
+}
+
+int main(void)
+{
+	const struct device *const video_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_camera));
+	struct video_buffer *vbuf = &(struct video_buffer){};
+	struct video_format fmt = {
+		.type = VIDEO_BUF_TYPE_OUTPUT,
+	};
+	struct video_caps caps = {
+		.type = VIDEO_BUF_TYPE_OUTPUT,
+	};
+	unsigned int frame = 0;
+	int ret;
+
+	/* When the video shell is enabled, do not run the capture loop */
+	if (IS_ENABLED(CONFIG_VIDEO_SHELL)) {
+		LOG_INF("Letting the user control the device with the video shell");
+		return 0;
+	}
+
+	ret = app_query_video_info(video_dev, &caps, &fmt);
+	if (ret < 0) {
+		return 0;
+	}
+
+	ret = app_setup_video_selection(video_dev, &fmt);
+	if (ret < 0) {
+		return 0;
+	}
+
+	ret = app_setup_video_format(video_dev, &fmt);
+	if (ret < 0) {
+		return 0;
+	}
+
+	ret = app_setup_video_frmival(video_dev, &fmt);
+	if (ret < 0) {
+		return 0;
+	}
+
+	ret = app_setup_video_controls(video_dev);
+	if (ret < 0) {
+		return 0;
 	}
 
 #if DT_HAS_CHOSEN(zephyr_display)
 	const struct device *const display_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
-
-	if (!device_is_ready(display_dev)) {
-		LOG_ERR("%s: display device not ready.", display_dev->name);
-		return 0;
-	}
 
 	ret = app_setup_display(display_dev, fmt.pixelformat);
 	if (ret < 0) {
@@ -284,33 +390,11 @@ int main(void)
 	}
 #endif
 
-	/* Alloc video buffers and enqueue for capture */
-	if (caps.min_vbuf_count > CONFIG_VIDEO_BUFFER_POOL_NUM_MAX ||
-	    fmt.size > CONFIG_VIDEO_BUFFER_POOL_SZ_MAX) {
-		LOG_ERR("Not enough buffers or memory to start streaming");
+	ret = app_setup_video_buffers(video_dev, &caps, &fmt);
+	if (ret < 0) {
 		return 0;
 	}
 
-	for (i = 0; i < CONFIG_VIDEO_BUFFER_POOL_NUM_MAX; i++) {
-		/*
-		 * For some hardwares, such as the PxP used on i.MX RT1170 to do image rotation,
-		 * buffer alignment is needed in order to achieve the best performance
-		 */
-		vbuf = video_buffer_aligned_alloc(fmt.size, CONFIG_VIDEO_BUFFER_POOL_ALIGN,
-							K_NO_WAIT);
-		if (vbuf == NULL) {
-			LOG_ERR("Unable to alloc video buffer");
-			return 0;
-		}
-		vbuf->type = VIDEO_BUF_TYPE_OUTPUT;
-		ret = video_enqueue(video_dev, vbuf);
-		if (ret < 0) {
-			LOG_ERR("Failed to enqueue video buffer");
-			return 0;
-		}
-	}
-
-	/* Start video capture */
 	ret = video_stream_start(video_dev, VIDEO_BUF_TYPE_OUTPUT);
 	if (ret < 0) {
 		LOG_ERR("Unable to start capture (interface)");
@@ -319,7 +403,6 @@ int main(void)
 
 	LOG_INF("Capture started");
 
-	/* Grab video frames */
 	vbuf->type = VIDEO_BUF_TYPE_OUTPUT;
 	while (1) {
 		ret = video_dequeue(video_dev, &vbuf, K_FOREVER);
@@ -332,7 +415,7 @@ int main(void)
 			frame++, vbuf->bytesused, vbuf->timestamp);
 
 #if DT_HAS_CHOSEN(zephyr_display)
-		ret = app_display_frame(display_dev, vbuf, fmt);
+		ret = app_display_frame(display_dev, vbuf, &fmt);
 		if (ret != 0) {
 			LOG_WRN("Failed to display this frame");
 		}
