@@ -643,6 +643,128 @@ static void mqtt_sn_do_ping(struct mqtt_sn_client *client)
 	}
 }
 
+static void mqtt_sn_do_will_topic_update(struct mqtt_sn_client *client)
+{
+	struct mqtt_sn_param p = {.type = MQTT_SN_MSG_TYPE_WILLTOPICUPD};
+
+	if (client == NULL) {
+		return;
+	}
+
+	if (client->state != MQTT_SN_CLIENT_ACTIVE) {
+		LOG_ERR("Cannot update will topic: not connected");
+		return;
+	}
+
+	LOG_INF("Updating will topic");
+
+	p.params.willtopicupd.topic.data = client->will_topic.data;
+	p.params.willtopicupd.topic.size = client->will_topic.size;
+	p.params.willtopicupd.retain = client->will_retain;
+	p.params.willtopicupd.qos = client->will_qos;
+
+	encode_and_send(client, &p, 0);
+}
+
+static void mqtt_sn_do_will_message_update(struct mqtt_sn_client *client)
+{
+	struct mqtt_sn_param p = {.type = MQTT_SN_MSG_TYPE_WILLMSGUPD};
+
+	if (client == NULL) {
+		return;
+	}
+
+	if (client->state != MQTT_SN_CLIENT_ACTIVE) {
+		LOG_ERR("Cannot update will message: not connected");
+		return;
+	}
+
+	LOG_INF("Updating will message");
+
+	p.params.willmsgupd.msg.data = client->will_msg.data;
+	p.params.willmsgupd.msg.size = client->will_msg.size;
+
+	encode_and_send(client, &p, 0);
+}
+
+static int process_will_topic_update(struct mqtt_sn_client *client, int64_t *next_cycle)
+{
+	const int64_t now = k_uptime_get();
+	int64_t next_attempt;
+
+	if (!client->will_topic_update.in_progress) {
+		return 0;
+	}
+
+	if (now == 0) {
+		next_attempt = 1;
+	} else if (client->will_topic_update.last_attempt == 0) {
+		next_attempt = 0;
+	} else {
+		next_attempt = client->will_topic_update.last_attempt + T_RETRY_MSEC;
+	}
+
+	if (next_attempt <= now) {
+		if (client->will_topic_update.retries-- == 0) {
+			LOG_WRN("Will topic update ran out of retries");
+			client->will_topic_update.in_progress = false;
+			mqtt_sn_disconnect_internal(client);
+			return -ETIMEDOUT;
+		}
+
+		LOG_DBG("Sending WILLTOPICUPD");
+		mqtt_sn_do_will_topic_update(client);
+		client->will_topic_update.last_attempt = now;
+		next_attempt = now + T_RETRY_MSEC;
+	}
+
+	if (*next_cycle == 0 || next_attempt < *next_cycle) {
+		*next_cycle = next_attempt;
+	}
+	LOG_DBG("next_cycle: %lld", *next_cycle);
+
+	return 0;
+}
+
+static int process_will_message_update(struct mqtt_sn_client *client, int64_t *next_cycle)
+{
+	const int64_t now = k_uptime_get();
+	int64_t next_attempt;
+
+	if (!client->will_message_update.in_progress) {
+		return 0;
+	}
+
+	if (now == 0) {
+		next_attempt = 1;
+	} else if (client->will_message_update.last_attempt == 0) {
+		next_attempt = 0;
+	} else {
+		next_attempt = client->will_message_update.last_attempt + T_RETRY_MSEC;
+	}
+
+	if (next_attempt <= now) {
+		if (client->will_message_update.retries-- == 0) {
+			LOG_WRN("Will message update ran out of retries");
+			client->will_message_update.in_progress = false;
+			mqtt_sn_disconnect_internal(client);
+			return -ETIMEDOUT;
+		}
+
+		LOG_DBG("Sending WILLMSGUPD");
+		mqtt_sn_do_will_message_update(client);
+		client->will_message_update.last_attempt = now;
+		next_attempt = now + T_RETRY_MSEC;
+	}
+
+	if (*next_cycle == 0 || next_attempt < *next_cycle) {
+		*next_cycle = next_attempt;
+	}
+	LOG_DBG("next_cycle: %lld", *next_cycle);
+
+	return 0;
+}
+
 /**
  * @brief Process all publish tasks in the queue.
  *
@@ -997,6 +1119,16 @@ static void process_work(struct k_work *wrk)
 	}
 
 	if (client->state == MQTT_SN_CLIENT_ACTIVE) {
+		err = process_will_topic_update(client, &next_cycle);
+		if (err) {
+			return;
+		}
+
+		err = process_will_message_update(client, &next_cycle);
+		if (err) {
+			return;
+		}
+
 		err = process_topics(client, &next_cycle);
 		if (err) {
 			return;
@@ -1599,6 +1731,35 @@ static void handle_disconnect(struct mqtt_sn_client *client, struct mqtt_sn_para
 	mqtt_sn_disconnect_internal(client);
 }
 
+static void handle_willtopicresp(struct mqtt_sn_client *client,
+				 struct mqtt_sn_param_willtopicresp *p)
+{
+	if (!client->will_topic_update.in_progress) {
+		LOG_ERR("There's no will topic update in progress");
+		return;
+	}
+
+	if (p->ret_code == MQTT_SN_CODE_ACCEPTED) {
+		client->will_topic_update.in_progress = false;
+	} else {
+		LOG_WRN("WILLTOPICRESP with ret code %d", p->ret_code);
+	}
+}
+
+static void handle_willmsgresp(struct mqtt_sn_client *client, struct mqtt_sn_param_willmsgresp *p)
+{
+	if (!client->will_message_update.in_progress) {
+		LOG_ERR("There's no will message update in progress");
+		return;
+	}
+
+	if (p->ret_code == MQTT_SN_CODE_ACCEPTED) {
+		client->will_message_update.in_progress = false;
+	} else {
+		LOG_WRN("WILLMSGRESP with ret code %d", p->ret_code);
+	}
+}
+
 static int handle_msg(struct mqtt_sn_client *client, struct mqtt_sn_data rx_addr)
 {
 	int err;
@@ -1667,8 +1828,10 @@ static int handle_msg(struct mqtt_sn_client *client, struct mqtt_sn_data rx_addr
 		handle_disconnect(client, &p.params.disconnect);
 		break;
 	case MQTT_SN_MSG_TYPE_WILLTOPICRESP:
+		handle_willtopicresp(client, &p.params.willtopicresp);
 		break;
 	case MQTT_SN_MSG_TYPE_WILLMSGRESP:
+		handle_willmsgresp(client, &p.params.willmsgresp);
 		break;
 	default:
 		LOG_ERR("Unexpected message type %d", p.type);
@@ -1774,4 +1937,38 @@ int mqtt_sn_predefine_topic(struct mqtt_sn_client *client, uint16_t topic_id,
 
 	return 0;
 
+}
+
+static int attempt_will_update(struct mqtt_sn_client *client, struct mqtt_sn_will_update *state)
+{
+	int err;
+
+	if (client->state != MQTT_SN_CLIENT_ACTIVE) {
+		return -ENOTCONN;
+	}
+
+	if (state->in_progress) {
+		return -EALREADY;
+	}
+
+	state->retries = N_RETRY;
+	state->last_attempt = 0;
+	state->in_progress = true;
+
+	err = k_work_reschedule(&client->process_work, K_NO_WAIT);
+	if (err < 0) {
+		return err;
+	}
+
+	return 0;
+}
+
+int mqtt_sn_update_will_topic(struct mqtt_sn_client *client)
+{
+	return attempt_will_update(client, &client->will_topic_update);
+}
+
+int mqtt_sn_update_will_message(struct mqtt_sn_client *client)
+{
+	return attempt_will_update(client, &client->will_message_update);
 }
