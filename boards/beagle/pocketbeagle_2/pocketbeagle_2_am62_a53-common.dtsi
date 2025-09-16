@@ -11,8 +11,8 @@
 	compatible = "beagle,pocketbeagle_2_a53";
 
 	chosen {
-		zephyr,console = &uart6;
-		zephyr,shell-uart = &uart6;
+		zephyr,console = &main_uart6;
+		zephyr,shell-uart = &main_uart6;
 		zephyr,sram = &a53_ddr_section;
 	};
 
@@ -62,7 +62,7 @@
 	};
 };
 
-&uart6 {
+&main_uart6 {
 	pinctrl-0 = <&main_uart6_rx_default &main_uart6_tx_default>;
 	pinctrl-names = "default";
 	status = "okay";
