@@ -515,7 +515,7 @@
 			clocks = <&scmi_clk IMX95_CLK_LPTMR2>;
 			clock-frequency = <DT_FREQ_K(32)>;
 			clk-source = <2>;
-			prescaler = <1>;
+			prescale-glitch-filter = <0>;
 			resolution = <32>;
 			status = "disabled";
 		};
