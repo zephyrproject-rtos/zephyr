@@ -42,7 +42,7 @@ jobs:
       if: >
         github.event_name == 'pull_request_target'
       run: |
-        git fetch origin pull/${{ github.event.pull_request.number }}/head
+        git fetch origin pull/${{ github.event.pull_request.number }}/merge
         git show FETCH_HEAD:west.yml > pr_west.yml
 
     - name: west setup
