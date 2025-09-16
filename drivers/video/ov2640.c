@@ -460,15 +460,15 @@ static const struct ov2640_reg uxga_regs[] = {
 	{BANK_SEL, BANK_SEL_DSP},
 	{R_BYPASS, R_BYPASS_DSP_BYPAS},
 
-	{ RESET,   RESET_DVP },
+	{RESET, RESET_DVP},
 	{HSIZE8, (UXGA_WIDTH >> 3)},  /* Image Horizontal Size HSIZE[10:3] */
 	{VSIZE8, (UXGA_HEIGHT >> 3)}, /* Image Vertical Size VSIZE[10:3] */
 
 	/* {HSIZE[11], HSIZE[2:0], VSIZE[2:0]} */
 	{SIZEL, ((UXGA_WIDTH >> 6) & 0x40) | ((UXGA_WIDTH & 0x7) << 3) | (UXGA_HEIGHT & 0x7)},
 
-	{ XOFFL,   0x00 }, /* OFFSET_X[7:0] */
-	{ YOFFL,   0x00 }, /* OFFSET_Y[7:0] */
+	{XOFFL, 0x00},                        /* OFFSET_X[7:0] */
+	{YOFFL, 0x00},                        /* OFFSET_Y[7:0] */
 	{HSIZE, ((UXGA_WIDTH >> 2) & 0xFF)},  /* H_SIZE[7:0] real/4 */
 	{VSIZE, ((UXGA_HEIGHT >> 2) & 0xFF)}, /* V_SIZE[7:0] real/4 */
 
@@ -484,7 +484,10 @@ static const struct ov2640_reg uxga_regs[] = {
 	{R_DVP_SP, R_DVP_SP_AUTO_MODE | 0x04},
 
 	{R_BYPASS, R_BYPASS_DSP_EN},
+<<<<<<< HEAD
 	{RESET, 0x00},
+=======
+>>>>>>> b0e2708d6a9 (drivers: video: ov2640 driver: code formatting)
 	{0, 0},
 };
 
