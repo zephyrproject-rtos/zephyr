@@ -9,14 +9,20 @@
 #include <zephyr/kernel.h>
 #include <zephyr/types.h>
 
-/* Naming of the  ETH PTP Config Status changes depending on the stm32 serie */
-#if defined(CONFIG_SOC_SERIES_STM32F4X)
-#define ETH_STM32_PTP_CONFIGURED HAL_ETH_PTP_CONFIGURATED
-#define ETH_STM32_PTP_NOT_CONFIGURED HAL_ETH_PTP_NOT_CONFIGURATED
-#else
-#define ETH_STM32_PTP_CONFIGURED HAL_ETH_PTP_CONFIGURED
-#define ETH_STM32_PTP_NOT_CONFIGURED HAL_ETH_PTP_NOT_CONFIGURED
-#endif /* stm32F7x or sm32F4x */
+#ifdef CONFIG_PTP_CLOCK_STM32_HAL
+const struct device *eth_stm32_get_ptp_clock(const struct device *dev);
+bool eth_is_ptp_pkt(struct net_if *iface, struct net_pkt *pkt);
+#endif /* CONFIG_PTP_CLOCK_STM32_HAL */
+
+#ifdef CONFIG_ETH_STM32_HAL_API_V2
+
+struct eth_stm32_tx_context {
+	struct net_pkt *pkt;
+	uint16_t first_tx_buffer_index;
+	bool used;
+};
+
+#endif /* CONFIG_ETH_STM32_HAL_API_V2 */
 
 #define ST_OUI_B0 0x00
 #define ST_OUI_B1 0x80
