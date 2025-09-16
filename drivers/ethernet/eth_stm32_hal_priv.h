@@ -9,6 +9,7 @@
 
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/linker/devicetree_regions.h>
 #include <zephyr/kernel.h>
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/phy.h>
@@ -36,6 +37,11 @@ extern const struct device *eth_stm32_phy_dev;
 #elif defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32H7RSX)
 #define __eth_stm32_desc __attribute__((section(".eth_stm32_desc")))
 #define __eth_stm32_buf  __attribute__((section(".eth_stm32_buf")))
+#elif defined(CONFIG_SOC_SERIES_STM32MP13X)
+#define ETH_DMA_REGION  DT_INST_PHANDLE(0, memory_regions)
+#define ETH_SECTION Z_GENERIC_SECTION(LINKER_DT_NODE_REGION_NAME_TOKEN(ETH_DMA_REGION))
+#define __eth_stm32_desc __aligned(32) ETH_SECTION
+#define __eth_stm32_buf  __aligned(32) ETH_SECTION
 #elif defined(CONFIG_NOCACHE_MEMORY)
 #define __eth_stm32_desc __nocache __aligned(4)
 #define __eth_stm32_buf  __nocache __aligned(4)
@@ -102,6 +108,12 @@ extern ETH_DMADescTypeDef dma_tx_desc_tab[ETH_TXBUFNB];
 struct eth_stm32_hal_dev_cfg {
 	void (*config_func)(void);
 	struct stm32_pclken pclken;
+#if DT_INST_CLOCKS_HAS_NAME(0, mac_clk)
+	struct stm32_pclken pclken_mac;
+#endif
+#if DT_INST_CLOCKS_HAS_NAME(0, eth_ker)
+	struct stm32_pclken pclken_ker;
+#endif
 	struct stm32_pclken pclken_rx;
 	struct stm32_pclken pclken_tx;
 #if DT_INST_CLOCKS_HAS_NAME(0, mac_clk_ptp)
