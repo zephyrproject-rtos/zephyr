@@ -464,6 +464,23 @@ int mqtt_sn_input(struct mqtt_sn_client *client);
 int mqtt_sn_get_topic_name(struct mqtt_sn_client *client, uint16_t id,
 			   struct mqtt_sn_data *topic_name);
 
+/**
+ * @brief Predefine topic.
+ *
+ * Has to be called after mqtt_sn_connect, if a clear session is started. Otherwise, the clearing
+ * will also remove all predefined topics. Additionally, it has to be called before calling
+ * mqtt_sn_input for the first time after the connect, to prevent race conditions where incoming
+ * publications use predefined topics which were not defined, yet.
+ *
+ * @param[in] client The MQTT-SN client to define the topic on.
+ * @param[in] topic_id Topic identifier.
+ * @param[in] topic_name The name of the topic.
+ *
+ * @return 0 or a negative error code (errno.h) indicating reason of failure.
+ */
+int mqtt_sn_predefine_topic(struct mqtt_sn_client *client, uint16_t topic_id,
+			    struct mqtt_sn_data *topic_name);
+
 #ifdef __cplusplus
 }
 #endif
