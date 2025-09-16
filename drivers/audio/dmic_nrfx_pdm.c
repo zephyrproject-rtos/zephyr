@@ -668,11 +668,12 @@ static int dmic_nrfx_pdm_read(const struct device *dev,
 
 static void init_clock_manager(const struct device *dev)
 {
-	struct dmic_nrfx_pdm_drv_data *drv_data = dev->data;
 #if DT_NODE_HAS_STATUS_OKAY(NODE_AUDIO_AUXPLL)
+	struct dmic_nrfx_pdm_drv_data *drv_data = dev->data;
 	drv_data->audiopll_dev = DEVICE_DT_GET(NODE_AUDIO_AUXPLL);
 #elif CONFIG_CLOCK_CONTROL_NRF
 	clock_control_subsys_t subsys;
+	struct dmic_nrfx_pdm_drv_data *drv_data = dev->data;
 #if NRF_CLOCK_HAS_HFCLKAUDIO
 	const struct dmic_nrfx_pdm_drv_cfg *drv_cfg = dev->config;
 
