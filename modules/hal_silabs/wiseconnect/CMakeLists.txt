@@ -194,6 +194,9 @@ if(CONFIG_WISECONNECT_NETWORK_STACK)
     ${WISECONNECT_DIR}/components/sli_si91x_wifi_event_handler/src/sli_si91x_wifi_event_handler.c
     ${WISECONNECT_DIR}/components/sli_wifi_command_engine/src/sli_wifi_command_engine.c
   )
+  zephyr_library_sources_ifdef(CONFIG_SIWX91X_FIRMWARE_UPGRADE
+    ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/firmware_upgrade/firmware_upgradation.c
+  )
 endif() # CONFIG_WISECONNECT_NETWORK_STACK
 
 if(CONFIG_SOC_SILABS_SLEEPTIMER)
