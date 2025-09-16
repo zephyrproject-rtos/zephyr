@@ -34,6 +34,7 @@ zephyr_library_sources_ifdef(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER mdns_socket.
 zephyr_library_sources_ifdef(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER border_agent.c)
 zephyr_library_sources_ifdef(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER trel.c)
 zephyr_library_sources_ifdef(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER dhcp6_pd.c)
+zephyr_library_sources_ifdef(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER dns_upstream_resolver.c)
 
 zephyr_include_directories(.)
 
@@ -41,4 +42,5 @@ if(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER)
   zephyr_library_include_directories(${ZEPHYR_BASE}/subsys/net/ip)
   zephyr_library_include_directories(${ZEPHYR_BASE}/subsys/net/lib/sockets)
   zephyr_include_directories(${ZEPHYR_BASE}/subsys/net/l2/openthread)
+  zephyr_library_include_directories(${ZEPHYR_BASE}/subsys/net/lib/dns)
 endif()
