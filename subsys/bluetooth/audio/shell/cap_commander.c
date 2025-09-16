@@ -521,6 +521,10 @@ static int cmd_cap_commander_change_microphone_gain(const struct shell *sh, size
 #endif /* CONFIG_BT_MICP_MIC_CTLR */
 
 #if defined(CONFIG_BT_BAP_BROADCAST_ASSISTANT)
+struct bt_cap_commander_broadcast_reception_stop_param cap_commander_reception_stop_param;
+struct bt_cap_commander_broadcast_reception_stop_member_param
+	cap_commander_reception_stop_member_params[CONFIG_BT_MAX_CONN];
+
 static int cmd_cap_commander_broadcast_reception_start(const struct shell *sh, size_t argc,
 						       char *argv[])
 {
@@ -693,14 +697,7 @@ static int cmd_cap_commander_broadcast_reception_start(const struct shell *sh, s
 static int cmd_cap_commander_broadcast_reception_stop(const struct shell *sh, size_t argc,
 						      char *argv[])
 {
-	struct bt_cap_commander_broadcast_reception_stop_member_param
-		member_params[CONFIG_BT_MAX_CONN] = {0};
 	const size_t cap_args = argc - 1; /* First argument is the command itself */
-	struct bt_cap_commander_broadcast_reception_stop_param param = {
-		.type = BT_CAP_SET_TYPE_AD_HOC,
-		.param = member_params,
-	};
-
 	struct bt_conn *connected_conns[CONFIG_BT_MAX_CONN] = {0};
 	size_t conn_cnt = 0U;
 	int err = 0;
@@ -709,6 +706,19 @@ static int cmd_cap_commander_broadcast_reception_stop(const struct shell *sh, si
 		shell_error(sh, "Not connected");
 		return -ENOEXEC;
 	}
+
+#if defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
+	if (default_source.handover_in_progress) {
+		shell_error(sh, "Handover already in progress");
+
+		return -ENOEXEC;
+	}
+#endif /* CONFIG_BT_BAP_BROADCAST_SOURCE */
+
+	(void)memset(&cap_commander_reception_stop_param, 0,
+		     sizeof(cap_commander_reception_stop_param));
+	(void)memset(&cap_commander_reception_stop_member_params, 0,
+		     sizeof(cap_commander_reception_stop_member_params));
 
 	/* TODO: Add support for coordinated sets */
 
@@ -748,15 +758,19 @@ static int cmd_cap_commander_broadcast_reception_stop(const struct shell *sh, si
 		}
 
 		/* TODO: Allow for multiple subgroups */
-		member_params[i].num_subgroups = 1;
-		member_params[i].src_id = src_id;
-		member_params[i].member.member = connected_conns[i];
-		param.count++;
+		cap_commander_reception_stop_member_params[i].num_subgroups = 1;
+		cap_commander_reception_stop_member_params[i].src_id = src_id;
+		cap_commander_reception_stop_member_params[i].member.member = connected_conns[i];
+		cap_commander_reception_stop_param.count++;
 	}
 
-	shell_print(sh, "Stopping broadcast reception on %zu connection(s)", param.count);
+	cap_commander_reception_stop_param.type = BT_CAP_SET_TYPE_AD_HOC;
+	cap_commander_reception_stop_param.param = cap_commander_reception_stop_member_params;
 
-	err = bt_cap_commander_broadcast_reception_stop(&param);
+	shell_print(sh, "Stopping broadcast reception on %zu connection(s)",
+		    cap_commander_reception_stop_param.count);
+
+	err = bt_cap_commander_broadcast_reception_stop(&cap_commander_reception_stop_param);
 	if (err != 0) {
 		shell_print(sh, "Failed to initiate broadcast reception stop: %d", err);
 
