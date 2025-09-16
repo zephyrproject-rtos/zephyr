@@ -31,61 +31,44 @@ LOG_MODULE_REGISTER(INA237, CONFIG_SENSOR_LOG_LEVEL);
  */
 #define INA237_DIETEMP_TO_uDegC(x) (((x) >> 4) * 125000)
 
-static void micro_s32_to_sensor_value(struct sensor_value *val, int32_t value_microX)
-{
-	val->val1 = value_microX / 1000000L;
-	val->val2 = value_microX % 1000000L;
-}
-
-static void micro_u64_to_sensor_value(struct sensor_value *val, uint64_t value_microX)
-{
-	val->val1 = value_microX / 1000000U;
-	val->val2 = value_microX % 1000000U;
-}
-
 static int ina237_channel_get(const struct device *dev, enum sensor_channel chan,
 			      struct sensor_value *val)
 {
 	const struct ina237_data *data = dev->data;
 	const struct ina237_config *config = dev->config;
+	int64_t val_micro;
 
 	switch (chan) {
 	case SENSOR_CHAN_VOLTAGE:
-		micro_s32_to_sensor_value(val, INA237_BUS_VOLTAGE_TO_uV(data->bus_voltage));
+		val_micro = INA237_BUS_VOLTAGE_TO_uV(data->bus_voltage);
 		break;
-
 	case SENSOR_CHAN_CURRENT:
-		/* see datasheet "Current and Power calculations" section */
-		micro_s32_to_sensor_value(val, data->current * config->current_lsb);
+		val_micro = (int32_t)data->current * config->current_lsb;
 		break;
-
 	case SENSOR_CHAN_POWER:
 		/* power in uW is power_reg * current_lsb * 0.2 */
-		micro_u64_to_sensor_value(val,
-			INA237_POWER_TO_uW((uint64_t)data->power * config->current_lsb));
+		val_micro = INA237_POWER_TO_uW((uint64_t)data->power * config->current_lsb);
 		break;
-
 #ifdef CONFIG_INA237_VSHUNT
 	case SENSOR_CHAN_VSHUNT:
 		if (config->config & INA237_CFG_HIGH_PRECISION) {
 			/* high-resolution mode - 1.25 uV/bit, sensor value is in mV */
-			micro_s32_to_sensor_value(val, data->shunt_voltage * 1250);
+			val_micro = data->shunt_voltage * 1250;
 		} else {
 			/* standard-resolution - 5 uV/bit -> nano-volts */
-			micro_s32_to_sensor_value(val, data->shunt_voltage * 5000);
+			val_micro = data->shunt_voltage * 5000;
 		}
 		break;
 #endif /* CONFIG_INA237_VSHUNT */
-
 	case SENSOR_CHAN_DIE_TEMP:
-		micro_s32_to_sensor_value(val, INA237_DIETEMP_TO_uDegC(data->die_temp));
+		val_micro = INA237_DIETEMP_TO_uDegC(data->die_temp);
 		break;
-
 	default:
 		return -ENOTSUP;
 	}
 
-	return 0;
+	/* Convert from micro units to sensor struct */
+	return sensor_value_from_micro(val, val_micro);
 }
 
 /**
