@@ -206,12 +206,14 @@ ZTEST_F(ina228, test_example_from_data_sheet)
 	/* Some difference due to limited resolution in devicetree LSB setting */
 	zexpect_within(287, reading, 1, "Got %.6f W", reading);
 
-	zassert_ok(sensor_channel_get(fixture->dev_basic, SENSOR_CHAN_INA2XX_CHARGE, &sensor_val));
+	zassert_ok(sensor_channel_get(fixture->dev_basic,
+				      (enum sensor_channel)SENSOR_CHAN_INA2XX_CHARGE, &sensor_val));
 	reading = sensor_value_to_double(&sensor_val);
 	/* Some difference due to limited resolution in devicetree LSB setting */
 	zexpect_within(21500, reading, 20, "Got %.6f C", reading);
 
-	zassert_ok(sensor_channel_get(fixture->dev_basic, SENSOR_CHAN_INA2XX_ENERGY, &sensor_val));
+	zassert_ok(sensor_channel_get(fixture->dev_basic,
+				      (enum sensor_channel)SENSOR_CHAN_INA2XX_ENERGY, &sensor_val));
 	reading = sensor_value_to_double(&sensor_val);
 	/* Some difference due to limited resolution in devicetree LSB setting */
 	zexpect_within(1032800, reading, 50, "Got %.6f J", reading);
@@ -267,7 +269,8 @@ ZTEST_F(ina228, test_negative_values)
 	reading = sensor_value_to_double(&sensor_val);
 	zexpect_within(-1.907e-3, reading, 1.0e-5, "Got %.6f A", reading);
 
-	zassert_ok(sensor_channel_get(fixture->dev_basic, SENSOR_CHAN_INA2XX_CHARGE, &sensor_val));
+	zassert_ok(sensor_channel_get(fixture->dev_basic,
+				      (enum sensor_channel)SENSOR_CHAN_INA2XX_CHARGE, &sensor_val));
 	reading = sensor_value_to_double(&sensor_val);
 	zexpect_within(-1.907e-3, reading, 1.0e-5, "Got %.6f C", reading);
 
