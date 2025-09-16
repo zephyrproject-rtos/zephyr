@@ -26,7 +26,7 @@
 
 LOG_MODULE_DECLARE(eth_stm32_hal, CONFIG_ETHERNET_LOG_LEVEL);
 
-void setup_mac_filter(ETH_HandleTypeDef *heth)
+void eth_stm32_setup_mac_filter(ETH_HandleTypeDef *heth)
 {
 	__ASSERT_NO_MSG(heth != NULL);
 	uint32_t tmp = heth->Instance->MACFFR;
@@ -55,7 +55,7 @@ void setup_mac_filter(ETH_HandleTypeDef *heth)
 	heth->Instance->MACFFR = tmp;
 }
 
-int eth_tx(const struct device *dev, struct net_pkt *pkt)
+int eth_stm32_tx(const struct device *dev, struct net_pkt *pkt)
 {
 	struct eth_stm32_hal_dev_data *dev_data = dev->data;
 	ETH_HandleTypeDef *heth = &dev_data->heth;
@@ -116,7 +116,7 @@ error:
 	return res;
 }
 
-struct net_pkt *eth_rx(const struct device *dev)
+struct net_pkt *eth_stm32_rx(const struct device *dev)
 {
 	struct eth_stm32_hal_dev_data *dev_data = dev->data;
 	ETH_HandleTypeDef *heth = &dev_data->heth;
@@ -135,7 +135,7 @@ struct net_pkt *eth_rx(const struct device *dev)
 	total_len = heth->RxFrameInfos.length;
 	dma_buffer = (uint8_t *)heth->RxFrameInfos.buffer;
 
-	pkt = net_pkt_rx_alloc_with_buffer(get_iface(dev_data),
+	pkt = net_pkt_rx_alloc_with_buffer(eth_stm32_get_iface(dev_data),
 					   total_len, AF_UNSPEC, 0, K_MSEC(100));
 	if (!pkt) {
 		LOG_ERR("Failed to obtain RX buffer");
@@ -179,13 +179,13 @@ release_desc:
 
 out:
 	if (!pkt) {
-		eth_stats_update_errors_rx(get_iface(dev_data));
+		eth_stats_update_errors_rx(eth_stm32_get_iface(dev_data));
 	}
 
 	return pkt;
 }
 
-int eth_hal_init(const struct device *dev)
+int eth_stm32_hal_init(const struct device *dev)
 {
 	struct eth_stm32_hal_dev_data *dev_data = dev->data;
 	ETH_HandleTypeDef *heth = &dev_data->heth;
@@ -226,7 +226,7 @@ int eth_hal_init(const struct device *dev)
 	return ret;
 }
 
-void set_mac_config(const struct device *dev, struct phy_link_state *state)
+void eth_stm32_set_mac_config(const struct device *dev, struct phy_link_state *state)
 {
 	struct eth_stm32_hal_dev_data *dev_data = dev->data;
 	ETH_HandleTypeDef *heth = &dev_data->heth;
