@@ -290,6 +290,20 @@ static struct mqtt_sn_topic *mqtt_sn_topic_find_by_msg_id(struct mqtt_sn_client 
 	return NULL;
 }
 
+static struct mqtt_sn_topic *mqtt_sn_topic_find_by_topic_id(struct mqtt_sn_client *client,
+							    uint16_t topic_id)
+{
+	struct mqtt_sn_topic *topic;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&client->topic, topic, next) {
+		if (topic->topic_id == topic_id) {
+			return topic;
+		}
+	}
+
+	return NULL;
+}
+
 static void mqtt_sn_topic_destroy(struct mqtt_sn_client *client, struct mqtt_sn_topic *topic)
 {
 	struct mqtt_sn_publish *pub;
@@ -1162,16 +1176,21 @@ int mqtt_sn_subscribe(struct mqtt_sn_client *client, enum mqtt_sn_qos qos,
 	}
 
 	topic = mqtt_sn_topic_find_by_name(client, topic_name);
-	if (!topic) {
+	if (topic != NULL) {
+		if (topic->state != MQTT_SN_TOPIC_STATE_REGISTERED ||
+		    topic->type != MQTT_SN_TOPIC_TYPE_PREDEF) {
+			return -EALREADY;
+		}
+	} else {
 		topic = mqtt_sn_topic_create(topic_name);
 		if (!topic) {
 			return -ENOMEM;
 		}
-
-		topic->qos = qos;
-		topic->state = MQTT_SN_TOPIC_STATE_SUBSCRIBE;
 		sys_slist_append(&client->topic, &topic->next);
 	}
+
+	topic->qos = qos;
+	topic->state = MQTT_SN_TOPIC_STATE_SUBSCRIBE;
 
 	err = k_work_reschedule(&client->process_work, K_NO_WAIT);
 	if (err < 0) {
@@ -1718,4 +1737,37 @@ int mqtt_sn_get_topic_name(struct mqtt_sn_client *client, uint16_t id,
 		}
 	}
 	return -ENOENT;
+}
+
+int mqtt_sn_predefine_topic(struct mqtt_sn_client *client, uint16_t topic_id,
+			    struct mqtt_sn_data *topic_name)
+{
+	struct mqtt_sn_topic *topic;
+
+	if (client == NULL || topic_name == NULL) {
+		return -EINVAL;
+	}
+
+	topic = mqtt_sn_topic_find_by_name(client, topic_name);
+	if (topic != NULL) {
+		return -EALREADY;
+	}
+
+	topic = mqtt_sn_topic_find_by_topic_id(client, topic_id);
+	if (topic != NULL) {
+		return -EALREADY;
+	}
+
+	topic = mqtt_sn_topic_create(topic_name);
+	if (topic == NULL) {
+		return -ENOMEM;
+	}
+
+	topic->state = MQTT_SN_TOPIC_STATE_REGISTERED;
+	topic->topic_id = topic_id;
+	topic->type = MQTT_SN_TOPIC_TYPE_PREDEF;
+	sys_slist_append(&client->topic, &topic->next);
+
+	return 0;
+
 }
