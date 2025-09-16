@@ -56,6 +56,7 @@ void soc_early_init_hook(void)
 	R_PSCU->PSARC = 0;
 	R_PSCU->PSARD = 0;
 	R_PSCU->PSARE = 0;
+	R_CPSCU->ICUSARC = 0;
 
 	/* The secure Attribute managed within the ARM CPU NVIC must match the
 	 * security attribution of IELSEn registers (Reference section 13.2.9

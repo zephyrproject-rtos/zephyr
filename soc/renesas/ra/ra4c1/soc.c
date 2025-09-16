@@ -49,6 +49,7 @@ void soc_early_init_hook(void)
 	R_PSCU->PSARD = 0;
 	R_PSCU->PSARE = 0;
 
+	R_CPSCU->ICUSARC = 0;
 	R_CPSCU->ICUSARG = 0;
 	R_CPSCU->ICUSARH = 0;
 
