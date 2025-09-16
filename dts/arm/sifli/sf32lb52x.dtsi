@@ -5,6 +5,7 @@
 
 #include <arm/armv8-m.dtsi>
 #include <freq.h>
+#include <mem.h>
 
 #include <zephyr/dt-bindings/clock/sf32lb52x-clocks.h>
 #include <zephyr/dt-bindings/pinctrl/sf32lb52x-pinctrl.h>
@@ -105,19 +106,27 @@
 		};
 
 		mpi1: memory-controller@50041000 {
-			compatible = "sifli,sf32lb-mpi";
-			reg = <0x50041000 0x1000>;
+			/*
+			 * configure compatible depending on memory type, choices:
+			 * - sifli,sf32lb-mpi-qspi-nor
+			 */
+			reg = <0x50041000 0x1000>, <0x10000000 DT_SIZE_M(32)>;
+			reg-names = "ctrl", "nor";
 			clocks = <&rcc_clk SF32LB52X_CLOCK_MPI1>;
 			#address-cells = <1>;
-			#size-cells = <1>;
+			#size-cells = <0>;
 			status = "disabled";
 		};
 
 		mpi2: memory-controller@50042000 {
-			compatible = "sifli,sf32lb-mpi";
-			reg = <0x50042000 0x1000>;
+			/*
+			 * configure compatible depending on memory type, choices:
+			 * - sifli,sf32lb-mpi-qspi-nor
+			 */
+			reg = <0x50042000 0x1000>, <0x12000000 DT_SIZE_M(224)>;
+			reg-names = "ctrl", "nor";
 			#address-cells = <1>;
-			#size-cells = <1>;
+			#size-cells = <0>;
 			clocks = <&rcc_clk SF32LB52X_CLOCK_MPI2>;
 			status = "disabled";
 		};
