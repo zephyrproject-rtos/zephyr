@@ -142,7 +142,11 @@ function(zephyr_mcuboot_tasks)
     dt_reg_addr(slot1_partition_address PATH ${slot1_partition})
 
     dt_prop(write_block_size PATH "${flash_node}" PROPERTY "write-block-size")
-    set(imgtool_args --align ${write_block_size} --load-addr ${chosen_ram_address} ${imgtool_args})
+    if(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD)
+      set(imgtool_args --align 1 --load-addr ${chosen_ram_address} ${imgtool_args})
+    else() # CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD_WITH_REVERT
+      set(imgtool_args --align ${write_block_size} --load-addr ${chosen_ram_address} ${imgtool_args})
+    endif()
     set(imgtool_args_alt_slot ${imgtool_args} --hex-addr ${slot1_partition_address})
     set(imgtool_args ${imgtool_args} --hex-addr ${slot0_partition_address})
   elseif(CONFIG_MCUBOOT_BOOTLOADER_MODE_SINGLE_APP_RAM_LOAD)
