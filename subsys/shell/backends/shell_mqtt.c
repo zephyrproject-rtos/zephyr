@@ -20,23 +20,11 @@ SHELL_DEFINE(shell_mqtt, "", &shell_transport_mqtt,
 LOG_MODULE_REGISTER(shell_mqtt, CONFIG_SHELL_MQTT_LOG_LEVEL);
 
 #define NET_EVENT_MASK (NET_EVENT_L4_CONNECTED | NET_EVENT_L4_DISCONNECTED)
-#define CONNECT_TIMEOUT_MS 2000
-#define LISTEN_TIMEOUT_MS 500
+#define CONNECT_TIMEOUT_MS CONFIG_SHELL_MQTT_CONNECT_TIMEOUT_MS
+#define LISTEN_TIMEOUT_MS CONFIG_SHELL_MQTT_LISTEN_TIMEOUT_MS
 #define MQTT_SEND_DELAY_MS K_MSEC(100)
-#define PROCESS_INTERVAL K_SECONDS(2)
+#define PROCESS_INTERVAL K_MSEC(CONFIG_SHELL_MQTT_WORK_DELAY_MS)
 #define SHELL_MQTT_WORKQ_STACK_SIZE 2048
-
-#ifdef CONFIG_SHELL_MQTT_SERVER_USERNAME
-#define MQTT_USERNAME CONFIG_SHELL_MQTT_SERVER_USERNAME
-#else
-#define MQTT_USERNAME NULL
-#endif /* CONFIG_SHELL_MQTT_SERVER_USERNAME */
-
-#ifdef CONFIG_SHELL_MQTT_SERVER_PASSWORD
-#define MQTT_PASSWORD CONFIG_SHELL_MQTT_SERVER_PASSWORD
-#else
-#define MQTT_PASSWORD NULL
-#endif /*SHELL_MQTT_SERVER_PASSWORD */
 
 struct shell_mqtt *sh_mqtt;
 K_KERNEL_STACK_DEFINE(sh_mqtt_workq_stack, SHELL_MQTT_WORKQ_STACK_SIZE);
@@ -187,10 +175,10 @@ static void client_init(struct shell_mqtt *sh)
 	static struct mqtt_utf8 password;
 	static struct mqtt_utf8 username;
 
-	password.utf8 = (uint8_t *)MQTT_PASSWORD;
-	password.size = strlen(MQTT_PASSWORD);
-	username.utf8 = (uint8_t *)MQTT_USERNAME;
-	username.size = strlen(MQTT_USERNAME);
+	password.utf8 = (uint8_t *)CONFIG_SHELL_MQTT_SERVER_PASSWORD;
+	password.size = strlen(CONFIG_SHELL_MQTT_SERVER_PASSWORD);
+	username.utf8 = (uint8_t *)CONFIG_SHELL_MQTT_SERVER_USERNAME;
+	username.size = strlen(CONFIG_SHELL_MQTT_SERVER_USERNAME);
 
 	mqtt_client_init(&sh->mqtt_cli);
 
@@ -274,14 +262,14 @@ static void sh_mqtt_process_handler(struct k_work *work)
 
 	/* Reschedule the process work */
 	LOG_DBG("Scheduling %s work", "process");
-	(void)sh_mqtt_work_reschedule(&sh->process_dwork, K_SECONDS(2));
+	(void)sh_mqtt_work_reschedule(&sh->process_dwork, PROCESS_INTERVAL);
 	sh_mqtt_context_unlock();
 	return;
 
 process_error:
 	LOG_DBG("%s: close MQTT, cleanup socket & reconnect", "connect");
 	sh_mqtt_close_and_cleanup(sh);
-	(void)sh_mqtt_work_reschedule(&sh->connect_dwork, K_SECONDS(1));
+	(void)sh_mqtt_work_reschedule(&sh->connect_dwork, PROCESS_INTERVAL);
 	sh_mqtt_context_unlock();
 }
 
@@ -350,7 +338,7 @@ static void sh_mqtt_subscribe_handler(struct k_work *work)
 subscribe_error:
 	LOG_DBG("%s: close MQTT, cleanup socket & reconnect", "subscribe");
 	sh_mqtt_close_and_cleanup(sh);
-	(void)sh_mqtt_work_reschedule(&sh->connect_dwork, K_SECONDS(2));
+	(void)sh_mqtt_work_reschedule(&sh->connect_dwork, PROCESS_INTERVAL);
 	sh_mqtt_context_unlock();
 }
 
@@ -383,7 +371,7 @@ static void sh_mqtt_connect_handler(struct k_work *work)
 	LOG_DBG("Resolving DNS");
 	rc = get_mqtt_broker_addrinfo(sh);
 	if (rc != 0) {
-		(void)sh_mqtt_work_reschedule(&sh->connect_dwork, K_SECONDS(1));
+		(void)sh_mqtt_work_reschedule(&sh->connect_dwork, PROCESS_INTERVAL);
 		sh_mqtt_context_unlock();
 		return;
 	}
@@ -424,14 +412,14 @@ static void sh_mqtt_connect_handler(struct k_work *work)
 	}
 
 	LOG_DBG("Scheduling %s work", "subscribe");
-	(void)sh_mqtt_work_reschedule(&sh->subscribe_dwork, K_SECONDS(2));
+	(void)sh_mqtt_work_reschedule(&sh->subscribe_dwork, PROCESS_INTERVAL);
 	sh_mqtt_context_unlock();
 	return;
 
 connect_error:
 	LOG_DBG("%s: close MQTT, cleanup socket & reconnect", "connect");
 	sh_mqtt_close_and_cleanup(sh);
-	(void)sh_mqtt_work_reschedule(&sh->connect_dwork, K_SECONDS(2));
+	(void)sh_mqtt_work_reschedule(&sh->connect_dwork, PROCESS_INTERVAL);
 	sh_mqtt_context_unlock();
 }
 
@@ -475,7 +463,7 @@ static void sh_mqtt_publish_handler(struct k_work *work)
 	if (rc != 0) {
 		LOG_DBG("%s: close MQTT, cleanup socket & reconnect", "publish");
 		sh_mqtt_close_and_cleanup(sh);
-		(void)sh_mqtt_work_reschedule(&sh->connect_dwork, K_SECONDS(2));
+		(void)sh_mqtt_work_reschedule(&sh->connect_dwork, PROCESS_INTERVAL);
 	}
 
 	sh_mqtt_context_unlock();
@@ -517,7 +505,7 @@ static void network_evt_handler(struct net_mgmt_event_callback *cb, uint64_t mgm
 	    (sh->network_state == SHELL_MQTT_NETWORK_DISCONNECTED)) {
 		LOG_WRN("Network %s", "connected");
 		sh->network_state = SHELL_MQTT_NETWORK_CONNECTED;
-		(void)sh_mqtt_work_reschedule(&sh->connect_dwork, K_SECONDS(1));
+		(void)sh_mqtt_work_reschedule(&sh->connect_dwork, PROCESS_INTERVAL);
 	} else if ((mgmt_event == NET_EVENT_L4_DISCONNECTED) &&
 		   (sh->network_state == SHELL_MQTT_NETWORK_CONNECTED)) {
 		(void)sh_mqtt_work_submit(&sh->net_disconnected_work);
@@ -657,8 +645,10 @@ static int init(const struct shell_transport *transport, const void *config,
 
 	LOG_DBG("Client ID is %s", sh->device_id);
 
-	(void)snprintf(sh->pub_topic, SH_MQTT_TOPIC_MAX_SIZE, "%s_tx", sh->device_id);
-	(void)snprintf(sh->sub_topic, SH_MQTT_TOPIC_MAX_SIZE, "%s_rx", sh->device_id);
+	(void)snprintf(sh->pub_topic, SH_MQTT_TOPIC_TX_MAX_SIZE, "%s" CONFIG_SHELL_MQTT_TOPIC_TX_ID,
+		       sh->device_id);
+	(void)snprintf(sh->sub_topic, SH_MQTT_TOPIC_RX_MAX_SIZE, "%s" CONFIG_SHELL_MQTT_TOPIC_RX_ID,
+		       sh->device_id);
 
 	ring_buf_init(&sh->rx_rb, RX_RB_SIZE, sh->rx_rb_buf);
 
@@ -764,8 +754,7 @@ static int write_data(const struct shell_transport *transport, const void *data,
 			rc = sh_mqtt_publish_tx_buf(sh, false);
 			if (rc != 0) {
 				sh_mqtt_close_and_cleanup(sh);
-				(void)sh_mqtt_work_reschedule(&sh->connect_dwork,
-							      K_SECONDS(2));
+				(void)sh_mqtt_work_reschedule(&sh->connect_dwork, PROCESS_INTERVAL);
 				*cnt = length;
 				return rc;
 			}

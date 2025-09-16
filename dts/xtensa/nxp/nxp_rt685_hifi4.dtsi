@@ -5,6 +5,7 @@
 
 #include <xtensa/xtensa.dtsi>
 #include <mem.h>
+#include <freq.h>
 #include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
@@ -20,6 +21,7 @@
 		cpu0: cpu@0 {
 			device_type = "cpu";
 			compatible = "cdns,tensilica-xtensa-lx6";
+			clock-frequency = <DT_FREQ_M(594)>;
 			reg = <0>;
 		};
 	};
@@ -135,7 +137,7 @@
 				#interrupt-cells = <1>;
 				#address-cells = <0>;
 				interrupts = <7 0 0>, <8 0 0>, <9 0 0>, <10 0 0>,
-					<11 0 0>, <12 0 0>, <13 0 0>, <14 0 0>;
+					     <11 0 0>, <12 0 0>, <13 0 0>, <14 0 0>;
 				num-lines = <8>;
 				num-inputs = <64>;
 			};

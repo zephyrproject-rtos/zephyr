@@ -383,7 +383,7 @@ static int pwm_mspm0_init(const struct device *dev)
 	return 0;
 }
 
-static const struct pwm_driver_api pwm_mspm0_driver_api = {
+static DEVICE_API(pwm, pwm_mspm0_driver_api) = {
 	.set_cycles = mspm0_pwm_set_cycles,
 	.get_cycles_per_sec = mspm0_pwm_get_cycles_per_sec,
 #ifdef CONFIG_PWM_CAPTURE

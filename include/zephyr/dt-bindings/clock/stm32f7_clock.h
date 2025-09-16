@@ -37,8 +37,10 @@
 #define STM32_SRC_PLL_R		(STM32_SRC_PLL_Q + 1)
 /** Peripheral bus clock */
 #define STM32_SRC_PCLK		(STM32_SRC_PLL_R + 1)
+#define STM32_SRC_TIMPCLK1	(STM32_SRC_PCLK + 1)
+#define STM32_SRC_TIMPCLK2	(STM32_SRC_TIMPCLK1 + 1)
 
-#define STM32_SRC_PLLI2S_R      (STM32_SRC_PCLK + 1)
+#define STM32_SRC_PLLI2S_R      (STM32_SRC_TIMPCLK2 + 1)
 
 /** @brief RCC_CFGRx register offset */
 #define CFGR_REG		0x08

@@ -237,23 +237,20 @@ BUILD_ASSERT(offsetof(struct _isr_table_entry, isr)
         return '.isr_shared.0x{:x}_client_num'.format(irq)
 
     def __isr_spurious_entry(self, irq):
-        return '_Z_ISR_TABLE_ENTRY({irq}, {func}, NULL, "{sect}");'.format(
-                irq = irq,
+        return '_Z_ISR_TABLE_ENTRY({func}, NULL, "{sect}");'.format(
                 func = self.__config.swt_spurious_handler,
                 sect = self.__isr_generated_section(irq)
             )
 
     def __isr_shared_entry(self, irq):
-        return '_Z_ISR_TABLE_ENTRY({irq}, {func}, {arg}, "{sect}");'.format(
-                irq = irq,
+        return '_Z_ISR_TABLE_ENTRY({func}, {arg}, "{sect}");'.format(
                 arg = '&{}[{}]'.format(self.__config.shared_array_name, irq),
                 func = self.__config.swt_shared_handler,
                 sect = self.__isr_generated_section(irq)
             )
 
     def __irq_spurious_entry(self, irq):
-        return '_Z_ISR_DIRECT_TABLE_ENTRY({irq}, {func}, "{sect}");'.format(
-                irq = irq,
+        return '_Z_ISR_DIRECT_TABLE_ENTRY({func}, "{sect}");'.format(
                 func = self.__config.vt_default_handler,
                 sect = self.__irq_spurious_section(irq)
             )

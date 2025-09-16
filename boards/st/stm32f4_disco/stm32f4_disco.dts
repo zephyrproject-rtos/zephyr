@@ -142,7 +142,7 @@
 };
 
 &rtc {
-	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>,
+	clocks = <&rcc STM32_CLOCK(APB1, 28)>,
 		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
 	status = "okay";
 
@@ -153,6 +153,12 @@
 
 zephyr_udc0: &usbotg_fs {
 	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&can1 {
+	pinctrl-0 = <&can1_rx_pd0 &can1_tx_pd1>;
 	pinctrl-names = "default";
 	status = "okay";
 };
@@ -203,7 +209,7 @@ zephyr_udc0: &usbotg_fs {
 	mck-enabled;
 	pinctrl-0 = <&i2s3_ws_pa4 &i2s3_ck_pc10 &i2s3_sd_pc12 &i2s3_mck_pc7>;
 	pinctrl-names = "default";
-	clocks = <&rcc STM32_CLOCK(APB1, 15U)>,
+	clocks = <&rcc STM32_CLOCK(APB1, 15)>,
 		 <&rcc STM32_SRC_PLLI2S_R I2S_SEL(0)>;
 	status = "okay";
 };

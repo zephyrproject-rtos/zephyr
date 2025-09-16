@@ -28,8 +28,6 @@
 
 #if defined(CONFIG_NET_DSA_DEPRECATED)
 #include <zephyr/net/dsa.h>
-#else
-#include <zephyr/net/dsa_core.h>
 #endif
 
 #if defined(CONFIG_NET_ETHERNET_BRIDGE)
@@ -131,6 +129,12 @@ struct net_eth_addr {
 
 #define _NET_ETH_MAX_FRAME_SIZE	(NET_ETH_MTU + _NET_ETH_MAX_HDR_SIZE)
 
+#if defined(CONFIG_DSA_TAG_SIZE)
+#define DSA_TAG_SIZE CONFIG_DSA_TAG_SIZE
+#else
+#define DSA_TAG_SIZE 0
+#endif
+
 #define NET_ETH_MAX_FRAME_SIZE (_NET_ETH_MAX_FRAME_SIZE + DSA_TAG_SIZE)
 #define NET_ETH_MAX_HDR_SIZE (_NET_ETH_MAX_HDR_SIZE + DSA_TAG_SIZE)
 
@@ -205,6 +209,16 @@ enum ethernet_hw_caps {
 };
 
 /** @cond INTERNAL_HIDDEN */
+
+#if !defined(CONFIG_NET_DSA_DEPRECATED)
+enum dsa_port_type {
+	NON_DSA_PORT,
+	DSA_CONDUIT_PORT,
+	DSA_USER_PORT,
+	DSA_CPU_PORT,
+	DSA_PORT,
+};
+#endif
 
 enum ethernet_config_type {
 	ETHERNET_CONFIG_TYPE_MAC_ADDRESS,
@@ -699,7 +713,7 @@ struct ethernet_context {
 	enum dsa_port_type dsa_port;
 
 	/** DSA switch context pointer */
-	struct dsa_switch_context *dsa_switch_ctx;
+	void *dsa_switch_ctx;
 #endif
 
 	/** Is network carrier up */

@@ -8,15 +8,16 @@
 
 /**
  * @file
- * @brief Public Clock Control APIs
+ * @ingroup clock_control_interface
+ * @brief Main header file for clock control driver API.
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_H_
 #define ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_H_
 
 /**
- * @brief Clock Control Interface
- * @defgroup clock_control_interface Clock Control Interface
+ * @brief Interfaces for clock controllers.
+ * @defgroup clock_control_interface Clock Control
  * @since 1.0
  * @version 1.0.0
  * @ingroup io_interfaces

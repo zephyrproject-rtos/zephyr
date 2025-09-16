@@ -104,6 +104,7 @@ struct eth_xmc4xxx_data {
 	struct net_buf *rx_frag_list[NUM_RX_DMA_DESCRIPTORS];
 #if defined(CONFIG_PTP_CLOCK_XMC4XXX)
 	const struct device *ptp_clock;
+	uint32_t timestamp_addend;
 #endif
 };
 
@@ -878,7 +879,15 @@ static int eth_xmc4xxx_init(const struct device *dev)
 	reg |= ETH_MAC_FRAME_FILTER_PM_Msk;
 	dev_cfg->regs->MAC_FRAME_FILTER = reg;
 
-	return eth_xmc4xxx_init_timestamp_control_reg(dev_cfg->regs);
+	ret = eth_xmc4xxx_init_timestamp_control_reg(dev_cfg->regs);
+	if (ret != 0) {
+		return ret;
+	}
+
+#if defined(CONFIG_PTP_CLOCK_XMC4XXX)
+	dev_data->timestamp_addend = dev_cfg->regs->TIMESTAMP_ADDEND;
+#endif
+	return 0;
 }
 
 static enum ethernet_hw_caps eth_xmc4xxx_capabilities(const struct device *dev)
@@ -1090,7 +1099,8 @@ static int eth_xmc4xxx_ptp_clock_rate_adjust(const struct device *dev, double ra
 {
 	struct ptp_context *ptp_context = dev->data;
 	const struct eth_xmc4xxx_config *dev_cfg = ptp_context->eth_dev->config;
-	uint64_t K = dev_cfg->regs->TIMESTAMP_ADDEND;
+	struct eth_xmc4xxx_data *dev_data = ptp_context->eth_dev->data;
+	uint64_t K = dev_data->timestamp_addend;
 
 	if (ratio < ETH_PTP_RATE_ADJUST_RATIO_MIN || ratio > ETH_PTP_RATE_ADJUST_RATIO_MAX) {
 		return -EINVAL;

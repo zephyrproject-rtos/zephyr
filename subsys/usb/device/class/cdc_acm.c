@@ -823,7 +823,7 @@ static int cdc_acm_line_ctrl_set(const struct device *dev,
 		if (val) {
 			dev_data->serial_state |= SERIAL_STATE_RX_CARRIER;
 		}
-		cdc_acm_send_notification(dev, SERIAL_STATE_RX_CARRIER);
+		cdc_acm_send_notification(dev, dev_data->serial_state);
 		return 0;
 	case USB_CDC_LINE_CTRL_DSR:
 		dev_data->serial_state &= ~SERIAL_STATE_TX_CARRIER;

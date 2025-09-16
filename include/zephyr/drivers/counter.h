@@ -7,15 +7,16 @@
 
 /**
  * @file
- * @brief Public API for counter and timer drivers
+ * @ingroup counter_interface
+ * @brief Main header file for counter driver API.
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_COUNTER_H_
 #define ZEPHYR_INCLUDE_DRIVERS_COUNTER_H_
 
 /**
- * @brief Counter Interface
- * @defgroup counter_interface Counter Interface
+ * @brief Interfaces for counters.
+ * @defgroup counter_interface Counter
  * @since 1.14
  * @version 0.8.0
  * @ingroup io_interfaces

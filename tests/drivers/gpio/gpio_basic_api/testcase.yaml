@@ -24,6 +24,11 @@ tests:
     extra_args: "DTC_OVERLAY_FILE=boards/nrf52840dk_nrf52840.overlay;\
                  boards/nrf52840dk_nrf52840_sense_edge.overlay"
 
+  drivers.gpio.nrf_sense_edge.nrf54l:
+    platform_allow:
+      - nrf54l15dk/nrf54l15/cpuapp
+    extra_args: "EXTRA_DTC_OVERLAY_FILE=boards/nrf54l_sense_edge.overlay"
+
   drivers.gpio.mr_canhubk3_wkpu:
     platform_allow: mr_canhubk3
     extra_args: "DTC_OVERLAY_FILE=boards/mr_canhubk3_wkpu.overlay"
@@ -114,3 +119,10 @@ tests:
     platform_allow:
       - siwx917_rb4338a
     extra_args: "DTC_OVERLAY_FILE=boards/siwx917_rb4338a-uulp.overlay"
+  drivers.gpio.2pin.nrf54h20_cpurad_gpiote0:
+    harness_config:
+      fixture: i2s_loopback # Loopback includes the pin pair needed for that test
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpurad
+    extra_args:
+      - DTC_OVERLAY_FILE="boards/nrf54h20dk_nrf54h20_cpurad_gpiote0.overlay"

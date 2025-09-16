@@ -6,7 +6,7 @@
 
 #include <zephyr/dt-bindings/display/panel.h>
 
-/{
+/ {
 	chosen {
 		zephyr,display = &zephyr_lcdif;
 		zephyr,touch = &ft5336_rk043fn02h_ct;
@@ -20,6 +20,7 @@
 
 &nxp_touch_i2c {
 	status = "okay";
+
 	ft5336_rk043fn02h_ct: ft5336@38 {
 		compatible = "focaltech,ft5336";
 		reg = <0x38>;
@@ -31,6 +32,7 @@
 	status = "okay";
 	width = <480>;
 	height = <272>;
+
 	display-timings {
 		compatible = "zephyr,panel-timing";
 		hsync-len = <41>;
@@ -39,7 +41,7 @@
 		vsync-len = <10>;
 		vfront-porch = <4>;
 		vback-porch = <2>;
-		de-active= <1>;
+		de-active = <1>;
 		pixelclk-active = <1>;
 		hsync-active = <0>;
 		vsync-active = <0>;

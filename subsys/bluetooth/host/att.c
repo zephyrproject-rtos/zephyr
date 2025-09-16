@@ -80,7 +80,7 @@ NET_BUF_POOL_DEFINE(prep_pool, CONFIG_BT_ATT_PREPARE_COUNT, BT_ATT_BUF_SIZE,
 		    sizeof(struct bt_attr_data), NULL);
 #endif /* CONFIG_BT_ATT_PREPARE_COUNT */
 
-K_MEM_SLAB_DEFINE(req_slab, sizeof(struct bt_att_req),
+K_MEM_SLAB_DEFINE_STATIC(req_slab, sizeof(struct bt_att_req),
 		  CONFIG_BT_ATT_TX_COUNT, __alignof__(struct bt_att_req));
 
 enum {
@@ -171,9 +171,9 @@ struct bt_att {
 #endif /* CONFIG_BT_EATT */
 };
 
-K_MEM_SLAB_DEFINE(att_slab, sizeof(struct bt_att),
+K_MEM_SLAB_DEFINE_STATIC(att_slab, sizeof(struct bt_att),
 		  CONFIG_BT_MAX_CONN, __alignof__(struct bt_att));
-K_MEM_SLAB_DEFINE(chan_slab, sizeof(struct bt_att_chan),
+K_MEM_SLAB_DEFINE_STATIC(chan_slab, sizeof(struct bt_att_chan),
 		  CONFIG_BT_MAX_CONN * ATT_CHAN_MAX,
 		  __alignof__(struct bt_att_chan));
 static struct bt_att_req cancel;
@@ -194,7 +194,7 @@ static k_tid_t att_handle_rsp_thread;
 
 static struct bt_att_tx_meta_data tx_meta_data_storage[CONFIG_BT_ATT_TX_COUNT];
 
-struct bt_att_tx_meta_data *bt_att_get_tx_meta_data(const struct net_buf *buf);
+static struct bt_att_tx_meta_data *att_get_tx_meta_data(const struct net_buf *buf);
 static void att_on_sent_cb(struct bt_att_tx_meta_data *meta);
 
 #if defined(CONFIG_BT_ATT_ERR_TO_STR)
@@ -255,7 +255,7 @@ const char *bt_att_err_to_str(uint8_t att_err)
 
 static void att_tx_destroy(struct net_buf *buf)
 {
-	struct bt_att_tx_meta_data *p_meta = bt_att_get_tx_meta_data(buf);
+	struct bt_att_tx_meta_data *p_meta = att_get_tx_meta_data(buf);
 	struct bt_att_tx_meta_data meta;
 
 	LOG_DBG("%p", buf);
@@ -289,7 +289,7 @@ NET_BUF_POOL_DEFINE(att_pool, CONFIG_BT_ATT_TX_COUNT,
 		    BT_L2CAP_SDU_BUF_SIZE(BT_ATT_BUF_SIZE),
 		    CONFIG_BT_CONN_TX_USER_DATA_SIZE, att_tx_destroy);
 
-struct bt_att_tx_meta_data *bt_att_get_tx_meta_data(const struct net_buf *buf)
+static struct bt_att_tx_meta_data *att_get_tx_meta_data(const struct net_buf *buf)
 {
 	__ASSERT_NO_MSG(net_buf_pool_get(buf->pool_id) == &att_pool);
 
@@ -304,7 +304,7 @@ static int bt_att_chan_send(struct bt_att_chan *chan, struct net_buf *buf);
 static void att_chan_mtu_updated(struct bt_att_chan *updated_chan);
 static void bt_att_disconnected(struct bt_l2cap_chan *chan);
 
-struct net_buf *bt_att_create_rsp_pdu(struct bt_att_chan *chan, uint8_t op);
+static struct net_buf *att_create_rsp_pdu(struct bt_att_chan *chan, uint8_t op);
 
 static void att_disconnect(struct bt_att_chan *chan)
 {
@@ -340,7 +340,7 @@ static int chan_send(struct bt_att_chan *chan, struct net_buf *buf)
 	struct bt_att_hdr *hdr;
 	struct net_buf_simple_state state;
 	int err;
-	struct bt_att_tx_meta_data *data = bt_att_get_tx_meta_data(buf);
+	struct bt_att_tx_meta_data *data = att_get_tx_meta_data(buf);
 	struct bt_att_chan *prev_chan = data->att_chan;
 
 	hdr = (void *)buf->data;
@@ -461,7 +461,7 @@ static struct net_buf *get_first_buf_matching_chan(struct k_fifo *fifo, struct b
 		k_fifo_init(&skipped);
 
 		while ((buf = k_fifo_get(fifo, K_NO_WAIT))) {
-			meta = bt_att_get_tx_meta_data(buf);
+			meta = att_get_tx_meta_data(buf);
 			if (!ret &&
 			    att_chan_matches_chan_opt(chan, meta->chan_opt)) {
 				ret = buf;
@@ -491,7 +491,7 @@ static struct bt_att_req *get_first_req_matching_chan(sys_slist_t *reqs, struct 
 		struct bt_att_tx_meta_data *meta = NULL;
 
 		SYS_SLIST_FOR_EACH_NODE(reqs, curr) {
-			meta = bt_att_get_tx_meta_data(ATT_REQ(curr)->buf);
+			meta = att_get_tx_meta_data(ATT_REQ(curr)->buf);
 			if (att_chan_matches_chan_opt(chan, meta->chan_opt)) {
 				break;
 			}
@@ -748,14 +748,14 @@ static struct net_buf *bt_att_chan_create_pdu(struct bt_att_chan *chan, uint8_t 
 	/* This will reserve headspace for lower layers */
 	buf = bt_l2cap_create_pdu_timeout(&att_pool, 0, timeout);
 	if (!buf) {
-		LOG_ERR("Unable to allocate buffer for op 0x%02x", op);
+		LOG_DBG("Unable to allocate buffer for op 0x%02x", op);
 		return NULL;
 	}
 
 	/* If we got a buf from `att_pool`, then the metadata slot at its index
 	 * is officially ours to use.
 	 */
-	data = bt_att_get_tx_meta_data(buf);
+	data = att_get_tx_meta_data(buf);
 
 	if (IS_ENABLED(CONFIG_BT_EATT)) {
 		net_buf_reserve(buf, BT_L2CAP_SDU_BUF_SIZE(0));
@@ -775,7 +775,7 @@ static int bt_att_chan_send(struct bt_att_chan *chan, struct net_buf *buf)
 		((struct bt_att_hdr *)buf->data)->code);
 
 	if (IS_ENABLED(CONFIG_BT_EATT) &&
-	    !att_chan_matches_chan_opt(chan, bt_att_get_tx_meta_data(buf)->chan_opt)) {
+	    !att_chan_matches_chan_opt(chan, att_get_tx_meta_data(buf)->chan_opt)) {
 		return -EINVAL;
 	}
 
@@ -831,6 +831,7 @@ static void send_err_rsp(struct bt_att_chan *chan, uint8_t req, uint16_t handle,
 
 	buf = bt_att_chan_create_pdu(chan, BT_ATT_OP_ERROR_RSP, sizeof(*rsp));
 	if (!buf) {
+		LOG_ERR("Unable to create err rsp PDU");
 		return;
 	}
 
@@ -867,7 +868,7 @@ static uint8_t att_mtu_req(struct bt_att_chan *chan, struct net_buf *buf)
 		return BT_ATT_ERR_INVALID_PDU;
 	}
 
-	pdu = bt_att_create_rsp_pdu(chan, BT_ATT_OP_MTU_RSP);
+	pdu = att_create_rsp_pdu(chan, BT_ATT_OP_MTU_RSP);
 	if (!pdu) {
 		return BT_ATT_ERR_UNLIKELY;
 	}
@@ -1107,7 +1108,7 @@ static uint8_t att_find_info_rsp(struct bt_att_chan *chan, uint16_t start_handle
 
 	(void)memset(&data, 0, sizeof(data));
 
-	data.buf = bt_att_create_rsp_pdu(chan, BT_ATT_OP_FIND_INFO_RSP);
+	data.buf = att_create_rsp_pdu(chan, BT_ATT_OP_FIND_INFO_RSP);
 	if (!data.buf) {
 		return BT_ATT_ERR_INSUFFICIENT_RESOURCES;
 	}
@@ -1261,7 +1262,7 @@ static uint8_t att_find_type_rsp(struct bt_att_chan *chan, uint16_t start_handle
 
 	(void)memset(&data, 0, sizeof(data));
 
-	data.buf = bt_att_create_rsp_pdu(chan, BT_ATT_OP_FIND_TYPE_RSP);
+	data.buf = att_create_rsp_pdu(chan, BT_ATT_OP_FIND_TYPE_RSP);
 	if (!data.buf) {
 		return BT_ATT_ERR_INSUFFICIENT_RESOURCES;
 	}
@@ -1511,7 +1512,7 @@ static uint8_t att_read_type_rsp(struct bt_att_chan *chan, struct bt_uuid *uuid,
 
 	(void)memset(&data, 0, sizeof(data));
 
-	data.buf = bt_att_create_rsp_pdu(chan, BT_ATT_OP_READ_TYPE_RSP);
+	data.buf = att_create_rsp_pdu(chan, BT_ATT_OP_READ_TYPE_RSP);
 	if (!data.buf) {
 		return BT_ATT_ERR_INSUFFICIENT_RESOURCES;
 	}
@@ -1663,7 +1664,7 @@ static uint8_t att_read_rsp(struct bt_att_chan *chan, uint8_t op, uint8_t rsp,
 
 	(void)memset(&data, 0, sizeof(data));
 
-	data.buf = bt_att_create_rsp_pdu(chan, rsp);
+	data.buf = att_create_rsp_pdu(chan, rsp);
 	if (!data.buf) {
 		return BT_ATT_ERR_INSUFFICIENT_RESOURCES;
 	}
@@ -1736,7 +1737,7 @@ static uint8_t att_read_mult_req(struct bt_att_chan *chan, struct net_buf *buf)
 
 	(void)memset(&data, 0, sizeof(data));
 
-	data.buf = bt_att_create_rsp_pdu(chan, BT_ATT_OP_READ_MULT_RSP);
+	data.buf = att_create_rsp_pdu(chan, BT_ATT_OP_READ_MULT_RSP);
 	if (!data.buf) {
 		return BT_ATT_ERR_INSUFFICIENT_RESOURCES;
 	}
@@ -1840,7 +1841,7 @@ static uint8_t att_read_mult_vl_req(struct bt_att_chan *chan, struct net_buf *bu
 
 	(void)memset(&data, 0, sizeof(data));
 
-	data.buf = bt_att_create_rsp_pdu(chan, BT_ATT_OP_READ_MULT_VL_RSP);
+	data.buf = att_create_rsp_pdu(chan, BT_ATT_OP_READ_MULT_VL_RSP);
 	if (!data.buf) {
 		return BT_ATT_ERR_INSUFFICIENT_RESOURCES;
 	}
@@ -1962,7 +1963,7 @@ static uint8_t att_read_group_rsp(struct bt_att_chan *chan, struct bt_uuid *uuid
 
 	(void)memset(&data, 0, sizeof(data));
 
-	data.buf = bt_att_create_rsp_pdu(chan, BT_ATT_OP_READ_GROUP_RSP);
+	data.buf = att_create_rsp_pdu(chan, BT_ATT_OP_READ_GROUP_RSP);
 	if (!data.buf) {
 		return BT_ATT_ERR_INSUFFICIENT_RESOURCES;
 	}
@@ -2129,6 +2130,7 @@ static uint8_t att_write_rsp(struct bt_att_chan *chan, uint8_t req, uint8_t rsp,
 	if (rsp) {
 		data.buf = bt_att_chan_create_pdu(chan, rsp, 0);
 		if (!data.buf) {
+			LOG_ERR("Unable to create rsp PDU");
 			return BT_ATT_ERR_INSUFFICIENT_RESOURCES;
 		}
 	}
@@ -2276,7 +2278,7 @@ static uint8_t att_prep_write_rsp(struct bt_att_chan *chan, uint16_t handle,
 	net_buf_slist_put(&chan->att->prep_queue, data.buf);
 
 	/* Generate response */
-	data.buf = bt_att_create_rsp_pdu(chan, BT_ATT_OP_PREPARE_WRITE_RSP);
+	data.buf = att_create_rsp_pdu(chan, BT_ATT_OP_PREPARE_WRITE_RSP);
 	if (!data.buf) {
 		return BT_ATT_ERR_INSUFFICIENT_RESOURCES;
 	}
@@ -2291,13 +2293,9 @@ static uint8_t att_prep_write_rsp(struct bt_att_chan *chan, uint16_t handle,
 
 	return 0;
 }
-#endif /* CONFIG_BT_ATT_PREPARE_COUNT */
 
 static uint8_t att_prepare_write_req(struct bt_att_chan *chan, struct net_buf *buf)
 {
-#if CONFIG_BT_ATT_PREPARE_COUNT == 0
-	return BT_ATT_ERR_NOT_SUPPORTED;
-#else
 	struct bt_att_prepare_write_req *req;
 	uint16_t handle, offset;
 
@@ -2309,10 +2307,8 @@ static uint8_t att_prepare_write_req(struct bt_att_chan *chan, struct net_buf *b
 	LOG_DBG("handle 0x%04x offset %u", handle, offset);
 
 	return att_prep_write_rsp(chan, handle, offset, buf->data, buf->len);
-#endif /* CONFIG_BT_ATT_PREPARE_COUNT */
 }
 
-#if CONFIG_BT_ATT_PREPARE_COUNT > 0
 static uint8_t exec_write_reassemble(uint16_t handle, uint16_t offset,
 				     sys_slist_t *list,
 				     struct net_buf_simple *buf)
@@ -2423,7 +2419,7 @@ static uint8_t att_exec_write_rsp(struct bt_att_chan *chan, uint8_t flags)
 	}
 
 	/* Generate response */
-	buf = bt_att_create_rsp_pdu(chan, BT_ATT_OP_EXEC_WRITE_RSP);
+	buf = att_create_rsp_pdu(chan, BT_ATT_OP_EXEC_WRITE_RSP);
 	if (!buf) {
 		return BT_ATT_ERR_UNLIKELY;
 	}
@@ -2432,14 +2428,9 @@ static uint8_t att_exec_write_rsp(struct bt_att_chan *chan, uint8_t flags)
 
 	return 0;
 }
-#endif /* CONFIG_BT_ATT_PREPARE_COUNT */
-
 
 static uint8_t att_exec_write_req(struct bt_att_chan *chan, struct net_buf *buf)
 {
-#if CONFIG_BT_ATT_PREPARE_COUNT == 0
-	return BT_ATT_ERR_NOT_SUPPORTED;
-#else
 	struct bt_att_exec_write_req *req;
 
 	req = (void *)buf->data;
@@ -2447,8 +2438,8 @@ static uint8_t att_exec_write_req(struct bt_att_chan *chan, struct net_buf *buf)
 	LOG_DBG("flags 0x%02x", req->flags);
 
 	return att_exec_write_rsp(chan, req->flags);
-#endif /* CONFIG_BT_ATT_PREPARE_COUNT */
 }
+#endif /* CONFIG_BT_ATT_PREPARE_COUNT > 0 */
 
 static uint8_t att_write_cmd(struct bt_att_chan *chan, struct net_buf *buf)
 {
@@ -2731,6 +2722,7 @@ static uint8_t att_indicate(struct bt_att_chan *chan, struct net_buf *buf)
 
 	buf = bt_att_chan_create_pdu(chan, BT_ATT_OP_CONFIRM, 0);
 	if (!buf) {
+		LOG_ERR("Unable to create confirm PDU");
 		return 0;
 	}
 
@@ -2806,6 +2798,7 @@ static const struct att_handler {
 		sizeof(struct bt_att_write_req),
 		ATT_REQUEST,
 		att_write_req },
+#if CONFIG_BT_ATT_PREPARE_COUNT > 0
 	{ BT_ATT_OP_PREPARE_WRITE_REQ,
 		sizeof(struct bt_att_prepare_write_req),
 		ATT_REQUEST,
@@ -2814,6 +2807,7 @@ static const struct att_handler {
 		sizeof(struct bt_att_exec_write_req),
 		ATT_REQUEST,
 		att_exec_write_req },
+#endif /* CONFIG_BT_ATT_PREPARE_COUNT > 0 */
 	{ BT_ATT_OP_CONFIRM,
 		0,
 		ATT_CONFIRMATION,
@@ -3064,7 +3058,7 @@ struct net_buf *bt_att_create_pdu(struct bt_conn *conn, uint8_t op, size_t len)
 	return NULL;
 }
 
-struct net_buf *bt_att_create_rsp_pdu(struct bt_att_chan *chan, uint8_t op)
+static struct net_buf *att_create_rsp_pdu(struct bt_att_chan *chan, uint8_t op)
 {
 	size_t headroom;
 	struct bt_att_hdr *hdr;
@@ -3085,7 +3079,7 @@ struct net_buf *bt_att_create_rsp_pdu(struct bt_att_chan *chan, uint8_t op)
 
 	net_buf_reserve(buf, headroom);
 
-	data = bt_att_get_tx_meta_data(buf);
+	data = att_get_tx_meta_data(buf);
 	data->att_chan = chan;
 
 	hdr = net_buf_add(buf, sizeof(*hdr));
@@ -3266,6 +3260,7 @@ static uint8_t att_req_retry(struct bt_att_chan *att_chan)
 
 	buf = bt_att_chan_create_pdu(att_chan, req->att_op, req->len);
 	if (!buf) {
+		LOG_ERR("Unable to create retry PDU (%u)", req->att_op);
 		return BT_ATT_ERR_UNLIKELY;
 	}
 
@@ -4133,7 +4128,7 @@ bool bt_att_out_of_sync_sent_on_fixed(struct bt_conn *conn)
 void bt_att_set_tx_meta_data(struct net_buf *buf, bt_gatt_complete_func_t func, void *user_data,
 			     enum bt_att_chan_opt chan_opt)
 {
-	struct bt_att_tx_meta_data *data = bt_att_get_tx_meta_data(buf);
+	struct bt_att_tx_meta_data *data = att_get_tx_meta_data(buf);
 
 	data->func = func;
 	data->user_data = user_data;
@@ -4143,7 +4138,7 @@ void bt_att_set_tx_meta_data(struct net_buf *buf, bt_gatt_complete_func_t func, 
 
 void bt_att_increment_tx_meta_data_attr_count(struct net_buf *buf, uint16_t attr_count)
 {
-	struct bt_att_tx_meta_data *data = bt_att_get_tx_meta_data(buf);
+	struct bt_att_tx_meta_data *data = att_get_tx_meta_data(buf);
 
 	data->attr_count += attr_count;
 }
@@ -4151,7 +4146,7 @@ void bt_att_increment_tx_meta_data_attr_count(struct net_buf *buf, uint16_t attr
 bool bt_att_tx_meta_data_match(const struct net_buf *buf, bt_gatt_complete_func_t func,
 			       const void *user_data, enum bt_att_chan_opt chan_opt)
 {
-	const struct bt_att_tx_meta_data *meta = bt_att_get_tx_meta_data(buf);
+	const struct bt_att_tx_meta_data *meta = att_get_tx_meta_data(buf);
 
 	return ((meta->func == func) &&
 		(meta->user_data == user_data) &&

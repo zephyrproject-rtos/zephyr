@@ -230,13 +230,12 @@ void soc_late_init_hook(void)
 		return;
 	}
 
-	/* Don't wait as this is not yet supported. */
-	bool cpu_wait = false;
+	bool cpu_wait = IS_ENABLED(CONFIG_SOC_NRF54H20_CPURAD_ENABLE_DEBUG_WAIT);
 
 	err_cpuconf = ironside_cpuconf(NRF_PROCESSOR_RADIOCORE, radiocore_address, cpu_wait, msg,
 				       msg_size);
 	__ASSERT(err_cpuconf == 0, "err_cpuconf was %d", err_cpuconf);
-#endif
+#endif /* CONFIG_SOC_NRF54H20_CPURAD_ENABLE */
 }
 #endif
 

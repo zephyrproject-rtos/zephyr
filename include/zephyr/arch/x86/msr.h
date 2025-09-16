@@ -6,6 +6,8 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_X86_MSR_H_
 #define ZEPHYR_INCLUDE_ARCH_X86_MSR_H_
 
+#include <zephyr/toolchain.h>
+
 /*
  * Model specific registers (MSR).  Access with z_x86_msr_read/write().
  */
@@ -23,6 +25,19 @@
 #define X86_MTRR_DEF_TYPE_MSR_ENABLE	BIT(11)
 
 #define X86_X2APIC_BASE_MSR		0x00000800 /* .. thru 0x00000BFF */
+
+#define X86_U_CET_MSR			0x000006A0
+
+#define X86_S_CET_MSR			0x000006A2
+#define X86_S_CET_MSR_SHSTK		BIT(0)
+#define X86_S_CET_MSR_WR_SHSTK		BIT(1)
+#define X86_S_CET_MSR_ENDBR		BIT(2)
+#define X86_S_CET_MSR_NO_TRACK		BIT(4)
+
+#define X86_S_CET_MSR_SHSTK_EN		(X86_S_CET_MSR_SHSTK | \
+					 X86_S_CET_MSR_WR_SHSTK)
+
+#define X86_INTERRUPT_SSP_TABLE_MSR	0x00006A8
 
 #define X86_EFER_MSR			0xC0000080U
 #define X86_EFER_MSR_SCE		BIT(0)

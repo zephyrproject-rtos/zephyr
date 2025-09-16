@@ -93,7 +93,11 @@ static int gpio_cat1_configure(const struct device *dev, gpio_pin_t pin, gpio_fl
 		return -ENOTSUP;
 	}
 
+#if defined(CY_PDL_TZ_ENABLED)
+	Cy_GPIO_Pin_SecFastInit(base, pin, drive_mode, pin_val, HSIOM_SEL_GPIO);
+#else
 	Cy_GPIO_Pin_FastInit(base, pin, drive_mode, pin_val, HSIOM_SEL_GPIO);
+#endif /* defined(CY_PDL_TZ_ENABLED) */
 
 	return 0;
 }

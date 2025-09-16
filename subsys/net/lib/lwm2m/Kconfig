@@ -143,7 +143,7 @@ config LWM2M_ENGINE_ALWAYS_REPORT_OBJ_VERSION
 	  always report all object versions.
 
 choice
-prompt "Socket handling at idle state"
+	prompt "Socket handling at idle state"
 
 config LWM2M_RD_CLIENT_CLOSE_SOCKET_AT_IDLE
 	bool "Close socket when entering RX idle"

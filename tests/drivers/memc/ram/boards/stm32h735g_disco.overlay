@@ -1,7 +1,7 @@
 /delete-node/ &sram2;
 
 /* D2 domain, AHB SRAM */
-&sram1{
+&sram1 {
 	reg = <0x30000000 DT_SIZE_K(32)>;
 	zephyr,memory-region = "SRAM1-2";
 };

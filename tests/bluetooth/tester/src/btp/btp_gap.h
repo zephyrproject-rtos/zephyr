@@ -11,12 +11,14 @@
 #include <stdint.h>
 
 #include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/iso.h>
+#include <zephyr/sys/util.h>
 
 /* GAP Service */
 /* commands */
 #define BTP_GAP_READ_SUPPORTED_COMMANDS		0x01
 struct btp_gap_read_supported_commands_rp {
-	uint8_t data[0];
+	FLEXIBLE_ARRAY_DECLARE(uint8_t, data);
 } __packed;
 
 #define BTP_GAP_READ_CONTROLLER_INDEX_LIST	0x02
@@ -134,6 +136,7 @@ struct btp_gap_stop_advertising_rp {
 #define BTP_GAP_DISCOVERY_FLAG_LE_ACTIVE_SCAN	0x08
 #define BTP_GAP_DISCOVERY_FLAG_LE_OBSERVE	0x10
 #define BTP_GAP_DISCOVERY_FLAG_OWN_ID_ADDR	0x20
+#define BTP_GAP_DISCOVERY_FLAG_USE_FILTER_LIST	0x40
 
 #define BTP_GAP_START_DISCOVERY			0x0c
 struct btp_gap_start_discovery_cmd {
@@ -346,6 +349,45 @@ struct btp_gap_pair_v2_cmd {
 	uint8_t flags;
 } __packed;
 
+#define BTP_GAP_BIG_CREATE_SYNC_ENC_DISABLE	0x00
+#define BTP_GAP_BIG_CREATE_SYNC_ENC_ENABLE	0x01
+
+#define BTP_GAP_BIG_CREATE_SYNC			0x2c
+struct btp_gap_big_create_sync_cmd {
+	bt_addr_le_t address;
+	uint8_t sid;
+	uint8_t num_bis;
+	uint32_t bis_bitfield;
+	uint32_t mse;
+	uint16_t sync_timeout;
+	uint8_t encryption;
+	uint8_t broadcast_code[];
+} __packed;
+
+#define BTP_GAP_CREATE_BIG_ENC_DISABLE		0x00
+#define BTP_GAP_CREATE_BIG_ENC_ENABLE		0x01
+
+#define BTP_GAP_CREATE_BIG			0x2d
+struct btp_gap_create_big_cmd {
+	uint8_t id;
+	uint8_t num_bis;
+	uint32_t interval;
+	uint16_t latency;
+	uint8_t rtn;
+	uint8_t phy;
+	uint8_t packing;
+	uint8_t framing;
+	uint8_t encryption;
+	uint8_t broadcast_code[];
+} __packed;
+
+#define BTP_GAP_BIS_BROADCAST			0x2e
+struct btp_gap_bis_broadcast_cmd {
+	uint8_t bis_id;
+	uint8_t data_len;
+	uint8_t data[];
+} __packed;
+
 #define BTP_GAP_SET_RPA_TIMEOUT                 0x30
 struct btp_gap_set_rpa_timeout_cmd {
 	uint16_t rpa_timeout;
@@ -477,6 +519,63 @@ struct btp_gap_encryption_change_ev {
 	bt_addr_le_t address;
 	uint8_t enabled;
 	uint8_t key_size;
+} __packed;
+
+#define BTP_GAP_EV_BIG_SYNC_ESTABLISHED		0x93
+struct btp_gap_big_sync_established_ev {
+	bt_addr_le_t address;
+	uint32_t latency;
+	uint8_t nse;
+	uint8_t bn;
+	uint32_t pto;
+	uint8_t irc;
+	uint16_t max_pdu;
+	uint16_t iso_interval;
+} __packed;
+
+#define BTP_GAP_EV_BIG_SYNC_LOST		0x94
+struct btp_gap_big_sync_lost_ev {
+	bt_addr_le_t address;
+	uint8_t reason;
+} __packed;
+
+#define BTP_GAP_EV_BIS_DATA_PATH_SETUP		0x95
+struct btp_gap_bis_data_path_setup_ev {
+	bt_addr_le_t address;
+	uint8_t bis_id;
+} __packed;
+
+#define BTP_GAP_EV_BIS_STREAM_RECEIVED		0x96
+struct btp_gap_bis_stream_received_ev {
+	bt_addr_le_t address;
+	uint8_t bis_id;
+	uint8_t flags;
+	uint32_t ts;
+	uint16_t seq_num;
+	uint8_t data_len;
+	uint8_t data[];
+} __packed;
+
+#define BTP_GAP_EV_PERIODIC_BIGINFO_ENC_DISABLE	0x00
+#define BTP_GAP_EV_PERIODIC_BIGINFO_ENC_ENABLE	0x01
+
+#define BTP_GAP_EV_PERIODIC_BIGINFO		0x97
+struct btp_gap_periodic_biginfo_ev {
+	bt_addr_le_t address;
+	uint16_t sync_handle;
+	uint8_t sid;
+	uint8_t num_bis;
+	uint8_t nse;
+	uint16_t iso_interval;
+	uint8_t bn;
+	uint8_t pto;
+	uint8_t irc;
+	uint16_t max_pdu;
+	uint32_t sdu_interval;
+	uint16_t max_sdu;
+	uint8_t phy;
+	uint8_t framing;
+	uint8_t encryption;
 } __packed;
 
 #if defined(CONFIG_BT_EXT_ADV)

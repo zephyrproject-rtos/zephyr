@@ -40,25 +40,18 @@ tests:
       - CONFIG_BT_LE_EXTENDED_FEAT_SET=y
       - CONFIG_BT_LL_SW_SPLIT=n
     build_only: true
+  bluetooth.shell.frame_space_update:
+    extra_configs:
+      - CONFIG_BT_FRAME_SPACE_UPDATE=y
+      - CONFIG_BT_LE_EXTENDED_FEAT_SET=y
+      - CONFIG_BT_LL_SW_SPLIT=n
+    build_only: true
   bluetooth.shell.channel_sounding:
     extra_configs:
       - CONFIG_BT_CHANNEL_SOUNDING=y
       - CONFIG_BT_CHANNEL_SOUNDING_TEST=y
       - CONFIG_BT_LL_SW_SPLIT=n
     build_only: true
-  bluetooth.shell.cdc_acm:
-    extra_args:
-      - EXTRA_CONF_FILE=cdc_acm.conf
-      - DTC_OVERLAY_FILE="usb.overlay"
-    depends_on: usb_device
-    platform_allow:
-      - native_sim
-      - native_sim/native/64
-      - nrf52840dk/nrf52840
-    platform_exclude: nrf52dk/nrf52810
-    tags: bluetooth
-    harness: keyboard
-    min_flash: 350
   bluetooth.shell.shell_br:
     extra_configs:
       - CONFIG_UART_NATIVE_PTY_0_ON_STDINOUT=y
@@ -79,7 +72,7 @@ tests:
     build_only: true
     extra_args: CONF_FILE="log.conf"
     tags: bluetooth
-  bluetooth.shell.bt_ctrl_dtm:
+  bluetooth.shell.bt_ctlr_dtm:
     build_only: true
     extra_args:
       - CONFIG_BT_CTLR_DTM_HCI=y
@@ -90,6 +83,12 @@ tests:
   # Bluetooth Audio Compile validation tests
   bluetooth.shell.audio:
     extra_args: CONF_FILE="audio.conf"
+    build_only: true
+    tags: bluetooth
+  bluetooth.shell.audio.no_bt_conn_dynamic_callbacks:
+    extra_args:
+      - CONF_FILE="audio.conf"
+      - CONFIG_BT_CONN_DYNAMIC_CALLBACKS=n
     build_only: true
     tags: bluetooth
   bluetooth.shell.audio.no_testing:
@@ -430,7 +429,7 @@ tests:
     extra_configs:
       - CONFIG_RING_BUFFER=n
       - CONFIG_USB_DEVICE_STACK=n
-      - CONFIG_USB_DEVICE_AUDIO=n
+      - CONFIG_USBD_AUDIO2_CLASS=n
   bluetooth.native_shell:
     build_only: true
     extra_args:

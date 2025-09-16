@@ -112,10 +112,9 @@
 			status = "okay";
 
 			gpio0: gpio@40000000 {
-				compatible = "bflb,gpio";
+				compatible = "bflb,bl60x_70x-gpio";
 				reg = <0x40000000 0x1000>;
 				#gpio-cells = <2>;
-				#bflb,pin-cells = <2>;
 				status = "disabled";
 
 				gpio-controller;
@@ -130,11 +129,11 @@
 			#clock-cells = <1>;
 			status = "okay";
 			clocks = <&clk_rc32m>, <&clk_crystal>, <&clk_root>, <&clk_bclk>,
-				<&clk_pll BL60X_PLL_192MHz>, <&clk_pll BL60X_PLL_160MHz>,
-				<&clk_pll BL60X_PLL_120MHz>, <&clk_pll BL60X_PLL_48MHz>;
+				 <&clk_pll BL60X_PLL_192MHz>, <&clk_pll BL60X_PLL_160MHz>,
+				 <&clk_pll BL60X_PLL_120MHz>, <&clk_pll BL60X_PLL_48MHz>;
 			clock-names = "rc32m", "crystal", "root", "bclk",
-				"pll_192", "pll_160",
-				"pll_120", "pll_48";
+				      "pll_192", "pll_160",
+				      "pll_120", "pll_48";
 		};
 
 		efuse: efuse@40007000 {

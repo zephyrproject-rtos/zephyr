@@ -99,6 +99,7 @@ endmenu # DT_HAS_ST_STM32WB0_LSI_CLOCK_ENABLED
 config CLOCK_STM32_MCO
 	bool
 	default y
+	select PINCTRL
 	depends on DT_HAS_ST_STM32_CLOCK_MCO_ENABLED || DT_HAS_ST_STM32F1_CLOCK_MCO_ENABLED
 	help
 	  Allows to output various different clock sources onto the MCO pin

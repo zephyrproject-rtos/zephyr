@@ -21,7 +21,7 @@ evaluating features and performance of this SoC.
 
 Zephyr OS support is available for both Cortex |reg|-A cores & Cortex |reg|-R52 core.
 
-More information about the S4 SoC can be fount at `Renesas R-Car S4 chip`_.
+More information about the S4 SoC can be found at `Renesas R-Car S4 chip`_.
 
 Hardware
 ********

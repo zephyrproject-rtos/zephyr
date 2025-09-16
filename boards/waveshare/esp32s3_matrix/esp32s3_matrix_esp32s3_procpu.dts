@@ -77,7 +77,7 @@
 		reg = <0>;
 		spi-max-frequency = <WS2812C_SPI_FREQ>;
 		chain-length = <64>;
-		color-mapping =	<LED_COLOR_ID_RED>,
+		color-mapping = <LED_COLOR_ID_RED>,
 				<LED_COLOR_ID_GREEN>,
 				<LED_COLOR_ID_BLUE>;
 		spi-one-frame = <WS2812C_ONE_FRAME>;

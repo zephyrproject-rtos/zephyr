@@ -30,8 +30,9 @@
 #define STM32_SRC_HSE		(STM32_SRC_MSI + 1)
 /** Peripheral bus clock */
 #define STM32_SRC_PCLK		(STM32_SRC_HSE + 1)
+#define STM32_SRC_TIMPCLK1	(STM32_SRC_PCLK + 1)
 /** PLL clock outputs */
-#define STM32_SRC_PLL_P		(STM32_SRC_PCLK + 1)
+#define STM32_SRC_PLL_P		(STM32_SRC_TIMPCLK1 + 1)
 #define STM32_SRC_PLL_Q		(STM32_SRC_PLL_P + 1)
 #define STM32_SRC_PLL_R		(STM32_SRC_PLL_Q + 1)
 

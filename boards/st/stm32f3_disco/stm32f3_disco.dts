@@ -149,7 +149,7 @@
 		compatible = "st,lis2dh", "st,lsm303dlhc-accel";
 		reg = <0x19>;
 		irq-gpios = <&gpioe 4 GPIO_ACTIVE_HIGH>,
-			  <&gpioe 5 GPIO_ACTIVE_HIGH>;
+			    <&gpioe 5 GPIO_ACTIVE_HIGH>;
 	};
 };
 
@@ -181,7 +181,7 @@ zephyr_udc0: &usb {
 };
 
 &rtc {
-	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>,
+	clocks = <&rcc STM32_CLOCK(APB1, 28)>,
 		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
 	status = "okay";
 

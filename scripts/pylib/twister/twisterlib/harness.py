@@ -15,6 +15,7 @@ import time
 import xml.etree.ElementTree as ET
 from collections import OrderedDict
 from enum import Enum
+from string import Template
 
 import junitparser.junitparser as junit
 import yaml
@@ -434,6 +435,9 @@ class Pytest(Harness):
                 f'Support for handler {handler.type_str} not implemented yet'
             )
 
+        for req_build in self.instance.required_build_dirs:
+            command.append(f'--required-build={req_build}')
+
         if handler.type_str != 'device':
             for fixture in handler.options.fixture:
                 command.append(f'--twister-fixture={fixture}')
@@ -478,6 +482,9 @@ class Pytest(Harness):
 
         if options.west_flash and options.west_flash != []:
             command.append(f'--west-flash-extra-args={options.west_flash}')
+
+        if options.flash_command:
+            command.append(f'--flash-command={options.flash_command}')
 
         if board_id := hardware.probe_id or hardware.id:
             command.append(f'--device-id={board_id}')
@@ -628,6 +635,29 @@ class Pytest(Harness):
         else:
             self.status = TwisterStatus.SKIP
             self.instance.reason = 'No tests collected'
+
+class Display_capture(Pytest):
+    def generate_command(self):
+        config = self.instance.testsuite.harness_config
+        pytest_root = [os.path.join(ZEPHYR_BASE, 'scripts', 'pylib', 'display-twister-harness')]
+        config['pytest_root'] = pytest_root
+
+        command = super().generate_command()
+        if test_config_file := self._get_display_config_file(config):
+            command.append(f'--config={test_config_file}')
+        else:
+            logger.warning('No config file provided')
+        return command
+
+    def _get_display_config_file(self, harness_config):
+        if test_config_file := harness_config.get('display_capture_config'):
+            _template = Template(test_config_file)
+            _config_file = _template.safe_substitute(os.environ)
+            test_config_path = os.path.join(self.source_dir, _config_file)
+            logger.info(f'test_config_path = {test_config_path}')
+            if os.path.exists(test_config_path):
+                return test_config_path
+        return None
 
 
 class Shell(Pytest):

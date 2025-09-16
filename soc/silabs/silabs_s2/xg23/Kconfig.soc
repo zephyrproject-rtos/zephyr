@@ -1,4 +1,5 @@
 # Copyright (c) 2024 Yishai Jaffe
+# Copyright (c) 2025 Christoph Jans
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_SILABS_XG23
@@ -13,12 +14,24 @@ config SOC_SERIES_EFR32ZG23
 	help
 	  Silicon Labs EFR32ZG23 Series MCU
 
-config SOC_PART_NUMBER_EFR32ZG23B020F512IM48
+config SOC_SERIES_EFM32PG23
+	bool
+	select SOC_SILABS_XG23
+	help
+	  Silicon Labs EFM32PG23 Series MCU
+
+config SOC_EFR32ZG23B020F512IM48
 	bool
 	select SOC_SERIES_EFR32ZG23
 
+config SOC_EFM32PG23B310F512IM48
+	bool
+	select SOC_SERIES_EFM32PG23
+
 config SOC_SERIES
 	default "efr32zg23" if SOC_SERIES_EFR32ZG23
+	default "efm32pg23" if SOC_SERIES_EFM32PG23
 
 config SOC
-	default "efr32zg23b020f512im48" if SOC_PART_NUMBER_EFR32ZG23B020F512IM48
+	default "efr32zg23b020f512im48" if SOC_EFR32ZG23B020F512IM48
+	default "efm32pg23b310f512im48" if SOC_EFM32PG23B310F512IM48

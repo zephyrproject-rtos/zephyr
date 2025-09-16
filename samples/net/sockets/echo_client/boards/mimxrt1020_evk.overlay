@@ -27,7 +27,7 @@
 	};
 
 	hdlc_rcp_if: hdlc_rcp_if {
-		     compatible = "uart,hdlc-rcp-if";
+		compatible = "uart,hdlc-rcp-if";
 	};
 };
 
@@ -53,9 +53,9 @@
 	pinmux_lpuart2_flowcontrol: pinmux_lpuart2_flowcontrol {
 		group0 {
 			pinmux = <&iomuxc_gpio_ad_b1_09_lpuart2_rx>,
-				<&iomuxc_gpio_ad_b1_08_lpuart2_tx>,
-				<&iomuxc_gpio_ad_b1_06_lpuart2_cts_b>,
-				<&iomuxc_gpio_ad_b1_07_lpuart2_rts_b>;
+				 <&iomuxc_gpio_ad_b1_08_lpuart2_tx>,
+				 <&iomuxc_gpio_ad_b1_06_lpuart2_cts_b>,
+				 <&iomuxc_gpio_ad_b1_07_lpuart2_rts_b>;
 			drive-strength = "r0-6";
 			slew-rate = "slow";
 			nxp,speed = "100-mhz";

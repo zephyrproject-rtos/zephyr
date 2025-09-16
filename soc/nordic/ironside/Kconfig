@@ -56,6 +56,12 @@ config NRF_IRONSIDE_BOOT_REPORT
 	help
 	  Support for parsing the Boot Report populated by Nordic IronSide firmware.
 
+config NRF_IRONSIDE_BOOTMODE_SERVICE
+	bool "IronSide boot mode service"
+	select NRF_IRONSIDE_CALL
+	help
+	  Service used to reboot into secondary firmware boot mode.
+
 config NRF_IRONSIDE_DVFS_SERVICE
 	bool "IronSide DVFS service"
 	depends on SOC_NRF54H20_CPUAPP
@@ -65,11 +71,12 @@ config NRF_IRONSIDE_DVFS_SERVICE
 
 if NRF_IRONSIDE_DVFS_SERVICE
 
-config NRF_IRONSIDE_DVFS_OPPOINT_CHANGE_MUTEX_TIMEOUT_MS
-	int "IRONSside DVFS change oppoint mutex timeout"
-	default 100
+config NRF_IRONSIDE_ABB_STATUSANA_CHECK_MAX_ATTEMPTS
+	int "IRONSside DVFS ABB analog status check maximum attempts"
+	range 0 255
+	default 50
 	help
-	  Maximum timeout when waiting for DVFS oppoint change mutex lock.
+	  Maximum attempts with 10us intervals before busy status will be reported.
 
 endif # NRF_IRONSIDE_DVFS_SERVICE
 

@@ -14,6 +14,7 @@
 #include <zephyr/linker/linker-defs.h>
 #include <string.h>
 
+#include <stm32_ll_bus.h>
 #include <stm32_ll_system.h>
 
 #include <cmsis_core.h>
@@ -32,4 +33,7 @@ void soc_early_init_hook(void)
 	/* Update CMSIS SystemCoreClock variable (HCLK) */
 	/* At reset, system core clock is set to 48 MHz from HSI */
 	SystemCoreClock = 48000000;
+
+	/* Enable PWR clock */
+	LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
 }

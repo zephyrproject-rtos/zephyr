@@ -43,10 +43,11 @@ struct bt_bap_broadcast_source;
 struct bt_bap_broadcast_sink;
 
 struct bt_bap_ep {
-	uint8_t  dir;
-	uint8_t  cig_id;
-	uint8_t  cis_id;
-	struct bt_ascs_ase_status status;
+	uint8_t dir;
+	uint8_t cig_id;
+	uint8_t cis_id;
+	uint8_t id;
+	enum bt_bap_ep_state state;
 	struct bt_bap_stream *stream;
 	struct bt_audio_codec_cfg codec_cfg;
 	struct bt_bap_qos_cfg qos;
@@ -94,6 +95,11 @@ struct bt_bap_unicast_group {
 	/* The ISO API for CIG creation requires an array of pointers to ISO channels */
 	struct bt_iso_chan *cis[UNICAST_GROUP_STREAM_CNT];
 	sys_slist_t streams;
+
+	/* Configured sink presentation delay */
+	uint32_t sink_pd;
+	/* Configured source presentation delay */
+	uint32_t source_pd;
 };
 
 #if CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0
@@ -194,7 +200,7 @@ struct bt_bap_broadcast_sink {
 };
 #endif /* CONFIG_BT_BAP_BROADCAST_SINK */
 
-static inline const char *bt_bap_ep_state_str(uint8_t state)
+static inline const char *bt_bap_ep_state_str(enum bt_bap_ep_state state)
 {
 	switch (state) {
 	case BT_BAP_EP_STATE_IDLE:

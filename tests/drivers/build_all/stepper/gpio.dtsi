@@ -5,7 +5,8 @@
 
 /****************************************
  *  PLEASE KEEP ALPHABETICALLY SORTED   *
- ***************************************/
+ **************************************
+ */
 
 adi_tmc2209: adi_tmc2209 {
 	compatible = "adi,tmc2209";
@@ -39,7 +40,7 @@ ti_drv84xx: ti_drv84xx {
 	dir-gpios = <&test_gpio 0 0>;
 	step-gpios = <&test_gpio 0 0>;
 	sleep-gpios = <&test_gpio 0 0>;
-	en-gpios  = <&test_gpio 0 0>;
+	en-gpios = <&test_gpio 0 0>;
 	m0-gpios = <&test_gpio 0 0>;
 	m1-gpios = <&test_gpio 0 0>;
 	counter = <&counter0>;

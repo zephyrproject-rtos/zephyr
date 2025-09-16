@@ -37,7 +37,7 @@
 		compatible = "gpio-leds";
 
 		red_led: led_0 {
-			gpios =  <&gpio0 4 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio0 4 GPIO_ACTIVE_HIGH>;
 			label = "Red - LED0";
 		};
 	};
@@ -95,6 +95,7 @@
 		status = "okay";
 		reg = <0x34>;
 		compatible = "x-powers,axp2101";
+
 		regulator {
 			compatible = "x-powers,axp2101-regulator";
 
@@ -145,12 +146,12 @@
 		reg = <0>;
 		reset-gpios = <&gpio0 23 GPIO_ACTIVE_LOW>;
 		dio-gpios =
-			/* SX1276 D0 -> GPIO26 */
-			<&gpio0 26 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,
-			/* SX1276 D1 -> GPIO33 */
-			<&gpio1 1 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,
-			/* SX1276 D2 -> GPIO32 */
-			<&gpio1 0 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
+			    /* SX1276 D0 -> GPIO26 */
+			    <&gpio0 26 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,
+			    /* SX1276 D1 -> GPIO33 */
+			    <&gpio1 1 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,
+			    /* SX1276 D2 -> GPIO32 */
+			    <&gpio1 0 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
 		spi-max-frequency = <1000000>;
 		power-amplifier-output = "pa-boost";
 	};

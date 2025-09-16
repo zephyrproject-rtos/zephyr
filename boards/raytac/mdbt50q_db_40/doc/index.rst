@@ -31,12 +31,12 @@ Hardware
 - Module Demo Board build by MDBT50Q-1MV2
 - Nordic nRF52840 SoC Solution Version: 2
 - A recommended 3rd-party module by Nordic Semiconductor.
-- BT5.2&BT5.1&BT5 Bluetooth Specification Cerified
+- BT5.2&BT5.1&BT5 Bluetooth Specification Certified
 - Supports BT5 Long Range Features
-- Cerifications: FCC, IC, CE, Telec(MIC), KC, SRRC, NCC, RCM, WPC
+- Certifications: FCC, IC, CE, Telec(MIC), KC, SRRC, NCC, RCM, WPC
 - 32-bit ARM® Cortex™ M4F CPU
 - 1MB Flash Memory/256kB RAM
-- RoHs & Reach Compiant.
+- RoHs & Reach Compliant.
 - 48 GPIO
 - Chip Antenna
 - Interfaces: SPI, UART, I2C, I2S, PWM, ADC, NFC, and USB

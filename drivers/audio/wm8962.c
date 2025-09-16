@@ -506,7 +506,7 @@ static int wm8962_configure(const struct device *dev, struct audio_codec_cfg *cf
 	wm8962_write_reg(dev, WM8962_REG_POWER1, 0x1FE);
 	wm8962_write_reg(dev, WM8962_REG_POWER2, 0x1E0);
 
-	if ((cfg->dai_cfg.i2s.options & I2S_OPT_FRAME_CLK_SLAVE) == I2S_OPT_FRAME_CLK_SLAVE) {
+	if ((cfg->dai_cfg.i2s.options & I2S_OPT_FRAME_CLK_SLAVE) == 0) {
 		wm8962_set_master_clock(dev, &cfg->dai_cfg, cfg->mclk_freq);
 		wm8962_update_reg(dev, WM8962_REG_IFACE0, 1U << 6U, 1U << 6U);
 	}

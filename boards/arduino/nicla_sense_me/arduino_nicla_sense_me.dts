@@ -16,6 +16,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button: button {
 			label = "user button";
 			gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
@@ -77,6 +78,7 @@
 	is31fl3194@53 {
 		compatible = "issi,is31fl3194";
 		reg = <0x53>;
+
 		led_rgb {
 			label = "RGB LED";
 			color-mapping = <LED_COLOR_ID_BLUE>,
@@ -150,18 +152,22 @@ zephyr_i2c: &i2c1 {
 			reg = <0x00000000 0x00010000>;
 			read-only;
 		};
+
 		slot0_partition: partition@10000 {
 			label = "image-0";
 			reg = <0x00010000 0x30000>;
 		};
+
 		slot1_partition: partition@40000 {
 			label = "image-1";
 			reg = <0x00040000 0x30000>;
 		};
+
 		scratch_partition: partition@70000 {
 			label = "image-scratch";
 			reg = <0x00070000 0xa000>;
 		};
+
 		storage_partition: partition@7a000 {
 			label = "storage";
 			reg = <0x0007a000 0x00006000>;

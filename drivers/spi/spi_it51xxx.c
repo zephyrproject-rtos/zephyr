@@ -500,6 +500,7 @@ static int transceive(const struct device *dev, const struct spi_config *config,
 		      const struct spi_buf_set *tx_bufs, const struct spi_buf_set *rx_bufs,
 		      bool asynchronous, spi_callback_t cb, void *userdata)
 {
+	const struct spi_it51xxx_config *cfg = dev->config;
 	struct spi_it51xxx_data *data = dev->data;
 	struct spi_context *ctx = &data->ctx;
 	int ret;
@@ -509,6 +510,12 @@ static int transceive(const struct device *dev, const struct spi_config *config,
 	/* configure spi */
 	ret = spi_it51xxx_configure(dev, config);
 	if (ret) {
+		goto out;
+	}
+
+	ret = clock_control_on(cfg->clk_dev, (clock_control_subsys_t *)&cfg->clk_cfg);
+	if (ret) {
+		LOG_ERR("failed to turn on spi clock %d", ret);
 		goto out;
 	}
 
@@ -541,6 +548,10 @@ static int transceive(const struct device *dev, const struct spi_config *config,
 #endif /* CONFIG_SPI_ITE_IT51XXX_FIFO_MODE */
 	pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
 
+	ret = clock_control_off(cfg->clk_dev, (clock_control_subsys_t *)&cfg->clk_cfg);
+	if (ret) {
+		LOG_ERR("failed to turn off spi clock %d", ret);
+	}
 out:
 	spi_context_release(ctx, ret);
 
@@ -714,12 +725,6 @@ static int spi_it51xxx_init(const struct device *dev)
 		return ret;
 	}
 
-	ret = clock_control_on(cfg->clk_dev, (clock_control_subsys_t *)&cfg->clk_cfg);
-	if (ret) {
-		LOG_ERR("failed to turn on spi clock %d", ret);
-		return ret;
-	}
-
 #ifdef CONFIG_SPI_ITE_IT51XXX_FIFO_MODE
 	/* set fifo base address */
 	LOG_INF("fifo base address 0x%x", (uint32_t)&data->fifo_data);
@@ -736,16 +741,6 @@ static int spi_it51xxx_init(const struct device *dev)
 	/* set fifo full interrupt */
 	sys_write8(FIFO_FULL_INT_STS, cfg->base + SPI0E_CTRL_4);
 	sys_write8(FIFO_FULL_INT_EN, cfg->base + SPI0E_CTRL_4);
-
-	if (cfg->irq_flags != IRQ_TYPE_LEVEL_HIGH) {
-		LOG_ERR("fifo mode only supports level-high-triggered");
-		return -ENOTSUP;
-	}
-#else
-	if (cfg->irq_flags != IRQ_TYPE_EDGE_RISING) {
-		LOG_ERR("pio mode only supports rising-edge-triggered");
-		return -ENOTSUP;
-	}
 #endif /* CONFIG_SPI_ITE_IT51XXX_FIFO_MODE */
 
 	ite_intc_irq_polarity_set(cfg->irq_no, cfg->irq_flags);
@@ -775,7 +770,16 @@ static DEVICE_API(spi, spi_it51xxx_driver_api) = {
 #endif
 };
 
+/* according to the it51xxx spi hardware design, high-level triggering
+ * is supported in fifo mode, while pio mode supports rising-edge
+ * triggering.
+ */
+#define SUPPORTED_INTERRUPT_FLAG                                                                   \
+	(IS_ENABLED(CONFIG_SPI_ITE_IT51XXX_FIFO_MODE) ? IRQ_TYPE_LEVEL_HIGH : IRQ_TYPE_EDGE_RISING)
+
 #define SPI_IT51XXX_INIT(n)                                                                        \
+	BUILD_ASSERT(DT_INST_IRQ(n, flags) == SUPPORTED_INTERRUPT_FLAG,                            \
+		     "unsupported interrupt flag");                                                \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
 	static void it51xxx_spi_config_func_##n(void)                                              \
 	{                                                                                          \

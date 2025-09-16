@@ -1,0 +1,69 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP PCA9422 PMIC.
+
+  The PCA9422 supports a charger and regulator function via i2c. These
+  devices have to be added to the Device Tree as children. While the
+  device itself has to be a child of i2c bus.
+
+  An example configuration:
+
+  &lpi2c15 {
+    status = "okay";
+    clock-frequency = <I2C_BITRATE_FAST>;
+    #address-cells = <1>;
+    #size-cells = <0>;
+    pinctrl-0 = <&pinmux_lpi2c15>;
+    pinctrl-names = "default";
+
+    pca9422: pca9422@61 {
+      compatible = "nxp,pca9422";
+      reg = <0x61>;
+      interrupts = <138 0>;
+
+      charger: pca9422_charger {
+        compatible = "nxp,pca9422-charger";
+        constant-charge-current-max-microamp = <100000>;
+        constant-charge-voltage-max-microvolt = <4200000>;
+        precharge-current-percent = <16>;
+        charge-termination-current-percent = <25>;
+        re-charge-threshold-microvolt = <100000>;
+        input-current-limit-microamp = <470000>;
+        system-voltage-min-threshold-microvolt = <4550000>;
+      };
+
+      regulators: pca9422_regulators {
+        compatible = "nxp,pca9422-regulator";
+        nxp,vsys-uvlo-sel-millivolt = <2700>;
+
+        pca9422_sw1: BUCK1 {
+          regulator-boot-on;
+          low-power-mode = "Normal";
+          enable-mode = "All";
+          nxp,active-microvolt = <1000000>;
+          nxp,sleep-microvolt = <600000>;
+          nxp,standby-microvolt = <1000000>;
+        };
+
+        pca9422_ldo1: LDO1 {
+          regulator-boot-on;
+          enable-mode = "All";
+          nxp,active-microvolt = <1800000>;
+          nxp,sleep-microvolt = <1800000>;
+          nxp,standby-microvolt = <1800000>;
+        };
+      };
+    };
+  };
+
+compatible: "nxp,pca9422"
+
+include: i2c-device.yaml
+
+properties:
+  reg:
+    required: true
+  interrupts:
+    required: true

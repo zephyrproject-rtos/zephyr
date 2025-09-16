@@ -311,7 +311,7 @@ for brevity, in real drivers they must be handled.
             * ACTIVE in cases of high throughput or unsolicitet data on the
             * bus, to avoid inefficient RESUME/SUSPEND cycles of the bus
             * for every transaction, and allowing reception of unsolicitet
-            * data on busses like UART.
+            * data on buses like UART.
             */
            (void)pm_device_runtime_put(config->bus);
            (void)pm_device_runtime_put(config->enable_pin.port);
@@ -511,7 +511,7 @@ used to move the device to the ``ACTIVE`` state through calling
 state, this results in a call to ``PM_DEVICE_ACTION_TURN_ON``
 followed by ``PM_DEVICE_ACTION_RESUME``.
 
-Given power domains and busses are "just devices", every power
+Given power domains and buses are "just devices", every power
 domain and bus will be resumed before its child devices as they
 are initialized according to the devicetree dependency ordinals.
 Every device is assumed to be powered, and the devices a device

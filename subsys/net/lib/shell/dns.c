@@ -5,6 +5,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdio.h>
+#include <strings.h>
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(net_shell);
 
@@ -31,21 +34,46 @@ static void dns_result_cb(enum dns_resolve_status status,
 #define MAX_STR_LEN CONFIG_DNS_RESOLVER_MAX_NAME_LEN
 		char str[MAX_STR_LEN + 1];
 
-		if (info->ai_family == AF_INET) {
+		switch (info->ai_family) {
+		case AF_INET:
 			net_addr_ntop(AF_INET,
 				      &net_sin(&info->ai_addr)->sin_addr,
 				      str, NET_IPV4_ADDR_LEN);
-		} else if (info->ai_family == AF_INET6) {
+			break;
+
+		case AF_INET6:
 			net_addr_ntop(AF_INET6,
 				      &net_sin6(&info->ai_addr)->sin6_addr,
 				      str, NET_IPV6_ADDR_LEN);
-		} else if (info->ai_family == AF_LOCAL) {
+			break;
+
+		case AF_LOCAL:
 			/* service discovery */
 			memset(str, 0, MAX_STR_LEN);
 			memcpy(str, info->ai_canonname,
 			       MIN(info->ai_addrlen, MAX_STR_LEN));
-		} else {
+			break;
+
+		case AF_UNSPEC:
+			if (info->ai_extension == DNS_RESOLVE_TXT) {
+				memset(str, 0, MAX_STR_LEN);
+				memcpy(str, info->ai_txt.text,
+				       MIN(info->ai_txt.textlen, MAX_STR_LEN));
+				break;
+			} else if (info->ai_extension == DNS_RESOLVE_SRV) {
+				snprintf(str, sizeof(str), "%d %d %d %.*s",
+					 info->ai_srv.priority,
+					 info->ai_srv.weight,
+					 info->ai_srv.port,
+					 (int)info->ai_srv.targetlen,
+					 info->ai_srv.target);
+				break;
+			}
+
+			/* fallthru */
+		default:
 			strncpy(str, "Invalid proto family", MAX_STR_LEN + 1);
+			break;
 		}
 
 		str[MAX_STR_LEN] = '\0';
@@ -210,6 +238,7 @@ static int cmd_net_dns_query(const struct shell *sh, size_t argc, char *argv[])
 
 #if defined(CONFIG_DNS_RESOLVER)
 #define DNS_TIMEOUT (MSEC_PER_SEC * 2) /* ms */
+	struct dns_resolve_context *ctx;
 	enum dns_query_type qtype = DNS_QUERY_TYPE_A;
 	char *host, *type = NULL;
 	int ret, arg = 1;
@@ -225,20 +254,38 @@ static int cmd_net_dns_query(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	if (type) {
-		if (strcmp(type, "A") == 0) {
+		if (strcasecmp(type, "A") == 0) {
 			qtype = DNS_QUERY_TYPE_A;
-			PR("IPv4 address type\n");
-		} else if (strcmp(type, "AAAA") == 0) {
+			PR("IPv4 address query type\n");
+		} else if (strcasecmp(type, "CNAME") == 0) {
+			qtype = DNS_QUERY_TYPE_CNAME;
+			PR("CNAME query type\n");
+		} else if (strcasecmp(type, "PTR") == 0) {
+			qtype = DNS_QUERY_TYPE_PTR;
+			PR("Pointer query type\n");
+		} else if (strcasecmp(type, "TXT") == 0) {
+			qtype = DNS_QUERY_TYPE_TXT;
+			PR("Text query type\n");
+		} else if (strcasecmp(type, "AAAA") == 0) {
 			qtype = DNS_QUERY_TYPE_AAAA;
-			PR("IPv6 address type\n");
+			PR("IPv6 address query type\n");
+		} else if (strcasecmp(type, "SRV") == 0) {
+			qtype = DNS_QUERY_TYPE_SRV;
+			PR("Service query type\n");
 		} else {
 			PR_WARNING("Unknown query type, specify either "
-				   "A or AAAA\n");
+				   "A, CNAME, PTR, TXT, AAAA, or SRV\n");
 			return -ENOEXEC;
 		}
 	}
 
-	ret = dns_get_addr_info(host, qtype, NULL, dns_result_cb,
+	ctx = dns_resolve_get_default();
+	if (!ctx) {
+		PR_WARNING("No default DNS context found.\n");
+		return -ENOEXEC;
+	}
+
+	ret = dns_resolve_name(ctx, host, qtype, NULL, dns_result_cb,
 				(void *)sh, DNS_TIMEOUT);
 	if (ret < 0) {
 		PR_WARNING("Cannot resolve '%s' (%d)\n", host, ret);

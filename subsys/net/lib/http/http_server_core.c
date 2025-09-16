@@ -276,8 +276,9 @@ static int accept_new_client(int server_fd)
 		return new_socket;
 	}
 
-	LOG_DBG("New client from %s:%d",
-		net_sprint_addr(sa.ss_family, &net_sin((struct sockaddr *)&sa)->sin_addr),
+	const char * const addrstr =
+		net_sprint_addr(sa.ss_family, &net_sin((struct sockaddr *)&sa)->sin_addr);
+	LOG_DBG("New client from %s:%d", addrstr != NULL ? addrstr : "<unknown>",
 		ntohs(net_sin((struct sockaddr *)&sa)->sin_port));
 
 	return new_socket;

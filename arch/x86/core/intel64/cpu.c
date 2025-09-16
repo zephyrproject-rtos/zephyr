@@ -13,6 +13,9 @@
 #include <zephyr/arch/x86/multiboot.h>
 #include <x86_mmu.h>
 #include <zephyr/drivers/interrupt_controller/loapic.h>
+#include <cet.h>
+#include <zephyr/arch/common/xip.h>
+#include <zephyr/arch/common/init.h>
 #ifdef CONFIG_ACPI
 #include <zephyr/arch/x86/cpuid.h>
 #include <zephyr/acpi/acpi.h>
@@ -41,6 +44,16 @@ x86_boot_arg_t x86_cpu_boot_arg;
 struct x86_cpuboot x86_cpuboot[] = {
 	LISTIFY(CONFIG_MP_MAX_NUM_CPUS, X86_CPU_BOOT_INIT, (,)),
 };
+
+#ifdef CONFIG_HW_SHADOW_STACK
+#define _CPU_IDX(n, _) n
+FOR_EACH(X86_INTERRUPT_SHADOW_STACK_DEFINE, (;),
+	 LISTIFY(CONFIG_MP_MAX_NUM_CPUS, _CPU_IDX, (,)));
+
+struct x86_interrupt_ssp_table issp_table[] = {
+	LISTIFY(CONFIG_MP_MAX_NUM_CPUS, X86_INTERRUPT_SSP_TABLE_INIT, (,)),
+};
+#endif
 
 /*
  * Send the INIT/STARTUP IPI sequence required to start up CPU 'cpu_num', which
@@ -105,8 +118,8 @@ FUNC_NORETURN void z_x86_cpu_init(struct x86_cpuboot *cpuboot)
 
 	if (cpuboot->cpu_id == 0U) {
 		/* Only need to do these once per boot */
-		z_bss_zero();
-		z_data_copy();
+		arch_bss_zero();
+		arch_data_copy();
 	}
 
 	z_loapic_enable(cpuboot->cpu_id);
@@ -121,6 +134,19 @@ FUNC_NORETURN void z_x86_cpu_init(struct x86_cpuboot *cpuboot)
 	/* Mask applied to RFLAGS when making a syscall */
 	z_x86_msr_write(X86_FMASK_MSR, EFLAGS_SYSCALL);
 #endif
+
+#ifdef CONFIG_X86_CET
+	z_x86_cet_enable();
+#ifdef CONFIG_X86_CET_IBT
+	z_x86_ibt_enable();
+#endif /* CONFIG_X86_CET_IBT */
+#ifdef CONFIG_HW_SHADOW_STACK
+	z_x86_setup_interrupt_ssp_table((uintptr_t)&issp_table[cpuboot->cpu_id]);
+	cpuboot->gs_base->shstk_addr = &issp_table[cpuboot->cpu_id].ist1;
+	cpuboot->gs_base->exception_shstk_addr = issp_table[cpuboot->cpu_id].ist7;
+#endif /* CONFIG_HW_SHADOW_STACK */
+
+#endif /* CONFIG_X86_CET */
 
 	/* Enter kernel, never return */
 	cpuboot->ready++;

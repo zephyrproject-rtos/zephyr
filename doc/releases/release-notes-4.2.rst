@@ -627,8 +627,6 @@ New Boards
 * NXP Semiconductors
 
    * :zephyr:board:`frdm_mcxa153` (``frdm_mcxa153``)
-   * :zephyr:board:`frdm_mcxa166` (``frdm_mcxa166``)
-   * :zephyr:board:`frdm_mcxa276` (``frdm_mcxa276``)
    * :zephyr:board:`imx943_evk` (``imx943_evk``)
    * :zephyr:board:`mcx_n9xx_evk` (``mcx_n9xx_evk``)
    * :zephyr:board:`s32k148_evb` (``s32k148_evb``)

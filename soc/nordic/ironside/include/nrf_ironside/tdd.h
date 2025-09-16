@@ -31,7 +31,8 @@ enum ironside_se_tdd_config {
  * @param config The configuration to be applied.
  *
  * @retval 0 on success.
- * @retval -IRONSIDE_SE_TDD_ERROR_EINVAL on invalid argument.
+ * @retval -IRONSIDE_SE_TDD_SERVICE_ERROR_INVALID_CONFIG if the configuration is invalid.
+ * @retval Positive error status if reported by IronSide call (see error codes in @ref call.h).
  */
 int ironside_se_tdd_configure(const enum ironside_se_tdd_config config);
 

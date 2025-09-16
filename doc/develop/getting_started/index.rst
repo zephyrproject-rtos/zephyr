@@ -260,8 +260,7 @@ chosen. You'll also install Zephyr's additional Python dependencies in a
 
             west zephyr-export
 
-      #. The Zephyr west extension command, ``west packages`` can be used to install Python
-         dependencies.
+      #. Install Python dependencies using ``west packages``.
 
          .. code-block:: bash
 
@@ -312,8 +311,7 @@ chosen. You'll also install Zephyr's additional Python dependencies in a
 
             west zephyr-export
 
-      #. The Zephyr west extension command, ``west packages`` can be used to install Python
-         dependencies.
+      #. Install Python dependencies using ``west packages``.
 
          .. code-block:: bash
 
@@ -380,8 +378,7 @@ chosen. You'll also install Zephyr's additional Python dependencies in a
 
             west zephyr-export
 
-      #. The Zephyr west extension command, ``west packages`` can be used to install Python
-         dependencies.
+      #. Install Python dependencies using ``west packages``.
 
          .. code-block:: bat
 

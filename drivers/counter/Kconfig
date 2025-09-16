@@ -70,6 +70,10 @@ source "drivers/counter/Kconfig.xec"
 
 source "drivers/counter/Kconfig.mcux_lptmr"
 
+source "drivers/counter/Kconfig.mcux_lpit"
+
+source "drivers/counter/Kconfig.mcux_ftm"
+
 source "drivers/counter/Kconfig.maxim_ds3231"
 
 source "drivers/counter/Kconfig.native_sim"

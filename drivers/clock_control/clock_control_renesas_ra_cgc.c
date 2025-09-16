@@ -101,7 +101,12 @@ static int clock_control_ra_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 	/* Call to HAL layer to initialize system clock and peripheral clock */
+#ifdef CONFIG_SOC_RA_SKIP_CLOCK_INIT
+	bsp_clock_freq_var_init();
+	SystemCoreClockUpdate();
+#else
 	bsp_clock_init();
+#endif /* CONFIG_SOC_RA_SKIP_CLOCK_INIT */
 	return 0;
 }
 

@@ -1,0 +1,15 @@
+identifier: apollo2_evb
+name: Apollo2 EVB
+type: mcu
+arch: arm
+ram: 256
+flash: 1024
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - uart
+testing:
+  ignore_tags:
+    - net
+vendor: ambiq

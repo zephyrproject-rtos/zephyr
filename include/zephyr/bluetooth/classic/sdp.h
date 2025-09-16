@@ -310,7 +310,7 @@ struct bt_sdp_record {
 	struct bt_sdp_attribute     *attrs;       /**< Base addr of attr array */
 	size_t                      attr_count;   /**< Number of attributes */
 	uint8_t                     index;        /**< Index of the record in LL */
-	struct bt_sdp_record        *next;        /**< Next service record */
+	sys_snode_t                 node;
 };
 
 /*
@@ -566,6 +566,30 @@ enum {
 	BT_SDP_DISCOVER_SERVICE_SEARCH_ATTR,
 };
 
+/** Initializes SDP attribute ID range */
+#define BT_SDP_ATTR_ID_RANGE(beginning, ending) {(beginning), (ending)}
+
+/**
+ * @brief SDP attribute ID range
+ *
+ * If the beginning attribute ID is same with the ending attribute ID, the range represents a
+ * single attribute ID.
+ */
+struct bt_sdp_attribute_id_range {
+	/** Beginning attribute ID of the range */
+	uint16_t beginning;
+	/** Ending attribute ID of the range */
+	uint16_t ending;
+};
+
+/** @brief SDP attribute ID list for Service Attribute and Service Search Attribute transactions */
+struct bt_sdp_attribute_id_list {
+	/** Count of the SDP attribute ID range */
+	size_t count;
+	/** Attribute ID range array list */
+	struct bt_sdp_attribute_id_range *ranges;
+};
+
 /** @brief Main user structure used in SDP discovery of remote. */
 struct bt_sdp_discover_params {
 	sys_snode_t _node;
@@ -581,6 +605,13 @@ struct bt_sdp_discover_params {
 	struct net_buf_pool *pool;
 	/** Discover type */
 	uint8_t type;
+	/**
+	 * Attribute ID list for Service Attribute and Service Search Attribute transactions
+	 *
+	 * If the `ids` is NULL or `ids->count` is 0, the default range `(0x0000, 0xffff)` will
+	 * be used.
+	 */
+	struct bt_sdp_attribute_id_list *ids;
 };
 
 /** @brief Allows user to start SDP discovery session.
@@ -604,12 +635,14 @@ struct bt_sdp_discover_params {
  *  Service Attribute:             The SDP Client generates an
  *                                 SDP_SERVICE_ATTR_REQ to retrieve specified
  *                                 attribute values from a specific service
- *                                 record (`params->handle`).
+ *                                 record (`params->handle`). The AttributeIDList
+ *                                 is specified by `params->ids`.
  *  Service Search Attribute:      The SDP Client generates an
  *                                 SDP_SERVICE_SEARCH_ATTR_REQ to retrieve
  *                                 specified attribute values that match the
  *                                 service search pattern (`params->uuid`)
  *                                 given as the first parameter of the PDU.
+ *                                 The AttributeIDList is specified by `params->ids`.
  *
  * @param conn Object identifying connection to remote.
  * @param params SDP discovery parameters.
@@ -639,6 +672,7 @@ int bt_sdp_discover_cancel(struct bt_conn *conn,
 /** @brief Protocols to be asked about specific parameters */
 enum bt_sdp_proto {
 	BT_SDP_PROTO_RFCOMM = 0x0003,
+	BT_SDP_PROTO_AVDTP  = 0x0019,
 	BT_SDP_PROTO_L2CAP  = 0x0100,
 };
 
@@ -702,6 +736,33 @@ int bt_sdp_get_profile_version(const struct net_buf *buf, uint16_t profile,
  *  @return 0 on success if feature found and valid, negative in case any error
  */
 int bt_sdp_get_features(const struct net_buf *buf, uint16_t *features);
+
+/** @brief Get Vendor ID
+ *
+ *  Helper API extracting remote Vendor ID. To get it proper
+ *  generic profile parameter needs to be selected usually listed in SDP
+ *  Interoperability Requirements section for given profile specification.
+ *
+ *  @param buf Buffer holding original raw record data from remote.
+ *  @param vendor_id On success populated by found Vendor ID.
+ *
+ *  @return 0 on success if vendor_id found and valid, negative in case any error
+ */
+int bt_sdp_get_vendor_id(const struct net_buf *buf, uint16_t *vendor_id);
+
+/** @brief Get Product ID
+ *
+ *  Helper API extracting remote Product ID. To get it proper
+ *  generic profile parameter needs to be selected usually listed in SDP
+ *  Interoperability Requirements section for given profile specification.
+ *
+ *  @param buf Buffer holding original raw record data from remote.
+ *  @param product_id On success populated by found Product ID.
+ *  mask.
+ *
+ *  @return 0 on success if product_id found and valid, negative in case any error
+ */
+int bt_sdp_get_product_id(const struct net_buf *buf, uint16_t *product_id);
 
 #ifdef __cplusplus
 }

@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import os
+from dataclasses import dataclass
 
 from west import log
 
@@ -14,27 +15,25 @@ from zspdx.writer import writeSPDX
 
 # SBOMConfig contains settings that will be passed along to the various
 # SBOM maker subcomponents.
+@dataclass(eq=True)
 class SBOMConfig:
-    def __init__(self):
-        super().__init__()
+    # prefix for Document namespaces; should not end with "/"
+    namespacePrefix: str = ""
 
-        # prefix for Document namespaces; should not end with "/"
-        self.namespacePrefix = ""
+    # location of build directory
+    buildDir: str = ""
 
-        # location of build directory
-        self.buildDir = ""
+    # location of SPDX document output directory
+    spdxDir: str = ""
 
-        # location of SPDX document output directory
-        self.spdxDir = ""
+    # SPDX specification version to use
+    spdxVersion: str = SPDX_VERSION_2_3
 
-        # SPDX specification version to use
-        self.spdxVersion = SPDX_VERSION_2_3
+    # should also analyze for included header files?
+    analyzeIncludes: bool = False
 
-        # should also analyze for included header files?
-        self.analyzeIncludes = False
-
-        # should also add an SPDX document for the SDK?
-        self.includeSDK = False
+    # should also add an SPDX document for the SDK?
+    includeSDK: bool = False
 
 
 # create Cmake file-based API directories and query file

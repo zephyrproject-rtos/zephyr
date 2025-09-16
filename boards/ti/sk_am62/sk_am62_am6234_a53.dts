@@ -8,6 +8,7 @@
 
 #include <ti/ti_am6234_a53.dtsi>
 #include "sk-am62_am6234_a53-pinctrl.dts"
+
 / {
 	model = "TI AM62X STARTER KIT (SK) EVALUATION MODULE (EVM)";
 	compatible = "ti,am62x_a53_sk";
@@ -19,7 +20,6 @@
 	};
 
 	cpus {
-
 		cpu@0 {
 			status = "okay";
 		};
@@ -42,7 +42,6 @@
 		reg = <0x82000000 DT_SIZE_M(1)>;
 	};
 };
-
 
 &uart0 {
 	current-speed = <115200>;

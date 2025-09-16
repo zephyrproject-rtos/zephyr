@@ -57,7 +57,6 @@ tests:
   drivers.flash.common.no_explicit_erase:
     platform_allow:
       - nrf54l15dk/nrf54l05/cpuapp
-      - nrf54l09pdk/nrf54l09/cpuapp
       - nrf54l15dk/nrf54l10/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54h20dk/nrf54h20/cpuapp
@@ -118,12 +117,14 @@ tests:
     platform_allow:
       - xg24_rb4187c
       - xg29_rb4412a
+      - bg29_rb4420a
     extra_configs:
       - CONFIG_DMA=y
   drivers.flash.common.silabs.dma.lpwrite:
     platform_allow:
       - xg24_rb4187c
       - xg29_rb4412a
+      - bg29_rb4420a
     extra_configs:
       - CONFIG_DMA=y
     extra_args:
@@ -132,6 +133,7 @@ tests:
     platform_allow:
       - xg24_rb4187c
       - xg29_rb4412a
+      - bg29_rb4420a
     extra_configs:
       - CONFIG_DMA=y
       - CONFIG_SOC_FLASH_SILABS_S2_DMA_READ=y
@@ -154,6 +156,8 @@ tests:
       - nrf5340dk/nrf5340/cpuapp
   drivers.flash.common.disable_spi_nor:
     filter: dt_compat_enabled("soc-nv-flash") and dt_compat_enabled("jedec,spi-nor")
+    platform_exclude:
+      - beagleconnect_freedom/cc1352p7
     extra_args:
       - CONFIG_SPI_NOR=n
   drivers.flash.common.ra_ospi_b_nor:
@@ -168,3 +172,13 @@ tests:
       - nrf54h20dk/nrf54h20/cpuapp
     extra_args:
       - EXTRA_DTC_OVERLAY_FILE=boards/mx25uw63_single_io.overlay
+  drivers.flash.common.ra_qspi_nor:
+    filter: CONFIG_FLASH_RENESAS_RA_QSPI and dt_compat_enabled("renesas,ra-qspi-nor")
+    platform_allow:
+      - ek_ra6m5
+      - ek_ra6m4
+      - ek_ra6m3
+      - ek_ra6e2
+    extra_args:
+      - DTC_OVERLAY_FILE="./boards/${BOARD}_qspi_nor.overlay"
+      - CONF_FILE="./prj.conf ./boards/${BOARD}_qspi_nor.conf"

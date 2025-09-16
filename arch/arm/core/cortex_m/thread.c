@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2013-2014 Wind River Systems, Inc.
  * Copyright (c) 2021 Lexmark International, Inc.
- * Copyright (c) 2023 Arm Limited
+ * Copyright (c) 2023, 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,11 +15,12 @@
  */
 
 #include <zephyr/kernel.h>
+#include <kernel_internal.h>
 #include <zephyr/llext/symbol.h>
-#include <ksched.h>
 #include <zephyr/sys/barrier.h>
 #include <stdbool.h>
 #include <cmsis_core.h>
+#include <zephyr/random/random.h>
 
 #if (MPU_GUARD_ALIGN_AND_SIZE_FLOAT > MPU_GUARD_ALIGN_AND_SIZE)
 #define FP_GUARD_EXTRA_SIZE (MPU_GUARD_ALIGN_AND_SIZE_FLOAT - MPU_GUARD_ALIGN_AND_SIZE)
@@ -121,6 +122,12 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack, char *sta
 #if defined(CONFIG_USERSPACE)
 	thread->arch.priv_stack_start = 0;
 #endif
+#endif
+#ifdef CONFIG_ARM_PAC_PER_THREAD
+	/* Generate PAC key and save it in thread context to be set later
+	 * when the thread is actually switched in
+	 */
+	sys_csrand_get(&thread->arch.pac_keys, sizeof(struct pac_keys));
 #endif
 	/*
 	 * initial values in all other registers/thread entries are
@@ -541,6 +548,9 @@ void arch_switch_to_main_thread(struct k_thread *main_thread, char *stack_ptr,
 #endif
 #endif /* CONFIG_BUILTIN_STACK_GUARD */
 
+#ifdef CONFIG_ARM_PAC_PER_THREAD
+	__set_PAC_KEY_P((uint32_t *)&main_thread->arch.pac_keys);
+#endif
 	/*
 	 * Set PSP to the highest address of the main stack
 	 * before enabling interrupts and jumping to main.
@@ -569,7 +579,9 @@ void arch_switch_to_main_thread(struct k_thread *main_thread, char *stack_ptr,
 			 /* We don’t intend to return, so there is no need to link. */
 			 "bx    r4\n"
 			 /* Force a literal pool placement for the addresses referenced above */
+#ifndef __IAR_SYSTEMS_ICC__
 			 ".ltorg\n"
+#endif
 			 :
 			 : "r"(_main), "r"(stack_ptr)
 			 : "r0", "r1", "r2", "r3", "r4", "ip", "lr", "memory");
@@ -637,7 +649,9 @@ FUNC_NORETURN void z_arm_switch_to_main_no_multithreading(k_thread_entry_t main_
 		"blx r0\n"
 		"loop: b loop\n\t" /* while (true); */
 		/* Force a literal pool placement for the addresses referenced above */
+#ifndef __IAR_SYSTEMS_ICC__
 		".ltorg\n"
+#endif
 		:
 		: [_p1] "r"(p1), [_p2] "r"(p2), [_p3] "r"(p3), [_psp] "r"(psp),
 		  [_main_entry] "r"(main_entry)
@@ -645,7 +659,7 @@ FUNC_NORETURN void z_arm_switch_to_main_no_multithreading(k_thread_entry_t main_
 			  ,
 		  [_psplim] "r"(psplim)
 #endif
-		: "r0", "r1", "r2", "ip", "lr");
+		: "r0", "r1", "r2", "ip", "lr", "memory");
 
 	CODE_UNREACHABLE; /* LCOV_EXCL_LINE */
 }

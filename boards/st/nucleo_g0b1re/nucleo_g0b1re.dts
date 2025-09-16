@@ -105,7 +105,7 @@ zephyr_udc0: &usb {
 };
 
 &rtc {
-	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000400>,
+	clocks = <&rcc STM32_CLOCK(APB1, 10)>,
 		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
 	status = "okay";
 };
@@ -183,7 +183,7 @@ zephyr_udc0: &usb {
 };
 
 &fdcan1 {
-	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00001000>,
+	clocks = <&rcc STM32_CLOCK(APB1, 12)>,
 		 <&rcc STM32_SRC_PLL_Q FDCAN_SEL(1)>;
 	pinctrl-0 = <&fdcan1_rx_pa11 &fdcan1_tx_pa12>;
 	pinctrl-names = "default";
@@ -191,7 +191,7 @@ zephyr_udc0: &usb {
 };
 
 &fdcan2 {
-	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00001000>,
+	clocks = <&rcc STM32_CLOCK(APB1, 12)>,
 		 <&rcc STM32_SRC_PLL_Q FDCAN_SEL(1)>;
 	pinctrl-0 = <&fdcan2_rx_pb0 &fdcan2_tx_pb1>;
 	pinctrl-names = "default";
@@ -229,7 +229,7 @@ zephyr_udc0: &usb {
 };
 
 stm32_lp_tick_source: &lptim1 {
-	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x80000000>,
+	clocks = <&rcc STM32_CLOCK(APB1, 31)>,
 		 <&rcc STM32_SRC_LSI LPTIM1_SEL(1)>;
 	status = "okay";
 };

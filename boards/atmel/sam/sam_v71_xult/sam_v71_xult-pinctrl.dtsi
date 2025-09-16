@@ -83,6 +83,7 @@
 				 <PA3A_TWI0_TWD>;
 		};
 	};
+
 	twihs2_default: twihs2_default {
 		group1 {
 			pinmux = <PD28C_TWI2_TWCK>,
@@ -96,58 +97,68 @@
 				 <PD30A_UART3_TXD>;
 		};
 	};
+
 	uart4_default: uart4_default {
 		group1 {
 			pinmux = <PD19C_UART4_TXD>,
 				 <PD18C_UART4_RXD>;
 		};
 	};
+
 	usart0_default: usart0_default {
 		group1 {
 			pinmux = <PB0C_USART0_RXD>,
 				 <PB1C_USART0_TXD>;
 		};
 	};
+
 	usart0_hw_ctrl_flow: usart0_hw_ctrl_flow {
 		group1 {
 			pinmux = <PB0C_USART0_RXD>,
 				 <PB3C_USART0_RTS>;
 			bias-pull-up;
 		};
+
 		group2 {
 			pinmux = <PB1C_USART0_TXD>,
 				 <PB2C_USART0_CTS>;
 		};
 	};
+
 	usart1_default: usart1_default {
 		group1 {
 			pinmux = <PA21A_USART1_RXD>,
 				 <PB4D_USART1_TXD>;
 		};
 	};
+
 	usart1_hw_ctrl_flow: usart1_hw_ctrl_flow {
 		group1 {
 			pinmux = <PA21A_USART1_RXD>,
 				 <PA24A_USART1_RTS>;
 			bias-pull-up;
 		};
+
 		group2 {
 			pinmux = <PB4D_USART1_TXD>,
 				 <PA25A_USART1_CTS>;
 		};
 	};
+
 	usart2_default: usart2_default {
 		group1 {
 			pinmux = <PD15B_USART2_RXD>,
 				 <PD16B_USART2_TXD>;
 		};
 	};
+
 	usart2_hw_ctrl_flow: usart2_hw_ctrl_flow_clk {
 		group1 {
 			pinmux = <PD15B_USART2_RXD>,
 				 <PD18B_USART2_RTS>;
 			bias-pull-up;
 		};
+
 		group2 {
 			pinmux = <PD16B_USART2_TXD>,
 				 <PD19B_USART2_CTS>;

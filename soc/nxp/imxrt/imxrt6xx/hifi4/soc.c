@@ -13,7 +13,7 @@
 
 __weak void mimxrt685s_hifi4_irq_init(void)
 {
-	/**
+	/*
 	 * IRQ assignments
 	 *
 	 * L1: (lowest priority)

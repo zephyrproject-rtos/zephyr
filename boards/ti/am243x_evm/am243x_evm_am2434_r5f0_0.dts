@@ -39,14 +39,14 @@
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0xa0100000 DT_SIZE_K(4)>;
 		zephyr,memory-region = "RSC_TABLE";
-		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
 	};
 
 	ipc_shm0: memory@a5000000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0xa5000000 DT_SIZE_M(8)>;
 		zephyr,memory-region = "IPC_SHM";
-		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_IO) )>;
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_IO)>;
 	};
 
 	ipc0: ipc {

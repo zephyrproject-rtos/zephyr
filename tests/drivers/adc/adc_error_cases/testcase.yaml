@@ -12,3 +12,7 @@ tests:
       - nrf54lm20dk/nrf54lm20a/cpuapp
       - nrf54h20dk/nrf54h20/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
+      - xg24_rb4187c
+      - xg27_dk2602a
+      - xg29_rb4412a
+      - bg29_rb4420a

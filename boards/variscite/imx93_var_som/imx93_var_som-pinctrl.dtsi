@@ -11,7 +11,7 @@
 	uart1_default: uart1_default {
 		group0 {
 			pinmux = <&iomuxc1_uart1_rxd_lpuart_rx_lpuart1_rx>,
-				<&iomuxc1_uart1_txd_lpuart_tx_lpuart1_tx>;
+				 <&iomuxc1_uart1_txd_lpuart_tx_lpuart1_tx>;
 			bias-pull-up;
 			slew-rate = "slightly_fast";
 			drive-strength = "x5";
@@ -21,7 +21,7 @@
 	uart7_default: uart7_default {
 		group0 {
 			pinmux = <&iomuxc1_gpio_io09_lpuart_rx_lpuart7_rx>,
-				<&iomuxc1_gpio_io08_lpuart_tx_lpuart7_tx>;
+				 <&iomuxc1_gpio_io08_lpuart_tx_lpuart7_tx>;
 			bias-pull-up;
 			slew-rate = "slightly_fast";
 			drive-strength = "x5";

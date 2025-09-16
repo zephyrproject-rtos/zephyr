@@ -30,7 +30,7 @@
 		zephyr,code-cpu1-partition = &slot1_partition;
 	};
 
-	aliases{
+	aliases {
 		watchdog0 = &wwdt0;
 		pwm-0 = &flexpwm1_pwm0;
 		pwm-1 = &sc_timer;
@@ -138,10 +138,12 @@
 
 &w25q64jwtbjq {
 	status = "okay";
+
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+
 		storage_partition: partition@0 {
 			label = "storage";
 			reg = <0x0 DT_SIZE_M(8)>;
@@ -183,6 +185,7 @@
 
 &usdhc0 {
 	status = "okay";
+
 	sdmmc {
 		compatible = "zephyr,sdmmc-disk";
 		disk-name = "SD";

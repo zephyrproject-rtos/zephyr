@@ -12,7 +12,39 @@ properties:
   column-offset:
     type: int
     required: true
-    description: First visible column number.
+    description: First visible column number. Number used is unintuitive,
+      try aligning driver display sample to figure it out.
+
+  oscillator-freq:
+    type: int
+    required: true
+    description: Front clock divider (3:0) / oscillator frequency (7:4). It can be set to 0x0.
+      If you get weird scanlines, increase oscillator frequency and play with phase length values,
+      for example set this to 0x90. Note this increases power consumption. A good starting value
+      for SSD1322 is 0x91.
+
+  precharge-voltage:
+    type: int
+    required: true
+    description: Set precharge voltage, from 0 (0.2 x VCC) to 0x1F (0.6x VCC).
+      Try highest value then go down.
+
+  vcomh-voltage:
+    type: int
+    required: true
+    description: Set COM deselect voltage, from 0 (0.72 x VCC) to 0x7 (0.86 x VCC).
+      Try highest value then go down.
+
+  mux-ratio:
+    type: int
+    required: true
+    description: COM Pin Multiplex ratio from 15-127. Typically height - 1.
+
+  phase-length:
+    type: int
+    required: true
+    description: Phase Length for segment charging (7:4) and discharging (3:0).
+      On SSD1322, 0xE2 is a good start value.
 
   row-offset:
     type: int
@@ -28,12 +60,11 @@ properties:
       Starting line address of display ram (0-127).
       The default corresponds to the reset value of the register.
 
-  mux-ratio:
+  precharge-period:
     type: int
-    default: 128
-    description: |
-      COM Pin Multiplex ratio from 16-128.
-      The default corresponds to the reset value of the register.
+    default: 8
+    description: Second precharge period, from 0 (0 dclk) to 0xF (15 dclks).
+      8 is the reset value.
 
   remap-row-first:
     type: boolean
@@ -58,6 +89,14 @@ properties:
   remap-com-dual:
     type: boolean
     description: Dual COM mode.
+
+  grayscale-enhancement:
+    type: boolean
+    description: Enable grayscale enhancement on some displays, partially undocumented.
+
+  inversion-on:
+    type: boolean
+    description: Turn on display color inverting
 
   segments-per-pixel:
     type: int

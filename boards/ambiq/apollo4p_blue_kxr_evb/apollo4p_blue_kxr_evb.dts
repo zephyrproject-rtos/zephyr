@@ -31,14 +31,17 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led0: led_0 {
 			gpios = <&gpio0_31 30 GPIO_ACTIVE_LOW>;
 			label = "LED 0";
 		};
+
 		led1: led_1 {
 			gpios = <&gpio0_31 16 GPIO_ACTIVE_LOW>;
 			label = "LED 1";
 		};
+
 		led2: led_2 {
 			gpios = <&gpio64_95 27 GPIO_ACTIVE_LOW>;
 			label = "LED 2";
@@ -48,12 +51,14 @@
 	buttons {
 		compatible = "gpio-keys";
 		polling-mode;
+
 		button0: button_0 {
 			gpios = <&gpio0_31 17 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "BTN0";
 			zephyr,code = <INPUT_KEY_0>;
 			status = "okay";
 		};
+
 		button1: button_1 {
 			gpios = <&gpio0_31 19 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "BTN1";
@@ -65,6 +70,7 @@
 	pwmleds: pwmleds {
 		compatible = "pwm-leds";
 		status = "disabled";
+
 		pwm_led0: pwm_led_0 {
 			pwms = <&pwm2 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 			label = "PWM_LED";
@@ -177,8 +183,8 @@
 };
 
 zephyr_udc0: &usb {
-	vddusb33-gpios = <&gpio0_31 13 (GPIO_PULL_UP)>;
-	vddusb0p9-gpios = <&gpio0_31 15 (GPIO_PULL_UP)>;
+	vddusb33-gpios = <&gpio0_31 13 GPIO_PULL_UP>;
+	vddusb0p9-gpios = <&gpio0_31 15 GPIO_PULL_UP>;
 	status = "okay";
 };
 

@@ -168,3 +168,10 @@ macro(toolchain_ld_relocation)
 	${ZEPHYR_BASE}/kernel/include ${ARCH_DIR}/${ARCH}/include)
   target_link_libraries(code_relocation_source_lib zephyr_interface)
 endmacro()
+
+# Function to map compiler flags into suitable linker flags
+# When using the compiler driver to run the linker, just pass
+# them all through
+function(toolchain_linker_add_compiler_options)
+  add_link_options(${ARGV})
+endfunction()

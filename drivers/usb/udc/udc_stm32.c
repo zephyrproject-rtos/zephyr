@@ -67,6 +67,17 @@ LOG_MODULE_REGISTER(udc_stm32, CONFIG_UDC_DRIVER_LOG_LEVEL);
 #define USB_USBPHYC_CR_FSEL_24MHZ        USB_USBPHYC_CR_FSEL_1
 #endif
 
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs) && defined(CONFIG_SOC_SERIES_STM32U5X)
+static const int syscfg_otg_hs_phy_clk[] = {
+	SYSCFG_OTG_HS_PHY_CLK_SELECT_1,	/* 16Mhz   */
+	SYSCFG_OTG_HS_PHY_CLK_SELECT_2,	/* 19.2Mhz */
+	SYSCFG_OTG_HS_PHY_CLK_SELECT_3,	/* 20Mhz   */
+	SYSCFG_OTG_HS_PHY_CLK_SELECT_4,	/* 24Mhz   */
+	SYSCFG_OTG_HS_PHY_CLK_SELECT_5,	/* 26Mhz   */
+	SYSCFG_OTG_HS_PHY_CLK_SELECT_6,	/* 32Mhz   */
+};
+#endif
+
 struct udc_stm32_data  {
 	PCD_HandleTypeDef pcd;
 	const struct device *dev;
@@ -132,6 +143,7 @@ void HAL_PCD_ResetCallback(PCD_HandleTypeDef *hpcd)
 				EP_TYPE_CTRL);
 	}
 
+	udc_set_suspended(dev, false);
 	udc_submit_event(priv->dev, UDC_EVT_RESET, 0);
 }
 
@@ -750,6 +762,9 @@ static int udc_stm32_host_wakeup(const struct device *dev)
 		return -EIO;
 	}
 
+	udc_set_suspended(dev, false);
+	udc_submit_event(dev, UDC_EVT_RESUME, 0);
+
 	return 0;
 }
 
@@ -1059,7 +1074,9 @@ static int priv_clock_enable(void)
 
 	/* Set the OTG PHY reference clock selection (through SYSCFG) block */
 	LL_APB3_GRP1_EnableClock(LL_APB3_GRP1_PERIPH_SYSCFG);
-	HAL_SYSCFG_SetOTGPHYReferenceClockSelection(SYSCFG_OTG_HS_PHY_CLK_SELECT_1);
+	HAL_SYSCFG_SetOTGPHYReferenceClockSelection(
+		syscfg_otg_hs_phy_clk[DT_ENUM_IDX(DT_NODELABEL(otghs_phy), clock_reference)]
+	);
 	/* Configuring the SYSCFG registers OTG_HS PHY : OTG_HS PHY enable*/
 	HAL_SYSCFG_EnableOTGPHY(SYSCFG_OTG_HS_PHY_ENABLE);
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_otghs)

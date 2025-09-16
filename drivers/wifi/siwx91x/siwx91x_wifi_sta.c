@@ -107,55 +107,6 @@ sl_status_t siwx91x_wifi_module_stats_event_handler(sl_wifi_event_t event, void 
 	return 0;
 }
 
-static enum wifi_mfp_options siwx91x_set_sta_mfp_option(sl_wifi_security_t security,
-							enum wifi_mfp_options mfp_conf)
-{
-	uint8_t join_config;
-
-	switch (security) {
-	case SL_WIFI_OPEN:
-	case SL_WIFI_WPA:
-		return WIFI_MFP_DISABLE;
-	case SL_WIFI_WPA2:
-	case SL_WIFI_WPA_WPA2_MIXED:
-		if (mfp_conf == WIFI_MFP_REQUIRED) {
-			/* Handling the case for WPA2_SHA256 security type */
-			/* Directly enabling the MFP Required bit in the Join Feature
-			 * bitmap. This ensures that MFP is enforced for connections using
-			 * WPA2_SHA256.
-			 *
-			 * Note: This is a workaround to configure MFP as the current SDK
-			 * does not provide a dedicated API to configure MFP settings.
-			 * By manipulating the join feature bitmap directly, we achieve
-			 * the desired MFP configuration for enhanced security.
-			 *
-			 * This case will be updated in the future when the SDK adds
-			 * dedicated support for configuring MFP.
-			 */
-			sl_si91x_get_join_configuration(SL_WIFI_CLIENT_INTERFACE, &join_config);
-			join_config |= SL_SI91X_JOIN_FEAT_MFP_CAPABLE_REQUIRED;
-			sl_si91x_set_join_configuration(SL_WIFI_CLIENT_INTERFACE, join_config);
-			return WIFI_MFP_REQUIRED;
-		}
-		/* Handling the case for WPA2 security type */
-		/* Ensuring the connection happened in WPA2-PSK
-		 * by clearing the MFP Required bit in the Join Feature bitmap.
-		 */
-		sl_si91x_get_join_configuration(SL_WIFI_CLIENT_INTERFACE, &join_config);
-		join_config &= ~(SL_SI91X_JOIN_FEAT_MFP_CAPABLE_REQUIRED);
-		sl_si91x_set_join_configuration(SL_WIFI_CLIENT_INTERFACE, join_config);
-		return WIFI_MFP_OPTIONAL;
-	case SL_WIFI_WPA3:
-		return WIFI_MFP_REQUIRED;
-	case SL_WIFI_WPA3_TRANSITION:
-		return WIFI_MFP_OPTIONAL;
-	default:
-		return WIFI_MFP_DISABLE;
-	}
-
-	return WIFI_MFP_UNKNOWN;
-}
-
 unsigned int siwx91x_on_join(sl_wifi_event_t event,
 			     char *result, uint32_t result_size, void *arg)
 {
@@ -252,7 +203,6 @@ int siwx91x_connect(const struct device *dev, struct wifi_connect_req_params *pa
 		.credential_id = SL_NET_DEFAULT_WIFI_CLIENT_CREDENTIAL_ID,
 	};
 	struct siwx91x_dev *sidev = dev->data;
-	enum wifi_mfp_options mfp_conf;
 	int ret;
 
 	if (sidev->state == WIFI_STATE_COMPLETED) {
@@ -320,15 +270,14 @@ int siwx91x_connect(const struct device *dev, struct wifi_connect_req_params *pa
 		return -EINVAL;
 	}
 
-	if (params->security == WIFI_SECURITY_TYPE_PSK_SHA256) {
-		mfp_conf = siwx91x_set_sta_mfp_option(wifi_config.security, WIFI_MFP_REQUIRED);
-	} else {
-		mfp_conf = siwx91x_set_sta_mfp_option(wifi_config.security, params->mfp);
-	}
-
-	if (params->mfp != mfp_conf) {
-		LOG_WRN("Needed MFP %s but got MFP %s, hence setting to MFP %s",
-			wifi_mfp_txt(mfp_conf), wifi_mfp_txt(params->mfp), wifi_mfp_txt(mfp_conf));
+	/* The Zephyr mfp values match the values expected by
+	 * Wiseconnect's mfp, even though the enum type differs.
+	 */
+	ret = sl_wifi_set_mfp(interface, (sl_wifi_mfp_mode_t)params->mfp);
+	if (ret != SL_STATUS_OK) {
+		LOG_ERR("Failed to set MFP: 0x%x", ret);
+		wifi_mgmt_raise_connect_result_event(sidev->iface, WIFI_STATUS_CONN_FAIL);
+		return -EINVAL;
 	}
 
 	if (params->channel != WIFI_CHANNEL_ANY) {

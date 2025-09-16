@@ -88,7 +88,7 @@ extern "C" {
 	(((~0ULL) - (1ULL << (l)) + 1) & (~0ULL >> (BITS_PER_LONG_LONG - 1 - (h))))
 
 /** @brief 0 if @p cond is true-ish; causes a compile error otherwise. */
-#define ZERO_OR_COMPILE_ERROR(cond) ((int) sizeof(char[1 - 2 * !(cond)]) - 1)
+#define ZERO_OR_COMPILE_ERROR(cond) ((int) sizeof(char[1 - (2 * !(cond))]) - 1)
 
 #if defined(__cplusplus)
 
@@ -433,6 +433,22 @@ extern "C" {
 #define IN_RANGE(val, min, max) ((val) >= (min) && (val) <= (max))
 
 /**
+ * Find number of contiguous bits which are not set in the bit mask (32 bits).
+ *
+ * It is possible to return immediately when requested number of bits is found or
+ * iterate over whole mask and return the best fit (smallest from available options).
+ *
+ * @param[in] mask 32 bit mask.
+ * @param[in] num_bits Number of bits to find.
+ * @param[in] total_bits Total number of LSB bits that can be used in the mask.
+ * @param[in] first_match If true returns when first match is found, else returns the best fit.
+ *
+ * @retval -1 Contiguous bits not found.
+ * @retval non-negative Starting index of the bits group.
+ */
+int bitmask_find_gap(uint32_t mask, size_t num_bits, size_t total_bits, bool first_match);
+
+/**
  * @brief Is @p x a power of two?
  * @param x value to check
  * @return true if @p x is a power of two, false otherwise
@@ -645,49 +661,6 @@ static inline int64_t sign_extend_64(uint64_t value, uint8_t index)
 	return (int64_t)(value << shift) >> shift;
 }
 
-/**
- * @brief Properly truncate a NULL-terminated UTF-8 string
- *
- * Take a NULL-terminated UTF-8 string and ensure that if the string has been
- * truncated (by setting the NULL terminator) earlier by other means, that
- * the string ends with a properly formatted UTF-8 character (1-4 bytes).
- *
- * Example:
- *
- * @code{.c}
- *      char test_str[] = "€€€";
- *      char trunc_utf8[8];
- *
- *      printf("Original : %s\n", test_str); // €€€
- *      strncpy(trunc_utf8, test_str, sizeof(trunc_utf8));
- *      trunc_utf8[sizeof(trunc_utf8) - 1] = '\0';
- *      printf("Bad      : %s\n", trunc_utf8); // €€�
- *      utf8_trunc(trunc_utf8);
- *      printf("Truncated: %s\n", trunc_utf8); // €€
- * @endcode
- *
- * @param utf8_str NULL-terminated string
- *
- * @return Pointer to the @p utf8_str
- */
-char *utf8_trunc(char *utf8_str);
-
-/**
- * @brief Copies a UTF-8 encoded string from @p src to @p dst
- *
- * The resulting @p dst will always be NULL terminated if @p n is larger than 0,
- * and the @p dst string will always be properly UTF-8 truncated.
- *
- * @param dst The destination of the UTF-8 string.
- * @param src The source string
- * @param n   The size of the @p dst buffer. Maximum number of characters copied
- *            is @p n - 1. If 0 nothing will be done, and the @p dst will not be
- *            NULL terminated.
- *
- * @return Pointer to the @p dst
- */
-char *utf8_lcpy(char *dst, const char *src, size_t n);
-
 #define __z_log2d(x) (32 - __builtin_clz(x) - 1)
 #define __z_log2q(x) (64 - __builtin_clzll(x) - 1)
 #define __z_log2(x) (sizeof(__typeof__(x)) > 4 ? __z_log2q(x) : __z_log2d(x))
@@ -817,6 +790,41 @@ static inline bool util_memeq(const void *m1, const void *m2, size_t n)
 static inline bool util_eq(const void *m1, size_t len1, const void *m2, size_t len2)
 {
 	return len1 == len2 && (m1 == m2 || util_memeq(m1, m2, len1));
+}
+
+/**
+ * @brief Returns the number of bits set in a value
+ *
+ * @param value The value to count number of bits set of
+ * @param len The number of octets in @p value
+ */
+static inline size_t sys_count_bits(const void *value, size_t len)
+{
+	size_t cnt = 0U;
+	size_t i = 0U;
+
+#ifdef POPCOUNT
+	for (; i < len / sizeof(unsigned int); i++) {
+		unsigned int val;
+		(void)memcpy(&val, (const uint8_t *)value + i * sizeof(unsigned int),
+			     sizeof(unsigned int));
+
+		cnt += POPCOUNT(val);
+	}
+	i *= sizeof(unsigned int); /* convert to a uint8_t index for the remainder (if any) */
+#endif
+
+	for (; i < len; i++) {
+		uint8_t value_u8 = ((const uint8_t *)value)[i];
+
+		/* Implements Brian Kernighan’s Algorithm to count bits */
+		while (value_u8) {
+			value_u8 &= (value_u8 - 1);
+			cnt++;
+		}
+	}
+
+	return cnt;
 }
 
 #ifdef __cplusplus

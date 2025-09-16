@@ -22,16 +22,6 @@ config XTENSA_RESET_VECTOR
 	  This is always needed for the simulator. Real boards may already
 	  implement this in boot ROM.
 
-config XTENSA_GEN_HANDLERS
-	bool "Automatically generate interrupt handlers"
-	default n
-	help
-	  When set, an "xtensa_handlers.h" file is generated
-	  containing definitions for the interrupt entry code of the
-	  target Xtensa core, based automatically on the details in
-	  the core-isa.h file.  This replaces the previous scheme
-	  where a _soc_inthandlers.h file would be generated offline.
-
 config XTENSA_USE_CORE_CRT1
 	bool "Use crt1.S from core"
 	default y
@@ -109,6 +99,13 @@ config XTENSA_BREAK_ON_UNRECOVERABLE_EXCEPTIONS
 	  Use BREAK instruction when unrecoverable exceptions are
 	  encountered. This requires a debugger attached to catch
 	  the BREAK.
+
+config XTENSA_EXCEPTION_ENTER_GDB
+	bool "Start the GDB stub when an exception is hit"
+	depends on GDBSTUB
+	help
+	  When an exception like invalid address access or division by zero is
+	  hit, enter the GDB stub.
 
 menu "Xtensa HiFi Options"
 

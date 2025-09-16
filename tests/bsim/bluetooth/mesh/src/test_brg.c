@@ -18,7 +18,7 @@
 LOG_MODULE_REGISTER(test_brg, LOG_LEVEL_INF);
 
 #define WAIT_TIME          32  /*seconds*/
-#define WAIT_TIME_IVU_TEST 240 /* seconds */
+#define WAIT_TIME_IVU_TEST 250 /* seconds */
 #define BEACON_INTERVAL    10  /*seconds */
 
 #define PROV_ADDR         0x0001

@@ -291,7 +291,7 @@ static int modbus_rtu_rx_adu(struct modbus_context *ctx)
 	return 0;
 }
 
-static void rtu_tx_adu(struct modbus_context *ctx)
+static void modbus_rtu_tx_adu(struct modbus_context *ctx)
 {
 	struct modbus_serial_config *cfg = ctx->cfg;
 	uint16_t tx_bytes = 0;
@@ -560,7 +560,7 @@ int modbus_serial_tx_adu(struct modbus_context *ctx)
 {
 	switch (ctx->mode) {
 	case MODBUS_MODE_RTU:
-		rtu_tx_adu(ctx);
+		modbus_rtu_tx_adu(ctx);
 		return 0;
 	case MODBUS_MODE_ASCII:
 		if (IS_ENABLED(CONFIG_MODBUS_ASCII_MODE)) {
@@ -600,6 +600,11 @@ int modbus_serial_init(struct modbus_context *ctx,
 		if (configure_uart(ctx, &param) != 0) {
 			return -EINVAL;
 		}
+	}
+
+	if (param.serial.baud == 0) {
+		LOG_ERR("Baudrate is 0");
+		return -EINVAL;
 	}
 
 	if (param.serial.baud <= 38400) {

@@ -357,6 +357,31 @@ static ZTEST_F(cap_initiator_test_unicast_group, test_initiator_unicast_group_fo
 	zassert_equal(cnt, expect_cnt, "Unexpected cnt (%zu != %zu)", cnt, expect_cnt);
 }
 
+static bool unicast_group_foreach_stream_return_early_cb(struct bt_cap_stream *stream,
+							 void *user_data)
+{
+	size_t *cnt = user_data;
+
+	(*cnt)++;
+
+	return true;
+}
+
+static ZTEST_F(cap_initiator_test_unicast_group,
+	       test_initiator_unicast_group_foreach_stream_return_early)
+{
+	size_t cnt = 0U;
+	int err;
+
+	err = bt_cap_unicast_group_create(fixture->group_param, &fixture->unicast_group);
+	zassert_equal(err, 0, "Unexpected return value %d", err);
+
+	err = bt_cap_unicast_group_foreach_stream(
+		fixture->unicast_group, unicast_group_foreach_stream_return_early_cb, &cnt);
+	zassert_equal(err, -ECANCELED, "Unexpected return value: %d", err);
+	zassert_equal(cnt, 1U, "Got %zu, expected %u", cnt, 1U);
+}
+
 static ZTEST_F(cap_initiator_test_unicast_group,
 	       test_initiator_unicast_group_foreach_stream_inval_null_group)
 {
@@ -387,4 +412,40 @@ static ZTEST_F(cap_initiator_test_unicast_group,
 	zassert_equal(err, -EINVAL, "Unexpected return value %d", err);
 
 	zassert_equal(cnt, expect_cnt, "Unexpected cnt (%zu != %zu)", cnt, expect_cnt);
+}
+
+static ZTEST_F(cap_initiator_test_unicast_group, test_initiator_unicast_group_get_info)
+{
+	struct bt_cap_unicast_group_info cap_info;
+	int err;
+
+	err = bt_cap_unicast_group_create(fixture->group_param, &fixture->unicast_group);
+	zassert_equal(err, 0, "Unexpected return value %d", err);
+
+	err = bt_cap_unicast_group_get_info(fixture->unicast_group, &cap_info);
+	zassert_equal(err, 0, "Unexpected return value %d", err);
+
+	zassert_not_null(cap_info.unicast_group);
+}
+
+static ZTEST_F(cap_initiator_test_unicast_group,
+	       test_initiator_unicast_group_get_info_inval_null_group)
+{
+	struct bt_cap_unicast_group_info cap_info;
+	int err;
+
+	err = bt_cap_unicast_group_get_info(NULL, &cap_info);
+	zassert_equal(err, -EINVAL, "Unexpected return value %d", err);
+}
+
+static ZTEST_F(cap_initiator_test_unicast_group,
+	       test_initiator_unicast_group_get_info_inval_null_info)
+{
+	int err;
+
+	err = bt_cap_unicast_group_create(fixture->group_param, &fixture->unicast_group);
+	zassert_equal(err, 0, "Unexpected return value %d", err);
+
+	err = bt_cap_unicast_group_get_info(fixture->unicast_group, NULL);
+	zassert_equal(err, -EINVAL, "Unexpected return value %d", err);
 }

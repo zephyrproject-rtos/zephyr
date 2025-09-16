@@ -45,8 +45,6 @@ Sample Output
 
 .. code-block:: console
 
-## Default configuration
-
    Found device "icp101xx@63", getting sensor data
    Starting pressure and altitude polling sample.
    temp 25.49 Cel, pressure 96.271438 kPa, altitude 447.208465 m

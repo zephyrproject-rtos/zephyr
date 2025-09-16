@@ -16,11 +16,11 @@ import sys
 import time
 
 # pylint: disable=no-name-in-module
-from conftest import TEST_DATA, ZEPHYR_BASE, testsuite_filename_mock, clear_log_in_test
+from conftest import TEST_DATA, ZEPHYR_BASE, suite_filename_mock, clear_log_in_test
 from twisterlib.testplan import TestPlan
 
 
-@mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', testsuite_filename_mock)
+@mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', suite_filename_mock)
 class TestRunner:
     TESTDATA_1 = [
         (
@@ -573,7 +573,7 @@ class TestRunner:
         ],
     )
     def test_tag(self, capfd, out_path, test_path, test_platforms, tags, expected):
-        args = ['--outdir', out_path, '-T', test_path, '-vv', '-ll', 'DEBUG'] + \
+        args = ['--detailed-test-id', '--outdir', out_path, '-T', test_path, '-vv', '-ll', 'DEBUG'] + \
                [val for pair in zip(
                    ['-p'] * len(test_platforms), test_platforms
                ) for val in pair] + \

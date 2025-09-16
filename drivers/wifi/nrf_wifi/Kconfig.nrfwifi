@@ -840,7 +840,7 @@ if NRF_WIFI_FEAT_KEEPALIVE
 config NRF_WIFI_KEEPALIVE_PERIOD_S
 	int "Keepalive period in seconds"
 	range 30 3600
-	default 60
+	default 30
 	help
 	  Keepalive period in seconds to send keepalive packets to the AP.
 endif
@@ -934,4 +934,14 @@ config NRF_WIFI_DYNAMIC_ED
 	help
 	  This option enables support for proprietary algorithm to
 	  enhance performance in high-traffic channels.
+
+config NRF_WIFI_TWT_SETUP_TIMEOUT_MS
+	int "TWT setup timeout (ms)"
+	range 100 10000
+	default 250
+	help
+	  Timeout duration (in milliseconds) for the TWT setup procedure.
+	  The STA will transmit a TWT setup request every 100 milliseconds,
+	  continuing until this timeout value is reached. If no response is
+	  received before the timeout expires, the TWT setup is considered failed.
 endif # WIFI_NRF70

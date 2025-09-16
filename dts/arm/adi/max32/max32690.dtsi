@@ -210,7 +210,7 @@
 			#dma-cells = <2>;
 		};
 
-		wdt1: watchdog@40080800  {
+		wdt1: watchdog@40080800 {
 			compatible = "adi,max32-watchdog";
 			reg = <0x40080800 0x400>;
 			interrupts = <57 0>;
@@ -227,6 +227,7 @@
 			clocks = <&gcr ADI_MAX32_CLOCK_BUS2 2>;
 			clock-source = <ADI_MAX32_PRPH_CLK_SRC_IBRO>;
 			prescaler = <1>;
+
 			counter {
 				compatible = "adi,max32-counter";
 				status = "disabled";
@@ -241,6 +242,7 @@
 			clocks = <&gcr ADI_MAX32_CLOCK_BUS2 3>;
 			clock-source = <ADI_MAX32_PRPH_CLK_SRC_IBRO>;
 			prescaler = <1>;
+
 			counter {
 				compatible = "adi,max32-counter";
 				status = "disabled";
@@ -281,6 +283,32 @@
 			status = "disabled";
 			interrupts = <108 0>;
 			clocks = <&gcr ADI_MAX32_CLOCK_BUS1 19>;
+		};
+
+		wut0: timer@40006400 {
+			compatible = "adi,max32-timer";
+			reg = <0x40006400 0x200>;
+			interrupts = <53 0>;
+			status = "disabled";
+			prescaler = <1>;
+
+			counter {
+				compatible = "adi,max32-wut";
+				status = "disabled";
+			};
+		};
+
+		wut1: timer@40006600 {
+			compatible = "adi,max32-timer";
+			reg = <0x40006600 0x200>;
+			interrupts = <109 0>;
+			status = "disabled";
+			prescaler = <1>;
+
+			counter {
+				compatible = "adi,max32-wut";
+				status = "disabled";
+			};
 		};
 	};
 };

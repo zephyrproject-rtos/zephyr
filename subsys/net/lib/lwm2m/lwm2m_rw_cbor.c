@@ -302,10 +302,12 @@ static int get_string(struct lwm2m_input_context *in, uint8_t *value, size_t buf
 		return -EBADMSG;
 	}
 
-	len = MIN(buflen-1, hndl.len);
+	len = hndl.len;
+	if (len >= buflen) {
+		return -ENOMEM;
+	}
 
 	memcpy(value, hndl.value, len);
-
 	value[len] = '\0';
 
 	len = ICTX_CBOR_R_SZ(states[0].payload, in);

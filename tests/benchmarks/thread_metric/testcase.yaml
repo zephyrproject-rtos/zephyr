@@ -46,6 +46,7 @@ tests:
       - CONFIG_TM_COOPERATIVE=y
 
   benchmark.thread_metric.interrupt:
+    min_ram: 24
     extra_configs:
       - CONFIG_TM_INTERRUPT=y
 

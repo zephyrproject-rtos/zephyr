@@ -790,14 +790,15 @@ static bool cb_no_cqe_run;
 /**
  * Callback for testing with
  */
-void rtio_callback_chaining_cb(struct rtio *r, const struct rtio_sqe *sqe, void *arg0)
+void rtio_callback_chaining_cb(struct rtio *r, const struct rtio_sqe *sqe, int result, void *arg0)
 {
-	TC_PRINT("chaining callback with userdata %p\n", arg0);
+	TC_PRINT("chaining callback with result %d and userdata %p\n", result, arg0);
 }
 
-void rtio_callback_chaining_cb_no_cqe(struct rtio *r, const struct rtio_sqe *sqe, void *arg0)
+void rtio_callback_chaining_cb_no_cqe(struct rtio *r, const struct rtio_sqe *sqe,
+				      int result, void *arg0)
 {
-	TC_PRINT("Chaining callback with userdata %p (No CQE)\n", arg0);
+	TC_PRINT("Chaining callback with result %d and userdata %p (No CQE)\n", result, arg0);
 	cb_no_cqe_run = true;
 }
 
@@ -949,10 +950,160 @@ void test_rtio_await_(struct rtio *rtio0, struct rtio *rtio1)
 	rtio_cqe_release(rtio1, cqe);
 }
 
+/**
+ * @brief Test await operations handled purely by the executor
+ *
+ * Ensures we can pause just one SQE chain using the AWAIT operation, letting the rtio_iodev serve
+ * other sequences during the wait, and finally resume the executor by calling rtio_sqe_signal().
+ */
+void test_rtio_await_executor_(struct rtio *rtio0, struct rtio *rtio1)
+{
+	int res;
+	int32_t userdata[4] = {0, 1, 2, 3};
+	struct rtio_sqe *await_sqe;
+	struct rtio_sqe *sqe;
+	struct rtio_cqe *cqe;
+
+	rtio_iodev_test_init(&iodev_test_await0);
+
+	/* Prepare a NOP->AWAIT chain on rtio0 to verify the blocking behavior of AWAIT */
+	sqe = rtio_sqe_acquire(rtio0);
+	zassert_not_null(sqe, "Expected a valid sqe");
+	rtio_sqe_prep_nop(sqe, &iodev_test_await0, &userdata[0]);
+	sqe->flags = RTIO_SQE_CHAINED;
+
+	await_sqe = rtio_sqe_acquire(rtio0);
+	zassert_not_null(await_sqe, "Expected a valid sqe");
+	rtio_sqe_prep_await_executor(await_sqe, RTIO_PRIO_LOW, &userdata[1]);
+	await_sqe->flags = 0;
+
+	/*
+	 * Prepare another NOP on rtio0, to verify that while the await is busy, the executor
+	 * can process an unconnected operation
+	 */
+	sqe = rtio_sqe_acquire(rtio0);
+	zassert_not_null(sqe, "Expected a valid sqe");
+	rtio_sqe_prep_nop(sqe, &iodev_test_await0, &userdata[3]);
+	sqe->flags = 0;
+
+	/* Prepare a NOP sqe on rtio1 */
+	sqe = rtio_sqe_acquire(rtio1);
+	zassert_not_null(sqe, "Expected a valid sqe");
+	rtio_sqe_prep_nop(sqe, &iodev_test_await0, &userdata[2]);
+	sqe->prio = RTIO_PRIO_HIGH;
+	sqe->flags = 0;
+
+	/* Submit the rtio0 sequence and make sure it reaches the AWAIT sqe */
+	TC_PRINT("Submitting await sqe from rtio0\n");
+	res = rtio_submit(rtio0, 0);
+	zassert_ok(res, "Submission failed");
+
+	TC_PRINT("Wait for nop sqe from rtio0 completed\n");
+	cqe = rtio_cqe_consume_block(rtio0);
+	zassert_not_null(sqe, "Expected a valid sqe");
+	zassert_equal(cqe->userdata, &userdata[0]);
+	rtio_cqe_release(rtio0, cqe);
+
+	/* Submit rtio1 sequence and ensure it completes while rtio0 is paused at the AWAIT */
+	TC_PRINT("Submitting sqe from rtio1\n");
+	res = rtio_submit(rtio1, 0);
+	zassert_ok(res, "Submission failed");
+
+	TC_PRINT("Ensure sqe from rtio1 completes\n");
+	cqe = rtio_cqe_consume_block(rtio1);
+	zassert_not_null(cqe, "Expected a valid cqe");
+	zassert_equal(cqe->userdata, &userdata[2]);
+	rtio_cqe_release(rtio1, cqe);
+
+	/* Verify that rtio0 processes the freestanding NOP during the await */
+	TC_PRINT("Ensure freestanding NOP completes while await is busy\n");
+	cqe = rtio_cqe_consume_block(rtio0);
+	zassert_not_null(cqe, "Expected a valid cqe");
+	zassert_equal(cqe->userdata, &userdata[3]);
+	rtio_cqe_release(rtio1, cqe);
+
+	/* Make sure rtio0 is still paused at the AWAIT and finally complete it */
+	TC_PRINT("Ensure await_sqe is not completed unintentionally\n");
+	cqe = rtio_cqe_consume(rtio0);
+	zassert_equal(cqe, NULL, "Expected no valid cqe");
+
+	TC_PRINT("Signal await sqe from rtio0\n");
+	rtio_sqe_signal(await_sqe);
+
+	TC_PRINT("Ensure sqe from rtio0 completed\n");
+	cqe = rtio_cqe_consume_block(rtio0);
+	zassert_not_null(cqe, "Expected a valid cqe");
+	zassert_equal(cqe->userdata, &userdata[1]);
+	rtio_cqe_release(rtio0, cqe);
+}
+
 ZTEST(rtio_api, test_rtio_await)
 {
 	test_rtio_await_(&r_await0, &r_await1);
+	test_rtio_await_executor_(&r_await0, &r_await1);
 }
+
+
+
+RTIO_DEFINE(r_callback_result, SQE_POOL_SIZE, CQE_POOL_SIZE);
+RTIO_IODEV_TEST_DEFINE(iodev_test_callback_result);
+static int callback_count;
+static int callback_result;
+static int expected_callback_result;
+
+void callback_update_data(struct rtio *r, const struct rtio_sqe *sqe,
+			  int result, void *arg0)
+{
+	_iodev_data_iodev_test_callback_result.result = expected_callback_result;
+	callback_count++;
+}
+
+void callback_stash_result(struct rtio *r, const struct rtio_sqe *sqe,
+			int result, void *arg0)
+{
+	callback_result = result;
+	callback_count++;
+}
+
+/*
+ * Ensure callbacks work as expected.
+ *
+ * 1. Callbacks always occur
+ * 2. The result code always contains the first error result
+ */
+ZTEST(rtio_api, test_rtio_callbacks)
+{
+	struct rtio *r = &r_callback_result;
+	struct rtio_iodev *iodev = &iodev_test_callback_result;
+	struct rtio_sqe *nop1 = rtio_sqe_acquire(r);
+	struct rtio_sqe *cb1 = rtio_sqe_acquire(r);
+	struct rtio_sqe *nop2 = rtio_sqe_acquire(r);
+	struct rtio_sqe *nop3 = rtio_sqe_acquire(r);
+	struct rtio_sqe *cb2 = rtio_sqe_acquire(r);
+
+	rtio_iodev_test_init(&iodev_test_callback_result);
+
+	callback_result = 0;
+	callback_count = 0;
+	expected_callback_result = -EIO;
+
+	rtio_sqe_prep_nop(nop1, iodev, NULL);
+	nop1->flags |= RTIO_SQE_CHAINED;
+	rtio_sqe_prep_callback(cb1, callback_update_data, NULL, NULL);
+	cb1->flags |= RTIO_SQE_CHAINED;
+	rtio_sqe_prep_nop(nop2, iodev, NULL);
+	nop2->flags |= RTIO_SQE_CHAINED;
+	rtio_sqe_prep_nop(nop3, iodev, NULL);
+	nop3->flags |= RTIO_SQE_CHAINED;
+	rtio_sqe_prep_callback(cb2, callback_stash_result, NULL, NULL);
+
+	rtio_submit(r, 5);
+
+	zassert_equal(callback_result, expected_callback_result,
+		      "expected results given to second callback to be an predefine error");
+	zassert_equal(callback_count, 2, "expected two callbacks to complete");
+}
+
 
 static void *rtio_api_setup(void)
 {

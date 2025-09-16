@@ -7,6 +7,7 @@ tests:
       - mimxrt595_evk/mimxrt595s/cm33
       - mimxrt1170_evk@B/mimxrt1176/cm7
       - mimxrt700_evk/mimxrt798s/cm33_cpu0
+      - mimxrt1060_evk/mimxrt1062/qspi
     harness: console
     harness_config:
       type: one_line

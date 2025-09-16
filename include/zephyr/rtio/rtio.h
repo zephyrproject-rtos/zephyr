@@ -277,9 +277,10 @@ struct rtio_iodev_sqe;
  * @brief Callback signature for RTIO_OP_CALLBACK
  * @param r RTIO context being used with the callback
  * @param sqe Submission for the callback op
+ * @param res Result of the previously linked submission.
  * @param arg0 Argument option as part of the sqe
  */
-typedef void (*rtio_callback_t)(struct rtio *r, const struct rtio_sqe *sqe, void *arg0);
+typedef void (*rtio_callback_t)(struct rtio *r, const struct rtio_sqe *sqe, int res, void *arg0);
 
 /**
  * @typedef rtio_signaled_t
@@ -580,7 +581,7 @@ struct rtio_iodev {
 /** An operation to sends I3C CCC */
 #define RTIO_OP_I3C_CCC (RTIO_OP_I3C_CONFIGURE+1)
 
-/** An operation to suspend bus while awaiting signal */
+/** An operation to await a signal while blocking the iodev (if one is provided) */
 #define RTIO_OP_AWAIT (RTIO_OP_I3C_CCC+1)
 
 /**
@@ -745,6 +746,20 @@ static inline void rtio_sqe_prep_transceive(struct rtio_sqe *sqe,
 	sqe->userdata = userdata;
 }
 
+/**
+ * @brief Prepare an await op submission
+ *
+ * The await operation will await the completion signal before the sqe completes.
+ *
+ * If an rtio_iodev is provided then it will be blocked while awaiting. This facilitates a
+ * low-latency continuation of the rtio sequence, a sort of "critical section" during a bus
+ * operation if you will.
+ * Note that it is the responsibility of the rtio_iodev driver to properly block during the
+ * operation.
+ *
+ * See @ref rtio_sqe_prep_await_iodev for a helper, where an rtio_iodev is blocked.
+ * See @ref rtio_sqe_prep_await_executor for a helper, where no rtio_iodev is blocked.
+ */
 static inline void rtio_sqe_prep_await(struct rtio_sqe *sqe,
 				       const struct rtio_iodev *iodev,
 				       int8_t prio,
@@ -755,6 +770,39 @@ static inline void rtio_sqe_prep_await(struct rtio_sqe *sqe,
 	sqe->prio = prio;
 	sqe->iodev = iodev;
 	sqe->userdata = userdata;
+}
+
+/**
+ * @brief Prepare an await op submission which blocks an rtio_iodev until completion
+ *
+ * This variant can be useful if the await op is part of a sequence which must run within a tight
+ * time window as it effectively keeps the underlying bus locked while awaiting completion.
+ * Note that it is the responsibility of the rtio_iodev driver to properly block during the
+ * operation.
+ *
+ * See @ref rtio_sqe_prep_await for details.
+ * See @ref rtio_sqe_prep_await_executor for a counterpart where no rtio_iodev is blocked.
+ */
+static inline void rtio_sqe_prep_await_iodev(struct rtio_sqe *sqe, const struct rtio_iodev *iodev,
+					     int8_t prio, void *userdata)
+{
+	__ASSERT_NO_MSG(iodev != NULL);
+	rtio_sqe_prep_await(sqe, iodev, prio, userdata);
+}
+
+/**
+ * @brief Prepare an await op submission which completes the sqe after being signaled
+ *
+ * This variant can be useful when the await op serves as a logical piece of a sequence without
+ * requirements for a low-latency continuation of the sequence upon completion, or if the await
+ * op is expected to take "a long time" to complete.
+ *
+ * See @ref rtio_sqe_prep_await for details.
+ * See @ref rtio_sqe_prep_await_iodev for a counterpart where an rtio_iodev is blocked.
+ */
+static inline void rtio_sqe_prep_await_executor(struct rtio_sqe *sqe, int8_t prio, void *userdata)
+{
+	rtio_sqe_prep_await(sqe, NULL, prio, userdata);
 }
 
 static inline void rtio_sqe_prep_delay(struct rtio_sqe *sqe,
@@ -1176,6 +1224,32 @@ static inline void rtio_cqe_release(struct rtio *r, struct rtio_cqe *cqe)
 }
 
 /**
+ * @brief Flush completion queue
+ *
+ * @param r RTIO context
+ * @return The operation completion result
+ * @retval 0 if the queued operations completed with no error
+ * @retval <0 on error
+ */
+static inline int rtio_flush_completion_queue(struct rtio *r)
+{
+	struct rtio_cqe *cqe;
+	int res = 0;
+
+	do {
+		cqe = rtio_cqe_consume(r);
+		if (cqe != NULL) {
+			if ((cqe->result < 0) && (res == 0)) {
+				res = cqe->result;
+			}
+			rtio_cqe_release(r, cqe);
+		}
+	} while (cqe != NULL);
+
+	return res;
+}
+
+/**
  * @brief Compute the CQE flags from the rtio_iodev_sqe entry
  *
  * @param iodev_sqe The SQE entry in question.
@@ -1421,6 +1495,9 @@ static inline void z_impl_rtio_release_buffer(struct rtio *r, void *buff, uint32
 
 /**
  * Grant access to an RTIO context to a user thread
+ *
+ * @param r RTIO context
+ * @param t Thread to grant permissions to
  */
 static inline void rtio_access_grant(struct rtio *r, struct k_thread *t)
 {
@@ -1432,6 +1509,26 @@ static inline void rtio_access_grant(struct rtio *r, struct k_thread *t)
 
 #ifdef CONFIG_RTIO_CONSUME_SEM
 	k_object_access_grant(r->consume_sem, t);
+#endif
+}
+
+
+/**
+ * Revoke access to an RTIO context from a user thread
+ *
+ * @param r RTIO context
+ * @param t Thread to revoke permissions from
+ */
+static inline void rtio_access_revoke(struct rtio *r, struct k_thread *t)
+{
+	k_object_access_revoke(r, t);
+
+#ifdef CONFIG_RTIO_SUBMIT_SEM
+	k_object_access_revoke(r->submit_sem, t);
+#endif
+
+#ifdef CONFIG_RTIO_CONSUME_SEM
+	k_object_access_revoke(r->consume_sem, t);
 #endif
 }
 
@@ -1673,6 +1770,108 @@ static inline int z_impl_rtio_submit(struct rtio *r, uint32_t wait_count)
 	return res;
 }
 #endif /* CONFIG_RTIO_SUBMIT_SEM */
+
+/**
+ * @brief Pool of RTIO contexts to use with dynamically created threads
+ */
+struct rtio_pool {
+	/** Size of the pool */
+	size_t pool_size;
+
+	/** Array containing contexts of the pool */
+	struct rtio **contexts;
+
+	/** Atomic bitmap to signal a member is used/unused */
+	atomic_t *used;
+};
+
+/**
+ * @brief Obtain an RTIO context from a pool
+ *
+ * @param pool RTIO pool to acquire a context from
+ *
+ * @retval NULL no available contexts
+ * @retval r Valid context with permissions granted to the calling thread
+ */
+__syscall struct rtio *rtio_pool_acquire(struct rtio_pool *pool);
+
+static inline struct rtio *z_impl_rtio_pool_acquire(struct rtio_pool *pool)
+{
+	struct rtio *r = NULL;
+
+	for (size_t i = 0; i < pool->pool_size; i++) {
+		if (atomic_test_and_set_bit(pool->used, i) == 0) {
+			r = pool->contexts[i];
+			break;
+		}
+	}
+
+	if (r != NULL) {
+		rtio_access_grant(r, k_current_get());
+	}
+
+	return r;
+}
+
+/**
+ * @brief Return an RTIO context to a pool
+ *
+ * @param pool RTIO pool to return a context to
+ * @param r RTIO context to return to the pool
+ */
+__syscall void rtio_pool_release(struct rtio_pool *pool, struct rtio *r);
+
+static inline void z_impl_rtio_pool_release(struct rtio_pool *pool, struct rtio *r)
+{
+
+	if (k_is_user_context()) {
+		rtio_access_revoke(r, k_current_get());
+	}
+
+	for (size_t i = 0; i < pool->pool_size; i++) {
+		if (pool->contexts[i] == r) {
+			atomic_clear_bit(pool->used, i);
+			break;
+		}
+	}
+}
+
+/* clang-format off */
+
+/** @cond ignore */
+
+#define Z_RTIO_POOL_NAME_N(n, name)                                             \
+	name##_##n
+
+#define Z_RTIO_POOL_DEFINE_N(n, name, sq_sz, cq_sz)				\
+	RTIO_DEFINE(Z_RTIO_POOL_NAME_N(n, name), sq_sz, cq_sz)
+
+#define Z_RTIO_POOL_REF_N(n, name)                                              \
+	&Z_RTIO_POOL_NAME_N(n, name)
+
+/** @endcond */
+
+/**
+ * @brief Statically define and initialize a pool of RTIO contexts
+ *
+ * @param name Name of the RTIO pool
+ * @param pool_sz Number of RTIO contexts to allocate in the pool
+ * @param sq_sz Size of the submission queue entry pool per context
+ * @param cq_sz Size of the completion queue entry pool per context
+ */
+#define RTIO_POOL_DEFINE(name, pool_sz, sq_sz, cq_sz)				\
+	LISTIFY(pool_sz, Z_RTIO_POOL_DEFINE_N, (;), name, sq_sz, cq_sz);        \
+	static struct rtio *name##_contexts[] = {                               \
+		LISTIFY(pool_sz, Z_RTIO_POOL_REF_N, (,), name)                  \
+	};                                                                      \
+	ATOMIC_DEFINE(name##_used, pool_sz);                                    \
+	STRUCT_SECTION_ITERABLE(rtio_pool, name) = {                            \
+		.pool_size = pool_sz,                                           \
+		.contexts = name##_contexts,                                    \
+		.used = name##_used,                                            \
+	}
+
+/* clang-format on */
 
 /**
  * @}

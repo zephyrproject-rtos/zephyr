@@ -35,8 +35,11 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL);
 #define MAYBE_CONST_CONFIG const
 #endif
 
-#if NRF_DT_INST_ANY_IS_FAST
-#define COUNTER_ANY_FAST 1
+#if NRF_DT_INST_ANY_IS_FAST && CONFIG_CLOCK_CONTROL
+#define COUNTER_IS_FAST(idx) NRF_DT_INST_IS_FAST(idx)
+#define COUNTER_ANY_FAST
+#else
+#define COUNTER_IS_FAST(idx) 0
 #endif
 
 struct counter_nrfx_data {
@@ -460,13 +463,13 @@ static DEVICE_API(counter, counter_nrfx_driver_api) = {
  * which is using nrfs (IPC) are initialized later.
  */
 #define TIMER_INIT_LEVEL(idx) \
-	COND_CODE_1(NRF_DT_INST_IS_FAST(idx), (POST_KERNEL), (PRE_KERNEL_1))
+	COND_CODE_1(COUNTER_IS_FAST(idx), (POST_KERNEL), (PRE_KERNEL_1))
 
 /* Get initialization priority of an instance. Instances that requires clock control
  * which is using nrfs (IPC) are initialized later.
  */
 #define TIMER_INIT_PRIO(idx)								\
-	COND_CODE_1(NRF_DT_INST_IS_FAST(idx),						\
+	COND_CODE_1(COUNTER_IS_FAST(idx),						\
 		    (UTIL_INC(CONFIG_CLOCK_CONTROL_NRF_HSFLL_GLOBAL_INIT_PRIORITY)),	\
 		    (CONFIG_COUNTER_INIT_PRIORITY))
 
@@ -522,8 +525,8 @@ static DEVICE_API(counter, counter_nrfx_driver_api) = {
 		},										\
 		.ch_data = counter##idx##_ch_data,						\
 		.timer = (NRF_TIMER_Type *)DT_INST_REG_ADDR(idx),				\
-		IF_ENABLED(NRF_DT_INST_IS_FAST(idx),						\
-			(.clk_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_DRV_INST(idx))),		\
+		IF_ENABLED(COUNTER_IS_FAST(idx),						\
+			(.clk_dev = DEVICE_DT_GET_OR_NULL(DT_CLOCKS_CTLR(DT_DRV_INST(idx))),	\
 			 .clk_spec = {								\
 				.frequency = NRF_PERIPH_GET_FREQUENCY(DT_DRV_INST(idx)),	\
 				.accuracy = 0,							\

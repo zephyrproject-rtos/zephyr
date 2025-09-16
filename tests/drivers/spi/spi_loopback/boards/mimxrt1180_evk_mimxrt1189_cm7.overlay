@@ -15,7 +15,7 @@
 };
 
 &ocram1 {
-	zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE) )>;
+	zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)>;
 };
 
 &lpspi3 {
@@ -29,4 +29,7 @@
 		reg = <0>;
 		spi-max-frequency = <16000000>;
 	};
+	transfer-delay = <100>;
+	pcs-sck-delay = <100>;
+	sck-pcs-delay = <100>;
 };

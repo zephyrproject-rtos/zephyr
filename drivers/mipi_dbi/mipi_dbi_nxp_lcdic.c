@@ -213,6 +213,8 @@ static int mipi_dbi_lcdic_start_dma(const struct device *dev)
 		}
 	}
 
+	stream->blk_cfg[0].dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+	stream->blk_cfg[1].dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
 	ret = dma_config(stream->dma_dev, stream->channel, &stream->dma_cfg);
 	if (ret) {
 		return ret;

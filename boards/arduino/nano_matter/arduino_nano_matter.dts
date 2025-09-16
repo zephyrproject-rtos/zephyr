@@ -100,10 +100,6 @@
 	clock-frequency = <78000000>;
 };
 
-&pstate_em3 {
-	status = "disabled";
-};
-
 &hfxo {
 	ctune = <95>;
 	precision = <50>;
@@ -176,7 +172,6 @@
 };
 
 &gpio {
-	location-swo = <0>;
 	status = "okay";
 };
 

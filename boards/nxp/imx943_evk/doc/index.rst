@@ -65,9 +65,30 @@ CPU's UART1 for Cortex-A55, and UART8 for Cortex-M33.
 Ethernet
 --------
 
-NETC driver supports to manage the Physical Station Interface (PSI).
+NETC driver supports to manage the Physical Station Interface (PSI), and TSN switch.
 The ENET0, ENETC1, ENETC2 ports could be enabled for M33 by west build option
 ``-DEXTRA_DTC_OVERLAY_FILE=enetc.overlay``.
+
+For A55 Core, ENET0, ENETC1, ENETC2 ports are enabled by default, so no overlay is
+needed, but NETC depends on GIC ITS, so need to make sure to allocate heap memory to
+be larger than 851968 byes by setting CONFIG_HEAP_MEM_POOL_SIZE.
+
+The two switch ports could be verified via :zephyr:code-sample:`dsa` on M33 core
+or on A55 Core, for example for A55 Core:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/dsa
+   :host-os: unix
+   :board: imx943_evk/mimx94398/a55
+   :goals: flash
+
+Or for M33 Core:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/dsa
+   :host-os: unix
+   :board: imx943_evk/mimx94398/m33/ddr
+   :goals: build
 
 Programming and Debugging (A55)
 *******************************

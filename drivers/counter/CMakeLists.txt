@@ -33,6 +33,8 @@ zephyr_library_sources_ifdef(CONFIG_COUNTER_MCUX_SNVS           counter_mcux_snv
 zephyr_library_sources_ifdef(CONFIG_COUNTER_MCUX_TPM            counter_mcux_tpm.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_XEC                 counter_mchp_xec.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_MCUX_LPTMR          counter_mcux_lptmr.c)
+zephyr_library_sources_ifdef(CONFIG_COUNTER_MCUX_LPIT           counter_mcux_lpit.c)
+zephyr_library_sources_ifdef(CONFIG_COUNTER_MCUX_FTM            counter_mcux_ftm.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_MAXIM_DS3231        maxim_ds3231.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_NATIVE_SIM          counter_native_sim.c)
 zephyr_library_sources_ifdef(CONFIG_USERSPACE                   counter_handlers.c)

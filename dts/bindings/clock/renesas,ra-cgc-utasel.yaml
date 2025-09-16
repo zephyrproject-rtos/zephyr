@@ -1,0 +1,15 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RA Clock Generation Circuit UTASEL Clock
+
+compatible: "renesas,ra-cgc-utasel"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  clocks:
+    required: true
+
+  "#clock-cells":
+    const: 0

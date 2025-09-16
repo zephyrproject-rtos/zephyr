@@ -15,14 +15,20 @@
 	chosen {
 		zephyr,console = &uart20;
 		zephyr,shell-uart = &uart20;
-		zephyr,code-partition = &slot0_partition;
-		zephyr,flash = &cpuapp_rram;
-		zephyr,sram = &cpuapp_sram;
 		zephyr,uart-mcumgr = &uart20;
 		zephyr,bt-mon-uart = &uart20;
 		zephyr,bt-c2h-uart = &uart20;
 		zephyr,flash-controller = &rram_controller;
+		zephyr,flash = &cpuapp_rram;
 		zephyr,ieee802154 = &ieee802154;
+		zephyr,boot-mode = &boot_mode0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,sram = &cpuapp_sram;
+	};
+
+	aliases {
+		mcuboot-button0 = &button0;
+		mcuboot-led0 = &led0;
 	};
 };
 
@@ -32,7 +38,7 @@
 
 &lfxo {
 	load-capacitors = "internal";
-	load-capacitance-femtofarad = <15500>;
+	load-capacitance-femtofarad = <17000>;
 };
 
 &hfxo {
@@ -60,6 +66,10 @@
 };
 
 &uart20 {
+	status = "okay";
+};
+
+&nfct {
 	status = "okay";
 };
 
@@ -99,6 +109,16 @@
 	status = "okay";
 };
 
+&gpregret1 {
+	status = "okay";
+
+	boot_mode0: boot_mode@0 {
+		compatible = "zephyr,retention";
+		status = "okay";
+		reg = <0x0 0x1>;
+	};
+};
+
 &spi00 {
 	status = "okay";
 
@@ -115,17 +135,16 @@
 
 		jedec-id = [c2 28 17];
 
-		sfdp-bfp = [
-			e5 20 f1 ff  ff ff ff 03  44 eb 08 6b  08 3b 04 bb
-			ee ff ff ff  ff ff 00 ff  ff ff 00 ff  0c 20 0f 52
-			10 d8 00 ff  23 72 f5 00  82 ed 04 cc  44 83 48 44
-			30 b0 30 b0  f7 c4 d5 5c  00 be 29 ff  f0 d0 ff ff
-		];
+		sfdp-bfp = [e5 20 f1 ff ff ff ff 03 44 eb 08 6b 08 3b 04 bb
+			    ee ff ff ff ff ff 00 ff ff ff 00 ff 0c 20 0f 52
+			    10 d8 00 ff 23 72 f5 00 82 ed 04 cc 44 83 48 44
+			    30 b0 30 b0 f7 c4 d5 5c 00 be 29 ff f0 d0 ff ff];
 
 		size = <67108864>;
 		has-dpd;
 		t-enter-dpd = <10000>;
 		t-exit-dpd = <35000>;
+		reset-gpios = <&gpio2 6 GPIO_ACTIVE_LOW>;
 	};
 };
 

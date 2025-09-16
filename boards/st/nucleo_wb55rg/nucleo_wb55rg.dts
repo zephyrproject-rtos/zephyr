@@ -139,7 +139,7 @@
 };
 
 &rtc {
-	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000400>,
+	clocks = <&rcc STM32_CLOCK(APB1, 10)>,
 		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
 	status = "okay";
 
@@ -178,7 +178,7 @@
 
 &lpuart1 {
 	pinctrl-0 = <&lpuart1_tx_pc1 &lpuart1_rx_pc0
-			&lpuart1_cts_pa6 &lpuart1_rts_pb12>;
+		     &lpuart1_cts_pa6 &lpuart1_rts_pb12>;
 	hw-flow-control;
 	pinctrl-names = "default";
 	current-speed = <115200>;
@@ -198,7 +198,7 @@
 };
 
 stm32_lp_tick_source: &lptim1 {
-	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x80000000>,
+	clocks = <&rcc STM32_CLOCK(APB1, 31)>,
 		 <&rcc STM32_SRC_LSE LPTIM1_SEL(3)>;
 	status = "okay";
 };

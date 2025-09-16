@@ -69,3 +69,15 @@ child-binding:
           1 - normal slew rate
           2 - fast slew rate
           3 - fastest slew rate (ultra)
+      sleep-output:
+        type: string
+        default: "low"
+        enum:
+          - "low"
+          - "high"
+          - "disable"
+        description: |
+          Sets pin output level in sleep mode.
+          0 - output level low
+          1 - output level high
+          2 - disable force output in sleep mode.

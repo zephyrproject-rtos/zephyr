@@ -15,7 +15,7 @@
 	mcp4726_mikroe_stepper_18_click: mcp4726@70 {
 		status = "okay";
 		compatible = "microchip,mcp4725";
-		reg = < 0x60 >;
+		reg = <0x60>;
 
 		#io-channel-cells = <1>;
 	};
@@ -29,7 +29,7 @@
 		dir-gpios = <&mikrobus_header 0 0>;
 		step-gpios = <&mikrobus_header 6 0>;
 		sleep-gpios = <&mikrobus_header 1 GPIO_ACTIVE_LOW>;
-		en-gpios  = <&mikrobus_header 2 0>;
+		en-gpios = <&mikrobus_header 2 0>;
 		fault-gpios = <&mikrobus_header 7 GPIO_ACTIVE_LOW>;
 	};
 };

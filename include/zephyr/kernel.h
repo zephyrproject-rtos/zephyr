@@ -805,7 +805,7 @@ struct _static_thread_data {
 				     _k_thread_stack_##name, stack_size,\
 				     entry, p1, p2, p3, prio, options,	\
 				     delay, name);			\
-	const k_tid_t name = (k_tid_t)&_k_thread_obj_##name
+	__maybe_unused const k_tid_t name = (k_tid_t)&_k_thread_obj_##name
 
 /**
  * INTERNAL_HIDDEN @endcond
@@ -959,6 +959,49 @@ __syscall void k_thread_priority_set(k_tid_t thread, int prio);
  *
  */
 __syscall void k_thread_deadline_set(k_tid_t thread, int deadline);
+
+/**
+ * @brief Set deadline expiration time for scheduler
+ *
+ * This sets the "deadline" expiration as a timestamp in the same
+ * units used by k_cycle_get_32(). The scheduler (when deadline scheduling
+ * is enabled) will choose the next expiring thread when selecting between
+ * threads at the same static priority.  Threads at different priorities
+ * will be scheduled according to their static priority.
+ *
+ * Unlike @ref k_thread_deadline_set which sets a relative timestamp to a
+ * "now" implicitly determined during its call, this routine sets an
+ * absolute timestamp that is computed from a timestamp relative to
+ * an explicit "now" that was determined before this routine is called.
+ * This allows the caller to specify deadlines for multiple threads
+ * using a common "now".
+ *
+ * @note Deadlines are stored internally using 32 bit unsigned
+ * integers.  The number of cycles between the "first" deadline in the
+ * scheduler queue and the "last" deadline must be less than 2^31 (i.e
+ * a signed non-negative quantity).  Failure to adhere to this rule
+ * may result in scheduled threads running in an incorrect deadline
+ * order.
+ *
+ * @note Even if a provided timestamp is in the past, the kernel will
+ * still schedule threads with deadlines in order from the earliest to
+ * the latest
+ *
+ * @note Despite the API naming, the scheduler makes no guarantees
+ * the thread WILL be scheduled within that deadline, nor does it take
+ * extra metadata (like e.g. the "runtime" and "period" parameters in
+ * Linux sched_setattr()) that allows the kernel to validate the
+ * scheduling for achievability.  Such features could be implemented
+ * above this call, which is simply input to the priority selection
+ * logic.
+ *
+ * @note You should enable @kconfig_dep{CONFIG_SCHED_DEADLINE} in your project
+ * configuration.
+ *
+ * @param thread A thread on which to set the deadline
+ * @param deadline A timestamp, in cycle units
+ */
+__syscall void k_thread_absolute_deadline_set(k_tid_t thread, int deadline);
 #endif
 
 /**
@@ -1697,6 +1740,9 @@ void k_timer_init(struct k_timer *timer,
  * Attempting to start a timer that is already running is permitted.
  * The timer's status is reset to zero and the timer begins counting down
  * using the new duration and period values.
+ *
+ * This routine neither updates nor has any other effect on the specified
+ * timer if @a duration is K_FOREVER.
  *
  * @param timer     Address of timer.
  * @param duration  Initial timer duration.
@@ -2506,6 +2552,52 @@ __syscall uint32_t k_event_wait(struct k_event *event, uint32_t events,
  */
 __syscall uint32_t k_event_wait_all(struct k_event *event, uint32_t events,
 				    bool reset, k_timeout_t timeout);
+
+/**
+ * @brief Wait for any of the specified events (safe version)
+ *
+ * This call is nearly identical to @ref k_event_wait with the main difference
+ * being that the safe version atomically clears received events from the
+ * event object. This mitigates the need for calling @ref k_event_clear, or
+ * passing a "reset" argument, since doing so may result in lost event
+ * information.
+ *
+ * @param event Address of the event object
+ * @param events Set of desired events on which to wait
+ * @param reset If true, clear the set of events tracked by the event object
+ *              before waiting. If false, do not clear the events.
+ * @param timeout Waiting period for the desired set of events or one of the
+ *                special values K_NO_WAIT and K_FOREVER.
+ *
+ * @retval set of matching events upon success
+ * @retval 0 if no matching event was received within the specified time
+ */
+__syscall uint32_t k_event_wait_safe(struct k_event *event, uint32_t events,
+				     bool reset, k_timeout_t timeout);
+
+/**
+ * @brief Wait for all of the specified events (safe version)
+ *
+ * This call is nearly identical to @ref k_event_wait_all with the main
+ * difference being that the safe version atomically clears received events
+ * from the event object. This mitigates the need for calling
+ * @ref k_event_clear, or passing a "reset" argument, since doing so may
+ * result in lost event information.
+ *
+ * @param event Address of the event object
+ * @param events Set of desired events on which to wait
+ * @param reset If true, clear the set of events tracked by the event object
+ *              before waiting. If false, do not clear the events.
+ * @param timeout Waiting period for the desired set of events or one of the
+ *                special values K_NO_WAIT and K_FOREVER.
+ *
+ * @retval set of matching events upon success
+ * @retval 0 if all matching events were not received within the specified time
+ */
+__syscall uint32_t k_event_wait_all_safe(struct k_event *event, uint32_t events,
+					 bool reset, k_timeout_t timeout);
+
+
 
 /**
  * @brief Test the events currently tracked in the event object
@@ -3415,6 +3507,97 @@ static inline unsigned int z_impl_k_sem_count_get(struct k_sem *sem)
 		     ((count_limit) <= K_SEM_MAX_LIMIT));
 
 /** @} */
+
+#if defined(CONFIG_SCHED_IPI_SUPPORTED) || defined(__DOXYGEN__)
+struct k_ipi_work;
+
+/**
+ * @cond INTERNAL_HIDDEN
+ */
+
+typedef void (*k_ipi_func_t)(struct k_ipi_work *work);
+
+struct k_ipi_work {
+	sys_dnode_t        node[CONFIG_MP_MAX_NUM_CPUS];   /* Node in IPI work queue */
+	k_ipi_func_t   func;     /* Function to execute on target CPU */
+	struct k_event event;    /* Event to signal when processed */
+	uint32_t       bitmask;  /* Bitmask of targeted CPUs */
+};
+
+/** @endcond */
+
+/**
+ * @brief Initialize the specified IPI work item
+ *
+ * @kconfig_dep{CONFIG_SCHED_IPI_SUPPORTED}
+ *
+ * @param work Pointer to the IPI work item to be initialized
+ */
+static inline void k_ipi_work_init(struct k_ipi_work *work)
+{
+	k_event_init(&work->event);
+	for (unsigned int i = 0; i < CONFIG_MP_MAX_NUM_CPUS; i++) {
+		sys_dnode_init(&work->node[i]);
+	}
+	work->bitmask = 0;
+}
+
+/**
+ * @brief Add an IPI work item to the IPI work queue
+ *
+ * Adds the specified IPI work item to the IPI work queues of each CPU
+ * identified by @a cpu_bitmask. The specified IPI work item will subsequently
+ * execute at ISR level as those CPUs process their received IPIs. Do not
+ * re-use the specified IPI work item until it has been processed by all of
+ * the identified CPUs.
+ *
+ * @kconfig_dep{CONFIG_SCHED_IPI_SUPPORTED}
+ *
+ * @param work Pointer to the IPI work item
+ * @param cpu_bitmask Set of CPUs to which the IPI work item will be sent
+ * @param func Function to execute on the targeted CPU(s)
+ *
+ * @retval 0 on success
+ * @retval -EBUSY if the specified IPI work item is still being processed
+ */
+int k_ipi_work_add(struct k_ipi_work *work, uint32_t cpu_bitmask,
+		   k_ipi_func_t func);
+
+/**
+ * @brief Wait until the IPI work item has been processed by all targeted CPUs
+ *
+ * This routine waits until the IPI work item has been processed by all CPUs
+ * to which it was sent. If called from an ISR, then @a timeout must be set to
+ * K_NO_WAIT. To prevent deadlocks the caller must not have IRQs locked when
+ * calling this function.
+ *
+ * @note It is not in general possible to poll safely for completion of this
+ * function in ISR or locked contexts where the calling CPU cannot service IPIs
+ * (because the targeted CPUs may themselves be waiting on the calling CPU).
+ * Application code must be prepared for failure or to poll from a thread
+ * context.
+ *
+ * @kconfig_dep{CONFIG_SCHED_IPI_SUPPORTED}
+ *
+ * @param work Pointer to the IPI work item
+ * @param timeout Maximum time to wait for IPI work to be processed
+ *
+ * @retval -EAGAIN Waiting period timed out.
+ * @retval 0 if processed by all targeted CPUs
+ */
+int k_ipi_work_wait(struct k_ipi_work *work, k_timeout_t timeout);
+
+/**
+ * @brief Signal that there is one or more IPI work items to process
+ *
+ * This routine sends an IPI to the set of CPUs identified by calls to
+ * k_ipi_work_add() since this CPU sent its last set of IPIs.
+ *
+ * @kconfig_dep{CONFIG_SCHED_IPI_SUPPORTED}
+ */
+void k_ipi_work_signal(void);
+
+#endif /* CONFIG_SCHED_IPI_SUPPORTED */
 
 /**
  * @cond INTERNAL_HIDDEN
@@ -4820,18 +5003,17 @@ __syscall int k_msgq_put(struct k_msgq *msgq, const void *data, k_timeout_t time
  * pointer is not retained, so the message content will not be modified
  * by this function.
  *
+ * @note k_msgq_put_front() does not block.
+ *
  * @funcprops \isr_ok
  *
  * @param msgq Address of the message queue.
  * @param data Pointer to the message.
- * @param timeout Waiting period to add the message, or one of the special
- *                values K_NO_WAIT and K_FOREVER.
  *
  * @retval 0 Message sent.
  * @retval -ENOMSG Returned without waiting or queue purged.
- * @retval -EAGAIN Waiting period timed out.
  */
-__syscall int k_msgq_put_front(struct k_msgq *msgq, const void *data, k_timeout_t timeout);
+__syscall int k_msgq_put_front(struct k_msgq *msgq, const void *data);
 
 /**
  * @brief Receive a message from a message queue.
@@ -5120,206 +5302,6 @@ void k_mbox_data_get(struct k_mbox_msg *rx_msg, void *buffer);
  */
 __syscall void k_pipe_init(struct k_pipe *pipe, uint8_t *buffer, size_t buffer_size);
 
-#ifdef CONFIG_PIPES
-/** Pipe Structure */
-struct k_pipe {
-	unsigned char *buffer;          /**< Pipe buffer: may be NULL */
-	size_t         size;            /**< Buffer size */
-	size_t         bytes_used;      /**< Number of bytes used in buffer */
-	size_t         read_index;      /**< Where in buffer to read from */
-	size_t         write_index;     /**< Where in buffer to write */
-	struct k_spinlock lock;		/**< Synchronization lock */
-
-	struct {
-		_wait_q_t      readers; /**< Reader wait queue */
-		_wait_q_t      writers; /**< Writer wait queue */
-	} wait_q;			/** Wait queue */
-
-	Z_DECL_POLL_EVENT
-
-	uint8_t	       flags;		/**< Flags */
-
-	SYS_PORT_TRACING_TRACKING_FIELD(k_pipe)
-
-#ifdef CONFIG_OBJ_CORE_PIPE
-	struct k_obj_core  obj_core;
-#endif
-};
-
-/**
- * @cond INTERNAL_HIDDEN
- */
-#define K_PIPE_FLAG_ALLOC	BIT(0)	/** Buffer was allocated */
-
-#define Z_PIPE_INITIALIZER(obj, pipe_buffer, pipe_buffer_size)     \
-	{                                                           \
-	.buffer = pipe_buffer,                                      \
-	.size = pipe_buffer_size,                                   \
-	.bytes_used = 0,                                            \
-	.read_index = 0,                                            \
-	.write_index = 0,                                           \
-	.lock = {},                                                 \
-	.wait_q = {                                                 \
-		.readers = Z_WAIT_Q_INIT(&obj.wait_q.readers),       \
-		.writers = Z_WAIT_Q_INIT(&obj.wait_q.writers)        \
-	},                                                          \
-	Z_POLL_EVENT_OBJ_INIT(obj)                                   \
-	.flags = 0,                                                 \
-	}
-
-/**
- * INTERNAL_HIDDEN @endcond
- */
-
-/**
- * @brief Statically define and initialize a pipe.
- *
- * The pipe can be accessed outside the module where it is defined using:
- *
- * @code extern struct k_pipe <name>; @endcode
- *
- * @param name Name of the pipe.
- * @param pipe_buffer_size Size of the pipe's ring buffer (in bytes),
- *                         or zero if no ring buffer is used.
- * @param pipe_align Alignment of the pipe's ring buffer (power of 2).
- *
- */
-#define K_PIPE_DEFINE(name, pipe_buffer_size, pipe_align)		\
-	static unsigned char __noinit __aligned(pipe_align)		\
-		_k_pipe_buf_##name[pipe_buffer_size];			\
-	STRUCT_SECTION_ITERABLE(k_pipe, name) =				\
-		Z_PIPE_INITIALIZER(name, _k_pipe_buf_##name, pipe_buffer_size)
-
-/**
- * @deprecated Dynamic allocation of pipe buffers will be removed in the new k_pipe API.
- * @brief Release a pipe's allocated buffer
- *
- * If a pipe object was given a dynamically allocated buffer via
- * k_pipe_alloc_init(), this will free it. This function does nothing
- * if the buffer wasn't dynamically allocated.
- *
- * @param pipe Address of the pipe.
- * @retval 0 on success
- * @retval -EAGAIN nothing to cleanup
- */
-__deprecated int k_pipe_cleanup(struct k_pipe *pipe);
-
-/**
- * @deprecated Dynamic allocation of pipe buffers will be removed in the new k_pipe API.
- * @brief Initialize a pipe and allocate a buffer for it
- *
- * Storage for the buffer region will be allocated from the calling thread's
- * resource pool. This memory will be released if k_pipe_cleanup() is called,
- * or userspace is enabled and the pipe object loses all references to it.
- *
- * This function should only be called on uninitialized pipe objects.
- *
- * @param pipe Address of the pipe.
- * @param size Size of the pipe's ring buffer (in bytes), or zero if no ring
- *             buffer is used.
- * @retval 0 on success
- * @retval -ENOMEM if memory couldn't be allocated
- */
-__deprecated __syscall int k_pipe_alloc_init(struct k_pipe *pipe, size_t size);
-
-/**
- * @deprecated k_pipe_put() is replaced by k_pipe_write(...) in the new k_pipe API.
- * @brief Write data to a pipe.
- *
- * This routine writes up to @a bytes_to_write bytes of data to @a pipe.
- *
- * @param pipe Address of the pipe.
- * @param data Address of data to write.
- * @param bytes_to_write Size of data (in bytes).
- * @param bytes_written Address of area to hold the number of bytes written.
- * @param min_xfer Minimum number of bytes to write.
- * @param timeout Waiting period to wait for the data to be written,
- *                or one of the special values K_NO_WAIT and K_FOREVER.
- *
- * @retval 0 At least @a min_xfer bytes of data were written.
- * @retval -EIO Returned without waiting; zero data bytes were written.
- * @retval -EAGAIN Waiting period timed out; between zero and @a min_xfer
- *                 minus one data bytes were written.
- */
-__deprecated __syscall int k_pipe_put(struct k_pipe *pipe, const void *data,
-			 size_t bytes_to_write, size_t *bytes_written,
-			 size_t min_xfer, k_timeout_t timeout);
-
-/**
- * @deprecated k_pipe_get() is replaced by k_pipe_read(...) in the new k_pipe API.
- * @brief Read data from a pipe.
- *
- * This routine reads up to @a bytes_to_read bytes of data from @a pipe.
- *
- * @param pipe Address of the pipe.
- * @param data Address to place the data read from pipe.
- * @param bytes_to_read Maximum number of data bytes to read.
- * @param bytes_read Address of area to hold the number of bytes read.
- * @param min_xfer Minimum number of data bytes to read.
- * @param timeout Waiting period to wait for the data to be read,
- *                or one of the special values K_NO_WAIT and K_FOREVER.
- *
- * @retval 0 At least @a min_xfer bytes of data were read.
- * @retval -EINVAL invalid parameters supplied
- * @retval -EIO Returned without waiting; zero data bytes were read.
- * @retval -EAGAIN Waiting period timed out; between zero and @a min_xfer
- *                 minus one data bytes were read.
- */
-__deprecated  __syscall int k_pipe_get(struct k_pipe *pipe, void *data,
-			 size_t bytes_to_read, size_t *bytes_read,
-			 size_t min_xfer, k_timeout_t timeout);
-
-/**
- * @deprecated k_pipe_read_avail() will be removed in the new k_pipe API.
- * @brief Query the number of bytes that may be read from @a pipe.
- *
- * @param pipe Address of the pipe.
- *
- * @retval a number n such that 0 <= n <= @ref k_pipe.size; the
- *         result is zero for unbuffered pipes.
- */
-__deprecated  __syscall size_t k_pipe_read_avail(struct k_pipe *pipe);
-
-/**
- * @deprecated k_pipe_write_avail() will be removed in the new k_pipe API.
- * @brief Query the number of bytes that may be written to @a pipe
- *
- * @param pipe Address of the pipe.
- *
- * @retval a number n such that 0 <= n <= @ref k_pipe.size; the
- *         result is zero for unbuffered pipes.
- */
-__deprecated __syscall size_t k_pipe_write_avail(struct k_pipe *pipe);
-
-/**
- * @deprecated k_pipe_flush() will be removed in the new k_pipe API.
- * @brief Flush the pipe of write data
- *
- * This routine flushes the pipe. Flushing the pipe is equivalent to reading
- * both all the data in the pipe's buffer and all the data waiting to go into
- * that pipe into a large temporary buffer and discarding the buffer. Any
- * writers that were previously pended become unpended.
- *
- * @param pipe Address of the pipe.
- */
-__deprecated __syscall void k_pipe_flush(struct k_pipe *pipe);
-
-/**
- * @deprecated k_pipe_buffer_flush will be removed in the new k_pipe API.
- * @brief Flush the pipe's internal buffer
- *
- * This routine flushes the pipe's internal buffer. This is equivalent to
- * reading up to N bytes from the pipe (where N is the size of the pipe's
- * buffer) into a temporary buffer and then discarding that buffer. If there
- * were writers previously pending, then some may unpend as they try to fill
- * up the pipe's emptied buffer.
- *
- * @param pipe Address of the pipe.
- */
-__deprecated __syscall void k_pipe_buffer_flush(struct k_pipe *pipe);
-
-#else /* CONFIG_PIPES */
-
 enum pipe_flags {
 	PIPE_FLAG_OPEN = BIT(0),
 	PIPE_FLAG_RESET = BIT(1),
@@ -5345,11 +5327,11 @@ struct k_pipe {
  */
 #define Z_PIPE_INITIALIZER(obj, pipe_buffer, pipe_buffer_size)	\
 {								\
+	.waiting = 0,						\
 	.buf = RING_BUF_INIT(pipe_buffer, pipe_buffer_size),	\
 	.data = Z_WAIT_Q_INIT(&obj.data),			\
 	.space = Z_WAIT_Q_INIT(&obj.space),			\
 	.flags = PIPE_FLAG_OPEN,				\
-	.waiting = 0,						\
 	Z_POLL_EVENT_OBJ_INIT(obj)				\
 }
 /**
@@ -5433,7 +5415,6 @@ __syscall void k_pipe_reset(struct k_pipe *pipe);
  * @param pipe Address of the pipe.
  */
 __syscall void k_pipe_close(struct k_pipe *pipe);
-#endif /* CONFIG_PIPES */
 /** @} */
 
 /**

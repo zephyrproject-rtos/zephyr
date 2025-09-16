@@ -77,10 +77,11 @@ extern "C" {
  * The value of 8 correspond to page 0 in the LE Controller supported features.
  * 24 bytes are required for all subsequent supported feature pages.
  */
-#define BT_LE_LOCAL_SUPPORTED_FEATURES_SIZE                                                        \
-	(BT_HCI_LE_BYTES_PAGE_0_FEATURE_PAGE +                                                     \
-	 COND_CODE_1(CONFIG_BT_LE_MAX_LOCAL_SUPPORTED_FEATURE_PAGE,                                \
-		CONFIG_BT_LE_MAX_LOCAL_SUPPORTED_FEATURE_PAGE * BT_HCI_LE_BYTES_PER_FEATURE_PAGE,  \
+#define BT_LE_LOCAL_SUPPORTED_FEATURES_SIZE                         \
+	(BT_HCI_LE_BYTES_PAGE_0_FEATURE_PAGE +                      \
+	 COND_CODE_1(CONFIG_BT_LE_MAX_LOCAL_SUPPORTED_FEATURE_PAGE, \
+		(CONFIG_BT_LE_MAX_LOCAL_SUPPORTED_FEATURE_PAGE      \
+			* BT_HCI_LE_BYTES_PER_FEATURE_PAGE),        \
 		(0U)))
 
 /** Opaque type representing an advertiser. */
@@ -783,32 +784,6 @@ enum bt_le_adv_opt {
 	BT_LE_ADV_OPT_USE_IDENTITY = BIT(2),
 
 	/**
-	 * @deprecated This option will be removed in the near future, see
-	 * https://github.com/zephyrproject-rtos/zephyr/issues/71686
-	 *
-	 * @brief Advertise using GAP device name.
-	 *
-	 * Include the GAP device name automatically when advertising.
-	 * By default the GAP device name is put at the end of the scan
-	 * response data.
-	 * When advertising using @ref BT_LE_ADV_OPT_EXT_ADV and not
-	 * @ref BT_LE_ADV_OPT_SCANNABLE then it will be put at the end of the
-	 * advertising data.
-	 * If the GAP device name does not fit into advertising data it will be
-	 * converted to a shortened name if possible.
-	 * @ref BT_LE_ADV_OPT_FORCE_NAME_IN_AD can be used to force the device
-	 * name to appear in the advertising data of an advert with scan
-	 * response data.
-	 *
-	 * The application can set the device name itself by including the
-	 * following in the advertising data.
-	 * @code
-	 * BT_DATA(BT_DATA_NAME_COMPLETE, name, sizeof(name) - 1)
-	 * @endcode
-	 */
-	BT_LE_ADV_OPT_USE_NAME = BIT(3),
-
-	/**
 	 * @brief Low duty cycle directed advertising.
 	 *
 	 * Use low duty directed advertising mode, otherwise high duty mode
@@ -929,19 +904,6 @@ enum bt_le_adv_opt {
 
 	/** Disable advertising on channel index 39. */
 	BT_LE_ADV_OPT_DISABLE_CHAN_39 = BIT(17),
-
-	/**
-	 * @deprecated This option will be removed in the near future, see
-	 * https://github.com/zephyrproject-rtos/zephyr/issues/71686
-	 *
-	 * @brief Put GAP device name into advert data
-	 *
-	 * Will place the GAP device name into the advertising data rather than
-	 * the scan response data.
-	 *
-	 * @note Requires @ref BT_LE_ADV_OPT_USE_NAME
-	 */
-	BT_LE_ADV_OPT_FORCE_NAME_IN_AD = BIT(18),
 
 	/**
 	 * @brief Advertise using a Non-Resolvable Private Address.
@@ -1270,27 +1232,6 @@ struct bt_le_per_adv_param {
 
 #define BT_LE_ADV_CONN_ONE_TIME BT_LE_ADV_CONN_FAST_2 __DEPRECATED_MACRO
 
-/**
- * @deprecated This macro will be removed in the near future, see
- * https://github.com/zephyrproject-rtos/zephyr/issues/71686
- */
-#define BT_LE_ADV_CONN_NAME BT_LE_ADV_PARAM(BT_LE_ADV_OPT_CONNECTABLE | \
-					    BT_LE_ADV_OPT_USE_NAME, \
-					    BT_GAP_ADV_FAST_INT_MIN_2, \
-					    BT_GAP_ADV_FAST_INT_MAX_2, NULL) \
-					    __DEPRECATED_MACRO
-
-/**
- * @deprecated This macro will be removed in the near future, see
- * https://github.com/zephyrproject-rtos/zephyr/issues/71686
- */
-#define BT_LE_ADV_CONN_NAME_AD BT_LE_ADV_PARAM(BT_LE_ADV_OPT_CONNECTABLE | \
-					    BT_LE_ADV_OPT_USE_NAME | \
-					    BT_LE_ADV_OPT_FORCE_NAME_IN_AD, \
-					    BT_GAP_ADV_FAST_INT_MIN_2, \
-					    BT_GAP_ADV_FAST_INT_MAX_2, NULL) \
-					    __DEPRECATED_MACRO
-
 #define BT_LE_ADV_CONN_DIR_LOW_DUTY(_peer)                                                         \
 	BT_LE_ADV_PARAM(BT_LE_ADV_OPT_CONN | BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY,                      \
 			BT_GAP_ADV_FAST_INT_MIN_2, BT_GAP_ADV_FAST_INT_MAX_2, _peer)
@@ -1298,17 +1239,6 @@ struct bt_le_per_adv_param {
 /** Non-connectable advertising with private address */
 #define BT_LE_ADV_NCONN BT_LE_ADV_PARAM(0, BT_GAP_ADV_FAST_INT_MIN_2, \
 					BT_GAP_ADV_FAST_INT_MAX_2, NULL)
-
-/**
- * @deprecated This macro will be removed in the near future, see
- * https://github.com/zephyrproject-rtos/zephyr/issues/71686
- *
- * Non-connectable advertising with @ref BT_LE_ADV_OPT_USE_NAME
- */
-#define BT_LE_ADV_NCONN_NAME BT_LE_ADV_PARAM(BT_LE_ADV_OPT_USE_NAME, \
-					     BT_GAP_ADV_FAST_INT_MIN_2, \
-					     BT_GAP_ADV_FAST_INT_MAX_2, NULL) \
-					     __DEPRECATED_MACRO
 
 /** Non-connectable advertising with @ref BT_LE_ADV_OPT_USE_IDENTITY */
 #define BT_LE_ADV_NCONN_IDENTITY BT_LE_ADV_PARAM(BT_LE_ADV_OPT_USE_IDENTITY, \
@@ -1321,20 +1251,6 @@ struct bt_le_per_adv_param {
 	BT_LE_ADV_PARAM(BT_LE_ADV_OPT_EXT_ADV | BT_LE_ADV_OPT_CONN, BT_GAP_ADV_FAST_INT_MIN_2,     \
 			BT_GAP_ADV_FAST_INT_MAX_2, NULL)
 
-/**
- * @deprecated This macro will be removed in the near future, see
- * https://github.com/zephyrproject-rtos/zephyr/issues/71686
- *
- * Connectable extended advertising with @ref BT_LE_ADV_OPT_USE_NAME
- */
-#define BT_LE_EXT_ADV_CONN_NAME BT_LE_ADV_PARAM(BT_LE_ADV_OPT_EXT_ADV | \
-						BT_LE_ADV_OPT_CONNECTABLE | \
-						BT_LE_ADV_OPT_USE_NAME, \
-						BT_GAP_ADV_FAST_INT_MIN_2, \
-						BT_GAP_ADV_FAST_INT_MAX_2, \
-						NULL) \
-						__DEPRECATED_MACRO
-
 /** Scannable extended advertising */
 #define BT_LE_EXT_ADV_SCAN BT_LE_ADV_PARAM(BT_LE_ADV_OPT_EXT_ADV | \
 					   BT_LE_ADV_OPT_SCANNABLE, \
@@ -1342,37 +1258,10 @@ struct bt_le_per_adv_param {
 					   BT_GAP_ADV_FAST_INT_MAX_2, \
 					   NULL)
 
-/**
- * @deprecated This macro will be removed in the near future, see
- * https://github.com/zephyrproject-rtos/zephyr/issues/71686
- *
- * Scannable extended advertising with @ref BT_LE_ADV_OPT_USE_NAME
- */
-#define BT_LE_EXT_ADV_SCAN_NAME BT_LE_ADV_PARAM(BT_LE_ADV_OPT_EXT_ADV | \
-						BT_LE_ADV_OPT_SCANNABLE | \
-						BT_LE_ADV_OPT_USE_NAME, \
-						BT_GAP_ADV_FAST_INT_MIN_2, \
-						BT_GAP_ADV_FAST_INT_MAX_2, \
-						NULL) \
-						__DEPRECATED_MACRO
-
 /** Non-connectable extended advertising with private address */
 #define BT_LE_EXT_ADV_NCONN BT_LE_ADV_PARAM(BT_LE_ADV_OPT_EXT_ADV, \
 					    BT_GAP_ADV_FAST_INT_MIN_2, \
 					    BT_GAP_ADV_FAST_INT_MAX_2, NULL)
-
-/**
- * @deprecated This macro will be removed in the near future, see
- * https://github.com/zephyrproject-rtos/zephyr/issues/71686
- *
- * Non-connectable extended advertising with @ref BT_LE_ADV_OPT_USE_NAME
- */
-#define BT_LE_EXT_ADV_NCONN_NAME BT_LE_ADV_PARAM(BT_LE_ADV_OPT_EXT_ADV | \
-						 BT_LE_ADV_OPT_USE_NAME, \
-						 BT_GAP_ADV_FAST_INT_MIN_2, \
-						 BT_GAP_ADV_FAST_INT_MAX_2, \
-						 NULL) \
-						 __DEPRECATED_MACRO
 
 /** Non-connectable extended advertising with @ref BT_LE_ADV_OPT_USE_IDENTITY */
 #define BT_LE_EXT_ADV_NCONN_IDENTITY \
@@ -1387,20 +1276,6 @@ struct bt_le_per_adv_param {
 						  BT_GAP_ADV_FAST_INT_MIN_2, \
 						  BT_GAP_ADV_FAST_INT_MAX_2, \
 						  NULL)
-
-/**
- * @deprecated This macro will be removed in the near future, see
- * https://github.com/zephyrproject-rtos/zephyr/issues/71686
- *
- * Non-connectable extended advertising on coded PHY with
- * @ref BT_LE_ADV_OPT_USE_NAME
- */
-#define BT_LE_EXT_ADV_CODED_NCONN_NAME \
-		BT_LE_ADV_PARAM(BT_LE_ADV_OPT_EXT_ADV | BT_LE_ADV_OPT_CODED | \
-				BT_LE_ADV_OPT_USE_NAME, \
-				BT_GAP_ADV_FAST_INT_MIN_2, \
-				BT_GAP_ADV_FAST_INT_MAX_2, NULL) \
-				__DEPRECATED_MACRO
 
 /** Non-connectable extended advertising on coded PHY with
  *  @ref BT_LE_ADV_OPT_USE_IDENTITY
@@ -1684,10 +1559,6 @@ int bt_le_ext_adv_set_data(struct bt_le_ext_adv *adv,
  * advertiser set is currently advertising. Stop the advertising set before
  * calling this function.
  *
- * @note When changing the option @ref BT_LE_ADV_OPT_USE_NAME then
- *       @ref bt_le_ext_adv_set_data needs to be called in order to update the
- *       advertising data and scan response data.
- *
  * @param adv   Advertising set object.
  * @param param Advertising parameters.
  *
@@ -1748,6 +1619,9 @@ struct bt_le_ext_adv_info {
 
 	/** Currently selected Transmit Power (dBM). */
 	int8_t                     tx_power;
+
+	/** Advertising Set ID */
+	uint8_t                    sid;
 
 	/** Current local advertising address used. */
 	const bt_addr_le_t         *addr;

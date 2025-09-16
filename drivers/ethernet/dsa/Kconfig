@@ -1,7 +1,8 @@
-# Distributed Switch Architecture [DSA] configuration options
+# Distributed Switch Architecture [DSA] device configuration options
 
 # Copyright (c) 2020 DENX Software Engineering GmbH
 #               Lukasz Majewski <lukma@denx.de>
+# Copyright 2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 config ETH_DSA_SUPPORT_DEPRECATED
@@ -10,25 +11,13 @@ config ETH_DSA_SUPPORT_DEPRECATED
 	  Set by an ethernet driver that supports DSA. This is obsolete,
 	  and only used for legacy dsa device.
 
-menuconfig NET_DSA
-	bool "Distributed Switch Architecture support"
+menuconfig DSA_DRIVERS
+	bool "Distributed Switch Architecture device drivers"
+	default y if NET_DSA
 	help
 	  Enable Distributed Switch Architecture support.
 
-if NET_DSA
-
-config NET_DSA_DEPRECATED
-	bool "Distributed Switch Architecture support for legacy device"
-	select DEPRECATED
-	depends on ETH_DSA_SUPPORT_DEPRECATED
-	help
-	  This is obsolete, and only used for legacy dsa device.
-
-config DSA_PORT_MAX_COUNT
-	int "DSA port max count"
-	default 8
-	help
-	  Set DSA port max count.
+if DSA_DRIVERS
 
 config DSA_KSZ8XXX
 	bool
@@ -66,14 +55,6 @@ config DSA_KSZ_TAIL_TAGGING
 	help
 	  Add support for tail tagging on DSA device.
 
-config DSA_TAG_SIZE
-	int "DSA tag size in bytes"
-	default 1 if DSA_KSZ8794 || DSA_KSZ8863 || DSA_KSZ8463
-	default 0
-	depends on DSA_KSZ_TAIL_TAGGING
-	help
-	  Set the DSA tag length in bytes.
-
 config DSA_KSZ_PORT_ISOLATING
 	bool "Support for ports isolating"
 	depends on DSA_KSZ8794 || DSA_KSZ8863 || DSA_KSZ8463
@@ -86,10 +67,11 @@ config DSA_SPI
 	help
 	  Use SPI bus to communicate with PHY
 
-module = NET_DSA
-module-dep = NET_LOG
-module-str = Log level for DSA
-module-help = Enables core DSA code to output debug messages.
-source "subsys/net/Kconfig.template.log_config.net"
+config DSA_NXP_IMX_NETC
+	bool "Support for NXP i.MX NETC"
+	default y
+	depends on DT_HAS_NXP_NETC_SWITCH_ENABLED
+	help
+	  Add support for NXP i.MX NETC DSA device driver.
 
-endif # NET_DSA
+endif # DSA_DRIVERS

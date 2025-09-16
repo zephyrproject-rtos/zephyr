@@ -28,7 +28,7 @@
 		dac2: dac@40009800 {
 			compatible = "st,stm32-dac";
 			reg = <0x40009800 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB1, 26U)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 26)>;
 			status = "disabled";
 			#io-channel-cells = <1>;
 		};

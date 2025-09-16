@@ -162,7 +162,7 @@ static int flash_renesas_ra_ospi_b_spi_mode_init(ospi_b_instance_ctrl_t *p_ctrl,
 	}
 
 	/* DDR sampling window extend */
-	R_XSPI->LIOCFGCS_b[p_ctrl->channel].DDRSMPEX = 1;
+	R_XSPI0->LIOCFGCS_b[p_ctrl->channel].DDRSMPEX = 1;
 
 	/* Switch OSPI module to 1S-1S-1S mode to configure flash device */
 	err = R_OSPI_B_SpiProtocolSet(p_ctrl, SPI_FLASH_PROTOCOL_EXTENDED_SPI);
@@ -172,9 +172,9 @@ static int flash_renesas_ra_ospi_b_spi_mode_init(ospi_b_instance_ctrl_t *p_ctrl,
 	}
 
 	/* Reset flash device by driving OM_RESET pin */
-	R_XSPI->LIOCTL_b.RSTCS0 = 0;
+	R_XSPI0->LIOCTL_b.RSTCS0 = 0;
 	k_sleep(K_USEC(500));
-	R_XSPI->LIOCTL_b.RSTCS0 = 1;
+	R_XSPI0->LIOCTL_b.RSTCS0 = 1;
 	k_sleep(K_NSEC(50));
 
 	/* Transfer write enable command */

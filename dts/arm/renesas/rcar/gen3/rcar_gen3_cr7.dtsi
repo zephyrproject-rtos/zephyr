@@ -79,9 +79,9 @@
 			compatible = "renesas,rcar-cmt";
 			interrupt-parent = <&gic>;
 			interrupts = <GIC_SPI 142 IRQ_TYPE_LEVEL
-					IRQ_DEFAULT_PRIORITY>,
+				      IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 143 IRQ_TYPE_LEVEL
-					IRQ_DEFAULT_PRIORITY>;
+				      IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "irq_0", "irq_1";
 			reg = <0xe60f0500 0x1004>;
 			clocks = <&cpg CPG_MOD 303>;
@@ -93,7 +93,7 @@
 			reg = <0xe6c30000 0x1000>;
 			interrupt-parent = <&gic>;
 			interrupts = <GIC_SPI 186 IRQ_TYPE_LEVEL
-					IRQ_DEFAULT_PRIORITY>;
+				      IRQ_DEFAULT_PRIORITY>;
 			status = "disabled";
 		};
 
@@ -105,7 +105,7 @@
 			reg = <0xe6510000 0x40>;
 			interrupt-parent = <&gic>;
 			interrupts = <GIC_SPI 286 IRQ_TYPE_LEVEL
-					IRQ_DEFAULT_PRIORITY>;
+				      IRQ_DEFAULT_PRIORITY>;
 			clocks = <&cpg CPG_MOD 929>;
 			status = "disabled";
 		};
@@ -118,7 +118,7 @@
 			reg = <0xe66d8000 0x40>;
 			interrupt-parent = <&gic>;
 			interrupts = <GIC_SPI 19 IRQ_TYPE_LEVEL
-					IRQ_DEFAULT_PRIORITY>;
+				      IRQ_DEFAULT_PRIORITY>;
 			clocks = <&cpg CPG_MOD 927>;
 			status = "disabled";
 		};
@@ -128,7 +128,7 @@
 			reg = <0xe6e68000 0x64>;
 			interrupt-parent = <&gic>;
 			interrupts = <GIC_SPI 153 IRQ_TYPE_LEVEL
-					IRQ_DEFAULT_PRIORITY>;
+				      IRQ_DEFAULT_PRIORITY>;
 			current-speed = <115200>;
 			status = "disabled";
 		};
@@ -138,7 +138,7 @@
 			reg = <0xe6e88000 0x64>;
 			interrupt-parent = <&gic>;
 			interrupts = <GIC_SPI 164 IRQ_TYPE_LEVEL
-					IRQ_DEFAULT_PRIORITY>;
+				      IRQ_DEFAULT_PRIORITY>;
 			current-speed = <115200>;
 			status = "disabled";
 		};

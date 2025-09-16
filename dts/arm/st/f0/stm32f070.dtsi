@@ -13,7 +13,7 @@
 		usart2: serial@40004400 {
 			compatible = "st,stm32-usart", "st,stm32-uart";
 			reg = <0x40004400 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB1, 17U)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 17)>;
 			resets = <&rctl STM32_RESET(APB1, 17U)>;
 			interrupts = <28 0>;
 			status = "disabled";
@@ -22,7 +22,8 @@
 		timers15: timers@40014000 {
 			compatible = "st,stm32-timers";
 			reg = <0x40014000 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB2, 16U)>;
+			clocks = <&rcc STM32_CLOCK(APB2, 16)>,
+				 <&rcc STM32_SRC_TIMPCLK1 NO_SEL>;
 			resets = <&rctl STM32_RESET(APB2, 16U)>;
 			interrupts = <20 0>;
 			interrupt-names = "global";
@@ -45,7 +46,7 @@
 			ram-size = <1024>;
 			maximum-speed = "full-speed";
 			phys = <&usb_fs_phy>;
-			clocks = <&rcc STM32_CLOCK(APB1, 23U)>,
+			clocks = <&rcc STM32_CLOCK(APB1, 23)>,
 				 <&rcc STM32_SRC_PLLCLK USB_SEL(1)>;
 			status = "disabled";
 		};

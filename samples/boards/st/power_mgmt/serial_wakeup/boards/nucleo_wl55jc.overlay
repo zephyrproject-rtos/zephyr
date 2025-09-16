@@ -4,11 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 &lpuart1 {
 	/* Set domain clock to LSE to allow wakeup from Stop mode */
 	clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000001>,
-		<&rcc STM32_SRC_LSE LPUART1_SEL(3)>;
+		 <&rcc STM32_SRC_LSE LPUART1_SEL(3)>;
 
 	/* LPUART1 clock source on LSE : set console at 9600 */
 	current-speed = <9600>;

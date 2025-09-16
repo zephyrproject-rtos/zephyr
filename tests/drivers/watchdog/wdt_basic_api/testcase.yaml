@@ -21,10 +21,10 @@ tests:
       - mps2/an383
       - mps2/an386
       - mps2/an500
-      - panb511evb/nrf54l15/cpuapp
-      - panb511evb/nrf54l15/cpuapp/ns
-      - panb511evb/nrf54l15/cpuflpr
-      - panb511evb/nrf54l15/cpuflpr/xip
+      - panb611evb/nrf54l15/cpuapp
+      - panb611evb/nrf54l15/cpuapp/ns
+      - panb611evb/nrf54l15/cpuflpr
+      - panb611evb/nrf54l15/cpuflpr/xip
       - mimxrt700_evk/mimxrt798s/cm33_cpu1
       - nrf54l15dk/nrf54l15/cpuapp/ns
       - nrf54l15dk/nrf54l10/cpuapp/ns
@@ -55,7 +55,6 @@ tests:
       - nucleo_u385rg_q
       - nucleo_u575zi_q
       - nucleo_c031c6
-      - stm32h573i_dk
       - nucleo_wba55cg
     integration_platforms:
       - nucleo_f091rc

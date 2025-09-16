@@ -16,7 +16,9 @@
 
 extern const uint8_t g_gpio_open_drain_n_support[];
 extern const uint8_t g_gpio_pull_up_support[];
+#ifndef CONFIG_SOC_SERIES_RX261
 extern const uint8_t g_gpio_dscr_support[];
+#endif
 
 static bool gpio_pin_function_check(uint8_t const *check_array, uint8_t port_number,
 				    uint8_t pin_number)
@@ -45,6 +47,7 @@ static int pinctrl_configure_pullup(const pinctrl_soc_pin_t *pin, uint32_t value
 	return ret;
 }
 
+#ifndef CONFIG_SOC_SERIES_RX261
 static int pinctrl_configure_dscr(const pinctrl_soc_pin_t *pin, uint32_t value)
 {
 	gpio_port_pin_t port_pin;
@@ -61,6 +64,7 @@ static int pinctrl_configure_dscr(const pinctrl_soc_pin_t *pin, uint32_t value)
 
 	return ret;
 }
+#endif
 
 static int pinctrl_configure_opendrain(const pinctrl_soc_pin_t *pin, uint32_t value)
 {
@@ -133,13 +137,14 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 		if (ret != 0) {
 			return -EINVAL;
 		}
-
+#ifndef CONFIG_SOC_SERIES_RX261
 		/* Set drive-strength */
 		ret = pinctrl_configure_dscr(pin, pin->cfg.drive_strength);
 
 		if (ret != 0) {
 			return -EINVAL;
 		}
+#endif
 
 		/* Set pin function */
 		pconfig.analog_enable = pin->cfg.analog_enable;

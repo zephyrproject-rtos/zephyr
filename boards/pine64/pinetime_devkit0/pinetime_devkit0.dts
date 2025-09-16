@@ -41,18 +41,22 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		blled0: bl_led_0 {
 			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
 			label = "Backlight Low";
 		};
+
 		blled1: bl_led_1 {
 			gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
 			label = "Backlight Medium";
 		};
+
 		blled2: bl_led_2 {
 			gpios = <&gpio0 23 GPIO_ACTIVE_LOW>;
 			label = "Backlight High";
 		};
+
 		statusled: led_3 {
 			gpios = <&gpio0 27 GPIO_ACTIVE_LOW>;
 			label = "Status Led";
@@ -61,6 +65,7 @@
 
 	buttons {
 		compatible = "gpio-keys";
+
 		key_in: button_0 {
 			gpios = <&gpio0 13 GPIO_ACTIVE_HIGH>;
 			label = "Key in";
@@ -88,6 +93,7 @@
 		write-only;
 		#address-cells = <1>;
 		#size-cells = <0>;
+
 		/* Sitronix ST7789V LCD */
 		st7789v: st7789v@1 {
 			compatible = "sitronix,st7789v";
@@ -161,6 +167,7 @@
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-1 = <&i2c0_sleep>;
 	pinctrl-names = "default", "sleep";
+
 	bma421: bma421@18 {
 		compatible = "bosch,bma4xx";
 		reg = <0x18>;
@@ -191,6 +198,7 @@
 	pinctrl-0 = <&spi1_default>;
 	pinctrl-1 = <&spi1_sleep>;
 	pinctrl-names = "default", "sleep";
+
 	xt25fb32: xt25fb32@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;

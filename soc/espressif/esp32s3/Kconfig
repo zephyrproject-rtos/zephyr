@@ -24,10 +24,12 @@ choice ESP32S3_INSTRUCTION_CACHE_SIZE
 	  If you use 16KB instruction cache rather than 32KB instruction cache,
 	  then the other 16KB will be managed by heap allocator.
 
-	config ESP32S3_INSTRUCTION_CACHE_16KB
-		bool "16KB"
-	config ESP32S3_INSTRUCTION_CACHE_32KB
-		bool "32KB"
+config ESP32S3_INSTRUCTION_CACHE_16KB
+	bool "16KB"
+
+config ESP32S3_INSTRUCTION_CACHE_32KB
+	bool "32KB"
+
 endchoice
 
 config ESP32S3_INSTRUCTION_CACHE_SIZE
@@ -41,10 +43,12 @@ choice ESP32S3_ICACHE_ASSOCIATED_WAYS
 	help
 	  Instruction cache associated ways to be set on application startup.
 
-	config ESP32S3_INSTRUCTION_CACHE_4WAYS
-		bool "4 ways"
-	config ESP32S3_INSTRUCTION_CACHE_8WAYS
-		bool "8 ways"
+config ESP32S3_INSTRUCTION_CACHE_4WAYS
+	bool "4 ways"
+
+config ESP32S3_INSTRUCTION_CACHE_8WAYS
+	bool "8 ways"
+
 endchoice
 
 config ESP32S3_ICACHE_ASSOCIATED_WAYS
@@ -58,11 +62,13 @@ choice ESP32S3_INSTRUCTION_CACHE_LINE_SIZE
 	help
 	  Instruction cache line size to be set on application startup.
 
-	config ESP32S3_INSTRUCTION_CACHE_LINE_16B
-		bool "16 Bytes"
-		depends on ESP32S3_INSTRUCTION_CACHE_16KB
-	config ESP32S3_INSTRUCTION_CACHE_LINE_32B
-		bool "32 Bytes"
+config ESP32S3_INSTRUCTION_CACHE_LINE_16B
+	bool "16 Bytes"
+	depends on ESP32S3_INSTRUCTION_CACHE_16KB
+
+config ESP32S3_INSTRUCTION_CACHE_LINE_32B
+	bool "32 Bytes"
+
 endchoice
 
 config ESP32S3_INSTRUCTION_CACHE_LINE_SIZE
@@ -85,12 +91,15 @@ choice ESP32S3_DATA_CACHE_SIZE
 	  If you use 32KB data cache rather than 64KB data cache,
 	  the other 32KB will be added to the heap.
 
-	config ESP32S3_DATA_CACHE_16KB
-		bool "16KB"
-	config ESP32S3_DATA_CACHE_32KB
-		bool "32KB"
-	config ESP32S3_DATA_CACHE_64KB
-		bool "64KB"
+config ESP32S3_DATA_CACHE_16KB
+	bool "16KB"
+
+config ESP32S3_DATA_CACHE_32KB
+	bool "32KB"
+
+config ESP32S3_DATA_CACHE_64KB
+	bool "64KB"
+
 endchoice
 
 config ESP32S3_DATA_CACHE_SIZE
@@ -106,10 +115,12 @@ choice ESP32S3_DCACHE_ASSOCIATED_WAYS
 	help
 	  Data cache associated ways to be set on application startup.
 
-	config ESP32S3_DATA_CACHE_4WAYS
-		bool "4 ways"
-	config ESP32S3_DATA_CACHE_8WAYS
-		bool "8 ways"
+config ESP32S3_DATA_CACHE_4WAYS
+	bool "4 ways"
+
+config ESP32S3_DATA_CACHE_8WAYS
+	bool "8 ways"
+
 endchoice
 
 config ESP32S3_DCACHE_ASSOCIATED_WAYS
@@ -123,13 +134,16 @@ choice ESP32S3_DATA_CACHE_LINE_SIZE
 	help
 	  Data cache line size to be set on application startup.
 
-	config ESP32S3_DATA_CACHE_LINE_16B
-		bool "16 Bytes"
-		depends on ESP32S3_DATA_CACHE_16KB || ESP32S3_DATA_CACHE_32KB
-	config ESP32S3_DATA_CACHE_LINE_32B
-		bool "32 Bytes"
-	config ESP32S3_DATA_CACHE_LINE_64B
-		bool "64 Bytes"
+config ESP32S3_DATA_CACHE_LINE_16B
+	bool "16 Bytes"
+	depends on ESP32S3_DATA_CACHE_16KB || ESP32S3_DATA_CACHE_32KB
+
+config ESP32S3_DATA_CACHE_LINE_32B
+	bool "32 Bytes"
+
+config ESP32S3_DATA_CACHE_LINE_64B
+	bool "64 Bytes"
+
 endchoice
 
 config ESP32S3_DATA_CACHE_LINE_SIZE
@@ -148,7 +162,6 @@ config ESP32S3_DATA_CACHE_WRAP
 config MAC_BB_PD
 	bool "Power down MAC and baseband of Wi-Fi and Bluetooth when PHY is disabled"
 	depends on SOC_SERIES_ESP32S3 && TICKLESS_KERNEL
-	default n
 	help
 	  If enabled, the MAC and baseband of Wi-Fi and Bluetooth will be powered
 	  down when PHY is disabled. Enabling this setting reduces power consumption

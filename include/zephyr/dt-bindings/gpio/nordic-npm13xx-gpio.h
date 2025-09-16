@@ -18,7 +18,7 @@
  * - Bit 10: Watchdog reset (0=OFF, 1=ON)
  * - Bit 11: Power loss warning (0=OFF, 1=ON)
  *
- * @ingroup gpio_interface
+ * @ingroup gpio_interface_ext
  * @{
  */
 

@@ -26,7 +26,6 @@
 				compatible = "arm,armv7m-mpu";
 				reg = <0xe000ed90 0x40>;
 			};
-
 		};
 	};
 
@@ -98,6 +97,7 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 			ngpios = <16>;
+			vbatts-pins = <2 3 4>;
 			status = "disabled";
 		};
 
@@ -121,19 +121,30 @@
 			status = "disabled";
 		};
 
+		dma0: dma@40005000 {
+			compatible = "renesas,ra-dma";
+			reg = <0x40005000 0x100>, <0x40005200 0xa0>;
+			reg-names = "channel", "common";
+			clocks = <&iclk MSTPA 22>;
+			dma-channels = <4>;
+			#dma-cells = <2>;
+			status = "disabled";
+		};
+
 		pinctrl: pin-controller@40040800 {
 			compatible = "renesas,ra-pinctrl-pfs";
 			reg = <0x40040800 0x3c0>;
 			status = "okay";
 		};
 
-		sci0: sci0@40070000  {
+		sci0: sci0@40070000 {
 			compatible = "renesas,ra-sci";
 			interrupts = <0 1>, <1 1>, <2 1>, <3 1>;
 			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x40070000 0x20>;
 			clocks = <&pclka MSTPB 31>;
 			status = "disabled";
+
 			uart {
 				compatible = "renesas,ra-sci-uart";
 				channel = <0>;
@@ -141,13 +152,14 @@
 			};
 		};
 
-		sci1: sci1@40070020  {
+		sci1: sci1@40070020 {
 			compatible = "renesas,ra-sci";
 			interrupts = <4 1>, <5 1>, <6 1>, <7 1>;
 			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x40070020 0x20>;
 			clocks = <&pclka MSTPB 30>;
 			status = "disabled";
+
 			uart {
 				compatible = "renesas,ra-sci-uart";
 				channel = <1>;
@@ -155,11 +167,12 @@
 			};
 		};
 
-		sci9: sci9@40070120  {
+		sci9: sci9@40070120 {
 			compatible = "renesas,ra-sci";
 			reg = <0x40070120 0x20>;
 			clocks = <&pclka MSTPB 22>;
 			status = "disabled";
+
 			uart {
 				compatible = "renesas,ra-sci-uart";
 				channel = <9>;
@@ -187,7 +200,7 @@
 			status = "disabled";
 		};
 
-		agt0: agt@40084000  {
+		agt0: agt@40084000 {
 			compatible = "renesas,ra-agt";
 			channel = <0>;
 			reg = <0x40084000 0x100>;
@@ -241,6 +254,13 @@
 			};
 		};
 
+		crc: crc@40074000 {
+			compatible = "renesas,ra-crc";
+			reg = <0x40074000 0x1000>;
+			clocks = <&pclka MSTPC 1>;
+			status = "disabled";
+		};
+
 		iic0: iic0@40053000 {
 			compatible = "renesas,ra-iic";
 			channel = <0>;
@@ -269,13 +289,6 @@
 				compatible = "renesas,ra-udc";
 				status = "disabled";
 			};
-		};
-
-		id_code: id_code@1010018 {
-			compatible = "zephyr,memory-region";
-			reg = <0x01010018 0x20>;
-			zephyr,memory-region = "ID_CODE";
-			status = "okay";
 		};
 
 		port_irq0: external-interrupt@40006000 {
@@ -448,6 +461,44 @@
 			clocks = <&pclkb MSTPC 3>;
 			variant = "ctsua";
 			status = "disabled";
+		};
+
+		option-setting-ofs-in-rom@400 {
+			reg = <0x00000400 0x3c>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			option_setting_ofs0: option-setting-ofs0@400 {
+				compatible = "renesas,ofs-memory";
+				reg = <0x00000400 0x4>;
+				status = "okay";
+			};
+
+			option_setting_ofs1: option-setting-ofs1@404 {
+				compatible = "renesas,ofs-memory";
+				reg = <0x00000404 0x4>;
+				status = "okay";
+			};
+
+			option_setting_secmpu: option-setting-secmpu@408 {
+				compatible = "renesas,ofs-memory";
+				reg = <0x00000408 0x34>;
+				status = "okay";
+			};
+		};
+
+		option-setting-ofs-conf@1010008 {
+			reg = <0x01010008 0x2c>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "okay";
+
+			option_setting_osis: option-setting-osis@1010018 {
+				compatible = "zephyr,memory-region";
+				zephyr,memory-region = "OFS_OSIS_MEMORY";
+				reg = <0x01010018 0x1c>;
+				status = "okay";
+			};
 		};
 	};
 

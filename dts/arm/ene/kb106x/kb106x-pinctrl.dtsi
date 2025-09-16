@@ -138,76 +138,76 @@
 
 	/* spi host - shi pinout */
 	/omit-if-no-ref/ shi_cs_gpio60: shi_cs_gpio60 {
-		pinmux = < ENE_KB106X_PINMUX(0x60, PINMUX_FUNC_B) >;
-		drive-strength = <16> ;
+		pinmux = <ENE_KB106X_PINMUX(0x60, PINMUX_FUNC_B)>;
+		drive-strength = <16>;
 	};
 
 	/omit-if-no-ref/ shi_clk_gpio61: shi_clk_gpio61 {
-		pinmux = < ENE_KB106X_PINMUX(0x61, PINMUX_FUNC_B) >;
-		drive-strength = <16> ;
+		pinmux = <ENE_KB106X_PINMUX(0x61, PINMUX_FUNC_B)>;
+		drive-strength = <16>;
 	};
 
 	/omit-if-no-ref/ shi_mosi_gpio62: shi_mosi_gpio62 {
-		pinmux = < ENE_KB106X_PINMUX(0x62, PINMUX_FUNC_B) >;
-		drive-strength = <16> ;
+		pinmux = <ENE_KB106X_PINMUX(0x62, PINMUX_FUNC_B)>;
+		drive-strength = <16>;
 	};
 
 	/omit-if-no-ref/ shi_miso_gpio78: shi_miso_gpio78 {
-		pinmux = < ENE_KB106X_PINMUX(0x78, PINMUX_FUNC_A) >;
+		pinmux = <ENE_KB106X_PINMUX(0x78, PINMUX_FUNC_A)>;
 		input-enable;
 	};
 
 	/omit-if-no-ref/ shi_cs_off_gpio60: shi_cs_off_gpio60 {
-		pinmux = < ENE_KB106X_PINMUX(0x60, PINMUX_FUNC_A) >;
+		pinmux = <ENE_KB106X_PINMUX(0x60, PINMUX_FUNC_A)>;
 	};
 
 	/omit-if-no-ref/ shi_clk_off_gpio61: shi_clk_off_gpio61 {
-		pinmux = < ENE_KB106X_PINMUX(0x61, PINMUX_FUNC_A) >;
+		pinmux = <ENE_KB106X_PINMUX(0x61, PINMUX_FUNC_A)>;
 	};
 
 	/omit-if-no-ref/ shi_mosi_off_gpio62: shi_mosi_off_gpio62 {
-		pinmux = < ENE_KB106X_PINMUX(0x62, PINMUX_FUNC_A) >;
+		pinmux = <ENE_KB106X_PINMUX(0x62, PINMUX_FUNC_A)>;
 	};
 
 	/omit-if-no-ref/ shi_miso_off_gpio78: shi_miso_off_gpio78 {
-		pinmux = < ENE_KB106X_PINMUX(0x78, PINMUX_FUNC_A) >;
+		pinmux = <ENE_KB106X_PINMUX(0x78, PINMUX_FUNC_A)>;
 	};
 
 	/* spi host - share rom pinout */
 	/omit-if-no-ref/ shr_cs_gpio5a: shr_cs_gpio5a {
-		pinmux = < ENE_KB106X_PINMUX(0x5A, PINMUX_FUNC_B) >;
-		drive-strength = <16> ;
+		pinmux = <ENE_KB106X_PINMUX(0x5A, PINMUX_FUNC_B)>;
+		drive-strength = <16>;
 	};
 
 	/omit-if-no-ref/ shr_clk_gpio58: shr_clk_gpio58 {
-		pinmux = < ENE_KB106X_PINMUX(0x58, PINMUX_FUNC_B) >;
-		drive-strength = <16> ;
+		pinmux = <ENE_KB106X_PINMUX(0x58, PINMUX_FUNC_B)>;
+		drive-strength = <16>;
 	};
 
 	/omit-if-no-ref/ shr_mosi_gpio5c: shr_mosi_gpio5c {
-		pinmux = < ENE_KB106X_PINMUX(0x5C, PINMUX_FUNC_B) >;
-		drive-strength = <16> ;
+		pinmux = <ENE_KB106X_PINMUX(0x5C, PINMUX_FUNC_B)>;
+		drive-strength = <16>;
 	};
 
 	/omit-if-no-ref/ shr_miso_gpio5b: shr_miso_gpio5b {
-		pinmux = < ENE_KB106X_PINMUX(0x5B, PINMUX_FUNC_A) >;
+		pinmux = <ENE_KB106X_PINMUX(0x5B, PINMUX_FUNC_A)>;
 		input-enable;
 	};
 
 	/omit-if-no-ref/ shr_cs_off_gpio5a: shr_cs_off_gpio5a {
-		pinmux = < ENE_KB106X_PINMUX(0x5A, PINMUX_FUNC_A) >;
+		pinmux = <ENE_KB106X_PINMUX(0x5A, PINMUX_FUNC_A)>;
 	};
 
 	/omit-if-no-ref/ shr_clk_off_gpio58: shr_clk_off_gpio58 {
-		pinmux = < ENE_KB106X_PINMUX(0x58, PINMUX_FUNC_A) >;
+		pinmux = <ENE_KB106X_PINMUX(0x58, PINMUX_FUNC_A)>;
 	};
 
 	/omit-if-no-ref/ shr_mosi_off_gpio5c: shr_mosi_off_gpio5c {
-		pinmux = < ENE_KB106X_PINMUX(0x5C, PINMUX_FUNC_A) >;
+		pinmux = <ENE_KB106X_PINMUX(0x5C, PINMUX_FUNC_A)>;
 	};
 
 	/omit-if-no-ref/ shr_miso_off_gpio5b: shr_miso_off_gpio5b {
-		pinmux = < ENE_KB106X_PINMUX(0x5B, PINMUX_FUNC_A) >;
+		pinmux = <ENE_KB106X_PINMUX(0x5B, PINMUX_FUNC_A)>;
 	};
 
 	/* pwm */

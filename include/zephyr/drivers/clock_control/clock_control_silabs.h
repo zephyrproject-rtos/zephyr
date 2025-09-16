@@ -19,6 +19,8 @@
 #include <zephyr/dt-bindings/clock/silabs/xg24-clock.h>
 #elif defined(CONFIG_SOC_SILABS_XG27)
 #include <zephyr/dt-bindings/clock/silabs/xg27-clock.h>
+#elif defined(CONFIG_SOC_SILABS_XG28)
+#include <zephyr/dt-bindings/clock/silabs/xg28-clock.h>
 #elif defined(CONFIG_SOC_SILABS_XG29)
 #include <zephyr/dt-bindings/clock/silabs/xg29-clock.h>
 #endif

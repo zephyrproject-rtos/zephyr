@@ -8,7 +8,6 @@
 	status = "okay";
 };
 
-
 dut: &usart4 {
 	dmas = <&dmamux1 5 57 STM32_DMA_PERIPH_TX>,
 	       <&dmamux1 6 56 STM32_DMA_PERIPH_RX>;

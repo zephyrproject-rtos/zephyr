@@ -24,8 +24,7 @@ if NET_CONFIG_SETTINGS
 
 config NET_CONFIG_AUTO_INIT
 	bool "Init networking support automatically during device startup"
-	default n if USB_DEVICE_NETWORK || USBD_CDC_ECM_CLASS || USBD_CDC_NCM_CLASS
-	default y
+	default y if !(USB_DEVICE_NETWORK || USBD_CDC_ECM_CLASS || USBD_CDC_NCM_CLASS)
 	help
 	  If this option is set, then the networking system is automatically
 	  initialized when the device is started. If you do not wish to do
@@ -249,10 +248,12 @@ if NET_CONFIG_SNTP_INIT_RESYNC
 config NET_CONFIG_SNTP_INIT_RESYNC_INTERVAL
 	int "SNTP resync interval (sec)"
 	default 3600
+	range 15 $(UINT32_MAX)
 
 config NET_CONFIG_SNTP_INIT_RESYNC_ON_FAILURE_INTERVAL
 	int "SNTP resync interval (sec) on failure"
 	default NET_CONFIG_SNTP_INIT_RESYNC_INTERVAL
+	range 15 $(UINT32_MAX)
 	help
 	  If the SNTP request fails, then this is the interval to wait
 	  before trying again.

@@ -97,9 +97,9 @@ tests:
   # transport. Transport does not affect flags so it does not really matter which is selected,
   # flags should affect any transport the same way.
   sample.mcumgr.smp_svr.mcuboot_flags.direct_xip_withrevert:
-    extra_args: EXTRA_CONF_FILE="overlay-serial.conf"
-    extra_configs:
-      - CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT=y
+    extra_args:
+      - EXTRA_CONF_FILE="overlay-serial.conf"
+      - SB_CONFIG_MCUBOOT_MODE_DIRECT_XIP_WITH_REVERT=y
     platform_allow:
       - nrf52840dk/nrf52840
       - pinnacle_100_dvk
@@ -182,8 +182,17 @@ tests:
       - EXTRA_CONF_FILE="overlay-serial.conf"
     platform_allow:
       - nrf52840dk/nrf52840
+      - mimxrt1050_evk/mimxrt1052/hyperflash
+  sample.mcumgr.smp_svr.ram_load_revert.serial:
+    extra_args:
+      - FILE_SUFFIX="ram_load"
+      - EXTRA_CONF_FILE="overlay-serial.conf"
+      - SB_CONFIG_MCUBOOT_MODE_RAM_LOAD_WITH_REVERT=y
+      - smp_svr_CONFIG_MCUBOOT_GENERATE_CONFIRMED_IMAGE=y
+    platform_allow:
+      - mimxrt1050_evk/mimxrt1052/hyperflash
     integration_platforms:
-      - nrf52840dk/nrf52840
+      - mimxrt1050_evk/mimxrt1052/hyperflash
   sample.mcumgr.smp_svr.ram_load.serial.fs.shell:
     extra_args:
       - FILE_SUFFIX="ram_load"

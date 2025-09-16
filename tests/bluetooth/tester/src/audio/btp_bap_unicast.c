@@ -21,7 +21,6 @@
 #include <hci_core.h>
 
 #include "ascs_internal.h"
-#include "bap_endpoint.h"
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
 #define LOG_MODULE_NAME bttester_bap_unicast
@@ -157,13 +156,14 @@ struct bt_bap_ep *btp_bap_unicast_end_point_find(struct btp_bap_unicast_connecti
 	return NULL;
 }
 
-static void btp_send_ascs_ase_state_changed_ev(struct bt_conn *conn, uint8_t ase_id, uint8_t state)
+static void btp_send_ascs_ase_state_changed_ev(struct bt_conn *conn, uint8_t ase_id,
+					       enum bt_bap_ep_state state)
 {
 	struct btp_ascs_ase_state_changed_ev ev;
 
 	bt_addr_le_copy(&ev.address, bt_conn_get_dst(conn));
 	ev.ase_id = ase_id;
-	ev.state = state;
+	ev.state = (uint8_t)state;
 
 	tester_event(BTP_SERVICE_ID_ASCS, BTP_ASCS_EV_ASE_STATE_CHANGED, &ev, sizeof(ev));
 }
@@ -696,16 +696,20 @@ static void send_stream_received_ev(struct bt_conn *conn, struct bt_bap_ep *ep,
 				    uint8_t data_len, uint8_t *data)
 {
 	struct btp_bap_stream_received_ev *ev;
+	struct bt_bap_ep_info ep_info;
+	int err;
+
+	err = bt_bap_ep_get_info(ep, &ep_info);
+	__ASSERT_NO_MSG(err == 0);
 
 	tester_rsp_buffer_lock();
 	tester_rsp_buffer_allocate(sizeof(*ev) + data_len, (uint8_t **)&ev);
 
-	LOG_DBG("Stream received, ep %d, dir %d, len %d", ep->status.id, ep->dir,
-		data_len);
+	LOG_DBG("Stream received, ep %d, dir %d, len %d", ep_info.id, ep_info.dir, data_len);
 
 	bt_addr_le_copy(&ev->address, bt_conn_get_dst(conn));
 
-	ev->ase_id = ep->status.id;
+	ev->ase_id = ep_info.id;
 	ev->data_len = data_len;
 	memcpy(ev->data, data, data_len);
 
@@ -931,7 +935,13 @@ static void unicast_client_endpoint_cb(struct bt_conn *conn, enum bt_audio_dir d
 	LOG_DBG("");
 
 	if (ep != NULL) {
-		LOG_DBG("Discovered ASE %p, id %u, dir 0x%02x", ep, ep->status.id, ep->dir);
+		struct bt_bap_ep_info ep_info;
+		int err;
+
+		err = bt_bap_ep_get_info(ep, &ep_info);
+		__ASSERT_NO_MSG(err == 0);
+
+		LOG_DBG("Discovered ASE %p, id %u, dir 0x%02x", ep, ep_info.id, ep_info.dir);
 
 		u_conn = &connections[bt_conn_index(conn)];
 
@@ -1340,6 +1350,8 @@ uint8_t btp_ascs_configure_codec(const void *cmd, uint16_t cmd_len, void *rsp, u
 
 	memset(&codec_cfg, 0, sizeof(codec_cfg));
 
+	codec_cfg.target_latency = BT_AUDIO_CODEC_CFG_TARGET_LATENCY_BALANCED;
+	codec_cfg.target_phy = BT_AUDIO_CODEC_CFG_TARGET_PHY_2M;
 	codec_cfg.id = cp->coding_format;
 	codec_cfg.vid = cp->vid;
 	codec_cfg.cid = cp->cid;

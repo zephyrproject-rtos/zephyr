@@ -11,7 +11,7 @@
 		group0 {
 			drive-strength = "x1";
 			pinmux = <&iomuxc_uart1_rxd_uart_rx_uart1_rx>,
-				<&iomuxc_uart1_txd_uart_tx_uart1_tx>;
+				 <&iomuxc_uart1_txd_uart_tx_uart1_tx>;
 			slew-rate = "slow";
 		};
 	};
@@ -21,7 +21,7 @@
 			bias-pull-up;
 			drive-strength = "x1";
 			pinmux = <&iomuxc_uart4_rxd_uart_rx_uart4_rx>,
-				<&iomuxc_uart4_txd_uart_tx_uart4_tx>;
+				 <&iomuxc_uart4_txd_uart_tx_uart4_tx>;
 			slew-rate = "slow";
 		};
 	};

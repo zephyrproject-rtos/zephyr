@@ -31,6 +31,14 @@ config SOC_AM6234_M4
 	bool
 	select SOC_SERIES_AM6X_M4
 
+config SOC_AM6254_A53
+	bool
+	select SOC_SERIES_AM6X_A53
+
+config SOC_AM6254_M4
+	bool
+	select SOC_SERIES_AM6X_M4
+
 config SOC_AM6232_A53
 	bool
 	select SOC_SERIES_AM6X_A53
@@ -86,6 +94,7 @@ config SOC
 	default "am2434" if SOC_AM2434_M4 || SOC_AM2434_R5F0_0
 	default "am6232" if SOC_AM6232_M4 || SOC_AM6232_A53
 	default "am6234" if SOC_AM6234_M4 || SOC_AM6234_A53
+	default "am6254" if SOC_AM6254_M4 || SOC_AM6254_A53
 	default "am6442" if SOC_AM6442_M4
 	default "am6442" if SOC_AM6442_R5F0_0
 	default "am6442" if SOC_AM6442_R5F0_1

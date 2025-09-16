@@ -19,17 +19,21 @@
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
+#include <zephyr/drivers/usb/udc_buf.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/net_buf.h>
 #include <zephyr/shell/shell.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/sys/ring_buffer.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/sys_clock.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/usb/usb_device.h>
-#include <zephyr/usb/class/usb_audio.h>
+#include <zephyr/usb/class/usbd_uac2.h>
+#include <zephyr/usb/usbd.h>
 
 #if defined(CONFIG_SOC_NRF5340_CPUAPP)
 #include <nrfx_clock.h>
@@ -48,10 +52,40 @@ LOG_MODULE_REGISTER(bap_usb, CONFIG_BT_BAP_STREAM_LOG_LEVEL);
 #define USB_MONO_FRAME_SIZE    (USB_SAMPLE_CNT * USB_BYTES_PER_SAMPLE)
 #define USB_CHANNELS           2U
 #define USB_STEREO_FRAME_SIZE  (USB_MONO_FRAME_SIZE * USB_CHANNELS)
-#define USB_OUT_RING_BUF_SIZE  (CONFIG_BT_ISO_RX_BUF_COUNT * LC3_MAX_NUM_SAMPLES_STEREO)
-#define USB_IN_RING_BUF_SIZE   (USB_MONO_FRAME_SIZE * USB_ENQUEUE_COUNT)
+
+#define IN_TERMINAL_ID  UAC2_ENTITY_ID(DT_NODELABEL(in_terminal))
+#define OUT_TERMINAL_ID UAC2_ENTITY_ID(DT_NODELABEL(out_terminal))
 
 #if defined CONFIG_BT_AUDIO_RX
+static void usb_data_request(const struct device *dev);
+#endif /* CONFIG_BT_AUDIO_RX */
+
+static bool in_terminal_enabled;
+static bool out_terminal_enabled;
+static void usb_terminal_update_cb(const struct device *dev, uint8_t terminal, bool enabled,
+				   bool microframes, void *user_data)
+{
+	if (terminal == IN_TERMINAL_ID) {
+		in_terminal_enabled = enabled;
+	} else if (terminal == OUT_TERMINAL_ID) {
+		out_terminal_enabled = enabled;
+	} else {
+		/* no-op */
+	}
+}
+
+static void usb_sof_cb(const struct device *dev, void *user_data)
+{
+#if defined CONFIG_BT_AUDIO_RX
+	if (in_terminal_enabled) {
+		usb_data_request(dev);
+	} /* else no-op, but is mandatory to register */
+#endif /* CONFIG_BT_AUDIO_RX */
+}
+
+#if defined CONFIG_BT_AUDIO_RX
+#define USB_IN_RING_BUF_SIZE (CONFIG_BT_ISO_RX_BUF_COUNT * LC3_MAX_NUM_SAMPLES_STEREO)
+
 struct decoded_sdu {
 	int16_t right_frames[MAX_CODEC_FRAMES_PER_SDU][LC3_MAX_NUM_SAMPLES_MONO];
 	int16_t left_frames[MAX_CODEC_FRAMES_PER_SDU][LC3_MAX_NUM_SAMPLES_MONO];
@@ -61,14 +95,14 @@ struct decoded_sdu {
 	uint32_t ts;
 } decoded_sdu;
 
-RING_BUF_DECLARE(usb_out_ring_buf, USB_OUT_RING_BUF_SIZE);
-NET_BUF_POOL_DEFINE(usb_out_buf_pool, USB_ENQUEUE_COUNT, USB_STEREO_FRAME_SIZE, 0, net_buf_destroy);
+RING_BUF_DECLARE(usb_in_ring_buf, USB_IN_RING_BUF_SIZE);
+K_MEM_SLAB_DEFINE_STATIC(usb_in_buf_pool, ROUND_UP(USB_STEREO_FRAME_SIZE, UDC_BUF_GRANULARITY),
+			 USB_ENQUEUE_COUNT, UDC_BUF_ALIGN);
 
 /* USB consumer callback, called every 1ms, consumes data from ring-buffer */
-static void usb_data_request_cb(const struct device *dev)
+static void usb_data_request(const struct device *dev)
 {
-	uint8_t usb_audio_data[USB_STEREO_FRAME_SIZE] = {0};
-	struct net_buf *pcm_buf;
+	void *pcm_buf;
 	uint32_t size;
 	int err;
 
@@ -77,16 +111,18 @@ static void usb_data_request_cb(const struct device *dev)
 		return;
 	}
 
-	pcm_buf = net_buf_alloc(&usb_out_buf_pool, K_NO_WAIT);
-	if (pcm_buf == NULL) {
-		LOG_WRN("Could not allocate pcm_buf");
+	err = k_mem_slab_alloc(&usb_in_buf_pool, &pcm_buf, K_NO_WAIT);
+	if (err != 0) {
+		LOG_WRN("Could not allocate pcm_buf: %d", err);
 		return;
 	}
 
 	/* This may fail without causing issues since usb_audio_data is 0-initialized */
-	size = ring_buf_get(&usb_out_ring_buf, usb_audio_data, sizeof(usb_audio_data));
-
-	net_buf_add_mem(pcm_buf, usb_audio_data, sizeof(usb_audio_data));
+	size = ring_buf_get(&usb_in_ring_buf, pcm_buf, USB_STEREO_FRAME_SIZE);
+	if (size != USB_STEREO_FRAME_SIZE) {
+		/* If we could not fill the buffer, zero-fill the rest (possibly all) */
+		memset(((uint8_t *)pcm_buf) + size, 0, USB_STEREO_FRAME_SIZE - size);
+	}
 
 	if (size != 0) {
 		static size_t cnt;
@@ -102,7 +138,7 @@ static void usb_data_request_cb(const struct device *dev)
 		}
 	}
 
-	err = usb_audio_send(dev, pcm_buf, sizeof(usb_audio_data));
+	err = usbd_uac2_send(dev, IN_TERMINAL_ID, pcm_buf, USB_STEREO_FRAME_SIZE);
 	if (err != 0) {
 		static size_t cnt;
 
@@ -111,14 +147,14 @@ static void usb_data_request_cb(const struct device *dev)
 			LOG_ERR("Failed to send USB audio: %d (%zu)", err, cnt);
 		}
 
-		net_buf_unref(pcm_buf);
+		k_mem_slab_free(&usb_in_buf_pool, pcm_buf);
 	}
 }
 
-static void usb_data_written_cb(const struct device *dev, struct net_buf *buf, size_t size)
+static void usb_buf_release_cb(const struct device *dev, uint8_t terminal, void *buf,
+			       void *user_data)
 {
-	/* Unreference the buffer now that the USB is done with it */
-	net_buf_unref(buf);
+	k_mem_slab_free(&usb_in_buf_pool, buf);
 }
 
 static void bap_usb_send_frames_to_usb(void)
@@ -145,7 +181,7 @@ static void bap_usb_send_frames_to_usb(void)
 		uint32_t rb_size;
 
 		/* Not enough space to store data */
-		if (ring_buf_space_get(&usb_out_ring_buf) < sizeof(stereo_frame)) {
+		if (ring_buf_space_get(&usb_in_ring_buf) < sizeof(stereo_frame)) {
 			if ((fail_cnt % bap_get_stats_interval()) == 0U) {
 				LOG_WRN("[%zu] Could not send more than %zu frames to USB",
 					fail_cnt, i);
@@ -183,7 +219,7 @@ static void bap_usb_send_frames_to_usb(void)
 			}
 		}
 
-		rb_size = ring_buf_put(&usb_out_ring_buf, (uint8_t *)stereo_frame,
+		rb_size = ring_buf_put(&usb_in_ring_buf, (uint8_t *)stereo_frame,
 				       sizeof(stereo_frame));
 		if (rb_size != sizeof(stereo_frame)) {
 			LOG_WRN("Failed to put frame on USB ring buf");
@@ -321,9 +357,15 @@ void bap_usb_clear_frames_to_usb(void)
 #endif /* CONFIG_BT_AUDIO_RX */
 
 #if defined(CONFIG_BT_AUDIO_TX)
-BUILD_ASSERT((USB_IN_RING_BUF_SIZE % USB_MONO_FRAME_SIZE) == 0);
-static int16_t usb_in_left_ring_buffer[USB_IN_RING_BUF_SIZE];
-static int16_t usb_in_right_ring_buffer[USB_IN_RING_BUF_SIZE];
+#define USB_OUT_RING_BUF_SIZE (USB_MONO_FRAME_SIZE * USB_ENQUEUE_COUNT)
+
+/* Allocate 3: 1 for USB to receive data to and 2 additional buffers to prevent out of memory
+ * errors when USB host decides to perform rapid terminal enable/disable cycles.
+ */
+K_MEM_SLAB_DEFINE_STATIC(usb_out_buf_pool, USB_STEREO_FRAME_SIZE, 3, UDC_BUF_ALIGN);
+
+static int16_t usb_out_left_ring_buffer[USB_OUT_RING_BUF_SIZE];
+static int16_t usb_out_right_ring_buffer[USB_OUT_RING_BUF_SIZE];
 static size_t write_index; /* Points to the oldest/uninitialized data */
 
 size_t bap_usb_get_read_cnt(const struct shell_stream *sh_stream)
@@ -373,23 +415,39 @@ static void stream_cb(struct shell_stream *sh_stream, void *user_data)
 	}
 }
 
-static void usb_data_received_cb(const struct device *dev, struct net_buf *buf, size_t size)
+static void *usb_get_recv_buf_cb(const struct device *dev, uint8_t terminal, uint16_t size,
+				 void *user_data)
+{
+	void *buf = NULL;
+	int ret;
+
+	if (!out_terminal_enabled) {
+		return NULL;
+	}
+
+	__ASSERT(size <= USB_STEREO_FRAME_SIZE, "%u was not <= %d", size, USB_STEREO_FRAME_SIZE);
+
+	ret = k_mem_slab_alloc(&usb_out_buf_pool, &buf, K_NO_WAIT);
+	if (ret != 0) {
+		LOG_WRN("Failed to allocate buffer: %d", ret);
+	}
+
+	return buf;
+}
+
+static void usb_data_recv_cb(const struct device *dev, uint8_t terminal, void *buf, uint16_t size,
+			     void *user_data)
 {
 	const size_t old_write_index = write_index;
 	static size_t cnt;
 	int16_t *pcm;
 
-	if (buf == NULL) {
+	if (!out_terminal_enabled || buf == NULL || size == 0U) {
+		k_mem_slab_free(&usb_out_buf_pool, buf);
 		return;
 	}
 
-	if (size != USB_STEREO_FRAME_SIZE) {
-		net_buf_unref(buf);
-
-		return;
-	}
-
-	pcm = (int16_t *)buf->data;
+	pcm = (int16_t *)buf;
 
 	/* Split the data into left and right as LC3 uses LLLLRRRR instead of LRLRLRLR as USB
 	 *
@@ -398,13 +456,13 @@ static void usb_data_received_cb(const struct device *dev, struct net_buf *buf, 
 	 * can be done once afterwards
 	 */
 	for (size_t i = 0U, j = 0U; i < USB_SAMPLE_CNT; i++, j += USB_CHANNELS) {
-		usb_in_left_ring_buffer[write_index + i] = pcm[j];
-		usb_in_right_ring_buffer[write_index + i] = pcm[j + 1];
+		usb_out_left_ring_buffer[write_index + i] = pcm[j];
+		usb_out_right_ring_buffer[write_index + i] = pcm[j + 1];
 	}
 
 	write_index += USB_SAMPLE_CNT;
 
-	if (write_index == USB_IN_RING_BUF_SIZE) {
+	if (write_index == USB_OUT_RING_BUF_SIZE) {
 		/* Overflow so that we start overwriting oldest */
 		write_index = 0U;
 	}
@@ -418,7 +476,7 @@ static void usb_data_received_cb(const struct device *dev, struct net_buf *buf, 
 		LOG_DBG("USB Data received (count = %d)", cnt);
 	}
 
-	net_buf_unref(buf);
+	k_mem_slab_free(&usb_out_buf_pool, buf);
 }
 
 bool bap_usb_can_get_full_sdu(struct shell_stream *sh_stream)
@@ -449,14 +507,14 @@ bool bap_usb_can_get_full_sdu(struct shell_stream *sh_stream)
 		buffer_cnt = write_index - read_idx;
 	} else {
 		/* Handle the case where the read spans across the end of the buffer */
-		buffer_cnt = write_index + (USB_IN_RING_BUF_SIZE - read_idx);
+		buffer_cnt = write_index + (USB_OUT_RING_BUF_SIZE - read_idx);
 	}
 
 	if (buffer_cnt < retrieve_cnt) {
 		/* Not enough for a frame yet */
 		if (!failed_last_time) {
 			LOG_WRN("Ring buffer (%u/%u) does not contain enough for an entire SDU %u",
-				buffer_cnt, USB_IN_RING_BUF_SIZE, retrieve_cnt);
+				buffer_cnt, USB_OUT_RING_BUF_SIZE, retrieve_cnt);
 		}
 
 		failed_last_time = true;
@@ -480,19 +538,19 @@ static size_t usb_ring_buf_get(int16_t dest[], int16_t src[], size_t idx, size_t
 {
 	size_t new_idx;
 
-	if (idx >= USB_IN_RING_BUF_SIZE) {
+	if (idx >= USB_OUT_RING_BUF_SIZE) {
 		LOG_ERR("Invalid idx %zu", idx);
 
 		return 0;
 	}
 
-	if ((idx + cnt) < USB_IN_RING_BUF_SIZE) {
+	if ((idx + cnt) < USB_OUT_RING_BUF_SIZE) {
 		/* Simply copy of the data and increment the index*/
 		memcpy(dest, &src[idx], cnt * USB_BYTES_PER_SAMPLE);
 		new_idx = idx + cnt;
 	} else {
 		/* Handle wrapping */
-		const size_t first_read_cnt = USB_IN_RING_BUF_SIZE - idx;
+		const size_t first_read_cnt = USB_OUT_RING_BUF_SIZE - idx;
 		const size_t second_read_cnt = cnt - first_read_cnt;
 
 		memcpy(dest, &src[idx], first_read_cnt * USB_BYTES_PER_SAMPLE);
@@ -514,37 +572,162 @@ void bap_usb_get_frame(struct shell_stream *sh_stream, enum bt_audio_location ch
 
 	if (is_left || is_mono) {
 		sh_stream->tx.left_read_idx = usb_ring_buf_get(
-			buffer, usb_in_left_ring_buffer, sh_stream->tx.left_read_idx, read_cnt);
+			buffer, usb_out_left_ring_buffer, sh_stream->tx.left_read_idx, read_cnt);
 	} else if (is_right) {
 		sh_stream->tx.right_read_idx = usb_ring_buf_get(
-			buffer, usb_in_right_ring_buffer, sh_stream->tx.right_read_idx, read_cnt);
+			buffer, usb_out_right_ring_buffer, sh_stream->tx.right_read_idx, read_cnt);
 	}
 }
 #endif /* CONFIG_BT_AUDIO_TX */
 
+static int bap_usbd_setup_device(struct usbd_context *const bap_usbd)
+{
+	static const uint8_t attributes =
+		(IS_ENABLED(CONFIG_BT_BAP_SHELL_USB_SELF_POWERED) ? USB_SCD_SELF_POWERED : 0U) |
+		(IS_ENABLED(CONFIG_BT_BAP_SHELL_USB_REMOTE_WAKEUP) ? USB_SCD_REMOTE_WAKEUP : 0U);
+	USBD_DESC_CONFIG_DEFINE(fs_cfg_desc, "FS Configuration");
+	USBD_CONFIGURATION_DEFINE(bap_usb_fs_config, attributes, CONFIG_BT_BAP_SHELL_USB_MAX_POWER,
+				  &fs_cfg_desc);
+	USBD_DESC_PRODUCT_DEFINE(bap_usb_product, CONFIG_BT_BAP_SHELL_USB_PRODUCT);
+	USBD_DESC_MANUFACTURER_DEFINE(bap_usb_mfr, "Zephyr Project");
+	USBD_DESC_LANG_DEFINE(bap_usb_lang);
+	const uint8_t class_cfg = 0x01U;
+	const uint8_t subclass = 0x02U;
+	const uint8_t protocol = 0x01U;
+
+	int err;
+
+	err = usbd_add_descriptor(bap_usbd, &bap_usb_lang);
+	if (err != 0) {
+		LOG_ERR("Failed to initialize language descriptor: %d", err);
+
+		return err;
+	}
+
+	err = usbd_add_descriptor(bap_usbd, &bap_usb_mfr);
+	if (err != 0) {
+		LOG_ERR("Failed to initialize manufacturer descriptor: %d", err);
+
+		return err;
+	}
+
+	err = usbd_add_descriptor(bap_usbd, &bap_usb_product);
+	if (err != 0) {
+		LOG_ERR("Failed to initialize product descriptor: %d", err);
+
+		return err;
+	}
+
+	if (IS_ENABLED(CONFIG_HWINFO)) {
+		USBD_DESC_SERIAL_NUMBER_DEFINE(bap_usb_sn);
+
+		err = usbd_add_descriptor(bap_usbd, &bap_usb_sn);
+		if (err != 0) {
+			LOG_ERR("Failed to initialize serial number descriptor: %d", err);
+
+			return err;
+		}
+	}
+
+	if (USBD_SUPPORTS_HIGH_SPEED && usbd_caps_speed(bap_usbd) == USBD_SPEED_HS) {
+		USBD_DESC_CONFIG_DEFINE(hs_cfg_desc, "HS Configuration");
+		USBD_CONFIGURATION_DEFINE(bap_usb_hs_config, attributes,
+					  CONFIG_BT_BAP_SHELL_USB_MAX_POWER, &hs_cfg_desc);
+
+		LOG_DBG("Setting up High-Speed USB");
+
+		err = usbd_add_configuration(bap_usbd, USBD_SPEED_HS, &bap_usb_hs_config);
+		if (err != 0) {
+			LOG_ERR("Failed to add High-Speed configuration: %d", err);
+
+			return err;
+		}
+
+		err = usbd_register_all_classes(bap_usbd, USBD_SPEED_HS, class_cfg, NULL);
+		if (err != 0) {
+			LOG_ERR("Failed to add register High-Speed classes: %d", err);
+
+			return err;
+		}
+
+		err = usbd_device_set_code_triple(bap_usbd, USBD_SPEED_HS, USB_BCC_MISCELLANEOUS,
+						  subclass, protocol);
+		if (err != 0) {
+			LOG_ERR("Failed to set High-Speed code triple: %d", err);
+
+			return err;
+		}
+	}
+
+	LOG_DBG("Setting up Full-Speed USB");
+
+	err = usbd_add_configuration(bap_usbd, USBD_SPEED_FS, &bap_usb_fs_config);
+	if (err != 0) {
+		LOG_ERR("Failed to add Full-Speed configuration: %d", err);
+
+		return err;
+	}
+
+	err = usbd_register_all_classes(bap_usbd, USBD_SPEED_FS, class_cfg, NULL);
+	if (err != 0) {
+		LOG_ERR("Failed to register Full-Speed classes: %d", err);
+
+		return err;
+	}
+
+	err = usbd_device_set_code_triple(bap_usbd, USBD_SPEED_FS, USB_BCC_MISCELLANEOUS, subclass,
+					  protocol);
+	if (err != 0) {
+		LOG_ERR("Failed to set Full-Speed code triple: %d", err);
+
+		return err;
+	}
+
+	usbd_self_powered(bap_usbd, attributes & USB_SCD_SELF_POWERED);
+
+	return 0;
+}
+
 int bap_usb_init(void)
 {
-	const struct device *hs_dev = DEVICE_DT_GET(DT_NODELABEL(hs_0));
-	static const struct usb_audio_ops usb_ops = {
-#if defined(CONFIG_BT_AUDIO_RX)
-		.data_request_cb = usb_data_request_cb,
-		.data_written_cb = usb_data_written_cb,
-#endif /* CONFIG_BT_AUDIO_RX */
+	USBD_DEVICE_DEFINE(bap_usbd, DEVICE_DT_GET(DT_NODELABEL(zephyr_udc0)),
+			   CONFIG_BT_BAP_SHELL_USB_VID, CONFIG_BT_BAP_SHELL_USB_PID);
+	const struct device *uac2_headset = DEVICE_DT_GET(DT_NODELABEL(uac2_headset));
+	static struct uac2_ops usb_audio_ops = {
+		.terminal_update_cb = usb_terminal_update_cb,
+		.sof_cb = usb_sof_cb,
 #if defined(CONFIG_BT_AUDIO_TX)
-		.data_received_cb = usb_data_received_cb,
+		.get_recv_buf = usb_get_recv_buf_cb,
+		.data_recv_cb = usb_data_recv_cb,
 #endif /* CONFIG_BT_AUDIO_TX */
+#if defined(CONFIG_BT_AUDIO_RX)
+		.buf_release_cb = usb_buf_release_cb,
+#endif /* CONFIG_BT_AUDIO_RX */
 	};
 	int err;
 
-	if (!device_is_ready(hs_dev)) {
+	if (!device_is_ready(uac2_headset)) {
 		LOG_ERR("Cannot get USB Headset Device");
 		return -EIO;
 	}
 
-	usb_audio_register(hs_dev, &usb_ops);
-	err = usb_enable(NULL);
+	usbd_uac2_set_ops(uac2_headset, &usb_audio_ops, NULL);
+
+	err = bap_usbd_setup_device(&bap_usbd);
 	if (err != 0) {
-		LOG_ERR("Failed to enable USB");
+		LOG_ERR("Failed to setup USB device: %d", err);
+		return err;
+	}
+
+	err = usbd_init(&bap_usbd);
+	if (err != 0) {
+		LOG_ERR("Failed to initialize device support: %d", err);
+		return err;
+	}
+
+	err = usbd_enable(&bap_usbd);
+	if (err != 0) {
+		LOG_ERR("Failed to enable USBD: %d", err);
 		return err;
 	}
 
@@ -560,6 +743,8 @@ int bap_usb_init(void)
 			LOG_WRN("Failed to set 128 MHz: %d", err);
 		}
 	}
+
+	LOG_INF("USB audio enabled");
 
 	return 0;
 }

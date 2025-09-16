@@ -37,6 +37,16 @@ extern "C" {
 #else
 #define PROCESSOR_NAME "cortex-m33+nodsp"
 #endif
+#elif defined(CONFIG_CPU_CORTEX_M52)
+#if defined(CONFIG_ARMV8_1_M_MVEF)
+#define PROCESSOR_NAME "cortex-m52"
+#elif defined(CONFIG_ARMV8_1_M_MVEI)
+#define PROCESSOR_NAME "cortex-m52+nomve.fp"
+#elif defined(CONFIG_ARMV8_M_DSP)
+#define PROCESSOR_NAME "cortex-m52+nomve"
+#else
+#define PROCESSOR_NAME "cortex-m52+nodsp"
+#endif
 #elif defined(CONFIG_CPU_CORTEX_M55)
 #if defined(CONFIG_ARMV8_1_M_MVEF)
 #define PROCESSOR_NAME "cortex-m55"
@@ -121,6 +131,8 @@ extern "C" {
 #define PROCESSOR_NAME "cortex-a76"
 #elif defined(CONFIG_CPU_CORTEX_A76)
 #define PROCESSOR_NAME "cortex-a76"
+#elif defined(CONFIG_CPU_CORTEX_A78)
+#define PROCESSOR_NAME "cortex-a78"
 #elif defined(CONFIG_CPU_CORTEX_R82)
 #define PROCESSOR_NAME "armv8.4-a+nolse"
 #endif

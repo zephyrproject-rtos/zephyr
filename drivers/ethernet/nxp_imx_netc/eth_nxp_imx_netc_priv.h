@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_DRIVERS_ETHERNET_ETH_NXP_IMX_NETC_PRIV_H_
 #define ZEPHYR_DRIVERS_ETHERNET_ETH_NXP_IMX_NETC_PRIV_H_
 
-#include "nxp_imx_netc.h"
+#include <zephyr/drivers/ethernet/nxp_imx_netc.h>
 #include "fsl_netc_endpoint.h"
 #ifndef CONFIG_ETH_NXP_IMX_NETC_MSI_GIC
 #include "fsl_msgintr.h"
@@ -66,10 +66,10 @@
 	do {                                                                                       \
 		uint32_t id = 0x001100;                                                            \
                                                                                                    \
-		mac_addr[0] = FREESCALE_OUI_B0;                                                    \
-		mac_addr[1] = FREESCALE_OUI_B1;                                                    \
 		/* Set MAC address locally administered bit (LAA) */                               \
-		mac_addr[2] = FREESCALE_OUI_B2 | 0x02;                                             \
+		mac_addr[0] = FREESCALE_OUI_B0 | 0x02;                                             \
+		mac_addr[1] = FREESCALE_OUI_B1;                                                    \
+		mac_addr[2] = FREESCALE_OUI_B2;                                                    \
 		mac_addr[3] = (id >> 16) & 0xff;                                                   \
 		mac_addr[4] = (id >> 8) & 0xff;                                                    \
 		mac_addr[5] = (id + n) & 0xff;                                                     \

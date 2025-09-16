@@ -43,6 +43,8 @@ endif()
 if(DEFINED CONFIG_MCUX_CORE_SUFFIX)
   if (CONFIG_SOC_MIMXRT595S_F1)
     set(core_id "fusionf1")
+  elseif (CONFIG_SOC_MIMXRT685S_HIFI4)
+    set(core_id "hifi4")
   else()
     string (REGEX REPLACE "^_" "" core_id "${CONFIG_MCUX_CORE_SUFFIX}")
   endif()
@@ -68,6 +70,7 @@ endif()
 if(NOT CONFIG_CPU_CORTEX_A)
   set(CONFIG_MCUX_COMPONENT_driver.reset ON)
   set(CONFIG_MCUX_COMPONENT_driver.memory ON)
+  set(CONFIG_MCUX_COMPONENT_driver.sentinel ON)
 endif()
 
 # Include fsl_dsp.c for ARM domains (applicable to i.MX RTxxx devices)
@@ -84,6 +87,45 @@ zephyr_compile_definitions("CPU_${CONFIG_SOC_PART_NUMBER}${core_id_suffix_name}"
 
 # Definitions to load device drivers, like: CPU_MIMXRT595SFAWC_dsp.
 set(CONFIG_MCUX_HW_DEVICE_CORE "${MCUX_DEVICE}${core_id_suffix_name}")
+
+# Necessary values to load right SDK NG cmake files
+# CONFIG_MCUX_HW_CORE
+# CONFIG_MCUX_HW_FPU_TYPE
+#
+# They are used by the files like:
+#   zephyr/modules/hal/nxp/mcux/mcux-sdk-ng/devices/arm/shared.cmake
+#   zephyr/modules/hal/nxp/mcux/mcux-sdk-ng/devices/xtensa/shared.cmake
+if (CONFIG_CPU_CORTEX_M0PLUS)
+  set(CONFIG_MCUX_HW_CORE cm0p)
+elseif (CONFIG_CPU_CORTEX_M3)
+  set(CONFIG_MCUX_HW_CORE cm3)
+elseif (CONFIG_CPU_CORTEX_M33)
+  set(CONFIG_MCUX_HW_CORE cm33)
+elseif (CONFIG_CPU_CORTEX_M4)
+  if (CONFIG_CPU_HAS_FPU)
+    set(CONFIG_MCUX_HW_CORE cm4f)
+  else()
+    set(CONFIG_MCUX_HW_CORE cm4)
+  endif()
+elseif (CONFIG_CPU_CORTEX_M7)
+  set(CONFIG_MCUX_HW_CORE cm7f)
+elseif (CONFIG_XTENSA)
+  set(CONFIG_MCUX_HW_CORE dsp)
+endif()
+
+if (CONFIG_CPU_HAS_FPU)
+  if (CONFIG_CPU_CORTEX_M33 OR CONFIG_CPU_CORTEX_M7)
+    if (CONFIG_CPU_HAS_FPU_DOUBLE_PRECISION)
+      set(CONFIG_MCUX_HW_FPU_TYPE fpv5_dp)
+    else()
+      set(CONFIG_MCUX_HW_FPU_TYPE fpv5_sp)
+    endif()
+  elseif (CONFIG_CPU_CORTEX_M4)
+    set(CONFIG_MCUX_HW_FPU_TYPE fpv4_sp)
+  endif()
+else()
+  set(CONFIG_MCUX_HW_FPU_TYPE no_fpu)
+endif()
 
 # Load device files
 mcux_add_cmakelists(${mcux_device_folder})

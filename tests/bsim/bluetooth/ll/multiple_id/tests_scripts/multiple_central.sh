@@ -11,7 +11,7 @@ EXECUTE_TIMEOUT=1600
 
 cd ${BSIM_OUT_PATH}/bin
 
-Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_ll_multiple_id_prj_conf \
+Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_ll_multiple_id_prj_conf -RealEncryption=1 \
   -v=${verbosity_level} -s=${simulation_id} -d=0 -testid=peripheral_multilink
 
 central_count=20
@@ -20,7 +20,7 @@ for device in `seq 1 $central_count`; do
 	let rs=$device*7
 
 	Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_ll_multiple_id_prj_conf \
-	  -v=${verbosity_level} -s=${simulation_id} -d=$device -rs=$rs \
+	  -v=${verbosity_level} -s=${simulation_id} -d=$device -rs=$rs -RealEncryption=1 \
 	  -testid=central_single
 done
 

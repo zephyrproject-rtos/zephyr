@@ -156,9 +156,15 @@
 				compatible = "solomon,ssd1322";
 				reg = <9>;
 				mipi-max-frequency = <16000000>;
-				width =	<128>;
+				width = <128>;
 				height = <64>;
-				column-offset =	<28>;
+				column-offset = <0>;
+				oscillator-freq = <0>;
+				precharge-voltage = <0>;
+				vcomh-voltage = <0>;
+				mux-ratio = <0>;
+				phase-length = <0>;
+				mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
 			};
 
 			test_mipi_dbi_st75256: st75256@10 {
@@ -197,7 +203,7 @@
 				compatible = "sinowealth,sh1122";
 				reg = <12>;
 				mipi-max-frequency = <10000000>;
-				width =	<256>;
+				width = <256>;
 				height = <64>;
 				oscillator-freq = <0>;
 				multiplex-ratio = <0>;
@@ -215,7 +221,7 @@
 				compatible = "solomon,ssd1331";
 				reg = <13>;
 				mipi-max-frequency = <10000000>;
-				width =	<96>;
+				width = <96>;
 				height = <64>;
 				display-offset = <0x0>;
 				start-line = <0x0>;
@@ -397,9 +403,9 @@
 			 * include MIPI DBI devices as well.
 			 */
 			cs-gpios = <&test_gpio 0 0 &test_gpio 0 1 &test_gpio 0 2
-				&test_gpio 0 3 &test_gpio 0 4 &test_gpio 0 5
-				&test_gpio 0 6 &test_gpio 0 7 &test_gpio 0 8
-				&test_gpio 0 9>;
+				    &test_gpio 0 3 &test_gpio 0 4 &test_gpio 0 5
+				    &test_gpio 0 6 &test_gpio 0 7 &test_gpio 0 8
+				    &test_gpio 0 9>;
 
 			test_led_strip_0: lpd8806@0 {
 				compatible = "greeled,lpd8806";
@@ -457,28 +463,28 @@
 			start-from-right;
 		};
 
-		test_i2c:i2c@60013000{
+		test_i2c: i2c@60013000 {
 			#address-cells = <1>;
 			#size-cells = <0>;
-			compatible="vnd,i2c";
+			compatible = "vnd,i2c";
 			reg = <0x60013000 0x1000>;
-			status="okay";
-			clock-frequency=<100000>;
+			status = "okay";
+			clock-frequency = <100000>;
 
-			test_ist3931:ist3931@0 {
-				reg=<0x0>;
-				width=<64>;
-				height=<32>;
+			test_ist3931: ist3931@0 {
+				reg = <0x0>;
+				width = <64>;
+				height = <32>;
 				compatible = "istech,ist3931";
-				reset-gpios =<&test_gpio 1 0>;
-				x-offset=<0>;
-				y-offset=<32>;
+				reset-gpios = <&test_gpio 1 0>;
+				x-offset = <0>;
+				y-offset = <32>;
 				voltage-converter;
 				voltage-follower;
-				lcd-bias=<3>;
-				lcd-ct=<223>;
-				duty-ratio=<64>;
-				frame-control=<400>;
+				lcd-bias = <3>;
+				lcd-ct = <223>;
+				duty-ratio = <64>;
+				frame-control = <400>;
 				reverse-com-output;
 			};
 
@@ -524,7 +530,7 @@
 			test_sh1122: sh1122@4 {
 				compatible = "sinowealth,sh1122";
 				reg = <4>;
-				width =	<256>;
+				width = <256>;
 				height = <64>;
 				oscillator-freq = <0>;
 				multiplex-ratio = <0>;

@@ -9,11 +9,17 @@ import os
 import shutil
 import sys
 import time
+from collections.abc import Sequence
 
 import colorama
 from colorama import Fore
 from twisterlib.coverage import run_coverage
-from twisterlib.environment import TwisterEnv
+from twisterlib.environment import (
+    TwisterEnv,
+    add_parse_arguments,
+    parse_arguments,
+    python_version_guard,
+)
 from twisterlib.hardwaremap import HardwareMap
 from twisterlib.log_helper import close_logging, setup_logging
 from twisterlib.package import Artifacts
@@ -27,7 +33,7 @@ def init_color(colorama_strip):
     colorama.init(strip=colorama_strip)
 
 
-def twister(options: argparse.Namespace, default_options: argparse.Namespace):
+def twister(options: argparse.Namespace, default_options: argparse.Namespace) -> int:
     start_time = time.time()
 
     # Configure color output
@@ -230,9 +236,17 @@ def twister(options: argparse.Namespace, default_options: argparse.Namespace):
     return 0
 
 
-def main(options: argparse.Namespace, default_options: argparse.Namespace):
+def main(argv: Sequence[str] | None = None) -> int:
+    """Main function to run twister."""
     try:
-        return_code = twister(options, default_options)
+        python_version_guard()
+
+        parser = add_parse_arguments()
+        options = parse_arguments(parser, argv)
+        default_options = parse_arguments(parser, [], on_init=False)
+        return twister(options, default_options)
     finally:
         close_logging()
-    return return_code
+        if (os.name != "nt") and os.isatty(1):
+            # (OS is not Windows) and (stdout is interactive)
+            os.system("stty sane <&1")

@@ -27,8 +27,8 @@
 
 	chosen {
 		zephyr,sram = &sram1;
-		zephyr,console = &uart0;
-		zephyr,shell-uart = &uart0;
+		zephyr,console = &usb_serial;
+		zephyr,shell-uart = &usb_serial;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,bt-hci = &esp32_bt_hci;
@@ -46,6 +46,7 @@
 
 	buttons {
 		compatible = "gpio-keys";
+
 		button0: button_0 {
 			gpios = <&gpio0 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "BOOT Button";
@@ -55,9 +56,11 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led0: led_0 {
 			gpios = <&gpio0 13 GPIO_ACTIVE_HIGH>;
 		};
+
 		led1: led_1 {
 			gpios = <&gpio1 45 GPIO_ACTIVE_HIGH>;
 		};
@@ -126,7 +129,7 @@
 };
 
 &usb_serial {
-	status = "disabled";
+	status = "okay";
 };
 
 &uart0 {

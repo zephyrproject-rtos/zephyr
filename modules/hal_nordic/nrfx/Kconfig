@@ -19,6 +19,9 @@ config NRFX_CLOCK
 
 if NRFX_CLOCK
 
+config NRFX_CLOCK_USE_LFRC_CALIBRATION
+	bool "Extend NRFX_CLOCK to use LFRC peripheral"
+
 config NRFX_CLOCK_LFXO_TWO_STAGE_ENABLED
 	bool "Two stage start sequence of the low frequency clock"
 
@@ -225,6 +228,10 @@ config NRFX_GPIOTE131
 	bool "NRFX_GPIOTE131 driver instance"
 	depends on $(dt_nodelabel_exists,gpiote131)
 	select NRFX_GPIOTE
+
+config NRFX_GPIOTE_NONUNIFORM_INSTANCES
+	def_bool $(dt_nodelabel_enabled,gpiote0)
+	depends on $(dt_nodelabel_bool_prop,gpiote0,fixed-channels-supported)
 
 config NRFX_GPIOTE_NUM_OF_EVT_HANDLERS
 	int "Number of event handlers"

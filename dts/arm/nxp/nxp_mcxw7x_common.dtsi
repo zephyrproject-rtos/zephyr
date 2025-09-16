@@ -139,6 +139,41 @@
 		clocks = <&scg SCG_K4_SLOW_CLK 0>;
 	};
 
+	lpit0: timer@2f000 {
+		compatible = "nxp,lpit";
+		reg = <0x2f000 0x60>;
+		interrupts = <36 0>;
+		clocks = <&scg SCG_K4_FIRC_CLK 0xbc>;
+		status = "disabled";
+		max-load-value = <0xffffffff>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		lpit1_channel0: lpit_channel@0 {
+			compatible = "nxp,lpit-channel";
+			reg = <0>;
+			status = "disabled";
+		};
+
+		lpit1_channel1: lpit_channel@1 {
+			compatible = "nxp,lpit-channel";
+			reg = <1>;
+			status = "disabled";
+		};
+
+		lpit1_channel2: lpit_channel@2 {
+			compatible = "nxp,lpit-channel";
+			reg = <2>;
+			status = "disabled";
+		};
+
+		lpit1_channel3: lpit_channel@3 {
+			compatible = "nxp,lpit-channel";
+			reg = <3>;
+			status = "disabled";
+		};
+	};
+
 	lpuart0: serial@38000 {
 		compatible = "nxp,lpuart";
 		reg = <0x38000 0x34>;
@@ -201,7 +236,7 @@
 		status = "disabled";
 	};
 
-	gpiod: gpio@46000{
+	gpiod: gpio@46000 {
 		compatible = "nxp,kinetis-gpio";
 		reg = <0x46000 0x128>;
 		interrupts = <65 0>, <66 0>;
@@ -311,7 +346,7 @@
 		reg = <0x47000 0x584>;
 		interrupts = <71 0>;
 		clocks = <&scg SCG_K4_FIRC_CLK 0x11c>;
-		voltage-ref= <1>;
+		voltage-ref = <1>;
 		calibration-average = <128>;
 		/* pwrlvl 0 is slow speed low power, 1 is opposite */
 		power-level = <0>;
@@ -332,6 +367,8 @@
 		regulator-min-microvolt = <1000000>;
 		regulator-max-microvolt = <2100000>;
 		nxp,current-compensation-en;
+		nxp,internal-voltage-regulator-en;
+		nxp,chop-oscillator-en;
 		status = "disabled";
 	};
 
@@ -342,6 +379,12 @@
 		interrupt-names = "alarm", "seconds";
 		clock-frequency = <32768>;
 		prescaler = <32768>;
+
+		counter_rtc: counter_rtc {
+			compatible = "zephyr,rtc-counter";
+			alarms-count = <1>;
+			status = "disabled";
+		};
 	};
 
 	ewm0: ewm@13000 {
@@ -351,10 +394,24 @@
 		interrupts = <18 0>;
 		clk-divider = <0x0>;
 	};
+
+	flexio: flexio@3a000 {
+		compatible = "nxp,flexio";
+		reg = <0x3a000 0x920>;
+		interrupts = <46 0>;
+		clocks = <&scg SCG_K4_FLEXIO_CLK 0xe8>;
+		status = "disabled";
+
+		flexio_pwm {
+			compatible = "nxp,flexio-pwm";
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+	};
 };
 
 &fast_peripheral0 {
-	gpioa: gpio@10000{
+	gpioa: gpio@10000 {
 		compatible = "nxp,kinetis-gpio";
 		status = "disabled";
 		gpio-controller;
@@ -364,7 +421,7 @@
 		interrupts = <59 0>, <60 0>;
 	};
 
-	gpiob: gpio@20000{
+	gpiob: gpio@20000 {
 		compatible = "nxp,kinetis-gpio";
 		status = "disabled";
 		gpio-controller;
@@ -374,7 +431,7 @@
 		interrupts = <61 0>, <62 0>;
 	};
 
-	gpioc: gpio@30000{
+	gpioc: gpio@30000 {
 		compatible = "nxp,kinetis-gpio";
 		status = "disabled";
 		gpio-controller;
@@ -391,10 +448,10 @@
 		#size-cells = <1>;
 
 		rpmsgmem: memory@8800 {
-			compatible = "zephyr,memory-region","mmio-sram";
+			compatible = "zephyr,memory-region", "mmio-sram";
 			reg = <0x8800 DT_SIZE_K(6)>;
 			zephyr,memory-region = "rpmsg_sh_mem";
-			zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
+			zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
 		};
 	};
 };

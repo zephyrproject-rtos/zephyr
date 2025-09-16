@@ -1,17 +1,18 @@
 /*
- * Copyright (c) 2024 Antmicro <www.antmicro.com>
+ * Copyright (c) 2024-2025 Antmicro <www.antmicro.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 / {
 	chosen {
+		zephyr,console = &virtio_console;
 		zephyr,entropy = &virtio_entropy;
 	};
 };
 
 &pcie0 {
-	virtio_pci: virtio_pci {
+	virtio_pci: virtio-pci {
 		compatible = "virtio,pci";
 
 		vendor-id = <0x1af4>;
@@ -23,7 +24,38 @@
 		status = "okay";
 	};
 
-	virtio_entropy: virtio_entropy {
+	virtio_net: virtio-net {
+		compatible = "virtio,pci";
+
+		vendor-id = <0x1af4>;
+		device-id = <0x1000>;
+
+		interrupts = <0xb 0x0 0x0>;
+		interrupt-parent = <&intc>;
+
+		device {
+			compatible = "virtio,net";
+			status = "okay";
+			zephyr,random-mac-address;
+		};
+	};
+
+	virtio_console_pci: virtio-console-pci {
+		compatible = "virtio,pci";
+
+		vendor-id = <0x1af4>;
+		device-id = <0x1003>;
+
+		interrupts = <0xb 0x0 0x0>;
+		interrupt-parent = <&intc>;
+
+		virtio_console: virtio-console {
+			compatible = "virtio,console";
+			status = "okay";
+		};
+	};
+
+	virtio_entropy: virtio-entropy {
 		compatible = "virtio,pci";
 
 		vendor-id = <0x1af4>;

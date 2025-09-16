@@ -26,6 +26,5 @@
 			gpios = <&gpio_w 19 0>;
 			label = "HAT Pin 40 as LED";
 		};
-
 	};
 };

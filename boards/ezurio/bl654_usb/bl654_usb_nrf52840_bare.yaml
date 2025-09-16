@@ -1,0 +1,18 @@
+identifier: bl654_usb/nrf52840/bare
+name: BL654-USB-NRF52840-bare
+type: mcu
+arch: arm
+ram: 256
+flash: 1024
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - usbd
+  - ble
+  - pwm
+  - watchdog
+  - counter
+  - netif:openthread
+  - gpio
+vendor: ezurio

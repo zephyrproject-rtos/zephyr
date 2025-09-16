@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2013-2014 Wind River Systems, Inc.
- * Copyright (c) 2023 Arm Limited
+ * Copyright 2023, 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -39,6 +39,7 @@ do {\
 	__asm__ volatile( \
 		"mov r0, %[_reason]\n" \
 		"svc %[id]\n" \
+		IF_ENABLED(CONFIG_ARM_BTI, ("bti\n")) \
 		:: [_reason] "r" (reason_p), [id] "i" (_SVC_CALL_RUNTIME_EXCEPT) \
 		: "r0", "memory"); \
 } while (false)
@@ -59,6 +60,7 @@ do { \
 		"push {lr}\n\t" \
 		"cpsie i\n\t" \
 		"svc %[id]\n\t" \
+		IF_ENABLED(CONFIG_ARM_BTI, ("bti\n\t")) \
 		"pop {lr}\n\t" \
 		: \
 		: "r" (r0), [id] "i" (_SVC_CALL_RUNTIME_EXCEPT) \

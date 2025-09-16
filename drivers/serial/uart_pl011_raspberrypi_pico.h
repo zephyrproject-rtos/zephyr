@@ -9,15 +9,14 @@
 
 #define RASPBERRYPI_PICO_UART_CLOCK_CTLR_SUBSYS_CELL clk_id
 
-#define RASPBERRYPI_PICO_UART_DEFINE(n)                                                            \
-	static inline int pwr_on_raspberrypi_pico_uart_##n(void)                                   \
-	{                                                                                          \
-		return 0;                                                                          \
-	}                                                                                          \
-	static inline int clk_enable_raspberrypi_pico_uart_##n(const struct device *dev,           \
-							       uint32_t clk)                       \
-	{                                                                                          \
-		return 0;                                                                          \
-	}
+static inline int pwr_on_raspberrypi_pico_uart(const struct device *dev)
+{
+	return 0;
+}
+
+static inline int clk_enable_raspberrypi_pico_uart(const struct device *dev, uint32_t clk)
+{
+	return 0;
+}
 
 #endif /* ZEPHYR_DRIVERS_SERIAL_UART_PL011_RASPBERRYPI_PICO_H_ */

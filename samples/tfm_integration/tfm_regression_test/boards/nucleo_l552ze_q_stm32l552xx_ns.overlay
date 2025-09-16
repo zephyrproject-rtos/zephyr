@@ -4,19 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
- /* This partition table could be used along with TFM configuration:
-  * - TEST_S=ON (REGRESSION)
-  * - TFM_PSA_API=ON (IPC)
-  *
-  */
+/* This partition table could be used along with TFM configuration:
+ * - TEST_S=ON (REGRESSION)
+ * - TFM_PSA_API=ON (IPC)
+ *
+ */
 
 / {
 	chosen {
 		zephyr,code-partition = &slot0_ns_partition;
 	};
 };
-
 
 /delete-node/ &slot1_partition;
 /delete-node/ &slot1_ns_partition;

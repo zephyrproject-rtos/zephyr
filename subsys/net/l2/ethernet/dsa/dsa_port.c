@@ -10,6 +10,7 @@ LOG_MODULE_REGISTER(net_dsa_port, CONFIG_NET_DSA_LOG_LEVEL);
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/phy.h>
 #include <zephyr/net/dsa_core.h>
+#include "dsa_tag.h"
 
 #if defined(CONFIG_NET_INTERFACE_NAME_LEN)
 #define INTERFACE_NAME_LEN CONFIG_NET_INTERFACE_NAME_LEN
@@ -28,19 +29,18 @@ int dsa_port_initialize(const struct device *dev)
 
 	dsa_switch_ctx->init_ports++;
 
-	/* Find conduit port */
+	/* Find the connection of conduit port and cpu port */
 	if (dsa_switch_ctx->iface_conduit == NULL && cfg->ethernet_connection != NULL) {
 		dsa_switch_ctx->iface_conduit = net_if_lookup_by_dev(cfg->ethernet_connection);
 		if (dsa_switch_ctx->iface_conduit == NULL) {
 			LOG_ERR("DSA: Conduit iface NOT found!");
 		}
 
+		/* Set up tag protocol on the cpu port */
 		eth_ctx->dsa_port = DSA_CPU_PORT;
+		dsa_tag_setup(dev);
 
-		/*
-		 * Provide pointer to DSA switch context to conduit's eth interface
-		 * struct ethernet_context
-		 */
+		/* Provide DSA information to the conduit port */
 		eth_ctx_conduit = net_if_l2_data(dsa_switch_ctx->iface_conduit);
 		eth_ctx_conduit->dsa_switch_ctx = dsa_switch_ctx;
 		eth_ctx_conduit->dsa_port = DSA_CONDUIT_PORT;
@@ -122,8 +122,33 @@ static const struct device *dsa_port_get_phy(const struct device *dev)
 	return cfg->phy_dev;
 }
 
+#ifdef CONFIG_NET_L2_PTP
+const struct device *dsa_port_get_ptp_clock(const struct device *dev)
+{
+	const struct dsa_port_config *cfg = dev->config;
+
+	return cfg->ptp_clock;
+}
+#endif
+
+enum ethernet_hw_caps dsa_port_get_capabilities(const struct device *dev)
+{
+	uint32_t caps = 0;
+
+#ifdef CONFIG_NET_L2_PTP
+	if (dsa_port_get_ptp_clock(dev) != NULL) {
+		caps |= ETHERNET_PTP;
+	}
+#endif
+	return caps;
+}
+
 const struct ethernet_api dsa_eth_api = {
 	.iface_api.init = dsa_port_iface_init,
 	.get_phy = dsa_port_get_phy,
 	.send = dsa_xmit,
+#ifdef CONFIG_NET_L2_PTP
+	.get_ptp_clock = dsa_port_get_ptp_clock,
+#endif
+	.get_capabilities = dsa_port_get_capabilities,
 };

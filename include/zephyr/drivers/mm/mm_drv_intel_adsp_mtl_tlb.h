@@ -44,6 +44,11 @@ typedef uint32_t (*mm_get_storage_size)(void);
  */
 void adsp_mm_restore_context(void *storage_buffer);
 
+/*
+ * This procedure return a pointer to a first unused address in L2 virtual memory
+ */
+uintptr_t adsp_mm_get_unused_l2_start_aligned(void);
+
 struct intel_adsp_tlb_api {
 	mm_save_context save_context;
 	mm_get_storage_size get_storage_size;

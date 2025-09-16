@@ -82,6 +82,7 @@ if WIFI_NM
 
 config WIFI_NM_MAX_MANAGED_INTERFACES
 	int "Maximum number of managed interfaces per Wi-Fi network manager"
+	default 2 if WIFI_USAGE_MODE_STA_AP
 	default 1
 	help
 	  This option defines the maximum number of managed interfaces per Wi-Fi
@@ -158,7 +159,7 @@ endif # WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
 config WIFI_MGMT_BSS_MAX_IDLE_TIME
 	int "BSS max idle timeout in seconds"
 	range 0 64000
-	default 30
+	default 300
 	help
 	  As per 802.11-2020: 11.21.13 BSS max idle period management
 	  If dot11WirelessManagementImplemented is true, dot11BSSMaxIdlePeriod is

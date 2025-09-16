@@ -20,10 +20,9 @@
 
 LOG_MODULE_DECLARE(adltc2990, CONFIG_SENSOR_LOG_LEVEL);
 
-#define ADLTC2990_NUM_REGS ADLTC2990_REG_VCC_LSB
+#define ADLTC2990_NUM_REGS ADLTC2990_REG_VCC_LSB + 1
 
 struct adltc2990_emul_data {
-	uint8_t mock_i2c_reg_error;
 	uint8_t reg[ADLTC2990_NUM_REGS];
 };
 
@@ -50,7 +49,6 @@ void adltc2990_emul_reset(const struct emul *target)
 {
 	struct adltc2990_emul_data *data = target->data;
 
-	data->mock_i2c_reg_error = ADLTC2990_NUM_REGS + 1;
 	memset(data->reg, 0, ADLTC2990_NUM_REGS);
 }
 

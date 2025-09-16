@@ -7,7 +7,7 @@ config SOC_SERIES_EFM32WG
 	help
 	  Silicon Labs EFM32WG (Wonder Gecko) Series MCU
 
-config SOC_PART_NUMBER_EFM32WG990F256
+config SOC_EFM32WG990F256
 	bool
 	select SOC_SERIES_EFM32WG
 
@@ -15,4 +15,4 @@ config SOC_SERIES
 	default "efm32wg" if SOC_SERIES_EFM32WG
 
 config SOC
-	default "efm32wg990f256" if SOC_PART_NUMBER_EFM32WG990F256
+	default "efm32wg990f256" if SOC_EFM32WG990F256

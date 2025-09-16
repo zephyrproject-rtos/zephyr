@@ -14,15 +14,16 @@
 
 #include <zephyr/types.h>
 #include <zephyr/device.h>
+#include <zephyr/drivers/pcie/pcie.h>
 
 #ifdef CONFIG_PCIE_MSI
 #include <zephyr/drivers/pcie/msi.h>
 #endif
 
 /**
- * @brief PCI Express Controller Interface
- * @defgroup pcie_controller_interface PCI Express Controller Interface
- * @ingroup io_interfaces
+ * @brief Interfaces for PCIe Controllers.
+ * @defgroup pcie_controller_interface PCIe Controller
+ * @ingroup pcie_interface
  * @{
  */
 

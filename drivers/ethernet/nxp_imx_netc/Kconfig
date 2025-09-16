@@ -5,7 +5,6 @@ menuconfig ETH_NXP_IMX_NETC
 	bool "NXP IMX Ethernet and Network Controller (NETC) driver"
 	default y
 	depends on DT_HAS_NXP_IMX_NETC_PSI_ENABLED
-	select MDIO
 	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
 	help
 	  Enable Ethernet and Network Controller (NETC) driver for NXP IMX SoCs.
@@ -99,14 +98,3 @@ config ETH_NXP_IMX_RX_RING_BUF_SIZE
 	  store one complete Ethernet frame, and be a multiple of 8.
 
 endif # ETH_NXP_IMX_NETC
-
-if NET_DSA
-
-config DSA_NXP_IMX_NETC
-	bool "Support for NXP i.MX NETC"
-	default y
-	depends on DT_HAS_NXP_NETC_SWITCH_ENABLED
-	help
-	  Add support for NXP i.MX NETC DSA device driver.
-
-endif

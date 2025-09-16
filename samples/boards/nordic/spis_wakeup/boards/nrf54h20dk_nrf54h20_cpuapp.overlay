@@ -57,8 +57,8 @@
 	pinctrl-names = "default", "sleep";
 	wake-gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
 	memory-regions = <&cpuapp_dma_region>;
-	/delete-property/rx-delay-supported;
-	/delete-property/rx-delay;
+	/delete-property/ rx-delay-supported;
+	/delete-property/ rx-delay;
 };
 
 &uart136 {

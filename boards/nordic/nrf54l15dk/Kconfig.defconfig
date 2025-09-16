@@ -19,7 +19,7 @@ config BOARD_NRF54L15DK
 	select USE_DT_CODE_PARTITION if BOARD_NRF54L15DK_NRF54L15_CPUAPP_NS || \
 		BOARD_NRF54L15DK_NRF54L10_CPUAPP_NS
 
-config BT_CTLR
+config HAS_BT_CTLR
 	default BT
 
 # By default, if we build for a Non-Secure version of the board,

@@ -21,15 +21,18 @@
 
 &flash0 {
 	reg = <0x8000000 DT_SIZE_M(2)>;
+
 	pages_layout: pages_layout {
 		pages_layout_16k: pages_layout_16k {
 			pages-count = <8>;
 			pages-size = <DT_SIZE_K(16)>;
 		};
+
 		pages_layout_128k: pages_layout_128k {
 			pages-count = <1>;
 			pages-size = <DT_SIZE_K(128)>;
 		};
+
 		pages_layout_256k: pages_layout_256k {
 			pages-count = <7>;
 			pages-size = <DT_SIZE_K(256)>;
@@ -99,6 +102,7 @@
 
 &can {
 	message-objects = <256>;
+
 	can_node3: can_node3@48014500 {
 		compatible = "infineon,xmc4xxx-can-node";
 		reg = <0x48014500 0x100>;

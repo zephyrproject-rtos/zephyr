@@ -26,6 +26,16 @@ config UDC_DWC2_HIBERNATION
 	help
 	  Enable Hibernation if DWC2 USB controller supports hibernation.
 
+config UDC_DWC2_PTI
+	bool "DWC2 USB Periodic Transfer Interrupt"
+	depends on UDC_DWC2
+	help
+	  Ignore frame number when scheduling isochronous endpoints. Use this
+	  when isochronous transfers should finish only after receiving token
+	  (IN or OUT) from host. In Periodic Transfer Interrupt, DWC2 driver is
+	  not automatically retiring transfers if host does not issue token
+	  during microframe. Enable to reduce isochronous endpoint CPU overhead.
+
 config UDC_DWC2_STACK_SIZE
 	int "UDC DWC2 driver internal thread stack size"
 	depends on UDC_DWC2

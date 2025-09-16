@@ -1,12 +1,4 @@
-.. _native_sim:
-
-Native simulator - native_sim
-#############################
-
-.. contents::
-   :depth: 1
-   :backlinks: entry
-   :local:
+.. zephyr:board:: native_sim
 
 Overview
 ********
@@ -293,7 +285,9 @@ All times are kept in microseconds.
 Peripherals
 ***********
 
-The following peripherals are currently provided with this board:
+.. zephyr:board-supported-hw::
+
+Here are more details on the peripherals that are currently provided with this board:
 
 **Interrupt controller**
   A simple yet generic interrupt controller is provided. It can nest interrupts
@@ -547,15 +541,24 @@ where :file:`/dev/{<ptyn>}` should be replaced with the actual PTY device.
 
 You may also chose to automatically attach a terminal emulator to any of these UARTs.
 To automatically attach one to all these UARTs, pass the command line option ``-attach_uart`` to the
-executable. To automatically attach one to a single UART use ``-<uart_name>_attach_uart``
+executable. To automatically attach one to a single UART use ``-<uart_name>_attach_uart``.
 The command used for attaching to the new shell can be set for all UARTs with the command line
 option ``-attach_uart_cmd=<"cmd">``, or for each individual UART with
 ``-<uart_name>_attach_uart_cmd``. Where the default command is given by
 :kconfig:option:`CONFIG_UART_NATIVE_PTY_AUTOATTACH_DEFAULT_CMD`.
 Note that the default command assumes both ``xterm`` and ``screen`` are installed in the system.
 
-This driver supports poll mode or async mode with :kconfig:option:`CONFIG_UART_ASYNC_API`.
-Interrupt mode is not supported.
+Note that these ``uart_cmd`` commands can be effectively any shell command including lists of
+commands. Therefore it is possible to invoke any other script or program from it.
+Those commands will be run right after the PTY is created.
+For example, if one wanted to create a link to the newly created PTY, and have it removed when the
+program ends, one could do:
+
+.. code-block:: console
+
+   $ zephyr.exe --uart_attach_uart_cmd='ln -s %s /tmp/somename' ; rm /tmp/somename
+
+This driver supports poll mode, interrupt mode and async mode.
 Neither runtime configuration or line control are supported.
 
 .. _native_tty_uart:
@@ -712,6 +715,7 @@ host libC (:kconfig:option:`CONFIG_EXTERNAL_LIBC`):
      FUSE, :ref:`Host based filesystem access <native_fuse_flash>`, :kconfig:option:`CONFIG_FUSE_FS_ACCESS`, All
      GPIO, GPIO emulator, :kconfig:option:`CONFIG_GPIO_EMUL`, All
      GPIO, SDL GPIO emulator, :kconfig:option:`CONFIG_GPIO_EMUL_SDL`, All
+     HWINFO, :kconfig:option:`CONFIG_HWINFO_NATIVE`, All
      I2C, I2C emulator, :kconfig:option:`CONFIG_I2C_EMUL`, All
      Input, Input SDL touch, :kconfig:option:`CONFIG_INPUT_SDL_TOUCH`, All
      Input, Linux evdev, :kconfig:option:`CONFIG_NATIVE_LINUX_EVDEV`, All

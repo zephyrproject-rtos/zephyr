@@ -64,7 +64,7 @@ uart2: &scb2 {
 		murata-1dx {
 			status = "okay";
 			compatible = "infineon,cyw43xxx-bt-hci";
-			bt-reg-on-gpios = <&gpio_prt3 4 (GPIO_ACTIVE_HIGH)>;
+			bt-reg-on-gpios = <&gpio_prt3 4 GPIO_ACTIVE_HIGH>;
 
 			/* Configuration UART speeds for firmware download (fw-download-speed)
 			 * and HCI operation (hci-operation-speed).
@@ -91,7 +91,7 @@ uart2: &scb2 {
 		compatible = "infineon,airoc-wifi";
 
 		/* Wi-Fi control gpios */
-		wifi-reg-on-gpios    = <&gpio_prt2 6 GPIO_ACTIVE_HIGH>;
+		wifi-reg-on-gpios = <&gpio_prt2 6 GPIO_ACTIVE_HIGH>;
 		wifi-host-wake-gpios = <&gpio_prt0 4 GPIO_ACTIVE_HIGH>;
 	};
 };

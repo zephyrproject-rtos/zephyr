@@ -89,6 +89,10 @@
 #endif
 #endif
 
+#if !defined(NRF_GPIOTE0) && defined(NRF_RADIOCORE_GPIOTE)
+#define NRF_GPIOTE0 NRF_RADIOCORE_GPIOTE
+#endif
+
 /**
  * Check that a devicetree node's "reg" base address matches the
  * correct value from the MDK.

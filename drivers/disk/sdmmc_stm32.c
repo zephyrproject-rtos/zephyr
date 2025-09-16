@@ -8,6 +8,7 @@
 
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/disk.h>
+#include <zephyr/drivers/disk/sdmmc_stm32.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
@@ -44,6 +45,22 @@ LOG_MODULE_REGISTER(stm32_sdmmc, CONFIG_SDMMC_LOG_LEVEL);
 
 #ifndef SDMMC_BUS_WIDE_8B
 #define SDMMC_BUS_WIDE_8B SDIO_BUS_WIDE_8B
+#endif
+
+#ifndef SDMMC_CLOCK_EDGE_RISING
+#define SDMMC_CLOCK_EDGE_RISING SDIO_CLOCK_EDGE_RISING
+#endif
+
+#ifndef SDMMC_CLOCK_POWER_SAVE_ENABLE
+#define SDMMC_CLOCK_POWER_SAVE_ENABLE SDIO_CLOCK_POWER_SAVE_ENABLE
+#endif
+
+#ifndef SDMMC_CLOCK_POWER_SAVE_DISABLE
+#define SDMMC_CLOCK_POWER_SAVE_DISABLE SDIO_CLOCK_POWER_SAVE_DISABLE
+#endif
+
+#ifndef SDMMC_HARDWARE_FLOW_CONTROL_DISABLE
+#define SDMMC_HARDWARE_FLOW_CONTROL_DISABLE SDIO_HARDWARE_FLOW_CONTROL_DISABLE
 #endif
 
 typedef void (*irq_config_func_t)(const struct device *dev);
@@ -224,8 +241,8 @@ static int stm32_sdmmc_configure_dma(DMA_HandleTypeDef *handle, struct sdmmc_dma
 		return ret;
 	}
 
+	handle->Instance                 = STM32_DMA_GET_INSTANCE(dma->reg, dma->channel_nb);
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_dma_v1)
-	handle->Instance                 = __LL_DMA_GET_STREAM_INSTANCE(dma->reg, dma->channel_nb);
 	handle->Init.Channel             = dma->cfg.dma_slot * DMA_CHANNEL_1;
 	handle->Init.PeriphInc           = DMA_PINC_DISABLE;
 	handle->Init.MemInc              = DMA_MINC_ENABLE;
@@ -238,14 +255,11 @@ static int stm32_sdmmc_configure_dma(DMA_HandleTypeDef *handle, struct sdmmc_dma
 	handle->Init.MemBurst            = DMA_MBURST_INC4;
 	handle->Init.PeriphBurst         = DMA_PBURST_INC4;
 #else
-	uint32_t channel_id = dma->channel_nb - STM32_DMA_STREAM_OFFSET;
-
 	BUILD_ASSERT(STM32_SDMMC_USE_DMA_SHARED == 1, "Only txrx is supported on this family");
 	/* handle->Init.Direction is not initialised here on purpose.
 	 * Since the channel is reused for both directions, the direction is
 	 * configured before each read/write call.
 	 */
-	handle->Instance                 = __LL_DMA_GET_CHANNEL_INSTANCE(dma->reg, channel_id);
 	handle->Init.Request             = dma->cfg.dma_slot;
 	handle->Init.PeriphInc           = DMA_PINC_DISABLE;
 	handle->Init.MemInc              = DMA_MINC_ENABLE;
@@ -816,6 +830,13 @@ err_card_detect:
 	return err;
 }
 
+void stm32_sdmmc_get_card_cid(const struct device *dev, uint32_t cid[4])
+{
+	const struct stm32_sdmmc_priv *priv = dev->data;
+
+	memcpy(cid, &priv->hsd.CID, sizeof(priv->hsd.CID));
+}
+
 #if DT_NODE_HAS_STATUS_OKAY(DT_DRV_INST(0))
 
 #if STM32_SDMMC_USE_DMA
@@ -872,10 +893,20 @@ static struct stm32_sdmmc_priv stm32_sdmmc_priv_1 = {
 	.irq_config = stm32_sdmmc_irq_config_func,
 	.hsd = {
 		.Instance = (MMC_TypeDef *)DT_INST_REG_ADDR(0),
-		.Init.BusWide = SDMMC_BUS_WIDTH,
-#if DT_INST_NODE_HAS_PROP(0, clk_div)
-		.Init.ClockDiv = DT_INST_PROP(0, clk_div),
+		.Init.ClockEdge = SDMMC_CLOCK_EDGE_RISING,
+#ifdef SDIO_CLOCK_BYPASS_DISABLE
+		.Init.ClockBypass = DT_INST_PROP(0, clk_bypass)
+						? SDIO_CLOCK_BYPASS_ENABLE
+						: SDIO_CLOCK_BYPASS_DISABLE,
+#elif defined(SDMMC_CLOCK_BYPASS_DISABLE)
+		.Init.ClockBypass = DT_INST_PROP(0, clk_bypass)
+						? SDMMC_CLOCK_BYPASS_ENABLE
+						: SDMMC_CLOCK_BYPASS_DISABLE,
 #endif
+		.Init.ClockPowerSave = SDMMC_CLOCK_POWER_SAVE_DISABLE,
+		.Init.BusWide = SDMMC_BUS_WIDTH,
+		.Init.HardwareFlowControl = SDMMC_HARDWARE_FLOW_CONTROL_DISABLE,
+		.Init.ClockDiv = DT_INST_PROP_OR(0, clk_div, 0),
 	},
 #if DT_INST_NODE_HAS_PROP(0, cd_gpios)
 	.cd = GPIO_DT_SPEC_INST_GET(0, cd_gpios),

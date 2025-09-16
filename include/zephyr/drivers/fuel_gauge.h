@@ -6,12 +6,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @ingroup fuel_gauge_interface
+ * @brief Main header file for fuel gauge driver API.
+ */
+
 #ifndef ZEPHYR_INCLUDE_DRIVERS_BATTERY_H_
 #define ZEPHYR_INCLUDE_DRIVERS_BATTERY_H_
 
 /**
- * @brief Fuel Gauge Interface
- * @defgroup fuel_gauge_interface Fuel Gauge Interface
+ * @brief Interfaces for fuel gauges.
+ * @defgroup fuel_gauge_interface Fuel Gauge
  * @since 3.3
  * @version 0.1.0
  * @ingroup io_interfaces
@@ -39,8 +45,6 @@ enum fuel_gauge_prop_type {
 	 */
 	FUEL_GAUGE_AVG_CURRENT = 0,
 
-	/** Used to cutoff the battery from the system - useful for storage/shipping of devices */
-	FUEL_GAUGE_BATTERY_CUTOFF,
 	/** Battery current (uA); negative=discharging */
 	FUEL_GAUGE_CURRENT,
 	/** Whether the battery underlying the fuel-gauge is cut off from charge */

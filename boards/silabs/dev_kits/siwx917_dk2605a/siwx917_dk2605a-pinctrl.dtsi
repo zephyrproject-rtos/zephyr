@@ -32,5 +32,4 @@
 			pinmux = <ULPI2C_SDA_ULP6>, <ULPI2C_SCL_ULP7>;
 		};
 	};
-
 };

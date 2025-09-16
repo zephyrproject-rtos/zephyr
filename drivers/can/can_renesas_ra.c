@@ -1106,7 +1106,11 @@ DT_FOREACH_STATUS_OKAY(renesas_ra_canfd_global, CAN_RENESAS_RA_GLOBAL_DEFINE)
 			EVENT_CAN_TX(DT_INST_PROP(index, channel));                                \
 		R_ICU->IELSR_b[DT_INST_IRQ_BY_NAME(index, err, irq)].IELS =                        \
 			EVENT_CAN_CHERR(DT_INST_PROP(index, channel));                             \
-	                                                                                           \
+                                                                                                   \
+		BSP_ASSIGN_EVENT_TO_CURRENT_CORE(EVENT_CAN_COMFRX(DT_INST_PROP(index, channel)));  \
+		BSP_ASSIGN_EVENT_TO_CURRENT_CORE(EVENT_CAN_TX(DT_INST_PROP(index, channel)));      \
+		BSP_ASSIGN_EVENT_TO_CURRENT_CORE(EVENT_CAN_CHERR(DT_INST_PROP(index, channel)));   \
+                                                                                                   \
 		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, rx, irq),                                   \
 			    DT_INST_IRQ_BY_NAME(index, rx, priority), canfd_common_fifo_rx_isr,    \
 			    NULL, 0);                                                              \
@@ -1149,7 +1153,7 @@ DT_FOREACH_STATUS_OKAY(renesas_ra_canfd_global, CAN_RENESAS_RA_GLOBAL_DEFINE)
 				.tx_irq = DT_INST_IRQ_BY_NAME(index, tx, irq),                     \
 				.p_extend = &can_renesas_ra_data##index.fsp_canfd_extend,          \
 				.p_bit_timing = &can_renesas_ra_data##index.bit_timing,            \
-				.p_context = DEVICE_DT_INST_GET(index),                            \
+				.p_context = (void *)DEVICE_DT_INST_GET(index),                    \
 				.p_callback = can_renesas_ra_fsp_cb,                               \
 			},                                                                         \
 		.fsp_canfd_extend =                                                                \

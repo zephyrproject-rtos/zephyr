@@ -7,7 +7,4 @@ config NUM_IRQS
 	# must be >= the highest interrupt number used
 	default 66
 
-config GPIO_GECKO
-	default y
-
 endif

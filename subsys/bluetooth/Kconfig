@@ -115,14 +115,21 @@ config BT_CONN_TX
 	help
 	  Hidden configuration that is true if ACL or broadcast ISO is enabled
 
-config BT_LE_MAX_LOCAL_SUPPORTED_FEATURE_PAGE
-	int "Maximum supported feature page"
+config BT_LE_LOCAL_MINIMUM_REQUIRED_FEATURE_PAGE
+	int
+	default 1 if BT_FRAME_SPACE_UPDATE
 	default 0
-	range 0 10
 	depends on BT_LE_EXTENDED_FEAT_SET
 	help
-	  Maximum supported feature page that can be stored locally and fetched
-	  from the remote connection with the LL Extended Feature Set feature.
+	  Minimum required feature page that must be supported.
+
+config BT_LE_MAX_LOCAL_SUPPORTED_FEATURE_PAGE
+	int "Maximum supported feature page"
+	default BT_LE_LOCAL_MINIMUM_REQUIRED_FEATURE_PAGE
+	range BT_LE_LOCAL_MINIMUM_REQUIRED_FEATURE_PAGE 10
+	depends on BT_LE_EXTENDED_FEAT_SET
+	help
+	  Maximum feature page that can be stored for local supported features.
 
 config BT_LE_EXTENDED_FEAT_SET
 	bool "LL Extended Feature Set"
@@ -131,6 +138,16 @@ config BT_LE_EXTENDED_FEAT_SET
 	  Enable support for the LL Extended Feature Set feature.
 
 if BT_CONN
+config BT_CONN_DYNAMIC_CALLBACKS
+	bool "Dynamic connection callbacks"
+	default y
+	help
+	  Enable support for dynamic connection callbacks. This links in
+	  bt_conn_cb_register(). Disabling this config is safe. It will make
+	  uses of this and associated APIs fail to link. Note: Static registration
+	  through BT_CONN_CB_DEFINE() is always available and does not depend on
+	  this config.
+
 config BT_HCI_ACL_FLOW_CONTROL
 	bool "Controller to Host ACL flow control support"
 	# Enable if building a Host-only build
@@ -202,6 +219,12 @@ config BT_SUBRATING
 	help
 	  Enable support for LE Connection Subrating feature that is defined in the
 	  Bluetooth Core specification, Version 5.4 | Vol 6, Part B, Section 4.6.35.
+
+config BT_FRAME_SPACE_UPDATE
+	bool "Frame Space Update"
+	depends on (!HAS_BT_CTLR || BT_CTLR_FRAME_SPACE_UPDATE_SUPPORT) && BT_CONN && BT_LE_EXTENDED_FEAT_SET
+	help
+	  Enable support for Bluetooth 6.0 Frame Space Update feature.
 
 config BT_CHANNEL_SOUNDING
 	bool "Channel Sounding [EXPERIMENTAL]"

@@ -227,7 +227,11 @@ static struct k_work_q lvgl_workqueue;
 static void lvgl_timer_handler_work(struct k_work *work)
 {
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
-	uint32_t wait_time = lv_timer_handler();
+	uint32_t wait_time;
+
+	lvgl_lock();
+	wait_time = lv_timer_handler();
+	lvgl_unlock();
 
 	/* schedule next timer verification */
 	if (wait_time == LV_NO_TIMER_READY) {
@@ -243,6 +247,27 @@ struct k_work_q *lvgl_get_workqueue(void)
 	return &lvgl_workqueue;
 }
 #endif /* CONFIG_LV_Z_RUN_LVGL_ON_WORKQUEUE */
+
+#if defined(CONFIG_LV_Z_LVGL_MUTEX) && !defined(CONFIG_LV_Z_USE_OSAL)
+
+static K_MUTEX_DEFINE(lvgl_mutex);
+
+void lvgl_lock(void)
+{
+	(void)k_mutex_lock(&lvgl_mutex, K_FOREVER);
+}
+
+bool lvgl_trylock(void)
+{
+	return k_mutex_lock(&lvgl_mutex, K_NO_WAIT) == 0;
+}
+
+void lvgl_unlock(void)
+{
+	(void)k_mutex_unlock(&lvgl_mutex);
+}
+
+#endif /* CONFIG_LV_Z_LVGL_MUTEX */
 
 void lv_mem_init(void)
 {

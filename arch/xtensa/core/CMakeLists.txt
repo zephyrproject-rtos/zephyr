@@ -108,25 +108,6 @@ add_dependencies(zephyr_interface zsr_h)
 
 unset(MAY_NEED_SYSCALL_SCRATCH_REG)
 
-# Similar: auto-generate interrupt handlers
-set(HANDLERS ${CMAKE_BINARY_DIR}/zephyr/include/generated/xtensa_handlers)
-
-add_custom_command(
-  OUTPUT ${HANDLERS}_tmp.c
-  COMMAND ${CMAKE_C_COMPILER} -E -U__XCC__
-          ${XTENSA_CONFIG_HAL_INCLUDE_DIR}
-	  -o ${HANDLERS}_tmp.c
-	  - < ${CMAKE_CURRENT_SOURCE_DIR}/xtensa_intgen.tmpl)
-
-add_custom_command(
-  OUTPUT ${HANDLERS}.h
-  DEPENDS ${HANDLERS}_tmp.c
-  COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/xtensa_intgen.py
-          ${HANDLERS}_tmp.c > ${HANDLERS}.h)
-
-add_custom_target(xtensa_handlers_h DEPENDS ${HANDLERS}.h)
-add_dependencies(zephyr_interface xtensa_handlers_h)
-
 # Auto-generate interrupt vector entry
 set(VECS_LD ${CMAKE_BINARY_DIR}/zephyr/include/generated/xtensa_vectors.ld)
 add_custom_command(OUTPUT ${VECS_LD} DEPENDS ${CORE_ISA_DM}

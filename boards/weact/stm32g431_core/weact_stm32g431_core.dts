@@ -33,6 +33,7 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led_0: led0 {
 			gpios = <&gpioc 6 GPIO_ACTIVE_HIGH>;
 			label = "Status LED";
@@ -41,11 +42,13 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		button_0: button0 {
 			label = "User";
 			gpios = <&gpioc 13 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		button_1: button1 {
 			label = "Boot0";
 			gpios = <&gpiob 8 GPIO_ACTIVE_HIGH>;
@@ -115,13 +118,13 @@
 
 &rtc {
 	status = "okay";
-	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000400>,
+	clocks = <&rcc STM32_CLOCK(APB1, 10)>,
 		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
 };
 
 stm32_lp_tick_source: &lptim1 {
 	status = "okay";
-	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x80000000>,
+	clocks = <&rcc STM32_CLOCK(APB1, 31)>,
 		 <&rcc STM32_SRC_LSE LPTIM1_SEL(3)>;
 };
 
@@ -180,7 +183,7 @@ stm32_lp_tick_source: &lptim1 {
 zephyr_udc0: &usb {
 	pinctrl-0 = <&usb_dm_pa11 &usb_dp_pa12>;
 	pinctrl-names = "default";
-	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00800000>,
+	clocks = <&rcc STM32_CLOCK(APB1, 23)>,
 		 <&rcc STM32_SRC_PLL_Q CLK48_SEL(2)>;
 	status = "okay";
 };

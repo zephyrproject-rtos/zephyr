@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 Sean Nyekjaer
- # Copyright (c) 2024-2025 Gerson Fernando Budke <nandojve@gmail.com>
+ * # Copyright (c) 2024-2025 Gerson Fernando Budke <nandojve@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -32,6 +32,7 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		yellow_led: led_0 {
 			gpios = <&porta 14 GPIO_ACTIVE_LOW>;
 			label = "LED0";
@@ -40,6 +41,7 @@
 
 	buttons {
 		compatible = "gpio-keys";
+
 		user_button: button_0 {
 			gpios = <&porta 15 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "SW0";

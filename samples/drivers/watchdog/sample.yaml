@@ -22,10 +22,10 @@ tests:
       - s32z2xxdc2/s32z270/rtu1
       - s32z2xxdc2@D/s32z270/rtu0
       - s32z2xxdc2@D/s32z270/rtu1
-      - panb511evb/nrf54l15/cpuapp
-      - panb511evb/nrf54l15/cpuapp/ns
-      - panb511evb/nrf54l15/cpuflpr
-      - panb511evb/nrf54l15/cpuflpr/xip
+      - panb611evb/nrf54l15/cpuapp
+      - panb611evb/nrf54l15/cpuapp/ns
+      - panb611evb/nrf54l15/cpuflpr
+      - panb611evb/nrf54l15/cpuflpr/xip
       - nrf54l15dk/nrf54l15/cpuapp/ns
       - nrf54l15dk/nrf54l10/cpuapp/ns
       - bl54l15_dvk/nrf54l10/cpuapp/ns

@@ -371,7 +371,8 @@ static int transceive(const struct device *dev, const struct spi_config *spi_cfg
 		goto error;
 	}
 
-	if (data->major_version < 2 && spi_cfg->operation & SPI_HOLD_ON_CS) {
+	if (data->major_version < 2 && spi_cfg->operation & SPI_HOLD_ON_CS &&
+	    !spi_cs_is_gpio(spi_cfg)) {
 		/* on this version of LPSPI, due to errata in design
 		 * CS must be deasserted in order to clock all words,
 		 * so HOLD_ON_CS flag cannot be supported.

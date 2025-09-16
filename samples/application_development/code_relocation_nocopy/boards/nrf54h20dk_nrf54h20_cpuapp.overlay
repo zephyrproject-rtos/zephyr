@@ -2,11 +2,16 @@
 	status = "okay";
 };
 
+&gpio6 {
+	status = "okay";
+};
+
+&exmif {
+	status = "okay";
+};
+
 &mx25uw63 {
-	read-command = <0xEC13>;
-	command-length = "INSTR_2_BYTE";
-	address-length = "ADDR_4_BYTE";
-	rx-dummy = <20>;
+	status = "okay";
 
 	xip-config = <1 0 0x20000000 0>;
 };

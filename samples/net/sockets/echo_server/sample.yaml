@@ -75,18 +75,15 @@ tests:
   sample.net.sockets.echo_server.b91_802154:
     extra_args: EXTRA_CONF_FILE="overlay-802154.conf"
     platform_allow: tlsr9518adk80d
-  sample.net.sockets.echo_server.usbnet:
-    depends_on: usb_device
+  sample.net.sockets.echo_server.usbd_cdc_ncm:
+    depends_on: usbd
     harness: net
-    extra_args: EXTRA_CONF_FILE="overlay-netusb.conf"
+    extra_args: EXTRA_CONF_FILE="overlay-usbd.conf"
+                EXTRA_DTC_OVERLAY_FILE="usbd_cdc_ncm.overlay"
     tags:
       - net
       - usb
-    # native_sim usb driver does not work with CONFIG_POSIX_API
-    platform_exclude:
-      - native_sim
-      - native_sim/native/64
-  sample.net.sockets.echo_server.openthread:
+  sample.net.sockets.echo_server.nrf_openthread:
     extra_args: EXTRA_CONF_FILE="overlay-ot.conf"
     slow: true
     tags:

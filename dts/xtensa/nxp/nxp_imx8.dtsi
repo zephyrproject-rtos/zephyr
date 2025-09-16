@@ -40,6 +40,7 @@
 
 		iomuxc: iomuxc {
 			compatible = "nxp,imx-iomuxc-scu";
+
 			pinctrl: pinctrl {
 				compatible = "nxp,imx8-pinctrl";
 			};
@@ -133,7 +134,7 @@
 		power-domains = <&edma0_ch6_pd>, <&edma0_ch7_pd>,
 				<&edma0_ch14_pd>, <&edma0_ch15_pd>;
 		interrupts-extended = <&master6 58>, <&master6 58>,
-				<&master5 29>, <&master5 29>;
+				      <&master5 29>, <&master5 29>;
 		#dma-cells = <2>;
 		status = "disabled";
 	};
@@ -159,11 +160,11 @@
 		clocks = <&ccm IMX_CCM_AUD_PLL_DIV_CLK0 0x0 0x0>,
 			 <&ccm IMX_CCM_ESAI0_CLK 0x0 0x0>;
 		esai-pin-modes = <ESAI_PIN_HCKR ESAI_PIN_DISCONNECTED>,
-				<ESAI_PIN_HCKT ESAI_PIN_DISCONNECTED>,
-				<ESAI_PIN_SDO4_SDI1 ESAI_PIN_DISCONNECTED>,
-				<ESAI_PIN_SDO3_SDI2 ESAI_PIN_DISCONNECTED>,
-				<ESAI_PIN_SDO2_SDI3 ESAI_PIN_DISCONNECTED>,
-				<ESAI_PIN_SDO1 ESAI_PIN_DISCONNECTED>;
+				 <ESAI_PIN_HCKT ESAI_PIN_DISCONNECTED>,
+				 <ESAI_PIN_SDO4_SDI1 ESAI_PIN_DISCONNECTED>,
+				 <ESAI_PIN_SDO3_SDI2 ESAI_PIN_DISCONNECTED>,
+				 <ESAI_PIN_SDO2_SDI3 ESAI_PIN_DISCONNECTED>,
+				 <ESAI_PIN_SDO1 ESAI_PIN_DISCONNECTED>;
 		status = "disabled";
 	};
 

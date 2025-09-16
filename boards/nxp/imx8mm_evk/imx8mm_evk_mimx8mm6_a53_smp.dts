@@ -24,6 +24,7 @@
 		cpu@0 {
 			status = "disabled";
 		};
+
 		cpu@1 {
 			status = "disabled";
 		};
@@ -56,6 +57,7 @@
 	pinctrl-0 = <&pinmux_mdio>;
 	pinctrl-names = "default";
 	status = "okay";
+
 	phy: phy@0 {
 		compatible = "qca,ar8031";
 		reg = <0>;

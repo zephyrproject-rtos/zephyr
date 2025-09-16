@@ -231,7 +231,7 @@
 			#pwm-cells = <3>;
 		};
 
-		adc0: adc@4003b000{
+		adc0: adc@4003b000 {
 			compatible = "nxp,kinetis-adc16";
 			reg = <0x4003b000 0x70>;
 			interrupts = <15 0>;

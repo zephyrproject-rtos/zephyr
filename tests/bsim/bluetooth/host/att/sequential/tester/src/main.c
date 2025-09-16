@@ -323,6 +323,8 @@ static void recv(struct net_buf *buf)
 
 static void send_cmd(uint16_t opcode, struct net_buf *cmd, struct net_buf **rsp)
 {
+	int err;
+
 	LOG_DBG("opcode %x", opcode);
 
 	if (!cmd) {
@@ -335,13 +337,12 @@ static void send_cmd(uint16_t opcode, struct net_buf *cmd, struct net_buf **rsp)
 	active_opcode = opcode;
 
 	LOG_HEXDUMP_DBG(cmd->data, cmd->len, "HCI TX");
-	bt_send(cmd);
+	err = bt_send(cmd);
+	__ASSERT(err == 0, "Failed to send HCI command: %d", err);
 
 	/* Wait until the command completes */
 	k_sem_take(&cmd_sem, K_FOREVER);
 	k_sem_give(&cmd_sem);
-
-	net_buf_unref(cmd);
 
 	/* return response. it's okay if cmd_rsp gets overwritten, since the app
 	 * gets the ref to the underlying buffer when this fn returns.

@@ -1,0 +1,9 @@
+tests:
+  subsys.cpu_freq.policies.on_demand:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    tags: cpu_freq
+    integration_platforms:
+      - native_sim
+      - native_sim/native/64

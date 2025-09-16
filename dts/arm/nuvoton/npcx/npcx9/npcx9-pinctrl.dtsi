@@ -5,7 +5,6 @@
  */
 
 &pinctrl {
-
 	/* Prebuild nodes for peripheral device's characteristics (Optional) */
 	/omit-if-no-ref/ vhif_lpc_sl: devctl-vhif-3p3v-lpc {
 		dev-ctl = <0x0 2 2 0x01>;

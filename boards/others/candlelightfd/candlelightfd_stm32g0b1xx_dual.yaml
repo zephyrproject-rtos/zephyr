@@ -7,4 +7,9 @@ toolchain:
   - gnuarmemb
 ram: 144
 flash: 128
+supported:
+  - can
+  - gpio
+  - usb_device
+  - usbd
 vendor: others

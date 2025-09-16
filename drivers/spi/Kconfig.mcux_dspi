@@ -17,7 +17,7 @@ if SPI_MCUX_DSPI
 
 config DSPI_MCUX_EDMA
 	bool "ENABLE EDMA for DSPI driver"
-	depends on HAS_MCUX && HAS_MCUX_EDMA
+	depends on HAS_MCUX && DMA_MCUX_EDMA
 	help
 	  Enable DMA support for the MCUX DSPI driver.
 

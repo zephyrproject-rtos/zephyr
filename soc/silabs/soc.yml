@@ -47,12 +47,29 @@ family:
       - name: efr32bg22
         socs:
           - name: efr32bg22c224f512im40
+          - name: efr32bg22c224f512im32
+          - name: efr32bg22c224f512gn32
+          - name: efr32bg22c224f512gm40
+          - name: efr32bg22c224f512gm32
+          - name: efr32bg22c222f352gn32
+          - name: efr32bg22c222f352gm40
+          - name: efr32bg22c222f352gm32
+      - name: efr32mg22
+        socs:
+          - name: efr32mg22c224f512im40
+          - name: efr32mg22c224f512im32
+          - name: efr32mg22c224f512gn32
+          - name: efr32mg22e224f512im40
+          - name: efr32mg22e224f512im32
       - name: efr32mg24
         socs:
           - name: efr32mg24b220f1536im48
           - name: efr32mg24b310f1536im48
           - name: efr32mg24b210f1536im48
           - name: efr32mg24b020f1536im40
+      - name: bgm24
+        socs:
+          - name: bgm240sa22vna
       - name: mgm24
         socs:
           - name: mgm240sd22vna
@@ -63,6 +80,9 @@ family:
       - name: efr32zg23
         socs:
           - name: efr32zg23b020f512im48
+      - name: efr32zg28
+        socs:
+          - name: efr32zg28b322f1024im68
       - name: efr32bg29
         socs:
           - name: efr32bg29b140f1024im40
@@ -73,6 +93,12 @@ family:
         socs:
           - name: efr32mg29b140f1024im40
           - name: efr32mg29b230f1024cm40
+      - name: efm32pg28
+        socs:
+          - name: efm32pg28b310f1024im68
+      - name: efm32pg23
+        socs:
+          - name: efm32pg23b310f512im48
   - name: silabs_siwx91x
     series:
       - name: siwg917

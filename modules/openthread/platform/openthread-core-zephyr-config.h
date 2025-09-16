@@ -211,10 +211,16 @@
  * in platform.
  *
  */
-#define OPENTHREAD_CONFIG_PLATFORM_USEC_TIMER_ENABLE                                               \
-	((CONFIG_OPENTHREAD_CSL_RECEIVER &&                                                        \
-	  (OPENTHREAD_CONFIG_THREAD_VERSION >= OT_THREAD_VERSION_1_2)) ||                          \
-	 CONFIG_OPENTHREAD_WAKEUP_END_DEVICE)
+#if defined(CONFIG_OPENTHREAD_CSL_RECEIVER) || defined(CONFIG_OPENTHREAD_WAKEUP_END_DEVICE)
+#if defined(CONFIG_OPENTHREAD_CSL_RECEIVER) &&                                              \
+	(OPENTHREAD_CONFIG_THREAD_VERSION >= OT_THREAD_VERSION_1_2)
+#define OPENTHREAD_CONFIG_PLATFORM_USEC_TIMER_ENABLE 1
+#elif defined(CONFIG_OPENTHREAD_WAKEUP_END_DEVICE)
+#define OPENTHREAD_CONFIG_PLATFORM_USEC_TIMER_ENABLE 1
+#else
+#define OPENTHREAD_CONFIG_PLATFORM_USEC_TIMER_ENABLE 0
+#endif
+#endif /* CONFIG_OPENTHREAD_CSL_RECEIVER || CONFIG_OPENTHREAD_WAKEUP_END_DEVICE */
 
 /* Zephyr does not use OpenThread's heap. mbedTLS will use heap memory allocated
  * by Zephyr. Here, we use some dummy values to prevent OpenThread warnings.
@@ -406,6 +412,16 @@
  */
 #ifdef CONFIG_OPENTHREAD_CRYPTO_PSA
 #define OPENTHREAD_CONFIG_CRYPTO_LIB OPENTHREAD_CONFIG_CRYPTO_LIB_PSA
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_PLATFORM_RADIO_COEX_ENABLE
+ *
+ * Enable radio coexistence support.
+ *
+ */
+#ifdef CONFIG_OPENTHREAD_PLATFORM_RADIO_COEX_ENABLE
+#define OPENTHREAD_CONFIG_PLATFORM_RADIO_COEX_ENABLE 1
 #endif
 
 /**

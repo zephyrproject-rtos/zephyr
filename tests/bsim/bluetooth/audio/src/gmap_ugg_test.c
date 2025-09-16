@@ -900,7 +900,7 @@ static int gmap_ac_unicast(const struct gmap_unicast_ac_param *param,
 	return 0;
 }
 
-static void unicast_audio_stop(struct bt_cap_unicast_group *unicast_group)
+static void cap_initiator_unicast_audio_stop(struct bt_cap_unicast_group *unicast_group)
 {
 	struct bt_cap_unicast_audio_stop_param param;
 	int err;
@@ -998,7 +998,7 @@ static void test_gmap_ugg_unicast_ac(const struct gmap_unicast_ac_param *param)
 		WAIT_FOR_FLAG(flag_audio_received);
 	}
 
-	unicast_audio_stop(unicast_group);
+	cap_initiator_unicast_audio_stop(unicast_group);
 
 	unicast_group_delete(unicast_group);
 	unicast_group = NULL;

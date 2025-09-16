@@ -22,7 +22,7 @@ LOG_MODULE_REGISTER(log_backend_mqtt, CONFIG_LOG_DEFAULT_LEVEL);
 #include <errno.h>
 
 static bool panic;
-static char *mqtt_topic = CONFIG_LOG_BACKEND_MQTT_TOPIC_DEFAULT;
+static const char *mqtt_topic = CONFIG_LOG_BACKEND_MQTT_TOPIC_DEFAULT;
 static uint8_t log_buf[CONFIG_LOG_BACKEND_MQTT_MAX_MSG_SIZE];
 static uint32_t log_format_current = CONFIG_LOG_BACKEND_MQTT_OUTPUT_DEFAULT;
 
@@ -33,7 +33,7 @@ static int log_output_func(uint8_t *data, size_t length, void *output_ctx)
 	struct mqtt_client *client = (struct mqtt_client *)output_ctx;
 	struct mqtt_publish_param param = {0};
 
-	param.message.topic.topic.utf8 = (uint8_t *)mqtt_topic;
+	param.message.topic.topic.utf8 = (const uint8_t *)mqtt_topic;
 	param.message.topic.topic.size = strlen(mqtt_topic);
 	param.message.topic.qos = CONFIG_LOG_BACKEND_MQTT_QOS;
 	param.message.payload.data = data;

@@ -4,7 +4,6 @@
  * Copyright (c) 2022 STMicroelectronics
  */
 
-
 / {
 	pwmleds: pwmleds {
 		compatible = "pwm-leds";
@@ -18,7 +17,6 @@
 	aliases {
 		pwm-led0 = &green_pwm_led;
 	};
-
 };
 
 &pwm2 {

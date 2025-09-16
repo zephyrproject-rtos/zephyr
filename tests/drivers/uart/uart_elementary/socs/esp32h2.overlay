@@ -1,0 +1,28 @@
+/*
+ * Copyright (c) 2025 Espressif Systems (Shanghai) Co., Ltd.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	uart1_test: uart1_test {
+		group1 {
+			pinmux = <UART1_TX_GPIO2>,
+				 <UART1_RTS_GPIO3>;
+			input-enable;
+			output-high;
+		};
+		group2 {
+			pinmux = <UART1_RX_GPIO2>,
+				 <UART1_CTS_GPIO3>;
+			output-enable;
+			bias-pull-up;
+		};
+	};
+};
+
+dut: &uart1 {
+	status = "okay";
+	pinctrl-0 = <&uart1_test>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+};

@@ -8,6 +8,8 @@
  * Overlay to enable support for OpenThread's RCP over SPI communication
  */
 
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
+
 / {
 	chosen {
 		zephyr,hdlc-rcp-if = &hdlc_rcp_if;
@@ -23,7 +25,7 @@
 		reg = <0>;
 
 		spi-max-frequency = <1000000>; /* 1 MHz to support most devices */
-		int-gpios = <&arduino_header 15 GPIO_ACTIVE_LOW>; /* D9 */
-		reset-gpios = <&arduino_header 14 GPIO_ACTIVE_LOW>; /* D8 */
+		int-gpios = <&arduino_header ARDUINO_HEADER_R3_D9 GPIO_ACTIVE_LOW>;
+		reset-gpios = <&arduino_header ARDUINO_HEADER_R3_D8 GPIO_ACTIVE_LOW>;
 	};
 };

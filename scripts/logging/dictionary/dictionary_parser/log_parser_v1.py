@@ -255,6 +255,18 @@ class LogParserV1(LogParser):
             print(f"{color}%s%s%s|%s{Fore.RESET}" % ((" " * prefix_len),
                   hex_vals, hex_padding, chr_vals))
 
+    def get_full_msg_hdr_size(self):
+        """Get the size of the full message header"""
+        return struct.calcsize(self.fmt_msg_type) + \
+            struct.calcsize(self.fmt_msg_hdr) + \
+            struct.calcsize(self.fmt_msg_timestamp)
+
+    def get_normal_msg_size(self, logdata, offset):
+        """Get the needed size of the normal log message at offset"""
+        log_desc, _ = struct.unpack_from(self.fmt_msg_hdr, logdata, offset)
+        pkg_len = (log_desc >> 6) & int(math.pow(2, 10) - 1)
+        data_len = (log_desc >> 16) & int(math.pow(2, 12) - 1)
+        return self.get_full_msg_hdr_size() + pkg_len + data_len
 
     def parse_one_normal_msg(self, logdata, offset):
         """Parse one normal log message and print the encoded message"""
@@ -341,33 +353,53 @@ class LogParserV1(LogParser):
         # Point to next message
         return next_msg_offset
 
+    def parse_one_msg(self, logdata, offset):
+        if offset + struct.calcsize(self.fmt_msg_type) > len(logdata):
+            return False, offset
+
+        # Get message type
+        msg_type = struct.unpack_from(self.fmt_msg_type, logdata, offset)[0]
+
+        if msg_type == MSG_TYPE_DROPPED:
+
+            if offset + struct.calcsize(self.fmt_dropped_cnt) > len(logdata):
+                return False, offset
+            offset += struct.calcsize(self.fmt_msg_type)
+
+            num_dropped = struct.unpack_from(self.fmt_dropped_cnt, logdata, offset)
+            offset += struct.calcsize(self.fmt_dropped_cnt)
+
+            print(f"--- {num_dropped} messages dropped ---")
+
+        elif msg_type == MSG_TYPE_NORMAL:
+
+            if ((offset + self.get_full_msg_hdr_size() > len(logdata)) or
+                (offset + self.get_normal_msg_size(logdata, offset) > len(logdata))):
+                return False, offset
+
+            offset += struct.calcsize(self.fmt_msg_type)
+
+            ret = self.parse_one_normal_msg(logdata, offset)
+            if ret is None:
+                raise ValueError("Error parsing normal log message")
+
+            offset = ret
+
+        else:
+            logger.error("------ Unknown message type: %s", msg_type)
+            raise ValueError(f"Unknown message type: {msg_type}")
+
+        return True, offset
 
     def parse_log_data(self, logdata, debug=False):
         """Parse binary log data and print the encoded log messages"""
         offset = 0
+        still_parsing = True
 
-        while offset < len(logdata):
-            # Get message type
-            msg_type = struct.unpack_from(self.fmt_msg_type, logdata, offset)[0]
-            offset += struct.calcsize(self.fmt_msg_type)
+        while offset < len(logdata) and still_parsing:
+            still_parsing, offset = self.parse_one_msg(logdata, offset)
 
-            if msg_type == MSG_TYPE_DROPPED:
-                num_dropped = struct.unpack_from(self.fmt_dropped_cnt, logdata, offset)
-                offset += struct.calcsize(self.fmt_dropped_cnt)
+        return offset
 
-                print(f"--- {num_dropped} messages dropped ---")
-
-            elif msg_type == MSG_TYPE_NORMAL:
-                ret = self.parse_one_normal_msg(logdata, offset)
-                if ret is None:
-                    return False
-
-                offset = ret
-
-            else:
-                logger.error("------ Unknown message type: %s", msg_type)
-                return False
-
-        return True
 
 colorama.init()

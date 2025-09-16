@@ -12,8 +12,8 @@
 	soc {
 		compatible = "st,stm32g0c1", "st,stm32g0", "simple-bus";
 	};
+};
 
-	&exti {
-		num-lines = <64>;
-	};
+&exti {
+	num-lines = <64>;
 };

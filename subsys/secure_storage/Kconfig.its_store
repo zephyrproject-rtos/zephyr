@@ -17,7 +17,7 @@ config SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_ZMS
 	depends on ZMS
 	help
 	  This implementation of the ITS store module makes direct use of ZMS for storage.
-	  It needs a `secure_storage_its_partition` devicetree chosen property that points
+	  It needs a secure_storage_its_partition devicetree chosen property that points
 	  to a fixed storage partition that will be dedicated to the ITS. It has lower
 	  overhead compared to the settings-based implementation, both in terms of runtime
 	  execution and storage space, and also ROM footprint if the settings subsystem is disabled.
@@ -78,7 +78,8 @@ config SECURE_STORAGE_ITS_STORE_SETTINGS_PREFIX
 config SECURE_STORAGE_ITS_STORE_SETTINGS_NAME_MAX_LEN
 	int "Maximum setting name length"
 	range 2 64
-	default 22 if !SECURE_STORAGE_ITS_STORE_SETTINGS_NAME_CUSTOM
-	default 0
+	default 0 if SECURE_STORAGE_ITS_STORE_SETTINGS_NAME_CUSTOM
+	default 22 if SECURE_STORAGE_64_BIT_UID
+	default 14
 
 endif # SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_SETTINGS

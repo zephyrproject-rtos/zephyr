@@ -31,35 +31,36 @@
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
 		gpio-map = <0 0 &gpio0 0 0>,	/* GP0 */
-			<1 0 &gpio0 1 0>,	/* GP1 */
-			<2 0 &gpio0 2 0>,	/* GP2 */
-			<3 0 &gpio0 3 0>,	/* GP3 */
-			<4 0 &gpio0 4 0>,	/* GP4 */
-			<5 0 &gpio0 5 0>,	/* GP5 */
-			<6 0 &gpio0 6 0>,	/* GP6 */
-			<7 0 &gpio0 7 0>,	/* GP7 */
-			<8 0 &gpio0 8 0>,	/* GP8 */
-			<9 0 &gpio0 9 0>,	/* GP9 */
-			<10 0 &gpio0 10 0>,	/* GP10 */
-			<11 0 &gpio0 11 0>,	/* GP11 */
-			<12 0 &gpio0 12 0>,	/* GP12 */
-			<13 0 &gpio0 13 0>,	/* GP13 */
-			<14 0 &gpio0 14 0>,	/* GP14 */
-			<15 0 &gpio0 15 0>,	/* GP15 */
-			<16 0 &gpio0 16 0>,	/* GP16 */
-			<17 0 &gpio0 17 0>,	/* GP17 */
-			<18 0 &gpio0 18 0>,	/* GP18 */
-			<19 0 &gpio0 19 0>,	/* GP19 */
-			<20 0 &gpio0 20 0>,	/* GP20 */
-			<21 0 &gpio0 21 0>,	/* GP21 */
-			<22 0 &gpio0 22 0>,	/* GP22 */
-			<26 0 &gpio0 26 0>,	/* GP26 */
-			<27 0 &gpio0 27 0>,	/* GP27 */
-			<28 0 &gpio0 28 0>;	/* GP28 */
+			   <1 0 &gpio0 1 0>,	/* GP1 */
+			   <2 0 &gpio0 2 0>,	/* GP2 */
+			   <3 0 &gpio0 3 0>,	/* GP3 */
+			   <4 0 &gpio0 4 0>,	/* GP4 */
+			   <5 0 &gpio0 5 0>,	/* GP5 */
+			   <6 0 &gpio0 6 0>,	/* GP6 */
+			   <7 0 &gpio0 7 0>,	/* GP7 */
+			   <8 0 &gpio0 8 0>,	/* GP8 */
+			   <9 0 &gpio0 9 0>,	/* GP9 */
+			   <10 0 &gpio0 10 0>,	/* GP10 */
+			   <11 0 &gpio0 11 0>,	/* GP11 */
+			   <12 0 &gpio0 12 0>,	/* GP12 */
+			   <13 0 &gpio0 13 0>,	/* GP13 */
+			   <14 0 &gpio0 14 0>,	/* GP14 */
+			   <15 0 &gpio0 15 0>,	/* GP15 */
+			   <16 0 &gpio0 16 0>,	/* GP16 */
+			   <17 0 &gpio0 17 0>,	/* GP17 */
+			   <18 0 &gpio0 18 0>,	/* GP18 */
+			   <19 0 &gpio0 19 0>,	/* GP19 */
+			   <20 0 &gpio0 20 0>,	/* GP20 */
+			   <21 0 &gpio0 21 0>,	/* GP21 */
+			   <22 0 &gpio0 22 0>,	/* GP22 */
+			   <26 0 &gpio0 26 0>,	/* GP26 */
+			   <27 0 &gpio0 27 0>,	/* GP27 */
+			   <28 0 &gpio0 28 0>;	/* GP28 */
 	};
 
 	leds {
 		compatible = "gpio-leds";
+
 		led0: led_0 {
 			gpios = <&gpio0 25 GPIO_ACTIVE_HIGH>;
 			label = "LED";
@@ -69,6 +70,7 @@
 	pwm_leds {
 		compatible = "pwm-leds";
 		status = "disabled";
+
 		pwm_led0: pwm_led_0 {
 			pwms = <&pwm 9 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 			label = "PWM_LED";
@@ -185,5 +187,7 @@ zephyr_udc0: &usbd {
 };
 
 pico_spi: &spi0 {};
+
 pico_i2c0: &i2c0 {};
+
 pico_i2c1: &i2c1 {};

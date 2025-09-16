@@ -92,7 +92,7 @@
 				#io-channel-cells = <1>;
 			};
 
-			test_i2c_ltc2451: ltc2451@8{
+			test_i2c_ltc2451: ltc2451@8 {
 				compatible = "lltc,ltc2451";
 				reg = <0x8>;
 				conversion-speed = <60>;
@@ -273,7 +273,6 @@
 				self-calibration;
 				#io-channel-cells = <1>;
 			};
-
 
 			test_spi_ads114s08: ads114s08@c {
 				compatible = "ti,ads114s08";

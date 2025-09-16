@@ -706,14 +706,20 @@ static uint8_t char_discover_func(struct bt_conn *conn,
 		} else if (bt_uuid_cmp(chrc->uuid, BT_UUID_BASS_RECV_STATE) == 0) {
 			if (inst->recv_state_cnt <
 				CONFIG_BT_BAP_BROADCAST_ASSISTANT_RECV_STATE_COUNT) {
-				uint8_t idx = inst->recv_state_cnt++;
+				const uint8_t idx = inst->recv_state_cnt;
 
 				LOG_DBG("Receive State %u", inst->recv_state_cnt);
 				inst->recv_state_handles[idx] =
 					attr->handle + 1;
 				sub_params = &inst->recv_state_sub_params[idx];
 				sub_params->disc_params = &inst->recv_state_disc_params[idx];
+				inst->recv_state_cnt++;
 			}
+		} else {
+			LOG_DBG("Invalid UUID %s", bt_uuid_str(chrc->uuid));
+			bap_broadcast_assistant_discover_complete(conn, -EBADMSG, 0);
+
+			return BT_GATT_ITER_STOP;
 		}
 
 		if (sub_params != NULL) {

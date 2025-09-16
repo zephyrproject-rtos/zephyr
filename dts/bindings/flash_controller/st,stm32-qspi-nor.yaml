@@ -80,3 +80,26 @@ properties:
     type: int
     default: 8
     description: The number of dummy-cycles required when reading jedec id
+
+  cs-high-time:
+    type: int
+    default: 8
+    enum:
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+      - 8
+    description: |
+      Minimum number of QSPI clock cycles the chip select signal must remain
+      high between commands issued to the flash memory.
+
+      The minimum acceptable value depends on the flash memory model and the
+      QSPI clock frequency. Using a value higher than the minimum required
+      by the flash memory would not lead to communication errors but is
+      suboptimal as it would reduce the throughput.
+
+      Defaults to 8 clock cycles, which is the maximum supported value.

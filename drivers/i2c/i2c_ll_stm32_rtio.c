@@ -269,9 +269,7 @@ static int i2c_stm32_init(const struct device *dev)
 		return ret;
 	}
 
-#ifdef CONFIG_PM_DEVICE_RUNTIME
 	(void)pm_device_runtime_enable(dev);
-#endif
 
 	return 0;
 }

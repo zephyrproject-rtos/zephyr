@@ -89,7 +89,7 @@ static int dma_wch_init(const struct device *dev)
 	return 0;
 }
 
-/* Coverts a transfer width in bytes to the corresponding bitfield */
+/* Converts a transfer width in bytes to the corresponding bitfield */
 static uint16_t dma_wch_width_index(uint32_t bytes)
 {
 	switch (bytes) {

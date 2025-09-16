@@ -4,8 +4,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Header file for binary descriptors
+ * @ingroup bindesc
+ */
+
 #ifndef ZEPHYR_INCLUDE_ZEPHYR_BINDESC_H_
 #define ZEPHYR_INCLUDE_ZEPHYR_BINDESC_H_
+
+/**
+ * @defgroup bindesc Binary Descriptors
+ * @ingroup os_services
+ * @{
+ */
 
 #include <zephyr/sys/util_macro.h>
 
@@ -17,19 +29,28 @@ extern "C" {
  * Corresponds to the definitions in scripts/west_commands/bindesc.py.
  * Do not change without syncing the definitions in both files!
  */
+
+/** Magic number used to identify binary descriptor sections in firmware images */
 #define BINDESC_MAGIC 0xb9863e5a7ea46046
+/** Required memory alignment for binary descriptor entries */
 #define BINDESC_ALIGNMENT 4
-#define BINDESC_TYPE_UINT 0x0
-#define BINDESC_TYPE_STR 0x1
-#define BINDESC_TYPE_BYTES 0x2
-#define BINDESC_TYPE_DESCRIPTORS_END 0xf
-/* sizeof ignores the data as it's a flexible array */
+
+/** @name Binary Descriptor Types */
+/** @{ */
+#define BINDESC_TYPE_UINT            0x0 /**< Unsigned integer data */
+#define BINDESC_TYPE_STR             0x1 /**< String data */
+#define BINDESC_TYPE_BYTES           0x2 /**< Byte array data */
+#define BINDESC_TYPE_DESCRIPTORS_END 0xf /**< Marks the end of binary descriptor section */
+/** @} */
+
+/** Size of the header of a binary descriptor entry */
+/* Needed as sizeof ignores the data as it's a flexible array */
 #define BINDESC_ENTRY_HEADER_SIZE (sizeof(struct bindesc_entry))
 
 /**
- * @brief Binary Descriptor Definition
- * @defgroup bindesc_define Bindesc Define
- * @ingroup os_services
+ * @brief Macros for defining binary descriptors in firmware images
+ * @defgroup bindesc_define Binary Descriptor Definition
+ * @ingroup bindesc
  * @{
  */
 
@@ -119,6 +140,7 @@ extern "C" {
 /** The C++ compiler version */
 #define BINDESC_ID_CXX_COMPILER_VERSION 0xb04
 
+/** The end of binary descriptor section */
 #define BINDESC_TAG_DESCRIPTORS_END BINDESC_TAG(DESCRIPTORS_END, 0x0fff)
 
 /**
@@ -292,9 +314,15 @@ extern "C" {
  * @}
  */
 
-/*
- * An entry of the binary descriptor header. Each descriptor is
- * described by one of these entries.
+/**
+ * @brief Functions for reading binary descriptors from firmware images
+ * @defgroup bindesc_read Binary Descriptor Reading
+ * @ingroup bindesc
+ * @{
+ */
+
+/**
+ * @brief Structure for a binary descriptor entry
  */
 struct bindesc_entry {
 	/** Tag of the entry */
@@ -305,6 +333,7 @@ struct bindesc_entry {
 	uint8_t data[];
 } __packed;
 
+/** @cond INTERNAL_HIDDEN */
 /*
  * We're assuming that `struct bindesc_entry` has a specific layout in
  * memory, so it's worth making sure that the layout is really what we
@@ -314,8 +343,13 @@ struct bindesc_entry {
 BUILD_ASSERT(offsetof(struct bindesc_entry, tag) == 0, "Incorrect memory layout");
 BUILD_ASSERT(offsetof(struct bindesc_entry, len) == 2, "Incorrect memory layout");
 BUILD_ASSERT(offsetof(struct bindesc_entry, data) == 4, "Incorrect memory layout");
+/** @endcond */
 
+/**
+ * @brief Handle for reading binary descriptors from firmware images
+ */
 struct bindesc_handle {
+	/** @cond INTERNAL_HIDDEN */
 	const uint8_t *address;
 	enum {
 		BINDESC_HANDLE_TYPE_RAM,
@@ -328,14 +362,8 @@ struct bindesc_handle {
 	uint8_t buffer[sizeof(struct bindesc_entry) +
 			CONFIG_BINDESC_READ_FLASH_MAX_DATA_SIZE] __aligned(BINDESC_ALIGNMENT);
 #endif /* IS_ENABLED(CONFIG_BINDESC_READ_FLASH) */
+	/** @endcond */
 };
-
-/**
- * @brief Reading Binary Descriptors of other images.
- * @defgroup bindesc_read Bindesc Read
- * @ingroup os_services
- * @{
- */
 
 /**
  * @brief Callback type to be called on descriptors found during a walk
@@ -355,7 +383,7 @@ typedef int (*bindesc_callback_t)(const struct bindesc_entry *entry, void *user_
  * Memory mapped flash is any flash that can be directly accessed by the CPU,
  * without needing to use the flash API for copying the data to RAM.
  *
- * @param handle Bindesc handle to be given to subsequent calls
+ * @param[out] handle Bindesc handle to be given to subsequent calls
  * @param offset The offset from the beginning of the flash that the bindesc magic can be found at
  *
  * @retval 0 On success
@@ -371,9 +399,9 @@ int bindesc_open_memory_mapped_flash(struct bindesc_handle *handle, size_t offse
  * It's assumed that the whole bindesc context was copied to RAM prior to calling
  * this function, either by the user or by a bootloader.
  *
- * @note The given address must be aligned to BINDESC_ALIGNMENT
+ * @note The given address must be aligned to @ref BINDESC_ALIGNMENT
  *
- * @param handle Bindesc handle to be given to subsequent calls
+ * @param[out] handle Bindesc handle to be given to subsequent calls
  * @param address The address that the bindesc magic can be found at
  * @param max_size Maximum size of the given buffer
  *
@@ -392,9 +420,11 @@ int bindesc_open_ram(struct bindesc_handle *handle, const uint8_t *address, size
  * backend requires reading the data from flash to an internal buffer
  * using the flash API
  *
- * @param handle Bindesc handle to be given to subsequent calls
+ * @param[out] handle Bindesc handle to be given to subsequent calls
  * @param offset The offset from the beginning of the flash that the bindesc magic can be found at
  * @param flash_device Flash device to read descriptors from
+ *
+ * @kconfig_dep{CONFIG_BINDESC_READ_FLASH}
  *
  * @retval 0 On success
  * @retval -ENOENT If no bindesc magic was found at the given offset
@@ -598,5 +628,9 @@ extern const struct bindesc_entry BINDESC_NAME(cxx_compiler_version);
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @}
+ */
 
 #endif /* ZEPHYR_INCLUDE_ZEPHYR_BINDESC_H_ */

@@ -90,7 +90,8 @@ struct pwm_stm32_config {
 	TIM_TypeDef *timer;
 	uint32_t prescaler;
 	uint32_t countermode;
-	struct stm32_pclken pclken;
+	const struct stm32_pclken *pclken;
+	size_t pclk_len;
 	const struct pinctrl_dev_config *pcfg;
 #ifdef CONFIG_PWM_CAPTURE
 	void (*irq_config_func)(const struct device *dev);
@@ -210,113 +211,6 @@ static inline bool is_center_aligned(const uint32_t ll_countermode)
 	return ((ll_countermode == LL_TIM_COUNTERMODE_CENTER_DOWN) ||
 		(ll_countermode == LL_TIM_COUNTERMODE_CENTER_UP) ||
 		(ll_countermode == LL_TIM_COUNTERMODE_CENTER_UP_DOWN));
-}
-
-/**
- * Obtain timer clock speed.
- *
- * @param pclken  Timer clock control subsystem.
- * @param tim_clk Where computed timer clock will be stored.
- *
- * @return 0 on success, error code otherwise.
- */
-static int get_tim_clk(const struct stm32_pclken *pclken, uint32_t *tim_clk)
-{
-	int r;
-	const struct device *clk;
-	uint32_t bus_clk, apb_psc;
-
-	clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
-
-	r = clock_control_get_rate(clk, (clock_control_subsys_t)pclken,
-				   &bus_clk);
-	if (r < 0) {
-		return r;
-	}
-
-#if defined(CONFIG_SOC_SERIES_STM32WB0X)
-	/* Timers are clocked by SYSCLK on STM32WB0 */
-	apb_psc = 1;
-#elif defined(CONFIG_SOC_SERIES_STM32H7X)
-	if (pclken->bus == STM32_CLOCK_BUS_APB1) {
-		apb_psc = STM32_D2PPRE1;
-	} else {
-		apb_psc = STM32_D2PPRE2;
-	}
-#else
-	if (pclken->bus == STM32_CLOCK_BUS_APB1) {
-#if defined(CONFIG_SOC_SERIES_STM32MP1X)
-		apb_psc = (uint32_t)(READ_BIT(RCC->APB1DIVR, RCC_APB1DIVR_APB1DIV));
-#elif defined(CONFIG_SOC_SERIES_STM32H7RSX)
-		apb_psc = STM32_PPRE1;
-#else
-		apb_psc = STM32_APB1_PRESCALER;
-#endif
-	}
-#if !defined(CONFIG_SOC_SERIES_STM32C0X) && !defined(CONFIG_SOC_SERIES_STM32F0X) &&                \
-	!defined(CONFIG_SOC_SERIES_STM32G0X) && !defined(CONFIG_SOC_SERIES_STM32U0X)
-	else {
-#if defined(CONFIG_SOC_SERIES_STM32MP1X)
-		apb_psc = (uint32_t)(READ_BIT(RCC->APB2DIVR, RCC_APB2DIVR_APB2DIV));
-#elif defined(CONFIG_SOC_SERIES_STM32H7RSX)
-		apb_psc = STM32_PPRE2;
-#else
-		apb_psc = STM32_APB2_PRESCALER;
-#endif
-	}
-#endif
-#endif
-
-#if defined(RCC_DCKCFGR_TIMPRE) || defined(RCC_DCKCFGR1_TIMPRE) || \
-	defined(RCC_CFGR_TIMPRE)
-	/*
-	 * There are certain series (some F4, F7 and H7) that have the TIMPRE
-	 * bit to control the clock frequency of all the timers connected to
-	 * APB1 and APB2 domains.
-	 *
-	 * Up to a certain threshold value of APB{1,2} prescaler, timer clock
-	 * equals to HCLK. This threshold value depends on TIMPRE setting
-	 * (2 if TIMPRE=0, 4 if TIMPRE=1). Above threshold, timer clock is set
-	 * to a multiple of the APB domain clock PCLK{1,2} (2 if TIMPRE=0, 4 if
-	 * TIMPRE=1).
-	 */
-
-	if (LL_RCC_GetTIMPrescaler() == LL_RCC_TIM_PRESCALER_TWICE) {
-		/* TIMPRE = 0 */
-		if (apb_psc <= 2u) {
-			LL_RCC_ClocksTypeDef clocks;
-
-			LL_RCC_GetSystemClocksFreq(&clocks);
-			*tim_clk = clocks.HCLK_Frequency;
-		} else {
-			*tim_clk = bus_clk * 2u;
-		}
-	} else {
-		/* TIMPRE = 1 */
-		if (apb_psc <= 4u) {
-			LL_RCC_ClocksTypeDef clocks;
-
-			LL_RCC_GetSystemClocksFreq(&clocks);
-			*tim_clk = clocks.HCLK_Frequency;
-		} else {
-			*tim_clk = bus_clk * 4u;
-		}
-	}
-#else
-	/*
-	 * If the APB prescaler equals 1, the timer clock frequencies
-	 * are set to the same frequency as that of the APB domain.
-	 * Otherwise, they are set to twice (×2) the frequency of the
-	 * APB domain.
-	 */
-	if (apb_psc == 1u) {
-		*tim_clk = bus_clk;
-	} else {
-		*tim_clk = bus_clk * 2u;
-	}
-#endif
-
-	return 0;
 }
 
 static int pwm_stm32_set_cycles(const struct device *dev, uint32_t channel,
@@ -786,30 +680,42 @@ static int pwm_stm32_init(const struct device *dev)
 {
 	struct pwm_stm32_data *data = dev->data;
 	const struct pwm_stm32_config *cfg = dev->config;
-
-	int r;
-	const struct device *clk;
+	const struct device *clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 	LL_TIM_InitTypeDef init;
-
-	/* enable clock and store its speed */
-	clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+	uint32_t tim_clk;
+	int r;
 
 	if (!device_is_ready(clk)) {
 		LOG_ERR("clock control device not ready");
 		return -ENODEV;
 	}
 
-	r = clock_control_on(clk, (clock_control_subsys_t)&cfg->pclken);
+	/* Enable clock and store its speed */
+	r = clock_control_on(clk, (clock_control_subsys_t)&cfg->pclken[0]);
 	if (r < 0) {
 		LOG_ERR("Could not initialize clock (%d)", r);
 		return r;
 	}
 
-	r = get_tim_clk(&cfg->pclken, &data->tim_clk);
-	if (r < 0) {
-		LOG_ERR("Could not obtain timer clock (%d)", r);
-		return r;
+	if (cfg->pclk_len > 1) {
+		/* Enable Timer clock source */
+		r = clock_control_configure(clk, (clock_control_subsys_t)&cfg->pclken[1], NULL);
+		if (r != 0) {
+			LOG_ERR("Could not configure clock (%d)", r);
+			return r;
+		}
+
+		r = clock_control_get_rate(clk, (clock_control_subsys_t)&cfg->pclken[1], &tim_clk);
+		if (r < 0) {
+			LOG_ERR("Timer clock rate get error (%d)", r);
+			return r;
+		}
+	} else {
+		LOG_ERR("Timer clock source is not specified");
+		return -EINVAL;
 	}
+
+	data->tim_clk = tim_clk;
 
 	/* Reset timer to default state using RCC */
 	(void)reset_line_toggle_dt(&data->reset);
@@ -885,13 +791,6 @@ static void pwm_stm32_irq_config_func_##index(const struct device *dev)		\
 #define CAPTURE_INIT(index)
 #endif /* CONFIG_PWM_CAPTURE */
 
-#define DT_INST_CLK(index, inst)                                               \
-	{                                                                      \
-		.bus = DT_CLOCKS_CELL(PWM(index), bus),				\
-		.enr = DT_CLOCKS_CELL(PWM(index), bits)				\
-	}
-
-
 #define PWM_DEVICE_INIT(index)                                                 \
 	static struct pwm_stm32_data pwm_stm32_data_##index = {		       \
 		.reset = RESET_DT_SPEC_GET(PWM(index)),			       \
@@ -901,11 +800,15 @@ static void pwm_stm32_irq_config_func_##index(const struct device *dev)		\
 									       \
 	PINCTRL_DT_INST_DEFINE(index);					       \
 									       \
+	static const struct stm32_pclken pclken_##index[] =		       \
+					STM32_DT_CLOCKS(PWM(index));	      \
+									       \
 	static const struct pwm_stm32_config pwm_stm32_config_##index = {      \
 		.timer = (TIM_TypeDef *)DT_REG_ADDR(PWM(index)),	       \
 		.prescaler = DT_PROP(PWM(index), st_prescaler),		       \
 		.countermode = DT_PROP(PWM(index), st_countermode),	       \
-		.pclken = DT_INST_CLK(index, timer),                           \
+		.pclken = pclken_##index,				       \
+		.pclk_len = DT_NUM_CLOCKS(PWM(index)),			       \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),		       \
 		CAPTURE_INIT(index)					       \
 	};                                                                     \

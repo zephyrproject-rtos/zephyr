@@ -94,6 +94,7 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 			ngpios = <16>;
+			vbatts-pins = <2 3 4>;
 			status = "disabled";
 		};
 
@@ -104,6 +105,16 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 			ngpios = <16>;
+			status = "disabled";
+		};
+
+		dma0: dma@40005000 {
+			compatible = "renesas,ra-dma";
+			reg = <0x40005000 0x200>, <0x40005200 0xa0>;
+			reg-names = "channel", "common";
+			clocks = <&iclk MSTPA 22>;
+			dma-channels = <8>;
+			#dma-cells = <2>;
 			status = "disabled";
 		};
 
@@ -120,6 +131,7 @@
 			reg = <0x40118000 0x100>;
 			clocks = <&pclka MSTPB 31>;
 			status = "disabled";
+
 			uart {
 				compatible = "renesas,ra-sci-uart";
 				channel = <0>;
@@ -134,6 +146,7 @@
 			reg = <0x40118900 0x100>;
 			clocks = <&pclka MSTPB 22>;
 			status = "disabled";
+
 			uart {
 				compatible = "renesas,ra-sci-uart";
 				channel = <9>;
@@ -287,6 +300,13 @@
 			status = "disabled";
 		};
 
+		crc: crc@40108000 {
+			compatible = "renesas,ra-crc";
+			reg = <0x40108000 0x1000>;
+			clocks = <&pclka MSTPC 1>;
+			status = "disabled";
+		};
+
 		dac_global: dac_global@40171000 {
 			compatible = "renesas,ra-dac-global";
 			reg = <0x40171000 0x10c4>;
@@ -324,13 +344,6 @@
 			};
 		};
 
-		option_setting_ofs: option_setting_ofs@100a100 {
-			compatible = "zephyr,memory-region";
-			reg = <0x0100a100 0x18>;
-			zephyr,memory-region = "OPTION_SETTING_OFS";
-			status = "okay";
-		};
-
 		flash: flash-controller@407e0000 {
 			compatible = "renesas,ra-flash-hp-controller";
 			reg = <0x407e0000 0x10000>;
@@ -338,20 +351,6 @@
 			#size-cells = <1>;
 			interrupts = <49 1>, <50 1>;
 			interrupt-names = "frdyi", "fiferr";
-		};
-
-		option_setting_sas: option_setting_sas@100a134 {
-			compatible = "zephyr,memory-region";
-			reg = <0x0100a134 0xcc>;
-			zephyr,memory-region = "OPTION_SETTING_SAS";
-			status = "okay";
-		};
-
-		option_setting_s: option_setting_s@100a200 {
-			compatible = "zephyr,memory-region";
-			reg = <0x0100a200 0x100>;
-			zephyr,memory-region = "OPTION_SETTING_S";
-			status = "okay";
 		};
 
 		port_irq0: external-interrupt@40006000 {
@@ -566,6 +565,14 @@
 			reg = <0x40081000 0x24>;
 			clocks = <&pclkb MSTPC 3>;
 			variant = "ctsua";
+			status = "disabled";
+		};
+
+		qspi0: qspi0@64000000 {
+			compatible = "renesas,ra-qspi";
+			#address-cells = <0x1>;
+			#size-cells = <0x1>;
+			reg = <0x64000000 0x808>;
 			status = "disabled";
 		};
 	};

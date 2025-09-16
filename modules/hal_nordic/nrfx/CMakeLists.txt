@@ -5,6 +5,8 @@ zephyr_library()
 
 # The nrfx source directory can be override through the definition of the NRFX_DIR symbol
 # during the invocation of the build system
+zephyr_get(NRFX_DIR SYSBUILD GLOBAL)
+
 if(NOT DEFINED NRFX_DIR)
   set(NRFX_DIR ${ZEPHYR_CURRENT_MODULE_DIR}/nrfx CACHE PATH "nrfx Directory")
 endif()
@@ -45,9 +47,6 @@ zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54L05            NRF54L05_XXAA
                                                                 DEVELOP_IN_NRF54L15)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54L05_CPUAPP     NRF_APPLICATION)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54L05_CPUFLPR    NRF_FLPR)
-zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54L09_ENGA       NRF54LV10A_ENGA_XXAA)
-zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54L09_ENGA_CPUAPP NRF_APPLICATION)
-zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54L09_ENGA_CPUFLPR NRF_FLPR)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54L10            NRF54L10_XXAA
                                                                 DEVELOP_IN_NRF54L15)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54L10_CPUAPP     NRF_APPLICATION)
@@ -230,8 +229,6 @@ mdk_svd_ifdef(CONFIG_SOC_NRF54H20_CPUFLPR     nrf54h20_flpr.svd)
 mdk_svd_ifdef(CONFIG_SOC_NRF54H20_CPURAD      nrf54h20_radiocore.svd)
 mdk_svd_ifdef(CONFIG_SOC_NRF54L05_CPUAPP      nrf54l05_application.svd)
 mdk_svd_ifdef(CONFIG_SOC_NRF54L05_CPUFLPR     nrf54l05_flpr.svd)
-mdk_svd_ifdef(CONFIG_SOC_NRF54L09_ENGA_CPUAPP nrf54lv10a_enga_application.svd)
-mdk_svd_ifdef(CONFIG_SOC_NRF54L09_ENGA_CPUFLPR nrf54lv10a_enga_flpr.svd)
 mdk_svd_ifdef(CONFIG_SOC_NRF54L10_CPUAPP      nrf54l10_application.svd)
 mdk_svd_ifdef(CONFIG_SOC_NRF54L10_CPUFLPR     nrf54l10_flpr.svd)
 mdk_svd_ifdef(CONFIG_SOC_NRF54L15_CPUAPP      nrf54l15_application.svd)

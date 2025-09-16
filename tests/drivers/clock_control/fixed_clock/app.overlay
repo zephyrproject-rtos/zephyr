@@ -12,6 +12,5 @@
 			clock-frequency = <100>;
 			#clock-cells = <0>;
 		};
-
 	};
 };

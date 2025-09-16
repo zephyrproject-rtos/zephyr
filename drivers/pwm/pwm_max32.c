@@ -40,14 +40,14 @@ static int api_set_cycles(const struct device *dev, uint32_t channel, uint32_t p
 	mxc_tmr_regs_t *regs = cfg->regs;
 	wrap_mxc_tmr_cfg_t pwm_cfg;
 	int prescaler_index;
+	mxc_tmr_pres_t tmr_prescaler_lut[] = {
+		TMR_PRES_1,    TMR_PRES_2,    TMR_PRES_4,   TMR_PRES_8,   TMR_PRES_16,
+		TMR_PRES_32,   TMR_PRES_64,   TMR_PRES_128, TMR_PRES_256, TMR_PRES_512,
+		TMR_PRES_1024, TMR_PRES_2048, TMR_PRES_4096};
 
 	prescaler_index = LOG2(cfg->prescaler);
-	if (prescaler_index == 0) {
-		pwm_cfg.pres = TMR_PRES_1; /* TMR_PRES_1 is 0 */
-	} else {
-		/* TMR_PRES_2 is  1<<X */
-		pwm_cfg.pres = TMR_PRES_2 + (prescaler_index - 1);
-	}
+	pwm_cfg.pres = tmr_prescaler_lut[prescaler_index];
+
 	pwm_cfg.mode = TMR_MODE_PWM;
 	pwm_cfg.cmp_cnt = period_cycles;
 	pwm_cfg.bitMode = 0; /* Timer Mode 32 bit */

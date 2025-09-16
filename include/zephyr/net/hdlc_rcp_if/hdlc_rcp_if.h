@@ -23,7 +23,7 @@ extern "C" {
  *
  * @note This function is called in the radio spinel HDLC level
  */
-typedef void (*hdlc_rx_callback_t)(uint8_t *data, uint16_t len, void *param);
+typedef void (*hdlc_rx_callback_t)(const uint8_t *data, uint16_t len, void *param);
 
 /** HDLC interface configuration data. */
 struct hdlc_api {

@@ -691,7 +691,6 @@ static int _api_dev_config(const struct device *dev,
 	}
 
 	if (param_mask & MSPI_DEVICE_CONFIG_DATA_RATE) {
-		/* TODO: add support for DDR */
 		dev_data->spi_ctrlr0 &= ~(SPI_CTRLR0_SPI_DDR_EN_BIT |
 					  SPI_CTRLR0_INST_DDR_EN_BIT);
 		switch (cfg->data_rate) {
@@ -712,10 +711,10 @@ static int _api_dev_config(const struct device *dev,
 	}
 
 	if (param_mask & MSPI_DEVICE_CONFIG_DQS) {
-		/* TODO: add support for DQS */
+		dev_data->spi_ctrlr0 &= ~SPI_CTRLR0_SPI_RXDS_EN_BIT;
+
 		if (cfg->dqs_enable) {
-			LOG_ERR("DQS line is not supported.");
-			return -ENOTSUP;
+			dev_data->spi_ctrlr0 |= SPI_CTRLR0_SPI_RXDS_EN_BIT;
 		}
 	}
 
@@ -956,7 +955,10 @@ static int start_next_packet(const struct device *dev, k_timeout_t timeout)
 	write_rx_sample_dly(dev, dev_data->rx_sample_dly);
 	if (dev_data->spi_ctrlr0 & (SPI_CTRLR0_SPI_DDR_EN_BIT |
 				    SPI_CTRLR0_INST_DDR_EN_BIT)) {
-		write_txd_drive_edge(dev, dev_data->baudr / 4);
+		int txd = (CONFIG_MSPI_DW_TXD_MUL * dev_data->baudr) /
+			CONFIG_MSPI_DW_TXD_DIV;
+
+		write_txd_drive_edge(dev, txd);
 	} else {
 		write_txd_drive_edge(dev, 0);
 	}
@@ -1190,6 +1192,22 @@ static int api_transceive(const struct device *dev,
 	return rc;
 }
 
+#if defined(CONFIG_MSPI_TIMING)
+static int api_timing_config(const struct device *dev,
+			     const struct mspi_dev_id *dev_id,
+			     const uint32_t param_mask, void *cfg)
+{
+	struct mspi_dw_data *dev_data = dev->data;
+	struct mspi_dw_timing_cfg *config = cfg;
+
+	if (param_mask & MSPI_DW_RX_TIMING_CFG) {
+		dev_data->rx_sample_dly = config->rx_sample_dly;
+		return 0;
+	}
+	return -ENOTSUP;
+}
+#endif /* defined(CONFIG_MSPI_TIMING) */
+
 #if defined(CONFIG_MSPI_XIP)
 static int _api_xip_config(const struct device *dev,
 			   const struct mspi_dev_id *dev_id,
@@ -1294,20 +1312,6 @@ static int _api_xip_config(const struct device *dev,
 	dev_data->xip_enabled |= BIT(dev_id->dev_idx);
 
 	return 0;
-}
-
-static int api_timing_config(const struct device *dev,
-			     const struct mspi_dev_id *dev_id,
-			     const uint32_t param_mask, void *cfg)
-{
-	struct mspi_dw_data *dev_data = dev->data;
-	struct mspi_dw_timing_cfg *config = cfg;
-
-	if (param_mask & MSPI_DW_RX_TIMING_CFG) {
-		dev_data->rx_sample_dly = config->rx_sample_dly;
-		return 0;
-	}
-	return -ENOTSUP;
 }
 
 static int api_xip_config(const struct device *dev,
@@ -1458,7 +1462,9 @@ static DEVICE_API(mspi, drv_api) = {
 	.dev_config         = api_dev_config,
 	.get_channel_status = api_get_channel_status,
 	.transceive         = api_transceive,
+#if defined(CONFIG_MSPI_TIMING)
 	.timing_config      = api_timing_config,
+#endif
 #if defined(CONFIG_MSPI_XIP)
 	.xip_config         = api_xip_config,
 #endif

@@ -189,6 +189,15 @@ static int h_bridge_stepper_move_by(const struct device *dev, int32_t micro_step
 		LOG_ERR("Step interval not set or invalid step interval set");
 		return -EINVAL;
 	}
+
+	if (micro_steps == 0) {
+		(void)k_work_cancel_delayable(&data->stepper_dwork);
+		if (data->callback) {
+			data->callback(data->dev, STEPPER_EVENT_STEPS_COMPLETED,
+				       data->event_cb_user_data);
+		}
+		return 0;
+	}
 	K_SPINLOCK(&data->lock) {
 		data->run_mode = STEPPER_RUN_MODE_POSITION;
 		data->step_count = micro_steps;

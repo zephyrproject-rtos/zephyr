@@ -30,6 +30,11 @@ config USE_RA_FSP_I3C
 	help
 	  Enable RA FSP I3C driver
 
+config USE_RA_FSP_DMA
+	bool
+	help
+	  Enable RA FSP DMA driver
+
 config USE_RA_FSP_DTC
 	bool
 	help
@@ -159,6 +164,11 @@ config USE_RA_FSP_SDHI
 	help
 	  Enable RA FSP SDHI driver
 
+config USE_RA_FSP_CRC
+	bool
+	help
+	  Enable RA FSP CRC driver
+
 config USE_RA_FSP_DAC
 	bool
 	help
@@ -218,6 +228,11 @@ config USE_RA_FSP_TOUCH
 	help
 	  Enable RA FSP TOUCH library
 
+config USE_RA_FSP_QSPI_NOR_FLASH
+	bool
+	help
+	  Enable RA FSP Quad-SPI driver
+
 endif # HAS_RENESAS_RA_FSP
 
 if HAS_RENESAS_RZ_FSP
@@ -236,6 +251,11 @@ config USE_RZ_FSP_SCIF_UART
 	bool
 	help
 	  Enable RZ FSP SCIF UART driver
+
+config USE_RZ_FSP_IIC_MASTER
+	bool
+	help
+	  Enable RZ FSP IIC MASTER driver
 
 config USE_RZ_FSP_RIIC_MASTER
 	bool
@@ -287,6 +307,11 @@ config USE_RZ_FSP_SCI_UART
 	help
 	  Enable RZ FSP SCI UART driver
 
+config USE_RZ_FSP_MTU
+	bool
+	help
+	  Enable RZ FSP MTU driver
+
 endif
 
 config HAS_RENESAS_RX_RDP
@@ -320,5 +345,15 @@ config USE_RX_RDP_I2C
 	bool
 	help
 	  Enable RX RDP I2C driver
+
+config USE_RX_RDP_FLASH
+	bool
+	help
+	  Enable RX RDP Flash driver
+
+config USE_RX_RDP_ADC
+	bool
+	help
+	  Enable RX RDP ADC driver
 
 endif # HAS_RENESAS_RX_RDP

@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -150,6 +150,14 @@
 			clk-divider = <1>;
 			status = "disabled";
 			#io-channel-cells = <1>;
+		};
+
+		ewm0: ewm@40061000 {
+			compatible = "nxp,ewm";
+			reg = <0x40061000 0x6>;
+			status = "disabled";
+			interrupts = <28 0>;
+			clk-divider = <0x0>;
 		};
 
 		lpuart0: uart@4006a000 {

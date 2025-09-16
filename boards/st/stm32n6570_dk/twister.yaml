@@ -10,9 +10,11 @@ supported:
   - arduino_spi
   - adc
   - can
+  - counter
   - dma
   - i2c
   - gpio
+  - pwm
   - memc
   - spi
   - uart

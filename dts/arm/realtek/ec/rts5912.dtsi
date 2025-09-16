@@ -93,7 +93,7 @@
 
 		timer0: timer@4000c300 {
 			compatible = "realtek,rts5912-timer";
-			reg = < 0x4000c300 0x14 >;
+			reg = <0x4000c300 0x14>;
 			interrupt-parent = <&nvic>;
 			interrupts = <196 0>;
 			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP1 PERIPH_GRP1_TMR0_CLKPWR>;
@@ -106,7 +106,7 @@
 
 		timer1: timer@4000c314 {
 			compatible = "realtek,rts5912-timer";
-			reg = < 0x4000c314 0x14 >;
+			reg = <0x4000c314 0x14>;
 			interrupt-parent = <&nvic>;
 			interrupts = <197 0>;
 			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP1 PERIPH_GRP1_TMR1_CLKPWR>;
@@ -119,7 +119,7 @@
 
 		timer2: timer@4000c328 {
 			compatible = "realtek,rts5912-timer";
-			reg = < 0x4000c328 0x14 >;
+			reg = <0x4000c328 0x14>;
 			interrupt-parent = <&nvic>;
 			interrupts = <198 0>;
 			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP1 PERIPH_GRP1_TMR2_CLKPWR>;
@@ -132,7 +132,7 @@
 
 		timer3: timer@4000c33c {
 			compatible = "realtek,rts5912-timer";
-			reg = < 0x4000c33c 0x14 >;
+			reg = <0x4000c33c 0x14>;
 			interrupt-parent = <&nvic>;
 			interrupts = <199 0>;
 			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP1 PERIPH_GRP1_TMR3_CLKPWR>;
@@ -145,7 +145,7 @@
 
 		timer4: timer@4000c350 {
 			compatible = "realtek,rts5912-timer";
-			reg = < 0x4000c350 0x14 >;
+			reg = <0x4000c350 0x14>;
 			interrupt-parent = <&nvic>;
 			interrupts = <200 0>;
 			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP1 PERIPH_GRP1_TMR4_CLKPWR>;
@@ -158,7 +158,7 @@
 
 		timer5: timer@4000c364 {
 			compatible = "realtek,rts5912-timer";
-			reg = < 0x4000c364 0x14 >;
+			reg = <0x4000c364 0x14>;
 			interrupt-parent = <&nvic>;
 			interrupts = <201 0>;
 			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP1 PERIPH_GRP1_TMR5_CLKPWR>;
@@ -174,78 +174,77 @@
 			status = "disabled";
 
 			reg = <0x400b1000 0x200		/* espi target */
-				0x400a0400 0x01c		/* port80 */
-				0x400a0200 0x1c			/* ACPI */
-				0x400A021C 0x1C			/* PROMT0 */
-				0x400A0238 0x1C			/* PROMT1 */
-				0x400A0254 0x1C			/* PROMT2 */
-				0x400A0270 0x1C			/* PROMT3 */
-				0x40082000 0x14			/* EMI0 */
-				0x40082020 0x14			/* EMI1 */
-				0x40082040 0x14			/* EMI2 */
-				0x40082060 0x14			/* EMI3 */
-				0x40082080 0x14			/* EMI4 */
-				0x400820A0 0x14			/* EMI5 */
-				0x400820C0 0x14			/* EMI6 */
-				0x400820E0 0x14			/* EMI7 */
-				0x400a0100 0x1c			/* KBC */
-				0x400B1600 0xd0>;		/* MBX */
+			       0x400a0400 0x01c		/* port80 */
+			       0x400a0200 0x1c			/* ACPI */
+			       0x400A021C 0x1C			/* PROMT0 */
+			       0x400A0238 0x1C			/* PROMT1 */
+			       0x400A0254 0x1C			/* PROMT2 */
+			       0x400A0270 0x1C			/* PROMT3 */
+			       0x40082000 0x14			/* EMI0 */
+			       0x40082020 0x14			/* EMI1 */
+			       0x40082040 0x14			/* EMI2 */
+			       0x40082060 0x14			/* EMI3 */
+			       0x40082080 0x14			/* EMI4 */
+			       0x400820A0 0x14			/* EMI5 */
+			       0x400820C0 0x14			/* EMI6 */
+			       0x400820E0 0x14			/* EMI7 */
+			       0x400a0100 0x1c			/* KBC */
+			       0x400B1600 0xd0>;		/* MBX */
 
 			reg-names = "espi_target", "port80", "acpi", "promt0", "promt1", "promt2",
-				"promt3", "emi0", "emi1", "emi2", "emi3", "emi4", "emi5",
-				"emi6", "emi7", "kbc", "mbx";
+				    "promt3", "emi0", "emi1", "emi2", "emi3", "emi4", "emi5",
+				    "emi6", "emi7", "kbc", "mbx";
 
 			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_ESPI_CLKPWR>,
-				<&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_P80_CLKPWR>,
-				<&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_ACPI_CLKPWR>,
-				<&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_PMPORT0_CLKPWR>,
-				<&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_PMPORT1_CLKPWR>,
-				<&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_PMPORT2_CLKPWR>,
-				<&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_PMPORT3_CLKPWR>,
-				<&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_EMI0_CLKPWR>,
-				<&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_EMI1_CLKPWR>,
-				<&sccon RTS5912_SCCON_PERIPH_GRP1 PERIPH_GRP1_EMI2_CLKPWR>,
-				<&sccon RTS5912_SCCON_PERIPH_GRP1 PERIPH_GRP1_EMI3_CLKPWR>,
-				<&sccon RTS5912_SCCON_PERIPH_GRP1 PERIPH_GRP1_EMI4_CLKPWR>,
-				<&sccon RTS5912_SCCON_PERIPH_GRP1 PERIPH_GRP1_EMI5_CLKPWR>,
-				<&sccon RTS5912_SCCON_PERIPH_GRP1 PERIPH_GRP1_EMI6_CLKPWR>,
-				<&sccon RTS5912_SCCON_PERIPH_GRP1 PERIPH_GRP1_EMI7_CLKPWR>,
-				<&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_KBC_CLKPWR>;
+				 <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_P80_CLKPWR>,
+				 <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_ACPI_CLKPWR>,
+				 <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_PMPORT0_CLKPWR>,
+				 <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_PMPORT1_CLKPWR>,
+				 <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_PMPORT2_CLKPWR>,
+				 <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_PMPORT3_CLKPWR>,
+				 <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_EMI0_CLKPWR>,
+				 <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_EMI1_CLKPWR>,
+				 <&sccon RTS5912_SCCON_PERIPH_GRP1 PERIPH_GRP1_EMI2_CLKPWR>,
+				 <&sccon RTS5912_SCCON_PERIPH_GRP1 PERIPH_GRP1_EMI3_CLKPWR>,
+				 <&sccon RTS5912_SCCON_PERIPH_GRP1 PERIPH_GRP1_EMI4_CLKPWR>,
+				 <&sccon RTS5912_SCCON_PERIPH_GRP1 PERIPH_GRP1_EMI5_CLKPWR>,
+				 <&sccon RTS5912_SCCON_PERIPH_GRP1 PERIPH_GRP1_EMI6_CLKPWR>,
+				 <&sccon RTS5912_SCCON_PERIPH_GRP1 PERIPH_GRP1_EMI7_CLKPWR>,
+				 <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_KBC_CLKPWR>;
 
 			clock-names = "espi-target", "port80", "acpi", "promt0", "promt1", "promt2",
-				"promt3", "emi0", "emi1", "emi2", "emi3", "emi4", "emi5",
-				"emi6", "emi7", "kbc";
+				      "promt3", "emi0", "emi1", "emi2", "emi3", "emi4", "emi5",
+				      "emi6", "emi7", "kbc";
 
 			interrupts = <133 0>, <134 0>, <146 0>,
-				<145 0>, <144 0>, <143 0>,
-				<142 0>, <141 0>, <140 0>,
-				<139 0>, <138 0>, <137 0>,
-				<136 0>, <135 0>, <154 0>,
-				<155 0>, <156 0>, <157 0>,
-				<158 0>, <159 0>, <160 0>,
-				<161 0>, <162 0>, <163 0>,
-				<164 0>, <165 0>, <212 0>,
-				<213 0>, <214 0>, <215 0>,
-				<216 0>, <217 0>, <218 0>,
-				<219 0>, <147 0>, <148 0>,
-				<149 0>, <152 0>, <153 0>,
-				<166 0>, <220 0>;
+				     <145 0>, <144 0>, <143 0>,
+				     <142 0>, <141 0>, <140 0>,
+				     <139 0>, <138 0>, <137 0>,
+				     <136 0>, <135 0>, <154 0>,
+				     <155 0>, <156 0>, <157 0>,
+				     <158 0>, <159 0>, <160 0>,
+				     <161 0>, <162 0>, <163 0>,
+				     <164 0>, <165 0>, <212 0>,
+				     <213 0>, <214 0>, <215 0>,
+				     <216 0>, <217 0>, <218 0>,
+				     <219 0>, <147 0>, <148 0>,
+				     <149 0>, <152 0>, <153 0>,
+				     <166 0>, <220 0>;
 
 			interrupt-names = "bus-rst", "periph-ch", "vw-ch",
-				"vw-idx2", "vw-idx3", "vw-idx7",
-				"vw-idx41", "vw-idx42", "vw-idx43",
-				"vw-idx44", "vw-idx47", "vw-idx4a",
-				"vw-idx51", "vw-idx61", "kbc_ibf",
-				"kbc_obe", "acpi_ibf", "acpi_obe",
-				"promt0_ibf", "promt0_obe", "promt1_ibf",
-				"promt1_obe", "promt2_ibf", "promt2_obe",
-				"promt3_ibf", "promt3_obe", "emi0",
-				"emi1", "emi2", "emi3",
-				"emi4", "emi5", "emi6",
-				"emi7", "oob_tx", "oob_rx",
-				"oob_chg", "maf_tr", "flash_chg",
-				"port80", "mbx";
-
+					  "vw-idx2", "vw-idx3", "vw-idx7",
+					  "vw-idx41", "vw-idx42", "vw-idx43",
+					  "vw-idx44", "vw-idx47", "vw-idx4a",
+					  "vw-idx51", "vw-idx61", "kbc_ibf",
+					  "kbc_obe", "acpi_ibf", "acpi_obe",
+					  "promt0_ibf", "promt0_obe", "promt1_ibf",
+					  "promt1_obe", "promt2_ibf", "promt2_obe",
+					  "promt3_ibf", "promt3_obe", "emi0",
+					  "emi1", "emi2", "emi3",
+					  "emi4", "emi5", "emi6",
+					  "emi7", "oob_tx", "oob_rx",
+					  "oob_chg", "maf_tr", "flash_chg",
+					  "port80", "mbx";
 		};
 
 		slwtmr0: slwtmr0@4000c200 {

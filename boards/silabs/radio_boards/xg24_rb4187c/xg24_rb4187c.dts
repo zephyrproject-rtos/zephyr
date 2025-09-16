@@ -70,6 +70,27 @@
 		enable-gpios = <&gpiod 3 GPIO_ACTIVE_HIGH>;
 		regulator-name = "sensor_enable";
 	};
+
+	exp_header: exp-header {
+		compatible = "silabs,exp-header";
+		#gpio-cells = <2>;
+		gpio-map = <3 0 &gpiob 5 0>,
+			   <4 0 &gpioc 1 0>,
+			   <5 0 &gpioa 0 0>,
+			   <6 0 &gpioc 2 0>,
+			   <7 0 &gpioa 5 0>,
+			   <8 0 &gpioc 3 0>,
+			   <9 0 &gpiod 2 0>,
+			   <10 0 &gpioc 0 0>,
+			   <11 0 &gpioa 6 0>,
+			   <12 0 &gpioa 8 0>,
+			   <13 0 &gpioa 7 0>,
+			   <14 0 &gpioa 9 0>,
+			   <15 0 &gpioc 5 0>,
+			   <16 0 &gpioc 7 0>;
+		gpio-map-mask = <0xffffffff 0x0>;
+		gpio-map-pass-thru = <0x0 GPIO_DT_FLAGS_MASK>;
+	};
 };
 
 &cpu0 {
@@ -80,10 +101,6 @@
 	pinctrl-0 = <&itm_default>;
 	pinctrl-names = "default";
 	swo-ref-frequency = <DT_FREQ_M(78)>;
-};
-
-&pstate_em3 {
-	status = "disabled";
 };
 
 &hfxo {
@@ -183,7 +200,6 @@
 };
 
 &gpio {
-	location-swo = <0>;
 	status = "okay";
 };
 
@@ -241,30 +257,32 @@
 			read-only;
 		};
 
-		/* Reserve 720 kB for the application in slot 0 */
+		/* Reserve 728 kB for the application in slot 0 */
 		slot0_partition: partition@c000 {
-			reg = <0x0000c000 0x000B4000>;
+			reg = <0x0000c000 DT_SIZE_K(728)>;
 			label = "image-0";
 		};
 
-		/* Reserve 720 kB for the application in slot 1 */
-		slot1_partition: partition@C0000 {
-			reg = <0x000C0000 0x000B4000>;
+		/* Reserve 728 kB for the application in slot 1 */
+		slot1_partition: partition@c2000 {
+			reg = <0x000c2000 DT_SIZE_K(728)>;
 			label = "image-1";
 		};
 
-		/* Reserve 32 kB for the scratch partition */
-		scratch_partition: partition@174000 {
-			reg = <0x00174000 DT_SIZE_K(32)>;
-			label = "image-scratch";
-		};
-
-		/* Set 16 kB of storage at the end of the 1536 kB of flash */
-		storage_partition: partition@17c000 {
-			reg = <0x0017c000 DT_SIZE_K(16)>;
+		/* Set 32 kB of storage at the end of the 1536 kB of flash */
+		storage_partition: partition@178000 {
+			reg = <0x00178000 DT_SIZE_K(32)>;
 			label = "storage";
 		};
 	};
+};
+
+&vdac0 {
+	status = "okay";
+};
+
+&vdac1 {
+	status = "okay";
 };
 
 &bt_hci_silabs {

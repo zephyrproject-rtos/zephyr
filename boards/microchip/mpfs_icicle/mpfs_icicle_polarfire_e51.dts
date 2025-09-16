@@ -27,5 +27,4 @@
 		zephyr,shell-uart = &uart0;
 		zephyr,sram = &sram1;
 	};
-
 };

@@ -24,6 +24,7 @@
 			compatible = "fixed-factor-clock";
 			clocks = <&hfrcodpll>;
 		};
+
 		hclk: hclk {
 			#clock-cells = <0>;
 			compatible = "fixed-factor-clock";
@@ -31,6 +32,7 @@
 			/* Divider 1, 2, or 4 */
 			clock-div = <1>;
 		};
+
 		pclk: pclk {
 			#clock-cells = <0>;
 			compatible = "fixed-factor-clock";
@@ -38,6 +40,7 @@
 			/* Divider 1 or 2 */
 			clock-div = <2>;
 		};
+
 		lspclk: lspclk {
 			#clock-cells = <0>;
 			compatible = "fixed-factor-clock";
@@ -45,6 +48,7 @@
 			/* Divider 1 or 2 */
 			clock-div = <2>;
 		};
+
 		hclkdiv1024: hclkdiv1024 {
 			#clock-cells = <0>;
 			compatible = "fixed-factor-clock";
@@ -52,41 +56,49 @@
 			/* Fixed divider of 1024 */
 			clock-div = <1024>;
 		};
+
 		traceclk: traceclk {
 			#clock-cells = <0>;
 			compatible = "fixed-factor-clock";
 			clocks = <&hclk>;
 		};
+
 		em01grpaclk: em01grpaclk {
 			#clock-cells = <0>;
 			compatible = "fixed-factor-clock";
 			clocks = <&hfrcodpll>;
 		};
+
 		iadcclk: iadcclk {
 			#clock-cells = <0>;
 			compatible = "fixed-factor-clock";
 			clocks = <&em01grpaclk>;
 		};
+
 		em23grpaclk: em23grpaclk {
 			#clock-cells = <0>;
 			compatible = "fixed-factor-clock";
 			clocks = <&lfrco>;
 		};
+
 		em4grpaclk: em4grpaclk {
 			#clock-cells = <0>;
 			compatible = "fixed-factor-clock";
 			clocks = <&lfrco>;
 		};
+
 		rtccclk: rtccclk {
 			#clock-cells = <0>;
 			compatible = "fixed-factor-clock";
 			clocks = <&lfrco>;
 		};
+
 		wdog0clk: wdog0clk {
 			#clock-cells = <0>;
 			compatible = "fixed-factor-clock";
 			clocks = <&lfrco>;
 		};
+
 		wdog1clk: wdog1clk {
 			#clock-cells = <0>;
 			compatible = "fixed-factor-clock";
@@ -303,7 +315,7 @@
 		};
 
 		i2c0: i2c@5a010000 {
-			compatible = "silabs,gecko-i2c";
+			compatible = "silabs,i2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -314,7 +326,7 @@
 		};
 
 		i2c1: i2c@50068000 {
-			compatible = "silabs,gecko-i2c";
+			compatible = "silabs,i2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -336,7 +348,7 @@
 		};
 
 		gpio: gpio@5003c300 {
-			compatible = "silabs,gecko-gpio";
+			compatible = "silabs,gpio";
 			reg = <0x5003c300 0x440>;
 			interrupts = <26 2>, <25 2>;
 			interrupt-names = "GPIO_EVEN", "GPIO_ODD";
@@ -347,38 +359,42 @@
 			#size-cells = <1>;
 
 			gpioa: gpio@5003c000 {
-				compatible = "silabs,gecko-gpio-port";
+				compatible = "silabs,gpio-port";
 				reg = <0x5003c000 0x30>;
-				peripheral-id = <0>;
 				gpio-controller;
 				#gpio-cells = <2>;
+				silabs,wakeup-ints = <0>;
+				silabs,wakeup-pins = <5>;
 				status = "disabled";
 			};
 
 			gpiob: gpio@5003c030 {
-				compatible = "silabs,gecko-gpio-port";
+				compatible = "silabs,gpio-port";
 				reg = <0x5003c030 0x30>;
-				peripheral-id = <1>;
 				gpio-controller;
 				#gpio-cells = <2>;
+				silabs,wakeup-ints = <3>;
+				silabs,wakeup-pins = <1>;
 				status = "disabled";
 			};
 
 			gpioc: gpio@5003c060 {
-				compatible = "silabs,gecko-gpio-port";
+				compatible = "silabs,gpio-port";
 				reg = <0x5003c060 0x30>;
-				peripheral-id = <2>;
 				gpio-controller;
 				#gpio-cells = <2>;
+				silabs,wakeup-ints = <6>, <7>;
+				silabs,wakeup-pins = <0>, <5>;
 				status = "disabled";
 			};
 
 			gpiod: gpio@5003c090 {
-				compatible = "silabs,gecko-gpio-port";
+				compatible = "silabs,gpio-port";
 				reg = <0x5003c090 0x30>;
-				peripheral-id = <3>;
 				gpio-controller;
 				#gpio-cells = <2>;
+				silabs,wakeup-ints = <9>;
+				silabs,wakeup-pins = <2>;
 				status = "disabled";
 			};
 		};
@@ -397,7 +413,7 @@
 			status = "okay";
 		};
 
-		dma0: dma@40040000{
+		dma0: dma@40040000 {
 			compatible = "silabs,ldma";
 			reg = <0x40040000 0x4000>;
 			interrupts = <21 0>;

@@ -101,13 +101,28 @@ if(CONFIG_SOC_GECKO_HAS_RADIO)
     endif()
     zephyr_library_sources(${RADIO_DIR}/rail_lib/plugin/pa-conversions/pa_conversions_efr32.c)
 
+    if(CONFIG_SILABS_SISDK_RAIL_MULTIPROTOCOL)
+      zephyr_compile_definitions(SL_RAIL_LIB_MULTIPROTOCOL_SUPPORT=1)
+    else()
+      zephyr_compile_definitions(SL_RAIL_LIB_MULTIPROTOCOL_SUPPORT=0)
+    endif()
+
     if(CONFIG_SILABS_DEVICE_IS_MODULE)
       # RAIL lib and config for modules
-      add_prebuilt_library(librail platform/radio/rail_lib/autogen/librail_release/librail_module_efr32xg${SILABS_DEVICE_FAMILY_NUMBER}_gcc_release.a)
+      if(CONFIG_SILABS_SISDK_RAIL_MULTIPROTOCOL)
+        add_prebuilt_library(librail platform/radio/rail_lib/autogen/librail_release/librail_multiprotocol_module_efr32xg${SILABS_DEVICE_FAMILY_NUMBER}_gcc_release.a)
+      else()
+        add_prebuilt_library(librail platform/radio/rail_lib/autogen/librail_release/librail_module_efr32xg${SILABS_DEVICE_FAMILY_NUMBER}_gcc_release.a)
+      endif()
+
       add_prebuilt_library(librail_config platform/radio/rail_lib/autogen/librail_release/librail_config_${CONFIG_SOC}_gcc.a)
     else()
       # generic RAIL lib for SoCs
-      add_prebuilt_library(librail platform/radio/rail_lib/autogen/librail_release/librail_efr32xg${SILABS_DEVICE_FAMILY_NUMBER}_gcc_release.a)
+      if(CONFIG_SILABS_SISDK_RAIL_MULTIPROTOCOL)
+        add_prebuilt_library(librail platform/radio/rail_lib/autogen/librail_release/librail_multiprotocol_efr32xg${SILABS_DEVICE_FAMILY_NUMBER}_gcc_release.a)
+      else()
+        add_prebuilt_library(librail platform/radio/rail_lib/autogen/librail_release/librail_efr32xg${SILABS_DEVICE_FAMILY_NUMBER}_gcc_release.a)
+      endif()
     endif()
 
     zephyr_include_directories_ifdef(CONFIG_SOC_GECKO_CUSTOM_RADIO_PHY
@@ -130,6 +145,8 @@ zephyr_include_directories(
   ${COMMON_DIR}/config
   ${COMMON_DIR}/inc
   ${DRIVER_DIR}/gpio/inc
+  ${DRIVER_DIR}/i2c/inc
+  ${DRIVER_DIR}/i2c/src
   ${EMDRV_DIR}/common/inc
   ${EMDRV_DIR}/dmadrv/config/s2_8ch/
   ${EMDRV_DIR}/dmadrv/inc
@@ -150,6 +167,7 @@ zephyr_include_directories(
   ${SERVICE_DIR}/sleeptimer/config
   ${SERVICE_DIR}/sleeptimer/inc
   ${SERVICE_DIR}/sleeptimer/src
+  ${SERVICE_DIR}/udelay/inc
   ${SECURITY_DIR}/sl_component/sl_protocol_crypto/src
   ${SECURITY_DIR}/sl_component/sli_crypto/inc
   ${BOARD_DIR}
@@ -261,8 +279,27 @@ if(CONFIG_SOC_GECKO_GPIO)
   )
 endif()
 
+if(CONFIG_SILABS_SISDK_GPIO)
+  zephyr_library_sources(
+    ${PERIPHERAL_DIR}/src/sl_hal_gpio.c
+  )
+  zephyr_library_compile_definitions(
+    SL_CATALOG_GPIO_PRESENT
+    SL_CODE_COMPONENT_HAL_GPIO=hal_gpio
+  )
+endif()
+
+if(CONFIG_SILABS_SISDK_I2C)
+  zephyr_library_sources(
+    ${DRIVER_DIR}/i2c/src/sl_i2c.c
+    ${SERVICE_DIR}/udelay/src/sl_udelay.c
+    ${PERIPHERAL_DIR}/src/sl_hal_i2c.c
+  )
+endif()
+
 zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_LETIMER   ${PERIPHERAL_DIR}/src/sl_hal_letimer.c)
 zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_TIMER     ${PERIPHERAL_DIR}/src/sl_hal_timer.c)
+zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_VDAC      ${PERIPHERAL_DIR}/src/sl_hal_vdac.c)
 
 zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_LDMA         ${EMDRV_DIR}/dmadrv/src/dmadrv.c)
 

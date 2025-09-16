@@ -14,6 +14,7 @@ supported:
   - i2c
   - spi
   - gpio
+  - can
   - usb_device
   - watchdog
   - counter
