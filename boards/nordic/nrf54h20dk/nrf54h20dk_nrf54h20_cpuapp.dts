@@ -345,6 +345,13 @@ zephyr_udc0: &usbhs {
 			zephyr,memory-region = "PMLocalRamfunc";
 		};
 
+		/* temporary stack for S2RAM resume logic */
+		pm_s2ram_stack: cpuapp_s2ram_stack@22007fd0 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x22007fd0 16>;
+			zephyr,memory-region = "pm_s2ram_stack";
+		};
+
 		/* run-time common S2RAM cpu context RAM */
 		pm_s2ram: cpuapp_s2ram@22007fe0 {
 			compatible = "zephyr,memory-region", "mmio-sram";
