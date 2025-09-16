@@ -13,6 +13,7 @@ supported:
   - counter
   - gpio
   - i2c
+  - i2c_target
   - mspi
   - spi
   - pwm
