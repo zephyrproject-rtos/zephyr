@@ -24,7 +24,7 @@ uint8_t bt_a2dp_sbc_get_channel_num(struct bt_a2dp_codec_sbc_params *sbc_codec)
 		return 1U;
 	} else if (sbc_codec->config[0] & A2DP_SBC_CH_MODE_DUAL) {
 		return 2U;
-	} else if (sbc_codec->config[0] & A2DP_SBC_CH_MODE_STREO) {
+	} else if (sbc_codec->config[0] & A2DP_SBC_CH_MODE_STEREO) {
 		return 2U;
 	} else if (sbc_codec->config[0] & A2DP_SBC_CH_MODE_JOINT) {
 		return 2U;
