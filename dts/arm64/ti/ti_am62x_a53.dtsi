@@ -75,50 +75,6 @@
 		#mbox-cells = <1>;
 	};
 
-	main_i2c0: i2c@20000000 {
-		compatible = "ti,omap-i2c";
-		reg = <0x20000000 0x100>;
-		interrupts = <GIC_SPI 161 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-		interrupt-parent = <&gic>;
-		clock-frequency = <100000>;
-		#address-cells = <1>;
-		#size-cells = <0>;
-		status = "disabled";
-	};
-
-	main_i2c1: i2c@20010000 {
-		compatible = "ti,omap-i2c";
-		reg = <0x20010000 0x100>;
-		interrupts = <GIC_SPI 162 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-		interrupt-parent = <&gic>;
-		clock-frequency = <100000>;
-		#address-cells = <1>;
-		#size-cells = <0>;
-		status = "disabled";
-	};
-
-	main_i2c2: i2c@20020000 {
-		compatible = "ti,omap-i2c";
-		reg = <0x20020000 0x100>;
-		interrupts = <GIC_SPI 163 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-		interrupt-parent = <&gic>;
-		clock-frequency = <100000>;
-		#address-cells = <1>;
-		#size-cells = <0>;
-		status = "disabled";
-	};
-
-	main_i2c3: i2c@20030000 {
-		compatible = "ti,omap-i2c";
-		reg = <0x20030000 0x100>;
-		interrupts = <GIC_SPI 164 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-		interrupt-parent = <&gic>;
-		clock-frequency = <100000>;
-		#address-cells = <1>;
-		#size-cells = <0>;
-		status = "disabled";
-	};
-
 	main_gpio0: gpio@600000 {
 		compatible = "ti,davinci-gpio";
 		reg = <0x00600000 0x100>;
@@ -172,5 +128,25 @@
 
 &main_uart6 {
 	interrupts = <GIC_SPI 184 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&gic>;
+};
+
+&main_i2c0 {
+	interrupts = <GIC_SPI 161 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&gic>;
+};
+
+&main_i2c1 {
+	interrupts = <GIC_SPI 162 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&gic>;
+};
+
+&main_i2c2 {
+	interrupts = <GIC_SPI 163 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&gic>;
+};
+
+&main_i2c3 {
+	interrupts = <GIC_SPI 164 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 	interrupt-parent = <&gic>;
 };
