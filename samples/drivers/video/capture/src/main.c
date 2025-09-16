@@ -13,14 +13,7 @@
 #include <zephyr/drivers/video-controls.h>
 
 #include <zephyr/logging/log.h>
-
-#ifdef CONFIG_TEST
-#include "check_test_pattern.h"
-
-LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
-#else
 LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
-#endif
 
 #if !DT_HAS_CHOSEN(zephyr_camera)
 #error No camera chosen in devicetree. Missing "--shield" or "--snippet video-sw-generator" flag?
@@ -251,7 +244,6 @@ int main(void)
 	}
 
 	/* Set controls */
-	int tp_set_ret = -ENOTSUP;
 
 	if (IS_ENABLED(CONFIG_VIDEO_CTRL_HFLIP)) {
 		struct video_control ctrl = {.id = VIDEO_CID_HFLIP, .val = 1};
@@ -271,16 +263,6 @@ int main(void)
 			LOG_ERR("Failed to set vertical flip");
 			return 0;
 		}
-	}
-
-	if (IS_ENABLED(CONFIG_TEST)) {
-		struct video_control ctrl = {.id = VIDEO_CID_TEST_PATTERN, .val = 1};
-
-		ret = video_set_ctrl(video_dev, &ctrl);
-		if (ret < 0 && ret != -ENOTSUP) {
-			LOG_WRN("Failed to set the test pattern");
-		}
-		tp_set_ret = ret;
 	}
 
 #if DT_HAS_CHOSEN(zephyr_display)
@@ -351,14 +333,6 @@ int main(void)
 
 		LOG_INF("Got frame %u! size: %u; timestamp %u ms",
 			frame++, vbuf->bytesused, vbuf->timestamp);
-
-#ifdef CONFIG_TEST
-		if (tp_set_ret < 0) {
-			LOG_DBG("Test pattern control was not successful. Skip test");
-		} else if (is_colorbar_ok(vbuf->buffer, fmt)) {
-			LOG_DBG("Pattern OK!\n");
-		}
-#endif
 
 #if DT_HAS_CHOSEN(zephyr_display)
 		ret = app_display_frame(display_dev, vbuf, fmt);
