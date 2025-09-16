@@ -219,24 +219,10 @@ static void fpu_restore(_fpu_context_t *backup)
 #endif /* !defined(CONFIG_FPU_SHARING) */
 #endif /* defined(CONFIG_FPU) */
 
-#if DT_NODE_EXISTS(DT_NODELABEL(mcuboot_s2ram)) &&\
-	DT_NODE_HAS_COMPAT(DT_NODELABEL(mcuboot_s2ram), zephyr_memory_region)
-/* Linker section name is given by `zephyr,memory-region` property of
- * `zephyr,memory-region` compatible DT node with nodelabel `mcuboot_s2ram`.
- */
-__attribute__((section(DT_PROP(DT_NODELABEL(mcuboot_s2ram), zephyr_memory_region))))
-volatile struct mcuboot_resume_s _mcuboot_resume;
-
-#define SET_MCUBOOT_RESUME_MAGIC() _mcuboot_resume.magic = MCUBOOT_S2RAM_RESUME_MAGIC
-#else
-#define SET_MCUBOOT_RESUME_MAGIC()
-#endif
-
 int soc_s2ram_suspend(pm_s2ram_system_off_fn_t system_off)
 {
 	int ret;
 
-	SET_MCUBOOT_RESUME_MAGIC();
 	scb_save(&backup_data.scb_context);
 #if defined(CONFIG_FPU)
 #if !defined(CONFIG_FPU_SHARING)

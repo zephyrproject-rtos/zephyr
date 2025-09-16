@@ -10,12 +10,6 @@
 #ifndef _ZEPHYR_SOC_ARM_NORDIC_NRF_PM_S2RAM_H_
 #define _ZEPHYR_SOC_ARM_NORDIC_NRF_PM_S2RAM_H_
 
-#define MCUBOOT_S2RAM_RESUME_MAGIC 0x75832419
-
-struct mcuboot_resume_s {
-	uint32_t magic; /* magic value to identify valid structure */
-};
-
 /**
  * @brief Save CPU state on suspend
  *
