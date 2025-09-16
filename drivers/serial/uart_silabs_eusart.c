@@ -47,7 +47,6 @@ struct eusart_config {
 
 enum eusart_pm_lock {
 	EUSART_PM_LOCK_TX,
-	EUSART_PM_LOCK_TX_POLL,
 	EUSART_PM_LOCK_RX,
 	EUSART_PM_LOCK_COUNT,
 };
@@ -82,7 +81,7 @@ static int eusart_pm_action(const struct device *dev, enum pm_device_action acti
  *
  * @return true if lock was taken, false otherwise
  */
-static bool eusart_pm_lock_get(const struct device *dev, enum eusart_pm_lock lock)
+static __maybe_unused bool eusart_pm_lock_get(const struct device *dev, enum eusart_pm_lock lock)
 {
 #ifdef CONFIG_PM
 	struct eusart_data *data = dev->data;
@@ -108,7 +107,7 @@ static bool eusart_pm_lock_get(const struct device *dev, enum eusart_pm_lock loc
  *
  * @return true if lock was released, false otherwise
  */
-static bool eusart_pm_lock_put(const struct device *dev, enum eusart_pm_lock lock)
+static __maybe_unused bool eusart_pm_lock_put(const struct device *dev, enum eusart_pm_lock lock)
 {
 #ifdef CONFIG_PM
 	struct eusart_data *data = dev->data;
@@ -142,13 +141,13 @@ static void eusart_poll_out(const struct device *dev, unsigned char c)
 {
 	const struct eusart_config *config = dev->config;
 
-	if (eusart_pm_lock_get(dev, EUSART_PM_LOCK_TX_POLL)) {
-		EUSART_IntEnable(config->eusart, EUSART_IF_TXC);
-	}
 	/* EUSART_Tx function already waits for the transmit buffer being empty
 	 * and waits for the bus to be free to transmit.
 	 */
 	EUSART_Tx(config->eusart, c);
+
+	while (!(config->eusart->STATUS & EUSART_STATUS_TXC)) {
+	}
 }
 
 static int eusart_err_check(const struct device *dev)
@@ -761,17 +760,12 @@ static int eusart_async_init(const struct device *dev)
 static void eusart_isr(const struct device *dev)
 {
 	__maybe_unused struct eusart_data *data = dev->data;
+#ifdef CONFIG_UART_SILABS_EUSART_ASYNC
 	const struct eusart_config *config = dev->config;
 	EUSART_TypeDef *eusart = config->eusart;
 	uint32_t flags = EUSART_IntGet(eusart);
-	__maybe_unused struct dma_status stat;
-
-	if (flags & EUSART_IF_TXC) {
-		if (eusart_pm_lock_put(dev, EUSART_PM_LOCK_TX_POLL)) {
-			EUSART_IntDisable(eusart, EUSART_IEN_TXC);
-			EUSART_IntClear(eusart, EUSART_IF_TXC);
-		}
-	}
+	struct dma_status stat;
+#endif
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	if (data->callback) {
 		data->callback(dev, data->cb_data);
