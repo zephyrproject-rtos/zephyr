@@ -301,11 +301,25 @@ int arch_irq_is_enabled(unsigned int irq)
 
  * The priority is verified if ASSERT_ON is enabled; max priority level
  * depends on CONFIG_NUM_IRQ_PRIO_LEVELS.
+ *
+ * A priority value is specific to the interrupt controller that owns the
+ * interrupt. For a 2nd or 3rd level interrupt the request is forwarded via
+ * the irq_nextlevel API to the aggregator driver that owns the leaf
+ * interrupt line, and is never propagated to parent controllers.
  */
 
 void z_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
 {
-	ARG_UNUSED(flags);
+#ifdef CONFIG_MULTI_LEVEL_INTERRUPTS
+	unsigned int level = irq_get_level(irq);
+
+	if (level != 1) {
+		const struct device *dev = z_get_sw_isr_device_from_irq(irq);
+
+		irq_set_priority_next_level(dev, irq_from_level(irq, level), prio, flags);
+		return;
+	}
+#endif
 
 	__ASSERT(prio < CONFIG_NUM_IRQ_PRIO_LEVELS,
 		 "invalid priority %d for irq %d", prio, irq);
