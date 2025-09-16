@@ -1,5 +1,6 @@
 /*
  * Copyright 2024-2025 NXP
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -205,4 +206,8 @@ zephyr_udc0: &usb {
 	status = "okay";
 	pinctrl-0 = <&pinmux_cmp>;
 	pinctrl-names = "default";
+};
+
+&vref {
+	status = "okay";
 };
