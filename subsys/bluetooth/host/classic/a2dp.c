@@ -653,27 +653,50 @@ int a2dp_delay_report_ind(struct bt_avdtp *session, struct bt_avdtp_sep *sep, st
 }
 #endif
 
+static bool bt_a2dp_req_check_busy(struct bt_avdtp_req *req)
+{
+	if (req->func != NULL) {
+		return true;
+	}
+
+	return false;
+}
+
+static void bt_a2dp_req_clear_busy(struct bt_avdtp_req *req)
+{
+	req->func = NULL;
+}
+
+static void bt_a2dp_ctrl_req_clear_busy(struct bt_a2dp *a2dp)
+{
+	bt_a2dp_req_clear_busy(&a2dp->ctrl_param.req);
+}
+
 static int bt_a2dp_set_config_cb(struct bt_avdtp_req *req, struct net_buf *buf)
 {
+	uint8_t status;
 	struct bt_a2dp_ep *ep;
 	struct bt_a2dp_stream *stream;
 	struct bt_a2dp_stream_ops *ops;
 
 	ep = CONTAINER_OF(SET_CONF_REQ(req)->sep, struct bt_a2dp_ep, sep);
 
+	status = req->status;
+	bt_a2dp_req_clear_busy(req);
+
 	if (ep->stream == NULL) {
 		return -EINVAL;
 	}
 
 	stream = ep->stream;
-	LOG_DBG("SET CONFIGURATION result:%d", req->status);
+	LOG_DBG("SET CONFIGURATION result:%d", status);
 
 	if ((a2dp_cb != NULL) && (a2dp_cb->config_rsp != NULL)) {
-		a2dp_cb->config_rsp(stream, req->status);
+		a2dp_cb->config_rsp(stream, status);
 	}
 
 	ops = stream->ops;
-	if ((!req->status) && (ops != NULL) && (ops->configured != NULL)) {
+	if ((status == BT_AVDTP_SUCCESS) && (ops != NULL) && (ops->configured != NULL)) {
 		ops->configured(stream);
 	}
 	return 0;
@@ -796,15 +819,20 @@ static int bt_a2dp_discover_cb(struct bt_avdtp_req *req, struct net_buf *buf)
 	struct bt_a2dp *a2dp = DISCOVER_PARAM(DISCOVER_REQ(req));
 	struct bt_avdtp_sep_info *sep_info;
 	int err;
+	uint8_t status;
 
 	LOG_DBG("DISCOVER result:%d", req->status);
+
+	status = req->status;
+	bt_a2dp_req_clear_busy(req);
+
 	if (a2dp->discover_cb_param == NULL) {
 		return -EINVAL;
 	}
 
 	a2dp->peer_seps_count = 0U;
 
-	if ((req->status == 0) && (buf != NULL)) {
+	if ((status == BT_AVDTP_SUCCESS) && (buf != NULL)) {
 		if (a2dp->discover_cb_param->sep_count == 0) {
 			if (a2dp->discover_cb_param->cb != NULL) {
 				a2dp->discover_cb_param->cb(a2dp, NULL, NULL);
@@ -858,7 +886,7 @@ int bt_a2dp_discover(struct bt_a2dp *a2dp, struct bt_a2dp_discover_param *param)
 		return -EIO;
 	}
 
-	if (a2dp->discover_cb_param != NULL) {
+	if (a2dp->discover_cb_param != NULL || bt_a2dp_req_check_busy(&a2dp->discover_param.req)) {
 		return -EBUSY;
 	}
 
@@ -867,6 +895,8 @@ int bt_a2dp_discover(struct bt_a2dp *a2dp, struct bt_a2dp_discover_param *param)
 
 	err = bt_avdtp_discover(&a2dp->session, &a2dp->discover_param);
 	if (err) {
+		bt_a2dp_req_clear_busy(&a2dp->discover_param.req);
+
 		if (a2dp->discover_cb_param->cb != NULL) {
 			a2dp->discover_cb_param->cb(a2dp, NULL, NULL);
 		}
@@ -904,6 +934,8 @@ int bt_a2dp_stream_config(struct bt_a2dp *a2dp, struct bt_a2dp_stream *stream,
 			  struct bt_a2dp_ep *local_ep, struct bt_a2dp_ep *remote_ep,
 			  struct bt_a2dp_codec_cfg *config)
 {
+	int err;
+
 	if ((a2dp == NULL) || (stream == NULL) || (local_ep == NULL) || (remote_ep == NULL) ||
 	    (config == NULL)) {
 		return -EINVAL;
@@ -918,6 +950,10 @@ int bt_a2dp_stream_config(struct bt_a2dp *a2dp, struct bt_a2dp_stream *stream,
 		return -EINVAL;
 	}
 
+	if (bt_a2dp_req_check_busy(&a2dp->set_config_param.req)) {
+		return -EBUSY;
+	}
+
 	stream->local_ep = local_ep;
 	stream->remote_ep = remote_ep;
 	stream->remote_ep_id = remote_ep->sep.sep_info.id;
@@ -930,7 +966,12 @@ int bt_a2dp_stream_config(struct bt_a2dp *a2dp, struct bt_a2dp_stream *stream,
 	a2dp->set_config_param.delay_report = config->delay_report;
 	stream->delay_report = config->delay_report;
 
-	return bt_avdtp_set_configuration(&a2dp->session, &a2dp->set_config_param);
+	err = bt_avdtp_set_configuration(&a2dp->session, &a2dp->set_config_param);
+	if (err != 0) {
+		bt_a2dp_req_clear_busy(&a2dp->set_config_param.req);
+	}
+
+	return err;
 }
 
 typedef void (*bt_a2dp_rsp_cb)(struct bt_a2dp_stream *stream, uint8_t rsp_err_code);
@@ -938,19 +979,23 @@ typedef void (*bt_a2dp_done_cb)(struct bt_a2dp_stream *stream);
 
 static int bt_a2dp_ctrl_cb(struct bt_avdtp_req *req, bt_a2dp_rsp_cb rsp_cb, bt_a2dp_done_cb done_cb)
 {
+	uint8_t status;
 	struct bt_a2dp_ep *ep = CONTAINER_OF(CTRL_REQ(req)->sep, struct bt_a2dp_ep, sep);
+
+	status = req->status;
+	bt_a2dp_req_clear_busy(req);
 
 	if (ep->stream == NULL) {
 		return -EINVAL;
 	}
 
-	LOG_DBG("ctrl result:%d", req->status);
+	LOG_DBG("ctrl result:%d", status);
 
 	if (rsp_cb != NULL) {
-		rsp_cb(ep->stream, req->status);
+		rsp_cb(ep->stream, status);
 	}
 
-	if ((!req->status) && (done_cb != NULL)) {
+	if ((status == BT_AVDTP_SUCCESS) && (done_cb != NULL)) {
 		done_cb(ep->stream);
 	}
 
@@ -1008,6 +1053,7 @@ static int bt_a2dp_get_config_cb(struct bt_avdtp_req *req, struct net_buf *buf)
 {
 	int err;
 	bool delay_report;
+	uint8_t status;
 	uint8_t codec_type;
 	uint8_t *codec_info_element;
 	uint16_t codec_info_element_len;
@@ -1015,9 +1061,11 @@ static int bt_a2dp_get_config_cb(struct bt_avdtp_req *req, struct net_buf *buf)
 	struct bt_a2dp_codec_ie codec_config;
 	struct bt_a2dp_ep *ep = CONTAINER_OF(CTRL_REQ(req)->sep, struct bt_a2dp_ep, sep);
 
-	if (req->status != BT_AVDTP_SUCCESS) {
+	status = req->status;
+	bt_a2dp_req_clear_busy(req);
+	if (status != BT_AVDTP_SUCCESS) {
 		if (a2dp_cb != NULL && a2dp_cb->get_config_rsp != NULL) {
-			a2dp_cb->get_config_rsp(ep->stream, NULL, req->status);
+			a2dp_cb->get_config_rsp(ep->stream, NULL, status);
 		}
 
 		return 0;
@@ -1042,7 +1090,7 @@ static int bt_a2dp_get_config_cb(struct bt_avdtp_req *req, struct net_buf *buf)
 							       : codec_info_element_len));
 
 	if (a2dp_cb != NULL && a2dp_cb->get_config_rsp != NULL) {
-		a2dp_cb->get_config_rsp(ep->stream, &cfg, req->status);
+		a2dp_cb->get_config_rsp(ep->stream, &cfg, status);
 	}
 
 	return 0;
@@ -1051,14 +1099,18 @@ static int bt_a2dp_get_config_cb(struct bt_avdtp_req *req, struct net_buf *buf)
 #ifdef CONFIG_BT_A2DP_SINK
 static int bt_a2dp_delay_report_cb(struct bt_avdtp_req *req, struct net_buf *buf)
 {
+	uint8_t status;
 	struct bt_a2dp_ep *ep = CONTAINER_OF(DELAY_REPORT_REQ(req)->sep, struct bt_a2dp_ep, sep);
+
+	status = req->status;
+	bt_a2dp_req_clear_busy(req);
 
 	if (ep->stream == NULL) {
 		return -EINVAL;
 	}
 
 	if (a2dp_cb != NULL && a2dp_cb->delay_report_rsp != NULL) {
-		a2dp_cb->delay_report_rsp(ep->stream, req->status);
+		a2dp_cb->delay_report_rsp(ep->stream, status);
 	}
 
 	return 0;
@@ -1074,6 +1126,10 @@ static int bt_a2dp_stream_ctrl_pre(struct bt_a2dp_stream *stream, bt_avdtp_func_
 	}
 
 	a2dp = stream->a2dp;
+	if (bt_a2dp_req_check_busy(&a2dp->ctrl_param.req)) {
+		return -EBUSY;
+	}
+
 	memset(&a2dp->ctrl_param, 0U, sizeof(a2dp->ctrl_param));
 	a2dp->ctrl_param.req.func = cb;
 	a2dp->ctrl_param.acp_stream_ep_id = stream->remote_ep != NULL
@@ -1093,7 +1149,12 @@ int bt_a2dp_stream_establish(struct bt_a2dp_stream *stream)
 		return err;
 	}
 
-	return bt_avdtp_open(&a2dp->session, &a2dp->ctrl_param);
+	err = bt_avdtp_open(&a2dp->session, &a2dp->ctrl_param);
+	if (err != 0) {
+		bt_a2dp_ctrl_req_clear_busy(a2dp);
+	}
+
+	return err;
 }
 
 int bt_a2dp_stream_release(struct bt_a2dp_stream *stream)
@@ -1106,7 +1167,12 @@ int bt_a2dp_stream_release(struct bt_a2dp_stream *stream)
 		return err;
 	}
 
-	return bt_avdtp_close(&a2dp->session, &a2dp->ctrl_param);
+	err = bt_avdtp_close(&a2dp->session, &a2dp->ctrl_param);
+	if (err != 0) {
+		bt_a2dp_ctrl_req_clear_busy(a2dp);
+	}
+
+	return err;
 }
 
 int bt_a2dp_stream_start(struct bt_a2dp_stream *stream)
@@ -1119,7 +1185,12 @@ int bt_a2dp_stream_start(struct bt_a2dp_stream *stream)
 		return err;
 	}
 
-	return bt_avdtp_start(&a2dp->session, &a2dp->ctrl_param);
+	err = bt_avdtp_start(&a2dp->session, &a2dp->ctrl_param);
+	if (err != 0) {
+		bt_a2dp_ctrl_req_clear_busy(a2dp);
+	}
+
+	return err;
 }
 
 int bt_a2dp_stream_suspend(struct bt_a2dp_stream *stream)
@@ -1132,7 +1203,12 @@ int bt_a2dp_stream_suspend(struct bt_a2dp_stream *stream)
 		return err;
 	}
 
-	return bt_avdtp_suspend(&a2dp->session, &a2dp->ctrl_param);
+	err = bt_avdtp_suspend(&a2dp->session, &a2dp->ctrl_param);
+	if (err != 0) {
+		bt_a2dp_ctrl_req_clear_busy(a2dp);
+	}
+
+	return err;
 }
 
 int bt_a2dp_stream_abort(struct bt_a2dp_stream *stream)
@@ -1145,15 +1221,25 @@ int bt_a2dp_stream_abort(struct bt_a2dp_stream *stream)
 		return err;
 	}
 
-	return bt_avdtp_abort(&a2dp->session, &a2dp->ctrl_param);
+	err = bt_avdtp_abort(&a2dp->session, &a2dp->ctrl_param);
+	if (err != 0) {
+		bt_a2dp_ctrl_req_clear_busy(a2dp);
+	}
+
+	return err;
 }
 
 int bt_a2dp_stream_reconfig(struct bt_a2dp_stream *stream, struct bt_a2dp_codec_cfg *config)
 {
+	int err;
 	uint8_t remote_id;
 
 	if ((stream == NULL) || (config == NULL)) {
 		return -EINVAL;
+	}
+
+	if (bt_a2dp_req_check_busy(&stream->a2dp->set_config_param.req)) {
+		return -EBUSY;
 	}
 
 	remote_id = stream->remote_ep != NULL ? stream->remote_ep->sep.sep_info.id
@@ -1161,7 +1247,12 @@ int bt_a2dp_stream_reconfig(struct bt_a2dp_stream *stream, struct bt_a2dp_codec_
 	bt_a2dp_stream_config_set_param(stream->a2dp, config, bt_a2dp_set_config_cb, remote_id,
 					stream->local_ep->sep.sep_info.id,
 					stream->local_ep->codec_type, &stream->local_ep->sep);
-	return bt_avdtp_reconfigure(&stream->a2dp->session, &stream->a2dp->set_config_param);
+	err = bt_avdtp_reconfigure(&stream->a2dp->session, &stream->a2dp->set_config_param);
+	if (err != 0) {
+		bt_a2dp_req_clear_busy(&stream->a2dp->set_config_param.req);
+	}
+
+	return err;
 }
 
 int bt_a2dp_stream_get_config(struct bt_a2dp_stream *stream)
@@ -1174,7 +1265,12 @@ int bt_a2dp_stream_get_config(struct bt_a2dp_stream *stream)
 		return err;
 	}
 
-	return bt_avdtp_get_configuration(&a2dp->session, &a2dp->ctrl_param);
+	err = bt_avdtp_get_configuration(&a2dp->session, &a2dp->ctrl_param);
+	if (err != 0) {
+		bt_a2dp_ctrl_req_clear_busy(a2dp);
+	}
+
+	return err;
 }
 
 uint32_t bt_a2dp_get_mtu(struct bt_a2dp_stream *stream)
@@ -1237,6 +1333,7 @@ int bt_a2dp_stream_send(struct bt_a2dp_stream *stream, struct net_buf *buf, uint
 #if defined(CONFIG_BT_A2DP_SINK)
 int bt_a2dp_stream_delay_report(struct bt_a2dp_stream *stream, uint16_t delay)
 {
+	int err;
 	struct bt_a2dp *a2dp;
 
 	CHECKIF(stream == NULL) {
@@ -1253,6 +1350,10 @@ int bt_a2dp_stream_delay_report(struct bt_a2dp_stream *stream, uint16_t delay)
 	}
 
 	a2dp = stream->a2dp;
+	if (bt_a2dp_req_check_busy(&a2dp->delay_report_param.req)) {
+		return -EBUSY;
+	}
+
 	memset(&a2dp->delay_report_param, 0U, sizeof(a2dp->delay_report_param));
 	a2dp->delay_report_param.req.func = bt_a2dp_delay_report_cb;
 	a2dp->delay_report_param.sep = &stream->local_ep->sep;
@@ -1261,7 +1362,12 @@ int bt_a2dp_stream_delay_report(struct bt_a2dp_stream *stream, uint16_t delay)
 						    ? stream->remote_ep->sep.sep_info.id
 						    : stream->remote_ep_id;
 
-	return bt_avdtp_delay_report(&a2dp->session, &a2dp->delay_report_param);
+	err = bt_avdtp_delay_report(&a2dp->session, &a2dp->delay_report_param);
+	if (err != 0) {
+		bt_a2dp_req_clear_busy(&a2dp->delay_report_param.req);
+	}
+
+	return err;
 }
 #endif
 
