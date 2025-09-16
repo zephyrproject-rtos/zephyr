@@ -20,3 +20,11 @@ if(CONFIG_NRF_PERIPHCONF_GENERATE_ENTRIES)
   zephyr_sources(${periphconf_entries_c_file})
   message(STATUS "Generated ${periphconf_entries_c_file} from ${EDT_PICKLE}")
 endif()
+
+if(CONFIG_NRF_PERIPHCONF_SECTION AND NOT SYSBUILD)
+  message(WARNING "CONFIG_NRF_PERIPHCONF_SECTION is enabled, but Sysbuild is not being used. "
+                  "The global peripheral configuration will not be applied unless artifacts "
+                  "are generated manually/externally. To enable automatic generation, build with "
+                  "Sysbuild and ensure that SB_CONFIG_NRF_HALTIUM_GENERATE_UICR=y."
+  )
+endif()
