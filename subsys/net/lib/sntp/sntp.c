@@ -58,8 +58,13 @@ static int64_t q32_32_s_to_ll_us(uint32_t t_s, uint32_t t_f)
 }
 #endif
 
+#if defined(CONFIG_ZTEST)
+int32_t parse_response(uint8_t *data, uint16_t len, struct sntp_time *expected_orig_ts,
+				 struct sntp_time *res)
+#else
 static int32_t parse_response(uint8_t *data, uint16_t len, struct sntp_time *expected_orig_ts,
-			      struct sntp_time *res)
+					  struct sntp_time *res)
+#endif
 {
 	struct sntp_pkt *pkt = (struct sntp_pkt *)data;
 	uint32_t ts;
