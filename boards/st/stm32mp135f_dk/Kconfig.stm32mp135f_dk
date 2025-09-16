@@ -3,3 +3,10 @@
 
 config BOARD_STM32MP135F_DK
 	select SOC_STM32MP135FXX
+
+if NETWORKING
+
+config NET_L2_ETHERNET
+	default y
+
+endif # NETWORKING
