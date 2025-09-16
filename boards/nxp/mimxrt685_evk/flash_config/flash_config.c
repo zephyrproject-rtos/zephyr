@@ -6,61 +6,52 @@
  */
 #include "flash_config.h"
 
-/* Component ID definition, used by tools. */
-#ifndef FSL_COMPONENT_ID
-#define FSL_COMPONENT_ID "platform.drivers.flash_config"
-#endif
-
 #if defined(BOOT_HEADER_ENABLE) && (BOOT_HEADER_ENABLE == 1)
-#if defined(__ARMCC_VERSION) || defined(__GNUC__)
 __attribute__((section(".flash_conf"), used))
-#elif defined(__ICCARM__)
-#pragma location = ".flash_conf"
-#endif
 
 const flexspi_nor_config_t flexspi_config = {
-	.memConfig = {
+	.mem_config = {
 		.tag = FLASH_CONFIG_BLOCK_TAG,
 		.version = FLASH_CONFIG_BLOCK_VERSION,
-		.csHoldTime = 3,
-		.csSetupTime = 3,
-		.deviceModeCfgEnable = 1,
-		.deviceModeType = kDeviceConfigCmdType_Generic,
-		.waitTimeCfgCommands = 1,
-		.deviceModeSeq = {
-			.seqNum = 1,
+		.cs_hold_time = 3,
+		.cs_setup_time = 3,
+		.device_mode_cfg_enable = 1,
+		.device_mode_type = device_config_cmd_type_generic,
+		.wait_time_cfg_commands = 1,
+		.device_mode_seq = {
+			.seq_num = 1,
 			/* See Lookup table for more details */
-			.seqId = 6,
+			.seq_id = 6,
 			.reserved = 0,
 		},
-		.deviceModeArg = 0,
-		.configCmdEnable = 1,
-		.configModeType = {kDeviceConfigCmdType_Generic,
-						kDeviceConfigCmdType_Spi2Xpi,
-						kDeviceConfigCmdType_Generic},
-		.configCmdSeqs = {
+		.device_mode_arg = 0,
+		.config_cmd_enable = 1,
+		.config_mode_type = {device_config_cmd_type_generic,
+					device_config_cmd_type_spi2xpi,
+					device_config_cmd_type_generic},
+		.config_cmd_seqs = {
 			{
-				.seqNum = 1,
-				.seqId = 7,
+				.seq_num = 1,
+				.seq_id = 7,
 				.reserved = 0,
 			},
 			{
-				.seqNum = 1,
-				.seqId = 10,
+				.seq_num = 1,
+				.seq_id = 10,
 				.reserved = 0,
 			}
 		},
-		.configCmdArgs = {0x2, 0x1},
-		.controllerMiscOption =
-			1u << kFlexSpiMiscOffset_SafeConfigFreqEnable,
-		.deviceType = 0x1,
-		.sflashPadType = kSerialFlash_8Pads,
-		.serialClkFreq = kFlexSpiSerialClk_SDR_48MHz,
-		.sflashA1Size = 0,
-		.sflashA2Size = 0,
-		.sflashB1Size = 0x4000000U,
-		.sflashB2Size = 0,
-		.lookupTable = {
+		.config_cmd_args = {0x2, 0x1},
+		.controller_misc_option =
+			1u << flexspi_misc_offset_safe_config_freq_enable,
+		.device_type = 0x1,
+		.sflash_pad_type = serial_flash_8_pads,
+		.serial_clk_freq = flexspi_serial_clk_sdr_48mhz,
+		.sflash_a1_size = 0,
+		.sflash_a2_size = 0,
+		.sflash_b1_size = 0x4000000U,
+		.sflash_b2_size = 0,
+		.lookup_table = {
 			/* Read */
 			[0] = FLEXSPI_LUT_SEQ(CMD_SDR, FLEXSPI_8PAD,
 					0xEC, CMD_SDR, FLEXSPI_8PAD, 0x13),
@@ -136,12 +127,12 @@ const flexspi_nor_config_t flexspi_config = {
 				 0x60, CMD_SDR, FLEXSPI_8PAD, 0x9F),
 		},
 	},
-	.pageSize = 0x100,
-	.sectorSize = 0x1000,
-	.ipcmdSerialClkFreq = 1u,
-	.serialNorType = 2u,
-	.blockSize = 0x10000,
-	.flashStateCtx = 0x07008100u,
+	.page_size = 0x100,
+	.sector_size = 0x1000,
+	.ipcmd_serial_clk_freq = 1u,
+	.serial_nor_type = 2u,
+	.block_size = 0x10000,
+	.flash_state_ctx = 0x07008100u,
 };
 
 #endif /* BOOT_HEADER_ENABLE */
