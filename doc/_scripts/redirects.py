@@ -27,6 +27,7 @@ REDIRECTS = (
     ('boards/rak/rak11720/doc/index', 'boards/rakwireless/rak11720/doc/index'),
     ('boards/rak/rak4631/doc/index', 'boards/rakwireless/rak4631/doc/index'),
     ('boards/rak/rak5010/doc/index', 'boards/rakwireless/rak5010/doc/index'),
+    ('boards/raytac/an54l15q_db/doc/index', 'boards/raytac/an54lq_db_15/doc/index'),
     ('boards/x86/ehl_crb/doc/index', 'boards/x86/intel_ehl/doc/index'),
     ('boards/x86/intel_ehl/doc/index', 'boards/intel/ehl/doc/index'),
     ('boards/x86/intel_rpl/doc/index', 'boards/intel/rpl/doc/index'),

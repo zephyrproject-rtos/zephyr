@@ -7,7 +7,7 @@
 
 /* This file is common to the secure and non-secure domain */
 
-#include "raytac_an54l15q_db_common.dtsi"
+#include "raytac_an54lq_db_15_common.dtsi"
 
 / {
 	chosen {
@@ -19,6 +19,12 @@
 		zephyr,flash-controller = &rram_controller;
 		zephyr,flash = &cpuapp_rram;
 		zephyr,ieee802154 = &ieee802154;
+		zephyr,boot-mode = &boot_mode0;
+	};
+
+	aliases {
+		mcuboot-button0 = &button0;
+		mcuboot-led0 = &led0;
 	};
 };
 
@@ -28,7 +34,7 @@
 
 &lfxo {
 	load-capacitors = "internal";
-	load-capacitance-femtofarad = <15500>;
+	load-capacitance-femtofarad = <17000>;
 };
 
 &hfxo {
@@ -53,6 +59,10 @@
 };
 
 &uart20 {
+	status = "okay";
+};
+
+&nfct {
 	status = "okay";
 };
 
@@ -90,6 +100,16 @@
 
 &clock {
 	status = "okay";
+};
+
+&gpregret1 {
+	status = "okay";
+
+	boot_mode0: boot_mode@0 {
+		compatible = "zephyr,retention";
+		status = "okay";
+		reg = <0x0 0x1>;
+	};
 };
 
 &spi00 {

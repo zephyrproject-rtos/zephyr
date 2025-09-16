@@ -650,7 +650,7 @@ New Boards
 
 * Raytac Corporation
 
-   * :zephyr:board:`raytac_an54l15q_db` (``raytac_an54l15q_db``)
+   * :zephyr:board:`raytac_an54lq_db_15` (``raytac_an54lq_db_15``)
    * :zephyr:board:`raytac_an7002q_db` (``raytac_an7002q_db``)
    * :zephyr:board:`raytac_mdbt50q_cx_40_dongle` (``raytac_mdbt50q_cx_40_dongle``)
 
