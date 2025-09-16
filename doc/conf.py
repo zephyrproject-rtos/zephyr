@@ -119,6 +119,7 @@ else:
 # multiple toctrees.
 if tags.has("convertimages"):  # pylint: disable=undefined-variable  # noqa: F821
     exclude_patterns.append("index.rst")
+    root_doc = "index-tex"
 else:
     exclude_patterns.append("index-tex.rst")
 
