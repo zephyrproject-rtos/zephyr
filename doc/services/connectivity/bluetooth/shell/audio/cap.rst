@@ -546,3 +546,43 @@ This command hands over one or more unicast streams from unicast to broadcast.
 
    # Enable periodic advertising (extended advertising is enabled as part of handover)
    uart:~$ bt per-adv on
+
+Handover broadcast to unicast
+-----------------------------
+
+This command hands over one or more unicast streams from broadcast to unicast.
+
+.. code-block:: console
+
+   uart:~$ bt init
+   uart:~$ bap init
+   uart:~$ bt connect <addr>
+
+   # Discover necessary services
+   uart:~$ bap discover
+   uart:~$ cap_initiator discover
+   uart:~$ bap_broadcast_assistant discover
+
+   # Create a non-connectable and non-scannable extended advertising set for broadcast
+   uart:~$ bt adv-create nconn-nscan ext-adv
+   uart:~$ bt per-adv-param
+
+   # Setup broadcast audio e.g. using the ac_12
+   uart:~$ cap_initiator ac_12
+   uart:~$ cap_initiator broadcast_start
+
+   # Set advertising data and enable advertising
+   uart:~$ bt adv-data dev-name discov
+   uart:~$ bt per-adv-data
+   uart:~$ bt per-adv on
+   uart:~$ bt adv-start
+
+   # Wait for broadcast sink to self-scan, or use broadcast reception to instruct sink to sync
+
+   # Perform the handover
+   uart:~$ cap_handover broadcast_to_unicast
+
+   # Terminate the advertiser (optional)
+   uart:~$ bt adv-stop
+   uart:~$ bt per-adv off
+   uart:~$ bt adv-delete
