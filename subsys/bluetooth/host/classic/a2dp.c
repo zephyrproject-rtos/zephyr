@@ -596,6 +596,12 @@ static int bt_a2dp_get_capabilities_cb(struct bt_avdtp_req *req, struct net_buf 
 	return 0;
 }
 
+static void bt_a2dp_init_req(struct bt_avdtp_req *req, bt_avdtp_func_t cb)
+{
+	memset(req, 0, sizeof(*req));
+	req->func = cb;
+}
+
 static int bt_a2dp_get_sep_caps(struct bt_a2dp *a2dp)
 {
 	int err;
@@ -615,7 +621,8 @@ static int bt_a2dp_get_sep_caps(struct bt_a2dp *a2dp)
 		    BT_AVDTP_AUDIO) {
 			memset(&a2dp->get_capabilities_param, 0U,
 			       sizeof(a2dp->get_capabilities_param));
-			a2dp->get_capabilities_param.req.func = bt_a2dp_get_capabilities_cb;
+			bt_a2dp_init_req(&a2dp->get_capabilities_param.req,
+					 bt_a2dp_get_capabilities_cb);
 			a2dp->get_capabilities_param.stream_endpoint_id =
 				a2dp->discover_cb_param->seps_info[a2dp->get_cap_index].id;
 
@@ -716,7 +723,7 @@ int bt_a2dp_discover(struct bt_a2dp *a2dp, struct bt_a2dp_discover_param *param)
 	}
 
 	a2dp->discover_cb_param = param;
-	a2dp->discover_param.req.func = bt_a2dp_discover_cb;
+	bt_a2dp_init_req(&a2dp->discover_param.req, bt_a2dp_discover_cb);
 
 	err = bt_avdtp_discover(&a2dp->session, &a2dp->discover_param);
 	if (err) {
@@ -743,7 +750,7 @@ static inline void bt_a2dp_stream_config_set_param(struct bt_a2dp *a2dp,
 						   struct bt_avdtp_sep *sep)
 {
 	memset(&a2dp->set_config_param, 0U, sizeof(a2dp->set_config_param));
-	a2dp->set_config_param.req.func = cb;
+	bt_a2dp_init_req(&a2dp->set_config_param.req, cb);
 	a2dp->set_config_param.acp_stream_ep_id = remote_id;
 	a2dp->set_config_param.int_stream_endpoint_id = int_id;
 	a2dp->set_config_param.media_type = BT_AVDTP_AUDIO;
@@ -864,6 +871,12 @@ static int bt_a2dp_abort_cb(struct bt_avdtp_req *req, struct net_buf *buf)
 	return bt_a2dp_ctrl_cb(req, rsp_cb, done_cb, true);
 }
 
+static void bt_a2dp_init_ctrl_req(struct bt_avdtp_ctrl_params *ctrl_param, bt_avdtp_func_t cb)
+{
+	memset(ctrl_param, 0U, sizeof(*ctrl_param));
+	ctrl_param->req.func = cb;
+}
+
 static int bt_a2dp_stream_ctrl_pre(struct bt_a2dp_stream *stream, bt_avdtp_func_t cb)
 {
 	struct bt_a2dp *a2dp;
@@ -873,8 +886,7 @@ static int bt_a2dp_stream_ctrl_pre(struct bt_a2dp_stream *stream, bt_avdtp_func_
 	}
 
 	a2dp = stream->a2dp;
-	memset(&a2dp->ctrl_param, 0U, sizeof(a2dp->ctrl_param));
-	a2dp->ctrl_param.req.func = cb;
+	bt_a2dp_init_ctrl_req(&a2dp->ctrl_param, cb);
 	a2dp->ctrl_param.acp_stream_ep_id = stream->remote_ep != NULL
 						    ? stream->remote_ep->sep.sep_info.id
 						    : stream->remote_ep_id;
