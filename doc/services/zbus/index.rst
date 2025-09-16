@@ -878,6 +878,136 @@ illustrates the runtime registration usage.
   the channel observer it was first associated with through :c:func:`zbus_chan_rm_obs`.
 
 
+Multi-domain Communication
+***************************
+
+ZBus supports multi-domain communication, enabling message passing between different execution
+domains such as CPU cores or separate devices. This is achieved through proxy agents that
+forward messages between domains.
+
+.. figure:: images/zbus_proxy_agent.png
+    :alt: ZBus publish processing detail
+    :width: 75%
+
+..
+  Temporary image illustrating zbus multi-domain communication with proxy agents.
+
+Concepts
+========
+
+Multi-domain zbus introduces several key concepts:
+
+* **Master channels**: Channels where messages are published locally within a domain
+* **Shadow channels**: Read-only channels that mirror master channels from other domains
+* **Proxy agents**: Background services that synchronize channel data between domains
+* **Transport backends**: Communication mechanisms (IPC, UART) used by proxy agents
+
+The :c:macro:`ZBUS_MULTIDOMAIN_CHAN_DEFINE` macro enables conditional compilation to create
+master channels in one domain and corresponding shadow channels in other domains.
+
+Transport Backends
+==================
+
+ZBus multi-domain communication relies on transport backends to forward messages between different
+execution domains.
+
+IPC Backend
+-----------
+
+The IPC backend facilitates communication between CPU cores within the same system using
+Inter-Process Communication mechanisms.
+
+See the :zephyr:code-sample:`zbus-ipc-forwarder` sample for a complete implementation.
+
+UART Backend
+------------
+
+The UART backend enables communication between physically separate devices over serial connections.
+This backend extends zbus messaging across device boundaries, allowing distributed systems to
+maintain a unified message bus architecture.
+
+See the :zephyr:code-sample:`zbus-uart-forwarder` sample for a complete implementation.
+
+Usage
+=====
+
+Multi-domain zbus requires defining shared channels and setting up proxy agents. Here's a typical setup:
+
+**common.h** - Shared channel definitions:
+
+.. code-block:: c
+
+    #include <zephyr/zbus/zbus.h>
+    #include <zephyr/zbus/multidomain/zbus_multidomain.h>
+
+    struct request_data {
+        // ...
+    };
+
+    struct response_data {
+        // ...
+    };
+
+    ZBUS_MULTIDOMAIN_CHAN_DEFINE(request_channel, struct request_data,
+                                 NULL, NULL, ZBUS_OBSERVERS_EMPTY,
+                                 ZBUS_MSG_INIT(0),
+                                 IS_ENABLED(DOMAIN_A), /* Master on domain A */
+                                 1 /* Include on both domains */);
+
+    ZBUS_MULTIDOMAIN_CHAN_DEFINE(response_channel, struct response_data,
+                                 NULL, NULL, ZBUS_OBSERVERS_EMPTY,
+                                 ZBUS_MSG_INIT(0),
+                                 IS_ENABLED(DOMAIN_B), /* Master on domain B */
+                                 1 /* Include on both domains */);
+
+**Domain A** - Requester setup:
+
+.. code-block:: c
+
+    #define DOMAIN_A 1
+    #include "common.h"
+
+    /* Set up proxy agent and add channels for forwarding */
+    #define IPC_INSTANCE DT_NODELABEL(ipc_node)
+    ZBUS_PROXY_AGENT_DEFINE(proxy_agent, ZBUS_MULTIDOMAIN_TYPE_IPC, IPC_INSTANCE);
+    ZBUS_PROXY_ADD_CHANNEL(proxy_agent, request_channel);
+
+    void response_listener_cb(const struct zbus_channel *chan) {
+        const struct response_data *resp = zbus_chan_const_msg(chan);
+        LOG_INF("Received response: ...");
+    }
+    ZBUS_LISTENER_DEFINE(response_listener, response_listener_cb);
+    ZBUS_CHAN_ADD_OBS(response_channel, response_listener, 0);
+
+    int main(void)
+    {
+        struct request_data req = { /* ... */ };
+        zbus_chan_pub(&request_channel, &req, K_MSEC(100));
+        return 0;
+    }
+
+**Domain B** - Responder setup:
+
+.. code-block:: c
+
+    #define DOMAIN_B 1
+    #include "common.h"
+
+    /* Set up proxy agent and add channels for forwarding */
+    #define IPC_INSTANCE DT_NODELABEL(ipc_node)
+    ZBUS_PROXY_AGENT_DEFINE(proxy_agent, ZBUS_MULTIDOMAIN_TYPE_IPC, IPC_INSTANCE);
+    ZBUS_PROXY_ADD_CHANNEL(proxy_agent, response_channel);
+
+    /* Observe requests and publish responses */
+    void request_listener_cb(const struct zbus_channel *chan) {
+        const struct request_data *req = zbus_chan_const_msg(chan);
+        struct response_data resp = { /* ... */ };
+        zbus_chan_pub(&response_channel, &resp, K_MSEC(100));
+        LOG_INF("Processed request ...");
+    }
+    ZBUS_LISTENER_DEFINE(request_listener, request_listener_cb);
+    ZBUS_CHAN_ADD_OBS(request_channel, request_listener, 0);
+
 Samples
 *******
 
@@ -901,7 +1031,8 @@ available:
   observer registration feature;
 * :zephyr:code-sample:`zbus-confirmed-channel` implements a way of implement confirmed channel only
   with subscribers;
-* :zephyr:code-sample:`zbus-benchmark` implements a benchmark with different combinations of inputs.
+* :zephyr:code-sample:`zbus-ipc-forwarder` demonstrates multi-core communication using IPC forwarders;
+* :zephyr:code-sample:`zbus-uart-forwarder` demonstrates inter-device communication using UART forwarders.
 
 Suggested Uses
 **************
@@ -912,6 +1043,13 @@ scenarios that can tolerate message losses and duplications; when they cannot, u
 subscribers (if you need a thread) or listeners (if you need to be lean and fast). In addition to
 the listener, another asynchronous message processing mechanism (like :ref:`message queues
 <message_queues_v2>`) may be necessary to retain the pending message until it gets processed.
+
+For multi-domain scenarios, use zbus to enable communication across execution boundaries:
+
+* **Multi-core systems**: Use IPC backend to coordinate between application and network processors,
+  or distribute workloads across multiple CPU cores.
+* **Distributed devices**: Use UART backend to create distributed applications where multiple
+  connected devices participate in the same logical message bus over serial connections.
 
 .. note::
    ZBus can be used to transfer streams from the producer to the consumer. However, this can
@@ -954,6 +1092,30 @@ Related configuration options:
   observers to statically allocate.
 * :kconfig:option:`CONFIG_ZBUS_RUNTIME_OBSERVERS_NODE_ALLOC_NONE` use user-provided runtime
   observers nodes;
+* :kconfig:option:`CONFIG_ZBUS_MULTIDOMAIN` enable multi-domain communication support.
+
+Multi-domain Configuration Options
+==================================
+
+* :kconfig:option:`CONFIG_ZBUS_MULTIDOMAIN_IPC` enable IPC backend for multi-domain communication;
+* :kconfig:option:`CONFIG_ZBUS_MULTIDOMAIN_UART` enable UART backend for multi-domain communication;
+* :kconfig:option:`CONFIG_ZBUS_MULTIDOMAIN_LOG_LEVEL` set the log level for multi-domain operations;
+* :kconfig:option:`CONFIG_ZBUS_MULTIDOMAIN_MESSAGE_SIZE` maximum message size for multi-domain
+  channels;
+* :kconfig:option:`CONFIG_ZBUS_MULTIDOMAIN_CHANNEL_NAME_SIZE` maximum size of channel names in
+  multi-domain communication;
+* :kconfig:option:`CONFIG_ZBUS_MULTIDOMAIN_PROXY_STACK_SIZE` stack size for proxy agent threads;
+* :kconfig:option:`CONFIG_ZBUS_MULTIDOMAIN_PROXY_PRIORITY` priority of proxy agent threads;
+* :kconfig:option:`CONFIG_ZBUS_MULTIDOMAIN_SENT_MSG_POOL_SIZE` number of sent messages to track for
+  acknowledgments;
+* :kconfig:option:`CONFIG_ZBUS_MULTIDOMAIN_MAX_TRANSMIT_ATTEMPTS` maximum retry attempts for message
+  transmission;
+* :kconfig:option:`CONFIG_ZBUS_MULTIDOMAIN_SENT_MSG_ACK_TIMEOUT` initial acknowledgment timeout for
+  sent messages;
+* :kconfig:option:`CONFIG_ZBUS_MULTIDOMAIN_SENT_MSG_ACK_TIMEOUT_MAX` maximum acknowledgment timeout
+  for exponential backoff;
+* :kconfig:option:`CONFIG_ZBUS_MULTIDOMAIN_UART_BUF_COUNT` number of UART buffers for multi-domain
+  communication;
 
 API Reference
 *************
