@@ -39,8 +39,9 @@
 		};
 	};
 
-	pwmleds {
+	pwmleds: pwmleds {
 		compatible = "pwm-leds";
+		status = "disabled";
 
 		pwm_led1: pwm_led1 {
 			pwms = <&pwm_ccu40 2 PWM_SEC(1) PWM_POLARITY_NORMAL>;
