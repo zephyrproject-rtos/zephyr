@@ -288,45 +288,11 @@ static int pwm_stm32_set_cycles(const struct device *dev, uint32_t channel,
 		return -ENOTSUP;
 	}
 
+	LL_TIM_OC_SetPolarity(cfg->timer, current_ll_channel, get_polarity(flags));
+	set_timer_compare[channel - 1u](cfg->timer, pulse_cycles);
+	LL_TIM_SetAutoReload(cfg->timer, period_cycles);
+
 	if (!LL_TIM_CC_IsEnabledChannel(cfg->timer, current_ll_channel)) {
-		LL_TIM_OC_InitTypeDef oc_init;
-
-		LL_TIM_OC_StructInit(&oc_init);
-
-		oc_init.OCMode = LL_TIM_OCMODE_PWM1;
-
-#if defined(LL_TIM_CHANNEL_CH1N)
-		/* the flags holds the STM32_PWM_COMPLEMENTARY information */
-		if ((flags & STM32_PWM_COMPLEMENTARY_MASK) == STM32_PWM_COMPLEMENTARY) {
-			oc_init.OCNState = LL_TIM_OCSTATE_ENABLE;
-			oc_init.OCNPolarity = get_polarity(flags);
-
-			/* inherit the polarity of the positive output */
-			oc_init.OCState = LL_TIM_CC_IsEnabledChannel(cfg->timer, ll_channel)
-						  ? LL_TIM_OCSTATE_ENABLE
-						  : LL_TIM_OCSTATE_DISABLE;
-			oc_init.OCPolarity = LL_TIM_OC_GetPolarity(cfg->timer, ll_channel);
-		} else {
-			oc_init.OCState = LL_TIM_OCSTATE_ENABLE;
-			oc_init.OCPolarity = get_polarity(flags);
-
-			/* inherit the polarity of the negative output */
-			if (negative_ll_channel) {
-				oc_init.OCNState =
-					LL_TIM_CC_IsEnabledChannel(cfg->timer, negative_ll_channel)
-						? LL_TIM_OCSTATE_ENABLE
-						: LL_TIM_OCSTATE_DISABLE;
-				oc_init.OCNPolarity =
-					LL_TIM_OC_GetPolarity(cfg->timer, negative_ll_channel);
-			}
-		}
-#else /* LL_TIM_CHANNEL_CH1N */
-
-		oc_init.OCState = LL_TIM_OCSTATE_ENABLE;
-		oc_init.OCPolarity = get_polarity(flags);
-#endif /* LL_TIM_CHANNEL_CH1N */
-		oc_init.CompareValue = pulse_cycles;
-
 #ifdef CONFIG_PWM_CAPTURE
 		if (IS_TIM_SLAVE_INSTANCE(cfg->timer)) {
 			LL_TIM_SetSlaveMode(cfg->timer,
@@ -336,58 +302,43 @@ static int pwm_stm32_set_cycles(const struct device *dev, uint32_t channel,
 		}
 #endif /* CONFIG_PWM_CAPTURE */
 
-		/* in LL_TIM_OC_Init, the channel is always the non-complementary */
-		if (LL_TIM_OC_Init(cfg->timer, ll_channel, &oc_init) != SUCCESS) {
-			LOG_ERR("Could not initialize timer channel output");
-			return -EIO;
-		}
-
+		LL_TIM_OC_SetMode(cfg->timer, ll_channel, LL_TIM_OCMODE_PWM1);
+#ifdef LL_TIM_OCIDLESTATE_LOW
+		LL_TIM_OC_SetIdleState(cfg->timer, current_ll_channel, LL_TIM_OCIDLESTATE_LOW);
+#endif
+		LL_TIM_CC_EnableChannel(cfg->timer, current_ll_channel);
 		LL_TIM_EnableARRPreload(cfg->timer);
 		/* in LL_TIM_OC_EnablePreload, the channel is always the non-complementary */
 		LL_TIM_OC_EnablePreload(cfg->timer, ll_channel);
-		LL_TIM_SetAutoReload(cfg->timer, period_cycles);
 		LL_TIM_GenerateEvent_UPDATE(cfg->timer);
-	} else {
-		/* in LL_TIM_OC_SetPolarity, the channel could be the complementary one */
-		LL_TIM_OC_SetPolarity(cfg->timer, current_ll_channel, get_polarity(flags));
-		set_timer_compare[channel - 1u](cfg->timer, pulse_cycles);
-		LL_TIM_SetAutoReload(cfg->timer, period_cycles);
 	}
 
 	return 0;
 }
 
 #ifdef CONFIG_PWM_CAPTURE
-static int init_capture_channels(const struct device *dev, uint32_t channel,
+static void init_capture_channels(const struct device *dev, uint32_t channel,
 				pwm_flags_t flags)
 {
 	const struct pwm_stm32_config *cfg = dev->config;
 	bool is_inverted = (flags & PWM_POLARITY_MASK) == PWM_POLARITY_INVERTED;
-	LL_TIM_IC_InitTypeDef ic;
+	uint32_t ll_channel = ch2ll[channel - 1];
+	uint32_t ll_complementary_channel = ch2ll[complimentary_channel[channel] - 1];
 
-	LL_TIM_IC_StructInit(&ic);
-	ic.ICPrescaler = TIM_ICPSC_DIV1;
-	ic.ICFilter = LL_TIM_IC_FILTER_FDIV1;
 
 	/* Setup main channel */
-	ic.ICActiveInput = LL_TIM_ACTIVEINPUT_DIRECTTI;
-	ic.ICPolarity = is_inverted ? LL_TIM_IC_POLARITY_FALLING : LL_TIM_IC_POLARITY_RISING;
-
-	if (LL_TIM_IC_Init(cfg->timer, ch2ll[channel - 1], &ic) != SUCCESS) {
-		LOG_ERR("Could not initialize main channel for PWM capture");
-		return -EIO;
-	}
+	LL_TIM_IC_SetPrescaler(cfg->timer, ll_channel, LL_TIM_ICPSC_DIV1);
+	LL_TIM_IC_SetFilter(cfg->timer, ll_channel, LL_TIM_IC_FILTER_FDIV1);
+	LL_TIM_IC_SetActiveInput(cfg->timer, ll_channel, LL_TIM_ACTIVEINPUT_DIRECTTI);
+	LL_TIM_IC_SetPolarity(cfg->timer, ll_channel,
+			      is_inverted ? LL_TIM_IC_POLARITY_FALLING : LL_TIM_IC_POLARITY_RISING);
 
 	/* Setup complimentary channel */
-	ic.ICActiveInput = LL_TIM_ACTIVEINPUT_INDIRECTTI;
-	ic.ICPolarity = is_inverted ? LL_TIM_IC_POLARITY_RISING : LL_TIM_IC_POLARITY_FALLING;
-
-	if (LL_TIM_IC_Init(cfg->timer, ch2ll[complimentary_channel[channel] - 1], &ic) != SUCCESS) {
-		LOG_ERR("Could not initialize complimentary channel for PWM capture");
-		return -EIO;
-	}
-
-	return 0;
+	LL_TIM_IC_SetPrescaler(cfg->timer, ll_complementary_channel, LL_TIM_ICPSC_DIV1);
+	LL_TIM_IC_SetFilter(cfg->timer, ll_complementary_channel, LL_TIM_IC_FILTER_FDIV1);
+	LL_TIM_IC_SetActiveInput(cfg->timer, ll_complementary_channel, LL_TIM_ACTIVEINPUT_INDIRECTTI);
+	LL_TIM_IC_SetPolarity(cfg->timer, ll_complementary_channel,
+			      is_inverted ? LL_TIM_IC_POLARITY_RISING : LL_TIM_IC_POLARITY_FALLING);
 }
 
 static int pwm_stm32_configure_capture(const struct device *dev,
@@ -411,7 +362,6 @@ static int pwm_stm32_configure_capture(const struct device *dev,
 	const struct pwm_stm32_config *cfg = dev->config;
 	struct pwm_stm32_data *data = dev->data;
 	struct pwm_stm32_capture_data *cpt = &data->capture;
-	int ret;
 
 	if (!cfg->four_channel_capture_support) {
 		if ((channel != 1u) && (channel != 2u)) {
@@ -451,10 +401,7 @@ static int pwm_stm32_configure_capture(const struct device *dev,
 	/* Prevents faulty behavior while making changes */
 	LL_TIM_SetSlaveMode(cfg->timer, LL_TIM_SLAVEMODE_DISABLED);
 
-	ret = init_capture_channels(dev, channel, flags);
-	if (ret < 0) {
-		return ret;
-	}
+	init_capture_channels(dev, channel, flags);
 
 	if (!cfg->four_channel_capture_support) {
 		if (channel == 1u) {
@@ -681,7 +628,6 @@ static int pwm_stm32_init(const struct device *dev)
 	struct pwm_stm32_data *data = dev->data;
 	const struct pwm_stm32_config *cfg = dev->config;
 	const struct device *clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
-	LL_TIM_InitTypeDef init;
 	uint32_t tim_clk;
 	int r;
 
@@ -728,17 +674,22 @@ static int pwm_stm32_init(const struct device *dev)
 	}
 
 	/* initialize timer */
-	LL_TIM_StructInit(&init);
+	LL_TIM_SetPrescaler(cfg->timer, cfg->prescaler);
+	LL_TIM_SetAutoReload(cfg->timer, 0U);
 
-	init.Prescaler = cfg->prescaler;
-	init.CounterMode = cfg->countermode;
-	init.Autoreload = 0u;
-	init.ClockDivision = LL_TIM_CLOCKDIVISION_DIV1;
-
-	if (LL_TIM_Init(cfg->timer, &init) != SUCCESS) {
-		LOG_ERR("Could not initialize timer");
-		return -EIO;
+	if (IS_TIM_COUNTER_MODE_SELECT_INSTANCE(cfg->timer)) {
+		LL_TIM_SetCounterMode(cfg->timer, cfg->countermode);
 	}
+
+	if (IS_TIM_CLOCK_DIVISION_INSTANCE(cfg->timer)) {
+		LL_TIM_SetClockDivision(cfg->timer, LL_TIM_CLOCKDIVISION_DIV1);
+	}
+
+#ifdef IS_TIM_REPETITION_COUNTER_INSTANCE
+	if (IS_TIM_REPETITION_COUNTER_INSTANCE(cfg->timer)) {
+		LL_TIM_SetRepetitionCounter(cfg->timer, 0U);
+	}
+#endif
 
 #if !defined(CONFIG_SOC_SERIES_STM32L0X) && !defined(CONFIG_SOC_SERIES_STM32L1X)
 	/* enable outputs and counter */
