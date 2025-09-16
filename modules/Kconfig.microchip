@@ -13,3 +13,6 @@ config HAS_MEC5_HAL
 
 config PIC32C
 	bool
+
+config SAM
+	bool
