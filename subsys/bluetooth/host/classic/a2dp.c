@@ -655,14 +655,13 @@ int a2dp_delay_report_ind(struct bt_avdtp *session, struct bt_avdtp_sep *sep, st
 
 static int bt_a2dp_set_config_cb(struct bt_avdtp_req *req, struct net_buf *buf)
 {
-	struct bt_a2dp *a2dp = SET_CONF_PARAM(SET_CONF_REQ(req));
 	struct bt_a2dp_ep *ep;
 	struct bt_a2dp_stream *stream;
 	struct bt_a2dp_stream_ops *ops;
 
-	ep = CONTAINER_OF(a2dp->set_config_param.sep, struct bt_a2dp_ep, sep);
+	ep = CONTAINER_OF(SET_CONF_REQ(req)->sep, struct bt_a2dp_ep, sep);
 
-	if ((ep->stream == NULL) || (SET_CONF_REQ(req) != &a2dp->set_config_param)) {
+	if (ep->stream == NULL) {
 		return -EINVAL;
 	}
 
@@ -689,10 +688,6 @@ static int bt_a2dp_get_capabilities_cb(struct bt_avdtp_req *req, struct net_buf 
 	uint8_t codec_type;
 	uint8_t user_ret;
 	bool delay_report;
-
-	if (GET_CAP_REQ(req) != &a2dp->get_capabilities_param) {
-		return -EINVAL;
-	}
 
 	LOG_DBG("GET CAPABILITIES result:%d", req->status);
 	if ((req->status != 0) || (buf == NULL)) {
@@ -943,11 +938,9 @@ typedef void (*bt_a2dp_done_cb)(struct bt_a2dp_stream *stream);
 
 static int bt_a2dp_ctrl_cb(struct bt_avdtp_req *req, bt_a2dp_rsp_cb rsp_cb, bt_a2dp_done_cb done_cb)
 {
-	struct bt_a2dp *a2dp = CTRL_PARAM(CTRL_REQ(req));
-	struct bt_a2dp_ep *ep;
+	struct bt_a2dp_ep *ep = CONTAINER_OF(CTRL_REQ(req)->sep, struct bt_a2dp_ep, sep);
 
-	ep = CONTAINER_OF(a2dp->ctrl_param.sep, struct bt_a2dp_ep, sep);
-	if ((ep->stream == NULL) || (CTRL_REQ(req) != &a2dp->ctrl_param)) {
+	if (ep->stream == NULL) {
 		return -EINVAL;
 	}
 
