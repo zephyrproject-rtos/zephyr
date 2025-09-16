@@ -61,7 +61,7 @@ ETH_DMADescTypeDef dma_tx_desc_tab[ETH_TXBUFNB] __eth_stm32_desc;
 
 const struct device *eth_stm32_phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(0, phy_handle));
 
-struct net_if *get_iface(struct eth_stm32_hal_dev_data *ctx)
+struct net_if *eth_stm32_get_iface(struct eth_stm32_hal_dev_data *ctx)
 {
 	return ctx->iface;
 }
@@ -81,7 +81,7 @@ static void rx_thread(void *arg1, void *unused1, void *unused2)
 		res = k_sem_take(&dev_data->rx_int_sem, K_FOREVER);
 		if (res == 0) {
 			/* semaphore taken and receive packets */
-			while ((pkt = eth_rx(dev)) != NULL) {
+			while ((pkt = eth_stm32_rx(dev)) != NULL) {
 				iface = net_pkt_iface(pkt);
 #if defined(CONFIG_NET_DSA_DEPRECATED)
 				iface = dsa_net_recv(iface, &pkt);
@@ -223,7 +223,7 @@ static int eth_initialize(const struct device *dev)
 	heth->Init.MACAddr = dev_data->mac_addr;
 
 #if defined(CONFIG_ETH_STM32_HAL_API_V1)
-	ret = eth_hal_init(dev);
+	ret = eth_stm32_hal_init(dev);
 	if (ret) {
 		LOG_ERR("Failed to initialize HAL");
 		return -EIO;
@@ -299,7 +299,7 @@ static void phy_link_state_changed(const struct device *phy_dev, struct phy_link
 	 */
 	eth_stm32_hal_stop(dev);
 	if (state->is_up) {
-		set_mac_config(dev, state);
+		eth_stm32_set_mac_config(dev, state);
 		eth_stm32_hal_start(dev);
 		net_eth_carrier_on(dev_data->iface);
 	} else {
@@ -325,7 +325,7 @@ static void eth_iface_init(struct net_if *iface)
 			     NET_LINK_ETHERNET);
 
 #if defined(CONFIG_NET_DSA_DEPRECATED)
-	dsa_register_master_tx(iface, &eth_tx);
+	dsa_register_master_tx(iface, &eth_stm32_tx);
 #endif
 
 	ethernet_init(iface);
@@ -335,10 +335,10 @@ static void eth_iface_init(struct net_if *iface)
 	 * properly initialized. In auto-negotiation mode, it reads the speed
 	 * and duplex settings to configure the driver accordingly.
 	 */
-	eth_hal_init(dev);
+	eth_stm32_hal_init(dev);
 #endif /* CONFIG_ETH_STM32_HAL_API_V2 */
 
-	setup_mac_filter(heth);
+	eth_stm32_setup_mac_filter(heth);
 
 	net_if_carrier_off(iface);
 
@@ -425,7 +425,7 @@ static const struct ethernet_api eth_api = {
 #if defined(CONFIG_NET_DSA_DEPRECATED)
 	.send = dsa_tx,
 #else
-	.send = eth_tx,
+	.send = eth_stm32_tx,
 #endif
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
 	.get_stats = eth_stm32_hal_get_stats,

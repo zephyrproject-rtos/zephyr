@@ -18,11 +18,6 @@
 
 extern const struct device *eth_stm32_phy_dev;
 
-#ifdef CONFIG_PTP_CLOCK_STM32_HAL
-const struct device *eth_stm32_get_ptp_clock(const struct device *dev);
-bool eth_is_ptp_pkt(struct net_if *iface, struct net_pkt *pkt);
-#endif /* CONFIG_PTP_CLOCK_STM32_HAL */
-
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet)
 #define IS_ETH_DMATXDESC_OWN(dma_tx_desc) (dma_tx_desc->DESC3 & ETH_DMATXNDESCRF_OWN)
 #define ETH_RXBUFNB	ETH_RX_DESC_CNT
@@ -137,20 +132,26 @@ struct eth_stm32_hal_dev_data {
 #endif
 };
 
-void setup_mac_filter(ETH_HandleTypeDef *heth);
-int eth_tx(const struct device *dev, struct net_pkt *pkt);
-struct net_pkt *eth_rx(const struct device *dev);
-int eth_hal_init(const struct device *dev);
-void set_mac_config(const struct device *dev, struct phy_link_state *state);
+void eth_stm32_setup_mac_filter(ETH_HandleTypeDef *heth);
+void eth_stm32_set_mac_config(const struct device *dev, struct phy_link_state *state);
+int eth_stm32_tx(const struct device *dev, struct net_pkt *pkt);
+struct net_pkt *eth_stm32_rx(const struct device *dev);
+int eth_stm32_hal_init(const struct device *dev);
 int eth_stm32_hal_start(const struct device *dev);
 int eth_stm32_hal_stop(const struct device *dev);
 int eth_stm32_hal_set_config(const struct device *dev,
 			     enum ethernet_config_type type,
 			     const struct ethernet_config *config);
-struct net_if *get_iface(struct eth_stm32_hal_dev_data *ctx);
+struct net_if *eth_stm32_get_iface(struct eth_stm32_hal_dev_data *ctx);
+
 #if defined(CONFIG_ETH_STM32_MULTICAST_FILTER)
 void eth_stm32_mcast_filter(const struct device *dev,
 			    const struct ethernet_filter *filter);
 #endif /* CONFIG_ETH_STM32_MULTICAST_FILTER */
+
+#ifdef CONFIG_PTP_CLOCK_STM32_HAL
+const struct device *eth_stm32_get_ptp_clock(const struct device *dev);
+bool eth_stm32_is_ptp_pkt(struct net_if *iface, struct net_pkt *pkt);
+#endif /* CONFIG_PTP_CLOCK_STM32_HAL */
 
 #endif /* ZEPHYR_DRIVERS_ETHERNET_ETH_STM32_HAL_PRIV_H_ */
