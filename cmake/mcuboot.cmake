@@ -49,6 +49,9 @@ function(zephyr_mcuboot_tasks)
       elseif(NOT (CONFIG_BUILD_OUTPUT_BIN OR CONFIG_BUILD_OUTPUT_HEX))
         message(FATAL_ERROR "Can't sign images for MCUboot: Neither CONFIG_BUILD_OUTPUT_BIN nor CONFIG_BUILD_OUTPUT_HEX is enabled, so there's nothing to sign.")
       endif()
+
+      # Add key file as CMake dependency so a file change will rerun the build
+      set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${${file}})
     endif()
   endforeach()
 
