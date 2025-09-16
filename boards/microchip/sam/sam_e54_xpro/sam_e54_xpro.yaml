@@ -9,7 +9,18 @@ toolchain:
   - zephyr
 flash: 1024
 ram: 256
+mcuboot: true
+partitions:
+  - name: mcuboot
+    size: 32
+  - name: image-0
+    size: 480
+  - name: image-1
+    size: 480
+  - name: storage
+    size: 32
 supported:
+  - flash
   - pinctrl
   - shell
   - uart

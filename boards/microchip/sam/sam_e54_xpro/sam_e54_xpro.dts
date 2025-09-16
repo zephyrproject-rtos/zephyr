@@ -18,6 +18,8 @@
 		zephyr,shell-uart = &sercom2;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,flash-controller = &nvmctrl;
 	};
 };
 
@@ -27,14 +29,25 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		/*
-		 * The final 16 KiB is reserved for the application.
-		 * Storage partition will be used by FCB/LittleFS/NVS
-		 * if enabled.
-		 */
-		storage_partition: partition@fc000 {
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0x00008000>;  /* 32 KB bootloader */
+			read-only;
+		};
+
+		slot0_partition: partition@8000 {
+			label = "image-0";
+			reg = <0x00008000 0x00078000>;  /* 480 KB primary app slot */
+		};
+
+		slot1_partition: partition@80000 {
+			label = "image-1";
+			reg = <0x00080000 0x00078000>;  /* 480 KB secondary app slot */
+		};
+
+		storage_partition: partition@f8000 {
 			label = "storage";
-			reg = <0x000fc000 0x00004000>;
+			reg = <0x000f8000 0x00008000>;  /* 32 KB storage area */
 		};
 	};
 };
