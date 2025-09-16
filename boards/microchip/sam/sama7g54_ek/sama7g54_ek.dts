@@ -419,6 +419,10 @@
 	status = "okay";
 };
 
+&tc0_ch0 {
+	status = "okay";
+};
+
 &trng {
 	status = "okay";
 };
