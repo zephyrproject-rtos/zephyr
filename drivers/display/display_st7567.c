@@ -24,7 +24,7 @@ union st7567_bus {
 };
 
 typedef bool (*st7567_bus_ready_fn)(const struct device *dev);
-typedef int (*st7567_write_bus_fn)(const struct device *dev, uint8_t *buf, size_t len,
+typedef int (*st7567_write_bus_fn)(const struct device *dev, const uint8_t *buf, size_t len,
 				   bool command);
 typedef const char *(*st7567_bus_name_fn)(const struct device *dev);
 
@@ -59,7 +59,8 @@ static bool st7567_bus_ready_i2c(const struct device *dev)
 	return i2c_is_ready_dt(&config->bus.i2c);
 }
 
-static int st7567_write_bus_i2c(const struct device *dev, uint8_t *buf, size_t len, bool command)
+static int st7567_write_bus_i2c(const struct device *dev, const uint8_t *buf, size_t len,
+				bool command)
 {
 	const struct st7567_config *config = dev->config;
 
@@ -90,13 +91,14 @@ static bool st7567_bus_ready_spi(const struct device *dev)
 	return spi_is_ready_dt(&config->bus.spi);
 }
 
-static int st7567_write_bus_spi(const struct device *dev, uint8_t *buf, size_t len, bool command)
+static int st7567_write_bus_spi(const struct device *dev, const uint8_t *buf, size_t len,
+				bool command)
 {
 	const struct st7567_config *config = dev->config;
 	int ret;
 
 	gpio_pin_set_dt(&config->data_cmd, command ? 0 : 1);
-	struct spi_buf tx_buf = {.buf = buf, .len = len};
+	struct spi_buf tx_buf = {.buf = (void *)buf, .len = len};
 
 	struct spi_buf_set tx_bufs = {.buffers = &tx_buf, .count = 1};
 
@@ -121,7 +123,8 @@ static inline bool st7567_bus_ready(const struct device *dev)
 	return config->bus_ready(dev);
 }
 
-static inline int st7567_write_bus(const struct device *dev, uint8_t *buf, size_t len, bool command)
+static inline int st7567_write_bus(const struct device *dev, const uint8_t *buf, size_t len,
+				   bool command)
 {
 	const struct st7567_config *config = dev->config;
 
@@ -206,21 +209,34 @@ static int st7567_suspend(const struct device *dev)
 }
 
 static int st7567_write_default(const struct device *dev, const uint16_t x, const uint16_t y,
-				const struct display_buffer_descriptor *desc, const void *buf,
-				const size_t buf_len)
+				const uint8_t *buf, const size_t buf_len)
 {
+	const struct st7567_config *config = dev->config;
 	int ret;
 	uint8_t cmd_buf[3];
+	uint16_t column = x + config->column_offset;
+
+	cmd_buf[0] = ST7567_COLUMN_LSB | (column & 0xF);
+	cmd_buf[1] = ST7567_COLUMN_MSB | ((column >> 4) & 0xF);
+	cmd_buf[2] = ST7567_PAGE | (y >> 3);
+
+	ret = st7567_write_bus(dev, cmd_buf, sizeof(cmd_buf), true);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return st7567_write_bus(dev, buf, buf_len, false);
+}
+
+static int st7567_write_desc(const struct device *dev, const uint16_t x, const uint16_t y,
+			     const struct display_buffer_descriptor *desc, const void *buf,
+			     const size_t buf_len)
+{
+	int ret = 0;
 
 	for (int i = 0; i < desc->height / 8; i++) {
-		cmd_buf[0] = ST7567_COLUMN_LSB | (x & 0xF);
-		cmd_buf[1] = ST7567_COLUMN_MSB | ((x >> 4) & 0xF);
-		cmd_buf[2] = ST7567_PAGE | ((y >> 3) + i);
-		ret = st7567_write_bus(dev, cmd_buf, sizeof(cmd_buf), true);
-		if (ret < 0) {
-			return ret;
-		}
-		ret = st7567_write_bus(dev, ((uint8_t *)buf + i * desc->pitch), desc->pitch, false);
+		ret = st7567_write_default(dev, x, y + (i << 3),
+					   ((const uint8_t *)buf + i * desc->pitch), desc->pitch);
 		if (ret < 0) {
 			return ret;
 		}
@@ -258,7 +274,7 @@ static int st7567_write(const struct device *dev, const uint16_t x, const uint16
 	LOG_DBG("x %u, y %u, pitch %u, width %u, height %u, buf_len %u", x, y, desc->pitch,
 		desc->width, desc->height, buf_len);
 
-	return st7567_write_default(dev, x, y, desc, buf, buf_len);
+	return st7567_write_desc(dev, x, y, desc, buf, buf_len);
 }
 
 static int st7567_set_contrast(const struct device *dev, const uint8_t contrast)
@@ -341,23 +357,9 @@ static int st7567_clear(const struct device *dev)
 	int ret = 0;
 	uint8_t buf = 0;
 
-	uint8_t cmd_buf[] = {
-		ST7567_COLUMN_LSB,
-		ST7567_COLUMN_MSB,
-		ST7567_PAGE,
-	};
-
 	for (int y = 0; y < config->height; y += 8) {
 		for (int x = 0; x < config->width; x++) {
-			cmd_buf[0] = ST7567_COLUMN_LSB | (x & 0xF);
-			cmd_buf[1] = ST7567_COLUMN_MSB | ((x >> 4) & 0xF);
-			cmd_buf[2] = ST7567_PAGE | (y >> 3);
-			ret = st7567_write_bus(dev, cmd_buf, sizeof(cmd_buf), true);
-			if (ret < 0) {
-				LOG_ERR("Error clearing display");
-				return ret;
-			}
-			ret = st7567_write_bus(dev, (uint8_t *)&buf, 1, false);
+			ret = st7567_write_default(dev, x, y, &buf, 1);
 			if (ret < 0) {
 				LOG_ERR("Error clearing display");
 				return ret;
