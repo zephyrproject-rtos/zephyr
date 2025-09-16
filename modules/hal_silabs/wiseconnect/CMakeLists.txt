@@ -48,6 +48,7 @@ zephyr_include_directories(
   ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/cmsis_driver/config
   ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/cmsis_driver
   ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/cmsis_driver/CMSIS/Driver/Include
+  ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/hal/inc
   ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/ahb_interface/inc
   ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/firmware_upgrade
 )
@@ -73,6 +74,7 @@ zephyr_library_sources(
   ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/unified_api/src/sl_si91x_driver_gpio.c
   ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/unified_api/src/sl_si91x_pwm.c
   ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/unified_peripheral_drivers/src/sl_si91x_peripheral_gpio.c
+  ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/hal/src/sl_si91x_hal_soc_soft_reset.c
   ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/core/chip/src/iPMU_prog/iPMU_dotc/ipmu_apis.c
   ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/core/chip/src/iPMU_prog/iPMU_dotc/rsi_system_config_917.c
 )
