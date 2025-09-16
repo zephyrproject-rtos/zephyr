@@ -138,6 +138,13 @@ if(CONFIG_WIFI_SILABS_SIWX91X)
     ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/sl_net/src/sl_net_si91x_callback_framework.c
     ${WISECONNECT_DIR}/components/service/network_manager/src/sl_net.c
   )
+  zephyr_include_directories_ifdef(CONFIG_WIFI_SILABS_SIWX91X_FIRMWARE_UPDATE
+    ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/hal/inc
+  )
+  zephyr_library_sources_ifdef(CONFIG_WIFI_SILABS_SIWX91X_FIRMWARE_UPDATE
+    ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/hal/src/sl_si91x_hal_soc_soft_reset.c
+    ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/firmware_upgrade/firmware_upgradation.c
+  )
 endif() # CONFIG_WIFI_SILABS_SIWX91X
 
 if(CONFIG_BT_SILABS_SIWX91X)
