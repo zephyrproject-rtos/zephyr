@@ -793,70 +793,70 @@
 		};
 	};
 	/* Define memory regions for IPC between m33s and m71 */
-	dram_m33s_m71_ipc0: memory0@86000000 {
+	dram_m33s_m71_ipc0: memory0@87000000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x86000000 DT_SIZE_K(16)>;
+		reg = <0x87000000 DT_SIZE_K(16)>;
 		zephyr,memory-region="DRAM_M33S_M71_IPC0";
 		zephyr,memory-attr = <(DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE))>;
 	};
 
-	dram_m33s_m71_ipc1: memory1@86004000 {
+	dram_m33s_m71_ipc1: memory1@87004000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x86004000 DT_SIZE_K(16)>;
+		reg = <0x87004000 DT_SIZE_K(16)>;
 		zephyr,memory-region="DRAM_M33S_M71_IPC1";
 		zephyr,memory-attr = <(DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE))>;
 	};
 
 	/* Define memory regions for IPC between m70 and m71 */
-	dram_m70_m71_ipc0: memory2@86008000 {
+	dram_m70_m71_ipc0: memory2@87008000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x86008000 DT_SIZE_K(16)>;
+		reg = <0x87008000 DT_SIZE_K(16)>;
 		zephyr,memory-region="DRAM_M70_M71_IPC0";
 		zephyr,memory-attr = <(DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE))>;
 	};
 
-	dram_m70_m71_ipc1: memory3@8600c000 {
+	dram_m70_m71_ipc1: memory3@8700c000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x8600c000 DT_SIZE_K(16)>;
+		reg = <0x8700c000 DT_SIZE_K(16)>;
 		zephyr,memory-region="DRAM_M70_M71_IPC1";
 		zephyr,memory-attr = <(DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE))>;
 	};
 
 	/* Define memory regions for IPC between m33s and m70 */
-	dram_m33s_m70_ipc0: memory4@86010000 {
+	dram_m33s_m70_ipc0: memory4@87010000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x86010000 DT_SIZE_K(16)>;
+		reg = <0x87010000 DT_SIZE_K(16)>;
 		zephyr,memory-region="DRAM_M33S_M70_IPC0";
 		zephyr,memory-attr = <(DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE))>;
 	};
 
-	dram_m33s_m70_ipc1: memory5@86014000 {
+	dram_m33s_m70_ipc1: memory5@87014000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x86014000 DT_SIZE_K(16)>;
+		reg = <0x87014000 DT_SIZE_K(16)>;
 		zephyr,memory-region="DRAM_M33S_M70_IPC1";
 		zephyr,memory-attr = <(DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE))>;
 	};
 
 	/* Define memory regions for IPC between m33s and m71 */
-	dram_m33s_m71_sh_mem: memory@86000000 {
+	dram_m33s_m71_sh_mem: memory@87000000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x86000000 DT_SIZE_K(32)>;
+		reg = <0x87000000 DT_SIZE_K(32)>;
 		zephyr,memory-region="DRAM_M33S_M71_SH_MEM";
 		zephyr,memory-attr = <(DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE))>;
 	};
 
 	/* Define memory regions for IPC between m70 and m71 */
-	dram_m70_m71_sh_mem: memory@86008000 {
+	dram_m70_m71_sh_mem: memory@87008000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x86008000 DT_SIZE_K(32)>;
+		reg = <0x87008000 DT_SIZE_K(32)>;
 		zephyr,memory-region="DRAM_M70_M71_SH_MEM";
 		zephyr,memory-attr = <(DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE))>;
 	};
 
 	/* Define memory regions for IPC between m33s and m70 */
-	dram_m33s_m70_sh_mem: memory@86010000 {
+	dram_m33s_m70_sh_mem: memory@87010000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x86010000 DT_SIZE_K(32)>;
+		reg = <0x87010000 DT_SIZE_K(32)>;
 		zephyr,memory-region="DRAM_M33S_M70_SH_MEM";
 		zephyr,memory-attr = <(DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE))>;
 	};
