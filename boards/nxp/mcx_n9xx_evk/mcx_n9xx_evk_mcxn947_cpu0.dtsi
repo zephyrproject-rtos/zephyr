@@ -167,6 +167,10 @@
 	status = "okay";
 };
 
+&phy {
+	status = "okay";
+};
+
 &wwdt0 {
 	status = "okay";
 };
