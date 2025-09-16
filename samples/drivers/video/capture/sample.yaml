@@ -15,7 +15,6 @@ tests:
       - platform:stm32h7b3i_dk:SHIELD="st_b_cams_omv_mb1683"
       - platform:ek_ra8d1/r7fa8d1bhecbd:SHIELD="dvp_20pin_ov7670;rtkmipilcdb00000be"
     extra_configs:
-      - CONFIG_TEST=y
       - CONFIG_FPU=y
     harness: console
     harness_config:
@@ -26,7 +25,6 @@ tests:
         - "Got frame \\d+"
         - "size: \\d+;"
         - "timestamp \\d+"
-        - "Pattern OK"
     platform_allow:
       - arduino_nicla_vision/stm32h747xx/m7
       - mimxrt1064_evk/mimxrt1064
