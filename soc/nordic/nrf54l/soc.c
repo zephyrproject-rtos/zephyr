@@ -22,6 +22,7 @@
 #include <zephyr/cache.h>
 #include <soc/nrfx_coredep.h>
 #include <system_nrf54l.h>
+#include <nrf_sys_event.h>
 #include <soc.h>
 LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 
@@ -140,7 +141,11 @@ static inline void power_and_clock_configuration(void)
 #endif
 
 	if (IS_ENABLED(CONFIG_SOC_NRF_FORCE_CONSTLAT)) {
-		nrf_power_task_trigger(NRF_POWER, NRF_POWER_TASK_CONSTLAT);
+		if (IS_ENABLED(CONFIG_NRF_SYS_EVENT)) {
+			(void)nrf_sys_event_request_global_constlat();
+		} else {
+			nrf_power_task_trigger(NRF_POWER, NRF_POWER_TASK_CONSTLAT);
+		}
 	}
 
 #if (DT_PROP(DT_NODELABEL(vregmain), regulator_initial_mode) == NRF5X_REG_MODE_DCDC)
