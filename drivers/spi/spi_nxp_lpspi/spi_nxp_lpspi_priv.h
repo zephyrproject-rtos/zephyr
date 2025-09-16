@@ -54,6 +54,19 @@ struct lpspi_data {
 	uint32_t clock_freq;
 };
 
+/* Common helper functions used to interact with LPSPI FIFOs (TX and RX) when dealing
+ * with cpu-based implementation.
+ */
+static inline uint8_t rx_fifo_cur_len(LPSPI_Type *base)
+{
+	return (base->FSR & LPSPI_FSR_RXCOUNT_MASK) >> LPSPI_FSR_RXCOUNT_SHIFT;
+}
+
+static inline uint8_t tx_fifo_cur_len(LPSPI_Type *base)
+{
+	return (base->FSR & LPSPI_FSR_TXCOUNT_MASK) >> LPSPI_FSR_TXCOUNT_SHIFT;
+}
+
 /* Verifies spi_cfg validity and set up configuration of hardware for xfer
  * Unsets interrupt and watermark options, specific implementation should configure that.
  * Sets bits in the TCR ONLY *directly* relating to what is in the spi_config struct.
