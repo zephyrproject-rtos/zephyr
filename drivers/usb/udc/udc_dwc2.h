@@ -26,6 +26,10 @@ struct dwc2_vendor_quirks {
 	int (*shutdown)(const struct device *dev);
 	/* Called at the end of IRQ handling */
 	int (*irq_clear)(const struct device *dev);
+	/* Called to enable an IRQ */
+	int (*irq_enable_func)(const struct device *dev);
+	/* Called to disable an IRQ */
+	int (*irq_disable_func)(const struct device *dev);
 	/* Called on driver pre-init */
 	int (*caps)(const struct device *dev);
 	/* Called while waiting for bits that require PHY to be clocked */
@@ -48,8 +52,6 @@ struct udc_dwc2_config {
 	/* Pointer to vendor quirks or NULL */
 	const struct dwc2_vendor_quirks *const quirks;
 	void (*make_thread)(const struct device *dev);
-	void (*irq_enable_func)(const struct device *dev);
-	void (*irq_disable_func)(const struct device *dev);
 	uint32_t ghwcfg1;
 	uint32_t ghwcfg2;
 	uint32_t ghwcfg4;
@@ -84,6 +86,8 @@ DWC2_QUIRK_FUNC_DEFINE(post_enable)
 DWC2_QUIRK_FUNC_DEFINE(disable)
 DWC2_QUIRK_FUNC_DEFINE(shutdown)
 DWC2_QUIRK_FUNC_DEFINE(irq_clear)
+DWC2_QUIRK_FUNC_DEFINE(irq_enable_func)
+DWC2_QUIRK_FUNC_DEFINE(irq_disable_func)
 DWC2_QUIRK_FUNC_DEFINE(caps)
 DWC2_QUIRK_FUNC_DEFINE(is_phy_clk_off)
 DWC2_QUIRK_FUNC_DEFINE(post_hibernation_entry)
