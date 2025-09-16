@@ -153,7 +153,7 @@ int tp_poll(struct mqtt_sn_client *client)
 	return recvfrom_data.sz;
 }
 
-#define NUM_TEST_CLIENTS 13
+#define NUM_TEST_CLIENTS 15
 static ZTEST_BMEM struct mqtt_sn_client mqtt_clients[NUM_TEST_CLIENTS];
 static ZTEST_BMEM struct mqtt_sn_client *mqtt_client;
 
@@ -689,6 +689,90 @@ static ZTEST(mqtt_sn_client, test_mqtt_sn_wait_suback)
 	err = k_sem_take(&mqtt_sn_tx_sem, K_SECONDS(1));
 	/* Expect UNSUBSCRIBE message */
 	assert_msg_send(1, 12, &gw_addr);
+}
+
+/*
+ * Test updating the will topic after the initial connect.
+ */
+static ZTEST(mqtt_sn_client, test_mqtt_sn_will_topic_update)
+{
+	int err;
+	static struct mqtt_sn_data topic = MQTT_SN_DATA_STRING_LITERAL("will");
+	static const uint8_t msg_data_request[] = {0x07, 0x1a, 0x00, 'w', 'i', 'l', 'l'};
+	static const uint8_t msg_data_request_empty[] = {0x02, 0x1a};
+	static const uint8_t msg_data_response[] = {0x03, 0x1b, 0x00};
+
+	mqtt_sn_connect_no_will(mqtt_client);
+	err = k_sem_take(&mqtt_sn_tx_sem, K_NO_WAIT);
+
+	mqtt_client->will_topic = topic;
+	mqtt_client->will_retain = false;
+	mqtt_client->will_qos = 0;
+
+	err = mqtt_sn_update_will_topic(mqtt_client);
+	zassert_ok(err, "unexpected error %d", err);
+
+	/* Parallel updates are not supported. */
+	err = mqtt_sn_update_will_topic(mqtt_client);
+	zassert_equal(err, -EALREADY, "unexpected error %d", err);
+
+	/* Expect WILLTOPICUPD to be sent */
+	err = k_sem_take(&mqtt_sn_tx_sem, K_SECONDS(10));
+	zassert_equal(err, 0, "Timed out waiting for callback.");
+	assert_msg_send_data(1, msg_data_request, sizeof(msg_data_request), &gw_addr);
+
+	/* Send WILLTOPICRESP in response */
+	err = input(mqtt_client, msg_data_response, sizeof(msg_data_response), &gw_addr);
+	zassert_ok(err, "unexpected error %d", err);
+	err = k_sem_take(&mqtt_sn_tx_sem, K_SECONDS(1));
+
+	/* Request deletion of the will topic */
+	mqtt_client->will_topic.size = 0;
+	err = mqtt_sn_update_will_topic(mqtt_client);
+	zassert_ok(err, "unexpected error %d", err);
+
+	/* Expect WILLTOPICUPD to be sent */
+	err = k_sem_take(&mqtt_sn_tx_sem, K_SECONDS(10));
+	zassert_equal(err, 0, "Timed out waiting for callback.");
+	assert_msg_send_data(1, msg_data_request_empty, sizeof(msg_data_request_empty), &gw_addr);
+
+	/* Send WILLTOPICRESP in response */
+	err = input(mqtt_client, msg_data_response, sizeof(msg_data_response), &gw_addr);
+	zassert_ok(err, "unexpected error %d", err);
+	err = k_sem_take(&mqtt_sn_tx_sem, K_SECONDS(1));
+}
+
+/*
+ * Test updating the will message after the initial connect.
+ */
+static ZTEST(mqtt_sn_client, test_mqtt_sn_will_message_update)
+{
+	int err;
+	static struct mqtt_sn_data will_msg = MQTT_SN_DATA_STRING_LITERAL("RIP");
+	static const uint8_t msg_data_request[] = {0x05, 0x1c, 'R', 'I', 'P'};
+	static const uint8_t msg_data_response[] = {0x03, 0x1d, 0x00};
+
+	mqtt_sn_connect_no_will(mqtt_client);
+	err = k_sem_take(&mqtt_sn_tx_sem, K_NO_WAIT);
+
+	mqtt_client->will_msg = will_msg;
+
+	err = mqtt_sn_update_will_message(mqtt_client);
+	zassert_ok(err, "unexpected error %d", err);
+
+	/* Parallel updates are not supported. */
+	err = mqtt_sn_update_will_message(mqtt_client);
+	zassert_equal(err, -EALREADY, "unexpected error %d", err);
+
+	/* Expect WILLMSGUPD to be sent */
+	err = k_sem_take(&mqtt_sn_tx_sem, K_SECONDS(10));
+	zassert_equal(err, 0, "Timed out waiting for callback.");
+	assert_msg_send_data(1, msg_data_request, sizeof(msg_data_request), &gw_addr);
+
+	/* Send WILLMSGRESP in response */
+	err = input(mqtt_client, msg_data_response, sizeof(msg_data_response), &gw_addr);
+	zassert_ok(err, "unexpected error %d", err);
+	err = k_sem_take(&mqtt_sn_tx_sem, K_SECONDS(1));
 }
 
 ZTEST_SUITE(mqtt_sn_client, NULL, NULL, setup, cleanup, NULL);
