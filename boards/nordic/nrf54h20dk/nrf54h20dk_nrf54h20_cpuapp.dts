@@ -343,12 +343,19 @@ zephyr_udc0: &usbhs {
 
 /* Trim this RAM block for making room on all run-time common S2RAM cpu context. */
 &cpuapp_ram0 {
-	reg = <0x22000000 (DT_SIZE_K(32) - 32)>;
-	ranges = <0x0 0x22000000 (0x8000 - 0x20)>;
+	reg = <0x22000000 (DT_SIZE_K(32) - 48)>;
+	ranges = <0x0 0x22000000 (0x8000 - 0x30)>;
 };
 
 / {
 	soc {
+		/* temporary stack for S2RAM resume logic */
+		pm_s2ram_stack: cpuapp_s2ram_stack@22007fd0  {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x22007fd0 16>;
+			zephyr,memory-region = "pm_s2ram_stack";
+		};
+
 		/* run-time common S2RAM cpu context RAM */
 		pm_s2ram: cpuapp_s2ram@22007fe0  {
 			compatible = "zephyr,memory-region", "mmio-sram";
