@@ -65,6 +65,78 @@ LOG_MODULE_REGISTER(usb_dc_stm32);
 #define USB_NUM_BIDIR_ENDPOINTS	DT_INST_PROP(0, num_bidir_endpoints)
 #define USB_RAM_SIZE		DT_INST_PROP(0, ram_size)
 
+/* Shorthand to obtain PHY node for an instance */
+#define UDC_PHY(node_id)			DT_PROP_BY_IDX(node_id, phys, 0)
+
+/** Evaluates to 1 if PHY of @p usb_node is an embedded PHY, 0 otherwise. */
+#define UDC_STM32_PHY_IS_EMBEDDED(usb_node)	UTIL_OR(UTIL_OR(		\
+	DT_NODE_HAS_COMPAT(UDC_PHY(usb_node), st_stm32_usbphyc),		\
+	DT_NODE_HAS_COMPAT(UDC_PHY(usb_node), st_stm32u5_otghs_phy)),		\
+	DT_NODE_HAS_COMPAT(UDC_PHY(usb_node), st_stm32_embedded_usb_phy))
+
+/**
+ * Evaluates to 1 if PHY of @p usb_node is an embedded HS PHY, 0 otherwise.
+ *
+ * @note Undefined behavior if UDC_PHY_IS_EMBEDDED(usb_node) is not 1.
+ */
+#define UDC_STM32_EMBEDDED_PHY_IS_HS(usb_node)	UTIL_OR(UTIL_OR(		\
+	DT_NODE_HAS_COMPAT(UDC_PHY(usb_node), st_stm32_usbphyc),		\
+	DT_NODE_HAS_COMPAT(UDC_PHY(usb_node), st_stm32u5_otghs_phy)),		\
+	DT_PROP(UDC_PHY(usb_node), high_speed))
+
+/** Evaluates to 1 if @p inst can run in High-Speed mode, 0 otherwise. */
+#define UDC_STM32_NODE_HS_CAPABLE(node_id)	DT_NODE_HAS_COMPAT(node_id, st_stm32_otghs)
+
+/**
+ * Returns the 'PCD_PHY_Module' value for @p node_id
+ *
+ * This value may be one of:
+ *    - PCD_PHY_EMBEDDED: embedded Full-Speed PHY
+ *    - PCD_PHY_UTMI: embedded High-Speed PHY over UTMI+
+ *    - PCD_PHY_ULPI: external High-Speed PHY over ULPI
+ *
+ * The PHY DT node referenced by the 'phys' property of @p node_id
+ * is examined to determine the correct value:
+ *  - compatible 'st,stm32-usbphyc'    => embedded HS PHY
+ *  - compatible 'st,stm32-embedded-usb-phy'
+ *     - property 'high-speed' set     => embedded HS PHY
+ *     - property 'high-speed' not set => embedded FS PHY
+ *  - all other compatibles            => external HS PHY
+ *
+ * @note For legacy/compatibility reasons, this logic is not applied
+ * if @p node_id is not HS-capable as such hardware is known to use
+ * use an embedded FS PHY (usually with compatible "usb-nop-xceiv").
+ */
+#define UDC_STM32_NODE_PHY_ITFACE(node_id)				\
+COND_CODE_0(UDC_STM32_NODE_HS_CAPABLE(node_id),				\
+	(PCD_PHY_EMBEDDED),						\
+	(COND_CODE_0(UDC_STM32_PHY_IS_EMBEDDED(node_id),		\
+		(PCD_PHY_ULPI),						\
+		(COND_CODE_1(UDC_STM32_EMBEDDED_PHY_IS_HS(node_id),	\
+			(PCD_PHY_UTMI), (PCD_PHY_EMBEDDED)))		\
+	))								\
+)
+
+/**
+ * Returns the 'PCD_Speed' value for @p node_id
+ *
+ * For HS-capable instances, this may be one of:
+ *   - PCD_SPEED_HIGH: High-Speed mode
+ *   - PCD_SPEED_HIGH_IN_FULL: Full-Speed mode on HS instance
+ *
+ * PCD_SPEED_FULL is returned for instances that are not HS-capable.
+ *
+ * The 'maximum-speed' property is ignored except if it has value
+ * 'full-speed' on an HS-capable instance, which forces the instance
+ * in Full-Speed mode instead of High-Speed; all other values are
+ * silently ignored.
+ */
+#define UDC_STM32_NODE_SPEED(node_id)							\
+	COND_CODE_1(UDC_STM32_NODE_HS_CAPABLE(node_id),					\
+		((DT_ENUM_IDX(node_id, maximum_speed) == 1)				\
+			? PCD_SPEED_HIGH_IN_FULL : PCD_SPEED_HIGH),			\
+		(PCD_SPEED_FULL))
+
 static const struct stm32_pclken pclken[] = STM32_DT_INST_CLOCKS(0);
 
 #if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_otghs)
@@ -73,35 +145,9 @@ static const struct pinctrl_dev_config *usb_pcfg =
 					PINCTRL_DT_INST_DEV_CONFIG_GET(0);
 #endif
 
-#define USB_OTG_HS_EMB_PHYC (DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usbphyc) && \
-			     DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs))
-
-#define USB_OTG_HS_EMB_PHY (DT_HAS_COMPAT_STATUS_OKAY(st_stm32u5_otghs_phy) && \
-			    DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs))
-
-#define USB_OTG_HS_ULPI_PHY (DT_HAS_COMPAT_STATUS_OKAY(usb_ulpi_phy) && \
-			    DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs))
-
-#if USB_OTG_HS_ULPI_PHY
+#if UDC_STM32_NODE_PHY_ITFACE(DT_DRV_INST(0)) == PCD_PHY_ULPI
 static const struct gpio_dt_spec ulpi_reset =
 	GPIO_DT_SPEC_GET_OR(DT_PHANDLE(DT_INST(0, st_stm32_otghs), phys), reset_gpios, {0});
-#endif
-
-/**
- * The following defines are used to map the value of the "maxiumum-speed"
- * DT property to the corresponding definition used by the STM32 HAL.
- */
-#if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(USB_OTG_HS_EMB_PHYC) || \
-	defined(USB_OTG_HS_EMB_PHY)
-#define USB_DC_STM32_HIGH_SPEED             USB_OTG_SPEED_HIGH_IN_FULL
-#else
-#define USB_DC_STM32_HIGH_SPEED             USB_OTG_SPEED_HIGH
-#endif
-
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usb)
-#define USB_DC_STM32_FULL_SPEED             PCD_SPEED_FULL
-#else
-#define USB_DC_STM32_FULL_SPEED             USB_OTG_SPEED_FULL
 #endif
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_otghs)
@@ -131,15 +177,6 @@ static const struct gpio_dt_spec ulpi_reset =
 #define USB_BTABLE_SIZE  (8 * USB_NUM_BIDIR_ENDPOINTS)
 
 #else /* USB_OTG_FS */
-
-/*
- * STM32L4 series USB LL API doesn't provide HIGH and HIGH_IN_FULL speed
- * defines.
- */
-#if defined(CONFIG_SOC_SERIES_STM32L4X)
-#define USB_OTG_SPEED_HIGH                     0U
-#define USB_OTG_SPEED_HIGH_IN_FULL             1U
-#endif /* CONFIG_SOC_SERIES_STM32L4X */
 
 #define EP0_MPS USB_OTG_MAX_EP0_SIZE
 
@@ -415,42 +452,62 @@ static int usb_dc_stm32_clock_enable(void)
 
 #endif /* RCC_CFGR_OTGFSPRE / RCC_CFGR_USBPRE */
 
-#if USB_OTG_HS_ULPI_PHY
-#if defined(CONFIG_SOC_SERIES_STM32H7X)
-	LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_USB1OTGHSULPI);
+/*
+ * Enable the USB PHY's clock.
+ * (a) Embedded FS PHY: no action required
+ * (b) Embedded HS PHY: must be configured then enabled
+ * (c) External HS PHY: requires ULPI clock to be enabled
+ * NOTE: (b) and (c) only apply to HS-capable instances.
+ */
+#if UDC_STM32_NODE_HS_CAPABLE(DT_DRV_INST(0))
+#if UDC_STM32_NODE_PHY_ITFACE(DT_DRV_INST(0)) == PCD_PHY_ULPI
+	/* Enable ULPI interface clock if external HS PHY is used */
+	#if defined(CONFIG_SOC_SERIES_STM32H7X)
+		LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_USB1OTGHSULPI);
+	#else
+		LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_OTGHSULPI);
+	#endif
 #else
-	LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_OTGHSULPI);
-#endif
-#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs) /* USB_OTG_HS_ULPI_PHY */
 	/* Disable ULPI interface (for external high-speed PHY) clock in sleep/low-power mode.
 	 * It is disabled by default in run power mode, no need to disable it.
 	 */
-#if defined(CONFIG_SOC_SERIES_STM32H7X)
-	LL_AHB1_GRP1_DisableClockSleep(LL_AHB1_GRP1_PERIPH_USB1OTGHSULPI);
-#elif defined(CONFIG_SOC_SERIES_STM32U5X)
-	LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_USBPHY);
-#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_otghs)
-	/* Reset specific configuration bits before setting new values */
-	USB1_HS_PHYC->USBPHYC_CR &= ~USB_USBPHYC_CR_FSEL_Msk;
+	#if defined(CONFIG_SOC_SERIES_STM32H7X)
+		LL_AHB1_GRP1_DisableClockSleep(LL_AHB1_GRP1_PERIPH_USB1OTGHSULPI);
+	#elif defined(LL_AHB1_GRP1_PERIPH_OTGHSULPI)
+		LL_AHB1_GRP1_DisableClockLowPower(LL_AHB1_GRP1_PERIPH_OTGHSULPI);
+	#endif /* defined(CONFIG_SOC_SERIES_STM32H7X) */
+#endif /* PHY_ITFACE == PCD_PHY_UPLI */
 
-	/* Configure the USB PHY Control Register to operate in the High frequency "24 MHz"
-	 * by setting the Frequency Selection (FSEL) bits 4 and 5 to 10,
-	 * which ensures proper communication.
+#if UDC_STM32_NODE_PHY_ITFACE(DT_DRV_INST(0)) == PCD_PHY_UTMI
+	/* Enable embedded HS PHY if used */
+	#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_otghs)
+		/* Reset specific configuration bits before setting new values */
+		USB1_HS_PHYC->USBPHYC_CR &= ~USB_USBPHYC_CR_FSEL_Msk;
+
+		/* Configure the USB PHY Control Register to operate in the High frequency "24 MHz"
+		 * by setting the Frequency Selection (FSEL) bits 4 and 5 to 10,
+		 * which ensures proper communication.
+		 */
+		USB1_HS_PHYC->USBPHYC_CR |= USB_USBPHYC_CR_FSEL_24MHZ;
+
+		/* Peripheral OTGPHY clock enable */
+		LL_AHB5_GRP1_EnableClock(LL_AHB5_GRP1_PERIPH_OTGPHY1);
+	#elif defined(LL_APB2_GRP1_PERIPH_OTGPHYC)
+		LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_OTGPHYC);
+	#elif defined(LL_AHB2_GRP1_PERIPH_USBPHY) /* U5 */
+		LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_USBPHY);
+	#endif
+#endif /* PHY_ITFACE == PCD_PHY_UTMI */
+
+/* No action to be done if embedded FS PHY is used */
+#else /* UDC_STM32_NODE_HS_CAPABLE(DT_DRV_INST(0)) */
+#if defined(CONFIG_SOC_SERIES_STM32H7X) && DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otgfs)
+	/* The USB2 controller only works in FS mode, but the ULPI clock needs
+	 * to be disabled in sleep mode for it to work.
 	 */
-	USB1_HS_PHYC->USBPHYC_CR |= USB_USBPHYC_CR_FSEL_24MHZ;
-
-	/* Peripheral OTGPHY clock enable */
-	LL_AHB5_GRP1_EnableClock(LL_AHB5_GRP1_PERIPH_OTGPHY1);
-#else
-	LL_AHB1_GRP1_DisableClockLowPower(LL_AHB1_GRP1_PERIPH_OTGHSULPI);
-#endif
-
-#if USB_OTG_HS_EMB_PHYC
-#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_otghs)
-	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_OTGPHYC);
-#endif
-#endif
-#endif /* USB_OTG_HS_ULPI_PHY */
+	LL_AHB1_GRP1_DisableClockSleep(LL_AHB1_GRP1_PERIPH_USB2OTGHSULPI);
+#endif /* CONFIG_SOC_SERIES_STM32H7X && DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otgfs) */
+#endif /* UDC_STM32_NODE_HS_CAPABLE(DT_DRV_INST(0)) */
 
 	return 0;
 }
@@ -475,8 +532,8 @@ static int usb_dc_stm32_init(void)
 	HAL_StatusTypeDef status;
 	unsigned int i;
 
-	usb_dc_stm32_state.pcd.Init.speed =
-			UTIL_CAT(USB_DC_STM32_, DT_INST_STRING_UPPER_TOKEN(0, maximum_speed));
+	usb_dc_stm32_state.pcd.Init.speed = UDC_STM32_NODE_SPEED(DT_DRV_INST(0));
+	usb_dc_stm32_state.pcd.Init.phy_itface = UDC_STM32_NODE_PHY_ITFACE(DT_DRV_INST(0));
 
 #if defined(USB) || defined(USB_DRD_FS)
 #ifdef USB
@@ -491,13 +548,6 @@ static int usb_dc_stm32_init(void)
 #else /* USB_OTG_FS || USB_OTG_HS */
 	usb_dc_stm32_state.pcd.Instance = (USB_OTG_GlobalTypeDef *)USB_BASE_ADDRESS;
 	usb_dc_stm32_state.pcd.Init.dev_endpoints = USB_NUM_BIDIR_ENDPOINTS;
-#if USB_OTG_HS_EMB_PHYC || USB_OTG_HS_EMB_PHY
-	usb_dc_stm32_state.pcd.Init.phy_itface = USB_OTG_HS_EMBEDDED_PHY;
-#elif USB_OTG_HS_ULPI_PHY
-	usb_dc_stm32_state.pcd.Init.phy_itface = USB_OTG_ULPI_PHY;
-#else
-	usb_dc_stm32_state.pcd.Init.phy_itface = PCD_PHY_EMBEDDED;
-#endif
 	usb_dc_stm32_state.pcd.Init.ep0_mps = USB_OTG_MAX_EP0_SIZE;
 	usb_dc_stm32_state.pcd.Init.vbus_sensing_enable = USB_VBUS_SENSING ? ENABLE : DISABLE;
 
@@ -622,7 +672,7 @@ int usb_dc_attach(void)
 	}
 #endif
 
-#if USB_OTG_HS_ULPI_PHY
+#if UDC_STM32_NODE_PHY_ITFACE(DT_DRV_INST(0)) == PCD_PHY_ULPI
 	if (ulpi_reset.port != NULL) {
 		if (!gpio_is_ready_dt(&ulpi_reset)) {
 			LOG_ERR("Reset GPIO device not ready");
