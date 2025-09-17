@@ -27,4 +27,18 @@
 	/omit-if-no-ref/ i2c0_data_gpf3_default: i2c0_data_gpf3_default {
 		pinmuxs = <&pinctrlf 3 IT8XXX2_ALT_FUNC_1>;
 	};
+
+	/* VBAT-Power alternate function */
+	/omit-if-no-ref/ xlpin0_gpq0_default: xlpin0_gpq0_default {
+		pinmuxs = <&pinctrlq 0 IT8XXX2_ALT_FUNC_1>;
+	};
+	/omit-if-no-ref/ xlpin1_gpq1_default: xlpin1_gpq1_default {
+		pinmuxs = <&pinctrlq 1 IT8XXX2_ALT_FUNC_1>;
+	};
+	/omit-if-no-ref/ xlpin2_gpq2_default: xlpin2_gpq2_default {
+		pinmuxs = <&pinctrlq 2 IT8XXX2_ALT_FUNC_1>;
+	};
+	/omit-if-no-ref/ xlpin4_gpq4_default: xlpin4_gpq4_default {
+		pinmuxs = <&pinctrlq 4 IT8XXX2_ALT_FUNC_1>;
+	};
 };
