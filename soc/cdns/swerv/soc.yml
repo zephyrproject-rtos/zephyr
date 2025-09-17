@@ -2,3 +2,4 @@ family:
 - name: cdns_swerv
   socs:
   - name: s400
+  - name: s420
