@@ -38,7 +38,7 @@
 # define MEMSZ (1024 * (size_t) CONFIG_SRAM_SIZE)
 #endif
 
-#define BIG_HEAP_SZ MIN(256 * 1024, MEMSZ / 3)
+#define BIG_HEAP_SZ GENERIC_MIN(256 * 1024, MEMSZ / 3)
 #define SMALL_HEAP_SZ MIN(BIG_HEAP_SZ, 2048)
 
 /* With enabling SYS_HEAP_RUNTIME_STATS, the size of struct z_heap

@@ -233,7 +233,7 @@ enum smf_state_result pe_src_send_capabilities_run(void *obj)
 			if (received_data_message(dev, header, PD_DATA_REQUEST)) {
 				/* Set to highest revision supported by both ports */
 				prl_set_rev(dev, PD_PACKET_SOP,
-					    MIN(PD_REV30, header.specification_revision));
+					    GENERIC_MIN(PD_REV30, header.specification_revision));
 				pe_set_state(dev, PE_SRC_NEGOTIATE_CAPABILITY);
 			}
 		}

@@ -53,7 +53,7 @@
 #define GMAP_UNICAST_AC_MAX_CONN     2U
 #define GMAP_UNICAST_AC_MAX_SNK      (2U * GMAP_UNICAST_AC_MAX_CONN)
 #define GMAP_UNICAST_AC_MAX_SRC      (2U * GMAP_UNICAST_AC_MAX_CONN)
-#define GMAP_UNICAST_AC_MAX_PAIR     MAX(GMAP_UNICAST_AC_MAX_SNK, GMAP_UNICAST_AC_MAX_SRC)
+#define GMAP_UNICAST_AC_MAX_PAIR     GENERIC_MAX(GMAP_UNICAST_AC_MAX_SNK, GMAP_UNICAST_AC_MAX_SRC)
 #define GMAP_UNICAST_AC_MAX_STREAM   (GMAP_UNICAST_AC_MAX_SNK + GMAP_UNICAST_AC_MAX_SRC)
 
 extern enum bst_result_t bst_result;
@@ -116,9 +116,9 @@ static struct bt_conn *connected_conns[GMAP_UNICAST_AC_MAX_CONN];
 static size_t connected_conn_cnt;
 
 static K_SEM_DEFINE(sem_stream_started, 0U,
-		    MAX(ARRAY_SIZE(unicast_streams), ARRAY_SIZE(broadcast_streams)));
+		    GENERIC_MAX(ARRAY_SIZE(unicast_streams), ARRAY_SIZE(broadcast_streams)));
 static K_SEM_DEFINE(sem_stream_stopped, 0U,
-		    MAX(ARRAY_SIZE(unicast_streams), ARRAY_SIZE(broadcast_streams)));
+		    GENERIC_MAX(ARRAY_SIZE(unicast_streams), ARRAY_SIZE(broadcast_streams)));
 
 CREATE_FLAG(flag_cas_discovered);
 CREATE_FLAG(flag_started);

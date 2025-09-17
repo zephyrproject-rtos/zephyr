@@ -142,7 +142,7 @@ struct lwm2m_rd_client_info {
  * string. In other case, 32 bytes are enough to encode any other query string
  * documented in the LwM2M specification.
  */
-static char query_buffer[MAX(32, sizeof("ep=") + CLIENT_EP_LEN)];
+static char query_buffer[GENERIC_MAX(32, sizeof("ep=") + CLIENT_EP_LEN)];
 static enum sm_engine_state suspended_client_state;
 
 static struct lwm2m_message *rd_get_message(void)

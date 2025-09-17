@@ -63,7 +63,7 @@ fcb_append(struct fcb *fcb, uint16_t len, struct fcb_entry *append_loc)
 	struct fcb_entry *active;
 	int cnt;
 	int rc;
-	uint8_t tmp_str[MAX(8, fcb->f_align)];
+	uint8_t tmp_str[GENERIC_MAX(8, fcb->f_align)];
 
 	/* Ensure defined value of padding bytes */
 	memset(tmp_str, fcb->f_erase_value, sizeof(tmp_str));

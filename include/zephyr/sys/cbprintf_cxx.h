@@ -374,7 +374,7 @@ static inline size_t z_cbprintf_cxx_alignment(unsigned long long arg)
 template < typename T >
 static inline size_t z_cbprintf_cxx_alignment(T arg)
 {
-	return MAX(__alignof__(arg), VA_STACK_MIN_ALIGN);
+	return GENERIC_MAX(__alignof__(arg), VA_STACK_MIN_ALIGN);
 }
 
 /* C++ version for checking if two arguments are same type */

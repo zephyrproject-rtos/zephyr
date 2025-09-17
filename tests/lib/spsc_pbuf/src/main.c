@@ -25,7 +25,7 @@ static bool use_cache(uint32_t flags)
 
 static void test_spsc_pbuf_flags(uint32_t flags)
 {
-	static uint8_t memory_area[216] __aligned(MAX(Z_SPSC_PBUF_DCACHE_LINE, 4));
+	static uint8_t memory_area[216] __aligned(GENERIC_MAX(Z_SPSC_PBUF_DCACHE_LINE, 4));
 	static uint8_t rbuf[198];
 	static uint8_t message[20] = {'a'};
 	struct spsc_pbuf *ib;
@@ -179,7 +179,7 @@ static void packet_consume(struct spsc_pbuf *pb,
 
 ZTEST(test_spsc_pbuf, test_0cpy)
 {
-	static uint8_t buffer[128] __aligned(MAX(Z_SPSC_PBUF_DCACHE_LINE, 4));
+	static uint8_t buffer[128] __aligned(GENERIC_MAX(Z_SPSC_PBUF_DCACHE_LINE, 4));
 	struct spsc_pbuf *pb = spsc_pbuf_init(buffer, sizeof(buffer), 0);
 	uint32_t capacity = spsc_pbuf_capacity(pb);
 	uint16_t len1;
@@ -211,7 +211,7 @@ ZTEST(test_spsc_pbuf, test_0cpy)
 
 ZTEST(test_spsc_pbuf, test_0cpy_smaller)
 {
-	static uint8_t buffer[128] __aligned(MAX(Z_SPSC_PBUF_DCACHE_LINE, 4));
+	static uint8_t buffer[128] __aligned(GENERIC_MAX(Z_SPSC_PBUF_DCACHE_LINE, 4));
 	struct spsc_pbuf *pb = spsc_pbuf_init(buffer, sizeof(buffer), 0);
 	uint32_t capacity = spsc_pbuf_capacity(pb);
 	uint16_t len1;
@@ -231,7 +231,7 @@ ZTEST(test_spsc_pbuf, test_0cpy_smaller)
 
 ZTEST(test_spsc_pbuf, test_0cpy_discard)
 {
-	static uint8_t buffer[128] __aligned(MAX(Z_SPSC_PBUF_DCACHE_LINE, 4));
+	static uint8_t buffer[128] __aligned(GENERIC_MAX(Z_SPSC_PBUF_DCACHE_LINE, 4));
 	struct spsc_pbuf *pb = spsc_pbuf_init(buffer, sizeof(buffer), 0);
 	uint32_t capacity = spsc_pbuf_capacity(pb);
 	int len1, len2;
@@ -261,7 +261,7 @@ ZTEST(test_spsc_pbuf, test_0cpy_discard)
 
 ZTEST(test_spsc_pbuf, test_0cpy_corner1)
 {
-	static uint8_t buffer[128] __aligned(MAX(Z_SPSC_PBUF_DCACHE_LINE, 4));
+	static uint8_t buffer[128] __aligned(GENERIC_MAX(Z_SPSC_PBUF_DCACHE_LINE, 4));
 	struct spsc_pbuf *pb;
 	uint32_t capacity;
 	char *buf;
@@ -297,7 +297,7 @@ ZTEST(test_spsc_pbuf, test_0cpy_corner1)
 
 ZTEST(test_spsc_pbuf, test_0cpy_corner2)
 {
-	static uint8_t buffer[128] __aligned(MAX(Z_SPSC_PBUF_DCACHE_LINE, 4));
+	static uint8_t buffer[128] __aligned(GENERIC_MAX(Z_SPSC_PBUF_DCACHE_LINE, 4));
 	struct spsc_pbuf *pb;
 	uint32_t capacity;
 	uint16_t len1;
@@ -337,7 +337,7 @@ ZTEST(test_spsc_pbuf, test_0cpy_corner2)
 
 ZTEST(test_spsc_pbuf, test_largest_alloc)
 {
-	static uint8_t buffer[128] __aligned(MAX(Z_SPSC_PBUF_DCACHE_LINE, 4));
+	static uint8_t buffer[128] __aligned(GENERIC_MAX(Z_SPSC_PBUF_DCACHE_LINE, 4));
 	struct spsc_pbuf *pb;
 	uint32_t capacity;
 	uint16_t len1;
@@ -372,7 +372,7 @@ ZTEST(test_spsc_pbuf, test_largest_alloc)
 
 ZTEST(test_spsc_pbuf, test_utilization)
 {
-	static uint8_t buffer[128] __aligned(MAX(Z_SPSC_PBUF_DCACHE_LINE, 4));
+	static uint8_t buffer[128] __aligned(GENERIC_MAX(Z_SPSC_PBUF_DCACHE_LINE, 4));
 	struct spsc_pbuf *pb;
 	uint32_t capacity;
 	uint16_t len1, len2, len3;
@@ -466,7 +466,7 @@ bool stress_write(void *user_data, uint32_t cnt, bool last, int prio)
 
 ZTEST(test_spsc_pbuf, test_stress)
 {
-	static uint8_t buffer[128] __aligned(MAX(Z_SPSC_PBUF_DCACHE_LINE, 4));
+	static uint8_t buffer[128] __aligned(GENERIC_MAX(Z_SPSC_PBUF_DCACHE_LINE, 4));
 	static struct stress_data ctx = {};
 	uint32_t repeat = 0;
 
@@ -536,7 +536,7 @@ bool stress_alloc_commit(void *user_data, uint32_t cnt, bool last, int prio)
 
 ZTEST(test_spsc_pbuf, test_stress_0cpy)
 {
-	static uint8_t buffer[128] __aligned(MAX(Z_SPSC_PBUF_DCACHE_LINE, 4));
+	static uint8_t buffer[128] __aligned(GENERIC_MAX(Z_SPSC_PBUF_DCACHE_LINE, 4));
 	static struct stress_data ctx;
 	uint32_t repeat = 0;
 

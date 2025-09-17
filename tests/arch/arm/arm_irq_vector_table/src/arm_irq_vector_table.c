@@ -170,7 +170,8 @@ void rtc_nrf_isr(void);
 #define TIMER_IRQ_NUM     RTC1_IRQn
 #endif
 
-#define IRQ_VECTOR_TABLE_SIZE (MAX(POWER_CLOCK_IRQ_NUM, MAX(TIMER_IRQ_NUM, _ISR_OFFSET + 2)) + 1)
+#define IRQ_VECTOR_TABLE_SIZE (GENERIC_MAX(POWER_CLOCK_IRQ_NUM, \
+					   GENERIC_MAX(TIMER_IRQ_NUM, _ISR_OFFSET + 2)) + 1)
 
 const vth __irq_vector_table _irq_vector_table[IRQ_VECTOR_TABLE_SIZE] = {
 #if (POWER_CLOCK_IRQ_NUM != -1)

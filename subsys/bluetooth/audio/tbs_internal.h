@@ -308,9 +308,9 @@ struct bt_tbs_in_uri {
  * remaining characteristic values
  */
 #define BT_TBS_CLIENT_INST_READ_BUF_SIZE \
-		MIN(BT_ATT_MAX_ATTRIBUTE_LEN, \
-			(CONFIG_BT_TBS_CLIENT_MAX_CALLS \
-			* sizeof(struct bt_tbs_client_call_state)))
+		GENERIC_MIN(BT_ATT_MAX_ATTRIBUTE_LEN, \
+			    (CONFIG_BT_TBS_CLIENT_MAX_CALLS \
+			     * sizeof(struct bt_tbs_client_call_state)))
 #endif /* defined(CONFIG_BT_TBS_CLIENT_BEARER_LIST_CURRENT_CALLS) */
 
 enum bt_tbs_client_flag {

@@ -68,7 +68,7 @@ struct avdtp_buf_user_data {
 	uint8_t current_frag;
 } __packed;
 
-#define AVDTP_POOL_USER_DATA_SIZE MAX(CONFIG_BT_CONN_TX_USER_DATA_SIZE,\
+#define AVDTP_POOL_USER_DATA_SIZE GENERIC_MAX(CONFIG_BT_CONN_TX_USER_DATA_SIZE,\
 				      sizeof(struct avdtp_buf_user_data))
 
 NET_BUF_POOL_DEFINE(avdtp_pool, CONFIG_BT_MAX_CONN * 2,

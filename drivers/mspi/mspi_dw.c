@@ -1503,8 +1503,8 @@ static DEVICE_API(mspi, drv_api) = {
 					    TX_FIFO_DEPTH(inst))
 #define MSPI_DW_FIFO_PROPS(inst)					\
 	.tx_fifo_depth_minus_1 = TX_FIFO_DEPTH(inst) - 1,		\
-	.max_queued_dummy_bytes = MIN(RX_FIFO_DEPTH(inst) - 1,		\
-				      TX_FIFO_DEPTH(inst)),		\
+	.max_queued_dummy_bytes = GENERIC_MIN(RX_FIFO_DEPTH(inst) - 1,	\
+					      TX_FIFO_DEPTH(inst)),	\
 	.tx_fifo_threshold =						\
 		DT_INST_PROP_OR(inst, tx_fifo_threshold,		\
 				7 * TX_FIFO_DEPTH(inst) / 8 - 1),	\

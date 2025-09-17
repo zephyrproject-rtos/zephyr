@@ -45,7 +45,7 @@ DEFINE_FLAG(is_connected);
 
 static K_FIFO_DEFINE(rx_queue);
 
-#define CMD_BUF_SIZE MAX(BT_BUF_EVT_RX_SIZE, BT_BUF_CMD_TX_SIZE)
+#define CMD_BUF_SIZE GENERIC_MAX(BT_BUF_EVT_RX_SIZE, BT_BUF_CMD_TX_SIZE)
 NET_BUF_POOL_FIXED_DEFINE(hci_cmd_pool, BT_BUF_CMD_TX_COUNT,
 			  CMD_BUF_SIZE, 8, NULL);
 
@@ -555,7 +555,7 @@ static void gatt_notify_without_last_fragment(void)
 		__ASSERT_NO_MSG(buf);
 
 		/* This is the size of the ACL payload. I.e. not including the HCI header. */
-		size_t frag_len = MIN(att_packet->len, on_air_size);
+		size_t frag_len = GENERIC_MIN(att_packet->len, on_air_size);
 
 		if (i == 0) {
 			/* Only first fragment should have L2CAP PDU header */

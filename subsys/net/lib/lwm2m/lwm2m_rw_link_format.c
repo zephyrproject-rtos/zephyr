@@ -44,7 +44,7 @@ LOG_MODULE_REGISTER(net_lwm2m_link_format, CONFIG_LWM2M_LOG_LEVEL);
 static int put_begin(struct lwm2m_output_context *out,
 		     struct lwm2m_obj_path *path)
 {
-	char init_string[MAX(sizeof(ENABLER_VERSION), sizeof(REG_PREFACE))] = "";
+	char init_string[GENERIC_MAX(sizeof(ENABLER_VERSION), sizeof(REG_PREFACE))] = "";
 	struct link_format_out_formatter_data *fd;
 	int ret;
 

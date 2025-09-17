@@ -363,10 +363,10 @@ ll_cig_parameters_commit_retry:
 			/* Use Max_PDU = MIN(<buffer_size>, Max_SDU) as default.
 			 * May be changed by set_bn_max_pdu.
 			 */
-			cis->lll.tx.max_pdu = MIN(LL_CIS_OCTETS_TX_MAX,
-						  cis->c_max_sdu);
-			cis->lll.rx.max_pdu = MIN(LL_CIS_OCTETS_RX_MAX,
-						  cis->p_max_sdu);
+			cis->lll.tx.max_pdu = GENERIC_MIN(LL_CIS_OCTETS_TX_MAX,
+							  cis->c_max_sdu);
+			cis->lll.rx.max_pdu = GENERIC_MIN(LL_CIS_OCTETS_RX_MAX,
+							  cis->p_max_sdu);
 
 			/* Calculate BN and Max_PDU (framed) for both
 			 * directions

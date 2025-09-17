@@ -333,7 +333,7 @@ static inline void i2c_dw_data_ask(const struct device *dev)
 
 	/* Figure out how many bytes we can request */
 	cnt = MIN(rx_buffer_depth, dw->request_bytes);
-	cnt = MIN(MIN(tx_empty, rx_empty), cnt);
+	cnt = GENERIC_MIN(GENERIC_MIN(tx_empty, rx_empty), cnt);
 
 	while (cnt > 0) {
 		/* Tell controller to get another byte */

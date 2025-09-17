@@ -117,8 +117,8 @@ struct tls_session_cache {
 #if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
 struct tls_dtls_cid {
 	bool enabled;
-	unsigned char cid[MAX(MBEDTLS_SSL_CID_OUT_LEN_MAX,
-			      MBEDTLS_SSL_CID_IN_LEN_MAX)];
+	unsigned char cid[GENERIC_MAX(MBEDTLS_SSL_CID_OUT_LEN_MAX,
+				      MBEDTLS_SSL_CID_IN_LEN_MAX)];
 	size_t cid_len;
 };
 #endif

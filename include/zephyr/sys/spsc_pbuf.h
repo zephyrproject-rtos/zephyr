@@ -51,7 +51,7 @@ extern "C" {
 #endif
 
 #define Z_SPSC_PBUF_DCACHE_LINE \
-	MAX(CONFIG_SPSC_PBUF_REMOTE_DCACHE_LINE, Z_SPSC_PBUF_LOCAL_DCACHE_LINE)
+	GENERIC_MAX(CONFIG_SPSC_PBUF_REMOTE_DCACHE_LINE, Z_SPSC_PBUF_LOCAL_DCACHE_LINE)
 
 /** @brief Maximum packet length. */
 #define SPSC_PBUF_MAX_LEN 0xFF00
@@ -71,7 +71,7 @@ struct spsc_pbuf_common {
 
 /* Padding to fill cache line. */
 #define Z_SPSC_PBUF_PADDING \
-	MAX(0, Z_SPSC_PBUF_DCACHE_LINE - (int)sizeof(struct spsc_pbuf_common))
+	GENERIC_MAX(0, Z_SPSC_PBUF_DCACHE_LINE - (int)sizeof(struct spsc_pbuf_common))
 
 /** @brief Remaining part of a packet buffer when cache is used.
  *

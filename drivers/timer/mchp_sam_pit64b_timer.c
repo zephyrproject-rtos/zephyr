@@ -24,7 +24,7 @@ struct sam_pit64b_cfg {
 #define CYCLES_PER_TICK (sys_clock_hw_cycles_per_sec() / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 
 #define MAX_TICKS ((k_ticks_t)(0x1FFFFF / CYCLES_PER_TICK) - 1)
-#define MIN_DELAY MAX(1024U, ((uint32_t)CYCLES_PER_TICK/16U))
+#define MIN_DELAY GENERIC_MAX(1024U, ((uint32_t)CYCLES_PER_TICK/16U))
 #define MAX_CYCLES (MAX_TICKS * CYCLES_PER_TICK)
 
 typedef uint32_t cycle_t;

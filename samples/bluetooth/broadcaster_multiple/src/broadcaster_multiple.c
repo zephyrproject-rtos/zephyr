@@ -37,16 +37,16 @@
 /* Maximum manufacturer data length, considering ad data format overhead and
  * the included device name in ad data format.
  */
-#define BT_MFG_DATA_LEN_MAX       (MIN((BT_AD_DATA_FORMAT_LEN_MAX - \
-					BT_AD_DATA_FORMAT_TYPE_SIZE), \
-				       (BT_AD_DATA_LEN_MAX - \
-					BT_AD_DATA_FORMAT_LEN_SIZE - \
-					BT_AD_DATA_FORMAT_TYPE_SIZE)))
-#define BT_MFG_DATA_LEN           (MIN(BT_MFG_DATA_LEN_MAX, \
-				       (BT_AD_DATA_LEN_MAX - \
-					BT_AD_DATA_FORMAT_LEN_SIZE - \
-					BT_AD_DATA_FORMAT_TYPE_SIZE - \
-					BT_DEVICE_NAME_AD_DATA_LEN)))
+#define BT_MFG_DATA_LEN_MAX       (GENERIC_MIN((BT_AD_DATA_FORMAT_LEN_MAX - \
+						BT_AD_DATA_FORMAT_TYPE_SIZE), \
+						(BT_AD_DATA_LEN_MAX - \
+						 BT_AD_DATA_FORMAT_LEN_SIZE - \
+						 BT_AD_DATA_FORMAT_TYPE_SIZE)))
+#define BT_MFG_DATA_LEN           (GENERIC_MIN(BT_MFG_DATA_LEN_MAX, \
+					       (BT_AD_DATA_LEN_MAX - \
+						BT_AD_DATA_FORMAT_LEN_SIZE - \
+						BT_AD_DATA_FORMAT_TYPE_SIZE - \
+						BT_DEVICE_NAME_AD_DATA_LEN)))
 /*
  * Datalength is an integer, so BT_MFG_DATA_LEN can not be larger than 255.
  * To ensure that we need to chain PDUs we therefore add manufacturer data

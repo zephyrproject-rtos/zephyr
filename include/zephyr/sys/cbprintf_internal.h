@@ -49,7 +49,7 @@
 #endif
 
 #ifndef VA_STACK_ALIGN
-#define VA_STACK_ALIGN(type)	MAX(VA_STACK_MIN_ALIGN, __alignof__(type))
+#define VA_STACK_ALIGN(type)	GENERIC_MAX(VA_STACK_MIN_ALIGN, __alignof__(type))
 #endif
 
 static inline void z_cbprintf_wcpy(int *dst, int *src, size_t len)
@@ -634,7 +634,7 @@ extern "C" {
 #define Z_CBPRINTF_ALIGNMENT(_arg) z_cbprintf_cxx_alignment(_arg)
 #else
 #define Z_CBPRINTF_ALIGNMENT(_arg) \
-	MAX(_Generic(Z_ARGIFY(_arg), \
+	GENERIC_MAX(_Generic(Z_ARGIFY(_arg), \
 		float : VA_STACK_ALIGN(double), \
 		double : VA_STACK_ALIGN(double), \
 		long double : VA_STACK_ALIGN(long double), \

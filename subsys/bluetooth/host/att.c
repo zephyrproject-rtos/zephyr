@@ -2344,7 +2344,7 @@ static uint8_t att_exec_write_rsp(struct bt_att_chan *chan, uint8_t flags)
 		uint16_t handle;
 
 		NET_BUF_SIMPLE_DEFINE_STATIC(reassembled_data,
-					     MIN(BT_ATT_MAX_ATTRIBUTE_LEN,
+					     GENERIC_MIN(BT_ATT_MAX_ATTRIBUTE_LEN,
 						 CONFIG_BT_ATT_PREPARE_COUNT * BT_ATT_BUF_SIZE));
 
 		buf = net_buf_slist_get(&chan->att->prep_queue);
