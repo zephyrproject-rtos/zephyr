@@ -363,7 +363,7 @@ struct bt_dev {
 	struct {
 		bool valid;
 		struct bt_hci_evt_le_enh_conn_complete evt;
-	} cached_conn_complete[MIN(CONFIG_BT_MAX_CONN,
+	} cached_conn_complete[GENERIC_MIN(CONFIG_BT_MAX_CONN,
 				CONFIG_BT_EXT_ADV_MAX_ADV_SET)];
 #endif
 #endif

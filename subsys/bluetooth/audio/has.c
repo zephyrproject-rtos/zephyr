@@ -46,7 +46,7 @@ LOG_MODULE_REGISTER(bt_has, CONFIG_BT_HAS_LOG_LEVEL);
 /* The service allows operations with paired devices only.
  * The number of clients is set to maximum number of simultaneous connections to paired devices.
  */
-#define MAX_INSTS MIN(CONFIG_BT_MAX_CONN, CONFIG_BT_MAX_PAIRED)
+#define MAX_INSTS GENERIC_MIN(CONFIG_BT_MAX_CONN, CONFIG_BT_MAX_PAIRED)
 
 #define BITS_CHANGED(_new_value, _old_value) ((_new_value) ^ (_old_value))
 #define FEATURE_DEVICE_TYPE_UNCHANGED(_new_value) \

@@ -11,8 +11,8 @@
 #include <zephyr/sys/iterable_sections.h>
 
 #if defined(CONFIG_NET_IPV6) && defined(CONFIG_NET_IPV4)
-#define CONN_MGR_IFACE_MAX		MAX(CONFIG_NET_IF_MAX_IPV6_COUNT, \
-					    CONFIG_NET_IF_MAX_IPV4_COUNT)
+#define CONN_MGR_IFACE_MAX		GENERIC_MAX(CONFIG_NET_IF_MAX_IPV6_COUNT, \
+						    CONFIG_NET_IF_MAX_IPV4_COUNT)
 #elif defined(CONFIG_NET_IPV6)
 #define CONN_MGR_IFACE_MAX		CONFIG_NET_IF_MAX_IPV6_COUNT
 #else

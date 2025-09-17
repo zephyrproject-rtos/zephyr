@@ -23,7 +23,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_WEBSOCKET_LOG_LEVEL);
 static const char lorem_ipsum[] = LOREM_IPSUM;
 
 #define MAX_RECV_BUF_LEN 256
-static uint8_t recv_buf[MAX(sizeof(lorem_ipsum), MAX_RECV_BUF_LEN)];
+static uint8_t recv_buf[GENERIC_MAX(sizeof(lorem_ipsum), MAX_RECV_BUF_LEN)];
 
 /* We need to allocate bigger buffer for the websocket data we receive so that
  * the websocket header fits into it.

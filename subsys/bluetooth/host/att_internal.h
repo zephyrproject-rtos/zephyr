@@ -34,10 +34,10 @@
  * the ATT_MTU down to what it is actually able to send. This will unfortunately
  * also limit how much the client is allowed to send.
  */
-#define BT_LOCAL_ATT_MTU_EATT MIN(BT_L2CAP_SDU_RX_MTU, BT_L2CAP_SDU_TX_MTU)
-#define BT_LOCAL_ATT_MTU_UATT MIN(BT_L2CAP_RX_MTU, BT_L2CAP_TX_MTU)
+#define BT_LOCAL_ATT_MTU_EATT GENERIC_MIN(BT_L2CAP_SDU_RX_MTU, BT_L2CAP_SDU_TX_MTU)
+#define BT_LOCAL_ATT_MTU_UATT GENERIC_MIN(BT_L2CAP_RX_MTU, BT_L2CAP_TX_MTU)
 
-#define BT_ATT_BUF_SIZE MAX(BT_LOCAL_ATT_MTU_UATT, BT_LOCAL_ATT_MTU_EATT)
+#define BT_ATT_BUF_SIZE GENERIC_MAX(BT_LOCAL_ATT_MTU_UATT, BT_LOCAL_ATT_MTU_EATT)
 
 struct bt_att_hdr {
 	uint8_t  code;

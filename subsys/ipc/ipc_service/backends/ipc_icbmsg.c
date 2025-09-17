@@ -1323,7 +1323,7 @@ const static struct ipc_service_backend backend_ops = {
  * Returns required data cache alignment for instance "i".
  */
 #define GET_CACHE_ALIGNMENT(i) \
-	MAX(BLOCK_ALIGNMENT, DT_INST_PROP_OR(i, dcache_alignment, 0))
+	GENERIC_MAX(BLOCK_ALIGNMENT, DT_INST_PROP_OR(i, dcache_alignment, 0))
 
 /**
  * Calculates minimum size required for ICMsg region for specific number of local

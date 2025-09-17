@@ -63,10 +63,10 @@
 
 #if defined(CONFIG_BT_MESH_BLOB_SRV)
 #define BLOB_BLOCK_REPORT_STATUS_MSG_MAXLEN ( \
-					MAX(sizeof(((struct bt_mesh_blob_block *)0)->missing), \
+				GENERIC_MAX(sizeof(((struct bt_mesh_blob_block *)0)->missing), \
 					    CONFIG_BT_MESH_BLOB_SRV_PULL_REQ_COUNT * 3))
 #define BLOB_BLOCK_STATUS_MSG_MAXLEN (5 + \
-				      MAX(sizeof(((struct bt_mesh_blob_block *)0)->missing), \
+			      GENERIC_MAX(sizeof(((struct bt_mesh_blob_block *)0)->missing), \
 					  CONFIG_BT_MESH_BLOB_SRV_PULL_REQ_COUNT * 3))
 #else
 #define BLOB_BLOCK_REPORT_STATUS_MSG_MAXLEN sizeof(((struct bt_mesh_blob_srv *)0)->block.missing)

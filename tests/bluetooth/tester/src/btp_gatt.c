@@ -1881,7 +1881,7 @@ static struct bt_gatt_subscribe_params *find_subscription(uint16_t ccc_handle)
 }
 
 /* TODO there should be better way of determining max supported MTU */
-#define MAX_NOTIF_DATA (MIN(BT_L2CAP_RX_MTU, BT_L2CAP_TX_MTU) - 3)
+#define MAX_NOTIF_DATA (GENERIC_MIN(BT_L2CAP_RX_MTU, BT_L2CAP_TX_MTU) - 3)
 
 static uint8_t ev_buf[sizeof(struct btp_gatt_notification_ev) + MAX_NOTIF_DATA];
 

@@ -1053,10 +1053,11 @@ static DEVICE_API(uart, uart_esp32_api) = {
 				.parity = DT_INST_ENUM_IDX(idx, parity),                           \
 				.stop_bits = DT_INST_ENUM_IDX(idx, stop_bits),                     \
 				.data_bits = DT_INST_ENUM_IDX(idx, data_bits),                     \
-				.flow_ctrl = MAX(COND_CODE_1(DT_INST_PROP(idx, hw_rs485_hd_mode),  \
+				.flow_ctrl = GENERIC_MAX(                                          \
+						COND_CODE_1(DT_INST_PROP(idx, hw_rs485_hd_mode),   \
 							     (UART_CFG_FLOW_CTRL_RS485),           \
 							     (UART_CFG_FLOW_CTRL_NONE)),           \
-						 COND_CODE_1(DT_INST_PROP(idx, hw_flow_control),   \
+						COND_CODE_1(DT_INST_PROP(idx, hw_flow_control),    \
 							     (UART_CFG_FLOW_CTRL_RTS_CTS),         \
 							     (UART_CFG_FLOW_CTRL_NONE)))},         \
 		.hal =                                                                             \

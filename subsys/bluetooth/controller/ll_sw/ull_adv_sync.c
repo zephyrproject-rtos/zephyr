@@ -58,8 +58,9 @@
 #if defined(CONFIG_BT_CTLR_ADV_SYNC_PDU_LINK)
 /* First PDU contains up to PDU_AC_EXT_AD_DATA_LEN_MAX, next ones PDU_AC_EXT_PAYLOAD_SIZE_MAX */
 #define PAYLOAD_BASED_FRAG_COUNT \
-	1U + DIV_ROUND_UP(MAX(0U, CONFIG_BT_CTLR_ADV_DATA_LEN_MAX - PDU_AC_EXT_AD_DATA_LEN_MAX), \
-			 PDU_AC_EXT_PAYLOAD_SIZE_MAX)
+	1U + DIV_ROUND_UP(GENERIC_MAX(0U, CONFIG_BT_CTLR_ADV_DATA_LEN_MAX - \
+				      PDU_AC_EXT_AD_DATA_LEN_MAX), \
+			  PDU_AC_EXT_PAYLOAD_SIZE_MAX)
 #if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
 #define MAX_FRAG_COUNT MAX(PAYLOAD_BASED_FRAG_COUNT, CONFIG_BT_CTLR_DF_PER_ADV_CTE_NUM_MAX)
 #else
@@ -1592,7 +1593,7 @@ static uint8_t ull_adv_sync_append_ad_data(struct lll_adv_sync *lll_sync, struct
 			/* Add aux_ptr to existing PDU */
 			ull_adv_sync_add_aux_ptr(pdu, ad_overflow, &overflow_len);
 
-			pdu_add_len = MAX(0U, MIN(max_ad_len - pdu_ad_len,
+			pdu_add_len = GENERIC_MAX(0U, GENERIC_MIN(max_ad_len - pdu_ad_len,
 					  PDU_AC_EXT_PAYLOAD_SIZE_MAX - pdu->len));
 #endif /* CONFIG_BT_CTLR_ADV_SYNC_PDU_LINK */
 		}

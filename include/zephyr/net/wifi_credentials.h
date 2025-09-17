@@ -46,7 +46,7 @@ extern "C" {
 
 /* Maximum length of the password */
 #define WIFI_CREDENTIALS_MAX_PASSWORD_LEN                                                          \
-	MAX(WIFI_PSK_MAX_LEN, CONFIG_WIFI_CREDENTIALS_SAE_PASSWORD_LENGTH)
+	GENERIC_MAX(WIFI_PSK_MAX_LEN, CONFIG_WIFI_CREDENTIALS_SAE_PASSWORD_LENGTH)
 
 /**
  * @brief Wi-Fi credentials entry header

@@ -23,8 +23,8 @@
 #define NODE_EP0 DT_NODELABEL(eeprom0)
 #define NODE_EP1 DT_NODELABEL(eeprom1)
 
-#define TEST_DATA_SIZE	MIN(CONFIG_I2C_TEST_DATA_MAX_SIZE, \
-			    MIN(DT_PROP(NODE_EP0, size), DT_PROP(NODE_EP1, size)))
+#define TEST_DATA_SIZE	GENERIC_MIN(CONFIG_I2C_TEST_DATA_MAX_SIZE, \
+				    GENERIC_MIN(DT_PROP(NODE_EP0, size), DT_PROP(NODE_EP1, size)))
 
 static uint8_t eeprom_0_data[TEST_DATA_SIZE];
 static uint8_t eeprom_1_data[TEST_DATA_SIZE];

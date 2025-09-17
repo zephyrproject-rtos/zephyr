@@ -317,7 +317,7 @@
 
 #define BFP_FLASH_SIZE(dw2) \
 	((dw2 & BIT(31)) \
-	 ? BIT(MIN(31, (dw2 & BIT_MASK(31)) - 3)) \
+	 ? BIT(GENERIC_MIN(31, (dw2 & BIT_MASK(31)) - 3)) \
 	 : dw2 / 8)
 
 #define FLASH_SIZE(inst) \

@@ -446,7 +446,7 @@ struct dev##_descriptor_##i {						\
 	.bTerminalID = terminal_id,				\
 	.wTerminalType = sys_cpu_to_le16(type),			\
 	.bAssocTerminal = 0,					\
-	.bNrChannels = MAX(1, CH_CNT(dev, i)),			\
+	.bNrChannels = GENERIC_MAX(1, CH_CNT(dev, i)),		\
 	.wChannelConfig = sys_cpu_to_le16(CH_CFG(dev, i)),	\
 	.iChannelNames = 0,					\
 	.iTerminal = 0,						\
@@ -502,7 +502,7 @@ struct dev##_descriptor_##i {						\
 	.bDescriptorType = USB_DESC_CS_INTERFACE,		\
 	.bDescriptorSubtype = USB_AUDIO_FORMAT_TYPE,		\
 	.bFormatType = 0x01,					\
-	.bNrChannels = MAX(1, ch_cnt),				\
+	.bNrChannels = GENERIC_MAX(1, ch_cnt),			\
 	.bSubframeSize = res/8,					\
 	.bBitResolution = res,					\
 	.bSamFreqType = 1,					\

@@ -122,12 +122,12 @@ struct pbuf {
 	.rd_idx_loc = (uint32_t *)(mem_addr),						\
 	.handshake_loc = use_handshake ? (uint32_t *)((uint8_t *)(mem_addr) +		\
 				_PBUF_IDX_SIZE) : NULL,					\
-	.wr_idx_loc = (uint32_t *)((uint8_t *)(mem_addr) + MAX(dcache_align,		\
+	.wr_idx_loc = (uint32_t *)((uint8_t *)(mem_addr) + GENERIC_MAX(dcache_align,	\
 				(use_handshake ? 2 : 1) * _PBUF_IDX_SIZE)),		\
 	.data_loc = (uint8_t *)((uint8_t *)(mem_addr) +					\
-				MAX(dcache_align, (use_handshake ? 2 : 1) *		\
+				GENERIC_MAX(dcache_align, (use_handshake ? 2 : 1) *	\
 						  _PBUF_IDX_SIZE) + _PBUF_IDX_SIZE),	\
-	.len = (uint32_t)((uint32_t)(size) - MAX(dcache_align,				\
+	.len = (uint32_t)((uint32_t)(size) - GENERIC_MAX(dcache_align,			\
 			(use_handshake ? 2 : 1) * _PBUF_IDX_SIZE) - _PBUF_IDX_SIZE),	\
 	.dcache_alignment = (dcache_align),						\
 }
@@ -140,7 +140,7 @@ struct pbuf {
  * @param dcache_align	Data cache alignment.
  */
 #define PBUF_HEADER_OVERHEAD(dcache_align) \
-	(MAX(dcache_align, _PBUF_IDX_SIZE) + _PBUF_IDX_SIZE)
+	(GENERIC_MAX(dcache_align, _PBUF_IDX_SIZE) + _PBUF_IDX_SIZE)
 
 /**
  * @brief Statically define and initialize pbuf.
@@ -157,10 +157,12 @@ struct pbuf {
 			"Cache line size must be non negative.");			\
 	BUILD_ASSERT((size) > 0 && IS_PTR_ALIGNED_BYTES(size, _PBUF_IDX_SIZE),		\
 			"Incorrect size.");						\
-	BUILD_ASSERT(IS_PTR_ALIGNED_BYTES(mem_addr, MAX(dcache_align, _PBUF_IDX_SIZE)),	\
+	BUILD_ASSERT(IS_PTR_ALIGNED_BYTES(mem_addr, GENERIC_MAX(dcache_align,		\
+								_PBUF_IDX_SIZE)),	\
 			"Misaligned memory.");						\
-	BUILD_ASSERT(size >= (MAX(dcache_align, _PBUF_IDX_SIZE) + _PBUF_IDX_SIZE +	\
-			_PBUF_MIN_DATA_LEN), "Insufficient size.");			\
+	BUILD_ASSERT(size >= (GENERIC_MAX(dcache_align, _PBUF_IDX_SIZE) +		\
+			      _PBUF_IDX_SIZE +						\
+			      _PBUF_MIN_DATA_LEN), "Insufficient size.");		\
 	BUILD_ASSERT(!(compatibility) || (dcache_align) >= 8,				\
 		"Data cache alignment must be at least 8 if compatibility is enabled.");\
 	static PBUF_MAYBE_CONST struct pbuf_cfg cfg_##name =				\

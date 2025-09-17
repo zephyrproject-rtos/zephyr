@@ -186,7 +186,7 @@ void bt_hci_cmd_state_set_init(struct net_buf *buf,
  * buffer length since the buffer is also used for the response event i.e
  * command complete or command status.
  */
-#define CMD_BUF_SIZE MAX(BT_BUF_EVT_RX_SIZE, BT_BUF_CMD_TX_SIZE)
+#define CMD_BUF_SIZE GENERIC_MAX(BT_BUF_EVT_RX_SIZE, BT_BUF_CMD_TX_SIZE)
 NET_BUF_POOL_FIXED_DEFINE(hci_cmd_pool, BT_BUF_CMD_TX_COUNT, CMD_BUF_SIZE, 0, NULL);
 
 struct event_handler {

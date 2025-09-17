@@ -593,7 +593,8 @@ static void string_ascii7_to_utf16le(struct usbd_desc_node *const dn,
 	LOG_DBG("wLength %u, bLength %u, tailroom %u",
 		wLength, head.bLength, net_buf_tailroom(buf));
 
-	len = MIN(net_buf_tailroom(buf), MIN(head.bLength,  wLength));
+	len = GENERIC_MIN(net_buf_tailroom(buf),
+			  GENERIC_MIN(head.bLength,  wLength));
 
 	/* Add bLength and bDescriptorType */
 	net_buf_add_mem(buf, &head, MIN(len, sizeof(head)));
@@ -770,7 +771,8 @@ static int sreq_get_desc_bos(struct usbd_context *const uds_ctx,
 	}
 
 	desc_fill_bos_root(uds_ctx, &bos);
-	len = MIN(net_buf_tailroom(buf), MIN(setup->wLength, bos.wTotalLength));
+	len = GENERIC_MIN(net_buf_tailroom(buf),
+			  GENERIC_MIN(setup->wLength, bos.wTotalLength));
 
 	LOG_DBG("wLength %u, bLength %u, wTotalLength %u, tailroom %u",
 		setup->wLength, bos.bLength, bos.wTotalLength, net_buf_tailroom(buf));

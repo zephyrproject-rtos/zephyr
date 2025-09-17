@@ -154,7 +154,7 @@
 #define HID_OUT_EP_MPS(n, alt)							\
 	COND_CODE_1(alt,							\
 	(sys_cpu_to_le16(USB_TPL_TO_MPS(DT_INST_PROP(n, out_report_size)))),	\
-	(sys_cpu_to_le16(MIN(DT_INST_PROP(n, out_report_size), 64U))))
+	(sys_cpu_to_le16(GENERIC_MIN(DT_INST_PROP(n, out_report_size), 64U))))
 
 /*
  * IN endpoint MPS for either default or alternate interface.
@@ -163,7 +163,7 @@
 #define HID_IN_EP_MPS(n, alt)							\
 	COND_CODE_1(alt,							\
 	(sys_cpu_to_le16(USB_TPL_TO_MPS(DT_INST_PROP(n, in_report_size)))),	\
-	(sys_cpu_to_le16(MIN(DT_INST_PROP(n, in_report_size), 64U))))
+	(sys_cpu_to_le16(GENERIC_MIN(DT_INST_PROP(n, in_report_size), 64U))))
 
 #define HID_OUT_EP_DEFINE(n, hs, alt)						\
 	{									\

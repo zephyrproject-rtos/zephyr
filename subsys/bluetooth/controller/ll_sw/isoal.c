@@ -1903,7 +1903,7 @@ uint16_t isoal_tx_unframed_get_next_payload_number(isoal_source_handle_t source_
 			/* Update the payload number if the target event is
 			 * later than the payload number indicates.
 			 */
-			*payload_number = MAX(pp->payload_number,
+			*payload_number = GENERIC_MAX(pp->payload_number,
 				(tx_sdu->target_event * session->burst_number));
 		}
 	}
@@ -2457,8 +2457,8 @@ static uint16_t isoal_tx_framed_find_correct_tx_event(const struct isoal_source 
 		 * released for this event. Segmentation should continue from
 		 * that payload.
 		 */
-		next_payload_number = MAX(pp->payload_number,
-					  (actual_event * session->burst_number));
+		next_payload_number = GENERIC_MAX(pp->payload_number,
+						  (actual_event * session->burst_number));
 
 		ISOAL_LOG_DBGV("[%p] Final Evt=%llu (PL=%llu) Ref.=%lu Next PL=%llu",
 			       source_ctx, actual_event, (actual_event * session->burst_number),

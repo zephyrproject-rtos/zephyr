@@ -225,7 +225,7 @@ static int i2c_nrfx_twim_rtio_deinit(const struct device *dev)
 
 #define USES_MSG_BUF(idx)                                                                          \
 	COND_CODE_0(CONCAT_BUF_SIZE(idx), (COND_CODE_0(FLASH_BUF_MAX_SIZE(idx), (0), (1))), (1))
-#define MSG_BUF_SIZE(idx) MAX(CONCAT_BUF_SIZE(idx), FLASH_BUF_MAX_SIZE(idx))
+#define MSG_BUF_SIZE(idx) GENERIC_MAX(CONCAT_BUF_SIZE(idx), FLASH_BUF_MAX_SIZE(idx))
 
 #define MSG_BUF_HAS_MEMORY_REGIONS(idx) \
 	DT_NODE_HAS_PROP(I2C(idx), memory_regions)

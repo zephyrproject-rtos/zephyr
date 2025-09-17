@@ -43,7 +43,7 @@ extern unsigned int z_clock_hw_cycles_per_sec;
  * masked.  Choosing a fraction of a tick is probably a good enough
  * default, with an absolute minimum of 1k cyc.
  */
-#define MIN_DELAY MAX(1024U, ((uint32_t)CYC_PER_TICK/16U))
+#define MIN_DELAY GENERIC_MAX(1024U, ((uint32_t)CYC_PER_TICK/16U))
 
 static struct k_spinlock lock;
 

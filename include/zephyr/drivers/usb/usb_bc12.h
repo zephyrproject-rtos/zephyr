@@ -58,7 +58,7 @@ extern "C" {
  * @return A valid BC1.2 current limit, in uA, clamped between the BC1.2 minimum
  * and maximum values.
  */
-#define BC12_CURR_UA(val) CLAMP(val, BC12_CHARGER_MIN_CURR_UA, BC12_CHARGER_MAX_CURR_UA)
+#define BC12_CURR_UA(val) GENERIC_CLAMP(val, BC12_CHARGER_MIN_CURR_UA, BC12_CHARGER_MAX_CURR_UA)
 /** @endcond  */
 
 /** @brief BC1.2 device role. */

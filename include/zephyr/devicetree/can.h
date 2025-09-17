@@ -72,10 +72,11 @@ extern "C" {
  * @param min minimum bitrate supported by the CAN controller
  * @return the minimum bitrate supported by the CAN controller/transceiver combination
  */
-#define DT_CAN_TRANSCEIVER_MIN_BITRATE(node_id, min)					\
-	COND_CODE_1(DT_NODE_HAS_PROP(node_id, phys),					\
-		    MAX(DT_PROP_OR(DT_PHANDLE(node_id, phys), min_bitrate, 0), min),	\
-		    MAX(DT_PROP_OR(DT_CHILD(node_id, can_transceiver), min_bitrate, min), min))
+#define DT_CAN_TRANSCEIVER_MIN_BITRATE(node_id, min)						\
+	COND_CODE_1(DT_NODE_HAS_PROP(node_id, phys),						\
+		    GENERIC_MAX(DT_PROP_OR(DT_PHANDLE(node_id, phys), min_bitrate, 0), min),	\
+		    GENERIC_MAX(DT_PROP_OR(DT_CHILD(node_id, can_transceiver),			\
+					   min_bitrate, min), min))
 
 /**
  * @brief Get the maximum transceiver bitrate for a CAN controller
@@ -117,8 +118,9 @@ extern "C" {
  */
 #define DT_CAN_TRANSCEIVER_MAX_BITRATE(node_id, max)					\
 	COND_CODE_1(DT_NODE_HAS_PROP(node_id, phys),					\
-		    MIN(DT_PROP(DT_PHANDLE(node_id, phys), max_bitrate), max),		\
-		    MIN(DT_PROP_OR(DT_CHILD(node_id, can_transceiver), max_bitrate, max), max))
+		    GENERIC_MIN(DT_PROP(DT_PHANDLE(node_id, phys), max_bitrate), max),	\
+		    GENERIC_MIN(DT_PROP_OR(DT_CHILD(node_id, can_transceiver),		\
+					   max_bitrate, max), max))
 
 /**
  * @brief Get the minimum transceiver bitrate for a DT_DRV_COMPAT CAN controller

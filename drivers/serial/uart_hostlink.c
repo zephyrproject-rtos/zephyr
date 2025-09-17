@@ -92,7 +92,8 @@ struct hl_pkt_write_char_get {
 	struct hl_packed_int host_errno;
 } __packed;
 
-#define MAX_PKT_SZ MAX(sizeof(struct hl_pkt_write_char_put), sizeof(struct hl_pkt_write_char_get))
+#define MAX_PKT_SZ GENERIC_MAX(sizeof(struct hl_pkt_write_char_put), \
+			       sizeof(struct hl_pkt_write_char_get))
 #define HL_HEADERS_SZ (sizeof(struct hl_hdr) + sizeof(struct hl_pkt_hdr))
 BUILD_ASSERT(HL_HEADERS_SZ + MAX_PKT_SZ < HL_MAX_DCACHE_LINE);
 

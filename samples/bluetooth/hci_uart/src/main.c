@@ -113,7 +113,7 @@ static void rx_isr(void)
 	static int remaining;
 	static uint8_t state;
 	static uint8_t type;
-	static uint8_t hdr_buf[MAX(sizeof(struct bt_hci_cmd_hdr),
+	static uint8_t hdr_buf[GENERIC_MAX(sizeof(struct bt_hci_cmd_hdr),
 			sizeof(struct bt_hci_acl_hdr))];
 	int read;
 

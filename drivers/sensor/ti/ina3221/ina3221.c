@@ -177,7 +177,7 @@ static int ina3221_sample_fetch(const struct device *dev, enum sensor_channel ch
 		}
 		measurement_time =
 			K_USEC(avg_mode_samples[cfg->avg_mode] *
-			       conv_time_us[MAX(cfg->conv_time_shunt, cfg->conv_time_bus)]);
+			       conv_time_us[GENERIC_MAX(cfg->conv_time_shunt, cfg->conv_time_bus)]);
 	} else {
 		return -ENOTSUP;
 	}

@@ -1603,7 +1603,7 @@ found_rx:
 		 * update reset logic inside rpl_update doesn't overwrite the
 		 * change.
 		 */
-		rpl->seg = MAX(rpl->seg, auth_seqnum);
+		rpl->seg = GENERIC_MAX(rpl->seg, auth_seqnum);
 	}
 
 	seg_rx_reset(rx, false);

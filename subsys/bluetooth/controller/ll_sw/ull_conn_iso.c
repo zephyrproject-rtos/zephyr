@@ -723,8 +723,8 @@ void ull_conn_iso_ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 			cis->lll.lazy_active = 0U;
 #endif /* !CONFIG_BT_CTLR_JIT_SCHEDULING */
 
-			leading_event_count = MAX(leading_event_count,
-						cis->lll.event_count_prepare);
+			leading_event_count = GENERIC_MAX(leading_event_count,
+							  cis->lll.event_count_prepare);
 
 			ull_iso_lll_event_prepare(cis->lll.handle, cis->lll.event_count_prepare);
 		}
@@ -1054,7 +1054,8 @@ void ull_conn_iso_start(struct ll_conn *conn, uint16_t cis_handle,
 		if (IS_ENABLED(CONFIG_BT_CTLR_PERIPHERAL_ISO_RESERVE_MAX)) {
 			slot_us = cis->lll.sub_interval * cis->lll.nse;
 		} else {
-			slot_us = cis->lll.sub_interval * MAX(cis->lll.tx.bn, cis->lll.rx.bn);
+			slot_us = cis->lll.sub_interval * GENERIC_MAX(cis->lll.tx.bn,
+								      cis->lll.rx.bn);
 		}
 
 		if (IS_ENABLED(CONFIG_BT_CTLR_EVENT_OVERHEAD_RESERVE_MAX)) {

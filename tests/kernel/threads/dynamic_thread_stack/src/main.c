@@ -21,7 +21,7 @@
 
 K_HEAP_DEFINE(stack_heap, POOL_SIZE);
 
-ZTEST_DMEM bool tflag[MAX(CONFIG_DYNAMIC_THREAD_POOL_SIZE, MAX_HEAP_STACKS)];
+ZTEST_DMEM bool tflag[GENERIC_MAX(CONFIG_DYNAMIC_THREAD_POOL_SIZE, MAX_HEAP_STACKS)];
 
 static void func(void *arg1, void *arg2, void *arg3)
 {

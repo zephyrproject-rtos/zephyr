@@ -123,14 +123,14 @@ extern "C" {
 #endif
 
 /** Maximum possible payload size of an outgoing access message (in octets). */
-#define BT_MESH_TX_SDU_MAX        MAX((BT_MESH_TX_SEG_MAX *		\
-				       BT_MESH_APP_SEG_SDU_MAX),	\
-				      BT_MESH_APP_UNSEG_SDU_MAX)
+#define BT_MESH_TX_SDU_MAX        GENERIC_MAX((BT_MESH_TX_SEG_MAX *		\
+					       BT_MESH_APP_SEG_SDU_MAX),	\
+					       BT_MESH_APP_UNSEG_SDU_MAX)
 
 /** Maximum possible payload size of an incoming access message (in octets). */
-#define BT_MESH_RX_SDU_MAX        MAX((BT_MESH_RX_SEG_MAX *		\
-				       BT_MESH_APP_SEG_SDU_MAX),	\
-				      BT_MESH_APP_UNSEG_SDU_MAX)
+#define BT_MESH_RX_SDU_MAX        GENERIC_MAX((BT_MESH_RX_SEG_MAX *		\
+					       BT_MESH_APP_SEG_SDU_MAX),	\
+					       BT_MESH_APP_UNSEG_SDU_MAX)
 
 /** Helper to define a mesh element within an array.
  *

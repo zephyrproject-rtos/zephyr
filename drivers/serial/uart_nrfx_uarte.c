@@ -2818,7 +2818,7 @@ static int uarte_instance_deinit(const struct device *dev)
 #define UARTE_INT_DRIVEN(idx)						       \
 	IF_ENABLED(CONFIG_UART_##idx##_INTERRUPT_DRIVEN,		       \
 		(static uint8_t uarte##idx##_tx_buffer			       \
-			[MIN(CONFIG_UART_##idx##_NRF_TX_BUFFER_SIZE,	       \
+			[GENERIC_MIN(CONFIG_UART_##idx##_NRF_TX_BUFFER_SIZE,   \
 			     BIT_MASK(UARTE##idx##_EASYDMA_MAXCNT_SIZE))]      \
 			DMM_MEMORY_SECTION(UARTE(idx));			       \
 		 static struct uarte_nrfx_int_driven			       \

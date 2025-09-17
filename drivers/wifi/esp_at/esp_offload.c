@@ -31,10 +31,10 @@ static int esp_listen(struct net_context *context, int backlog)
 static int _sock_connect(struct esp_data *dev, struct esp_socket *sock)
 {
 	/* Calculate the largest possible AT command length based on both TCP and UDP variants. */
-	char connect_msg[MAX(sizeof("AT+CIPSTART=000,\"TCP\",\"\",65535,7200") +
-				NET_IPV4_ADDR_LEN,
-			     sizeof("AT+CIPSTART=000,\"UDP\",\"\",65535,65535,0,\"\"") +
-				2 * NET_IPV4_ADDR_LEN)];
+	char connect_msg[GENERIC_MAX(sizeof("AT+CIPSTART=000,\"TCP\",\"\",65535,7200") +
+				     NET_IPV4_ADDR_LEN,
+				     sizeof("AT+CIPSTART=000,\"UDP\",\"\",65535,65535,0,\"\"") +
+				     2 * NET_IPV4_ADDR_LEN)];
 	char dst_addr_str[NET_IPV4_ADDR_LEN];
 	char src_addr_str[NET_IPV4_ADDR_LEN];
 	struct sockaddr src;

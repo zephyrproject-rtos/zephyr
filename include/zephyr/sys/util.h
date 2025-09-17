@@ -376,30 +376,48 @@ extern "C" {
 /**
  * @brief Obtain the maximum of two values.
  *
- * @note Arguments are evaluated twice. Use Z_MAX for a GCC-only, single
- * evaluation version
+ * Macro ensures that expressions are evaluated only once.
+ *
+ * @note Macro has limited usage compared to the standard macro as it cannot be
+ *	 used:
+ *	 - to generate constant integer, e.g. __aligned(MAX(4,5))
+ *	 - static variable, e.g. array like static uint8_t array[MAX(...)];
  *
  * @param a First value.
  * @param b Second value.
  *
  * @returns Maximum value of @p a and @p b.
  */
-#define MAX(a, b) (((a) > (b)) ? (a) : (b))
+#define MAX(a, b) ({ \
+		/* random suffix to avoid naming conflict */ \
+		__typeof__(a) _value_a_ = (a); \
+		__typeof__(b) _value_b_ = (b); \
+		(_value_a_ > _value_b_) ? _value_a_ : _value_b_; \
+	})
 #endif
 
 #ifndef MIN
 /**
  * @brief Obtain the minimum of two values.
  *
- * @note Arguments are evaluated twice. Use Z_MIN for a GCC-only, single
- * evaluation version
+ * Macro ensures that expressions are evaluated only once.
+ *
+ * @note Macro has limited usage compared to the standard macro as it cannot be
+ *	 used:
+ *	 - to generate constant integer, e.g. __aligned(MIN(4,5))
+ *	 - static variable, e.g. array like static uint8_t array[MIN(...)];
  *
  * @param a First value.
  * @param b Second value.
  *
  * @returns Minimum value of @p a and @p b.
  */
-#define MIN(a, b) (((a) < (b)) ? (a) : (b))
+#define MIN(a, b) ({ \
+		/* random suffix to avoid naming conflict */ \
+		__typeof__(a) _value_a_ = (a); \
+		__typeof__(b) _value_b_ = (b); \
+		(_value_a_ < _value_b_) ? _value_a_ : _value_b_; \
+	})
 #endif
 
 #ifndef MAX_FROM_LIST
@@ -527,8 +545,12 @@ extern "C" {
 /**
  * @brief Clamp a value to a given range.
  *
- * @note Arguments are evaluated multiple times. Use Z_CLAMP for a GCC-only,
- * single evaluation version.
+ * Macro ensures that expressions are evaluated only once.
+ *
+ * @note Macro has limited usage compared to the standard macro as it cannot be
+ *	 used:
+ *	 - to generate constant integer, e.g. __aligned(CLAMP(4,5,6))
+ *	 - static variable, e.g. array like static uint8_t array[CLAMP(...)];
  *
  * @param val Value to be clamped.
  * @param low Lowest allowed value (inclusive).
@@ -536,8 +558,53 @@ extern "C" {
  *
  * @returns Clamped value.
  */
-#define CLAMP(val, low, high) (((val) <= (low)) ? (low) : MIN(val, high))
+#define CLAMP(val, low, high) ({                                             \
+		/* random suffix to avoid naming conflict */                   \
+		__typeof__(val) _value_val_ = (val);                           \
+		__typeof__(low) _value_low_ = (low);                           \
+		__typeof__(high) _value_high_ = (high);                        \
+		(_value_val_ < _value_low_)  ? _value_low_ :                   \
+		(_value_val_ > _value_high_) ? _value_high_ :                  \
+					       _value_val_;                    \
+	})
 #endif
+
+/**
+ * @brief Obtain the maximum of two values.
+ *
+ * Generic implementation for cases not covered by @ref MAX.
+ *
+ * @param a First value.
+ * @param b Second value.
+ *
+ * @returns Maximum value of @p a and @p b.
+ */
+#define GENERIC_MAX(a, b) (((a) > (b)) ? (a) : (b))
+
+/**
+ * @brief Obtain the minimum of two values.
+ *
+ * Generic implementation for cases not covered by @ref MIN.
+ *
+ * @param a First value.
+ * @param b Second value.
+ *
+ * @returns Minimum value of @p a and @p b.
+ */
+#define GENERIC_MIN(a, b) (((a) < (b)) ? (a) : (b))
+
+/**
+ * @brief Clamp a value to a given range.
+ *
+ * Generic implementation for cases not covered by @ref CLAMP.
+ *
+ * @param val Value to be clamped.
+ * @param low Lowest allowed value (inclusive).
+ * @param high Highest allowed value (inclusive).
+ *
+ * @returns Clamped value.
+ */
+#define GENERIC_CLAMP(val, low, high) (((val) <= (low)) ? (low) : GENERIC_MIN(val, high))
 
 /**
  * @brief Checks if a value is within range.

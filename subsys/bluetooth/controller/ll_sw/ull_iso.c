@@ -125,8 +125,8 @@ BUILD_ASSERT(ISO_RX_HEADER_SIZE == offsetof(struct pdu_cis, payload));
 
 /* ISO LL conformance tests require a PDU size of maximum 251 bytes + header */
 #define ISO_RX_BUFFER_SIZE (ISO_RX_HEADER_SIZE + \
-			    MAX(MAX(LL_BIS_OCTETS_RX_MAX, LL_CIS_OCTETS_RX_MAX), \
-				LL_VND_OCTETS_RX_MIN))
+			    GENERIC_MAX(GENERIC_MAX(LL_BIS_OCTETS_RX_MAX, LL_CIS_OCTETS_RX_MAX), \
+					LL_VND_OCTETS_RX_MIN))
 
 /* Declare the ISO rx node RXFIFO. This is a composite pool-backed MFIFO for
  * rx_nodes. The declaration constructs the following data structures:
@@ -155,8 +155,8 @@ void ll_iso_tx_mem_release(void *node_tx);
 
 #define NODE_TX_BUFFER_SIZE MROUND(offsetof(struct node_tx_iso, pdu) + \
 				   offsetof(struct pdu_iso, payload) + \
-				   MAX(LL_BIS_OCTETS_TX_MAX, \
-				       LL_CIS_OCTETS_TX_MAX))
+				   GENERIC_MAX(LL_BIS_OCTETS_TX_MAX, \
+					       LL_CIS_OCTETS_TX_MAX))
 
 #define ISO_TEST_TX_BUFFER_SIZE 32U
 

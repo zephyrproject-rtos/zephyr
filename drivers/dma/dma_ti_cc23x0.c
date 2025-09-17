@@ -177,7 +177,7 @@ static int dma_cc23x0_config(const struct device *dev, uint32_t channel,
 		return -EINVAL;
 	}
 
-	data_size = MIN(config->source_data_size, config->dest_data_size);
+	data_size = GENERIC_MIN(config->source_data_size, config->dest_data_size);
 
 	switch (data_size) {
 	case 1:

@@ -455,14 +455,14 @@ struct mcp251xfd_tefobj {
 } __packed;
 
 #define MCP251XFD_MAX_READ_FIFO_BUF_SIZE                                                           \
-	MAX((MCP251XFD_RX_FIFO_ITEM_SIZE * MCP251XFD_RX_FIFO_ITEMS),                               \
-	    (MCP251XFD_TEF_FIFO_ITEM_SIZE * MCP251XFD_TEF_FIFO_ITEMS))
+	GENERIC_MAX((MCP251XFD_RX_FIFO_ITEM_SIZE * MCP251XFD_RX_FIFO_ITEMS),                       \
+		    (MCP251XFD_TEF_FIFO_ITEM_SIZE * MCP251XFD_TEF_FIFO_ITEMS))
 
 #define MCP251XFD_MAX_READ_CRC_BUF_SIZE                                                            \
 	(MCP251XFD_SPI_CRC_LEN + 2 * MCP251XFD_REG_SIZE)
 
 #define MCP251XFD_SPI_BUF_SIZE                                                                     \
-	MAX(MCP251XFD_MAX_READ_FIFO_BUF_SIZE, MCP251XFD_MAX_READ_CRC_BUF_SIZE)
+	GENERIC_MAX(MCP251XFD_MAX_READ_FIFO_BUF_SIZE, MCP251XFD_MAX_READ_CRC_BUF_SIZE)
 #define MCP251XFD_SPI_HEADER_LEN (MCP251XFD_SPI_CMD_LEN + MCP251XFD_SPI_LEN_FIELD_LEN)
 
 struct mcp251xfd_spi_data {

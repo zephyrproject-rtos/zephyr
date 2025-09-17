@@ -87,7 +87,7 @@ struct sd_card {
 	 * which case, use CONFIG_SDHC_BUFFER_ALIGNMENT.
 	 */
 	uint8_t card_buffer[CONFIG_SD_BUFFER_SIZE]
-		__aligned(MAX(4, CONFIG_SDHC_BUFFER_ALIGNMENT)); /* Card internal buffer */
+		__aligned(GENERIC_MAX(4, CONFIG_SDHC_BUFFER_ALIGNMENT)); /* Card internal buffer */
 };
 
 /**

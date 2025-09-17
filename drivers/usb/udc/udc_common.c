@@ -285,10 +285,10 @@ static void ep_update_mps(const struct device *dev,
 	 */
 	switch (ep_attrib_get_transfer(attributes)) {
 	case USB_EP_TYPE_BULK:
-		*mps = MIN(cfg->caps.mps, spec_bulk_mps);
+		*mps = GENERIC_MIN(cfg->caps.mps, spec_bulk_mps);
 		break;
 	case USB_EP_TYPE_INTERRUPT:
-		*mps = MIN(cfg->caps.mps, spec_int_mps);
+		*mps = GENERIC_MIN(cfg->caps.mps, spec_int_mps);
 		break;
 	case USB_EP_TYPE_CONTROL:
 		__fallthrough;

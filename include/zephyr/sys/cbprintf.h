@@ -139,7 +139,7 @@ extern "C" {
 #else
 #define CBPRINTF_PACKAGE_ALIGNMENT \
 	Z_POW2_CEIL(COND_CODE_1(CONFIG_CBPRINTF_PACKAGE_LONGDOUBLE, \
-		(sizeof(long double)), (MAX(sizeof(double), sizeof(long long)))))
+		(sizeof(long double)), (GENERIC_MAX(sizeof(double), sizeof(long long)))))
 #endif
 
 BUILD_ASSERT(Z_IS_POW2(CBPRINTF_PACKAGE_ALIGNMENT));

@@ -216,7 +216,7 @@ void pe_snk_evaluate_capability_entry(void *obj)
 	pe->hard_reset_counter = 0;
 
 	/* Set to highest revision supported by both ports */
-	prl_set_rev(dev, PD_PACKET_SOP, MIN(PD_REV30, header.specification_revision));
+	prl_set_rev(dev, PD_PACKET_SOP, GENERIC_MIN(PD_REV30, header.specification_revision));
 
 	/* Send source caps to Device Policy Manager for saving */
 	policy_set_src_cap(dev, pdos, num_pdo_objs);

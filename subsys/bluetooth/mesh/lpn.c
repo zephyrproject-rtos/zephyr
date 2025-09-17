@@ -69,8 +69,8 @@ LOG_MODULE_REGISTER(bt_mesh_lpn);
 #define POLL_TIMEOUT              (CONFIG_BT_MESH_LPN_POLL_TIMEOUT * 100)
 
 #define REQ_ATTEMPTS_MAX          6
-#define REQ_ATTEMPTS(lpn)         MIN(REQ_ATTEMPTS_MAX, \
-			  POLL_TIMEOUT / REQ_RETRY_DURATION(lpn))
+#define REQ_ATTEMPTS(lpn)         GENERIC_MIN(REQ_ATTEMPTS_MAX, \
+					      POLL_TIMEOUT / REQ_RETRY_DURATION(lpn))
 
 #define POLL_TIMEOUT_MAX(lpn)     (POLL_TIMEOUT - \
 			  (REQ_ATTEMPTS(lpn) * REQ_RETRY_DURATION(lpn)))

@@ -249,7 +249,8 @@ static DEVICE_API(i2c, i2c_nrfx_twim_driver_api) = {
 	COND_CODE_0(CONCAT_BUF_SIZE(idx),				       \
 		(COND_CODE_0(FLASH_BUF_MAX_SIZE(idx), (0), (1))),	       \
 		(1))
-#define MSG_BUF_SIZE(idx)  MAX(CONCAT_BUF_SIZE(idx), FLASH_BUF_MAX_SIZE(idx))
+#define MSG_BUF_SIZE(idx)  GENERIC_MAX(CONCAT_BUF_SIZE(idx),                   \
+				       FLASH_BUF_MAX_SIZE(idx))
 
 #define I2C_NRFX_TWIM_DEVICE(idx)					       \
 	NRF_DT_CHECK_NODE_HAS_PINCTRL_SLEEP(I2C(idx));			       \

@@ -57,7 +57,7 @@ struct sd_data {
 	/**< Maximum input clock supported by HC */
 	uint32_t maxclock;
 	/**< ADMA descriptor table */
-	adma2_descriptor adma2_descrtbl[MAX(1, CONFIG_HOST_ADMA2_DESC_SIZE)];
+	adma2_descriptor adma2_descrtbl[GENERIC_MAX(1, CONFIG_HOST_ADMA2_DESC_SIZE)];
 };
 
 /**

@@ -582,7 +582,7 @@ static void sam0_handle_out_isr(const struct device *dev, const uint8_t ep)
 	LOG_DBG("ISR ep 0x%02x byte_count %u room %u mps %u",
 		ep, bd->bank0.byte_count, net_buf_tailroom(buf), udc_mps_ep_size(ep_cfg));
 
-	size = MIN(bd->bank0.byte_count, net_buf_tailroom(buf));
+	size = GENERIC_MIN(bd->bank0.byte_count, net_buf_tailroom(buf));
 	if (ep == USB_CONTROL_EP_OUT) {
 		net_buf_add_mem(buf, priv->ctrl_out_buf, size);
 	} else {

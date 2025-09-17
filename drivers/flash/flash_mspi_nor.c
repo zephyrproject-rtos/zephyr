@@ -1238,7 +1238,8 @@ static DEVICE_API(flash, drv_api) = {
 #define FLASH_INITIAL_CONFIG(inst)					\
 {									\
 	.ce_num = DT_INST_PROP_OR(inst, mspi_hardware_ce_num, 0),	\
-	.freq = MIN(DT_INST_PROP(inst, mspi_max_frequency), MHZ(50)),	\
+	.freq = GENERIC_MIN(DT_INST_PROP(inst, mspi_max_frequency),	\
+			    MHZ(50)),					\
 	.io_mode = MSPI_IO_MODE_SINGLE,					\
 	.data_rate = MSPI_DATA_RATE_SINGLE,				\
 	.cpp = MSPI_CPP_MODE_0,						\
