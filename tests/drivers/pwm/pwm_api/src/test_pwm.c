@@ -29,41 +29,10 @@
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 
-#if DT_NODE_HAS_STATUS_OKAY(DT_ALIAS(pwm_0))
-#define PWM_DEV_NODE DT_ALIAS(pwm_0)
-#elif DT_NODE_HAS_STATUS_OKAY(DT_ALIAS(pwm_1))
-#define PWM_DEV_NODE DT_ALIAS(pwm_1)
-#elif DT_NODE_HAS_STATUS_OKAY(DT_ALIAS(pwm_2))
-#define PWM_DEV_NODE DT_ALIAS(pwm_2)
-#elif DT_NODE_HAS_STATUS_OKAY(DT_ALIAS(pwm_3))
-#define PWM_DEV_NODE DT_ALIAS(pwm_3)
-
-#elif DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_pwm)
-#define PWM_DEV_NODE DT_INST(0, nordic_nrf_pwm)
-
-#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_pwm)
-#define PWM_DEV_NODE DT_INST(0, st_stm32_pwm)
-
-#elif DT_HAS_COMPAT_STATUS_OKAY(xlnx_xps_timer_1_00_a_pwm)
-#define PWM_DEV_NODE DT_INST(0, xlnx_xps_timer_1_00_a_pwm)
-
-#elif DT_HAS_COMPAT_STATUS_OKAY(nxp_ftm_pwm)
-#define PWM_DEV_NODE DT_INST(0, nxp_ftm_pwm)
-
-#elif DT_HAS_COMPAT_STATUS_OKAY(intel_blinky_pwm)
-#define PWM_DEV_NODE DT_INST(0, intel_blinky_pwm)
-
-#elif DT_HAS_COMPAT_STATUS_OKAY(renesas_ra_pwm)
-#define PWM_DEV_NODE DT_INST(0, renesas_ra_pwm)
-
-#elif DT_HAS_COMPAT_STATUS_OKAY(renesas_rz_gpt_pwm)
-#define PWM_DEV_NODE DT_INST(0, renesas_rz_gpt_pwm)
-
-#elif DT_HAS_COMPAT_STATUS_OKAY(renesas_rz_mtu_pwm)
-#define PWM_DEV_NODE DT_INST(0, renesas_rz_mtu_pwm)
-
+#if DT_NODE_HAS_STATUS_OKAY(DT_ALIAS(pwm_test))
+#define PWM_DEV_NODE DT_ALIAS(pwm_test)
 #else
-#error "Define a PWM device"
+#error "Test requires a pwm-test alias in DTS"
 #endif
 
 #if defined(CONFIG_BOARD_COLIBRI_IMX7D_MCIMX7D_M4) || defined(CONFIG_SOC_MK64F12) ||               \
