@@ -72,6 +72,8 @@ config COVERAGE_GCOV
 
 endchoice
 
+if COVERAGE_GCOV
+
 config COVERAGE_GCOV_HEAP_SIZE
 	int "Size of heap allocated for gcov coverage data dump"
 	depends on COVERAGE_GCOV
@@ -82,11 +84,18 @@ config COVERAGE_GCOV_HEAP_SIZE
 	  data to be dumped over serial. If the value is 0, no buffer will be used,
 	  data will be dumped directly over serial.
 
+choice COVERAGE_DUMP_METHOD
+	prompt "Method to dump coverage data"
+	default COVERAGE_DUMP
+
 config COVERAGE_DUMP
-	bool "Dump coverage data on exit"
-	depends on COVERAGE_GCOV
+	bool "Dump coverage data to console on exit"
 	help
 	  Dump collected coverage information to console on exit.
+
+endchoice
+
+endif # COVERAGE_GCOV
 
 config FORCE_COVERAGE
 	bool "Force coverage"
