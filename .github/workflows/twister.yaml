@@ -69,6 +69,7 @@ jobs:
         with:
           app-path: zephyr
           toolchains: all
+          west-version: 1.5.0
 
       - name: Environment Setup
         working-directory: zephyr
