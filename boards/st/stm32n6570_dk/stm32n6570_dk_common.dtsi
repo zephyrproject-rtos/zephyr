@@ -21,6 +21,7 @@
 		zephyr,canbus = &fdcan1;
 		zephyr,display = &ltdc;
 		zephyr,touch = &gt911;
+		zephyr,videoenc = &venc;
 		spi-flash0 = &mx66uw1g45g;
 		zephyr,flash-controller = &mx66uw1g45g;
 		zephyr,flash = &mx66uw1g45g;
@@ -489,4 +490,8 @@ csi_interface: &dcmipp {
 	port {
 		csi_ep_in: endpoint {};
 	};
+};
+
+&venc {
+	status = "okay";
 };
