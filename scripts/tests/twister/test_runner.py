@@ -2853,3 +2853,134 @@ def test_twisterrunner_get_cmake_filter_stages(filter, expected_result):
     result = TwisterRunner.get_cmake_filter_stages(filter, ['not', 'and'])
 
     assert sorted(result) == sorted(expected_result)
+
+
+@pytest.mark.parametrize(
+    'required_apps, processing_ready_keys, expected_result',
+    [
+        (['app1', 'app2'], ['app1', 'app2'], True),  # all apps ready
+        (['app1', 'app2', 'app3'], ['app1', 'app2'], False),  # some apps missing
+        ([], [], True),  # no required apps
+        (['app1'], [], False),  # single app missing
+    ],
+    ids=['all_ready', 'some_missing', 'no_apps', 'single_missing']
+)
+def test_twisterrunner_are_required_apps_ready(required_apps, processing_ready_keys, expected_result):
+    """Test _are_required_apps_ready method with various scenarios"""
+    instances = {}
+    suites = []
+    env_mock = mock.Mock()
+    tr = TwisterRunner(instances, suites, env=env_mock)
+
+    instance_mock = mock.Mock()
+    instance_mock.required_applications = required_apps
+
+    processing_ready = {key: mock.Mock() for key in processing_ready_keys}
+
+    result = tr._are_required_apps_ready(instance_mock, processing_ready)
+
+    assert result is expected_result
+
+
+@pytest.mark.parametrize(
+    'app_statuses, expected_result',
+    [
+        ([TwisterStatus.PASS, TwisterStatus.PASS], True),  # all passed
+        ([TwisterStatus.NOTRUN, TwisterStatus.NOTRUN], True),  # all notrun
+        ([TwisterStatus.PASS, TwisterStatus.NOTRUN], True),  # mixed pass/notrun
+        ([TwisterStatus.PASS, TwisterStatus.FAIL], False),  # one failed
+        ([TwisterStatus.ERROR], False),  # single error
+    ],
+    ids=['all_pass', 'all_notrun', 'mixed_pass_notrun', 'one_fail', 'single_error']
+)
+def test_twisterrunner_are_all_required_apps_success(app_statuses, expected_result):
+    """Test _are_all_required_apps_success method with various app statuses"""
+    instances = {}
+    suites = []
+    env_mock = mock.Mock()
+    tr = TwisterRunner(instances, suites, env=env_mock)
+
+    instance_mock = mock.Mock()
+    required_apps = [f'app{i + 1}' for i in range(len(app_statuses))]
+    instance_mock.required_applications = required_apps
+
+    processing_ready = {}
+    for i, status in enumerate(app_statuses):
+        app_instance = mock.Mock()
+        app_instance.status = status
+        app_instance.reason = f"Reason for app{i + 1}"
+        processing_ready[f'app{i + 1}'] = app_instance
+
+    result = tr._are_all_required_apps_success(instance_mock, processing_ready)
+    assert result is expected_result
+
+
+@pytest.mark.parametrize(
+    'required_apps, ready_apps, expected_result, expected_actions',
+    [
+        ([], {}, True,
+         {'requeue': False, 'skip': False, 'build_dirs': 0}),
+        (['app1'], {}, False,
+         {'requeue': True, 'skip': False, 'build_dirs': 0}),
+        (['app1', 'app2'], {'app1': TwisterStatus.PASS}, False,
+         {'requeue': True, 'skip': False, 'build_dirs': 0}),
+        (['app1'], {'app1': TwisterStatus.FAIL}, False,
+         {'requeue': False, 'skip': True, 'build_dirs': 0}),
+        (['app1', 'app2'], {'app1': TwisterStatus.PASS, 'app2': TwisterStatus.NOTRUN}, True,
+         {'requeue': False, 'skip': False, 'build_dirs': 2}),
+    ],
+    ids=['no_apps', 'not_ready_single_job', 'not_ready_multi_job',
+         'apps_failed', 'apps_success']
+)
+def test_twisterrunner_are_required_apps_processed(required_apps, ready_apps,
+                                                   expected_result, expected_actions):
+    """Test are_required_apps_processed method with various scenarios"""
+    # Setup TwisterRunner instances dict
+    tr_instances = {}
+    for app_name in required_apps:
+        tr_instances[app_name] = mock.Mock(build_dir=f'/path/to/{app_name}')
+
+    env_mock = mock.Mock()
+    tr = TwisterRunner(tr_instances, [], env=env_mock)
+    tr.jobs = 1
+
+    instance_mock = mock.Mock()
+    instance_mock.required_applications = required_apps[:]
+    instance_mock.required_build_dirs = []
+
+    # Setup testcases for skip scenarios
+    if expected_actions['skip']:
+        testcase_mock = mock.Mock()
+        instance_mock.testcases = [testcase_mock]
+
+    # Setup processing_ready with app instances
+    processing_ready = {}
+    for app_name, status in ready_apps.items():
+        app_instance = mock.Mock()
+        app_instance.status = status
+        app_instance.reason = f"Reason for {app_name}"
+        app_instance.build_dir = f'/path/to/{app_name}'
+        processing_ready[app_name] = app_instance
+
+    processing_queue = deque()
+    task = {'test': instance_mock}
+
+    result = tr.are_required_apps_processed(instance_mock, processing_queue, processing_ready, task)
+
+    assert result is expected_result
+
+    if expected_actions['requeue']:
+        assert len(processing_queue) == 1
+        assert processing_queue[0] == task
+
+    if expected_actions['skip']:
+        assert instance_mock.status == TwisterStatus.SKIP
+        assert instance_mock.reason == "Required application failed"
+        assert instance_mock.required_applications == []
+        assert instance_mock.testcases[0].status == TwisterStatus.SKIP
+        # Check for report task in queue
+        assert any(item.get('op') == 'report' for item in processing_queue)
+
+    assert len(instance_mock.required_build_dirs) == expected_actions['build_dirs']
+    if expected_actions['build_dirs'] > 0:
+        assert instance_mock.required_applications == []
