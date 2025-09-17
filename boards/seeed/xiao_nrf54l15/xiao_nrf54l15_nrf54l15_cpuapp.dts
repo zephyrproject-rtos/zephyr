@@ -66,6 +66,10 @@
 	status = "okay";
 };
 
+&xo {
+	status = "okay";
+};
+
 &uart20 {
 	status = "okay";
 };

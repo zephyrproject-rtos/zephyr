@@ -10,6 +10,7 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/nrf_clock_control.h>
 #include "nrf_clock_calibration.h"
+#include "clock_control_nrf_common.h"
 #include <nrfx_clock.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/shell/shell.h>
@@ -317,7 +318,7 @@ static void hfclk_start(void)
 		hf_start_tstamp = k_uptime_get();
 	}
 
-	nrfx_clock_hfclk_start();
+	nrfx_clock_start(NRF_CLOCK_DOMAIN_HFCLK);
 }
 
 static void hfclk_stop(void)
@@ -326,7 +327,7 @@ static void hfclk_stop(void)
 		hf_stop_tstamp = k_uptime_get();
 	}
 
-	nrfx_clock_hfclk_stop();
+	nrfx_clock_stop(NRF_CLOCK_DOMAIN_HFCLK);
 }
 
 #if NRF_CLOCK_HAS_HFCLK24M
@@ -420,47 +421,6 @@ static void generic_hfclk_stop(void)
 
 	irq_unlock(key);
 }
-
-
-void z_nrf_clock_bt_ctlr_hf_request(void)
-{
-	if (atomic_or(&hfclk_users, HF_USER_BT) & HF_USER_GENERIC) {
-		/* generic request already activated clock. */
-		return;
-	}
-
-	hfclk_start();
-}
-
-void z_nrf_clock_bt_ctlr_hf_release(void)
-{
-	/* It's not enough to use only atomic_and() here for synchronization,
-	 * see the explanation in generic_hfclk_stop().
-	 */
-	unsigned int key = irq_lock();
-
-	hfclk_users &= ~HF_USER_BT;
-	/* Skip stopping if generic is still requesting the clock. */
-	if (!(hfclk_users & HF_USER_GENERIC)) {
-		struct nrf_clock_control_sub_data *sub_data =
-			get_sub_data(CLOCK_DEVICE, CLOCK_CONTROL_NRF_TYPE_HFCLK);
-
-		/* State needs to be set to OFF as BT API does not call stop API which
-		 * normally setting this state.
-		 */
-		sub_data->flags = CLOCK_CONTROL_STATUS_OFF;
-		hfclk_stop();
-	}
-
-	irq_unlock(key);
-}
-
-#if DT_NODE_EXISTS(DT_NODELABEL(hfxo))
-uint32_t z_nrf_clock_bt_ctlr_hf_get_startup_time_us(void)
-{
-	return DT_PROP(DT_NODELABEL(hfxo), startup_time_us);
-}
-#endif
 
 static int stop(const struct device *dev, clock_control_subsys_t subsys,
 		uint32_t ctx)
@@ -811,9 +771,8 @@ static int clk_init(const struct device *dev)
 #if NRF_LFRC_HAS_CALIBRATION
 	IRQ_CONNECT(LFRC_IRQn, DT_INST_IRQ(0, priority), nrfx_isr, nrfx_power_clock_irq_handler, 0);
 #endif
-
-	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
-		    nrfx_isr, nrfx_power_clock_irq_handler, 0);
+    
+    clock_control_nrf_common_connect_irq();
 
 	nrfx_err = nrfx_clock_init(clock_event_handler);
 	if (nrfx_err != NRFX_SUCCESS) {
