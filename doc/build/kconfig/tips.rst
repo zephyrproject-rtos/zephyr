@@ -1054,5 +1054,5 @@ Other resources
 ***************
 
 The *Intro to symbol values* section in the `Kconfiglib docstring
-<https://github.com/ulfalizer/Kconfiglib/blob/master/kconfiglib.py>`__ goes
+<https://github.com/zephyrproject-rtos/Kconfiglib/blob/main/kconfiglib.py>`__ goes
 over how symbols values are calculated in more detail.
