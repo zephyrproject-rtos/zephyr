@@ -44,6 +44,10 @@ BUILD_ASSERT(K_LOWEST_APPLICATION_THREAD_PRIO
 #define LOCK_SCHED_SPINLOCK   K_SPINLOCK(&_sched_spinlock)
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern struct k_spinlock _sched_spinlock;
 
 extern struct k_thread _thread_dummy;
@@ -334,5 +338,9 @@ static inline void z_sched_usage_switch(struct k_thread *thread)
 	z_sched_usage_start(thread);
 #endif /* CONFIG_SCHED_THREAD_USAGE */
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ZEPHYR_KERNEL_INCLUDE_KSCHED_H_ */
