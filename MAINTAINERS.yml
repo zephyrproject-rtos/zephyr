@@ -5235,7 +5235,8 @@ West:
   collaborators:
     - PetervdPerk-NXP
     - jgoppert
-  files: []
+  files:
+    - modules/hal_afbr/
   labels:
     - "platform: Broadcom"
 
