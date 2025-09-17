@@ -8,6 +8,7 @@ tests:
       - usbd
     platform_allow:
       - nrf52840dk/nrf52840
+      - arduino_nano_33_ble
       - frdm_k64f
       - nucleo_c071rb
       - rpi_debug_probe
