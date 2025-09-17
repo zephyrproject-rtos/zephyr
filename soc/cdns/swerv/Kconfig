@@ -12,7 +12,7 @@ rsource "*/Kconfig"
 
 config SOC_CDNS_SWERV_BOOT_MRAC
 	hex "Set MRAC CSR value at boot"
-	depends on SOC_S400
+	depends on SOC_S400 || SOC_S420
 	help
 	  Setup the MRAC CSR register for region access control
 	  on caching and side effect settings.
