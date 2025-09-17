@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019 Linaro Limited
+ * Copyright 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +15,7 @@
 #define ALARM_CHANNEL_ID 0
 
 struct counter_alarm_cfg alarm_cfg;
+struct counter_top_cfg top_cfg;
 
 #if defined(CONFIG_BOARD_SAMD20_XPRO)
 #define TIMER DT_NODELABEL(tc4)
@@ -72,6 +74,11 @@ struct counter_alarm_cfg alarm_cfg;
 #define TIMER DT_INST(0, renesas_rz_gtm_counter)
 #elif defined(CONFIG_COUNTER_CC23X0_RTC)
 #define TIMER DT_NODELABEL(rtc0)
+#elif defined(CONFIG_COUNTER_MCUX_LPIT)
+/* Index may start from 1 or 0 depends on name convention from RM */
+#define TIMER                                                                                      \
+	COND_CODE_1(DT_NODE_EXISTS(DT_NODELABEL(lpit0_channel0)),  \
+	    (DT_NODELABEL(lpit0_channel0)), (DT_NODELABEL(lpit1_channel0)))
 #else
 #error Unable to find a counter device node in devicetree
 #endif
@@ -117,9 +124,79 @@ static void test_counter_interrupt_fn(const struct device *counter_dev,
 	}
 }
 
+static void test_counter_top_interrupt_fn(const struct device *counter_dev, void *user_data)
+{
+	struct counter_top_cfg *config = user_data;
+	uint32_t now_ticks;
+	uint64_t now_usec;
+	int now_sec;
+	int err;
+
+	now_ticks = counter_get_top_value(counter_dev);
+	now_usec = counter_ticks_to_us(counter_dev, now_ticks);
+	now_sec = (int)(now_usec / USEC_PER_SEC);
+
+	printk("!!! Alarm !!!\n");
+	printk("Now: %u\n", now_sec);
+
+	/* Set a new alarm with a double length duration */
+	config->ticks = config->ticks * 2U;
+
+	printk("Set alarm in %u sec (%u ticks)\n",
+	       (uint32_t)(counter_ticks_to_us(counter_dev, config->ticks) / USEC_PER_SEC),
+	       config->ticks);
+
+	err = counter_set_top_value(counter_dev, user_data);
+	if (err != 0) {
+		printk("Alarm could not be set\n");
+	}
+}
+
+static int alarm_setup(const struct device *counter_dev, uint32_t ticks)
+{
+	int err;
+
+	alarm_cfg.flags = 0;
+	alarm_cfg.ticks = ticks;
+	alarm_cfg.callback = test_counter_interrupt_fn;
+	alarm_cfg.user_data = &alarm_cfg;
+
+	err = counter_set_channel_alarm(counter_dev, ALARM_CHANNEL_ID,
+					&alarm_cfg);
+
+	if (-EINVAL == err) {
+		printk("Alarm settings invalid\n");
+	} else if (-ENOTSUP == err) {
+		printk("Alarm setting request not supported\n");
+	}
+
+	return err;
+}
+
+static int top_setup(const struct device *counter_dev, uint32_t ticks)
+{
+	int err;
+
+	top_cfg.flags = 0;
+	top_cfg.ticks = ticks;
+	top_cfg.callback = test_counter_top_interrupt_fn;
+	top_cfg.user_data = &top_cfg;
+
+	err = counter_set_top_value(counter_dev, &top_cfg);
+
+	if (-EINVAL == err) {
+		printk("Top settings invalid\n");
+	} else if (-ENOTSUP == err) {
+		printk("Top setting request not supported\n");
+	}
+
+	return err;
+}
+
 int main(void)
 {
 	const struct device *const counter_dev = DEVICE_DT_GET(TIMER);
+	uint32_t ticks = counter_us_to_ticks(counter_dev, DELAY);
 	int err;
 
 	printk("Counter alarm sample\n\n");
@@ -131,25 +208,17 @@ int main(void)
 
 	counter_start(counter_dev);
 
-	alarm_cfg.flags = 0;
-	alarm_cfg.ticks = counter_us_to_ticks(counter_dev, DELAY);
-	alarm_cfg.callback = test_counter_interrupt_fn;
-	alarm_cfg.user_data = &alarm_cfg;
-
-	err = counter_set_channel_alarm(counter_dev, ALARM_CHANNEL_ID,
-					&alarm_cfg);
-	printk("Set alarm in %u sec (%u ticks)\n",
-	       (uint32_t)(counter_ticks_to_us(counter_dev,
-					   alarm_cfg.ticks) / USEC_PER_SEC),
-	       alarm_cfg.ticks);
-
-	if (-EINVAL == err) {
-		printk("Alarm settings invalid\n");
-	} else if (-ENOTSUP == err) {
-		printk("Alarm setting request not supported\n");
-	} else if (err != 0) {
-		printk("Error\n");
+	err = alarm_setup(counter_dev, ticks);
+	if (err != 0) {
+		/* If alarm setup fails, try top setup */
+		err = top_setup(counter_dev, ticks);
+		if (err != 0) {
+			printk("Error\n");
+		}
 	}
+
+	printk("Set alarm in %u sec (%u ticks)\n",
+	       (uint32_t)(counter_ticks_to_us(counter_dev, ticks) / USEC_PER_SEC), ticks);
 
 	while (1) {
 		k_sleep(K_FOREVER);

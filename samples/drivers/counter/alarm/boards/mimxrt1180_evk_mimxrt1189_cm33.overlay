@@ -1,0 +1,13 @@
+/*
+ * Copyright 2024-2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&lpit1 {
+	status = "okay";
+};
+
+&lpit1_channel0 {
+	status = "okay";
+};
