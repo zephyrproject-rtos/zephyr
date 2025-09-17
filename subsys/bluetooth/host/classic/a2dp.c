@@ -522,6 +522,12 @@ static int bt_a2dp_set_config_cb(struct bt_avdtp_req *req, struct net_buf *buf)
 	}
 
 	stream = ep->stream;
+	stream->codec_config.len = a2dp->set_config_param.codec_specific_ie_len;
+	memcpy(&stream->codec_config.codec_ie[0],
+	       a2dp->set_config_param.codec_specific_ie,
+	       (a2dp->set_config_param.codec_specific_ie_len > BT_A2DP_MAX_IE_LENGTH
+			? BT_A2DP_MAX_IE_LENGTH
+			: a2dp->set_config_param.codec_specific_ie_len));
 	LOG_DBG("SET CONFIGURATION result:%d", req->status);
 
 	if ((a2dp_cb != NULL) && (a2dp_cb->config_rsp != NULL)) {
@@ -798,7 +804,7 @@ static int bt_a2dp_ctrl_cb(struct bt_avdtp_req *req, bt_a2dp_rsp_cb rsp_cb, bt_a
 
 	stream = ep->stream;
 
-	if (clear_stream) {
+	if (clear_stream && req->status == BT_AVDTP_SUCCESS) {
 		ep->stream = NULL;
 	}
 

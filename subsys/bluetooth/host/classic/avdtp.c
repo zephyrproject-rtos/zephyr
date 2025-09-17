@@ -871,6 +871,7 @@ static void avdtp_process_configuration_cmd(struct bt_avdtp *session, struct net
 
 	if (!reconfig && !err && !avdtp_err_code) {
 		bt_avdtp_set_state(sep, AVDTP_CONFIGURED);
+		sep->session = session;
 	}
 
 	avdtp_sep_unlock(sep);
@@ -903,6 +904,7 @@ static void avdtp_process_configuration_rsp(struct bt_avdtp *session, struct net
 
 	if (req->status == BT_AVDTP_SUCCESS) {
 		avdtp_set_status(req, buf, msg_type);
+		SET_CONF_REQ(req)->sep->session = session;
 	}
 
 	bt_avdtp_clear_req(session);
@@ -1085,6 +1087,7 @@ static void avdtp_start_rsp(struct bt_avdtp *session, struct net_buf *buf, uint8
 	if (msg_type == BT_AVDTP_ACCEPT) {
 		bt_avdtp_set_state_lock(CTRL_REQ(req)->sep, AVDTP_STREAMING);
 	} else if (msg_type == BT_AVDTP_REJECT) {
+		bt_avdtp_set_state_lock(CTRL_REQ(req)->sep, AVDTP_OPEN);
 		avdtp_handle_reject(buf, req);
 	}
 
