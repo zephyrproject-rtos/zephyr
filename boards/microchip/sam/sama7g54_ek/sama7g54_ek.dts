@@ -8,7 +8,7 @@
 /dts-v1/;
 #include <common/freq.h>
 #include <dt-bindings/mfd/mfd_mchp_sam_flexcom.h>
-#include <dt-bindings/pinctrl/sama7g5-pinctrl.h>
+#include <dt-bindings/sam/sama7g5/sama7g54/sama7g54-pinctrl.h>
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/gpio/microchip-sam-gpio.h>
 #include <dt-bindings/input/input-event-codes.h>
