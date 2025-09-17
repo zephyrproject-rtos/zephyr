@@ -2719,7 +2719,7 @@ static void tcp_queue_recv_data(struct tcp *conn, struct net_pkt *pkt,
 }
 
 static enum net_verdict tcp_data_received(struct tcp *conn, struct net_pkt *pkt,
-					  size_t *len, bool psh)
+					  size_t *len, bool psh, bool fin)
 {
 	enum net_verdict ret;
 
@@ -2731,6 +2731,13 @@ static enum net_verdict tcp_data_received(struct tcp *conn, struct net_pkt *pkt,
 
 	net_stats_update_tcp_seg_recv(conn->iface);
 	conn_ack(conn, *len);
+
+	/* In case FIN was received, don't send ACK just yet, FIN,ACK will be
+	 * sent instead.
+	 */
+	if (fin) {
+		return ret;
+	}
 
 	/* Delay ACK response in case of small window or missing PSH,
 	 * as described in RFC 813.
@@ -3143,37 +3150,8 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 		}
 
 		break;
-	case TCP_ESTABLISHED:
-		/* full-close */
-		if (FL(&fl, &, FIN, th_seq(th) == conn->ack)) {
-			if (len) {
-				verdict = tcp_data_get(conn, pkt, &len);
-				if (verdict == NET_OK) {
-					/* net_pkt owned by the recv fifo now */
-					pkt = NULL;
-				}
-			} else {
-				verdict = NET_OK;
-			}
-
-			conn_ack(conn, + len + 1);
-			keep_alive_timer_stop(conn);
-
-			if (net_tcp_seq_cmp(th_ack(th), conn->seq) > 0) {
-				uint32_t len_acked = th_ack(th) - conn->seq;
-
-				conn_seq(conn, + len_acked);
-			}
-
-			tcp_out(conn, FIN | ACK);
-			conn_seq(conn, + 1);
-			tcp_setup_retransmission(conn);
-
-			tcp_setup_last_ack_timer(conn);
-			next = TCP_LAST_ACK;
-
-			break;
-		}
+	case TCP_ESTABLISHED: {
+		bool fin = FL(&fl, &, FIN, th_seq(th) == conn->ack);
 
 		/* Whatever we've received, we know that peer is alive, so reset
 		 * the keepalive timer.
@@ -3279,11 +3257,21 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 
 			/* We are closing the connection, send a FIN to peer */
 			if (conn->in_close && conn->send_data_total == 0) {
-				next = TCP_FIN_WAIT_1;
-
-				k_work_reschedule_for_queue(&tcp_work_q,
-							    &conn->fin_timer,
-							    FIN_TIMEOUT);
+				if (fin) {
+					/* If FIN was also present in the processed
+					 * packet, acknowledge that and jump directly
+					 * to TCP_LAST_ACK.
+					 */
+					conn_ack(conn, + 1);
+					next = TCP_LAST_ACK;
+					tcp_setup_last_ack_timer(conn);
+				} else {
+					/* Otherwise, wait for FIN in TCP_FIN_WAIT_1 */
+					next = TCP_FIN_WAIT_1;
+					k_work_reschedule_for_queue(&tcp_work_q,
+								    &conn->fin_timer,
+								    FIN_TIMEOUT);
+				}
 
 				tcp_out(conn, FIN | ACK);
 				conn_seq(conn, + 1);
@@ -3314,7 +3302,7 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 data_recv:
 				psh = FL(&fl, &, PSH);
 
-				verdict = tcp_data_received(conn, pkt, &len, psh);
+				verdict = tcp_data_received(conn, pkt, &len, psh, fin);
 				if (verdict == NET_OK) {
 					/* net_pkt owned by the recv fifo now */
 					pkt = NULL;
@@ -3358,7 +3346,19 @@ data_recv:
 			k_sem_give(&conn->tx_sem);
 		}
 
+		/* Finally, after all Data/ACK processing, check for FIN flag. */
+		if (fin) {
+			keep_alive_timer_stop(conn);
+			conn_ack(conn, + 1);
+			tcp_out(conn, FIN | ACK);
+			conn_seq(conn, + 1);
+			tcp_setup_retransmission(conn);
+			tcp_setup_last_ack_timer(conn);
+			next = TCP_LAST_ACK;
+		}
+
 		break;
+	}
 	case TCP_CLOSE_WAIT:
 		/* Half-close is not supported, so do nothing here */
 		break;
