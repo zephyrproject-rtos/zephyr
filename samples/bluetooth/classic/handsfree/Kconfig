@@ -1,0 +1,47 @@
+# Copyright (c) 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+config AUDIO_TRANSFER_INTERVAL
+	int "Audio transfer interval"
+	default 10
+	range 1 100
+	help
+	  Controls the audio transfer interval.
+
+config PCM_BUFFERS
+	int "PCM Buffer Count"
+	default 4
+	help
+	  Controls the initial count of audio data blocks.
+
+config PCM_RX_THREAD_STACK_SIZE
+	int "PCM RX thread stack size"
+	default 1024
+	help
+	  Controls the PCM RX thread stack size in bytes.
+
+config PCM_RX_THREAD_PRIO
+	int "PCM RX thread priority"
+	default 4
+	help
+	  Controls the PCM RX thread priority
+
+config CODEC_BUFFERS
+	int "CODEC Buffer Count"
+	default PCM_BUFFERS
+	help
+	  Controls the initial count of audio data blocks.
+
+config CODEC_RX_THREAD_STACK_SIZE
+	int "CODEC RX thread stack size"
+	default 1024
+	help
+	  Controls the CODEC RX thread stack size in bytes.
+
+config CODEC_RX_THREAD_PRIO
+	int "CODEC RX thread priority"
+	default 4
+	help
+	  Controls the CODEC RX thread priority
