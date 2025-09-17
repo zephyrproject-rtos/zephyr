@@ -130,6 +130,9 @@ struct dsa_api {
 	/** Connect the switch to the tag protocol */
 	int (*connect_tag_protocol)(struct dsa_switch_context *dsa_switch_ctx, int tag_proto);
 
+	/** Get the device capabilities */
+	enum ethernet_hw_caps (*get_capabilities)(const struct device *dev);
+
 	/** Set specific hardware configuration */
 	int (*set_config)(const struct device *dev,
 			  enum ethernet_config_type type,
