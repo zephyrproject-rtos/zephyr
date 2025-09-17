@@ -66,6 +66,9 @@ enum dwc2_drv_event_type {
 /* Get Data FIFO access register */
 #define UDC_DWC2_EP_FIFO(base, idx)	((mem_addr_t)base + 0x1000 * (idx + 1))
 
+/* Percentage limit of how much SPRAM can be allocated for RxFIFO */
+#define MAX_RXFIFO_GDFIFO_PERCENTAGE 25
+
 enum dwc2_suspend_type {
 	DWC2_SUSPEND_NO_POWER_SAVING,
 	DWC2_SUSPEND_HIBERNATION,
@@ -2184,6 +2187,13 @@ static int udc_dwc2_init_controller(const struct device *dev)
 	if (priv->dynfifosizing) {
 		uint32_t gnptxfsiz;
 		uint32_t default_depth;
+		uint32_t spram_size;
+		uint32_t max_rxfifo;
+
+		/* Get available SPRAM size and calculate max allocatable RX fifo size */
+		val = sys_read32((mem_addr_t)&base->gdfifocfg);
+		spram_size = usb_dwc2_get_gdfifocfg_gdfifocfg(val);
+		max_rxfifo = ((spram_size * MAX_RXFIFO_GDFIFO_PERCENTAGE) / 100);
 
 		/* TODO: For proper runtime FIFO sizing UDC driver would have to
 		 * have prior knowledge of the USB configurations. Only with the
@@ -2204,7 +2214,7 @@ static int udc_dwc2_init_controller(const struct device *dev)
 		 * to store reset value. Read the reset value and make sure that
 		 * the programmed value is not greater than what driver sets.
 		 */
-		priv->rxfifo_depth = MIN(priv->rxfifo_depth, default_depth);
+		priv->rxfifo_depth = MIN(MIN(priv->rxfifo_depth, default_depth), max_rxfifo);
 		sys_write32(usb_dwc2_set_grxfsiz(priv->rxfifo_depth), grxfsiz_reg);
 
 		/* Set TxFIFO 0 depth */
@@ -3446,6 +3456,30 @@ static const struct udc_api udc_dwc2_api = {
 	COND_CODE_1(DT_NUM_REGS(DT_DRV_INST(n)), (DT_INST_REG_ADDR(n)),		\
 		    (DT_INST_REG_ADDR_BY_NAME(n, core)))
 
+#if !defined(UDC_DWC2_IRQ_DT_INST_DEFINE)
+#define UDC_DWC2_IRQ_FLAGS_TYPE0(n)	0
+#define UDC_DWC2_IRQ_FLAGS_TYPE1(n)	DT_INST_IRQ(n, type)
+#define DW_IRQ_FLAGS(n) \
+	_CONCAT(UDC_DWC2_IRQ_FLAGS_TYPE, DT_INST_IRQ_HAS_CELL(n, type))(n)
+
+#define UDC_DWC2_IRQ_DT_INST_DEFINE(n)	\
+	static void udc_dwc2_irq_enable_func_##n(const struct device *dev)	\
+	{									\
+		IRQ_CONNECT(DT_INST_IRQN(n),					\
+			    DT_INST_IRQ(n, priority),				\
+			    udc_dwc2_isr_handler,				\
+			    DEVICE_DT_INST_GET(n),				\
+			    DW_IRQ_FLAGS(n));					\
+										\
+		irq_enable(DT_INST_IRQN(n));					\
+	}									\
+										\
+	static void udc_dwc2_irq_disable_func_##n(const struct device *dev)	\
+	{									\
+		irq_disable(DT_INST_IRQN(n));					\
+	}
+#endif
+
 #define UDC_DWC2_PINCTRL_DT_INST_DEFINE(n)					\
 	COND_CODE_1(DT_INST_PINCTRL_HAS_NAME(n, default),			\
 		    (PINCTRL_DT_INST_DEFINE(n)), ())
@@ -3453,11 +3487,6 @@ static const struct udc_api udc_dwc2_api = {
 #define UDC_DWC2_PINCTRL_DT_INST_DEV_CONFIG_GET(n)				\
 	COND_CODE_1(DT_INST_PINCTRL_HAS_NAME(n, default),			\
 		    ((void *)PINCTRL_DT_INST_DEV_CONFIG_GET(n)), (NULL))
-
-#define UDC_DWC2_IRQ_FLAGS_TYPE0(n)	0
-#define UDC_DWC2_IRQ_FLAGS_TYPE1(n)	DT_INST_IRQ(n, type)
-#define DW_IRQ_FLAGS(n) \
-	_CONCAT(UDC_DWC2_IRQ_FLAGS_TYPE, DT_INST_IRQ_HAS_CELL(n, type))(n)
 
 /*
  * A UDC driver should always be implemented as a multi-instance
@@ -3490,21 +3519,7 @@ static const struct udc_api udc_dwc2_api = {
 		k_thread_name_set(&priv->thread_data, dev->name);		\
 	}									\
 										\
-	static void udc_dwc2_irq_enable_func_##n(const struct device *dev)	\
-	{									\
-		IRQ_CONNECT(DT_INST_IRQN(n),					\
-			    DT_INST_IRQ(n, priority),				\
-			    udc_dwc2_isr_handler,				\
-			    DEVICE_DT_INST_GET(n),				\
-			    DW_IRQ_FLAGS(n));					\
-										\
-		irq_enable(DT_INST_IRQN(n));					\
-	}									\
-										\
-	static void udc_dwc2_irq_disable_func_##n(const struct device *dev)	\
-	{									\
-		irq_disable(DT_INST_IRQN(n));					\
-	}									\
+	UDC_DWC2_IRQ_DT_INST_DEFINE(n)						\
 										\
 	static struct udc_ep_config ep_cfg_out[DT_INST_PROP(n, num_out_eps)];	\
 	static struct udc_ep_config ep_cfg_in[DT_INST_PROP(n, num_in_eps)];	\

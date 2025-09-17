@@ -141,13 +141,13 @@ arduino_i2c: &flexcomm2 {
 
 	mx25u51245g: mx25u51245g@0 {
 		compatible = "nxp,imx-flexspi-nor";
-		spi-max-frequency = <133000000>;
+		spi-max-frequency = <DT_FREQ_M(133)>;
 		reg = <0>;
 		/* MX25UM51245G is 64MB, 512MBit flash part */
 		size = <DT_SIZE_M(64 * 8)>;
 		status = "okay";
 		jedec-id = [c2 25 3a];
-		erase-block-size = <4096>;
+		erase-block-size = <DT_SIZE_K(4)>;
 		write-block-size = <1>;
 
 		partitions {
@@ -186,7 +186,7 @@ arduino_i2c: &flexcomm2 {
 		/* IS66WVQ8M4 is 4MB, 32MBit pSRAM */
 		size = <DT_SIZE_M(32)>;
 		reg = <2>;
-		spi-max-frequency = <256000000>;
+		spi-max-frequency = <DT_FREQ_M(256)>;
 		/* PSRAM cannot be enabled while board is in default XIP
 		 * configuration, as it will conflict with flash chip.
 		 */

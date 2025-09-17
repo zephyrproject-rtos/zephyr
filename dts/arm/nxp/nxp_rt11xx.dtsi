@@ -5,6 +5,7 @@
  */
 
 #include <mem.h>
+#include <freq.h>
 #include <arm/armv7-m.dtsi>
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/clock/imx_ccm_rev2.h>
@@ -51,7 +52,7 @@
 
 	xtal: xtal-osc {
 		compatible = "fixed-clock";
-		clock-frequency = <24000000>;
+		clock-frequency = <DT_FREQ_M(24)>;
 		#clock-cells = <0>;
 	};
 
@@ -105,7 +106,7 @@
 			compatible = "nxp,imx-gpt";
 			reg = <0x400f0000 0x4000>;
 			interrupts = <120 0>;
-			gptfreq = <24000000>;
+			gptfreq = <DT_FREQ_M(24)>;
 			clocks = <&ccm IMX_CCM_GPT_CLK 0x41 0>;
 		};
 
@@ -113,7 +114,7 @@
 			compatible = "nxp,imx-gpt";
 			reg = <0x400f4000 0x4000>;
 			interrupts = <121 0>;
-			gptfreq = <24000000>;
+			gptfreq = <DT_FREQ_M(24)>;
 			clocks = <&ccm IMX_CCM_GPT_CLK 0x42 0>;
 		};
 
@@ -121,7 +122,7 @@
 			compatible = "nxp,imx-gpt";
 			reg = <0x400f8000 0x4000>;
 			interrupts = <122 0>;
-			gptfreq = <24000000>;
+			gptfreq = <DT_FREQ_M(24)>;
 			clocks = <&ccm IMX_CCM_GPT_CLK 0x43 0>;
 		};
 
@@ -129,7 +130,7 @@
 			compatible = "nxp,imx-gpt";
 			reg = <0x400fc000 0x4000>;
 			interrupts = <123 0>;
-			gptfreq = <24000000>;
+			gptfreq = <DT_FREQ_M(24)>;
 			clocks = <&ccm IMX_CCM_GPT_CLK 0x44 0>;
 		};
 
@@ -137,7 +138,7 @@
 			compatible = "nxp,imx-gpt";
 			reg = <0x40100000 0x4000>;
 			interrupts = <124 0>;
-			gptfreq = <24000000>;
+			gptfreq = <DT_FREQ_M(24)>;
 			clocks = <&ccm IMX_CCM_GPT_CLK 0x45 0>;
 		};
 
@@ -854,8 +855,8 @@
 			clocks = <&ccm IMX_CCM_USDHC1_CLK 0 0>;
 			max-current-330 = <1020>;
 			max-current-180 = <1020>;
-			max-bus-freq = <208000000>;
-			min-bus-freq = <400000>;
+			max-bus-freq = <DT_FREQ_M(208)>;
+			min-bus-freq = <DT_FREQ_K(400)>;
 		};
 
 		usdhc2: usdhc@4041c000 {
@@ -866,8 +867,8 @@
 			clocks = <&ccm IMX_CCM_USDHC2_CLK 0 0>;
 			max-current-330 = <1020>;
 			max-current-180 = <1020>;
-			max-bus-freq = <208000000>;
-			min-bus-freq = <400000>;
+			max-bus-freq = <DT_FREQ_M(208)>;
+			min-bus-freq = <DT_FREQ_K(400)>;
 		};
 
 		csi: csi@40800000 {
@@ -950,18 +951,6 @@
 			compatible = "zephyr,memory-region", "mmio-sram";
 			zephyr,memory-region = "OCRAM";
 			reg = <0x20200000 DT_SIZE_K(256)>;
-		};
-
-		ocram1: ocram@20240000 {
-			compatible = "zephyr,memory-region", "mmio-sram";
-			zephyr,memory-region = "OCRAM1";
-			reg = <0x20240000 DT_SIZE_K(512)>;
-		};
-
-		ocram2: ocram@202c0000 {
-			compatible = "zephyr,memory-region", "mmio-sram";
-			zephyr,memory-region = "OCRAM2";
-			reg = <0x202c0000 DT_SIZE_K(512)>;
 		};
 
 		lpadc1: adc@40050000 {

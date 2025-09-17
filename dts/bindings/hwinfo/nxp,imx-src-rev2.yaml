@@ -1,0 +1,12 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP SRC REV2 get reset cause flags
+
+compatible: "nxp,imx-src-rev2"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

@@ -1,0 +1,47 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_imx943_m7_1.dtsi>
+#include "imx943_evk-pinctrl.dtsi"
+
+/ {
+	model = "NXP i.MX943 EVK board";
+	compatible = "nxp,imx943_evk";
+
+	chosen {
+		/* TCM */
+		zephyr,flash = &itcm;
+		zephyr,sram = &dtcm;
+
+		zephyr,console = &lpuart12;
+		zephyr,shell-uart = &lpuart12;
+	};
+};
+
+&flexio1 {
+	status = "okay";
+	/* Signal can be checked by the connector J44 Pin10(M1_LED_TP1) via logic analyzer */
+	flexio1_pwm: flexio1_pwm {
+		compatible = "nxp,flexio-pwm";
+		#pwm-cells = <3>;
+		pinctrl-0 = <&flexio1_io5_default>;
+		pinctrl-names = "default";
+		pwm_1 {
+			pin-id = <5>;
+			prescaler = <1>;
+		};
+		status = "okay";
+	};
+};
+
+&lpuart12 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&lpuart12_default>;
+	pinctrl-names = "default";
+};

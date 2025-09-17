@@ -5,6 +5,7 @@
  */
 
 #include <mem.h>
+#include <freq.h>
 #include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
 #include <zephyr/dt-bindings/reset/nxp_syscon_reset_common.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
@@ -536,7 +537,7 @@
 		flash: flash@0 {
 			compatible = "soc-nv-flash";
 			reg = <0 DT_SIZE_M(1)>;
-			erase-block-size = <8192>;
+			erase-block-size = <DT_SIZE_K(8)>;
 			/* MCXN23x ROM Flash API supports writing of 128B pages. */
 			write-block-size = <128>;
 		};
@@ -871,7 +872,7 @@
 		compatible = "nxp,lptmr";
 		reg = <0x4a000 0x1000>;
 		interrupts = <143 0>;
-		clock-frequency = <16000>;
+		clock-frequency = <DT_FREQ_K(16)>;
 		prescaler = <1>;
 		clk-source = <1>;
 		resolution = <32>;
@@ -881,7 +882,7 @@
 		compatible = "nxp,lptmr";
 		reg = <0x4b000 0x1000>;
 		interrupts = <144 0>;
-		clock-frequency = <16000>;
+		clock-frequency = <DT_FREQ_K(16)>;
 		prescaler = <1>;
 		clk-source = <1>;
 		resolution = <32>;

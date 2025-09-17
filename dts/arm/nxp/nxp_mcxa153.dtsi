@@ -5,6 +5,7 @@
  */
 
 #include <mem.h>
+#include <freq.h>
 #include <arm/armv8-m.dtsi>
 #include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
@@ -134,7 +135,7 @@
 			flash: flash@0 {
 				compatible = "soc-nv-flash";
 				reg = <0 DT_SIZE_K(128)>;
-				erase-block-size = <8192>;
+				erase-block-size = <DT_SIZE_K(8)>;
 				write-block-size = <128>;
 			};
 

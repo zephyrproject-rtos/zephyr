@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
 #include <mem.h>
+#include <freq.h>
 #include <arm/armv7-m.dtsi>
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/clock/kinetis_sim.h>
@@ -154,7 +155,7 @@
 			flash0: flash@0 {
 				compatible = "soc-nv-flash";
 				reg = <0 DT_SIZE_M(1)>;
-				erase-block-size = <4096>;
+				erase-block-size = <DT_SIZE_K(4)>;
 				write-block-size = <8>;
 			};
 		};

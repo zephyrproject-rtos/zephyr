@@ -201,8 +201,7 @@ static int stm32_sdmmc_clock_disable(struct stm32_sdmmc_priv *priv)
 
 	clock = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
-	return clock_control_off(clock,
-				 (clock_control_subsys_t)&priv->pclken);
+	return clock_control_off(clock, (clock_control_subsys_t)&priv->pclken[0]);
 }
 #endif
 
@@ -339,34 +338,65 @@ static int stm32_sdmmc_dma_deinit(struct stm32_sdmmc_priv *priv)
 
 #endif
 
+/* Forward declarations */
+static int stm32_sdmmc_pwr_on(struct stm32_sdmmc_priv *priv);
+static void stm32_sdmmc_pwr_off(struct stm32_sdmmc_priv *priv);
+static int stm32_sdmmc_card_detect_init(struct stm32_sdmmc_priv *priv);
+static bool stm32_sdmmc_card_present(struct stm32_sdmmc_priv *priv);
+static int stm32_sdmmc_card_detect_uninit(struct stm32_sdmmc_priv *priv);
+
 static int stm32_sdmmc_access_init(struct disk_info *disk)
 {
 	const struct device *dev = disk->dev;
 	struct stm32_sdmmc_priv *priv = dev->data;
 	int err;
 
-	if (priv->status == DISK_STATUS_NOMEDIA) {
-		return -ENODEV;
+	err = stm32_sdmmc_pwr_on(priv);
+	if (err) {
+		return -EIO;
 	}
+
+	/* Configure dt provided device signals when available */
+	err = pinctrl_apply_state(priv->pcfg, PINCTRL_STATE_DEFAULT);
+	if (err < 0) {
+		stm32_sdmmc_pwr_off(priv);
+		return err;
+	}
+
+#if !defined(CONFIG_SDMMC_STM32_EMMC)
+	err = stm32_sdmmc_card_detect_init(priv);
+	if (err) {
+		stm32_sdmmc_pwr_off(priv);
+		return err;
+	}
+#endif
+
+	if (!stm32_sdmmc_card_present(priv)) {
+		priv->status = DISK_STATUS_NOMEDIA;
+		err = -ENODEV;
+		goto error;
+	}
+
+	priv->status = DISK_STATUS_UNINIT;
 
 #if STM32_SDMMC_USE_DMA
 	err = stm32_sdmmc_dma_init(priv);
 	if (err) {
 		LOG_ERR("DMA init failed");
-		return err;
+		goto error;
 	}
 #endif
 
 	err = stm32_sdmmc_clock_enable(priv);
 	if (err) {
 		LOG_ERR("failed to init clocks");
-		return err;
+		goto error;
 	}
 
 	err = reset_line_toggle_dt(&priv->reset);
 	if (err) {
 		LOG_ERR("failed to reset peripheral");
-		return err;
+		goto error;
 	}
 
 #ifdef CONFIG_SDMMC_STM32_EMMC
@@ -376,7 +406,8 @@ static int stm32_sdmmc_access_init(struct disk_info *disk)
 #endif
 	if (err != HAL_OK) {
 		LOG_ERR("failed to init stm32_sdmmc (ErrorCode 0x%X)", priv->hsd.ErrorCode);
-		return -EIO;
+		err = -EIO;
+		goto error;
 	}
 
 #ifdef CONFIG_SDMMC_STM32_HWFC
@@ -385,6 +416,10 @@ static int stm32_sdmmc_access_init(struct disk_info *disk)
 
 	priv->status = DISK_STATUS_OK;
 	return 0;
+error:
+	stm32_sdmmc_card_detect_uninit(priv);
+	stm32_sdmmc_pwr_off(priv);
+	return err;
 }
 
 static int stm32_sdmmc_access_deinit(struct stm32_sdmmc_priv *priv)
@@ -409,6 +444,11 @@ static int stm32_sdmmc_access_deinit(struct stm32_sdmmc_priv *priv)
 		LOG_ERR("failed to deinit stm32_sdmmc (ErrorCode 0x%X)", priv->hsd.ErrorCode);
 		return err;
 	}
+
+#if !defined(CONFIG_SDMMC_STM32_EMMC)
+	stm32_sdmmc_card_detect_uninit(priv);
+#endif
+	stm32_sdmmc_pwr_off(priv);
 
 	priv->status = DISK_STATUS_UNINIT;
 	return 0;
@@ -734,7 +774,7 @@ static int stm32_sdmmc_card_detect_uninit(struct stm32_sdmmc_priv *priv)
 }
 #endif /* !CONFIG_SDMMC_STM32_EMMC */
 
-static int stm32_sdmmc_pwr_init(struct stm32_sdmmc_priv *priv)
+static int stm32_sdmmc_pwr_on(struct stm32_sdmmc_priv *priv)
 {
 	int err;
 
@@ -756,21 +796,26 @@ static int stm32_sdmmc_pwr_init(struct stm32_sdmmc_priv *priv)
 	return 0;
 }
 
-static int stm32_sdmmc_pwr_uninit(struct stm32_sdmmc_priv *priv)
+static void stm32_sdmmc_pwr_off(struct stm32_sdmmc_priv *priv)
 {
+	int ret;
+
 	if (!priv->pe.port) {
-		return 0;
+		return;
 	}
 
-	gpio_pin_configure_dt(&priv->pe, GPIO_DISCONNECTED);
-	return 0;
+	/* PINCTRL sleep mode when powered down */
+	ret = pinctrl_apply_state(priv->pcfg, PINCTRL_STATE_SLEEP);
+	if (ret != 0 && ret != ENOTSUP) {
+		LOG_WRN("Failed to configure pins for sleep (%d)", ret);
+	}
+	gpio_pin_configure_dt(&priv->pe, GPIO_OUTPUT_INACTIVE);
 }
 
 static int disk_stm32_sdmmc_init(const struct device *dev)
 {
 	struct stm32_sdmmc_priv *priv = dev->data;
 	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
-	int err;
 
 	if (!device_is_ready(clk)) {
 		LOG_ERR("clock control device not ready");
@@ -782,12 +827,6 @@ static int disk_stm32_sdmmc_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	/* Configure dt provided device signals when available */
-	err = pinctrl_apply_state(priv->pcfg, PINCTRL_STATE_DEFAULT);
-	if (err < 0) {
-		return err;
-	}
-
 	priv->irq_config(dev);
 
 	/* Initialize semaphores */
@@ -796,38 +835,13 @@ static int disk_stm32_sdmmc_init(const struct device *dev)
 
 #if !defined(CONFIG_SDMMC_STM32_EMMC)
 	k_work_init(&priv->work, stm32_sdmmc_cd_handler);
-
-	err = stm32_sdmmc_card_detect_init(priv);
-	if (err) {
-		return err;
-	}
 #endif
 
-	err = stm32_sdmmc_pwr_init(priv);
-	if (err) {
-		goto err_card_detect;
-	}
-
-	if (stm32_sdmmc_card_present(priv)) {
-		priv->status = DISK_STATUS_UNINIT;
-	} else {
-		priv->status = DISK_STATUS_NOMEDIA;
-	}
+	/* Ensure off by default */
+	stm32_sdmmc_pwr_off(priv);
 
 	stm32_sdmmc_info.dev = dev;
-	err = disk_access_register(&stm32_sdmmc_info);
-	if (err) {
-		goto err_pwr;
-	}
-	return 0;
-
-err_pwr:
-	stm32_sdmmc_pwr_uninit(priv);
-err_card_detect:
-#if !defined(CONFIG_SDMMC_STM32_EMMC)
-	stm32_sdmmc_card_detect_uninit(priv);
-#endif
-	return err;
+	return disk_access_register(&stm32_sdmmc_info);
 }
 
 void stm32_sdmmc_get_card_cid(const struct device *dev, uint32_t cid[4])

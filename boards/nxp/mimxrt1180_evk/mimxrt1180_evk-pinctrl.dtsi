@@ -357,4 +357,19 @@
 			slew-rate = "fast";
 		};
 	};
+
+	pinmux_sai1: pinmux_sai1 {
+		group0 {
+			pinmux = <&iomuxc_aon_gpio_aon_24_sai1_mclk>,
+				<&iomuxc_aon_gpio_aon_27_sai1_rx_sync>,
+				<&iomuxc_aon_gpio_aon_26_sai1_rx_bclk>,
+				<&iomuxc_aon_gpio_aon_25_sai1_rx_data0>,
+				<&iomuxc_aon_gpio_aon_21_sai1_tx_data0>,
+				<&iomuxc_aon_gpio_aon_23_sai1_tx_bclk>,
+				<&iomuxc_aon_gpio_aon_22_sai1_tx_sync>;
+			drive-strength = "high";
+			slew-rate = "fast";
+			input-enable;
+		};
+	};
 };

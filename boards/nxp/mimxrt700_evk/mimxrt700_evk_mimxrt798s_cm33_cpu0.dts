@@ -331,10 +331,10 @@ zephyr_lcdif: &lcdif {};
 		/* MX25UM51245G is 64MB, 512MBit flash part */
 		size = <DT_SIZE_M(64 * 8)>;
 		reg = <0>;
-		spi-max-frequency = <200000000>;
+		spi-max-frequency = <DT_FREQ_M(200)>;
 		status = "okay";
 		jedec-id = [c2 81 3a];
-		erase-block-size = <4096>;
+		erase-block-size = <DT_SIZE_K(4)>;
 		write-block-size = <2>;
 	};
 };

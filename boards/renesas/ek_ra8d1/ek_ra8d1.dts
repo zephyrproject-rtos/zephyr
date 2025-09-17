@@ -12,6 +12,8 @@
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 #include <zephyr/dt-bindings/memory-controller/renesas,ra-sdram.h>
 #include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/gpio/dvp-20pin-connector.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
 #include "ek_ra8d1-pinctrl.dtsi"
 
 / {
@@ -117,6 +119,15 @@
 			   <3 0 &ioport5 10 0>, /* DISP_INT */
 			   <4 0 &ioport5 12 0>, /* IIC_SCL */
 			   <6 0 &ioporta 1 0>;  /* DISP_RST */
+	};
+
+	dvp_20pin_connector: dvp-20pin-connector {
+		compatible = "arducam,dvp-20pin-connector";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0x0 0x3f>;
+		gpio-map = <DVP_20PIN_PEN 0 &ioport7 4 0>,
+			   <DVP_20PIN_PDN 0 &ioport7 5 0>;
 	};
 
 	aliases {
@@ -313,6 +324,21 @@
 	};
 };
 
+&pwm3 {
+	pinctrl-0 = <&pwm3_default>;
+	pinctrl-names = "default";
+	interrupts = <51 12>, <52 12>;
+	interrupt-names = "gtioca", "overflow";
+
+	cam_clock: pwmclock {
+		compatible = "pwm-clock";
+		status = "disabled";
+		#clock-cells = <1>;
+		clock-frequency = <24000000>;
+		pwms = <&pwm3 0 PWM_KHZ(24000) PWM_POLARITY_NORMAL>;
+	};
+};
+
 &pwm7 {
 	pinctrl-0 = <&pwm7_default>;
 	interrupts = <40 1>, <41 1>;
@@ -419,6 +445,16 @@
 	};
 };
 
+&ceu {
+	pinctrl-0 = <&ceu_default>;
+	pinctrl-names = "default";
+	interrupts = <53 12>;
+	interrupt-names = "ceui";
+	clocks = <&pclka MSTPC 16>, <&cam_clock 0>;
+	clock-names = "pclk", "cam-xclk";
+	burst-transfer = <256>;
+};
+
 zephyr_lcdif: &lcdif {};
 
 zephyr_mipi_dsi: &mipi_dsi {};
@@ -426,6 +462,10 @@ zephyr_mipi_dsi: &mipi_dsi {};
 renesas_mipi_i2c: &iic1 {};
 
 pmod_sd_shield: &sdhc1 {};
+
+dvp_20pin_i2c: &iic1 {};
+
+dvp_20pin_interface: &ceu {};
 
 &usbfs {
 	pinctrl-0 = <&usbfs_default>;

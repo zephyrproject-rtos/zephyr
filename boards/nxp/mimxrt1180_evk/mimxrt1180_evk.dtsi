@@ -13,6 +13,8 @@
 		sw0 = &user_button;
 		pwm-led0 = &green_pwm_led;
 		sdhc0 = &usdhc1;
+		i2s-codec-tx = &sai1;
+		i2s-tx = &sai1;
 	};
 
 	leds {
@@ -188,10 +190,10 @@
 		compatible = "nxp,imx-flexspi-nor";
 		size = <DT_SIZE_M(16*8)>;
 		reg = <0>;
-		spi-max-frequency = <133000000>;
+		spi-max-frequency = <DT_FREQ_M(133)>;
 		status = "okay";
 		jedec-id = [ef 60 18];
-		erase-block-size = <4096>;
+		erase-block-size = <DT_SIZE_K(4)>;
 		write-block-size = <1>;
 
 		partitions {
@@ -291,4 +293,25 @@ p3t1755dp_ard_i2c_interface: &lpi2c2 {};
 		disk-name = "SD";
 		status = "okay";
 	};
+};
+
+&sai1 {
+	pinctrl-0 = <&pinmux_sai1>;
+	pinctrl-names = "default";
+};
+
+&lpi2c2 {
+	pinctrl-0 = <&pinmux_lpi2c2>;
+	pinctrl-names = "default";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	audio_codec: wm8962@1a {
+		compatible = "wolfson,wm8962";
+		reg = <0x1a>;
+		clock-source = "MCLK";
+		clocks = <&ccm IMX_CCM_SAI1_CLK 0x2004 4>;
+		clock-names = "mclk";
+	};
+
 };

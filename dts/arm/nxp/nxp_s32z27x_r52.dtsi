@@ -5,6 +5,7 @@
  */
 
 #include <mem.h>
+#include <freq.h>
 #include <arm/armv8-r.dtsi>
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
 #include <zephyr/dt-bindings/clock/nxp_s32z2_clock.h>
@@ -75,7 +76,7 @@
 
 	/* Dummy pinctrl node, filled with pin mux options at board level */
 	pinctrl: pinctrl {
-		compatible = "nxp,s32ze-pinctrl";
+		compatible = "nxp,s32ze-siul2-pinctrl";
 		status = "okay";
 	};
 
@@ -231,7 +232,7 @@
 			#size-cells = <1>;
 
 			eirq0: eirq0@40520010 {
-				compatible = "nxp,s32-siul2-eirq";
+				compatible = "nxp,siul2-eirq";
 				reg = <0x40520010 0xb4>;
 				#address-cells = <0>;
 				interrupts = <GIC_SPI 514 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
@@ -241,7 +242,7 @@
 			};
 
 			gpioa: gpio@40521702 {
-				compatible = "nxp,s32-gpio";
+				compatible = "nxp,siul2-gpio";
 				reg = <0x40521702 0x02>, <0x40520240 0x40>;
 				reg-names = "pgpdo", "mscr";
 				interrupt-parent = <&eirq0>;
@@ -254,7 +255,7 @@
 			};
 
 			gpiob: gpio@40521700 {
-				compatible = "nxp,s32-gpio";
+				compatible = "nxp,siul2-gpio";
 				reg = <0x40521700 0x02>, <0x40520280 0x40>;
 				reg-names = "pgpdo", "mscr";
 				interrupt-parent = <&eirq0>;
@@ -266,7 +267,7 @@
 			};
 
 			gpioo: gpio@40521716 {
-				compatible = "nxp,s32-gpio";
+				compatible = "nxp,siul2-gpio";
 				reg = <0x40521716 0x02>, <0x405204c0 0x40>;
 				reg-names = "pgpdo", "mscr";
 				gpio-controller;
@@ -283,7 +284,7 @@
 			#size-cells = <1>;
 
 			eirq1: eirq1@40d20010 {
-				compatible = "nxp,s32-siul2-eirq";
+				compatible = "nxp,siul2-eirq";
 				reg = <0x40d20010 0xb4>;
 				#address-cells = <0>;
 				interrupts = <GIC_SPI 515 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
@@ -293,7 +294,7 @@
 			};
 
 			gpioc: gpio@40d21700 {
-				compatible = "nxp,s32-gpio";
+				compatible = "nxp,siul2-gpio";
 				reg = <0x40d21700 0x02>, <0x40d20280 0x40>;
 				reg-names = "pgpdo", "mscr";
 				interrupt-parent = <&eirq1>;
@@ -306,7 +307,7 @@
 			};
 
 			gpiod: gpio@40d21706 {
-				compatible = "nxp,s32-gpio";
+				compatible = "nxp,siul2-gpio";
 				reg = <0x40d21706 0x02>, <0x40d202c0 0x40>;
 				reg-names = "pgpdo", "mscr";
 				gpio-controller;
@@ -316,7 +317,7 @@
 			};
 
 			gpioe: gpio@40d21704 {
-				compatible = "nxp,s32-gpio";
+				compatible = "nxp,siul2-gpio";
 				reg = <0x40d21704 0x02>, <0x40d20300 0x40>;
 				reg-names = "pgpdo", "mscr";
 				gpio-controller;
@@ -326,7 +327,7 @@
 			};
 
 			gpiof: gpio@40d2170a {
-				compatible = "nxp,s32-gpio";
+				compatible = "nxp,siul2-gpio";
 				reg = <0x40d2170a 0x02>, <0x40d20340 0x40>;
 				reg-names = "pgpdo", "mscr";
 				gpio-controller;
@@ -336,7 +337,7 @@
 			};
 
 			gpiog: gpio@40d21708 {
-				compatible = "nxp,s32-gpio";
+				compatible = "nxp,siul2-gpio";
 				reg = <0x40d21708 0x02>, <0x40d20380 0x40>;
 				reg-names = "pgpdo", "mscr";
 				interrupt-parent = <&eirq1>;
@@ -359,7 +360,7 @@
 			#size-cells = <1>;
 
 			eirq4: eirq4@42520010 {
-				compatible = "nxp,s32-siul2-eirq";
+				compatible = "nxp,siul2-eirq";
 				reg = <0x42520010 0xb4>;
 				#address-cells = <0>;
 				interrupts = <GIC_SPI 516 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
@@ -369,7 +370,7 @@
 			};
 
 			gpioh: gpio@42521708 {
-				compatible = "nxp,s32-gpio";
+				compatible = "nxp,siul2-gpio";
 				reg = <0x42521708 0x02>, <0x42520380 0x40>;
 				reg-names = "pgpdo", "mscr";
 				gpio-controller;
@@ -380,7 +381,7 @@
 			};
 
 			gpioi: gpio@4252170e {
-				compatible = "nxp,s32-gpio";
+				compatible = "nxp,siul2-gpio";
 				reg = <0x4252170e 0x02>, <0x425203c0 0x40>;
 				reg-names = "pgpdo", "mscr";
 				interrupt-parent = <&eirq4>;
@@ -392,7 +393,7 @@
 			};
 
 			gpioj: gpio@4252170c {
-				compatible = "nxp,s32-gpio";
+				compatible = "nxp,siul2-gpio";
 				reg = <0x4252170c 0x02>, <0x42520400 0x40>;
 				reg-names = "pgpdo", "mscr";
 				interrupt-parent = <&eirq4>;
@@ -404,7 +405,7 @@
 			};
 
 			gpiok: gpio@42521712 {
-				compatible = "nxp,s32-gpio";
+				compatible = "nxp,siul2-gpio";
 				reg = <0x42521712 0x02>, <0x42520440 0x40>;
 				reg-names = "pgpdo", "mscr";
 				interrupt-parent = <&eirq4>;
@@ -417,7 +418,7 @@
 			};
 
 			gpiol: gpio@42521710 {
-				compatible = "nxp,s32-gpio";
+				compatible = "nxp,siul2-gpio";
 				reg = <0x42521710 0x02>, <0x42520480 0x40>;
 				reg-names = "pgpdo", "mscr";
 				gpio-controller;
@@ -433,7 +434,7 @@
 			#size-cells = <1>;
 
 			eirq5: eirq5@42d20010 {
-				compatible = "nxp,s32-siul2-eirq";
+				compatible = "nxp,siul2-eirq";
 				reg = <0x42d20010 0xb4>;
 				#address-cells = <0>;
 				interrupts = <GIC_SPI 517 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
@@ -443,7 +444,7 @@
 			};
 
 			gpiom: gpio@42d21710 {
-				compatible = "nxp,s32-gpio";
+				compatible = "nxp,siul2-gpio";
 				reg = <0x42d21710 0x02>, <0x42d20480 0x40>;
 				reg-names = "pgpdo", "mscr";
 				interrupt-parent = <&eirq5>;
@@ -456,7 +457,7 @@
 			};
 
 			gpion: gpio@42d21716 {
-				compatible = "nxp,s32-gpio";
+				compatible = "nxp,siul2-gpio";
 				reg = <0x42d21716 0x02>, <0x42d204c0 0x40>;
 				reg-names = "pgpdo", "mscr";
 				interrupt-parent = <&eirq5>;

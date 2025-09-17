@@ -5,6 +5,7 @@
  */
 
 #include <mem.h>
+#include <freq.h>
 #include <arm/armv8-m.dtsi>
 #include <zephyr/dt-bindings/clock/scg_k4.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
@@ -53,7 +54,7 @@
 			flash: flash@0 {
 				compatible = "soc-nv-flash";
 				write-block-size = <16>;
-				erase-block-size = <8192>;
+				erase-block-size = <DT_SIZE_K(8)>;
 			};
 		};
 
@@ -275,9 +276,9 @@
 		compatible = "nxp,wdog32";
 		reg = <0x1a000 10>;
 		interrupts = <23 0>;
-		clocks = <&scg SCG_K4_SYSOSC_CLK 0x68>;
+		clocks = <&scg SCG_K4_RTCOSC_CLK 0x68>;
 		clk-source = <1>;
-		clk-divider = <256>;
+		clk-divider = <1>;
 		status = "okay";
 	};
 
@@ -285,9 +286,9 @@
 		compatible = "nxp,wdog32";
 		reg = <0x1b000 10>;
 		interrupts = <24 0>;
-		clocks = <&scg SCG_K4_SYSOSC_CLK 0x6c>;
+		clocks = <&scg SCG_K4_RTCOSC_CLK 0x6c>;
 		clk-source = <1>;
-		clk-divider = <256>;
+		clk-divider = <1>;
 		status = "disabled";
 	};
 
@@ -295,7 +296,7 @@
 		compatible = "nxp,lptmr";
 		reg = <0x2d000 0x10>;
 		interrupts = <34 0>;
-		clock-frequency = <32000>;
+		clock-frequency = <DT_FREQ_K(32)>;
 		clk-source = <2>;
 		prescaler = <1>;
 		resolution = <32>;
@@ -306,7 +307,7 @@
 		compatible = "nxp,lptmr";
 		reg = <0x2e000 0x10>;
 		interrupts = <35 0>;
-		clock-frequency = <32000>;
+		clock-frequency = <DT_FREQ_K(32)>;
 		clk-source = <2>;
 		prescaler = <1>;
 		resolution = <32>;

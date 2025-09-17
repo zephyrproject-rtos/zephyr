@@ -168,10 +168,10 @@ nxp_parallel_i2c: &lpi2c1 {};
 		compatible = "nxp,imx-flexspi-nor";
 		size = <DT_SIZE_M(8 * 8)>;
 		reg = <0>;
-		spi-max-frequency = <104000000>;
+		spi-max-frequency = <DT_FREQ_M(104)>;
 		status = "okay";
 		jedec-id = [9d 70 17];
-		erase-block-size = <4096>;
+		erase-block-size = <DT_SIZE_K(4)>;
 		write-block-size = <1>;
 
 		partitions {

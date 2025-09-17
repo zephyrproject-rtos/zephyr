@@ -6,6 +6,7 @@
 
 #include <arm/armv7-m.dtsi>
 #include <mem.h>
+#include <freq.h>
 #include <zephyr/dt-bindings/clock/nxp_s32k344_clock.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
@@ -35,7 +36,7 @@
 
 	/* Dummy pinctrl node, filled with pin mux options at board level */
 	pinctrl: pinctrl {
-		compatible = "nxp,s32k3-pinctrl";
+		compatible = "nxp,s32k3-siul2-pinctrl";
 		status = "okay";
 	};
 
@@ -91,7 +92,7 @@
 			#size-cells = <1>;
 
 			eirq0: eirq@40290010 {
-				compatible = "nxp,s32-siul2-eirq";
+				compatible = "nxp,siul2-eirq";
 				reg = <0x40290010 0xb4>;
 				#address-cells = <0>;
 				interrupts = <53 0>, <54 0>, <55 0>, <56 0>;
@@ -101,7 +102,7 @@
 			};
 
 			gpioa_l: gpio@40291702 {
-				compatible = "nxp,s32-gpio";
+				compatible = "nxp,siul2-gpio";
 				reg = <0x40291702 0x02>, <0x40290240 0x40>;
 				reg-names = "pgpdo", "mscr";
 				interrupt-parent = <&eirq0>;
@@ -119,7 +120,7 @@
 			};
 
 			gpioa_h: gpio@40291700 {
-				compatible = "nxp,s32-gpio";
+				compatible = "nxp,siul2-gpio";
 				reg = <0x40291700 0x02>, <0x40290280 0x40>;
 				reg-names = "pgpdo", "mscr";
 				interrupt-parent = <&eirq0>;
@@ -135,7 +136,7 @@
 			};
 
 			gpiob_l: gpio@40291706 {
-				compatible = "nxp,s32-gpio";
+				compatible = "nxp,siul2-gpio";
 				reg = <0x40291706 0x02>, <0x402902c0 0x40>;
 				reg-names = "pgpdo", "mscr";
 				interrupt-parent = <&eirq0>;
@@ -153,7 +154,7 @@
 			};
 
 			gpiob_h: gpio@40291704 {
-				compatible = "nxp,s32-gpio";
+				compatible = "nxp,siul2-gpio";
 				reg = <0x40291704 0x02>, <0x40290300 0x40>;
 				reg-names = "pgpdo", "mscr";
 				interrupt-parent = <&eirq0>;
@@ -169,7 +170,7 @@
 			};
 
 			gpioc_l: gpio@4029170a {
-				compatible = "nxp,s32-gpio";
+				compatible = "nxp,siul2-gpio";
 				reg = <0x4029170a 0x02>, <0x40290340 0x40>;
 				reg-names = "pgpdo", "mscr";
 				interrupt-parent = <&eirq0>;
@@ -186,7 +187,7 @@
 			};
 
 			gpioc_h: gpio@40291708 {
-				compatible = "nxp,s32-gpio";
+				compatible = "nxp,siul2-gpio";
 				reg = <0x40291708 0x02>, <0x40290380 0x40>;
 				reg-names = "pgpdo", "mscr";
 				interrupt-parent = <&eirq0>;
@@ -202,7 +203,7 @@
 			};
 
 			gpiod_l: gpio@4029170e {
-				compatible = "nxp,s32-gpio";
+				compatible = "nxp,siul2-gpio";
 				reg = <0x4029170e 0x02>, <0x402903c0 0x40>;
 				reg-names = "pgpdo", "mscr";
 				interrupt-parent = <&eirq0>;
@@ -220,7 +221,7 @@
 			};
 
 			gpiod_h: gpio@4029170c {
-				compatible = "nxp,s32-gpio";
+				compatible = "nxp,siul2-gpio";
 				reg = <0x4029170c 0x02>, <0x40290400 0x40>;
 				reg-names = "pgpdo", "mscr";
 				interrupt-parent = <&eirq0>;
@@ -236,7 +237,7 @@
 			};
 
 			gpioe_l: gpio@40291712 {
-				compatible = "nxp,s32-gpio";
+				compatible = "nxp,siul2-gpio";
 				reg = <0x40291712 0x02>, <0x40290440 0x40>;
 				reg-names = "pgpdo", "mscr";
 				interrupt-parent = <&eirq0>;
@@ -254,7 +255,7 @@
 			};
 
 			gpioe_h: gpio@40291710 {
-				compatible = "nxp,s32-gpio";
+				compatible = "nxp,siul2-gpio";
 				reg = <0x40291710 0x02>, <0x40290480 0x40>;
 				reg-names = "pgpdo", "mscr";
 				interrupt-parent = <&eirq0>;
@@ -269,7 +270,7 @@
 			};
 
 			gpiof_l: gpio@40291716 {
-				compatible = "nxp,s32-gpio";
+				compatible = "nxp,siul2-gpio";
 				reg = <0x40291716 0x02>, <0x402904c0 0x40>;
 				reg-names = "pgpdo", "mscr";
 				interrupt-parent = <&eirq0>;
@@ -284,7 +285,7 @@
 			};
 
 			gpiof_h: gpio@40291714 {
-				compatible = "nxp,s32-gpio";
+				compatible = "nxp,siul2-gpio";
 				reg = <0x40291714 0x02>, <0x40290500 0x40>;
 				reg-names = "pgpdo", "mscr";
 				gpio-controller;
@@ -294,7 +295,7 @@
 			};
 
 			gpiog_l: gpio@4029171a {
-				compatible = "nxp,s32-gpio";
+				compatible = "nxp,siul2-gpio";
 				reg = <0x4029171a 0x02>, <0x40290540 0x40>;
 				reg-names = "pgpdo", "mscr";
 				interrupt-parent = <&eirq0>;
@@ -309,7 +310,7 @@
 			};
 
 			gpiog_h: gpio@40291718 {
-				compatible = "nxp,s32-gpio";
+				compatible = "nxp,siul2-gpio";
 				reg = <0x40291718 0x02>, <0x40290580 0x40>;
 				reg-names = "pgpdo", "mscr";
 				gpio-controller;

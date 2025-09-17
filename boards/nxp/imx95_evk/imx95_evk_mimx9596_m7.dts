@@ -60,10 +60,10 @@
 		compatible = "nxp,imx-flexspi-nor";
 		size = <DT_SIZE_M(1024)>;
 		reg = <0>;
-		spi-max-frequency = <200000000>;
+		spi-max-frequency = <DT_FREQ_M(200)>;
 		status = "okay";
 		jedec-id = [2c 5b 1b];
-		erase-block-size = <4096>;
+		erase-block-size = <DT_SIZE_K(4)>;
 		write-block-size = <2>;
 
 		partitions {

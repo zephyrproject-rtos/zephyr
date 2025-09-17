@@ -11,3 +11,20 @@
 	clock-mult = <83>;
 	clock-div = <2>;
 };
+
+/* Set OCRAM regions/sizes for RT1170 */
+/ {
+	soc {
+		ocram1: ocram@20240000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			zephyr,memory-region = "OCRAM1";
+			reg = <0x20240000 DT_SIZE_K(512)>;
+		};
+
+		ocram2: ocram@202c0000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			zephyr,memory-region = "OCRAM2";
+			reg = <0x202c0000 DT_SIZE_K(512)>;
+		};
+	};
+};

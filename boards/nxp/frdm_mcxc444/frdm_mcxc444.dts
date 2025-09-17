@@ -99,7 +99,7 @@
 };
 
 &cpu0 {
-	clock-frequency = <48000000>;
+	clock-frequency = <DT_FREQ_M(48)>;
 };
 
 &osc {
@@ -184,7 +184,7 @@ i2c0: &i2c0 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_tpm0>;
 	pinctrl-names = "default";
-	clocks = <&sim KINETIS_SIM_OSCERCLK 0x103C 24>;
+	clocks = <&sim KINETIS_SIM_MCGPCLK 0x103C 24>;
 };
 
 zephyr_udc0: &usb {

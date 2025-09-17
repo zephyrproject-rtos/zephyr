@@ -47,7 +47,7 @@
 		compatible = "sitronix,st7796s";
 		status = "okay";
 		reg = <0>;
-		mipi-max-frequency = <23000000>;
+		mipi-max-frequency = <DT_FREQ_M(23)>;
 		duplex = <SPI_HALF_DUPLEX>;
 		height = <320>;
 		width = <480>;

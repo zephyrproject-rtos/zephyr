@@ -1,0 +1,12 @@
+# Copyright (c) 2025 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+#
+description: ESP32 USB-OTG (DWC2 compatible controller)
+
+compatible: "espressif,esp32-usb-otg"
+
+include: ["snps,dwc2.yaml"]
+
+properties:
+  clocks:
+    required: true

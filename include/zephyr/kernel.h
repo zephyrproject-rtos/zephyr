@@ -1614,10 +1614,16 @@ const char *k_thread_state_str(k_tid_t thread_id, char *buf, size_t buf_size);
  */
 
 /**
- * @cond INTERNAL_HIDDEN
+ * @brief Kernel timer structure
+ *
+ * This structure is used to represent a kernel timer.
+ * All the members are internal and should not be accessed directly.
  */
-
 struct k_timer {
+	/**
+	 * @cond INTERNAL_HIDDEN
+	 */
+
 	/*
 	 * _timeout structure must be first here if we want to use
 	 * dynamic timer allocation. timeout.node is used in the double-linked
@@ -1648,8 +1654,14 @@ struct k_timer {
 #ifdef CONFIG_OBJ_CORE_TIMER
 	struct k_obj_core  obj_core;
 #endif
+	/**
+	 * INTERNAL_HIDDEN @endcond
+	 */
 };
 
+/**
+ * @cond INTERNAL_HIDDEN
+ */
 #define Z_TIMER_INITIALIZER(obj, expiry, stop) \
 	{ \
 	.timeout = { \
@@ -2399,7 +2411,17 @@ __syscall int k_futex_wake(struct k_futex *futex, bool wake_all);
  * @ingroup event_apis
  */
 
+/**
+ * @brief Kernel Event structure
+ *
+ * This structure is used to represent kernel events. All the members
+ * are internal and should not be accessed directly.
+ */
+
 struct k_event {
+/**
+ * @cond INTERNAL_HIDDEN
+ */
 	_wait_q_t         wait_q;
 	uint32_t          events;
 	struct k_spinlock lock;
@@ -2409,8 +2431,15 @@ struct k_event {
 #ifdef CONFIG_OBJ_CORE_EVENT
 	struct k_obj_core obj_core;
 #endif
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
 
 };
+
+/**
+ * @cond INTERNAL_HIDDEN
+ */
 
 #define Z_EVENT_INITIALIZER(obj) \
 	{ \
@@ -2418,6 +2447,9 @@ struct k_event {
 	.events = 0, \
 	.lock = {}, \
 	}
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
 
 /**
  * @brief Initialize an event object
@@ -3511,20 +3543,26 @@ static inline unsigned int z_impl_k_sem_count_get(struct k_sem *sem)
 #if defined(CONFIG_SCHED_IPI_SUPPORTED) || defined(__DOXYGEN__)
 struct k_ipi_work;
 
-/**
- * @cond INTERNAL_HIDDEN
- */
 
 typedef void (*k_ipi_func_t)(struct k_ipi_work *work);
 
+/**
+ * @brief IPI work item structure
+ *
+ * This structure is used to represent an IPI work item.
+ * All the members are internal and should not be accessed directly.
+ */
 struct k_ipi_work {
-	sys_dnode_t        node[CONFIG_MP_MAX_NUM_CPUS];   /* Node in IPI work queue */
+/**
+ * @cond INTERNAL_HIDDEN
+ */
+	sys_dnode_t    node[CONFIG_MP_MAX_NUM_CPUS];   /* Node in IPI work queue */
 	k_ipi_func_t   func;     /* Function to execute on target CPU */
 	struct k_event event;    /* Event to signal when processed */
 	uint32_t       bitmask;  /* Bitmask of targeted CPUs */
+/** INTERNAL_HIDDEN @endcond */
 };
 
-/** @endcond */
 
 /**
  * @brief Initialize the specified IPI work item

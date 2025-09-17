@@ -200,7 +200,7 @@ manifest:
       groups:
         - hal
     - name: hal_nordic
-      revision: 54f33f10a0b826174fb145f155afa61ce5a44b93
+      revision: d0cef2363e572679deba0e796ef6c77f1188bb04
       path: modules/hal/nordic
       groups:
         - hal
@@ -210,7 +210,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: b03baa6ceb5e346f556984f70505188a4c9ded60
+      revision: bcab469190b4302bb2f78cc20768f1c719595cba
       path: modules/hal/nxp
       groups:
         - hal
@@ -235,7 +235,7 @@ manifest:
       groups:
         - hal
     - name: hal_silabs
-      revision: 14dff7b65169055e347d3ddb49ee872ecb864de1
+      revision: 9f8ca4f8be6070f4d09eb4b646ed87c7c085071a
       path: modules/hal/silabs
       groups:
         - hal
@@ -281,7 +281,7 @@ manifest:
         - hal
     - name: hostap
       path: modules/lib/hostap
-      revision: 5abcff1c0ecff65f0f81e0cc086b7f766e5101bf
+      revision: f707b19c1733ebe401a50450494e5ebdd2e71b5f
     - name: liblc3
       revision: 48bbd3eacd36e99a57317a0a4867002e0b09e183
       path: modules/lib/liblc3
