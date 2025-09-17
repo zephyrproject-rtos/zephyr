@@ -15,11 +15,15 @@
 /* Driverlib includes */
 #include <ti/driverlib/dl_gpio.h>
 
+#include <soc.h>
+
 struct gpio_mspm0_config {
 	/* gpio_mspm0_config needs to be first (doesn't actually get used) */
 	struct gpio_driver_config common;
 	/* port base address */
 	GPIO_Regs *base;
+	/* Interrupt configuration function */
+	int (*int_config)(const struct device *dev);
 	/* port pincm lookup table */
 	uint8_t *pincm_lut;
 };
@@ -283,52 +287,31 @@ static uint32_t gpio_mspm0_get_pending_int(const struct device *port)
 
 static void gpio_mspm0_isr(const struct device *port)
 {
-	struct gpio_mspm0_data *data;
-	const struct gpio_mspm0_config *config;
-	const struct device *dev_list[] = {
-			DEVICE_DT_GET_OR_NULL(GPIOA_NODE),
-			DEVICE_DT_GET_OR_NULL(GPIOB_NODE),
-			DEVICE_DT_GET_OR_NULL(GPIOC_NODE),
-	};
+	struct gpio_mspm0_data *data = port->data;
+	const struct gpio_mspm0_config *config = port->config;
+	uint32_t status = DL_GPIO_getEnabledInterruptStatus(config->base,
+							    UINT32_MAX);
 
-	for (uint8_t i = 0; i < ARRAY_SIZE(dev_list); i++) {
-		uint32_t status;
+	DL_GPIO_clearInterruptStatus(config->base, status);
 
-		if (dev_list[i] == NULL) {
-			continue;
-		}
-
-		data = dev_list[i]->data;
-		config = dev_list[i]->config;
-
-		status = DL_GPIO_getEnabledInterruptStatus(config->base,
-							   0xFFFFFFFF);
-
-		DL_GPIO_clearInterruptStatus(config->base, status);
-		if (status != 0) {
-			gpio_fire_callbacks(&data->callbacks,
-					    dev_list[i], status);
-		}
+	if (status != 0) {
+		gpio_fire_callbacks(&data->callbacks, port, status);
 	}
 }
 
-static int gpio_mspm0_init(const struct device *dev)
+static int gpio_mspm0_init(const struct device *port)
 {
-	const struct gpio_mspm0_config *cfg = dev->config;
-	static bool init_irq = true;
+	const struct gpio_mspm0_config *cfg = port->config;
+	int ret;
+
+	ret = cfg->int_config(port);
+	if (ret != 0) {
+		return ret;
+	}
 
 	/* Reset and enable GPIO banks */
 	DL_GPIO_reset(cfg->base);
 	DL_GPIO_enablePower(cfg->base);
-
-	/* All the interrupt port share the same irq number, do it once */
-	if (init_irq) {
-		init_irq = false;
-
-		IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
-			    gpio_mspm0_isr, DEVICE_DT_INST_GET(0), 0);
-		irq_enable(DT_INST_IRQN(0));
-	}
 
 	return 0;
 }
@@ -386,11 +369,19 @@ static DEVICE_API(gpio, gpio_mspm0_driver_api) = {
 };
 
 #define GPIO_DEVICE_INIT(n, __suffix, __base_addr)						\
+	static int gpio_mspm0_int_config_##__suffix(const struct device *port)			\
+	{											\
+		return mspm0_register_int_to_group(DT_IRQN(n),					\
+						   DT_PROP(n, ti_int_group_iidx),		\
+						   gpio_mspm0_isr, port);			\
+	}											\
+												\
 	static const struct gpio_mspm0_config gpio_mspm0_cfg_##__suffix = {			\
 		.common = { .port_pin_mask =							\
 					GPIO_PORT_PIN_MASK_FROM_NGPIOS(gpio##__suffix##_pins),	\
 			  },									\
 		.base = (GPIO_Regs *)__base_addr,						\
+		.int_config = gpio_mspm0_int_config_##__suffix,					\
 		.pincm_lut = gpio##__suffix##_pincm_lut,					\
 	};											\
 	static struct gpio_mspm0_data gpio_mspm0_data_##__suffix;				\
