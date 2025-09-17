@@ -27,6 +27,7 @@
 		zephyr,sram = &ddram;
 		zephyr,console = &usart3;
 		zephyr,shell-uart = &usart3;
+		zephyr,entropy = &trng;
 	};
 
 	clocks {
@@ -139,4 +140,8 @@
 
 &pit64b0 {
 	clock-frequency = <DT_FREQ_M(10)>;
+};
+
+&trng {
+	status = "okay";
 };
