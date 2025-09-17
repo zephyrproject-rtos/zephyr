@@ -884,7 +884,7 @@ RTIO_IODEV_TEST_DEFINE(iodev_test_await0);
 /**
  * @brief Test await requests
  *
- * Ensures we can block execution of an RTIO context using the AWAIT operation,
+ * Ensures we can block execution of an RTIO iodev using the AWAIT operation,
  * and unblock it by calling rtio_seq_signal(), and that the AWAIT operation
  * will be skipped if rtio_seq_signal() was called before the AWAIT SQE is
  * executed.
@@ -902,7 +902,7 @@ void test_rtio_await_(struct rtio *rtio0, struct rtio *rtio1)
 	sqe = rtio_sqe_acquire(rtio0);
 	zassert_not_null(sqe, "Expected a valid sqe");
 	rtio_sqe_prep_nop(sqe, &iodev_test_await0, &userdata[0]);
-	sqe->flags = RTIO_SQE_CHAINED;
+	sqe->flags = RTIO_SQE_TRANSACTION;
 
 	await_sqe = rtio_sqe_acquire(rtio0);
 	zassert_not_null(await_sqe, "Expected a valid sqe");
@@ -919,11 +919,8 @@ void test_rtio_await_(struct rtio *rtio0, struct rtio *rtio1)
 	res = rtio_submit(rtio0, 0);
 	zassert_ok(res, "Submission failed");
 
-	TC_PRINT("Wait for nop sqe from rtio0 completed\n");
-	cqe = rtio_cqe_consume_block(rtio0);
-	zassert_not_null(sqe, "Expected a valid sqe");
-	zassert_equal(cqe->userdata, &userdata[0]);
-	rtio_cqe_release(rtio0, cqe);
+	TC_PRINT("Ensure rtio0 has started execution\n");
+	k_sleep(K_MSEC(20));
 
 	TC_PRINT("Submitting sqe from rtio1\n");
 	res = rtio_submit(rtio1, 0);
@@ -937,7 +934,11 @@ void test_rtio_await_(struct rtio *rtio0, struct rtio *rtio1)
 	TC_PRINT("Signal await sqe from rtio0\n");
 	rtio_sqe_signal(await_sqe);
 
-	TC_PRINT("Ensure sqe from rtio0 completed\n");
+	TC_PRINT("Ensure both sqe from rtio0 completed\n");
+	cqe = rtio_cqe_consume_block(rtio0);
+	zassert_not_null(cqe, "Expected a valid cqe");
+	zassert_equal(cqe->userdata, &userdata[0]);
+	rtio_cqe_release(rtio0, cqe);
 	cqe = rtio_cqe_consume_block(rtio0);
 	zassert_not_null(cqe, "Expected a valid cqe");
 	zassert_equal(cqe->userdata, &userdata[1]);
