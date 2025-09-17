@@ -172,6 +172,11 @@
 /* Group 23 */
 #define IT8XXX2_IRQ_WU149       184
 #define IT8XXX2_IRQ_WU150       185
+/* Group 27 */
+#define IT8XXX2_IRQ_WU184       216
+#define IT8XXX2_IRQ_WU185       217
+#define IT8XXX2_IRQ_WU186       218
+#define IT8XXX2_IRQ_WU188       220
 
 #define IT8XXX2_IRQ_COUNT       (CONFIG_NUM_IRQS + 1)
 
