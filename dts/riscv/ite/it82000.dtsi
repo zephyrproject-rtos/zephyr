@@ -37,6 +37,31 @@
 			has-volt-sel = <0 0 0 0 0 0 0 0>;
 			#gpio-cells = <2>;
 		};
+
+		pinctrlq: pinctrl@f016e0 {
+			compatible = "ite,it8xxx2-pinctrl-func";
+			reg = <0x00f016e0 8     /* GPCR */
+			       NO_FUNC    1>;
+			func3-gcr = <NO_FUNC NO_FUNC NO_FUNC NO_FUNC NO_FUNC
+				     NO_FUNC NO_FUNC NO_FUNC>;
+			func3-en-mask = <0 0 0 0 0 0 0 0>;
+			func4-gcr = <NO_FUNC NO_FUNC NO_FUNC NO_FUNC NO_FUNC
+				     NO_FUNC NO_FUNC NO_FUNC>;
+			func4-en-mask = <0 0 0 0 0 0 0 0>;
+			volt-sel = <NO_FUNC NO_FUNC NO_FUNC NO_FUNC NO_FUNC
+				    NO_FUNC NO_FUNC NO_FUNC>;
+			volt-sel-mask = <0 0 0 0 0 0 0 0>;
+			#pinmux-cells = <2>;
+			gpio-group;
+		};
+
+		power_ctrl_elpm: power-ctrl-elpm@f03e00 {
+			compatible = "ite,it8xxx2-power-elpm";
+			reg = <0x00f03e00 0xfd>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
 	};
 };
 
