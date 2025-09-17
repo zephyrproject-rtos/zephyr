@@ -11,5 +11,8 @@ config HAS_MPFS_HAL
 config HAS_MEC5_HAL
 	bool "Microchip MEC5 HAL drivers support"
 
-config PIC32C
+config MICROCHIP_PIC32C
+	bool
+
+config MICROCHIP_SAM
 	bool
