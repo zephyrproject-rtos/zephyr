@@ -19,6 +19,11 @@
 #include <zephyr/bluetooth/classic/hfp_hf.h>
 #include <zephyr/settings/settings.h>
 
+#include "pcm.h"
+#include "codec.h"
+
+static struct bt_conn *active_sco_conn;
+
 static void hf_connected(struct bt_conn *conn, struct bt_hfp_hf *hf)
 {
 	printk("HFP HF Connected!\n");
@@ -29,13 +34,95 @@ static void hf_disconnected(struct bt_hfp_hf *hf)
 	printk("HFP HF Disconnected!\n");
 }
 
+static void pcm_rx_cb(const uint8_t *data, uint32_t len)
+{
+	int err;
+
+	if (active_sco_conn == NULL) {
+		return;
+	}
+
+	err = codec_tx(data, len);
+	if (err != 0) {
+		printk("Failed to transmit PCM data: %d\n", err);
+	}
+}
+
+static void codec_rx_cb(const uint8_t *data, uint32_t len)
+{
+	int err;
+
+	if (active_sco_conn == NULL) {
+		return;
+	}
+
+	err = pcm_tx(data, len);
+	if (err != 0) {
+		printk("Failed to transmit Codec data: %d\n", err);
+	}
+}
+
 static void hf_sco_connected(struct bt_hfp_hf *hf, struct bt_conn *sco_conn)
 {
+	struct bt_conn_info info;
+	int err;
+
 	printk("HF SCO connected\n");
+	active_sco_conn = bt_conn_ref(sco_conn);
+
+	err = bt_conn_get_info(sco_conn, &info);
+	if (err != 0) {
+		printk("Failed to get sco conn %p info\n", sco_conn);
+	} else {
+		printk("SCO air mode %u\n", info.sco.air_mode);
+	}
+
+	err = pcm_init(info.sco.air_mode);
+	if (err != 0) {
+		printk("Failed to initialize PCM for air mode %u\n", info.sco.air_mode);
+		return;
+	}
+
+	err = codec_init(info.sco.air_mode);
+	if (err != 0) {
+		printk("Failed to initialize CODEC for air mode %u\n", info.sco.air_mode);
+		return;
+	}
+
+	err = pcm_rx_start(pcm_rx_cb);
+	if (err != 0) {
+		printk("Failed to start PCM\n");
+		return;
+	}
+
+	err = codec_rx_start(codec_rx_cb);
+	if (err != 0) {
+		printk("Failed to start CODEC\n");
+		return;
+	}
 }
 
 static void hf_sco_disconnected(struct bt_conn *sco_conn, uint8_t reason)
 {
+	int err;
+
+	if (active_sco_conn != sco_conn) {
+		return;
+	}
+
+	bt_conn_unref(active_sco_conn);
+	active_sco_conn = NULL;
+
+	err = pcm_rx_stop();
+	if (err != 0) {
+		printk("Failed to stop PCM\n");
+	}
+
+	err = codec_rx_stop();
+	if (err != 0) {
+		printk("Failed to stop CODEC\n");
+	}
+
 	printk("HF SCO disconnected\n");
 }
 
