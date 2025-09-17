@@ -772,7 +772,7 @@ static int clk_init(const struct device *dev)
 	IRQ_CONNECT(LFRC_IRQn, DT_INST_IRQ(0, priority), nrfx_isr, nrfx_power_clock_irq_handler, 0);
 #endif
     
-    clock_control_nrf_common_connect_irq();
+	clock_control_nrf_common_connect_irq();
 
 	nrfx_err = nrfx_clock_init(clock_event_handler);
 	if (nrfx_err != NRFX_SUCCESS) {
