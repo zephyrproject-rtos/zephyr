@@ -28,9 +28,9 @@
 
 	i2c22_default_alt: i2c22_default_alt {
 		group1 {
-/* Temporary workaround as it is currently not possible
- * to configure pins for TWIS with pinctrl.
- */
+			/* Temporary workaround as it is currently not possible
+			 * to configure pins for TWIS with pinctrl.
+			 */
 			psels = <NRF_PSEL(TWIM_SDA, 1, 9)>,
 				<NRF_PSEL(TWIM_SCL, 1, 13)>;
 			bias-pull-up;
@@ -46,13 +46,13 @@
 	};
 };
 
-&i2c21 {
+dut_twim: &i2c21 {
 	compatible = "nordic,nrf-twim";
 	status = "okay";
 	pinctrl-0 = <&i2c21_default_alt>;
 	pinctrl-1 = <&i2c21_sleep_alt>;
 	pinctrl-names = "default", "sleep";
-
+	clock-frequency = <I2C_BITRATE_STANDARD>;
 	sensor: sensor@54 {
 		reg = <0x54>;
 	};

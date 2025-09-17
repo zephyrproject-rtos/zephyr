@@ -344,33 +344,22 @@ static void bt_spi_rx_thread(void *p1, void *p2, void *p3)
 
 static int bt_apollo_send(const struct device *dev, struct net_buf *buf)
 {
-	int ret = 0;
+	int ret;
 
-	/* Buffer needs an additional byte for type */
-	if (buf->len >= SPI_MAX_TX_MSG_LEN) {
+	if (buf->len > SPI_MAX_TX_MSG_LEN) {
 		LOG_ERR("Message too long");
-		return -EINVAL;
-	}
-
-	switch (bt_buf_get_type(buf)) {
-	case BT_BUF_ACL_OUT:
-		net_buf_push_u8(buf, BT_HCI_H4_ACL);
-		break;
-	case BT_BUF_CMD:
-		net_buf_push_u8(buf, BT_HCI_H4_CMD);
-		break;
-	default:
-		LOG_ERR("Unsupported type");
-		net_buf_unref(buf);
 		return -EINVAL;
 	}
 
 	/* Send the SPI packet */
 	ret = spi_send_packet(buf->data, buf->len);
+	if (ret != 0) {
+		return ret;
+	}
 
 	net_buf_unref(buf);
 
-	return ret;
+	return 0;
 }
 
 static int bt_apollo_open(const struct device *dev, bt_hci_recv_t recv)
@@ -405,6 +394,9 @@ static int bt_apollo_close(const struct device *dev)
 	if (ret) {
 		return ret;
 	}
+
+	/* Stop RX thread */
+	k_thread_abort(&spi_rx_thread_data);
 
 	hci->recv = NULL;
 

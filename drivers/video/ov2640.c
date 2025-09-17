@@ -829,8 +829,7 @@ uint8_t ov2640_check_connection(const struct device *dev)
 	return ret;
 }
 
-static int ov2640_set_fmt(const struct device *dev,
-			enum video_endpoint_id ep, struct video_format *fmt)
+static int ov2640_set_fmt(const struct device *dev, struct video_format *fmt)
 {
 	struct ov2640_data *drv_data = dev->data;
 	uint16_t width, height;
@@ -872,8 +871,7 @@ static int ov2640_set_fmt(const struct device *dev,
 	return -ENOTSUP;
 }
 
-static int ov2640_get_fmt(const struct device *dev,
-			enum video_endpoint_id ep, struct video_format *fmt)
+static int ov2640_get_fmt(const struct device *dev, struct video_format *fmt)
 {
 	struct ov2640_data *drv_data = dev->data;
 
@@ -882,14 +880,12 @@ static int ov2640_get_fmt(const struct device *dev,
 	return 0;
 }
 
-static int ov2640_set_stream(const struct device *dev, bool enable)
+static int ov2640_set_stream(const struct device *dev, bool enable, enum video_buf_type type)
 {
 	return 0;
 }
 
-static int ov2640_get_caps(const struct device *dev,
-			   enum video_endpoint_id ep,
-			   struct video_caps *caps)
+static int ov2640_get_caps(const struct device *dev, struct video_caps *caps)
 {
 	caps->format_caps = fmts;
 	return 0;
@@ -1004,8 +1000,13 @@ static int ov2640_init_controls(const struct device *dev)
 
 static int ov2640_init(const struct device *dev)
 {
-	struct video_format fmt;
 	int ret = 0;
+	/* set default/init format SVGA RGB565 */
+	struct video_format fmt = {
+		.pixelformat = VIDEO_PIX_FMT_RGB565,
+		.width = SVGA_HSIZE,
+		.height = SVGA_VSIZE,
+	};
 
 #if DT_INST_NODE_HAS_PROP(0, reset_gpios)
 	const struct ov2640_config *cfg = dev->config;
@@ -1032,12 +1033,7 @@ static int ov2640_init(const struct device *dev)
 
 	ov2640_write_all(dev, default_regs, ARRAY_SIZE(default_regs));
 
-	/* set default/init format SVGA RGB565 */
-	fmt.pixelformat = VIDEO_PIX_FMT_RGB565;
-	fmt.width = SVGA_HSIZE;
-	fmt.height = SVGA_VSIZE;
-	fmt.pitch = SVGA_HSIZE * 2;
-	ret = ov2640_set_fmt(dev, VIDEO_EP_OUT, &fmt);
+	ret = ov2640_set_fmt(dev, &fmt);
 	if (ret) {
 		LOG_ERR("Unable to configure default format");
 		return -EIO;

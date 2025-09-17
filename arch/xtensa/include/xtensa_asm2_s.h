@@ -17,7 +17,7 @@
  * only by the assembler.
  */
 
-#if defined(CONFIG_XTENSA_HIFI_SHARING)
+#if defined(CONFIG_XTENSA_EAGER_HIFI_SHARING)
 .extern _xtensa_hifi_save
 #endif
 
@@ -395,7 +395,11 @@ _xstack_call0_\@:
 	l32i a6, a6, ___cpu_t_current_OFFSET
 
 #ifdef CONFIG_XTENSA_MMU
+#ifdef CONFIG_XTENSA_MMU_FLUSH_AUTOREFILL_DTLBS_ON_SWAP
+	call4 xtensa_swap_update_page_tables
+#else
 	SWAP_PAGE_TABLE a6, a3, a7
+#endif
 #endif
 #ifdef CONFIG_XTENSA_MPU
 	call4 xtensa_mpu_map_write
@@ -433,7 +437,7 @@ _xstack_returned_\@:
 	FPU_REG_SAVE
 #endif
 
-#if defined(CONFIG_XTENSA_HIFI_SHARING)
+#if defined(CONFIG_XTENSA_EAGER_HIFI_SHARING)
 	call0 _xtensa_hifi_save    /* Save HiFi registers */
 #endif
 
@@ -601,6 +605,10 @@ _excint_noflush_\@:
 
 	/* Restore A1 stack pointer from "next" handle. */
 	mov a1, a6
+
+#ifdef CONFIG_INSTRUMENT_THREAD_SWITCHING
+	call4 z_thread_mark_switched_in
+#endif
 
 _restore_\@:
 	j _restore_context

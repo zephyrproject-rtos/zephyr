@@ -46,8 +46,7 @@ Add this linker file to your application using CMake:
 
     # Support CMake linker generator
     zephyr_iterable_section(NAME coap_resource_my_service
-                            GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT}
-                            SUBALIGN ${CONFIG_LINKER_ITERABLE_SUBALIGN})
+                            GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT})
 
 You can now define your service as part of the application:
 
@@ -100,7 +99,7 @@ The following is an example of a CoAP resource registered with our service:
 
         /* Append payload */
         coap_packet_append_payload_marker(&response);
-        coap_packet_append_payload(&response, (uint8_t *)msg, sizeof(msg));
+        coap_packet_append_payload(&response, (uint8_t *)msg, strlen(msg));
 
         /* Send to response back to the client */
         return coap_resource_send(resource, &response, addr, addr_len, NULL);
@@ -243,7 +242,7 @@ following example simply prints when an event occurs.
     #define COAP_EVENTS_SET (NET_EVENT_COAP_OBSERVER_ADDED | NET_EVENT_COAP_OBSERVER_REMOVED | \
                              NET_EVENT_COAP_SERVICE_STARTED | NET_EVENT_COAP_SERVICE_STOPPED)
 
-    void coap_event_handler(uint32_t mgmt_event, struct net_if *iface,
+    void coap_event_handler(uint64_t mgmt_event, struct net_if *iface,
                             void *info, size_t info_length, void *user_data)
     {
         switch (mgmt_event) {

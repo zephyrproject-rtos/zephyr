@@ -982,9 +982,17 @@ static int uart_silabs_configure(const struct device *dev,
 		return -ENOSYS;
 	}
 
+	if (cfg->parity > UART_CFG_PARITY_SPACE) {
+		return -EINVAL;
+	}
+
 	if (cfg->flow_ctrl == UART_CFG_FLOW_CTRL_DTR_DSR ||
 	    cfg->flow_ctrl == UART_CFG_FLOW_CTRL_RS485) {
 		return -ENOSYS;
+	}
+
+	if (cfg->flow_ctrl > UART_CFG_FLOW_CTRL_RS485) {
+		return -EINVAL;
 	}
 
 	*data->uart_cfg = *cfg;
@@ -1019,7 +1027,7 @@ static int uart_silabs_init(const struct device *dev)
 	/* The peripheral and gpio clock are already enabled from soc and gpio driver */
 	/* Enable USART clock */
 	err = clock_control_on(config->clock_dev, (clock_control_subsys_t)&config->clock_cfg);
-	if (err < 0) {
+	if (err < 0 && err != -EALREADY) {
 		return err;
 	}
 

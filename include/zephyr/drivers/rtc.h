@@ -7,15 +7,16 @@
 
 /**
  * @file drivers/rtc.h
- * @brief Public real time clock driver API
+ * @ingroup rtc_interface
+ * @brief Main header file for real-time clock (RTC) driver API.
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_RTC_H_
 #define ZEPHYR_INCLUDE_DRIVERS_RTC_H_
 
 /**
- * @brief RTC Interface
- * @defgroup rtc_interface RTC Interface
+ * @brief Interfaces for real-time clocks (RTC).
+ * @defgroup rtc_interface RTC
  * @since 3.4
  * @version 0.1.0
  * @ingroup io_interfaces
@@ -368,11 +369,8 @@ static inline int z_impl_rtc_alarm_is_pending(const struct device *dev, uint16_t
  * @return -ENOTSUP if API is not supported by hardware
  * @return -errno code if failure
  */
-__syscall int rtc_alarm_set_callback(const struct device *dev, uint16_t id,
-				     rtc_alarm_callback callback, void *user_data);
-
-static inline int z_impl_rtc_alarm_set_callback(const struct device *dev, uint16_t id,
-						rtc_alarm_callback callback, void *user_data)
+static inline int rtc_alarm_set_callback(const struct device *dev, uint16_t id,
+					 rtc_alarm_callback callback, void *user_data)
 {
 	if (DEVICE_API_GET(rtc, dev)->alarm_set_callback == NULL) {
 		return -ENOSYS;
@@ -411,11 +409,8 @@ static inline int z_impl_rtc_alarm_set_callback(const struct device *dev, uint16
  * @return -ENOTSUP if API is not supported by hardware
  * @return -errno code if failure
  */
-__syscall int rtc_update_set_callback(const struct device *dev, rtc_update_callback callback,
-				      void *user_data);
-
-static inline int z_impl_rtc_update_set_callback(const struct device *dev,
-						 rtc_update_callback callback, void *user_data)
+static inline int rtc_update_set_callback(const struct device *dev,
+					  rtc_update_callback callback, void *user_data)
 {
 	if (DEVICE_API_GET(rtc, dev)->update_set_callback == NULL) {
 		return -ENOSYS;

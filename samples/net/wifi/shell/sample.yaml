@@ -85,7 +85,7 @@ tests:
     extra_args:
       - CONFIG_BUILD_ONLY_NO_BLOBS=y
     platform_allow:
-      - esp32_devkitc_wroom/esp32/procpu
+      - esp32_devkitc/esp32/procpu
       - esp32s2_saola
       - esp32c3_devkitm
       - esp32s3_devkitm/esp32s3/procpu

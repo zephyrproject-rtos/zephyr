@@ -20,12 +20,15 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		red_led_0: led0 {
 			gpios = <&gpioc 8 GPIO_ACTIVE_LOW>;
 		};
+
 		green_led_1: led1 {
 			gpios = <&gpiob 6 GPIO_ACTIVE_LOW>;
 		};
+
 		blue_led_2: led2 {
 			gpios = <&gpiob 7 GPIO_ACTIVE_LOW>;
 		};
@@ -80,7 +83,6 @@
 		led0 = &red_led_0;
 		led1 = &green_led_1;
 		led2 = &blue_led_2;
-		bootloader-led0 = &blue_led_2;
 		vcc1 = &cc1_buf;
 		vcc2 = &cc2_buf;
 		vbus = &vbus_read_buf;
@@ -88,7 +90,6 @@
 		ccon = &csa_cc2;
 	};
 };
-
 
 &adc1 {
 	#address-cells = <1>;
@@ -98,8 +99,7 @@
 		     &adc1_in3_pa3	/* CC2_BUF	 */
 		     &adc1_in15_pb11	/* VBUS_READ_BUF */
 		     &adc1_in17_pc4	/* CSA_VBUS	 */
-		     &adc1_in18_pc5	/* CSA_CC2	 */
-		    >;
+		     &adc1_in18_pc5	/* CSA_CC2	 */ >;
 	pinctrl-names = "default";
 	st,adc-clock-source = "SYNC";
 	st,adc-prescaler = <4>;

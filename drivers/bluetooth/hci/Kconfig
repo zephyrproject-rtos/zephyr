@@ -169,6 +169,11 @@ config BT_SILABS_EFR32
 	select BT_CTLR_CHAN_SEL_2_SUPPORT
 	select BT_CTLR_CONN_RSSI_SUPPORT
 	select BT_CTLR_ADV_EXT_SUPPORT
+	select BT_CTLR_PRIVACY_SUPPORT
+	select BT_CTLR_PHY_2M_SUPPORT
+	select BT_CTLR_SYNC_PERIODIC_SUPPORT
+	select BT_CTLR_SYNC_TRANSFER_RECEIVER_SUPPORT
+	select BT_CTLR_SYNC_TRANSFER_SENDER_SUPPORT
 	help
 	  Use Silicon Labs binary Bluetooth library to connect to the
 	  controller.
@@ -210,11 +215,11 @@ config BT_ESP32
 	select BT_CTLR_PRIVACY_SUPPORT
 	select BT_CTLR_EXT_SCAN_FP_SUPPORT
 	select BT_CTLR_DATA_LEN_UPDATE_SUPPORT
-	select BT_CTLR_ADV_EXT_SUPPORT if SOC_SERIES_ESP32S3 || SOC_SERIES_ESP32C3
-	select BT_CTLR_PHY_UPDATE_SUPPORT if SOC_SERIES_ESP32S3 || SOC_SERIES_ESP32C3
-	select BT_CTLR_EXT_REJ_IND_SUPPORT if SOC_SERIES_ESP32S3 || SOC_SERIES_ESP32C3
-	select BT_CTLR_PHY_2M_SUPPORT if SOC_SERIES_ESP32S3 || SOC_SERIES_ESP32C3
-	select BT_CTLR_CHAN_SEL_2_SUPPORT if SOC_SERIES_ESP32S3 || SOC_SERIES_ESP32C3
+	select BT_CTLR_ADV_EXT_SUPPORT if SOC_SERIES_ESP32S3 || SOC_SERIES_ESP32C2 || SOC_SERIES_ESP32C3 || SOC_SERIES_ESP32C6
+	select BT_CTLR_PHY_UPDATE_SUPPORT if SOC_SERIES_ESP32S3 || SOC_SERIES_ESP32C2 || SOC_SERIES_ESP32C3 || SOC_SERIES_ESP32C6
+	select BT_CTLR_EXT_REJ_IND_SUPPORT if SOC_SERIES_ESP32S3 || SOC_SERIES_ESP32C2 || SOC_SERIES_ESP32C3 || SOC_SERIES_ESP32C6
+	select BT_CTLR_PHY_2M_SUPPORT if SOC_SERIES_ESP32S3 || SOC_SERIES_ESP32C2 || SOC_SERIES_ESP32C3 || SOC_SERIES_ESP32C6
+	select BT_CTLR_CHAN_SEL_2_SUPPORT if SOC_SERIES_ESP32S3 || SOC_SERIES_ESP32C2 || SOC_SERIES_ESP32C3 || SOC_SERIES_ESP32C6
 	help
 	  Espressif HCI bluetooth interface
 
@@ -303,6 +308,7 @@ config BT_AIROC
 source "drivers/bluetooth/hci/Kconfig.esp32"
 source "drivers/bluetooth/hci/Kconfig.infineon"
 source "drivers/bluetooth/hci/Kconfig.nxp"
+source "drivers/bluetooth/hci/Kconfig.stm32"
 
 config BT_DRIVER_QUIRK_NO_AUTO_DLE
 	bool "Host auto-initiated Data Length Update quirk"
@@ -369,7 +375,7 @@ config BT_H4_NXP_CTLR
 	depends on DT_HAS_NXP_BT_HCI_UART_ENABLED
 	help
 	  Enables support for NXP Bluetooth Controller.
-	  More inforamtion about NXP Bluetooth profuct could be found on
+	  More information about NXP Bluetooth products could be found on
 	  https://www.nxp.com/products/wireless-connectivity/wi-fi-plus-bluetooth-plus-802-15-4:WIFI-BLUETOOTH
 
 if BT_H4_NXP_CTLR

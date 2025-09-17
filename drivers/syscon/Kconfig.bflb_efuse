@@ -1,0 +1,9 @@
+# Copyright (c) 2024-2025 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+config SYSCON_BFLB_EFUSE
+	bool "Bouffalolab EFUSEs driver"
+	default y
+	depends on DT_HAS_BFLB_EFUSE_ENABLED
+	help
+	  E-Fuse access via SYSCON API for Bouffalolab platforms.

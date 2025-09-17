@@ -65,7 +65,7 @@ struct sdhc_ra_priv {
 	/* Transfer DTC */
 	struct st_transfer_instance transfer;
 	struct st_dtc_instance_ctrl transfer_ctrl;
-	struct st_transfer_info transfer_info;
+	struct st_transfer_info transfer_info DTC_TRANSFER_INFO_ALIGNMENT;
 	struct st_transfer_cfg transfer_cfg;
 	struct st_dtc_extended_cfg transfer_cfg_extend;
 };
@@ -605,6 +605,11 @@ static DEVICE_API(sdhc, sdhc_api) = {
 			EVENT_SDMMC_CARD(DT_INST_PROP(index, channel));                            \
 		R_ICU->IELSR[DT_INST_IRQ_BY_NAME(index, dma_req, irq)] =                           \
 			EVENT_SDMMC_DMA_REQ(DT_INST_PROP(index, channel));                         \
+                                                                                                   \
+		BSP_ASSIGN_EVENT_TO_CURRENT_CORE(EVENT_SDMMC_ACCS(DT_INST_PROP(index, channel)));  \
+		BSP_ASSIGN_EVENT_TO_CURRENT_CORE(EVENT_SDMMC_CARD(DT_INST_PROP(index, channel)));  \
+		BSP_ASSIGN_EVENT_TO_CURRENT_CORE(                                                  \
+			EVENT_SDMMC_DMA_REQ(DT_INST_PROP(index, channel)));                        \
                                                                                                    \
 		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, accs, irq),                                 \
 			    DT_INST_IRQ_BY_NAME(index, accs, priority), ra_sdmmc_accs_isr,         \

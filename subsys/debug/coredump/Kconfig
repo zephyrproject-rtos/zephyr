@@ -45,7 +45,7 @@ config DEBUG_COREDUMP_BACKEND_INTEL_ADSP_MEM_WINDOW
 	help
 	  Core dump is done via memory window slot[1].
 	  It is Intel ADSP memory region shared with xtensa DSP.
-	  Window 2 slot [1] is reserved for debuging information.
+	  Window 2 slot [1] is reserved for debugging information.
 
 config DEBUG_COREDUMP_BACKEND_OTHER
 	bool "Backend subsystem for coredump defined out of tree"
@@ -143,5 +143,28 @@ config DEBUG_COREDUMP_BACKEND_IN_MEMORY_SIZE
 module = DEBUG_COREDUMP
 module-str = coredump
 source "subsys/logging/Kconfig.template.log_config"
+
+config DEBUG_COREDUMP_THREAD_STACK_TOP
+	bool "Dump top of stack only"
+	default y if DEBUG_COREDUMP_MEMORY_DUMP_MIN
+	depends on DEBUG_COREDUMP_MEMORY_DUMP_MIN || \
+		   DEBUG_COREDUMP_MEMORY_DUMP_THREADS
+	depends on ARCH_SUPPORTS_COREDUMP_STACK_PTR
+	help
+	  This option enables dumping only the top portion of each thread's
+	  stack, rather than the entire stack region. The top of the stack is
+	  defined as the area from the stack pointer to the stack end, but the
+	  size of this region can additionally be constrained using the
+	  DEBUG_COREDUMP_THREAD_STACK_TOP_LIMIT option.
+
+config DEBUG_COREDUMP_THREAD_STACK_TOP_LIMIT
+	int "Stack top size limit"
+	default -1
+	depends on DEBUG_COREDUMP_THREAD_STACK_TOP
+	help
+	  See the description of the DEBUG_COREDUMP_THREAD_STACK_TOP option.
+	  The value -1 indicates that there is no limit, meaning that the stack
+	  is dumped till the end of its region.
+
 
 endif # DEBUG_COREDUMP

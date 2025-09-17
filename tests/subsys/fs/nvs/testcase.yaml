@@ -28,3 +28,6 @@ tests:
       - CONFIG_NVS_LOOKUP_CACHE=y
       - CONFIG_NVS_LOOKUP_CACHE_SIZE=64
     platform_allow: native_sim
+  filesystem.nvs.64kb_erase_block:
+    extra_args: DTC_OVERLAY_FILE=boards/native_sim_64kb_erase_block.overlay
+    platform_allow: native_sim

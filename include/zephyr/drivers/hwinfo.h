@@ -1,21 +1,21 @@
-/**
- * @file
- *
- * @brief Public APIs to get device Information.
- */
-
 /*
  * Copyright (c) 2018 Alexander Wachter
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @ingroup hwinfo_interface
+ * @brief Main header file for hardware information (hwinfo) driver API.
+ */
+
 #ifndef ZEPHYR_INCLUDE_DRIVERS_HWINFO_H_
 #define ZEPHYR_INCLUDE_DRIVERS_HWINFO_H_
 
 /**
- * @brief Hardware Information Interface
- * @defgroup hwinfo_interface Hardware Info Interface
+ * @brief Interfaces allowing to obtain hardware information.
+ * @defgroup hwinfo_interface Hardware Info
  * @since 1.14
  * @version 1.0.0
  * @ingroup io_interfaces
@@ -67,6 +67,10 @@ extern "C" {
 #define RESET_USER				BIT(13)
 /** Temperature reset */
 #define RESET_TEMPERATURE			BIT(14)
+/** Bootloader reset (entry / exit) */
+#define RESET_BOOTLOADER			BIT(15)
+/** Flash ECC reset */
+#define RESET_FLASH				BIT(16)
 /**
  * @}
  */

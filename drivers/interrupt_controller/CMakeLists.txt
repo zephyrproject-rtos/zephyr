@@ -6,6 +6,7 @@ zephyr_library_sources_ifdef(CONFIG_ARCV2_INTERRUPT_UNIT    intc_arcv2_irq_unit.
 zephyr_library_sources_ifdef(CONFIG_CAVS_ICTL               intc_cavs.c)
 zephyr_library_sources_ifdef(CONFIG_DW_ICTL                 intc_dw.c)
 zephyr_library_sources_ifdef(CONFIG_DW_ICTL_ACE             intc_dw_ace.c)
+zephyr_library_sources_ifdef(CONFIG_GPIO_INTC_STM32         intc_gpio_stm32.c)
 zephyr_library_sources_ifdef(CONFIG_EXTI_STM32              intc_exti_stm32.c)
 zephyr_library_sources_ifdef(CONFIG_GD32_EXTI               intc_gd32_exti.c)
 zephyr_library_sources_ifdef(CONFIG_GIC_V1                  intc_gic.c)
@@ -41,10 +42,12 @@ zephyr_library_sources_ifdef(CONFIG_NXP_S32_EIRQ            intc_eirq_nxp_s32.c)
 zephyr_library_sources_ifdef(CONFIG_NXP_S32_WKPU            intc_wkpu_nxp_s32.c)
 zephyr_library_sources_ifdef(CONFIG_XMC4XXX_INTC            intc_xmc4xxx.c)
 zephyr_library_sources_ifdef(CONFIG_NXP_PINT                intc_nxp_pint.c)
+zephyr_library_sources_ifdef(CONFIG_RENESAS_RX_ICU          intc_renesas_rx_icu.c)
 zephyr_library_sources_ifdef(CONFIG_RENESAS_RZ_EXT_IRQ      intc_renesas_rz_ext_irq.c)
 zephyr_library_sources_ifdef(CONFIG_NXP_IRQSTEER            intc_nxp_irqsteer.c)
 zephyr_library_sources_ifdef(CONFIG_INTC_MTK_ADSP           intc_mtk_adsp.c)
 zephyr_library_sources_ifdef(CONFIG_WCH_PFIC                intc_wch_pfic.c)
+zephyr_library_sources_ifdef(CONFIG_WCH_EXTI                intc_wch_exti.c)
 
 if(CONFIG_INTEL_VTD_ICTL)
   zephyr_library_include_directories(${ZEPHYR_BASE}/arch/x86/include)
@@ -55,6 +58,10 @@ if(CONFIG_PLIC_SHELL)
       WARNING:  `CONFIG_PLIC_SHELL` is enabled.
       This can use quite a bit of RAM (PLICs * IRQs * sizeof(uint16_t))"
   )
+endif()
+
+if(CONFIG_NXP_PINT)
+  zephyr_compile_definitions(PINT_USE_LEGACY_CALLBACK=1)
 endif()
 
 zephyr_library_include_directories(${ZEPHYR_BASE}/arch/common/include)

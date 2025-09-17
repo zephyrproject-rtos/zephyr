@@ -152,10 +152,9 @@ static bool cred_buf_clear(void)
 }
 
 /* Parse a (possibly incomplete) chunk into the credential buffer */
-static int cred_buf_write(char *chunk)
+static int cred_buf_write(char *chunk, size_t chunk_len)
 {
 	char *writehead = cred_buf + cred_written;
-	size_t chunk_len = strlen(chunk);
 
 	/* Verify that there is room for the incoming chunk */
 	if ((writehead + chunk_len) >= (cred_buf + sizeof(cred_buf) - 1)) {
@@ -327,7 +326,8 @@ static void shell_clear_cred_buf(const struct shell *sh)
 /* Write data into the credential buffer, with shell feedback. */
 static int shell_write_cred_buf(const struct shell *sh, char *chunk)
 {
-	int res = cred_buf_write(chunk);
+	size_t chunk_len = strlen(chunk);
+	int res = cred_buf_write(chunk, chunk_len);
 
 	/* Report results. */
 
@@ -515,15 +515,59 @@ cleanup:
 	return err;
 }
 
+#define ASCII_CTRL_C 0x03
+
+static void tls_cred_cmd_load_bypass(const struct shell *sh, uint8_t *data, size_t len)
+{
+	bool terminate = false;
+	int res;
+	size_t write_len = len;
+
+	for (size_t i = 0; i < len; i++) {
+		if (data[i] == ASCII_CTRL_C) {
+			write_len = i;
+			terminate = true;
+			break;
+		}
+	}
+
+	res = cred_buf_write(data, write_len);
+	if (res == -ENOMEM) {
+		shell_set_bypass(sh, NULL);
+		shell_fprintf(sh, SHELL_ERROR, "Not enough room in credential buffer for "
+					       "provided data. Increase "
+					       "CONFIG_TLS_CREDENTIALS_SHELL_CRED_BUF_SIZE.\n");
+		shell_clear_cred_buf(sh);
+		return;
+	}
+
+	if (terminate) {
+		shell_set_bypass(sh, NULL);
+		shell_fprintf(sh, SHELL_NORMAL, "Stored %d bytes.\n", cred_written);
+	}
+}
+
+static int tls_cred_cmd_buf_clear(const struct shell *sh, size_t argc, char *argv[])
+{
+	/* If the "clear" keyword is provided, clear the buffer rather than write to it. */
+	(void)cred_buf_clear();
+	shell_fprintf(sh, SHELL_NORMAL, "Credential buffer cleared.\n");
+
+	return 0;
+}
+
+static int tls_cred_cmd_buf_load(const struct shell *sh, size_t argc, char *argv[])
+{
+	shell_clear_cred_buf(sh);
+
+	shell_fprintf(sh, SHELL_NORMAL, "Input credential, finish with CTRL+C.\n");
+	shell_set_bypass(sh, tls_cred_cmd_load_bypass);
+	return 0;
+}
+
 /* Buffers credential data into the credential buffer. */
 static int tls_cred_cmd_buf(const struct shell *sh, size_t argc, char *argv[])
 {
-	/* If the "clear" keyword is provided, clear the buffer rather than write to it. */
-	if (strcmp(argv[1], "clear") == 0) {
-		shell_clear_cred_buf(sh);
-		return 0;
-	}
-
 	/* Otherwise, assume provided arg is base64 and attempt to write it into the credential
 	 * buffer.
 	 */
@@ -793,8 +837,15 @@ cleanup:
 	return 0;
 }
 
+SHELL_STATIC_SUBCMD_SET_CREATE(tls_cred_buf_cmds,
+	SHELL_CMD(clear, NULL, "Clear the credential buffer", tls_cred_cmd_buf_clear),
+	SHELL_CMD(load, NULL, "Load credential directly to buffer so it can be added.",
+		      tls_cred_cmd_buf_load),
+	SHELL_SUBCMD_SET_END
+);
+
 SHELL_STATIC_SUBCMD_SET_CREATE(tls_cred_cmds,
-	SHELL_CMD_ARG(buf, NULL, "Buffer in credential data so it can be added.",
+	SHELL_CMD_ARG(buf, &tls_cred_buf_cmds, "Buffer in credential data so it can be added.",
 		      tls_cred_cmd_buf, 2, 0),
 	SHELL_CMD_ARG(add, NULL, "Add a TLS credential.",
 		      tls_cred_cmd_add, 5, 1),

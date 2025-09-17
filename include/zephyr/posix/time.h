@@ -60,13 +60,14 @@ struct itimerspec {
 #include <errno.h>
 #include <zephyr/posix/posix_types.h>
 #include <zephyr/posix/signal.h>
+#include <zephyr/sys/clock.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #ifndef CLOCK_REALTIME
-#define CLOCK_REALTIME 1
+#define CLOCK_REALTIME SYS_CLOCK_REALTIME
 #endif
 
 #ifndef CLOCK_PROCESS_CPUTIME_ID
@@ -78,17 +79,12 @@ extern "C" {
 #endif
 
 #ifndef CLOCK_MONOTONIC
-#define CLOCK_MONOTONIC 4
+#define CLOCK_MONOTONIC SYS_CLOCK_MONOTONIC
 #endif
 
 #ifndef TIMER_ABSTIME
-#define TIMER_ABSTIME 4
+#define TIMER_ABSTIME SYS_TIMER_ABSTIME
 #endif
-
-static inline int32_t _ts_to_ms(const struct timespec *to)
-{
-	return (int32_t)(to->tv_sec * MSEC_PER_SEC) + (int32_t)(to->tv_nsec / NSEC_PER_MSEC);
-}
 
 int clock_gettime(clockid_t clock_id, struct timespec *ts);
 int clock_getres(clockid_t clock_id, struct timespec *ts);

@@ -9,6 +9,23 @@
  * SCL = P1.2 and P1.3
  */
 
+/ {
+	zephyr,user {
+		sda0-gpios = <&gpio2 8 0>;
+		scl0-gpios = <&gpio1 2 0>;
+		sda1-gpios = <&gpio2 9 0>;
+		scl1-gpios = <&gpio1 3 0>;
+	};
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&gpio2 {
+	status = "okay";
+};
+
 &pinctrl {
 	i2c130_default: i2c130_default {
 		group1 {

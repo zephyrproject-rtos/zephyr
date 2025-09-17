@@ -22,11 +22,9 @@ config SOC_NRF54L_CPUAPP_COMMON
 	select HAS_HW_NRF_RADIO_IEEE802154
 	select HAS_POWEROFF
 	select HAS_NORDIC_RAM_CTRL
+	select HAS_SWO
 
 config SOC_NRF54L05_CPUAPP
-	select SOC_NRF54L_CPUAPP_COMMON
-
-config SOC_NRF54L09_ENGA_CPUAPP
 	select SOC_NRF54L_CPUAPP_COMMON
 
 config SOC_NRF54L10_CPUAPP
@@ -34,11 +32,15 @@ config SOC_NRF54L10_CPUAPP
 
 config SOC_NRF54L15_CPUAPP
 	select SOC_NRF54L_CPUAPP_COMMON
+	select SOC_COMPATIBLE_NRF54L15
+	select SOC_COMPATIBLE_NRF54L15_CPUAPP
+
+config SOC_NRF54LM20A_ENGA_CPUAPP
+	select SOC_NRF54L_CPUAPP_COMMON
+	select SOC_COMPATIBLE_NRF54LM20A
+	select SOC_COMPATIBLE_NRF54LM20A_CPUAPP
 
 config SOC_NRF54L05_CPUFLPR
-	select RISCV_CORE_NORDIC_VPR
-
-config SOC_NRF54L09_ENGA_CPUFLPR
 	select RISCV_CORE_NORDIC_VPR
 
 config SOC_NRF54L10_CPUFLPR
@@ -46,11 +48,9 @@ config SOC_NRF54L10_CPUFLPR
 
 config SOC_NRF54L15_CPUFLPR
 	select RISCV_CORE_NORDIC_VPR
+	select SOC_COMPATIBLE_NRF54L15
 
-config SOC_NRF54L20_ENGA_CPUAPP
-	select SOC_NRF54L_CPUAPP_COMMON
-
-config SOC_NRF54L20_ENGA_CPUFLPR
+config SOC_NRF54LM20A_ENGA_CPUFLPR
 	select RISCV_CORE_NORDIC_VPR
 
 if SOC_SERIES_NRF54LX
@@ -83,5 +83,11 @@ config SOC_NRF_FORCE_CONSTLAT
 	  will be constant and kept at a minimum. This is secured by forcing a set
 	  of base resources on while in sleep. The advantage of having a constant
 	  and predictable latency will be at the cost of having increased power consumption.
+
+config SOC_NRF54L_ANOMALY_56_WORKAROUND
+	bool "Apply workaround 56 for nRF54L SoCs"
+	default y
+	help
+	   This option enables configuration workaround 56 for nRF54L Series SoCs.
 
 endif # SOC_SERIES_NRF54LX

@@ -83,9 +83,8 @@ The list of command line options supported by twister can be viewed using:
 
    .. group-tab:: Linux
 
-      .. code-block:: bash
-
-         $ ./scripts/twister --help
+      .. command-output:: $ZEPHYR_BASE/scripts/twister --help
+         :shell:
 
    .. group-tab:: Windows
 
@@ -561,6 +560,7 @@ harness: <string>
     - robot
     - ctest
     - shell
+    - power
 
     See :ref:`twister_harnesses` for more information.
 
@@ -602,6 +602,18 @@ harness_config: <harness configuration options>
 
         Only one fixture can be defined per test scenario and the fixture name has to
         be unique across all tests in the test suite.
+
+    ztest_suite_repeat: <int> (default 1)
+        This parameter specifies the number of times the entire test suite should be repeated.
+
+    ztest_test_repeat: <int> (default 1)
+        This parameter specifies the number of times each individual test within the test suite
+        should be repeated.
+
+    ztest_test_shuffle: <True|False> (default False)
+        This parameter indicates whether the order of the tests within the test suite should
+        be shuffled. When set to ``true``, the tests will be executed in a random order.
+
 
 
     The following is an example yaml file with robot harness_config options.
@@ -733,6 +745,43 @@ required_snippets: <list of needed snippets>
             required_snippets:
               - cdc-acm-console
               - user-snippet-example
+
+required_applications: <list of required applications> (default empty)
+    Specify a list of test applications that must be built before current test can run.
+    It enables sharing of built applications between test scenarios, allowing tests
+    to access build artifacts from other applications.
+
+    Each required application entry supports:
+    - ``name``: Test scenario identifier (required)
+    - ``platform``: Target platform (optional, defaults to current test's platform)
+
+    Required applications must be available in the source tree (specified with ``-T``
+    and/or ``-s`` options). When reusing build directories (e.g., with ``--no-clean``),
+    Twister can find required applications in the current build directory.
+
+    How it works:
+
+    - Twister builds the required applications first
+    - The main test application waits for required applications to complete
+    - Build directories of required applications are made available to the test harness
+    - For pytest harness, build directories are passed via ``--required-build`` arguments
+      and accessible through the ``required_build_dirs`` fixture
+
+    Example configuration:
+
+    .. code-block:: yaml
+
+        tests:
+          sample.required_app_demo:
+            harness: pytest
+            required_applications:
+              - name: sample.shared_app
+              - name: sample.basic.helloworld
+                platform: native_sim
+          sample.shared_app:
+            build_only: true
+
+    Limitations: Not supported with ``--subset`` or ``--runtime-artifact-cleanup`` options.
 
 expect_reboot: <True|False> (default False)
     Notify twister that the test scenario is expected to reboot while executing.
@@ -871,6 +920,9 @@ pytest_dut_scope: <function|class|module|package|session> (default function)
               - test_file_2.py::test_A
               - test_file_2.py::test_B[param_a]
 
+
+.. _twister_console_harness:
+
 Console
 =======
 
@@ -960,6 +1012,8 @@ record: <recording options> (optional)
           }
       ]
 
+.. _twister_robot_harness:
+
 Robot
 =====
 
@@ -971,6 +1025,49 @@ robot_testsuite: <robot file path> (default empty)
 
 robot_option: <robot option> (default empty)
     One or more options to be send to robotframework.
+
+.. _twister_power_harness:
+
+Power
+=====
+
+The ``power`` harness is used to measure and validate the current consumption.
+It integrates with 'pytest' to perform automated data collection and analysis using a hardware power monitor.
+
+The harness executes the following steps:
+
+1. Initializes a power monitoring device (e.g., ``stm_powershield``) via the ``PowerMonitor`` abstract interface.
+#. Starts current measurement for a defined ``measurement_duration``.
+#. Collects raw current waveform data.
+#. Uses a peak detection algorithm to segment data into defined execution phases based on power transitions.
+#. Computes RMS current values for each phase using a utility function.
+#. Compares the computed values with user-defined expected RMS values.
+
+.. code-block:: yaml
+
+    harness: power
+    harness_config:
+      fixture: pm_probe
+      power_measurements:
+        element_to_trim: 100
+        min_peak_distance: 40
+        min_peak_height: 0.008
+        peak_padding: 40
+        measurement_duration: 6
+        num_of_transitions: 4
+        expected_rms_values: [56.0, 4.0, 1.2, 0.26, 140]
+        tolerance_percentage: 20
+
+- **elements_to_trim** – Number of samples to discard at the start of measurement to eliminate noise.
+- **min_peak_distance** – Minimum distance between detected current peaks (helps detect distinct transitions).
+- **min_peak_height** – Minimum current threshold to qualify as a peak (in amps).
+- **peak_padding** – Number of samples to extend around each detected peak.
+- **measurement_duration** – Total time (in seconds) to record current data.
+- **num_of_transitions** – Expected number of power state transitions in the DUT during test execution.
+- **expected_rms_values** – Target RMS values for each identified execution phase (in milliamps).
+- **tolerance_percentage** – Allowed deviation percentage from the expected RMS values.
+
+.. _twister_bsim_harness:
 
 Bsim
 ====
@@ -989,6 +1086,8 @@ bsim_exe_name: <string>
     If provided, the executable filename when copying to BabbleSim's bin
     directory, will be ``bs_<platform_name>_<bsim_exe_name>`` instead of the
     default based on the test path and scenario name.
+
+.. _twister_shell_harness:
 
 Shell
 =====
@@ -1380,6 +1479,33 @@ work. It is equivalent to following west and twister commands.
   and generate a correct hardware map automatically. You have to edit it
   manually according to above example. This is because the serial port
   of the PTY is not fixed and being allocated in the system at runtime.
+
+If west is not available or does not know how to flash your system, a custom
+flash command can be specified using the ``flash-command`` flag. The script is
+called with a ``--build-dir`` with the path of the current build, as well as a
+``--board-id`` flag to identify the specific device when multiple are available
+in a hardware map.
+
+.. tabs::
+
+   .. group-tab:: Linux
+
+      .. code-block:: bash
+
+         twister -p npcx9m6f_evb --device-testing --device-serial /dev/ttyACM0
+         --flash-command './custom_flash_script.py,--flag,"complex, argument"'
+
+   .. group-tab:: Windows
+
+      .. note::
+
+         python .\scripts\twister -p npcx9m6f_evb --device-testing
+         --device-serial COM1
+         --flash-command 'custom_flash_script.py,--flag,"complex, argument"'
+
+Would result in calling ``./custom_flash_script.py
+--build-dir <build directory> --board-id <board identification>
+--flag "complex, argument"``.
 
 Fixtures
 +++++++++

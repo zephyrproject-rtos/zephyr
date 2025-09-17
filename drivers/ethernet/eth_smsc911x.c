@@ -416,7 +416,7 @@ static enum ethernet_hw_caps eth_smsc911x_get_capabilities(const struct device *
 {
 	ARG_UNUSED(dev);
 
-	return ETHERNET_LINK_10BASE_T | ETHERNET_LINK_100BASE_T;
+	return ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE;
 }
 
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)

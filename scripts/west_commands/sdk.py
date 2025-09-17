@@ -138,7 +138,7 @@ class Sdk(WestCommand):
             help="SDK install destination directory. "
             "The SDK will be installed on the specified path. "
             "The directory contained in the archive will be renamed and installed for the specified directory. "
-            "For example, if you specify -b /foo/bar/baz, The archive's zephyr-sdk-<version> directory will be renamed baz and placed under /foo/bar. "
+            "For example, if you specify -d /foo/bar/baz, The archive's zephyr-sdk-<version> directory will be renamed baz and placed under /foo/bar. "
             "If this option is specified, the --install-base option is ignored. "
         )
         install_args_parser.add_argument(
@@ -154,7 +154,11 @@ class Sdk(WestCommand):
             metavar="toolchain_name",
             nargs="+",
             help="toolchain(s) to install (e.g. 'arm-zephyr-eabi'). "
-            "If this option is not given, toolchains for all architectures will be installed.",
+            "If this option is not given, toolchains for all architectures will be installed. "
+            "If you are unsure which one to install, install all toolchains. "
+            "This requires downloading several gigabytes and the corresponding disk space."
+            "Each Zephyr SDK release may include different toolchains; "
+            "see the release notes at https://github.com/zephyrproject-rtos/sdk-ng/releases.",
         )
         install_args_parser.add_argument(
             "-T",

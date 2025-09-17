@@ -23,6 +23,7 @@ zephyr_library_sources_ifdef(CONFIG_XTENSA_ENABLE_BACKTRACE debug_helpers_asm.S)
 zephyr_library_sources_ifdef(CONFIG_DEBUG_COREDUMP coredump.c)
 zephyr_library_sources_ifdef(CONFIG_TIMING_FUNCTIONS timing.c)
 zephyr_library_sources_ifdef(CONFIG_GDBSTUB gdbstub.c)
+zephyr_library_sources_ifdef(CONFIG_SEMIHOST semihost.c)
 zephyr_library_sources_ifdef(CONFIG_XTENSA_MMU ptables.c mmu.c)
 zephyr_library_sources_ifdef(CONFIG_XTENSA_MPU mpu.c)
 zephyr_library_sources_ifdef(CONFIG_USERSPACE userspace.S syscall_helper.c)
@@ -37,6 +38,17 @@ zephyr_library_sources_ifdef(
 
 if("${ZEPHYR_TOOLCHAIN_VARIANT}" STREQUAL "xcc")
   zephyr_library_sources(xcc_stubs.c)
+endif()
+
+# ...where to find core-isa.h for custom compilation commands below.
+if(CONFIG_SOC_FAMILY_ESPRESSIF_ESP32)
+  set(XTENSA_CONFIG_HAL_INCLUDE_DIR
+      -I${ZEPHYR_HAL_ESPRESSIF_MODULE_DIR}/components/xtensa/${CONFIG_SOC}/include
+     )
+else()
+  set(XTENSA_CONFIG_HAL_INCLUDE_DIR
+      -I${ZEPHYR_XTENSA_MODULE_DIR}/zephyr/soc/${CONFIG_SOC}
+     )
 endif()
 
 add_subdirectory(startup)
@@ -54,7 +66,7 @@ set(CORE_ISA_IN ${CMAKE_BINARY_DIR}/zephyr/include/generated/core-isa-dM.c)
 file(WRITE ${CORE_ISA_IN} "#include <xtensa/config/core-isa.h>\n")
 add_custom_command(OUTPUT ${CORE_ISA_DM}
   COMMAND ${CMAKE_C_COMPILER} -E -dM -U__XCC__ ${XTENSA_CORE_LOCAL_C_FLAG}
-          -I${ZEPHYR_XTENSA_MODULE_DIR}/zephyr/soc/${CONFIG_SOC}
+          ${XTENSA_CONFIG_HAL_INCLUDE_DIR}
           -I${SOC_FULL_DIR}
           ${CORE_ISA_IN} -o ${CORE_ISA_DM})
 
@@ -79,6 +91,10 @@ else()
   set(NEED_FLUSH_SCRATCH_REG false)
 endif()
 
+if(CONFIG_SEMIHOST)
+  zephyr_library_include_directories(${ZEPHYR_BASE}/arch/common/include)
+endif()
+
 # Generates a list of device-specific scratch register choices
 set(ZSR_H ${CMAKE_BINARY_DIR}/zephyr/include/generated/zephyr/zsr.h)
 add_custom_command(OUTPUT ${ZSR_H} DEPENDS ${CORE_ISA_DM}
@@ -91,25 +107,6 @@ add_custom_target(zsr_h DEPENDS ${ZSR_H})
 add_dependencies(zephyr_interface zsr_h)
 
 unset(MAY_NEED_SYSCALL_SCRATCH_REG)
-
-# Similar: auto-generate interrupt handlers
-set(HANDLERS ${CMAKE_BINARY_DIR}/zephyr/include/generated/xtensa_handlers)
-
-add_custom_command(
-  OUTPUT ${HANDLERS}_tmp.c
-  COMMAND ${CMAKE_C_COMPILER} -E -U__XCC__
-	  -I${ZEPHYR_XTENSA_MODULE_DIR}/zephyr/soc/${CONFIG_SOC}
-	  -o ${HANDLERS}_tmp.c
-	  - < ${CMAKE_CURRENT_SOURCE_DIR}/xtensa_intgen.tmpl)
-
-add_custom_command(
-  OUTPUT ${HANDLERS}.h
-  DEPENDS ${HANDLERS}_tmp.c
-  COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/xtensa_intgen.py
-          ${HANDLERS}_tmp.c > ${HANDLERS}.h)
-
-add_custom_target(xtensa_handlers_h DEPENDS ${HANDLERS}.h)
-add_dependencies(zephyr_interface xtensa_handlers_h)
 
 # Auto-generate interrupt vector entry
 set(VECS_LD ${CMAKE_BINARY_DIR}/zephyr/include/generated/xtensa_vectors.ld)

@@ -45,7 +45,6 @@
 			read-only;
 		};
 
-
 		/*
 		 * Usable flash. Starts at 0x100, after the bootloader. The partition
 		 * size is 16MB minus the 0x100 bytes taken by the bootloader.
@@ -63,6 +62,13 @@
 	status = "okay";
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-names = "default";
+};
+
+zephyr_i2c: &i2c0 {
+	status = "okay";
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
 &i2c1 {

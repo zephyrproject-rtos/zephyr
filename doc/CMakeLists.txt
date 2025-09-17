@@ -17,6 +17,7 @@ set(SPHINXOPTS_EXTRA "" CACHE STRING "Extra Sphinx Options (added to defaults)")
 set(LATEXMKOPTS "-halt-on-error -no-shell-escape" CACHE STRING "Default latexmk options")
 set(DT_TURBO_MODE OFF CACHE BOOL "Enable DT turbo mode")
 set(HW_FEATURES_TURBO_MODE OFF CACHE BOOL "Enable HW features turbo mode")
+set(HW_FEATURES_VENDOR_FILTER "" CACHE STRING "Vendor filter for HW features")
 set(DOC_TAG "development" CACHE STRING "Documentation tag")
 set(DTS_ROOTS "${ZEPHYR_BASE}" CACHE STRING "DT bindings root folders")
 
@@ -118,6 +119,27 @@ set_target_properties(
 )
 
 #-------------------------------------------------------------------------------
+# Doxygen Coverage
+
+add_custom_target(
+  doxygen-coverage
+  COMMAND ${PYTHON_EXECUTABLE} -m coverxygen
+    --xml-dir ${CMAKE_CURRENT_BINARY_DIR}/doxygen/xml/
+    --src-dir ${ZEPHYR_BASE}/include/
+    --output ${CMAKE_CURRENT_BINARY_DIR}/doc-coverage.info
+  COMMAND lcov
+    --remove ${CMAKE_CURRENT_BINARY_DIR}/doc-coverage.info "*/deprecated"
+    > ${CMAKE_CURRENT_BINARY_DIR}/new.info
+  COMMAND genhtml
+    --no-function-coverage
+    --no-branch-coverage
+    ${CMAKE_CURRENT_BINARY_DIR}/new.info
+    -o ${CMAKE_CURRENT_BINARY_DIR}/coverage-report
+  DEPENDS doxygen
+  COMMENT "Generating Doxygen coverage info and HTML report..."
+)
+
+#-------------------------------------------------------------------------------
 # devicetree
 
 set(GEN_DEVICETREE_REST_SCRIPT ${CMAKE_CURRENT_LIST_DIR}/_scripts/gen_devicetree_rest.py)
@@ -159,6 +181,11 @@ set(SPHINX_TAGS_ARGS "")
 foreach(tag ${SPHINX_TAGS})
   list(APPEND SPHINX_TAGS_ARGS "-t" "${tag}")
 endforeach()
+
+if(HW_FEATURES_VENDOR_FILTER)
+  list(JOIN HW_FEATURES_VENDOR_FILTER "," vendor_filter)
+  list(APPEND SPHINXOPTS "-D" "zephyr_hw_features_vendor_filter=${vendor_filter}")
+endif()
 
 add_doc_target(
   html

@@ -33,10 +33,9 @@
 			compatible = "zephyr,uac2-feature-unit";
 			data-source = <&out_terminal>;
 			mute-control = "host-programmable";
-			automatic-gain-control =
-				"host-programmable" /* Primary */,
-				"host-programmable" /* Channel 1 */,
-				"host-programmable" /* Channel 2 */;
+			automatic-gain-control = "host-programmable", /* Primary */
+						 "host-programmable", /* Channel 1 */
+						 "host-programmable"; /* Channel 2 */
 		};
 
 		headphones_output: headphones {
@@ -64,9 +63,8 @@
 			compatible = "zephyr,uac2-feature-unit";
 			data-source = <&mic_input>;
 			mute-control = "host-programmable";
-			automatic-gain-control =
-				"not-present" /* Primary */,
-				"host-programmable" /* Channel 1 */;
+			automatic-gain-control = "not-present", /* Primary */
+						 "host-programmable"; /* Channel 1 */
 		};
 
 		in_terminal: in_terminal {

@@ -22,7 +22,7 @@ LOG_MODULE_REGISTER(gnss_emul, CONFIG_GNSS_LOG_LEVEL);
 #define DT_DRV_COMPAT zephyr_gnss_emul
 
 #define GNSS_EMUL_DEFAULT_FIX_INTERVAL_MS      1000
-#define GNSS_EMUL_MIN_FIX_INTERVAL_MS          100
+#define GNSS_EMUL_MIN_FIX_INTERVAL_MS          200
 #define GNSS_EMUL_FIX_ACQUIRE_TIME_MS          5000
 #define GNSS_EMUL_DEFAULT_NAV_MODE             GNSS_NAVIGATION_MODE_BALANCED_DYNAMICS
 #define GNSS_EMUL_SUPPORTED_SYSTEMS_MASK       0xFF
@@ -380,6 +380,7 @@ static void gnss_emul_set_utc(const struct device *dev)
 	data->data.utc.millisecond = millisecond;
 	data->data.utc.minute = datetime.tm_min;
 	data->data.utc.month = datetime.tm_mon + 1;
+	data->data.utc.month_day = datetime.tm_mday;
 	data->data.utc.century_year = datetime.tm_year % 100;
 }
 

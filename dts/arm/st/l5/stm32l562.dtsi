@@ -13,7 +13,7 @@
 		aes: aes@420c0000 {
 			compatible = "st,stm32-aes";
 			reg = <0x420c0000 0x400>;
-			clocks = <&rcc STM32_CLOCK(AHB2, 16U)>;
+			clocks = <&rcc STM32_CLOCK(AHB2, 16)>;
 			resets = <&rctl STM32_RESET(AHB2, 16U)>;
 			interrupts = <93 0>;
 			status = "disabled";

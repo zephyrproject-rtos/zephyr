@@ -235,7 +235,7 @@ static void test_pipe_open(void)
 	zassert_equal(atomic_get(&test_state),
 		      BIT(TEST_MODEM_PIPE_EVENT_OPENED_BIT) |
 		      BIT(TEST_MODEM_PIPE_EVENT_TRANSMIT_IDLE_BIT),
-		      "Unexpected state %u", atomic_get(&test_state));
+		      "Unexpected state %u", (uint32_t)atomic_get(&test_state));
 }
 
 /* Re-opening pipe shall have no effect */
@@ -244,7 +244,7 @@ static void test_pipe_reopen(void)
 	zassert_ok(modem_pipe_open(test_pipe, K_SECONDS(10)), "Failed to re-open pipe");
 	zassert_false(test_backend.open_called, "open was called");
 	zassert_equal(atomic_get(&test_state), 0,
-		      "Unexpected state %u", atomic_get(&test_state));
+		      "Unexpected state %u", (uint32_t)atomic_get(&test_state));
 }
 
 /* Closing pipe shall raise event CLOSED */
@@ -253,7 +253,7 @@ static void test_pipe_close(void)
 	zassert_ok(modem_pipe_close(test_pipe, K_SECONDS(10)), "Failed to close pipe");
 	zassert_true(test_backend.close_called, "close was not called");
 	zassert_equal(atomic_get(&test_state), BIT(TEST_MODEM_PIPE_EVENT_CLOSED_BIT),
-		      "Unexpected state %u", atomic_get(&test_state));
+		      "Unexpected state %u", (uint32_t)atomic_get(&test_state));
 }
 
 /* Re-closing pipe shall have no effect */
@@ -262,7 +262,7 @@ static void test_pipe_reclose(void)
 	zassert_ok(modem_pipe_close(test_pipe, K_SECONDS(10)), "Failed to re-close pipe");
 	zassert_false(test_backend.close_called, "close was called");
 	zassert_equal(atomic_get(&test_state), 0,
-		      "Unexpected state %u", atomic_get(&test_state));
+		      "Unexpected state %u", (uint32_t)atomic_get(&test_state));
 }
 
 static void test_pipe_async_transmit(void)
@@ -274,10 +274,10 @@ static void test_pipe_async_transmit(void)
 	zassert_equal(test_backend.transmit_buffer_size, test_buffer_size,
 		      "Incorrect buffer size");
 	zassert_equal(atomic_get(&test_state), 0, "Unexpected state %u",
-		      atomic_get(&test_state));
+		      (uint32_t)atomic_get(&test_state));
 	k_sleep(TEST_MODEM_PIPE_WAIT_TIMEOUT);
 	zassert_equal(atomic_get(&test_state), BIT(TEST_MODEM_PIPE_EVENT_TRANSMIT_IDLE_BIT),
-		      "Unexpected state %u", atomic_get(&test_state));
+		      "Unexpected state %u", (uint32_t)atomic_get(&test_state));
 }
 
 static void test_pipe_sync_transmit(void)
@@ -289,14 +289,14 @@ static void test_pipe_sync_transmit(void)
 	zassert_equal(test_backend.transmit_buffer_size, test_buffer_size,
 		      "Incorrect buffer size");
 	zassert_equal(atomic_get(&test_state), BIT(TEST_MODEM_PIPE_EVENT_TRANSMIT_IDLE_BIT),
-		      "Unexpected state %u", atomic_get(&test_state));
+		      "Unexpected state %u", (uint32_t)atomic_get(&test_state));
 }
 
 static void test_pipe_attach_receive_not_ready_transmit_idle(void)
 {
 	modem_pipe_attach(test_pipe, modem_pipe_fake_handler, &test_user_data);
 	zassert_equal(atomic_get(&test_state), BIT(TEST_MODEM_PIPE_EVENT_TRANSMIT_IDLE_BIT),
-		      "Unexpected state %u", atomic_get(&test_state));
+		      "Unexpected state %u", (uint32_t)atomic_get(&test_state));
 }
 
 static void test_pipe_attach_receive_ready_transmit_idle(void)
@@ -305,7 +305,7 @@ static void test_pipe_attach_receive_ready_transmit_idle(void)
 	zassert_equal(atomic_get(&test_state),
 		      BIT(TEST_MODEM_PIPE_EVENT_TRANSMIT_IDLE_BIT) |
 		      BIT(TEST_MODEM_PIPE_EVENT_RECEIVE_READY_BIT),
-		      "Unexpected state %u", atomic_get(&test_state));
+		      "Unexpected state %u", (uint32_t)atomic_get(&test_state));
 }
 
 static void test_pipe_receive(void)
@@ -317,14 +317,14 @@ static void test_pipe_receive(void)
 	zassert_equal(test_backend.receive_buffer_size, test_buffer_size,
 		      "Incorrect buffer size");
 	zassert_equal(atomic_get(&test_state), 0, "Unexpected state %u",
-		      atomic_get(&test_state));
+		      (uint32_t)atomic_get(&test_state));
 }
 
 static void test_pipe_notify_receive_ready(void)
 {
 	modem_pipe_notify_receive_ready(test_pipe);
 	zassert_equal(atomic_get(&test_state), BIT(TEST_MODEM_PIPE_EVENT_RECEIVE_READY_BIT),
-		      "Unexpected state %u", atomic_get(&test_state));
+		      "Unexpected state %u", (uint32_t)atomic_get(&test_state));
 }
 
 ZTEST(modem_pipe, test_async_open_close)

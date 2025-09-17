@@ -169,14 +169,6 @@ otError otPlatUartEnable(void)
 					(void *)&ot_uart);
 
 	if (DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_ot_uart), zephyr_cdc_acm_uart)) {
-		int ret;
-
-		ret = usb_enable(NULL);
-		if (ret != 0 && ret != -EALREADY) {
-			LOG_ERR("Failed to enable USB");
-			return OT_ERROR_FAILED;
-		}
-
 		/* Data Carrier Detect Modem - mark connection as established */
 		(void)uart_line_ctrl_set(ot_uart.dev, UART_LINE_CTRL_DCD, 1);
 		/* Data Set Ready - the NCP SoC is ready to communicate */
@@ -190,14 +182,6 @@ otError otPlatUartEnable(void)
 
 otError otPlatUartDisable(void)
 {
-	if (DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_ot_uart), zephyr_cdc_acm_uart)) {
-		int ret = usb_disable();
-
-		if (ret) {
-			LOG_WRN("Failed to disable USB (%d)", ret);
-		}
-	}
-
 	uart_irq_tx_disable(ot_uart.dev);
 	uart_irq_rx_disable(ot_uart.dev);
 	return OT_ERROR_NONE;

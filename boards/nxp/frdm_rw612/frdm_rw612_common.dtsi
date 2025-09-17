@@ -5,6 +5,7 @@
  */
 
 #include "frdm_rw612-pinctrl.dtsi"
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
@@ -32,6 +33,7 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		green_led: led_1 {
 			gpios = <&hsgpio0 12 GPIO_ACTIVE_LOW>;
 		};
@@ -39,6 +41,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button_0: button_0 {
 			label = "User SW2";
 			gpios = <&hsgpio0 11 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
@@ -52,8 +55,34 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xfffffff0>;
 		gpio-map-pass-thru = <0 0xf>;
-		gpio-map = <10  0 &hsgpio1 12 0>,  /* Pin 10, LCD and touch reset */
-			   <12  0 &hsgpio0 18 0>;  /* Pin 11, LCD touch INT */
+		gpio-map = <10 0 &hsgpio1 12 0>,  /* Pin 10, LCD and touch reset */
+			   <12 0 &hsgpio0 18 0>;  /* Pin 11, LCD touch INT */
+	};
+
+	arduino_header: arduino-connector {
+		compatible = "arduino-header-r3";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <ARDUINO_HEADER_R3_A0 0 &hsgpio1 10 0>,
+			   <ARDUINO_HEADER_R3_A1 0 &hsgpio1 11 0>,
+			   <ARDUINO_HEADER_R3_A2 0 &hsgpio1 13 0>,
+			   <ARDUINO_HEADER_R3_D0 0 &hsgpio0 9 0>,
+			   <ARDUINO_HEADER_R3_D1 0 &hsgpio0 8 0>,
+			   <ARDUINO_HEADER_R3_D2 0 &hsgpio0 11 0>,
+			   <ARDUINO_HEADER_R3_D3 0 &hsgpio0 15 0>,
+			   <ARDUINO_HEADER_R3_D4 0 &hsgpio0 18 0>,
+			   <ARDUINO_HEADER_R3_D5 0 &hsgpio0 27 0>,
+			   <ARDUINO_HEADER_R3_D6 0 &hsgpio0 0 0>,
+			   <ARDUINO_HEADER_R3_D7 0 &hsgpio0 20 0>,
+			   <ARDUINO_HEADER_R3_D8 0 &hsgpio1 18 0>,
+			   <ARDUINO_HEADER_R3_D9 0 &hsgpio1 20 0>,
+			   <ARDUINO_HEADER_R3_D10 0 &hsgpio0 6 0>,
+			   <ARDUINO_HEADER_R3_D11 0 &hsgpio0 9 0>,
+			   <ARDUINO_HEADER_R3_D12 0 &hsgpio0 8 0>,
+			   <ARDUINO_HEADER_R3_D13 0 &hsgpio0 7 0>,
+			   <ARDUINO_HEADER_R3_D14 0 &hsgpio0 16 0>,
+			   <ARDUINO_HEADER_R3_D15 0 &hsgpio0 17 0>;
 	};
 };
 
@@ -63,6 +92,7 @@
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_flexcomm3_usart>;
 	pinctrl-names = "default";
+	wakeup-source;
 };
 
 &flexcomm0 {
@@ -75,6 +105,14 @@
 
 &hsgpio0 {
 	status = "okay";
+	pinctrl-0 = <&pinmux_hsgpio0>;
+	pinctrl-names = "default";
+};
+
+&hsgpio1 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_hsgpio1>;
+	pinctrl-names = "default";
 };
 
 &flexspi {
@@ -86,12 +124,14 @@
 	ahb-boundary = "1024";
 	rx-clock-source = <1>;
 	rx-clock-source-b = <1>;
+
 	/* Winbond external flash */
 	w25q512jvfiq: w25q512jvfiq@0 {
 		compatible = "nxp,imx-flexspi-nor";
 		reg = <0>;
 		size = <DT_SIZE_M(64 * 8)>;
 		status = "okay";
+		jedec-id = [ef 40 20];
 		erase-block-size = <4096>;
 		write-block-size = <1>;
 		spi-max-frequency = <104000000>;
@@ -101,45 +141,50 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
+			/*
+			 * Partition sizes must be aligned
+			 * to the flash memory sector size of 4KB.
+			 */
 			boot_partition: partition@0 {
 				label = "mcuboot";
 				reg = <0x00000000 DT_SIZE_K(128)>;
 			};
-			/* The MCUBoot swap-move algorithm uses the last 2 sectors
-			 * of the primary slot0 for swap status and move.
-			 */
+
 			slot0_partition: partition@20000 {
 				label = "image-0";
-				reg = <0x00020000 (DT_SIZE_M(3) + DT_SIZE_K(2 * 4))>;
+				reg = <0x00020000 DT_SIZE_M(3)>;
 			};
-			slot1_partition: partition@323000 {
+
+			slot1_partition: partition@320000 {
 				label = "image-1";
-				reg = <0x00323000 DT_SIZE_M(3)>;
+				reg = <0x00320000 DT_SIZE_M(3)>;
 			};
-			storage_partition: partition@623000 {
+
+			storage_partition: partition@620000 {
 				label = "storage";
-				reg = <0x00623000 (DT_SIZE_M(58) - DT_SIZE_K(136))>;
+				reg = <0x00620000 (DT_SIZE_M(58) - DT_SIZE_K(128))>;
 			};
 		};
 	};
+
 	aps6404l: aps6404l@2 {
-			compatible = "nxp,imx-flexspi-aps6404l";
-			/* APS6404L is 8MB, 64MBit pSRAM */
-			size = <DT_SIZE_M(8 * 8)>;
-			reg = <2>;
-			spi-max-frequency = <109000000>;
-			/* PSRAM cannot be enabled while board is in default XIP
-			 * configuration, as it will conflict with flash chip.
-			 */
-			status = "disabled";
-			cs-interval-unit = <1>;
-			cs-interval = <2>;
-			cs-hold-time = <3>;
-			cs-setup-time = <3>;
-			data-valid-time = <6>;
-			column-space = <0>;
-			ahb-write-wait-unit = <2>;
-			ahb-write-wait-interval = <0>;
+		compatible = "nxp,imx-flexspi-aps6404l";
+		/* APS6404L is 8MB, 64MBit pSRAM */
+		size = <DT_SIZE_M(8 * 8)>;
+		reg = <2>;
+		spi-max-frequency = <109000000>;
+		/* PSRAM cannot be enabled while board is in default XIP
+		 * configuration, as it will conflict with flash chip.
+		 */
+		status = "disabled";
+		cs-interval-unit = <1>;
+		cs-interval = <2>;
+		cs-hold-time = <3>;
+		cs-setup-time = <3>;
+		data-valid-time = <6>;
+		column-space = <0>;
+		ahb-write-wait-unit = <2>;
+		ahb-write-wait-interval = <0>;
 	};
 };
 
@@ -153,7 +198,7 @@
 	pinctrl-0 = <&pinmux_enet>;
 	pinctrl-names = "default";
 	phy-handle = <&phy>;
-	zephyr,random-mac-address;
+	nxp,unique-mac;
 	phy-connection-type = "rmii";
 };
 
@@ -161,6 +206,7 @@
 	status = "okay";
 	pinctrl-0 = <&pinmux_mdio>;
 	pinctrl-names = "default";
+
 	phy: phy@2 {
 		compatible = "microchip,ksz8081";
 		reg = <2>;
@@ -225,6 +271,11 @@
 };
 
 &nbu {
+	status = "okay";
+	wakeup-source;
+};
+
+&imu {
 	status = "okay";
 	wakeup-source;
 };

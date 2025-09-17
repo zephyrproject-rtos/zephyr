@@ -11,9 +11,9 @@
 #include <zephyr/mgmt/mcumgr/smp/smp_client.h>
 
 /**
- * @brief MCUmgr OS management client API
- * @defgroup mcumgr_os_mgmt_client MCUmgr os_mgmt_client API
- * @ingroup mcumgr
+ * @brief MCUmgr OS Management Client API
+ * @defgroup mcumgr_os_mgmt_client OS Management Client
+ * @ingroup mcumgr_os_mgmt
  * @{
  */
 

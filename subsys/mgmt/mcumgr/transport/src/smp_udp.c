@@ -154,7 +154,7 @@ static int smp_udp_ud_copy(struct net_buf *dst, const struct net_buf *src)
 	struct sockaddr *src_ud = net_buf_user_data(src);
 	struct sockaddr *dst_ud = net_buf_user_data(dst);
 
-	net_ipaddr_copy(dst_ud, src_ud);
+	memcpy(dst_ud, src_ud, sizeof(struct sockaddr));
 
 	return MGMT_ERR_EOK;
 }
@@ -249,7 +249,7 @@ static void smp_udp_receive_thread(void *p1, void *p2, void *p3)
 			}
 			net_buf_add_mem(nb, conf->recv_buffer, len);
 			ud = net_buf_user_data(nb);
-			net_ipaddr_copy(ud, &addr);
+			memcpy(ud, &addr, sizeof(addr));
 
 			smp_rx_req(&conf->smp_transport, nb);
 		} else if (len < 0) {
@@ -280,7 +280,7 @@ static void smp_udp_open_iface(struct net_if *iface, void *user_data)
 	}
 }
 
-static void smp_udp_net_event_handler(struct net_mgmt_event_callback *cb, uint32_t mgmt_event,
+static void smp_udp_net_event_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt_event,
 				      struct net_if *iface)
 {
 	ARG_UNUSED(cb);

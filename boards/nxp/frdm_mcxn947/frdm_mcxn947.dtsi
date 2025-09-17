@@ -6,10 +6,12 @@
 
 #include "frdm_mcxn947-pinctrl.dtsi"
 #include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
+#include <zephyr/dt-bindings/gpio/dvp-20pin-connector.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	aliases{
+	aliases {
 		led0 = &red_led;
 		led1 = &green_led;
 		led2 = &blue_led;
@@ -21,16 +23,19 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		green_led: led_1 {
 			gpios = <&gpio0 27 GPIO_ACTIVE_LOW>;
 			label = "Green LED";
 			status = "disabled";
 		};
+
 		blue_led: led_2 {
 			gpios = <&gpio1 2 GPIO_ACTIVE_LOW>;
 			label = "Blue LED";
 			status = "disabled";
 		};
+
 		red_led: led_3 {
 			gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
 			label = "Red LED";
@@ -40,18 +45,47 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button_2: button_0 {
 			label = "User SW2";
 			gpios = <&gpio0 23 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 			zephyr,code = <INPUT_KEY_0>;
 			status = "disabled";
 		};
+
 		user_button_3: button_1 {
 			label = "User SW3";
 			gpios = <&gpio0 6 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 			zephyr,code = <INPUT_KEY_1>;
 			status = "disabled";
 		};
+	};
+
+	arduino_header: arduino-connector {
+		compatible = "arduino-header-r3";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <ARDUINO_HEADER_R3_A2 0 &gpio0 14 0>,
+			   <ARDUINO_HEADER_R3_A3 0 &gpio0 22 0>,
+			   <ARDUINO_HEADER_R3_A4 0 &gpio0 15 0>,
+			   <ARDUINO_HEADER_R3_A5 0 &gpio0 23 0>,
+			   <ARDUINO_HEADER_R3_D0 0 &gpio4 3 0>,
+			   <ARDUINO_HEADER_R3_D1 0 &gpio4 2 0>,
+			   <ARDUINO_HEADER_R3_D2 0 &gpio0 29 0>,
+			   <ARDUINO_HEADER_R3_D3 0 &gpio1 23 0>,
+			   <ARDUINO_HEADER_R3_D4 0 &gpio0 30 0>,
+			   <ARDUINO_HEADER_R3_D5 0 &gpio1 21 0>,
+			   <ARDUINO_HEADER_R3_D6 0 &gpio1 2 0>,
+			   <ARDUINO_HEADER_R3_D7 0 &gpio0 31 0>,
+			   <ARDUINO_HEADER_R3_D8 0 &gpio0 28 0>,
+			   <ARDUINO_HEADER_R3_D9 0 &gpio0 10 0>,
+			   <ARDUINO_HEADER_R3_D10 0 &gpio0 27 0>,
+			   <ARDUINO_HEADER_R3_D11 0 &gpio0 24 0>,
+			   <ARDUINO_HEADER_R3_D12 0 &gpio0 26 0>,
+			   <ARDUINO_HEADER_R3_D13 0 &gpio0 25 0>,
+			   <ARDUINO_HEADER_R3_D14 0 &gpio4 0 0>,
+			   <ARDUINO_HEADER_R3_D15 0 &gpio4 1 0>;
 	};
 
 	/*
@@ -62,9 +96,18 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map =	<9  0 &gpio4 6 0>,	/* Pin 9, LCD touch INT */
-				<10  0 &gpio4 5 0>,	/* Pin 10, LCD backlight control */
-				<11  0 &gpio4 7 0>;	/* Pin 11, LCD and touch reset */
+		gpio-map = <9 0 &gpio4 6 0>,	/* Pin 9, LCD touch INT */
+			   <10 0 &gpio4 5 0>,	/* Pin 10, LCD backlight control */
+			   <11 0 &gpio4 7 0>;	/* Pin 11, LCD and touch reset */
+	};
+
+	dvp_20pin_connector: dvp-20pin-connector {
+		compatible = "arducam,dvp-20pin-connector";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0x0 GPIO_DT_FLAGS_MASK>;
+		gpio-map = <DVP_20PIN_PEN 0 &gpio1 19 0>,
+			   <DVP_20PIN_PDN 0 &gpio1 18 0>;
 	};
 };
 
@@ -95,24 +138,19 @@ nxp_8080_touch_panel_i2c: &flexcomm2_lpi2c2 {
 	pinctrl-0 = <&pinmux_flexcomm7_lpi2c>;
 	pinctrl-names = "default";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
-	ov7670: ov7670@21 {
-		compatible = "ovti,ov7670";
-		reset-gpios = <&gpio1 19 GPIO_ACTIVE_HIGH>;
-		pwdn-gpios = <&gpio1 18 GPIO_ACTIVE_HIGH>;
-		reg = <0x21>;
-	};
 };
 
 /* SmartDMA is used for video driver on this board */
 &smartdma {
+	/* Shields do not enable video-sdma parent node so enable it by default */
 	status = "okay";
 	program-mem = <0x4000000>;
+
 	video_sdma: video-sdma {
-		status = "okay";
+		status = "disabled";
 		compatible = "nxp,video-smartdma";
 		pinctrl-0 = <&pinmux_smartdma_camera>;
 		pinctrl-names = "default";
-		sensor = <&ov7670>;
 		vsync-pin = <4>;
 		hsync-pin = <11>;
 		pclk-pin = <5>;
@@ -137,6 +175,7 @@ nxp_8080_touch_panel_i2c: &flexcomm2_lpi2c2 {
 		compatible = "mmio-sram";
 		reg = <0x20050000 DT_SIZE_K(64)>;
 	};
+
 	sramh: memory@20060000 {
 		compatible = "mmio-sram";
 		reg = <0x20060000 DT_SIZE_K(32)>;
@@ -157,13 +196,12 @@ nxp_8080_touch_panel_i2c: &flexcomm2_lpi2c2 {
 			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(80)>;
 		};
-		/* For the MCUBoot "upgrade only" method,
-		 * the slot sizes must be equal.
-		 */
+
 		slot0_partition: partition@14000 {
 			label = "image-0";
 			reg = <0x00014000 DT_SIZE_K(984)>;
 		};
+
 		slot1_partition: partition@10A000 {
 			label = "image-1";
 			reg = <0x0010A000 DT_SIZE_K(984)>;
@@ -231,7 +269,7 @@ nxp_8080_touch_panel_i2c: &flexcomm2_lpi2c2 {
 	phy: ethernet-phy@0 {
 		compatible = "ethernet-phy";
 		reg = <0>;
-		status = "okay";
+		status = "disabled";
 	};
 };
 
@@ -289,3 +327,7 @@ zephyr_mipi_dbi_parallel: &flexio0_lcd {
 	pinctrl-0 = <&pinmux_sctimer>;
 	pinctrl-names = "default";
 };
+
+dvp_20pin_i2c: &flexcomm7_lpi2c7 {};
+
+dvp_20pin_interface: &video_sdma {};

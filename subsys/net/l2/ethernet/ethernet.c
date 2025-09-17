@@ -13,6 +13,9 @@ LOG_MODULE_REGISTER(net_ethernet, CONFIG_NET_L2_ETHERNET_LOG_LEVEL);
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/ethernet_mgmt.h>
+#if defined(CONFIG_NET_DSA) && !defined(CONFIG_NET_DSA_DEPRECATED)
+#include <zephyr/net/dsa_core.h>
+#endif
 #include <zephyr/net/gptp.h>
 #include <zephyr/random/random.h>
 
@@ -194,9 +197,9 @@ enum net_verdict ethernet_check_ipv4_bcast_addr(struct net_pkt *pkt,
 	}
 
 	if (net_eth_is_addr_broadcast(&hdr->dst) &&
-	    !(net_ipv4_is_addr_mcast((struct in_addr *)NET_IPV4_HDR(pkt)->dst) ||
-	      net_ipv4_is_addr_bcast(net_pkt_iface(pkt),
-				     (struct in_addr *)NET_IPV4_HDR(pkt)->dst))) {
+	    !(net_ipv4_is_addr_mcast_raw(NET_IPV4_HDR(pkt)->dst) ||
+	      net_ipv4_is_addr_bcast_raw(net_pkt_iface(pkt),
+					 NET_IPV4_HDR(pkt)->dst))) {
 		return NET_DROP;
 	}
 
@@ -465,9 +468,9 @@ ETH_NET_L3_REGISTER(IPv6, NET_ETH_PTYPE_IPV6, ethernet_ip_recv);
 #if defined(CONFIG_NET_IPV4)
 static inline bool ethernet_ipv4_dst_is_broadcast_or_mcast(struct net_pkt *pkt)
 {
-	if (net_ipv4_is_addr_bcast(net_pkt_iface(pkt),
-				   (struct in_addr *)NET_IPV4_HDR(pkt)->dst) ||
-	    net_ipv4_is_addr_mcast((struct in_addr *)NET_IPV4_HDR(pkt)->dst)) {
+	if (net_ipv4_is_addr_bcast_raw(net_pkt_iface(pkt),
+				       NET_IPV4_HDR(pkt)->dst) ||
+	    net_ipv4_is_addr_mcast_raw(NET_IPV4_HDR(pkt)->dst)) {
 		return true;
 	}
 
@@ -478,7 +481,7 @@ static bool ethernet_fill_in_dst_on_ipv4_mcast(struct net_pkt *pkt,
 					       struct net_eth_addr *dst)
 {
 	if (net_pkt_family(pkt) == AF_INET &&
-	    net_ipv4_is_addr_mcast((struct in_addr *)NET_IPV4_HDR(pkt)->dst)) {
+	    net_ipv4_is_addr_mcast_raw(NET_IPV4_HDR(pkt)->dst)) {
 		/* Multicast address */
 		net_eth_ipv4_mcast_to_mac_addr(
 			(struct in_addr *)NET_IPV4_HDR(pkt)->dst, dst);
@@ -489,8 +492,9 @@ static bool ethernet_fill_in_dst_on_ipv4_mcast(struct net_pkt *pkt,
 	return false;
 }
 
-static struct net_pkt *ethernet_ll_prepare_on_ipv4(struct net_if *iface,
-						   struct net_pkt *pkt)
+static int ethernet_ll_prepare_on_ipv4(struct net_if *iface,
+				       struct net_pkt *pkt,
+				       struct net_pkt **out)
 {
 	struct ethernet_context *ctx = net_if_l2_data(iface);
 
@@ -503,34 +507,19 @@ static struct net_pkt *ethernet_ll_prepare_on_ipv4(struct net_if *iface,
 	}
 
 	if (ethernet_ipv4_dst_is_broadcast_or_mcast(pkt)) {
-		return pkt;
+		return NET_ARP_COMPLETE;
 	}
 
 	if (IS_ENABLED(CONFIG_NET_ARP)) {
-		struct net_pkt *arp_pkt;
-
-		arp_pkt = net_arp_prepare(pkt, (struct in_addr *)NET_IPV4_HDR(pkt)->dst, NULL);
-		if (!arp_pkt) {
-			return NULL;
-		}
-
-		if (pkt != arp_pkt) {
-			NET_DBG("Sending arp pkt %p (orig %p) to iface %d (%p)",
-				arp_pkt, pkt, net_if_get_by_iface(iface), iface);
-			net_pkt_unref(pkt);
-			return arp_pkt;
-		}
-
-		NET_DBG("Found ARP entry, sending pkt %p to iface %d (%p)",
-			pkt, net_if_get_by_iface(iface), iface);
+		return net_arp_prepare(pkt, (struct in_addr *)NET_IPV4_HDR(pkt)->dst, NULL, out);
 	}
 
-	return pkt;
+	return NET_ARP_COMPLETE;
 }
 #else
 #define ethernet_ipv4_dst_is_broadcast_or_mcast(...) false
 #define ethernet_fill_in_dst_on_ipv4_mcast(...) false
-#define ethernet_ll_prepare_on_ipv4(...) NULL
+#define ethernet_ll_prepare_on_ipv4(...) NET_ARP_COMPLETE
 #endif /* CONFIG_NET_IPV4 */
 
 #ifdef CONFIG_NET_IPV6
@@ -538,7 +527,7 @@ static bool ethernet_fill_in_dst_on_ipv6_mcast(struct net_pkt *pkt,
 					       struct net_eth_addr *dst)
 {
 	if (net_pkt_family(pkt) == AF_INET6 &&
-	    net_ipv6_is_addr_mcast((struct in6_addr *)NET_IPV6_HDR(pkt)->dst)) {
+	    net_ipv6_is_addr_mcast_raw(NET_IPV6_HDR(pkt)->dst)) {
 		memcpy(dst, (uint8_t *)multicast_eth_addr.addr,
 		       sizeof(struct net_eth_addr) - 4);
 		memcpy((uint8_t *)dst + 2,
@@ -725,18 +714,33 @@ static int ethernet_send(struct net_if *iface, struct net_pkt *pkt)
 	if (IS_ENABLED(CONFIG_NET_IPV4) && net_pkt_family(pkt) == AF_INET &&
 	    net_pkt_ll_proto_type(pkt) == NET_ETH_PTYPE_IP) {
 		if (!net_pkt_ipv4_acd(pkt)) {
-			struct net_pkt *tmp;
+			struct net_pkt *arp;
 
-			tmp = ethernet_ll_prepare_on_ipv4(iface, pkt);
-			if (tmp == NULL) {
-				ret = -ENOMEM;
-				goto error;
-			} else if (IS_ENABLED(CONFIG_NET_ARP) && tmp != pkt) {
+			ret = ethernet_ll_prepare_on_ipv4(iface, pkt, &arp);
+			if (ret == NET_ARP_COMPLETE) {
+				/* ARP resolution complete, packet ready to send */
+				NET_DBG("Found ARP entry, sending pkt %p to iface %d (%p)",
+					pkt, net_if_get_by_iface(iface), iface);
+			} else if (ret == NET_ARP_PKT_REPLACED) {
 				/* Original pkt got queued and is replaced
 				 * by an ARP request packet.
 				 */
-				pkt = tmp;
+				NET_DBG("Sending arp pkt %p (orig %p) to iface %d (%p)",
+					arp, pkt, net_if_get_by_iface(iface), iface);
+				net_pkt_unref(pkt);
+				pkt = arp;
 				ptype = htons(net_pkt_ll_proto_type(pkt));
+			} else if (ret == NET_ARP_PKT_QUEUED) {
+				/* Original pkt got queued, pending resolution
+				 * of an ongoing ARP request.
+				 */
+				NET_DBG("Pending ARP request, pkt %p queued", pkt);
+				net_pkt_unref(pkt);
+				ret = 0;
+				goto error;
+			} else {
+				__ASSERT_NO_MSG(ret < 0);
+				goto error;
 			}
 		}
 	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) &&

@@ -14,10 +14,12 @@
 / {
 	leds {
 		compatible = "gpio-leds";
+
 		red_led_9: led_9 {
 			gpios = <&gpiod 3 GPIO_ACTIVE_LOW>;
 			label = "User LD9";
 		};
+
 		green_led_10: led_10 {
 			gpios = <&gpiog 12 GPIO_ACTIVE_LOW>;
 			label = "User LD10";
@@ -26,6 +28,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button: button {
 			label = "User";
 			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
@@ -66,21 +69,21 @@
 		#size-cells = <0>;
 
 		bank@0 {
-			reg = <0x0>;
+			reg = <STM32_FMC_NORSRAM_BANK1>;
 			st,control = <STM32_FMC_DATA_ADDRESS_MUX_DISABLE
-				STM32_FMC_MEMORY_TYPE_SRAM
-				STM32_FMC_NORSRAM_MEM_BUS_WIDTH_16
-				STM32_FMC_BURST_ACCESS_MODE_DISABLE
-				STM32_FMC_WAIT_SIGNAL_POLARITY_LOW
-				STM32_FMC_WAIT_TIMING_BEFORE_WS
-				STM32_FMC_WRITE_OPERATION_ENABLE
-				STM32_FMC_WAIT_SIGNAL_DISABLE
-				STM32_FMC_EXTENDED_MODE_DISABLE
-				STM32_FMC_ASYNCHRONOUS_WAIT_DISABLE
-				STM32_FMC_WRITE_BURST_DISABLE
-				STM32_FMC_CONTINUOUS_CLOCK_SYNC_ONLY
-				STM32_FMC_WRITE_FIFO_DISABLE
-				STM32_FMC_PAGE_SIZE_NONE>;
+				      STM32_FMC_MEMORY_TYPE_SRAM
+				      STM32_FMC_NORSRAM_MEM_BUS_WIDTH_16
+				      STM32_FMC_BURST_ACCESS_MODE_DISABLE
+				      STM32_FMC_WAIT_SIGNAL_POLARITY_LOW
+				      STM32_FMC_WAIT_TIMING_BEFORE_WS
+				      STM32_FMC_WRITE_OPERATION_ENABLE
+				      STM32_FMC_WAIT_SIGNAL_DISABLE
+				      STM32_FMC_EXTENDED_MODE_DISABLE
+				      STM32_FMC_ASYNCHRONOUS_WAIT_DISABLE
+				      STM32_FMC_WRITE_BURST_DISABLE
+				      STM32_FMC_CONTINUOUS_CLOCK_SYNC_ONLY
+				      STM32_FMC_WRITE_FIFO_DISABLE
+				      STM32_FMC_PAGE_SIZE_NONE>;
 			st,timing = <1 1 32 0 2 2 STM32_FMC_ACCESS_MODE_A>;
 
 			fmc-mipi-dbi {
@@ -90,6 +93,7 @@
 				register-select-pin = <0>;
 				#address-cells = <1>;
 				#size-cells = <0>;
+
 				st7789v: lcd-panel@0 {
 					compatible = "sitronix,st7789v";
 					reg = <0>;
@@ -153,7 +157,7 @@
 };
 
 stm32_lp_tick_source: &lptim1 {
-	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x80000000>,
+	clocks = <&rcc STM32_CLOCK(APB1, 31)>,
 		 <&rcc STM32_SRC_LSE LPTIM1_SEL(3)>;
 	status = "okay";
 };
@@ -223,41 +227,40 @@ stm32_lp_tick_source: &lptim1 {
 
 	status = "okay";
 
-	mx25lm51245: ospi-nor-flash@90000000 {
+	mx25lm51245: ospi-nor-flash@0 {
 		compatible = "st,stm32-ospi-nor";
-		reg = <0x90000000 DT_SIZE_M(64)>; /* 512 Mbits */
+		reg = <0>;
+		size = <DT_SIZE_M(512)>; /* 512 Megabits */
 		ospi-max-frequency = <DT_FREQ_M(50)>;
 		spi-bus-width = <OSPI_OPI_MODE>;
 		data-rate = <OSPI_DTR_TRANSFER>;
 		four-byte-opcodes;
 		status = "okay";
-		sfdp-bfp = [
-			53 46 44 50 06 01 02 ff
-			00 06 01 10 30 00 00 ff
-			c2 00 01 04 10 01 00 ff
-			84 00 01 02 c0 00 00 ff
-			00 00 00 00 00 00 00 00
-			00 00 00 00 00 00 00 00
-			e5 20 fb ff ff ff ff 1f
-			44 eb 08 6b 08 3b 04 bb
-			fe ff ff ff ff ff 00 ff
-			ff ff 44 eb 0c 20 0f 52
-			10 d8 00 ff d6 49 c5 00
-			81 df 04 e3 44 03 67 38
-			30 b0 30 b0 f7 bd d5 5c
-			4a 9e 29 ff f0 50 f9 85
-			00 00 00 00 00 00 00 00
-			00 00 00 00 00 00 00 00
-			00 00 00 00 00 00 00 00
-			00 00 00 00 00 00 00 00
-			00 00 00 00 00 00 00 00
-			00 00 00 00 00 00 00 00
-			00 00 00 00 00 00 00 00
-			00 00 00 00 00 00 00 00
-			00 00 00 00 00 00 00 00
-			00 00 00 00 00 00 00 00
-			7f ef ff ff 21 5c dc ff
-		];
+		sfdp-bfp = [53 46 44 50 06 01 02 ff
+			    00 06 01 10 30 00 00 ff
+			    c2 00 01 04 10 01 00 ff
+			    84 00 01 02 c0 00 00 ff
+			    00 00 00 00 00 00 00 00
+			    00 00 00 00 00 00 00 00
+			    e5 20 fb ff ff ff ff 1f
+			    44 eb 08 6b 08 3b 04 bb
+			    fe ff ff ff ff ff 00 ff
+			    ff ff 44 eb 0c 20 0f 52
+			    10 d8 00 ff d6 49 c5 00
+			    81 df 04 e3 44 03 67 38
+			    30 b0 30 b0 f7 bd d5 5c
+			    4a 9e 29 ff f0 50 f9 85
+			    00 00 00 00 00 00 00 00
+			    00 00 00 00 00 00 00 00
+			    00 00 00 00 00 00 00 00
+			    00 00 00 00 00 00 00 00
+			    00 00 00 00 00 00 00 00
+			    00 00 00 00 00 00 00 00
+			    00 00 00 00 00 00 00 00
+			    00 00 00 00 00 00 00 00
+			    00 00 00 00 00 00 00 00
+			    00 00 00 00 00 00 00 00
+			    7f ef ff ff 21 5c dc ff];
 
 		partitions {
 			compatible = "fixed-partitions";
@@ -314,7 +317,7 @@ zephyr_udc0: &usb {
 
 &sdmmc1 {
 	status = "okay";
-
+	disk-name = "SD";
 	pinctrl-0 = <&sdmmc1_d0_pc8
 		     &sdmmc1_d1_pc9
 		     &sdmmc1_d2_pc10

@@ -34,7 +34,12 @@ LOG_MODULE_REGISTER(net_websocket, CONFIG_NET_WEBSOCKET_LOG_LEVEL);
 #include <zephyr/random/random.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/base64.h>
+
+#ifdef CONFIG_MBEDTLS_PSA_CRYPTO_CLIENT
+#include <psa/crypto.h>
+#else
 #include <mbedtls/sha1.h>
+#endif /* CONFIG_MBEDTLS_PSA_CRYPTO_CLIENT */
 
 #include "net_private.h"
 #include "sockets_internal.h"
@@ -149,9 +154,9 @@ static struct websocket_context *websocket_find(int real_sock)
 	return ctx;
 }
 
-static void response_cb(struct http_response *rsp,
-			enum http_final_call final_data,
-			void *user_data)
+static int response_cb(struct http_response *rsp,
+		       enum http_final_call final_data,
+		       void *user_data)
 {
 	struct websocket_context *ctx = user_data;
 
@@ -164,6 +169,8 @@ static void response_cb(struct http_response *rsp,
 			rsp->data_len);
 		ctx->all_received = true;
 	}
+
+	return 0;
 }
 
 static int on_header_field(struct http_parser *parser, const char *at,
@@ -251,6 +258,10 @@ int websocket_connect(int sock, struct websocket_request *wreq,
 		"Sec-WebSocket-Version: 13\r\n",
 		NULL
 	};
+#ifdef CONFIG_MBEDTLS_PSA_CRYPTO_CLIENT
+	psa_status_t psa_status;
+	size_t hash_length;
+#endif /* CONFIG_MBEDTLS_PSA_CRYPTO_CLIENT */
 
 	fd = -1;
 
@@ -278,8 +289,23 @@ int websocket_connect(int sock, struct websocket_request *wreq,
 	ctx->http_cb = wreq->http_cb;
 	ctx->is_client = 1;
 
-	mbedtls_sha1((const unsigned char *)&rnd_value, sizeof(rnd_value),
-			 sec_accept_key);
+#ifdef CONFIG_MBEDTLS_PSA_CRYPTO_CLIENT
+	psa_status = psa_hash_compute(PSA_ALG_SHA_1, (const uint8_t *)&rnd_value, sizeof(rnd_value),
+				      sec_accept_key, sizeof(sec_accept_key), &hash_length);
+	if (psa_status != PSA_SUCCESS) {
+		NET_DBG("[%p] Cannot calculate sha1 (%d)", ctx, psa_status);
+		ret = -EPROTO;
+		goto out;
+	}
+#else
+	ret = mbedtls_sha1((const unsigned char *)&rnd_value, sizeof(rnd_value), sec_accept_key);
+	if (ret != 0) {
+		NET_DBG("[%p] Cannot calculate sha1 (%d)", ctx, ret);
+		ret = -EPROTO;
+		goto out;
+	}
+#endif /* CONFIG_MBEDTLS_PSA_CRYPTO_CLIENT */
+
 
 	ret = base64_encode(sec_ws_key + sizeof("Sec-Websocket-Key: ") - 1,
 			    sizeof(sec_ws_key) -
@@ -342,7 +368,22 @@ int websocket_connect(int sock, struct websocket_request *wreq,
 	strncpy(key_accept + key_len, WS_MAGIC, olen);
 
 	/* This SHA-1 value is then checked when we receive the response */
-	mbedtls_sha1(key_accept, olen + key_len, sec_accept_key);
+#ifdef CONFIG_MBEDTLS_PSA_CRYPTO_CLIENT
+	psa_status = psa_hash_compute(PSA_ALG_SHA_1, (const uint8_t *)key_accept, olen + key_len,
+				      sec_accept_key, sizeof(sec_accept_key), &hash_length);
+	if (psa_status != PSA_SUCCESS) {
+		NET_DBG("[%p] Cannot calculate sha1 (%d)", ctx, psa_status);
+		ret = -EPROTO;
+		goto out;
+	}
+#else
+	ret = mbedtls_sha1(key_accept, olen + key_len, sec_accept_key);
+	if (ret != 0) {
+		NET_DBG("[%p] Cannot calculate sha1 (%d)", ctx, ret);
+		ret = -EPROTO;
+		goto out;
+	}
+#endif /* CONFIG_MBEDTLS_PSA_CRYPTO_CLIENT */
 
 	ret = http_client_req(sock, &req, timeout, ctx);
 	if (ret < 0) {
@@ -384,10 +425,11 @@ int websocket_connect(int sock, struct websocket_request *wreq,
 
 	NET_DBG("[%p] WS connection to peer established (fd %d)", ctx, fd);
 
-	/* We will re-use the temp buffer in receive function if needed but
-	 * in order that to work the amount of data in buffer must be set to 0
+	/* We will re-use the temp buffer in receive function. If there were
+	 * any leftover data from HTTP headers processing, we need to reflect
+	 * this in the count variable.
 	 */
-	ctx->recv_buf.count = 0;
+	ctx->recv_buf.count = req.data_len;
 
 	/* Init parser FSM */
 	ctx->parser_state = WEBSOCKET_PARSER_STATE_OPCODE;
@@ -839,7 +881,8 @@ static int websocket_parse(struct websocket_context *ctx, struct websocket_buffe
 				break;
 			case WEBSOCKET_PARSER_STATE_MASK:
 				ctx->parser_remaining--;
-				ctx->masking_value |= (data << (ctx->parser_remaining * 8));
+				ctx->masking_value |=
+					(uint32_t)((uint64_t)data << (ctx->parser_remaining * 8));
 				if (ctx->parser_remaining == 0) {
 					if (ctx->message_len == 0) {
 						ctx->parser_remaining = 0;

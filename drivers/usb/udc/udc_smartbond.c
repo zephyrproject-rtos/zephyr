@@ -1456,9 +1456,9 @@ static void handle_ep0_rx_work(struct k_work *item)
 	struct usb_smartbond_data *data =
 		CONTAINER_OF(item, struct usb_smartbond_data, ep0_rx_work);
 	const uint8_t ep = USB_CONTROL_EP_OUT;
-	struct udc_ep_config *ep_cfg = udc_get_ep_cfg(ep);
-	struct net_buf *buf;
 	const struct device *dev = data->dev;
+	struct udc_ep_config *ep_cfg = udc_get_ep_cfg(dev, ep);
+	struct net_buf *buf;
 	unsigned int lock_key;
 
 	/*
@@ -1495,7 +1495,7 @@ static void handle_ep0_tx_work(struct k_work *item)
 	struct net_buf *buf;
 	const struct device *dev = data->dev;
 	const uint8_t ep = USB_CONTROL_EP_IN;
-	struct udc_ep_config *ep_cfg = udc_get_ep_cfg(ep);
+	struct udc_ep_config *ep_cfg = udc_get_ep_cfg(dev, ep);
 	unsigned int lock_key;
 
 	buf = udc_buf_peek(ep_cfg);

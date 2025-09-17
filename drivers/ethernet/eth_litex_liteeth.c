@@ -139,7 +139,7 @@ static void eth_rx(const struct device *port)
 	pkt = net_pkt_rx_alloc_with_buffer(context->iface, len, AF_UNSPEC, 0,
 					   K_NO_WAIT);
 	if (pkt == NULL) {
-		LOG_ERR("Failed to obtain RX buffer");
+		LOG_ERR("Failed to obtain RX buffer of length %u", len);
 		return;
 	}
 
@@ -294,7 +294,7 @@ static enum ethernet_hw_caps eth_caps(const struct device *dev)
 #ifdef CONFIG_NET_VLAN
 		ETHERNET_HW_VLAN |
 #endif
-		ETHERNET_LINK_10BASE_T | ETHERNET_LINK_100BASE_T | ETHERNET_LINK_1000BASE_T;
+		ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE | ETHERNET_LINK_1000BASE;
 }
 
 static const struct ethernet_api eth_api = {
@@ -331,7 +331,8 @@ static const struct ethernet_api eth_api = {
 	}                                                                                          \
                                                                                                    \
 	static struct eth_litex_dev_data eth_data##n = {                                           \
-		.mac_addr = DT_INST_PROP(n, local_mac_address)};                                   \
+		.mac_addr = DT_INST_PROP_OR(n, local_mac_address, {0}),			           \
+	};                                                                                         \
                                                                                                    \
 	static const struct eth_litex_config eth_config##n = {                                     \
 		.phy_dev = DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(n, phy_handle)),                  \

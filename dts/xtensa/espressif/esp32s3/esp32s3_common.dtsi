@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Espressif Systems (Shanghai) Co., Ltd.
+ * Copyright (c) 2022-2025 Espressif Systems (Shanghai) Co., Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,7 +14,6 @@
 #include <dt-bindings/pinctrl/esp32s3-pinctrl.h>
 
 / {
-
 	aliases {
 		die-temp0 = &coretemp;
 	};
@@ -80,6 +79,14 @@
 		status = "okay";
 	};
 
+	clock: clock {
+		compatible = "espressif,esp32-clock";
+		fast-clk-src = <ESP32_RTC_FAST_CLK_SRC_RC_FAST>;
+		slow-clk-src = <ESP32_RTC_SLOW_CLK_SRC_RC_SLOW>;
+		#clock-cells = <1>;
+		status = "okay";
+	};
+
 	soc {
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -137,9 +144,8 @@
 			status = "disabled";
 			shared-memory = <&ipmmem0>;
 			shared-memory-size = <0x400>;
-			interrupts =
-				<FROM_CPU_INTR0_SOURCE IRQ_DEFAULT_PRIORITY 0>,
-				<FROM_CPU_INTR1_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupts = <FROM_CPU_INTR0_SOURCE IRQ_DEFAULT_PRIORITY 0>,
+				     <FROM_CPU_INTR1_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
 		};
 
@@ -149,9 +155,8 @@
 			status = "disabled";
 			shared-memory = <&ipmmem0>;
 			shared-memory-size = <0x400>;
-			interrupts =
-				<FROM_CPU_INTR0_SOURCE IRQ_DEFAULT_PRIORITY 0>,
-				<FROM_CPU_INTR1_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupts = <FROM_CPU_INTR0_SOURCE IRQ_DEFAULT_PRIORITY 0>,
+				     <FROM_CPU_INTR1_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
 			#mbox-cells = <1>;
 		};
@@ -165,19 +170,10 @@
 			status = "okay";
 		};
 
-		rtc: rtc@60021000 {
-			compatible = "espressif,esp32-rtc";
-			reg = <0x60021000 0x2000>;
-			fast-clk-src = <ESP32_RTC_FAST_CLK_SRC_RC_FAST>;
-			slow-clk-src = <ESP32_RTC_SLOW_CLK_SRC_RC_SLOW>;
-			#clock-cells = <1>;
-			status = "okay";
-		};
-
 		xt_wdt: xt_wdt@60021004 {
 			compatible = "espressif,esp32-xt-wdt";
 			reg = <0x60021004 0x4>;
-			clocks = <&rtc ESP32_MODULE_MAX>;
+			clocks = <&clock ESP32_MODULE_MAX>;
 			interrupts = <RTC_CORE_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
 			status = "disabled";
@@ -185,8 +181,8 @@
 
 		rtc_timer: rtc_timer@60008004 {
 			reg = <0x60008004 0xC>;
-			compatible = "espressif,esp32-rtc-timer";
-			clocks = <&rtc ESP32_MODULE_MAX>;
+			compatible = "espressif,esp32-rtc_timer";
+			clocks = <&clock ESP32_MODULE_MAX>;
 			interrupts = <RTC_CORE_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
 			status = "disabled";
@@ -211,7 +207,7 @@
 			reg = <0x60000000 0x1000>;
 			interrupts = <UART0_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
-			clocks = <&rtc ESP32_UART0_MODULE>;
+			clocks = <&clock ESP32_UART0_MODULE>;
 			status = "disabled";
 		};
 
@@ -220,7 +216,7 @@
 			reg = <0x60010000 0x1000>;
 			interrupts = <UART1_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
-			clocks = <&rtc ESP32_UART1_MODULE>;
+			clocks = <&clock ESP32_UART1_MODULE>;
 			status = "disabled";
 		};
 
@@ -229,7 +225,7 @@
 			reg = <0x6002e000 0x1000>;
 			interrupts = <UART2_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
-			clocks = <&rtc ESP32_UART2_MODULE>;
+			clocks = <&clock ESP32_UART2_MODULE>;
 			status = "disabled";
 		};
 
@@ -237,10 +233,8 @@
 			compatible = "simple-bus";
 			gpio-map-mask = <0xffffffe0 0xffffffc0>;
 			gpio-map-pass-thru = <0x1f 0x3f>;
-			gpio-map = <
-				0x00 0x0 &gpio0 0x0 0x0
-				0x20 0x0 &gpio1 0x0 0x0
-			>;
+			gpio-map = <0x00 0x0 &gpio0 0x0 0x0
+				    0x20 0x0 &gpio1 0x0 0x0>;
 			#gpio-cells = <2>;
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -287,7 +281,7 @@
 			reg = <0x60013000 DT_SIZE_K(4)>;
 			interrupts = <I2C_EXT0_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
-			clocks = <&rtc ESP32_I2C0_MODULE>;
+			clocks = <&clock ESP32_I2C0_MODULE>;
 			status = "disabled";
 		};
 
@@ -298,7 +292,7 @@
 			reg = <0x60027000 DT_SIZE_K(4)>;
 			interrupts = <I2C_EXT1_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
-			clocks = <&rtc ESP32_I2C1_MODULE>;
+			clocks = <&clock ESP32_I2C1_MODULE>;
 			status = "disabled";
 		};
 
@@ -309,7 +303,7 @@
 			reg = <0x6000f000 0x1000>;
 			interrupts = <I2S0_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
-			clocks = <&rtc ESP32_I2S0_MODULE>;
+			clocks = <&clock ESP32_I2S0_MODULE>;
 			dmas = <&dma 2>, <&dma 3>;
 			dma-names = "rx", "tx";
 			unit = <0>;
@@ -323,7 +317,7 @@
 			reg = <0x6002d000 0x1000>;
 			interrupts = <I2S1_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
-			clocks = <&rtc ESP32_I2S1_MODULE>;
+			clocks = <&clock ESP32_I2S1_MODULE>;
 			dmas = <&dma 4>, <&dma 5>;
 			dma-names = "rx", "tx";
 			unit = <1>;
@@ -335,8 +329,7 @@
 			reg = <0x60024000 DT_SIZE_K(4)>;
 			interrupts = <SPI2_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
-			clocks = <&rtc ESP32_SPI2_MODULE>;
-			dma-clk = <ESP32_GDMA_MODULE>;
+			clocks = <&clock ESP32_SPI2_MODULE>;
 			dma-host = <0>;
 			status = "disabled";
 		};
@@ -346,8 +339,7 @@
 			reg = <0x60025000 DT_SIZE_K(4)>;
 			interrupts = <SPI3_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
-			clocks = <&rtc ESP32_SPI3_MODULE>;
-			dma-clk = <ESP32_GDMA_MODULE>;
+			clocks = <&clock ESP32_SPI3_MODULE>;
 			dma-host = <1>;
 			status = "disabled";
 		};
@@ -362,7 +354,7 @@
 		adc0: adc@60040000 {
 			compatible = "espressif,esp32-adc";
 			reg = <0x60040000 4>;
-			clocks = <&rtc ESP32_SARADC_MODULE>;
+			clocks = <&clock ESP32_SARADC_MODULE>;
 			unit = <1>;
 			channel-count = <10>;
 			#io-channel-cells = <1>;
@@ -372,7 +364,7 @@
 		adc1: adc@60040004 {
 			compatible = "espressif,esp32-adc";
 			reg = <0x60040004 4>;
-			clocks = <&rtc ESP32_SARADC_MODULE>;
+			clocks = <&clock ESP32_SARADC_MODULE>;
 			unit = <2>;
 			channel-count = <10>;
 			#io-channel-cells = <1>;
@@ -384,14 +376,14 @@
 			reg = <0x6002b000 DT_SIZE_K(4)>;
 			interrupts = <TWAI_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
-			clocks = <&rtc ESP32_TWAI_MODULE>;
+			clocks = <&clock ESP32_TWAI_MODULE>;
 			status = "disabled";
 		};
 
 		lcd_cam: lcd_cam@60041000 {
 			compatible = "espressif,esp32-lcd-cam";
 			reg = <0x60041000 DT_SIZE_K(4)>;
-			clocks = <&rtc ESP32_LCD_CAM_MODULE>;
+			clocks = <&clock ESP32_LCD_CAM_MODULE>;
 			interrupts = <LCD_CAM_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
 			status = "disabled";
@@ -403,50 +395,84 @@
 			status = "disabled";
 			interrupts = <USB_SERIAL_JTAG_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
-			clocks = <&rtc ESP32_USB_MODULE>;
+			clocks = <&clock ESP32_USB_MODULE>;
+		};
+
+		usb_otg: usb_otg@60080000 {
+			compatible = "espressif,esp32-usb-otg", "snps,dwc2";
+			reg = <0x60080000 DT_SIZE_K(256)>;
+			status = "disabled";
+			interrupts = <USB_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupt-parent = <&intc>;
+			clocks = <&clock ESP32_USB_MODULE>;
+			num-out-eps = <6>;
+			num-in-eps = <6>;
+			ghwcfg1 = <0x00000000>;
+			ghwcfg2 = <0x224dd930>;
+			ghwcfg4 = <0xd3f0a030>;
 		};
 
 		timer0: counter@6001f000 {
 			compatible = "espressif,esp32-timer";
 			reg = <0x6001f000 DT_SIZE_K(4)>;
-			clocks = <&rtc ESP32_TIMG0_MODULE>;
+			clocks = <&clock ESP32_TIMG0_MODULE>;
 			group = <0>;
 			index = <0>;
 			interrupts = <TG0_T0_LEVEL_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
 			status = "disabled";
+
+			counter {
+				compatible = "espressif,esp32-counter";
+				status = "disabled";
+			};
 		};
 
 		timer1: counter@6001f024 {
 			compatible = "espressif,esp32-timer";
 			reg = <0x6001f024 DT_SIZE_K(4)>;
-			clocks = <&rtc ESP32_TIMG0_MODULE>;
+			clocks = <&clock ESP32_TIMG0_MODULE>;
 			group = <0>;
 			index = <1>;
 			interrupts = <TG0_T1_LEVEL_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
 			status = "disabled";
+
+			counter {
+				compatible = "espressif,esp32-counter";
+				status = "disabled";
+			};
 		};
 
 		timer2: counter@60020000 {
 			compatible = "espressif,esp32-timer";
 			reg = <0x60020000 DT_SIZE_K(4)>;
-			clocks = <&rtc ESP32_TIMG1_MODULE>;
+			clocks = <&clock ESP32_TIMG1_MODULE>;
 			group = <1>;
 			index = <0>;
 			interrupts = <TG1_T0_LEVEL_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
 			status = "disabled";
+
+			counter {
+				compatible = "espressif,esp32-counter";
+				status = "disabled";
+			};
 		};
 
 		timer3: counter@60020024 {
 			compatible = "espressif,esp32-timer";
 			reg = <0x60020024 DT_SIZE_K(4)>;
-			clocks = <&rtc ESP32_TIMG1_MODULE>;
+			clocks = <&clock ESP32_TIMG1_MODULE>;
 			group = <1>;
 			index = <1>;
 			interrupts = <TG1_T1_LEVEL_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
+
+			counter {
+				compatible = "espressif,esp32-counter";
+				status = "disabled";
+			};
 		};
 
 		wdt0: watchdog@6001f048 {
@@ -454,7 +480,7 @@
 			reg = <0x6001f048 0x20>;
 			interrupts = <TG0_WDT_LEVEL_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
-			clocks = <&rtc ESP32_TIMG0_MODULE>;
+			clocks = <&clock ESP32_TIMG0_MODULE>;
 			status = "disabled";
 		};
 
@@ -463,7 +489,7 @@
 			reg = <0x60020048 0x20>;
 			interrupts = <TG1_WDT_LEVEL_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
-			clocks = <&rtc ESP32_TIMG1_MODULE>;
+			clocks = <&clock ESP32_TIMG1_MODULE>;
 			status = "disabled";
 		};
 
@@ -477,7 +503,7 @@
 			compatible = "espressif,esp32-ledc";
 			#pwm-cells = <3>;
 			reg = <0x60019000 DT_SIZE_K(4)>;
-			clocks = <&rtc ESP32_LEDC_MODULE>;
+			clocks = <&clock ESP32_LEDC_MODULE>;
 			status = "disabled";
 		};
 
@@ -486,7 +512,7 @@
 			reg = <0x6001e000 DT_SIZE_K(4)>;
 			interrupts = <PWM0_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
-			clocks = <&rtc ESP32_PWM0_MODULE>;
+			clocks = <&clock ESP32_PWM0_MODULE>;
 			#pwm-cells = <3>;
 			status = "disabled";
 		};
@@ -496,7 +522,7 @@
 			reg = <0x6002c000 DT_SIZE_K(4)>;
 			interrupts = <PWM1_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
-			clocks = <&rtc ESP32_PWM1_MODULE>;
+			clocks = <&clock ESP32_PWM1_MODULE>;
 			#pwm-cells = <3>;
 			status = "disabled";
 		};
@@ -506,7 +532,7 @@
 			reg = <0x60017000 DT_SIZE_K(4)>;
 			interrupts = <PCNT_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
-			clocks = <&rtc ESP32_PCNT_MODULE>;
+			clocks = <&clock ESP32_PCNT_MODULE>;
 			status = "disabled";
 		};
 
@@ -514,19 +540,28 @@
 			compatible = "espressif,esp32-gdma";
 			reg = <0x6003f000 DT_SIZE_K(4)>;
 			#dma-cells = <1>;
-			interrupts =
-				<DMA_IN_CH0_INTR_SOURCE IRQ_DEFAULT_PRIORITY ESP_INTR_FLAG_SHARED>,
-				<DMA_OUT_CH0_INTR_SOURCE IRQ_DEFAULT_PRIORITY ESP_INTR_FLAG_SHARED>,
-				<DMA_IN_CH1_INTR_SOURCE IRQ_DEFAULT_PRIORITY ESP_INTR_FLAG_SHARED>,
-				<DMA_OUT_CH1_INTR_SOURCE IRQ_DEFAULT_PRIORITY ESP_INTR_FLAG_SHARED>,
-				<DMA_IN_CH2_INTR_SOURCE IRQ_DEFAULT_PRIORITY ESP_INTR_FLAG_SHARED>,
-				<DMA_OUT_CH2_INTR_SOURCE IRQ_DEFAULT_PRIORITY ESP_INTR_FLAG_SHARED>,
-				<DMA_IN_CH3_INTR_SOURCE IRQ_DEFAULT_PRIORITY ESP_INTR_FLAG_SHARED>,
-				<DMA_OUT_CH3_INTR_SOURCE IRQ_DEFAULT_PRIORITY ESP_INTR_FLAG_SHARED>,
-				<DMA_IN_CH4_INTR_SOURCE IRQ_DEFAULT_PRIORITY ESP_INTR_FLAG_SHARED>,
-				<DMA_OUT_CH4_INTR_SOURCE IRQ_DEFAULT_PRIORITY ESP_INTR_FLAG_SHARED>;
+			interrupts = <DMA_IN_CH0_INTR_SOURCE IRQ_DEFAULT_PRIORITY
+				      ESP_INTR_FLAG_SHARED>,
+				     <DMA_OUT_CH0_INTR_SOURCE IRQ_DEFAULT_PRIORITY
+				      ESP_INTR_FLAG_SHARED>,
+				     <DMA_IN_CH1_INTR_SOURCE IRQ_DEFAULT_PRIORITY
+				      ESP_INTR_FLAG_SHARED>,
+				     <DMA_OUT_CH1_INTR_SOURCE IRQ_DEFAULT_PRIORITY
+				      ESP_INTR_FLAG_SHARED>,
+				     <DMA_IN_CH2_INTR_SOURCE IRQ_DEFAULT_PRIORITY
+				      ESP_INTR_FLAG_SHARED>,
+				     <DMA_OUT_CH2_INTR_SOURCE IRQ_DEFAULT_PRIORITY
+				      ESP_INTR_FLAG_SHARED>,
+				     <DMA_IN_CH3_INTR_SOURCE IRQ_DEFAULT_PRIORITY
+				      ESP_INTR_FLAG_SHARED>,
+				     <DMA_OUT_CH3_INTR_SOURCE IRQ_DEFAULT_PRIORITY
+				      ESP_INTR_FLAG_SHARED>,
+				     <DMA_IN_CH4_INTR_SOURCE IRQ_DEFAULT_PRIORITY
+				      ESP_INTR_FLAG_SHARED>,
+				     <DMA_OUT_CH4_INTR_SOURCE IRQ_DEFAULT_PRIORITY
+				      ESP_INTR_FLAG_SHARED>;
 			interrupt-parent = <&intc>;
-			clocks = <&rtc ESP32_GDMA_MODULE>;
+			clocks = <&clock ESP32_GDMA_MODULE>;
 			dma-channels = <10>;
 			dma-buf-addr-alignment = <4>;
 			status = "disabled";
@@ -537,7 +572,7 @@
 			reg = <0x60028000 0x1000>;
 			interrupts = <SDIO_HOST_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
-			clocks = <&rtc ESP32_SDMMC_MODULE>;
+			clocks = <&clock ESP32_SDMMC_MODULE>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 

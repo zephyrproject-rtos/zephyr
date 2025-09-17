@@ -12,4 +12,6 @@ supported:
   - uart
   - usbd
   - watchdog
+  - counter
+  - crc
 vendor: renesas

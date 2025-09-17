@@ -450,7 +450,7 @@ static void uart_cmsdk_apb_irq_callback_set(const struct device *dev,
  *
  * @param arg argument to interrupt service routine.
  */
-void uart_cmsdk_apb_isr(const struct device *dev)
+static void uart_cmsdk_apb_isr(const struct device *dev)
 {
 	struct uart_cmsdk_apb_dev_data *data = dev->data;
 

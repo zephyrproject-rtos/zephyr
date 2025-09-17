@@ -31,7 +31,7 @@ LOG_MODULE_REGISTER(display_mcux_elcdif, CONFIG_DISPLAY_LOG_LEVEL);
 K_HEAP_DEFINE(display_heap, CONFIG_MCUX_ELCDIF_FB_NUM * CONFIG_MCUX_ELCDIF_FB_SIZE + 512);
 
 static const uint32_t supported_fmts =
-	PIXEL_FORMAT_BGR_565 | PIXEL_FORMAT_ARGB_8888 | PIXEL_FORMAT_RGB_888;
+	PIXEL_FORMAT_RGB_565 | PIXEL_FORMAT_ARGB_8888 | PIXEL_FORMAT_RGB_888;
 
 struct mcux_elcdif_config {
 	LCDIF_Type *base;
@@ -54,6 +54,9 @@ struct mcux_elcdif_data {
 	struct k_sem sem;
 	/* Tracks index of next active driver framebuffer */
 	uint8_t next_idx;
+#ifndef CONFIG_MCUX_ELCDIF_START_ON_INIT
+	bool running;
+#endif
 #ifdef CONFIG_MCUX_ELCDIF_PXP
 	/* Given to when PXP completes operation */
 	struct k_sem pxp_done;
@@ -152,7 +155,7 @@ static int mcux_elcdif_write(const struct device *dev, const uint16_t x, const u
 		pxp_block.block_size = desc->buf_size;
 
 		/* DMA slot sets pixel format and rotation angle */
-		if (dev_data->pixel_format == PIXEL_FORMAT_BGR_565) {
+		if (dev_data->pixel_format == PIXEL_FORMAT_RGB_565) {
 			pxp_dma.dma_slot = DMA_MCUX_PXP_FMT(DMA_MCUX_PXP_FMT_RGB565);
 		} else if (dev_data->pixel_format == PIXEL_FORMAT_RGB_888) {
 			pxp_dma.dma_slot = DMA_MCUX_PXP_FMT(DMA_MCUX_PXP_FMT_RGB888);
@@ -215,6 +218,14 @@ static int mcux_elcdif_write(const struct device *dev, const uint16_t x, const u
 	/* Update index of active framebuffer */
 	dev_data->next_idx = (dev_data->next_idx + 1) % CONFIG_MCUX_ELCDIF_FB_NUM;
 #endif
+
+#ifndef CONFIG_MCUX_ELCDIF_START_ON_INIT
+	if (unlikely(!dev_data->running)) {
+		ELCDIF_RgbModeStart(config->base);
+		dev_data->running = true;
+	}
+#endif
+
 	/* Enable frame buffer completion interrupt */
 	ELCDIF_EnableInterrupts(config->base, kELCDIF_CurFrameDoneInterruptEnable);
 	/* Wait for frame send to complete */
@@ -224,24 +235,24 @@ static int mcux_elcdif_write(const struct device *dev, const uint16_t x, const u
 
 static int mcux_elcdif_display_blanking_off(const struct device *dev)
 {
-	#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(backlight_gpio)
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(backlight_gpios)
 	const struct mcux_elcdif_config *config = dev->config;
 	if (config->backlight_gpio.port) {
 		return gpio_pin_set_dt(&config->backlight_gpio, 1);
 	}
-	#endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(backlight_gpio) */
+#endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(backlight_gpios) */
 
 	return -ENOSYS;
 }
 
 static int mcux_elcdif_display_blanking_on(const struct device *dev)
 {
-	#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(backlight_gpio)
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(backlight_gpios)
 	const struct mcux_elcdif_config *config = dev->config;
 	if (config->backlight_gpio.port) {
 		return gpio_pin_set_dt(&config->backlight_gpio, 0);
 	}
-	#endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(backlight_gpio) */
+#endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(backlight_gpios) */
 
 	return -ENOSYS;
 }
@@ -274,7 +285,7 @@ static int mcux_elcdif_set_pixel_format(const struct device *dev,
 	}
 
 	dev_data->rgb_mode = config->rgb_mode;
-	if (pixel_format == PIXEL_FORMAT_BGR_565) {
+	if (pixel_format == PIXEL_FORMAT_RGB_565) {
 		dev_data->rgb_mode.pixelFormat = kELCDIF_PixelFormatRGB565;
 	} else if (pixel_format == PIXEL_FORMAT_RGB_888) {
 		dev_data->rgb_mode.pixelFormat = kELCDIF_PixelFormatRGB888;
@@ -338,14 +349,14 @@ static int mcux_elcdif_init(const struct device *dev)
 		return err;
 	}
 
-	#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(backlight_gpio)
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(backlight_gpios)
 	if (config->backlight_gpio.port) {
 		err = gpio_pin_configure_dt(&config->backlight_gpio, GPIO_OUTPUT_ACTIVE);
 		if (err) {
 			return err;
 		}
 	}
-	#endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios) */
+#endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(backlight_gpios) */
 
 	k_sem_init(&dev_data->sem, 0, 1);
 #ifdef CONFIG_MCUX_ELCDIF_PXP
@@ -361,10 +372,15 @@ static int mcux_elcdif_init(const struct device *dev)
 	/* Set default pixel format obtained from device tree */
 	mcux_elcdif_set_pixel_format(dev, dev_data->pixel_format);
 
+#if CONFIG_MCUX_ELCDIF_FB_NUM != 0
 	dev_data->active_fb = dev_data->fb[0];
+	dev_data->rgb_mode.bufferAddr = (uint32_t)dev_data->active_fb;
+#endif
 
 	ELCDIF_RgbModeInit(config->base, &dev_data->rgb_mode);
+#ifdef CONFIG_MCUX_ELCDIF_START_ON_INIT
 	ELCDIF_RgbModeStart(config->base);
+#endif
 
 	return 0;
 }

@@ -85,10 +85,10 @@ struct mt9m114_reg {
 struct mt9m114_resolution_config {
 	uint16_t width;
 	uint16_t height;
-	struct mt9m114_reg *params;
+	const struct mt9m114_reg *params;
 };
 
-static struct mt9m114_reg mt9m114_init_config[] = {
+static const struct mt9m114_reg mt9m114_init_config[] = {
 	{0x098E, 2, 0x1000},    /* LOGICAL_ADDRESS_ACCESS */
 	{0xC97E, 1, 0x01},      /* CAM_SYSCTL_PLL_ENABLE */
 	{0xC980, 2, 0x0120},    /* CAM_SYSCTL_PLL_DIVIDER_M_N = 288 */
@@ -126,7 +126,7 @@ static struct mt9m114_reg mt9m114_init_config[] = {
 	{0xC984, 2, 0x8000}, /* CAM_PORT_OUTPUT_CONTROL, for MIPI CSI-2 interface : 0x8000 */
 	{/* NULL terminated */}};
 
-static struct mt9m114_reg mt9m114_480_272[] = {
+static const struct mt9m114_reg mt9m114_480_272[] = {
 	{MT9M114_CAM_SENSOR_CFG_Y_ADDR_START, 2, 0x00D4},     /* 212 */
 	{MT9M114_CAM_SENSOR_CFG_X_ADDR_START, 2, 0x00A4},     /* 164 */
 	{MT9M114_CAM_SENSOR_CFG_Y_ADDR_END, 2, 0x02FB},       /* 763 */
@@ -142,7 +142,7 @@ static struct mt9m114_reg mt9m114_480_272[] = {
 	{MT9M114_CAM_STAT_AE_INITIAL_WINDOW_YEND, 2, 0x0035}, /* 53 */
 	{/* NULL terminated */}};
 
-static struct mt9m114_reg mt9m114_640_480[] = {
+static const struct mt9m114_reg mt9m114_640_480[] = {
 	{MT9M114_CAM_SENSOR_CFG_Y_ADDR_START, 2, 0x0000},     /* 0 */
 	{MT9M114_CAM_SENSOR_CFG_X_ADDR_START, 2, 0x0000},     /* 0 */
 	{MT9M114_CAM_SENSOR_CFG_Y_ADDR_END, 2, 0x03CD},       /* 973 */
@@ -158,7 +158,7 @@ static struct mt9m114_reg mt9m114_640_480[] = {
 	{MT9M114_CAM_STAT_AE_INITIAL_WINDOW_YEND, 2, 0x005F}, /* 95 */
 	{/* NULL terminated */}};
 
-static struct mt9m114_reg mt9m114_1280_720[] = {
+static const struct mt9m114_reg mt9m114_1280_720[] = {
 	{MT9M114_CAM_SENSOR_CFG_Y_ADDR_START, 2, 0x007C},     /* 124 */
 	{MT9M114_CAM_SENSOR_CFG_X_ADDR_START, 2, 0x0004},     /* 4 */
 	{MT9M114_CAM_SENSOR_CFG_Y_ADDR_END, 2, 0x0353},       /* 851 */
@@ -174,7 +174,7 @@ static struct mt9m114_reg mt9m114_1280_720[] = {
 	{MT9M114_CAM_STAT_AE_INITIAL_WINDOW_YEND, 2, 0x008F}, /* 143 */
 	{/* NULL terminated */}};
 
-static struct mt9m114_resolution_config resolutionConfigs[] = {
+static const struct mt9m114_resolution_config resolution_configs[] = {
 	{.width = 480, .height = 272, .params = mt9m114_480_272},
 	{.width = 640, .height = 480, .params = mt9m114_640_480},
 	{.width = 1280, .height = 720, .params = mt9m114_1280_720},
@@ -225,16 +225,17 @@ static inline int i2c_burst_write16_dt(const struct i2c_dt_spec *spec, uint16_t 
 }
 
 static int mt9m114_write_reg(const struct device *dev, uint16_t reg_addr, uint8_t reg_size,
-			     void *value)
+			     const void *value)
 {
 	const struct mt9m114_config *cfg = dev->config;
+	uint32_t val;
 
 	switch (reg_size) {
 	case 2:
-		*(uint16_t *)value = sys_cpu_to_be16(*(uint16_t *)value);
+		val = sys_cpu_to_be16(*(const uint16_t *)value);
 		break;
 	case 4:
-		*(uint32_t *)value = sys_cpu_to_be32(*(uint32_t *)value);
+		val = sys_cpu_to_be32(*(const uint32_t *)value);
 		break;
 	case 1:
 		break;
@@ -242,7 +243,7 @@ static int mt9m114_write_reg(const struct device *dev, uint16_t reg_addr, uint8_
 		return -ENOTSUP;
 	}
 
-	return i2c_burst_write16_dt(&cfg->i2c, reg_addr, value, reg_size);
+	return i2c_burst_write16_dt(&cfg->i2c, reg_addr, (const uint8_t *)&val, reg_size);
 }
 
 static int mt9m114_read_reg(const struct device *dev, uint16_t reg_addr, uint8_t reg_size,
@@ -293,7 +294,7 @@ static int mt9m114_modify_reg(const struct device *dev, const uint16_t addr,
 	return mt9m114_write_reg(dev, addr, reg_size, &newVal);
 }
 
-static int mt9m114_write_all(const struct device *dev, struct mt9m114_reg *reg)
+static int mt9m114_write_all(const struct device *dev, const struct mt9m114_reg *reg)
 {
 	int i = 0;
 
@@ -397,8 +398,7 @@ static int mt9m114_set_output_format(const struct device *dev, int pixel_format)
 	return ret;
 }
 
-static int mt9m114_set_fmt(const struct device *dev, enum video_endpoint_id ep,
-			   struct video_format *fmt)
+static int mt9m114_set_fmt(const struct device *dev, struct video_format *fmt)
 {
 	struct mt9m114_data *drv_data = dev->data;
 	int ret;
@@ -433,10 +433,10 @@ static int mt9m114_set_fmt(const struct device *dev, enum video_endpoint_id ep,
 	}
 
 	/* Set output resolution */
-	for (i = 0; i < ARRAY_SIZE(resolutionConfigs); i++) {
-		if (fmt->width == resolutionConfigs[i].width &&
-		    fmt->height == resolutionConfigs[i].height) {
-			ret = mt9m114_write_all(dev, resolutionConfigs[i].params);
+	for (i = 0; i < ARRAY_SIZE(resolution_configs); i++) {
+		if (fmt->width == resolution_configs[i].width &&
+		    fmt->height == resolution_configs[i].height) {
+			ret = mt9m114_write_all(dev, resolution_configs[i].params);
 			if (ret) {
 				LOG_ERR("Unable to set resolution");
 				return ret;
@@ -450,8 +450,7 @@ static int mt9m114_set_fmt(const struct device *dev, enum video_endpoint_id ep,
 	return mt9m114_set_state(dev, MT9M114_SYS_STATE_ENTER_CONFIG_CHANGE);
 }
 
-static int mt9m114_get_fmt(const struct device *dev, enum video_endpoint_id ep,
-			   struct video_format *fmt)
+static int mt9m114_get_fmt(const struct device *dev, struct video_format *fmt)
 {
 	struct mt9m114_data *drv_data = dev->data;
 
@@ -460,14 +459,13 @@ static int mt9m114_get_fmt(const struct device *dev, enum video_endpoint_id ep,
 	return 0;
 }
 
-static int mt9m114_set_stream(const struct device *dev, bool enable)
+static int mt9m114_set_stream(const struct device *dev, bool enable, enum video_buf_type type)
 {
 	return enable ? mt9m114_set_state(dev, MT9M114_SYS_STATE_START_STREAMING)
 		      : mt9m114_set_state(dev, MT9M114_SYS_STATE_ENTER_SUSPEND);
 }
 
-static int mt9m114_get_caps(const struct device *dev, enum video_endpoint_id ep,
-			    struct video_caps *caps)
+static int mt9m114_get_caps(const struct device *dev, struct video_caps *caps)
 {
 	caps->format_caps = fmts;
 	return 0;
@@ -529,9 +527,19 @@ static int mt9m114_init_controls(const struct device *dev)
 
 static int mt9m114_init(const struct device *dev)
 {
-	struct video_format fmt;
+	const struct mt9m114_config *cfg = dev->config;
+	struct video_format fmt = {
+		.pixelformat = VIDEO_PIX_FMT_RGB565,
+		.width = 480,
+		.height = 272,
+	};
 	uint16_t val;
 	int ret;
+
+	if (!device_is_ready(cfg->i2c.bus)) {
+		LOG_ERR("Bus device is not ready");
+		return -ENODEV;
+	}
 
 	/* no power control, wait for camera ready */
 	k_sleep(K_MSEC(100));
@@ -557,13 +565,7 @@ static int mt9m114_init(const struct device *dev)
 		return ret;
 	}
 
-	/* Set default format to 480x272 RGB565 */
-	fmt.pixelformat = VIDEO_PIX_FMT_RGB565;
-	fmt.width = 480;
-	fmt.height = 272;
-	fmt.pitch = fmt.width * 2;
-
-	ret = mt9m114_set_fmt(dev, VIDEO_EP_OUT, &fmt);
+	ret = mt9m114_set_fmt(dev, &fmt);
 	if (ret) {
 		LOG_ERR("Unable to configure default format");
 		return -EIO;
@@ -576,29 +578,16 @@ static int mt9m114_init(const struct device *dev)
 	return mt9m114_init_controls(dev);
 }
 
-#if 1 /* Unique Instance */
+#define MT9M114_INIT(n)                                                                            \
+	static struct mt9m114_data mt9m114_data_##n;                                               \
+                                                                                                   \
+	static const struct mt9m114_config mt9m114_cfg_##n = {                                     \
+		.i2c = I2C_DT_SPEC_INST_GET(n),                                                    \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, &mt9m114_init, NULL, &mt9m114_data_##n, &mt9m114_cfg_##n,         \
+			      POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY, &mt9m114_driver_api);       \
+                                                                                                   \
+	VIDEO_DEVICE_DEFINE(mt9m114_##n, DEVICE_DT_INST_GET(n), NULL);
 
-static const struct mt9m114_config mt9m114_cfg_0 = {
-	.i2c = I2C_DT_SPEC_INST_GET(0),
-};
-
-static struct mt9m114_data mt9m114_data_0;
-
-static int mt9m114_init_0(const struct device *dev)
-{
-	const struct mt9m114_config *cfg = dev->config;
-
-	if (!device_is_ready(cfg->i2c.bus)) {
-		LOG_ERR("Bus device is not ready");
-		return -ENODEV;
-	}
-
-	return mt9m114_init(dev);
-}
-
-DEVICE_DT_INST_DEFINE(0, &mt9m114_init_0, NULL, &mt9m114_data_0, &mt9m114_cfg_0, POST_KERNEL,
-		      CONFIG_VIDEO_INIT_PRIORITY, &mt9m114_driver_api);
-
-VIDEO_DEVICE_DEFINE(mt9m114, DEVICE_DT_INST_GET(0), NULL);
-
-#endif
+DT_INST_FOREACH_STATUS_OKAY(MT9M114_INIT)

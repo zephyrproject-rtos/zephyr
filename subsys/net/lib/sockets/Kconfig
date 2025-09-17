@@ -42,7 +42,7 @@ config NET_SOCKETS_CONNECT_TIMEOUT
 config NET_SOCKETS_DNS_TIMEOUT
 	int "Timeout value in milliseconds for DNS queries"
 	default 2000
-	range 1000 300000
+	range 1000 300000 if !NET_TEST
 	depends on DNS_RESOLVER
 	help
 	  This variable specifies time in milliseconds after which DNS
@@ -116,6 +116,10 @@ config NET_SOCKETS_SOCKOPT_TLS
 	imply TLS_CREDENTIALS
 	select MBEDTLS if NET_NATIVE
 	imply MBEDTLS_TLS_VERSION_1_2 if !NET_L2_OPENTHREAD
+	imply MBEDTLS_MD if !NET_L2_OPENTHREAD
+	imply MBEDTLS_RSA_C if !NET_L2_OPENTHREAD
+	imply MBEDTLS_PKCS1_V15 if !NET_L2_OPENTHREAD
+	imply MBEDTLS_PKCS1_V21 if !NET_L2_OPENTHREAD
 	imply MBEDTLS_KEY_EXCHANGE_RSA_ENABLED if !NET_L2_OPENTHREAD
 	imply MBEDTLS_CIPHER_AES_ENABLED if !NET_L2_OPENTHREAD
 	imply PSA_WANT_KEY_TYPE_AES if !NET_L2_OPENTHREAD && PSA_CRYPTO_CLIENT
@@ -232,12 +236,20 @@ config NET_SOCKETS_TLS_MAX_APP_PROTOCOLS
 	  By default, no supported application layer protocol is set.
 
 config NET_SOCKETS_TLS_MAX_CLIENT_SESSION_COUNT
-	  int "Maximum number of stored client TLS/DTLS sessions"
-	  default 1
-	  depends on NET_SOCKETS_SOCKOPT_TLS
-	  help
-	    This variable specifies maximum number of stored TLS/DTLS sessions,
-	    used for TLS/DTLS session resumption.
+	int "Maximum number of stored client TLS/DTLS sessions"
+	default 1
+	depends on NET_SOCKETS_SOCKOPT_TLS
+	help
+	  This variable specifies maximum number of stored TLS/DTLS sessions,
+	  used for TLS/DTLS session resumption.
+
+config NET_SOCKETS_TLS_CERT_VERIFY_CALLBACK
+	bool "TLS certificate verification callback support"
+	depends on NET_SOCKETS_SOCKOPT_TLS
+	help
+	  This option controls whether TLS_CERT_VERIFY_CALLBACK TLS socket option
+	  is available to use. It allows to register a certificate verification
+	  callback, which is called by the TLS backend during the TLS handshake.
 
 config NET_SOCKETS_OFFLOAD
 	bool "Offload Socket APIs"
@@ -338,7 +350,6 @@ if NET_SOCKETPAIR
 
 config NET_SOCKETPAIR_BUFFER_SIZE
 	int "Size of the intermediate buffer, in bytes"
-	default 1024 if WIFI_NM_WPA_SUPPLICANT
 	default 64
 	range 1 4096
 	help
@@ -360,8 +371,6 @@ if NET_SOCKETPAIR_STATIC
 
 config NET_SOCKETPAIR_MAX
 	int "How many socketpairs to pre-allocate"
-	default 6 if WIFI_NM_HOSTAPD_AP
-	default 4 if WIFI_NM_WPA_SUPPLICANT
 	default 1
 
 endif # NET_SOCKETPAIR_STATIC
@@ -370,9 +379,7 @@ if NET_SOCKETPAIR_HEAP
 
 config HEAP_MEM_POOL_ADD_SIZE_SOCKETPAIR
 	int
-	default 9136 if WIFI_NM_HOSTAPD_AP
-	default 6852 if WIFI_NM_WPA_SUPPLICANT
-	default 256
+	default 296
 
 endif # NET_SOCKETPAIR_HEAP
 

@@ -12,14 +12,17 @@
 / {
 	leds: leds {
 		compatible = "gpio-leds";
+
 		green_led_1: led_1 {
 			gpios = <&gpioc 7 GPIO_ACTIVE_HIGH>;
 			label = "User LD1";
 		};
+
 		blue_led_1: led_2 {
 			gpios = <&gpiob 7 GPIO_ACTIVE_HIGH>;
 			label = "User LD2";
 		};
+
 		red_led_1: led_3 {
 			gpios = <&gpiog 2 GPIO_ACTIVE_HIGH>;
 			label = "User LD3";
@@ -28,6 +31,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button: button {
 			label = "User";
 			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
@@ -146,7 +150,7 @@
 	status = "okay";
 
 	pwm3: pwm {
-	pinctrl-0 = <&tim3_ch2_pc7>;
+		pinctrl-0 = <&tim3_ch2_pc7>;
 		pinctrl-names = "default";
 		status = "okay";
 	};
@@ -172,7 +176,7 @@
 };
 
 &fdcan1 {
-	clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000200>,
+	clocks = <&rcc STM32_CLOCK(APB1_2, 9)>,
 		 <&rcc STM32_SRC_PLL1_Q FDCAN1_SEL(1)>;
 	pinctrl-0 = <&fdcan1_rx_pd0 &fdcan1_tx_pd1>;
 	pinctrl-names = "default";
@@ -180,7 +184,7 @@
 };
 
 &rtc {
-	clocks = <&rcc STM32_CLOCK_BUS_APB3 0x00200000>,
+	clocks = <&rcc STM32_CLOCK(APB3, 21)>,
 		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
 	status = "okay";
 };

@@ -12,6 +12,3 @@ RunTest mesh_adv_random_order_workq adv_tx_random_order adv_rx_random_order
 
 overlay="overlay_multi_adv_sets_conf"
 RunTest mesh_adv_random_order_multi_adv_sets adv_tx_random_order adv_rx_random_order
-
-overlay=overlay_psa_conf
-RunTest mesh_adv_random_order_psa adv_tx_random_order adv_rx_random_order

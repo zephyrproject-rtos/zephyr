@@ -94,7 +94,7 @@ static int mtx_timedlock_fn(void *arg)
 	struct timespec time_point;
 	mtx_t *mtx = (mtx_t *)arg;
 
-	zassume_ok(clock_gettime(CLOCK_MONOTONIC, &time_point));
+	zassume_ok(sys_clock_gettime(SYS_CLOCK_MONOTONIC, &time_point));
 	timespec_add_ms(&time_point, TIMEDLOCK_TIMEOUT_MS);
 
 	return mtx_timedlock(mtx, &time_point);

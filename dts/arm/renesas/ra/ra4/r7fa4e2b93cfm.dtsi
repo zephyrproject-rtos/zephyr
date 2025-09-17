@@ -6,6 +6,7 @@
 
 #include <zephyr/dt-bindings/clock/ra_clock.h>
 #include <arm/renesas/ra/ra4/ra4-cm33-common.dtsi>
+#include <zephyr/dt-bindings/misc/renesas/ra-elc/ra4e2-elc.h>
 
 /delete-node/ &agt0;
 /delete-node/ &agt1;
@@ -39,33 +40,30 @@
 		};
 
 		flash-controller@407e0000 {
-			block-32kb-linear-end = <9>;
+			flash-hardware-version = <40>;
+			#erase-block-cells = <2>;
+
 			flash0: flash@0 {
-				compatible = "renesas,ra-nv-flash";
+				compatible = "renesas,ra-nv-code-flash";
 				reg = <0x0 DT_SIZE_K(128)>;
 				write-block-size = <128>;
-				erase-block-size = <8192>;
-				renesas,programming-enable;
+				erase-block-size = <32768>;
+				erase-blocks = <&flash 8 8192>, <&flash 2 32768>;
+				programming-enable;
 			};
 
 			flash1: flash@8000000 {
-				compatible = "renesas,ra-nv-flash";
+				compatible = "renesas,ra-nv-data-flash";
 				reg = <0x8000000 DT_SIZE_K(4)>;
 				write-block-size = <4>;
 				erase-block-size = <64>;
-				renesas,programming-enable;
+				programming-enable;
+				erase-value-undefined;
 			};
 		};
 
 		adc@40170000 {
 			channel-available-mask = <0x139f7>;
-		};
-
-		id_code: id_code@100a120 {
-			compatible = "zephyr,memory-region";
-			reg = <0x0100a120 0x10>;
-			zephyr,memory-region = "ID_CODE";
-			status = "okay";
 		};
 
 		canfd_global: canfd_global@400b0000 {
@@ -92,6 +90,78 @@
 		trng: trng {
 			compatible = "renesas,ra-trng";
 			status = "disabled";
+		};
+
+		agt0: agtw@400e8000 {
+			compatible = "renesas,ra-agt";
+			channel = <0>;
+			reg = <0x400e8000 0x100>;
+			renesas,count-source = "AGT_CLOCK_LOCO";
+			renesas,prescaler = <0>;
+			renesas,resolution = <32>;
+			status = "disabled";
+
+			counter {
+				compatible = "renesas,ra-agt-counter";
+				status = "disabled";
+			};
+		};
+
+		agt1: agtw@400e8100 {
+			compatible = "renesas,ra-agt";
+			channel = <1>;
+			reg = <0x400e8100 0x100>;
+			renesas,count-source = "AGT_CLOCK_LOCO";
+			renesas,prescaler = <0>;
+			renesas,resolution = <32>;
+			status = "disabled";
+
+			counter {
+				compatible = "renesas,ra-agt-counter";
+				status = "disabled";
+			};
+		};
+
+		option-setting-ofs-conf@100a100 {
+			reg = <0x0100a100 0x200>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "okay";
+
+			option_setting_ofs0: option-setting-ofs0@100a100 {
+				compatible = "zephyr,memory-region";
+				zephyr,memory-region = "OFS_OFS0_MEMORY";
+				reg = <0x0100a100 0x4>;
+				status = "okay";
+			};
+
+			option_setting_osis: option-setting-osis@100a120 {
+				compatible = "zephyr,memory-region";
+				zephyr,memory-region = "OFS_OSIS_MEMORY";
+				reg = <0x0100a120 0x10>;
+				status = "okay";
+			};
+
+			option_setting_ofs1_sec: option-setting-ofs1-sec@100a200 {
+				compatible = "zephyr,memory-region";
+				zephyr,memory-region = "OFS_OFS1_SEC_MEMORY";
+				reg = <0x0100a200 0x4>;
+				status = "okay";
+			};
+
+			option_setting_bps_sec: option-setting-bps-sec@100a240 {
+				compatible = "zephyr,memory-region";
+				zephyr,memory-region = "OFS_BPS_SEC_MEMORY";
+				reg = <0x0100a240 0x4>;
+				status = "okay";
+			};
+
+			option_setting_pbps_sec: option-setting-pbps-sec@100a260 {
+				compatible = "zephyr,memory-region";
+				zephyr,memory-region = "OFS_PBPS_SEC_MEMORY";
+				reg = <0x0100a260 0x4>;
+				status = "okay";
+			};
 		};
 	};
 
@@ -146,7 +216,7 @@
 			compatible = "renesas,ra-cgc-pclk-block";
 			reg = <0x40084000 4>, <0x40084004 4>, <0x40084008 4>,
 			      <0x4008400c 4>, <0x40084010 4>;
-			reg-names = "MSTPA", "MSTPB","MSTPC",
+			reg-names = "MSTPA", "MSTPB", "MSTPC",
 				    "MSTPD", "MSTPE";
 			#clock-cells = <0>;
 			clocks = <&pll>;
@@ -230,8 +300,8 @@
 
 &ioport0 {
 	port-irqs = <&port_irq6 &port_irq7 &port_irq8
-	&port_irq9 &port_irq10 &port_irq11
-	&port_irq12 &port_irq13>;
+		     &port_irq9 &port_irq10 &port_irq11
+		     &port_irq12 &port_irq13>;
 	port-irq-names = "port-irq6",
 			 "port-irq7",
 			 "port-irq8",
@@ -252,7 +322,7 @@
 
 &ioport1 {
 	port-irqs = <&port_irq0 &port_irq1 &port_irq2
-	&port_irq3 &port_irq4>;
+		     &port_irq3 &port_irq4>;
 	port-irq-names = "port-irq0",
 			 "port-irq1",
 			 "port-irq2",
@@ -267,7 +337,7 @@
 
 &ioport2 {
 	port-irqs = <&port_irq0 &port_irq1 &port_irq2
-	&port_irq3>;
+		     &port_irq3>;
 	port-irq-names = "port-irq0",
 			 "port-irq1",
 			 "port-irq2",
@@ -290,7 +360,7 @@
 
 &ioport4 {
 	port-irqs = <&port_irq0 &port_irq4 &port_irq5
-	&port_irq6 &port_irq7 &port_irq14>;
+		     &port_irq6 &port_irq7 &port_irq14>;
 	port-irq-names = "port-irq0",
 			 "port-irq4",
 			 "port-irq5",
@@ -303,6 +373,7 @@
 	port-irq6-pins = <9>;
 	port-irq7-pins = <8>;
 	port-irq14-pins = <3>;
+	/delete-property/ vbatts-pins;
 };
 
 &ioport8 {

@@ -12,6 +12,17 @@
 #include <ksched.h>
 #include <wait_q.h>
 
+int k_heap_array_get(struct k_heap **heap)
+{
+	int num;
+
+	/* Pointer to the start of the heap array */
+	STRUCT_SECTION_GET(k_heap, 0, heap);
+	/* Number of statically defined heaps */
+	STRUCT_SECTION_COUNT(k_heap, &num);
+	return num;
+}
+
 void k_heap_init(struct k_heap *heap, void *mem, size_t bytes)
 {
 	z_waitq_init(&heap->wait_q);
@@ -121,6 +132,10 @@ void *k_heap_aligned_alloc(struct k_heap *heap, size_t align, size_t bytes,
 			k_timeout_t timeout)
 {
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_heap, aligned_alloc, heap, timeout);
+
+	/* A power of 2 as well as 0 is OK */
+	__ASSERT((align & (align - 1)) == 0,
+		 "align must be a power of 2");
 
 	void *ret = z_heap_alloc_helper(heap, align, bytes, timeout,
 					sys_heap_aligned_alloc);

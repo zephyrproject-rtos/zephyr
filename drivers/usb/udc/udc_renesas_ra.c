@@ -79,7 +79,7 @@ static void udc_renesas_ra_event_handler(usbd_callback_arg_t *p_args)
 		break;
 
 	case USBD_EVENT_SOF:
-		udc_submit_event(dev, UDC_EVT_SOF, 0);
+		udc_submit_sof_event(dev);
 		break;
 
 	default:
@@ -748,9 +748,11 @@ static const struct udc_api udc_renesas_ra_api = {
 	(DT_NODE_HAS_COMPAT(id, renesas_ra_usbhs) ? UDC_BUS_SPEED_HS : UDC_BUS_SPEED_FS)
 
 #define USB_RENESAS_RA_SPEED_IDX(id)                                                               \
-	(DT_NODE_HAS_COMPAT(id, renesas_ra_usbhs)                                                  \
-		 ? DT_ENUM_IDX_OR(id, maximum_speed, UDC_BUS_SPEED_HS)                             \
-		 : DT_ENUM_IDX_OR(id, maximum_speed, UDC_BUS_SPEED_FS))
+	COND_CODE_1(CONFIG_UDC_DRIVER_HIGH_SPEED_SUPPORT_ENABLED,                                  \
+		    (DT_NODE_HAS_COMPAT(id, renesas_ra_usbhs)                                      \
+			? DT_ENUM_IDX_OR(id, maximum_speed, UDC_BUS_SPEED_HS)                      \
+			: DT_ENUM_IDX_OR(id, maximum_speed, UDC_BUS_SPEED_FS)),                    \
+		    (UDC_BUS_SPEED_FS))
 
 #define USB_RENESAS_RA_IRQ_CONNECT(idx, n)                                                         \
 	IRQ_CONNECT(DT_IRQ_BY_IDX(DT_INST_PARENT(n), idx, irq),                                    \
@@ -811,7 +813,7 @@ static const struct udc_api udc_renesas_ra_api = {
 			.ipl = USB_RENESAS_RA_IRQ_GET(DT_INST_PARENT(n), usbfs_i, priority),       \
 			.ipl_r = USB_RENESAS_RA_IRQ_GET(DT_INST_PARENT(n), usbfs_r, priority),     \
 			.hsipl = USB_RENESAS_RA_IRQ_GET(DT_INST_PARENT(n), usbhs_ir, priority),    \
-			.p_context = DEVICE_DT_INST_GET(n),                                        \
+			.p_context = (void *)DEVICE_DT_INST_GET(n),                                \
 			.p_callback = udc_renesas_ra_event_handler,                                \
 		},                                                                                 \
 	};                                                                                         \

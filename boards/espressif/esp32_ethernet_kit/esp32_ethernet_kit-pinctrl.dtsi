@@ -9,12 +9,12 @@
 #include <zephyr/dt-bindings/pinctrl/esp32-gpio-sigmap.h>
 
 &pinctrl {
-
 	uart0_default: uart0_default {
 		group1 {
 			pinmux = <UART0_TX_GPIO1>;
 			output-high;
 		};
+
 		group2 {
 			pinmux = <UART0_RX_GPIO3>;
 			bias-pull-up;
@@ -27,6 +27,7 @@
 				 <SPIM2_SCLK_GPIO14>,
 				 <SPIM2_CSEL_GPIO15>;
 		};
+
 		group2 {
 			pinmux = <SPIM2_MOSI_GPIO13>;
 			output-low;
@@ -49,6 +50,7 @@
 				 <I2S0_I_BCK_GPIO16>;
 			output-enable;
 		};
+
 		group2 {
 			pinmux = <I2S0_I_SD_GPIO17>;
 			input-enable;
@@ -64,6 +66,7 @@
 				 <I2S1_I_BCK_GPIO11>;
 			output-enable;
 		};
+
 		group2 {
 			pinmux = <I2S1_I_SD_GPIO12>;
 			input-enable;

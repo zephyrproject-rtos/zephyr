@@ -2,7 +2,7 @@ sample:
   description: Test wpan_serial sample
   name: wpan_serial
 common:
-  depends_on: usb_device
+  depends_on: usbd
   harness: net
   tags:
     - usb

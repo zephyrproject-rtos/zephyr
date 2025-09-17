@@ -1,9 +1,0 @@
-# SPDX-License-Identifier: Apache-2.0
-
-cmake_minimum_required(VERSION 3.20.0)
-set(CMAKE_C_FLAGS "-D__deprecated=\"/* deprecated */\" -D__DEPRECATED_MACRO=\"/* deprecated_macro*/\"")
-find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
-project(pipe_api)
-
-FILE(GLOB app_sources src/*.c)
-target_sources(app PRIVATE ${app_sources})

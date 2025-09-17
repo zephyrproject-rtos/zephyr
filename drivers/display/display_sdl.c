@@ -47,6 +47,7 @@ struct sdl_display_task {
 struct sdl_display_config {
 	uint16_t height;
 	uint16_t width;
+	const char *title;
 };
 
 struct sdl_display_data {
@@ -88,11 +89,13 @@ static void exec_sdl_task(const struct device *dev, const struct sdl_display_tas
 					 disp_data->mutex, disp_data->texture,
 					 disp_data->background_texture, disp_data->buf,
 					 disp_data->display_on,
-					 task->write.desc->frame_incomplete);
+					 task->write.desc->frame_incomplete,
+					 CONFIG_SDL_DISPLAY_COLOR_TINT);
 		break;
 	case SDL_BLANKING_OFF:
 		sdl_display_blanking_off_bottom(disp_data->renderer, disp_data->texture,
-						disp_data->background_texture);
+						disp_data->background_texture,
+						CONFIG_SDL_DISPLAY_COLOR_TINT);
 		break;
 	case SDL_BLANKING_ON:
 		sdl_display_blanking_on_bottom(disp_data->renderer);
@@ -116,14 +119,15 @@ static void sdl_task_thread(void *p1, void *p2, void *p3)
 		sdl_display_zoom_pct = CONFIG_SDL_DISPLAY_ZOOM_PCT;
 	}
 
-	int rc = sdl_display_init_bottom(config->height, config->width, sdl_display_zoom_pct,
-					 use_accelerator, &disp_data->window, dev,
-					 &disp_data->renderer, &disp_data->mutex,
-					 &disp_data->texture, &disp_data->read_texture,
-					 &disp_data->background_texture,
-					 CONFIG_SDL_DISPLAY_TRANSPARENCY_GRID_CELL_COLOR_1,
-					 CONFIG_SDL_DISPLAY_TRANSPARENCY_GRID_CELL_COLOR_2,
-					 CONFIG_SDL_DISPLAY_TRANSPARENCY_GRID_CELL_SIZE);
+	int rc = sdl_display_init_bottom(
+		config->height, config->width, sdl_display_zoom_pct, use_accelerator,
+		&disp_data->window, dev, config->title, &disp_data->renderer, &disp_data->mutex,
+		&disp_data->texture, &disp_data->read_texture, &disp_data->background_texture,
+		CONFIG_SDL_DISPLAY_TRANSPARENCY_GRID_CELL_COLOR_1,
+		CONFIG_SDL_DISPLAY_TRANSPARENCY_GRID_CELL_COLOR_2,
+		CONFIG_SDL_DISPLAY_TRANSPARENCY_GRID_CELL_SIZE);
+
+	k_sem_give(&disp_data->task_sem);
 
 	if (rc != 0) {
 		nsi_print_error_and_exit("Failed to create SDL display");
@@ -158,6 +162,8 @@ static int sdl_display_init(const struct device *dev)
 		PIXEL_FORMAT_BGR_565
 #elif defined(CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_L_8)
 		PIXEL_FORMAT_L_8
+#elif defined(CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_AL_88)
+		PIXEL_FORMAT_AL_88
 #else  /* SDL_DISPLAY_DEFAULT_PIXEL_FORMAT */
 		PIXEL_FORMAT_ARGB_8888
 #endif /* SDL_DISPLAY_DEFAULT_PIXEL_FORMAT */
@@ -169,6 +175,8 @@ static int sdl_display_init(const struct device *dev)
 			K_KERNEL_STACK_SIZEOF(disp_data->sdl_thread_stack),
 			sdl_task_thread, (void *)dev, NULL, NULL,
 			CONFIG_SDL_DISPLAY_THREAD_PRIORITY, 0, K_NO_WAIT);
+	/* Ensure task thread has performed the init */
+	k_sem_take(&disp_data->task_sem, K_FOREVER);
 
 	return 0;
 }
@@ -201,6 +209,31 @@ static void sdl_display_write_rgb888(uint8_t *disp_buf,
 			pixel |= *(byte_ptr + 1) << 8;
 			pixel |= *(byte_ptr + 2);
 			*((uint32_t *)disp_buf) = pixel | 0xFF000000;
+			disp_buf += 4;
+		}
+	}
+}
+
+static void sdl_display_write_al88(uint8_t *disp_buf,
+		const struct display_buffer_descriptor *desc, const void *buf)
+{
+	uint32_t w_idx;
+	uint32_t h_idx;
+	uint32_t pixel;
+	const uint8_t *byte_ptr;
+
+	__ASSERT((desc->pitch * 2U * desc->height) <= desc->buf_size,
+			"Input buffer too small");
+
+	for (h_idx = 0U; h_idx < desc->height; ++h_idx) {
+		for (w_idx = 0U; w_idx < desc->width; ++w_idx) {
+			byte_ptr = (const uint8_t *)buf +
+				((h_idx * desc->pitch) + w_idx) * 2U;
+			pixel = *(byte_ptr + 1) << 24;
+			pixel |= *(byte_ptr) << 16;
+			pixel |= *(byte_ptr) << 8;
+			pixel |= *(byte_ptr);
+			*((uint32_t *)disp_buf) = pixel;
 			disp_buf += 4;
 		}
 	}
@@ -388,6 +421,8 @@ static int sdl_display_write(const struct device *dev, const uint16_t x,
 		sdl_display_write_bgr565(disp_data->buf, desc, buf);
 	} else if (disp_data->current_pixel_format == PIXEL_FORMAT_L_8) {
 		sdl_display_write_l8(disp_data->buf, desc, buf);
+	} else if (disp_data->current_pixel_format == PIXEL_FORMAT_AL_88) {
+		sdl_display_write_al88(disp_data->buf, desc, buf);
 	}
 
 	if (k_current_get() == &disp_data->sdl_thread) {
@@ -539,6 +574,29 @@ static void sdl_display_read_l8(const uint8_t *read_buf,
 	}
 }
 
+static void sdl_display_read_al88(const uint8_t *read_buf,
+				const struct display_buffer_descriptor *desc, void *buf)
+{
+	uint32_t w_idx;
+	uint32_t h_idx;
+	uint8_t *buf8;
+	const uint32_t *pix_ptr;
+
+	__ASSERT((desc->pitch * 2U * desc->height) <= desc->buf_size, "Read buffer is too small");
+
+	for (h_idx = 0U; h_idx < desc->height; ++h_idx) {
+		buf8 = ((uint8_t *)buf) + desc->pitch * 2U * h_idx;
+
+		for (w_idx = 0U; w_idx < desc->width; ++w_idx) {
+			pix_ptr = (const uint32_t *)read_buf + ((h_idx * desc->pitch) + w_idx);
+			*buf8 = (*pix_ptr & 0xFF);
+			buf8 += 1;
+			*buf8 = (*pix_ptr & 0xFF000000) >> 24;
+			buf8 += 1;
+		}
+	}
+}
+
 static int sdl_display_read(const struct device *dev, const uint16_t x, const uint16_t y,
 			    const struct display_buffer_descriptor *desc, void *buf)
 {
@@ -576,6 +634,8 @@ static int sdl_display_read(const struct device *dev, const uint16_t x, const ui
 		sdl_display_read_bgr565(disp_data->read_buf, desc, buf);
 	} else if (disp_data->current_pixel_format == PIXEL_FORMAT_L_8) {
 		sdl_display_read_l8(disp_data->read_buf, desc, buf);
+	} else if (disp_data->current_pixel_format == PIXEL_FORMAT_AL_88) {
+		sdl_display_read_al88(disp_data->read_buf, desc, buf);
 	}
 	k_mutex_unlock(&disp_data->task_mutex);
 
@@ -594,7 +654,6 @@ static int sdl_display_clear(const struct device *dev)
 	switch (disp_data->current_pixel_format) {
 	case PIXEL_FORMAT_ARGB_8888:
 		size = config->width * config->height * 4U;
-		bgcolor = 0xFFu;
 		break;
 	case PIXEL_FORMAT_RGB_888:
 		size = config->width * config->height * 3U;
@@ -610,6 +669,9 @@ static int sdl_display_clear(const struct device *dev)
 		break;
 	case PIXEL_FORMAT_RGB_565:
 	case PIXEL_FORMAT_BGR_565:
+		size = config->width * config->height * 2U;
+		break;
+	case PIXEL_FORMAT_AL_88:
 		size = config->width * config->height * 2U;
 		break;
 	default:
@@ -685,7 +747,8 @@ static void sdl_display_get_capabilities(
 		PIXEL_FORMAT_MONO10 |
 		PIXEL_FORMAT_RGB_565 |
 		PIXEL_FORMAT_BGR_565 |
-		PIXEL_FORMAT_L_8;
+		PIXEL_FORMAT_L_8 |
+		PIXEL_FORMAT_AL_88;
 	capabilities->current_pixel_format = disp_data->current_pixel_format;
 	capabilities->screen_info =
 		(IS_ENABLED(CONFIG_SDL_DISPLAY_MONO_VTILED) ? SCREEN_INFO_MONO_VTILED : 0) |
@@ -705,6 +768,7 @@ static int sdl_display_set_pixel_format(const struct device *dev,
 	case PIXEL_FORMAT_RGB_565:
 	case PIXEL_FORMAT_BGR_565:
 	case PIXEL_FORMAT_L_8:
+	case PIXEL_FORMAT_AL_88:
 		disp_data->current_pixel_format = pixel_format;
 		return 0;
 	default:
@@ -730,35 +794,30 @@ static DEVICE_API(display, sdl_display_api) = {
 	.set_pixel_format = sdl_display_set_pixel_format,
 };
 
-#define DISPLAY_SDL_DEFINE(n)						\
-	static const struct sdl_display_config sdl_config_##n = {	\
-		.height = DT_INST_PROP(n, height),			\
-		.width = DT_INST_PROP(n, width),			\
-	};								\
-									\
-	static uint8_t sdl_buf_##n[4 * DT_INST_PROP(n, height)		\
-				   * DT_INST_PROP(n, width)];		\
-	static uint8_t sdl_read_buf_##n[4 * DT_INST_PROP(n, height)	\
-					* DT_INST_PROP(n, width)];	\
-	K_MSGQ_DEFINE(sdl_task_msgq_##n, sizeof(struct sdl_display_task), 1, 4); \
-	static struct sdl_display_data sdl_data_##n = {			\
-		.buf = sdl_buf_##n,					\
-		.read_buf = sdl_read_buf_##n,				\
-		.task_msgq = &sdl_task_msgq_##n,			\
-	};								\
-									\
-	DEVICE_DT_INST_DEFINE(n, &sdl_display_init, NULL,		\
-			      &sdl_data_##n,				\
-			      &sdl_config_##n,				\
-			      POST_KERNEL,				\
-			      CONFIG_DISPLAY_INIT_PRIORITY,		\
-			      &sdl_display_api);			\
-									\
-	static void sdl_display_cleanup_##n(void)			\
-	{								\
-		sdl_display_cleanup(&sdl_data_##n);			\
-	}								\
-									\
+#define DISPLAY_SDL_DEFINE(n)                                                                      \
+	static const struct sdl_display_config sdl_config_##n = {                                  \
+		.height = DT_INST_PROP(n, height),                                                 \
+		.width = DT_INST_PROP(n, width),                                                   \
+		.title = DT_INST_PROP_OR(n, title, "Zephyr Display"),                              \
+	};                                                                                         \
+                                                                                                   \
+	static uint8_t sdl_buf_##n[4 * DT_INST_PROP(n, height) * DT_INST_PROP(n, width)];          \
+	static uint8_t sdl_read_buf_##n[4 * DT_INST_PROP(n, height) * DT_INST_PROP(n, width)];     \
+	K_MSGQ_DEFINE(sdl_task_msgq_##n, sizeof(struct sdl_display_task), 1, 4);                   \
+	static struct sdl_display_data sdl_data_##n = {                                            \
+		.buf = sdl_buf_##n,                                                                \
+		.read_buf = sdl_read_buf_##n,                                                      \
+		.task_msgq = &sdl_task_msgq_##n,                                                   \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, &sdl_display_init, NULL, &sdl_data_##n, &sdl_config_##n,          \
+			      POST_KERNEL, CONFIG_DISPLAY_INIT_PRIORITY, &sdl_display_api);        \
+                                                                                                   \
+	static void sdl_display_cleanup_##n(void)                                                  \
+	{                                                                                          \
+		sdl_display_cleanup(&sdl_data_##n);                                                \
+	}                                                                                          \
+                                                                                                   \
 	NATIVE_TASK(sdl_display_cleanup_##n, ON_EXIT, 1);
 
 DT_INST_FOREACH_STATUS_OKAY(DISPLAY_SDL_DEFINE)

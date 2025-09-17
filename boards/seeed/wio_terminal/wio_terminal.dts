@@ -39,6 +39,7 @@
 	/* LEDs */
 	leds {
 		compatible = "gpio-leds";
+
 		led0: led_0 {
 			label = "LED";
 			gpios = <&porta 15 GPIO_ACTIVE_HIGH>;
@@ -48,16 +49,19 @@
 	/* Buttons */
 	buttons: buttons {
 		compatible = "gpio-keys";
+
 		user_button_0: button_0 {
 			label = "User Button 0";
 			gpios = <&portc 26 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		user_button_1: button_1 {
 			label = "User Button 1";
 			gpios = <&portc 27 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_1>;
 		};
+
 		user_button_2: button_2 {
 			label = "User Button 2";
 			gpios = <&portc 28 GPIO_ACTIVE_LOW>;
@@ -70,26 +74,31 @@
 		compatible = "gpio-keys";
 		polling-mode;
 		debounce-interval-ms = <100>;
+
 		joy_sel: joystick_selection {
 			label = "joystick selection";
 			gpios = <&portd 10 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_ENTER>;
 		};
+
 		joy_down: joystick_down {
 			label = "joystick down";
 			gpios = <&portd 8 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_DOWN>;
 		};
+
 		joy_up: joystick_up {
 			label = "joystick up";
 			gpios = <&portd 20 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_UP>;
 		};
+
 		joy_left: joystick_left {
 			label = "joystick left";
 			gpios = <&portd 12 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_LEFT>;
 		};
+
 		joy_right: joystick_right {
 			label = "joystick right";
 			gpios = <&portd 9 GPIO_ACTIVE_LOW>;
@@ -104,18 +113,21 @@
 		enable-gpios = <&portc 5 GPIO_ACTIVE_HIGH>;
 		regulator-boot-on;
 	};
+
 	rpi_power_3v3_en {
 		compatible = "regulator-fixed";
 		regulator-name = "rpi_power_3v3_enable";
 		enable-gpios = <&portc 15 GPIO_ACTIVE_LOW>;
 		regulator-boot-on;
 	};
+
 	rpi_power_5v_en {
 		compatible = "regulator-fixed";
 		regulator-name = "rpi_power_5v_enable";
 		enable-gpios = <&portc 14 GPIO_ACTIVE_HIGH>;
 		regulator-boot-on;
 	};
+
 	usb_power_5v_en {
 		compatible = "regulator-fixed";
 		regulator-name = "usb_power_5v_en";
@@ -273,6 +285,7 @@
 		compatible = "zephyr,sdhc-spi-slot";
 		reg = <0>;
 		spi-max-frequency = <24000000>;
+
 		mmc {
 			compatible = "zephyr,sdmmc-disk";
 			disk-name = "SD";

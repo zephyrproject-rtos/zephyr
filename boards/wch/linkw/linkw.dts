@@ -51,6 +51,7 @@
 	aliases {
 		led0 = &blue_led;
 		sw0 = &mode;
+		watchdog0 = &iwdg;
 	};
 };
 
@@ -68,6 +69,10 @@
 	clocks = <&pll>;
 };
 
+&exti {
+	status = "okay";
+};
+
 &gpioa {
 	status = "okay";
 };
@@ -81,4 +86,8 @@
 	current-speed = <115200>;
 	pinctrl-0 = <&usart2_default>;
 	pinctrl-names = "default";
+};
+
+&iwdg {
+	status = "okay";
 };

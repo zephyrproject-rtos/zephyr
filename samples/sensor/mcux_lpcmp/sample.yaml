@@ -4,11 +4,17 @@ sample:
 common:
   platform_allow:
     - frdm_mcxn947/mcxn947/cpu0
+    - mcx_n9xx_evk/mcxn947/cpu0
     - frdm_mcxn236
     - frdm_mcxa156
+    - frdm_mcxa153
+    - frdm_mcxa346
+    - frdm_mcxa266
   integration_platforms:
     - frdm_mcxn947/mcxn947/cpu0
     - frdm_mcxn236
+    - frdm_mcxa346
+    - frdm_mcxa266
   tags:
     - drivers
     - sensor

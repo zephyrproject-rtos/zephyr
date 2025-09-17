@@ -28,11 +28,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-22.04, ubuntu-24.04, macos-13, macos-14, windows-2022]
+        os: [ubuntu-22.04, ubuntu-24.04, ubuntu-24.04-arm, macos-13, macos-14, windows-2022]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           path: zephyr
           fetch-depth: 0
@@ -54,15 +54,15 @@ jobs:
           git log --graph --oneline HEAD...${PR_HEAD}
 
       - name: Set up Python
-        uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
+        uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6.0.0
         with:
-          python-version: 3.11
+          python-version: 3.12
 
       - name: Setup Zephyr project
-        uses: zephyrproject-rtos/action-zephyr-setup@f7b70269a8eb01f70c8e710891e4c94972a2f6b4 # v1.0.6
+        uses: zephyrproject-rtos/action-zephyr-setup@6a744370a22e4ecb24f5dda3c7e80ff3e0a3b847 # v1.0.8
         with:
           app-path: zephyr
-          toolchains: all
+          toolchains: aarch64-zephyr-elf:arc-zephyr-elf:arc64-zephyr-elf:arm-zephyr-eabi:mips-zephyr-elf:riscv64-zephyr-elf:sparc-zephyr-elf:x86_64-zephyr-elf:xtensa-dc233c_zephyr-elf:xtensa-sample_controller32_zephyr-elf:rx-zephyr-elf
 
       - name: Build firmware
         working-directory: zephyr
@@ -72,6 +72,8 @@ jobs:
             EXTRA_TWISTER_FLAGS="-P native_sim --build-only"
           elif [ "${{ runner.os }}" = "Windows" ]; then
             EXTRA_TWISTER_FLAGS="-P native_sim --short-build-path -O/tmp/twister-out"
+          elif [ "${{ runner.os }}-${{ runner.arch }}" == "Linux-ARM64" ]; then
+            EXTRA_TWISTER_FLAGS="--exclude-platform native_sim/native"
           fi
           ./scripts/twister --runtime-artifact-cleanup --force-color --inline-logs -T samples/hello_world -T samples/cpp/hello_world -v $EXTRA_TWISTER_FLAGS
 

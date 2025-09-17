@@ -17,7 +17,7 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
-
+#include <stm32_backup_domain.h>
 
 /* Macros to fill up prescaler values */
 #define z_ahb_prescaler(v) LL_RCC_SYSCLK_DIV_ ## v
@@ -128,6 +128,8 @@ int enabled_clock(uint32_t src_clk)
 	    (src_clk == STM32_SRC_PCLK1) ||
 	    (src_clk == STM32_SRC_PCLK2) ||
 	    (src_clk == STM32_SRC_PCLK3) ||
+	    (src_clk == STM32_SRC_TIMPCLK1) ||
+	    (src_clk == STM32_SRC_TIMPCLK2) ||
 	    ((src_clk == STM32_SRC_HSE) && IS_ENABLED(STM32_HSE_ENABLED)) ||
 	    ((src_clk == STM32_SRC_HSI16) && IS_ENABLED(STM32_HSI_ENABLED)) ||
 	    ((src_clk == STM32_SRC_HSI48) && IS_ENABLED(STM32_HSI48_ENABLED)) ||
@@ -202,6 +204,11 @@ static int stm32_clock_control_configure(const struct device *dev,
 	if (err < 0) {
 		/* Attempt to configure a src clock not available or not valid */
 		return err;
+	}
+
+	if (pclken->enr == NO_SEL) {
+		/* Domain clock is fixed. Nothing to set. Exit */
+		return 0;
 	}
 
 	sys_clear_bits(DT_REG_ADDR(DT_NODELABEL(rcc)) + STM32_DT_CLKSEL_REG_GET(pclken->enr),
@@ -353,6 +360,12 @@ static int stm32_clock_control_get_subsys_rate(const struct device *dev,
 					      STM32_PLL3_R_DIVISOR);
 		break;
 #endif /* STM32_PLL3_ENABLED */
+	case STM32_SRC_TIMPCLK1:
+		*rate = STM32_APB1_PRESCALER <= 2 ? ahb_clock : apb1_clock * 2;
+		break;
+	case STM32_SRC_TIMPCLK2:
+		*rate = STM32_APB2_PRESCALER <= 2 ? ahb_clock : apb2_clock * 2;
+		break;
 	default:
 		return -ENOTSUP;
 	}
@@ -732,13 +745,7 @@ static void set_up_fixed_clock_sources(void)
 		/* Enable the power interface clock */
 		LL_AHB3_GRP1_EnableClock(LL_AHB3_GRP1_PERIPH_PWR);
 
-		if (!LL_PWR_IsEnabledBkUpAccess()) {
-			/* Enable write access to Backup domain */
-			LL_PWR_EnableBkUpAccess();
-			while (!LL_PWR_IsEnabledBkUpAccess()) {
-				/* Wait for Backup domain access */
-			}
-		}
+		stm32_backup_domain_enable_access();
 
 		/* Configure driving capability */
 		LL_RCC_LSE_SetDriveCapability(STM32_LSE_DRIVING << RCC_BDCR_LSEDRV_Pos);
@@ -760,7 +767,7 @@ static void set_up_fixed_clock_sources(void)
 		while (!LL_RCC_LSESYS_IsReady()) {
 		}
 
-		LL_PWR_DisableBkUpAccess();
+		stm32_backup_domain_disable_access();
 	}
 
 	if (IS_ENABLED(STM32_MSIS_ENABLED)) {
@@ -818,20 +825,14 @@ static void set_up_fixed_clock_sources(void)
 			LL_AHB3_GRP1_EnableClock(LL_AHB3_GRP1_PERIPH_PWR);
 		}
 
-		if (!LL_PWR_IsEnabledBkUpAccess()) {
-			/* Enable write access to Backup domain */
-			LL_PWR_EnableBkUpAccess();
-			while (!LL_PWR_IsEnabledBkUpAccess()) {
-				/* Wait for Backup domain access */
-			}
-		}
+		stm32_backup_domain_enable_access();
 
 		/* Enable LSI oscillator */
 		LL_RCC_LSI_Enable();
 		while (LL_RCC_LSI_IsReady() != 1) {
 		}
 
-		LL_PWR_DisableBkUpAccess();
+		stm32_backup_domain_disable_access();
 	}
 
 	if (IS_ENABLED(STM32_HSI48_ENABLED)) {
@@ -898,6 +899,19 @@ int stm32_clock_control_init(const struct device *dev)
 	} else {
 		return -ENOTSUP;
 	}
+
+#ifdef CONFIG_PM
+	/* Disable unused clocks that are enabled (e.g. by bootloader or as wakeup source).
+	 * These will not be enabled, unless the MCU uses them for PM wakeup purposes.
+	 */
+	if (!IS_ENABLED(STM32_MSIS_ENABLED) && (READ_BIT(RCC->CR, RCC_CR_MSISON) != 0U)) {
+		LL_RCC_MSIS_Disable();
+	}
+
+	if (!IS_ENABLED(STM32_HSI_ENABLED) && (READ_BIT(RCC->CR, RCC_CR_HSION) != 0U)) {
+		LL_RCC_HSI_Disable();
+	}
+#endif
 
 	/* Set FLASH latency */
 	/* If freq not increased, set flash latency after all clock setting */

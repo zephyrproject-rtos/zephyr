@@ -53,6 +53,7 @@ struct ptp_clock {
 		uint64_t	    t3;
 		uint64_t	    t4;
 	} timestamp;			/* latest timestamps in nanoseconds */
+	double pi_drift;
 };
 
 __maybe_unused static struct ptp_clock ptp_clk = { 0 };
@@ -506,8 +507,21 @@ int ptp_clock_management_msg_process(struct ptp_port *port, struct ptp_msg *msg)
 	return state_decision_required;
 }
 
+static double ptp_servo_pi(int64_t nanosecond_diff)
+{
+	double kp = 0.7;
+	double ki = 0.3;
+	double ppb;
+
+	ptp_clk.pi_drift += ki * nanosecond_diff;
+	ppb = kp * nanosecond_diff + ptp_clk.pi_drift;
+
+	return ppb;
+}
+
 void ptp_clock_synchronize(uint64_t ingress, uint64_t egress)
 {
+	double ppb;
 	int64_t offset;
 	int64_t delay = ptp_clk.current_ds.mean_delay >> 16;
 
@@ -543,18 +557,24 @@ void ptp_clock_synchronize(uint64_t ingress, uint64_t egress)
 		current.nanosecond = (uint32_t)dest_nsec;
 
 		ptp_clock_set(ptp_clk.phc, &current);
+		LOG_WRN("Set clock time: %"PRIu64".%09u", current.second, current.nanosecond);
 		return;
 	}
 
 	LOG_DBG("Offset %lldns", offset);
 	ptp_clk.current_ds.offset_from_tt = clock_ns_to_timeinterval(offset);
 
-	ptp_clock_adjust(ptp_clk.phc, -offset);
+	ppb = ptp_servo_pi(-offset);
+	ptp_clock_rate_adjust(ptp_clk.phc, 1.0 + (ppb / 1000000000.0));
 }
 
 void ptp_clock_delay(uint64_t egress, uint64_t ingress)
 {
 	int64_t delay;
+
+	if (ptp_clk.timestamp.t1 == 0 || ptp_clk.timestamp.t2 == 0) {
+		return;
+	}
 
 	ptp_clk.timestamp.t3 = egress;
 	ptp_clk.timestamp.t4 = ingress;

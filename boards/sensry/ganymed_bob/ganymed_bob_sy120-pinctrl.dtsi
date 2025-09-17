@@ -4,7 +4,6 @@
 #include <zephyr/dt-bindings/pinctrl/sy1xx-pinctrl.h>
 
 &pinctrl {
-
 	/* UART0 */
 	/omit-if-no-ref/ uart0_tx: uart0_tx {
 		pinmux = <SY1XX_UART0_PAD_CFG0 SY1XX_PAD(0)>;
@@ -114,26 +113,32 @@
 
 	/omit-if-no-ref/ rgmii_tx_ctl: rgmii_tx_ctl {
 		pinmux = <SY1XX_RGMII0_PAD_CFG0 SY1XX_PAD(2)>;
+		slew-rate = <3>;
 	};
 
 	/omit-if-no-ref/ rgmii_tx_clk: rgmii_tx_clk {
 		pinmux = <SY1XX_RGMII0_PAD_CFG0 SY1XX_PAD(3)>;
+		slew-rate = <3>;
 	};
 
 	/omit-if-no-ref/ rgmii_txd0: rgmii_txd0 {
 		pinmux = <SY1XX_RGMII0_PAD_CFG1 SY1XX_PAD(0)>;
+		slew-rate = <3>;
 	};
 
 	/omit-if-no-ref/ rgmii_txd1: rgmii_txd1 {
 		pinmux = <SY1XX_RGMII0_PAD_CFG1 SY1XX_PAD(1)>;
+		slew-rate = <3>;
 	};
 
 	/omit-if-no-ref/ rgmii_txd2: rgmii_txd2 {
 		pinmux = <SY1XX_RGMII0_PAD_CFG1 SY1XX_PAD(2)>;
+		slew-rate = <3>;
 	};
 
 	/omit-if-no-ref/ rgmii_txd3: rgmii_txd3 {
 		pinmux = <SY1XX_RGMII0_PAD_CFG1 SY1XX_PAD(3)>;
+		slew-rate = <3>;
 	};
 
 	/omit-if-no-ref/ rgmii_rxd0: rgmii_rxd0 {
@@ -156,7 +161,6 @@
 		input-enable;
 	};
 };
-
 
 &uart0 {
 	pinctrl-0 = <&uart0_tx &uart0_rx>;
@@ -195,8 +199,8 @@
 
 &eth0 {
 	pinctrl-0 = <&rgmii_rx_ctl &rgmii_rx_clk
-				 &rgmii_tx_ctl &rgmii_tx_clk
-				 &rgmii_txd0 &rgmii_txd1 &rgmii_txd2 &rgmii_txd3
-				 &rgmii_rxd0 &rgmii_rxd1 &rgmii_rxd2 &rgmii_rxd3>;
+		     &rgmii_tx_ctl &rgmii_tx_clk
+		     &rgmii_txd0 &rgmii_txd1 &rgmii_txd2 &rgmii_txd3
+		     &rgmii_rxd0 &rgmii_rxd1 &rgmii_rxd2 &rgmii_rxd3>;
 	pinctrl-names = "default";
 };

@@ -170,6 +170,8 @@ static inline int net_conn_unregister(struct net_conn_handle *handle)
  * @param user_data User data supplied by caller.
  * @param remote_addr Remote address
  * @param remote_port Remote port
+ * @param local_addr Local address
+ * @param local_port Local port
  *
  * @return Return 0 if the change succeed, <0 otherwise.
  */
@@ -177,7 +179,9 @@ int net_conn_update(struct net_conn_handle *handle,
 		    net_conn_cb_t cb,
 		    void *user_data,
 		    const struct sockaddr *remote_addr,
-		    uint16_t remote_port);
+		    uint16_t remote_port,
+		    const struct sockaddr *local_addr,
+		    uint16_t local_port);
 
 /**
  * @brief Called by net_core.c when a network packet is received
@@ -185,11 +189,14 @@ int net_conn_update(struct net_conn_handle *handle,
  *
  * @param pkt Network packet holding received data
  * @param proto LL protocol for the connection
+ * @param type socket type
  *
  * @return NET_OK if the packet was consumed, NET_CONTINUE if the packet should
  * be processed further in the stack.
  */
-enum net_verdict net_conn_packet_input(struct net_pkt *pkt, uint16_t proto);
+enum net_verdict net_conn_packet_input(struct net_pkt *pkt,
+				       uint16_t proto,
+				       enum net_sock_type type);
 
 /**
  * @brief Called by net_core.c when an IP packet is received

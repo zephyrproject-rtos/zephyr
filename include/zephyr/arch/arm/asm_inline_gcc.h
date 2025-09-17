@@ -20,7 +20,7 @@
 
 #include <zephyr/toolchain.h>
 #include <zephyr/types.h>
-#include <zephyr/arch/arm/exception.h>
+#include <zephyr/arch/exception.h>
 #include <cmsis_core.h>
 
 #if defined(CONFIG_CPU_AARCH32_CORTEX_R) || defined(CONFIG_CPU_AARCH32_CORTEX_A)

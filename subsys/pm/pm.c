@@ -130,6 +130,10 @@ bool pm_state_force(uint8_t cpu, const struct pm_state_info *info)
 		 "Invalid power state %d!", info->state);
 
 	info = pm_state_get(cpu, info->state, info->substate_id);
+	if (info == NULL) {
+		/* Return false if the state could not be retrieved */
+		return false;
+	}
 
 	key = k_spin_lock(&pm_forced_state_lock);
 	z_cpus_pm_forced_state[cpu] = info;
@@ -147,7 +151,7 @@ bool pm_system_suspend(int32_t kernel_ticks)
 
 	SYS_PORT_TRACING_FUNC_ENTER(pm, system_suspend, kernel_ticks);
 
-	if (!pm_policy_state_any_active()) {
+	if (!pm_policy_state_any_active() && (z_cpus_pm_forced_state[id] == NULL)) {
 		/* Return early if all states are unavailable. */
 		return false;
 	}
@@ -195,8 +199,12 @@ bool pm_system_suspend(int32_t kernel_ticks)
 		/*
 		 * We need to set the timer to interrupt a little bit early to
 		 * accommodate the time required by the CPU to fully wake up.
+		 *
+		 * Since K_TICKS_FOREVER is defined as -1, ensure that -1
+		 * is not passed as the next timeout.
+		 *
 		 */
-		sys_clock_set_timeout(ticks - exit_latency_ticks, true);
+		sys_clock_set_timeout(MAX(0, ticks - exit_latency_ticks), true);
 	}
 
 	/*
@@ -209,15 +217,23 @@ bool pm_system_suspend(int32_t kernel_ticks)
 	 * sent the notification in pm_system_resume().
 	 */
 	k_sched_lock();
-	pm_stats_start();
+
+	if (IS_ENABLED(CONFIG_PM_STATS)) {
+		pm_stats_start();
+	}
 	/* Enter power state */
 	pm_state_notify(true);
 	atomic_set_bit(z_post_ops_required, id);
 	pm_state_set(z_cpus_pm_state[id]->state, z_cpus_pm_state[id]->substate_id);
-	pm_stats_stop();
 
 	/* Wake up sequence starts here */
-	pm_stats_update(z_cpus_pm_state[id]->state);
+
+	if (IS_ENABLED(CONFIG_PM_STATS)) {
+		pm_stats_stop();
+		pm_stats_update(z_cpus_pm_state[id] ?
+				z_cpus_pm_state[id]->state : PM_STATE_ACTIVE);
+	}
+
 	pm_system_resume();
 	k_sched_unlock();
 	SYS_PORT_TRACING_FUNC_EXIT(pm, system_suspend, ticks,

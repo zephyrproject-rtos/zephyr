@@ -1,0 +1,85 @@
+# ICM4268X-P Six-Axis Motion Tracking device configuration options
+#
+# Copyright (c) 2022 Intel Corporation
+# Copyright (c) 2024 Croxel Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ICM4268X
+	bool "ICM4268X Six-Axis Motion Tracking Device"
+	default y
+	depends on DT_HAS_INVENSENSE_ICM4268X_ENABLED
+	select SPI
+	select RTIO_WORKQ if SENSOR_ASYNC_API
+	help
+	  Enable driver for ICM4268X SPI-based six-axis motion tracking device.
+
+if ICM4268X
+
+config EMUL_ICM4268X
+	bool "Emulator for the ICM4268X"
+	default y
+	depends on EMUL
+	help
+	  Enable the hardware emulator for the ICM4268X. Doing so allows exercising
+	  sensor APIs for this IMU in native_sim and qemu.
+
+config ICM4268X_DECODER
+	bool "ICM4268X decoder logic"
+	default y
+	select SENSOR_ASYNC_API
+	help
+	  Compile the ICM4268X decoder API which allows decoding raw data returned
+	  from the sensor.
+
+choice
+	prompt "Trigger mode"
+	default ICM4268X_TRIGGER_NONE if ICM4268X_STREAM
+	default ICM4268X_TRIGGER_GLOBAL_THREAD
+	help
+	  Specify the type of triggering to be used by the driver
+
+config ICM4268X_TRIGGER_NONE
+	bool "No trigger"
+
+config ICM4268X_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_INVENSENSE_ICM4268X),int-gpios)
+	select ICM4268X_TRIGGER
+
+config ICM4268X_TRIGGER_OWN_THREAD
+	bool "Use own thread"
+	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_INVENSENSE_ICM4268X),int-gpios)
+	select ICM4268X_TRIGGER
+
+endchoice
+
+config ICM4268X_STREAM
+	bool "Use hardware FIFO to stream data"
+	select ICM4268X_TRIGGER
+	default y
+	depends on SPI_RTIO
+	depends on SENSOR_ASYNC_API
+	help
+	  Use this config option to enable streaming sensor data via RTIO subsystem.
+
+config ICM4268X_TRIGGER
+	bool
+
+config ICM4268X_THREAD_PRIORITY
+	int "Own thread priority"
+	depends on ICM4268X_TRIGGER_OWN_THREAD
+	default 10
+	help
+	  The priority of the thread used for handling interrupts.
+
+config ICM4268X_THREAD_STACK_SIZE
+	int "Own thread stack size"
+	depends on ICM4268X_TRIGGER_OWN_THREAD
+	default 1024
+	help
+	  The thread stack size.
+
+endif # ICM4268X

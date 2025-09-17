@@ -11,8 +11,6 @@
  */
 /delete-node/ &slot0_partition;
 /delete-node/ &slot1_partition;
-/delete-node/ &slot0_ns_partition;
-/delete-node/ &slot1_ns_partition;
 /delete-node/ &storage_partition;
 
 &cpuapp_rram {
@@ -38,7 +36,7 @@
 
 / {
 	msc_disk0 {
-		status="okay";
+		status = "okay";
 		compatible = "zephyr,flash-disk";
 		partition = <&storage_partition>;
 		disk-name = "SD";

@@ -17,6 +17,8 @@ tests:
     harness: bsim
     harness_config:
       bsim_exe_name: tests_bluetooth_tester_prj_conf
+    extra_args:
+      - EXTRA_CONF_FILE="overlay-bt_ll_sw_split.conf"
   bluetooth.general.tester.nxp:
     # Disabling monolithic since CI environment doesn't use blobs
     build_only: true
@@ -35,9 +37,6 @@ tests:
       - nrf5340dk/nrf5340/cpuapp
     integration_platforms:
       - nrf5340dk/nrf5340/cpuapp
-    extra_args:
-      # Build config used by AutoPTS for nRF53
-      - EXTRA_CONF_FILE="hci_ipc.conf"
     tags: bluetooth
     sysbuild: true
   bluetooth.general.tester_hci_ipc_bsim:
@@ -47,8 +46,7 @@ tests:
     harness_config:
       bsim_exe_name: tests_bluetooth_tester_prj_conf
     extra_args:
-      # Build config used by AutoPTS for nRF53
-      - EXTRA_CONF_FILE="hci_ipc.conf"
+      - EXTRA_CONF_FILE="gap_iso.conf"
     sysbuild: true
   bluetooth.general.tester_le_audio:
     build_only: true
@@ -64,6 +62,17 @@ tests:
       - EXTRA_CONF_FILE="overlay-le-audio.conf"
     tags: bluetooth
     harness: bluetooth
+    sysbuild: true
+  bluetooth.general.tester_le_audio_bsim:
+    build_only: true
+    platform_allow:
+      - nrf52_bsim/native
+      - nrf5340bsim/nrf5340/cpuapp
+    extra_args:
+      - EXTRA_CONF_FILE="overlay-le-audio.conf"
+    harness: bsim
+    harness_config:
+      bsim_exe_name: tests_bluetooth_tester_le_audio_prj_conf
     sysbuild: true
   bluetooth.general.tester_mesh:
     build_only: true

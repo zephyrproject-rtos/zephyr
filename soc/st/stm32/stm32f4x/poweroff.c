@@ -16,9 +16,7 @@
 
 void z_sys_poweroff(void)
 {
-#ifdef CONFIG_STM32_WKUP_PINS
 	LL_PWR_ClearFlag_WU();
-#endif /* CONFIG_STM32_WKUP_PINS */
 
 	LL_PWR_SetPowerMode(LL_PWR_MODE_STANDBY);
 	LL_LPM_EnableDeepSleep();

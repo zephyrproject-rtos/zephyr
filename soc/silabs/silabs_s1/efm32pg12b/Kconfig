@@ -17,6 +17,3 @@ config SOC_SERIES_EFM32PG12B
 	select SOC_GECKO_TRNG
 	select SOC_GECKO_ADC
 	select HAS_PM
-
-config SOC_GECKO_SDID
-	default 84 if SOC_SERIES_EFM32PG12B

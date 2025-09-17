@@ -66,16 +66,17 @@ struct adsp_debug_slot {
 
 static void mtrace_init(void)
 {
-	if (ADSP_DW->descs[0].type == MTRACE_LOGGING_SLOT_TYPE(MTRACE_CORE)) {
+	if (ADSP_DW->descs[ADSP_DW_SLOT_NUM_MTRACE].type == MTRACE_LOGGING_SLOT_TYPE(MTRACE_CORE)) {
 		return;
 	}
 
-	ADSP_DW->descs[0].type = MTRACE_LOGGING_SLOT_TYPE(MTRACE_CORE);
+	ADSP_DW->descs[ADSP_DW_SLOT_NUM_MTRACE].type = MTRACE_LOGGING_SLOT_TYPE(MTRACE_CORE);
 }
 
 static size_t mtrace_out(int8_t *str, size_t len, size_t *space_left)
 {
-	struct adsp_debug_slot *slot = (struct adsp_debug_slot *)(ADSP_DW->slots[0]);
+	struct adsp_debug_slot *slot = (struct adsp_debug_slot *)
+		ADSP_DW->slots[ADSP_DW_SLOT_NUM_MTRACE];
 	uint8_t *data = slot->data;
 	uint32_t r = slot->host_ptr;
 	uint32_t w = slot->dsp_ptr;
@@ -221,7 +222,7 @@ void adsp_mtrace_log_init(adsp_mtrace_log_hook_t hook)
 	mtrace_init();
 
 	mtrace_hook = hook;
-	mtrace_active = true;
+	mtrace_active = !!hook;
 }
 
 const struct log_backend *log_backend_adsp_mtrace_get(void)

@@ -38,4 +38,6 @@ config SYSCON_INIT_PRIORITY
 	  initialized earlier in the startup cycle. If unsure, leave at default
 	  value
 
+source "drivers/syscon/Kconfig.bflb_efuse"
+
 endif # SYSCON

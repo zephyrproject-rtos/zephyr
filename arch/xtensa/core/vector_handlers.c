@@ -6,7 +6,6 @@
 #include <string.h>
 #include <xtensa_asm2_context.h>
 #include <zephyr/kernel.h>
-#include <ksched.h>
 #include <zephyr/kernel_structs.h>
 #include <kernel_internal.h>
 #include <kswap.h>
@@ -16,12 +15,6 @@
 #include <zephyr/zsr.h>
 #include <zephyr/arch/common/exc_handle.h>
 
-#ifdef CONFIG_XTENSA_GEN_HANDLERS
-#include <xtensa_handlers.h>
-#else
-#include <_soc_inthandlers.h>
-#endif
-
 #include <kernel_internal.h>
 #include <xtensa_internal.h>
 #include <xtensa_stack.h>
@@ -30,6 +23,16 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 extern char xtensa_arch_except_epc[];
 extern char xtensa_arch_kernel_oops_epc[];
+
+extern void xtensa_lazy_hifi_save(uint8_t *regs);
+extern void xtensa_lazy_hifi_load(uint8_t *regs);
+
+#if defined(CONFIG_XTENSA_LAZY_HIFI_SHARING) && (CONFIG_MP_MAX_NUM_CPUS > 1)
+#define LAZY_COPROCESSOR_LOCK
+
+static struct k_spinlock coprocessor_lock;
+#endif
+
 
 bool xtensa_is_outside_stack_bounds(uintptr_t addr, size_t sz, uint32_t ps)
 {
@@ -153,13 +156,13 @@ void xtensa_dump_stack(const void *stack)
 	bsa = frame->ptr_to_bsa;
 
 	/* Calculate number of high registers. */
-	num_high_regs = (uint8_t *)bsa - (uint8_t *)frame + sizeof(void *);
+	num_high_regs = (uint8_t *)bsa - ((uint8_t *)frame + sizeof(void *));
 	num_high_regs /= sizeof(uintptr_t);
 
 	/* And high registers are always comes in 4 in a block. */
 	reg_blks_remaining = (int)num_high_regs / 4;
 
-	LOG_ERR(" **  A0 %p  SP %p  A2 %p  A3 %p",
+	EXCEPTION_DUMP(" **  A0 %p  SP %p  A2 %p  A3 %p",
 		(void *)bsa->a0,
 		(void *)((char *)bsa + sizeof(*bsa)),
 		(void *)bsa->a2, (void *)bsa->a3);
@@ -167,7 +170,7 @@ void xtensa_dump_stack(const void *stack)
 	if (reg_blks_remaining > 0) {
 		reg_blks_remaining--;
 
-		LOG_ERR(" **  A4 %p  A5 %p  A6 %p  A7 %p",
+		EXCEPTION_DUMP(" **  A4 %p  A5 %p  A6 %p  A7 %p",
 			(void *)frame->blks[reg_blks_remaining].r0,
 			(void *)frame->blks[reg_blks_remaining].r1,
 			(void *)frame->blks[reg_blks_remaining].r2,
@@ -177,7 +180,7 @@ void xtensa_dump_stack(const void *stack)
 	if (reg_blks_remaining > 0) {
 		reg_blks_remaining--;
 
-		LOG_ERR(" **  A8 %p  A9 %p A10 %p A11 %p",
+		EXCEPTION_DUMP(" **  A8 %p  A9 %p A10 %p A11 %p",
 			(void *)frame->blks[reg_blks_remaining].r0,
 			(void *)frame->blks[reg_blks_remaining].r1,
 			(void *)frame->blks[reg_blks_remaining].r2,
@@ -187,7 +190,7 @@ void xtensa_dump_stack(const void *stack)
 	if (reg_blks_remaining > 0) {
 		reg_blks_remaining--;
 
-		LOG_ERR(" ** A12 %p A13 %p A14 %p A15 %p",
+		EXCEPTION_DUMP(" ** A12 %p A13 %p A14 %p A15 %p",
 			(void *)frame->blks[reg_blks_remaining].r0,
 			(void *)frame->blks[reg_blks_remaining].r1,
 			(void *)frame->blks[reg_blks_remaining].r2,
@@ -195,16 +198,16 @@ void xtensa_dump_stack(const void *stack)
 	}
 
 #if XCHAL_HAVE_LOOPS
-	LOG_ERR(" ** LBEG %p LEND %p LCOUNT %p",
+	EXCEPTION_DUMP(" ** LBEG %p LEND %p LCOUNT %p",
 		(void *)bsa->lbeg,
 		(void *)bsa->lend,
 		(void *)bsa->lcount);
 #endif
 
-	LOG_ERR(" ** SAR %p", (void *)bsa->sar);
+	EXCEPTION_DUMP(" ** SAR %p", (void *)bsa->sar);
 
 #if XCHAL_HAVE_THREADPTR
-	LOG_ERR(" **  THREADPTR %p", (void *)bsa->threadptr);
+	EXCEPTION_DUMP(" **  THREADPTR %p", (void *)bsa->threadptr);
 #endif
 }
 
@@ -227,12 +230,12 @@ static void print_fatal_exception(void *print_stack, int cause,
 	__asm__ volatile("rsr.excvaddr %0" : "=r"(vaddr));
 
 	if (is_dblexc) {
-		LOG_ERR(" ** FATAL EXCEPTION (DOUBLE)");
+		EXCEPTION_DUMP(" ** FATAL EXCEPTION (DOUBLE)");
 	} else {
-		LOG_ERR(" ** FATAL EXCEPTION");
+		EXCEPTION_DUMP(" ** FATAL EXCEPTION");
 	}
 
-	LOG_ERR(" ** CPU %d EXCCAUSE %d (%s)",
+	EXCEPTION_DUMP(" ** CPU %d EXCCAUSE %d (%s)",
 		arch_curr_cpu()->id, cause,
 		xtensa_exccause(cause));
 
@@ -241,21 +244,21 @@ static void print_fatal_exception(void *print_stack, int cause,
 	 * Or worse, cause another access violation.
 	 */
 	if (xtensa_is_outside_stack_bounds((uintptr_t)bsa, sizeof(*bsa), UINT32_MAX)) {
-		LOG_ERR(" ** VADDR %p Invalid SP %p", (void *)vaddr, print_stack);
+		EXCEPTION_DUMP(" ** VADDR %p Invalid SP %p", (void *)vaddr, print_stack);
 		return;
 	}
 
 	ps = bsa->ps;
 	pc = (void *)bsa->pc;
 
-	LOG_ERR(" **  PC %p VADDR %p", pc, (void *)vaddr);
+	EXCEPTION_DUMP(" **  PC %p VADDR %p", pc, (void *)vaddr);
 
 	if (is_dblexc) {
-		LOG_ERR(" **  DEPC %p", (void *)depc);
+		EXCEPTION_DUMP(" **  DEPC %p", (void *)depc);
 	}
 
-	LOG_ERR(" **  PS %p", (void *)bsa->ps);
-	LOG_ERR(" **    (INTLEVEL:%d EXCM: %d UM:%d RING:%d WOE:%d OWB:%d CALLINC:%d)",
+	EXCEPTION_DUMP(" **  PS %p", (void *)bsa->ps);
+	EXCEPTION_DUMP(" **    (INTLEVEL:%d EXCM: %d UM:%d RING:%d WOE:%d OWB:%d CALLINC:%d)",
 		get_bits(0, 4, ps), get_bits(4, 1, ps),
 		get_bits(5, 1, ps), get_bits(6, 2, ps),
 		get_bits(18, 1, ps),
@@ -279,27 +282,118 @@ static inline void *return_to(void *interrupted)
 #endif /* CONFIG_MULTITHREADING */
 }
 
-/* The wrapper code lives here instead of in the python script that
- * generates _xtensa_handle_one_int*().  Seems cleaner, still kind of
- * ugly.
- *
- * This may be unused depending on number of interrupt levels
- * supported by the SoC.
+#if defined(LAZY_COPROCESSOR_LOCK)
+/**
+ * Spin until thread is no longer the HiFi owner on specified CPU.
+ * Note: Interrupts are locked on entry. Unlock before spinning to allow
+ * an IPI to be caught and processed; restore them afterwards.
  */
-#define DEF_INT_C_HANDLER(l)				\
-__unused void *xtensa_int##l##_c(void *interrupted_stack)	\
-{							   \
-	uint32_t irqs, intenable, m;			   \
-	usage_stop();					   \
-	__asm__ volatile("rsr.interrupt %0" : "=r"(irqs)); \
-	__asm__ volatile("rsr.intenable %0" : "=r"(intenable)); \
-	irqs &= intenable;					\
-	while ((m = _xtensa_handle_one_int##l(irqs))) {		\
-		irqs ^= m;					\
-		__asm__ volatile("wsr.intclear %0" : : "r"(m)); \
-	}							\
-	return return_to(interrupted_stack);		\
+static void spin_while_hifi_owner(struct _cpu *cpu, struct k_thread *thread)
+{
+	unsigned int key;
+	unsigned int original;
+	unsigned int unlocked;
+
+	__asm__ volatile("rsr.ps %0" : "=r"(original));
+	unlocked = original & ~PS_INTLEVEL_MASK;
+	__asm__ volatile("wsr.ps %0; rsync" :: "r"(unlocked) : "memory");
+
+	/* Spin until thread is no longer the HiFi owner on the other CPU */
+
+	while ((struct k_thread *)
+	       atomic_ptr_get(&cpu->arch.hifi_owner) == thread) {
+		key = arch_irq_lock();
+		arch_spin_relax();
+		arch_irq_unlock(key);
+	}
+
+	__asm__ volatile("wsr.ps %0; rsync" :: "r"(original) : "memory");
 }
+
+/**
+ * Determine if the thread is the owner of a HiFi on another CPU. This is
+ * called with the coprocessor lock held
+ */
+static struct _cpu *thread_hifi_owner_elsewhere(struct k_thread *thread)
+{
+	struct _cpu *this_cpu = arch_curr_cpu();
+	struct k_thread *owner;
+
+	for (unsigned int i = 0; i < CONFIG_MP_MAX_NUM_CPUS; i++) {
+		owner = (struct k_thread *)
+			atomic_ptr_get(&_kernel.cpus[i].arch.hifi_owner);
+		if ((this_cpu != &_kernel.cpus[i]) && (owner == thread)) {
+			return &_kernel.cpus[i];
+		}
+	}
+	return NULL;
+}
+#endif
+
+/**
+ * This routine only needed for SMP systems with HiFi sharing. It handles the
+ * IPI sent to save the HiFi registers so the owner can load them onto another
+ * CPU.
+ */
+void arch_ipi_lazy_coprocessors_save(void)
+{
+#if defined(LAZY_COPROCESSOR_LOCK)
+	k_spinlock_key_t key = k_spin_lock(&coprocessor_lock);
+	struct _cpu *cpu = arch_curr_cpu();
+	struct k_thread *save_hifi = (struct k_thread *)
+				     atomic_ptr_get(&cpu->arch.save_hifi);
+	struct k_thread *hifi_owner = (struct k_thread *)
+				      atomic_ptr_get(&cpu->arch.hifi_owner);
+
+	if ((save_hifi == hifi_owner) && (save_hifi != NULL)) {
+		unsigned int cp;
+
+		__asm__ volatile("rsr.cpenable %0" : "=r"(cp));
+		cp |= BIT(XCHAL_CP_ID_AUDIOENGINELX);
+		__asm__ volatile("wsr.cpenable %0" :: "r"(cp));
+
+		xtensa_lazy_hifi_save(save_hifi->arch.hifi_regs);
+
+		cp &= ~BIT(XCHAL_CP_ID_AUDIOENGINELX);
+		__asm__ volatile("wsr.cpenable %0" :: "r"(cp));
+
+		atomic_ptr_set(&cpu->arch.hifi_owner, NULL);
+	}
+	atomic_ptr_set(&cpu->arch.save_hifi, NULL);
+	k_spin_unlock(&coprocessor_lock, key);
+#endif
+}
+
+
+#if XCHAL_NUM_INTERRUPTS <= 32
+#define DECLARE_IRQ(lvl)                                                                           \
+	{                                                                                          \
+		XCHAL_INTLEVEL##lvl##_MASK,                                                        \
+	}
+#elif XCHAL_NUM_INTERRUPTS <= 64
+#define DECLARE_IRQ(lvl)                                                                           \
+	{                                                                                          \
+		XCHAL_INTLEVEL##lvl##_MASK,                                                        \
+		XCHAL_INTLEVEL##lvl##_MASK1,                                                       \
+	}
+#elif XCHAL_NUM_INTERRUPTS <= 96
+#define DECLARE_IRQ(lvl)                                                                           \
+	{                                                                                          \
+		XCHAL_INTLEVEL##lvl##_MASK,                                                        \
+		XCHAL_INTLEVEL##lvl##_MASK1,                                                       \
+		XCHAL_INTLEVEL##lvl##_MASK2,                                                       \
+	}
+#elif XCHAL_NUM_INTERRUPTS <= 128
+#define DECLARE_IRQ(lvl)                                                                           \
+	{                                                                                          \
+		XCHAL_INTLEVEL##lvl##_MASK,                                                        \
+		XCHAL_INTLEVEL##lvl##_MASK1,                                                       \
+		XCHAL_INTLEVEL##lvl##_MASK2,                                                       \
+		XCHAL_INTLEVEL##lvl##_MASK3,                                                       \
+	}
+#else
+#error "xtensa supports up to 128 interrupts"
+#endif
 
 #if XCHAL_HAVE_NMI
 #define MAX_INTR_LEVEL XCHAL_NMILEVEL
@@ -309,6 +403,102 @@ __unused void *xtensa_int##l##_c(void *interrupted_stack)	\
 #error Xtensa core with no interrupt support is used
 #define MAX_INTR_LEVEL 0
 #endif
+
+#define GRP_COUNT (ROUND_UP(XCHAL_NUM_INTERRUPTS, 32) / 32)
+
+static const uint32_t xtensa_lvl_mask[MAX_INTR_LEVEL][GRP_COUNT] = {
+#if MAX_INTR_LEVEL >= 1
+	DECLARE_IRQ(1),
+#endif
+#if MAX_INTR_LEVEL >= 2
+	DECLARE_IRQ(2),
+#endif
+#if MAX_INTR_LEVEL >= 3
+	DECLARE_IRQ(3),
+#endif
+#if MAX_INTR_LEVEL >= 4
+	DECLARE_IRQ(4),
+#endif
+#if MAX_INTR_LEVEL >= 5
+	DECLARE_IRQ(5),
+#endif
+#if MAX_INTR_LEVEL >= 6
+	DECLARE_IRQ(6),
+#endif
+#if MAX_INTR_LEVEL >= 7
+	DECLARE_IRQ(7),
+#endif
+};
+
+/* Handles all interrupts for given IRQ Level.
+ * - Supports up to 128 interrupts (max supported by Xtensa)
+ * - Supports all IRQ levels
+ * - Uses __builtin_ctz that for most xtensa configurations will be optimized using nsau instruction
+ */
+__unused static void xtensa_handle_irq_lvl(int irq_lvl)
+{
+	int irq;
+	uint32_t irq_mask;
+	uint32_t intenable;
+#if XCHAL_NUM_INTERRUPTS > 0
+	__asm__ volatile("rsr.interrupt %0" : "=r"(irq_mask));
+	__asm__ volatile("rsr.intenable %0" : "=r"(intenable));
+	irq_mask &= intenable;
+	irq_mask &= xtensa_lvl_mask[irq_lvl - 1][0];
+	while (irq_mask) {
+		irq = __builtin_ctz(irq_mask);
+		_sw_isr_table[irq].isr(_sw_isr_table[irq].arg);
+		__asm__ volatile("wsr.intclear %0" : : "r"(BIT(irq)));
+		irq_mask ^= BIT(irq);
+	}
+#endif
+#if XCHAL_NUM_INTERRUPTS > 32
+	__asm__ volatile("rsr.interrupt1 %0" : "=r"(irq_mask));
+	__asm__ volatile("rsr.intenable1 %0" : "=r"(intenable));
+	irq_mask &= intenable;
+	irq_mask &= xtensa_lvl_mask[irq_lvl - 1][1];
+	while (irq_mask) {
+		irq = __builtin_ctz(irq_mask);
+		_sw_isr_table[irq + 32].isr(_sw_isr_table[irq + 32].arg);
+		__asm__ volatile("wsr.intclear1 %0" : : "r"(BIT(irq)));
+		irq_mask ^= BIT(irq);
+	}
+#endif
+
+#if XCHAL_NUM_INTERRUPTS > 64
+	__asm__ volatile("rsr.interrupt2 %0" : "=r"(irq_mask));
+	__asm__ volatile("rsr.intenable2 %0" : "=r"(intenable2));
+	irq_mask &= intenable;
+	irq_mask &= xtensa_lvl_mask[irq_lvl - 1][2];
+	while (irq_mask) {
+		irq = __builtin_ctz(irq_mask);
+		_sw_isr_table[irq + 64].isr(_sw_isr_table[irq + 64].arg);
+		__asm__ volatile("wsr.intclear2 %0" : : "r"(BIT(irq)));
+		irq_mask ^= BIT(irq);
+	}
+#endif
+#if XCHAL_NUM_INTERRUPTS > 96
+	__asm__ volatile("rsr.interrupt3 %0" : "=r"(irq_mask));
+	__asm__ volatile("rsr.intenable3 %0" : "=r"(intenable));
+	irq_mask &= intenable;
+	irq_mask &= xtensa_lvl_mask[irq_lvl - 1][3];
+
+	while (irq_mask) {
+		irq = __builtin_ctz(irq_mask);
+		_sw_isr_table[irq + 96].isr(_sw_isr_table[irq + 96].arg);
+		__asm__ volatile("wsr.intclear3 %0" : : "r"(BIT(irq)));
+		irq_mask ^= BIT(irq);
+	}
+#endif
+}
+
+#define DEF_INT_C_HANDLER(l)                                                                       \
+	__unused void *xtensa_int##l##_c(void *interrupted_stack)                                  \
+	{                                                                                          \
+		usage_stop();                                                                      \
+		xtensa_handle_irq_lvl(l);                                                          \
+		return return_to(interrupted_stack);                                               \
+	}
 
 #if MAX_INTR_LEVEL >= 2
 DEF_INT_C_HANDLER(2)
@@ -377,7 +567,7 @@ void *xtensa_excint1_c(void *esf)
 	 */
 	case EXCCAUSE_SYSCALL:
 		/* Just report it to the console for now */
-		LOG_ERR(" ** SYSCALL PS %p PC %p",
+		EXCEPTION_DUMP(" ** SYSCALL PS %p PC %p",
 			(void *)bsa->ps, (void *)bsa->pc);
 		xtensa_dump_stack(interrupted_stack);
 
@@ -388,6 +578,59 @@ void *xtensa_excint1_c(void *esf)
 		bsa->pc += 3;
 		break;
 #endif /* !CONFIG_USERSPACE */
+#ifdef CONFIG_XTENSA_LAZY_HIFI_SHARING
+	case EXCCAUSE_CP_DISABLED(XCHAL_CP_ID_AUDIOENGINELX):
+		/* Identify the interrupted thread and the old HiFi owner */
+		struct k_thread *thread = _current;
+		struct k_thread *owner;
+		unsigned int cp;
+
+#if defined(LAZY_COPROCESSOR_LOCK)
+		/*
+		 * If the interrupted thread is a HiFi owner on another CPU,
+		 * then send an IPI to that CPU to have it save its HiFi state
+		 * and then return. This CPU will continue to raise the current
+		 * exception (and send IPIs) until the other CPU has both saved
+		 * the HiFi registers and cleared its HiFi owner.
+		 */
+
+		k_spinlock_key_t key  = k_spin_lock(&coprocessor_lock);
+		struct _cpu *cpu = thread_hifi_owner_elsewhere(thread);
+
+		if (cpu != NULL) {
+			cpu->arch.save_hifi = thread;
+			arch_sched_directed_ipi(BIT(cpu->id));
+			k_spin_unlock(&coprocessor_lock, key);
+			spin_while_hifi_owner(cpu, thread);
+			key = k_spin_lock(&coprocessor_lock);
+		}
+#endif
+		owner = (struct k_thread *)
+			atomic_ptr_get(&arch_curr_cpu()->arch.hifi_owner);
+
+		/* Enable the HiFi coprocessor */
+		__asm__ volatile("rsr.cpenable %0" : "=r"(cp));
+		cp |= BIT(XCHAL_CP_ID_AUDIOENGINELX);
+		__asm__ volatile("wsr.cpenable %0" :: "r"(cp));
+
+		if (owner == thread) {
+#if defined(LAZY_COPROCESSOR_LOCK)
+			k_spin_unlock(&coprocessor_lock, key);
+#endif
+			break;
+		}
+
+		if (owner != NULL) {
+			xtensa_lazy_hifi_save(owner->arch.hifi_regs);
+		}
+
+		atomic_ptr_set(&arch_curr_cpu()->arch.hifi_owner, thread);
+#if defined(LAZY_COPROCESSOR_LOCK)
+		k_spin_unlock(&coprocessor_lock, key);
+#endif
+		xtensa_lazy_hifi_load(thread->arch.hifi_regs);
+		break;
+#endif /* CONFIG_XTENSA_LAZY_HIFI_SHARING */
 	default:
 		reason = K_ERR_CPU_EXCEPTION;
 
@@ -412,7 +655,7 @@ void *xtensa_excint1_c(void *esf)
 		 * this code.
 		 *
 		 * Another intentionally ill is from xtensa_arch_kernel_oops.
-		 * Kernel OOPS has to be explicity raised so we can simply
+		 * Kernel OOPS has to be explicitly raised so we can simply
 		 * set the reason and continue.
 		 */
 		if (cause == EXCCAUSE_ILLEGAL) {
@@ -437,6 +680,10 @@ skip_checks:
 		if (reason != K_ERR_KERNEL_OOPS) {
 			print_fatal_exception(print_stack, cause, is_dblexc, depc);
 		}
+#ifdef CONFIG_XTENSA_EXCEPTION_ENTER_GDB
+		extern void z_gdb_isr(struct arch_esf *esf);
+		z_gdb_isr((void *)print_stack);
+#endif
 
 		/* FIXME: legacy xtensa port reported "HW" exception
 		 * for all unhandled exceptions, which seems incorrect
@@ -453,6 +700,9 @@ skip_checks:
 #ifndef CONFIG_USERSPACE
 	case EXCCAUSE_SYSCALL:
 #endif /* !CONFIG_USERSPACE */
+#ifdef CONFIG_XTENSA_LAZY_HIFI_SHARING
+	case EXCCAUSE_CP_DISABLED(XCHAL_CP_ID_AUDIOENGINELX):
+#endif /* CONFIG_XTENSA_LAZY_HIFI_SHARING */
 		is_fatal_error = false;
 		break;
 	default:

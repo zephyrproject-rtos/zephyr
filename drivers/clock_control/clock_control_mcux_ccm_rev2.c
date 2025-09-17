@@ -81,7 +81,7 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 		break;
 #endif
 
-#ifdef CONFIG_SPI_MCUX_LPSPI
+#ifdef CONFIG_SPI_NXP_LPSPI
 #if defined(CONFIG_SOC_SERIES_IMXRT118X)
 	case IMX_CCM_LPSPI0102_CLK:
 		clock_root = kCLOCK_Root_Lpspi0102 + instance;
@@ -91,7 +91,7 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 		clock_root = kCLOCK_Root_Lpspi1 + instance;
 		break;
 #endif /* CONFIG_SOC_SERIES_IMXRT118X */
-#endif /* CONFIG_SPI_MCUX_LPSPI */
+#endif /* CONFIG_SPI_NXP_LPSPI */
 
 #ifdef CONFIG_UART_MCUX_LPUART
 #if defined(CONFIG_SOC_SERIES_IMXRT118X)
@@ -225,11 +225,8 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 #endif
 
 #ifdef CONFIG_MCUX_FLEXIO
-	case IMX_CCM_FLEXIO1_CLK:
-		clock_root = kCLOCK_Root_Flexio1;
-		break;
-	case IMX_CCM_FLEXIO2_CLK:
-		clock_root = kCLOCK_Root_Flexio2;
+	case IMX_CCM_FLEXIO_CLK:
+		clock_root = kCLOCK_Root_Flexio1 + instance;
 		break;
 #endif
 
@@ -259,7 +256,25 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 		clock_root = kCLOCK_Root_Bus + instance;
 		break;
 #endif
-
+#ifdef CONFIG_COUNTER_MCUX_LPIT
+#if defined(CONFIG_SOC_SERIES_IMXRT118X)
+	case IMX_CCM_LPIT_CLK:
+		switch (instance) {
+		case 0:
+			clock_root = kCLOCK_Root_Bus_Aon;
+			break;
+		case 1:
+			clock_root = kCLOCK_Root_Bus_Wakeup;
+			break;
+		case 2:
+			clock_root = kCLOCK_Root_Lpit3;
+			break;
+		default:
+			return -EINVAL;
+		}
+		break;
+#endif
+#endif
 #ifdef CONFIG_ADC_MCUX_LPADC
 	case IMX_CCM_LPADC1_CLK:
 		clock_root = kCLOCK_Root_Adc1 + instance;
@@ -281,6 +296,12 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 		break;
 	case IMX_CCM_MIPI_CSI2RX_UI_CLK:
 		clock_root = kCLOCK_Root_Csi2_Ui;
+		break;
+#endif
+
+#ifdef CONFIG_INPUT_MCUX_KPP
+	case IMX_CCM_KPP_CLK:
+		clock_root = kCLOCK_CpuClk;
 		break;
 #endif
 

@@ -22,12 +22,6 @@ manifest:
       remote: upstream
       groups:
         - optional
-    - name: nanopb
-      revision: 7307ce399b81ddcb3c3a5dc862c52d4754328d38
-      path: modules/lib/nanopb
-      remote: upstream
-      groups:
-        - optional
     - name: psa-arch-tests
       revision: 2cadb02a72eacda7042505dcbdd492371e8ce024
       path: modules/tee/tf-m/psa-arch-tests
@@ -35,13 +29,13 @@ manifest:
       groups:
         - optional
     - name: sof
-      revision: bc08c9c606324cfba0c104f4ffaf5dd456cb11d6
+      revision: ba8de7551f88a4f8d4533791274fa85b37ec332e
       path: modules/audio/sof
       remote: upstream
       groups:
         - optional
     - name: tf-m-tests
-      revision: c712761dd5391bf3f38033643d28a736cae89a19
+      revision: a286347e6a5dd37a9a5e960450ffc0260d63fb27
       path: modules/tee/tf-m/tf-m-tests
       remote: upstream
       groups:
@@ -60,14 +54,14 @@ manifest:
       groups:
         - optional
     - name: zephyr-lang-rust
-      revision: d4f9036a88e53080bf2b186afa5289f9c77a0f73
+      revision: dd73abc242e995784da62352fe8c70d9a6c7ac2e
       path: modules/lang/rust
       remote: upstream
       groups:
         - optional
     - name: zscilib
       path: modules/lib/zscilib
-      revision: ee1b287d9dd07208d2cc52284240ac25bb66eae3
+      revision: ee3c0c405087e331aad16d167b6e4ec1c3452ba9
       remote: upstream
       groups:
         - optional

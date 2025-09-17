@@ -47,7 +47,7 @@
 
 		/* Additional Secure peripherals */
 		cryptocell: crypto@50840000 {
-			compatible = "nordic,cryptocell", "arm,cryptocell-310";
+			compatible = "arm,cryptocell-310";
 			reg = <0x50840000 0x1000>, <0x50841000 0x1000>;
 			reg-names = "wrapper", "core";
 			interrupts = <64 NRF_DEFAULT_IRQ_PRIORITY>;
@@ -65,7 +65,7 @@
 		 * so we give it the 'gpiote' label for use when building
 		 * code for this target.
 		 */
-		 gpiote: gpiote0: gpiote@5000d000 {
+		gpiote: gpiote0: gpiote@5000d000 {
 			compatible = "nordic,nrf-gpiote";
 			reg = <0x5000d000 0x1000>;
 			interrupts = <13 5>;

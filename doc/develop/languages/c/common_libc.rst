@@ -12,7 +12,7 @@ Time function
 *************
 
 This provides an implementation of the standard C function, :c:func:`time`,
-relying on the Zephyr function, :c:func:`clock_gettime`. This function can
+relying on the Zephyr function, :c:func:`sys_clock_gettime`. This function can
 be enabled by selecting :kconfig:option:`COMMON_LIBC_TIME`.
 
 Dynamic Memory Management

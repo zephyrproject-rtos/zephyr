@@ -24,9 +24,9 @@
  */
 #define MCO1_SEL_HSI48 4
 
- /* See reference manual (RM0433 Rev 8) page 391:
-  *   0100: division by 4
-  */
+/* See reference manual (RM0433 Rev 8) page 391:
+ *   0100: division by 4
+ */
 #define MCO1_PRE_DIV_4 4
 
 &mco1 {
@@ -42,12 +42,6 @@
 		supply-gpios = <&dcmi_camera_connector 8 GPIO_ACTIVE_HIGH>;
 		clock-rate-control = <0x80>;
 	};
-};
-
-&zephyr_camera_dvp {
-	dmas = <&dma1 0 75 (STM32_DMA_PERIPH_TO_MEMORY | STM32_DMA_PERIPH_NO_INC |
-		STM32_DMA_MEM_INC | STM32_DMA_PERIPH_8BITS | STM32_DMA_MEM_32BITS |
-		STM32_DMA_PRIORITY_HIGH) STM32_DMA_FIFO_1_4>;
 };
 
 &dma1 {

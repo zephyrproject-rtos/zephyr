@@ -12,6 +12,7 @@ from pathlib import Path
 
 import list_boards
 import list_hardware
+import list_shields
 import yaml
 import zephyr_module
 from gen_devicetree_rest import VndLookup
@@ -19,14 +20,14 @@ from runners.core import ZephyrBinaryRunner
 
 ZEPHYR_BASE = Path(__file__).parents[2]
 ZEPHYR_BINDINGS = ZEPHYR_BASE / "dts/bindings"
-EDT_PICKLE_PATHS = [
+EDT_PICKLE_PATHS = (
     "zephyr/edt.pickle",
-    "hello_world/zephyr/edt.pickle"  # for board targets using sysbuild
-]
-RUNNERS_YAML_PATHS = [
+    "hello_world/zephyr/edt.pickle",  # for board targets using sysbuild
+)
+RUNNERS_YAML_PATHS = (
     "zephyr/runners.yaml",
-    "hello_world/zephyr/runners.yaml"  # for board targets using sysbuild
-]
+    "hello_world/zephyr/runners.yaml",  # for board targets using sysbuild
+)
 
 logger = logging.getLogger(__name__)
 
@@ -72,8 +73,7 @@ class DeviceTreeUtils:
             The cached description for the node's compatible, creating it if needed.
         """
         return cls._compat_description_cache.setdefault(
-            node.matching_compat,
-            cls.get_first_sentence(node.description)
+            node.matching_compat, cls.get_first_sentence(node.description)
         )
 
 
@@ -87,12 +87,12 @@ def guess_file_from_patterns(directory, patterns, name, extensions):
 
 
 def guess_image(board_or_shield):
-    img_exts = ["jpg", "jpeg", "webp", "png"]
-    patterns = [
+    img_exts = ("jpg", "jpeg", "webp", "png")
+    patterns = (
         "**/{name}.{ext}",
         "**/*{name}*.{ext}",
         "**/*.{ext}",
-    ]
+    )
     img_file = guess_file_from_patterns(
         board_or_shield.dir, patterns, board_or_shield.name, img_exts
     )
@@ -101,12 +101,12 @@ def guess_image(board_or_shield):
 
 
 def guess_doc_page(board_or_shield):
-    patterns = [
+    patterns = (
         "doc/index.{ext}",
         "**/{name}.{ext}",
         "**/*{name}*.{ext}",
         "**/*.{ext}",
-    ]
+    )
     doc_file = guess_file_from_patterns(
         board_or_shield.dir, patterns, board_or_shield.name, ["rst"]
     )
@@ -175,9 +175,7 @@ def gather_board_build_info(twister_out_dir):
                 if runners_yaml_file:
                     with open(runners_yaml_file) as f:
                         runners_yaml = yaml.safe_load(f)
-                        board_runners.setdefault(board_name, {})[board_target] = (
-                            runners_yaml
-                        )
+                        board_runners.setdefault(board_name, {})[board_target] = runners_yaml
 
         except Exception as e:
             logger.error(f"Error processing build info file {build_info_file}: {e}")
@@ -185,29 +183,37 @@ def gather_board_build_info(twister_out_dir):
     return board_devicetrees, board_runners
 
 
-def run_twister_cmake_only(outdir):
+def run_twister_cmake_only(outdir, vendor_filter):
     """Run twister in cmake-only mode to generate build info files.
 
     Args:
         outdir: Directory where twister should output its files
+        vendor_filter: Limit build info to boards from listed vendors
     """
     twister_cmd = [
         sys.executable,
         f"{ZEPHYR_BASE}/scripts/twister",
-        "-T", "samples/hello_world/",
-        "--all",
+        "-T",
+        "samples/hello_world/",
         "-M",
         *[arg for path in EDT_PICKLE_PATHS for arg in ('--keep-artifacts', path)],
         *[arg for path in RUNNERS_YAML_PATHS for arg in ('--keep-artifacts', path)],
         "--cmake-only",
-        "--outdir", str(outdir),
+        "--outdir",
+        str(outdir),
     ]
+
+    if vendor_filter:
+        for vendor in vendor_filter:
+            twister_cmd += ["--vendor", vendor]
+    else:
+        twister_cmd += ["--all"]
 
     minimal_env = {
         'PATH': os.environ.get('PATH', ''),
         'ZEPHYR_BASE': str(ZEPHYR_BASE),
         'HOME': os.environ.get('HOME', ''),
-        'PYTHONPATH': os.environ.get('PYTHONPATH', '')
+        'PYTHONPATH': os.environ.get('PYTHONPATH', ''),
     }
 
     try:
@@ -216,11 +222,13 @@ def run_twister_cmake_only(outdir):
         logger.warning(f"Failed to run Twister, list of hw features might be incomplete.\n{e}")
 
 
-def get_catalog(generate_hw_features=False):
+def get_catalog(generate_hw_features=False, hw_features_vendor_filter=None):
     """Get the board catalog.
 
     Args:
         generate_hw_features: If True, run twister to generate hardware features information.
+        hw_features_vendor_filter: If generate_hw_features is True, limit hardware feature
+                                   information generation to boards from this list of vendors.
     """
     import tempfile
 
@@ -238,41 +246,37 @@ def get_catalog(generate_hw_features=False):
             if root is not None:
                 module_settings[key].append(Path(module.project) / root)
 
-    Args = namedtuple("args", ["arch_roots", "board_roots", "soc_roots", "board_dir", "board"])
+    Args = namedtuple(
+        "args", ["arch_roots", "board_roots", "soc_roots", "board_dir", "board", "arch"]
+    )
     args_find_boards = Args(
         arch_roots=module_settings["arch_root"],
         board_roots=module_settings["board_root"],
         soc_roots=module_settings["soc_root"],
         board_dir=[],
         board=None,
+        arch=None,
     )
 
     boards = list_boards.find_v2_boards(args_find_boards)
+    shields = list_shields.find_shields(args_find_boards)
     systems = list_hardware.find_v2_systems(args_find_boards)
+    archs = list_hardware.find_v2_archs(args_find_boards)
     board_catalog = {}
+    shield_catalog = {}
     board_devicetrees = {}
     board_runners = {}
 
     if generate_hw_features:
         logger.info("Running twister in cmake-only mode to get Devicetree files for all boards")
         with tempfile.TemporaryDirectory() as tmp_dir:
-            run_twister_cmake_only(tmp_dir)
+            run_twister_cmake_only(tmp_dir, hw_features_vendor_filter)
             board_devicetrees, board_runners = gather_board_build_info(Path(tmp_dir))
     else:
         logger.info("Skipping generation of supported hardware features.")
 
     for board in boards.values():
-        # We could use board.vendor but it is often incorrect. Instead, deduce vendor from
-        # containing folder. There are a few exceptions, like the "native" and "others" folders
-        # which we know are not actual vendors so treat them as such.
-        for folder in board.dir.parents:
-            if folder.name in ["native", "others"]:
-                vendor = "others"
-                break
-            elif vnd_lookup.vnd2vendor.get(folder.name):
-                vendor = folder.name
-                break
-
+        vendor = board.vendor or "others"
         socs = {soc.name for soc in board.socs}
         full_name = board.full_name or board.name
         doc_page = guess_doc_page(board)
@@ -295,15 +299,16 @@ def get_catalog(generate_hw_features=False):
                         binding_type = "misc"
                         is_custom_binding = True
 
-
                     if node.matching_compat is None:
                         continue
 
-                    # skip "zephyr,xxx" compatibles
-                    if node.matching_compat.startswith("zephyr,"):
+                    # skip "zephyr,xxx" compatibles (unless board is native_sim, since in this
+                    # case the "zephyr,"-prefixed peripherals are legitimate)
+                    if node.matching_compat.startswith("zephyr,") and board.name != "native_sim":
                         continue
 
                     description = DeviceTreeUtils.get_cached_description(node)
+                    title = node.title
                     filename = node.filename
                     lineno = node.lineno
                     locations = set()
@@ -314,11 +319,14 @@ def get_catalog(generate_hw_features=False):
                         else:
                             locations.add("soc")
 
-                    existing_feature = features.get(binding_type, {}).get(
-                        node.matching_compat
-                    )
+                    existing_feature = features.get(binding_type, {}).get(node.matching_compat)
 
-                    node_info = {"filename": str(filename), "lineno": lineno}
+                    node_info = {
+                        "filename": str(filename),
+                        "lineno": lineno,
+                        "dts_path": Path(node.filename),
+                        "binding_path": Path(node.binding_path),
+                    }
                     node_list_key = "okay_nodes" if node.status == "okay" else "disabled_nodes"
 
                     if existing_feature:
@@ -328,6 +336,7 @@ def get_catalog(generate_hw_features=False):
 
                     feature_data = {
                         "description": description,
+                        "title": title,
                         "custom_binding": is_custom_binding,
                         "locations": locations,
                         "okay_nodes": [],
@@ -351,15 +360,15 @@ def get_catalog(generate_hw_features=False):
 
         # Grab all the twister files for this board and use them to figure out all the archs it
         # supports.
-        archs = set()
-        pattern = f"{board.name}*.yaml"
-        for twister_file in board.dir.glob(pattern):
-            try:
-                with open(twister_file) as f:
-                    board_data = yaml.safe_load(f)
-                    archs.add(board_data.get("arch"))
-            except Exception as e:
-                logger.error(f"Error parsing twister file {twister_file}: {e}")
+        board_archs = set()
+        for pattern in (f"{board.name}*.yaml", "twister.yaml"):
+            for twister_file in board.dir.glob(pattern):
+                try:
+                    with open(twister_file) as f:
+                        board_data = yaml.safe_load(f)
+                        board_archs.add(board_data.get("arch"))
+                except Exception as e:
+                    logger.error(f"Error parsing twister file {twister_file}: {e}")
 
         if doc_page and doc_page.is_relative_to(ZEPHYR_BASE):
             doc_page_path = doc_page.relative_to(ZEPHYR_BASE).as_posix()
@@ -371,7 +380,7 @@ def get_catalog(generate_hw_features=False):
             "full_name": full_name,
             "doc_page": doc_page_path,
             "vendor": vendor,
-            "archs": list(archs),
+            "archs": list(board_archs),
             "socs": list(socs),
             "revision_default": board.revision_default,
             "supported_features": supported_features,
@@ -395,9 +404,35 @@ def get_catalog(generate_hw_features=False):
             "commands": runner.capabilities().commands,
         }
 
+    arch_catalog = {
+        arch['name']: {
+            "name": arch['name'],
+            "full_name": arch.get('full_name', arch['name']),
+        }
+        for arch in archs['archs']
+    }
+
+    for shield in shields:
+        doc_page = guess_doc_page(shield)
+        if doc_page and doc_page.is_relative_to(ZEPHYR_BASE):
+            doc_page_path = doc_page.relative_to(ZEPHYR_BASE).as_posix()
+        else:
+            doc_page_path = None
+
+        shield_catalog[shield.name] = {
+            "name": shield.name,
+            "full_name": shield.full_name or shield.name,
+            "vendor": shield.vendor or "others",
+            "doc_page": doc_page_path,
+            "image": guess_image(shield),
+            "supported_features": shield.supported_features or [],
+        }
+
     return {
         "boards": board_catalog,
+        "shields": shield_catalog,
         "vendors": {**vnd_lookup.vnd2vendor, "others": "Other/Unknown"},
         "socs": socs_hierarchy,
+        "archs": arch_catalog,
         "runners": available_runners,
     }

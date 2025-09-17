@@ -8,6 +8,7 @@
 
 #include <skeleton.dtsi>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
 
 / {
 	chosen {
@@ -32,24 +33,22 @@
 				firq: firq {
 					#address-cells = <1>;
 					interrupt-map-mask = <0x0 0xffffffff>;
-					interrupt-map = <
-						0  0 &intc 0 16
-						0  1 &intc 0 17
-						0  2 &intc 0 18
-						0  3 &intc 0 19
-						0  4 &intc 0 20
-						0  5 &intc 0 21
-						0  6 &intc 0 22
-						0  7 &intc 0 23
-						0  8 &intc 0 24
-						0  9 &intc 0 25
-						0 10 &intc 0 26
-						0 11 &intc 0 27
-						0 12 &intc 0 28
-						0 13 &intc 0 29
-						0 14 &intc 0 30
-						0 15 &intc 0 31
-					>;
+					interrupt-map = <0 0 &intc 0 16
+							 0 1 &intc 0 17
+							 0 2 &intc 0 18
+							 0 3 &intc 0 19
+							 0 4 &intc 0 20
+							 0 5 &intc 0 21
+							 0 6 &intc 0 22
+							 0 7 &intc 0 23
+							 0 8 &intc 0 24
+							 0 9 &intc 0 25
+							 0 10 &intc 0 26
+							 0 11 &intc 0 27
+							 0 12 &intc 0 28
+							 0 13 &intc 0 29
+							 0 14 &intc 0 30
+							 0 15 &intc 0 31>;
 					#interrupt-cells = <1>;
 				};
 			};
@@ -77,6 +76,22 @@
 			compatible = "neorv32,bootrom", "mmio-sram";
 			status = "disabled";
 			reg = <0xffe00000 0x10000>;
+		};
+
+		pwm: pwm@fff00000 {
+			compatible = "neorv32,pwm";
+			status = "disabled";
+			reg = <0xfff00000 0x10000>;
+			syscon = <&sysinfo>;
+			#pwm-cells = <3>;
+		};
+
+		gptmr: timer@fff10000 {
+			compatible = "neorv32,gptmr";
+			status = "disabled";
+			reg = <0xfff10000 0x10000>;
+			interrupts = <12>;
+			syscon = <&sysinfo>;
 		};
 
 		clint: clint@fff40000 {
@@ -123,6 +138,7 @@
 			compatible = "neorv32,gpio";
 			status = "disabled";
 			reg = <0xfffc0000 0x10000>;
+			interrupts = <8>;
 			syscon = <&sysinfo>;
 			gpio-controller;
 			ngpios = <32>;

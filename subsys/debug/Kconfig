@@ -67,12 +67,35 @@ config ASAN_NOP_DLCLOSE
 
 config UBSAN
 	bool "Build with undefined behavior sanitizer"
-	depends on ARCH_POSIX
 	help
-	  Builds Zephyr with Undefined Behavior Sanitizer enabled.
-	  This is currently only supported by boards based on the posix
-	  architecture, and requires a recent-ish compiler with the
-	  ``-fsanitize=undefined`` command line option.
+	  Builds Zephyr with Undefined Behavior Sanitizer enabled.  This
+	  requires a recent-ish compiler with the ``-fsanitize=undefined``
+	  command line option.
+
+choice UBSAN_MODE
+	prompt "Undefined behavior sanitizer mode"
+	depends on UBSAN
+	default UBSAN_LIBRARY
+
+config UBSAN_LIBRARY
+	bool "Call ubsan routines"
+	depends on ARCH_POSIX || PICOLIBC
+	help
+	  Call ubsan library routines when undefined behavior is detected
+	  at runtime. This provides information about the faulting
+	  condition along with the source filename, line number, types and
+	  values involved.  This is currently only supported by boards
+	  based on the posix architecture or when building with picolibc.
+
+config UBSAN_TRAP
+	bool "Call __builtin_trap"
+	help
+	  When undefined behavior is detected, invoke __builtin_trap to
+	  cause an exception to be raised. This can be used on any target,
+	  but the lack of information makes figuring out the triggering
+	  code difficult.
+
+endchoice
 
 config MSAN
 	bool "Build with memory sanitizer"
@@ -205,6 +228,7 @@ config FORCE_NO_ASSERT
 config ASSERT_VERBOSE
 	bool "Verbose assertions"
 	default y
+	depends on PRINTK
 	help
 	  This option enables printing an assert message with information about
 	  the assertion that occurred. This includes printing the location,
@@ -280,13 +304,6 @@ config OMIT_FRAME_POINTER
 #
 # Generic Debugging Options
 #
-config DEBUG_INFO
-	bool "System debugging information"
-	help
-	  This option enables the addition of various information that can be
-	  used by debuggers in debugging the system, or enable additional
-	  debugging information to be reported at runtime.
-
 config EXCEPTION_STACK_TRACE
 	bool "Attempt to print stack traces upon exceptions"
 	default y
@@ -336,7 +353,7 @@ config CS_TRACE_DEFMT
 
 config CPU_LOAD
 	select TRACING
-	depends on CPU_CORTEX_M || RISCV
+	depends on CPU_CORTEX_M || RISCV || CPU_CORTEX_A
 	depends on !SMP
 	bool "CPU load measurement"
 

@@ -1,0 +1,22 @@
+# Copyright (c) 2025 EXALT Technologies.
+# SPDX-License-Identifier: Apache-2.0
+
+config SDHC_STM32_SDIO
+	bool "STM32 SDMMC driver support for SDIO"
+	depends on DT_HAS_ST_STM32_SDIO_ENABLED
+	select USE_STM32_HAL_SDIO
+	select USE_STM32_LL_SDMMC
+	select SDHC_SUPPORTS_NATIVE_MODE
+	select PINCTRL
+	imply CACHE_MANAGEMENT if !SDHC_STM32_POLLING_SUPPORT && DCACHE
+	default y
+	help
+	  Enable support for SDMMC on STM32 platforms for SDIO devices.
+
+config SDHC_BUFFER_ALIGNMENT
+	default 32
+
+config SDHC_STM32_POLLING_SUPPORT
+	bool "STM32 SDHC Polling driver support"
+	help
+	  Enables support for SDHC Polling mode on STM32 microcontrollers.

@@ -186,7 +186,7 @@ static inline bool ipv6_drop_on_unknown_option(struct net_pkt *pkt,
 	case 0x40:
 		break;
 	case 0xc0:
-		if (net_ipv6_is_addr_mcast((struct in6_addr *)hdr->dst)) {
+		if (net_ipv6_is_addr_mcast_raw(hdr->dst)) {
 			break;
 		}
 
@@ -307,8 +307,8 @@ static struct net_route_entry *add_route(struct net_if *iface,
 #endif /* CONFIG_NET_ROUTE */
 
 static void ipv6_no_route_info(struct net_pkt *pkt,
-			       struct in6_addr *src,
-			       struct in6_addr *dst)
+			       const uint8_t *src,
+			       const uint8_t *dst)
 {
 	NET_DBG("Will not route pkt %p ll src %s to dst %s between interfaces",
 		pkt, net_sprint_ipv6_addr(src),
@@ -321,15 +321,17 @@ static enum net_verdict ipv6_route_packet(struct net_pkt *pkt,
 {
 	struct net_route_entry *route;
 	struct in6_addr *nexthop;
+	struct in6_addr src_ip, dst_ip;
 	bool found;
+
+	net_ipv6_addr_copy_raw(src_ip.s6_addr, hdr->src);
+	net_ipv6_addr_copy_raw(dst_ip.s6_addr, hdr->dst);
 
 	/* Check if the packet can be routed */
 	if (IS_ENABLED(CONFIG_NET_ROUTING)) {
-		found = net_route_get_info(NULL, (struct in6_addr *)hdr->dst,
-					   &route, &nexthop);
+		found = net_route_get_info(NULL, &dst_ip, &route, &nexthop);
 	} else {
-		found = net_route_get_info(net_pkt_iface(pkt),
-					   (struct in6_addr *)hdr->dst,
+		found = net_route_get_info(net_pkt_iface(pkt), &dst_ip,
 					   &route, &nexthop);
 	}
 
@@ -337,11 +339,11 @@ static enum net_verdict ipv6_route_packet(struct net_pkt *pkt,
 		int ret;
 
 		if (IS_ENABLED(CONFIG_NET_ROUTING) &&
-		    (net_ipv6_is_ll_addr((struct in6_addr *)hdr->src) ||
-		     net_ipv6_is_ll_addr((struct in6_addr *)hdr->dst))) {
+		    (net_ipv6_is_ll_addr(&src_ip) ||
+		     net_ipv6_is_ll_addr(&dst_ip))) {
 			/* RFC 4291 ch 2.5.6 */
-			ipv6_no_route_info(pkt, (struct in6_addr *)hdr->src,
-					   (struct in6_addr *)hdr->dst);
+			ipv6_no_route_info(pkt, hdr->src, hdr->dst);
+
 			goto drop;
 		}
 
@@ -365,8 +367,7 @@ static enum net_verdict ipv6_route_packet(struct net_pkt *pkt,
 				pkt, net_pkt_orig_iface(pkt),
 				net_pkt_iface(pkt));
 
-			add_route(net_pkt_orig_iface(pkt),
-				  (struct in6_addr *)hdr->src, 128);
+			add_route(net_pkt_orig_iface(pkt), &src_ip, 128);
 		}
 
 		ret = net_route_packet(pkt, nexthop);
@@ -382,7 +383,7 @@ static enum net_verdict ipv6_route_packet(struct net_pkt *pkt,
 		struct net_if *iface = NULL;
 		int ret;
 
-		if (net_if_ipv6_addr_onlink(&iface, (struct in6_addr *)hdr->dst)) {
+		if (net_if_ipv6_addr_onlink(&iface, &dst_ip)) {
 			ret = net_route_packet_if(pkt, iface);
 			if (ret < 0) {
 				NET_DBG("Cannot re-route pkt %p "
@@ -394,7 +395,7 @@ static enum net_verdict ipv6_route_packet(struct net_pkt *pkt,
 		}
 
 		NET_DBG("No route to %s pkt %p dropped",
-			net_sprint_ipv6_addr(&hdr->dst), pkt);
+			net_sprint_ipv6_addr(&dst_ip), pkt);
 	}
 
 drop:
@@ -427,9 +428,9 @@ static enum net_verdict ipv6_forward_mcast_packet(struct net_pkt *pkt,
 	 *   3. is from link local source
 	 *   4. hop limit is or would become zero
 	 */
-	if (net_ipv6_is_addr_mcast((struct in6_addr *)hdr->src) ||
-	    net_ipv6_is_addr_mcast_iface((struct in6_addr *)hdr->dst) ||
-	    net_ipv6_is_ll_addr((struct in6_addr *)hdr->src) || hdr->hop_limit <= 1) {
+	if (net_ipv6_is_addr_mcast_raw(hdr->src) ||
+	    net_ipv6_is_addr_mcast_iface_raw(hdr->dst) ||
+	    net_ipv6_is_ll_addr_raw(hdr->src) || hdr->hop_limit <= 1) {
 		return NET_CONTINUE;
 	}
 
@@ -462,11 +463,11 @@ static uint8_t extension_to_bitmap(uint8_t header, uint8_t ext_bitmap)
 	}
 }
 
-static inline bool is_src_non_tentative_itself(struct in6_addr *src)
+static inline bool is_src_non_tentative_itself(const uint8_t *src)
 {
 	struct net_if_addr *ifaddr;
 
-	ifaddr = net_if_ipv6_addr_lookup(src, NULL);
+	ifaddr = net_if_ipv6_addr_lookup_raw(src, NULL);
 	if (ifaddr != NULL && ifaddr->addr_state != NET_ADDR_TENTATIVE) {
 		return true;
 	}
@@ -474,7 +475,7 @@ static inline bool is_src_non_tentative_itself(struct in6_addr *src)
 	return false;
 }
 
-enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback)
+enum net_verdict net_ipv6_input(struct net_pkt *pkt)
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ipv6_access, struct net_ipv6_hdr);
 	NET_PKT_DATA_ACCESS_DEFINE(udp_access, struct net_udp_hdr);
@@ -518,37 +519,37 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback)
 		net_sprint_ipv6_addr(&hdr->src),
 		net_sprint_ipv6_addr(&hdr->dst));
 
-	if (net_ipv6_is_addr_unspecified((struct in6_addr *)hdr->src)) {
+	if (net_ipv6_is_addr_unspecified_raw(hdr->src)) {
 		/* If this is a possible DAD message, let it pass. Extra checks
 		 * are done in duplicate address detection code to verify that
 		 * the packet is ok.
 		 */
 		if (!(IS_ENABLED(CONFIG_NET_IPV6_DAD) &&
-		      net_ipv6_is_addr_solicited_node((struct in6_addr *)hdr->dst))) {
+		      net_ipv6_is_addr_solicited_node_raw(hdr->dst))) {
 			NET_DBG("DROP: src addr is %s", "unspecified");
 			goto drop;
 		}
 	}
 
-	if (net_ipv6_is_addr_mcast((struct in6_addr *)hdr->src) ||
-	    net_ipv6_is_addr_mcast_scope((struct in6_addr *)hdr->dst, 0)) {
+	if (net_ipv6_is_addr_mcast_raw(hdr->src) ||
+	    net_ipv6_is_addr_mcast_scope_raw(hdr->dst, 0)) {
 		NET_DBG("DROP: multicast packet");
 		goto drop;
 	}
 
-	if (!is_loopback) {
-		if (net_ipv6_is_addr_loopback((struct in6_addr *)hdr->dst) ||
-		    net_ipv6_is_addr_loopback((struct in6_addr *)hdr->src)) {
+	if (!net_pkt_is_loopback(pkt)) {
+		if (net_ipv6_is_addr_loopback_raw(hdr->dst) ||
+		    net_ipv6_is_addr_loopback_raw(hdr->src)) {
 			NET_DBG("DROP: ::1 packet");
 			goto drop;
 		}
 
-		if (net_ipv6_is_addr_mcast_iface((struct in6_addr *)hdr->dst) ||
-		    (net_ipv6_is_addr_mcast_group(
-			    (struct in6_addr *)hdr->dst,
-			    net_ipv6_unspecified_address()) &&
-		     (net_ipv6_is_addr_mcast_site((struct in6_addr *)hdr->dst) ||
-		      net_ipv6_is_addr_mcast_org((struct in6_addr *)hdr->dst)))) {
+		if (net_ipv6_is_addr_mcast_iface_raw(hdr->dst) ||
+		    (net_ipv6_is_addr_mcast_group_raw(
+			    hdr->dst,
+			    (const uint8_t *)net_ipv6_unspecified_address()) &&
+		     (net_ipv6_is_addr_mcast_site_raw(hdr->dst) ||
+		      net_ipv6_is_addr_mcast_org_raw(hdr->dst)))) {
 			NET_DBG("DROP: invalid scope multicast packet");
 			goto drop;
 		}
@@ -559,7 +560,7 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback)
 		 * This check is done later on if routing features are enabled.
 		 */
 		if (!IS_ENABLED(CONFIG_NET_ROUTING) && !IS_ENABLED(CONFIG_NET_ROUTE_MCAST) &&
-		    is_src_non_tentative_itself((struct in6_addr *)hdr->src)) {
+		    is_src_non_tentative_itself(hdr->src)) {
 			NET_DBG("DROP: src addr is %s", "mine");
 			goto drop;
 		}
@@ -589,7 +590,7 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback)
 	}
 
 	if (IS_ENABLED(CONFIG_NET_ROUTE_MCAST) &&
-		net_ipv6_is_addr_mcast((struct in6_addr *)hdr->dst) && !net_pkt_forwarding(pkt)) {
+		net_ipv6_is_addr_mcast_raw(hdr->dst) && !net_pkt_forwarding(pkt)) {
 		/* If the packet is a multicast packet and multicast routing
 		 * is activated, we give the packet to the routing engine.
 		 *
@@ -603,14 +604,14 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback)
 		}
 	}
 
-	if (!net_ipv6_is_addr_mcast((struct in6_addr *)hdr->dst)) {
-		if (!net_if_ipv6_addr_lookup_by_iface(pkt_iface, (struct in6_addr *)hdr->dst)) {
+	if (!net_ipv6_is_addr_mcast_raw(hdr->dst)) {
+		if (!net_if_ipv6_addr_lookup_by_iface_raw(pkt_iface, hdr->dst)) {
 			if (ipv6_route_packet(pkt, hdr) == NET_OK) {
 				return NET_OK;
 			}
 
 			NET_DBG("DROP: no such address %s in iface %d",
-				net_sprint_ipv6_addr((struct in6_addr *)hdr->dst),
+				net_sprint_ipv6_addr(hdr->dst),
 				net_if_get_by_iface(pkt_iface));
 			goto drop;
 		}
@@ -621,25 +622,23 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback)
 		 * RFC 4291 ch 2.5.6
 		 */
 		if (IS_ENABLED(CONFIG_NET_ROUTING) &&
-		    net_ipv6_is_ll_addr((struct in6_addr *)hdr->src) &&
-		    !net_if_ipv6_addr_lookup_by_iface(
-				pkt_iface, (struct in6_addr *)hdr->dst)) {
-			ipv6_no_route_info(pkt, (struct in6_addr *)hdr->src,
-					   (struct in6_addr *)hdr->dst);
+		    net_ipv6_is_ll_addr_raw(hdr->src) &&
+		    !net_if_ipv6_addr_lookup_by_iface_raw(pkt_iface, hdr->dst)) {
+			ipv6_no_route_info(pkt, hdr->src, hdr->dst);
 			NET_DBG("DROP: cross interface boundary");
 			goto drop;
 		}
 	}
 
 	if ((IS_ENABLED(CONFIG_NET_ROUTING) || IS_ENABLED(CONFIG_NET_ROUTE_MCAST)) &&
-	    !is_loopback && is_src_non_tentative_itself((struct in6_addr *)hdr->src)) {
+	    !net_pkt_is_loopback(pkt) && is_src_non_tentative_itself(hdr->src)) {
 		NET_DBG("DROP: src addr is %s", "mine");
 		goto drop;
 	}
 
-	if (net_ipv6_is_addr_mcast((struct in6_addr *)hdr->dst) &&
-	    !(net_ipv6_is_addr_mcast_iface((struct in6_addr *)hdr->dst) ||
-	      net_ipv6_is_addr_mcast_link_all_nodes((struct in6_addr *)hdr->dst))) {
+	if (net_ipv6_is_addr_mcast_raw(hdr->dst) &&
+	    !(net_ipv6_is_addr_mcast_iface_raw(hdr->dst) ||
+	      net_ipv6_is_addr_mcast_link_all_nodes_raw(hdr->dst))) {
 		/* If we receive a packet with a interface-local or
 		 * link-local all-nodes multicast destination address we
 		 * always have to pass it to the upper layer.
@@ -650,9 +649,7 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback)
 		 * packet will be dropped.
 		 * RFC4291 ch 2.7.1, ch 2.8
 		 */
-		if_mcast_addr = net_if_ipv6_maddr_lookup(
-				    (struct in6_addr *)hdr->dst, &pkt_iface);
-
+		if_mcast_addr = net_if_ipv6_maddr_lookup_raw(hdr->dst, &pkt_iface);
 		if (!if_mcast_addr ||
 		    !net_if_ipv6_maddr_is_joined(if_mcast_addr)) {
 			NET_DBG("DROP: packet for unjoined multicast address");
@@ -1030,6 +1027,12 @@ int net_ipv6_addr_generate_iid(struct net_if *iface,
 
 			break;
 		case 8:
+			if (sizeof(lladdr->addr) < 8) {
+				NET_ERR("Invalid link layer address length %zu, expecting 8",
+					sizeof(lladdr->addr));
+				return -EINVAL;
+			}
+
 			memcpy(&tmp_addr.s6_addr[8], lladdr->addr, lladdr->len);
 			tmp_addr.s6_addr[8] ^= 0x02;
 			break;

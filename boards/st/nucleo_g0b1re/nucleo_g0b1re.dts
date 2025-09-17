@@ -27,6 +27,7 @@
 
 	leds: leds {
 		compatible = "gpio-leds";
+
 		green_led_1: led_4 {
 			gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>;
 			label = "User LD4";
@@ -35,6 +36,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button: button {
 			label = "User";
 			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
@@ -103,7 +105,7 @@ zephyr_udc0: &usb {
 };
 
 &rtc {
-	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000400>,
+	clocks = <&rcc STM32_CLOCK(APB1, 10)>,
 		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
 	status = "okay";
 };
@@ -115,6 +117,7 @@ zephyr_udc0: &usb {
 &timers3 {
 	st,prescaler = <10000>;
 	status = "okay";
+
 	pwm3: pwm {
 		status = "okay";
 		pinctrl-0 = <&tim3_ch1_pb4>;
@@ -125,6 +128,7 @@ zephyr_udc0: &usb {
 &timers15 {
 	st,prescaler = <10000>;
 	status = "okay";
+
 	pwm15: pwm {
 		status = "okay";
 		pinctrl-0 = <&tim15_ch1_pb14>;
@@ -179,7 +183,7 @@ zephyr_udc0: &usb {
 };
 
 &fdcan1 {
-	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00001000>,
+	clocks = <&rcc STM32_CLOCK(APB1, 12)>,
 		 <&rcc STM32_SRC_PLL_Q FDCAN_SEL(1)>;
 	pinctrl-0 = <&fdcan1_rx_pa11 &fdcan1_tx_pa12>;
 	pinctrl-names = "default";
@@ -187,7 +191,7 @@ zephyr_udc0: &usb {
 };
 
 &fdcan2 {
-	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00001000>,
+	clocks = <&rcc STM32_CLOCK(APB1, 12)>,
 		 <&rcc STM32_SRC_PLL_Q FDCAN_SEL(1)>;
 	pinctrl-0 = <&fdcan2_rx_pb0 &fdcan2_tx_pb1>;
 	pinctrl-names = "default";
@@ -205,14 +209,17 @@ zephyr_udc0: &usb {
 			reg = <0x00000000 DT_SIZE_K(48)>;
 			read-only;
 		};
+
 		slot0_partition: partition@C000 {
 			label = "image-0";
 			reg = <0x0000C000 DT_SIZE_K(200)>;
 		};
+
 		slot1_partition: partition@3E000 {
 			label = "image-1";
 			reg = <0x0003E000 DT_SIZE_K(200)>;
 		};
+
 		/* final 64KiB reserved for app storage partition */
 		storage_partition: partition@70000 {
 			label = "storage";
@@ -222,7 +229,7 @@ zephyr_udc0: &usb {
 };
 
 stm32_lp_tick_source: &lptim1 {
-	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x80000000>,
+	clocks = <&rcc STM32_CLOCK(APB1, 31)>,
 		 <&rcc STM32_SRC_LSI LPTIM1_SEL(1)>;
 	status = "okay";
 };

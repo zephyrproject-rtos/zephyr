@@ -498,16 +498,16 @@ static int phy_dm8806_get_link_state(const struct device *dev, struct phy_link_s
 	status >>= DM8806_SPEED_AND_DUPLEX_OFFSET;
 	switch (status & DM8806_SPEED_AND_DUPLEX_MASK) {
 	case DM8806_SPEED_10MBPS_HALF_DUPLEX:
-		state->speed = LINK_HALF_10BASE_T;
+		state->speed = LINK_HALF_10BASE;
 		break;
 	case DM8806_SPEED_10MBPS_FULL_DUPLEX:
-		state->speed = LINK_FULL_10BASE_T;
+		state->speed = LINK_FULL_10BASE;
 		break;
 	case DM8806_SPEED_100MBPS_HALF_DUPLEX:
-		state->speed = LINK_HALF_100BASE_T;
+		state->speed = LINK_HALF_100BASE;
 		break;
 	case DM8806_SPEED_100MBPS_FULL_DUPLEX:
-		state->speed = LINK_FULL_100BASE_T;
+		state->speed = LINK_FULL_100BASE;
 		break;
 	}
 	/* Extract link status from Switch Per-Port Register: Per Port Status Data
@@ -522,30 +522,37 @@ static int phy_dm8806_get_link_state(const struct device *dev, struct phy_link_s
 	return ret;
 }
 
-static int phy_dm8806_cfg_link(const struct device *dev, enum phy_link_speed adv_speeds)
+static int phy_dm8806_cfg_link(const struct device *dev, enum phy_link_speed adv_speeds,
+			       enum phy_cfg_link_flag flags)
 {
-	uint8_t ret;
+	int ret;
 	uint16_t data;
 	uint16_t req_speed;
 	const struct phy_dm8806_config *cfg = dev->config;
 
+	ARG_UNUSED(flags);
+
 	req_speed = adv_speeds;
 	switch (req_speed) {
-	case LINK_HALF_10BASE_T:
+	case LINK_HALF_10BASE:
 		req_speed = DM8806_MODE_10_BASET_HALF_DUPLEX;
 		break;
 
-	case LINK_FULL_10BASE_T:
+	case LINK_FULL_10BASE:
 		req_speed = DM8806_MODE_10_BASET_FULL_DUPLEX;
 		break;
 
-	case LINK_HALF_100BASE_T:
+	case LINK_HALF_100BASE:
 		req_speed = DM8806_MODE_100_BASET_HALF_DUPLEX;
 		break;
 
-	case LINK_FULL_100BASE_T:
+	case LINK_FULL_100BASE:
 		req_speed = DM8806_MODE_100_BASET_FULL_DUPLEX;
 		break;
+
+	default:
+		LOG_ERR("Invalid speed %d for PHY (%d)", adv_speeds, cfg->phy_addr);
+		return -EINVAL;
 	}
 
 	/* Power down */

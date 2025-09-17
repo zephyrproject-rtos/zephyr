@@ -11,6 +11,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(voltage, CONFIG_SENSOR_LOG_LEVEL);
@@ -125,12 +126,24 @@ static int pm_action(const struct device *dev, enum pm_device_action action)
 		}
 		data->earliest_sample = K_TIMEOUT_ABS_TICKS(
 			k_uptime_ticks() + k_us_to_ticks_ceil32(config->sample_delay_us));
+		/* Power up ADC */
+		ret = pm_device_runtime_get(config->voltage.port.dev);
+		if (ret != 0) {
+			LOG_ERR("failed to power up ADC (%d)", ret);
+			return ret;
+		}
 		break;
 #ifdef CONFIG_PM_DEVICE
 	case PM_DEVICE_ACTION_SUSPEND:
 		ret = gpio_pin_set_dt(&config->gpio_power, 0);
 		if (ret != 0) {
 			LOG_ERR("failed to set GPIO for PM suspend");
+		}
+		/* Power down ADC */
+		ret = pm_device_runtime_put(config->voltage.port.dev);
+		if (ret != 0) {
+			LOG_ERR("failed to Power down ADC (%d)", ret);
+			return ret;
 		}
 		break;
 	case PM_DEVICE_ACTION_TURN_OFF:
@@ -178,6 +191,7 @@ static int voltage_init(const struct device *dev)
 
 	data->sequence.buffer = &data->raw;
 	data->sequence.buffer_size = sizeof(data->raw);
+	data->sequence.calibrate = true;
 
 	return pm_device_driver_init(dev, pm_action);
 }

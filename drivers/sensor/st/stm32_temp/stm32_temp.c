@@ -13,7 +13,7 @@
 #include <zephyr/pm/device_runtime.h>
 #include <stm32_ll_adc.h>
 #if defined(CONFIG_SOC_SERIES_STM32H5X)
-#include <stm32_ll_icache.h>
+#include <zephyr/cache.h>
 #endif /* CONFIG_SOC_SERIES_STM32H5X */
 
 LOG_MODULE_REGISTER(stm32_temp, CONFIG_SENSOR_LOG_LEVEL);
@@ -105,7 +105,7 @@ static void read_calibration_data(const struct stm32_temp_config *cfg,
 	 * This is required on STM32H5, where the manufacturing flash must be
 	 * accessed in non-cacheable mode - otherwise, a bus error occurs.
 	 */
-	LL_ICACHE_Disable();
+	sys_cache_instr_disable();
 #endif /* CONFIG_SOC_SERIES_STM32H5X */
 
 	calib_data[0] = fetch_mfg_data(cfg->ts_cal1_addr);
@@ -116,7 +116,7 @@ static void read_calibration_data(const struct stm32_temp_config *cfg,
 
 #if defined(CONFIG_SOC_SERIES_STM32H5X)
 	/* Re-enable the ICACHE (unconditonally - it should always be turned on) */
-	LL_ICACHE_Enable();
+	sys_cache_instr_enable();
 #endif /* CONFIG_SOC_SERIES_STM32H5X */
 }
 #endif /* HAS_CALIBRATION */

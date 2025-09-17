@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Renesas Electronics Corporation
+ * Copyright (c) 2024-2025 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,6 +7,7 @@
 #include <zephyr/dt-bindings/clock/ra_clock.h>
 #include <arm/renesas/ra/ra4/ra4-cm4-common.dtsi>
 #include <zephyr/dt-bindings/pwm/ra_pwm.h>
+#include <zephyr/dt-bindings/misc/renesas/ra-elc/ra4w1-elc.h>
 
 / {
 	soc {
@@ -22,13 +23,14 @@
 			};
 		};
 
-		sci4: sci4@40070080  {
+		sci4: sci4@40070080 {
 			compatible = "renesas,ra-sci";
 			interrupts = <16 1>, <17 1>, <18 1>, <19 1>;
 			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x40070080 0x20>;
 			clocks = <&pclka MSTPB 26>;
 			status = "disabled";
+
 			uart {
 				compatible = "renesas,ra-sci-uart";
 				channel = <4>;
@@ -108,7 +110,7 @@
 			compatible = "renesas,ra-cgc-pclk-block";
 			reg = <0x4001e01c 4>, <0x40047000 4>, <0x40047004 4>,
 			      <0x40047008 4>;
-			reg-names = "MSTPA", "MSTPB","MSTPC",
+			reg-names = "MSTPA", "MSTPB", "MSTPC",
 				    "MSTPD";
 			#clock-cells = <0>;
 			clocks = <&hoco>;
@@ -175,7 +177,7 @@
 
 &ioport0 {
 	port-irqs = <&port_irq3 &port_irq7 &port_irq14
-	&port_irq15>;
+		     &port_irq15>;
 	port-irq-names = "port-irq3",
 			 "port-irq7",
 			 "port-irq14",
@@ -188,7 +190,7 @@
 
 &ioport1 {
 	port-irqs = <&port_irq0 &port_irq1 &port_irq2
-	&port_irq3 &port_irq4>;
+		     &port_irq3 &port_irq4>;
 	port-irq-names = "port-irq0",
 			 "port-irq1",
 			 "port-irq2",
@@ -203,7 +205,7 @@
 
 &ioport2 {
 	port-irqs = <&port_irq0 &port_irq1 &port_irq2
-	&port_irq3>;
+		     &port_irq3>;
 	port-irq-names = "port-irq0",
 			 "port-irq1",
 			 "port-irq2",
@@ -222,6 +224,7 @@
 	port-irq4-pins = <2>;
 	port-irq6-pins = <9>;
 	port-irq9-pins = <14>;
+	vbatts-pins = <2>;
 };
 
 &ioport5 {

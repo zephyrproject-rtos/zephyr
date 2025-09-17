@@ -6,6 +6,7 @@
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
 
 / {
 	clocks {
@@ -108,12 +109,6 @@
 			};
 		};
 
-		pwrcfg: pwrcfg@40021000 {
-			compatible = "ambiq,pwrctrl";
-			reg = <0x40021000 0x400>;
-			#pwrcfg-cells = <2>;
-		};
-
 		stimer0: stimer@40008140 {
 			compatible = "ambiq,stimer";
 			reg = <0x40008140 0x80>;
@@ -121,97 +116,175 @@
 			status = "okay";
 		};
 
-		counter0: counter@40008000 {
-			compatible = "ambiq,counter";
+		timer0: timer@40008000 {
+			compatible = "ambiq,ctimer";
 			reg = <0x40008000 0x20>;
 			interrupts = <14 0>;
-			clock-frequency = <DT_FREQ_M(3)>;
-			clk-source = <2>;
+			clk-source = "CLK_SELECT_HFRC_3MHZ";
 			status = "disabled";
+
+			counter {
+				compatible = "ambiq,counter";
+				status = "disabled";
+			};
+
+			pwm {
+				compatible = "ambiq,ctimer-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
 		};
 
-		counter1: counter@40008020 {
-			compatible = "ambiq,counter";
+		timer1: timer@40008020 {
+			compatible = "ambiq,ctimer";
 			reg = <0x40008020 0x20>;
 			interrupts = <14 0>;
-			clock-frequency = <DT_FREQ_M(3)>;
-			clk-source = <2>;
+			clk-source = "CLK_SELECT_HFRC_3MHZ";
 			status = "disabled";
+
+			counter {
+				compatible = "ambiq,counter";
+				status = "disabled";
+			};
+
+			pwm {
+				compatible = "ambiq,ctimer-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
 		};
 
-		counter2: counter@40008040 {
-			compatible = "ambiq,counter";
+		timer2: timer@40008040 {
+			compatible = "ambiq,ctimer";
 			reg = <0x40008040 0x20>;
 			interrupts = <14 0>;
-			clock-frequency = <DT_FREQ_M(3)>;
-			clk-source = <2>;
+			clk-source = "CLK_SELECT_HFRC_187_5KHZ";
 			status = "disabled";
+
+			counter {
+				compatible = "ambiq,counter";
+				status = "disabled";
+			};
+
+			pwm {
+				compatible = "ambiq,ctimer-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
 		};
 
-		counter3: counter@40008060 {
-			compatible = "ambiq,counter";
+		timer3: timer@40008060 {
+			compatible = "ambiq,ctimer";
 			reg = <0x40008060 0x20>;
 			interrupts = <14 0>;
-			clock-frequency = <DT_FREQ_M(3)>;
-			clk-source = <2>;
+			clk-source = "CLK_SELECT_HFRC_3MHZ";
 			status = "disabled";
+
+			counter {
+				compatible = "ambiq,counter";
+				status = "disabled";
+			};
+
+			pwm {
+				compatible = "ambiq,ctimer-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
 		};
 
-		counter4: counter@40008080 {
-			compatible = "ambiq,counter";
+		timer4: timer@40008080 {
+			compatible = "ambiq,ctimer";
 			reg = <0x40008080 0x20>;
 			interrupts = <14 0>;
-			clock-frequency = <DT_FREQ_M(3)>;
-			clk-source = <2>;
+			clk-source = "CLK_SELECT_HFRC_3MHZ";
 			status = "disabled";
+
+			counter {
+				compatible = "ambiq,counter";
+				status = "disabled";
+			};
+
+			pwm {
+				compatible = "ambiq,ctimer-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
 		};
 
-		counter5: counter@400080a0 {
-			compatible = "ambiq,counter";
+		timer5: timer@400080a0 {
+			compatible = "ambiq,ctimer";
 			reg = <0x400080A0 0x20>;
 			interrupts = <14 0>;
-			clock-frequency = <DT_FREQ_M(3)>;
-			clk-source = <2>;
+			clk-source = "CLK_SELECT_HFRC_3MHZ";
 			status = "disabled";
+
+			counter {
+				compatible = "ambiq,counter";
+				status = "disabled";
+			};
+
+			pwm {
+				compatible = "ambiq,ctimer-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
 		};
 
-		counter6: counter@400080c0 {
-			compatible = "ambiq,counter";
+		timer6: timer@400080c0 {
+			compatible = "ambiq,ctimer";
 			reg = <0x400080C0 0x20>;
 			interrupts = <14 0>;
-			clock-frequency = <DT_FREQ_M(3)>;
-			clk-source = <2>;
+			clk-source = "CLK_SELECT_HFRC_3MHZ";
 			status = "disabled";
+
+			counter {
+				compatible = "ambiq,counter";
+				status = "disabled";
+			};
+
+			pwm {
+				compatible = "ambiq,ctimer-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
 		};
 
-		counter7: counter@400080e0 {
-			compatible = "ambiq,counter";
+		timer7: timer@400080e0 {
+			compatible = "ambiq,ctimer";
 			reg = <0x400080E0 0x20>;
 			interrupts = <14 0>;
-			clock-frequency = <DT_FREQ_M(3)>;
-			clk-source = <2>;
+			clk-source = "CLK_SELECT_HFRC_3MHZ";
 			status = "disabled";
+
+			counter {
+				compatible = "ambiq,counter";
+				status = "disabled";
+			};
+
+			pwm {
+				compatible = "ambiq,ctimer-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
 		};
 
 		uart0: uart@4001c000 {
-			compatible = "ambiq,uart", "arm,pl011";
+			compatible = "ambiq,pl011-uart", "arm,pl011";
 			reg = <0x4001c000 0x1000>;
 			interrupts = <15 0>;
 			interrupt-names = "UART0";
 			status = "disabled";
 			clocks = <&uartclk>;
-			ambiq,pwrcfg = <&pwrcfg 0x8 0x80>;
 			zephyr,pm-device-runtime-auto;
 		};
 
 		uart1: uart@4001d000 {
-			compatible = "ambiq,uart", "arm,pl011";
+			compatible = "ambiq,pl011-uart", "arm,pl011";
 			reg = <0x4001d000 0x1000>;
 			interrupts = <16 0>;
 			interrupt-names = "UART1";
 			status = "disabled";
 			clocks = <&uartclk>;
-			ambiq,pwrcfg = <&pwrcfg 0x8 0x100>;
 			zephyr,pm-device-runtime-auto;
 		};
 
@@ -237,6 +310,7 @@
 				status = "disabled";
 				zephyr,pm-device-runtime-auto;
 			};
+
 			i2c {
 				compatible = "ambiq,i2c";
 				#address-cells = <1>;
@@ -258,6 +332,7 @@
 				status = "disabled";
 				zephyr,pm-device-runtime-auto;
 			};
+
 			i2c {
 				compatible = "ambiq,i2c";
 				#address-cells = <1>;
@@ -279,6 +354,7 @@
 				status = "disabled";
 				zephyr,pm-device-runtime-auto;
 			};
+
 			i2c {
 				compatible = "ambiq,i2c";
 				#address-cells = <1>;
@@ -300,6 +376,7 @@
 				status = "disabled";
 				zephyr,pm-device-runtime-auto;
 			};
+
 			i2c {
 				compatible = "ambiq,i2c";
 				#address-cells = <1>;
@@ -321,6 +398,7 @@
 				status = "disabled";
 				zephyr,pm-device-runtime-auto;
 			};
+
 			i2c {
 				compatible = "ambiq,i2c";
 				#address-cells = <1>;
@@ -342,6 +420,7 @@
 				status = "disabled";
 				zephyr,pm-device-runtime-auto;
 			};
+
 			i2c {
 				compatible = "ambiq,i2c";
 				#address-cells = <1>;
@@ -364,7 +443,7 @@
 
 		mspi0: mspi@50014000 {
 			compatible = "ambiq,mspi-controller";
-			reg = <0x50014000 0x400>,<0x52000000 0x2000000>;
+			reg = <0x50014000 0x400>, <0x52000000 0x2000000>;
 			clock-frequency = <48000000>;
 			interrupts = <20 0>;
 			#address-cells = <1>;
@@ -374,7 +453,7 @@
 
 		mspi1: mspi@50015000 {
 			compatible = "ambiq,mspi-controller";
-			reg = <0x50015000 0x400>,<0x54000000 0x2000000>;
+			reg = <0x50015000 0x400>, <0x54000000 0x2000000>;
 			clock-frequency = <48000000>;
 			interrupts = <32 0>;
 			#address-cells = <1>;
@@ -385,7 +464,7 @@
 		mspi2: mspi@50016000 {
 			compatible = "ambiq,mspi-controller";
 			clock-frequency = <48000000>;
-			reg = <0x50016000 0x400>,<0x56000000 0x2000000>;
+			reg = <0x50016000 0x400>, <0x56000000 0x2000000>;
 			interrupts = <33 0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -425,11 +504,9 @@
 				compatible = "ambiq,gpio";
 				gpio-map-mask = <0xffffffe0 0xffffffc0>;
 				gpio-map-pass-thru = <0x1f 0x3f>;
-				gpio-map = <
-					0x00 0x0 &gpio0_31 0x0 0x0
-					0x20 0x0 &gpio32_63 0x0 0x0
-					0x40 0x0 &gpio64_95 0x0 0x0
-				>;
+				gpio-map = <0x00 0x0 &gpio0_31 0x0 0x0
+					    0x20 0x0 &gpio32_63 0x0 0x0
+					    0x40 0x0 &gpio64_95 0x0 0x0>;
 				reg = <0x40010000>;
 				#gpio-cells = <2>;
 				#address-cells = <1>;

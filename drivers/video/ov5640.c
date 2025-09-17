@@ -117,8 +117,12 @@ enum ov5640_frame_rate {
 
 struct ov5640_config {
 	struct i2c_dt_spec i2c;
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
 	struct gpio_dt_spec reset_gpio;
+#endif
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(powerdown_gpios)
 	struct gpio_dt_spec powerdown_gpio;
+#endif
 	int bus_type;
 };
 
@@ -164,7 +168,6 @@ struct ov5640_ctrls {
 struct ov5640_data {
 	struct ov5640_ctrls ctrls;
 	struct video_format fmt;
-	uint64_t cur_pixrate;
 	uint16_t cur_frmrate;
 	const struct ov5640_mode_config *cur_mode;
 };
@@ -767,8 +770,7 @@ static int ov5640_set_fmt_dvp(const struct ov5640_config *cfg)
 	return 0;
 }
 
-static int ov5640_set_frmival(const struct device *dev, enum video_endpoint_id ep,
-			      struct video_frmival *frmival)
+static int ov5640_set_frmival(const struct device *dev, struct video_frmival *frmival)
 {
 	const struct ov5640_config *cfg = dev->config;
 	struct ov5640_data *drv_data = dev->data;
@@ -812,10 +814,9 @@ static int ov5640_set_frmival(const struct device *dev, enum video_endpoint_id e
 	}
 
 	drv_data->cur_frmrate = best_match;
-	drv_data->cur_pixrate = drv_data->cur_mode->mipi_frmrate_config[ind].pixelrate;
 
 	/* Update pixerate control */
-	drv_data->ctrls.pixel_rate.val = drv_data->cur_pixrate;
+	drv_data->ctrls.pixel_rate.val64 = drv_data->cur_mode->mipi_frmrate_config[ind].pixelrate;
 
 	frmival->numerator = 1;
 	frmival->denominator = best_match;
@@ -823,8 +824,7 @@ static int ov5640_set_frmival(const struct device *dev, enum video_endpoint_id e
 	return 0;
 }
 
-static int ov5640_set_fmt(const struct device *dev, enum video_endpoint_id ep,
-			  struct video_format *fmt)
+static int ov5640_set_fmt(const struct device *dev, struct video_format *fmt)
 {
 	struct ov5640_data *drv_data = dev->data;
 	const struct ov5640_config *cfg = dev->config;
@@ -906,11 +906,10 @@ static int ov5640_set_fmt(const struct device *dev, enum video_endpoint_id ep,
 	def_frmival.denominator = drv_data->cur_mode->def_frmrate;
 	def_frmival.numerator = 1;
 
-	return ov5640_set_frmival(dev, ep, &def_frmival);
+	return ov5640_set_frmival(dev, &def_frmival);
 }
 
-static int ov5640_get_fmt(const struct device *dev, enum video_endpoint_id ep,
-			  struct video_format *fmt)
+static int ov5640_get_fmt(const struct device *dev, struct video_format *fmt)
 {
 	struct ov5640_data *drv_data = dev->data;
 
@@ -919,14 +918,13 @@ static int ov5640_get_fmt(const struct device *dev, enum video_endpoint_id ep,
 	return 0;
 }
 
-static int ov5640_get_caps(const struct device *dev, enum video_endpoint_id ep,
-			   struct video_caps *caps)
+static int ov5640_get_caps(const struct device *dev, struct video_caps *caps)
 {
 	caps->format_caps = ov5640_is_dvp(dev) ? dvp_fmts : csi2_fmts;
 	return 0;
 }
 
-static int ov5640_set_stream(const struct device *dev, bool enable)
+static int ov5640_set_stream(const struct device *dev, bool enable, enum video_buf_type type)
 {
 	const struct ov5640_config *cfg = dev->config;
 
@@ -998,9 +996,13 @@ static int ov5640_set_ctrl_hue(const struct device *dev, int value)
 		sign = 0x02;
 	}
 
-	struct ov5640_reg hue_params[] = {{SDE_CTRL8_REG, sign},
-					  {SDE_CTRL1_REG, abs(cos_coef)},
-					  {SDE_CTRL2_REG, abs(sin_coef)}};
+	struct ov5640_reg hue_params[] = {{SDE_CTRL1_REG, abs(cos_coef) & 0xFF},
+					  {SDE_CTRL2_REG, abs(sin_coef) & 0xFF}};
+
+	ret = ov5640_modify_reg(&cfg->i2c, SDE_CTRL8_REG, 0x7F, sign);
+	if (ret < 0) {
+		return ret;
+	}
 
 	return ov5640_write_multi_regs(&cfg->i2c, hue_params, ARRAY_SIZE(hue_params));
 }
@@ -1023,15 +1025,18 @@ static int ov5640_set_ctrl_brightness(const struct device *dev, int value)
 {
 	const struct ov5640_config *cfg = dev->config;
 
-	struct ov5640_reg brightness_params[] = {{SDE_CTRL8_REG, value >= 0 ? 0x01 : 0x09},
-						 {SDE_CTRL7_REG, abs(value) & 0xff}};
 	int ret = ov5640_modify_reg(&cfg->i2c, SDE_CTRL0_REG, BIT(2), BIT(2));
 
 	if (ret) {
 		return ret;
 	}
 
-	return ov5640_write_multi_regs(&cfg->i2c, brightness_params, ARRAY_SIZE(brightness_params));
+	ret = ov5640_modify_reg(&cfg->i2c, SDE_CTRL8_REG, BIT(3), value >= 0 ? 0 : BIT(3));
+	if (ret < 0) {
+		return ret;
+	}
+
+	return ov5640_write_reg(&cfg->i2c, SDE_CTRL7_REG, (abs(value) << 4) & 0xf0);
 }
 
 static int ov5640_set_ctrl_contrast(const struct device *dev, int value)
@@ -1041,6 +1046,11 @@ static int ov5640_set_ctrl_contrast(const struct device *dev, int value)
 	int ret = ov5640_modify_reg(&cfg->i2c, SDE_CTRL0_REG, BIT(2), BIT(2));
 
 	if (ret) {
+		return ret;
+	}
+
+	ret = ov5640_modify_reg(&cfg->i2c, SDE_CTRL6_REG, BIT(2), value >= 0 ? 0 : BIT(2));
+	if (ret < 0) {
 		return ret;
 	}
 
@@ -1177,8 +1187,7 @@ static int ov5640_get_volatile_ctrl(const struct device *dev, uint32_t id)
 	return 0;
 }
 
-static int ov5640_get_frmival(const struct device *dev, enum video_endpoint_id ep,
-			      struct video_frmival *frmival)
+static int ov5640_get_frmival(const struct device *dev, struct video_frmival *frmival)
 {
 	struct ov5640_data *drv_data = dev->data;
 
@@ -1192,8 +1201,7 @@ static int ov5640_get_frmival(const struct device *dev, enum video_endpoint_id e
 	return 0;
 }
 
-static int ov5640_enum_frmival(const struct device *dev, enum video_endpoint_id ep,
-			       struct video_frmival_enum *fie)
+static int ov5640_enum_frmival(const struct device *dev, struct video_frmival_enum *fie)
 {
 	uint8_t i = 0;
 
@@ -1316,7 +1324,7 @@ static int ov5640_init_controls(const struct device *dev)
 static int ov5640_init(const struct device *dev)
 {
 	const struct ov5640_config *cfg = dev->config;
-	struct video_format fmt;
+	struct video_format fmt = {0};
 	uint16_t chip_id;
 	int ret;
 
@@ -1325,42 +1333,54 @@ static int ov5640_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	if (!gpio_is_ready_dt(&cfg->reset_gpio)) {
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
+	if (cfg->reset_gpio.port != NULL && !gpio_is_ready_dt(&cfg->reset_gpio)) {
 		LOG_ERR("%s: device %s is not ready", dev->name, cfg->reset_gpio.port->name);
 		return -ENODEV;
 	}
+#endif
 
-	if (!gpio_is_ready_dt(&cfg->powerdown_gpio)) {
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(powerdown_gpios)
+	if (cfg->powerdown_gpio.port != NULL && !gpio_is_ready_dt(&cfg->powerdown_gpio)) {
 		LOG_ERR("%s: device %s is not ready", dev->name, cfg->powerdown_gpio.port->name);
 		return -ENODEV;
 	}
+#endif
 
 	/* Power up sequence */
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(powerdown_gpios)
 	if (cfg->powerdown_gpio.port != NULL) {
 		ret = gpio_pin_configure_dt(&cfg->powerdown_gpio, GPIO_OUTPUT_ACTIVE);
 		if (ret) {
 			return ret;
 		}
 	}
+#endif
 
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
 	if (cfg->reset_gpio.port != NULL) {
 		ret = gpio_pin_configure_dt(&cfg->reset_gpio, GPIO_OUTPUT_ACTIVE);
 		if (ret) {
 			return ret;
 		}
 	}
+#endif
 
 	k_sleep(K_MSEC(5));
 
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(powerdown_gpios)
 	if (cfg->powerdown_gpio.port != NULL) {
 		gpio_pin_set_dt(&cfg->powerdown_gpio, 0);
 	}
+#endif
 
 	k_sleep(K_MSEC(1));
 
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
 	if (cfg->reset_gpio.port != NULL) {
 		gpio_pin_set_dt(&cfg->reset_gpio, 0);
 	}
+#endif
 
 	k_sleep(K_MSEC(20));
 
@@ -1429,8 +1449,7 @@ static int ov5640_init(const struct device *dev)
 		fmt.width = 1280;
 		fmt.height = 720;
 	}
-	fmt.pitch = fmt.width * 2;
-	ret = ov5640_set_fmt(dev, VIDEO_EP_OUT, &fmt);
+	ret = ov5640_set_fmt(dev, &fmt);
 	if (ret) {
 		LOG_ERR("Unable to configure default format");
 		return -EIO;
@@ -1440,13 +1459,27 @@ static int ov5640_init(const struct device *dev)
 	return ov5640_init_controls(dev);
 }
 
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
+#define OV5640_GET_RESET_GPIO(n)								   \
+	.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {0}),
+#else
+#define OV5640_GET_RESET_GPIO(n)
+#endif
+
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(powerdown_gpios)
+#define OV5640_GET_POWERDOWN_GPIO(n)								   \
+	.powerdown_gpio = GPIO_DT_SPEC_INST_GET_OR(n, powerdown_gpios, {0}),
+#else
+#define OV5640_GET_POWERDOWN_GPIO(n)
+#endif
+
 #define OV5640_INIT(n)                                                                             \
 	static struct ov5640_data ov5640_data_##n;                                                 \
                                                                                                    \
 	static const struct ov5640_config ov5640_cfg_##n = {                                       \
 		.i2c = I2C_DT_SPEC_INST_GET(n),                                                    \
-		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {0}),                       \
-		.powerdown_gpio = GPIO_DT_SPEC_INST_GET_OR(n, powerdown_gpios, {0}),               \
+		OV5640_GET_RESET_GPIO(n)							   \
+		OV5640_GET_POWERDOWN_GPIO(n)							   \
 		.bus_type = DT_PROP_OR(DT_CHILD(DT_INST_CHILD(n, port), endpoint), bus_type,       \
 				       VIDEO_BUS_TYPE_CSI2_DPHY),                                  \
 	};                                                                                         \

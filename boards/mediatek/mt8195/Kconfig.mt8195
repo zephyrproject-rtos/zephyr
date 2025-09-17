@@ -3,5 +3,3 @@
 
 config BOARD_MT8195
 	select SOC_MT8195
-	help
-	  Board with Mediatek MT8195 Audio DSP

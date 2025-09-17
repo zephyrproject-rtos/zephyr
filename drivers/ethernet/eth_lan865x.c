@@ -112,7 +112,7 @@ static void lan865x_iface_init(struct net_if *iface)
 static enum ethernet_hw_caps lan865x_port_get_capabilities(const struct device *dev)
 {
 	ARG_UNUSED(dev);
-	return ETHERNET_LINK_10BASE_T | ETHERNET_PROMISC_MODE;
+	return ETHERNET_LINK_10BASE | ETHERNET_PROMISC_MODE;
 }
 
 static int lan865x_gpio_reset(const struct device *dev);
@@ -472,13 +472,13 @@ static const struct ethernet_api lan865x_api_func = {
 	struct oa_tc6 oa_tc6_##inst = {                                                            \
 		.cps = 64, .protected = 0, .spi = &lan865x_config_##inst.spi};                     \
 	static struct lan865x_data lan865x_data_##inst = {                                         \
-		.mac_address = DT_INST_PROP(inst, local_mac_address),                              \
+		.mac_address = DT_INST_PROP_OR(inst, local_mac_address, {0}),                      \
 		.tx_rx_sem = Z_SEM_INITIALIZER((lan865x_data_##inst).tx_rx_sem, 1, 1),             \
 		.int_sem = Z_SEM_INITIALIZER((lan865x_data_##inst).int_sem, 0, 1),                 \
 		.tc6 = &oa_tc6_##inst};                                                            \
                                                                                                    \
 	ETH_NET_DEVICE_DT_INST_DEFINE(inst, lan865x_init, NULL, &lan865x_data_##inst,              \
-				      &lan865x_config_##inst, CONFIG_ETH_INIT_PRIORITY,            \
+				      &lan865x_config_##inst, CONFIG_ETH_LAN865X_INIT_PRIORITY,    \
 				      &lan865x_api_func, NET_ETH_MTU);
 
 DT_INST_FOREACH_STATUS_OKAY(LAN865X_DEFINE);

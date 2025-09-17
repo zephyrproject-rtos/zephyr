@@ -14,14 +14,17 @@
 / {
 	leds: leds {
 		compatible = "gpio-leds";
+
 		green_led_1: led_1 {
 			gpios = <&gpiob 0 GPIO_ACTIVE_HIGH>;
 			label = "User LD1";
 		};
+
 		yellow_led_1: led_2 {
 			gpios = <&gpiof 4 GPIO_ACTIVE_HIGH>;
 			label = "User LD2";
 		};
+
 		red_led_1: led_3 {
 			gpios = <&gpiog 4 GPIO_ACTIVE_HIGH>;
 			label = "User LD3";
@@ -30,6 +33,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button: button {
 			label = "User";
 			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
@@ -79,7 +83,7 @@
 };
 
 &i3c1 {
-	pinctrl-0 =  <&i3c1_scl_pd12 &i3c1_sda_pd13>;
+	pinctrl-0 = <&i3c1_scl_pd12 &i3c1_sda_pd13>;
 	pinctrl-names = "default";
 	i3c-scl-hz = <12500000>;
 	status = "okay";
@@ -127,7 +131,7 @@
 };
 
 &rtc {
-	clocks = <&rcc STM32_CLOCK_BUS_APB3 0x00200000>,
+	clocks = <&rcc STM32_CLOCK(APB3, 21)>,
 		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
 	status = "okay";
 };
@@ -152,7 +156,7 @@
 };
 
 &adc1 {
-	clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000400>,
+	clocks = <&rcc STM32_CLOCK(AHB2, 10)>,
 		 <&rcc STM32_SRC_HCLK ADCDAC_SEL(0)>;
 	pinctrl-0 = <&adc1_inp3_pa6 &adc1_inp15_pa3>; /* Zio A0, Zio D35 */
 	pinctrl-names = "default";
@@ -164,7 +168,7 @@
 &fdcan1 {
 	pinctrl-0 = <&fdcan1_rx_pd0 &fdcan1_tx_pd1>;
 	pinctrl-names = "default";
-	clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000200>,
+	clocks = <&rcc STM32_CLOCK(APB1_2, 9)>,
 		 <&rcc STM32_SRC_PLL1_Q FDCAN_SEL(1)>;
 	clk-divider = <2>;
 	status = "okay";
@@ -180,14 +184,17 @@
 			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(64)>;
 		};
+
 		slot0_partition: partition@10000 {
 			label = "image-0";
 			reg = <0x00010000 DT_SIZE_K(960)>;
 		};
+
 		slot1_partition: partition@100000 {
 			label = "image-1";
 			reg = <0x00100000 DT_SIZE_K(960)>;
 		};
+
 		storage_partition: partition@1f0000 {
 			label = "storage";
 			reg = <0x001f0000 DT_SIZE_K(64)>;
@@ -214,7 +221,7 @@ zephyr_udc0: &usb {
 };
 
 stm32_lp_tick_source: &lptim4 {
-	clocks = <&rcc STM32_CLOCK_BUS_APB3 0x2000>,
+	clocks = <&rcc STM32_CLOCK(APB3, 13)>,
 		 <&rcc STM32_SRC_LSI LPTIM4_SEL(4)>;
 	status = "okay";
 };

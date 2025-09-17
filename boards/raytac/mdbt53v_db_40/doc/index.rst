@@ -55,8 +55,8 @@ Hardware
 - Supports BT5 Long Range Features
 - Supports Bluetooth Direction Finding & Mesh
 - Supports Bluetooth low energy audio
-- Cerifications: FCC, IC, CE, Telec(MIC), KC, SRRC, NCC, RCM, WPC
-- RoHs & Reach Compiant.
+- Certifications: FCC, IC, CE, Telec(MIC), KC, SRRC, NCC, RCM, WPC
+- RoHs & Reach Compliant.
 - 25 GPIO
 - Chip Antenna
 - Interfaces: SPI, UART, I2C, I2S, PWM, ADC, and NFC

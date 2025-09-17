@@ -75,6 +75,11 @@ struct smfi_it51xxx_regs {
 #define SCARH_ENABLE                    BIT(7)
 #define SCARH_ADDR_BIT19                BIT(3)
 
+#define IT51XXX_SMFI_BASE      0xf01000
+/* 0x63: Flash Control Register 3 */
+#define IT51XXX_SMFI_FLHCTRL3R (IT51XXX_SMFI_BASE + 0x63)
+#define IT51XXX_SMFI_FFSPITRI  BIT(0)
+
 /**
  *
  * (16xxh) General Purpose I/O Port (GPIO) registers
@@ -86,8 +91,12 @@ struct smfi_it51xxx_regs {
 struct gpio_it51xxx_regs {
 	/* 0x00: General Control */
 	volatile uint8_t GPIO_GCR;
-	/* 0x01-CF: Reserved_01_cf */
-	volatile uint8_t reserved_01_cf[207];
+	/* 0x01-C1: Reserved_01_c1 */
+	volatile uint8_t reserved_01_c1[193];
+	/* 0xC2: General Control 35 */
+	volatile uint8_t GPIO_GCR35;
+	/* 0xC3-CF: Reserved_c3_cf */
+	volatile uint8_t reserved_c3_cf[13];
 	/* 0xD0: General Control 31 */
 	volatile uint8_t GPIO_GCR31;
 	/* 0xD1: General Control 32 */
@@ -189,9 +198,8 @@ struct gpio_it51xxx_regs {
 /* 0x00: General Control */
 #define IT51XXX_GPIO_LPCRSTEN             (BIT(2) | BIT(1))
 #define ITE_EC_GPIO_LPCRSTEN              IT51XXX_GPIO_LPCRSTEN
-#define IT51XXX_GPIO_GCR_ESPI_RST_D2      0x2
-#define IT51XXX_GPIO_GCR_ESPI_RST_POS     1
-#define IT51XXX_GPIO_GCR_ESPI_RST_EN_MASK (0x3 << IT51XXX_GPIO_GCR_ESPI_RST_POS)
+/* 0xC2: General Control 35 */
+#define IT51XXX_GPIO_USBPDEN              BIT(5)
 /* 0xF0: General Control 1 */
 #define IT51XXX_GPIO_U2CTRL_SIN1_SOUT1_EN BIT(2)
 #define IT51XXX_GPIO_U1CTRL_SIN0_SOUT0_EN BIT(0)
@@ -270,8 +278,16 @@ struct gctrl_it51xxx_regs {
 	volatile uint8_t reserved_1d_1f[3];
 	/* 0x20: Reset Control 5 */
 	volatile uint8_t GCTRL_RSTC5;
-	/* 0x21-0x37: reserved_21_37 */
-	volatile uint8_t reserved_21_37[23];
+	/* 0x21-0x2f: reserved_21_2f */
+	volatile uint8_t reserved_21_2f[15];
+	/* 0x30: Port 80h/81h Status Register */
+	volatile uint8_t GCTRL_P80H81HSR;
+	/* 0x31: Port 80h Data Register */
+	volatile uint8_t GCTRL_P80HDR;
+	/* 0x32: Port 81h Data Register */
+	volatile uint8_t GCTRL_P81HDR;
+	/* 0x33-0x37: reserved_33_37 */
+	volatile uint8_t reserved_33_37[5];
 	/* 0x38: Special Control 9 */
 	volatile uint8_t GCTRL_SPCTRL9;
 	/* 0x39-0x46: reserved_39_46 */
@@ -322,5 +338,35 @@ struct gctrl_it51xxx_regs {
 /* Alias gctrl_ite_ec_regs to gctrl_it51xxx_regs for compatibility */
 #define gctrl_ite_ec_regs      gctrl_it51xxx_regs
 #define GCTRL_ITE_EC_REGS_BASE GCTRL_IT51XXX_REGS_BASE
+
+/**
+ *
+ * (22xxh) Battery-backed SRAM (BRAM) registers
+ *
+ */
+#ifndef __ASSEMBLER__
+/* Battery backed RAM indices. */
+#define BRAM_MAGIC_FIELD_OFFSET 0x7c
+
+enum bram_indices {
+	/* This field is used to indicate BRAM is valid or not. */
+	BRAM_IDX_VALID_FLAGS0 = BRAM_MAGIC_FIELD_OFFSET,
+	BRAM_IDX_VALID_FLAGS1,
+	BRAM_IDX_VALID_FLAGS2,
+	BRAM_IDX_VALID_FLAGS3
+};
+#endif /* !__ASSEMBLER__ */
+
+/**
+ *
+ * (42xxh) SMBus Interface for target (SMB) registers
+ *
+ */
+#define IT51XXX_SMB_BASE 0xf04200
+/* 0x0a, 0x2a, 0x4a: Slave n Dedicated FIFO Pre-defined Control Register */
+#define SMB_SADFPCTL     (IT51XXX_SMB_BASE + 0x0a)
+#define SMB_SBDFPCTL     (IT51XXX_SMB_BASE + 0x2a)
+#define SMB_SCDFPCTL     (IT51XXX_SMB_BASE + 0x4a)
+#define SMB_HSAPE        BIT(1)
 
 #endif /* CHIP_CHIPREGS_H */

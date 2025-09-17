@@ -34,7 +34,7 @@
 #define BM4_WE_SHIFT 24
 #define BM4_RE_SHIFT 25
 
-#if CONFIG_USB_KINETIS || CONFIG_UDC_KINETIS
+#if CONFIG_USB_KINETIS || CONFIG_UDC_KINETIS || CONFIG_UHC_NXP_KHCI
 #define BM4_PERMISSIONS ((1 << BM4_RE_SHIFT) | (1 << BM4_WE_SHIFT))
 #else
 #define BM4_PERMISSIONS 0
@@ -232,6 +232,16 @@ extern const struct nxp_mpu_config mpu_config;
 
 #endif /* _ASMLANGUAGE */
 
+/* Some compilers do not handle casts on pointers in constant expressions */
+#if defined(__IAR_SYSTEMS_ICC__)
+#define _ARCH_MEM_PARTITION_ALIGN_CHECK(start, size)                                               \
+	BUILD_ASSERT(                                                                              \
+		(size) % CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE == 0 &&                          \
+		(size) >= CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE,                                \
+		"The size of the partition must align with minimum MPU region size"                \
+		" and greater than or equal to minimum MPU region size.\n"                         \
+		"The start address of the partition must align with minimum MPU region size.")
+#else
 #define _ARCH_MEM_PARTITION_ALIGN_CHECK(start, size)                                               \
 	BUILD_ASSERT(                                                                              \
 		(size) % CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE == 0 &&                          \
@@ -240,5 +250,6 @@ extern const struct nxp_mpu_config mpu_config;
 		"The size of the partition must align with minimum MPU region size"                \
 		" and greater than or equal to minimum MPU region size.\n"                         \
 		"The start address of the partition must align with minimum MPU region size.")
+#endif
 
 #endif /* ZEPHYR_INCLUDE_ARCH_ARM_MPU_NXP_MPU_H_ */

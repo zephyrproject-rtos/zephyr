@@ -9,9 +9,20 @@ toolchain:
   - gnuarmemb
 supported:
   - uart
+  - adc
   - watchdog
+  - counter
   - gpio
+  - spi
+  - i2c
+  - rtc
+  - hwinfo
   - clock_control
+  - usbd
+  - pdm
+  - i2s
+  - mspi
+  - sdhc
 testing:
   ignore_tags:
     - net

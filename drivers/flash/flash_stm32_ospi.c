@@ -39,8 +39,8 @@ LOG_MODULE_REGISTER(flash_stm32_ospi, CONFIG_FLASH_LOG_LEVEL);
 #define DT_OSPI_PROP_OR(prop, default_value) \
 	DT_PROP_OR(STM32_OSPI_NODE, prop, default_value)
 
-/* Get the base address of the flash from the DTS node */
-#define STM32_OSPI_BASE_ADDRESS DT_INST_REG_ADDR(0)
+/* Get the base address of the flash from the DTS st,stm32-ospi node */
+#define STM32_OSPI_BASE_ADDRESS DT_REG_ADDR_BY_IDX(STM32_OSPI_NODE, 1)
 
 #define STM32_OSPI_RESET_GPIO DT_INST_NODE_HAS_PROP(0, reset_gpios)
 
@@ -1702,11 +1702,21 @@ static void flash_stm32_ospi_pages_layout(const struct device *dev,
 }
 #endif
 
+static int flash_stm32_ospi_get_size(const struct device *dev, uint64_t *size)
+{
+	const struct flash_stm32_ospi_config *dev_cfg = dev->config;
+
+	*size = (uint64_t)dev_cfg->flash_size;
+
+	return 0;
+}
+
 static DEVICE_API(flash, flash_stm32_ospi_driver_api) = {
 	.read = flash_stm32_ospi_read,
 	.write = flash_stm32_ospi_write,
 	.erase = flash_stm32_ospi_erase,
 	.get_parameters = flash_stm32_ospi_get_parameters,
+	.get_size = flash_stm32_ospi_get_size,
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	.page_layout = flash_stm32_ospi_pages_layout,
 #endif
@@ -1843,6 +1853,49 @@ static int stm32_ospi_write_status_register(const struct device *dev, uint8_t re
 	}
 
 	return ospi_write_access(dev, &s_command, regs_p, size);
+}
+
+static int stm32_ospi_program_addr_4b(const struct device *dev, bool write_enable)
+{
+	uint8_t statReg;
+	struct flash_stm32_ospi_data *data = dev->data;
+	OSPI_HandleTypeDef *hospi = &data->hospi;
+	uint8_t nor_mode = OSPI_SPI_MODE;
+	uint8_t nor_rate = OSPI_STR_TRANSFER;
+	OSPI_RegularCmdTypeDef s_command = ospi_prepare_cmd(nor_mode, nor_rate);
+
+	if (write_enable) {
+		if (stm32_ospi_write_enable(data, nor_mode, nor_rate) < 0) {
+			LOG_DBG("program_addr_4b failed to write_enable");
+			return -EIO;
+		}
+	}
+
+	/* Initialize the write enable command */
+	s_command.Instruction = SPI_NOR_CMD_4BA;
+	if (nor_mode != OSPI_OPI_MODE) {
+		/* force 1-line InstructionMode for any non-OSPI transfer */
+		s_command.InstructionMode = HAL_OSPI_INSTRUCTION_1_LINE;
+	}
+	s_command.AddressMode = HAL_OSPI_ADDRESS_NONE;
+	s_command.DataMode = HAL_OSPI_DATA_NONE;
+	s_command.DummyCycles = 0U;
+
+	if (HAL_OSPI_Command(hospi, &s_command, HAL_OSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
+		LOG_DBG("OSPI Address Mode Change cmd failed");
+		return -EIO;
+	}
+
+	/* Check that ADS Bit in Status Reg 3 is now set indicating 4 Byte Address mode */
+	if (stm32_ospi_read_status_register(dev, 3, &statReg)) {
+		LOG_DBG("Status reg read failed");
+		return -EIO;
+	}
+
+	if (statReg & 0x01) {
+		return 0;
+	}
+	return -EIO;
 }
 
 static int stm32_ospi_enable_qe(const struct device *dev)
@@ -1983,6 +2036,7 @@ static int spi_nor_process_bfp(const struct device *dev,
 	const size_t flash_size = jesd216_bfp_density(bfp) / 8U;
 	struct jesd216_instr read_instr = { 0 };
 	struct jesd216_bfp_dw15 dw15;
+	uint8_t addr_mode;
 
 	if (flash_size != dev_cfg->flash_size) {
 		LOG_DBG("Unexpected flash size: %u", flash_size);
@@ -2002,8 +2056,29 @@ static int spi_nor_process_bfp(const struct device *dev,
 		++etp;
 	}
 
-	spi_nor_process_bfp_addrbytes(dev, jesd216_bfp_addrbytes(bfp));
+	addr_mode = jesd216_bfp_addrbytes(bfp);
+	spi_nor_process_bfp_addrbytes(dev, addr_mode);
 	LOG_DBG("Address width: %u Bytes", data->address_width);
+	/* 4 Byte Address Mode has to be explicitly enabled for Winbond Flash */
+	if (addr_mode == JESD216_SFDP_BFP_DW1_ADDRBYTES_VAL_3B4B) {
+		struct jesd216_bfp_dw16 dw16;
+
+		if (jesd216_bfp_decode_dw16(php, bfp, &dw16) == 0) {
+			/*
+			 * According to JESD216, the bit0 of dw16.enter_4ba
+			 * portion of flash description register 16 indicates
+			 * if it is enough to use 0xB7 instruction without
+			 * write enable to switch to 4 bytes addressing mode.
+			 * If bit 1 is set, a write enable is needed.
+			 */
+			if (dw16.enter_4ba & 0x3) {
+				if (stm32_ospi_program_addr_4b(dev, dw16.enter_4ba & 2)) {
+					LOG_ERR("Unable to enter 4B mode.");
+					return -EIO;
+				}
+			}
+		}
+	}
 
 	/* use PP opcode based on configured data mode if nothing is set in DTS */
 	if (data->write_opcode == SPI_NOR_WRITEOC_NONE) {
@@ -2154,12 +2229,9 @@ static int flash_stm32_ospi_init(const struct device *dev)
 	dma_cfg.user_data = &hdma;
 	/* HACK: This field is used to inform driver that it is overridden */
 	dma_cfg.linked_channel = STM32_DMA_HAL_OVERRIDE;
-	/* Because of the STREAM OFFSET, the DMA channel given here is from 1 - 8 */
-	ret = dma_config(dev_data->dma.dev,
-			 (dev_data->dma.channel + STM32_DMA_STREAM_OFFSET), &dma_cfg);
+	ret = dma_config(dev_data->dma.dev, dev_data->dma.channel, &dma_cfg);
 	if (ret != 0) {
-		LOG_ERR("Failed to configure DMA channel %d",
-			dev_data->dma.channel + STM32_DMA_STREAM_OFFSET);
+		LOG_ERR("Failed to configure DMA channel %d", dev_data->dma.channel);
 		return ret;
 	}
 
@@ -2191,27 +2263,12 @@ static int flash_stm32_ospi_init(const struct device *dev)
 	hdma.Init.Mode = DMA_NORMAL;
 	hdma.Init.Priority = table_priority[dma_cfg.channel_priority];
 	hdma.Init.Direction = DMA_PERIPH_TO_MEMORY;
+	hdma.Instance = STM32_DMA_GET_INSTANCE(dev_data->dma.reg, dev_data->dma.channel);
 #ifdef CONFIG_DMA_STM32_V1
 	/* TODO: Not tested in this configuration */
 	hdma.Init.Channel = dma_cfg.dma_slot;
-	hdma.Instance = __LL_DMA_GET_STREAM_INSTANCE(dev_data->dma.reg,
-						     dev_data->dma.channel);
 #else
 	hdma.Init.Request = dma_cfg.dma_slot;
-#if CONFIG_DMA_STM32U5
-	hdma.Instance = LL_DMA_GET_CHANNEL_INSTANCE(dev_data->dma.reg,
-						      dev_data->dma.channel);
-#elif defined(CONFIG_DMAMUX_STM32)
-	/*
-	 * HAL expects a valid DMA channel (not DMAMUX).
-	 * The channel is from 0 to 7 because of the STM32_DMA_STREAM_OFFSET in the dma_stm32 driver
-	 */
-	hdma.Instance = __LL_DMA_GET_CHANNEL_INSTANCE(dev_data->dma.reg,
-						      dev_data->dma.channel);
-#else
-	hdma.Instance = __LL_DMA_GET_CHANNEL_INSTANCE(dev_data->dma.reg,
-						      dev_data->dma.channel-1);
-#endif /* CONFIG_DMA_STM32U5 */
 #endif /* CONFIG_DMA_STM32_V1 */
 
 	/* Initialize DMA HAL */
@@ -2593,7 +2650,7 @@ static const struct flash_stm32_ospi_config flash_stm32_ospi_cfg = {
 		       .enr = DT_CLOCKS_CELL_BY_NAME(STM32_OSPI_NODE, ospi_mgr, bits)},
 #endif
 	.irq_config = flash_stm32_ospi_irq_config_func,
-	.flash_size = DT_INST_REG_SIZE(0),
+	.flash_size = DT_INST_PROP(0, size) / 8, /* In Bytes */
 	.max_frequency = DT_INST_PROP(0, ospi_max_frequency),
 	.data_mode = DT_INST_PROP(0, spi_bus_width), /* SPI or OPI */
 	.data_rate = DT_INST_PROP(0, data_rate), /* DTR or STR */
@@ -2621,7 +2678,7 @@ static struct flash_stm32_ospi_data flash_stm32_ospi_dev_data = {
 	.qer_type = DT_QER_PROP_OR(0, JESD216_DW15_QER_VAL_S1B6),
 	.write_opcode = DT_WRITEOC_PROP_OR(0, SPI_NOR_WRITEOC_NONE),
 	.page_size = SPI_NOR_PAGE_SIZE, /* by default, to be updated by sfdp */
-#if DT_NODE_HAS_PROP(DT_INST(0, st_stm32_ospi_nor), jedec_id)
+#if DT_NODE_HAS_PROP(DT_INST(0, st_stm32_ospi_nor), jedec_id) && defined(CONFIG_FLASH_JESD216_API)
 	.jedec_id = DT_INST_PROP(0, jedec_id),
 #endif /* jedec_id */
 	OSPI_DMA_CHANNEL(STM32_OSPI_NODE, tx_rx)

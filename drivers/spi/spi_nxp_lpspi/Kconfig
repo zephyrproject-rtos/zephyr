@@ -1,7 +1,7 @@
 # Copyright 2018, 2024-2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-config SPI_MCUX_LPSPI
+config SPI_NXP_LPSPI
 	bool "NXP LPSPI peripheral"
 	default y
 	depends on DT_HAS_NXP_LPSPI_ENABLED
@@ -10,9 +10,9 @@ config SPI_MCUX_LPSPI
 	help
 	  Enable driver support for NXP LPSPI.
 
-if SPI_MCUX_LPSPI
+if SPI_NXP_LPSPI
 
-config SPI_MCUX_LPSPI_DMA
+config SPI_NXP_LPSPI_DMA
 	bool "NXP LPSPI DMA-based Driver"
 	default y
 	select DMA
@@ -27,13 +27,26 @@ config SPI_MCUX_LPSPI_DMA
 	  immediately with CPU, so there could be more latency between
 	  the point of requesting a transfer and when it actually starts.
 
-config SPI_MCUX_LPSPI_CPU
+config SPI_NXP_LPSPI_CPU
 	bool "NXP LPSPI CPU-based driver"
 	default y
-	depends on $(dt_compat_any_not_has_prop,$(DT_COMPAT_NXP_LPSPI),dmas) || !SPI_MCUX_LPSPI_DMA
+	depends on $(dt_compat_any_not_has_prop,$(DT_COMPAT_NXP_LPSPI),dmas) || !SPI_NXP_LPSPI_DMA
 	help
 	  Enable "normal" CPU based SPI driver for LPSPI.
 	  This has lower latency than DMA-based driver but over the
 	  longer transfers will likely have less bandwidth and use more CPU time.
 
-endif # SPI_MCUX_LPSPI
+config SPI_NXP_LPSPI_TXFIFO_WAIT_CYCLES
+	int "Number of CPU cycles to wait on TX fifo empty"
+	default 0 if DEBUG
+	default 10000
+	help
+	  This option most likely does not need changed.
+	  The drivers tend to need to wait on confirming the transmit command
+	  is consumed by the hardware by checking of the TX fifo is emptied.
+	  This option gives a maximum number of CPU cycles to wait on that check.
+	  The special value of 0 means infinite, which can be useful for debugging
+	  for if there is some programming error that causes TX fifo not to empty.
+	  The default of 10000 is arbitrary.
+
+endif # SPI_NXP_LPSPI

@@ -1,0 +1,15 @@
+# Copyright (c) 2025 Abderrahmane JARMOUNI
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Display controllers to pass to graphical libraries like LVGL.
+  Only one node with this compatible is allowed in the DeviceTree
+
+compatible: "zephyr,displays"
+
+properties:
+  displays:
+    type: phandles
+    required: true
+    description: |
+      Nodes of display controllers for graphical libraries to use

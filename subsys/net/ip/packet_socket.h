@@ -26,10 +26,13 @@
  * disabled, the function will always return NET_DROP.
  */
 #if defined(CONFIG_NET_SOCKETS_PACKET)
-enum net_verdict net_packet_socket_input(struct net_pkt *pkt, uint16_t proto);
+enum net_verdict net_packet_socket_input(struct net_pkt *pkt,
+					 uint16_t proto,
+					 enum net_sock_type type);
 #else
 static inline enum net_verdict net_packet_socket_input(struct net_pkt *pkt,
-						       uint16_t proto)
+						       uint16_t proto,
+						       enum net_sock_type type)
 {
 	return NET_CONTINUE;
 }

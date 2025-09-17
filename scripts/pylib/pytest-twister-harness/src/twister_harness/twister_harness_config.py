@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import csv
 import logging
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -30,6 +31,7 @@ class DeviceConfig:
     serial_pty: str = ''
     flash_before: bool = False
     west_flash_extra_args: list[str] = field(default_factory=list, repr=False)
+    flash_command: str = ''
     name: str = ''
     pre_script: Path | None = None
     post_script: Path | None = None
@@ -59,7 +61,10 @@ class TwisterHarnessConfig:
 
         west_flash_extra_args: list[str] = []
         if config.option.west_flash_extra_args:
-            west_flash_extra_args = [w.strip() for w in config.option.west_flash_extra_args.split(',')]
+            west_flash_extra_args = [w.strip() for w in next(csv.reader([config.option.west_flash_extra_args]))]
+        flash_command: list[str] = []
+        if config.option.flash_command:
+            flash_command = [w.strip() for w in next(csv.reader([config.option.flash_command]))]
         runner_params: list[str] = []
         if config.option.runner_params:
             runner_params = [w.strip() for w in config.option.runner_params]
@@ -78,6 +83,7 @@ class TwisterHarnessConfig:
             serial_pty=config.option.device_serial_pty,
             flash_before=bool(config.option.flash_before),
             west_flash_extra_args=west_flash_extra_args,
+            flash_command=flash_command,
             pre_script=_cast_to_path(config.option.pre_script),
             post_script=_cast_to_path(config.option.post_script),
             post_flash_script=_cast_to_path(config.option.post_flash_script),

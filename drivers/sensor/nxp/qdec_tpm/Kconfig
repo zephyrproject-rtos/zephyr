@@ -1,0 +1,10 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config QDEC_TPM
+	bool "NXP Quad Decoder TPM driver"
+	default y
+	depends on DT_HAS_NXP_TPM_QDEC_ENABLED
+	select PINCTRL
+	help
+	  Enable drivers for NXP TPM QUADRATURE DECODER

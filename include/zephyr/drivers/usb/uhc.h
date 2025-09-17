@@ -20,8 +20,8 @@
 
 /**
  * @brief USB host controller (UHC) driver API
- * @defgroup uhc_api USB host controller driver API
- * @ingroup io_interfaces
+ * @defgroup uhc_api USB Host Controller
+ * @ingroup usb_interfaces
  * @since 3.3
  * @version 0.1.1
  * @{
@@ -130,6 +130,11 @@ struct uhc_transfer {
 	unsigned int queued : 1;
 	/** Control stage status, up to the driver to use it or not */
 	unsigned int stage : 2;
+	/**
+	 * The status stage of the control transfer will be omitted.
+	 * This flag is optional and is mainly used for testing.
+	 */
+	unsigned int no_status : 1;
 	/** Pointer to USB device */
 	struct usb_device *udev;
 	/** Pointer to transfer completion callback (opaque for the UHC) */

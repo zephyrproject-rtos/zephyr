@@ -20,6 +20,7 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		green_led: led-1 {
 			gpios = <&gpio9 3 GPIO_ACTIVE_LOW>;
 			label = "User LED D6";
@@ -28,6 +29,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button: button-1 {
 			label = "User SW7";
 			gpios = <&gpio13 0 GPIO_ACTIVE_HIGH>;
@@ -91,13 +93,14 @@
 	ahb-read-addr-opt;
 	rx-clock-source = <1>;
 	reg = <0x400cc000 0x4000>, <0x30000000 DT_SIZE_M(16)>;
+
 	is25wp128: is25wp128@0 {
 		compatible = "nxp,imx-flexspi-nor";
 		size = <DT_SIZE_M(16*8)>;
 		reg = <0>;
 		spi-max-frequency = <104000000>;
 		status = "okay";
-		jedec-id = [9d 70 17];
+		jedec-id = [9d 70 18];
 		erase-block-size = <4096>;
 		write-block-size = <1>;
 
@@ -105,24 +108,29 @@
 			compatible = "fixed-partitions";
 			#address-cells = <1>;
 			#size-cells = <1>;
+
+			/*
+			 * Partition sizes must be aligned
+			 * to the flash memory sector size of 4KB.
+			 */
 			boot_partition: partition@0 {
 				label = "mcuboot";
 				reg = <0x00000000 DT_SIZE_K(128)>;
 			};
-			/* The MCUBoot swap-move algorithm uses the last 3 sectors
-			 * of the primary slot0 for swap status and move.
-			 */
+
 			slot0_partition: partition@20000 {
 				label = "image-0";
-				reg = <0x00020000 (DT_SIZE_M(7) + DT_SIZE_K(12))>;
+				reg = <0x00020000 DT_SIZE_M(7)>;
 			};
-			slot1_partition: partition@723000 {
+
+			slot1_partition: partition@720000 {
 				label = "image-1";
-				reg = <0x00723000 DT_SIZE_M(7)>;
+				reg = <0x00720000 DT_SIZE_M(7)>;
 			};
-			storage_partition: partition@E23000 {
+
+			storage_partition: partition@E20000 {
 				label = "storage";
-				reg = <0x00E23000 (DT_SIZE_M(2) - DT_SIZE_K(140))>;
+				reg = <0x00E20000 (DT_SIZE_M(2) - DT_SIZE_K(128))>;
 			};
 		};
 	};
@@ -147,6 +155,7 @@
 	status = "okay";
 	pinctrl-0 = <&pinmux_enet_mdio>;
 	pinctrl-names = "default";
+
 	phy: phy@0 {
 		compatible = "microchip,ksz8081";
 		reg = <0>;
@@ -179,7 +188,7 @@
 };
 
 &lpi2c1 {
-	pinctrl-0 =<&pinmux_lpi2c1>;
+	pinctrl-0 = <&pinmux_lpi2c1>;
 	pinctrl-names = "default";
 };
 
@@ -199,8 +208,8 @@
 	pinctrl-names = "default";
 };
 
-&lpadc0 {
-	pinctrl-0 = <&pinmux_lpadc0>;
+&lpadc1 {
+	pinctrl-0 = <&pinmux_lpadc1>;
 	pinctrl-names = "default";
 };
 

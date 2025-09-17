@@ -112,9 +112,9 @@ static int payload_cb(int sock, struct http_request *req, void *user_data)
 	return pos;
 }
 
-static void response_cb(struct http_response *rsp,
-			enum http_final_call final_data,
-			void *user_data)
+static int response_cb(struct http_response *rsp,
+		       enum http_final_call final_data,
+		       void *user_data)
 {
 	if (final_data == HTTP_DATA_MORE) {
 		LOG_INF("Partial data received (%zd bytes)", rsp->data_len);
@@ -124,6 +124,8 @@ static void response_cb(struct http_response *rsp,
 
 	LOG_INF("Response to %s", (const char *)user_data);
 	LOG_INF("Response status %s", rsp->http_status);
+
+	return 0;
 }
 
 static int connect_socket(sa_family_t family, const char *server, int port,
@@ -157,6 +159,7 @@ static int run_queries(void)
 	int32_t timeout = 3 * MSEC_PER_SEC;
 	int ret = 0;
 	int port = HTTP_PORT;
+	struct http_request req;
 
 	if (IS_ENABLED(CONFIG_NET_SOCKETS_SOCKOPT_TLS)) {
 		ret = tls_credential_add(CA_CERTIFICATE_TAG,
@@ -176,21 +179,10 @@ static int run_queries(void)
 		(void)connect_socket(AF_INET, SERVER_ADDR4, port,
 				     &sock4, (struct sockaddr *)&addr4,
 				     sizeof(addr4));
-	}
-
-	if (IS_ENABLED(CONFIG_NET_IPV6)) {
-		(void)connect_socket(AF_INET6, SERVER_ADDR6, port,
-				     &sock6, (struct sockaddr *)&addr6,
-				     sizeof(addr6));
-	}
-
-	if (sock4 < 0 && sock6 < 0) {
-		LOG_ERR("Cannot create HTTP connection.");
-		return -ECONNABORTED;
-	}
-
-	if (sock4 >= 0 && IS_ENABLED(CONFIG_NET_IPV4)) {
-		struct http_request req;
+		if (sock4 < 0) {
+			LOG_ERR("Cannot create HTTP IPv4 connection.");
+			return -ECONNABORTED;
+		}
 
 		memset(&req, 0, sizeof(req));
 
@@ -203,12 +195,21 @@ static int run_queries(void)
 		req.recv_buf_len = sizeof(recv_buf_ipv4);
 
 		ret = http_client_req(sock4, &req, timeout, "IPv4 GET");
+		if (ret < 0) {
+			LOG_ERR("Client error %d", ret);
+		}
 
 		close(sock4);
 	}
 
-	if (sock6 >= 0 && IS_ENABLED(CONFIG_NET_IPV6)) {
-		struct http_request req;
+	if (IS_ENABLED(CONFIG_NET_IPV6)) {
+		(void)connect_socket(AF_INET6, SERVER_ADDR6, port,
+				     &sock6, (struct sockaddr *)&addr6,
+				     sizeof(addr6));
+		if (sock6 < 0) {
+			LOG_ERR("Cannot create HTTP IPv6 connection.");
+			return -ECONNABORTED;
+		}
 
 		memset(&req, 0, sizeof(req));
 
@@ -221,6 +222,9 @@ static int run_queries(void)
 		req.recv_buf_len = sizeof(recv_buf_ipv6);
 
 		ret = http_client_req(sock6, &req, timeout, "IPv6 GET");
+		if (ret < 0) {
+			LOG_ERR("Client error %d", ret);
+		}
 
 		close(sock6);
 	}
@@ -232,21 +236,10 @@ static int run_queries(void)
 		(void)connect_socket(AF_INET, SERVER_ADDR4, port,
 				     &sock4, (struct sockaddr *)&addr4,
 				     sizeof(addr4));
-	}
-
-	if (IS_ENABLED(CONFIG_NET_IPV6)) {
-		(void)connect_socket(AF_INET6, SERVER_ADDR6, port,
-				     &sock6, (struct sockaddr *)&addr6,
-				     sizeof(addr6));
-	}
-
-	if (sock4 < 0 && sock6 < 0) {
-		LOG_ERR("Cannot create HTTP connection.");
-		return -ECONNABORTED;
-	}
-
-	if (sock4 >= 0 && IS_ENABLED(CONFIG_NET_IPV4)) {
-		struct http_request req;
+		if (sock4 < 0) {
+			LOG_ERR("Cannot create HTTP IPv4 connection.");
+			return -ECONNABORTED;
+		}
 
 		memset(&req, 0, sizeof(req));
 
@@ -261,12 +254,21 @@ static int run_queries(void)
 		req.recv_buf_len = sizeof(recv_buf_ipv4);
 
 		ret = http_client_req(sock4, &req, timeout, "IPv4 POST");
+		if (ret < 0) {
+			LOG_ERR("Client error %d", ret);
+		}
 
 		close(sock4);
 	}
 
-	if (sock6 >= 0 && IS_ENABLED(CONFIG_NET_IPV6)) {
-		struct http_request req;
+	if (IS_ENABLED(CONFIG_NET_IPV6)) {
+		(void)connect_socket(AF_INET6, SERVER_ADDR6, port,
+				     &sock6, (struct sockaddr *)&addr6,
+				     sizeof(addr6));
+		if (sock6 < 0) {
+			LOG_ERR("Cannot create HTTP IPv6 connection.");
+			return -ECONNABORTED;
+		}
 
 		memset(&req, 0, sizeof(req));
 
@@ -281,6 +283,9 @@ static int run_queries(void)
 		req.recv_buf_len = sizeof(recv_buf_ipv6);
 
 		ret = http_client_req(sock6, &req, timeout, "IPv6 POST");
+		if (ret < 0) {
+			LOG_ERR("Client error %d", ret);
+		}
 
 		close(sock6);
 	}
@@ -291,28 +296,18 @@ static int run_queries(void)
 	sock6 = -1;
 
 	if (IS_ENABLED(CONFIG_NET_IPV4)) {
-		(void)connect_socket(AF_INET, SERVER_ADDR4, port,
-				     &sock4, (struct sockaddr *)&addr4,
-				     sizeof(addr4));
-	}
-
-	if (IS_ENABLED(CONFIG_NET_IPV6)) {
-		(void)connect_socket(AF_INET6, SERVER_ADDR6, port,
-				     &sock6, (struct sockaddr *)&addr6,
-				     sizeof(addr6));
-	}
-
-	if (sock4 < 0 && sock6 < 0) {
-		LOG_ERR("Cannot create HTTP connection.");
-		return -ECONNABORTED;
-	}
-
-	if (sock4 >= 0 && IS_ENABLED(CONFIG_NET_IPV4)) {
-		struct http_request req;
 		const char *headers[] = {
 			"Transfer-Encoding: chunked\r\n",
 			NULL
 		};
+
+		(void)connect_socket(AF_INET, SERVER_ADDR4, port,
+				     &sock4, (struct sockaddr *)&addr4,
+				     sizeof(addr4));
+		if (sock4 < 0) {
+			LOG_ERR("Cannot create HTTP IPv4 connection.");
+			return -ECONNABORTED;
+		}
 
 		memset(&req, 0, sizeof(req));
 
@@ -327,16 +322,26 @@ static int run_queries(void)
 		req.recv_buf_len = sizeof(recv_buf_ipv4);
 
 		ret = http_client_req(sock4, &req, timeout, "IPv4 POST");
+		if (ret < 0) {
+			LOG_ERR("Client error %d", ret);
+		}
 
 		close(sock4);
 	}
 
-	if (sock6 >= 0 && IS_ENABLED(CONFIG_NET_IPV6)) {
-		struct http_request req;
+	if (IS_ENABLED(CONFIG_NET_IPV6)) {
 		const char *headers[] = {
 			"Transfer-Encoding: chunked\r\n",
 			NULL
 		};
+
+		(void)connect_socket(AF_INET6, SERVER_ADDR6, port,
+				     &sock6, (struct sockaddr *)&addr6,
+				     sizeof(addr6));
+		if (sock6 < 0) {
+			LOG_ERR("Cannot create HTTP IPv6 connection.");
+			return -ECONNABORTED;
+		}
 
 		memset(&req, 0, sizeof(req));
 
@@ -351,6 +356,9 @@ static int run_queries(void)
 		req.recv_buf_len = sizeof(recv_buf_ipv6);
 
 		ret = http_client_req(sock6, &req, timeout, "IPv6 POST");
+		if (ret < 0) {
+			LOG_ERR("Client error %d", ret);
+		}
 
 		close(sock6);
 	}

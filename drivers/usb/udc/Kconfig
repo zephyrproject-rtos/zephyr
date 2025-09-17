@@ -3,8 +3,7 @@
 
 
 menuconfig UDC_DRIVER
-	bool "USB device controller drivers [EXPERIMENTAL]"
-	select EXPERIMENTAL
+	bool "USB device controller drivers"
 	select NET_BUF
 	help
 	  USB device controller driver.
@@ -42,6 +41,12 @@ config UDC_BUF_FORCE_NOCACHE
 	  Place the buffer pools in the nocache memory region if the driver
 	  cannot handle buffers in cached memory.
 
+config UDC_ENABLE_SOF
+	bool "SOF interrupt processing"
+	help
+	  Enabled SoF interrupts can cause a very high CPU load on high-speed
+	  controllers because the interrupt rate would be 125 µs.
+
 config UDC_WORKQUEUE
 	bool "Use a dedicate work queue for UDC drivers"
 	help
@@ -78,5 +83,6 @@ source "drivers/usb/udc/Kconfig.rpi_pico"
 source "drivers/usb/udc/Kconfig.ambiq"
 source "drivers/usb/udc/Kconfig.renesas_ra"
 source "drivers/usb/udc/Kconfig.max32"
+source "drivers/usb/udc/Kconfig.sam0"
 
 endif # UDC_DRIVER

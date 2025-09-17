@@ -17,3 +17,12 @@ boards:
           - name: 'ptl'
             variants:
               - name: 'sim'
+          - name: 'wcl'
+            variants:
+              - name: 'sim'
+      - name: ace40
+        variants:
+          - name: 'nvl'
+            variants:
+              - name: 'sim'
+          - name: 'nvls'

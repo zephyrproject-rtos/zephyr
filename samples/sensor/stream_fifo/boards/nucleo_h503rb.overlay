@@ -5,7 +5,6 @@
  */
 #include <zephyr/dt-bindings/sensor/lsm6dsv16x.h>
 
-
 /*
  * Nucleo F401RE board + shield iks4a1
  *
@@ -34,7 +33,7 @@
 
 		sflp-odr = <LSM6DSV16X_DT_SFLP_ODR_AT_15Hz>;
 		sflp-fifo-enable = <LSM6DSV16X_DT_SFLP_FIFO_GAME_ROTATION_GRAVITY_GBIAS>;
-		int2-gpios =  <&arduino_header 10 GPIO_ACTIVE_HIGH>; /* D4 (PB5) */
+		int2-gpios = <&arduino_header 10 GPIO_ACTIVE_HIGH>; /* D4 (PB5) */
 		drdy-pin = <2>;
 		drdy-pulsed;
 	};

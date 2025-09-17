@@ -771,7 +771,12 @@ void k_sched_lock(void)
 	K_SPINLOCK(&_sched_spinlock) {
 		SYS_PORT_TRACING_FUNC(k_thread, sched_lock);
 
-		z_sched_lock();
+		__ASSERT(!arch_is_in_isr(), "");
+		__ASSERT(_current->base.sched_locked != 1U, "");
+
+		--_current->base.sched_locked;
+
+		compiler_barrier();
 	}
 }
 
@@ -815,7 +820,12 @@ struct k_thread *z_swap_next_thread(void)
 /* Just a wrapper around z_current_thread_set(xxx) with tracing */
 static inline void set_current(struct k_thread *new_thread)
 {
-	z_thread_mark_switched_out();
+	/* If the new thread is the same as the current thread, we
+	 * don't need to do anything.
+	 */
+	if (IS_ENABLED(CONFIG_INSTRUMENT_THREAD_SWITCHING) && new_thread != _current) {
+		z_thread_mark_switched_out();
+	}
 	z_current_thread_set(new_thread);
 }
 
@@ -989,13 +999,9 @@ static inline void z_vrfy_k_thread_priority_set(k_tid_t thread, int prio)
 #endif /* CONFIG_USERSPACE */
 
 #ifdef CONFIG_SCHED_DEADLINE
-void z_impl_k_thread_deadline_set(k_tid_t tid, int deadline)
+void z_impl_k_thread_absolute_deadline_set(k_tid_t tid, int deadline)
 {
-
-	deadline = CLAMP(deadline, 0, INT_MAX);
-
 	struct k_thread *thread = tid;
-	int32_t newdl = k_cycle_get_32() + deadline;
 
 	/* The prio_deadline field changes the sorting order, so can't
 	 * change it while the thread is in the run queue (dlists
@@ -1006,15 +1012,35 @@ void z_impl_k_thread_deadline_set(k_tid_t tid, int deadline)
 	K_SPINLOCK(&_sched_spinlock) {
 		if (z_is_thread_queued(thread)) {
 			dequeue_thread(thread);
-			thread->base.prio_deadline = newdl;
+			thread->base.prio_deadline = deadline;
 			queue_thread(thread);
 		} else {
-			thread->base.prio_deadline = newdl;
+			thread->base.prio_deadline = deadline;
 		}
 	}
 }
 
+void z_impl_k_thread_deadline_set(k_tid_t tid, int deadline)
+{
+
+	deadline = CLAMP(deadline, 0, INT_MAX);
+
+	int32_t newdl = k_cycle_get_32() + deadline;
+
+	z_impl_k_thread_absolute_deadline_set(tid, newdl);
+}
+
 #ifdef CONFIG_USERSPACE
+static inline void z_vrfy_k_thread_absolute_deadline_set(k_tid_t tid, int deadline)
+{
+	struct k_thread *thread = tid;
+
+	K_OOPS(K_SYSCALL_OBJ(thread, K_OBJ_THREAD));
+
+	z_impl_k_thread_absolute_deadline_set((k_tid_t)thread, deadline);
+}
+#include <zephyr/syscalls/k_thread_absolute_deadline_set_mrsh.c>
+
 static inline void z_vrfy_k_thread_deadline_set(k_tid_t tid, int deadline)
 {
 	struct k_thread *thread = tid;
@@ -1271,9 +1297,7 @@ static ALWAYS_INLINE void halt_thread(struct k_thread *thread, uint8_t new_state
 			return;
 		}
 
-#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
-		arch_float_disable(thread);
-#endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
+		arch_coprocessors_disable(thread);
 
 		SYS_PORT_TRACING_FUNC(k_thread, sched_abort, thread);
 

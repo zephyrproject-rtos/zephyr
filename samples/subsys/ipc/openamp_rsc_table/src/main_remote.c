@@ -17,6 +17,7 @@
 #include <metal/sys.h>
 #include <metal/io.h>
 #include <resource_table.h>
+#include <addr_translation.h>
 
 #ifdef CONFIG_SHELL_BACKEND_RPMSG
 #include <zephyr/shell/shell_rpmsg.h>
@@ -29,6 +30,13 @@ LOG_MODULE_REGISTER(openamp_rsc_table);
 
 #if !DT_HAS_CHOSEN(zephyr_ipc_shm)
 #error "Sample requires definition of shared memory for rpmsg"
+#endif
+
+#if CONFIG_IPM_MAX_DATA_SIZE > 0
+
+#define	IPM_SEND(dev, w, id, d, s) ipm_send(dev, w, id, d, s)
+#else
+#define IPM_SEND(dev, w, id, d, s) ipm_send(dev, w, id, NULL, 0)
 #endif
 
 /* Constants derived from device tree */
@@ -68,7 +76,7 @@ static struct metal_io_region *shm_io = &shm_io_data;
 static struct metal_io_region *rsc_io = &rsc_io_data;
 static struct rpmsg_virtio_device rvdev;
 
-static struct fw_resource_table *rsc_table;
+static void *rsc_table;
 static struct rpmsg_device *rpdev;
 
 static char rx_sc_msg[20];  /* should receive "Hello world!" */
@@ -133,7 +141,7 @@ int mailbox_notify(void *priv, uint32_t id)
 	ARG_UNUSED(priv);
 
 	LOG_DBG("%s: msg received", __func__);
-	ipm_send(ipm_handle, 0, id, &id, 4);
+	IPM_SEND(ipm_handle, 0, id, &id, 4);
 
 	return 0;
 }
@@ -152,7 +160,7 @@ int platform_init(void)
 
 	/* declare shared memory region */
 	metal_io_init(shm_io, (void *)SHM_START_ADDR, &shm_physmap,
-		      SHM_SIZE, -1, 0, NULL);
+		      SHM_SIZE, -1, 0, addr_translation_get_ops(shm_physmap));
 
 	/* declare resource table region */
 	rsc_table_get(&rsc_table, &rsc_size);

@@ -18,27 +18,22 @@ endif()
 find_program(CMAKE_C_COMPILER   clang   ${find_program_clang_args})
 find_program(CMAKE_CXX_COMPILER clang++ ${find_program_clang_args})
 
+if(SYSROOT_DIR)
+  # The toolchain has specified a sysroot dir, pass it to the compiler
+  list(APPEND TOOLCHAIN_C_FLAGS "--sysroot=${SYSROOT_DIR}")
+  list(APPEND TOOLCHAIN_LD_FLAGS "--sysroot=${SYSROOT_DIR}")
+endif()
+
 if(NOT "${ARCH}" STREQUAL "posix")
   include(${ZEPHYR_BASE}/cmake/gcc-m-cpu.cmake)
   include(${ZEPHYR_BASE}/cmake/gcc-m-fpu.cmake)
 
   if("${ARCH}" STREQUAL "arm")
-    list(APPEND TOOLCHAIN_C_FLAGS
-      -fshort-enums
-      )
-    list(APPEND TOOLCHAIN_LD_FLAGS
-      -fshort-enums
-      )
-
     include(${ZEPHYR_BASE}/cmake/compiler/clang/target_arm.cmake)
   elseif("${ARCH}" STREQUAL "arm64")
     include(${ZEPHYR_BASE}/cmake/compiler/clang/target_arm64.cmake)
   elseif("${ARCH}" STREQUAL "riscv")
     include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_riscv.cmake)
-  endif()
-
-  if(DEFINED CMAKE_C_COMPILER_TARGET)
-    set(clang_target_flag "--target=${CMAKE_C_COMPILER_TARGET}")
   endif()
 
   foreach(file_name include/stddef.h)
@@ -72,7 +67,8 @@ if(NOT "${ARCH}" STREQUAL "posix")
   #
   # Other clang/LLVM distributions may come with other pre-built C libraries.
   # clang/LLVM supports using an alternative C library, either by direct linking,
-  # or by specifying '--sysroot <path>'.
+  # or by specifying '--sysroot <path>'. Sysroot can also be passed using the
+  # CMake variable SYSROOT_DIR which will append the '--sysroot <path>' flags.
   #
   # LLVM for Arm provides a 'newlib.cfg' file for newlib C selection.
   # Let us support this principle by looking for a dedicated 'newlib.cfg' or
@@ -99,21 +95,6 @@ if(NOT "${ARCH}" STREQUAL "posix")
       list(APPEND TOOLCHAIN_C_FLAGS --config=${picolibc_cfg})
     endif()
   endif()
-
-  # This libgcc code is partially duplicated in compiler/*/target.cmake
-  execute_process(
-    COMMAND ${CMAKE_C_COMPILER} ${clang_target_flag} ${TOOLCHAIN_C_FLAGS}
-            --print-libgcc-file-name
-    OUTPUT_VARIABLE RTLIB_FILE_NAME
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-
-  get_filename_component(RTLIB_DIR ${RTLIB_FILE_NAME} DIRECTORY)
-  get_filename_component(RTLIB_NAME_WITH_PREFIX ${RTLIB_FILE_NAME} NAME_WLE)
-  string(REPLACE lib "" RTLIB_NAME ${RTLIB_NAME_WITH_PREFIX})
-
-  set_property(TARGET linker PROPERTY lib_include_dir "-L${RTLIB_DIR}")
-  set_property(TARGET linker PROPERTY rt_library "-l${RTLIB_NAME}")
 
   list(APPEND CMAKE_REQUIRED_FLAGS -nostartfiles -nostdlib ${isystem_include_flags})
   string(REPLACE ";" " " CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS}")

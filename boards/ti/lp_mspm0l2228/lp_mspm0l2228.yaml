@@ -1,0 +1,15 @@
+identifier: lp_mspm0l2228
+name: TI MSPM0L2228 Launchpad
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 32
+flash: 256
+supported:
+  - gpio
+  - pinctrl
+  - uart
+vendor: ti

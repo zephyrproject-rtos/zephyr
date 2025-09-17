@@ -46,8 +46,7 @@ ZTEST(posix_headers, test_signal_h)
 	zassert_not_equal(-1, offsetof(union sigval, sival_int));
 	zassert_not_equal(-1, offsetof(union sigval, sival_ptr));
 
-	zassert_not_equal(-1, RTSIG_MAX);
-	zassert_true(SIGRTMAX - SIGRTMIN >= RTSIG_MAX);
+	zassert_true(SIGRTMAX - SIGRTMIN >= 0);
 
 	zassert_not_equal(-1, SIG_BLOCK);
 	zassert_not_equal(-1, SIG_UNBLOCK);

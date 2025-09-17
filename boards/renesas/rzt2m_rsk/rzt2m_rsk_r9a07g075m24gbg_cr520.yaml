@@ -12,4 +12,7 @@ toolchain:
 supported:
   - uart
   - gpio
+  - pwm
+  - adc
+  - i2c
 vendor: renesas

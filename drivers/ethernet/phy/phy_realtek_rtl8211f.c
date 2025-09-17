@@ -25,6 +25,8 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
+#include "phy_mii.h"
+
 #define REALTEK_OUI_MSB (0x1CU)
 
 #define PHY_RT_RTL8211F_PHYSR_REG (0x1A)
@@ -59,6 +61,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 struct rt_rtl8211f_config {
 	uint8_t addr;
 	const struct device *mdio_dev;
+	enum phy_link_speed default_speeds;
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
 	const struct gpio_dt_spec reset_gpio;
 #endif
@@ -241,24 +244,24 @@ static int phy_rt_rtl8211f_get_link(const struct device *dev,
 				>> PHY_RT_RTL8211F_PHYSR_LINKSPEED_SHIFT) {
 		case PHY_RT_RTL8211F_PHYSR_LINKSPEED_100M:
 			if (duplex) {
-				new_state.speed = LINK_FULL_100BASE_T;
+				new_state.speed = LINK_FULL_100BASE;
 			} else {
-				new_state.speed = LINK_HALF_100BASE_T;
+				new_state.speed = LINK_HALF_100BASE;
 			}
 			break;
 		case PHY_RT_RTL8211F_PHYSR_LINKSPEED_1000M:
 			if (duplex) {
-				new_state.speed = LINK_FULL_1000BASE_T;
+				new_state.speed = LINK_FULL_1000BASE;
 			} else {
-				new_state.speed = LINK_HALF_1000BASE_T;
+				new_state.speed = LINK_HALF_1000BASE;
 			}
 			break;
 		case PHY_RT_RTL8211F_PHYSR_LINKSPEED_10M:
 		default:
 			if (duplex) {
-				new_state.speed = LINK_FULL_10BASE_T;
+				new_state.speed = LINK_FULL_10BASE;
 			} else {
-				new_state.speed = LINK_HALF_10BASE_T;
+				new_state.speed = LINK_HALF_10BASE;
 			}
 			break;
 	}
@@ -278,14 +281,17 @@ result:
 	return ret;
 }
 
-static int phy_rt_rtl8211f_cfg_link(const struct device *dev,
-					enum phy_link_speed speeds)
+static int phy_rt_rtl8211f_cfg_link(const struct device *dev, enum phy_link_speed speeds,
+				    enum phy_cfg_link_flag flags)
 {
 	const struct rt_rtl8211f_config *config = dev->config;
 	struct rt_rtl8211f_data *data = dev->data;
-	uint32_t anar;
-	uint32_t gbcr;
 	int ret;
+
+	if (flags & PHY_FLAG_AUTO_NEGOTIATION_DISABLED) {
+		LOG_ERR("Disabling auto-negotiation is not supported by this driver");
+		return -ENOTSUP;
+	}
 
 	/* Lock mutex */
 	ret = k_mutex_lock(&data->mutex, K_FOREVER);
@@ -303,60 +309,15 @@ static int phy_rt_rtl8211f_cfg_link(const struct device *dev,
 	k_work_cancel_delayable(&data->phy_monitor_work);
 #endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios) */
 
-	/* Read ANAR register to write back */
-	ret = phy_rt_rtl8211f_read(dev, MII_ANAR, &anar);
-	if (ret) {
-		LOG_ERR("Error reading phy (%d) advertising register", config->addr);
+	ret = phy_mii_set_anar_reg(dev, speeds);
+	if (ret < 0 && ret != -EALREADY) {
+		LOG_ERR("Error setting ANAR register for phy (%d)", config->addr);
 		goto done;
 	}
 
-	/* Read GBCR register to write back */
-	ret = phy_rt_rtl8211f_read(dev, MII_1KTCR, &gbcr);
-	if (ret) {
-		LOG_ERR("Error reading phy (%d) 1000Base-T control register", config->addr);
-		goto done;
-	}
-
-	/* Setup advertising register */
-	if (speeds & LINK_FULL_100BASE_T) {
-		anar |= MII_ADVERTISE_100_FULL;
-	} else {
-		anar &= ~MII_ADVERTISE_100_FULL;
-	}
-	if (speeds & LINK_HALF_100BASE_T) {
-		anar |= MII_ADVERTISE_100_HALF;
-	} else {
-		anar &= ~MII_ADVERTISE_100_HALF;
-	}
-	if (speeds & LINK_FULL_10BASE_T) {
-		anar |= MII_ADVERTISE_10_FULL;
-	} else {
-		anar &= ~MII_ADVERTISE_10_FULL;
-	}
-	if (speeds & LINK_HALF_10BASE_T) {
-		anar |= MII_ADVERTISE_10_HALF;
-	} else {
-		anar &= ~MII_ADVERTISE_10_HALF;
-	}
-
-	/* Setup 1000Base-T control register */
-	if (speeds & LINK_FULL_1000BASE_T) {
-		gbcr |= MII_ADVERTISE_1000_FULL;
-	} else {
-		gbcr &= ~MII_ADVERTISE_1000_FULL;
-	}
-
-	/* Write capabilities to advertising register */
-	ret = phy_rt_rtl8211f_write(dev, MII_ANAR, anar);
-	if (ret) {
-		LOG_ERR("Error writing phy (%d) advertising register", config->addr);
-		goto done;
-	}
-
-	/* Write capabilities to 1000Base-T control register */
-	ret = phy_rt_rtl8211f_write(dev, MII_1KTCR, gbcr);
-	if (ret) {
-		LOG_ERR("Error writing phy (%d) 1000Base-T control register", config->addr);
+	ret = phy_mii_set_c1kt_reg(dev, speeds);
+	if (ret < 0 && ret != -EALREADY) {
+		LOG_ERR("Error setting C1KT register for phy (%d)", config->addr);
 		goto done;
 	}
 
@@ -639,6 +600,9 @@ skip_int_gpio:
 	phy_rt_rtl8211f_monitor_work_handler(&data->phy_monitor_work.work);
 #endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios) */
 
+	/* Advertise default speeds */
+	phy_rt_rtl8211f_cfg_link(dev, config->default_speeds, 0);
+
 	return 0;
 }
 
@@ -668,6 +632,7 @@ static DEVICE_API(ethphy, rt_rtl8211f_phy_api) = {
 	static const struct rt_rtl8211f_config rt_rtl8211f_##n##_config = {	\
 		.addr = DT_INST_REG_ADDR(n),					\
 		.mdio_dev = DEVICE_DT_GET(DT_INST_PARENT(n)),			\
+		.default_speeds = PHY_INST_GENERATE_DEFAULT_SPEEDS(n),		\
 		RESET_GPIO(n)							\
 		INTERRUPT_GPIO(n)						\
 	};									\

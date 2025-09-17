@@ -10,10 +10,6 @@
 #include <errno.h>
 #include <stdio.h>
 
-#ifdef CONFIG_SECURE_STORAGE_ITS_IMPLEMENTATION_ZEPHYR
-#include <zephyr/secure_storage/its/transform.h>
-#endif
-
 LOG_MODULE_DECLARE(secure_storage, CONFIG_SECURE_STORAGE_LOG_LEVEL);
 
 static int init_settings_subsys(void)
@@ -42,9 +38,15 @@ void secure_storage_its_store_settings_get_name(
 {
 	int ret;
 
+#ifdef CONFIG_SECURE_STORAGE_64_BIT_UID
 	ret = snprintf(name, SECURE_STORAGE_ITS_STORE_SETTINGS_NAME_BUF_SIZE,
 		       CONFIG_SECURE_STORAGE_ITS_STORE_SETTINGS_PREFIX "%x/%llx",
 		       uid.caller_id, (unsigned long long)uid.uid);
+#else
+	ret = snprintf(name, SECURE_STORAGE_ITS_STORE_SETTINGS_NAME_BUF_SIZE,
+		       CONFIG_SECURE_STORAGE_ITS_STORE_SETTINGS_PREFIX "%x/%lx",
+		       uid.caller_id, (unsigned long)uid.uid);
+#endif
 	__ASSERT_NO_MSG(ret > 0 && ret < SECURE_STORAGE_ITS_STORE_SETTINGS_NAME_BUF_SIZE);
 }
 
@@ -120,7 +122,7 @@ psa_status_t secure_storage_its_store_remove(secure_storage_its_uid_t uid)
 	secure_storage_its_store_settings_get_name(uid, name);
 
 	ret = settings_delete(name);
-
 	LOG_DBG("%s %s. (%d)", ret ? "Failed to delete" : "Deleted", name, ret);
+
 	return ret ? PSA_ERROR_STORAGE_FAILURE : PSA_SUCCESS;
 }

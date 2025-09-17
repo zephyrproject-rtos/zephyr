@@ -17,8 +17,8 @@ LOG_MODULE_REGISTER(ls0xx, CONFIG_DISPLAY_LOG_LEVEL);
 #include <zephyr/drivers/spi.h>
 #include <zephyr/sys/byteorder.h>
 
-/* Supports LS012B7DD01, LS012B7DD06, LS013B7DH03, LS013B7DH05
- * LS013B7DH06, LS027B7DH01A, LS032B7DD02, LS044Q7DH01
+/* Supports LS012B7DD01, LS013B7DH03, LS013B7DH05
+ * LS027B7DH01A, LS032B7DD02, LS044Q7DH01
  */
 
 /* Note:
@@ -282,6 +282,7 @@ static DEVICE_API(display, ls0xx_driver_api) = {
 	.blanking_on = ls0xx_blanking_on,
 	.blanking_off = ls0xx_blanking_off,
 	.write = ls0xx_write,
+	.clear = ls0xx_clear,
 	.get_capabilities = ls0xx_get_capabilities,
 	.set_pixel_format = ls0xx_set_pixel_format,
 };

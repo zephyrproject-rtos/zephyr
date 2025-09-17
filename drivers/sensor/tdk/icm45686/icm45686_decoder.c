@@ -125,7 +125,7 @@ int icm45686_convert_raw_to_q31(struct icm45686_encoded_data *edata,
 	if (shift < 0) {
 		intermediate =
 			intermediate * ((int64_t)INT32_MAX + 1) * (1 << -shift) / INT64_C(1000000);
-	} else if (shift > 0) {
+	} else {
 		intermediate =
 			intermediate * ((int64_t)INT32_MAX + 1) / ((1 << shift) * INT64_C(1000000));
 	}
@@ -360,6 +360,14 @@ static int icm45686_one_shot_decode(const uint8_t *buffer,
 		out->header.base_timestamp_ns = edata->header.timestamp;
 		out->header.reading_count = 1;
 
+		err = icm45686_get_shift(chan_spec.chan_type,
+					 edata->header.accel_fs,
+					 edata->header.gyro_fs,
+					 &out->shift);
+		if (err != 0) {
+			return -EINVAL;
+		}
+
 		icm45686_convert_raw_to_q31(
 			edata,
 			chan_spec.chan_type - 3,
@@ -404,7 +412,7 @@ static q31_t icm45686_fifo_read_temp_from_packet(const uint8_t *pkt)
 	if (shift < 0) {
 		intermediate =
 			intermediate * ((int64_t)INT32_MAX + 1) * (1 << -shift) / INT64_C(1000000);
-	} else if (shift > 0) {
+	} else {
 		intermediate =
 			intermediate * ((int64_t)INT32_MAX + 1) / ((1 << shift) * INT64_C(1000000));
 	}
@@ -450,7 +458,7 @@ static int icm45686_fifo_read_imu_from_packet(const uint8_t *pkt,
 	if (shift < 0) {
 		intermediate =
 			intermediate * ((int64_t)INT32_MAX + 1) * (1 << -shift) / INT64_C(1000000);
-	} else if (shift > 0) {
+	} else {
 		intermediate =
 			intermediate * ((int64_t)INT32_MAX + 1) / ((1 << shift) * INT64_C(1000000));
 	}

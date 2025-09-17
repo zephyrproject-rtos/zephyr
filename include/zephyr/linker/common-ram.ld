@@ -17,7 +17,7 @@
 ITERABLE_SECTION_RAM(scmi_protocol, Z_LINK_ITERABLE_SUBALIGN)
 #endif /* CONFIG_ARM_SCMI */
 
-#if defined(CONFIG_GEN_SW_ISR_TABLE) && defined(CONFIG_DYNAMIC_INTERRUPTS)
+#if defined(CONFIG_GEN_SW_ISR_TABLE) && defined(CONFIG_SRAM_SW_ISR_TABLE)
 	SECTION_DATA_PROLOGUE(sw_isr_table,,)
 	{
 		/*
@@ -41,11 +41,13 @@ ITERABLE_SECTION_RAM(scmi_protocol, Z_LINK_ITERABLE_SUBALIGN)
 
         SECTION_DATA_PROLOGUE(device_states,,)
         {
+		. = ALIGN(CONFIG_ARCH_DEVICE_STATE_ALIGN);
 		/* Device states used by the device objects. */
-                __device_states_start = .;
+                PLACE_SYMBOL_HERE(__device_states_start);
 		KEEP(*(".z_devstate"));
 		KEEP(*(".z_devstate.*"));
-                __device_states_end = .;
+                PLACE_SYMBOL_HERE(__device_states_end);
+		. = ALIGN(CONFIG_ARCH_DEVICE_STATE_ALIGN);
         } GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
 #ifdef CONFIG_PM_DEVICE
@@ -71,7 +73,7 @@ ITERABLE_SECTION_RAM(scmi_protocol, Z_LINK_ITERABLE_SUBALIGN)
 	 * These two symbols only used by gen_kobject_list.py
 	 */
 
-	_static_kernel_objects_begin = .;
+	PLACE_SYMBOL_HERE(_static_kernel_objects_begin);
 #endif /* CONFIG_USERSPACE */
 
 	ITERABLE_SECTION_RAM_GC_ALLOWED(k_timer, Z_LINK_ITERABLE_SUBALIGN)
@@ -103,10 +105,10 @@ ITERABLE_SECTION_RAM(scmi_protocol, Z_LINK_ITERABLE_SUBALIGN)
 #if defined(CONFIG_USB_DEVICE_STACK)
 	SECTION_DATA_PROLOGUE(usb_descriptor,,SUBALIGN(1))
 	{
-		__usb_descriptor_start = .;
+		PLACE_SYMBOL_HERE(__usb_descriptor_start);
 		*(".usb.descriptor")
 		KEEP(*(SORT_BY_NAME(".usb.descriptor*")))
-		__usb_descriptor_end = .;
+		PLACE_SYMBOL_HERE(__usb_descriptor_end);
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
 	ITERABLE_SECTION_RAM(usb_cfg_data, Z_LINK_ITERABLE_SUBALIGN)
@@ -115,15 +117,16 @@ ITERABLE_SECTION_RAM(scmi_protocol, Z_LINK_ITERABLE_SUBALIGN)
 #if defined(CONFIG_USB_DEVICE_BOS)
 	SECTION_DATA_PROLOGUE(usb_bos_desc,,SUBALIGN(1))
 	{
-		__usb_bos_desc_start = .;
+		PLACE_SYMBOL_HERE(__usb_bos_desc_start);
 		*(".usb.bos_desc")
 		KEEP(*(SORT_BY_NAME(".usb.bos_desc*")))
-		__usb_bos_desc_end = .;
+		PLACE_SYMBOL_HERE(__usb_bos_desc_end);
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 #endif /* CONFIG_USB_DEVICE_BOS */
 
 #if defined(CONFIG_RTIO)
 	ITERABLE_SECTION_RAM(rtio, Z_LINK_ITERABLE_SUBALIGN)
+	ITERABLE_SECTION_RAM(rtio_pool, Z_LINK_ITERABLE_SUBALIGN)
 	ITERABLE_SECTION_RAM(rtio_iodev, Z_LINK_ITERABLE_SUBALIGN)
 	ITERABLE_SECTION_RAM(rtio_sqe_pool, Z_LINK_ITERABLE_SUBALIGN)
 	ITERABLE_SECTION_RAM(rtio_cqe_pool, Z_LINK_ITERABLE_SUBALIGN)
@@ -146,5 +149,5 @@ ITERABLE_SECTION_RAM(scmi_protocol, Z_LINK_ITERABLE_SUBALIGN)
 #endif
 
 #ifdef CONFIG_USERSPACE
-	_static_kernel_objects_end = .;
+	PLACE_SYMBOL_HERE(_static_kernel_objects_end);
 #endif

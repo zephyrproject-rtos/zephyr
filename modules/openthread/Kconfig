@@ -1,4 +1,5 @@
 # Copyright (c) 2022 Nordic Semiconductor ASA
+# Copyright 2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 config OPENTHREAD
@@ -6,7 +7,6 @@ config OPENTHREAD
 	imply FLASH
 	imply FLASH_MAP
 	imply MPU_ALLOW_FLASH_WRITE
-
 	select SETTINGS if FLASH
 	select OPENTHREAD_SETTINGS_RAM if !FLASH
 	select CPP
@@ -16,6 +16,21 @@ config OPENTHREAD
 	  This option enables the OpenThread library
 
 if OPENTHREAD
+
+config OPENTHREAD_SYS_INIT
+	bool "Initialize OpenThread stack during system initialization"
+	default y
+	depends on !NET_L2_OPENTHREAD
+	help
+	  This option initializes the OpenThread automatically by calling the openthread_init()
+	  function during system initialization.
+
+config OPENTHREAD_SYS_INIT_PRIORITY
+	int "OpenThread system initialization priority"
+	default 40
+	depends on OPENTHREAD_SYS_INIT
+	help
+	  This option sets the priority of the OpenThread system initialization.
 
 choice OPENTHREAD_IMPLEMENTATION
 	prompt "OpenThread origin selection"
@@ -56,14 +71,19 @@ choice OPENTHREAD_LOG_LEVEL_CHOICE
 
 config OPENTHREAD_LOG_LEVEL_CRIT
 	bool "Critical"
+
 config OPENTHREAD_LOG_LEVEL_WARN
 	bool "Warning"
+
 config OPENTHREAD_LOG_LEVEL_NOTE
 	bool "Notice"
+
 config OPENTHREAD_LOG_LEVEL_INFO
 	bool "Informational"
+
 config OPENTHREAD_LOG_LEVEL_DEBG
 	bool "Debug"
+
 endchoice # OPENTHREAD_LOG_LEVEL_CHOICE
 
 config OPENTHREAD_LOG_LEVEL
@@ -106,7 +126,6 @@ config OPENTHREAD_THREAD_STACK_SIZE
 	default 3168 if MPU_STACK_GUARD && FPU_SHARING && CPU_CORTEX_M
 	default 3072
 
-
 config OPENTHREAD_PKT_LIST_SIZE
 	int "List size for IPv6 packet buffering"
 	default 10
@@ -116,15 +135,18 @@ config OPENTHREAD_RADIO_WORKQUEUE_STACK_SIZE
 	default 608 if MPU_STACK_GUARD && FPU_SHARING && CPU_CORTEX_M
 	default 512
 
-endmenu # "Zephyr optimizations"
+config OPENTHREAD_RADIO_WORKQUEUE_PRIORITY
+	int "OpenThread radio transmit workqueue priority"
+	default 0 if OPENTHREAD_THREAD_PREEMPTIVE
+	default 7
 
+endmenu # "Zephyr optimizations"
 
 config OPENTHREAD_SHELL
 	bool "OpenThread shell"
 	depends on SHELL
 
 config MBEDTLS_PROMPTLESS
-	bool
 	default y if !CUSTOM_OPENTHREAD_SECURITY
 
 choice OPENTHREAD_SECURITY
@@ -174,7 +196,6 @@ config OPENTHREAD_MBEDTLS
 	select MBEDTLS_PK_WRITE_C if OPENTHREAD_ECDSA
 	select MBEDTLS_ECP_C if OPENTHREAD_COMMISSIONER || OPENTHREAD_JOINER || OPENTHREAD_ECDSA
 
-
 config OPENTHREAD_MBEDTLS_LIB_NAME
 	string "mbedtls lib name"
 	default "mbedTLS"
@@ -199,8 +220,10 @@ choice OPENTHREAD_COPROCESSOR_CHOICE
 
 config OPENTHREAD_COPROCESSOR_NCP
 	bool "NCP - Network Co-Processor"
+
 config OPENTHREAD_COPROCESSOR_RCP
 	bool "RCP - Radio Co-Processor"
+
 endchoice # OPENTHREAD_COPROCESSOR_CHOICE
 
 config OPENTHREAD_COPROCESSOR_UART_RING_BUFFER_SIZE
@@ -319,6 +342,26 @@ config OPENTHREAD_INTERFACE_EARLY_UP
 	  Establishment phase.
 	  Otherwise, OpenThread interface will be marked operational UP only
 	  after the device joins a Thread network.
+
+config OPENTHREAD_PLATFORM_PKT_TXTIME
+	bool
+	default y if NET_PKT_TXTIME
+	help
+	  Enable packet TX time support. This is needed for when the application
+	  wants to set the exact time when the packet should be sent.
+
+config OPENTHREAD_PLATFORM_CARRIER_FUNCTIONS
+	bool
+	default y if OPENTHREAD_DIAG && IEEE802154_CARRIER_FUNCTIONS
+	help
+	  Enable support for functions such as modulated carrier and continuous carrier.
+
+config OPENTHREAD_ZEPHYR_BORDER_ROUTER
+	bool "Adds support for Border Router functionality [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	imply NET_ROUTING
+	help
+	  Enable support for Border Router using Openthread's implementation.
 
 menu "OpenThread stack features"
 rsource "Kconfig.features"

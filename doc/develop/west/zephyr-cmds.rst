@@ -40,6 +40,7 @@ It currently supports the following shells:
 - bash
 - zsh
 - fish
+- powershell (board qualifiers only)
 
 Additional instructions are available in the command's help::
 
@@ -74,7 +75,7 @@ See :zephyr_file:`share/zephyr-package/cmake` for details.
 Software bill of materials: ``west spdx``
 *****************************************
 
-This command generates SPDX 2.3 tag-value documents, creating relationships
+This command generates SPDX 2.2 or 2.3 tag-value documents, creating relationships
 from source files to the corresponding generated build files.
 ``SPDX-License-Identifier`` comments in source files are scanned and filled
 into the SPDX documents.
@@ -104,6 +105,24 @@ To use this command:
 
       west spdx -d BUILD_DIR
 
+   By default, this generates SPDX 2.3 documents. To generate SPDX 2.2 documents instead:
+
+   .. code-block:: bash
+
+      west spdx -d BUILD_DIR --spdx-version 2.2
+
+.. note::
+
+   When building with :ref:`sysbuild`, make sure you target the actual application
+   which you want to generate the SBOM for. For example, if the application is
+   named ``hello_world``:
+
+   .. code-block:: bash
+
+     west spdx --init  -d BUILD_DIR/hello_world
+     west build -d BUILD_DIR/hello_world
+     west spdx -d BUILD_DIR/hello_world
+
 This generates the following SPDX bill-of-materials (BOM) documents in
 :file:`BUILD_DIR/spdx/`:
 
@@ -116,6 +135,13 @@ This generates the following SPDX bill-of-materials (BOM) documents in
 Each file in the bill-of-materials is scanned, so that its hashes (SHA256 and
 SHA1) can be recorded, along with any detected licenses if an
 ``SPDX-License-Identifier`` comment appears in the file.
+
+Copyright notices are extracted using the third-party :command:`reuse` tool from the REUSE group.
+When found, these notices are added to SPDX documents as ``FileCopyrightText`` fields.
+
+.. note::
+   Copyright extraction uses heuristics that may not capture complete notice text, so
+   ``FileCopyrightText`` content is best-effort. This aligns with SPDX specification recommendations.
 
 SPDX Relationships are created to indicate dependencies between
 CMake build targets, build targets that are linked together, and
@@ -131,6 +157,10 @@ source files that are compiled to generate the built library files.
 - ``-s SPDX_DIR``: specifies an alternate directory where the SPDX documents
   should be written instead of :file:`BUILD_DIR/spdx/`.
 
+- ``--spdx-version {2.2,2.3}``: specifies which SPDX specification version to use.
+  Defaults to ``2.3``. SPDX 2.3 includes additional fields like ``PrimaryPackagePurpose``
+  that are not available in SPDX 2.2.
+
 - ``--analyze-includes``: in addition to recording the compiled source code
   files (e.g. ``.c``, ``.S``) in the bills-of-materials, also attempt to
   determine the specific header files that are included for each ``.c`` file.
@@ -141,6 +171,10 @@ source files that are compiled to generate the built library files.
 
 - ``--include-sdk``: with ``--analyze-includes``, also create a fourth SPDX
   document, :file:`sdk.spdx`, which lists header files included from the SDK.
+
+.. warning::
+
+   The generation of SBOM documents for the ``native_sim`` platform is currently not supported.
 
 .. _SPDX specification clause 6:
    https://spdx.github.io/spdx-spec/v2.2.2/document-creation-information/
@@ -179,6 +213,12 @@ As does deleting them::
 Additionally the tool allows you to specify the modules you want to list,
 fetch or clean blobs for by typing the module names as a command-line
 parameter.
+
+The argument ``--allow-regex`` can be passed ``west blobs fetch`` to restrict
+the specific blobs that are fetched, by passing a regular expression::
+
+  # For example, only download esp32 blobs, skip the other variants
+  west blobs fetch hal_espressif --allow-regex 'lib/esp32/.*'
 
 .. _west-twister:
 
@@ -268,3 +308,123 @@ Additional tips:
   separate ``west global`` command since ``global`` already searches for the
   ``GTAGS`` file starting from your current working directory. This is why you
   need to run ``global`` from inside the workspace.
+
+.. _west-patch:
+
+Working with patches: ``west patch``
+************************************
+
+The ``patch`` command allows users to apply patches to Zephyr or Zephyr modules
+in a controlled manner that makes automation and tracking easier for external applications that
+use the :ref:`T2 star topology <west-t2>`. The :ref:`patches.yml <patches-yml>` file stores
+metadata about patch files and fills-in the gaps between official Zephyr releases, so that users
+can easily see the status of any upstreaming efforts, and determine which patches to drop before
+upgrading to the next Zephyr release.
+
+There are several sub-commands available to manage patches for Zephyr or other modules in the
+workspace:
+
+* ``apply``: apply patches listed in ``patches.yml``
+* ``clean``: remove all patches that have been applied, and reset to the manifest checkout state
+* ``list``: list all patches in ``patches.yml``
+* ``gh-fetch``: fetch patches from a GitHub pull request
+
+.. code-block:: none
+
+    west-workspace/
+    └── application/
+       ...
+       ├── west.yml
+       └── zephyr
+           ├── module.yml
+           ├── patches
+           │   ├── bootloader
+           │   │   └── mcuboot
+           │   │       └── my-tweak-for-mcuboot.patch
+           │   └── zephyr
+           │       └── my-zephyr-change.patch
+           └── patches.yml
+
+In this example, the :ref:`west manifest <west-manifests>` file, ``west.yml``, would pin to a
+specific Zephyr revision (e.g. ``v4.1.0``) and apply patches against that revision of Zephyr and
+the specific revisions of other modules used in the application. However, this application needs
+two changes in order to meet requirements; one for Zephyr and another for MCUBoot.
+
+.. _patches-yml:
+
+.. code-block:: yaml
+
+    patches:
+      - path: zephyr/my-zephyr-change.patch
+        sha256sum: c676cd376a4d19dc95ac4e44e179c253853d422b758688a583bb55c3c9137035
+        module: zephyr
+        author: Obi-Wan Kenobi
+        email: obiwan@jedi.org
+        date: 2025-05-04
+        upstreamable: false
+        comments: |
+          An application-specific change we need for Zephyr.
+      - path: bootloader/mcuboot/my-tweak-for-mcuboot.patch
+        sha256sum: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+        module: mcuboot
+        author: Darth Sidious
+        email: sidious@sith.org
+        date: 2025-05-04
+        merge-pr: https://github.com/zephyrproject-rtos/zephyr/pull/<pr-number>
+        issue: https://github.com/zephyrproject-rtos/zephyr/issues/<issue-number>
+        merge-status: true
+        merge-commit: 1234567890abcdef1234567890abcdef12345678
+        merge-date: 2025-05-06
+        apply-command: git apply
+        comments: |
+          A change to mcuboot that has been merged already. We can remove this
+          patch when we are ready to upgrade to the next Zephyr release.
+
+Patches can easily be applied in an automated manner. For example:
+
+.. code-block:: bash
+
+    west init -m <manifest repo> <workspace>
+    cd <workspace>
+    west update
+    west patch apply
+
+When it is time to update to a newer version of Zephyr, the ``west.yml`` file can be updated to
+point at the next Zephyr release, e.g. ``v4.2.0``. Patches that are no longer needed, like
+``my-tweak-for-mcuboot.patch`` in the example above, can be removed from ``patches.yml`` and from
+the external application repository, and then the following commands can be run.
+
+.. code-block:: bash
+
+    west patch clean
+    west update
+    west patch apply --roll-back # roll-back all patches if one does not apply cleanly
+
+If a patch needs to be reworked, remember to update the ``patches.yml`` file with the new SHA256
+checksum.
+
+.. code-block:: bash
+
+    sha256sum zephyr/patches/zephyr/my-zephyr-change.patch
+    7d57ca78d5214f422172cc47fed9d0faa6d97a0796c02485bff0bf29455765e9
+
+It is also possible to use ``west patch gh-fetch`` to fetch patches from a GitHub pull request and
+automatically create or update the ``patches.yml`` file. This can be useful when the author already
+has a number of changes captured in existing upstream pull requests.
+
+.. code-block:: bash
+
+    west patch gh-fetch --owner zephyrproject-rtos --repo zephyr --pull-request <pr-number> \
+      --module zephyr --split-commits
+
+The above command will create the directory and file structure below, which includes patches for
+each individual commit associated with the given pull request.
+
+.. code-block:: none
+
+    zephyr
+    ├── patches
+    │   ├── first-commit-from-pr.patch
+    │   ├── second-commit-from-pr.patch
+    │   └── third-commit-from-pr.patch
+    └── patches.yml

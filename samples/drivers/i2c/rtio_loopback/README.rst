@@ -48,3 +48,10 @@ If necessary, add any board specific configs to the board specific overlay:
 .. code-block:: cfg
 
    CONFIG_I2C_TARGET_BUFFER_MODE=y
+
+Transferred data sizes
+**********************
+
+One can tune the number of data bytes echanged during the tests using
+configuration options ``CONFIG_I2C_RTIO_LOOPBACK_DATA_READ_MAX_SIZE``
+and ``CONFIG_I2C_RTIO_LOOPBACK_DATA_WRITE_MAX_SIZE``.

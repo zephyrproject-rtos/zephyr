@@ -21,3 +21,11 @@ tests:
       - CONFIG_MDNS_RESPONDER=n
       - CONFIG_NET_IPV6_MLD=y
       - CONFIG_NET_IPV4_IGMP=y
+  net.dns.resolve.hostname:
+    extra_configs:
+      - CONFIG_NET_HOSTNAME_ENABLE=y
+      - CONFIG_NET_HOSTNAME="test-zephyr"
+      - CONFIG_NET_IPV6=y
+      - CONFIG_NET_IPV4=y
+      - CONFIG_NET_SOCKETS_DNS_TIMEOUT=5
+      - CONFIG_ZTEST_STACK_SIZE=1280

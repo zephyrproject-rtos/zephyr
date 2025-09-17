@@ -44,6 +44,12 @@ config BT_MAX_SCO_CONN
 	  Maximum number of simultaneous Bluetooth synchronous connections
 	  supported. The minimum (and default) number is 1.
 
+config BT_L2CAP_CONNLESS
+	bool "Bluetooth L2CAP connectionless data reception [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  This option enables Bluetooth L2CAP connectionless data reception
+
 config BT_L2CAP_RET
 	bool "Bluetooth L2CAP retransmission mode [EXPERIMENTAL]"
 	select EXPERIMENTAL
@@ -140,23 +146,12 @@ config BT_RFCOMM_L2CAP_MTU
 
 config BT_RFCOMM_TX_MAX
 	int "Maximum number of pending TX buffers for RFCOMM"
-	default BT_CONN_TX_MAX
-	range BT_CONN_TX_MAX $(UINT8_MAX)
+	default BT_BUF_ACL_TX_COUNT
+	range BT_BUF_ACL_TX_COUNT $(UINT8_MAX)
 	help
 	  Maximum number of pending TX buffers that have an associated
 	  sending buf. Normally this can be left to the default value, which
 	  is equal to the number of session in the stack-internal pool.
-
-config BT_RFCOMM_DLC_STACK_SIZE
-	int "Stack size of DLC for RFCOMM"
-	default 512
-	help
-	  Stack size of DLC for RFCOMM. This is the context from which
-	  all data of upper layer are sent and disconnect
-	  callback to the upper layer. The default value is sufficient
-	  for basic operation, but if the application needs to do
-	  advanced things in its callbacks that require extra stack
-	  space, this value can be increased to accommodate for that.
 
 config BT_HFP_HF
 	bool "Bluetooth Handsfree profile HF Role support [EXPERIMENTAL]"
@@ -419,6 +414,13 @@ config BT_HFP_AG_REJECT_CALL
 	help
 	  This option enables ability to reject a call for HFP AG
 
+config BT_HFP_AG_GET_ONGOING_CALL_TIMEOUT
+	int "Timeout after the get ongoing calls callback notified (milliseconds) [EXPERIMENTAL]"
+	default 10000
+	range 1000 10000
+	help
+	  This option sets the timeout after the get ongoing calls callback notified
+
 endif # BT_HFP_AG
 
 config BT_AVDTP
@@ -441,6 +443,14 @@ config BT_AVDTP_RTP_VERSION
 	default 2
 	help
 	  This option sets the AVDTP RTP protocol version
+
+config BT_AVDTP_SIGNAL_SDU_MAX
+	int "Maximum size of AVDTP signaling SDU"
+	default 512
+	range 48 $(UINT16_MAX)
+	help
+	  This option sets the maximum size of AVDTP signaling SDU.
+	  The default value is 512 bytes.
 
 endif # BT_AVDTP
 
@@ -483,7 +493,45 @@ config BT_AVRCP_CONTROLLER
 	help
 	  This option enables the AVRCP profile controller function
 
+config BT_AVRCP_BROWSING
+	bool "Bluetooth AVRCP Browsing channel support [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	select BT_L2CAP_ENH_RET
+	help
+	  This option enables support for the AVRCP Browsing channel
+	  over Bluetooth BR/EDR.
+
 endif # BT_AVRCP
+
+config BT_DID
+	bool "Bluetooth DID Profile [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  This option enables the DID profile
+
+if BT_DID
+config BT_DEVICE_VEDNOR_ID
+	hex "Bluetooth Device Vendor ID"
+	range 0x0000 $(UINT16_MAX)
+	default 0x0000
+	help
+	  This option sets the device vendor id
+
+config BT_DEVICE_PRODUCT_ID
+	hex "Bluetooth Device Product ID"
+	range 0x0000 $(UINT16_MAX)
+	default 0x0000
+	help
+	  This option sets the device product id
+
+config BT_DEVICE_VERSION
+	hex "Bluetooth Device Version"
+	range 0x0000 $(UINT16_MAX)
+	default 0x0000
+	help
+	  This option sets the device version
+
+endif # BT_DID
 
 config BT_PAGE_TIMEOUT
 	hex "Bluetooth Page Timeout"
@@ -500,6 +548,55 @@ config BT_COD
 	  This option sets the class of device.For the list of possible values please
 	  consult the following link:
 	  https://www.bluetooth.com/specifications/assigned-numbers
+
+config BT_DEFAULT_ROLE_SWITCH_ENABLE
+	bool "Default Bluetooth Role Switch Enable/Disable State"
+	help
+	  This option sets the controller's default link policy to
+	  enable/disable the role switch.
+
+config BT_GOEP
+	bool "Bluetooth GOEP Profile [EXPERIMENTAL]"
+	select BT_RFCOMM
+	select BT_L2CAP_ENH_RET
+	select EXPERIMENTAL
+	help
+	  This option enables the GOEP profile
+
+if BT_GOEP
+config BT_GOEP_RFCOMM_MTU
+	int "RFCOMM MTU for GOEP"
+	default BT_RFCOMM_L2CAP_MTU
+	# For GOEP over RFCOMM, including,
+	# 255 bytes - the minimum MTU of GOEP,
+	# 4 bytes - L2CAP Header,
+	# 5 bytes - 4 bytes for RFCOMM header with extended length, 1 byte for FCS.
+	range 264 BT_RFCOMM_L2CAP_MTU
+	help
+	  Maximum size of RFCOMM MTU for GOEP.
+	  RX MTU will be truncated to account for ACL data and type overhead, the L2CAP PDU header,
+	  and the RFCOMM header.
+
+config BT_GOEP_L2CAP_MTU
+	int "L2CAP MTU for GOEP"
+	default BT_BUF_ACL_RX_SIZE
+	# For GOEP over L2CAP, including,
+	# 255 bytes - the minimum MTU of GOEP,
+	# 4 bytes - L2CAP Header,
+	range 259 BT_BUF_ACL_RX_SIZE
+	help
+	  Maximum size of L2CAP MTU for GOEP.
+	  RX MTU will be truncated to account for ACL data and type overhead, and the L2CAP PDU
+	  header.
+
+config BT_OEBX_RSP_CODE_TO_STR
+	bool "Print OBEX response code as strings"
+	help
+	  This configuration enables printing of OBEX response
+	  codes represented as strings.
+	  See bt_obex_rsp_code_to_str() for more details.
+
+endif # BT_GOEP
 
 endif # BT_CLASSIC
 

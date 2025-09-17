@@ -348,18 +348,6 @@ static int phy_adin2111_get_link_state(const struct device *dev,
 	return 0;
 }
 
-static int phy_adin2111_cfg_link(const struct device *dev,
-				 enum phy_link_speed adv_speeds)
-{
-	ARG_UNUSED(dev);
-
-	if (!!(adv_speeds & LINK_FULL_10BASE_T)) {
-		return 0;
-	}
-
-	return -ENOTSUP;
-}
-
 static int phy_adin2111_reset(const struct device *dev)
 {
 	int ret;
@@ -377,7 +365,7 @@ static int phy_adin2111_reset(const struct device *dev)
 static void invoke_link_cb(const struct device *dev)
 {
 	struct phy_adin2111_data *const data = dev->data;
-	struct phy_link_state state;
+	struct phy_link_state state = data->state;
 
 	if (data->cb == NULL) {
 		return;
@@ -449,7 +437,7 @@ static int phy_adin2111_init(const struct device *dev)
 
 	data->dev = dev;
 	data->state.is_up = false;
-	data->state.speed = LINK_FULL_10BASE_T;
+	data->state.speed = LINK_FULL_10BASE;
 
 	/*
 	 * For adin1100 and further mii stuff,
@@ -624,7 +612,6 @@ static int phy_adin2111_link_cb_set(const struct device *dev, phy_callback_t cb,
 
 static DEVICE_API(ethphy, phy_adin2111_api) = {
 	.get_link = phy_adin2111_get_link_state,
-	.cfg_link = phy_adin2111_cfg_link,
 	.link_cb_set = phy_adin2111_link_cb_set,
 	.read = phy_adin2111_reg_read,
 	.write = phy_adin2111_reg_write,

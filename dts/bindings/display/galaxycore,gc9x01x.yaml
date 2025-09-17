@@ -3,13 +3,15 @@
 # Copyright (c) 2023 Martin Kiepfer <mrmarteng@teleschirm.org>
 # SPDX-License-Identifier: Apache-2.0
 
-description: |
-  GC9X01X display driver.
+title: |
+  Galaxycore GC9X01X display driver
 
+description: |
   This driver implements support for various GC9X01X graphics
   controllers and different display sizes. It has been validated
   for following controllers:
-   - GC9101A: (Waveshare 240x240, 1.28inch round lcd display 240x240)
+   - GC9101A: (Waveshare 240x240, 1.28inch round lcd display 240x240
+     with 65k colors)
 
   Here is an example to define a display interface:
 

@@ -6,12 +6,6 @@ rsource "*/Kconfig"
 
 if SOC_FAMILY_SILABS_S0 || SOC_FAMILY_SILABS_S1 || SOC_FAMILY_SILABS_S2
 
-config SOC_GECKO_SDID
-	int
-	help
-	  Gecko SDK sometime refere to the chipset using the internal ID. This
-	  entry reflects this ID.
-
 config SOC_GECKO_BURTC
 	bool
 	help
@@ -158,6 +152,13 @@ config SOC_GECKO_PM_BACKEND_EMU
 	default y if !SOC_GECKO_PM_BACKEND_PMGR
 	help
 	  Implement PM using direct calls to EMU driver in emlib
+
+config SOC_SILABS_PM_LOW_INTERRUPT_LATENCY
+	bool "Low interrupt latency mode"
+	default y if SOC_GECKO_PM_BACKEND_PMGR
+	help
+	  Enabling low interrupt latency allows interrupts to be executed
+	  before the high frequency clock is restored after sleep.
 
 endif # PM
 

@@ -8,16 +8,19 @@
 # This section covers flags related to optimization #
 #####################################################
 set_compiler_property(PROPERTY no_optimization -On)
-
 set_compiler_property(PROPERTY optimization_debug -Ol)
-
 set_compiler_property(PROPERTY optimization_speed -Ohs)
-
 set_compiler_property(PROPERTY optimization_size -Ohz)
-
 set_compiler_property(PROPERTY optimization_size_aggressive -Ohz)
-
 set_compiler_property(PROPERTY optimization_fast --no_size_constraints)
+
+# IAR uses the GNU assembler so the options differ from the compiler
+set_property(TARGET asm PROPERTY no_optimization -O0)
+set_property(TARGET asm PROPERTY optimization_debug -Og)
+set_property(TARGET asm PROPERTY optimization_speed -O2)
+set_property(TARGET asm PROPERTY optimization_size -Os)
+set_property(TARGET asm PROPERTY optimization_size_aggressive -Oz)
+set_property(TARGET asm PROPERTY optimization_fast -Ofast)
 
 #######################################################
 # This section covers flags related to warning levels #
@@ -120,6 +123,7 @@ set_property(TARGET compiler-cpp PROPERTY dialect_cpp17 --libc++)
 set_property(TARGET compiler-cpp PROPERTY dialect_cpp2a --libc++)
 set_property(TARGET compiler-cpp PROPERTY dialect_cpp20 --libc++)
 set_property(TARGET compiler-cpp PROPERTY dialect_cpp2b --libc++)
+set_property(TARGET compiler-cpp PROPERTY dialect_cpp23 --libc++)
 
 # Flag for disabling strict aliasing rule in C and C++
 set_compiler_property(PROPERTY no_strict_aliasing)

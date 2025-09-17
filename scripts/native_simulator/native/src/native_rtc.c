@@ -27,11 +27,11 @@ uint64_t native_rtc_gettime_us(int clock_type)
 
 		hwtimer_get_pseudohost_rtc_time(&nsec, &sec);
 		return sec * 1000000UL + nsec / 1000U;
+	} else {
+		nsi_print_error_and_exit("Unknown clock source %i\n",
+					clock_type);
+		return 0;
 	}
-
-	nsi_print_error_and_exit("Unknown clock source %i\n",
-				   clock_type);
-	return 0;
 }
 
 /**

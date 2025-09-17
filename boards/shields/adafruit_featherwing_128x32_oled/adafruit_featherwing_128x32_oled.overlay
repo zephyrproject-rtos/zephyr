@@ -1,0 +1,55 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,display = &ssd1306_ssd1306_128x32;
+	};
+
+	aliases {
+		sw0 = &buttonA;
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		buttonA: button_A {
+			gpios = <&feather_header 16 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; /* D9 */
+			label = "Button A";
+			zephyr,code = <INPUT_KEY_A>;
+		};
+
+		buttonB: button_B {
+			/* Button B has a pull up resistor on board. */
+			gpios = <&feather_header 15 GPIO_ACTIVE_LOW>; /* D6 */
+			label = "Button B";
+			zephyr,code = <INPUT_KEY_B>;
+		};
+
+		buttonC: button_C {
+			gpios = <&feather_header 14 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;	/* D5 */
+			label = "Button C";
+			zephyr,code = <INPUT_KEY_C>;
+		};
+	};
+};
+
+&feather_i2c {
+	ssd1306_ssd1306_128x32: ssd1306@3c {
+		compatible = "solomon,ssd1306fb";
+		reg = <0x3c>;
+		width = <128>;
+		height = <32>;
+		segment-offset = <0>;
+		page-offset = <0>;
+		display-offset = <0>;
+		multiplex-ratio = <31>;
+		segment-remap;
+		com-invdir;
+		com-sequential;
+		prechargep = <0x22>;
+	};
+};

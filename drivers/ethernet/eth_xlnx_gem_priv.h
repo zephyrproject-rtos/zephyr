@@ -453,7 +453,8 @@ static const struct eth_xlnx_gem_dev_cfg eth_xlnx_gem##port##_dev_cfg = {\
 	.enable_sgmii_mode		= DT_INST_PROP(port, sgmii_mode),\
 	.disable_reject_fcs_crc_errors	= DT_INST_PROP(port, disable_reject_fcs_crc_errors),\
 	.enable_rx_halfdup_while_tx	= DT_INST_PROP(port, rx_halfdup_while_tx),\
-	.enable_rx_chksum_offload	= DT_INST_PROP(port, rx_checksum_offload),\
+	.disable_rx_chksum_offload	= UTIL_OR(IS_ENABLED(CONFIG_QEMU_TARGET),\
+					  DT_INST_PROP(port, disable_rx_checksum_offload)),\
 	.disable_pause_copy		= DT_INST_PROP(port, disable_pause_copy),\
 	.discard_rx_fcs			= DT_INST_PROP(port, discard_rx_fcs),\
 	.discard_rx_length_errors	= DT_INST_PROP(port, discard_rx_length_errors),\
@@ -464,11 +465,11 @@ static const struct eth_xlnx_gem_dev_cfg eth_xlnx_gem##port##_dev_cfg = {\
 	.enable_ucast_hash		= DT_INST_PROP(port, unicast_hash),\
 	.enable_mcast_hash		= DT_INST_PROP(port, multicast_hash),\
 	.disable_bcast			= DT_INST_PROP(port, reject_broadcast),\
-	.copy_all_frames		= DT_INST_PROP(port, promiscuous_mode),\
 	.discard_non_vlan		= DT_INST_PROP(port, discard_non_vlan),\
 	.enable_fdx			= DT_INST_PROP(port, full_duplex),\
 	.disc_rx_ahb_unavail		= DT_INST_PROP(port, discard_rx_frame_ahb_unavail),\
-	.enable_tx_chksum_offload	= DT_INST_PROP(port, tx_checksum_offload),\
+	.disable_tx_chksum_offload	= UTIL_OR(IS_ENABLED(CONFIG_QEMU_TARGET),\
+					  DT_INST_PROP(port, disable_tx_checksum_offload)),\
 	.tx_buffer_size_full		= DT_INST_PROP(port, hw_tx_buffer_size_full),\
 	.enable_ahb_packet_endian_swap	= DT_INST_PROP(port, ahb_packet_endian_swap),\
 	.enable_ahb_md_endian_swap	= DT_INST_PROP(port, ahb_md_endian_swap)\
@@ -477,7 +478,7 @@ static const struct eth_xlnx_gem_dev_cfg eth_xlnx_gem##port##_dev_cfg = {\
 /* Device run-time data declaration macro */
 #define ETH_XLNX_GEM_DEV_DATA(port) \
 static struct eth_xlnx_gem_dev_data eth_xlnx_gem##port##_dev_data = {\
-	.mac_addr        = DT_INST_PROP(port, local_mac_address),\
+	.mac_addr        = DT_INST_PROP_OR(port, local_mac_address, {0}),\
 	.started         = 0,\
 	.eff_link_speed  = LINK_DOWN,\
 	.phy_addr        = 0,\
@@ -711,7 +712,7 @@ struct eth_xlnx_gem_dev_cfg {
 	bool				enable_sgmii_mode : 1;
 	bool				disable_reject_fcs_crc_errors : 1;
 	bool				enable_rx_halfdup_while_tx : 1;
-	bool				enable_rx_chksum_offload : 1;
+	bool				disable_rx_chksum_offload : 1;
 	bool				disable_pause_copy : 1;
 	bool				discard_rx_fcs : 1;
 	bool				discard_rx_length_errors : 1;
@@ -722,11 +723,10 @@ struct eth_xlnx_gem_dev_cfg {
 	bool				enable_ucast_hash : 1;
 	bool				enable_mcast_hash : 1;
 	bool				disable_bcast : 1;
-	bool				copy_all_frames : 1;
 	bool				discard_non_vlan : 1;
 	bool				enable_fdx : 1;
 	bool				disc_rx_ahb_unavail : 1;
-	bool				enable_tx_chksum_offload : 1;
+	bool				disable_tx_chksum_offload : 1;
 	bool				tx_buffer_size_full : 1;
 	bool				enable_ahb_packet_endian_swap : 1;
 	bool				enable_ahb_md_endian_swap : 1;

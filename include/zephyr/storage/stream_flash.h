@@ -65,8 +65,11 @@ struct stream_flash_ctx {
 	stream_flash_callback_t callback; /* Callback invoked after write op */
 #endif
 #ifdef CONFIG_STREAM_FLASH_ERASE
-	size_t erased_up_to;		/* Offset of last erased byte, relative to
-					 * offset in this context.
+	size_t erased_up_to;		/* First offset in continuous range,
+					 * relative to the stream_flash_ctx.offset,
+					 * that has not yet been erased while
+					 * preparing Stream Flash designated area
+					 * for write.
 					 */
 #endif
 	size_t write_block_size;	/* Offset/size device write alignment */
@@ -102,6 +105,15 @@ int stream_flash_init(struct stream_flash_ctx *ctx, const struct device *fdev,
  * @return Number of payload bytes written to flash.
  */
 size_t stream_flash_bytes_written(const struct stream_flash_ctx *ctx);
+
+/**
+ * @brief Read number of bytes buffered for the next flash write.
+ *
+ * @param ctx context
+ *
+ * @return Number of payload bytes buffered for the next flash write.
+ */
+size_t stream_flash_bytes_buffered(const struct stream_flash_ctx *ctx);
 
 /**
  * @brief Process input buffers to be written to flash device in single blocks.

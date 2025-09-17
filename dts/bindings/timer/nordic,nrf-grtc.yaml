@@ -45,3 +45,10 @@ properties:
     description: Number of capture/compare channels
     type: int
     required: true
+
+  clock-frequency:
+    type: int
+    default: 1000000
+    description: |
+      Clock frequency information for tick increment operations, this default value comes from
+      the nRF54L15 datasheet.

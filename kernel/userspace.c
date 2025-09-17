@@ -364,7 +364,7 @@ static struct k_object *dynamic_object_create(enum k_objects otype, size_t align
 	} else {
 		dyn->data = z_thread_aligned_alloc(align, obj_size_get(otype) + size);
 		if (dyn->data == NULL) {
-			k_free(dyn->data);
+			k_free(dyn);
 			return NULL;
 		}
 		dyn->kobj.name = dyn->data;
@@ -521,6 +521,33 @@ void k_object_wordlist_foreach(_wordlist_cb_func_t func, void *context)
 }
 #endif /* CONFIG_DYNAMIC_OBJECTS */
 
+/* In the earlier linker-passes before we have the real generated
+ * implementation of the lookup functions, we need some weak dummies.
+ * Being __weak, they will be replaced by the generated implementations in
+ * the later linker passes.
+ */
+#ifdef CONFIG_DYNAMIC_OBJECTS
+Z_GENERIC_SECTION(.kobject_data.text.dummies)
+__weak struct k_object *z_object_gperf_find(const void *obj)
+{
+	return NULL;
+}
+Z_GENERIC_SECTION(.kobject_data.text.dummies)
+__weak void z_object_gperf_wordlist_foreach(_wordlist_cb_func_t func, void *context)
+{
+}
+#else
+Z_GENERIC_SECTION(.kobject_data.text.dummies)
+__weak struct k_object *k_object_find(const void *obj)
+{
+	return NULL;
+}
+Z_GENERIC_SECTION(.kobject_data.text.dummies)
+__weak void k_object_wordlist_foreach(_wordlist_cb_func_t func, void *context)
+{
+}
+#endif
+
 static unsigned int thread_index_get(struct k_thread *thread)
 {
 	struct k_object *ko;
@@ -564,11 +591,6 @@ static void unref_check(struct k_object *ko, uintptr_t index)
 	 * specifically needs to happen depends on the object type.
 	 */
 	switch (ko->type) {
-#ifdef CONFIG_PIPES
-	case K_OBJ_PIPE:
-		k_pipe_cleanup((struct k_pipe *)ko->name);
-		break;
-#endif /* CONFIG_PIPES */
 	case K_OBJ_MSGQ:
 		k_msgq_cleanup((struct k_msgq *)ko->name);
 		break;

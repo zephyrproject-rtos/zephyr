@@ -7,13 +7,13 @@
 	uart1_test: uart1_test {
 		group1 {
 			pinmux = <UART1_TX_GPIO2>,
-				<UART1_RTS_GPIO3>;
+				 <UART1_RTS_GPIO3>;
 			input-enable;
 			output-high;
 		};
 		group2 {
 			pinmux = <UART1_RX_GPIO2>,
-				<UART1_CTS_GPIO3>;
+				 <UART1_CTS_GPIO3>;
 			output-enable;
 			bias-pull-up;
 		};

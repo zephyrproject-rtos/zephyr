@@ -20,6 +20,7 @@
 		watchdog0 = &wdt0;
 		rtc = &pfc8563_rtc;
 		pwm-led0 = &backlight_pwm;
+		fuel-gauge0 = &fuel_gauge;
 	};
 
 	chosen {
@@ -227,6 +228,10 @@
 			dldo2 {
 				regulator-boot-off;
 			};
+		};
+
+		fuel_gauge: fuel_gauge {
+			compatible = "x-powers,axp2101-fuel-gauge";
 		};
 	};
 };

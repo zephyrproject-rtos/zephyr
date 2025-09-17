@@ -10,7 +10,7 @@ menuconfig GPIO_MAX2219X
 	depends on SPI
 	depends on DT_HAS_ADI_MAX22190_GPIO_ENABLED || DT_HAS_ADI_MAX22199_GPIO_ENABLED
 	help
-	  Enabe MAX2219X Octal industrial digital
+	  Enable MAX2219X Octal industrial digital
 	  input with diagnostics
 
 config GPIO_MAX22190_INIT_PRIORITY

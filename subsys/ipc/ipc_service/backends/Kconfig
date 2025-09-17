@@ -23,7 +23,7 @@ config IPC_SERVICE_BACKEND_ICMSG
 	depends on DT_HAS_ZEPHYR_IPC_ICMSG_ENABLED
 	select IPC_SERVICE_ICMSG
 	help
-	  Chosing this backend results in single endpoint implementation based
+	  Choosing this backend results in single endpoint implementation based
 	  on circular packet buffer.
 
 config IPC_SERVICE_BACKEND_ICMSG_ME_INITIATOR
@@ -33,8 +33,8 @@ config IPC_SERVICE_BACKEND_ICMSG_ME_INITIATOR
 	depends on DT_HAS_ZEPHYR_IPC_ICMSG_ME_INITIATOR_ENABLED
 	select IPC_SERVICE_ICMSG_ME
 	help
-	  Chosing this backend results in multi endpoint implementation based
-	  on circular packet buffer. This enables enpoint discovery initiator
+	  Choosing this backend results in multi endpoint implementation based
+	  on circular packet buffer. This enables endpoint discovery initiator
 	  role.
 
 config IPC_SERVICE_BACKEND_ICMSG_ME_FOLLOWER
@@ -44,8 +44,8 @@ config IPC_SERVICE_BACKEND_ICMSG_ME_FOLLOWER
 	depends on DT_HAS_ZEPHYR_IPC_ICMSG_ME_FOLLOWER_ENABLED
 	select IPC_SERVICE_ICMSG_ME
 	help
-	  Chosing this backend results in multi endpoint implementation based
-	  on circular packet buffer. This enables enpoint discovery follower
+	  Choosing this backend results in multi endpoint implementation based
+	  on circular packet buffer. This enables endpoint discovery follower
 	  role.
 
 rsource "Kconfig.icmsg_me"

@@ -63,7 +63,7 @@ struct uart_ra_sci_data {
 
 	struct st_transfer_instance rx_transfer;
 	struct st_dtc_instance_ctrl rx_transfer_ctrl;
-	struct st_transfer_info rx_transfer_info;
+	struct st_transfer_info rx_transfer_info DTC_TRANSFER_INFO_ALIGNMENT;
 	struct st_transfer_cfg rx_transfer_cfg;
 	struct st_dtc_extended_cfg rx_transfer_cfg_extend;
 
@@ -72,7 +72,7 @@ struct uart_ra_sci_data {
 
 	struct st_transfer_instance tx_transfer;
 	struct st_dtc_instance_ctrl tx_transfer_ctrl;
-	struct st_transfer_info tx_transfer_info;
+	struct st_transfer_info tx_transfer_info DTC_TRANSFER_INFO_ALIGNMENT;
 	struct st_transfer_cfg tx_transfer_cfg;
 	struct st_dtc_extended_cfg tx_transfer_cfg_extend;
 #endif
@@ -960,7 +960,7 @@ static int uart_ra_sci_init(const struct device *dev)
 	data->fsp_config_extend.p_baud_setting = &data->fsp_baud_setting;
 #if defined(CONFIG_UART_ASYNC_API)
 	data->fsp_config.p_callback = uart_ra_sci_callback_adapter;
-	data->fsp_config.p_context = dev;
+	data->fsp_config.p_context = (void *)dev;
 	k_work_init_delayable(&data->tx_timeout, uart_ra_sci_tx_timeout_handler);
 	k_work_init_delayable(&data->rx_timeout_work, uart_ra_sci_rx_timeout_handler);
 #endif /* defined(CONFIG_UART_ASYNC_API) */

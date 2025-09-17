@@ -8,6 +8,7 @@
 #include <arm/armv8-m.dtsi>
 #include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 
 / {
 	cpus {
@@ -28,7 +29,47 @@
 		status = "okay";
 	};
 
+	cmc {
+		compatible = "nxp,cmc-reset-cause";
+	};
+
 	soc {
+		ctimer0: ctimer@40004000 {
+			compatible = "nxp,lpc-ctimer";
+			reg = <0x40004000 0x1000>;
+			interrupts = <39 0>;
+			status = "disabled";
+			clk-source = <1>;
+			clocks = <&syscon MCUX_CTIMER0_CLK>;
+			mode = <0>;
+			input = <0>;
+			prescale = <0>;
+		};
+
+		ctimer1: ctimer@40005000 {
+			compatible = "nxp,lpc-ctimer";
+			reg = <0x40005000 0x1000>;
+			interrupts = <40 0>;
+			status = "disabled";
+			clk-source = <1>;
+			clocks = <&syscon MCUX_CTIMER1_CLK>;
+			mode = <0>;
+			input = <0>;
+			prescale = <0>;
+		};
+
+		ctimer2: ctimer@40006000 {
+			compatible = "nxp,lpc-ctimer";
+			reg = <0x40006000 0x1000>;
+			interrupts = <41 0>;
+			status = "disabled";
+			clk-source = <1>;
+			clocks = <&syscon MCUX_CTIMER2_CLK>;
+			mode = <0>;
+			input = <0>;
+			prescale = <0>;
+		};
+
 		edma0: dma-controller@40080000 {
 			#dma-cells = <2>;
 			compatible = "nxp,mcux-edma";
@@ -47,6 +88,7 @@
 			reg = <0x400a9000 0x1000>;
 			interrupt-names = "RELOAD-ERROR", "FAULT";
 			interrupts = <44 0>, <45 0>;
+
 			flexpwm0_pwm0: pwm0 {
 				compatible = "nxp,imx-pwm";
 				index = <0>;
@@ -95,6 +137,11 @@
 				erase-block-size = <8192>;
 				write-block-size = <128>;
 			};
+
+			uuid: uuid@1100800 {
+				compatible = "nxp,lpc-uid";
+				reg = <0x1100800 0x10>;
+			};
 		};
 
 		gpio0: gpio@40102000 {
@@ -137,6 +184,97 @@
 			nxp,kinetis-port = <&portd>;
 		};
 
+		i3c0: i3c@40002000 {
+			compatible = "nxp,mcux-i3c";
+			reg = <0x40002000 0x1000>;
+			interrupts = <24 0>;
+			clocks = <&syscon MCUX_I3C_CLK>;
+			clk-divider = <4>;
+			clk-divider-slow = <1>;
+			clk-divider-tc = <1>;
+			status = "disabled";
+			#address-cells = <3>;
+			#size-cells = <0>;
+		};
+
+		lpadc0: lpadc@400af000 {
+			compatible = "nxp,lpc-lpadc";
+			reg = <0x400af000 0x1000>;
+			interrupts = <62 0>;
+			status = "disabled";
+			clk-divider = <1>;
+			clk-source = <0>;
+			voltage-ref = <2>;
+			calibration-average = <128>;
+			power-level = <0>;
+			offset-value-a = <0>;
+			offset-value-b = <0>;
+			#io-channel-cells = <1>;
+			clocks = <&syscon MCUX_LPADC1_CLK>;
+		};
+
+		lpcmp0: lpcmp@400b1000 {
+			compatible = "nxp,lpcmp";
+			reg = <0x400b1000 0x1000>;
+			interrupts = <64 0>;
+			status = "disabled";
+			#io-channel-cells = <2>;
+		};
+
+		lpcmp1: lpcmp@400b2000 {
+			compatible = "nxp,lpcmp";
+			reg = <0x400b2000 0x1000>;
+			interrupts = <65 0>;
+			status = "disabled";
+			#io-channel-cells = <2>;
+		};
+
+		lpi2c0: i2c@4009a000 {
+			compatible = "nxp,lpi2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x4009a000 0x1000>;
+			interrupts = <26 0>;
+			clocks = <&syscon MCUX_LPI2C0_CLK>;
+			status = "disabled";
+		};
+
+		lpspi0: spi@4009c000 {
+			compatible = "nxp,lpspi";
+			reg = <0x4009c000 0x1000>;
+			interrupts = <28 0>;
+			clocks = <&syscon MCUX_LPSPI0_CLK>;
+			tx-fifo-size = <4>;
+			rx-fifo-size = <4>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		lpspi1: spi@4009d000 {
+			compatible = "nxp,lpspi";
+			reg = <0x4009d000 0x1000>;
+			interrupts = <29 0>;
+			clocks = <&syscon MCUX_LPSPI1_CLK>;
+			tx-fifo-size = <4>;
+			rx-fifo-size = <4>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		lptmr0: lptmr@400ab000 {
+			compatible = "nxp,lptmr";
+			reg = <0x400ab000 0x1000>;
+			interrupts = <55 0>;
+			clock-frequency = <16000>;
+			prescaler = <1>;
+			clk-source = <1>;
+			resolution = <32>;
+			status = "disabled";
+		};
+
 		lpuart0: lpuart@4009f000 {
 			compatible = "nxp,lpuart";
 			status = "disabled";
@@ -168,6 +306,13 @@
 			/* DMA channels 2 and 3, muxed to LPUART2 RX and TX */
 			dmas = <&edma0 2 25>, <&edma0 3 26>;
 			dma-names = "rx", "tx";
+		};
+
+		ostimer0: timers@400ad000 {
+			compatible = "nxp,os-timer";
+			reg = <0x400ad000 0x1000>;
+			interrupts = <57 0>;
+			status = "disabled";
 		};
 
 		porta: pinmux@400bc000 {
@@ -213,6 +358,29 @@
 				compatible = "nxp,lpc-syscon-reset";
 				#reset-cells = <1>;
 			};
+		};
+
+		temp0: temp0 {
+			compatible = "nxp,lpadc-temp40";
+			status = "disabled";
+		};
+
+		usb: usbd@400a4000 {
+			compatible = "nxp,kinetis-usbd";
+			reg = <0x400a4000 0x1000>;
+			interrupts = <36 1>;
+			interrupt-names = "usb";
+			num-bidir-endpoints = <16>;
+			status = "disabled";
+			no-voltage-regulator;
+		};
+
+		wwdt0: watchdog@4000c000 {
+			compatible = "nxp,lpc-wwdt";
+			reg = <0x4000c000 0x1000>;
+			interrupts = <60 0>;
+			status = "disabled";
+			clk-divider = <1>;
 		};
 	};
 };

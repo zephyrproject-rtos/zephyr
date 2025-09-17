@@ -1,0 +1,21 @@
+common:
+  tags: linker
+  arch_allow: arm
+  filter: CONFIG_CPU_CORTEX_M_HAS_VTOR
+tests:
+  application_development.ram_context_for_isr:
+    # Exclude mps3/corstone310 because it uses another mechanism to support relocation
+    # of the vector table (CONFIG_ROMSTART_RELOCATION_ROM).
+    platform_exclude:
+      - mps3/corstone310/an555
+      - mps3/corstone310/fvp
+      - mps4/corstone315/fvp
+      - mps4/corstone320/fvp
+      - imx943_evk/mimx94398/m33
+      - imx943_evk/mimx94398/m33/ddr
+      - frdm_mcxc444/mcxc444
+      - frdm_mcxc242/mcxc242
+      - frdm_mcxn947/mcxn947/cpu0/qspi
+      - hexiwear/mkw40z4
+      - frdm_kw41z/mkw41z4
+      - frdm_kl25z/mkl25z4

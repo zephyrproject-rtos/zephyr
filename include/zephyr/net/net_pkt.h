@@ -237,6 +237,7 @@ struct net_pkt {
 	uint8_t chksum_done : 1; /* Checksum has already been computed for
 				  * the packet.
 				  */
+	uint8_t loopback : 1; /* Packet is a loop back packet. */
 #if defined(CONFIG_NET_IP_FRAGMENT)
 	uint8_t ip_reassembled : 1; /* Packet is a reassembled IP packet. */
 #endif
@@ -316,18 +317,18 @@ struct net_pkt {
 	uint16_t vlan_tci;
 #endif /* CONFIG_NET_VLAN */
 
-#if defined(NET_PKT_HAS_CONTROL_BLOCK)
-	/* TODO: Evolve this into a union of orthogonal
-	 *       control block declarations if further L2
-	 *       stacks require L2-specific attributes.
-	 */
+#if defined(CONFIG_NET_PKT_CONTROL_BLOCK)
+	/* Control block which could be used by any layer */
+	union {
+		uint8_t cb[CONFIG_NET_PKT_CONTROL_BLOCK_SIZE];
 #if defined(CONFIG_IEEE802154)
-	/* The following structure requires a 4-byte alignment
-	 * boundary to avoid padding.
-	 */
-	struct net_pkt_cb_ieee802154 cb;
+		/* The following structure requires a 4-byte alignment
+		 * boundary to avoid padding.
+		 */
+		struct net_pkt_cb_ieee802154 cb_ieee802154;
 #endif /* CONFIG_IEEE802154 */
-#endif /* NET_PKT_HAS_CONTROL_BLOCK */
+	} cb;
+#endif /* CONFIG_NET_PKT_CONTROL_BLOCK */
 
 	/** Network packet priority, can be left out in which case packet
 	 * is not prioritised.
@@ -1020,6 +1021,17 @@ static inline void net_pkt_set_ipv6_fragment_id(struct net_pkt *pkt,
 }
 #endif /* CONFIG_NET_IPV6_FRAGMENT */
 
+static inline bool net_pkt_is_loopback(struct net_pkt *pkt)
+{
+	return !!(pkt->loopback);
+}
+
+static inline void net_pkt_set_loopback(struct net_pkt *pkt,
+					bool loopback)
+{
+	pkt->loopback = loopback;
+}
+
 #if defined(CONFIG_NET_IP_FRAGMENT)
 static inline bool net_pkt_is_ip_reassembled(struct net_pkt *pkt)
 {
@@ -1451,7 +1463,7 @@ static inline void net_pkt_set_ppp(struct net_pkt *pkt,
 }
 #endif /* CONFIG_NET_L2_PPP */
 
-#if defined(NET_PKT_HAS_CONTROL_BLOCK)
+#if defined(CONFIG_NET_PKT_CONTROL_BLOCK)
 static inline void *net_pkt_cb(struct net_pkt *pkt)
 {
 	return &pkt->cb;
@@ -2564,11 +2576,12 @@ static inline size_t net_pkt_get_len(struct net_pkt *pkt)
 int net_pkt_update_length(struct net_pkt *pkt, size_t length);
 
 /**
- * @brief Remove data from the packet at current location
+ * @brief Remove data from the start of the packet.
  *
- * @details net_pkt's cursor should be properly initialized and,
- *          eventually, properly positioned using net_pkt_skip/read/write.
+ * @details net_pkt's cursor should be properly initialized.
  *          Note that net_pkt's cursor is reset by this function.
+ *          This functions works in similar way as net_buf_pull(),
+ *          but it can handle multiple net_buf fragments.
  *
  * @param pkt    Network packet
  * @param length Number of bytes to be removed

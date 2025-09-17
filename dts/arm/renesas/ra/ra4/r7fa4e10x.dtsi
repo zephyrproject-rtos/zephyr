@@ -7,12 +7,14 @@
 #include <arm/renesas/ra/ra4/ra4-cm33-common.dtsi>
 #include <zephyr/dt-bindings/clock/ra_clock.h>
 #include <zephyr/dt-bindings/pwm/ra_pwm.h>
+#include <zephyr/dt-bindings/misc/renesas/ra-elc/ra4e1-elc.h>
 
 /delete-node/ &spi1;
 /delete-node/ &agt4;
 /delete-node/ &adc1;
 /delete-node/ &dac1;
 /delete-node/ &iic1;
+/delete-node/ &i3c0;
 /delete-node/ &pwm0;
 
 / {
@@ -65,6 +67,55 @@
 		trng: trng {
 			compatible = "renesas,ra-sce9-rng";
 			status = "disabled";
+		};
+
+		option-setting-ofs-conf@100a100 {
+			reg = <0x0100a100 0x200>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "okay";
+
+			option_setting_ofs0: option-setting-ofs0@100a100 {
+				compatible = "zephyr,memory-region";
+				zephyr,memory-region = "OFS_OFS0_MEMORY";
+				reg = <0x0100a100 0x4>;
+				status = "okay";
+			};
+
+			option_setting_ofs1_sec: option-setting-ofs1-sec@100a200 {
+				compatible = "zephyr,memory-region";
+				zephyr,memory-region = "OFS_OFS1_SEC_MEMORY";
+				reg = <0x0100a200 0x4>;
+				status = "okay";
+			};
+
+			option_setting_bps_sec: option-setting-bps-sec@100a240 {
+				compatible = "zephyr,memory-region";
+				zephyr,memory-region = "OFS_BPS_SEC_MEMORY";
+				reg = <0x0100a240 0x4>;
+				status = "okay";
+			};
+
+			option_setting_pbps_sec: option-setting-pbps-sec@100a260 {
+				compatible = "zephyr,memory-region";
+				zephyr,memory-region = "OFS_PBPS_SEC_MEMORY";
+				reg = <0x0100a260 0x4>;
+				status = "okay";
+			};
+
+			option_setting_ofs1_sel: option-setting-ofs1-sel@100a280 {
+				compatible = "zephyr,memory-region";
+				zephyr,memory-region = "OFS_OFS1_SEL_MEMORY";
+				reg = <0x0100a280 0x4>;
+				status = "okay";
+			};
+
+			option_setting_bps_sel: option-setting-bps-sel@100a2c0 {
+				compatible = "zephyr,memory-region";
+				zephyr,memory-region = "OFS_BPS_SEL_MEMORY";
+				reg = <0x0100a2c0 0x4>;
+				status = "okay";
+			};
 		};
 	};
 
@@ -195,7 +246,7 @@
 
 &ioport0 {
 	port-irqs = <&port_irq6 &port_irq7 &port_irq8
-	&port_irq9 &port_irq13>;
+		     &port_irq9 &port_irq13>;
 	port-irq-names = "port-irq6",
 			 "port-irq7",
 			 "port-irq8",
@@ -210,7 +261,7 @@
 
 &ioport1 {
 	port-irqs = <&port_irq0 &port_irq1 &port_irq2
-	&port_irq3 &port_irq4>;
+		     &port_irq3 &port_irq4>;
 	port-irq-names = "port-irq0",
 			 "port-irq1",
 			 "port-irq2",
@@ -225,7 +276,7 @@
 
 &ioport2 {
 	port-irqs = <&port_irq0 &port_irq1 &port_irq2
-	&port_irq3>;
+		     &port_irq3>;
 	port-irq-names = "port-irq0",
 			 "port-irq1",
 			 "port-irq2",
@@ -248,7 +299,7 @@
 
 &ioport4 {
 	port-irqs = <&port_irq0 &port_irq4 &port_irq5
-	&port_irq6 &port_irq7>;
+		     &port_irq6 &port_irq7>;
 	port-irq-names = "port-irq0",
 			 "port-irq4",
 			 "port-irq5",
@@ -259,6 +310,7 @@
 	port-irq5-pins = <1 10>;
 	port-irq6-pins = <9>;
 	port-irq7-pins = <8>;
+	vbatts-pins = <2>;
 };
 
 &dac_global {

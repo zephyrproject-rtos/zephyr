@@ -6,7 +6,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 #include <nxp/lpc/LPC55S36JBD100-pinctrl.h>
 
 &pinctrl {
@@ -14,7 +13,7 @@
 	pinmux_flexcomm0_usart: pinmux_flexcomm0_usart {
 		group0 {
 			pinmux = <FC0_RXD_SDA_MOSI_DATA_PIO0_29>,
-				<FC0_TXD_SCL_MISO_WS_PIO0_30>;
+				 <FC0_TXD_SCL_MISO_WS_PIO0_30>;
 			slew-rate = "standard";
 		};
 	};
@@ -23,7 +22,7 @@
 	pinmux_flexcomm2_i2c: pinmux_flexcomm2_i2c {
 		group0 {
 			pinmux = <FC2_CTS_SDA_SSEL0_PIO1_26>,
-				<FC2_TXD_SCL_MISO_WS_PIO1_25>;
+				 <FC2_TXD_SCL_MISO_WS_PIO1_25>;
 			slew-rate = "standard";
 		};
 	};
@@ -32,9 +31,9 @@
 	pinmux_hs_lspi_default: pinmux_hs_lspi_default {
 		group0 {
 			pinmux = <HS_SPI_MISO_PIO1_3>,
-				<HS_SPI_MOSI_PIO0_26>,
-				<HS_SPI_SCK_PIO1_2>,
-				<HS_SPI_SSEL0_PIO0_20>;
+				 <HS_SPI_MOSI_PIO0_26>,
+				 <HS_SPI_SCK_PIO1_2>,
+				 <HS_SPI_SSEL0_PIO0_20>;
 			slew-rate = "standard";
 		};
 	};
@@ -51,7 +50,7 @@
 	pinmux_sctimer_default: pinmux_sctimer_default {
 		group0 {
 			pinmux = <SCT0_OUT0_PIO1_4>,
-				<SCT0_OUT2_PIO0_15>;
+				 <SCT0_OUT2_PIO0_15>;
 			slew-rate = "standard";
 		};
 	};
@@ -68,7 +67,7 @@
 	pinmux_flexpwm0_pwm0: pinmux_flexpwm0_pwm0 {
 		group0 {
 			pinmux = <PWM0_A0_PIO1_20>,
-				<PWM0_B0_PIO1_17>;
+				 <PWM0_B0_PIO1_17>;
 			slew-rate = "standard";
 		};
 	};
@@ -76,7 +75,7 @@
 	pinmux_flexpwm0_pwm1: pinmux_flexpwm0_pwm1 {
 		group0 {
 			pinmux = <PWM0_A1_PIO1_6>,
-				<PWM0_B1_PIO1_22>;
+				 <PWM0_B1_PIO1_22>;
 			slew-rate = "standard";
 		};
 	};
@@ -84,7 +83,7 @@
 	pinmux_flexpwm0_pwm2: pinmux_flexpwm0_pwm2 {
 		group0 {
 			pinmux = <PWM0_A2_PIO1_8>,
-				<PWM0_B2_PIO1_4>;
+				 <PWM0_B2_PIO1_4>;
 			slew-rate = "standard";
 		};
 	};
@@ -92,7 +91,7 @@
 	pinmux_flexpwm1_pwm0: pinmux_flexpwm1_pwm0 {
 		group0 {
 			pinmux = <PWM1_A0_PIO1_21>,
-				<PWM1_B0_PIO0_3>;
+				 <PWM1_B0_PIO0_3>;
 			slew-rate = "standard";
 		};
 	};
@@ -100,7 +99,7 @@
 	pinmux_flexpwm1_pwm1: pinmux_flexpwm1_pwm1 {
 		group0 {
 			pinmux = <PWM1_A1_PIO1_23>,
-				<PWM1_B1_PIO0_21>;
+				 <PWM1_B1_PIO0_21>;
 			slew-rate = "standard";
 		};
 	};
@@ -108,7 +107,7 @@
 	pinmux_flexpwm1_pwm2: pinmux_flexpwm1_pwm2 {
 		group0 {
 			pinmux = <PWM1_A2_PIO1_25>,
-				<PWM1_B2_PIO1_31>;
+				 <PWM1_B2_PIO1_31>;
 			slew-rate = "standard";
 		};
 	};

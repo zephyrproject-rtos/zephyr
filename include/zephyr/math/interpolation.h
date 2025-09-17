@@ -20,6 +20,13 @@ extern "C" {
  */
 
 /**
+ * @defgroup math_interpolation Math Interpolation Functions
+ * @ingroup utilities
+ * @brief Linear interpolation utilities for mathematical operations
+ * @{
+ */
+
+/**
  * @brief Perform a linear interpolation across an arbitrary curve
  *
  * @note Result rounding occurs away from 0, e.g:
@@ -67,6 +74,10 @@ static inline int32_t linear_interpolate(const int32_t *x_axis, const int32_t *y
 	/* Apply slope, undo origin shift and round */
 	return roundf(y_axis[idx_low] + (slope * x_shifted));
 }
+
+/**
+ * @}
+ */
 
 #ifdef __cplusplus
 }

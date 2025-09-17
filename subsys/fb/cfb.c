@@ -273,8 +273,16 @@ static uint8_t draw_char_htmono(const struct char_framebuffer *fb,
 static inline void draw_point(struct char_framebuffer *fb, int16_t x, int16_t y)
 {
 	const bool need_reverse = ((fb->screen_info & SCREEN_INFO_MONO_MSB_FIRST) != 0);
-	const size_t index = ((y / 8) * fb->x_res);
-	uint8_t m = BIT(y % 8);
+	size_t index;
+	uint8_t m;
+
+	if ((fb->screen_info & SCREEN_INFO_MONO_VTILED) != 0) {
+		index = (x + (y / 8) * fb->x_res);
+		m = BIT(y % 8);
+	} else {
+		index = ((x / 8) + y * (fb->x_res / 8));
+		m = BIT(x % 8);
+	}
 
 	if (x < 0 || x >= fb->x_res) {
 		return;
@@ -288,7 +296,7 @@ static inline void draw_point(struct char_framebuffer *fb, int16_t x, int16_t y)
 		m = byte_reverse(m);
 	}
 
-	fb->buf[index + x] |= m;
+	fb->buf[index] |= m;
 }
 
 static void draw_line(struct char_framebuffer *fb, int16_t x0, int16_t y0, int16_t x1, int16_t y1)
@@ -382,6 +390,36 @@ int cfb_draw_rect(const struct device *dev, const struct cfb_position *start,
 	draw_line(fb, end->x, start->y, end->x, end->y);
 	draw_line(fb, end->x, end->y, start->x, end->y);
 	draw_line(fb, start->x, end->y, start->x, start->y);
+
+	return 0;
+}
+
+int cfb_draw_circle(const struct device *dev, const struct cfb_position *center, uint16_t radius)
+{
+	struct char_framebuffer *fb = &char_fb;
+	uint16_t x = 0;
+	int16_t y = -radius;
+	int16_t p = -radius;
+
+	/* Using the Midpoint Circle Algorithm */
+	while (x < -y) {
+		if (p > 0) {
+			p += 2 * (x + ++y) + 1;
+		} else {
+			p += 2 * x + 1;
+		}
+
+		draw_point(fb, center->x + x, center->y + y);
+		draw_point(fb, center->x - x, center->y + y);
+		draw_point(fb, center->x + x, center->y - y);
+		draw_point(fb, center->x - x, center->y - y);
+		draw_point(fb, center->x + y, center->y + x);
+		draw_point(fb, center->x + y, center->y - x);
+		draw_point(fb, center->x - y, center->y + x);
+		draw_point(fb, center->x - y, center->y - x);
+
+		x++;
+	}
 
 	return 0;
 }

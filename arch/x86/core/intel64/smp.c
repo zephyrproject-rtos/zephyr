@@ -8,6 +8,7 @@
 #include <kernel_arch_data.h>
 #include <x86_mmu.h>
 #include <zephyr/init.h>
+#include <ipi.h>
 
 #define NR_IRQ_VECTORS (IV_NR_VECTORS - IV_IRQS)  /* # vectors free for IRQs */
 

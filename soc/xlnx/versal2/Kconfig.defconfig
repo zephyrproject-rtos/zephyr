@@ -1,0 +1,21 @@
+#
+# Copyright (c) 2025 Advanced Micro Devices, Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_AMD_VERSAL2
+
+if SOC_AMD_VERSAL2_RPU
+
+config NUM_IRQS
+	# must be >= the highest interrupt number used
+	# - include the UART interrupts
+	default 256
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)
+
+endif # SOC_AMD_VERSAL2_RPU
+
+endif # SOC_VERSAL2_AMD

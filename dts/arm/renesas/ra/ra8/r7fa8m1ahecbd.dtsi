@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Renesas Electronics Corporation
+ * Copyright (c) 2024-2025 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,20 +9,25 @@
 / {
 	soc {
 		flash-controller@40100000 {
+			flash-hardware-version = <40>;
+			#erase-block-cells = <2>;
+
 			flash0: flash@2000000 {
-				compatible = "renesas,ra-nv-flash";
+				compatible = "renesas,ra-nv-code-flash";
 				reg = <0x02000000 DT_SIZE_K(2016)>;
 				write-block-size = <128>;
-				erase-block-size = <8192>;
-				renesas,programming-enable;
+				erase-block-size = <32768>;
+				erase-blocks = <&flash 8 8192>, <&flash 61 32768>;
+				programming-enable;
 			};
 
 			flash1: flash@27000000 {
-				compatible = "renesas,ra-nv-flash";
+				compatible = "renesas,ra-nv-data-flash";
 				reg = <0x27000000 DT_SIZE_K(12)>;
 				write-block-size = <4>;
 				erase-block-size = <64>;
-				renesas,programming-enable;
+				programming-enable;
+				erase-value-undefined;
 			};
 		};
 	};

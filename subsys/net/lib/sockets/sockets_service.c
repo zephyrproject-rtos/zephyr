@@ -165,8 +165,12 @@ static int trigger_work(struct zsock_pollfd *pev)
 	return call_work(pev, event);
 }
 
-static void socket_service_thread(void)
+static void socket_service_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	int ret, i, fd, count = 0;
 	zvfs_eventfd_t value;
 
@@ -256,7 +260,7 @@ restart:
 		}
 
 		/* Relocate after trigger work so the work gets done before restarting */
-		if (ret > 0 && ctx.events[0].revents) {
+		if (ctx.events[0].revents) {
 			zvfs_eventfd_read(ctx.events[0].fd, &value);
 			ctx.events[0].revents = 0;
 			NET_DBG("Received restart event.");

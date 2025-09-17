@@ -9,12 +9,12 @@
 
 / {
 	chosen {
-		zephyr,console = &usart0;
-		zephyr,shell-uart = &usart0;
-		zephyr,uart-pipe = &usart0;
-		zephyr,sram = &sram0;
-		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,console = &usart0;
+		zephyr,flash = &flash0;
+		zephyr,shell-uart = &usart0;
+		zephyr,sram = &sram0;
+		zephyr,uart-pipe = &usart0;
 	};
 
 	/* These aliases are provided for compatibility with samples */
@@ -28,10 +28,12 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led0: led_0 {
 			gpios = <&gpiof 4 0>;
 			label = "LED 0";
 		};
+
 		led1: led_1 {
 			gpios = <&gpiof 5 0>;
 			label = "LED 1";
@@ -40,12 +42,14 @@
 
 	buttons {
 		compatible = "gpio-keys";
+
 		button0: button_0 {
 			/* gpio flags need validation */
 			gpios = <&gpiof 6 GPIO_ACTIVE_LOW>;
 			label = "User Push Button 0";
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		button1: button_1 {
 			/* gpio flags need validation */
 			gpios = <&gpiof 7 GPIO_ACTIVE_LOW>;
@@ -53,7 +57,6 @@
 			zephyr,code = <INPUT_KEY_1>;
 		};
 	};
-
 };
 
 &usart0 {
@@ -79,9 +82,9 @@
 	mx25r80: mx25r8035f@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;
-		spi-max-frequency = <33000000>;
-		size = <0x800000>;
 		jedec-id = [c2 28 14];
+		size = <0x800000>;
+		spi-max-frequency = <33000000>;
 	};
 };
 

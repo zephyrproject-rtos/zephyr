@@ -50,7 +50,7 @@ static int pin_code_neg_reply(const bt_addr_t *bdaddr)
 
 	LOG_DBG("");
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_PIN_CODE_NEG_REPLY, sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -68,7 +68,7 @@ static int pin_code_reply(struct bt_conn *conn, const char *pin, uint8_t len)
 
 	LOG_DBG("");
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_PIN_CODE_REPLY, sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -186,7 +186,7 @@ static int ssp_confirm_reply(struct bt_conn *conn)
 
 	LOG_DBG("");
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_USER_CONFIRM_REPLY, sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -204,7 +204,7 @@ static int ssp_confirm_neg_reply(struct bt_conn *conn)
 
 	LOG_DBG("");
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_USER_CONFIRM_NEG_REPLY, sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -248,9 +248,19 @@ static void ssp_pairing_complete(struct bt_conn *conn, uint8_t status)
 	}
 }
 
+#define BR_SSP_AUTH_MITM_DISABLED(auth) (((auth) & BT_MITM) == 0)
+
 static void ssp_auth(struct bt_conn *conn, uint32_t passkey)
 {
 	conn->br.pairing_method = ssp_pair_method(conn);
+
+	if (BR_SSP_AUTH_MITM_DISABLED(conn->br.local_auth) &&
+	    BR_SSP_AUTH_MITM_DISABLED(conn->br.remote_auth)) {
+		/*
+		 * If the MITM flag of both sides is false, the pairing method is `just works`.
+		 */
+		conn->br.pairing_method = JUST_WORKS;
+	}
 
 	/*
 	 * If local required security is HIGH then MITM is mandatory.
@@ -303,7 +313,7 @@ static int ssp_passkey_reply(struct bt_conn *conn, unsigned int passkey)
 
 	LOG_DBG("");
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_USER_PASSKEY_REPLY, sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -322,7 +332,7 @@ static int ssp_passkey_neg_reply(struct bt_conn *conn)
 
 	LOG_DBG("");
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_USER_PASSKEY_NEG_REPLY, sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -341,7 +351,7 @@ static int conn_auth(struct bt_conn *conn)
 
 	LOG_DBG("");
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_AUTH_REQUESTED, sizeof(*auth));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -529,7 +539,7 @@ void link_key_neg_reply(const bt_addr_t *bdaddr)
 
 	LOG_DBG("");
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LINK_KEY_NEG_REPLY, sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		LOG_ERR("Out of command buffers");
 		return;
@@ -547,7 +557,7 @@ void link_key_reply(const bt_addr_t *bdaddr, const uint8_t *lk)
 
 	LOG_DBG("");
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LINK_KEY_REPLY, sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		LOG_ERR("Out of command buffers");
 		return;
@@ -603,8 +613,7 @@ void io_capa_neg_reply(const bt_addr_t *bdaddr, const uint8_t reason)
 	struct bt_hci_cp_io_capability_neg_reply *cp;
 	struct net_buf *resp_buf;
 
-	resp_buf = bt_hci_cmd_create(BT_HCI_OP_IO_CAPABILITY_NEG_REPLY,
-				     sizeof(*cp));
+	resp_buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!resp_buf) {
 		LOG_ERR("Out of command buffers");
 		return;
@@ -641,6 +650,25 @@ void bt_hci_io_capa_resp(struct net_buf *buf)
 	conn = bt_conn_lookup_addr_br(&evt->bdaddr);
 	if (!conn) {
 		LOG_ERR("Unable to find conn for %s", bt_addr_str(&evt->bdaddr));
+		return;
+	}
+
+	if (atomic_test_bit(conn->flags, BT_CONN_BR_PAIRING_INITIATOR) &&
+	    (evt->authentication > BT_HCI_NO_BONDING_MITM) &&
+	    !atomic_test_bit(conn->flags, BT_CONN_BR_BONDABLE)) {
+		/*
+		 * BLUETOOTH CORE SPECIFICATION Version 6.0 | Vol 3, Part C, section 9.4.2.
+		 * A device in the non-bondable mode does not allow a bond to be created with a
+		 * peer device.
+		 *
+		 * If the local is SSP initiator and non-bondable mode, and the bonding is required
+		 * by peer device, reports the pairing failure and disconnects the ACL connection
+		 * with error `BT_HCI_ERR_AUTH_FAIL`.
+		 */
+		LOG_WRN("Bonding flag mismatch (initiator:false != responder:true)");
+		ssp_pairing_complete(conn, bt_security_err_get(BT_HCI_ERR_AUTH_FAIL));
+		bt_conn_disconnect(conn, BT_HCI_ERR_AUTH_FAIL);
+		bt_conn_unref(conn);
 		return;
 	}
 
@@ -738,7 +766,9 @@ void bt_hci_io_capa_req(struct net_buf *buf)
 		auth = BT_HCI_SET_NO_BONDING(auth);
 	}
 
-	resp_buf = bt_hci_cmd_create(BT_HCI_OP_IO_CAPABILITY_REPLY, sizeof(*cp));
+	conn->br.local_auth = auth;
+
+	resp_buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!resp_buf) {
 		LOG_ERR("Out of command buffers");
 		bt_conn_unref(conn);
@@ -834,7 +864,7 @@ static void link_encr(const uint16_t handle)
 
 	LOG_DBG("");
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_SET_CONN_ENCRYPT, sizeof(*encr));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		LOG_ERR("Out of command buffers");
 		return;

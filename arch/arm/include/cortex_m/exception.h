@@ -47,7 +47,7 @@ extern volatile irq_offload_routine_t offload_routine;
 /* Prefix. Indicates that this is an EXC_RETURN value.
  * This field reads as 0b11111111.
  */
-#define EXC_RETURN_INDICATOR_PREFIX            (0xFF << 24)
+#define EXC_RETURN_INDICATOR_PREFIX            (0xFFU << 24)
 /* bit[0]: Exception Secure. The security domain the exception was taken to. */
 #define EXC_RETURN_EXCEPTION_SECURE_Pos        0
 #define EXC_RETURN_EXCEPTION_SECURE_Msk        BIT(EXC_RETURN_EXCEPTION_SECURE_Pos)
@@ -260,16 +260,6 @@ static ALWAYS_INLINE void z_arm_set_fault_sp(const struct arch_esf *esf, uint32_
 #endif /* CONFIG_ARMV7_M_ARMV8_M_MAINLINE || CONFIG_ARMV6_M_ARMV8_M_BASELINE */
 #endif /* CONFIG_DEBUG_COREDUMP */
 }
-
-/**
- * @brief Assess whether a debug monitor event should be treated as an error
- *
- * This routine checks the status of a debug_monitor() exception, and
- * evaluates whether this needs to be considered as a processor error.
- *
- * @return true if the DM exception is a processor error, otherwise false
- */
-bool z_arm_debug_monitor_event_error_check(void);
 
 #ifdef __cplusplus
 }

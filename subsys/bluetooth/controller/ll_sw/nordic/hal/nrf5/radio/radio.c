@@ -150,20 +150,15 @@ void isr_radio(void)
 {
 	if (radio_has_disabled()) {
 		isr_cb(isr_cb_param);
+	} else {
+		/* Nothing to do here, we shall not get spurious Radio IRQ */
 	}
 }
 
 void radio_isr_set(radio_isr_cb_t cb, void *param)
 {
-	irq_disable(HAL_RADIO_IRQn);
-
 	isr_cb_param = param;
 	isr_cb = cb;
-
-	nrf_radio_int_enable(NRF_RADIO, HAL_RADIO_INTENSET_DISABLED_Msk);
-
-	NVIC_ClearPendingIRQ(HAL_RADIO_IRQn);
-	irq_enable(HAL_RADIO_IRQn);
 }
 
 void radio_setup(void)
@@ -197,7 +192,6 @@ void radio_setup(void)
 
 void radio_reset(void)
 {
-	irq_disable(HAL_RADIO_IRQn);
 
 	/* nRF SoC generic radio reset/initializations
 	 * Note: Only registers whose bits are partially modified across
@@ -572,6 +566,9 @@ void radio_disable(void)
 #if !defined(CONFIG_BT_CTLR_TIFS_HW)
 	hal_radio_sw_switch_cleanup();
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
+
+	/* Reset/disable PPI/DPPI */
+	radio_tmr_status_reset();
 
 	NRF_RADIO->SHORTS = 0;
 	nrf_radio_task_trigger(NRF_RADIO, NRF_RADIO_TASK_DISABLE);
@@ -1056,6 +1053,14 @@ void radio_switch_complete_and_disable(void)
 	NRF_RADIO->SHORTS = (RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk);
 	hal_radio_sw_switch_disable();
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
+}
+
+void radio_switch_complete_end_capture_and_disable(void)
+{
+	hal_radio_end_time_capture_ppi_config();
+	hal_radio_nrf_ppi_channels_enable(BIT(HAL_RADIO_END_TIME_CAPTURE_PPI));
+
+	radio_switch_complete_and_disable();
 }
 
 uint8_t radio_phy_flags_rx_get(void)
@@ -2072,6 +2077,11 @@ struct ccm_job_ptr {
 #define CCM_JOB_PTR_ATTRIBUTE_ADATA 13U
 #define CCM_JOB_PTR_ATTRIBUTE_MDATA 14U
 
+/* For a Max 27 byte PDU reception, an actual 26 byte PDU needs the below extra MDATA length to
+ * mitigate MIC failures. I.e. MDATA length = 27 + 4 (MIC size) + 2 (extra).
+ */
+#define NRF_CCM_WORKAROUND_XXXX_MDATA_EXTRA 2U
+
 static struct {
 	uint16_t in_alen;
 	uint16_t in_mlen;
@@ -2213,7 +2223,7 @@ static void *radio_ccm_ext_rx_pkt_set(struct ccm *cnf, uint8_t phy, uint8_t pdu_
 				RADIO_PCNF1_MAXLEN_Pos;
 
 	/* MAXPACKETSIZE value 0x001B (27) - 0x00FB (251) bytes */
-	NRF_CCM->MAXPACKETSIZE = max_len - 4U;
+	NRF_CCM->MAXPACKETSIZE = CLAMP((max_len - PDU_MIC_SIZE), 0x001B, 0x00FB);
 #endif
 
 #if defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
@@ -2253,7 +2263,7 @@ static void *radio_ccm_ext_rx_pkt_set(struct ccm *cnf, uint8_t phy, uint8_t pdu_
 	ccm_job.in[3].attribute = CCM_JOB_PTR_ATTRIBUTE_ADATA;
 
 	ccm_job.in[4].ptr = (void *)((uint8_t *)_pkt_scratch + 3U);
-	ccm_job.in[4].length = mlen;
+	ccm_job.in[4].length = mlen + NRF_CCM_WORKAROUND_XXXX_MDATA_EXTRA;
 	ccm_job.in[4].attribute = CCM_JOB_PTR_ATTRIBUTE_MDATA;
 
 	ccm_job.in[5].ptr = NULL;
@@ -2392,7 +2402,7 @@ static void *radio_ccm_ext_tx_pkt_set(struct ccm *cnf, uint8_t pdu_type, void *p
 				RADIO_PCNF1_MAXLEN_Pos;
 
 	/* MAXPACKETSIZE value 0x001B (27) - 0x00FB (251) bytes */
-	NRF_CCM->MAXPACKETSIZE = max_len - 4U;
+	NRF_CCM->MAXPACKETSIZE = CLAMP((max_len - PDU_MIC_SIZE), 0x001B, 0x00FB);
 #endif
 
 #if defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
@@ -2510,6 +2520,13 @@ uint32_t radio_ccm_mic_is_valid(void)
 {
 	return (NRF_CCM->MICSTATUS != 0);
 }
+
+void radio_ccm_disable(void)
+{
+	nrf_ccm_task_trigger(NRF_CCM, NRF_CCM_TASK_STOP);
+	nrf_ccm_disable(NRF_CCM);
+}
+#endif /* CONFIG_BT_CTLR_LE_ENC || CONFIG_BT_CTLR_BROADCAST_ISO_ENC */
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 static uint8_t MALIGN(4) _aar_scratch[3];
@@ -2640,7 +2657,6 @@ uint8_t radio_ar_resolve(const uint8_t *addr)
 
 }
 #endif /* CONFIG_BT_CTLR_PRIVACY */
-#endif /* CONFIG_BT_CTLR_LE_ENC || CONFIG_BT_CTLR_BROADCAST_ISO_ENC */
 
 #if defined(CONFIG_BT_CTLR_DF_SUPPORT) && !defined(CONFIG_ZTEST)
 /* @brief Function configures CTE inline register to start sampling of CTE

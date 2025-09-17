@@ -20,7 +20,12 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(clock_control);
 
-#ifdef CONFIG_SPI_MCUX_LPSPI
+#if defined(CONFIG_SOC_MIMX8QM6_ADSP) || defined(CONFIG_SOC_MIMX8QX6_ADSP)
+#define AUD_PLL_DIV_CLK0_LPCG UINT_TO_POINTER(0x59D20000)
+static sc_ipc_t ipc_handle;
+#endif
+
+#ifdef CONFIG_SPI_NXP_LPSPI
 static const clock_name_t lpspi_clocks[] = {
 	kCLOCK_Usb1PllPfd1Clk,
 	kCLOCK_Usb1PllPfd0Clk,
@@ -81,6 +86,15 @@ static const clock_ip_name_t sai_clocks[] = {
 #endif
 #endif /* CONFIG_DAI_NXP_SAI */
 
+#ifdef CONFIG_DAI_NXP_ESAI
+#if defined(CONFIG_SOC_MIMX8QX6_ADSP) || defined(CONFIG_SOC_MIMX8QM6_ADSP)
+static const clock_ip_name_t esai_clocks[] = {
+	kCLOCK_AUDIO_Esai0,
+	kCLOCK_AUDIO_Esai1,
+};
+#endif
+#endif /* CONFIG_DAI_NXP_ESAI */
+
 #if defined(CONFIG_I2C_NXP_II2C)
 static const clock_ip_name_t i2c_clk_root[] = {
 	kCLOCK_RootI2c1,
@@ -91,6 +105,13 @@ static const clock_ip_name_t i2c_clk_root[] = {
 	kCLOCK_RootI2c5,
 	kCLOCK_RootI2c6,
 #endif
+};
+#endif
+
+#if defined(CONFIG_CAN_MCUX_FLEXCAN) && defined(CONFIG_SOC_MIMX8ML8)
+static const clock_ip_name_t flexcan_clk_root[] = {
+	kCLOCK_RootFlexCan1,
+	kCLOCK_RootFlexCan2,
 };
 #endif
 
@@ -139,6 +160,27 @@ static int mcux_ccm_on(const struct device *dev,
 #endif
 #endif /* CONFIG_DAI_NXP_SAI */
 
+#ifdef CONFIG_DAI_NXP_ESAI
+#if defined(CONFIG_SOC_MIMX8QM6_ADSP) || defined(CONFIG_SOC_MIMX8QX6_ADSP)
+	case IMX_CCM_ESAI0_CLK:
+	case IMX_CCM_ESAI1_CLK:
+		CLOCK_EnableClock(esai_clocks[instance]);
+		return 0;
+#endif
+#endif /* CONFIG_DAI_NXP_ESAI */
+
+#if defined(CONFIG_SOC_MIMX8QM6_ADSP) || defined(CONFIG_SOC_MIMX8QX6_ADSP)
+	case IMX_CCM_AUD_PLL_DIV_CLK0:
+		/* ungate PLL parent */
+		sc_pm_clock_enable(ipc_handle, SC_R_AUDIO_PLL_0,
+				   SC_PM_CLK_MISC0, true, false);
+
+		/* ungate the clock itself */
+		CLOCK_SetLpcgGate(AUD_PLL_DIV_CLK0_LPCG, true, false, 0xa);
+
+		return 0;
+#endif
+
 #if defined(CONFIG_ETH_NXP_ENET)
 #ifdef CONFIG_SOC_SERIES_IMX8M
 #define ENET_CLOCK	kCLOCK_Enet1
@@ -180,6 +222,27 @@ static int mcux_ccm_off(const struct device *dev,
 		return 0;
 #endif
 #endif /* CONFIG_DAI_NXP_SAI */
+
+#ifdef CONFIG_DAI_NXP_ESAI
+#if defined(CONFIG_SOC_MIMX8QM6_ADSP) || defined(CONFIG_SOC_MIMX8QX6_ADSP)
+	case IMX_CCM_ESAI0_CLK:
+	case IMX_CCM_ESAI1_CLK:
+		CLOCK_DisableClock(esai_clocks[instance]);
+		return 0;
+#endif
+#endif /* CONFIG_DAI_NXP_ESAI */
+
+#if defined(CONFIG_SOC_MIMX8QM6_ADSP) || defined(CONFIG_SOC_MIMX8QX6_ADSP)
+	case IMX_CCM_AUD_PLL_DIV_CLK0:
+		/* gate the clock itself */
+		CLOCK_SetLpcgGate(AUD_PLL_DIV_CLK0_LPCG, false, false, 0xa);
+
+		/* gate PLL parent */
+		sc_pm_clock_enable(ipc_handle, SC_R_AUDIO_PLL_0,
+				   SC_PM_CLK_MISC0, false, false);
+
+		return 0;
+#endif
 	default:
 		(void)instance;
 		return 0;
@@ -207,7 +270,7 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 		break;
 #endif
 
-#ifdef CONFIG_SPI_MCUX_LPSPI
+#ifdef CONFIG_SPI_NXP_LPSPI
 	case IMX_CCM_LPSPI_CLK:
 	{
 		uint32_t lpspi_mux = CLOCK_GetMux(kCLOCK_LpspiMux);
@@ -296,7 +359,11 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 
 #ifdef CONFIG_PTP_CLOCK_NXP_ENET
 	case IMX_CCM_ENET_PLL:
+#if defined(CONFIG_SOC_SERIES_IMXRT10XX)
+		*rate = CLOCK_GetPllFreq(kCLOCK_PllEnet25M);
+#else
 		*rate = CLOCK_GetPllFreq(kCLOCK_PllEnet);
+#endif
 		break;
 #endif
 
@@ -323,6 +390,22 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 #endif
 
 #ifdef CONFIG_CAN_MCUX_FLEXCAN
+#ifdef CONFIG_SOC_MIMX8ML8
+	case IMX_CCM_CAN1_CLK:
+	case IMX_CCM_CAN2_CLK:
+	{
+		uint32_t instance = clock_name & IMX_CCM_INSTANCE_MASK;
+		uint32_t can_mux = CLOCK_GetRootMux(flexcan_clk_root[instance]);
+
+		if (can_mux == 0) {
+			*rate = MHZ(24);
+		} else if (can_mux == 4) { /* SYSTEM_PLL1_CLK */
+			*rate = CLOCK_GetPllFreq(kCLOCK_SystemPll1Ctrl) /
+				(CLOCK_GetRootPreDivider(flexcan_clk_root[instance])) /
+				(CLOCK_GetRootPostDivider(flexcan_clk_root[instance]));
+		}
+	} break;
+#else
 	case IMX_CCM_CAN_CLK:
 	{
 		uint32_t can_mux = CLOCK_GetMux(kCLOCK_CanMux);
@@ -338,6 +421,7 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 				/ (CLOCK_GetDiv(kCLOCK_CanDiv) + 1);
 		}
 	} break;
+#endif
 #endif
 
 #ifdef CONFIG_COUNTER_MCUX_GPT
@@ -365,21 +449,27 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 #endif
 
 #ifdef CONFIG_I2S_MCUX_SAI
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sai1))
 	case IMX_CCM_SAI1_CLK:
 		*rate = CLOCK_GetFreq(kCLOCK_AudioPllClk)
 				/ (CLOCK_GetDiv(kCLOCK_Sai1PreDiv) + 1)
 				/ (CLOCK_GetDiv(kCLOCK_Sai1Div) + 1);
 		break;
+#endif
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sai2))
 	case IMX_CCM_SAI2_CLK:
 		*rate = CLOCK_GetFreq(kCLOCK_AudioPllClk)
 				/ (CLOCK_GetDiv(kCLOCK_Sai2PreDiv) + 1)
 				/ (CLOCK_GetDiv(kCLOCK_Sai2Div) + 1);
 		break;
+#endif
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sai3))
 	case IMX_CCM_SAI3_CLK:
 		*rate = CLOCK_GetFreq(kCLOCK_AudioPllClk)
 				/ (CLOCK_GetDiv(kCLOCK_Sai3PreDiv) + 1)
 				/ (CLOCK_GetDiv(kCLOCK_Sai3Div) + 1);
 		break;
+#endif
 #endif
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexspi))
 	case IMX_CCM_FLEXSPI_CLK:
@@ -536,7 +626,6 @@ static DEVICE_API(clock_control, mcux_ccm_driver_api) = {
 static int mcux_ccm_init(const struct device *dev)
 {
 #if defined(CONFIG_SOC_MIMX8QM6_ADSP) || defined(CONFIG_SOC_MIMX8QX6_ADSP)
-	sc_ipc_t ipc_handle;
 	int ret;
 
 	ret = sc_ipc_open(&ipc_handle, DT_REG_ADDR(DT_NODELABEL(scu_mu)));

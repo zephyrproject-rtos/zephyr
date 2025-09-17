@@ -22,11 +22,16 @@
  */
 #define PTHREAD_OBJ_MASK_INIT 0x80000000
 
-struct posix_thread_attr {
+#ifdef CONFIG_RX
+struct __packed posix_thread_attr
+#else
+struct posix_thread_attr
+#endif
+{
 	void *stack;
 	/* the following two bitfields should combine to be 32-bits in size */
-	uint32_t stacksize : CONFIG_POSIX_PTHREAD_ATTR_STACKSIZE_BITS;
-	uint16_t guardsize : CONFIG_POSIX_PTHREAD_ATTR_GUARDSIZE_BITS;
+	uint32_t stacksize: CONFIG_POSIX_PTHREAD_ATTR_STACKSIZE_BITS;
+	uint16_t guardsize: CONFIG_POSIX_PTHREAD_ATTR_GUARDSIZE_BITS;
 	int8_t priority;
 	uint8_t schedpolicy: 2;
 	bool contentionscope: 1;
@@ -64,6 +69,20 @@ struct posix_thread {
 
 	/* Queue ID (internal-only) */
 	uint8_t qid;
+};
+
+struct posix_condattr {
+	/* leaves room for CLOCK_REALTIME (1, default) and CLOCK_MONOTONIC (4) */
+	unsigned char clock: 3;
+	char initialized: 1;
+#ifdef _POSIX_THREAD_PROCESS_SHARED
+	unsigned char pshared: 1;
+#endif
+};
+
+struct posix_cond {
+	struct k_condvar condvar;
+	struct posix_condattr attr;
 };
 
 typedef struct pthread_key_obj {

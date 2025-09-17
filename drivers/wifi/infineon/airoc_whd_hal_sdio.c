@@ -73,6 +73,11 @@ int airoc_wifi_init_primary(const struct device *dev, whd_interface_t *interface
 	}
 
 	/* Init SDIO functions */
+	ret = sdio_init_func(&data->card, &data->card.func0, BUS_FUNCTION);
+	if (ret) {
+		LOG_ERR("sdio_enable_func BUS_FUNCTION, error: %x", ret);
+		return ret;
+	}
 	ret = sdio_init_func(&data->card, &data->sdio_func1, BACKPLANE_FUNCTION);
 	if (ret) {
 		LOG_ERR("sdio_enable_func BACKPLANE_FUNCTION, error: %x", ret);
@@ -91,6 +96,11 @@ int airoc_wifi_init_primary(const struct device *dev, whd_interface_t *interface
 	ret = sdio_set_block_size(&data->sdio_func2, SDIO_64B_BLOCK);
 	if (ret) {
 		LOG_ERR("Can't set block size for WLAN_FUNCTION, error: %x", ret);
+		return ret;
+	}
+	ret = sdio_set_block_size(&data->card.func0, data->card.func0.cis.max_blk_size);
+	if (ret) {
+		LOG_ERR("Can't set block size for BUS_FUNCTION, error: %x", ret);
 		return ret;
 	}
 

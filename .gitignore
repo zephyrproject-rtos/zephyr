@@ -55,6 +55,7 @@ doc/doc.warnings
 hide-defaults-note
 venv
 .venv
+.envrc
 .DS_Store
 .clangd
 new.info
@@ -102,6 +103,7 @@ MaintainersFormat.txt
 ModulesMaintainers.txt
 Nits.txt
 Pylint.txt
+PythonCompat.txt
 Ruff.txt
 SphinxLint.txt
 SysbuildKconfig.txt
@@ -109,3 +111,4 @@ SysbuildKconfigBasic.txt
 SysbuildKconfigBasicNoModules.txt
 TextEncoding.txt
 YAMLLint.txt
+ZephyrModuleFile.txt

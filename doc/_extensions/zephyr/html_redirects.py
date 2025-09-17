@@ -6,7 +6,7 @@
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-#     http://www.apache.org/licenses/LICENSE-2.0
+#     https://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -52,7 +52,7 @@ REDIRECT_TEMPLATE = r"""
 
 
 def setup(app):
-    app.add_config_value('html_redirect_pages', [], 'html')
+    app.add_config_value('html_redirect_pages', (), 'html')
     app.connect('build-finished', create_redirect_pages)
 
     # Since we're just setting up a build-finished hook, which runs

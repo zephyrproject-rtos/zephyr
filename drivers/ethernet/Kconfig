@@ -77,6 +77,7 @@ source "drivers/ethernet/Kconfig.test"
 source "drivers/ethernet/Kconfig.lan9250"
 source "drivers/ethernet/Kconfig.sy1xx_mac"
 source "drivers/ethernet/Kconfig.xilinx_axienet"
+source "drivers/ethernet/Kconfig.virtio_net"
 
 source "drivers/ethernet/eth_nxp_enet_qos/Kconfig"
 
@@ -86,6 +87,7 @@ source "drivers/ethernet/phy/Kconfig"
 
 source "drivers/ethernet/nxp_imx_netc/Kconfig"
 source "drivers/ethernet/Kconfig.renesas_ra"
+source "drivers/ethernet/intel/Kconfig"
 
 endif # "Ethernet Drivers"
 

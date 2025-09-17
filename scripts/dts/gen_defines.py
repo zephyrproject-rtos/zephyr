@@ -554,7 +554,7 @@ def write_pinctrls(node: edtlib.Node) -> None:
 def write_fixed_partitions(node: edtlib.Node) -> None:
     # Macros for child nodes of each fixed-partitions node.
 
-    if not (node.parent and "fixed-partitions" in node.parent.compats):
+    if not (node.parent and ("fixed-partitions" in node.parent.compats or "fixed-subpartitions" in node.parent.compats)):
         return
 
     global flash_area_num
@@ -569,7 +569,7 @@ def write_gpio_hogs(node: edtlib.Node) -> None:
     macro = f"{node.z_path_id}_GPIO_HOGS"
     macro2val = {}
     for i, entry in enumerate(node.gpio_hogs):
-        macro2val.update(controller_and_data_macros(entry, i, macro))
+        macro2val.update(controller_and_data_macros(entry, i, macro, ""))
 
     if macro2val:
         out_comment("GPIO hog properties:")
@@ -679,10 +679,15 @@ def enum_macros(prop: edtlib.Property, macro: str):
     val = prop.val_as_tokens if spec.enum_tokenizable else (prop.val if isinstance(prop.val, list) else [prop.val])
 
     for i, subval in enumerate(val):
+        # make sure the subval is a formated right.
+        if isinstance(subval, str):
+            subval = str2ident(subval)
         # DT_N_<node-id>_P_<prop-id>_IDX_<i>_EXISTS
         ret[f"{macro}_IDX_{i}_EXISTS"] = 1
         # DT_N_<node-id>_P_<prop-id>_IDX_<i>_ENUM_VAL_<val>_EXISTS 1
         ret[f"{macro}_IDX_{i}_ENUM_VAL_{subval}_EXISTS"] = 1
+        # DT_N_<node-id>_P_<prop-id>_ENUM_VAL_<val>_EXISTS 1
+        ret[f"{macro}_ENUM_VAL_{subval}_EXISTS"] = 1
 
     return ret
 
@@ -830,12 +835,12 @@ def phandle_macros(prop: edtlib.Property, macro: str) -> dict:
                 ret[f"{macro}_IDX_{i}_EXISTS"] = 0
                 continue
 
-            ret.update(controller_and_data_macros(entry, i, macro))
+            ret.update(controller_and_data_macros(entry, i, macro, prop.name))
 
     return ret
 
 
-def controller_and_data_macros(entry: edtlib.ControllerAndData, i: int, macro: str):
+def controller_and_data_macros(entry: edtlib.ControllerAndData, i: int, macro: str, pname: str):
     # Helper procedure used by phandle_macros().
     #
     # Its purpose is to write the "controller" (i.e. label property of
@@ -844,6 +849,8 @@ def controller_and_data_macros(entry: edtlib.ControllerAndData, i: int, macro: s
 
     ret = {}
     data = entry.data
+    node = entry.node
+    pname = edtlib.str_as_token(str2ident(pname))
 
     # DT_N_<node-id>_P_<prop-id>_IDX_<i>_EXISTS
     ret[f"{macro}_IDX_{i}_EXISTS"] = 1
@@ -853,13 +860,40 @@ def controller_and_data_macros(entry: edtlib.ControllerAndData, i: int, macro: s
     for cell, val in data.items():
         ret[f"{macro}_IDX_{i}_VAL_{str2ident(cell)}"] = val
         ret[f"{macro}_IDX_{i}_VAL_{str2ident(cell)}_EXISTS"] = 1
+    # DT_N_<node-id>_P_<prop-id>_IDX_<i>_EXISTS
+    ret[f"{macro}_IDX_{i}_EXISTS"] = 1
+    # DT_N_<node-id>_P_<prop-id>_IDX_<i>_FOREACH_CELL
+    ret[f"{macro}_IDX_{i}_FOREACH_CELL(fn)"] = (
+            ' \\\n\t'.join(f'fn(DT_{node.z_path_id}, {pname}, {i}, {cell})'
+                           for cell in data))
+    # DT_N_<node-id>_P_<prop-id>_IDX_<i>_FOREACH_CELL_SEP
+    ret[f"{macro}_IDX_{i}_FOREACH_CELL_SEP(fn, sep)"] = (
+        ' DT_DEBRACKET_INTERNAL sep \\\n\t'.join(
+            f'fn(DT_{node.z_path_id}, {pname}, {i}, {cell})'
+               for cell in data))
+    # DT_N_<node-id>_P_<prop-id>_IDX_<i>_NUM_CELLS
+    ret[f"{macro}_IDX_{i}_NUM_CELLS"] = len(data)
 
     if not entry.name:
         return ret
 
     name = str2ident(entry.name)
-    # DT_N_<node-id>_P_<prop-id>_IDX_<i>_EXISTS
-    ret[f"{macro}_IDX_{i}_EXISTS"] = 1
+
+    # DT_N_<node-id>_P_<prop-id>_IDX_<i>_NAME
+    ret[f"{macro}_IDX_{i}_NAME"] = edtlib.str_as_token(name)
+    # DT_N_<node-id>_P_<prop-id>_NAME_<name>_IDX
+    ret[f"{macro}_NAME_{name}_IDX"] = i
+    # DT_N_<node-id>_P_<prop-id>_NAME_<name>_FOREACH_CELL
+    ret[f"{macro}_NAME_{name}_FOREACH_CELL(fn)"] = (
+            ' \\\n\t'.join(f'fn(DT_{node.z_path_id}, {pname}, {name}, {cell})'
+                           for cell in data))
+    # DT_N_<node-id>_P_<prop-id>_NAME_<name>_FOREACH_CELL_SEP
+    ret[f"{macro}_NAME_{name}_FOREACH_CELL_SEP(fn, sep)"] = (
+        ' DT_DEBRACKET_INTERNAL sep \\\n\t'.join(
+            f'fn(DT_{node.z_path_id}, {pname}, {name}, {cell})'
+               for cell in data))
+    # DT_N_<node-id>_P_<prop-id>_NAME_<name>_NUM_CELLS
+    ret[f"{macro}_NAME_{name}_NUM_CELLS"] = len(data)
     # DT_N_<node-id>_P_<prop-id>_IDX_<i>_NAME
     ret[f"{macro}_IDX_{i}_NAME"] = quote_str(entry.name)
     # DT_N_<node-id>_P_<prop-id>_NAME_<NAME>_PH

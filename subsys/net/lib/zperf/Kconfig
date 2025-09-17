@@ -22,6 +22,17 @@ config NET_ZPERF_LEGACY_HEADER_COMPAT
 	  detected. This option reverts the header format for use with
 	  iperf version 2.0.9 and earlier.
 
+config ZPERF_SESSION_PER_THREAD
+	bool "Run each session in a separate thread"
+	select EVENTS
+	help
+	  Each session is started in its own thread. This means
+	  that the system will use more memory because multiple
+	  stack frames are needed, so this is not enabled by default.
+	  User is also able to set each thread priority separately and
+	  the ZPERF_WORK_Q_THREAD_PRIORITY is a default value if thread
+	  priority is not set when starting the session.
+
 config ZPERF_WORK_Q_THREAD_PRIORITY
 	int "zperf work queue thread priority"
 	default NUM_PREEMPT_PRIORITIES
@@ -42,9 +53,10 @@ source "subsys/net/Kconfig.template.log_config.net"
 
 config NET_ZPERF_MAX_PACKET_SIZE
 	int "Maximum packet size"
-	default 1024
+	default 1064
 	help
-	  Upper size limit for packets sent by zperf.
+	  Upper size limit for packets sent by zperf. Default allows for a 1kB
+	  payload with the 40 byte iperf UDP client header.
 
 config NET_ZPERF_SERVER
 	bool "zperf server support"
@@ -58,5 +70,16 @@ config NET_ZPERF_MAX_SESSIONS
 	default 4
 	help
 	  Upper size limit for connections handled by zperf.
+
+config NET_ZPERF_UDP_REPORT_RETANSMISSION_COUNT
+	int "Maximum number of UDP upload report retransmissions"
+	depends on NET_UDP
+	range 0 16
+	default 4
+	help
+	  Maximum number of retries zperf will take to retrieve the UDP upload
+	  report from the server. `0` means the report will not be requested
+	  at all, which is useful for testing purposes.
+
 
 endif

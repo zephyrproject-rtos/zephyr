@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import contextlib
+import filecmp
 import glob
 import logging
 import os
@@ -414,6 +415,8 @@ class Gcovr(CoverageTool):
                "--gcov-ignore-parse-errors=negative_hits.warn_once_per_file",
                "--gcov-executable", self.gcov_tool,
                "-e", "tests/*"]
+        if self.version >= "7.0":
+            cmd += ["--gcov-object-directory", outdir]
         cmd += excludes + self.options + ["--json", "-o", coverage_file, outdir]
         cmd_str = " ".join(cmd)
         logger.debug(f"Running: {cmd_str}")
@@ -428,6 +431,9 @@ class Gcovr(CoverageTool):
         cmd += ["--gcov-executable", self.gcov_tool,
                 "-f", "tests/ztest", "-e", "tests/ztest/test/*",
                 "--json", "-o", ztest_file, outdir]
+        if self.version >= "7.0":
+            cmd += ["--gcov-object-directory", outdir]
+
         cmd_str = " ".join(cmd)
         logger.debug(f"Running: {cmd_str}")
         coveragelog.write(f"Running: {cmd_str}\n")
@@ -502,6 +508,54 @@ class Gcovr(CoverageTool):
 
         return ret, { 'report': coverage_file, 'ztest': ztest_file, 'summary': coverage_summary }
 
+def try_making_symlink(source: str, link: str):
+    """
+    Attempts to create a symbolic link from source to link.
+    If the link already exists:
+    - If it's a symlink pointing to a different source, it's replaced.
+    - If it's a regular file with the same content, no action is taken.
+    - If it's a regular file with different content, it's replaced with a
+    symlink (if possible, otherwise a copy).
+    If symlinking fails for any reason (other than the link already existing and
+    being correct), it attempts to copy the source to the link.
+
+    Args:
+        source (str): The path to the source file.
+        link (str): The path where the symbolic link should be created.
+    """
+    symlink_error = None
+
+    try:
+        os.symlink(source, link)
+    except FileExistsError:
+        if os.path.islink(link):
+            if os.readlink(link) == source:
+                # Link is already set up
+                return
+            # Link is pointing to the wrong file, fall below this if/else and
+            # it will be replaced
+        elif filecmp.cmp(source, link):
+            # File contents are the same
+            return
+
+        # link exists, but points to a different file. We'll create a new link
+        # and replace it atomically with the old one
+        temp_filename = f"{link}.{os.urandom(8).hex()}"
+        try:
+            os.symlink(source, temp_filename)
+            os.replace(temp_filename, link)
+        except OSError as e:
+            symlink_error = e
+    except OSError as e:
+        symlink_error = e
+
+    if symlink_error:
+        logger.error(
+            "Error creating symlink: %s, attempting to copy.", str(symlink_error)
+        )
+        temp_filename = f"{link}.{os.urandom(8).hex()}"
+        shutil.copy(source, temp_filename)
+        os.replace(temp_filename, link)
 
 def choose_gcov_tool(options, is_system_gcov):
     gcov_tool = None
@@ -516,10 +570,7 @@ def choose_gcov_tool(options, is_system_gcov):
             llvm_cov = shutil.which("llvm-cov", path=llvm_path)
             llvm_cov_ext = pathlib.Path(llvm_cov).suffix
             gcov_lnk = os.path.join(options.outdir, f"gcov{llvm_cov_ext}")
-            try:
-                os.symlink(llvm_cov, gcov_lnk)
-            except OSError:
-                shutil.copy(llvm_cov, gcov_lnk)
+            try_making_symlink(llvm_cov, gcov_lnk)
             gcov_tool = gcov_lnk
         elif is_system_gcov:
             gcov_tool = "gcov"

@@ -19,3 +19,20 @@ properties:
 
   pinctrl-names:
     required: true
+
+  dmas:
+    description: |
+      Optional TX & RX DMA specifiers. Each specifier will have a phandle
+      reference to the DMA controller, the channel number, and the peripheral
+      trigger source.
+
+      Example for channels 0/1 with spi0txtrg/spi0rxtrg trigger sources:
+        dmas = <&dma 0 0>, <&dma 1 1>;
+
+  dma-names:
+    description: |
+      Required if the dmas property exists. This should be "tx" and "rx"
+      to match the dmas property.
+
+      Example:
+        dma-names = "tx", "rx";

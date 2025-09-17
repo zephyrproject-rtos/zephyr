@@ -25,16 +25,37 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/offsets.h>
 
-/* We need to dummy out DT_NODE_HAS_STATUS when building the unittests.
+/* We need to dummy out DT_NODE_HAS_STATUS and DT_NODE_HAS_STATUS_OKAY when
+ * building the unittests.
  * Including devicetree.h would require generating dummy header files
  * to match what gen_defines creates, so it's easier to just dummy out
- * DT_NODE_HAS_STATUS. These are undefined at the end of the file.
+ * DT_NODE_HAS_STATUS and DT_NODE_HAS_STATUS_OKAY. These are undefined at the
+ * end of the file.
  */
 #ifdef ZTEST_UNITTEST
+#ifdef DT_NODE_HAS_STATUS
+#undef DT_NODE_HAS_STATUS
+#endif
 #define DT_NODE_HAS_STATUS(node, status) 0
+
+#ifdef DT_NODE_HAS_STATUS_OKAY
+#undef DT_NODE_HAS_STATUS_OKAY
+#endif
 #define DT_NODE_HAS_STATUS_OKAY(node) 0
 #else
 #include <zephyr/devicetree.h>
+#endif
+
+/* The GCC for Renesas RX processors adds leading underscores to C-symbols
+ * by default. As a workaroud for symbols defined in linker scripts to be
+ * available in C code, an alias with a leading underscore has to be provided.
+ */
+#if defined(CONFIG_RX)
+#define PLACE_SYMBOL_HERE(symbol)                                                                  \
+	symbol = .;                                                                                \
+	PROVIDE(_CONCAT(_, symbol) = symbol)
+#else
+#define PLACE_SYMBOL_HERE(symbol) symbol = .
 #endif
 
 #ifdef _LINKER
@@ -44,9 +65,10 @@
  * (sorted by priority). Ensure the objects aren't discarded if there is
  * no direct reference to them
  */
+
 /* clang-format off */
 #define CREATE_OBJ_LEVEL(object, level)				\
-		__##object##_##level##_start = .;		\
+		PLACE_SYMBOL_HERE(__##object##_##level##_start);\
 		KEEP(*(SORT(.z_##object##_##level##_P_?_*)));	\
 		KEEP(*(SORT(.z_##object##_##level##_P_??_*)));	\
 		KEEP(*(SORT(.z_##object##_##level##_P_???_*)));
@@ -109,11 +131,11 @@ extern char __kernel_ram_start[];
 extern char __kernel_ram_end[];
 extern char __kernel_ram_size[];
 
-/* Used by z_bss_zero or arch-specific implementation */
+/* Used by arch_bss_zero or arch-specific implementation */
 extern char __bss_start[];
 extern char __bss_end[];
 
-/* Used by z_data_copy() or arch-specific implementation */
+/* Used by arch_data_copy() or arch-specific implementation */
 #ifdef CONFIG_XIP
 extern char __data_region_load_start[];
 extern char __data_region_start[];
@@ -152,6 +174,12 @@ extern char _vector_end[];
 
 #ifdef CONFIG_SW_VECTOR_RELAY
 extern char __vector_relay_table[];
+#endif
+
+#ifdef CONFIG_SRAM_VECTOR_TABLE
+extern char _sram_vector_start[];
+extern char _sram_vector_end[];
+extern char _sram_vector_size[];
 #endif
 
 #ifdef CONFIG_COVERAGE_GCOV
@@ -218,14 +246,21 @@ extern char __sg_size[];
  * with a MPU. Start and end will be aligned for memory management/protection
  * hardware for the target architecture.
  *
- * All the functions with '__nocache' keyword will be placed into this
- * section.
+ * All the variables with '__nocache' keyword will be placed into the nocache
+ * section, variables with '__nocache_load' keyword will be placed into the
+ * nocache section that is loaded from ROM.
  */
 #ifdef CONFIG_NOCACHE_MEMORY
 extern char _nocache_ram_start[];
 extern char _nocache_ram_end[];
 extern char _nocache_ram_size[];
-extern char _nocache_load_start[];
+extern char _nocache_noload_ram_start[];
+extern char _nocache_noload_ram_end[];
+extern char _nocache_noload_ram_size[];
+extern char _nocache_load_ram_start[];
+extern char _nocache_load_ram_end[];
+extern char _nocache_load_ram_size[];
+extern char _nocache_load_rom_start[];
 #endif /* CONFIG_NOCACHE_MEMORY */
 
 /* Memory owned by the kernel. Start and end will be aligned for memory

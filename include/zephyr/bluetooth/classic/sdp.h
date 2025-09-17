@@ -241,6 +241,13 @@ extern "C" {
  * TextString and URLString can be of size 2^{8, 16, 32} bytes
  * DataSequence and DataSequenceAlternates can be of size 2^{8, 16, 32}
  * The size are computed post-facto in the API and are not known apriori.
+ *
+ * For the type BT_SDP_UINT128, BT_SDP_INT128, and BT_SDP_UUID128, the
+ * byteorder of data should be little-endian. Such as, SPP UUID128:
+ * `00001101-0000-1000-8000-00805F9B34FB` will be represented as
+ * {0xFB, 0x34, 0x9B, 0x5F, 0x80, 0x00, 0x00, 0x80, 0x00, 0x10, 0x00, 0x00,
+ * 0x01, 0x11, 0x00, 0x00}
+ * For UUID 128, @ref BT_SDP_ARRAY_UUID_128 is used to declare the array.
  * @{
  */
 #define BT_SDP_DATA_NIL        0x00	/**< Nil, the null type */
@@ -303,7 +310,7 @@ struct bt_sdp_record {
 	struct bt_sdp_attribute     *attrs;       /**< Base addr of attr array */
 	size_t                      attr_count;   /**< Number of attributes */
 	uint8_t                     index;        /**< Index of the record in LL */
-	struct bt_sdp_record        *next;        /**< Next service record */
+	sys_snode_t                 node;
 };
 
 /*
@@ -326,6 +333,31 @@ struct bt_sdp_record {
  *  @brief Declare an array of 32-bit elements in an attribute.
  */
 #define BT_SDP_ARRAY_32(...) ((uint32_t[]) {__VA_ARGS__})
+
+/**
+ * @brief Declare a UUID 128 in little-endian format in an attribute.
+ *
+ *  Helper macro to initialize a 128-bit UUID array value from the readable form
+ *  of UUIDs.
+ *
+ *  Example of how to declare the UUID `6E400001-B5A3-F393-E0A9-E50E24DCCA9E`
+ *
+ *  @code
+ *  BT_SDP_ARRAY_UUID_128(0x6E400001, 0xB5A3, 0xF393, 0xE0A9, 0xE50E24DCCA9E)
+ *  @endcode
+ *
+ *  Just replace the hyphen by the comma and add `0x` prefixes.
+ *
+ *  @param w32 First part of the UUID (32 bits)
+ *  @param w1  Second part of the UUID (16 bits)
+ *  @param w2  Third part of the UUID (16 bits)
+ *  @param w3  Fourth part of the UUID (16 bits)
+ *  @param w48 Fifth part of the UUID (48 bits)
+ *
+ *  @return The comma separated values for UUID 128.
+ */
+#define BT_SDP_ARRAY_UUID_128(w32, w1, w2, w3, w48) \
+	BT_SDP_ARRAY_8(BT_UUID_128_ENCODE(w32, w1, w2, w3, w48))
 
 /**
  *  @brief Declare a fixed-size data element header.
@@ -534,6 +566,30 @@ enum {
 	BT_SDP_DISCOVER_SERVICE_SEARCH_ATTR,
 };
 
+/** Initializes SDP attribute ID range */
+#define BT_SDP_ATTR_ID_RANGE(beginning, ending) {(beginning), (ending)}
+
+/**
+ * @brief SDP attribute ID range
+ *
+ * If the beginning attribute ID is same with the ending attribute ID, the range represents a
+ * single attribute ID.
+ */
+struct bt_sdp_attribute_id_range {
+	/** Beginning attribute ID of the range */
+	uint16_t beginning;
+	/** Ending attribute ID of the range */
+	uint16_t ending;
+};
+
+/** @brief SDP attribute ID list for Service Attribute and Service Search Attribute transactions */
+struct bt_sdp_attribute_id_list {
+	/** Count of the SDP attribute ID range */
+	size_t count;
+	/** Attribute ID range array list */
+	struct bt_sdp_attribute_id_range *ranges;
+};
+
 /** @brief Main user structure used in SDP discovery of remote. */
 struct bt_sdp_discover_params {
 	sys_snode_t _node;
@@ -549,6 +605,13 @@ struct bt_sdp_discover_params {
 	struct net_buf_pool *pool;
 	/** Discover type */
 	uint8_t type;
+	/**
+	 * Attribute ID list for Service Attribute and Service Search Attribute transactions
+	 *
+	 * If the `ids` is NULL or `ids->count` is 0, the default range `(0x0000, 0xffff)` will
+	 * be used.
+	 */
+	struct bt_sdp_attribute_id_list *ids;
 };
 
 /** @brief Allows user to start SDP discovery session.
@@ -560,6 +623,10 @@ struct bt_sdp_discover_params {
  *  On the service discovery completion the callback function will be
  *  called to get feedback to user about findings.
  *
+ *  If the UUID is UUID 128 for discovery type `Service Search` and
+ * `Service Search Attribute`, the UUID data should be represented as the
+ *  little-endian byteorder sequence.
+ *
  *  Service Search:                The SDP Client generates an
  *                                 SDP_SERVICE_SEARCH_REQ to locate service
  *                                 records that match the service search
@@ -568,12 +635,14 @@ struct bt_sdp_discover_params {
  *  Service Attribute:             The SDP Client generates an
  *                                 SDP_SERVICE_ATTR_REQ to retrieve specified
  *                                 attribute values from a specific service
- *                                 record (`params->handle`).
+ *                                 record (`params->handle`). The AttributeIDList
+ *                                 is specified by `params->ids`.
  *  Service Search Attribute:      The SDP Client generates an
  *                                 SDP_SERVICE_SEARCH_ATTR_REQ to retrieve
  *                                 specified attribute values that match the
  *                                 service search pattern (`params->uuid`)
  *                                 given as the first parameter of the PDU.
+ *                                 The AttributeIDList is specified by `params->ids`.
  *
  * @param conn Object identifying connection to remote.
  * @param params SDP discovery parameters.
@@ -582,7 +651,7 @@ struct bt_sdp_discover_params {
  */
 
 int bt_sdp_discover(struct bt_conn *conn,
-		    const struct bt_sdp_discover_params *params);
+		    struct bt_sdp_discover_params *params);
 
 /** @brief Release waiting SDP discovery request.
  *
@@ -603,6 +672,7 @@ int bt_sdp_discover_cancel(struct bt_conn *conn,
 /** @brief Protocols to be asked about specific parameters */
 enum bt_sdp_proto {
 	BT_SDP_PROTO_RFCOMM = 0x0003,
+	BT_SDP_PROTO_AVDTP  = 0x0019,
 	BT_SDP_PROTO_L2CAP  = 0x0100,
 };
 
@@ -666,6 +736,33 @@ int bt_sdp_get_profile_version(const struct net_buf *buf, uint16_t profile,
  *  @return 0 on success if feature found and valid, negative in case any error
  */
 int bt_sdp_get_features(const struct net_buf *buf, uint16_t *features);
+
+/** @brief Get Vendor ID
+ *
+ *  Helper API extracting remote Vendor ID. To get it proper
+ *  generic profile parameter needs to be selected usually listed in SDP
+ *  Interoperability Requirements section for given profile specification.
+ *
+ *  @param buf Buffer holding original raw record data from remote.
+ *  @param vendor_id On success populated by found Vendor ID.
+ *
+ *  @return 0 on success if vendor_id found and valid, negative in case any error
+ */
+int bt_sdp_get_vendor_id(const struct net_buf *buf, uint16_t *vendor_id);
+
+/** @brief Get Product ID
+ *
+ *  Helper API extracting remote Product ID. To get it proper
+ *  generic profile parameter needs to be selected usually listed in SDP
+ *  Interoperability Requirements section for given profile specification.
+ *
+ *  @param buf Buffer holding original raw record data from remote.
+ *  @param product_id On success populated by found Product ID.
+ *  mask.
+ *
+ *  @return 0 on success if product_id found and valid, negative in case any error
+ */
+int bt_sdp_get_product_id(const struct net_buf *buf, uint16_t *product_id);
 
 #ifdef __cplusplus
 }

@@ -20,7 +20,13 @@ extern "C" {
 /**
  * @defgroup devicetree-gpio Devicetree GPIO API
  * @ingroup devicetree
+ * @ingroup gpio_interface
  * @{
+ *
+ * @defgroup devicetree-gpio-pin-headers GPIO pin headers
+ * @brief Constants for pins exposed on common GPIO pin headers
+ * @{
+ * @}
  */
 
 /**

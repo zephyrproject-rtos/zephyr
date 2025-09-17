@@ -37,12 +37,16 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 /* No information in documentation about that. */
 #define STM32H7_FLASH_OPT_TIMEOUT_MS 800
 
+#if DT_NODE_HAS_PROP(DT_INST(0, st_stm32_nv_flash), bank2_flash_size)
 #define STM32H7_M4_FLASH_SIZE DT_PROP_OR(DT_INST(0, st_stm32_nv_flash), bank2_flash_size, 0)
 #ifdef CONFIG_CPU_CORTEX_M4
 #if STM32H7_M4_FLASH_SIZE == 0
 #error Flash driver on M4 requires the DT property bank2-flash-size
 #else
 #define REAL_FLASH_SIZE_KB (KB(STM32H7_M4_FLASH_SIZE * 2))
+#endif
+#else
+#define REAL_FLASH_SIZE_KB (DT_REG_SIZE(DT_INST(0, st_stm32_nv_flash)) * 2)
 #endif
 #else
 #define REAL_FLASH_SIZE_KB DT_REG_SIZE(DT_INST(0, st_stm32_nv_flash))
@@ -52,7 +56,7 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 #define STM32H7_SERIES_MAX_FLASH_KB KB(2048)
 #define BANK2_OFFSET                (STM32H7_SERIES_MAX_FLASH_KB / 2)
 /* When flash is dual bank and flash size is smaller than Max flash size of
- * the serie, there is a discontinuty between bank1 and bank2.
+ * the series, there is a discontinuty between bank1 and bank2.
  */
 #define DISCONTINUOUS_BANKS         (REAL_FLASH_SIZE_KB < STM32H7_SERIES_MAX_FLASH_KB)
 #define NUMBER_OF_BANKS             2
@@ -309,31 +313,6 @@ int flash_stm32_option_bytes_disable(const struct device *dev)
 }
 #endif /* CONFIG_FLASH_STM32_BLOCK_REGISTERS */
 
-int flash_stm32_option_bytes_lock(const struct device *dev, bool enable)
-{
-	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
-
-	if (enable) {
-		regs->OPTCR |= FLASH_OPTCR_OPTLOCK;
-	} else if (regs->OPTCR & FLASH_OPTCR_OPTLOCK) {
-#ifdef CONFIG_SOC_SERIES_STM32H7RSX
-		regs->OPTKEYR = FLASH_OPTKEY1;
-		regs->OPTKEYR = FLASH_OPTKEY2;
-#else
-		regs->OPTKEYR = FLASH_OPT_KEY1;
-		regs->OPTKEYR = FLASH_OPT_KEY2;
-#endif /* CONFIG_SOC_SERIES_STM32H7RSX */
-	}
-
-	if (enable) {
-		LOG_DBG("Option bytes locked");
-	} else {
-		LOG_DBG("Option bytes unlocked");
-	}
-
-	return 0;
-}
-
 bool flash_stm32_valid_range(const struct device *dev, off_t offset, uint32_t len, bool write)
 {
 #if defined(DUAL_BANK)
@@ -448,7 +427,8 @@ static int flash_stm32_check_status(const struct device *dev)
 
 int flash_stm32_wait_flash_idle(const struct device *dev)
 {
-	int64_t timeout_time = k_uptime_get() + STM32H7_FLASH_TIMEOUT;
+	k_timepoint_t timeout = sys_timepoint_calc(K_MSEC(STM32H7_FLASH_TIMEOUT));
+	bool expired = false;
 	int rc;
 
 	rc = flash_stm32_check_status(dev);
@@ -462,10 +442,16 @@ int flash_stm32_wait_flash_idle(const struct device *dev)
 	while (FLASH_STM32_REGS(dev)->SR1 & FLASH_SR_QW)
 #endif
 	{
-		if (k_uptime_get() > timeout_time) {
-			LOG_ERR("Timeout! val: %d", STM32H7_FLASH_TIMEOUT);
+		if (expired) {
+			LOG_ERR("Timeout! val: %d ms", STM32H7_FLASH_TIMEOUT);
 			return -EIO;
 		}
+
+		/* Check if expired, but always read status register one more time.
+		 * If the calling thread is pre-emptive we may have been scheduled out after reading
+		 * the status register, and scheduled back after timeout has expired.
+		 */
+		expired = sys_timepoint_expired(timeout);
 	}
 
 	return 0;
@@ -861,6 +847,20 @@ static const struct flash_parameters *flash_stm32h7_get_parameters(const struct 
 	return &flash_stm32h7_parameters;
 }
 
+/* Gives the total logical device size in bytes and return 0. */
+static int flash_stm32h7_get_size(const struct device *dev, uint64_t *size)
+{
+	ARG_UNUSED(dev);
+
+#ifdef CONFIG_SOC_SERIES_STM32H7RSX
+	*size = (uint64_t)0x10000U; /* The series has only 64K of user flash memory */
+#else
+	*size = (uint64_t)LL_GetFlashSize() * 1024U;
+#endif /* CONFIG_SOC_SERIES_STM32H7RSX */
+
+	return 0;
+}
+
 void flash_stm32_page_layout(const struct device *dev, const struct flash_pages_layout **layout,
 			     size_t *layout_size)
 {
@@ -918,6 +918,7 @@ static DEVICE_API(flash, flash_stm32h7_api) = {
 	.write = flash_stm32h7_write,
 	.read = flash_stm32h7_read,
 	.get_parameters = flash_stm32h7_get_parameters,
+	.get_size = flash_stm32h7_get_size,
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 	.page_layout = flash_stm32_page_layout,
 #endif

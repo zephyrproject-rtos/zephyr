@@ -29,6 +29,7 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		green_led_1: led_1 {
 			gpios = <&gpioi 1 GPIO_ACTIVE_HIGH>;
 			label = "User LD1";
@@ -37,6 +38,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button: button {
 			label = "User";
 			gpios = <&gpioi 11 GPIO_ACTIVE_HIGH>;
@@ -54,7 +56,7 @@
 		device_type = "memory";
 		reg = <0xc0000000 DT_SIZE_M(16)>;
 		zephyr,memory-region = "SDRAM1";
-		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
 	};
 
 	aliases {
@@ -148,7 +150,7 @@ zephyr_udc0: &usbotg_fs {
 };
 
 &rtc {
-	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>,
+	clocks = <&rcc STM32_CLOCK(APB1, 28)>,
 		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
 	status = "okay";
 };
@@ -160,6 +162,7 @@ zephyr_udc0: &usbotg_fs {
 		     &sdmmc1_ck_pc12 &sdmmc1_cmd_pd2>;
 	pinctrl-names = "default";
 	cd-gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
+	disk-name = "SD";
 };
 
 &mac {
@@ -194,10 +197,12 @@ zephyr_udc0: &usbotg_fs {
 	pinctrl-names = "default";
 	status = "okay";
 
-	n25q128a1: qspi-nor-flash@90000000 {
+	n25q128a1: qspi-nor-flash@0 {
 		compatible = "st,stm32-qspi-nor";
-		reg = <0x90000000 DT_SIZE_M(16)>; /* 128 Mbits */
+		reg = <0>;
+		size = <DT_SIZE_M(128)>; /* 128 Mbits */
 		qspi-max-frequency = <72000000>;
+		cs-high-time = <4>; /* >= 50 ns */
 		status = "okay";
 
 		partitions {
@@ -208,7 +213,7 @@ zephyr_udc0: &usbotg_fs {
 			slot1_partition: partition@0 {
 				label = "image-1";
 				reg = <0x00000000 DT_SIZE_K(640)>;
-				};
+			};
 
 			storage_partition: partition@a0000 {
 				label = "storage";
@@ -244,16 +249,17 @@ zephyr_udc0: &usbotg_fs {
 		 * Note: SDRAM_CLK_MHZ = HCLK_MHZ / 2 (108 MHz)
 		 */
 		refresh-rate = <1667>;
+
 		bank@0 {
 			reg = <0>;
 			st,sdram-control = <STM32_FMC_SDRAM_NC_8
-						STM32_FMC_SDRAM_NR_12
-						STM32_FMC_SDRAM_MWID_16
-						STM32_FMC_SDRAM_NB_4
-						STM32_FMC_SDRAM_CAS_2
-						STM32_FMC_SDRAM_SDCLK_PERIOD_2
-						STM32_FMC_SDRAM_RBURST_ENABLE
-						STM32_FMC_SDRAM_RPIPE_0>;
+					    STM32_FMC_SDRAM_NR_12
+					    STM32_FMC_SDRAM_MWID_16
+					    STM32_FMC_SDRAM_NB_4
+					    STM32_FMC_SDRAM_CAS_2
+					    STM32_FMC_SDRAM_SDCLK_PERIOD_2
+					    STM32_FMC_SDRAM_RBURST_ENABLE
+					    STM32_FMC_SDRAM_RPIPE_0>;
 			st,sdram-timing = <2 6 4 6 2 2 2>;
 		};
 	};
@@ -276,6 +282,7 @@ zephyr_udc0: &usbotg_fs {
 	width = <480>;
 	height = <272>;
 	pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+
 	display-timings {
 		compatible = "zephyr,panel-timing";
 		de-active = <0>;
@@ -289,6 +296,7 @@ zephyr_udc0: &usbotg_fs {
 		hfront-porch = <8>;
 		vfront-porch = <4>;
 	};
+
 	def-back-color-red = <0xFF>;
 	def-back-color-green = <0xFF>;
 	def-back-color-blue = <0xFF>;

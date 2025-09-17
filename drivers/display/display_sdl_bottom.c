@@ -15,15 +15,18 @@
 
 int sdl_display_init_bottom(uint16_t height, uint16_t width, uint16_t zoom_pct,
 			    bool use_accelerator, void **window, const void *window_user_data,
-			    void **renderer, void **mutex, void **texture, void **read_texture,
-			    void **background_texture, uint32_t transparency_grid_color1,
-			    uint32_t transparency_grid_color2, uint16_t transparency_grid_cell_size)
+			    const char *title, void **renderer, void **mutex, void **texture,
+			    void **read_texture, void **background_texture,
+			    uint32_t transparency_grid_color1, uint32_t transparency_grid_color2,
+			    uint16_t transparency_grid_cell_size)
 {
-	*window = SDL_CreateWindow("Zephyr Display", SDL_WINDOWPOS_UNDEFINED,
-				   SDL_WINDOWPOS_UNDEFINED, width * zoom_pct / 100,
+	/* clang-format off */
+	*window = SDL_CreateWindow(title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
+				   width * zoom_pct / 100,
 				   height * zoom_pct / 100, SDL_WINDOW_SHOWN);
+	/* clang-format on */
 	if (*window == NULL) {
-		nsi_print_warning("Failed to create SDL window: %s", SDL_GetError());
+		nsi_print_warning("Failed to create SDL window %s: %s", title, SDL_GetError());
 		return -1;
 	}
 	SDL_SetWindowData(*window, "zephyr_display", (void *)window_user_data);
@@ -106,7 +109,7 @@ int sdl_display_init_bottom(uint16_t height, uint16_t width, uint16_t zoom_pct,
 void sdl_display_write_bottom(const uint16_t height, const uint16_t width, const uint16_t x,
 			      const uint16_t y, void *renderer, void *mutex, void *texture,
 			      void *background_texture, uint8_t *buf, bool display_on,
-			      bool frame_incomplete)
+			      bool frame_incomplete, uint32_t color_tint)
 {
 	SDL_Rect rect;
 	int err;
@@ -127,7 +130,12 @@ void sdl_display_write_bottom(const uint16_t height, const uint16_t width, const
 	if (display_on && !frame_incomplete) {
 		SDL_RenderClear(renderer);
 		SDL_RenderCopy(renderer, background_texture, NULL, NULL);
+		SDL_SetTextureColorMod(texture,
+				       (color_tint >> 16) & 0xff,
+				       (color_tint >> 8) & 0xff,
+				       color_tint & 0xff);
 		SDL_RenderCopy(renderer, texture, NULL, NULL);
+		SDL_SetTextureColorMod(texture, 255, 255, 255);
 		SDL_RenderPresent(renderer);
 	}
 
@@ -154,11 +162,13 @@ int sdl_display_read_bottom(const uint16_t height, const uint16_t width,
 	}
 
 	SDL_SetRenderTarget(renderer, read_texture);
+	SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_NONE);
 
 	SDL_RenderClear(renderer);
 	SDL_RenderCopy(renderer, texture, NULL, NULL);
 	SDL_RenderReadPixels(renderer, &rect, SDL_PIXELFORMAT_ARGB8888, buf, width * 4);
 
+	SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
 	SDL_SetRenderTarget(renderer, NULL);
 
 	SDL_UnlockMutex(mutex);
@@ -166,11 +176,17 @@ int sdl_display_read_bottom(const uint16_t height, const uint16_t width,
 	return err;
 }
 
-void sdl_display_blanking_off_bottom(void *renderer, void *texture, void *background_texture)
+void sdl_display_blanking_off_bottom(void *renderer, void *texture, void *background_texture,
+				     uint32_t color_tint)
 {
 	SDL_RenderClear(renderer);
 	SDL_RenderCopy(renderer, background_texture, NULL, NULL);
+	SDL_SetTextureColorMod(texture,
+			       (color_tint >> 16) & 0xff,
+			       (color_tint >> 8) & 0xff,
+			       color_tint & 0xff);
 	SDL_RenderCopy(renderer, texture, NULL, NULL);
+	SDL_SetTextureColorMod(texture, 255, 255, 255);
 	SDL_RenderPresent(renderer);
 }
 

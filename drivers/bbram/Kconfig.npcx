@@ -24,3 +24,11 @@ config BBRAM_NPCX_STATUS_REG_WRITE_WORKAROUND
 	  A write operation to the BKUP_STS register might disable write to all
 	  the Battery-Backed RAM. The workaround is to read the BKUP_STS
 	  register after every write to this register.
+
+config BBRAM_NPCX_EX
+	bool "Extended NPCX BBRAM driver support"
+	default y
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_NUVOTON_NPCX_BBRAM),support-npckn-v1,True)
+	help
+	  This option enables extended BBRAM support for NPCKn variant of
+	  processors.

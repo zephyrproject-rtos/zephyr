@@ -918,6 +918,7 @@ ssize_t bt_gatt_attr_read_service(struct bt_conn *conn,
  *  Read include service attribute value from local database storing the result
  *  into buffer after encoding it.
  *  @note Only use this with attributes which user_data is a ``bt_gatt_include``.
+ *  The function returns EINVAL if @p attr or @p attr->user_data is NULL.
  *
  *  @param conn Connection object.
  *  @param attr Attribute to read.
@@ -1383,8 +1384,6 @@ struct bt_gatt_notify_params {
  *  The callback is run from System Workqueue context.
  *  When called from the System Workqueue context this API will not wait for
  *  resources for the callback but instead return an error.
- *  The number of pending callbacks can be increased with the
- *  @kconfig{CONFIG_BT_CONN_TX_MAX} option.
  *
  *  Alternatively it is possible to notify by UUID by setting it on the
  *  parameters, when using this method the attribute if provided is used as the
@@ -1898,6 +1897,9 @@ struct bt_gatt_read_params;
  *  When reading using by_uuid, `params->start_handle` is the attribute handle
  *  for this `data` item.
  *
+ *  If the received data length is invalid, the callback will called with the
+ *  error @ref BT_ATT_ERR_INVALID_PDU.
+ *
  *  @param conn Connection object.
  *  @param err ATT error code.
  *  @param params Read parameters used.
@@ -2006,6 +2008,8 @@ struct bt_gatt_read_params {
  *  The Response comes in callback @p params->func. The callback is run from
  *  the context specified by 'config BT_RECV_CONTEXT'.
  *  @p params must remain valid until start of callback.
+ *  If the received data length is invalid, the callback @p params->func will
+ *  called with the error @ref BT_ATT_ERR_INVALID_PDU.
  *
  *  @param conn Connection object.
  *  @param params Read parameters.
@@ -2078,8 +2082,6 @@ int bt_gatt_write(struct bt_conn *conn, struct bt_gatt_write_params *params);
  *  The callback is run from System Workqueue context.
  *  When called from the System Workqueue context this API will not wait for
  *  resources for the callback but instead return an error.
- *  The number of pending callbacks can be increased with the
- *  @kconfig{CONFIG_BT_CONN_TX_MAX} option.
  *
  *  @param conn Connection object.
  *  @param handle Attribute handle.

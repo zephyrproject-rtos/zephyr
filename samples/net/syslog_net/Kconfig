@@ -17,8 +17,8 @@ config NET_SAMPLE_SERVER_RUNTIME
 	string "Syslog server IP address set at runtime"
 	help
 	  Server address for the syslog server.
-	  This server address gets set at rumtime by the sample
-	  app defore the backend is initialized. This can be
+	  This server address gets set at runtime by the sample
+	  app before the backend is initialized. This can be
 	  either IPv4 or IPv6 address. Server listen UDP port
 	  number can be configured here too.
 	  Following syntax is supported:

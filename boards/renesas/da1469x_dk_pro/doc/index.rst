@@ -47,6 +47,23 @@ The pin connections are as follows:
 * UART RX, via USB1 on motherboard = P0.08
 * UART TX, via USB1 on motherboard = P0.09
 
+System requirements
+*******************
+
+Prerequisites
+=============
+
+Renesas HAL requires Bluetooth controller binary blobs in order to work. Run the command
+below to retrieve those files.
+
+.. code-block:: console
+
+   west blobs fetch hal_renesas
+
+.. note::
+
+   It is recommended running the command above after :file:`west update`.
+
 Programming and Debugging
 *************************
 

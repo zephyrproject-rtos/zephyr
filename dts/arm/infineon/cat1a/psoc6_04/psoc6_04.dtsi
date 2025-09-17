@@ -17,6 +17,7 @@
 			compatible = "arm,cortex-m0+";
 			reg = <0>;
 		};
+
 		cpu@1 {
 			device_type = "cpu";
 			compatible = "arm,cortex-m4f";
@@ -26,7 +27,7 @@
 
 	flash-controller@40240000 {
 		compatible = "infineon,cat1-flash-controller";
-		reg = < 0x40240000 0x10000 >;
+		reg = <0x40240000 0x10000>;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -36,6 +37,7 @@
 			write-block-size = <512>;
 			erase-block-size = <512>;
 		};
+
 		flash1: flash@14000000 {
 			compatible = "soc-nv-flash";
 			reg = <0x14000000 0x0>;
@@ -72,6 +74,7 @@
 				status = "disabled";
 				#gpio-cells = <2>;
 			};
+
 			gpio_prt1: gpio@40310080 {
 				compatible = "infineon,cat1-gpio";
 				reg = <0x40310080 0x80>;
@@ -80,6 +83,7 @@
 				status = "disabled";
 				#gpio-cells = <2>;
 			};
+
 			gpio_prt2: gpio@40310100 {
 				compatible = "infineon,cat1-gpio";
 				reg = <0x40310100 0x80>;
@@ -89,6 +93,7 @@
 				status = "disabled";
 				#gpio-cells = <2>;
 			};
+
 			gpio_prt3: gpio@40310180 {
 				compatible = "infineon,cat1-gpio";
 				reg = <0x40310180 0x80>;
@@ -98,6 +103,7 @@
 				status = "disabled";
 				#gpio-cells = <2>;
 			};
+
 			gpio_prt5: gpio@40310280 {
 				compatible = "infineon,cat1-gpio";
 				reg = <0x40310280 0x80>;
@@ -107,6 +113,7 @@
 				status = "disabled";
 				#gpio-cells = <2>;
 			};
+
 			gpio_prt6: gpio@40310300 {
 				compatible = "infineon,cat1-gpio";
 				reg = <0x40310300 0x80>;
@@ -116,6 +123,7 @@
 				status = "disabled";
 				#gpio-cells = <2>;
 			};
+
 			gpio_prt7: gpio@40310380 {
 				compatible = "infineon,cat1-gpio";
 				reg = <0x40310380 0x80>;
@@ -125,6 +133,7 @@
 				status = "disabled";
 				#gpio-cells = <2>;
 			};
+
 			gpio_prt8: gpio@40310400 {
 				compatible = "infineon,cat1-gpio";
 				reg = <0x40310400 0x80>;
@@ -134,6 +143,7 @@
 				status = "disabled";
 				#gpio-cells = <2>;
 			};
+
 			gpio_prt9: gpio@40310480 {
 				compatible = "infineon,cat1-gpio";
 				reg = <0x40310480 0x80>;
@@ -143,6 +153,7 @@
 				status = "disabled";
 				#gpio-cells = <2>;
 			};
+
 			gpio_prt10: gpio@40310500 {
 				compatible = "infineon,cat1-gpio";
 				reg = <0x40310500 0x80>;
@@ -152,6 +163,7 @@
 				status = "disabled";
 				#gpio-cells = <2>;
 			};
+
 			gpio_prt11: gpio@40310580 {
 				compatible = "infineon,cat1-gpio";
 				reg = <0x40310580 0x80>;
@@ -161,6 +173,7 @@
 				status = "disabled";
 				#gpio-cells = <2>;
 			};
+
 			gpio_prt12: gpio@40310600 {
 				compatible = "infineon,cat1-gpio";
 				reg = <0x40310600 0x80>;
@@ -170,6 +183,7 @@
 				status = "disabled";
 				#gpio-cells = <2>;
 			};
+
 			gpio_prt14: gpio@40310700 {
 				compatible = "infineon,cat1-gpio";
 				reg = <0x40310700 0x80>;
@@ -180,6 +194,7 @@
 				#gpio-cells = <2>;
 			};
 		};
+
 		uid: device_uid@16000600 {
 			compatible = "infineon,cat1-uid";
 			reg = <0x16000600 0xb>;
@@ -192,6 +207,7 @@
 			interrupts = <39 6>;
 			status = "disabled";
 		};
+
 		adc1: adc@409c0000 {
 			compatible = "infineon,cat1-adc";
 			reg = <0x409c0000 0x10000>;
@@ -207,6 +223,7 @@
 			interrupts = <45 6>;
 			status = "disabled";
 		};
+
 		scb1: scb@40610000 {
 			compatible = "infineon,cat1-scb";
 			reg = <0x40610000 0x10000>;
@@ -215,6 +232,7 @@
 			interrupts = <46 6>;
 			status = "disabled";
 		};
+
 		scb2: scb@40620000 {
 			compatible = "infineon,cat1-scb";
 			reg = <0x40620000 0x10000>;
@@ -223,6 +241,7 @@
 			interrupts = <47 6>;
 			status = "disabled";
 		};
+
 		scb4: scb@40640000 {
 			compatible = "infineon,cat1-scb";
 			reg = <0x40640000 0x10000>;
@@ -231,6 +250,7 @@
 			interrupts = <49 6>;
 			status = "disabled";
 		};
+
 		scb5: scb@40650000 {
 			compatible = "infineon,cat1-scb";
 			reg = <0x40650000 0x10000>;
@@ -239,6 +259,7 @@
 			interrupts = <50 6>;
 			status = "disabled";
 		};
+
 		scb6: scb@40660000 {
 			compatible = "infineon,cat1-scb";
 			reg = <0x40660000 0x10000>;
@@ -247,12 +268,12 @@
 			interrupts = <18 6>;
 			status = "disabled";
 		};
+
 		sdhc0: sdhc@40460000 {
 			compatible = "infineon,cat1-sdhc-sdio";
 			reg = <0x40460000 0x2000>;
 			interrupts = <164 6>;
 			status = "disabled";
 		};
-
 	};
 };

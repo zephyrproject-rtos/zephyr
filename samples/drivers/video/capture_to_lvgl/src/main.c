@@ -9,23 +9,34 @@
 #include <zephyr/drivers/display.h>
 #include <zephyr/drivers/video.h>
 #include <zephyr/drivers/video-controls.h>
+#include <zephyr/logging/log.h>
 #include <lvgl.h>
 
-#define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
-#include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(main);
+LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
 
-#define VIDEO_DEV_SW "VIDEO_SW_GENERATOR"
+#if !DT_HAS_CHOSEN(zephyr_camera)
+#error No camera chosen in devicetree. Missing "--shield" or "--snippet video-sw-generator" flag?
+#endif
+
+#if !DT_HAS_CHOSEN(zephyr_display)
+#error No display chosen in devicetree. Missing "--shield" flag?
+#endif
 
 int main(void)
 {
-	struct video_buffer *buffers[2], *vbuf;
+	struct video_buffer *buffers[2];
+	struct video_buffer *vbuf = &(struct video_buffer){};
 	const struct device *display_dev;
+	const struct device *video_dev;
 	struct video_format fmt;
 	struct video_caps caps;
-	const struct device *video_dev;
+	enum video_buf_type type = VIDEO_BUF_TYPE_OUTPUT;
+	struct video_selection sel = {
+		.type = VIDEO_BUF_TYPE_OUTPUT,
+	};
 	size_t bsize;
 	int i = 0;
+	int err;
 
 	display_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
 	if (!device_is_ready(display_dev)) {
@@ -33,24 +44,17 @@ int main(void)
 		return 0;
 	}
 
-#if DT_HAS_CHOSEN(zephyr_camera)
 	video_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_camera));
 	if (!device_is_ready(video_dev)) {
 		LOG_ERR("%s device is not ready", video_dev->name);
 		return 0;
 	}
-#else
-	video_dev = device_get_binding(VIDEO_DEV_SW);
-	if (video_dev == NULL) {
-		LOG_ERR("%s device not found", VIDEO_DEV_SW);
-		return 0;
-	}
-#endif
 
 	LOG_INF("- Device name: %s", video_dev->name);
 
 	/* Get capabilities */
-	if (video_get_caps(video_dev, VIDEO_EP_OUT, &caps)) {
+	caps.type = type;
+	if (video_get_caps(video_dev, &caps)) {
 		LOG_ERR("Unable to retrieve video capabilities");
 		return 0;
 	}
@@ -68,18 +72,57 @@ int main(void)
 	}
 
 	/* Get default/native format */
-	if (video_get_format(video_dev, VIDEO_EP_OUT, &fmt)) {
+	fmt.type = type;
+	if (video_get_format(video_dev, &fmt)) {
 		LOG_ERR("Unable to retrieve video format");
 		return 0;
 	}
 
+	/* Set the crop setting if necessary */
+#if CONFIG_VIDEO_SOURCE_CROP_WIDTH && CONFIG_VIDEO_SOURCE_CROP_HEIGHT
+	sel.target = VIDEO_SEL_TGT_CROP;
+	sel.rect.left = CONFIG_VIDEO_SOURCE_CROP_LEFT;
+	sel.rect.top = CONFIG_VIDEO_SOURCE_CROP_TOP;
+	sel.rect.width = CONFIG_VIDEO_SOURCE_CROP_WIDTH;
+	sel.rect.height = CONFIG_VIDEO_SOURCE_CROP_HEIGHT;
+	if (video_set_selection(video_dev, &sel)) {
+		LOG_ERR("Unable to set selection crop");
+		return 0;
+	}
+	LOG_INF("Selection crop set to (%u,%u)/%ux%u",
+		sel.rect.left, sel.rect.top, sel.rect.width, sel.rect.height);
+#endif
+
 	/* Set format */
 	fmt.width = CONFIG_VIDEO_WIDTH;
 	fmt.height = CONFIG_VIDEO_HEIGHT;
-	fmt.pitch = fmt.width * 2;
 	fmt.pixelformat = VIDEO_PIX_FMT_RGB565;
 
-	if (video_set_format(video_dev, VIDEO_EP_OUT, &fmt)) {
+	/*
+	 * Check (if possible) if targeted size is same as crop
+	 * and if compose is necessary
+	 */
+	sel.target = VIDEO_SEL_TGT_CROP;
+	err = video_get_selection(video_dev, &sel);
+	if (err < 0 && err != -ENOSYS) {
+		LOG_ERR("Unable to get selection crop");
+		return 0;
+	}
+
+	if (err == 0 && (sel.rect.width != fmt.width || sel.rect.height != fmt.height)) {
+		sel.target = VIDEO_SEL_TGT_COMPOSE;
+		sel.rect.left = 0;
+		sel.rect.top = 0;
+		sel.rect.width = fmt.width;
+		sel.rect.height = fmt.height;
+		err = video_set_selection(video_dev, &sel);
+		if (err < 0 && err != -ENOSYS) {
+			LOG_ERR("Unable to set selection compose");
+			return 0;
+		}
+	}
+
+	if (video_set_format(video_dev, &fmt)) {
 		LOG_ERR("Unable to set up video format");
 		return 0;
 	}
@@ -97,13 +140,14 @@ int main(void)
 
 	/* Alloc video buffers and enqueue for capture */
 	for (i = 0; i < ARRAY_SIZE(buffers); i++) {
-		buffers[i] = video_buffer_alloc(bsize, K_FOREVER);
+		buffers[i] = video_buffer_aligned_alloc(bsize, CONFIG_VIDEO_BUFFER_POOL_ALIGN,
+							K_FOREVER);
 		if (buffers[i] == NULL) {
 			LOG_ERR("Unable to alloc video buffer");
 			return 0;
 		}
-
-		video_enqueue(video_dev, VIDEO_EP_OUT, buffers[i]);
+		buffers[i]->type = type;
+		video_enqueue(video_dev, buffers[i]);
 	}
 
 	/* Set controls */
@@ -119,7 +163,7 @@ int main(void)
 	}
 
 	/* Start video capture */
-	if (video_stream_start(video_dev)) {
+	if (video_stream_start(video_dev, type)) {
 		LOG_ERR("Unable to start capture (interface)");
 		return 0;
 	}
@@ -139,10 +183,9 @@ int main(void)
 	LOG_INF("- Capture started");
 
 	/* Grab video frames */
+	vbuf->type = type;
 	while (1) {
-		int err;
-
-		err = video_dequeue(video_dev, VIDEO_EP_OUT, &vbuf, K_FOREVER);
+		err = video_dequeue(video_dev, &vbuf, K_FOREVER);
 		if (err) {
 			LOG_ERR("Unable to dequeue video buf");
 			return 0;
@@ -153,7 +196,7 @@ int main(void)
 
 		lv_task_handler();
 
-		err = video_enqueue(video_dev, VIDEO_EP_OUT, vbuf);
+		err = video_enqueue(video_dev, vbuf);
 		if (err) {
 			LOG_ERR("Unable to requeue video buf");
 			return 0;

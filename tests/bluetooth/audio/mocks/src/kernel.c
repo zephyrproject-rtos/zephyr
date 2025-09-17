@@ -5,6 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <errno.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -20,6 +21,8 @@
 #define FFF_FAKES_LIST(FAKE)                                                                       \
 	FAKE(z_timeout_remaining)                                                                  \
 	FAKE(k_work_cancel_delayable_sync)                                                         \
+	FAKE(k_sem_take)                                                                           \
+	FAKE(k_sem_give)
 
 /* List of k_work items to be worked. */
 static sys_slist_t work_pending;

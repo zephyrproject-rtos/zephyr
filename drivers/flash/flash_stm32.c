@@ -13,12 +13,16 @@
 #define DT_DRV_COMPAT st_stm32_flash_controller
 
 #include <string.h>
+#if defined(CONFIG_SOC_SERIES_STM32H5X)
+#include <zephyr/cache.h>
+#endif /* CONFIG_SOC_SERIES_STM32H5X */
 #include <zephyr/drivers/flash.h>
 #include <zephyr/drivers/flash/stm32_flash_api_extensions.h>
 #include <zephyr/init.h>
 #include <soc.h>
 #include <stm32_ll_bus.h>
 #include <stm32_ll_rcc.h>
+#include <stm32_ll_utils.h>
 #include <zephyr/logging/log.h>
 
 #include "flash_stm32.h"
@@ -41,8 +45,6 @@ static const struct flash_parameters flash_stm32_parameters = {
 	.erase_value = 0xff,
 #endif
 };
-
-static int flash_stm32_cr_lock(const struct device *dev, bool enable);
 
 bool __weak flash_stm32_valid_range(const struct device *dev, off_t offset,
 				    uint32_t len, bool write)
@@ -79,7 +81,8 @@ static int flash_stm32_check_status(const struct device *dev)
 
 int flash_stm32_wait_flash_idle(const struct device *dev)
 {
-	int64_t timeout_time = k_uptime_get() + STM32_FLASH_TIMEOUT;
+	k_timepoint_t timeout = sys_timepoint_calc(K_MSEC(STM32_FLASH_TIMEOUT));
+	bool expired = false;
 	int rc;
 	uint32_t busy_flags;
 
@@ -96,10 +99,16 @@ int flash_stm32_wait_flash_idle(const struct device *dev)
 #endif
 
 	while ((FLASH_STM32_REGS(dev)->FLASH_STM32_SR & busy_flags)) {
-		if (k_uptime_get() > timeout_time) {
-			LOG_ERR("Timeout! val: %d", STM32_FLASH_TIMEOUT);
+		if (expired) {
+			LOG_ERR("Timeout! val: %d ms", STM32_FLASH_TIMEOUT);
 			return -EIO;
 		}
+
+		/* Check if expired, but always read status register one more time.
+		 * If the calling thread is pre-emptive we may have been scheduled out after reading
+		 * the status register, and scheduled back after timeout has expired.
+		 */
+		expired = sys_timepoint_expired(timeout);
 	}
 
 	return 0;
@@ -110,7 +119,8 @@ static void flash_stm32_flush_caches(const struct device *dev,
 {
 #if defined(CONFIG_SOC_SERIES_STM32F0X) || defined(CONFIG_SOC_SERIES_STM32F3X) || \
 	defined(CONFIG_SOC_SERIES_STM32G0X) || defined(CONFIG_SOC_SERIES_STM32L5X) || \
-	defined(CONFIG_SOC_SERIES_STM32U5X) || defined(CONFIG_SOC_SERIES_STM32H5X)
+	defined(CONFIG_SOC_SERIES_STM32U3X) || defined(CONFIG_SOC_SERIES_STM32U5X) || \
+	defined(CONFIG_SOC_SERIES_STM32H5X)
 	ARG_UNUSED(dev);
 	ARG_UNUSED(offset);
 	ARG_UNUSED(len);
@@ -228,7 +238,7 @@ static int flash_stm32_write(const struct device *dev, off_t offset,
 	return rc;
 }
 
-static int flash_stm32_cr_lock(const struct device *dev, bool enable)
+int flash_stm32_cr_lock(const struct device *dev, bool enable)
 {
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
 
@@ -286,81 +296,6 @@ static int flash_stm32_cr_lock(const struct device *dev, bool enable)
 	}
 
 	return rc;
-}
-
-int flash_stm32_option_bytes_lock(const struct device *dev, bool enable)
-{
-	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
-
-#if defined(FLASH_OPTCR_OPTLOCK) /* F2, F4, F7 */
-	if (enable) {
-		regs->OPTCR |= FLASH_OPTCR_OPTLOCK;
-	} else if (regs->OPTCR & FLASH_OPTCR_OPTLOCK) {
-		regs->OPTKEYR = FLASH_OPT_KEY1;
-		regs->OPTKEYR = FLASH_OPT_KEY2;
-	}
-#else
-	int rc;
-
-	/* Unlock CR/PECR/NSCR register if needed. */
-	if (!enable) {
-		rc = flash_stm32_cr_lock(dev, false);
-		if (rc) {
-			return rc;
-		}
-	}
-#if defined(FLASH_CR_OPTWRE)	  /* F0, F1 and F3 */
-	if (enable) {
-		regs->CR &= ~FLASH_CR_OPTWRE;
-	} else if (!(regs->CR & FLASH_CR_OPTWRE)) {
-		regs->OPTKEYR = FLASH_OPTKEY1;
-		regs->OPTKEYR = FLASH_OPTKEY2;
-	}
-#elif defined(FLASH_CR_OPTLOCK)	  /* G0, G4, L4, WB and WL */
-	if (enable) {
-		regs->CR |= FLASH_CR_OPTLOCK;
-	} else if (regs->CR & FLASH_CR_OPTLOCK) {
-		regs->OPTKEYR = FLASH_OPTKEY1;
-		regs->OPTKEYR = FLASH_OPTKEY2;
-	}
-#elif defined(FLASH_PECR_OPTLOCK) /* L0 and L1 */
-	if (enable) {
-		regs->PECR |= FLASH_PECR_OPTLOCK;
-	} else if (regs->PECR & FLASH_PECR_OPTLOCK) {
-		regs->OPTKEYR = FLASH_OPTKEY1;
-		regs->OPTKEYR = FLASH_OPTKEY2;
-	}
-#elif defined(FLASH_NSCR_OPTLOCK) /* L5 and U5 */
-	if (enable) {
-		regs->NSCR |= FLASH_NSCR_OPTLOCK;
-	} else if (regs->NSCR & FLASH_NSCR_OPTLOCK) {
-		regs->OPTKEYR = FLASH_OPTKEY1;
-		regs->OPTKEYR = FLASH_OPTKEY2;
-	}
-#elif defined(FLASH_NSCR1_OPTLOCK) /* WBA */
-	if (enable) {
-		regs->NSCR1 |= FLASH_NSCR1_OPTLOCK;
-	} else if (regs->NSCR1 & FLASH_NSCR1_OPTLOCK) {
-		regs->OPTKEYR = FLASH_OPTKEY1;
-		regs->OPTKEYR = FLASH_OPTKEY2;
-	}
-#endif
-	/* Lock CR/PECR/NSCR register if needed. */
-	if (enable) {
-		rc = flash_stm32_cr_lock(dev, true);
-		if (rc) {
-			return rc;
-		}
-	}
-#endif
-
-	if (enable) {
-		LOG_DBG("Option bytes locked");
-	} else {
-		LOG_DBG("Option bytes unlocked");
-	}
-
-	return 0;
 }
 
 #if defined(CONFIG_FLASH_EX_OP_ENABLED) && defined(CONFIG_FLASH_STM32_BLOCK_REGISTERS)
@@ -431,6 +366,29 @@ flash_stm32_get_parameters(const struct device *dev)
 	return &flash_stm32_parameters;
 }
 
+/* Gives the total logical device size in bytes and return 0. */
+static int flash_stm32_get_size(const struct device *dev, uint64_t *size)
+{
+	ARG_UNUSED(dev);
+
+#if defined(CONFIG_SOC_SERIES_STM32H5X)
+	/* Disable the ICACHE to ensure all memory accesses are non-cacheable.
+	 * This is required on STM32H5, where the manufacturing flash must be
+	 * accessed in non-cacheable mode - otherwise, a bus error occurs.
+	 */
+	cache_instr_disable();
+#endif /* CONFIG_SOC_SERIES_STM32H5X */
+
+	*size = (uint64_t)LL_GetFlashSize() * 1024U;
+
+#if defined(CONFIG_SOC_SERIES_STM32H5X)
+	/* Re-enable the ICACHE (unconditonally - it should always be turned on) */
+	cache_instr_enable();
+#endif /* CONFIG_SOC_SERIES_STM32H5X */
+
+	return 0;
+}
+
 static struct flash_stm32_priv flash_data = {
 	.regs = (FLASH_TypeDef *) DT_INST_REG_ADDR(0),
 	/* Getting clocks information from device tree description depending
@@ -449,6 +407,7 @@ static DEVICE_API(flash, flash_stm32_api) = {
 	.write = flash_stm32_write,
 	.read = flash_stm32_read,
 	.get_parameters = flash_stm32_get_parameters,
+	.get_size = flash_stm32_get_size,
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 	.page_layout = flash_stm32_page_layout,
 #endif

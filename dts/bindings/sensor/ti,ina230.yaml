@@ -13,18 +13,9 @@ description: |
 
 compatible: "ti,ina230"
 
-include: ti,ina23x-common.yaml
+include: ti,ina2xx-common.yaml
 
 properties:
-  config:
-    type: int
-    deprecated: true
-    default: 0x0000
-    description: |
-      Value of the configuration register
-      e.g shunt voltage and bus voltage ADC conversion
-      times, ADC and averaging, and ADC operating mode.
-
   alert-config:
     type: int
     description: Diag alert register, default matches the power-on reset value

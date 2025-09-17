@@ -63,6 +63,8 @@ int lvgl_keypad_input_init(const struct device *dev)
 	static const uint16_t lvgl_keypad_lvgl_codes_##inst[] = DT_INST_PROP(inst, lvgl_codes);    \
 	static const struct lvgl_keypad_input_config lvgl_keypad_input_config_##inst = {           \
 		.common_config.event_msgq = &LVGL_INPUT_EVENT_MSGQ(inst, keypad),                  \
+		.common_config.display_dev =                                                       \
+			DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(inst, display)),                     \
 		.input_codes = lvgl_keypad_input_codes_##inst,                                     \
 		.lvgl_codes = lvgl_keypad_lvgl_codes_##inst,                                       \
 		.num_codes = DT_INST_PROP_LEN(inst, input_codes),                                  \

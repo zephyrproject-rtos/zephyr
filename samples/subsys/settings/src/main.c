@@ -48,7 +48,7 @@ int beta_handle_export(int (*cb)(const char *name,
 int beta_handle_get(const char *name, char *val, int val_len_max);
 
 /* dynamic main tree handler */
-struct settings_handler alph_handler = {
+struct settings_handler alpha_handler = {
 		.name = "alpha",
 		.h_get = NULL,
 		.h_set = alpha_handle_set,
@@ -418,7 +418,7 @@ static void example_without_handler(void)
 	}
 }
 
-static void example_initialization(void)
+static int example_initialization(void)
 {
 	int rc;
 
@@ -450,19 +450,22 @@ static void example_initialization(void)
 	rc = settings_subsys_init();
 	if (rc) {
 		printk("settings subsys initialization: fail (err %d)\n", rc);
-		return;
+		return rc;
 	}
 
 	printk("settings subsys initialization: OK.\n");
 
-	rc = settings_register(&alph_handler);
+	rc = settings_register(&alpha_handler);
 	if (rc) {
 		printk("subtree <%s> handler registered: fail (err %d)\n",
-		       alph_handler.name, rc);
+		       alpha_handler.name, rc);
+		return rc;
 	}
 
-	printk("subtree <%s> handler registered: OK\n", alph_handler.name);
+	printk("subtree <%s> handler registered: OK\n", alpha_handler.name);
 	printk("subtree <alpha/beta> has static handler\n");
+
+	return 0;
 }
 
 static void example_delete(void)
@@ -542,7 +545,9 @@ int main(void)
 	printk("\n*** Settings usage example ***\n\n");
 
 	/* settings initialization */
-	example_initialization();
+	if (example_initialization() != 0) {
+		return 0;
+	}
 
 	for (i = 0; i < 6; i++) {
 		printk("\n##############\n");

@@ -4,17 +4,18 @@
 
 import argparse
 import os
-from pathlib import Path
+import re
 import sys
 import textwrap
+from pathlib import Path
 from urllib.parse import urlparse
 
 from west.commands import WestCommand
-
 from zephyr_ext_common import ZEPHYR_BASE
 
 sys.path.append(os.fspath(Path(__file__).parent.parent))
 import zephyr_module
+
 
 class Blobs(WestCommand):
 
@@ -55,6 +56,8 @@ class Blobs(WestCommand):
             - type: type of blob
             - version: version string
             - license_path: path to the license file for the blob
+            - license-abspath: absolute path to the license file for the blob
+            - click-through: need license click-through or not
             - uri: URI to the remote location of the blob
             - description: blob text description
             - doc-url: URL to the documentation for this blob
@@ -74,6 +77,17 @@ class Blobs(WestCommand):
         group.add_argument('-f', '--format',
                             help='''format string to use to list each blob;
                                     see FORMAT STRINGS below''')
+
+        group = parser.add_argument_group('west blobs fetch options')
+        group.add_argument(
+            '-l',
+            '--allow-regex',
+            help='''Regex pattern to apply to the blob local path.
+                    Only local paths matching this regex will be fetched.
+                    Note that local paths are relative to the module directory''',
+        )
+        group.add_argument('-a', '--auto-accept', action='store_true',
+                            help='''auto accept license if the fetching needs click-through''')
 
         return parser
 
@@ -121,7 +135,7 @@ class Blobs(WestCommand):
     # Compare the checksum of a file we've just downloaded
     # to the digest in blob metadata, warn user if they differ.
     def verify_blob(self, blob) -> bool:
-        self.dbg('Verifying blob {module}: {abspath}'.format(**blob))
+        self.dbg(f"Verifying blob {blob['module']}: {blob['abspath']}")
 
         status = zephyr_module.get_blob_status(blob['abspath'], blob['sha256'])
         if status == zephyr_module.BLOB_OUTDATED:
@@ -148,9 +162,44 @@ class Blobs(WestCommand):
         blobs = self.get_blobs(args)
         for blob in blobs:
             if blob['status'] == zephyr_module.BLOB_PRESENT:
-                self.dbg('Blob {module}: {abspath} is up to date'.format(**blob))
+                self.dbg(f"Blob {blob['module']}: {blob['abspath']} is up to date")
                 continue
-            self.inf('Fetching blob {module}: {abspath}'.format(**blob))
+
+            # if args.allow_regex is set, use it to filter the blob by path
+            if args.allow_regex and not re.match(args.allow_regex, blob['path']):
+                self.dbg(
+                    f"Blob {blob['module']}: {blob['abspath']} does not match regex "
+                    f"'{args.allow_regex}', skipping"
+                )
+                continue
+            self.inf(f"Fetching blob {blob['module']}: {blob['abspath']}")
+
+            if blob['click-through'] and not args.auto_accept:
+                while True:
+                    user_input = input("For this blob, need to read and accept "
+                                       "license to continue. Read it?\n"
+                                       "Please type 'y' or 'n' and press enter to confirm: ")
+                    if user_input.upper() == "Y" or user_input.upper() == "N":
+                        break
+
+                if user_input.upper() != "Y":
+                    self.wrn('Skip fetching this blob.')
+                    continue
+
+                with open(blob['license-abspath']) as license_file:
+                    license_content = license_file.read()
+                    print(license_content)
+
+                while True:
+                    user_input = input("Accept license to continue?\n"
+                                       "Please type 'y' or 'n' and press enter to confirm: ")
+                    if user_input.upper() == "Y" or user_input.upper() == "N":
+                        break
+
+                if user_input.upper() != "Y":
+                    self.wrn('Skip fetching this blob.')
+                    continue
+
             self.fetch_blob(blob['url'], blob['abspath'])
             if not self.verify_blob(blob):
                 bad_checksum_count += 1
@@ -163,17 +212,17 @@ class Blobs(WestCommand):
         blobs = self.get_blobs(args)
         for blob in blobs:
             if blob['status'] == zephyr_module.BLOB_NOT_PRESENT:
-                self.dbg('Blob {module}: {abspath} not in filesystem'.format(**blob))
+                self.dbg(f"Blob {blob['module']}: {blob['abspath']} not in filesystem")
                 continue
-            self.inf('Deleting blob {module}: {status} {abspath}'.format(**blob))
+            self.inf(f"Deleting blob {blob['module']}: {blob['status']} {blob['abspath']}")
             blob['abspath'].unlink()
 
     def do_run(self, args, _):
-        self.dbg(f'subcmd: \'{args.subcmd[0]}\' modules: {args.modules}')
+        self.dbg(f"subcmd: '{args.subcmd[0]}' modules: {args.modules}")
 
         subcmd = getattr(self, args.subcmd[0])
 
         if args.subcmd[0] != 'list' and args.format is not None:
-            self.die(f'unexpected --format argument; this is a "west blobs list" option')
+            self.die('unexpected --format argument; this is a "west blobs list" option')
 
         subcmd(args)

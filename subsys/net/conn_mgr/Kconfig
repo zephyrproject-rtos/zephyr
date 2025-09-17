@@ -2,12 +2,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig NET_CONNECTION_MANAGER
-	bool "Network connection manager [EXPERIMENTAL]"
+	bool "Network connection manager"
 	depends on NET_IPV6 || NET_IPV4
 	select NET_MGMT
 	select NET_MGMT_EVENT
 	select NET_MGMT_EVENT_INFO
-	select EXPERIMENTAL
 	help
 	  When enabled, this will start the connection manager that will
 	  listen to network interface and IP events in order to verify

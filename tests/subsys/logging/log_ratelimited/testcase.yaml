@@ -1,0 +1,23 @@
+common:
+  integration_platforms:
+    - native_sim
+  tags:
+    - logging
+  platform_allow:
+    - native_sim
+
+tests:
+  logging.log_ratelimited:
+    build_only: true
+    extra_configs:
+      - CONFIG_LOG_RATELIMIT_INTERVAL_MS=1000
+  logging.log_ratelimited.fallback_drop:
+    build_only: true
+    extra_configs:
+      - CONFIG_LOG_RATELIMIT=n
+      - CONFIG_LOG_RATELIMIT_FALLBACK_DROP=y
+  logging.log_ratelimited.fallback_log:
+    build_only: true
+    extra_configs:
+      - CONFIG_LOG_RATELIMIT=n
+      - CONFIG_LOG_RATELIMIT_FALLBACK_LOG=y

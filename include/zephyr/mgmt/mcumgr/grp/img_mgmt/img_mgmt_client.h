@@ -8,13 +8,14 @@
 #define H_IMG_MGMT_CLIENT_
 
 #include <inttypes.h>
+#include <zephyr/mgmt/mcumgr/mgmt/mgmt_defines.h>
 #include <zephyr/mgmt/mcumgr/grp/img_mgmt/img_mgmt.h>
 #include <zephyr/mgmt/mcumgr/smp/smp_client.h>
 
 /**
  * @brief MCUmgr Image management client API
- * @defgroup mcumgr_img_mgmt_client MCUmgr img_mgmt_client API
- * @ingroup mcumgr
+ * @defgroup mcumgr_img_mgmt_client Image Management Client
+ * @ingroup mcumgr_img_mgmt
  * @{
  */
 

@@ -11,6 +11,7 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/irq.h>
 #include <zephyr/kernel.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/pm/policy.h>
 #include <errno.h>
 #include <soc.h>
@@ -23,7 +24,8 @@ LOG_MODULE_REGISTER(i2c_ite_enhance, CONFIG_I2C_LOG_LEVEL);
 #include "i2c-priv.h"
 
 /* Start smbus session from idle state */
-#define I2C_MSG_START BIT(5)
+#define I2C_MSG_START    BIT(5)
+#define I2C_MSG_W2R_MASK (I2C_MSG_RESTART | I2C_MSG_READ | I2C_MSG_STOP)
 
 #define I2C_LINE_SCL_HIGH BIT(0)
 #define I2C_LINE_SDA_HIGH BIT(1)
@@ -122,6 +124,8 @@ struct i2c_enhance_data {
 	struct k_mutex mutex;
 	struct k_sem device_sync_sem;
 	struct i2c_bitbang bitbang;
+	struct gpio_callback gpio_wui_scl_cb;
+	struct gpio_callback gpio_wui_sda_cb;
 	/* Index into output data */
 	size_t widx;
 	/* Index into input data */
@@ -136,6 +140,8 @@ struct i2c_enhance_data {
 	uint8_t stop;
 	/* Number of messages. */
 	uint8_t num_msgs;
+	/* NACK */
+	bool nack;
 #ifdef CONFIG_I2C_IT8XXX2_CQ_MODE
 	/* Store command queue mode messages. */
 	struct i2c_msg *cq_msgs;
@@ -408,6 +414,7 @@ static int enhanced_i2c_error(const struct device *dev)
 	} else if ((i2c_str & E_HOSTA_BDS_AND_ACK) == E_HOSTA_BDS) {
 		if (IT8XXX2_I2C_CTR(base) & E_ACK) {
 			data->err = E_HOSTA_ACK;
+			data->nack = true;
 			/* STOP */
 			IT8XXX2_I2C_CTR(base) = E_FINISH;
 		}
@@ -520,6 +527,12 @@ static int enhanced_i2c_tran_read(const struct device *dev)
 				}
 				/* read next byte */
 				i2c_pio_trans_data(dev, RX_DIRECT, in_data, 0);
+			} else if (data->active_msg->len == 0) {
+				/* Handle data length of 0 */
+				data->i2ccs = I2C_CH_NORMAL;
+				IT8XXX2_I2C_CTR(base) = E_FINISH;
+				/* wait for stop bit interrupt */
+				data->stop = 1;
 			}
 		}
 	}
@@ -589,6 +602,19 @@ static int i2c_transaction(const struct device *dev)
 			}
 		}
 	}
+
+	/*
+	 * When a transaction results in NACK, ensure that the IT8XXX2_I2C_CTR
+	 * register has been updated E_FINISH before proceeding with the
+	 * following i2c_reset.
+	 */
+	if (data->nack) {
+		data->nack = false;
+		data->stop = 1;
+
+		return 1;
+	}
+
 	/* reset i2c port */
 	i2c_reset(dev);
 	IT8XXX2_I2C_CTR1(base) = 0;
@@ -659,6 +685,8 @@ static int i2c_enhance_pio_transfer(const struct device *dev,
 	if (data->err || (data->active_msg->flags & I2C_MSG_STOP)) {
 		data->i2ccs = I2C_CH_NORMAL;
 	}
+	/* Clear the flag */
+	data->nack = false;
 
 	return data->err;
 }
@@ -811,12 +839,11 @@ static int enhanced_i2c_cmd_queue_trans(const struct device *dev)
 	IT8XXX2_I2C_MODE_SEL(base) = 0;
 	IT8XXX2_I2C_CTR2(base) = 1;
 	/*
-	 * The EC processor(CPU) cannot be in the k_cpu_idle() and power
-	 * policy during the transactions with the CQ mode(DMA mode).
+	 * The EC processor(CPU) cannot be in the k_cpu_idle() during the
+	 * transactions with the CQ mode(DMA mode).
 	 * Otherwise, the EC processor would be clock gated.
 	 */
 	chip_block_idle();
-	pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
 	/* Start */
 	IT8XXX2_I2C_CTR(base) = E_START_CQ;
 
@@ -851,8 +878,7 @@ static int i2c_enhance_cq_transfer(const struct device *dev,
 			config->port, data->addr_16bit, I2C_RC_TIMEOUT);
 	}
 
-	/* Permit to enter power policy and idle mode. */
-	pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+	/* Permit to enter idle mode. */
 	chip_permit_idle();
 
 	return data->err;
@@ -886,11 +912,10 @@ static bool cq_mode_allowed(const struct device *dev, struct i2c_msg *msgs)
 			return false;
 		}
 		/*
-		 * Write of I2C target address without writing data, used by
-		 * cmd_i2c_scan. Use PIO mode.
+		 * Use PIO mode when no data is written and read, such as in the
+		 * case of cmd_i2c_scan.
 		 */
-		if (((msgs[0].flags & I2C_MSG_RW_MASK) == I2C_MSG_WRITE) &&
-		    (msgs[0].len == 0)) {
+		if (msgs[0].len == 0) {
 			return false;
 		}
 		return true;
@@ -915,10 +940,9 @@ static bool cq_mode_allowed(const struct device *dev, struct i2c_msg *msgs)
 			 *      msg[1].flags = I2C_MSG_RESTART | I2C_MSG_READ |
 			 *                     I2C_MSG_STOP;
 			 */
-			if ((msgs[1].flags & I2C_MSG_RESTART) &&
-			    ((msgs[1].flags & I2C_MSG_RW_MASK) == I2C_MSG_READ) &&
-			    (msgs[1].flags & I2C_MSG_STOP) &&
-			    (msgs[1].len <= CONFIG_I2C_CQ_MODE_MAX_PAYLOAD_SIZE)) {
+			if (((msgs[1].flags & I2C_MSG_W2R_MASK) == I2C_MSG_W2R_MASK) &&
+			    (msgs[1].len <= CONFIG_I2C_CQ_MODE_MAX_PAYLOAD_SIZE) &&
+			    (msgs[1].len != 0)) {
 				return true;
 			}
 		}
@@ -943,6 +967,8 @@ static int i2c_enhance_transfer(const struct device *dev,
 #endif
 	/* Lock mutex of i2c controller */
 	k_mutex_lock(&data->mutex, K_FOREVER);
+	/* Block to enter power policy. */
+	pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
 
 	data->num_msgs = num_msgs;
 	data->addr_16bit = addr;
@@ -961,9 +987,8 @@ static int i2c_enhance_transfer(const struct device *dev,
 			 * (No external pull-up), drop the transaction.
 			 */
 			if (i2c_bus_not_available(dev)) {
-				/* Unlock mutex of i2c controller */
-				k_mutex_unlock(&data->mutex);
-				return -EIO;
+				ret = -EIO;
+				goto done;
 			}
 		}
 	}
@@ -978,6 +1003,10 @@ static int i2c_enhance_transfer(const struct device *dev,
 	}
 	/* Save return value. */
 	ret = i2c_parsing_return_value(dev);
+
+done:
+	/* Permit to enter power policy */
+	pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
 	/* Unlock mutex of i2c controller */
 	k_mutex_unlock(&data->mutex);
 
@@ -1171,6 +1200,20 @@ static void i2c_enhance_isr(void *arg)
 #endif
 }
 
+#ifdef CONFIG_I2C_TARGET_ALLOW_POWER_SAVING
+void wui_scl_isr(const struct device *gpio, struct gpio_callback *cb, uint32_t pins)
+{
+	/* Disable interrupts on SCL pin to avoid repeated interrupts. */
+	(void)gpio_pin_interrupt_configure(gpio, (find_msb_set(pins) - 1), GPIO_INT_MODE_DISABLED);
+}
+
+void wui_sda_isr(const struct device *gpio, struct gpio_callback *cb, uint32_t pins)
+{
+	/* Disable interrupts on SDA pin to avoid repeated interrupts. */
+	(void)gpio_pin_interrupt_configure(gpio, (find_msb_set(pins) - 1), GPIO_INT_MODE_DISABLED);
+}
+#endif
+
 static int i2c_enhance_init(const struct device *dev)
 {
 	struct i2c_enhance_data *data = dev->data;
@@ -1260,6 +1303,31 @@ static int i2c_enhance_init(const struct device *dev)
 		return status;
 	}
 
+#ifdef CONFIG_I2C_TARGET_ALLOW_POWER_SAVING
+	if (config->target_enable) {
+		/*
+		 * Configure GPIO callbacks for SDA/SCL pins as wake-up sources.
+		 * When the device enters PM_DEVICE_ACTION_SUSPEND, the pins are
+		 * set to trigger interrupts on both edges.
+		 * Any bus activity will wake the system from Deep Doze. Enabling
+		 * lower power consumption while maintaining reliable communication.
+		 */
+		gpio_init_callback(&data->gpio_wui_scl_cb, wui_scl_isr, BIT(config->scl_gpios.pin));
+		status = gpio_add_callback(config->scl_gpios.port, &data->gpio_wui_scl_cb);
+		if (status < 0) {
+			LOG_ERR("Failed to add SCL %d wui pin callback (err %d)", config->port,
+				status);
+			return status;
+		}
+		gpio_init_callback(&data->gpio_wui_sda_cb, wui_sda_isr, BIT(config->sda_gpios.pin));
+		status = gpio_add_callback(config->sda_gpios.port, &data->gpio_wui_sda_cb);
+		if (status < 0) {
+			LOG_ERR("Failed to add SDA %d wui pin callback (err %d)", config->port,
+				status);
+			return status;
+		}
+	}
+#endif
 
 	return 0;
 }
@@ -1369,8 +1437,10 @@ static int i2c_enhance_target_register(const struct device *dev,
 
 	/* I2C target initial configuration of PIO mode */
 	if (config->target_pio_mode) {
+#ifndef CONFIG_I2C_TARGET_ALLOW_POWER_SAVING
 		/* Block to enter power policy. */
 		pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+#endif
 
 		/* I2C module enable */
 		IT8XXX2_I2C_CTR1(base) = IT8XXX2_I2C_MDL_EN;
@@ -1409,6 +1479,7 @@ static int i2c_enhance_target_register(const struct device *dev,
 		IT8XXX2_I2C_BYTE_CNT_L(base) =
 			CONFIG_I2C_TARGET_IT8XXX2_MAX_BUF_SIZE & GENMASK(2, 0);
 
+#ifndef CONFIG_I2C_TARGET_ALLOW_POWER_SAVING
 		/*
 		 * The EC processor(CPU) cannot be in the k_cpu_idle() and power
 		 * policy during the transactions with the CQ mode(DMA mode).
@@ -1416,6 +1487,7 @@ static int i2c_enhance_target_register(const struct device *dev,
 		 */
 		chip_block_idle();
 		pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+#endif
 
 		/* I2C module enable and command queue mode */
 		IT8XXX2_I2C_CTR1(base) = IT8XXX2_I2C_COMQ_EN | IT8XXX2_I2C_MDL_EN;
@@ -1439,11 +1511,13 @@ static int i2c_enhance_target_unregister(const struct device *dev,
 
 	irq_disable(config->i2c_irq_base);
 
+#ifndef CONFIG_I2C_TARGET_ALLOW_POWER_SAVING
 	/* Permit to enter power policy and idle mode. */
 	pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
 	if (!config->target_pio_mode) {
 		chip_permit_idle();
 	}
+#endif
 
 	data->target_cfg = NULL;
 	data->target_attached = false;
@@ -1452,6 +1526,59 @@ static int i2c_enhance_target_unregister(const struct device *dev,
 	return 0;
 }
 #endif
+
+#ifdef CONFIG_I2C_TARGET_ALLOW_POWER_SAVING
+static inline int i2c_enhance_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	const struct i2c_enhance_config *const config = dev->config;
+	int ret;
+
+	if (config->target_enable) {
+		switch (action) {
+		/* Next device power state is in active. */
+		case PM_DEVICE_ACTION_RESUME:
+			/* Disable interrupts on SCL/SDA pin to avoid repeated interrupts. */
+			ret = gpio_pin_interrupt_configure_dt(&config->scl_gpios,
+							      GPIO_INT_MODE_DISABLED);
+			if (ret < 0) {
+				LOG_ERR("Failed to configure I2C%d WUI (ret %d)", config->port,
+					ret);
+				return ret;
+			}
+			ret = gpio_pin_interrupt_configure_dt(&config->sda_gpios,
+							      GPIO_INT_MODE_DISABLED);
+			if (ret < 0) {
+				LOG_ERR("Failed to configure I2C%d WUI (ret %d)", config->port,
+					ret);
+				return ret;
+			}
+			break;
+		/* Next device power state is deep doze mode */
+		case PM_DEVICE_ACTION_SUSPEND:
+			/* Configure wakeup pins as both edge tribbers */
+			ret = gpio_pin_interrupt_configure_dt(
+				&config->scl_gpios, GPIO_INT_MODE_EDGE | GPIO_INT_TRIG_BOTH);
+			if (ret < 0) {
+				LOG_ERR("Failed to configure I2C%d WUI (ret %d)", config->port,
+					ret);
+				return ret;
+			}
+			ret = gpio_pin_interrupt_configure_dt(
+				&config->sda_gpios, GPIO_INT_MODE_EDGE | GPIO_INT_TRIG_BOTH);
+			if (ret < 0) {
+				LOG_ERR("Failed to configure I2C%d WUI (ret %d)", config->port,
+					ret);
+				return ret;
+			}
+			break;
+		default:
+			return -ENOTSUP;
+		}
+	}
+
+	return 0;
+}
+#endif /* CONFIG_I2C_TARGET_ALLOW_POWER_SAVING */
 
 static DEVICE_API(i2c, i2c_enhance_driver_api) = {
 	.configure = i2c_enhance_configure,
@@ -1504,9 +1631,11 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_I2C_TARGET_BUFFER_MODE),
 	};                                                                      \
 										\
 	static struct i2c_enhance_data i2c_enhance_data_##inst;                 \
-										\
+		IF_ENABLED(CONFIG_I2C_TARGET_ALLOW_POWER_SAVING,                \
+		(PM_DEVICE_DT_INST_DEFINE(inst, i2c_enhance_pm_action);))       \
 	I2C_DEVICE_DT_INST_DEFINE(inst, i2c_enhance_init,                       \
-				  NULL,                                         \
+		COND_CODE_1(CONFIG_I2C_TARGET_ALLOW_POWER_SAVING,               \
+			    (PM_DEVICE_DT_INST_GET(inst)), (NULL)),             \
 				  &i2c_enhance_data_##inst,                     \
 				  &i2c_enhance_cfg_##inst,                      \
 				  POST_KERNEL,                                  \

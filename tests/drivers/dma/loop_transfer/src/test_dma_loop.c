@@ -169,6 +169,8 @@ static int test_loop(const struct device *dma)
 		}
 	}
 
+	dma_release_channel(dma, chan_id);
+
 	TC_PRINT("Finished DMA: %s\n", dma->name);
 	return TC_PASS;
 }
@@ -313,6 +315,8 @@ static int test_loop_suspend_resume(const struct device *dma)
 			return TC_FAIL;
 		}
 	}
+
+	dma_release_channel(dma, chan_id);
 
 	TC_PRINT("Finished DMA: %s\n", dma->name);
 	return TC_PASS;
@@ -467,6 +471,8 @@ static int test_loop_repeated_start_stop(const struct device *dma)
 		TC_PRINT("ERROR: repeated transfer stop (%d)\n", chan_id);
 		return TC_FAIL;
 	}
+
+	dma_release_channel(dma, chan_id);
 
 	return TC_PASS;
 }

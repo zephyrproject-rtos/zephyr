@@ -16,8 +16,8 @@
 	iis2dlpc_mikroe_accel13_click: iis2dlpc@18 {
 		compatible = "st,iis2dlpc";
 		reg = <0x18>;
-		drdy-gpios =  <&mikrobus_header 7 GPIO_ACTIVE_HIGH>;
-		drdy-int =  <2>;
+		drdy-gpios = <&mikrobus_header 7 GPIO_ACTIVE_HIGH>;
+		drdy-int = <2>;
 		status = "okay";
 	};
 };

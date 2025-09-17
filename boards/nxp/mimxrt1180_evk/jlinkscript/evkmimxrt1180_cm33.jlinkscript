@@ -1,0 +1,1029 @@
+__constant U32 _INDEX_AHB_AP_CORTEX_M33 = 3;
+__constant U32 _AHB_ACC_32BIT_AUTO_INC =
+	(1 << 29) | (1 << 25) | (1 << 24) | (1 << 4) | (2 << 0);
+__constant U32 _AHB_ACC_16BIT_AUTO_INC =
+	(1 << 29) | (1 << 25) | (1 << 24) | (1 << 4) | (1 << 0);
+	/* HMASTER = DEBUG, Private access, no Auto-increment, */
+	/* Access size: half word; */
+__constant U32 _ACCESS_AP = 1;
+__constant U32 _CM33_CPUID = 0xD210;
+__constant U32 _CM7_CPUID = 0x0C27;
+
+/* ROM trap address for CM33 core, after system reset */
+__constant U32 _ROM_TRAP0_ADDR = 0x10002932;
+__constant U32 _ROM_TRAP1_ADDR = 0x100025D4;
+__constant U32 _ROM_TRAP2_ADDR = 0x100025D4;
+
+__constant U32 _SRC_SRSR_ADDR = 0x44460050;
+__constant U32 _SRC_SRMASK_ADDR = 0x44460018;
+__constant U32 _SRC_SCR_ADDR = 0x44460010;
+__constant U32 _SRC_AUTHEN_CTRL_ADDR = 0x44460004;
+__constant U32 _SRC_SBMR2_ADDR = 0x44460044;
+__constant U32 _BLK_M7_CFG_ADDR = 0x444F0080;
+
+__constant U32 _DWT_COMP0_ADDR = 0xE0001020;
+__constant U32 _DWT_FUNC0_ADDR = 0xE0001028;
+
+__constant U32 _DCB_DHCSR_ADDR = 0xE000EDF0;
+__constant U32 _DCB_DEMCR_ADDR = 0xE000EDFC;
+
+__constant U32 _SCB_AIRCR_ADDR = 0xE000ED0C;
+
+__constant U32 _XCACHE_PC_CCR_ADDR = 0x44400000;
+__constant U32 _XCACHE_PS_CCR_ADDR = 0x44400800;
+
+__constant U32 _CM33_MPU_CTRL_ADDR = 0xE000ED94;
+
+__constant U32 _SI_VER_ADDR = 0x5751804C;
+
+unsigned int cpuID;
+unsigned int rom_trap_addr;
+
+static int _WriteViaCM33AP16(U32 Addr, U16 Data)
+{
+	int r;
+
+	JLINK_CORESIGHT_WriteDP(JLINK_CORESIGHT_DP_REG_SELECT,
+				(0 << 4) | (_INDEX_AHB_AP_CORTEX_M33 << 24));
+	JLINK_CORESIGHT_WriteAP(JLINK_CORESIGHT_AP_REG_CTRL,
+			_AHB_ACC_16BIT_AUTO_INC);
+	Data = (Data & 0xFFFF) | ((Data & 0xFFFF) << 16);
+	r = JLINK_CORESIGHT_WriteDAP(JLINK_CORESIGHT_AP_REG_ADDR,
+			_ACCESS_AP, Addr);
+	r |= JLINK_CORESIGHT_WriteDAP(JLINK_CORESIGHT_AP_REG_DATA,
+			_ACCESS_AP, Data);
+	return r;
+}
+
+static U32 _ReadViaCM33AP16(U32 Addr)
+{
+	U32 r;
+
+	JLINK_CORESIGHT_WriteDP(JLINK_CORESIGHT_DP_REG_SELECT,
+				(0 << 4) | (_INDEX_AHB_AP_CORTEX_M33 << 24));
+	JLINK_CORESIGHT_WriteAP(JLINK_CORESIGHT_AP_REG_CTRL,
+	 _AHB_ACC_16BIT_AUTO_INC);
+	JLINK_CORESIGHT_WriteDAP(JLINK_CORESIGHT_AP_REG_ADDR,
+	 _ACCESS_AP, Addr);
+	JLINK_CORESIGHT_ReadDAP(JLINK_CORESIGHT_AP_REG_DATA,
+	 _ACCESS_AP, &r);
+	return r;
+}
+
+static int _WriteViaCM33AP32(U32 Addr, U32 Data)
+{
+	int r;
+
+	JLINK_CORESIGHT_WriteDP(JLINK_CORESIGHT_DP_REG_SELECT,
+				(0 << 4) | (_INDEX_AHB_AP_CORTEX_M33 << 24));
+	JLINK_CORESIGHT_WriteAP(JLINK_CORESIGHT_AP_REG_CTRL,
+	 _AHB_ACC_32BIT_AUTO_INC);
+	r = JLINK_CORESIGHT_WriteDAP(JLINK_CORESIGHT_AP_REG_ADDR,
+	 _ACCESS_AP, Addr);
+	r |= JLINK_CORESIGHT_WriteDAP(JLINK_CORESIGHT_AP_REG_DATA,
+	 _ACCESS_AP, Data);
+	return r;
+}
+
+static U32 _ReadViaCM33AP32(U32 Addr)
+{
+	int r;
+
+	JLINK_CORESIGHT_WriteDP(JLINK_CORESIGHT_DP_REG_SELECT,
+				(0 << 4) | (_INDEX_AHB_AP_CORTEX_M33 << 24));
+	JLINK_CORESIGHT_WriteAP(JLINK_CORESIGHT_AP_REG_CTRL,
+	 _AHB_ACC_32BIT_AUTO_INC);
+	r = JLINK_CORESIGHT_WriteDAP(JLINK_CORESIGHT_AP_REG_ADDR,
+	 _ACCESS_AP, Addr);
+	r |= JLINK_CORESIGHT_ReadDAP(JLINK_CORESIGHT_AP_REG_DATA,
+	 _ACCESS_AP, &r);
+	return r;
+}
+
+/* For Debug Start */
+__constant U32 _DCB_DCRSR_ADDR = 0xE000EDF4;
+__constant U32 _DCB_DCRDR_ADDR = 0xE000EDF8;
+__constant U32 _SCB_DFSR_ADDR = 0xE000ED30;
+
+__constant U32 _REG_R0 = 0x0;
+__constant U32 _REG_R1 = 0x1;
+__constant U32 _REG_R2 = 0x2;
+__constant U32 _REG_R3 = 0x3;
+__constant U32 _REG_R4 = 0x4;
+__constant U32 _REG_R5 = 0x5;
+__constant U32 _REG_R6 = 0x6;
+__constant U32 _REG_R7 = 0x7;
+__constant U32 _REG_R8 = 0x8;
+__constant U32 _REG_R9 = 0x9;
+__constant U32 _REG_R10 = 0xA;
+__constant U32 _REG_R11 = 0xB;
+__constant U32 _REG_R12 = 0xC;
+__constant U32 _REG_SP = 0xD;
+__constant U32 _REG_LR = 0xE;
+__constant U32 _REG_PC = 0xF;
+__constant U32 _REG_SP_main = 0x11;
+__constant U32 _REG_SP_process = 0x12;
+__constant U32 _REG_MSPLIM_S = 0x1C;
+__constant U32 _REG_PSPLIM_S = 0x1D;
+__constant U32 _REG_MSPLIM_NS = 0x1E;
+__constant U32 _REG_PSPLIM_NS = 0x1F;
+
+static U32 _ReadCPUReg(int RegIndex)
+{
+	U32 v;
+
+	JLINK_CORESIGHT_WriteAP(JLINK_CORESIGHT_AP_REG_ADDR, _DCB_DCRSR_ADDR);
+	JLINK_CORESIGHT_WriteAP(JLINK_CORESIGHT_AP_REG_DATA, RegIndex);
+	JLINK_CORESIGHT_WriteAP(JLINK_CORESIGHT_AP_REG_ADDR, _DCB_DCRDR_ADDR);
+	v = JLINK_CORESIGHT_ReadAP(JLINK_CORESIGHT_AP_REG_DATA);
+	return v;
+}
+
+static U32 _ReadCPURegViaAP(int AP, int RegIndex)
+{
+	int r;
+
+	JLINK_CORESIGHT_WriteDP(JLINK_CORESIGHT_DP_REG_SELECT,
+	 (0 << 4) | (AP << 24));
+	JLINK_CORESIGHT_WriteAP(JLINK_CORESIGHT_AP_REG_CTRL,
+	 _AHB_ACC_32BIT_AUTO_INC);
+
+	r = _ReadCPUReg(RegIndex);
+	return r;
+}
+
+int debug = 0;
+
+void ShowDAPInfo(void)
+{
+	int r;
+
+	if (debug) {
+		JLINK_CORESIGHT_WriteDP(JLINK_CORESIGHT_DP_REG_SELECT,
+					(0 << 4) | (_INDEX_AHB_AP_CORTEX_M33 << 24));
+		r = JLINK_CORESIGHT_ReadAP(JLINK_CORESIGHT_AP_REG_CTRL);
+		JLINK_SYS_Report1("CM33 AP CSW = ", r);
+	}
+}
+
+void DBG_ShowCM33Reg(void)
+{
+	int r, sp, pc;
+
+	r = _ReadViaCM33AP32(_CM33_MPU_CTRL_ADDR);
+	JLINK_SYS_Report1("  CM33 MPU_CTRL  = ", r);
+	r = _ReadViaCM33AP32(_XCACHE_PC_CCR_ADDR);
+	JLINK_SYS_Report1("  XCACHE_PC_CCR  = ", r);
+	r = _ReadViaCM33AP32(_XCACHE_PS_CCR_ADDR);
+	JLINK_SYS_Report1("  XCACHE_PS_CCR  = ", r);
+
+	r = _ReadViaCM33AP32(_DWT_COMP0_ADDR);
+	JLINK_SYS_Report1("  CM33 DWT_COMP0  = ", r);
+	r = _ReadViaCM33AP32(_DWT_FUNC0_ADDR);
+	JLINK_SYS_Report1("  CM33 DWT_FUNC0  = ", r);
+
+	r = _ReadViaCM33AP32(_SCB_DFSR_ADDR);
+	JLINK_SYS_Report1("  CM33 DFSR  = ", r);
+	r = _ReadViaCM33AP32(_DCB_DEMCR_ADDR);
+	JLINK_SYS_Report1("  CM33 DEMCR = ", r);
+	r = _ReadViaCM33AP32(_DCB_DHCSR_ADDR);
+	JLINK_SYS_Report1("  CM33 DHCSR = ", r);
+	if ((r & 0x02) != 0) {
+		sp = _ReadCPURegViaAP(_INDEX_AHB_AP_CORTEX_M33, _REG_SP);
+		pc = _ReadCPURegViaAP(_INDEX_AHB_AP_CORTEX_M33, _REG_PC);
+		JLINK_SYS_Report1("  CM33 PC    = ", pc);
+		JLINK_SYS_Report1("  CM33 SP    = ", sp);
+	} else {
+		JLINK_SYS_Report("  CM33 core is not halted!");
+	}
+}
+
+void DBG_ShowCoreReg(void)
+{
+	int r, sp, pc;
+
+	r = JLINK_MEM_ReadU32(_SCB_DFSR_ADDR);
+	JLINK_SYS_Report1("  DFSR   = ", r);
+	r = JLINK_MEM_ReadU32(_DCB_DHCSR_ADDR);
+	JLINK_SYS_Report1("  DHCSR  = ", r);
+	if ((r & 0x02) != 0) {
+		sp = _ReadCPUReg(_REG_SP);
+		pc = _ReadCPUReg(_REG_PC);
+		JLINK_SYS_Report1("  PC     = ", pc);
+		JLINK_SYS_Report1("  SP     = ", sp);
+	} else {
+		JLINK_SYS_Report("  Core is not halted!");
+	}
+}
+
+void DBG_ShowReg(int seq)
+{
+	int r;
+	if (debug) {
+		JLINK_SYS_Report1("Seq: ", seq);
+
+		r = _ReadViaCM33AP32(_SRC_AUTHEN_CTRL_ADDR);
+		JLINK_SYS_Report1("  AUTHEN_CTRL   = ", r);
+		r = _ReadViaCM33AP32(_SRC_SRSR_ADDR);
+		JLINK_SYS_Report1("  SRSR   = ", r);
+		r = _ReadViaCM33AP32(_SRC_SRMASK_ADDR);
+		JLINK_SYS_Report1("  SRMASK = ", r);
+		r = _ReadViaCM33AP32(_SRC_SCR_ADDR);
+		JLINK_SYS_Report1("  SCR    = ", r);
+		r = _ReadViaCM33AP32(_BLK_M7_CFG_ADDR);
+		JLINK_SYS_Report1("  M7_CFG = ", r);
+
+		if (cpuID == _CM7_CPUID) {
+			if ((r & 0x10) == 0) {
+				DBG_ShowCoreReg();
+			}
+		}
+
+		DBG_ShowCM33Reg();
+	}
+}
+/* For Debug End */
+
+void _FLEXSPI1_ModuleReset()
+{
+	unsigned int reg;
+
+	reg = MEM_ReadU32(0x425E0000); // FlexSPI1->MCR0
+	if ((reg & 0x02) == 0)         // Module Enabled
+	{
+		reg = MEM_ReadU32(0x425E0000);
+		MEM_WriteU32(0x425E0000, (reg | 0x1));
+		do {
+			reg = MEM_ReadU32(0x425E0000);
+		} while ((reg & 0x1) != 0);
+	}
+}
+
+void _FLEXSPI1_WaitBusIdle()
+{
+	unsigned int reg;
+	reg = MEM_ReadU32(0x425E0000); // FlexSPI1->MCR0
+	if ((reg & 0x02) == 0)         // Module Enabled
+	{
+		do {
+			reg = MEM_ReadU32(0x425E00E0);
+		} while ((reg & 0x3) != 0x3);
+	}
+}
+
+void _FLEXSPI1_ClockInit()
+{
+	_WriteViaCM33AP32(0x54484350, 0x0); // ROSC400M_CTRL1
+
+	/* Set flexspi1 root clock, use ROSC400, div = 4 = 1+3 */
+	MEM_WriteU32(0x54450A80, 0x103); // CLOCK_ROOT[21].CONTROL, FlexSPI1
+}
+
+void _FLEXSPI1_SetPinForQuadMode(void)
+{
+	// Set 4 Pin Mode for JLink
+	// IOMUXC_GPIO_B2_07_FLEXSPI1_BUS2BIT_A_DQS
+	MEM_WriteU32(0x42A1023C, 0x17);
+	MEM_WriteU32(0x42A10544, 0x1);
+	// IOMUXC_GPIO_B2_08_FLEXSPI1_BUS2BIT_A_SCLK
+	MEM_WriteU32(0x42A10240, 0x17);
+	// IOMUXC_GPIO_B2_09_FLEXSPI1_BUS2BIT_A_SS0_B
+	MEM_WriteU32(0x42A10244, 0x17);
+	// IOMUXC_GPIO_B2_10_FLEXSPI1_BUS2BIT_A_DATA00
+	MEM_WriteU32(0x42A10248, 0x17);
+	// IOMUXC_GPIO_B2_11_FLEXSPI1_BUS2BIT_A_DATA01
+	MEM_WriteU32(0x42A1024C, 0x17);
+	// IOMUXC_GPIO_B2_12_FLEXSPI1_BUS2BIT_A_DATA02
+	MEM_WriteU32(0x42A10250, 0x17);
+	// IOMUXC_GPIO_B2_13_FLEXSPI1_BUS2BIT_A_DATA03
+	MEM_WriteU32(0x42A10254, 0x17);
+}
+
+void _FLEXSPI1_ModuleInit(void)
+{
+
+	unsigned int reg;
+	reg = MEM_ReadU32(0x425E0000);
+	MEM_WriteU32(0x425E0000, (reg & 0xFFFFFFFD));
+
+	// FLEXSPI1->MCR0 = 0xFFFF8010;
+	MEM_WriteU32(0x425E0000, 0xFFFF8010);
+	// FLEXSPI1->MCR2 = 0x200001F7;
+	MEM_WriteU32(0x425E0008, 0x200001F7);
+	// FLEXSPI1->AHBCR = 0x78;
+	MEM_WriteU32(0x425E000C, 0x78);
+
+	// FLEXSPI1->FLSHCR0[0] = 0x00004000;
+	MEM_WriteU32(0x425E0060, 0x00004000);
+
+	// FLEXSPI1->FLSHCR4 = 0xC3;
+	MEM_WriteU32(0x425E0094, 0xC3);
+	// FLEXSPI1->IPRXFCR = 0x1C;
+	MEM_WriteU32(0x425E00B8, 0x1C);
+
+	// FLEXSPI1->LUTKEY = 0x5AF05AF0UL;
+	MEM_WriteU32(0x425E0018, 0x5AF05AF0);
+	// FLEXSPI1->LUTCR  = 0x02;
+	MEM_WriteU32(0x425E001C, 0x02);
+
+	// AHB Quad Read Change to use Fast Read Quad
+	// FLEXSPI1->LUT[0] = 0x0A1804EB;
+	MEM_WriteU32(0x425E0200, 0x0A1804EB);
+	// FLEXSPI1->LUT[1] = 0x26043206;
+	MEM_WriteU32(0x425E0204, 0x26043206);
+	// FLEXSPI1->LUT[2] = 0x00000000;
+	MEM_WriteU32(0x425E0208, 0x00000000);
+	// FLEXSPI1->LUT[3] = 0x00000000;
+	MEM_WriteU32(0x425E020C, 0x00000000);
+
+	// FLEXSPI1->LUT[4] = 0x00000406;  // Write Enable
+	MEM_WriteU32(0x425E0210, 0x00000406);
+	// FLEXSPI1->LUT[5] = 0x00000000;
+	MEM_WriteU32(0x425E0214, 0x00000000);
+	// FLEXSPI1->LUT[6] = 0x00000000;
+	MEM_WriteU32(0x425E0218, 0x00000000);
+	// FLEXSPI1->LUT[7] = 0x00000000;
+	MEM_WriteU32(0x425E021C, 0x00000000);
+
+	// FLEXSPI1->LUT[8] = 0x20040401;  // Write s1
+	MEM_WriteU32(0x425E0220, 0x20040401);
+	// FLEXSPI1->LUT[9] = 0x00000000;
+	MEM_WriteU32(0x425E0224, 0x00000000);
+	// FLEXSPI1->LUT[10] = 0x00000000;
+	MEM_WriteU32(0x425E0228, 0x00000000);
+	// FLEXSPI1->LUT[11] = 0x00000000;
+	MEM_WriteU32(0x425E022C, 0x00000000);
+
+	// FLEXSPI1->LUT[12] = 0x24040405;  // Read s1
+	MEM_WriteU32(0x425E0230, 0x24040405);
+	// FLEXSPI1->LUT[13] = 0x00000000;
+	MEM_WriteU32(0x425E0234, 0x00000000);
+	// FLEXSPI1->LUT[14] = 0x00000000;
+	MEM_WriteU32(0x425E0238, 0x00000000);
+	// FLEXSPI1->LUT[15] = 0x00000000;
+	MEM_WriteU32(0x425E023C, 0x00000000);
+
+	// FLEXSPI1->LUT[16] = 0x00000404;  // Write Disable
+	MEM_WriteU32(0x425E0240, 0x00000404);
+	// FLEXSPI1->LUT[17] = 0x00000000;
+	MEM_WriteU32(0x425E0244, 0x00000000);
+	// FLEXSPI1->LUT[18] = 0x00000000;
+	MEM_WriteU32(0x425E0248, 0x00000000);
+	// FLEXSPI1->LUT[19] = 0x00000000;
+	MEM_WriteU32(0x425E024C, 0x00000000);
+
+	// FLEXSPI1->LUT[20] = 0x20040431;  // Write s2
+	MEM_WriteU32(0x425E0250, 0x20040431);
+	// FLEXSPI1->LUT[21] = 0x00000000;
+	MEM_WriteU32(0x425E0254, 0x00000000);
+	// FLEXSPI1->LUT[22] = 0x00000000;
+	MEM_WriteU32(0x425E0258, 0x00000000);
+	// FLEXSPI1->LUT[23] = 0x00000000;
+	MEM_WriteU32(0x425E025C, 0x00000000);
+
+	// FLEXSPI1->LUT[24] = 0x24040435;  // Read s2
+	MEM_WriteU32(0x425E0260, 0x24040435);
+	// FLEXSPI1->LUT[25] = 0x00000000;
+	MEM_WriteU32(0x425E0264, 0x00000000);
+	// FLEXSPI1->LUT[26] = 0x00000000;
+	MEM_WriteU32(0x425E0268, 0x00000000);
+	// FLEXSPI1->LUT[27] = 0x00000000;
+	MEM_WriteU32(0x425E026C, 0x00000000);
+
+	// FLEXSPI1->LUT[28] = 0x00000450;  // Write Enable Volatile
+	MEM_WriteU32(0x425E0270, 0x00000450);
+	// FLEXSPI1->LUT[29] = 0x00000000;
+	MEM_WriteU32(0x425E0274, 0x00000000);
+	// FLEXSPI1->LUT[30] = 0x00000000;
+	MEM_WriteU32(0x425E0278, 0x00000000);
+	// FLEXSPI1->LUT[31] = 0x00000000;
+	MEM_WriteU32(0x425E027C, 0x00000000);
+
+	// FLEXSPI1->LUTKEY = 0x5AF05AF0UL;
+	MEM_WriteU32(0x425E0018, 0x5AF05AF0);
+	// FLEXSPI1->LUTCR  = 0x01;
+	MEM_WriteU32(0x425E001C, 0x01);
+}
+
+void _FLEXSPI2_ModuleReset()
+{
+	unsigned int reg;
+
+	reg = MEM_ReadU32(0x445E0000); // FlexSPI2->MCR0
+	if ((reg & 0x02) == 0)         // Module Enabled
+	{
+		reg = MEM_ReadU32(0x445E0000);
+		MEM_WriteU32(0x445E0000, (reg | 0x1));
+		do {
+			reg = MEM_ReadU32(0x445E0000);
+		} while ((reg & 0x1) != 0);
+	}
+}
+
+void _FLEXSPI2_WaitBusIdle()
+{
+	unsigned int reg;
+
+	reg = MEM_ReadU32(0x445E0000); // FlexSPI2->MCR0
+	if ((reg & 0x02) == 0)         // Module Enabled
+	{
+		do {
+			reg = MEM_ReadU32(0x445E00E0);
+		} while ((reg & 0x3) != 0x3);
+	}
+}
+
+void _FlexSPI2_SetPinForOctalMode()
+{
+	// Config IOMUX for FlexSPI2
+	MEM_WriteU32(0x42A10088, 0x00000013); // FLEXSPI2_B_DATA03
+	MEM_WriteU32(0x42A1008C, 0x00000013); // FLEXSPI2_B_DATA02
+	MEM_WriteU32(0x42A10090, 0x00000013); // FLEXSPI2_B_DATA01
+	MEM_WriteU32(0x42A10094, 0x00000013); // FLEXSPI2_B_DATA00
+	MEM_WriteU32(0x42A1009C, 0x00000013); // FLEXSPI2_A_DATA00
+	MEM_WriteU32(0x42A100A0, 0x00000013); // FLEXSPI2_A_DATA01
+	MEM_WriteU32(0x42A100A4, 0x00000013); // FLEXSPI2_A_DATA02
+	MEM_WriteU32(0x42A100A8, 0x00000013); // FLEXSPI2_A_DATA03
+	MEM_WriteU32(0x42A100AC, 0x00000013); // FLEXSPI2_A_SS0_B
+	MEM_WriteU32(0x42A100B0, 0x00000013); // FLEXSPI2_A_DQS
+	MEM_WriteU32(0x42A100B4, 0x00000013); // FLEXSPI2_A_SCLK
+
+	// The input daisy!!
+	MEM_WriteU32(0x42A10594, 0x00000001); // FLEXSPI2_B_DATA03
+	MEM_WriteU32(0x42A10590, 0x00000001); // FLEXSPI2_B_DATA02
+	MEM_WriteU32(0x42A1058C, 0x00000001); // FLEXSPI2_B_DATA01
+	MEM_WriteU32(0x42A10588, 0x00000001); // FLEXSPI2_B_DATA00
+	MEM_WriteU32(0x42A10578, 0x00000000); // FLEXSPI2_A_DATA00
+	MEM_WriteU32(0x42A1057C, 0x00000000); // FLEXSPI2_A_DATA01
+	MEM_WriteU32(0x42A10580, 0x00000000); // FLEXSPI2_A_DATA02
+	MEM_WriteU32(0x42A10584, 0x00000000); // FLEXSPI2_A_DATA03
+	MEM_WriteU32(0x42A10570, 0x00000000); // FLEXSPI2_A_DQS
+	MEM_WriteU32(0x42A10598, 0x00000000); // FLEXSPI2_A_SCLK
+
+	// PAD ctrl
+	MEM_WriteU32(0x42A102D0, 0x00000008); // FLEXSPI2_B_DATA03
+	MEM_WriteU32(0x42A102D4, 0x00000008); // FLEXSPI2_B_DATA02
+	MEM_WriteU32(0x42A102D8, 0x00000008); // FLEXSPI2_B_DATA01
+	MEM_WriteU32(0x42A102DC, 0x00000008); // FLEXSPI2_B_DATA00
+	MEM_WriteU32(0x42A102E4, 0x00000008); // FLEXSPI2_A_DATA00
+	MEM_WriteU32(0x42A102E8, 0x00000008); // FLEXSPI2_A_DATA01
+	MEM_WriteU32(0x42A102EC, 0x00000008); // FLEXSPI2_A_DATA02
+	MEM_WriteU32(0x42A102F0, 0x00000008); // FLEXSPI2_A_DATA03
+	MEM_WriteU32(0x42A102F4, 0x00000008); // FLEXSPI2_A_SS0_B
+	MEM_WriteU32(0x42A102F8, 0x00000008); // FLEXSPI2_A_DQS
+	MEM_WriteU32(0x42A102FC, 0x00000008); // FLEXSPI2_A_SCLK
+}
+
+void _FLEXSPI2_ClockInit()
+{
+	_WriteViaCM33AP32(0x54484350, 0x0); // ROSC400M_CTRL1
+
+	// Set flexspi2 root clock, use ROSC400, div = 2 = 1+1
+	MEM_WriteU32(0x44450B00, 0x101); // CLOCK_ROOT[22].CONTROL, FlexSPI2
+}
+
+void _FLEXSPI2_ModuleInit()
+{
+	// Config FlexSPI2 Registers
+
+	unsigned int reg;
+	reg = MEM_ReadU32(0x445E0000);
+	MEM_WriteU32(0x445E0000, (reg & 0xFFFFFFFD));
+
+	_FLEXSPI2_ModuleReset();
+
+	MEM_WriteU32(0x445E0000, 0xFFFF3032); // MCR0
+	MEM_WriteU32(0x445E0004, 0xFFFFFFFF); // MCR1
+	MEM_WriteU32(0x445E0008, 0x200001F7); // MCR2
+	MEM_WriteU32(0x445E000C, 0x00000078); // AHBCR prefetch enable
+	MEM_WriteU32(0x445E0020, 0x800F0000); // AHBRXBUF0CR0
+	MEM_WriteU32(0x445E0024, 0x800F0000); // AHBRXBUF1CR0
+	MEM_WriteU32(0x445E0028, 0x800F0000); // AHBRXBUF2CR0
+	MEM_WriteU32(0x445E002C, 0x800F0000); // AHBRXBUF3CR0
+	MEM_WriteU32(0x445E0030, 0x800F0000); // AHBRXBUF4CR0
+	MEM_WriteU32(0x445E0034, 0x800F0000); // AHBRXBUF5CR0
+	MEM_WriteU32(0x445E0038, 0x80000020); // AHBRXBUF6CR0
+	MEM_WriteU32(0x445E003C, 0x80000020); // AHBRXBUF7CR0
+	MEM_WriteU32(0x445E00B8, 0x00000000); // IPRXFCR
+	MEM_WriteU32(0x445E00BC, 0x00000000); // IPTXFCR
+
+	MEM_WriteU32(0x445E0060, 0x00000000); // FLASHA1CR0
+	MEM_WriteU32(0x445E0064, 0x00000000); // FLASHA2CR0
+	MEM_WriteU32(0x445E0068, 0x00000000); // FLASHB1CR0
+	MEM_WriteU32(0x445E006C, 0x00000000); // FLASHB2CR0
+
+	_FLEXSPI2_WaitBusIdle();
+
+	MEM_WriteU32(0x445E0060, 0x00002000); // FLASHA1CR0
+	MEM_WriteU32(0x445E0070, 0x00021C63); // FLASHA1CR1
+	MEM_WriteU32(0x445E0080, 0x00000100); // FLASHA1CR2
+
+	_FLEXSPI2_WaitBusIdle();
+
+	MEM_WriteU32(0x445E00C0, 0x00000079); // DLLCRA
+	MEM_WriteU32(0x445E0000, 0xFFFF3030); // MCR0
+
+	do {
+		reg = MEM_ReadU32(0x445E00E8);
+	} while (0x3 != (reg & 0x3));
+	JLINK_SYS_Sleep(1);
+	// __delay(100);//100us
+
+	MEM_WriteU32(0x445E0000, 0xFFFF3032); // MCR0
+	MEM_WriteU32(0x445E0094, 0x000000C2); // FLASHCR4
+	MEM_WriteU32(0x445E0094, 0x000000C6); // FLASHCR4
+	MEM_WriteU32(0x445E0000, 0xFFFF3030); // MCR0
+
+	_FLEXSPI2_WaitBusIdle();
+
+	MEM_WriteU32(0x445E0018, 0x5AF05AF0); // LUTKEY
+	MEM_WriteU32(0x445E001C, 0x00000002); // LUTCR
+	MEM_WriteU32(0x445E0200, 0x8B1887A0); // LUT[0]
+	MEM_WriteU32(0x445E0204, 0xB7078F10); // LUT[1]
+	MEM_WriteU32(0x445E0208, 0x0000A704); // LUT[2]
+	MEM_WriteU32(0x445E020C, 0x00000000); // LUT[3]
+	MEM_WriteU32(0x445E0210, 0x8B188720); // LUT[4]
+	MEM_WriteU32(0x445E0214, 0xB7078F10); // LUT[5]
+	MEM_WriteU32(0x445E0218, 0x0000A304); // LUT[6]
+	MEM_WriteU32(0x445E021C, 0x00000000); // LUT[7]
+	MEM_WriteU32(0x445E0220, 0x8B1887E0); // LUT[8]
+	MEM_WriteU32(0x445E0224, 0xB7078F10); // LUT[9]
+	MEM_WriteU32(0x445E0228, 0x0000A704); // LUT[10]
+	MEM_WriteU32(0x445E022C, 0x00000000); // LUT[11]
+	MEM_WriteU32(0x445E0230, 0x8B188760); // LUT[12]
+	MEM_WriteU32(0x445E0234, 0xA3028F10); // LUT[13]
+	MEM_WriteU32(0x445E0238, 0x00000000); // LUT[14]
+	MEM_WriteU32(0x445E023C, 0x00000000); // LUT[15]
+	MEM_WriteU32(0x445E0240, 0x00000000); // LUT[16]
+	MEM_WriteU32(0x445E0244, 0x00000000); // LUT[17]
+	MEM_WriteU32(0x445E0248, 0x00000000); // LUT[18]
+	MEM_WriteU32(0x445E024C, 0x00000000); // LUT[19]
+	MEM_WriteU32(0x445E0018, 0x5AF05AF0); // LUTKEY
+	MEM_WriteU32(0x445E001C, 0x00000001); // LUTCR
+
+	/* Restore hyperram CR0 register */
+	MEM_WriteU32(0x445E00A0, 0x00001000); // IPCR0
+	MEM_WriteU32(0x445E00A4, 0x00030002); // IPCR1
+	MEM_WriteU32(0x445E00BC, 0x00000001); // IPTXFCR
+	0x8F2F is default value of W756/7x of CR0
+	MEM_WriteU32(0x445E0180, 0x2F8F2F8F); // TFDR
+	MEM_WriteU32(0x445E0014, 0x00000040); // INTR
+	MEM_WriteU32(0x445E00B0, 0x00000001); // IPCMD
+	do {
+		reg = MEM_ReadU32(0x445E0014); // INTR
+	} while ((reg & 0x1) == 0x0);
+	MEM_WriteU32(0x445E0014, 0x00000001); // INTR
+
+	/* Restore hyperram CR1 register */
+	MEM_WriteU32(0x445E00A0, 0x00001002); // IPCR0
+	MEM_WriteU32(0x445E00A4, 0x00030002); // IPCR1
+	MEM_WriteU32(0x445E00BC, 0x00000001); // IPTXFCR
+	0xFFC1 is default value of W756/7x of CR1
+	MEM_WriteU32(0x445E0180, 0xC1FFC1FF); // TFDR
+	MEM_WriteU32(0x445E0014, 0x00000040); // INTR
+	MEM_WriteU32(0x445E00B0, 0x00000001); // IPCMD
+	do {
+		reg = MEM_ReadU32(0x445E0014); // INTR
+	} while ((reg & 0x1) == 0x0);
+	MEM_WriteU32(0x445E0014, 0x00000001); // INTR
+
+	_FLEXSPI2_ModuleReset();
+}
+
+void CM7_InitTCM(U32 targetAddr, U32 size)
+{
+	U32 reg;
+
+	reg = _ReadViaCM33AP32(0x52010000); // DMA4->TDC[0].CH_CSR
+
+	if ((reg & 0x80000000) != 0) {
+		// DMA channel is active, wait it get finished
+		do {
+			// DMA4->TDC[0].CH_CSR
+			reg = _ReadViaCM33AP32(0x52010000);
+		} while ((reg & 0x40000000) == 0);
+	}
+
+	// DMA4->TDC[0].CH_CSR, clear DONE flag
+	_WriteViaCM33AP32(0x52010000, 0x40000000);
+
+	_WriteViaCM33AP32(0x5201002C, 0x00000000); // DMA4->TCD[0].SLAST_SGA
+	_WriteViaCM33AP32(0x52010038, 0x00000000); // DMA4->TCD[0].DLAST_SGA
+
+	_WriteViaCM33AP32(0x52010000, 0x40000000); // DMA4->TCD[0].CH_CSR
+
+	_WriteViaCM33AP32(0x52010020, 0x20484000); // DMA4->TCD[0].SADDR
+	_WriteViaCM33AP32(0x52010030, targetAddr); // DMA4->TCD[0].DADDR
+	_WriteViaCM33AP32(0x52010028, size);       // DMA4->TCD[0].NBYTES_MLOFFNO
+	_WriteViaCM33AP16(0x52010036, 0x1);        // DMA4->TCD[0].ELINKNO
+	_WriteViaCM33AP16(0x5201003E, 0x1);        // DMA4->TCD[0].BITER_ELINKNO
+	_WriteViaCM33AP16(0x52010026, 0x0303);     // DMA4->TCD[0].ATTR
+	_WriteViaCM33AP16(0x52010024, 0x0);        // DMA4->TCD[0].SOFF
+	_WriteViaCM33AP16(0x52010034, 0x8);        // DMA4->TCD[0].DOFF
+	_WriteViaCM33AP32(0x52010000, 0x7);        // DMA4->TDC[0].CH_CSR
+	_WriteViaCM33AP16(0x5201003C, 0x8);        // DMA4->TCD[0].CSR
+	_WriteViaCM33AP16(0x5201003C, 0x9);        // DMA4->TCD[0].CSR
+
+	do {
+		reg = _ReadViaCM33AP32(0x52010000); // DMA4->TDC[0].CH_CSR
+	} while ((reg & 0x40000000) == 0);
+	// DMA4->TDC[0].CH_CSR, clear DONE flag
+	_WriteViaCM33AP32(0x52010000, 0x40000000);
+}
+
+void CM7_KickOff(int ecc_init)
+{
+	U32 reg, resp1, resp2;
+
+	reg = _ReadViaCM33AP32(_BLK_M7_CFG_ADDR);
+	if ((reg & 0x10) == 0) {
+		JLINK_SYS_Report("CM7 is running already");
+	} else {
+		JLINK_SYS_Report(
+			"************* Begin Operations to Enable CM7 *************");
+
+		// Clock Preparation
+		JLINK_SYS_Report("******** Prepare Clock *********");
+		_WriteViaCM33AP32(0x54484350, 0x0);   // ROSC400M_CTRL1
+		_WriteViaCM33AP32(0x54450000, 0x100); // CLOCK_ROOT[0].CONTROL, CM7
+
+		// Release CM7
+		_WriteViaCM33AP32(_SRC_SCR_ADDR, 0x1);
+
+		if (ecc_init) {
+			// DMA initialization
+			JLINK_SYS_Report("******** DMA operation *********");
+			CM7_InitTCM(0x303C0000, 0x40000);
+			CM7_InitTCM(0x30400000, 0x40000);
+		}
+
+		// Making Landing Zone
+		JLINK_SYS_Report("******** Creating Landing Zone *********");
+		_WriteViaCM33AP32(0x303C0000, 0x20020000);
+		_WriteViaCM33AP32(0x303C0004, 0x00000009);
+		_WriteViaCM33AP32(0x303C0008, 0xE7FEE7FE);
+
+		// VTOR 0x00
+		_WriteViaCM33AP32(_BLK_M7_CFG_ADDR, 0x0010);
+
+		// Trigger ELE
+		JLINK_SYS_Report("******** ELE Trigger *********");
+		_WriteViaCM33AP32(0x57540200, 0x17d20106); // MU_RT_S3MUA->TR[0]
+		resp1 = _ReadViaCM33AP32(0x57540280);      // MU_RT_S3MUA->RR[0]
+		resp2 = _ReadViaCM33AP32(0x57540284);      // MU_RT_S3MUA->RR[1]
+		JLINK_SYS_Report1("ELE RESP1 : ", resp1);
+		JLINK_SYS_Report1("ELE RESP2 : ", resp2);
+
+		// Deassert CM7 Wait
+		JLINK_SYS_Report("******** Kickoff CM7 *********");
+		_WriteViaCM33AP32(_BLK_M7_CFG_ADDR, 0x0);
+	}
+}
+
+void DAP_Init(void)
+{
+	JLINK_CORESIGHT_Configure("");
+
+	CORESIGHT_AddAP(0, CORESIGHT_AHB_AP);
+	CORESIGHT_AddAP(1, CORESIGHT_APB_AP);
+	CORESIGHT_AddAP(2, CORESIGHT_AHB_AP);
+	CORESIGHT_AddAP(3, CORESIGHT_AHB_AP);
+	CORESIGHT_AddAP(4, CORESIGHT_APB_AP);
+	CORESIGHT_AddAP(5, CORESIGHT_APB_AP);
+	CORESIGHT_AddAP(6, CORESIGHT_APB_AP);
+
+	JLINK_SYS_Report("***************************************************");
+	if (cpuID == _CM7_CPUID) {
+		CPU = CORTEX_M7;
+		CORESIGHT_IndexAHBAPToUse = 2;
+		JLINK_SYS_Report("Current core is CM7");
+	} else if (cpuID == _CM33_CPUID) {
+		CPU = CORTEX_M33;
+		CORESIGHT_IndexAHBAPToUse = 3;
+		JLINK_SYS_Report("Current core is CM33");
+
+		ShowDAPInfo();
+		CORESIGHT_AHBAPCSWDefaultSettings = (1 << 29) | (1 << 25) | (1 << 24);
+	} else {
+		JLINK_SYS_Report1("Wrong CPU ID: ", cpuID);
+	}
+	JLINK_SYS_Report("***************************************************");
+}
+
+void CM33_Halt(void)
+{
+	U32 reg;
+
+	reg = (_ReadViaCM33AP32(_SRC_SBMR2_ADDR) >> 24) & 0x3F;
+
+	if ((reg == 8) || (reg == 9)) // Serial Download Mode, or Boot From Fuse
+	{
+		JLINK_SYS_Report("Not flash execution mode,"
+						"check if CM33 is halted...");
+
+		reg = _ReadViaCM33AP32(_DCB_DHCSR_ADDR);
+
+		if (0 == (reg & 0x02)) {
+			JLINK_SYS_Report1("CM33 is not halted, trying to halt it."
+			"CM33 DHCSR: ", reg);
+
+			// Enable CM33 debug control
+			_WriteViaCM33AP32(_DCB_DHCSR_ADDR, 0xA05F0001);
+			_WriteViaCM33AP32(_DCB_DHCSR_ADDR, 0xA05F0003); // Halt CM33
+			reg = _ReadViaCM33AP32(_DCB_DHCSR_ADDR);
+			if (0 != (reg & 0x02)) {
+				JLINK_SYS_Report1("CM33 is halted now. CM33 DHCSR: ", reg);
+			} else {
+				JLINK_SYS_Report1("CM33 still running, halt failed."
+				"CM33 DHCSR: ", reg);
+			}
+		} else {
+			JLINK_SYS_Report1("CM33 is halted. CM33 DHCSR: ", reg);
+		}
+	} else {
+		JLINK_SYS_Report("Flash execution mode, "
+		"leave CM33 run status as it was...");
+	}
+}
+
+void Flash_Init()
+{
+	JLINK_SYS_Report("***************************************************");
+	JLINK_SYS_Report("Init Flash");
+
+	_FLEXSPI1_WaitBusIdle();
+	_FLEXSPI1_ModuleReset();
+
+	_FLEXSPI1_SetPinForQuadMode();
+	_FLEXSPI1_ClockInit();
+	_FLEXSPI1_ModuleInit();
+
+	JLINK_SYS_Report("***************************************************");
+}
+
+void HyperRAM_Init()
+{
+	JLINK_SYS_Report("***************************************************");
+	JLINK_SYS_Report("Init HyperRAM");
+
+	_FLEXSPI2_WaitBusIdle();
+	_FLEXSPI2_ModuleReset();
+
+	_FlexSPI2_SetPinForOctalMode();
+	_FLEXSPI2_ClockInit();
+	_FLEXSPI2_ModuleInit();
+
+	JLINK_SYS_Report("***************************************************");
+}
+
+void CM33_ClearNVIC(void)
+{
+	JLINK_SYS_Report("***************************************************");
+	JLINK_SYS_Report("Clear NVIC");
+	JLINK_SYS_Report("***************************************************");
+	JLINK_MEM_Fill(0xE000E180, 0x40, 0xFF);
+	JLINK_MEM_Fill(0xE000E280, 0x40, 0xFF);
+}
+
+int InitTarget(void)
+{
+	int r;
+	cpuID = _CM33_CPUID;
+
+	DAP_Init();
+
+	if (cpuID == _CM7_CPUID) {
+		CM33_Halt();
+		CM7_KickOff(1);
+
+		/* Avoid to access TPIU to prevent soc hang */
+		// Mark region as illegal
+		JLINK_ExecCommand("map region 0xE0040000-0xE0040FFF X");
+	}
+
+	r = _ReadViaCM33AP32(_SI_VER_ADDR) & 0xF;
+
+	if (r == 1) {
+		rom_trap_addr = _ROM_TRAP1_ADDR;
+	} else if (r == 2) {
+		rom_trap_addr = _ROM_TRAP2_ADDR;
+	} else {
+		rom_trap_addr = _ROM_TRAP0_ADDR;
+	}
+	JLINK_SYS_Report1("SI_VER = ", r);
+	JLINK_SYS_Report1("TRAP   = ", rom_trap_addr);
+
+	return 0;
+}
+
+int SetupTarget(void)
+{
+	return 0;
+}
+
+void ResetTarget_CM33(void)
+{
+	int r, w;
+	int comp, func;
+	int core_reset_request_bit_mask;
+
+	core_reset_request_bit_mask = 0x100; /* for CM33 core */
+
+	DBG_ShowReg(0);
+
+	/* Halt the CPU and wait sometime
+	 * for possible peripheral operation finish
+	 */
+	JLINK_TARGET_Halt();
+	JLINK_SYS_Sleep(10);
+
+	r = JLINK_TARGET_IsHalted();
+	if (r != 1) {
+		JLINK_SYS_Report("ERR: CM33 core can't be halted!");
+	}
+
+	DBG_ShowReg(1);
+
+	/* check and enable core request system reset */
+	r = JLINK_MEM_ReadU32(_SRC_SRMASK_ADDR);
+	if ((r & core_reset_request_bit_mask) != 0) {
+		if ((r & (core_reset_request_bit_mask << 16)) == 0) {
+			w = r & (~core_reset_request_bit_mask);
+			r = JLINK_MEM_ReadU32(_SRC_AUTHEN_CTRL_ADDR);
+			if ((r & 0x80) == 0) {
+				JLINK_SYS_Report("Enable system reset via CM33 core reset");
+				JLINK_MEM_WriteU32(_SRC_SRMASK_ADDR, w);
+				ShowDAPInfo();
+			} else {
+				JLINK_SYS_Report("ERR: Core reset request is masked"
+				"and all mask are locked!");
+			}
+		} else {
+			JLINK_SYS_Report("ERR: Core reset request is masked and locked!");
+		}
+	}
+
+	DBG_ShowReg(2);
+
+	JLINK_SYS_Report("Set CM33 watch point");
+	comp = JLINK_MEM_ReadU32(
+		_DWT_COMP0_ADDR); /* Save the DWT register and restore them later */
+	func = JLINK_MEM_ReadU32(_DWT_FUNC0_ADDR);
+	JLINK_MEM_WriteU32(_DWT_COMP0_ADDR, rom_trap_addr);
+	JLINK_MEM_WriteU32(_DWT_FUNC0_ADDR, 0x00000412);
+
+	/* Clear the reset status to avoid ROM clean the core TCM after reset */
+	r = JLINK_MEM_ReadU32(_SRC_SRSR_ADDR);
+	JLINK_MEM_WriteU32(_SRC_SRSR_ADDR, r);
+
+	DBG_ShowReg(3);
+
+	JLINK_SYS_Report("Execute SYSRESETREQ via AIRCR");
+	JLINK_MEM_WriteU32(_SCB_AIRCR_ADDR, 0x05FA0004);
+	JLINK_SYS_Sleep(100);
+
+	r = JLINK_MEM_ReadU32(_DWT_FUNC0_ADDR);
+	if ((r & 0x01000000) == 0) {
+		JLINK_SYS_Report("ERR: CM33 core is not trapped!");
+	}
+
+	DBG_ShowReg(4);
+
+	r = JLINK_TARGET_IsHalted();
+	if (r == 1) {
+		JLINK_SYS_Report("restore CM33 watch point");
+		JLINK_MEM_WriteU32(_DWT_COMP0_ADDR, comp);
+		JLINK_MEM_WriteU32(_DWT_FUNC0_ADDR, func);
+	} else {
+		JLINK_SYS_Report("ERR: CM33 is not halted after reset!");
+	}
+}
+
+void ResetTarget_CM7(void)
+{
+	int r, w;
+	int comp, func;
+	int core_reset_request_bit_mask;
+	int mem_0, mem_1, mem_2;
+
+	core_reset_request_bit_mask = 0x400; /* for CM7 core */
+
+	DBG_ShowReg(0);
+
+	/* Halt the CPU and wait sometime for possible
+	 * peripheral operation finish
+	 */
+	JLINK_TARGET_Halt();
+	JLINK_SYS_Sleep(10);
+
+	r = JLINK_TARGET_IsHalted();
+	if (r != 1) {
+		JLINK_SYS_Report("ERR: CM7 core can't be halted!");
+	}
+
+	DBG_ShowReg(1);
+
+	/* check and enable core request system reset */
+	r = JLINK_MEM_ReadU32(_SRC_SRMASK_ADDR);
+	if ((r & core_reset_request_bit_mask) != 0) {
+		if ((r & (core_reset_request_bit_mask << 16)) == 0) {
+			w = r & (~core_reset_request_bit_mask);
+			r = JLINK_MEM_ReadU32(_SRC_AUTHEN_CTRL_ADDR);
+			if ((r & 0x80) == 0) {
+				JLINK_SYS_Report("Enable system reset via CM7 core reset");
+				JLINK_MEM_WriteU32(_SRC_SRMASK_ADDR, w);
+			} else {
+				JLINK_SYS_Report("ERR: Core reset request is masked and"
+				 "all mask are locked!");
+			}
+		} else {
+			JLINK_SYS_Report("ERR: Core reset request is masked and locked!");
+		}
+	}
+
+	DBG_ShowReg(2);
+
+	/* Clear the reset status to avoid ROM clean the core TCM after reset */
+	r = JLINK_MEM_ReadU32(_SRC_SRSR_ADDR);
+	JLINK_MEM_WriteU32(_SRC_SRSR_ADDR, r);
+
+	DBG_ShowReg(3);
+
+	/* CM7_KickOff will use the first 3 words(32bits) of CM7 ITCM,
+	 * save and restore them later
+	 */
+	mem_0 = JLINK_MEM_ReadU32(0);
+	mem_1 = JLINK_MEM_ReadU32(4);
+	mem_2 = JLINK_MEM_ReadU32(8);
+
+	JLINK_SYS_Report("Set CM33 watch point");
+	/* Enable Debug and halt CM33 core */
+	_WriteViaCM33AP32(_DCB_DHCSR_ADDR, 0xA05F0003);
+	comp = _ReadViaCM33AP32(
+		/* Save the DWT register and restore them later after reset */
+		_DWT_COMP0_ADDR);
+	func = _ReadViaCM33AP32(_DWT_FUNC0_ADDR);
+	/* Enable DWT of CM33 core */
+	_WriteViaCM33AP32(_DCB_DEMCR_ADDR, 0x01000000);
+	_WriteViaCM33AP32(_DWT_COMP0_ADDR, rom_trap_addr);
+	_WriteViaCM33AP32(_DWT_FUNC0_ADDR, 0x00000412);
+
+	DBG_ShowReg(4);
+
+	JLINK_SYS_Report("Execute SYSRESETREQ via AIRCR");
+	JLINK_MEM_WriteU32(_SCB_AIRCR_ADDR, 0x05FA0004);
+	JLINK_SYS_Sleep(100);
+
+	r = _ReadViaCM33AP32(_DWT_FUNC0_ADDR);
+	if ((r & 0x01000000) == 0) {
+		JLINK_SYS_Report("ERR: CM33 core is not trapped after reset!");
+	}
+
+	DBG_ShowReg(5);
+
+	CM7_KickOff(0);
+
+	// Halt CM7 core
+	JLINK_MEM_WriteU32(_DCB_DHCSR_ADDR, 0xA05F0003);
+
+	DBG_ShowReg(6);
+
+	r = JLINK_TARGET_IsHalted();
+	if (r == 1) {
+		JLINK_SYS_Report("restore CM7 ITCM");
+
+		JLINK_MEM_WriteU32(0, mem_0);
+		JLINK_MEM_WriteU32(4, mem_1);
+		JLINK_MEM_WriteU32(8, mem_2);
+
+		JLINK_SYS_Report("restore CM33 watch points");
+		_WriteViaCM33AP32(_DWT_COMP0_ADDR, comp);
+		_WriteViaCM33AP32(_DWT_FUNC0_ADDR, func);
+	} else {
+		JLINK_SYS_Report("ERR: CM7 core can not be halted!");
+	}
+}
+
+void ResetTarget(void)
+{
+	if (cpuID == _CM7_CPUID) {
+		ResetTarget_CM7();
+	} else if (cpuID == _CM33_CPUID) {
+		ResetTarget_CM33();
+	}
+}
+
+int AfterResetTarget(void)
+{
+	U32 reg;
+
+	if (cpuID == _CM33_CPUID) {
+		// CM33 NVIC may be enabled by ROM after reset
+		CM33_ClearNVIC();
+	}
+
+	Flash_Init();
+	HyperRAM_Init();
+
+	return 0;
+}

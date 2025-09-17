@@ -7,16 +7,17 @@
 
 /**
  * @file
- * @brief Public API for FLASH drivers
+ * @ingroup flash_interface
+ * @brief Main header file for Flash driver API.
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_FLASH_H_
 #define ZEPHYR_INCLUDE_DRIVERS_FLASH_H_
 
 /**
- * @brief FLASH internal Interface
- * @defgroup flash_internal_interface FLASH internal Interface
- * @ingroup io_interfaces
+ * @brief Internal interfaces for flash memory controllers.
+ * @defgroup flash_internal_interface Flash Internal
+ * @ingroup flash_interface
  * @{
  */
 
@@ -43,12 +44,18 @@ struct flash_pages_layout {
  */
 
 /**
- * @brief FLASH Interface
- * @defgroup flash_interface FLASH Interface
+ * @brief Interfaces for flash memory controllers.
+ * @defgroup flash_interface Flash
  * @since 1.2
  * @version 1.0.0
  * @ingroup io_interfaces
+ *
  * @{
+ *
+ * @defgroup flash_ex_op Extended Operations
+ * @brief Vendor-specific extended operations for flash drivers.
+ * @{
+ * @}
  */
 
 /**
@@ -88,8 +95,8 @@ struct flash_parameters {
 #define FLASH_ERASE_C_VAL_BIT		0x04
 #define FLASH_ERASE_UNIFORM_PAGE	0x08
 
-
-/* @brief Parser for flash_parameters for retrieving erase capabilities
+/**
+ * @brief Parser for flash_parameters for retrieving erase capabilities
  *
  * The functions parses flash_parameters type object and returns combination
  * of erase capabilities of 0 if device does not have any.
@@ -125,6 +132,18 @@ int flash_params_get_erase_cap(const struct flash_parameters *p)
  * @{
  */
 
+/**
+ * @brief Flash read implementation handler type
+ *
+ * @return 0 on success or len is zero, -EINVAL if page offset doesn't exist or data
+ *         destination is NULL
+ *
+ * @note Any necessary read protection management must be performed by
+ * the driver.
+ *
+ * For consistency across implementations, value check len parameter equal zero and
+ * return result 0 before validating the data destination parameter.
+ */
 typedef int (*flash_api_read)(const struct device *dev, off_t offset,
 			      void *data,
 			      size_t len);

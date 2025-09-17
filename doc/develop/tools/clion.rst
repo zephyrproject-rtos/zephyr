@@ -209,7 +209,7 @@ Start debugging
 
    Refer to `CLion web help`_ for detailed description of the IDE debug capabilities.
 
-.. _native Zephyr West integration: https://www.jetbrains.com/help/clion/zephyr.html
+.. _native Zephyr West integration: https://jb.gg/cl_zephyr_doc
 .. _CLion: https://www.jetbrains.com/clion/
 .. _Download CLion: https://www.jetbrains.com/clion/download
 .. _Project security: https://www.jetbrains.com/help/clion/project-security.html#projects_security

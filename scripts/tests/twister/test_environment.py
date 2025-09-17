@@ -7,7 +7,7 @@
 Tests for environment.py classes' methods
 """
 
-import mock
+from unittest import mock
 import os
 import pytest
 import shutil
@@ -31,20 +31,6 @@ TESTDATA_1 = [
         None,
         ['--device-serial-pty', 'dummy'],
         '--device-serial-pty is not supported on Windows OS'
-    ),
-    (
-        None,
-        None,
-        None,
-        ['--west-runner=dummy'],
-        'west-runner requires west-flash to be enabled'
-    ),
-    (
-        None,
-        None,
-        None,
-        ['--west-flash=\"--board-id=dummy\"'],
-        'west-flash requires device-testing to be enabled'
     ),
     (
         None,
@@ -136,8 +122,6 @@ TESTDATA_1 = [
     ids=[
         'short build path without ninja',
         'device-serial-pty on Windows',
-        'west runner without west flash',
-        'west-flash without device-testing',
         'valgrind without executable',
         'device serial without platform',
         'device serial with multiple platforms',

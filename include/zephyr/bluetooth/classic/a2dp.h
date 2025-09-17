@@ -21,8 +21,6 @@
 extern "C" {
 #endif
 
-#define BT_A2DP_STREAM_BUF_RESERVE (12U + BT_L2CAP_BUF_SIZE(0))
-
 /** SBC IE length */
 #define BT_A2DP_SBC_IE_LENGTH      (4U)
 /** MPEG1,2 IE length */
@@ -297,6 +295,8 @@ enum bt_a2dp_codec_type {
 	BT_A2DP_MPEG1 = 0x01,
 	/** Codec MPEG-2 */
 	BT_A2DP_MPEG2 = 0x02,
+	/** Codec MPEG-D */
+	BT_A2DP_MPEGD = 0x03,
 	/** Codec ATRAC */
 	BT_A2DP_ATRAC = 0x04,
 	/** Codec Non-A2DP */
@@ -389,6 +389,15 @@ struct bt_a2dp_discover_param {
 	 *  it save endpoint info internally.
 	 */
 	struct bt_avdtp_sep_info *seps_info;
+	/** The AVDTP version of the peer's A2DP sdp service.
+	 *  Stack uses it to determine using get_all_cap or get_cap cmd. When both
+	 *  versions are v1.3 or bigger version, get_all_cap is used, otherwise
+	 *  get_cap is used.
+	 *  It is the same value of the avdtp sepcificaiton's version value.
+	 *  For example: 0x0103 means version 1.3
+	 *  If the value is 0 (unknown), stack process it as less than v1.3
+	 */
+	uint16_t avdtp_version;
 	/** The max count of seps (stream endpoint) that can be got in this call route */
 	uint8_t sep_count;
 };
@@ -616,6 +625,16 @@ int bt_a2dp_register_ep(struct bt_a2dp_ep *ep, uint8_t media_type, uint8_t sep_t
  */
 int bt_a2dp_register_cb(struct bt_a2dp_cb *cb);
 
+/** @brief Obtain the ACL connection corresponding to A2DP.
+ *
+ *  @param a2dp The A2DP instance.
+ *
+ *  @return Connection object associated with the A2DP context. The caller gets a new
+ *  reference to the connection object which must be released with bt_conn_unref()
+ *  once done using the object.
+ */
+struct bt_conn *bt_a2dp_get_conn(struct bt_a2dp *a2dp);
+
 /** @brief Discover remote endpoints.
  *
  *  @param a2dp The a2dp instance.
@@ -820,7 +839,6 @@ int bt_a2dp_stream_abort(struct bt_a2dp_stream *stream);
  */
 uint32_t bt_a2dp_get_mtu(struct bt_a2dp_stream *stream);
 
-#if defined(CONFIG_BT_A2DP_SOURCE)
 /** @brief send a2dp media data
  *
  * Only A2DP source side can call this function.
@@ -834,7 +852,21 @@ uint32_t bt_a2dp_get_mtu(struct bt_a2dp_stream *stream);
  */
 int bt_a2dp_stream_send(struct bt_a2dp_stream *stream, struct net_buf *buf, uint16_t seq_num,
 			uint32_t ts);
-#endif
+
+/**
+ * @brief Allocate a net_buf for bt_a2dp_stream_send
+ *
+ * This function allocates a buffer from the specified pool, reserves
+ * sufficient headroom for protocol headers required by L2CAP over Bluetooth, fills
+ * the AVDTP header.
+ *
+ * @param pool    The buffer pool to allocate from.
+ * @param timeout Non-negative waiting period to obtain a buffer or one of
+ *                the special values K_NO_WAIT and K_FOREVER.
+ *
+ * @return A newly allocated net_buf.
+ */
+struct net_buf *bt_a2dp_stream_create_pdu(struct net_buf_pool *pool, k_timeout_t timeout);
 
 #ifdef __cplusplus
 }

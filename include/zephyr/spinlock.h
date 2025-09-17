@@ -175,6 +175,9 @@ static ALWAYS_INLINE void z_spinlock_validate_post(struct k_spinlock *l)
  * in uniprocessor contexts such that the locking reduces to an
  * interrupt mask operation.
  *
+ * @warning
+ * Holding a spinlock when a context switch occurs is illegal.
+ *
  * @param l A pointer to the spinlock to lock
  * @return A key value that must be passed to k_spin_unlock() when the
  *         lock is released.

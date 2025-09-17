@@ -3,11 +3,7 @@
 Fuel Gauge
 ##########
 
-The fuel gauge subsystem exposes an API to uniformly access battery fuel gauge devices. Currently,
-only reading data is supported.
-
-Note: This API is currently experimental and this doc will be significantly changed as new features
-are added to the API.
+The fuel gauge subsystem exposes an API to uniformly access battery fuel gauge devices.
 
 Basic Operation
 ***************
@@ -21,7 +17,8 @@ Fuel gauges typically support multiple properties, such as temperature readings 
 or present-time current/voltage.
 
 Properties are fetched by the client one at a time using :c:func:`fuel_gauge_get_prop`, or fetched
-in a batch using :c:func:`fuel_gauge_get_props`.
+in a batch using :c:func:`fuel_gauge_get_props`. Buffer properties, e.g. device name, are fetched by
+using :c:func:`fuel_gauge_get_buffer_prop`.
 
 Properties are set by the client one at a time using :c:func:`fuel_gauge_set_prop`, or set in a
 batch using :c:func:`fuel_gauge_set_props`.

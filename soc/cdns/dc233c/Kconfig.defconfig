@@ -6,9 +6,6 @@
 
 if SOC_XTENSA_DC233C
 
-config SOC_XTENSA_DC233C
-	select XTENSA_GEN_HANDLERS
-
 config XTENSA_MMU_NUM_L2_TABLES
 	int
 	default 48 if XTENSA_MMU

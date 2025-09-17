@@ -31,6 +31,8 @@
 		watchdog0 = &wdt0;
 		rtc = &bm8563_rtc;
 		sdhc0 = &sd0;
+		led0 = &axp2101_led;
+		fuel-gauge0 = &fuel_gauge;
 	};
 
 	lvgl_pointer {
@@ -95,43 +97,43 @@
 			 */
 
 			vdd_3v3: DCDC1 {
-				regulator-min-microvolt  = <3000000>;
+				regulator-min-microvolt = <3000000>;
 				/* regulator-init-microvolt = <3300000>; */
-				regulator-max-microvolt  = <3300000>;
+				regulator-max-microvolt = <3300000>;
 				regulator-boot-on;
 				regulator-always-on;
 				status = "okay";
 			};
 
 			vcc_3v3: DCDC3 {
-				regulator-min-microvolt  = <3100000>;
+				regulator-min-microvolt = <3100000>;
 				/* regulator-init-microvolt = <3300000>; */
-				regulator-max-microvolt  = <3500000>;
+				regulator-max-microvolt = <3500000>;
 				regulator-boot-on;
 				regulator-always-on;
 				status = "okay";
 			};
 
 			vdd_1v8: ALDO1 {
-				regulator-min-microvolt  = <1700000>;
+				regulator-min-microvolt = <1700000>;
 				/* regulator-init-microvolt = <1800000>; */
-				regulator-max-microvolt  = <1900000>;
+				regulator-max-microvolt = <1900000>;
 				regulator-boot-on;
 				status = "okay";
 			};
 
 			vdda_3v3: ALDO2 {
-				regulator-min-microvolt  = <3100000>;
+				regulator-min-microvolt = <3100000>;
 				/* regulator-init-microvolt = <3300000>; */
-				regulator-max-microvolt  = <3500000>;
+				regulator-max-microvolt = <3500000>;
 				regulator-boot-on;
 				status = "okay";
 			};
 
 			vdd_3v3_sd: ALDO4 {
-				regulator-min-microvolt  = <3100000>;
+				regulator-min-microvolt = <3100000>;
 				/* regulator-init-microvolt = <3300000>; */
-				regulator-max-microvolt  = <3500000>;
+				regulator-max-microvolt = <3500000>;
 				regulator-boot-on;
 				status = "okay";
 			};
@@ -157,6 +159,16 @@
 			constant-charge-current-max-microamp = <200000>;
 			constant-charge-voltage-max-microvolt = <4200000>;
 			charge-term-current-microamp = <125000>;
+		};
+
+		axp2101_led: led {
+			compatible = "x-powers,axp2101-led";
+			status = "okay";
+			x-powers,mode = "by-reg";
+		};
+
+		fuel_gauge: fuel_gauge {
+			compatible = "x-powers,axp2101-fuel-gauge";
 		};
 	};
 
@@ -212,12 +224,12 @@
 		reg = <1>;
 		status = "okay";
 		spi-max-frequency = <20000000>;
+
 		mmc {
 			compatible = "zephyr,sdmmc-disk";
 			disk-name = "SD";
 			status = "okay";
 		};
-
 	};
 };
 

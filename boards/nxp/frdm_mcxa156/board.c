@@ -9,9 +9,9 @@
 #include <fsl_spc.h>
 #include <soc.h>
 
-/* Core clock frequency: 150MHz */
-#define CLOCK_INIT_CORE_CLOCK            960000000U
-#define BOARD_BOOTCLOCKFRO96M_CORE_CLOCK 960000000U
+/* Core clock frequency: 96MHz */
+#define CLOCK_INIT_CORE_CLOCK            96000000U
+#define BOARD_BOOTCLOCKFRO96M_CORE_CLOCK 96000000U
 /* System clock frequency. */
 extern uint32_t SystemCoreClock;
 
@@ -39,7 +39,7 @@ void board_early_init_hook(void)
 		(void)SPC_SetSRAMOperateVoltage(SPC0, &sramOption);
 	}
 
-	CLOCK_SetupFROHFClocking(96000000U); /*!< Enable FRO HF(96MHz) output */
+	CLOCK_SetupFROHFClocking(CLOCK_INIT_CORE_CLOCK); /*!< Enable FRO HF(96MHz) output */
 
 	CLOCK_SetupFRO12MClocking(); /*!< Setup FRO12M clock */
 
@@ -233,6 +233,10 @@ void board_early_init_hook(void)
 	CLOCK_AttachClk(kFRO12M_to_LPTMR0);
 #endif /* DT_PROP(DT_NODELABEL(lptmr0), clk_source) */
 
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ostimer0))
+	CLOCK_AttachClk(kCLK_1M_to_OSTIMER);
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usb))

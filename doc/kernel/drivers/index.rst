@@ -343,7 +343,7 @@ Initialization Levels
 Drivers may depend on other drivers being initialized first, or require
 the use of kernel services. :c:func:`DEVICE_DEFINE()` and related APIs
 allow the user to specify at what time during the boot sequence the init
-function will be executed. Any driver will specify one of four
+function will be executed. Any driver will specify one of three
 initialization levels:
 
 ``PRE_KERNEL_1``
@@ -590,7 +590,7 @@ would be in the driver config struct:
 Drivers that do not use Zephyr Device Model
 ===========================================
 
-Some drivers or driver-like code may not user Zephyr's device model,
+Some drivers or driver-like code may not use Zephyr's device model,
 and alternative storage must be arranged for the MMIO data. An
 example of this are timer drivers, or interrupt controller code.
 

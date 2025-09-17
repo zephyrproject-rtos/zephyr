@@ -210,6 +210,7 @@
 
 /* Channel Map Unused channels count minimum */
 #define CHM_USED_COUNT_MIN     2U
+#define CHM_USED_COUNT_MAX     37U
 
 /* Channel Map hop count minimum and maximum */
 #define CHM_HOP_COUNT_MIN      5U
@@ -436,7 +437,7 @@ struct pdu_adv_ext_hdr {
 	uint8_t tgt_addr:1;
 	uint8_t adv_addr:1;
 #endif /* CONFIG_LITTLE_ENDIAN */
-	uint8_t data[0];
+	uint8_t data[];
 } __packed;
 
 struct pdu_adv_com_ext_adv {
@@ -449,7 +450,7 @@ struct pdu_adv_com_ext_adv {
 #endif /* CONFIG_LITTLE_ENDIAN */
 	union {
 		struct pdu_adv_ext_hdr ext_hdr;
-		uint8_t ext_hdr_adv_data[0];
+		FLEXIBLE_ARRAY_DECLARE(uint8_t, ext_hdr_adv_data);
 	};
 } __packed;
 
@@ -567,7 +568,7 @@ struct pdu_adv {
 	uint8_t len;
 
 	union {
-		uint8_t   payload[0];
+		FLEXIBLE_ARRAY_DECLARE(uint8_t, payload);
 		struct pdu_adv_adv_ind adv_ind;
 		struct pdu_adv_direct_ind direct_ind;
 		struct pdu_adv_scan_req scan_req;
@@ -1004,7 +1005,7 @@ struct pdu_data {
 
 	union {
 		struct pdu_data_llctrl llctrl;
-		uint8_t                   lldata[0];
+		FLEXIBLE_ARRAY_DECLARE(uint8_t, lldata);
 
 #if defined(CONFIG_BT_CTLR_CONN_RSSI)
 		uint8_t                   rssi;
@@ -1032,7 +1033,7 @@ struct pdu_iso {
 
 	struct pdu_iso_vnd_octet3 octet3;
 
-	uint8_t payload[0];
+	uint8_t payload[];
 } __packed;
 
 /* ISO SDU segmentation header */
@@ -1094,7 +1095,7 @@ struct pdu_cis {
 
 	struct pdu_cis_vnd_octet3 octet3;
 
-	uint8_t payload[0];
+	uint8_t payload[];
 } __packed;
 
 enum pdu_big_ctrl_type {
@@ -1116,7 +1117,7 @@ struct pdu_big_ctrl_term_ind {
 struct pdu_big_ctrl {
 	uint8_t opcode;
 	union {
-		uint8_t ctrl_data[0];
+		FLEXIBLE_ARRAY_DECLARE(uint8_t, ctrl_data);
 		struct pdu_big_ctrl_chan_map_ind chan_map_ind;
 		struct pdu_big_ctrl_term_ind term_ind;
 	} __packed;
@@ -1151,7 +1152,7 @@ struct pdu_bis {
 	struct pdu_bis_vnd_octet3 octet3;
 
 	union {
-		uint8_t payload[0];
+		FLEXIBLE_ARRAY_DECLARE(uint8_t, payload);
 		struct pdu_big_ctrl ctrl;
 	} __packed;
 } __packed;
@@ -1275,7 +1276,7 @@ struct pdu_dtm {
 
 	struct pdu_data_vnd_octet3 octet3;
 
-	uint8_t payload[0];
+	uint8_t payload[];
 } __packed;
 
 /* Direct Test Mode maximum payload size */

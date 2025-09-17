@@ -190,8 +190,8 @@ static int counter_rz_gtm_set_alarm(const struct device *dev, uint8_t chan,
 	const struct counter_rz_gtm_config *cfg = dev->config;
 	struct counter_rz_gtm_data *data = dev->data;
 
-	bool absolute = alarm_cfg->flags & COUNTER_ALARM_CFG_ABSOLUTE;
-	uint32_t val = alarm_cfg->ticks;
+	bool absolute;
+	uint32_t val;
 	k_spinlock_key_t key;
 	bool irq_on_late;
 	uint32_t max_rel_val;
@@ -201,6 +201,10 @@ static int counter_rz_gtm_set_alarm(const struct device *dev, uint8_t chan,
 	if (!alarm_cfg) {
 		return -EINVAL;
 	}
+
+	absolute = alarm_cfg->flags & COUNTER_ALARM_CFG_ABSOLUTE;
+	val = alarm_cfg->ticks;
+
 	/* Alarm callback is mandatory */
 	if (!alarm_cfg->callback) {
 		return -EINVAL;

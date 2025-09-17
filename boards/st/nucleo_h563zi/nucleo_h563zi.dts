@@ -8,7 +8,6 @@
 /dts-v1/;
 #include "nucleo_h563zi-common.dtsi"
 
-
 / {
 	model = "STMicroelectronics STM32H563ZI-NUCLEO board";
 	compatible = "st,stm32h563zi-nucleo";
@@ -27,6 +26,7 @@
 
 	aliases {
 		led0 = &green_led_1;
+		led1 = &yellow_led_1;
 		sw0 = &user_button;
 		watchdog0 = &iwdg;
 		pwm-led0 = &pwm_led_1;

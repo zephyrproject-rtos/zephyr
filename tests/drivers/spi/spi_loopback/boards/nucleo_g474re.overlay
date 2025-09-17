@@ -6,10 +6,10 @@
 
 &rcc {
 	/*
-	* Reduce bus clock speed to be able
-	* to reach SPI_LOOPBACK_SLOW_FREQ = 500000
-	* with max prescaler 256
-	*/
+	 * Reduce bus clock speed to be able
+	 * to reach SPI_LOOPBACK_SLOW_FREQ = 500000
+	 * with max prescaler 256
+	 */
 	apb2-prescaler = <2>;
 };
 

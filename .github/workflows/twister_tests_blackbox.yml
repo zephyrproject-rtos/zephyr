@@ -18,41 +18,40 @@ on:
 permissions:
   contents: read
 
+env:
+  PYTHONIOENCODING: utf-8
+
 jobs:
   twister-tests:
     name: Twister Black Box Tests
-    runs-on: ubuntu-24.04
     strategy:
       matrix:
         python-version: ['3.10', '3.11', '3.12', '3.13']
+        os: [ubuntu-24.04, macos-14, windows-2022]
+      fail-fast: false
+    runs-on: ${{ matrix.os }}
     steps:
     - name: Checkout
-      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
       with:
         path: zephyr
         fetch-depth: 0
 
     - name: Set Up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
+      uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6.0.0
       with:
         python-version: ${{ matrix.python-version }}
         cache: pip
         cache-dependency-path: scripts/requirements-actions.txt
 
-    - name: install-packages
-      working-directory: zephyr
-      run: |
-        pip install -r scripts/requirements-actions.txt --require-hashes
-        sudo apt-get update -y
-        sudo apt-get install -y lcov
-
     - name: Setup Zephyr project
-      uses: zephyrproject-rtos/action-zephyr-setup@f7b70269a8eb01f70c8e710891e4c94972a2f6b4 # v1.0.6
+      uses: zephyrproject-rtos/action-zephyr-setup@6a744370a22e4ecb24f5dda3c7e80ff3e0a3b847 # v1.0.8
       with:
         app-path: zephyr
         toolchains: all
 
     - name: Run Pytest For Twister Black Box Tests
+      if: ${{ runner.os == 'Linux' }}
       working-directory: zephyr
       shell: bash
       env:
@@ -60,6 +59,129 @@ jobs:
         ZEPHYR_TOOLCHAIN_VARIANT: zephyr
       run: |
         export ZEPHYR_SDK_INSTALL_DIR=${{ github.workspace }}/zephyr-sdk
+        sudo apt-get install -y lcov
         echo "Run twister tests"
         source zephyr-env.sh
         PYTHONPATH="./scripts/tests" pytest ./scripts/tests/twister_blackbox/
+
+    - name: Build firmware No. 1 - basic
+      working-directory: zephyr
+      shell: bash
+      run: |
+        if [ "${{ runner.os }}" = "macOS" ]; then
+          EXTRA_TWISTER_FLAGS="-P native_sim --build-only"
+        elif [ "${{ runner.os }}" = "Windows" ]; then
+          EXTRA_TWISTER_FLAGS="-P native_sim --short-build-path -O /tmp/twister-out"
+        fi
+        ./scripts/twister --runtime-artifact-cleanup --force-color --inline-logs -T samples/hello_world -T samples/cpp/hello_world -v $EXTRA_TWISTER_FLAGS
+
+    - name: Build firmware No. 2 - save and load with emulation only
+      working-directory: zephyr
+      shell: bash
+      run: |
+        if [ "${{ runner.os }}" = "macOS" ]; then
+          EXTRA_TWISTER_FLAGS="-P native_sim --build-only"
+        elif [ "${{ runner.os }}" = "Windows" ]; then
+          EXTRA_TWISTER_FLAGS="-P native_sim --short-build-path -O /tmp/twister-out"
+        fi
+        BASIC_FLAGS="--runtime-artifact-cleanup --force-color --inline-logs -T samples/hello_world -T samples/cpp/hello_world -v $EXTRA_TWISTER_FLAGS"
+        ./scripts/twister --save-tests tests.file $BASIC_FLAGS
+        ./scripts/twister --load-tests tests.file --emulation-only $BASIC_FLAGS
+        rm tests.file
+
+    - name: Build firmware No. 3 - print out test plan
+      working-directory: zephyr
+      shell: bash
+      run: |
+        if [ "${{ runner.os }}" = "macOS" ]; then
+          EXTRA_TWISTER_FLAGS="-P native_sim --build-only"
+        elif [ "${{ runner.os }}" = "Windows" ]; then
+          EXTRA_TWISTER_FLAGS="-P native_sim --short-build-path -O /tmp/twister-out"
+        fi
+        BASIC_FLAGS="--runtime-artifact-cleanup --force-color --inline-logs -v $EXTRA_TWISTER_FLAGS"
+        ./scripts/twister --test-tree -T tests/kernel/spinlock $BASIC_FLAGS
+
+    - name: Build firmware No. 4 - integration, exclude tag, filter, shuffle, dry run
+      working-directory: zephyr
+      shell: bash
+      run: |
+        if [ "${{ runner.os }}" = "macOS" ]; then
+          EXTRA_TWISTER_FLAGS="-P native_sim --build-only"
+        elif [ "${{ runner.os }}" = "Windows" ]; then
+          EXTRA_TWISTER_FLAGS="-P native_sim --short-build-path -O /tmp/twister-out"
+        fi
+        BASIC_FLAGS="--runtime-artifact-cleanup --force-color --inline-logs -v $EXTRA_TWISTER_FLAGS"
+        ./scripts/twister --dry-run --integration --subset 1/3 --shuffle-tests --shuffle-tests-seed 1 --filter runnable --exclude-tag audio --exclude-tag driver $BASIC_FLAGS
+
+    - name: Build firmware No. 5 - test, arch, vendor, exclude-platform, platform-reports
+      working-directory: zephyr
+      shell: bash
+      run: |
+        if [ "${{ runner.os }}" = "macOS" ]; then
+          EXTRA_TWISTER_FLAGS="-P native_sim --build-only"
+        elif [ "${{ runner.os }}" = "Windows" ]; then
+          EXTRA_TWISTER_FLAGS="-P native_sim --short-build-path -O /tmp/twister-out"
+        fi
+        BASIC_FLAGS="--runtime-artifact-cleanup --force-color --inline-logs -v $EXTRA_TWISTER_FLAGS"
+        ./scripts/twister --test kernel.multiprocessing.spinlock --arch x86 --exclude-platform qemu_x86_64 --vendor qemu --platform-reports $BASIC_FLAGS
+
+    - name: Build firmware No. 6 - subtest, platform, rom-ram report, ROM footprint report from buildlog, size report
+      working-directory: zephyr
+      shell: bash
+      run: |
+        if [ "${{ runner.os }}" = "macOS" ]; then
+          EXTRA_TWISTER_FLAGS="-P native_sim --build-only"
+        elif [ "${{ runner.os }}" = "Windows" ]; then
+          EXTRA_TWISTER_FLAGS="-P native_sim --short-build-path -O /tmp/twister-out"
+        fi
+        BASIC_FLAGS="--runtime-artifact-cleanup --force-color --inline-logs -v $EXTRA_TWISTER_FLAGS"
+        ./scripts/twister --sub-test kernel.multiprocessing.spinlock.minimallibc.spinlock.spinlock_basic --platform qemu_x86 --create-rom-ram-report --footprint-report ROM --enable-size-report --footprint-from-buildlog $BASIC_FLAGS --detailed-test-id
+
+    - name: Build firmware No. 7 - list tags
+      working-directory: zephyr
+      shell: bash
+      run: |
+        if [ "${{ runner.os }}" = "macOS" ]; then
+          EXTRA_TWISTER_FLAGS="-P native_sim --build-only"
+        elif [ "${{ runner.os }}" = "Windows" ]; then
+          EXTRA_TWISTER_FLAGS="-P native_sim --short-build-path -O /tmp/twister-out"
+        fi
+        BASIC_FLAGS="--runtime-artifact-cleanup --force-color --inline-logs -v $EXTRA_TWISTER_FLAGS"
+        ./scripts/twister --sub-test kernel.multiprocessing.spinlock.minimallibc.spinlock.spinlock_basic --list-tags $BASIC_FLAGS --detailed-test-id
+
+    - name: Build firmware No. 8 - list tests
+      working-directory: zephyr
+      shell: bash
+      run: |
+        if [ "${{ runner.os }}" = "macOS" ]; then
+          EXTRA_TWISTER_FLAGS="-P native_sim --build-only"
+        elif [ "${{ runner.os }}" = "Windows" ]; then
+          EXTRA_TWISTER_FLAGS="-P native_sim --short-build-path -O /tmp/twister-out"
+        fi
+        BASIC_FLAGS="--runtime-artifact-cleanup --force-color --inline-logs -v $EXTRA_TWISTER_FLAGS"
+        ./scripts/twister -T tests/posix/common --list-tests $BASIC_FLAGS
+
+    - name: Build firmware No. 9 - report flags - dir, name, suffix, summary, all-options, filtered
+      working-directory: zephyr
+      shell: bash
+      run: |
+        if [ "${{ runner.os }}" = "macOS" ]; then
+          EXTRA_TWISTER_FLAGS="-P native_sim --build-only"
+        elif [ "${{ runner.os }}" = "Windows" ]; then
+          EXTRA_TWISTER_FLAGS="-P native_sim --short-build-path -O /tmp/twister-out"
+        fi
+        BASIC_FLAGS="--runtime-artifact-cleanup --force-color --inline-logs -v $EXTRA_TWISTER_FLAGS"
+        ./scripts/twister --sub-test kernel.multiprocessing.spinlock.minimallibc.spinlock.spinlock_basic --platform qemu_x86 --report-dir . --report-name test_name --report-suffix suffix --report-summary 0 --report-all-options --report-filtered $BASIC_FLAGS --detailed-test-id
+
+    - name: Build firmware No. 10 - force platform and toolchain, log level, timestamps, logfile
+      working-directory: zephyr
+      shell: bash
+      run: |
+        if [ "${{ runner.os }}" = "macOS" ]; then
+          EXTRA_TWISTER_FLAGS="-P native_sim --build-only"
+        elif [ "${{ runner.os }}" = "Windows" ]; then
+          EXTRA_TWISTER_FLAGS="-P native_sim --short-build-path -O /tmp/twister-out"
+        fi
+        BASIC_FLAGS="--runtime-artifact-cleanup --force-color --inline-logs -v $EXTRA_TWISTER_FLAGS"
+        ./scripts/twister --sub-test kernel.multiprocessing.spinlock.minimallibc.spinlock.spinlock_basic --force-platform --platform qemu_x86 --force-toolchain --log-level WARNING --log-file log.file $BASIC_FLAGS --detailed-test-id
+        rm log.file

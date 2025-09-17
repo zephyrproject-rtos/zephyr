@@ -533,13 +533,13 @@ static int sreq_get_desc_cfg(struct usbd_context *const uds_ctx,
 	return 0;
 }
 
-#define USBD_HWID_SN_MAX 32U
+#define USBD_SN_ASCII7_LENGTH (CONFIG_USBD_HWINFO_DEVID_LENGTH * 2)
 
 /* Generate valid USB device serial number from hwid */
-static ssize_t get_sn_from_hwid(uint8_t sn[static USBD_HWID_SN_MAX])
+static ssize_t get_sn_from_hwid(uint8_t sn[static USBD_SN_ASCII7_LENGTH])
 {
 	static const char hex[] = "0123456789ABCDEF";
-	uint8_t hwid[USBD_HWID_SN_MAX / 2U];
+	uint8_t hwid[USBD_SN_ASCII7_LENGTH / 2U];
 	ssize_t hwid_len = -ENOSYS;
 
 	if (IS_ENABLED(CONFIG_HWINFO)) {
@@ -554,36 +554,37 @@ static ssize_t get_sn_from_hwid(uint8_t sn[static USBD_HWID_SN_MAX])
 		return hwid_len;
 	}
 
-	for (ssize_t i = 0; i < hwid_len; i++) {
+	for (ssize_t i = 0; i < MIN(hwid_len, sizeof(hwid)); i++) {
 		sn[i * 2] = hex[hwid[i] >> 4];
 		sn[i * 2 + 1] = hex[hwid[i] & 0xF];
 	}
 
-	return hwid_len * 2;
+	return MIN(hwid_len, sizeof(hwid)) * 2;
 }
 
 /* Copy and convert ASCII-7 string descriptor to UTF16-LE */
 static void string_ascii7_to_utf16le(struct usbd_desc_node *const dn,
 				     struct net_buf *const buf, const uint16_t wLength)
 {
-	uint8_t hwid_sn[USBD_HWID_SN_MAX];
+	uint8_t sn_ascii7_str[USBD_SN_ASCII7_LENGTH];
 	struct usb_desc_header head = {
 		.bDescriptorType = dn->bDescriptorType,
 	};
-	uint8_t *ascii7_str;
+	const uint8_t *ascii7_str;
 	size_t len;
 	size_t i;
 
-	if (dn->str.utype == USBD_DUT_STRING_SERIAL_NUMBER && dn->str.use_hwinfo) {
-		ssize_t hwid_len = get_sn_from_hwid(hwid_sn);
+	if (IS_ENABLED(CONFIG_HWINFO) &&
+	    dn->str.utype == USBD_DUT_STRING_SERIAL_NUMBER && dn->str.use_hwinfo) {
+		ssize_t sn_ascii7_str_len = get_sn_from_hwid(sn_ascii7_str);
 
-		if (hwid_len < 0) {
+		if (sn_ascii7_str_len < 0) {
 			errno = -ENOTSUP;
 			return;
 		}
 
-		head.bLength = sizeof(head) + hwid_len * 2;
-		ascii7_str = hwid_sn;
+		head.bLength = sizeof(head) + sn_ascii7_str_len * 2;
+		ascii7_str = sn_ascii7_str;
 	} else {
 		head.bLength = dn->bLength;
 		ascii7_str = (uint8_t *)dn->ptr;
@@ -629,6 +630,10 @@ static int sreq_get_desc_dev(struct usbd_context *const uds_ctx,
 	default:
 		errno = -ENOTSUP;
 		return 0;
+	}
+
+	if (head == NULL) {
+		return -EINVAL;
 	}
 
 	net_buf_add_mem(buf, head, MIN(len, head->bLength));
@@ -679,12 +684,6 @@ static int sreq_get_dev_qualifier(struct usbd_context *const uds_ctx,
 	struct usb_device_qualifier_descriptor q_desc = {
 		.bLength = sizeof(struct usb_device_qualifier_descriptor),
 		.bDescriptorType = USB_DESC_DEVICE_QUALIFIER,
-		.bcdUSB = d_desc->bcdUSB,
-		.bDeviceClass = d_desc->bDeviceClass,
-		.bDeviceSubClass = d_desc->bDeviceSubClass,
-		.bDeviceProtocol = d_desc->bDeviceProtocol,
-		.bMaxPacketSize0 = d_desc->bMaxPacketSize0,
-		.bNumConfigurations = d_desc->bNumConfigurations,
 		.bReserved = 0U,
 	};
 	size_t len;
@@ -698,6 +697,17 @@ static int sreq_get_dev_qualifier(struct usbd_context *const uds_ctx,
 		errno = -ENOTSUP;
 		return 0;
 	}
+
+	if (d_desc == NULL) {
+		return -EINVAL;
+	}
+
+	q_desc.bcdUSB = d_desc->bcdUSB;
+	q_desc.bDeviceClass = d_desc->bDeviceClass;
+	q_desc.bDeviceSubClass = d_desc->bDeviceSubClass;
+	q_desc.bDeviceProtocol = d_desc->bDeviceProtocol;
+	q_desc.bMaxPacketSize0 = d_desc->bMaxPacketSize0;
+	q_desc.bNumConfigurations = d_desc->bNumConfigurations;
 
 	LOG_DBG("Get Device Qualifier");
 	len = MIN(setup->wLength, net_buf_tailroom(buf));
@@ -733,6 +743,11 @@ static int sreq_get_desc_bos(struct usbd_context *const uds_ctx,
 	struct usbd_desc_node *desc_nd;
 	size_t len;
 
+	if (!IS_ENABLED(CONFIG_USBD_BOS_SUPPORT)) {
+		errno = -ENOTSUP;
+		return 0;
+	}
+
 	switch (usbd_bus_speed(uds_ctx)) {
 	case USBD_SPEED_FS:
 		dev_dsc = uds_ctx->fs_desc;
@@ -743,6 +758,10 @@ static int sreq_get_desc_bos(struct usbd_context *const uds_ctx,
 	default:
 		errno = -ENOTSUP;
 		return 0;
+	}
+
+	if (dev_dsc == NULL) {
+		return -EINVAL;
 	}
 
 	if (sys_le16_to_cpu(dev_dsc->bcdUSB) < 0x0201U) {
@@ -934,6 +953,11 @@ static int vendor_device_request(struct usbd_context *const uds_ctx,
 {
 	struct usb_setup_packet *setup = usbd_get_setup_pkt(uds_ctx);
 	struct usbd_vreq_node *vreq_nd;
+
+	if (!IS_ENABLED(CONFIG_USBD_VREQ_SUPPORT)) {
+		errno = -ENOTSUP;
+		return 0;
+	}
 
 	vreq_nd = usbd_device_get_vreq(uds_ctx, setup->bRequest);
 	if (vreq_nd == NULL) {

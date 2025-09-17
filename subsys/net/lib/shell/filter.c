@@ -89,7 +89,7 @@ static int cmd_net_filter(const struct shell *sh, size_t argc, char *argv[])
 	struct net_shell_user_data user_data;
 	int count = 0;
 
-	PR("Rule  %-10s  Verdict  Tests \n", "Type");
+	PR("Rule  %-10s  Verdict  Tests\n", "Type");
 
 	user_data.sh = sh;
 	user_data.user_data = &count;

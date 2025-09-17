@@ -87,7 +87,11 @@ BUILD_ASSERT(sizeof(struct image_header) == IMAGE_HEADER_SIZE,
 #define ACTIVE_IMAGE_IS 0
 #endif
 
+#if CONFIG_MCUBOOT_BOOTLOADER_MODE_FIRMWARE_UPDATER
+#define SLOTS_PER_IMAGE 1
+#else
 #define SLOTS_PER_IMAGE 2
+#endif
 
 LOG_MODULE_REGISTER(mcumgr_img_grp, CONFIG_MCUMGR_GRP_IMG_LOG_LEVEL);
 
@@ -246,8 +250,7 @@ int img_mgmt_active_image(void)
 /*
  * Reads the version and build hash from the specified image slot.
  */
-int img_mgmt_read_info(int image_slot, struct image_version *ver, uint8_t *hash,
-				   uint32_t *flags)
+int img_mgmt_read_info(int image_slot, struct image_version *ver, uint8_t *hash, uint32_t *flags)
 {
 	struct image_header hdr;
 	struct image_tlv tlv;
@@ -319,7 +322,7 @@ int img_mgmt_read_info(int image_slot, struct image_version *ver, uint8_t *hash,
 		if (tlv.it_type == 0xff && tlv.it_len == 0xffff) {
 			return IMG_MGMT_ERR_INVALID_TLV;
 		}
-		if (tlv.it_type != IMAGE_TLV_SHA256 || tlv.it_len != IMAGE_HASH_LEN) {
+		if (tlv.it_type != IMAGE_TLV_SHA || tlv.it_len != IMAGE_SHA_LEN) {
 			/* Non-hash TLV.  Skip it. */
 			data_off += sizeof(tlv) + tlv.it_len;
 			continue;
@@ -333,10 +336,10 @@ int img_mgmt_read_info(int image_slot, struct image_version *ver, uint8_t *hash,
 
 		data_off += sizeof(tlv);
 		if (hash != NULL) {
-			if (data_off + IMAGE_HASH_LEN > data_end) {
+			if (data_off + IMAGE_SHA_LEN > data_end) {
 				return IMG_MGMT_ERR_TLV_INVALID_SIZE;
 			}
-			rc = img_mgmt_read(image_slot, data_off, hash, IMAGE_HASH_LEN);
+			rc = img_mgmt_read(image_slot, data_off, hash, IMAGE_SHA_LEN);
 			if (rc != 0) {
 				return rc;
 			}
@@ -360,7 +363,7 @@ img_mgmt_find_by_ver(struct image_version *find, uint8_t *hash)
 	int i;
 	struct image_version ver;
 
-	for (i = 0; i < 2 * CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER; i++) {
+	for (i = 0; i < SLOTS_PER_IMAGE * CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER; i++) {
 		if (img_mgmt_read_info(i, &ver, hash, NULL) != 0) {
 			continue;
 		}
@@ -379,13 +382,13 @@ int
 img_mgmt_find_by_hash(uint8_t *find, struct image_version *ver)
 {
 	int i;
-	uint8_t hash[IMAGE_HASH_LEN];
+	uint8_t hash[IMAGE_SHA_LEN];
 
-	for (i = 0; i < 2 * CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER; i++) {
+	for (i = 0; i < SLOTS_PER_IMAGE * CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER; i++) {
 		if (img_mgmt_read_info(i, ver, hash, NULL) != 0) {
 			continue;
 		}
-		if (!memcmp(hash, find, IMAGE_HASH_LEN)) {
+		if (!memcmp(hash, find, IMAGE_SHA_LEN)) {
 			return i;
 		}
 	}
@@ -695,7 +698,7 @@ img_mgmt_upload_good_rsp(struct smp_streamer *ctxt)
 static int
 img_mgmt_upload_log(bool is_first, bool is_last, int status)
 {
-	uint8_t hash[IMAGE_HASH_LEN];
+	uint8_t hash[IMAGE_SHA_LEN];
 	const uint8_t *hashp;
 	int rc;
 
@@ -1087,7 +1090,8 @@ static const struct mgmt_handler img_mgmt_handlers[] = {
 	[IMG_MGMT_ID_STATE] = {
 		.mh_read = img_mgmt_state_read,
 #if defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP) || \
-	defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD)
+	defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD) || \
+	defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_FIRMWARE_UPDATER)
 		.mh_write = NULL
 #else
 		.mh_write = img_mgmt_state_write,

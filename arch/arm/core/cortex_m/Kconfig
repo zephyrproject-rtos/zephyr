@@ -1,6 +1,7 @@
 # ARM Cortex-M platform configuration options
 
 # Copyright (c) 2014-2015 Wind River Systems, Inc.
+# Copyright 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 # SPDX-License-Identifier: Apache-2.0
 
 # NOTE: We have the specific core implementations first and outside of the
@@ -61,6 +62,17 @@ config CPU_CORTEX_M33
 	select ARMV7_M_ARMV8_M_FP if CPU_HAS_FPU
 	help
 	  This option signifies the use of a Cortex-M33 CPU
+
+config CPU_CORTEX_M52
+	bool
+	select CPU_CORTEX_M
+	select ARMV8_1_M_MAINLINE
+	select ARMV8_M_SE if CPU_HAS_TEE
+	select ARMV7_M_ARMV8_M_FP if CPU_HAS_FPU
+	select CPU_HAS_DCACHE
+	select CPU_HAS_ICACHE
+	help
+	  This option signifies the use of a Cortex-M52 CPU
 
 config CPU_CORTEX_M55
 	bool

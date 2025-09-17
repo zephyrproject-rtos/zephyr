@@ -12,8 +12,9 @@ extern "C" {
 #endif
 
 /**
- * @brief MCUmgr os_mgmt callback API
- * @defgroup mcumgr_callback_api_os_mgmt MCUmgr os_mgmt callback API
+ * @brief MCUmgr OS Management Callbacks API
+ * @defgroup mcumgr_callback_api_os_mgmt OS Management Callbacks
+ * @ingroup mcumgr_os_mgmt
  * @ingroup mcumgr_callback_api
  * @{
  */
@@ -26,6 +27,11 @@ extern "C" {
 struct os_mgmt_reset_data {
 	/** Contains the value of the force parameter. */
 	bool force;
+
+#if defined(CONFIG_MCUMGR_GRP_OS_RESET_BOOT_MODE) || defined(__DOXYGEN__)
+	/** Contains the value of the boot_mode parameter. */
+	uint8_t boot_mode;
+#endif
 };
 
 /**

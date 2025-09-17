@@ -15,8 +15,10 @@
 	compatible = "ite,it515xx-evb";
 
 	aliases {
+		i2c-0 = &i2c0;
 		led0 = &led0;
 		watchdog0 = &twd0;
+		pwm-0 = &pwm0;
 	};
 
 	chosen {
@@ -36,6 +38,14 @@
 			label = "Green LED";
 		};
 	};
+};
+
+&i2c0 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	pinctrl-0 = <&i2c0_clk_gpf2_default
+		     &i2c0_data_gpf3_default>;
+	pinctrl-names = "default";
 };
 
 &uart1 {
@@ -111,6 +121,26 @@
 	pinctrl-names = "default";
 };
 
+/*
+ * test pwm:
+ * If we need pwm output in ITE chip power saving mode,
+ * then we should set pwm output frequency <=324Hz.
+ */
+&pwm0 {
+	status = "okay";
+	prescaler-cx = <PWM_PRESCALER_C6>;
+	pinctrl-0 = <&pwm0_gpa0_default>;
+	pinctrl-names = "default";
+};
+
+/* test fan */
+&pwm7 {
+	status = "okay";
+	prescaler-cx = <PWM_PRESCALER_C4>;
+	pinctrl-0 = <&pwm7_gpa7_default>;
+	pinctrl-names = "default";
+};
+
 /* test fan tachometer sensor */
 &tach0 {
 	status = "okay";
@@ -118,4 +148,16 @@
 	pulses-per-round = <2>;
 	pinctrl-0 = <&tach0a_gpd6_default>;
 	pinctrl-names = "default";
+};
+
+&sha256 {
+	status = "okay";
+};
+
+/* voltage comparator for test */
+&vcmp1 {
+	status = "okay";
+	threshold-mv = <1500>;
+	scan-period = <0x4>;
+	io-channels = <&adc0 3>;
 };

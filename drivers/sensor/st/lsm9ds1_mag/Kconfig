@@ -1,0 +1,10 @@
+# Copyright (c) 2024 Bootlin
+# SPDX-License-Identifier: Apache-2.0
+
+config LSM9DS1_MAG
+	bool "LSM9DS1 I2C magnetometer chip"
+	default y
+	depends on DT_HAS_ST_LSM9DS1_MAG_ENABLED
+	select I2C
+	select HAS_STMEMSC
+	select USE_STDC_LSM9DS1

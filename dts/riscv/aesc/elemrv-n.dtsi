@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2025 Aesc Silicon
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <aesc/nitrogen.dtsi>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "aesc,elemrv-n-soc", "simple-bus";
+		ranges;
+
+		uart0: uart0@f0006000 {
+			compatible = "aesc,uart";
+			reg = <0xf0006000 0x1000>;
+			status = "disabled";
+		};
+	};
+};

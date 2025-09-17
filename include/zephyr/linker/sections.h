@@ -77,6 +77,7 @@
 
 #ifdef CONFIG_NOCACHE_MEMORY
 #define _NOCACHE_SECTION_NAME nocache
+#define _NOCACHE_LOAD_SECTION_NAME nocache_load
 #endif
 
 /* Symbol table section */

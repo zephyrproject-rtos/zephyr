@@ -13,8 +13,10 @@ LOG_MODULE_REGISTER(spi_ll_stm32);
 #include <zephyr/sys/util.h>
 #include <zephyr/kernel.h>
 #include <soc.h>
+#include <stm32_cache.h>
 #include <stm32_ll_spi.h>
 #include <errno.h>
+#include <zephyr/cache.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/drivers/spi/rtio.h>
 #include <zephyr/drivers/pinctrl.h>
@@ -168,7 +170,7 @@ static int spi_stm32_dma_tx_load(const struct device *dev, const uint8_t *buf,
 		/* if tx buff is null, then sends NOP on the line. */
 		dummy_rx_tx_buffer = 0;
 #if SPI_STM32_MANUAL_CACHE_COHERENCY_REQUIRED
-		arch_dcache_flush_range((void *)&dummy_rx_tx_buffer, sizeof(uint32_t));
+		sys_cache_data_flush_range((void *)&dummy_rx_tx_buffer, sizeof(uint32_t));
 #endif /* SPI_STM32_MANUAL_CACHE_COHERENCY_REQUIRED */
 		blk_cfg->source_address = (uint32_t)&dummy_rx_tx_buffer;
 		blk_cfg->source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
@@ -466,9 +468,9 @@ static int spi_stm32_shift_frames(const struct spi_stm32_config *cfg,
 	return spi_stm32_get_err(cfg->spi);
 }
 
-static void spi_stm32_cs_control(const struct device *dev, bool on)
+static void spi_stm32_cs_control(const struct device *dev, bool on __maybe_unused)
 {
-	struct spi_stm32_data *data = dev->data;
+	__maybe_unused struct spi_stm32_data *data = dev->data;
 
 	spi_context_cs_control(&data->ctx, on);
 
@@ -540,6 +542,14 @@ static void spi_stm32_complete(const struct device *dev, int status)
 
 	if (!(data->ctx.config->operation & SPI_HOLD_ON_CS)) {
 		ll_func_disable_spi(spi);
+#if defined(CONFIG_SPI_STM32_INTERRUPT) && defined(CONFIG_SOC_SERIES_STM32H7X)
+	} else {
+		/* On H7, with SPI still enabled, the ISR is always called, even if the interrupt
+		 * enable register is cleared.
+		 * As a workaround, disable the IRQ at NVIC level.
+		 */
+		irq_disable(cfg->irq_line);
+#endif /* CONFIG_SPI_STM32_INTERRUPT && CONFIG_SOC_SERIES_STM32H7X */
 	}
 
 #ifdef CONFIG_SPI_STM32_INTERRUPT
@@ -959,6 +969,10 @@ static int transceive(const struct device *dev,
 
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
 
+#if defined(CONFIG_SPI_STM32_INTERRUPT) && defined(CONFIG_SOC_SERIES_STM32H7X)
+	/* Make sure IRQ is disabled to avoid any spurious IRQ to happen */
+	irq_disable(cfg->irq_line);
+#endif  /* CONFIG_SPI_STM32_INTERRUPT && CONFIG_SOC_SERIES_STM32H7X */
 	LL_SPI_Enable(spi);
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
@@ -1001,6 +1015,10 @@ static int transceive(const struct device *dev,
 	}
 
 	ll_func_enable_int_tx_empty(spi);
+
+#if defined(CONFIG_SPI_STM32_INTERRUPT) && defined(CONFIG_SOC_SERIES_STM32H7X)
+	irq_enable(cfg->irq_line);
+#endif  /* CONFIG_SPI_STM32_INTERRUPT && CONFIG_SOC_SERIES_STM32H7X */
 
 	do {
 		ret = spi_context_wait_for_completion(&data->ctx);
@@ -1075,28 +1093,6 @@ static int wait_dma_rx_tx_done(const struct device *dev)
 }
 
 #ifdef CONFIG_DCACHE
-static bool buf_in_nocache(uintptr_t buf __maybe_unused, size_t len_bytes __maybe_unused)
-{
-	bool buf_within_nocache = false;
-
-#ifdef CONFIG_NOCACHE_MEMORY
-	/* Check if buffer is in nocache region defined by the linker */
-	buf_within_nocache = (buf >= ((uintptr_t)_nocache_ram_start)) &&
-		((buf + len_bytes - 1) <= ((uintptr_t)_nocache_ram_end));
-	if (buf_within_nocache) {
-		return true;
-	}
-#endif /* CONFIG_NOCACHE_MEMORY */
-
-#ifdef CONFIG_MEM_ATTR
-	/* Check if buffer is in nocache memory region defined in DT */
-	buf_within_nocache = mem_attr_check_buf(
-		(void *)buf, len_bytes, DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)) == 0;
-#endif /* CONFIG_MEM_ATTR */
-
-	return buf_within_nocache;
-}
-
 static bool is_dummy_buffer(const struct spi_buf *buf)
 {
 	return buf->buf == NULL;
@@ -1108,7 +1104,7 @@ static bool spi_buf_set_in_nocache(const struct spi_buf_set *bufs)
 		const struct spi_buf *buf = &bufs->buffers[i];
 
 		if (!is_dummy_buffer(buf) &&
-				!buf_in_nocache((uintptr_t)buf->buf, buf->len)) {
+				!stm32_buf_in_nocache((uintptr_t)buf->buf, buf->len)) {
 			return false;
 		}
 	}
@@ -1141,7 +1137,8 @@ static int transceive_dma(const struct device *dev,
 #ifdef CONFIG_DCACHE
 	if ((tx_bufs != NULL && !spi_buf_set_in_nocache(tx_bufs)) ||
 		(rx_bufs != NULL && !spi_buf_set_in_nocache(rx_bufs))) {
-		return -EFAULT;
+		LOG_ERR("SPI DMA transfers not supported on cached memory");
+		return -ENOTSUP;
 	}
 #endif /* CONFIG_DCACHE */
 
@@ -1204,6 +1201,13 @@ static int transceive_dma(const struct device *dev,
 
 	/* This is turned off in spi_stm32_complete(). */
 	spi_stm32_cs_control(dev, true);
+
+	uint8_t word_size_bytes = bits2bytes(SPI_WORD_SIZE_GET(config->operation));
+
+	data->dma_rx.dma_cfg.source_data_size = word_size_bytes;
+	data->dma_rx.dma_cfg.dest_data_size = word_size_bytes;
+	data->dma_tx.dma_cfg.source_data_size = word_size_bytes;
+	data->dma_tx.dma_cfg.dest_data_size = word_size_bytes;
 
 	while (data->ctx.rx_len > 0 || data->ctx.tx_len > 0) {
 		size_t dma_len;
@@ -1399,6 +1403,66 @@ static inline bool spi_stm32_is_subghzspi(const struct device *dev)
 #endif /* st_stm32_spi_subghz */
 }
 
+static int spi_stm32_pinctrl_apply(const struct device *dev, uint8_t id)
+{
+	const struct spi_stm32_config *config = dev->config;
+	int err;
+
+	if (spi_stm32_is_subghzspi(dev)) {
+		return 0;
+	}
+
+	/* Move pins to requested state */
+	err = pinctrl_apply_state(config->pcfg, id);
+	if ((id == PINCTRL_STATE_SLEEP) && (err == -ENOENT)) {
+		/* Sleep state is optional */
+		err = 0;
+	}
+	return err;
+}
+
+static int spi_stm32_pm_action(const struct device *dev,
+			       enum pm_device_action action)
+{
+	const struct spi_stm32_config *config = dev->config;
+	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+	int err;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		/* Configure pins for active mode */
+		err = spi_stm32_pinctrl_apply(dev, PINCTRL_STATE_DEFAULT);
+		if (err < 0) {
+			return err;
+		}
+		/* enable clock */
+		err = clock_control_on(clk, (clock_control_subsys_t)&config->pclken[0]);
+		if (err != 0) {
+			LOG_ERR("Could not enable SPI clock");
+			return err;
+		}
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		/* Stop device clock. */
+		err = clock_control_off(clk, (clock_control_subsys_t)&config->pclken[0]);
+		if (err != 0) {
+			LOG_ERR("Could not disable SPI clock");
+			return err;
+		}
+		/* Configure pins for sleep mode */
+		return spi_stm32_pinctrl_apply(dev, PINCTRL_STATE_SLEEP);
+	case PM_DEVICE_ACTION_TURN_ON:
+		/* Configure pins for sleep mode */
+		return spi_stm32_pinctrl_apply(dev, PINCTRL_STATE_SLEEP);
+	case PM_DEVICE_ACTION_TURN_OFF:
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
 static int spi_stm32_init(const struct device *dev)
 {
 	struct spi_stm32_data *data __attribute__((unused)) = dev->data;
@@ -1410,28 +1474,12 @@ static int spi_stm32_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	err = clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-			       (clock_control_subsys_t) &cfg->pclken[0]);
-	if (err < 0) {
-		LOG_ERR("Could not enable SPI clock");
-		return err;
-	}
-
 	if (IS_ENABLED(STM32_SPI_DOMAIN_CLOCK_SUPPORT) && (cfg->pclk_len > 1)) {
 		err = clock_control_configure(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 					      (clock_control_subsys_t) &cfg->pclken[1],
 					      NULL);
 		if (err < 0) {
 			LOG_ERR("Could not select SPI domain clock");
-			return err;
-		}
-	}
-
-	if (!spi_stm32_is_subghzspi(dev)) {
-		/* Configure dt provided device signals when available */
-		err = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
-		if (err < 0) {
-			LOG_ERR("SPI pinctrl setup failed (%d)", err);
 			return err;
 		}
 	}
@@ -1464,72 +1512,16 @@ static int spi_stm32_init(const struct device *dev)
 
 	spi_context_unlock_unconditionally(&data->ctx);
 
-	return pm_device_runtime_enable(dev);
+	return pm_device_driver_init(dev, spi_stm32_pm_action);
 }
-
-#ifdef CONFIG_PM_DEVICE
-static int spi_stm32_pm_action(const struct device *dev,
-			       enum pm_device_action action)
-{
-	const struct spi_stm32_config *config = dev->config;
-	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
-	int err;
-
-
-	switch (action) {
-	case PM_DEVICE_ACTION_RESUME:
-		if (!spi_stm32_is_subghzspi(dev)) {
-			/* Set pins to active state */
-			err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
-			if (err < 0) {
-				return err;
-			}
-		}
-
-		/* enable clock */
-		err = clock_control_on(clk, (clock_control_subsys_t)&config->pclken[0]);
-		if (err != 0) {
-			LOG_ERR("Could not enable SPI clock");
-			return err;
-		}
-		break;
-	case PM_DEVICE_ACTION_SUSPEND:
-		/* Stop device clock. */
-		err = clock_control_off(clk, (clock_control_subsys_t)&config->pclken[0]);
-		if (err != 0) {
-			LOG_ERR("Could not disable SPI clock");
-			return err;
-		}
-
-		if (!spi_stm32_is_subghzspi(dev)) {
-			/* Move pins to sleep state */
-			err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_SLEEP);
-			if ((err < 0) && (err != -ENOENT)) {
-				/*
-				 * If returning -ENOENT, no pins where defined for sleep mode :
-				 * Do not output on console (might sleep already) when going to
-				 * sleep,
-				 * "SPI pinctrl sleep state not available"
-				 * and don't block PM suspend.
-				 * Else return the error.
-				 */
-				return err;
-			}
-		}
-		break;
-	default:
-		return -ENOTSUP;
-	}
-
-	return 0;
-}
-#endif /* CONFIG_PM_DEVICE */
 
 #ifdef CONFIG_SPI_STM32_INTERRUPT
 #define STM32_SPI_IRQ_HANDLER_DECL(id)					\
 	static void spi_stm32_irq_config_func_##id(const struct device *dev)
 #define STM32_SPI_IRQ_HANDLER_FUNC(id)					\
-	.irq_config = spi_stm32_irq_config_func_##id,
+	.irq_config = spi_stm32_irq_config_func_##id,			\
+	IF_ENABLED(CONFIG_SOC_SERIES_STM32H7X,				\
+	(.irq_line = DT_INST_IRQN(id),))
 #define STM32_SPI_IRQ_HANDLER(id)					\
 static void spi_stm32_irq_config_func_##id(const struct device *dev)		\
 {									\

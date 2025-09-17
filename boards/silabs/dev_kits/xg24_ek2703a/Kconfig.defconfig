@@ -19,11 +19,4 @@ config FPU
 
 endif # SOC_GECKO_USE_RAIL
 
-if BT
-
-config COMMON_LIBC_MALLOC_ARENA_SIZE
-	default 8192
-
-endif # BT
-
 endif # BOARD_XG24_EK2703A

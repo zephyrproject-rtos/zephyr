@@ -31,7 +31,8 @@
  * The profile is not limited to carrier phone calls and can be used with common applications like
  * Discord and Teams.
  */
-#include <stdint.h>
+
+#include <stddef.h>
 
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/audio/tbs.h>
@@ -91,6 +92,33 @@ int bt_ccp_call_control_server_register_bearer(const struct bt_tbs_register_para
  * @retval -ENOEXEC The service failed to be unregistered
  */
 int bt_ccp_call_control_server_unregister_bearer(struct bt_ccp_call_control_server_bearer *bearer);
+
+/**
+ * @brief Set a new bearer provider name.
+ *
+ * @param bearer  The bearer to set the name for.
+ * @param name    The new bearer provider name.
+ *
+ * @retval 0 Success
+ * @retval -EINVAL @p bearer or @p name is NULL, or @p name is the empty string or @p name is larger
+ *                 than @kconfig{CONFIG_BT_TBS_MAX_PROVIDER_NAME_LENGTH}
+ * @retval -EFAULT @p bearer is not registered
+ */
+int bt_ccp_call_control_server_set_bearer_provider_name(
+	struct bt_ccp_call_control_server_bearer *bearer, const char *name);
+
+/**
+ * @brief Get the bearer provider name.
+ *
+ * @param[in]  bearer  The bearer to get the name for.
+ * @param[out] name    Pointer that will be updated to be the bearer provider name.
+ *
+ * @retval 0 Success
+ * @retval -EINVAL @p bearer or @p name is NULL
+ * @retval -EFAULT @p bearer is not registered
+ */
+int bt_ccp_call_control_server_get_bearer_provider_name(
+	struct bt_ccp_call_control_server_bearer *bearer, const char **name);
 
 /** @} */ /* End of group bt_ccp_call_control_server */
 

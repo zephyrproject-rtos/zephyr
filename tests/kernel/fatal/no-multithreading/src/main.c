@@ -22,7 +22,7 @@ void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *pEsf)
 		TC_PRINT("Unexpected reason (exp: %d)\n", expected_reason);
 		rv = TC_FAIL;
 	}
-	TC_END_RESULT_CUSTOM(rv, "test_fatal");
+	TC_END_RESULT_CUSTOM(rv, "test_fatal_no_mt");
 	TC_END_REPORT(rv);
 	arch_system_halt(reason);
 }
@@ -34,8 +34,6 @@ static void entry_cpu_exception(void)
 	TC_PRINT("cpu exception\n");
 #if defined(CONFIG_X86)
 	__asm__ volatile ("ud2");
-#elif defined(CONFIG_NIOS2)
-	__asm__ volatile ("trap");
 #elif defined(CONFIG_ARC)
 	__asm__ volatile ("swi");
 #else

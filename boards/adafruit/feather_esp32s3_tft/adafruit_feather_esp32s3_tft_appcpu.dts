@@ -6,7 +6,7 @@
  */
 /dts-v1/;
 
-#include <espressif/esp32s3/esp32s3_wroom_n8.dtsi>
+#include <espressif/esp32s3/esp32s3_wroom_n4r2.dtsi>
 #include <espressif/partitions_0x0_amp.dtsi>
 #include "adafruit_feather_esp32s3_tft-pinctrl.dtsi"
 

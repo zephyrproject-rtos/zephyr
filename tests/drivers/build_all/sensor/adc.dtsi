@@ -7,7 +7,7 @@
  * Application overlay for ADC devices
  */
 
- #include <zephyr/dt-bindings/battery/battery.h>
+#include <zephyr/dt-bindings/battery/battery.h>
 
 test_adc_mcp9700a: mcp9700a {
 	status = "okay";
@@ -34,13 +34,22 @@ test_current: current_amp {
 	sense-resistor-milli-ohms = <1>;
 	sense-gain-mult = <1>;
 	sense-gain-div = <1>;
+	zero-current-voltage-mv = <0>;
+};
+
+test_current_alt_gain: current_amp_alt_gain {
+	compatible = "current-sense-amplifier";
+	io-channels = <&adc0 0>;
+	sense-resistor-milli-ohms = <2>;
+	sense-gain-mult = <50>;
+	gain-extended-range = "ADC_GAIN_1_6";
 };
 
 test_composite_fuel_gauge: composite_fuel_gauge {
 	compatible = "zephyr,fuel-gauge-composite";
 	status = "okay";
-	battery-voltage = <&test_voltage>;
-	battery-current = <&test_current>;
+	source-primary = <&test_voltage>;
+	source-secondary = <&test_current>;
 	device-chemistry = "lithium-ion-polymer";
 	ocv-capacity-table-0 = <BATTERY_OCV_CURVE_LITHIUM_ION_POLYMER_DEFAULT>;
 	charge-full-design-microamp-hours = <1000000>;
@@ -125,4 +134,10 @@ test_veaa_x_3: test_veaa_x_3 {
 	dac-channel-id = <2>;
 	dac-resolution = <12>;
 	pressure-range-type = "D2";
+};
+
+test_als_pt19: test_als-pt19 {
+	compatible = "everlight,als-pt19";
+	io-channels = <&test_adc 0>;
+	load-resistor = <10000>;
 };

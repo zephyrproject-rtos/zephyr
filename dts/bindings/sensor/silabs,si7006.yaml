@@ -2,6 +2,8 @@
 # Copyright (c) 2023, Trent Piepho <tpiepho@gmail.com>
 # SPDX-License-Identifier: Apache-2.0
 
+title: Silicon Labs Si7006/13/20/21 RHT (Relative Humidity and Temperature) Sensor
+
 description: |
   Silicon Labs Si7006 Humidity and Temperature Sensor
 

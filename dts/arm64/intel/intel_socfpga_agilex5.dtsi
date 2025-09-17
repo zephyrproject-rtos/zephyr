@@ -14,7 +14,7 @@
 / {
 	cpus {
 		#address-cells = <1>;
-		#size-cells= <0>;
+		#size-cells = <0>;
 
 		cpu@0 {
 			device_type = "cpu";
@@ -45,7 +45,7 @@
 		};
 	};
 
-	gic: interrupt-controller@1d000000  {
+	gic: interrupt-controller@1d000000 {
 		compatible = "arm,gic-v3", "arm,gic";
 		reg = <0x1d000000 0x10000>, /* GICD */
 		      <0x1d060000 0x80000>; /* GICR */
@@ -125,13 +125,13 @@
 	sdmmc: sdmmc@10808000 {
 		compatible = "cdns,sdhc";
 		reg = <0x10808000 0x1000>,
-			<0x10B92000 0x1000>;
+		      <0x10B92000 0x1000>;
 		reg-names = "reg_base", "combo_phy";
 		clock-frequency = <200000000>;
 		power-delay-ms = <1000>;
 		resets = <&reset RSTMGR_SDMMC_RSTLINE>,
-			<&reset RSTMGR_SDMMCECC_RSTLINE>,
-			<&reset RSTMGR_SOFTPHY_RSTLINE>;
+			 <&reset RSTMGR_SDMMCECC_RSTLINE>,
+			 <&reset RSTMGR_SOFTPHY_RSTLINE>;
 		status = "disabled";
 	};
 
@@ -139,7 +139,7 @@
 		compatible = "snps,dw-timers";
 		interrupt-parent = <&gic>;
 		interrupts = <GIC_SPI 113 IRQ_TYPE_LEVEL
-				IRQ_DEFAULT_PRIORITY>;
+			      IRQ_DEFAULT_PRIORITY>;
 		reg = <0x10c03000 0x100>;
 		clocks = <&clock INTEL_SOCFPGA_CLOCK_TIMER>;
 		resets = <&reset RSTMGR_SPTIMER0_RSTLINE>;
@@ -150,7 +150,7 @@
 		compatible = "snps,dw-timers";
 		interrupt-parent = <&gic>;
 		interrupts = <GIC_SPI 114 IRQ_TYPE_LEVEL
-				IRQ_DEFAULT_PRIORITY>;
+			      IRQ_DEFAULT_PRIORITY>;
 		reg = <0x10c03100 0x100>;
 		clocks = <&clock INTEL_SOCFPGA_CLOCK_TIMER>;
 		resets = <&reset RSTMGR_SPTIMER1_RSTLINE>;
@@ -161,7 +161,7 @@
 		compatible = "snps,dw-timers";
 		interrupt-parent = <&gic>;
 		interrupts = <GIC_SPI 115 IRQ_TYPE_LEVEL
-				IRQ_DEFAULT_PRIORITY>;
+			      IRQ_DEFAULT_PRIORITY>;
 		reg = <0x10D00000 0x100>;
 		clocks = <&clock INTEL_SOCFPGA_CLOCK_TIMER>;
 		resets = <&reset RSTMGR_L4SYSTIMER0_RSTLINE>;
@@ -172,7 +172,7 @@
 		compatible = "snps,dw-timers";
 		interrupt-parent = <&gic>;
 		interrupts = <GIC_SPI 116 IRQ_TYPE_LEVEL
-				IRQ_DEFAULT_PRIORITY>;
+			      IRQ_DEFAULT_PRIORITY>;
 		reg = <0x10D00100 0x100>;
 		clocks = <&clock INTEL_SOCFPGA_CLOCK_TIMER>;
 		resets = <&reset RSTMGR_L4SYSTIMER1_RSTLINE>;
@@ -218,7 +218,7 @@
 		status = "disabled";
 	};
 
-	sip_smc: smc{
+	sip_smc: smc {
 		compatible = "intel,socfpga-agilex-sip-smc";
 		method = "smc";
 		status = "disabled";
@@ -226,15 +226,15 @@
 	};
 
 	/* cadence Nand Flash controller*/
-	nand: nand@10B80000	{
+	nand: nand@10B80000 {
 		compatible = "cdns,nand";
 		reg = <0x10B80000 0X10000>,
-			  <0x10840000 0x10000>;
-		reg-names = "nand_reg","sdma";
+		      <0x10840000 0x10000>;
+		reg-names = "nand_reg", "sdma";
 		interrupt-parent = <&gic>;
 		interrupts = <GIC_SPI 97 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		resets = <&reset RSTMGR_NAND_RSTLINE>,
-				<&reset RSTMGR_SOFTPHY_RSTLINE>;
+			 <&reset RSTMGR_SOFTPHY_RSTLINE>;
 		block-size = <0x20000>;
 		data-rate-mode = <0>;
 		status = "disabled";
@@ -246,13 +246,13 @@
 		reg = <0x10DB0000 0x1000>;
 		interrupt-parent = <&gic>;
 		interrupts = <GIC_SPI 81 IRQ_TYPE_LEVEL
-				 IRQ_DEFAULT_PRIORITY>,
+			      IRQ_DEFAULT_PRIORITY>,
 			     <GIC_SPI 82 IRQ_TYPE_LEVEL
-				 IRQ_DEFAULT_PRIORITY>,
+			      IRQ_DEFAULT_PRIORITY>,
 			     <GIC_SPI 83 IRQ_TYPE_LEVEL
-				 IRQ_DEFAULT_PRIORITY>,
+			      IRQ_DEFAULT_PRIORITY>,
 			     <GIC_SPI 84 IRQ_TYPE_LEVEL
-				 IRQ_DEFAULT_PRIORITY>;
+			      IRQ_DEFAULT_PRIORITY>;
 		dma-channels = <4>;
 		resets = <&reset RSTMGR_DMA_RSTLINE>;
 		status = "disabled";
@@ -264,13 +264,13 @@
 		reg = <0x10DC0000 0x1000>;
 		interrupt-parent = <&gic>;
 		interrupts = <GIC_SPI 166 IRQ_TYPE_LEVEL
-				 IRQ_DEFAULT_PRIORITY>,
+			      IRQ_DEFAULT_PRIORITY>,
 			     <GIC_SPI 167 IRQ_TYPE_LEVEL
-				 IRQ_DEFAULT_PRIORITY>,
+			      IRQ_DEFAULT_PRIORITY>,
 			     <GIC_SPI 168 IRQ_TYPE_LEVEL
-				 IRQ_DEFAULT_PRIORITY>,
+			      IRQ_DEFAULT_PRIORITY>,
 			     <GIC_SPI 169 IRQ_TYPE_LEVEL
-				 IRQ_DEFAULT_PRIORITY>;
+			      IRQ_DEFAULT_PRIORITY>;
 		dma-channels = <4>;
 		resets = <&reset RSTMGR_DMA_RSTLINE>;
 	};

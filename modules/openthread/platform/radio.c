@@ -15,7 +15,7 @@
 #define LOG_MODULE_NAME net_otPlat_radio
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
+LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_OPENTHREAD_PLATFORM_LOG_LEVEL);
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -58,9 +58,9 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 #define FRAME_TYPE_ACK 0x02
 
 #if defined(CONFIG_NET_TC_THREAD_COOPERATIVE)
-#define OT_WORKER_PRIORITY K_PRIO_COOP(CONFIG_OPENTHREAD_THREAD_PRIORITY)
+#define OT_WORKER_PRIORITY K_PRIO_COOP(CONFIG_OPENTHREAD_RADIO_WORKQUEUE_PRIORITY)
 #else
-#define OT_WORKER_PRIORITY K_PRIO_PREEMPT(CONFIG_OPENTHREAD_THREAD_PRIORITY)
+#define OT_WORKER_PRIORITY K_PRIO_PREEMPT(CONFIG_OPENTHREAD_RADIO_WORKQUEUE_PRIORITY)
 #endif
 
 #define CHANNEL_COUNT OT_RADIO_2P4GHZ_OQPSK_CHANNEL_MAX - OT_RADIO_2P4GHZ_OQPSK_CHANNEL_MIN + 1
@@ -244,7 +244,7 @@ void handle_radio_event(const struct device *dev, enum ieee802154_event evt,
 	}
 }
 
-#if defined(CONFIG_NET_PKT_TXTIME) || defined(CONFIG_OPENTHREAD_CSL_RECEIVER)
+#if defined(CONFIG_OPENTHREAD_PLATFORM_PKT_TXTIME) || defined(CONFIG_OPENTHREAD_CSL_RECEIVER)
 /**
  * @brief Convert 32-bit (potentially wrapped) OpenThread microsecond timestamps
  * to 64-bit Zephyr network subsystem nanosecond timestamps.
@@ -320,7 +320,7 @@ static net_time_t convert_32bit_us_wrapped_to_64bit_ns(uint32_t target_time_us_w
 	__ASSERT_NO_MSG(result <= INT64_MAX / NSEC_PER_USEC);
 	return (net_time_t)result * NSEC_PER_USEC;
 }
-#endif /* CONFIG_NET_PKT_TXTIME || CONFIG_OPENTHREAD_CSL_RECEIVER */
+#endif /* CONFIG_OPENTHREAD_PLATFORM_PKT_TXTIME || CONFIG_OPENTHREAD_CSL_RECEIVER */
 
 static void dataInit(void)
 {
@@ -416,7 +416,7 @@ void transmit_message(struct k_work *tx_job)
 
 	if ((radio_caps & IEEE802154_HW_TXTIME) &&
 	    (sTransmitFrame.mInfo.mTxInfo.mTxDelay != 0)) {
-#if defined(CONFIG_NET_PKT_TXTIME)
+#if defined(CONFIG_OPENTHREAD_PLATFORM_PKT_TXTIME)
 		uint32_t tx_at = sTransmitFrame.mInfo.mTxInfo.mTxDelayBaseTime +
 				 sTransmitFrame.mInfo.mTxInfo.mTxDelay;
 		net_pkt_set_timestamp_ns(tx_pkt, convert_32bit_us_wrapped_to_64bit_ns(tx_at));
@@ -622,6 +622,8 @@ static int run_tx_task(otInstance *aInstance)
 		sState = OT_RADIO_STATE_TRANSMIT;
 
 		k_work_submit_to_queue(&ot_work_q, &tx_job);
+		k_yield();
+
 		return 0;
 	} else {
 		return -EBUSY;
@@ -809,6 +811,10 @@ otError otPlatRadioReceive(otInstance *aInstance, uint8_t aChannel)
 	radio_api->start(radio_dev);
 	sState = OT_RADIO_STATE_RECEIVE;
 
+	if (is_pending_event_set(PENDING_EVENT_TX_DONE)) {
+		reset_pending_event(PENDING_EVENT_TX_DONE);
+	}
+
 	return OT_ERROR_NONE;
 }
 
@@ -833,7 +839,7 @@ otError otPlatRadioReceiveAt(otInstance *aInstance, uint8_t aChannel,
 }
 #endif
 
-#if defined(CONFIG_IEEE802154_CARRIER_FUNCTIONS)
+#if defined(CONFIG_OPENTHREAD_PLATFORM_CARRIER_FUNCTIONS)
 otError platformRadioTransmitCarrier(otInstance *aInstance, bool aEnable)
 {
 	if (radio_api->continuous_carrier == NULL) {
@@ -884,7 +890,7 @@ otError platformRadioTransmitModulatedCarrier(otInstance *aInstance, bool aEnabl
 	return OT_ERROR_NONE;
 }
 
-#endif /* CONFIG_IEEE802154_CARRIER_FUNCTIONS */
+#endif /* CONFIG_OPENTHREAD_PLATFORM_CARRIER_FUNCTIONS */
 
 otRadioState otPlatRadioGetState(otInstance *aInstance)
 {
@@ -998,7 +1004,7 @@ otRadioCaps otPlatRadioGetCaps(otInstance *aInstance)
 	}
 #endif
 
-#if defined(CONFIG_NET_PKT_TXTIME)
+#if defined(CONFIG_OPENTHREAD_PLATFORM_PKT_TXTIME)
 	if (radio_caps & IEEE802154_HW_TXTIME) {
 		caps |= OT_RADIO_CAPS_TRANSMIT_TIMING;
 	}
@@ -1172,7 +1178,7 @@ otError otPlatRadioClearSrcMatchShortEntry(otInstance *aInstance,
 
 	if (radio_api->configure(radio_dev, IEEE802154_CONFIG_ACK_FPB,
 				 &config) != 0) {
-		return OT_ERROR_NO_BUFS;
+		return OT_ERROR_NO_ADDRESS;
 	}
 
 	return OT_ERROR_NONE;
@@ -1191,7 +1197,7 @@ otError otPlatRadioClearSrcMatchExtEntry(otInstance *aInstance,
 
 	if (radio_api->configure(radio_dev, IEEE802154_CONFIG_ACK_FPB,
 				 &config) != 0) {
-		return OT_ERROR_NO_BUFS;
+		return OT_ERROR_NO_ADDRESS;
 	}
 
 	return OT_ERROR_NONE;
@@ -1263,7 +1269,7 @@ uint64_t otPlatTimeGet(void)
 	}
 }
 
-#if defined(CONFIG_NET_PKT_TXTIME)
+#if defined(CONFIG_OPENTHREAD_PLATFORM_PKT_TXTIME)
 uint64_t otPlatRadioGetNow(otInstance *aInstance)
 {
 	ARG_UNUSED(aInstance);

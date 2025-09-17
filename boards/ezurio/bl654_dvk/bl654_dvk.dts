@@ -27,18 +27,22 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led1: led_1 {
 			gpios = <&gpio0 13 GPIO_ACTIVE_HIGH>;
 			label = "Blue LED 1";
 		};
+
 		led2: led_2 {
 			gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;
 			label = "Blue LED 2";
 		};
+
 		led3: led_3 {
 			gpios = <&gpio0 15 GPIO_ACTIVE_HIGH>;
 			label = "Blue LED 3";
 		};
+
 		led4: led_4 {
 			gpios = <&gpio0 16 GPIO_ACTIVE_HIGH>;
 			label = "Blue LED 4";
@@ -47,21 +51,25 @@
 
 	buttons {
 		compatible = "gpio-keys";
+
 		button1: button_1 {
 			gpios = <&gpio0 11 GPIO_PULL_UP>;
 			label = "Push button switch 1 (SW1)";
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		button2: button_2 {
 			gpios = <&gpio0 12 GPIO_PULL_UP>;
 			label = "Push button switch 2 (SW2)";
 			zephyr,code = <INPUT_KEY_1>;
 		};
+
 		button3: button_3 {
 			gpios = <&gpio0 24 GPIO_PULL_UP>;
 			label = "Push button switch 3 (SW9)";
 			zephyr,code = <INPUT_KEY_2>;
 		};
+
 		button4: button_4 {
 			gpios = <&gpio0 25 GPIO_PULL_UP>;
 			label = "Push button switch 4 (SW10)";
@@ -126,6 +134,7 @@
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-1 = <&i2c0_sleep>;
 	pinctrl-names = "default", "sleep";
+
 	dac0: mcp4725@60 {
 		/* MCP4725 not populated at factory */
 		compatible = "microchip,mcp4725";
@@ -165,6 +174,7 @@
 	pinctrl-0 = <&spi1_default>;
 	pinctrl-1 = <&spi1_sleep>;
 	pinctrl-names = "default", "sleep";
+
 	mx25r6435f@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;

@@ -7,7 +7,9 @@ config SOC_SERIES_NRF54HX
 	select HAS_NRFS
 	select HAS_NRFX
 	select HAS_NORDIC_DRIVERS
+	select SOC_EARLY_INIT_HOOK if ARM
 	select NRF_PLATFORM_HALTIUM
+	select EXPERIMENTAL if MCUBOOT
 
 config SOC_NRF54H20_CPUAPP_COMMON
 	bool
@@ -26,7 +28,6 @@ config SOC_NRF54H20_CPUAPP_COMMON
 	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
 	select NRFS_HAS_AUDIOPLL_SERVICE
 	select NRFS_HAS_CLOCK_SERVICE
-	select NRFS_HAS_DVFS_SERVICE
 	select NRFS_HAS_GDFS_SERVICE
 	select NRFS_HAS_GDPWR_SERVICE
 	select NRFS_HAS_MRAM_SERVICE
@@ -65,6 +66,45 @@ config SOC_NRF54H20_CPURAD_COMMON
 	select HAS_PM
 	select HAS_POWEROFF
 
+config SOC_NRF54H20_TDD_ENABLE
+	bool "Power and configure the trace and debug domain (TDD)"
+	depends on SOC_NRF54H20_CPUAPP
+	select NRF_IRONSIDE_TDD_SERVICE
+	select SOC_LATE_INIT_HOOK
+	help
+	  This will at application boot time request that the trace and
+	  debug domain (TDD) is powered up and configured.
+	  This allows configuring the coresight peripherals from
+	  the application domain.
+
+config SOC_NRF54H20_CPURAD_ENABLE
+	bool "Boot the nRF54H20 Radio core"
+	default y if NRF_802154_SER_HOST || BT_HCI_HOST
+	depends on SOC_NRF54H20_CPUAPP
+	select NRF_IRONSIDE_CPUCONF_SERVICE
+	select SOC_LATE_INIT_HOOK
+	help
+	  This will at application boot time enable clock to the
+	  Radiocore, and also power will be requested to the Radiocore
+	  subsystem. The Radiocore will then start executing instructions.
+
+if SOC_NRF54H20_CPURAD_ENABLE
+
+config SOC_NRF54H20_CPURAD_ENABLE_CHECK_VTOR
+	bool "Check VTOR before booting Radio core"
+	default y
+	help
+	  Verify that VTOR is not 0xFFFFFFFF before booting the Radiocore.
+
+config SOC_NRF54H20_CPURAD_ENABLE_DEBUG_WAIT
+	bool "Boot the Radio core in DEBUGWAIT mode"
+	help
+	  Halt the Radio core immediately after reset. This ensures that a
+	  debugger can attach and take control from the very first
+	  instruction.
+
+endif # SOC_NRF54H20_CPURAD_ENABLE
+
 config SOC_NRF54H20_CPURAD
 	select SOC_NRF54H20_CPURAD_COMMON
 
@@ -75,7 +115,3 @@ config SOC_NRF54H20_CPUFLPR
 	select RISCV_CORE_NORDIC_VPR
 
 rsource "bicr/Kconfig"
-rsource "gpd/Kconfig"
-
-config SOC_NRF54H20_IRON
-	select EXPERIMENTAL if MCUBOOT

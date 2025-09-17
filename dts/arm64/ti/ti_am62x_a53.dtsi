@@ -9,6 +9,7 @@
 #include <arm64/armv8-a.dtsi>
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
 #include <zephyr/dt-bindings/pinctrl/ti-k3-pinctrl.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
 
 / {
 	#address-cells = <1>;
@@ -25,6 +26,13 @@
 		};
 	};
 
+	firmware {
+		psci: psci {
+			compatible = "arm,psci-1.1";
+			method = "smc";
+		};
+	};
+
 	oc_sram: memory@70000000 {
 		reg = <0x70000000 DT_SIZE_K(64)>;
 	};
@@ -32,20 +40,20 @@
 	arch_timer: timer {
 		compatible = "arm,armv8-timer";
 		interrupts = <GIC_PPI 13 IRQ_TYPE_LEVEL
-				  IRQ_DEFAULT_PRIORITY>,
-				 <GIC_PPI 14 IRQ_TYPE_LEVEL
-				  IRQ_DEFAULT_PRIORITY>,
-				 <GIC_PPI 11 IRQ_TYPE_LEVEL
-				  IRQ_DEFAULT_PRIORITY>,
-				 <GIC_PPI 10 IRQ_TYPE_LEVEL
-				  IRQ_DEFAULT_PRIORITY>;
+			      IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 14 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 11 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 10 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>;
 		interrupt-parent = <&gic>;
 	};
 
 	gic: interrupt-controller@1800000 {
 		compatible = "arm,gic-v3", "arm,gic";
 		reg = <0x01800000 0x10000>, /* GICD */
-			  <0x01880000 0xc0000>; /* GICR */
+		      <0x01880000 0xc0000>; /* GICR */
 		interrupt-controller;
 		#interrupt-cells = <4>;
 		status = "okay";
@@ -141,5 +149,69 @@
 		interrupt-parent = <&gic>;
 		usr-id = <0>;
 		#mbox-cells = <1>;
+	};
+
+	main_i2c0: i2c@20000000 {
+		compatible = "ti,omap-i2c";
+		reg = <0x20000000 0x100>;
+		interrupts = <GIC_SPI 161 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+		clock-frequency = <100000>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+	};
+
+	main_i2c1: i2c@20010000 {
+		compatible = "ti,omap-i2c";
+		reg = <0x20010000 0x100>;
+		interrupts = <GIC_SPI 162 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+		clock-frequency = <100000>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+	};
+
+	main_i2c2: i2c@20020000 {
+		compatible = "ti,omap-i2c";
+		reg = <0x20020000 0x100>;
+		interrupts = <GIC_SPI 163 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+		clock-frequency = <100000>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+	};
+
+	main_i2c3: i2c@20030000 {
+		compatible = "ti,omap-i2c";
+		reg = <0x20030000 0x100>;
+		interrupts = <GIC_SPI 164 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+		clock-frequency = <100000>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+	};
+
+	main_gpio0: gpio@600000 {
+		compatible = "ti,davinci-gpio";
+		reg = <0x00600000 0x100>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		/* FIXME: Enable all 92 GPIOs */
+		ngpios = <32>;
+		status = "disabled";
+	};
+
+	main_gpio1: gpio@601000 {
+		compatible = "ti,davinci-gpio";
+		reg = <0x00601000 0x100>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		/* FIXME: Enable all 52 GPIOs */
+		ngpios = <32>;
+		status = "disabled";
 	};
 };

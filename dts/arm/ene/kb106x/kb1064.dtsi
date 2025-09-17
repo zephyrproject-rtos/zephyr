@@ -1,0 +1,105 @@
+/*
+ * Copyright (c) 2025 ENE Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/ene/kb106x/kb106x.dtsi>
+
+&soc {
+	pwm4: pwm@40210040 {
+		compatible = "ene,kb106x-pwm";
+		reg = <0x40210040 0x10>;
+		pwm-channel = <4>;
+		#pwm-cells = <3>;
+		status = "disabled";
+	};
+
+	pwm5: pwm@40210050 {
+		compatible = "ene,kb106x-pwm";
+		reg = <0x40210050 0x10>;
+		pwm-channel = <5>;
+		#pwm-cells = <3>;
+		status = "disabled";
+	};
+
+	pwm6: pwm@40210060 {
+		compatible = "ene,kb106x-pwm";
+		reg = <0x40210060 0x10>;
+		pwm-channel = <6>;
+		#pwm-cells = <3>;
+		status = "disabled";
+	};
+
+	pwm7: pwm@40210070 {
+		compatible = "ene,kb106x-pwm";
+		reg = <0x40210070 0x10>;
+		pwm-channel = <7>;
+		#pwm-cells = <3>;
+		status = "disabled";
+	};
+
+	pwm8: pwm@40210080 {
+		compatible = "ene,kb106x-pwm";
+		reg = <0x40210080 0x10>;
+		pwm-channel = <8>;
+		#pwm-cells = <3>;
+		status = "disabled";
+	};
+
+	pwm9: pwm@40210090 {
+		compatible = "ene,kb106x-pwm";
+		reg = <0x40210090 0x10>;
+		pwm-channel = <9>;
+		#pwm-cells = <3>;
+		status = "disabled";
+	};
+
+	pwm10: pwm@402100a0 {
+		compatible = "ene,kb106x-pwm";
+		reg = <0x402100A0 0x10>;
+		pwm-channel = <10>;
+		#pwm-cells = <3>;
+		status = "disabled";
+	};
+
+	pwm11: pwm@402100b0 {
+		compatible = "ene,kb106x-pwm";
+		reg = <0x402100B0 0x10>;
+		pwm-channel = <11>;
+		#pwm-cells = <3>;
+		status = "disabled";
+	};
+
+	pwm12: pwm@402100c0 {
+		compatible = "ene,kb106x-pwm";
+		reg = <0x402100C0 0x10>;
+		pwm-channel = <12>;
+		#pwm-cells = <3>;
+		status = "disabled";
+	};
+
+	pwm13: pwm@402100d0 {
+		compatible = "ene,kb106x-pwm";
+		reg = <0x402100D0 0x10>;
+		pwm-channel = <13>;
+		#pwm-cells = <3>;
+		status = "disabled";
+	};
+
+	pwm14: pwm@402100e0 {
+		compatible = "ene,kb106x-pwm";
+		reg = <0x402100E0 0x10>;
+		pwm-channel = <14>;
+		#pwm-cells = <3>;
+		status = "disabled";
+	};
+
+	pwm15: pwm@402100f0 {
+		compatible = "ene,kb106x-pwm";
+		reg = <0x402100F0 0x10>;
+		pwm-channel = <15>;
+		#pwm-cells = <3>;
+		status = "disabled";
+	};
+};

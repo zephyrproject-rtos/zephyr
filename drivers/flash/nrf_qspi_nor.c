@@ -41,7 +41,10 @@ struct qspi_nor_data {
 	 */
 	volatile bool ready;
 #endif /* CONFIG_MULTITHREADING */
-	bool xip_enabled;
+	uint32_t xip_users;
+#if NRF53_ERRATA_159_ENABLE_WORKAROUND
+	nrf_clock_hfclk_div_t prev_hclk_div;
+#endif
 };
 
 struct qspi_nor_config {
@@ -55,6 +58,12 @@ struct qspi_nor_config {
 
 	const struct pinctrl_dev_config *pcfg;
 };
+
+#ifdef CONFIG_NORDIC_QSPI_NOR_ACTIVE_DWELL_MS
+#define ACTIVE_DWELL_MS CONFIG_NORDIC_QSPI_NOR_ACTIVE_DWELL_MS
+#else
+#define ACTIVE_DWELL_MS 0
+#endif
 
 /* Status register bits */
 #define QSPI_SECTOR_SIZE SPI_NOR_SECTOR_SIZE
@@ -273,9 +282,18 @@ static inline void qspi_unlock(const struct device *dev)
 #endif
 }
 
-static inline void qspi_clock_div_change(void)
+static inline void qspi_clock_div_change(const struct device *dev)
 {
 #ifdef CONFIG_SOC_SERIES_NRF53X
+#if NRF53_ERRATA_159_ENABLE_WORKAROUND
+	struct qspi_nor_data *dev_data = dev->data;
+
+	if (nrf53_errata_159()) {
+		/* Save current hfclk configuration */
+		dev_data->prev_hclk_div = nrf_clock_hfclk_div_get(NRF_CLOCK);
+		nrf_clock_hfclk_div_set(NRF_CLOCK, NRF_CLOCK_HFCLK_DIV_2);
+	}
+#endif
 	/* Make sure the base clock divider is changed accordingly
 	 * before a QSPI transfer is performed.
 	 */
@@ -284,13 +302,21 @@ static inline void qspi_clock_div_change(void)
 #endif
 }
 
-static inline void qspi_clock_div_restore(void)
+static inline void qspi_clock_div_restore(const struct device *dev)
 {
 #ifdef CONFIG_SOC_SERIES_NRF53X
 	/* Restore the default base clock divider to reduce power
 	 * consumption when the QSPI peripheral is idle.
 	 */
 	nrf_clock_hfclk192m_div_set(NRF_CLOCK, NRF_CLOCK_HFCLK_DIV_4);
+#if NRF53_ERRATA_159_ENABLE_WORKAROUND
+	struct qspi_nor_data *dev_data = dev->data;
+
+	if (nrf53_errata_159()) {
+		/* Restore previous hfclk configuration */
+		nrf_clock_hfclk_div_set(NRF_CLOCK, dev_data->prev_hclk_div);
+	}
+#endif
 #endif
 }
 
@@ -313,8 +339,8 @@ static void qspi_acquire(const struct device *dev)
 
 	qspi_lock(dev);
 
-	if (!dev_data->xip_enabled) {
-		qspi_clock_div_change();
+	if (dev_data->xip_users == 0) {
+		qspi_clock_div_change(dev);
 
 		pm_device_busy_set(dev);
 	}
@@ -331,8 +357,8 @@ static void qspi_release(const struct device *dev)
 	deactivate = atomic_dec(&dev_data->usage_count) == 1;
 #endif
 
-	if (!dev_data->xip_enabled) {
-		qspi_clock_div_restore();
+	if (dev_data->xip_users == 0) {
+		qspi_clock_div_restore(dev);
 
 		if (deactivate) {
 			(void) nrfx_qspi_deactivate();
@@ -343,7 +369,7 @@ static void qspi_release(const struct device *dev)
 
 	qspi_unlock(dev);
 
-	rc = pm_device_runtime_put(dev);
+	rc = pm_device_runtime_put_async(dev, K_MSEC(ACTIVE_DWELL_MS));
 	if (rc < 0) {
 		LOG_ERR("pm_device_runtime_put failed: %d", rc);
 	}
@@ -1115,11 +1141,11 @@ static int qspi_nor_init(const struct device *dev)
 	IRQ_CONNECT(DT_IRQN(QSPI_NODE), DT_IRQ(QSPI_NODE, priority),
 		    nrfx_isr, nrfx_qspi_irq_handler, 0);
 
-	qspi_clock_div_change();
+	qspi_clock_div_change(dev);
 
 	rc = qspi_init(dev);
 
-	qspi_clock_div_restore();
+	qspi_clock_div_restore(dev);
 
 	if (!IS_ENABLED(CONFIG_NORDIC_QSPI_NOR_XIP) && nrfx_qspi_init_check()) {
 		(void)nrfx_qspi_deactivate();
@@ -1322,7 +1348,7 @@ static int qspi_nor_pm_action(const struct device *dev,
 	}
 
 	qspi_lock(dev);
-	qspi_clock_div_change();
+	qspi_clock_div_change(dev);
 
 	switch (action) {
 	case PM_DEVICE_ACTION_SUSPEND:
@@ -1337,30 +1363,61 @@ static int qspi_nor_pm_action(const struct device *dev,
 		rc = -ENOTSUP;
 	}
 
-	qspi_clock_div_restore();
+	qspi_clock_div_restore(dev);
 	qspi_unlock(dev);
 
 	return rc;
 }
 #endif /* CONFIG_PM_DEVICE */
 
+static void on_xip_enable(const struct device *dev)
+{
+#if NRF_QSPI_HAS_XIPEN
+	nrf_qspi_xip_set(NRF_QSPI, true);
+#endif
+	(void)nrfx_qspi_activate(false);
+}
+
+static void on_xip_disable(const struct device *dev)
+{
+	/* It turns out that when the QSPI peripheral is deactivated
+	 * after a XIP transaction, it cannot be later successfully
+	 * reactivated and an attempt to perform another XIP transaction
+	 * results in the CPU being hung; even a debug session cannot be
+	 * started then and the SoC has to be recovered.
+	 * As a workaround, at least until the cause of such behavior
+	 * is fully clarified, perform a simple non-XIP transaction
+	 * (a read of the status register) before deactivating the QSPI.
+	 * This prevents the issue from occurring.
+	 */
+	(void)qspi_rdsr(dev, 1);
+
+#if NRF_QSPI_HAS_XIPEN
+	nrf_qspi_xip_set(NRF_QSPI, false);
+#endif
+}
+
 void z_impl_nrf_qspi_nor_xip_enable(const struct device *dev, bool enable)
 {
 	struct qspi_nor_data *dev_data = dev->data;
 
-	if (dev_data->xip_enabled == enable) {
-		return;
-	}
-
 	qspi_acquire(dev);
 
-#if NRF_QSPI_HAS_XIPEN
-	nrf_qspi_xip_set(NRF_QSPI, enable);
-#endif
 	if (enable) {
-		(void)nrfx_qspi_activate(false);
+		if (dev_data->xip_users == 0) {
+			on_xip_enable(dev);
+		}
+
+		++dev_data->xip_users;
+	} else if (dev_data->xip_users == 0) {
+		LOG_ERR("Unbalanced XIP disabling");
+	} else {
+		--dev_data->xip_users;
+
+		if (dev_data->xip_users == 0) {
+			on_xip_disable(dev);
+		}
 	}
-	dev_data->xip_enabled = enable;
 
 	qspi_release(dev);
 }

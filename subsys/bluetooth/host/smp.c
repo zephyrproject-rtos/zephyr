@@ -39,6 +39,7 @@
 
 #include "conn_internal.h"
 #include "common/bt_str.h"
+#include "common/rpa.h"
 #include "crypto/bt_crypto.h"
 #include "ecc.h"
 #include "hci_core.h"
@@ -1263,7 +1264,7 @@ static bool smp_br_pairing_allowed(struct bt_smp_br *smp)
 	bt_addr_le_t addr;
 	struct bt_conn *conn;
 	struct bt_keys_link_key *key;
-	bool le_bonded;
+	struct bt_keys *le_keys;
 
 	if (!smp->chan.chan.conn) {
 		return false;
@@ -1273,7 +1274,7 @@ static bool smp_br_pairing_allowed(struct bt_smp_br *smp)
 
 	addr.type = BT_ADDR_LE_PUBLIC;
 	bt_addr_copy(&addr.a, &conn->br.dst);
-	le_bonded = bt_le_bond_exists(BT_ID_DEFAULT, &addr);
+	le_keys = bt_keys_find_addr(BT_ID_DEFAULT, &addr);
 
 	key = bt_keys_find_link_key(&conn->br.dst);
 	if (!key) {
@@ -1287,7 +1288,9 @@ static bool smp_br_pairing_allowed(struct bt_smp_br *smp)
 	 * or MITM protection, then neither device shall generate an LE LTK using cross-transport
 	 * key derivation from a BR/EDR link key.
 	 */
-	if (le_bonded && !(key->flags & BT_LINK_KEY_AUTHENTICATED)) {
+	if ((le_keys != NULL) && ((le_keys->flags & BT_KEYS_AUTHENTICATED) != 0) &&
+	    ((key->flags & BT_LINK_KEY_AUTHENTICATED) == 0)) {
+		LOG_WRN("Stronger LTK (MITM) cannot be overwrote by weaker LK");
 		return false;
 	}
 
@@ -1513,12 +1516,33 @@ static uint8_t smp_br_ident_info(struct bt_smp_br *smp, struct net_buf *buf)
 	return 0;
 }
 
+static void convert_to_id_on_irk_match(struct bt_conn *conn, void *data)
+{
+	struct bt_keys *keys = data;
+
+	if (!bt_addr_le_is_rpa(&conn->le.dst)) {
+		return;
+	}
+
+	if (bt_rpa_irk_matches(keys->irk.val, &conn->le.dst.a)) {
+		if (conn->le.keys != NULL && conn->le.keys != keys) {
+			bt_keys_clear(conn->le.keys);
+		}
+
+		conn->le.keys = keys;
+		/* always update last use RPA */
+		bt_addr_copy(&keys->irk.rpa, &conn->le.dst.a);
+		bt_addr_le_copy(&conn->le.dst, &keys->addr);
+	}
+}
+
 static uint8_t smp_br_ident_addr_info(struct bt_smp_br *smp,
 				      struct net_buf *buf)
 {
 	struct bt_conn *conn = smp->chan.chan.conn;
 	struct bt_smp_ident_addr_info *req = (void *)buf->data;
 	bt_addr_le_t addr;
+	struct bt_keys *keys;
 
 	LOG_DBG("identity %s", bt_addr_le_str(&req->addr));
 
@@ -1541,12 +1565,25 @@ static uint8_t smp_br_ident_addr_info(struct bt_smp_br *smp,
 		atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_SIGNING_INFO);
 	}
 
+	/* Check the BLE connections that has RPA matched with this IRK */
+	keys = bt_keys_get_type(BT_KEYS_IRK, conn->id, &addr);
+	if (keys) {
+		bt_conn_foreach(BT_CONN_TYPE_LE, convert_to_id_on_irk_match, keys);
+	} else {
+		LOG_ERR("Unable to get keys for %s", bt_addr_le_str(&addr));
+	}
+
 	if (conn->role == BT_CONN_ROLE_CENTRAL && !smp->remote_dist) {
 		smp_br_distribute_keys(smp);
 	}
 
 	/* if all keys were distributed, pairing is done */
 	if (!smp->local_dist && !smp->remote_dist) {
+		/* TODO: consider the follow cases (BLE to BR derivation need to consider them too):
+		 * (1) the ble connection is already encrypted, then the new LTK is derived.
+		 * (2) the ble connection is not encrypted, the LTK is derived,
+		 *     how to trigger the BLE encryption.
+		 */
 		smp_pairing_br_complete(smp, 0);
 	}
 
@@ -2553,22 +2590,35 @@ static uint8_t legacy_pairing_req(struct bt_smp *smp)
 static uint8_t legacy_pairing_random(struct bt_smp *smp)
 {
 	struct bt_conn *conn = smp->chan.chan.conn;
-	uint8_t tmp[16];
+	uint8_t tmp[16], cfm_i[16];
 	int err;
 
 	LOG_DBG("");
 
-	/* calculate confirmation */
+	/* calculate LP_CONFIRM_R */
 	err = smp_c1(smp->tk, smp->rrnd, smp->preq, smp->prsp,
 		     &conn->le.init_addr, &conn->le.resp_addr, tmp);
 	if (err) {
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
-	LOG_DBG("pcnf %s", bt_hex(smp->pcnf, 16));
-	LOG_DBG("cfm %s", bt_hex(tmp, 16));
+	/* calculate LP_CONFIRM_I */
+	err = smp_c1(smp->tk, smp->prnd, smp->preq, smp->prsp,
+		     &conn->le.init_addr, &conn->le.resp_addr, cfm_i);
+	if (err) {
+		return BT_SMP_ERR_UNSPECIFIED;
+	}
 
-	if (memcmp(smp->pcnf, tmp, sizeof(smp->pcnf))) {
+	LOG_DBG("pcnf %s", bt_hex(smp->pcnf, 16));
+	LOG_DBG("cfm (remote) %s", bt_hex(tmp, 16));
+	LOG_DBG("cfm (local) %s", bt_hex(cfm_i, 16));
+
+	/* Core Specification, Vol 3, Part H, section 2.3.5.5 (Errata ES-24491): If the computed
+	 * LP_CONFIRM_R value is not equal to the received LP_CONFIRM_R value, or the received
+	 * LP_CONFIRM_R value is equal to the LP_CONFIRM_I value, fail pairing.
+	 */
+	if (memcmp(smp->pcnf, tmp, sizeof(smp->pcnf)) ||
+	    !memcmp(smp->pcnf, cfm_i, sizeof(smp->pcnf))) {
 		return BT_SMP_ERR_CONFIRM_FAILED;
 	}
 
@@ -4080,6 +4130,7 @@ static uint8_t smp_id_add_replace(struct bt_smp *smp, struct bt_keys *new_bond)
 struct addr_match {
 	const bt_addr_le_t *rpa;
 	const bt_addr_le_t *id_addr;
+	struct bt_keys *keys;
 };
 
 static void convert_to_id_on_match(struct bt_conn *conn, void *data)
@@ -4088,6 +4139,10 @@ static void convert_to_id_on_match(struct bt_conn *conn, void *data)
 
 	if (bt_addr_le_eq(&conn->le.dst, addr_match->rpa)) {
 		bt_addr_le_copy(&conn->le.dst, addr_match->id_addr);
+
+		if (conn->le.keys && conn->le.keys != addr_match->keys) {
+			bt_addr_le_copy(&conn->le.keys->addr, addr_match->id_addr);
+		}
 	}
 }
 
@@ -4155,6 +4210,7 @@ static uint8_t smp_ident_addr_info(struct bt_smp *smp, struct net_buf *buf)
 				struct addr_match addr_match = {
 					.rpa = &conn->le.dst,
 					.id_addr = &req->addr,
+					.keys = keys,
 				};
 
 				bt_conn_foreach(BT_CONN_TYPE_LE,
@@ -4476,7 +4532,7 @@ static uint8_t smp_public_key(struct bt_smp *smp, struct net_buf *buf)
 		}
 	} else if (!bt_pub_key_is_valid(smp->pkey)) {
 		LOG_WRN("Received invalid public key");
-		return BT_SMP_ERR_INVALID_PARAMS;
+		return BT_SMP_ERR_DHKEY_CHECK_FAILED;
 	}
 
 	if (IS_ENABLED(CONFIG_BT_CENTRAL) &&

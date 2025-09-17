@@ -71,10 +71,8 @@ struct flash_stm32_priv {
 #define FLASH_STM32_SR		SR
 #endif
 
-
 #define FLASH_STM32_PRIV(dev) ((struct flash_stm32_priv *)((dev)->data))
 #define FLASH_STM32_REGS(dev) (FLASH_STM32_PRIV(dev)->regs)
-
 
 /* Redefinitions of flags and masks to harmonize stm32 series: */
 #if defined(CONFIG_SOC_SERIES_STM32U5X)
@@ -88,6 +86,18 @@ struct flash_stm32_priv {
 #define FLASH_STM32_NSPNB_POS FLASH_NSCR_PNB_Pos
 #define FLASH_STM32_NSPNB FLASH_NSCR_PNB
 #define FLASH_STM32_NSSTRT FLASH_NSCR_STRT
+#define FLASH_PAGE_SIZE_128_BITS FLASH_PAGE_SIZE
+#elif defined(CONFIG_SOC_SERIES_STM32U3X)
+#define FLASH_STM32_NSLOCK FLASH_CR_LOCK
+#define FLASH_STM32_DBANK FLASH_OPTR_DUALBANK
+#define FLASH_STM32_NSPG FLASH_CR_PG
+#define FLASH_STM32_NSBKER_MSK FLASH_CR_BKER_Msk
+#define FLASH_STM32_NSBKER FLASH_CR_BKER
+#define FLASH_STM32_NSPER FLASH_CR_PER
+#define FLASH_STM32_NSPNB_MSK FLASH_CR_PNB_Msk
+#define FLASH_STM32_NSPNB_POS FLASH_CR_PNB_Pos
+#define FLASH_STM32_NSPNB FLASH_CR_PNB
+#define FLASH_STM32_NSSTRT FLASH_CR_STRT
 #define FLASH_PAGE_SIZE_128_BITS FLASH_PAGE_SIZE
 #elif defined(CONFIG_SOC_SERIES_STM32H5X)
 #define FLASH_OPTR_SWAP_BANK FLASH_OPTCR_SWAP_BANK
@@ -329,12 +339,12 @@ int flash_stm32_block_erase_loop(const struct device *dev,
 
 int flash_stm32_wait_flash_idle(const struct device *dev);
 
-int flash_stm32_option_bytes_lock(const struct device *dev, bool enable);
-
 uint32_t flash_stm32_option_bytes_read(const struct device *dev);
 
 int flash_stm32_option_bytes_write(const struct device *dev, uint32_t mask,
 				   uint32_t value);
+
+int flash_stm32_cr_lock(const struct device *dev, bool enable);
 
 #ifdef CONFIG_SOC_SERIES_STM32WBX
 int flash_stm32_check_status(const struct device *dev);

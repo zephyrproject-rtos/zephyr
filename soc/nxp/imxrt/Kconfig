@@ -42,21 +42,25 @@ config BOOT_XSPI_NOR
 	bool "XPI serial NOR"
 	depends on DT_HAS_NXP_XSPI_ENABLED
 
+FLEXSPI_COMPAT := nxp,imx-flexspi
+
 config BOOT_FLEXSPI_NOR
 	bool "FlexSPI serial NOR"
-	depends on HAS_MCUX_FLEXSPI
+	depends on $(dt_has_compat,$(FLEXSPI_COMPAT))
 
 config BOOT_FLEXSPI_NAND
 	bool "FlexSPI serial NAND"
-	depends on HAS_MCUX_FLEXSPI
+	depends on $(dt_has_compat,$(FLEXSPI_COMPAT))
+
+SEMC_COMPAT := nxp,imx-semc
 
 config BOOT_SEMC_NOR
 	bool "SEMC parallel NOR"
-	depends on HAS_MCUX_SEMC
+	depends on $(dt_has_compat, $(SEMC_COMPAT))
 
 config BOOT_SEMC_NAND
 	bool "SEMC parallel NAND"
-	depends on HAS_MCUX_SEMC
+	depends on $(dt_has_compat, $(SEMC_COMPAT))
 
 endchoice # BOOT_DEVICE
 
@@ -179,17 +183,13 @@ config DCDC_VALUE
 	hex "DCDC value for VDD_SOC"
 
 config INIT_ARM_PLL
+	default y
+	depends on !SOC_MIMXRT1011 && !SOC_MIMXRT1015 && \
+		   !SOC_MIMXRT1021 && !SOC_MIMXRT1024
 	bool "Initialize ARM PLL"
 
 config INIT_VIDEO_PLL
 	bool "Initialize Video PLL"
-
-config INIT_ENET_PLL
-	bool
-	help
-	  If y, the Ethernet PLL is initialized. Always enabled on e.g.
-	  MIMXRT1021 - see commit 17f4d6bec7 ("soc: nxp_imx: fix ENET_PLL selection
-	  for MIMXRT1021").
 
 config INIT_SYS_PLL
 	bool "Initialize System PLL"

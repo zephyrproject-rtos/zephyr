@@ -14,10 +14,16 @@
 		zephyr,shell-uart = &uart0;
 		zephyr,ocm = &ocm;
 	};
+
+	sdhci_ref_clk: sdhci-ref-clk {
+		compatible = "fixed-clock";
+		clock-frequency = <200000000>;
+		#clock-cells = <0>;
+	};
 };
 
 &cpu0 {
-	 clock-frequency = <100000000>;
+	clock-frequency = <100000000>;
 };
 
 &soc {
@@ -41,4 +47,15 @@
 	status = "okay";
 	current-speed = <115200>;
 	clock-frequency = <100000000>;
+};
+
+&sdhci0 {
+	status = "okay";
+	power-delay-ms = <10>;
+	clocks = <&sdhci_ref_clk>;
+};
+
+&sdhci1 {
+	status = "okay";
+	clocks = <&sdhci_ref_clk>;
 };

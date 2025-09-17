@@ -5,6 +5,7 @@ common:
   platform_allow:
     - nrf52_bsim/native
     - nrf5340bsim/nrf5340/cpunet
+    - nrf54l15bsim/nrf54l15/cpuapp
   harness: bsim
 
 tests:

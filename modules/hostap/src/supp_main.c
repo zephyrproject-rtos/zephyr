@@ -11,6 +11,7 @@ LOG_MODULE_REGISTER(wifi_supplicant, CONFIG_WIFI_NM_WPA_SUPPLICANT_LOG_LEVEL);
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
 #include <poll.h>
+#include <zephyr/zvfs/eventfd.h>
 
 #if !defined(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE) && !defined(CONFIG_MBEDTLS_ENABLE_HEAP)
 #include <mbedtls/platform.h>
@@ -44,6 +45,7 @@ static K_THREAD_STACK_DEFINE(iface_wq_stack, CONFIG_WIFI_NM_WPA_SUPPLICANT_WQ_ST
 #include "fst/fst.h"
 #include "includes.h"
 #include "wpa_cli_zephyr.h"
+#include "ctrl_iface_zephyr.h"
 #ifdef CONFIG_WIFI_NM_HOSTAPD_AP
 #include "hostapd.h"
 #include "hapd_main.h"
@@ -74,6 +76,7 @@ static const struct wifi_mgmt_ops mgmt_ops = {
 	.channel = supplicant_channel,
 	.set_rts_threshold = supplicant_set_rts_threshold,
 	.get_rts_threshold = supplicant_get_rts_threshold,
+	.bss_support_neighbor_rep = supplicant_bss_support_neighbor_rep,
 	.bss_ext_capab = supplicant_bss_ext_capab,
 	.legacy_roam = supplicant_legacy_roam,
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_WNM
@@ -81,6 +84,7 @@ static const struct wifi_mgmt_ops mgmt_ops = {
 #endif
 	.get_conn_params = supplicant_get_wifi_conn_params,
 	.wps_config = supplicant_wps_config,
+	.set_bss_max_idle_period = supplicant_set_bss_max_idle_period,
 #ifdef CONFIG_AP
 	.ap_enable = supplicant_ap_enable,
 	.ap_disable = supplicant_ap_disable,
@@ -93,6 +97,7 @@ static const struct wifi_mgmt_ops mgmt_ops = {
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
 	.enterprise_creds = supplicant_add_enterprise_creds,
 #endif
+	.config_params = supplicant_config_params,
 };
 
 DEFINE_WIFI_NM_INSTANCE(wifi_supplicant, &mgmt_ops);
@@ -109,7 +114,8 @@ struct supplicant_context {
 	struct net_mgmt_event_callback cb;
 	struct net_if *iface;
 	char if_name[CONFIG_NET_INTERFACE_NAME_LEN + 1];
-	int event_socketpair[2];
+	struct k_fifo fifo;
+	int sock;
 	struct k_work iface_work;
 	struct k_work_q iface_wq;
 	int (*iface_handler)(struct supplicant_context *ctx, struct net_if *iface);
@@ -139,39 +145,25 @@ struct k_work_q *get_workq(void)
 	return &get_default_context()->iface_wq;
 }
 
+/* found in hostap/wpa_supplicant/ctrl_iface_zephyr.c */
+extern int send_data(struct k_fifo *fifo, int sock, const char *buf, size_t len, int flags);
+
 int zephyr_wifi_send_event(const struct wpa_supplicant_event_msg *msg)
 {
 	struct supplicant_context *ctx;
-	struct pollfd fds[1];
 	int ret;
 
 	/* TODO: Fix this to get the correct container */
 	ctx = get_default_context();
 
-	if (ctx->event_socketpair[1] < 0) {
+	if (ctx->sock < 0) {
 		ret = -ENOENT;
 		goto out;
 	}
 
-	fds[0].fd = ctx->event_socketpair[0];
-	fds[0].events = POLLOUT;
-	fds[0].revents = 0;
-
-	ret = zsock_poll(fds, 1, WRITE_TIMEOUT);
-	if (ret < 0) {
-		ret = -errno;
-		LOG_ERR("Cannot write event (%d)", ret);
-		goto out;
-	}
-
-	ret = zsock_send(ctx->event_socketpair[1], msg, sizeof(*msg), 0);
-	if (ret < 0) {
-		ret = -errno;
-		LOG_WRN("Event send failed (%d)", ret);
-		goto out;
-	}
-
-	if (ret != sizeof(*msg)) {
+	ret = send_data(&ctx->fifo, ctx->sock,
+			(const char *)msg, sizeof(*msg), 0);
+	if (ret != 0) {
 		ret = -EMSGSIZE;
 		LOG_WRN("Event partial send (%d)", ret);
 		goto out;
@@ -495,14 +487,14 @@ static void submit_iface_work(struct supplicant_context *ctx,
 }
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_INF_MON
 static void interface_handler(struct net_mgmt_event_callback *cb,
-			      uint32_t mgmt_event, struct net_if *iface)
+			      uint64_t mgmt_event, struct net_if *iface)
 {
 	if ((mgmt_event & INTERFACE_EVENT_MASK) != mgmt_event) {
 		return;
 	}
 
 	if (!is_wanted_interface(iface)) {
-		LOG_DBG("Ignoring event (0x%02x) from interface %d (%p)",
+		LOG_DBG("Ignoring event (0x%" PRIx64 ") from interface %d (%p)",
 			mgmt_event, net_if_get_by_iface(iface), iface);
 		return;
 	}
@@ -562,84 +554,105 @@ static int setup_interface_monitoring(struct supplicant_context *ctx, struct net
 static void event_socket_handler(int sock, void *eloop_ctx, void *user_data)
 {
 	struct supplicant_context *ctx = user_data;
-	struct wpa_supplicant_event_msg msg;
-	int ret;
+	struct wpa_supplicant_event_msg event_msg;
+	struct zephyr_msg *msg;
+	zvfs_eventfd_t value;
 
 	ARG_UNUSED(eloop_ctx);
-	ARG_UNUSED(ctx);
 
-	ret = zsock_recv(sock, &msg, sizeof(msg), 0);
-	if (ret < 0) {
-		LOG_ERR("Failed to recv the message (%d)", -errno);
-		return;
-	}
+	do {
+		zvfs_eventfd_read(sock, &value);
 
-	if (ret != sizeof(msg)) {
-		LOG_ERR("Received incomplete message: got: %d, expected:%d",
-			ret, sizeof(msg));
-		return;
-	}
-
-	LOG_DBG("Passing message %d to wpa_supplicant", msg.event);
-
-	if (msg.global) {
-		wpa_supplicant_event_global(msg.ctx, msg.event, msg.data);
-#ifdef CONFIG_WIFI_NM_HOSTAPD_AP
-	} else if (msg.hostapd) {
-		hostapd_event(msg.ctx, msg.event, msg.data);
-#endif
-	} else {
-		wpa_supplicant_event(msg.ctx, msg.event, msg.data);
-	}
-
-	if (msg.data) {
-		union wpa_event_data *data = msg.data;
-
-		/* Free up deep copied data */
-		if (msg.event == EVENT_AUTH) {
-			os_free((char *)data->auth.ies);
-		} else if (msg.event == EVENT_RX_MGMT) {
-			os_free((char *)data->rx_mgmt.frame);
-		} else if (msg.event == EVENT_TX_STATUS) {
-			os_free((char *)data->tx_status.data);
-		} else if (msg.event == EVENT_ASSOC) {
-			os_free((char *)data->assoc_info.addr);
-			os_free((char *)data->assoc_info.req_ies);
-			os_free((char *)data->assoc_info.resp_ies);
-			os_free((char *)data->assoc_info.resp_frame);
-		} else if (msg.event == EVENT_ASSOC_REJECT) {
-			os_free((char *)data->assoc_reject.bssid);
-			os_free((char *)data->assoc_reject.resp_ies);
-		} else if (msg.event == EVENT_DEAUTH) {
-			os_free((char *)data->deauth_info.addr);
-			os_free((char *)data->deauth_info.ie);
-		} else if (msg.event == EVENT_DISASSOC) {
-			os_free((char *)data->disassoc_info.addr);
-			os_free((char *)data->disassoc_info.ie);
-		} else if (msg.event == EVENT_UNPROT_DEAUTH) {
-			os_free((char *)data->unprot_deauth.sa);
-			os_free((char *)data->unprot_deauth.da);
-		} else if (msg.event == EVENT_UNPROT_DISASSOC) {
-			os_free((char *)data->unprot_disassoc.sa);
-			os_free((char *)data->unprot_disassoc.da);
+		msg = k_fifo_get(&ctx->fifo, K_NO_WAIT);
+		if (msg == NULL) {
+			LOG_ERR("fifo(event): %s", "empty");
+			return;
 		}
 
-		os_free(msg.data);
-	}
+		if (msg->data == NULL) {
+			LOG_ERR("fifo(event): %s", "no data");
+			goto out;
+		}
+
+		if (msg->len != sizeof(event_msg)) {
+			LOG_ERR("Received incomplete message: got: %d, expected:%d",
+				msg->len, sizeof(event_msg));
+			goto out;
+		}
+
+		memcpy(&event_msg, msg->data, sizeof(event_msg));
+
+		LOG_DBG("Passing message %d to wpa_supplicant", event_msg.event);
+
+		if (event_msg.global) {
+			wpa_supplicant_event_global(event_msg.ctx, event_msg.event,
+						    event_msg.data);
+#ifdef CONFIG_WIFI_NM_HOSTAPD_AP
+		} else if (event_msg.hostapd) {
+			hostapd_event(event_msg.ctx, event_msg.event, event_msg.data);
+#endif
+		} else {
+			wpa_supplicant_event(event_msg.ctx, event_msg.event, event_msg.data);
+		}
+
+		if (event_msg.data) {
+			union wpa_event_data *data = event_msg.data;
+
+			/* Free up deep copied data */
+			if (event_msg.event == EVENT_AUTH) {
+				os_free((char *)data->auth.ies);
+			} else if (event_msg.event == EVENT_RX_MGMT) {
+				os_free((char *)data->rx_mgmt.frame);
+			} else if (event_msg.event == EVENT_TX_STATUS) {
+				os_free((char *)data->tx_status.data);
+			} else if (event_msg.event == EVENT_ASSOC) {
+				os_free((char *)data->assoc_info.addr);
+				os_free((char *)data->assoc_info.req_ies);
+				os_free((char *)data->assoc_info.resp_ies);
+				os_free((char *)data->assoc_info.resp_frame);
+			} else if (event_msg.event == EVENT_ASSOC_REJECT) {
+				os_free((char *)data->assoc_reject.bssid);
+				os_free((char *)data->assoc_reject.resp_ies);
+			} else if (event_msg.event == EVENT_DEAUTH) {
+				os_free((char *)data->deauth_info.addr);
+				os_free((char *)data->deauth_info.ie);
+			} else if (event_msg.event == EVENT_DISASSOC) {
+				os_free((char *)data->disassoc_info.addr);
+				os_free((char *)data->disassoc_info.ie);
+			} else if (event_msg.event == EVENT_UNPROT_DEAUTH) {
+				os_free((char *)data->unprot_deauth.sa);
+				os_free((char *)data->unprot_deauth.da);
+			} else if (event_msg.event == EVENT_UNPROT_DISASSOC) {
+				os_free((char *)data->unprot_disassoc.sa);
+				os_free((char *)data->unprot_disassoc.da);
+			}
+
+			os_free(event_msg.data);
+		}
+
+out:
+		os_free(msg->data);
+		os_free(msg);
+
+	} while (!k_fifo_is_empty(&ctx->fifo));
 }
 
 static int register_supplicant_event_socket(struct supplicant_context *ctx)
 {
 	int ret;
 
-	ret = socketpair(AF_UNIX, SOCK_STREAM, 0, ctx->event_socketpair);
+	ret = zvfs_eventfd(0, ZVFS_EFD_NONBLOCK);
 	if (ret < 0) {
 		ret = -errno;
 		LOG_ERR("Failed to initialize socket (%d)", ret);
 		return ret;
 	}
 
-	eloop_register_read_sock(ctx->event_socketpair[0], event_socket_handler, NULL, ctx);
+	ctx->sock = ret;
+
+	k_fifo_init(&ctx->fifo);
+
+	eloop_register_read_sock(ctx->sock, event_socket_handler, NULL, ctx);
 
 	return 0;
 }
@@ -707,7 +720,7 @@ static void handler(void)
 
 	supplicant_generate_state_event(ctx->if_name, NET_EVENT_SUPPLICANT_CMD_NOT_READY, 0);
 
-	eloop_unregister_read_sock(ctx->event_socketpair[0]);
+	eloop_unregister_read_sock(ctx->sock);
 
 	zephyr_global_wpa_ctrl_deinit();
 
@@ -716,8 +729,7 @@ static void handler(void)
 out:
 	wpa_supplicant_deinit(ctx->supplicant);
 
-	zsock_close(ctx->event_socketpair[0]);
-	zsock_close(ctx->event_socketpair[1]);
+	close(ctx->sock);
 
 err:
 	os_free(params.pid_file);

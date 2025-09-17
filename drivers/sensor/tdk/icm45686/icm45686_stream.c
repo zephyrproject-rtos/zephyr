@@ -11,6 +11,10 @@
 #include <zephyr/rtio/rtio.h>
 #include <zephyr/sys/atomic.h>
 
+#if DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(invensense_icm45686, i3c)
+#include <zephyr/drivers/i3c.h>
+#endif
+
 #include "icm45686.h"
 #include "icm45686_bus.h"
 #include "icm45686_stream.h"
@@ -206,6 +210,8 @@ static void icm45686_handle_event_actions(struct rtio *ctx,
 				   NULL);
 		if (data->rtio.type == ICM45686_BUS_I2C) {
 			data_rd_sqe->iodev_flags |= RTIO_IODEV_I2C_STOP | RTIO_IODEV_I2C_RESTART;
+		} else if (data->rtio.type == ICM45686_BUS_I3C) {
+			data_rd_sqe->iodev_flags |= RTIO_IODEV_I3C_STOP | RTIO_IODEV_I3C_RESTART;
 		}
 		data_rd_sqe->flags |= RTIO_SQE_CHAINED;
 
@@ -237,6 +243,8 @@ static void icm45686_handle_event_actions(struct rtio *ctx,
 					 NULL);
 		if (data->rtio.type == ICM45686_BUS_I2C) {
 			write_sqe->iodev_flags |= RTIO_IODEV_I2C_STOP;
+		} else if (data->rtio.type == ICM45686_BUS_I3C) {
+			write_sqe->iodev_flags |= RTIO_IODEV_I3C_STOP;
 		}
 		write_sqe->flags |= RTIO_SQE_CHAINED;
 
@@ -277,6 +285,8 @@ static void icm45686_handle_event_actions(struct rtio *ctx,
 				   NULL);
 		if (data->rtio.type == ICM45686_BUS_I2C) {
 			read_sqe->iodev_flags |= RTIO_IODEV_I2C_STOP | RTIO_IODEV_I2C_RESTART;
+		} else if (data->rtio.type == ICM45686_BUS_I3C) {
+			read_sqe->iodev_flags |= RTIO_IODEV_I3C_STOP | RTIO_IODEV_I3C_RESTART;
 		}
 		read_sqe->flags |= RTIO_SQE_CHAINED;
 	}
@@ -329,6 +339,8 @@ static void icm45686_event_handler(const struct device *dev)
 					 NULL);
 		if (data->rtio.type == ICM45686_BUS_I2C) {
 			write_sqe->iodev_flags |= RTIO_IODEV_I2C_STOP;
+		} else if (data->rtio.type == ICM45686_BUS_I3C) {
+			write_sqe->iodev_flags |= RTIO_IODEV_I3C_STOP;
 		}
 		rtio_submit(data->rtio.ctx, 0);
 
@@ -389,6 +401,8 @@ static void icm45686_event_handler(const struct device *dev)
 			   NULL);
 	if (data->rtio.type == ICM45686_BUS_I2C) {
 		read_sqe->iodev_flags |= RTIO_IODEV_I2C_STOP | RTIO_IODEV_I2C_RESTART;
+	} else if (data->rtio.type == ICM45686_BUS_I3C) {
+		read_sqe->iodev_flags |= RTIO_IODEV_I3C_STOP | RTIO_IODEV_I3C_RESTART;
 	}
 	read_sqe->flags |= RTIO_SQE_CHAINED;
 
@@ -413,6 +427,8 @@ static void icm45686_event_handler(const struct device *dev)
 			   NULL);
 	if (data->rtio.type == ICM45686_BUS_I2C) {
 		read_fifo_ct_sqe->iodev_flags |= RTIO_IODEV_I2C_STOP | RTIO_IODEV_I2C_RESTART;
+	} else if (data->rtio.type == ICM45686_BUS_I3C) {
+		read_fifo_ct_sqe->iodev_flags |= RTIO_IODEV_I3C_STOP | RTIO_IODEV_I3C_RESTART;
 	}
 	read_fifo_ct_sqe->flags |= RTIO_SQE_CHAINED;
 
@@ -423,6 +439,16 @@ static void icm45686_event_handler(const struct device *dev)
 
 	rtio_submit(data->rtio.ctx, 0);
 }
+
+#if DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(invensense_icm45686, i3c)
+static int icm45686_ibi_cb(struct i3c_device_desc *target,
+			   struct i3c_ibi_payload *payload)
+{
+	icm45686_event_handler(target->dev);
+
+	return 0;
+}
+#endif
 
 static void icm45686_gpio_callback(const struct device *gpio_dev,
 				   struct gpio_callback *cb,
@@ -615,49 +641,68 @@ int icm45686_stream_init(const struct device *dev)
 
 	(void)atomic_clear(&data->stream.in_progress);
 
-	if (!cfg->int_gpio.port) {
+	if (cfg->int_gpio.port) {
+		if (!gpio_is_ready_dt(&cfg->int_gpio)) {
+			LOG_ERR("Interrupt GPIO not ready");
+			return -ENODEV;
+		}
+
+		err = gpio_pin_configure_dt(&cfg->int_gpio, GPIO_INPUT);
+		if (err) {
+			LOG_ERR("Failed to configure interrupt GPIO");
+			return -EIO;
+		}
+
+		gpio_init_callback(&data->stream.cb,
+				   icm45686_gpio_callback,
+				   BIT(cfg->int_gpio.pin));
+
+		err = gpio_add_callback(cfg->int_gpio.port, &data->stream.cb);
+		if (err) {
+			LOG_ERR("Failed to add interrupt callback");
+			return -EIO;
+		}
+
+		err = gpio_pin_interrupt_configure_dt(&cfg->int_gpio,
+						      GPIO_INT_EDGE_TO_ACTIVE);
+		if (err) {
+			LOG_ERR("Failed to configure interrupt");
+		}
+
+		err = icm45686_bus_write(dev, REG_INT1_CONFIG0, &val, 1);
+		if (err) {
+			LOG_ERR("Failed to disable all INTs");
+		}
+
+		val = REG_INT1_CONFIG2_EN_OPEN_DRAIN(false) |
+		      REG_INT1_CONFIG2_EN_ACTIVE_HIGH(true);
+
+		err = icm45686_bus_write(dev, REG_INT1_CONFIG2, &val, 1);
+		if (err) {
+			LOG_ERR("Failed to configure INT as push-pull: %d", err);
+		}
+#if DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(invensense_icm45686, i3c)
+	/** I3C devices use IBI only if no GPIO INT pin is defined. */
+	} else if (data->rtio.type == ICM45686_BUS_I3C) {
+		const struct i3c_iodev_data *iodev_data = data->rtio.iodev->data;
+
+		data->rtio.i3c.desc = i3c_device_find(iodev_data->bus,
+						      &data->rtio.i3c.id);
+		if (data->rtio.i3c.desc == NULL) {
+			LOG_ERR("Failed to find I3C device");
+			return -ENODEV;
+		}
+		data->rtio.i3c.desc->ibi_cb = icm45686_ibi_cb;
+
+		err = i3c_ibi_enable(data->rtio.i3c.desc);
+		if (err) {
+			LOG_ERR("Failed to enable IBI: %d", err);
+			return err;
+		}
+#endif
+	} else {
 		LOG_ERR("Interrupt GPIO not supplied");
 		return -ENODEV;
-	}
-
-	if (!gpio_is_ready_dt(&cfg->int_gpio)) {
-		LOG_ERR("Interrupt GPIO not ready");
-		return -ENODEV;
-	}
-
-	err = gpio_pin_configure_dt(&cfg->int_gpio, GPIO_INPUT);
-	if (err) {
-		LOG_ERR("Failed to configure interrupt GPIO");
-		return -EIO;
-	}
-
-	gpio_init_callback(&data->stream.cb,
-			   icm45686_gpio_callback,
-			   BIT(cfg->int_gpio.pin));
-
-	err = gpio_add_callback(cfg->int_gpio.port, &data->stream.cb);
-	if (err) {
-		LOG_ERR("Failed to add interrupt callback");
-		return -EIO;
-	}
-
-	err = gpio_pin_interrupt_configure_dt(&cfg->int_gpio,
-					      GPIO_INT_EDGE_TO_ACTIVE);
-	if (err) {
-		LOG_ERR("Failed to configure interrupt");
-	}
-
-	err = icm45686_bus_write(dev, REG_INT1_CONFIG0, &val, 1);
-	if (err) {
-		LOG_ERR("Failed to disable all INTs");
-	}
-
-	val = REG_INT1_CONFIG2_EN_OPEN_DRAIN(false) |
-	      REG_INT1_CONFIG2_EN_ACTIVE_HIGH(true);
-
-	err = icm45686_bus_write(dev, REG_INT1_CONFIG2, &val, 1);
-	if (err) {
-		LOG_ERR("Failed to configure INT as push-pull: %d", err);
 	}
 
 	return 0;

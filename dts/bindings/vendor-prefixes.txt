@@ -33,7 +33,9 @@ adh	AD Holdings Plc.
 adi	Analog Devices, Inc.
 advantech	Advantech Corporation
 aeroflexgaisler	Aeroflex Gaisler AB
+aesc	Aesc Silicon
 aesop	AESOP Embedded Forum
+aithinker	Ai-Thinker Co., Ltd.
 al	Annapurna Labs
 alcatel	Alcatel
 alientek	Alientek
@@ -70,6 +72,7 @@ arc	Synopsys, Inc. (formerly ARC International PLC)
 archermind	ArcherMind Technology (Nanjing) Co., Ltd.
 arctic	Arctic Sand
 arcx	arcx Inc. / Archronix Inc.
+arducam	Arducam
 arduino	Arduino
 aries	Aries Embedded GmbH
 arm	ARM Ltd.
@@ -175,13 +178,14 @@ dfrobot	DFRobot
 dh	DH electronics GmbH
 difrnce	Shenzhen Yagu Electronic Technology Co., Ltd.
 digi	Digi International Inc.
-digilent	Diglent, Inc.
+digilent	Digilent, Inc.
 diodes	Diodes Incorporated
 dioo	Dioo Microcircuit Co., Ltd
 dlc	DLC Display Co., Ltd.
 dlg	Dialog Semiconductor
 dlink	D-Link Corporation
 dmo	Data Modul AG
+doiting	Doctors of Intelligence & Technology
 domintech	Domintech Co., Ltd.
 dongwoon	Dongwoon Anatech
 dptechnics	DPTechnics
@@ -204,6 +208,7 @@ element14	Element14 (A Premier Farnell Company)
 elgin	Elgin S/A.
 elida	Shenzhen Elida Technology Co., Ltd.
 elimo	Elimo Engineering Ltd.
+embedsky	Guangdong Embedsky Technology Co., Ltd.
 embest	Shenzhen Embest Technology Co., Ltd.
 emlid	Emlid, Ltd.
 emmicro	EM Microelectronic
@@ -242,6 +247,7 @@ festo	Festo SE & Co. KG
 fii	Foxconn Industrial Internet
 fintek	Feature Integration Technology Inc.
 firefly	Firefly
+fobe	FoBE Studio
 focaltech	FocalTech Systems Co.,Ltd
 franzininho	Franzininho
 frida	Shenzhen Frida LCD Co., Ltd.
@@ -502,8 +508,7 @@ ortustech	Ortus Technology Co., Ltd.
 osddisplays	OSD Displays
 ouya	Ouya Inc.
 overkiz	Overkiz SAS
-ovti	OmniVision Technologies
-ovti	OmniVision Technologies Co., Ltd.
+ovti	OmniVision Technologies Inc.
 oxsemi	Oxford Semiconductor, Ltd.
 ozzmaker	OzzMaker
 panasonic	Panasonic Corporation
@@ -511,6 +516,7 @@ parade	Parade Technologies Inc.
 parallax	Parallax Inc.
 particle	Particle.io
 pda	Precision Design Associates, Inc.
+peacefair	Ningbo Peacefair Electronic Technology Co., Ltd
 peregrine	Peregrine Consultoria e Servicos
 pericom	Pericom Technology Inc.
 pervasive	Pervasive Displays, Inc.
@@ -582,6 +588,7 @@ ronbo	Ronbo Electronics
 ronoth	Ronoth
 roofull	Shenzhen Roofull Technology Co, Ltd
 roseapplepi	RoseapplePi.org
+ruiside	Shanghai Ruiside Electronic Technology Co., Ltd.
 ruuvi	Ruuvi Innovations Ltd (Oy)
 samsung	Samsung Semiconductor
 samtec	Samtec/Softing company
@@ -589,7 +596,7 @@ sancloud	Sancloud Ltd
 sandisk	Sandisk Corporation
 satoz	Satoz International Co., Ltd
 sbs	Smart Battery System
-sc	Space Cubics, LLC
+sc	Space Cubics Inc.
 schindler	Schindler
 sciosense	Sciosense B.V.
 seagate	Seagate Technology PLC
@@ -641,7 +648,6 @@ solderparty	Solder Party AB
 solidrun	SolidRun
 solomon	Solomon Systech Limited
 sony	Sony Corporation
-spacecubics	Space Cubics, LLC
 spansion	Spansion Inc.
 sparkfun	SparkFun Electronics
 sprd	Spreadtrum Communications Inc.
@@ -767,6 +773,7 @@ xiphera	Xiphera Ltd.
 xlnx	Xilinx
 xnano	Xnano
 xptek	Shenzhen Xptek Technology Co., Ltd
+xuantie	Alibaba Xuantie
 xunlong	Shenzhen Xunlong Software CO.,Limited
 xylon	Xylon
 yamaha	Yamaha Corporation
@@ -778,9 +785,10 @@ yones-toptech	Yones Toptech Co., Ltd.
 ys	Shenzhen Yashi Changhua Intelligent Technology Co., Ltd.
 ysoft	Y Soft Corporation a.s.
 zarlink	Zarlink Semiconductor
+zb	Zbit Semiconductor, Inc.
 zealz	Zealz
 zeitec	ZEITEC Semiconductor Co., LTD.
-zephyr	Zephyr-specific binding
+zephyr	The Zephyr Project
 zidoo	Shenzhen Zidoo Technology Co., Ltd.
 zii	Zodiac Inflight Innovations
 zinitix	Zinitix Co., Ltd

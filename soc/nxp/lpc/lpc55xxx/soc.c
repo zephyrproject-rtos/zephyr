@@ -1,4 +1,4 @@
-/* Copyright 2017, 2019-2023 NXP
+/* Copyright 2017, 2019-2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,7 +26,7 @@
 #ifdef CONFIG_GPIO_MCUX_LPC
 #include <fsl_pint.h>
 #endif
-#if CONFIG_USB_DC_NXP_LPCIP3511 || CONFIG_UDC_NXP_IP3511
+#if CONFIG_USB_DC_NXP_LPCIP3511 || CONFIG_UDC_NXP_IP3511 || CONFIG_UHC_NXP_IP3516HS
 #include "usb_phy.h"
 #include "usb.h"
 #endif
@@ -176,45 +176,63 @@ __weak void clock_init(void)
 	/* Enables the clock for the I/O controller.: Enable Clock. */
 	CLOCK_EnableClock(kCLOCK_Iocon);
 
-#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm2), nxp_lpc_usart, okay)
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm0), nxp_lpc_i2c, okay) || \
+	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm0), nxp_lpc_spi, okay) || \
+	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm0), nxp_lpc_usart, okay)
+	CLOCK_AttachClk(kFRO_HF_DIV_to_FLEXCOMM0);
+#endif
+
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm1), nxp_lpc_i2c, okay) || \
+	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm1), nxp_lpc_spi, okay) || \
+	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm1), nxp_lpc_usart, okay)
+	CLOCK_AttachClk(kFRO_HF_DIV_to_FLEXCOMM1);
+#endif
+
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm2), nxp_lpc_i2c, okay) || \
+	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm2), nxp_lpc_spi, okay) || \
+	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm2), nxp_lpc_usart, okay)
 #if defined(CONFIG_SOC_LPC55S36)
 	CLOCK_SetClkDiv(kCLOCK_DivFlexcom2Clk, 0U, true);
 	CLOCK_SetClkDiv(kCLOCK_DivFlexcom2Clk, 1U, false);
 #endif
-	CLOCK_AttachClk(kFRO12M_to_FLEXCOMM2);
+	CLOCK_AttachClk(kFRO_HF_DIV_to_FLEXCOMM2);
 #endif
 
-#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm3), nxp_lpc_usart, okay)
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm3), nxp_lpc_i2c, okay) || \
+	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm3), nxp_lpc_spi, okay) || \
+	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm3), nxp_lpc_usart, okay)
 	CLOCK_AttachClk(kFRO_HF_DIV_to_FLEXCOMM3);
 #endif
 
-#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm4), nxp_lpc_i2c, okay)
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm4), nxp_lpc_i2c, okay) || \
+	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm4), nxp_lpc_spi, okay) || \
+	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm4), nxp_lpc_usart, okay)
 #if defined(CONFIG_SOC_LPC55S36)
 	CLOCK_SetClkDiv(kCLOCK_DivFlexcom4Clk, 0U, true);
 	CLOCK_SetClkDiv(kCLOCK_DivFlexcom4Clk, 1U, false);
 #endif
-	/* attach 12 MHz clock to FLEXCOMM4 */
-	CLOCK_AttachClk(kFRO12M_to_FLEXCOMM4);
-#endif
-
-#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm4), nxp_lpc_usart, okay)
 	CLOCK_AttachClk(kFRO_HF_DIV_to_FLEXCOMM4);
 #endif
 
-#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm5), nxp_lpc_usart, okay)
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm5), nxp_lpc_i2c, okay) || \
+	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm5), nxp_lpc_spi, okay) || \
+	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm5), nxp_lpc_usart, okay)
 	CLOCK_AttachClk(kFRO_HF_DIV_to_FLEXCOMM5);
 #endif
 
-#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm6), nxp_lpc_usart, okay)
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm6), nxp_lpc_i2c, okay) || \
+	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm6), nxp_lpc_spi, okay) || \
+	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm6), nxp_lpc_usart, okay)
 	CLOCK_AttachClk(kFRO_HF_DIV_to_FLEXCOMM6);
 #endif
 
-#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm7), nxp_lpc_usart, okay)
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm7), nxp_lpc_i2c, okay) || \
+	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm7), nxp_lpc_spi, okay) || \
+	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm7), nxp_lpc_usart, okay)
 	CLOCK_AttachClk(kFRO_HF_DIV_to_FLEXCOMM7);
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(hs_lspi))
-	/* Attach 12 MHz clock to HSLSPI */
 	CLOCK_AttachClk(kFRO_HF_DIV_to_HSLSPI);
 #endif
 
@@ -286,6 +304,48 @@ __weak void clock_init(void)
 #endif /* USB_DEVICE_TYPE_HS */
 
 #endif /* CONFIG_USB_DC_NXP_LPCIP3511 */
+
+#if CONFIG_UHC_NXP_OHCI
+
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(usbhfs), nxp_uhc_ohci, okay)
+	/* set BOD VBAT level to 1.65V */
+	POWER_SetBodVbatLevel(kPOWER_BodVbatLevel1650mv, kPOWER_BodHystLevel50mv, false);
+	NVIC_ClearPendingIRQ(USB0_IRQn);
+	NVIC_ClearPendingIRQ(USB0_NEEDCLK_IRQn);
+	/*< Turn on USB Phy */
+#if defined(CONFIG_SOC_LPC55S36)
+	POWER_DisablePD(kPDRUNCFG_PD_USBFSPHY);
+#else
+	POWER_DisablePD(kPDRUNCFG_PD_USB0_PHY);
+#endif
+	RESET_PeripheralReset(kUSB1H_RST_SHIFT_RSTn);
+	RESET_PeripheralReset(kUSB1D_RST_SHIFT_RSTn);
+	RESET_PeripheralReset(kUSB1_RST_SHIFT_RSTn);
+	RESET_PeripheralReset(kUSB1RAM_RST_SHIFT_RSTn);
+	CLOCK_EnableUsbfs0HostClock(kCLOCK_UsbfsSrcPll0, 48000000U);
+#if defined(FSL_FEATURE_USBHSD_USB_RAM) && (FSL_FEATURE_USBHSD_USB_RAM)
+	memset((uint8_t *)FSL_FEATURE_USBHSD_USB_RAM_BASE_ADDRESS, 0, FSL_FEATURE_USBHSD_USB_RAM);
+#endif
+#endif
+
+#endif
+
+#if CONFIG_UHC_NXP_IP3516HS
+
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(usbhhs), nxp_uhc_ip3516hs, okay)
+	/*< Turn on USB Phy */
+#if !defined(CONFIG_SOC_LPC55S36)
+	POWER_DisablePD(kPDRUNCFG_PD_USB1_PHY);
+#endif
+	CLOCK_EnableUsbhs0PhyPllClock(kCLOCK_UsbPhySrcExt, CLK_CLK_IN);
+	CLOCK_EnableUsbhs0HostClock(kCLOCK_UsbSrcUnused, 0U);
+	USB_EhciPhyInit(kUSB_ControllerLpcIp3511Hs0, CLK_CLK_IN, NULL);
+#if defined(FSL_FEATURE_USBHSD_USB_RAM) && (FSL_FEATURE_USBHSD_USB_RAM)
+	memset((uint8_t *)FSL_FEATURE_USBHSD_USB_RAM_BASE_ADDRESS, 0, FSL_FEATURE_USBHSD_USB_RAM);
+#endif
+#endif
+
+#endif
 
 DT_FOREACH_STATUS_OKAY(nxp_lpc_ctimer, CTIMER_CLOCK_SETUP)
 

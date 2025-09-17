@@ -35,44 +35,25 @@
 			cpu-power-states = <&d0i3 &d3>;
 		};
 
-		cpu3: cpu@3 {
-			device_type = "cpu";
-			compatible = "cdns,tensilica-xtensa-lx7";
-			reg = <3>;
-			cpu-power-states = <&d0i3 &d3>;
-		};
+		power-states {
+			d0i3: idle {
+				compatible = "zephyr,power-state";
+				power-state-name = "runtime-idle";
+				min-residency-us = <200>;
+				exit-latency-us = <100>;
+			};
 
-		cpu4: cpu@4 {
-			device_type = "cpu";
-			compatible = "cdns,tensilica-xtensa-lx7";
-			reg = <4>;
-			cpu-power-states = <&d0i3 &d3>;
+			/* PM_STATE_SOFT_OFF can be entered only by calling pm_state_force.
+			 * The procedure is triggered by IPC from the HOST (SET_DX).
+			 */
+			d3: off {
+				compatible = "zephyr,power-state";
+				power-state-name = "soft-off";
+				min-residency-us = <0>;
+				exit-latency-us = <0>;
+				status = "disabled";
+			};
 		};
-	};
-
-	power-states {
-		d0i3: idle {
-			compatible = "zephyr,power-state";
-			power-state-name = "runtime-idle";
-			min-residency-us = <200>;
-			exit-latency-us = <100>;
-		};
-		/* PM_STATE_SOFT_OFF can be entered only by calling pm_state_force.
-		 * The procedure is triggered by IPC from the HOST (SET_DX).
-		 */
-		d3: off {
-			compatible = "zephyr,power-state";
-			power-state-name = "soft-off";
-			min-residency-us = <0>;
-			exit-latency-us = <0>;
-			status = "disabled";
-		};
-	};
-
-	sram0: memory@a0020000 {
-		device_type = "memory";
-		compatible = "mmio-sram";
-		reg = <0xa0020000 DT_SIZE_K(4608)>;
 	};
 
 	sram0virtual: virtualmemory@a0020000 {
@@ -137,6 +118,11 @@
 		l1pcfg: l1pcfg@3fe80088 {
 			compatible = "intel,adsp-l1pcfg";
 			reg = <0x3fe80088 0x4>;
+		};
+
+		hsbcap: hsbcap@71d00 {
+			compatible = "intel,adsp-hsbcap";
+			reg = <0x71d00 0x4>;
 		};
 
 		lsbpm: lsbpm@71d80 {
@@ -206,7 +192,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x00028100 0x1000
-				   0x00079C00 0x200>;
+			       0x00079C00 0x200>;
 			i2svss = <0x00028C00 0x1000>;
 			interrupts = <0x00 0 0>;
 			interrupt-parent = <&ace_intc>;
@@ -286,7 +272,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x00029100 0x1000
-				   0x00079C00 0x200>;
+			       0x00079C00 0x200>;
 			i2svss = <0x00029C00 0x1000>;
 			interrupts = <0x01 0 0>;
 			interrupt-parent = <&ace_intc>;
@@ -366,7 +352,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x0002a100 0x1000
-				   0x00079C00 0x200>;
+			       0x00079C00 0x200>;
 			i2svss = <0x0002AC00 0x1000>;
 			interrupts = <0x02 0 0>;
 			interrupt-parent = <&ace_intc>;
@@ -441,6 +427,14 @@
 			};
 		};
 
+		mic_privacy: mic-prv@71a40 {
+			compatible = "intel,adsp-mic-privacy";
+			reg = <0x71a40 0x8000>;
+			interrupts = <29 0 0>;
+			interrupt-parent = <&ace_intc>;
+			status = "okay";
+		};
+
 		mem_window0: mem_window@70200 {
 			compatible = "intel,adsp-mem-window";
 			reg = <0x70200 0x8>;
@@ -490,26 +484,31 @@
 				bit-position = <15>;
 				#power-domain-cells = <0>;
 			};
+
 			ml0_domain: ml0_domain {
 				compatible = "intel,adsp-power-domain";
 				bit-position = <12>;
 				#power-domain-cells = <0>;
 			};
+
 			io1_domain: io1_domain {
 				compatible = "intel,adsp-power-domain";
 				bit-position = <9>;
 				#power-domain-cells = <0>;
 			};
+
 			io0_domain: io0_domain {
 				compatible = "intel,adsp-power-domain";
 				bit-position = <8>;
 				#power-domain-cells = <0>;
 			};
+
 			hub_hp_domain: hub_hpp_domain {
 				compatible = "intel,adsp-power-domain";
 				bit-position = <6>;
 				#power-domain-cells = <0>;
 			};
+
 			hst_domain: hst_domain {
 				compatible = "intel,adsp-power-domain";
 				bit-position = <5>;
@@ -612,13 +611,13 @@
 		 * masking layer makes it easier for MTL to handle
 		 * this internally.
 		 */
-		ace_intc: ace_intc@94000  {
+		ace_intc: ace_intc@94000 {
 			compatible = "intel,ace-intc";
 			reg = <0x94000 0xc00>;
 			interrupt-controller;
 			#interrupt-cells = <3>;
 			interrupts = <4 0 0>;
-			num-irqs = <28>;
+			num-irqs = <30>;
 			interrupt-parent = <&core_intc>;
 		};
 
@@ -627,7 +626,7 @@
 			reg = <0x17e000 0x1000>;
 			paddr-size = <12>;
 			exec-bit-idx = <14>;
-			write-bit-idx= <15>;
+			write-bit-idx = <15>;
 		};
 
 		timer: timer {
@@ -647,6 +646,7 @@
 			status = "okay";
 			reg = <0>;
 		};
+
 		hda1: hda@1 {
 			compatible = "intel,hda-dai";
 			power-domains = <&io0_domain>;
@@ -654,6 +654,7 @@
 			status = "okay";
 			reg = <1>;
 		};
+
 		hda2: hda@2 {
 			compatible = "intel,hda-dai";
 			power-domains = <&io0_domain>;
@@ -661,6 +662,7 @@
 			status = "okay";
 			reg = <2>;
 		};
+
 		hda3: hda@3 {
 			compatible = "intel,hda-dai";
 			power-domains = <&io0_domain>;
@@ -668,6 +670,7 @@
 			status = "okay";
 			reg = <3>;
 		};
+
 		hda4: hda@4 {
 			compatible = "intel,hda-dai";
 			power-domains = <&io0_domain>;
@@ -675,6 +678,7 @@
 			status = "okay";
 			reg = <4>;
 		};
+
 		hda5: hda@5 {
 			compatible = "intel,hda-dai";
 			power-domains = <&io0_domain>;
@@ -682,6 +686,7 @@
 			status = "okay";
 			reg = <5>;
 		};
+
 		hda6: hda@6 {
 			compatible = "intel,hda-dai";
 			power-domains = <&io0_domain>;
@@ -689,6 +694,7 @@
 			status = "okay";
 			reg = <6>;
 		};
+
 		hda7: hda@7 {
 			compatible = "intel,hda-dai";
 			power-domains = <&io0_domain>;
@@ -696,6 +702,7 @@
 			status = "okay";
 			reg = <7>;
 		};
+
 		hda8: hda@8 {
 			compatible = "intel,hda-dai";
 			power-domains = <&io0_domain>;
@@ -703,6 +710,7 @@
 			status = "okay";
 			reg = <8>;
 		};
+
 		hda9: hda@9 {
 			compatible = "intel,hda-dai";
 			power-domains = <&io0_domain>;
@@ -710,6 +718,7 @@
 			status = "okay";
 			reg = <9>;
 		};
+
 		hda10: hda@a {
 			compatible = "intel,hda-dai";
 			power-domains = <&io0_domain>;
@@ -717,6 +726,7 @@
 			status = "okay";
 			reg = <0x0a>;
 		};
+
 		hda11: hda@b {
 			compatible = "intel,hda-dai";
 			power-domains = <&io0_domain>;
@@ -724,6 +734,7 @@
 			status = "okay";
 			reg = <0x0b>;
 		};
+
 		hda12: hda@c {
 			compatible = "intel,hda-dai";
 			power-domains = <&io0_domain>;
@@ -731,6 +742,7 @@
 			status = "okay";
 			reg = <0x0c>;
 		};
+
 		hda13: hda@d {
 			compatible = "intel,hda-dai";
 			power-domains = <&io0_domain>;
@@ -738,6 +750,7 @@
 			status = "okay";
 			reg = <0x0d>;
 		};
+
 		hda14: hda@e {
 			compatible = "intel,hda-dai";
 			power-domains = <&io0_domain>;
@@ -745,6 +758,7 @@
 			status = "okay";
 			reg = <0x0e>;
 		};
+
 		hda15: hda@f {
 			compatible = "intel,hda-dai";
 			power-domains = <&io0_domain>;
@@ -752,6 +766,7 @@
 			status = "okay";
 			reg = <0x0f>;
 		};
+
 		hda16: hda@10 {
 			compatible = "intel,hda-dai";
 			power-domains = <&io0_domain>;
@@ -759,6 +774,7 @@
 			status = "okay";
 			reg = <0x10>;
 		};
+
 		hda17: hda@11 {
 			compatible = "intel,hda-dai";
 			power-domains = <&io0_domain>;
@@ -766,6 +782,7 @@
 			status = "okay";
 			reg = <0x11>;
 		};
+
 		hda18: hda@12 {
 			compatible = "intel,hda-dai";
 			power-domains = <&io0_domain>;

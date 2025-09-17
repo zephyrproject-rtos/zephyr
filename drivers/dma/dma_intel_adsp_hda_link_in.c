@@ -37,7 +37,7 @@ static DEVICE_API(dma, intel_adsp_hda_dma_link_in_api) = {
 												   \
 	PM_DEVICE_DT_INST_DEFINE(inst, intel_adsp_hda_dma_pm_action);				   \
 												   \
-	DEVICE_DT_INST_DEFINE(inst, &intel_adsp_hda_dma_init,					   \
+	DEVICE_DT_INST_DEFINE(inst, intel_adsp_hda_dma_init,					   \
 			      PM_DEVICE_DT_INST_GET(inst),					   \
 			      &intel_adsp_hda_dma##inst##_data,                                    \
 			      &intel_adsp_hda_dma##inst##_config, POST_KERNEL,                     \

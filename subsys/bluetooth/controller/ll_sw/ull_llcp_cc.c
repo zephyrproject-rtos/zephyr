@@ -130,8 +130,8 @@ enum {
 	RP_CC_EVT_UNKNOWN,
 };
 
-static void rp_cc_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
-				void *param);
+static void rp_cc_check_instant_rx_cis_ind(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
+					   void *param);
 
 /*
  * LLCP Remote Procedure FSM
@@ -349,8 +349,13 @@ static uint8_t rp_cc_validate_req(struct ll_conn *conn, struct proc_ctx *ctx,
 	/* Note: SDU intervals are 20 bits; Mask away RFU bits */
 	c_sdu_interval = sys_get_le24(pdu->llctrl.cis_req.c_sdu_interval) & 0x0FFFFF;
 	p_sdu_interval = sys_get_le24(pdu->llctrl.cis_req.p_sdu_interval) & 0x0FFFFF;
-	if (c_sdu_interval < BT_HCI_ISO_SDU_INTERVAL_MIN ||
-	    p_sdu_interval < BT_HCI_ISO_SDU_INTERVAL_MIN) {
+	/*
+	 * Some in-the-wild devices use SDU interval of 0 when BN == 0; This is not allowed by
+	 * BT Core Spec v6.0, but is not specifically mentioned in v5.4 and earlier. To allow
+	 * connecting a CIS to these devices, relax the check on SDU interval
+	 */
+	if ((pdu->llctrl.cis_req.c_bn > 0 && c_sdu_interval < BT_HCI_ISO_SDU_INTERVAL_MIN) ||
+	    (pdu->llctrl.cis_req.p_bn > 0 && p_sdu_interval < BT_HCI_ISO_SDU_INTERVAL_MIN)) {
 		return BT_HCI_ERR_INVALID_LL_PARAM;
 	}
 
@@ -480,7 +485,7 @@ static void rp_cc_state_wait_rx_cis_ind(struct ll_conn *conn, struct proc_ctx *c
 			llcp_rx_node_retain(ctx);
 
 			/* Check if this connection event is where we need to start the CIS */
-			rp_cc_check_instant(conn, ctx, evt, param);
+			rp_cc_check_instant_rx_cis_ind(conn, ctx, evt, param);
 			break;
 		}
 		/* If we get to here the CIG_ID referred in req/acquire has become void/invalid */
@@ -518,13 +523,11 @@ static void rp_cc_state_wait_ntf_avail(struct ll_conn *conn, struct proc_ctx *ct
 }
 
 
-static void rp_cc_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
-				void *param)
+static void rp_cc_check_instant_by_counter(struct ll_conn *conn, struct proc_ctx *ctx,
+					   uint16_t event_counter, uint8_t evt, void *param)
 {
 	uint16_t start_event_count;
-	uint16_t event_counter;
 
-	event_counter = ull_conn_event_counter(conn);
 	start_event_count = ctx->data.cis_create.conn_event_count;
 
 	if (is_instant_reached_or_passed(start_event_count, event_counter)) {
@@ -539,6 +542,26 @@ static void rp_cc_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint
 		/* Now we can wait for CIS to become established */
 		ctx->state = RP_CC_STATE_WAIT_CIS_ESTABLISHED;
 	}
+}
+
+static void rp_cc_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
+				void *param)
+{
+	uint16_t event_counter;
+
+	event_counter = ull_conn_event_counter_at_prepare(conn);
+
+	rp_cc_check_instant_by_counter(conn, ctx, event_counter, evt, param);
+}
+
+static void rp_cc_check_instant_rx_cis_ind(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
+					   void *param)
+{
+	uint16_t event_counter;
+
+	event_counter = ull_conn_event_counter(conn);
+
+	rp_cc_check_instant_by_counter(conn, ctx, event_counter, evt, param);
 }
 
 static void rp_cc_state_wait_reply(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
@@ -1073,7 +1096,7 @@ static void lp_cc_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint
 	uint16_t instant_latency;
 	uint16_t event_counter;
 
-	event_counter = ull_conn_event_counter(conn);
+	event_counter = ull_conn_event_counter_at_prepare(conn);
 	start_event_count = ctx->data.cis_create.conn_event_count;
 
 	instant_latency = (event_counter - start_event_count) & 0xffff;

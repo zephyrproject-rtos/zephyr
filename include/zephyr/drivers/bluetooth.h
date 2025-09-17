@@ -5,12 +5,19 @@
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
+
+/**
+ * @file
+ * @ingroup bt_hci_api
+ * @brief Main header file for Bluetooth HCI driver API.
+ */
+
 #ifndef ZEPHYR_INCLUDE_DRIVERS_BLUETOOTH_H_
 #define ZEPHYR_INCLUDE_DRIVERS_BLUETOOTH_H_
 
 /**
- * @brief Bluetooth HCI APIs
- * @defgroup bt_hci_api Bluetooth HCI APIs
+ * @brief Interfaces for Bluetooth Host Controller Interface (HCI).
+ * @defgroup bt_hci_api Bluetooth HCI
  *
  * @since 3.7
  * @version 0.2.0
@@ -59,7 +66,7 @@ enum {
 };
 
 /** Possible values for the 'bus' member of the bt_hci_driver struct */
-enum bt_hci_bus {
+enum __deprecated bt_hci_bus { /* Use macro BT_DT_HCI_BUS_GET() instead */
 	BT_HCI_BUS_VIRTUAL       = 0,
 	BT_HCI_BUS_USB           = 1,
 	BT_HCI_BUS_PCCARD        = 2,
@@ -72,8 +79,6 @@ enum bt_hci_bus {
 	BT_HCI_BUS_SMD           = 9,
 	BT_HCI_BUS_VIRTIO        = 10,
 	BT_HCI_BUS_IPC           = 11,
-	/* IPM is deprecated and simply an alias for IPC */
-	BT_HCI_BUS_IPM           = BT_HCI_BUS_IPC,
 };
 
 #define BT_DT_HCI_QUIRK_OR(node_id, prop, idx) \
@@ -89,8 +94,10 @@ enum bt_hci_bus {
 #define BT_DT_HCI_NAME_GET(node_id) DT_PROP_OR(node_id, bt_hci_name, "HCI")
 #define BT_DT_HCI_NAME_INST_GET(inst) BT_DT_HCI_NAME_GET(DT_DRV_INST(inst))
 
-#define BT_DT_HCI_BUS_GET(node_id) \
-	UTIL_CAT(BT_HCI_BUS_, DT_STRING_UPPER_TOKEN_OR(node_id, bt_hci_bus, VIRTUAL))
+/* Fallback default when there's no property, same as "virtual" */
+#define BT_PRIV_HCI_BUS_DEFAULT (0)
+#define BT_DT_HCI_BUS_GET(node_id) DT_ENUM_IDX_OR(node_id, bt_hci_bus, BT_PRIV_HCI_BUS_DEFAULT)
+
 #define BT_DT_HCI_BUS_INST_GET(inst) BT_DT_HCI_BUS_GET(DT_DRV_INST(inst))
 
 typedef int (*bt_hci_recv_t)(const struct device *dev, struct net_buf *buf);
@@ -114,9 +121,8 @@ __subsystem struct bt_hci_driver_api {
  *
  * @param dev  HCI device
  * @param recv This is callback through which the HCI driver provides the
- *             host with data from the controller. The buffer passed to
- *             the callback will have its type set with bt_buf_set_type().
- *             The callback is expected to be called from thread context.
+ *             host with data from the controller. The callback is expected
+ *             to be called from thread context.
  *
  * @return 0 on success or negative POSIX error number on failure.
  */
@@ -151,8 +157,14 @@ static inline int bt_hci_close(const struct device *dev)
 /**
  * @brief Send HCI buffer to controller.
  *
- * Send an HCI packet to the controller. The packet type of the buffer
- * must be set using bt_buf_set_type().
+ * Send an HCI packet to the controller. The packet type is encoded as H:4,
+ * i.e. the UART transport encoding, as a prefix to the actual payload. This means
+ * that HCI drivers that use H:4 as their native encoding don't need to do any
+ * special handling of the packet type.
+ *
+ * If the function returns 0 (success) the reference to @c buf was moved to the
+ * HCI driver. On error, the caller still owns the reference and is responsible
+ * for eventually calling @ref net_buf_unref on it.
  *
  * @note This function must only be called from a cooperative thread.
  *

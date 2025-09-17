@@ -61,12 +61,20 @@ static bool i2c_nrfx_twi_rtio_msg_start(const struct device *dev, uint8_t flags,
 	return false;
 }
 
+static void i2c_nrfx_twi_rtio_sqe_signaled(struct rtio_iodev_sqe *iodev_sqe, void *userdata)
+{
+	const struct device *dev = userdata;
+
+	i2c_nrfx_twi_rtio_complete(dev, 0);
+}
+
 static bool i2c_nrfx_twi_rtio_start(const struct device *dev)
 {
 	struct i2c_nrfx_twi_rtio_data *const dev_data = dev->data;
 	struct i2c_rtio *ctx = dev_data->ctx;
 	struct rtio_sqe *sqe = &ctx->txn_curr->sqe;
 	struct i2c_dt_spec *dt_spec = sqe->iodev->data;
+	struct rtio_iodev_sqe *iodev_sqe;
 
 	switch (sqe->op) {
 	case RTIO_OP_RX:
@@ -89,6 +97,11 @@ static bool i2c_nrfx_twi_rtio_start(const struct device *dev)
 		return i2c_rtio_complete(ctx, 0);
 	case RTIO_OP_I2C_RECOVER:
 		(void)i2c_nrfx_twi_recover_bus(dev);
+		return false;
+	case RTIO_OP_AWAIT:
+		iodev_sqe = CONTAINER_OF(sqe, struct rtio_iodev_sqe, sqe);
+		rtio_iodev_sqe_await_signal(iodev_sqe, i2c_nrfx_twi_rtio_sqe_signaled,
+					    (void *)dev);
 		return false;
 	default:
 		LOG_ERR("Invalid op code %d for submission %p\n", sqe->op, (void *)sqe);

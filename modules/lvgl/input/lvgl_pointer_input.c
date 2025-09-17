@@ -1,5 +1,6 @@
 /*
  * Copyright 2023 Fabian Blatz <fabianblatz@gmail.com>
+ * Copyright 2025 Abderrahmane JARMOUNI
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -32,7 +33,7 @@ static void lvgl_pointer_process_event(struct input_event *evt, void *user_data)
 	const struct device *dev = user_data;
 	const struct lvgl_pointer_input_config *cfg = dev->config;
 	struct lvgl_pointer_input_data *data = dev->data;
-	lv_display_t *disp = lv_display_get_default();
+	lv_display_t *disp = lv_indev_get_display(data->common_data.indev);
 	struct lvgl_disp_data *disp_data = (struct lvgl_disp_data *)lv_display_get_user_data(disp);
 	struct display_capabilities *cap = &disp_data->cap;
 	lv_point_t *point = &data->common_data.pending_event.point;
@@ -137,6 +138,8 @@ int lvgl_pointer_input_init(const struct device *dev)
 			  lvgl_pointer_process_event);                                             \
 	static const struct lvgl_pointer_input_config lvgl_pointer_input_config_##inst = {         \
 		.common_config.event_msgq = &LVGL_INPUT_EVENT_MSGQ(inst, pointer),                 \
+		.common_config.display_dev =                                                       \
+			DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(inst, display)),                     \
 		.swap_xy = DT_INST_PROP(inst, swap_xy),                                            \
 		.invert_x = DT_INST_PROP(inst, invert_x),                                          \
 		.invert_y = DT_INST_PROP(inst, invert_y),                                          \

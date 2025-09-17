@@ -24,6 +24,7 @@
  */
 #include <zephyr/types.h>
 #include <zephyr/device.h>
+#include <zephyr/sys/util_macro.h>
 #include <errno.h>
 
 #ifdef __cplusplus
@@ -32,22 +33,22 @@ extern "C" {
 
 /** @brief Ethernet link speeds. */
 enum phy_link_speed {
-	/** 10Base-T Half-Duplex */
-	LINK_HALF_10BASE_T = BIT(0),
-	/** 10Base-T Full-Duplex */
-	LINK_FULL_10BASE_T = BIT(1),
-	/** 100Base-T Half-Duplex */
-	LINK_HALF_100BASE_T = BIT(2),
-	/** 100Base-T Full-Duplex */
-	LINK_FULL_100BASE_T = BIT(3),
-	/** 1000Base-T Half-Duplex */
-	LINK_HALF_1000BASE_T = BIT(4),
-	/** 1000Base-T Full-Duplex */
-	LINK_FULL_1000BASE_T = BIT(5),
-	/** 2.5GBase-T Full-Duplex */
-	LINK_FULL_2500BASE_T = BIT(6),
-	/** 5GBase-T Full-Duplex */
-	LINK_FULL_5000BASE_T = BIT(7),
+	/** 10Base Half-Duplex */
+	LINK_HALF_10BASE = BIT(0),
+	/** 10Base Full-Duplex */
+	LINK_FULL_10BASE = BIT(1),
+	/** 100Base Half-Duplex */
+	LINK_HALF_100BASE = BIT(2),
+	/** 100Base Full-Duplex */
+	LINK_FULL_100BASE = BIT(3),
+	/** 1000Base Half-Duplex */
+	LINK_HALF_1000BASE = BIT(4),
+	/** 1000Base Full-Duplex */
+	LINK_FULL_1000BASE = BIT(5),
+	/** 2.5GBase Full-Duplex */
+	LINK_FULL_2500BASE = BIT(6),
+	/** 5GBase Full-Duplex */
+	LINK_FULL_5000BASE = BIT(7),
 };
 
 /**
@@ -57,7 +58,9 @@ enum phy_link_speed {
  *
  * @return True if link is full duplex, false if not.
  */
-#define PHY_LINK_IS_FULL_DUPLEX(x) (x & (BIT(1) | BIT(3) | BIT(5) | BIT(6) | BIT(7)))
+#define PHY_LINK_IS_FULL_DUPLEX(x)                                                                 \
+	(x & (LINK_FULL_10BASE | LINK_FULL_100BASE | LINK_FULL_1000BASE | LINK_FULL_2500BASE |     \
+	      LINK_FULL_5000BASE))
 
 /**
  * @brief Check if phy link speed is 1 Gbit/sec.
@@ -66,16 +69,25 @@ enum phy_link_speed {
  *
  * @return True if link is 1 Gbit/sec, false if not.
  */
-#define PHY_LINK_IS_SPEED_1000M(x) (x & (BIT(4) | BIT(5)))
+#define PHY_LINK_IS_SPEED_1000M(x) (x & (LINK_HALF_1000BASE | LINK_FULL_1000BASE))
 
 /**
  * @brief Check if phy link speed is 100 Mbit/sec.
  *
  * @param x Link capabilities
  *
- * @return True if link is 1 Mbit/sec, false if not.
+ * @return True if link is 100 Mbit/sec, false if not.
  */
-#define PHY_LINK_IS_SPEED_100M(x) (x & (BIT(2) | BIT(3)))
+#define PHY_LINK_IS_SPEED_100M(x) (x & (LINK_HALF_100BASE | LINK_FULL_100BASE))
+
+/**
+ * @brief Check if phy link speed is 10 Mbit/sec.
+ *
+ * @param x Link capabilities
+ *
+ * @return True if link is 10 Mbit/sec, false if not.
+ */
+#define PHY_LINK_IS_SPEED_10M(x) (x & (LINK_HALF_10BASE | LINK_FULL_10BASE))
 
 /** @brief Link state */
 struct phy_link_state {
@@ -83,6 +95,12 @@ struct phy_link_state {
 	enum phy_link_speed speed;
 	/** When true the link is active and connected */
 	bool is_up;
+};
+
+/** @brief Ethernet configure link flags. */
+enum phy_cfg_link_flag {
+	/** Auto-negotiation disable */
+	PHY_FLAG_AUTO_NEGOTIATION_DISABLED = BIT(0),
 };
 
 /** @brief PLCA (Physical Layer Collision Avoidance) Reconciliation Sublayer configurations */
@@ -165,7 +183,8 @@ __subsystem struct ethphy_driver_api {
 	int (*get_link)(const struct device *dev, struct phy_link_state *state);
 
 	/** Configure link */
-	int (*cfg_link)(const struct device *dev, enum phy_link_speed adv_speeds);
+	int (*cfg_link)(const struct device *dev, enum phy_link_speed adv_speeds,
+			enum phy_cfg_link_flag flags);
 
 	/** Set callback to be invoked when link state changes. Driver has to invoke
 	 * callback once after setting it, even if link state has not changed.
@@ -204,20 +223,26 @@ __subsystem struct ethphy_driver_api {
  *
  * @param[in]  dev     PHY device structure
  * @param      speeds  OR'd link speeds to be advertised by the PHY
+ * @param      flags   OR'd flags to control the link configuration or 0.
  *
  * @retval 0 If successful.
  * @retval -EIO If communication with PHY failed.
  * @retval -ENOTSUP If not supported.
+ * @retval -EALREADY If already configured with the same speeds and flags.
  */
-static inline int phy_configure_link(const struct device *dev, enum phy_link_speed speeds)
+static inline int phy_configure_link(const struct device *dev, enum phy_link_speed speeds,
+				     enum phy_cfg_link_flag flags)
 {
-	const struct ethphy_driver_api *api = (const struct ethphy_driver_api *)dev->api;
-
-	if (api->cfg_link == NULL) {
+	if (DEVICE_API_GET(ethphy, dev)->cfg_link == NULL) {
 		return -ENOSYS;
 	}
 
-	return api->cfg_link(dev, speeds);
+	/* Check if only one speed is set, when auto-negotiation is disabled */
+	if ((flags & PHY_FLAG_AUTO_NEGOTIATION_DISABLED) && !IS_POWER_OF_TWO(speeds)) {
+		return -EINVAL;
+	}
+
+	return DEVICE_API_GET(ethphy, dev)->cfg_link(dev, speeds, flags);
 }
 
 /**
@@ -235,13 +260,11 @@ static inline int phy_configure_link(const struct device *dev, enum phy_link_spe
  */
 static inline int phy_get_link_state(const struct device *dev, struct phy_link_state *state)
 {
-	const struct ethphy_driver_api *api = (const struct ethphy_driver_api *)dev->api;
-
-	if (api->get_link == NULL) {
+	if (DEVICE_API_GET(ethphy, dev)->get_link == NULL) {
 		return -ENOSYS;
 	}
 
-	return api->get_link(dev, state);
+	return DEVICE_API_GET(ethphy, dev)->get_link(dev, state);
 }
 
 /**
@@ -265,13 +288,11 @@ static inline int phy_get_link_state(const struct device *dev, struct phy_link_s
 static inline int phy_link_callback_set(const struct device *dev, phy_callback_t callback,
 					void *user_data)
 {
-	const struct ethphy_driver_api *api = (const struct ethphy_driver_api *)dev->api;
-
-	if (api->link_cb_set == NULL) {
+	if (DEVICE_API_GET(ethphy, dev)->link_cb_set == NULL) {
 		return -ENOSYS;
 	}
 
-	return api->link_cb_set(dev, callback, user_data);
+	return DEVICE_API_GET(ethphy, dev)->link_cb_set(dev, callback, user_data);
 }
 
 /**
@@ -288,13 +309,11 @@ static inline int phy_link_callback_set(const struct device *dev, phy_callback_t
  */
 static inline int phy_read(const struct device *dev, uint16_t reg_addr, uint32_t *value)
 {
-	const struct ethphy_driver_api *api = (const struct ethphy_driver_api *)dev->api;
-
-	if (api->read == NULL) {
+	if (DEVICE_API_GET(ethphy, dev)->read == NULL) {
 		return -ENOSYS;
 	}
 
-	return api->read(dev, reg_addr, value);
+	return DEVICE_API_GET(ethphy, dev)->read(dev, reg_addr, value);
 }
 
 /**
@@ -311,13 +330,11 @@ static inline int phy_read(const struct device *dev, uint16_t reg_addr, uint32_t
  */
 static inline int phy_write(const struct device *dev, uint16_t reg_addr, uint32_t value)
 {
-	const struct ethphy_driver_api *api = (const struct ethphy_driver_api *)dev->api;
-
-	if (api->write == NULL) {
+	if (DEVICE_API_GET(ethphy, dev)->write == NULL) {
 		return -ENOSYS;
 	}
 
-	return api->write(dev, reg_addr, value);
+	return DEVICE_API_GET(ethphy, dev)->write(dev, reg_addr, value);
 }
 
 /**
@@ -336,13 +353,11 @@ static inline int phy_write(const struct device *dev, uint16_t reg_addr, uint32_
 static inline int phy_read_c45(const struct device *dev, uint8_t devad, uint16_t regad,
 			       uint16_t *data)
 {
-	const struct ethphy_driver_api *api = (const struct ethphy_driver_api *)dev->api;
-
-	if (api->read_c45 == NULL) {
+	if (DEVICE_API_GET(ethphy, dev)->read_c45 == NULL) {
 		return -ENOSYS;
 	}
 
-	return api->read_c45(dev, devad, regad, data);
+	return DEVICE_API_GET(ethphy, dev)->read_c45(dev, devad, regad, data);
 }
 
 /**
@@ -361,13 +376,11 @@ static inline int phy_read_c45(const struct device *dev, uint8_t devad, uint16_t
 static inline int phy_write_c45(const struct device *dev, uint8_t devad, uint16_t regad,
 				uint16_t data)
 {
-	const struct ethphy_driver_api *api = (const struct ethphy_driver_api *)dev->api;
-
-	if (api->write_c45 == NULL) {
+	if (DEVICE_API_GET(ethphy, dev)->write_c45 == NULL) {
 		return -ENOSYS;
 	}
 
-	return api->write_c45(dev, devad, regad, data);
+	return DEVICE_API_GET(ethphy, dev)->write_c45(dev, devad, regad, data);
 }
 
 /**
@@ -383,13 +396,11 @@ static inline int phy_write_c45(const struct device *dev, uint8_t devad, uint16_
  */
 static inline int phy_set_plca_cfg(const struct device *dev, struct phy_plca_cfg *plca_cfg)
 {
-	const struct ethphy_driver_api *api = (const struct ethphy_driver_api *)dev->api;
-
-	if (api->set_plca_cfg == NULL) {
+	if (DEVICE_API_GET(ethphy, dev)->set_plca_cfg == NULL) {
 		return -ENOSYS;
 	}
 
-	return api->set_plca_cfg(dev, plca_cfg);
+	return DEVICE_API_GET(ethphy, dev)->set_plca_cfg(dev, plca_cfg);
 }
 
 /**
@@ -405,13 +416,11 @@ static inline int phy_set_plca_cfg(const struct device *dev, struct phy_plca_cfg
  */
 static inline int phy_get_plca_cfg(const struct device *dev, struct phy_plca_cfg *plca_cfg)
 {
-	const struct ethphy_driver_api *api = (const struct ethphy_driver_api *)dev->api;
-
-	if (api->get_plca_cfg == NULL) {
+	if (DEVICE_API_GET(ethphy, dev)->get_plca_cfg == NULL) {
 		return -ENOSYS;
 	}
 
-	return api->get_plca_cfg(dev, plca_cfg);
+	return DEVICE_API_GET(ethphy, dev)->get_plca_cfg(dev, plca_cfg);
 }
 
 /**
@@ -427,13 +436,11 @@ static inline int phy_get_plca_cfg(const struct device *dev, struct phy_plca_cfg
  */
 static inline int phy_get_plca_sts(const struct device *dev, bool *plca_status)
 {
-	const struct ethphy_driver_api *api = (const struct ethphy_driver_api *)dev->api;
-
-	if (api->get_plca_sts == NULL) {
+	if (DEVICE_API_GET(ethphy, dev)->get_plca_sts == NULL) {
 		return -ENOSYS;
 	}
 
-	return api->get_plca_sts(dev, plca_status);
+	return DEVICE_API_GET(ethphy, dev)->get_plca_sts(dev, plca_status);
 }
 
 #ifdef __cplusplus

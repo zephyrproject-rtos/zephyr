@@ -1,0 +1,25 @@
+# Copyright 2025 Texas Instruments Incorporated.
+# SPDX-License-Identifier: Apache-2.0
+
+description: TISCI Client Driver
+
+compatible: "ti,k2g-sci"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  ti,host-id:
+    type: int
+    required: true
+    description: Host ID for processor
+
+  mboxes:
+    description: phandle to the MBOX controller (TX and RX are required)
+    required: true
+
+  mbox-names:
+    description: MBOX channel names (must be called "tx" and "rx")
+    required: true

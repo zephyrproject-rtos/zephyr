@@ -8,6 +8,7 @@
 #include <st/n6/stm32n657x0hxq-pinctrl.dtsi>
 #include "zephyr/dt-bindings/display/panel.h"
 #include <zephyr/dt-bindings/flash_controller/xspi.h>
+#include <zephyr/dt-bindings/gpio/raspberrypi-csi-connector.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/video/video-interfaces.h>
 #include "arduino_r3_connector.dtsi"
@@ -19,18 +20,30 @@
 		zephyr,sram = &axisram2;
 		zephyr,canbus = &fdcan1;
 		zephyr,display = &ltdc;
+		zephyr,touch = &gt911;
 		spi-flash0 = &mx66uw1g45g;
+		zephyr,flash-controller = &mx66uw1g45g;
+		zephyr,flash = &mx66uw1g45g;
+		zephyr,code-partition = &slot0_partition;
 	};
 
 	aliases {
 		led0 = &green_led_1;
+		sw0 = &user_button;
+	};
+
+	lvgl_pointer {
+		compatible = "zephyr,lvgl-pointer-input";
+		input = <&gt911>;
+		display = <&ltdc>;
+		invert-y;
 	};
 
 	psram: memory@90000000 {
 		compatible = "zephyr,memory-region";
 		reg = <0x90000000 DT_SIZE_M(32)>;
 		zephyr,memory-region = "PSRAM";
-		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)>;
 	};
 
 	leds: leds {
@@ -45,6 +58,41 @@
 			gpios = <&gpiog 10 GPIO_ACTIVE_HIGH>;
 			label = "User LD2";
 		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		user_button: button {
+			label = "User";
+			gpios = <&gpioc 13 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	csi_connector: connector_csi {
+		compatible = "raspberrypi,csi-connector";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <CSI_IO0 0 &gpioc 8 0>,
+			   <CSI_IO1 0 &gpiod 2 0>;
+	};
+};
+
+&i2c2 {
+	status = "okay";
+	clocks = <&rcc STM32_CLOCK(APB1, 22)>,
+		 <&rcc STM32_SRC_CKPER I2C2_SEL(1)>;
+	pinctrl-0 = <&i2c2_scl_pd14 &i2c2_sda_pd4>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_FAST>;
+
+	gt911: gt911@5d {
+		compatible = "goodix,gt911";
+		reg = <0x5d>;
+		reset-gpios = <&gpioe 4 GPIO_ACTIVE_LOW>;
+		irq-gpios = <&gpioq 4 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 	};
 };
 
@@ -107,12 +155,6 @@
 	status = "okay";
 };
 
-&ic3 {
-	pll-src = <1>;
-	ic-div = <6>;
-	status = "okay";
-};
-
 &ic4 {
 	pll-src = <2>;
 	ic-div = <32>;
@@ -133,6 +175,18 @@
 
 &ic16 {
 	pll-src = <4>;
+	ic-div = <60>;
+	status = "okay";
+};
+
+&ic17 {
+	pll-src = <1>;
+	ic-div = <4>;
+	status = "okay";
+};
+
+&ic18 {
+	pll-src = <1>;
 	ic-div = <60>;
 	status = "okay";
 };
@@ -173,7 +227,7 @@
 	status = "okay";
 };
 
-&i2c1 {
+csi_i2c: &i2c1 {
 	clocks = <&rcc STM32_CLOCK(APB1, 21)>,
 		 <&rcc STM32_SRC_CKPER I2C1_SEL(1)>;
 	pinctrl-0 = <&i2c1_scl_ph9 &i2c1_sda_pc1>;
@@ -196,12 +250,13 @@
 	clocks = <&rcc STM32_CLOCK(AHB5, 7)>,
 		 <&rcc STM32_SRC_IC4 SDMMC2_SEL(2)>;
 	pinctrl-0 = <&sdmmc2_d0_pc4 &sdmmc2_d1_pc5
-			&sdmmc2_d2_pc0 &sdmmc2_d3_pe4
-			&sdmmc2_ck_pc2 &sdmmc2_cmd_pc3>;
+		     &sdmmc2_d2_pc0 &sdmmc2_d3_pe4
+		     &sdmmc2_ck_pc2 &sdmmc2_cmd_pc3>;
 	pinctrl-names = "default";
 	bus-width = <4>;
 	cd-gpios = <&gpion 12 GPIO_ACTIVE_HIGH>;
 	pwr-gpios = <&gpioq 7 GPIO_ACTIVE_HIGH>;
+	disk-name = "SD";
 };
 
 &spi5 {
@@ -230,6 +285,28 @@
 	status = "okay";
 };
 
+&timers1 {
+	st,prescaler = <9999>;
+	status = "okay";
+
+	pwm1: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim1_ch1_pe9>;
+		pinctrl-names = "default";
+	};
+};
+
+&timers15 {
+	st,prescaler = <9999>;
+	status = "okay";
+
+	pwm15: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim15_ch1_pc12>;
+		pinctrl-names = "default";
+	};
+};
+
 zephyr_udc0: &usbotg_hs1 {
 	status = "okay";
 };
@@ -245,13 +322,15 @@ zephyr_udc0: &usbotg_hs1 {
 		     &xspim_p1_io15_pp15>;
 	pinctrl-names = "default";
 	clocks = <&rcc STM32_CLOCK(AHB5, 5)>,
-		 <&rcc STM32_SRC_IC3 XSPI1_SEL(2)>,
+		 <&rcc STM32_SRC_HCLK5 XSPI1_SEL(0)>,
 		 <&rcc STM32_CLOCK(AHB5, 13)>;
 	status = "okay";
 
-	memc: aps256xxn_obr: memory@90000000 {
+	memc: aps256xxn_obr: memory@0 {
 		compatible = "st,stm32-xspi-psram";
-		reg = <0x90000000 DT_SIZE_M(32)>; /* 256 Mbits */
+		reg = <0>;
+		size = <DT_SIZE_M(256)>; /* 256 Mbits */
+		max-frequency = <DT_FREQ_M(200)>;
 		fixed-latency;
 		io-x16-mode;
 		read-latency = <4>;
@@ -268,13 +347,14 @@ zephyr_udc0: &usbotg_hs1 {
 		     &xspim_p2_io6_pn10 &xspim_p2_io7_pn11>;
 	pinctrl-names = "default";
 	clocks = <&rcc STM32_CLOCK(AHB5, 12)>,
-		 <&rcc STM32_SRC_IC3 XSPI1_SEL(2)>,
+		 <&rcc STM32_SRC_HCLK5 XSPI2_SEL(0)>,
 		 <&rcc STM32_CLOCK(AHB5, 13)>;
 	status = "okay";
 
-	mx66uw1g45g: ospi-nor-flash@70000000 {
+	mx66uw1g45g: ospi-nor-flash@0 {
 		compatible = "st,stm32-xspi-nor";
-		reg = <0x70000000 DT_SIZE_M(128)>; /* 1 Gbits */
+		reg = <0>;
+		size = <DT_SIZE_M(1024)>; /* 1Gbits */
 		ospi-max-frequency = <DT_FREQ_M(200)>;
 		spi-bus-width = <XSPI_OCTO_MODE>;
 		data-rate = <XSPI_DTR_TRANSFER>;
@@ -286,12 +366,40 @@ zephyr_udc0: &usbotg_hs1 {
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			storage_partition: partition@7ff0000 {
+			/*
+			 * Following flash partition is dedicated to the use of bootloader
+			 */
+			boot_partition: partition@0 {
+				label = "mcuboot";
+				reg = <0x00000000 DT_SIZE_K(256)>;
+			};
+
+			slot0_partition: partition@10000 {
+				label = "image-0";
+				reg = <0x10000 DT_SIZE_K(1536)>;
+			};
+
+			slot1_partition: partition@210000 {
+				label = "image-1";
+				reg = <0x210000 DT_SIZE_K(1536)>;
+			};
+
+			storage_partition: partition@410000 {
 				label = "storage";
-				reg = <0x7ff0000 DT_SIZE_K(64)>;
+				reg = <0x410000 DT_SIZE_K(64)>;
 			};
 		};
 	};
+};
+
+/**
+ * Per the RGMII specification, the Tx clock signal must be skewed
+ * from the Tx data signals by 1~2 ns. On this board, the SoC must
+ * be configured to add the required delay via pinctrl.
+ */
+&eth1_rgmii_gtx_clk_pf0 {
+	st,io-delay-path = "output";
+	st,io-delay-ps = <2000>;
 };
 
 &mac {
@@ -308,8 +416,7 @@ zephyr_udc0: &usbotg_hs1 {
 		     &eth1_rgmii_rxd0_pf14
 		     &eth1_rgmii_rxd1_pf15
 		     &eth1_rgmii_txd2_pg3
-		     &eth1_rgmii_txd3_pg4
-		     &eth1_phy_intn_pd3>;
+		     &eth1_rgmii_txd3_pg4>;
 	pinctrl-names = "default";
 	phy-connection-type = "rgmii";
 	phy-handle = <&eth_phy>;
@@ -320,9 +427,20 @@ zephyr_udc0: &usbotg_hs1 {
 	pinctrl-0 = <&eth1_mdio_pd12 &eth1_mdc_pd1>;
 	pinctrl-names = "default";
 
-	eth_phy: ethernet-phy@0 {
-		compatible = "ethernet-phy";
-		reg = <0x0>;
+	eth_phy: ethernet-phy@1 {
+		compatible = "realtek,rtl8211f";
+		reg = <0x1>;
+		/**
+		 * PD3 can be used as alternate function ETH1_PHY_INTN,
+		 * which allows the Ethernet MAC to sense interrupts from
+		 * the PHY in order to signal them to the CPU via its own
+		 * interrupt lines. However, the Zephyr RTL8211F driver
+		 * is unaware of this mechanism. Skip configuring PD3 as
+		 * alternate function (in pinctrl of &mac) and provide the
+		 * pin to the RTL8211F driver for interrupt sensing using
+		 * the regular GPIO interrupt APIs.
+		 */
+		int-gpios = <&gpiod 3 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 	};
 };
 
@@ -330,12 +448,12 @@ zephyr_udc0: &usbotg_hs1 {
 	clocks = <&rcc STM32_CLOCK(APB5, 1)>,
 		 <&rcc STM32_SRC_IC16 LTDC_SEL(2)>;
 	pinctrl-0 = <&ltdc_r0_pg0 &ltdc_r1_pd9 &ltdc_r2_pd15 &ltdc_r3_pb4
-			&ltdc_r4_ph4 &ltdc_r5_pa15 &ltdc_r6_pg11 &ltdc_r7_pd8
-			&ltdc_g0_pg12 &ltdc_g1_pg1 &ltdc_g2_pa1 &ltdc_g3_pa0
-			&ltdc_g4_pb15 &ltdc_g5_pb12 &ltdc_g6_pb11 &ltdc_g7_pg8
-			&ltdc_b0_pg15 &ltdc_b1_pa7 &ltdc_b2_pb2 &ltdc_b3_pg6
-			&ltdc_b4_ph3 &ltdc_b5_ph6 &ltdc_b6_pa8 &ltdc_b7_pa2
-			&ltdc_de_pg13 &ltdc_clk_pb13 &ltdc_hsync_pb14 &ltdc_vsync_pe11>;
+		     &ltdc_r4_ph4 &ltdc_r5_pa15 &ltdc_r6_pg11 &ltdc_r7_pd8
+		     &ltdc_g0_pg12 &ltdc_g1_pg1 &ltdc_g2_pa1 &ltdc_g3_pa0
+		     &ltdc_g4_pb15 &ltdc_g5_pb12 &ltdc_g6_pb11 &ltdc_g7_pg8
+		     &ltdc_b0_pg15 &ltdc_b1_pa7 &ltdc_b2_pb2 &ltdc_b3_pg6
+		     &ltdc_b4_ph3 &ltdc_b5_ph6 &ltdc_b6_pa8 &ltdc_b7_pa2
+		     &ltdc_de_pg13 &ltdc_clk_pb13 &ltdc_hsync_pb14 &ltdc_vsync_pe11>;
 	pinctrl-names = "default";
 	disp-on-gpios = <&gpioq 3 GPIO_ACTIVE_HIGH>;
 	bl-ctrl-gpios = <&gpioq 6 GPIO_ACTIVE_HIGH>;
@@ -347,6 +465,7 @@ zephyr_udc0: &usbotg_hs1 {
 	width = <800>;
 	height = <480>;
 	pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+
 	display-timings {
 		compatible = "zephyr,panel-timing";
 		de-active = <0>;
@@ -360,7 +479,14 @@ zephyr_udc0: &usbotg_hs1 {
 		hfront-porch = <8>;
 		vfront-porch = <8>;
 	};
+
 	def-back-color-red = <0xFF>;
 	def-back-color-green = <0xFF>;
 	def-back-color-blue = <0xFF>;
+};
+
+csi_interface: &dcmipp {
+	port {
+		csi_ep_in: endpoint {};
+	};
 };

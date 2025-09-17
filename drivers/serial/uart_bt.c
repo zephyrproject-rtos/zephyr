@@ -311,11 +311,12 @@ static int uart_bt_workqueue_init(void)
 	k_work_queue_start(&nus_work_queue, nus_work_queue_stack,
 			   K_THREAD_STACK_SIZEOF(nus_work_queue_stack),
 			   CONFIG_UART_BT_WORKQUEUE_PRIORITY, NULL);
+	k_thread_name_set(&nus_work_queue.thread, "uart_bt");
 
 	return 0;
 }
 
-/** The work-queue is shared across all instances, hence we initialize it separatedly */
+/** The work-queue is shared across all instances, hence we initialize it separately */
 SYS_INIT(uart_bt_workqueue_init, POST_KERNEL, CONFIG_SERIAL_INIT_PRIORITY);
 
 static int uart_bt_init(const struct device *dev)

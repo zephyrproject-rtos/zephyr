@@ -7,8 +7,12 @@ tests:
     filter: not CONFIG_I2S_TEST_USE_GPIO_LOOPBACK
     platform_exclude:
       - frdm_mcxn947/mcxn947/cpu0
+      - mcx_n9xx_evk/mcxn947/cpu0
       - mimxrt595_evk/mimxrt595s/cm33
       - mimxrt685_evk/mimxrt685s/cm33
+      - nrf54h20dk/nrf54h20/cpuapp
+      - mimxrt1060_evk/mimxrt1062/qspi
+      - frdm_mcxn236/mcxn236
   drivers.i2s.gpio_loopback:
     depends_on:
       - i2s
@@ -20,7 +24,21 @@ tests:
     harness: ztest
     platform_exclude:
       - frdm_mcxn947/mcxn947/cpu0
+      - mcx_n9xx_evk/mcxn947/cpu0
       - mimxrt595_evk/mimxrt595s/cm33
       - mimxrt685_evk/mimxrt685s/cm33
+      - nrf54h20dk/nrf54h20/cpuapp
+      - frdm_mcxn236/mcxn236
     harness_config:
       fixture: gpio_loopback
+  drivers.i2s.gpio_loopback.nrf54h:
+    depends_on: i2s
+    tags:
+      - drivers
+      - userspace
+    harness_config:
+      fixture: i2s_loopback
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp
+    integration_platforms:
+      - nrf54h20dk/nrf54h20/cpuapp

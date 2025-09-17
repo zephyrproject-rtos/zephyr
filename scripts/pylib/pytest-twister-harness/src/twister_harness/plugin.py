@@ -103,6 +103,10 @@ def pytest_addoption(parser: pytest.Parser):
              'will translate to "west flash -- --board-id=foobar --erase".'
     )
     twister_harness_group.addoption(
+        '--flash-command',
+        help='Use a custom flash command for flashing.'
+    )
+    twister_harness_group.addoption(
         '--pre-script',
         metavar='PATH',
         help='Script executed before flashing and connecting to serial.'
@@ -121,6 +125,11 @@ def pytest_addoption(parser: pytest.Parser):
         '--dut-scope',
         choices=('function', 'class', 'module', 'package', 'session'),
         help='The scope for which `dut` and `shell` fixtures are shared.'
+    )
+    twister_harness_group.addoption(
+        '--required-build', action='append', default=[], metavar='PATH',
+        help='Required build directory / shared applications for the test. '
+             'May be given multiple times.'
     )
     twister_harness_group.addoption(
         '--twister-fixture', action='append', dest='fixtures', metavar='FIXTURE', default=[],

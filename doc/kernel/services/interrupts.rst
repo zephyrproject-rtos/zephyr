@@ -162,6 +162,8 @@ The IRQ must be subsequently **enabled** to permit the ISR to execute.
     Disabling an IRQ prevents *all* threads in the system from being preempted
     by the associated ISR, not just the thread that disabled the IRQ.
 
+.. _zlis:
+
 Zero Latency Interrupts
 -----------------------
 
@@ -173,10 +175,14 @@ The kernel addresses such use-cases by allowing interrupts with critical
 latency constraints to execute at a priority level that cannot be blocked
 by interrupt locking. These interrupts are defined as
 *zero-latency interrupts*. The support for zero-latency interrupts requires
-:kconfig:option:`CONFIG_ZERO_LATENCY_IRQS` to be enabled. In addition to that, the
-flag :c:macro:`IRQ_ZERO_LATENCY` must be passed to :c:macro:`IRQ_CONNECT` or
-:c:macro:`IRQ_DIRECT_CONNECT` macros to configure the particular interrupt
-with zero latency.
+:kconfig:option:`CONFIG_ZERO_LATENCY_IRQS` to be enabled. Any interrupts
+configured as zero-latency must also be declared as :ref:`direct ISRs
+<direct_isrs>` (and must not use the :c:macro:`ISR_DIRECT_PM` in them), since
+regular ISRs interact with the kernel. In addition to that, the flag
+:c:macro:`IRQ_ZERO_LATENCY` must be passed to the :c:macro:`IRQ_DIRECT_CONNECT`
+macro to configure the particular interrupt with
+zero latency. Declaring a zero-latency interrupt ISR to be both direct and
+dynamic is possible on some architectures, see :ref:`direct_isrs`.
 
 Zero-latency interrupts are expected to be used to manage hardware events
 directly, and not to interoperate with the kernel code at all. They should
@@ -190,6 +196,10 @@ generate exceptions that need to be handled synchronously (e.g. kernel panic).
     Zero-latency interrupts are supported on an architecture-specific basis.
     The feature is currently implemented in the ARM Cortex-M architecture
     variant.
+
+.. tip::
+    To mitigate flash access latency, consider relocating ISRs and all related
+    symbols to RAM.
 
 Offloading ISR Work
 ===================
@@ -306,6 +316,8 @@ Dynamic interrupts require the :kconfig:option:`CONFIG_DYNAMIC_INTERRUPTS` optio
 be enabled. Removing or re-configuring a dynamic interrupt is currently
 unsupported.
 
+.. _direct_isrs:
+
 Defining a 'direct' ISR
 =======================
 
@@ -322,7 +334,10 @@ for some low-latency use-cases. Specifically:
   need to switch to the interrupt stack in code
 
 * After the interrupt is serviced, the OS then performs some logic to
-  potentially make a scheduling decision.
+  potentially make a scheduling decision
+
+* :ref:`zlis` must always be declared as direct ISRs, since regular
+  ISRs interact with the kernel
 
 Zephyr supports so-called 'direct' interrupts, which are installed via
 :c:macro:`IRQ_DIRECT_CONNECT` and whose handlers are declared using
@@ -336,14 +351,17 @@ The following code demonstrates a direct ISR:
 
     #define MY_DEV_IRQ  24       /* device uses IRQ 24 */
     #define MY_DEV_PRIO  2       /* device uses interrupt priority 2 */
-    /* argument passed to my_isr(), in this case a pointer to the device */
     #define MY_IRQ_FLAGS 0       /* IRQ flags */
 
     ISR_DIRECT_DECLARE(my_isr)
     {
        do_stuff();
-       ISR_DIRECT_PM(); /* PM done after servicing interrupt for best latency */
-       return 1; /* We should check if scheduling decision should be made */
+       /* PM done after servicing interrupt for best latency. This cannot be
+       used for zero-latency IRQs because it accesses kernel data. */
+       ISR_DIRECT_PM();
+       /* Ask the kernel to check if scheduling decision should be made. If the
+       ISR is for a zero-latency IRQ then the return value must always be 0. */
+       return 1;
     }
 
     void my_isr_installer(void)
@@ -355,9 +373,21 @@ The following code demonstrates a direct ISR:
     }
 
 Installation of dynamic direct interrupts is supported on an
-architecture-specific basis. (The feature is currently implemented in
-ARM Cortex-M architecture variant. Dynamic direct interrupts feature is
-exposed to the user via an ARM-only API.)
+architecture-specific basis. The feature is currently implemented in the Arm
+Cortex-M architecture variant via the macro
+:c:macro:`ARM_IRQ_DIRECT_DYNAMIC_CONNECT`, which can be used to declare a direct
+and dynamic interrupt.
+
+RAM-based ISR Execution
+=======================
+
+For ultra-low latency, ISRs and vector tables can be relocated to RAM to
+eliminate flash access delays. That can be achieved by enabling the
+:kconfig:option:`CONFIG_SRAM_VECTOR_TABLE` and
+:kconfig:option:`CONFIG_SRAM_SW_ISR_TABLE` options which will result in vector
+tables being placed in RAM.
+Then, Zephyr :ref:`Code and Data Relocation <code_data_relocation>` can be
+used to relocate the ISR code and all the related symbols to RAM as well.
 
 Sharing an interrupt line
 =========================
@@ -549,10 +579,9 @@ for IRQ line n, and the function pointers are:
    spurious IRQ handler will be placed here. The spurious IRQ handler
    causes a system fatal error if encountered.
 
-Some architectures (such as the Nios II internal interrupt controller) have a
-common entry point for all interrupts and do not support a vector table, in
-which case the :kconfig:option:`CONFIG_GEN_IRQ_VECTOR_TABLE` option should be
-disabled.
+Some architectures have a common entry point for all interrupts and do not
+support a vector table, in which case the
+:kconfig:option:`CONFIG_GEN_IRQ_VECTOR_TABLE` option should be disabled.
 
 Some architectures may reserve some initial vectors for system exceptions
 and declare this in a table elsewhere, in which case
@@ -600,9 +629,9 @@ The name comes from the fact that all the entries to the arrays that would creat
 interrupt vectors are created locally in place of invocation of :c:macro:`IRQ_CONNECT` macro.
 Then automatically generated linker scripts are used to place it in the right place in the memory.
 
-This option requires enabling by the choose of :kconfig:option:`ISR_TABLES_LOCAL_DECLARATION`.
+This option requires enabling by the choose of :kconfig:option:`CONFIG_ISR_TABLES_LOCAL_DECLARATION`.
 If this configuration is supported by the used architecture and toolchaing the
-:kconfig:option:`ISR_TABLES_LOCAL_DECLARATION_SUPPORTED` is set.
+:kconfig:option:`CONFIG_ISR_TABLES_LOCAL_DECLARATION_SUPPORTED` is set.
 See details of this option for the information about currently supported configurations.
 
 Any invocation of :c:macro:`IRQ_CONNECT` or :c:macro:`IRQ_DIRECT_CONNECT` will declare an instance

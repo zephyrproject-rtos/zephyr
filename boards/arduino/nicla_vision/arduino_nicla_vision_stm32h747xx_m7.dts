@@ -95,7 +95,7 @@
 	};
 };
 
-&i2c1 {
+zephyr_i2c: &i2c1 {
 	status = "disabled";
 	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
 	pinctrl-names = "default";
@@ -108,9 +108,9 @@
 	pinctrl-names = "default";
 	clock-frequency = <I2C_BITRATE_FAST>;
 
-	vl53l1x: vl53l1x@52 {
+	vl53l1x: vl53l1x@29 {
 		compatible = "st,vl53l1x";
-		reg = <0x52>;
+		reg = <0x29>;
 		status = "okay";
 		xshut-gpios = <&gpiog 10 GPIO_ACTIVE_HIGH>;
 		int-gpios = <&gpiod 8 GPIO_ACTIVE_HIGH>;
@@ -165,10 +165,12 @@
 	pinctrl-names = "default";
 	status = "okay";
 
-	n25q128a1: qspi-nor-flash@90000000 {
+	n25q128a1: qspi-nor-flash@0 {
 		compatible = "st,stm32-qspi-nor";
-		reg = <0x90000000 DT_SIZE_M(16)>; /* 128 Mbits */
+		reg = <0>;
+		size = <DT_SIZE_M(128)>; /* 128 Mbits */
 		qspi-max-frequency = <72000000>;
+		cs-high-time = <4>; /* >= 50 ns */
 		status = "okay";
 
 		partitions {
@@ -195,17 +197,17 @@
 
 zephyr_udc0: &usbotg_hs {
 	pinctrl-0 = <&usb_otg_hs_ulpi_ck_pa5
-			&usb_otg_hs_ulpi_d0_pa3
-			&usb_otg_hs_ulpi_d1_pb0
-			&usb_otg_hs_ulpi_d2_pb1
-			&usb_otg_hs_ulpi_d3_pb10
-			&usb_otg_hs_ulpi_d4_pb11
-			&usb_otg_hs_ulpi_d5_pb12
-			&usb_otg_hs_ulpi_d6_pb13
-			&usb_otg_hs_ulpi_d7_pb5
-			&usb_otg_hs_ulpi_stp_pc0
-			&usb_otg_hs_ulpi_dir_pc2_c
-			&usb_otg_hs_ulpi_nxt_pc3_c>;
+		     &usb_otg_hs_ulpi_d0_pa3
+		     &usb_otg_hs_ulpi_d1_pb0
+		     &usb_otg_hs_ulpi_d2_pb1
+		     &usb_otg_hs_ulpi_d3_pb10
+		     &usb_otg_hs_ulpi_d4_pb11
+		     &usb_otg_hs_ulpi_d5_pb12
+		     &usb_otg_hs_ulpi_d6_pb13
+		     &usb_otg_hs_ulpi_d7_pb5
+		     &usb_otg_hs_ulpi_stp_pc0
+		     &usb_otg_hs_ulpi_dir_pc2_c
+		     &usb_otg_hs_ulpi_nxt_pc3_c>;
 	pinctrl-names = "default";
 	maximum-speed = "high-speed";
 	phys = <&otghs_ulpi_phy>;
@@ -225,10 +227,9 @@ zephyr_udc0: &usbotg_hs {
 
 		port {
 			gc2145_ep_out: endpoint {
-				remote-endpoint = <&dcmi_ep_in>;
+				remote-endpoint-label = "dcmi_ep_in";
 			};
 		};
-
 	};
 };
 
@@ -240,19 +241,13 @@ zephyr_udc0: &usbotg_hs {
 	pinctrl-names = "default";
 	status = "okay";
 
-	sensor = <&gc2145>;
-	bus-width = <8>;
-	hsync-active = <0>;
-	vsync-active = <0>;
-	pixelclk-active = <0>;
-	capture-rate = <1>;
-	dmas = <&dma1 0 38 (STM32_DMA_PERIPH_TO_MEMORY | STM32_DMA_PERIPH_NO_INC |
-		STM32_DMA_MEM_INC | STM32_DMA_PERIPH_8BITS | STM32_DMA_MEM_32BITS |
-		STM32_DMA_PRIORITY_HIGH) STM32_DMA_FIFO_1_4>;
-
 	port {
 		dcmi_ep_in: endpoint {
-			remote-endpoint = <&gc2145_ep_out>;
+			remote-endpoint-label = "gc2145_ep_out";
+			bus-width = <8>;
+			hsync-active = <0>;
+			vsync-active = <0>;
+			pclk-sample = <0>;
 		};
 	};
 };

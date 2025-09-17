@@ -4,15 +4,15 @@
 #include <mem.h>
 
 /dts-v1/;
-/ {
 
+/ {
 	#address-cells = <1>;
 	#size-cells = <1>;
 
 	sram0: memory@40000000 {
-		 device_type = "memory";
-		 compatible = "mmio-sram";
-		 reg = <0x40000000 DT_SIZE_K(256)>;
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0x40000000 DT_SIZE_K(256)>;
 	};
 
 	dram0: memory@60000000 {
@@ -46,12 +46,12 @@
 			#interrupt-cells = <3>;
 		};
 
-		intc1: intc@10680130 {
+		intc1: intc@10803130 {
 			compatible = "mediatek,adsp_intc";
 			interrupt-controller;
 			#interrupt-cells = <3>;
-			reg = <0x10680130 4>;
-			status-reg = <0x10680150>;
+			reg = <0x10803130 4>;
+			status-reg = <0x10803150>;
 			interrupts = <1 0 0>;
 			mask = <0x3ffffff0>;
 			interrupt-parent = <&core_intc>;
@@ -95,6 +95,7 @@
 		};
 	}; /* soc */
 
-	chosen { };
-	aliases { };
+	chosen {};
+
+	aliases {};
 };

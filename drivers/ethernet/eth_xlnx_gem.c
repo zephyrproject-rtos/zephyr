@@ -37,6 +37,12 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
+#if CONFIG_QEMU_TARGET ||\
+	DT_ANY_INST_HAS_BOOL_STATUS_OKAY(disable_rx_checksum_offload) ||\
+	DT_ANY_INST_HAS_BOOL_STATUS_OKAY(disable_tx_checksum_offload)
+#warning "xlnx_gem: at least one instance has checksum offloading to hardware disabled"
+#endif
+
 static int  eth_xlnx_gem_dev_init(const struct device *dev);
 static void eth_xlnx_gem_iface_init(struct net_if *iface);
 static void eth_xlnx_gem_isr(const struct device *dev);
@@ -48,6 +54,9 @@ static enum ethernet_hw_caps
 static int  eth_xlnx_gem_get_config(const struct device *dev,
 				    enum ethernet_config_type type,
 				    struct ethernet_config *config);
+static int eth_xlnx_gem_set_config(const struct device *dev,
+				   enum ethernet_config_type type,
+				   const struct ethernet_config *config);
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
 static struct net_stats_eth *eth_xlnx_gem_stats(const struct device *dev);
 #endif
@@ -73,6 +82,7 @@ static const struct ethernet_api eth_xlnx_gem_apis = {
 	.start		  = eth_xlnx_gem_start_device,
 	.stop		  = eth_xlnx_gem_stop_device,
 	.get_config	  = eth_xlnx_gem_get_config,
+	.set_config	  = eth_xlnx_gem_set_config,
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
 	.get_stats	  = eth_xlnx_gem_stats,
 #endif
@@ -176,16 +186,6 @@ static int eth_xlnx_gem_dev_init(const struct device *dev)
 		 "%s TX buffer size %u is invalid, should be >64, "
 		 "must be 16380 bytes maximum.", dev->name,
 		 dev_conf->tx_buffer_size);
-
-	/* Checksum offloading limitations of the QEMU GEM implementation */
-#ifdef CONFIG_QEMU_TARGET
-	__ASSERT(!dev_conf->enable_rx_chksum_offload,
-		 "TCP/UDP/IP hardware checksum offloading is not "
-		 "supported by the QEMU GEM implementation");
-	__ASSERT(!dev_conf->enable_tx_chksum_offload,
-		 "TCP/UDP/IP hardware checksum offloading is not "
-		 "supported by the QEMU GEM implementation");
-#endif
 
 	/*
 	 * Initialization procedure as described in the Zynq-7000 TRM,
@@ -622,38 +622,30 @@ static enum ethernet_hw_caps eth_xlnx_gem_get_capabilities(
 
 	if (dev_conf->max_link_speed == LINK_1GBIT) {
 		if (dev_conf->phy_advertise_lower) {
-			caps |= (ETHERNET_LINK_1000BASE_T |
-				ETHERNET_LINK_100BASE_T |
-				ETHERNET_LINK_10BASE_T);
+			caps |= (ETHERNET_LINK_1000BASE | ETHERNET_LINK_100BASE |
+				 ETHERNET_LINK_10BASE);
 		} else {
-			caps |= ETHERNET_LINK_1000BASE_T;
+			caps |= ETHERNET_LINK_1000BASE;
 		}
 	} else if (dev_conf->max_link_speed == LINK_100MBIT) {
 		if (dev_conf->phy_advertise_lower) {
-			caps |= (ETHERNET_LINK_100BASE_T |
-				ETHERNET_LINK_10BASE_T);
+			caps |= (ETHERNET_LINK_100BASE | ETHERNET_LINK_10BASE);
 		} else {
-			caps |= ETHERNET_LINK_100BASE_T;
+			caps |= ETHERNET_LINK_100BASE;
 		}
 	} else {
-		caps |= ETHERNET_LINK_10BASE_T;
+		caps |= ETHERNET_LINK_10BASE;
 	}
 
-	if (dev_conf->enable_rx_chksum_offload) {
+	if (!dev_conf->disable_rx_chksum_offload) {
 		caps |= ETHERNET_HW_RX_CHKSUM_OFFLOAD;
 	}
 
-	if (dev_conf->enable_tx_chksum_offload) {
+	if (!dev_conf->disable_tx_chksum_offload) {
 		caps |= ETHERNET_HW_TX_CHKSUM_OFFLOAD;
 	}
 
-	if (dev_conf->enable_fdx) {
-		caps |= ETHERNET_DUPLEX_SET;
-	}
-
-	if (dev_conf->copy_all_frames) {
-		caps |= ETHERNET_PROMISC_MODE;
-	}
+	caps |= ETHERNET_PROMISC_MODE;
 
 	return caps;
 }
@@ -686,7 +678,7 @@ static int eth_xlnx_gem_get_config(const struct device *dev,
 
 	switch (type) {
 	case ETHERNET_CONFIG_TYPE_RX_CHECKSUM_SUPPORT:
-		if (dev_conf->enable_rx_chksum_offload) {
+		if (!dev_conf->disable_rx_chksum_offload) {
 			config->chksum_support = ETHERNET_CHECKSUM_SUPPORT_IPV4_HEADER |
 						 ETHERNET_CHECKSUM_SUPPORT_IPV6_HEADER |
 						 ETHERNET_CHECKSUM_SUPPORT_TCP |
@@ -696,7 +688,7 @@ static int eth_xlnx_gem_get_config(const struct device *dev,
 		}
 		return 0;
 	case ETHERNET_CONFIG_TYPE_TX_CHECKSUM_SUPPORT:
-		if (dev_conf->enable_tx_chksum_offload) {
+		if (!dev_conf->disable_tx_chksum_offload) {
 			config->chksum_support = ETHERNET_CHECKSUM_SUPPORT_IPV4_HEADER |
 						 ETHERNET_CHECKSUM_SUPPORT_IPV6_HEADER |
 						 ETHERNET_CHECKSUM_SUPPORT_TCP |
@@ -708,6 +700,55 @@ static int eth_xlnx_gem_get_config(const struct device *dev,
 	default:
 		return -ENOTSUP;
 	};
+}
+
+/**
+ * @brief GEM hardware configuration data set function
+ * Modifies hardware configuration details of the specified device
+ * instance. Multiple hardware configuration items can be addressed
+ * depending on the type parameter. Currently supports setting the
+ * controller's MAC address and enabling/disabling promiscuous mode
+ * if this is enabled at the system level.
+ *
+ * @param dev Pointer to the device data
+ * @param type The hardware configuration item to be modified
+ * @param config Pointer to the struct containing the configuration
+ *               data to be applied.
+ * @return 0 if the specified configuration item was successfully
+ *         modified, -ENOTSUP if the specified configuration item
+ *         is not supported by this function.
+ */
+static int eth_xlnx_gem_set_config(const struct device *dev,
+				   enum ethernet_config_type type,
+				   const struct ethernet_config *config)
+{
+	struct eth_xlnx_gem_dev_data *dev_data = dev->data;
+
+	switch (type) {
+#ifdef CONFIG_NET_PROMISCUOUS_MODE
+	case ETHERNET_CONFIG_TYPE_PROMISC_MODE:
+		const struct eth_xlnx_gem_dev_cfg *dev_conf = dev->config;
+		uint32_t reg_val = sys_read32(dev_conf->base_addr + ETH_XLNX_GEM_NWCFG_OFFSET);
+
+		if (config->promisc_mode) {
+			reg_val |= ETH_XLNX_GEM_NWCFG_COPYALLEN_BIT;
+		} else {
+			reg_val &= ~ETH_XLNX_GEM_NWCFG_COPYALLEN_BIT;
+		}
+		sys_write32(reg_val, dev_conf->base_addr + ETH_XLNX_GEM_NWCFG_OFFSET);
+		break;
+#endif
+	case ETHERNET_CONFIG_TYPE_MAC_ADDRESS:
+		memcpy(dev_data->mac_addr, config->mac_address.addr, sizeof(dev_data->mac_addr));
+		eth_xlnx_gem_set_mac_address(dev);
+		net_if_set_link_addr(dev_data->iface, dev_data->mac_addr,
+				     sizeof(dev_data->mac_addr), NET_LINK_ETHERNET);
+		break;
+	default:
+		return -ENOTSUP;
+	};
+
+	return 0;
 }
 
 #ifdef CONFIG_NET_STATISTICS_ETHERNET
@@ -930,7 +971,7 @@ static void eth_xlnx_gem_set_initial_nwcfg(const struct device *dev)
 		/* [25]     RX half duplex while TX enable */
 		reg_val |= ETH_XLNX_GEM_NWCFG_HDRXEN_BIT;
 	}
-	if (dev_conf->enable_rx_chksum_offload) {
+	if (!dev_conf->disable_rx_chksum_offload) {
 		/* [24]     enable RX IP/TCP/UDP checksum offload */
 		reg_val |= ETH_XLNX_GEM_NWCFG_RXCHKSUMEN_BIT;
 	}
@@ -985,10 +1026,6 @@ static void eth_xlnx_gem_set_initial_nwcfg(const struct device *dev)
 	if (dev_conf->disable_bcast) {
 		/* [05]     Do not receive broadcast frames */
 		reg_val |= ETH_XLNX_GEM_NWCFG_BCASTDIS_BIT;
-	}
-	if (dev_conf->copy_all_frames) {
-		/* [04]     Copy all frames */
-		reg_val |= ETH_XLNX_GEM_NWCFG_COPYALLEN_BIT;
 	}
 	if (dev_conf->discard_non_vlan) {
 		/* [02]     Receive only VLAN frames */
@@ -1112,7 +1149,7 @@ static void eth_xlnx_gem_set_initial_dmacr(const struct device *dev)
 	reg_val |= (((dev_conf->rx_buffer_size / 64) &
 		   ETH_XLNX_GEM_DMACR_RX_BUF_MASK) <<
 		   ETH_XLNX_GEM_DMACR_RX_BUF_SHIFT);
-	if (dev_conf->enable_tx_chksum_offload) {
+	if (!dev_conf->disable_tx_chksum_offload) {
 		/* [11] TX TCP/UDP/IP checksum offload to GEM */
 		reg_val |= ETH_XLNX_GEM_DMACR_TCP_CHKSUM_BIT;
 	}

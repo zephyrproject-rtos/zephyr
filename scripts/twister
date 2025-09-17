@@ -186,7 +186,6 @@ import os
 import sys
 from pathlib import Path
 
-
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 if not ZEPHYR_BASE:
     # This file has been zephyr/scripts/twister for years,
@@ -203,22 +202,7 @@ if not ZEPHYR_BASE:
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister/"))
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/build_helpers"))
 
-from twisterlib.environment import add_parse_arguments, parse_arguments, python_version_guard
-from twisterlib.twister_main import main
-
+from twisterlib.twister_main import main  # noqa: E402
 
 if __name__ == "__main__":
-    ret = 0
-    try:
-        python_version_guard()
-
-        parser = add_parse_arguments()
-        options = parse_arguments(parser, sys.argv[1:])
-        default_options = parse_arguments(parser, [], on_init=False)
-        ret = main(options, default_options)
-    finally:
-        if (os.name != "nt") and os.isatty(1):
-            # (OS is not Windows) and (stdout is interactive)
-            os.system("stty sane <&1")
-
-    sys.exit(ret)
+    sys.exit(main())

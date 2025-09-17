@@ -20,6 +20,6 @@
 	gnss: u_blox_m10 {
 		status = "okay";
 		compatible = "u-blox,m8";
-		uart-baudrate = <115200>;
+		initial-baudrate = <115200>;
 	};
 };

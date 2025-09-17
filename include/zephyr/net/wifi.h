@@ -295,7 +295,7 @@ enum wifi_frequency_bandwidths {
 	WIFI_FREQ_BANDWIDTH_UNKNOWN
 };
 
-const char *const wifi_bandwidth_txt(enum wifi_frequency_bandwidths bandwidth);
+const char *wifi_bandwidth_txt(enum wifi_frequency_bandwidths bandwidth);
 
 /** Max SSID length */
 #define WIFI_SSID_MAX_LEN 32
@@ -733,6 +733,12 @@ enum wifi_ap_config_param {
 	WIFI_AP_CONFIG_PARAM_HT_CAPAB = BIT(3),
 	/** Used for AP mode configuration parameter vht_capab */
 	WIFI_AP_CONFIG_PARAM_VHT_CAPAB = BIT(4),
+};
+
+/** @brief Wi-Fi STA mode configuration parameter */
+enum wifi_config_param {
+	/** Used for STA mode configuration parameter OKC */
+	WIFI_CONFIG_PARAM_OKC = BIT(0),
 };
 
 /** Helper function to get user-friendly status name for the status code. */

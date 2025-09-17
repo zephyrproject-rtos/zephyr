@@ -9,8 +9,6 @@
 
 / {
 	soc {
-
 		compatible = "st,stm32h7r3", "st,stm32h7rs", "simple-bus";
-
 	};
 };

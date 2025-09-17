@@ -1,0 +1,19 @@
+shields:
+  - name: x_nucleo_iks02a1
+    full_name: X-NUCLEO-IKS02A1 (Standard / Mode 1)
+    vendor: st
+    supported_features:
+      - sensor
+
+  - name: x_nucleo_iks02a1_shub
+    full_name: X-NUCLEO-IKS02A1 (SensorHub / Mode 2)
+    vendor: st
+    supported_features:
+      - sensor
+
+  - name: x_nucleo_iks02a1_mic
+    full_name: X-NUCLEO-IKS02A1 (Microphone)
+    vendor: st
+    supported_features:
+      - sensor
+      - audio

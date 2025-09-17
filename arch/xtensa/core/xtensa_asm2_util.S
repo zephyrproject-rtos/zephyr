@@ -185,7 +185,7 @@ _restore_ps_after:
 	FPU_REG_RESTORE
 #endif
 
-#if defined(CONFIG_XTENSA_HIFI_SHARING)
+#if defined(CONFIG_XTENSA_EAGER_HIFI_SHARING)
 .extern _xtensa_hifi_load
 	call0 _xtensa_hifi_load
 #endif
@@ -251,7 +251,11 @@ xtensa_switch:
 	rsr a6, ZSR_CPU
 	l32i a6, a6, ___cpu_t_current_OFFSET
 #ifdef CONFIG_XTENSA_MMU
+#ifdef CONFIG_XTENSA_MMU_FLUSH_AUTOREFILL_DTLBS_ON_SWAP
+	call4 xtensa_swap_update_page_tables
+#else
 	SWAP_PAGE_TABLE a6, a4, a7
+#endif
 #endif
 #ifdef CONFIG_XTENSA_MPU
 	call4 xtensa_mpu_map_write
@@ -301,8 +305,14 @@ xtensa_switch:
 	movi a0, _switch_restore_pc
 	s32i a0, a1, ___xtensa_irq_bsa_t_pc_OFFSET
 
-#if defined(CONFIG_XTENSA_HIFI_SHARING)
+#if defined(CONFIG_XTENSA_EAGER_HIFI_SHARING)
 	call0 _xtensa_hifi_save
+#elif defined(CONFIG_XTENSA_LAZY_HIFI_SHARING)
+	/* Disable HiFi sharing */
+	rsr a6, CPENABLE
+	movi a7, ~(1 << XCHAL_CP_ID_AUDIOENGINELX)
+	and a6, a6, a7
+	wsr a6, CPENABLE
 #endif
 
 	/* Now the high registers */

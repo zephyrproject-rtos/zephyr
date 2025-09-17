@@ -348,6 +348,28 @@ static const struct json_obj_descr enums_descr[] = {
 	JSON_OBJ_DESCR_PRIM(struct test_enums, u32, JSON_TOK_UINT),
 };
 
+struct test_mixed_arr {
+	const char *msg_type;
+	uint64_t dev_id;
+	struct test_nested nested;
+	int arr[3];
+	size_t arr_len;
+	char status_buf[10];
+	size_t count;
+};
+
+static const struct json_obj_descr test_mixed_arr_descr_arr[] = {
+	JSON_OBJ_DESCR_ARRAY(struct test_mixed_arr, arr, 3, arr_len, JSON_TOK_NUMBER),
+};
+
+static const struct json_mixed_arr_descr test_mixed_arr_descr[] = {
+	JSON_MIXED_ARR_DESCR_PRIM(struct test_mixed_arr, msg_type, JSON_TOK_STRING, count),
+	JSON_MIXED_ARR_DESCR_PRIM(struct test_mixed_arr, dev_id, JSON_TOK_UINT64, count),
+	JSON_MIXED_ARR_DESCR_OBJECT(struct test_mixed_arr, nested, nested_descr, count),
+	JSON_MIXED_ARR_DESCR_ARRAY(struct test_mixed_arr, arr, 3, test_mixed_arr_descr_arr, count),
+	JSON_MIXED_ARR_DESCR_PRIM(struct test_mixed_arr, status_buf, JSON_TOK_STRING_BUF, count),
+};
+
 
 ZTEST(lib_json_test, test_json_encoding)
 {
@@ -596,35 +618,35 @@ ZTEST(lib_json_test, test_json_limits)
 			 "\"uint8_min\":0"
 			 "}";
 
-	struct test_int_limits limits = {
-		.int_max = INT_MAX,
-		.int_cero = 0,
-		.int_min = INT_MIN,
-		.int64_max = INT64_MAX,
-		.int64_cero = 0,
-		.int64_min = INT64_MIN,
-		.uint64_max = UINT64_MAX,
-		.uint64_cero = 0,
-		.uint64_min = 0,
-		.uint32_max = UINT32_MAX,
-		.uint32_cero = 0,
-		.uint32_min = 0,
-		.int16_max = INT16_MAX,
-		.int16_cero = 0,
-		.int16_min = INT16_MIN,
-		.uint16_max = UINT16_MAX,
-		.uint16_cero = 0,
-		.uint16_min = 0,
-		.int8_max = INT8_MAX,
-		.int8_cero = 0,
-		.int8_min = INT8_MIN,
-		.uint8_max = UINT8_MAX,
-		.uint8_cero = 0,
-		.uint8_min = 0,
-	};
+	struct test_int_limits limits = {0};
+	struct test_int_limits limits_decoded = {0};
+
+	limits.int_max = INT_MAX;
+	limits.int_cero = 0;
+	limits.int_min = INT_MIN;
+	limits.int64_max = INT64_MAX;
+	limits.int64_cero = 0;
+	limits.int64_min = INT64_MIN;
+	limits.uint64_max = UINT64_MAX;
+	limits.uint64_cero = 0;
+	limits.uint64_min = 0;
+	limits.uint32_max = UINT32_MAX;
+	limits.uint32_cero = 0;
+	limits.uint32_min = 0;
+	limits.int16_max = INT16_MAX;
+	limits.int16_cero = 0;
+	limits.int16_min = INT16_MIN;
+	limits.uint16_max = UINT16_MAX;
+	limits.uint16_cero = 0;
+	limits.uint16_min = 0;
+	limits.int8_max = INT8_MAX;
+	limits.int8_cero = 0;
+	limits.int8_min = INT8_MIN;
+	limits.uint8_max = UINT8_MAX;
+	limits.uint8_cero = 0;
+	limits.uint8_min = 0;
 
 	char buffer[sizeof(encoded)];
-	struct test_int_limits limits_decoded = {0};
 
 	ret = json_obj_encode_buf(obj_limits_descr, ARRAY_SIZE(obj_limits_descr),
 				&limits, buffer, sizeof(buffer));
@@ -2039,7 +2061,7 @@ ZTEST(lib_json_test, test_large_descriptor)
 	int64_t ret = json_obj_parse(encoded, sizeof(encoded) - 1, large_descr,
 				     ARRAY_SIZE(large_descr), &ls);
 
-	zassert_false(ret < 0, "json_obj_parse returned error %d", ret);
+	zassert_false(ret < 0, "json_obj_parse returned error %lld", ret);
 	zassert_false(ret & ((int64_t)1 << 2), "Field int2 erroneously decoded");
 	zassert_false(ret & ((int64_t)1 << 35), "Field int35 erroneously decoded");
 	zassert_true(ret & ((int64_t)1 << 1), "Field int1 not decoded");
@@ -2084,7 +2106,7 @@ ZTEST(lib_json_test, test_json_array_alignment)
 	int64_t ret = json_obj_parse(encoded, sizeof(encoded) - 1, outer_descr,
 				     ARRAY_SIZE(outer_descr), &o);
 
-	zassert_false(ret < 0, "json_obj_parse returned error %d", ret);
+	zassert_false(ret < 0, "json_obj_parse returned error %lld", ret);
 	zassert_equal(o.num_elements, 2, "Number of elements not decoded correctly");
 
 	zassert_equal(o.array[0].int1, 1, "Element 0 int1 not decoded correctly");
@@ -2107,7 +2129,7 @@ ZTEST(lib_json_test, test_json_array_alignment_bool)
 	int64_t ret = json_obj_parse(encoded, sizeof(encoded) - 1, alignment_bool_descr,
 				     ARRAY_SIZE(alignment_bool_descr), &o);
 
-	zassert_false(ret < 0, "json_obj_parse returned error %d", ret);
+	zassert_false(ret < 0, "json_obj_parse returned error %lld", ret);
 	zassert_equal(o.num_elements, 2, "Number of elements not decoded correctly");
 
 	zassert_equal(o.array[0].bool1, true, "Element 0 bool1 not decoded correctly");
@@ -2156,18 +2178,16 @@ ZTEST(lib_json_test, test_json_enums)
 			 "\"i32\":-2147483648,"
 			 "\"u32\":4294967295"
 			 "}";
-
-	struct test_enums enums = {
-		.i8 = I8_MIN,
-		.u8 = U8_MAX,
-		.i16 = I16_MIN,
-		.u16 = U16_MAX,
-		.i32 = I32_MIN,
-		.u32 = U32_MAX,
-	};
-
 	char buffer[sizeof(encoded)];
 	struct test_enums enums_decoded = {0};
+	struct test_enums enums = {0};
+
+	enums.i8 = I8_MIN;
+	enums.u8 = U8_MAX;
+	enums.i16 = I16_MIN;
+	enums.u16 = U16_MAX;
+	enums.i32 = I32_MIN;
+	enums.u32 = U32_MAX;
 
 	ret = json_obj_encode_buf(enums_descr, ARRAY_SIZE(enums_descr),
 				&enums, buffer, sizeof(buffer));
@@ -2178,6 +2198,132 @@ ZTEST(lib_json_test, test_json_enums)
 			  "Enums not encoded correctly");
 	zassert_true(!memcmp(&enums, &enums_decoded, sizeof(enums)),
 		     "Enums not decoded correctly");
+}
+
+ZTEST(lib_json_test, test_json_string_nullptr)
+{
+	int ret = 0;
+
+	struct test_struct ts = {0};
+	char *buffer;
+	size_t len;
+
+	len = json_calc_encoded_len(test_descr, ARRAY_SIZE(test_descr), &ts);
+	zassert(len > 0, "encoded size incorrect");
+
+	buffer = alloca(len + 1);
+	ret = json_obj_encode_buf(test_descr, ARRAY_SIZE(test_descr), &ts, buffer, len + 1);
+	zassert_equal(ret, 0, "Encoding function failed");
+
+	ret = json_obj_parse(buffer, len, test_descr, ARRAY_SIZE(test_descr), &ts);
+	zassert_equal(ret, (1 << ARRAY_SIZE(test_descr)) - 1, "Not all fields decoded correctly");
+	zassert_str_equal(ts.some_string, "", "String not decoded correctly");
+}
+
+ZTEST(lib_json_test, test_json_mixed_arr_parse)
+{
+	struct test_mixed_arr arr = {0};
+	char json[] = "[\"msg\", 123456, {\"nested_int\":42,\"nested_bool\":true,"
+		      "\"nested_string\":\"abc\","
+		      "\"nested_string_buf\":\"buf\",\"nested_int8\":1,\"nested_uint8\":2,"
+		      "\"nested_int64\":3,\"nested_uint64\":4}, [10,20,30], \"ok\"]";
+	int ret = json_mixed_arr_parse(json, strlen(json),
+				       test_mixed_arr_descr,
+				       ARRAY_SIZE(test_mixed_arr_descr), &arr);
+
+	zassert_equal(ret, 5, "Should parse 5 elements");
+	zassert_str_equal(arr.msg_type, "msg", NULL);
+	zassert_equal(arr.dev_id, 123456, NULL);
+	zassert_equal(arr.nested.nested_int, 42, NULL);
+	zassert_equal(arr.arr_len, 3, NULL);
+	zassert_equal(arr.arr[0], 10, NULL);
+	zassert_equal(arr.arr[1], 20, NULL);
+	zassert_equal(arr.arr[2], 30, NULL);
+	zassert_str_equal(arr.status_buf, "ok", NULL);
+}
+
+ZTEST(lib_json_test, test_json_mixed_arr_encode)
+{
+	char buf[256];
+	struct test_mixed_arr pkt = {0};
+	struct test_mixed_arr arr = {
+		.msg_type = "msg",
+		.dev_id = 123456,
+		.nested = {
+			.nested_int = 42,
+			.nested_bool = true,
+			.nested_string = "abc",
+			.nested_string_buf = "buf",
+			.nested_int8 = 1,
+			.nested_uint8 = 2,
+			.nested_int64 = 3,
+			.nested_uint64 = 4,
+		},
+		.arr = {10, 20, 30},
+		.arr_len = 3,
+		.status_buf = "ok",
+		.count = 5
+	};
+	int ret = json_mixed_arr_encode_buf(test_mixed_arr_descr,
+					    ARRAY_SIZE(test_mixed_arr_descr),
+					    &arr, buf, sizeof(buf));
+
+	zassert_equal(ret, 0, NULL);
+
+	ret = json_mixed_arr_parse(buf, strlen(buf),
+				   test_mixed_arr_descr,
+				   ARRAY_SIZE(test_mixed_arr_descr), &pkt);
+
+	zassert_equal(ret, 5, NULL);
+	zassert_str_equal(pkt.msg_type, "msg", NULL);
+	zassert_equal(pkt.dev_id, 123456, NULL);
+	zassert_equal(pkt.arr[0], 10, NULL);
+	zassert_str_equal(pkt.status_buf, "ok", NULL);
+}
+
+ZTEST(lib_json_test, test_json_mixed_arr_empty)
+{
+	struct test_mixed_arr arr = {0};
+	char json[] = "[]";
+	int ret = json_mixed_arr_parse(json, strlen(json),
+		test_mixed_arr_descr, 0, &arr);
+
+	zassert_equal(ret, 0, NULL);
+}
+
+ZTEST(lib_json_test, test_json_mixed_arr_calc_len)
+{
+	char buf[256];
+	ssize_t calc_len;
+	int ret;
+	struct test_mixed_arr arr = {
+		.msg_type = "msg",
+		.dev_id = 123456,
+		.nested = {
+			.nested_int = 42,
+			.nested_bool = true,
+			.nested_string = "abc",
+			.nested_string_buf = "buf",
+			.nested_int8 = 1,
+			.nested_uint8 = 2,
+			.nested_int64 = 3,
+			.nested_uint64 = 4,
+		},
+		.arr = {10, 20, 30},
+		.arr_len = 3,
+		.status_buf = "ok",
+		.count = 5
+	};
+
+	calc_len = json_calc_mixed_arr_len(test_mixed_arr_descr,
+					   ARRAY_SIZE(test_mixed_arr_descr),
+					   &arr);
+	ret = json_mixed_arr_encode_buf(test_mixed_arr_descr,
+					ARRAY_SIZE(test_mixed_arr_descr),
+					&arr, buf, sizeof(buf));
+	zassert_equal(ret, 0, NULL);
+
+	zassert_equal(calc_len, (ssize_t)strlen(buf), "Length mismatch");
 }
 
 ZTEST_SUITE(lib_json_test, NULL, NULL, NULL, NULL, NULL);

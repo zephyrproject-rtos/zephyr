@@ -68,7 +68,7 @@ static int igmp_v2_create(struct net_pkt *pkt, const struct in_addr *addr,
 
 	igmp->type = type;
 	igmp->max_rsp = 0U;
-	net_ipaddr_copy(&igmp->address, addr);
+	net_ipaddr_copy(UNALIGNED_MEMBER_ADDR(igmp, address), addr);
 	igmp->chksum = 0;
 
 	if (net_pkt_set_data(pkt, &igmp_access)) {
@@ -584,7 +584,7 @@ int net_ipv4_igmp_join(struct net_if *iface, const struct in_addr *addr,
 		       const struct igmp_param *param)
 {
 	struct net_if_mcast_addr *maddr;
-	int ret;
+	int ret = 0;
 
 #if defined(CONFIG_NET_IPV4_IGMPV3)
 	if (param != NULL) {
@@ -622,6 +622,10 @@ int net_ipv4_igmp_join(struct net_if *iface, const struct in_addr *addr,
 
 	net_if_ipv4_maddr_join(iface, maddr);
 
+	if (net_if_is_offloaded(iface)) {
+		goto out;
+	}
+
 #if defined(CONFIG_NET_IPV4_IGMPV3)
 	ret = igmpv3_send_generic(iface, maddr);
 #else
@@ -640,6 +644,7 @@ int net_ipv4_igmp_join(struct net_if *iface, const struct in_addr *addr,
 	}
 #endif
 
+out:
 	net_if_mcast_monitor(iface, &maddr->address, true);
 
 	net_mgmt_event_notify_with_info(NET_EVENT_IPV4_MCAST_JOIN, iface, &maddr->address.in_addr,
@@ -651,11 +656,15 @@ int net_ipv4_igmp_join(struct net_if *iface, const struct in_addr *addr,
 int net_ipv4_igmp_leave(struct net_if *iface, const struct in_addr *addr)
 {
 	struct net_if_mcast_addr *maddr;
-	int ret;
+	int ret = 0;
 
 	maddr = net_if_ipv4_maddr_lookup(addr, &iface);
 	if (!maddr) {
 		return -ENOENT;
+	}
+
+	if (net_if_is_offloaded(iface)) {
+		goto out;
 	}
 
 #if defined(CONFIG_NET_IPV4_IGMPV3)
@@ -670,6 +679,7 @@ int net_ipv4_igmp_leave(struct net_if *iface, const struct in_addr *addr)
 		return ret;
 	}
 
+out:
 	if (!net_if_ipv4_maddr_rm(iface, addr)) {
 		return -EINVAL;
 	}

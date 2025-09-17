@@ -41,18 +41,22 @@
 			label = "image-0";
 			reg = <0x00000000 0x00069000>;
 		};
+
 		slot1_partition: partition@69000 {
 			label = "image-1";
 			reg = <0x00069000 0x00069000>;
 		};
+
 		scratch_partition: partition@d2000 {
 			label = "image-scratch";
 			reg = <0x000d2000 0x0001e000>;
 		};
+
 		storage_partition: partition@f0000 {
 			label = "storage";
 			reg = <0x000f0000 0x00004000>;
 		};
+
 		boot_partition: partition@f4000 {
 			label = "mcuboot";
 			reg = <0x000f4000 0x0000C000>;

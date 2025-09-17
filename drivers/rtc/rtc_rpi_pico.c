@@ -212,12 +212,12 @@ static int rtc_rpi_pico_alarm_set_time(const struct device *dev, uint16_t id, ui
 	if (mask & RTC_ALARM_TIME_MASK_MONTH) {
 		hw_set_bits(&rtc_hw->irq_setup_0,
 			    RTC_IRQ_SETUP_0_MONTH_ENA_BITS |
-				    (alarm->tm_mon << RTC_IRQ_SETUP_0_MONTH_LSB));
+				    ((alarm->tm_mon + 1) << RTC_IRQ_SETUP_0_MONTH_LSB));
 	}
 	if (mask & RTC_ALARM_TIME_MASK_MONTHDAY) {
 		hw_set_bits(&rtc_hw->irq_setup_0,
 			    RTC_IRQ_SETUP_0_DAY_ENA_BITS |
-				    ((alarm->tm_mday + 1) << RTC_IRQ_SETUP_0_DAY_LSB));
+				    (alarm->tm_mday << RTC_IRQ_SETUP_0_DAY_LSB));
 	}
 	if (mask & RTC_ALARM_TIME_MASK_WEEKDAY) {
 		hw_set_bits(&rtc_hw->irq_setup_1,

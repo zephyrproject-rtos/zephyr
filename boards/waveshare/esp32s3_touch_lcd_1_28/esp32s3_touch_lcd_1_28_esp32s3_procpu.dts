@@ -38,6 +38,7 @@
 	/* Buttons */
 	buttons {
 		compatible = "gpio-keys";
+
 		button0: button_0 {
 			gpios = <&gpio0 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "BOOT Button";
@@ -54,6 +55,7 @@
 	/* PWM */
 	pwmleds {
 		compatible = "pwm-leds";
+
 		pwm_lcd0: pwm_lcd0 {
 			pwms = <&ledc0 0 PWM_HZ(250) PWM_POLARITY_NORMAL>;
 		};
@@ -95,7 +97,7 @@
 };
 
 &i2c1 {
-	status ="okay";
+	status = "okay";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	pinctrl-0 = <&i2c1_default>;
 	pinctrl-names = "default";
@@ -116,14 +118,17 @@
 	pinctrl-names = "default";
 	#address-cells = <1>;
 	#size-cells = <0>;
+
 	channel0@0 {
 		reg = <0x0>;
 		timer = <0>;
 	};
+
 	channel1@1 {
 		reg = <0x1>;
 		timer = <1>;
 	};
+
 	channel2@2 {
 		reg = <0x2>;
 		timer = <2>;

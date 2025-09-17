@@ -21,3 +21,11 @@ config WDT_NPCX_WARNING_LEADING_TIME_MS
 	  This option defines the window in which a watchdog event must be
 	  handled. After this time window, the watchdog reset triggers
 	  immediately.
+
+config WDT_NPCX_EX
+	bool "Extended NPCX watchdog driver support"
+	default y
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_NUVOTON_NPCX_WATCHDOG),support-npckn-v1,True)
+	help
+	  This option enables the extended Watchdog Timer driver for NPCKn variant
+	  of processors.

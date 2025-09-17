@@ -1,0 +1,13 @@
+/*
+ * Copyright 2023 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	resources {
+		compatible = "test-gpio-basic-api";
+		out-gpios = <&gpioa 0 0>;
+		in-gpios = <&gpioa 1 0>;
+	};
+};

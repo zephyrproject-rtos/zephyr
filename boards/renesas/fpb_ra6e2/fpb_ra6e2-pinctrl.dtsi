@@ -8,7 +8,7 @@
 		group1 {
 			/* tx rx */
 			psels = <RA_PSEL(RA_PSEL_SCI_0, 4, 11)>,
-			<RA_PSEL(RA_PSEL_SCI_0, 4, 10)>;
+				<RA_PSEL(RA_PSEL_SCI_0, 4, 10)>;
 		};
 	};
 
@@ -16,9 +16,9 @@
 		group1 {
 			/* MISO MOSI RSPCK SSL */
 			psels = <RA_PSEL(RA_PSEL_SPI, 1, 10)>,
-			<RA_PSEL(RA_PSEL_SPI, 1, 9)>,
-			<RA_PSEL(RA_PSEL_SPI, 1, 11)>,
-			<RA_PSEL(RA_PSEL_SPI, 3, 1)>;
+				<RA_PSEL(RA_PSEL_SPI, 1, 9)>,
+				<RA_PSEL(RA_PSEL_SPI, 1, 11)>,
+				<RA_PSEL(RA_PSEL_SPI, 3, 1)>;
 		};
 	};
 

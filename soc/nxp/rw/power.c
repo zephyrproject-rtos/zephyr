@@ -5,17 +5,22 @@
  */
 #include <zephyr/kernel.h>
 #include <zephyr/pm/pm.h>
+#include <fsl_clock.h>
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(standby))
+#include <fsl_rtc.h>
+#endif
 #include <zephyr/init.h>
 #include <zephyr/drivers/pinctrl.h>
 #if CONFIG_GPIO && (DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pin0)) || \
 		    DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pin1)))
 #include <zephyr/drivers/gpio/gpio_mcux_lpc.h>
 #endif
+#include <zephyr/drivers/timer/system_timer.h>
+#include <zephyr/drivers/timer/nxp_os_timer.h>
 
 #include "fsl_power.h"
 
 #include <zephyr/logging/log.h>
-#include <zephyr/drivers/timer/system_timer.h>
 
 LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 
@@ -141,15 +146,26 @@ static void restore_mpu_state(void)
 }
 
 #endif /* CONFIG_MPU */
+static void config_wakeup_gpio_pins(void)
+{
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pin0))
+	pin_cfg = IOMUX_GPIO_IDX(24) | IOMUX_TYPE(IOMUX_GPIO);
+	pinctrl_configure_pins(&pin_cfg, 1, 0);
+#endif
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pin1))
+	pin_cfg = IOMUX_GPIO_IDX(25) | IOMUX_TYPE(IOMUX_GPIO);
+	pinctrl_configure_pins(&pin_cfg, 1, 0);
+#endif
+}
 
 /* Invoke Low Power/System Off specific Tasks */
 __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 {
 	ARG_UNUSED(substate_id);
 
+	config_wakeup_gpio_pins();
+
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pin0))
-	pin_cfg = IOMUX_GPIO_IDX(24) | IOMUX_TYPE(IOMUX_GPIO);
-	pinctrl_configure_pins(&pin_cfg, 1, 0);
 	POWER_ConfigWakeupPin(kPOWER_WakeupPin0, DT_ENUM_IDX(DT_NODELABEL(pin0), wakeup_level));
 	POWER_ClearWakeupStatus(DT_IRQN(DT_NODELABEL(pin0)));
 	NVIC_ClearPendingIRQ(DT_IRQN(DT_NODELABEL(pin0)));
@@ -157,8 +173,6 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 	POWER_EnableWakeup(DT_IRQN(DT_NODELABEL(pin0)));
 #endif
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pin1))
-	pin_cfg = IOMUX_GPIO_IDX(25) | IOMUX_TYPE(IOMUX_GPIO);
-	pinctrl_configure_pins(&pin_cfg, 1, 0);
 	POWER_ConfigWakeupPin(kPOWER_WakeupPin1, DT_ENUM_IDX(DT_NODELABEL(pin1), wakeup_level));
 	POWER_ClearWakeupStatus(DT_IRQN(DT_NODELABEL(pin1)));
 	NVIC_ClearPendingIRQ(DT_IRQN(DT_NODELABEL(pin1)));
@@ -177,7 +191,17 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 		__WFI();
 		break;
 	case PM_STATE_SUSPEND_TO_IDLE:
+		/* save old value of main clock mux and switch to lposc */
+		uint32_t main_sel_a = CLKCTL0->MAINCLKSELA;
+		uint32_t main_sel_b = CLKCTL0->MAINCLKSELB;
+
+		CLKCTL0->MAINCLKSELA = 2;
+		CLKCTL0->MAINCLKSELB = 0;
 		POWER_EnterPowerMode(POWER_MODE2, &slp_cfg);
+		/* restore previous main clock */
+		CLKCTL0->MAINCLKSELA = main_sel_a;
+		CLKCTL0->MAINCLKSELB = main_sel_b;
+
 		break;
 	case PM_STATE_STANDBY:
 #ifdef CONFIG_MPU
@@ -186,7 +210,28 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 #endif /* CONFIG_MPU */
 
 		POWER_EnableWakeup(DT_IRQN(DT_NODELABEL(rtc)));
+
+		sys_clock_set_timeout(0, true);
+
 		if (POWER_EnterPowerMode(POWER_MODE3, &slp_cfg)) {
+			/* Go back to PM Mode 3 if RTC wakeup is to be ignored.*/
+			while (z_nxp_os_timer_ignore_timer_wakeup() &&
+			       (PMU->WAKEUP_STATUS & PMU_WAKEUP_STATUS_RTC_MASK)) {
+				config_wakeup_gpio_pins();
+				/* Reinitialize the OS Timer */
+				CLOCK_AttachClk(kLPOSC_to_OSTIMER_CLK);
+				/* Clear the RTC wakeup bits */
+				POWER_ClearWakeupStatus(DT_IRQN(DT_NODELABEL(rtc)));
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(standby))
+				RTC_ClearStatusFlags(RTC, kRTC_WakeupFlag);
+#endif
+				NVIC_ClearPendingIRQ(DT_IRQN(DT_NODELABEL(rtc)));
+				sys_clock_idle_exit();
+				sys_clock_set_timeout(0, true);
+				if (!(POWER_EnterPowerMode(POWER_MODE3, &slp_cfg))) {
+					break;
+				}
+			}
 #ifdef CONFIG_MPU
 			/* Restore MPU as is lost after PM3 exit*/
 			restore_mpu_state();

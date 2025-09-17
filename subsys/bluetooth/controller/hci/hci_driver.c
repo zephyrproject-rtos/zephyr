@@ -98,7 +98,8 @@ isoal_status_t sink_sdu_alloc_hci(const struct isoal_sink    *sink_ctx,
 
 	if (buf) {
 		/* Increase reserved space for headers */
-		net_buf_reserve(buf, SDU_HCI_HDR_SIZE + net_buf_headroom(buf));
+		net_buf_reset(buf);
+		net_buf_reserve(buf, BT_BUF_RESERVE + SDU_HCI_HDR_SIZE);
 
 		sdu_buffer->dbuf = buf;
 		sdu_buffer->size = net_buf_tailroom(buf);
@@ -197,6 +198,8 @@ isoal_status_t sink_sdu_emit_hci(const struct isoal_sink             *sink_ctx,
 		hdr->handle = sys_cpu_to_le16(handle_packed);
 		hdr->len = sys_cpu_to_le16(len);
 
+		net_buf_push_u8(buf, BT_HCI_H4_ISO);
+
 		/* send fragment up the chain */
 		data->recv(dev, buf);
 	}
@@ -268,8 +271,8 @@ static int bt_recv_prio(const struct device *dev, struct net_buf *buf)
 {
 	const struct hci_driver_data *data = dev->data;
 
-	if (bt_buf_get_type(buf) == BT_BUF_EVT) {
-		struct bt_hci_evt_hdr *hdr = (void *)buf->data;
+	if (buf->data[0] == BT_HCI_H4_EVT) {
+		struct bt_hci_evt_hdr *hdr = (void *)(buf->data + 1);
 		uint8_t evt_flags = bt_hci_evt_get_flags(hdr->evt);
 
 		if ((evt_flags & BT_HCI_EVT_FLAG_RECV_PRIO) &&
@@ -541,6 +544,7 @@ static inline struct net_buf *encode_node(struct node_rx_pdu *node_rx,
 	case HCI_CLASS_EVT_CONNECTION:
 	case HCI_CLASS_EVT_LLCP:
 		if (class == HCI_CLASS_EVT_DISCARDABLE) {
+			/* For BT_HCI_RAW, bt_buf_get_evt() calls bt_buf_get_rx(). */
 			buf = bt_buf_get_evt(BT_HCI_EVT_UNKNOWN, true,
 					     K_NO_WAIT);
 		} else {
@@ -869,8 +873,8 @@ static void recv_thread(void *p1, void *p2, void *p3)
 			frag = net_buf_ref(buf);
 			buf = net_buf_frag_del(NULL, buf);
 
-			if (frag->len) {
-				LOG_DBG("Packet in: type:%u len:%u", bt_buf_get_type(frag),
+			if (frag->len > 1) {
+				LOG_DBG("Packet in: type:%u len:%u", frag->data[0],
 					frag->len);
 
 				data->recv(dev, frag);
@@ -963,18 +967,18 @@ static int hci_driver_send(const struct device *dev, struct net_buf *buf)
 		return -EINVAL;
 	}
 
-	type = bt_buf_get_type(buf);
+	type = net_buf_pull_u8(buf);
 	switch (type) {
 #if defined(CONFIG_BT_CONN)
-	case BT_BUF_ACL_OUT:
+	case BT_HCI_H4_ACL:
 		err = acl_handle(dev, buf);
 		break;
 #endif /* CONFIG_BT_CONN */
-	case BT_BUF_CMD:
+	case BT_HCI_H4_CMD:
 		err = cmd_handle(dev, buf);
 		break;
 #if defined(CONFIG_BT_CTLR_ADV_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
-	case BT_BUF_ISO_OUT:
+	case BT_HCI_H4_ISO:
 		err = iso_handle(dev, buf);
 		break;
 #endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
@@ -1022,14 +1026,14 @@ static int hci_driver_open(const struct device *dev, bt_hci_recv_t recv)
 			K_KERNEL_STACK_SIZEOF(prio_recv_thread_stack),
 			prio_recv_thread, (void *)dev, NULL, NULL,
 			K_PRIO_COOP(CONFIG_BT_DRIVER_RX_HIGH_PRIO), 0, K_NO_WAIT);
-	k_thread_name_set(&prio_recv_thread_data, "BT RX pri");
+	k_thread_name_set(&prio_recv_thread_data, "BT CTLR RX pri");
 #endif /* CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE */
 
 	k_thread_create(&recv_thread_data, recv_thread_stack,
 			K_KERNEL_STACK_SIZEOF(recv_thread_stack),
 			recv_thread, (void *)dev, NULL, NULL,
 			K_PRIO_COOP(CONFIG_BT_RX_PRIO), 0, K_NO_WAIT);
-	k_thread_name_set(&recv_thread_data, "BT RX");
+	k_thread_name_set(&recv_thread_data, "BT CTLR RX");
 
 	LOG_DBG("Success.");
 

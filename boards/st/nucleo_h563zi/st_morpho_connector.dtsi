@@ -63,7 +63,6 @@
 			   <ST_MORPHO_L_68 0 &gpiog 13 0>, /* SB37=OFF */
 			   <ST_MORPHO_L_69 0 &gpiod 9 0>, /* SB75=ON, SB18=OFF, SB65=OFF */
 			   <ST_MORPHO_L_70 0 &gpiog 11 0>, /* SB34=OFF */
-
 			   <ST_MORPHO_R_1 0 &gpioc 9 0>,
 			   <ST_MORPHO_R_2 0 &gpioc 8 0>,
 			   <ST_MORPHO_R_3 0 &gpiob 8 0>,

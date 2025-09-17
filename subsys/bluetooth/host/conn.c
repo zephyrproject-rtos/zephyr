@@ -117,10 +117,19 @@ const struct bt_conn_auth_cb *bt_auth;
 sys_slist_t bt_auth_info_cbs = SYS_SLIST_STATIC_INIT(&bt_auth_info_cbs);
 #endif /* CONFIG_BT_SMP || CONFIG_BT_CLASSIC */
 
-
+#if defined(CONFIG_BT_CONN_DYNAMIC_CALLBACKS)
 static sys_slist_t conn_cbs = SYS_SLIST_STATIC_INIT(&conn_cbs);
 
-static struct bt_conn_tx conn_tx[CONFIG_BT_CONN_TX_MAX];
+#define BT_CONN_CB_DYNAMIC_FOREACH(_cn) \
+	for (struct bt_conn_cb *_cn = SYS_SLIST_PEEK_HEAD_CONTAINER(&conn_cbs, _cn, _node); \
+	     _cn != NULL; \
+	     _cn = SYS_SLIST_PEEK_NEXT_CONTAINER(_cn, _node))
+#else
+#define BT_CONN_CB_DYNAMIC_FOREACH(_cn) \
+	for (struct bt_conn_cb *_cn = NULL; false; )
+#endif
+
+static struct bt_conn_tx conn_tx[CONFIG_BT_BUF_ACL_TX_COUNT];
 
 #if defined(CONFIG_BT_CLASSIC)
 static struct bt_conn sco_conns[CONFIG_BT_MAX_SCO_CONN];
@@ -128,7 +137,7 @@ static struct bt_conn sco_conns[CONFIG_BT_MAX_SCO_CONN];
 #endif /* CONFIG_BT_CONN */
 
 #if defined(CONFIG_BT_CONN_TX)
-void frag_destroy(struct net_buf *buf);
+static void frag_destroy(struct net_buf *buf);
 
 /* Storage for fragments (views) into the upper layers' PDUs. */
 /* TODO: remove user-data requirements */
@@ -138,14 +147,14 @@ NET_BUF_POOL_FIXED_DEFINE(fragments, CONFIG_BT_CONN_FRAG_COUNT, 0,
 struct frag_md {
 	struct bt_buf_view_meta view_meta;
 };
-struct frag_md frag_md_pool[CONFIG_BT_CONN_FRAG_COUNT];
+static struct frag_md frag_md_pool[CONFIG_BT_CONN_FRAG_COUNT];
 
-struct frag_md *get_frag_md(struct net_buf *fragment)
+static struct frag_md *get_frag_md(struct net_buf *fragment)
 {
 	return &frag_md_pool[net_buf_id(fragment)];
 }
 
-void frag_destroy(struct net_buf *frag)
+static void frag_destroy(struct net_buf *frag)
 {
 	/* allow next view to be allocated (and unlock the parent buf) */
 	bt_buf_destroy_view(frag, &get_frag_md(frag)->view_meta);
@@ -388,11 +397,10 @@ void bt_conn_reset_rx_state(struct bt_conn *conn)
 	conn->rx = NULL;
 }
 
-static void bt_acl_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
+static void bt_acl_recv(struct bt_conn *conn, struct net_buf *buf,
+			uint8_t flags)
 {
 	uint16_t acl_total_len;
-
-	bt_acl_set_ncp_sent(buf, false);
 
 	/* Check packet boundary flags */
 	switch (flags) {
@@ -405,7 +413,7 @@ static void bt_acl_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags
 		LOG_DBG("First, len %u final %u", buf->len,
 			(buf->len < sizeof(uint16_t)) ? 0 : sys_get_le16(buf->data));
 
-		conn->rx = net_buf_ref(buf);
+		conn->rx = buf;
 		break;
 	case BT_ACL_CONT:
 		if (!conn->rx) {
@@ -435,6 +443,7 @@ static void bt_acl_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags
 		}
 
 		net_buf_add_mem(conn->rx, buf->data, buf->len);
+		net_buf_unref(buf);
 		break;
 	default:
 		/* BT_ACL_START_NO_FLUSH and BT_ACL_COMPLETE are not allowed on
@@ -451,10 +460,6 @@ static void bt_acl_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags
 		/* Still not enough data received to retrieve the L2CAP header
 		 * length field.
 		 */
-		bt_send_one_host_num_completed_packets(conn->handle);
-		bt_acl_set_ncp_sent(buf, true);
-		net_buf_unref(buf);
-
 		return;
 	}
 
@@ -462,16 +467,10 @@ static void bt_acl_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags
 
 	if (conn->rx->len < acl_total_len) {
 		/* L2CAP frame not complete. */
-		bt_send_one_host_num_completed_packets(conn->handle);
-		bt_acl_set_ncp_sent(buf, true);
-		net_buf_unref(buf);
-
 		return;
 	}
 
-	net_buf_unref(buf);
-
-	if (conn->rx->len > acl_total_len) {
+	if ((conn->type != BT_CONN_TYPE_BR) && (conn->rx->len > acl_total_len)) {
 		LOG_ERR("ACL len mismatch (%u > %u)", conn->rx->len, acl_total_len);
 		bt_conn_reset_rx_state(conn);
 		return;
@@ -481,10 +480,12 @@ static void bt_acl_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags
 	buf = conn->rx;
 	conn->rx = NULL;
 
-	__ASSERT(buf->ref == 1, "buf->ref %d", buf->ref);
-
 	LOG_DBG("Successfully parsed %u byte L2CAP packet", buf->len);
-	bt_l2cap_recv(conn, buf, true);
+	if (IS_ENABLED(CONFIG_BT_CLASSIC) && (conn->type == BT_CONN_TYPE_BR)) {
+		bt_br_acl_recv(conn, buf, true);
+	} else {
+		bt_l2cap_recv(conn, buf, true);
+	}
 }
 
 void bt_conn_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
@@ -551,7 +552,7 @@ static int send_acl(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 	hdr->handle = sys_cpu_to_le16(bt_acl_handle_pack(conn->handle, flags));
 	hdr->len = sys_cpu_to_le16(buf->len - sizeof(*hdr));
 
-	bt_buf_set_type(buf, BT_BUF_ACL_OUT);
+	net_buf_push_u8(buf, BT_HCI_H4_ACL);
 
 	return bt_send(buf);
 }
@@ -609,7 +610,7 @@ static int send_iso(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 	hdr->handle = sys_cpu_to_le16(bt_iso_handle_pack(conn->handle, flags, ts));
 	hdr->len = sys_cpu_to_le16(buf->len - sizeof(*hdr));
 
-	bt_buf_set_type(buf, BT_BUF_ISO_OUT);
+	net_buf_push_u8(buf, BT_HCI_H4_ISO);
 
 	return bt_send(buf);
 }
@@ -657,7 +658,7 @@ static bool is_acl_conn(struct bt_conn *conn)
 }
 
 static int send_buf(struct bt_conn *conn, struct net_buf *buf,
-		    size_t len, void *cb, void *ud)
+		    size_t len, bt_conn_tx_cb_t cb, void *ud)
 {
 	struct net_buf *frag = NULL;
 	struct bt_conn_tx *tx = NULL;
@@ -667,13 +668,15 @@ static int send_buf(struct bt_conn *conn, struct net_buf *buf,
 	if (buf->len == 0) {
 		__ASSERT_NO_MSG(0);
 
-		return -EMSGSIZE;
+		err = -EMSGSIZE;
+		goto error_return;
 	}
 
 	if (bt_buf_has_view(buf)) {
 		__ASSERT_NO_MSG(0);
 
-		return -EIO;
+		err = -EIO;
+		goto error_return;
 	}
 
 	LOG_DBG("conn %p buf %p len %zu buf->len %u cb %p ud %p",
@@ -688,7 +691,8 @@ static int send_buf(struct bt_conn *conn, struct net_buf *buf,
 		 */
 		__ASSERT(0, "No controller bufs");
 
-		return -ENOMEM;
+		err = -ENOMEM;
+		goto error_return;
 	}
 
 	/* Allocate and set the TX context */
@@ -697,8 +701,9 @@ static int send_buf(struct bt_conn *conn, struct net_buf *buf,
 	/* See big comment above */
 	if (!tx) {
 		__ASSERT(0, "No TX context");
-
-		return -ENOMEM;
+		k_sem_give(bt_conn_get_pkts(conn));
+		err = -ENOMEM;
+		goto error_return;
 	}
 
 	tx->cb = cb;
@@ -706,18 +711,17 @@ static int send_buf(struct bt_conn *conn, struct net_buf *buf,
 
 	uint16_t frag_len = MIN(conn_mtu(conn), len);
 
-	__ASSERT_NO_MSG(buf->ref == 1);
+	/* Check that buf->ref is 1 or 2. It would be 1 if this
+	 * was the only reference (e.g. buf was removed
+	 * from the conn tx_queue). It would be 2 if the
+	 * tx_data_pull kept it on the tx_queue for segmentation.
+	 */
+	__ASSERT_NO_MSG((buf->ref == 1) || (buf->ref == 2));
 
-	if (buf->len > frag_len) {
-		LOG_DBG("keep %p around", buf);
-		frag = get_data_frag(net_buf_ref(buf), frag_len);
-	} else {
-		LOG_DBG("move %p ref in", buf);
-		/* Move the ref into `frag` for the last TX. That way `buf` will
-		 * get destroyed when `frag` is destroyed.
-		 */
-		frag = get_data_frag(buf, frag_len);
-	}
+	/* The reference is always transferred to the frag, so when
+	 * the frag is destroyed, the parent reference is decremented.
+	 */
+	frag = get_data_frag(buf, frag_len);
 
 	/* Caller is supposed to check we have all resources to send */
 	__ASSERT_NO_MSG(frag != NULL);
@@ -731,7 +735,7 @@ static int send_buf(struct bt_conn *conn, struct net_buf *buf,
 		conn->next_is_frag = false;
 	}
 
-	LOG_DBG("send frag: buf %p len %d", buf, frag_len);
+	LOG_DBG("send frag: buf %p len %d", frag, frag_len);
 
 	/* At this point, the buffer is either a fragment or a full HCI packet.
 	 * The flags are also valid.
@@ -774,15 +778,26 @@ static int send_buf(struct bt_conn *conn, struct net_buf *buf,
 	 */
 	net_buf_unref(frag);
 
-	/* `buf` might not get destroyed right away, and its `tx`
-	 * pointer will still be reachable. Make sure that we don't try
-	 * to use the destroyed context later.
+	/* `buf` might not get destroyed right away because it may
+	 * still be on a conn tx_queue, and its `tx` pointer will still
+	 * be reachable. Make sure that we don't try to use the
+	 * destroyed context later.
 	 */
 	conn_tx_destroy(conn, tx);
 	k_sem_give(bt_conn_get_pkts(conn));
 
 	/* Merge HCI driver errors */
 	return -EIO;
+
+error_return:
+	/* Runtime handling of fatal errors when ASSERTS are disabled.
+	 * Unref the buf and invoke callback with the error.
+	 */
+	net_buf_unref(buf);
+	if (cb) {
+		cb(conn, ud, err);
+	}
+	return err;
 }
 
 static struct k_poll_signal conn_change =
@@ -857,30 +872,33 @@ static bool should_stop_tx(struct bt_conn *conn)
 
 void bt_conn_data_ready(struct bt_conn *conn)
 {
+	bool added;
+
 	LOG_DBG("DR");
 
-	/* The TX processor will call the `pull_cb` to get the buf */
-	if (!atomic_set(&conn->_conn_ready_lock, 1)) {
-		/* Attach a reference to the `bt_dev.le.conn_ready` list.
-		 *
-		 * This reference will be consumed when the conn is popped off
-		 * the list (in `get_conn_ready`).
-		 *
-		 * The `bt_dev.le.conn_ready` list is accessed by the tx_processor
-		 * which runs in a workqueue, but `bt_conn_data_ready` can be called
-		 * from different threads so we need to make sure that nothing will
-		 * trigger a thread switch while we are manipulating the list since
-		 * sys_slist_*() functions are not thread safe.
-		 */
-		bt_conn_ref(conn);
-		k_sched_lock();
-		sys_slist_append(&bt_dev.le.conn_ready,
-				 &conn->_conn_ready);
-		k_sched_unlock();
-		LOG_DBG("raised");
+	bt_conn_ref(conn);
+
+	/* This function is the only function which accesses conn_ready list  that can be called
+	 * from a preemptive thread context, therefore requires a critical section to ensure that
+	 * the conn_ready list is not modified while we are checking and appending to it.
+	 */
+	k_sched_lock();
+
+	if (!sys_slist_find(&bt_dev.le.conn_ready, &conn->_conn_ready, NULL)) {
+		sys_slist_append(&bt_dev.le.conn_ready, &conn->_conn_ready);
+
+		added = true;
 	} else {
-		LOG_DBG("already in list");
+		added = false;
 	}
+
+	k_sched_unlock();
+
+	if (!added) {
+		bt_conn_unref(conn);
+	}
+
+	LOG_DBG("Connection %p %s conn_ready list", conn, added ? "added to" : "already in");
 
 	/* Kick the TX processor */
 	bt_tx_irq_raise();
@@ -917,7 +935,7 @@ __maybe_unused static bool dont_have_methods(struct bt_conn *conn)
 		(conn->has_data == NULL);
 }
 
-struct bt_conn *get_conn_ready(void)
+static struct bt_conn *get_conn_ready(void)
 {
 	struct bt_conn *conn, *tmp;
 	sys_snode_t *prev = NULL;
@@ -962,10 +980,9 @@ struct bt_conn *get_conn_ready(void)
 			/* Move reference off the list */
 			__ASSERT_NO_MSG(prev != &conn->_conn_ready);
 			sys_slist_remove(&bt_dev.le.conn_ready, prev, &conn->_conn_ready);
-			(void)atomic_set(&conn->_conn_ready_lock, 0);
 
-			/* Append connection to list if it still has data */
-			if (conn->has_data(conn)) {
+			/* Append connection to list if it is connected and still has data */
+			if (conn->has_data(conn) && (conn->state == BT_CONN_CONNECTED)) {
 				LOG_DBG("appending %p to back of TX queue", conn);
 				bt_conn_data_ready(conn);
 			}
@@ -992,30 +1009,6 @@ static void acl_get_and_clear_cb(struct bt_conn *conn, struct net_buf *buf,
 	memset(buf->user_data, 0, buf->user_data_size);
 }
 #endif	/* defined(CONFIG_BT_CONN) */
-
-/* Acts as a "null-routed" bt_send(). This fn will decrease the refcount of
- * `buf` and call the user callback with an error code.
- */
-static void destroy_and_callback(struct bt_conn *conn,
-				 struct net_buf *buf,
-				 bt_conn_tx_cb_t cb,
-				 void *ud)
-{
-	if (!cb) {
-		conn->get_and_clear_cb(conn, buf, &cb, &ud);
-	}
-
-	LOG_DBG("pop: cb %p userdata %p", cb, ud);
-
-	/* bt_send() would've done an unref. Do it here also, so the buffer is
-	 * hopefully destroyed and the user callback can allocate a new one.
-	 */
-	net_buf_unref(buf);
-
-	if (cb) {
-		cb(conn, ud, -ESHUTDOWN);
-	}
-}
 
 static volatile bool _suspend_tx;
 
@@ -1059,17 +1052,7 @@ void bt_conn_tx_processor(void)
 
 	if (conn->state != BT_CONN_CONNECTED) {
 		LOG_WRN("conn %p: not connected", conn);
-
-		/* Call the user callbacks & destroy (final-unref) the buffers
-		 * we were supposed to send.
-		 */
-		buf = conn->tx_data_pull(conn, SIZE_MAX, &buf_len);
-		while (buf) {
-			destroy_and_callback(conn, buf, cb, ud);
-			buf = conn->tx_data_pull(conn, SIZE_MAX, &buf_len);
-		}
-
-		goto exit;
+		goto raise_and_exit;
 	}
 
 	/* now that we are guaranteed resources, we can pull data from the upper
@@ -1103,25 +1086,12 @@ void bt_conn_tx_processor(void)
 	int err = send_buf(conn, buf, buf_len, cb, ud);
 
 	if (err) {
-		/* -EIO means `unrecoverable error`. It can be an assertion that
-		 *  failed or an error from the HCI driver.
-		 *
-		 * -ENOMEM means we thought we had all the resources to send the
-		 *  buf (ie. TX context + controller buffer) but one of them was
-		 *  not available. This is likely due to a failure of
-		 *  assumption, likely that we have been pre-empted somehow and
-		 *  that `tx_processor()` has been re-entered.
-		 *
-		 *  In both cases, we destroy the buffer and mark the connection
-		 *  as dead.
-		 */
 		LOG_ERR("Fatal error (%d). Disconnecting %p", err, conn);
-		destroy_and_callback(conn, buf, cb, ud);
 		bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
-
 		goto exit;
 	}
 
+raise_and_exit:
 	/* Always kick the TX work. It will self-suspend if it doesn't get
 	 * resources or there is nothing left to send.
 	 */
@@ -1155,8 +1125,8 @@ static void process_unack_tx(struct bt_conn *conn)
 	}
 }
 
-struct bt_conn *conn_lookup_handle(struct bt_conn *conns, size_t size,
-				   uint16_t handle)
+static struct bt_conn *conn_lookup_handle(struct bt_conn *conns, size_t size,
+					  uint16_t handle)
 {
 	int i;
 
@@ -1542,8 +1512,11 @@ void bt_conn_unref(struct bt_conn *conn)
 
 	old = atomic_dec(&conn->ref);
 	/* Prevent from accessing connection object */
-	conn = NULL;
 	deallocated = (atomic_get(&old) == 1);
+	IF_ENABLED(CONFIG_BT_CONN_TX,
+		   (__ASSERT(!(deallocated && k_work_is_pending(&conn->tx_complete_work)),
+			     "tx_complete_work is pending when conn is deallocated")));
+	conn = NULL;
 
 	LOG_DBG("handle %u ref %ld -> %ld", conn_handle, old, (old - 1));
 
@@ -1654,7 +1627,7 @@ struct net_buf *bt_conn_create_pdu_timeout(struct net_buf_pool *pool,
 	}
 
 	if (!buf) {
-		LOG_WRN("Unable to allocate buffer within timeout");
+		LOG_DBG("Unable to allocate buffer within timeout");
 		return NULL;
 	}
 
@@ -1676,9 +1649,7 @@ static void tx_complete_work(struct k_work *work)
 static void notify_recycled_conn_slot(void)
 {
 #if defined(CONFIG_BT_CONN)
-	struct bt_conn_cb *callback;
-
-	SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, callback, _node) {
+	BT_CONN_CB_DYNAMIC_FOREACH(callback) {
 		if (callback->recycled) {
 			callback->recycled();
 		}
@@ -1852,6 +1823,23 @@ void bt_conn_connected(struct bt_conn *conn)
 	notify_connected(conn);
 }
 
+#if defined(CONFIG_BT_CLASSIC)
+void bt_conn_role_changed(struct bt_conn *conn, uint8_t status)
+{
+	BT_CONN_CB_DYNAMIC_FOREACH(callback) {
+		if (callback->role_changed) {
+			callback->role_changed(conn, status);
+		}
+	}
+
+	STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
+		if (cb->role_changed) {
+			cb->role_changed(conn, status);
+		}
+	}
+}
+#endif
+
 static int conn_disconnect(struct bt_conn *conn, uint8_t reason)
 {
 	int err;
@@ -1915,10 +1903,7 @@ int bt_conn_disconnect(struct bt_conn *conn, uint8_t reason)
 
 static void notify_connected(struct bt_conn *conn)
 {
-	struct bt_conn_cb *callback;
-
-	SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, callback, _node) {
-
+	BT_CONN_CB_DYNAMIC_FOREACH(callback) {
 		if (callback->connected) {
 			callback->connected(conn, conn->err);
 		}
@@ -1933,9 +1918,7 @@ static void notify_connected(struct bt_conn *conn)
 
 static void notify_disconnected(struct bt_conn *conn)
 {
-	struct bt_conn_cb *callback;
-
-	SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, callback, _node) {
+	BT_CONN_CB_DYNAMIC_FOREACH(callback) {
 		if (callback->disconnected) {
 			callback->disconnected(conn, conn->err);
 		}
@@ -1949,7 +1932,7 @@ static void notify_disconnected(struct bt_conn *conn)
 }
 
 #if defined(CONFIG_BT_REMOTE_INFO)
-void notify_remote_info(struct bt_conn *conn)
+void bt_conn_notify_remote_info(struct bt_conn *conn)
 {
 	struct bt_conn_remote_info remote_info;
 	int err;
@@ -1960,9 +1943,7 @@ void notify_remote_info(struct bt_conn *conn)
 		return;
 	}
 
-	struct bt_conn_cb *callback;
-
-	SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, callback, _node) {
+	BT_CONN_CB_DYNAMIC_FOREACH(callback) {
 		if (callback->remote_info_available) {
 			callback->remote_info_available(conn, &remote_info);
 		}
@@ -1976,7 +1957,7 @@ void notify_remote_info(struct bt_conn *conn)
 }
 #endif /* defined(CONFIG_BT_REMOTE_INFO) */
 
-void notify_le_param_updated(struct bt_conn *conn)
+void bt_conn_notify_le_param_updated(struct bt_conn *conn)
 {
 	/* If new connection parameters meet requirement of pending
 	 * parameters don't send peripheral conn param request anymore on timeout
@@ -1989,13 +1970,11 @@ void notify_le_param_updated(struct bt_conn *conn)
 		atomic_clear_bit(conn->flags, BT_CONN_PERIPHERAL_PARAM_SET);
 	}
 
-	struct bt_conn_cb *callback;
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, callback, _node) {
+	BT_CONN_CB_DYNAMIC_FOREACH(callback) {
 		if (callback->le_param_updated) {
 			callback->le_param_updated(conn, conn->le.interval,
-						   conn->le.latency,
-						   conn->le.timeout);
+						   conn->le.latency, conn->le.timeout);
 		}
 	}
 
@@ -2009,11 +1988,9 @@ void notify_le_param_updated(struct bt_conn *conn)
 }
 
 #if defined(CONFIG_BT_USER_DATA_LEN_UPDATE)
-void notify_le_data_len_updated(struct bt_conn *conn)
+void bt_conn_notify_le_data_len_updated(struct bt_conn *conn)
 {
-	struct bt_conn_cb *callback;
-
-	SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, callback, _node) {
+	BT_CONN_CB_DYNAMIC_FOREACH(callback) {
 		if (callback->le_data_len_updated) {
 			callback->le_data_len_updated(conn, &conn->le.data_len);
 		}
@@ -2028,11 +2005,9 @@ void notify_le_data_len_updated(struct bt_conn *conn)
 #endif
 
 #if defined(CONFIG_BT_USER_PHY_UPDATE)
-void notify_le_phy_updated(struct bt_conn *conn)
+void bt_conn_notify_le_phy_updated(struct bt_conn *conn)
 {
-	struct bt_conn_cb *callback;
-
-	SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, callback, _node) {
+	BT_CONN_CB_DYNAMIC_FOREACH(callback) {
 		if (callback->le_phy_updated) {
 			callback->le_phy_updated(conn, &conn->le.phy);
 		}
@@ -2046,15 +2021,13 @@ void notify_le_phy_updated(struct bt_conn *conn)
 }
 #endif
 
-bool le_param_req(struct bt_conn *conn, struct bt_le_conn_param *param)
+bool bt_conn_le_param_req(struct bt_conn *conn, struct bt_le_conn_param *param)
 {
 	if (!bt_le_conn_params_valid(param)) {
 		return false;
 	}
 
-	struct bt_conn_cb *callback;
-
-	SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, callback, _node) {
+	BT_CONN_CB_DYNAMIC_FOREACH(callback) {
 		if (!callback->le_param_req) {
 			continue;
 		}
@@ -2454,10 +2427,7 @@ void bt_conn_identity_resolved(struct bt_conn *conn)
 		rpa = &conn->le.init_addr;
 	}
 
-
-	struct bt_conn_cb *callback;
-
-	SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, callback, _node) {
+	BT_CONN_CB_DYNAMIC_FOREACH(callback) {
 		if (callback->identity_resolved) {
 			callback->identity_resolved(conn, rpa, &conn->le.dst);
 		}
@@ -2480,7 +2450,7 @@ int bt_conn_le_start_encryption(struct bt_conn *conn, uint8_t rand[8],
 		return -EINVAL;
 	}
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_START_ENCRYPTION, sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -2519,8 +2489,7 @@ uint8_t bt_conn_enc_key_size(const struct bt_conn *conn)
 		struct net_buf *rsp;
 		uint8_t key_size;
 
-		buf = bt_hci_cmd_create(BT_HCI_OP_READ_ENCRYPTION_KEY_SIZE,
-					sizeof(*cp));
+		buf = bt_hci_cmd_alloc(K_FOREVER);
 		if (!buf) {
 			return 0;
 		}
@@ -2574,9 +2543,7 @@ void bt_conn_security_changed(struct bt_conn *conn, uint8_t hci_err,
 		bt_iso_security_changed(conn, hci_err);
 	}
 
-	struct bt_conn_cb *callback;
-
-	SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, callback, _node) {
+	BT_CONN_CB_DYNAMIC_FOREACH(callback) {
 		if (callback->security_changed) {
 			callback->security_changed(conn, conn->sec_level, err);
 		}
@@ -2676,6 +2643,8 @@ bt_security_t bt_conn_get_security(const struct bt_conn *conn)
 }
 #endif /* CONFIG_BT_SMP */
 
+#if defined(CONFIG_BT_CONN_DYNAMIC_CALLBACKS)
+
 int bt_conn_cb_register(struct bt_conn_cb *cb)
 {
 	if (sys_slist_find(&conn_cbs, &cb->_node, NULL)) {
@@ -2699,6 +2668,8 @@ int bt_conn_cb_unregister(struct bt_conn_cb *cb)
 
 	return 0;
 }
+
+#endif /* CONFIG_BT_CONN_DYNAMIC_CALLBACKS */
 
 bool bt_conn_exists_le(uint8_t id, const bt_addr_le_t *peer)
 {
@@ -2905,6 +2876,10 @@ int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info)
 	case BT_CONN_TYPE_BR:
 		info->br.dst = &conn->br.dst;
 		return 0;
+	case BT_CONN_TYPE_SCO:
+		info->sco.air_mode = conn->sco.air_mode;
+		info->sco.link_type = conn->sco.link_type;
+		return 0;
 #endif
 #if defined(CONFIG_BT_ISO)
 	case BT_CONN_TYPE_ISO:
@@ -2986,7 +2961,7 @@ static int bt_conn_get_tx_power_level(struct bt_conn *conn, uint8_t type,
 	struct bt_hci_cp_read_tx_power_level *cp;
 	struct net_buf *buf;
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_READ_TX_POWER_LEVEL, sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -3008,12 +2983,9 @@ static int bt_conn_get_tx_power_level(struct bt_conn *conn, uint8_t type,
 }
 
 #if defined(CONFIG_BT_TRANSMIT_POWER_CONTROL)
-void notify_tx_power_report(struct bt_conn *conn,
-			    struct bt_conn_le_tx_power_report report)
+void bt_conn_notify_tx_power_report(struct bt_conn *conn, struct bt_conn_le_tx_power_report report)
 {
-	struct bt_conn_cb *callback;
-
-	SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, callback, _node) {
+	BT_CONN_CB_DYNAMIC_FOREACH(callback) {
 		if (callback->tx_power_report) {
 			callback->tx_power_report(conn, &report);
 		}
@@ -3045,7 +3017,7 @@ int bt_conn_le_enhanced_get_tx_power_level(struct bt_conn *conn,
 		return -EINVAL;
 	}
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_ENH_READ_TX_POWER_LEVEL, sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -3083,7 +3055,7 @@ int bt_conn_le_get_remote_tx_power_level(struct bt_conn *conn,
 		return -EINVAL;
 	}
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_READ_REMOTE_TX_POWER_LEVEL, sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -3107,7 +3079,7 @@ int bt_conn_le_set_tx_power_report_enable(struct bt_conn *conn,
 		return -EINVAL;
 	}
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_TX_POWER_REPORT_ENABLE, sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -3153,12 +3125,10 @@ int bt_conn_le_get_tx_power_level(struct bt_conn *conn,
 }
 
 #if defined(CONFIG_BT_PATH_LOSS_MONITORING)
-void notify_path_loss_threshold_report(struct bt_conn *conn,
-				       struct bt_conn_le_path_loss_threshold_report report)
+void bt_conn_notify_path_loss_threshold_report(struct bt_conn *conn,
+					       struct bt_conn_le_path_loss_threshold_report report)
 {
-	struct bt_conn_cb *callback;
-
-	SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, callback, _node) {
+	BT_CONN_CB_DYNAMIC_FOREACH(callback) {
 		if (callback->path_loss_threshold_report) {
 			callback->path_loss_threshold_report(conn, &report);
 		}
@@ -3183,7 +3153,7 @@ int bt_conn_le_set_path_loss_mon_param(struct bt_conn *conn,
 		return -EINVAL;
 	}
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_PATH_LOSS_REPORTING_PARAMETERS, sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -3209,7 +3179,7 @@ int bt_conn_le_set_path_loss_mon_enable(struct bt_conn *conn, bool reporting_ena
 		return -EINVAL;
 	}
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_PATH_LOSS_REPORTING_ENABLE, sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -3224,12 +3194,10 @@ int bt_conn_le_set_path_loss_mon_enable(struct bt_conn *conn, bool reporting_ena
 #endif /* CONFIG_BT_PATH_LOSS_MONITORING */
 
 #if defined(CONFIG_BT_SUBRATING)
-void notify_subrate_change(struct bt_conn *conn,
-			   const struct bt_conn_le_subrate_changed params)
+void bt_conn_notify_subrate_change(struct bt_conn *conn,
+				   const struct bt_conn_le_subrate_changed params)
 {
-	struct bt_conn_cb *callback;
-
-	SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, callback, _node) {
+	BT_CONN_CB_DYNAMIC_FOREACH(callback) {
 		if (callback->subrate_changed) {
 			callback->subrate_changed(conn, &params);
 		}
@@ -3284,7 +3252,7 @@ int bt_conn_le_subrate_set_defaults(const struct bt_conn_le_subrate_param *param
 		return -EINVAL;
 	}
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_DEFAULT_SUBRATE, sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -3314,7 +3282,7 @@ int bt_conn_le_subrate_request(struct bt_conn *conn,
 		return -EINVAL;
 	}
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SUBRATE_REQUEST, sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -3331,15 +3299,131 @@ int bt_conn_le_subrate_request(struct bt_conn *conn,
 }
 #endif /* CONFIG_BT_SUBRATING */
 
-#if defined(CONFIG_BT_CHANNEL_SOUNDING)
-void notify_remote_cs_capabilities(struct bt_conn *conn, uint8_t status,
-				   struct bt_conn_le_cs_capabilities *params)
+#if defined(CONFIG_BT_LE_EXTENDED_FEAT_SET)
+void bt_conn_notify_read_all_remote_feat_complete(struct bt_conn *conn,
+					struct bt_conn_le_read_all_remote_feat_complete *params)
 {
-	struct bt_conn_cb *callback;
+	BT_CONN_CB_DYNAMIC_FOREACH(callback) {
+		if (callback->read_all_remote_feat_complete != NULL) {
+			callback->read_all_remote_feat_complete(conn, params);
+		}
+	}
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, callback, _node) {
+	STRUCT_SECTION_FOREACH(bt_conn_cb, cb)
+	{
+		if (cb->read_all_remote_feat_complete != NULL) {
+			cb->read_all_remote_feat_complete(conn, params);
+		}
+	}
+}
+
+int bt_conn_le_read_all_remote_features(struct bt_conn *conn, uint8_t pages_requested)
+{
+	struct bt_hci_cp_le_read_all_remote_features *cp;
+	struct net_buf *buf;
+
+	if (!bt_conn_is_type(conn, BT_CONN_TYPE_LE)) {
+		LOG_DBG("Invalid connection type: %u for %p", conn->type, conn);
+		return -EINVAL;
+	}
+
+	if (pages_requested > BT_HCI_LE_FEATURE_PAGE_MAX) {
+		return -EINVAL;
+	}
+
+	buf = bt_hci_cmd_alloc(K_FOREVER);
+	if (buf == NULL) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->handle = sys_cpu_to_le16(conn->handle);
+	cp->pages_requested = pages_requested;
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_READ_ALL_REMOTE_FEATURES, buf, NULL);
+}
+#endif /* CONFIG_BT_LE_EXTENDED_FEAT_SET */
+
+#if defined(CONFIG_BT_FRAME_SPACE_UPDATE)
+void bt_conn_notify_frame_space_update_complete(struct bt_conn *conn,
+						struct bt_conn_le_frame_space_updated *params)
+{
+	if (IS_ENABLED(CONFIG_BT_CONN_DYNAMIC_CALLBACKS)) {
+		struct bt_conn_cb *callback;
+
+		SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, callback, _node) {
+			if (callback->frame_space_updated != NULL) {
+				callback->frame_space_updated(conn, params);
+			}
+		}
+	}
+
+	STRUCT_SECTION_FOREACH(bt_conn_cb, cb)
+	{
+		if (cb->frame_space_updated != NULL) {
+			cb->frame_space_updated(conn, params);
+		}
+	}
+}
+
+static bool frame_space_update_param_valid(const struct bt_conn_le_frame_space_update_param *param)
+{
+	if (param->frame_space_min > BT_CONN_LE_FRAME_SPACE_MAX ||
+	    param->frame_space_max > BT_CONN_LE_FRAME_SPACE_MAX ||
+	    param->frame_space_min > param->frame_space_max) {
+		return false;
+	}
+
+	if (param->spacing_types == 0) {
+		return false;
+	}
+
+	if (param->phys == 0) {
+		return false;
+	}
+
+	return true;
+}
+
+int bt_conn_le_frame_space_update(struct bt_conn *conn,
+				  const struct bt_conn_le_frame_space_update_param *param)
+{
+	struct bt_hci_cp_le_frame_space_update *cp;
+	struct net_buf *buf;
+
+	if (!bt_conn_is_type(conn, BT_CONN_TYPE_LE)) {
+		LOG_DBG("Invalid connection type: %u for %p", conn->type, conn);
+		return -EINVAL;
+	}
+
+	if (!frame_space_update_param_valid(param)) {
+		return -EINVAL;
+	}
+
+	buf = bt_hci_cmd_alloc(K_FOREVER);
+	if (buf == NULL) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->handle = sys_cpu_to_le16(conn->handle);
+	cp->frame_space_min = sys_cpu_to_le16(param->frame_space_min);
+	cp->frame_space_max = sys_cpu_to_le16(param->frame_space_max);
+	cp->spacing_types = sys_cpu_to_le16(param->spacing_types);
+	cp->phys = param->phys;
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_FRAME_SPACE_UPDATE, buf, NULL);
+}
+#endif /* CONFIG_BT_FRAME_SPACE_UPDATE */
+
+#if defined(CONFIG_BT_CHANNEL_SOUNDING)
+void bt_conn_notify_remote_cs_capabilities(struct bt_conn *conn, uint8_t status,
+					   struct bt_conn_le_cs_capabilities *params)
+{
+	BT_CONN_CB_DYNAMIC_FOREACH(callback) {
 		if (callback->le_cs_read_remote_capabilities_complete) {
-			callback->le_cs_read_remote_capabilities_complete(conn, status, params);
+			callback->le_cs_read_remote_capabilities_complete(conn, status,
+										params);
 		}
 	}
 
@@ -3350,14 +3434,13 @@ void notify_remote_cs_capabilities(struct bt_conn *conn, uint8_t status,
 	}
 }
 
-void notify_remote_cs_fae_table(struct bt_conn *conn, uint8_t status,
-				struct bt_conn_le_cs_fae_table *params)
+void bt_conn_notify_remote_cs_fae_table(struct bt_conn *conn, uint8_t status,
+					struct bt_conn_le_cs_fae_table *params)
 {
-	struct bt_conn_cb *callback;
-
-	SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, callback, _node) {
+	BT_CONN_CB_DYNAMIC_FOREACH(callback) {
 		if (callback->le_cs_read_remote_fae_table_complete) {
-			callback->le_cs_read_remote_fae_table_complete(conn, status, params);
+			callback->le_cs_read_remote_fae_table_complete(conn, status,
+									params);
 		}
 	}
 
@@ -3368,12 +3451,10 @@ void notify_remote_cs_fae_table(struct bt_conn *conn, uint8_t status,
 	}
 }
 
-void notify_cs_config_created(struct bt_conn *conn, uint8_t status,
-			      struct bt_conn_le_cs_config *params)
+void bt_conn_notify_cs_config_created(struct bt_conn *conn, uint8_t status,
+				      struct bt_conn_le_cs_config *params)
 {
-	struct bt_conn_cb *callback;
-
-	SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, callback, _node) {
+	BT_CONN_CB_DYNAMIC_FOREACH(callback) {
 		if (callback->le_cs_config_complete) {
 			callback->le_cs_config_complete(conn, status, params);
 		}
@@ -3386,11 +3467,9 @@ void notify_cs_config_created(struct bt_conn *conn, uint8_t status,
 	}
 }
 
-void notify_cs_config_removed(struct bt_conn *conn, uint8_t config_id)
+void bt_conn_notify_cs_config_removed(struct bt_conn *conn, uint8_t config_id)
 {
-	struct bt_conn_cb *callback;
-
-	SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, callback, _node) {
+	BT_CONN_CB_DYNAMIC_FOREACH(callback) {
 		if (callback->le_cs_config_removed) {
 			callback->le_cs_config_removed(conn, config_id);
 		}
@@ -3403,11 +3482,9 @@ void notify_cs_config_removed(struct bt_conn *conn, uint8_t config_id)
 	}
 }
 
-void notify_cs_security_enable_available(struct bt_conn *conn, uint8_t status)
+void bt_conn_notify_cs_security_enable_available(struct bt_conn *conn, uint8_t status)
 {
-	struct bt_conn_cb *callback;
-
-	SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, callback, _node) {
+	BT_CONN_CB_DYNAMIC_FOREACH(callback) {
 		if (callback->le_cs_security_enable_complete) {
 			callback->le_cs_security_enable_complete(conn, status);
 		}
@@ -3420,12 +3497,10 @@ void notify_cs_security_enable_available(struct bt_conn *conn, uint8_t status)
 	}
 }
 
-void notify_cs_procedure_enable_available(struct bt_conn *conn, uint8_t status,
-					  struct bt_conn_le_cs_procedure_enable_complete *params)
+void bt_conn_notify_cs_procedure_enable_available(struct bt_conn *conn, uint8_t status,
+					struct bt_conn_le_cs_procedure_enable_complete *params)
 {
-	struct bt_conn_cb *callback;
-
-	SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, callback, _node) {
+	BT_CONN_CB_DYNAMIC_FOREACH(callback) {
 		if (callback->le_cs_procedure_enable_complete) {
 			callback->le_cs_procedure_enable_complete(conn, status, params);
 		}
@@ -3438,11 +3513,10 @@ void notify_cs_procedure_enable_available(struct bt_conn *conn, uint8_t status,
 	}
 }
 
-void notify_cs_subevent_result(struct bt_conn *conn, struct bt_conn_le_cs_subevent_result *result)
+void bt_conn_notify_cs_subevent_result(struct bt_conn *conn,
+				       struct bt_conn_le_cs_subevent_result *result)
 {
-	struct bt_conn_cb *callback;
-
-	SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, callback, _node) {
+	BT_CONN_CB_DYNAMIC_FOREACH(callback) {
 		if (callback->le_cs_subevent_data_available) {
 			callback->le_cs_subevent_data_available(conn, result);
 		}
@@ -3540,6 +3614,21 @@ int bt_conn_le_phy_update(struct bt_conn *conn,
 
 	return bt_le_set_phy(conn, all_phys, param->pref_tx_phy,
 			     param->pref_rx_phy, phy_opts);
+}
+
+int bt_conn_le_set_default_phy(uint8_t pref_tx_phy, uint8_t pref_rx_phy)
+{
+	uint8_t all_phys = 0U;
+
+	if (pref_tx_phy == BT_GAP_LE_PHY_NONE) {
+		all_phys |= BT_HCI_LE_PHY_TX_ANY;
+	}
+
+	if (pref_rx_phy == BT_GAP_LE_PHY_NONE) {
+		all_phys |= BT_HCI_LE_PHY_RX_ANY;
+	}
+
+	return bt_le_set_default_phy(all_phys, pref_tx_phy, pref_rx_phy);
 }
 #endif
 
@@ -3944,8 +4033,7 @@ int bt_conn_le_conn_update(struct bt_conn *conn,
 	struct hci_cp_le_conn_update *conn_update;
 	struct net_buf *buf;
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_CONN_UPDATE,
-				sizeof(*conn_update));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -4227,9 +4315,7 @@ void bt_hci_le_df_connection_iq_report_common(uint8_t event, struct net_buf *buf
 		return;
 	}
 
-	struct bt_conn_cb *callback;
-
-	SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, callback, _node) {
+	BT_CONN_CB_DYNAMIC_FOREACH(callback) {
 		if (callback->cte_report_cb) {
 			callback->cte_report_cb(conn, &iq_report);
 		}
@@ -4271,9 +4357,7 @@ void bt_hci_le_df_cte_req_failed(struct net_buf *buf)
 		return;
 	}
 
-	struct bt_conn_cb *callback;
-
-	SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, callback, _node) {
+	BT_CONN_CB_DYNAMIC_FOREACH(callback) {
 		if (callback->cte_report_cb) {
 			callback->cte_report_cb(conn, &iq_report);
 		}

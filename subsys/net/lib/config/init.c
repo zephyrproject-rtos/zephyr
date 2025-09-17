@@ -102,7 +102,7 @@ static void print_dhcpv4_info(struct net_if *iface)
 static struct net_mgmt_event_callback mgmt4_cb;
 
 static void ipv4_addr_add_handler(struct net_mgmt_event_callback *cb,
-				  uint32_t mgmt_event,
+				  uint64_t mgmt_event,
 				  struct net_if *iface)
 {
 	if (mgmt_event == NET_EVENT_IPV4_ADDR_ADD) {
@@ -244,7 +244,7 @@ static struct net_mgmt_event_callback mgmt6_cb;
 static struct in6_addr laddr;
 
 static void ipv6_event_handler(struct net_mgmt_event_callback *cb,
-			       uint32_t mgmt_event, struct net_if *iface)
+			       uint64_t mgmt_event, struct net_if *iface)
 {
 	struct net_if_ipv6 *ipv6 = iface->config.ip.ipv6;
 	int i;
@@ -310,7 +310,7 @@ static void ipv6_event_handler(struct net_mgmt_event_callback *cb,
 static void setup_ipv6(struct net_if *iface, uint32_t flags)
 {
 	struct net_if_addr *ifaddr;
-	uint32_t mask = NET_EVENT_IPV6_DAD_SUCCEED;
+	uint64_t mask = NET_EVENT_IPV6_DAD_SUCCEED;
 
 	if (sizeof(CONFIG_NET_CONFIG_MY_IPV6_ADDR) == 1) {
 		/* Empty address, skip setting ANY address in this case */
@@ -330,20 +330,10 @@ static void setup_ipv6(struct net_if *iface, uint32_t flags)
 	net_mgmt_init_event_callback(&mgmt6_cb, ipv6_event_handler, mask);
 	net_mgmt_add_event_callback(&mgmt6_cb);
 
-	/*
-	 * check for CMD_ADDR_ADD bit here, NET_EVENT_IPV6_ADDR_ADD is
-	 * a combination of _NET_EVENT_IPV6_BASE | NET_EVENT_IPV6_CMD_ADDR_ADD
-	 * so it will always return != NET_EVENT_IPV6_CMD_ADDR_ADD if any other
-	 * event is set (for instance NET_EVENT_IPV6_ROUTER_ADD)
-	 */
-	if ((mask & NET_EVENT_IPV6_CMD_ADDR_ADD) ==
-	    NET_EVENT_IPV6_CMD_ADDR_ADD) {
-		ifaddr = net_if_ipv6_addr_add(iface, &laddr,
-					      NET_ADDR_MANUAL, 0);
-		if (!ifaddr) {
-			NET_ERR("Cannot add %s to interface",
-				CONFIG_NET_CONFIG_MY_IPV6_ADDR);
-		}
+	ifaddr = net_if_ipv6_addr_add(iface, &laddr, NET_ADDR_MANUAL, 0);
+	if (!ifaddr) {
+		NET_ERR("Cannot add %s to interface",
+			CONFIG_NET_CONFIG_MY_IPV6_ADDR);
 	}
 
 exit:
@@ -363,7 +353,7 @@ exit:
 
 #if defined(CONFIG_NET_NATIVE)
 static void iface_up_handler(struct net_mgmt_event_callback *cb,
-			     uint32_t mgmt_event, struct net_if *iface)
+			     uint64_t mgmt_event, struct net_if *iface)
 {
 	if (mgmt_event == NET_EVENT_IF_UP) {
 		NET_INFO("Interface %d (%p) coming up",
@@ -546,24 +536,17 @@ int net_config_init_app(const struct device *dev, const char *app_info)
 		NET_ERR("Network initialization failed (%d)", ret);
 	}
 
-	if (IS_ENABLED(CONFIG_NET_CONFIG_CLOCK_SNTP_INIT)) {
+	if (IS_ENABLED(CONFIG_NET_CONFIG_CLOCK_SNTP_INIT) &&
+	    !IS_ENABLED(CONFIG_NET_CONFIG_SNTP_INIT_USE_CONNECTION_MANAGER)) {
 		net_init_clock_via_sntp();
 	}
 
 	/* This is activated late as it requires the network stack to be up
 	 * and running before syslog messages can be sent to network.
 	 */
-	if (IS_ENABLED(CONFIG_LOG_BACKEND_NET) &&
-	    IS_ENABLED(CONFIG_LOG_BACKEND_NET_AUTOSTART)) {
-		const struct log_backend *backend = log_backend_net_get();
-
-		if (!log_backend_is_active(backend)) {
-			if (backend->api->init != NULL) {
-				backend->api->init(backend);
-			}
-
-			log_backend_activate(backend, NULL);
-		}
+	if (IS_ENABLED(CONFIG_LOG_BACKEND_NET_AUTOSTART) &&
+	    !IS_ENABLED(CONFIG_LOG_BACKEND_NET_USE_CONNECTION_MANAGER)) {
+		log_backend_net_start();
 	}
 
 	return ret;

@@ -169,6 +169,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	/* Get reference to ACL context */
 	conn_lll = ull_conn_lll_get(cis_lll->acl_handle);
+	LL_ASSERT(conn_lll != NULL);
 
 	/* Pick the event_count calculated in the ULL prepare */
 	cis_lll->event_count = cis_lll->event_count_prepare;
@@ -445,6 +446,17 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 		radio_isr_set(isr_done, cis_lll);
 		radio_disable();
 
+#if defined(CONFIG_BT_CTLR_LE_ENC)
+		/* Get reference to ACL context */
+		const struct lll_conn *conn_lll = ull_conn_lll_get(cis_lll->acl_handle);
+
+		LL_ASSERT(conn_lll != NULL);
+
+		if (conn_lll->enc_rx) {
+			radio_ccm_disable();
+		}
+#endif /* CONFIG_BT_CTLR_LE_ENC */
+
 		return;
 	}
 
@@ -543,8 +555,15 @@ static void isr_rx(void *param)
 		radio_tmr_ready_save(radio_tmr_ready_get() - se_offset_us);
 	}
 
-	/* Close subevent, one tx-rx chain */
-	radio_switch_complete_and_disable();
+	/* Close subevent, one rx-tx chain */
+	if (IS_ENABLED(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)) {
+		/* Required under single time tIFS switching, to accumulate the packet
+		 * timer value at the time of clear on radio end.
+		 */
+		radio_switch_complete_end_capture_and_disable();
+	} else {
+		radio_switch_complete_and_disable();
+	}
 
 	/* FIXME: Do not call this for every event/subevent */
 	ull_conn_iso_lll_cis_established(param);
@@ -554,6 +573,7 @@ static void isr_rx(void *param)
 
 	/* Get reference to ACL context */
 	conn_lll = ull_conn_lll_get(cis_lll->acl_handle);
+	LL_ASSERT(conn_lll != NULL);
 
 	if (crc_ok) {
 		struct node_rx_pdu *node_rx;
@@ -637,10 +657,7 @@ static void isr_rx(void *param)
 
 			ull_iso_pdu_rx_alloc();
 			iso_rx_put(node_rx->hdr.link, node_rx);
-
-#if !defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
 			iso_rx_sched();
-#endif /* CONFIG_BT_CTLR_LOW_LAT_ULL */
 
 			cis_lll->rx.bn_curr++;
 			if ((cis_lll->rx.bn_curr > cis_lll->rx.bn) &&
@@ -859,6 +876,11 @@ static void isr_tx(void *param)
 	uint32_t start_us;
 	uint32_t hcto;
 
+	/* Call to ensure packet/event timer accumulates the elapsed time
+	 * under single timer use.
+	 */
+	(void)radio_is_tx_done();
+
 	lll_isr_tx_sub_status_reset();
 
 	/* Get reference to CIS LLL context */
@@ -870,6 +892,8 @@ static void isr_tx(void *param)
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 	/* Get reference to ACL context */
 	const struct lll_conn *conn_lll = ull_conn_lll_get(cis_lll->acl_handle);
+
+	LL_ASSERT(conn_lll != NULL);
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
 	/* PHY */
@@ -1015,6 +1039,8 @@ static void next_cis_prepare(void *param)
 		return;
 	}
 
+	payload_count_rx_flush_or_txrx_inc(cis_lll);
+
 	cis_handle_curr = cis_handle;
 
 	radio_isr_set(isr_prepare_subevent_next_cis, next_cis_lll);
@@ -1032,6 +1058,7 @@ static void isr_prepare_subevent(void *param)
 
 	/* Get reference to ACL context */
 	conn_lll = ull_conn_lll_get(cis_lll->acl_handle);
+	LL_ASSERT(conn_lll != NULL);
 
 	/* Calculate the radio channel to use for next subevent
 	 */
@@ -1057,6 +1084,7 @@ static void isr_prepare_subevent_next_cis(void *param)
 
 	/* Get reference to ACL context */
 	conn_lll = ull_conn_lll_get(cis_lll->acl_handle);
+	LL_ASSERT(conn_lll != NULL);
 
 	/* Event counter value,  0-15 bit of cisEventCounter */
 	event_counter = cis_lll->event_count;
@@ -1093,6 +1121,8 @@ static void isr_prepare_subevent_common(void *param)
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 	/* Get reference to ACL context */
 	const struct lll_conn *conn_lll = ull_conn_lll_get(cis_lll->acl_handle);
+
+	LL_ASSERT(conn_lll != NULL);
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
 	/* PHY */

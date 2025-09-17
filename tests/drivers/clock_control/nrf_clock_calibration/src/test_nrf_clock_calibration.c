@@ -63,6 +63,10 @@ static void test_calibration(uint32_t exp_cal, uint32_t exp_skip,
 	int cal_cnt;
 	int skip_cnt;
 
+	const struct device *const clk_dev = DEVICE_DT_GET_ONE(nordic_nrf_clock);
+
+	turn_on_clock(clk_dev, CLOCK_CONTROL_NRF_SUBSYS_HF);
+
 	cal_cnt = z_nrf_clock_calibration_count();
 	skip_cnt = z_nrf_clock_calibration_skips_count();
 
@@ -70,6 +74,8 @@ static void test_calibration(uint32_t exp_cal, uint32_t exp_skip,
 
 	cal_cnt = z_nrf_clock_calibration_count() - cal_cnt;
 	skip_cnt = z_nrf_clock_calibration_skips_count() - skip_cnt;
+
+	turn_off_clock(clk_dev, CLOCK_CONTROL_NRF_SUBSYS_HF);
 
 	zassert_equal(cal_cnt, exp_cal,
 			"%d: Unexpected number of calibrations (%d, exp:%d)",

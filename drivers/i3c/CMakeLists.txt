@@ -52,8 +52,28 @@ zephyr_library_sources_ifdef(
 )
 
 zephyr_library_sources_ifdef(
+  CONFIG_I3C_RENESAS_RA
+  i3c_renesas_ra.c
+)
+
+zephyr_library_sources_ifdef(
   CONFIG_I3C_DW
   i3c_dw.c
+)
+
+zephyr_library_sources_ifdef(
+  CONFIG_I3CM_IT51XXX
+  i3cm_it51xxx.c
+)
+
+zephyr_library_sources_ifdef(
+  CONFIG_I3CS_IT51XXX
+  i3cs_it51xxx.c
+)
+
+zephyr_library_sources_ifdef(
+  CONFIG_I3C_MAX32
+  i3c_max32.c
 )
 
 zephyr_library_sources_ifdef(

@@ -30,6 +30,7 @@
 #include <zephyr/linker/sections.h>
 #include <ia32/exception.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/arch/x86/cet.h>
 
 #ifndef _ASMLANGUAGE
 #include <zephyr/kernel.h>
@@ -40,7 +41,7 @@
 /* Some configurations require that the stack/registers be adjusted before
  * z_thread_entry. See discussion in swap.S for z_x86_thread_entry_wrapper()
  */
-#if defined(CONFIG_DEBUG_INFO)
+#if defined(CONFIG_X86_DEBUG_INFO)
 #define _THREAD_WRAPPER_REQUIRED
 #endif
 
@@ -72,5 +73,15 @@ extern void z_x86_tls_update_gdt(struct k_thread *thread);
 #endif
 
 #endif /* _ASMLANGUAGE */
+
+#define X86_IRQ_SHADOW_STACK_DEFINE(name, size)							\
+	arch_thread_hw_shadow_stack_t Z_GENERIC_SECTION(.x86shadowstack)			\
+	__aligned(CONFIG_X86_CET_SHADOW_STACK_ALIGNMENT)					\
+	name[size / sizeof(arch_thread_hw_shadow_stack_t)] =					\
+		{ [size / sizeof(arch_thread_hw_shadow_stack_t) - 4] =				\
+			(uintptr_t)name + size - 2 * sizeof(arch_thread_hw_shadow_stack_t),	\
+		  [size / sizeof(arch_thread_hw_shadow_stack_t) - 3] = 0,			\
+		  [size / sizeof(arch_thread_hw_shadow_stack_t) - 2] = 0,			\
+		}
 
 #endif /* ZEPHYR_ARCH_X86_INCLUDE_IA32_KERNEL_ARCH_DATA_H_ */

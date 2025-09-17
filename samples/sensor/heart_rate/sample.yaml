@@ -1,0 +1,10 @@
+sample:
+  name: Heart Rate Sensor Sample
+tests:
+  sample.sensor.heart_rate:
+    harness: sensor
+    tags: sensors
+    platform_allow: hexiwear/mk64f12
+    depends_on: i2c
+    integration_platforms:
+      - hexiwear/mk64f12

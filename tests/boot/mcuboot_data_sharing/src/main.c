@@ -16,7 +16,7 @@
 #define FLASH_SECTOR_SIZE 1024
 #define FLASH_SECTOR_SIZE_KB 4
 #define FLASH_MAX_APP_SECTORS 34
-#define FLASH_RESERVED_SECTORS 2
+#define FLASH_RESERVED_SECTORS 1
 #define FLASH_MAX_APP_SIZE ((FLASH_MAX_APP_SECTORS - FLASH_RESERVED_SECTORS) \
 			    * FLASH_SECTOR_SIZE_KB)
 #define RUNNING_SLOT 0
@@ -29,7 +29,7 @@ ZTEST(mcuboot_shared_data, test_mode)
 	memset(var, 0xff, sizeof(var));
 	rc = settings_runtime_get("blinfo/mode", var, sizeof(var));
 	zassert_equal(rc, sizeof(var), "Expected data length mismatch");
-	zassert_equal(var[0], MCUBOOT_MODE_SWAP_USING_MOVE, "Expected data mismatch");
+	zassert_equal(var[0], MCUBOOT_MODE_SWAP_USING_OFFSET, "Expected data mismatch");
 }
 
 ZTEST(mcuboot_shared_data, test_signature_type)

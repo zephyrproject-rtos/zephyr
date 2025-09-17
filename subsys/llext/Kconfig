@@ -5,7 +5,6 @@ menuconfig LLEXT
 	bool "Linkable loadable extensions"
 	select CACHE_MANAGEMENT if DCACHE
 	select KERNEL_WHOLE_ARCHIVE
-	depends on !HARVARD
 	help
 	  Enable the linkable loadable extension subsystem
 
@@ -44,11 +43,40 @@ config LLEXT_TYPE_ELF_SHAREDLIB
 
 endchoice
 
+config LLEXT_HEAP_DYNAMIC
+	bool "Do not allocate static LLEXT heap"
+	help
+	  Some applications require loading extensions into the memory which does not
+	  exist during the boot time and cannot be allocated statically. Make the application
+	  responsible for LLEXT heap allocation. Do not allocate LLEXT heap statically.
+
+	  Application must call llext_heap_init() in order to assign a buffer to be used
+	  as the LLEXT heap, otherwise LLEXT modules will not load. When the application
+	  does not need LLEXT functionality any more, it should call llext_heap_uninit(),
+	  which releases control of the buffer back to the application.
+
 config LLEXT_HEAP_SIZE
 	int "llext heap memory size in kilobytes"
+	depends on !LLEXT_HEAP_DYNAMIC && !HARVARD
 	default 8
 	help
 	  Heap size in kilobytes available to llext for dynamic allocation
+
+config LLEXT_INSTR_HEAP_SIZE
+	int "llext ICCM heap memory size in kilobytes"
+	depends on !LLEXT_HEAP_DYNAMIC && HARVARD
+	default 4
+	help
+	  ICCM heap size in kilobytes available to llext for dynamic allocation.
+	  Only executable sections will be placed in this heap.
+
+config LLEXT_DATA_HEAP_SIZE
+	int "llext DCCM heap memory size in kilobytes"
+	depends on !LLEXT_HEAP_DYNAMIC && HARVARD
+	default 8
+	help
+	  DCCM heap size in kilobytes available to llext for dynamic allocation.
+	  Extension data and metadata will be placed in this heap.
 
 config LLEXT_BUILD_PIC
 	bool "Use -fPIC when building LLEXT"
@@ -119,6 +147,12 @@ config LLEXT_IMPORT_ALL_GLOBALS
 	  This option instead allows all global symbols from extensions to be
 	  used by the main application. This is useful to load basic extensions
 	  that have been compiled without the full Zephyr EDK.
+
+config LLEXT_EXPERIMENTAL
+	bool "LLEXT experimental functionality"
+	help
+	  Include support for LLEXT experimental and unstable functionality that
+	  has a very high likelihood to change in the future.
 
 module = LLEXT
 module-str = llext

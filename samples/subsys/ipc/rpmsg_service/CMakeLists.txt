@@ -15,7 +15,7 @@ message(STATUS "${BOARD} compile as Master in this sample")
 
 enable_language(C ASM)
 
-if("${BOARD}" STREQUAL "esp32_devkitc_wrover" OR "${BOARD}" STREQUAL "esp32s3_devkitm")
+if("${BOARD}" STREQUAL "esp32_devkitc" OR "${BOARD}" STREQUAL "esp32s3_devkitm")
   set_source_files_properties(${REMOTE_ZEPHYR_DIR}/esp32_net_firmware.c PROPERTIES GENERATED TRUE)
   target_sources(app PRIVATE src/main.c ${REMOTE_ZEPHYR_DIR}/esp32_net_firmware.c)
 else()

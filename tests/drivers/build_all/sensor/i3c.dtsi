@@ -8,7 +8,8 @@
 
 /****************************************
  * PLEASE KEEP REG ADDRESSES SEQUENTIAL *
- ***************************************/
+ **************************************
+ */
 
 test_i3c_lps22hh: lps22hh@100000803E0000001 {
 	compatible = "st,lps22hh";
@@ -59,4 +60,11 @@ test_i3c_lsm6dsv32x: lsm6dsv32x@600000803E0000004 {
 	accel-odr = <LSM6DSV16X_DT_ODR_AT_60Hz>;
 	gyro-range = <LSM6DSV16X_DT_FS_2000DPS>;
 	gyro-odr = <LSM6DSV16X_DT_ODR_AT_60Hz>;
+};
+
+test_i3c_icm45686: icm45686@700000803E0000004 {
+	compatible = "invensense,icm45686";
+	reg = <0x7 0x00000803 0xE0000004>;
+	assigned-address = <0x7>;
+	int-gpios = <&test_gpio 0 0>;
 };

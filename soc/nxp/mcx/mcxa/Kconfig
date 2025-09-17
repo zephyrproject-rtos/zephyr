@@ -1,7 +1,7 @@
 # Copyright 2024-2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_SERIES_MCXA
+config SOC_FAMILY_MCXA
 	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
 	select CLOCK_CONTROL
 	select ARM
@@ -20,14 +20,14 @@ config SOC_MCXA156
 	select ARMV8_M_DSP
 	select HAS_MCUX_CACHE
 
-config SOC_MCXA166
+config SOC_MCXA346
 	select CPU_CORTEX_M33
 	select CPU_HAS_ARM_MPU
 	select CPU_HAS_FPU
 	select ARMV8_M_DSP
 	select HAS_MCUX_CACHE
 
-config SOC_MCXA276
+config SOC_MCXA266
 	select CPU_CORTEX_M33
 	select CPU_HAS_ARM_MPU
 	select CPU_HAS_FPU

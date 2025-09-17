@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2024 TOKITA Hiroshi
+ * Copyright (c) 2024-2025 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,6 +29,14 @@
 			compatible = "renesas,ra-system";
 			reg = <0x4001e000 0x1000>;
 			status = "okay";
+		};
+
+		elc: elc@40041000 {
+			compatible = "renesas,ra-elc";
+			reg = <0x40041000 0x6c>;
+			#renesas-elc-cells = <2>;
+			clocks = <&pclkb MSTPC 14>;
+			status = "disabled";
 		};
 
 		ioport0: gpio@40040000 {
@@ -143,6 +152,7 @@
 			reg = <0x40070000 0x20>;
 			clocks = <&pclkb MSTPB 31>;
 			status = "disabled";
+
 			uart {
 				compatible = "renesas,ra-sci-uart";
 				channel = <0>;
@@ -157,6 +167,7 @@
 			reg = <0x40070020 0x20>;
 			clocks = <&pclkb MSTPB 30>;
 			status = "disabled";
+
 			uart {
 				compatible = "renesas,ra-sci-uart";
 				channel = <1>;
@@ -171,6 +182,7 @@
 			reg = <0x40070040 0x20>;
 			clocks = <&pclkb MSTPB 29>;
 			status = "disabled";
+
 			uart {
 				compatible = "renesas,ra-sci-uart";
 				channel = <2>;
@@ -185,6 +197,7 @@
 			reg = <0x40070060 0x20>;
 			clocks = <&pclkb MSTPB 28>;
 			status = "disabled";
+
 			uart {
 				compatible = "renesas,ra-sci-uart";
 				channel = <3>;
@@ -199,6 +212,7 @@
 			reg = <0x40070120 0x20>;
 			clocks = <&pclkb MSTPB 22>;
 			status = "disabled";
+
 			uart {
 				compatible = "renesas,ra-sci-uart";
 				channel = <9>;
@@ -246,7 +260,7 @@
 			#size-cells = <1>;
 		};
 
-		agt0: agt@40084000  {
+		agt0: agt@40084000 {
 			compatible = "renesas,ra-agt";
 			channel = <0>;
 			reg = <0x40084000 0x100>;
@@ -276,11 +290,11 @@
 			};
 		};
 
-		id_code: id_code@1010018 {
-			compatible = "zephyr,memory-region";
-			reg = <0x01010018 0x20>;
-			zephyr,memory-region = "ID_CODE";
-			status = "okay";
+		crc: crc@40074000 {
+			compatible = "renesas,ra-crc";
+			reg = <0x40074000 0x1000>;
+			clocks = <&pclkb MSTPC 1>;
+			status = "disabled";
 		};
 
 		port_irq0: external-interrupt@40006000 {
@@ -376,6 +390,44 @@
 				#io-channel-cells = <1>;
 				reg = <0>;
 				status = "disabled";
+			};
+		};
+
+		option-setting-ofs-in-rom@400 {
+			reg = <0x00000400 0x3c>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			option_setting_ofs0: option-setting-ofs0@400 {
+				compatible = "renesas,ofs-memory";
+				reg = <0x00000400 0x4>;
+				status = "okay";
+			};
+
+			option_setting_ofs1: option-setting-ofs1@404 {
+				compatible = "renesas,ofs-memory";
+				reg = <0x00000404 0x4>;
+				status = "okay";
+			};
+
+			option_setting_secmpu: option-setting-secmpu@408 {
+				compatible = "renesas,ofs-memory";
+				reg = <0x00000408 0x34>;
+				status = "okay";
+			};
+		};
+
+		option-setting-ofs-conf@1010008 {
+			reg = <0x01010008 0x2c>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "okay";
+
+			option_setting_osis: option-setting-osis@1010018 {
+				compatible = "zephyr,memory-region";
+				zephyr,memory-region = "OFS_OSIS_MEMORY";
+				reg = <0x01010018 0x1c>;
+				status = "okay";
 			};
 		};
 	};

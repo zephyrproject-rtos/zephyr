@@ -64,8 +64,8 @@ static uint32_t pacs_snk_location;
 #endif /* CONFIG_BT_PAC_SNK_LOC */
 #endif /* CONFIG_BT_PAC_SNK */
 
-static uint16_t src_available_contexts = BT_AUDIO_CONTEXT_TYPE_PROHIBITED;
-static uint16_t snk_available_contexts = BT_AUDIO_CONTEXT_TYPE_PROHIBITED;
+static uint16_t src_available_contexts = BT_AUDIO_CONTEXT_TYPE_NONE;
+static uint16_t snk_available_contexts = BT_AUDIO_CONTEXT_TYPE_NONE;
 
 enum {
 	FLAG_ACTIVE,
@@ -110,6 +110,23 @@ static struct pacs {
 	ATOMIC_DEFINE(flags, PACS_FLAG_NUM);
 
 	struct pacs_client clients[CONFIG_BT_MAX_PAIRED];
+
+	struct bt_gatt_attr *available_ctx_attr;
+#if defined(CONFIG_BT_PACS_SUPPORTED_CONTEXT_NOTIFIABLE)
+	struct bt_gatt_attr *supported_ctx_attr;
+#endif /* CONFIG_BT_PACS_SUPPORTED_CONTEXT_NOTIFIABLE */
+#if defined(CONFIG_BT_PAC_SNK_NOTIFIABLE)
+	struct bt_gatt_attr *snk_pac_attr;
+#endif /* CONFIG_BT_PAC_SNK_NOTIFIABLE */
+#if defined(CONFIG_BT_PAC_SNK_LOC_NOTIFIABLE)
+	struct bt_gatt_attr *snk_pac_loc_attr;
+#endif /* CONFIG_BT_PAC_SNK_LOC_NOTIFIABLE */
+#if defined(CONFIG_BT_PAC_SRC_NOTIFIABLE)
+	struct bt_gatt_attr *src_pac_attr;
+#endif /* CONFIG_BT_PAC_SRC_NOTIFIABLE */
+#if defined(CONFIG_BT_PAC_SRC_LOC_NOTIFIABLE)
+	struct bt_gatt_attr *src_pac_loc_attr;
+#endif /* CONFIG_BT_PAC_SRC_LOC_NOTIFIABLE */
 } pacs;
 
 
@@ -308,7 +325,7 @@ static uint16_t supported_context_get(enum bt_audio_dir dir)
 		break;
 	}
 
-	return BT_AUDIO_CONTEXT_TYPE_PROHIBITED;
+	return BT_AUDIO_CONTEXT_TYPE_NONE;
 }
 
 static ssize_t supported_context_read(struct bt_conn *conn,
@@ -860,6 +877,35 @@ int bt_pacs_register(const struct bt_pacs_register_param *param)
 		return -ENOEXEC;
 	}
 
+	pacs.available_ctx_attr = bt_gatt_find_by_uuid(pacs_svc.attrs, pacs_svc.attr_count,
+						       BT_UUID_PACS_AVAILABLE_CONTEXT);
+	__ASSERT_NO_MSG(pacs.available_ctx_attr != NULL);
+#if defined(CONFIG_BT_PACS_SUPPORTED_CONTEXT_NOTIFIABLE)
+	pacs.supported_ctx_attr = bt_gatt_find_by_uuid(pacs_svc.attrs, pacs_svc.attr_count,
+						       BT_UUID_PACS_SUPPORTED_CONTEXT);
+	__ASSERT_NO_MSG(pacs.supported_ctx_attr != NULL);
+#endif /* CONFIG_BT_PACS_SUPPORTED_CONTEXT_NOTIFIABLE */
+#if defined(CONFIG_BT_PAC_SNK_NOTIFIABLE)
+	pacs.snk_pac_attr =
+		bt_gatt_find_by_uuid(pacs_svc.attrs, pacs_svc.attr_count, BT_UUID_PACS_SNK);
+	__ASSERT_NO_MSG(pacs.snk_pac_attr != NULL);
+#endif /* CONFIG_BT_PAC_SNK_NOTIFIABLE */
+#if defined(CONFIG_BT_PAC_SNK_LOC_NOTIFIABLE)
+	pacs.snk_pac_loc_attr =
+		bt_gatt_find_by_uuid(pacs_svc.attrs, pacs_svc.attr_count, BT_UUID_PACS_SNK_LOC);
+	__ASSERT_NO_MSG(pacs.snk_pac_loc_attr != NULL);
+#endif /* CONFIG_BT_PAC_SNK_LOC_NOTIFIABLE */
+#if defined(CONFIG_BT_PAC_SRC_NOTIFIABLE)
+	pacs.src_pac_attr =
+		bt_gatt_find_by_uuid(pacs_svc.attrs, pacs_svc.attr_count, BT_UUID_PACS_SRC);
+	__ASSERT_NO_MSG(pacs.src_pac_attr != NULL);
+#endif /* CONFIG_BT_PAC_SRC_NOTIFIABLE */
+#if defined(CONFIG_BT_PAC_SRC_LOC_NOTIFIABLE)
+	pacs.src_pac_loc_attr =
+		bt_gatt_find_by_uuid(pacs_svc.attrs, pacs_svc.attr_count, BT_UUID_PACS_SRC_LOC);
+	__ASSERT_NO_MSG(pacs.src_pac_loc_attr != NULL);
+#endif /* CONFIG_BT_PAC_SRC_LOC_NOTIFIABLE */
+
 	return 0;
 }
 
@@ -1005,6 +1051,7 @@ static int available_contexts_notify(struct bt_conn *conn)
 	return 0;
 }
 
+#if defined(CONFIG_BT_PACS_SUPPORTED_CONTEXT_NOTIFIABLE)
 static int supported_contexts_notify(struct bt_conn *conn)
 {
 	struct bt_pacs_context context = {
@@ -1022,6 +1069,7 @@ static int supported_contexts_notify(struct bt_conn *conn)
 	}
 	return 0;
 }
+#endif /* CONFIG_BT_PACS_SUPPORTED_CONTEXT_NOTIFIABLE */
 
 void pacs_gatt_notify_complete_cb(struct bt_conn *conn, void *user_data)
 {
@@ -1096,7 +1144,8 @@ static void notify_cb(struct bt_conn *conn, void *data)
 	}
 
 #if defined(CONFIG_BT_PAC_SNK_NOTIFIABLE)
-	if (atomic_test_bit(client->flags, FLAG_SINK_PAC_CHANGED)) {
+	if (atomic_test_bit(client->flags, FLAG_SINK_PAC_CHANGED) &&
+	    bt_gatt_is_subscribed(conn, pacs.snk_pac_attr, BT_GATT_CCC_NOTIFY)) {
 		LOG_DBG("Notifying Sink PAC");
 		err = pac_notify(conn, BT_AUDIO_DIR_SINK);
 		if (!err) {
@@ -1106,7 +1155,8 @@ static void notify_cb(struct bt_conn *conn, void *data)
 #endif /* CONFIG_BT_PAC_SNK_NOTIFIABLE */
 
 #if defined(CONFIG_BT_PAC_SNK_LOC_NOTIFIABLE)
-	if (atomic_test_bit(client->flags, FLAG_SINK_AUDIO_LOCATIONS_CHANGED)) {
+	if (atomic_test_bit(client->flags, FLAG_SINK_AUDIO_LOCATIONS_CHANGED) &&
+	    bt_gatt_is_subscribed(conn, pacs.snk_pac_loc_attr, BT_GATT_CCC_NOTIFY)) {
 		LOG_DBG("Notifying Sink Audio Location");
 		err = pac_notify_loc(conn, BT_AUDIO_DIR_SINK);
 		if (!err) {
@@ -1116,7 +1166,8 @@ static void notify_cb(struct bt_conn *conn, void *data)
 #endif /* CONFIG_BT_PAC_SNK_LOC_NOTIFIABLE */
 
 #if defined(CONFIG_BT_PAC_SRC_NOTIFIABLE)
-	if (atomic_test_bit(client->flags, FLAG_SOURCE_PAC_CHANGED)) {
+	if (atomic_test_bit(client->flags, FLAG_SOURCE_PAC_CHANGED) &&
+	    bt_gatt_is_subscribed(conn, pacs.src_pac_attr, BT_GATT_CCC_NOTIFY)) {
 		LOG_DBG("Notifying Source PAC");
 		err = pac_notify(conn, BT_AUDIO_DIR_SOURCE);
 		if (!err) {
@@ -1126,7 +1177,8 @@ static void notify_cb(struct bt_conn *conn, void *data)
 #endif /* CONFIG_BT_PAC_SRC_NOTIFIABLE */
 
 #if defined(CONFIG_BT_PAC_SRC_LOC_NOTIFIABLE)
-	if (atomic_test_and_clear_bit(client->flags, FLAG_SOURCE_AUDIO_LOCATIONS_CHANGED)) {
+	if (atomic_test_bit(client->flags, FLAG_SOURCE_AUDIO_LOCATIONS_CHANGED) &&
+	    bt_gatt_is_subscribed(conn, pacs.src_pac_loc_attr, BT_GATT_CCC_NOTIFY)) {
 		LOG_DBG("Notifying Source Audio Location");
 		err = pac_notify_loc(conn, BT_AUDIO_DIR_SOURCE);
 		if (!err) {
@@ -1135,7 +1187,8 @@ static void notify_cb(struct bt_conn *conn, void *data)
 	}
 #endif /* CONFIG_BT_PAC_SRC_LOC_NOTIFIABLE */
 
-	if (atomic_test_bit(client->flags, FLAG_AVAILABLE_AUDIO_CONTEXT_CHANGED)) {
+	if (atomic_test_bit(client->flags, FLAG_AVAILABLE_AUDIO_CONTEXT_CHANGED) &&
+	    bt_gatt_is_subscribed(conn, pacs.available_ctx_attr, BT_GATT_CCC_NOTIFY)) {
 		LOG_DBG("Notifying Available Contexts");
 		err = available_contexts_notify(conn);
 		if (!err) {
@@ -1143,14 +1196,16 @@ static void notify_cb(struct bt_conn *conn, void *data)
 		}
 	}
 
-	if (IS_ENABLED(CONFIG_BT_PACS_SUPPORTED_CONTEXT_NOTIFIABLE) &&
-	    atomic_test_bit(client->flags, FLAG_SUPPORTED_AUDIO_CONTEXT_CHANGED)) {
+#if defined(CONFIG_BT_PACS_SUPPORTED_CONTEXT_NOTIFIABLE)
+	if (atomic_test_bit(client->flags, FLAG_SUPPORTED_AUDIO_CONTEXT_CHANGED) &&
+	    bt_gatt_is_subscribed(conn, pacs.supported_ctx_attr, BT_GATT_CCC_NOTIFY)) {
 		LOG_DBG("Notifying Supported Contexts");
 		err = supported_contexts_notify(conn);
 		if (!err) {
 			atomic_clear_bit(client->flags, FLAG_SUPPORTED_AUDIO_CONTEXT_CHANGED);
 		}
 	}
+#endif /* CONFIG_BT_PACS_SUPPORTED_CONTEXT_NOTIFIABLE */
 }
 
 static void deferred_nfy_work_handler(struct k_work *work)
@@ -1324,7 +1379,7 @@ static void add_bonded_addr_to_client_list(const struct bt_bond_info *info, void
 int bt_pacs_cap_register(enum bt_audio_dir dir, struct bt_pacs_cap *cap)
 {
 	const struct bt_audio_codec_cap *codec_cap;
-	static bool callbacks_registered;
+	static bool first_register;
 	sys_slist_t *pac;
 
 	if (!cap || !cap->codec_cap) {
@@ -1338,18 +1393,18 @@ int bt_pacs_cap_register(enum bt_audio_dir dir, struct bt_pacs_cap *cap)
 		return -EINVAL;
 	}
 
-	/* Restore bonding list */
-	bt_foreach_bond(BT_ID_DEFAULT, add_bonded_addr_to_client_list, NULL);
-
 	LOG_DBG("cap %p dir %s codec_cap id 0x%02x codec_cap cid 0x%04x codec_cap vid 0x%04x", cap,
 		bt_audio_dir_str(dir), codec_cap->id, codec_cap->cid, codec_cap->vid);
 
 	sys_slist_append(pac, &cap->_node);
 
-	if (!callbacks_registered) {
+	if (!first_register) {
 		bt_conn_auth_info_cb_register(&auth_callbacks);
 
-		callbacks_registered = true;
+		/* Restore bonding list */
+		bt_foreach_bond(BT_ID_DEFAULT, add_bonded_addr_to_client_list, NULL);
+
+		first_register = true;
 	}
 
 	if (IS_ENABLED(CONFIG_BT_PAC_SNK_NOTIFIABLE) && dir == BT_AUDIO_DIR_SINK) {
@@ -1561,7 +1616,7 @@ enum bt_audio_context bt_pacs_get_available_contexts(enum bt_audio_dir dir)
 		break;
 	}
 
-	return BT_AUDIO_CONTEXT_TYPE_PROHIBITED;
+	return BT_AUDIO_CONTEXT_TYPE_NONE;
 }
 
 enum bt_audio_context bt_pacs_get_available_contexts_for_conn(struct bt_conn *conn,
@@ -1569,7 +1624,7 @@ enum bt_audio_context bt_pacs_get_available_contexts_for_conn(struct bt_conn *co
 {
 	CHECKIF(conn == NULL) {
 		LOG_ERR("NULL conn");
-		return BT_AUDIO_CONTEXT_TYPE_PROHIBITED;
+		return BT_AUDIO_CONTEXT_TYPE_NONE;
 	}
 
 	return pacs_get_available_contexts_for_conn(conn, dir);

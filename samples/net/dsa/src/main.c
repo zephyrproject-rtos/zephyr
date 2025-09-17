@@ -54,7 +54,7 @@ static void dsa_iface_find_cb(struct net_if *iface, void *user_data)
 static struct net_mgmt_event_callback mgmt_cb;
 
 static void event_handler(struct net_mgmt_event_callback *cb,
-			  uint32_t mgmt_event, struct net_if *iface)
+			  uint64_t mgmt_event, struct net_if *iface)
 {
 	ARG_UNUSED(iface);
 	ARG_UNUSED(cb);

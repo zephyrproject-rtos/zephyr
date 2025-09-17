@@ -5,14 +5,19 @@
  */
 
 #include <zephyr/kernel.h>
-#include <kernel_internal.h>
+#include <kernel_arch_func.h>
+#include <kernel_arch_interface.h>
 #include <zephyr/arch/x86/multiboot.h>
 #include <zephyr/arch/x86/efi.h>
 #include <x86_mmu.h>
 #include <zephyr/platform/hooks.h>
-#include <zephyr/arch/cache.h>
+#include <zephyr/cache.h>
+#include <zephyr/arch/common/init.h>
 
-extern FUNC_NORETURN void z_cstart(void);
+K_KERNEL_PINNED_STACK_ARRAY_DECLARE(z_interrupt_stacks,
+		CONFIG_MP_MAX_NUM_CPUS,
+		CONFIG_ISR_STACK_SIZE);
+
 extern void x86_64_irq_init(void);
 
 #if !defined(CONFIG_X86_64)
@@ -61,7 +66,7 @@ FUNC_NORETURN void z_prep_c(void *arg)
 #ifdef CONFIG_X86_VERY_EARLY_CONSOLE
 	z_x86_early_serial_init();
 
-#if defined(CONFIG_BOARD_QEMU_X86) || defined(CONFIG_BOARD_QEMU_X86_64)
+#if defined(CONFIG_QEMU_TARGET)
 	/*
 	 * Under QEMU and SeaBIOS, everything gets to be printed
 	 * immediately after "Booting from ROM.." as there is no newline.

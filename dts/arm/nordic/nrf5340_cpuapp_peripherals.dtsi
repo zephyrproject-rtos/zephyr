@@ -26,6 +26,7 @@ oscillators: clock-controller@4000 {
 		compatible = "nordic,nrf53-hfxo";
 		#clock-cells = <0>;
 		clock-frequency = <DT_FREQ_M(32)>;
+		startup-time-us = <1400>;
 	};
 };
 
@@ -534,7 +535,6 @@ flash_controller: flash-controller@39000 {
 
 	#address-cells = <1>;
 	#size-cells = <1>;
-
 
 	flash0: flash@0 {
 		compatible = "soc-nv-flash";

@@ -1,0 +1,27 @@
+/*
+ * Copyright (c) 2025 A Labs GmbH
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	/* the board has no actual button, you need to connect PA0 to GND with a jumper wire */
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button: button {
+			label = "User";
+			gpios = <&gpioa 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	aliases {
+		wkup-src = &user_button;
+	};
+};
+
+&pwr {
+	status = "okay";
+};

@@ -19,7 +19,6 @@ tests:
       - CONFIG_BM_ONE_TO=8
       - CONFIG_BM_MESSAGE_SIZE=256
       - CONFIG_BM_LISTENERS=y
-      - arch:nios2:CONFIG_SYS_CLOCK_TICKS_PER_SEC=1000
       - CONFIG_IDLE_STACK_SIZE=1024
     integration_platforms:
       - qemu_x86
@@ -41,7 +40,6 @@ tests:
       - CONFIG_BM_ONE_TO=8
       - CONFIG_BM_MESSAGE_SIZE=256
       - CONFIG_BM_MSG_SUBSCRIBERS=y
-      - arch:nios2:CONFIG_SYS_CLOCK_TICKS_PER_SEC=1000
       - CONFIG_IDLE_STACK_SIZE=1024
     integration_platforms:
       - qemu_x86
@@ -63,7 +61,6 @@ tests:
       - CONFIG_BM_ONE_TO=8
       - CONFIG_BM_MESSAGE_SIZE=256
       - CONFIG_BM_SUBSCRIBERS=y
-      - arch:nios2:CONFIG_SYS_CLOCK_TICKS_PER_SEC=1000
       - CONFIG_IDLE_STACK_SIZE=1024
     integration_platforms:
       - qemu_x86

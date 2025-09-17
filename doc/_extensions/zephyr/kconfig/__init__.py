@@ -44,6 +44,7 @@ from tempfile import TemporaryDirectory
 from typing import Any
 
 from docutils import nodes
+from dotenv import load_dotenv
 from sphinx.addnodes import pending_xref
 from sphinx.application import Sphinx
 from sphinx.builders import Builder
@@ -70,18 +71,30 @@ RESOURCES_DIR = Path(__file__).parent / "static"
 ZEPHYR_BASE = Path(__file__).parents[4]
 
 
-def kconfig_load(app: Sphinx) -> tuple[kconfiglib.Kconfig, dict[str, str]]:
+def kconfig_load(app: Sphinx) -> tuple[kconfiglib.Kconfig, kconfiglib.Kconfig, dict[str, str]]:
     """Load Kconfig"""
     with TemporaryDirectory() as td:
         modules = zephyr_module.parse_modules(ZEPHYR_BASE)
 
         # generate Kconfig.modules file
+        kconfig_module_dirs = ""
         kconfig = ""
+        sysbuild_kconfig = ""
         for module in modules:
+            kconfig_module_dirs += zephyr_module.process_kconfig_module_dir(module.project,
+                                                                            module.meta,
+                                                                            False)
             kconfig += zephyr_module.process_kconfig(module.project, module.meta)
+            sysbuild_kconfig += zephyr_module.process_sysbuildkconfig(module.project, module.meta)
+
+        with open(Path(td) / "kconfig_module_dirs.env", "w") as f:
+            f.write(kconfig_module_dirs)
 
         with open(Path(td) / "Kconfig.modules", "w") as f:
             f.write(kconfig)
+
+        with open(Path(td) / "Kconfig.sysbuild.modules", "w") as f:
+            f.write(sysbuild_kconfig)
 
         # generate dummy Kconfig.dts file
         kconfig = ""
@@ -144,6 +157,14 @@ def kconfig_load(app: Sphinx) -> tuple[kconfiglib.Kconfig, dict[str, str]]:
 
         os.environ["BOARD"] = "boards"
         os.environ["KCONFIG_BOARD_DIR"] = str(Path(td) / "boards")
+        load_dotenv(str(Path(td) / "kconfig_module_dirs.env"))
+
+        # Sysbuild runs first
+        os.environ["CONFIG_"] = "SB_CONFIG_"
+        sysbuild_output = kconfiglib.Kconfig(ZEPHYR_BASE / "share" / "sysbuild" / "Kconfig")
+
+        # Normal Kconfig runs second
+        os.environ["CONFIG_"] = "CONFIG_"
 
         # insert external Kconfigs to the environment
         module_paths = dict()
@@ -172,7 +193,7 @@ def kconfig_load(app: Sphinx) -> tuple[kconfiglib.Kconfig, dict[str, str]]:
                     if kconfig.exists():
                         os.environ[f"ZEPHYR_{name_var}_KCONFIG"] = str(kconfig)
 
-        return kconfiglib.Kconfig(ZEPHYR_BASE / "Kconfig"), module_paths
+        return kconfiglib.Kconfig(ZEPHYR_BASE / "Kconfig"), sysbuild_output, module_paths
 
 
 class KconfigSearchNode(nodes.Element):
@@ -233,13 +254,26 @@ class _FindKconfigSearchDirectiveVisitor(nodes.NodeVisitor):
         return self._found
 
 
+class KconfigRegexRole(XRefRole):
+    """Role for creating links to Kconfig regex searches."""
+
+    def process_link(self, env: BuildEnvironment, refnode: nodes.Element, has_explicit_title: bool,
+                     title: str, target: str) -> tuple[str, str]:
+        # render as "normal" text when explicit title is provided, literal otherwise
+        if has_explicit_title:
+            self.innernodeclass = nodes.inline
+        else:
+            self.innernodeclass = nodes.literal
+        return title, target
+
+
 class KconfigDomain(Domain):
     """Kconfig domain"""
 
     name = "kconfig"
     label = "Kconfig"
     object_types = {"option": ObjType("option", "option")}
-    roles = {"option": XRefRole()}
+    roles = {"option": XRefRole(), "option-regex": KconfigRegexRole()}
     directives = {"search": KconfigSearch}
     initial_data: dict[str, Any] = {"options": set()}
 
@@ -259,20 +293,56 @@ class KconfigDomain(Domain):
         node: pending_xref,
         contnode: nodes.Element,
     ) -> nodes.Element | None:
-        match = [
-            (docname, anchor)
-            for name, _, _, docname, anchor, _ in self.get_objects()
-            if name == target
-        ]
-
-        if match:
-            todocname, anchor = match[0]
-
-            return make_refnode(
-                builder, fromdocname, todocname, anchor, contnode, anchor
-            )
+        if typ == "option-regex":
+            # Handle regex search links
+            search_docname = self._find_search_docname(env)
+            if search_docname:
+                # Create a reference to the search page with the regex as a fragment
+                ref_uri = builder.get_relative_uri(fromdocname, search_docname) + f"#!{target}"
+                ref_node = nodes.reference('', '', refuri=ref_uri, internal=True)
+                ref_node.append(contnode)
+                return ref_node
+            else:
+                # Fallback to plain text if no search page is found
+                return contnode
         else:
-            return None
+            # Handle regular option links
+            match = [
+                (docname, anchor)
+                for name, _, _, docname, anchor, _ in self.get_objects()
+                if name == target
+            ]
+
+            if match:
+                todocname, anchor = match[0]
+
+                return make_refnode(
+                    builder, fromdocname, todocname, anchor, contnode, anchor
+                )
+            else:
+                return None
+
+    def _find_search_docname(self, env: BuildEnvironment) -> str | None:
+        """Find the document containing the kconfig search directive."""
+        # Cache the result to avoid repeated searches
+        if hasattr(env, '_kconfig_search_docname'):
+            return env._kconfig_search_docname
+
+        for docname in env.all_docs:
+            try:
+                doctree = env.get_doctree(docname)
+                visitor = _FindKconfigSearchDirectiveVisitor(doctree)
+                doctree.walk(visitor)
+                if visitor.found_kconfig_search_directive:
+                    env._kconfig_search_docname = docname
+                    return docname
+            except Exception:
+                # Skip documents that can't be loaded
+                continue
+
+        # No search directive found
+        env._kconfig_search_docname = None
+        return None
 
     def add_option(self, option):
         """Register a new Kconfig option to the domain."""
@@ -283,13 +353,15 @@ class KconfigDomain(Domain):
 
 
 def sc_fmt(sc):
+    prefix = os.environ["CONFIG_"]
+
     if isinstance(sc, kconfiglib.Symbol):
         if sc.nodes:
-            return f'<a href="#CONFIG_{sc.name}">CONFIG_{sc.name}</a>'
+            return f'<a href="#{prefix}{sc.name}">{prefix}{sc.name}</a>'
     elif isinstance(sc, kconfiglib.Choice):
         if not sc.name:
             return "&ltchoice&gt"
-        return f'&ltchoice <a href="#CONFIG_{sc.name}">CONFIG_{sc.name}</a>&gt'
+        return f'&ltchoice <a href="#{prefix}{sc.name}">{prefix}{sc.name}</a>&gt'
 
     return kconfiglib.standard_sc_expr_str(sc)
 
@@ -301,137 +373,139 @@ def kconfig_build_resources(app: Sphinx) -> None:
         return
 
     with progress_message("Building Kconfig database..."):
-        kconfig, module_paths = kconfig_load(app)
+        kconfig, sysbuild_kconfig, module_paths = kconfig_load(app)
         db = list()
 
-        for sc in sorted(
-            chain(kconfig.unique_defined_syms, kconfig.unique_choices),
-            key=lambda sc: sc.name if sc.name else "",
-        ):
-            # skip nameless symbols
-            if not sc.name:
-                continue
-
-            # store alternative defaults (from defconfig files)
-            alt_defaults = list()
-            for node in sc.nodes:
-                if "defconfig" not in node.filename:
+        for kconfig_obj in [kconfig, sysbuild_kconfig]:
+            os.environ["CONFIG_"] = kconfig_obj.config_prefix
+            for sc in sorted(
+                chain(kconfig_obj.unique_defined_syms, kconfig_obj.unique_choices),
+                key=lambda sc: sc.name if sc.name else "",
+            ):
+                # skip nameless symbols
+                if not sc.name:
                     continue
 
-                for value, cond in node.orig_defaults:
-                    fmt = kconfiglib.expr_str(value, sc_fmt)
-                    if cond is not sc.kconfig.y:
-                        fmt += f" if {kconfiglib.expr_str(cond, sc_fmt)}"
-                    alt_defaults.append([fmt, node.filename])
+                # store alternative defaults (from defconfig files)
+                alt_defaults = list()
+                for node in sc.nodes:
+                    if "defconfig" not in str(node.filename):
+                        continue
 
-            # build list of symbols that select/imply the current one
-            # note: all reverse dependencies are ORed together, and conditionals
-            # (e.g. select/imply A if B) turns into A && B. So we first split
-            # by OR to include all entries, and we split each one by AND to just
-            # take the first entry.
-            selected_by = list()
-            if isinstance(sc, kconfiglib.Symbol) and sc.rev_dep != sc.kconfig.n:
-                for select in kconfiglib.split_expr(sc.rev_dep, kconfiglib.OR):
-                    sym = kconfiglib.split_expr(select, kconfiglib.AND)[0]
-                    selected_by.append(f"CONFIG_{sym.name}")
+                    for value, cond in node.orig_defaults:
+                        fmt = kconfiglib.expr_str(value, sc_fmt)
+                        if cond is not sc.kconfig.y:
+                            fmt += f" if {kconfiglib.expr_str(cond, sc_fmt)}"
+                        alt_defaults.append([fmt, node.filename])
 
-            implied_by = list()
-            if isinstance(sc, kconfiglib.Symbol) and sc.weak_rev_dep != sc.kconfig.n:
-                for select in kconfiglib.split_expr(sc.weak_rev_dep, kconfiglib.OR):
-                    sym = kconfiglib.split_expr(select, kconfiglib.AND)[0]
-                    implied_by.append(f"CONFIG_{sym.name}")
+                # build list of symbols that select/imply the current one
+                # note: all reverse dependencies are ORed together, and conditionals
+                # (e.g. select/imply A if B) turns into A && B. So we first split
+                # by OR to include all entries, and we split each one by AND to just
+                # take the first entry.
+                selected_by = list()
+                if isinstance(sc, kconfiglib.Symbol) and sc.rev_dep != sc.kconfig.n:
+                    for select in kconfiglib.split_expr(sc.rev_dep, kconfiglib.OR):
+                        sym = kconfiglib.split_expr(select, kconfiglib.AND)[0]
+                        selected_by.append(f"{kconfig_obj.config_prefix}{sym.name}")
 
-            # only process nodes with prompt or help
-            nodes = [node for node in sc.nodes if node.prompt or node.help]
+                implied_by = list()
+                if isinstance(sc, kconfiglib.Symbol) and sc.weak_rev_dep != sc.kconfig.n:
+                    for select in kconfiglib.split_expr(sc.weak_rev_dep, kconfiglib.OR):
+                        sym = kconfiglib.split_expr(select, kconfiglib.AND)[0]
+                        implied_by.append(f"{kconfig_obj.config_prefix}{sym.name}")
 
-            inserted_paths = list()
-            for node in nodes:
-                # avoid duplicate symbols by forcing unique paths. this can
-                # happen due to dependencies on 0, a trick used by some modules
-                path = f"{node.filename}:{node.linenr}"
-                if path in inserted_paths:
-                    continue
-                inserted_paths.append(path)
+                # only process nodes with prompt or help
+                nodes = [node for node in sc.nodes if node.prompt or node.help]
 
-                dependencies = None
-                if node.dep is not sc.kconfig.y:
-                    dependencies = kconfiglib.expr_str(node.dep, sc_fmt)
+                inserted_paths = list()
+                for node in nodes:
+                    # avoid duplicate symbols by forcing unique paths. this can
+                    # happen due to dependencies on 0, a trick used by some modules
+                    path = f"{node.filename}:{node.linenr}"
+                    if path in inserted_paths:
+                        continue
+                    inserted_paths.append(path)
 
-                defaults = list()
-                for value, cond in node.orig_defaults:
-                    fmt = kconfiglib.expr_str(value, sc_fmt)
-                    if cond is not sc.kconfig.y:
-                        fmt += f" if {kconfiglib.expr_str(cond, sc_fmt)}"
-                    defaults.append(fmt)
+                    dependencies = None
+                    if node.dep is not sc.kconfig.y:
+                        dependencies = kconfiglib.expr_str(node.dep, sc_fmt)
 
-                selects = list()
-                for value, cond in node.orig_selects:
-                    fmt = kconfiglib.expr_str(value, sc_fmt)
-                    if cond is not sc.kconfig.y:
-                        fmt += f" if {kconfiglib.expr_str(cond, sc_fmt)}"
-                    selects.append(fmt)
+                    defaults = list()
+                    for value, cond in node.orig_defaults:
+                        fmt = kconfiglib.expr_str(value, sc_fmt)
+                        if cond is not sc.kconfig.y:
+                            fmt += f" if {kconfiglib.expr_str(cond, sc_fmt)}"
+                        defaults.append(fmt)
 
-                implies = list()
-                for value, cond in node.orig_implies:
-                    fmt = kconfiglib.expr_str(value, sc_fmt)
-                    if cond is not sc.kconfig.y:
-                        fmt += f" if {kconfiglib.expr_str(cond, sc_fmt)}"
-                    implies.append(fmt)
+                    selects = list()
+                    for value, cond in node.orig_selects:
+                        fmt = kconfiglib.expr_str(value, sc_fmt)
+                        if cond is not sc.kconfig.y:
+                            fmt += f" if {kconfiglib.expr_str(cond, sc_fmt)}"
+                        selects.append(fmt)
 
-                ranges = list()
-                for min, max, cond in node.orig_ranges:
-                    fmt = (
-                        f"[{kconfiglib.expr_str(min, sc_fmt)}, "
-                        f"{kconfiglib.expr_str(max, sc_fmt)}]"
+                    implies = list()
+                    for value, cond in node.orig_implies:
+                        fmt = kconfiglib.expr_str(value, sc_fmt)
+                        if cond is not sc.kconfig.y:
+                            fmt += f" if {kconfiglib.expr_str(cond, sc_fmt)}"
+                        implies.append(fmt)
+
+                    ranges = list()
+                    for min, max, cond in node.orig_ranges:
+                        fmt = (
+                            f"[{kconfiglib.expr_str(min, sc_fmt)}, "
+                            f"{kconfiglib.expr_str(max, sc_fmt)}]"
+                        )
+                        if cond is not sc.kconfig.y:
+                            fmt += f" if {kconfiglib.expr_str(cond, sc_fmt)}"
+                        ranges.append(fmt)
+
+                    choices = list()
+                    if isinstance(sc, kconfiglib.Choice):
+                        for sym in sc.syms:
+                            choices.append(kconfiglib.expr_str(sym, sc_fmt))
+
+                    menupath = ""
+                    iternode = node
+                    while iternode.parent is not iternode.kconfig.top_node:
+                        iternode = iternode.parent
+                        if iternode.prompt:
+                            title = iternode.prompt[0]
+                        else:
+                            title = kconfiglib.standard_sc_expr_str(iternode.item)
+                        menupath = f" > {title}" + menupath
+
+                    menupath = "(Top)" + menupath
+
+                    filename = str(node.filename)
+                    for name, path in module_paths.items():
+                        path += "/"
+                        if str(node.filename).startswith(path):
+                            filename = str(node.filename).replace(path, f"<module:{name}>/")
+                            break
+
+                    db.append(
+                        {
+                            "name": f"{kconfig_obj.config_prefix}{sc.name}",
+                            "prompt": node.prompt[0] if node.prompt else None,
+                            "type": kconfiglib.TYPE_TO_STR[sc.type],
+                            "help": node.help,
+                            "dependencies": dependencies,
+                            "defaults": defaults,
+                            "alt_defaults": alt_defaults,
+                            "selects": selects,
+                            "selected_by": selected_by,
+                            "implies": implies,
+                            "implied_by": implied_by,
+                            "ranges": ranges,
+                            "choices": choices,
+                            "filename": filename,
+                            "linenr": node.linenr,
+                            "menupath": menupath,
+                        }
                     )
-                    if cond is not sc.kconfig.y:
-                        fmt += f" if {kconfiglib.expr_str(cond, sc_fmt)}"
-                    ranges.append(fmt)
-
-                choices = list()
-                if isinstance(sc, kconfiglib.Choice):
-                    for sym in sc.syms:
-                        choices.append(kconfiglib.expr_str(sym, sc_fmt))
-
-                menupath = ""
-                iternode = node
-                while iternode.parent is not iternode.kconfig.top_node:
-                    iternode = iternode.parent
-                    if iternode.prompt:
-                        title = iternode.prompt[0]
-                    else:
-                        title = kconfiglib.standard_sc_expr_str(iternode.item)
-                    menupath = f" > {title}" + menupath
-
-                menupath = "(Top)" + menupath
-
-                filename = node.filename
-                for name, path in module_paths.items():
-                    path += "/"
-                    if node.filename.startswith(path):
-                        filename = node.filename.replace(path, f"<module:{name}>/")
-                        break
-
-                db.append(
-                    {
-                        "name": f"CONFIG_{sc.name}",
-                        "prompt": node.prompt[0] if node.prompt else None,
-                        "type": kconfiglib.TYPE_TO_STR[sc.type],
-                        "help": node.help,
-                        "dependencies": dependencies,
-                        "defaults": defaults,
-                        "alt_defaults": alt_defaults,
-                        "selects": selects,
-                        "selected_by": selected_by,
-                        "implies": implies,
-                        "implied_by": implied_by,
-                        "ranges": ranges,
-                        "choices": choices,
-                        "filename": filename,
-                        "linenr": node.linenr,
-                        "menupath": menupath,
-                    }
-                )
 
         app.env.kconfig_db = db  # type: ignore
 

@@ -49,9 +49,9 @@ typedef uint32_t net_stats_t;
  */
 struct net_stats_bytes {
 	/** Number of bytes sent */
-	net_stats_t sent;
+	uint64_t sent;
 	/** Number of bytes received */
-	net_stats_t received;
+	uint64_t received;
 };
 
 /**
@@ -319,6 +319,8 @@ struct net_stats_rx_time {
 struct net_stats_tc {
 	/** TX statistics for each traffic class */
 	struct {
+		/** Number of bytes sent for this traffic class */
+		uint64_t bytes;
 		/** Helper for calculating average TX time statistics */
 		struct net_stats_tx_time tx_time;
 #if defined(CONFIG_NET_PKT_TXTIME_STATS_DETAIL)
@@ -330,14 +332,14 @@ struct net_stats_tc {
 		net_stats_t pkts;
 		/** Number of packets dropped for this traffic class */
 		net_stats_t dropped;
-		/** Number of bytes sent for this traffic class */
-		net_stats_t bytes;
 		/** Priority of this traffic class */
 		uint8_t priority;
 	} sent[NET_TC_TX_STATS_COUNT];
 
 	/** RX statistics for each traffic class */
 	struct {
+		/** Number of bytes received for this traffic class */
+		uint64_t bytes;
 		/** Helper for calculating average RX time statistics */
 		struct net_stats_rx_time rx_time;
 #if defined(CONFIG_NET_PKT_RXTIME_STATS_DETAIL)
@@ -349,8 +351,6 @@ struct net_stats_tc {
 		net_stats_t pkts;
 		/** Number of packets dropped for this traffic class */
 		net_stats_t dropped;
-		/** Number of bytes received for this traffic class */
-		net_stats_t bytes;
 		/** Priority of this traffic class */
 		uint8_t priority;
 	} recv[NET_TC_RX_STATS_COUNT];
@@ -404,14 +404,14 @@ struct net_stats_pkt_filter {
  * @brief All network statistics in one struct.
  */
 struct net_stats {
-	/** Count of malformed packets or packets we do not have handler for */
-	net_stats_t processing_error;
-
 	/**
 	 * This calculates amount of data transferred through all the
 	 * network interfaces.
 	 */
 	struct net_stats_bytes bytes;
+
+	/** Count of malformed packets or packets we do not have handler for */
+	net_stats_t processing_error;
 
 	/** IP layer errors */
 	struct net_stats_ip_errors ip_errors;
@@ -733,10 +733,10 @@ struct net_stats_wifi {
 
 /** @cond INTERNAL_HIDDEN */
 
-#define _NET_STATS_LAYER	NET_MGMT_LAYER_L3
-#define _NET_STATS_CODE		0x101
-#define _NET_STATS_BASE		(NET_MGMT_LAYER(_NET_STATS_LAYER) |	\
-				 NET_MGMT_LAYER_CODE(_NET_STATS_CODE))
+#define NET_STATS_LAYER	NET_MGMT_LAYER_L3
+#define NET_STATS_CODE		NET_MGMT_LAYER_CODE_STATS
+#define NET_STATS_BASE		(NET_MGMT_LAYER(NET_STATS_LAYER) |	\
+				 NET_MGMT_LAYER_CODE(NET_STATS_CODE))
 
 enum net_request_stats_cmd {
 	NET_REQUEST_STATS_CMD_GET_ALL = 1,
@@ -764,23 +764,23 @@ enum net_request_stats_cmd {
 
 /** Request all network statistics */
 #define NET_REQUEST_STATS_GET_ALL				\
-	(_NET_STATS_BASE | NET_REQUEST_STATS_CMD_GET_ALL)
+	(NET_STATS_BASE | NET_REQUEST_STATS_CMD_GET_ALL)
 
 /** Request all processing error statistics */
 #define NET_REQUEST_STATS_GET_PROCESSING_ERROR				\
-	(_NET_STATS_BASE | NET_REQUEST_STATS_CMD_GET_PROCESSING_ERROR)
+	(NET_STATS_BASE | NET_REQUEST_STATS_CMD_GET_PROCESSING_ERROR)
 
 /** Request all pkt_filter drop statistics */
 #define NET_REQUEST_STATS_GET_PKT_FILTER_DROP			\
-	(_NET_STATS_BASE | NET_REQUEST_STATS_CMD_GET_PKT_FILTER_DROP)
+	(NET_STATS_BASE | NET_REQUEST_STATS_CMD_GET_PKT_FILTER_DROP)
 
 /** Request number of received and sent bytes */
 #define NET_REQUEST_STATS_GET_BYTES				\
-	(_NET_STATS_BASE | NET_REQUEST_STATS_CMD_GET_BYTES)
+	(NET_STATS_BASE | NET_REQUEST_STATS_CMD_GET_BYTES)
 
 /** Request IP error statistics */
 #define NET_REQUEST_STATS_GET_IP_ERRORS				\
-	(_NET_STATS_BASE | NET_REQUEST_STATS_CMD_GET_IP_ERRORS)
+	(NET_STATS_BASE | NET_REQUEST_STATS_CMD_GET_IP_ERRORS)
 
 /** @cond INTERNAL_HIDDEN */
 
@@ -798,7 +798,7 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_PKT_FILTER_DROP);
 #if defined(CONFIG_NET_STATISTICS_IPV4)
 /** Request IPv4 statistics */
 #define NET_REQUEST_STATS_GET_IPV4				\
-	(_NET_STATS_BASE | NET_REQUEST_STATS_CMD_GET_IPV4)
+	(NET_STATS_BASE | NET_REQUEST_STATS_CMD_GET_IPV4)
 
 /** @cond INTERNAL_HIDDEN */
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_IPV4);
@@ -808,7 +808,7 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_IPV4);
 #if defined(CONFIG_NET_STATISTICS_IPV6)
 /** Request IPv6 statistics */
 #define NET_REQUEST_STATS_GET_IPV6				\
-	(_NET_STATS_BASE | NET_REQUEST_STATS_CMD_GET_IPV6)
+	(NET_STATS_BASE | NET_REQUEST_STATS_CMD_GET_IPV6)
 
 /** @cond INTERNAL_HIDDEN */
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_IPV6);
@@ -818,7 +818,7 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_IPV6);
 #if defined(CONFIG_NET_STATISTICS_IPV6_ND)
 /** Request IPv6 neighbor discovery statistics */
 #define NET_REQUEST_STATS_GET_IPV6_ND				\
-	(_NET_STATS_BASE | NET_REQUEST_STATS_CMD_GET_IPV6_ND)
+	(NET_STATS_BASE | NET_REQUEST_STATS_CMD_GET_IPV6_ND)
 
 /** @cond INTERNAL_HIDDEN */
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_IPV6_ND);
@@ -828,7 +828,7 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_IPV6_ND);
 #if defined(CONFIG_NET_STATISTICS_IPV6_PMTU)
 /** Request IPv6 Path MTU Discovery statistics */
 #define NET_REQUEST_STATS_GET_IPV6_PMTU				\
-	(_NET_STATS_BASE | NET_REQUEST_STATS_CMD_GET_IPV6_PMTU)
+	(NET_STATS_BASE | NET_REQUEST_STATS_CMD_GET_IPV6_PMTU)
 
 /** @cond INTERNAL_HIDDEN */
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_IPV6_PMTU);
@@ -838,7 +838,7 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_IPV6_PMTU);
 #if defined(CONFIG_NET_STATISTICS_IPV4_PMTU)
 /** Request IPv4 Path MTU Discovery statistics */
 #define NET_REQUEST_STATS_GET_IPV4_PMTU				\
-	(_NET_STATS_BASE | NET_REQUEST_STATS_CMD_GET_IPV4_PMTU)
+	(NET_STATS_BASE | NET_REQUEST_STATS_CMD_GET_IPV4_PMTU)
 
 /** @cond INTERNAL_HIDDEN */
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_IPV4_PMTU);
@@ -848,7 +848,7 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_IPV4_PMTU);
 #if defined(CONFIG_NET_STATISTICS_ICMP)
 /** Request ICMPv4 and ICMPv6 statistics */
 #define NET_REQUEST_STATS_GET_ICMP				\
-	(_NET_STATS_BASE | NET_REQUEST_STATS_CMD_GET_ICMP)
+	(NET_STATS_BASE | NET_REQUEST_STATS_CMD_GET_ICMP)
 
 /** @cond INTERNAL_HIDDEN */
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_ICMP);
@@ -858,7 +858,7 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_ICMP);
 #if defined(CONFIG_NET_STATISTICS_UDP)
 /** Request UDP statistics */
 #define NET_REQUEST_STATS_GET_UDP				\
-	(_NET_STATS_BASE | NET_REQUEST_STATS_CMD_GET_UDP)
+	(NET_STATS_BASE | NET_REQUEST_STATS_CMD_GET_UDP)
 
 /** @cond INTERNAL_HIDDEN */
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_UDP);
@@ -868,7 +868,7 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_UDP);
 #if defined(CONFIG_NET_STATISTICS_TCP)
 /** Request TCP statistics */
 #define NET_REQUEST_STATS_GET_TCP				\
-	(_NET_STATS_BASE | NET_REQUEST_STATS_CMD_GET_TCP)
+	(NET_STATS_BASE | NET_REQUEST_STATS_CMD_GET_TCP)
 
 /** @cond INTERNAL_HIDDEN */
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_TCP);
@@ -878,7 +878,7 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_TCP);
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
 /** Request Ethernet statistics */
 #define NET_REQUEST_STATS_GET_ETHERNET				\
-	(_NET_STATS_BASE | NET_REQUEST_STATS_CMD_GET_ETHERNET)
+	(NET_STATS_BASE | NET_REQUEST_STATS_CMD_GET_ETHERNET)
 
 /** @cond INTERNAL_HIDDEN */
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_ETHERNET);
@@ -888,7 +888,7 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_ETHERNET);
 #if defined(CONFIG_NET_STATISTICS_PPP)
 /** Request PPP statistics */
 #define NET_REQUEST_STATS_GET_PPP				\
-	(_NET_STATS_BASE | NET_REQUEST_STATS_CMD_GET_PPP)
+	(NET_STATS_BASE | NET_REQUEST_STATS_CMD_GET_PPP)
 
 /** @cond INTERNAL_HIDDEN */
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_PPP);
@@ -898,7 +898,7 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_PPP);
 #if defined(CONFIG_NET_STATISTICS_VPN)
 /** Request VPN statistics */
 #define NET_REQUEST_STATS_GET_VPN				\
-	(_NET_STATS_BASE | NET_REQUEST_STATS_CMD_GET_VPN)
+	(NET_STATS_BASE | NET_REQUEST_STATS_CMD_GET_VPN)
 
 /** @cond INTERNAL_HIDDEN */
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_VPN);
@@ -910,7 +910,7 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_VPN);
 #if defined(CONFIG_NET_STATISTICS_POWER_MANAGEMENT)
 /** Request network power management statistics */
 #define NET_REQUEST_STATS_GET_PM				\
-	(_NET_STATS_BASE | NET_REQUEST_STATS_CMD_GET_PM)
+	(NET_STATS_BASE | NET_REQUEST_STATS_CMD_GET_PM)
 
 /** @cond INTERNAL_HIDDEN */
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_PM);
@@ -920,7 +920,7 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_PM);
 #if defined(CONFIG_NET_STATISTICS_WIFI)
 /** Request Wi-Fi statistics */
 #define NET_REQUEST_STATS_GET_WIFI				\
-	(_NET_STATS_BASE | NET_REQUEST_STATS_CMD_GET_WIFI)
+	(NET_STATS_BASE | NET_REQUEST_STATS_CMD_GET_WIFI)
 
 /** @cond INTERNAL_HIDDEN */
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_WIFI);
@@ -928,7 +928,7 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_WIFI);
 
 /** Reset Wi-Fi statistics*/
 #define NET_REQUEST_STATS_RESET_WIFI                              \
-	(_NET_STATS_BASE | NET_REQUEST_STATS_CMD_RESET_WIFI)
+	(NET_STATS_BASE | NET_REQUEST_STATS_CMD_RESET_WIFI)
 
 /** @cond INTERNAL_HIDDEN */
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_RESET_WIFI);

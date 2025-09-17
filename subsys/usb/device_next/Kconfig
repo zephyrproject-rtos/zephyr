@@ -3,12 +3,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig USB_DEVICE_STACK_NEXT
-	bool "New USB device stack [EXPERIMENTAL]"
-	select EXPERIMENTAL
+	bool "New USB device stack"
 	select UDC_DRIVER
 	imply HWINFO
 	help
-	  New experimental USB device stack.
+	  New USB device stack.
 
 if USB_DEVICE_STACK_NEXT
 
@@ -36,6 +35,20 @@ config USBD_MAX_SPEED
 	default 0 if USBD_MAX_SPEED_FULL
 	default 1 if USBD_MAX_SPEED_HIGH
 
+config USBD_BOS_SUPPORT
+	bool "USB device BOS support"
+	default y
+	help
+	  BOS support can be disabled if the application does not use a BOS
+	  descriptor.
+
+config USBD_VREQ_SUPPORT
+	bool "USB device vendor request support"
+	default y
+	help
+	  Allow the application to register a handler for the vendor request
+	  with the recipient device.
+
 config USBD_SHELL
 	bool "USB device shell"
 	depends on SHELL
@@ -60,20 +73,37 @@ config USBD_MAX_UDC_MSG
 	help
 	  Maximum number of USB device controller events that can be queued.
 
+config USBD_MSG_DEFERRED_MODE
+	bool "Execute message callback from system workqueue"
+	default y
+	help
+	  Execute message callback from system workqueue. If disabled, message
+	  callback will be executed in the device stack context.
+
 config USBD_MSG_SLAB_COUNT
-	int "Maximum number of USB device notification messages"
+	int "Maximum number of USB device notification messages" if USBD_MSG_DEFERRED_MODE
 	range 4 64
 	default 8
 	help
 	  Maximum number of USB device notification messages that can be queued.
 
 config USBD_MSG_WORK_DELAY
-	int "USB device notification messages work delay"
+	int "USB device notification messages work delay" if USBD_MSG_DEFERRED_MODE
 	range 1 100
 	default 1
 	help
 	  Message work may need to be delayed because the device stack is not
 	  yet ready to publish the message. The delay unit is milliseconds.
+
+config USBD_HWINFO_DEVID_LENGTH
+	int "The length of the device ID requested from HWINFO in bytes"
+	depends on HWINFO
+	range 8 128
+	default 16
+	help
+	  Each byte represents two digits in the serial number string
+	  descriptor. This option can be used to limit the length requested
+	  from HWINFO to a meaningful number of digits.
 
 rsource "class/Kconfig"
 rsource "app/Kconfig.cdc_acm_serial"

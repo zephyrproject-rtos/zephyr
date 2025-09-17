@@ -12,6 +12,19 @@ hardware supports them and your Zephyr board directory's :file:`board.cmake`
 file declares that support properly. See :ref:`west-build-flash-debug` for
 more information on these commands.
 
+.. _runner_blackmagicprobe:
+
+Black Magic Probe
+*****************
+
+Black Magic Probe (BMP) is an open-source debugging hardware incorporating GDB debug
+server functionality into the firmware.
+There is no need for a GDB server program, so there is no program equivalent
+to host-tool.
+
+For more details, including usage instructions and supported targets,
+see :ref:`black-magic-probe`.
+
 .. _atmel_sam_ba_bootloader:
 .. _runner_bossac:
 
@@ -449,13 +462,13 @@ the runner on each invocation via ``--s32ds-path`` as shown below:
 
       .. code-block:: console
 
-         west debug --s32ds-path=/opt/NXP/S32DS.3.5
+         west debug --s32ds-path=/opt/NXP/S32DS.3.6
 
    .. group-tab:: Windows
 
       .. code-block:: console
 
-         west debug --s32ds-path=C:\NXP\S32DS.3.5
+         west debug --s32ds-path=C:\NXP\S32DS.3.6
 
 If multiple S32 debug probes are connected to the host via USB, the runner will
 ask the user to select one via command line prompt before continuing. The
@@ -477,6 +490,18 @@ afterwards detach the debug session:
 .. code-block:: console
 
    west debug --tool-opt='--batch'
+
+Requirements
+------------
+
+- **S32 Design Studio version**: 3.6.0 or newer.
+- **S32DebugProbe OS (firmware)**: 1.1.0 or newer.
+
+S32 Debug Probe OS Upgrade Procedure
+------------------------------------
+
+Refer to the “Reprogramming S32 Debug Probe Firmware Images” chapter
+in the `S32 Debug Probe User Guide`_ to upgrade the OS of the S32DebugProbe.
 
 .. _runner_probe_rs:
 
@@ -511,6 +536,50 @@ to ``rfp-cli`` when flashing:
 .. code-block:: console
 
    west flash --rfp-cli ~/Downloads/RFP_CLI_Linux_V31800_x64/linux-x64/rfp-cli
+
+.. _stm32cubeclt-host-tools:
+.. _runner_stlink_gdbserver:
+
+STM32CubeCLT Flash & Debug Host Tools
+*************************************
+
+STMicroelectronics provides `STM32CubeCLT`_ as an official all-in-one toolset compatible with
+Linux |reg|, macOS |reg| and Windows |reg|, allowing the use of STMicroelectronics proprietary
+tools within third-party development environments.
+
+It notably provides a GDB debugging server (the *ST-LINK GDB Server*) that can be used to debug
+applications on STM32 boards thanks to on-board or external ST-LINK debug probes.
+
+It is compatible with the following debug probes:
+
+- :ref:`stlink-v21-onboard-debug-probe`
+- Standalone `ST-LINK-V2`_, `ST-LINK-V3`_, and `STLINK-V3PWR`_ probes
+
+Install STM32CubeCLT
+--------------------
+
+The easiest way to get the ST-LINK GDB Server is to install `STM32CubeCLT`_ from STMicroelectronics' website.
+A valid email address is needed to receive the downloading link.
+
+Basic usage
+-----------
+
+The ST-Link GDB Server can be used through the ``west attach``, ``west debug`` or ``west debugserver`` commands
+to debug Zephyr applications.
+
+.. code-block:: console
+
+   west debug --runner stlink_gdbserver
+
+.. note::
+
+   The `STM32CubeProgrammer`_ version contained in the `STM32CubeCLT`_ installation can also be used to flash
+   applications. To do so, the dedicated :ref:`STM32CubeProgrammer runner <runner_stm32cubeprogrammer>` should
+   be used instead of ``stlink_gdbserver``, as done in the following example:
+
+   .. code-block:: console
+
+      west flash --runner stm32cubeprogrammer
 
 .. _stm32cubeprog-flash-host-tools:
 .. _runner_stm32cubeprogrammer:
@@ -561,6 +630,28 @@ It can be used through the ``west flash`` command to flash Zephyr applications.
 
 For advanced usage via the GUI or CLI, check out the `STM32CubeProgrammer User Manual`_.
 
+.. _runner_uf2:
+
+UF2 Uploader
+************
+
+The uf2 runner supports flashing some boards using the UF2 (USB Flashing Format).
+UF2 is a user-friendly file format designed for drag-and-drop programming via a USB mass storage device.
+
+It relies on the target device entering a special bootloader mode where it appears to the host
+as a USB mass storage device.
+Once in this mode, the application image can be uploaded by copying a ``.uf2`` file to the
+mounted volume.
+
+.. code-block:: console
+
+   west flash --runner uf2
+
+If the UF2 volume is not automatically detected, you may need to manually specify the mount point
+using the ``--device`` option:
+
+For more about the UF2 format and its tooling, see `USB Flashing Format (UF2)`_.
+
 .. _J-Link Software and Documentation Pack:
    https://www.segger.com/downloads/jlink/#J-LinkSoftwareAndDocumentationPack
 
@@ -577,13 +668,13 @@ For advanced usage via the GUI or CLI, check out the `STM32CubeProgrammer User M
    https://github.com/pyocd/pyOCD/tree/main/pyocd/target/builtin
 
 .. _OpenOCD Windows:
-    http://gnutoolchains.com/arm-eabi/openocd/
+    https://gnutoolchains.com/arm-eabi/openocd/
 
 .. _Lauterbach TRACE32:
     https://www.lauterbach.com/
 
 .. _Lauterbach TRACE32 download website:
-   http://www.lauterbach.com/download_trace32.html
+   https://www.lauterbach.com/download_trace32.html
 
 .. _Lauterbach TRACE32 Installation Guide:
    https://www2.lauterbach.com/pdf/installation.pdf
@@ -609,17 +700,20 @@ For advanced usage via the GUI or CLI, check out the `STM32CubeProgrammer User M
 .. _S32 Design Studio for S32 Platform Installation User Guide:
    https://www.nxp.com/webapp/Download?colCode=S32DSIG
 
+.. _S32 Debug Probe User Guide:
+   https://www.nxp.com/docs/en/user-guide/S32DBGUG.pdf
+
 .. _probe-rs Installation:
    https://probe.rs/docs/getting-started/installation/
 
 .. _probe-rs Supported Devices:
    https://probe.rs/targets/
 
-.. _STM32CubeProgrammer:
-   https://www.st.com/en/development-tools/stm32cubeprog.html
-
 .. _STM32CubeCLT:
    https://www.st.com/en/development-tools/stm32cubeclt.html
+
+.. _STM32CubeProgrammer:
+   https://www.st.com/en/development-tools/stm32cubeprog.html
 
 .. _STM32CubeProgrammer User Manual:
    https://www.st.com/resource/en/user_manual/um2237-stm32cubeprogrammer-software-description-stmicroelectronics.pdf
@@ -632,3 +726,6 @@ For advanced usage via the GUI or CLI, check out the `STM32CubeProgrammer User M
 
 .. _STLINK-V3PWR:
    https://www.st.com/en/development-tools/stlink-v3pwr.html
+
+.. _USB Flashing Format (UF2):
+   https://github.com/microsoft/uf2

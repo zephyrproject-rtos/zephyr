@@ -5,18 +5,31 @@ menuconfig ETH_NXP_IMX_NETC
 	bool "NXP IMX Ethernet and Network Controller (NETC) driver"
 	default y
 	depends on DT_HAS_NXP_IMX_NETC_PSI_ENABLED
-	select MDIO
 	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
 	help
 	  Enable Ethernet and Network Controller (NETC) driver for NXP IMX SoCs.
 
 if ETH_NXP_IMX_NETC
 
+DT_GIC_ITS_COMPAT := arm,gic-v3-its
+DT_NETC_PATH := $(dt_nodelabel_path,netc)
+DT_NETC_INT_PARENT_PATH := $(dt_node_ph_prop_path,$(DT_NETC_PATH),msi-parent)
+DT_NETC_INT_IS_GIC := $(dt_node_has_compat,$(DT_NETC_INT_PARENT_PATH),$(DT_GIC_ITS_COMPAT))
+
+config ETH_NXP_IMX_NETC_MSI_GIC
+	bool
+	default	y if ($(DT_NETC_INT_IS_GIC) && DT_HAS_ARM_GIC_V3_ITS_ENABLED)
+	depends on GIC_V3_ITS
+	help
+	  Use GIC ITS controller as MSI module for NXP NETC
+
+if !ETH_NXP_IMX_NETC_MSI_GIC
 config ETH_NXP_IMX_MSGINTR
 	int "Message Interrupt module select"
 	default 1
 	help
 	  Message Interrupt module select.
+endif
 
 config ETH_NXP_IMX_RX_THREAD_PRIO
 	int "RX thread priority"
@@ -85,14 +98,3 @@ config ETH_NXP_IMX_RX_RING_BUF_SIZE
 	  store one complete Ethernet frame, and be a multiple of 8.
 
 endif # ETH_NXP_IMX_NETC
-
-if NET_DSA
-
-config DSA_NXP_IMX_NETC
-	bool "Support for NXP i.MX NETC"
-	default y
-	depends on DT_HAS_NXP_NETC_SWITCH_ENABLED
-	help
-	  Add support for NXP i.MX NETC DSA device driver.
-
-endif

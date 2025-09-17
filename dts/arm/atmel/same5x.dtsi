@@ -10,24 +10,27 @@
 
 / {
 	soc {
-		gmac: ethernet@42000800 {
-			compatible = "atmel,sam0-gmac";
+		ethernet@42000800 {
+			compatible = "microchip,sam-ethernet-controller";
 			reg = <0x42000800 0x400>;
-			interrupts = <84 0>;
-			interrupt-names = "gmac";
-			status = "disabled";
 
-			num-queues = <1>;
-			local-mac-address = [00 00 00 00 00 00];
-		};
+			gmac: ethernet {
+				compatible = "atmel,sam0-gmac";
+				interrupts = <84 0>;
+				interrupt-names = "gmac";
+				status = "disabled";
 
-		mdio: mdio@42000800 {
-			compatible = "atmel,sam-mdio";
-			reg = <0x42000800 0x400>;
-			status = "disabled";
+				num-queues = <1>;
+				local-mac-address = [00 00 00 00 00 00];
+			};
 
-			#address-cells = <1>;
-			#size-cells = <0>;
+			mdio: mdio {
+				compatible = "atmel,sam-mdio";
+				status = "disabled";
+
+				#address-cells = <1>;
+				#size-cells = <0>;
+			};
 		};
 
 		can0: can@42000000 {
@@ -37,12 +40,12 @@
 			interrupt-names = "int0", "int1";
 			clocks = <&gclk 27>, <&mclk 0x10 17>;
 			clock-names = "GCLK", "MCLK";
-			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clocks = <&gclk 7>;
 			atmel,assigned-clock-names = "GCLK";
 			status = "disabled";
 
 			bosch,mram-cfg = <0x0 128 64 64 64 64 32 32>;
-			divider = <12>;
+			divider = <1>;
 		};
 
 		can1: can@42000400 {
@@ -52,12 +55,12 @@
 			interrupt-names = "int0", "int1";
 			clocks = <&gclk 28>, <&mclk 0x10 18>;
 			clock-names = "GCLK", "MCLK";
-			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clocks = <&gclk 7>;
 			atmel,assigned-clock-names = "GCLK";
 			status = "disabled";
 
 			bosch,mram-cfg = <0x0 128 64 64 64 64 32 32>;
-			divider = <12>;
+			divider = <1>;
 		};
 	};
 };

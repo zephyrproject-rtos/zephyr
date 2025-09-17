@@ -8,9 +8,6 @@
 #define ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_NRF_CLOCK_CONTROL_H_
 
 #include <zephyr/device.h>
-#ifdef NRF_CLOCK
-#include <hal/nrf_clock.h>
-#endif
 #include <zephyr/sys/onoff.h>
 #include <zephyr/drivers/clock_control.h>
 
@@ -20,6 +17,8 @@ extern "C" {
 
 #if defined(CONFIG_CLOCK_CONTROL_NRF)
 
+#include <hal/nrf_clock.h>
+
 /** @brief Clocks handled by the CLOCK peripheral.
  *
  * Enum shall be used as a sys argument in clock_control API.
@@ -27,6 +26,9 @@ extern "C" {
 enum clock_control_nrf_type {
 	CLOCK_CONTROL_NRF_TYPE_HFCLK,
 	CLOCK_CONTROL_NRF_TYPE_LFCLK,
+#if NRF_CLOCK_HAS_HFCLK24M
+	CLOCK_CONTROL_NRF_TYPE_HFCLK24M,
+#endif
 #if NRF_CLOCK_HAS_HFCLK192M
 	CLOCK_CONTROL_NRF_TYPE_HFCLK192M,
 #endif
@@ -43,6 +45,8 @@ enum clock_control_nrf_type {
 	((clock_control_subsys_t)CLOCK_CONTROL_NRF_TYPE_HFCLK)
 #define CLOCK_CONTROL_NRF_SUBSYS_LF \
 	((clock_control_subsys_t)CLOCK_CONTROL_NRF_TYPE_LFCLK)
+#define CLOCK_CONTROL_NRF_SUBSYS_HF24M \
+	((clock_control_subsys_t)CLOCK_CONTROL_NRF_TYPE_HFCLK24M)
 #define CLOCK_CONTROL_NRF_SUBSYS_HF192M \
 	((clock_control_subsys_t)CLOCK_CONTROL_NRF_TYPE_HFCLK192M)
 #define CLOCK_CONTROL_NRF_SUBSYS_HFAUDIO \
@@ -162,10 +166,14 @@ void z_nrf_clock_bt_ctlr_hf_request(void);
  */
 void z_nrf_clock_bt_ctlr_hf_release(void);
 
+/**
+ * @brief Get clock startup time
+ *
+ * @retval HFCLK startup time in microseconds
+ */
+uint32_t z_nrf_clock_bt_ctlr_hf_get_startup_time_us(void);
+
 #endif /* defined(CONFIG_CLOCK_CONTROL_NRF) */
-
-
-#if defined(CONFIG_CLOCK_CONTROL_NRF2)
 
 /* Specifies to use the maximum available frequency for a given clock. */
 #define NRF_CLOCK_CONTROL_FREQUENCY_MAX UINT32_MAX
@@ -197,6 +205,12 @@ __subsystem struct nrf_clock_control_driver_api {
 	int (*cancel_or_release)(const struct device *dev,
 				 const struct nrf_clock_spec *spec,
 				 struct onoff_client *cli);
+	int (*resolve)(const struct device *dev,
+		       const struct nrf_clock_spec *req_spec,
+		       struct nrf_clock_spec *res_spec);
+	int (*get_startup_time)(const struct device *dev,
+				const struct nrf_clock_spec *spec,
+				uint32_t *startup_time_us);
 };
 
 /**
@@ -317,6 +331,54 @@ int nrf_clock_control_cancel_or_release(const struct device *dev,
 	return api->cancel_or_release(dev, spec, cli);
 }
 
+/**
+ * @brief Resolve a requested clock spec to resulting spec.
+ *
+ * @param dev Device structure.
+ * @param req_spec The requested clock specification.
+ * @param res_spec Destination for the resulting clock specification.
+ *
+ * @retval Successful if successful.
+ * @retval -errno code if failure
+ */
+static inline int nrf_clock_control_resolve(const struct device *dev,
+					    const struct nrf_clock_spec *req_spec,
+					    struct nrf_clock_spec *res_spec)
+{
+	const struct nrf_clock_control_driver_api *api =
+		(const struct nrf_clock_control_driver_api *)dev->api;
+
+	if (api->resolve == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->resolve(dev, req_spec, res_spec);
+}
+
+/**
+ * @brief Get the startup time of a clock.
+ *
+ * @param dev Device structure.
+ * @param spec Clock specification to get startup time for.
+ * @param startup_time_us Destination for startup time in microseconds.
+ *
+ * @retval Successful if successful.
+ * @retval -errno code if failure.
+ */
+static inline int nrf_clock_control_get_startup_time(const struct device *dev,
+						     const struct nrf_clock_spec *spec,
+						     uint32_t *startup_time_us)
+{
+	const struct nrf_clock_control_driver_api *api =
+		(const struct nrf_clock_control_driver_api *)dev->api;
+
+	if (api->get_startup_time == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->get_startup_time(dev, spec, startup_time_us);
+}
+
 /** @brief Request the HFXO from Zero Latency Interrupt context.
  *
  * Function is optimized for use in Zero Latency Interrupt context.
@@ -340,8 +402,6 @@ void nrf_clock_control_hfxo_request(void);
  * there are no more pending requests.
  */
 void nrf_clock_control_hfxo_release(void);
-
-#endif /* defined(CONFIG_CLOCK_CONTROL_NRF2) */
 
 #ifdef __cplusplus
 }

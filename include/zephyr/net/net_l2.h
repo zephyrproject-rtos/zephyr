@@ -66,7 +66,7 @@ struct net_l2 {
 	 * This function is used by net core to push a packet to lower layer
 	 * (interface's L2), which in turn might work on the packet relevantly.
 	 * (adding proper header etc...)
-	 * Returns a negative error code, or the number of bytes sent otherwise.
+	 * Returns a negative error code, or 0 if the packet was accepted.
 	 */
 	int (*send)(struct net_if *iface, struct net_pkt *pkt);
 

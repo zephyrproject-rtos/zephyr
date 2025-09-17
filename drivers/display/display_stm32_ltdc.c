@@ -94,7 +94,7 @@ static void stm32_ltdc_global_isr(const struct device *dev)
 			data->front_buf = data->pend_buf;
 
 			LTDC_LAYER(&data->hltdc, LTDC_LAYER_1)->CFBAR = (uint32_t)data->front_buf;
-			__HAL_LTDC_RELOAD_CONFIG(&data->hltdc);
+			__HAL_LTDC_RELOAD_IMMEDIATE_CONFIG(&data->hltdc);
 
 			k_sem_give(&data->sem);
 		}
@@ -124,6 +124,7 @@ static int stm32_ltdc_set_pixel_format(const struct device *dev,
 		err = HAL_LTDC_SetPixelFormat(&data->hltdc, LTDC_PIXEL_FORMAT_ARGB8888, 0);
 		data->current_pixel_format = PIXEL_FORMAT_ARGB_8888;
 		data->current_pixel_size = 4u;
+		break;
 	default:
 		err = -ENOTSUP;
 		break;
@@ -223,7 +224,12 @@ static int stm32_ltdc_write(const struct device *dev, const uint16_t x,
 
 	data->pend_buf = pend_buf;
 
+	__HAL_LTDC_CLEAR_FLAG(&data->hltdc, LTDC_FLAG_LI);
+	__HAL_LTDC_ENABLE_IT(&data->hltdc, LTDC_IT_LI);
+
 	k_sem_take(&data->sem, K_FOREVER);
+
+	__HAL_LTDC_DISABLE_IT(&data->hltdc, LTDC_IT_LI);
 
 	return 0;
 }
@@ -264,11 +270,23 @@ static int stm32_ltdc_display_blanking_off(const struct device *dev)
 {
 	const struct display_stm32_ltdc_config *config = dev->config;
 	const struct device *display_dev = config->display_controller;
+	int err;
+
+	if (!display_dev && !config->bl_ctrl_gpio.port) {
+		return -ENOSYS;
+	}
+
+	/* Turn on backlight (if its GPIO is defined in device tree) */
+	if (config->bl_ctrl_gpio.port) {
+		err = gpio_pin_set_dt(&config->bl_ctrl_gpio, 1);
+		if (err < 0) {
+			return err;
+		}
+	}
 
 	/* Panel controller's phandle is not passed to LTDC in devicetree */
-	if (display_dev == NULL) {
-		LOG_ERR("There is no panel controller to forward blanking_off call to");
-		return -ENOSYS;
+	if (!display_dev) {
+		return 0;
 	}
 
 	if (!device_is_ready(display_dev)) {
@@ -283,11 +301,23 @@ static int stm32_ltdc_display_blanking_on(const struct device *dev)
 {
 	const struct display_stm32_ltdc_config *config = dev->config;
 	const struct device *display_dev = config->display_controller;
+	int err;
+
+	if (!display_dev && !config->bl_ctrl_gpio.port) {
+		return -ENOSYS;
+	}
+
+	/* Turn off backlight (if its GPIO is defined in device tree) */
+	if (config->bl_ctrl_gpio.port) {
+		err = gpio_pin_set_dt(&config->bl_ctrl_gpio, 0);
+		if (err < 0) {
+			return err;
+		}
+	}
 
 	/* Panel controller's phandle is not passed to LTDC in devicetree */
-	if (display_dev == NULL) {
-		LOG_ERR("There is no panel controller to forward blanking_on call to");
-		return -ENOSYS;
+	if (!display_dev) {
+		return 0;
 	}
 
 	if (!device_is_ready(display_dev)) {
@@ -326,7 +356,7 @@ static int stm32_ltdc_init(const struct device *dev)
 
 	/* Configure and set display backlight control GPIO */
 	if (config->bl_ctrl_gpio.port) {
-		err = gpio_pin_configure_dt(&config->bl_ctrl_gpio, GPIO_OUTPUT_ACTIVE);
+		err = gpio_pin_configure_dt(&config->bl_ctrl_gpio, GPIO_OUTPUT_INACTIVE);
 		if (err < 0) {
 			LOG_ERR("Configuration of display backlight control GPIO failed");
 			return err;
@@ -419,8 +449,8 @@ static int stm32_ltdc_init(const struct device *dev)
 
 #if defined(CONFIG_STM32_LTDC_FB_USE_SHARED_MULTI_HEAP)
 	data->frame_buffer = shared_multi_heap_aligned_alloc(
-			CONFIG_VIDEO_BUFFER_SMH_ATTRIBUTE,
-			32,
+			CONFIG_STM32_LTDC_FB_SMH_ATTRIBUTE,
+			CONFIG_STM32_LTDC_FB_SMH_ALIGN,
 			CONFIG_STM32_LTDC_FB_NUM * data->frame_buffer_len);
 
 	if (data->frame_buffer == NULL) {
@@ -443,7 +473,7 @@ static int stm32_ltdc_init(const struct device *dev)
 	/* Configure RIF for LTDC layer 1 */
 	rimc.MasterCID = RIF_CID_1;
 	rimc.SecPriv = RIF_ATTRIBUTE_SEC | RIF_ATTRIBUTE_PRIV;
-	HAL_RIF_RIMC_ConfigMasterAttributes(RIF_MASTER_INDEX_LTDC1 , &rimc);
+	HAL_RIF_RIMC_ConfigMasterAttributes(RIF_MASTER_INDEX_LTDC1, &rimc);
 	HAL_RIF_RISC_SetSlaveSecureAttributes(RIF_RISC_PERIPH_INDEX_LTDCL1,
 					      RIF_ATTRIBUTE_SEC | RIF_ATTRIBUTE_PRIV);
 #endif
@@ -453,9 +483,6 @@ static int stm32_ltdc_init(const struct device *dev)
 
 	/* Set the line interrupt position */
 	LTDC->LIPCR = 0U;
-
-	__HAL_LTDC_CLEAR_FLAG(&data->hltdc, LTDC_FLAG_LI);
-	__HAL_LTDC_ENABLE_IT(&data->hltdc, LTDC_IT_LI);
 
 	return 0;
 }
@@ -536,7 +563,8 @@ static DEVICE_API(display, stm32_ltdc_display_api) = {
 #elif DT_SAME_NODE(DT_INST_PHANDLE(0, ext_sdram), DT_NODELABEL(psram))
 #define FRAME_BUFFER_SECTION __stm32_psram_section
 #else
-#error "LTDC ext-sdram property in device tree does not reference SDRAM1 or SDRAM2 node or PSRAM node"
+#error "LTDC ext-sdram property in device tree does not reference SDRAM1 or SDRAM2 node or PSRAM "\
+	"node"
 #define FRAME_BUFFER_SECTION
 #endif /* DT_SAME_NODE(DT_INST_PHANDLE(0, ext_sdram), DT_NODELABEL(sdram1)) */
 

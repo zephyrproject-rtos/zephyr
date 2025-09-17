@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import logging
+import os
 import shlex
 
 from subprocess import check_output
@@ -11,6 +12,12 @@ from pathlib import Path
 
 
 logger = logging.getLogger(__name__)
+
+
+def get_imgtool_path() -> Path:
+    """Get the path to the imgtool script."""
+    zephyr_base = os.getenv("ZEPHYR_BASE") or Path(__file__).parents[4]
+    return Path(zephyr_base).parent / "bootloader" / "mcuboot" / "scripts" / "imgtool.py"
 
 
 def west_sign_with_imgtool(
@@ -24,6 +31,7 @@ def west_sign_with_imgtool(
     command = [
         'west', 'sign',
         '-t', 'imgtool',
+        '--tool-path', str(get_imgtool_path()),
         '--no-hex',
         '--build-dir', str(build_dir)
     ]

@@ -398,7 +398,7 @@ class Reporting:
                 suite["reason"] = instance.reason
             else:
                 suite["status"] = TwisterStatus.NONE
-                suite["reason"] = 'Unknown Instance status.'
+                suite["reason"] = 'Unknown Instance status'
 
             if instance.status != TwisterStatus.NONE:
                 suite["execution_time"] =  f"{float(handler_time):.2f}"
@@ -617,7 +617,7 @@ class Reporting:
 
             logger.info("")
             logger.info("To rerun the tests, call twister using the following commandline:")
-            extra_parameters = '' if detailed_test_id else ' --no-detailed-test-id'
+            extra_parameters = '' if not detailed_test_id else ' --detailed-test-id'
             logger.info(f"west twister -p <PLATFORM> -s <TEST ID>{extra_parameters}, for example:")
             logger.info("")
             logger.info(
@@ -734,7 +734,7 @@ class Reporting:
                     f'.'
                 )
 
-        built_only = results.total - run - results.filtered_configs
+        built_only = results.total - run - results.filtered_configs - results.skipped
         logger.info(
             f"{Fore.GREEN}{run}{Fore.RESET} test configurations executed on platforms,"
             f" {TwisterStatus.get_color(TwisterStatus.NOTRUN)}{built_only}{Fore.RESET}"
@@ -845,4 +845,9 @@ class Reporting:
                 return line[line.index('error: ') :].strip()
             elif ": in function " in line:
                 last_warning = line[line.index('in function') :].strip()
+            elif "CMake Error at" in line:
+                for next_line in lines[i + 1 :]:
+                    if next_line.strip():
+                        return line + ' ' + next_line
+                return line
         return None

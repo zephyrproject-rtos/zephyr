@@ -18,16 +18,30 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/__assert.h>
+#ifdef CONFIG_NRF71_ON_IPC
+#include "ipc_if.h"
+#else
 #include <zephyr/drivers/wifi/nrf_wifi/bus/rpu_hw_if.h>
 #include <zephyr/drivers/wifi/nrf_wifi/bus/qspi_if.h>
+#endif /* CONFIG_NRF71_ON_IPC */
 #include <zephyr/sys/math_extras.h>
 
 #include "shim.h"
 #include "work.h"
 #include "timer.h"
 #include "osal_ops.h"
+#include "common/hal_structs_common.h"
 
 LOG_MODULE_REGISTER(wifi_nrf, CONFIG_WIFI_NRF70_LOG_LEVEL);
+
+/* Memory pool management - unified pool-based API */
+#if defined(CONFIG_NRF_WIFI_GLOBAL_HEAP)
+/* Use global system heap */
+extern struct sys_heap _system_heap;
+static struct k_heap * const wifi_ctrl_pool = &_system_heap;
+static struct k_heap * const wifi_data_pool = &_system_heap;
+#else
+/* Use dedicated heaps */
 #if defined(CONFIG_NOCACHE_MEMORY)
 K_HEAP_DEFINE_NOCACHE(wifi_drv_ctrl_mem_pool, CONFIG_NRF_WIFI_CTRL_HEAP_SIZE);
 K_HEAP_DEFINE_NOCACHE(wifi_drv_data_mem_pool, CONFIG_NRF_WIFI_DATA_HEAP_SIZE);
@@ -35,6 +49,10 @@ K_HEAP_DEFINE_NOCACHE(wifi_drv_data_mem_pool, CONFIG_NRF_WIFI_DATA_HEAP_SIZE);
 K_HEAP_DEFINE(wifi_drv_ctrl_mem_pool, CONFIG_NRF_WIFI_CTRL_HEAP_SIZE);
 K_HEAP_DEFINE(wifi_drv_data_mem_pool, CONFIG_NRF_WIFI_DATA_HEAP_SIZE);
 #endif /* CONFIG_NOCACHE_MEMORY */
+static struct k_heap * const wifi_ctrl_pool = &wifi_drv_ctrl_mem_pool;
+static struct k_heap * const wifi_data_pool = &wifi_drv_data_mem_pool;
+#endif /* CONFIG_NRF_WIFI_GLOBAL_HEAP */
+
 #define WORD_SIZE 4
 
 struct zep_shim_intr_priv *intr_priv;
@@ -43,14 +61,14 @@ static void *zep_shim_mem_alloc(size_t size)
 {
 	size_t size_aligned = ROUND_UP(size, 4);
 
-	return k_heap_aligned_alloc(&wifi_drv_ctrl_mem_pool, WORD_SIZE, size_aligned, K_FOREVER);
+	return k_heap_aligned_alloc(wifi_ctrl_pool, WORD_SIZE, size_aligned, K_FOREVER);
 }
 
 static void *zep_shim_data_mem_alloc(size_t size)
 {
 	size_t size_aligned = ROUND_UP(size, 4);
 
-	return k_heap_aligned_alloc(&wifi_drv_data_mem_pool, WORD_SIZE, size_aligned, K_FOREVER);
+	return k_heap_aligned_alloc(wifi_data_pool, WORD_SIZE, size_aligned, K_FOREVER);
 }
 
 static void *zep_shim_mem_zalloc(size_t size)
@@ -94,14 +112,14 @@ static void *zep_shim_data_mem_zalloc(size_t size)
 static void zep_shim_mem_free(void *buf)
 {
 	if (buf) {
-		k_heap_free(&wifi_drv_ctrl_mem_pool, buf);
+		k_heap_free(wifi_ctrl_pool, buf);
 	}
 }
 
 static void zep_shim_data_mem_free(void *buf)
 {
 	if (buf) {
-		k_heap_free(&wifi_drv_data_mem_pool, buf);
+		k_heap_free(wifi_data_pool, buf);
 	}
 }
 
@@ -122,6 +140,7 @@ static int zep_shim_mem_cmp(const void *addr1,
 	return memcmp(addr1, addr2, size);
 }
 
+#ifndef CONFIG_NRF71_ON_IPC
 static unsigned int zep_shim_qspi_read_reg32(void *priv, unsigned long addr)
 {
 	unsigned int val;
@@ -174,15 +193,17 @@ static void zep_shim_qspi_cpy_to(void *priv, unsigned long addr, const void *src
 
 	dev->write(addr, src, count_aligned);
 }
+#endif /* !CONFIG_NRF71_ON_IPC */
 
 static void *zep_shim_spinlock_alloc(void)
 {
 	struct k_mutex *lock = NULL;
 
-	lock = zep_shim_mem_zalloc(sizeof(*lock));
-
+	lock = k_heap_aligned_alloc(wifi_ctrl_pool, WORD_SIZE, sizeof(*lock), K_FOREVER);
 	if (!lock) {
 		LOG_ERR("%s: Unable to allocate memory for spinlock", __func__);
+	} else {
+		memset(lock, 0, sizeof(*lock));
 	}
 
 	return lock;
@@ -190,7 +211,9 @@ static void *zep_shim_spinlock_alloc(void)
 
 static void zep_shim_spinlock_free(void *lock)
 {
-	k_heap_free(&wifi_drv_ctrl_mem_pool, lock);
+	if (lock) {
+		k_heap_free(wifi_ctrl_pool, lock);
+	}
 }
 
 static void zep_shim_spinlock_init(void *lock)
@@ -268,6 +291,9 @@ struct nwb {
 	void (*cleanup_cb)();
 	unsigned char priority;
 	bool chksum_done;
+#ifdef CONFIG_NRF70_RAW_DATA_TX
+	void *raw_tx_hdr;
+#endif /* CONFIG_NRF70_RAW_DATA_TX */
 #ifdef CONFIG_NRF_WIFI_ZERO_COPY_TX
 	struct net_pkt *pkt;
 #endif
@@ -392,6 +418,55 @@ static void zep_shim_nbuf_set_chksum_done(void *nbuf, unsigned char chksum_done)
 
 	nwb->chksum_done = (bool)chksum_done;
 }
+
+#ifdef CONFIG_NRF70_RAW_DATA_TX
+static void *zep_shim_nbuf_set_raw_tx_hdr(void *nbuf, unsigned short raw_hdr_len)
+{
+	struct nwb *nwb = (struct nwb *)nbuf;
+
+	if (!nwb) {
+		LOG_ERR("%s: Received network buffer is NULL", __func__);
+		return NULL;
+	}
+
+	nwb->raw_tx_hdr = zep_shim_nbuf_data_get(nwb);
+	if (!nwb->raw_tx_hdr) {
+		LOG_ERR("%s: Unable to set raw Tx header in network buffer", __func__);
+		return NULL;
+	}
+
+	zep_shim_nbuf_data_pull(nwb, raw_hdr_len);
+
+	return nwb->raw_tx_hdr;
+}
+
+static void *zep_shim_nbuf_get_raw_tx_hdr(void *nbuf)
+{
+	struct nwb *nwb = (struct nwb *)nbuf;
+
+	if (!nwb) {
+		LOG_ERR("%s: Received network buffer is NULL", __func__);
+		return NULL;
+	}
+
+	return nwb->raw_tx_hdr;
+}
+
+static bool zep_shim_nbuf_is_raw_tx(void *nbuf)
+{
+	struct nwb *nwb = (struct nwb *)nbuf;
+
+	if (!nwb) {
+		LOG_ERR("%s: Received network buffer is NULL", __func__);
+		return false;
+	}
+
+	return (nwb->raw_tx_hdr != NULL);
+}
+#endif /* CONFIG_NRF70_RAW_DATA_TX */
+
+
+
 
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/net_core.h>
@@ -771,7 +846,7 @@ static void zep_shim_work_kill(void *item)
 
 static unsigned long zep_shim_time_get_curr_us(void)
 {
-	return k_uptime_get() * USEC_PER_MSEC;
+	return k_ticks_to_us_floor64(k_uptime_ticks());
 }
 
 static unsigned int zep_shim_time_elapsed_us(unsigned long start_time_us)
@@ -807,14 +882,56 @@ static enum nrf_wifi_status zep_shim_bus_qspi_dev_init(void *os_qspi_dev_ctx)
 static void zep_shim_bus_qspi_dev_deinit(void *priv)
 {
 	struct zep_shim_bus_qspi_priv *qspi_priv = priv;
+#ifndef CONFIG_NRF71_ON_IPC
 	volatile struct qspi_dev *dev = qspi_priv->qspi_dev;
-
+#else
+	volatile struct rpu_dev *dev = qspi_priv->qspi_dev;
+#endif /* !CONFIG_NRF71_ON_IPC */
 	dev->deinit();
 }
+
+#ifdef CONFIG_NRF71_ON_IPC
+static int ipc_send_msg(unsigned int msg_type, void *msg, unsigned int len)
+{
+	enum nrf_wifi_status status = NRF_WIFI_STATUS_FAIL;
+	struct rpu_dev *dev = rpu_dev();
+	int ret;
+	ipc_ctx_t ctx;
+
+	switch (msg_type) {
+	case NRF_WIFI_HAL_MSG_TYPE_CMD_CTRL:
+		ctx.inst = IPC_INSTANCE_CMD_CTRL;
+		ctx.ept = IPC_EPT_UMAC;
+		break;
+	case NRF_WIFI_HAL_MSG_TYPE_CMD_DATA_TX:
+		ctx.inst = IPC_INSTANCE_CMD_TX;
+		ctx.ept = IPC_EPT_UMAC;
+		break;
+	case NRF_WIFI_HAL_MSG_TYPE_CMD_DATA_RX:
+		ctx.inst = IPC_INSTANCE_RX;
+		ctx.ept = IPC_EPT_LMAC;
+		break;
+	default:
+		nrf_wifi_osal_log_err("%s: Invalid msg_type (%d)", __func__, msg_type);
+		goto out;
+	};
+
+	ret = dev->send(ctx, msg, len);
+	if (ret < 0) {
+		nrf_wifi_osal_log_err("%s: Sending message to RPU failed\n", __func__);
+		goto out;
+	}
+
+	status = NRF_WIFI_STATUS_SUCCESS;
+out:
+	return status;
+}
+#endif /*  CONFIG_NRF71_ON_IPC */
 
 static void *zep_shim_bus_qspi_dev_add(void *os_qspi_priv, void *osal_qspi_dev_ctx)
 {
 	struct zep_shim_bus_qspi_priv *zep_qspi_priv = os_qspi_priv;
+#ifndef CONFIG_NRF71_ON_IPC
 	struct qspi_dev *dev = qspi_dev();
 	int ret;
 	enum nrf_wifi_status status;
@@ -836,6 +953,11 @@ static void *zep_shim_bus_qspi_dev_add(void *os_qspi_priv, void *osal_qspi_dev_c
 		LOG_ERR("%s: RPU enable failed with error %d", __func__, ret);
 		return NULL;
 	}
+#else
+	struct rpu_dev *dev = rpu_dev();
+
+	dev->init();
+#endif /* !CONFIG_NRF71_ON_IPC */
 	zep_qspi_priv->qspi_dev = dev;
 	zep_qspi_priv->dev_added = true;
 
@@ -849,8 +971,10 @@ static void zep_shim_bus_qspi_dev_rem(void *priv)
 
 	ARG_UNUSED(dev);
 
+#ifndef CONFIG_NRF71_ON_IPC
 	/* TODO: Make qspi_dev a dynamic instance and remove it here */
 	rpu_disable();
+#endif /* !CONFIG_NRF71_ON_IPC */
 }
 
 static void *zep_shim_bus_qspi_init(void)
@@ -908,6 +1032,7 @@ static void zep_shim_bus_qspi_dev_host_map_get(void *os_qspi_dev_ctx,
 	host_map->addr = 0;
 }
 
+#ifndef CONFIG_NRF71_ON_IPC
 static void irq_work_handler(struct k_work *work)
 {
 	int ret = 0;
@@ -940,6 +1065,8 @@ static void zep_shim_irq_handler(const struct device *dev, struct gpio_callback 
 	k_work_schedule_for_queue(&zep_wifi_intr_q, &intr_priv->work, K_NO_WAIT);
 }
 
+#endif /* !CONFIG_NRF71_ON_IPC */
+
 static enum nrf_wifi_status zep_shim_bus_qspi_intr_reg(void *os_dev_ctx, void *callbk_data,
 						       int (*callbk_fn)(void *callbk_data))
 {
@@ -948,6 +1075,14 @@ static enum nrf_wifi_status zep_shim_bus_qspi_intr_reg(void *os_dev_ctx, void *c
 
 	ARG_UNUSED(os_dev_ctx);
 
+#ifdef CONFIG_NRF71_ON_IPC
+	ret = ipc_register_rx_cb(callbk_fn, callbk_data);
+	if (ret) {
+		LOG_ERR("%s: ipc_register_rx_cb failed\n", __func__);
+		goto out;
+	}
+	status = NRF_WIFI_STATUS_SUCCESS;
+#else
 	intr_priv = zep_shim_mem_zalloc(sizeof(*intr_priv));
 
 	if (!intr_priv) {
@@ -970,18 +1105,20 @@ static enum nrf_wifi_status zep_shim_bus_qspi_intr_reg(void *os_dev_ctx, void *c
 	}
 
 	status = NRF_WIFI_STATUS_SUCCESS;
-
+#endif /* CONFIG_NRF71_ON_IPC */
 out:
 	return status;
 }
 
 static void zep_shim_bus_qspi_intr_unreg(void *os_qspi_dev_ctx)
 {
+#ifndef CONFIG_NRF71_ON_IPC
 	struct k_work_sync sync;
 	int ret;
+#endif /* !CONFIG_NRF71_ON_IPC */
 
 	ARG_UNUSED(os_qspi_dev_ctx);
-
+#ifndef CONFIG_NRF71_ON_IPC
 	ret = rpu_irq_remove(&intr_priv->gpio_cb_data);
 	if (ret) {
 		LOG_ERR("%s: rpu_irq_remove failed", __func__);
@@ -992,6 +1129,7 @@ static void zep_shim_bus_qspi_intr_unreg(void *os_qspi_dev_ctx)
 
 	zep_shim_mem_free(intr_priv);
 	intr_priv = NULL;
+#endif /*! CONFIG_NRF71_ON_IPC */
 }
 
 #ifdef CONFIG_NRF_WIFI_LOW_POWER
@@ -1072,12 +1210,12 @@ const struct nrf_wifi_osal_ops nrf_wifi_os_zep_ops = {
 	.mem_cpy = zep_shim_mem_cpy,
 	.mem_set = zep_shim_mem_set,
 	.mem_cmp = zep_shim_mem_cmp,
-
+#ifndef CONFIG_NRF71_ON_IPC
 	.qspi_read_reg32 = zep_shim_qspi_read_reg32,
 	.qspi_write_reg32 = zep_shim_qspi_write_reg32,
 	.qspi_cpy_from = zep_shim_qspi_cpy_from,
 	.qspi_cpy_to = zep_shim_qspi_cpy_to,
-
+#endif /* CONFIG_NRF71_ON_IPC */
 	.spinlock_alloc = zep_shim_spinlock_alloc,
 	.spinlock_free = zep_shim_spinlock_free,
 	.spinlock_init = zep_shim_spinlock_init,
@@ -1122,6 +1260,11 @@ const struct nrf_wifi_osal_ops nrf_wifi_os_zep_ops = {
 	.nbuf_get_priority = zep_shim_nbuf_get_priority,
 	.nbuf_get_chksum_done = zep_shim_nbuf_get_chksum_done,
 	.nbuf_set_chksum_done = zep_shim_nbuf_set_chksum_done,
+#ifdef CONFIG_NRF70_RAW_DATA_TX
+	.nbuf_set_raw_tx_hdr = zep_shim_nbuf_set_raw_tx_hdr,
+	.nbuf_get_raw_tx_hdr = zep_shim_nbuf_get_raw_tx_hdr,
+	.nbuf_is_raw_tx = zep_shim_nbuf_is_raw_tx,
+#endif /* CONFIG_NRF70_RAW_DATA_TX */
 
 	.tasklet_alloc = zep_shim_work_alloc,
 	.tasklet_free = zep_shim_work_free,
@@ -1157,7 +1300,9 @@ const struct nrf_wifi_osal_ops nrf_wifi_os_zep_ops = {
 	.bus_qspi_ps_wake = zep_shim_bus_qspi_ps_wake,
 	.bus_qspi_ps_status = zep_shim_bus_qspi_ps_status,
 #endif /* CONFIG_NRF_WIFI_LOW_POWER */
-
 	.assert = zep_shim_assert,
 	.strlen = zep_shim_strlen,
+#ifdef CONFIG_NRF71_ON_IPC
+	.ipc_send_msg = ipc_send_msg,
+#endif /* CONFIG_NRF71_ON_IPC */
 };

@@ -5,14 +5,16 @@
  */
 
 /* ENET MUST be disabled because share
-* pins with UART-3
-*/
+ * pins with UART-3
+ */
 &enet_mac {
 	status = "disabled";
 };
+
 &enet_mdio {
 	status = "disabled";
 };
+
 &enet_ptp_clock {
 	status = "disabled";
 };

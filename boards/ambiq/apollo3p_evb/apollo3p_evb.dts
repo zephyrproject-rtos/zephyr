@@ -26,27 +26,32 @@
 		led2 = &led2;
 		sw0 = &button0;
 		sw1 = &button1;
-		rtc = &rtc0;
+		pwm-led0 = &pwm_led0;
 	};
 
 	leds {
 		compatible = "gpio-leds";
+
 		led0: led_0 {
 			gpios = <&gpio0_31 10 GPIO_ACTIVE_LOW>;
 			label = "LED 0";
 		};
+
 		led1: led_1 {
 			gpios = <&gpio0_31 30 GPIO_ACTIVE_LOW>;
 			label = "LED 1";
 		};
+
 		led2: led_2 {
 			gpios = <&gpio0_31 15 GPIO_ACTIVE_LOW>;
 			label = "LED 2";
 		};
+
 		led3: led_3 {
 			gpios = <&gpio0_31 14 GPIO_ACTIVE_LOW>;
 			label = "LED 3";
 		};
+
 		led4: led_4 {
 			gpios = <&gpio0_31 17 GPIO_ACTIVE_LOW>;
 			label = "LED 4";
@@ -55,20 +60,33 @@
 
 	buttons {
 		compatible = "gpio-keys";
+
 		button0: button_0 {
 			gpios = <&gpio0_31 16 GPIO_ACTIVE_LOW>;
 			label = "BTN0";
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		button1: button_1 {
 			gpios = <&gpio0_31 18 GPIO_ACTIVE_LOW>;
 			label = "BTN1";
 			zephyr,code = <INPUT_KEY_1>;
 		};
+
 		button2: button_2 {
 			gpios = <&gpio0_31 19 GPIO_ACTIVE_LOW>;
 			label = "BTN2";
 			zephyr,code = <INPUT_KEY_2>;
+		};
+	};
+
+	pwmleds: pwmleds {
+		compatible = "pwm-leds";
+		status = "disabled";
+
+		pwm_led0: pwm_led_0 {
+			pwms = <&pwm2 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+			label = "PWM_LED";
 		};
 	};
 };
@@ -123,7 +141,7 @@
 		pinctrl-names = "default";
 		cs-gpios = <&gpio0_31 11 GPIO_ACTIVE_LOW>;
 		clock-frequency = <DT_FREQ_M(1)>;
-		status = "okay";
+		status = "disabled";
 	};
 };
 
@@ -134,44 +152,28 @@
 		clock-frequency = <I2C_BITRATE_STANDARD>;
 		scl-gpios = <&gpio32_63 10 (GPIO_OPEN_DRAIN | GPIO_PULL_UP)>;
 		sda-gpios = <&gpio32_63 11 (GPIO_OPEN_DRAIN | GPIO_PULL_UP)>;
-		status = "okay";
+		status = "disabled";
 	};
 };
 
-&counter0 {
-	status = "okay";
+&timer0 {
+	counter0: counter {
+		status = "disabled";
+	};
 };
 
-&counter1 {
-	status = "okay";
-};
-
-&counter2 {
-	status = "okay";
-};
-
-&counter3 {
-	status = "okay";
-};
-
-&counter4 {
-	status = "okay";
-};
-
-&counter5 {
-	status = "okay";
-};
-
-&counter6 {
-	status = "okay";
-};
-
-&counter7 {
-	status = "okay";
+&timer2 {
+	pwm2: pwm {
+		timer-segment = "SEGMENT_B";
+		pwm-type = "PWM_REPEAT";
+		pinctrl-0 = <&pwm2_default>;
+		pinctrl-names = "default";
+		status = "disabled";
+	};
 };
 
 &rtc0 {
-	status = "okay";
+	status = "disabled";
 	clock = "XTAL";
 };
 

@@ -73,7 +73,7 @@ struct bt_conn *bt_conn_create_br(const bt_addr_t *peer,
 		return NULL;
 	}
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_CONNECT, sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		bt_conn_unref(conn);
 		return NULL;
@@ -107,7 +107,7 @@ int bt_hci_connect_br_cancel(struct bt_conn *conn)
 	struct net_buf *buf, *rsp;
 	int err;
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_CONNECT_CANCEL, sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -142,4 +142,132 @@ const bt_addr_t *bt_conn_get_dst_br(const struct bt_conn *conn)
 	}
 
 	return &conn->br.dst;
+}
+
+void bt_br_acl_recv(struct bt_conn *conn, struct net_buf *buf, bool complete)
+{
+	uint16_t acl_total_len;
+	struct bt_l2cap_hdr *hdr;
+	struct net_buf_simple_state state;
+
+	do {
+		net_buf_simple_save(&buf->b, &state);
+
+		hdr = (void *)buf->data;
+		acl_total_len = sys_le16_to_cpu(hdr->len) + sizeof(*hdr);
+		if (buf->len > acl_total_len) {
+			LOG_DBG("Multiple L2CAP packet (%u > %u)", buf->len, acl_total_len);
+			buf->len = acl_total_len;
+		} else if (buf->len < acl_total_len) {
+			LOG_ERR("Short packet (%u < %u)", buf->len, acl_total_len);
+			break;
+		}
+		bt_l2cap_recv(conn, net_buf_ref(buf), complete);
+
+		net_buf_simple_restore(&buf->b, &state);
+		net_buf_pull(buf, acl_total_len);
+	} while (buf->len > 0);
+
+	net_buf_unref(buf);
+}
+
+int bt_conn_br_switch_role(const struct bt_conn *conn, uint8_t role)
+{
+	struct net_buf *buf;
+	struct bt_hci_cp_switch_role *cp;
+
+	CHECKIF(conn == NULL) {
+		LOG_DBG("conn is NULL");
+		return -EINVAL;
+	}
+
+	if (!bt_conn_is_type(conn, BT_CONN_TYPE_BR)) {
+		LOG_DBG("Invalid connection type: %u for %p", conn->type, conn);
+		return -EINVAL;
+	}
+
+	buf = bt_hci_cmd_alloc(K_FOREVER);
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	bt_addr_copy(&cp->bdaddr, &conn->br.dst);
+	cp->role = role;
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_SWITCH_ROLE, buf, NULL);
+}
+
+static int bt_conn_br_read_link_policy_settings(const struct bt_conn *conn,
+						uint16_t *link_policy_settings)
+{
+	int err;
+	struct net_buf *buf;
+	struct bt_hci_cp_read_link_policy_settings *cp;
+	struct bt_hci_rp_read_link_policy_settings *rp;
+	struct net_buf *rsp;
+
+	buf = bt_hci_cmd_alloc(K_FOREVER);
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->handle = sys_cpu_to_le16(conn->handle);
+
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_LINK_POLICY_SETTINGS, buf, &rsp);
+	if (!err) {
+		rp = (void *)rsp->data;
+		*link_policy_settings = rp->link_policy_settings;
+	}
+
+	return err;
+}
+
+static int bt_conn_br_write_link_policy_settings(const struct bt_conn *conn,
+						 uint16_t link_policy_settings)
+{
+	struct net_buf *buf;
+	struct bt_hci_cp_write_link_policy_settings *cp;
+
+	buf = bt_hci_cmd_alloc(K_FOREVER);
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->handle = sys_cpu_to_le16(conn->handle);
+	cp->link_policy_settings = link_policy_settings;
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_LINK_POLICY_SETTINGS, buf, NULL);
+}
+
+int bt_conn_br_set_role_switch_enable(const struct bt_conn *conn, bool enable)
+{
+	int err;
+	uint16_t link_policy_settings;
+	bool is_enabled;
+
+	CHECKIF(conn == NULL) {
+		LOG_DBG("conn is NULL");
+		return -EINVAL;
+	}
+
+	if (!bt_conn_is_type(conn, BT_CONN_TYPE_BR)) {
+		LOG_DBG("Invalid connection type: %u for %p", conn->type, conn);
+		return -EINVAL;
+	}
+
+	err = bt_conn_br_read_link_policy_settings(conn, &link_policy_settings);
+	if (err) {
+		return err;
+	}
+
+	is_enabled = (link_policy_settings & BT_HCI_LINK_POLICY_SETTINGS_ENABLE_ROLE_SWITCH);
+	if (enable == is_enabled) {
+		return 0;
+	}
+
+	link_policy_settings ^= BT_HCI_LINK_POLICY_SETTINGS_ENABLE_ROLE_SWITCH;
+	return bt_conn_br_write_link_policy_settings(conn, link_policy_settings);
 }

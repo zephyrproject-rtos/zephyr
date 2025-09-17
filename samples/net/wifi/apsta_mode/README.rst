@@ -28,11 +28,11 @@ Requirements
 ************
 
 This example should be able to run on any commonly available
-:zephyr:board:`esp32_devkitc_wroom` development board without any extra hardware.
+:zephyr:board:`esp32_devkitc` development board without any extra hardware.
 
 To enable or disable ``AP-STA`` mode, modify the :kconfig:option:`CONFIG_ESP32_WIFI_AP_STA_MODE`
-parameter in the ``boards/esp32_devkitc_wroom_procpu.conf`` file of the demo. Moreover, an
-extra Wi-Fi node is included in ``boards/esp32_devkitc_wroom_procpu.overlay``.
+parameter in the ``boards/esp32_devkitc_procpu.conf`` file of the demo. Moreover, an
+extra Wi-Fi node is included in ``boards/esp32_devkitc_procpu.overlay``.
 
 By default, AP-STA mode is disabled.
 
@@ -41,7 +41,7 @@ Building, Flashing and Running
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/wifi/apsta_mode
-   :board: esp32_devkitc_wroom/esp32/procpu
+   :board: esp32_devkitc/esp32/procpu
    :goals: build flash
    :compact:
 

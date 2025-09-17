@@ -54,7 +54,7 @@ static void malloc_free_handler(void *p1, void *p2, void *p3)
 
 	block_fail = k_malloc(BLK_SIZE_MIN);
 	/** TESTPOINT: Return NULL if fail.*/
-	zassert_is_null(block_fail, NULL);
+	zassert_is_null(block_fail);
 
 	for (int i = 0; i < nb; i++) {
 		/**
@@ -69,7 +69,7 @@ static void malloc_free_handler(void *p1, void *p2, void *p3)
 
 	/** TESTPOINT: Return NULL if fail.*/
 	block_fail = k_malloc(OVERFLOW_SIZE);
-	zassert_is_null(block_fail, NULL);
+	zassert_is_null(block_fail);
 }
 
 static void tIsr_malloc_and_free(void *data)
@@ -278,7 +278,7 @@ ZTEST(mheap_api, test_k_aligned_alloc)
 	zassert_not_equal(NULL, r, "aligned alloc of 1 byte failed");
 	/* r is suitably aligned */
 	zassert_equal(0, (uintptr_t)r % sizeof(void *),
-		"%p not %u-byte-aligned",
+		"%p not %zu-byte-aligned",
 		r, sizeof(void *));
 	k_free(r);
 

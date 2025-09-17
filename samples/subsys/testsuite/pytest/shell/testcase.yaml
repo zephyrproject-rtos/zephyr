@@ -3,6 +3,7 @@ common:
     - test_framework
     - pytest
     - shell
+  platform_exclude: qemu_rx
   filter: CONFIG_SERIAL and not CONFIG_SMP and dt_chosen_enabled("zephyr,shell-uart")
   extra_configs:
     - arch:posix:CONFIG_UART_NATIVE_PTY_0_ON_STDINOUT=y
@@ -32,3 +33,11 @@ tests:
       - CONFIG_SHELL_VT100_COLORS=n
     harness_config:
       shell_commands: *kernel_commands
+  sample.pytest.required_app_demo:
+    required_applications:
+      - name: sample.pytest.shell
+      - name: sample.harness.shell
+    harness: pytest
+    harness_config:
+      pytest_root:
+        - "pytest_shared_app/test_shared_app.py"

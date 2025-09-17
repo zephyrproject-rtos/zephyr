@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2024, STRIM, ALC
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -102,11 +102,6 @@ static int spi_mcux_flexio_isr(void *user_data)
 	const struct spi_mcux_flexio_config *config = dev->config;
 	struct spi_mcux_flexio_data *data = dev->data;
 
-	/* Wait until data transfer complete. */
-	WAIT_FOR((3U == (FLEXIO_SPI_GetStatusFlags(config->flexio_spi)
-		& (uint32_t)(kFLEXIO_SPI_TxBufferEmptyFlag | kFLEXIO_SPI_RxBufferFullFlag))),
-		100, NULL);
-
 	FLEXIO_SPI_MasterTransferHandleIRQ(config->flexio_spi, &data->handle);
 
 	return 0;
@@ -141,14 +136,20 @@ static void spi_flexio_master_init(FLEXIO_SPI_Type *base, flexio_spi_master_conf
 
 	/* Configure FLEXIO SPI Master */
 	ctrlReg = base->flexioBase->CTRL;
-	ctrlReg &= ~(FLEXIO_CTRL_DOZEN_MASK | FLEXIO_CTRL_DBGE_MASK |
-			FLEXIO_CTRL_FASTACC_MASK | FLEXIO_CTRL_FLEXEN_MASK);
+	ctrlReg &= ~(FLEXIO_CTRL_DBGE_MASK | FLEXIO_CTRL_FASTACC_MASK | FLEXIO_CTRL_FLEXEN_MASK);
+#if !(defined(FSL_FEATURE_FLEXIO_HAS_DOZE_MODE_SUPPORT) && \
+		(FSL_FEATURE_FLEXIO_HAS_DOZE_MODE_SUPPORT == 0))
+	ctrlReg &= ~FLEXIO_CTRL_DOZEN_MASK;
+#endif
 	ctrlReg |= (FLEXIO_CTRL_DBGE(masterConfig->enableInDebug) |
 		FLEXIO_CTRL_FASTACC(masterConfig->enableFastAccess) |
 		FLEXIO_CTRL_FLEXEN(masterConfig->enableMaster));
+#if !(defined(FSL_FEATURE_FLEXIO_HAS_DOZE_MODE_SUPPORT) && \
+		(FSL_FEATURE_FLEXIO_HAS_DOZE_MODE_SUPPORT == 0))
 	if (!masterConfig->enableInDoze) {
 		ctrlReg |= FLEXIO_CTRL_DOZEN_MASK;
 	}
+#endif
 
 	base->flexioBase->CTRL = ctrlReg;
 
@@ -204,8 +205,26 @@ static void spi_flexio_master_init(FLEXIO_SPI_Type *base, flexio_spi_master_conf
 	timerConfig.timerEnable     = kFLEXIO_TimerEnableOnTriggerHigh;
 	timerConfig.timerStop       = kFLEXIO_TimerStopBitEnableOnTimerDisable;
 	timerConfig.timerStart      = kFLEXIO_TimerStartBitEnabled;
-	/* Low 8-bits are used to configure baudrate. */
+	/* Low 8-bits are used to configure baud rate. */
 	timerDiv = (uint16_t)(srcClock_Hz / masterConfig->baudRate_Bps);
+
+	/* Add protection if the required baud rate overflows.
+	 * FLEXIO input freq can't meet required baud rate. Max baud rate can
+	 * not exceed 1/4 of input freq. You can raise input freq or lower
+	 * baud rate required to remove this warning.
+	 */
+	if (timerDiv < 4) {
+		timerDiv = 4;
+	}
+	/* If timeDiv is odd, get it to even. */
+	timerDiv += timerDiv & 1UL;
+
+	if (masterConfig->baudRate_Bps != (srcClock_Hz / timerDiv)) {
+		LOG_WRN("baud rate req:%uKbps, got:%uKbps",
+			(uint32_t)(masterConfig->baudRate_Bps / 1000),
+			(uint32_t)(srcClock_Hz / (timerDiv*1000)));
+	}
+
 	timerDiv = timerDiv / 2U - 1U;
 	/* High 8-bits are used to configure shift clock edges(transfer width). */
 	timerCmp = ((uint16_t)masterConfig->dataMode * 2U - 1U) << 8U;

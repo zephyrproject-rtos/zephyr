@@ -2,6 +2,7 @@
 find_program(CMAKE_C_COMPILER ${CROSS_COMPILE}ccac PATHS ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
 find_program(CMAKE_CXX_COMPILER ${CROSS_COMPILE}ccac PATHS ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
 find_program(CMAKE_ASM_COMPILER ${CROSS_COMPILE}ccac PATHS ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
+
 # The CMAKE_REQUIRED_FLAGS variable is used by check_c_compiler_flag()
 # (and other commands which end up calling check_c_source_compiles())
 # to add additional compiler flags used during checking. These flags
@@ -24,11 +25,20 @@ string(REPLACE ";" " " CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS}")
 
 set(NOSTDINC ${TOOLCHAIN_HOME}/arc/inc)
 
+set(LLEXT_APPEND_FLAGS
+  -nog
+)
+
+set(LLEXT_REMOVE_FLAGS
+  -ffunction-sections
+  -fdata-sections
+)
+
 # For CMake to be able to test if a compiler flag is supported by the toolchain
 # (check_c_compiler_flag function which we wrap with target_cc_option in extensions.cmake)
 # we rely on default MWDT header locations and don't manually specify headers directories.
 
-# common compile options, no copyright msg, little-endian, no small data,
+# Common compile options: no copyright message, little-endian, no small data,
 # no MWDT stack checking
 list(APPEND TOOLCHAIN_C_FLAGS -Hnocopyr -HL -Hnosdata)
 
@@ -49,3 +59,7 @@ endif()
 if(CONFIG_RISCV)
   list(APPEND TOOLCHAIN_C_FLAGS -D__MW_ASM_RV_MACRO__)
 endif()
+
+# The MWDT compiler doesn't need to pass any properties to the linker as for now
+function(compiler_set_linker_properties)
+endfunction()

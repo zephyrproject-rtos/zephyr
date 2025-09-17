@@ -17,20 +17,24 @@
 	chosen {
 		zephyr,console = &usart3;
 		zephyr,shell-uart = &usart3;
+		zephyr,canbus = &can1;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 	};
 
 	leds: leds {
 		compatible = "gpio-leds";
+
 		green_led_1: led_1 {
 			gpios = <&gpiob 0 GPIO_ACTIVE_HIGH>;
 			label = "User LD1";
 		};
+
 		blue_led_1: led_2 {
 			gpios = <&gpiob 7 GPIO_ACTIVE_HIGH>;
 			label = "User LD2";
 		};
+
 		red_led_1: led_3 {
 			gpios = <&gpiob 14 GPIO_ACTIVE_HIGH>;
 			label = "User LD3";
@@ -44,10 +48,12 @@
 			pwms = <&pwm3 3 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 			label = "Green PWM LED";
 		};
+
 		blue_pwm_led: led_pwm_2 {
 			pwms = <&pwm4 2 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 			label = "Blue PWM LED";
 		};
+
 		red_pwm_led: led_pwm_0 {
 			pwms = <&pwm12 1 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 			label = "Red PWM LED";
@@ -56,6 +62,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button: button {
 			label = "User";
 			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
@@ -147,12 +154,24 @@ zephyr_udc0: &usbotg_fs {
 	status = "okay";
 };
 
+&can1 {
+	pinctrl-0 = <&can1_rx_pd0 &can1_tx_pd1>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&can2 {
+	pinctrl-0 = <&can2_rx_pb5 &can2_tx_pb6>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &iwdg {
 	status = "okay";
 };
 
 &rtc {
-	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>,
+	clocks = <&rcc STM32_CLOCK(APB1, 28)>,
 		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
 	status = "okay";
 };

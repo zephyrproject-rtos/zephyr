@@ -3,7 +3,7 @@
  * @brief Header for Bluetooth BAP.
  *
  * Copyright (c) 2020 Bose Corporation
- * Copyright (c) 2021-2024 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,12 +28,14 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/iso.h>
+#include <zephyr/bluetooth/uuid.h>
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/util_macro.h>
@@ -51,6 +53,9 @@ extern "C" {
 
 /** An invalid Broadcast ID */
 #define BT_BAP_INVALID_BROADCAST_ID 0xFFFFFFFFU
+
+/** Value that represents an unset presentation delay value */
+#define BT_BAP_PD_UNSET 0xFFFFFFFFU
 
 /**
  * @brief Recommended connectable advertising parameters
@@ -789,6 +794,52 @@ struct bt_bap_scan_delegator_cb {
 	 * @param is_scanning true if scanning started, false if scanning stopped.
 	 */
 	void (*scanning_state)(struct bt_conn *conn, bool is_scanning);
+	/**
+	 * @brief Add Source operation callback
+	 *
+	 * These callbacks notify the application when a request comes
+	 * in to add a source. The application can return 0 to
+	 * accept or any other value to reject the request.
+	 *
+	 * @param conn       Pointer to the connection that initiated the request,
+	 *                   or NULL if locally triggered.
+	 * @param recv_state Pointer to the requested receive state to be added.
+	 *
+	 * @return 0 in case of accept, or other value to reject.
+	 */
+	int (*add_source)(struct bt_conn *conn,
+			  const struct bt_bap_scan_delegator_recv_state *recv_state);
+
+	/**
+	 * @brief Modify Source operation callback
+	 *
+	 * These callbacks notify the application when a request comes
+	 * in to modify a source. The application can return 0 to
+	 * accept or any other value to reject the request.
+	 *
+	 * @param conn       Pointer to the connection that initiated the request,
+	 *                   or NULL if locally triggered.
+	 * @param recv_state Pointer to the requested receive state to be modified.
+	 *
+	 * @return 0 in case of accept, or other value to reject.
+	 */
+	int (*modify_source)(struct bt_conn *conn,
+			     const struct bt_bap_scan_delegator_recv_state *recv_state);
+
+	/**
+	 * @brief Remove Source operation callback
+	 *
+	 * These callbacks notify the application when a request comes
+	 * in to remove a source. The application can return 0 to
+	 * accept or any other value to reject the request.
+	 *
+	 * @param conn   Pointer to the connection that initiated the request,
+	 *               or NULL if locally triggered.
+	 * @param src_id The Source ID that is requested to be removed.
+	 *
+	 * @return 0 in case of accept, or other value to reject.
+	 */
+	int (*remove_source)(struct bt_conn *conn, uint8_t src_id);
 };
 
 /** Structure holding information of audio stream endpoint */
@@ -858,15 +909,12 @@ struct bt_bap_stream {
 	/** Stream user data */
 	void *user_data;
 
-#if defined(CONFIG_BT_BAP_UNICAST_CLIENT) || defined(__DOXYGEN__)
-	/** @cond INTERNAL_HIDDEN */
-	/**
-	 * @brief Audio ISO reference
+	/** ISO channel reference
 	 *
-	 * This is only used for Unicast Client streams, and is handled internally.
+	 * This will become valid once the stream is added to a group (bt_bap_unicast_group,
+	 * bt_bap_broadcast_source or bt_bap_broadcast_sink).
 	 */
-	struct bt_bap_iso *bap_iso;
-#endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
+	struct bt_iso_chan *iso;
 
 	/** Unicast or Broadcast group - Used internally */
 	void *group;
@@ -876,6 +924,7 @@ struct bt_bap_stream {
 	uint16_t _prev_seq_num;
 #endif /* CONFIG_BT_BAP_DEBUG_STREAM_SEQ_NUM */
 
+	/** @cond INTERNAL_HIDDEN */
 	/** Internally used list node */
 	sys_snode_t _node;
 	/** @endcond */
@@ -1672,6 +1721,59 @@ int bt_bap_unicast_group_add_streams(struct bt_bap_unicast_group *unicast_group,
  */
 int bt_bap_unicast_group_delete(struct bt_bap_unicast_group *unicast_group);
 
+/** Callback function for bt_bap_unicast_group_foreach_stream()
+ *
+ * @param stream     The audio stream
+ * @param user_data  User data
+ *
+ * @retval true Stop iterating.
+ * @retval false Continue iterating.
+ */
+typedef bool (*bt_bap_unicast_group_foreach_stream_func_t)(struct bt_bap_stream *stream,
+							   void *user_data);
+
+/**
+ * @brief Iterate through all streams in a unicast group
+ *
+ * @param unicast_group  The unicast group
+ * @param func           The callback function
+ * @param user_data      User specified data that sent to the callback function
+ *
+ * @retval 0 Success (even if no streams exists in the group).
+ * @retval -ECANCELED Iteration was stopped by the callback function before complete.
+ * @retval -EINVAL @p unicast_group or @p func were NULL.
+ */
+int bt_bap_unicast_group_foreach_stream(struct bt_bap_unicast_group *unicast_group,
+					bt_bap_unicast_group_foreach_stream_func_t func,
+					void *user_data);
+
+/** Structure holding information of audio stream endpoint */
+struct bt_bap_unicast_group_info {
+	/** Presentation delay for sink ASEs
+	 *
+	 * Will be @ref BT_BAP_PD_UNSET if no sink ASEs have been QoS configured
+	 */
+	uint32_t sink_pd;
+
+	/** Presentation delay for source ASEs
+	 *
+	 * Will be @ref BT_BAP_PD_UNSET if no source ASEs have been QoS configured
+	 */
+	uint32_t source_pd;
+};
+
+/**
+ * @brief Return structure holding information of unicast group
+ *
+ * @param unicast_group The unicast group object.
+ * @param info          The structure object to be filled with the info.
+ *
+ * @retval 0 Success
+ * @retval -EINVAL  @p unicast_group or @p info are NULL
+ */
+int bt_bap_unicast_group_get_info(const struct bt_bap_unicast_group *unicast_group,
+				  struct bt_bap_unicast_group_info *info);
+
 /** Unicast Client callback structure */
 struct bt_bap_unicast_client_cb {
 	/**
@@ -2354,6 +2456,32 @@ int bt_bap_broadcast_source_delete(struct bt_bap_broadcast_source *source);
 int bt_bap_broadcast_source_get_base(struct bt_bap_broadcast_source *source,
 				     struct net_buf_simple *base_buf);
 
+/**
+ * @brief Callback function for bt_bap_broadcast_source_foreach_stream()
+ *
+ * @param stream     The audio stream
+ * @param user_data  User data
+ *
+ * @retval true  Stop iterating.
+ * @retval false Continue iterating.
+ */
+typedef bool (*bt_bap_broadcast_source_foreach_stream_func_t)(struct bt_bap_stream *stream,
+							      void *user_data);
+
+/**
+ * @brief Iterate through all streams in a broadcast source
+ *
+ * @param source         The broadcast source
+ * @param func           The callback function
+ * @param user_data      User specified data that is sent to the callback function
+ *
+ * @retval 0          Success (even if no streams exists in the broadcast source).
+ * @retval -ECANCELED The @p func returned true.
+ * @retval -EINVAL    @p source or @p func were NULL.
+ */
+int bt_bap_broadcast_source_foreach_stream(struct bt_bap_broadcast_source *source,
+					   bt_bap_broadcast_source_foreach_stream_func_t func,
+					   void *user_data);
 /** @} */ /* End of bt_bap_broadcast_source */
 
 /**
@@ -2533,8 +2661,6 @@ int bt_bap_scan_delegator_unregister(void);
  *
  * @param src_id    The source id used to identify the receive state.
  * @param pa_state  The Periodic Advertising sync state to set.
- *                  BT_BAP_PA_STATE_NOT_SYNCED and BT_BAP_PA_STATE_SYNCED is
- *                  not necessary to provide, as they are handled internally.
  *
  * @return int    Error value. 0 on success, errno on fail.
  */
@@ -2559,6 +2685,14 @@ struct bt_bap_scan_delegator_add_src_param {
 
 	/** Advertiser SID */
 	uint8_t sid;
+
+	/**
+	 * @brief Periodic Advertising sync state
+	 *
+	 * This will typically be either @ref BT_BAP_PA_STATE_NOT_SYNCED or
+	 * @ref BT_BAP_PA_STATE_SYNCED.
+	 */
+	enum bt_bap_pa_state pa_state;
 
 	/** The broadcast isochronous group encryption state */
 	enum bt_bap_big_enc_state encrypt_state;

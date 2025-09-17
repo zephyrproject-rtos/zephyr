@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/{
+/ {
 	chosen {
 		zephyr,display = &rm67162_g1120b0mipi;
 		zephyr,touch = &ft3267_g1120b0mipi;
@@ -20,12 +20,14 @@
 	lvgl_pointer {
 		compatible = "zephyr,lvgl-pointer-input";
 		input = <&ft3267_g1120b0mipi>;
+		display = <&rm67162_g1120b0mipi>;
 		invert-y;
 	};
 };
 
 &nxp_mipi_i2c {
 	status = "okay";
+
 	ft3267_g1120b0mipi: ft3267@38 {
 		/*
 		 * Note- the actual controller present on this IC is a FT3267,
@@ -42,6 +44,7 @@
 	status = "okay";
 	autoinsert-eotp;
 	phy-clock = <316800000>;
+
 	rm67162_g1120b0mipi: rm67162@0 {
 		status = "okay";
 		compatible = "raydium,rm67162";

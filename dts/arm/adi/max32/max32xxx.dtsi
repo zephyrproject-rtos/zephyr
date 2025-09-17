@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Analog Devices, Inc.
+ * Copyright (c) 2023-2025 Analog Devices, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,6 +26,27 @@
 			device_type = "cpu";
 			compatible = "arm,cortex-m4f";
 			reg = <0>;
+			cpu-power-states = <&idle &suspend>;
+		};
+
+		power-states {
+			/* Sleep Mode */
+			idle: idle {
+				compatible = "zephyr,power-state";
+				power-state-name = "runtime-idle";
+				min-residency-us = <50>;
+				/* Typical value is 0.847us as per of Datasheet */
+				exit-latency-us = <1>;
+			};
+
+			/* Deep-sleep Mode */
+			suspend: suspend {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				min-residency-us = <200>;
+				/* Typical value is 12.4us as per of Datasheet */
+				exit-latency-us = <25>;
+			};
 		};
 	};
 
@@ -198,7 +219,7 @@
 			status = "disabled";
 		};
 
-		wdt0: watchdog@40003000  {
+		wdt0: watchdog@40003000 {
 			compatible = "adi,max32-watchdog";
 			reg = <0x40003000 0x400>;
 			interrupts = <1 0>;
@@ -227,10 +248,12 @@
 			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 15>;
 			clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
 			prescaler = <1>;
+
 			counter {
 				compatible = "adi,max32-counter";
 				status = "disabled";
 			};
+
 			pwm {
 				compatible = "adi,max32-pwm";
 				status = "disabled";
@@ -246,10 +269,12 @@
 			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 16>;
 			clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
 			prescaler = <1>;
+
 			counter {
 				compatible = "adi,max32-counter";
 				status = "disabled";
 			};
+
 			pwm {
 				compatible = "adi,max32-pwm";
 				status = "disabled";
@@ -265,10 +290,12 @@
 			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 17>;
 			clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
 			prescaler = <1>;
+
 			counter {
 				compatible = "adi,max32-counter";
 				status = "disabled";
 			};
+
 			pwm {
 				compatible = "adi,max32-pwm";
 				status = "disabled";
@@ -284,10 +311,12 @@
 			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 18>;
 			clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
 			prescaler = <1>;
+
 			counter {
 				compatible = "adi,max32-counter";
 				status = "disabled";
 			};
+
 			pwm {
 				compatible = "adi,max32-pwm";
 				status = "disabled";

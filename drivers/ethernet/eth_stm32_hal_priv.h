@@ -46,8 +46,6 @@ struct eth_stm32_hal_dev_data {
 	struct net_if *iface;
 	uint8_t mac_addr[6];
 	ETH_HandleTypeDef heth;
-	/* clock device */
-	const struct device *clock;
 	struct k_mutex tx_mutex;
 	struct k_sem rx_int_sem;
 #if defined(CONFIG_ETH_STM32_HAL_API_V2)
@@ -62,7 +60,6 @@ struct eth_stm32_hal_dev_data {
 #if defined(CONFIG_PTP_CLOCK_STM32_HAL)
 	const struct device *ptp_clock;
 	float clk_ratio;
-	float clk_ratio_adj;
 #endif /* CONFIG_PTP_CLOCK_STM32_HAL */
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
 	struct net_stats_eth stats;

@@ -9,8 +9,6 @@ board:
       cpucluster: cpuppr
     - name: xip
       cpucluster: cpuflpr
-    - name: iron
-      cpucluster: cpuapp
   revision:
     format: major.minor.patch
     default: "0.9.0"

@@ -22,6 +22,15 @@
 		};
 	};
 
+	clocks {
+		hfxo: hfxo {
+			compatible = "nordic,nrf51-hfxo";
+			clock-frequency = <16000000>;
+			startup-time-us = <1400>;
+			#clock-cells = <0>;
+		};
+	};
+
 	soc {
 		ficr: ficr@10000000 {
 			compatible = "nordic,nrf-ficr";
@@ -301,7 +310,6 @@
 
 			#address-cells = <1>;
 			#size-cells = <1>;
-
 
 			flash0: flash@0 {
 				compatible = "soc-nv-flash";

@@ -13,7 +13,6 @@
 	#size-cells = <0x01>;
 
 	clocks {
-
 		clk_cpu {
 			#clock-cells = <0x00>;
 			clock-frequency = <DT_FREQ_M(50)>;
@@ -77,9 +76,9 @@
 			reg = <0x20000000 0x10000>;
 			xlnx,num-ss-bits = <0x01>;
 			xlnx,num-transfer-bits = <0x8>;
-			interrupts=<2 0x2>;
-			interrupt-parent=<&plic>;
-			clocks=<&clk_bus>;
+			interrupts = <2 0x2>;
+			interrupt-parent = <&plic>;
+			clocks = <&clk_bus>;
 			status = "disabled";
 		};
 
@@ -142,8 +141,8 @@
 		xlnx_gpio: gpio@40000000 {
 			#gpio-cells = <2>;
 			compatible = "xlnx,xps-gpio-1.00.a";
-			gpio-controller ;
-			reg = <0x0 0x40000000 0x0 0x10000 >;
+			gpio-controller;
+			reg = <0x0 0x40000000 0x0 0x10000>;
 			xlnx,all-inputs = <0x0>;
 			xlnx,all-inputs-2 = <0x0>;
 			xlnx,dout-default = <0x0>;

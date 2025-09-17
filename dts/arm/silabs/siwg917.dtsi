@@ -24,22 +24,46 @@
 		cpu0: cpu@0 {
 			compatible = "arm,cortex-m4f";
 			reg = <0>;
+			cpu-power-states = <&pstate_ps4_standby &pstate_ps4_sleep>;
+		};
+
+		power-states {
+			pstate_ps4_standby: ps4_standby {
+				compatible = "zephyr,power-state";
+				power-state-name = "runtime-idle";
+			};
+
+			pstate_ps4_sleep: ps4_sleep {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				min-residency-us = <100000>;
+				exit-latency-us = <3000>;
+			};
 		};
 	};
 
-	sram0: memory@0 {
+	/* The first 1KB of SRAM is reserved for the NWP (Network Processor).
+	 * It also protects against null pointer exceptions.
+	 */
+	nwp_reserved: memory@0 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x00000000 DT_SIZE_K(1)>;
+		zephyr,memory-region = "NWP_RESERVED_RAM";
+	};
+
+	sram0: memory@400 {
 		compatible = "mmio-sram";
-		/* siwx91x has 672kB of SRAM shared between the Cortex-M4
+		/* siwx91x has 671kB of SRAM shared between the Cortex-M4
 		 * (Zephyr) and the NWP (Network Processor). 3 memory
 		 * configurations are
 		 * possible:
-		 *  - 196kB
-		 *  - 256kB
-		 *  - 320kB
+		 *  - 195kB
+		 *  - 255kB
+		 *  - 319kB
 		 * Less memory is allocated to Zephyr, more memory is allocated
 		 * to NWP, better are the WiFi and BLE performances.
 		 */
-		reg = <0x00000000 DT_SIZE_K(256)>;
+		reg = <0x00000400 DT_SIZE_K(255)>;
 	};
 
 	sram_dma1: memory-dma@24061c00 {
@@ -49,14 +73,19 @@
 		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)>;
 	};
 
-	bt_hci0: bt_hci {
-		compatible = "silabs,siwx91x-bt-hci";
-		status = "disabled";
-	};
+	nwp: nwp {
+		compatible = "silabs,siwx91x-nwp";
+		power-profile = "high-performance";
 
-	wifi0: wifi {
-		compatible = "silabs,siwx91x-wifi";
-		status = "disabled";
+		bt_hci0: bt_hci {
+			compatible = "silabs,siwx91x-bt-hci";
+			status = "disabled";
+		};
+
+		wifi0: wifi {
+			compatible = "silabs,siwx91x-wifi";
+			status = "disabled";
+		};
 	};
 
 	soc {
@@ -81,11 +110,19 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			flash0: flash@8202000 {
+			flash0: flash@8000000 {
 				compatible = "soc-nv-flash";
 				write-block-size = <1>;
 				erase-block-size = <4096>;
 			};
+		};
+
+		memc: memory-controller@12040000 {
+			compatible = "silabs,siwx91x-qspi-memory";
+			reg = <0x12040000 0x200>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "disabled";
 		};
 
 		ulpuart: uart@24041800 {
@@ -141,9 +178,7 @@
 				#gpio-cells = <2>;
 				ngpios = <16>;
 				gpio-reserved-ranges = <0 6>;
-				silabs,pads = [
-					ff ff ff ff  ff ff 01 02  03 04 05 06  07 ff ff 08
-				];
+				silabs,pads = [ff ff ff ff ff ff 01 02 03 04 05 06 07 ff ff 08];
 				status = "okay";
 			};
 
@@ -153,9 +188,7 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <16>;
-				silabs,pads = [
-					ff ff ff ff  ff ff ff ff  ff 00 00 00  00 00 00 09
-				];
+				silabs,pads = [ff ff ff ff ff ff ff ff ff 00 00 00 00 00 00 09];
 				status = "okay";
 			};
 
@@ -165,9 +198,7 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <16>;
-				silabs,pads = [
-					09 09 09 ff  ff ff ff ff  ff ff ff ff  ff ff 0a 0b
-				];
+				silabs,pads = [09 09 09 ff ff ff ff ff ff ff ff ff ff ff 0a 0b];
 				status = "okay";
 			};
 
@@ -177,9 +208,7 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <10>;
-				silabs,pads = [
-					0c 0d 0e 0f  10 11 12 13  14 15 ff ff  ff ff ff ff
-				];
+				silabs,pads = [0c 0d 0e 0f 10 11 12 13 14 15 ff ff ff ff ff ff];
 				status = "okay";
 			};
 		};
@@ -201,9 +230,7 @@
 				#gpio-cells = <2>;
 				ngpios = <12>;
 				gpio-reserved-ranges = <3 1>;
-				silabs,pads = [
-					16 17 18 19  1a 1b 1c 1d  1e 1f 20 21  ff ff ff ff
-				];
+				silabs,pads = [16 17 18 19 1a 1b 1c 1d 1e 1f 20 21 ff ff ff ff];
 				status = "okay";
 			};
 		};
@@ -262,7 +289,7 @@
 			interrupts = <33 0>;
 			interrupt-names = "dma0";
 			clocks = <&clock0 SIWX91X_CLK_DMA0>;
-			#dma-cells = < 1>;
+			#dma-cells = <1>;
 			dma-channels = <32>;
 			status = "disabled";
 		};
@@ -276,7 +303,7 @@
 			interrupt-names = "ulpdma";
 			clocks = <&clock0 SIWX91X_CLK_ULP_DMA>;
 			silabs,sram-region = <&sram_dma1>;
-			#dma-cells = < 1>;
+			#dma-cells = <1>;
 			dma-channels = <12>;
 			status = "disabled";
 		};
@@ -290,7 +317,16 @@
 			interrupt-names = "pwm";
 			clocks = <&clock0 SIWX91X_CLK_PWM>;
 			#pwm-cells = <2>;
-			silabs,ch_prescaler = <64 64 64 64>;
+			silabs,ch-prescaler = <64 64 64 64>;
+			status = "disabled";
+		};
+
+		rtc0: rtc@24048200 {
+			compatible = "silabs,siwx91x-rtc";
+			reg = <0x24048200 0x40>;
+			interrupts = <28 0>;
+			interrupt-names = "rtc";
+			clocks = <&clock0 SIWX91X_CLK_RTC>;
 			status = "disabled";
 		};
 
@@ -305,13 +341,64 @@
 			status = "disabled";
 		};
 
-		sysrtc0: sysrtc@24048c00 {
+		sysrtc0: stimer0: sysrtc@24048c00 {
 			compatible = "silabs,gecko-stimer";
 			reg = <0x24048c00 0x78>;
 			interrupts = <22 0>;
 			interrupt-names = "sysrtc";
 			clock-frequency = <DT_FREQ_K(32)>;
 			prescaler = <1>;
+			status = "disabled";
+		};
+
+		spi0: spi@45030000 {
+			compatible = "silabs,gspi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x45030000 0xBC>;
+			interrupts = <46 0>;
+			interrupt-names = "gspi";
+			clocks = <&clock0 SIWX91X_CLK_GSPI>;
+			status = "disabled";
+		};
+
+		i2s0: i2s@47050000 {
+			compatible = "silabs,siwx91x-i2s";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x47050000 0x200>;
+			interrupts = <64 0>;
+			interrupt-names = "i2s0";
+			silabs,channel-group = <0>;
+			silabs,max-channel-count = <2>;
+			clocks = <&clock0 SIWX91X_CLK_I2S0>, <&clock0 SIWX91X_CLK_STATIC_I2S0>;
+			status = "disabled";
+		};
+
+		ulpi2s: i2s@24040400 {
+			compatible = "silabs,siwx91x-i2s";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x24040400 0x200>;
+			interrupts = <14 0>;
+			interrupt-names = "ulpi2s";
+			silabs,channel-group = <0>;
+			silabs,max-channel-count = <1>;
+			clocks = <&clock0 SIWX91X_CLK_ULP_I2S>,
+				 <&clock0 SIWX91X_CLK_STATIC_ULP_I2S>;
+			status = "disabled";
+		};
+
+		adc0: adc@24043800 {
+			compatible = "silabs,siwx91x-adc";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x24043800 0x214>;
+			interrupts = <11 0>;
+			interrupt-names = "adc0";
+			silabs,adc-sampling-rate = <100000>;
+			clocks = <&clock0 SIWX91X_ADC_CLK>;
+			#io-channel-cells = <1>;
 			status = "disabled";
 		};
 	};

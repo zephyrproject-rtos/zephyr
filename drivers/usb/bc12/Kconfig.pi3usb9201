@@ -35,7 +35,7 @@ config USB_BC12_PI3USB9201_CDP_ERRATA
 	  Downstream Port).
 
 	  This is a workaround for a glitch seen on the USB data lines when
-	  operating in CDP mode. Note that the BC1.2 negotiation compeletes
+	  operating in CDP mode. Note that the BC1.2 negotiation completes
 	  before switching to SDP mode, so the attached portable device can
 	  continue to draw up to 1.5 A.
 

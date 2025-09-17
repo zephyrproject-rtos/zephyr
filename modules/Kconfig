@@ -20,7 +20,6 @@ comment "Available modules."
 
 osource "$(KCONFIG_BINARY_DIR)/Kconfig.modules"
 
-source "modules/Kconfig.altera"
 source "modules/Kconfig.atmel"
 source "modules/Kconfig.chre"
 source "modules/Kconfig.cypress"
@@ -30,10 +29,11 @@ source "modules/Kconfig.infineon"
 source "modules/Kconfig.libmetal"
 source "modules/lvgl/Kconfig"
 source "modules/Kconfig.microchip"
+source "modules/Kconfig.mspm0"
 source "modules/Kconfig.nuvoton"
 source "modules/Kconfig.open-amp"
 source "modules/Kconfig.picolibc"
-source "modules/Kconfig.renesas_fsp"
+source "modules/Kconfig.renesas"
 source "modules/Kconfig.rust"
 source "modules/Kconfig.simplelink"
 source "modules/Kconfig.sof"
@@ -41,7 +41,6 @@ source "modules/Kconfig.stm32"
 source "modules/Kconfig.syst"
 source "modules/Kconfig.telink"
 source "modules/thrift/Kconfig"
-source "modules/Kconfig.tinycrypt"
 source "modules/Kconfig.vega"
 source "modules/Kconfig.wurthelektronik"
 source "modules/Kconfig.xtensa"
@@ -78,6 +77,9 @@ comment "hal_nxp module not available."
 comment "liblc3 module not available."
 	depends on !ZEPHYR_LIBLC3_MODULE
 
+comment "libsbc module not available."
+	depends on !ZEPHYR_LIBSBC_MODULE
+
 comment "LittleFS module not available."
 	depends on !ZEPHYR_LITTLEFS_MODULE
 
@@ -98,6 +100,9 @@ comment "Lz4 module not available."
 
 comment "loramac-node module not available."
 	depends on !ZEPHYR_LORAMAC_NODE_MODULE
+
+comment "LoRa Basics Modem module not available."
+	depends on !ZEPHYR_LORA_BASICS_MODEM_MODULE
 
 comment "CANopenNode module not available."
 	depends on !ZEPHYR_CANOPENNODE_MODULE

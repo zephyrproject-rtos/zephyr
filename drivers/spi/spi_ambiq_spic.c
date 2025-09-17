@@ -17,29 +17,13 @@ LOG_MODULE_REGISTER(spi_ambiq);
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/policy.h>
 #include <zephyr/pm/device_runtime.h>
+#include <zephyr/cache.h>
 
 #include <stdlib.h>
 #include <errno.h>
 #include "spi_context.h"
+
 #include <soc.h>
-
-#include <zephyr/mem_mgmt/mem_attr.h>
-
-#ifdef CONFIG_DCACHE
-#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
-#endif /* CONFIG_DCACHE */
-
-#ifdef CONFIG_NOCACHE_MEMORY
-#include <zephyr/linker/linker-defs.h>
-#elif defined(CONFIG_CACHE_MANAGEMENT)
-#include <zephyr/arch/cache.h>
-#endif /* CONFIG_NOCACHE_MEMORY */
-
-#if defined(CONFIG_DCACHE) && !defined(CONFIG_NOCACHE_MEMORY)
-#define SPI_AMBIQ_MANUAL_CACHE_COHERENCY_REQUIRED 1
-#else
-#define SPI_AMBIQ_MANUAL_CACHE_COHERENCY_REQUIRED 0
-#endif /* defined(CONFIG_DCACHE) && !defined(CONFIG_NOCACHE_MEMORY) */
 
 struct spi_ambiq_config {
 	uint32_t base;
@@ -56,6 +40,7 @@ struct spi_ambiq_data {
 	void *iom_handler;
 	bool cont;
 	bool pm_policy_state_on;
+	bool dma_mode;
 };
 
 typedef void (*spi_context_update_trx)(struct spi_context *ctx, uint8_t dfs, uint32_t len);
@@ -88,17 +73,6 @@ static void spi_ambiq_pm_policy_state_lock_put(const struct device *dev)
 	}
 }
 
-#ifdef CONFIG_SPI_AMBIQ_DMA
-/*
- * If Nocache Memory is supported, buffer will be placed in nocache region by
- * the linker to avoid potential DMA cache-coherency problems.
- * If Nocache Memory is not supported, cache coherency might need to be kept
- * manually. See SPI_AMBIQ_MANUAL_CACHE_COHERENCY_REQUIRED.
- */
-static __aligned(32) struct {
-	__aligned(32) uint32_t buf[CONFIG_SPI_DMA_TCB_BUFFER_SIZE];
-} spi_dma_tcb_buf[DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT)] __nocache;
-
 static void spi_ambiq_callback(void *callback_ctxt, uint32_t status)
 {
 	const struct device *dev = callback_ctxt;
@@ -111,42 +85,6 @@ static void spi_ambiq_callback(void *callback_ctxt, uint32_t status)
 	}
 	spi_context_complete(ctx, dev, (status == AM_HAL_STATUS_SUCCESS) ? 0 : -EIO);
 }
-
-#ifdef CONFIG_DCACHE
-static bool buf_in_nocache(uintptr_t buf, size_t len_bytes)
-{
-	bool buf_within_nocache = false;
-
-#ifdef CONFIG_NOCACHE_MEMORY
-	/* Check if buffer is in nocache region defined by the linker */
-	buf_within_nocache = (buf >= ((uintptr_t)_nocache_ram_start)) &&
-			     ((buf + len_bytes - 1) <= ((uintptr_t)_nocache_ram_end));
-	if (buf_within_nocache) {
-		return true;
-	}
-#endif /* CONFIG_NOCACHE_MEMORY */
-
-	/* Check if buffer is in nocache memory region defined in DT */
-	buf_within_nocache =
-		mem_attr_check_buf((void *)buf, len_bytes, DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)) == 0;
-
-	return buf_within_nocache;
-}
-
-static bool spi_buf_set_in_nocache(const struct spi_buf_set *bufs)
-{
-	for (size_t i = 0; i < bufs->count; i++) {
-		const struct spi_buf *buf = &bufs->buffers[i];
-
-		if (!buf_in_nocache((uintptr_t)buf->buf, buf->len)) {
-			return false;
-		}
-	}
-	return true;
-}
-#endif /* CONFIG_DCACHE */
-
-#endif
 
 static void spi_ambiq_reset(const struct device *dev)
 {
@@ -179,8 +117,6 @@ static int spi_config(const struct device *dev, const struct spi_config *config)
 	struct spi_ambiq_data *data = dev->data;
 	const struct spi_ambiq_config *cfg = dev->config;
 	struct spi_context *ctx = &(data->ctx);
-
-	data->iom_cfg.eInterfaceMode = AM_HAL_IOM_SPI_MODE;
 
 	int ret = 0;
 
@@ -243,11 +179,6 @@ static int spi_config(const struct device *dev, const struct spi_config *config)
 		(config->frequency ? MIN(config->frequency, cfg->clock_freq) : cfg->clock_freq);
 	ctx->config = config;
 
-#ifdef CONFIG_SPI_AMBIQ_DMA
-	data->iom_cfg.pNBTxnBuf = spi_dma_tcb_buf[cfg->inst_idx].buf;
-	data->iom_cfg.ui32NBTxnBufLength = CONFIG_SPI_DMA_TCB_BUFFER_SIZE;
-#endif
-
 	/* Disable IOM instance as it cannot be configured when enabled*/
 	ret = am_hal_iom_disable(data->iom_handler);
 
@@ -289,36 +220,39 @@ static int spi_ambiq_xfer_half_duplex(const struct device *dev, am_hal_iom_dir_e
 		trans.pui32TxBuffer = (uint32_t *)ctx->tx_buf;
 		trans.pui32RxBuffer = (uint32_t *)ctx->rx_buf;
 		ctx_update(ctx, 1, cur_num);
-		if ((!spi_context_tx_buf_on(ctx)) && (!spi_context_rx_buf_on(ctx))) {
+		if ((!spi_context_tx_buf_on(ctx)) && (!spi_context_rx_on(ctx))) {
 			is_last = true;
 		}
-#ifdef CONFIG_SPI_AMBIQ_DMA
-#if SPI_AMBIQ_MANUAL_CACHE_COHERENCY_REQUIRED
-		/* Clean Dcache before DMA write */
-		if ((trans.eDirection == AM_HAL_IOM_TX) && (trans.pui32TxBuffer)) {
-			sys_cache_data_flush_range((void *)trans.pui32TxBuffer,
-							    trans.ui32NumBytes);
-		}
-#endif /* SPI_AMBIQ_MANUAL_CACHE_COHERENCY_REQUIRED */
-		if (AM_HAL_STATUS_SUCCESS !=
-		    am_hal_iom_nonblocking_transfer(data->iom_handler, &trans,
-						    ((is_last == true) ? spi_ambiq_callback : NULL),
-						    (void *)dev)) {
-			return -EIO;
-		}
-		if (is_last) {
-			ret = spi_context_wait_for_completion(ctx);
-#if SPI_AMBIQ_MANUAL_CACHE_COHERENCY_REQUIRED
-			/* Invalidate Dcache after DMA read */
-			if ((trans.eDirection == AM_HAL_IOM_RX) && (trans.pui32RxBuffer)) {
-				sys_cache_data_invd_range((void *)trans.pui32RxBuffer,
-								    trans.ui32NumBytes);
+		if (data->dma_mode) {
+#if CONFIG_SPI_AMBIQ_HANDLE_CACHE
+			/* Clean Dcache before DMA write */
+			if ((trans.eDirection == AM_HAL_IOM_TX) && (trans.pui32TxBuffer) &&
+			    (!buf_in_nocache((uintptr_t)trans.pui32TxBuffer, trans.ui32NumBytes))) {
+				sys_cache_data_flush_range((void *)trans.pui32TxBuffer,
+							   trans.ui32NumBytes);
 			}
-#endif /* SPI_AMBIQ_MANUAL_CACHE_COHERENCY_REQUIRED */
+#endif /* CONFIG_SPI_AMBIQ_HANDLE_CACHE */
+			if (AM_HAL_STATUS_SUCCESS !=
+			    am_hal_iom_nonblocking_transfer(
+				    data->iom_handler, &trans,
+				    ((is_last == true) ? spi_ambiq_callback : NULL), (void *)dev)) {
+				return -EIO;
+			}
+			if (is_last) {
+				ret = spi_context_wait_for_completion(ctx);
+#if CONFIG_SPI_AMBIQ_HANDLE_CACHE
+				/* Invalidate Dcache after DMA read */
+				if ((trans.eDirection == AM_HAL_IOM_RX) && (trans.pui32RxBuffer) &&
+				    (!buf_in_nocache((uintptr_t)trans.pui32RxBuffer,
+						     trans.ui32NumBytes))) {
+					sys_cache_data_invd_range((void *)trans.pui32RxBuffer,
+								  trans.ui32NumBytes);
+				}
+#endif /* CONFIG_SPI_AMBIQ_HANDLE_CACHE */
+			}
+		} else {
+			ret = am_hal_iom_blocking_transfer(data->iom_handler, &trans);
 		}
-#else
-		ret = am_hal_iom_blocking_transfer(data->iom_handler, &trans);
-#endif
 		rem_num -= cur_num;
 		if (ret != 0) {
 			return -EIO;
@@ -423,12 +357,11 @@ static int spi_ambiq_xfer(const struct device *dev, const struct spi_config *con
 		}
 	}
 
-#ifndef CONFIG_SPI_AMBIQ_DMA
-	if (!data->cont) {
+	if ((!data->dma_mode) && (!data->cont)) {
 		spi_context_cs_control(ctx, false);
 		spi_context_complete(ctx, dev, ret);
 	}
-#endif
+
 	return ret;
 }
 
@@ -442,13 +375,6 @@ static int spi_ambiq_transceive(const struct device *dev, const struct spi_confi
 	if (!tx_bufs && !rx_bufs) {
 		return 0;
 	}
-
-#if defined(CONFIG_SPI_AMBIQ_DMA) && defined(CONFIG_DCACHE)
-	if ((tx_bufs != NULL && !spi_buf_set_in_nocache(tx_bufs)) ||
-	    (rx_bufs != NULL && !spi_buf_set_in_nocache(rx_bufs))) {
-		return -EFAULT;
-	}
-#endif /* CONFIG_DCACHE */
 
 	/* context setup */
 	spi_context_lock(&data->ctx, false, NULL, NULL, config);
@@ -520,11 +446,13 @@ static int spi_ambiq_init(const struct device *dev)
 		goto end;
 	}
 
-#ifdef CONFIG_SPI_AMBIQ_DMA
-	am_hal_iom_interrupt_clear(data->iom_handler, AM_HAL_IOM_INT_CQUPD | AM_HAL_IOM_INT_ERR);
-	am_hal_iom_interrupt_enable(data->iom_handler, AM_HAL_IOM_INT_CQUPD | AM_HAL_IOM_INT_ERR);
-	cfg->irq_config_func();
-#endif
+	if (data->dma_mode) {
+		am_hal_iom_interrupt_clear(data->iom_handler,
+					   AM_HAL_IOM_INT_CQUPD | AM_HAL_IOM_INT_ERR);
+		am_hal_iom_interrupt_enable(data->iom_handler,
+					    AM_HAL_IOM_INT_CQUPD | AM_HAL_IOM_INT_ERR);
+		cfg->irq_config_func();
+	}
 end:
 	if (ret < 0) {
 		am_hal_iom_uninitialize(data->iom_handler);
@@ -537,25 +465,44 @@ end:
 #ifdef CONFIG_PM_DEVICE
 static int spi_ambiq_pm_action(const struct device *dev, enum pm_device_action action)
 {
+	const struct spi_ambiq_config *cfg = dev->config;
 	struct spi_ambiq_data *data = dev->data;
-	uint32_t ret;
+	int err;
 	am_hal_sysctrl_power_state_e status;
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
+		/* Set pins to active state */
+		err = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+		if (err < 0) {
+			return err;
+		}
 		status = AM_HAL_SYSCTRL_WAKE;
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
+		/* Move pins to sleep state */
+		err = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_SLEEP);
+		if ((err < 0) && (err != -ENOENT)) {
+			/*
+			 * If returning -ENOENT, no pins where defined for sleep mode :
+			 * Do not output on console (might sleep already) when going to
+			 * sleep,
+			 * "SPI pinctrl sleep state not available"
+			 * and don't block PM suspend.
+			 * Else return the error.
+			 */
+			return err;
+		}
 		status = AM_HAL_SYSCTRL_DEEPSLEEP;
 		break;
 	default:
 		return -ENOTSUP;
 	}
 
-	ret = am_hal_iom_power_ctrl(data->iom_handler, status, true);
+	err = am_hal_iom_power_ctrl(data->iom_handler, status, true);
 
-	if (ret != AM_HAL_STATUS_SUCCESS) {
-		LOG_ERR("am_hal_iom_power_ctrl failed: %d", ret);
+	if (err != AM_HAL_STATUS_SUCCESS) {
+		LOG_ERR("am_hal_iom_power_ctrl failed: %d", err);
 		return -EPERM;
 	} else {
 		return 0;
@@ -563,7 +510,17 @@ static int spi_ambiq_pm_action(const struct device *dev, enum pm_device_action a
 }
 #endif /* CONFIG_PM_DEVICE */
 
+#define IOM_HAL_CFG(n, cmdq, cmdq_size)                                                            \
+	{                                                                                          \
+		.eInterfaceMode     = AM_HAL_IOM_SPI_MODE,                                         \
+		.ui32ClockFreq      = AM_HAL_IOM_100KHZ,                                           \
+		.pNBTxnBuf          = cmdq,                                                        \
+		.ui32NBTxnBufLength = cmdq_size,                                                   \
+	}
+
 #define AMBIQ_SPI_INIT(n)                                                                          \
+	BUILD_ASSERT(DT_CHILD_NUM_STATUS_OKAY(DT_INST_PARENT(n)) == 1,                             \
+		     "Too many children for IOM, either SPI or I2C should be enabled!");           \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
 	static void spi_irq_config_func_##n(void)                                                  \
 	{                                                                                          \
@@ -571,7 +528,18 @@ static int spi_ambiq_pm_action(const struct device *dev, enum pm_device_action a
 			    spi_ambiq_isr, DEVICE_DT_INST_GET(n), 0);                              \
 		irq_enable(DT_IRQN(DT_INST_PARENT(n)));                                            \
 	};                                                                                         \
+	IF_ENABLED(DT_PROP(DT_INST_PARENT(n), dma_mode),                                           \
+	(static uint32_t spi_ambiq_cmdq##n[DT_PROP_OR(DT_INST_PARENT(n), cmdq_buffer_size, 1024)]  \
+	 __attribute__((section(DT_PROP_OR(DT_INST_PARENT(n),                                      \
+					  cmdq_buffer_location, ".nocache"))));)                   \
+	)                                                                                          \
 	static struct spi_ambiq_data spi_ambiq_data##n = {                                         \
+		.iom_cfg = IOM_HAL_CFG(                                                            \
+			n, COND_CODE_1(DT_PROP(DT_INST_PARENT(n), dma_mode), (spi_ambiq_cmdq##n),  \
+									    (NULL)),               \
+				COND_CODE_1(DT_PROP(DT_INST_PARENT(n), dma_mode),                 \
+					(DT_INST_PROP_OR(n, cmdq_buffer_size, 1024)), (0))),   \
+		.dma_mode = DT_PROP(DT_INST_PARENT(n), dma_mode),                         \
 		SPI_CONTEXT_INIT_LOCK(spi_ambiq_data##n, ctx),                                     \
 		SPI_CONTEXT_INIT_SYNC(spi_ambiq_data##n, ctx),                                     \
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)};                             \

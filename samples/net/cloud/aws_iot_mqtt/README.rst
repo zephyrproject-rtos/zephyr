@@ -57,7 +57,7 @@ Core region, thing, and device advisor configuration:
 Refer to the `AWS IoT Core Documentation <https://docs.aws.amazon.com/iot/index.html>`_
 for more information.
 
-Additionnaly, it is possible to tune the firmware to pass the AWS DQP test
+Additionally, it is possible to tune the firmware to pass the AWS DQP test
 suite, to do set Kconfig option :kconfig:option:`CONFIG_AWS_TEST_SUITE_DQP` to ``y``.
 
 More information about the AWS device advisor can be found here:

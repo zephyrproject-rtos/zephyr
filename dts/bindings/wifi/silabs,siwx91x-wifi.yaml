@@ -5,3 +5,19 @@
 description: Silabs SiWx91x SoC WiFi
 
 compatible: "silabs,siwx91x-wifi"
+
+properties:
+  wifi-max-tx-pwr-scan:
+    type: int
+    default: 31
+    description: |
+      Maximum TX power (in dBm) used during Wi‑Fi scanning. Actual
+      output may be capped by regulatory or hardware constraints.
+      Note: SiWx91x firmware does **not** support per‑rate power.
+  wifi-max-tx-pwr-join:
+    type: int
+    default: 31
+    description: |
+      Maximum TX power (in dBm) used when joining a Wi‑Fi network.
+      Actual output may be capped by regulatory or hardware constraints.
+      Note: SiWx91x firmware does **not** support per‑rate power.

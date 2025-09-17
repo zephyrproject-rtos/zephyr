@@ -1,0 +1,17 @@
+# ST_B_CAMS_IMX_MB1854 configuration
+
+# Copyright (c) 2025 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+if VIDEO_STM32_DCMIPP
+
+config VIDEO_STM32_DCMIPP_SENSOR_PIXEL_FORMAT
+	default "pRAA"
+
+config VIDEO_STM32_DCMIPP_SENSOR_WIDTH
+	default 2592
+
+config VIDEO_STM32_DCMIPP_SENSOR_HEIGHT
+	default 1944
+
+endif # VIDEO_STM32_DCMIPP

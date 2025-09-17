@@ -1025,6 +1025,13 @@ int nvs_mount(struct nvs_fs *fs)
 		return -EINVAL;
 	}
 
+	/* check that sector size is not greater than max */
+	if (fs->sector_size > NVS_MAX_SECTOR_SIZE) {
+		LOG_ERR("Sector size %u too large, maximum is %zu",
+			fs->sector_size, NVS_MAX_SECTOR_SIZE);
+		return -EINVAL;
+	}
+
 	/* check that sector size is a multiple of pagesize */
 	rc = flash_get_page_info_by_offs(fs->flash_device, fs->offset, &info);
 	if (rc) {
@@ -1136,7 +1143,10 @@ no_cached_entry:
 		} else if (len + NVS_DATA_CRC_SIZE == wlk_ate.len) {
 			/* do not try to compare if lengths are not equal */
 			/* compare the data and if equal return 0 */
-			rc = nvs_flash_block_cmp(fs, rd_addr, data, len + NVS_DATA_CRC_SIZE);
+			/* note: data CRC is not taken into account here, as it has not yet been
+			 * appended to the data buffer
+			 */
+			rc = nvs_flash_block_cmp(fs, rd_addr, data, len);
 			if (rc <= 0) {
 				return rc;
 			}

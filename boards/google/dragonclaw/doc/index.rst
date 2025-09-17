@@ -15,7 +15,7 @@ Hardware
 
 - STM32F412CGU6 UFQFPN48 package
 
-Peripherial Mapping
+Peripheral Mapping
 ===================
 
 - USART_1 TX/RX : PA9/PA10

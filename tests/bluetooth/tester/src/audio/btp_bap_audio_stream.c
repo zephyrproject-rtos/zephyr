@@ -32,7 +32,6 @@
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/types.h>
 
-#include "btp/btp.h"
 #include "btp_bap_audio_stream.h"
 
 LOG_MODULE_REGISTER(bttester_bap_audio_stream, CONFIG_BTTESTER_LOG_LEVEL);

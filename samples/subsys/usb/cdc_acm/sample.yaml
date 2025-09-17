@@ -1,19 +1,9 @@
 sample:
   name: CDC ACM USB
 tests:
-  sample.usb.cdc-acm:
-    depends_on: usb_device
-    tags: usb
-    arch_exclude: posix
-    harness: console
-    harness_config:
-      type: one_line
-      regex:
-        - "Wait for DTR"
   sample.usb_device_next.cdc-acm:
     depends_on: usbd
     tags: usb
-    extra_args: CONF_FILE="usbd_next_prj.conf"
     integration_platforms:
       - nrf52840dk/nrf52840
       - nrf54h20dk/nrf54h20/cpuapp
@@ -23,15 +13,22 @@ tests:
       - mimxrt685_evk/mimxrt685s/cm33
       - mimxrt1060_evk/mimxrt1062/qspi
       - max32690evkit/max32690/m4
+      - samd21_xpro
+      - same54_xpro
     harness: console
     harness_config:
       type: one_line
       regex:
         - "Wait for DTR"
-  sample.usb.cdc-acm.buildonly:
-    depends_on: usb_device
+  sample.usb_device_next.cdc-acm-workqueue:
+    depends_on: usbd
     tags: usb
-    arch_allow: posix
-    build_only: true
+    extra_args:
+      - DCONFIG_USBD_CDC_ACM_WORKQUEUE=y
     integration_platforms:
-      - native_sim
+      - frdm_k64f
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "Wait for DTR"

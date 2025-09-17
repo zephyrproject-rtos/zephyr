@@ -18,6 +18,18 @@ config REQUIRES_FLOAT_PRINTF
 	  Select a printf implementation that provides a complete
 	  implementation including floating point support.
 
+config LIBC_ALLOW_LESS_THAN_64BIT_TIME
+	bool "Don't require that time_t be at least 64-bits"
+	default y if NATIVE_LIBC
+	help
+	  When selected, time_t will not be required to be at least 64
+	  bits. Background: To avoid Y2038 issues time_t needs to be
+	  bigger than 32bits. But some C libraries do not provide or
+	  default to a type for time_t which is at least
+	  64bits. Enable this option if your C library defined time_t
+	  is more than 32bits (e.g. 48 bits) or are sure your project
+	  is not subject to Y2038 issues.
+
 config FULL_LIBC_SUPPORTED
 	bool
 	help
@@ -27,7 +39,6 @@ config FULL_LIBC_SUPPORTED
 
 config MINIMAL_LIBC_SUPPORTED
 	bool
-	depends on !NATIVE_APPLICATION
 	default y
 	help
 	  Selected when the target has support for the minimal C library
@@ -36,7 +47,6 @@ config NEWLIB_LIBC_SUPPORTED
 	bool
 	default y
 	depends on "$(TOOLCHAIN_HAS_NEWLIB)" = "y"
-	depends on !NATIVE_APPLICATION
 	select FULL_LIBC_SUPPORTED
 	help
 	  Selected when the target has support for the newlib C library
@@ -44,7 +54,6 @@ config NEWLIB_LIBC_SUPPORTED
 # Picolibc with C++ support in Zephyr SDK is handled by Zephyr SDK's own Kconfig.
 config PICOLIBC_SUPPORTED
 	bool
-	depends on !NATIVE_APPLICATION
 	depends on ("$(TOOLCHAIN_HAS_PICOLIBC)" = "y") || (ZEPHYR_PICOLIBC_MODULE && !REQUIRES_FULL_LIBCPP)
 	default y
 	select FULL_LIBC_SUPPORTED
@@ -68,7 +77,7 @@ menu "C Library"
 
 choice LIBC_IMPLEMENTATION
 	prompt "C Library Implementation"
-	default EXTERNAL_LIBC if NATIVE_BUILD && !(NATIVE_LIBRARY && NATIVE_LIBC_INCOMPATIBLE)
+	default EXTERNAL_LIBC if NATIVE_BUILD && !NATIVE_LIBC_INCOMPATIBLE
 	default PICOLIBC
 	default NEWLIB_LIBC if REQUIRES_FULL_LIBC
 	default MINIMAL_LIBC
@@ -84,6 +93,7 @@ config MINIMAL_LIBC
 	imply COMMON_LIBC_MALLOC
 	imply COMMON_LIBC_CALLOC
 	imply COMMON_LIBC_REALLOCARRAY
+	imply COMMON_LIBC_TIME
 	help
 	  Build with minimal C library.
 
@@ -96,6 +106,7 @@ config PICOLIBC
 	select TC_PROVIDES_POSIX_C_LANG_SUPPORT_R
 	imply COMMON_LIBC_MALLOC
 	imply COMMON_LIBC_ABORT
+	imply COMMON_LIBC_TIME
 	depends on PICOLIBC_SUPPORTED
 	help
 	  Build with picolibc library. The picolibc library is built as
@@ -116,14 +127,16 @@ config NEWLIB_LIBC
 	imply POSIX_FILE_SYSTEM_ALIAS_FSTAT
 	imply POSIX_MULTI_PROCESS_ALIAS_GETPID
 	imply POSIX_SIGNALS_ALIAS_KILL
+	imply COMMON_LIBC_TIME
 	help
 	  Build with newlib library. The newlib library is expected to be
 	  part of the SDK in this case.
 
 config ARCMWDT_LIBC
 	bool "ARC MWDT C library"
-	depends on !NATIVE_APPLICATION
 	depends on "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "arcmwdt"
+	select STATIC_INIT_GNU
+	select LIBC_ALLOW_LESS_THAN_64BIT_TIME
 	help
 	  C library provided by ARC MWDT toolchain.
 
@@ -137,7 +150,7 @@ config IAR_LIBC
 	depends on IAR_LIBC_SUPPORTED
 	depends on "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "iar"
 	select COMMON_LIBC_STRNLEN
-	select COMMON_LIBC_TIME if POSIX_TIMERS
+	select COMMON_LIBC_TIME
 	help
 	  Use the full IAR Compiler runtime libraries.
 	  A reduced Zephyr minimal libc will be used for library functionality
@@ -156,7 +169,7 @@ rsource "picolibc/Kconfig"
 config STDOUT_CONSOLE
 	bool "Send stdout to console"
 	depends on CONSOLE_HAS_DRIVER
-	depends on !(NATIVE_APPLICATION || (NATIVE_LIBRARY && EXTERNAL_LIBC))
+	depends on !(NATIVE_LIBRARY && EXTERNAL_LIBC)
 	default y
 	help
 	  This option directs standard output (e.g. printf) to the console

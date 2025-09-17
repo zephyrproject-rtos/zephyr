@@ -34,6 +34,8 @@ menuconfig HTTP_SERVER
 	select HTTP_PARSER
 	select HTTP_PARSER_URL
 	select EXPERIMENTAL
+	select NET_SOCKETS
+	select EVENTFD
 	imply NET_IPV4_MAPPING_TO_IPV6 if NET_IPV4 && NET_IPV6
 	help
 	  HTTP1 and HTTP2 server support.
@@ -42,6 +44,7 @@ if HTTP_SERVER
 
 config HTTP_SERVER_STACK_SIZE
 	int "HTTP server thread stack size"
+	default 4096 if FILE_SYSTEM
 	default 3072
 	help
 	  HTTP server thread stack size for processing RX/TX events.
@@ -176,7 +179,7 @@ config HTTP_SERVER_RESTART_DELAY
 	range 1 60000
 	help
 	  In case server restarts for any reason, the server re-initialization
-	  will be delayed by this value (miliseconds). The delay is needed to
+	  will be delayed by this value (milliseconds). The delay is needed to
 	  allow any existing connections to finalize to avoid binding errors
 	  during initialization.
 
@@ -216,6 +219,17 @@ config HTTP_SERVER_COMPRESSION
 	    4. compress -> .lzw
 	    5. deflate  -> .zz
 	    6. File without compression
+
+config HTTP_SERVER_STATIC_FS_RESPONSE_SIZE
+	int "Size of static file system response buffer"
+	depends on FILE_SYSTEM
+	default 1024
+	help
+	  The size of a single chunk when serving static files from the file system.
+	  This config value must be large enough to hold the headers in a single chunk.
+	  If set to 0, the server will use the minimal viable buffer size for the response.
+	  Please note that it is allocated on the stack of the HTTP server thread,
+	  so CONFIG_HTTP_SERVER_STACK_SIZE has to be sufficiently large.
 
 endif
 

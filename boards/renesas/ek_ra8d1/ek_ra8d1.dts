@@ -6,6 +6,7 @@
 /dts-v1/;
 
 #include <renesas/ra/ra8/r7fa8d1bhecbd.dtsi>
+#include <zephyr/dt-bindings/flash_controller/xspi.h>
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
@@ -25,31 +26,60 @@
 		zephyr,entropy = &trng;
 		zephyr,flash-controller = &flash1;
 		zephyr,canbus = &canfd0;
+		zephyr,crc = &crc;
 	};
 
 	leds {
 		compatible = "gpio-leds";
+
 		led1: led1 {
 			gpios = <&ioport6 0 GPIO_ACTIVE_HIGH>;
 			label = "LED1";
 		};
+
 		led2: led2 {
 			gpios = <&ioport4 14 GPIO_ACTIVE_HIGH>;
 			label = "LED2";
 		};
+
 		led3: led3 {
 			gpios = <&ioport1 7 GPIO_ACTIVE_HIGH>;
 			label = "LED3";
 		};
 	};
 
+	mikrobus_header: mikrobus-connector {
+		compatible = "mikro-bus";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &ioport0 4 0>,	/* AN  */
+			   <1 0 &ioport5 7 0>,	/* RST */
+			   <2 0 &ioport4 13 0>,	/* CS   */
+			   <3 0 &ioport4 12 0>,	/* SCK  */
+			   <4 0 &ioport4 10 0>,	/* MISO */
+			   <5 0 &ioport4 11 0>,	/* MOSI */
+			   /* +3.3V */
+			   /* GND */
+			   <6 0 &ioport9 7 0>,	/* PWM  */
+			   <7 0 &ioport0 10 0>,	/* INT  */
+			   <8 0 &ioport4 8 0>,	/* RX   */
+			   <9 0 &ioport4 9 0>,	/* TX   */
+			   <10 0 &ioport4 0 0>,	/* SCL  */
+			   <11 0 &ioport4 1 0>;	/* SDA  */
+		/* +5V */
+		/* GND */
+	};
+
 	buttons {
 		compatible = "gpio-keys";
+
 		button0: s1 {
 			gpios = <&ioport0 9 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button switch 1";
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		button1: s2 {
 			gpios = <&ioport0 8 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button switch 2";
@@ -70,11 +100,23 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map =	<14 0 &ioport5 11 0>,	/* IIC_SDA */
-				<15 0 &ioport4 4 0>,	/* DISP_BLEN */
-				<16 0 &ioport5 12 0>,	/* IIC_SCL */
-				<17 0 &ioport5 10 0>,	/* DISP_INT */
-				<18 0 &ioporta 1 0>;	/* DISP_RST */
+		gpio-map = <14 0 &ioport5 11 0>,	/* IIC_SDA */
+			   <15 0 &ioport4 4 0>,	/* DISP_BLEN */
+			   <16 0 &ioport5 12 0>,	/* IIC_SCL */
+			   <17 0 &ioport5 10 0>,	/* DISP_INT */
+			   <18 0 &ioporta 1 0>;	/* DISP_RST */
+	};
+
+	ek_ra8d1_parallel_graphics_expansion: parallel-graphics-expansion {
+		compatible = "renesas,ra-parallel-graphics-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <1 0 &ioport4 4 0>,	/* DISP_BLEN */
+			   <2 0 &ioport5 11 0>, /* IIC_SDA */
+			   <3 0 &ioport5 10 0>, /* DISP_INT */
+			   <4 0 &ioport5 12 0>, /* IIC_SCL */
+			   <6 0 &ioporta 1 0>;  /* DISP_RST */
 	};
 
 	aliases {
@@ -83,6 +125,11 @@
 		sw1 = &button1;
 		mipi-dsi = &mipi_dsi;
 		watchdog0 = &wdt;
+	};
+
+	zephyr,user {
+		i3c-pullup-gpios = <&ioportb 2 GPIO_ACTIVE_LOW>,
+				   <&ioport7 11 GPIO_ACTIVE_LOW>;
 	};
 };
 
@@ -99,6 +146,7 @@
 
 &pll {
 	status = "okay";
+
 	pllp {
 		status = "okay";
 	};
@@ -111,6 +159,19 @@
 
 	pllr {
 		status = "okay";
+	};
+};
+
+&pll2 {
+	status = "okay";
+	clocks = <&xtal>;
+	div = <2>;
+	mul = <80 0>;
+
+	pll2p {
+		status = "okay";
+		freq = <DT_FREQ_M(400)>;
+		div = <2>;
 	};
 };
 
@@ -132,9 +193,21 @@
 	status = "okay";
 };
 
+&octaspiclk {
+	clocks = <&pll2p>;
+	div = <2>;
+	status = "okay";
+};
+
 &uclk {
 	clocks = <&pllq>;
 	div = <5>;
+	status = "okay";
+};
+
+&i3cclk {
+	clocks = <&pllp>;
+	div = <3>;
 	status = "okay";
 };
 
@@ -158,7 +231,19 @@
 	status = "okay";
 };
 
+&ioport7 {
+	status = "okay";
+};
+
+&ioport9 {
+	status = "okay";
+};
+
 &ioporta {
+	status = "okay";
+};
+
+&ioportb {
 	status = "okay";
 };
 
@@ -166,6 +251,7 @@
 	pinctrl-0 = <&sci9_default>;
 	pinctrl-names = "default";
 	status = "okay";
+
 	uart9: uart {
 		current-speed = <115200>;
 		status = "okay";
@@ -183,6 +269,17 @@
 	};
 };
 
+&sci3 {
+	pinctrl-0 = <&sci3_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	uart3: uart {
+		current-speed = <115200>;
+		status = "okay";
+	};
+};
+
 &trng {
 	status = "okay";
 };
@@ -190,6 +287,16 @@
 &spi1 {
 	pinctrl-0 = <&spi1_default>;
 	pinctrl-names = "default";
+	status = "okay";
+};
+
+&i3c0 {
+	i2c-scl-hz = <DT_FREQ_K(400)>;
+	i3c-scl-hz = <DT_FREQ_M(4)>;
+	pinctrl-0 = <&i3c0_default>;
+	pinctrl-names = "default";
+	interrupts = <60 1>, <61 1>, <62 1>, <63 1>, <64 1>, <65 1>;
+	interrupt-names = "resp", "rx", "tx", "rcv", "ibi", "eei";
 	status = "okay";
 };
 
@@ -216,6 +323,7 @@
 
 &canfd_global {
 	status = "okay";
+
 	canfd0 {
 		pinctrl-0 = <&canfd0_default>;
 		pinctrl-names = "default";
@@ -255,6 +363,7 @@
 	pinctrl-names = "default";
 	maximum-speed = "high-speed";
 	status = "okay";
+
 	zephyr_udc0: udc {
 		status = "okay";
 	};
@@ -297,15 +406,16 @@
 	edian-mode = "little-endian";
 	continuous-access;
 	bus-width = "16-bit";
+
 	bank@0 {
 		reg = <0>;
 		renesas,ra-sdram-timing = <SDRAM_TRAS_6CYCLES
-		SDRAM_TRCD_3CYCLES
-		SDRAM_TRP_3CYCLES
-		SDRAM_TWR_2CYCLES
-		SDRAM_TCL_3CYCLES
-		937
-		SDRAM_TREFW_8CYCLES>;
+					   SDRAM_TRCD_3CYCLES
+					   SDRAM_TRP_3CYCLES
+					   SDRAM_TWR_2CYCLES
+					   SDRAM_TCL_3CYCLES
+					   937
+					   SDRAM_TREFW_8CYCLES>;
 	};
 };
 
@@ -342,3 +452,55 @@ pmod_sd_shield: &sdhc1 {};
 		status = "okay";
 	};
 };
+
+&ospi0 {
+	pinctrl-0 = <&ospi0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	s28hl512t: ospi-nor-flash@90000000 {
+		compatible = "renesas,ra-ospi-b-nor";
+		protocol-mode = <XSPI_OCTO_MODE>;
+		data-rate = <XSPI_DTR_TRANSFER>;
+		ospi-max-frequency = <DT_FREQ_M(200)>;
+		reg = <0x90000000 DT_SIZE_M(64)>;
+		write-block-size = <1>;
+		status = "okay";
+
+		pages_layout: pages_layout {
+			pages_layout_4k: pages_layout_4k {
+				pages-count = <32>;
+				pages-size = <DT_SIZE_K(4)>;
+			};
+
+			pages_layout_128k: pages_layout_128k {
+				pages-count = <1>;
+				pages-size = <DT_SIZE_K(128)>;
+			};
+
+			pages_layout_256k: pages_layout_256k {
+				pages-count = <255>;
+				pages-size = <DT_SIZE_K(256)>;
+			};
+		};
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "nor";
+				reg = <0x00000000 DT_SIZE_M(64)>;
+			};
+		};
+	};
+};
+
+&crc {
+	status = "okay";
+};
+
+mikrobus_serial: &uart3 {};
+
+mikrobus_spi: &spi1 {};

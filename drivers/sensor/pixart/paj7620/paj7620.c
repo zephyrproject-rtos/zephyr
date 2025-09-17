@@ -48,7 +48,7 @@ static int paj7620_select_register_bank(const struct device *dev, enum paj7620_m
 
 static int paj7620_get_hw_id(const struct device *dev, uint16_t *result)
 {
-	uint8_t ret;
+	int ret;
 	uint8_t hw_id[2];
 	const struct paj7620_config *config = dev->config;
 
@@ -107,7 +107,7 @@ static int paj7620_set_sampling_rate(const struct device *dev, const struct sens
 	int ret;
 	int fps;
 	const struct paj7620_config *config = dev->config;
-	int64_t uval = val->val1 * 1000000 + val->val2;
+	int64_t uval = ((int64_t)val->val1 * (int64_t)1000000) + val->val2;
 
 	if (uval <= 120000000) {
 		fps = PAJ7620_NORMAL_SPEED;

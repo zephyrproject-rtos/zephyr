@@ -30,20 +30,24 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		red_led: led_1 {
 			gpios = <&gpioa 13 GPIO_ACTIVE_HIGH>;
 			label = "LED1";
 			status = "disabled";
 		};
+
 		green_led: led_2 {
 			gpios = <&gpioa 14 GPIO_ACTIVE_HIGH>;
 			label = "LED2";
 			status = "disabled";
 		};
+
 		yellow_led: led_3 {
 			gpios = <&gpioa 15 GPIO_ACTIVE_HIGH>;
 			label = "LED3";
 		};
+
 		blue_led: led_4 {
 			gpios = <&gpiob 4 GPIO_ACTIVE_HIGH>;
 			label = "LED4";
@@ -52,6 +56,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button: button {
 			gpios = <&gpiob 3 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 			zephyr,code = <INPUT_KEY_0>;
@@ -103,6 +108,7 @@
 		     &sdmmc1_d2_pc10 &sdmmc1_d3_pc11
 		     &sdmmc1_ck_pc12 &sdmmc1_cmd_pd2>;
 	cd-gpios = <&gpioa 8 GPIO_ACTIVE_LOW>;
+	disk-name = "SD";
 	status = "okay";
 };
 
@@ -113,10 +119,12 @@
 		     &quadspi_bk1_io2_pe2 &quadspi_bk1_io3_pd13>;
 	status = "okay";
 
-	w25q128jv: qspi-nor-flash@90000000 {
+	w25q128jv: qspi-nor-flash@0 {
 		compatible = "st,stm32-qspi-nor";
-		reg = <0x90000000 DT_SIZE_M(16)>;
+		reg = <0>;
+		size = <DT_SIZE_M(128)>; /* 128 Mbits */
 		qspi-max-frequency = <80000000>;
+		cs-high-time = <4>; /* >= 50 ns */
 		spi-bus-width = <4>;
 		status = "okay";
 

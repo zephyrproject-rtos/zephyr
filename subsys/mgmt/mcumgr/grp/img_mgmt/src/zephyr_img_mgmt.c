@@ -144,6 +144,7 @@ img_mgmt_flash_area_id(int slot)
 		fa_id = FIXED_PARTITION_ID(SLOT1_PARTITION);
 		break;
 
+#if !defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_FIRMWARE_UPDATER)
 #if FIXED_PARTITION_EXISTS(SLOT2_PARTITION)
 	case 2:
 		fa_id = FIXED_PARTITION_ID(SLOT2_PARTITION);
@@ -167,6 +168,7 @@ img_mgmt_flash_area_id(int slot)
 		fa_id = FIXED_PARTITION_ID(SLOT5_PARTITION);
 		break;
 #endif
+#endif /* !defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_FIRMWARE_UPDATER) */
 
 	default:
 		fa_id = -1;

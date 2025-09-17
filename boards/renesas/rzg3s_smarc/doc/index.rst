@@ -48,6 +48,8 @@ The Renesas RZ/G3S MPU documentation can be found at `RZ/G3S Group Website`_
 
 	RZ/G3S block diagram (Credit: Renesas Electronics Corporation)
 
+Detailed hardware features for the board can be found at `RZG3S-EVKIT Website`_
+
 Multi-OS processing
 *******************
 
@@ -58,40 +60,7 @@ Please see :zephyr:code-sample:`rz-openamp-linux-zephyr` sample for reference.
 Supported Features
 ==================
 
-The ``rzg3s_smarc/r9a08g045s33gbg/cm33`` board target supports the ARM Cortex-M33 System Core without FPU
-and the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | arch/arm                            |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | arch/arm                            |
-+-----------+------------+-------------------------------------+
-| PINCTRL   | on-chip    | pinctrl                             |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | adc                                 |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| DMA       | on-chip    | dma                                 |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial                              |
-+-----------+------------+-------------------------------------+
-| GTM       | on-chip    | counter                             |
-+-----------+------------+-------------------------------------+
-| GPT       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| INTC      | on-chip    | external interrupt controller       |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | clock control                       |
-+-----------+------------+-------------------------------------+
-| MHU       | on-chip    | mbox                                |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are currently not supported by the port.
+.. zephyr:board-supported-hw::
 
 Programming and Debugging
 *************************
@@ -274,10 +243,10 @@ References
 .. target-notes::
 
 .. _RZ/G3S Group Website:
-   https://www.renesas.com/us/en/products/microcontrollers-microprocessors/rz-mpus/rzg3s-general-purpose-microprocessors-single-core-arm-cortex-a55-11-ghz-cpu-and-dual-core-cortex-m33-250
+   https://www.renesas.com/en/products/rz-g3s
 
 .. _RZG3S-EVKIT Website:
-   https://www.renesas.com/us/en/products/microcontrollers-microprocessors/rz-mpus/rzg3s-evkit-evaluation-board-kit-rzg3s-mpu
+   https://www.renesas.com/en/design-resources/boards-kits/rz-g3s-evkit
 
 .. _SMARC EVK of RZ/G3S Linux Start-up Guide:
-   https://www.renesas.com/us/en/document/gde/smarc-evk-rzg3s-linux-start-guide-rev104
+   https://www.renesas.com/en/document/gde/smarc-evk-rzg3s-linux-start-guide-rev106

@@ -9,7 +9,8 @@
 
 /**
  * @file
- * @brief Public APIs for GPIO drivers
+ * @ingroup gpio_interface
+ * @brief Main header file for GPIO driver API.
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_GPIO_H_
@@ -31,12 +32,18 @@ extern "C" {
 #endif
 
 /**
- * @brief GPIO Driver APIs
- * @defgroup gpio_interface GPIO Driver APIs
+ * @brief Interfaces for General Purpose Input/Output (GPIO)
+ *        controllers.
+ * @defgroup gpio_interface GPIO
  * @since 1.0
  * @version 1.0.0
  * @ingroup io_interfaces
  * @{
+ *
+ * @defgroup gpio_interface_ext Device-specific GPIO API extensions
+ *
+ * @{
+ * @}
  */
 
 /**
@@ -45,10 +52,10 @@ extern "C" {
  */
 
 /** Enables pin as input. */
-#define GPIO_INPUT              (1U << 16)
+#define GPIO_INPUT              BIT(16)
 
 /** Enables pin as output, no change to the output state. */
-#define GPIO_OUTPUT             (1U << 17)
+#define GPIO_OUTPUT             BIT(17)
 
 /** Disables pin for both input and output. */
 #define GPIO_DISCONNECTED	0
@@ -56,13 +63,13 @@ extern "C" {
 /** @cond INTERNAL_HIDDEN */
 
 /* Initializes output to a low state. */
-#define GPIO_OUTPUT_INIT_LOW    (1U << 18)
+#define GPIO_OUTPUT_INIT_LOW    BIT(18)
 
 /* Initializes output to a high state. */
-#define GPIO_OUTPUT_INIT_HIGH   (1U << 19)
+#define GPIO_OUTPUT_INIT_HIGH   BIT(19)
 
 /* Initializes output based on logic level */
-#define GPIO_OUTPUT_INIT_LOGICAL (1U << 20)
+#define GPIO_OUTPUT_INIT_LOGICAL BIT(20)
 
 /** @endcond */
 
@@ -98,19 +105,19 @@ extern "C" {
  */
 
 /** Disables GPIO pin interrupt. */
-#define GPIO_INT_DISABLE               (1U << 21)
+#define GPIO_INT_DISABLE               BIT(21)
 
 /** @cond INTERNAL_HIDDEN */
 
 /* Enables GPIO pin interrupt. */
-#define GPIO_INT_ENABLE                (1U << 22)
+#define GPIO_INT_ENABLE                BIT(22)
 
 /* GPIO interrupt is sensitive to logical levels.
  *
  * This is a component flag that should be combined with other
  * `GPIO_INT_*` flags to produce a meaningful configuration.
  */
-#define GPIO_INT_LEVELS_LOGICAL        (1U << 23)
+#define GPIO_INT_LEVELS_LOGICAL        BIT(23)
 
 /* GPIO interrupt is edge sensitive.
  *
@@ -119,7 +126,7 @@ extern "C" {
  * This is a component flag that should be combined with other
  * `GPIO_INT_*` flags to produce a meaningful configuration.
  */
-#define GPIO_INT_EDGE                  (1U << 24)
+#define GPIO_INT_EDGE                  BIT(24)
 
 /* Trigger detection when input state is (or transitions to) physical low or
  * logical 0 level.
@@ -127,7 +134,7 @@ extern "C" {
  * This is a component flag that should be combined with other
  * `GPIO_INT_*` flags to produce a meaningful configuration.
  */
-#define GPIO_INT_LOW_0                 (1U << 25)
+#define GPIO_INT_LOW_0                 BIT(25)
 
 /* Trigger detection on input state is (or transitions to) physical high or
  * logical 1 level.
@@ -135,7 +142,7 @@ extern "C" {
  * This is a component flag that should be combined with other
  * `GPIO_INT_*` flags to produce a meaningful configuration.
  */
-#define GPIO_INT_HIGH_1                (1U << 26)
+#define GPIO_INT_HIGH_1                BIT(26)
 
 #ifdef CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT
 /* Disable/Enable interrupt functionality without changing other interrupt
@@ -144,7 +151,7 @@ extern "C" {
  * This is a component flag that should be combined with `GPIO_INT_ENABLE` or
  * `GPIO_INT_DISABLE` flags to produce a meaningful configuration.
  */
-#define GPIO_INT_ENABLE_DISABLE_ONLY   (1u << 27)
+#define GPIO_INT_ENABLE_DISABLE_ONLY   BIT(27)
 #endif /* CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT */
 
 #define GPIO_INT_MASK                  (GPIO_INT_DISABLE | \
@@ -788,6 +795,16 @@ enum gpio_int_trig {
 	GPIO_INT_TRIG_BOTH = GPIO_INT_LOW_0 | GPIO_INT_HIGH_1,
 	/* Trigger a system wakeup. */
 	GPIO_INT_TRIG_WAKE = GPIO_INT_WAKEUP,
+	/* Trigger a system wakeup when input state is (or transitions to)
+	 * physical low. (Edge Falling or Active Low)
+	 */
+	GPIO_INT_TRIG_WAKE_LOW = GPIO_INT_LOW_0 | GPIO_INT_WAKEUP,
+	/* Trigger a system wakeup when input state is (or transitions to)
+	 * physical high. (Edge Rising or Active High)
+	 */
+	GPIO_INT_TRIG_WAKE_HIGH = GPIO_INT_HIGH_1 | GPIO_INT_WAKEUP,
+	/* Trigger a system wakeup on pin rising or falling edge. */
+	GPIO_INT_TRIG_WAKE_BOTH = GPIO_INT_LOW_0 | GPIO_INT_HIGH_1 | GPIO_INT_WAKEUP,
 };
 
 __subsystem struct gpio_driver_api {
@@ -902,16 +919,17 @@ static inline int z_impl_gpio_pin_interrupt_configure(const struct device *port,
 		 "Only one of GPIO_INT_LOW_0, GPIO_INT_HIGH_1 can be "
 		 "enabled for a level interrupt.");
 
-	__ASSERT(((flags & GPIO_INT_ENABLE) == 0) ||
 #ifdef CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT
-			 ((flags & (GPIO_INT_LOW_0 | GPIO_INT_HIGH_1)) != 0) ||
-			 (flags & GPIO_INT_ENABLE_DISABLE_ONLY) != 0,
+#define GPIO_INT_ENABLE_DISABLE_ONLY_VALUE  GPIO_INT_ENABLE_DISABLE_ONLY
 #else
-			 ((flags & (GPIO_INT_LOW_0 | GPIO_INT_HIGH_1)) != 0),
+#define GPIO_INT_ENABLE_DISABLE_ONLY_VALUE  0
 #endif /* CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT */
-		 "At least one of GPIO_INT_LOW_0, GPIO_INT_HIGH_1 has to be "
-		 "enabled.");
 
+	__ASSERT(((flags & GPIO_INT_ENABLE) == 0) ||
+			 ((flags & (GPIO_INT_LOW_0 | GPIO_INT_HIGH_1)) != 0) ||
+			 (flags & GPIO_INT_ENABLE_DISABLE_ONLY_VALUE) != 0,
+		 "At least one of GPIO_INT_LOW_0, GPIO_INT_HIGH_1 has to be enabled.");
+#undef GPIO_INT_ENABLE_DISABLE_ONLY_VALUE
 	__ASSERT((cfg->port_pin_mask & (gpio_port_pins_t)BIT(pin)) != 0U,
 		 "Unsupported pin");
 
@@ -941,9 +959,11 @@ static inline int z_impl_gpio_pin_interrupt_configure(const struct device *port,
  *
  * This is equivalent to:
  *
- *     gpio_pin_interrupt_configure(spec->port, spec->pin, flags);
+ *     gpio_pin_interrupt_configure(spec->port, spec->pin, combined_flags);
  *
- * The <tt>spec->dt_flags</tt> value is not used.
+ * Where <tt>combined_flags</tt> is the combination of the <tt>flags</tt> argument
+ * and the <tt>GPIO_INT_WAKEUP</tt> flag from <tt>spec->dt_flags</tt> if set. Other
+ * flags from <tt>spec->dt_flags</tt> are ignored.
  *
  * @param spec GPIO specification from devicetree
  * @param flags interrupt configuration flags
@@ -952,7 +972,8 @@ static inline int z_impl_gpio_pin_interrupt_configure(const struct device *port,
 static inline int gpio_pin_interrupt_configure_dt(const struct gpio_dt_spec *spec,
 						  gpio_flags_t flags)
 {
-	return gpio_pin_interrupt_configure(spec->port, spec->pin, flags);
+	return gpio_pin_interrupt_configure(spec->port, spec->pin,
+					    flags | (spec->dt_flags & GPIO_INT_WAKEUP));
 }
 
 /**

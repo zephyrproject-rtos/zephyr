@@ -121,16 +121,16 @@ fail:
 }
 
 static struct net_ipv6_reassembly *reassembly_get(uint32_t id,
-						  struct in6_addr *src,
-						  struct in6_addr *dst)
+						  const uint8_t *src,
+						  const uint8_t *dst)
 {
 	int i, avail = -1;
 
 	for (i = 0; i < CONFIG_NET_IPV6_FRAGMENT_MAX_COUNT; i++) {
 		if (k_work_delayable_remaining_get(&reassembly[i].timer) &&
 		    reassembly[i].id == id &&
-		    net_ipv6_addr_cmp(src, &reassembly[i].src) &&
-		    net_ipv6_addr_cmp(dst, &reassembly[i].dst)) {
+		    net_ipv6_addr_cmp_raw(src, reassembly[i].src.s6_addr) &&
+		    net_ipv6_addr_cmp_raw(dst, reassembly[i].dst.s6_addr)) {
 			return &reassembly[i];
 		}
 
@@ -149,8 +149,8 @@ static struct net_ipv6_reassembly *reassembly_get(uint32_t id,
 
 	k_work_reschedule(&reassembly[avail].timer, IPV6_REASSEMBLY_TIMEOUT);
 
-	net_ipaddr_copy(&reassembly[avail].src, src);
-	net_ipaddr_copy(&reassembly[avail].dst, dst);
+	net_ipv6_addr_copy_raw(reassembly[avail].src.s6_addr, src);
+	net_ipv6_addr_copy_raw(reassembly[avail].dst.s6_addr, dst);
 
 	reassembly[avail].id = id;
 
@@ -346,9 +346,9 @@ static void reassemble_packet(struct net_ipv6_reassembly *reass)
 	/* We need to use the queue when feeding the packet back into the
 	 * IP stack as we might run out of stack if we call processing_data()
 	 * directly. As the packet does not contain link layer header, we
-	 * MUST NOT pass it to L2 so there will be a special check for that
-	 * in process_data() when handling the packet.
+	 * MUST NOT pass it to L2 so mark it as l2_processed.
 	 */
+	net_pkt_set_l2_processed(pkt, true);
 	if (net_recv_data(net_pkt_iface(pkt), pkt) >= 0) {
 		return;
 	}
@@ -492,8 +492,7 @@ enum net_verdict net_ipv6_handle_fragment_hdr(struct net_pkt *pkt,
 		goto drop;
 	}
 
-	reass = reassembly_get(id, (struct in6_addr *)hdr->src,
-			       (struct in6_addr *)hdr->dst);
+	reass = reassembly_get(id, hdr->src, hdr->dst);
 	if (!reass) {
 		NET_DBG("Cannot get reassembly slot, dropping pkt %p", pkt);
 		goto drop;

@@ -7,6 +7,7 @@
 /dts-v1/;
 #include <silabs/efm32hg322f64.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/pinctrl/gecko-pinctrl-s1.h>
 
 / {
 	model = "Silicon Labs EFM32HG SLSTK3400A board";
@@ -14,9 +15,9 @@
 
 	chosen {
 		zephyr,console = &usart1;
+		zephyr,flash = &flash0;
 		zephyr,shell-uart = &usart1;
 		zephyr,sram = &sram0;
-		zephyr,flash = &flash0;
 	};
 
 	/* These aliases are provided for compatibility with samples */
@@ -29,10 +30,12 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led0: led_0 {
 			gpios = <&gpiof 4 0>;
 			label = "LED 0";
 		};
+
 		led1: led_1 {
 			gpios = <&gpiof 5 0>;
 			label = "LED 1";
@@ -41,12 +44,14 @@
 
 	buttons {
 		compatible = "gpio-keys";
+
 		button0: button_0 {
 			/* gpio flags need validation */
 			gpios = <&gpioc 9 GPIO_ACTIVE_LOW>;
 			label = "User Push Button 0";
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		button1: button_1 {
 			/* gpio flags need validation */
 			gpios = <&gpioc 10 GPIO_ACTIVE_LOW>;
@@ -54,7 +59,6 @@
 			zephyr,code = <INPUT_KEY_1>;
 		};
 	};
-
 };
 
 &cpu0 {
@@ -87,7 +91,6 @@
 };
 
 &flash0 {
-
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
@@ -95,9 +98,8 @@
 
 		/* Set 4Kb of storage at the end of the 64Kb of flash */
 		storage_partition: partition@f000 {
-			label = "storage";
 			reg = <0x0000f000 0x00001000>;
+			label = "storage";
 		};
-
 	};
 };

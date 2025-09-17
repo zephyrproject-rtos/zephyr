@@ -1,0 +1,63 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_FRDM_IMX93
+
+if BOARD_FRDM_IMX93_MIMX9352_A55
+
+if GPIO
+
+# CAN Phy must be initialized after board mux
+config I2C
+	default y
+
+endif # GPIO
+
+if CAN
+
+# CAN Phy must be initialized after board mux
+config GPIO_PCA_SERIES_INIT_PRIORITY
+	default 60
+
+config CAN_TRANSCEIVER_INIT_PRIORITY
+	default 65
+
+endif # CAN
+
+if NETWORKING
+
+config NET_L2_ETHERNET
+	default y
+
+config NET_TX_STACK_SIZE
+	default 8192
+
+config NET_RX_STACK_SIZE
+	default 8192
+
+if NET_TCP
+
+config NET_TCP_WORKQ_STACK_SIZE
+	default 8192
+
+endif # NET_TCP
+
+if NET_MGMT_EVENT
+
+config NET_MGMT_EVENT_STACK_SIZE
+	default 8192
+
+endif # NET_MGMT_EVENT
+
+if NET_SOCKETS_SERVICE
+
+config NET_SOCKETS_SERVICE_STACK_SIZE
+	default 8192
+
+endif # NET_SOCKETS_SERVICE
+
+endif # NETWORKING
+
+endif # BOARD_FRDM_IMX93_MIMX9352_A55
+
+endif # BOARD_FRDM_IMX93

@@ -217,21 +217,21 @@ static int dma_sedi_apply_single_config(sedi_dma_t dev, uint32_t channel,
 	if (ret != 0) {
 		goto INVALID_ARGS;
 	}
-	/* configurate dma width of source data*/
+	/* configure dma width of source data*/
 	ret = width_index(config->source_data_size, &temp);
 	if (ret != 0) {
 		goto INVALID_ARGS;
 	}
 	sedi_dma_control(dev, channel, SEDI_CONFIG_DMA_SR_TRANS_WIDTH, temp);
 
-	/* configurate dma width of destination data*/
+	/* configure dma width of destination data*/
 	ret = width_index(config->dest_data_size, &temp);
 	if (ret != 0) {
 		goto INVALID_ARGS;
 	}
 	sedi_dma_control(dev, channel, SEDI_CONFIG_DMA_DT_TRANS_WIDTH, temp);
 
-	/* configurate dma burst size*/
+	/* configure dma burst size*/
 	ret = burst_index(config->source_burst_length, &temp);
 	if (ret != 0) {
 		goto INVALID_ARGS;
@@ -376,7 +376,7 @@ static int dma_sedi_init(const struct device *dev)
 		.chn_num = DT_INST_PROP(inst, dma_channels), \
 		.irq_config = dma_sedi_##inst##_irq_config \
 	}; \
-	DEVICE_DT_INST_DEFINE(inst, &dma_sedi_init, \
+	DEVICE_DT_INST_DEFINE(inst, dma_sedi_init, \
 	      NULL, &dma_sedi_dev_data_##inst, &dma_sedi_config_data_##inst, PRE_KERNEL_2, \
 	      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, (void *)&dma_funcs); \
 									\

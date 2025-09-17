@@ -28,6 +28,7 @@ ZTEST(nrf_grtc_timer, test_get_ticks)
 {
 	k_timeout_t t = K_MSEC(1);
 
+	uint64_t grtc_start_value = z_nrf_grtc_timer_startup_value_get();
 	uint64_t exp_ticks = z_nrf_grtc_timer_read() + t.ticks * CYC_PER_TICK;
 	int64_t ticks;
 
@@ -51,6 +52,7 @@ ZTEST(nrf_grtc_timer, test_get_ticks)
 			curr_tick2 = sys_clock_tick_get();
 		} while (curr_tick != curr_tick2);
 
+		curr_tick += (grtc_start_value / CYC_PER_TICK);
 		t = Z_TIMEOUT_TICKS(Z_TICK_ABS(curr_tick - K_MSEC(1).ticks));
 
 		exp_ticks = curr_grtc_tick - K_MSEC(1).ticks * CYC_PER_TICK;
@@ -69,6 +71,7 @@ ZTEST(nrf_grtc_timer, test_get_ticks)
 			curr_tick2 = sys_clock_tick_get();
 		} while (curr_tick != curr_tick2);
 
+		curr_tick += (grtc_start_value / CYC_PER_TICK);
 		t = Z_TIMEOUT_TICKS(Z_TICK_ABS(curr_tick + K_MSEC(10).ticks));
 		exp_ticks = curr_grtc_tick + K_MSEC(10).ticks * CYC_PER_TICK;
 		ticks = z_nrf_grtc_timer_get_ticks(t);

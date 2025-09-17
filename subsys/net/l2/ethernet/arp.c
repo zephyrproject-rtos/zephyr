@@ -229,7 +229,7 @@ static void arp_request_timeout(struct k_work *work)
 }
 
 static inline struct in_addr *if_get_addr(struct net_if *iface,
-					  struct in_addr *addr)
+					  const uint8_t *addr)
 {
 	struct net_if_ipv4 *ipv4 = iface->config.ip.ipv4;
 
@@ -242,8 +242,8 @@ static inline struct in_addr *if_get_addr(struct net_if *iface,
 		    ipv4->unicast[i].ipv4.address.family == AF_INET &&
 		    ipv4->unicast[i].ipv4.addr_state == NET_ADDR_PREFERRED &&
 		    (!addr ||
-		     net_ipv4_addr_cmp(addr,
-				       &ipv4->unicast[i].ipv4.address.in_addr))) {
+		     net_ipv4_addr_cmp_raw(
+				addr, ipv4->unicast[i].ipv4.address.in_addr.s4_addr))) {
 			return &ipv4->unicast[i].ipv4.address.in_addr;
 		}
 	}
@@ -339,7 +339,7 @@ static inline struct net_pkt *arp_prepare(struct net_if *iface,
 	} else if (!entry) {
 		my_addr = (struct in_addr *)NET_IPV4_HDR(pending)->src;
 	} else {
-		my_addr = if_get_addr(entry->iface, current_ip);
+		my_addr = if_get_addr(entry->iface, (const uint8_t *)current_ip);
 	}
 
 	if (my_addr) {
@@ -352,28 +352,28 @@ static inline struct net_pkt *arp_prepare(struct net_if *iface,
 	return pkt;
 }
 
-struct net_pkt *net_arp_prepare(struct net_pkt *pkt,
-				struct in_addr *request_ip,
-				struct in_addr *current_ip)
+int net_arp_prepare(struct net_pkt *pkt,
+		    struct in_addr *request_ip,
+		    struct in_addr *current_ip,
+		    struct net_pkt **arp_pkt)
 {
 	bool is_ipv4_ll_used = false;
 	struct arp_entry *entry;
 	struct in_addr *addr;
 
 	if (!pkt || !pkt->buffer) {
-		return NULL;
+		return -EINVAL;
 	}
 
 	if (net_pkt_ipv4_acd(pkt)) {
-		return arp_prepare(net_pkt_iface(pkt), request_ip, NULL,
-				   pkt, current_ip);
+		*arp_pkt = arp_prepare(net_pkt_iface(pkt), request_ip, NULL,
+				       pkt, current_ip);
+		return *arp_pkt ? NET_ARP_PKT_REPLACED : -ENOMEM;
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV4_AUTO)) {
-		is_ipv4_ll_used = net_ipv4_is_ll_addr((struct in_addr *)
-						&NET_IPV4_HDR(pkt)->src) ||
-				  net_ipv4_is_ll_addr((struct in_addr *)
-						&NET_IPV4_HDR(pkt)->dst);
+		is_ipv4_ll_used = net_ipv4_is_ll_addr_raw(NET_IPV4_HDR(pkt)->src) ||
+				  net_ipv4_is_ll_addr_raw(NET_IPV4_HDR(pkt)->dst);
 	}
 
 	/* Is the destination in the local network, if not route via
@@ -391,7 +391,7 @@ struct net_pkt *net_arp_prepare(struct net_pkt *pkt,
 					net_if_get_by_iface(net_pkt_iface(pkt)),
 					net_sprint_ipv4_addr(request_ip));
 
-				return NULL;
+				return -EINVAL;
 			}
 		} else {
 			addr = request_ip;
@@ -421,15 +421,19 @@ struct net_pkt *net_arp_prepare(struct net_pkt *pkt,
 			/* There is a pending ARP request already, check if this packet is already
 			 * in the pending list and if so, resend the request, otherwise just
 			 * append the packet to the request fifo list.
+			 * Ensure the packet reference is incremented to account for the queue
+			 * holding the reference.
 			 */
-			if (k_queue_unique_append(&entry->pending_queue._queue,
-						  net_pkt_ref(pkt))) {
+			pkt = net_pkt_ref(pkt);
+			if (k_queue_unique_append(&entry->pending_queue._queue, pkt)) {
 				NET_DBG("Pending ARP request for %s, queuing pkt %p",
 					net_sprint_ipv4_addr(addr), pkt);
 				k_mutex_unlock(&arp_mutex);
-				return NULL;
+				return NET_ARP_PKT_QUEUED;
 			}
 
+			/* Queueing the packet failed, undo the net_pkt_ref */
+			net_pkt_unref(pkt);
 			entry = NULL;
 		}
 
@@ -452,7 +456,8 @@ struct net_pkt *net_arp_prepare(struct net_pkt *pkt,
 		}
 
 		k_mutex_unlock(&arp_mutex);
-		return req;
+		*arp_pkt = req;
+		return req ? NET_ARP_PKT_REPLACED : -ENOMEM;
 	}
 
 	k_mutex_unlock(&arp_mutex);
@@ -469,7 +474,7 @@ struct net_pkt *net_arp_prepare(struct net_pkt *pkt,
 				   sizeof(struct net_eth_addr)),
 		net_sprint_ipv4_addr(NET_IPV4_HDR(pkt)->dst));
 
-	return pkt;
+	return NET_ARP_COMPLETE;
 }
 
 static void arp_gratuitous(struct net_if *iface,
@@ -562,7 +567,7 @@ static void notify_all_ipv4_addr(struct net_if *iface)
 }
 
 static void iface_event_handler(struct net_mgmt_event_callback *cb,
-				uint32_t mgmt_event, struct net_if *iface)
+				uint64_t mgmt_event, struct net_if *iface)
 {
 	ARG_UNUSED(cb);
 
@@ -579,7 +584,7 @@ static void iface_event_handler(struct net_mgmt_event_callback *cb,
 }
 
 static void ipv4_event_handler(struct net_mgmt_event_callback *cb,
-			       uint32_t mgmt_event, struct net_if *iface)
+			       uint64_t mgmt_event, struct net_if *iface)
 {
 	struct in_addr *ipaddr;
 
@@ -778,7 +783,7 @@ static bool arp_hdr_check(struct net_arp_hdr *arp_hdr)
 	    ntohs(arp_hdr->protocol) != NET_ETH_PTYPE_IP ||
 	    arp_hdr->hwlen != sizeof(struct net_eth_addr) ||
 	    arp_hdr->protolen != NET_ARP_IPV4_PTYPE_SIZE ||
-	    net_ipv4_is_addr_loopback((struct in_addr *)arp_hdr->src_ipaddr)) {
+	    net_ipv4_is_addr_loopback_raw(arp_hdr->src_ipaddr)) {
 		NET_DBG("DROP: Invalid ARP header");
 		return false;
 	}
@@ -792,6 +797,7 @@ enum net_verdict net_arp_input(struct net_pkt *pkt,
 {
 	struct net_eth_addr *dst_hw_addr;
 	struct net_arp_hdr *arp_hdr;
+	struct in_addr src_ipaddr;
 	struct net_pkt *reply;
 	struct in_addr *addr;
 
@@ -826,8 +832,9 @@ enum net_verdict net_arp_input(struct net_pkt *pkt,
 				/* If the IP address is in our cache,
 				 * then update it here.
 				 */
-				net_arp_update(net_pkt_iface(pkt),
-					       (struct in_addr *)arp_hdr->src_ipaddr,
+				net_ipv4_addr_copy_raw(src_ipaddr.s4_addr,
+						       arp_hdr->src_ipaddr);
+				net_arp_update(net_pkt_iface(pkt), &src_ipaddr,
 					       &arp_hdr->src_hwaddr,
 					       true, false);
 				break;
@@ -839,14 +846,13 @@ enum net_verdict net_arp_input(struct net_pkt *pkt,
 		 */
 		if (memcmp(dst, net_eth_broadcast_addr(),
 			   sizeof(struct net_eth_addr)) == 0 &&
-		    net_ipv4_is_addr_mcast((struct in_addr *)arp_hdr->src_ipaddr)) {
+		    net_ipv4_is_addr_mcast_raw(arp_hdr->src_ipaddr)) {
 			NET_DBG("DROP: eth addr is bcast, src addr is mcast");
 			return NET_DROP;
 		}
 
 		/* Someone wants to know our ll address */
-		addr = if_get_addr(net_pkt_iface(pkt),
-				   (struct in_addr *)arp_hdr->dst_ipaddr);
+		addr = if_get_addr(net_pkt_iface(pkt), arp_hdr->dst_ipaddr);
 		if (!addr) {
 			/* Not for us so drop the packet silently */
 			return NET_DROP;
@@ -869,8 +875,9 @@ enum net_verdict net_arp_input(struct net_pkt *pkt,
 						   arp_hdr->hwlen),
 				net_if_get_by_iface(net_pkt_iface(pkt)));
 
-			net_arp_update(net_pkt_iface(pkt),
-				       (struct in_addr *)arp_hdr->src_ipaddr,
+			net_ipv4_addr_copy_raw(src_ipaddr.s4_addr,
+					       arp_hdr->src_ipaddr);
+			net_arp_update(net_pkt_iface(pkt), &src_ipaddr,
 				       &arp_hdr->src_hwaddr,
 				       false, true);
 
@@ -889,13 +896,15 @@ enum net_verdict net_arp_input(struct net_pkt *pkt,
 		break;
 
 	case NET_ARP_REPLY:
-		if (net_ipv4_is_my_addr((struct in_addr *)arp_hdr->dst_ipaddr)) {
+		if (net_ipv4_is_my_addr_raw(arp_hdr->dst_ipaddr)) {
 			NET_DBG("Received ll %s for IP %s",
 				net_sprint_ll_addr(arp_hdr->src_hwaddr.addr,
 						   sizeof(struct net_eth_addr)),
 				net_sprint_ipv4_addr(arp_hdr->src_ipaddr));
-			net_arp_update(net_pkt_iface(pkt),
-				       (struct in_addr *)arp_hdr->src_ipaddr,
+
+			net_ipv4_addr_copy_raw(src_ipaddr.s4_addr,
+					       arp_hdr->src_ipaddr);
+			net_arp_update(net_pkt_iface(pkt), &src_ipaddr,
 				       &arp_hdr->src_hwaddr,
 				       false, false);
 		}

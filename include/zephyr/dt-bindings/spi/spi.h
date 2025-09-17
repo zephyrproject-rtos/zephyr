@@ -7,9 +7,7 @@
 #define ZEPHYR_INCLUDE_DT_BINDINGS_SPI_SPI_H_
 
 /**
- * @brief SPI Interface
- * @defgroup spi_interface SPI Interface
- * @ingroup io_interfaces
+ * @addtogroup spi_interface
  * @{
  */
 

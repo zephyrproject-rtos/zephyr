@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <dt-bindings/regulator/npm1300.h>
+#include <dt-bindings/regulator/npm13xx.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 &arduino_i2c {
@@ -57,10 +57,11 @@
 
 		npm1300_ek_buttons: buttons {
 			compatible = "gpio-keys";
+
 			pmic_button0: pmic_button_0 {
-				gpios = < &npm1300_ek_gpio 0 GPIO_ACTIVE_HIGH>;
+				gpios = <&npm1300_ek_gpio 0 GPIO_ACTIVE_HIGH>;
 				label = "Pmic button switch 0";
-			zephyr,code = <INPUT_KEY_0>;
+				zephyr,code = <INPUT_KEY_0>;
 			};
 		};
 

@@ -55,6 +55,7 @@ System Clock
 
 The MCX-A153 SoC is configured to use FRO running at 96MHz as a source for
 the system clock.
+The MCX-A153 uses OS timer as the kernel timer.
 
 Serial Port
 ===========

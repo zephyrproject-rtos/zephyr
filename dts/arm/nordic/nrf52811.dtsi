@@ -35,6 +35,15 @@
 		};
 	};
 
+	clocks {
+		hfxo: hfxo {
+			compatible = "nordic,nrf52-hfxo";
+			clock-frequency = <64000000>;
+			startup-time-us = <1400>;
+			#clock-cells = <0>;
+		};
+	};
+
 	soc {
 		ficr: ficr@10000000 {
 			compatible = "nordic,nrf-ficr";
@@ -150,7 +159,7 @@
 		};
 
 		spi1: spi@40003000 {
-		/* cannot be used with i2c0 */
+			/* cannot be used with i2c0 */
 			/*
 			 * This spi node can be SPI, SPIM, or SPIS,
 			 * for the user to pick:
@@ -367,7 +376,6 @@
 
 			#address-cells = <1>;
 			#size-cells = <1>;
-
 
 			flash0: flash@0 {
 				compatible = "soc-nv-flash";

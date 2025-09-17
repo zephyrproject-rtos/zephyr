@@ -227,45 +227,30 @@ err:
 	return ret;
 }
 
-static int emul_imager_set_frmival(const struct device *dev, enum video_endpoint_id ep,
-				   struct video_frmival *frmival)
+static int emul_imager_set_frmival(const struct device *dev, struct video_frmival *frmival)
 {
 	struct emul_imager_data *data = dev->data;
 	struct video_frmival_enum fie = {.format = &data->fmt, .discrete = *frmival};
 
-	if (ep != VIDEO_EP_OUT && ep != VIDEO_EP_ALL) {
-		return -EINVAL;
-	}
-
-	video_closest_frmival(dev, ep, &fie);
+	video_closest_frmival(dev, &fie);
 	LOG_DBG("Applying frame interval number %u", fie.index);
 	return emul_imager_set_mode(dev, &emul_imager_modes[data->fmt_id][fie.index]);
 }
 
-static int emul_imager_get_frmival(const struct device *dev, enum video_endpoint_id ep,
-				   struct video_frmival *frmival)
+static int emul_imager_get_frmival(const struct device *dev, struct video_frmival *frmival)
 {
 	struct emul_imager_data *data = dev->data;
-
-	if (ep != VIDEO_EP_OUT && ep != VIDEO_EP_ALL) {
-		return -EINVAL;
-	}
 
 	frmival->numerator = 1;
 	frmival->denominator = data->mode->fps;
 	return 0;
 }
 
-static int emul_imager_enum_frmival(const struct device *dev, enum video_endpoint_id ep,
-				    struct video_frmival_enum *fie)
+static int emul_imager_enum_frmival(const struct device *dev, struct video_frmival_enum *fie)
 {
 	const struct emul_imager_mode *mode;
 	size_t fmt_id;
 	int ret;
-
-	if (ep != VIDEO_EP_OUT && ep != VIDEO_EP_ALL) {
-		return -EINVAL;
-	}
 
 	ret = video_format_caps_index(fmts, fie->format, &fmt_id);
 	if (ret < 0) {
@@ -277,21 +262,15 @@ static int emul_imager_enum_frmival(const struct device *dev, enum video_endpoin
 	fie->type = VIDEO_FRMIVAL_TYPE_DISCRETE;
 	fie->discrete.numerator = 1;
 	fie->discrete.denominator = mode->fps;
-	fie->index++;
 
 	return mode->fps == 0;
 }
 
-static int emul_imager_set_fmt(const struct device *const dev, enum video_endpoint_id ep,
-			       struct video_format *fmt)
+static int emul_imager_set_fmt(const struct device *const dev, struct video_format *fmt)
 {
 	struct emul_imager_data *data = dev->data;
 	size_t fmt_id;
 	int ret;
-
-	if (ep != VIDEO_EP_OUT && ep != VIDEO_EP_ALL) {
-		return -EINVAL;
-	}
 
 	if (memcmp(&data->fmt, fmt, sizeof(data->fmt)) == 0) {
 		return 0;
@@ -324,31 +303,21 @@ static int emul_imager_set_fmt(const struct device *const dev, enum video_endpoi
 	return 0;
 }
 
-static int emul_imager_get_fmt(const struct device *dev, enum video_endpoint_id ep,
-			       struct video_format *fmt)
+static int emul_imager_get_fmt(const struct device *dev, struct video_format *fmt)
 {
 	struct emul_imager_data *data = dev->data;
-
-	if (ep != VIDEO_EP_OUT && ep != VIDEO_EP_ALL) {
-		return -EINVAL;
-	}
 
 	*fmt = data->fmt;
 	return 0;
 }
 
-static int emul_imager_get_caps(const struct device *dev, enum video_endpoint_id ep,
-				struct video_caps *caps)
+static int emul_imager_get_caps(const struct device *dev, struct video_caps *caps)
 {
-	if (ep != VIDEO_EP_OUT && ep != VIDEO_EP_ALL) {
-		return -EINVAL;
-	}
-
 	caps->format_caps = fmts;
 	return 0;
 }
 
-static int emul_imager_set_stream(const struct device *dev, bool enable)
+static int emul_imager_set_stream(const struct device *dev, bool enable, enum video_buf_type type)
 {
 	return emul_imager_write_reg(dev, EMUL_IMAGER_REG_CTRL, enable ? 1 : 0);
 }
@@ -375,7 +344,11 @@ static int emul_imager_init_controls(const struct device *dev)
 
 int emul_imager_init(const struct device *dev)
 {
-	struct video_format fmt;
+	struct video_format fmt = {
+		.pixelformat = fmts[0].pixelformat,
+		.width = fmts[0].width_min,
+		.height = fmts[0].height_min,
+	};
 	uint8_t sensor_id;
 	int ret;
 
@@ -396,12 +369,7 @@ int emul_imager_init(const struct device *dev)
 		return ret;
 	}
 
-	fmt.pixelformat = fmts[0].pixelformat;
-	fmt.width = fmts[0].width_min;
-	fmt.height = fmts[0].height_min;
-	fmt.pitch = fmt.width * 2;
-
-	ret = emul_imager_set_fmt(dev, VIDEO_EP_OUT, &fmt);
+	ret = emul_imager_set_fmt(dev, &fmt);
 	if (ret < 0) {
 		LOG_ERR("Failed to set to default format %x %ux%u",
 			fmt.pixelformat, fmt.width, fmt.height);

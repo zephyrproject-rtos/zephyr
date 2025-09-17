@@ -64,11 +64,11 @@ static void iso_rx_freed_cb(void)
  * the HCI transport to fill buffers in parallel with `bt_recv`
  * consuming them.
  */
-NET_BUF_POOL_FIXED_DEFINE(sync_evt_pool, 1, SYNC_EVT_SIZE, sizeof(struct bt_buf_data), NULL);
+NET_BUF_POOL_FIXED_DEFINE(sync_evt_pool, 1, SYNC_EVT_SIZE, 0, NULL);
 
 NET_BUF_POOL_FIXED_DEFINE(discardable_pool, CONFIG_BT_BUF_EVT_DISCARDABLE_COUNT,
 			  BT_BUF_EVT_SIZE(CONFIG_BT_BUF_EVT_DISCARDABLE_SIZE),
-			  sizeof(struct bt_buf_data), NULL);
+			  0, NULL);
 
 #if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
 static void acl_in_pool_destroy(struct net_buf *buf)
@@ -84,11 +84,11 @@ static void evt_pool_destroy(struct net_buf *buf)
 }
 
 NET_BUF_POOL_DEFINE(acl_in_pool, (BT_BUF_ACL_RX_COUNT_EXTRA + BT_BUF_HCI_ACL_RX_COUNT),
-		    BT_BUF_ACL_SIZE(CONFIG_BT_BUF_ACL_RX_SIZE), sizeof(struct acl_data),
+		    BT_BUF_ACL_SIZE(CONFIG_BT_BUF_ACL_RX_SIZE), sizeof(struct bt_conn_rx),
 		    acl_in_pool_destroy);
 
-NET_BUF_POOL_FIXED_DEFINE(evt_pool, CONFIG_BT_BUF_EVT_RX_COUNT, BT_BUF_EVT_RX_SIZE,
-			  sizeof(struct bt_buf_data), evt_pool_destroy);
+NET_BUF_POOL_FIXED_DEFINE(evt_pool, CONFIG_BT_BUF_EVT_RX_COUNT, BT_BUF_EVT_RX_SIZE, 0,
+			  evt_pool_destroy);
 #else
 static void hci_rx_pool_destroy(struct net_buf *buf)
 {
@@ -101,8 +101,8 @@ static void hci_rx_pool_destroy(struct net_buf *buf)
 	buf_rx_freed_notify(BT_BUF_EVT | BT_BUF_ACL_IN);
 }
 
-NET_BUF_POOL_FIXED_DEFINE(hci_rx_pool, BT_BUF_RX_COUNT, BT_BUF_RX_SIZE, sizeof(struct acl_data),
-			  hci_rx_pool_destroy);
+NET_BUF_POOL_FIXED_DEFINE(hci_rx_pool, BT_BUF_RX_COUNT, BT_BUF_RX_SIZE,
+			  sizeof(struct bt_conn_rx), hci_rx_pool_destroy);
 #endif /* CONFIG_BT_HCI_ACL_FLOW_CONTROL */
 
 struct net_buf *bt_buf_get_rx(enum bt_buf_type type, k_timeout_t timeout)
@@ -125,10 +125,8 @@ struct net_buf *bt_buf_get_rx(enum bt_buf_type type, k_timeout_t timeout)
 #else
 	buf = net_buf_alloc(&hci_rx_pool, timeout);
 #endif
-
 	if (buf) {
-		net_buf_reserve(buf, BT_BUF_RESERVE);
-		bt_buf_set_type(buf, type);
+		net_buf_add_u8(buf, bt_buf_type_to_h4(type));
 	}
 
 	return buf;
@@ -162,6 +160,7 @@ struct net_buf *bt_buf_get_evt(uint8_t evt, bool discardable,
 		break;
 	default:
 		if (discardable) {
+			/* Discardable, decided in Host-side HCI Transport driver. */
 			buf = net_buf_alloc(&discardable_pool, timeout);
 		} else {
 			return bt_buf_get_rx(BT_BUF_EVT, timeout);
@@ -169,8 +168,7 @@ struct net_buf *bt_buf_get_evt(uint8_t evt, bool discardable,
 	}
 
 	if (buf) {
-		net_buf_reserve(buf, BT_BUF_RESERVE);
-		bt_buf_set_type(buf, BT_BUF_EVT);
+		net_buf_add_u8(buf, BT_HCI_H4_EVT);
 	}
 
 	return buf;
@@ -193,13 +191,6 @@ struct net_buf_pool *bt_buf_get_hci_rx_pool(void)
 	return &hci_rx_pool;
 }
 #endif /* CONFIG_BT_HCI_ACL_FLOW_CONTROL */
-
-#if defined(CONFIG_BT_BUF_EVT_DISCARDABLE_COUNT)
-struct net_buf_pool *bt_buf_get_discardable_pool(void)
-{
-	return &discardable_pool;
-}
-#endif /* CONFIG_BT_BUF_EVT_DISCARDABLE_COUNT */
 
 #if defined(CONFIG_BT_CONN) || defined(CONFIG_BT_ISO)
 struct net_buf_pool *bt_buf_get_num_complete_pool(void)

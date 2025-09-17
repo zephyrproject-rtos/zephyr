@@ -6,13 +6,14 @@
 
 #include <zephyr/ztest.h>
 #include <zephyr/sys/crc.h>
-#include "../../../lib/crc/crc8_sw.c"
-#include "../../../lib/crc/crc16_sw.c"
-#include "../../../lib/crc/crc32_sw.c"
-#include "../../../lib/crc/crc32c_sw.c"
-#include "../../../lib/crc/crc7_sw.c"
-#include "../../../lib/crc/crc24_sw.c"
-#include "../../../lib/crc/crc32k_4_2_sw.c"
+#include "../../../subsys/crc/crc8_sw.c"
+#include "../../../subsys/crc/crc16_sw.c"
+#include "../../../subsys/crc/crc32_sw.c"
+#include "../../../subsys/crc/crc32c_sw.c"
+#include "../../../subsys/crc/crc7_sw.c"
+#include "../../../subsys/crc/crc24_sw.c"
+#include "../../../subsys/crc/crc4_sw.c"
+#include "../../../subsys/crc/crc32k_4_2_sw.c"
 
 ZTEST(crc, test_crc32_k_4_2)
 {
@@ -43,11 +44,11 @@ ZTEST(crc, test_crc32c)
 
 	/* Single streams */
 	zassert_equal(crc32_c(0, test1, sizeof(test1), true, true),
-			0xE16DCDEE, NULL);
+			0xE16DCDEE);
 	zassert_equal(crc32_c(0, test2, sizeof(test2), true, true),
-			0xE3069283, NULL);
+			0xE3069283);
 	zassert_equal(crc32_c(0, test3, sizeof(test3), true, true),
-			0xFCDEB58D, NULL);
+			0xFCDEB58D);
 
 	/* Continuous streams - test1, test2 and test3 are considered part
 	 * of one big stream whose CRC needs to be calculated. Note that the
@@ -55,11 +56,11 @@ ZTEST(crc, test_crc32c)
 	 * second to third and so on.
 	 */
 	zassert_equal(crc32_c(0, test1, sizeof(test1), true, false),
-			0x1E923211, NULL);
+			0x1E923211);
 	zassert_equal(crc32_c(0x1E923211, test2, sizeof(test2), false, false),
-			0xB2983B83, NULL);
+			0xB2983B83);
 	zassert_equal(crc32_c(0xB2983B83, test3, sizeof(test3), false, true),
-			0x7D4F9D21, NULL);
+			0x7D4F9D21);
 }
 
 ZTEST(crc, test_crc32_ieee)
@@ -87,6 +88,15 @@ ZTEST(crc, test_crc24_pgp)
 	zassert_equal(crc24_pgp_update(CRC24_PGP_INITIAL_VALUE, test2, 3), 0x0009DF67);
 	zassert_equal(crc24_pgp_update(0x0009DF67, test2 + 3, 2), 0x00BA353A);
 	zassert_equal(crc24_pgp_update(0x00BA353A, test2 + 5, 4), 0x0021CF02);
+}
+
+ZTEST(crc, test_crc24q_rtcm3)
+{
+	uint8_t test1[] = {0xD3, 0x00, 0x04, 0x4C, 0xE0, 0x00, 0x80};
+	uint8_t test2[] = {0xD3, 0x00, 0x04, 0x4C, 0xE0, 0x00, 0x80, 0xED, 0xED, 0xD6};
+
+	zassert_equal(crc24q_rtcm3(test1, sizeof(test1)), 0xEDEDD6);
+	zassert_equal(crc24q_rtcm3(test2, sizeof(test2)), 0x000000);
 }
 
 ZTEST(crc, test_crc16)
@@ -142,7 +152,7 @@ ZTEST(crc, test_crc16_ccitt)
 	 * check=0x906e
 	 */
 	zassert_equal(crc16_ccitt(0xffff, test2, sizeof(test2)) ^ 0xffff,
-		      0x906e, NULL);
+		      0x906e);
 
 	/* Appending the CRC to a buffer and computing the CRC over
 	 * the extended buffer leaves a residual of zero.
@@ -168,9 +178,9 @@ ZTEST(crc, test_crc16_ccitt_for_ppp)
 	uint8_t test2[] = { '1', '2', '3', '4', '5', '6', '7', '8', '9' };
 
 	zassert_equal(crc16_ccitt(0xffff, test0, sizeof(test0)),
-		      0xf0b8, NULL);
+		      0xf0b8);
 	zassert_equal(crc16_ccitt(0xffff, test2, sizeof(test2)) ^ 0xFFFF,
-		      0x906e, NULL);
+		      0x906e);
 }
 
 ZTEST(crc, test_crc16_itu_t)
@@ -193,6 +203,25 @@ ZTEST(crc, test_crc16_itu_t)
 	 */
 	zassert_equal(crc16_itu_t(0, test2, sizeof(test2)) ^ 0xffff, 0xce3c);
 
+}
+
+ZTEST(crc, test_crc4)
+{
+	uint8_t test1[] = {'A'};
+	uint8_t test2[] = {'Z', 'e', 'p', 'h', 'y', 'r'};
+
+	zassert_equal(crc4(test1, sizeof(test1), 0x3, 0x0, true), 0x2);
+	zassert_equal(crc4(test2, sizeof(test2), 0x3, 0x0, true), 0x0);
+	zassert_equal(crc4(test1, sizeof(test1), 0x3, 0x0, false), 0x4);
+	zassert_equal(crc4(test2, sizeof(test2), 0x3, 0x0, false), 0xE);
+}
+
+ZTEST(crc, test_crc4_ti)
+{
+	uint8_t test1[] = {'Z', 'e', 'p'};
+
+	zassert_equal(crc4_ti(0x0, test1, sizeof(test1)), 0xF);
+	zassert_equal(crc4_ti(0x5, test1, sizeof(test1)), 0xB);
 }
 
 ZTEST(crc, test_crc8_ccitt)

@@ -22,6 +22,9 @@ LOG_MODULE_REGISTER(nxp_imx_eth_psi);
 #include "../eth.h"
 #include "eth_nxp_imx_netc_priv.h"
 
+#define DEV_CFG(_dev)  ((const struct netc_eth_config *)(_dev)->config)
+#define DEV_DATA(_dev) ((struct netc_eth_data *)(_dev)->data)
+
 static void netc_eth_phylink_callback(const struct device *pdev, struct phy_link_state *state,
 				      void *user_data)
 {
@@ -104,6 +107,9 @@ static int netc_eth_init(const struct device *dev)
 	const struct netc_eth_config *cfg = dev->config;
 	int err;
 
+	DEVICE_MMIO_NAMED_MAP(dev, port, K_MEM_CACHE_NONE | K_MEM_DIRECT_MAP);
+	DEVICE_MMIO_NAMED_MAP(dev, pfconfig, K_MEM_CACHE_NONE | K_MEM_DIRECT_MAP);
+
 	if (cfg->pseudo_mac) {
 		goto init_common;
 	}
@@ -128,6 +134,9 @@ static const struct ethernet_api netc_eth_api = {.iface_api.init = netc_eth_ifac
 						 .get_capabilities = netc_eth_get_capabilities,
 						 .get_phy = netc_eth_get_phy,
 						 .set_config = netc_eth_set_config,
+#ifdef CONFIG_PTP_CLOCK_NXP_NETC
+						 .get_ptp_clock = netc_eth_get_ptp_clock,
+#endif
 						 .send = netc_eth_tx};
 
 #define NETC_PSI_INSTANCE_DEFINE(n)                                                                \
@@ -189,6 +198,8 @@ static const struct ethernet_api netc_eth_api = {.iface_api.init = netc_eth_ifac
 		.rx_frame = eth##n##_rx_frame,                                                     \
 	};                                                                                         \
 	static const struct netc_eth_config netc_eth##n##_config = {                               \
+		DEVICE_MMIO_NAMED_ROM_INIT_BY_NAME(port, DT_DRV_INST(n)),                          \
+		DEVICE_MMIO_NAMED_ROM_INIT_BY_NAME(pfconfig, DT_DRV_INST(n)),                      \
 		.generate_mac = netc_eth##n##_generate_mac,                                        \
 		.bdr_init = netc_eth##n##_bdr_init,                                                \
 		.phy_dev = (COND_CODE_1(DT_INST_NODE_HAS_PROP(n, phy_handle),                      \
@@ -197,8 +208,16 @@ static const struct ethernet_api netc_eth_api = {.iface_api.init = netc_eth_ifac
 		.pseudo_mac = DT_ENUM_HAS_VALUE(DT_DRV_INST(n), phy_connection_type, internal),    \
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
 		.si_idx = (DT_INST_PROP(n, mac_index) << 8) | DT_INST_PROP(n, si_index),           \
-		.tx_intr_msg_data = NETC_TX_INTR_MSG_DATA_START + n,                               \
-		.rx_intr_msg_data = NETC_RX_INTR_MSG_DATA_START + n,                               \
+		IF_ENABLED(CONFIG_ETH_NXP_IMX_NETC_MSI_GIC,                                        \
+			(.msi_device_id = DT_INST_PROP_OR(n, msi_device_id, 0),                    \
+			.msi_dev = (COND_CODE_1(DT_NODE_HAS_PROP(DT_INST_PARENT(n), msi_parent),   \
+			       (DEVICE_DT_GET(DT_PHANDLE(DT_INST_PARENT(n), msi_parent))), NULL)), \
+			))                                                                         \
+		IF_DISABLED(CONFIG_ETH_NXP_IMX_NETC_MSI_GIC,                                       \
+			(.tx_intr_msg_data = NETC_TX_INTR_MSG_DATA_START + n,                      \
+			.rx_intr_msg_data = NETC_RX_INTR_MSG_DATA_START + n,))                     \
+		IF_ENABLED(CONFIG_PTP_CLOCK_NXP_NETC,				                   \
+			(.ptp_clock = DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(n, ptp_clock)),))      \
 	};                                                                                         \
 	ETH_NET_DEVICE_DT_INST_DEFINE(n, netc_eth_init, NULL, &netc_eth##n##_data,                 \
 				      &netc_eth##n##_config, CONFIG_ETH_INIT_PRIORITY,             \

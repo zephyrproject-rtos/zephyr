@@ -9,6 +9,8 @@ tests:
       - native_sim/native/64
       - frdm_k64f
       - nrf52840dk/nrf52840
+      - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54h20dk/nrf54h20/cpuapp
       - nucleo_g474re
       - nrf52_bsim
       - nrf5340bsim/nrf5340/cpuapp
@@ -20,6 +22,7 @@ tests:
       - s32z2xxdc2@D/s32z270/rtu0
       - s32z2xxdc2@D/s32z270/rtu1
       - xg29_rb4412a
+      - bg29_rb4420a
     integration_platforms:
       - native_sim
       - native_sim/native/64

@@ -366,11 +366,11 @@ static enum ethernet_hw_caps eth_cyclonev_caps(const struct device *dev)
 	enum ethernet_hw_caps caps = 0;
 
 	if (p->feature & EMAC_DMA_HW_FEATURE_MIISEL) {
-		caps |= ETHERNET_LINK_10BASE_T;
-		caps |= ETHERNET_LINK_100BASE_T;
+		caps |= ETHERNET_LINK_10BASE;
+		caps |= ETHERNET_LINK_100BASE;
 	}
 	if (p->feature & EMAC_DMA_HW_FEATURE_GMIISEL) {
-		caps |= ETHERNET_LINK_1000BASE_T;
+		caps |= ETHERNET_LINK_1000BASE;
 	}
 	if (p->feature & EMAC_DMA_HW_FEATURE_RXTYP2COE) {
 		caps |= ETHERNET_HW_RX_CHKSUM_OFFLOAD;
@@ -408,6 +408,9 @@ static int eth_cyclonev_send(const struct device *dev, struct net_pkt *pkt)
 
 	LOG_DBG("Pkt length: %d", len);
 	frag = pkt->buffer;
+
+	__ASSERT((frag != NULL), "Invalid net_pkt: no data buffer\n");
+
 	do {
 
 		/* reserve a free descriptor for this fragment */
@@ -433,10 +436,7 @@ static int eth_cyclonev_send(const struct device *dev, struct net_pkt *pkt)
 
 		/* Copy data to local buffer   */
 
-		if (frag) {
-			memcpy(&p->tx_buf[p->tx_current_desc_number * ETH_BUFFER_SIZE], frag->data,
-			       len);
-		}
+		memcpy(&p->tx_buf[p->tx_current_desc_number * ETH_BUFFER_SIZE], frag->data, len);
 
 		/* Set the buffer size.  */
 		tx_desc->control_buffer_size = (frag->len & ETH_DMATXDESC_TBS1);

@@ -75,6 +75,7 @@
 		sw2 = &user_button_3;
 		mcuboot-led0 = &blue_led_1;
 		mcuboot-button0 = &user_button_1;
+		die-temp0 = &die_temp;
 	};
 };
 
@@ -83,7 +84,6 @@
 };
 
 &clk_hse {
-	hse-div2;
 	status = "okay";
 };
 
@@ -93,9 +93,9 @@
 
 &rcc {
 	clocks = <&clk_hse>;
-	clock-frequency = <DT_FREQ_M(16)>;
+	clock-frequency = <DT_FREQ_M(32)>; /* Lowest value to manage radio events */
 	ahb-prescaler = <1>;
-	ahb5-prescaler = <2>;
+	ahb5-prescaler = <1>;
 	apb1-prescaler = <1>;
 	apb2-prescaler = <2>;
 	apb7-prescaler = <1>;
@@ -108,7 +108,7 @@
 &rtc {
 	status = "okay";
 	clocks = <&rcc STM32_CLOCK(APB7, 21)>,
-			<&rcc STM32_SRC_LSE RTC_SEL(1)>;
+		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
 	prescaler = <32768>;
 };
 
@@ -122,9 +122,9 @@
 	status = "okay";
 };
 
-&spi1 {
-	pinctrl-0 = <&spi1_nss_pa12 &spi1_sck_pb4
-		     &spi1_miso_pb3 &spi1_mosi_pa15>;
+&spi2 {
+	pinctrl-0 = <&spi2_nss_pb9 &spi2_sck_pb10
+		     &spi2_miso_pa9 &spi2_mosi_pc3>;
 	pinctrl-names = "default";
 	status = "okay";
 };
@@ -141,6 +141,10 @@
 	pinctrl-names = "default";
 	st,adc-clock-source = "ASYNC";
 	st,adc-prescaler = <4>;
+	status = "okay";
+};
+
+&die_temp {
 	status = "okay";
 };
 

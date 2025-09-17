@@ -69,4 +69,11 @@ config NET_SAMPLE_WEBSOCKET_STATS_INTERVAL
 	  This interval controls how often the net stats data shown on the web page
 	  will be updated.
 
+if USB_DEVICE_STACK_NEXT
+# Source common USB sample options used to initialize new experimental USB
+# device stack. The scope of these options is limited to USB samples in project
+# tree, you cannot use them in your own application.
+	source "samples/subsys/usb/common/Kconfig.sample_usbd"
+endif
+
 source "Kconfig.zephyr"

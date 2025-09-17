@@ -7,7 +7,7 @@
 
 source "Kconfig.constants"
 
-osource "${APPLICATION_SOURCE_DIR}/VERSION"
+osource "$(APPLICATION_SOURCE_DIR)/VERSION"
 
 # Include Kconfig.defconfig files first so that they can override defaults and
 # other symbol/choice properties by adding extra symbol/choice definitions.
@@ -214,12 +214,6 @@ config LINKER_SORT_BY_ALIGNMENT
 	  This turns on the linker flag to sort sections by alignment
 	  in decreasing size of symbols. This helps to minimize
 	  padding between symbols.
-
-config SRAM_VECTOR_TABLE
-	bool "Place the vector table in SRAM instead of flash"
-	help
-	  The option specifies that the vector table should be placed at the
-	  start of SRAM instead of the start of flash.
 
 config HAS_SRAM_OFFSET
 	bool
@@ -466,17 +460,6 @@ config NATIVE_BUILD
 	  Zephyr will be built targeting the host system for debug and
 	  development purposes.
 
-config NATIVE_APPLICATION
-	bool
-	default y if ARCH_POSIX
-	depends on !NATIVE_LIBRARY
-	select NATIVE_BUILD
-	select DEPRECATED
-	help
-	  Build as a native application that can run on the host and using
-	  resources and libraries provided by the host. This option is deprecated
-	  and will be removed in Zephyr v4.3
-
 config NATIVE_LIBRARY
 	bool
 	select NATIVE_BUILD
@@ -513,7 +496,7 @@ config SIZE_OPTIMIZATIONS
 config SIZE_OPTIMIZATIONS_AGGRESSIVE
 	bool "Aggressively optimize for size"
 	help
-	  Compiler optimizations wil be set to -Oz independently of other
+	  Compiler optimizations will be set to -Oz independently of other
 	  options.
 
 config SPEED_OPTIMIZATIONS
@@ -550,6 +533,14 @@ config COMPILER_WARNINGS_AS_ERRORS
 	bool "Treat warnings as errors"
 	help
 	  Turn on "warning as error" toolchain flags
+
+config DEPRECATION_TEST
+	bool "Indicate test for deprecated feature"
+	help
+	  This option is selected by tests which check functionality of
+	  deprecated features. It ensures that COMPILER_WARNINGS_AS_ERRORS
+	  is not selected as that would generate errors when the deprecated
+	  features are used.
 
 config COMPILER_SAVE_TEMPS
 	bool "Save temporary object files"
@@ -695,6 +686,13 @@ config OUTPUT_DISASSEMBLY_WITH_SOURCE
 	  the .lst file that can vary across platforms because
 	  of reasons such as having ".." include paths.
 
+config OUTPUT_DISASSEMBLY_NO_ALIASES
+	bool "Disassemble with raw instruction mnemonics"
+	depends on OUTPUT_DISASSEMBLY
+	help
+	  The .lst file will contain raw instruction mnemonic instead of
+	  pseudo instructions.
+
 config OUTPUT_PRINT_MEMORY_USAGE
 	bool "Print memory usage to stdout"
 	default y
@@ -789,6 +787,12 @@ config BUILD_OUTPUT_UF2
 	depends on BUILD_OUTPUT_BIN
 	help
 	  Build a UF2 binary zephyr/zephyr.uf2 in the build directory.
+	  The name of this file can be customized with CONFIG_KERNEL_BIN_NAME.
+
+config BUILD_OUTPUT_MOT
+	bool "Build a binary in MOT format"
+	help
+	  Build a MOT binary zephyr/zephyr.mot in the build directory.
 	  The name of this file can be customized with CONFIG_KERNEL_BIN_NAME.
 
 if BUILD_OUTPUT_UF2
@@ -959,7 +963,7 @@ config BUILD_OUTPUT_STRIP_PATHS
 	bool "Strip absolute paths from binaries"
 	default y
 	help
-	  If the compiler supports it, strip the ${ZEPHYR_BASE} prefix from the
+	  If the compiler supports it, strip the $(ZEPHYR_BASE) prefix from the
 	  __FILE__ macro used in __ASSERT*, in the
 	  .noinit."/home/joe/zephyr/fu/bar.c" section names and in any
 	  application code.
@@ -1021,6 +1025,12 @@ config WARN_EXPERIMENTAL
 	help
 	  Print a warning when the Kconfig tree is parsed if any experimental
 	  features are enabled.
+
+config NOT_SECURE
+	bool
+	help
+	  Symbol to be selected by a feature to indicate that feature is
+	  not secure.
 
 config TAINT
 	bool

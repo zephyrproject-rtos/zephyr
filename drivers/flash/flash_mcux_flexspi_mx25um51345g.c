@@ -68,7 +68,9 @@ struct flash_flexspi_nor_data {
 	flexspi_device_config_t config;
 	flexspi_port_t port;
 	uint64_t size;
+#if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	struct flash_pages_layout layout;
+#endif
 	struct flash_parameters flash_parameters;
 };
 
@@ -361,6 +363,15 @@ static int flash_flexspi_nor_read(const struct device *dev, off_t offset,
 		void *buffer, size_t len)
 {
 	struct flash_flexspi_nor_data *data = dev->data;
+
+	if (len == 0) {
+		return 0;
+	}
+
+	if (!buffer) {
+		return -EINVAL;
+	}
+
 	uint8_t *src = memc_flexspi_get_ahb_address(data->controller,
 						    data->port,
 						    offset);
@@ -390,6 +401,7 @@ static int flash_flexspi_nor_write(const struct device *dev, off_t offset,
 		 * code and data accessed must reside in ram.
 		 */
 		key = irq_lock();
+		memc_flexspi_wait_bus_idle(data->controller);
 	}
 	if (IS_ENABLED(CONFIG_FLASH_MCUX_FLEXSPI_MX25UM51345G_OPI_DTR)) {
 		/* Check that write size and length are even */
@@ -406,6 +418,12 @@ static int flash_flexspi_nor_write(const struct device *dev, off_t offset,
 		i = MIN(SPI_NOR_PAGE_SIZE - (offset % SPI_NOR_PAGE_SIZE), len);
 #ifdef CONFIG_FLASH_MCUX_FLEXSPI_NOR_WRITE_BUFFER
 		memcpy(nor_write_buf, src, i);
+		/* As memcpy could cause an XIP access,
+		 * we need to wait for XIP prefetch to be finished again
+		 */
+		if (memc_flexspi_is_running_xip(data->controller)) {
+			memc_flexspi_wait_bus_idle(data->controller);
+		}
 #endif
 		flash_flexspi_nor_write_enable(dev, true);
 #ifdef CONFIG_FLASH_MCUX_FLEXSPI_NOR_WRITE_BUFFER
@@ -461,6 +479,7 @@ static int flash_flexspi_nor_erase(const struct device *dev, off_t offset,
 		 * code and data accessed must reside in ram.
 		 */
 		key = irq_lock();
+		memc_flexspi_wait_bus_idle(data->controller);
 	}
 
 	if ((offset == 0) && (size == data->config.flashSize * KB(1))) {
@@ -607,11 +626,12 @@ static DEVICE_API(flash, flash_flexspi_nor_api) = {
 		.config = FLASH_FLEXSPI_DEVICE_CONFIG(n),		\
 		.port = DT_INST_REG_ADDR(n),				\
 		.size = DT_INST_PROP(n, size) / 8,			\
-		.layout = {						\
+		IF_ENABLED(CONFIG_FLASH_PAGE_LAYOUT,	\
+		(.layout = {						\
 			.pages_count = DT_INST_PROP(n, size) / 8	\
 				/ SPI_NOR_SECTOR_SIZE,			\
 			.pages_size = SPI_NOR_SECTOR_SIZE,		\
-		},							\
+		},))							\
 		.flash_parameters = {					\
 			.write_block_size = NOR_WRITE_SIZE,		\
 			.erase_value = NOR_ERASE_VALUE,			\

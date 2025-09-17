@@ -17,6 +17,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/iterable_sections.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/toolchain.h>
 
 #if defined CONFIG_SHELL_GETOPT
 #include <getopt.h>
@@ -129,7 +130,44 @@ struct shell_static_args {
  * start with this text.  Pass null if no prefix match is required.
  */
 const struct device *shell_device_lookup(size_t idx,
-				   const char *prefix);
+					 const char *prefix);
+
+/**
+ * @brief Get by index a device that matches .
+ *
+ * This can be used, for example, to identify I2C_1 as the second I2C
+ * device.
+ *
+ * Devices that failed to initialize - or deferred to be - are included
+ * from the candidates for a match, minus the ones who do not have
+ * a non-empty name.
+ *
+ * @param idx the device number starting from zero.
+ *
+ * @param prefix optional name prefix used to restrict candidate
+ * devices.  Indexing is done relative to devices with names that
+ * start with this text.  Pass null if no prefix match is required.
+ */
+const struct device *shell_device_lookup_all(size_t idx,
+					     const char *prefix);
+
+/**
+ * @brief Get by index a non-initialized device that matches .
+ *
+ * This can be used, for example, to identify I2C_1 as the second I2C
+ * device.
+ *
+ * Devices that initialized successfully or do not have a non-empty name
+ * are excluded.
+ *
+ * @param idx the device number starting from zero.
+ *
+ * @param prefix optional name prefix used to restrict candidate
+ * devices.  Indexing is done relative to devices with names that
+ * start with this text.  Pass null if no prefix match is required.
+ */
+const struct device *shell_device_lookup_non_ready(size_t idx,
+						   const char *prefix);
 
 /**
  * @brief Filter callback type, for use with shell_device_lookup_filter
@@ -180,6 +218,23 @@ const struct device *shell_device_filter(size_t idx,
  * failed.
  */
 const struct device *shell_device_get_binding(const char *name);
+
+/**
+ * @brief Get a @ref device reference from its @ref device.name field or label.
+ *
+ * This function iterates through the devices on the system. If a device with
+ * the given @p name field is found, this function returns a pointer to the
+ * device.
+ *
+ * If no device has the given @p name, this function returns `NULL`.
+ *
+ * @param name device name to search for. A null pointer, or a pointer to an
+ * empty string, will cause NULL to be returned.
+ *
+ * @return pointer to device structure with the given name; `NULL` if the device
+ * is not found.
+ */
+const struct device *shell_device_get_binding_all(const char *name);
 
 /**
  * @brief Shell command handler prototype.
@@ -235,6 +290,83 @@ struct shell_static_entry {
 };
 
 /**
+ * @brief Shell structured help descriptor.
+ *
+ * @details This structure provides an organized way to specify command help
+ * as opposed to a free-form string. This helps make help messages more
+ * consistent and easier to read.
+ */
+struct shell_cmd_help {
+	/* @cond INTERNAL_HIDDEN */
+	uint32_t magic;
+	/* @endcond */
+	const char *description; /*!< Command description */
+	const char *usage;       /*!< Command usage string */
+};
+
+/**
+ * @cond INTERNAL_HIDDEN
+ */
+
+/**
+ * @brief Magic number used to identify the beginning of a structured help
+ * message when cast to a char pointer.
+ */
+#define SHELL_STRUCTURED_HELP_MAGIC 0x86D20BC4
+
+/**
+ * @endcond
+ */
+
+/**
+ * @brief Check if help string is structured help.
+ *
+ * @param help Pointer to help string or structured help.
+ * @return true if help is structured, false otherwise.
+ */
+static inline bool shell_help_is_structured(const char *help)
+{
+	const struct shell_cmd_help *structured = (const struct shell_cmd_help *)help;
+
+	return structured != NULL && IS_PTR_ALIGNED(structured, struct shell_cmd_help) &&
+	       structured->magic == SHELL_STRUCTURED_HELP_MAGIC;
+}
+
+#if defined(CONFIG_SHELL_HELP) || defined(__DOXYGEN__)
+/**
+ * @brief Helper macro to create structured help inline.
+ *
+ * This macro allows you to pass structured help directly to existing shell macros.
+ *
+ * Example:
+ *
+ * @code{.c}
+ * #define MY_CMD_HELP SHELL_HELP("Do stuff", "<device> <arg1> [<arg2>]")
+ * SHELL_CMD_REGISTER(my_cmd, NULL, MY_CMD_HELP, &my_cmd_handler, 1, 1);
+ * @endcode
+ *
+ * @param[in] _description	Command description.
+ *				This can be a multi-line string. First line should be one sentence
+ *				describing the command. Additional lines might be used to provide
+ *				additional details.
+ *
+ * @param[in] _usage		Command usage string.
+ *				This can be a multi-line string. First line should always be
+ *				indicating the command syntax (_without_ the command name).
+ *				Additional lines may be used to provide additional details, e.g.
+ *				explain the meaning of each argument, allowed values, etc.
+ */
+#define SHELL_HELP(_description, _usage)                                                           \
+	((const char *)&(const struct shell_cmd_help){                                             \
+		.magic = SHELL_STRUCTURED_HELP_MAGIC,                                              \
+		.description = (_description),                                                     \
+		.usage = (_usage),                                                                 \
+	})
+#else
+#define SHELL_HELP(_description, _usage) NULL
+#endif /* CONFIG_SHELL_HELP */
+
+/**
  * @brief Macro for defining and adding a root command (level 0) with required
  * number of arguments.
  *
@@ -244,7 +376,7 @@ struct shell_static_entry {
  *
  * @param[in] syntax	Command syntax (for example: history).
  * @param[in] subcmd	Pointer to a subcommands array.
- * @param[in] help	Pointer to a command help string.
+ * @param[in] help	Pointer to a command help string (use @ref SHELL_HELP for structured help)
  * @param[in] handler	Pointer to a function handler.
  * @param[in] mandatory	Number of mandatory arguments including command name.
  * @param[in] optional	Number of optional arguments.
@@ -275,7 +407,7 @@ struct shell_static_entry {
  *			exists and equals 1.
  * @param[in] syntax	Command syntax (for example: history).
  * @param[in] subcmd	Pointer to a subcommands array.
- * @param[in] help	Pointer to a command help string.
+ * @param[in] help	Pointer to a command help string (use @ref SHELL_HELP for structured help).
  * @param[in] handler	Pointer to a function handler.
  * @param[in] mandatory	Number of mandatory arguments including command name.
  * @param[in] optional	Number of optional arguments.
@@ -303,7 +435,7 @@ struct shell_static_entry {
  *
  * @param[in] syntax	Command syntax (for example: history).
  * @param[in] subcmd	Pointer to a subcommands array.
- * @param[in] help	Pointer to a command help string.
+ * @param[in] help	Pointer to a command help string. Use @ref SHELL_HELP for structured help.
  * @param[in] handler	Pointer to a function handler.
  */
 #define SHELL_CMD_REGISTER(syntax, subcmd, help, handler) \
@@ -319,7 +451,7 @@ struct shell_static_entry {
  *			exists and equals 1.
  * @param[in] syntax	Command syntax (for example: history).
  * @param[in] subcmd	Pointer to a subcommands array.
- * @param[in] help	Pointer to a command help string.
+ * @param[in] help	Pointer to a command help string. Use @ref SHELL_HELP for structured help.
  * @param[in] handler	Pointer to a function handler.
  */
 #define SHELL_COND_CMD_REGISTER(flag, syntax, subcmd, help, handler) \
@@ -432,7 +564,7 @@ struct shell_static_entry {
  * @brief Define ending subcommands set.
  *
  */
-#define SHELL_SUBCMD_SET_END {NULL}
+#define SHELL_SUBCMD_SET_END {0}
 
 /**
  * @brief Macro for creating a dynamic entry.
@@ -455,7 +587,7 @@ struct shell_static_entry {
  *
  * @param[in] syntax	 Command syntax (for example: history).
  * @param[in] subcmd	 Pointer to a subcommands array.
- * @param[in] help	 Pointer to a command help string.
+ * @param[in] help	 Pointer to a command help string. Use @ref SHELL_HELP for structured help.
  * @param[in] handler	 Pointer to a function handler.
  * @param[in] mand	 Number of mandatory arguments including command name.
  * @param[in] opt	 Number of optional arguments.
@@ -477,7 +609,7 @@ struct shell_static_entry {
  *			 exists and equals 1.
  * @param[in] syntax	 Command syntax (for example: history).
  * @param[in] subcmd	 Pointer to a subcommands array.
- * @param[in] help	 Pointer to a command help string.
+ * @param[in] help	 Pointer to a command help string. Use @ref SHELL_HELP for structured help.
  * @param[in] handler	 Pointer to a function handler.
  * @param[in] mand	 Number of mandatory arguments including command name.
  * @param[in] opt	 Number of optional arguments.
@@ -822,11 +954,10 @@ union shell_backend_ctx {
 };
 
 enum shell_signal {
-	SHELL_SIGNAL_RXRDY,
-	SHELL_SIGNAL_LOG_MSG,
-	SHELL_SIGNAL_KILL,
-	SHELL_SIGNAL_TXDONE, /* TXDONE must be last one before SHELL_SIGNALS */
-	SHELL_SIGNALS
+	SHELL_SIGNAL_RXRDY = BIT(0),
+	SHELL_SIGNAL_LOG_MSG = BIT(1),
+	SHELL_SIGNAL_KILL = BIT(2),
+	SHELL_SIGNAL_TXDONE = BIT(3),
 };
 
 /**
@@ -884,14 +1015,9 @@ struct shell_ctx {
 	volatile union shell_backend_cfg cfg;
 	volatile union shell_backend_ctx ctx;
 
-	struct k_poll_signal signals[SHELL_SIGNALS];
+	struct k_event signal_event;
 
-	/** Events that should be used only internally by shell thread.
-	 * Event for SHELL_SIGNAL_TXDONE is initialized but unused.
-	 */
-	struct k_poll_event events[SHELL_SIGNALS];
-
-	struct k_mutex wr_mtx;
+	struct k_sem lock_sem;
 	k_tid_t tid;
 	int ret_val;
 };

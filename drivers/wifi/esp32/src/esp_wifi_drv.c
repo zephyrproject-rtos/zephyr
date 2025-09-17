@@ -13,9 +13,11 @@ LOG_MODULE_REGISTER(esp32_wifi, CONFIG_WIFI_LOG_LEVEL);
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/wifi_mgmt.h>
+#if defined(CONFIG_NET_CONNECTION_MANAGER_CONNECTIVITY_WIFI_MGMT)
+#include <zephyr/net/conn_mgr/connectivity_wifi_mgmt.h>
+#endif
 #if defined(CONFIG_ESP32_WIFI_AP_STA_MODE)
 #include <zephyr/net/wifi_nm.h>
-#include <zephyr/net/conn_mgr/connectivity_wifi_mgmt.h>
 #endif
 #include <zephyr/device.h>
 #include <soc.h>
@@ -77,7 +79,7 @@ struct esp32_wifi_runtime {
 
 static struct net_mgmt_event_callback esp32_dhcp_cb;
 
-static void wifi_event_handler(struct net_mgmt_event_callback *cb, uint32_t mgmt_event,
+static void wifi_event_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt_event,
 			       struct net_if *iface)
 {
 	switch (mgmt_event) {
@@ -95,7 +97,7 @@ static int esp32_wifi_send(const struct device *dev, struct net_pkt *pkt)
 	const int pkt_len = net_pkt_get_len(pkt);
 	esp_interface_t ifx = data->state == ESP32_AP_CONNECTED ? ESP_IF_WIFI_AP : ESP_IF_WIFI_STA;
 
-	if (esp32_data.state != ESP32_STA_CONNECTED && esp32_data.state != ESP32_AP_CONNECTED) {
+	if (data->state != ESP32_STA_CONNECTED && data->state != ESP32_AP_CONNECTED) {
 		return -EIO;
 	}
 
@@ -770,8 +772,10 @@ static int esp32_wifi_status(const struct device *dev, struct wifi_iface_status 
 	}
 
 	strncpy(status->ssid, data->status.ssid, WIFI_SSID_MAX_LEN);
-	status->ssid_len = strnlen(data->status.ssid, WIFI_SSID_MAX_LEN);
-	status->ssid[status->ssid_len] = '\0';
+	/* Ensure the result is NUL terminated */
+	status->ssid[WIFI_SSID_MAX_LEN-1] = '\0';
+	/* We know it is NUL terminated, so we can use strlen */
+	status->ssid_len = strlen(data->status.ssid);
 	status->band = WIFI_FREQ_BAND_2_4_GHZ;
 	status->link_mode = WIFI_LINK_MODE_UNKNOWN;
 	status->mfp = WIFI_MFP_DISABLE;
@@ -991,6 +995,8 @@ NET_DEVICE_DT_INST_DEFINE(1,
 		NET_L2_GET_CTX_TYPE(ETHERNET_L2), NET_ETH_MTU);
 
 DEFINE_WIFI_NM_INSTANCE(esp32_wifi_nm, &esp32_wifi_mgmt);
+#endif
 
+#if defined(CONFIG_NET_CONNECTION_MANAGER_CONNECTIVITY_WIFI_MGMT)
 CONNECTIVITY_WIFI_MGMT_BIND(Z_DEVICE_DT_DEV_ID(DT_DRV_INST(0)));
 #endif

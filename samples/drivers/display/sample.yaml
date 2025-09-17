@@ -98,7 +98,7 @@ tests:
       - platform:mimxrt1010_evk/mimxrt1011:SHIELD=st7789v_waveshare_240x240
       - platform:frdm_k22f/mk22f51212:SHIELD=ls013b7dh03
       - platform:nrf52833dk/nrf52833:SHIELD=st7735r_ada_160x128
-      - platform:mimxrt1170_evk/mimxrt1176/cm7:SHIELD=rk055hdmipi4m
+      - platform:mimxrt1170_evk/mimxrt1176/cm7:SHIELD=rk055hdmipi4ma0
       - platform:da1469x_dk_pro/da14699:DTC_OVERLAY_FILE=da1469x_dk_pro_mipi_dbi.overlay
       - platform:nrf52840dk/nrf52840:SHIELD=max7219_8x8
       - platform:stm32h747i_disco/stm32h747xx/m7:SHIELD=st_b_lcd40_dsi1_mb1166
@@ -107,8 +107,10 @@ tests:
       - platform:mimxrt1050_evk/mimxrt1052:SHIELD=rk043fn66hs_ctg
       - platform:mimxrt1040_evk/mimxrt1042:SHIELD=rk043fn66hs_ctg
       - platform:frdm_mcxn947/mcxn947/cpu0:SHIELD=lcd_par_s035_8080
+      - platform:mcx_n9xx_evk/mcxn947/cpu0:SHIELD=lcd_par_s035_8080
       - platform:frdm_mcxn236/mcxn236:SHIELD=lcd_par_s035_8080
       - platform:frdm_mcxa156/mcxa156:SHIELD=lcd_par_s035_8080
       - platform:frdm_rw612:SHIELD=lcd_par_s035_spi
       - platform:ek_ra8d1:SHIELD=rtkmipilcdb00000be
       - platform:ek_ra8d1:SHIELD=rtk7eka6m3b00001bu
+      - platform:nucleo_g071rb/stm32g071xx:SHIELD=x_nucleo_gfx01m2

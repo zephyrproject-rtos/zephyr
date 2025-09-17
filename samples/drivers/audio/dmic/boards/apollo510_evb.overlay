@@ -1,0 +1,5 @@
+dmic_dev: &pdm0 {
+	pdm-buffer-location = "SRAM_NO_CACHE";
+	pdm-buffer-size = <640>;
+	status = "okay";
+};

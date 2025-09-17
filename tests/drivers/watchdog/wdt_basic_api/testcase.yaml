@@ -21,15 +21,19 @@ tests:
       - mps2/an383
       - mps2/an386
       - mps2/an500
-      - panb511evb/nrf54l15/cpuapp
-      - panb511evb/nrf54l15/cpuflpr
-      - panb511evb/nrf54l15/cpuflpr/xip
+      - panb611evb/nrf54l15/cpuapp
+      - panb611evb/nrf54l15/cpuapp/ns
+      - panb611evb/nrf54l15/cpuflpr
+      - panb611evb/nrf54l15/cpuflpr/xip
       - mimxrt700_evk/mimxrt798s/cm33_cpu1
       - nrf54l15dk/nrf54l15/cpuapp/ns
       - nrf54l15dk/nrf54l10/cpuapp/ns
       - bl54l15_dvk/nrf54l10/cpuapp/ns
       - bl54l15_dvk/nrf54l15/cpuapp/ns
       - bl54l15u_dvk/nrf54l15/cpuapp/ns
+      - raytac_an54l15q_db/nrf54l15/cpuapp/ns
+      - frdm_mcxw71
+      - frdm_mcxw72/mcxw727c/cpu0
   drivers.watchdog.stm32wwdg:
     filter: dt_compat_enabled("st,stm32-window-watchdog") or dt_compat_enabled("st,stm32-watchdog")
     extra_args: DTC_OVERLAY_FILE="boards/stm32_wwdg.overlay"
@@ -49,9 +53,9 @@ tests:
       - nucleo_wb55rg
       - nucleo_wl55jc
       - b_u585i_iot02a
+      - nucleo_u385rg_q
       - nucleo_u575zi_q
       - nucleo_c031c6
-      - stm32h573i_dk
       - nucleo_wba55cg
     integration_platforms:
       - nucleo_f091rc
@@ -89,6 +93,7 @@ tests:
       - nucleo_h753zi
       - nucleo_h7s3l8
       - stm32h7s78_dk
+      - nucleo_u385rg_q
       - nucleo_wba55cg
     integration_platforms:
       - nucleo_f091rc
@@ -146,3 +151,8 @@ tests:
     filter: dt_compat_enabled("ti,tps382x")
     platform_allow: mimxrt1050_evk/mimxrt1052/hyperflash
     extra_args: DTC_OVERLAY_FILE="boards/mimxrt1050_evk_ti_tps382x.overlay"
+  drivers.watchdog.nxp_sram_noecc:
+    extra_args: EXTRA_DTC_OVERLAY_FILE="sram_noecc.overlay"
+    platform_allow:
+      - frdm_mcxw71
+      - frdm_mcxw72/mcxw727c/cpu0

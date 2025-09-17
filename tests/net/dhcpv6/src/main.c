@@ -109,8 +109,10 @@ static void generate_fake_server_duid(void)
 
 	memset(serverid, 0, sizeof(*serverid));
 
-	UNALIGNED_PUT(htons(DHCPV6_DUID_TYPE_LL), &serverid->duid.type);
-	UNALIGNED_PUT(htons(DHCPV6_HARDWARE_ETHERNET_TYPE), &duid_ll->hw_type);
+	UNALIGNED_PUT(htons(DHCPV6_DUID_TYPE_LL),
+		      UNALIGNED_MEMBER_ADDR(serverid, duid.type));
+	UNALIGNED_PUT(htons(DHCPV6_HARDWARE_ETHERNET_TYPE),
+		      UNALIGNED_MEMBER_ADDR(duid_ll, hw_type));
 	memcpy(duid_ll->ll_addr, fake_mac, sizeof(fake_mac));
 
 	serverid->length = DHCPV6_DUID_LL_HEADER_SIZE + sizeof(fake_mac);
@@ -178,7 +180,7 @@ fail:
 	return NULL;
 }
 
-static void evt_handler(struct net_mgmt_event_callback *cb, uint32_t mgmt_event,
+static void evt_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt_event,
 			struct net_if *iface)
 {
 	ARG_UNUSED(cb);
@@ -634,7 +636,7 @@ ZTEST(dhcpv6_tests, test_input_reject_client_initiated_messages)
 						 set_generic_client_options);
 		zassert_not_null(pkt, "Failed to create fake pkt");
 
-		result = net_ipv6_input(pkt, false);
+		result = net_ipv6_input(pkt);
 		zassert_equal(result, NET_DROP, "Should've drop the message");
 
 		net_pkt_unref(pkt);
@@ -717,7 +719,7 @@ ZTEST(dhcpv6_tests, test_input_advertise)
 						 set_advertise_options);
 		zassert_not_null(pkt, "Failed to create pkt");
 
-		result = net_ipv6_input(pkt, false);
+		result = net_ipv6_input(pkt);
 
 		switch (state) {
 		case NET_DHCPV6_SOLICITING:
@@ -824,7 +826,7 @@ ZTEST(dhcpv6_tests, test_input_reply)
 						 set_reply_options);
 		zassert_not_null(pkt, "Failed to create pkt");
 
-		result = net_ipv6_input(pkt, false);
+		result = net_ipv6_input(pkt);
 
 		switch (state) {
 		case NET_DHCPV6_CONFIRMING:
@@ -889,7 +891,7 @@ static void test_solicit_expect_request_send_reply(struct net_if *iface,
 					   set_reply_options);
 	zassert_not_null(reply, "Failed to create pkt");
 
-	result = net_ipv6_input(reply, false);
+	result = net_ipv6_input(reply);
 	zassert_equal(result, NET_OK, "Message should've been processed");
 
 	/* Verify client state */
@@ -934,7 +936,7 @@ static void test_solicit_expect_solicit_send_advertise(struct net_if *iface,
 					   set_advertise_options);
 	zassert_not_null(reply, "Failed to create pkt");
 
-	result = net_ipv6_input(reply, false);
+	result = net_ipv6_input(reply);
 	zassert_equal(result, NET_OK, "Message should've been processed");
 
 	/* Verify client state */
@@ -991,7 +993,7 @@ static void expect_request_send_reply(struct net_if *iface, struct net_pkt *pkt)
 					   set_reply_options);
 	zassert_not_null(reply, "Failed to create pkt");
 
-	result = net_ipv6_input(reply, false);
+	result = net_ipv6_input(reply);
 	zassert_equal(result, NET_OK, "Message should've been processed");
 
 	k_sem_give(&test_ctx.exchange_complete_sem);
@@ -1011,7 +1013,7 @@ static void expect_solicit_send_advertise(struct net_if *iface, struct net_pkt *
 					   set_advertise_options);
 	zassert_not_null(reply, "Failed to create pkt");
 
-	result = net_ipv6_input(reply, false);
+	result = net_ipv6_input(reply);
 	zassert_equal(result, NET_OK, "Message should've been processed");
 }
 
@@ -1056,7 +1058,7 @@ static void test_confirm_expect_confirm_send_reply(struct net_if *iface,
 					   set_reply_options);
 	zassert_not_null(reply, "Failed to create pkt");
 
-	result = net_ipv6_input(reply, false);
+	result = net_ipv6_input(reply);
 	zassert_equal(result, NET_OK, "Message should've been processed");
 
 	/* Verify client state */
@@ -1125,7 +1127,7 @@ static void test_rebind_expect_rebind_send_reply(struct net_if *iface,
 					   set_reply_options);
 	zassert_not_null(reply, "Failed to create pkt");
 
-	result = net_ipv6_input(reply, false);
+	result = net_ipv6_input(reply);
 	zassert_equal(result, NET_OK, "Message should've been processed");
 
 	/* Verify client state */
@@ -1199,7 +1201,7 @@ static void test_renew_expect_renew_send_reply(struct net_if *iface,
 					   set_reply_options);
 	zassert_not_null(reply, "Failed to create pkt");
 
-	result = net_ipv6_input(reply, false);
+	result = net_ipv6_input(reply);
 	zassert_equal(result, NET_OK, "Message should've been processed");
 
 	/* Verify client state */

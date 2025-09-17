@@ -93,18 +93,9 @@ struct pmc_reg {
 	volatile uint8_t PWDWN_CTL7[1];
 };
 
-/* PMC internal inline functions for multi-registers */
-static inline uint32_t npcx_pwdwn_ctl_offset(uint32_t ctl_no)
-{
-	if (ctl_no < 6) {
-		return 0x008 + ctl_no;
-	} else {
-		return 0x024 + ctl_no - 6;
-	}
-}
-
 /* Macro functions for PMC multi-registers */
-#define NPCX_PWDWN_CTL(base, n) (*(volatile uint8_t *)(base + npcx_pwdwn_ctl_offset(n)))
+#define NPCX_PWDWN_CTL(base, n) \
+	(*(volatile uint8_t *)(base + NPCX_PWDWN_CTL_OFFSET(n)))
 
 /* PMC register fields */
 #define NPCX_PMCSR_DI_INSTW        0
@@ -206,6 +197,13 @@ struct scfg_reg {
 #define NPCX_JEN_CTL1_JEN_HEN     FIELD(4, 4)
 #define NPCX_JEN_CTL1_JEN_ENABLE  0x9
 #define NPCX_JEN_CTL1_JEN_DISABLE 0x6
+
+#define NPCX_JEN_CTL2_OFFSET 0x121
+#define NPCX_JEN_CTL2(base)  (*(volatile uint8_t *)(base + (NPCX_JEN_CTL2_OFFSET)))
+
+#define NPCX_JEN_CTL2_CCDEV_SEL_EN     FIELD(0, 4)
+#define NPCX_JEN_CTL2_CCDEV_SEL_ENABLE  0x9
+#define NPCX_JEN_CTL2_CCDEV_SEL_DISABLE 0x6
 
 /* SCFG register fields */
 #define NPCX_DEVCNT_F_SPI_TRIS         6
@@ -1477,6 +1475,7 @@ struct fiu_reg {
 };
 
 /* FIU register fields */
+#define NPCX_BURST_CFG_UNLIM_BURST     3
 #define NPCX_BURST_CFG_SPI_DEV_SEL     FIELD(4, 2)
 #define NPCX_RESP_CFG_IAD_EN           0
 #define NPCX_RESP_CFG_DEV_SIZE_EX      2
@@ -2187,5 +2186,46 @@ struct mdma_reg {
 
 /* Channel 0/1 Current Transfer Count Register (MDMA_CTCNT0/MDMA_CTCNT1) */
 #define NPCX_MDMA_CTCNT_CURRENT_TFR_CNT FIELD(0, 13)
+
+/* BBRM register fields */
+#define NPCX_BKUPSTS_VCC1_STS BIT(0)
+#define NPCX_BKUPSTS_VSBY_STS BIT(1)
+#define NPCX_BKUPSTS_IBBR     BIT(7)
+
+/* GDMA registers */
+struct gdma_reg {
+	/* 0x000: Channel Control */
+	volatile uint32_t CONTROL;
+	/* 0x004: Channel Source Base Address */
+	volatile uint32_t SRCB;
+	/* 0x008: Channel Destination Base Address */
+	volatile uint32_t DSTB;
+	/* 0x00C: Channel Transfer Count */
+	volatile uint32_t TCNT;
+	/* 0x010: Channel Current Source */
+	volatile uint32_t CSRC;
+	/* 0x014: Channel Current Destination */
+	volatile uint32_t CDST;
+	/* 0x018: Channel Current Transfer Count */
+	volatile uint32_t CTCNT;
+};
+
+/* DMA register fields */
+#define NPCX_DMACTL_GDMAEN               0
+#define NPCX_DMACTL_GPD                  1
+#define NPCX_DMACTL_GDMAMS               FIELD(2, 2)
+#define NPCX_DMACTL_DADIR                4
+#define NPCX_DMACTL_SADIR                5
+#define NPCX_DMACTL_DAFIX                6
+#define NPCX_DMACTL_SAFIX                7
+#define NPCX_DMACTL_SIEN                 8
+#define NPCX_DMACTL_BME                  9
+#define NPCX_DMACTL_TWS                  FIELD(12, 2)
+#define NPCX_DMACTL_GPS                  14
+#define NPCX_DMACTL_DM                   15
+#define NPCX_DMACTL_SOFTREQ              16
+#define NPCX_DMACTL_TC                   18
+#define NPCX_DMACTL_BMSAFIX              30
+#define NPCX_DMACTL_BMDAFIX              31
 
 #endif /* _NUVOTON_NPCX_REG_DEF_H */

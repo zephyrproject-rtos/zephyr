@@ -13,9 +13,13 @@
 #include "usb.h"
 
 /* USB PHY configuration */
-#define BOARD_USB_PHY_D_CAL     0x04U
-#define BOARD_USB_PHY_TXCAL45DP 0x07U
-#define BOARD_USB_PHY_TXCAL45DM 0x07U
+#define BOARD_USB_PHY_D_CAL     (0x04U)
+#define BOARD_USB_PHY_TXCAL45DP (0x07U)
+#define BOARD_USB_PHY_TXCAL45DM (0x07U)
+
+usb_phy_config_struct_t usbPhyConfig = {
+	BOARD_USB_PHY_D_CAL, BOARD_USB_PHY_TXCAL45DP, BOARD_USB_PHY_TXCAL45DM,
+};
 #endif
 
 /* Board xtal frequency in Hz */
@@ -99,23 +103,26 @@ void board_early_init_hook(void)
 
 	CLOCK_SetupExtClocking(BOARD_XTAL0_CLK_HZ);
 
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexcan1))
-	/* Set up PLL1 for 80 MHz FlexCAN clock */
-	const pll_setup_t pll1Setup = {
-		.pllctrl = SCG_SPLLCTRL_SOURCE(1U) | SCG_SPLLCTRL_SELI(27U) |
-			   SCG_SPLLCTRL_SELP(13U),
-		.pllndiv = SCG_SPLLNDIV_NDIV(3U),
-		.pllpdiv = SCG_SPLLPDIV_PDIV(1U),
-		.pllmdiv = SCG_SPLLMDIV_MDIV(10U),
-		.pllRate = 80000000U
-	};
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sai0)) || DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sai1))
+	/* < Set up PLL1 */
+	const pll_setup_t pll1_Setup = {
+		.pllctrl = SCG_SPLLCTRL_SOURCE(1U) | SCG_SPLLCTRL_SELI(3U) |
+				 SCG_SPLLCTRL_SELP(1U),
+		.pllndiv = SCG_SPLLNDIV_NDIV(25U),
+		.pllpdiv = SCG_SPLLPDIV_PDIV(10U),
+		.pllmdiv = SCG_SPLLMDIV_MDIV(256U),
+		.pllRate = 24576000U};
 
 	/* Configure PLL1 to the desired values */
-	CLOCK_SetPLL1Freq(&pll1Setup);
-	/* PLL1 Monitor is disabled */
-	CLOCK_SetPll1MonitorMode(kSCG_Pll1MonitorDisable);
+	CLOCK_SetPLL1Freq(&pll1_Setup);
 	/* Set PLL1 CLK0 divider to value 1 */
 	CLOCK_SetClkDiv(kCLOCK_DivPLL1Clk0, 1U);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexcomm0))
+	/* Configure input clock to be able to reach the datasheet specified SPI band rate. */
+	CLOCK_SetClkDiv(kCLOCK_DivFlexcom0Clk, 1u);
+	CLOCK_AttachClk(kFRO_HF_DIV_to_FLEXCOMM0);
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexcomm1))
@@ -206,7 +213,7 @@ void board_early_init_hook(void)
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexcan1))
 	CLOCK_SetClkDiv(kCLOCK_DivFlexcan1Clk, 1U);
-	CLOCK_AttachClk(kPLL1_CLK0_to_FLEXCAN1);
+	CLOCK_AttachClk(kFRO_HF_to_FLEXCAN1);
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(vref))
@@ -219,11 +226,7 @@ void board_early_init_hook(void)
 	CLOCK_AttachClk(kFRO_HF_to_ADC0);
 #endif
 
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usb1)) && CONFIG_USB_DC_NXP_EHCI
-	usb_phy_config_struct_t usbPhyConfig = {
-		BOARD_USB_PHY_D_CAL, BOARD_USB_PHY_TXCAL45DP, BOARD_USB_PHY_TXCAL45DM,
-	};
-
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usb1)) && (CONFIG_USB_DC_NXP_EHCI || CONFIG_UDC_NXP_EHCI)
 	SPC0->ACTIVE_VDELAY = 0x0500;
 	/* Change the power DCDC to 1.8v (By default, DCDC is 1.8V), CORELDO to 1.1v (By default,
 	 * CORELDO is 1.0V)
@@ -259,7 +262,9 @@ void board_early_init_hook(void)
 	CLOCK_EnableClock(kCLOCK_UsbHsPhy);
 	CLOCK_EnableUsbhsPhyPllClock(kCLOCK_Usbphy480M, BOARD_XTAL0_CLK_HZ);
 	CLOCK_EnableUsbhsClock();
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usb1)) && CONFIG_USB_DC_NXP_EHCI
 	USB_EhciPhyInit(kUSB_ControllerEhci0, BOARD_XTAL0_CLK_HZ, &usbPhyConfig);
+#endif
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpcmp0))
@@ -301,6 +306,37 @@ void board_early_init_hook(void)
 	CLOCK_SetClkDiv(kCLOCK_DivI3c1FClk, DT_PROP(DT_NODELABEL(i3c1), clk_divider));
 	/* Attach PLL0 clock to I3C, 150MHz / 6 = 25MHz. */
 	CLOCK_AttachClk(kPLL0_to_I3C1FCLK);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(smartdma))
+	CLOCK_EnableClock(kCLOCK_Smartdma);
+	RESET_PeripheralReset(kSMART_DMA_RST_SHIFT_RSTn);
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(video_sdma))
+	/* Drive CLKOUT from main clock, divided by 25 to yield 6MHz clock
+	 * The camera will use this clock signal to generate
+	 * PCLK, HSYNC, and VSYNC
+	 */
+	CLOCK_AttachClk(kMAIN_CLK_to_CLKOUT);
+	CLOCK_SetClkDiv(kCLOCK_DivClkOut, 25U);
+#endif
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ewm0))
+	CLOCK_SetupOsc32KClocking(kCLOCK_Osc32kToWake);
+	CLOCK_AttachClk(kXTAL32K2_to_EWM0);
+	CLOCK_EnableClock(kCLOCK_Ewm0);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sai0))
+	CLOCK_SetClkDiv(kCLOCK_DivSai0Clk, 1u);
+	CLOCK_AttachClk(kPLL1_CLK0_to_SAI0);
+	CLOCK_EnableClock(kCLOCK_Sai0);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sai1))
+	CLOCK_SetClkDiv(kCLOCK_DivSai1Clk, 1u);
+	CLOCK_AttachClk(kPLL1_CLK0_to_SAI1);
+	CLOCK_EnableClock(kCLOCK_Sai1);
 #endif
 
 	/* Set SystemCoreClock variable. */

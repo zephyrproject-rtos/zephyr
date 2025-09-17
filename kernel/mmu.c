@@ -19,6 +19,7 @@
 #include <zephyr/sys/check.h>
 #include <zephyr/sys/math_extras.h>
 #include <zephyr/timing/timing.h>
+#include <zephyr/arch/common/init.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
@@ -360,7 +361,7 @@ static void *virt_region_alloc(size_t size, size_t align)
 
 	/* Need to make sure this does not step into kernel memory */
 	if (dest_addr < POINTER_TO_UINT(Z_VIRT_REGION_START_ADDR)) {
-		(void)sys_bitarray_free(&virt_region_bitmap, size, offset);
+		(void)sys_bitarray_free(&virt_region_bitmap, num_bits, offset);
 		return NULL;
 	}
 
@@ -955,7 +956,7 @@ void k_mem_map_phys_bare(uint8_t **virt_ptr, uintptr_t phys, size_t size, uint32
 		 "wraparound for virtual address %p (size %zu)",
 		 dest_addr, size);
 
-	LOG_DBG("arch_mem_map(%p, 0x%lx, %zu, %x) offset %lu", dest_addr,
+	LOG_DBG("arch_mem_map(%p, 0x%lx, %zu, %x) offset %lu", (void *)dest_addr,
 		aligned_phys, aligned_size, flags, addr_offset);
 
 	arch_mem_map(dest_addr, aligned_phys, aligned_size, flags);
@@ -1176,7 +1177,7 @@ void z_mem_manage_init(void)
 	 * and the BSS pages can be brought into physical
 	 * memory to be cleared.
 	 */
-	z_bss_zero();
+	arch_bss_zero();
 #endif /* CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT */
 }
 

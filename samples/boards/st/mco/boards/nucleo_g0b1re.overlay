@@ -1,0 +1,15 @@
+&mco1 {
+	status = "okay";
+	clocks = <&rcc STM32_SRC_LSI MCO1_SEL(MCO_SEL_LSI)>;
+	prescaler = <MCO1_PRE(MCO_PRE_DIV_1)>;
+	pinctrl-0 = <&rcc_mco_pa8>;
+	pinctrl-names = "default";
+};
+
+&mco2 {
+	status = "okay";
+	clocks = <&rcc STM32_SRC_HSI MCO2_SEL(MCO_SEL_HSI16)>;
+	prescaler = <MCO2_PRE(MCO_PRE_DIV_16)>;
+	pinctrl-0 = <&rcc_mco_2_pa15>;
+	pinctrl-names = "default";
+};

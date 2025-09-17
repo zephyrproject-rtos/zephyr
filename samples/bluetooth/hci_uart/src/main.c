@@ -20,8 +20,6 @@
 #include <zephyr/init.h>
 #include <zephyr/drivers/uart.h>
 
-#include <zephyr/usb/usb_device.h>
-
 #include <zephyr/net_buf.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/l2cap.h>
@@ -150,8 +148,8 @@ static void rx_isr(void)
 				 * interrupt. On failed allocation state machine
 				 * is reset.
 				 */
-				buf = bt_buf_get_tx(BT_BUF_H4, K_NO_WAIT,
-						    &type, sizeof(type));
+				buf = bt_buf_get_tx(bt_buf_type_from_h4(type, BT_BUF_OUT),
+						    K_NO_WAIT, NULL, 0);
 				if (!buf) {
 					LOG_ERR("No available command buffers!");
 					state = ST_IDLE;
@@ -272,8 +270,7 @@ static void tx_thread(void *p1, void *p2, void *p3)
 
 static int h4_send(struct net_buf *buf)
 {
-	LOG_DBG("buf %p type %u len %u", buf, bt_buf_get_type(buf),
-		    buf->len);
+	LOG_DBG("buf %p type %u len %u", buf, buf->data[0], buf->len);
 
 	k_fifo_put(&uart_tx_queue, buf);
 	uart_irq_tx_enable(hci_uart_dev);
@@ -331,13 +328,6 @@ void bt_ctlr_assert_handle(char *file, uint32_t line)
 static int hci_uart_init(void)
 {
 	LOG_DBG("");
-
-	if (IS_ENABLED(CONFIG_USB_CDC_ACM)) {
-		if (usb_enable(NULL)) {
-			LOG_ERR("Failed to enable USB");
-			return -EINVAL;
-		}
-	}
 
 	if (!device_is_ready(hci_uart_dev)) {
 		LOG_ERR("HCI UART %s is not ready", hci_uart_dev->name);

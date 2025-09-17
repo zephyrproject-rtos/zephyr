@@ -16,12 +16,8 @@
 #define ATMEL_OUI_B1 0x04
 #define ATMEL_OUI_B2 0x25
 
-/* This option enables support to push multiple packets to the DMA engine.
- * This currently doesn't work given the current version of net_pkt or
- * net_buf does not allowed access from multiple threads. This option is
- * therefore currently disabled.
- */
-#define GMAC_MULTIPLE_TX_PACKETS 0
+/* This option enables support to push multiple packets to the DMA engine. */
+#define GMAC_MULTIPLE_TX_PACKETS 1
 
 #define GMAC_MTU NET_ETH_MTU
 #define GMAC_FRAME_SIZE_MAX (GMAC_MTU + 18)

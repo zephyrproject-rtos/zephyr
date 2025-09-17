@@ -10,7 +10,7 @@
 	pwm_loopback_0 {
 		compatible = "test-pwm-loopback";
 		pwms = <&emios0_pwm 24 0 PWM_POLARITY_NORMAL>,
-			<&emios0_pwm 25 0 PWM_POLARITY_NORMAL>;
+		       <&emios0_pwm 25 0 PWM_POLARITY_NORMAL>;
 	};
 };
 

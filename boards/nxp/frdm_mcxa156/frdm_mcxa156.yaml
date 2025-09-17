@@ -15,6 +15,7 @@ toolchain:
   - gnuarmemb
 supported:
   - adc
+  - arduino_gpio
   - flash
   - gpio
   - can

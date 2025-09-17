@@ -9,11 +9,12 @@ SPHINXOPTS_EXTRA ?=
 LATEXMKOPTS ?= -halt-on-error -no-shell-escape
 DT_TURBO_MODE ?= 0
 HW_FEATURES_TURBO_MODE ?= 0
+HW_FEATURES_VENDOR_FILTER ?=
 
 # ------------------------------------------------------------------------------
 # Documentation targets
 
-.PHONY: configure clean html html-fast html-live html-live-fast latex pdf doxygen
+.PHONY: configure clean html html-fast html-live html-live-fast latex pdf doxygen doxygen-coverage
 
 html-fast:
 	${MAKE} html DT_TURBO_MODE=1 HW_FEATURES_TURBO_MODE=1
@@ -21,7 +22,7 @@ html-fast:
 html-live-fast:
 	${MAKE} html-live DT_TURBO_MODE=1 HW_FEATURES_TURBO_MODE=1
 
-html html-live latex pdf linkcheck doxygen: configure
+html html-live latex pdf linkcheck doxygen doxygen-coverage: configure
 	cmake --build ${BUILDDIR} --target $@
 
 configure:
@@ -34,7 +35,8 @@ configure:
 		-DSPHINXOPTS_EXTRA="${SPHINXOPTS_EXTRA}" \
 		-DLATEXMKOPTS="${LATEXMKOPTS}" \
 		-DDT_TURBO_MODE=${DT_TURBO_MODE} \
-		-DHW_FEATURES_TURBO_MODE=${HW_FEATURES_TURBO_MODE}
+		-DHW_FEATURES_TURBO_MODE=${HW_FEATURES_TURBO_MODE} \
+		-DHW_FEATURES_VENDOR_FILTER=${HW_FEATURES_VENDOR_FILTER}
 
 clean:
 	cmake --build ${BUILDDIR} --target clean

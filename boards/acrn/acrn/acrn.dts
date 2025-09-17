@@ -17,6 +17,15 @@
 	model = "ACRN";
 	compatible = "acrn";
 
+	cpus {
+		cpu@1 {
+			device_type = "cpu";
+			compatible = "intel,x86_64";
+			d-cache-line-size = <64>;
+			reg = <1>;
+		};
+	};
+
 	aliases {
 		uart-0 = &uart0;
 		uart-1 = &uart1;

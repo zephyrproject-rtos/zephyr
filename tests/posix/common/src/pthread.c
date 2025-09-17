@@ -6,6 +6,7 @@
 
 #include <pthread.h>
 #include <semaphore.h>
+#include <time.h>
 
 #include <zephyr/sys/util.h>
 #include <zephyr/ztest.h>
@@ -404,14 +405,13 @@ ZTEST(pthread, test_pthread_timedjoin)
 	struct timespec not_done;
 	struct timespec done;
 	struct timespec invalid[] = {
-		[0] = {.tv_sec = -1},
-		[1] = {.tv_nsec = -1},
-		[2] = {.tv_nsec = NSEC_PER_SEC},
+		{.tv_nsec = -1},
+		{.tv_nsec = NSEC_PER_SEC},
 	};
 
 	/* setup timespecs when the thread is still running and when it is done */
-	clock_gettime(CLOCK_MONOTONIC, &not_done);
-	clock_gettime(CLOCK_MONOTONIC, &done);
+	clock_gettime(CLOCK_REALTIME, &not_done);
+	clock_gettime(CLOCK_REALTIME, &done);
 	not_done.tv_nsec += sleep_duration_ms / 2 * NSEC_PER_MSEC;
 	done.tv_nsec += sleep_duration_ms * 1.5 * NSEC_PER_MSEC;
 	while (not_done.tv_nsec >= NSEC_PER_SEC) {
@@ -426,7 +426,7 @@ ZTEST(pthread, test_pthread_timedjoin)
 	/* Creating a thread that exits after 200ms*/
 	zassert_ok(pthread_create(&th, NULL, timedjoin_thread, INT_TO_POINTER(sleep_duration_ms)));
 
-	/* pthread_timedjoin-np must return -EINVAL for invalid struct timespecs */
+	/* pthread_timedjoin-np must return EINVAL for invalid struct timespecs */
 	zassert_equal(pthread_timedjoin_np(th, &ret, NULL), EINVAL);
 	for (size_t i = 0; i < ARRAY_SIZE(invalid); ++i) {
 		zassert_equal(pthread_timedjoin_np(th, &ret, &invalid[i]), EINVAL);

@@ -99,6 +99,14 @@ config WIFI_ESP_AT_RX_NET_PKT_ALLOC_TIMEOUT
 	help
 	  Network interface RX net_pkt allocation timeout in milliseconds.
 
+config WIFI_ESP_AT_TCP_SEND_TIMEOUT
+	int "TCP socket send timeout"
+	default 30000
+	help
+	  For TCP socket, how long to wait in milliseconds for device
+	  to reply SEND OK/SEND FAIL after AT+CIPSEND has been sent.
+	  This can vary with network traffic condition.
+
 choice
 	prompt "ESP IP Address configuration"
 	default WIFI_ESP_AT_IP_DHCP

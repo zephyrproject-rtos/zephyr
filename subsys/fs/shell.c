@@ -17,9 +17,6 @@
 #include <inttypes.h>
 #include <limits.h>
 
-#define STORAGE_PARTITION    storage_partition
-#define STORAGE_PARTITION_ID FIXED_PARTITION_ID(STORAGE_PARTITION)
-
 #ifdef CONFIG_FILE_SYSTEM_SHELL_MOUNT_COMMAND
 /* FAT */
 #ifdef CONFIG_FAT_FILESYSTEM_ELM
@@ -64,6 +61,15 @@ static struct fs_mount_t littlefs_mnt = {
 };
 #else
 #include <zephyr/storage/flash_map.h>
+
+#define STORAGE_PARTIION_NODE_ID DT_PHANDLE(DT_INST(0, zephyr_fstab_littlefs), partition)
+
+#if DT_FIXED_PARTITION_EXISTS(STORAGE_PARTIION_NODE_ID)
+#define STORAGE_PARTITION_ID DT_FIXED_PARTITION_ID(STORAGE_PARTIION_NODE_ID)
+#else
+#define STORAGE_PARTITION    storage_partition
+#define STORAGE_PARTITION_ID FIXED_PARTITION_ID(STORAGE_PARTITION)
+#endif
 
 FS_LITTLEFS_DECLARE_DEFAULT_CONFIG(lfs_data);
 static struct fs_mount_t littlefs_mnt = {
@@ -182,6 +188,7 @@ static int cmd_ls(const struct shell *sh, size_t argc, char **argv)
 
 	while (1) {
 		struct fs_dirent entry;
+		const char *name_end;
 
 		err = fs_readdir(&dir, &entry);
 		if (err != 0) {
@@ -194,7 +201,12 @@ static int cmd_ls(const struct shell *sh, size_t argc, char **argv)
 			break;
 		}
 
-		shell_print(sh, "%s%s", entry.name, (entry.type == FS_DIR_ENTRY_DIR) ? "/" : "");
+		name_end = (entry.type == FS_DIR_ENTRY_DIR) ? "/" : "";
+		if (IS_ENABLED(CONFIG_FILE_SYSTEM_SHELL_LS_SIZE)) {
+			shell_print(sh, "%8zu %s%s", entry.size, entry.name, name_end);
+		} else {
+			shell_print(sh, "%s%s", entry.name, name_end);
+		}
 	}
 
 	fs_closedir(&dir);

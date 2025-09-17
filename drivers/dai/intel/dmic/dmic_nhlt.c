@@ -282,7 +282,8 @@ static int dai_nhlt_dmic_dai_params_get(struct dai_intel_dmic *dmic, const int c
 static inline void dai_dmic_clock_select_set(const struct dai_intel_dmic *dmic, uint32_t source)
 {
 	uint32_t val;
-#if defined(CONFIG_SOC_INTEL_ACE20_LNL) || defined(CONFIG_SOC_INTEL_ACE30) /* ACE 2.0,3.0 */
+#if defined(CONFIG_SOC_INTEL_ACE20_LNL) || defined(CONFIG_SOC_INTEL_ACE30) ||                      \
+	defined(CONFIG_SOC_INTEL_ACE40) /* ACE 2.0,3.0,4.0 */
 	val = sys_read32(dmic->vshim_base + DMICLVSCTL_OFFSET);
 	val &= ~DMICLVSCTL_MLCS;
 	val |= FIELD_PREP(DMICLVSCTL_MLCS, source);
@@ -292,23 +293,6 @@ static inline void dai_dmic_clock_select_set(const struct dai_intel_dmic *dmic, 
 	val &= ~DMICLCTL_MLCS;
 	val |= FIELD_PREP(DMICLCTL_MLCS, source);
 	sys_write32(val, dmic->shim_base + DMICLCTL_OFFSET);
-#endif
-}
-
-/*
- * @brief Get clock source used by device
- *
- * @return Clock source index
- */
-static inline uint32_t dai_dmic_clock_select_get(const struct dai_intel_dmic *dmic)
-{
-	uint32_t val;
-#if defined(CONFIG_SOC_INTEL_ACE20_LNL) || defined(CONFIG_SOC_INTEL_ACE30) /* ACE 2.0,3.0 */
-	val = sys_read32(dmic->vshim_base + DMICLVSCTL_OFFSET);
-	return FIELD_GET(DMICLVSCTL_MLCS, val);
-#else
-	val = sys_read32(dmic->shim_base + DMICLCTL_OFFSET);
-	return FIELD_GET(DMICLCTL_MLCS, val);
 #endif
 }
 

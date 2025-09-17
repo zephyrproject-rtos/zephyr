@@ -18,6 +18,7 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
+#include <stm32_backup_domain.h>
 
 /* Macros to fill up prescaler values */
 #define z_hsi_divider(v) LL_RCC_HSI_DIV_ ## v
@@ -123,6 +124,8 @@ int enabled_clock(uint32_t src_clk)
 	    (src_clk == STM32_SRC_PCLK1) ||
 	    (src_clk == STM32_SRC_PCLK2) ||
 	    (src_clk == STM32_SRC_PCLK3) ||
+	    (src_clk == STM32_SRC_TIMPCLK1) ||
+	    (src_clk == STM32_SRC_TIMPCLK2) ||
 	    ((src_clk == STM32_SRC_HSE) && IS_ENABLED(STM32_HSE_ENABLED)) ||
 	    ((src_clk == STM32_SRC_HSI) && IS_ENABLED(STM32_HSI_ENABLED)) ||
 	    ((src_clk == STM32_SRC_HSI48) && IS_ENABLED(STM32_HSI48_ENABLED)) ||
@@ -196,6 +199,11 @@ static int stm32_clock_control_configure(const struct device *dev,
 	if (err < 0) {
 		/* Attempt to configure a src clock not available or not valid */
 		return err;
+	}
+
+	if (pclken->enr == NO_SEL) {
+		/* Domain clock is fixed. Nothing to set. Exit */
+		return 0;
 	}
 
 	sys_set_bits(DT_REG_ADDR(DT_NODELABEL(rcc)) + STM32_DT_CLKSEL_REG_GET(pclken->enr),
@@ -337,6 +345,20 @@ static int stm32_clock_control_get_subsys_rate(const struct device *dev,
 					      STM32_PLL3_R_DIVISOR);
 		break;
 #endif /* STM32_PLL3_ENABLED */
+	case STM32_SRC_TIMPCLK1:
+		if (IS_ENABLED(STM32_TIMER_PRESCALER)) {
+			*rate = STM32_APB1_PRESCALER <= 4 ? ahb_clock : apb1_clock * 4;
+		} else {
+			*rate = STM32_APB1_PRESCALER <= 2 ? ahb_clock : apb1_clock * 2;
+		}
+		break;
+	case STM32_SRC_TIMPCLK2:
+		if (IS_ENABLED(STM32_TIMER_PRESCALER)) {
+			*rate = STM32_APB2_PRESCALER <= 4 ? ahb_clock : apb2_clock * 4;
+		} else {
+			*rate = STM32_APB2_PRESCALER <= 2 ? ahb_clock : apb2_clock * 2;
+		}
+		break;
 	default:
 		return -ENOTSUP;
 	}
@@ -348,10 +370,36 @@ static int stm32_clock_control_get_subsys_rate(const struct device *dev,
 	return 0;
 }
 
+static enum clock_control_status stm32_clock_control_get_status(const struct device *dev,
+								clock_control_subsys_t sub_system)
+{
+	struct stm32_pclken *pclken = (struct stm32_pclken *)sub_system;
+
+	ARG_UNUSED(dev);
+
+	if (IN_RANGE(pclken->bus, STM32_PERIPH_BUS_MIN, STM32_PERIPH_BUS_MAX) == true) {
+		/* Gated clocks */
+		if ((sys_read32(DT_REG_ADDR(DT_NODELABEL(rcc)) + pclken->bus) & pclken->enr)
+		    == pclken->enr) {
+			return CLOCK_CONTROL_STATUS_ON;
+		} else {
+			return CLOCK_CONTROL_STATUS_OFF;
+		}
+	} else {
+		/* Domain clock sources */
+		if (enabled_clock(pclken->bus) == 0) {
+			return CLOCK_CONTROL_STATUS_ON;
+		} else {
+			return CLOCK_CONTROL_STATUS_OFF;
+		}
+	}
+}
+
 static DEVICE_API(clock_control, stm32_clock_control_api) = {
 	.on = stm32_clock_control_on,
 	.off = stm32_clock_control_off,
 	.get_rate = stm32_clock_control_get_subsys_rate,
+	.get_status = stm32_clock_control_get_status,
 	.configure = stm32_clock_control_configure,
 };
 
@@ -434,7 +482,19 @@ static int set_up_plls(void)
 #endif
 
 #if defined(STM32_PLL_ENABLED)
+
+#if defined(CONFIG_STM32_APP_IN_EXT_FLASH)
 	/*
+	 * Don't disable PLL1 during application initialization
+	 * that runs on the external octospi flash (in memmap mode)
+	 * when (Q/O)SPI uses PLL1 as its clock source.
+	 */
+	if (LL_RCC_GetOCTOSPIClockSource(LL_RCC_OCTOSPI_CLKSOURCE) == LL_RCC_OSPI_CLKSOURCE_PLL1Q) {
+		goto setup_pll2;
+	}
+#endif /* CONFIG_STM32_APP_IN_EXT_FLASH */
+	/*
+	 * Case of chain-loaded applications:
 	 * Switch to HSI and disable the PLL before configuration.
 	 * (Switching to HSI makes sure we have a SYSCLK source in
 	 * case we're currently running from the PLL we're about to
@@ -500,12 +560,30 @@ static int set_up_plls(void)
 	LL_RCC_PLL1_Enable();
 	while (LL_RCC_PLL1_IsReady() != 1U) {
 	}
+
+	goto setup_pll2;
 #else
 	/* Init PLL source to None */
 	LL_RCC_PLL1_SetSource(LL_RCC_PLL1SOURCE_NONE);
+
+	goto setup_pll2;
 #endif /* STM32_PLL_ENABLED */
 
+setup_pll2:
 #if defined(STM32_PLL2_ENABLED)
+
+#if defined(CONFIG_STM32_APP_IN_EXT_FLASH)
+	/*
+	 * Don't disable PLL2 during application initialization
+	 * that runs on the external octospi flash (in memmap mode)
+	 * when (Q/O)SPI uses PLL2 as its clock source.
+	 */
+	if (LL_RCC_GetOCTOSPIClockSource(LL_RCC_OCTOSPI_CLKSOURCE) == LL_RCC_OSPI_CLKSOURCE_PLL2R) {
+		goto setup_pll3;
+	}
+#endif /* CONFIG_STM32_APP_IN_EXT_FLASH */
+	LL_RCC_PLL2_Disable();
+
 	/* Configure PLL2 source */
 	if (IS_ENABLED(STM32_PLL2_SRC_HSE)) {
 		LL_RCC_PLL2_SetSource(LL_RCC_PLL2SOURCE_HSE);
@@ -553,11 +631,16 @@ static int set_up_plls(void)
 	LL_RCC_PLL2_Enable();
 	while (LL_RCC_PLL2_IsReady() != 1U) {
 	}
+
+	goto setup_pll3;
 #else
 	/* Init PLL2 source to None */
 	LL_RCC_PLL2_SetSource(LL_RCC_PLL2SOURCE_NONE);
+
+	goto setup_pll3;
 #endif /* STM32_PLL2_ENABLED */
 
+setup_pll3:
 #if defined(RCC_CR_PLL3ON)
 #if defined(STM32_PLL3_ENABLED)
 	/* Configure PLL3 source */
@@ -653,13 +736,7 @@ static void set_up_fixed_clock_sources(void)
 	}
 
 	if (IS_ENABLED(STM32_LSE_ENABLED)) {
-		if (!LL_PWR_IsEnabledBkUpAccess()) {
-			/* Enable write access to Backup domain */
-			LL_PWR_EnableBkUpAccess();
-			while (!LL_PWR_IsEnabledBkUpAccess()) {
-				/* Wait for Backup domain access */
-			}
-		}
+		stm32_backup_domain_enable_access();
 
 		/* Configure driving capability before enabling the LSE oscillator */
 		LL_RCC_LSE_SetDriveCapability(STM32_LSE_DRIVING << RCC_BDCR_LSEDRV_Pos);
@@ -675,7 +752,7 @@ static void set_up_fixed_clock_sources(void)
 		while (!LL_RCC_LSE_IsReady()) {
 		}
 
-		LL_PWR_DisableBkUpAccess();
+		stm32_backup_domain_disable_access();
 	}
 
 	if (IS_ENABLED(STM32_CSI_ENABLED)) {
@@ -770,6 +847,12 @@ int stm32_clock_control_init(const struct device *dev)
 	/* If freq not increased, set flash latency after all clock setting */
 	if (old_hclk_freq >= CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC) {
 		LL_SetFlashLatency(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
+	}
+
+	if (IS_ENABLED(STM32_TIMER_PRESCALER)) {
+		LL_RCC_SetTIMPrescaler(LL_RCC_TIM_PRESCALER_FOUR_TIMES);
+	} else {
+		LL_RCC_SetTIMPrescaler(LL_RCC_TIM_PRESCALER_TWICE);
 	}
 
 	/* Update CMSIS variable */

@@ -14,7 +14,7 @@
  *
  * - Bit 8: Interrupt controller to which the respective GPIO interrupt is routed.
  *
- * @ingroup gpio_interface
+ * @ingroup gpio_interface_ext
  * @{
  */
 

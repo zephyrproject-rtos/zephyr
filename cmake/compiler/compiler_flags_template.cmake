@@ -68,6 +68,7 @@ set_property(TARGET compiler-cpp PROPERTY dialect_cpp17)
 set_property(TARGET compiler-cpp PROPERTY dialect_cpp2a)
 set_property(TARGET compiler-cpp PROPERTY dialect_cpp20)
 set_property(TARGET compiler-cpp PROPERTY dialect_cpp2b)
+set_property(TARGET compiler-cpp PROPERTY dialect_cpp23)
 
 # Flag for disabling strict aliasing rule in C and C++
 set_compiler_property(PROPERTY no_strict_aliasing)
@@ -75,6 +76,9 @@ set_compiler_property(PROPERTY no_strict_aliasing)
 # Extra warnings options for twister run
 set_property(TARGET compiler PROPERTY warnings_as_errors)
 set_property(TARGET asm PROPERTY warnings_as_errors)
+
+set_property(TARGET compiler PROPERTY no_deprecation_warning)
+set_property(TARGET asm PROPERTY no_deprecation_warning)
 
 # Flag for disabling exceptions in C++
 set_property(TARGET compiler-cpp PROPERTY no_exceptions)
@@ -161,3 +165,9 @@ set_compiler_property(PROPERTY include_file)
 set_compiler_property(PROPERTY cmse)
 
 set_property(TARGET asm PROPERTY cmse)
+
+# Compiler flag for not placing functions in their own sections:
+set_compiler_property(PROPERTY no_function_sections)
+
+# Compiler flag for not placing variables in their own sections:
+set_compiler_property(PROPERTY no_data_sections)

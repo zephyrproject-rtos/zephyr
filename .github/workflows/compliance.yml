@@ -21,7 +21,7 @@ jobs:
         echo "$HOME/.local/bin" >> $GITHUB_PATH
 
     - name: Checkout the code
-      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
       with:
         ref: ${{ github.event.pull_request.head.sha }}
         fetch-depth: 0
@@ -44,7 +44,7 @@ jobs:
         git log  --pretty=oneline | head -n 10
 
     - name: Set up Python
-      uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
+      uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6.0.0
       with:
         python-version: 3.12
         cache: pip
@@ -115,10 +115,5 @@ jobs:
         if [ "${exit}" == "1" ]; then
           echo "Compliance error, check for error messages in the \"Run Compliance Tests\" step"
           echo "You can run this step locally with the ./scripts/ci/check_compliance.py script."
-          exit 1;
-        fi
-
-        if [ "${{ steps.pr_description.outcome }}" == "failure" ]; then
-          echo "PR description cannot be empty"
           exit 1;
         fi

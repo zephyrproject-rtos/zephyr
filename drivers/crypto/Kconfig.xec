@@ -7,6 +7,6 @@ config CRYPTO_MCHP_XEC_SYMCR
 	default y
 	depends on DT_HAS_MICROCHIP_XEC_SYMCR_ENABLED
 	help
-	  Enable Microchip XEC symmetic crypto (AES/Hash) driver.
+	  Enable Microchip XEC symmetric crypto (AES/Hash) driver.
 	  Symmetric crypto provides a single hardware interface
 	  to AES and hash engines.

@@ -72,7 +72,7 @@ static const struct device *nrf5_dev;
 #define NSEC_PER_TEN_SYMBOLS (10 * IEEE802154_PHY_OQPSK_780_TO_2450MHZ_SYMBOL_PERIOD_NS)
 
 #if defined(CONFIG_IEEE802154_NRF5_UICR_EUI64_ENABLE)
-#if defined(CONFIG_SOC_NRF5340_CPUAPP)
+#if defined(CONFIG_SOC_NRF5340_CPUAPP) || defined(CONFIG_SOC_SERIES_NRF54LX)
 #if defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
 #error "NRF_UICR->OTP is not supported to read from non-secure"
 #else
@@ -80,7 +80,7 @@ static const struct device *nrf5_dev;
 #endif /* CONFIG_TRUSTED_EXECUTION_NONSECURE */
 #else
 #define EUI64_ADDR (NRF_UICR->CUSTOMER)
-#endif /* CONFIG_SOC_NRF5340_CPUAPP */
+#endif /* CONFIG_SOC_NRF5340_CPUAPP || CONFIG_SOC_SERIES_NRF54LX*/
 #endif /* CONFIG_IEEE802154_NRF5_UICR_EUI64_ENABLE */
 
 #if defined(CONFIG_IEEE802154_NRF5_UICR_EUI64_ENABLE)
@@ -179,7 +179,12 @@ static void nrf5_rx_thread(void *arg1, void *arg2, void *arg3)
 		}
 
 #if defined(CONFIG_NET_BUF_DATA_SIZE)
-		__ASSERT_NO_MSG(pkt_len <= CONFIG_NET_BUF_DATA_SIZE);
+		if (pkt_len > CONFIG_NET_BUF_DATA_SIZE) {
+			LOG_ERR("Received a frame exceeding the buffer size (%u): %u",
+				CONFIG_NET_BUF_DATA_SIZE, pkt_len);
+			LOG_HEXDUMP_ERR(rx_frame->psdu, rx_frame->psdu[0] + 1, "Received PSDU");
+			goto drop;
+		}
 #endif
 
 		LOG_DBG("Frame received");
@@ -232,7 +237,9 @@ drop:
 		rx_frame->psdu = NULL;
 		nrf_802154_buffer_free_raw(psdu);
 
-		net_pkt_unref(pkt);
+		if (pkt) {
+			net_pkt_unref(pkt);
+		}
 	}
 }
 
@@ -1114,8 +1121,12 @@ void nrf_802154_received_timestamp_raw(uint8_t *data, int8_t power, uint8_t lqi,
 		nrf5_data.rx_frames[i].lqi = lqi;
 
 #if defined(CONFIG_NET_PKT_TIMESTAMP)
-		nrf5_data.rx_frames[i].time =
-			nrf_802154_timestamp_end_to_phr_convert(time, data[0]);
+		if (time != NRF_802154_NO_TIMESTAMP) {
+			nrf5_data.rx_frames[i].time =
+				nrf_802154_timestamp_end_to_phr_convert(time, data[0]);
+		} else {
+			nrf5_data.rx_frames[i].time = 0;
+		}
 #endif
 
 		nrf5_data.rx_frames[i].ack_fpb = nrf5_data.last_frame_ack_fpb;

@@ -751,7 +751,13 @@ static DEVICE_API(adc, api_esp32_driver_api) = {
 
 #endif /* defined(CONFIG_ADC_ESP32_DMA) */
 
+#define ADC_ESP32_CHECK_CHANNEL_REF(chan)                                                          \
+	BUILD_ASSERT(DT_ENUM_HAS_VALUE(chan, zephyr_reference, adc_ref_internal),                  \
+		     "adc_esp32 only supports ADC_REF_INTERNAL as a reference");
+
 #define ESP32_ADC_INIT(inst)                                                                       \
+                                                                                                   \
+	DT_INST_FOREACH_CHILD(inst, ADC_ESP32_CHECK_CHANNEL_REF)                                   \
                                                                                                    \
 	static const struct adc_esp32_conf adc_esp32_conf_##inst = {                               \
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(inst)),                             \

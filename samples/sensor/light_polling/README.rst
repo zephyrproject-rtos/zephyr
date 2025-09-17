@@ -27,11 +27,11 @@ overlay that specifies the sensor configuration for your setup.
 Building and Running
 ********************
 
-Build and flash the sample as follows, changing ``nrf52dk_nrf52832`` to your board:
+Build and flash the sample as follows, changing ``nrf52dk/nrf52832`` to your board:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/light_polling
-   :board: nrf52dk_nrf52832
+   :board: mikroe_clicker_ra4m1
    :goals: build flash
    :compact:
 

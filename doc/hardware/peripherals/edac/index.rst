@@ -21,4 +21,4 @@ Related configuration option:
 API Reference
 *************
 
-.. doxygengroup:: edac
+.. doxygengroup:: edac_interface

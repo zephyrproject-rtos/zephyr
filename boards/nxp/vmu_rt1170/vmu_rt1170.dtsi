@@ -17,6 +17,7 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		green_led: led-1 {
 			gpios = <&gpio5 2 GPIO_ACTIVE_HIGH>;
 			label = "Green LED";
@@ -109,9 +110,10 @@
 &enet1g_mdio {
 	pinctrl-0 = <&pinmux_enet1g_mdio>;
 	pinctrl-names = "default";
-	enet1g_phy: phy@1 {
+
+	enet1g_phy: phy@f {
 		compatible = "nxp,tja1103";
-		reg = <1>;
+		reg = <0xf>;
 		master-slave = "master";
 	};
 };
@@ -137,22 +139,22 @@
 };
 
 &lpi2c1 {
-	pinctrl-0 =<&pinmux_lpi2c1>;
+	pinctrl-0 = <&pinmux_lpi2c1>;
 	pinctrl-names = "default";
 };
 
 &lpi2c2 {
-	pinctrl-0 =<&pinmux_lpi2c2>;
+	pinctrl-0 = <&pinmux_lpi2c2>;
 	pinctrl-names = "default";
 };
 
 &lpi2c3 {
-	pinctrl-0 =<&pinmux_lpi2c3>;
+	pinctrl-0 = <&pinmux_lpi2c3>;
 	pinctrl-names = "default";
 };
 
 &lpi2c6 {
-	pinctrl-0 =<&pinmux_lpi2c6>;
+	pinctrl-0 = <&pinmux_lpi2c6>;
 	pinctrl-names = "default";
 };
 
@@ -176,8 +178,8 @@
 	pinctrl-names = "default";
 };
 
-&lpadc1 {
-	pinctrl-0 = <&pinmux_lpadc1>;
+&lpadc2 {
+	pinctrl-0 = <&pinmux_lpadc2>;
 	pinctrl-names = "default";
 };
 
@@ -197,6 +199,7 @@
 	ahb-read-addr-opt;
 	rx-clock-source = <1>;
 	reg = <0x400cc000 0x4000>, <0x30000000 DT_SIZE_M(64)>;
+
 	mx25um51345g: mx25um51345g@0 {
 		compatible = "nxp,imx-flexspi-mx25um51345g";
 		/* MX25UM51245G is 64MB, 512MBit flash part */
@@ -212,24 +215,29 @@
 			compatible = "fixed-partitions";
 			#address-cells = <1>;
 			#size-cells = <1>;
+
+			/*
+			 * Partition sizes must be aligned
+			 * to the flash memory sector size of 4KB.
+			 */
 			boot_partition: partition@0 {
 				label = "mcuboot";
 				reg = <0x00000000 DT_SIZE_K(128)>;
 			};
-			/* The MCUBoot swap-move algorithm uses the last 3 sectors
-			 * of the primary slot0 for swap status and move.
-			 */
+
 			slot0_partition: partition@20000 {
 				label = "image-0";
-				reg = <0x00020000 (DT_SIZE_M(3) + DT_SIZE_K(3 * 4))>;
+				reg = <0x00020000 DT_SIZE_M(3)>;
 			};
-			slot1_partition: partition@32E000 {
+
+			slot1_partition: partition@320000 {
 				label = "image-1";
-				reg = <0x0032E000 DT_SIZE_M(3)>;
+				reg = <0x00320000 DT_SIZE_M(3)>;
 			};
-			storage_partition: partition@62E000 {
+
+			storage_partition: partition@620000 {
 				label = "storage";
-				reg = <0x0062E000 (DT_SIZE_M(58) - DT_SIZE_K(140))>;
+				reg = <0x00620000 (DT_SIZE_M(58) - DT_SIZE_K(128))>;
 			};
 		};
 	};
