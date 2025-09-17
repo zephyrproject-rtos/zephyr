@@ -4974,6 +4974,8 @@ Utilities:
     - tests/unit/list/
     - tests/unit/intmath/
     - tests/unit/pot/
+    - tests/unit/hex/
+    - tests/unit/winstream/
     - tests/lib/onoff/
     - tests/lib/sys_util/
     - tests/lib/sprintf/
