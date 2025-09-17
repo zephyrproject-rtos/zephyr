@@ -170,7 +170,6 @@ __weak void clk_init(void)
 		CLOCK_GetCurSysClkConfig(&current);
 	} while (current.src != scg_sys_clk_config.src);
 
-
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpuart0))
 	CLOCK_SetIpSrc(kCLOCK_Lpuart0,
 		       DT_CLOCKS_CELL(DT_NODELABEL(lpuart0), ip_source));

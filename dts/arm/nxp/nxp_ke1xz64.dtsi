@@ -34,7 +34,7 @@
 		zephyr,memory-region = "SRAMU";
 	};
 
-	soc{
+	soc {
 		/* Remove ftfe, it doesn't exist on KE16Z */
 		/delete-node/ ftfe;
 
@@ -58,9 +58,9 @@
 			/delete-node/ lpfll_clk;
 
 			lpfll_clk: lpfll_clk {
-			compatible = "fixed-clock";
-			clock-frequency = <48000000>;
-			#clock-cells = <0>;
+				compatible = "fixed-clock";
+				clock-frequency = <48000000>;
+				#clock-cells = <0>;
 			};
 		};
 	};

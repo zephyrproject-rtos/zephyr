@@ -66,9 +66,9 @@
 			/delete-node/ lpfll_clk;
 
 			lpfll_clk: lpfll_clk {
-			compatible = "fixed-clock";
-			clock-frequency = <96000000>;
-			#clock-cells = <0>;
+				compatible = "fixed-clock";
+				clock-frequency = <96000000>;
+				#clock-cells = <0>;
 			};
 		};
 

@@ -96,12 +96,6 @@
 				#clock-cells = <0>;
 			};
 
-			lpfll_clk: lpfll_clk {
-				compatible = "fixed-clock";
-				clock-frequency = <72000000>;
-				#clock-cells = <0>;
-			};
-
 			core_clk: core_clk {
 				compatible = "fixed-factor-clock";
 				#clocks = <&firc_clk>;
