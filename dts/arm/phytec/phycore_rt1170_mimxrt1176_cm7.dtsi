@@ -1,0 +1,78 @@
+/*
+ * Copyright (c) 2025 PHYTEC America LLC
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_rt1170_cm7.dtsi>
+#include <phytec/phycore_rt1170_common.dtsi>
+
+/ {
+	chosen {
+		zephyr,sram = &sdram0;
+		zephyr,dtcm = &dtcm;
+		zephyr,itcm = &itcm;
+		zephyr,flash-controller = &mx25u12832f;
+		zephyr,flash = &mx25u12832f;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,cpu1-region = &ocram;
+		zephyr,ipc = &mailbox_a;
+	};
+
+	zephyr,user {
+		dac = <&dac>;
+		dac-channel-id = <0>;
+		dac-resolution = <12>;
+	};
+};
+
+&dac {
+	status = "okay";
+};
+
+&lpuart1 {
+	status = "okay";
+	current-speed = <115200>;
+};
+
+&lpuart5 {
+	status = "okay";
+	current-speed = <115200>;
+};
+
+&som_green_led {
+	status = "okay";
+};
+
+&som_red_led {
+	status = "okay";
+};
+
+/* GPT and Systick are enabled. If power management is enabled, the GPT
+ * timer will be used instead of systick, as allows the core clock to
+ * be gated.
+ */
+&gpt_hw_timer {
+	status = "okay";
+};
+
+&systick {
+	status = "okay";
+};
+
+&wdog1 {
+	status = "okay";
+};
+
+&mailbox_a {
+	status = "okay";
+};
+
+&pit1 {
+	status = "okay";
+};
+
+&pit2 {
+	status = "okay";
+};
