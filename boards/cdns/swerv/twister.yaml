@@ -12,3 +12,13 @@ variants:
     type: sim
     simulation:
       - name: whisper
+  cdns_swerv/s420/whisper:
+    type: sim
+    simulation:
+      - name: whisper
+    supported:
+      - smp
+    # Some SMP tests take a while to finish since it's
+    # under simulated environment.
+    testing:
+      timeout_multiplier: 4

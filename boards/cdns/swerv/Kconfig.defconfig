@@ -35,3 +35,30 @@ config CUSTOM_LINKER_SCRIPT
 	default "${ZEPHYR_BASE}/boards/cdns/swerv/cdns_swerv_s400_whisper.ld"
 
 endif # BOARD_CDNS_SWERV_S400_WHISPER
+
+if BOARD_CDNS_SWERV_S420_WHISPER
+
+# 32 in core RISC-V by MIE CSR
+# 256 in SweRV PIC for external interrupts
+config NUM_IRQS
+	default 288
+
+config SWERV_PIC_MAX_GENERIC_IRQ
+	default 31
+
+config WHISPER_TARGET
+	default y
+
+config WHISPER_USE_SWINT
+	default y
+
+config WHISPER_SWINT_BASE_ADDRESS
+	default 0x02000000
+
+config HAVE_CUSTOM_LINKER_SCRIPT
+	default y
+
+config CUSTOM_LINKER_SCRIPT
+	default "${ZEPHYR_BASE}/boards/cdns/swerv/cdns_swerv_s420_whisper.ld"
+
+endif # BOARD_CDNS_SWERV_S420_WHISPER
