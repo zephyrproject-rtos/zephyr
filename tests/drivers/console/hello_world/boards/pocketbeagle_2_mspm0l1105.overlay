@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2025 Ayush Singh, BeagleBoard.org Foundation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Sample overlay for using UART on PocketBeagle 2 MSPM0.
+ *
+ * P1_25 = UART TX
+ * P1_27 = UART RX
+ */
+
+/ {
+	chosen {
+		zephyr,console = &uart0;
+	};
+};
+
+&uart0 {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart0_rx_pa26 &uart0_tx_pa25>;
+};
