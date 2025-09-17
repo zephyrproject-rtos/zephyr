@@ -97,6 +97,17 @@ def test_pytest_command_extra_args_in_options(testinstance: TestInstance):
     assert command.index(pytest_args_from_yaml) < command.index(pytest_args_from_cmd[1])
 
 
+def test_pytest_command_required_build_args(testinstance: TestInstance):
+    """ Test that required build dirs are passed to pytest harness """
+    pytest_harness = Pytest()
+    required_builds = ['/req/build/dir', 'another/req/dir']
+    testinstance.required_build_dirs = required_builds
+    pytest_harness.configure(testinstance)
+    command = pytest_harness.generate_command()
+    for req_dir in required_builds:
+        assert f'--required-build={req_dir}' in command
+
+
 @pytest.mark.parametrize(
     ('pytest_root', 'expected'),
     [

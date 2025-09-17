@@ -12,6 +12,7 @@ from unittest import mock
 import pytest
 
 from contextlib import nullcontext
+from pathlib import Path
 
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))
@@ -251,6 +252,105 @@ def test_apply_filters_part3(class_testplan, all_testsuites_dict, platforms_list
 
     filtered_instances = list(filter(lambda item:  item.status == TwisterStatus.FILTER, class_testplan.instances.values()))
     assert not filtered_instances
+
+
+def get_testsuite_for_given_test(plan: TestPlan, testname: str) -> TestSuite | None:
+    """ Helper function to get testsuite object for a given testname"""
+    for _, testsuite in plan.testsuites.items():
+        if testname in testsuite.name:
+            return testsuite
+    return None
+
+
+@pytest.fixture()
+def testplan_with_one_instance(
+    class_testplan: TestPlan, platforms_list, all_testsuites_dict
+) -> TestPlan:
+    """ Pytest fixture to initialize and return the class TestPlan object
+    with one instance for 'sample_test.app' test on 'demo_board_1' platform"""
+    class_testplan.platforms = platforms_list
+    class_testplan.platform_names = [p.name for p in platforms_list]
+    class_testplan.testsuites = all_testsuites_dict
+    platform = class_testplan.get_platform("demo_board_1")
+    testsuite = get_testsuite_for_given_test(class_testplan, 'sample_test.app')
+    testinstance = TestInstance(testsuite, platform, 'zephyr', class_testplan.env.outdir)
+    class_testplan.add_instances([testinstance])
+    return class_testplan
+
+
+def test_apply_changes_for_required_applications(testplan_with_one_instance: TestPlan):
+    """ Testing apply_changes_for_required_applications function of TestPlan class in Twister """
+    plan = testplan_with_one_instance
+    testinstance_req = next(iter(plan.instances.values()))
+
+    testsuite = get_testsuite_for_given_test(plan, 'test_a.check_1')
+    testsuite.required_applications = [{'name': 'sample_test.app'}]
+    platform = plan.get_platform("demo_board_1")
+    testinstance = TestInstance(testsuite, platform, 'zephyr', plan.env.outdir)
+    plan.add_instances([testinstance])
+
+    plan.apply_changes_for_required_applications()
+    # Check that the required application was added to the instance
+    assert testinstance.required_applications[0] == testinstance_req.name
+
+
+def test_apply_changes_for_required_applications_missing_app(testplan_with_one_instance: TestPlan):
+    """ Test apply_changes_for_required_applications when required application is missing """
+    plan = testplan_with_one_instance
+    testsuite = get_testsuite_for_given_test(plan, 'test_a.check_1')
+    # Set a required application that does not exist
+    testsuite.required_applications = [{'name': 'nonexistent_app'}]
+    platform = plan.get_platform("demo_board_1")
+    testinstance = TestInstance(testsuite, platform, 'zephyr', plan.env.outdir)
+    plan.add_instances([testinstance])
+
+    plan.apply_changes_for_required_applications()
+    # Check that the instance was filtered
+    assert testinstance.status == TwisterStatus.FILTER
+    assert "Missing required application" in testinstance.reason
+    assert len(testinstance.required_applications) == 0
+
+
+def test_apply_changes_for_required_applications_wrong_platform(testplan_with_one_instance: TestPlan):
+    """ Test apply_changes_for_required_applications with not matched platform """
+    plan = testplan_with_one_instance
+    testsuite = get_testsuite_for_given_test(plan, 'test_a.check_1')
+    testsuite.required_applications = [{'name': 'sample_test.app', 'platform': 'demo_board_2'}]
+    platform = plan.get_platform("demo_board_2")
+    testinstance = TestInstance(testsuite, platform, 'zephyr', plan.env.outdir)
+    plan.add_instances([testinstance])
+
+    plan.apply_changes_for_required_applications()
+    # Check that the instance was filtered
+    assert testinstance.status == TwisterStatus.FILTER
+    assert "Missing required application" in testinstance.reason
+    assert len(testinstance.required_applications) == 0
+
+
+def test_apply_changes_for_required_applications_in_outdir(testplan_with_one_instance: TestPlan):
+    """ Testing apply_changes_for_required_applications when required application is already in outdir
+    and --no-clean option is used """
+    plan = testplan_with_one_instance
+    plan.options.no_clean = True
+    req_app_in_outdir = "prebuilt_sample_test.app"
+
+    testsuite = get_testsuite_for_given_test(plan, 'test_a.check_1')
+    testsuite.required_applications = [{'name': req_app_in_outdir}]
+    platform = plan.get_platform("demo_board_1")
+    testinstance = TestInstance(testsuite, platform, 'zephyr', plan.env.outdir)
+    plan.add_instances([testinstance])
+
+    # create the required application directory in outdir to simulate prebuilt app
+    req_app_dir = Path(plan.env.outdir) / platform.normalized_name / "test_dir" / req_app_in_outdir
+    (req_app_dir / "zephyr").mkdir(parents=True, exist_ok=True)
+
+    plan.apply_changes_for_required_applications()
+    # Check that the required application was not added to the instance,
+    # but the required build dir was added
+    assert len(testinstance.required_applications) == 0
+    assert len(testinstance.required_build_dirs) == 1
+    assert str(req_app_dir) in testinstance.required_build_dirs
+
 
 def test_add_instances_short(tmp_path, class_env, all_testsuites_dict, platforms_list):
     """ Testing add_instances() function of TestPlan class in Twister
