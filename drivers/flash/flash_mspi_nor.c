@@ -1237,14 +1237,14 @@ static DEVICE_API(flash, drv_api) = {
 
 #define FLASH_INITIAL_CONFIG(inst)					\
 {									\
-	.ce_num = DT_INST_PROP_OR(inst, mspi_hardware_ce_num, 0),	\
+	.ce = MSPI_DEVICE_CE_DT_INST(inst),				\
 	.freq = MIN(DT_INST_PROP(inst, mspi_max_frequency), MHZ(50)),	\
 	.io_mode = MSPI_IO_MODE_SINGLE,					\
 	.data_rate = MSPI_DATA_RATE_SINGLE,				\
 	.cpp = MSPI_CPP_MODE_0,						\
 	.endian = MSPI_XFER_BIG_ENDIAN,					\
-	.ce_polarity = MSPI_CE_ACTIVE_LOW,				\
 	.dqs_enable = false,						\
+	.ce_timing = MSPI_DEVICE_CE_TIMING_DT_INST(inst),		\
 }
 
 #define FLASH_QUIRKS(inst) FLASH_MSPI_QUIRKS_GET(DT_DRV_INST(inst))
