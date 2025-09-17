@@ -29,8 +29,6 @@ family:
     cpuclusters:
     - name: cpu0
     - name: cpu1
-- name: mcxw2x
-  socs:
   - name: mcxw236
 runners:
   run_once:

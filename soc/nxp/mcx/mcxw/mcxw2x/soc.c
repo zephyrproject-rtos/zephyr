@@ -79,30 +79,6 @@ __weak void clock_init(void)
 	DT_FOREACH_STATUS_OKAY(nxp_ctimer_pwm, CTIMER_CLOCK_SETUP)
 }
 
-/**
- *
- * @brief Perform basic hardware initialization
- *
- * Initialize the interrupt controller device drivers.
- * Also initialize the timer device driver, if required.
- *
- * @return 0
- */
-static int nxp_mcxw23x_init(void)
-{
-	z_arm_clear_faults();
-
-	/* Initialize FRO/system clock to 96 MHz */
-	clock_init();
-
-#ifdef CONFIG_GPIO_MCUX_LPC
-	/* Turn on PINT device*/
-	PINT_Init(PINT);
-#endif
-
-	return 0;
-}
-
 #ifdef CONFIG_SOC_RESET_HOOK
 
 void soc_reset_hook(void)
@@ -120,4 +96,15 @@ void soc_reset_hook(void)
 
 #endif /* CONFIG_SOC_RESET_HOOK */
 
-SYS_INIT(nxp_mcxw23x_init, PRE_KERNEL_1, 0);
+void soc_early_init_hook(void)
+{
+	z_arm_clear_faults();
+
+	/* Initialize FRO/system clock to 96 MHz */
+	clock_init();
+
+#ifdef CONFIG_GPIO_MCUX_LPC
+	/* Turn on PINT device*/
+	PINT_Init(PINT);
+#endif
+}
