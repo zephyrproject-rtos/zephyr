@@ -257,6 +257,7 @@ static void phy_dm8806_thread_cb(const struct device *dev, struct phy_link_state
 	uint16_t data;
 	struct phy_dm8806_data *drv_data = dev->data;
 	const struct phy_dm8806_config *cfg = dev->config;
+	int res;
 
 	if (drv_data->link_speed_chenge_cb != NULL) {
 		drv_data->link_speed_chenge_cb(dev, state, cb_data);
@@ -264,9 +265,18 @@ static void phy_dm8806_thread_cb(const struct device *dev, struct phy_link_state
 	/* Clear the interrupt flag, by writing "1" to LNKCHG bit of Interrupt Status
 	 * Register (318h)
 	 */
-	mdio_read(cfg->mdio, DM8806_INT_STAT_PHY_ADDR, DM8806_INT_STAT_REG_ADDR, &data);
+	res = mdio_read(cfg->mdio, DM8806_INT_STAT_PHY_ADDR, DM8806_INT_STAT_REG_ADDR, &data);
+	if (res < 0) {
+		LOG_ERR("Failed to read regad: %d, error: %d", DM8806_INT_STAT_REG_ADDR, res);
+	}
+
 	data |= 0x1;
-	mdio_write(cfg->mdio, DM8806_INT_STAT_PHY_ADDR, DM8806_INT_STAT_REG_ADDR, data);
+
+	res = mdio_write(cfg->mdio, DM8806_INT_STAT_PHY_ADDR, DM8806_INT_STAT_REG_ADDR, data);
+	if (res < 0) {
+		LOG_ERR("Failed to write regad: %d, error: %d", DM8806_INT_STAT_REG_ADDR, res);
+	}
+
 	gpio_pin_interrupt_configure_dt(&cfg->gpio_int, GPIO_INT_EDGE_TO_ACTIVE);
 }
 
