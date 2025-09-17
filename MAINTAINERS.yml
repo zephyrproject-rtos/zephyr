@@ -5242,10 +5242,11 @@ West:
     - "platform: Broadcom"
 
 "West project: hal_ambiq":
-  status: odd fixes
+  status: maintained
+  maintainers:
+    - AlessandroLuo
   collaborators:
     - aaronyegx
-    - AlessandroLuo
     - RichardSWheatley
   files:
     - modules/hal_ambiq/
