@@ -48,6 +48,7 @@ schema;platform-schema:
                   "tsim",
                   "armfvp",
                   "native",
+                  "whisper",
                   "custom",
                 ]
             "exec":
