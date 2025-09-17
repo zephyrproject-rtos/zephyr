@@ -5191,7 +5191,8 @@ West:
   collaborators:
     - tomi-font
     - ithinuel
-  files: []
+  files:
+    - modules/cmsis_6/
   labels:
     - "area: CMSIS_6"
 
