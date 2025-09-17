@@ -9,13 +9,13 @@
 
 #include <zephyr/sys/util.h>
 
-#define reg_read(reg)                                                                              \
+#define riscv_reg_read(reg)                                                                        \
 	({                                                                                         \
 		register unsigned long __rv;                                                       \
 		__asm__ volatile("mv %0, " STRINGIFY(reg) : "=r"(__rv));                           \
 		__rv;                                                                              \
 	})
 
-#define reg_write(reg, val) ({ __asm__("mv " STRINGIFY(reg) ", %0" : : "r"(val)); })
+#define riscv_reg_write(reg, val) ({ __asm__("mv " STRINGIFY(reg) ", %0" : : "r"(val)); })
 
 #endif /* ZEPHYR_INCLUDE_ZEPHYR_ARCH_RISCV_REG_H_ */
