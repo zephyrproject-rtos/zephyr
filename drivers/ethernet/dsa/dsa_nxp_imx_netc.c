@@ -415,6 +415,19 @@ static int dsa_netc_get_config(const struct device *dev, enum ethernet_config_ty
 	return ret;
 }
 
+static enum ethernet_hw_caps dsa_port_get_capabilities(const struct device *dev)
+{
+	uint32_t caps = 0;
+
+	ARG_UNUSED(dev);
+
+#ifdef CONFIG_NET_QBV
+	caps |= ETHERNET_QBV;
+#endif
+
+	return caps;
+}
+
 static struct dsa_api dsa_netc_api = {
 	.port_init = dsa_netc_port_init,
 	.port_generate_random_mac = dsa_netc_port_generate_random_mac,
@@ -424,6 +437,7 @@ static struct dsa_api dsa_netc_api = {
 	.port_txtstamp = dsa_netc_port_txtstamp,
 #endif
 	.connect_tag_protocol = dsa_netc_connect_tag_protocol,
+	.get_capabilities = dsa_port_get_capabilities,
 	.set_config = dsa_netc_set_config,
 	.get_config = dsa_netc_get_config,
 };
