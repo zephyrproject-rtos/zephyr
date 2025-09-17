@@ -209,8 +209,8 @@ static inline int mspi_dev_cfg_check_save(const struct device *controller,
 {
 	struct mspi_emul_data *data = controller->data;
 
-	if (param_mask & MSPI_DEVICE_CONFIG_CE_NUM) {
-		data->dev_cfg.ce_num = dev_cfg->ce_num;
+	if (param_mask & MSPI_DEVICE_CONFIG_CE) {
+		data->dev_cfg.ce = dev_cfg->ce;
 	}
 
 	if (param_mask & MSPI_DEVICE_CONFIG_FREQUENCY) {
@@ -253,13 +253,6 @@ static inline int mspi_dev_cfg_check_save(const struct device *controller,
 		data->dev_cfg.endian = dev_cfg->endian;
 	}
 
-	if (param_mask & MSPI_DEVICE_CONFIG_CE_POL) {
-		if (dev_cfg->ce_polarity > MSPI_CE_ACTIVE_HIGH) {
-			LOG_ERR("%u, Invalid ce_polarity.", __LINE__);
-			return -EINVAL;
-		}
-		data->dev_cfg.ce_polarity = dev_cfg->ce_polarity;
-	}
 
 	if (param_mask & MSPI_DEVICE_CONFIG_DQS) {
 		if (dev_cfg->dqs_enable && !data->mspicfg.dqs_support) {
@@ -297,8 +290,8 @@ static inline int mspi_dev_cfg_check_save(const struct device *controller,
 		data->dev_cfg.mem_boundary = dev_cfg->mem_boundary;
 	}
 
-	if (param_mask & MSPI_DEVICE_CONFIG_BREAK_TIME) {
-		data->dev_cfg.time_to_break = dev_cfg->time_to_break;
+	if (param_mask & MSPI_DEVICE_CONFIG_CE_TIMING) {
+		data->dev_cfg.ce_timing = dev_cfg->ce_timing;
 	}
 
 	return 0;
@@ -886,16 +879,8 @@ static struct emul_mspi_driver_api emul_mspi_driver_api = {
 		.mspicfg.num_ce_gpios  = ARRAY_SIZE(ce_gpios##n),                                 \
 		.mspicfg.num_periph    = DT_INST_CHILD_NUM(n),                                    \
 		.mspicfg.re_init       = false,                                                   \
-		.dev_id                = 0,                                                       \
 		.lock                  = Z_MUTEX_INITIALIZER(mspi_emul_data_##n.lock),            \
-		.dev_cfg               = {0},                                                     \
-		.xip_cfg               = {0},                                                     \
-		.scramble_cfg          = {0},                                                     \
-		.cbs                   = {0},                                                     \
-		.cb_ctxs               = {0},                                                     \
 		.ctx.lock              = Z_SEM_INITIALIZER(mspi_emul_data_##n.ctx.lock, 0, 1),    \
-		.ctx.callback          = 0,                                                       \
-		.ctx.callback_ctx      = 0,                                                       \
 	};                                                                                        \
 	DEVICE_DT_INST_DEFINE(n,                                                                  \
 			      &mspi_emul_init,                                                    \

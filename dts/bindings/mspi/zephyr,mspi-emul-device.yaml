@@ -16,6 +16,3 @@ properties:
 
   scramble-config:
     default: [0, 0, 0]
-
-  ce-break-config:
-    default: [0, 0]
