@@ -7,6 +7,7 @@ config GPIO_MSPM0
 	bool "TI MSPM0 GPIO driver"
 	default y
 	depends on DT_HAS_TI_MSPM0_GPIO_ENABLED
+	select SOC_TI_MSPM0_INT_GROUP_1
 	select USE_MSPM0_DL_GPIO
 	help
 	  Enable the TI MSPM0 GPIO driver.
