@@ -32,6 +32,8 @@
 #include <zephyr/arch/arch_interface.h>
 #include <zephyr/arch/riscv/csr.h>
 
+#include <stdlib.h>
+
 #define LOG_LEVEL CONFIG_MPU_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(mpu);
@@ -55,6 +57,14 @@ LOG_MODULE_REGISTER(mpu);
 #define PMP_ADDR_NAPOT(addr, size)	PMP_ADDR(addr | NAPOT_RANGE(size))
 
 #define PMP_NONE 0
+
+#define ADDRESS_RESOLVER(config_value)                                                             \
+	(strcmp(config_value, "__rom_region_start") == 0) ? (uintptr_t)__rom_region_start          \
+	: (strcmp(config_value, "__rom_region_size") == 0)                                         \
+		? (uintptr_t)__rom_region_size                                                     \
+		: ((config_value[0] == '0' && (config_value[1] == 'x' || config_value[1] == 'X'))  \
+			   ? (uintptr_t)strtoul(config_value, NULL, 16)                            \
+			   : 0)
 
 static void print_pmp_entries(unsigned int pmp_start, unsigned int pmp_end,
 			      unsigned long *pmp_addr, unsigned long *pmp_cfg,
@@ -355,10 +365,9 @@ void z_riscv_pmp_init(void)
 	unsigned int index = 0;
 
 	/* The read-only area is always there for every mode */
-	set_pmp_entry(&index, PMP_R | PMP_X | PMP_L,
-		      (uintptr_t)__rom_region_start,
-		      (size_t)__rom_region_size,
-		      pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
+	set_pmp_entry(&index, PMP_R | PMP_X | PMP_L, ADDRESS_RESOLVER(CONFIG_ROM_REGION_START),
+		      ADDRESS_RESOLVER(CONFIG_ROM_REGION_SIZE), pmp_addr, pmp_cfg,
+		      ARRAY_SIZE(pmp_addr));
 
 #ifdef CONFIG_NULL_POINTER_EXCEPTION_DETECTION_PMP
 	/*
