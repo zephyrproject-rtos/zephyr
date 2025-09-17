@@ -5736,7 +5736,7 @@ static void notify_iface_up(struct net_if *iface)
 		/* CAN does not require link address. */
 	} else {
 		if (!net_if_is_offloaded(iface)) {
-			NET_ASSERT(net_if_get_link_addr(iface)->addr != NULL);
+			NET_ASSERT(net_if_get_link_addr(iface)->len > 0);
 		}
 	}
 
