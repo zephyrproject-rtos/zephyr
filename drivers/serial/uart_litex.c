@@ -189,12 +189,18 @@ static int uart_litex_fifo_fill(const struct device *dev,
 	const struct uart_litex_device_config *config = dev->config;
 	int i;
 
-	litex_write8(UART_EV_TX, config->ev_pending_addr);
 	for (i = 0; i < size && !litex_read8(config->txfull_addr); i++) {
 		litex_write8(tx_data[i], config->rxtx_addr);
 	}
-	while (!litex_read8(config->txfull_addr)) {
-		litex_write8(0, config->rxtx_addr);
+
+	if (litex_read8(config->txfull_addr)) {
+		/* only flush TX event if TX is really full */
+		litex_write8(UART_EV_TX, config->ev_pending_addr);
+
+		/* fallback if we maybe missed the TX interrupt */
+		while (!litex_read8(config->txfull_addr)) {
+			litex_write8(0, config->rxtx_addr);
+		}
 	}
 
 	return i;
