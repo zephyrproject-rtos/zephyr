@@ -1,0 +1,30 @@
+/*
+ * Copyright (c) 2025 Muhammad Waleed Badar
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/dts-v1/;
+
+#include <espressif/esp32/esp32_appcpu.dtsi>
+#include <espressif/partitions_0x1000_amp.dtsi>
+
+/ {
+	model = "Ai-Thinker ESP32-CAM APPCPU";
+	compatible = "aithinker,esp32-cam";
+
+	chosen {
+		zephyr,sram = &sram1;
+		zephyr,ipc_shm = &shm0;
+		zephyr,ipc = &ipm0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_appcpu_partition;
+	};
+};
+
+&ipm0 {
+	status = "okay";
+};
+
+&trng0 {
+	status = "okay";
+};
