@@ -60,7 +60,8 @@ tests:
       - nrf54l15dk/nrf54l10/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54h20dk/nrf54h20/cpuapp
-      - ophelia4ev/nrf54l15/cpuapp
+    harness_config:
+      fixture: external_flash
   drivers.flash.common.nrf54lm20a:
     platform_allow:
       - nrf54lm20dk/nrf54lm20a/cpuapp
