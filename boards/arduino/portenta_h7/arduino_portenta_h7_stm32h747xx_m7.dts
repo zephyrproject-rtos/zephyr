@@ -8,7 +8,6 @@
 #include <st/h7/stm32h747Xi_m7.dtsi>
 #include <st/h7/stm32h747xihx-pinctrl.dtsi>
 #include "arduino_portenta_h7-common.dtsi"
-#include <../boards/common/usb/cdc_acm_serial.dtsi>
 
 / {
 	model = "Arduino Portenta H7 board";
@@ -147,9 +146,30 @@
 	status = "disabled";
 };
 
-&usbotg_hs {
+zephyr_udc0: &usbotg_hs {
 	status = "okay";
+	pinctrl-0 = <&usb_otg_hs_ulpi_d0_pa3
+		     &usb_otg_hs_ulpi_ck_pa5
+		     &usb_otg_hs_ulpi_d1_pb0
+		     &usb_otg_hs_ulpi_d2_pb1
+		     &usb_otg_hs_ulpi_d7_pb5
+		     &usb_otg_hs_ulpi_d3_pb10
+		     &usb_otg_hs_ulpi_d4_pb11
+		     &usb_otg_hs_ulpi_d5_pb12
+		     &usb_otg_hs_ulpi_d6_pb13
+		     &usb_otg_hs_ulpi_stp_pc0
+		     &usb_otg_hs_ulpi_nxt_ph4
+		     &usb_otg_hs_ulpi_dir_pi11>;
+	pinctrl-names = "default";
+	phys = <&otghs_ulpi_phy>;
+	maximum-speed = "high-speed";
+	/* Include the USB1ULPIEN | USB1OTGHSULPIEN clock enable bit */
+	clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x6000000>,
+		 <&rcc STM32_SRC_HSI48 USB_SEL(3)>;
+	num-bidir-endpoints = <4>;
 };
+
+#include <../boards/common/usb/cdc_acm_serial.dtsi>
 
 &flash0 {
 	partitions {

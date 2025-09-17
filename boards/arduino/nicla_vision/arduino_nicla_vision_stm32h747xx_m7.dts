@@ -15,9 +15,6 @@
 	compatible = "arduino,nicla-vision";
 
 	chosen {
-		zephyr,console = &lpuart1;
-		zephyr,shell-uart = &lpuart1;
-		zephyr,uart-mcumgr = &lpuart1;
 		zephyr,bt-hci = &bt_hci_uart;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
@@ -213,6 +210,8 @@ zephyr_udc0: &usbotg_hs {
 	phys = <&otghs_ulpi_phy>;
 	status = "okay";
 };
+
+#include <../boards/common/usb/cdc_acm_serial.dtsi>
 
 &i2c3 {
 	status = "okay";
