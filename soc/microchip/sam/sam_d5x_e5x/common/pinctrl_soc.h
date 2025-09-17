@@ -9,7 +9,7 @@
 
 #include <zephyr/devicetree.h>
 #include <zephyr/types.h>
-#include "dt-bindings/sam/sam_d5x_e5x/common/mchp_pinctrl_pinmux_sam.h"
+#include <dt-bindings/sam/sam_d5x_e5x/common/mchp_pinctrl_pinmux_sam.h>
 
 #ifdef __cplusplus
 extern "C" {
