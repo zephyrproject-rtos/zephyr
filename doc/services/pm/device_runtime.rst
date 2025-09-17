@@ -32,8 +32,10 @@ in response to :c:func:`pm_device_runtime_get` and :c:func:`pm_device_runtime_pu
 calls on the child device.
 
 For the previous to automatically control the power domain state, device runtime PM must be enabled
-on the power domain device (either through the ``zephyr,pm-device-runtime-auto`` devicetree property
-or :c:func:`pm_device_runtime_enable`).
+on the power domain device. To enable device runtime PM globally, enable
+:kconfig:option:`CONFIG_PM_DEVICE_RUNTIME_DEFAULT_ENABLE`. To enable device runtime PM only for
+select devices, set the ``zephyr,pm-device-runtime-auto`` devicetree property, or use
+:c:func:`pm_device_runtime_enable` for the select devices.
 
 .. graphviz::
    :caption: Device states and transitions
