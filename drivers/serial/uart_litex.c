@@ -267,17 +267,11 @@ static void uart_litex_irq_callback_set(const struct device *dev,
 
 static void uart_litex_irq_handler(const struct device *dev)
 {
-	const struct uart_litex_device_config *config = dev->config;
 	struct uart_litex_data *data = dev->data;
 	unsigned int key = irq_lock();
 
 	if (data->callback) {
 		data->callback(dev, data->cb_data);
-	}
-
-	/* Clear RX events, TX events still needed to enqueue the next transfer */
-	if ((litex_read8(config->ev_pending_addr) & UART_EV_RX) > 0) {
-		litex_write8(UART_EV_RX, config->ev_pending_addr);
 	}
 
 	irq_unlock(key);
