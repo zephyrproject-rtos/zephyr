@@ -77,6 +77,7 @@ endif()
 
 set(protectedmem_args)
 set(periphconf_args)
+set(wdtstart_args)
 set(periphconf_elfs)
 set(merged_hex_file ${APPLICATION_BINARY_DIR}/zephyr/${CONFIG_KERNEL_BIN_NAME}.hex)
 set(secondary_periphconf_elfs)
@@ -118,6 +119,13 @@ endif(CONFIG_GEN_UICR_SECURESTORAGE)
 if(CONFIG_GEN_UICR_PROTECTEDMEM)
   list(APPEND protectedmem_args --protectedmem)
   list(APPEND protectedmem_args --protectedmem-size-bytes ${CONFIG_GEN_UICR_PROTECTEDMEM_SIZE_BYTES})
+endif()
+
+# Handle WDTSTART configuration
+if(CONFIG_GEN_UICR_WDTSTART)
+  list(APPEND wdtstart_args --wdtstart)
+  list(APPEND wdtstart_args --wdtstart-instance-code ${CONFIG_GEN_UICR_WDTSTART_INSTANCE_CODE})
+  list(APPEND wdtstart_args --wdtstart-crv ${CONFIG_GEN_UICR_WDTSTART_CRV})
 endif()
 
 if(CONFIG_GEN_UICR_GENERATE_PERIPHCONF)
@@ -173,6 +181,13 @@ if(CONFIG_GEN_UICR_SECONDARY)
     --secondary-processor ${CONFIG_GEN_UICR_SECONDARY_PROCESSOR_VALUE}
     )
 
+  # Handle secondary WDTSTART configuration
+  if(CONFIG_GEN_UICR_SECONDARY_WDTSTART)
+    list(APPEND secondary_args --secondary-wdtstart)
+    list(APPEND secondary_args --secondary-wdtstart-instance-code ${CONFIG_GEN_UICR_SECONDARY_WDTSTART_INSTANCE_CODE})
+    list(APPEND secondary_args --secondary-wdtstart-crv ${CONFIG_GEN_UICR_SECONDARY_WDTSTART_CRV})
+  endif()
+
   if(CONFIG_GEN_UICR_SECONDARY_GENERATE_PERIPHCONF)
     # Compute SECONDARY_PERIPHCONF absolute address and size from this image's devicetree
     compute_partition_address_and_size("secondary_periphconf_partition" SECONDARY_PERIPHCONF_ADDRESS SECONDARY_PERIPHCONF_SIZE)
@@ -195,6 +210,7 @@ add_custom_command(
           --uicr-address ${UICR_ADDRESS}
           --out-merged-hex ${merged_hex_file}
           --out-uicr-hex ${uicr_hex_file}
+          ${wdtstart_args}
           ${periphconf_args}
           ${securestorage_args}
           ${protectedmem_args}
