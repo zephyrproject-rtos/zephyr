@@ -5724,6 +5724,7 @@ West:
   maintainers:
     - pdgendt
   files:
+    - doc/services/serialization/nanopb.rst
     - modules/nanopb/
     - samples/modules/nanopb/
     - tests/modules/nanopb/
