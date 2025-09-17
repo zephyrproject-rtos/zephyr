@@ -2820,6 +2820,7 @@ Infineon Platforms:
     - boards/cypress/
     - boards/infineon/
     - drivers/*/*ifx_cat1*
+    - drivers/*/*ifx*
     - drivers/*/*xmc*
     - drivers/sensor/infineon/
     - dts/arm/infineon/
