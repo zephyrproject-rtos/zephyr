@@ -172,6 +172,7 @@
 				compatible = "ti,mspm0-gpio";
 				reg = <0x400a0000 0x2000>;
 				interrupts = <1 0>;
+				ti,int-group-iidx = <0>;
 				status = "disabled";
 				gpio-controller;
 				#gpio-cells = <2>;
@@ -181,6 +182,7 @@
 				compatible = "ti,mspm0-gpio";
 				reg = <0x400a2000 0x2000>;
 				interrupts = <1 0>;
+				ti,int-group-iidx = <1>;
 				status = "disabled";
 				gpio-controller;
 				#gpio-cells = <2>;
