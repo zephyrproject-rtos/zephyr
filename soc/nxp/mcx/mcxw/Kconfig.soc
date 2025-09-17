@@ -1,38 +1,10 @@
-# Copyright 2024 NXP
+# Copyright 2024-2025 NXP
 # SPDX-License-Identifier: Apache-2.0
+
+rsource "*/Kconfig.soc"
 
 config SOC_FAMILY_MCXW
 	bool
 
 config SOC_FAMILY
 	default "mcxw" if SOC_FAMILY_MCXW
-
-config SOC_MCXW716C
-	bool
-	select SOC_FAMILY_MCXW
-
-config SOC_MCXW727C
-	bool
-	select SOC_FAMILY_MCXW
-
-config SOC_MCXW727C_CPU0
-	bool
-	select SOC_MCXW727C
-
-config SOC_MCXW727C_CPU1
-	bool
-	select SOC_MCXW727C
-
-config SOC
-	default "mcxw716c" if SOC_MCXW716C
-	default "mcxw727c" if SOC_MCXW727C
-
-config SOC_PART_NUMBER_MCXW716CMFTA
-	bool
-
-config SOC_PART_NUMBER_MCXW727CMFTA
-	bool
-
-config SOC_PART_NUMBER
-	default "MCXW716CMFTA" if SOC_PART_NUMBER_MCXW716CMFTA
-	default "MCXW727CMFTA" if SOC_PART_NUMBER_MCXW727CMFTA
