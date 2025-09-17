@@ -1,8 +1,11 @@
 name: Code Coverage with codecov
 
 on:
-  schedule:
-    - cron: '25 06,18 * * *'
+  push:
+    branches:
+      - main
+      - v*-branch
+      - collab-*
 
 permissions:
   contents: read
