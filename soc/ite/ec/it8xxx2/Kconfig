@@ -47,6 +47,12 @@ config SOC_IT8XXX2_USBPD_PHY_V2
 	  This option is automatically selected by variant soc and sets
 	  the USBPD PHY version.
 
+config SOC_IT8XXX2_GPIO_Q_GROUP_SUPPORTED
+	bool
+	help
+	  This option indicates GPIO-Q group support and is
+	  automatically selected based on the SoC variant.
+
 config SOC_IT81302BX
 	select SOC_IT8XXX2_REG_SET_V1
 	select SOC_IT8XXX2_USBPD_PHY_V1
@@ -100,6 +106,11 @@ config SOC_IT82302BW
 	select SOC_IT8XXX2_REG_SET_V2
 	select SOC_IT8XXX2_EC_BUS_24MHZ if !DT_HAS_ITE_IT82XX2_USB_ENABLED
 	select SOC_IT8XXX2_USBPD_PHY_V2
+
+config SOC_IT82000BW
+	select SOC_IT8XXX2_REG_SET_V2
+	select SOC_IT8XXX2_EC_BUS_24MHZ if !DT_HAS_ITE_IT82XX2_USB_ENABLED
+	select SOC_IT8XXX2_GPIO_Q_GROUP_SUPPORTED
 
 config SOC_IT8XXX2_PLL_FLASH_48M
 	bool "Flash frequency is 48MHz"
