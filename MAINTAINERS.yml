@@ -1722,6 +1722,7 @@ Documentation Infrastructure:
     - drivers/haptics/
     - dts/bindings/haptics/
     - include/zephyr/drivers/haptics.h
+    - include/zephyr/drivers/haptics/
     - doc/hardware/peripherals/haptics.rst
     - tests/drivers/build_all/haptics/
     - samples/drivers/haptics/
