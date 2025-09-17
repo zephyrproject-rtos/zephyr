@@ -1406,6 +1406,7 @@ Documentation Infrastructure:
   files:
     - drivers/dac/
     - include/zephyr/drivers/dac.h
+    - include/zephyr/drivers/dac/
     - dts/bindings/dac/
     - include/zephyr/dt-bindings/dac/
     - tests/drivers/dac/
