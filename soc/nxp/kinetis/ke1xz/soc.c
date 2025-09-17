@@ -167,7 +167,7 @@ __weak void clk_init(void)
 	/* Finally init the App desired clock */
 	CLOCK_SetRunModeSysClkConfig(&scg_sys_clk_config);
 	do {
-	     CLOCK_GetCurSysClkConfig(&current);
+		CLOCK_GetCurSysClkConfig(&current);
 	} while (current.src != scg_sys_clk_config.src);
 
 

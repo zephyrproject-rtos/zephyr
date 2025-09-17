@@ -79,7 +79,7 @@ Install the :ref:`jlink-debug-host-tools` and make sure they are in your search
 path.
 
 Follow the instructions in :ref:`opensda-jlink-onboard-debug-probe` to program
-the `OpenSDA J-Link Firmware for FRDM-KE16Z`_.
+the `OpenSDA J-Link Firmware for FRDM-KE15Z`_.
 Use the ``-r jlink`` option with west to use the jlink runner.
 
 .. code-block:: console
