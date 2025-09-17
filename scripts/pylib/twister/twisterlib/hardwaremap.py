@@ -168,6 +168,7 @@ class HardwareMap:
                 self.add_device(self.options.device_serial[0],
                                 self.options.platform[0],
                                 self.options.pre_script,
+                                self.options.failure_script,
                                 False,
                                 baud=self.options.device_serial_baud,
                                 flash_timeout=self.options.device_flash_timeout,
@@ -179,12 +180,14 @@ class HardwareMap:
                         self.add_device(serial,
                                         platform=None,
                                         pre_script=None,
+                                        failure_script=None,
                                         is_pty=False)
 
             elif self.options.device_serial_pty:
                 self.add_device(self.options.device_serial_pty,
                                 self.options.platform[0],
                                 self.options.pre_script,
+                                self.options.failure_script,
                                 True,
                                 flash_timeout=self.options.device_flash_timeout,
                                 flash_with_test=self.options.device_flash_with_test,
@@ -214,6 +217,7 @@ class HardwareMap:
         serial,
         platform,
         pre_script,
+        failure_script,
         is_pty,
         baud=None,
         flash_timeout=60,
@@ -224,6 +228,7 @@ class HardwareMap:
             platform=platform,
             connected=True,
             pre_script=pre_script,
+            failure_script=failure_script,
             serial_baud=baud,
             flash_timeout=flash_timeout,
             flash_with_test=flash_with_test,
@@ -268,6 +273,7 @@ class HardwareMap:
             fixtures = dut.get('fixtures', [])
             connected = dut.get('connected') and ((serial or serial_pty) is not None)
             west_flash_cmd = dut.get('west_flash_cmd', "")
+            failure_script = dut.get('failure_script')
             if not connected:
                 continue
             for plat in platforms:
@@ -287,7 +293,8 @@ class HardwareMap:
                               script_param=script_param,
                               flash_timeout=flash_timeout,
                               flash_with_test=flash_with_test,
-                              west_flash_cmd=west_flash_cmd)
+                              west_flash_cmd=west_flash_cmd,
+                              failure_script=failure_script)
                 new_dut.fixtures = fixtures
                 new_dut.counter = 0
                 self.duts.append(new_dut)

@@ -685,6 +685,7 @@ class DeviceHandler(Handler):
 
         post_flash_script = hardware.post_flash_script
         post_script = hardware.post_script
+        failure_script = hardware.failure_script
 
         flash_timeout = hardware.flash_timeout
         if hardware.flash_with_test:
@@ -831,6 +832,13 @@ class DeviceHandler(Handler):
             if script_param:
                 timeout = script_param.get("post_script_timeout", timeout)
             self.run_custom_script(post_script, timeout)
+
+        if failure_script and self.instance.status in [TwisterStatus.ERROR, TwisterStatus.FAIL]:
+            logger.debug(f"Running failure script: {failure_script}")
+            timeout = 30
+            if script_param:
+                timeout = script_param.get("failure_script_timeout", timeout)
+            self.run_custom_script(failure_script, timeout)
 
 
 class QEMUHandler(Handler):
