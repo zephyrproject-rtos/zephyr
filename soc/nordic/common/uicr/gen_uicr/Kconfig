@@ -46,6 +46,93 @@ config GEN_UICR_PROTECTEDMEM_SIZE_BYTES
 	  Size of the protected memory region in bytes.
 	  This value must be divisible by 4096 (4 kiB).
 
+config GEN_UICR_WDTSTART
+	bool "Enable UICR.WDTSTART"
+	help
+	  When enabled, the UICR generator will configure an application
+	  domain watchdog timer to start automatically before the
+	  application core is booted.
+
+choice GEN_UICR_WDTSTART_INSTANCE
+	prompt "Watchdog timer instance"
+	depends on GEN_UICR_WDTSTART
+	default GEN_UICR_WDTSTART_INSTANCE_WDT0
+	help
+	  Select which watchdog timer instance to use.
+
+config GEN_UICR_WDTSTART_INSTANCE_WDT0
+	bool "WDT0"
+	help
+	  Use watchdog timer instance 0.
+
+config GEN_UICR_WDTSTART_INSTANCE_WDT1
+	bool "WDT1"
+	help
+	  Use watchdog timer instance 1.
+
+endchoice
+
+config GEN_UICR_WDTSTART_INSTANCE_CODE
+	hex
+	default 0xBD2328A8 if GEN_UICR_WDTSTART_INSTANCE_WDT0
+	default 0x1730C77F if GEN_UICR_WDTSTART_INSTANCE_WDT1
+	depends on GEN_UICR_WDTSTART
+
+config GEN_UICR_WDTSTART_CRV
+	int "Initial Counter Reload Value (CRV)"
+	default 65535
+	range 15 4294967295
+	depends on GEN_UICR_WDTSTART
+	help
+	  Initial Counter Reload Value (CRV) for the watchdog timer.
+	  This value determines the watchdog timeout period.
+	  Must be at least 15 (0xF) to ensure proper watchdog operation.
+	  Default value 65535 creates a 2-second timeout.
+
+config GEN_UICR_SECONDARY_WDTSTART
+	bool "Enable UICR.SECONDARY.WDTSTART"
+	depends on GEN_UICR_SECONDARY
+	help
+	  When enabled, the UICR generator will configure the
+	  watchdog timer to start automatically before the
+	  secondary firmware is booted.
+
+choice GEN_UICR_SECONDARY_WDTSTART_INSTANCE
+	prompt "Secondary watchdog timer instance"
+	depends on GEN_UICR_SECONDARY_WDTSTART
+	default GEN_UICR_SECONDARY_WDTSTART_INSTANCE_WDT0
+	help
+	  Select which watchdog timer instance to use for secondary firmware.
+
+config GEN_UICR_SECONDARY_WDTSTART_INSTANCE_WDT0
+	bool "WDT0"
+	help
+	  Use watchdog timer instance 0 for secondary firmware.
+
+config GEN_UICR_SECONDARY_WDTSTART_INSTANCE_WDT1
+	bool "WDT1"
+	help
+	  Use watchdog timer instance 1 for secondary firmware.
+
+endchoice
+
+config GEN_UICR_SECONDARY_WDTSTART_INSTANCE_CODE
+	hex
+	default 0xBD2328A8 if GEN_UICR_SECONDARY_WDTSTART_INSTANCE_WDT0
+	default 0x1730C77F if GEN_UICR_SECONDARY_WDTSTART_INSTANCE_WDT1
+	depends on GEN_UICR_SECONDARY_WDTSTART
+
+config GEN_UICR_SECONDARY_WDTSTART_CRV
+	int "Secondary initial Counter Reload Value (CRV)"
+	default 65535
+	range 15 4294967295
+	depends on GEN_UICR_SECONDARY_WDTSTART
+	help
+	  Initial Counter Reload Value (CRV) for the secondary watchdog timer.
+	  This value determines the watchdog timeout period.
+	  Must be at least 15 (0xF) to ensure proper watchdog operation.
+	  Default value 65535 creates a 2-second timeout.
+
 config GEN_UICR_SECONDARY
 	bool "Enable UICR.SECONDARY.ENABLE"
 

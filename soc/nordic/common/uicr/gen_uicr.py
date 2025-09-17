@@ -441,6 +441,36 @@ def main() -> None:
         help="Protected memory size in bytes (must be divisible by 4096)",
     )
     parser.add_argument(
+        "--wdtstart",
+        action="store_true",
+        help="Enable watchdog timer start in UICR",
+    )
+    parser.add_argument(
+        "--wdtstart-instance-code",
+        type=lambda s: int(s, 0),
+        help="Watchdog timer instance code (0xBD2328A8 for WDT0, 0x1730C77F for WDT1)",
+    )
+    parser.add_argument(
+        "--wdtstart-crv",
+        type=int,
+        help="Initial Counter Reload Value (CRV) for watchdog timer (minimum: 0xF)",
+    )
+    parser.add_argument(
+        "--secondary-wdtstart",
+        action="store_true",
+        help="Enable watchdog timer start in UICR.SECONDARY",
+    )
+    parser.add_argument(
+        "--secondary-wdtstart-instance-code",
+        type=lambda s: int(s, 0),
+        help="Secondary watchdog timer instance code (0xBD2328A8 for WDT0, 0x1730C77F for WDT1)",
+    )
+    parser.add_argument(
+        "--secondary-wdtstart-crv",
+        type=int,
+        help="Secondary initial Counter Reload Value (CRV) for watchdog timer (minimum: 0xF)",
+    )
+    parser.add_argument(
         "--secondary",
         action="store_true",
         help="Enable secondary firmware support in UICR",
@@ -557,6 +587,12 @@ def main() -> None:
             uicr.PROTECTEDMEM.ENABLE = ENABLED_VALUE
             uicr.PROTECTEDMEM.SIZE4KB = args.protectedmem_size_bytes // KB_4
 
+        # Handle WDTSTART configuration
+        if args.wdtstart:
+            uicr.WDTSTART.ENABLE = ENABLED_VALUE
+            uicr.WDTSTART.CRV = args.wdtstart_crv
+            uicr.WDTSTART.INSTANCE = args.wdtstart_instance_code
+
         # Process periphconf data first and configure UICR completely before creating hex objects
         periphconf_hex = IntelHex()
         secondary_periphconf_hex = IntelHex()
@@ -624,6 +660,12 @@ def main() -> None:
                     )
 
                 uicr.SECONDARY.PERIPHCONF.MAXCOUNT = args.secondary_periphconf_size // 8
+
+            # Handle secondary WDTSTART configuration
+            if args.secondary_wdtstart:
+                uicr.SECONDARY.WDTSTART.ENABLE = ENABLED_VALUE
+                uicr.SECONDARY.WDTSTART.CRV = args.secondary_wdtstart_crv
+                uicr.SECONDARY.WDTSTART.INSTANCE = args.secondary_wdtstart_instance_code
 
         # Create UICR hex object with final UICR data
         uicr_hex = IntelHex()
