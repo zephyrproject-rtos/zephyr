@@ -49,7 +49,8 @@ class DUT:
                  runner=None,
                  flash_timeout=60,
                  flash_with_test=False,
-                 flash_before=False):
+                 flash_before=False,
+                 failure_script=None):
 
         self.serial = serial
         self.baud = serial_baud or 115200
@@ -70,6 +71,7 @@ class DUT:
         self.post_script = post_script
         self.pre_script = pre_script
         self.script_param = script_param
+        self.failure_script = failure_script
         self.probe_id = None
         self.notes = None
         self.lock = Lock()
@@ -198,6 +200,7 @@ class HardwareMap:
                 self.add_device(self.options.device_serial,
                                 self.options.platform[0],
                                 self.options.pre_script,
+                                self.options.failure_script,
                                 False,
                                 baud=self.options.device_serial_baud,
                                 flash_timeout=self.options.device_flash_timeout,
@@ -209,6 +212,7 @@ class HardwareMap:
                 self.add_device(self.options.device_serial_pty,
                                 self.options.platform[0],
                                 self.options.pre_script,
+                                self.options.failure_script,
                                 True,
                                 flash_timeout=self.options.device_flash_timeout,
                                 flash_with_test=self.options.device_flash_with_test,
@@ -238,6 +242,7 @@ class HardwareMap:
         serial,
         platform,
         pre_script,
+        failure_script,
         is_pty,
         baud=None,
         flash_timeout=60,
@@ -248,6 +253,7 @@ class HardwareMap:
             platform=platform,
             connected=True,
             pre_script=pre_script,
+            failure_script=failure_script,
             serial_baud=baud,
             flash_timeout=flash_timeout,
             flash_with_test=flash_with_test,
@@ -291,6 +297,7 @@ class HardwareMap:
             product = dut.get('product')
             fixtures = dut.get('fixtures', [])
             connected = dut.get('connected') and ((serial or serial_pty) is not None)
+            failure_script = dut.get('failure_script')
             if not connected:
                 continue
             for plat in platforms:
@@ -309,7 +316,8 @@ class HardwareMap:
                               post_flash_script=post_flash_script,
                               script_param=script_param,
                               flash_timeout=flash_timeout,
-                              flash_with_test=flash_with_test)
+                              flash_with_test=flash_with_test,
+                              failure_script=failure_script)
                 new_dut.fixtures = fixtures
                 new_dut.counter = 0
                 self.duts.append(new_dut)

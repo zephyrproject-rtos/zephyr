@@ -57,6 +57,7 @@ TESTDATA_1 = [
             'pre_script': 'dummy pre script',
             'post_script': 'dummy post script',
             'post_flash_script': 'dummy post flash script',
+            'failure_script': 'dummy failure script',
             'runner': 'dummy runner',
             'flash_timeout': 30,
             'flash_with_test': True,
@@ -64,6 +65,7 @@ TESTDATA_1 = [
                 'pre_script_timeout' : 30,
                 'post_flash_timeout' : 30,
                 'post_script_timeout' : 30,
+                'failure_script_timeout' : 30,
                 }
         },
         {
@@ -79,6 +81,7 @@ TESTDATA_1 = [
             'pre_script': 'dummy pre script',
             'post_script': 'dummy post script',
             'post_flash_script': 'dummy post flash script',
+            'failure_script': 'dummy failure script',
             'runner': 'dummy runner',
             'flash_timeout': 30,
             'flash_with_test': True,
@@ -86,6 +89,7 @@ TESTDATA_1 = [
                 'pre_script_timeout' : 30,
                 'post_flash_timeout' : 30,
                 'post_script_timeout' : 30,
+                'failure_script_timeout' : 30,
                 }
         },
         '<dummy platform (dummy product) on dummy serial>'
@@ -253,7 +257,8 @@ def test_hardwaremap_add_device(is_pty):
     serial = 'dummy'
     platform = 'p0'
     pre_script = 'dummy pre script'
-    hm.add_device(serial, platform, pre_script, is_pty)
+    failure_script = 'dummy failure script'
+    hm.add_device(serial, platform, pre_script, failure_script, is_pty)
 
     assert len(hm.duts) == 1
     if is_pty:
