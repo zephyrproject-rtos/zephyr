@@ -70,6 +70,10 @@
 	status = "okay";
 };
 
+&lfclk {
+	status = "okay";
+};
+
 &uart20 {
 	status = "okay";
 };

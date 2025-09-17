@@ -31,6 +31,9 @@ void clock_control_nrf_common_connect_irq( void )
 	}
 	irq_connected = true;
 
-	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
-		    nrfx_isr, clock_irq_handler, 0);
+#if NRF_LFRC_HAS_CALIBRATION
+	IRQ_CONNECT(LFRC_IRQn, DT_INST_IRQ(0, priority), nrfx_isr, clock_irq_handler, 0);
+#endif
+
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), nrfx_isr, clock_irq_handler, 0);
 }

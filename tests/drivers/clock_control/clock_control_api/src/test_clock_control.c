@@ -33,10 +33,7 @@ static void setup_instance(const struct device *dev, clock_control_subsys_t subs
 		err = clock_control_off(dev, subsys);
 #if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_clock)
 		if (err == -EPERM) {
-			struct onoff_manager *mgr =
-				z_nrf_clock_control_get_onoff(subsys);
-
-			err = onoff_release(mgr);
+            err = nrf_clock_control_release(dev, NULL);
 			if (err >= 0) {
 				break;
 			}
@@ -45,28 +42,27 @@ static void setup_instance(const struct device *dev, clock_control_subsys_t subs
 	} while (clock_control_get_status(dev, subsys) !=
 			CLOCK_CONTROL_STATUS_OFF);
 
-	LOG_INF("setup done");
+	LOG_INF("setup done: %s", dev->name);
 }
 
 static void tear_down_instance(const struct device *dev,
 				clock_control_subsys_t subsys)
 {
-#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_clock)
+#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_clock_lfclk)
 	/* Turn on LF clock using onoff service if it is disabled. */
-	const struct device *const clk = DEVICE_DT_GET_ONE(nordic_nrf_clock);
+	const struct device *const clk = DEVICE_DT_GET_ONE(nordic_nrf_clock_lfclk);
 	struct onoff_client cli;
-	struct onoff_manager *mgr = z_nrf_clock_control_get_onoff(CLOCK_CONTROL_NRF_SUBSYS_LF);
 	int err;
 
 	zassert_true(device_is_ready(clk), "Clock dev is not ready");
 
-	if (clock_control_get_status(clk, CLOCK_CONTROL_NRF_SUBSYS_LF) !=
+	if (clock_control_get_status(clk, NULL) !=
 		CLOCK_CONTROL_STATUS_OFF) {
 		return;
 	}
 
 	sys_notify_init_spinwait(&cli.notify);
-	err = onoff_request(mgr, &cli);
+    err = nrf_clock_control_request(clk, NULL, &cli);
 	zassert_true(err >= 0, "");
 
 	while (sys_notify_fetch_result(&cli.notify, &err) < 0) {

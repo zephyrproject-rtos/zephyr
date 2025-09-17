@@ -141,3 +141,7 @@
 &xo {
 	status = "okay";
 };
+
+&lfclk {
+	status = "okay";
+};

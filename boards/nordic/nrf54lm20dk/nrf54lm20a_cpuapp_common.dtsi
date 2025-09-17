@@ -140,6 +140,10 @@
 	status = "okay";
 };
 
+&lfclk {
+	status = "okay";
+};
+
 &bt_hci_controller {
 	status = "okay";
 };
