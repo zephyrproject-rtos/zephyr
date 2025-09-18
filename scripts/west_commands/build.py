@@ -13,7 +13,7 @@ import yaml
 from build_helpers import FIND_BUILD_DIR_DESCRIPTION, find_build_dir, is_zephyr_build, load_domains
 from west.commands import Verbosity
 from west.configuration import config
-from west.util import west_topdir
+from west.util import WestNotFound, west_topdir
 from west.version import __version__
 from zcmake import DEFAULT_CMAKE_GENERATOR, CMakeCache, run_build, run_cmake
 from zephyr_ext_common import Forceable
@@ -283,11 +283,11 @@ class Build(Forceable):
             if board is not None:
                 return (board, origin)
 
-        if self.args.board:
+        if getattr(self.args, 'board', None):
             board, origin = self.args.board, 'command line'
         elif 'BOARD' in os.environ:
             board, origin = os.environ['BOARD'], 'env'
-        elif self.config_board is not None:
+        elif getattr(self, 'config_board', None):
             board, origin = self.config_board, 'configfile'
         return board, origin
 
@@ -452,16 +452,37 @@ class Build(Forceable):
         with contextlib.suppress(FileNotFoundError):
             self.cmake_cache = CMakeCache.from_build_dir(self.build_dir)
 
+    def _get_dir_fmt_context(self):
+        # Return a dictionary of build attributes which are used while
+        # substituting the placeholders in the build.dir-fmt format string.
+        source_dir = pathlib.Path(self._find_source_dir())
+        app = source_dir.name
+        board, _ = self._find_board()
+        try:
+            west_top_dir = west_topdir(source_dir)
+        except WestNotFound:
+            west_top_dir = pathlib.Path.cwd()
+        context = {
+            "west_topdir": str(west_top_dir),
+            "source_dir": str(source_dir),
+            "app": app,
+            "board": board,
+        }
+        if source_dir.is_relative_to(west_top_dir):
+            context['source_dir_workspace'] = str(source_dir.relative_to(west_top_dir))
+        else:
+            context['source_dir_workspace'] = str(source_dir.relative_to(source_dir.anchor))
+        self.dbg(f'dir-fmt context: {context}', level=Verbosity.DBG_EXTREME)
+        return context
+
     def _setup_build_dir(self):
         # Initialize build_dir and created_build_dir attributes.
         # If we created the build directory, we must run CMake.
         self.dbg('setting up build directory', level=Verbosity.DBG_EXTREME)
         # The CMake Cache has not been loaded yet, so this is safe
-        board, _ = self._find_board()
-        source_dir = self._find_source_dir()
-        app = os.path.split(source_dir)[1]
-        build_dir = find_build_dir(self.args.build_dir, board=board,
-                                   source_dir=source_dir, app=app)
+
+        context = self._get_dir_fmt_context()
+        build_dir = find_build_dir(self.args.build_dir, **context)
         if not build_dir:
             self.die('Unable to determine a default build folder. Check '
                     'your build.dir-fmt configuration option')
