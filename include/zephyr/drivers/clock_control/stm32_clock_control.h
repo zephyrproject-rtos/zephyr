@@ -12,6 +12,9 @@
 
 #include <zephyr/drivers/clock_control.h>
 
+/* Retrieve the main system clock from DTS. */
+#define STM32_HCLK_FREQUENCY DT_PROP(DT_NODELABEL(rcc), clock_frequency)
+
 #if defined(CONFIG_SOC_SERIES_STM32C0X)
 #include <zephyr/dt-bindings/clock/stm32c0_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32F0X)
