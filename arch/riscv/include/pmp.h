@@ -14,5 +14,6 @@ void z_riscv_pmp_stackguard_disable(void);
 void z_riscv_pmp_usermode_init(struct k_thread *thread);
 void z_riscv_pmp_usermode_prepare(struct k_thread *thread);
 void z_riscv_pmp_usermode_enable(struct k_thread *thread);
+void z_riscv_custom_pmp_entry_enable(void);
 
 #endif /* PMP_H_ */

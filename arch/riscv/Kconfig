@@ -432,6 +432,44 @@ config PMP_STACK_GUARD_MIN_SIZE
 	  wiggle room to accommodate the eventual overflow exception
 	  stack usage.
 
+config CUSTOM_PMP_ENTRY
+	bool "Use PMP for custom protection region"
+	depends on RISCV_PMP
+	help
+	  Enable a custom Physical Memory Protection (PMP) entry to protect
+	  a user-defined memory region. This is typically used for critical
+	  data or firmware rollback protection.
+
+if CUSTOM_PMP_ENTRY
+
+config CUSTOM_PMP_ENTRY_START
+	hex "Custom PMP entry start address"
+	default 0x80000000
+	help
+	  The base address of the memory region to be protected by the custom
+	  PMP entry.
+
+config CUSTOM_PMP_ENTRY_SIZE
+	hex "Custom PMP entry size in bytes"
+	default 0x4000
+	help
+	  The size, in bytes, of the memory region to be protected. The region
+	  will extend from CUSTOM_PMP_ENTRY_START for this many bytes.
+
+config CUSTOM_PMP_ENTRY_PERMISSIONS
+	hex "Custom PMP entry permissions (PMP_R, PMP_W, PMP_X)"
+	default 0x3 # PMP_R | PMP_W (Read and Write)
+	help
+	  The permissions for the PMP region, represented as a bitmask of
+	  PMP attributes:
+	  0x1: PMP_R (Read)
+	  0x2: PMP_W (Write)
+	  0x4: PMP_X (Execute)
+
+	  Example: 0x3 is (Read | Write).
+
+endif # CUSTOM_PMP_ENTRY
+
 # Implement the null pointer detection using the Physical Memory Protection
 # (PMP) Unit.
 config NULL_POINTER_EXCEPTION_DETECTION_PMP

@@ -204,7 +204,7 @@ static bool set_pmp_entry(unsigned int *index_p, uint8_t perm,
 	return ok;
 }
 
-#ifdef CONFIG_PMP_STACK_GUARD
+#if defined(CONFIG_PMP_STACK_GUARD) || defined(CONFIG_CUSTOM_PMP_ENTRY)
 static inline bool set_pmp_mprv_catchall(unsigned int *index_p,
 					 unsigned long *pmp_addr, unsigned long *pmp_cfg,
 					 unsigned int index_limit)
@@ -354,6 +354,13 @@ void z_riscv_pmp_init(void)
 	unsigned long pmp_cfg[CONFIG_PMP_SLOTS / PMPCFG_STRIDE];
 	unsigned int index = 0;
 
+#ifdef CONFIG_CUSTOM_PMP_ENTRY
+	set_pmp_entry(&index, CONFIG_CUSTOM_PMP_ENTRY_PERMISSIONS,
+		      (uintptr_t)(CONFIG_CUSTOM_PMP_ENTRY_START),
+		      (size_t)(CONFIG_CUSTOM_PMP_ENTRY_SIZE), pmp_addr, pmp_cfg,
+		      ARRAY_SIZE(pmp_addr));
+#endif
+
 	/* The read-only area is always there for every mode */
 	set_pmp_entry(&index, PMP_R | PMP_X | PMP_L,
 		      (uintptr_t)__rom_region_start,
@@ -369,6 +376,17 @@ void z_riscv_pmp_init(void)
 		      0,
 		      CONFIG_NULL_POINTER_EXCEPTION_REGION_SIZE,
 		      pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
+#endif
+
+#ifdef CONFIG_CUSTOM_PMP_ENTRY
+#ifndef CONFIG_PMP_STACK_GUARD
+	/*
+	 * This early, the kernel init code uses the custom entry and we want to
+	 * safeguard it as soon as possible. But we need a temporary default
+	 * "catch all" PMP entry for MPRV to work.
+	 */
+	set_pmp_mprv_catchall(&index, pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
+#endif
 #endif
 
 #ifdef CONFIG_PMP_STACK_GUARD
@@ -445,6 +463,20 @@ void z_riscv_pmp_init(void)
 		dump_pmp_regs("initial register dump");
 	}
 }
+
+#if defined(CONFIG_CUSTOM_PMP_ENTRY)
+/**
+ * @brief Prepare M-mode for custom PMP entry handling.
+ *
+ * Configures the Machine Status Register (mstatus) by clearing MPP and setting MPRV to control
+ * the memory privilege context for PMP access or configuration.
+ */
+void z_riscv_custom_pmp_entry_enable(void)
+{
+	csr_clear(mstatus, MSTATUS_MPRV | MSTATUS_MPP);
+	csr_set(mstatus, MSTATUS_MPRV);
+}
+#endif
 
 /**
  * @Brief Initialize the per-thread PMP register copy with global values.
