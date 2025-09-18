@@ -615,14 +615,14 @@ void ffsa_init_bottom(const char *fuse_mountpoint, struct ffa_op_callbacks *op_c
 		nsi_print_error_and_exit("%s is not a directory\n", fuse_mountpoint);
 	}
 
-	err = pthread_create(&fuse_thread, NULL, ffsa_main, (void *)fuse_mountpoint);
-	if (err < 0) {
-		nsi_print_error_and_exit("Failed to create thread for fuse_fs_access_main\n");
-	}
-
 	err = sem_init(&op_queue.op_done, 0, 0);
 	if (err) {
 		nsi_print_error_and_exit("Failed to initialize semaphore\n");
+	}
+
+	err = pthread_create(&fuse_thread, NULL, ffsa_main, (void *)fuse_mountpoint);
+	if (err < 0) {
+		nsi_print_error_and_exit("Failed to create thread for fuse_fs_access_main\n");
 	}
 }
 
