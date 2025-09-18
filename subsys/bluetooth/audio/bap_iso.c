@@ -241,6 +241,7 @@ static bool is_unicast_client_ep(struct bt_bap_ep *ep)
 
 void bt_bap_iso_bind_ep(struct bt_bap_iso *iso, struct bt_bap_ep *ep)
 {
+	const struct bt_bap_ep *paired_ep;
 	struct bt_bap_iso_dir *iso_dir;
 
 	__ASSERT_NO_MSG(ep != NULL);
@@ -256,6 +257,15 @@ void bt_bap_iso_bind_ep(struct bt_bap_iso *iso, struct bt_bap_ep *ep)
 	iso_dir->ep = ep;
 
 	ep->iso = bt_bap_iso_ref(iso);
+
+	paired_ep = bt_bap_iso_get_paired_ep(ep);
+	if (paired_ep != NULL && paired_ep->stream != NULL && paired_ep->stream->conn != NULL &&
+	    ep->stream != NULL && ep->stream->conn != NULL) {
+		__ASSERT(paired_ep->stream->conn == ep->stream->conn,
+			 "Cannot bind ep %p with conn %p to iso %p with paired_ep %p with "
+			 "different conn %p",
+			 ep, ep->stream->conn, iso, paired_ep, paired_ep->stream->conn);
+	}
 }
 
 void bt_bap_iso_unbind_ep(struct bt_bap_iso *iso, struct bt_bap_ep *ep)
