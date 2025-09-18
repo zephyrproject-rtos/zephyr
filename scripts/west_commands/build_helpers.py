@@ -17,7 +17,7 @@ from pathlib import Path
 import zcmake
 from west import log
 from west.configuration import config
-from west.util import escapes_directory
+from west.util import escapes_directory, west_topdir
 
 # Domains.py must be imported from the pylib directory, since
 # twister also uses the implementation
@@ -43,6 +43,10 @@ def _resolve_build_dir(fmt, guess, cwd, **kwargs):
     # Check if source_dir is below cwd first
     source_dir = kwargs.get('source_dir')
     if source_dir:
+        west_workspace = west_topdir(source_dir)
+        first_common = os.path.commonpath([source_dir, west_workspace])
+        source_dir_common = os.path.relpath(source_dir, first_common)
+        kwargs['source_dir_common'] = source_dir_common
         if escapes_directory(cwd, source_dir):
             kwargs['source_dir'] = os.path.relpath(source_dir, cwd)
         else:
@@ -82,7 +86,7 @@ def _resolve_build_dir(fmt, guess, cwd, **kwargs):
                     return str(curr)
     return str(b)
 
-def find_build_dir(dir, guess=False, **kwargs):
+def find_build_dir(dir, guess=False, dir_fmt=None, **kwargs):
     '''Heuristic for finding a build directory.
 
     The default build directory is computed by reading the build.dir-fmt
@@ -99,8 +103,16 @@ def find_build_dir(dir, guess=False, **kwargs):
         build_dir = dir
     else:
         cwd = os.getcwd()
-        default = config.get('build', 'dir-fmt', fallback=DEFAULT_BUILD_DIR)
+        default = dir_fmt or config.get('build', 'dir-fmt', fallback=DEFAULT_BUILD_DIR)
         default = _resolve_build_dir(default, guess, cwd, **kwargs)
+        if not default:
+            # take first entry from build.dir-fmt-symlinks which can be resolved
+            symlinks = config.get('build', 'symlinks', fallback=[]).split(":")
+            for symlink in symlinks:
+                symlink_resolved = _resolve_build_dir(symlink, guess, cwd, **kwargs)
+                if symlink_resolved:
+                    default = os.path.realpath(symlink_resolved)
+                    break
         log.dbg(f'config dir-fmt: {default}', level=log.VERBOSE_EXTREME)
         if default and is_zephyr_build(default):
             build_dir = default
