@@ -160,7 +160,6 @@ REDIRECTS = (
     ('guides/west/index', 'develop/west/index'),
     ('guides/west/install', 'develop/west/install'),
     ('guides/west/manifest', 'develop/west/manifest'),
-    ('guides/west/moving-to-west', 'develop/west/moving-to-west'),
     ('guides/west/release-notes', 'develop/west/release-notes'),
     ('guides/west/sign', 'develop/west/sign'),
     ('guides/west/troubleshooting', 'develop/west/troubleshooting'),
