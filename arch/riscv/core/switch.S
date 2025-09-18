@@ -61,6 +61,12 @@ SECTION_FUNC(TEXT, z_riscv_switch)
 	mv a0, s0
 #endif
 
+#if defined(CONFIG_MEM_ATTR) && !defined(CONFIG_PMP_STACK_GUARD)
+	mv s0, a0
+	call z_riscv_pmp_mem_attr_enable
+	mv a0, s0
+#endif
+
 #if defined(CONFIG_PMP_STACK_GUARD)
 	/* Stack guard has priority over user space for PMP usage. */
 	mv s0, a0
