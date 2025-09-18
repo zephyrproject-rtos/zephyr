@@ -677,6 +677,38 @@
 			};
 		};
 
+		test_children_on_bus: controller@77778888 {
+			compatible = "vnd,controller";
+			reg = <0x77778888 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			test_child_on_bus_a: test-child-a@0 {
+				compatible = "vnd,device";
+				reg = <0>;
+				status = "okay";
+			};
+			test_child_on_bus_b: test-child-b@1 {
+				compatible = "vnd,device";
+				reg = <1>;
+				status = "okay";
+			};
+			test_child_on_bus_c: test-child-c@2 {
+				compatible = "vnd,device";
+				reg = <2>;
+				status = "disabled";
+			};
+			test_child_on_bus_d: test-child-on-bus-d {
+				status = "okay";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				test_child_dd: test-child-dd@3 {
+					compatible = "vnd,device";
+					reg = <3>;
+					status = "okay";
+				};
+			};
+		};
+
 		test-ranges {
 			#address-cells = <2>;
 			#size-cells = <1>;
