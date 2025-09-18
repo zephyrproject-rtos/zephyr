@@ -27,7 +27,6 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,flash-controller = &flashctrl;
-		zephyr,code-partition = &slot0_partition;
 	};
 
 	leds {
@@ -59,29 +58,6 @@
 
 &ite_uart1_wrapper {
 	status = "okay";
-};
-
-&flash0 {
-	partitions {
-		compatible = "fixed-partitions";
-		#address-cells = <1>;
-		#size-cells = <1>;
-
-		slot0_partition: partition@0 {
-			label = "image-0";
-			reg = <0x00000000 DT_SIZE_K(128)>;
-		};
-
-		slot1_partition: partition@20000 {
-			label = "image-1";
-			reg = <0x00020000 DT_SIZE_K(128)>;
-		};
-
-		storage_partition: partition@40000 {
-			label = "storage";
-			reg = <0x00040000 DT_SIZE_K(256)>;
-		};
-	};
 };
 
 &kbd {

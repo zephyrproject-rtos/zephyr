@@ -183,3 +183,11 @@ tests:
     extra_args:
       - DTC_OVERLAY_FILE="./boards/${BOARD}_qspi_nor.overlay"
       - CONF_FILE="./prj.conf ./boards/${BOARD}_qspi_nor.conf"
+  drivers.flash.common.it8xxx2_indirect:
+    build_only: true
+    platform_allow:
+      - it8xxx2_evb
+      - it82xx2_evb
+      - it515xx_evb
+    extra_args:
+      - DTC_OVERLAY_FILE="./boards/it8xxx2_indirect.overlay"
