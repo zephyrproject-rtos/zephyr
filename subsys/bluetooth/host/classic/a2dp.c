@@ -691,6 +691,15 @@ static int bt_a2dp_set_config_cb(struct bt_avdtp_req *req, struct net_buf *buf)
 	stream = ep->stream;
 	LOG_DBG("SET CONFIGURATION result:%d", status);
 
+	if (status == BT_AVDTP_SUCCESS) {
+		struct bt_avdtp_set_configuration_params *param = SET_CONF_REQ(req);
+
+		stream->codec_config.len = param->codec_specific_ie_len;
+		memcpy(&stream->codec_config.codec_ie[0], param->codec_specific_ie,
+		       (param->codec_specific_ie_len > BT_A2DP_MAX_IE_LENGTH ?
+			BT_A2DP_MAX_IE_LENGTH : param->codec_specific_ie_len));
+	}
+
 	if ((a2dp_cb != NULL) && (a2dp_cb->config_rsp != NULL)) {
 		a2dp_cb->config_rsp(stream, status);
 	}
