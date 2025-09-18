@@ -120,7 +120,7 @@ static void trel_receive_handler(struct net_socket_service_event *evt)
 
 	len = zsock_recvfrom(trel_sock, req->buffer, sizeof(req->buffer), 0,
 		       (struct sockaddr *)&addr, &addrlen);
-	VerifyOrExit(len > 0);
+	VerifyOrExit(len > 0, openthread_border_router_deallocate_message((void *)req));
 
 	trel_counters.mRxBytes += len;
 

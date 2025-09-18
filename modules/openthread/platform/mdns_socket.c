@@ -107,7 +107,7 @@ static otError mdns_socket_init_v6(uint32_t ail_iface_idx)
 
 	struct sockaddr_in6 addr = {.sin6_family = AF_INET6,
 				    .sin6_port = htons(MULTICAST_PORT),
-				    .sin6_addr = {{{0}}},
+				    .sin6_addr = IN6ADDR_ANY_INIT,
 				    .sin6_scope_id = 0};
 
 	mdns_sock_v6 = zsock_socket(AF_INET6, SOCK_DGRAM | SOCK_NONBLOCK, IPPROTO_UDP);
@@ -169,7 +169,7 @@ static otError mdns_socket_init_v4(uint32_t ail_iface_idx)
 
 	struct sockaddr_in addr = {.sin_family = AF_INET,
 				   .sin_port = htons(MULTICAST_PORT),
-				   .sin_addr = {{{0}}}};
+				   .sin_addr = INADDR_ANY_INIT};
 
 	mdns_sock_v4 = zsock_socket(AF_INET, SOCK_DGRAM | SOCK_NONBLOCK, IPPROTO_UDP);
 	VerifyOrExit(mdns_sock_v4 >= 0, error = OT_ERROR_FAILED);
@@ -339,7 +339,7 @@ static void mdns_receive_handler(struct net_socket_service_event *evt)
 		addrlen = sizeof(addr_v4);
 		len = zsock_recvfrom(mdns_sock_v4, req->buffer, sizeof(req->buffer), 0,
 			       (struct sockaddr *)&addr_v4, &addrlen);
-		VerifyOrExit(len > 0);
+		VerifyOrExit(len > 0, openthread_border_router_deallocate_message((void *)req));
 		otIp4ToIp4MappedIp6Address((otIp4Address *)&addr_v4.sin_addr.s_addr,
 					   &req->addr_info.mAddress);
 		req->addr_info.mPort = ntohs(addr_v4.sin_port);
@@ -348,7 +348,7 @@ static void mdns_receive_handler(struct net_socket_service_event *evt)
 		addrlen = sizeof(addr_v6);
 		len = zsock_recvfrom(mdns_sock_v6, req->buffer, sizeof(req->buffer), 0,
 			       (struct sockaddr *)&addr_v6, &addrlen);
-		VerifyOrExit(len > 0);
+		VerifyOrExit(len > 0, openthread_border_router_deallocate_message((void *)req));
 		memcpy(&req->addr_info.mAddress, &addr_v6.sin6_addr,
 		       sizeof(req->addr_info.mAddress));
 		req->addr_info.mPort = ntohs(addr_v6.sin6_port);

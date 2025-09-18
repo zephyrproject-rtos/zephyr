@@ -227,10 +227,9 @@ exit:
 
 static void infra_if_handle_backbone_icmp6(struct otbr_msg_ctx *msg_ctx_ptr)
 {
-	otPlatInfraIfRecvIcmp6Nd(
-		ot_instance, ail_iface_index, &msg_ctx_ptr->addr,
-		(const uint8_t *)&msg_ctx_ptr->buffer[sizeof(struct net_ipv6_hdr)],
-		msg_ctx_ptr->length);
+	otPlatInfraIfRecvIcmp6Nd(ot_instance, ail_iface_index, &msg_ctx_ptr->addr,
+				 (const uint8_t *)&msg_ctx_ptr->buffer[sizeof(struct net_ipv6_hdr)],
+				 msg_ctx_ptr->length);
 }
 
 otError infra_if_start_icmp6_listener(void)

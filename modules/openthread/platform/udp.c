@@ -239,7 +239,8 @@ otError otPlatUdpSend(otUdpSocket *aUdpSocket,
 	VerifyOrExit(sock >= 0, error = OT_ERROR_INVALID_ARGS);
 
 	VerifyOrExit(len <= OTBR_MESSAGE_SIZE, error = OT_ERROR_FAILED);
-	VerifyOrExit(openthread_border_router_allocate_message((void **)&req) == OT_ERROR_NONE);
+	VerifyOrExit(openthread_border_router_allocate_message((void **)&req) == OT_ERROR_NONE,
+		     error = OT_ERROR_FAILED);
 	VerifyOrExit(otMessageRead(aMessage, 0, req->buffer, len) == len, error = OT_ERROR_FAILED);
 
 	iov.iov_base = req->buffer;
@@ -313,7 +314,7 @@ otError otPlatUdpSend(otUdpSocket *aUdpSocket,
 	}
 
 exit:
-	if (error == OT_ERROR_NONE && aMessage) {
+	if (aMessage != NULL) {
 		otMessageFree(aMessage);
 	}
 	openthread_border_router_deallocate_message((void *)req);
@@ -429,7 +430,7 @@ static void udp_receive_handler(struct net_socket_service_event *evt)
 	msg.msg_flags = 0;
 
 	rval = zsock_recvmsg(evt->event.fd, &msg, 0);
-	VerifyOrExit(rval > 0);
+	VerifyOrExit(rval > 0, openthread_border_router_deallocate_message((void *)req));
 	req->length = (uint16_t)rval;
 
 	for (cmsg = CMSG_FIRSTHDR(&msg); cmsg != NULL; cmsg = CMSG_NXTHDR(&msg, cmsg)) {
