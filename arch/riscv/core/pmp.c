@@ -432,12 +432,12 @@ void z_riscv_pmp_init(void)
 	/* Make sure secondary CPUs produced the same values */
 	if (global_pmp_end_index != 0) {
 		__ASSERT(global_pmp_end_index == index, "");
-		__ASSERT(global_pmp_cfg[0] == pmp_cfg[0], "");
+		__ASSERT(global_pmp_cfg[0] == pmp_cfg[index / 4], "");
 		__ASSERT(global_pmp_last_addr == pmp_addr[index - 1], "");
 	}
 #endif
 
-	global_pmp_cfg[0] = pmp_cfg[0];
+	global_pmp_cfg[0] = pmp_cfg[index / 4];
 	global_pmp_last_addr = pmp_addr[index - 1];
 	global_pmp_end_index = index;
 
@@ -459,7 +459,7 @@ static inline unsigned int z_riscv_pmp_thread_init(unsigned long *pmp_addr,
 	/*
 	 * Retrieve pmpcfg0 partial content from global entries.
 	 */
-	pmp_cfg[0] = global_pmp_cfg[0];
+	pmp_cfg[global_pmp_end_index / 4] = global_pmp_cfg[0];
 
 	/*
 	 * Retrieve the pmpaddr value matching the last global PMP slot.
@@ -519,8 +519,7 @@ void z_riscv_pmp_stackguard_enable(struct k_thread *thread)
 	csr_clear(mstatus, MSTATUS_MPRV | MSTATUS_MPP);
 
 	/* Write our m-mode MPP entries */
-	write_pmp_entries(global_pmp_end_index, thread->arch.m_mode_pmp_end_index,
-			  false /* no need to clear to the end */,
+	write_pmp_entries(global_pmp_end_index, thread->arch.m_mode_pmp_end_index, true,
 			  PMP_M_MODE(thread));
 
 	if (PMP_DEBUG_DUMP) {
