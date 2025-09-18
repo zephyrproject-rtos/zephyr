@@ -61,11 +61,6 @@ ETH_DMADescTypeDef dma_tx_desc_tab[ETH_TXBUFNB] __eth_stm32_desc;
 
 const struct device *eth_stm32_phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(0, phy_handle));
 
-struct net_if *eth_stm32_get_iface(struct eth_stm32_hal_dev_data *ctx)
-{
-	return ctx->iface;
-}
-
 static void rx_thread(void *arg1, void *unused1, void *unused2)
 {
 	const struct device *dev = (const struct device *)arg1;
