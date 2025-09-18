@@ -100,7 +100,7 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
 
 #endif /* CONFIG_INIT_ARCH_HW_AT_BOOT */
 
-#if defined(CONFIG_PM_S2RAM)
+#if defined(CONFIG_PM_S2RAM) || defined(CONFIG_ARCH_PM_S2RAM_RESUME)
     /*
      * Temporarily set MSP to interrupt stack so that arch_pm_s2ram_resume can
      * use stack for calling pm_s2ram_mark_check_and_clear.

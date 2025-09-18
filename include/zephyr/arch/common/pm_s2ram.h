@@ -81,6 +81,19 @@ void pm_s2ram_mark_set(void);
  * @retval false if marking is not found which indicates standard boot.
  */
 bool pm_s2ram_mark_check_and_clear(void);
+
+/**
+ * @brief Check suspend-to-RAM marking and does mediation.
+ *
+ * Function does resume mediation if determines resuming after suspend-to-RAM
+ * or return so standard boot will be executed.
+ *
+ * Implementation is up to given application - usually a bootloader. The function is expected
+ * to do mediation needed for resuming the application from S2AM state, which usually means no
+ * return to caller. Usage of this API implementation shall be enabled using
+ * CONFIG_ARCH_PM_S2RAM_RESUME.
+ */
+void pm_s2ram_mark_check_and_mediate(void);
 /**
  * @}
  */
