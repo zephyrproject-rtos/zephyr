@@ -378,11 +378,8 @@ void z_riscv_pmp_init(void)
 	 * addresses inaccessible. This will never change so we do it here
 	 * and lock it too.
 	 */
-	set_pmp_entry(&index, PMP_NONE | PMP_L,
-		      (uintptr_t)z_interrupt_stacks[_current_cpu->id],
-		      Z_RISCV_STACK_GUARD_SIZE,
-		      pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
-
+	set_pmp_entry(&index, PMP_NONE, (uintptr_t)z_interrupt_stacks[_current_cpu->id],
+		      Z_RISCV_STACK_GUARD_SIZE, pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
 	/*
 	 * This early, the kernel init code uses the IRQ stack and we want to
 	 * safeguard it as soon as possible. But we need a temporary default
