@@ -97,8 +97,7 @@ static void uart_packet_send(uint8_t type, uint8_t *buffer, uint32_t length)
 
 static int take_picture(void)
 {
-	int err;
-	enum video_frame_fragmented_status f_status;
+	int err, ret;
 
 	err = video_dequeue(video, &vbuf, K_FOREVER);
 	if (err) {
@@ -106,22 +105,19 @@ static int take_picture(void)
 		return -1;
 	}
 
-	f_status = vbuf->flags;
-
 	head_and_tail[2] = 0x01;
 	uart_buffer_send(console, &head_and_tail[0], 3);
-	uart_buffer_send(console, (uint8_t *)&vbuf->bytesframe, 4);
+	uart_buffer_send(console, (uint8_t *)&vbuf->bytesused, 4);
 	uart_poll_out(console, ((current_resolution & 0x0f) << 4) | 0x01);
 
 	uart_buffer_send(console, vbuf->buffer, vbuf->bytesused);
 
 	video_enqueue(video, vbuf);
-	while (f_status == VIDEO_BUF_FRAG) {
-		video_dequeue(video, &vbuf, K_FOREVER);
-		f_status = vbuf->flags;
+	do{
+		ret = video_dequeue(video, &vbuf, K_FOREVER);
 		uart_buffer_send(console, vbuf->buffer, vbuf->bytesused);
 		video_enqueue(video, vbuf);
-	}
+	}while(!ret);
 	uart_buffer_send(console, &head_and_tail[3], 2);
 
 	return 0;
@@ -130,7 +126,6 @@ static int take_picture(void)
 static void video_preview(void)
 {
 	int err;
-	enum video_frame_fragmented_status f_status;
 
 	if (!preview_on) {
 		return;
@@ -142,22 +137,17 @@ static void video_preview(void)
 		return;
 	}
 
-	f_status = vbuf->flags;
-
 	if (capture_flag == 1) {
 		capture_flag = 0;
 		head_and_tail[2] = 0x01;
 		uart_buffer_send(console, &head_and_tail[0], 3);
-		uart_buffer_send(console, (uint8_t *)&vbuf->bytesframe, 4);
+		uart_buffer_send(console, (uint8_t *)&vbuf->bytesused, 4);
 		uart_poll_out(console, ((current_resolution & 0x0f) << 4) | 0x01);
 	}
 
 	uart_buffer_send(console, vbuf->buffer, vbuf->bytesused);
 
-	if (f_status == VIDEO_BUF_EOF) {
-		uart_buffer_send(console, &head_and_tail[3], 2);
-		capture_flag = 1;
-	}
+	uart_buffer_send(console, &head_and_tail[3], 2);
 
 	err = video_enqueue(video, vbuf);
 	if (err) {

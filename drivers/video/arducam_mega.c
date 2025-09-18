@@ -890,15 +890,11 @@ static void arducam_mega_buffer_work(struct k_work *work)
 
 	arducam_mega_fifo_read(drv_data->dev, vbuf);
 
-	if (drv_data->fifo_length == 0) {
-		vbuf->flags = VIDEO_BUF_EOF;
-	} else {
-		vbuf->flags = VIDEO_BUF_FRAG;
+	if (drv_data->fifo_length != 0) {
 		k_work_submit_to_queue(&ac_work_q, &drv_data->buf_work);
 	}
 
 	vbuf->timestamp = f_timestamp;
-	vbuf->bytesframe = f_length;
 	k_fifo_put(&drv_data->fifo_out, vbuf);
 
 	k_yield();
