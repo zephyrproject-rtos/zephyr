@@ -89,7 +89,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 		/* Supervisor thread */
 		stack_init->mepc = (unsigned long)z_thread_entry;
 
-#if defined(CONFIG_PMP_STACK_GUARD)
+#if (defined(CONFIG_PMP_STACK_GUARD) || defined(CONFIG_MEM_ATTR))
 		/* Enable PMP in mstatus.MPRV mode for RISC-V machine mode
 		 * if thread is supervisor thread.
 		 */
@@ -97,7 +97,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 #endif /* CONFIG_PMP_STACK_GUARD */
 	}
 
-#if defined(CONFIG_PMP_STACK_GUARD)
+#if (defined(CONFIG_PMP_STACK_GUARD) || defined(CONFIG_MEM_ATTR))
 	/* Setup PMP regions of PMP stack guard of thread. */
 	z_riscv_pmp_kernelmode_prepare(thread);
 #endif /* CONFIG_PMP_STACK_GUARD */
