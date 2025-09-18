@@ -38,14 +38,6 @@ config SOC_RA_SECOND_CORE_BUILD
 	help
 	  Indicates the image is built for the secondary core when enabled
 
-config SOC_RA_SKIP_CLOCK_INIT
-	bool "Skip clock frequency configuration in system initialization"
-	depends on SOC_RA_SECOND_CORE_BUILD
-	default y
-	help
-	  With this option, the CPU clock frequency is not set during system
-	  initialization.
-
 config RENESAS_RA_BATTERY_BACKUP_MANUAL_CONFIGURE
 	bool "VBAT switching manual"
 	default y
