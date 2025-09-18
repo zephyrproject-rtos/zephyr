@@ -87,7 +87,7 @@ def guess_file_from_patterns(directory, patterns, name, extensions):
 
 
 def guess_image(board_or_shield):
-    img_exts = ("jpg", "jpeg", "webp", "png")
+    img_exts = ("webp", "png", "jpg", "jpeg")
 
     name_parts = board_or_shield.name.split('_')
     prefix_matches = []
