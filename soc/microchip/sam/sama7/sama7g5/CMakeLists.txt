@@ -3,9 +3,5 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-config SOC_SAMA7G54
-	bool
-	select SOC_SERIES_SAMA7G5
-
-config SOC
-	default "sama7g54" if SOC_SAMA7G54
+zephyr_sources(soc.c)
+zephyr_include_directories(.)

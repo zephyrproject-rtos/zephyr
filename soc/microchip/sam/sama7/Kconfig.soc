@@ -3,10 +3,12 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-config SOC_FAMILY_MICROCHIP_SAM
+config SOC_FAMILY_MICROCHIP_SAMA7
 	bool
+	help
+	  Enable support for Microchip SAMA7 Cortex-A Microprocessors.
 
 config SOC_FAMILY
-	default "microchip_sam" if SOC_FAMILY_MICROCHIP_SAM
+	default "microchip_sama7" if SOC_FAMILY_MICROCHIP_SAMA7
 
 rsource "*/Kconfig.soc"
