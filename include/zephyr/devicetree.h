@@ -694,16 +694,40 @@
  */
 #define DT_CHILD_NUM(node_id) DT_CAT(node_id, _CHILD_NUM)
 
-
 /**
- * @brief Get the number of child nodes of a given node
- *        which child nodes' status are okay
+ * @brief Get the number of child nodes of a given node,
+ *        whose status is okay
  *
  * @param node_id a node identifier
  * @return Number of child nodes which status are okay
  */
 #define DT_CHILD_NUM_STATUS_OKAY(node_id) \
 	DT_CAT(node_id, _CHILD_NUM_STATUS_OKAY)
+
+/**
+ * @brief Get the number of child nodes of a given node
+ *        that are on the given bus,
+ *        whose binding defines the given bus as their on-bus key
+ *
+ * @param node_id a node identifier
+ * @param bus bus type string
+ * @return Number of child nodes
+ */
+#define DT_CHILD_NUM_ON_BUS(node_id, bus) \
+	DT_CAT3(node_id, _CHILD_NUM_ON_BUS_, bus)
+
+/**
+ * @brief Get the number of child nodes of a given node
+ *        that are on the given bus,
+ *        whose binding defines the given bus as their on-bus key,
+ *        and whose status is okay
+ *
+ * @param node_id a node identifier
+ * @param bus bus type string
+ * @return Number of child nodes
+ */
+#define DT_CHILD_NUM_ON_BUS_STATUS_OKAY(node_id, bus) \
+	DT_CAT4(node_id, _CHILD_NUM_ON_BUS_, bus, _STATUS_OKAY)
 
 /**
  * @brief Do @p node_id1 and @p node_id2 refer to the same node?
@@ -4141,7 +4165,8 @@
 #define DT_INST_CHILD_NUM(inst) DT_CHILD_NUM(DT_DRV_INST(inst))
 
 /**
- * @brief Get the number of child nodes of a given node
+ * @brief Get the number of child nodes of a given node,
+ *        whose status is okay
  *
  * This is equivalent to @see
  * <tt>DT_CHILD_NUM_STATUS_OKAY(DT_DRV_INST(inst))</tt>.
@@ -4151,6 +4176,37 @@
  */
 #define DT_INST_CHILD_NUM_STATUS_OKAY(inst) \
 	DT_CHILD_NUM_STATUS_OKAY(DT_DRV_INST(inst))
+
+/**
+ * @brief Get the number of child nodes of a given node
+ *        that are on the given bus,
+ *        whose binding defines the given bus as their on-bus key
+ *
+ * This is equivalent to @see
+ * <tt>DT_CHILD_NUM_ON_BUS(DT_DRV_INST(inst), bus)</tt>.
+ *
+ * @param inst Devicetree instance number
+ * @param bus bus type string
+ * @return Number of child nodes
+ */
+#define DT_INST_CHILD_NUM_ON_BUS(inst, bus) \
+	DT_CHILD_NUM_ON_BUS(DT_DRV_INST(inst), bus)
+
+/**
+ * @brief Get the number of child nodes of a given node
+ *        that are on the given bus,
+ *        whose binding defines the given bus as their on-bus key,
+ *        and whose status is okay
+ *
+ * This is equivalent to @see
+ * <tt>DT_CHILD_NUM_ON_BUS_STATUS_OKAY(DT_DRV_INST(inst), bus)</tt>.
+ *
+ * @param inst Devicetree instance number
+ * @param bus bus type string
+ * @return Number of child nodes
+ */
+#define DT_INST_CHILD_NUM_ON_BUS_STATUS_OKAY(inst, bus) \
+	DT_CHILD_NUM_ON_BUS_STATUS_OKAY(DT_DRV_INST(inst), bus)
 
 /**
  * @brief Get a string array of DT_DRV_INST(inst)'s node labels

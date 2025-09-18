@@ -1016,6 +1016,44 @@ def write_global_macros(edt: edtlib.EDT):
             out_define(
                 f"DT_COMPAT_{str2ident(compat)}_BUS_{str2ident(bus)}", 1)
 
+    bus_by_id = {}
+    for node in edt.nodes:
+        if node.bus_node is not None:
+            bus_by_id[node.bus_node.z_path_id] = node.bus_node
+
+    def _iter_descendants(node):
+        # Iterate descendants but stop recursion at bus nodes (i.e. nodes that
+        # themselves expose a bus). This allows counting only devices on the
+        # same bus while not traversing into sub-buses.
+        for child in node.children.values():
+            yield child
+            if not child.buses:
+                yield from _iter_descendants(child)
+
+    # For each bus controller, and for each bus type it exposes, count the
+    # descendant nodes that are on that bus but have no descendant also on
+    # that same bus (i.e. count only the bus-leaf nodes).
+    for bus_id, bus_node in bus_by_id.items():
+
+        for bus in bus_node.buses:
+            bus_ident = str2ident(bus)
+
+            count = 0
+            count_ok = 0
+            for descendant in _iter_descendants(bus_node):
+                # Count nodes that are on this bus, including nodes that are
+                # themselves bus nodes. Recursion into bus-node subtrees is
+                # prevented by _iter_descendants, so we won't double-count
+                # devices behind sub-buses.
+                if descendant.on_bus == bus:
+                    count += 1
+                    if descendant.status == "okay":
+                        count_ok += 1
+
+            out_comment(f"Bus info (controller: '{bus_node.path}', BUS: '{bus_ident}')")
+            out_dt_define(f"{bus_id}_CHILD_NUM_ON_BUS_{bus_ident}", count)
+            out_dt_define(f"{bus_id}_CHILD_NUM_ON_BUS_{bus_ident}_STATUS_OKAY", count_ok)
+
 
 def str2ident(s: str) -> str:
     # Converts 's' to a form suitable for (part of) an identifier
