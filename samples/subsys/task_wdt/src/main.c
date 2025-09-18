@@ -81,6 +81,11 @@ int main(void)
 	/* passing NULL instead of callback to trigger system reset */
 	int task_wdt_id = task_wdt_add(1100U, NULL, NULL);
 
+#if defined(CONFIG_TASK_WDT_HW_FALLBACK) && defined(CONFIG_WDT_MULTISTAGE)
+	task_wdt_suspend();
+	k_busy_wait((CONFIG_TASK_WDT_MIN_TIMEOUT + CONFIG_TASK_WDT_HW_FALLBACK_DELAY + 500) * 1000);
+#endif
+
 	while (true) {
 		printk("Main thread still alive...\n");
 		task_wdt_feed(task_wdt_id);

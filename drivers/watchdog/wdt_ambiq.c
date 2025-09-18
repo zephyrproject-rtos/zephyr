@@ -26,7 +26,13 @@ struct wdt_ambiq_config {
 
 struct wdt_ambiq_data {
 	wdt_callback_t callback;
-	uint32_t timeout;
+	/* Stage-1 interrupt (bark) count in watchdog clock ticks */
+	uint32_t bark_count;
+	/* Stage-2 reset (bite) count in watchdog clock ticks */
+	uint32_t bite_count;
+	/* Enable interrupt stage */
+	bool interrupt_enable;
+	/* Enable reset stage */
 	bool reset;
 };
 
@@ -72,12 +78,15 @@ static int wdt_ambiq_setup(const struct device *dev, uint8_t options)
 		ui32ClockSource = AM_HAL_WDT_LFRC_CLK_1HZ;
 	}
 	cfg.ui32Config = ui32ClockSource | _VAL2FLD(WDT_CFG_RESEN, data->reset) |
-			 AM_HAL_WDT_ENABLE_INTERRUPT;
-	cfg.ui16InterruptCount = data->timeout;
-	cfg.ui16ResetCount = data->timeout;
+			 (data->interrupt_enable ? AM_HAL_WDT_ENABLE_INTERRUPT : 0);
+	/* Program separate bark/bite thresholds */
+	cfg.ui16InterruptCount = data->interrupt_enable ? data->bark_count : data->bite_count;
+	cfg.ui16ResetCount = data->bite_count;
 	am_hal_clkgen_control(AM_HAL_CLKGEN_CONTROL_LFRC_START, 0);
 	am_hal_wdt_init(&cfg);
-	am_hal_wdt_int_enable();
+	if (data->interrupt_enable) {
+		am_hal_wdt_int_enable();
+	}
 	am_hal_wdt_start();
 #else
 	if (dev_cfg->clk_freq == 128) {
@@ -96,15 +105,17 @@ static int wdt_ambiq_setup(const struct device *dev, uint8_t options)
 	}
 #endif
 
-	cfg.bInterruptEnable = true;
-	cfg.ui32InterruptValue = data->timeout;
+	cfg.bInterruptEnable = data->interrupt_enable;
+	cfg.ui32InterruptValue = data->bark_count;
 	cfg.bResetEnable = data->reset;
-	cfg.ui32ResetValue = data->timeout;
+	cfg.ui32ResetValue = data->bite_count;
 #if defined(CONFIG_SOC_SERIES_APOLLO4X)
 	cfg.bAlertOnDSPReset = false;
 #endif
 	am_hal_wdt_config(AM_HAL_WDT_MCU, &cfg);
-	am_hal_wdt_interrupt_enable(AM_HAL_WDT_MCU, AM_HAL_WDT_INTERRUPT_MCU);
+	if (data->interrupt_enable) {
+		am_hal_wdt_interrupt_enable(AM_HAL_WDT_MCU, AM_HAL_WDT_INTERRUPT_MCU);
+	}
 	am_hal_wdt_start(AM_HAL_WDT_MCU, false);
 #endif
 	return 0;
@@ -126,31 +137,75 @@ static int wdt_ambiq_install_timeout(const struct device *dev, const struct wdt_
 {
 	const struct wdt_ambiq_config *dev_cfg = dev->config;
 	struct wdt_ambiq_data *data = dev->data;
-	uint32_t timeout = cfg->window.max * dev_cfg->clk_freq / 1000;
 
 	if (cfg->window.min != 0U || cfg->window.max == 0U) {
 		return -EINVAL;
 	}
 
-	if (timeout == 0 || timeout > 256) {
-		return -EINVAL;
+	/* Convert ms to watchdog clock ticks using 64-bit, round up */
+	uint64_t bark_ticks = ((uint64_t)cfg->window.max * dev_cfg->clk_freq + 999U) / 1000U;
+	uint64_t bite_ticks = bark_ticks;
+
+#if defined(CONFIG_WDT_MULTISTAGE)
+	const struct wdt_timeout_cfg *next = cfg->next;
+
+	if (next) {
+		if (cfg->flags != WDT_FLAG_RESET_NONE) {
+			return -ENOTSUP;
+		}
+		if (next->window.max < cfg->window.max) {
+			return -EINVAL;
+		}
+		if (!(next->flags == WDT_FLAG_RESET_SOC ||
+		      next->flags == WDT_FLAG_RESET_CPU_CORE)) {
+			return -ENOTSUP;
+		}
+		/* Compute bite ticks from next stage */
+		bite_ticks = ((uint64_t)next->window.max * dev_cfg->clk_freq + 999U) / 1000U;
+	} else {
+		/* Single-stage: only allow supported flags */
+		if (!(cfg->flags == WDT_FLAG_RESET_SOC || cfg->flags == WDT_FLAG_RESET_CPU_CORE)) {
+			return -ENOTSUP;
+		}
+	}
+#endif
+
+	/* Saturate by hardware capabilities: both INTVAL (bark) and RESVAL (bite) are 8-bit */
+	if (bark_ticks > UINT8_MAX) {
+		LOG_WRN("Bark timeout value (%llu) exceeds hardware max (%u), clamping to %u",
+			bark_ticks, UINT8_MAX, UINT8_MAX);
+		bark_ticks = UINT8_MAX;
+	}
+	if (bite_ticks > UINT8_MAX) {
+		LOG_WRN("Bite timeout value (%llu) exceeds hardware max (%u), clamping to %u",
+			bite_ticks, UINT8_MAX, UINT8_MAX);
+		bite_ticks = UINT8_MAX;
 	}
 
-	data->timeout = timeout;
 	data->callback = cfg->callback;
+	data->bark_count = (uint32_t)bark_ticks;
+	data->bite_count = (uint32_t)bite_ticks;
 
+#if defined(CONFIG_WDT_MULTISTAGE)
+	data->interrupt_enable = (cfg->callback != NULL);
+	data->reset = true;
+#else
+	/* Single stage behavior per flags */
 	switch (cfg->flags) {
+	case WDT_FLAG_RESET_NONE:
+		data->interrupt_enable = true;
+		data->reset = false;
+		break;
 	case WDT_FLAG_RESET_CPU_CORE:
 	case WDT_FLAG_RESET_SOC:
+		data->interrupt_enable = false;
 		data->reset = true;
-		break;
-	case WDT_FLAG_RESET_NONE:
-		data->reset = false;
 		break;
 	default:
 		LOG_ERR("Unsupported watchdog config flag");
 		return -EINVAL;
 	}
+#endif
 
 	return 0;
 }

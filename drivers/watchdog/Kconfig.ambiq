@@ -10,5 +10,6 @@ config WDT_AMBIQ
 	depends on DT_HAS_AMBIQ_WATCHDOG_ENABLED
 	select AMBIQ_HAL
 	select AMBIQ_HAL_USE_WDT
+	select HAS_WDT_MULTISTAGE
 	help
 	  Enable driver for Ambiq WDT.

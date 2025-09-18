@@ -88,6 +88,16 @@ static void schedule_next_timeout(int64_t current_ticks)
 #endif
 }
 
+/* Optional bark callback for hardware fallback when multistage is enabled */
+#if defined(CONFIG_TASK_WDT_HW_FALLBACK) && defined(CONFIG_WDT_MULTISTAGE)
+static void hw_fallback_bark_cb(const struct device *dev, int channel_id)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(channel_id);
+	printk("[HW WDT] bark stage reached (interrupt)\n");
+}
+#endif
+
 /**
  * @brief Task watchdog timer callback.
  *
@@ -130,16 +140,37 @@ int task_wdt_init(const struct device *hw_wdt)
 {
 	if (hw_wdt) {
 #ifdef CONFIG_TASK_WDT_HW_FALLBACK
+		hw_wdt_dev = hw_wdt;
+#if defined(CONFIG_WDT_MULTISTAGE)
+		/* Install a multistage timeout: bark (interrupt) then bite (reset) */
+		struct wdt_timeout_cfg bite = {
+			.window = {
+				.min = 0U,
+				.max = CONFIG_TASK_WDT_MIN_TIMEOUT +
+						CONFIG_TASK_WDT_HW_FALLBACK_DELAY,
+			},
+			.callback = NULL,
+			.flags = WDT_FLAG_RESET_SOC,
+		};
+		struct wdt_timeout_cfg bark = {
+			.window = {
+				.min = 0U,
+				.max = CONFIG_TASK_WDT_MIN_TIMEOUT,
+			},
+			.callback = hw_fallback_bark_cb,
+			.flags = WDT_FLAG_RESET_NONE,
+			.next = &bite,
+		};
+		hw_wdt_channel = wdt_install_timeout(hw_wdt_dev, &bark);
+#else
 		struct wdt_timeout_cfg wdt_config;
-
 		wdt_config.flags = WDT_FLAG_RESET_SOC;
 		wdt_config.window.min = 0U;
 		wdt_config.window.max = CONFIG_TASK_WDT_MIN_TIMEOUT +
 			CONFIG_TASK_WDT_HW_FALLBACK_DELAY;
 		wdt_config.callback = NULL;
-
-		hw_wdt_dev = hw_wdt;
 		hw_wdt_channel = wdt_install_timeout(hw_wdt_dev, &wdt_config);
+#endif
 		if (hw_wdt_channel < 0) {
 			LOG_ERR("hw_wdt install timeout failed: %d", hw_wdt_channel);
 			return hw_wdt_channel;
