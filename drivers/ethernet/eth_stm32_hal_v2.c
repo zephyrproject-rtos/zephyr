@@ -238,7 +238,7 @@ static inline struct eth_stm32_tx_context *allocate_tx_context(struct net_pkt *p
 	}
 }
 
-static ETH_TxPacketConfig tx_config;
+static ETH_TxPacketConfigTypeDef tx_config;
 
 static void setup_mac_filter(ETH_HandleTypeDef *heth)
 {
@@ -854,7 +854,7 @@ static int eth_init_api_v2(const struct device *dev)
 	k_sem_init(&dev_data->tx_int_sem, 0, K_SEM_MAX_LIMIT);
 
 	/* Tx config init: */
-	memset(&tx_config, 0, sizeof(ETH_TxPacketConfig));
+	memset(&tx_config, 0, sizeof(ETH_TxPacketConfigTypeDef));
 	tx_config.Attributes = ETH_TX_PACKETS_FEATURES_CSUM |
 				ETH_TX_PACKETS_FEATURES_CRCPAD;
 	tx_config.ChecksumCtrl = IS_ENABLED(CONFIG_ETH_STM32_HW_CHECKSUM) ?
