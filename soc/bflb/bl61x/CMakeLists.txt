@@ -7,6 +7,9 @@ zephyr_sources(soc.c)
 
 set(SOC_LINKER_SCRIPT ${ZEPHYR_BASE}/include/zephyr/arch/riscv/common/linker.ld CACHE INTERNAL "")
 
+zephyr_code_relocate(
+  FILES ${ZEPHYR_BASE}/arch/riscv/core/xuantie/cache_xtheadcmo.c LOCATION ITCM NOKEEP)
+
 zephyr_code_relocate_ifdef(CONFIG_UART_BFLB LIBRARY drivers__serial LOCATION ITCM NOKEEP)
 zephyr_code_relocate_ifdef(CONFIG_RISCV_MACHINE_TIMER LIBRARY drivers__timer LOCATION ITCM NOKEEP)
 zephyr_code_relocate_ifdef(CONFIG_PINCTRL_BFLB LIBRARY drivers__pinctrl LOCATION ITCM NOKEEP)
