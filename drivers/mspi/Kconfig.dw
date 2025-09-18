@@ -12,6 +12,15 @@ config MSPI_DW
 
 if MSPI_DW
 
+config MSPI_DW_HANDLE_FIFOS_IN_SYSTEM_WORKQUEUE
+	bool "Handle FIFO in system workqueue"
+	help
+	  When the driver does not use DMA for transferring data to/from the
+	  SSI FIFOs, handling of those may take a significant amount of time.
+	  It may be destructive for some applications if that time is spent
+	  in the interrupt context. This option allows offloading the job to
+	  the system workqueue.
+
 config MSPI_DW_TXD_DIV
 	int "Designware SSI TX Drive edge divisor"
 	default 4
