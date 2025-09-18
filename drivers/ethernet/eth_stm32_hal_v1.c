@@ -190,7 +190,6 @@ int eth_stm32_hal_init(const struct device *dev)
 	struct eth_stm32_hal_dev_data *dev_data = dev->data;
 	ETH_HandleTypeDef *heth = &dev_data->heth;
 	HAL_StatusTypeDef hal_ret = HAL_OK;
-	int ret = 0;
 
 	if (!ETH_STM32_AUTO_NEGOTIATION_ENABLE) {
 		struct phy_link_state state;
@@ -223,7 +222,7 @@ int eth_stm32_hal_init(const struct device *dev)
 	HAL_ETH_DMARxDescListInit(heth, dma_rx_desc_tab,
 		&dma_rx_buffer[0][0], ETH_RXBUFNB);
 
-	return ret;
+	return 0;
 }
 
 void eth_stm32_set_mac_config(const struct device *dev, struct phy_link_state *state)
