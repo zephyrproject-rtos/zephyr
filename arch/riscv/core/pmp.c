@@ -31,6 +31,8 @@
 #include <pmp.h>
 #include <zephyr/arch/arch_interface.h>
 #include <zephyr/arch/riscv/csr.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-riscv.h>
+#include <zephyr/mem_mgmt/mem_attr.h>
 
 #define LOG_LEVEL CONFIG_MPU_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -382,6 +384,49 @@ static void write_pmp_entries(unsigned int start, unsigned int end,
 				  pmp_addr, pmp_cfg);
 }
 
+#ifdef CONFIG_MEM_ATTR
+/**
+ * @brief Install PMP entries from devicetree mem-attr regions.
+ *
+ * Iterates over devicetree-provided memory-attr regions and programs PMP
+ * via set_pmp_entry(). Ordering matters because PMP checks entries from lowest
+ * to highest index and uses the first entry that matches the address.
+ *
+ * @param index_p Location of the current PMP slot index to use. This index
+ *                will be updated according to the number of slots used.
+ * @param pmp_addr Array of pmpaddr values (starting at entry 0).
+ * @param pmp_cfg Array of pmpcfg values (starting at entry 0).
+ * @param index_limit Index value representing the size of the provided arrays.
+ * @return Number of PMP slots consumed by installed mem-attr regions.
+ */
+static unsigned int set_pmp_mem_attr(unsigned int *index_p,
+				     unsigned long *pmp_addr, unsigned long *pmp_cfg,
+				     unsigned int index_limit)
+{
+	const struct mem_attr_region_t *region;
+	unsigned int entry_cnt = *index_p;
+	size_t num_regions;
+
+	num_regions = mem_attr_get_regions(&region);
+
+	for (size_t idx = 0; idx < num_regions; ++idx) {
+
+		uint8_t perm = DT_MEM_RISCV_TO_PMP_PERM(region[idx].dt_attr);
+
+		if (perm) {
+			set_pmp_entry(index_p, perm,
+				(uintptr_t)(region[idx].dt_addr),
+				(size_t)(region[idx].dt_size),
+				pmp_addr, pmp_cfg, index_limit);
+		}
+	}
+
+	entry_cnt = *index_p - entry_cnt;
+
+	return entry_cnt;
+}
+#endif /* CONFIG_MEM_ATTR */
+
 /**
  * @brief Abstract the last 3 arguments to set_pmp_entry() and
  *        write_pmp_entries( for m-mode.
@@ -419,7 +464,7 @@ static unsigned int global_pmp_end_index;
 void z_riscv_pmp_init(void)
 {
 	unsigned long pmp_addr[CONFIG_PMP_SLOTS];
-	unsigned long pmp_cfg[CONFIG_PMP_SLOTS / PMPCFG_STRIDE];
+	unsigned long pmp_cfg[CONFIG_PMP_SLOTS / PMPCFG_STRIDE] = {0};
 	unsigned int index = 0;
 
 #ifdef CONFIG_NULL_POINTER_EXCEPTION_DETECTION_PMP
@@ -450,23 +495,6 @@ void z_riscv_pmp_init(void)
 		      (uintptr_t)z_interrupt_stacks[_current_cpu->id],
 		      Z_RISCV_STACK_GUARD_SIZE,
 		      pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
-
-	/*
-	 * This early, the kernel init code uses the IRQ stack and we want to
-	 * safeguard it as soon as possible. But we need a temporary default
-	 * "catch all" PMP entry for MPRV to work. Later on, this entry will
-	 * be set for each thread by z_riscv_pmp_kernelmode_prepare().
-	 */
-	set_pmp_mprv_catchall(&index, pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
-
-	 /* Write those entries to PMP regs. */
-	write_pmp_entries(0, index, true, pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
-
-	/* Activate our non-locked PMP entries for m-mode */
-	csr_set(mstatus, MSTATUS_MPRV);
-
-	/* And forget about that last entry as we won't need it later */
-	index--;
 #else
 	/* Without multithreading setup stack guards for IRQ and main stacks */
 	set_pmp_entry(&index, PMP_NONE | PMP_L,
@@ -479,11 +507,30 @@ void z_riscv_pmp_init(void)
 		      Z_RISCV_STACK_GUARD_SIZE,
 		      pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
 
+#endif /* CONFIG_MULTITHREADING */
+#endif
+
+#ifdef CONFIG_MEM_ATTR
+	unsigned int attr_cnt = set_pmp_mem_attr(&index, pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
+
+	/*
+	 * This early, we want to protect unlock PMP entries as soon as
+	 * possible. But we need a temporary default "catch all" PMP entry for
+	 * MPRV to work. Later on, this entry will be set for each thread by
+	 * z_riscv_pmp_kernelmode_prepare().
+	 */
+	set_pmp_mprv_catchall(&index, pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
+
 	/* Write those entries to PMP regs. */
 	write_pmp_entries(0, index, true, pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
-#endif /* CONFIG_MULTITHREADING */
+
+	/* Activate our non-locked PMP entries for m-mode */
+	csr_set(mstatus, MSTATUS_MPRV);
+
+	/* And forget about that tempory entries as we won't need it later */
+	index -= attr_cnt + 1;
 #else
-	 /* Write those entries to PMP regs. */
+	/* Write those entries to PMP regs. */
 	write_pmp_entries(0, index, true, pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
 #endif
 
@@ -566,6 +613,10 @@ void z_riscv_pmp_kernelmode_prepare(struct k_thread *thread)
 		      stack_bottom, Z_RISCV_STACK_GUARD_SIZE,
 		      PMP_M_MODE(thread));
 #endif /* CONFIG_PMP_STACK_GUARD */
+
+#ifdef CONFIG_MEM_ATTR
+	set_pmp_mem_attr(&index, PMP_M_MODE(thread));
+#endif /* CONFIG_MEM_ATTR */
 
 	set_pmp_mprv_catchall(&index, PMP_M_MODE(thread));
 
@@ -698,8 +749,34 @@ static void resync_pmp_domain(struct k_thread *thread,
 			continue;
 		}
 
-		ok = set_pmp_entry(&index, part->attr.pmp_attr,
-				   part->start, part->size, PMP_U_MODE(thread));
+#ifdef CONFIG_MEM_ATTR
+		const struct mem_attr_region_t *region;
+		uint8_t attr_mask = PMP_R | PMP_W | PMP_X;
+
+		for (int idx = 0; idx < mem_attr_get_regions(&region); idx++) {
+			uintptr_t dt_start = (uintptr_t)(region[idx].dt_addr);
+			uintptr_t dt_end = dt_start + (size_t)(region[idx].dt_size);
+			bool covered = false;
+
+			/* No overlap at all, skip this memory region */
+			if ((part->start + part->size) <= dt_start || part->start >= dt_end) {
+				continue;
+			}
+
+			covered = part->start >= dt_start && (part->start + part->size) <= dt_end;
+			__ASSERT(covered, "No allowed partition partially overlaps memory region");
+
+			attr_mask = DT_MEM_RISCV_TO_PMP_PERM(region[idx].dt_attr);
+			break;
+		}
+
+		ok = set_pmp_entry(&index, part->attr.pmp_attr & attr_mask, part->start, part->size,
+				   PMP_U_MODE(thread));
+#else
+		ok = set_pmp_entry(&index, part->attr.pmp_attr, part->start, part->size,
+				   PMP_U_MODE(thread));
+#endif
+
 		__ASSERT(ok,
 			 "no PMP slot left for %d remaining partitions in domain %p",
 			 remaining_partitions + 1, domain);
