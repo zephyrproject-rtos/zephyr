@@ -30,9 +30,24 @@ separate_arguments(LATEXMKOPTS)
 
 find_package(Doxygen REQUIRED dot)
 
-find_program(SPHINXBUILD sphinx-build)
+# set the hints for finding sphinx to be based on which python we are using,
+# in case we are in a virtual environment, so that find_program prefers this version
+get_filename_component(_PYTHON_DIR "${PYTHON_EXECUTABLE}" DIRECTORY)
+set(_SPHINX_HINTS
+    "${_PYTHON_DIR}/sphinx-build"         # Direct path
+    "${_PYTHON_DIR}/bin/sphinx-build"     # Unix virtualenv
+    "${_PYTHON_DIR}/Scripts/sphinx-build" # Windows virtualenv
+)
+
+find_program(SPHINXBUILD
+    NAMES sphinx-build sphinx-build.exe
+    HINTS ${_SPHINX_HINTS}
+)
+
 if(NOT SPHINXBUILD)
   message(FATAL_ERROR "The 'sphinx-build' command was not found")
+else()
+  message(STATUS "Using sphinx-build located at: ${SPHINXBUILD}")
 endif()
 find_program(SPHINXAUTOBUILD sphinx-autobuild)
 
