@@ -54,10 +54,8 @@ typedef struct ra_pinctrl_soc_pin pinctrl_soc_pin_t;
  * @param prop Property name describing state pins.
  */
 #define Z_PINCTRL_STATE_PINS_INIT(node_id, prop)                                                   \
-	{                                                                                          \
-		DT_FOREACH_CHILD_VARGS(DT_PHANDLE(node_id, prop), DT_FOREACH_PROP_ELEM, psels,     \
-				       Z_PINCTRL_STATE_PIN_INIT)                                   \
-	}
+	{DT_FOREACH_CHILD_VARGS(DT_PHANDLE(node_id, prop), DT_FOREACH_PROP_ELEM, psels,            \
+				Z_PINCTRL_STATE_PIN_INIT)}
 
 #define RA_GET_PORT_NUM(pinctrl) (((pinctrl) >> RA_PORT_NUM_POS) & RA_PORT_NUM_MASK)
 #define RA_GET_PIN_NUM(pinctrl)  (((pinctrl) >> RA_PIN_NUM_POS) & RA_PIN_NUM_MASK)

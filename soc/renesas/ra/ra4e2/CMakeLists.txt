@@ -3,10 +3,6 @@
 
 zephyr_include_directories(.)
 
-zephyr_sources(
-  soc.c
-)
-
 if(CONFIG_CMAKE_LINKER_GENERATOR)
   dt_nodelabel(option_setting_ofs0 NODELABEL "option_setting_ofs0")
   dt_nodelabel(option_setting_osis NODELABEL "option_setting_osis")
@@ -58,10 +54,7 @@ if(CONFIG_CMAKE_LINKER_GENERATOR)
 
 elseif(CONFIG_LD_LINKER_TEMPLATE)
   zephyr_linker_sources(SECTIONS sections.ld)
-  zephyr_linker_sources(RAM_SECTIONS ram_sections.ld)
 
 else()
   message(WARNING "Unsupported linker template.")
 endif()
-
-set(SOC_LINKER_SCRIPT ${ZEPHYR_BASE}/include/zephyr/arch/arm/cortex_m/scripts/linker.ld CACHE INTERNAL "")
