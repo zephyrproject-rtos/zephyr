@@ -163,6 +163,11 @@ Networking
 
 .. zephyr-keep-sorted-stop
 
+Modem
+*****
+
+* ``CONFIG_MODEM_AT_SHELL_USER_PIPE`` has been renamed to :kconfig:option:`CONFIG_MODEM_AT_USER_PIPE`.
+
 Display
 *******
 
