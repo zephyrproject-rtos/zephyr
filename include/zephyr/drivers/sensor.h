@@ -1027,11 +1027,12 @@ static inline int z_impl_sensor_get_decoder(const struct device *dev,
  * @return 0 on success
  * @return < 0 on error
  */
-__syscall int sensor_reconfigure_read_iodev(struct rtio_iodev *iodev, const struct device *sensor,
+__syscall int sensor_reconfigure_read_iodev(const struct rtio_iodev *iodev,
+					    const struct device *sensor,
 					    const struct sensor_chan_spec *channels,
 					    size_t num_channels);
 
-static inline int z_impl_sensor_reconfigure_read_iodev(struct rtio_iodev *iodev,
+static inline int z_impl_sensor_reconfigure_read_iodev(const struct rtio_iodev *iodev,
 						       const struct device *sensor,
 						       const struct sensor_chan_spec *channels,
 						       size_t num_channels)
@@ -1048,7 +1049,7 @@ static inline int z_impl_sensor_reconfigure_read_iodev(struct rtio_iodev *iodev,
 	return 0;
 }
 
-static inline int sensor_stream(struct rtio_iodev *iodev, struct rtio *ctx, void *userdata,
+static inline int sensor_stream(const struct rtio_iodev *iodev, struct rtio *ctx, void *userdata,
 				struct rtio_sqe **handle)
 {
 	if (IS_ENABLED(CONFIG_USERSPACE)) {
@@ -1085,7 +1086,7 @@ static inline int sensor_stream(struct rtio_iodev *iodev, struct rtio *ctx, void
  * @return 0 on success
  * @return < 0 on error
  */
-static inline int sensor_read(struct rtio_iodev *iodev, struct rtio *ctx, uint8_t *buf,
+static inline int sensor_read(const struct rtio_iodev *iodev, struct rtio *ctx, uint8_t *buf,
 			      size_t buf_len)
 {
 	if (IS_ENABLED(CONFIG_USERSPACE)) {
