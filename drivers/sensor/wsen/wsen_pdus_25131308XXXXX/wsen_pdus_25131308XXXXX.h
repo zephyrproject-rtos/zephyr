@@ -10,9 +10,9 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/sensor.h>
 
-#include <weplatform.h>
+#include <platform.h>
 
-#include "WSEN_PDUS_25131308XXX01_hal.h"
+#include <WSEN_PDUS_25131308XXX01.h>
 #include <zephyr/drivers/i2c.h>
 
 struct pdus_25131308XXXXX_data {
