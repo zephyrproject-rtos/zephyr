@@ -217,13 +217,11 @@ static int eth_initialize(const struct device *dev)
 
 	heth->Init.MACAddr = dev_data->mac_addr;
 
-#if defined(CONFIG_ETH_STM32_HAL_API_V1)
 	ret = eth_stm32_hal_init(dev);
 	if (ret) {
 		LOG_ERR("Failed to initialize HAL");
 		return -EIO;
 	}
-#endif /* !CONFIG_ETH_STM32_HAL_API_V1 */
 
 	LOG_DBG("MAC %02x:%02x:%02x:%02x:%02x:%02x",
 		dev_data->mac_addr[0], dev_data->mac_addr[1],
@@ -324,14 +322,6 @@ static void eth_iface_init(struct net_if *iface)
 #endif
 
 	ethernet_init(iface);
-
-#if defined(CONFIG_ETH_STM32_HAL_API_V2)
-	/* This function requires the Ethernet interface to be
-	 * properly initialized. In auto-negotiation mode, it reads the speed
-	 * and duplex settings to configure the driver accordingly.
-	 */
-	eth_stm32_hal_init(dev);
-#endif /* CONFIG_ETH_STM32_HAL_API_V2 */
 
 	eth_stm32_setup_mac_filter(heth);
 
