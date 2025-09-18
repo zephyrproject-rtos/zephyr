@@ -12,7 +12,6 @@ config SOC_SERIES_RA4T1
 	select CPU_HAS_FPU
 	select FPU
 	select XIP
-	select SOC_EARLY_INIT_HOOK
 
 if SOC_SERIES_RA4T1
 
