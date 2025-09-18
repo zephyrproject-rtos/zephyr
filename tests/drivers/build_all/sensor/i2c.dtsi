@@ -7,6 +7,9 @@
  */
 
 #include <zephyr/dt-bindings/sensor/lsm6dsv16x.h>
+#include <zephyr/dt-bindings/sensor/lsm6dsv32x.h>
+#include <zephyr/dt-bindings/sensor/lsm6dsv320x.h>
+#include <zephyr/dt-bindings/sensor/lsm6dsv80x.h>
 #include <zephyr/dt-bindings/sensor/lsm6dso.h>
 #include <zephyr/dt-bindings/sensor/lsm6dso16is.h>
 #include <zephyr/dt-bindings/sensor/lps22hh.h>
@@ -752,9 +755,9 @@ test_i2c_lsm6dsv16x: lsm6dsv16x@69 {
 	int1-gpios = <&test_gpio 0 0>;
 	int2-gpios = <&test_gpio 0 0>;
 	accel-range = <LSM6DSV16X_DT_FS_8G>;
-	accel-odr = <LSM6DSV16X_DT_ODR_AT_60Hz>;
+	accel-odr = <LSM6DSVXXX_DT_ODR_AT_60Hz>;
 	gyro-range = <LSM6DSV16X_DT_FS_2000DPS>;
-	gyro-odr = <LSM6DSV16X_DT_ODR_AT_60Hz>;
+	gyro-odr = <LSM6DSVXXX_DT_ODR_AT_60Hz>;
 };
 
 test_i2c_mcp9600: mcp9600@6a {
@@ -1404,4 +1407,26 @@ test_i2c_wsen_isds_2536030320001: wsen_isds_2536030320001@bb {
 	tap-axis-enable = <0 0 1>;
 	events-interrupt-gpios = <&test_gpio 0 0>;
 	drdy-interrupt-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_lsm6dsv320x: lsm6dsv320x@bc {
+	compatible = "st,lsm6dsv320x";
+	reg = <0xbc>;
+	int1-gpios = <&test_gpio 0 0>;
+	int2-gpios = <&test_gpio 0 0>;
+	accel-range = <LSM6DSV320X_DT_FS_8G>;
+	accel-odr = <LSM6DSVXXX_DT_ODR_AT_60Hz>;
+	gyro-range = <LSM6DSV320X_DT_FS_2000DPS>;
+	gyro-odr = <LSM6DSVXXX_DT_ODR_AT_60Hz>;
+};
+
+test_i2c_lsm6dsv80x: lsm6dsv80x@bc {
+	compatible = "st,lsm6dsv80x";
+	reg = <0xbc>;
+	int1-gpios = <&test_gpio 0 0>;
+	int2-gpios = <&test_gpio 0 0>;
+	accel-range = <LSM6DSV80X_DT_FS_8G>;
+	accel-odr = <LSM6DSVXXX_DT_ODR_AT_60Hz>;
+	gyro-range = <LSM6DSV80X_DT_FS_2000DPS>;
+	gyro-odr = <LSM6DSVXXX_DT_ODR_AT_60Hz>;
 };
