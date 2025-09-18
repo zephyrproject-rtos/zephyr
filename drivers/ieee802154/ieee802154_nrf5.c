@@ -499,7 +499,13 @@ static bool nrf5_tx_immediate(struct net_pkt *pkt, uint8_t *payload, bool cca)
 		},
 	};
 
+#ifdef NRF_802154_TX_FUNCTIONS_RETURN_ERROR_CODE
+	nrf_802154_tx_error_t result = nrf_802154_transmit_raw(payload, &metadata);
+
+	return result == NRF_802154_TX_ERROR_NONE;
+#else
 	return nrf_802154_transmit_raw(payload, &metadata);
+#endif
 }
 
 #if NRF_802154_CSMA_CA_ENABLED
@@ -516,7 +522,13 @@ static bool nrf5_tx_csma_ca(struct net_pkt *pkt, uint8_t *payload)
 		},
 	};
 
+#ifdef NRF_802154_TX_FUNCTIONS_RETURN_ERROR_CODE
+	nrf_802154_tx_error_t result = nrf_802154_transmit_csma_ca_raw(payload, &metadata);
+
+	return result == NRF_802154_TX_ERROR_NONE;
+#else
 	return nrf_802154_transmit_csma_ca_raw(payload, &metadata);
+#endif
 }
 #endif
 
@@ -573,7 +585,13 @@ static bool nrf5_tx_at(struct nrf5_802154_data *nrf5_radio, struct net_pkt *pkt,
 	uint64_t tx_at = nrf_802154_timestamp_phr_to_shr_convert(
 		net_pkt_timestamp_ns(pkt) / NSEC_PER_USEC);
 
+#ifdef NRF_802154_TX_FUNCTIONS_RETURN_ERROR_CODE
+	nrf_802154_tx_error_t result = nrf_802154_transmit_raw_at(payload, tx_at, &metadata);
+
+	return result == NRF_802154_TX_ERROR_NONE;
+#else
 	return nrf_802154_transmit_raw_at(payload, tx_at, &metadata);
+#endif
 }
 #endif /* CONFIG_NET_PKT_TXTIME */
 
