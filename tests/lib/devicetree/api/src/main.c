@@ -75,6 +75,9 @@
 #define TEST_DMA_CTLR_1 DT_NODELABEL(test_dma1)
 #define TEST_DMA_CTLR_2 DT_NODELABEL(test_dma2)
 
+#define TEST_CONTROLLER DT_NODELABEL(test_children_on_bus)
+#define TEST_BUS_EXT    DT_NODELABEL(test_child_on_bus_ext)
+
 #define TEST_VIDEO2           DT_NODELABEL(test_video2)
 #define TEST_VIDEO2_PORT0     DT_NODELABEL(test_video2_port0)
 #define TEST_VIDEO2_PORT0_IN0 DT_NODELABEL(test_video2_port0_in0)
@@ -2739,6 +2742,18 @@ ZTEST(devicetree_api, test_child_nodes_number)
 ZTEST(devicetree_api, test_great_grandchild)
 {
 	zassert_equal(DT_PROP(DT_NODELABEL(test_ggc), ggc_prop), 42, "");
+}
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT vnd_controller
+ZTEST(devicetree_api, test_child_on_bus_nodes_number)
+{
+	zassert_equal(DT_CHILD_NUM_ON_BUS(TEST_CONTROLLER, generic), 6, "");
+	zassert_equal(DT_INST_CHILD_NUM_ON_BUS(0, generic), 6, "");
+	zassert_equal(DT_CHILD_NUM_ON_BUS_STATUS_OKAY(TEST_CONTROLLER, generic), 4, "");
+	zassert_equal(DT_INST_CHILD_NUM_ON_BUS_STATUS_OKAY(0, generic), 4, "");
+	zassert_equal(DT_CHILD_NUM_ON_BUS(TEST_BUS_EXT, generic), 2, "");
+	zassert_equal(DT_CHILD_NUM_ON_BUS_STATUS_OKAY(TEST_BUS_EXT, generic), 1, "");
 }
 
 #undef DT_DRV_COMPAT

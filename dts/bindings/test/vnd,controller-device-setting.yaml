@@ -1,0 +1,8 @@
+description: Controller to device setting in 1 to many mapping
+
+compatible: "vnd,controller-device-setting"
+
+properties:
+  val1:
+    type: int
+    required: true
