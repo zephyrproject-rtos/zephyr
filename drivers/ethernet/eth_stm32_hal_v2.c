@@ -32,7 +32,7 @@ struct eth_stm32_tx_buffer_header {
 	bool used;
 };
 
-static ETH_TxPacketConfig tx_config;
+static ETH_TxPacketConfigTypeDef tx_config;
 
 static struct eth_stm32_rx_buffer_header dma_rx_buffer_header[ETH_RXBUFNB];
 static struct eth_stm32_tx_buffer_header dma_tx_buffer_header[ETH_TXBUFNB];
@@ -608,7 +608,6 @@ int eth_stm32_hal_init(const struct device *dev)
 	k_sem_init(&dev_data->tx_int_sem, 0, 1);
 
 	/* Tx config init: */
-	memset(&tx_config, 0, sizeof(ETH_TxPacketConfig));
 	tx_config.Attributes = ETH_TX_PACKETS_FEATURES_CSUM |
 				ETH_TX_PACKETS_FEATURES_CRCPAD;
 	tx_config.ChecksumCtrl = IS_ENABLED(CONFIG_ETH_STM32_HW_CHECKSUM) ?
