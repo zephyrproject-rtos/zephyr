@@ -20,16 +20,15 @@ LOG_MODULE_REGISTER(net_echo_server_svc_sample, LOG_LEVEL_DBG);
 
 #define MY_PORT 4242
 
-static char addr_str[INET6_ADDRSTRLEN];
+#define MAX_SERVICES (CONFIG_ZVFS_POLL_MAX - 3)
 
+BUILD_ASSERT(MAX_SERVICES > 0, "Need at least 4 poll fds, increase CONFIG_ZVFS_POLL_MAX");
+
+K_MUTEX_DEFINE(lock);
 static struct pollfd sockfd_udp[1] = {
 	[0] = { .fd = -1 }, /* UDP socket */
 };
-static struct pollfd sockfd_tcp[1] = {
-	[0] = { .fd = -1 }, /* TCP socket */
-};
-
-#define MAX_SERVICES 1
+static struct pollfd sockfd_tcp[MAX_SERVICES];
 
 static void receive_data(bool is_udp, struct net_socket_service_event *pev,
 			 char *buf, size_t buflen);
@@ -48,8 +47,78 @@ static void udp_service_handler(struct net_socket_service_event *pev)
 	receive_data(true, pev, buf, sizeof(buf));
 }
 
-NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(service_udp, udp_service_handler, MAX_SERVICES);
+NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(service_udp, udp_service_handler, 1);
 NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(service_tcp, tcp_service_handler, MAX_SERVICES);
+
+static void client_list_init(void)
+{
+	k_mutex_lock(&lock, K_FOREVER);
+	ARRAY_FOR_EACH_PTR(sockfd_tcp, sockfd) {
+		sockfd->fd = -1;
+	}
+	k_mutex_unlock(&lock);
+}
+
+static void client_list_deinit(void)
+{
+	int ret;
+
+	ret = net_socket_service_unregister(&service_tcp);
+	if (ret < 0) {
+		LOG_ERR("Cannot unregister socket service handler (%d)", ret);
+	}
+
+	k_mutex_lock(&lock, K_FOREVER);
+	ARRAY_FOR_EACH_PTR(sockfd_tcp, sockfd) {
+		if (sockfd->fd != -1) {
+			close(sockfd->fd);
+			sockfd->fd = -1;
+		}
+	}
+	k_mutex_unlock(&lock);
+}
+
+static void client_list_try_add(int sock)
+{
+	int ret;
+
+	k_mutex_lock(&lock, K_FOREVER);
+	ARRAY_FOR_EACH_PTR(sockfd_tcp, sockfd) {
+		if (sockfd->fd == -1) {
+			sockfd->fd = sock;
+			sockfd->events = POLLIN;
+
+			ret = net_socket_service_register(&service_tcp, sockfd_tcp, ARRAY_SIZE(sockfd_tcp), NULL);
+			if (ret < 0) {
+				LOG_ERR("Cannot register socket service handler (%d)", ret);
+			}
+			k_mutex_unlock(&lock);
+			return;
+		}
+	}
+	k_mutex_unlock(&lock);
+	LOG_WRN("Max capacity reached");
+	close(sock);
+}
+
+static void client_list_remove(int client)
+{
+	int ret;
+
+	k_mutex_lock(&lock, K_FOREVER);
+	ARRAY_FOR_EACH_PTR(sockfd_tcp, sockfd) {
+		if (sockfd->fd == client) {
+			close(client);
+			sockfd->fd = -1;
+			ret = net_socket_service_register(&service_tcp, sockfd_tcp, ARRAY_SIZE(sockfd_tcp), NULL);
+			if (ret < 0) {
+				LOG_ERR("Cannot register socket service handler (%d)", ret);
+			}
+			break;
+		}
+	}
+	k_mutex_unlock(&lock);
+}
 
 static void receive_data(bool is_udp, struct net_socket_service_event *pev,
 			 char *buf, size_t buflen)
@@ -57,6 +126,7 @@ static void receive_data(bool is_udp, struct net_socket_service_event *pev,
 	struct pollfd *pfd = &pev->event;
 	int client = pfd->fd;
 	struct sockaddr_in6 addr;
+	char addr_str[INET6_ADDRSTRLEN];
 	socklen_t addrlen = sizeof(addr);
 	int len, out_len;
 	char *p;
@@ -67,21 +137,11 @@ static void receive_data(bool is_udp, struct net_socket_service_event *pev,
 		if (len < 0) {
 			LOG_ERR("recv: %d", -errno);
 		}
-
-		/* If the TCP socket is closed, mark it as non pollable */
-		if (!is_udp && sockfd_tcp[0].fd == client) {
-			sockfd_tcp[0].fd = -1;
-
-			/* Update the handler so that client connection is
-			 * not monitored any more.
-			 */
-			(void)net_socket_service_register(&service_tcp, sockfd_tcp,
-							  ARRAY_SIZE(sockfd_tcp), NULL);
-			close(client);
-
+		if (!is_udp) {
+			client_list_remove(client);
+			inet_ntop(addr.sin6_family, &addr.sin6_addr, addr_str, sizeof(addr_str));
 			LOG_INF("Connection from %s closed", addr_str);
 		}
-
 		return;
 	}
 
@@ -176,12 +236,15 @@ static int setup_udp_socket(struct sockaddr_in6 *addr)
 int main(void)
 {
 	int tcp_sock, udp_sock, ret;
+	char addr_str[INET6_ADDRSTRLEN];
 	struct sockaddr_in6 addr = {
 		.sin6_family = AF_INET6,
 		.sin6_addr = IN6ADDR_ANY_INIT,
 		.sin6_port = htons(MY_PORT),
 	};
 	static int counter;
+
+	client_list_init();
 
 	tcp_sock = setup_tcp_socket(&addr);
 	if (tcp_sock < 0) {
@@ -222,20 +285,11 @@ int main(void)
 			  addr_str, sizeof(addr_str));
 		LOG_INF("Connection #%d from %s (%d)", counter++, addr_str, client);
 
-		sockfd_tcp[0].fd = client;
-		sockfd_tcp[0].events = POLLIN;
+		client_list_try_add(client);
 
-		/* Register all the sockets to service handler */
-		ret = net_socket_service_register(&service_tcp, sockfd_tcp,
-						  ARRAY_SIZE(sockfd_tcp), NULL);
-		if (ret < 0) {
-			LOG_ERR("Cannot register socket service handler (%d)",
-				ret);
-			break;
-		}
 	}
 
-	(void)net_socket_service_unregister(&service_tcp);
+	client_list_deinit();
 	(void)net_socket_service_unregister(&service_udp);
 
 	close(tcp_sock);
