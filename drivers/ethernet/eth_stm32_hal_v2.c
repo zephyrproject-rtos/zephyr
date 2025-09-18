@@ -476,9 +476,9 @@ void HAL_ETH_ErrorCallback(ETH_HandleTypeDef *heth)
 
 int eth_stm32_hal_init(const struct device *dev)
 {
-	HAL_StatusTypeDef hal_ret = HAL_OK;
 	struct eth_stm32_hal_dev_data *dev_data = dev->data;
 	ETH_HandleTypeDef *heth = &dev_data->heth;
+	HAL_StatusTypeDef hal_ret = HAL_OK;
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_ethernet)
 	for (int ch = 0; ch < ETH_DMA_CH_CNT; ch++) {
