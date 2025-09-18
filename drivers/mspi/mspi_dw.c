@@ -71,6 +71,12 @@ struct mspi_dw_data {
 	/* For locking of controller configuration. */
 	struct k_sem cfg_lock;
 	struct mspi_xfer xfer;
+
+#if defined(CONFIG_MSPI_DW_HANDLE_FIFOS_IN_SYSTEM_WORKQUEUE)
+	struct k_work fifo_work;
+	const struct device *dev;
+	uint32_t imr;
+#endif
 };
 
 struct mspi_dw_config {
@@ -111,7 +117,7 @@ DEFINE_MM_REG_RD_WR(rxftlr,	0x1c)
 DEFINE_MM_REG_RD(txflr,		0x20)
 DEFINE_MM_REG_RD(rxflr,		0x24)
 DEFINE_MM_REG_RD(sr,		0x28)
-DEFINE_MM_REG_WR(imr,		0x2c)
+DEFINE_MM_REG_RD_WR(imr,	0x2c)
 DEFINE_MM_REG_RD(isr,		0x30)
 DEFINE_MM_REG_RD(risr,		0x34)
 DEFINE_MM_REG_RD_WR(dr,		0x60)
@@ -218,6 +224,8 @@ static bool tx_dummy_bytes(const struct device *dev)
 		write_dr(dev, dummy_val);
 	} while (--dummy_bytes);
 
+	dev_data->dummy_bytes = 0;
+
 	/* Set the TX start level to 0, so that the transmission will be
 	 * started now if it hasn't been yet. The threshold value is also
 	 * set to 0 here, but it doesn't really matter, as the interrupt
@@ -280,7 +288,18 @@ static bool read_rx_fifo(const struct device *dev,
 	return false;
 }
 
-static void mspi_dw_isr(const struct device *dev)
+static inline void set_imr(const struct device *dev, uint32_t imr)
+{
+#if defined(CONFIG_MSPI_DW_HANDLE_FIFOS_IN_SYSTEM_WORKQUEUE)
+	struct mspi_dw_data *dev_data = dev->data;
+
+	dev_data->imr = imr;
+#else
+	write_imr(dev, imr);
+#endif
+}
+
+static void handle_fifos(const struct device *dev)
 {
 	struct mspi_dw_data *dev_data = dev->data;
 	const struct mspi_xfer_packet *packet =
@@ -302,42 +321,82 @@ static void mspi_dw_isr(const struct device *dev)
 			finished = true;
 		}
 	} else {
-		uint32_t int_status = read_isr(dev);
+		for (;;) {
+			/* Use RISR, not ISR, because when this function is
+			 * executed through the system workqueue, all interrupts
+			 * are masked (IMR is 0).
+			 */
+			uint32_t int_status = read_risr(dev);
 
-		do {
-			if (int_status & ISR_RXFIS_BIT) {
+			if (int_status & RISR_RXFIR_BIT) {
 				if (read_rx_fifo(dev, packet)) {
 					finished = true;
 					break;
 				}
 
-				if (read_risr(dev) & RISR_RXOIR_BIT) {
+				if (int_status & RISR_RXOIR_BIT) {
 					finished = true;
 					break;
 				}
 
-				int_status = read_isr(dev);
+				/* Refresh interrupt status, as during reading
+				 * from the RX FIFO, the TX FIFO status might
+				 * have changed.
+				 */
+				int_status = read_risr(dev);
 			}
 
-			if (int_status & ISR_TXEIS_BIT) {
-				if (tx_dummy_bytes(dev)) {
-					/* All the required dummy bytes were
-					 * written to the FIFO; disable the TXE
-					 * interrupt, as it's no longer needed.
-					 */
-					write_imr(dev, IMR_RXFIM_BIT);
-				}
-
-				int_status = read_isr(dev);
+			if (dev_data->dummy_bytes == 0 ||
+			    !(int_status & RISR_TXEIR_BIT)) {
+				break;
 			}
-		} while (int_status != 0);
+
+			if (tx_dummy_bytes(dev)) {
+				/* All the required dummy bytes were written
+				 * to the FIFO; disable the TXE interrupt,
+				 * as it's no longer needed.
+				 */
+				set_imr(dev, IMR_RXFIM_BIT);
+			}
+		}
 	}
 
 	if (finished) {
-		write_imr(dev, 0);
+		set_imr(dev, 0);
 
 		k_sem_give(&dev_data->finished);
 	}
+}
+
+#if defined(CONFIG_MSPI_DW_HANDLE_FIFOS_IN_SYSTEM_WORKQUEUE)
+static void fifo_work_handler(struct k_work *work)
+{
+	struct mspi_dw_data *dev_data =
+		CONTAINER_OF(work, struct mspi_dw_data, fifo_work);
+	const struct device *dev = dev_data->dev;
+
+	handle_fifos(dev);
+
+	write_imr(dev, dev_data->imr);
+}
+#endif
+
+static void mspi_dw_isr(const struct device *dev)
+{
+#if defined(CONFIG_MSPI_DW_HANDLE_FIFOS_IN_SYSTEM_WORKQUEUE)
+	struct mspi_dw_data *dev_data = dev->data;
+	int rc;
+
+	dev_data->imr = read_imr(dev);
+	write_imr(dev, 0);
+
+	rc = k_work_submit(&dev_data->fifo_work);
+	if (rc < 0) {
+		LOG_ERR("k_work_submit failed: %d\n", rc);
+	}
+#else
+	handle_fifos(dev);
+#endif
 
 	vendor_specific_irq_clear(dev);
 }
@@ -1425,6 +1484,11 @@ static int dev_init(const struct device *dev)
 	k_sem_init(&dev_data->finished, 0, 1);
 	k_sem_init(&dev_data->cfg_lock, 1, 1);
 	k_sem_init(&dev_data->ctx_lock, 1, 1);
+
+#if defined(CONFIG_MSPI_DW_HANDLE_FIFOS_IN_SYSTEM_WORKQUEUE)
+	dev_data->dev = dev;
+	k_work_init(&dev_data->fifo_work, fifo_work_handler);
+#endif
 
 	for (ce_gpio = dev_config->ce_gpios;
 	     ce_gpio < &dev_config->ce_gpios[dev_config->ce_gpios_len];
