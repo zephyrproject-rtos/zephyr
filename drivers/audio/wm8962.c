@@ -681,8 +681,10 @@ static void wm8962_configure_output(const struct device *dev)
 
 static void wm8962_configure_input(const struct device *dev)
 {
-	wm8962_route_input(dev, AUDIO_CHANNEL_FRONT_LEFT, kWM8962_InputPGASourceInput1);
-	wm8962_route_input(dev, AUDIO_CHANNEL_FRONT_RIGHT, kWM8962_InputPGASourceInput3);
+	wm8962_route_input(dev, AUDIO_CHANNEL_FRONT_LEFT,
+			   WM8962_INPUT_PGA_ENA | kWM8962_InputPGASourceInput1);
+	wm8962_route_input(dev, AUDIO_CHANNEL_FRONT_RIGHT,
+			   WM8962_INPUT_PGA_ENA | kWM8962_InputPGASourceInput3);
 
 	/* Input MIXER source */
 	wm8962_write_reg(dev, WM8962_REG_INPUTMIX,
