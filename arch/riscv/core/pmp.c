@@ -354,11 +354,13 @@ static void write_pmp_entries(unsigned int start, unsigned int end,
 	ARRAY_SIZE(thread->arch.u_mode_pmpaddr_regs)
 
 /*
- * This is used to seed thread PMP copies with global m-mode cfg entries
- * sharing the same cfg register. Locked entries aren't modifiable but
+ * Stores the initial values of the pmpcfg CSRs, covering all global
+ * m-mode PMP entries. This array is sized to hold all pmpcfg registers
+ * necessary for CONFIG_PMP_SLOTS. It is used to seed the per-thread
+ * PMP configuration copies. Locked entries aren't modifiable but
  * we could have non-locked entries here too.
  */
-static unsigned long global_pmp_cfg[1];
+static unsigned long global_pmp_cfg[CONFIG_PMP_SLOTS / PMPCFG_STRIDE];
 static unsigned long global_pmp_last_addr;
 
 /* End of global PMP entry range */
@@ -451,12 +453,13 @@ void z_riscv_pmp_init(void)
 	/* Make sure secondary CPUs produced the same values */
 	if (global_pmp_end_index != 0) {
 		__ASSERT(global_pmp_end_index == index, "");
-		__ASSERT(global_pmp_cfg[0] == pmp_cfg[0], "");
+		__ASSERT(global_pmp_cfg[index / PMPCFG_STRIDE] == pmp_cfg[index / PMPCFG_STRIDE],
+			 "");
 		__ASSERT(global_pmp_last_addr == pmp_addr[index - 1], "");
 	}
 #endif
 
-	global_pmp_cfg[0] = pmp_cfg[0];
+	memcpy(global_pmp_cfg, pmp_cfg, sizeof(pmp_cfg));
 	global_pmp_last_addr = pmp_addr[index - 1];
 	global_pmp_end_index = index;
 
@@ -476,9 +479,9 @@ static inline unsigned int z_riscv_pmp_thread_init(unsigned long *pmp_addr,
 	ARG_UNUSED(index_limit);
 
 	/*
-	 * Retrieve pmpcfg0 partial content from global entries.
+	 * Retrieve the pmpcfg register with partial content from global entries.
 	 */
-	pmp_cfg[0] = global_pmp_cfg[0];
+	memcpy(pmp_cfg, global_pmp_cfg, sizeof(global_pmp_cfg));
 
 	/*
 	 * Retrieve the pmpaddr value matching the last global PMP slot.
