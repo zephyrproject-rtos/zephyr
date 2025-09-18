@@ -5,7 +5,7 @@
  */
 
 dut: &usart1 {
-	pinctrl-0 = <&usart1_tx_pb6 &usart1_rx_pb7 &usart1_rts_pa12 &usart1_cts_pa11>;
+	pinctrl-0 = <&usart1_tx_pb6 &usart1_rx_pb7 &usart1_rts_pb3 &usart1_cts_pb4>;
 	dmas = <&dmamux1 3 51 STM32_DMA_PERIPH_TX>,
 	       <&dmamux1 4 50 STM32_DMA_PERIPH_RX>;
 	dma-names = "tx", "rx";
@@ -18,8 +18,4 @@ dut: &usart1 {
 
 &dmamux1 {
 	status = "okay";
-};
-
-&usb {
-	status = "disabled"
 };
