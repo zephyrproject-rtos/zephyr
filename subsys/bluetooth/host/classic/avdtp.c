@@ -954,6 +954,7 @@ static void avdtp_process_configuration_cmd(struct bt_avdtp *session, struct net
 	err = avdtp_send_rsp(session, rsp_buf);
 
 	if (!reconfig && !err && !avdtp_err_code) {
+		sep->session = session;
 		bt_avdtp_set_state(sep, AVDTP_CONFIGURED);
 	}
 
@@ -987,6 +988,10 @@ static void avdtp_process_configuration_rsp(struct bt_avdtp *session, struct net
 
 	if (req->status == BT_AVDTP_SUCCESS) {
 		avdtp_set_status(req, buf, msg_type);
+	}
+
+	if (req->status == BT_AVDTP_SUCCESS) {
+		SET_CONF_REQ(req)->sep->session = session;
 	}
 
 	bt_avdtp_clear_req(session);
