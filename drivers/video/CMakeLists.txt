@@ -2,6 +2,7 @@
 
 zephyr_library()
 
+zephyr_library_sources(video_buffer.c)
 zephyr_library_sources(video_common.c)
 zephyr_library_sources(video_ctrls.c)
 zephyr_library_sources(video_device.c)

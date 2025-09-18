@@ -186,7 +186,7 @@ static int cmd_video_capture(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev;
 	struct video_format fmt = {.type = VIDEO_BUF_TYPE_OUTPUT};
-	struct video_buffer *buffers[CONFIG_VIDEO_BUFFER_POOL_NUM_MAX] = {NULL};
+	struct video_buffer *buffers[CONFIG_VIDEO_BUFFER_POOL_NUM_BUFS] = {NULL};
 	struct video_buffer vbuf0 = {.type = VIDEO_BUF_TYPE_OUTPUT};
 	struct video_buffer *vbuf = &vbuf0;
 	char *arg_device = argv[1];
@@ -218,10 +218,10 @@ static int cmd_video_capture(const struct shell *sh, size_t argc, char **argv)
 		return -EINVAL;
 	}
 
-	buf_size = MIN(fmt.pitch * fmt.height, CONFIG_VIDEO_BUFFER_POOL_SZ_MAX);
+	buf_size = MIN(fmt.pitch * fmt.height, CONFIG_VIDEO_BUFFER_POOL_BUF_SZ);
 
 	shell_print(sh, "Preparing %u buffers of %u bytes each",
-		    CONFIG_VIDEO_BUFFER_POOL_NUM_MAX, buf_size);
+		    CONFIG_VIDEO_BUFFER_POOL_NUM_BUFS, buf_size);
 
 	for (int i = 0; i < ARRAY_SIZE(buffers); i++) {
 		buffers[i] = video_buffer_alloc(buf_size, K_NO_WAIT);
