@@ -232,7 +232,7 @@ static void icm45686_handle_event_actions(struct rtio *ctx,
 		uint8_t write_reg[] = {
 			REG_FIFO_CONFIG2,
 			REG_FIFO_CONFIG2_FIFO_FLUSH(true) |
-			REG_FIFO_CONFIG2_FIFO_WM_GT_THS(true)
+			REG_FIFO_CONFIG2_FIFO_WM_GT_THS(false)
 		};
 
 		rtio_sqe_prep_tiny_write(write_sqe,
@@ -586,7 +586,7 @@ void icm45686_stream_submit(const struct device *dev,
 			uint16_t fifo_ths = data->stream.settings.enabled.fifo_ths ?
 					    cfg->settings.fifo_watermark : 0;
 
-			val = REG_FIFO_CONFIG2_FIFO_WM_GT_THS(true) |
+			val = REG_FIFO_CONFIG2_FIFO_WM_GT_THS(false) |
 			      REG_FIFO_CONFIG2_FIFO_FLUSH(true);
 			err = icm45686_bus_write(dev, REG_FIFO_CONFIG2, &val, 1);
 			if (err) {
