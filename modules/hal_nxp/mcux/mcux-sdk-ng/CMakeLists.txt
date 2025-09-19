@@ -11,6 +11,11 @@ if((${MCUX_DEVICE} MATCHES "RW61") AND (NOT DEFINED CONFIG_MINIMAL_LIBC))
   zephyr_library_sources(${ZEPHYR_CURRENT_MODULE_DIR}/mcux/mcux-sdk-ng/components/misc_utilities/fsl_memcpy.S)
 endif()
 
+if(CONFIG_BT_H4_NXP_CTLR AND CONFIG_BT_CLASSIC)
+  # Add SCO specific configuration source file if BT Classic is enabled
+  zephyr_library_sources(middleware/bt_controller/hci_nxp_sco.c)
+endif()
+
 include(middleware/middleware.cmake)
 include(components/components.cmake)
 include(drivers/drivers.cmake)
