@@ -2899,6 +2899,7 @@ Intel Platforms (X86):
     - ceolin
   files:
     - boards/intel/adl/
+    - boards/intel/btl/
     - boards/intel/ehl/
     - boards/intel/rpl/
     - dts/x86/intel/
