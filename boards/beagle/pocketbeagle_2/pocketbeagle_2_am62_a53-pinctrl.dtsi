@@ -142,6 +142,11 @@
 		pinmux = <K3_PINMUX(0x01CC, PIN_INPUT, MUX_MODE_7)>;
 	};
 
+	P1_30_uart0_tx: P1-30-uart0-tx-pins {
+		/* (E14) UART0_TXD */
+		pinmux = <K3_PINMUX(0x01CC, PIN_OUTPUT, MUX_MODE_0)>;
+	};
+
 	P1_31_gpio: P1-31-gpio-pins {
 		/* (Y22) VOUT0_DATA14.GPIO0_59 */
 		pinmux = <K3_PINMUX(0x00F0, PIN_INPUT, MUX_MODE_7)>;
@@ -150,6 +155,11 @@
 	P1_32_gpio: P1-32-gpio-pins {
 		/* (D14) UART0_RXD.GPIO1_20 */
 		pinmux = <K3_PINMUX(0x01C8, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	P1_32_uart0_rx: P1-32-uart0-rx-pins {
+		/* (D14) UART0_RXD */
+		pinmux = <K3_PINMUX(0x01C8, PIN_INPUT, MUX_MODE_0)>;
 	};
 
 	P1_33_A17_gpio: P1-33-A17-gpio-pins {
@@ -222,6 +232,11 @@
 		pinmux = <K3_PINMUX(0x01D8, PIN_INPUT, MUX_MODE_7)>;
 	};
 
+	P2_05_C15_uart5_rx: P2-05-C15-uart5-rx-pins {
+		/* (C15) MCAN0_TX.UART5_RXD */
+		pinmux = <K3_PINMUX(0x01D8, PIN_INPUT, MUX_MODE_1)>;
+	};
+
 	P2_06_gpio: P2-06-gpio-pins {
 		/* (W25) VOUT0_DATA2.GPIO0_47 */
 		pinmux = <K3_PINMUX(0x00C0, PIN_INPUT, MUX_MODE_7)>;
@@ -230,6 +245,11 @@
 	P2_07_E15_gpio: P2-07-E15-gpio-pins {
 		/* (E15) MCAN0_RX.GPIO1_25 */
 		pinmux = <K3_PINMUX(0x01DC, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	P2_07_E15_uart5_tx: P2-07-E15-uart5-tx-pins {
+		/* (E15) MCAN0_RX.UART5_TXD */
+		pinmux = <K3_PINMUX(0x01DC, PIN_INPUT, MUX_MODE_1)>;
 	};
 
 	P2_08_gpio: P2-08-gpio-pins {
