@@ -11,4 +11,5 @@ flash: 512
 ram: 64
 supported:
   - gpio
+  - pinctrl
 vendor: microchip
