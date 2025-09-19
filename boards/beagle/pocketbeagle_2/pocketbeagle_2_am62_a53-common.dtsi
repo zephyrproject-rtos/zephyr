@@ -63,6 +63,18 @@
 	};
 };
 
+&main_uart0 {
+	pinctrl-0 = <&P1_30_uart0_tx &P1_32_uart0_rx>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&main_uart5 {
+	pinctrl-0 = <&P2_07_E15_uart5_tx &P2_05_C15_uart5_rx>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &main_uart6 {
 	pinctrl-0 = <&main_uart6_rx_default &main_uart6_tx_default>;
 	pinctrl-names = "default";
