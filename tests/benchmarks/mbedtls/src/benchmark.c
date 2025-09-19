@@ -279,7 +279,7 @@ void ecp_clear_precomputed(mbedtls_ecp_group *grp)
 unsigned char buf[BUFSIZE];
 
 typedef struct {
-	char md5, ripemd160, sha1, sha256, sha512, des3, des,
+	char ripemd160, sha1, sha256, sha512, des3, des,
 	     aes_cbc, aes_gcm, aes_ccm, aes_xts, chachapoly, aes_cmac,
 	     des3_cmac, aria, camellia, chacha20, poly1305,
 	     havege, ctr_drbg, hmac_drbg, rsa, dhm, ecdsa, ecdh;
@@ -305,13 +305,6 @@ int main(void)
 
 	memset(buf, 0xAA, sizeof(buf));
 	memset(tmp, 0xBB, sizeof(tmp));
-
-
-#if defined(MBEDTLS_MD5_C)
-	if (todo.md5) {
-		TIME_AND_TSC("MD5", mbedtls_md5(buf, BUFSIZE, tmp));
-	}
-#endif
 
 #if defined(MBEDTLS_RIPEMD160_C)
 	if (todo.ripemd160) {

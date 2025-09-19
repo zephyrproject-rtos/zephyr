@@ -33,7 +33,6 @@
 #include "mbedtls/gcm.h"
 #include "mbedtls/ccm.h"
 #include "mbedtls/cmac.h"
-#include "mbedtls/md5.h"
 #include "mbedtls/ripemd160.h"
 #include "mbedtls/sha1.h"
 #include "mbedtls/sha256.h"
@@ -190,13 +189,6 @@ ZTEST_USER(mbedtls_fn, test_mbedtls)
 
 #if defined(MBEDTLS_MD4_C)
 	if (mbedtls_md4_self_test(v) != 0) {
-		suites_failed++;
-	}
-	suites_tested++;
-#endif
-
-#if defined(MBEDTLS_MD5_C)
-	if (mbedtls_md5_self_test(v) != 0) {
 		suites_failed++;
 	}
 	suites_tested++;

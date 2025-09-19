@@ -311,6 +311,12 @@ Modules
 * The TinyCrypt library was removed as the upstream version is no longer maintained.
   PSA Crypto API is now the recommended cryptographic library for Zephyr.
 
+* In order to prepare for the next Mbed TLS release where all legacy cryptographic
+  support was removed in favor of PSA API, following Kconfig symbols are
+  deprecated:
+    * :kconfig:option:`CONFIG_MBEDTLS_MD5`. Switch to
+      :kconfig:option:`CONFIG_PSA_WANT_ALG_MD5`.
+
 Silabs
 ======
 
