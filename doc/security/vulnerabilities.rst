@@ -1983,3 +1983,19 @@ This has been fixed in main for v4.2.0
 
 - `PR 94080 fix for main
   <https://github.com/zephyrproject-rtos/zephyr/pull/94080>`_
+
+:cve:`2025-10458`
+-----------------
+
+Bluetooth: le_conn_rsp does not sanitize CID, MTU, MPS values
+
+Parameters are not validated or sanitized, and are later used in
+various internal operations.
+
+- `Zephyr project bug tracker GHSA-vmww-237q-2fwp
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-vmww-237q-2fwp>`_
+
+This has been fixed in main for v4.2.0
+
+- `PR 93174 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/93174>`_
