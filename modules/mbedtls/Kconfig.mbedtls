@@ -340,9 +340,6 @@ config MBEDTLS_HASH_ALL_ENABLED
 	select MBEDTLS_SHA512
 	select MBEDTLS_POLY1305
 
-config MBEDTLS_MD5
-	bool "MD5 hash algorithm"
-
 config MBEDTLS_SHA1
 	bool "SHA-1 hash algorithm"
 
