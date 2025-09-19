@@ -96,6 +96,12 @@
 			clocks = <&hclk>;
 		};
 
+		prortcclk: prortcclk {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&lfrco>;
+		};
+
 		rtccclk: rtccclk {
 			compatible = "fixed-factor-clock";
 			#clock-cells = <0>;
@@ -148,6 +154,11 @@
 				compatible = "arm,armv8m-itm";
 				reg = <0xe0000000 0x1000>;
 			};
+
+			mpu: mpu@e000ed90 {
+				compatible = "arm,armv8m-mpu";
+				reg = <0xe000ed90 0x40>;
+			};
 		};
 
 		power-states {
@@ -167,6 +178,11 @@
 				status = "disabled";
 			};
 		};
+	};
+
+	hwinfo: hwinfo {
+		compatible = "silabs,gecko-hwinfo";
+		status = "disabled";
 	};
 
 	soc {
@@ -532,6 +548,15 @@
 			interrupt-names = "wdog0";
 			interrupts = <49 2>;
 			peripheral-id = <0>;
+			status = "disabled";
+		};
+
+		eusart0: eusart@5a040000 {
+			compatible = "silabs,eusart-spi";
+			reg = <0x5a040000 0x4000>;
+			clocks = <&cmu CLOCK_EUSART0 CLOCK_BRANCH_EUSART0CLK>;
+			interrupt-names = "rx", "tx";
+			interrupts = <20 2>, <21 2>;
 			status = "disabled";
 		};
 
