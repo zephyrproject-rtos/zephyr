@@ -1308,7 +1308,7 @@ class Kconfig(object):
                                            "within the same choice", loc)
 
                             # Set the choice's mode
-                            sym.choice.set_value(val)
+                            sym.choice.set_value(val, loc)
 
                     elif sym.orig_type is STRING:
                         match = _conf_string_match(val)
@@ -1349,7 +1349,7 @@ class Kconfig(object):
                 if sym._was_set:
                     self._assigned_twice(sym, val, loc)
 
-                sym.set_value(val)
+                sym.set_value(val, loc)
 
         if replace:
             # If we're replacing the configuration, unset the symbols that
@@ -4154,6 +4154,10 @@ class Symbol(object):
       most symbols. Undefined and constant symbols have an empty nodes list.
       Symbols defined in multiple locations get one node for each location.
 
+    user_loc:
+      A (filename, linenr) tuple indicating where the user value was set, or
+      None if the user hasn't set a value.
+
     choice:
       Holds the parent Choice for choice symbols, and None for non-choice
       symbols. Doubles as a flag for whether a symbol is a choice symbol.
@@ -4295,6 +4299,7 @@ class Symbol(object):
         "ranges",
         "rev_dep",
         "selects",
+        "user_loc",
         "user_value",
         "weak_rev_dep",
     )
@@ -4588,7 +4593,7 @@ class Symbol(object):
         """
         return self.name + " " + _locs(self)
 
-    def set_value(self, value):
+    def set_value(self, value, loc=None):
         """
         Sets the user value of the symbol.
 
@@ -4620,6 +4625,9 @@ class Symbol(object):
           BOOL or "0x123" for an INT) are ignored and won't be stored in
           Symbol.user_value. Kconfiglib will print a warning by default for
           invalid assignments, and set_value() will return False.
+
+        loc:
+          A (filename, linenr) tuple indicating where the value was set.
 
         Returns True if the value is valid for the type of the symbol, and
         False otherwise. This only looks at the form of the value. For BOOL and
@@ -4661,6 +4669,7 @@ class Symbol(object):
 
             return False
 
+        self.user_loc = loc
         self.user_value = value
         self._was_set = True
 
@@ -4683,6 +4692,7 @@ class Symbol(object):
         gotten a user value via Kconfig.load_config() or Symbol.set_value().
         """
         if self.user_value is not None:
+            self.user_loc = None
             self.user_value = None
             self._rec_invalidate_if_has_prompt()
 
@@ -4827,6 +4837,7 @@ class Symbol(object):
         self.implies = []
         self.ranges = []
 
+        self.user_loc = \
         self.user_value = \
         self.choice = \
         self.env_var = \
@@ -5125,6 +5136,10 @@ class Choice(object):
       WARNING: Do not assign directly to this. It will break things. Call
       sym.set_value(2) on the choice symbol to be selected instead.
 
+    user_loc:
+      A (filename, linenr) tuple indicating where the user value was set, or
+      None if the user hasn't set a value.
+
     visibility:
       See the Symbol class documentation. Acts on the value (mode).
 
@@ -5195,6 +5210,7 @@ class Choice(object):
         "nodes",
         "orig_type",
         "syms",
+        "user_loc",
         "user_selection",
         "user_value",
     )
@@ -5274,7 +5290,7 @@ class Choice(object):
             self._cached_selection = self._selection()
         return self._cached_selection
 
-    def set_value(self, value):
+    def set_value(self, value, loc=None):
         """
         Sets the user value (mode) of the choice. Like for Symbol.set_value(),
         the visibility might truncate the value. Choices without the 'optional'
@@ -5309,6 +5325,7 @@ class Choice(object):
 
             return False
 
+        self.user_loc = loc
         self.user_value = value
         self._was_set = True
         self._rec_invalidate()
@@ -5321,6 +5338,7 @@ class Choice(object):
         the user had never touched the mode or any of the choice symbols.
         """
         if self.user_value is not None or self.user_selection:
+            self.user_loc = None
             self.user_value = self.user_selection = None
             self._rec_invalidate()
 
