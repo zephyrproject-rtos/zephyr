@@ -692,6 +692,8 @@ Bouffalolab Platforms:
   status: maintained
   maintainers:
     - VynDragon
+  collaborators:
+    - josuah
   files:
     - boards/bflb/
     - drivers/*/*bflb*
@@ -5296,6 +5298,8 @@ West:
   status: maintained
   maintainers:
     - VynDragon
+  collaborators:
+    - josuah
   files:
     - modules/hal_bouffalolab/
   labels:
