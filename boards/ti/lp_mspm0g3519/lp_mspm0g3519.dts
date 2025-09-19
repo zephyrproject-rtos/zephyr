@@ -50,7 +50,7 @@
 		compatible = "gpio-keys";
 
 		btn0: btn_0 {
-			gpios = <&gpioa 18 (GPIO_ACTIVE_HIGH)>;
+			gpios = <&gpioa 18 GPIO_ACTIVE_HIGH>;
 			label = "Switch 1";
 			zephyr,code = <INPUT_KEY_0>;
 		};

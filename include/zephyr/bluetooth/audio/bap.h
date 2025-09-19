@@ -2661,8 +2661,6 @@ int bt_bap_scan_delegator_unregister(void);
  *
  * @param src_id    The source id used to identify the receive state.
  * @param pa_state  The Periodic Advertising sync state to set.
- *                  BT_BAP_PA_STATE_NOT_SYNCED and BT_BAP_PA_STATE_SYNCED is
- *                  not necessary to provide, as they are handled internally.
  *
  * @return int    Error value. 0 on success, errno on fail.
  */
@@ -2687,6 +2685,14 @@ struct bt_bap_scan_delegator_add_src_param {
 
 	/** Advertiser SID */
 	uint8_t sid;
+
+	/**
+	 * @brief Periodic Advertising sync state
+	 *
+	 * This will typically be either @ref BT_BAP_PA_STATE_NOT_SYNCED or
+	 * @ref BT_BAP_PA_STATE_SYNCED.
+	 */
+	enum bt_bap_pa_state pa_state;
 
 	/** The broadcast isochronous group encryption state */
 	enum bt_bap_big_enc_state encrypt_state;

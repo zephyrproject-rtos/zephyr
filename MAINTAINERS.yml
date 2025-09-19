@@ -399,6 +399,7 @@ Binary Descriptors:
   maintainers:
     - yonsch
   files:
+    - doc/services/binary_descriptors/
     - subsys/bindesc/
     - include/zephyr/bindesc.h
     - samples/subsys/bindesc/
@@ -690,7 +691,6 @@ Bootloaders:
 Bouffalolab Platforms:
   status: maintained
   maintainers:
-    - nandojve
     - VynDragon
   files:
     - boards/bflb/
@@ -1330,6 +1330,7 @@ Documentation Infrastructure:
     - dts/bindings/comparator/
     - include/zephyr/drivers/comparator.h
     - include/zephyr/drivers/comparator/
+    - include/zephyr/dt-bindings/comparator/
     - tests/drivers/build_all/comparator/
     - tests/drivers/comparator/
     - doc/hardware/peripherals/comparator.rst
@@ -1407,6 +1408,7 @@ Documentation Infrastructure:
   files:
     - drivers/dac/
     - include/zephyr/drivers/dac.h
+    - include/zephyr/drivers/dac/
     - dts/bindings/dac/
     - include/zephyr/dt-bindings/dac/
     - tests/drivers/dac/
@@ -1637,6 +1639,7 @@ Documentation Infrastructure:
   status: maintained
   maintainers:
     - aaronemassey
+    - DBS06
     - teburd
   collaborators:
     - DBS06
@@ -1722,6 +1725,7 @@ Documentation Infrastructure:
     - drivers/haptics/
     - dts/bindings/haptics/
     - include/zephyr/drivers/haptics.h
+    - include/zephyr/drivers/haptics/
     - doc/hardware/peripherals/haptics.rst
     - tests/drivers/build_all/haptics/
     - samples/drivers/haptics/
@@ -1892,6 +1896,7 @@ Documentation Infrastructure:
   status: odd fixes
   files:
     - drivers/memc/
+    - include/zephyr/drivers/memc/
     - samples/drivers/memc/
     - tests/drivers/memc/
     - include/zephyr/dt-bindings/memory-controller/
@@ -1911,6 +1916,7 @@ Documentation Infrastructure:
   files:
     - drivers/mfd/
     - include/zephyr/drivers/mfd/
+    - include/zephyr/dt-bindings/mfd/
     - dts/bindings/mfd/
     - tests/drivers/build_all/mfd/
   labels:
@@ -2412,6 +2418,7 @@ Documentation Infrastructure:
     - drivers/video/
     - include/zephyr/drivers/video.h
     - include/zephyr/drivers/video-controls.h
+    - include/zephyr/dt-bindings/video/
     - doc/hardware/peripherals/video.rst
     - tests/drivers/*/video/
     - dts/bindings/video/
@@ -2675,9 +2682,8 @@ Formatted Output:
 GD32 Platforms:
   status: maintained
   maintainers:
-    - nandojve
-  collaborators:
     - soburi
+  collaborators:
     - cameled
   files:
     - boards/gd/
@@ -2814,6 +2820,7 @@ Infineon Platforms:
     - boards/cypress/
     - boards/infineon/
     - drivers/*/*ifx_cat1*
+    - drivers/*/*ifx*
     - drivers/*/*xmc*
     - drivers/sensor/infineon/
     - dts/arm/infineon/
@@ -3148,8 +3155,11 @@ MAINTAINERS file:
     - stephanosio
   files:
     - MAINTAINERS.yml
+    - scripts/get_maintainer.py
+    - scripts/set_assignees.py
+    - scripts/check_maintainers.py
   labels:
-    - "area: Process"
+    - "area: MAINTAINER File"
   description: >-
     Zephyr Maintainers File
 
@@ -3664,6 +3674,25 @@ Networking:
     - net.dhcpv4_client
     - net.dhcpv4_server
 
+"Networking: DSA":
+  status: maintained
+  maintainers:
+    - yangbolu1991
+    - JiafeiPan
+  files:
+    - subsys/net/l2/ethernet/dsa/
+    - drivers/ethernet/dsa/
+    - dts/bindings/dsa/
+    - doc/connectivity/networking/dsa*
+    - include/zephyr/net/dsa*.h
+    - include/zephyr/dt-bindings/ethernet/dsa*.h
+    - samples/net/dsa/
+  labels:
+    - "area: Networking"
+    - "area: DSA"
+  tests:
+    - sample.net.dsa
+
 "Networking: HTTP":
   status: maintained
   maintainers:
@@ -3854,6 +3883,7 @@ Nuvoton NPCX Platforms:
   files:
     - soc/nuvoton/npcx/
     - boards/nuvoton/npcx*/
+    - boards/nuvoton/npck*/
     - dts/arm/nuvoton/
     - dts/bindings/*/*npcx*
     - drivers/*/*_npcx*.c
@@ -4640,6 +4670,7 @@ TI K3 Platforms:
     - dts/arm/ti/am6*
     - dts/arm/ti/j7*
     - dts/bindings/*/ti,k3*
+    - dts/vendor/ti/
     - soc/ti/k3/
   labels:
     - "platform: TI K3"
@@ -4946,6 +4977,8 @@ Utilities:
     - tests/unit/list/
     - tests/unit/intmath/
     - tests/unit/pot/
+    - tests/unit/hex/
+    - tests/unit/winstream/
     - tests/lib/onoff/
     - tests/lib/sys_util/
     - tests/lib/sprintf/
@@ -5170,7 +5203,8 @@ West:
   collaborators:
     - tomi-font
     - ithinuel
-  files: []
+  files:
+    - modules/cmsis_6/
   labels:
     - "area: CMSIS_6"
 
@@ -5214,15 +5248,17 @@ West:
   collaborators:
     - PetervdPerk-NXP
     - jgoppert
-  files: []
+  files:
+    - modules/hal_afbr/
   labels:
     - "platform: Broadcom"
 
 "West project: hal_ambiq":
-  status: odd fixes
+  status: maintained
+  maintainers:
+    - AlessandroLuo
   collaborators:
     - aaronyegx
-    - AlessandroLuo
     - RichardSWheatley
   files:
     - modules/hal_ambiq/
@@ -5243,7 +5279,6 @@ West:
 "West project: hal_bouffalolab":
   status: maintained
   maintainers:
-    - nandojve
     - VynDragon
   files:
     - modules/hal_bouffalolab/
@@ -5293,8 +5328,6 @@ West:
 "West project: hal_gigadevice":
   status: maintained
   maintainers:
-    - nandojve
-  collaborators:
     - soburi
   files:
     - modules/hal_gigadevice/
@@ -5696,6 +5729,7 @@ West:
   maintainers:
     - pdgendt
   files:
+    - doc/services/serialization/nanopb.rst
     - modules/nanopb/
     - samples/modules/nanopb/
     - tests/modules/nanopb/
@@ -6040,6 +6074,21 @@ nRF BSIM:
     - "platform: nRF BSIM"
   tests:
     - boards.nrf52_bsim
+
+nRF IronSide SE Platforms:
+  status: maintained
+  maintainers:
+    - hakonfam
+  collaborators:
+    - "57300"
+    - jonathannilsen
+    - karstenkoenig
+    - SebastianBoe
+  files:
+    - soc/nordic/ironside/
+    - soc/nordic/common/uicr/
+  labels:
+    - "platform: nRF IronSide SE"
 
 nRF Platforms:
   status: maintained

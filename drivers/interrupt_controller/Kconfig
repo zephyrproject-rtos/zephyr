@@ -96,6 +96,8 @@ source "drivers/interrupt_controller/Kconfig.plic"
 
 source "drivers/interrupt_controller/Kconfig.nxp_s32"
 
+source "drivers/interrupt_controller/Kconfig.nxp_siul2"
+
 source "drivers/interrupt_controller/Kconfig.xmc4xxx"
 
 source "drivers/interrupt_controller/Kconfig.nxp_pint"

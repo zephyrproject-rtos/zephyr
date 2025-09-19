@@ -323,7 +323,8 @@ static int parse_sensor_value(const char *val_str, struct sensor_value *out)
 	return 0;
 }
 
-void sensor_shell_processing_callback(int result, uint8_t *buf, uint32_t buf_len, void *userdata)
+void sensor_shell_processing_callback(int result, uint8_t *buf, uint32_t buf_len,
+				      void *userdata)
 {
 	struct sensor_shell_processing_context *ctx = userdata;
 	const struct sensor_decoder_api *decoder;

@@ -7,10 +7,10 @@
 #include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
 
 / {
-	 chosen {
-		 zephyr,bt-hci = &hci_spi;
-	 };
- };
+	chosen {
+		zephyr,bt-hci = &hci_spi;
+	};
+};
 
 &arduino_spi {
 	cs-gpios = <&arduino_header ARDUINO_HEADER_R3_A1 GPIO_ACTIVE_LOW>;
@@ -20,7 +20,7 @@
 		reg = <0>;
 		reset-gpios = <&arduino_header ARDUINO_HEADER_R3_D7 GPIO_ACTIVE_LOW>;
 		irq-gpios = <&arduino_header ARDUINO_HEADER_R3_A0
-			    (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+			     (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 		spi-cpha; /* CPHA=1 */
 		spi-hold-cs;
 		spi-max-frequency = <DT_FREQ_M(1)>;

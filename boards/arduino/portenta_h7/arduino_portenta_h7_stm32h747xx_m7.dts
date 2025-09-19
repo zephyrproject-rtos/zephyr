@@ -43,7 +43,7 @@
 		device_type = "memory";
 		reg = <0xc0000000 DT_SIZE_M(8)>;
 		zephyr,memory-region = "SDRAM1";
-		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
 	};
 };
 
@@ -95,27 +95,33 @@
 		pmic_regulators: regulators {
 			status = "okay";
 			compatible = "nxp,pf1550-regulator";
+
 			pf1550_sw1: BUCK1 {
 				regulator-init-microvolt = <3000000>;
 				regulator-boot-on;
 			};
+
 			pf1550_sw2: BUCK2 {
 				regulator-init-microvolt = <3300000>;
 				regulator-boot-on;
 			};
+
 			pf1550_sw3: BUCK3 {
 				regulator-init-microvolt = <3300000>;
 				regulator-init-microamp = <2000000>;
 				regulator-boot-on;
 			};
+
 			pf1550_ldo1: LDO1 {
 				regulator-init-microvolt = <1000000>;
 				regulator-boot-on;
 			};
+
 			pf1550_ldo2: LDO2 {
 				regulator-init-microvolt = <1800000>;
 				regulator-boot-on;
 			};
+
 			pf1550_ldo3: LDO3 {
 				regulator-init-microvolt = <1200000>;
 				regulator-boot-on;
@@ -156,6 +162,7 @@
 			reg = <0x00000000 0x00010000>;
 			read-only;
 		};
+
 		/*
 		 * The flash starting at 0x00010000 and ending at
 		 * 0x0001ffff (sectors 16-31) is reserved for use
@@ -165,6 +172,7 @@
 			label = "image-scratch";
 			reg = <0x00010000 0x00030000>;
 		};
+
 		/* The arduino default bootloader occupies the address space 0x0 - 0x40000.
 		 * This way regardless of the user's choice to use the mcuboot bootloader,
 		 * applications will be located at 0x40000 which will be loaded by the
@@ -174,6 +182,7 @@
 			label = "image-0";
 			reg = <0x00040000 0x00060000>;
 		};
+
 		slot1_partition: partition@A0000 {
 			label = "image-1";
 			reg = <0x000A0000 0x00060000>;

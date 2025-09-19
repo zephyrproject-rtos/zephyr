@@ -100,7 +100,7 @@
 		gpio-controller;
 		#gpio-cells = <2>;
 		ngpios = <24>;
-		int-gpios = <&gpio3 27 (GPIO_ACTIVE_LOW|GPIO_PULL_UP)>;
+		int-gpios = <&gpio3 27 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 		status = "okay";
 	};
 };

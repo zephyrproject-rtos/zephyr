@@ -63,6 +63,7 @@
 			reg = <0x400700a0 0x20>;
 			clocks = <&pclka MSTPB 26>;
 			status = "disabled";
+
 			uart {
 				compatible = "renesas,ra-sci-uart";
 				channel = <5>;
@@ -77,6 +78,7 @@
 			reg = <0x400700c0 0x20>;
 			clocks = <&pclka MSTPB 25>;
 			status = "disabled";
+
 			uart {
 				compatible = "renesas,ra-sci-uart";
 				channel = <6>;
@@ -91,6 +93,7 @@
 			reg = <0x400700e0 0x20>;
 			clocks = <&pclka MSTPB 24>;
 			status = "disabled";
+
 			uart {
 				compatible = "renesas,ra-sci-uart";
 				channel = <7>;
@@ -114,6 +117,7 @@
 			phys = <&usbhs_phy>;
 			phys-clock = <&uclk>;
 			status = "disabled";
+
 			udc {
 				compatible = "renesas,ra-udc";
 				status = "disabled";
@@ -138,10 +142,10 @@
 			status = "disabled";
 		};
 
-		option_setting_ofs_in_rom: option-setting-ofs-in-rom@400 {
+		option-setting-ofs-in-rom@400 {
 			reg = <0x00000400 0x3c>;
 			#address-cells = <1>;
-			#size-cells = <0>;
+			#size-cells = <1>;
 
 			option_setting_ofs0: option-setting-ofs0@400 {
 				compatible = "renesas,ofs-memory";
@@ -162,16 +166,15 @@
 			};
 		};
 
-		option_setting_ofs_conf: option-setting-ofs-conf@100a150 {
-			compatible = "zephyr,memory-region";
+		option-setting-ofs-conf@100a150 {
 			reg = <0x0100a150 0x18>;
-			zephyr,memory-region = "OFS_CONF_MEMORY";
 			#address-cells = <1>;
-			#size-cells = <0>;
+			#size-cells = <1>;
 			status = "okay";
 
 			option_setting_osis: option-setting-osis@100a150 {
-				compatible = "renesas,ofs-memory";
+				compatible = "zephyr,memory-region";
+				zephyr,memory-region = "OFS_OSIS_MEMORY";
 				reg = <0x0100a150 0x10>;
 				status = "okay";
 			};
@@ -229,7 +232,7 @@
 			compatible = "renesas,ra-cgc-pclk-block";
 			reg = <0x4001e01c 4>, <0x40047000 4>, <0x40047004 4>,
 			      <0x40047008 4>;
-			reg-names = "MSTPA", "MSTPB","MSTPC",
+			reg-names = "MSTPA", "MSTPB", "MSTPC",
 				    "MSTPD";
 			#clock-cells = <0>;
 			clocks = <&pll>;
@@ -274,6 +277,7 @@
 			bclk: bclk {
 				compatible = "renesas,ra-cgc-pclk";
 				div = <2>;
+
 				bclkout: bclkout {
 					compatible = "renesas,ra-cgc-busclk";
 					clk-out-div = <2>;
@@ -314,8 +318,8 @@
 
 &ioport0 {
 	port-irqs = <&port_irq6 &port_irq7 &port_irq8
-	&port_irq9 &port_irq10 &port_irq11
-	&port_irq12 &port_irq13 &port_irq14>;
+		     &port_irq9 &port_irq10 &port_irq11
+		     &port_irq12 &port_irq13 &port_irq14>;
 	port-irq-names = "port-irq6",
 			 "port-irq7",
 			 "port-irq8",
@@ -338,7 +342,7 @@
 
 &ioport1 {
 	port-irqs = <&port_irq0 &port_irq1 &port_irq2
-	&port_irq3 &port_irq4>;
+		     &port_irq3 &port_irq4>;
 	port-irq-names = "port-irq0",
 			 "port-irq1",
 			 "port-irq2",
@@ -353,7 +357,7 @@
 
 &ioport2 {
 	port-irqs = <&port_irq0 &port_irq1 &port_irq2
-	&port_irq3>;
+		     &port_irq3>;
 	port-irq-names = "port-irq0",
 			 "port-irq1",
 			 "port-irq2",
@@ -366,7 +370,7 @@
 
 &ioport3 {
 	port-irqs = <&port_irq5 &port_irq6
-	&port_irq8 &port_irq9>;
+		     &port_irq8 &port_irq9>;
 	port-irq-names = "port-irq5",
 			 "port-irq6",
 			 "port-irq8",
@@ -379,8 +383,8 @@
 
 &ioport4 {
 	port-irqs = <&port_irq0 &port_irq4 &port_irq5
-	&port_irq6 &port_irq7 &port_irq8
-	&port_irq9>;
+		     &port_irq6 &port_irq7 &port_irq8
+		     &port_irq9>;
 	port-irq-names = "port-irq0",
 			 "port-irq4",
 			 "port-irq5",
@@ -399,7 +403,7 @@
 
 &ioport5 {
 	port-irqs = <&port_irq11 &port_irq12 &port_irq14
-	&port_irq15>;
+		     &port_irq15>;
 	port-irq-names = "port-irq11",
 			 "port-irq12",
 			 "port-irq14",
@@ -412,7 +416,7 @@
 
 &ioport7 {
 	port-irqs = <&port_irq7 &port_irq8 &port_irq10
-	&port_irq11>;
+		     &port_irq11>;
 	port-irq-names = "port-irq7",
 			 "port-irq8",
 			 "port-irq10",

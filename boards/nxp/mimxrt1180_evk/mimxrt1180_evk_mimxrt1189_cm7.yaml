@@ -29,4 +29,5 @@ supported:
   - uart
   - dac
   - kpp
+  - i2s
 vendor: nxp

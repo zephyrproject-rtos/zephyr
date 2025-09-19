@@ -10,7 +10,7 @@
 
 / {
 	model = "GARDENA Smart Garden Radio Module";
-	compatible = "gardena,sgrm-sim3u167", "silabs,sim3u167","silabs,sim3u";
+	compatible = "gardena,sgrm-sim3u167", "silabs,sim3u167", "silabs,sim3u";
 
 	chosen {
 		zephyr,console = &usart1;

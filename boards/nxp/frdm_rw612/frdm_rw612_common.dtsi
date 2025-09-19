@@ -33,6 +33,7 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		green_led: led_1 {
 			gpios = <&hsgpio0 12 GPIO_ACTIVE_LOW>;
 		};
@@ -40,6 +41,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button_0: button_0 {
 			label = "User SW2";
 			gpios = <&hsgpio0 11 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
@@ -53,8 +55,8 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xfffffff0>;
 		gpio-map-pass-thru = <0 0xf>;
-		gpio-map = <10  0 &hsgpio1 12 0>,  /* Pin 10, LCD and touch reset */
-			   <12  0 &hsgpio0 18 0>;  /* Pin 11, LCD touch INT */
+		gpio-map = <10 0 &hsgpio1 12 0>,  /* Pin 10, LCD and touch reset */
+			   <12 0 &hsgpio0 18 0>;  /* Pin 11, LCD touch INT */
 	};
 
 	arduino_header: arduino-connector {
@@ -122,6 +124,7 @@
 	ahb-boundary = "1024";
 	rx-clock-source = <1>;
 	rx-clock-source-b = <1>;
+
 	/* Winbond external flash */
 	w25q512jvfiq: w25q512jvfiq@0 {
 		compatible = "nxp,imx-flexspi-nor";
@@ -131,7 +134,7 @@
 		jedec-id = [ef 40 20];
 		erase-block-size = <4096>;
 		write-block-size = <1>;
-		spi-max-frequency = <104000000>;
+		spi-max-frequency = <DT_FREQ_M(104)>;
 
 		partitions {
 			compatible = "fixed-partitions";
@@ -146,38 +149,42 @@
 				label = "mcuboot";
 				reg = <0x00000000 DT_SIZE_K(128)>;
 			};
+
 			slot0_partition: partition@20000 {
 				label = "image-0";
 				reg = <0x00020000 DT_SIZE_M(3)>;
 			};
+
 			slot1_partition: partition@320000 {
 				label = "image-1";
 				reg = <0x00320000 DT_SIZE_M(3)>;
 			};
+
 			storage_partition: partition@620000 {
 				label = "storage";
 				reg = <0x00620000 (DT_SIZE_M(58) - DT_SIZE_K(128))>;
 			};
 		};
 	};
+
 	aps6404l: aps6404l@2 {
-			compatible = "nxp,imx-flexspi-aps6404l";
-			/* APS6404L is 8MB, 64MBit pSRAM */
-			size = <DT_SIZE_M(8 * 8)>;
-			reg = <2>;
-			spi-max-frequency = <109000000>;
-			/* PSRAM cannot be enabled while board is in default XIP
-			 * configuration, as it will conflict with flash chip.
-			 */
-			status = "disabled";
-			cs-interval-unit = <1>;
-			cs-interval = <2>;
-			cs-hold-time = <3>;
-			cs-setup-time = <3>;
-			data-valid-time = <6>;
-			column-space = <0>;
-			ahb-write-wait-unit = <2>;
-			ahb-write-wait-interval = <0>;
+		compatible = "nxp,imx-flexspi-aps6404l";
+		/* APS6404L is 8MB, 64MBit pSRAM */
+		size = <DT_SIZE_M(8 * 8)>;
+		reg = <2>;
+		spi-max-frequency = <DT_FREQ_M(109)>;
+		/* PSRAM cannot be enabled while board is in default XIP
+		 * configuration, as it will conflict with flash chip.
+		 */
+		status = "disabled";
+		cs-interval-unit = <1>;
+		cs-interval = <2>;
+		cs-hold-time = <3>;
+		cs-setup-time = <3>;
+		data-valid-time = <6>;
+		column-space = <0>;
+		ahb-write-wait-unit = <2>;
+		ahb-write-wait-interval = <0>;
 	};
 };
 
@@ -199,6 +206,7 @@
 	status = "okay";
 	pinctrl-0 = <&pinmux_mdio>;
 	pinctrl-names = "default";
+
 	phy: phy@2 {
 		compatible = "microchip,ksz8081";
 		reg = <2>;

@@ -24,10 +24,12 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led1: led_1 {
 			gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
 			label = "Red LED";
 		};
+
 		led2: led_2 {
 			gpios = <&gpio0 23 GPIO_ACTIVE_LOW>;
 			label = "Blue LED";
@@ -36,6 +38,7 @@
 
 	buttons {
 		compatible = "gpio-keys";
+
 		pb1: pb1 {
 			gpios = <&gpio0 21 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "SW2";

@@ -17,6 +17,7 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		green_led: led-1 {
 			gpios = <&gpio5 2 GPIO_ACTIVE_HIGH>;
 			label = "Green LED";
@@ -109,6 +110,7 @@
 &enet1g_mdio {
 	pinctrl-0 = <&pinmux_enet1g_mdio>;
 	pinctrl-names = "default";
+
 	enet1g_phy: phy@f {
 		compatible = "nxp,tja1103";
 		reg = <0xf>;
@@ -137,22 +139,22 @@
 };
 
 &lpi2c1 {
-	pinctrl-0 =<&pinmux_lpi2c1>;
+	pinctrl-0 = <&pinmux_lpi2c1>;
 	pinctrl-names = "default";
 };
 
 &lpi2c2 {
-	pinctrl-0 =<&pinmux_lpi2c2>;
+	pinctrl-0 = <&pinmux_lpi2c2>;
 	pinctrl-names = "default";
 };
 
 &lpi2c3 {
-	pinctrl-0 =<&pinmux_lpi2c3>;
+	pinctrl-0 = <&pinmux_lpi2c3>;
 	pinctrl-names = "default";
 };
 
 &lpi2c6 {
-	pinctrl-0 =<&pinmux_lpi2c6>;
+	pinctrl-0 = <&pinmux_lpi2c6>;
 	pinctrl-names = "default";
 };
 
@@ -197,15 +199,16 @@
 	ahb-read-addr-opt;
 	rx-clock-source = <1>;
 	reg = <0x400cc000 0x4000>, <0x30000000 DT_SIZE_M(64)>;
+
 	mx25um51345g: mx25um51345g@0 {
 		compatible = "nxp,imx-flexspi-mx25um51345g";
 		/* MX25UM51245G is 64MB, 512MBit flash part */
 		size = <DT_SIZE_M(64 * 8)>;
 		reg = <0>;
-		spi-max-frequency = <200000000>;
+		spi-max-frequency = <DT_FREQ_M(200)>;
 		status = "okay";
 		jedec-id = [c2 81 3a];
-		erase-block-size = <4096>;
+		erase-block-size = <DT_SIZE_K(4)>;
 		write-block-size = <2>; /* FLASH_MCUX_FLEXSPI_MX25UM51345G_OPI_DTR set */
 
 		partitions {
@@ -221,14 +224,17 @@
 				label = "mcuboot";
 				reg = <0x00000000 DT_SIZE_K(128)>;
 			};
+
 			slot0_partition: partition@20000 {
 				label = "image-0";
 				reg = <0x00020000 DT_SIZE_M(3)>;
 			};
+
 			slot1_partition: partition@320000 {
 				label = "image-1";
 				reg = <0x00320000 DT_SIZE_M(3)>;
 			};
+
 			storage_partition: partition@620000 {
 				label = "storage";
 				reg = <0x00620000 (DT_SIZE_M(58) - DT_SIZE_K(128))>;

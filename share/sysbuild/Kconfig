@@ -2,8 +2,6 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-source "$(KCONFIG_ENV_FILE)"
-
 config BOARD
 	string
 	default "$(BOARD)"

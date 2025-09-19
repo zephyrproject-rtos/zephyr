@@ -6,43 +6,103 @@
 /dts-v1/;
 
 #include <renesas/ra/ra8/r7ka8p1kflcac_cm33.dtsi>
-#include <dt-bindings/gpio/gpio.h>
-#include <dt-bindings/input/input-event-codes.h>
-#include "ek_ra8p1-pinctrl.dtsi"
+#include "ek_ra8p1.dtsi"
 
 / {
 	model = "Renesas EK-RA8P1";
 	compatible = "renesas,ra8p1", "renesas,ra8";
 
 	chosen {
-		zephyr,sram = &sram0;
-		zephyr,flash = &flash0;
+		zephyr,sram = &sram1;
+		zephyr,flash = &flash1;
+		zephyr,console = &uart9;
+		zephyr,shell-uart = &uart9;
+	};
+
+	aliases {
+		led0 = &led2;
+		sw0 = &button1;
 	};
 };
 
-&xtal {
-	clock-frequency = <DT_FREQ_M(24)>;
-	mosel = <0>;
-	#clock-cells = <0>;
+&button1 {
 	status = "okay";
 };
 
-&subclk {
+&sci9 {
+	pinctrl-0 = <&sci9_default>;
+	pinctrl-names = "default";
+	interrupts = <40 1>, <41 1>, <42 1>, <43 1>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
 	status = "okay";
-};
 
-&pll {
-	status = "okay";
-
-	pllp: pllp {
-		status = "okay";
-	};
-
-	pllq: pllq {
-		status = "okay";
-	};
-
-	pllr: pllr {
+	uart9: uart {
+		current-speed = <115200>;
 		status = "okay";
 	};
 };
+
+&sci1 {
+	pinctrl-0 = <&sci1_default>;
+	pinctrl-names = "default";
+	interrupts = <44 1>, <45 1>, <46 1>, <47 1>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
+
+	i2c1: i2c {
+		sda-output-delay = <300>;
+		noise-filter-clock-select = <1>;
+		bit-rate-modulation;
+	};
+};
+
+&spi1 {
+	pinctrl-0 = <&spi1_default>;
+	pinctrl-names = "default";
+	interrupts = <48 1>, <49 1>, <50 1>, <51 1>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
+	status = "okay";
+};
+
+&pwm1 {
+	pinctrl-0 = <&pwm1_default>;
+	interrupts = <52 1>, <53 1>;
+	interrupt-names = "gtioca", "overflow";
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&iic1 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clock-frequency = <DT_FREQ_M(1)>;
+	pinctrl-0 = <&iic1_default>;
+	pinctrl-names = "default";
+	interrupts = <54 1>, <55 1>, <56 1>, <57 1>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
+	status = "okay";
+};
+
+&port_irq12 {
+	interrupts = <58 12>;
+	status = "okay";
+};
+
+&ulpt0 {
+	interrupts = <59 1>;
+	interrupt-names = "ulpti";
+	status = "okay";
+
+	timer {
+		status = "okay";
+	};
+};
+
+&ulpt1 {
+	status = "okay";
+
+	timer {
+		status = "okay";
+	};
+};
+
+pmod_sd_shield: &sdhc0 {};

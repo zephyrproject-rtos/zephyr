@@ -12,25 +12,25 @@
 	leds {
 		compatible = "gpio-leds";
 
-		green_led_1:led_1 {
+		green_led_1: led_1 {
 			gpios = <&gpioi 12 GPIO_ACTIVE_LOW>;
 			label = "User LD1";
 			status = "disabled";
 		};
 
-		orange_led_2:led_2 {
+		orange_led_2: led_2 {
 			gpios = <&gpioi 13 GPIO_ACTIVE_LOW>;
 			label = "User LD2";
 			status = "disabled";
 		};
 
-		red_led_3:led_3 {
+		red_led_3: led_3 {
 			gpios = <&gpioi 14 GPIO_ACTIVE_LOW>;
 			label = "User LD3";
 			status = "disabled";
 		};
 
-		blue_led_4:led_4 {
+		blue_led_4: led_4 {
 			gpios = <&gpioi 15 GPIO_ACTIVE_LOW>;
 			label = "User LD4";
 			status = "disabled";

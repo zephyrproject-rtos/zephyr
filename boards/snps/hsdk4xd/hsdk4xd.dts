@@ -21,7 +21,6 @@
 		zephyr,console = &uart_dbg;
 		zephyr,shell-uart = &uart_dbg;
 	};
-
 };
 
 arduino_spi: &spi2 {};

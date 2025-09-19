@@ -6,7 +6,7 @@
 
 #include <zephyr/dt-bindings/display/panel.h>
 
-/{
+/ {
 	chosen {
 		zephyr,display = &zephyr_lcdif;
 	};
@@ -19,6 +19,7 @@
 
 &renesas_mipi_i2c {
 	status = "okay";
+
 	gt911_rtkmipilcdb00000be: gt911-rtkmipilcdb00000be@5d {
 		compatible = "goodix,gt911";
 		reg = <0x5d>;
@@ -29,6 +30,7 @@
 
 &zephyr_mipi_dsi {
 	status = "okay";
+
 	ili9806e: ili9806e@0 {
 		status = "okay";
 		compatible = "ilitek,ili9806e-dsi";
@@ -46,6 +48,7 @@
 	height = <854>;
 	input-pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
 	output-pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
+
 	display-timings {
 		compatible = "zephyr,panel-timing";
 		hsync-len = <2>;

@@ -347,6 +347,8 @@ static int a2dp_process_config_ind(struct bt_avdtp *session, struct bt_avdtp_sep
 		err = a2dp_cb->reconfig_req(stream, &cfg, &rsp_err_code);
 		if (err) {
 			*errcode = rsp_err_code;
+		} else {
+			stream->codec_config = *cfg.codec_config;
 		}
 	}
 
@@ -973,6 +975,26 @@ uint32_t bt_a2dp_get_mtu(struct bt_a2dp_stream *stream)
 }
 
 #if defined(CONFIG_BT_A2DP_SOURCE)
+struct net_buf *bt_a2dp_stream_create_pdu(struct net_buf_pool *pool, k_timeout_t timeout)
+{
+	struct net_buf *buf;
+
+	buf = bt_l2cap_create_pdu_timeout(pool, 0, timeout);
+	if (buf == NULL) {
+		return NULL;
+	}
+
+	/* add AVDTP header */
+	if (net_buf_tailroom(buf) < sizeof(struct bt_avdtp_media_hdr)) {
+		net_buf_unref(buf);
+		return NULL;
+	}
+
+	net_buf_add(buf, sizeof(struct bt_avdtp_media_hdr));
+
+	return buf;
+}
+
 int bt_a2dp_stream_send(struct bt_a2dp_stream *stream, struct net_buf *buf, uint16_t seq_num,
 			uint32_t ts)
 {
@@ -982,7 +1004,7 @@ int bt_a2dp_stream_send(struct bt_a2dp_stream *stream, struct net_buf *buf, uint
 		return -EINVAL;
 	}
 
-	media_hdr = net_buf_push(buf, sizeof(struct bt_avdtp_media_hdr));
+	media_hdr = (struct bt_avdtp_media_hdr *)buf->data;
 	memset(media_hdr, 0, sizeof(struct bt_avdtp_media_hdr));
 
 	if (stream->local_ep->codec_type == BT_A2DP_SBC) {

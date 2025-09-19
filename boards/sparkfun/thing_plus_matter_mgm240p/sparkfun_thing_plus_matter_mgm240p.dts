@@ -14,8 +14,8 @@
 #include <zephyr/dt-bindings/regulator/silabs_dcdc.h>
 
 / {
-	 model = "Sparkfun MGM240P (Sparkfun Thing Plus Matter)";
-	 compatible = "sparkfun,sparkfun_thing_plus_mgm240p", "silabs,efr32mg24";
+	model = "Sparkfun MGM240P (Sparkfun Thing Plus Matter)";
+	compatible = "sparkfun,sparkfun_thing_plus_mgm240p", "silabs,efr32mg24";
 
 	chosen {
 		zephyr,bt-hci = &bt_hci_silabs;

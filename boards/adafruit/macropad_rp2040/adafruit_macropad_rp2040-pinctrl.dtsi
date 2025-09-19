@@ -5,6 +5,7 @@
 		group1 {
 			pinmux = <UART1_TX_P20>;
 		};
+
 		group2 {
 			pinmux = <UART1_RX_P21>;
 			input-enable;
@@ -16,6 +17,7 @@
 			pinmux = <I2C0_SDA_P20>;
 			input-enable;
 		};
+
 		group2 {
 			pinmux = <I2C0_SCL_P21>;
 			input-enable;
@@ -26,10 +28,12 @@
 		group1 {
 			pinmux = <SPI1_TX_P27>;
 		};
+
 		group2 {
 			pinmux = <SPI1_RX_P28>;
 			input-enable;
 		};
+
 		group3 {
 			pinmux = <SPI1_SCK_P26>;
 		};

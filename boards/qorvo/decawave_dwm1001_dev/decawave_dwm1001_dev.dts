@@ -14,31 +14,35 @@
 	compatible = "decawave,dwm1001";
 
 	chosen {
-		zephyr,console        = &uart0;
-		zephyr,shell-uart     = &uart0;
-		zephyr,uart-mcumgr    = &uart0;
-		zephyr,bt-mon-uart    = &uart0;
-		zephyr,bt-c2h-uart    = &uart0;
-		zephyr,sram           = &sram0;
-		zephyr,flash          = &flash0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,uart-mcumgr = &uart0;
+		zephyr,bt-mon-uart = &uart0;
+		zephyr,bt-c2h-uart = &uart0;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
-		zephyr,ieee802154     = &ieee802154;
+		zephyr,ieee802154 = &ieee802154;
 	};
 
 	leds {
 		compatible = "gpio-leds";
+
 		led0_red: led_0 {
 			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
 			label = "Red LED 0";
 		};
+
 		led1_green: led_1 {
 			gpios = <&gpio0 30 GPIO_ACTIVE_LOW>;
 			label = "Green LED 1";
 		};
+
 		led2_red: led_2 {
 			gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
 			label = "Red LED 2";
 		};
+
 		led3_blue: led_3 {
 			gpios = <&gpio0 31 GPIO_ACTIVE_LOW>;
 			label = "Blue LED 3";
@@ -47,6 +51,7 @@
 
 	pwmleds {
 		compatible = "pwm-leds";
+
 		pwm_led0_red: pwm_led_0 {
 			pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 			label = "Red PWM LED";
@@ -55,6 +60,7 @@
 
 	buttons {
 		compatible = "gpio-keys";
+
 		button0: button_0 {
 			gpios = <&gpio0 2 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button switch 0";
@@ -64,20 +70,19 @@
 
 	/* These aliases are provided for compatibility with samples */
 	aliases {
-		sw0        = &button0;
-		led0       = &led0_red;
-		led1       = &led1_green;
-		led2       = &led2_red;
-		led3       = &led3_blue;
-		led0-red   = &led0_red;
+		sw0 = &button0;
+		led0 = &led0_red;
+		led1 = &led1_green;
+		led2 = &led2_red;
+		led3 = &led3_blue;
+		led0-red = &led0_red;
 		led1-green = &led1_green;
-		led2-red   = &led2_red;
-		led3-blue  = &led3_blue;
-		pwm-led0   = &pwm_led0_red;
+		led2-red = &led2_red;
+		led3-blue = &led3_blue;
+		pwm-led0 = &pwm_led0_red;
 		watchdog0 = &wdt0;
-		accel0     = &lis2dh12;
+		accel0 = &lis2dh12;
 	};
-
 };
 
 &reg {
@@ -117,6 +122,7 @@
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-1 = <&i2c0_sleep>;
 	pinctrl-names = "default", "sleep";
+
 	lis2dh12: lis2dh12@19 {
 		compatible = "st,lis2dh12", "st,lis2dh";
 		reg = <0x19>;
@@ -141,6 +147,7 @@
 	pinctrl-0 = <&spi2_default>;
 	pinctrl-1 = <&spi2_sleep>;
 	pinctrl-names = "default", "sleep";
+
 	ieee802154: dw1000@0 {
 		compatible = "decawave,dw1000";
 		spi-max-frequency = <8000000>;
@@ -159,7 +166,6 @@
 };
 
 &flash0 {
-
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
@@ -169,18 +175,22 @@
 			label = "mcuboot";
 			reg = <0x00000000 0xc000>;
 		};
+
 		slot0_partition: partition@c000 {
 			label = "image-0";
 			reg = <0x0000C000 0x32000>;
 		};
+
 		slot1_partition: partition@3e000 {
 			label = "image-1";
 			reg = <0x0003E000 0x32000>;
 		};
+
 		scratch_partition: partition@70000 {
 			label = "image-scratch";
 			reg = <0x00070000 0xa000>;
 		};
+
 		storage_partition: partition@7a000 {
 			label = "storage";
 			reg = <0x0007a000 0x00006000>;

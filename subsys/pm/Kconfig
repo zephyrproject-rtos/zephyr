@@ -199,4 +199,15 @@ config PM_DEVICE_SYSTEM_MANAGED
 
 endif # PM_DEVICE
 
+config PM_CPU_SHELL
+	bool "CPU Power Management shell"
+	depends on SHELL
+	help
+	  Enable the cpu power management shell, for triggering cpu power
+	  management events through the shell interface.
+	  The shell allows:
+	    - listing supported CPU low power states from devicetree;
+	    - checking whether states are currently available;
+	    - idling the shell thread so the system naturally enters low power;
+
 endmenu

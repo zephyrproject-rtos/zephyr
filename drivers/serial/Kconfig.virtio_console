@@ -1,0 +1,40 @@
+# Copyright (c) 2025 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig UART_VIRTIO_CONSOLE
+	bool "VIRTIO console paravirtualization device driver"
+	default y
+	depends on VIRTIO && DT_HAS_VIRTIO_CONSOLE_ENABLED && \
+		!(X86_VERY_EARLY_CONSOLE || EARLY_CONSOLE || BOOT_BANNER)
+
+if UART_VIRTIO_CONSOLE
+
+config UART_VIRTIO_CONSOLE_RX_BUFSIZE
+	int "VIRTIO console receive buffer length"
+	default 1
+
+config UART_VIRTIO_CONSOLE_TX_BUFSIZE
+	int "VIRTIO console transmit buffer length"
+	default 2
+
+config UART_VIRTIO_CONSOLE_RX_CONTROL_BUFSIZE
+	int "VIRTIO console receive buffer length (for control messages)"
+	default 8
+
+config UART_VIRTIO_CONSOLE_TX_CONTROL_BUFSIZE
+	int "VIRTIO console transmit buffer length (for control messages)"
+	default 8
+
+config UART_VIRTIO_CONSOLE_F_MULTIPORT
+	bool "Support multiple VIRTIO console ports"
+	default n
+	help
+	  The VIRTIO console device can support multiple i/o ports simultaneously
+	  (up to 31 in the case of QEMU). Select to enable this feature. Otherwise
+	  only one will be used.
+
+config UART_VIRTIO_CONSOLE_NAME_BUFSIZE
+	int "VIRTIO console maximum port name length"
+	default 16
+
+endif

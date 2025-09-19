@@ -29,14 +29,17 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led1: led1 {
 			gpios = <&ioport0 6 GPIO_ACTIVE_HIGH>;
 			label = "LED1";
 		};
+
 		led2: led2 {
 			gpios = <&ioport0 7 GPIO_ACTIVE_HIGH>;
 			label = "LED2";
 		};
+
 		led3: led3 {
 			gpios = <&ioport0 8 GPIO_ACTIVE_HIGH>;
 			label = "LED3";
@@ -48,22 +51,22 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map =	<0 0 &ioport0 0 0>,	/* AN  */
-				<1 0 &ioport3 3 0>,	/* RST */
-				<2 0 &ioport2 5 0>,	/* CS   */
-				<3 0 &ioport2 4 0>,	/* SCK  */
-				<4 0 &ioport2 2 0>,	/* MISO */
-				<5 0 &ioport2 3 0>,	/* MOSI */
-							/* +3.3V */
-							/* GND */
-				<6 0 &ioport1 11 0>,	/* PWM  */
-				<7 0 &ioport4 9 0>,	/* INT  */
-				<8 0 &ioport6 14 0>,	/* RX   */
-				<9 0 &ioport6 13 0>,	/* TX   */
-				<10 0 &ioport5 12 0>,	/* SCL  */
-				<11 0 &ioport5 11 0>;	/* SDA  */
-							/* +5V */
-							/* GND */
+		gpio-map = <0 0 &ioport0 0 0>,	/* AN  */
+			   <1 0 &ioport3 3 0>,	/* RST */
+			   <2 0 &ioport2 5 0>,	/* CS   */
+			   <3 0 &ioport2 4 0>,	/* SCK  */
+			   <4 0 &ioport2 2 0>,	/* MISO */
+			   <5 0 &ioport2 3 0>,	/* MOSI */
+			   /* +3.3V */
+			   /* GND */
+			   <6 0 &ioport1 11 0>,	/* PWM  */
+			   <7 0 &ioport4 9 0>,	/* INT  */
+			   <8 0 &ioport6 14 0>,	/* RX   */
+			   <9 0 &ioport6 13 0>,	/* TX   */
+			   <10 0 &ioport5 12 0>,	/* SCL  */
+			   <11 0 &ioport5 11 0>;	/* SDA  */
+		/* +5V */
+		/* GND */
 	};
 
 	arduino_header: arduino-connector {
@@ -97,11 +100,13 @@
 
 	buttons {
 		compatible = "gpio-keys";
+
 		button0: s1 {
 			gpios = <&ioport0 5 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button switch 1";
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		button1: s2 {
 			gpios = <&ioport0 4 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button switch 2";
@@ -121,6 +126,7 @@
 	pinctrl-0 = <&sci0_default>;
 	pinctrl-names = "default";
 	status = "okay";
+
 	uart0: uart {
 		current-speed = <115200>;
 		status = "okay";
@@ -219,6 +225,7 @@
 	pinctrl-names = "default";
 	maximum-speed = "high-speed";
 	status = "okay";
+
 	zephyr_udc0: udc {
 		status = "okay";
 	};
@@ -282,11 +289,15 @@
 };
 
 mikrobus_serial: &uart7 {};
+
 mikrobus_i2c: &iic1 {};
+
 mikrobus_spi: &spi0 {};
 
 arduino_serial: &uart7 {};
+
 arduino_i2c: &iic1 {};
+
 arduino_spi: &spi0 {};
 
 &wdt {

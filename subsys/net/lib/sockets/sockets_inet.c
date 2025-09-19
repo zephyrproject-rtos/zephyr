@@ -482,6 +482,8 @@ int zsock_accept_ctx(struct net_context *parent, struct sockaddr *addr,
 		return -1;
 	}
 
+	net_tcp_conn_accepted(ctx);
+
 	fd = zvfs_reserve_fd();
 	if (fd < 0) {
 		zsock_flush_queue(ctx);
@@ -815,6 +817,15 @@ static int sock_get_pkt_src_addr(struct net_context *ctx,
 		*port = 0;
 	} else {
 		ret = -ENOTSUP;
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV4_MAPPING_TO_IPV6) && net_pkt_family(pkt) == AF_INET &&
+	    net_context_get_family(ctx) == AF_INET6 && !net_context_is_v6only_set(ctx)) {
+		struct sockaddr_in6 mapped_addr;
+
+		net_ipv6_addr_create_v4_mapped(&net_sin(addr)->sin_addr, &(mapped_addr.sin6_addr));
+		net_ipaddr_copy(&net_sin6(addr)->sin6_addr, &mapped_addr.sin6_addr);
+		addr->sa_family = AF_INET6;
 	}
 
 error:

@@ -23,6 +23,7 @@
 
 &sdmmc {
 	status = "okay";
+
 	mmc {
 		/*SD Disk Access */
 		compatible = "zephyr,sdmmc-disk";
@@ -38,7 +39,7 @@
 
 &xgmac0 {
 	full-duplex-mode-en;
-	num-dma-ch   = <1>;
+	num-dma-ch = <1>;
 	num-tx-queues = <1>;
 	num-rx-queues = <1>;
 	num-tc = <1>;
@@ -51,7 +52,7 @@
 	phy-handle = <&phy0>;
 };
 
-&mdio0  {
+&mdio0 {
 	csr-clock-indx = <4>;
 
 	phy0: phy@0 {

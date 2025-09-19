@@ -1,66 +1,66 @@
-	afe_dl1: afe_dl1 {
-		compatible = "mediatek,afe";
-		afe-name = "DL1";
-		dai-id = <1>;
-		downlink;
-		base = <0x1a114470 0x1a114474>;
-		cur = <0x1a114478 0x1a11447c>;
-		end = <0x1a114480 0x1a114484>;
-		fs = <0x1a114490 8 5>;
-		mono = <0x1a114490 4 1>;
-		enable = <0x1a114490 28 1>;
-		hd = <0x1a114490 0 1>;
-	};
+afe_dl1: afe_dl1 {
+	compatible = "mediatek,afe";
+	afe-name = "DL1";
+	dai-id = <1>;
+	downlink;
+	base = <0x1a114470 0x1a114474>;
+	cur = <0x1a114478 0x1a11447c>;
+	end = <0x1a114480 0x1a114484>;
+	fs = <0x1a114490 8 5>;
+	mono = <0x1a114490 4 1>;
+	enable = <0x1a114490 28 1>;
+	hd = <0x1a114490 0 1>;
+};
 
-	afe_dl_24ch: afe_dl_24ch {
-		compatible = "mediatek,afe";
-		afe-name = "DL_24CH";
-		dai-id = <0>;
-		downlink;
-		base = <0x1a114620 0x1a114624>;
-		cur = <0x1a114628 0x1a11462c>;
-		end = <0x1a114630 0x1a114634>;
-		fs = <0x1a114640 8 5>;
-		enable = <0x1a114640 31 1>;
-		hd = <0x1a114640 0 1>;
-		ch-num = <0x1a114640 24 6>;
-	};
+afe_dl_24ch: afe_dl_24ch {
+	compatible = "mediatek,afe";
+	afe-name = "DL_24CH";
+	dai-id = <0>;
+	downlink;
+	base = <0x1a114620 0x1a114624>;
+	cur = <0x1a114628 0x1a11462c>;
+	end = <0x1a114630 0x1a114634>;
+	fs = <0x1a114640 8 5>;
+	enable = <0x1a114640 31 1>;
+	hd = <0x1a114640 0 1>;
+	ch-num = <0x1a114640 24 6>;
+};
 
-	afe_ul0: afe_ul0 {
-		compatible = "mediatek,afe";
-		afe-name = "UL0";
-		dai-id = <2>;
-		base = <0x1a114d60 0x1a114d64>;
-		cur = <0x1a114d68 0x1a114d6c>;
-		end = <0x1a114d70 0x1a114d74>;
-		fs = <0x1a114d80 8 5>;
-		mono = <0x1a114d80 4 1>;
-		enable = <0x1a114d80 28 1>;
-		hd = <0x1a114d80 0 1>;
-	};
+afe_ul0: afe_ul0 {
+	compatible = "mediatek,afe";
+	afe-name = "UL0";
+	dai-id = <2>;
+	base = <0x1a114d60 0x1a114d64>;
+	cur = <0x1a114d68 0x1a114d6c>;
+	end = <0x1a114d70 0x1a114d74>;
+	fs = <0x1a114d80 8 5>;
+	mono = <0x1a114d80 4 1>;
+	enable = <0x1a114d80 28 1>;
+	hd = <0x1a114d80 0 1>;
+};
 
-	afe_ul1: afe_ul1 {
-		compatible = "mediatek,afe";
-		afe-name = "UL1";
-		dai-id = <3>;
-		base = <0x1a114d90 0x1a114d94>;
-		cur = <0x1a114d98 0x1a114d9c>;
-		end = <0x1a114da0 0x1a114da4>;
-		fs = <0x1a114db0 8 5>;
-		mono = <0x1a114db0 4 1>;
-		enable = <0x1a114db0 28 1>;
-		hd = <0x1a114db0 0 1>;
-	};
+afe_ul1: afe_ul1 {
+	compatible = "mediatek,afe";
+	afe-name = "UL1";
+	dai-id = <3>;
+	base = <0x1a114d90 0x1a114d94>;
+	cur = <0x1a114d98 0x1a114d9c>;
+	end = <0x1a114da0 0x1a114da4>;
+	fs = <0x1a114db0 8 5>;
+	mono = <0x1a114db0 4 1>;
+	enable = <0x1a114db0 28 1>;
+	hd = <0x1a114db0 0 1>;
+};
 
-	afe_ul2: afe_ul2 {
-		compatible = "mediatek,afe";
-		afe-name = "UL2";
-		dai-id = <4>;
-		base = <0x1a114dc0 0x1a114dc4>;
-		cur = <0x1a114dc8 0x1a114dcc>;
-		end = <0x1a114dd0 0x1a114dd4>;
-		fs = <0x1a114de0 8 5>;
-		mono = <0x1a114de0 4 1>;
-		enable = <0x1a114de0 28 1>;
-		hd = <0x1a114de0 0 1>;
-	};
+afe_ul2: afe_ul2 {
+	compatible = "mediatek,afe";
+	afe-name = "UL2";
+	dai-id = <4>;
+	base = <0x1a114dc0 0x1a114dc4>;
+	cur = <0x1a114dc8 0x1a114dcc>;
+	end = <0x1a114dd0 0x1a114dd4>;
+	fs = <0x1a114de0 8 5>;
+	mono = <0x1a114de0 4 1>;
+	enable = <0x1a114de0 28 1>;
+	hd = <0x1a114de0 0 1>;
+};

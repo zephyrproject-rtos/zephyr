@@ -98,7 +98,7 @@ stm32_lp_tick_source: &lptim1 {
 	 * resulting in time running 1.13 faster than reality
 	 */
 	clocks = <&rcc STM32_CLOCK(APB1, 31)>,
-		<&rcc STM32_SRC_LSI LPTIM1_SEL(1)>;
+		 <&rcc STM32_SRC_LSI LPTIM1_SEL(1)>;
 	status = "okay";
 };
 

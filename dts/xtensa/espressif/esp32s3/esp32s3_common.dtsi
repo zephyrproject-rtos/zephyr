@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Espressif Systems (Shanghai) Co., Ltd.
+ * Copyright (c) 2022-2025 Espressif Systems (Shanghai) Co., Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,7 +14,6 @@
 #include <dt-bindings/pinctrl/esp32s3-pinctrl.h>
 
 / {
-
 	aliases {
 		die-temp0 = &coretemp;
 	};
@@ -145,9 +144,8 @@
 			status = "disabled";
 			shared-memory = <&ipmmem0>;
 			shared-memory-size = <0x400>;
-			interrupts =
-				<FROM_CPU_INTR0_SOURCE IRQ_DEFAULT_PRIORITY 0>,
-				<FROM_CPU_INTR1_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupts = <FROM_CPU_INTR0_SOURCE IRQ_DEFAULT_PRIORITY 0>,
+				     <FROM_CPU_INTR1_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
 		};
 
@@ -157,9 +155,8 @@
 			status = "disabled";
 			shared-memory = <&ipmmem0>;
 			shared-memory-size = <0x400>;
-			interrupts =
-				<FROM_CPU_INTR0_SOURCE IRQ_DEFAULT_PRIORITY 0>,
-				<FROM_CPU_INTR1_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupts = <FROM_CPU_INTR0_SOURCE IRQ_DEFAULT_PRIORITY 0>,
+				     <FROM_CPU_INTR1_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
 			#mbox-cells = <1>;
 		};
@@ -236,10 +233,8 @@
 			compatible = "simple-bus";
 			gpio-map-mask = <0xffffffe0 0xffffffc0>;
 			gpio-map-pass-thru = <0x1f 0x3f>;
-			gpio-map = <
-				0x00 0x0 &gpio0 0x0 0x0
-				0x20 0x0 &gpio1 0x0 0x0
-			>;
+			gpio-map = <0x00 0x0 &gpio0 0x0 0x0
+				    0x20 0x0 &gpio1 0x0 0x0>;
 			#gpio-cells = <2>;
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -403,6 +398,20 @@
 			clocks = <&clock ESP32_USB_MODULE>;
 		};
 
+		usb_otg: usb_otg@60080000 {
+			compatible = "espressif,esp32-usb-otg", "snps,dwc2";
+			reg = <0x60080000 DT_SIZE_K(256)>;
+			status = "disabled";
+			interrupts = <USB_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupt-parent = <&intc>;
+			clocks = <&clock ESP32_USB_MODULE>;
+			num-out-eps = <6>;
+			num-in-eps = <6>;
+			ghwcfg1 = <0x00000000>;
+			ghwcfg2 = <0x224dd930>;
+			ghwcfg4 = <0xd3f0a030>;
+		};
+
 		timer0: counter@6001f000 {
 			compatible = "espressif,esp32-timer";
 			reg = <0x6001f000 DT_SIZE_K(4)>;
@@ -531,17 +540,26 @@
 			compatible = "espressif,esp32-gdma";
 			reg = <0x6003f000 DT_SIZE_K(4)>;
 			#dma-cells = <1>;
-			interrupts =
-				<DMA_IN_CH0_INTR_SOURCE IRQ_DEFAULT_PRIORITY ESP_INTR_FLAG_SHARED>,
-				<DMA_OUT_CH0_INTR_SOURCE IRQ_DEFAULT_PRIORITY ESP_INTR_FLAG_SHARED>,
-				<DMA_IN_CH1_INTR_SOURCE IRQ_DEFAULT_PRIORITY ESP_INTR_FLAG_SHARED>,
-				<DMA_OUT_CH1_INTR_SOURCE IRQ_DEFAULT_PRIORITY ESP_INTR_FLAG_SHARED>,
-				<DMA_IN_CH2_INTR_SOURCE IRQ_DEFAULT_PRIORITY ESP_INTR_FLAG_SHARED>,
-				<DMA_OUT_CH2_INTR_SOURCE IRQ_DEFAULT_PRIORITY ESP_INTR_FLAG_SHARED>,
-				<DMA_IN_CH3_INTR_SOURCE IRQ_DEFAULT_PRIORITY ESP_INTR_FLAG_SHARED>,
-				<DMA_OUT_CH3_INTR_SOURCE IRQ_DEFAULT_PRIORITY ESP_INTR_FLAG_SHARED>,
-				<DMA_IN_CH4_INTR_SOURCE IRQ_DEFAULT_PRIORITY ESP_INTR_FLAG_SHARED>,
-				<DMA_OUT_CH4_INTR_SOURCE IRQ_DEFAULT_PRIORITY ESP_INTR_FLAG_SHARED>;
+			interrupts = <DMA_IN_CH0_INTR_SOURCE IRQ_DEFAULT_PRIORITY
+				      ESP_INTR_FLAG_SHARED>,
+				     <DMA_OUT_CH0_INTR_SOURCE IRQ_DEFAULT_PRIORITY
+				      ESP_INTR_FLAG_SHARED>,
+				     <DMA_IN_CH1_INTR_SOURCE IRQ_DEFAULT_PRIORITY
+				      ESP_INTR_FLAG_SHARED>,
+				     <DMA_OUT_CH1_INTR_SOURCE IRQ_DEFAULT_PRIORITY
+				      ESP_INTR_FLAG_SHARED>,
+				     <DMA_IN_CH2_INTR_SOURCE IRQ_DEFAULT_PRIORITY
+				      ESP_INTR_FLAG_SHARED>,
+				     <DMA_OUT_CH2_INTR_SOURCE IRQ_DEFAULT_PRIORITY
+				      ESP_INTR_FLAG_SHARED>,
+				     <DMA_IN_CH3_INTR_SOURCE IRQ_DEFAULT_PRIORITY
+				      ESP_INTR_FLAG_SHARED>,
+				     <DMA_OUT_CH3_INTR_SOURCE IRQ_DEFAULT_PRIORITY
+				      ESP_INTR_FLAG_SHARED>,
+				     <DMA_IN_CH4_INTR_SOURCE IRQ_DEFAULT_PRIORITY
+				      ESP_INTR_FLAG_SHARED>,
+				     <DMA_OUT_CH4_INTR_SOURCE IRQ_DEFAULT_PRIORITY
+				      ESP_INTR_FLAG_SHARED>;
 			interrupt-parent = <&intc>;
 			clocks = <&clock ESP32_GDMA_MODULE>;
 			dma-channels = <10>;

@@ -13,7 +13,7 @@
 };
 
 &spi1 {
-	pinctrl-0 = < &spi1_default >;
+	pinctrl-0 = <&spi1_default>;
 	pinctrl-names = "default";
 	cs-gpios = <&pico_header 9 GPIO_ACTIVE_LOW>;
 	status = "okay";

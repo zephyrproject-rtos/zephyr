@@ -10,12 +10,13 @@
 	usart0_default: usart0_default {
 		group1 {
 			pinmux = <SI32_MUX(USART0_TX, 0, 0)>,
-				<SI32_MUX(USART0_RTS, 0, 2)>;
+				 <SI32_MUX(USART0_RTS, 0, 2)>;
 			output-enable;
 		};
+
 		group2 {
 			pinmux = <SI32_MUX(USART0_RX, 0, 1)>,
-				<SI32_MUX(USART0_CTS, 0, 3)>;
+				 <SI32_MUX(USART0_CTS, 0, 3)>;
 			input-enable;
 		};
 	};
@@ -25,6 +26,7 @@
 			pinmux = <SI32_MUX(USART1_TX, 0, 13)>;
 			output-enable;
 		};
+
 		group2 {
 			pinmux = <SI32_MUX(USART1_RX, 0, 14)>;
 			input-enable;

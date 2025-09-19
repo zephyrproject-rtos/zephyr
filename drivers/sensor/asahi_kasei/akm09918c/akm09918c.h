@@ -112,7 +112,9 @@ void akm09918_async_fetch(struct k_work *work);
 int akm09918c_get_decoder(const struct device *dev, const struct sensor_decoder_api **decoder);
 
 void akm09918c_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe);
-void akm09918_after_start_cb(struct rtio *rtio_ctx, const struct rtio_sqe *sqe, void *arg0);
-void akm09918_complete_cb(struct rtio *rtio_ctx, const struct rtio_sqe *sqe, void *arg0);
+void akm09918_after_start_cb(struct rtio *rtio_ctx, const struct rtio_sqe *sqe, int result,
+			     void *arg0);
+void akm09918_complete_cb(struct rtio *rtio_ctx, const struct rtio_sqe *sqe, int result,
+			  void *arg0);
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_AKM09918C_AKM09918C_H_ */

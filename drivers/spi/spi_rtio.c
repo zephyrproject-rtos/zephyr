@@ -415,6 +415,10 @@ int spi_rtio_transceive(struct spi_rtio *ctx,
 	int err = 0;
 	int ret;
 
+	if (tx_bufs == NULL && rx_bufs == NULL) {
+		return -EINVAL;
+	}
+
 	dt_spec->config = *config;
 
 	ret = spi_rtio_copy(ctx->r, &ctx->iodev, tx_bufs, rx_bufs, &sqe);

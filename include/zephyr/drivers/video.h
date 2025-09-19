@@ -1541,6 +1541,220 @@ int64_t video_get_csi_link_freq(const struct device *dev, uint8_t bpp, uint8_t l
 #define VIDEO_PIX_FMT_XYUV32 VIDEO_FOURCC('X', 'Y', 'U', 'V')
 
 /**
+ * Planar formats
+ */
+/**
+ * Chroma (U/V) are subsampled horizontaly and vertically
+ *
+ * @code{.unparsed}
+ * | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | ...
+ * | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | ...
+ * | ... |
+ * | Uuuuuuuu   Vvvvvvvv | Uuuuuuuu   Vvvvvvvv | ...
+ * | ... |
+ * @endcode
+ *
+ * Below diagram show how luma and chroma relate to each others
+ *
+ * @code{.unparsed}
+ *  Y0        Y1        Y2        Y3        ...
+ *  Y6        Y7        Y8        Y9        ...
+ *  ...
+ *
+ *  U0/1/6/7  V0/1/6/7  U2/3/8/9  V2/3/8/9  ...
+ *  ...
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_NV12 VIDEO_FOURCC('N', 'V', '1', '2')
+
+/**
+ * Chroma (U/V) are subsampled horizontaly and vertically
+ *
+ * @code{.unparsed}
+ * | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | ...
+ * | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | ...
+ * | ... |
+ * | Vvvvvvvv   Uuuuuuuu | Vvvvvvvv   Uuuuuuuu | ...
+ * | ... |
+ * @endcode
+ *
+ * Below diagram show how luma and chroma relate to each others
+ *
+ * @code{.unparsed}
+ *  Y0        Y1        Y2        Y3        ...
+ *  Y6        Y7        Y8        Y9        ...
+ *  ...
+ *
+ *  V0/1/6/7  U0/1/6/7  V2/3/8/9  U2/3/8/9  ...
+ *  ...
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_NV21 VIDEO_FOURCC('N', 'V', '2', '1')
+
+/**
+ * Chroma (U/V) are subsampled horizontaly
+ *
+ * @code{.unparsed}
+ * | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | ...
+ * | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | ...
+ * | ... |
+ * | Uuuuuuuu   Vvvvvvvv | Uuuuuuuu   Vvvvvvvv | ...
+ * | Uuuuuuuu   Vvvvvvvv | Uuuuuuuu   Vvvvvvvv | ...
+ * | ... |
+ * @endcode
+ *
+ * Below diagram show how luma and chroma relate to each others
+ *
+ * @code{.unparsed}
+ *  Y0        Y1        Y2        Y3        ...
+ *  Y6        Y7        Y8        Y9        ...
+ *  ...
+ *
+ *  U0/1      V0/1      U2/3      V2/3      ...
+ *  U6/7      V6/7      U8/9      V8/9      ...
+ *  ...
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_NV16 VIDEO_FOURCC('N', 'V', '1', '6')
+
+/**
+ * Chroma (U/V) are subsampled horizontaly
+ *
+ * @code{.unparsed}
+ * | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | ...
+ * | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | ...
+ * | ... |
+ * | Vvvvvvvv   Uuuuuuuu | Vvvvvvvv   Uuuuuuuu | ...
+ * | Vvvvvvvv   Uuuuuuuu | Vvvvvvvv   Uuuuuuuu | ...
+ * | ... |
+ * @endcode
+ *
+ * Below diagram show how luma and chroma relate to each others
+ *
+ * @code{.unparsed}
+ *  Y0        Y1        Y2        Y3        ...
+ *  Y6        Y7        Y8        Y9        ...
+ *  ...
+ *
+ *  V0/1      U0/1      V2/3      U2/3      ...
+ *  V6/7      U6/7      V8/9      U8/9      ...
+ *  ...
+ * @endcode
+ */
+
+#define VIDEO_PIX_FMT_NV61 VIDEO_FOURCC('N', 'V', '6', '1')
+
+/**
+ * Chroma (U/V) are not subsampled
+ *
+ * @code{.unparsed}
+ * | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy |
+ * | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy |
+ * | ... |
+ * | Uuuuuuuu   Vvvvvvvv | Uuuuuuuu   Vvvvvvvv | Uuuuuuuu   Vvvvvvvv | Uuuuuuuu   Vvvvvvvv |
+ * | Uuuuuuuu   Vvvvvvvv | Uuuuuuuu   Vvvvvvvv | Uuuuuuuu   Vvvvvvvv | Uuuuuuuu   Vvvvvvvv |
+ * | ... |
+ * @endcode
+ *
+ * Below diagram show how luma and chroma relate to each others
+ *
+ * @code{.unparsed}
+ *  Y0        Y1        Y2        Y3        ...
+ *  Y6        Y7        Y8        Y9        ...
+ *  ...
+ *
+ *  U0        V0        U1        V1        U2        V2        U3        V3        ...
+ *  U6        V6        U7        V7        U8        V8        U9        V9        ...
+ *  ...
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_NV24 VIDEO_FOURCC('N', 'V', '2', '4')
+
+/**
+ * Chroma (U/V) are not subsampled
+ *
+ * @code{.unparsed}
+ * | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy |
+ * | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy |
+ * | ... |
+ * | Vvvvvvvv   Uuuuuuuu | Vvvvvvvv   Uuuuuuuu | Vvvvvvvv   Uuuuuuuu | Vvvvvvvv   Uuuuuuuu |
+ * | Vvvvvvvv   Uuuuuuuu | Vvvvvvvv   Uuuuuuuu | Vvvvvvvv   Uuuuuuuu | Vvvvvvvv   Uuuuuuuu |
+ * | ... |
+ * @endcode
+ *
+ * Below diagram show how luma and chroma relate to each others
+ *
+ * @code{.unparsed}
+ *  Y0        Y1        Y2        Y3        ...
+ *  Y6        Y7        Y8        Y9        ...
+ *  ...
+ *
+ *  V0        U0        V1        U1        V2        U2        V3        U3        ...
+ *  V6        U6        V7        U7        V8        U8        V9        U9        ...
+ *  ...
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_NV42 VIDEO_FOURCC('N', 'V', '4', '2')
+
+/**
+ * Chroma (U/V) are subsampled horizontaly and vertically
+ *
+ * @code{.unparsed}
+ * | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy |
+ * | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy |
+ * | ... |
+ * | Uuuuuuuu | Uuuuuuuu |
+ * | ... |
+ * | Vvvvvvvv | Vvvvvvvv |
+ * | ... |
+ * @endcode
+ *
+ * Below diagram show how luma and chroma relate to each others
+ *
+ * @code{.unparsed}
+ *  Y0        Y1        Y2        Y3        ...
+ *  Y6        Y7        Y8        Y9        ...
+ *  ...
+ *
+ *  U0/1/6/7      U2/3/8/9      ...
+ *  ...
+ *
+ *  V0/1/6/7      V2/3/8/9      ...
+ *  ...
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_YUV420 VIDEO_FOURCC('Y', 'U', '1', '2')
+
+/**
+ * Chroma (U/V) are subsampled horizontaly and vertically
+ *
+ * @code{.unparsed}
+ * | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy |
+ * | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy |
+ * | ... |
+ * | Vvvvvvvv | Vvvvvvvv |
+ * | ... |
+ * | Uuuuuuuu | Uuuuuuuu |
+ * | ... |
+ * @endcode
+ *
+ * Below diagram show how luma and chroma relate to each others
+ *
+ * @code{.unparsed}
+ *  Y0        Y1        Y2        Y3        ...
+ *  Y6        Y7        Y8        Y9        ...
+ *  ...
+ *
+ *  V0/1/6/7      V2/3/8/9      ...
+ *  ...
+ *
+ *  U0/1/6/7      U2/3/8/9      ...
+ *  ...
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_YVU420 VIDEO_FOURCC('Y', 'V', '1', '2')
+
+/**
  * @}
  */
 
@@ -1586,6 +1800,10 @@ static inline unsigned int video_bits_per_pixel(uint32_t pixfmt)
 	case VIDEO_PIX_FMT_SGRBG12P:
 	case VIDEO_PIX_FMT_SRGGB12P:
 	case VIDEO_PIX_FMT_Y12P:
+	case VIDEO_PIX_FMT_NV12:
+	case VIDEO_PIX_FMT_NV21:
+	case VIDEO_PIX_FMT_YUV420:
+	case VIDEO_PIX_FMT_YVU420:
 		return 12;
 	case VIDEO_PIX_FMT_SBGGR14P:
 	case VIDEO_PIX_FMT_SGBRG14P:
@@ -1618,9 +1836,13 @@ static inline unsigned int video_bits_per_pixel(uint32_t pixfmt)
 	case VIDEO_PIX_FMT_Y12:
 	case VIDEO_PIX_FMT_Y14:
 	case VIDEO_PIX_FMT_Y16:
+	case VIDEO_PIX_FMT_NV16:
+	case VIDEO_PIX_FMT_NV61:
 		return 16;
 	case VIDEO_PIX_FMT_BGR24:
 	case VIDEO_PIX_FMT_RGB24:
+	case VIDEO_PIX_FMT_NV24:
+	case VIDEO_PIX_FMT_NV42:
 		return 24;
 	case VIDEO_PIX_FMT_XRGB32:
 	case VIDEO_PIX_FMT_XYUV32:

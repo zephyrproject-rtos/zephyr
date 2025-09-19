@@ -14,17 +14,16 @@
 };
 
 &arduino_i2c {
-
 	lis2dw12_19_x_nucleo_iks01a3_shub: lis2dw12@19 {
 		compatible = "st,lis2dw12";
 		reg = <0x19>;
-		irq-gpios =  <&arduino_header ARDUINO_HEADER_R3_A3 GPIO_ACTIVE_HIGH>;
+		irq-gpios = <&arduino_header ARDUINO_HEADER_R3_A3 GPIO_ACTIVE_HIGH>;
 	};
 
 	lsm6dso_6b_x_nucleo_iks01a3_shub: lsm6dso@6b {
 		compatible = "st,lsm6dso";
 		reg = <0x6b>;
-		irq-gpios =  <&arduino_header ARDUINO_HEADER_R3_D5 GPIO_ACTIVE_HIGH>;
+		irq-gpios = <&arduino_header ARDUINO_HEADER_R3_D5 GPIO_ACTIVE_HIGH>;
 		int-pin = <2>;
 	};
 };

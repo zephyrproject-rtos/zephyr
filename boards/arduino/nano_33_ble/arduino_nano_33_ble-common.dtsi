@@ -19,23 +19,28 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led0: led_0 {
 			gpios = <&gpio0 24 GPIO_ACTIVE_LOW>;
 			label = "Red LED";
 		};
+
 		led1: led_1 {
 			gpios = <&gpio0 16 GPIO_ACTIVE_LOW>;
 			label = "Green LED";
 		};
+
 		led2: led_2 {
 			gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
 			label = "Blue LED";
 		};
+
 		led3: led_3 {
 			/* Cannot be used together with spi2. */
 			gpios = <&gpio0 13 GPIO_ACTIVE_HIGH>;
 			label = "Yellow LED";
 		};
+
 		led4: led_4 {
 			gpios = <&gpio1 9 GPIO_ACTIVE_HIGH>;
 			label = "User LED";
@@ -49,14 +54,17 @@
 			pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 			label = "Red PWM LED";
 		};
+
 		green_pwm_led: led_pwm_1 {
 			pwms = <&pwm0 1 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 			label = "Green PWM LED";
 		};
+
 		blue_pwm_led: led_pwm_2 {
 			pwms = <&pwm0 2 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 			label = "Blue PWM LED";
 		};
+
 		user_pwm_led: led_pwm_4 {
 			pwms = <&pwm1 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 			label = "User PWM LED";
@@ -177,7 +185,6 @@ arduino_i2c: &i2c0 {
 		compatible = "st,lsm9ds1_mag";
 		reg = <0x1e>;
 	};
-
 };
 
 /* SPI2 is used because SPI1/0 shares conflicts with I2C1/0 */

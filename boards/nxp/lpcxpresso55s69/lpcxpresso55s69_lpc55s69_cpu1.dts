@@ -41,7 +41,6 @@
 	reg = <0x20030000 DT_SIZE_K(80)>;
 };
 
-
 &gpio0 {
 	status = "okay";
 };

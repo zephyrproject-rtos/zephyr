@@ -11,6 +11,7 @@
 	uart0_rx_default: uart0_rx_default {
 		pinmux = <16 SIFIVE_PINMUX_IOF0>;
 	};
+
 	uart0_tx_default: uart0_tx_default {
 		pinmux = <17 SIFIVE_PINMUX_IOF0>;
 	};

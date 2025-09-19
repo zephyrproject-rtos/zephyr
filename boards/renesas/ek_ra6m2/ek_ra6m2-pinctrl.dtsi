@@ -8,7 +8,7 @@
 		group1 {
 			/* tx rx */
 			psels = <RA_PSEL(RA_PSEL_SCI_7, 4, 1)>,
-			<RA_PSEL(RA_PSEL_SCI_7, 4, 2)>;
+				<RA_PSEL(RA_PSEL_SCI_7, 4, 2)>;
 		};
 	};
 
@@ -16,7 +16,7 @@
 		group1 {
 			/* SCL2 SDA2 */
 			psels = <RA_PSEL(RA_PSEL_I2C, 5, 12)>,
-			<RA_PSEL(RA_PSEL_I2C, 5, 11)>;
+				<RA_PSEL(RA_PSEL_I2C, 5, 11)>;
 			drive-strength = "medium";
 		};
 	};
@@ -25,9 +25,9 @@
 		group1 {
 			/* MISO MOSI RSPCK SSL */
 			psels = <RA_PSEL(RA_PSEL_SPI, 4, 10)>,
-			<RA_PSEL(RA_PSEL_SPI, 4, 11)>,
-			<RA_PSEL(RA_PSEL_SPI, 4, 12)>,
-			<RA_PSEL(RA_PSEL_SPI, 4, 13)>;
+				<RA_PSEL(RA_PSEL_SPI, 4, 11)>,
+				<RA_PSEL(RA_PSEL_SPI, 4, 12)>,
+				<RA_PSEL(RA_PSEL_SPI, 4, 13)>;
 		};
 	};
 

@@ -1,0 +1,29 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_MIMX94398_M7_1
+
+DT_CHOSEN_Z_FLASH := zephyr,flash
+
+config FLASH_SIZE
+	default $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_FLASH),0,K)
+
+config FLASH_BASE_ADDRESS
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))
+
+config MCUX_CORE_SUFFIX
+	default "_cm7_core1" if SOC_MIMX94398_M7_1
+
+config NUM_IRQS
+	default 238
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)
+
+config ETH_NXP_IMX_MSGINTR
+	default 2
+
+config CACHE_MANAGEMENT
+	default n
+
+endif # SOC_MIMX94398_M7_1

@@ -14,11 +14,10 @@
 		status = "okay";
 		compatible = "zephyr,h-bridge-stepper";
 
-		en-gpios  = <&mikrobus_header 2 GPIO_ACTIVE_LOW>;
+		en-gpios = <&mikrobus_header 2 GPIO_ACTIVE_LOW>;
 		gpios = <&mikrobus_header 0 GPIO_ACTIVE_LOW>, /* IN1 */
-			 <&mikrobus_header 1 GPIO_ACTIVE_LOW>, /* IN2 */
-			 <&mikrobus_header 6 GPIO_ACTIVE_LOW>, /* IN3 */
-			 <&mikrobus_header 7 GPIO_ACTIVE_LOW>; /* IN4 */
-
+			<&mikrobus_header 1 GPIO_ACTIVE_LOW>, /* IN2 */
+			<&mikrobus_header 6 GPIO_ACTIVE_LOW>, /* IN3 */
+			<&mikrobus_header 7 GPIO_ACTIVE_LOW>; /* IN4 */
 	};
 };

@@ -24,6 +24,12 @@ extern "C" {
 uint32_t flexspi_clock_set_freq(uint32_t clock_name, uint32_t rate);
 #endif
 
+#ifdef CONFIG_I2S_MCUX_SAI
+void imxrt_audio_codec_pll_init(uint32_t clock_name, uint32_t clk_src,
+					uint32_t clk_pre_div, uint32_t clk_src_div);
+
+#endif /* CONFIG_I2S_MCUX_SAI */
+
 #ifdef __cplusplus
 }
 #endif

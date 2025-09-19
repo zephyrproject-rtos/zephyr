@@ -12,7 +12,6 @@
 
 #include "mimxrt595_evk_mimxrt595s_cm33-pinctrl.dtsi"
 
-
 / {
 	model = "NXP MIMXRT595-EVK board";
 	compatible = "nxp,mimxrt595";
@@ -46,11 +45,13 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button_1: button_0 {
 			label = "User SW1";
 			gpios = <&gpio0 25 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		user_button_2: button_1 {
 			label = "User SW2";
 			gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
@@ -60,14 +61,17 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		green_led: led_1 {
 			gpios = <&gpio1 0 0>;
 			label = "User LED_GREEN";
 		};
+
 		blue_led: led_2 {
 			gpios = <&gpio3 17 0>;
 			label = "User LED_BLUE";
 		};
+
 		red_led: led_3 {
 			gpios = <&gpio0 14 0>;
 			label = "User LED_RED";
@@ -79,28 +83,28 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map =	<ARDUINO_HEADER_R3_A0 0 &gpio0 5 0>,
-				<ARDUINO_HEADER_R3_A1 0 &gpio0 6 0>,
-				<ARDUINO_HEADER_R3_A2 0 &gpio0 19 0>,
-				<ARDUINO_HEADER_R3_A3 0 &gpio0 13 0>,
-				<ARDUINO_HEADER_R3_A4 0 &gpio4 22 0>,
-				<ARDUINO_HEADER_R3_A5 0 &gpio4 21 0>,
-				<ARDUINO_HEADER_R3_D0 0 &gpio4 31 0>,
-				<ARDUINO_HEADER_R3_D1 0 &gpio4 30 0>,
-				<ARDUINO_HEADER_R3_D2 0 &gpio4 20 0>,
-				<ARDUINO_HEADER_R3_D3 0 &gpio4 23 0>,
-				<ARDUINO_HEADER_R3_D4 0 &gpio4 24 0>,
-				<ARDUINO_HEADER_R3_D5 0 &gpio4 25 0>,
-				<ARDUINO_HEADER_R3_D6 0 &gpio4 26 0>,
-				<ARDUINO_HEADER_R3_D7 0 &gpio4 27 0>,
-				<ARDUINO_HEADER_R3_D8 0 &gpio4 28 0>,
-				<ARDUINO_HEADER_R3_D9 0 &gpio4 29 0>,
-				<ARDUINO_HEADER_R3_D10 0 &gpio5 0 0>,
-				<ARDUINO_HEADER_R3_D11 0 &gpio5 1 0>,
-				<ARDUINO_HEADER_R3_D12 0 &gpio5 2 0>,
-				<ARDUINO_HEADER_R3_D13 0 &gpio5 3 0>,
-				<ARDUINO_HEADER_R3_D14 0 &gpio4 22 0>,
-				<ARDUINO_HEADER_R3_D15 0 &gpio4 21 0>;
+		gpio-map = <ARDUINO_HEADER_R3_A0 0 &gpio0 5 0>,
+			   <ARDUINO_HEADER_R3_A1 0 &gpio0 6 0>,
+			   <ARDUINO_HEADER_R3_A2 0 &gpio0 19 0>,
+			   <ARDUINO_HEADER_R3_A3 0 &gpio0 13 0>,
+			   <ARDUINO_HEADER_R3_A4 0 &gpio4 22 0>,
+			   <ARDUINO_HEADER_R3_A5 0 &gpio4 21 0>,
+			   <ARDUINO_HEADER_R3_D0 0 &gpio4 31 0>,
+			   <ARDUINO_HEADER_R3_D1 0 &gpio4 30 0>,
+			   <ARDUINO_HEADER_R3_D2 0 &gpio4 20 0>,
+			   <ARDUINO_HEADER_R3_D3 0 &gpio4 23 0>,
+			   <ARDUINO_HEADER_R3_D4 0 &gpio4 24 0>,
+			   <ARDUINO_HEADER_R3_D5 0 &gpio4 25 0>,
+			   <ARDUINO_HEADER_R3_D6 0 &gpio4 26 0>,
+			   <ARDUINO_HEADER_R3_D7 0 &gpio4 27 0>,
+			   <ARDUINO_HEADER_R3_D8 0 &gpio4 28 0>,
+			   <ARDUINO_HEADER_R3_D9 0 &gpio4 29 0>,
+			   <ARDUINO_HEADER_R3_D10 0 &gpio5 0 0>,
+			   <ARDUINO_HEADER_R3_D11 0 &gpio5 1 0>,
+			   <ARDUINO_HEADER_R3_D12 0 &gpio5 2 0>,
+			   <ARDUINO_HEADER_R3_D13 0 &gpio5 3 0>,
+			   <ARDUINO_HEADER_R3_D14 0 &gpio4 22 0>,
+			   <ARDUINO_HEADER_R3_D15 0 &gpio4 21 0>;
 	};
 
 	/*
@@ -114,15 +118,15 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map =	<0  0 &gpio0 12 0>,	/* Pin 1, LEDK */
-				<21 0 &gpio3 21 0>,	/* Pin 21, RESET */
-				<22 0 &gpio3 18 0>,	/* Pin 22, LPTE */
-				<26 0 &gpio0 30 0>,	/* Pin 26, CTP_I2C SDA */
-				<27 0 &gpio0 29 0>,	/* Pin 27, CTP_I2C SCL */
-				<28 0 &gpio4 4 0>,	/* Pin 28, CTP_RST */
-				<29 0 &gpio3 19 0>,	/* Pin 29, CTP_INT */
-				<32 0 &gpio3 15 0>,	/* Pin 32, PWR_EN */
-				<34 0 &gpio0 12 0>;	/* Pin 34, BL_PWM */
+		gpio-map = <0 0 &gpio0 12 0>,	/* Pin 1, LEDK */
+			   <21 0 &gpio3 21 0>,	/* Pin 21, RESET */
+			   <22 0 &gpio3 18 0>,	/* Pin 22, LPTE */
+			   <26 0 &gpio0 30 0>,	/* Pin 26, CTP_I2C SDA */
+			   <27 0 &gpio0 29 0>,	/* Pin 27, CTP_I2C SCL */
+			   <28 0 &gpio4 4 0>,	/* Pin 28, CTP_RST */
+			   <29 0 &gpio3 19 0>,	/* Pin 29, CTP_INT */
+			   <32 0 &gpio3 15 0>,	/* Pin 32, PWR_EN */
+			   <34 0 &gpio0 12 0>;	/* Pin 34, BL_PWM */
 	};
 
 	en_mipi_display: enable-mipi-display {
@@ -179,7 +183,6 @@ nxp_mipi_i2c: &arduino_i2c {};
 zephyr_mipi_dsi: &mipi_dsi {};
 
 zephyr_lcdif: &lcdif {};
-
 
 hs_spi1: &hs_lspi1 {
 	compatible = "nxp,lpc-spi";
@@ -370,6 +373,7 @@ zephyr_udc0: &usbhs {
 	status = "okay";
 	pwr-gpios = <&gpio2 10 GPIO_ACTIVE_HIGH>;
 	cd-gpios = <&gpio2 9 GPIO_ACTIVE_LOW>;
+
 	mmc {
 		compatible = "zephyr,mmc-disk";
 		disk-name = "SD2";
@@ -396,10 +400,10 @@ zephyr_udc0: &usbhs {
 		/* MX25UM51245G is 64MB, 512MBit flash part */
 		size = <DT_SIZE_M(64 * 8)>;
 		reg = <0>;
-		spi-max-frequency = <200000000>;
+		spi-max-frequency = <DT_FREQ_M(200)>;
 		status = "okay";
 		jedec-id = [c2 81 3a];
-		erase-block-size = <4096>;
+		erase-block-size = <DT_SIZE_K(4)>;
 		write-block-size = <2>; /* FLASH_MCUX_FLEXSPI_MX25UM51345G_OPI_DTR set */
 
 		partitions {
@@ -415,14 +419,17 @@ zephyr_udc0: &usbhs {
 				label = "mcuboot";
 				reg = <0x00000000 DT_SIZE_K(128)>;
 			};
+
 			slot0_partition: partition@20000 {
 				label = "image-0";
 				reg = <0x00020000 DT_SIZE_M(3)>;
 			};
+
 			slot1_partition: partition@320000 {
 				label = "image-1";
 				reg = <0x00320000 DT_SIZE_M(3)>;
 			};
+
 			storage_partition: partition@620000 {
 				label = "storage";
 				reg = <0x00620000 (DT_SIZE_M(58) - DT_SIZE_K(128))>;
@@ -440,12 +447,13 @@ zephyr_udc0: &usbhs {
 	ahb-bufferable;
 	ahb-cacheable;
 	ahb-read-addr-opt;
+
 	aps6408l: aps6408l@0 {
 		compatible = "nxp,imx-flexspi-aps6408l";
 		/* APS6408L is 8MB, 64MBit pSRAM */
 		size = <DT_SIZE_M(8 * 8)>;
 		reg = <0>;
-		spi-max-frequency = <198000000>;
+		spi-max-frequency = <DT_FREQ_M(198)>;
 		status = "okay";
 		cs-interval-unit = <1>;
 		cs-interval = <5>;

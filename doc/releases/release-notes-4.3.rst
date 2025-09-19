@@ -48,12 +48,8 @@ https://docs.zephyrproject.org/latest/security/vulnerabilities.html
 API Changes
 ***********
 
-* RTIO
-
-  * :c:func:`rtio_is_spi`
-  * :c:func:`rtio_is_cspi`
-  * :c:func:`rtio_is_i3c`
-  * :c:func:`rtio_read_regs_async`
+..
+  Only removed, deprecated and new APIs, changes go in migration guide.
 
 Removed APIs and options
 ========================
@@ -66,6 +62,9 @@ Deprecated APIs and options
 ===========================
 
 * :dtcompatible:`maxim,ds3231` is deprecated in favor of :dtcompatible:`maxim,ds3231-rtc`.
+
+* :c:enum:`bt_hci_bus` was deprecated as it was not used. :c:macro:`BT_DT_HCI_BUS_GET` should be
+  used instead.
 
 New APIs and options
 ====================
@@ -171,6 +170,13 @@ New APIs and options
 
     * :kconfig:option:`CONFIG_HAWKBIT_REBOOT_NONE`
 
+* Networking
+
+  * Sockets
+
+    * :c:func:`zsock_listen` now implements the ``backlog`` parameter support. The TCP server
+      socket will limit the number of pending incoming connections to that value.
+
 * Power management
 
    * :c:func:`pm_device_driver_deinit`
@@ -222,6 +228,14 @@ New Drivers
 * Interrupt controller
 
    * STM32 EXTI interrupt/event controller (:dtcompatible:`st,stm32-exti`) has a dedicated driver and API now, separate from STM32 GPIO Interrupt Control driver.
+
+* MFD
+   * IRQ support has been added for X-Power AXP2101 MFD device. It gets automatically
+     enabled as soon as device-tree property ``int-gpios`` is defined on the device node.
+
+   * Support for the power button found on the X-Power AXP2101 MFD is added and can be enabled
+     via :kconfig:option:`MFD_AXP2101_POWER_BUTTON`. This feature requires interrupt support to
+     be enabled.
 
 * RTC
 

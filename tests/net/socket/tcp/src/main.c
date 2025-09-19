@@ -2539,6 +2539,128 @@ ZTEST(net_socket_tcp, test_keepalive_timeout)
 	test_context_cleanup();
 }
 
+#define TEST_BACKLOG_MAX 3
+
+static void test_prepare_backlog_server_sock(int family, int *s_sock,
+					     struct sockaddr *s_addr,
+					     socklen_t *addrlen)
+{
+	if (family == AF_INET) {
+		prepare_sock_tcp_v4(MY_IPV4_ADDR, SERVER_PORT, s_sock,
+				    (struct sockaddr_in *)s_addr);
+		*addrlen = sizeof(struct sockaddr_in);
+	} else {
+		prepare_sock_tcp_v6(MY_IPV6_ADDR, SERVER_PORT, s_sock,
+				    (struct sockaddr_in6 *)s_addr);
+		*addrlen = sizeof(struct sockaddr_in6);
+	}
+
+	test_bind(*s_sock, s_addr, *addrlen);
+}
+
+static void test_backlog_connect_ok(int *c_sock, struct sockaddr *s_addr,
+				    socklen_t addrlen)
+{
+	struct sockaddr c_addr;
+	int sock;
+	int ret;
+
+	if (s_addr->sa_family == AF_INET) {
+		prepare_sock_tcp_v4(MY_IPV4_ADDR, ANY_PORT, &sock,
+				    (struct sockaddr_in *)&c_addr);
+	} else {
+		prepare_sock_tcp_v6(MY_IPV6_ADDR, ANY_PORT, &sock,
+				    (struct sockaddr_in6 *)&c_addr);
+	}
+
+	ret = zsock_connect(sock, s_addr, addrlen);
+	zassert_ok(ret, "connect failed with error %d", errno);
+
+	if (IS_ENABLED(CONFIG_NET_TC_THREAD_PREEMPTIVE)) {
+		/* Let the connection proceed */
+		k_msleep(THREAD_SLEEP);
+	}
+
+	*c_sock = sock;
+}
+
+static void test_backlog_connect_fail(struct sockaddr *s_addr, socklen_t addrlen)
+{
+	struct sockaddr c_addr;
+	int sock;
+	int ret;
+
+	if (s_addr->sa_family == AF_INET) {
+		prepare_sock_tcp_v4(MY_IPV4_ADDR, ANY_PORT, &sock,
+				    (struct sockaddr_in *)&c_addr);
+	} else {
+		prepare_sock_tcp_v6(MY_IPV6_ADDR, ANY_PORT, &sock,
+				    (struct sockaddr_in6 *)&c_addr);
+	}
+
+	ret = zsock_connect(sock, s_addr, addrlen);
+	zassert_equal(ret, -1, "connect should have failed");
+	zassert_equal(errno, ETIMEDOUT, "wrong errno, %d", errno);
+
+	test_close(sock);
+}
+
+static void test_common_listen_backlog(int family, int backlog)
+{
+	const int expect_conns = backlog <= 0 ? 1 : backlog;
+	int client_socks[TEST_BACKLOG_MAX];
+	struct sockaddr s_addr;
+	socklen_t addrlen;
+	int s_sock, c_sock, accept_sock;
+	int ret;
+
+	test_prepare_backlog_server_sock(family, &s_sock, &s_addr, &addrlen);
+
+	ret = zsock_listen(s_sock, backlog);
+	zassert_ok(ret, "listen failed with error %d", errno);
+
+	/* Fill up the server backlog. */
+	for (int i = 0; i < expect_conns; i++) {
+		test_backlog_connect_ok(&client_socks[i], &s_addr, addrlen);
+	}
+
+	/* Backlog full, consecutive attempt should fail. */
+	test_backlog_connect_fail(&s_addr, addrlen);
+
+	/* Accept one connection. */
+	accept_sock = zsock_accept(s_sock, NULL, NULL);
+	zassert_true(accept_sock >= 0, "accept failed");
+
+	/* Server should now allow one more connection. */
+	test_backlog_connect_ok(&c_sock, &s_addr, addrlen);
+	test_backlog_connect_fail(&s_addr, addrlen);
+
+	/* Cleanup */
+	test_close(accept_sock);
+	test_close(s_sock);
+	test_close(c_sock);
+
+	for (int i = 0; i < expect_conns; i++) {
+		test_close(client_socks[i]);
+	}
+
+	test_context_cleanup();
+}
+
+ZTEST(net_socket_tcp, test_v4_listen_backlog)
+{
+	test_common_listen_backlog(AF_INET, 0);
+	test_common_listen_backlog(AF_INET, 1);
+	test_common_listen_backlog(AF_INET, TEST_BACKLOG_MAX);
+}
+
+ZTEST(net_socket_tcp, test_v6_listen_backlog)
+{
+	test_common_listen_backlog(AF_INET6, 0);
+	test_common_listen_backlog(AF_INET6, 1);
+	test_common_listen_backlog(AF_INET6, TEST_BACKLOG_MAX);
+}
+
 static void after(void *arg)
 {
 	ARG_UNUSED(arg);

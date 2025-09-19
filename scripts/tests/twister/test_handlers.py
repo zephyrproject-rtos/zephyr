@@ -1187,7 +1187,7 @@ def test_devicehandler_create_command(
 ):
     handler = DeviceHandler(mocked_instance, 'build', mock.Mock())
     handler.options = mock.Mock(west_flash=self_west_flash,
-                                flash_command=self_flash_command)
+                                flash_command=self_flash_command, verbose=0)
     handler.generator_cmd = 'generator_cmd'
 
     expected = [handler.build_dir if val == '$build_dir' else \
@@ -1453,7 +1453,8 @@ def test_devicehandler_handle(
     handler.options = mock.Mock(
         timeout_multiplier=1,
         west_flash=None,
-        west_runner=None
+        west_runner=None,
+        verbose=0
     )
     handler._start_serial_pty = mock.Mock(side_effect=mock_start_serial_pty)
     handler._create_command = mock.Mock(return_value=['dummy', 'command'])
@@ -2027,7 +2028,8 @@ def test_qemuhandler_handle(
     handler.options = mock.Mock(
         timeout_multiplier=1,
         west_flash=handler_options_west_flash,
-        west_runner=None
+        west_runner=None,
+        verbose=0,
     )
     handler.run_custom_script = mock.Mock(return_value=None)
     handler.make_device_available = mock.Mock(return_value=None)

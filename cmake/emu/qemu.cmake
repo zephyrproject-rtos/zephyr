@@ -73,7 +73,11 @@ else()
 endif()
 
 # Connect main serial port to the console chardev.
-list(APPEND QEMU_FLAGS -serial chardev:con)
+if(CONFIG_DT_HAS_VIRTIO_CONSOLE_ENABLED)
+  list(APPEND QEMU_FLAGS -serial none -device virtio-serial -device virtconsole,chardev=con)
+else()
+  list(APPEND QEMU_FLAGS -serial chardev:con)
+endif()
 
 # Connect semihosting console to the console chardev if configured.
 if(CONFIG_SEMIHOST)
@@ -83,7 +87,11 @@ if(CONFIG_SEMIHOST)
 endif()
 
 # Connect monitor to the console chardev.
-list(APPEND QEMU_FLAGS -mon chardev=con,mode=readline)
+if(CONFIG_DT_HAS_VIRTIO_CONSOLE_ENABLED)
+  list(APPEND QEMU_FLAGS -monitor none)
+else()
+  list(APPEND QEMU_FLAGS -mon chardev=con,mode=readline)
+endif()
 
 if(CONFIG_QEMU_ICOUNT)
   if(CONFIG_QEMU_ICOUNT_SLEEP)

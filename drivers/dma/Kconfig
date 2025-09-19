@@ -58,6 +58,8 @@ source "drivers/dma/Kconfig.xmc4xxx"
 
 source "drivers/dma/Kconfig.rpi_pico"
 
+source "drivers/dma/Kconfig.renesas_ra"
+
 source "drivers/dma/Kconfig.renesas_rz"
 
 source "drivers/dma/Kconfig.ifx_cat1"
@@ -96,5 +98,7 @@ source "drivers/dma/Kconfig.nxp_sdma"
 source "drivers/dma/Kconfig.wch"
 
 source "drivers/dma/Kconfig.ti_cc23x0"
+
+source "drivers/dma/Kconfig.npcx"
 
 endif # DMA

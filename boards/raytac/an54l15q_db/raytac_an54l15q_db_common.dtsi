@@ -34,6 +34,7 @@
 
 	pwmleds {
 		compatible = "pwm-leds";
+
 		/*
 		 * PWM signal can be exposed on GPIO pin only within same domain.
 		 * There is only one domain which contains both PWM and GPIO:

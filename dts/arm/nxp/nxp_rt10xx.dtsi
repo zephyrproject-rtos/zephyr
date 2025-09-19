@@ -5,6 +5,7 @@
  */
 
 #include <mem.h>
+#include <freq.h>
 #include <arm/armv7-m.dtsi>
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/clock/imx_ccm.h>
@@ -43,7 +44,7 @@
 			itm: itm@e0000000 {
 				compatible = "arm,armv7m-itm";
 				reg = <0xe0000000 0x1000>;
-				swo-ref-frequency = <132000000>;
+				swo-ref-frequency = <DT_FREQ_M(132)>;
 			};
 		};
 
@@ -54,12 +55,14 @@
 				exit-latency-us = <4000>;
 				min-residency-us = <5000>;
 			};
+
 			suspend: suspend {
 				compatible = "zephyr,power-state";
 				power-state-name = "suspend-to-idle";
 				exit-latency-us = <5000>;
 				min-residency-us = <10000>;
 			};
+
 			off: off {
 				/* PM_STATE_SOFT_OFF is entered only by calling pm_state_force */
 				status = "disabled";
@@ -71,13 +74,13 @@
 
 	sysclk: system-clock {
 		compatible = "fixed-clock";
-		clock-frequency = <600000000>;
+		clock-frequency = <DT_FREQ_M(600)>;
 		#clock-cells = <0>;
 	};
 
 	xtal: clock-xtal {
 		compatible = "fixed-clock";
-		clock-frequency = <24000000>;
+		clock-frequency = <DT_FREQ_M(24)>;
 		#clock-cells = <0>;
 	};
 
@@ -90,7 +93,7 @@
 	/* USB PLL (selected to be FLEXSPI clock source) will be left unchanged */
 	usbclk: usbpll-clock {
 		compatible = "fixed-clock";
-		clock-frequency = <480000000>;
+		clock-frequency = <DT_FREQ_M(480)>;
 		#clock-cells = <0>;
 	};
 
@@ -170,7 +173,7 @@
 			compatible = "nxp,imx-gpt";
 			reg = <0x401f0000 0x4000>;
 			interrupts = <101 0>;
-			gptfreq = <25000000>;
+			gptfreq = <DT_FREQ_M(25)>;
 			clocks = <&ccm IMX_CCM_GPT_CLK 0x68 24>;
 		};
 
@@ -179,21 +182,25 @@
 			reg = <0x401dc000 0x7a>;
 			interrupts = <133 0>;
 			clocks = <&ccm IMX_CCM_QTMR_CLK 0 0>;
+
 			qtmr1_timer0: timer0 {
 				compatible = "nxp,imx-tmr";
 				channel = <0>;
 				status = "disabled";
 			};
+
 			qtmr1_timer1: timer1 {
 				compatible = "nxp,imx-tmr";
 				channel = <1>;
 				status = "disabled";
 			};
+
 			qtmr1_timer2: timer2 {
 				compatible = "nxp,imx-tmr";
 				channel = <2>;
 				status = "disabled";
 			};
+
 			qtmr1_timer3: timer3 {
 				compatible = "nxp,imx-tmr";
 				channel = <3>;
@@ -206,21 +213,25 @@
 			reg = <0x401e0000 0x7a>;
 			interrupts = <134 0>;
 			clocks = <&ccm IMX_CCM_QTMR_CLK 0 0>;
+
 			qtmr2_timer0: timer0 {
 				compatible = "nxp,imx-tmr";
 				channel = <0>;
 				status = "disabled";
 			};
+
 			qtmr2_timer1: timer1 {
 				compatible = "nxp,imx-tmr";
 				channel = <1>;
 				status = "disabled";
 			};
+
 			qtmr2_timer2: timer2 {
 				compatible = "nxp,imx-tmr";
 				channel = <2>;
 				status = "disabled";
 			};
+
 			qtmr2_timer3: timer3 {
 				compatible = "nxp,imx-tmr";
 				channel = <3>;
@@ -233,21 +244,25 @@
 			reg = <0x401e4000 0x7a>;
 			interrupts = <135 0>;
 			clocks = <&ccm IMX_CCM_QTMR_CLK 0 0>;
+
 			qtmr3_timer0: timer0 {
 				compatible = "nxp,imx-tmr";
 				channel = <0>;
 				status = "disabled";
 			};
+
 			qtmr3_timer1: timer1 {
 				compatible = "nxp,imx-tmr";
 				channel = <1>;
 				status = "disabled";
 			};
+
 			qtmr3_timer2: timer2 {
 				compatible = "nxp,imx-tmr";
 				channel = <2>;
 				status = "disabled";
 			};
+
 			qtmr3_timer3: timer3 {
 				compatible = "nxp,imx-tmr";
 				channel = <3>;
@@ -260,21 +275,25 @@
 			reg = <0x401e8000 0x7a>;
 			interrupts = <136 0>;
 			clocks = <&ccm IMX_CCM_QTMR_CLK 0 0>;
+
 			qtmr4_timer0: timer0 {
 				compatible = "nxp,imx-tmr";
 				channel = <0>;
 				status = "disabled";
 			};
+
 			qtmr4_timer1: timer1 {
 				compatible = "nxp,imx-tmr";
 				channel = <1>;
 				status = "disabled";
 			};
+
 			qtmr4_timer2: timer2 {
 				compatible = "nxp,imx-tmr";
 				channel = <2>;
 				status = "disabled";
 			};
+
 			qtmr4_timer3: timer3 {
 				compatible = "nxp,imx-tmr";
 				channel = <3>;
@@ -368,6 +387,7 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 		};
+
 		/*
 		 * Note: interrupts for GPIO6-9 are not currently supported
 		 * by the gpio driver.
@@ -448,6 +468,7 @@
 			compatible = "nxp,imx-iomuxc";
 			reg = <0x401f8000 0x4000>;
 			status = "okay";
+
 			pinctrl: pinctrl {
 				status = "okay";
 				compatible = "nxp,mcux-rt-pinctrl";
@@ -659,7 +680,7 @@
 		flexpwm2: flexpwm@403e0000 {
 			compatible = "nxp,flexpwm";
 			reg = <0x403e0000 0x4000>;
-			interrupts =  <141 0>;
+			interrupts = <141 0>;
 
 			flexpwm2_pwm0: flexpwm2_pwm0 {
 				compatible = "nxp,imx-pwm";
@@ -705,7 +726,7 @@
 		flexpwm3: flexpwm@403e4000 {
 			compatible = "nxp,flexpwm";
 			reg = <0x403e4000 0x4000>;
-			interrupts =  <146 0>;
+			interrupts = <146 0>;
 
 			flexpwm3_pwm0: flexpwm3_pwm0 {
 				compatible = "nxp,imx-pwm";
@@ -798,6 +819,7 @@
 			compatible = "nxp,enet";
 			reg = <0x402D8000 0x628>;
 			clocks = <&ccm IMX_CCM_ENET_CLK 0 0>;
+
 			enet_mac: ethernet {
 				compatible = "nxp,enet-mac";
 				interrupts = <114 0>;
@@ -806,12 +828,14 @@
 				ptp-clock = <&enet_ptp_clock>;
 				status = "disabled";
 			};
+
 			enet_mdio: mdio {
 				compatible = "nxp,enet-mdio";
 				status = "disabled";
 				#address-cells = <1>;
 				#size-cells = <0>;
 			};
+
 			enet_ptp_clock: ptp_clock {
 				compatible = "nxp,enet-ptp-clock";
 				interrupts = <115 0>;
@@ -891,8 +915,8 @@
 			clocks = <&ccm IMX_CCM_USDHC1_CLK 0 0>;
 			max-current-330 = <1020>;
 			max-current-180 = <1020>;
-			max-bus-freq = <208000000>;
-			min-bus-freq = <400000>;
+			max-bus-freq = <DT_FREQ_M(208)>;
+			min-bus-freq = <DT_FREQ_K(400)>;
 		};
 
 		usdhc2: usdhc@402c4000 {
@@ -903,8 +927,8 @@
 			clocks = <&ccm IMX_CCM_USDHC2_CLK 0 0>;
 			max-current-330 = <120>;
 			max-current-180 = <45>;
-			max-bus-freq = <198000000>;
-			min-bus-freq = <400000>;
+			max-bus-freq = <DT_FREQ_M(198)>;
+			min-bus-freq = <DT_FREQ_K(400)>;
 		};
 
 		csi: csi@402bc000 {
@@ -923,11 +947,11 @@
 			nxp,mem2mem;
 			nxp,a-on;
 			reg = <0x400E8000 0x4000>,
-				<0x400EC000 0x4000>;
+			      <0x400EC000 0x4000>;
 			interrupts = <0 0>, <1 0>, <2 0>, <3 0>,
-				<4 0>, <5 0>, <6 0>, <7 0>,
-				<8 0>, <9 0>, <10 0>, <11 0>,
-				<12 0>, <13 0>, <14 0>, <15 0>;
+				     <4 0>, <5 0>, <6 0>, <7 0>,
+				     <8 0>, <9 0>, <10 0>, <11 0>,
+				     <12 0>, <13 0>, <14 0>, <15 0>;
 			irq-shared-offset = <16>;
 			clocks = <&ccm IMX_CCM_EDMA_CLK 0x7C 0x000000C0>;
 			status = "disabled";
@@ -1012,10 +1036,10 @@
 			 * = (24MHz * (32 + 77 / 100)) / 1 = 786.48 MHz
 			 */
 			pll-clocks = <&anatop 0x70 0xC000 0>,
-				      <&anatop 0x70 0x7F 32>,
-				      <&anatop 0x70 0x180000 1>,
-				      <&anatop 0x80 0x3FFFFFFF 77>,
-				      <&anatop 0x90 0x3FFFFFFF 100>;
+				     <&anatop 0x70 0x7F 32>,
+				     <&anatop 0x70 0x180000 1>,
+				     <&anatop 0x80 0x3FFFFFFF 77>,
+				     <&anatop 0x90 0x3FFFFFFF 100>;
 			pll-clock-names = "src", "lp", "pd", "num", "den";
 			/* The maximum input frequency into the SAI mclk input is 300MHz
 			 * Based on this requirement, pre-div must be at least 3
@@ -1050,10 +1074,10 @@
 			pre-div = <0>;
 			podf = <63>;
 			pll-clocks = <&anatop 0x70 0xC000 0x0>,
-					<&anatop 0x70 0x7F 32>,
-					<&anatop 0x70 0x180000 1>,
-					<&anatop 0x80 0x3FFFFFFF 77>,
-					<&anatop 0x90 0x3FFFFFFF 100>;
+				     <&anatop 0x70 0x7F 32>,
+				     <&anatop 0x70 0x180000 1>,
+				     <&anatop 0x80 0x3FFFFFFF 77>,
+				     <&anatop 0x90 0x3FFFFFFF 100>;
 			pll-clock-names = "src", "lp", "pd", "num", "den";
 			pinmuxes = <&iomuxcgpr 0x4 0x100000>;
 			interrupts = <57 0>;
@@ -1077,10 +1101,10 @@
 			pre-div = <0>;
 			podf = <63>;
 			pll-clocks = <&anatop 0x70 0xC000 0>,
-				   <&anatop 0x70 0x7F 32>,
-				   <&anatop 0x70 0x180000 1>,
-				   <&anatop 0x80 0x3FFFFFFF 77>,
-				   <&anatop 0x90 0x3FFFFFFF 100>;
+				     <&anatop 0x70 0x7F 32>,
+				     <&anatop 0x70 0x180000 1>,
+				     <&anatop 0x80 0x3FFFFFFF 77>,
+				     <&anatop 0x90 0x3FFFFFFF 100>;
 			pll-clock-names = "src", "lp", "pd", "num", "den";
 			pinmuxes = <&iomuxcgpr 0x4 0x200000>;
 			interrupts = <58 0>, <59 0>;

@@ -589,7 +589,7 @@ class Build(Forceable):
         self.check_force(
             not boards_mismatched or self.auto_pristine,
             f'Build directory {self.build_dir} targets board {cached_board}, '
-            'but board {self.args.board} was specified. '
+            f'but board {self.args.board} was specified. '
             '(Clean the directory, use --pristine, or use --build-dir to '
             'specify a different one.)')
 

@@ -54,10 +54,10 @@
 	};
 
 	ddr: memory@60000000 {
-		compatible ="zephyr,memory-region", "mmio-sram";
+		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x60000000 DT_SIZE_M(16)>;
 		zephyr,memory-region = "DDR";
-		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
 	};
 
 	sram_mcpu0: memory@23000 {
@@ -107,7 +107,7 @@
 	status = "okay";
 };
 
-&gpio13{
+&gpio13 {
 	status = "okay";
 };
 

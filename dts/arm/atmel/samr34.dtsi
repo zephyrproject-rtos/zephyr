@@ -58,13 +58,12 @@
 		status = "disabled";
 
 		reset-gpios = <&portb 15 GPIO_ACTIVE_LOW>;               /* nRST */
-		dio-gpios =
-			<&portb 16 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>, /* DIO0 */
-			<&porta 11 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>, /* DIO1 */
-			<&porta 12 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>, /* DIO2 */
-			<&portb 17 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>, /* DIO3 */
-			<&porta 10 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>, /* DIO4 */
-			<&portb  0 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>; /* DIO5 */
+		dio-gpios = <&portb 16 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>, /* DIO0 */
+			    <&porta 11 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>, /* DIO1 */
+			    <&porta 12 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>, /* DIO2 */
+			    <&portb 17 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>, /* DIO3 */
+			    <&porta 10 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>, /* DIO4 */
+			    <&portb 0 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>; /* DIO5 */
 		spi-max-frequency = <DT_FREQ_M(10)>;
 	};
 };

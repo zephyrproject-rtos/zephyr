@@ -36,6 +36,7 @@
 	buttons {
 		compatible = "gpio-keys";
 		debounce-interval-ms = <100>;
+
 		user_button_0: button_0 {
 			label = "User button 0";
 			gpios = <&gpio1 9 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
@@ -87,13 +88,14 @@
 		spi-max-frequency = <WS2812C_SPI_FREQ>;
 
 		chain-length = <1>;
-		color-mapping =	<LED_COLOR_ID_GREEN>,
-			<LED_COLOR_ID_RED>,
-			<LED_COLOR_ID_BLUE>;
+		color-mapping = <LED_COLOR_ID_GREEN>,
+				<LED_COLOR_ID_RED>,
+				<LED_COLOR_ID_BLUE>;
 		spi-one-frame = <WS2812C_ONE_FRAME>;
 		spi-zero-frame = <WS2812C_ZERO_FRAME>;
 	};
 };
+
 &gpio0 {
 	status = "okay";
 };

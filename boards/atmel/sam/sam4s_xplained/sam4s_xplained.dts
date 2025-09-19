@@ -46,10 +46,12 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		yellow_led_1: led_1 {
 			gpios = <&pioc 10 GPIO_ACTIVE_LOW>;
 			label = "LED 1";
 		};
+
 		yellow_led_2: led_2 {
 			gpios = <&pioc 17 GPIO_ACTIVE_LOW>;
 			label = "LED 2";
@@ -58,6 +60,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button: button_1 {
 			label = "User Button";
 			gpios = <&pioa 5 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
@@ -217,23 +220,17 @@
 	status = "okay";
 };
 
-xplained1_i2c: &twi0 {
-};
+xplained1_i2c: &twi0 {};
 
-xplained1_spi: &spi0 {
-};
+xplained1_spi: &spi0 {};
 
-xplained1_serial: &uart1 {
-};
+xplained1_serial: &uart1 {};
 
-xplained4_i2c: &twi0 {
-};
+xplained4_i2c: &twi0 {};
 
-xplained4_spi: &spi0 {
-};
+xplained4_spi: &spi0 {};
 
-xplained4_serial: &uart1 {
-};
+xplained4_serial: &uart1 {};
 
 &smc {
 	status = "okay";

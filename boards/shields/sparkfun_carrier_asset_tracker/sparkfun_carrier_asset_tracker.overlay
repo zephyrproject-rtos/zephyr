@@ -33,6 +33,7 @@
 		compatible = "zephyr,sdhc-spi-slot";
 		reg = <0>;
 		status = "okay";
+
 		mmc {
 			compatible = "zephyr,sdmmc-disk";
 			disk-name = "SD";

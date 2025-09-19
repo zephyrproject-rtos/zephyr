@@ -19,16 +19,17 @@
 		sw1 = &user_button_1;
 		watchdog0 = &wwdt;
 		usart-0 = &flexcomm3;
-		i2c-0 = &flexcomm2;
+		i2s-0 = &flexcomm0;
+		i2c-2 = &flexcomm2;
 		pwm-0 = &sctimer;
 	};
 
 	chosen {
 		zephyr,sram = &sram_data;
-		zephyr,flash = &w25q512jvfiq;
+		zephyr,flash = &fm25m6413ibe;
 		zephyr,console = &flexcomm3;
 		zephyr,shell-uart = &flexcomm3;
-		zephyr,flash-controller = &w25q512jvfiq;
+		zephyr,flash-controller = &fm25m6413ibe;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,uart-mcumgr = &flexcomm3;
 	};
@@ -78,10 +79,9 @@
 };
 
 &flexcomm0 {
-	compatible = "nxp,lpc-usart";
+	compatible = "nxp,lpc-i2s";
 	status = "disabled";
-	current-speed = <115200>;
-	pinctrl-0 = <&pinmux_flexcomm0_usart>;
+	pinctrl-0 = <&pinmux_flexcomm0_i2s>;
 	pinctrl-names = "default";
 };
 
@@ -108,14 +108,14 @@
 	rx-clock-source-b = <1>;
 
 	/* external flash */
-	w25q512jvfiq: w25q512jvfiq@0 {
+	fm25m6413ibe: fm25m6413ibe@0 {
 		compatible = "nxp,imx-flexspi-nor";
 		reg = <0>;
 		size = <DT_SIZE_M(8 * 8)>;
 		status = "okay";
 		erase-block-size = <4096>;
 		write-block-size = <1>;
-		spi-max-frequency = <104000000>;
+		spi-max-frequency = <133000000>;
 
 		partitions {
 			compatible = "fixed-partitions";
@@ -146,27 +146,6 @@
 				reg = <0x00620000 (DT_SIZE_M(2) - DT_SIZE_K(128))>;
 			};
 		};
-	};
-
-	aps6404l: aps6404l@2 {
-		compatible = "nxp,imx-flexspi-aps6404l";
-		/* APS6404L is 8MB, 64MBit pSRAM */
-		size = <DT_SIZE_M(8 * 8)>;
-		reg = <2>;
-		spi-max-frequency = <109000000>;
-
-		/* PSRAM cannot be enabled while board is in default XIP
-		 * configuration, as it will conflict with flash chip.
-		 */
-		status = "disabled";
-		cs-interval-unit = <1>;
-		cs-interval = <2>;
-		cs-hold-time = <3>;
-		cs-setup-time = <3>;
-		data-valid-time = <6>;
-		column-space = <0>;
-		ahb-write-wait-unit = <2>;
-		ahb-write-wait-interval = <0>;
 	};
 };
 
@@ -219,12 +198,14 @@
 	wakeup-source;
 };
 
-/*
- * the default resistors on the board breaks out the MOSI/MISO
- * pins to the nets labelled "UART" which go to J1 2 and 4,
- * but we are using it for spi mosi and miso here.
- * SCK is on J2 6 as labelled.
- */
+&xtal32 {
+	status = "disabled";
+};
+
+zephyr_udc0: &usb_otg {
+	status = "okay";
+};
+
 &flexcomm1 {
 	compatible = "nxp,lpc-spi";
 	pinctrl-0 = <&pinmux_flexcomm1_spi>;

@@ -9,7 +9,7 @@
 &peripheral {
 	dac1: dac@112000 {
 		compatible = "nxp,lpdac";
-		reg = < 0x112000 0x1000>;
+		reg = <0x112000 0x1000>;
 		interrupts = <107 0>;
 		status = "disabled";
 		voltage-reference = <0>;
@@ -21,6 +21,7 @@
 		reg = <0xd0000 0x1000>;
 		interrupt-names = "RELOAD-ERROR", "FAULT";
 		interrupts = <118 0>, <119 0>;
+
 		flexpwm1_pwm0: pwm0 {
 			compatible = "nxp,imx-pwm";
 			index = <0>;

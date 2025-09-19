@@ -73,7 +73,6 @@
 	apb2-prescaler = <2>;
 };
 
-
 &usart1 {
 	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
 	pinctrl-names = "default";

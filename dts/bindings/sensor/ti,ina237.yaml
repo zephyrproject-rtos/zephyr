@@ -12,32 +12,9 @@ description: |
 
 compatible: "ti,ina237"
 
-include: ti,ina23x-common.yaml
+include: ti,ina2xx-common.yaml
 
 properties:
-  config:
-    type: int
-    deprecated: true
-    default: 0x0000
-    description: |
-      Value of the configuration register
-      e.g shunt voltage and bus voltage ADC conversion
-      times and averaging, operating mode for INA230 or
-      delay for initial ADC conversion, shunt full scale range
-      for INA237.
-
-      Deprecated, please use new properties instead.
-
-  adc-config:
-    type: int
-    deprecated: true
-    default: 0x0000
-    description: |
-      Value of the ADC configuration register (ADC conversion times,
-      averaging, operating mode and etc).
-
-      Deprecated, please use new properties instead.
-
   alert-config:
     type: int
     description: Diag alert register, default matches the power-on reset value

@@ -13,6 +13,7 @@
 
 	buttons {
 		compatible = "gpio-keys";
+
 		xiao_button0: button_0 {
 			gpios = <&xiao_d 1 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "SW0";
@@ -58,6 +59,7 @@
 		compatible = "zephyr,sdhc-spi-slot";
 		reg = <0>;
 		status = "okay";
+
 		mmc {
 			compatible = "zephyr,sdmmc-disk";
 			disk-name = "SD";

@@ -2,6 +2,7 @@
  * Userspace and service handler hooks
  *
  * Copyright (c) 2017 Linaro Limited
+ * Copyright 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -322,9 +323,8 @@ SECTION_FUNC(TEXT,z_arm_userspace_enter)
  * This function is used to do system calls from unprivileged code.  This
  * function is responsible for the following:
  * 1) Fixing up bad syscalls
- * 2) Configuring privileged stack and loading up stack arguments
- * 3) Dispatching the system call
- * 4) Restoring stack and calling back to the caller of the SVC
+ * 2) Dispatching the system call
+ * 3) Restoring stack and calling back to the caller of the SVC
  *
  */
 SECTION_FUNC(TEXT, z_arm_do_syscall)
@@ -342,41 +342,7 @@ SECTION_FUNC(TEXT, z_arm_do_syscall)
      * At this point PSPLIM is already configured to guard the default (user)
      * stack, so pushing to the default thread's stack is safe.
      */
-#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
-    /* save current stack pointer (user stack) */
-    mov ip, sp
-    /* temporarily push to user stack */
-    push {r0,r1}
-    /* setup privileged stack */
-    ldr r0, =_kernel
-    ldr r0, [r0, #_kernel_offset_to_current]
-    adds r0, r0, #_thread_offset_to_priv_stack_start
-    ldr r0, [r0]    /* priv stack ptr */
-    ldr r1, =CONFIG_PRIVILEGED_STACK_SIZE
-    add r0, r1
-
-    /* Store current SP and LR at the beginning of the priv stack */
-    subs r0, #8
-    mov r1, ip
-    str r1, [r0, #0]
-    mov r1, lr
-    str r1, [r0, #4]
-    mov ip, r0
-    /* Restore user stack and original r0, r1 */
-    pop {r0, r1}
-
-#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
-    /* setup privileged stack */
-    ldr ip, =_kernel
-    ldr ip, [ip, #_kernel_offset_to_current]
-    ldr ip, [ip, #_thread_offset_to_priv_stack_start]    /* priv stack ptr */
-    add ip, #CONFIG_PRIVILEGED_STACK_SIZE
-
-    /* Store current SP and LR at the beginning of the priv stack */
-    subs ip, #8
-    str sp, [ip, #0]
-    str lr, [ip, #4]
-#elif defined(CONFIG_CPU_AARCH32_CORTEX_R)
+#if defined(CONFIG_CPU_AARCH32_CORTEX_R)
     /*
      * The SVC handler has already switched to the privileged stack.
      * Store the user SP and LR at the beginning of the priv stack.
@@ -387,11 +353,6 @@ SECTION_FUNC(TEXT, z_arm_do_syscall)
     push {ip, lr}
 #endif
 
-#if !defined(CONFIG_CPU_AARCH32_CORTEX_R)
-    /* switch to privileged stack */
-    msr PSP, ip
-#endif
-
     /* Note (applies when using stack limit checking):
      * We do not need to lock IRQs after switching PSP to the privileged stack;
      * PSPLIM is guarding the default (user) stack, which, by design, is
@@ -399,14 +360,6 @@ SECTION_FUNC(TEXT, z_arm_do_syscall)
      * privileged stack we are safe, as long as the stack can accommodate
      * the maximum exception stack frame.
      */
-
-#if defined(CONFIG_BUILTIN_STACK_GUARD)
-    /* Set stack pointer limit (needed in privileged mode) */
-    ldr ip, =_kernel
-    ldr ip, [ip, #_kernel_offset_to_current]
-    ldr ip, [ip, #_thread_offset_to_priv_stack_start]    /* priv stack ptr */
-    msr PSPLIM, ip
-#endif
 
     /*
      * r0-r5 contain arguments

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2021 Argentum Systems Ltd.
- # Copyright (c) 2024-2025 Gerson Fernando Budke <nandojve@gmail.com>
+ * # Copyright (c) 2024-2025 Gerson Fernando Budke <nandojve@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,6 +30,7 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led0: led_0 {
 			gpios = <&portb 10 GPIO_ACTIVE_LOW>;
 			label = "Yellow LED";
@@ -38,6 +39,7 @@
 
 	pwmleds {
 		compatible = "pwm-leds";
+
 		pwm_led0: pwm_led_0 {
 			pwms = <&tcc0 0 PWM_MSEC(20)>;
 		};
@@ -45,6 +47,7 @@
 
 	buttons {
 		compatible = "gpio-keys";
+
 		user_button: button_0 {
 			gpios = <&porta 2 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "SW0";

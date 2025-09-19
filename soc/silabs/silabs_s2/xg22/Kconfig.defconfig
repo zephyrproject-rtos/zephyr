@@ -5,9 +5,6 @@ if SOC_SILABS_XG22
 
 config NUM_IRQS
 	# must be >= the highest interrupt number used
-	default 60
-
-config PM
-	select UART_INTERRUPT_DRIVEN
+	default 64
 
 endif

@@ -20,6 +20,9 @@ config SOC_SERIES_STM32N6X
 	select SOC_EARLY_INIT_HOOK
 	select TRUSTED_EXECUTION_SECURE
 	select BUILD_OUTPUT_BIN
+	# MPU_GAP_FILLING is default when !USERSPACE, select it in the other case as well.
+	select MPU_GAP_FILLING if USERSPACE
+	select CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS if USERSPACE && !XIP
 
 config STM32N6_BOOT_SERIAL
 	bool "Serial boot target (USB)"

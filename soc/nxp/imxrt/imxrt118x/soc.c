@@ -653,6 +653,36 @@ __weak void clock_init(void)
 	GPC_CM_EnableCpuSleepHold(1, false);
 }
 
+#ifdef CONFIG_I2S_MCUX_SAI
+void imxrt_audio_codec_pll_init(uint32_t clock_name, uint32_t clk_src, uint32_t clk_pre_div,
+				uint32_t clk_src_div)
+{
+	ARG_UNUSED(clk_pre_div);
+
+	switch (clock_name) {
+	case IMX_CCM_SAI1_CLK:
+		CLOCK_SetRootClockMux(kCLOCK_Root_Sai1, clk_src);
+		CLOCK_SetRootClockDiv(kCLOCK_Root_Sai1, clk_src_div);
+		break;
+	case IMX_CCM_SAI2_CLK:
+		CLOCK_SetRootClockMux(kCLOCK_Root_Sai2, clk_src);
+		CLOCK_SetRootClockDiv(kCLOCK_Root_Sai2, clk_src_div);
+		break;
+	case IMX_CCM_SAI3_CLK:
+		CLOCK_SetRootClockMux(kCLOCK_Root_Sai3, clk_src);
+		CLOCK_SetRootClockDiv(kCLOCK_Root_Sai3, clk_src_div);
+		break;
+	case IMX_CCM_SAI4_CLK:
+		CLOCK_SetRootClockMux(kCLOCK_Root_Sai4, clk_src);
+		CLOCK_SetRootClockDiv(kCLOCK_Root_Sai4, clk_src_div);
+		break;
+	default:
+		return;
+	}
+}
+#endif /* CONFIG_I2S_MCUX_SAI */
+
+
 /**
  * @brief Initialize the system clock
  */

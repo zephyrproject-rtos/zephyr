@@ -65,8 +65,9 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         if not path.exists(cfg.board_dir):
             # try to find the board support in-tree
             cfg_board_path = path.normpath(cfg.board_dir)
-            _temp_path = cfg_board_path.split("boards/")[1]
-            support = path.join(ZEPHYR_BASE, "boards", _temp_path, 'support')
+            boards_parent = cfg_board_path.split('boards')[0]
+            boards_and_below = path.relpath(cfg_board_path, boards_parent)
+            support = path.join(ZEPHYR_BASE, boards_and_below, 'support')
         else:
             support = path.join(cfg.board_dir, 'support')
 
@@ -407,7 +408,12 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
                 + ['-c', f'rtt server start {self.rtt_port} 0']
             )
 
-        gdb_cmd = (self.gdb_cmd + self.tui_arg +
+        if command == 'rtt':
+            # Run GDB in batch mode. This will disable pagination automatically
+            gdb_args = ['--batch']
+        else:
+            gdb_args = []
+        gdb_cmd = (self.gdb_cmd + gdb_args + self.tui_arg +
                    ['-ex', f'target extended-remote :{self.gdb_client_port}',
                     self.elf_name])
         if command == 'debug':
@@ -421,8 +427,6 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
             if rtt_address is None:
                 raise ValueError("RTT Control block not found")
 
-            # cannot prompt the user to press return for automation purposes
-            gdb_cmd.extend(['-ex', 'set pagination off'])
             # start the internal openocd rtt service via gdb monitor commands
             gdb_cmd.extend(
                 ['-ex', f'monitor rtt setup 0x{rtt_address:x} 0x10 "SEGGER RTT"'])

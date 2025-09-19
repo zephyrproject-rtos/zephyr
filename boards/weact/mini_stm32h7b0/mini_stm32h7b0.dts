@@ -22,6 +22,7 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		user_led: led {
 			gpios = <&gpioe 3 GPIO_ACTIVE_HIGH>;
 			label = "User LED";
@@ -30,6 +31,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button: button {
 			label = "User PB";
 			gpios = <&gpioc 13 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
@@ -138,11 +140,11 @@ zephyr_udc0: &usbotg_hs {
 &octospi1 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&octospim_p1_clk_pb2 &octospim_p1_ncs_pb6
-		&octospim_p1_io0_pd11 &octospim_p1_io1_pd12
-		&octospim_p1_io2_pe2 &octospim_p1_io3_pd13>;
+		     &octospim_p1_io0_pd11 &octospim_p1_io1_pd12
+		     &octospim_p1_io2_pe2 &octospim_p1_io3_pd13>;
 	status = "okay";
 
-	w25q64_qspi: ospi-nor-flash@0{
+	w25q64_qspi: ospi-nor-flash@0 {
 		compatible = "st,stm32-ospi-nor";
 		reg = <0>;
 		size = <DT_SIZE_M(64)>; /* 64 Mbits */
@@ -156,6 +158,7 @@ zephyr_udc0: &usbotg_hs {
 			compatible = "fixed-partitions";
 			#address-cells = <1>;
 			#size-cells = <1>;
+
 			slot0_partition: partition@0 {
 				reg = <0x00000000 DT_SIZE_M(64)>;
 			};
@@ -168,6 +171,7 @@ zephyr_udc0: &usbotg_hs {
 	cs-gpios = <&gpiod 6 GPIO_ACTIVE_LOW>;
 	pinctrl-names = "default";
 	status = "okay";
+
 	w25q64_spi: spi-nor-flash@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;
@@ -178,10 +182,12 @@ zephyr_udc0: &usbotg_hs {
 		has-dpd;
 		t-enter-dpd = <3500>;
 		t-exit-dpd = <3500>;
+
 		partitions {
 			compatible = "fixed-partitions";
 			#address-cells = <1>;
 			#size-cells = <1>;
+
 			storage_partition: partition@0 {
 				label = "storage";
 				reg = <0x00000000 DT_SIZE_M(64)>;

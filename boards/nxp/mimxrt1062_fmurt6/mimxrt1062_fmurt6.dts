@@ -40,10 +40,12 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		green_led: led-1 {
 			gpios = <&gpio2 11 GPIO_ACTIVE_HIGH>;
 			label = "User LED1";
 		};
+
 		red_led: led-2 {
 			gpios = <&gpio2 10 GPIO_ACTIVE_LOW>;
 			label = "User LED2";
@@ -110,6 +112,7 @@
 	status = "okay";
 	pinctrl-0 = <&pinmux_flexcan1>;
 	pinctrl-names = "default";
+
 	can-transceiver {
 		max-bitrate = <5000000>;
 	};
@@ -119,6 +122,7 @@
 	status = "disabled";
 	pinctrl-0 = <&pinmux_flexcan2>;
 	pinctrl-names = "default";
+
 	can-transceiver {
 		max-bitrate = <5000000>;
 	};
@@ -128,6 +132,7 @@
 	status = "disabled";
 	pinctrl-0 = <&pinmux_flexcan3>;
 	pinctrl-names = "default";
+
 	can-transceiver {
 		max-bitrate = <5000000>;
 	};
@@ -185,11 +190,12 @@
 	combination-mode;
 	rx-clock-source = <3>;
 	reg = <0x402a8000 0x4000>, <0x60000000 DT_SIZE_M(64)>;
+
 	s26ks512s0: s26ks512s@0 {
 		compatible = "nxp,imx-flexspi-hyperflash";
 		size = <DT_SIZE_M(64*8)>;
 		reg = <0>;
-		spi-max-frequency = <166000000>;
+		spi-max-frequency = <DT_FREQ_M(166)>;
 		word-addressable;
 		cs-interval-unit = <1>;
 		cs-interval = <2>;
@@ -216,14 +222,17 @@
 				label = "mcuboot";
 				reg = <0x00000000 DT_SIZE_K(256)>;
 			};
+
 			slot0_partition: partition@40000 {
 				label = "image-0";
 				reg = <0x00040000 DT_SIZE_M(3)>;
 			};
+
 			slot1_partition: partition@340000 {
 				label = "image-1";
 				reg = <0x00340000 DT_SIZE_M(3)>;
 			};
+
 			storage_partition: partition@640000 {
 				label = "storage";
 				reg = <0x00640000 (DT_SIZE_M(58) - DT_SIZE_K(256))>;
@@ -236,7 +245,6 @@
 	status = "okay";
 	pinctrl-0 = <&pinmux_lpi2c1>;
 	pinctrl-names = "default";
-
 };
 
 &lpi2c2 {
@@ -261,7 +269,6 @@
 		status = "disabled";
 		reg = <0x10>;
 	};
-
 };
 
 &lpuart7 {
@@ -313,11 +320,10 @@
 	ism330dhcx: ism330dhcx@0 {
 		compatible = "st,ism330dhcx";
 		status = "disabled";
-		spi-max-frequency = <1000000>;
+		spi-max-frequency = <DT_FREQ_M(1)>;
 		reg = <0>;
 	};
 };
-
 
 &lpspi3 {
 	status = "okay";
@@ -345,42 +351,42 @@
 	nxp,prescaler = <64>;
 };
 
-&flexpwm2_pwm2	{
+&flexpwm2_pwm2 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm_fmu_ch3>;
 	pinctrl-names = "default";
 	nxp,prescaler = <64>;
 };
 
-&flexpwm2_pwm3	{
+&flexpwm2_pwm3 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm_fmu_ch4>;
 	pinctrl-names = "default";
 	nxp,prescaler = <64>;
 };
 
-&flexpwm3_pwm2	{
+&flexpwm3_pwm2 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm_fmu_ch5>;
 	pinctrl-names = "default";
 	nxp,prescaler = <64>;
 };
 
-&flexpwm3_pwm0	{
+&flexpwm3_pwm0 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm_fmu_ch6>;
 	pinctrl-names = "default";
 	nxp,prescaler = <64>;
 };
 
-&flexpwm4_pwm2	{
+&flexpwm4_pwm2 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm_fmu_ch7>;
 	pinctrl-names = "default";
 	nxp,prescaler = <64>;
 };
 
-&flexpwm4_pwm0	{
+&flexpwm4_pwm0 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm_fmu_ch8>;
 	pinctrl-names = "default";
@@ -404,6 +410,7 @@
 	status = "okay";
 	pinctrl-0 = <&pinmux_enet>;
 	pinctrl-names = "default";
+
 	phy: phy@0 {
 		compatible = "ethernet-phy";
 		reg = <0>;
@@ -425,6 +432,7 @@ zephyr_udc0: &usb1 {
 	pinctrl-2 = <&pinmux_usdhc1_med>;
 	pinctrl-3 = <&pinmux_usdhc1_fast>;
 	pinctrl-names = "default", "slow", "med", "fast";
+
 	sdmmc {
 		compatible = "zephyr,sdmmc-disk";
 		disk-name = "SD";

@@ -117,8 +117,3 @@ jobs:
           echo "You can run this step locally with the ./scripts/ci/check_compliance.py script."
           exit 1;
         fi
-
-        if [ "${{ steps.pr_description.outcome }}" == "failure" ]; then
-          echo "PR description cannot be empty"
-          exit 1;
-        fi

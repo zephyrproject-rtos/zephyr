@@ -572,6 +572,10 @@ zephyr_library_compile_definitions_ifdef(CONFIG_EAP_FAST
   EAP_FAST
 )
 
+zephyr_library_compile_definitions_ifdef(CONFIG_EAP_TLSV1_3
+  EAP_TLSV1_3
+)
+
 zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_EAPOL
   ${HOSTAP_SRC_BASE}/eapol_supp/eapol_supp_sm.c
   ${HOSTAP_SRC_BASE}/eap_peer/eap.c

@@ -6,7 +6,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 #include <arm/armv8-m.dtsi>
 #include <zephyr/dt-bindings/clock/stm32l4_clock.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
@@ -51,12 +50,14 @@
 				substate-id = <1>;
 				min-residency-us = <100>;
 			};
+
 			stop1: state1 {
 				compatible = "zephyr,power-state";
 				power-state-name = "suspend-to-idle";
 				substate-id = <2>;
 				min-residency-us = <500>;
 			};
+
 			stop2: state2 {
 				compatible = "zephyr,power-state";
 				power-state-name = "suspend-to-idle";
@@ -357,7 +358,7 @@
 			clocks = <&rcc STM32_CLOCK(AHB1, 2)>;
 			dma-channels = <16>;
 			dma-generators = <4>;
-			dma-requests= <90>;
+			dma-requests = <90>;
 			status = "disabled";
 		};
 
@@ -439,7 +440,7 @@
 			interrupts = <76 0>;
 			clock-names = "ospix", "ospi-ker";
 			clocks = <&rcc STM32_CLOCK(AHB3, 8)>,
-					<&rcc STM32_SRC_SYSCLK OSPI_SEL(0)>;
+				 <&rcc STM32_SRC_SYSCLK OSPI_SEL(0)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
@@ -783,7 +784,6 @@
 		i2c = <&i2c2>;
 		status = "disabled";
 	};
-
 };
 
 &nvic {

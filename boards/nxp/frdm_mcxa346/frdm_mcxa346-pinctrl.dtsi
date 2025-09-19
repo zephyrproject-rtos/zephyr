@@ -3,14 +3,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 #include <nxp/mcx/MCXA346VLQ-pinctrl.h>
 
 &pinctrl {
 	pinmux_lpuart2: pinmux_lpuart2 {
 		group0 {
 			pinmux = <LPUART2_RXD_P2_3>,
-				<LPUART2_TXD_P2_2>;
+				 <LPUART2_TXD_P2_2>;
 			drive-strength = "low";
 			slew-rate = "fast";
 			input-enable;
@@ -20,7 +19,7 @@
 	pinmux_lpuart3: pinmux_lpuart3 {
 		group0 {
 			pinmux = <LPUART3_RXD_P4_2>,
-				<LPUART3_TXD_P4_5>;
+				 <LPUART3_TXD_P4_5>;
 			drive-strength = "low";
 			slew-rate = "fast";
 			input-enable;
@@ -34,6 +33,7 @@
 			drive-strength = "low";
 		};
 	};
+
 	pinmux_lpcmp0: pinmux_lpcmp0 {
 		group0 {
 			pinmux = <CMP0_IN1_P1_3>;
@@ -42,10 +42,11 @@
 			bias-pull-up;
 		};
 	};
+
 	pinmux_lpi2c1: pinmux_lpi2c1 {
 		group0 {
 			pinmux = <LPI2C1_SDA_P1_0>,
-			    <LPI2C1_SCL_P1_1>;
+				 <LPI2C1_SCL_P1_1>;
 			slew-rate = "fast";
 			drive-strength = "low";
 			input-enable;
@@ -53,10 +54,11 @@
 			drive-open-drain;
 		};
 	};
+
 	pinmux_lpi2c2: pinmux_lpi2c2 {
 		group0 {
 			pinmux = <LPI2C2_SDA_P1_8>,
-			    <LPI2C2_SCL_P1_9>;
+				 <LPI2C2_SCL_P1_9>;
 			slew-rate = "fast";
 			drive-strength = "low";
 			input-enable;
@@ -64,10 +66,11 @@
 			drive-open-drain;
 		};
 	};
+
 	pinmux_lpi2c3: pinmux_lpi2c3 {
 		group0 {
 			pinmux = <LPI2C3_SDA_P3_28>,
-			    <LPI2C3_SCL_P3_27>;
+				 <LPI2C3_SCL_P3_27>;
 			slew-rate = "fast";
 			drive-strength = "low";
 			input-enable;

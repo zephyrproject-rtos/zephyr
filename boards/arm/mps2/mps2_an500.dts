@@ -11,6 +11,7 @@
 /* hence we delete them for AN500 in FVP */
 /delete-node/ &uart3;
 /delete-node/ &uart4;
+
 / {
 	cpus {
 		#address-cells = <1>;

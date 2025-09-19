@@ -19,6 +19,7 @@
 		blue-pwm-led = &blue_pwm_led;
 		green-pwm-led = &green_pwm_led;
 		red-pwm-led = &red_pwm_led;
+		rtc = &counter_rtc;
 	};
 
 	chosen {
@@ -36,6 +37,7 @@
 
 	user_led {
 		compatible = "gpio-leds";
+
 		blue_led: led {
 			gpios = <&gpioc 1 GPIO_ACTIVE_LOW>;
 		};
@@ -43,12 +45,15 @@
 
 	pwmleds {
 		compatible = "pwm-leds";
+
 		blue_pwm_led: pwm_led_0 {
 			pwms = <&tpm0 1 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 		};
+
 		green_pwm_led: pwm_led_1 {
 			pwms = <&tpm0 2 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 		};
+
 		red_pwm_led: pwm_led_2 {
 			pwms = <&tpm0 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 		};
@@ -56,6 +61,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button_0: button_0 {
 			label = "User SW2";
 			gpios = <&gpioc 6 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
@@ -108,14 +114,14 @@
 
 &lpuart0 {
 	current-speed = <115200>;
-	status =  "okay";
+	status = "okay";
 	pinctrl-0 = <&pinmux_lpuart0>;
 	pinctrl-names = "default";
 };
 
 &lpuart1 {
 	current-speed = <115200>;
-	status =  "okay";
+	status = "okay";
 	pinctrl-0 = <&pinmux_lpuart1>;
 	pinctrl-names = "default";
 };
@@ -156,7 +162,7 @@
 		/* this is the default (reset) mode for this flash */
 		mxicy,mx25r-power-mode = "low-power";
 		/* 8 MHz for low power mode */
-		spi-max-frequency = <8000000>;
+		spi-max-frequency = <DT_FREQ_M(8)>;
 	};
 };
 
@@ -173,12 +179,15 @@
 		boot_partition: partition@0 {
 			reg = <0x0 DT_SIZE_K(64)>;
 		};
+
 		slot0_partition: partition@10000 {
 			reg = <0x10000 DT_SIZE_K(424)>;
 		};
+
 		slot1_partition: partition@7A000 {
 			reg = <0x7A000 DT_SIZE_K(424)>;
 		};
+
 		storage_partition: partition@E4000 {
 			reg = <0xE4000 DT_SIZE_K(112)>;
 		};
@@ -221,5 +230,9 @@
 };
 
 &rtc {
+	status = "okay";
+};
+
+&counter_rtc {
 	status = "okay";
 };

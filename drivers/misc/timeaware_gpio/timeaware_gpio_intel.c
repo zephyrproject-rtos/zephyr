@@ -17,6 +17,8 @@
 /* TGPIO Register offsets */
 #define ART_L           0x00 /* ART lower 32 bit reg */
 #define ART_H           0x04 /* ART higher 32 bit reg */
+#define ART_CTRL	0x08 /* ART Control 32 bit reg */
+#define ART_TIMEOUT	100 /* ART control update timeout */
 #define CTL             0x10 /* TGPIO control reg */
 #define COMPV31_0       0x20 /* Comparator lower 32 bit reg */
 #define COMPV63_32      0x24 /* Comparator higher 32 bit reg */
@@ -32,7 +34,14 @@
 #define UINT32_MASK     0xFFFFFFFF /* 32 bit Mask */
 #define UINT32_SIZE     32
 
-/* Control Register */
+/*
+ * ART Control Register.
+ * This register is existing on latest platforms.
+ * Used to control reads to ART.
+ */
+#define ART_CTRL_CAPT		BIT(0) /* ART control capture */
+
+/* TGPIO Control Register */
 #define CTL_EN                  BIT(0) /* Control enable */
 #define CTL_DIR                 BIT(1) /* Control disable */
 #define CTL_EP                  GENMASK(3, 2) /* Recerved polarity */
@@ -53,6 +62,7 @@ struct tgpio_config {
 	DEVICE_MMIO_NAMED_ROM(reg_base);
 	uint32_t max_pins;
 	uint32_t art_clock_freq;
+	bool artv_ctrl;
 };
 
 struct tgpio_runtime {
@@ -67,6 +77,18 @@ static mm_reg_t regs(const struct device *dev)
 static int tgpio_intel_get_time(const struct device *dev,
 					uint64_t *current_time)
 {
+	if (DEV_CFG(dev)->artv_ctrl) {
+		uint8_t i = 0;
+
+		sys_write32(sys_read32(regs(dev) + ART_CTRL) | ART_CTRL_CAPT,
+			    regs(dev) + ART_CTRL);
+		while (sys_read32(regs(dev) + ART_CTRL) & ART_CTRL_CAPT) {
+			i++;
+			if (i == ART_TIMEOUT) {
+				return -ETIMEDOUT;
+			}
+		}
+	}
 	*current_time = sys_read32(regs(dev) + ART_L);
 	*current_time += ((uint64_t)sys_read32(regs(dev) + ART_H) << UINT32_SIZE);
 
@@ -216,6 +238,7 @@ static int tgpio_init(const struct device *dev)
 		DEVICE_MMIO_NAMED_ROM_INIT(reg_base, DT_DRV_INST(n)),	       \
 		.max_pins = DT_INST_PROP(n, max_pins),			       \
 		.art_clock_freq = DT_INST_PROP(n, timer_clock),		       \
+		.artv_ctrl = DT_INST_PROP(n, artv_ctrl),		       \
 	};								       \
 									       \
 	static struct tgpio_runtime tgpio_##n##_runtime;		       \

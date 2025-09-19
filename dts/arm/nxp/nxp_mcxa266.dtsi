@@ -5,6 +5,7 @@
  */
 
 #include <mem.h>
+#include <freq.h>
 #include <arm/armv8-m.dtsi>
 #include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
@@ -272,7 +273,7 @@
 			flash: flash@0 {
 				compatible = "soc-nv-flash";
 				reg = <0 DT_SIZE_M(1)>;
-				erase-block-size = <8192>;
+				erase-block-size = <DT_SIZE_K(8)>;
 				write-block-size = <128>;
 			};
 
@@ -291,7 +292,7 @@
 
 			reg = <0x40080000 0x1000>;
 			interrupts = <2 0>, <3 0>, <4 0>, <5 0>,
-				<6 0>, <7 0>, <8 0>, <9 0>;
+				     <6 0>, <7 0>, <8 0>, <9 0>;
 			no-error-irq;
 			status = "disabled";
 		};
@@ -316,7 +317,7 @@
 			status = "disabled";
 			clk-divider = <1>;
 			clk-source = <0>;
-			voltage-ref= <2>;
+			voltage-ref = <2>;
 			calibration-average = <128>;
 			power-level = <0>;
 			offset-value-a = <0>;
@@ -337,7 +338,7 @@
 			status = "disabled";
 			clk-divider = <1>;
 			clk-source = <0>;
-			voltage-ref= <2>;
+			voltage-ref = <2>;
 			calibration-average = <128>;
 			power-level = <1>;
 			offset-value-a = <0>;

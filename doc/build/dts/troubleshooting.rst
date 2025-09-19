@@ -21,6 +21,15 @@ This is general advice which is especially applicable to debugging devicetree
 issues, because the outputs are created during the CMake configuration phase,
 and are not always regenerated when one of their inputs changes.
 
+Use Devicetree diagnostics tool (DT Doctor)
+*******************************************
+
+An optional Devicetree diagnostics tool is available to help diagnose Devicetree issues. It can
+be enabled by passing the ``-DZEPHYR_SCA_VARIANT=dtdoctor`` argument to
+:ref:`west build <west-building>`.
+
+See :ref:`dtdoctor` for more information.
+
 Make sure <devicetree.h> is included
 ************************************
 

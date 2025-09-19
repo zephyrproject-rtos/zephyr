@@ -24,6 +24,7 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led0: led_0 {
 			gpios = <&portb 8 0>;
 			label = "LED";
@@ -54,7 +55,6 @@ zephyr_i2c: &sercom0 {
 		compatible = "atmel,atecc508";
 		reg = <0xc0>;
 	};
-
 };
 
 &sercom1 {
@@ -87,6 +87,7 @@ zephyr_i2c: &sercom0 {
 		reg = <0>;
 		status = "okay";
 		spi-max-frequency = <1000000>;
+
 		mmc {
 			compatible = "zephyr,sdmmc-disk";
 			disk-name = "SD";

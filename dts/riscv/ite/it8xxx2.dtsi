@@ -27,6 +27,7 @@
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
+
 		cpu0: cpu@0 {
 			compatible = "ite,riscv-ite", "riscv";
 			riscv,isa = "rv32imafc_zifencei";
@@ -56,6 +57,7 @@
 			status = "okay";
 			reg = <0x00f02200 0xc0>;
 		};
+
 		flashctrl: flash-controller@f01000 {
 			compatible = "ite,it8xxx2-flash-controller";
 			reg = <0x00f01000 0x100>;
@@ -74,6 +76,7 @@
 			compatible = "mmio-sram";
 			reg = <0x80100000 DT_SIZE_K(60)>;
 		};
+
 		ilm: ilm@f01040 {
 			compatible = "ite,it8xxx2-ilm";
 			reg = <0xf01040 3	/* SCAR0 */
@@ -112,6 +115,7 @@
 			interrupt-parent = <&intc>;
 			reg-shift = <0>;
 		};
+
 		uart2: uart@f02800 {
 			compatible = "ns16550";
 			reg = <0x00f02800 0x0020>;
@@ -312,13 +316,13 @@
 			ngpios = <8>;
 			gpio-controller;
 			interrupts = <IT8XXX2_IRQ_WU60 IRQ_TYPE_LEVEL_HIGH
-				IT8XXX2_IRQ_WU61 IRQ_TYPE_LEVEL_HIGH
-				IT8XXX2_IRQ_WU62 IRQ_TYPE_LEVEL_HIGH
-				IT8XXX2_IRQ_WU63 IRQ_TYPE_LEVEL_HIGH
-				IT8XXX2_IRQ_WU88 IRQ_TYPE_LEVEL_HIGH
-				IT8XXX2_IRQ_WU89 IRQ_TYPE_LEVEL_HIGH
-				IT8XXX2_IRQ_WU90 IRQ_TYPE_LEVEL_HIGH
-				0 IRQ_TYPE_LEVEL_HIGH>;
+				      IT8XXX2_IRQ_WU61 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU62 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU63 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU88 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU89 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU90 IRQ_TYPE_LEVEL_HIGH
+				      0 IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-parent = <&intc>;
 			wakeup-source;   /* WUI17 */
 			#gpio-cells = <2>;
@@ -413,13 +417,13 @@
 			ngpios = <7>;
 			gpio-controller;
 			interrupts = <IT8XXX2_IRQ_WU144 IRQ_TYPE_LEVEL_HIGH
-				IT8XXX2_IRQ_WU145 IRQ_TYPE_LEVEL_HIGH
-				IT8XXX2_IRQ_WU146 IRQ_TYPE_LEVEL_HIGH
-				IT8XXX2_IRQ_WU147 IRQ_TYPE_LEVEL_HIGH
-				IT8XXX2_IRQ_WU148 IRQ_TYPE_LEVEL_HIGH
-				IT8XXX2_IRQ_WU149 IRQ_TYPE_LEVEL_HIGH
-				IT8XXX2_IRQ_WU150 IRQ_TYPE_LEVEL_HIGH
-				0 IRQ_TYPE_LEVEL_HIGH>;
+				      IT8XXX2_IRQ_WU145 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU146 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU147 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU148 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU149 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU150 IRQ_TYPE_LEVEL_HIGH
+				      0 IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-parent = <&intc>;
 			#gpio-cells = <2>;
 		};
@@ -461,6 +465,7 @@
 			buffer-rx-size = <256>;
 			buffer-tx-size = <256>;
 		};
+
 		adc0: adc@f01900 {
 			compatible = "ite,it8xxx2-adc";
 			reg = <0xf01900 0x45>;
@@ -469,6 +474,7 @@
 			status = "disabled";
 			#io-channel-cells = <1>;
 		};
+
 		vcmp0: vcmp@f01946 {
 			compatible = "ite,it8xxx2-vcmp";
 			reg = <0xf01946 0x01   /* VCMP0CTL */
@@ -483,6 +489,7 @@
 			vcmp-ch = <VCMP_CHANNEL_0>;
 			status = "disabled";
 		};
+
 		vcmp1: vcmp@f01949 {
 			compatible = "ite,it8xxx2-vcmp";
 			reg = <0xf01949 0x01   /* VCMP1CTL */
@@ -497,6 +504,7 @@
 			vcmp-ch = <VCMP_CHANNEL_1>;
 			status = "disabled";
 		};
+
 		vcmp2: vcmp@f0194c {
 			compatible = "ite,it8xxx2-vcmp";
 			reg = <0xf0194c 0x01   /* VCMP2CTL */
@@ -511,6 +519,7 @@
 			vcmp-ch = <VCMP_CHANNEL_2>;
 			status = "disabled";
 		};
+
 		vcmp3: vcmp@f0196e {
 			compatible = "ite,it8xxx2-vcmp";
 			reg = <0xf0196e 0x01   /* VCMP3CTL */
@@ -525,6 +534,7 @@
 			vcmp-ch = <VCMP_CHANNEL_3>;
 			status = "disabled";
 		};
+
 		vcmp4: vcmp@f01971 {
 			compatible = "ite,it8xxx2-vcmp";
 			reg = <0xf01971 0x01   /* VCMP4CTL */
@@ -539,6 +549,7 @@
 			vcmp-ch = <VCMP_CHANNEL_4>;
 			status = "disabled";
 		};
+
 		vcmp5: vcmp@f01974 {
 			compatible = "ite,it8xxx2-vcmp";
 			reg = <0xf01974 0x01   /* VCMP5CTL */
@@ -559,10 +570,12 @@
 			reg = <0x00f01e00 0x11>;
 			reg-names = "ecpm";
 		};
+
 		prs: pwmprs@f01800 {
 			compatible = "ite,it8xxx2-pwmprs";
 			reg = <0x00f01800 1>;
 		};
+
 		pwm0: pwm@f01802 {
 			compatible = "ite,it8xxx2-pwm";
 			reg = <0x00f01802 1   /* DCR */
@@ -574,6 +587,7 @@
 			pwmctrl = <&prs>;
 			#pwm-cells = <3>;
 		};
+
 		pwm1: pwm@f01803 {
 			compatible = "ite,it8xxx2-pwm";
 			reg = <0x00f01803 1   /* DCR */
@@ -585,6 +599,7 @@
 			pwmctrl = <&prs>;
 			#pwm-cells = <3>;
 		};
+
 		pwm2: pwm@f01804 {
 			compatible = "ite,it8xxx2-pwm";
 			reg = <0x00f01804 1   /* DCR */
@@ -596,6 +611,7 @@
 			pwmctrl = <&prs>;
 			#pwm-cells = <3>;
 		};
+
 		pwm3: pwm@f01805 {
 			compatible = "ite,it8xxx2-pwm";
 			reg = <0x00f01805 1   /* DCR */
@@ -607,6 +623,7 @@
 			pwmctrl = <&prs>;
 			#pwm-cells = <3>;
 		};
+
 		pwm4: pwm@f01806 {
 			compatible = "ite,it8xxx2-pwm";
 			reg = <0x00f01806 1   /* DCR */
@@ -618,6 +635,7 @@
 			pwmctrl = <&prs>;
 			#pwm-cells = <3>;
 		};
+
 		pwm5: pwm@f01807 {
 			compatible = "ite,it8xxx2-pwm";
 			reg = <0x00f01807 1   /* DCR */
@@ -629,6 +647,7 @@
 			pwmctrl = <&prs>;
 			#pwm-cells = <3>;
 		};
+
 		pwm6: pwm@f01808 {
 			compatible = "ite,it8xxx2-pwm";
 			reg = <0x00f01808 1   /* DCR */
@@ -640,6 +659,7 @@
 			pwmctrl = <&prs>;
 			#pwm-cells = <3>;
 		};
+
 		pwm7: pwm@f01809 {
 			compatible = "ite,it8xxx2-pwm";
 			reg = <0x00f01809 1   /* DCR */
@@ -651,6 +671,7 @@
 			pwmctrl = <&prs>;
 			#pwm-cells = <3>;
 		};
+
 		tach0: tach@f0181e {
 			compatible = "ite,it8xxx2-tach";
 			reg = <0x00f0181e 1   /* F1TLRR */
@@ -660,6 +681,7 @@
 			chsel-bit = <BIT(2)>;
 			status = "disabled";
 		};
+
 		tach1: tach@f01820 {
 			compatible = "ite,it8xxx2-tach";
 			reg = <0x00f01820 1   /* F2TLRR */
@@ -678,7 +700,7 @@
 		peci0: peci@f02c00 {
 			compatible = "ite,it8xxx2-peci";
 			reg = <0x00f02c00 15>;
-			#address-cells=<1>;
+			#address-cells = <1>;
 			#size-cells = <0>;
 			interrupt-parent = <&intc>;
 			interrupts = <160 IRQ_TYPE_LEVEL_HIGH>;

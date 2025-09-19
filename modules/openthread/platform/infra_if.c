@@ -5,24 +5,32 @@
  */
 
 #include "openthread/platform/infra_if.h"
-#include <zephyr/net/net_if.h>
-#include <zephyr/kernel.h>
-#include <zephyr/net/ethernet.h>
-#include <zephyr/net/socket.h>
-#include <zephyr/net/net_ip.h>
-#include <zephyr/net/net_pkt.h>
-#include <route.h>
-#include "ipv6.h"
 #include "icmpv6.h"
-#include <zephyr/net/openthread.h>
-#include <zephyr/net/mld.h>
-#include <platform-zephyr.h>
+#include "ipv6.h"
 #include "openthread_border_router.h"
 #include <common/code_utils.hpp>
+#include <platform-zephyr.h>
+#include <route.h>
+#include <zephyr/kernel.h>
+#include <zephyr/net/ethernet.h>
+#include <zephyr/net/icmp.h>
+#include <zephyr/net/mld.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/openthread.h>
+#include <zephyr/net/socket.h>
+#include <zephyr/net/icmp.h>
+#include <icmpv6.h>
 
 static struct otInstance *ot_instance;
 static struct net_if *ail_iface_ptr;
+static uint32_t ail_iface_index;
+static struct net_icmp_ctx ra_ctx;
+static struct net_icmp_ctx rs_ctx;
+static struct net_icmp_ctx na_ctx;
 
+static void infra_if_handle_backbone_icmp6(struct otbr_msg_ctx *msg_ctx_ptr);
 static void handle_ra_from_ot(const uint8_t *buffer, uint16_t buffer_length);
 
 otError otPlatInfraIfSendIcmp6Nd(uint32_t aInfraIfIndex, const otIp6Address *aDestAddress,
@@ -35,10 +43,9 @@ otError otPlatInfraIfSendIcmp6Nd(uint32_t aInfraIfIndex, const otIp6Address *aDe
 
 	if (aBuffer[0] == NET_ICMPV6_RA) {
 		handle_ra_from_ot(aBuffer, aBufferLength);
-		net_ipv6_addr_create_ll_allnodes_mcast(&dst);
-	} else { /* Router solicitation */
-		net_ipv6_addr_create_ll_allrouters_mcast(&dst);
 	}
+
+	memcpy(&dst, aDestAddress, sizeof(otIp6Address));
 
 	src = net_if_ipv6_select_src_addr(ail_iface_ptr, &dst);
 	VerifyOrExit(!net_ipv6_is_addr_unspecified(src), error = OT_ERROR_FAILED);
@@ -58,7 +65,7 @@ otError otPlatInfraIfSendIcmp6Nd(uint32_t aInfraIfIndex, const otIp6Address *aDe
 
 exit:
 	if (error == OT_ERROR_FAILED) {
-		if (pkt) {
+		if (pkt != NULL) {
 			net_pkt_unref(pkt);
 			pkt = NULL;
 		}
@@ -86,7 +93,7 @@ bool otPlatInfraIfHasAddress(uint32_t aInfraIfIndex, const otIp6Address *aAddres
 			continue;
 		}
 		ifaddr = net_if_ipv6_addr_lookup_by_iface(tmp, &addr);
-		if (ifaddr) {
+		if (ifaddr != NULL) {
 			return true;
 		} else {
 			return false;
@@ -112,13 +119,12 @@ otError infra_if_init(otInstance *instance, struct net_if *ail_iface)
 {
 	otError error = OT_ERROR_NONE;
 	struct in6_addr addr = {0};
-	int ret;
 
 	ot_instance = instance;
 	ail_iface_ptr = ail_iface;
+	ail_iface_index = (uint32_t)net_if_get_by_iface(ail_iface_ptr);
 	net_ipv6_addr_create_ll_allrouters_mcast(&addr);
-	ret = net_ipv6_mld_join(ail_iface, &addr);
-	VerifyOrExit(ret == 0, error = OT_ERROR_FAILED);
+	VerifyOrExit(net_ipv6_mld_join(ail_iface, &addr) == 0, error = OT_ERROR_FAILED);
 
 exit:
 	return error;
@@ -157,7 +163,7 @@ static void handle_ra_from_ot(const uint8_t *buffer, uint16_t buffer_length)
 				     (0U)), 0U, &addr_to_add_from_pio,
 							       net_if_get_link_addr(ail_iface_ptr));
 			ifaddr = net_if_ipv6_addr_lookup(&addr_to_add_from_pio, NULL);
-			if (ifaddr) {
+			if (ifaddr != NULL) {
 				net_if_addr_set_lf(ifaddr, true);
 			}
 			net_if_ipv6_addr_add(ail_iface_ptr, &addr_to_add_from_pio,
@@ -186,4 +192,65 @@ static void handle_ra_from_ot(const uint8_t *buffer, uint16_t buffer_length)
 			break;
 		}
 	}
+}
+
+static int handle_icmp6_input(struct net_icmp_ctx *ctx, struct net_pkt *pkt,
+			      struct net_icmp_ip_hdr *hdr,
+			      struct net_icmp_hdr *icmp_hdr, void *user_data)
+{
+	uint16_t length = net_pkt_get_len(pkt);
+	struct otbr_msg_ctx *req = NULL;
+	otError error = OT_ERROR_NONE;
+
+	VerifyOrExit(openthread_border_router_allocate_message((void **)&req) == OT_ERROR_NONE,
+		     error = OT_ERROR_FAILED);
+
+	if (net_buf_linearize(req->buffer, sizeof(req->buffer),
+			      pkt->buffer, 0, length) == length) {
+		req->length = length;
+		memcpy(&req->addr, hdr->ipv6->src, sizeof(req->addr));
+		req->cb = infra_if_handle_backbone_icmp6;
+
+		openthread_border_router_post_message(req);
+	} else {
+		openthread_border_router_deallocate_message((void *)req);
+		ExitNow(error = OT_ERROR_FAILED);
+	}
+
+exit:
+	if (error == OT_ERROR_NONE) {
+		return 0;
+	}
+
+	return -1;
+}
+
+static void infra_if_handle_backbone_icmp6(struct otbr_msg_ctx *msg_ctx_ptr)
+{
+	otPlatInfraIfRecvIcmp6Nd(
+		ot_instance, ail_iface_index, &msg_ctx_ptr->addr,
+		(const uint8_t *)&msg_ctx_ptr->buffer[sizeof(struct net_ipv6_hdr)],
+		msg_ctx_ptr->length);
+}
+
+otError infra_if_start_icmp6_listener(void)
+{
+	otError error = OT_ERROR_NONE;
+
+	VerifyOrExit(net_icmp_init_ctx(&ra_ctx, NET_ICMPV6_RA, 0, handle_icmp6_input) == 0,
+		     error = OT_ERROR_FAILED);
+	VerifyOrExit(net_icmp_init_ctx(&rs_ctx, NET_ICMPV6_RS, 0, handle_icmp6_input) == 0,
+		     error = OT_ERROR_FAILED);
+	VerifyOrExit(net_icmp_init_ctx(&na_ctx, NET_ICMPV6_NA, 0, handle_icmp6_input) == 0,
+		     error = OT_ERROR_FAILED);
+
+exit:
+	return error;
+}
+
+void infra_if_stop_icmp6_listener(void)
+{
+	(void)net_icmp_cleanup_ctx(&ra_ctx);
+	(void)net_icmp_cleanup_ctx(&rs_ctx);
+	(void)net_icmp_cleanup_ctx(&na_ctx);
 }

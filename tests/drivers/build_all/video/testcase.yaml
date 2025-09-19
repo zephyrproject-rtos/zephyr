@@ -36,3 +36,8 @@ tests:
       - stm32n6570_dk/stm32n657xx/sb
     extra_args:
       - platform:stm32n6570_dk/stm32n657xx/sb:SHIELD=st_b_cams_imx_mb1854
+  drivers.video.renesas_ra_ceu.build:
+    platform_allow:
+      - ek_ra8d1/r7fa8d1bhecbd
+    extra_args:
+      - platform:ek_ra81/r7fa8d1bhecbd:SHIELD="dvp_20pin_ov7670"

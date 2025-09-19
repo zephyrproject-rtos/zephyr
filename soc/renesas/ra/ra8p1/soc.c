@@ -69,6 +69,7 @@ void soc_early_init_hook(void)
 
 	sys_cache_data_enable();
 #endif
+
 #endif /*CONFIG_CPU_CORTEX_M85*/
 
 #ifdef CONFIG_CPU_CORTEX_M33
@@ -91,3 +92,12 @@ void soc_early_init_hook(void)
 #endif
 #endif /*CONFIG_CPU_CORTEX_M33*/
 }
+
+#ifdef CONFIG_SOC_LATE_INIT_HOOK
+void soc_late_init_hook(void)
+{
+#ifdef CONFIG_SOC_RA_ENABLE_START_SECOND_CORE
+	R_BSP_SecondaryCoreStart();
+#endif /* CONFIG_SOC_RA_ENABLE_START_SECOND_CORE */
+}
+#endif /* CONFIG_SOC_LATE_INIT_HOOK */

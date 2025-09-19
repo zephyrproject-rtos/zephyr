@@ -136,11 +136,13 @@
 				#pwm-cells = <3>;
 				status = "disabled";
 			};
+
 			pwm1: pwm1 {
 				compatible = "ti,cc23x0-lgpt-pwm";
 				#pwm-cells = <3>;
 				status = "disabled";
 			};
+
 			pwm2: pwm2 {
 				compatible = "ti,cc23x0-lgpt-pwm";
 				#pwm-cells = <3>;
@@ -161,11 +163,13 @@
 				#pwm-cells = <3>;
 				status = "disabled";
 			};
+
 			pwm4: pwm1 {
 				compatible = "ti,cc23x0-lgpt-pwm";
 				#pwm-cells = <3>;
 				status = "disabled";
 			};
+
 			pwm5: pwm2 {
 				compatible = "ti,cc23x0-lgpt-pwm";
 				#pwm-cells = <3>;
@@ -186,11 +190,13 @@
 				#pwm-cells = <3>;
 				status = "disabled";
 			};
+
 			pwm7: pwm1 {
 				compatible = "ti,cc23x0-lgpt-pwm";
 				#pwm-cells = <3>;
 				status = "disabled";
 			};
+
 			pwm8: pwm2 {
 				compatible = "ti,cc23x0-lgpt-pwm";
 				#pwm-cells = <3>;
@@ -211,11 +217,13 @@
 				#pwm-cells = <3>;
 				status = "disabled";
 			};
+
 			pwm10: pwm1 {
 				compatible = "ti,cc23x0-lgpt-pwm";
 				#pwm-cells = <3>;
 				status = "disabled";
 			};
+
 			pwm11: pwm2 {
 				compatible = "ti,cc23x0-lgpt-pwm";
 				#pwm-cells = <3>;
@@ -230,6 +238,15 @@
 			#io-channel-cells = <1>;
 			dmas = <&dma 3 5>;
 			dma-names = "dma";
+			status = "disabled";
+		};
+
+		i2c0: i2c@40038000 {
+			compatible = "ti,cc23x0-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40038000 0x820>;
+			interrupts = <12 0>;
 			status = "disabled";
 		};
 	};

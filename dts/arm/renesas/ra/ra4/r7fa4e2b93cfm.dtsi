@@ -122,40 +122,43 @@
 			};
 		};
 
-		option_setting_ofs_conf: option-setting-ofs-conf@100a100 {
-			compatible = "zephyr,memory-region";
+		option-setting-ofs-conf@100a100 {
 			reg = <0x0100a100 0x200>;
-			zephyr,memory-region = "OFS_CONF_MEMORY";
 			#address-cells = <1>;
-			#size-cells = <0>;
+			#size-cells = <1>;
 			status = "okay";
 
 			option_setting_ofs0: option-setting-ofs0@100a100 {
-				compatible = "renesas,ofs-memory";
+				compatible = "zephyr,memory-region";
+				zephyr,memory-region = "OFS_OFS0_MEMORY";
 				reg = <0x0100a100 0x4>;
 				status = "okay";
 			};
 
 			option_setting_osis: option-setting-osis@100a120 {
-				compatible = "renesas,ofs-memory";
+				compatible = "zephyr,memory-region";
+				zephyr,memory-region = "OFS_OSIS_MEMORY";
 				reg = <0x0100a120 0x10>;
 				status = "okay";
 			};
 
 			option_setting_ofs1_sec: option-setting-ofs1-sec@100a200 {
-				compatible = "renesas,ofs-memory";
+				compatible = "zephyr,memory-region";
+				zephyr,memory-region = "OFS_OFS1_SEC_MEMORY";
 				reg = <0x0100a200 0x4>;
 				status = "okay";
 			};
 
 			option_setting_bps_sec: option-setting-bps-sec@100a240 {
-				compatible = "renesas,ofs-memory";
+				compatible = "zephyr,memory-region";
+				zephyr,memory-region = "OFS_BPS_SEC_MEMORY";
 				reg = <0x0100a240 0x4>;
 				status = "okay";
 			};
 
 			option_setting_pbps_sec: option-setting-pbps-sec@100a260 {
-				compatible = "renesas,ofs-memory";
+				compatible = "zephyr,memory-region";
+				zephyr,memory-region = "OFS_PBPS_SEC_MEMORY";
 				reg = <0x0100a260 0x4>;
 				status = "okay";
 			};
@@ -213,7 +216,7 @@
 			compatible = "renesas,ra-cgc-pclk-block";
 			reg = <0x40084000 4>, <0x40084004 4>, <0x40084008 4>,
 			      <0x4008400c 4>, <0x40084010 4>;
-			reg-names = "MSTPA", "MSTPB","MSTPC",
+			reg-names = "MSTPA", "MSTPB", "MSTPC",
 				    "MSTPD", "MSTPE";
 			#clock-cells = <0>;
 			clocks = <&pll>;
@@ -297,8 +300,8 @@
 
 &ioport0 {
 	port-irqs = <&port_irq6 &port_irq7 &port_irq8
-	&port_irq9 &port_irq10 &port_irq11
-	&port_irq12 &port_irq13>;
+		     &port_irq9 &port_irq10 &port_irq11
+		     &port_irq12 &port_irq13>;
 	port-irq-names = "port-irq6",
 			 "port-irq7",
 			 "port-irq8",
@@ -319,7 +322,7 @@
 
 &ioport1 {
 	port-irqs = <&port_irq0 &port_irq1 &port_irq2
-	&port_irq3 &port_irq4>;
+		     &port_irq3 &port_irq4>;
 	port-irq-names = "port-irq0",
 			 "port-irq1",
 			 "port-irq2",
@@ -334,7 +337,7 @@
 
 &ioport2 {
 	port-irqs = <&port_irq0 &port_irq1 &port_irq2
-	&port_irq3>;
+		     &port_irq3>;
 	port-irq-names = "port-irq0",
 			 "port-irq1",
 			 "port-irq2",
@@ -357,7 +360,7 @@
 
 &ioport4 {
 	port-irqs = <&port_irq0 &port_irq4 &port_irq5
-	&port_irq6 &port_irq7 &port_irq14>;
+		     &port_irq6 &port_irq7 &port_irq14>;
 	port-irq-names = "port-irq0",
 			 "port-irq4",
 			 "port-irq5",

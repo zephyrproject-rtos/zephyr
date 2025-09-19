@@ -25,48 +25,63 @@
 		s_led0: s-led-0 {
 			pwms = <&pca9685_adafruit_pca9685 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 		};
+
 		s_led1: s-led-1 {
 			pwms = <&pca9685_adafruit_pca9685 1 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 		};
+
 		s_led2: s-led-2 {
 			pwms = <&pca9685_adafruit_pca9685 2 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 		};
+
 		s_led3: s-led-3 {
 			pwms = <&pca9685_adafruit_pca9685 3 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 		};
+
 		s_led4: s-led-4 {
 			pwms = <&pca9685_adafruit_pca9685 4 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 		};
+
 		s_led5: s-led-5 {
 			pwms = <&pca9685_adafruit_pca9685 5 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 		};
+
 		s_led6: s-led-6 {
 			pwms = <&pca9685_adafruit_pca9685 6 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 		};
+
 		s_led7: s-led-7 {
 			pwms = <&pca9685_adafruit_pca9685 7 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 		};
+
 		s_led8: s-led-8 {
 			pwms = <&pca9685_adafruit_pca9685 8 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 		};
+
 		s_led9: s-led-9 {
 			pwms = <&pca9685_adafruit_pca9685 9 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 		};
+
 		s_led10: s-led-10 {
 			pwms = <&pca9685_adafruit_pca9685 10 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 		};
+
 		s_led11: s-led-11 {
 			pwms = <&pca9685_adafruit_pca9685 11 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 		};
+
 		s_led12: s-led-12 {
 			pwms = <&pca9685_adafruit_pca9685 12 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 		};
+
 		s_led13: s-led-13 {
 			pwms = <&pca9685_adafruit_pca9685 13 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 		};
+
 		s_led14: s-led-14 {
 			pwms = <&pca9685_adafruit_pca9685 14 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 		};
+
 		s_led15: s-led-15 {
 			pwms = <&pca9685_adafruit_pca9685 15 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 		};

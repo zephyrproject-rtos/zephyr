@@ -12,6 +12,7 @@ gpspi0: spi@40009400 {
 	interrupts = <92 2>, <93 2>;
 	status = "disabled";
 };
+
 gpspi1: spi@40009480 {
 	reg = <0x40009480 0x80>;
 	interrupts = <94 2>, <95 2>;

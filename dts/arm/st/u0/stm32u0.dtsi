@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 #include <arm/armv6-m.dtsi>
 #include <zephyr/dt-bindings/clock/stm32u0_clock.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
@@ -145,7 +144,7 @@
 		};
 
 		exti: interrupt-controller@40021800 {
-			compatible = "st,stm32g0-exti","st,stm32-exti";
+			compatible = "st,stm32g0-exti", "st,stm32-exti";
 			interrupt-controller;
 			#interrupt-cells = <1>;
 			#address-cells = <1>;
@@ -359,7 +358,7 @@
 			interrupts = <11 0>;
 			dma-channels = <7>;
 			dma-generators = <4>;
-			dma-requests= <76>;
+			dma-requests = <76>;
 			status = "disabled";
 		};
 
@@ -570,7 +569,6 @@
 			interrupts = <17 1>;
 			interrupt-names = "combined";
 			status = "disabled";
-
 		};
 
 		lptim2: timers@40009400 {

@@ -13,7 +13,7 @@
 LOG_MODULE_REGISTER(test, CONFIG_SAMPLE_MODULE_LOG_LEVEL);
 
 #define EMUL_UART_NUM             DT_NUM_INST_STATUS_OKAY(zephyr_uart_emul)
-#define EMUL_UART_NODE(i)         DT_NODELABEL(euart##i)
+#define EMUL_UART_NODE(i)         DT_NODELABEL(emul_uart##i)
 #define EMUL_UART_DEV_INIT(i, _)  DEVICE_DT_GET(EMUL_UART_NODE(i))
 #define EMUL_UART_TX_FIFO_SIZE(i) DT_PROP(EMUL_UART_NODE(i), tx_fifo_size)
 #define SAMPLE_DATA_SIZE          EMUL_UART_TX_FIFO_SIZE(0)

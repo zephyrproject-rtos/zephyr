@@ -27,6 +27,15 @@ tests:
       - esp32s3_devkitm/esp32s3/procpu
       - xg24_rb4187c
       - bg29_rb4420a
+      - xg29_rb4412a
+      - b_u585i_iot02a
+      - nucleo_f091rc
+      - nucleo_g071rb
+      - nucleo_g474re
+      - nucleo_h743zi
+      - nucleo_l152re
+      - stm32n6570_dk/stm32n657xx/sb
+      - stm32u083c_dk
     integration_platforms:
       - nrf54h20dk/nrf54h20/cpuapp
   drivers.uart.uart_elementary_dual_nrf54h:

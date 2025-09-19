@@ -54,7 +54,7 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map =	<0  0 &gpio2 31 0>;	/* Pin 1, BL+ */
+		gpio-map = <0 0 &gpio2 31 0>;	/* Pin 1, BL+ */
 	};
 
 	/*
@@ -67,12 +67,13 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map =	<1  0 &gpio1 2 0>,	/* Pin 2, LCD touch RST */
-				<2  0 &gpio1 11 0>;	/* Pin 3, LCD touch INT */
+		gpio-map = <1 0 &gpio1 2 0>,	/* Pin 2, LCD touch RST */
+			   <2 0 &gpio1 11 0>;	/* Pin 3, LCD touch INT */
 	};
 
 	leds {
 		compatible = "gpio-leds";
+
 		green_led: led-1 {
 			gpios = <&gpio1 9 GPIO_ACTIVE_LOW>;
 			label = "User LD1";
@@ -89,6 +90,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button: button-1 {
 			label = "User SW8";
 			gpios = <&gpio5 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
@@ -161,14 +163,15 @@ nxp_parallel_i2c: &lpi2c1 {};
 	ahb-read-addr-opt;
 	rx-clock-source = <1>;
 	reg = <0x402a8000 0x4000>, <0x60000000 DT_SIZE_M(8)>;
+
 	is25wp064: is25wp064@0 {
 		compatible = "nxp,imx-flexspi-nor";
 		size = <DT_SIZE_M(8 * 8)>;
 		reg = <0>;
-		spi-max-frequency = <104000000>;
+		spi-max-frequency = <DT_FREQ_M(104)>;
 		status = "okay";
 		jedec-id = [9d 70 17];
-		erase-block-size = <4096>;
+		erase-block-size = <DT_SIZE_K(4)>;
 		write-block-size = <1>;
 
 		partitions {
@@ -198,10 +201,12 @@ nxp_parallel_i2c: &lpi2c1 {};
 			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(128)>;
 		};
+
 		slot0_partition: partition@20000 {
 			label = "image-0";
 			reg = <0x00020000 DT_SIZE_K(1984)>;
 		};
+
 		slot1_partition: partition@210000 {
 			label = "image-1";
 			reg = <0x00210000 DT_SIZE_K(1984)>;
@@ -238,6 +243,7 @@ arduino_serial: &lpuart3 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_enet_mdio>;
 	pinctrl-names = "default";
+
 	phy: phy@0 {
 		compatible = "microchip,ksz8081";
 		reg = <0>;
@@ -253,7 +259,6 @@ arduino_serial: &lpuart3 {
 	pinctrl-0 = <&pinmux_ptp>;
 	pinctrl-names = "default";
 };
-
 
 zephyr_udc0: &usb1 {
 	status = "okay";
@@ -279,6 +284,7 @@ zephyr_udc0: &usb1 {
 	pinctrl-2 = <&pinmux_usdhc1_med>;
 	pinctrl-3 = <&pinmux_usdhc1_fast>;
 	pinctrl-names = "default", "slow", "med", "fast";
+
 	sdmmc {
 		compatible = "zephyr,sdmmc-disk";
 		disk-name = "SD";

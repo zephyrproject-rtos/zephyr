@@ -31,15 +31,16 @@ static K_THREAD_STACK_ARRAY_DEFINE(dynamic_stack, CONFIG_DYNAMIC_THREAD_POOL_SIZ
 				   CONFIG_DYNAMIC_THREAD_STACK_SIZE);
 SYS_BITARRAY_DEFINE_STATIC(dynamic_ba, BA_SIZE);
 
-static k_thread_stack_t *z_thread_stack_alloc_pool(size_t size)
+static k_thread_stack_t *z_thread_stack_alloc_pool(size_t size, int flags)
 {
 	int rv;
 	size_t offset;
 	k_thread_stack_t *stack;
+	const size_t max_size = ((flags & K_USER) != 0) ? K_THREAD_STACK_SIZEOF(dynamic_stack[0]) :
+							  K_KERNEL_STACK_SIZEOF(dynamic_stack[0]);
 
-	if (size > CONFIG_DYNAMIC_THREAD_STACK_SIZE) {
-		LOG_DBG("stack size %zu is > pool stack size %d", size,
-			CONFIG_DYNAMIC_THREAD_STACK_SIZE);
+	if (size > max_size) {
+		LOG_DBG("stack size %zu is > pool stack size %zu", size, max_size);
 		return NULL;
 	}
 
@@ -79,11 +80,11 @@ k_thread_stack_t *z_impl_k_thread_stack_alloc(size_t size, int flags)
 	if (IS_ENABLED(CONFIG_DYNAMIC_THREAD_PREFER_ALLOC)) {
 		stack = z_thread_stack_alloc_dyn(size, flags);
 		if (stack == NULL && CONFIG_DYNAMIC_THREAD_POOL_SIZE > 0) {
-			stack = z_thread_stack_alloc_pool(size);
+			stack = z_thread_stack_alloc_pool(size, flags);
 		}
 	} else if (IS_ENABLED(CONFIG_DYNAMIC_THREAD_PREFER_POOL)) {
 		if (CONFIG_DYNAMIC_THREAD_POOL_SIZE > 0) {
-			stack = z_thread_stack_alloc_pool(size);
+			stack = z_thread_stack_alloc_pool(size, flags);
 		}
 
 		if ((stack == NULL) && IS_ENABLED(CONFIG_DYNAMIC_THREAD_ALLOC)) {

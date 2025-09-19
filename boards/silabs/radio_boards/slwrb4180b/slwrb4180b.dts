@@ -15,6 +15,7 @@
 	compatible = "silabs,slwrb4180b", "silabs,efr32mg21";
 
 	chosen {
+		zephyr,bt-hci = &bt_hci_silabs;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,console = &usart0;
 		zephyr,flash = &flash0;
@@ -168,6 +169,14 @@
 };
 
 &dma0 {
+	status = "okay";
+};
+
+&se {
+	status = "okay";
+};
+
+&bt_hci_silabs {
 	status = "okay";
 };
 

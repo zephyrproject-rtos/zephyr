@@ -40,18 +40,22 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		red_led: led_0 {
 			gpios = <&gpioe 11 0>;
 			label = "User LED D4";
 		};
+
 		green_led: led_1 {
 			gpios = <&gpioe 12 0>;
 			label = "User LED D3";
 		};
+
 		blue_led: led_2 {
 			gpios = <&gpioe 29 0>;
 			label = "User LED D2";
 		};
+
 		orange_led: led_3 {
 			gpios = <&gpioe 30 0>;
 			label = "User LED D1";
@@ -60,21 +64,25 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button_0: button_0 {
 			label = "User SW2";
 			gpios = <&gpioa 4 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		user_button_1: button_1 {
 			label = "User SW3";
 			gpios = <&gpioe 4 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_1>;
 		};
+
 		user_button_2: button_2 {
 			label = "User SW4";
 			gpios = <&gpiob 5 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_2>;
 		};
+
 		user_button_3: button_3 {
 			label = "User SW5";
 			gpios = <&gpiob 4 GPIO_ACTIVE_LOW>;
@@ -87,7 +95,6 @@
 	pllfll-select = <KINETIS_SIM_PLLFLLSEL_MCGPLLCLK>;
 	er32k-select = <KINETIS_SIM_ER32KSEL_OSC32KCLK>;
 };
-
 
 &gpioa {
 	status = "okay";
@@ -110,7 +117,6 @@
 };
 
 &flash0 {
-
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
@@ -125,14 +131,17 @@
 			reg = <0x00000000 DT_SIZE_K(64)>;
 			read-only;
 		};
+
 		slot0_partition: partition@10000 {
 			label = "image-0";
 			reg = <0x00010000 DT_SIZE_K(424)>;
 		};
+
 		slot1_partition: partition@7A000 {
 			label = "image-1";
 			reg = <0x0007A000 DT_SIZE_K(424)>;
 		};
+
 		storage_partition: partition@E4000 {
 			label = "storage";
 			reg = <0x000E4000 DT_SIZE_K(112)>;

@@ -1323,6 +1323,15 @@ enum chip_pll_mode {
 #define IT8XXX2_SMB_PREDEN      BIT(7)
 #endif
 
+/* SMBus register fields */
+/*
+ * it81xx2cx/dx:
+ * bit3@0xf01c20: Gating Enable of I2C Idle to Sleep Control
+ * it82xx2:
+ * bit3@0xf01c09: Gating Enable of I2C Idle to Sleep Control
+ */
+#define IT8XXX2_SMB_GEOIITSC BIT(3)
+
 /**
  * Enhanced SMBus/I2C Interface
  * Ch_D: 0x00F03680, Ch_E: 0x00F03500, Ch_F: 0x00F03580

@@ -28,6 +28,7 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led1: led1 {
 			gpios = <&ioport1 12 GPIO_ACTIVE_HIGH>;
 			label = "LED1";
@@ -36,6 +37,7 @@
 
 	buttons {
 		compatible = "gpio-keys";
+
 		button0: s1 {
 			gpios = <&ioport4 15 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button switch 1";
@@ -54,6 +56,7 @@
 	pinctrl-0 = <&sci8_default>;
 	pinctrl-names = "default";
 	status = "okay";
+
 	uart8: uart {
 		current-speed = <115200>;
 		status = "okay";
@@ -104,7 +107,7 @@
 };
 
 &trng {
-	status ="okay";
+	status = "okay";
 };
 
 &adc0 {
@@ -156,6 +159,7 @@
 	pinctrl-names = "default";
 	maximum-speed = "full-speed";
 	status = "okay";
+
 	zephyr_udc0: udc {
 		status = "okay";
 	};

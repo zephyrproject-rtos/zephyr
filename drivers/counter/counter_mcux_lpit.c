@@ -65,7 +65,7 @@ static int mcux_lpit_start(const struct device *dev)
 	uint8_t channel_id = LPIT_CHANNEL_ID(dev);
 
 	LOG_DBG("period is %d", mcux_lpit_get_top_value(dev));
-	LPIT_EnableInterrupts(config->base, (1U << channel_id));
+	LPIT_EnableInterrupts(config->base, BIT(channel_id));
 	LPIT_StartTimer(config->base, channel_id);
 	return 0;
 }
@@ -75,7 +75,7 @@ static int mcux_lpit_stop(const struct device *dev)
 	const struct mcux_lpit_config *config = dev->config;
 	uint8_t channel_id = LPIT_CHANNEL_ID(dev);
 
-	LPIT_DisableInterrupts(config->base, channel_id);
+	LPIT_DisableInterrupts(config->base, BIT(channel_id));
 	LPIT_StopTimer(config->base, channel_id);
 	return 0;
 }
@@ -150,12 +150,12 @@ static void mcux_lpit_isr(const struct device *dev)
 
 	for (int channel_index = 0; channel_index < config->num_channels; channel_index++) {
 
-		if ((flags & (1U << channel_index)) == 0) {
+		if ((flags & BIT(channel_index)) == 0) {
 			continue;
 		}
 
 		/* Clear interrupt flag */
-		LPIT_ClearStatusFlags(config->base, (1U << channel_index));
+		LPIT_ClearStatusFlags(config->base, BIT(channel_index));
 
 		struct mcux_lpit_channel_data *data =
 			LPIT_CHANNEL_DATA(config->channels[channel_index]);

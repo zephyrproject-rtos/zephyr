@@ -60,12 +60,6 @@ The following is a list of SCA tools natively supported by Zephyr build system.
 
 .. toctree::
    :maxdepth: 1
+   :glob:
 
-   codechecker
-   sparse
-   gcc
-   clang
-   cpptest
-   eclair
-   polyspace
-   coverity
+   *

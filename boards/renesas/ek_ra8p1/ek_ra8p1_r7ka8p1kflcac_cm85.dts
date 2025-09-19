@@ -6,11 +6,7 @@
 /dts-v1/;
 
 #include <renesas/ra/ra8/r7ka8p1kflcac_cm85.dtsi>
-#include <dt-bindings/gpio/gpio.h>
-#include <dt-bindings/input/input-event-codes.h>
-#include "ek_ra8p1-pinctrl.dtsi"
-#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
-#include <zephyr/dt-bindings/memory-controller/renesas,ra-sdram.h>
+#include "ek_ra8p1.dtsi"
 
 / {
 	model = "Renesas EK-RA8P1";
@@ -23,163 +19,13 @@
 		zephyr,shell-uart = &uart8;
 	};
 
-	leds {
-		compatible = "gpio-leds";
-
-		led1: led1 {
-			gpios = <&ioport6 0 GPIO_ACTIVE_HIGH>;
-			label = "LED1";
-		};
-
-		led2: led2 {
-			gpios = <&ioport3 3 GPIO_ACTIVE_HIGH>;
-			label = "LED2";
-		};
-
-		led3: led3 {
-			gpios = <&ioporta 7 GPIO_ACTIVE_HIGH>;
-			label = "LED3";
-		};
-	};
-
-	buttons {
-		compatible = "gpio-keys";
-
-		button0: s1 {
-			gpios = <&ioport0 9 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
-			label = "Push button switch 1";
-			zephyr,code = <INPUT_KEY_0>;
-		};
-
-		button1: s2 {
-			gpios = <&ioport0 8 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
-			label = "Push button switch 2";
-			zephyr,code = <INPUT_KEY_1>;
-		};
-	};
-
-	sdram1: sdram@68000000 {
-		compatible = "zephyr,memory-region", "mmio-sram";
-		device_type = "memory";
-		reg = <0x68000000 DT_SIZE_M(64)>;	/* 512 Mbits */
-		zephyr,memory-region = "SDRAM";
-		status = "okay";
-	};
-
 	aliases {
 		led0 = &led1;
 		sw0 = &button0;
-		sw1 = &button1;
 	};
 };
 
-&xtal {
-	clock-frequency = <DT_FREQ_M(24)>;
-	mosel = <0>;
-	#clock-cells = <0>;
-	status = "okay";
-};
-
-&subclk {
-	status = "okay";
-};
-
-&pll {
-	status = "okay";
-
-	pllp: pllp {
-		status = "okay";
-	};
-
-	pllq: pllq {
-		status = "okay";
-	};
-
-	pllr: pllr {
-		status = "okay";
-	};
-};
-
-&pll2 {
-	status = "okay";
-	clocks = <&xtal>;
-	div = <3>;
-	mul = <120 0>;
-
-	pll2p {
-		div = <2>;
-		freq = <DT_FREQ_M(480)>;
-		status = "okay";
-	};
-
-	pll2q {
-		div = <3>;
-		freq = <DT_FREQ_M(320)>;
-		status = "okay";
-	};
-
-	pll2r {
-		div = <5>;
-		freq = <DT_FREQ_M(192)>;
-		status = "okay";
-	};
-};
-
-&sciclk {
-	clocks = <&pllp>;
-	div = <10>;
-	status = "okay";
-};
-
-&lcdclk {
-	clocks = <&pll2p>;
-	div = <2>;
-	status = "okay";
-};
-
-&uclk {
-	clocks = <&pll2p>;
-	div = <10>;
-	status = "okay";
-};
-
-&ioport0 {
-	status = "okay";
-};
-
-&ioport1 {
-	status = "okay";
-};
-
-&ioport2 {
-	status = "okay";
-};
-
-&ioport3 {
-	status = "okay";
-};
-
-&ioport4 {
-	status = "okay";
-};
-
-&ioport5 {
-	status = "okay";
-};
-
-&ioport6 {
-	status = "okay";
-};
-
-&ioport7 {
-	status = "okay";
-};
-
-&ioport8 {
-	status = "okay";
-};
-
-&ioporta {
+&button0 {
 	status = "okay";
 };
 
@@ -236,18 +82,13 @@
 	status = "okay";
 };
 
-&port_irq12 {
+&port_irq13 {
 	interrupts = <18 12>;
 	status = "okay";
 };
 
-&port_irq13 {
-	interrupts = <19 12>;
-	status = "okay";
-};
-
 &ulpt0 {
-	interrupts = <20 1>;
+	interrupts = <19 1>;
 	interrupt-names = "ulpti";
 	status = "okay";
 
@@ -265,29 +106,5 @@
 };
 
 zephyr_lcdif: &lcdif {};
-
-&sdram {
-	pinctrl-0 = <&sdram_default>;
-	pinctrl-names = "default";
-	status = "okay";
-	auto-refresh-interval = <SDRAM_AUTO_REFREDSH_INTERVEL_10CYCLES>;
-	auto-refresh-count = <SDRAM_AUTO_REFREDSH_COUNT_8TIMES>;
-	precharge-cycle-count = <SDRAM_AUTO_PRECHARGE_CYCLE_3CYCLES>;
-	multiplex-addr-shift = "9-bit";
-	edian-mode = "little-endian";
-	continuous-access;
-	bus-width = "32-bit";
-
-	bank@0 {
-		reg = <0>;
-		renesas,ra-sdram-timing = <SDRAM_TRAS_6CYCLES
-					SDRAM_TRCD_3CYCLES
-					SDRAM_TRP_3CYCLES
-					SDRAM_TWR_2CYCLES
-					SDRAM_TCL_3CYCLES
-					937
-					SDRAM_TREFW_8CYCLES>;
-	};
-};
 
 pmod_sd_shield: &sdhc0 {};

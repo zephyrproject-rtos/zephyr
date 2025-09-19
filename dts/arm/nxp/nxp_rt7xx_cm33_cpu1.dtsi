@@ -5,6 +5,7 @@
  */
 
 #include <mem.h>
+#include <freq.h>
 #include <arm/armv8-m.dtsi>
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
@@ -33,7 +34,7 @@
 	soc {
 		sram: memory@10000000 {
 			ranges = <0x0 0x10000000 0x780000
-				0x20000000 0x30000000 0x780000>;
+				  0x20000000 0x30000000 0x780000>;
 		};
 
 		peripheral: peripheral@50000000 {
@@ -43,7 +44,6 @@
 		xspi2: memory@50411000 {
 			reg = <0x50411000 0x1000>, <0x70000000 DT_SIZE_M(128)>;
 		};
-
 	};
 
 	pinctrl: pinctrl {
@@ -64,13 +64,13 @@
 	 * The SRAM region [0x680000-0x77FFFF] is reserved for HiFi1 application.
 	 */
 
-	sram_code: memory@600000{
+	sram_code: memory@600000 {
 		compatible = "mmio-sram";
 		reg = <0x600000 DT_SIZE_K(512)>;
 	};
 
 	/* This partition is shared with code in RAM */
-	sram_shared_code: memory@20058000{
+	sram_shared_code: memory@20058000 {
 		compatible = "mmio-sram";
 		reg = <0x20058000 DT_SIZE_K(256)>;
 	};
@@ -85,6 +85,7 @@
 &peripheral {
 	#address-cells = <1>;
 	#size-cells = <1>;
+
 	/*
 	 * Note that the offsets here are relative to the base address.
 	 * The base addresses differ between non-secure (0x40000000)
@@ -98,7 +99,7 @@
 		status = "disabled";
 		clk-divider = <1>;
 		clk-source = <0>;
-		voltage-ref= <1>;
+		voltage-ref = <1>;
 		calibration-average = <128>;
 		power-level = <0>;
 		offset-value-a = <10>;
@@ -268,7 +269,7 @@
 		compatible = "nxp,kinetis-gpio";
 		status = "disabled";
 		reg = <0x320000 0x1000>;
-		interrupts = <61 0>,<62 0>;
+		interrupts = <61 0>, <62 0>;
 		gpio-controller;
 		#gpio-cells = <2>;
 		nxp,kinetis-port = <&gpio8>;
@@ -279,7 +280,7 @@
 		compatible = "nxp,kinetis-gpio";
 		status = "disabled";
 		reg = <0x322000 0x1000>;
-		interrupts = <63 0>,<64 0>;
+		interrupts = <63 0>, <64 0>;
 		gpio-controller;
 		#gpio-cells = <2>;
 		nxp,kinetis-port = <&gpio9>;
@@ -290,7 +291,7 @@
 		compatible = "nxp,kinetis-gpio";
 		status = "disabled";
 		reg = <0x324000 0x1000>;
-		interrupts = <65 0>,<66 0>;
+		interrupts = <65 0>, <66 0>;
 		gpio-controller;
 		#gpio-cells = <2>;
 		nxp,kinetis-port = <&gpio10>;
@@ -314,6 +315,7 @@
 			clocks = <&clkctl1 MCUX_FLEXCOMM17_CLK>;
 			status = "disabled";
 		};
+
 		flexcomm17_lpspi17: spi@326000 {
 			compatible = "nxp,lpspi";
 			reg = <0x326000 0x1000>;
@@ -324,6 +326,7 @@
 			rx-fifo-size = <8>;
 			status = "disabled";
 		};
+
 		flexcomm17_lpi2c17: i2c@326800 {
 			compatible = "nxp,lpi2c";
 			reg = <0x326800 0x1000>;
@@ -351,6 +354,7 @@
 			clocks = <&clkctl1 MCUX_FLEXCOMM18_CLK>;
 			status = "disabled";
 		};
+
 		flexcomm18_lpspi18: spi@327000 {
 			compatible = "nxp,lpspi";
 			reg = <0x327000 0x1000>;
@@ -361,6 +365,7 @@
 			rx-fifo-size = <8>;
 			status = "disabled";
 		};
+
 		flexcomm18_lpi2c18: i2c@327800 {
 			compatible = "nxp,lpi2c";
 			reg = <0x327800 0x1000>;
@@ -388,6 +393,7 @@
 			clocks = <&clkctl1 MCUX_FLEXCOMM19_CLK>;
 			status = "disabled";
 		};
+
 		flexcomm19_lpspi19: spi@328000 {
 			compatible = "nxp,lpspi";
 			reg = <0x328000 0x1000>;
@@ -398,6 +404,7 @@
 			rx-fifo-size = <8>;
 			status = "disabled";
 		};
+
 		flexcomm19_lpi2c19: i2c@328800 {
 			compatible = "nxp,lpi2c";
 			reg = <0x328800 0x1000>;
@@ -425,6 +432,7 @@
 			clocks = <&clkctl1 MCUX_FLEXCOMM20_CLK>;
 			status = "disabled";
 		};
+
 		flexcomm20_lpspi20: spi@329000 {
 			compatible = "nxp,lpspi";
 			reg = <0x329000 0x1000>;
@@ -435,6 +443,7 @@
 			rx-fifo-size = <8>;
 			status = "disabled";
 		};
+
 		flexcomm20_lpi2c20: i2c@329800 {
 			compatible = "nxp,lpi2c";
 			reg = <0x329800 0x1000>;

@@ -12,6 +12,7 @@
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 #include <mem.h>
+#include <freq.h>
 #include <zephyr/dt-bindings/reset/nxp_syscon_reset_common.h>
 
 / {
@@ -75,9 +76,9 @@
 
 	usb_sram: memory@40100000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x40100000  DT_SIZE_K(16)>;
+		reg = <0x40100000 DT_SIZE_K(16)>;
 		zephyr,memory-region = "USB_SRAM";
-		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
 	};
 };
 
@@ -89,6 +90,7 @@
 		compatible = "nxp,lpc-syscon";
 		reg = <0x0 0x1000>;
 		#clock-cells = <1>;
+
 		reset: reset {
 			compatible = "nxp,lpc-syscon-reset";
 			#reset-cells = <1>;
@@ -126,6 +128,7 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 		ranges = <0x0 0x1000 0x100>;
+
 		pinctrl: pinctrl {
 			compatible = "nxp,lpc-iocon-pinctrl";
 		};
@@ -161,7 +164,7 @@
 		#interrupt-cells = <1>;
 		#address-cells = <0>;
 		interrupts = <4 2>, <5 2>, <6 2>, <7 2>,
-			<32 2>, <33 2>, <34 2>, <35 2>;
+			     <32 2>, <33 2>, <34 2>, <35 2>;
 		num-lines = <8>;
 		num-inputs = <64>;
 	};
@@ -277,11 +280,13 @@
 	hs_lspi: spi@9f000 {
 		compatible = "nxp,lpc-spi";
 		/* Enabling cs-gpios below will allow using GPIO CS,
-		 rather than Flexcomm SS */
+		 * rather than Flexcomm SS
+		 */
 		/* cs-gpios = <&gpio0 20 GPIO_ACTIVE_LOW>,
-			<&gpio1 1 GPIO_ACTIVE_LOW>,
-			<&gpio1 12 GPIO_ACTIVE_LOW>,
-			<&gpio1 26 GPIO_ACTIVE_LOW>; */
+		 * <&gpio1 1 GPIO_ACTIVE_LOW>,
+		 * <&gpio1 12 GPIO_ACTIVE_LOW>,
+		 * <&gpio1 26 GPIO_ACTIVE_LOW>;
+		 */
 		reg = <0x9f000 0x1000>;
 		interrupts = <59 0>;
 		clocks = <&syscon MCUX_HS_SPI_CLK>;
@@ -312,7 +317,7 @@
 		status = "disabled";
 		clk-divider = <8>;
 		clk-source = <0>;
-		voltage-ref= <1>;
+		voltage-ref = <1>;
 		calibration-average = <128>;
 		power-level = <0>;
 		offset-value-a = <10>;

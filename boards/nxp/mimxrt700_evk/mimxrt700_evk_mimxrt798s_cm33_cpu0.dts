@@ -39,10 +39,12 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		green_led: led_0 {
 			gpios = <&gpio0 18 GPIO_ACTIVE_HIGH>;
 			label = "User LED_GREEN";
 		};
+
 		blue_led: led_1 {
 			gpios = <&gpio0 17 GPIO_ACTIVE_HIGH>;
 			label = "User LED_BLUE";
@@ -51,11 +53,13 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button_1: button_0 {
 			label = "User SW5";
 			gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		user_button_2: button_1 {
 			label = "User SW7";
 			gpios = <&gpio1 3 GPIO_ACTIVE_LOW>;
@@ -74,15 +78,15 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map =	<0  0 &gpio1 14 0>,	/* Pin 1, LEDK */
-					<21 0 &gpio3 4 0>,	/* Pin 21, RESET */
-					<22 0 &gpio3 5 0>,	/* Pin 22, LPTE */
-					<26 0 &gpio0 6 0>,	/* Pin 26, CTP_I2C SDA */
-					<27 0 &gpio0 7 0>,	/* Pin 27, CTP_I2C SCL */
-					<28 0 &gpio3 8 0>,	/* Pin 28, CTP_RST */
-					<29 0 &gpio1 13 0>,	/* Pin 29, CTP_INT */
-					<32 0 &gpio1 10 0>,	/* Pin 32, PWR_EN */
-					<34 0 &gpio1 14 0>;	/* Pin 34, BL_PWM */
+		gpio-map = <0 0 &gpio1 14 0>,	/* Pin 1, LEDK */
+			   <21 0 &gpio3 4 0>,	/* Pin 21, RESET */
+			   <22 0 &gpio3 5 0>,	/* Pin 22, LPTE */
+			   <26 0 &gpio0 6 0>,	/* Pin 26, CTP_I2C SDA */
+			   <27 0 &gpio0 7 0>,	/* Pin 27, CTP_I2C SCL */
+			   <28 0 &gpio3 8 0>,	/* Pin 28, CTP_RST */
+			   <29 0 &gpio1 13 0>,	/* Pin 29, CTP_INT */
+			   <32 0 &gpio1 10 0>,	/* Pin 32, PWR_EN */
+			   <34 0 &gpio1 14 0>;	/* Pin 34, BL_PWM */
 	};
 
 	en_mipi_display: enable-mipi-display {
@@ -111,7 +115,7 @@
 	wakeup-source;
 };
 
-&flexcomm0{
+&flexcomm0 {
 	status = "okay";
 };
 
@@ -131,7 +135,108 @@
 	pinctrl-names = "default";
 };
 
-&flexcomm2{
+&lpi2c15 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-0 = <&pinmux_lpi2c15>;
+	pinctrl-names = "default";
+
+	pca9422: pca9422@61 {
+		compatible = "nxp,pca9422";
+		reg = <0x61>;
+		interrupts = <138 0>;
+
+		charger: pca9422_charger {
+			compatible = "nxp,pca9422-charger";
+			constant-charge-current-max-microamp = <100000>;
+			constant-charge-voltage-max-microvolt = <4200000>;
+			precharge-current-percent = <16>;
+			charge-termination-current-percent = <25>;
+			re-charge-threshold-microvolt = <100000>;
+			input-current-limit-microamp = <470000>;
+			system-voltage-min-threshold-microvolt = <4550000>;
+		};
+
+		regulators: pca9422_regulators {
+			compatible = "nxp,pca9422-regulator";
+			nxp,vsys-uvlo-sel-millivolt = <2700>;
+
+			pca9422_sw1: BUCK1 {
+				regulator-boot-on;
+				low-power-mode = "Normal";
+				enable-mode = "All";
+				nxp,active-microvolt = <1000000>;
+				nxp,sleep-microvolt = <600000>;
+				nxp,standby-microvolt = <1000000>;
+			};
+
+			pca9422_sw2: BUCK2 {
+				regulator-boot-on;
+				low-power-mode = "Normal";
+				enable-mode = "All";
+				nxp,active-microvolt = <1100000>;
+				nxp,sleep-microvolt = <1100000>;
+				nxp,standby-microvolt = <1100000>;
+			};
+
+			pca9422_sw3: BUCK3 {
+				regulator-boot-on;
+				low-power-mode = "Normal";
+				enable-mode = "All";
+				nxp,active-microvolt = <1800000>;
+				nxp,sleep-microvolt = <1800000>;
+				nxp,standby-microvolt = <1800000>;
+			};
+
+			pca9422_sw4: BUCKBOOST {
+				regulator-boot-on;
+				low-power-mode = "Normal";
+				enable-mode = "All";
+				nxp,active-microvolt = <1800000>;
+				nxp,sleep-microvolt = <1800000>;
+				nxp,standby-microvolt = <1800000>;
+			};
+
+			pca9422_ldo1: LDO1 {
+				regulator-boot-on;
+				enable-mode = "All";
+				nxp,active-microvolt = <1800000>;
+				nxp,sleep-microvolt = <1800000>;
+				nxp,standby-microvolt = <1800000>;
+			};
+
+			pca9422_ldo2: LDO2 {
+				regulator-boot-on;
+				low-power-mode = "Normal";
+				enable-mode = "All";
+				nxp,active-microvolt = <1800000>;
+				nxp,sleep-microvolt = <1800000>;
+				nxp,standby-microvolt = <1800000>;
+			};
+
+			pca9422_ldo3: LDO3 {
+				regulator-boot-on;
+				low-power-mode = "Normal";
+				enable-mode = "All";
+				nxp,active-microvolt = <1200000>;
+				nxp,sleep-microvolt = <1200000>;
+				nxp,standby-microvolt = <1200000>;
+			};
+
+			pca9422_ldo4: LDO4 {
+				regulator-boot-on;
+				enable-mode = "All";
+				nxp,active-microvolt = <3300000>;
+				nxp,sleep-microvolt = <3300000>;
+				nxp,standby-microvolt = <3300000>;
+			};
+		};
+	};
+};
+
+&flexcomm2 {
 	status = "okay";
 };
 
@@ -152,7 +257,7 @@
 	};
 };
 
-&flexcomm8{
+&flexcomm8 {
 	status = "okay";
 };
 
@@ -226,10 +331,10 @@ zephyr_lcdif: &lcdif {};
 		/* MX25UM51245G is 64MB, 512MBit flash part */
 		size = <DT_SIZE_M(64 * 8)>;
 		reg = <0>;
-		spi-max-frequency = <200000000>;
+		spi-max-frequency = <DT_FREQ_M(200)>;
 		status = "okay";
 		jedec-id = [c2 81 3a];
-		erase-block-size = <4096>;
+		erase-block-size = <DT_SIZE_K(4)>;
 		write-block-size = <2>;
 	};
 };
@@ -249,6 +354,7 @@ zephyr_udc0: &usb0 {
 &usdhc0 {
 	status = "okay";
 	pwr-gpios = <&gpio7 12 GPIO_ACTIVE_HIGH>;
+
 	mmc {
 		compatible = "zephyr,mmc-disk";
 		disk-name = "SD2";
@@ -281,5 +387,9 @@ p3t1755dp_ard_i2c_interface: &flexcomm8_lpi2c8 {};
 };
 
 &mbox4 {
+	status = "okay";
+};
+
+&pca9422 {
 	status = "okay";
 };

@@ -54,8 +54,7 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map =
-			   <ARDUINO_HEADER_R3_A0 0 &gpio0_hi 9 0>,
+		gpio-map = <ARDUINO_HEADER_R3_A0 0 &gpio0_hi 9 0>,
 			   <ARDUINO_HEADER_R3_A1 0 &gpio0_hi 10 0>,
 			   <ARDUINO_HEADER_R3_A2 0 &gpio0_hi 11 0>,
 			   <ARDUINO_HEADER_R3_A3 0 &gpio0_hi 12 0>,
@@ -165,7 +164,7 @@ zephyr_udc0: &usbd {
 
 	arduion_spi: pio0_spi0 {
 		compatible = "raspberrypi,pico-spi-pio";
-		clocks = < &clocks RPI_PICO_CLKID_CLK_SYS >;
+		clocks = <&clocks RPI_PICO_CLKID_CLK_SYS>;
 		#address-cells = <1>;
 		#size-cells = <0>;
 		cs-gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
@@ -192,14 +191,14 @@ zephyr_udc0: &usbd {
 			gpios = <&gpio0 25 GPIO_ACTIVE_HIGH>;
 			chain-length = <1>;
 			color-mapping = <LED_COLOR_ID_GREEN
-					LED_COLOR_ID_RED
-					LED_COLOR_ID_BLUE>;
+					 LED_COLOR_ID_RED
+					 LED_COLOR_ID_BLUE>;
 			reset-delay = <280>;
 			frequency = <800000>;
 		};
 	};
 };
 
-
 arduino_serial: &uart0 {};
+
 arduino_i2c: &i2c0 {};

@@ -40,14 +40,17 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led_r: led_r {
 			label = "LED_R";
 			gpios = <&gpio2 13 GPIO_ACTIVE_HIGH>;
 		};
+
 		led_g: led_g {
 			label = "LED_G";
 			gpios = <&gpio2 4 GPIO_ACTIVE_HIGH>;
 		};
+
 		led_b: led_b {
 			label = "LED_B";
 			gpios = <&gpio2 12 GPIO_ACTIVE_HIGH>;
@@ -57,13 +60,13 @@
 	keys {
 		compatible = "gpio-keys";
 
-		btn_1: btn_1{
+		btn_1: btn_1 {
 			label = "BTN1";
 			gpios = <&gpio2 23 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_0>;
 		};
 
-		btn_2: btn_2{
+		btn_2: btn_2 {
 			label = "BTN2";
 			gpios = <&gpio2 24 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_1>;
@@ -106,6 +109,7 @@
 	pinctrl-0 = <&pinmux_mdio>;
 	pinctrl-names = "default";
 	status = "okay";
+
 	phy: phy@2 {
 		compatible = "realtek,rtl8211f";
 		reg = <2>;
@@ -129,7 +133,6 @@
 	pinctrl-names = "default";
 };
 
-
 &lpi2c1 {
 	status = "disabled";
 	clock-frequency = <I2C_BITRATE_FAST>;
@@ -143,7 +146,7 @@
 	pinctrl-0 = <&i2c2_default>;
 	pinctrl-names = "default";
 
-	mfd0:adp5585@34 {
+	mfd0: adp5585@34 {
 		compatible = "adi,adp5585";
 		reg = <0x34>;
 		status = "okay";
@@ -169,31 +172,31 @@
 		gpio-controller;
 		#gpio-cells = <2>;
 		ngpios = <24>;
-		int-gpios = <&gpio3 27 (GPIO_ACTIVE_LOW|GPIO_PULL_UP)>;
+		int-gpios = <&gpio3 27 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 		status = "okay";
 	};
 };
 
 &lpspi3 {
 	status = "disabled";
-	clock-frequency = <1000000>;
+	clock-frequency = <DT_FREQ_M(1)>;
 	pinctrl-0 = <&spi3_default>;
 	pinctrl-names = "default";
 };
 
-&gpio1{
+&gpio1 {
 	status = "okay";
 };
 
-&gpio2{
+&gpio2 {
 	status = "okay";
 };
 
-&gpio3{
+&gpio3 {
 	status = "okay";
 };
 
-&gpio4{
+&gpio4 {
 	status = "okay";
 };
 
@@ -214,6 +217,7 @@
 	read-watermark = <0x10>;
 	write-watermark = <0x80>;
 	status = "disabled";
+
 	sdmmc {
 		compatible = "zephyr,mmc-disk";
 		disk-name = "SD2";
@@ -234,6 +238,7 @@
 	read-watermark = <0x10>;
 	write-watermark = <0x80>;
 	status = "disabled";
+
 	sdmmc {
 		compatible = "zephyr,sdmmc-disk";
 		disk-name = "SD";

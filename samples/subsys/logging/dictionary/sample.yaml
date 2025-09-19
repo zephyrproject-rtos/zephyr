@@ -5,6 +5,9 @@ tests:
   sample.logger.basic.dictionary:
     build_only: true
     tags: logging
+    platform_exclude:
+      - pocketbeagle_2/am6232/m4
+      - pocketbeagle_2/am6254/m4
     integration_platforms:
       - qemu_x86
       - qemu_x86_64
@@ -12,6 +15,9 @@ tests:
     build_only: true
     tags: logging
     filter: CONFIG_CPU_HAS_FPU
+    platform_exclude:
+      - pocketbeagle_2/am6232/m4
+      - pocketbeagle_2/am6254/m4
     extra_configs:
       - CONFIG_FPU=y
     integration_platforms:
@@ -21,6 +27,9 @@ tests:
     build_only: true
     tags: logging
     filter: CONFIG_CPU_HAS_FPU
+    platform_exclude:
+      - pocketbeagle_2/am6232/m4
+      - pocketbeagle_2/am6254/m4
     extra_configs:
       - CONFIG_FPU=y
       - CONFIG_CBPRINTF_PACKAGE_LONGDOUBLE=y
@@ -61,6 +70,9 @@ tests:
     build_only: true
     tags: logging
     filter: CONFIG_SERIAL_SUPPORT_INTERRUPT and CONFIG_UART_CONSOLE
+    platform_exclude:
+      - pocketbeagle_2/am6232/m4
+      - pocketbeagle_2/am6254/m4
     integration_platforms:
       - qemu_x86
       - qemu_x86_64

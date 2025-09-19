@@ -125,8 +125,8 @@
 			compatible = "raspberrypi,pico-pll";
 			clocks = <&xosc>;
 			clock-names = "xosc";
-			clock-div= <1>;
-			fb-div= <125>;
+			clock-div = <1>;
+			fb-div = <125>;
 			post-div1 = <5>;
 			post-div2 = <2>;
 			#clock-cells = <0>;
@@ -136,7 +136,7 @@
 			compatible = "raspberrypi,pico-pll";
 			clocks = <&xosc>;
 			clock-names = "xosc";
-			clock-div= <1>;
+			clock-div = <1>;
 			fb-div = <100>;
 			post-div1 = <5>;
 			post-div2 = <5>;
@@ -226,10 +226,10 @@
 				 <&pll_sys>, <&pll_usb>, <&xosc>, <&rosc>, <&rosc_ph>,
 				 <&gpin0>, <&gpin1>;
 			clock-names = "clk_gpout0", "clk_gpout1", "clk_gpout2", "clk_gpout3",
-				 "clk_hstx", "clk_ref", "clk_sys", "clk_peri",
-				 "clk_usb", "clk_adc",
-				 "pll_sys", "pll_usb", "xosc", "rosc", "rosc_ph",
-				 "gpin0", "gpin1";
+				      "clk_hstx", "clk_ref", "clk_sys", "clk_peri",
+				      "clk_usb", "clk_adc",
+				      "pll_sys", "pll_usb", "xosc", "rosc", "rosc_ph",
+				      "gpin0", "gpin1";
 		};
 
 		gpio0_map: gpio@40028000 {
@@ -349,9 +349,9 @@
 			resets = <&reset RPI_PICO_RESETS_RESET_PWM>;
 			clocks = <&clocks RPI_PICO_CLKID_CLK_SYS>;
 			interrupts = <8 RPI_PICO_DEFAULT_IRQ_PRIORITY>,
-					<9 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
+				     <9 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
 			interrupt-names = "PWM_IRQ_WRAP_0",
-						"PWM_IRQ_WRAP_1";
+					  "PWM_IRQ_WRAP_1";
 			status = "disabled";
 			#pwm-cells = <3>;
 		};
@@ -427,7 +427,7 @@
 			clocks = <&clocks RPI_PICO_CLKID_CLK_SYS>;
 			resets = <&reset RPI_PICO_RESETS_RESET_PIO0>;
 			interrupts = <15 RPI_PICO_DEFAULT_IRQ_PRIORITY>,
-				    <16 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
+				     <16 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
 			interrupt-names = "irq0", "irq1";
 			status = "disabled";
 		};
@@ -438,7 +438,7 @@
 			clocks = <&clocks RPI_PICO_CLKID_CLK_SYS>;
 			resets = <&reset RPI_PICO_RESETS_RESET_PIO1>;
 			interrupts = <17 RPI_PICO_DEFAULT_IRQ_PRIORITY>,
-				    <18 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
+				     <18 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
 			interrupt-names = "irq0", "irq1";
 			status = "disabled";
 		};
@@ -449,7 +449,7 @@
 			clocks = <&clocks RPI_PICO_CLKID_CLK_SYS>;
 			resets = <&reset RPI_PICO_RESETS_RESET_PIO2>;
 			interrupts = <19 RPI_PICO_DEFAULT_IRQ_PRIORITY>,
-				    <20 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
+				     <20 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
 			interrupt-names = "irq0", "irq1";
 			status = "disabled";
 		};

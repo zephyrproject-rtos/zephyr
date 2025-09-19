@@ -19,6 +19,7 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		blue_led: led_0 {
 			gpios = <&gpio0 3 GPIO_ACTIVE_LOW>;
 			label = "Blue LED (D7)";
@@ -27,6 +28,7 @@
 
 	pwmleds {
 		compatible = "pwm-leds";
+
 		pwm_led0: pwm_led_0 {
 			pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 		};
@@ -34,6 +36,7 @@
 
 	buttons {
 		compatible = "gpio-keys";
+
 		button0: button_0 {
 			gpios = <&gpio0 12 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Switch 1";
@@ -67,26 +70,26 @@
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
 		gpio-map = <12 0 &gpio0 26 0>,  /* SDA */
-		<13 0 &gpio0 27 0>,  /* SCL */
-		<14 0 &gpio0 29 0>,  /* PWM3 */
-		<15 0 &gpio0 30 0>,  /* PWM3 */
-		<16 0 &gpio0 0 0>,   /* PWM1 */
-		<17 0 &gpio0 1 0>,   /* PWM1 */
-		<18 0 &gpio0 2 0>,   /* PWM1 */
-		<19 0 &gpio0 3 0>,   /* PWM0 */
-		<20 0 &gpio0 4 0>,   /* PWM1 */
-		/* 11 not connected */
-		<10 0 &gpio0 24 0>,  /* TX */
-		<9 0 &gpio0 23 0>,   /* RX */
-		<8 0 &gpio0 22 0>,   /* MISO */
-		<7 0 &gpio0 21 0>,   /* MOSI */
-		<6 0 &gpio0 19 0>,   /* SCK */
-		<5 0 &gpio0 18 0>,   /* SS */
-		<4 0 &gpio0 17 0>,   /* ADC4 = AIN6 */
-		<3 0 &gpio0 16 0>,   /* ADC3 = AIN5 */
-		<2 0 &gpio0 15 0>,   /* ADC2 = AIN4 */
-		<1 0 &gpio0 14 0>,   /* ADC1 = AIN2 */
-		<0 0 &gpio0 13 0>;   /* ADC0 = AIN1 */
+			   <13 0 &gpio0 27 0>,  /* SCL */
+			   <14 0 &gpio0 29 0>,  /* PWM3 */
+			   <15 0 &gpio0 30 0>,  /* PWM3 */
+			   <16 0 &gpio0 0 0>,   /* PWM1 */
+			   <17 0 &gpio0 1 0>,   /* PWM1 */
+			   <18 0 &gpio0 2 0>,   /* PWM1 */
+			   <19 0 &gpio0 3 0>,   /* PWM0 */
+			   <20 0 &gpio0 4 0>,   /* PWM1 */
+			   /* 11 not connected */
+			   <10 0 &gpio0 24 0>,  /* TX */
+			   <9 0 &gpio0 23 0>,   /* RX */
+			   <8 0 &gpio0 22 0>,   /* MISO */
+			   <7 0 &gpio0 21 0>,   /* MOSI */
+			   <6 0 &gpio0 19 0>,   /* SCK */
+			   <5 0 &gpio0 18 0>,   /* SS */
+			   <4 0 &gpio0 17 0>,   /* ADC4 = AIN6 */
+			   <3 0 &gpio0 16 0>,   /* ADC3 = AIN5 */
+			   <2 0 &gpio0 15 0>,   /* ADC2 = AIN4 */
+			   <1 0 &gpio0 14 0>,   /* ADC1 = AIN2 */
+			   <0 0 &gpio0 13 0>;   /* ADC0 = AIN1 */
 	};
 };
 
@@ -130,6 +133,7 @@ zephyr_i2c: &i2c1 {
 	pinctrl-0 = <&i2c1_default>;
 	pinctrl-1 = <&i2c1_sleep>;
 	pinctrl-names = "default", "sleep";
+
 	pcf85063a@51 {
 		compatible = "nxp,pcf85063a";
 		reg = <0x51>;
@@ -140,7 +144,6 @@ zephyr_i2c: &i2c1 {
 		reg = <0x18>;
 		irq-gpios = <&gpio0 29 0>;
 	};
-
 };
 
 &pwm0 {
@@ -157,6 +160,7 @@ zephyr_i2c: &i2c1 {
 	pinctrl-0 = <&spi3_default>;
 	pinctrl-1 = <&spi3_sleep>;
 	pinctrl-names = "default", "sleep";
+
 	w25q32jv: w25q32jv@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;
@@ -167,7 +171,7 @@ zephyr_i2c: &i2c1 {
 		has-dpd;
 		t-enter-dpd = <3000>;
 		t-exit-dpd = <30000>;
-		jedec-id = [ ef 40 16 ];
+		jedec-id = [ef 40 16];
 	};
 };
 

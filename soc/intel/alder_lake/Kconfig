@@ -9,3 +9,4 @@ config SOC_ALDER_LAKE
 	select PCIE_MSI
 	select DYNAMIC_INTERRUPTS
 	select X86_MMU
+	select HAS_POWEROFF if ACPI_POWEROFF

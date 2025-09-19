@@ -7,7 +7,7 @@ description: >
 
 compatible: "snps,designware-i3c"
 
-include: i3c-controller.yaml
+include: [i3c-controller.yaml, pinctrl-device.yaml]
 
 properties:
   clocks:

@@ -33,9 +33,9 @@
 
 &regulator {
 	vddcam_3v3: ALDO3 {
-		regulator-min-microvolt  = <3000000>;
+		regulator-min-microvolt = <3000000>;
 		/* regulator-init-microvolt = <3300000>; */
-		regulator-max-microvolt  = <3500000>;
+		regulator-max-microvolt = <3500000>;
 		regulator-boot-on;
 		status = "okay";
 	};

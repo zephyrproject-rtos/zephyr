@@ -25,7 +25,6 @@
 
 	pinctrl-0 = <&p9_0_scb2_uart_rx &p9_1_scb2_uart_tx>;
 	pinctrl-names = "default";
-
 };
 
 &uart5 {
@@ -36,7 +35,6 @@
 
 	pinctrl-0 = <&p5_0_scb5_uart_rx &p5_1_scb5_uart_tx>;
 	pinctrl-names = "default";
-
 };
 
 arduino_serial: &uart5 {};

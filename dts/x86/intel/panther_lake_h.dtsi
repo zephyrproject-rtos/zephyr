@@ -26,7 +26,6 @@
 			d-cache-line-size = <64>;
 			reg = <1>;
 		};
-
 	};
 
 	dram0: memory@0 {
@@ -34,7 +33,7 @@
 		reg = <0x0 DT_DRAM_SIZE>;
 	};
 
-	intc: ioapic@fec00000  {
+	intc: ioapic@fec00000 {
 		compatible = "intel,ioapic";
 		#address-cells = <1>;
 		#interrupt-cells = <3>;
@@ -42,7 +41,7 @@
 		interrupt-controller;
 	};
 
-	intc_loapic: loapic@fee00000  {
+	intc_loapic: loapic@fee00000 {
 		compatible = "intel,loapic";
 		reg = <0xfee00000 0x1000>;
 		interrupt-controller;
@@ -266,7 +265,6 @@
 			current-speed = <115200>;
 			status = "disabled";
 		};
-
 	};
 
 	soc {
@@ -310,6 +308,15 @@
 			interrupts = <8 IRQ_TYPE_LOWEST_EDGE_RISING 3>;
 			interrupt-parent = <&intc>;
 			alarms-count = <1>;
+			status = "disabled";
+		};
+
+		tgpio: tgpio@fe001200 {
+			compatible = "intel,timeaware-gpio";
+			reg = <0xfe001200 0x100>;
+			timer-clock = <19200000>;
+			max-pins = <2>;
+			artv-ctrl;
 			status = "disabled";
 		};
 

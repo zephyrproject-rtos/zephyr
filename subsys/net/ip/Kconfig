@@ -755,6 +755,22 @@ config NET_PKT_BUF_TX_DATA_ALLOC_ALIGN_LEN
 	  that expects 4 byte alignment for the length of the data and the start
 	  of the data that is being sent.
 
+config NET_PKT_CONTROL_BLOCK
+	bool "pkt control block"
+	help
+	  This is to enable control block which can be used by any layer.
+
+config NET_PKT_CONTROL_BLOCK_SIZE
+	int "Size of pkt control block in bytes"
+	depends on NET_PKT_CONTROL_BLOCK
+	default 1 if DSA_TAG_PROTOCOL_NETC
+	default 1
+	help
+	  Size of pkt control block in bytes if there are no other specific control blocks
+	  enabled. If there are already specific control blocks enabled, like
+	  net_pkt_cb_ieee802154, the actual pkt control block size will be the
+	  maximum of them.
+
 config NET_HEADERS_ALWAYS_CONTIGUOUS
 	bool
 	help

@@ -3,9 +3,6 @@ sample:
   name: memc driver sample
 common:
   tags: memc
-  filter: dt_alias_exists("sram-ext")
-  integration_platforms:
-    - mimxrt595_evk/mimxrt595s/cm33
   harness: console
   harness_config:
     type: one_line
@@ -13,4 +10,12 @@ common:
       - "Read data matches written data"
 tests:
   sample.drivers.memc:
-    tags: memc
+    filter: dt_alias_exists("sram-ext")
+    integration_platforms:
+      - mimxrt595_evk/mimxrt595s/cm33
+  sample.drivers.memc.mspi:
+    tags: mspi
+    filter: dt_alias_exists("psram0")
+    integration_platforms:
+      - apollo3p_evb
+      - apollo510_evb

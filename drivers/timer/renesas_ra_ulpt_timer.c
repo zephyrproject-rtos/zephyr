@@ -173,6 +173,7 @@ static int sys_clock_driver_init(void)
 
 	/* Set up interrupts for timer instance 0. */
 	R_ICU->IELSR[RA_ULPT_INST0_IRQN] = ELC_EVENT_ULPT_INT(RA_ULPT_INST0_CHANNEL);
+	BSP_ASSIGN_EVENT_TO_CURRENT_CORE(ELC_EVENT_ULPT_INT(RA_ULPT_INST0_CHANNEL));
 	IRQ_CONNECT(RA_ULPT_INST0_IRQN, RA_ULPT_INST0_IRQP, ra_ulpt_timer_isr, NULL, 0);
 	irq_enable(RA_ULPT_INST0_IRQN);
 

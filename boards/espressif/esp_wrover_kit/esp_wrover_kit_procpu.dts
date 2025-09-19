@@ -44,31 +44,34 @@
 		compatible = "gpio-leds";
 
 		blue_led: led_0 {
-			gpios =  <&gpio0 4 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio0 4 GPIO_ACTIVE_HIGH>;
 			label = "Blue - LED0";
 		};
 
 		green_led: led_1 {
-			gpios =  <&gpio0 2 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
 			label = "Green - LED1";
 		};
 
 		red_led: led_2 {
-			gpios =  <&gpio0 0 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
 			label = "Red - LED2";
 		};
 	};
 
 	pwmleds {
 		compatible = "pwm-leds";
+
 		pwm_led_red: pwm_led_0 {
 			label = "Red PWM LED";
 			pwms = <&ledc0 0 PWM_HZ(100) PWM_POLARITY_NORMAL>;
 		};
+
 		pwm_led_green: pwm_led_1 {
 			label = "Green PWM LED";
 			pwms = <&ledc0 1 PWM_HZ(100) PWM_POLARITY_NORMAL>;
 		};
+
 		pwm_led_blue: pwm_led_2 {
 			label = "Blue PWM LED";
 			pwms = <&ledc0 2 PWM_HZ(100) PWM_POLARITY_NORMAL>;
@@ -156,14 +159,17 @@
 	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
+
 	channel0@0 {
 		reg = <0x0>;
 		timer = <0>;
 	};
+
 	channel1@1 {
 		reg = <0x1>;
 		timer = <1>;
 	};
+
 	channel2@2 {
 		reg = <0x2>;
 		timer = <2>;

@@ -175,7 +175,7 @@
 			status = "disabled";
 		};
 
-		wdt0: watchdog@40003000  {
+		wdt0: watchdog@40003000 {
 			compatible = "adi,max32-watchdog";
 			reg = <0x40003000 0x400>;
 			interrupts = <1 0>;
@@ -183,7 +183,7 @@
 			status = "disabled";
 		};
 
-		wdt1: watchdog@40003400  {
+		wdt1: watchdog@40003400 {
 			compatible = "adi,max32-watchdog";
 			reg = <0x40003400 0x400>;
 			interrupts = <57 0>;
@@ -196,7 +196,7 @@
 			reg = <0x40028000 0x1000>;
 			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 5>;
 			interrupts = <28 0>, <29 0>, <30 0>, <31 0>, <68 0>, <69 0>, <70 0>, <71 0>,
-				<72 0>, <73 0>, <74 0>, <75 0>, <76 0>, <77 0>, <78 0>, <79 0>;
+				     <72 0>, <73 0>, <74 0>, <75 0>, <76 0>, <77 0>, <78 0>, <79 0>;
 			dma-channels = <16>;
 			status = "disabled";
 			#dma-cells = <2>;

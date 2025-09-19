@@ -32,7 +32,7 @@ jobs:
 
       - name: Fetch MAINTAINERS.yml from pull request
         run: |
-          git fetch origin pull/${{ github.event.pull_request.number }}/head
+          git fetch origin pull/${{ github.event.pull_request.number }}/merge
           git show FETCH_HEAD:MAINTAINERS.yml > pr_MAINTAINERS.yml
 
       - name: Check maintainer file changes

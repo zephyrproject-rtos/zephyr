@@ -159,16 +159,16 @@ zephyr_udc0: &usbotg_fs {
 		     &fmc_a0_pf0 &fmc_a1_pf1 &fmc_a2_pf2 &fmc_a3_pf3 &fmc_a4_pf4
 		     &fmc_a5_pf5 &fmc_a6_pf12 &fmc_a7_pf13 &fmc_a8_pf14
 		     &fmc_a9_pf15 &fmc_a10_pg0 &fmc_a11_pg1 &fmc_a12_pg2
-			 &fmc_a14_pg4 &fmc_a15_pg5
+		     &fmc_a14_pg4 &fmc_a15_pg5
 		     &fmc_d0_pd14 &fmc_d1_pd15
 		     &fmc_d2_pd0 &fmc_d3_pd1 &fmc_d4_pe7 &fmc_d5_pe8 &fmc_d6_pe9
 		     &fmc_d7_pe10 &fmc_d8_pe11 &fmc_d9_pe12 &fmc_d10_pe13
 		     &fmc_d11_pe14 &fmc_d12_pe15 &fmc_d13_pd8 &fmc_d14_pd9
 		     &fmc_d15_pd10 &fmc_d16_ph8 &fmc_d17_ph9 &fmc_d18_ph10
-			 &fmc_d19_ph11 &fmc_d20_ph12 &fmc_d21_ph13 &fmc_d22_ph14
-			 &fmc_d23_ph15 &fmc_d24_pi0 &fmc_d25_pi1 &fmc_d26_pi2
-			 &fmc_d27_pi3 &fmc_d28_pi6 &fmc_d29_pi7 &fmc_d30_pi9
-			 &fmc_d31_pi10>;
+		     &fmc_d19_ph11 &fmc_d20_ph12 &fmc_d21_ph13 &fmc_d22_ph14
+		     &fmc_d23_ph15 &fmc_d24_pi0 &fmc_d25_pi1 &fmc_d26_pi2
+		     &fmc_d27_pi3 &fmc_d28_pi6 &fmc_d29_pi7 &fmc_d30_pi9
+		     &fmc_d31_pi10>;
 	pinctrl-names = "default";
 	status = "okay";
 
@@ -184,16 +184,17 @@ zephyr_udc0: &usbotg_fs {
 		 * Note: SDRAM_CLK_MHZ = HCLK_MHZ / 2
 		 */
 		refresh-rate = <1292>;
+
 		bank@0 {
 			reg = <0>;
 			st,sdram-control = <STM32_FMC_SDRAM_NC_8
-						STM32_FMC_SDRAM_NR_12
-						STM32_FMC_SDRAM_MWID_32
-						STM32_FMC_SDRAM_NB_4
-						STM32_FMC_SDRAM_CAS_3
-						STM32_FMC_SDRAM_SDCLK_PERIOD_2
-						STM32_FMC_SDRAM_RBURST_ENABLE
-						STM32_FMC_SDRAM_RPIPE_0>;
+					    STM32_FMC_SDRAM_NR_12
+					    STM32_FMC_SDRAM_MWID_32
+					    STM32_FMC_SDRAM_NB_4
+					    STM32_FMC_SDRAM_CAS_3
+					    STM32_FMC_SDRAM_SDCLK_PERIOD_2
+					    STM32_FMC_SDRAM_RBURST_ENABLE
+					    STM32_FMC_SDRAM_RPIPE_0>;
 			st,sdram-timing = <2 6 4 6 2 2 2>;
 		};
 	};

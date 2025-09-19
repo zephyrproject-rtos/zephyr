@@ -26,6 +26,7 @@
 
 &spim0 {
 	status = "okay";
+
 	/* 256 Mbit SPI flash MX25L25635FZ2I-10G in 8 pin WSON package */
 	flash0: flash@0 {
 		compatible = "jedec,spi-nor";

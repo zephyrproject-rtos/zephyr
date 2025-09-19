@@ -51,11 +51,13 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button_1: button_0 {
 			label = "User SW1";
 			gpios = <&gpio1 1 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		user_button_2: button_1 {
 			label = "User SW2";
 			gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
@@ -65,14 +67,17 @@
 
 	leds: leds {
 		compatible = "gpio-leds";
+
 		green_led: led_1 {
 			gpios = <&gpio0 14 0>;
 			label = "User LED_GREEN";
 		};
+
 		blue_led: led_2 {
 			gpios = <&gpio0 26 0>;
 			label = "User LED_BLUE";
 		};
+
 		red_led: led_3 {
 			gpios = <&gpio0 31 0>;
 			label = "User LED_RED";
@@ -81,16 +86,19 @@
 
 	pwmleds {
 		compatible = "pwm-leds";
+
 		green_pwm_led: green_pwm_led {
 			pwms = <&sc_timer 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 			label = "Green PWM LED";
 			status = "okay";
 		};
+
 		blue_pwm_led: blue_pwm_led {
 			pwms = <&sc_timer 6 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 			label = "Blue PWM LED";
 			status = "okay";
 		};
+
 		red_pwm_led: red_pwm_led {
 			pwms = <&sc_timer 6 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 			label = "Red PWM LED";
@@ -103,28 +111,28 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map =	<ARDUINO_HEADER_R3_A0 0 &gpio0 5 0>,
-				<ARDUINO_HEADER_R3_A1 0 &gpio0 6 0>,
-				<ARDUINO_HEADER_R3_A2 0 &gpio0 19 0>,
-				<ARDUINO_HEADER_R3_A3 0 &gpio0 20 0>,
-				<ARDUINO_HEADER_R3_A4 0 &gpio0 17 0>,
-				<ARDUINO_HEADER_R3_A5 0 &gpio0 18 0>,
-				<ARDUINO_HEADER_R3_D0 0 &gpio0 30 0>,
-				<ARDUINO_HEADER_R3_D1 0 &gpio0 29 0>,
-				<ARDUINO_HEADER_R3_D2 0 &gpio0 28 0>,
-				<ARDUINO_HEADER_R3_D3 0 &gpio0 27 0>,
-				<ARDUINO_HEADER_R3_D4 0 &gpio1 0 0>,
-				<ARDUINO_HEADER_R3_D5 0 &gpio1 10 0>,
-				<ARDUINO_HEADER_R3_D6 0 &gpio1 2 0>,
-				<ARDUINO_HEADER_R3_D7 0 &gpio1 8 0>,
-				<ARDUINO_HEADER_R3_D8 0 &gpio1 9 0>,
-				<ARDUINO_HEADER_R3_D9 0 &gpio1 7 0>,
-				<ARDUINO_HEADER_R3_D10 0 &gpio1 6 0>,
-				<ARDUINO_HEADER_R3_D11 0 &gpio1 5 0>,
-				<ARDUINO_HEADER_R3_D12 0 &gpio1 4 0>,
-				<ARDUINO_HEADER_R3_D13 0 &gpio1 3 0>,
-				<ARDUINO_HEADER_R3_D14 0 &gpio0 17 0>,
-				<ARDUINO_HEADER_R3_D15 0 &gpio0 18 0>;
+		gpio-map = <ARDUINO_HEADER_R3_A0 0 &gpio0 5 0>,
+			   <ARDUINO_HEADER_R3_A1 0 &gpio0 6 0>,
+			   <ARDUINO_HEADER_R3_A2 0 &gpio0 19 0>,
+			   <ARDUINO_HEADER_R3_A3 0 &gpio0 20 0>,
+			   <ARDUINO_HEADER_R3_A4 0 &gpio0 17 0>,
+			   <ARDUINO_HEADER_R3_A5 0 &gpio0 18 0>,
+			   <ARDUINO_HEADER_R3_D0 0 &gpio0 30 0>,
+			   <ARDUINO_HEADER_R3_D1 0 &gpio0 29 0>,
+			   <ARDUINO_HEADER_R3_D2 0 &gpio0 28 0>,
+			   <ARDUINO_HEADER_R3_D3 0 &gpio0 27 0>,
+			   <ARDUINO_HEADER_R3_D4 0 &gpio1 0 0>,
+			   <ARDUINO_HEADER_R3_D5 0 &gpio1 10 0>,
+			   <ARDUINO_HEADER_R3_D6 0 &gpio1 2 0>,
+			   <ARDUINO_HEADER_R3_D7 0 &gpio1 8 0>,
+			   <ARDUINO_HEADER_R3_D8 0 &gpio1 9 0>,
+			   <ARDUINO_HEADER_R3_D9 0 &gpio1 7 0>,
+			   <ARDUINO_HEADER_R3_D10 0 &gpio1 6 0>,
+			   <ARDUINO_HEADER_R3_D11 0 &gpio1 5 0>,
+			   <ARDUINO_HEADER_R3_D12 0 &gpio1 4 0>,
+			   <ARDUINO_HEADER_R3_D13 0 &gpio1 3 0>,
+			   <ARDUINO_HEADER_R3_D14 0 &gpio0 17 0>,
+			   <ARDUINO_HEADER_R3_D15 0 &gpio0 18 0>;
 	};
 };
 
@@ -244,8 +252,6 @@ i2s1: &flexcomm3 {
 		ldo2: LDO2 {
 			regulator-boot-on;
 		};
-
-
 	};
 };
 
@@ -253,15 +259,16 @@ i2s1: &flexcomm3 {
 	pinctrl-0 = <&pinmux_flexspi>;
 	pinctrl-names = "default";
 	status = "okay";
+
 	mx25um51345g: mx25um51345g@2 {
 		compatible = "nxp,imx-flexspi-mx25um51345g";
 		/* MX25UM51245G is 64MB, 512MBit flash part */
 		size = <DT_SIZE_M(64 * 8)>;
 		reg = <2>;
-		spi-max-frequency = <200000000>;
+		spi-max-frequency = <DT_FREQ_M(200)>;
 		status = "okay";
 		jedec-id = [c2 81 3a];
-		erase-block-size = <4096>;
+		erase-block-size = <DT_SIZE_K(4)>;
 		write-block-size = <1>; /* FLASH_MCUX_FLEXSPI_MX25UM51345G_OPI_STR set */
 
 		partitions {
@@ -277,14 +284,17 @@ i2s1: &flexcomm3 {
 				label = "mcuboot";
 				reg = <0x00000000 DT_SIZE_K(128)>;
 			};
+
 			slot0_partition: partition@20000 {
 				label = "image-0";
 				reg = <0x00020000 DT_SIZE_M(3)>;
 			};
+
 			slot1_partition: partition@320000 {
 				label = "image-1";
 				reg = <0x00320000 DT_SIZE_M(3)>;
 			};
+
 			storage_partition: partition@620000 {
 				label = "storage";
 				reg = <0x00620000 (DT_SIZE_M(58) - DT_SIZE_K(128))>;
@@ -345,6 +355,7 @@ i2s1: &flexcomm3 {
 	no-1-8-v;
 	pwr-gpios = <&gpio2 10 GPIO_ACTIVE_HIGH>;
 	cd-gpios = <&gpio2 9 GPIO_ACTIVE_LOW>;
+
 	sdmmc {
 		compatible = "zephyr,sdmmc-disk";
 		disk-name = "SD";

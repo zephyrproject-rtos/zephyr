@@ -25,14 +25,17 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		green_led_1: led_1 {
 			gpios = <&gpiod 2 GPIO_ACTIVE_HIGH>;
 			label = "USR1 LED";
 		};
+
 		green_led_2: led_2 {
 			gpios = <&gpioa 15 GPIO_ACTIVE_HIGH>;
 			label = "USR2 LED";
 		};
+
 		bt_blue_led: led_3 {
 			gpios = <&gpiob 5 GPIO_ACTIVE_HIGH>;
 			label = "BT LED";
@@ -41,6 +44,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button: button {
 			label = "User";
 			gpios = <&gpiob 2 GPIO_ACTIVE_LOW>;
@@ -148,7 +152,6 @@ zephyr_udc0: &usbotg_fs {
 };
 
 &flash0 {
-
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
@@ -170,10 +173,12 @@ zephyr_udc0: &usbotg_fs {
 			label = "image-0";
 			reg = <0x00020000 DT_SIZE_K(128)>;
 		};
+
 		slot1_partition: partition@40000 {
 			label = "image-1";
 			reg = <0x00040000 DT_SIZE_K(128)>;
 		};
+
 		scratch_partition: partition@60000 {
 			label = "image-scratch";
 			reg = <0x00060000 DT_SIZE_K(128)>;

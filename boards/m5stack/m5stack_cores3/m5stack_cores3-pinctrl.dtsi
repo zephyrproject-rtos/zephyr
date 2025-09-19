@@ -14,6 +14,7 @@
 			pinmux = <UART0_TX_GPIO43>;
 			output-high;
 		};
+
 		group2 {
 			pinmux = <UART0_RX_GPIO44>;
 			bias-pull-up;
@@ -25,6 +26,7 @@
 			pinmux = <UART1_TX_GPIO17>;
 			output-high;
 		};
+
 		group2 {
 			pinmux = <UART1_RX_GPIO18>;
 			bias-pull-up;
@@ -36,6 +38,7 @@
 			pinmux = <UART2_TX_GPIO2>;
 			output-high;
 		};
+
 		group2 {
 			pinmux = <UART2_RX_GPIO1>;
 			bias-pull-up;
@@ -47,6 +50,7 @@
 			pinmux = <SPIM2_MISO_GPIO35>,
 				 <SPIM2_SCLK_GPIO36>;
 		};
+
 		group2 {
 			pinmux = <SPIM2_MOSI_GPIO37>;
 			output-low;

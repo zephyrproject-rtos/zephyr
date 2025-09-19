@@ -844,6 +844,11 @@ static int udc_stm32_ep_set_halt(const struct device *dev,
 		return -EIO;
 	}
 
+	/* Mark endpoint as halted if not control EP */
+	if (USB_EP_GET_IDX(cfg->addr) != 0U) {
+		cfg->stat.halted = true;
+	}
+
 	return 0;
 }
 
@@ -852,6 +857,7 @@ static int udc_stm32_ep_clear_halt(const struct device *dev,
 {
 	struct udc_stm32_data *priv = udc_get_private(dev);
 	HAL_StatusTypeDef status;
+	struct net_buf *buf;
 
 	LOG_DBG("Clear halt for ep 0x%02x", cfg->addr);
 
@@ -862,6 +868,25 @@ static int udc_stm32_ep_clear_halt(const struct device *dev,
 		return -EIO;
 	}
 
+	/* Clear halt bit from endpoint status */
+	cfg->stat.halted = false;
+
+	/* Check if there are transfers queued for EP */
+	buf = udc_buf_peek(cfg);
+	if (buf != NULL) {
+		/*
+		 * There is at least one transfer pending.
+		 * IN EP transfer can be started only if not busy;
+		 * OUT EP transfer should be prepared only if busy.
+		 */
+		const bool busy = udc_ep_is_busy(cfg);
+
+		if (USB_EP_DIR_IS_IN(cfg->addr) && !busy) {
+			udc_stm32_tx(dev, cfg, buf);
+		} else if (USB_EP_DIR_IS_OUT(cfg->addr) && busy) {
+			udc_stm32_rx(dev, cfg, buf);
+		}
+	}
 	return 0;
 }
 
@@ -888,14 +913,18 @@ static int udc_stm32_ep_enqueue(const struct device *dev,
 				struct net_buf *buf)
 {
 	unsigned int lock_key;
-	int ret;
+	int ret = 0;
 
 	udc_buf_put(epcfg, buf);
 
 	lock_key = irq_lock();
 
 	if (USB_EP_DIR_IS_IN(epcfg->addr)) {
-		ret = udc_stm32_tx(dev, epcfg, buf);
+		if (epcfg->stat.halted) {
+			LOG_DBG("skip enqueue for halted ep 0x%02x", epcfg->addr);
+		} else {
+			ret = udc_stm32_tx(dev, epcfg, buf);
+		}
 	} else {
 		ret = udc_stm32_rx(dev, epcfg, buf);
 	}

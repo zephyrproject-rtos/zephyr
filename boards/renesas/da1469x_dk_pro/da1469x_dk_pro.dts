@@ -30,6 +30,7 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		red_led: led_0 {
 			gpios = <&gpio1 1 GPIO_ACTIVE_HIGH>;
 		};
@@ -37,6 +38,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button: button {
 			label = "User (K1)";
 			gpios = <&gpio0 6 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
@@ -49,29 +51,28 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map =
-			<ARDUINO_HEADER_R3_A0 0 &gpio1 9 0>,
-			<ARDUINO_HEADER_R3_A1 0 &gpio0 25 0>,
-			<ARDUINO_HEADER_R3_A2 0 &gpio0 8 0>,
-			<ARDUINO_HEADER_R3_A3 0 &gpio0 9 0>,
-			<ARDUINO_HEADER_R3_A4 0 &gpio1 13 0>,
-			<ARDUINO_HEADER_R3_A5 0 &gpio1 12 0>,
-			<ARDUINO_HEADER_R3_D0 0 &gpio1 2 0>,
-			<ARDUINO_HEADER_R3_D1 0 &gpio1 3 0>,
-			<ARDUINO_HEADER_R3_D2 0 &gpio1 4 0>,
-			<ARDUINO_HEADER_R3_D3 0 &gpio1 5 0>,
-			<ARDUINO_HEADER_R3_D4 0 &gpio1 7 0>,
-			<ARDUINO_HEADER_R3_D5 0 &gpio1 8 0>,
-			<ARDUINO_HEADER_R3_D6 0 &gpio0 17 0>,
-			<ARDUINO_HEADER_R3_D7 0 &gpio0 18 0>,
-			<ARDUINO_HEADER_R3_D8 0 &gpio0 19 0>,
-			<ARDUINO_HEADER_R3_D9 0 &gpio0 20 0>,
-			<ARDUINO_HEADER_R3_D10 0 &gpio0 21 0>,
-			<ARDUINO_HEADER_R3_D11 0 &gpio0 24 0>,
-			<ARDUINO_HEADER_R3_D12 0 &gpio0 26 0>,
-			<ARDUINO_HEADER_R3_D13 0 &gpio0 27 0>,
-			<ARDUINO_HEADER_R3_D14 0 &gpio0 28 0>,
-			<ARDUINO_HEADER_R3_D15 0 &gpio0 29 0>;
+		gpio-map = <ARDUINO_HEADER_R3_A0 0 &gpio1 9 0>,
+			   <ARDUINO_HEADER_R3_A1 0 &gpio0 25 0>,
+			   <ARDUINO_HEADER_R3_A2 0 &gpio0 8 0>,
+			   <ARDUINO_HEADER_R3_A3 0 &gpio0 9 0>,
+			   <ARDUINO_HEADER_R3_A4 0 &gpio1 13 0>,
+			   <ARDUINO_HEADER_R3_A5 0 &gpio1 12 0>,
+			   <ARDUINO_HEADER_R3_D0 0 &gpio1 2 0>,
+			   <ARDUINO_HEADER_R3_D1 0 &gpio1 3 0>,
+			   <ARDUINO_HEADER_R3_D2 0 &gpio1 4 0>,
+			   <ARDUINO_HEADER_R3_D3 0 &gpio1 5 0>,
+			   <ARDUINO_HEADER_R3_D4 0 &gpio1 7 0>,
+			   <ARDUINO_HEADER_R3_D5 0 &gpio1 8 0>,
+			   <ARDUINO_HEADER_R3_D6 0 &gpio0 17 0>,
+			   <ARDUINO_HEADER_R3_D7 0 &gpio0 18 0>,
+			   <ARDUINO_HEADER_R3_D8 0 &gpio0 19 0>,
+			   <ARDUINO_HEADER_R3_D9 0 &gpio0 20 0>,
+			   <ARDUINO_HEADER_R3_D10 0 &gpio0 21 0>,
+			   <ARDUINO_HEADER_R3_D11 0 &gpio0 24 0>,
+			   <ARDUINO_HEADER_R3_D12 0 &gpio0 26 0>,
+			   <ARDUINO_HEADER_R3_D13 0 &gpio0 27 0>,
+			   <ARDUINO_HEADER_R3_D14 0 &gpio0 28 0>,
+			   <ARDUINO_HEADER_R3_D15 0 &gpio0 29 0>;
 	};
 
 	aliases {
@@ -104,14 +105,17 @@
 			label = "mcuboot";
 			reg = <0x000002400 0x00009c00>;
 		};
+
 		slot0_partition: partition@c000 {
 			label = "image-0";
 			reg = <0x0000c000 0x00076000>;
 		};
+
 		slot1_partition: partition@82000 {
 			label = "image-1";
 			reg = <0x00082000 0x00076000>;
 		};
+
 		storage_partition: partition@f8000 {
 			label = "storage";
 			reg = <0x000f8000 0x00008000>;

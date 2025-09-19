@@ -5,6 +5,7 @@
  */
 
 #include <mem.h>
+#include <freq.h>
 #include <arm/armv7-m.dtsi>
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/clock/imx_ccm_rev2.h>
@@ -13,6 +14,7 @@
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include <zephyr/dt-bindings/power/imx_spc.h>
 #include <zephyr/dt-bindings/mipi_dsi/mipi_dsi.h>
+
 / {
 	cpus {
 		#address-cells = <1>;
@@ -32,7 +34,7 @@
 			idle: set_point_1_wait {
 				/* idle corresponds to set point 1 (wait) for RT1170 */
 				compatible = "zephyr,power-state";
-				power-state-name="runtime-idle";
+				power-state-name = "runtime-idle";
 				substate-id = <IMX_SPC_SET_POINT_1_WAIT>;
 				min-residency-us = <100>;
 			};
@@ -40,7 +42,7 @@
 			suspend: set_point_10_suspend {
 				/*  suspend corresponds to set point 10 for RT1170 */
 				compatible = "zephyr,power-state";
-				power-state-name="suspend-to-idle";
+				power-state-name = "suspend-to-idle";
 				substate-id = <IMX_SPC_SET_POINT_10_SUSPEND>;
 				min-residency-us = <5000>;
 				exit-latency-us = <500>;
@@ -50,7 +52,7 @@
 
 	xtal: xtal-osc {
 		compatible = "fixed-clock";
-		clock-frequency = <24000000>;
+		clock-frequency = <DT_FREQ_M(24)>;
 		#clock-cells = <0>;
 	};
 
@@ -104,7 +106,7 @@
 			compatible = "nxp,imx-gpt";
 			reg = <0x400f0000 0x4000>;
 			interrupts = <120 0>;
-			gptfreq = <24000000>;
+			gptfreq = <DT_FREQ_M(24)>;
 			clocks = <&ccm IMX_CCM_GPT_CLK 0x41 0>;
 		};
 
@@ -112,7 +114,7 @@
 			compatible = "nxp,imx-gpt";
 			reg = <0x400f4000 0x4000>;
 			interrupts = <121 0>;
-			gptfreq = <24000000>;
+			gptfreq = <DT_FREQ_M(24)>;
 			clocks = <&ccm IMX_CCM_GPT_CLK 0x42 0>;
 		};
 
@@ -120,7 +122,7 @@
 			compatible = "nxp,imx-gpt";
 			reg = <0x400f8000 0x4000>;
 			interrupts = <122 0>;
-			gptfreq = <24000000>;
+			gptfreq = <DT_FREQ_M(24)>;
 			clocks = <&ccm IMX_CCM_GPT_CLK 0x43 0>;
 		};
 
@@ -128,7 +130,7 @@
 			compatible = "nxp,imx-gpt";
 			reg = <0x400fc000 0x4000>;
 			interrupts = <123 0>;
-			gptfreq = <24000000>;
+			gptfreq = <DT_FREQ_M(24)>;
 			clocks = <&ccm IMX_CCM_GPT_CLK 0x44 0>;
 		};
 
@@ -136,7 +138,7 @@
 			compatible = "nxp,imx-gpt";
 			reg = <0x40100000 0x4000>;
 			interrupts = <124 0>;
-			gptfreq = <24000000>;
+			gptfreq = <DT_FREQ_M(24)>;
 			clocks = <&ccm IMX_CCM_GPT_CLK 0x45 0>;
 		};
 
@@ -188,7 +190,6 @@
 				compatible = "fixed-factor-clock";
 				#clock-cells = <0>;
 			};
-
 		};
 
 		gpio1: gpio@4012c000 {
@@ -348,6 +349,7 @@
 			compatible = "nxp,imx-iomuxc";
 			reg = <0x400e8000 0x4000>;
 			status = "okay";
+
 			pinctrl: pinctrl {
 				status = "okay";
 				compatible = "nxp,mcux-rt11xx-pinctrl";
@@ -603,7 +605,7 @@
 		flexpwm2: flexpwm@40190000 {
 			compatible = "nxp,flexpwm";
 			reg = <0x40190000 0x4000>;
-			interrupts =  <181 0>;
+			interrupts = <181 0>;
 
 			flexpwm2_pwm0: flexpwm2_pwm0 {
 				compatible = "nxp,imx-pwm";
@@ -649,7 +651,7 @@
 		flexpwm3: flexpwm@40194000 {
 			compatible = "nxp,flexpwm";
 			reg = <0x40194000 0x4000>;
-			interrupts =  <186 0>;
+			interrupts = <186 0>;
 
 			flexpwm3_pwm0: flexpwm3_pwm0 {
 				compatible = "nxp,imx-pwm";
@@ -758,6 +760,7 @@
 			compatible = "nxp,enet";
 			reg = <0x40424000 0x628>;
 			clocks = <&ccm IMX_CCM_ENET_CLK 0 0>;
+
 			enet_mac: ethernet {
 				compatible = "nxp,enet-mac";
 				interrupts = <137 0>;
@@ -766,12 +769,14 @@
 				ptp-clock = <&enet_ptp_clock>;
 				status = "disabled";
 			};
+
 			enet_mdio: mdio {
 				compatible = "nxp,enet-mdio";
 				status = "disabled";
 				#address-cells = <1>;
 				#size-cells = <0>;
 			};
+
 			enet_ptp_clock: ptp_clock {
 				compatible = "nxp,enet-ptp-clock";
 				interrupts = <138 0>;
@@ -785,6 +790,7 @@
 			reg = <0x40420000 0x628>;
 			clocks = <&ccm IMX_CCM_ENET1G_CLK 0 0>;
 			status = "disabled";
+
 			enet1g_mac: ethernet {
 				compatible = "nxp,enet-mac";
 				interrupts = <141 0>;
@@ -793,12 +799,14 @@
 				ptp-clock = <&enet1g_ptp_clock>;
 				status = "disabled";
 			};
+
 			enet1g_mdio: mdio {
 				compatible = "nxp,enet-mdio";
 				status = "disabled";
 				#address-cells = <1>;
 				#size-cells = <0>;
 			};
+
 			enet1g_ptp_clock: ptp_clock {
 				compatible = "nxp,enet-ptp-clock";
 				interrupts = <142 0>;
@@ -847,8 +855,8 @@
 			clocks = <&ccm IMX_CCM_USDHC1_CLK 0 0>;
 			max-current-330 = <1020>;
 			max-current-180 = <1020>;
-			max-bus-freq = <208000000>;
-			min-bus-freq = <400000>;
+			max-bus-freq = <DT_FREQ_M(208)>;
+			min-bus-freq = <DT_FREQ_K(400)>;
 		};
 
 		usdhc2: usdhc@4041c000 {
@@ -859,8 +867,8 @@
 			clocks = <&ccm IMX_CCM_USDHC2_CLK 0 0>;
 			max-current-330 = <1020>;
 			max-current-180 = <1020>;
-			max-bus-freq = <208000000>;
-			min-bus-freq = <400000>;
+			max-bus-freq = <DT_FREQ_M(208)>;
+			min-bus-freq = <DT_FREQ_K(400)>;
 		};
 
 		csi: csi@40800000 {
@@ -881,8 +889,8 @@
 			reg = <0x40810000 0x200>;
 			status = "disabled";
 			clocks = <&ccm IMX_CCM_MIPI_CSI2RX_ROOT_CLK 0 0>,
-			<&ccm IMX_CCM_MIPI_CSI2RX_UI_CLK 0 0>,
-			<&ccm IMX_CCM_MIPI_CSI2RX_ESC_CLK 0 0>;
+				 <&ccm IMX_CCM_MIPI_CSI2RX_UI_CLK 0 0>,
+				 <&ccm IMX_CCM_MIPI_CSI2RX_ESC_CLK 0 0>;
 
 			ports {
 				#address-cells = <1>;
@@ -890,6 +898,7 @@
 
 				port@0 {
 					reg = <0>;
+
 					mipi_csi2rx_ep_out: endpoint {
 						remote-endpoint-label = "csi_ep_in";
 					};
@@ -944,24 +953,12 @@
 			reg = <0x20200000 DT_SIZE_K(256)>;
 		};
 
-		ocram1: ocram@20240000 {
-			compatible = "zephyr,memory-region", "mmio-sram";
-			zephyr,memory-region = "OCRAM1";
-			reg = <0x20240000 DT_SIZE_K(512)>;
-		};
-
-		ocram2: ocram@202c0000 {
-			compatible = "zephyr,memory-region", "mmio-sram";
-			zephyr,memory-region = "OCRAM2";
-			reg = <0x202c0000 DT_SIZE_K(512)>;
-		};
-
 		lpadc1: adc@40050000 {
 			compatible = "nxp,lpc-lpadc";
 			reg = <0x40050000 0x304>;
 			interrupts = <88 0>;
 			status = "disabled";
-			voltage-ref= <1>;
+			voltage-ref = <1>;
 			calibration-average = <128>;
 			power-level = <0>;
 			offset-value-a = <10>;
@@ -977,7 +974,7 @@
 			status = "disabled";
 			clk-divider = <8>;
 			clk-source = <0>;
-			voltage-ref= <1>;
+			voltage-ref = <1>;
 			calibration-average = <128>;
 			power-level = <1>;
 			offset-value-a = <10>;
@@ -1030,13 +1027,13 @@
 			nxp,mem2mem;
 			nxp,a-on;
 			reg = <0x40070000 0x4000>,
-				<0x40074000 0x4000>;
+			      <0x40074000 0x4000>;
 			clocks = <&ccm IMX_CCM_EDMA_CLK 0x7C 0x000000C0>;
-				status = "disabled";
+			status = "disabled";
 			interrupts = <0 0>, <1 0>, <2 0>, <3 0>,
-				<4 0>, <5 0>, <6 0>, <7 0>,
-				<8 0>, <9 0>, <10 0>, <11 0>,
-				<12 0>, <13 0>, <14 0>, <15 0>;
+				     <4 0>, <5 0>, <6 0>, <7 0>,
+				     <8 0>, <9 0>, <10 0>, <11 0>,
+				     <12 0>, <13 0>, <14 0>, <15 0>;
 			irq-shared-offset = <16>;
 		};
 
@@ -1049,13 +1046,13 @@
 			nxp,mem2mem;
 			nxp,a-on;
 			reg = <0x40c14000 0x4000>,
-				<0x40c18000 0x4000>;
+			      <0x40c18000 0x4000>;
 			clocks = <&ccm IMX_CCM_EDMA_LPSR_CLK 0x7C 0x000000C0>;
 			status = "disabled";
 			interrupts = <0 0>, <1 0>, <2 0>, <3 0>,
-				<4 0>, <5 0>, <6 0>, <7 0>,
-				<8 0>, <9 0>, <10 0>, <11 0>,
-				<12 0>, <13 0>, <14 0>, <15 0>;
+				     <4 0>, <5 0>, <6 0>, <7 0>,
+				     <8 0>, <9 0>, <10 0>, <11 0>,
+				     <12 0>, <13 0>, <14 0>, <15 0>;
 			irq-shared-offset = <16>;
 		};
 
@@ -1085,10 +1082,10 @@
 			pre-div = <0>;
 			podf = <16>;
 			pll-clocks = <&anatop 0 0 0>,
-					<&anatop 0 0 32>,
-					<&anatop 0 0 1>,
-					<&anatop 0 0 768>,
-					<&anatop 0 0 1000>;
+				     <&anatop 0 0 32>,
+				     <&anatop 0 0 1>,
+				     <&anatop 0 0 768>,
+				     <&anatop 0 0 1000>;
 			pll-clock-names = "src", "lp", "pd", "num", "den";
 			pinmuxes = <&iomuxcgpr 0x0 0x100>;
 			interrupts = <76 0>;
@@ -1108,10 +1105,10 @@
 			pre-div = <0>;
 			podf = <16>;
 			pll-clocks = <&anatop 0 0 0>,
-					<&anatop 0 0 32>,
-					<&anatop 0 0 1>,
-					<&anatop 0 0 768>,
-					<&anatop 0 0 1000>;
+				     <&anatop 0 0 32>,
+				     <&anatop 0 0 1>,
+				     <&anatop 0 0 768>,
+				     <&anatop 0 0 1000>;
 			pll-clock-names = "src", "lp", "pd", "num", "den";
 			pinmuxes = <&iomuxcgpr 0x4 0x100>;
 			interrupts = <77 0>;
@@ -1131,10 +1128,10 @@
 			pre-div = <0>;
 			podf = <16>;
 			pll-clocks = <&anatop 0 0 0>,
-					<&anatop 0 0 32>,
-					<&anatop 0 0 1>,
-					<&anatop 0 0 768>,
-					<&anatop 0 0 1000>;
+				     <&anatop 0 0 32>,
+				     <&anatop 0 0 1>,
+				     <&anatop 0 0 768>,
+				     <&anatop 0 0 1000>;
 			pll-clock-names = "src", "lp", "pd", "num", "den";
 			pinmuxes = <&iomuxcgpr 0x8 0x100>;
 			interrupts = <78 0>, <79 0>;
@@ -1154,10 +1151,10 @@
 			pre-div = <0>;
 			podf = <16>;
 			pll-clocks = <&anatop 0 0 0>,
-					<&anatop 0 0 32>,
-					<&anatop 0 0 1>,
-					<&anatop 0 0 768>,
-					<&anatop 0 0 1000>;
+				     <&anatop 0 0 32>,
+				     <&anatop 0 0 1>,
+				     <&anatop 0 0 768>,
+				     <&anatop 0 0 1000>;
 			pll-clock-names = "src", "lp", "pd", "num", "den";
 			pinmuxes = <&iomuxcgpr 0x8 0x200>;
 			interrupts = <80 0>, <81 0>;
@@ -1170,7 +1167,6 @@
 			reg = <0x40c04000 0x4000>;
 			status = "okay";
 		};
-
 
 		qdec1: qdec@40174000 {
 			compatible = "nxp,mcux-qdec";
@@ -1268,17 +1264,20 @@
 				compatible = "nxp,pit-channel";
 				reg = <0>;
 				status = "disabled";
-				};
+			};
+
 			pit2_channel1: pit2_channel@1 {
 				compatible = "nxp,pit-channel";
 				reg = <1>;
 				status = "disabled";
-				};
+			};
+
 			pit2_channel2: pit2_channel@2 {
 				compatible = "nxp,pit-channel";
 				reg = <2>;
 				status = "disabled";
 			};
+
 			pit2_channel3: pit2_channel@3 {
 				compatible = "nxp,pit-channel";
 				reg = <3>;

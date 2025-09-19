@@ -418,7 +418,7 @@
 			status = "disabled";
 			buffer-rx-size = <128>;
 			buffer-tx-size = <128>;
-			shi-cs-wui =<&wui_io53>;
+			shi-cs-wui = <&wui_io53>;
 		};
 
 		espi0: espi@4000a000 {
@@ -521,6 +521,22 @@
 			compatible = "syscon";
 			reg = <0x4000c02e 0x153>;
 			reg-io-width = <1>;
+			status = "disabled";
+		};
+
+		gdma1: dma@40011a00 {
+			compatible = "nuvoton,npcx-gdma";
+			reg = <0x40011a00 0x40>;
+			chan-offset = <0x20>;
+
+			interrupts = <65 3>;
+			clocks = <&pcc NPCX_CLOCK_BUS_AHB6 NPCX_PWDWN_CTL3 5>;
+
+			dma-channels = <2>;
+
+			#dma-cells = <2>;
+			#address-cells = <1>;
+			#size-cells = <0>;
 			status = "disabled";
 		};
 	};

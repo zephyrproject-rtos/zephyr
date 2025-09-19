@@ -40,7 +40,7 @@
 
 		elc: elc@40082000 {
 			compatible = "renesas,ra-elc";
-			reg = <0x40082000  0x70>;
+			reg = <0x40082000 0x70>;
 			#renesas-elc-cells = <2>;
 			clocks = <&pclkb MSTPC 14>;
 			status = "disabled";
@@ -116,6 +116,16 @@
 			status = "disabled";
 		};
 
+		dma0: dma@40005000 {
+			compatible = "renesas,ra-dma";
+			reg = <0x40005000 0x200>, <0x40005200 0xa0>;
+			reg-names = "channel", "common";
+			clocks = <&iclk MSTPA 22>;
+			dma-channels = <8>;
+			#dma-cells = <2>;
+			status = "disabled";
+		};
+
 		pinctrl: pin-controller@40080800 {
 			compatible = "renesas,ra-pinctrl-pfs";
 			reg = <0x40080800 0x3c0>;
@@ -129,6 +139,7 @@
 			reg = <0x40118000 0x100>;
 			clocks = <&pclka MSTPB 31>;
 			status = "disabled";
+
 			uart {
 				compatible = "renesas,ra-sci-uart";
 				channel = <0>;
@@ -143,6 +154,7 @@
 			reg = <0x40118900 0x100>;
 			clocks = <&pclka MSTPB 22>;
 			status = "disabled";
+
 			uart {
 				compatible = "renesas,ra-sci-uart";
 				channel = <9>;
@@ -291,7 +303,7 @@
 			status = "disabled";
 		};
 
-		crc: crc@40108000{
+		crc: crc@40108000 {
 			compatible = "renesas,ra-crc";
 			reg = <0x40108000 0x1000>;
 			clocks = <&pclka MSTPC 1>;

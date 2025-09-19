@@ -36,11 +36,13 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		yellow_led0: led_0 {
 			gpios = <&pioa 23 GPIO_ACTIVE_LOW>;
 			label = "User LED 0";
 			status = "disabled";
 		};
+
 		yellow_led1: led_1 {
 			gpios = <&pioc 9 GPIO_ACTIVE_LOW>;
 			label = "User LED 1";
@@ -49,6 +51,7 @@
 
 	pwmleds {
 		compatible = "pwm-leds";
+
 		pwm_led0: pwm_led_0 {
 			pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 		};
@@ -66,6 +69,7 @@
 			gpios = <&pioa 9 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		sw1_user_button: button_2 {
 			label = "User Button 1";
 			gpios = <&piob 12 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
@@ -231,7 +235,6 @@
 	status = "okay";
 	current-speed = <115200>;
 
-
 	pinctrl-0 = <&uart3_default>;
 	pinctrl-names = "default";
 };
@@ -369,29 +372,20 @@ zephyr_udc0: &usbhs {
 	};
 };
 
-ext1_spi: &spi0 {
-};
+ext1_spi: &spi0 {};
 
-ext1_i2c: &twihs0 {
-};
+ext1_i2c: &twihs0 {};
 
-ext1_serial: &usart0 {
-};
+ext1_serial: &usart0 {};
 
-ext2_spi: &spi0 {
-};
+ext2_spi: &spi0 {};
 
-ext2_i2c: &twihs0 {
-};
+ext2_i2c: &twihs0 {};
 
-ext2_serial: &usart1 {
-};
+ext2_serial: &usart1 {};
 
-arduino_spi: &spi0 {
-};
+arduino_spi: &spi0 {};
 
-arduino_i2c: &twihs0 {
-};
+arduino_i2c: &twihs0 {};
 
-arduino_serial: &uart3 {
-};
+arduino_serial: &uart3 {};

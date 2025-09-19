@@ -44,7 +44,7 @@
 
 		button0: btn_0 {
 			label = "BTN0";
-			gpios = <&gpio2 27 (GPIO_PULL_UP|GPIO_ACTIVE_LOW)>;
+			gpios = <&gpio2 27 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			zephyr,code = <INPUT_KEY_0>;
 		};
 	};

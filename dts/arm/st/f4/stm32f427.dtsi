@@ -9,6 +9,14 @@
 #include <zephyr/dt-bindings/memory-controller/stm32-fmc-sdram.h>
 
 / {
+	clocks {
+		pllsai: pllsai {
+			compatible = "st,stm32fx-pllsai-clock";
+			#clock-cells = <0>;
+			status = "disabled";
+		};
+	};
+
 	soc {
 		compatible = "st,stm32f427", "st,stm32f4", "simple-bus";
 
@@ -67,7 +75,7 @@
 		/* spi5 is present on all STM32F427XX and derivates SoCs except
 		 * some vX variants. Delete node in vX.dtsi.
 		 */
-		 spi5: spi@40015000 {
+		spi5: spi@40015000 {
 			compatible = "st,stm32-spi";
 			#address-cells = <1>;
 			#size-cells = <0>;

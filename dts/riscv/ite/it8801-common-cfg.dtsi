@@ -121,7 +121,6 @@
 		mfdctrl = <&pwm7_gp20_default>;
 		channel = <7>;
 		#pwm-cells = <3>;
-
 	};
 
 	ioex_it8801_pwm8: it8801_pwm@98 {

@@ -107,9 +107,12 @@ int fake_dev_init(const struct device *dev)
 
 static void fake_iface_init(struct net_if *iface)
 {
-	static uint8_t mac[8] = { 0x00, 0x00, 0x00, 0x00, 0x0a, 0x0b, 0x0c, 0x0d};
+	static uint8_t mac[6] = { 0x00, 0x00, 0x0a, 0x0b, 0x0c, 0x0d};
+	int ret;
 
-	net_if_set_link_addr(iface, mac, 8, NET_LINK_DUMMY);
+	ret = net_if_set_link_addr(iface, mac, 6, NET_LINK_DUMMY);
+
+	zassert_equal(ret, 0, "Setting link address failed (%d)", ret);
 }
 
 static int fake_iface_send(const struct device *dev, struct net_pkt *pkt)

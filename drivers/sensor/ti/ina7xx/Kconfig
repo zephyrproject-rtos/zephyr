@@ -1,0 +1,12 @@
+# INA745 Current/Power Monitor
+
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config INA7XX
+	bool "INA7xx Current/Power Monitor"
+	default y
+	depends on DT_HAS_TI_INA7XX_ENABLED
+	select I2C
+	help
+	  Enable driver for INA7xx Bidirectional Current/Power Monitor.

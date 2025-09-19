@@ -64,7 +64,6 @@
 		eeprom-0 = &eeprom;
 		lora0 = &lora;
 	};
-
 };
 
 &clk_lse {
@@ -95,7 +94,9 @@
 };
 
 arduino_usart: &usart1 {};
+
 arduino_spi: &spi2 {};
+
 arduino_i2c: &i2c1 {};
 
 &usart1 {
@@ -124,11 +125,11 @@ arduino_i2c: &i2c1 {};
 		reg = <0>;
 		reset-gpios = <&gpioc 0 GPIO_ACTIVE_LOW>;
 		dio-gpios = <&gpiob 4 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,
-			<&gpiob 1 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,
-			<&gpiob 0 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,
-			<&gpioc 13 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,
-			<&gpioa 5 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,
-			<&gpioa 4 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
+			    <&gpiob 1 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,
+			    <&gpiob 0 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,
+			    <&gpioc 13 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,
+			    <&gpioa 5 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,
+			    <&gpioa 4 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
 		rfi-enable-gpios = <&gpioa 1 GPIO_ACTIVE_HIGH>;
 		rfo-enable-gpios = <&gpioc 2 GPIO_ACTIVE_HIGH>;
 		pa-boost-enable-gpios = <&gpioc 1 GPIO_ACTIVE_HIGH>;

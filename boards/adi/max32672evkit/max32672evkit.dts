@@ -26,10 +26,12 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led1: led_1 {
 			gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
 			label = "Red LED";
 		};
+
 		led2: led_2 {
 			gpios = <&gpio0 23 GPIO_ACTIVE_LOW>;
 			label = "Green LED";
@@ -38,6 +40,7 @@
 
 	buttons {
 		compatible = "gpio-keys";
+
 		pb1: pb1 {
 			gpios = <&gpio0 18 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "SW3";
@@ -45,7 +48,7 @@
 		};
 	};
 
-	 /* These aliases are provided for compatibility with samples */
+	/* These aliases are provided for compatibility with samples */
 	aliases {
 		led0 = &led1;
 		led1 = &led2;
@@ -143,11 +146,11 @@
 };
 
 &spi0a_mosi_p0_3 {
-	power-source=<MAX32_VSEL_VDDIOH>;
+	power-source = <MAX32_VSEL_VDDIOH>;
 };
 
 &spi0a_sck_p0_4 {
-	power-source=<MAX32_VSEL_VDDIOH>;
+	power-source = <MAX32_VSEL_VDDIOH>;
 };
 
 &spi0 {

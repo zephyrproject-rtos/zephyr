@@ -1933,8 +1933,6 @@ struct gdma_reg {
 	volatile uint32_t CDST;
 	/* 0x018: Channel Current Transfer Count */
 	volatile uint32_t CTCNT;
-	/* 0x01C: Reserved */
-	volatile uint32_t reserved1;
 };
 
 /* DMA register fields */

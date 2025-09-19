@@ -854,7 +854,7 @@ static int process_ping(struct mqtt_sn_client *client, int64_t *next_cycle)
 		next_ping = client->last_ping + T_RETRY_MSEC;
 	}
 
-	if (next_ping < now) {
+	if (next_ping <= now) {
 		if (!client->ping_retries--) {
 			LOG_WRN("Ping ran out of retries");
 			mqtt_sn_disconnect_internal(client);

@@ -209,7 +209,7 @@
 			status = "disabled";
 		};
 
-		wdt0: watchdog@6001f048  {
+		wdt0: watchdog@6001f048 {
 			compatible = "espressif,esp32-watchdog";
 			reg = <0x6001f048 0x20>;
 			interrupts = <TG0_WDT_LEVEL_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;

@@ -73,6 +73,17 @@ schema;scenario-schema:
     "expect_reboot":
       type: bool
       required: false
+    "required_applications":
+      type: seq
+      required: false
+      sequence:
+        - type: map
+          mapping:
+            "name":
+              type: str
+              required: true
+            "platform":
+              type: str
     "required_snippets":
       type: seq
       required: false

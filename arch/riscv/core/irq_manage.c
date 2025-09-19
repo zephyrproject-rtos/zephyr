@@ -10,6 +10,7 @@
 #include <zephyr/arch/riscv/csr.h>
 #include <zephyr/irq_multilevel.h>
 #include <zephyr/sw_isr_table.h>
+#include <zephyr/pm/pm.h>
 
 #ifdef CONFIG_RISCV_HAS_PLIC
 #include <zephyr/drivers/interrupt_controller/riscv_plic.h>
@@ -75,3 +76,19 @@ int arch_irq_disconnect_dynamic(unsigned int irq, unsigned int priority,
 }
 #endif /* CONFIG_SHARED_INTERRUPTS */
 #endif /* CONFIG_DYNAMIC_INTERRUPTS */
+
+#ifdef CONFIG_PM
+void arch_isr_direct_pm(void)
+{
+	unsigned int key;
+
+	key = irq_lock();
+
+	if (_kernel.idle) {
+		_kernel.idle = 0;
+		pm_system_resume();
+	}
+
+	irq_unlock(key);
+}
+#endif

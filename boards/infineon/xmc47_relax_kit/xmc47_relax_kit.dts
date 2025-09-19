@@ -27,21 +27,26 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		/* leds are labelled LED1 and LED2 in the relax kit documentation */
 		led1: led1 {
 			gpios = <&gpio5 9 GPIO_ACTIVE_HIGH>;
 		};
+
 		led2: led2 {
 			gpios = <&gpio5 8 GPIO_ACTIVE_HIGH>;
 		};
 	};
 
-	pwmleds {
+	pwmleds: pwmleds {
 		compatible = "pwm-leds";
+		status = "disabled";
+
 		pwm_led1: pwm_led1 {
 			pwms = <&pwm_ccu80 4 PWM_SEC(1) PWM_POLARITY_NORMAL>;
 			label = "PWM LED1";
 		};
+
 		pwm_led2: pwm_led2 {
 			pwms = <&pwm_ccu80 0 PWM_SEC(1) PWM_POLARITY_NORMAL>;
 			label = "PWM LED2";
@@ -57,7 +62,6 @@
 		zephyr,code-partition = &code_partition;
 		zephyr,canbus = &can_node1;
 	};
-
 };
 
 &psram1 {

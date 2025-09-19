@@ -115,6 +115,7 @@
 			clocks = <&gcr ADI_MAX32_CLOCK_BUS2 0>;
 			clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
 			prescaler = <1>;
+
 			counter {
 				compatible = "adi,max32-counter";
 				status = "disabled";

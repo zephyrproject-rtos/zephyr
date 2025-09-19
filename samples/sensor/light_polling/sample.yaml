@@ -16,11 +16,21 @@ tests:
     harness: grove
     depends_on: adc
   sample.sensor.light_polling:
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "lux:"
     tags:
       - drivers
       - sensor
       - light
     integration_platforms:
+      - frdm_mcxw71/mcxw716c
+      - adafruit_qt_py_rp2040/rp2040
+      - mikroe_clicker_ra4m1/r7fa4m1ab3cfm
+      - mikroe_quail/stm32f427xx
+    platform_allow:
       - frdm_mcxw71/mcxw716c
       - adafruit_qt_py_rp2040/rp2040       # adafruit_tsl2591 shield
       - mikroe_clicker_ra4m1/r7fa4m1ab3cfm # mikroe_ambient_2_click shield

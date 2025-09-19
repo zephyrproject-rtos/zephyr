@@ -39,4 +39,12 @@ if !CM7_BOOT_FROM_FLASH
 		$(dt_node_reg_addr_hex,/soc/itcm@0)"
 endif # !CM7_BOOT_FROM_FLASH
 endif # SECOND_CORE_MCUX && BOARD_MIMXRT1180_EVK_MIMXRT1189_CM7
+
+if DMA
+
+config NOCACHE_MEMORY
+	default y
+
+endif # DMA
+
 endif # BOARD_MIMXRT1180_EVK

@@ -10,9 +10,11 @@
 &pinctrl {
 	uart0_default: uart0_default {
 		status = "okay";
+
 		group1 {
 			pinmux = <UART0_TX_P0>;
 		};
+
 		group2 {
 			pinmux = <UART0_RX_P1>;
 			input-enable;
@@ -24,6 +26,7 @@
 			pinmux = <I2C0_SDA_P24>;
 			input-enable;
 		};
+
 		group2 {
 			pinmux = <I2C0_SCL_P25>;
 			input-enable;
@@ -35,6 +38,7 @@
 			pinmux = <I2C1_SDA_P22>;
 			input-enable;
 		};
+
 		group2 {
 			pinmux = <I2C1_SCL_P23>;
 			input-enable;
@@ -45,10 +49,12 @@
 		group1 {
 			pinmux = <SPI0_TX_P3>;
 		};
+
 		group2 {
 			pinmux = <SPI0_RX_P4>;
 			input-enable;
 		};
+
 		group3 {
 			pinmux = <SPI0_SCK_P6>;
 		};

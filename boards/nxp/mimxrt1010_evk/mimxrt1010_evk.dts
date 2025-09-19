@@ -36,6 +36,7 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		green_led: led-1 {
 			gpios = <&gpio1 11 GPIO_ACTIVE_LOW>;
 			label = "User LD1";
@@ -44,6 +45,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button: button-1 {
 			label = "User SW4";
 			gpios = <&gpio2 5 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
@@ -92,14 +94,15 @@ arduino_serial: &lpuart1 {};
 &flexspi {
 	status = "okay";
 	reg = <0x400a0000 0x4000>, <0x60000000 DT_SIZE_M(16)>;
+
 	at25sf128a: at25sf128a@0 {
 		compatible = "nxp,imx-flexspi-nor";
 		size = <DT_SIZE_M(16 * 8)>;
 		reg = <0>;
-		spi-max-frequency = <133000000>;
+		spi-max-frequency = <DT_FREQ_M(133)>;
 		status = "okay";
 		jedec-id = [1f 89 01];
-		erase-block-size = <4096>;
+		erase-block-size = <DT_SIZE_K(4)>;
 		write-block-size = <1>;
 
 		partitions {
@@ -115,14 +118,17 @@ arduino_serial: &lpuart1 {};
 				label = "mcuboot";
 				reg = <0x00000000 DT_SIZE_K(128)>;
 			};
+
 			slot0_partition: partition@20000 {
 				label = "image-0";
 				reg = <0x00020000 DT_SIZE_M(7)>;
 			};
+
 			slot1_partition: partition@720000 {
 				label = "image-1";
 				reg = <0x00720000 DT_SIZE_M(7)>;
 			};
+
 			storage_partition: partition@E20000 {
 				label = "storage";
 				reg = <0x00E20000 (DT_SIZE_M(2) - DT_SIZE_K(128))>;

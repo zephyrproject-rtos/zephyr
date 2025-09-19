@@ -29,18 +29,22 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led1: led_1 {
 			gpios = <&gpio0 13 GPIO_ACTIVE_HIGH>;
 			label = "Blue LED 1";
 		};
+
 		led2: led_2 {
 			gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;
 			label = "Blue LED 2";
 		};
+
 		led3: led_3 {
 			gpios = <&gpio0 15 GPIO_ACTIVE_HIGH>;
 			label = "Blue LED 3";
 		};
+
 		led4: led_4 {
 			gpios = <&gpio0 16 GPIO_ACTIVE_HIGH>;
 			label = "Blue LED 4";
@@ -49,21 +53,25 @@
 
 	buttons {
 		compatible = "gpio-keys";
+
 		button1: button_1 {
 			gpios = <&gpio0 11 GPIO_PULL_UP>;
 			label = "Push button switch 1 (SW1)";
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		button2: button_2 {
 			gpios = <&gpio0 12 GPIO_PULL_UP>;
 			label = "Push button switch 2 (SW2)";
 			zephyr,code = <INPUT_KEY_1>;
 		};
+
 		button3: button_3 {
 			gpios = <&gpio0 24 GPIO_PULL_UP>;
 			label = "Push button switch 3 (SW9)";
 			zephyr,code = <INPUT_KEY_2>;
 		};
+
 		button4: button_4 {
 			gpios = <&gpio0 22 GPIO_PULL_UP>;
 			label = "Push button switch 4 (SW10)";
@@ -128,6 +136,7 @@
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-1 = <&i2c0_sleep>;
 	pinctrl-names = "default", "sleep";
+
 	dac0: mcp4725@60 {
 		/* MCP4725 not populated at factory */
 		compatible = "microchip,mcp4725";
@@ -169,18 +178,22 @@
 			label = "mcuboot";
 			reg = <0x00000000 0xC000>;
 		};
+
 		slot0_partition: partition@c000 {
 			label = "image-0";
 			reg = <0x0000C000 0x32000>;
 		};
+
 		slot1_partition: partition@3e000 {
 			label = "image-1";
 			reg = <0x0003E000 0x32000>;
 		};
+
 		scratch_partition: partition@70000 {
 			label = "image-scratch";
 			reg = <0x00070000 0xA000>;
 		};
+
 		storage_partition: partition@7a000 {
 			label = "storage";
 			reg = <0x0007A000 0x00006000>;

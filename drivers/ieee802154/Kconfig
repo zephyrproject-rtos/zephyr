@@ -9,6 +9,7 @@
 menuconfig IEEE802154
 	bool "IEEE 802.15.4 drivers"
 	depends on NETWORKING
+	select NET_PKT_CONTROL_BLOCK
 	default y if NET_L2_PHY_IEEE802154
 
 if IEEE802154

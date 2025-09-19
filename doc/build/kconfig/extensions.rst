@@ -3,7 +3,7 @@
 Kconfig extensions
 ##################
 
-Zephyr uses the `Kconfiglib <https://github.com/ulfalizer/Kconfiglib>`__
+Zephyr uses the `Kconfiglib <https://github.com/zephyrproject-rtos/Kconfiglib>`__
 implementation of `Kconfig
 <https://docs.kernel.org/kbuild/kconfig-language.html>`__,
 which includes some Kconfig extensions:

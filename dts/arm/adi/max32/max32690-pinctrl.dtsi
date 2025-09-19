@@ -9,7 +9,6 @@
 / {
 	soc {
 		pinctrl: pin-controller@40008000 {
-
 			/omit-if-no-ref/ spixr_sdio0_p0_1: spixr_sdio0_p0_1 {
 				pinmux = <MAX32_PINMUX(0, 1, AF1)>;
 			};
@@ -765,7 +764,6 @@
 			/omit-if-no-ref/ lptmr1b_ioa_p3_7: lptmr1b_ioa_p3_7 {
 				pinmux = <MAX32_PINMUX(3, 7, AF2)>;
 			};
-
 		};
 	};
 };

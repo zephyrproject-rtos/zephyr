@@ -7,6 +7,7 @@
 
 &arduino_i2c {
 	status = "okay";
+
 	amg88xx_amg88xx_grid_eye_eval_shield: amg88xx@68 {
 		compatible = "panasonic,amg88xx";
 		reg = <0x68>;

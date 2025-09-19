@@ -25,8 +25,11 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(RM3100, CONFIG_SENSOR_LOG_LEVEL);
 
-static void rm3100_complete_result(struct rtio *ctx, const struct rtio_sqe *sqe, void *arg)
+static void rm3100_complete_result(struct rtio *ctx, const struct rtio_sqe *sqe,
+				   int result, void *arg)
 {
+	ARG_UNUSED(result);
+
 	struct rtio_iodev_sqe *iodev_sqe = (struct rtio_iodev_sqe *)sqe->userdata;
 	struct rtio_cqe *cqe;
 	int err = 0;

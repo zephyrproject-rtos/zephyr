@@ -14,8 +14,8 @@
 		};
 	};
 
-	/omit-if-no-ref/ irq2_default: irq2_default{
-		irq2-pinmux{
+	/omit-if-no-ref/ irq2_default: irq2_default {
+		irq2-pinmux {
 			pinmux = <RZT_PINMUX(PORT_10, 5, 0)>;
 			input-enable;
 		};

@@ -145,3 +145,11 @@
 	pinctrl-names = "default";
 	status = "okay";
 };
+
+&i2c0 {
+	status = "okay";
+	pinctrl-0 = <&i2c0_scl_default
+		     &i2c0_sda_default>;
+	clock-frequency = <100000>;
+	pinctrl-names = "default";
+};

@@ -402,6 +402,127 @@ extern "C" {
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 #endif
 
+#ifndef MAX_FROM_LIST
+/**
+ * @brief Returns the maximum of a single value (base case).
+ * @param a The value.
+ * @returns The value `a`.
+ */
+#define Z_MAX_1(a) a
+
+/**
+ * @brief Returns the maximum of two values.
+ *
+ * @note Arguments are evaluated multiple times.
+ *
+ * @param a First value.
+ * @param b Second value.
+ * @returns Maximum value of @p a and @p b.
+ */
+#define Z_MAX_2(a, b) ((a) > (b) ? (a) : (b))
+
+/**
+ * @brief Returns the maximum of three values.
+ * @note Arguments may be evaluated multiple times.
+ * @param a First value.
+ * @param b Second value.
+ * @param c Third value.
+ * @returns Maximum value of @p a, @p b, and @p c.
+ */
+#define Z_MAX_3(a, b, c) Z_MAX_2(a, Z_MAX_2(b, c))
+
+/**
+ * @brief Returns the maximum of four values.
+ * @note Arguments may be evaluated multiple times.
+ * @param a First value.
+ * @param b Second value.
+ * @param c Third value.
+ * @param d Fourth value.
+ * @returns Maximum value of @p a, @p b, @p c, and @p d.
+ */
+#define Z_MAX_4(a, b, c, d) Z_MAX_2(Z_MAX_2(a, b), Z_MAX_2(c, d))
+
+/**
+ * @brief Returns the maximum of five values.
+ * @note Arguments may be evaluated multiple times.
+ */
+#define Z_MAX_5(a, b, c, d, e) Z_MAX_2(Z_MAX_4(a, b, c, d), e)
+
+/**
+ * @brief Returns the maximum of six values.
+ * @note Arguments may be evaluated multiple times.
+ */
+#define Z_MAX_6(a, b, c, d, e, f) Z_MAX_2(Z_MAX_5(a, b, c, d, e), f)
+
+/**
+ * @brief Returns the maximum of seven values.
+ * @note Arguments may be evaluated multiple times.
+ */
+#define Z_MAX_7(a, b, c, d, e, f, g) Z_MAX_2(Z_MAX_6(a, b, c, d, e, f), g)
+
+/**
+ * @brief Returns the maximum of eight values.
+ * @note Arguments may be evaluated multiple times.
+ */
+#define Z_MAX_8(a, b, c, d, e, f, g, h) Z_MAX_2(Z_MAX_7(a, b, c, d, e, f, g), h)
+
+/**
+ * @brief Returns the maximum of nine values.
+ * @note Arguments may be evaluated multiple times.
+ */
+#define Z_MAX_9(a, b, c, d, e, f, g, h, i) Z_MAX_2(Z_MAX_8(a, b, c, d, e, f, g, h), i)
+
+/**
+ * @brief Returns the maximum of ten values.
+ * @note Arguments may be evaluated multiple times.
+ */
+#define Z_MAX_10(a, b, c, d, e, f, g, h, i, j) Z_MAX_2(Z_MAX_9(a, b, c, d, e, f, g, h, i), j)
+
+/**
+ * @brief Helper macro to select the correct MAX_N macro.
+ *
+ * This macro uses the argument-counting trick to pick the correct
+ * `Z_MAX_N` macro name from the arguments provided to `MAX_FROM_LIST`.
+ * The 10th argument (or 11th including `NAME`) effectively becomes the
+ * macro name to use.
+ *
+ * @param _1 Positional argument 1.
+ * @param _2 Positional argument 2.
+ * @param _3 Positional argument 3.
+ * @param _4 Positional argument 4.
+ * @param _5 Positional argument 5.
+ * @param _6 Positional argument 6.
+ * @param _7 Positional argument 7.
+ * @param _8 Positional argument 8.
+ * @param _9 Positional argument 9.
+ * @param _10 Positional argument 10.
+ * @param NAME The macro name to be selected.
+ * @param ... Additional arguments.
+ * @returns The selected macro name `NAME`.
+ */
+#define Z_GET_MAX_MACRO(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, NAME, ...) NAME
+
+/**
+ * @brief Finds the maximum value from a list of 1 to 10 arguments.
+ *
+ * Dispatches to the appropriate internal `Z_MAX_N` macro based on the number of
+ * arguments provided.
+ *
+ * Example Usage:
+ *   MAX_FROM_LIST(1, 5, 2)
+ *   MAX_FROM_LIST(10)
+ *
+ * @note Arguments may be evaluated multiple times by the underlying
+ *       `Z_MAX_N` macros. Avoid expressions with side effects.
+ *
+ * @param ... A list of 1 to 10 values to compare.
+ * @returns The maximum value among the arguments.
+ */
+#define MAX_FROM_LIST(...)                                                                         \
+	Z_GET_MAX_MACRO(__VA_ARGS__, Z_MAX_10, Z_MAX_9, Z_MAX_8, Z_MAX_7, Z_MAX_6, Z_MAX_5,        \
+			Z_MAX_4, Z_MAX_3, Z_MAX_2, Z_MAX_1)(__VA_ARGS__)
+#endif
+
 #ifndef CLAMP
 /**
  * @brief Clamp a value to a given range.

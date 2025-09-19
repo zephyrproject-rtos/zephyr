@@ -28,7 +28,7 @@
 /delete-node/ &flash0;
 
 &flc0 {
-	flash0: flash@0{
+	flash0: flash@0 {
 		compatible = "soc-nv-flash";
 		reg = <0x00000000 DT_SIZE_K(256)>;
 		write-block-size = <16>;

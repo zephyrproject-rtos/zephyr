@@ -122,10 +122,12 @@
 			interrupts = <14 0>;
 			clk-source = "CLK_SELECT_HFRC_3MHZ";
 			status = "disabled";
+
 			counter {
 				compatible = "ambiq,counter";
 				status = "disabled";
 			};
+
 			pwm {
 				compatible = "ambiq,ctimer-pwm";
 				status = "disabled";
@@ -139,10 +141,12 @@
 			interrupts = <14 0>;
 			clk-source = "CLK_SELECT_HFRC_3MHZ";
 			status = "disabled";
+
 			counter {
 				compatible = "ambiq,counter";
 				status = "disabled";
 			};
+
 			pwm {
 				compatible = "ambiq,ctimer-pwm";
 				status = "disabled";
@@ -156,10 +160,12 @@
 			interrupts = <14 0>;
 			clk-source = "CLK_SELECT_HFRC_187_5KHZ";
 			status = "disabled";
+
 			counter {
 				compatible = "ambiq,counter";
 				status = "disabled";
 			};
+
 			pwm {
 				compatible = "ambiq,ctimer-pwm";
 				status = "disabled";
@@ -173,10 +179,12 @@
 			interrupts = <14 0>;
 			clk-source = "CLK_SELECT_HFRC_3MHZ";
 			status = "disabled";
+
 			counter {
 				compatible = "ambiq,counter";
 				status = "disabled";
 			};
+
 			pwm {
 				compatible = "ambiq,ctimer-pwm";
 				status = "disabled";
@@ -190,10 +198,12 @@
 			interrupts = <14 0>;
 			clk-source = "CLK_SELECT_HFRC_3MHZ";
 			status = "disabled";
+
 			counter {
 				compatible = "ambiq,counter";
 				status = "disabled";
 			};
+
 			pwm {
 				compatible = "ambiq,ctimer-pwm";
 				status = "disabled";
@@ -207,10 +217,12 @@
 			interrupts = <14 0>;
 			clk-source = "CLK_SELECT_HFRC_3MHZ";
 			status = "disabled";
+
 			counter {
 				compatible = "ambiq,counter";
 				status = "disabled";
 			};
+
 			pwm {
 				compatible = "ambiq,ctimer-pwm";
 				status = "disabled";
@@ -224,10 +236,12 @@
 			interrupts = <14 0>;
 			clk-source = "CLK_SELECT_HFRC_3MHZ";
 			status = "disabled";
+
 			counter {
 				compatible = "ambiq,counter";
 				status = "disabled";
 			};
+
 			pwm {
 				compatible = "ambiq,ctimer-pwm";
 				status = "disabled";
@@ -241,10 +255,12 @@
 			interrupts = <14 0>;
 			clk-source = "CLK_SELECT_HFRC_3MHZ";
 			status = "disabled";
+
 			counter {
 				compatible = "ambiq,counter";
 				status = "disabled";
 			};
+
 			pwm {
 				compatible = "ambiq,ctimer-pwm";
 				status = "disabled";
@@ -294,6 +310,7 @@
 				status = "disabled";
 				zephyr,pm-device-runtime-auto;
 			};
+
 			i2c {
 				compatible = "ambiq,i2c";
 				#address-cells = <1>;
@@ -315,6 +332,7 @@
 				status = "disabled";
 				zephyr,pm-device-runtime-auto;
 			};
+
 			i2c {
 				compatible = "ambiq,i2c";
 				#address-cells = <1>;
@@ -336,6 +354,7 @@
 				status = "disabled";
 				zephyr,pm-device-runtime-auto;
 			};
+
 			i2c {
 				compatible = "ambiq,i2c";
 				#address-cells = <1>;
@@ -357,6 +376,7 @@
 				status = "disabled";
 				zephyr,pm-device-runtime-auto;
 			};
+
 			i2c {
 				compatible = "ambiq,i2c";
 				#address-cells = <1>;
@@ -378,6 +398,7 @@
 				status = "disabled";
 				zephyr,pm-device-runtime-auto;
 			};
+
 			i2c {
 				compatible = "ambiq,i2c";
 				#address-cells = <1>;
@@ -399,6 +420,7 @@
 				status = "disabled";
 				zephyr,pm-device-runtime-auto;
 			};
+
 			i2c {
 				compatible = "ambiq,i2c";
 				#address-cells = <1>;
@@ -421,7 +443,7 @@
 
 		mspi0: mspi@50014000 {
 			compatible = "ambiq,mspi-controller";
-			reg = <0x50014000 0x400>,<0x52000000 0x2000000>;
+			reg = <0x50014000 0x400>, <0x52000000 0x2000000>;
 			clock-frequency = <48000000>;
 			interrupts = <20 0>;
 			#address-cells = <1>;
@@ -431,7 +453,7 @@
 
 		mspi1: mspi@50015000 {
 			compatible = "ambiq,mspi-controller";
-			reg = <0x50015000 0x400>,<0x54000000 0x2000000>;
+			reg = <0x50015000 0x400>, <0x54000000 0x2000000>;
 			clock-frequency = <48000000>;
 			interrupts = <32 0>;
 			#address-cells = <1>;
@@ -442,7 +464,7 @@
 		mspi2: mspi@50016000 {
 			compatible = "ambiq,mspi-controller";
 			clock-frequency = <48000000>;
-			reg = <0x50016000 0x400>,<0x56000000 0x2000000>;
+			reg = <0x50016000 0x400>, <0x56000000 0x2000000>;
 			interrupts = <33 0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -482,11 +504,9 @@
 				compatible = "ambiq,gpio";
 				gpio-map-mask = <0xffffffe0 0xffffffc0>;
 				gpio-map-pass-thru = <0x1f 0x3f>;
-				gpio-map = <
-					0x00 0x0 &gpio0_31 0x0 0x0
-					0x20 0x0 &gpio32_63 0x0 0x0
-					0x40 0x0 &gpio64_95 0x0 0x0
-				>;
+				gpio-map = <0x00 0x0 &gpio0_31 0x0 0x0
+					    0x20 0x0 &gpio32_63 0x0 0x0
+					    0x40 0x0 &gpio64_95 0x0 0x0>;
 				reg = <0x40010000>;
 				#gpio-cells = <2>;
 				#address-cells = <1>;

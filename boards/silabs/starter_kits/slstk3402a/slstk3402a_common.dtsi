@@ -44,8 +44,8 @@
 	};
 
 	buttons {
-
 		compatible = "gpio-keys";
+
 		button0: button_0 {
 			/* gpio flags need validation */
 			gpios = <&gpiof 6 GPIO_ACTIVE_LOW>;
@@ -144,7 +144,6 @@
 	status = "okay";
 };
 
-
 &flash0 {
 	partitions {
 		compatible = "fixed-partitions";
@@ -156,7 +155,6 @@
 			reg = <0x000fe800 0x00001800>;
 			label = "storage";
 		};
-
 	};
 };
 

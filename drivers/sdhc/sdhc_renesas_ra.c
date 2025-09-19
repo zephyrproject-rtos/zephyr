@@ -606,6 +606,11 @@ static DEVICE_API(sdhc, sdhc_api) = {
 		R_ICU->IELSR[DT_INST_IRQ_BY_NAME(index, dma_req, irq)] =                           \
 			EVENT_SDMMC_DMA_REQ(DT_INST_PROP(index, channel));                         \
                                                                                                    \
+		BSP_ASSIGN_EVENT_TO_CURRENT_CORE(EVENT_SDMMC_ACCS(DT_INST_PROP(index, channel)));  \
+		BSP_ASSIGN_EVENT_TO_CURRENT_CORE(EVENT_SDMMC_CARD(DT_INST_PROP(index, channel)));  \
+		BSP_ASSIGN_EVENT_TO_CURRENT_CORE(                                                  \
+			EVENT_SDMMC_DMA_REQ(DT_INST_PROP(index, channel)));                        \
+                                                                                                   \
 		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, accs, irq),                                 \
 			    DT_INST_IRQ_BY_NAME(index, accs, priority), ra_sdmmc_accs_isr,         \
 			    DEVICE_DT_INST_GET(index), 0);                                         \

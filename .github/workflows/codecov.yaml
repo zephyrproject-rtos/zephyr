@@ -1,8 +1,11 @@
 name: Code Coverage with codecov
 
 on:
-  schedule:
-    - cron: '25 06,18 * * *'
+  push:
+    branches:
+      - main
+      - v*-branch
+      - collab-*
 
 permissions:
   contents: read
@@ -111,6 +114,24 @@ jobs:
             -i --force-color -N -v --filter runnable -p ${{ matrix.platform }} --coverage \
             -T tests --coverage-tool gcovr -xCONFIG_TEST_EXTRA_STACK_SIZE=4096 -e nano \
             --timeout-multiplier 2
+
+      - name: Build Doxygen Coverage
+        if: matrix.platform == 'unit_testing'
+        run: |
+          pip install -r doc/requirements.txt --require-hashes
+          sudo apt-get update
+          sudo apt-get install -y graphviz # dot is needed but currently missing from the Docker image
+          cmake -B doc/_build -S doc
+          cmake --build doc/_build --target doxygen-coverage
+
+      - name: Upload Doxygen Coverage Results
+        if: matrix.platform == 'unit_testing'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: doxygen-coverage-results
+          path: |
+            doc/_build/new.info
+            doc/_build/coverage-report
 
       - name: Print ccache stats
         if: always()
@@ -230,7 +251,7 @@ jobs:
             coverage/reports/coverage-report-${{ steps.run_date.outputs.run_date_short }}.json
             coverage/reports/coverage-report-${{ steps.run_date.outputs.run_date_short }}.xlsx
 
-      - name: Upload coverage to Codecov
+      - name: Upload test coverage to Codecov
         if: always()
         uses: codecov/codecov-action@5a1091511ad55cbe89839c7260b706298ca349f7 # v5.5.1
         with:
@@ -240,3 +261,15 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: coverage/reports/merged.xml
           flags: unittests-coverage
+
+      - name: Upload Doxygen coverage to Codecov
+        if: always()
+        uses: codecov/codecov-action@5a1091511ad55cbe89839c7260b706298ca349f7 # v5.5.1
+        with:
+          env_vars: OS,PYTHON
+          fail_ci_if_error: false
+          verbose: true
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: coverage/reports/doxygen-coverage-results/new.info
+          disable_search: true
+          flags: doxygen-coverage

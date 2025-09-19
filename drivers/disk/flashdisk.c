@@ -424,7 +424,7 @@ static int disk_flash_access_write(struct disk_info *disk, const uint8_t *buff,
 end:
 	k_mutex_unlock(&ctx->lock);
 
-	return 0;
+	return rc;
 }
 
 static int disk_flash_access_ioctl(struct disk_info *disk, uint8_t cmd, void *buff)

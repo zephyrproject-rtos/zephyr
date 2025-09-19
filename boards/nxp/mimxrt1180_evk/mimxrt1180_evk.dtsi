@@ -13,10 +13,13 @@
 		sw0 = &user_button;
 		pwm-led0 = &green_pwm_led;
 		sdhc0 = &usdhc1;
+		i2s-codec-tx = &sai1;
+		i2s-tx = &sai1;
 	};
 
 	leds {
 		compatible = "gpio-leds";
+
 		red_led: led-2 {
 			gpios = <&gpio4 26 GPIO_ACTIVE_HIGH>;
 			label = "User LED D7";
@@ -25,6 +28,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button: button-1 {
 			label = "User SW8";
 			gpios = <&gpio1 4 (GPIO_PULL_UP | GPIO_ACTIVE_HIGH)>;
@@ -34,6 +38,7 @@
 
 	pwmleds {
 		compatible = "pwm-leds";
+
 		green_pwm_led: green_pwm_led {
 			pwms = <&flexpwm2_pwm1 1 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 		};
@@ -180,14 +185,15 @@
 	ahb-prefetch;
 	ahb-read-addr-opt;
 	rx-clock-source = <1>;
+
 	w25q128jw: w25q128jw@0 {
 		compatible = "nxp,imx-flexspi-nor";
 		size = <DT_SIZE_M(16*8)>;
 		reg = <0>;
-		spi-max-frequency = <133000000>;
+		spi-max-frequency = <DT_FREQ_M(133)>;
 		status = "okay";
 		jedec-id = [ef 60 18];
-		erase-block-size = <4096>;
+		erase-block-size = <DT_SIZE_K(4)>;
 		write-block-size = <1>;
 
 		partitions {
@@ -203,14 +209,17 @@
 				label = "mcuboot";
 				reg = <0x00000000 DT_SIZE_K(128)>;
 			};
+
 			slot0_partition: partition@20000 {
 				label = "image-0";
 				reg = <0x00020000 DT_SIZE_M(7)>;
 			};
+
 			slot1_partition: partition@720000 {
 				label = "image-1";
 				reg = <0x00720000 DT_SIZE_M(7)>;
 			};
+
 			storage_partition: partition@E20000 {
 				label = "storage";
 				reg = <0x00E20000 (DT_SIZE_M(2) - DT_SIZE_K(128))>;
@@ -237,6 +246,7 @@
 &flexcan3 {
 	pinctrl-0 = <&pinmux_flexcan3>;
 	pinctrl-names = "default";
+
 	can-transceiver {
 		max-bitrate = <5000000>;
 	};
@@ -259,6 +269,7 @@
 };
 
 p3t1755dp_ard_i3c_interface: &i3c2 {};
+
 p3t1755dp_ard_i2c_interface: &lpi2c2 {};
 
 &lpspi3 {
@@ -276,9 +287,31 @@ p3t1755dp_ard_i2c_interface: &lpi2c2 {};
 	pinctrl-0 = <&pinmux_usdhc1>;
 	pinctrl-1 = <&pinmux_usdhc1_dat3_nopull>;
 	pinctrl-names = "default", "nopull";
+
 	sdmmc {
 		compatible = "zephyr,sdmmc-disk";
 		disk-name = "SD";
 		status = "okay";
 	};
+};
+
+&sai1 {
+	pinctrl-0 = <&pinmux_sai1>;
+	pinctrl-names = "default";
+};
+
+&lpi2c2 {
+	pinctrl-0 = <&pinmux_lpi2c2>;
+	pinctrl-names = "default";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	audio_codec: wm8962@1a {
+		compatible = "wolfson,wm8962";
+		reg = <0x1a>;
+		clock-source = "MCLK";
+		clocks = <&ccm IMX_CCM_SAI1_CLK 0x2004 4>;
+		clock-names = "mclk";
+	};
+
 };

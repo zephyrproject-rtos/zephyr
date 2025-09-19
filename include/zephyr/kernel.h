@@ -805,7 +805,7 @@ struct _static_thread_data {
 				     _k_thread_stack_##name, stack_size,\
 				     entry, p1, p2, p3, prio, options,	\
 				     delay, name);			\
-	const k_tid_t name = (k_tid_t)&_k_thread_obj_##name
+	__maybe_unused const k_tid_t name = (k_tid_t)&_k_thread_obj_##name
 
 /**
  * INTERNAL_HIDDEN @endcond
@@ -959,6 +959,49 @@ __syscall void k_thread_priority_set(k_tid_t thread, int prio);
  *
  */
 __syscall void k_thread_deadline_set(k_tid_t thread, int deadline);
+
+/**
+ * @brief Set deadline expiration time for scheduler
+ *
+ * This sets the "deadline" expiration as a timestamp in the same
+ * units used by k_cycle_get_32(). The scheduler (when deadline scheduling
+ * is enabled) will choose the next expiring thread when selecting between
+ * threads at the same static priority.  Threads at different priorities
+ * will be scheduled according to their static priority.
+ *
+ * Unlike @ref k_thread_deadline_set which sets a relative timestamp to a
+ * "now" implicitly determined during its call, this routine sets an
+ * absolute timestamp that is computed from a timestamp relative to
+ * an explicit "now" that was determined before this routine is called.
+ * This allows the caller to specify deadlines for multiple threads
+ * using a common "now".
+ *
+ * @note Deadlines are stored internally using 32 bit unsigned
+ * integers.  The number of cycles between the "first" deadline in the
+ * scheduler queue and the "last" deadline must be less than 2^31 (i.e
+ * a signed non-negative quantity).  Failure to adhere to this rule
+ * may result in scheduled threads running in an incorrect deadline
+ * order.
+ *
+ * @note Even if a provided timestamp is in the past, the kernel will
+ * still schedule threads with deadlines in order from the earliest to
+ * the latest
+ *
+ * @note Despite the API naming, the scheduler makes no guarantees
+ * the thread WILL be scheduled within that deadline, nor does it take
+ * extra metadata (like e.g. the "runtime" and "period" parameters in
+ * Linux sched_setattr()) that allows the kernel to validate the
+ * scheduling for achievability.  Such features could be implemented
+ * above this call, which is simply input to the priority selection
+ * logic.
+ *
+ * @note You should enable @kconfig_dep{CONFIG_SCHED_DEADLINE} in your project
+ * configuration.
+ *
+ * @param thread A thread on which to set the deadline
+ * @param deadline A timestamp, in cycle units
+ */
+__syscall void k_thread_absolute_deadline_set(k_tid_t thread, int deadline);
 #endif
 
 /**
@@ -1571,10 +1614,16 @@ const char *k_thread_state_str(k_tid_t thread_id, char *buf, size_t buf_size);
  */
 
 /**
- * @cond INTERNAL_HIDDEN
+ * @brief Kernel timer structure
+ *
+ * This structure is used to represent a kernel timer.
+ * All the members are internal and should not be accessed directly.
  */
-
 struct k_timer {
+	/**
+	 * @cond INTERNAL_HIDDEN
+	 */
+
 	/*
 	 * _timeout structure must be first here if we want to use
 	 * dynamic timer allocation. timeout.node is used in the double-linked
@@ -1605,8 +1654,14 @@ struct k_timer {
 #ifdef CONFIG_OBJ_CORE_TIMER
 	struct k_obj_core  obj_core;
 #endif
+	/**
+	 * INTERNAL_HIDDEN @endcond
+	 */
 };
 
+/**
+ * @cond INTERNAL_HIDDEN
+ */
 #define Z_TIMER_INITIALIZER(obj, expiry, stop) \
 	{ \
 	.timeout = { \
@@ -1697,6 +1752,9 @@ void k_timer_init(struct k_timer *timer,
  * Attempting to start a timer that is already running is permitted.
  * The timer's status is reset to zero and the timer begins counting down
  * using the new duration and period values.
+ *
+ * This routine neither updates nor has any other effect on the specified
+ * timer if @a duration is K_FOREVER.
  *
  * @param timer     Address of timer.
  * @param duration  Initial timer duration.
@@ -2353,7 +2411,17 @@ __syscall int k_futex_wake(struct k_futex *futex, bool wake_all);
  * @ingroup event_apis
  */
 
+/**
+ * @brief Kernel Event structure
+ *
+ * This structure is used to represent kernel events. All the members
+ * are internal and should not be accessed directly.
+ */
+
 struct k_event {
+/**
+ * @cond INTERNAL_HIDDEN
+ */
 	_wait_q_t         wait_q;
 	uint32_t          events;
 	struct k_spinlock lock;
@@ -2363,8 +2431,15 @@ struct k_event {
 #ifdef CONFIG_OBJ_CORE_EVENT
 	struct k_obj_core obj_core;
 #endif
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
 
 };
+
+/**
+ * @cond INTERNAL_HIDDEN
+ */
 
 #define Z_EVENT_INITIALIZER(obj) \
 	{ \
@@ -2372,6 +2447,9 @@ struct k_event {
 	.events = 0, \
 	.lock = {}, \
 	}
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
 
 /**
  * @brief Initialize an event object
@@ -3465,20 +3543,26 @@ static inline unsigned int z_impl_k_sem_count_get(struct k_sem *sem)
 #if defined(CONFIG_SCHED_IPI_SUPPORTED) || defined(__DOXYGEN__)
 struct k_ipi_work;
 
-/**
- * @cond INTERNAL_HIDDEN
- */
 
 typedef void (*k_ipi_func_t)(struct k_ipi_work *work);
 
+/**
+ * @brief IPI work item structure
+ *
+ * This structure is used to represent an IPI work item.
+ * All the members are internal and should not be accessed directly.
+ */
 struct k_ipi_work {
-	sys_dnode_t        node[CONFIG_MP_MAX_NUM_CPUS];   /* Node in IPI work queue */
+/**
+ * @cond INTERNAL_HIDDEN
+ */
+	sys_dnode_t    node[CONFIG_MP_MAX_NUM_CPUS];   /* Node in IPI work queue */
 	k_ipi_func_t   func;     /* Function to execute on target CPU */
 	struct k_event event;    /* Event to signal when processed */
 	uint32_t       bitmask;  /* Bitmask of targeted CPUs */
+/** INTERNAL_HIDDEN @endcond */
 };
 
-/** @endcond */
 
 /**
  * @brief Initialize the specified IPI work item
@@ -4957,18 +5041,17 @@ __syscall int k_msgq_put(struct k_msgq *msgq, const void *data, k_timeout_t time
  * pointer is not retained, so the message content will not be modified
  * by this function.
  *
+ * @note k_msgq_put_front() does not block.
+ *
  * @funcprops \isr_ok
  *
  * @param msgq Address of the message queue.
  * @param data Pointer to the message.
- * @param timeout Waiting period to add the message, or one of the special
- *                values K_NO_WAIT and K_FOREVER.
  *
  * @retval 0 Message sent.
  * @retval -ENOMSG Returned without waiting or queue purged.
- * @retval -EAGAIN Waiting period timed out.
  */
-__syscall int k_msgq_put_front(struct k_msgq *msgq, const void *data, k_timeout_t timeout);
+__syscall int k_msgq_put_front(struct k_msgq *msgq, const void *data);
 
 /**
  * @brief Receive a message from a message queue.

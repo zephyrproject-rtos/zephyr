@@ -7,7 +7,6 @@
 #include <arm64/armv8-a.dtsi>
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
 
-
 / {
 	#address-cells = <1>;
 	#size-cells = <1>;
@@ -39,7 +38,6 @@
 			compatible = "arm,cortex-a55";
 			enable-method = "psci";
 			reg = <0x200>;
-
 		};
 
 		cpu@300 {
@@ -52,7 +50,7 @@
 
 	gic: interrupt-controller@fe600000 {
 		#address-cells = <1>;
-		compatible = "arm,gic-v3","arm,gic";
+		compatible = "arm,gic-v3", "arm,gic";
 		#interrupt-cells = <4>;
 		interrupt-controller;
 

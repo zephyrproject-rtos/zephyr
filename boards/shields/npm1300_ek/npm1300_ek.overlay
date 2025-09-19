@@ -57,10 +57,11 @@
 
 		npm1300_ek_buttons: buttons {
 			compatible = "gpio-keys";
+
 			pmic_button0: pmic_button_0 {
-				gpios = < &npm1300_ek_gpio 0 GPIO_ACTIVE_HIGH>;
+				gpios = <&npm1300_ek_gpio 0 GPIO_ACTIVE_HIGH>;
 				label = "Pmic button switch 0";
-			zephyr,code = <INPUT_KEY_0>;
+				zephyr,code = <INPUT_KEY_0>;
 			};
 		};
 

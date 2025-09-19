@@ -21,8 +21,7 @@
 			resets = <&rctl STM32_RESET(APB4, 1)>;
 			status = "disabled";
 
-			pipe_dump: pipe {
-			};
+			pipe_dump: pipe {};
 
 			port {
 				endpoint {

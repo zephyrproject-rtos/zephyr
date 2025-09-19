@@ -28,14 +28,17 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led1: led1 {
 			gpios = <&ioport4 3 GPIO_ACTIVE_HIGH>;
 			label = "LED1";
 		};
+
 		led2: led2 {
 			gpios = <&ioport4 0 GPIO_ACTIVE_HIGH>;
 			label = "LED2";
 		};
+
 		led3: led3 {
 			gpios = <&ioport1 0 GPIO_ACTIVE_HIGH>;
 			label = "LED3";
@@ -44,11 +47,13 @@
 
 	buttons {
 		compatible = "gpio-keys";
+
 		button0: s1 {
 			gpios = <&ioport0 9 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button switch 1";
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		button1: s2 {
 			gpios = <&ioport0 8 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button switch 2";
@@ -86,6 +91,7 @@
 	pinctrl-0 = <&sci8_default>;
 	pinctrl-names = "default";
 	status = "okay";
+
 	uart8: uart {
 		current-speed = <115200>;
 		status = "okay";
@@ -122,7 +128,7 @@
 };
 
 &trng {
-	status ="okay";
+	status = "okay";
 };
 
 &uclk {
@@ -136,6 +142,7 @@
 	pinctrl-names = "default";
 	maximum-speed = "high-speed";
 	status = "okay";
+
 	zephyr_udc0: udc {
 		status = "okay";
 	};

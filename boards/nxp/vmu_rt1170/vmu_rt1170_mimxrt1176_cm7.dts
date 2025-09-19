@@ -42,6 +42,7 @@
 	/* This is the Arming Button on the included GPS module for 10 pin JST-GH */
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		arming_button: button_0 {
 			label = "Arming Switch";
 			gpios = <&gpio1 24 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
@@ -127,12 +128,12 @@
 
 	pwm_shell: pwm_shell {
 		compatible = "pwm-leds";
+
 		buzzer0: buzzer0 {
 			pwms = <&qtmr1 0 PWM_HZ(50) PWM_POLARITY_NORMAL>;
 		};
 	};
 };
-
 
 &gpio1 {
 	status = "okay";
@@ -187,26 +188,31 @@
 
 	sbus {
 		compatible = "futaba,sbus";
+
 		right_stick_x {
 			channel = <1>;
 			type = <INPUT_EV_ABS>;
 			zephyr,code = <INPUT_ABS_RX>;
 		};
+
 		right_stick_y {
 			channel = <2>;
 			type = <INPUT_EV_ABS>;
 			zephyr,code = <INPUT_ABS_RY>;
 		};
+
 		left_stick_y {
 			channel = <3>;
 			type = <INPUT_EV_ABS>;
 			zephyr,code = <INPUT_ABS_Y>;
 		};
+
 		left_stick_x {
 			channel = <4>;
 			type = <INPUT_EV_ABS>;
 			zephyr,code = <INPUT_ABS_X>;
 		};
+
 		kill_switch {
 			channel = <5>;
 			type = <INPUT_EV_KEY>;
@@ -215,11 +221,11 @@
 	};
 };
 
-
 &flexcan1 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_flexcan1>;
 	pinctrl-names = "default";
+
 	can-transceiver {
 		max-bitrate = <5000000>;
 	};
@@ -229,6 +235,7 @@
 	status = "okay";
 	pinctrl-0 = <&pinmux_flexcan2>;
 	pinctrl-names = "default";
+
 	can-transceiver {
 		max-bitrate = <5000000>;
 	};
@@ -238,6 +245,7 @@
 	status = "okay";
 	pinctrl-0 = <&pinmux_flexcan3>;
 	pinctrl-names = "default";
+
 	can-transceiver {
 		max-bitrate = <5000000>;
 	};
@@ -247,13 +255,13 @@
 
 &lpspi1 {
 	status = "okay";
-	cs-gpios =<&gpio2 11 GPIO_ACTIVE_LOW>;
+	cs-gpios = <&gpio2 11 GPIO_ACTIVE_LOW>;
 
 	icm42686_0: icm42686p0@0 {
 		compatible = "invensense,icm42686", "invensense,icm4268x";
 		reg = <0>;
 		int-gpios = <&gpio3 19 GPIO_ACTIVE_HIGH>;
-		spi-max-frequency = <24000000>;
+		spi-max-frequency = <DT_FREQ_M(24)>;
 		accel-pwr-mode = <ICM42686_DT_ACCEL_LN>;
 		accel-odr = <ICM42686_DT_ACCEL_ODR_1000>;
 		accel-fs = <ICM42686_DT_ACCEL_FS_16>;
@@ -273,13 +281,13 @@
 
 &lpspi2 {
 	status = "okay";
-	cs-gpios =<&gpio3 24 GPIO_ACTIVE_LOW>;
+	cs-gpios = <&gpio3 24 GPIO_ACTIVE_LOW>;
 
 	icm42688_0: icm42688p0@0 {
 		compatible = "invensense,icm42688", "invensense,icm4268x";
 		reg = <0>;
 		int-gpios = <&gpio2 7 GPIO_ACTIVE_HIGH>;
-		spi-max-frequency = <24000000>;
+		spi-max-frequency = <DT_FREQ_M(24)>;
 		accel-pwr-mode = <ICM42688_DT_ACCEL_LN>;
 		accel-odr = <ICM42688_DT_ACCEL_ODR_1000>;
 		accel-fs = <ICM42688_DT_ACCEL_FS_16>;
@@ -297,14 +305,13 @@
 &lpspi3 {
 	status = "okay";
 	cs-gpios = <&gpio2 15 GPIO_ACTIVE_LOW>,
-		<&gpio2 18 GPIO_ACTIVE_LOW>;
-
+		   <&gpio2 18 GPIO_ACTIVE_LOW>;
 
 	bmi08x_accel: bmi08x@0 {
 		compatible = "bosch,bmi08x-accel";
 		reg = <0>;
 		int-gpios = <&gpio3 20 GPIO_ACTIVE_HIGH>;
-		spi-max-frequency = <10000000>;
+		spi-max-frequency = <DT_FREQ_M(10)>;
 		int1-map-io = <0x01>;
 		int2-map-io = <0x00>;
 		int1-conf-io = <0x04>;
@@ -317,7 +324,7 @@
 		compatible = "bosch,bmi08x-gyro";
 		reg = <1>;
 		int-gpios = <&gpio2 28 GPIO_ACTIVE_HIGH>;
-		spi-max-frequency = <10000000>;
+		spi-max-frequency = <DT_FREQ_M(10)>;
 		int3-4-map-io = <0x01>;
 		int3-4-conf-io = <0x02>;
 		gyro-hz = "1000_116";
@@ -335,7 +342,6 @@
 	ist8310: ist8310@e {
 		compatible = "isentek,ist8310";
 		reg = <0xe>;
-
 	};
 
 	ncp5623c: ncp5623c@39 {
@@ -345,10 +351,9 @@
 		led_0 {
 			label = "GNSS LED";
 			index = <0>;
-			color-mapping =
-				<LED_COLOR_ID_RED>,
-				<LED_COLOR_ID_GREEN>,
-				<LED_COLOR_ID_BLUE>;
+			color-mapping = <LED_COLOR_ID_RED>,
+					<LED_COLOR_ID_GREEN>,
+					<LED_COLOR_ID_BLUE>;
 		};
 	};
 };
@@ -406,48 +411,47 @@
 	nxp,prescaler = <64>;
 };
 
-&flexpwm1_pwm2	{
+&flexpwm1_pwm2 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm_vmu_ch3>;
 	pinctrl-names = "default";
 	nxp,prescaler = <64>;
 };
 
-&flexpwm2_pwm0	{
+&flexpwm2_pwm0 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm_vmu_ch4>;
 	pinctrl-names = "default";
 	nxp,prescaler = <64>;
 };
 
-&flexpwm2_pwm1	{
+&flexpwm2_pwm1 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm_vmu_ch5>;
 	pinctrl-names = "default";
 	nxp,prescaler = <64>;
 };
 
-&flexpwm2_pwm2	{
+&flexpwm2_pwm2 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm_vmu_ch6>;
 	pinctrl-names = "default";
 	nxp,prescaler = <64>;
 };
 
-&flexpwm2_pwm3	{
+&flexpwm2_pwm3 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm_vmu_ch7>;
 	pinctrl-names = "default";
 	nxp,prescaler = <64>;
 };
 
-&flexpwm3_pwm0	{
+&flexpwm3_pwm0 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm_vmu_ch8>;
 	pinctrl-names = "default";
 	nxp,prescaler = <64>;
 };
-
 
 &gpt5 {
 	compatible = "nxp,gpt-ppm-input";
@@ -470,6 +474,7 @@
 	no-1-8-v;
 	pwr-gpios = <&gpio1 1 GPIO_ACTIVE_HIGH>;
 	cd-gpios = <&gpio3 31 (GPIO_ACTIVE_LOW | GPIO_PULL_DOWN)>;
+
 	sdmmc {
 		compatible = "zephyr,sdmmc-disk";
 		disk-name = "SD";

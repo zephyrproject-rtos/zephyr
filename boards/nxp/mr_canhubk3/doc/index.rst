@@ -46,7 +46,7 @@ The GPIO controller provides the option to route external input pad interrupts
 to either the SIUL2 EIRQ or WKPU interrupt controllers, as supported by the SoC.
 By default, GPIO interrupts are routed to SIUL2 EIRQ interrupt controller,
 unless they are explicitly configured to be directed to the WKPU interrupt
-controller, as outlined in :zephyr_file:`dts/bindings/gpio/nxp,s32-gpio.yaml`.
+controller, as outlined in :zephyr_file:`dts/bindings/gpio/nxp,siul2-gpio.yaml`.
 
 To find information about which GPIOs are compatible with each interrupt
 controller, refer to the device reference manual.

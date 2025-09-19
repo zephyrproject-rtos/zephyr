@@ -343,13 +343,14 @@ static void i2c_stm32_slave_event(const struct device *dev)
 	slave_cb = slave_cfg->callbacks;
 
 	if (LL_I2C_IsActiveFlag_TXIS(i2c)) {
-		uint8_t val;
+		uint8_t val = 0x00;
 
 		if (slave_cb->read_processed(slave_cfg, &val) < 0) {
 			LOG_ERR("Error continuing reading");
-		} else {
-			LL_I2C_TransmitData8(i2c, val);
 		}
+
+		LL_I2C_TransmitData8(i2c, val);
+
 		return;
 	}
 

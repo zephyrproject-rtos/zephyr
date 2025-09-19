@@ -11,6 +11,7 @@
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/inputmux/inputmux_trigger_ports.h>
 #include <mem.h>
+#include <freq.h>
 #include <zephyr/dt-bindings/reset/nxp_syscon_reset_common.h>
 
 / {
@@ -45,22 +46,27 @@
 		reg = <0x04000000 DT_SIZE_K(16)>;
 		zephyr,memory-region = "SRAMX";
 	};
+
 	sram0: memory@20000000 {
 		compatible = "mmio-sram";
 		reg = <0x20000000 DT_SIZE_K(16)>;
 	};
+
 	sram1: memory@20004000 {
 		compatible = "mmio-sram";
 		reg = <0x20004000 DT_SIZE_K(16)>;
 	};
+
 	sram2: memory@20008000 {
 		compatible = "mmio-sram";
 		reg = <0x20008000 DT_SIZE_K(32)>;
 	};
+
 	sram3: memory@20010000 {
 		compatible = "mmio-sram";
 		reg = <0x20010000 DT_SIZE_K(32)>;
 	};
+
 	sram4: memory@20018000 {
 		compatible = "mmio-sram";
 		reg = <0x20018000 DT_SIZE_K(16)>;
@@ -75,6 +81,7 @@
 		compatible = "nxp,lpc-syscon";
 		reg = <0x0 0x1000>;
 		#clock-cells = <1>;
+
 		reset: reset {
 			compatible = "nxp,lpc-syscon-reset";
 			#reset-cells = <1>;
@@ -113,6 +120,7 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 		ranges = <0x0 0x1000 0x100>;
+
 		pinctrl: pinctrl {
 			compatible = "nxp,lpc-iocon-pinctrl";
 		};
@@ -123,6 +131,7 @@
 		reg = <0x8c000 0x2488>;
 		#address-cells = <1>;
 		#size-cells = <0>;
+
 		gpio0: gpio@0 {
 			compatible = "nxp,lpc-gpio-port";
 			int-source = "pint";
@@ -178,7 +187,7 @@
 		#interrupt-cells = <1>;
 		#address-cells = <0>;
 		interrupts = <4 2>, <5 2>, <6 2>, <7 2>,
-			<32 2>, <33 2>, <34 2>, <35 2>;
+			     <32 2>, <33 2>, <34 2>, <35 2>;
 		num-lines = <8>;
 		num-inputs = <64>;
 	};
@@ -291,7 +300,7 @@
 		status = "disabled";
 		clk-divider = <8>;
 		clk-source = <0>;
-		voltage-ref= <1>;
+		voltage-ref = <1>;
 		calibration-average = <128>;
 		power-level = <0>;
 		offset-value-a = <10>;
@@ -305,7 +314,7 @@
 
 	dac0: dac@b2000 {
 		compatible = "nxp,lpdac";
-		reg = < 0xb2000 0x1000>;
+		reg = <0xb2000 0x1000>;
 		interrupts = <74 0>;
 		status = "disabled";
 		voltage-reference = <0>;
@@ -314,7 +323,7 @@
 
 	dac1: dac@b6000 {
 		compatible = "nxp,lpdac";
-		reg = < 0xb6000 0x1000>;
+		reg = <0xb6000 0x1000>;
 		interrupts = <75 0>;
 		status = "disabled";
 		voltage-reference = <0>;
@@ -323,7 +332,7 @@
 
 	dac2: dac@b9000 {
 		compatible = "nxp,lpdac";
-		reg = < 0xb9000 0x1000>;
+		reg = <0xb9000 0x1000>;
 		interrupts = <76 0>;
 		status = "disabled";
 		voltage-reference = <0>;
@@ -346,6 +355,7 @@
 		reg = <0x400C3000 0x1000>;
 		interrupt-names = "INPUT-CAPTURE", "FAULT", "RELOAD-ERROR";
 		interrupts = <80 0>, <81 0>, <82 0>;
+
 		flexpwm0_pwm0: pwm0 {
 			compatible = "nxp,imx-pwm";
 			index = <0>;
@@ -395,12 +405,12 @@
 		};
 	};
 
-
 	flexpwm1: flexpwm@400C5000 {
 		compatible = "nxp,flexpwm";
 		reg = <0x400C5000 0x1000>;
 		interrupt-names = "INPUT-CAPTURE", "FAULT", "RELOAD-ERROR";
 		interrupts = <91 0>, <92 0>, <93 0>;
+
 		flexpwm1_pwm0: pwm0 {
 			compatible = "nxp,imx-pwm";
 			index = <0>;

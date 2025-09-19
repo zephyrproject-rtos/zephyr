@@ -21,6 +21,7 @@
 &mikrobus_serial {
 	status = "okay";
 	current-speed = <115200>;
+
 	modem: modem {
 		status = "okay";
 		compatible = "sqn,gm02s";

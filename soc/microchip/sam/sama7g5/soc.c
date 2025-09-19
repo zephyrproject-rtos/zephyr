@@ -35,6 +35,12 @@ static const struct arm_mmu_region mmu_regions[] = {
 
 	MMU_REGION_FLAT_ENTRY("sckc", SCKC_BASE_ADDRESS, 0x4,
 			      MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),
+
+	MMU_REGION_FLAT_ENTRY("sdmmc0", SDMMC0_BASE_ADDRESS, 0x4000,
+			      MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),
+
+	MMU_REGION_FLAT_ENTRY("sdmmc1", SDMMC1_BASE_ADDRESS, 0x4000,
+			      MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),
 };
 
 const struct arm_mmu_config mmu_config = {
@@ -53,4 +59,14 @@ void soc_early_init_hook(void)
 	PMC_REGS->PMC_PCR = PMC_PCR_CMD(1) | PMC_PCR_GCLKEN(1) | PMC_PCR_EN(1) |
 			    PMC_PCR_GCLKDIV(40 - 1) | PMC_PCR_GCLKCSS_SYSPLL |
 			    PMC_PCR_PID(ID_PIT64B0);
+
+	/* Enable Generic clock for SDMMC0, frequency is 200MHz */
+	PMC_REGS->PMC_PCR = PMC_PCR_CMD(1) | PMC_PCR_GCLKEN(1) | PMC_PCR_EN(1) |
+			    PMC_PCR_GCLKDIV(2 - 1) | PMC_PCR_GCLKCSS_SYSPLL |
+			    PMC_PCR_PID(ID_SDMMC0);
+
+	/* Enable Generic clock for SDMMC1, frequency is 200MHz */
+	PMC_REGS->PMC_PCR = PMC_PCR_CMD(1) | PMC_PCR_GCLKEN(1) | PMC_PCR_EN(1) |
+			    PMC_PCR_GCLKDIV(2 - 1) | PMC_PCR_GCLKCSS_SYSPLL |
+			    PMC_PCR_PID(ID_SDMMC1);
 }

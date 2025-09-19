@@ -18,7 +18,7 @@
 		status = "okay";
 		compatible = "ti,ina237";
 		reg = <0x40>;
-		rshunt-micro-ohms= <15000>;
+		rshunt-micro-ohms = <15000>;
 		current-lsb-microamps = <500>;
 	};
 };

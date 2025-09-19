@@ -5,14 +5,14 @@
  */
 
 #include <mem.h>
+#include <freq.h>
 #include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
-#include <mem.h>
 #include <zephyr/dt-bindings/reset/nxp_syscon_reset_common.h>
 
 / {
-	aliases{
+	aliases {
 		gpio-0 = &gpio0;
 		gpio-1 = &gpio1;
 		mailbox-0 = &mailbox0;
@@ -42,6 +42,7 @@
 			compatible = "nxp,lpc-syscon";
 			reg = <0x40000000 0x4000>;
 			#clock-cells = <1>;
+
 			reset: reset {
 				compatible = "nxp,lpc-syscon-reset";
 				#reset-cells = <1>;
@@ -62,18 +63,18 @@
 		 * The board level or application level device tree can override the memory sizes
 		 * to allocate memory to the different cores of the dual-core platforms.
 		 */
-		sram0:memory@20000000 {
+		sram0: memory@20000000 {
 			compatible = "mmio-sram";
 			reg = <0x20000000 DT_SIZE_K(64)>;
 		};
 
-		sram1:memory@20010000 {
+		sram1: memory@20010000 {
 			compatible = "zephyr,memory-region", "mmio-sram";
 			reg = <0x20010000 DT_SIZE_K(64)>;
 			zephyr,memory-region = "SRAM1";
 		};
 
-		sram2:memory@20020000 {
+		sram2: memory@20020000 {
 			compatible = "zephyr,memory-region", "mmio-sram";
 			reg = <0x20020000 DT_SIZE_K(32)>;
 			zephyr,memory-region = "SRAM2";
@@ -84,7 +85,7 @@
 		 * LPC540xx: 192K @ 0x04000000
 		 * LPC541xx:  32K @ 0x04000000
 		 */
-		sramx:memory@04000000{
+		sramx: memory@04000000 {
 			compatible = "mmio-sram";
 			reg = <0x04000000 DT_SIZE_K(32)>;
 		};
@@ -95,6 +96,7 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			status = "disabled";
+
 			flash0: flash@0 {
 				compatible = "soc-nv-flash";
 				reg = <0 DT_SIZE_K(256)>;
@@ -109,6 +111,7 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges = <0x0 0x40001000 0x100>;
+
 			pinctrl: pinctrl {
 				compatible = "nxp,lpc-iocon-pinctrl";
 			};
@@ -144,12 +147,12 @@
 			#interrupt-cells = <1>;
 			#address-cells = <0>;
 			interrupts = <4 2>, <5 2>, <6 2>, <7 2>,
-				<32 2>, <33 2>, <34 2>, <35 2>;
+				     <32 2>, <33 2>, <34 2>, <35 2>;
 			num-lines = <8>;
 			num-inputs = <64>;
 		};
 
-		mailbox0:mailbox@4008b000 {
+		mailbox0: mailbox@4008b000 {
 			compatible = "nxp,lpc-mailbox";
 			reg = <0x4008b000 0xEC>;
 			interrupts = <31 0>;

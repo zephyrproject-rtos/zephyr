@@ -119,6 +119,27 @@ set_target_properties(
 )
 
 #-------------------------------------------------------------------------------
+# Doxygen Coverage
+
+add_custom_target(
+  doxygen-coverage
+  COMMAND ${PYTHON_EXECUTABLE} -m coverxygen
+    --xml-dir ${CMAKE_CURRENT_BINARY_DIR}/doxygen/xml/
+    --src-dir ${ZEPHYR_BASE}/include/
+    --output ${CMAKE_CURRENT_BINARY_DIR}/doc-coverage.info
+  COMMAND lcov
+    --remove ${CMAKE_CURRENT_BINARY_DIR}/doc-coverage.info "*/deprecated"
+    > ${CMAKE_CURRENT_BINARY_DIR}/new.info
+  COMMAND genhtml
+    --no-function-coverage
+    --no-branch-coverage
+    ${CMAKE_CURRENT_BINARY_DIR}/new.info
+    -o ${CMAKE_CURRENT_BINARY_DIR}/coverage-report
+  DEPENDS doxygen
+  COMMENT "Generating Doxygen coverage info and HTML report..."
+)
+
+#-------------------------------------------------------------------------------
 # devicetree
 
 set(GEN_DEVICETREE_REST_SCRIPT ${CMAKE_CURRENT_LIST_DIR}/_scripts/gen_devicetree_rest.py)

@@ -23,6 +23,7 @@
 
 &iic1 {
 	status = "okay";
+
 	ft5336_rtk7eka6m3b00001bu: ft5336-rtk7eka6m3b00001bu@38 {
 		compatible = "focaltech,ft5336";
 		reg = <0x38>;
@@ -36,6 +37,7 @@
 	height = <272>;
 	input-pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
 	output-pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
+
 	display-timings {
 		compatible = "zephyr,panel-timing";
 		hsync-len = <1>;

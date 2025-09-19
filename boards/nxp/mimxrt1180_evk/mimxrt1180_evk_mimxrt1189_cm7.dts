@@ -89,7 +89,7 @@ zephyr_udc0: &usb1 {
 	tx-cal-45-dm-ohms = <6>;
 };
 
-zephyr_udc1: &usb2{
+zephyr_udc1: &usb2 {
 	status = "okay";
 	phy-handle = <&usbphy2>;
 };
@@ -102,5 +102,9 @@ zephyr_udc1: &usb2{
 };
 
 &kpp {
+	status = "okay";
+};
+
+&sai1 {
 	status = "okay";
 };

@@ -52,15 +52,14 @@
 
 			gpio: gpio-common {
 				compatible = "renesas,rz-gpio-int";
-				interrupts =
-					<444 10>, <445 10>, <446 10>, <447 10>,
-					<448 10>, <449 10>, <450 10>, <451 10>,
-					<452 10>, <453 10>, <454 10>, <455 10>,
-					<456 10>, <457 10>, <458 10>, <459 10>,
-					<460 10>, <461 10>, <462 10>, <463 10>,
-					<464 10>, <465 10>, <466 10>, <467 10>,
-					<468 10>, <469 10>, <470 10>, <471 10>,
-					<472 10>, <473 10>, <474 10>, <475 10>;
+				interrupts = <444 10>, <445 10>, <446 10>, <447 10>,
+					     <448 10>, <449 10>, <450 10>, <451 10>,
+					     <452 10>, <453 10>, <454 10>, <455 10>,
+					     <456 10>, <457 10>, <458 10>, <459 10>,
+					     <460 10>, <461 10>, <462 10>, <463 10>,
+					     <464 10>, <465 10>, <466 10>, <467 10>,
+					     <468 10>, <469 10>, <470 10>, <471 10>,
+					     <472 10>, <473 10>, <474 10>, <475 10>;
 				#address-cells = <1>;
 				#size-cells = <0>;
 				status = "disabled";
@@ -826,6 +825,62 @@
 			interrupts = <372 1>, <373 1>, <374 1>, <375 1>,
 				     <376 1>, <377 1>, <378 1>, <379 1>;
 			interrupt-names = "rxi", "txi", "tei", "naki", "spi", "sti", "ali", "tmoi";
+			status = "disabled";
+		};
+
+		/* CA55_0 <-> CM33 */
+		mbox1: mhu@40400020 {
+			compatible = "renesas,rz-mhu-mbox";
+			channel = <1>;
+			reg = <0x40400020 0x20>;
+			tx-mask = <0x00000002>; /* Channel 1 is for TX */
+			rx-mask = <0x00000001>; /* Channel 0 is for RX */
+			channels-count = <2>;
+			interrupts = <69 2>;
+			interrupt-names = "mhuns";
+			#mbox-cells = <1>;
+			status = "disabled";
+		};
+
+		/* CA55_1 <-> CM33 */
+		mbox3: mhu@40400060 {
+			compatible = "renesas,rz-mhu-mbox";
+			channel = <3>;
+			reg = <0x40400060 0x20>;
+			tx-mask = <0x00000002>; /* Channel 1 is for TX */
+			rx-mask = <0x00000001>; /* Channel 0 is for RX */
+			channels-count = <2>;
+			interrupts = <71 2>;
+			interrupt-names = "mhuns";
+			#mbox-cells = <1>;
+			status = "disabled";
+		};
+
+		/* CM33 <-> CA55_0 */
+		mbox4: mhu@40400080 {
+			compatible = "renesas,rz-mhu-mbox";
+			channel = <4>;
+			reg = <0x40400080 0x20>;
+			tx-mask = <0x00000002>; /* Channel 1 is for TX */
+			rx-mask = <0x00000001>; /* Channel 0 is for RX */
+			channels-count = <2>;
+			interrupts = <78 2>;
+			interrupt-names = "mhuns";
+			#mbox-cells = <1>;
+			status = "disabled";
+		};
+
+		/* CM33 <-> CA55_1 */
+		mbox5: mhu@404000a0 {
+			compatible = "renesas,rz-mhu-mbox";
+			channel = <5>;
+			reg = <0x404000a0 0x20>;
+			tx-mask = <0x00000002>; /* Channel 1 is for TX */
+			rx-mask = <0x00000001>; /* Channel 0 is for RX */
+			channels-count = <2>;
+			interrupts = <79 2>;
+			interrupt-names = "mhuns";
+			#mbox-cells = <1>;
 			status = "disabled";
 		};
 	};

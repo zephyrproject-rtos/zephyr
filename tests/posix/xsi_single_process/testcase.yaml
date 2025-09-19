@@ -10,6 +10,7 @@ common:
     - simulation
   integration_platforms:
     - qemu_cortex_m0
+  min_ram: 16
 tests:
   portability.xsi.single_process:
     extra_configs:

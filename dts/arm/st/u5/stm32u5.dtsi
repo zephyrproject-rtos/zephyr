@@ -8,7 +8,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 #include <arm/armv8-m.dtsi>
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
@@ -53,18 +52,21 @@
 				substate-id = <1>;
 				min-residency-us = <100>;
 			};
+
 			stop1: state1 {
 				compatible = "zephyr,power-state";
 				power-state-name = "suspend-to-idle";
 				substate-id = <2>;
 				min-residency-us = <500>;
 			};
+
 			stop2: state2 {
 				compatible = "zephyr,power-state";
 				power-state-name = "suspend-to-idle";
 				substate-id = <3>;
 				min-residency-us = <900>;
 			};
+
 			/omit-if-no-ref/ stop3: state3 {
 				compatible = "zephyr,power-state";
 				power-state-name = "suspend-to-idle";
@@ -477,7 +479,7 @@
 			#size-cells = <0>;
 			reg = <0x40015404 0x20>;
 			clocks = <&rcc STM32_CLOCK(APB2, 21)>,
-					 <&rcc STM32_SRC_PLL2_P SAI1_SEL(0)>;
+				 <&rcc STM32_SRC_PLL2_P SAI1_SEL(0)>;
 			dmas = <&gpdma1 1 36 (STM32_DMA_MODE_NORMAL | STM32_DMA_PRIORITY_HIGH |
 				STM32_DMA_16BITS)>;
 			status = "disabled";
@@ -489,7 +491,7 @@
 			#size-cells = <0>;
 			reg = <0x40015424 0x20>;
 			clocks = <&rcc STM32_CLOCK(APB2, 21)>,
-					 <&rcc STM32_SRC_PLL2_P SAI1_SEL(0)>;
+				 <&rcc STM32_SRC_PLL2_P SAI1_SEL(0)>;
 			dmas = <&gpdma1 0 37 (STM32_DMA_MODE_NORMAL | STM32_DMA_PRIORITY_HIGH |
 				STM32_DMA_16BITS)>;
 			status = "disabled";
@@ -713,8 +715,8 @@
 			interrupts = <76 0>;
 			clock-names = "ospix", "ospi-ker", "ospi-mgr";
 			clocks = <&rcc STM32_CLOCK(AHB2_2, 4)>,
-				<&rcc STM32_SRC_SYSCLK OCTOSPI_SEL(0)>,
-				<&rcc STM32_CLOCK(AHB2, 21)>;
+				 <&rcc STM32_SRC_SYSCLK OCTOSPI_SEL(0)>,
+				 <&rcc STM32_CLOCK(AHB2, 21)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
@@ -726,8 +728,8 @@
 			interrupts = <120 0>;
 			clock-names = "ospix", "ospi-ker", "ospi-mgr";
 			clocks = <&rcc STM32_CLOCK(AHB2_2, 8)>,
-				<&rcc STM32_SRC_SYSCLK OCTOSPI_SEL(0)>,
-				<&rcc STM32_CLOCK(AHB2, 21)>;
+				 <&rcc STM32_SRC_SYSCLK OCTOSPI_SEL(0)>,
+				 <&rcc STM32_CLOCK(AHB2, 21)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
@@ -823,7 +825,7 @@
 			#dma-cells = <3>;
 			reg = <0x40020000 0x400>;
 			interrupts = <29 0 30 0 31 0 32 0 33 0 34 0 35 0 36 0
-					80 0 81 0 82 0 83 0 84 0 85 0 86 0 87 0>;
+				      80 0 81 0 82 0 83 0 84 0 85 0 86 0 87 0>;
 			clocks = <&rcc STM32_CLOCK(AHB1, 0)>;
 			dma-channels = <16>;
 			dma-requests = <114>;
@@ -907,7 +909,6 @@
 					     <&gpiob 10 STM32_PWR_WKUP_EVT_SRC_2>;
 			};
 		};
-
 	};
 
 	swj_port: swj_port {

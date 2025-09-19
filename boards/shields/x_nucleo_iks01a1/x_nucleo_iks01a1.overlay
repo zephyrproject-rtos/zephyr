@@ -14,7 +14,6 @@
 };
 
 &arduino_i2c {
-
 	hts221_x_nucleo_iks01a1: hts221@5f {
 		compatible = "st,hts221";
 		reg = <0x5f>;

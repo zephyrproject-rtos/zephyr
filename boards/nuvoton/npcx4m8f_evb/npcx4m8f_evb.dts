@@ -31,6 +31,7 @@
 
 	leds-pwm {
 		compatible = "pwm-leds";
+
 		pwm_led0_green: pwm_led_0 {
 			pwms = <&pwm6 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 			label = "User D7 green";
@@ -39,6 +40,7 @@
 
 	leds-gpio {
 		compatible = "gpio-leds";
+
 		gpio_led_red: led_0 {
 			gpios = <&gpio6 0 GPIO_ACTIVE_LOW>;
 			label = "User D8 red";

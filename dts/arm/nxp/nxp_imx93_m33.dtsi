@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,7 @@
 #include <zephyr/dt-bindings/clock/imx_ccm_rev2.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <mem.h>
+#include <freq.h>
 
 / {
 	cpus {
@@ -45,6 +46,7 @@
 			compatible = "nxp,imx-iomuxc";
 			reg = <0x443c0000 DT_SIZE_K(64)>;
 			status = "okay";
+
 			pinctrl: pinctrl {
 				status = "okay";
 				compatible = "nxp,imx93-pinctrl";
@@ -156,6 +158,15 @@
 			#pwm-cells = <3>;
 			status = "disabled";
 		};
+
+		sar_adc1: adc@44530000 {
+			compatible = "nxp,sar-adc";
+			reg = <0x44530000 DT_SIZE_K(64)>;
+			interrupts = <219 0>;
+			status = "disabled";
+			#io-channel-cells = <1>;
+			clocks = <&ccm IMX_CCM_SAR_ADC1_CLK 0x0 0>;
+		};
 	};
 };
 
@@ -165,120 +176,120 @@
 
 &gpio1 {
 	pinmux = <&iomuxc1_i2c1_scl_gpio_io_gpio1_io00>,
-		<&iomuxc1_i2c1_sda_gpio_io_gpio1_io01>,
-		<&iomuxc1_i2c2_scl_gpio_io_gpio1_io02>,
-		<&iomuxc1_i2c2_sda_gpio_io_gpio1_io03>,
-		<&iomuxc1_uart1_rxd_gpio_io_gpio1_io04>,
-		<&iomuxc1_uart1_txd_gpio_io_gpio1_io05>,
-		<&iomuxc1_uart2_rxd_gpio_io_gpio1_io06>,
-		<&iomuxc1_uart2_txd_gpio_io_gpio1_io07>,
-		<&iomuxc1_pdm_clk_gpio_io_gpio1_io08>,
-		<&iomuxc1_pdm_bit_stream0_gpio_io_gpio1_io09>,
-		<&iomuxc1_pdm_bit_stream1_gpio_io_gpio1_io10>,
-		<&iomuxc1_sai1_txfs_gpio_io_gpio1_io11>,
-		<&iomuxc1_sai1_txc_gpio_io_gpio1_io12>,
-		<&iomuxc1_sai1_txd0_gpio_io_gpio1_io13>,
-		<&iomuxc1_sai1_rxd0_gpio_io_gpio1_io14>,
-		<&iomuxc1_wdog_any_gpio_io_gpio1_io15>;
+		 <&iomuxc1_i2c1_sda_gpio_io_gpio1_io01>,
+		 <&iomuxc1_i2c2_scl_gpio_io_gpio1_io02>,
+		 <&iomuxc1_i2c2_sda_gpio_io_gpio1_io03>,
+		 <&iomuxc1_uart1_rxd_gpio_io_gpio1_io04>,
+		 <&iomuxc1_uart1_txd_gpio_io_gpio1_io05>,
+		 <&iomuxc1_uart2_rxd_gpio_io_gpio1_io06>,
+		 <&iomuxc1_uart2_txd_gpio_io_gpio1_io07>,
+		 <&iomuxc1_pdm_clk_gpio_io_gpio1_io08>,
+		 <&iomuxc1_pdm_bit_stream0_gpio_io_gpio1_io09>,
+		 <&iomuxc1_pdm_bit_stream1_gpio_io_gpio1_io10>,
+		 <&iomuxc1_sai1_txfs_gpio_io_gpio1_io11>,
+		 <&iomuxc1_sai1_txc_gpio_io_gpio1_io12>,
+		 <&iomuxc1_sai1_txd0_gpio_io_gpio1_io13>,
+		 <&iomuxc1_sai1_rxd0_gpio_io_gpio1_io14>,
+		 <&iomuxc1_wdog_any_gpio_io_gpio1_io15>;
 };
 
 &gpio2 {
 	pinmux = <&iomuxc1_gpio_io00_gpio_io_gpio2_io00>,
-		<&iomuxc1_gpio_io01_gpio_io_gpio2_io01>,
-		<&iomuxc1_gpio_io02_gpio_io_gpio2_io02>,
-		<&iomuxc1_gpio_io03_gpio_io_gpio2_io03>,
-		<&iomuxc1_gpio_io04_gpio_io_gpio2_io04>,
-		<&iomuxc1_gpio_io05_gpio_io_gpio2_io05>,
-		<&iomuxc1_gpio_io06_gpio_io_gpio2_io06>,
-		<&iomuxc1_gpio_io07_gpio_io_gpio2_io07>,
-		<&iomuxc1_gpio_io08_gpio_io_gpio2_io08>,
-		<&iomuxc1_gpio_io09_gpio_io_gpio2_io09>,
-		<&iomuxc1_gpio_io10_gpio_io_gpio2_io10>,
-		<&iomuxc1_gpio_io11_gpio_io_gpio2_io11>,
-		<&iomuxc1_gpio_io12_gpio_io_gpio2_io12>,
-		<&iomuxc1_gpio_io13_gpio_io_gpio2_io13>,
-		<&iomuxc1_gpio_io14_gpio_io_gpio2_io14>,
-		<&iomuxc1_gpio_io15_gpio_io_gpio2_io15>,
-		<&iomuxc1_gpio_io16_gpio_io_gpio2_io16>,
-		<&iomuxc1_gpio_io17_gpio_io_gpio2_io17>,
-		<&iomuxc1_gpio_io18_gpio_io_gpio2_io18>,
-		<&iomuxc1_gpio_io19_gpio_io_gpio2_io19>,
-		<&iomuxc1_gpio_io20_gpio_io_gpio2_io20>,
-		<&iomuxc1_gpio_io21_gpio_io_gpio2_io21>,
-		<&iomuxc1_gpio_io22_gpio_io_gpio2_io22>,
-		<&iomuxc1_gpio_io23_gpio_io_gpio2_io23>,
-		<&iomuxc1_gpio_io24_gpio_io_gpio2_io24>,
-		<&iomuxc1_gpio_io25_gpio_io_gpio2_io25>,
-		<&iomuxc1_gpio_io26_gpio_io_gpio2_io26>,
-		<&iomuxc1_gpio_io27_gpio_io_gpio2_io27>,
-		<&iomuxc1_gpio_io28_gpio_io_gpio2_io28>,
-		<&iomuxc1_gpio_io29_gpio_io_gpio2_io29>;
+		 <&iomuxc1_gpio_io01_gpio_io_gpio2_io01>,
+		 <&iomuxc1_gpio_io02_gpio_io_gpio2_io02>,
+		 <&iomuxc1_gpio_io03_gpio_io_gpio2_io03>,
+		 <&iomuxc1_gpio_io04_gpio_io_gpio2_io04>,
+		 <&iomuxc1_gpio_io05_gpio_io_gpio2_io05>,
+		 <&iomuxc1_gpio_io06_gpio_io_gpio2_io06>,
+		 <&iomuxc1_gpio_io07_gpio_io_gpio2_io07>,
+		 <&iomuxc1_gpio_io08_gpio_io_gpio2_io08>,
+		 <&iomuxc1_gpio_io09_gpio_io_gpio2_io09>,
+		 <&iomuxc1_gpio_io10_gpio_io_gpio2_io10>,
+		 <&iomuxc1_gpio_io11_gpio_io_gpio2_io11>,
+		 <&iomuxc1_gpio_io12_gpio_io_gpio2_io12>,
+		 <&iomuxc1_gpio_io13_gpio_io_gpio2_io13>,
+		 <&iomuxc1_gpio_io14_gpio_io_gpio2_io14>,
+		 <&iomuxc1_gpio_io15_gpio_io_gpio2_io15>,
+		 <&iomuxc1_gpio_io16_gpio_io_gpio2_io16>,
+		 <&iomuxc1_gpio_io17_gpio_io_gpio2_io17>,
+		 <&iomuxc1_gpio_io18_gpio_io_gpio2_io18>,
+		 <&iomuxc1_gpio_io19_gpio_io_gpio2_io19>,
+		 <&iomuxc1_gpio_io20_gpio_io_gpio2_io20>,
+		 <&iomuxc1_gpio_io21_gpio_io_gpio2_io21>,
+		 <&iomuxc1_gpio_io22_gpio_io_gpio2_io22>,
+		 <&iomuxc1_gpio_io23_gpio_io_gpio2_io23>,
+		 <&iomuxc1_gpio_io24_gpio_io_gpio2_io24>,
+		 <&iomuxc1_gpio_io25_gpio_io_gpio2_io25>,
+		 <&iomuxc1_gpio_io26_gpio_io_gpio2_io26>,
+		 <&iomuxc1_gpio_io27_gpio_io_gpio2_io27>,
+		 <&iomuxc1_gpio_io28_gpio_io_gpio2_io28>,
+		 <&iomuxc1_gpio_io29_gpio_io_gpio2_io29>;
 };
 
 &gpio3 {
 	pinmux = <&iomuxc1_sd2_cd_b_gpio_io_gpio3_io00>,
-		<&iomuxc1_sd2_clk_gpio_io_gpio3_io01>,
-		<&iomuxc1_sd2_cmd_gpio_io_gpio3_io02>,
-		<&iomuxc1_sd2_data0_gpio_io_gpio3_io03>,
-		<&iomuxc1_sd2_data1_gpio_io_gpio3_io04>,
-		<&iomuxc1_sd2_data2_gpio_io_gpio3_io05>,
-		<&iomuxc1_sd2_data3_gpio_io_gpio3_io06>,
-		<&iomuxc1_sd2_reset_b_gpio_io_gpio3_io07>,
-		<&iomuxc1_sd1_clk_gpio_io_gpio3_io08>,
-		<&iomuxc1_sd1_cmd_gpio_io_gpio3_io09>,
-		<&iomuxc1_sd1_data0_gpio_io_gpio3_io10>,
-		<&iomuxc1_sd1_data1_gpio_io_gpio3_io11>,
-		<&iomuxc1_sd1_data2_gpio_io_gpio3_io12>,
-		<&iomuxc1_sd1_data3_gpio_io_gpio3_io13>,
-		<&iomuxc1_sd1_data4_gpio_io_gpio3_io14>,
-		<&iomuxc1_sd1_data5_gpio_io_gpio3_io15>,
-		<&iomuxc1_sd1_data6_gpio_io_gpio3_io16>,
-		<&iomuxc1_sd1_data7_gpio_io_gpio3_io17>,
-		<&iomuxc1_sd1_strobe_gpio_io_gpio3_io18>,
-		<&iomuxc1_sd2_vselect_gpio_io_gpio3_io19>,
-		<&iomuxc1_sd3_clk_gpio_io_gpio3_io20>,
-		<&iomuxc1_sd3_cmd_gpio_io_gpio3_io21>,
-		<&iomuxc1_sd3_data0_gpio_io_gpio3_io22>,
-		<&iomuxc1_sd3_data1_gpio_io_gpio3_io23>,
-		<&iomuxc1_sd3_data2_gpio_io_gpio3_io24>,
-		<&iomuxc1_sd3_data3_gpio_io_gpio3_io25>,
-		<&iomuxc1_ccm_clko1_gpio_io_gpio3_io26>,
-		<&iomuxc1_ccm_clko2_gpio_io_gpio3_io27>,
-		<&iomuxc1_dap_tdi_gpio_io_gpio3_io28>,
-		<&iomuxc1_dap_tms_swdio_gpio_io_gpio3_io29>,
-		<&iomuxc1_dap_tclk_swclk_gpio_io_gpio3_io30>,
-		<&iomuxc1_dap_tdo_traceswo_gpio_io_gpio3_io31>;
+		 <&iomuxc1_sd2_clk_gpio_io_gpio3_io01>,
+		 <&iomuxc1_sd2_cmd_gpio_io_gpio3_io02>,
+		 <&iomuxc1_sd2_data0_gpio_io_gpio3_io03>,
+		 <&iomuxc1_sd2_data1_gpio_io_gpio3_io04>,
+		 <&iomuxc1_sd2_data2_gpio_io_gpio3_io05>,
+		 <&iomuxc1_sd2_data3_gpio_io_gpio3_io06>,
+		 <&iomuxc1_sd2_reset_b_gpio_io_gpio3_io07>,
+		 <&iomuxc1_sd1_clk_gpio_io_gpio3_io08>,
+		 <&iomuxc1_sd1_cmd_gpio_io_gpio3_io09>,
+		 <&iomuxc1_sd1_data0_gpio_io_gpio3_io10>,
+		 <&iomuxc1_sd1_data1_gpio_io_gpio3_io11>,
+		 <&iomuxc1_sd1_data2_gpio_io_gpio3_io12>,
+		 <&iomuxc1_sd1_data3_gpio_io_gpio3_io13>,
+		 <&iomuxc1_sd1_data4_gpio_io_gpio3_io14>,
+		 <&iomuxc1_sd1_data5_gpio_io_gpio3_io15>,
+		 <&iomuxc1_sd1_data6_gpio_io_gpio3_io16>,
+		 <&iomuxc1_sd1_data7_gpio_io_gpio3_io17>,
+		 <&iomuxc1_sd1_strobe_gpio_io_gpio3_io18>,
+		 <&iomuxc1_sd2_vselect_gpio_io_gpio3_io19>,
+		 <&iomuxc1_sd3_clk_gpio_io_gpio3_io20>,
+		 <&iomuxc1_sd3_cmd_gpio_io_gpio3_io21>,
+		 <&iomuxc1_sd3_data0_gpio_io_gpio3_io22>,
+		 <&iomuxc1_sd3_data1_gpio_io_gpio3_io23>,
+		 <&iomuxc1_sd3_data2_gpio_io_gpio3_io24>,
+		 <&iomuxc1_sd3_data3_gpio_io_gpio3_io25>,
+		 <&iomuxc1_ccm_clko1_gpio_io_gpio3_io26>,
+		 <&iomuxc1_ccm_clko2_gpio_io_gpio3_io27>,
+		 <&iomuxc1_dap_tdi_gpio_io_gpio3_io28>,
+		 <&iomuxc1_dap_tms_swdio_gpio_io_gpio3_io29>,
+		 <&iomuxc1_dap_tclk_swclk_gpio_io_gpio3_io30>,
+		 <&iomuxc1_dap_tdo_traceswo_gpio_io_gpio3_io31>;
 };
 
 &gpio4 {
 	pinmux = <&iomuxc1_enet1_mdc_gpio_io_gpio4_io00>,
-		<&iomuxc1_enet1_mdio_gpio_io_gpio4_io01>,
-		<&iomuxc1_enet1_td3_gpio_io_gpio4_io02>,
-		<&iomuxc1_enet1_td2_gpio_io_gpio4_io03>,
-		<&iomuxc1_enet1_td1_gpio_io_gpio4_io04>,
-		<&iomuxc1_enet1_td0_gpio_io_gpio4_io05>,
-		<&iomuxc1_enet1_tx_ctl_gpio_io_gpio4_io06>,
-		<&iomuxc1_enet1_txc_gpio_io_gpio4_io07>,
-		<&iomuxc1_enet1_rx_ctl_gpio_io_gpio4_io08>,
-		<&iomuxc1_enet1_rxc_gpio_io_gpio4_io09>,
-		<&iomuxc1_enet1_rd0_gpio_io_gpio4_io10>,
-		<&iomuxc1_enet1_rd1_gpio_io_gpio4_io11>,
-		<&iomuxc1_enet1_rd2_gpio_io_gpio4_io12>,
-		<&iomuxc1_enet1_rd3_gpio_io_gpio4_io13>,
-		<&iomuxc1_enet2_mdc_gpio_io_gpio4_io14>,
-		<&iomuxc1_enet2_mdio_gpio_io_gpio4_io15>,
-		<&iomuxc1_enet2_td3_gpio_io_gpio4_io16>,
-		<&iomuxc1_enet2_td2_gpio_io_gpio4_io17>,
-		<&iomuxc1_enet2_td1_gpio_io_gpio4_io18>,
-		<&iomuxc1_enet2_td0_gpio_io_gpio4_io19>,
-		<&iomuxc1_enet2_tx_ctl_gpio_io_gpio4_io20>,
-		<&iomuxc1_enet2_txc_gpio_io_gpio4_io21>,
-		<&iomuxc1_enet2_rx_ctl_gpio_io_gpio4_io22>,
-		<&iomuxc1_enet2_rxc_gpio_io_gpio4_io23>,
-		<&iomuxc1_enet2_rd0_gpio_io_gpio4_io24>,
-		<&iomuxc1_enet2_rd1_gpio_io_gpio4_io25>,
-		<&iomuxc1_enet2_rd2_gpio_io_gpio4_io26>,
-		<&iomuxc1_enet2_rd3_gpio_io_gpio4_io27>,
-		<&iomuxc1_ccm_clko3_gpio_io_gpio4_io28>,
-		<&iomuxc1_ccm_clko4_gpio_io_gpio4_io29>;
+		 <&iomuxc1_enet1_mdio_gpio_io_gpio4_io01>,
+		 <&iomuxc1_enet1_td3_gpio_io_gpio4_io02>,
+		 <&iomuxc1_enet1_td2_gpio_io_gpio4_io03>,
+		 <&iomuxc1_enet1_td1_gpio_io_gpio4_io04>,
+		 <&iomuxc1_enet1_td0_gpio_io_gpio4_io05>,
+		 <&iomuxc1_enet1_tx_ctl_gpio_io_gpio4_io06>,
+		 <&iomuxc1_enet1_txc_gpio_io_gpio4_io07>,
+		 <&iomuxc1_enet1_rx_ctl_gpio_io_gpio4_io08>,
+		 <&iomuxc1_enet1_rxc_gpio_io_gpio4_io09>,
+		 <&iomuxc1_enet1_rd0_gpio_io_gpio4_io10>,
+		 <&iomuxc1_enet1_rd1_gpio_io_gpio4_io11>,
+		 <&iomuxc1_enet1_rd2_gpio_io_gpio4_io12>,
+		 <&iomuxc1_enet1_rd3_gpio_io_gpio4_io13>,
+		 <&iomuxc1_enet2_mdc_gpio_io_gpio4_io14>,
+		 <&iomuxc1_enet2_mdio_gpio_io_gpio4_io15>,
+		 <&iomuxc1_enet2_td3_gpio_io_gpio4_io16>,
+		 <&iomuxc1_enet2_td2_gpio_io_gpio4_io17>,
+		 <&iomuxc1_enet2_td1_gpio_io_gpio4_io18>,
+		 <&iomuxc1_enet2_td0_gpio_io_gpio4_io19>,
+		 <&iomuxc1_enet2_tx_ctl_gpio_io_gpio4_io20>,
+		 <&iomuxc1_enet2_txc_gpio_io_gpio4_io21>,
+		 <&iomuxc1_enet2_rx_ctl_gpio_io_gpio4_io22>,
+		 <&iomuxc1_enet2_rxc_gpio_io_gpio4_io23>,
+		 <&iomuxc1_enet2_rd0_gpio_io_gpio4_io24>,
+		 <&iomuxc1_enet2_rd1_gpio_io_gpio4_io25>,
+		 <&iomuxc1_enet2_rd2_gpio_io_gpio4_io26>,
+		 <&iomuxc1_enet2_rd3_gpio_io_gpio4_io27>,
+		 <&iomuxc1_ccm_clko3_gpio_io_gpio4_io28>,
+		 <&iomuxc1_ccm_clko4_gpio_io_gpio4_io29>;
 };

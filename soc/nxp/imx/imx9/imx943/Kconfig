@@ -22,3 +22,29 @@ config SOC_MIMX94398_M33
 	select HAS_MCUX_XCACHE
 	select INIT_ARCH_HW_AT_BOOT
 	select SOC_EARLY_INIT_HOOK
+
+config SOC_MIMX94398_M7_0
+	select ARM
+	select CPU_CORTEX_M7
+	select CPU_HAS_FPU
+	select CPU_HAS_FPU_DOUBLE_PRECISION
+	select CPU_HAS_ICACHE
+	select CPU_HAS_DCACHE
+	select CPU_HAS_ARM_MPU
+	select ARM_MPU
+	select SOC_EARLY_INIT_HOOK
+	select HAS_MCUX
+	select HAS_MCUX_CACHE
+
+config SOC_MIMX94398_M7_1
+	select ARM
+	select CPU_CORTEX_M7
+	select CPU_HAS_FPU
+	select CPU_HAS_FPU_DOUBLE_PRECISION
+	select CPU_HAS_ICACHE
+	select CPU_HAS_DCACHE
+	select CPU_HAS_ARM_MPU
+	select ARM_MPU
+	select SOC_EARLY_INIT_HOOK
+	select HAS_MCUX
+	select HAS_MCUX_CACHE

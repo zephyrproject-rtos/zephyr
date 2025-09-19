@@ -12,6 +12,7 @@
 		gpio-map = <0 0 &portb 8 0>,	/* A0/D0 */
 			   <1 0 &portb 9 0>;	/* A1/D1 */
 	};
+
 	grove_header1: grove_header1 {
 		compatible = "grove-header";
 		#gpio-cells = <2>;

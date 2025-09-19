@@ -12,11 +12,14 @@
 };
 
 &dvp_20pin_i2c {
+	status = "okay";
+
 	ov7670: ov7670@21 {
 		compatible = "ovti,ov7670";
 		reg = <0x21>;
 		reset-gpios = <&dvp_20pin_connector DVP_20PIN_PEN GPIO_ACTIVE_HIGH>;
-		pwdn-gpios  = <&dvp_20pin_connector DVP_20PIN_PDN GPIO_ACTIVE_HIGH>;
+		pwdn-gpios = <&dvp_20pin_connector DVP_20PIN_PDN GPIO_ACTIVE_HIGH>;
+		status = "okay";
 
 		port {
 			ov7670_ep_out: endpoint {
@@ -32,6 +35,10 @@
 	port {
 		dvp_20pin_ep_in: endpoint {
 			remote-endpoint-label = "ov7670_ep_out";
+			bus-width = <8>;
+			hsync-active = <1>;
+			vsync-active = <1>;
+			pclk-sample = <1>;
 		};
 	};
 };

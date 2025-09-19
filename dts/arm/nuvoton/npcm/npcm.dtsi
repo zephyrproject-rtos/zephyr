@@ -42,7 +42,7 @@
 			/* First reg region is Power Management Controller */
 			/* Second reg region is Core Domain Clock Generator */
 			reg = <0x4000d000 0x2000
-				   0x400b5000 0x2000>;
+			       0x400b5000 0x2000>;
 			reg-names = "pmc", "cdcg";
 		};
 	};

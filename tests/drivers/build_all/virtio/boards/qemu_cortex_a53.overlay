@@ -7,14 +7,34 @@
 / {
 	chosen {
 		zephyr,entropy = &virtio_entropy;
+		zephyr,console = &virtio_console;
 	};
 };
 
 &virtio_mmio0 {
 	status = "okay";
 
-	virtio_entropy: virtio_entropy {
+	virtio_entropy: virtio-entropy {
 		compatible = "virtio,device4";
 		status = "okay";
+	};
+};
+
+&virtio_mmio1 {
+	status = "okay";
+
+	virtio_console: virtio-console {
+		compatible = "virtio,console";
+		status = "okay";
+	};
+};
+
+&virtio_mmio2 {
+	status = "okay";
+
+	virtio_net: virtio-net {
+		compatible = "virtio,net";
+		status = "okay";
+		zephyr,random-mac-address;
 	};
 };

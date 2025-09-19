@@ -32,7 +32,7 @@ void producer_function(void *rec, void *p2, void *p3)
 			normal_data++;
 		}
 		printk("[producer] sending: %c (urgent)\n", urgent_data);
-		k_msgq_put_front(&my_msgq, &urgent_data, K_NO_WAIT);
+		k_msgq_put_front(&my_msgq, &urgent_data);
 		k_sleep(K_MSEC(100));
 		urgent_data++;
 

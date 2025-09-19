@@ -11,20 +11,23 @@
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
 		gpio-map = <0 0 &gpio0 1 0>,	/* D0 */
-				   <1 0 &gpio0 2 0>,	/* D1 */
-				   <2 0 &gpio0 3 0>,	/* D2 */
-				   <3 0 &gpio0 4 0>,	/* D3 */
-				   <4 0 &gpio0 5 0>,	/* D4 */
-				   <5 0 &gpio0 6 0>,	/* D5 */
-				   <6 0 &gpio1 11 0>,	/* D6 */
-				   <7 0 &gpio1 12 0>,	/* D7 */
-				   <8 0 &gpio0 7 0>,	/* D8 */
-				   <9 0 &gpio0 8 0>,	/* D9 */
-				   <10 0 &gpio0 9 0>;	/* D10 */
+			   <1 0 &gpio0 2 0>,	/* D1 */
+			   <2 0 &gpio0 3 0>,	/* D2 */
+			   <3 0 &gpio0 4 0>,	/* D3 */
+			   <4 0 &gpio0 5 0>,	/* D4 */
+			   <5 0 &gpio0 6 0>,	/* D5 */
+			   <6 0 &gpio1 11 0>,	/* D6 */
+			   <7 0 &gpio1 12 0>,	/* D7 */
+			   <8 0 &gpio0 7 0>,	/* D8 */
+			   <9 0 &gpio0 8 0>,	/* D9 */
+			   <10 0 &gpio0 9 0>;	/* D10 */
 	};
 };
 
 xiao_spi: &spi2 {};
+
 xiao_i2c: &i2c0 {};
+
 xiao_serial: &uart0 {};
+
 xiao_adc: &adc0 {};

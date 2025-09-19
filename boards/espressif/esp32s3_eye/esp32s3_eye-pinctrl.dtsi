@@ -24,32 +24,43 @@
 			pinmux = <SPIM3_SCLK_GPIO21>,
 				 <SPIM3_CSEL_GPIO44>;
 		};
+
 		group2 {
 			pinmux = <SPIM3_MOSI_GPIO47>;
 			output-low;
 		};
 	};
 
-	lcd_cam_default: lcd_cam_default{
+	lcd_cam_default: lcd_cam_default {
 		group1 {
 			pinmux = <LCD_CAM_CAM_CLK_GPIO15>;
 			output-enable;
 		};
+
 		group2 {
 			pinmux = <LCD_CAM_V_SYNC_CAM_GPIO6>,
-				<LCD_CAM_H_ENABLE_CAM_GPIO7>,
-				<LCD_CAM_CAM_PCLK_GPIO13>,
-				<LCD_CAM_DATA_IN0_GPIO11>,
-				<LCD_CAM_DATA_IN1_GPIO9>,
-				<LCD_CAM_DATA_IN2_GPIO8>,
-				<LCD_CAM_DATA_IN3_GPIO10>,
-				<LCD_CAM_DATA_IN4_GPIO12>,
-				<LCD_CAM_DATA_IN5_GPIO18>,
-				<LCD_CAM_DATA_IN6_GPIO17>,
-				<LCD_CAM_DATA_IN7_GPIO16>;
+				 <LCD_CAM_H_ENABLE_CAM_GPIO7>,
+				 <LCD_CAM_CAM_PCLK_GPIO13>,
+				 <LCD_CAM_DATA_IN0_GPIO11>,
+				 <LCD_CAM_DATA_IN1_GPIO9>,
+				 <LCD_CAM_DATA_IN2_GPIO8>,
+				 <LCD_CAM_DATA_IN3_GPIO10>,
+				 <LCD_CAM_DATA_IN4_GPIO12>,
+				 <LCD_CAM_DATA_IN5_GPIO18>,
+				 <LCD_CAM_DATA_IN6_GPIO17>,
+				 <LCD_CAM_DATA_IN7_GPIO16>;
 			input-enable;
 			bias-disable;
 		};
+	};
 
+	sdhc0_default: sdhc0_default {
+		group1 {
+			pinmux = <SDHC0_CMD_GPIO38>,
+				 <SDHC0_CLKOUT_GPIO39>,
+				 <SDHC0_DATA0_GPIO40>;
+			bias-pull-up;
+			output-high;
+		};
 	};
 };

@@ -30,8 +30,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_TCP_LOG_LEVEL);
 
 #include "ipv4.h"
 #include "ipv6.h"
-#include "tcp.h"
-#include "tcp_private.h"
+#include "tcp_internal.h"
 #include "net_stats.h"
 
 #include <zephyr/ztest.h>

@@ -361,14 +361,14 @@ def get_catalog(generate_hw_features=False, hw_features_vendor_filter=None):
         # Grab all the twister files for this board and use them to figure out all the archs it
         # supports.
         board_archs = set()
-        pattern = f"{board.name}*.yaml"
-        for twister_file in board.dir.glob(pattern):
-            try:
-                with open(twister_file) as f:
-                    board_data = yaml.safe_load(f)
-                    board_archs.add(board_data.get("arch"))
-            except Exception as e:
-                logger.error(f"Error parsing twister file {twister_file}: {e}")
+        for pattern in (f"{board.name}*.yaml", "twister.yaml"):
+            for twister_file in board.dir.glob(pattern):
+                try:
+                    with open(twister_file) as f:
+                        board_data = yaml.safe_load(f)
+                        board_archs.add(board_data.get("arch"))
+                except Exception as e:
+                    logger.error(f"Error parsing twister file {twister_file}: {e}")
 
         if doc_page and doc_page.is_relative_to(ZEPHYR_BASE):
             doc_page_path = doc_page.relative_to(ZEPHYR_BASE).as_posix()

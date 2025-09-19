@@ -42,7 +42,7 @@ LOG_MODULE_REGISTER(net_ctx, CONFIG_NET_CONTEXT_LOG_LEVEL);
 #include "pmtu.h"
 
 #if defined(CONFIG_NET_TCP)
-#include "tcp.h"
+#include "tcp_internal.h"
 #endif
 
 #ifdef CONFIG_NET_INITIAL_MCAST_TTL
@@ -646,6 +646,13 @@ int net_context_get(sa_family_t family, enum net_sock_type type, uint16_t proto,
 	k_sem_give(&contexts_lock);
 
 	if (ret < 0) {
+		if (ret == -EADDRINUSE &&
+		    !net_if_is_ip_offloaded(net_if_get_default()) &&
+		    proto == IPPROTO_TCP) {
+			/* Free the TCP context that we allocated earlier */
+			net_tcp_put(&contexts[i]);
+		}
+
 		return ret;
 	}
 
@@ -1229,8 +1236,6 @@ static inline struct net_context *find_context(void *conn_handler)
 
 int net_context_listen(struct net_context *context, int backlog)
 {
-	ARG_UNUSED(backlog);
-
 	NET_ASSERT(PART_OF_ARRAY(contexts, context));
 
 	if (!net_context_is_used(context)) {
@@ -1245,7 +1250,7 @@ int net_context_listen(struct net_context *context, int backlog)
 
 	k_mutex_lock(&context->lock, K_FOREVER);
 
-	if (net_tcp_listen(context) >= 0) {
+	if (net_tcp_listen(context, backlog) >= 0) {
 		k_mutex_unlock(&context->lock);
 		return 0;
 	}
@@ -2335,6 +2340,11 @@ static void set_pkt_txtime(struct net_pkt *pkt, const struct msghdr *msghdr)
 static void set_pkt_hoplimit(struct net_pkt *pkt, const struct msghdr *msg_hdr)
 {
 	struct cmsghdr *cmsg;
+	const struct sockaddr_in6 *addr6 = NULL;
+
+	if (IS_ENABLED(CONFIG_NET_IPV4_MAPPING_TO_IPV6) && IS_ENABLED(CONFIG_NET_IPV6)) {
+		addr6 = msg_hdr->msg_name;
+	}
 
 	for (cmsg = CMSG_FIRSTHDR(msg_hdr); cmsg != NULL;
 	     cmsg = CMSG_NXTHDR(msg_hdr, cmsg)) {
@@ -2345,12 +2355,23 @@ static void set_pkt_hoplimit(struct net_pkt *pkt, const struct msghdr *msg_hdr)
 				net_pkt_set_ipv6_hop_limit(pkt, *(uint8_t *)CMSG_DATA(cmsg));
 				break;
 			}
-		} else {
-			if (cmsg->cmsg_len == CMSG_LEN(sizeof(int)) &&
-			    cmsg->cmsg_level == IPPROTO_IP &&
-			    cmsg->cmsg_type == IP_TTL) {
-				net_pkt_set_ipv4_ttl(pkt, *(uint8_t *)CMSG_DATA(cmsg));
-				break;
+		} else if (net_pkt_family(pkt) == AF_INET) {
+			if (addr6  == NULL ||
+			    (addr6 != NULL && !net_ipv6_addr_is_v4_mapped(&addr6->sin6_addr))) {
+				if (cmsg->cmsg_len == CMSG_LEN(sizeof(int)) &&
+				    cmsg->cmsg_level == IPPROTO_IP &&
+				    cmsg->cmsg_type == IP_TTL) {
+					net_pkt_set_ipv4_ttl(pkt, *(uint8_t *)CMSG_DATA(cmsg));
+					break;
+				}
+			} else if (addr6 != NULL &&
+				   net_ipv6_addr_is_v4_mapped(&addr6->sin6_addr)) {
+				if (cmsg->cmsg_len == CMSG_LEN(sizeof(int)) &&
+				    cmsg->cmsg_level == IPPROTO_IPV6 &&
+				    cmsg->cmsg_type == IPV6_HOPLIMIT) {
+					net_pkt_set_ipv4_ttl(pkt, *(uint8_t *)CMSG_DATA(cmsg));
+					break;
+				}
 			}
 		}
 	}
@@ -2395,8 +2416,18 @@ static int context_sendto(struct net_context *context,
 	if (IS_ENABLED(CONFIG_NET_IPV4_MAPPING_TO_IPV6) &&
 	    IS_ENABLED(CONFIG_NET_IPV6) &&
 	    net_context_get_family(context) == AF_INET6 &&
+	    dst_addr != NULL &&
 	    dst_addr->sa_family == AF_INET) {
 		family = AF_INET;
+	} else if (IS_ENABLED(CONFIG_NET_IPV4_MAPPING_TO_IPV6) &&
+		   IS_ENABLED(CONFIG_NET_IPV6) && msghdr != NULL) {
+		const struct sockaddr_in6 *addr6 = msghdr->msg_name;
+
+		if (net_ipv6_addr_is_v4_mapped(&addr6->sin6_addr)) {
+			family = AF_INET;
+		} else {
+			family = net_context_get_family(context);
+		}
 	} else {
 		family = net_context_get_family(context);
 	}
@@ -2483,6 +2514,10 @@ static int context_sendto(struct net_context *context,
 			net_ipaddr_copy(&mapped.sin_addr,
 					(struct in_addr *)(&addr6->sin6_addr.s6_addr32[3]));
 			addr4 = &mapped;
+
+			/* For sendmsg(), the dst_addr is NULL so set it here.
+			 */
+			dst_addr = (const struct sockaddr *)addr4;
 		}
 
 		if (addrlen < sizeof(struct sockaddr_in)) {

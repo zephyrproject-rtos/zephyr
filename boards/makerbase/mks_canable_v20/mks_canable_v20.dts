@@ -24,10 +24,12 @@
 
 	leds: leds {
 		compatible = "gpio-leds";
+
 		blue_led: led_2 {
 			gpios = <&gpioa 15 GPIO_ACTIVE_LOW>;
 			label = "blue-status D2";
 		};
+
 		green_led: led_3 {
 			gpios = <&gpioa 0 GPIO_ACTIVE_LOW>;
 			label = "green-word D3";
