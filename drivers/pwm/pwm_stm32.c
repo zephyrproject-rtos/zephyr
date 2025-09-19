@@ -48,7 +48,7 @@ enum capture_state {
 /** Return the complementary channel number
  * that is used to capture the end of the pulse.
  */
-static const uint32_t complementary_channel[] = {0, 2, 1, 4, 3};
+static const uint32_t complementary_channel[] = {2, 1, 4, 3};
 
 struct pwm_stm32_capture_data {
 	pwm_capture_callback_handler_t callback;
@@ -325,7 +325,7 @@ static void init_capture_channels(const struct device *dev, uint32_t channel,
 	TIM_TypeDef *timer = cfg->timer;
 	bool is_inverted = (flags & PWM_POLARITY_MASK) == PWM_POLARITY_INVERTED;
 	uint32_t ll_channel = ch2ll[channel - 1];
-	uint32_t ll_complementary_channel = ch2ll[complementary_channel[channel] - 1];
+	uint32_t ll_complementary_channel = ch2ll[complementary_channel[channel - 1] - 1];
 
 
 	/* Setup main channel */
@@ -469,7 +469,7 @@ static int pwm_stm32_enable_capture(const struct device *dev, uint32_t channel)
 	enable_capture_interrupt[channel - 1](timer);
 
 	LL_TIM_CC_EnableChannel(timer, ch2ll[channel - 1]);
-	LL_TIM_CC_EnableChannel(timer, ch2ll[complementary_channel[channel] - 1]);
+	LL_TIM_CC_EnableChannel(timer, ch2ll[complementary_channel[channel - 1] - 1]);
 	LL_TIM_GenerateEvent_UPDATE(timer);
 
 	return 0;
@@ -498,7 +498,7 @@ static int pwm_stm32_disable_capture(const struct device *dev, uint32_t channel)
 
 	LL_TIM_DisableIT_UPDATE(timer);
 	LL_TIM_CC_DisableChannel(timer, ch2ll[channel - 1]);
-	LL_TIM_CC_DisableChannel(timer, ch2ll[complementary_channel[channel] - 1]);
+	LL_TIM_CC_DisableChannel(timer, ch2ll[complementary_channel[channel - 1] - 1]);
 
 	return 0;
 }
@@ -509,6 +509,7 @@ static void pwm_stm32_isr(const struct device *dev)
 	TIM_TypeDef *timer = cfg->timer;
 	struct pwm_stm32_data *data = dev->data;
 	struct pwm_stm32_capture_data *cpt = &data->capture;
+	uint8_t channel = cpt->channel;
 	int status = 0;
 
 	if (cpt->skip_irq != 0u) {
@@ -542,19 +543,19 @@ static void pwm_stm32_isr(const struct device *dev)
 	}
 
 	if (!cfg->four_channel_capture_support) {
-		if (is_capture_active[cpt->channel - 1](timer) ||
-		    is_capture_active[complementary_channel[cpt->channel] - 1](timer)) {
-			clear_capture_interrupt[cpt->channel - 1](timer);
+		if (is_capture_active[channel - 1](timer) ||
+		    is_capture_active[complementary_channel[channel - 1] - 1](timer)) {
+			clear_capture_interrupt[channel - 1](timer);
 			clear_capture_interrupt
-					[complementary_channel[cpt->channel] - 1](timer);
+					[complementary_channel[channel - 1] - 1](timer);
 
-			cpt->period = get_channel_capture[cpt->channel - 1](timer);
+			cpt->period = get_channel_capture[channel - 1](timer);
 			cpt->pulse = get_channel_capture
-					[complementary_channel[cpt->channel] - 1](timer);
+					[complementary_channel[channel - 1] - 1](timer);
 		}
 	} else {
 		if (cpt->state == CAPTURE_STATE_WAIT_FOR_PULSE_START &&
-		    is_capture_active[cpt->channel - 1](timer)) {
+		    is_capture_active[channel - 1](timer)) {
 			/* Reset the counter manually instead of automatically by HW
 			 * This sets the pulse-start at 0 and makes the pulse-end
 			 * and period related to that number. Sure we loose some
@@ -569,19 +570,19 @@ static void pwm_stm32_isr(const struct device *dev)
 
 		} else if ((cpt->state == CAPTURE_STATE_WAIT_FOR_UPDATE_EVENT ||
 				cpt->state == CAPTURE_STATE_WAIT_FOR_PERIOD_END) &&
-			    is_capture_active[cpt->channel - 1](timer)) {
+			    is_capture_active[channel - 1](timer)) {
 			cpt->state = CAPTURE_STATE_IDLE;
 			/* The end of the period. Both capture channels should now contain
 			 * the timer value when the pulse and period ended respectively.
 			 */
-			cpt->pulse = get_channel_capture[complementary_channel[cpt->channel] - 1]
+			cpt->pulse = get_channel_capture[complementary_channel[channel - 1] - 1]
 					(timer);
-			cpt->period = get_channel_capture[cpt->channel - 1](timer);
+			cpt->period = get_channel_capture[channel - 1](timer);
 			/* Reset the counter manually for next cycle */
 			LL_TIM_GenerateEvent_UPDATE(timer);
 		}
 
-		clear_capture_interrupt[cpt->channel - 1](timer);
+		clear_capture_interrupt[channel - 1](timer);
 
 		if (cpt->state != CAPTURE_STATE_IDLE) {
 			/* Still waiting for a complete capture */
@@ -594,14 +595,14 @@ static void pwm_stm32_isr(const struct device *dev)
 	}
 
 	if (!cpt->continuous) {
-		pwm_stm32_disable_capture(dev, cpt->channel);
+		pwm_stm32_disable_capture(dev, channel);
 	} else {
 		cpt->overflows = 0u;
 		cpt->state = CAPTURE_STATE_WAIT_FOR_PERIOD_END;
 	}
 
 	if (cpt->callback != NULL) {
-		cpt->callback(dev, cpt->channel, cpt->capture_period ? cpt->period : 0u,
+		cpt->callback(dev, channel, cpt->capture_period ? cpt->period : 0u,
 				cpt->capture_pulse ? cpt->pulse : 0u, status, cpt->user_data);
 	}
 }
