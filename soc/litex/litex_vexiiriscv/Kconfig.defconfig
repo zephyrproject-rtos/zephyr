@@ -1,0 +1,31 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_LITEX_VEXIIRISCV
+
+config RISCV_SOC_INTERRUPT_INIT
+	default y
+
+config 2ND_LVL_ISR_TBL_OFFSET
+	default 12
+
+config 2ND_LVL_INTR_00_OFFSET
+	default 11
+
+config MAX_IRQ_PER_AGGREGATOR
+	default 32
+
+# Compute the IRQ table size automatically from the devicetree. The LiteX SoC is
+# generated, so which peripherals exist and which PLIC IRQ numbers they use
+# differs from build to build. dt_highest_controller_irq_number() returns the
+# highest IRQ number used by an active (status = "okay") device on the PLIC. A
+# PLIC interrupt N lands at index CONFIG_2ND_LVL_ISR_TBL_OFFSET + N, so the
+# table has to hold CONFIG_2ND_LVL_ISR_TBL_OFFSET + <highest IRQ number> + 1
+# entries.
+DT_PLIC_MAX_IRQN := $(dt_highest_controller_irq_number,$(dt_nodelabel_path,intc0),irq)
+
+config NUM_IRQS
+	default $(add,12,$(inc,$(DT_PLIC_MAX_IRQN))) if $(dt_nodelabel_enabled,intc0)
+	default 12
+
+endif # SOC_LITEX_VEXIIRISCV
