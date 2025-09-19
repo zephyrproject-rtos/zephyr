@@ -416,6 +416,12 @@
 				status = "disabled";
 			};
 
+			ppib020: ppib@23000 {
+				compatible = "nordic,nrf-ppib";
+				reg = <0x23000 0x1000>;
+				status = "disabled";
+			};
+
 			cpurad_ipct: ipct@24000 {
 				compatible = "nordic,nrf-ipct-local";
 				reg = <0x24000 0x1000>;
@@ -502,6 +508,12 @@
 					compatible = "nordic,nrf-ieee802154";
 					status = "disabled";
 				};
+			};
+
+			ppib030: ppib@31000 {
+				compatible = "nordic,nrf-ppib";
+				reg = <0x31000 0x1000>;
+				status = "disabled";
 			};
 
 			ccm030: ccm@3a000 {
@@ -830,6 +842,18 @@
 				nordic,clockpin-enable = <NRF_FUN_SPIM_SCK>;
 			};
 
+			ppib120: ppib@8ee000 {
+				compatible = "nordic,nrf-ppib";
+				reg = <0x8ee000 0x1000>;
+				status = "disabled";
+			};
+
+			ppib121: ppib@8ef000 {
+				compatible = "nordic,nrf-ppib";
+				reg = <0x8ef000 0x1000>;
+				status = "disabled";
+			};
+
 			cpuppr_vpr: vpr@908000 {
 				compatible = "nordic,nrf-vpr-coprocessor";
 				reg = <0x908000 0x1000>;
@@ -859,6 +883,18 @@
 			dppic130: dppic@922000 {
 				compatible = "nordic,nrf-dppic-global";
 				reg = <0x922000 0x1000>;
+				status = "disabled";
+			};
+
+			ppib130: ppib@925000 {
+				compatible = "nordic,nrf-ppib";
+				reg = <0x925000 0x1000>;
+				status = "disabled";
+			};
+
+			ppib131: ppib@926000 {
+				compatible = "nordic,nrf-ppib";
+				reg = <0x926000 0x1000>;
 				status = "disabled";
 			};
 
@@ -1036,6 +1072,12 @@
 				interrupts = <389 NRF_DEFAULT_IRQ_PRIORITY>;
 			};
 
+			ppib132: ppib@98d000 {
+				compatible = "nordic,nrf-ppib";
+				reg = <0x98d000 0x1000>;
+				status = "disabled";
+			};
+
 			dppic132: dppic@991000 {
 				compatible = "nordic,nrf-dppic-global";
 				reg = <0x991000 0x1000>;
@@ -1071,6 +1113,12 @@
 				cc-num = <16>;
 				clocks = <&lfclk>, <&fll16m>;
 				clock-names = "lfclock", "hfclock";
+			};
+
+			ppib133: ppib@99d000 {
+				compatible = "nordic,nrf-ppib";
+				reg = <0x99d000 0x1000>;
+				status = "disabled";
 			};
 
 			dppic133: dppic@9a1000 {
@@ -1199,6 +1247,12 @@
 				zephyr,pm-device-runtime-auto;
 			};
 
+			ppib134: ppib@9ad000 {
+				compatible = "nordic,nrf-ppib";
+				reg = <0x9ad000 0x1000>;
+				status = "disabled";
+			};
+
 			dppic134: dppic@9b1000 {
 				compatible = "nordic,nrf-dppic-global";
 				reg = <0x9b1000 0x1000>;
@@ -1323,6 +1377,12 @@
 				endtx-stoptx-supported;
 				frame-timeout-supported;
 				zephyr,pm-device-runtime-auto;
+			};
+
+			ppib135: ppib@9bd000 {
+				compatible = "nordic,nrf-ppib";
+				reg = <0x9bd000 0x1000>;
+				status = "disabled";
 			};
 
 			dppic135: dppic@9c1000 {
@@ -1451,6 +1511,12 @@
 				zephyr,pm-device-runtime-auto;
 			};
 
+			ppib136: ppib@9cd000 {
+				compatible = "nordic,nrf-ppib";
+				reg = <0x9cd000 0x1000>;
+				status = "disabled";
+			};
+
 			dppic136: dppic@9d1000 {
 				compatible = "nordic,nrf-dppic-global";
 				reg = <0x9d1000 0x1000>;
@@ -1575,6 +1641,12 @@
 				endtx-stoptx-supported;
 				frame-timeout-supported;
 				zephyr,pm-device-runtime-auto;
+			};
+
+			ppib137: ppib@9dd000 {
+				compatible = "nordic,nrf-ppib";
+				reg = <0x9dd000 0x1000>;
+				status = "disabled";
 			};
 
 			tdm130: tdm@992000 {
