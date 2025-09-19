@@ -375,6 +375,8 @@ error-prone, since it can be hard to spot that the same dependency is added
 twice.
 
 
+.. _stuck_symbols:
+
 "Stuck" symbols in menuconfig and guiconfig
 *******************************************
 
