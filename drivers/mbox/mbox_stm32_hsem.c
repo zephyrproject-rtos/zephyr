@@ -207,7 +207,7 @@ static int mbox_stm32_clock_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	if (clock_control_on(clk, (clock_control_subsys_t *)&cfg->pclken) != 0) {
+	if (clock_control_on(clk, (clock_control_subsys_t)&cfg->pclken) != 0) {
 		LOG_WRN("Failed to enable clock.");
 		return -EIO;
 	}
