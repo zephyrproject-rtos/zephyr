@@ -518,8 +518,13 @@ static int http_wait_data(int sock, struct http_request *req, const k_timepoint_
 			ret = -EBADF;
 			goto error;
 		} else if (fds[0].revents & ZSOCK_POLLIN) {
+			memset(req->internal.response.recv_buf + offset, 0,
+					      req->internal.response.recv_buf_len - offset);
 			received = zsock_recv(sock, req->internal.response.recv_buf + offset,
 					      req->internal.response.recv_buf_len - offset, 0);
+			LOG_HEXDUMP_DBG(req->internal.response.recv_buf + offset,
+					      req->internal.response.recv_buf_len - offset,
+					      "received buffer");
 			if (received == 0 && total_received == 0) {
 				/* Connection closed, no data received */
 				goto closed;
