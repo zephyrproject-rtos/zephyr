@@ -671,7 +671,7 @@ static const struct audio_codec_api wm8904_driver_api = {
 #define WM8904_INIT(n)                                                                             \
 	static const struct wm8904_driver_config wm8904_device_config_##n = {                      \
 		.i2c = I2C_DT_SPEC_INST_GET(n),                                                    \
-		.clock_source = DT_INST_PROP_OR(n, clk_source, 0),                                 \
+		.clock_source = DT_INST_ENUM_IDX(n, clock_source),				   \
 		.mclk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_NAME(n, mclk)),                   \
 		.mclk_name = (clock_control_subsys_t)DT_INST_CLOCKS_CELL_BY_NAME(n, mclk, name)};  \
                                                                                                    \
