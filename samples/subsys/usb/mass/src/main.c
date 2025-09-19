@@ -31,7 +31,8 @@ FS_LITTLEFS_DECLARE_DEFAULT_CONFIG(storage);
 
 #if !defined(CONFIG_DISK_DRIVER_FLASH) && \
 	!defined(CONFIG_DISK_DRIVER_RAM) && \
-	!defined(CONFIG_DISK_DRIVER_SDMMC)
+	!defined(CONFIG_DISK_DRIVER_SDMMC) && \
+	!defined(CONFIG_DISK_DRIVER_MMC)
 #error No supported disk driver enabled
 #endif
 
@@ -52,6 +53,10 @@ USBD_DEFINE_MSC_LUN(nand, "NAND", "Zephyr", "FlashDisk", "0.00");
 
 #if CONFIG_DISK_DRIVER_SDMMC
 USBD_DEFINE_MSC_LUN(sd, "SD", "Zephyr", "SD", "0.00");
+#endif
+
+#if CONFIG_DISK_DRIVER_MMC
+USBD_DEFINE_MSC_LUN(emmc, "SD2", "Zephyr", "eMMC", "0.00");
 #endif
 
 static int setup_flash(struct fs_mount_t *mnt)
@@ -95,6 +100,8 @@ static int mount_app_fs(struct fs_mount_t *mnt)
 		mnt->mnt_point = "/RAM:";
 	} else if (IS_ENABLED(CONFIG_DISK_DRIVER_SDMMC)) {
 		mnt->mnt_point = "/SD:";
+	} else if (IS_ENABLED(CONFIG_DISK_DRIVER_MMC)) {
+		mnt->mnt_point = "/SD2:";
 	} else {
 		mnt->mnt_point = "/NAND:";
 	}

@@ -40,12 +40,19 @@ config APP_MSC_STORAGE_SDCARD
 	imply FILE_SYSTEM
 	imply FAT_FILESYSTEM_ELM
 
+config APP_MSC_STORAGE_EMMC
+	bool "Use eMMC and FAT file system"
+	imply DISK_DRIVER_MMC
+	imply FILE_SYSTEM
+	imply FAT_FILESYSTEM_ELM
+
 endchoice
 
 config MASS_STORAGE_DISK_NAME
 	default "NAND" if DISK_DRIVER_FLASH
 	default "RAM" if DISK_DRIVER_RAM
 	default "SD" if DISK_DRIVER_SDMMC
+	default "SD2" if DISK_DRIVER_MMC
 
 if DISK_DRIVER_FLASH
 
