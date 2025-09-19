@@ -33,9 +33,13 @@ config PM_STATS
 	help
 	  Enable System Power Management Stats.
 
+DT_POWER_STATE_COMPAT := zephyr,power-state
+
 config PM_S2RAM
-	bool "Suspend-to-RAM (S2RAM)"
+	bool
+	default y
 	depends on ARCH_HAS_SUSPEND_TO_RAM
+	depends on $(dt_compat_any_has_prop,$(DT_POWER_STATE_COMPAT),power-state-name,suspend-to-ram)
 	help
 	  This option enables suspend-to-RAM (S2RAM).
 	  When enabled on Cortex-M, and a 'zephyr,memory-region' compatible node with nodelabel
