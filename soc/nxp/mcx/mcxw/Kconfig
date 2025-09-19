@@ -26,3 +26,10 @@ config MCUX_CORE_SUFFIX
 	default "_cm33_core1" if SOC_MCXW727C_CPU1
 
 endif # SOC_MCXW727C
+
+if SOC_MCXW236
+
+config MCXW23X_SRAM_CLOCKS
+	bool "Clock MCXW23 SRAM banks"
+
+endif # SOC_MCXW236

@@ -8,13 +8,17 @@ config CORTEX_M_SYSTICK
 
 config NUM_IRQS
 	default 77 if SOC_MCXW727C
+	default 63 if SOC_MCXW236
 	default 75
 
+DT_SYSCLK_PATH := $(dt_nodelabel_path,sysclk)
+
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default 96000000 if CORTEX_M_SYSTICK
+	default 96000000 if (CORTEX_M_SYSTICK && (SOC_MCXW727C || SOC_MCXW716C))
+	default $(dt_node_int_prop_int,$(DT_SYSCLK_PATH),clock-frequency) if (CORTEX_M_SYSTICK && (SOC_MCXW236 || SOC_MCXW235))
 
 config MCUX_FLASH_K4_API
-	default y
+	default y if SOC_MCXW727C || SOC_MCXW716C
 
 if BT
 
@@ -64,5 +68,18 @@ config NXP_RF_IMU
 
 endif # IEEE802154
 
+if SOC_MCXW236
+
+# SRAM controllers 1,2,3, and 4 are disabled at reset.
+# By default, CMSIS SystemInit will enable the clock to these RAM banks.
+# Disable this Kconfig to leave the ram banks untouched out of reset.
+config MCXW23X_SRAM_CLOCKS
+	default y
+
+# Set to the minimal size of data which can be written.
+config FLASH_FILL_BUFFER_SIZE
+	default 512
+
+endif # SOC_MCXW236
 
 endif # SOC_FAMILY_MCXW
