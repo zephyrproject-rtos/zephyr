@@ -48,6 +48,7 @@ int main(void)
 		/* buffer size in bytes, not number of samples */
 		.buffer_size = sizeof(channel_reading),
 		.resolution = CONFIG_SEQUENCE_RESOLUTION,
+		.oversampling = CONFIG_SEQUENCE_OVERSAMPLING,
 		.options = &options,
 	};
 
