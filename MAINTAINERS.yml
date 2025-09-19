@@ -5367,6 +5367,7 @@ West:
     - anangl
     - nika-nordic
     - masz-nordic
+    - carlescufi
   collaborators:
     - nordic-krch
     - kl-cruz
@@ -5375,6 +5376,7 @@ West:
     - mif1-nordic
     - adamkondraciuk
     - lstnl
+    - rlubos
   files:
     - modules/hal_nordic/
   labels:
