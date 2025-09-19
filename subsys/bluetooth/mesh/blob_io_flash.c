@@ -83,9 +83,13 @@ static inline int erase_device_block(const struct flash_area *fa, off_t start, s
 		return err;
 	}
 
+	if (start != page.start_offset) {
+		/* Only need to erase when starting the first block on the page. */
+		return 0;
+	}
+
 	/* Align to page boundary. */
 	size = page.size * DIV_ROUND_UP(size, page.size);
-	start = page.start_offset;
 
 	return flash_area_erase(fa, start, size);
 }
