@@ -1,9 +1,5 @@
 # SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_LITEX_VEXRISCV
-
-config NUM_IRQS
-	default 12
-
-endif # SOC_LITEX_VEXRISCV
+add_subdirectory(common)
+add_subdirectory(${SOC_SERIES})
