@@ -1,11 +1,12 @@
 /*
- * Copyright (c) 2018 - 2019 Antmicro <www.antmicro.com>
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-FileCopyrightText: Copyright (c) 2018 - 2019 Antmicro <www.antmicro.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __RISCV32_LITEX_VEXRISCV_SOC_H_
-#define __RISCV32_LITEX_VEXRISCV_SOC_H_
+#ifndef __RISCV32_LITEX_COMMON_SOC_H_
+#define __RISCV32_LITEX_COMMON_SOC_H_
 
 #include <zephyr/devicetree.h>
 #include <zephyr/arch/riscv/sys_io.h>
@@ -236,4 +237,4 @@ static inline void litex_read32_array(mem_addr_t addr, uint32_t *buf, size_t cnt
 
 #endif /* _ASMLANGUAGE */
 
-#endif /* __RISCV32_LITEX_VEXRISCV_SOC_H_ */
+#endif /* __RISCV32_LITEX_COMMON_SOC_H_ */
