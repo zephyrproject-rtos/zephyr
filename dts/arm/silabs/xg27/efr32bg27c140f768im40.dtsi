@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <silabs/xg27/efr32bg27.dtsi>
 #include <mem.h>
+#include <silabs/xg27/efr32bg27.dtsi>
 
 / {
 	soc {
-		compatible = "silabs,efr32bg27c140f768im40", "silabs,efr32mg27", "silabs,xg27",
+		compatible = "silabs,efr32bg27c140f768im40", "silabs,efr32bg27", "silabs,xg27",
 			     "silabs,efr32", "simple-bus";
 	};
 };
