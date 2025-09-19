@@ -6,13 +6,9 @@
 
 #include "_common.h"
 
-#include <stdlib.h>
-
-#ifdef CONFIG_POSIX_API
+#include <limits.h>
 #include <signal.h>
-#else
-#include <zephyr/posix/signal.h>
-#endif
+#include <stdlib.h>
 
 /**
  * @brief existence test for `<signal.h>`
@@ -21,18 +17,25 @@
  */
 ZTEST(posix_headers, test_signal_h)
 {
-	typedef void *(*my_sig_handler_t)(int signo);
+	typedef void (*my_sig_handler_t)(int signo);
 
 	my_sig_handler_t handler;
 
 	handler = SIG_DFL;
 	handler = SIG_ERR;
 	handler = SIG_IGN;
+
+#if defined(CONFIG_POSIX_SIGNALS)
 	/* zassert_not_equal(-1, SIG_HOLD); */ /* not implemented */
+#endif
 
 	zassert_not_equal((sig_atomic_t)-1, (sig_atomic_t)0);
-	zassert_not_equal((pid_t)-1, (pid_t)0);
 
+#if defined(CONFIG_POSIX_SIGNALS)
+	zassert_not_equal((pid_t)-1, (pid_t)0);
+#endif
+
+#if defined(CONFIG_POSIX_REALTIME_SIGNALS)
 	zassert_not_equal(-1, offsetof(struct sigevent, sigev_notify));
 	zassert_not_equal(-1, offsetof(struct sigevent, sigev_signo));
 	zassert_not_equal(-1, offsetof(struct sigevent, sigev_value));
@@ -42,7 +45,9 @@ ZTEST(posix_headers, test_signal_h)
 	zassert_not_equal(-1, SIGEV_NONE);
 	zassert_not_equal(-1, SIGEV_SIGNAL);
 	zassert_not_equal(-1, SIGEV_THREAD);
+#endif
 
+#if defined(CONFIG_POSIX_SIGNALS)
 	zassert_not_equal(-1, offsetof(union sigval, sival_int));
 	zassert_not_equal(-1, offsetof(union sigval, sival_ptr));
 
@@ -55,11 +60,14 @@ ZTEST(posix_headers, test_signal_h)
 	zassert_not_equal(-1, offsetof(struct sigaction, sa_handler));
 	zassert_not_equal(-1, offsetof(struct sigaction, sa_mask));
 	zassert_not_equal(-1, offsetof(struct sigaction, sa_flags));
+#if defined(CONFIG_POSIX_REALTIME_SIGNALS) && !defined(CONFIG_NEWLIB_LIBC)
 	zassert_not_equal(-1, offsetof(struct sigaction, sa_sigaction));
+#endif
 
 	zassert_not_equal(-1, offsetof(siginfo_t, si_signo));
 	zassert_not_equal(-1, offsetof(siginfo_t, si_code));
 	zassert_not_equal(-1, offsetof(siginfo_t, si_value));
+#endif
 
 	/* zassert_not_equal(-1, SA_NOCLDSTOP); */ /* not implemented */
 	/* zassert_not_equal(-1, SA_ONSTACK); */ /* not implemented */
@@ -164,11 +172,8 @@ ZTEST(posix_headers, test_signal_h)
 	zassert_not_equal(-1, SIGURG);
 	zassert_not_equal(-1, SIGXCPU);
 	zassert_not_equal(-1, SIGXFSZ);
-	zassert_not_equal(((sigset_t){.sig[0] = 0}).sig[0], ((sigset_t){.sig[0] = -1}).sig[0]);
 	zassert_not_null(abort);
-	zassert_not_null(alarm);
 	zassert_not_null(kill);
-	zassert_not_null(pause);
 	zassert_not_null(pthread_sigmask);
 	zassert_not_null(raise);
 	zassert_not_null(sigaction);

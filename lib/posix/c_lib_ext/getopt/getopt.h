@@ -14,13 +14,13 @@ extern "C" {
 #include <zephyr/kernel.h>
 
 struct getopt_state {
-	int opterr;	/* if error message should be printed */
-	int optind;	/* index into parent argv vector */
-	int optopt;	/* character checked for validity */
-	int optreset;	/* reset getopt */
-	char *optarg;	/* argument associated with option */
+	int opterr;   /* if error message should be printed */
+	int optind;   /* index into parent argv vector */
+	int optopt;   /* character checked for validity */
+	int optreset; /* reset getopt */
+	char *optarg; /* argument associated with option */
 
-	char *place;	/* option letter processing */
+	char *place; /* option letter processing */
 
 #if CONFIG_GETOPT_LONG
 	int nonopt_start;
@@ -28,15 +28,15 @@ struct getopt_state {
 #endif
 };
 
-extern int optreset;	/* reset getopt */
+extern int optreset; /* reset getopt */
 extern char *optarg;
 extern int opterr;
 extern int optind;
 extern int optopt;
 
-#define no_argument        0
-#define required_argument  1
-#define optional_argument  2
+#define no_argument       0
+#define required_argument 1
+#define optional_argument 2
 
 struct option {
 	/* name of long option */
@@ -79,9 +79,8 @@ struct getopt_state *getopt_state_get(void);
  * @return		If an option was successfully found, function returns
  *			the option character.
  */
-int getopt_long(int nargc, char *const *nargv,
-		const char *options, const struct option *long_options,
-		int *idx);
+int getopt_long(int nargc, char *const *nargv, const char *options,
+		const struct option *long_options, int *idx);
 
 /**
  * @brief Parses the command-line arguments.
@@ -106,9 +105,8 @@ int getopt_long(int nargc, char *const *nargv,
  * @return		If an option was successfully found, function returns
  *			the option character.
  */
-int getopt_long_only(int nargc, char *const *nargv,
-		     const char *options, const struct option *long_options,
-		     int *idx);
+int getopt_long_only(int nargc, char *const *nargv, const char *options,
+		     const struct option *long_options, int *idx);
 
 #ifdef __cplusplus
 }
