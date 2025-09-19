@@ -4705,6 +4705,7 @@ function(zephyr_dt_import)
   zephyr_check_arguments_required_all(${CMAKE_CURRENT_FUNCTION} arg ${req_single_args})
 
   set(gen_dts_cmake_script ${ZEPHYR_BASE}/scripts/dts/gen_dts_cmake.py)
+  set(gen_dts_cmake_temp ${arg_EDT_PICKLE_FILE}.cmake.new)
   set(gen_dts_cmake_output ${arg_EDT_PICKLE_FILE}.cmake)
 
   if((${arg_EDT_PICKLE_FILE} IS_NEWER_THAN ${gen_dts_cmake_output}) OR
@@ -4713,11 +4714,13 @@ function(zephyr_dt_import)
     execute_process(
       COMMAND ${PYTHON_EXECUTABLE} ${gen_dts_cmake_script}
       --edt-pickle ${arg_EDT_PICKLE_FILE}
-      --cmake-out ${gen_dts_cmake_output}
+      --cmake-out ${gen_dts_cmake_temp}
       WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
       RESULT_VARIABLE ret
       COMMAND_ERROR_IS_FATAL ANY
     )
+
+    file(COPY_FILE ${gen_dts_cmake_temp} ${gen_dts_cmake_output} ONLY_IF_DIFFERENT)
   endif()
   set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${gen_dts_cmake_script})
 
