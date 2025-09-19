@@ -111,7 +111,7 @@ BUILD_ASSERT(INST_0_SCK_FREQUENCY >= (NRF_QSPI_BASE_CLOCK_FREQ / 16),
 #define BASE_CLOCK_DIV NRF_CLOCK_HFCLK_DIV_1
 #define INST_0_SCK_CFG NRF_QSPI_FREQ_DIV1
 /* If anomaly 159 is to be prevented, only /1 divider can be used. */
-#elif NRF53_ERRATA_159_ENABLE_WORKAROUND
+#elif NRF_ERRATA_STATIC_CHECK(53, 159)
 #define BASE_CLOCK_DIV NRF_CLOCK_HFCLK_DIV_1
 #define INST_0_SCK_CFG (DIV_ROUND_UP(NRF_QSPI_BASE_CLOCK_FREQ, \
 				     INST_0_SCK_FREQUENCY) - 1)
@@ -251,7 +251,7 @@ static inline int qspi_get_zephyr_ret_code(nrfx_err_t res)
 		return -EINVAL;
 	case NRFX_ERROR_INVALID_STATE:
 		return -ECANCELED;
-#if NRF53_ERRATA_159_ENABLE_WORKAROUND
+#if NRF_ERRATA_STATIC_CHECK(53, 159)
 	case NRFX_ERROR_FORBIDDEN:
 		LOG_ERR("nRF5340 anomaly 159 conditions detected");
 		LOG_ERR("Set the CPU clock to 64 MHz before starting QSPI operation");
