@@ -27,6 +27,17 @@
 /* delay between greetings (in ms) */
 #define SLEEPTIME 500
 
+void thread_c_entry_point(void *dummy1, void *dummy2, void *dummy3)
+{
+	while (1) {
+		k_msleep(9);
+	}
+}
+
+K_THREAD_DEFINE(thread_c, STACKSIZE,
+				thread_c_entry_point, NULL, NULL, NULL,
+				PRIORITY - 1, 0, 0);
+extern const k_tid_t thread_c;
 
 /*
  * @param my_name      thread identification string
@@ -41,9 +52,6 @@ void hello_loop(const char *my_name,
 	struct k_thread *current_thread;
 
 	while (1) {
-		/* take my semaphore */
-		k_sem_take(my_sem, K_FOREVER);
-
 		current_thread = k_current_get();
 		tname = k_thread_name_get(current_thread);
 #if CONFIG_SMP
@@ -60,10 +68,8 @@ void hello_loop(const char *my_name,
 				tname, cpu, CONFIG_BOARD);
 		}
 
-		/* wait a while, then let other thread have a turn */
+		/* Only do busy waiting so only time slicing can swap threads */
 		k_busy_wait(100000);
-		k_msleep(SLEEPTIME);
-		k_sem_give(other_sem);
 	}
 }
 
