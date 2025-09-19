@@ -409,6 +409,10 @@ module = BT_GOEP
 module-str = "Bluetooth Generic Object Exchange Profile (GOEP)"
 source "subsys/logging/Kconfig.template.log_config_inherit"
 
+module = BT_SPP
+module-str = "Bluetooth Serial Port Profile (SPP)"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
 endmenu # Bluetooth Classic
 endif # BT_CLASSIC
 
