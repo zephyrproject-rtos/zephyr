@@ -650,6 +650,96 @@ out:
  * {
  */
 
+static inline int gpio_pca_series_reset_pin_toggle(const struct device *dev)
+{
+	const struct gpio_pca_series_config *cfg = dev->config;
+	int ret = 0;
+
+	/** Reset pin connected, do hardware reset */
+	if (!device_is_ready(cfg->gpio_rst.port)) {
+		return -ENODEV;
+	}
+
+	/* Reset gpio should be set to active LOW in dts */
+	ret = gpio_pin_configure_dt(&cfg->gpio_rst,
+		GPIO_OUTPUT_HIGH | GPIO_OUTPUT_INIT_LOGICAL);
+	if (ret) {
+		return ret;
+	}
+	k_busy_wait(1);
+
+	ret = gpio_pin_set_dt(&cfg->gpio_rst, 0U);
+	if (ret) {
+		return ret;
+	}
+	k_busy_wait(1);
+
+	return ret;
+}
+
+static inline int gpio_pca_series_reset_write_reg(const struct device *dev)
+{
+	const struct gpio_pca_series_config *cfg = dev->config;
+	const uint8_t reset_value_0[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+	const uint8_t reset_value_1[] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
+	int ret = 0;
+
+	/**
+	 * write reset value to registers
+	 */
+	ret = gpio_pca_series_reg_write(dev, PCA_REG_TYPE_1B_OUTPUT_PORT, reset_value_1);
+	if (ret) {
+		return ret;
+	}
+	ret = gpio_pca_series_reg_write(dev, PCA_REG_TYPE_1B_CONFIGURATION, reset_value_1);
+	if (ret) {
+		return ret;
+	}
+	if (cfg->part_cfg->flags & PCA_HAS_LATCH) {
+		ret = gpio_pca_series_reg_write(dev, PCA_REG_TYPE_2B_OUTPUT_DRIVE_STRENGTH,
+			reset_value_1);
+		if (ret) {
+			return ret;
+		}
+		ret = gpio_pca_series_reg_write(dev, PCA_REG_TYPE_1B_INPUT_LATCH, reset_value_0);
+		if (ret) {
+			return ret;
+		}
+	}
+	if (cfg->part_cfg->flags & PCA_HAS_PULL) {
+		ret = gpio_pca_series_reg_write(dev, PCA_REG_TYPE_1B_PULL_ENABLE, reset_value_0);
+		if (ret) {
+			return ret;
+		}
+		ret = gpio_pca_series_reg_write(dev, PCA_REG_TYPE_1B_PULL_SELECT, reset_value_1);
+		if (ret) {
+			return ret;
+		}
+	}
+	if (cfg->part_cfg->flags & PCA_HAS_OUT_CONFIG) {
+		ret = gpio_pca_series_reg_write(dev, PCA_REG_TYPE_1B_OUTPUT_CONFIG, reset_value_0);
+		if (ret) {
+			return ret;
+		}
+	}
+#ifdef CONFIG_GPIO_PCA_SERIES_INTERRUPT
+	if (cfg->part_cfg->flags & PCA_HAS_INT_MASK) {
+		ret = gpio_pca_series_reg_write(dev, PCA_REG_TYPE_1B_INTERRUPT_MASK, reset_value_1);
+		if (ret) {
+			return ret;
+		}
+	}
+	if (cfg->part_cfg->flags & PCA_HAS_INT_EXTEND) {
+		ret = gpio_pca_series_reg_write(dev, PCA_REG_TYPE_2B_INTERRUPT_EDGE, reset_value_0);
+		if (ret) {
+			return ret;
+		}
+	}
+#endif /* CONFIG_GPIO_PCA_SERIES_INTERRUPT */
+
+	return ret;
+}
+
 /**
  * @brief Reset function of pca_series
  *
@@ -657,64 +747,27 @@ out:
  * device if reset_pin is present. Otherwise it write
  * reset value to device registers.
  */
-static inline void gpio_pca_series_reset(const struct device *dev)
+static inline int gpio_pca_series_reset(const struct device *dev)
 {
 	const struct gpio_pca_series_config *cfg = dev->config;
-	const uint8_t reset_value_0[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-	const uint8_t reset_value_1[] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
 	int ret = 0;
 
-	/** Reset pin connected, do hardware reset */
 	if (cfg->gpio_rst.port != NULL) {
-		if (!device_is_ready(cfg->gpio_rst.port)) {
-			goto sw_rst;
-		}
-		/* Reset gpio should be set to active LOW in dts */
-		ret = gpio_pin_configure_dt(&cfg->gpio_rst,
-			GPIO_OUTPUT_HIGH | GPIO_OUTPUT_INIT_LOGICAL);
+		ret = gpio_pca_series_reset_pin_toggle(dev);
 		if (ret) {
-			goto sw_rst;
+			LOG_WRN("gpio reset failed (%d), fallback to soft reset", ret);
+		} else {
+			return ret;
 		}
-		k_sleep(K_USEC(1));
-		ret = gpio_pin_set_dt(&cfg->gpio_rst, 0U);
-		if (ret) {
-			goto sw_rst;
-		}
-		k_sleep(K_USEC(1));
-		return;
 	}
 
-sw_rst:
-	/** Warn that gpio configured but failed */
-	if (cfg->gpio_rst.port != NULL) {
-		LOG_WRN("gpio reset failed, fallback to soft reset");
+	ret = gpio_pca_series_reset_write_reg(dev);
+	if (ret) {
+		LOG_ERR("soft reset failed (%d)", ret);
+		return ret;
 	}
-	/**
-	 * Reset pin not connected, write reset value to registers
-	 * No need to check return, as unsupported reg will return early with error
-	 */
-	gpio_pca_series_reg_write(dev, PCA_REG_TYPE_1B_OUTPUT_PORT, reset_value_1);
-	gpio_pca_series_reg_write(dev, PCA_REG_TYPE_1B_CONFIGURATION, reset_value_1);
-	if (cfg->part_cfg->flags & PCA_HAS_LATCH) {
-		gpio_pca_series_reg_write(dev, PCA_REG_TYPE_2B_OUTPUT_DRIVE_STRENGTH,
-			reset_value_1);
-		gpio_pca_series_reg_write(dev, PCA_REG_TYPE_1B_INPUT_LATCH, reset_value_0);
-	}
-	if (cfg->part_cfg->flags & PCA_HAS_PULL) {
-		gpio_pca_series_reg_write(dev, PCA_REG_TYPE_1B_PULL_ENABLE, reset_value_0);
-		gpio_pca_series_reg_write(dev, PCA_REG_TYPE_1B_PULL_SELECT, reset_value_1);
-	}
-	if (cfg->part_cfg->flags & PCA_HAS_OUT_CONFIG) {
-		gpio_pca_series_reg_write(dev, PCA_REG_TYPE_1B_OUTPUT_CONFIG, reset_value_0);
-	}
-#ifdef CONFIG_GPIO_PCA_SERIES_INTERRUPT
-	if (cfg->part_cfg->flags & PCA_HAS_INT_MASK) {
-		gpio_pca_series_reg_write(dev, PCA_REG_TYPE_1B_INTERRUPT_MASK, reset_value_1);
-	}
-	if (cfg->part_cfg->flags & PCA_HAS_INT_EXTEND) {
-		gpio_pca_series_reg_write(dev, PCA_REG_TYPE_2B_INTERRUPT_EDGE, reset_value_0);
-	}
-#endif /* CONFIG_GPIO_PCA_SERIES_INTERRUPT */
+
+	return ret;
 }
 
 #ifdef GPIO_NXP_PCA_SERIES_DEBUG
@@ -1710,18 +1763,37 @@ static int gpio_pca_series_init(const struct device *dev)
 	struct gpio_pca_series_data *data = dev->data;
 	int ret = 0;
 
+	/** With deferred initialization, context checking is also required here */
+	if (k_is_in_isr()) {
+		LOG_ERR("Cannot initialize from ISR context");
+		return -EWOULDBLOCK;
+	}
+
 	if (!device_is_ready(cfg->i2c.bus)) {
 		LOG_ERR("i2c bus device not found");
 		goto out_bus;
 	}
 
 	/** device reset */
-	gpio_pca_series_reset(dev);
-	LOG_DBG("device reset done");
+	ret = gpio_pca_series_reset(dev);
+	if (ret) {
+		LOG_ERR("device reset error %d", ret);
+		goto out_bus;
+	} else {
+		LOG_DBG("device reset done");
+	}
 
 #ifdef GPIO_NXP_PCA_SERIES_DEBUG
 # ifdef CONFIG_GPIO_PCA_SERIES_CACHE_ALL
 	gpio_pca_series_cache_test(dev);
+	/** Device needs to be reset again after test */
+	ret = gpio_pca_series_reset(dev);
+	if (ret) {
+		LOG_ERR("device reset error %d", ret);
+		goto out_bus;
+	} else {
+		LOG_DBG("device reset done");
+	}
 # endif /* CONFIG_GPIO_PCA_SERIES_CACHE_ALL */
 #endif /* GPIO_NXP_PCA_SERIES_DEBUG */
 
