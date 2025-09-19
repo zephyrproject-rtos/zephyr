@@ -7,19 +7,12 @@
  */
 
 #include <zephyr/logging/log.h>
-#include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/__assert.h>
+#include <ethernet/eth_stats.h>
+
 #include <errno.h>
 #include <stdbool.h>
-#include <zephyr/net/ethernet.h>
-#include <zephyr/net/phy.h>
-#include <ethernet/eth_stats.h>
-#include <soc.h>
-#include <zephyr/irq.h>
-
-#if defined(CONFIG_PTP_CLOCK_STM32_HAL)
-#include <zephyr/drivers/ptp_clock.h>
-#endif /* CONFIG_PTP_CLOCK_STM32_HAL */
 
 #include "eth.h"
 #include "eth_stm32_hal_priv.h"

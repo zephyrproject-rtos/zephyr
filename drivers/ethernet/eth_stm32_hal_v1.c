@@ -7,19 +7,18 @@
  */
 
 #include <zephyr/device.h>
+#include <zephyr/irq.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/sys/__assert.h>
+#include <zephyr/net/ethernet.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/lldp.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/__assert.h>
+#include <ethernet/eth_stats.h>
+
 #include <stdbool.h>
 #include <errno.h>
-#include <zephyr/net/net_pkt.h>
-#include <zephyr/net/net_if.h>
-#include <zephyr/net/ethernet.h>
-#include <zephyr/net/phy.h>
-#include <ethernet/eth_stats.h>
-#include <soc.h>
-#include <zephyr/irq.h>
-#include <zephyr/net/lldp.h>
 
 #include "eth.h"
 #include "eth_stm32_hal_priv.h"
