@@ -165,11 +165,13 @@ static int mcux_wdog32_feed(const struct device *dev, int channel_id)
 static void mcux_wdog32_isr(const struct device *dev)
 {
 	struct mcux_wdog32_data *data = dev->data;
+#ifndef CONFIG_SOC_MIMX9352
 	WDOG_Type *base = get_base_address(dev);
 	uint32_t flags;
 
 	flags = WDOG32_GetStatusFlags(base);
 	WDOG32_ClearStatusFlags(base, flags);
+#endif
 
 	if (data->callback) {
 		data->callback(dev, 0);
