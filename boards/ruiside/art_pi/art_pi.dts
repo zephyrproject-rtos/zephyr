@@ -71,7 +71,6 @@
 		led0 = &red_led;
 		led1 = &blue_led;
 		sw0 = &user_button;
-		die-temp0 = &die_temp;
 		touch = &gt911;
 		sdhc0 = &sdmmc1;
 		sram-ext = &sdram1;
@@ -145,13 +144,9 @@
 		&ltdc_hsync_pi12 &ltdc_vsync_pi13 &ltdc_de_pk7 &ltdc_clk_pi14
 	>;
 	pinctrl-names = "default";
-
 	bl-ctrl-gpios = <&gpiod 4 GPIO_ACTIVE_HIGH>;
-
-	 ext-sdram = <&sdram1>;
-
+	ext-sdram = <&sdram1>;
 	status = "okay";
-
 	clocks = <&rcc STM32_CLOCK(APB3, 3)>,
 	 <&rcc STM32_SRC_PLL3_R NO_SEL>;
 
@@ -377,10 +372,6 @@
 	    st,sdram-timing = <2 9 6 8 2 2 3>;
 	};
 	};
-};
-
-&die_temp {
-	status = "okay";
 };
 
 zephyr_udc0: &usbotg_fs {

@@ -41,7 +41,6 @@ More information about STM32H750xx can be found here:
 
 - `STM32H750 on www.st.com`_
 
-
 Supported Features
 ==================
 
@@ -57,15 +56,10 @@ The ART-Pi board features a On-board ST-LINK/V2.1 debugger/programmer. Board is 
 - LED2 (blue) : PI8
 - USER PUSH-BUTTON : PH4
 
-
-
-
 Programming and Debugging
 *************************
 
 .. zephyr:board-supported-runners::
-
-ART-Pi board includes an ST-LINK/V2.1 embedded debug tool interface.
 
 .. note::
 
@@ -73,12 +67,6 @@ ART-Pi board includes an ST-LINK/V2.1 embedded debug tool interface.
 
 Flashing
 ========
-
-The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
-so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
-
-Flashing an application to ART-Pi
-----------------------------------
 
 First, connect the art_pi to your host computer using
 the USB port to prepare it for flashing. Then build and flash your application.
@@ -111,8 +99,6 @@ You should see the following message on the console:
    *** Booting Zephyr OS build v4.2.0-3809-g1d6b6759aa1a ***
    Hello World! art_pi/stm32h750xx
 
-
-
 Blinky example can also be used:
 
 .. zephyr-app-commands::
@@ -140,8 +126,7 @@ References
    https://github.com/RT-Thread-Studio/sdk-bsp-stm32h750-realthread-artpi
 
 .. _STM32H750 on www.st.com:
-   https://www.st.com/en/microcontrollers-microprocessors/stm32h750xb.html#
-
+   https://www.st.com/en/microcontrollers-microprocessors/stm32h750xb.html
 
 .. _STM32CubeProgrammer:
    https://www.st.com/en/development-tools/stm32cubeprog.html
