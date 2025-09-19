@@ -4,12 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "mcx_n9xx_evk-pinctrl.dtsi"
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	aliases {
+	aliases{
 		led0 = &red_led;
 		led1 = &green_led;
 		led2 = &blue_led;
@@ -21,19 +20,16 @@
 
 	leds {
 		compatible = "gpio-leds";
-
 		green_led: led_1 {
 			gpios = <&gpio3 2 GPIO_ACTIVE_HIGH>;
 			label = "Green LED";
 			status = "disabled";
 		};
-
 		blue_led: led_2 {
 			gpios = <&gpio3 3 GPIO_ACTIVE_HIGH>;
 			label = "Blue LED";
 			status = "disabled";
 		};
-
 		red_led: led_3 {
 			gpios = <&gpio3 4 GPIO_ACTIVE_HIGH>;
 			label = "Red LED";
@@ -43,14 +39,12 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
-
 		user_button_2: button_0 {
 			label = "User SW2";
 			gpios = <&gpio1 3 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 			zephyr,code = <INPUT_KEY_0>;
 			status = "disabled";
 		};
-
 		user_button_3: button_1 {
 			label = "User SW3";
 			gpios = <&gpio0 6 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
@@ -67,9 +61,9 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map = <9 0 &gpio4 6 0>,	/* Pin 9, LCD touch INT */
-			   <10 0 &gpio1 11 0>,	/* Pin 10, LCD backlight control */
-			   <11 0 &gpio4 7 0>;	/* Pin 11, LCD and touch reset */
+		gpio-map =	<9  0 &gpio4 6 0>,	/* Pin 9, LCD touch INT */
+				<10  0 &gpio1 11 0>,	/* Pin 10, LCD backlight control */
+				<11  0 &gpio4 7 0>;	/* Pin 11, LCD and touch reset */
 	};
 };
 
@@ -120,7 +114,6 @@ nxp_8080_touch_panel_i2c: &flexcomm2_lpi2c2 {
 		compatible = "mmio-sram";
 		reg = <0x20050000 DT_SIZE_K(64)>;
 	};
-
 	sramh: memory@20060000 {
 		compatible = "mmio-sram";
 		reg = <0x20060000 DT_SIZE_K(32)>;
@@ -141,12 +134,10 @@ nxp_8080_touch_panel_i2c: &flexcomm2_lpi2c2 {
 			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(80)>;
 		};
-
 		slot0_partition: partition@14000 {
 			label = "image-0";
 			reg = <0x00014000 DT_SIZE_K(984)>;
 		};
-
 		slot1_partition: partition@10A000 {
 			label = "image-1";
 			reg = <0x0010A000 DT_SIZE_K(984)>;
@@ -169,11 +160,11 @@ nxp_8080_touch_panel_i2c: &flexcomm2_lpi2c2 {
 	w25q64jwtbjq: w25q64jwtbjq@0 {
 		compatible = "nxp,imx-flexspi-nor";
 		status = "disabled";
-		size = <DT_SIZE_M(64)>;
+		size = <67108864>;
 		reg = <0>;
-		spi-max-frequency = <DT_FREQ_M(133)>;
+		spi-max-frequency = <133000000>;
 		jedec-id = [ef 40 17];
-		erase-block-size = <DT_SIZE_K(4)>;
+		erase-block-size = <4096>;
 		write-block-size = <1>;
 		cs-interval-unit = <1>;
 		cs-interval = <2>;
@@ -213,11 +204,6 @@ nxp_8080_touch_panel_i2c: &flexcomm2_lpi2c2 {
 	};
 };
 
-&flexpwm1_pwm0 {
-	pinctrl-0 = <&pinmux_flexpwm1_pwm0>;
-	pinctrl-names = "default";
-};
-
 &usdhc0 {
 	pinctrl-0 = <&pinmux_usdhc0>;
 	pinctrl-1 = <&pinmux_usdhc0>;
@@ -246,11 +232,6 @@ zephyr_mipi_dbi_parallel: &flexio0_lcd {
 	cs-gpios = <&gpio0 12 GPIO_ACTIVE_HIGH>;
 	rs-gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
 	pinctrl-0 = <&pinmux_flexio_lcd>;
-	pinctrl-names = "default";
-};
-
-&lpcmp2 {
-	pinctrl-0 = <&pinmux_lpcmp2>;
 	pinctrl-names = "default";
 };
 

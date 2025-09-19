@@ -27,6 +27,8 @@ elseif(CONFIG_SOC_MCXN947_CPU1)
   board_runner_args(jlink "--device=MCXN947_M33_1" "--reset-after-load")
   board_runner_args(linkserver  "--device=MCXN947:MCX-N9XX-EVK")
   board_runner_args(linkserver  "--core=cm33_core1")
+elseif(CONFIG_SOC_MCXN547_CPU0)
+  board_runner_args(linkserver  "--device=MCXN547:MCX-N5XX-EVK")
 endif()
 
 # Pyocd support added with the NXP.MCXN947_DFP.17.0.0.pack CMSIS Pack
