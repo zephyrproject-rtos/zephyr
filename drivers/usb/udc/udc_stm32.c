@@ -1137,14 +1137,13 @@ static int priv_clock_enable(void)
 #endif
 
 	if (DT_INST_NUM_CLOCKS(0) > 1) {
-		if (clock_control_configure(clk, (clock_control_subsys_t *)&pclken[1],
-									NULL) != 0) {
+		if (clock_control_configure(clk, (clock_control_subsys_t)&pclken[1], NULL) != 0) {
 			LOG_ERR("Could not select USB domain clock");
 			return -EIO;
 		}
 	}
 
-	if (clock_control_on(clk, (clock_control_subsys_t *)&pclken[0]) != 0) {
+	if (clock_control_on(clk, (clock_control_subsys_t)&pclken[0]) != 0) {
 		LOG_ERR("Unable to enable USB clock");
 		return -EIO;
 	}
@@ -1153,7 +1152,7 @@ static int priv_clock_enable(void)
 		uint32_t usb_clock_rate;
 
 		if (clock_control_get_rate(clk,
-					   (clock_control_subsys_t *)&pclken[1],
+					   (clock_control_subsys_t)&pclken[1],
 					   &usb_clock_rate) != 0) {
 			LOG_ERR("Failed to get USB domain clock rate");
 			return -EIO;
@@ -1224,7 +1223,7 @@ static int priv_clock_disable(void)
 {
 	const struct device *clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
-	if (clock_control_off(clk, (clock_control_subsys_t *)&pclken[0]) != 0) {
+	if (clock_control_off(clk, (clock_control_subsys_t)&pclken[0]) != 0) {
 		LOG_ERR("Unable to disable USB clock");
 		return -EIO;
 	}
