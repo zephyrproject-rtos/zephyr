@@ -1137,7 +1137,7 @@ class Kconfig(object):
         See the class documentation.
         """
         if self.defconfig_list:
-            for filename, cond in self.defconfig_list.defaults:
+            for filename, cond, _ in self.defconfig_list.defaults:
                 if expr_value(cond):
                     try:
                         with self._open_config(filename.str_value) as f:
@@ -3170,7 +3170,7 @@ class Kconfig(object):
                     self._parse_error("only symbols can select")
 
                 node.selects.append((self._expect_nonconst_sym(),
-                                     self._parse_cond()))
+                                     self._parse_cond(), self.loc))
 
             elif t0 is None:
                 # Blank line
@@ -3178,26 +3178,26 @@ class Kconfig(object):
 
             elif t0 is _T_DEFAULT:
                 node.defaults.append((self._parse_expr(False),
-                                      self._parse_cond()))
+                                      self._parse_cond(), self.loc))
 
             elif t0 in _DEF_TOKEN_TO_TYPE:
                 self._set_type(node.item, _DEF_TOKEN_TO_TYPE[t0])
                 node.defaults.append((self._parse_expr(False),
-                                      self._parse_cond()))
+                                      self._parse_cond(), self.loc))
 
             elif t0 is _T_PROMPT:
                 self._parse_prompt(node)
 
             elif t0 is _T_RANGE:
                 node.ranges.append((self._expect_sym(), self._expect_sym(),
-                                    self._parse_cond()))
+                                    self._parse_cond(), self.loc))
 
             elif t0 is _T_IMPLY:
                 if node.item.__class__ is not Symbol:
                     self._parse_error("only symbols can imply")
 
                 node.implies.append((self._expect_nonconst_sym(),
-                                     self._parse_cond()))
+                                     self._parse_cond(), self.loc))
 
             elif t0 is _T_VISIBLE:
                 if not self._check_token(_T_IF):
@@ -3217,7 +3217,7 @@ class Kconfig(object):
                     if env_var in os.environ:
                         node.defaults.append(
                             (self._lookup_const_sym(os.environ[env_var]),
-                             self.y))
+                             self.y, "env[{}]".format(env_var)))
                     else:
                         self._warn("{1} has 'option env=\"{0}\"', "
                                    "but the environment variable {0} is not "
@@ -3493,7 +3493,7 @@ class Kconfig(object):
                     depend_on(sym, node.prompt[1])
 
             # The default values and their conditions
-            for value, cond in sym.defaults:
+            for value, cond, _ in sym.defaults:
                 depend_on(sym, value)
                 depend_on(sym, cond)
 
@@ -3502,7 +3502,7 @@ class Kconfig(object):
             depend_on(sym, sym.weak_rev_dep)
 
             # The ranges along with their conditions
-            for low, high, cond in sym.ranges:
+            for low, high, cond, _ in sym.ranges:
                 depend_on(sym, low)
                 depend_on(sym, high)
                 depend_on(sym, cond)
@@ -3528,7 +3528,7 @@ class Kconfig(object):
                     depend_on(choice, node.prompt[1])
 
             # The default symbol conditions
-            for _, cond in choice.defaults:
+            for _, cond, _ in choice.defaults:
                 depend_on(choice, cond)
 
     def _add_choice_deps(self):
@@ -3573,7 +3573,7 @@ class Kconfig(object):
                 # Add the defaults to the node, with the requirement that
                 # direct dependencies are respected. The original order
                 # of the default statements between nodes is preserved.
-                default = (d[0], self._make_and(sym.direct_dep, d[1]))
+                default = (d[0], self._make_and(sym.direct_dep, d[1]), d[2])
                 sym.defaults.insert(inserted + idx, default)
                 inserted += 1
 
@@ -3684,23 +3684,23 @@ class Kconfig(object):
 
                 # Propagate dependencies to defaults
                 if cur.defaults:
-                    cur.defaults = [(default, self._make_and(cond, dep))
-                                    for default, cond in cur.defaults]
+                    cur.defaults = [(default, self._make_and(cond, dep), loc)
+                                    for default, cond, loc in cur.defaults]
 
                 # Propagate dependencies to ranges
                 if cur.ranges:
-                    cur.ranges = [(low, high, self._make_and(cond, dep))
-                                  for low, high, cond in cur.ranges]
+                    cur.ranges = [(low, high, self._make_and(cond, dep), loc)
+                                  for low, high, cond, loc in cur.ranges]
 
                 # Propagate dependencies to selects
                 if cur.selects:
-                    cur.selects = [(target, self._make_and(cond, dep))
-                                   for target, cond in cur.selects]
+                    cur.selects = [(target, self._make_and(cond, dep), loc)
+                                   for target, cond, loc in cur.selects]
 
                 # Propagate dependencies to implies
                 if cur.implies:
-                    cur.implies = [(target, self._make_and(cond, dep))
-                                   for target, cond in cur.implies]
+                    cur.implies = [(target, self._make_and(cond, dep), loc)
+                                   for target, cond, loc in cur.implies]
 
             elif cur.prompt:  # Not a symbol/choice
                 # Propagate dependencies to the prompt. 'visible if' is only
@@ -3739,14 +3739,14 @@ class Kconfig(object):
         sym.implies += node.implies
 
         # Modify the reverse dependencies of the selected symbol
-        for target, cond in node.selects:
+        for target, cond, _ in node.selects:
             target.rev_dep = self._make_or(
                 target.rev_dep,
                 self._make_and(sym, cond))
 
         # Modify the weak reverse dependencies of the implied
         # symbol
-        for target, cond in node.implies:
+        for target, cond, _ in node.implies:
             target.weak_rev_dep = self._make_or(
                 target.weak_rev_dep,
                 self._make_and(sym, cond))
@@ -3775,7 +3775,7 @@ class Kconfig(object):
                 # A helper function could be factored out here, but keep it
                 # speedy/straightforward
 
-                for target_sym, _ in sym.selects:
+                for target_sym, _, _ in sym.selects:
                     if target_sym.orig_type not in _BOOL_TRISTATE_UNKNOWN:
                         self._warn("{} selects the {} symbol {}, which is not "
                                    "bool or tristate"
@@ -3783,7 +3783,7 @@ class Kconfig(object):
                                            TYPE_TO_STR[target_sym.orig_type],
                                            target_sym.name_and_loc))
 
-                for target_sym, _ in sym.implies:
+                for target_sym, _, _ in sym.implies:
                     if target_sym.orig_type not in _BOOL_TRISTATE_UNKNOWN:
                         self._warn("{} implies the {} symbol {}, which is not "
                                    "bool or tristate"
@@ -3792,7 +3792,7 @@ class Kconfig(object):
                                            target_sym.name_and_loc))
 
             elif sym.orig_type:  # STRING/INT/HEX
-                for default, _ in sym.defaults:
+                for default, _, _ in sym.defaults:
                     if default.__class__ is not Symbol:
                         raise KconfigError(
                             "the {} symbol {} has a malformed default {} -- "
@@ -3834,7 +3834,7 @@ class Kconfig(object):
                         .format(TYPE_TO_STR[sym.orig_type],
                                 sym.name_and_loc))
                 else:
-                    for low, high, _ in sym.ranges:
+                    for low, high, _, _ in sym.ranges:
                         if not num_ok(low, sym.orig_type) or \
                            not num_ok(high, sym.orig_type):
 
@@ -3872,7 +3872,7 @@ class Kconfig(object):
             else:
                 self._warn(choice.name_and_loc + " defined without a prompt")
 
-            for default, _ in choice.defaults:
+            for default, _, _ in choice.defaults:
                 if default.__class__ is not Symbol:
                     raise KconfigError(
                         "{} has a malformed default {}"
@@ -4163,8 +4163,8 @@ class Symbol(object):
       symbols. Doubles as a flag for whether a symbol is a choice symbol.
 
     defaults:
-      List of (default, cond) tuples for the symbol's 'default' properties. For
-      example, 'default A && B if C || D' is represented as
+      List of (default, cond, loc) tuples for the symbol's 'default'
+      properties. For example, 'default A && B if C || D' is represented as
       ((AND, A, B), (OR, C, D)). If no condition was given, 'cond' is
       self.kconfig.y.
 
@@ -4172,9 +4172,9 @@ class Symbol(object):
       'default' conditions.
 
     selects:
-      List of (symbol, cond) tuples for the symbol's 'select' properties. For
-      example, 'select A if B && C' is represented as (A, (AND, B, C)). If no
-      condition was given, 'cond' is self.kconfig.y.
+      List of (symbol, cond, loc) tuples for the symbol's 'select' properties.
+      For example, 'select A if B && C' is represented as (A, (AND, B, C)). If
+      no condition was given, 'cond' is self.kconfig.y.
 
       Note that 'depends on' and parent dependencies are propagated to 'select'
       conditions.
@@ -4183,9 +4183,9 @@ class Symbol(object):
       Like 'selects', for imply.
 
     ranges:
-      List of (low, high, cond) tuples for the symbol's 'range' properties. For
-      example, 'range 1 2 if A' is represented as (1, 2, A). If there is no
-      condition, 'cond' is self.kconfig.y.
+      List of (low, high, cond, loc) tuples for the symbol's 'range'
+      properties. For example, 'range 1 2 if A' is represented as (1, 2, A). If
+      there is no condition, 'cond' is self.kconfig.y.
 
       Note that 'depends on' and parent dependencies are propagated to 'range'
       conditions.
@@ -4357,7 +4357,7 @@ class Symbol(object):
             base = _TYPE_TO_BASE[self.orig_type]
 
             # Check if a range is in effect
-            for low_expr, high_expr, cond in self.ranges:
+            for low_expr, high_expr, cond, _ in self.ranges:
                 if expr_value(cond):
                     has_active_range = True
 
@@ -4400,7 +4400,7 @@ class Symbol(object):
                 # Used to implement the warning below
                 has_default = False
 
-                for sym, cond in self.defaults:
+                for sym, cond, _ in self.defaults:
                     if expr_value(cond):
                         has_default = self._write_to_conf = True
 
@@ -4445,7 +4445,7 @@ class Symbol(object):
                 val = self.user_value
             else:
                 # Otherwise, look at defaults
-                for sym, cond in self.defaults:
+                for sym, cond, _ in self.defaults:
                     if expr_value(cond):
                         val = sym.str_value
                         self._write_to_conf = True
@@ -4499,7 +4499,7 @@ class Symbol(object):
                 # Otherwise, look at defaults and weak reverse dependencies
                 # (implies)
 
-                for default, cond in self.defaults:
+                for default, cond, _ in self.defaults:
                     dep_val = expr_value(cond)
                     if dep_val:
                         val = min(expr_value(default), dep_val)
@@ -4970,7 +4970,7 @@ class Symbol(object):
 
             # Defaults, selects, and implies do not affect choice symbols
             if not self.choice:
-                for default, cond in self.defaults:
+                for default, cond, _ in self.defaults:
                     cond_val = expr_value(cond)
                     if cond_val:
                         val = min(expr_value(default), cond_val)
@@ -4988,7 +4988,7 @@ class Symbol(object):
             return TRI_TO_STR[val]
 
         if self.orig_type:  # STRING/INT/HEX
-            for default, cond in self.defaults:
+            for default, cond, _ in self.defaults:
                 if expr_value(cond):
                     return default.str_value
 
@@ -5490,7 +5490,7 @@ class Choice(object):
 
     def _selection_from_defaults(self):
         # Check if we have a default
-        for sym, cond in self.defaults:
+        for sym, cond, _ in self.defaults:
             # The default symbol must be visible too
             if expr_value(cond) and sym.visibility:
                 return sym
@@ -5587,7 +5587,8 @@ class MenuNode(object):
     orig_ranges:
       These work the like the corresponding attributes without orig_*, but omit
       any dependencies propagated from 'depends on' and surrounding 'if's (the
-      direct dependencies, stored in MenuNode.dep).
+      direct dependencies, stored in MenuNode.dep). These also strip any
+      location information.
 
       One use for this is generating less cluttered documentation, by only
       showing the direct dependencies in one place.
@@ -5720,7 +5721,7 @@ class MenuNode(object):
         See the class documentation.
         """
         return [(default, self._strip_dep(cond))
-                for default, cond in self.defaults]
+                for default, cond, _ in self.defaults]
 
     @property
     def orig_selects(self):
@@ -5728,7 +5729,7 @@ class MenuNode(object):
         See the class documentation.
         """
         return [(select, self._strip_dep(cond))
-                for select, cond in self.selects]
+                for select, cond, _ in self.selects]
 
     @property
     def orig_implies(self):
@@ -5736,7 +5737,7 @@ class MenuNode(object):
         See the class documentation.
         """
         return [(imply, self._strip_dep(cond))
-                for imply, cond in self.implies]
+                for imply, cond, _ in self.implies]
 
     @property
     def orig_ranges(self):
@@ -5744,7 +5745,7 @@ class MenuNode(object):
         See the class documentation.
         """
         return [(low, high, self._strip_dep(cond))
-                for low, high, cond in self.ranges]
+                for low, high, cond, _ in self.ranges]
 
     @property
     def referenced(self):
@@ -5761,19 +5762,19 @@ class MenuNode(object):
         if self.item is MENU:
             res |= expr_items(self.visibility)
 
-        for value, cond in self.defaults:
+        for value, cond, _ in self.defaults:
             res |= expr_items(value)
             res |= expr_items(cond)
 
-        for value, cond in self.selects:
+        for value, cond, _ in self.selects:
             res.add(value)
             res |= expr_items(cond)
 
-        for value, cond in self.implies:
+        for value, cond, _ in self.implies:
             res.add(value)
             res |= expr_items(cond)
 
-        for low, high, cond in self.ranges:
+        for low, high, cond, _ in self.ranges:
             res.add(low)
             res.add(high)
             res |= expr_items(cond)
