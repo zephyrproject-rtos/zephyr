@@ -7,8 +7,6 @@
  */
 
 #include <zephyr/device.h>
-#include <zephyr/drivers/clock_control.h>
-#include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/ptp_clock.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/net/ethernet.h>

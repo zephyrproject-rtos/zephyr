@@ -9,8 +9,9 @@
 
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
-#include <zephyr/net/phy.h>
 #include <zephyr/kernel.h>
+#include <zephyr/net/ethernet.h>
+#include <zephyr/net/phy.h>
 #include <zephyr/types.h>
 #include <soc.h>
 
