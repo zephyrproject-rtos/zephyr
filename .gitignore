@@ -73,6 +73,7 @@ target/
 
 # CI output
 compliance.xml
+dts_linter.patch
 _error.types
 
 # Tag files
@@ -112,3 +113,6 @@ SysbuildKconfigBasicNoModules.txt
 TextEncoding.txt
 YAMLLint.txt
 ZephyrModuleFile.txt
+
+# Node dependecies
+node_modules
