@@ -6,5 +6,12 @@ config MBEDTLS_MD5
 	bool "MD5 hash algorithm"
 	select DEPRECATED
 	help
-	  Legacy MD5 support be removed starting from the next Mbed TLS release.
-	  Please switch to PSA API.
+	  Legacy crypto support is going to be removed starting from the next
+	  Mbed TLS release. Please switch to PSA API.
+
+config MBEDTLS_SHA1
+	bool "SHA-1 hash algorithm"
+	select DEPRECATED
+	help
+	  Legacy crypto support is going to be removed starting from the next
+	  Mbed TLS release. Please switch to PSA API.
