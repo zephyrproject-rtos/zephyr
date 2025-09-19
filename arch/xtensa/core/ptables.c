@@ -193,6 +193,14 @@ static ATOMIC_DEFINE(l1_page_tables_track, CONFIG_XTENSA_MMU_NUM_L1_TABLES);
  */
 static volatile uint8_t l2_page_tables_counter[CONFIG_XTENSA_MMU_NUM_L2_TABLES];
 
+#ifdef CONFIG_XTENSA_MMU_PAGE_TABLE_STATS
+/** Maximum number of used L1 page tables. */
+static uint32_t l1_page_tables_max_usage;
+
+/** Maximum number of used L2 page tables. */
+static uint32_t l2_page_tables_max_usage;
+#endif /* CONFIG_XTENSA_MMU_PAGE_TABLE_STATS */
+
 /*
  * Protects xtensa_domain_list and serializes access to page tables.
  */
@@ -324,15 +332,31 @@ static inline int l2_table_to_counter_pos(uint32_t *l2_table)
 static inline uint32_t *alloc_l2_table(void)
 {
 	uint16_t idx;
+	uint32_t *ret = NULL;
 
 	for (idx = 0; idx < CONFIG_XTENSA_MMU_NUM_L2_TABLES; idx++) {
 		if (l2_page_tables_counter[idx] == 0) {
 			l2_page_tables_counter[idx] = 1;
-			return (uint32_t *)&l2_page_tables[idx];
+			ret = (uint32_t *)&l2_page_tables[idx];
+			break;
 		}
 	}
 
-	return NULL;
+#ifdef CONFIG_XTENSA_MMU_PAGE_TABLE_STATS
+	uint32_t cur_l2_usage = 0;
+
+	/* Calculate how many L2 page tables are being used now. */
+	for (idx = 0; idx < CONFIG_XTENSA_MMU_NUM_L2_TABLES; idx++) {
+		if (l2_page_tables_counter[idx] > 0) {
+			cur_l2_usage++;
+		}
+	}
+
+	/* Store the bigger number. */
+	l2_page_tables_max_usage = MAX(l2_page_tables_max_usage, cur_l2_usage);
+#endif /* CONFIG_XTENSA_MMU_PAGE_TABLE_STATS */
+
+	return ret;
 }
 
 static void map_memory_range(const uint32_t start, const uint32_t end,
@@ -972,14 +996,30 @@ static inline uint32_t *thread_page_tables_get(const struct k_thread *thread)
 static inline uint32_t *alloc_l1_table(void)
 {
 	uint16_t idx;
+	uint32_t *ret = NULL;
 
 	for (idx = 0; idx < CONFIG_XTENSA_MMU_NUM_L1_TABLES; idx++) {
 		if (!atomic_test_and_set_bit(l1_page_tables_track, idx)) {
-			return (uint32_t *)&l1_page_tables[idx];
+			ret = (uint32_t *)&l1_page_tables[idx];
+			break;
 		}
 	}
 
-	return NULL;
+#ifdef CONFIG_XTENSA_MMU_PAGE_TABLE_STATS
+	uint32_t cur_l1_usage = 0;
+
+	/* Calculate how many L1 page tables are being used now. */
+	for (idx = 0; idx < CONFIG_XTENSA_MMU_NUM_L1_TABLES; idx++) {
+		if (atomic_test_bit(l1_page_tables_track, idx)) {
+			cur_l1_usage++;
+		}
+	}
+
+	/* Store the bigger number. */
+	l1_page_tables_max_usage = MAX(l1_page_tables_max_usage, cur_l1_usage);
+#endif /* CONFIG_XTENSA_MMU_PAGE_TABLE_STATS */
+
+	return ret;
 }
 
 /**
@@ -1524,3 +1564,34 @@ void xtensa_swap_update_page_tables(struct k_thread *incoming)
 #endif
 
 #endif /* CONFIG_USERSPACE */
+
+#ifdef CONFIG_XTENSA_MMU_PAGE_TABLE_STATS
+void xtensa_mmu_page_table_stats_get(struct xtensa_mmu_page_table_stats *stats)
+{
+	int idx;
+	uint32_t cur_l1_usage = 0;
+	uint32_t cur_l2_usage = 0;
+
+	__ASSERT_NO_MSG(stats != NULL);
+
+	/* Calculate how many L1 page tables are being used now. */
+	for (idx = 0; idx < CONFIG_XTENSA_MMU_NUM_L1_TABLES; idx++) {
+		if (atomic_test_bit(l1_page_tables_track, idx)) {
+			cur_l1_usage++;
+		}
+	}
+
+	/* Calculate how many L2 page tables are being used now. */
+	for (idx = 0; idx < CONFIG_XTENSA_MMU_NUM_L2_TABLES; idx++) {
+		if (l2_page_tables_counter[idx] > 0) {
+			cur_l2_usage++;
+		}
+	}
+
+	/* Store the statistics into the output. */
+	stats->cur_num_l1_alloced = cur_l1_usage;
+	stats->cur_num_l2_alloced = cur_l2_usage;
+	stats->max_num_l1_alloced = l1_page_tables_max_usage;
+	stats->max_num_l2_alloced = l2_page_tables_max_usage;
+}
+#endif /* CONFIG_XTENSA_MMU_PAGE_TABLE_STATS */
