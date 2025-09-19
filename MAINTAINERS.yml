@@ -4206,7 +4206,6 @@ Release Notes:
 Renesas R-Car Platforms:
   status: maintained
   maintainers:
-    - aaillet
     - lorc
   collaborators:
     - xakep-amatop
