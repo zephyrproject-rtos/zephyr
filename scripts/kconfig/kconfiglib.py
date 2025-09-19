@@ -503,9 +503,9 @@ expected by the function (excluding the implicit 'name' argument). If
 <max.args> is None, there is no upper limit to the number of arguments. Passing
 an invalid number of arguments will generate a KconfigError exception.
 
-Functions can access the current parsing location as kconf.filename/linenr.
-Accessing other fields of the Kconfig object is not safe. See the warning
-below.
+Functions can access the current parsing location as kconf.loc, or individually
+as kconf.filename/linenr. Accessing other fields of the Kconfig object is not
+safe. See the warning below.
 
 Keep in mind that for a variable defined like 'foo = $(fn)', 'fn' will be
 called only when 'foo' is expanded. If 'fn' uses the parsing location and the
@@ -1050,8 +1050,7 @@ class Kconfig(object):
         self.top_node.prompt = ("Main menu", self.y)
         self.top_node.parent = None
         self.top_node.dep = self.y
-        self.top_node.filename = filename
-        self.top_node.linenr = 1
+        self.top_node.loc = (filename, 1)
         self.top_node.include_path = ()
 
         # Parse the Kconfig files
@@ -2935,8 +2934,7 @@ class Kconfig(object):
                 node.is_configdefault = t0 is _T_CONFIGDEFAULT
                 node.prompt = node.help = node.list = None
                 node.parent = parent
-                node.filename = self.filename
-                node.linenr = self.linenr
+                node.loc = self.loc
                 node.include_path = self._include_path
 
                 sym.nodes.append(node)
@@ -3031,8 +3029,7 @@ class Kconfig(object):
                 node.prompt = (self._expect_str_and_eol(), self.y)
                 node.visibility = self.y
                 node.parent = parent
-                node.filename = self.filename
-                node.linenr = self.linenr
+                node.loc = self.loc
                 node.include_path = self._include_path
 
                 self.menus.append(node)
@@ -3051,8 +3048,7 @@ class Kconfig(object):
                 node.prompt = (self._expect_str_and_eol(), self.y)
                 node.list = None
                 node.parent = parent
-                node.filename = self.filename
-                node.linenr = self.linenr
+                node.loc = self.loc
                 node.include_path = self._include_path
 
                 self.comments.append(node)
@@ -3083,8 +3079,7 @@ class Kconfig(object):
                 node.is_menuconfig = True
                 node.prompt = node.help = None
                 node.parent = parent
-                node.filename = self.filename
-                node.linenr = self.linenr
+                node.loc = self.loc
                 node.include_path = self._include_path
 
                 choice.nodes.append(node)
@@ -4001,7 +3996,7 @@ class Kconfig(object):
                 for node in self.node_iter():
                     if sym in node.referenced:
                         msg += "\n\n- Referenced at {}:{}:\n\n{}" \
-                               .format(node.filename, node.linenr, node)
+                               .format(node.loc[0], node.loc[1], node)
                 self._warn(msg)
 
     def _warn(self, msg, filename=None, linenr=None):
@@ -4774,7 +4769,7 @@ class Symbol(object):
 
         if self.nodes:
             for node in self.nodes:
-                add("{}:{}".format(node.filename, node.linenr))
+                add("{}:{}".format(*node.loc))
         else:
             add("constant" if self.is_constant else "undefined")
 
@@ -5380,7 +5375,7 @@ class Choice(object):
             add("optional")
 
         for node in self.nodes:
-            add("{}:{}".format(node.filename, node.linenr))
+            add("{}:{}".format(*node.loc))
 
         return "<{}>".format(", ".join(fields))
 
@@ -5630,10 +5625,11 @@ class MenuNode(object):
       'is_menuconfig' is just a hint on how to display the menu node. It's
       ignored internally by Kconfiglib, except when printing symbols.
 
-    filename/linenr:
-      The location where the menu node appears. The filename is relative to
-      $srctree (or to the current directory if $srctree isn't set), except
-      absolute paths are used for paths outside $srctree.
+    loc/filename/linenr:
+      The location where the menu node appears, as a (filename, linenr) tuple
+      or as individual properties. The filename is relative to $srctree (or to
+      the current directory if $srctree isn't set), except absolute paths are
+      used for paths outside $srctree.
 
     include_path:
       A tuple of (filename, linenr) tuples, giving the locations of the
@@ -5649,15 +5645,14 @@ class MenuNode(object):
     """
     __slots__ = (
         "dep",
-        "filename",
         "help",
         "include_path",
         "is_menuconfig",
         "is_configdefault",
         "item",
         "kconfig",
-        "linenr",
         "list",
+        "loc",
         "next",
         "parent",
         "prompt",
@@ -5678,6 +5673,20 @@ class MenuNode(object):
         self.selects = []
         self.implies = []
         self.ranges = []
+
+    @property
+    def filename(self):
+        """
+        See the class documentation.
+        """
+        return self.loc[0]
+
+    @property
+    def linenr(self):
+        """
+        See the class documentation.
+        """
+        return self.loc[1]
 
     @property
     def orig_prompt(self):
@@ -5798,7 +5807,7 @@ class MenuNode(object):
         if self.next:
             add("has next")
 
-        add("{}:{}".format(self.filename, self.linenr))
+        add("{}:{}".format(*self.loc))
 
         return "<{}>".format(", ".join(fields))
 
@@ -6477,7 +6486,7 @@ def _locs(sc):
 
     if sc.nodes:
         return "(defined at {})".format(
-            ", ".join("{0.filename}:{0.linenr}".format(node)
+            ", ".join("{}:{}".format(*node.loc)
                       for node in sc.nodes))
 
     return "(undefined)"
