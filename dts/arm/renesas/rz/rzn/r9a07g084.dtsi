@@ -4,6 +4,7 @@
  */
 
 #include <mem.h>
+#include <freq.h>
 #include <arm/armv8-r.dtsi>
 #include <freq.h>
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
@@ -1256,6 +1257,14 @@
 				compatible = "renesas,rz-cmtw-counter";
 				status = "disabled";
 			};
+		};
+
+		wdt0: watchdog@80042000 {
+			compatible = "renesas,rz-wdt";
+			reg = <0x80042000 0x1000>;
+			clock-freq = <DT_FREQ_M(50)>;
+			interrupts = <GIC_SPI 388 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
 		};
 	};
 };
