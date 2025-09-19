@@ -337,6 +337,11 @@ config USE_RZ_FSP_CMTW
 	help
 	  Enable RZ FSP CMTW driver
 
+config USE_RZ_FSP_WDT
+	bool
+	help
+	  Enable RZ FSP WDT driver
+
 endif
 
 config HAS_RENESAS_RX_RDP
