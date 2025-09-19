@@ -214,11 +214,7 @@ endif() # CONFIG_SOC_SILABS_SLEEPTIMER
 
 if(CONFIG_SOC_SIWX91X_PM_BACKEND_PMGR)
   zephyr_library_sources(
-    ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/core/common/src/rsi_debug.c
     ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/core/chip/src/rsi_ps_ram_func.c
-    ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/cmsis_driver/USART.c
-    ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/cmsis_driver/UDMA.c
-    ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/cmsis_driver/SAI.c
     ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/peripheral_drivers/src/sl_si91x_m4_ps.c
     ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/peripheral_drivers/src/rsi_usart.c
     ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/peripheral_drivers/src/rsi_udma_wrapper.c
@@ -238,8 +234,6 @@ if(CONFIG_SOC_SIWX91X_PM_BACKEND_PMGR)
     SL_SLEEP_TIMER
     SL_SI91X_SI917_RAM_MEM_CONFIG=2
     SL_CODE_COMPONENT_CORE=core
-    DEBUG_ENABLE
-    DEBUG_UART
     SLI_WIRELESS_COMPONENT_PRESENT
   )
   zephyr_code_relocate(FILES
