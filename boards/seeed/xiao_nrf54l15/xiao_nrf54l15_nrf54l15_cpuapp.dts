@@ -66,6 +66,14 @@
 	status = "okay";
 };
 
+&xo {
+	status = "okay";
+};
+
+&lfclk {
+	status = "okay";
+};
+
 &uart20 {
 	status = "okay";
 };
