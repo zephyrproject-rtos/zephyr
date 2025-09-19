@@ -1965,3 +1965,21 @@ This has been fixed in main for v4.2.0
 
 - `PR 93576 fix for main
   <https://github.com/zephyrproject-rtos/zephyr/pull/93576>`_
+
+:cve:`2025-10457`
+-----------------
+
+Bluetooth: Out-Of-Context le_conn_rsp handling
+
+The function responsible for handling BLE connection responses does
+not verify whether a response is expected—that is, whether the device
+has initiated a connection request. Instead, it relies solely on
+identifier matching.
+
+- `Zephyr project bug tracker GHSA-xqj6-vh76-2vv8
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-xqj6-vh76-2vv8>`_
+
+This has been fixed in main for v4.2.0
+
+- `PR 94080 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/94080>`_
