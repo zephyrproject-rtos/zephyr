@@ -1,0 +1,16 @@
+# i.MX 93 EVK board configuration
+
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_FRDM_IMX93_GPIO_EXP1_INIT
+	bool "Deferred init of node gpio_exp1"
+	default n
+
+config BOARD_FRDM_IMX93_GPIO_EXP1_INIT_PRIO
+	int "Node gpio_exp1 dts node init priority"
+	default 71
+
+module = BOARD_FRDM_IMX93
+module-str = Board Control
+source "subsys/logging/Kconfig.template.log_config"
