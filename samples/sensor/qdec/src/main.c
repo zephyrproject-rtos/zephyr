@@ -71,6 +71,35 @@ static void qenc_emulate_init(void) { };
 
 #endif /* QUAD_ENC_EMUL_ENABLED */
 
+void eqdc_data_ready_cb(const struct device *dev,
+				    const struct sensor_trigger *_trig)
+{
+	struct sensor_value val;
+	struct sensor_value val2;
+	int rc;
+	ARG_UNUSED(_trig);
+
+	rc = sensor_sample_fetch(dev);
+	if (rc != 0) {
+		printk("Failed to fetch sample (%d)\n", rc);
+		return;
+	}
+
+	rc = sensor_channel_get(dev, SENSOR_CHAN_ROTATION, &val);
+	if (rc != 0) {
+		printk("Failed to get data (%d)\n", rc);
+		return;
+	}
+
+	rc = sensor_channel_get(dev, SENSOR_CHAN_RPM, &val2);
+	if (rc != 0) {
+		printk("Failed to get data (%d)\n", rc);
+		return;
+	}
+
+	printk("Position = %d degrees; speed = %d.%06d\n", val.val1, val2.val1, abs(val2.val2));
+}
+
 int main(void)
 {
 	struct sensor_value val;
@@ -87,33 +116,38 @@ int main(void)
 
 	qenc_emulate_init();
 
+	if(sensor_trigger_set(dev, &(struct sensor_trigger){ .chan = SENSOR_CHAN_ROTATION, .type = SENSOR_TRIG_DATA_READY }, eqdc_data_ready_cb) == 0) {
+		printk("Using DATA_READY trigger to obtain data");
+		while (true) {}
+	} else {
 #ifndef CONFIG_COVERAGE
-	while (true) {
+		while (true) {
 #else
-	for (int i = 0; i < 3; i++) {
+		for (int i = 0; i < 3; i++) {
 #endif
-		/* sleep first to gather position from first period */
-		k_msleep(sys_rand8_get() + 50);
+			/* sleep first to gather position from first period */
+			k_msleep(sys_rand8_get() + 50);
 
-		rc = sensor_sample_fetch(dev);
-		if (rc != 0) {
-			printk("Failed to fetch sample (%d)\n", rc);
-			return 0;
+			rc = sensor_sample_fetch(dev);
+			if (rc != 0) {
+				printk("Failed to fetch sample (%d)\n", rc);
+				return 0;
+			}
+
+			rc = sensor_channel_get(dev, SENSOR_CHAN_ROTATION, &val);
+			if (rc != 0) {
+				printk("Failed to get data (%d)\n", rc);
+				return 0;
+			}
+
+			rc = sensor_channel_get(dev, SENSOR_CHAN_RPM, &val2);
+			if (rc != 0) {
+				printk("Failed to get data (%d)\n", rc);
+				return 0;
+			}
+
+			printk("Position = %d degrees; speed = %d.%06d\n", val.val1, val2.val1, abs(val2.val2));
 		}
-
-		rc = sensor_channel_get(dev, SENSOR_CHAN_ROTATION, &val);
-		if (rc != 0) {
-			printk("Failed to get data (%d)\n", rc);
-			return 0;
-		}
-
-		rc = sensor_channel_get(dev, SENSOR_CHAN_RPM, &val2);
-		if (rc != 0) {
-			printk("Failed to get data (%d)\n", rc);
-			return 0;
-		}
-
-		printk("Position = %d degrees; speed = %d.%06d\n", val.val1, val2.val1, abs(val2.val2));
 	}
 	return 0;
 }

@@ -36,6 +36,14 @@ struct eqdc_mcux_config {
 };
 
 struct eqdc_mcux_data {
+	sensor_trigger_handler_t data_ready_cb;
+	struct k_timer* data_ready_timer;
+
+	/*
+	 * Used to keep track of the last position sent through the data ready handler,
+	 * so we do not send the same position more than once
+	 */
+	int32_t last_trigger_position;
 	int32_t position;
 	float32_t speed;
 };
@@ -64,13 +72,16 @@ static int eqdc_mcux_fetch(const struct device *dev, enum sensor_channel ch)
 	/* Calculate speed */
 	if (ch == SENSOR_CHAN_ALL) {
 		const int16_t pulses_since_last_read = EQDC_GetPositionDifference(config->base);
-		const uint16_t ticks_between_pulses = EQDC_GetHoldPositionDifferencePeriod(config->base);
+		const uint16_t ticks_between_pulses =
+			EQDC_GetHoldPositionDifferencePeriod(config->base);
 		const float32_t ticks_per_sec =
 			CLOCK_GetFreq(kCLOCK_BusClk) / (1 << config->prescaler_log2);
-		const float32_t pulses_per_sec_to_rpm = 60.f / (float32_t)config->counts_per_revolution;
+		const float32_t pulses_per_sec_to_rpm =
+			60.f / (float32_t)config->counts_per_revolution;
 
 		if (pulses_since_last_read == 0) {
-			const uint16_t ticks_since_last_edge = EQDC_GetHoldLastEdgeTime(config->base);
+			const uint16_t ticks_since_last_edge =
+				EQDC_GetHoldLastEdgeTime(config->base);
 			if (ticks_since_last_edge == UINT16_MAX) {
 				/* Too long since last pulse. We consider the speed to be zero */
 				data->speed = 0.f;
@@ -84,22 +95,25 @@ static int eqdc_mcux_fetch(const struct device *dev, enum sensor_channel ch)
 					const float32_t secs_since_last_edge =
 						ticks_since_last_edge / ticks_per_sec;
 					if (data->speed > 0) {
-						data->speed = pulses_per_sec_to_rpm / secs_since_last_edge;
+						data->speed = pulses_per_sec_to_rpm /
+							      secs_since_last_edge;
 					} else {
-						data->speed = -pulses_per_sec_to_rpm / secs_since_last_edge;
+						data->speed = -pulses_per_sec_to_rpm /
+							      secs_since_last_edge;
 					}
 				} else {
 					/* Fetched sensors just before a pulse, assume the speed is
-					* kept constant */
+					 * kept constant */
 				}
 			}
 		} else {
 			/* At least one pulse since last sensor fetch */
 
-			const float32_t seconds_between_pulses = (float32_t)ticks_between_pulses / ticks_per_sec;
+			const float32_t seconds_between_pulses =
+				(float32_t)ticks_between_pulses / ticks_per_sec;
 
 			data->speed = (float32_t)pulses_since_last_read / seconds_between_pulses *
-					pulses_per_sec_to_rpm;
+				      pulses_per_sec_to_rpm;
 		}
 
 		LOG_DBG("POSD: %i, POSDPERH: %u", pulses_since_last_read, ticks_between_pulses);
@@ -119,8 +133,8 @@ static int eqdc_mcux_ch_get(const struct device *dev, enum sensor_channel ch,
 
 	switch (ch) {
 	case SENSOR_CHAN_ROTATION:
-		sensor_value_from_float(val,
-					(data->position * 360.0f) / (float32_t)config->counts_per_revolution);
+		sensor_value_from_float(val, (data->position * 360.0f) /
+						     (float32_t)config->counts_per_revolution);
 		break;
 
 	case SENSOR_CHAN_RPM:
@@ -134,12 +148,52 @@ static int eqdc_mcux_ch_get(const struct device *dev, enum sensor_channel ch,
 	return 0;
 }
 
-static DEVICE_API(sensor, eqdc_mcux_api) = {
-	.attr_set = &eqdc_mcux_attr_set,
-	.attr_get = &eqdc_mcux_attr_get,
-	.sample_fetch = &eqdc_mcux_fetch,
-	.channel_get = &eqdc_mcux_ch_get,
-};
+void data_ready_timer_cb(struct k_timer *timer)
+{
+	const struct device *dev = k_timer_user_data_get(timer);
+	struct eqdc_mcux_data *data = dev->data;
+	__ASSERT_NO_MSG(data);
+
+	eqdc_mcux_fetch(dev, SENSOR_CHAN_ROTATION);
+
+	if (data->last_trigger_position != data->position) {
+		data->last_trigger_position = data->position;
+		data->data_ready_cb(dev, &(struct sensor_trigger){.chan = SENSOR_CHAN_ROTATION,
+								  .type = SENSOR_TRIG_DATA_READY});
+	}
+}
+
+static int eqdc_mcux_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
+				 sensor_trigger_handler_t handler)
+{
+	struct eqdc_mcux_data *data = dev->data;
+
+	if (trig->type != SENSOR_TRIG_DATA_READY) {
+		return -ENOTSUP;
+	}
+
+	if ((trig->chan != SENSOR_CHAN_ALL) && (trig->chan != SENSOR_CHAN_ROTATION)) {
+		return -ENOTSUP;
+	}
+
+	data->data_ready_cb = handler;
+
+	if (handler) {
+		/* XXX */
+		k_timer_user_data_set(data->data_ready_timer, dev);
+		k_timer_start(data->data_ready_timer, K_MSEC(30), K_MSEC(30));
+	} else {
+		k_timer_stop(data->data_ready_timer);
+	}
+
+	return 0;
+}
+
+static DEVICE_API(sensor, eqdc_mcux_api) = {.attr_set = &eqdc_mcux_attr_set,
+					    .attr_get = &eqdc_mcux_attr_get,
+					    .sample_fetch = &eqdc_mcux_fetch,
+					    .channel_get = &eqdc_mcux_ch_get,
+					    .trigger_set = &eqdc_mcux_trigger_set};
 
 static void init_inputs(const struct device *dev)
 {
@@ -200,12 +254,15 @@ static int eqdc_mcux_init(const struct device *dev)
 
 #define QDEC_MCUX_INIT(n)                                                                          \
                                                                                                    \
+	K_TIMER_DEFINE(data_##n##_ready_timer, data_ready_timer_cb, NULL);                         \
+                                                                                                   \
 	QDEC_CHECK_COND(n, counts_per_revolution, 1, UINT32_MAX);                                  \
 	QDEC_CHECK_COND(n, prescaler_log2, kEQDC_Prescaler1, kEQDC_Prescaler32768);                \
 	QDEC_CHECK_COND(n, device_idx, 0, 1);                                                      \
 	QDEC_CHECK_COND(n, input_kind, 0, 1);                                                      \
                                                                                                    \
-	static struct eqdc_mcux_data eqdc_mcux_##n##_data = {.position = 0};                       \
+	static struct eqdc_mcux_data eqdc_mcux_##n##_data = {                                      \
+		.position = 0, .data_ready_timer = &data_##n##_ready_timer};                        \
                                                                                                    \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
                                                                                                    \
