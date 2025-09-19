@@ -206,7 +206,7 @@ static void test_3_thread(void *arg1, void *arg2, void *arg3)
 	k_sem_give(sema);
 }
 
-static K_THREAD_STACK_DEFINE(test_3_thread_stack, 1024);
+static K_THREAD_STACK_DEFINE(test_3_thread_stack, 1024 + CONFIG_TEST_EXTRA_STACK_SIZE);
 
 ZTEST(net_buf_tests, test_net_buf_3)
 {

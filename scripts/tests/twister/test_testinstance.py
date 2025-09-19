@@ -96,13 +96,13 @@ def test_check_build_or_run(
 
 TESTDATA_PART_2 = [
     (True, True, True, ["demo_board_2/unit_testing"], "native",
-     None, '\nCONFIG_COVERAGE=y\nCONFIG_COVERAGE_DUMP=y\nCONFIG_ASAN=y\nCONFIG_UBSAN=y'),
+     None, '\nCONFIG_COVERAGE=y\nCONFIG_ASAN=y\nCONFIG_UBSAN=y'),
     (True, False, True, ["demo_board_2/unit_testing"], "native",
-     None, '\nCONFIG_COVERAGE=y\nCONFIG_COVERAGE_DUMP=y\nCONFIG_ASAN=y'),
+     None, '\nCONFIG_COVERAGE=y\nCONFIG_ASAN=y'),
     (False, False, True, ["demo_board_2/unit_testing"], 'native',
-     None, '\nCONFIG_COVERAGE=y\nCONFIG_COVERAGE_DUMP=y'),
+     None, '\nCONFIG_COVERAGE=y'),
     (True, False, True, ["demo_board_2/unit_testing"], 'mcu',
-     None, '\nCONFIG_COVERAGE=y\nCONFIG_COVERAGE_DUMP=y'),
+     None, '\nCONFIG_COVERAGE=y'),
     (False, False, False, ["demo_board_2/unit_testing"], 'native', None, ''),
     (False, False, True, ['demo_board_1'], 'native', None, ''),
     (True, False, False, ["demo_board_2"], 'native', None, '\nCONFIG_ASAN=y'),

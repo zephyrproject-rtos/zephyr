@@ -9,6 +9,7 @@
 
 #ifdef CONFIG_COVERAGE_GCOV
 void gcov_coverage_dump(void);
+void gcov_coverage_semihost(void);
 void gcov_static_init(void);
 #else
 static inline void gcov_coverage_dump(void) { }
