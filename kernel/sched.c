@@ -142,19 +142,6 @@ void z_requeue_current(struct k_thread *thread)
 	signal_pending_ipi();
 }
 
-/* Return true if the thread is aborting, else false */
-static inline bool is_aborting(struct k_thread *thread)
-{
-	return (thread->base.thread_state & _THREAD_ABORTING) != 0U;
-}
-
-/* Return true if the thread is aborting or suspending, else false */
-static inline bool is_halting(struct k_thread *thread)
-{
-	return (thread->base.thread_state &
-		(_THREAD_ABORTING | _THREAD_SUSPENDING)) != 0U;
-}
-
 /* Clear the halting bits (_THREAD_ABORTING and _THREAD_SUSPENDING) */
 static inline void clear_halting(struct k_thread *thread)
 {
@@ -167,8 +154,8 @@ static inline void clear_halting(struct k_thread *thread)
 static ALWAYS_INLINE struct k_thread *next_up(void)
 {
 #ifdef CONFIG_SMP
-	if (is_halting(_current)) {
-		halt_thread(_current, is_aborting(_current) ?
+	if (z_is_thread_halting(_current)) {
+		halt_thread(_current, z_is_thread_aborting(_current) ?
 				      _THREAD_DEAD : _THREAD_SUSPENDED);
 	}
 #endif /* CONFIG_SMP */
@@ -378,12 +365,12 @@ void z_move_thread_to_end_of_prio_q(struct k_thread *thread)
  */
 static void thread_halt_spin(struct k_thread *thread, k_spinlock_key_t key)
 {
-	if (is_halting(_current)) {
+	if (z_is_thread_halting(_current)) {
 		halt_thread(_current,
-			    is_aborting(_current) ? _THREAD_DEAD : _THREAD_SUSPENDED);
+			    z_is_thread_aborting(_current) ? _THREAD_DEAD : _THREAD_SUSPENDED);
 	}
 	k_spin_unlock(&_sched_spinlock, key);
-	while (is_halting(thread)) {
+	while (z_is_thread_halting(thread)) {
 		unsigned int k = arch_irq_lock();
 
 		arch_spin_relax(); /* Requires interrupts be masked */
@@ -1354,7 +1341,7 @@ void z_thread_abort(struct k_thread *thread)
 	bool essential = z_is_thread_essential(thread);
 	k_spinlock_key_t key = k_spin_lock(&_sched_spinlock);
 
-	if ((thread->base.thread_state & _THREAD_DEAD) != 0U) {
+	if (z_is_thread_dead(thread)) {
 		k_spin_unlock(&_sched_spinlock, key);
 		return;
 	}
@@ -1374,7 +1361,7 @@ void z_impl_k_thread_abort(k_tid_t thread)
 
 	z_thread_abort(thread);
 
-	__ASSERT_NO_MSG((thread->base.thread_state & _THREAD_DEAD) != 0);
+	__ASSERT_NO_MSG(z_is_thread_dead(thread));
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_thread, abort, thread);
 }
@@ -1387,7 +1374,7 @@ int z_impl_k_thread_join(struct k_thread *thread, k_timeout_t timeout)
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_thread, join, thread, timeout);
 
-	if ((thread->base.thread_state & _THREAD_DEAD) != 0U) {
+	if (z_is_thread_dead(thread)) {
 		z_sched_switch_spin(thread);
 		ret = 0;
 	} else if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
