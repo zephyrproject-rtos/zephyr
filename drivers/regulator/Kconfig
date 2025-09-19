@@ -43,6 +43,7 @@ source "drivers/regulator/Kconfig.pca9422"
 source "drivers/regulator/Kconfig.pf1550"
 source "drivers/regulator/Kconfig.rpi_pico"
 source "drivers/regulator/Kconfig.nxp_vref"
+source "drivers/regulator/Kconfig.nxp_vrefv1"
 source "drivers/regulator/Kconfig.mpm54304"
 
 endif # REGULATOR
