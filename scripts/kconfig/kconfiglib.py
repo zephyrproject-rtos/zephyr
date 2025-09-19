@@ -851,6 +851,7 @@ class Kconfig(object):
         "_readline",
         "filename",
         "linenr",
+        "loc",
         "_include_path",
         "_filestack",
         "_line",
@@ -1269,13 +1270,14 @@ class Kconfig(object):
             for linenr, line in enumerate(f, 1):
                 # The C tools ignore trailing whitespace
                 line = line.rstrip()
+                loc = (filename, linenr)
 
                 match = set_match(line)
                 if match:
                     name, val = match.groups()
                     sym = get_sym(name)
                     if not sym or not sym.nodes:
-                        self._undef_assign(name, val, filename, linenr)
+                        self._undef_assign(name, val, loc)
                         continue
 
                     if sym.orig_type in _BOOL_TRISTATE:
@@ -1288,8 +1290,7 @@ class Kconfig(object):
                             self._warn("'{}' is not a valid value for the {} "
                                        "symbol {}. Assignment ignored."
                                        .format(val, TYPE_TO_STR[sym.orig_type],
-                                               sym.name_and_loc),
-                                       filename, linenr)
+                                               sym.name_and_loc), loc)
                             continue
 
                         val = val[0]
@@ -1304,8 +1305,7 @@ class Kconfig(object):
                                TRI_TO_STR[prev_mode] != val:
 
                                 self._warn("both m and y assigned to symbols "
-                                           "within the same choice",
-                                           filename, linenr)
+                                           "within the same choice", loc)
 
                             # Set the choice's mode
                             sym.choice.set_value(val)
@@ -1315,8 +1315,7 @@ class Kconfig(object):
                         if not match:
                             self._warn("malformed string literal in "
                                        "assignment to {}. Assignment ignored."
-                                       .format(sym.name_and_loc),
-                                       filename, linenr)
+                                       .format(sym.name_and_loc), loc)
                             continue
 
                         val = unescape(match.group(1))
@@ -1330,15 +1329,14 @@ class Kconfig(object):
                         # rstrip()'d, so blank lines show up as "" here.
                         if line and not line.lstrip().startswith("#"):
                             self._warn("ignoring malformed line '{}'"
-                                       .format(line),
-                                       filename, linenr)
+                                       .format(line), loc)
 
                         continue
 
                     name = match.group(1)
                     sym = get_sym(name)
                     if not sym or not sym.nodes:
-                        self._undef_assign(name, "n", filename, linenr)
+                        self._undef_assign(name, "n", loc)
                         continue
 
                     if sym.orig_type not in _BOOL_TRISTATE:
@@ -1349,7 +1347,7 @@ class Kconfig(object):
                 # Done parsing the assignment. Set the value.
 
                 if sym._was_set:
-                    self._assigned_twice(sym, val, filename, linenr)
+                    self._assigned_twice(sym, val, loc)
 
                 sym.set_value(val)
 
@@ -1365,16 +1363,16 @@ class Kconfig(object):
                 if not choice._was_set:
                     choice.unset_value()
 
-    def _undef_assign(self, name, val, filename, linenr):
+    def _undef_assign(self, name, val, loc):
         # Called for assignments to undefined symbols during .config loading
 
         self.missing_syms.append((name, val))
         if self.warn_assign_undef:
             self._warn(
                 "attempt to assign the value '{}' to the undefined symbol {}"
-                .format(val, name), filename, linenr)
+                .format(val, name), loc)
 
-    def _assigned_twice(self, sym, new_val, filename, linenr):
+    def _assigned_twice(self, sym, new_val, loc):
         # Called when a symbol is assigned more than once in a .config file
 
         # Use strings for bool/tristate user values in the warning
@@ -1388,9 +1386,9 @@ class Kconfig(object):
 
         if user_val == new_val:
             if self.warn_assign_redun:
-                self._warn(msg, filename, linenr)
+                self._warn(msg, loc)
         elif self.warn_assign_override:
-            self._warn(msg, filename, linenr)
+            self._warn(msg, loc)
 
     def load_allconfig(self, filename):
         """
@@ -2232,6 +2230,8 @@ class Kconfig(object):
             line = line[:-2] + self._readline()
             self.linenr += 1
 
+        self.loc = (self.filename, self.linenr)
+
         self._tokens = self._tokenize(line)
         # Initialize to 1 instead of 0 to factor out code from _parse_block()
         # and _parse_props(). They immediately fetch self._tokens[0].
@@ -2253,6 +2253,7 @@ class Kconfig(object):
             line = line[:-2] + self._readline()
             self.linenr += 1
 
+        self.loc = (self.filename, self.linenr)
         self._tokens = self._tokenize(line)
         self._reuse_tokens = True
 
@@ -2425,8 +2426,7 @@ class Kconfig(object):
 
                     if token is not _T_CHOICE:
                         self._warn("style: quotes recommended around '{}' in '{}'"
-                                   .format(name, self._line.strip()),
-                                   self.filename, self.linenr)
+                                   .format(name, self._line.strip()), self.loc)
 
                     token = name
                     i = match.end()
@@ -3222,7 +3222,7 @@ class Kconfig(object):
                         self._warn("{1} has 'option env=\"{0}\"', "
                                    "but the environment variable {0} is not "
                                    "set".format(node.item.name, env_var),
-                                   self.filename, self.linenr)
+                                   self.loc)
 
                     if env_var != node.item.name:
                         self._warn("Kconfiglib expands environment variables "
@@ -3232,7 +3232,7 @@ class Kconfig(object):
                                    "rename {} to {} (so that the symbol name "
                                    "matches the environment variable name)."
                                    .format(node.item.name, env_var),
-                                   self.filename, self.linenr)
+                                   self.loc)
 
                 elif self._check_token(_T_DEFCONFIG_LIST):
                     if not self.defconfig_list:
@@ -3242,7 +3242,7 @@ class Kconfig(object):
                                    "symbols ({0} and {1}). Only {0} will be "
                                    "used.".format(self.defconfig_list.name,
                                                   node.item.name),
-                                   self.filename, self.linenr)
+                                   self.loc)
 
                 elif self._check_token(_T_MODULES):
                     # To reduce warning spam, only warn if 'option modules' is
@@ -3258,8 +3258,7 @@ class Kconfig(object):
                                    "Kconfiglib just assumes the symbol name "
                                    "MODULES, like older versions of the C "
                                    "implementation did when 'option modules' "
-                                   "wasn't used.",
-                                   self.filename, self.linenr)
+                                   "wasn't used.", self.loc)
 
                 elif self._check_token(_T_ALLNOCONFIG_Y):
                     if node.item.__class__ is not Symbol:
@@ -3999,15 +3998,15 @@ class Kconfig(object):
                                .format(node.loc[0], node.loc[1], node)
                 self._warn(msg)
 
-    def _warn(self, msg, filename=None, linenr=None):
+    def _warn(self, msg, loc=None):
         # For printing general warnings
 
         if not self.warn:
             return
 
         msg = "warning: " + msg
-        if filename is not None:
-            msg = "{}:{}: {}".format(filename, linenr, msg)
+        if loc is not None:
+            msg = "{}:{}: {}".format(loc[0], loc[1], msg)
 
         self.warnings.append(msg)
         if self.warn_to_stderr:
@@ -6824,7 +6823,7 @@ def _info_fn(kconf, _, msg):
 
 def _warning_if_fn(kconf, _, cond, msg):
     if cond == "y":
-        kconf._warn(msg, kconf.filename, kconf.linenr)
+        kconf._warn(msg, kconf.loc)
 
     return ""
 
@@ -6854,7 +6853,7 @@ def _shell_fn(kconf, _, command):
     if stderr:
         kconf._warn("'{}' wrote to stderr: {}".format(
                         command, "\n".join(stderr.splitlines())),
-                    kconf.filename, kconf.linenr)
+                    kconf.loc)
 
     # Universal newlines with splitlines() (to prevent e.g. stray \r's in
     # command output on Windows), trailing newline removal, and
