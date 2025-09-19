@@ -1943,3 +1943,25 @@ This has been fixed in main for v4.2.0
 
 - `PR 90975 fix for main
   <https://github.com/zephyrproject-rtos/zephyr/pull/90975>`_
+
+:cve:`2025-10456`
+-----------------
+
+Bluetooth: Semi-Arbitrary ability to make the BLE Target send
+disconnection requests
+
+A vulnerability was identified in the handling of Bluetooth Low Energy
+(BLE) fixed channels (such as SMP or ATT). Specifically, an attacker
+could exploit a flaw that causes the BLE target (i.e., the device
+under attack) to attempt to disconnect a fixed channel, which is not
+allowed per the Bluetooth specification. This leads to undefined
+behavior, including potential assertion failures, crashes, or memory
+corruption.
+
+- `Zephyr project bug tracker GHSA-hcc8-3qr7-c9m8
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-hcc8-3qr7-c9m8>`_
+
+This has been fixed in main for v4.2.0
+
+- `PR 93576 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/93576>`_
