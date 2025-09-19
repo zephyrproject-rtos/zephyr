@@ -1,0 +1,121 @@
+/*
+ * Copyright (C) 2024-2025, Xiaohua Semiconductor Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <xhsc/f4/hc32f4a0.dtsi>
+#include "hc32f4a0_evb-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "xhsc, EV_F4A0_LQ176_Rev1.0 board";
+	compatible = "xhsc,hc32f4a0_evb";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		green_led: led_0 {
+			gpios = <&gpioc 9 GPIO_ACTIVE_HIGH>;
+			label = "User LED";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		user_button: button {
+			label = "Wkup_key";
+			gpios = <&gpioa 0 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	aliases {
+		led0 = &green_led;
+		sw0 = &user_button;
+	};
+};
+
+&gpioa {
+	status = "okay";
+};
+
+&gpiob {
+	status = "okay";
+};
+
+&gpioc {
+	status = "okay";
+};
+
+&gpiod {
+	status = "okay";
+};
+
+&gpioe {
+	status = "okay";
+};
+
+&gpiof {
+	status = "okay";
+};
+
+&gpiog {
+	status = "okay";
+};
+
+&gpioh {
+	status = "okay";
+};
+
+&gpioi {
+	status = "okay";
+};
+
+&clk_xtal {
+	status = "okay";
+};
+
+&clk_xtal32 {
+	status = "okay";
+};
+
+&clk_hrc {
+	status = "okay";
+};
+
+&clk_mrc {
+	status = "okay";
+};
+
+&clk_lrc {
+	status = "okay";
+};
+
+&clk_pll {
+	status = "okay";
+};
+
+&usart1 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&usart1_default>;
+	pinctrl-names = "default";
+	interrupt-parent = <&intc>;
+	interrupts = <HC32_UART1_RXERR_IRQ_NUM HC32_UART1_RXERR_IRQ_PRIO	\
+			INT_SRC_USART1_EI>,
+		<HC32_UART1_RX_IRQ_NUM HC32_UART1_RX_IRQ_PRIO			\
+			INT_SRC_USART1_RI>,
+		<HC32_UART1_TX_CPLT_IRQ_NUM HC32_UART1_TX_CPLT_IRQ_PRIO		\
+			INT_SRC_USART1_TCI>;
+	interrupt-names = "ore", "rxne", "tc";
+};
