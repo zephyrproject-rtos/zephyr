@@ -116,4 +116,6 @@ source "drivers/clock_control/Kconfig.it51xxx"
 
 source "drivers/clock_control/Kconfig.mchp"
 
+source "drivers/clock_control/Kconfig.focaltech"
+
 endif # CLOCK_CONTROL
