@@ -286,6 +286,11 @@ do {                                                                    \
  */
 #endif
 
+#ifndef __deprecated_version
+#define __deprecated_version(version) \
+	__attribute__((deprecated("planned removal in v" #version)))
+#endif
+
 #ifndef __attribute_const__
 #define __attribute_const__ __attribute__((__const__))
 #endif

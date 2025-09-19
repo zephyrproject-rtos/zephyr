@@ -206,6 +206,10 @@ New APIs and options
 
   * :c:func:`sys_count_bits`
 
+* Toolchain
+
+  * :c:macro:`__deprecated_version`
+
 .. zephyr-keep-sorted-stop
 
 New Boards
