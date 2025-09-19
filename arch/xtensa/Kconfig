@@ -258,6 +258,12 @@ config XTENSA_MMU_FLUSH_AUTOREFILL_DTLBS_ON_SWAP
 	  This flushes (invalidates) all auto-refill data TLBs when page
 	  tables are swapped.
 
+config XTENSA_MMU_PAGE_TABLE_STATS
+	bool "Page table statistics"
+	help
+	  Enable this for page table statistics, including current usage and
+	  maximum number of page tables used.
+
 endif # XTENSA_MMU
 
 endif # CPU_HAS_MMU
