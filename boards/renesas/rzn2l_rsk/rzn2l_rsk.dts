@@ -24,6 +24,7 @@
 		led0 = &led0;
 		led1 = &led1;
 		sw0 = &sw1;
+		watchdog0 = &wdt0;
 	};
 
 	leds {
@@ -121,5 +122,9 @@
 &i2c1 {
 	pinctrl-0 = <&i2c1_default>;
 	pinctrl-names = "default";
+	status = "okay";
+};
+
+&wdt0 {
 	status = "okay";
 };
