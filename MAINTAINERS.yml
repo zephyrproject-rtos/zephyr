@@ -6022,11 +6022,12 @@ Xen Platform:
     - "area: Xen Platform"
 
 Xilinx Platforms:
-  status: odd fixes
+  status: maintained
+  maintainers:
+    - michalsimek
   collaborators:
     - henrikbrixandersen
     - ibirnbaum
-    - michalsimek
   files:
     - boards/amd/
     - drivers/*/*xilinx*
