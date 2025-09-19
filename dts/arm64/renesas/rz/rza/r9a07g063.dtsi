@@ -911,5 +911,13 @@
 				status = "disabled";
 			};
 		};
+
+		wdt0: watchdog@12800800 {
+			compatible = "renesas,rz-wdt";
+			reg = <0x12800800 DT_SIZE_K(1)>;
+			interrupts = <GIC_SPI 49 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clock-freq = <DT_FREQ_M(24)>;
+			status = "disabled";
+		};
 	};
 };
