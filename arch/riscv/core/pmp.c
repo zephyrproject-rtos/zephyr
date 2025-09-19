@@ -32,6 +32,9 @@
 #include <zephyr/arch/arch_interface.h>
 #include <zephyr/arch/riscv/csr.h>
 
+#include <errno.h>
+#include <stdint.h>
+
 #define LOG_LEVEL CONFIG_MPU_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(mpu);
@@ -55,6 +58,8 @@ LOG_MODULE_REGISTER(mpu);
 #define PMP_ADDR_NAPOT(addr, size)	PMP_ADDR(addr | NAPOT_RANGE(size))
 
 #define PMP_NONE 0
+
+#define PMP_CFG_W_BIT 1 /* Write permission bit in the PMP config byte */
 
 static void print_pmp_entries(unsigned int pmp_start, unsigned int pmp_end,
 			      unsigned long *pmp_addr, unsigned long *pmp_cfg,
@@ -476,6 +481,93 @@ void z_riscv_custom_pmp_entry_enable(void)
 	csr_clear(mstatus, MSTATUS_MPRV | MSTATUS_MPP);
 	csr_set(mstatus, MSTATUS_MPRV);
 }
+
+int riscv_pmp_set_write_permission(bool write_enable)
+{
+	if (CONFIG_PMP_SLOTS > 8) {
+		LOG_ERR("This function only supports up to 8 PMP slots.");
+		return -ENOTSUP;
+	}
+
+	int entry_index = -1;
+	uintptr_t target_pmpaddr_start = PMP_ADDR(CONFIG_CUSTOM_PMP_ENTRY_START);
+	uintptr_t target_pmpaddr_end =
+		PMP_ADDR(CONFIG_CUSTOM_PMP_ENTRY_START + CONFIG_CUSTOM_PMP_ENTRY_SIZE);
+	uintptr_t target_pmpaddr_napot =
+		PMP_ADDR_NAPOT(CONFIG_CUSTOM_PMP_ENTRY_START, CONFIG_CUSTOM_PMP_ENTRY_SIZE);
+
+	for (uint8_t i = 0; i < CONFIG_PMP_SLOTS; ++i) {
+		if ((PMPADDR_READ(i) == target_pmpaddr_start) &&
+		    (PMPADDR_READ(i + 1) == target_pmpaddr_end)) {
+			entry_index = i + 1;
+			break;
+		}
+		if (PMPADDR_READ(i) == target_pmpaddr_napot) {
+			entry_index = i;
+			break;
+		}
+	}
+
+	if (entry_index == -1) {
+		LOG_ERR("PMP entry for address 0x%x not found", CONFIG_CUSTOM_PMP_ENTRY_START);
+		return -ENOENT;
+	}
+
+	uint8_t cfg_reg_idx = entry_index / PMPCFG_STRIDE;
+	uint8_t entry_in_reg = entry_index % PMPCFG_STRIDE;
+	int bit_position = (entry_in_reg * 8) + PMP_CFG_W_BIT;
+	unsigned long mask = 1UL << bit_position;
+
+	unsigned long pmpcfg_val;
+
+#if defined(CONFIG_64BIT)
+	/*
+	 * RV64: pmpcfg0 holds configurations for entries 0-7.
+	 * On RV64, the PMP configuration registers are even-numbered:
+	 * pmpcfg0, pmpcfg2, pmpcfg4, and so on.
+	 */
+	if (cfg_reg_idx == 0) { /* Entries 0-7 are in pmpcfg0 */
+		pmpcfg_val = csr_read(pmpcfg0);
+		if (write_enable) {
+			pmpcfg_val |= mask;
+		} else {
+			pmpcfg_val &= ~mask;
+		}
+		csr_write(pmpcfg0, pmpcfg_val);
+	} else {
+		LOG_ERR("cfg_reg_idx %d unexpected for <= 8 slots on RV64", cfg_reg_idx);
+		return -EINVAL;
+	}
+#else
+	/*
+	 * RV32: pmpcfg0 holds configurations for entries 0-3, pmpcfg1 holds entries 4-7.
+	 * On RV32, all pmpcfg registers are valid: pmpcfg0, pmpcfg1, pmpcfg2, and so on.
+	 */
+	if (cfg_reg_idx == 0) { /* Entries 0-3 */
+		pmpcfg_val = csr_read(pmpcfg0);
+		if (write_enable) {
+			pmpcfg_val |= mask;
+		} else {
+			pmpcfg_val &= ~mask;
+		}
+		csr_write(pmpcfg0, pmpcfg_val);
+	} else if (cfg_reg_idx == 1) { /* Entries 4-7 */
+		pmpcfg_val = csr_read(pmpcfg1);
+		if (write_enable) {
+			pmpcfg_val |= mask;
+		} else {
+			pmpcfg_val &= ~mask;
+		}
+		csr_write(pmpcfg1, pmpcfg_val);
+	} else {
+		LOG_ERR("cfg_reg_idx %d unexpected for <= 8 slots on RV32", cfg_reg_idx);
+		return -EINVAL;
+	}
+#endif
+
+	return 0;
+}
+
 #endif
 
 /**
