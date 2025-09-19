@@ -1930,4 +1930,16 @@ This has been fixed in main for v4.2.0
 :cve:`2025-7403`
 ----------------
 
-Under embargo until 2025-09-05
+Bluetooth: bt_conn_tx_processor unsafe handling
+
+Unsafe handling in bt_conn_tx_processor causes a use-after-free,
+resulting in a write-before-zero. The written 4 bytes are
+attacker-controlled, enabling precise memory corruption.
+
+- `Zephyr project bug tracker GHSA-9r46-cqqw-6j2j
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-9r46-cqqw-6j2j>`_
+
+This has been fixed in main for v4.2.0
+
+- `PR 90975 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/90975>`_
