@@ -175,6 +175,18 @@ static ALWAYS_INLINE struct k_thread *next_up(void)
 
 	struct k_thread *thread = runq_best();
 
+#if !defined(CONFIG_SMP) && defined(CONFIG_TIMESLICING)
+	if (thread != NULL) {
+		bool active = z_is_thread_ready(thread);
+		bool queued = z_is_thread_queued(thread);
+
+		if (active && queued && !z_is_idle_thread_object(_current)) {
+			dequeue_thread(thread);
+			queue_thread(thread);
+		}
+	}
+#endif /* !CONFIG_SMP && CONFIG_TIMESLICING */
+
 #if (CONFIG_NUM_METAIRQ_PRIORITIES > 0) &&                                                         \
 	(CONFIG_NUM_COOP_PRIORITIES > CONFIG_NUM_METAIRQ_PRIORITIES)
 	/* MetaIRQs must always attempt to return back to a
@@ -422,8 +434,8 @@ static ALWAYS_INLINE void z_thread_halt(struct k_thread *thread, k_spinlock_key_
 		arch_sched_directed_ipi(IPI_CPU_MASK(cpu->id));
 #else
 		arch_sched_broadcast_ipi();
-#endif
-#endif
+#endif /* CONFIG_ARCH_HAS_DIRECTED_IPIS */
+#endif /* CONFIG_SMP && CONFIG_SCHED_IPI_SUPPORTED */
 		if (arch_is_in_isr()) {
 			thread_halt_spin(thread, key);
 		} else  {
