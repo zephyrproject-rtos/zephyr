@@ -25,6 +25,7 @@ common:
     regex:
       - " PASS - test_generate_random.*"
       - " PASS - test_md5.*"
+      - " PASS - test_sha1.*"
 tests:
   crypto.mbedtls_psa.with_entropy_driver:
     filter: CONFIG_CSPRNG_ENABLED

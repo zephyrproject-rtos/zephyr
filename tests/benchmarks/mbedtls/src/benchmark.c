@@ -313,12 +313,6 @@ int main(void)
 	}
 #endif
 
-#if defined(MBEDTLS_SHA1_C)
-	if (todo.sha1) {
-		TIME_AND_TSC("SHA-1", mbedtls_sha1(buf, BUFSIZE, tmp));
-	}
-#endif
-
 #if defined(MBEDTLS_SHA256_C)
 	if (todo.sha256) {
 		TIME_AND_TSC("SHA-256", mbedtls_sha256(buf,
@@ -652,34 +646,6 @@ int main(void)
 		const mbedtls_md_info_t *md_info;
 
 		mbedtls_hmac_drbg_init(&hmac_drbg);
-
-#if defined(MBEDTLS_SHA1_C)
-		md_info = mbedtls_md_info_from_type(MBEDTLS_MD_SHA1);
-		if (md_info == NULL) {
-			mbedtls_exit(1);
-		}
-
-		if (mbedtls_hmac_drbg_seed(&hmac_drbg, md_info,
-					   myrand, NULL, NULL, 0) != 0) {
-			mbedtls_exit(1);
-		}
-
-		TIME_AND_TSC("HMAC_DRBG SHA-1 (NOPR)",
-			     mbedtls_hmac_drbg_random(&hmac_drbg, buf,
-						      BUFSIZE));
-
-		if (mbedtls_hmac_drbg_seed(&hmac_drbg, md_info, myrand,
-					   NULL, NULL, 0) != 0) {
-			mbedtls_exit(1);
-		}
-
-		mbedtls_hmac_drbg_set_prediction_resistance(&hmac_drbg,
-						MBEDTLS_HMAC_DRBG_PR_ON);
-
-		TIME_AND_TSC("HMAC_DRBG SHA-1 (PR)",
-			     mbedtls_hmac_drbg_random(&hmac_drbg, buf,
-						      BUFSIZE));
-#endif
 
 #if defined(MBEDTLS_SHA256_C)
 		md_info = mbedtls_md_info_from_type(MBEDTLS_MD_SHA256);

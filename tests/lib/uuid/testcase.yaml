@@ -8,8 +8,8 @@ tests:
     extra_configs:
       - CONFIG_UUID_V5=y
       - CONFIG_MBEDTLS=y
-      - CONFIG_MBEDTLS_MD=y
-      - CONFIG_MBEDTLS_SHA1=y
+      - CONFIG_MBEDTLS_PSA_CRYPTO_C=y
+      - CONFIG_PSA_WANT_ALG_SHA_1=y
       - CONFIG_UUID_BASE64=y
       - CONFIG_BASE64=y
       # UUID utilities need some heap, but MINIMAL_LIBC has none by default.

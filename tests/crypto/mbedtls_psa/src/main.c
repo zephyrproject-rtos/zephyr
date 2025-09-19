@@ -39,4 +39,21 @@ ZTEST_USER(test_mbedtls_psa, test_md5)
 	zassert_mem_equal(out_buf, out_buf_ref, sizeof(out_buf_ref));
 }
 
+ZTEST_USER(test_mbedtls_psa, test_sha1)
+{
+	uint8_t in_buf[] = { 'a' };
+	uint8_t out_buf[PSA_HASH_LENGTH(PSA_ALG_SHA_1)] = { 0 };
+	uint8_t out_buf_ref[PSA_HASH_LENGTH(PSA_ALG_SHA_1)] = {
+		0x86, 0xf7, 0xe4, 0x37, 0xfa, 0xa5, 0xa7, 0xfc, 0xe1, 0x5d,
+		0x1d, 0xdc, 0xb9, 0xea, 0xea, 0xea, 0x37, 0x76, 0x67, 0xb8
+	};
+	size_t out_len;
+	psa_status_t status;
+
+	status = psa_hash_compute(PSA_ALG_SHA_1, in_buf, sizeof(in_buf),
+				  out_buf, sizeof(out_buf), &out_len);
+	zassert_equal(status, PSA_SUCCESS);
+	zassert_mem_equal(out_buf, out_buf_ref, sizeof(out_buf_ref));
+}
+
 ZTEST_SUITE(test_mbedtls_psa, NULL, NULL, NULL, NULL, NULL);

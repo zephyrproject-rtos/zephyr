@@ -215,7 +215,7 @@ static int on_header_value(struct http_parser *parser, const char *at,
 
 		ret = base64_encode(str, sizeof(str) - 1, &olen,
 				    ctx->sec_accept_key,
-				    WS_SHA1_OUTPUT_LEN);
+				    PSA_HASH_LENGTH(PSA_ALG_SHA_1));
 		if (ret == 0) {
 			if (strncmp(at, str, length)) {
 				NET_DBG("[%p] Security keys do not match "
@@ -241,7 +241,8 @@ int websocket_connect(int sock, struct websocket_request *wreq,
 	 * of this function call so there is no issue even if this variable
 	 * is allocated from stack.
 	 */
-	uint8_t sec_accept_key[WS_SHA1_OUTPUT_LEN];
+	uint8_t sec_accept_key[PSA_HASH_LENGTH(PSA_ALG_SHA_1)];
+	size_t sec_accept_key_len;
 	struct http_parser_settings http_parser_settings;
 	struct websocket_context *ctx;
 	struct http_request req;
@@ -289,7 +290,6 @@ int websocket_connect(int sock, struct websocket_request *wreq,
 	ctx->http_cb = wreq->http_cb;
 	ctx->is_client = 1;
 
-#ifdef CONFIG_MBEDTLS_PSA_CRYPTO_CLIENT
 	psa_status = psa_hash_compute(PSA_ALG_SHA_1, (const uint8_t *)&rnd_value, sizeof(rnd_value),
 				      sec_accept_key, sizeof(sec_accept_key), &hash_length);
 	if (psa_status != PSA_SUCCESS) {
@@ -297,15 +297,6 @@ int websocket_connect(int sock, struct websocket_request *wreq,
 		ret = -EPROTO;
 		goto out;
 	}
-#else
-	ret = mbedtls_sha1((const unsigned char *)&rnd_value, sizeof(rnd_value), sec_accept_key);
-	if (ret != 0) {
-		NET_DBG("[%p] Cannot calculate sha1 (%d)", ctx, ret);
-		ret = -EPROTO;
-		goto out;
-	}
-#endif /* CONFIG_MBEDTLS_PSA_CRYPTO_CLIENT */
-
 
 	ret = base64_encode(sec_ws_key + sizeof("Sec-Websocket-Key: ") - 1,
 			    sizeof(sec_ws_key) -
@@ -368,7 +359,6 @@ int websocket_connect(int sock, struct websocket_request *wreq,
 	strncpy(key_accept + key_len, WS_MAGIC, olen);
 
 	/* This SHA-1 value is then checked when we receive the response */
-#ifdef CONFIG_MBEDTLS_PSA_CRYPTO_CLIENT
 	psa_status = psa_hash_compute(PSA_ALG_SHA_1, (const uint8_t *)key_accept, olen + key_len,
 				      sec_accept_key, sizeof(sec_accept_key), &hash_length);
 	if (psa_status != PSA_SUCCESS) {
@@ -376,14 +366,6 @@ int websocket_connect(int sock, struct websocket_request *wreq,
 		ret = -EPROTO;
 		goto out;
 	}
-#else
-	ret = mbedtls_sha1(key_accept, olen + key_len, sec_accept_key);
-	if (ret != 0) {
-		NET_DBG("[%p] Cannot calculate sha1 (%d)", ctx, ret);
-		ret = -EPROTO;
-		goto out;
-	}
-#endif /* CONFIG_MBEDTLS_PSA_CRYPTO_CLIENT */
 
 	ret = http_client_req(sock, &req, timeout, ctx);
 	if (ret < 0) {

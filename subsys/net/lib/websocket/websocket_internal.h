@@ -12,8 +12,6 @@
 
 #include <zephyr/toolchain/common.h>
 
-#define WS_SHA1_OUTPUT_LEN 20
-
 /* Min Websocket header length */
 #define MIN_HEADER_LEN 2
 
