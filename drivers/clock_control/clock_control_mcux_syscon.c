@@ -15,9 +15,48 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(clock_control);
 
-static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
-					    clock_control_subsys_t sub_system)
+struct lpc_syscon_spec {
+	uint32_t name;
+};
+
+static int lpc_syscon_get_spec(clock_control_subsys_t subsys, struct lpc_syscon_spec *spec)
 {
+	struct clock_control_dt_spec *dt_spec = subsys;
+
+	if (dt_spec->len != 1) {
+		return -EINVAL;
+	}
+
+	spec->name = *(dt_spec->cells);
+
+	return 0;
+}
+
+static int lpc_syscon_get_name(clock_control_subsys_t dt_spec, uint32_t *name)
+{
+	struct lpc_syscon_spec spec;
+	int ret;
+
+	ret = lpc_syscon_get_spec(dt_spec, &spec);
+	if (ret) {
+		return ret;
+	}
+
+	*name = spec.name;
+
+	return 0;
+}
+
+static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
+					    clock_control_subsys_t subsys)
+{
+	uint32_t sub_system;
+
+	lpc_syscon_get_name(subsys, &sub_system);
+	if (ret) {
+		return ret;
+	}
+
 #if defined(CONFIG_CAN_MCUX_MCAN)
 	if ((uint32_t)sub_system == MCUX_MCAN_CLK) {
 		CLOCK_EnableClock(kCLOCK_Mcan);
@@ -149,7 +188,12 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(const struct device *de
 							 clock_control_subsys_t sub_system,
 							 uint32_t *rate)
 {
-	uint32_t clock_name = (uint32_t)sub_system;
+	uint32_t clock_name = 0;
+
+	lpc_syscon_get_name(sub_system, &clock_name);
+	if (ret) {
+		return ret;
+	}
 
 	switch (clock_name) {
 
@@ -602,8 +646,13 @@ __weak int flexspi_clock_set_freq(uint32_t clock_name, uint32_t freq)
 static int SYSCON_SET_FUNC_ATTR mcux_lpc_syscon_clock_control_set_subsys_rate(
 	const struct device *dev, clock_control_subsys_t subsys, clock_control_subsys_rate_t rate)
 {
-	uint32_t clock_name = (uintptr_t)subsys;
+	uint32_t clock_name;
 	uint32_t clock_rate = (uintptr_t)rate;
+
+	lpc_syscon_get_name(subsys, &clock_name);
+	if (ret) {
+		return ret;
+	}
 
 	switch (clock_name) {
 	case MCUX_FLEXSPI_CLK:
@@ -632,10 +681,16 @@ static int SYSCON_SET_FUNC_ATTR mcux_lpc_syscon_clock_control_set_subsys_rate(
 static int mcux_lpc_syscon_clock_control_configure(const struct device *dev,
 						   clock_control_subsys_t sub_system, void *data)
 {
+	uint32_t clock_name = 0;
+	int flexcomm_num = -1;
+
+	lpc_syscon_get_name(sub_system, &clock_name);
+	if (ret) {
+		return ret;
+	}
+
 #ifdef CONFIG_SOC_SERIES_RW6XX
 #define FLEXCOMM_LP_CLK_DECODE(n) (n & 0x80)
-	uint32_t clock_name = (uint32_t)sub_system;
-	int flexcomm_num = -1;
 
 	switch (clock_name) {
 	case MCUX_FLEXCOMM0_CLK:

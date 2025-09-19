@@ -1417,8 +1417,7 @@ static void serial_mcux_flexcomm_##n##_pm_exit(enum pm_state state)		\
 static const struct mcux_flexcomm_config mcux_flexcomm_##n##_config = {		\
 	.base = (USART_Type *)DT_INST_REG_ADDR(n),				\
 	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),			\
-	.clock_subsys =								\
-	(clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),			\
+	.clock_subsys =	CLOCK_CONTROL_DT_SPEC_INST_GET(n, clocks),		\
 	.baud_rate = DT_INST_PROP(n, current_speed),				\
 	.parity = DT_INST_ENUM_IDX(n, parity),					\
 	.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),				\
@@ -1437,6 +1436,8 @@ static struct mcux_flexcomm_data mcux_flexcomm_##n##_data = {			\
 #define UART_MCUX_FLEXCOMM_INIT(n)						\
 										\
 	PINCTRL_DT_INST_DEFINE(n);						\
+										\
+	CLOCK_CONTROL_DT_SPEC_INST_DEFINE(n, clocks);				\
 										\
 	UART_MCUX_FLEXCOMM_PM_UNLOCK_FUNC_DEFINE(n)				\
 	UART_MCUX_FLEXCOMM_WAKEUP_CFG_DEFINE(n)					\
