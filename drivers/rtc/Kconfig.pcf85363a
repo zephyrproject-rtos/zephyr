@@ -1,0 +1,11 @@
+# NXP PCF85363A RTC
+
+# Copyright (c) 2025 Byteflies
+
+config RTC_PCF85363A
+    bool "NXP PCF85363A RTC driver"
+    default y
+    depends on DT_HAS_NXP_PCF85363A_ENABLED
+    select I2C
+    help
+      Enable the NXP PCF85363A RTC driver.

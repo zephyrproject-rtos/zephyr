@@ -1,0 +1,25 @@
+# Copyright (c) 2025 Byteflies NV
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP PCF85363A RTC
+
+compatible: "nxp,pcf85363a"
+
+include:
+  - name: rtc-device.yaml
+  - name: i2c-device.yaml
+  - name: pm.yaml
+    property-allowlist:
+      - wakeup-source
+
+
+properties:
+  int_a_gpios:
+    type: phandle-array
+    description: |
+      GPIO connected to the PCF85363A INT_A interrupt output. This signal is open-drain, active low.
+
+  int_b_gpios:
+    type: phandle-array
+    description: |
+      GPIO connected to the PCF85363A INT_B interrupt output. This signal is open-drain, active low.
