@@ -4113,6 +4113,24 @@ class Symbol(object):
       The visibility of the symbol. One of 0, 1, 2, representing n, m, y. See
       the module documentation for an overview of symbol values and visibility.
 
+    origin:
+      A (kind, loc) tuple containing information about how and where a symbol's
+      final value is derived, or None if the symbol is hidden from the
+      configuration and can't be given a value.
+
+      There can be 5 kinds of origins of a symbol's value:
+      - "assign", when it was set by the user (via CONFIG_xx=y)
+      - "default", when it was set by a 'default' property
+      - "select", when it was set by a 'select' statement on another symbol
+      - "imply", when it was set by an 'imply' statement on another symbol
+      - "unset", when none of the above applied
+      The location can be either:
+       - None, if the value is unset, has an implicit default, or no location
+         was provided in set_value();
+       - a (filename, linenr) tuple, if the value was set by a single line;
+       - a list of strings describing the conditions that resulted in the
+         value being set, in case of reverse dependencies (select and imply).
+
     config_string:
       The .config assignment string that would get written out for the symbol
       by Kconfig.write_config(). Returns the empty string if no .config
@@ -4281,6 +4299,7 @@ class Symbol(object):
         "_cached_vis",
         "_dependents",
         "_old_val",
+        "_origin",
         "_visited",
         "_was_set",
         "_write_to_conf",
@@ -4342,6 +4361,7 @@ class Symbol(object):
             return self.name
 
         val = ""
+        self._origin = None
         # Warning: See Symbol._rec_invalidate(), and note that this is a hidden
         # function call (property magic)
         vis = self.visibility
@@ -4393,6 +4413,7 @@ class Symbol(object):
                     # specified in the assignment (with or without "0x", etc.)
                     val = self.user_value
                     use_defaults = False
+                    self._origin = _T_CONFIG, self.user_loc
 
             if use_defaults:
                 # No user value or invalid user value. Look at defaults.
@@ -4400,11 +4421,12 @@ class Symbol(object):
                 # Used to implement the warning below
                 has_default = False
 
-                for sym, cond, _ in self.defaults:
+                for sym, cond, loc in self.defaults:
                     if expr_value(cond):
                         has_default = self._write_to_conf = True
 
                         val = sym.str_value
+                        self._origin = _T_DEFAULT, loc
 
                         if _is_base_n(val, base):
                             val_num = int(val, base)
@@ -4414,6 +4436,7 @@ class Symbol(object):
                         break
                 else:
                     val_num = 0  # strtoll() on empty string
+                    self._origin = _T_DEFAULT, None
 
                 # This clamping procedure runs even if there's no default
                 if has_active_range:
@@ -4443,12 +4466,14 @@ class Symbol(object):
             if vis and self.user_value is not None:
                 # If the symbol is visible and has a user value, use that
                 val = self.user_value
+                self._origin = _T_CONFIG, self.user_loc
             else:
                 # Otherwise, look at defaults
-                for sym, cond, _ in self.defaults:
+                for sym, cond, loc in self.defaults:
                     if expr_value(cond):
                         val = sym.str_value
                         self._write_to_conf = True
+                        self._origin = _T_DEFAULT, loc
                         break
 
         # env_var corresponds to SYMBOL_AUTO in the C implementation, and is
@@ -4494,17 +4519,19 @@ class Symbol(object):
             if vis and self.user_value is not None:
                 # If the symbol is visible and has a user value, use that
                 val = min(self.user_value, vis)
+                self._origin = _T_CONFIG, self.user_loc
 
             else:
                 # Otherwise, look at defaults and weak reverse dependencies
                 # (implies)
 
-                for default, cond, _ in self.defaults:
+                for default, cond, loc in self.defaults:
                     dep_val = expr_value(cond)
                     if dep_val:
                         val = min(expr_value(default), dep_val)
                         if val:
                             self._write_to_conf = True
+                            self._origin = _T_DEFAULT, loc
                         break
 
                 # Weak reverse dependencies are only considered if our
@@ -4513,6 +4540,7 @@ class Symbol(object):
                 if dep_val and expr_value(self.direct_dep):
                     val = max(dep_val, val)
                     self._write_to_conf = True
+                    self._origin = _T_IMPLY, None # expanded later
 
             # Reverse (select-related) dependencies take precedence
             dep_val = expr_value(self.rev_dep)
@@ -4522,6 +4550,7 @@ class Symbol(object):
 
                 val = max(dep_val, val)
                 self._write_to_conf = True
+                self._origin = _T_SELECT, None # expanded later
 
             # m is promoted to y for (1) bool symbols and (2) symbols with a
             # weak_rev_dep (from imply) of y
@@ -4534,6 +4563,8 @@ class Symbol(object):
             # the visibility of choice symbols, so it's sufficient to just
             # check the visibility of the choice symbols themselves.
             val = 2 if self.choice.selection is self else 0
+            self._origin = self.choice._origin \
+                           if self.choice.selection is self else None
 
         elif vis and self.user_value:
             # Visible choice symbol in m-mode choice, with set non-0 user value
@@ -4559,6 +4590,38 @@ class Symbol(object):
         if self._cached_vis is None:
             self._cached_vis = _visibility(self)
         return self._cached_vis
+
+    @property
+    def origin(self):
+        """
+        See the class documentation.
+        """
+        # Reading 'str_value' computes _write_to_conf and _origin.
+        _ = self.str_value
+        if not self._write_to_conf:
+            return None
+
+        if not self._origin:
+            return (KIND_TO_STR[UNKNOWN], None)
+
+        kind, loc = self._origin
+
+        if kind == _T_SELECT:
+            # calculate subexpressions that contribute to the value
+            loc = [ expr_str(subexpr)
+                    for subexpr in split_expr(self.rev_dep, OR)
+                    if expr_value(subexpr) ]
+        elif kind == _T_IMPLY:
+            # calculate subexpressions that contribute to the value
+            loc = [ expr_str(subexpr)
+                    for subexpr in split_expr(self.weak_rev_dep, OR)
+                    if expr_value(subexpr) ]
+        elif isinstance(loc, tuple) and not os.path.isabs(loc[0]):
+            # convert filename to absolute
+            fn, ln = loc
+            loc = os.path.abspath(os.path.join(self.kconfig.srctree, fn)), ln
+
+        return (KIND_TO_STR[kind], loc)
 
     @property
     def config_string(self):
@@ -4841,6 +4904,7 @@ class Symbol(object):
         self.user_value = \
         self.choice = \
         self.env_var = \
+        self._origin = \
         self._cached_str_val = self._cached_tri_val = self._cached_vis = \
         self._cached_assignable = None
 
@@ -5199,6 +5263,7 @@ class Choice(object):
         "_cached_selection",
         "_cached_vis",
         "_dependents",
+        "_origin",
         "_visited",
         "_was_set",
         "defaults",
@@ -5442,6 +5507,7 @@ class Choice(object):
 
         self.name = \
         self.user_value = self.user_selection = \
+        self.user_loc = self._origin = \
         self._cached_vis = self._cached_assignable = None
 
         self._cached_selection = _NO_CACHED_SELECTION
@@ -5483,6 +5549,7 @@ class Choice(object):
 
         # Use the user selection if it's visible
         if self.user_selection and self.user_selection.visibility:
+            self._origin = _T_CONFIG, self.user_loc
             return self.user_selection
 
         # Otherwise, check if we have a default
@@ -5490,20 +5557,23 @@ class Choice(object):
 
     def _selection_from_defaults(self):
         # Check if we have a default
-        for sym, cond, _ in self.defaults:
+        for sym, cond, loc in self.defaults:
             # The default symbol must be visible too
             if expr_value(cond) and sym.visibility:
+                self._origin = _T_DEFAULT, loc
                 return sym
 
         # Otherwise, pick the first visible symbol, if any
         for sym in self.syms:
             if sym.visibility:
+                self._origin = _T_DEFAULT, None
                 return sym
 
         # Couldn't find a selection
         return None
 
     def _invalidate(self):
+        self.user_loc = self._origin = \
         self._cached_vis = self._cached_assignable = None
         self._cached_selection = _NO_CACHED_SELECTION
 
@@ -7184,6 +7254,15 @@ _RELATIONS = frozenset({
     GREATER,
     GREATER_EQUAL,
 })
+
+# Origin kinds map
+KIND_TO_STR = {
+    UNKNOWN:    "unset",    # value not set
+    _T_CONFIG:  "assign",   # explicit assignment
+    _T_DEFAULT: "default",  # 'default' statement
+    _T_SELECT:  "select",   # 'select' statement
+    _T_IMPLY:   "imply",    # 'imply' statement
+}
 
 # Helper functions for getting compiled regular expressions, with the needed
 # matching function returned directly as a small optimization.
