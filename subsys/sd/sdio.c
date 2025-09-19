@@ -549,6 +549,7 @@ int sdio_card_init(struct sd_card *card)
 {
 	int ret;
 	uint32_t ocr_arg = 0U;
+	uint32_t cid[4] = {0};
 
 	/* Probe card with SDIO OCR CM5 */
 	ret = sdio_send_ocr(card, ocr_arg);
@@ -609,7 +610,7 @@ int sdio_card_init(struct sd_card *card)
 		if ((card->flags & SD_MEM_PRESENT_FLAG) &&
 			((card->flags & SD_SDHC_FLAG) == 0)) {
 			/* We must send CMD2 to get card cid */
-			ret = card_read_cid(card);
+			ret = card_read_cid(card, cid);
 			if (ret) {
 				return ret;
 			}

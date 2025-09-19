@@ -73,8 +73,9 @@ extern "C" {
  * requested, but this operation is inherently unsafe.
  */
 #define DISK_IOCTL_CTRL_DEINIT			7
-/* Get Card identification info. Only available with SDMMC and SDIO.
- * Takes a struct sd_cid pointer as the `buf` parameter from sd/sd_spec.h
+/** Get Card identification (CID) register value.
+ * Passed buffer must be four 32-bit integer long to hold CID register value
+ * read from the card.
  */
 #define DISK_IOCTL_GET_CARD_CID			8
 

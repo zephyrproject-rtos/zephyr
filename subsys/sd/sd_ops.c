@@ -281,12 +281,12 @@ int sdmmc_read_csd(struct sd_card *card)
 }
 
 /* Reads card identification register, and decodes it */
-int card_read_cid(struct sd_card *card)
+int card_read_cid(struct sd_card *card, uint32_t *cid)
 {
-	uint32_t cid[4];
 	int ret;
 #if defined(CONFIG_SDMMC_STACK) || defined(CONFIG_SDIO_STACK)
-	memset(&card->cid, 0, sizeof(card->cid));
+	/* Keep CID on stack for reduced RAM usage */
+	struct sd_cid card_cid = {0};
 #endif
 
 	if (card->host_props.is_spi && IS_ENABLED(CONFIG_SDHC_SUPPORTS_SPI_MODE)) {
@@ -309,9 +309,9 @@ int card_read_cid(struct sd_card *card)
 #endif
 #if defined(CONFIG_SDMMC_STACK) || defined(CONFIG_SDIO_STACK)
 	/* Decode SD CID */
-	sdmmc_decode_cid(&card->cid, cid);
-	LOG_DBG("Card MID: 0x%x, OID: %c%c", card->cid.manufacturer,
-		((char *)&card->cid.application)[0], ((char *)&card->cid.application)[1]);
+	sdmmc_decode_cid(&card_cid, cid);
+	LOG_DBG("Card MID: 0x%x, OID: %c%c", card_cid.manufacturer,
+		((char *)&card_cid.application)[0], ((char *)&card_cid.application)[1]);
 #endif
 
 	return 0;
@@ -884,11 +884,7 @@ int card_ioctl(struct sd_card *card, uint8_t cmd, void *buf)
 		ret = sdhc_set_io(card->sdhc, &card->bus_io);
 		break;
 	case DISK_IOCTL_GET_CARD_CID:
-#if defined(CONFIG_SDMMC_STACK) || defined(CONFIG_SDIO_STACK)
-		(*(struct sd_cid *)buf) = card->cid;
-#else
-		ret = -ENOTSUP;
-#endif
+		ret = card_read_cid(card, buf);
 		break;
 	default:
 		ret = -ENOTSUP;
