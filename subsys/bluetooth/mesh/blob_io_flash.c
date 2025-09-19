@@ -12,13 +12,17 @@
 #include "net.h"
 #include "transport.h"
 
-#define WRITE_BLOCK_SIZE DT_PROP(DT_INST(0, soc_nv_flash), write_block_size)
+#define LOG_LEVEL CONFIG_BT_MESH_MODEL_LOG_LEVEL
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(bt_mesh_blob_io_flash);
 
 #define FLASH_IO(_io) CONTAINER_OF(_io, struct bt_mesh_blob_io_flash, io)
 
 static int test_flash_area(uint8_t area_id)
 {
+	const struct flash_parameters *fparam;
 	const struct flash_area *area;
+	const struct device *fdev;
 	uint8_t align;
 	int err;
 
@@ -28,9 +32,19 @@ static int test_flash_area(uint8_t area_id)
 	}
 
 	align = flash_area_align(area);
+	fdev = flash_area_get_device(area);
+	fparam = flash_get_parameters(fdev);
+
 	flash_area_close(area);
 
-	if (align > WRITE_BLOCK_SIZE) {
+	if (!fdev) {
+		return -ENODEV;
+	}
+
+	if ((flash_params_get_erase_cap(fparam) & FLASH_ERASE_C_EXPLICIT) &&
+	    CONFIG_BT_MESH_BLOB_IO_FLASH_WRITE_BLOCK_SIZE_MAX % align) {
+		LOG_ERR("CONFIG_BT_MESH_BLOB_IO_FLASH_WRITE_BLOCK_SIZE_MAX must be set to a\n"
+			"multiple of the write block size for the flash deviced used.");
 		return -EINVAL;
 	}
 
@@ -126,30 +140,49 @@ static int wr_chunk(const struct bt_mesh_blob_io *io,
 		    const struct bt_mesh_blob_chunk *chunk)
 {
 	struct bt_mesh_blob_io_flash *flash = FLASH_IO(io);
+	const struct device *fdev = flash_area_get_device(flash->area);
 
-	if (IS_ENABLED(CONFIG_SOC_FLASH_NRF_RRAM)) {
+	if (!fdev) {
+		return -ENODEV;
+	}
+
+	const struct flash_parameters *fparam = flash_get_parameters(fdev);
+
+	/*
+	 * If device has no erase requirement then write directly.
+	 * This is required since trick with padding using the erase value will
+	 * not work in this case.
+	 */
+	if (!(flash_params_get_erase_cap(fparam) & FLASH_ERASE_C_EXPLICIT)) {
 		return flash_area_write(flash->area,
 					flash->offset + block->offset + chunk->offset,
 					chunk->data, chunk->size);
 	}
 
-	uint8_t buf[ROUND_UP(BLOB_RX_CHUNK_SIZE, WRITE_BLOCK_SIZE)];
+	/*
+	 * Allocate one additional write block for the case where a chunk will need
+	 * an extra write block on both sides to fit.
+	 */
+	uint8_t buf[ROUND_UP(BLOB_RX_CHUNK_SIZE, CONFIG_BT_MESH_BLOB_IO_FLASH_WRITE_BLOCK_SIZE_MAX)
+		    + CONFIG_BT_MESH_BLOB_IO_FLASH_WRITE_BLOCK_SIZE_MAX];
+	uint32_t write_block_size = flash_area_align(flash->area);
 	off_t area_offset = flash->offset + block->offset + chunk->offset;
-	int i = 0;
+	int start_pad = area_offset % write_block_size;
 
-	/* Write block align the chunk data */
-	memset(&buf[i], 0xff, area_offset % WRITE_BLOCK_SIZE);
-	i += area_offset % WRITE_BLOCK_SIZE;
+	/*
+	 * Fill buffer with erase value, to make sure only the part of the
+	 * buffer with chunk data will overwrite flash.
+	 * (Because chunks can arrive in random order, this is required unless
+	 *  the entire block is cached in RAM).
+	 */
+	memset(buf, fparam->erase_value, sizeof(buf));
 
-	memcpy(&buf[i], chunk->data, chunk->size);
-	i += chunk->size;
-
-	memset(&buf[i], 0xff, ROUND_UP(i, WRITE_BLOCK_SIZE) - i);
-	i = ROUND_UP(i, WRITE_BLOCK_SIZE);
+	memcpy(&buf[start_pad], chunk->data, chunk->size);
 
 	return flash_area_write(flash->area,
-				ROUND_DOWN(area_offset, WRITE_BLOCK_SIZE),
-				buf, i);
+				ROUND_DOWN(area_offset, write_block_size),
+				buf,
+				ROUND_UP(start_pad + chunk->size, write_block_size));
 }
 
 int bt_mesh_blob_io_flash_init(struct bt_mesh_blob_io_flash *flash,
