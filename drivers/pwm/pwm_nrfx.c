@@ -19,10 +19,7 @@
 
 LOG_MODULE_REGISTER(pwm_nrfx, CONFIG_PWM_LOG_LEVEL);
 
-/* NRFX_PWM_NRF52_ANOMALY_109_WORKAROUND_ENABLED can be undefined or defined
- * to 0 or 1, hence the use of #if IS_ENABLED().
- */
-#if IS_ENABLED(NRFX_PWM_NRF52_ANOMALY_109_WORKAROUND_ENABLED)
+#if NRF_ERRATA_STATIC_CHECK(52, 109)
 #define ANOMALY_109_EGU_IRQ_CONNECT(idx) _EGU_IRQ_CONNECT(idx)
 #define _EGU_IRQ_CONNECT(idx) \
 	extern void nrfx_egu_##idx##_irq_handler(void); \
