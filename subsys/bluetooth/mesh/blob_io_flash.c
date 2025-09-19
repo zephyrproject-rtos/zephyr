@@ -56,42 +56,38 @@ static void io_close(const struct bt_mesh_blob_io *io,
 	flash_area_close(flash->area);
 }
 
+/* Erasure code not needed if no flash in the system requires explicit erase */
+#ifdef CONFIG_BT_MESH_BLOB_IO_FLASH_WITH_ERASE
 static inline int erase_device_block(const struct flash_area *fa, off_t start, size_t size)
 {
-	/* If there are no devices requiring erase, then there is nothing to do */
-	if (IS_ENABLED(CONFIG_BT_MESH_BLOB_IO_FLASH_WITH_ERASE)) {
-		const struct device *fdev = flash_area_get_device(fa);
+	const struct device *fdev = flash_area_get_device(fa);
+	struct flash_pages_info page;
+	int err;
 
-		if (!fdev) {
-			return -ENODEV;
-		}
-
-		/* We have a mix of devices in system */
-		if (IS_ENABLED(CONFIG_BT_MESH_BLOB_IO_FLASH_WITHOUT_ERASE)) {
-			const struct flash_parameters *fparam = flash_get_parameters(fdev);
-
-			/* If device has no erase requirement then do nothing */
-			if (!(flash_params_get_erase_cap(fparam) & FLASH_ERASE_C_EXPLICIT)) {
-				return 0;
-			}
-		}
-
-		if (IS_ENABLED(CONFIG_FLASH_PAGE_LAYOUT)) {
-			struct flash_pages_info page;
-			int err;
-
-			err = flash_get_page_info_by_offs(fdev, start, &page);
-			if (err) {
-				return err;
-			}
-
-			size = page.size * DIV_ROUND_UP(size, page.size);
-			start = page.start_offset;
-		}
-		return flash_area_erase(fa, start, size);
+	if (!fdev) {
+		return -ENODEV;
 	}
 
-	return 0;
+#ifdef CONFIG_BT_MESH_BLOB_IO_FLASH_WITHOUT_ERASE
+	/* We have a mix of devices in system */
+	const struct flash_parameters *fparam = flash_get_parameters(fdev);
+
+	/* If device has no erase requirement then do nothing */
+	if (!(flash_params_get_erase_cap(fparam) & FLASH_ERASE_C_EXPLICIT)) {
+		return 0;
+	}
+#endif /* CONFIG_BT_MESH_BLOB_IO_FLASH_WITHOUT_ERASE */
+
+	err = flash_get_page_info_by_offs(fdev, start, &page);
+	if (err) {
+		return err;
+	}
+
+	/* Align to page boundary. */
+	size = page.size * DIV_ROUND_UP(size, page.size);
+	start = page.start_offset;
+
+	return flash_area_erase(fa, start, size);
 }
 
 static int block_start(const struct bt_mesh_blob_io *io,
@@ -106,6 +102,7 @@ static int block_start(const struct bt_mesh_blob_io *io,
 
 	return erase_device_block(flash->area, flash->offset + block->offset, block->size);
 }
+#endif /* CONFIG_BT_MESH_BLOB_IO_FLASH_WITH_ERASE */
 
 static int rd_chunk(const struct bt_mesh_blob_io *io,
 		    const struct bt_mesh_blob_xfer *xfer,
@@ -165,7 +162,11 @@ int bt_mesh_blob_io_flash_init(struct bt_mesh_blob_io_flash *flash,
 	flash->offset = offset;
 	flash->io.open = io_open;
 	flash->io.close = io_close;
+#ifdef CONFIG_BT_MESH_BLOB_IO_FLASH_WITH_ERASE
 	flash->io.block_start = block_start;
+#else
+	flash->io.block_start = NULL;
+#endif
 	flash->io.block_end = NULL;
 	flash->io.rd = rd_chunk;
 	flash->io.wr = wr_chunk;
