@@ -274,6 +274,27 @@ config ARM_STORE_EXC_RETURN
 	  This is needed when switching between threads that differ in either
 	  FPU usage or security domain.
 
+config ISR_STACKS_USE_DTCM_SECTION
+	bool "Place ISR stacks in DTCM section"
+	depends on CPU_CORTEX_M
+	help
+	  This option places the ISR stacks in the DTCM section. This can
+	  improve performance while executing interrupts
+
+config IDLE_STACKS_USE_DTCM_SECTION
+	bool "Place Idle stacks in DTCM section"
+	depends on CPU_CORTEX_M
+	help
+	  This option places the Idle stacks in the DTCM section. This can
+	  reduce cache thrashing when the idle thread is swapped in/out
+
+config MAIN_STACK_USE_DTCM_SECTION
+	bool "Place Main stack in DTCM section"
+	depends on CPU_CORTEX_M
+	help
+	  This option places the Main stack in the DTCM section. This can
+	  reduce cache thrashing when the main thread is swapped in/out
+
 choice
 	prompt "Floating point ABI"
 	default FP_HARDABI
