@@ -19,6 +19,11 @@
 #define VIDEO_CTRL_FLAG_INACTIVE   BIT(3)
 /** Control that affects other controls, e.g. the primary control of a cluster */
 #define VIDEO_CTRL_FLAG_UPDATE     BIT(4)
+/**
+ * Control is executed immediately when set, and driver callback is invoked even if the value
+ * hasn't changed
+ */
+#define VIDEO_CTRL_FLAG_EXECUTE_ON_WRITE BIT(5)
 
 enum video_ctrl_type {
 	/** Boolean type */
@@ -33,6 +38,8 @@ enum video_ctrl_type {
 	VIDEO_CTRL_TYPE_STRING = 5,
 	/** Menu integer type, standard or driver-defined menu */
 	VIDEO_CTRL_TYPE_INTEGER_MENU = 6,
+	/** Command-like type, triggers an action when written, without storing a value */
+	VIDEO_CTRL_TYPE_BUTTON = 7,
 };
 
 struct video_device;

@@ -111,6 +111,13 @@ static inline void set_type_flag(uint32_t id, enum video_ctrl_type *type, uint32
 	case VIDEO_CID_LINK_FREQ:
 		*type = VIDEO_CTRL_TYPE_INTEGER_MENU;
 		break;
+	case VIDEO_CID_PAN_RELATIVE:
+	case VIDEO_CID_TILT_RELATIVE:
+	case VIDEO_CID_FOCUS_RELATIVE:
+	case VIDEO_CID_IRIS_RELATIVE:
+	case VIDEO_CID_ZOOM_RELATIVE:
+		*flags |= VIDEO_CTRL_FLAG_WRITE_ONLY | VIDEO_CTRL_FLAG_EXECUTE_ON_WRITE;
+		break;
 	default:
 		*type = VIDEO_CTRL_TYPE_INTEGER;
 		break;
@@ -122,7 +129,7 @@ int video_init_ctrl(struct video_ctrl *ctrl, const struct device *dev, uint32_t 
 {
 	int ret;
 	uint32_t flags;
-	enum video_ctrl_type type;
+	enum video_ctrl_type type = VIDEO_CTRL_TYPE_INTEGER;
 	struct video_ctrl *vc;
 	struct video_device *vdev;
 
@@ -161,6 +168,10 @@ int video_init_ctrl(struct video_ctrl *ctrl, const struct device *dev, uint32_t 
 		ctrl->val64 = range.def64;
 	} else {
 		ctrl->val = range.def;
+	}
+
+	if (type == VIDEO_CTRL_TYPE_BUTTON) {
+		ctrl->flags |= VIDEO_CTRL_FLAG_WRITE_ONLY | VIDEO_CTRL_FLAG_EXECUTE_ON_WRITE;
 	}
 
 	/* Insert in an ascending order of ctrl's id */
@@ -363,8 +374,10 @@ int video_set_ctrl(const struct device *dev, struct video_control *control)
 	}
 
 	/* No new value */
-	if (ctrl->type == VIDEO_CTRL_TYPE_INTEGER64 ? ctrl->val64 == control->val64
-						    : ctrl->val == control->val) {
+	if (!(ctrl->flags & VIDEO_CTRL_FLAG_EXECUTE_ON_WRITE) &&
+			    ctrl->type == VIDEO_CTRL_TYPE_INTEGER64
+		    ? ctrl->val64 == control->val64
+		    : ctrl->val == control->val) {
 		return 0;
 	}
 
