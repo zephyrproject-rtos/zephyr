@@ -130,6 +130,12 @@ should be called. It can be called from the entry, run, or exit actions. The
 function takes a non-zero user defined value that will be returned by the
 :c:func:`smf_run_state` function.
 
+Retreive the Current Executing State
+====================================
+
+To retrieve the state that is currently being accessed, the :c:func:`smf_get_executing`
+function should be called.
+
 UML State Machines
 ==================
 
