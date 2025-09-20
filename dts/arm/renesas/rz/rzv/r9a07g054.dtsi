@@ -883,6 +883,48 @@
 			#mbox-cells = <1>;
 			status = "disabled";
 		};
+
+		gtm0: gtm@42801000 {
+			compatible = "renesas,rz-gtm";
+			reg = <0x42801000 0x400>;
+			channel = <0>;
+			interrupts = <46 1>;
+			interrupt-names = "overflow";
+			status = "disabled";
+
+			os_timer {
+				compatible = "renesas,rz-gtm-os-timer";
+				status = "disabled";
+			};
+		};
+
+		gtm1: gtm@42801400 {
+			compatible = "renesas,rz-gtm";
+			reg = <0x42801400 0x400>;
+			channel = <1>;
+			interrupts = <47 1>;
+			interrupt-names = "overflow";
+			status = "disabled";
+
+			os_timer {
+				compatible = "renesas,rz-gtm-os-timer";
+				status = "disabled";
+			};
+		};
+
+		gtm2: gtm@42801800 {
+			compatible = "renesas,rz-gtm";
+			reg = <0x42801800 0x400>;
+			channel = <2>;
+			interrupts = <48 1>;
+			interrupt-names = "overflow";
+			status = "disabled";
+
+			os_timer {
+				compatible = "renesas,rz-gtm-os-timer";
+				status = "disabled";
+			};
+		};
 	};
 };
 

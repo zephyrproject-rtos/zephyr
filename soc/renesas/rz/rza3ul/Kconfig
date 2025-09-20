@@ -4,6 +4,6 @@
 config SOC_SERIES_RZA3UL
 	select ARM64
 	select CPU_CORTEX_A55
-	select ARM_ARCH_TIMER
+	select ARM_ARCH_TIMER if !RZ_OS_TIMER
 	select HAS_RENESAS_RZ_FSP
 	select SOC_EARLY_INIT_HOOK
