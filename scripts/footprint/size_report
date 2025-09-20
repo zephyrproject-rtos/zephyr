@@ -752,6 +752,12 @@ def print_any_tree(root, total_size, depth):
     """
     Print the symbol tree.
     """
+    global args
+    maxItems = None
+
+    if args.maxItems and args.maxItems != 0:
+        maxItems = args.maxItems
+
     print('{:98s} {:>7s} {:>7s} {:11s} {:16s}'.format(
         Fore.YELLOW + "Path", "Size", "%", " Address", "Section" + Fore.RESET))
     print('=' * 138)
@@ -759,6 +765,18 @@ def print_any_tree(root, total_size, depth):
         f = len(row.pre) + len(row.node._name)
         s = str(row.node._size).rjust(100-f)
         percent = 100 * float(row.node._size) / float(total_size)
+
+        if args.lowestLimit and args.lowestLimit != 0:
+            # If the current symbol's footprint percentage is below the threshold -> skip it
+            if percent < args.lowestLimit:
+                continue
+
+        # Only print as many items as the user configured
+        if args.maxItems and args.maxItems != 0:
+            maxItems -= 1
+
+            if maxItems < 0:
+                break
 
         hex_addr = "-"
         section_name = ""
@@ -805,6 +823,10 @@ def parse_args():
     parser.add_argument("-v", "--verbose", action="store_true",
                         help="Print extra debugging information")
     parser.add_argument("--json", help="store results in a JSON file.")
+    parser.add_argument("-l", "--lowestLimit", dest="lowestLimit",
+                        type=int, default=0, help="set what percentage is the lowest limit for printing a symbol.")
+    parser.add_argument("-m", "--maxItems", dest="maxItems", 
+                        type=int, default=0, help="how many items in total should the script print.")
     args = parser.parse_args()
 
 
