@@ -10,8 +10,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Ruuvi RuuviTag";
 	compatible = "ruuvi,ruuvitag";
+	model = "Ruuvi RuuviTag";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -75,22 +75,22 @@
 };
 
 &uart0 {
-	status = "okay";
 	compatible = "nordic,nrf-uart";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &spi0 {
 	compatible = "nordic,nrf-spi";
-	status = "okay";
 	cs-gpios = <&gpio0 3 GPIO_ACTIVE_LOW>, <&gpio0 8 GPIO_ACTIVE_LOW>;
 
 	pinctrl-0 = <&spi0_default>;
 	pinctrl-1 = <&spi0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	bme280@0 {
 		compatible = "bosch,bme280";
@@ -113,23 +113,23 @@
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 0xc000>;
+			label = "mcuboot";
 		};
 
 		slot0_partition: partition@c000 {
-			label = "image-0";
 			reg = <0x0000C000 0x32000>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@3e000 {
-			label = "image-1";
 			reg = <0x0003E000 0x32000>;
+			label = "image-1";
 		};
 
 		scratch_partition: partition@70000 {
-			label = "image-scratch";
 			reg = <0x00070000 0xa000>;
+			label = "image-scratch";
 		};
 
 		/*
@@ -140,8 +140,8 @@
 		 * if enabled.
 		 */
 		storage_partition: partition@7a000 {
-			label = "storage";
 			reg = <0x0007a000 0x00006000>;
+			label = "storage";
 		};
 	};
 };

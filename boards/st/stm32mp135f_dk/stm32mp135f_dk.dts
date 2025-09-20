@@ -14,8 +14,8 @@
 #include <zephyr/dt-bindings/video/video-interfaces.h>
 
 / {
-	model = "STMicroelectronics STM32MP135-DK board";
 	compatible = "st,stm32mp135f-dk";
+	model = "STMicroelectronics STM32MP135-DK board";
 
 	chosen {
 		zephyr,flash = &ddr_code;
@@ -213,11 +213,15 @@ csi_interface: &dcmipp {
 	disp-on-gpios = <&gpioi 7 GPIO_ACTIVE_HIGH>;
 	bl-ctrl-gpios = <&gpioe 12 GPIO_ACTIVE_HIGH>;
 
-	status = "okay";
-
 	width = <480>;
 	height = <272>;
 	pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+
+	def-back-color-red = <0xFF>;
+	def-back-color-green = <0xFF>;
+	def-back-color-blue = <0xFF>;
+
+	status = "okay";
 
 	display-timings {
 		compatible = "zephyr,panel-timing";
@@ -232,10 +236,6 @@ csi_interface: &dcmipp {
 		hfront-porch = <32>;
 		vfront-porch = <2>;
 	};
-
-	def-back-color-red = <0xFF>;
-	def-back-color-green = <0xFF>;
-	def-back-color-blue = <0xFF>;
 };
 
 /*

@@ -9,8 +9,8 @@
 #include <ti/mspm0/l/mspm0l1105.dtsi>
 
 / {
-	model = "BeagleBoard.org PocketBeagle 2";
 	compatible = "beagle,pocketbeagle_2_mspm0l1105";
+	model = "BeagleBoard.org PocketBeagle 2";
 
 	chosen {
 		zephyr,sram = &sram0;

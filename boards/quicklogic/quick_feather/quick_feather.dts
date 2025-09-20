@@ -10,8 +10,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "QuickLogic Quick Feather board";
 	compatible = "quicklogic,eos_s3";
+	model = "QuickLogic Quick Feather board";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -82,8 +82,8 @@
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart_rx_default &uart_tx_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };

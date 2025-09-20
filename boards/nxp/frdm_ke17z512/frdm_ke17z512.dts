@@ -13,8 +13,8 @@
 #include <zephyr/dt-bindings/pwm/pwm.h>
 
 / {
-	model = "NXP Freedom KE17Z512 board";
 	compatible = "nxp,ke17z512", "nxp,mke17z9", "nxp,ke1xz";
+	model = "NXP Freedom KE17Z512 board";
 
 	chosen {
 		zephyr,sram = &sram_u;
@@ -134,18 +134,18 @@
 &lpuart2 {
 	dmas = <&edma 5 6>, <&edma 6 7>;
 	dma-names = "rx", "tx";
-	status = "okay";
 	pinctrl-0 = <&lpuart2_default>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
+	status = "okay";
 };
 
 &adc0 {
-	status = "okay";
 	sample-time = <12>;
 	vref-mv = <3300>;
 	pinctrl-0 = <&adc0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &gpiod {
@@ -163,24 +163,23 @@
 };
 
 &rtc {
-	status = "okay";
 	clock-source = "LPO";
+	status = "okay";
 };
 
 &lpi2c0 {
-	status = "okay";
 	pinctrl-0 = <&lpi2c0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &lpi2c1 {
-	status = "okay";
 	pinctrl-0 = <&lpi2c1_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &ftm2 {
-	status = "okay";
 	compatible = "nxp,ftm-pwm";
 	#pwm-cells = <3>;
 	clocks = <&scg KINETIS_SCG_SIRC_CLK>;
@@ -188,6 +187,7 @@
 	pinctrl-0 = <&ftm2_default>;
 	pinctrl-names = "default";
 	clock-source = "system";
+	status = "okay";
 };
 
 &flash0 {
@@ -201,24 +201,24 @@
 		 * to the flash memory sector size of 2KB.
 		 */
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(64)>;
+			label = "mcuboot";
 			read-only;
 		};
 
 		slot0_partition: partition@10000 {
-			label = "image-0";
 			reg = <0x00010000 DT_SIZE_K(204)>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@43000 {
-			label = "image-1";
 			reg = <0x00043000 DT_SIZE_K(204)>;
+			label = "image-1";
 		};
 
 		storage_partition: partition@76000 {
-			label = "storage";
 			reg = <0x00076000 DT_SIZE_K(40)>;
+			label = "storage";
 		};
 	};
 };
@@ -226,9 +226,9 @@
 &lpspi0 {
 	dmas = <&edma 0 14>, <&edma 1 15>;
 	dma-names = "rx", "tx";
-	status = "okay";
 	pinctrl-0 = <&lpspi0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &edma {

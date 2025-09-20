@@ -8,8 +8,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Actinius Icarus SoM DK";
 	compatible = "actinius,icarus_som_dk";
+	model = "Actinius Icarus SoM DK";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -77,21 +77,20 @@
 };
 
 &uart0 {
-	status = "okay";
-
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 neopixel_spi: &spi1 {
 	compatible = "nordic,nrf-spim";
-	status = "okay";
 
 	pinctrl-0 = <&neopixel_spi_default>;
 	pinctrl-1 = <&neopixel_spi_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	neopixel_led: ws2812@0 {
 		compatible = "worldsemi,ws2812-spi";
@@ -110,13 +109,13 @@ neopixel_spi: &spi1 {
 
 &i2c2 {
 	compatible = "nordic,nrf-twim";
-	status = "okay";
 
 	clock-frequency = <I2C_BITRATE_FAST>;
 
 	pinctrl-0 = <&i2c2_default>;
 	pinctrl-1 = <&i2c2_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	lis2dh12_accel: lis2dh12-accel@19 {
 		compatible = "st,lis2dh12", "st,lis2dh";
@@ -128,13 +127,13 @@ neopixel_spi: &spi1 {
 
 &spi3 {
 	compatible = "nordic,nrf-spim";
-	status = "okay";
 
 	cs-gpios = <&gpio0 24 GPIO_ACTIVE_LOW>;
 
 	pinctrl-0 = <&spi3_default>;
 	pinctrl-1 = <&spi3_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	w25q64: w25q64jv@0 {
 		compatible = "jedec,spi-nor";
@@ -149,11 +148,10 @@ neopixel_spi: &spi1 {
 };
 
 &pwm0 {
-	status = "okay";
-
 	pinctrl-0 = <&pwm0_default>;
 	pinctrl-1 = <&pwm0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 /* Include file with mappings and aliases for arduino compatibility */

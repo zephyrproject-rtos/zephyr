@@ -40,59 +40,59 @@
 };
 
 &lpuart1 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpuart1>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
+	status = "okay";
 };
 
 &lpuart3 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpuart3>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
+	status = "okay";
 };
 
 &lpuart4 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpuart4>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
+	status = "okay";
 };
 
 &lpuart5 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpuart5>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
+	status = "okay";
 };
 
 &lpuart6 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpuart6>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
+	status = "okay";
 };
 
 &lpuart8 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpuart8>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
+	status = "okay";
 };
 
 &lpuart10 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpuart10>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
+	status = "okay";
 };
 
 &lpuart11 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpuart11>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
+	status = "okay";
 };
 
 &green_led {
@@ -194,22 +194,22 @@
 };
 
 &flexspi {
-	status = "okay";
+	reg = <0x400cc000 0x4000>, <0x30000000 DT_SIZE_M(64)>;
 	ahb-prefetch;
 	ahb-read-addr-opt;
 	rx-clock-source = <1>;
-	reg = <0x400cc000 0x4000>, <0x30000000 DT_SIZE_M(64)>;
+	status = "okay";
 
 	mx25um51345g: mx25um51345g@0 {
 		compatible = "nxp,imx-flexspi-mx25um51345g";
+		reg = <0>;
 		/* MX25UM51245G is 64MB, 512MBit flash part */
 		size = <DT_SIZE_M(64 * 8)>;
-		reg = <0>;
 		spi-max-frequency = <DT_FREQ_M(200)>;
-		status = "okay";
 		jedec-id = [c2 81 3a];
 		erase-block-size = <DT_SIZE_K(4)>;
 		write-block-size = <2>; /* FLASH_MCUX_FLEXSPI_MX25UM51345G_OPI_DTR set */
+		status = "okay";
 
 		partitions {
 			compatible = "fixed-partitions";
@@ -221,23 +221,23 @@
 			 * to the flash memory sector size of 4KB.
 			 */
 			boot_partition: partition@0 {
-				label = "mcuboot";
 				reg = <0x00000000 DT_SIZE_K(128)>;
+				label = "mcuboot";
 			};
 
 			slot0_partition: partition@20000 {
-				label = "image-0";
 				reg = <0x00020000 DT_SIZE_M(3)>;
+				label = "image-0";
 			};
 
 			slot1_partition: partition@320000 {
-				label = "image-1";
 				reg = <0x00320000 DT_SIZE_M(3)>;
+				label = "image-1";
 			};
 
 			storage_partition: partition@620000 {
-				label = "storage";
 				reg = <0x00620000 (DT_SIZE_M(58) - DT_SIZE_K(128))>;
+				label = "storage";
 			};
 		};
 	};

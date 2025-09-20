@@ -10,8 +10,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "WeAct Studio STM32H5 Core Board";
 	compatible = "weact,stm32h5-core";
+	model = "WeAct Studio STM32H5 Core Board";
 
 	chosen {
 		zephyr,console = &usart1;
@@ -75,8 +75,8 @@
 };
 
 &clk_hse {
-	status = "okay";
 	clock-frequency = <DT_FREQ_M(8)>;
+	status = "okay";
 };
 
 &rcc {
@@ -115,10 +115,10 @@ stm32_lp_tick_source: &lptim4 {
 };
 
 &usart1 {
-	status = "okay";
 	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
+	status = "okay";
 };
 
 &rng {
@@ -155,23 +155,23 @@ zephyr_udc0: &usb {
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(64)>;
+			label = "mcuboot";
 		};
 
 		slot0_partition: partition@10000 {
-			label = "image-0";
 			reg = <0x00010000 DT_SIZE_K(448)>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@80000 {
-			label = "image-1";
 			reg = <0x00080000 DT_SIZE_K(448)>;
+			label = "image-1";
 		};
 
 		storage_partition: partition@f0000 {
-			label = "storage";
 			reg = <0x000f0000 DT_SIZE_K(64)>;
+			label = "storage";
 		};
 	};
 };

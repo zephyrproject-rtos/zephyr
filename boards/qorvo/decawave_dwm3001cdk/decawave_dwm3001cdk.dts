@@ -10,8 +10,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Decawave DWM3001CDK";
 	compatible = "decawave,dwm3001";
+	model = "Decawave DWM3001CDK";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -89,12 +89,12 @@
 };
 
 &uart0 {
-	status = "okay";
 	compatible = "nordic,nrf-uart";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &gpio1 {
@@ -103,12 +103,12 @@
 
 &i2c0 {
 	compatible = "nordic,nrf-twim";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-1 = <&i2c0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	lis2dh12: lis2dh12@19 {
 		compatible = "st,lis2dh12", "st,lis2dh";
@@ -119,12 +119,12 @@
 
 &spi3 {
 	compatible = "nordic,nrf-spim";
-	status = "okay";
 	cs-gpios = <&gpio1 6 GPIO_ACTIVE_LOW>;
 
 	pinctrl-0 = <&spi3_default>;
 	pinctrl-1 = <&spi3_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &ieee802154 {
@@ -138,23 +138,23 @@
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 0xC000>;
+			label = "mcuboot";
 		};
 
 		slot0_partition: partition@c000 {
-			label = "image-0";
 			reg = <0x0000C000 0x38000>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@44000 {
-			label = "image-1";
 			reg = <0x00044000 0x36000>;
+			label = "image-1";
 		};
 
 		storage_partition: partition@7a000 {
-			label = "storage";
 			reg = <0x0007A000 0x00006000>;
+			label = "storage";
 		};
 	};
 };

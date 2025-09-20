@@ -10,8 +10,8 @@
 #include "qemu_cortex_m0-pinctrl.dtsi"
 
 / {
-	model = "QEMU Cortex-M0";
 	compatible = "bbc,qemu-microbit";
+	model = "QEMU Cortex-M0";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -37,11 +37,11 @@
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &flash0 {
@@ -51,28 +51,28 @@
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 0x8000>;
+			label = "mcuboot";
 		};
 
 		slot0_partition: partition@8000 {
-			label = "image-0";
 			reg = <0x00008000 0x1a000>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@22000 {
-			label = "image-1";
 			reg = <0x00022000 0x1a000>;
+			label = "image-1";
 		};
 
 		scratch_partition: partition@3c000 {
-			label = "image-scratch";
 			reg = <0x0003c000 0x2000>;
+			label = "image-scratch";
 		};
 
 		storage_partition: partition@3e000 {
-			label = "storage";
 			reg = <0x0003e000 0x00002000>;
+			label = "storage";
 		};
 	};
 };

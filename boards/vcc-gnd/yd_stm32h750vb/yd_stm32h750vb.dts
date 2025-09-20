@@ -10,8 +10,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "VCC-GND Studio STM32H750VB";
 	compatible = "st,stm32h750vb";
+	model = "VCC-GND Studio STM32H750VB";
 
 	aliases {
 		led0 = &yellow_led;
@@ -59,8 +59,8 @@
 
 		user_button: button {
 			gpios = <&gpiob 3 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
-			zephyr,code = <INPUT_KEY_0>;
 			label = "USR";
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 };
@@ -134,8 +134,8 @@
 			#size-cells = <1>;
 
 			storage_partition: partition@0 {
-				label = "storage";
 				reg = <0x0 DT_SIZE_M(16)>;
+				label = "storage";
 			};
 		};
 	};

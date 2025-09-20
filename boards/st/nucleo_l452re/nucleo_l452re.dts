@@ -12,8 +12,8 @@
 #include "st_morpho_connector.dtsi"
 
 / {
-	model = "STMicroelectronics STM32L452RE-NUCLEO board";
 	compatible = "st,stm32l452re-nucleo";
+	model = "STMicroelectronics STM32L452RE-NUCLEO board";
 
 	leds: leds {
 		compatible = "gpio-leds";

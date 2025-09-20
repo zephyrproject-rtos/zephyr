@@ -32,22 +32,23 @@
 	status = "okay";
 
 	ili9806e: ili9806e@0 {
-		status = "okay";
 		compatible = "ilitek,ili9806e-dsi";
 		reg = <0x0>;
 		height = <854>;
 		width = <480>;
 		data-lanes = <2>;
 		pixel-format = <MIPI_DSI_PIXFMT_RGB888>;
+		status = "okay";
 	};
 };
 
 &zephyr_lcdif {
-	status = "okay";
 	width = <480>;
 	height = <854>;
 	input-pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
 	output-pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
+	backlight-gpios = <&renesas_mipi_connector 15 GPIO_ACTIVE_HIGH>;
+	status = "okay";
 
 	display-timings {
 		compatible = "zephyr,panel-timing";
@@ -62,5 +63,4 @@
 		hfront-porch = <72>;
 		vfront-porch = <17>;
 	};
-	backlight-gpios = <&renesas_mipi_connector 15 GPIO_ACTIVE_HIGH>;
 };

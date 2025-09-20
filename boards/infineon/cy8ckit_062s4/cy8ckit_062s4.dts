@@ -8,8 +8,8 @@
 #include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
 
 / {
-	model = "Infineon PSOC 62S4 Pioneer Kit";
 	compatible = "cypress,psoc6";
+	model = "Infineon PSOC 62S4 Pioneer Kit";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -69,10 +69,10 @@
 
 uart2: &scb2 {
 	compatible = "infineon,cat1-uart";
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&p3_0_scb2_uart_rx &p3_1_scb2_uart_tx>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &gpio_prt3 {

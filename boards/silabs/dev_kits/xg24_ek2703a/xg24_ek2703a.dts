@@ -11,8 +11,8 @@
 #include "xg24_ek2703a-pinctrl.dtsi"
 
 / {
-	model = "Silicon Labs BRD2703A (xG24 Explorer Kit)";
 	compatible = "silabs,xg24_ek2703a", "silabs,efr32mg24";
+	model = "Silicon Labs BRD2703A (xG24 Explorer Kit)";
 
 	chosen {
 		zephyr,bt-hci = &bt_hci_silabs;
@@ -153,10 +153,10 @@
 };
 
 &dcdc {
-	status = "okay";
 	regulator-boot-on;
 	regulator-initial-mode = <SILABS_DCDC_MODE_BUCK>;
 	silabs,pfmx-peak-current-milliamp = <120>;
+	status = "okay";
 };
 
 &flash0 {

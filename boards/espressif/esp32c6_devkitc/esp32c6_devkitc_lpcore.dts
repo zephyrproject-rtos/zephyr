@@ -9,8 +9,8 @@
 #include <espressif/partitions_0x0_default.dtsi>
 
 / {
-	model = "Espressif ESP32C6-DevkitC LPCORE";
 	compatible = "espressif,esp32c6";
+	model = "Espressif ESP32C6-DevkitC LPCORE";
 
 	chosen {
 		zephyr,sram = &sramlp;
@@ -21,6 +21,6 @@
 };
 
 &lp_uart {
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 };

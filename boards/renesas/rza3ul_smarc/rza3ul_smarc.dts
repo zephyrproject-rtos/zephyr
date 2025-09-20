@@ -13,8 +13,8 @@
 #include "rza3ul_smarc-pinctrl.dtsi"
 
 / {
-	model = "Renesas RZ/A3UL SMARC";
 	compatible = "renesas,rza3ul-smarc";
+	model = "Renesas RZ/A3UL SMARC";
 
 	chosen {
 		zephyr,sram = &ddr;
@@ -46,14 +46,14 @@
 			#size-cells = <1>;
 
 			header: partition@0 {
-				label = "header";
 				reg = <0x00000000 0x200>;
+				label = "header";
 				read-only;
 			};
 
 			slot0_partition: partition@200 {
-				label = "image-0";
 				reg = <0x00000200 (DT_SIZE_M(16) - 0x20200)>;
+				label = "image-0";
 				read-only;
 			};
 		};

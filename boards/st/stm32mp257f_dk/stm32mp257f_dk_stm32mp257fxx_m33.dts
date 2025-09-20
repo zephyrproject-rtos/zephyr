@@ -10,8 +10,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "STMicroelectronics STM32MP257F-DK board";
 	compatible = "st,stm32mp257f-dk", "st,stm32mp25";
+	model = "STMicroelectronics STM32MP257F-DK board";
 
 	chosen {
 		zephyr,console = &uart5;

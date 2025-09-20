@@ -15,8 +15,8 @@
 #include "beetle_rp2040-pinctrl.dtsi"
 
 / {
-	model = "DFRobot Beetle RP2040";
 	compatible = "dfrobot,beetle_rp2040";
+	model = "DFRobot Beetle RP2040";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -56,8 +56,8 @@
 
 		/* Reserved memory for the second stage bootloader */
 		second_stage_bootloader: partition@0 {
-			label = "second_stage_bootloader";
 			reg = <0x00000000 0x100>;
+			label = "second_stage_bootloader";
 			read-only;
 		};
 
@@ -66,8 +66,8 @@
 		 * size is 2 MB minus the 0x100 bytes taken by the bootloader.
 		 */
 		code_partition: partition@100 {
-			label = "code-partition";
 			reg = <0x100 (DT_SIZE_M(2) - 0x100)>;
+			label = "code-partition";
 			read-only;
 		};
 	};
@@ -79,9 +79,9 @@
 
 &uart1 {
 	current-speed = <115200>;
-	status = "okay";
 	pinctrl-0 = <&uart1_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &timer {
@@ -93,11 +93,11 @@
 };
 
 &adc {
-	status = "okay";
 	pinctrl-0 = <&adc_default>;
 	pinctrl-names = "default";
 	#address-cells = <1>;
 	#size-cells = <0>;
+	status = "okay";
 
 	channel@2 {
 		reg = <2>;

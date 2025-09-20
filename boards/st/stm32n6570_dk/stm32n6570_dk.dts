@@ -8,8 +8,8 @@
 #include "stm32n6570_dk_common.dtsi"
 
 / {
-	model = "STMicroelectronics STM32N6570 Discovery Kit board";
 	compatible = "st,stm32n6570-dk";
+	model = "STMicroelectronics STM32N6570 Discovery Kit board";
 
 	chosen {
 		zephyr,sram = &axisram1;

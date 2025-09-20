@@ -7,8 +7,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Nordic nRF9131 EK NRF9131";
 	compatible = "nordic,nrf9131-ek-nrf9131";
+	model = "Nordic nRF9131 EK NRF9131";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -89,28 +89,28 @@
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &uart1 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart1_default>;
 	pinctrl-1 = <&uart1_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &i2c2 {
 	compatible = "nordic,nrf-twim";
-	status = "okay";
 	pinctrl-0 = <&i2c2_default>;
 	pinctrl-1 = <&i2c2_sleep>;
 	pinctrl-names = "default", "sleep";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 
 	pmic_main: npm1300@6b {
 		compatible = "nordic,npm1300";
@@ -147,23 +147,22 @@
 };
 
 &pwm0 {
-	status = "okay";
 	pinctrl-0 = <&pwm0_default>;
 	pinctrl-1 = <&pwm0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &spi3 {
 	compatible = "nordic,nrf-spim";
-	status = "okay";
 	cs-gpios = <&gpio0 26 GPIO_ACTIVE_LOW>;
 	pinctrl-0 = <&spi3_default>;
 	pinctrl-1 = <&spi3_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	gd25wb256: gd25wb256e3ir@0 {
 		compatible = "jedec,spi-nor";
-		status = "disabled";
 		reg = <0>;
 		spi-max-frequency = <8000000>;
 		size = <268435456>;
@@ -175,6 +174,7 @@
 			    10 d8 00 ff 44 7a c9 fe 83 67 26 62 ec 82 18 44
 			    7a 75 7a 75 04 c4 d5 5c 00 06 74 00 08 50 00 01];
 		jedec-id = [c8 65 19];
+		status = "disabled";
 	};
 };
 

@@ -9,8 +9,8 @@
 #include <nxp/nxp_ls1046a.dtsi>
 
 / {
-	model = "NXP ls1046a RDB";
 	compatible = "nxp,ls1046ardb";
+	model = "NXP ls1046a RDB";
 
 	chosen {
 		zephyr,console = &uart1;
@@ -20,6 +20,6 @@
 };
 
 &uart1 {
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 };

@@ -12,8 +12,8 @@
 #include <zephyr/dt-bindings/memory-controller/stm32-fmc-nor-psram.h>
 
 / {
-	model = "Analog Devices Inc. EVAL-ADIN1110EBZ board";
 	compatible = "adi,eval-adin1110ebz";
+	model = "Analog Devices Inc. EVAL-ADIN1110EBZ board";
 
 	chosen {
 		zephyr,console = &usart1;
@@ -26,8 +26,8 @@
 
 	ram0: psram@60000000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
-		device_type = "memory";
 		reg = <0x60000000 DT_SIZE_M(8)>;
+		device_type = "memory";
 		zephyr,memory-region = "RAM0";
 	};
 
@@ -113,8 +113,8 @@
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(64)>;
+			label = "mcuboot";
 			read-only;
 		};
 
@@ -124,23 +124,23 @@
 		 */
 
 		slot0_partition: partition@20000 {
-			label = "image-0";
 			reg = <0x00020000 DT_SIZE_K(432)>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@8c000 {
-			label = "image-1";
 			reg = <0x0008C000 DT_SIZE_K(432)>;
+			label = "image-1";
 		};
 
 		scratch_partition: partition@f8000 {
-			label = "image-scratch";
 			reg = <0x000F8000 DT_SIZE_K(16)>;
+			label = "image-scratch";
 		};
 
 		storage_partition: partition@fc000 {
-			label = "storage";
 			reg = <0x000fc000 DT_SIZE_K(16)>;
+			label = "storage";
 		};
 	};
 };
@@ -177,15 +177,15 @@
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pg14 &i2c1_sda_pg13>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 };
 
 &i2c3 {
 	pinctrl-0 = <&i2c3_scl_pg7 &i2c3_sda_pg8>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 
 	adt7420: adt7420@48 {
 		compatible = "adi,adt7420";
@@ -216,9 +216,9 @@
 		spi-max-frequency = <25000000>;
 		int-gpios = <&gpiob 11 GPIO_ACTIVE_LOW>;
 		reset-gpios = <&gpioc 7 GPIO_ACTIVE_LOW>;
-		status = "okay";
 		spi-oa;
 		spi-oa-protection;
+		status = "okay";
 
 		port1 {
 			local-mac-address = [00 E0 22 FE DA C8];
@@ -230,8 +230,8 @@
 			#size-cells = <0>;
 
 			ethernet-phy@1 {
-				reg = <0x1>;
 				compatible = "adi,adin2111-phy";
+				reg = <0x1>;
 			};
 		};
 	};
@@ -247,9 +247,9 @@
 	status = "okay";
 
 	pwm2: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim2_ch1_pa15>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
@@ -291,8 +291,8 @@ zephyr_udc0: &usbotg_fs {
 			#size-cells = <1>;
 
 			store_partition: partition@0 {
-				label = "store";
 				reg = <0x00000000 DT_SIZE_M(8)>;
+				label = "store";
 			};
 		};
 	};

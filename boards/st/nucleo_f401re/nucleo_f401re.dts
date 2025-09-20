@@ -13,8 +13,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "STMicroelectronics STM32F401RE-NUCLEO board";
 	compatible = "st,stm32f401re-nucleo";
+	model = "STMicroelectronics STM32F401RE-NUCLEO board";
 
 	chosen {
 		zephyr,console = &usart2;
@@ -106,15 +106,15 @@
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 };
 
 &i2c3 {
 	pinctrl-0 = <&i2c3_scl_pa8 &i2c3_sda_pc9>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 };
 
 &spi1 {
@@ -138,8 +138,8 @@
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(64)>;
+			label = "mcuboot";
 			read-only;
 		};
 
@@ -149,18 +149,18 @@
 		 */
 
 		slot0_partition: partition@20000 {
-			label = "image-0";
 			reg = <0x00020000 DT_SIZE_K(128)>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@40000 {
-			label = "image-1";
 			reg = <0x00040000 DT_SIZE_K(128)>;
+			label = "image-1";
 		};
 
 		scratch_partition: partition@60000 {
-			label = "image-scratch";
 			reg = <0x00060000 DT_SIZE_K(128)>;
+			label = "image-scratch";
 		};
 	};
 };
@@ -169,9 +169,9 @@
 	status = "okay";
 
 	pwm2: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim2_ch1_pa5>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 

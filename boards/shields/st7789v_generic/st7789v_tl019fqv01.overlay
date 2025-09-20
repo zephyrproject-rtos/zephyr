@@ -22,8 +22,8 @@
 
 		st7789v_st7789v_tl019fqv01: st7789v@0 {
 			compatible = "sitronix,st7789v";
-			mipi-max-frequency = <20000000>;
 			reg = <0>;
+			mipi-max-frequency = <20000000>;
 			width = <320>;
 			height = <170>;
 			x-offset = <0>;
@@ -49,6 +49,6 @@
 };
 
 &arduino_spi {
-	status = "okay";
 	cs-gpios = <&arduino_header ARDUINO_HEADER_R3_D10 GPIO_ACTIVE_LOW>;
+	status = "okay";
 };

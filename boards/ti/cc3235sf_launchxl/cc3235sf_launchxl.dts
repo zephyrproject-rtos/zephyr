@@ -11,8 +11,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "TI CC3235SF LaunchXL";
 	compatible = "ti,cc3235sf-launchxl", "ti,cc3235sf", "ti,cc32xx";
+	model = "TI CC3235SF LaunchXL";
 
 	aliases {
 		uart-0 = &uart0;
@@ -77,17 +77,17 @@
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &i2c0 {
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &wdt0 {

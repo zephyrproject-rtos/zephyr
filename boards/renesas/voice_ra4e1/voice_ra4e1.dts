@@ -12,8 +12,8 @@
 #include "voice_ra4e1-pinctrl.dtsi"
 
 / {
-	model = "Renesas VOICE-RA4E1";
 	compatible = "renesas,ra4e1", "renesas,ra";
+	model = "Renesas VOICE-RA4E1";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -120,8 +120,8 @@
 		#size-cells = <1>;
 
 		storage_partition: partition@0 {
-			label = "storage";
 			reg = <0X0 DT_SIZE_K(8)>;
+			label = "storage";
 		};
 	};
 };

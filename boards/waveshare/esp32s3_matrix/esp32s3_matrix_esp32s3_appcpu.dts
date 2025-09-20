@@ -9,8 +9,8 @@
 #include <espressif/partitions_0x0_amp_4M.dtsi>
 
 / {
-	model = "ESP32-S3-Matrix APPCPU";
 	compatible = "waveshare,esp32-s3-matrix";
+	model = "ESP32-S3-Matrix APPCPU";
 
 	chosen {
 		zephyr,sram = &sram1;

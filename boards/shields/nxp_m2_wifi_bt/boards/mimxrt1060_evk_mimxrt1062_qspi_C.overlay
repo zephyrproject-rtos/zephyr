@@ -82,8 +82,8 @@
 			bias-disable;
 			drive-strength = "r0";
 			slew-rate = "fast";
-			nxp,speed = "100-mhz";
 			input-schmitt-enable;
+			nxp,speed = "100-mhz";
 		};
 	};
 };

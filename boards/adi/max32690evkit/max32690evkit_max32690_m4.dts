@@ -14,8 +14,8 @@
 #include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
 
 / {
-	model = "Analog Devices MAX32690EVKIT";
 	compatible = "adi,max32690evkit";
+	model = "Analog Devices MAX32690EVKIT";
 
 	chosen {
 		zephyr,console = &uart2;
@@ -67,10 +67,10 @@
 
 		st7735: st7735@0 {
 			compatible = "sitronix,st7735r";
-			mipi-max-frequency = <DT_FREQ_M(6)>;
-			mipi-mode = "MIPI_DBI_MODE_SPI_3WIRE";
 
 			reg = <0>;
+			mipi-max-frequency = <DT_FREQ_M(6)>;
+			mipi-mode = "MIPI_DBI_MODE_SPI_3WIRE";
 			width = <130>;
 			height = <132>;
 			x-offset = <0>;
@@ -93,20 +93,20 @@
 
 	spibb0: spibb0 {
 		compatible = "zephyr,spi-bitbang";
-		status = "okay";
 		#address-cells = <1>;
 		#size-cells = <0>;
 		clk-gpios = <&gpio2 25 (GPIO_ACTIVE_HIGH | MAX32_GPIO_VSEL_VDDIOH)>;
 		mosi-gpios = <&gpio2 24 (GPIO_ACTIVE_HIGH | MAX32_GPIO_VSEL_VDDIOH)>;
 		cs-gpios = <&gpio2 11 (GPIO_ACTIVE_LOW | MAX32_GPIO_VSEL_VDDIOH)>;
+		status = "okay";
 	};
 
 	sdram1: sdram1@60000000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
-		status = "disabled";
-		device_type = "memory";
 		reg = <0x60000000 DT_SIZE_M(8)>;
+		device_type = "memory";
 		zephyr,memory-region = "SDRAM1";
+		status = "disabled";
 	};
 };
 
@@ -169,9 +169,9 @@
 };
 
 &i2c0 {
-	status = "okay";
 	pinctrl-0 = <&i2c0a_scl_p2_8 &i2c0a_sda_p2_7>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &dma0 {
@@ -183,9 +183,9 @@
 };
 
 &spi0 {
-	status = "okay";
 	pinctrl-0 = <&spi0b_mosi_p2_28 &spi0b_miso_p2_27 &spi0b_sck_p2_29 &spi0b_ss1_p2_26>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &w1 {
@@ -202,7 +202,7 @@ zephyr_udc0: &usbhs {
 };
 
 &can0 {
-	status = "okay";
 	pinctrl-0 = <&can0b_tx_p2_23 &can0b_rx_p2_22>;
 	pinctrl-names = "default";
+	status = "okay";
 };

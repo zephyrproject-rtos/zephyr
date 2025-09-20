@@ -11,8 +11,8 @@
 #include "../common/launchxl-flash.dtsi"
 
 / {
-	model = "TI CC1352R1 LaunchXL";
 	compatible = "ti,launchxl-cc1352r1";
+	model = "TI CC1352R1 LaunchXL";
 };
 
 &adc0 {

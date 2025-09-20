@@ -7,8 +7,8 @@
 #include "arduino_r3_connector.dtsi"
 
 / {
-	model = "Arduino Due with an Atmel SAM3X8E SoC";
 	compatible = "arduino,due", "atmel,sam3x8e", "atmel,sam3x";
+	model = "Arduino Due with an Atmel SAM3X8E SoC";
 
 	aliases {
 		uart-0 = &uart;
@@ -45,39 +45,36 @@
 };
 
 &twi0 {
-	status = "okay";
-
 	pinctrl-0 = <&twi0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &twi1 {
-	status = "okay";
-
 	pinctrl-0 = <&twi1_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &spi0 {
-	status = "okay";
 	pinctrl-0 = <&spi0_default>;
 	pinctrl-names = "default";
 	cs-gpios = <&pioa 28 GPIO_ACTIVE_LOW>;
+	status = "okay";
 };
 
 &uart {
-	status = "okay";
 	current-speed = <115200>;
 
 	pinctrl-0 = <&uart_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &pwm0 {
-	status = "okay";
-
 	pinctrl-0 = <&pwm0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 arduino_i2c: &twi1 {};

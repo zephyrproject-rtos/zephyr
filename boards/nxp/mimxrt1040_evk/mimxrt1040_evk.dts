@@ -12,8 +12,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "NXP MIMXRT1040-EVK board";
 	compatible = "nxp,mimxrt1042";
+	model = "NXP MIMXRT1040-EVK board";
 
 	aliases {
 		led0 = &green_led;
@@ -36,9 +36,9 @@
 	};
 
 	sdram0: memory@80000000 {
+		reg = <0x80000000 DT_SIZE_M(32)>;
 		/* Winbond W9825G6KH SDRAM */
 		device_type = "memory";
-		reg = <0x80000000 DT_SIZE_M(32)>;
 	};
 
 	/*
@@ -118,19 +118,19 @@
 };
 
 &flexspi {
-	status = "okay";
 	reg = <0x402a8000 0x4000>, <0x60000000 DT_SIZE_M(8)>;
+	status = "okay";
 
 	/* Winbond external flash */
 	w25q64jvssiq: w25q64jvssiq@0 {
 		compatible = "nxp,imx-flexspi-nor";
-		size = <(DT_SIZE_M(8) * 8)>;
 		reg = <0>;
+		size = <(DT_SIZE_M(8) * 8)>;
 		spi-max-frequency = <DT_FREQ_M(133)>;
-		status = "okay";
 		jedec-id = [ef 40 17];
 		erase-block-size = <DT_SIZE_K(4)>;
 		write-block-size = <1>;
+		status = "okay";
 
 		partitions {
 			compatible = "fixed-partitions";
@@ -142,55 +142,55 @@
 			 * to the flash memory sector size of 4KB.
 			 */
 			boot_partition: partition@0 {
-				label = "mcuboot";
 				reg = <0x00000000 DT_SIZE_K(128)>;
+				label = "mcuboot";
 			};
 
 			slot0_partition: partition@20000 {
-				label = "image-0";
 				reg = <0x00020000 DT_SIZE_M(3)>;
+				label = "image-0";
 			};
 
 			slot1_partition: partition@320000 {
-				label = "image-1";
 				reg = <0x00320000 DT_SIZE_M(3)>;
+				label = "image-1";
 			};
 
 			storage_partition: partition@620000 {
-				label = "storage";
 				reg = <0x00620000 (DT_SIZE_M(2) - DT_SIZE_K(128))>;
+				label = "storage";
 			};
 		};
 	};
 };
 
 &lpuart1 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_lpuart1>;
 	pinctrl-1 = <&pinmux_lpuart1_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &flexpwm1_pwm3 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm1_pwm3>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &adc1 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_adc1>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &lpspi1 {
-	status = "okay";
 	/* DMA channels 0 and 1, muxed to LPSPI1 RX and TX */
 	dmas = <&edma0 0 13>, <&edma0 1 14>;
 	dma-names = "rx", "tx";
 	pinctrl-0 = <&pinmux_lpspi1>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &edma0 {
@@ -198,9 +198,9 @@
 };
 
 &lpi2c1 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpi2c1>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 nxp_touch_i2c: &lpi2c1 {};

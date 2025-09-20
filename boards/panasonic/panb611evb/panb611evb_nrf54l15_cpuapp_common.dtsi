@@ -40,8 +40,8 @@
 };
 
 &vregmain {
-	status = "okay";
 	regulator-initial-mode = <NRF5X_REG_MODE_DCDC>;
+	status = "okay";
 };
 
 &grtc {
@@ -92,15 +92,14 @@
 };
 
 &spi00 {
-	status = "okay";
 	cs-gpios = <&gpio2 5 GPIO_ACTIVE_LOW>;
 	pinctrl-0 = <&spi00_default>;
 	pinctrl-1 = <&spi00_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	mx25r64: mx25r6435f@0 {
 		compatible = "jedec,spi-nor";
-		status = "okay";
 		reg = <0>;
 		spi-max-frequency = <8000000>;
 		jedec-id = [c2 28 17];
@@ -112,6 +111,7 @@
 		has-dpd;
 		t-enter-dpd = <10000>;
 		t-exit-dpd = <35000>;
+		status = "okay";
 	};
 };
 

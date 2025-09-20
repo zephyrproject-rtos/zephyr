@@ -9,8 +9,8 @@
 #include <broadcom/viper-a72.dtsi>
 
 / {
-	model = "Broadcom BCM958402M2_A72";
 	compatible = "brcm,viper";
+	model = "Broadcom BCM958402M2_A72";
 	#address-cells = <1>;
 	#size-cells = <1>;
 
@@ -22,6 +22,6 @@
 };
 
 &uart1 {
-	status = "okay";
 	current-speed = <57600>;
+	status = "okay";
 };

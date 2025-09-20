@@ -13,8 +13,8 @@
 #include <espressif/partitions_0x1000_amp.dtsi>
 
 / {
-	model = "M5StickC Plus PROCPU";
 	compatible = "m5stack,m5stickc-plus";
+	model = "M5StickC Plus PROCPU";
 
 	aliases {
 		led0 = &red_led;
@@ -103,10 +103,10 @@
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_tx_gpio1 &uart0_rx_gpio3>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &gpio0 {
@@ -119,13 +119,13 @@
 
 /* IMU MPU-6886, RTC BM8563, PMU AXP192 */
 &i2c0 {
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 	sda-gpios = <&gpio0 21 GPIO_OPEN_DRAIN>;
 	scl-gpios = <&gpio0 22 GPIO_OPEN_DRAIN>;
 	pinctrl-0 = <&i2c0_default>;
 	scl-timeout-us = <0>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	axp192_pmic: axp192@34 {
 		compatible = "x-powers,axp192";
@@ -167,9 +167,9 @@
 	};
 
 	mpu6886: mpu6886@68 {
-		status = "okay";
 		compatible = "invensense,mpu6050";
 		reg = <0x68>;
+		status = "okay";
 	};
 
 	bm8563: bm8563@51 {
@@ -182,19 +182,19 @@
 &spi2 {
 	#address-cells = <1>;
 	#size-cells = <0>;
-	status = "okay";
 	pinctrl-0 = <&spim2_miso_gpio12 &spim2_mosi_gpio11
 		     &spim2_sclk_gpio14 &spim2_csel_gpio16>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 /* LCD TFT 1.14", 135x240 px, ST7789v2 */
 &spi3 {
 	#address-cells = <1>;
 	#size-cells = <0>;
-	status = "okay";
 	pinctrl-0 = <&spim3_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &timer0 {

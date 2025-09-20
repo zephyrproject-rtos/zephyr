@@ -11,8 +11,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "STMicroelectronics STM32C071RB-NUCLEO board";
 	compatible = "st,stm32c071rb-nucleo";
+	model = "STMicroelectronics STM32C071RB-NUCLEO board";
 
 	chosen {
 		zephyr,console = &usart2;
@@ -49,8 +49,8 @@
 		user_button: button {
 			label = "user button";
 			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
-			status = "okay";
 			zephyr,code = <INPUT_KEY_0>;
+			status = "okay";
 		};
 	};
 
@@ -79,8 +79,8 @@
 };
 
 &clk_hsi48 {
-	status = "okay";
 	crs-usb-sof;
+	status = "okay";
 };
 
 &rcc {
@@ -128,15 +128,15 @@
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 };
 
 &i2c2 {
 	pinctrl-0 = <&i2c2_scl_pa7 &i2c2_sda_pa6>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 };
 
 &spi1 {
@@ -149,12 +149,12 @@
 &adc1 {
 	pinctrl-0 = <&adc1_in0_pa0 &adc1_in1_pa1 &adc1_in4_pa4>;
 	pinctrl-names = "default";
-	st,adc-clock-source = "ASYNC";
 	clocks = <&rcc STM32_CLOCK(APB1_2, 20)>,
 		 <&rcc STM32_SRC_HSI ADC_SEL(2)>;
+	vref-mv = <3300>;
+	st,adc-clock-source = "ASYNC";
 	st,adc-prescaler = <4>;
 	status = "okay";
-	vref-mv = <3300>;
 };
 
 &die_temp {

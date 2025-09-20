@@ -10,8 +10,8 @@
 #include <mem.h>
 
 / {
-	model = "beagle,beaglev-fire";
 	compatible = "beagle,beaglev-fire", "microchip,mpfs";
+	model = "beagle,beaglev-fire";
 
 	aliases {};
 
@@ -33,9 +33,9 @@
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
 	clock-frequency = <150000000>;
+	status = "okay";
 };
 
 &gpio2 {

@@ -9,8 +9,8 @@
 #include <intel/intel_socfpga_agilex5.dtsi>
 
 / {
-	model = "Intel SoC FPGA Agilex5";
 	compatible = "intel,socfpga-agilex5";
+	model = "Intel SoC FPGA Agilex5";
 	#address-cells = <1>;
 	#size-cells = <1>;
 
@@ -33,8 +33,8 @@
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 };
 
 &xgmac0 {
@@ -48,8 +48,8 @@
 	max-speed = <1000>;
 	max-frame-size = <9018>;
 	jumbo-pkt-en;
-	zephyr,random-mac-address;
 	phy-handle = <&phy0>;
+	zephyr,random-mac-address;
 };
 
 &mdio0 {

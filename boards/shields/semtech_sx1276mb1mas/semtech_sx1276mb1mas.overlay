@@ -13,9 +13,8 @@
 };
 
 &arduino_spi {
-	status = "okay";
-
 	cs-gpios = <&arduino_header ARDUINO_HEADER_R3_D10 GPIO_ACTIVE_LOW>;
+	status = "okay";
 
 	lora_semtech_sx1276mb1mas: lora@0 {
 		compatible = "semtech,sx1276";

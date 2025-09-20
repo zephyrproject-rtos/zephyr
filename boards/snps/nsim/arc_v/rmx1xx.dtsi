@@ -9,8 +9,8 @@
 
 		cpu0: cpu@0 {
 			compatible = "snps,av5rmx", "riscv";
-			device_type = "cpu";
 			reg = <0>;
+			device_type = "cpu";
 			clock-frequency = <5000000>;
 			riscv,isa = "rv32imac_zicsr_zifencei";
 
@@ -39,8 +39,8 @@
 
 		mtimer: timer@a001bff8 {
 			compatible = "riscv,machine-timer";
-			interrupts-extended = <&cpu0_intc 7>;
 			reg = <0xa001bff8 0x8 0xa0014000 0x8>;
+			interrupts-extended = <&cpu0_intc 7>;
 			reg-names = "mtime", "mtimecmp";
 		};
 

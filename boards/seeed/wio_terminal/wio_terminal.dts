@@ -12,8 +12,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Wio Terminal";
 	compatible = "seeed,wio-terminal";
+	model = "Wio Terminal";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -146,8 +146,8 @@
 
 		ili9341: ili9341@0 {
 			compatible = "ilitek,ili9341";
-			mipi-max-frequency = <24000000>;
 			reg = <0>;
+			mipi-max-frequency = <24000000>;
 			pixel-format = <ILI9XXX_PIXEL_FORMAT_RGB565>;
 			rotation = <270>;
 			width = <320>;
@@ -171,14 +171,14 @@
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "uf2";
 			reg = <0x00000000 DT_SIZE_K(16)>;
+			label = "uf2";
 			read-only;
 		};
 
 		code_partition: partition@4000 {
-			label = "code";
 			reg = <0x4000 DT_SIZE_K(512-16)>;
+			label = "code";
 			read-only;
 		};
 	};
@@ -186,7 +186,6 @@
 
 /* RTL8720D (Wifi/BLE) */
 &sercom0 {
-	status = "okay";
 	compatible = "atmel,sam0-spi";
 	#address-cells = <1>;
 	#size-cells = <0>;
@@ -195,57 +194,58 @@
 	pinctrl-0 = <&sercom0_spi_default>;
 	pinctrl-names = "default";
 	cs-gpios = <&portc 25 GPIO_ACTIVE_LOW>;
+	status = "okay";
 };
 
 /* RTL8720D (Wifi/BLE) */
 &sercom1 {
-	status = "okay";
 	compatible = "atmel,sam0-uart";
 	current-speed = <115200>;
 	rxpo = <1>;
 	txpo = <0>;
 	pinctrl-0 = <&sercom1_uart_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 /* UART, Raspberry Pi connector */
 &sercom2 {
-	status = "okay";
 	compatible = "atmel,sam0-uart";
 	current-speed = <115200>;
 	rxpo = <1>;
 	txpo = <0>;
 	pinctrl-0 = <&sercom2_uart_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 /* I2C1, Raspberry Pi and Groove connectors */
 &sercom3 {
-	status = "okay";
 	compatible = "atmel,sam0-i2c";
 	clock-frequency = <I2C_BITRATE_FAST>;
 	#address-cells = <1>;
 	#size-cells = <0>;
 	pinctrl-0 = <&sercom3_i2c_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 /* I2C0, LIS3DH, ATECC608, Raspberry Pi connector */
 &sercom4 {
-	status = "okay";
 	compatible = "atmel,sam0-i2c";
 	clock-frequency = <I2C_BITRATE_HIGH>;
 	#address-cells = <1>;
 	#size-cells = <0>;
 	pinctrl-0 = <&sercom4_i2c_default>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	/* LIS3DH */
 	lis3dh: lis3dh@18 {
 		compatible = "st,lis3dh", "st,lis2dh";
-		status = "okay";
 		reg = <0x18>;
 		irq-gpios = <&portc 21 GPIO_ACTIVE_HIGH>;
+		status = "okay";
 	};
 
 	/* ATECC608A */
@@ -257,7 +257,6 @@
 
 /* SPI, Raspberry Pi connector */
 &sercom5 {
-	status = "okay";
 	compatible = "atmel,sam0-spi";
 	#address-cells = <1>;
 	#size-cells = <0>;
@@ -266,11 +265,11 @@
 	pinctrl-0 = <&sercom5_spi_default>;
 	pinctrl-names = "default";
 	cs-gpios = <&portb 1 GPIO_ACTIVE_LOW>;
+	status = "okay";
 };
 
 /* microSD Card */
 &sercom6 {
-	status = "okay";
 	compatible = "atmel,sam0-spi";
 	#address-cells = <1>;
 	#size-cells = <0>;
@@ -279,6 +278,7 @@
 	pinctrl-0 = <&sercom6_spi_default>;
 	pinctrl-names = "default";
 	cs-gpios = <&portc 19 GPIO_ACTIVE_LOW>;
+	status = "okay";
 
 	/* microSD Card */
 	sdhc0: sdhc@0 {
@@ -295,7 +295,6 @@
 
 /* LCD */
 &sercom7 {
-	status = "okay";
 	compatible = "atmel,sam0-spi";
 	#address-cells = <1>;
 	#size-cells = <0>;
@@ -304,13 +303,14 @@
 	pinctrl-0 = <&sercom7_spi_default>;
 	pinctrl-names = "default";
 	cs-gpios = <&portb 21 GPIO_ACTIVE_LOW>;
+	status = "okay";
 };
 
 /* USB */
 zephyr_udc0: &usb0 {
-	status = "okay";
 	pinctrl-0 = <&usb_dc_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 #include <../boards/common/usb/cdc_acm_serial.dtsi>

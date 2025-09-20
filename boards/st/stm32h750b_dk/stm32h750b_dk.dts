@@ -11,8 +11,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "STMicroelectronics STM32H750B DISCOVERY KIT";
 	compatible = "st,stm32h750b-dk";
+	model = "STMicroelectronics STM32H750B DISCOVERY KIT";
 
 	chosen {
 		zephyr,console = &usart3;
@@ -26,8 +26,8 @@
 
 	sdram2: sdram@d0000000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
-		device_type = "memory";
 		reg = <0xd0000000 DT_SIZE_M(16)>; /* 128Mbit */
+		device_type = "memory";
 		zephyr,memory-region = "SDRAM2";
 		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
 	};
@@ -90,8 +90,8 @@
 
 		/* Flash has 128KB sector size */
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(128)>;
+			label = "mcuboot";
 		};
 	};
 };
@@ -109,7 +109,6 @@
 	disp-on-gpios = <&gpiod 7 GPIO_ACTIVE_HIGH>;
 
 	ext-sdram = <&sdram2>;
-	status = "okay";
 
 	clocks = <&rcc STM32_CLOCK(APB3, 3)>,
 		 <&rcc STM32_SRC_PLL3_R NO_SEL>;
@@ -117,6 +116,11 @@
 	width = <480>;
 	height = <272>;
 	pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+
+	def-back-color-red = <0xFF>;
+	def-back-color-green = <0xFF>;
+	def-back-color-blue = <0xFF>;
+	status = "okay";
 
 	display-timings {
 		compatible = "zephyr,panel-timing";
@@ -131,10 +135,6 @@
 		hfront-porch = <8>;
 		vfront-porch = <4>;
 	};
-
-	def-back-color-red = <0xFF>;
-	def-back-color-green = <0xFF>;
-	def-back-color-blue = <0xFF>;
 };
 
 &pll {
@@ -203,18 +203,18 @@
 			#size-cells = <1>;
 
 			slot0_partition: partition@0 {
-				label = "image-0";
 				reg = <0x00000000 DT_SIZE_K(2048)>;
+				label = "image-0";
 			};
 
 			slot1_partition: partition@200000 {
-				label = "image-1";
 				reg = <0x00200000 DT_SIZE_K(2048)>;
+				label = "image-1";
 			};
 
 			storage_partition: partition@400000 {
-				label = "storage";
 				reg = <0x00400000 DT_SIZE_K(128)>;
+				label = "storage";
 			};
 		};
 	};
@@ -244,11 +244,11 @@
 	status = "okay";
 
 	sdram {
-		status = "okay";
 		power-up-delay = <100>;
 		num-auto-refresh = <8>;
 		mode-register = <0x230>;
 		refresh-rate = <0x603>;
+		status = "okay";
 
 		bank@1 {
 			reg = <1>;

@@ -18,8 +18,8 @@
 	};
 
 	sram0: sram@80400000 {
-		device_type = "memory";
 		reg = <0x80400000 DT_SRAM_SIZE>;
+		device_type = "memory";
 	};
 
 	chosen {

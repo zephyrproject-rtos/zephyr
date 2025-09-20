@@ -11,8 +11,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Atmel SAM4E Xplained Pro Board with an Atmel SAM4E16E SoC";
 	compatible = "atmel,sam4e_xpro", "atmel,sam4e16e", "atmel,sam4e";
+	model = "Atmel SAM4E Xplained Pro Board with an Atmel SAM4E16E SoC";
 
 	aliases {
 		i2c-0 = &twi0;
@@ -143,43 +143,39 @@
 };
 
 &afec0 {
-	status = "okay";
-
 	pinctrl-0 = <&afec0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &afec1 {
-	status = "okay";
-
 	pinctrl-0 = <&afec1_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &twi0 {
-	status = "okay";
-
 	pinctrl-0 = <&twi0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &spi0 {
-	status = "okay";
-
 	pinctrl-0 = <&spi0_default>;
 	pinctrl-names = "default";
 
 	cs-gpios = <&piob 14 GPIO_ACTIVE_LOW>,
 		   <&piod 23 GPIO_ACTIVE_LOW>,
 		   <&piod 30 GPIO_ACTIVE_LOW>;
+	status = "okay";
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
 
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &uart1 {
@@ -188,49 +184,45 @@
 };
 
 &usart1 {
-	status = "okay";
 	current-speed = <115200>;
 
 	pinctrl-0 = <&usart1_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &gmac {
-	status = "okay";
-
 	pinctrl-0 = <&gmac_mii>;
 	pinctrl-names = "default";
 
-	zephyr,random-mac-address;
-
 	phy-handle = <&phy>;
+
+	zephyr,random-mac-address;
+	status = "okay";
 };
 
 &mdio {
-	status = "okay";
-
 	pinctrl-0 = <&mdio_default>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	phy: ethernet-phy@0 {
 		compatible = "ethernet-phy";
-		status = "okay";
 		reg = <0>;
+		status = "okay";
 	};
 };
 
 &pwm0 {
-	status = "okay";
-
 	pinctrl-0 = <&pwm0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &hsmci {
-	status = "okay";
-
 	pinctrl-0 = <&hsmci_default>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	mmc {
 		compatible = "zephyr,sdmmc-disk";

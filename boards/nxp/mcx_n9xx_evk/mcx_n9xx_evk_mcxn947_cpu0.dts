@@ -9,6 +9,6 @@
 #include "mcx_n9xx_evk_mcxn947_cpu0.dtsi"
 
 / {
-	model = "NXP MCX-N9XX-EVK board";
 	compatible = "nxp,mcxn947", "nxp,mcx";
+	model = "NXP MCX-N9XX-EVK board";
 };

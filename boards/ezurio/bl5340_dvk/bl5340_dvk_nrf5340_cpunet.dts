@@ -11,8 +11,8 @@
 #include "bl5340_dvk_nrf5340_cpunet_common.dtsi"
 
 / {
-	model = "Ezurio BL5340 (nRF5340) Network";
 	compatible = "ezurio,bl5340-dvk-cpunet";
+	model = "Ezurio BL5340 (nRF5340) Network";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -32,9 +32,9 @@
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };

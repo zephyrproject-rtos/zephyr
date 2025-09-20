@@ -10,8 +10,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "STMicroelectronics STM32F0DISCOVERY board";
 	compatible = "st,stm32f058r8-discovery";
+	model = "STMicroelectronics STM32F0DISCOVERY board";
 
 	chosen {
 		zephyr,console = &usart1;
@@ -114,8 +114,8 @@
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(8)>;
+			label = "mcuboot";
 			read-only;
 		};
 
@@ -125,18 +125,18 @@
 		 */
 
 		slot0_partition: partition@4000 {
-			label = "image-0";
 			reg = <0x00004000 DT_SIZE_K(16)>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@8000 {
-			label = "image-1";
 			reg = <0x00008000 DT_SIZE_K(16)>;
+			label = "image-1";
 		};
 
 		scratch_partition: partition@c000 {
-			label = "image-scratch";
 			reg = <0x0000C000 DT_SIZE_K(16)>;
+			label = "image-scratch";
 		};
 	};
 };

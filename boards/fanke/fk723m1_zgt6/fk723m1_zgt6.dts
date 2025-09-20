@@ -10,8 +10,8 @@
 #include <st/h7/stm32h723zgtx-pinctrl.dtsi>
 
 / {
-	model = "FK723M1-ZGT6 board";
 	compatible = "fanke,fk723m1-zgt6";
+	model = "FK723M1-ZGT6 board";
 
 	chosen {
 		zephyr,console = &usart1;
@@ -123,8 +123,8 @@ zephyr_udc0: &usbotg_hs {
 	clocks = <&rcc STM32_CLOCK(AHB3, 16)>,
 		 <&rcc STM32_SRC_PLL1_Q SDMMC_SEL(0)>;
 	disk-name = "SD";
-	status = "okay";
 	bus-width = <4>;
+	status = "okay";
 };
 
 &octospi1 {

@@ -11,8 +11,8 @@
 #include "kit_psc3m5_evk-pinctrl.dtsi"
 
 / {
-	model = "The Infineon PSOC™ Control C3M5 Evaluation Kit";
 	compatible = "infineon,kit_psc3m5_evk", "infineon,PSC3M5";
+	model = "The Infineon PSOC™ Control C3M5 Evaluation Kit";
 
 	aliases {
 		watchdog0 = &watchdog0;
@@ -28,19 +28,19 @@
 
 uart3: &scb3 {
 	compatible = "infineon,cat1-uart-pdl";
-	status = "okay";
 	current-speed = <115200>;
 
 	clocks = <&peri0_group4_8bit_0>;
 
 	pinctrl-0 = <&p6_3_scb3_uart_tx &p6_2_scb3_uart_rx &p6_1_scb3_uart_rts &p6_0_scb3_uart_cts>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &peri0_group4_8bit_0 {
-	status = "okay";
 	scb-block = <3>;
 	div-value = <109>;
+	status = "okay";
 };
 
 &path_mux0 {

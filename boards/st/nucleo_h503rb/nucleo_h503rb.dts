@@ -12,8 +12,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "STMicroelectronics STM32H503RB-NUCLEO board";
 	compatible = "st,stm32h503rb-nucleo";
+	model = "STMicroelectronics STM32H503RB-NUCLEO board";
 
 	#address-cells = <1>;
 	#size-cells = <1>;

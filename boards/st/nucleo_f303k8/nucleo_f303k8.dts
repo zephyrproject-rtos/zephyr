@@ -10,8 +10,8 @@
 #include <st/f3/stm32f303k(6-8)tx-pinctrl.dtsi>
 
 / {
-	model = "STMicroelectronics STM32F303K8-NUCLEO board";
 	compatible = "st,stm32f303k8-nucleo";
+	model = "STMicroelectronics STM32F303K8-NUCLEO board";
 
 	chosen {
 		zephyr,console = &usart2;
@@ -73,9 +73,9 @@
 	status = "okay";
 
 	pwm2: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim2_ch2_pb3>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
@@ -89,8 +89,8 @@
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 };
 
 &spi1 {

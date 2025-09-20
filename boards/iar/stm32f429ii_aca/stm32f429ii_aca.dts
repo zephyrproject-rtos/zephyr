@@ -12,8 +12,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "IAR STM32F429II-ACA board";
 	compatible = "iar,stm32f429ii-aca";
+	model = "IAR STM32F429II-ACA board";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -23,8 +23,8 @@
 
 	sdram2: sdram@d0000000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
-		device_type = "memory";
 		reg = <0xd0000000 DT_SIZE_M(8)>;
+		device_type = "memory";
 		zephyr,memory-region = "SDRAM2";
 	};
 
@@ -186,27 +186,26 @@
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb7>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 };
 
 &i2c2 {
 	pinctrl-0 = <&i2c2_scl_ph4 &i2c2_sda_ph5>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 };
 
 &spi5 {
 	pinctrl-0 = <&spi5_nss_pf6 &spi5_sck_pf7
 		     &spi5_miso_pf8 &spi5_mosi_pf9>;
 	pinctrl-names = "default";
-	status = "okay";
 	cs-gpios = <&gpioc 2 GPIO_ACTIVE_LOW>;
+	status = "okay";
 };
 
 &fmc {
-	status = "okay";
 	pinctrl-0 = <&fmc_nbl0_pe0 &fmc_nbl1_pe1
 		     &fmc_sdclk_pg8 &fmc_sdnwe_pc0 &fmc_sdcke0_pc3
 		     &fmc_sdne0_pc2 &fmc_sdnras_pf11 &fmc_sdncas_pg15
@@ -219,14 +218,14 @@
 		     &fmc_d8_pe11 &fmc_d9_pe12 &fmc_d10_pe13 &fmc_d11_pe14
 		     &fmc_d12_pe15 &fmc_d13_pd8 &fmc_d14_pd9 &fmc_d15_pd10>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	sdram {
-		status = "okay";
-
 		power-up-delay = <100>;
 		num-auto-refresh = <1>;
 		mode-register = <0>;
 		refresh-rate = <1386>;
+		status = "okay";
 
 		bank@1 {
 			reg = <1>;
@@ -248,11 +247,11 @@
 	compatible = "st,stm32f4-adc", "st,stm32-adc";
 	pinctrl-0 = <&adc2_in6_pa6>;
 	pinctrl-names = "default";
-	st,adc-prescaler = <2>;
-	status = "okay";
 
 	#address-cells = <1>;
 	#size-cells = <0>;
+	st,adc-prescaler = <2>;
+	status = "okay";
 
 	channel@6 {
 		reg = <6>;

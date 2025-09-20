@@ -11,8 +11,8 @@
 #include "am243x_evm_am2434_m4-pinctrl.dtsi"
 
 / {
-	model = "TI AM243x EVM M4F core";
 	compatible = "ti,am243x-evm-m4";
+	model = "TI AM243x EVM M4F core";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -28,8 +28,8 @@
 
 	cpus {
 		cpu@0 {
-			status = "okay";
 			clock-frequency = <DT_FREQ_M(400)>;
+			status = "okay";
 		};
 	};
 
