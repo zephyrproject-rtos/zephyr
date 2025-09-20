@@ -1930,4 +1930,72 @@ This has been fixed in main for v4.2.0
 :cve:`2025-7403`
 ----------------
 
-Under embargo until 2025-09-05
+Bluetooth: bt_conn_tx_processor unsafe handling
+
+Unsafe handling in bt_conn_tx_processor causes a use-after-free,
+resulting in a write-before-zero. The written 4 bytes are
+attacker-controlled, enabling precise memory corruption.
+
+- `Zephyr project bug tracker GHSA-9r46-cqqw-6j2j
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-9r46-cqqw-6j2j>`_
+
+This has been fixed in main for v4.2.0
+
+- `PR 90975 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/90975>`_
+
+:cve:`2025-10456`
+-----------------
+
+Bluetooth: Semi-Arbitrary ability to make the BLE Target send
+disconnection requests
+
+A vulnerability was identified in the handling of Bluetooth Low Energy
+(BLE) fixed channels (such as SMP or ATT). Specifically, an attacker
+could exploit a flaw that causes the BLE target (i.e., the device
+under attack) to attempt to disconnect a fixed channel, which is not
+allowed per the Bluetooth specification. This leads to undefined
+behavior, including potential assertion failures, crashes, or memory
+corruption.
+
+- `Zephyr project bug tracker GHSA-hcc8-3qr7-c9m8
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-hcc8-3qr7-c9m8>`_
+
+This has been fixed in main for v4.2.0
+
+- `PR 93576 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/93576>`_
+
+:cve:`2025-10457`
+-----------------
+
+Bluetooth: Out-Of-Context le_conn_rsp handling
+
+The function responsible for handling BLE connection responses does
+not verify whether a response is expected—that is, whether the device
+has initiated a connection request. Instead, it relies solely on
+identifier matching.
+
+- `Zephyr project bug tracker GHSA-xqj6-vh76-2vv8
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-xqj6-vh76-2vv8>`_
+
+This has been fixed in main for v4.2.0
+
+- `PR 94080 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/94080>`_
+
+:cve:`2025-10458`
+-----------------
+
+Bluetooth: le_conn_rsp does not sanitize CID, MTU, MPS values
+
+Parameters are not validated or sanitized, and are later used in
+various internal operations.
+
+- `Zephyr project bug tracker GHSA-vmww-237q-2fwp
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-vmww-237q-2fwp>`_
+
+This has been fixed in main for v4.2.0
+
+- `PR 93174 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/93174>`_
