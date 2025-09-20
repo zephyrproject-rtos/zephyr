@@ -50,12 +50,16 @@ else() # Linux.x86_64
 
     target_link_options(native_simulator INTERFACE "-m64")
     target_compile_options(native_simulator INTERFACE "-m64")
+
+    set(LLEXT_APPEND_FLAGS ${LLEXT_APPEND_FLAGS} -m64 CACHE STRING "LLEXT append flags")
   else ()
     zephyr_compile_options(-m32)
     zephyr_link_libraries(-m32)
 
     target_link_options(native_simulator INTERFACE "-m32")
     target_compile_options(native_simulator INTERFACE "-m32")
+
+    set(LLEXT_APPEND_FLAGS ${LLEXT_APPEND_FLAGS} -m32 CACHE STRING "LLEXT append flags")
 
     # When building for 32bits x86, gcc defaults to using the old 8087 float arithmetic
     # which causes some issues with literal float comparisons. So we set it
