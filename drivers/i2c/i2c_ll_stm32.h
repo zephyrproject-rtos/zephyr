@@ -22,6 +22,7 @@
 
 #include <zephyr/drivers/dma.h>
 
+
 typedef void (*irq_config_func_t)(const struct device *port);
 
 #ifdef CONFIG_I2C_STM32_V2
@@ -135,6 +136,7 @@ struct i2c_stm32_data {
 #ifdef CONFIG_I2C_STM32_V2
 	struct i2c_target_config *slave2_cfg;
 #endif /* CONFIG_I2C_STM32_V2 */
+	void (*slave_error_cb)(const struct device *dev, int error_code);
 #endif /* CONFIG_I2C_TARGET */
 };
 
