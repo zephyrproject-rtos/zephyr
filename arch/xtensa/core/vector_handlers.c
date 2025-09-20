@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include "xtensa/corebits.h"
 #include <string.h>
 #include <xtensa_asm2_context.h>
 #include <zephyr/kernel.h>
@@ -220,14 +221,11 @@ static inline unsigned int get_bits(int offset, int num_bits, unsigned int val)
 	return val & mask;
 }
 
-static void print_fatal_exception(void *print_stack, int cause,
-				  bool is_dblexc, uint32_t depc)
+static void print_fatal_exception(void *print_stack, bool is_dblexc, uint32_t depc)
 {
 	void *pc;
-	uint32_t ps, vaddr;
+	uint32_t ps;
 	_xtensa_irq_bsa_t *bsa = (void *)*(int **)print_stack;
-
-	__asm__ volatile("rsr.excvaddr %0" : "=r"(vaddr));
 
 	if (is_dblexc) {
 		EXCEPTION_DUMP(" ** FATAL EXCEPTION (DOUBLE)");
@@ -235,23 +233,23 @@ static void print_fatal_exception(void *print_stack, int cause,
 		EXCEPTION_DUMP(" ** FATAL EXCEPTION");
 	}
 
-	EXCEPTION_DUMP(" ** CPU %d EXCCAUSE %d (%s)",
-		arch_curr_cpu()->id, cause,
-		xtensa_exccause(cause));
+	EXCEPTION_DUMP(" ** CPU %d EXCCAUSE %u (%s)",
+		arch_curr_cpu()->id, (uint32_t)bsa->exccause,
+		xtensa_exccause(bsa->exccause));
 
 	/* Don't print information if the BSA area is invalid as any elements
 	 * obtained via de-referencing the pointer are probably also invalid.
 	 * Or worse, cause another access violation.
 	 */
 	if (xtensa_is_outside_stack_bounds((uintptr_t)bsa, sizeof(*bsa), UINT32_MAX)) {
-		EXCEPTION_DUMP(" ** VADDR %p Invalid SP %p", (void *)vaddr, print_stack);
+		EXCEPTION_DUMP(" ** VADDR %p Invalid SP %p", (void *)bsa->excvaddr, print_stack);
 		return;
 	}
 
 	ps = bsa->ps;
 	pc = (void *)bsa->pc;
 
-	EXCEPTION_DUMP(" **  PC %p VADDR %p", pc, (void *)vaddr);
+	EXCEPTION_DUMP(" **  PC %p VADDR %p", pc, (void *)bsa->excvaddr);
 
 	if (is_dblexc) {
 		EXCEPTION_DUMP(" **  DEPC %p", (void *)depc);
@@ -259,10 +257,13 @@ static void print_fatal_exception(void *print_stack, int cause,
 
 	EXCEPTION_DUMP(" **  PS %p", (void *)bsa->ps);
 	EXCEPTION_DUMP(" **    (INTLEVEL:%d EXCM: %d UM:%d RING:%d WOE:%d OWB:%d CALLINC:%d)",
-		get_bits(0, 4, ps), get_bits(4, 1, ps),
-		get_bits(5, 1, ps), get_bits(6, 2, ps),
-		get_bits(18, 1, ps),
-		get_bits(8, 4, ps), get_bits(16, 2, ps));
+		       get_bits(XCHAL_PS_INTLEVEL_SHIFT, XCHAL_PS_INTLEVEL_BITS, ps),
+		       get_bits(XCHAL_PS_EXCM_SHIFT, XCHAL_PS_EXCM_BITS, ps),
+		       get_bits(XCHAL_PS_UM_SHIFT, XCHAL_PS_UM_BITS, ps),
+		       get_bits(XCHAL_PS_RING_SHIFT, XCHAL_PS_RING_BITS, ps),
+		       get_bits(XCHAL_PS_WOE_SHIFT, XCHAL_PS_WOE_BITS, ps),
+		       get_bits(XCHAL_PS_OWB_SHIFT, XCHAL_PS_OWB_BITS, ps),
+		       get_bits(XCHAL_PS_CALLINC_SHIFT, XCHAL_PS_CALLINC_BITS, ps));
 }
 
 static ALWAYS_INLINE void usage_stop(void)
@@ -544,12 +545,11 @@ void *xtensa_excint1_c(void *esf)
 
 #ifdef CONFIG_XTENSA_MMU
 	depc = XTENSA_RSR(ZSR_DEPC_SAVE_STR);
-	cause = XTENSA_RSR(ZSR_EXCCAUSE_SAVE_STR);
 
 	is_dblexc = (depc != 0U);
-#else /* CONFIG_XTENSA_MMU */
-	__asm__ volatile("rsr.exccause %0" : "=r"(cause));
 #endif /* CONFIG_XTENSA_MMU */
+
+	cause = bsa->exccause;
 
 	switch (cause) {
 	case EXCCAUSE_LEVEL1_INTERRUPT:
@@ -631,6 +631,16 @@ void *xtensa_excint1_c(void *esf)
 		xtensa_lazy_hifi_load(thread->arch.hifi_regs);
 		break;
 #endif /* CONFIG_XTENSA_LAZY_HIFI_SHARING */
+#if defined(CONFIG_XTENSA_MMU) && defined(CONFIG_USERSPACE)
+	case EXCCAUSE_DTLB_MULTIHIT:
+		xtensa_exc_dtlb_multihit_handle();
+		break;
+	case EXCCAUSE_LOAD_STORE_RING:
+		if (!xtensa_exc_load_store_ring_error_check(bsa)) {
+			break;
+		}
+		__fallthrough;
+#endif /* CONFIG_XTENSA_MMU && CONFIG_USERSPACE */
 	default:
 		reason = K_ERR_CPU_EXCEPTION;
 
@@ -661,7 +671,6 @@ void *xtensa_excint1_c(void *esf)
 		if (cause == EXCCAUSE_ILLEGAL) {
 			if (pc == (void *)&xtensa_arch_except_epc) {
 				cause = 63;
-				__asm__ volatile("wsr.exccause %0" : : "r"(cause));
 				reason = bsa->a2;
 			} else if (pc == (void *)&xtensa_arch_kernel_oops_epc) {
 				cause = 64; /* kernel oops */
@@ -674,11 +683,13 @@ void *xtensa_excint1_c(void *esf)
 				 */
 				print_stack = (void *)bsa->a3;
 			}
+
+			bsa->exccause = cause;
 		}
 
 skip_checks:
 		if (reason != K_ERR_KERNEL_OOPS) {
-			print_fatal_exception(print_stack, cause, is_dblexc, depc);
+			print_fatal_exception(print_stack, is_dblexc, depc);
 		}
 #ifdef CONFIG_XTENSA_EXCEPTION_ENTER_GDB
 		extern void z_gdb_isr(struct arch_esf *esf);
