@@ -13,8 +13,8 @@
 #include <freq.h>
 
 / {
-	model = "BeagleBoard.org BeagleBone AI-64";
 	compatible = "beagle,beaglebone-ai64";
+	model = "BeagleBoard.org BeagleBone AI-64";
 
 	chosen {
 		zephyr,sram = &atcm;
@@ -55,16 +55,16 @@
 };
 
 &i2c6 {
-	status = "okay";
 	pinctrl-0 = <&i2c6_scl_default &i2c6_sda_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &uart2 {
-	status = "okay";
 	pinctrl-0 = <&uart2_tx_default &uart2_rx_default>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
+	status = "okay";
 };
 
 &systick_timer {
