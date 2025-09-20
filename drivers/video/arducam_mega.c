@@ -212,7 +212,7 @@ static int arducam_mega_write_reg(const struct spi_dt_spec *spec, uint8_t reg_ad
 		if (!spi_write_dt(spec, &tx_bufs)) {
 			return 0;
 		}
-		// If writing failed wait 5ms before next attempt
+		/* If writing failed wait 5ms before next attempt */
 		k_msleep(5);
 	}
 	LOG_ERR("failed to write 0x%x to 0x%x", value, reg_addr);
@@ -247,7 +247,7 @@ static int arducam_mega_read_reg(const struct spi_dt_spec *spec, uint8_t reg_add
 		if (!ret) {
 			return value;
 		}
-		// If reading failed wait 5ms before next attempt
+		/* If reading failed wait 5ms before next attempt */
 		k_msleep(5);
 	}
 	LOG_ERR("failed to read 0x%x register", reg_addr);
@@ -641,6 +641,7 @@ static int arducam_mega_check_connection(const struct device *dev)
 		drv_data->ctrls.device_address.val = DEVICE_ADDRESS;
 		break;
 	case ARDUCAM_SENSOR_3MP_1:
+	case ARDUCAM_SENSOR_3MP_2:
 		fmts[8] = (struct video_format_cap)ARDUCAM_MEGA_VIDEO_FORMAT_CAP(
 			2048, 1536, VIDEO_PIX_FMT_RGB565);
 		fmts[17] = (struct video_format_cap)ARDUCAM_MEGA_VIDEO_FORMAT_CAP(
@@ -668,21 +669,6 @@ static int arducam_mega_check_connection(const struct device *dev)
 		drv_data->ctrls.enable_sharpness.val = ENABLE_SHARPNESS_5M;
 		drv_data->ctrls.device_address.val = DEVICE_ADDRESS;
 		break;
-	case ARDUCAM_SENSOR_3MP_2:
-		fmts[8] = (struct video_format_cap)ARDUCAM_MEGA_VIDEO_FORMAT_CAP(
-			2048, 1536, VIDEO_PIX_FMT_RGB565);
-		fmts[17] = (struct video_format_cap)ARDUCAM_MEGA_VIDEO_FORMAT_CAP(
-			2048, 1536, VIDEO_PIX_FMT_JPEG);
-		fmts[26] = (struct video_format_cap)ARDUCAM_MEGA_VIDEO_FORMAT_CAP(
-			2048, 1536, VIDEO_PIX_FMT_YUYV);
-		support_resolution[8] = MEGA_RESOLUTION_QXGA;
-
-		drv_data->ctrls.support_resolution.val = SUPPORT_RESOLUTION_3M;
-		drv_data->ctrls.support_special_effects.val = SUPPORT_SP_EFF_3M;
-		drv_data->ctrls.enable_focus.val = ENABLE_FOCUS_3M;
-		drv_data->ctrls.enable_sharpness.val = ENABLE_SHARPNESS_3M;
-		drv_data->ctrls.device_address.val = DEVICE_ADDRESS;
-		break;
 	default:
 		return -ENODEV;
 	}
@@ -698,7 +684,7 @@ static int arducam_mega_set_fmt(const struct device *dev, struct video_format *f
 	int ret = 0;
 	int i = 0;
 
-	// We only support RGB565, JPEG, and YUYV pixel formats
+	/* We only support RGB565, JPEG, and YUYV pixel formats */
 	if (fmt->pixelformat != VIDEO_PIX_FMT_RGB565 && fmt->pixelformat != VIDEO_PIX_FMT_JPEG &&
 	    fmt->pixelformat != VIDEO_PIX_FMT_YUYV) {
 		LOG_ERR("Arducam Mega camera only supports RGB565, JPG, and YUYV pixel "
@@ -710,21 +696,21 @@ static int arducam_mega_set_fmt(const struct device *dev, struct video_format *f
 	height = fmt->height;
 
 	if (!memcmp(&drv_data->fmt, fmt, sizeof(drv_data->fmt))) {
-		// nothing to do
+		/* nothing to do */
 		return 0;
 	}
 
-	// Check if camera is capable of handling given format
+	/* Check if camera is capable of handling given format */
 	while (fmts[i].pixelformat) {
 		if (fmts[i].width_min == width && fmts[i].height_min == height &&
 		    fmts[i].pixelformat == fmt->pixelformat) {
-			// Set output format
-			int ret = arducam_mega_set_output_format(dev, fmt->pixelformat);
+			/* Set output format */
+			ret = arducam_mega_set_output_format(dev, fmt->pixelformat);
 			if (ret < 0) {
 				LOG_ERR("Failed to set output format");
 				return ret;
 			}
-			// Set window size
+			/* Set window size */
 			ret = arducam_mega_set_resolution(
 				dev, support_resolution[i % SUPPORT_RESOLUTION_NUM]);
 			if (ret < 0) {
@@ -737,7 +723,7 @@ static int arducam_mega_set_fmt(const struct device *dev, struct video_format *f
 		}
 		i++;
 	}
-	// Camera is not capable of handling given format
+	/* Camera is not capable of handling given format */
 	LOG_ERR("Image resolution not supported\n");
 	return -ENOTSUP;
 }
@@ -795,7 +781,7 @@ static int arducam_mega_flush(const struct device *dev, bool cancel)
 	struct arducam_mega_data *drv_data = dev->data;
 	struct video_buffer *vbuf;
 
-	// Clear fifo cache
+	/* Clear fifo cache */
 	while (!k_fifo_is_empty(&drv_data->fifo_out)) {
 		vbuf = k_fifo_get(&drv_data->fifo_out, K_USEC(10));
 		if (vbuf != NULL) {
@@ -813,7 +799,7 @@ static int arducam_mega_soft_reset(const struct device *dev)
 	if (drv_data->stream_on) {
 		arducam_mega_stream_stop(dev);
 	}
-	// Initiate system reset //
+	/* Initiate system reset */
 	int ret = arducam_mega_write_reg(&cfg->bus, CAM_REG_SENSOR_RESET, SENSOR_RESET_ENABLE);
 	k_msleep(1000);
 
