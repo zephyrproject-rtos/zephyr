@@ -1,0 +1,41 @@
+.. zephyr:code-sample:: stm32_pm_standby
+   :name: STM32 System PM Standby State
+   :relevant-api: subsys_pm_sys
+
+   Demonstrate System PM Standby state on STM32.
+
+Overview
+********
+
+This sample is a minimum application to demonstrate System Power Management Standby state
+behavior. Press and hold the user button to enter Standby Mode and release the user button
+to exit from Standby Mode.
+
+.. _stm32-pm-standby-sample-requirements:
+
+Requirements
+************
+
+The board should support System Power Management Standby state. For a STM32 based target,
+it means that it should support a clock source alternative to Cortex Systick that can be used
+in core sleep states, as LPTIM (:dtcompatible:`st,stm32-lptim`).
+For another board than nucleo_l476rg please adjust wakeup pin into config_wakeup_features().
+
+Building and Running
+********************
+
+Build and flash standby as follows, changing ``nucleo_l476rg`` for your board:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/boards/st/power_mgmt/standby
+   :board: nucleo_l476rg
+   :goals: build flash
+   :compact:
+
+After flashing, the board boots. Press and hold the user button to enter Standby Mode
+and release the user button to exit from Standby Mode.
+
+PM configurations
+*****************
+
+By default, :kconfig:option:`CONFIG_PM` is enabled.
