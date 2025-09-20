@@ -100,7 +100,7 @@
 
 		sram7: memory@200d0000 {
 			compatible = "mmio-sram";
-			reg = <0x200d0000 DT_SIZE_K(64)>;
+			reg = <0x200d0000 DT_SIZE_K(192)>;
 		};
 
 		spixf: spixf@40027000 {
@@ -124,11 +124,11 @@
 			#size-cells = <1>;
 			status = "okay";
 
-			flash1: flash@10080000 {
+			flash1: flash@10300000 {
 				compatible = "soc-nv-flash";
-				reg = <0x10080000 DT_SIZE_K(256)>;
+				reg = <0x10300000 DT_SIZE_K(256)>;
 				write-block-size = <16>;
-				erase-block-size = <16384>;
+				erase-block-size = <8192>;
 			};
 		};
 
