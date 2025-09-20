@@ -1,0 +1,7 @@
+# Copyright (c) 2025 Jilay Sandeep Pandya
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    A fake stepper controller for use as either a stub or a mock in testing.
+
+compatible: "zephyr,fake-stepper-controller"

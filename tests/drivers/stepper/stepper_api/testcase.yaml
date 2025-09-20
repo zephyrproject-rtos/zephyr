@@ -13,7 +13,7 @@ tests:
     extra_configs:
       - CONFIG_GPIO=y
       - CONFIG_COUNTER=y
-      - CONFIG_STEPPER_STEP_DIR_GENERATE_ISR_SAFE_EVENTS=y
+      - CONFIG_ZEPHYR_STEPPER_MOTION_CONTROL_GENERATE_ISR_SAFE_EVENTS=y
     platform_allow:
       - native_sim/native/64
   drivers.stepper.stepper_api.adi_tmc2209_work_q:
@@ -21,7 +21,7 @@ tests:
       - platform:native_sim/native/64:DTC_OVERLAY_FILE="boards/native_sim_adi_tmc2209_work_q.overlay"
     extra_configs:
       - CONFIG_GPIO=y
-      - CONFIG_STEPPER_STEP_DIR_GENERATE_ISR_SAFE_EVENTS=y
+      - CONFIG_ZEPHYR_STEPPER_MOTION_CONTROL_GENERATE_ISR_SAFE_EVENTS=y
       - CONFIG_STEPPER_TEST_TIMING_TIMEOUT_TOLERANCE_PCT=30
     platform_allow:
       - native_sim/native/64
@@ -31,7 +31,7 @@ tests:
     extra_configs:
       - CONFIG_GPIO=y
       - CONFIG_COUNTER=y
-      - CONFIG_STEPPER_STEP_DIR_GENERATE_ISR_SAFE_EVENTS=y
+      - CONFIG_ZEPHYR_STEPPER_MOTION_CONTROL_GENERATE_ISR_SAFE_EVENTS=y
     platform_allow:
       - native_sim/native/64
   drivers.stepper.stepper_api.allegro_a4979_work_q:
@@ -39,7 +39,7 @@ tests:
       - platform:native_sim/native/64:DTC_OVERLAY_FILE="boards/native_sim_allegro_a4979_work_q.overlay"
     extra_configs:
       - CONFIG_GPIO=y
-      - CONFIG_STEPPER_STEP_DIR_GENERATE_ISR_SAFE_EVENTS=y
+      - CONFIG_ZEPHYR_STEPPER_MOTION_CONTROL_GENERATE_ISR_SAFE_EVENTS=y
       - CONFIG_STEPPER_TEST_TIMING_TIMEOUT_TOLERANCE_PCT=30
     platform_allow:
       - native_sim/native/64
@@ -49,7 +49,7 @@ tests:
     extra_configs:
       - CONFIG_GPIO=y
       - CONFIG_COUNTER=y
-      - CONFIG_STEPPER_STEP_DIR_GENERATE_ISR_SAFE_EVENTS=y
+      - CONFIG_ZEPHYR_STEPPER_MOTION_CONTROL_GENERATE_ISR_SAFE_EVENTS=y
     platform_allow:
       - native_sim/native/64
   drivers.stepper.stepper_api.ti_drv84xx_work_q:
@@ -57,7 +57,7 @@ tests:
       - platform:native_sim/native/64:DTC_OVERLAY_FILE="boards/native_sim_ti_drv84xx_work_q.overlay"
     extra_configs:
       - CONFIG_GPIO=y
-      - CONFIG_STEPPER_STEP_DIR_GENERATE_ISR_SAFE_EVENTS=y
+      - CONFIG_ZEPHYR_STEPPER_MOTION_CONTROL_GENERATE_ISR_SAFE_EVENTS=y
       - CONFIG_STEPPER_TEST_TIMING_TIMEOUT_TOLERANCE_PCT=30
     platform_allow:
       - native_sim/native/64

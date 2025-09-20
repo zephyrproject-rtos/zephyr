@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  GPIO Stepper Controller for darlington transistor arrays or dual H-bridge
+  H-Bridge Stepper Driver
 
   Example:
     /* Lead A is connected Lead C and Lead B is connected to Lead D*/
@@ -18,7 +18,7 @@ description: |
 
 compatible: "zephyr,h-bridge-stepper"
 
-include: stepper-controller.yaml
+include: stepper.yaml
 
 properties:
   gpios:
