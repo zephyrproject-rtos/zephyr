@@ -14,8 +14,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Analog Devices AD-APARD32690-SL";
 	compatible = "adi,apard32690";
+	model = "Analog Devices AD-APARD32690-SL";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -106,18 +106,18 @@
 
 	sdram1: sdram1@60000000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
-		status = "disabled";
-		device_type = "memory";
 		reg = <0x60000000 DT_SIZE_M(64)>;
+		device_type = "memory";
 		zephyr,memory-region = "SDRAM1";
+		status = "disabled";
 	};
 
 	sdram2: sdram2@70000000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
-		status = "disabled";
-		device_type = "memory";
 		reg = <0x70000000 DT_SIZE_M(64)>;
+		device_type = "memory";
 		zephyr,memory-region = "SDRAM2";
+		status = "disabled";
 	};
 };
 
@@ -254,8 +254,8 @@ pmod_spi: &spi4 {
 			#size-cells = <0>;
 
 			ethernet-phy@1 {
-				reg = <0x1>;
 				compatible = "adi,adin2111-phy";
+				reg = <0x1>;
 			};
 		};
 	};
