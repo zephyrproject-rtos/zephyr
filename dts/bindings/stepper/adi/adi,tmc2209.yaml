@@ -19,6 +19,7 @@ compatible: "adi,tmc2209"
 
 include:
   - name: stepper-controller.yaml
+  - name: step-dir-timing.yaml
 
 properties:
   msx-gpios:
