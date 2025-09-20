@@ -152,6 +152,11 @@ enum video_colorfx {
  */
 #define VIDEO_CID_BAND_STOP_FILTER (VIDEO_CID_BASE + 33)
 
+/** Rotate the image by a given angle, e.g. 90, 180, 270 degree. The application will be then
+ * responsible for setting the new width and height of the image using video_set_fmt() if needed.
+ */
+#define VIDEO_CID_ROTATE (VIDEO_CID_BASE + 34)
+
 /** Sets the alpha color component.
  * Some devices produce data with a user-controllable alpha component. Set the value applied to
  * the alpha channel of every pixel produced.

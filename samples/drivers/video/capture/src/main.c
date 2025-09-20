@@ -26,6 +26,22 @@ LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
 #error No camera chosen in devicetree. Missing "--shield" or "--snippet video-sw-generator" flag?
 #endif
 
+#define NUM_BUFS 2
+
+int __weak video_transform_setup(struct video_format in_fmt, struct video_format *out_fmt)
+{
+	*out_fmt = in_fmt;
+
+	return 0;
+}
+
+int __weak video_transform_process(struct video_buffer *in_buf, struct video_buffer **out_buf)
+{
+	*out_buf = in_buf;
+
+	return 0;
+}
+
 #if DT_HAS_CHOSEN(zephyr_display)
 static inline int display_setup(const struct device *const display_dev, const uint32_t pixfmt)
 {
@@ -92,8 +108,10 @@ static inline void video_display_frame(const struct device *const display_dev,
 int main(void)
 {
 	struct video_buffer *vbuf = &(struct video_buffer){};
+	struct video_buffer *transformed_buf = &(struct video_buffer){};
 	const struct device *video_dev;
 	struct video_format fmt;
+	struct video_format transformed_fmt;
 	struct video_caps caps;
 	struct video_frmival frmival;
 	struct video_frmival_enum fie;
@@ -261,6 +279,13 @@ int main(void)
 		tp_set_ret = video_set_ctrl(video_dev, &ctrl);
 	}
 
+	/* Set up transformation */
+	err = video_transform_setup(fmt, &transformed_fmt);
+	if (err) {
+		LOG_ERR("Unable to set up transformation");
+		return 0;
+	}
+
 #if DT_HAS_CHOSEN(zephyr_display)
 	const struct device *const display_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
 
@@ -269,7 +294,7 @@ int main(void)
 		return 0;
 	}
 
-	err = display_setup(display_dev, fmt.pixelformat);
+	err = display_setup(display_dev, transformed_fmt.pixelformat);
 	if (err) {
 		LOG_ERR("Unable to set up display");
 		return err;
@@ -284,13 +309,13 @@ int main(void)
 	}
 
 	/* Alloc video buffers and enqueue for capture */
-	if (caps.min_vbuf_count > CONFIG_VIDEO_BUFFER_POOL_NUM_MAX ||
+	if (caps.min_vbuf_count > NUM_BUFS ||
 	    bsize > CONFIG_VIDEO_BUFFER_POOL_SZ_MAX) {
 		LOG_ERR("Not enough buffers or memory to start streaming");
 		return 0;
 	}
 
-	for (i = 0; i < CONFIG_VIDEO_BUFFER_POOL_NUM_MAX; i++) {
+	for (i = 0; i < NUM_BUFS; i++) {
 		/*
 		 * For some hardwares, such as the PxP used on i.MX RT1170 to do image rotation,
 		 * buffer alignment is needed in order to achieve the best performance
@@ -333,8 +358,15 @@ int main(void)
 		}
 #endif
 
+		/* Do transformation */
+		err = video_transform_process(vbuf, &transformed_buf);
+		if (err) {
+			LOG_ERR("Unable to transform video frame");
+			return 0;
+		}
+
 #if DT_HAS_CHOSEN(zephyr_display)
-		video_display_frame(display_dev, vbuf, fmt);
+		video_display_frame(display_dev, transformed_buf, transformed_fmt);
 #endif
 
 		err = video_enqueue(video_dev, vbuf);

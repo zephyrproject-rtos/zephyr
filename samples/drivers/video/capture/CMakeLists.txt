@@ -6,3 +6,7 @@ project(video_capture)
 
 FILE(GLOB app_sources src/*.c)
 target_sources(app PRIVATE ${app_sources})
+
+if(CONFIG_VIDEO_TRANSFORM)
+    target_sources(app PRIVATE boards/${BOARD}/transform.c)
+endif()
