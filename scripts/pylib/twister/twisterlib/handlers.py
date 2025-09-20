@@ -543,6 +543,12 @@ class DeviceHandler(Handler):
     def make_dut_available(self, dut):
         if self.instance.status in [TwisterStatus.ERROR, TwisterStatus.FAIL]:
             dut.failures_increment()
+            if dut.failure_script:
+                logger.debug(f"Running failure script: {dut.failure_script}")
+                timeout = 30
+                if dut.script_param:
+                    timeout = dut.script_param.get("failure_script_timeout", timeout)
+                self.run_custom_script(re.split('[, ]', dut.failure_script), timeout)
         logger.debug(f"Release DUT:{dut.platform}, Id:{dut.id}, "
                      f"counter:{dut.counter}, failures:{dut.failures}")
         # get all DUTs with the same id

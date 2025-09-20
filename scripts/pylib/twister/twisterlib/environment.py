@@ -697,6 +697,11 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
                         before device handler open serial port and invoke runner.
                         """)
 
+    parser.add_argument("--failure-script",
+                        help="""specify a failures script. This will be executed
+                        on test failure.
+                        """)
+
     parser.add_argument(
         "--quarantine-list",
         action="append",
