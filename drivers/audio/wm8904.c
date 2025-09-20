@@ -567,16 +567,15 @@ static int wm8904_apply_properties(const struct device *dev)
 	 * Set VU = 1 for all output channels, VU takes effect for the whole
 	 * channel pair.
 	 */
-	wm8904_update_reg(
-		dev,
+	wm8904_update_reg(dev,
 		WM8904_REG_ANALOG_OUT1_LEFT,
-		WM8904_REGVAL_OUT_VOL(0, 1, 0, 0),
-		WM8904_REGMASK_OUT_MUTE
+		WM8904_REGMASK_OUT_VU,
+		WM8904_REGVAL_OUT_VOL(0, 1, 0, 0)
 	);
 	wm8904_update_reg(dev,
 		WM8904_REG_ANALOG_OUT2_LEFT,
-		WM8904_REGVAL_OUT_VOL(0, 1, 0, 0),
-		WM8904_REGMASK_OUT_MUTE
+		WM8904_REGMASK_OUT_VU,
+		WM8904_REGVAL_OUT_VOL(0, 1, 0, 0)
 	);
 
 	return 0;
