@@ -186,6 +186,14 @@ struct fs_file_system_t {
 	 */
 	int (*statvfs)(struct fs_mount_t *mountp, const char *path,
 					struct fs_statvfs *stat);
+	/**
+	 * Attempt to proactively clean file system
+	 *
+	 * @param mountp Mount point.
+	 * @param path Path to the file or directory.
+	 * @return 0 on success, negative errno code on fail.
+	 */
+	int (*gc)(struct fs_mount_t *mountp, const char *path);
 #if defined(CONFIG_FILE_SYSTEM_MKFS) || defined(__DOXYGEN__)
 	/**
 	 * Formats a device to specified file system type.
