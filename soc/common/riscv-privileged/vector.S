@@ -10,11 +10,18 @@
 /* exports */
 GTEXT(__start)
 
+#if !defined(CONFIG_K_ENTRY_SOC_CUSTOM_ARCH_EXTENSION)
+GTEXT(k_entry)
+SET_SYM(k_entry, __start)
+#endif
+
 /* imports */
 GTEXT(__initialize)
 #if defined(CONFIG_USE_ISR_WRAPPER)
 GTEXT(_isr_wrapper)
 #endif
+
+
 
 SECTION_FUNC(vectors, __start)
 #if defined(CONFIG_RISCV_GP)

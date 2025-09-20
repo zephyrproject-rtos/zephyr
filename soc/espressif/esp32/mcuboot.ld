@@ -34,7 +34,7 @@ MEMORY
 #endif
 }
 
-ENTRY(CONFIG_KERNEL_ENTRY)
+ENTRY(k_entry)
 
 SECTIONS
 {

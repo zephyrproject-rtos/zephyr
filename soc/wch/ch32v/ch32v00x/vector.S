@@ -13,6 +13,9 @@
 /* Exports */
 GTEXT(__start)
 
+GTEXT(k_entry)
+SET_SYM(k_entry, __start)
+
 /* Imports */
 GTEXT(__initialize)
 

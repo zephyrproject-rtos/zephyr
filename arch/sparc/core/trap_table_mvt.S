@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019-2020 Cobham Gaisler AB
+ * Copyright (c) 2025 Baumer (www.baumer.com)
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -63,6 +64,11 @@
 
 GTEXT(__sparc_trap_table)
 GTEXT(__start)
+
+#if !defined(CONFIG_K_ENTRY_SOC_CUSTOM_ARCH_EXTENSION)
+GTEXT(k_entry)
+SET_SYM(k_entry, __start)
+#endif
 
 SECTION_SUBSEC_FUNC(TEXT, traptable, __sparc_trap_table)
 __start:

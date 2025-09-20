@@ -16,6 +16,9 @@
 /* exports */
 GTEXT(entry)
 
+GTEXT(k_entry)
+SET_SYM(k_entry, entry)
+
 SECTION_FUNC(init, init)
 entry:
 

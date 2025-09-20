@@ -51,4 +51,7 @@ endchoice
 config DCACHE_LINE_SIZE
 	default 64
 
+config K_ENTRY_SOC_CUSTOM_ARCH_EXTENSION
+	default y
+
 endif # SOC_FAMILY_INTEL_ADSP

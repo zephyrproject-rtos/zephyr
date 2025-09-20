@@ -11,6 +11,10 @@
 /* exports */
 GTEXT(__start)
 
+GTEXT(k_entry)
+SET_SYM(k_entry, __start)
+
+
 /* imports */
 GTEXT(__initialize)
 GTEXT(_isr_wrapper)

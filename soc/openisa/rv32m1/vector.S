@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018 Foundries.io Ltd
+ * Copyright (c) 2025 Baumer (www.baumer.com)
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +13,10 @@ GTEXT(_isr_wrapper)
 
 /* Exports */
 GTEXT(__start)
+
+GTEXT(k_entry)
+SET_SYM(k_entry, __start)
+
 
 /*
  * Interrupts work the same way for both the RI5CY and ZERO-RISCY cores

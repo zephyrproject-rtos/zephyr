@@ -2,6 +2,7 @@
  * Copyright (c) 2013-2014 Wind River Systems, Inc.
  * Copyright (c) 2019 Stephanos Ioannidis <root@stephanos.io>
  * Copyright 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+ * Copyright (c) 2025 Baumer (www.baumer.com)
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -33,6 +34,11 @@ GDATA(z_arm_abort_stack)
 GDATA(z_arm_undef_stack)
 #if defined(CONFIG_SOC_RESET_HOOK)
 GTEXT(soc_reset_hook)
+#endif
+
+#if !defined(CONFIG_K_ENTRY_SOC_CUSTOM_ARCH_EXTENSION)
+GTEXT(k_entry)
+SET_SYM(k_entry, __start)
 #endif
 
 /**

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2010-2015 Wind River Systems, Inc.
+ * Copyright (c) 2025 Baumer (www.baumer.com)
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,6 +16,7 @@
  * available in virtual address space after loading of page table.
  */
 
+#include <zephyr/toolchain.h>
 #include <zephyr/arch/x86/ia32/asm.h>
 #include <zephyr/arch/x86/msr.h>
 #include <kernel_arch_data.h>
@@ -40,6 +42,10 @@
 	GDATA(_gdt)
 #endif
 
+#if !defined(CONFIG_K_ENTRY_SOC_CUSTOM_ARCH_EXTENSION)
+GTEXT(k_entry)
+SET_SYM(k_entry, __start)
+#endif
 
 #if defined(CONFIG_X86_SSE)
 	GDATA(_sse_mxcsr_default_value)

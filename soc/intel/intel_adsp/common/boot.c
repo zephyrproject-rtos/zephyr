@@ -56,29 +56,31 @@
  * z_boot_asm_entry (which cannot be here, because it needs to be able
  * to reference immediates which must link before it)
  */
-__asm__(".pushsection .boot_entry.text, \"ax\" \n\t"
-	".global rom_entry             \n\t"
-	"rom_entry:                    \n\t"
-	"  j z_boot_asm_entry          \n\t"
-	".popsection                   \n\t");
+__asm__(".pushsection .boot_entry.text, \"ax\"\n\t"
+	".global rom_entry\n\t"
+	".global k_entry\n\t"
+	".set k_entry, rom_entry\n\t"
+	"rom_entry:\n\t"
+	"  j z_boot_asm_entry\n\t"
+	".popsection\n\t");
 
 /* Entry stub.  Sets up register windows and stack such that we can
  * enter C code successfully, and calls boot_core0()
  */
 #define STRINGIFY_MACRO(x) Z_STRINGIFY(x)
 #define IMRSTACK STRINGIFY_MACRO(IMR_BOOT_LDR_MANIFEST_BASE)
-__asm__(".section .imr.z_boot_asm_entry, \"x\" \n\t"
-	".align 4                   \n\t"
-	"z_boot_asm_entry:          \n\t"
-	"  movi  a0, 0x4002f        \n\t"
-	"  wsr   a0, PS             \n\t"
-	"  movi  a0, 0              \n\t"
-	"  wsr   a0, WINDOWBASE     \n\t"
-	"  movi  a0, 1              \n\t"
-	"  wsr   a0, WINDOWSTART    \n\t"
-	"  rsync                    \n\t"
-	"  movi  a1, " IMRSTACK    "\n\t"
-	"  call4 boot_core0   \n\t");
+__asm__(".section .imr.z_boot_asm_entry, \"x\"\n\t"
+	".align 4\n\t"
+	"z_boot_asm_entry:\n\t"
+	"  movi  a0, 0x4002f\n\t"
+	"  wsr   a0, PS\n\t"
+	"  movi  a0, 0\n\t"
+	"  wsr   a0, WINDOWBASE\n\t"
+	"  movi  a0, 1\n\t"
+	"  wsr   a0, WINDOWSTART\n\t"
+	"  rsync\n\t"
+	"  movi  a1, " IMRSTACK "\n\t"
+	"  call4 boot_core0\n\t");
 
 static __imr void parse_module(struct sof_man_fw_header *hdr,
 			       struct sof_man_module *mod)

@@ -21,7 +21,7 @@
 	#define MMU_PAGE_ALIGN_PERM
 #endif
 
-ENTRY(CONFIG_KERNEL_ENTRY)
+ENTRY(k_entry)
 
 SECTIONS
 {
