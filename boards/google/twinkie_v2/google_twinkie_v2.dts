@@ -10,8 +10,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Google Twinkie V2";
 	compatible = "google,twinkie-v2";
+	model = "Google Twinkie V2";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -177,10 +177,9 @@
 };
 
 &ucpd1 {
-	status = "okay";
-
 	psc-ucpdclk = <1>;
 	hbitclkdiv = <27>;
 	pinctrl-0 = <&ucpd1_cc1_pa8 &ucpd1_cc2_pb15>;
 	pinctrl-names = "default";
+	status = "okay";
 };
