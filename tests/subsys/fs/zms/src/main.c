@@ -757,9 +757,9 @@ ZTEST_F(zms, test_zms_cache_init)
 
 /*
  * Test that even after writing more ZMS IDs than the number of ZMS lookup cache
- * entries they all can be read correctly.
+ * entries they all can be read and deleted correctly.
  */
-ZTEST_F(zms, test_zms_cache_collission)
+ZTEST_F(zms, test_zms_cache_collision)
 {
 #ifdef CONFIG_ZMS_LOOKUP_CACHE
 	int err;
@@ -779,6 +779,16 @@ ZTEST_F(zms, test_zms_cache_collission)
 		err = zms_read(&fixture->fs, id, &data, sizeof(data));
 		zassert_equal(err, sizeof(data), "zms_read call failure: %d", err);
 		zassert_equal(data, id, "incorrect data read");
+	}
+
+	for (int id = 0; id < CONFIG_ZMS_LOOKUP_CACHE_SIZE + 1; id++) {
+		err = zms_delete(&fixture->fs, id);
+		zassert_equal(0, err, "zms_delete failed: %d", err);
+	}
+
+	for (int id = 0; id < CONFIG_ZMS_LOOKUP_CACHE_SIZE + 1; id++) {
+		err = zms_read(&fixture->fs, id, &data, sizeof(data));
+		zassert_equal(-ENOENT, err, "zms_delete failed: %d", err);
 	}
 #endif
 }
