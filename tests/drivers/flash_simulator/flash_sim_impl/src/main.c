@@ -498,6 +498,53 @@ ZTEST(flash_sim_api, test_flash_fill)
 	}
 }
 
+ZTEST(flash_sim_api, test_flash_mmap)
+{
+	const uint8_t out[] = "Hello world!!!\n";
+	uint8_t in[64];
+	uint8_t *p;
+	uint64_t size;
+	int rc;
+#if defined(CONFIG_FLASH_SIMULATOR_EXPLICIT_ERASE)
+	rc = flash_erase(flash_dev, FLASH_SIMULATOR_BASE_OFFSET,
+			 FLASH_SIMULATOR_FLASH_SIZE);
+	zassert_equal(0, rc, "flash_erase should succeed");
+#else
+	rc = flash_fill(flash_dev, FLASH_SIMULATOR_ERASE_VALUE,
+			FLASH_SIMULATOR_BASE_OFFSET,
+			FLASH_SIMULATOR_FLASH_SIZE);
+	zassert_equal(0, rc, "flash_fill should succeed");
+#endif
+	zassert_ok(flash_mmap(flash_dev, (void **)&p, &size, FLASH_MMAP_F_READ));
+	zassert_ok(flash_write(flash_dev, FLASH_SIMULATOR_BASE_OFFSET, out,
+			       sizeof(out)));
+
+	zassert_ok(memcmp(p, out, sizeof(out)));
+
+	zassert_ok(flash_read(flash_dev, FLASH_SIMULATOR_BASE_OFFSET, in,
+			      sizeof(out)));
+	zassert_ok(memcmp(out, in, sizeof(out)));
+
+#if defined(CONFIG_FLASH_SIMULATOR_EXPLICIT_ERASE)
+	rc = flash_erase(flash_dev, FLASH_SIMULATOR_BASE_OFFSET,
+			 FLASH_SIMULATOR_FLASH_SIZE);
+	zassert_equal(0, rc, "flash_erase should succeed");
+#else
+	rc = flash_fill(flash_dev, FLASH_SIMULATOR_ERASE_VALUE,
+			FLASH_SIMULATOR_BASE_OFFSET,
+			FLASH_SIMULATOR_FLASH_SIZE);
+	zassert_equal(0, rc, "flash_fill should succeed");
+#endif
+	zassert_ok(flash_mmap(flash_dev, (void **)&p, &size, FLASH_MMAP_F_WRITE));
+	memset(in, 0, sizeof(in));
+	/* Write via memcpy */
+	memcpy(p, out, sizeof(out));
+	zassert_ok(memcmp(p, out, sizeof(out)));
+	zassert_ok(flash_read(flash_dev, FLASH_SIMULATOR_BASE_OFFSET, in,
+			      sizeof(out)));
+	zassert_ok(memcmp(out, in, sizeof(out)));
+}
+
 ZTEST(flash_sim_api, test_flash_flatten)
 {
 	int rc;
