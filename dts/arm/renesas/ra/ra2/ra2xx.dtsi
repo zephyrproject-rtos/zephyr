@@ -393,42 +393,29 @@
 			};
 		};
 
-		option-setting-ofs-in-rom@400 {
-			reg = <0x00000400 0x3c>;
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			option_setting_ofs0: option-setting-ofs0@400 {
-				compatible = "renesas,ofs-memory";
-				reg = <0x00000400 0x4>;
-				status = "okay";
-			};
-
-			option_setting_ofs1: option-setting-ofs1@404 {
-				compatible = "renesas,ofs-memory";
-				reg = <0x00000404 0x4>;
-				status = "okay";
-			};
-
-			option_setting_secmpu: option-setting-secmpu@408 {
-				compatible = "renesas,ofs-memory";
-				reg = <0x00000408 0x34>;
-				status = "okay";
-			};
+		option_setting_ofs0: option-setting-ofs0@400 {
+			compatible = "renesas,ofs-memory";
+			reg = <0x00000400 0x4>;
+			status = "okay";
 		};
 
-		option-setting-ofs-conf@1010008 {
-			reg = <0x01010008 0x2c>;
-			#address-cells = <1>;
-			#size-cells = <1>;
+		option_setting_ofs1: option-setting-ofs1@404 {
+			compatible = "renesas,ofs-memory";
+			reg = <0x00000404 0x4>;
 			status = "okay";
+		};
 
-			option_setting_osis: option-setting-osis@1010018 {
-				compatible = "zephyr,memory-region";
-				zephyr,memory-region = "OFS_OSIS_MEMORY";
-				reg = <0x01010018 0x1c>;
-				status = "okay";
-			};
+		option_setting_secmpu: option-setting-secmpu@408 {
+			compatible = "renesas,ofs-memory";
+			reg = <0x00000408 0x34>;
+			status = "okay";
+		};
+
+		option_setting_osis: option-setting-osis@1010018 {
+			compatible = "zephyr,memory-region";
+			zephyr,memory-region = "OFS_OSIS_MEMORY";
+			reg = <0x01010018 0x1c>;
+			status = "okay";
 		};
 	};
 };
