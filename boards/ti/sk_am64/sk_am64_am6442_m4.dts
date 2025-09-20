@@ -12,8 +12,8 @@
 #include "sk_am64_am6442_m4-pinctrl.dtsi"
 
 / {
-	model = "TI AM64x STARTER KIT (SK) M4";
 	compatible = "ti,am64x_m4_sk", "ti,am6442";
+	model = "TI AM64x STARTER KIT (SK) M4";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -29,8 +29,8 @@
 
 	cpus {
 		cpu@0 {
-			status = "okay";
 			clock-frequency = <DT_FREQ_M(400)>;
+			status = "okay";
 		};
 	};
 

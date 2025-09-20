@@ -13,8 +13,8 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 
 / {
-	model = "TI LP_MSPM0L2228/MSPM0L2228";
 	compatible = "ti,mspm0l2228";
+	model = "TI LP_MSPM0L2228/MSPM0L2228";
 
 	aliases {
 		led0 = &led0;
@@ -53,18 +53,18 @@
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 0x8000>;
+			label = "mcuboot";
 		};
 
 		slot0_partition: partition@8000 {
-			label = "image-0";
 			reg = <0x00008000 0x1c000>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@24000 {
-			label = "image-1";
 			reg = <0x00024000 0x1c000>;
+			label = "image-1";
 		};
 	};
 };
@@ -78,8 +78,8 @@
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_tx_pa10 &uart0_rx_pa11>;
 	pinctrl-names = "default";
+	status = "okay";
 };

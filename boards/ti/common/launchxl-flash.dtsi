@@ -8,25 +8,25 @@
 	partitions {
 		/* 40 KiB (0xa000) for MCUboot */
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 0x0000a000>;
+			label = "mcuboot";
 		};
 
 		/* 136 KiB (0x22000) per slot for application */
 		slot0_partition: partition@a000 {
-			label = "image-0";
 			reg = <0x0000a000 0x00022000>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@2c000 {
-			label = "image-1";
 			reg = <0x0002c000 0x00022000>;
+			label = "image-1";
 		};
 
 		/* 32 KiB (0x8000) for storage */
 		storage_partition: partition@4e000 {
-			label = "storage";
 			reg = <0x0004e000 0x00008000>;
+			label = "storage";
 		};
 
 		/* CCFG (customer configuration area) is located in uppermost
