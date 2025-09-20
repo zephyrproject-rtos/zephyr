@@ -1,0 +1,18 @@
+# Copyright (c) 2025 Suraj Sonawane <surajsonawane0215@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+title: Zephyr binding for a Virtual DAI (Digital Audio Interface)
+
+description: |
+  This DAI is not connected to real hardware and is used for software-only
+  audio routing or testing within SOF + Zephyr systems.
+
+compatible: "zephyr,virtual-dai"
+
+include: base.yaml
+
+properties:
+  dai-index:
+    type: int
+    description: |
+      DAI index used to identify this virtual DAI in IPC and topology.
