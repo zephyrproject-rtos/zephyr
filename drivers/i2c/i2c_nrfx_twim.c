@@ -29,7 +29,7 @@ LOG_MODULE_REGISTER(i2c_nrfx_twim, CONFIG_I2C_LOG_LEVEL);
 #endif
 
 struct i2c_nrfx_twim_data {
-	struct k_sem transfer_sync;
+	struct k_mutex transfer_mutex;
 	struct k_sem completion_sync;
 	volatile nrfx_err_t res;
 };
@@ -39,7 +39,7 @@ int i2c_nrfx_twim_exclusive_access_acquire(const struct device *dev, k_timeout_t
 	struct i2c_nrfx_twim_data *dev_data = dev->data;
 	int ret;
 
-	ret = k_sem_take(&dev_data->transfer_sync, timeout);
+	ret = k_mutex_lock(&dev_data->transfer_mutex, timeout);
 
 	if (ret == 0) {
 		(void)pm_device_runtime_get(dev);
@@ -54,7 +54,7 @@ void i2c_nrfx_twim_exclusive_access_release(const struct device *dev)
 
 	(void)pm_device_runtime_put(dev);
 
-	k_sem_give(&dev_data->transfer_sync);
+	k_mutex_unlock(&dev_data->transfer_mutex);
 }
 
 static int i2c_nrfx_twim_transfer(const struct device *dev,
@@ -218,7 +218,7 @@ static int i2c_nrfx_twim_init(const struct device *dev)
 {
 	struct i2c_nrfx_twim_data *data = dev->data;
 
-	k_sem_init(&data->transfer_sync, 1, 1);
+	k_mutex_init(&data->transfer_mutex);
 	k_sem_init(&data->completion_sync, 0, 1);
 
 	return i2c_nrfx_twim_common_init(dev);
