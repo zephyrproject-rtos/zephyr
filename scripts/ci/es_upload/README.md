@@ -69,7 +69,7 @@ making it suitable for Kibana default visual components
 
 ### Twister test results
 
-Create the index:
+Create the index once:
 ```bash
 python3 ./scripts/ci/upload_test_results_es.py --create-index \
     --index zephyr-test-example \
@@ -90,7 +90,7 @@ Store test results with `recording` data entries, for example from
 [Kernel Timer Behavior](https://github.com/zephyrproject-rtos/zephyr/tree/main/tests/kernel/timer/timer_behavior)
 test suite.
 
-Create the index:
+Create the index once:
 ```bash
 python3 ./scripts/ci/upload_test_results_es.py --create-index \
     --index zephyr-test-recording-example-1 \
@@ -114,7 +114,7 @@ to extract embedded values, for example
 [Kernel Latency Benchmarks](https://github.com/zephyrproject-rtos/zephyr/tree/main/tests/benchmarks/latency_measure)
 test suite.
 
-Create the index:
+Create the index once:
 ```bash
 python3 ./scripts/ci/upload_test_results_es.py --create-index \
     --index zephyr-test-recording-example-2 \
@@ -137,7 +137,7 @@ python3 ./scripts/ci/upload_test_results_es.py \
 
 To store Memory Footprint data reported in `twister-footprint.json` (see Twister `--footprint-report`).
 
-Create the index:
+Create the index once:
 ```bash
 python3 ./scripts/ci/upload_test_results_es.py --create-index \
     --index zephyr-memory-footprint-example \
@@ -153,4 +153,39 @@ python3 ./scripts/ci/upload_test_results_es.py  \
     --flatten-list-names "{'children':'name'}" \
     --transform "{ 'footprint_name': '^(?P<footprint_area>([^\/]+\/){0,2})(?P<footprint_path>([^\/]*\/)*)(?P<footprint_symbol>[^\/]*)$' }" \
     ../footprint_data/**/twister_footprint.json
+```
+
+
+### Thread Metrics Test Suite with recording and preprocessing
+
+[Thread-Metric RTOS Test Suite](https://github.com/zephyrproject-rtos/zephyr/tree/main/tests/benchmarks/thread_metric)
+consists of several tests, and one of them is the 'baseline' metric:
+its value can be used to normalize all the metrics, including the baseline itself,
+to allow relative performance comparison to other RTOS-es as well as between different
+platforms running Zephyr.
+After Twister did its part to execute the test suite and extract 'raw' benchmark values from
+the test console output into twister.json recordings, we can run a post processing script
+which calculates the additional statistics adding them to the same `recording` JSON object.
+This allows to simplify further data aggergation and visualization of the benchmark data
+on the Kibana standard charts.
+
+Create the index once:
+```bash
+python3 ./scripts/ci/upload_test_results_es.py --create-index \
+    --index zephyr-test-recording-thread_metric \
+    --map-file zephyr_twister_flat_recording_benchmark_thread_metric_index.json
+```
+
+Post-process Thread-Metric results:
+```bash
+python3 tests/benchmarks/thread_metric/scripts/twister_postprocess.py twister-out/**/twister.json
+```
+
+Upload the reports with 'flattened' test suites generating documents for each `record` data entry:
+```bash
+python3 ./scripts/ci/upload_test_results_es.py \
+    --index zephyr-test-recording-thread_metric \
+    --exclude path run_id \
+    --flatten recording \
+    ./twister-out/**/twister.json
 ```
