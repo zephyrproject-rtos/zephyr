@@ -84,17 +84,6 @@ K_THREAD_STACK_DEFINE(ac_stack_area, AC_STACK_SIZE);
 
 struct k_work_q ac_work_q;
 
-/**
- * @struct mega_sdk_data
- * @brief Basic information of the camera firmware
- */
-struct mega_sdk_data {
-	uint8_t year;
-	uint8_t month;
-	uint8_t day;
-	uint8_t version;
-};
-
 struct arducam_mega_config {
 	struct spi_dt_spec bus;
 };
@@ -141,7 +130,6 @@ struct arducam_mega_data {
 	struct k_work buf_work;
 	struct k_timer stream_schedule_timer;
 	struct k_poll_signal *signal;
-	struct mega_sdk_data ver;
 	uint8_t fifo_first_read;
 	uint32_t fifo_length;
 	uint8_t stream_on;
@@ -1149,14 +1137,11 @@ static int arducam_mega_init(const struct device *dev)
 		return ret;
 	}
 
-	drv_data->ver.year = arducam_mega_read_reg(&cfg->bus, CAM_REG_YEAR_SDK) & 0x3F;
-	drv_data->ver.month = arducam_mega_read_reg(&cfg->bus, CAM_REG_MONTH_SDK) & 0x0F;
-	drv_data->ver.day = arducam_mega_read_reg(&cfg->bus, CAM_REG_DAY_SDK) & 0x1F;
-	drv_data->ver.version =
-		arducam_mega_read_reg(&cfg->bus, CAM_REG_FPGA_VERSION_NUMBER) & 0xfF;
-
-	LOG_INF("arducam mega ver: %d-%d-%d \t %x", drv_data->ver.year, drv_data->ver.month,
-		drv_data->ver.day, drv_data->ver.version);
+	uint8_t year = arducam_mega_read_reg(&cfg->bus, CAM_REG_YEAR_SDK) & 0x3F;
+	uint8_t month = arducam_mega_read_reg(&cfg->bus, CAM_REG_MONTH_SDK) & 0x0F;
+	uint8_t day = arducam_mega_read_reg(&cfg->bus, CAM_REG_DAY_SDK) & 0x1F;
+	uint8_t version = arducam_mega_read_reg(&cfg->bus, CAM_REG_FPGA_VERSION_NUMBER) & 0xfF;
+	LOG_INF("arducam mega ver: %d-%d-%d \t %x", year, month, day, version);
 
 	/* set default/init format */
 	fmt.type = VIDEO_BUF_TYPE_OUTPUT;
