@@ -177,7 +177,12 @@ New APIs and options
   * Sockets
 
     * :c:func:`zsock_listen` now implements the ``backlog`` parameter support. The TCP server
-      socket will limit the number of pending incoming connections to that value.
+      socket will limit the number of pending incoming connections to that
+      value.
+
+* Newlib
+
+  * :kconfig:option:`CONFIG_NEWLIB_LIBC_USE_POSIX_LIMITS_H`
 
 * Power management
 
