@@ -10,6 +10,9 @@ config SILABS_SISDK_GPIO
 config SILABS_SISDK_I2C
 	bool "Peripheral HAL for I2C"
 
+config SILABS_SISDK_IADC
+	bool "Peripheral HAL for IADC"
+
 config SILABS_SISDK_LETIMER
 	bool "Peripheral HAL for LETIMER"
 

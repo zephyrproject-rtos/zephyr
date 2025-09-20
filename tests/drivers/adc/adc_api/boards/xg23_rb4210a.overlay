@@ -1,10 +1,10 @@
 /*
  * SPDX-License-Identifier: Apache-2.0
  *
- * Copyright (c) 2023 Antmicro <www.antmicro.com>
+ * Copyright (c) 2025 Silicon Laboratories Inc.
  */
 
-#include "dt-bindings/adc/silabs-adc.h"
+#include <dt-bindings/adc/silabs-adc.h>
 
 / {
 	zephyr,user {

@@ -1,14 +1,18 @@
 /*
  * SPDX-License-Identifier: Apache-2.0
  *
- * Copyright (c) 2023 Antmicro <www.antmicro.com>
+ * Copyright (c) 2025 Silicon Laboratories Inc.
  */
 
-#include "dt-bindings/adc/silabs-adc.h"
+#include <dt-bindings/adc/silabs-adc.h>
 
 / {
 	zephyr,user {
 		io-channels = <&adc0 3>, <&adc0 4>;
+	};
+
+	aliases {
+		adc0 = &adc0;
 	};
 };
 
@@ -24,7 +28,6 @@
 &adc0 {
 	pinctrl-0 = <&adc0_default>;
 	pinctrl-names = "default";
-	dmas = <&dma0 DMA_REQSEL_IADC0IADC_SCAN>;
 	#address-cells = <1>;
 	#size-cells = <0>;
 	status = "okay";
@@ -47,8 +50,4 @@
 		zephyr,resolution = <12>;
 		zephyr,input-positive = <IADC_INPUT_PB3>;
 	};
-};
-
-&dma0 {
-	status = "okay";
 };
