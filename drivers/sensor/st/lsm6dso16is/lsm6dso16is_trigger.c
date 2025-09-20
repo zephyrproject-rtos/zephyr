@@ -54,6 +54,54 @@ static int lsm6dso16is_enable_t_int(const struct device *dev, int enable)
 }
 #endif
 
+#if defined(CONFIG_USE_ST_MEMS_ISPU)
+/**
+ * lsm6dso16is_enable_ispu_int - ISPU enable selected int pin to generate interrupt
+ */
+static int lsm6dso16is_enable_ispu_int(const struct device *dev, int enable)
+{
+	const struct lsm6dso16is_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
+	int ret;
+
+	if (enable) {
+		int16_t buf[3];
+
+		/* dummy read: re-trigger interrupt */
+		lsm6dso16is_acceleration_raw_get(ctx, buf);
+	}
+
+	/* set interrupt */
+	if (cfg->drdy_pin == 1) {
+		lsm6dso16is_pin_int1_route_t val = {0};
+
+		ret = lsm6dso16is_pin_int1_route_get(ctx, &val);
+		if (ret < 0) {
+			LOG_ERR("pint_int1_route_get error");
+			return ret;
+		}
+
+		val.ispu = enable;
+
+		ret = lsm6dso16is_pin_int1_route_set(ctx, val);
+	} else {
+		lsm6dso16is_pin_int2_route_t val = {0};
+
+		ret = lsm6dso16is_pin_int2_route_get(ctx, &val);
+		if (ret < 0) {
+			LOG_ERR("pint_int2_route_get error");
+			return ret;
+		}
+
+		val.ispu = enable;
+
+		ret = lsm6dso16is_pin_int2_route_set(ctx, val);
+	}
+
+	return ret;
+}
+#endif
+
 /**
  * lsm6dso16is_enable_xl_int - XL enable selected int pin to generate interrupt
  */
@@ -189,6 +237,15 @@ int lsm6dso16is_trigger_set(const struct device *dev,
 		}
 	}
 #endif
+#if defined(CONFIG_USE_ST_MEMS_ISPU)
+	else if ((enum sensor_channel_st_embedded_cores)trig->chan == SENSOR_CHAN_ST_ISPU) {
+		lsm6dso16is->handler_ispu = handler;
+		lsm6dso16is->trig_ispu = trig;
+
+		/* ISPU interrupt is already enabled */
+		return 0;
+	}
+#endif
 
 	return -ENOTSUP;
 }
@@ -202,21 +259,18 @@ static void lsm6dso16is_handle_interrupt(const struct device *dev)
 	struct lsm6dso16is_data *lsm6dso16is = dev->data;
 	const struct lsm6dso16is_config *cfg = dev->config;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
-	lsm6dso16is_status_reg_t status;
+	lsm6dso16is_status_reg_t status = {0};
 
-	while (1) {
-		if (lsm6dso16is_status_reg_get(ctx, &status) < 0) {
-			LOG_DBG("failed reading status reg");
-			return;
-		}
+	if (lsm6dso16is_status_reg_get(ctx, &status) < 0) {
+		LOG_DBG("failed reading status reg");
+		return;
+	}
 
-		if ((status.xlda == 0) && (status.gda == 0)
+	if ((status.xlda != 0) || (status.gda != 0)
 #if defined(CONFIG_LSM6DSO16IS_ENABLE_TEMP)
-					&& (status.tda == 0)
+				|| (status.tda != 0)
 #endif
-					) {
-			break;
-		}
+				) {
 
 		if ((status.xlda) && (lsm6dso16is->handler_drdy_acc != NULL)) {
 			lsm6dso16is->handler_drdy_acc(dev, lsm6dso16is->trig_drdy_acc);
@@ -230,8 +284,25 @@ static void lsm6dso16is_handle_interrupt(const struct device *dev)
 		if ((status.tda) && (lsm6dso16is->handler_drdy_temp != NULL)) {
 			lsm6dso16is->handler_drdy_temp(dev, lsm6dso16is->trig_drdy_temp);
 		}
-#endif
 	}
+#endif
+
+#if defined(CONFIG_USE_ST_MEMS_ISPU)
+	uint32_t ispu_status = 0;
+
+	if (lsm6dso16is_ia_ispu_get(ctx, &ispu_status) < 0) {
+		LOG_DBG("failed reading status reg");
+		return;
+	}
+
+	if (ispu_status) {
+		ispu_status = 0;
+		if ((lsm6dso16is->handler_ispu != NULL)) {
+			lsm6dso16is->handler_ispu(dev, lsm6dso16is->trig_ispu);
+		}
+
+	}
+#endif
 
 	gpio_pin_interrupt_configure_dt(&cfg->gpio_drdy,
 					GPIO_INT_EDGE_TO_ACTIVE);
