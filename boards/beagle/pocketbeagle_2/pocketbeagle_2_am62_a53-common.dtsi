@@ -18,6 +18,7 @@
 
 	aliases {
 		led0 = &led1;
+		watchdog0 = &main_rti0;
 	};
 
 	ddr0: memory@80000000 {
@@ -77,5 +78,9 @@
 &main_gpio0 {
 	pinctrl-0 = <&led_pins_default>;
 	pinctrl-names = "default";
+	status = "okay";
+};
+
+&main_rti0 {
 	status = "okay";
 };
