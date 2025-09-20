@@ -52,3 +52,7 @@
 	pinctrl-1 = <&spi3_sleep_alt>;
 	pinctrl-names = "default", "sleep";
 };
+
+cycle_timer: &timer1 {
+	status = "okay";
+};
