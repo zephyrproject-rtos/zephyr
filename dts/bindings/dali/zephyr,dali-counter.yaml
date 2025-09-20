@@ -1,0 +1,63 @@
+description: counter based DALI interface
+
+compatible: "zephyr,dali-counter"
+
+include: base.yaml
+
+properties:
+  counter:
+    type: phandle
+    required: true
+    description: |
+      The counter for signal transmission and receiving.
+
+  chan-id-tx:
+    type: int
+    default: 0
+    description: |
+      Channel for Tx alarm.
+
+  chan-id-collision:
+    type: int
+    default: 1
+    description: |
+      Channel for collision detection alarm.
+
+  chan-id-stop:
+    type: int
+    default: 2
+    description: |
+      Channel for stop condition alarm.
+
+  rx-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      GPIO pin that connects to the DALI Rx pin.
+
+  tx-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      GPIO pin that connects to the DALI Tx pin.
+
+  tx-flank-shift-us:
+    type: int
+    description: |
+      Difference in propagation delay in ns between the falling and rising edge.
+      If for example the high to low delay is 8 us and low to high is 22 us, then enter
+      (-14) here. Keep in low µs range.
+
+  rx-flank-shift-us:
+    type: int
+    description: |
+      Difference in propagation delay in ns between the falling and rising edge.
+      If for example the high to low delay is 47 us and low to high is 15 us, then enter
+      (32) here. Keep in low µs range.
+
+  tx-rx-propagation-max-us:
+    type: int
+    description: |
+      The maximal time from a transmitted change to read observation.
+      This value needs to be set for proper collision detection.
+      The delay is measured in micro seconds.

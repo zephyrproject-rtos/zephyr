@@ -1,0 +1,25 @@
+/* add the DALI-interface via Click-adapter-board */
+/* connect DALI Tx to D12 - PA6 */
+/* connect DALI Rx to A0  - PA0 */
+
+/ {
+	dali0: dali {
+		compatible = "zephyr,dali-counter";
+		status = "okay";
+		counter = <&counter3>;
+		rx-gpios = <&gpioa 0 GPIO_ACTIVE_HIGH>;
+		tx-gpios = <&gpioa 6 GPIO_ACTIVE_HIGH>;
+		tx-flank-shift-us = <(-30)>;
+		rx-flank-shift-us = <(-56)>;
+		tx-rx-propagation-max-us = <2400>;
+	};
+};
+
+&timers3 {
+	st,prescaler = <47>;
+	status = "okay";
+	counter3: counter {
+		compatible = "st,stm32-counter";
+		status = "okay";
+	};
+};
