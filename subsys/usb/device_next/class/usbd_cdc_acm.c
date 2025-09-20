@@ -1126,6 +1126,8 @@ static int usbd_cdc_acm_preinit(const struct device *dev)
 	k_work_init(&data->rx_fifo_work, cdc_acm_rx_fifo_handler);
 	k_work_init(&data->irq_cb_work, cdc_acm_irq_cb_handler);
 
+	cdc_acm_update_uart_cfg(data);
+
 	return 0;
 }
 
