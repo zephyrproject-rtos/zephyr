@@ -184,6 +184,10 @@ New APIs and options
    * :c:func:`pm_device_driver_deinit`
    * :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME_DEFAULT_ENABLE`
 
+* SPI
+
+   * :c:func:`spi_acquire`
+
 * Settings
 
    * :kconfig:option:`CONFIG_SETTINGS_TFM_ITS`
