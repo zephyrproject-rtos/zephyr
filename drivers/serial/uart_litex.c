@@ -309,7 +309,7 @@ static int uart_litex_init(const struct device *dev)
 {
 	const struct uart_litex_device_config *config = dev->config;
 
-	litex_write8(UART_EV_TX | UART_EV_RX, config->ev_pending_addr);
+	litex_write8(0, config->ev_enable_addr);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	config->config_func(dev);
