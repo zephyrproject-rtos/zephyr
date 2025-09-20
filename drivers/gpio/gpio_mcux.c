@@ -494,8 +494,8 @@ static DEVICE_API(gpio, gpio_mcux_driver_api) = {
 	} while (false)
 
 #define GPIO_PORT_BASE_ADDR(n) DT_REG_ADDR(DT_INST_PHANDLE(n, nxp_kinetis_port))
-#define GPIO_PORT_NUMBER(n) COND_CODE_1(DT_INST_NODE_HAS_PROP(n, gpio_port_offest),	\
-						(DT_INST_PROP(n, gpio_port_offest) + n), (n))	\
+#define GPIO_PORT_NUMBER(n) COND_CODE_1(DT_INST_NODE_HAS_PROP(n, gpio_port),	\
+						(DT_INST_PROP(n, gpio_port)), (n))	\
 
 #define GPIO_DEVICE_INIT_MCUX(n)                                                                   \
 	static int gpio_mcux_port##n##_init(const struct device *dev);                             \
