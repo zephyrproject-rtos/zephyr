@@ -1,0 +1,3 @@
+# Copyright (c) 2025 Lothar Felten <lothar.felten@gmail.com>
+
+source "Kconfig.zephyr"
