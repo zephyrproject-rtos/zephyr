@@ -1,0 +1,8 @@
+# Symbol to enable/disable the feature ("enabling symbol")
+config ADC_ADI_AD405X
+	bool "AD405X (Analog Devices, Inc) ADC driver"
+	depends on DT_HAS_ADI_AD4052_ADC_ENABLED || DT_HAS_ADI_AD4050_ADC_ENABLED
+	select SPI
+	default y
+	help
+	  Enable ADC driver for ADI AD405X.
