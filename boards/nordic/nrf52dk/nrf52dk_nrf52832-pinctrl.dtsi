@@ -106,6 +106,7 @@
 			psels = <NRF_PSEL(SPIM_SCK, 0, 25)>,
 				<NRF_PSEL(SPIM_MOSI, 0, 23)>,
 				<NRF_PSEL(SPIM_MISO, 0, 24)>;
+			nordic,drive-mode = <NRF_DRIVE_H0H1>;
 		};
 	};
 
