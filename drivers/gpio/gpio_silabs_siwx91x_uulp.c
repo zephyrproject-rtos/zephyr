@@ -20,6 +20,12 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/gpio/gpio_utils.h>
 
+/* Lookup table: Pin (dts) -> SoC Pin (ULP Pin from reference manual)             */
+/*                                                                                */
+/* Pin : 0  1  2  3  4                                                            */
+/*                                                                                */
+/* ULP : 0  1  2  3  4                                                            */
+
 #define UULP_GPIO_COUNT           5
 #define UULP_REG_INTERRUPT_CONFIG 0x10
 

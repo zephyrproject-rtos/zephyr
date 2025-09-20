@@ -27,6 +27,13 @@
 	CONFIG_GPIO_INIT_PRIORITY.
 #endif
 
+/* Lookup table:  Port-Pin (dts) -> SoC Pin (HP Pin from reference manual)              */
+/*                                                                                      */
+/* Port: A  A  A  A  B  B  B  B  B  B  B  C  C  C  C  C  D  D  D  D  D  D  D  D  D  D   */
+/* Pin : 10 11 12 15 09 10 11 12 13 14 15 00 01 02 14 15 00 01 02 03 04 05 06 07 08 09  */
+/*                                                                                      */
+/* HP  : 10 11 12 15 25 26 27 28 29 30 31 32 33 34 46 47 48 49 50 51 52 53 54 55 56 57  */
+
 #define MAX_PORT_COUNT  4
 #define MAX_PIN_COUNT   16
 #define INVALID_PORT    0xFF
