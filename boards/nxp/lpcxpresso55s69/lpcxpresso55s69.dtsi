@@ -182,6 +182,9 @@ mikrobus_serial: &flexcomm2 {};
 
 mikrobus_spi: &hs_lspi {};
 
+mikrobus_i2c: &flexcomm4 {
+};
+
 &flexcomm0 {
 	pinctrl-0 = <&pinmux_flexcomm0_usart>;
 	pinctrl-names = "default";
