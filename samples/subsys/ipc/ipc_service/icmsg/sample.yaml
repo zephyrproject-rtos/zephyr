@@ -89,6 +89,34 @@ tests:
         - "host: Received"
         - "host: IPC-service HOST demo ended"
 
+  sample.ipc.icbmsg.nrf5340bsim:
+    platform_allow:
+      - nrf5340bsim/nrf5340/cpuapp
+    integration_platforms:
+      - nrf5340bsim/nrf5340/cpuapp
+    tags: ipc
+    extra_args:
+      - icmsg_DTC_OVERLAY_FILE="boards/nrf5340bsim_nrf5340_cpuapp_icbmsg.overlay"
+      - remote_DTC_OVERLAY_FILE="boards/nrf5340bsim_nrf5340_cpunet_icbmsg.overlay"
+    sysbuild: true
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: false
+      regex:
+        - "host: IPC-service HOST demo started"
+        - "host: Ep bounded"
+        - "host: Perform sends for"
+        - "host: Sent"
+        - "host: Received"
+        - "host: IPC-service HOST demo ended"
+        - "remote: IPC-service REMOTE demo started"
+        - "remote: Ep bounded"
+        - "remote: Perform sends for"
+        - "remote: Sent"
+        - "remote: Received"
+        - "remote: IPC-service REMOTE demo ended"
+
   sample.ipc.icbmsg.nrf54l15:
     platform_allow: nrf54l15dk/nrf54l15/cpuapp
     integration_platforms:

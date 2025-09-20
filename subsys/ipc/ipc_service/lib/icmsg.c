@@ -412,6 +412,10 @@ int icmsg_open(const struct icmsg_config_t *conf,
 	k_mutex_init(&dev_data->tx_lock);
 #endif
 
+#if defined(CONFIG_ARCH_POSIX)
+	pbuf_native_addr_remap(dev_data->tx_pb);
+#endif
+
 	ret = pbuf_rx_init(dev_data->rx_pb);
 
 	if (ret < 0) {
