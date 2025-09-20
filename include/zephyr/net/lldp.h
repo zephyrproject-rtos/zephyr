@@ -116,6 +116,7 @@ extern "C" {
 
 
 struct net_if;
+struct net_pkt;
 
 /** @endcond */
 
