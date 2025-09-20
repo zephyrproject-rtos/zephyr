@@ -30,9 +30,6 @@ config RISCV_SOC_OFFSETS
 config RISCV_SOC_INTERRUPT_INIT
 	default y
 
-config RISCV_MCAUSE_EXCEPTION_MASK
-	default 0x1F
-
 # We need to disable the watchdog out of reset, as it's enabled by
 # default. Use the WDOG_INIT hook for doing that.
 config WDOG_INIT
