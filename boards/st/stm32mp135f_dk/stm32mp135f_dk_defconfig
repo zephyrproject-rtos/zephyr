@@ -14,3 +14,6 @@ CONFIG_CONSOLE=y
 
 # UART console (overrides remote proc console)
 CONFIG_UART_CONSOLE=y
+
+# Enable I2C support (for mcp23017 GPIO expander)
+CONFIG_I2C=y

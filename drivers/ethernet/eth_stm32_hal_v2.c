@@ -33,6 +33,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/irq.h>
 #include <zephyr/net/lldp.h>
 #include <zephyr/drivers/hwinfo.h>
+#include <zephyr/linker/devicetree_regions.h>
 
 #if defined(CONFIG_NET_DSA_DEPRECATED)
 #include <zephyr/net/dsa.h>
@@ -100,6 +101,13 @@ static const struct device *eth_stm32_phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(0,
 #elif defined(CONFIG_SOC_SERIES_STM32H7X)
 #define __eth_stm32_desc __attribute__((section(".eth_stm32_desc")))
 #define __eth_stm32_buf  __attribute__((section(".eth_stm32_buf")))
+#elif defined(CONFIG_SOC_SERIES_STM32MP13X)
+#define ETH_DMA_REGION  DT_PHANDLE(DT_NODELABEL(mac), memory_regions)
+#define ETH_DMA_LINKER_REGION_NAME \
+	LINKER_DT_NODE_REGION_NAME(ETH_DMA_REGION)
+
+#define __eth_stm32_desc __attribute__((__section__(ETH_DMA_LINKER_REGION_NAME)))
+#define __eth_stm32_buf __attribute__((__section__(ETH_DMA_LINKER_REGION_NAME)))
 #elif defined(CONFIG_NOCACHE_MEMORY)
 #define __eth_stm32_desc __nocache __aligned(4)
 #define __eth_stm32_buf  __nocache __aligned(4)
@@ -144,7 +152,11 @@ static struct eth_stm32_rx_buffer_header dma_rx_buffer_header[ETH_RXBUFNB];
 static struct eth_stm32_tx_buffer_header dma_tx_buffer_header[ETH_TXBUFNB];
 static struct eth_stm32_tx_context dma_tx_context[ETH_TX_DESC_CNT];
 
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32mp13_ethernet)
+void HAL_ETH_RxAllocateCallback(ETH_HandleTypeDef *heth, uint8_t **buf)
+#else
 void HAL_ETH_RxAllocateCallback(uint8_t **buf)
+#endif
 {
 	for (size_t i = 0; i < ETH_RXBUFNB; ++i) {
 		if (!dma_rx_buffer_header[i].used) {
@@ -162,7 +174,12 @@ void HAL_ETH_RxAllocateCallback(uint8_t **buf)
 typedef uint8_t (*RxBufferPtr)[ETH_STM32_RX_BUF_SIZE];
 
 /* called by HAL_ETH_ReadData() */
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32mp13_ethernet)
+void HAL_ETH_RxLinkCallback(ETH_HandleTypeDef *heth, void **pStart, void **pEnd,
+			    uint8_t *buff, uint16_t Length)
+#else
 void HAL_ETH_RxLinkCallback(void **pStart, void **pEnd, uint8_t *buff, uint16_t Length)
+#endif
 {
 	/* buff points to the begin on one of the rx buffers,
 	 * so we can compute the index of the given buffer
@@ -187,7 +204,11 @@ void HAL_ETH_RxLinkCallback(void **pStart, void **pEnd, uint8_t *buff, uint16_t 
 }
 
 /* Called by HAL_ETH_ReleaseTxPacket */
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32mp13_ethernet)
+void HAL_ETH_TxFreeCallback(ETH_HandleTypeDef *heth, uint32_t *buff)
+#else
 void HAL_ETH_TxFreeCallback(uint32_t *buff)
+#endif
 {
 	__ASSERT_NO_MSG(buff != NULL);
 
@@ -238,7 +259,7 @@ static inline struct eth_stm32_tx_context *allocate_tx_context(struct net_pkt *p
 	}
 }
 
-static ETH_TxPacketConfig tx_config;
+static ETH_TxPacketConfigTypeDef tx_config;
 
 static void setup_mac_filter(ETH_HandleTypeDef *heth)
 {
@@ -410,7 +431,11 @@ error:
 		HAL_ETH_ReleaseTxPacket(heth);
 	} else {
 		/* We need to release the tx context and its buffers */
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32mp13_ethernet)
+		HAL_ETH_TxFreeCallback(heth, (uint32_t *)ctx);
+#else
 		HAL_ETH_TxFreeCallback((uint32_t *)ctx);
+#endif
 	}
 
 	k_mutex_unlock(&dev_data->tx_mutex);
@@ -628,7 +653,10 @@ void HAL_ETH_ErrorCallback(ETH_HandleTypeDef *heth)
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet) */
 	}
 
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet)
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32mp13_ethernet)
+	dev_data->stats.error_details.rx_crc_errors = heth->Instance->MMCRXCRCEPR;
+	dev_data->stats.error_details.rx_align_errors = heth->Instance->MMCRXAEPR;
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet)
 	dev_data->stats.error_details.rx_crc_errors = heth->Instance->MMCRCRCEPR;
 	dev_data->stats.error_details.rx_align_errors = heth->Instance->MMCRAEPR;
 #else
@@ -714,6 +742,7 @@ static int eth_initialize(const struct device *dev)
 	struct eth_stm32_hal_dev_data *dev_data = dev->data;
 	const struct eth_stm32_hal_dev_cfg *cfg = dev->config;
 	ETH_HandleTypeDef *heth = &dev_data->heth;
+	__maybe_unused uint8_t *desc_uncached_addr;
 	int ret = 0;
 
 	if (!device_is_ready(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE))) {
@@ -721,11 +750,29 @@ static int eth_initialize(const struct device *dev)
 		return -ENODEV;
 	}
 
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32mp13_ethernet)
+	/* Map memory region for DMA descriptor and buffer as non cacheable */
+	k_mem_map_phys_bare(&desc_uncached_addr,
+			    DT_REG_ADDR(ETH_DMA_REGION),
+			    DT_REG_SIZE(ETH_DMA_REGION),
+			    K_MEM_PERM_RW | K_MEM_DIRECT_MAP | K_MEM_CACHE_NONE);
+#endif
+
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_ethernet)
 	/* RISAF Configuration */
 	RISAF_Config();
 #endif
 
+#if DT_INST_CLOCKS_HAS_NAME(0, eth_ker)
+	/* Turn on DCMIPP peripheral clock */
+	ret = clock_control_configure(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
+				      (clock_control_subsys_t)&cfg->pclken_ker,
+				      NULL);
+	if (ret < 0) {
+		LOG_ERR("Failed to configure ETH kernel clock. Error %d", ret);
+		return ret;
+	}
+#endif
 	/* enable clock */
 	ret = clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 		(clock_control_subsys_t)&cfg->pclken);
@@ -733,6 +780,11 @@ static int eth_initialize(const struct device *dev)
 		(clock_control_subsys_t)&cfg->pclken_tx);
 	ret |= clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 		(clock_control_subsys_t)&cfg->pclken_rx);
+#if DT_INST_CLOCKS_HAS_NAME(0, mac_clk)
+	ret |= clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
+		(clock_control_subsys_t)&cfg->pclken_mac);
+#endif
+
 #if DT_INST_CLOCKS_HAS_NAME(0, mac_clk_ptp)
 	ret |= clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 		(clock_control_subsys_t)&cfg->pclken_ptp);
@@ -812,6 +864,7 @@ static void eth_stm32_mcast_filter(const struct device *dev, const struct ethern
 static int eth_init_api_v2(const struct device *dev)
 {
 	HAL_StatusTypeDef hal_ret = HAL_OK;
+	__maybe_unused const struct eth_stm32_hal_dev_cfg *cfg = dev->config;
 	struct eth_stm32_hal_dev_data *dev_data = dev->data;
 	ETH_HandleTypeDef *heth = &dev_data->heth;
 
@@ -826,6 +879,10 @@ static int eth_init_api_v2(const struct device *dev)
 #endif
 	heth->Init.RxBuffLen = ETH_STM32_RX_BUF_SIZE;
 
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32mp13_ethernet)
+	/* APO test : TBD */
+	heth->Init.ClockSelection = cfg->clockselection;
+#endif
 	hal_ret = HAL_ETH_Init(heth);
 	if (hal_ret == HAL_TIMEOUT) {
 		/* HAL Init time out. This could be linked to */
@@ -854,7 +911,7 @@ static int eth_init_api_v2(const struct device *dev)
 	k_sem_init(&dev_data->tx_int_sem, 0, K_SEM_MAX_LIMIT);
 
 	/* Tx config init: */
-	memset(&tx_config, 0, sizeof(ETH_TxPacketConfig));
+	memset(&tx_config, 0, sizeof(ETH_TxPacketConfigTypeDef));
 	tx_config.Attributes = ETH_TX_PACKETS_FEATURES_CSUM |
 				ETH_TX_PACKETS_FEATURES_CRCPAD;
 	tx_config.ChecksumCtrl = IS_ENABLED(CONFIG_ETH_STM32_HW_CHECKSUM) ?
@@ -1134,6 +1191,18 @@ static const struct eth_stm32_hal_dev_cfg eth0_config = {
 	.config_func = eth0_irq_config,
 	.pclken = {.bus = DT_CLOCKS_CELL_BY_NAME(DT_INST_PARENT(0), stm_eth, bus),
 		   .enr = DT_CLOCKS_CELL_BY_NAME(DT_INST_PARENT(0), stm_eth, bits)},
+#if DT_INST_CLOCKS_HAS_NAME(0, mac_clk)
+	.pclken_mac = {.bus = DT_INST_CLOCKS_CELL_BY_NAME(0, mac_clk, bus),
+		       .enr = DT_INST_CLOCKS_CELL_BY_NAME(0, mac_clk, bits)},
+#endif
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32mp13_ethernet)
+	.clockselection = DT_NODE_HAS_PROP(0, st_ext_phyclk) ?
+			  HAL_ETH1_REF_CLK_RCC : HAL_ETH1_REF_CLK_RX_CLK_PIN,
+#endif
+#if DT_INST_CLOCKS_HAS_NAME(0, eth_ker)
+	.pclken_ker = {.bus = DT_INST_CLOCKS_CELL_BY_NAME(0, eth_ker, bus),
+		       .enr = DT_INST_CLOCKS_CELL_BY_NAME(0, eth_ker, bits)},
+#endif
 	.pclken_tx = {.bus = DT_INST_CLOCKS_CELL_BY_NAME(0, mac_clk_tx, bus),
 		      .enr = DT_INST_CLOCKS_CELL_BY_NAME(0, mac_clk_tx, bits)},
 	.pclken_rx = {.bus = DT_INST_CLOCKS_CELL_BY_NAME(0, mac_clk_rx, bus),
