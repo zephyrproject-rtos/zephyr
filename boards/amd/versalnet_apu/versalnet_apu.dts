@@ -27,13 +27,13 @@
 };
 
 &uart1 {
-	status = "okay";
 	current-speed = <115200>;
 	clock-frequency = <100000000>;
+	status = "okay";
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
 	clock-frequency = <100000000>;
+	status = "okay";
 };
