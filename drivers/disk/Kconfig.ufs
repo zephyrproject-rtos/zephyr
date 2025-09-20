@@ -1,0 +1,30 @@
+# Copyright (c) 2025 Advanced Micro Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config DISK_DRIVER_UFS
+	bool "Disk operations on UFS card"
+	default y if DT_HAS_ZEPHYR_UFS_DISK_ENABLED
+	select SCSI
+	select UFS_STACK
+	help
+	  UFS device as disk driver.
+
+if DISK_DRIVER_UFS
+
+config UFSDISK_INIT_PRIORITY
+	int "Init priority"
+	default 90
+	help
+	  UFS disk device driver initialization priority
+
+config UFS_BUFFER_SIZE
+	int
+	default 4096
+	help
+	  Size in bytes of internal buffer UFS card uses for unaligned reads.
+
+module = UFSDISK
+module-str = ufsdisk
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # DISK_DRIVER_UFS

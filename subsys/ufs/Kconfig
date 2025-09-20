@@ -1,0 +1,26 @@
+# Copyright (c) 2025 Advanced Micro Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+# UFS stack configuration options
+
+menuconfig UFS_STACK
+	bool "UFS protocol support"
+	depends on SCSI
+	select UFSHC
+	select DYNAMIC_INTERRUPTS
+	select EVENTS
+	default n
+	help
+	  Enable support for the UFS (Universal Flash Storage) protocol.
+	  This is required for the proper functioning of UFS devices.
+
+if UFS_STACK
+
+# UFS module configuration
+module = UFS
+module-str = UFS stack
+
+# Source additional logging configuration
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # UFS_STACK
