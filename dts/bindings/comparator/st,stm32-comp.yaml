@@ -1,0 +1,201 @@
+# Copyright (c) 2025 Alexander Kozhinov <ak.alexander.kozhinov@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  STM32 Comparator
+
+  The following example displays the minimum node layout:
+
+    comp1: comparator@40010200 {
+      reg = <0x40010200 0x4>;
+      interrupts = <64 0>;
+      clocks = <&rcc STM32_CLOCK(APB2, 0)>;
+      st,exti-line = <21>;
+      positive-input = "IN0";
+      negative-input = "VREFINT";
+      status = "okay";
+    };
+
+  Enabling the comparator node requires setting the minimum default
+  configuration of the comparator. This includes selecting the
+  positive and negative inputs, and routing them using pinctrl:
+
+    &pinctrl {
+      comp1_default: comp1_default {
+          ...
+      };
+    };
+
+    &comp1 {
+      pinctrl-0 = <&comp1_default>;
+      pinctrl-names = "default";
+
+      positive-input = "IN0";
+      negative-input = "VREFINT";
+      status = "okay";
+    };
+
+compatible: "st,stm32-comp"
+
+include:
+  - base.yaml
+  - pinctrl-device.yaml
+
+properties:
+  reg:
+    required: true
+  interrupts:
+    required: true
+  clocks:
+    required: true
+
+  hysteresis:
+    type: string
+    description: |
+      Selects the hysteresis voltage level.
+      Hysteresis adds a voltage offset to the comparator threshold to prevent
+      unwanted output toggling when the input voltage is noisy or slowly
+      varying around the comparator threshold.
+    enum:
+      - NONE
+      - LOW
+      - MEDIUM
+      - HIGH
+      - 10MV
+      - 20MV
+      - 30MV
+      - 40MV
+      - 50MV
+      - 60MV
+      - 70MV
+    default: NONE
+
+  invert-output:
+    type: string
+    description: |
+      Output polarity selection.
+    enum:
+      - NONINVERTED
+      - INVERTED
+    default: NONINVERTED
+
+  st,exti-line:
+    required: true
+    type: int
+    description: |
+      EXTI interrupt line number connected to the comparator (COMPx) event.
+
+  st,lock-enable:
+    type: boolean
+    description: |
+      The comparator configuration can be locked to prevent any
+      modification until the next system reset.
+      Once the lock bit is set, it can be cleared only by a system reset.
+      This feature allows to protect the comparator configuration against
+      unintentional modification.
+
+  st,blank-sel:
+    type: string
+    description: |
+      Blanking source to mask short spikes at PWM period start.
+      Ref (example): STM32G4 RM0440 Rev 8, 24.3.6.
+    enum:
+      - NONE
+      - TIM1_OC5
+      - TIM1_OC5_COMP1
+      - TIM1_OC5_COMP2
+      - TIM1_OC5_COMP3
+      - TIM1_OC5_COMP4
+      - TIM1_OC5_COMP5
+      - TIM1_OC5_COMP6
+      - TIM1_OC5_COMP7
+      - TIM2_OC3
+      - TIM2_OC3_COMP1
+      - TIM2_OC3_COMP2
+      - TIM2_OC3_COMP5
+      - TIM2_OC4_COMP3
+      - TIM2_OC4_COMP6
+      - TIM3_OC3
+      - TIM3_OC3_COMP1
+      - TIM3_OC3_COMP2
+      - TIM3_OC3_COMP3
+      - TIM3_OC3_COMP5
+      - TIM3_OC3_COMP7
+      - TIM3_OC4
+      - TIM3_OC4_COMP4
+      - TIM4_OC3
+      - TIM8_OC5
+      - TIM8_OC5_COMP1
+      - TIM8_OC5_COMP2
+      - TIM8_OC5_COMP3
+      - TIM8_OC5_COMP4
+      - TIM8_OC5_COMP5
+      - TIM8_OC5_COMP6
+      - TIM8_OC5_COMP7
+      - TIM15_OC1
+      - TIM15_OC1_COMP4
+      - TIM15_OC2
+      - TIM15_OC2_COMP6
+      - TIM15_OC2_COMP7
+      - TIM20_OC5
+    default: NONE
+
+  positive-input:
+    required: true
+    type: string
+    description: |
+      Selects positive input pin provided by the pinmux controller.
+      IN0 corresponds to the first pinmux option, IN1 to the second one.
+    enum:
+      - IN0
+      - IN1
+      - DAC2_CH1
+
+  negative-input:
+    required: true
+    type: string
+    description: |
+      Selects negative input. May be a package pin (IN0 / IN1) via pinctrl
+      or an internal signal (e.g. VREFINT, DAC).
+      In case of package pin assignment IN0 will correspond to first pinmux pin
+      option and IN1 to the second one.
+    enum:
+      - 1_2VREFINT
+      - 1_4VREFINT
+      - 3_4VREFINT
+      - DAC1_CH1
+      - DAC1_CH2
+      - DAC2_CH1
+      - DAC3_CH1
+      - DAC3_CH2
+      - DAC4_CH1
+      - DAC4_CH2
+      - IN0
+      - IN1
+      - TPSENS_DAC2CH1
+      - VBAT_VDDAP
+      - VREFINT
+
+  st,miller-effect-hold-enable:
+    type: int
+    description: |
+      Enable undocumented hold feature (COMP_CxCSR bit 1).
+      NOTE: This setting is supported only by stm32g4x series.
+      NOTE: It is recommended to enable the feature unless very fast events are tracked.
+      Please refer to following url for details:
+      https://community.st.com/t5/stm32-mcus-products/stm32g431-comparator-bug/m-p/679540#M250779
+    enum:
+      - 0
+      - 1
+    default: 1
+
+  st,power-mode:
+    type: string
+    description: |
+      Select comparator speed vs power mode.
+      Typical modes: fast (higher current), medium, low power, ultra-low power.
+      Availability varies by series; unsupported values must fail the build.
+    enum:
+      - HIGHSPEED
+      - MEDIUMSPEED
+      - ULTRALOWPOWER
