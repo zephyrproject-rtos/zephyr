@@ -155,12 +155,13 @@ static void lpspi_next_tx_fill(const struct device *dev)
 	struct lpspi_driver_data *lpspi_data = (struct lpspi_driver_data *)data->driver_data;
 	struct spi_context *ctx = &data->ctx;
 	uint8_t left_in_fifo = tx_fifo_cur_len(base);
-	size_t fill_len = MIN(ctx->tx_len, config->tx_fifo_size - left_in_fifo);
+	size_t max_chunk = spi_context_max_continuous_chunk(ctx);
+	size_t fill_len = MIN(max_chunk, config->tx_fifo_size - left_in_fifo);
 	size_t actual_filled = 0;
 
 	const struct spi_buf *current_buf = ctx->current_tx;
 	const uint8_t *cur_buf_pos = ctx->tx_buf;
-	size_t cur_buf_len_left = ctx->tx_len;
+	size_t cur_buf_len_left = max_chunk;
 	size_t bufs_left = ctx->tx_count;
 
 	while (fill_len > 0) {
