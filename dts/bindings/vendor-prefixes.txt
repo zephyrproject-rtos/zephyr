@@ -662,6 +662,7 @@ starfive	StarFive Technology Co. Ltd.
 starry	Starry Electronic Technology (ShenZhen) Co., LTD
 startek	Startek
 ste	ST-Ericsson
+steelseries	SteelSeries
 stericsson	ST-Ericsson
 summit	Summit microelectronics
 sunchip	Shenzhen Sunchip Technology Co., Ltd
