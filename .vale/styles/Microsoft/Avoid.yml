@@ -1,0 +1,14 @@
+extends: existence
+message: "Don't use '%s'. See the A-Z word list for details."
+# See the A-Z word list
+link: https://docs.microsoft.com/en-us/style-guide
+ignorecase: true
+level: error
+tokens:
+  - abortion
+  - and so on
+  - app(?:lication)?s? (?:developer|program)
+  - app(?:lication)? file
+  - backbone
+  - backend
+  - contiguous selection

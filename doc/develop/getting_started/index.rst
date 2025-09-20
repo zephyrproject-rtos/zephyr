@@ -16,6 +16,23 @@ Follow this guide to:
 Select and Update OS
 ********************
 
+I am going to write a really long paragraph here to test the Vale rules ; the idea
+is to make a really really long sentence that will trigger the Vale rules.
+
+It is OK.
+
+It isn't good.
+
+It is not good.
+
+This is a spellling mistake.
+
+The following is written in the passive voice:
+
+A new board can be added to the system by adding a new board definition to the
+board configuration.
+
+
 Click the operating system you are using.
 
 .. tabs::

@@ -1,0 +1,13 @@
+extends: existence
+message: "Remove the spaces around '%s'."
+link: https://docs.microsoft.com/en-us/style-guide/punctuation/dashes-hyphens/emes
+ignorecase: true
+nonword: true
+level: error
+action:
+  name: edit
+  params:
+    - trim
+    - " "
+tokens:
+  - '\s[—–]\s|\s[—–]|[—–]\s'
