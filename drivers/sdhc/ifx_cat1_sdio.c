@@ -208,7 +208,7 @@ static int ifx_cat1_sdio_get_host_props(const struct device *dev, struct sdhc_ho
 	memset(props, 0, sizeof(*props));
 	props->f_max = IFX_CAT1_SDIO_F_MAX;
 	props->f_min = IFX_CAT1_SDIO_F_MIN;
-	props->host_caps.bus_4_bit_support = true;
+	props->bus_4_bit_support = true;
 	props->host_caps.high_spd_support = true;
 	props->host_caps.sdr50_support = true;
 	props->host_caps.sdio_async_interrupt_support = true;

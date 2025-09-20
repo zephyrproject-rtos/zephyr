@@ -164,13 +164,13 @@ static int ambiq_sdio_get_host_props(const struct device *dev, struct sdhc_host_
 	props->host_caps.adma_2_support = true;
 	props->host_caps.sdio_async_interrupt_support = true;
 	props->host_caps.vol_180_support = true;
-	props->host_caps.bus_4_bit_support = true;
 	props->host_caps.bus_8_bit_support = true;
 	props->host_caps.high_spd_support = true;
 	props->host_caps.sdr50_support = true;
 	props->host_caps.sdr104_support = true;
 	props->host_caps.ddr50_support = true;
-	props->host_caps.hs200_support = true;
+	props->bus_4_bit_support = true;
+	props->hs200_support = true;
 	props->max_current_330 = 1020;
 	props->max_current_300 = 1020;
 	props->max_current_180 = 1020;
