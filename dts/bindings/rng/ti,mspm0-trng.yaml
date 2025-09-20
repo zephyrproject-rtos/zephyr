@@ -1,0 +1,30 @@
+# Copyright 2025 Linumiz GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Texas Instruments MSPM0 Series True Random Number Generator (TRNG).
+  This peripheral provides a hardware-based source of entropy with built-in
+  health tests.
+
+compatible: "ti,mspm0-trng"
+
+include: base.yaml
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  ti,clk-div:
+    type: int
+    required: true
+    default: 1
+    enum:
+      - 1
+      - 2
+      - 4
+      - 6
+      - 8
+    description: |
+      Clock divider selction value.
