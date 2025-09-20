@@ -400,6 +400,13 @@ You can :ref:`configure <west-config-cmd>` ``west build`` using these options.
            to the source directory. If the current working directory is inside
            the source directory this will be set to an empty string.
          - ``app``: The name of the source directory.
+         - ``source_dir_common``: The relative path from the west topdir to the
+           source directory (without leadiing ``..``)
+   * - ``build.symlinks``
+     - String. The symlinks format string contains one or more symlink paths,
+       with multiple paths separated by colons (``:``). Each symlink is created
+       during build process and points to the actual build directory. The
+       available arguments are the same as for ``dir-fmt``.
    * - ``build.generator``
      - String, default ``Ninja``. The `CMake Generator`_ to use to create a
        build system. (To set a generator for a single build, see the

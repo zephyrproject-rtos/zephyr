@@ -456,16 +456,28 @@ class Build(Forceable):
         with contextlib.suppress(FileNotFoundError):
             self.cmake_cache = CMakeCache.from_build_dir(self.build_dir)
 
+    def _get_dir_fmt_context(self):
+        board, _ = self._find_board()
+        source_dir = self._find_source_dir()
+        app = os.path.split(source_dir)[1]
+        west_workspace = west_topdir(source_dir)
+        first_common = os.path.commonpath([source_dir, west_workspace])
+        source_dir_common = os.path.relpath(source_dir, first_common)
+        return {
+            "board" : board,
+            "source_dir" : source_dir,
+            "app" : app,
+            "source_dir_common" : source_dir_common
+        }
+
     def _setup_build_dir(self):
         # Initialize build_dir and created_build_dir attributes.
         # If we created the build directory, we must run CMake.
         self.dbg('setting up build directory', level=Verbosity.DBG_EXTREME)
         # The CMake Cache has not been loaded yet, so this is safe
-        board, _ = self._find_board()
-        source_dir = self._find_source_dir()
-        app = os.path.split(source_dir)[1]
-        build_dir = find_build_dir(self.args.build_dir, board=board,
-                                   source_dir=source_dir, app=app)
+
+        context = self._get_dir_fmt_context()
+        build_dir = find_build_dir(self.args.build_dir, **context)
         if not build_dir:
             self.die('Unable to determine a default build folder. Check '
                     'your build.dir-fmt configuration option')
@@ -477,6 +489,21 @@ class Build(Forceable):
             os.makedirs(build_dir, exist_ok=False)
             self.created_build_dir = True
             self.run_cmake = True
+
+        symlinks = config.get('build', 'symlinks', fallback=None)
+        if symlinks:
+            symlinks = symlinks.split(":")
+            context = self._get_dir_fmt_context()
+            for symlink in symlinks:
+                symlink_fmt = find_build_dir(None, dir_fmt=symlink, **context)
+                if os.path.exists(symlink_fmt):
+                    if os.path.islink(symlink_fmt):
+                        os.unlink(symlink_fmt)
+                    else:
+                        self.die(f'path {symlink_fmt} already exists and is not a symlink')
+                os.makedirs(os.path.dirname(symlink_fmt), exist_ok=True)
+                os.symlink(build_dir, symlink_fmt, target_is_directory=True)
+                self.dbg(f'Created symlink {symlink_fmt}', level=Verbosity.DBG_MORE)
 
         self.build_dir = build_dir
 
