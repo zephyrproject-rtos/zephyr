@@ -6,10 +6,11 @@ include: [interrupt-controller.yaml, base.yaml]
 
 properties:
   "#interrupt-cells":
-    const: 1
+    const: 2
 
   reg:
     required: true
 
 interrupt-cells:
   - irq
+  - priority
