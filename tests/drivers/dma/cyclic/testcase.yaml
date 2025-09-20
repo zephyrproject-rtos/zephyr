@@ -7,4 +7,5 @@ tests:
     platform_allow:
       - xmc47_relax_kit
       - xmc45_relax_kit
+      - stm32mp257f_ev1/stm32mp257fxx/m33
     filter: dt_alias_exists("dma0")

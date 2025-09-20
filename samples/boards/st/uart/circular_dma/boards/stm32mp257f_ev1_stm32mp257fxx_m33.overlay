@@ -1,0 +1,17 @@
+/*
+ * Copyright (C) 2025 Savoir-faire Linux, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&uart5 {
+	dmas = <&hpdma3 0 18 STM32_DMA_PERIPH_TX>,
+	       <&hpdma3 1 17 (STM32_DMA_PERIPH_RX | STM32_DMA_MEM_8BITS |
+			      STM32_DMA_MODE_CYCLIC)>;
+	dma-names = "tx", "rx";
+	fifo-enable;
+};
+
+&hpdma3 {
+	status = "okay";
+};
