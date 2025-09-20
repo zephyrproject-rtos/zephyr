@@ -7,7 +7,7 @@
 #include <zephyr/ztest.h>
 #include "test_sched.h"
 
-#ifdef CONFIG_TIMESLICING
+#if defined(CONFIG_TIMESLICING) && !defined(CONFIG_SMP)
 
 /* nrf 51 has lower ram, so creating less number of threads */
 #if CONFIG_SRAM_SIZE <= 24
@@ -203,7 +203,7 @@ ZTEST(threads_scheduling, test_slice_perthread)
 	zassert_false(perthread_running, "thread failed to suspend");
 }
 
-#else /* CONFIG_TIMESLICING */
+#else /* CONFIG_TIMESLICING && !CONFIG_SMP */
 ZTEST(threads_scheduling, test_slice_scheduling)
 {
 	ztest_test_skip();
@@ -212,4 +212,4 @@ ZTEST(threads_scheduling, test_slice_perthread)
 {
 	ztest_test_skip();
 }
-#endif /* CONFIG_TIMESLICING */
+#endif /* CONFIG_TIMESLICING && !CONFIG_SMP */

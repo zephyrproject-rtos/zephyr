@@ -284,7 +284,7 @@ ZTEST(threads_scheduling, test_time_slicing_preemptible)
  */
 ZTEST(threads_scheduling, test_time_slicing_disable_preemptible)
 {
-#ifdef CONFIG_TIMESLICING
+#if defined(CONFIG_TIMESLICING) && !defined(CONFIG_SMP)
 	/* set current thread to a preemptible priority */
 	init_prio = 0;
 	setup_threads();

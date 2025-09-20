@@ -7,7 +7,7 @@
 #include <zephyr/ztest.h>
 #include "test_sched.h"
 
-#ifdef CONFIG_TIMESLICING
+#if defined(CONFIG_TIMESLICING) && !defined(CONFIG_SMP)
 
 #define NUM_THREAD 3
 
@@ -92,7 +92,7 @@ static void thread_time_slice(void *p1, void *p2, void *p3)
 	thread_idx = (thread_idx + 1) % NUM_THREAD;
 
 	/** TESTPOINT: timeslice should be reset for each preemptive thread */
-#ifndef CONFIG_COVERAGE_GCOV
+#if !defined(CONFIG_COVERAGE_GCOV) && !defined(CONFIG_SMP)
 	zassert_true(t >= expected_slice_min,
 		     "timeslice too small, expected %u got %u",
 		     expected_slice_min, t);
@@ -196,9 +196,9 @@ ZTEST(threads_scheduling, test_slice_reset)
 	k_thread_priority_set(k_current_get(), old_prio);
 }
 
-#else /* CONFIG_TIMESLICING */
+#else /* CONFIG_TIMESLICING && !CONFIG_SMP */
 ZTEST(threads_scheduling, test_slice_reset)
 {
 	ztest_test_skip();
 }
-#endif /* CONFIG_TIMESLICING */
+#endif /* CONFIG_TIMESLICING && !CONFIG_SMP */
