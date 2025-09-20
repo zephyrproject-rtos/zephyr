@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2025 STMicroelectronics.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+
+/* Reset cannot be controlled on the STM32H747I-DISCO */
+&ov5640 {
+	/delete-property/ reset-gpios;
+};
+
+&dma1 {
+	status = "okay";
+};
+
+&dmamux1 {
+	status = "okay";
+};
