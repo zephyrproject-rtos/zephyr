@@ -24,6 +24,9 @@ choice LV_COLOR_DEPTH
 	default LV_COLOR_DEPTH_1
 endchoice
 
+config LV_USE_THEME_DEFAULT
+	default y if LV_COLOR_DEPTH_1
+
 endif # LVGL
 
 endif # DISPLAY
