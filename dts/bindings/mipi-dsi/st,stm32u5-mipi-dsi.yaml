@@ -1,0 +1,40 @@
+#
+# Copyright (c) 2025 Charles Dias
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: |
+    STM32U5 MIPI DSI controller. This is a variant of the STM32 MIPI DSI
+    controller with specific properties for the U5 series.
+
+compatible: "st,stm32u5-mipi-dsi"
+
+include: "st,stm32-mipi-dsi.yaml"
+
+properties:
+  phy-freq-range:
+    type: int
+    description: |
+      D-PHY PLL input frequency range. This is used to select the appropriate
+      frequency range for the D-PHY PLL operation on STM32U5 series.
+
+  phy-low-power-offset:
+    type: int
+    description: |
+      D-PHY low power offset configuration specific to STM32U5 series.
+
+  pll-vco-range:
+    type: int
+    description: |
+      PLL VCO frequency range configuration for STM32U5 D-PHY.
+
+  pll-charge-pump:
+    type: int
+    description: |
+      PLL charge pump configuration for STM32U5 D-PHY.
+
+  pll-tuning:
+    type: int
+    description: |
+      PLL tuning parameter for STM32U5 D-PHY.
