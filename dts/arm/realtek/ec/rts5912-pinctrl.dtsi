@@ -449,6 +449,112 @@
 	};
 
 	/* KSO PINCTRL SETTING END */
+	/* KSO PINCTRL SLEEP SETTING START */
+	/omit-if-no-ref/ kso0_sleep_gpio041: kso0_sleep_gpio041 {
+			pinmux = <REALTEK_RTS5912_PINMUX(41, FUNC0)>;
+			output-enable;
+			output-low;
+	};
+	/omit-if-no-ref/ kso1_sleep_gpio042: kso1_sleep_gpio042 {
+			pinmux = <REALTEK_RTS5912_PINMUX(42, FUNC0)>;
+			output-enable;
+			output-low;
+	};
+	/omit-if-no-ref/ kso2_sleep_gpio043: kso2_sleep_gpio043 {
+			pinmux = <REALTEK_RTS5912_PINMUX(43, FUNC0)>;
+			output-enable;
+			output-low;
+	};
+	/omit-if-no-ref/ kso3_sleep_gpio044: kso3_sleep_gpio044 {
+			pinmux = <REALTEK_RTS5912_PINMUX(44, FUNC0)>;
+			output-enable;
+			output-low;
+	};
+
+	/omit-if-no-ref/ kso4_sleep_gpio045: kso4_sleep_gpio045 {
+			pinmux = <REALTEK_RTS5912_PINMUX(45, FUNC0)>;
+			output-enable;
+			output-low;
+	};
+	/omit-if-no-ref/ kso5_sleep_gpio046: kso5_sleep_gpio046 {
+			pinmux = <REALTEK_RTS5912_PINMUX(46, FUNC0)>;
+			output-enable;
+			output-low;
+	};
+	/omit-if-no-ref/ kso6_sleep_gpio047: kso6_sleep_gpio047 {
+			pinmux = <REALTEK_RTS5912_PINMUX(47, FUNC0)>;
+			output-enable;
+			output-low;
+	};
+	/omit-if-no-ref/ kso7_sleep_gpio048: kso7_sleep_gpio048 {
+			pinmux = <REALTEK_RTS5912_PINMUX(48, FUNC0)>;
+			output-enable;
+			output-low;
+	};
+
+	/omit-if-no-ref/ kso8_sleep_gpio049: kso8_sleep_gpio049 {
+			pinmux = <REALTEK_RTS5912_PINMUX(49, FUNC0)>;
+			output-enable;
+			output-low;
+	};
+	/omit-if-no-ref/ kso9_sleep_gpio050: kso9_sleep_gpio050 {
+			pinmux = <REALTEK_RTS5912_PINMUX(50, FUNC0)>;
+			output-enable;
+			output-low;
+	};
+	/omit-if-no-ref/ kso10_sleep_gpio051: kso10_sleep_gpio051 {
+			pinmux = <REALTEK_RTS5912_PINMUX(51, FUNC0)>;
+			output-enable;
+			output-low;
+	};
+	/omit-if-no-ref/ kso11_sleep_gpio055: kso11_sleep_gpio055 {
+			pinmux = <REALTEK_RTS5912_PINMUX(55, FUNC0)>;
+			output-enable;
+			output-low;
+	};
+
+	/omit-if-no-ref/ kso12_sleep_gpio056: kso12_sleep_gpio056 {
+			pinmux = <REALTEK_RTS5912_PINMUX(56, FUNC0)>;
+			output-enable;
+			output-low;
+	};
+	/omit-if-no-ref/ kso13_sleep_gpio057: kso13_sleep_gpio057 {
+			pinmux = <REALTEK_RTS5912_PINMUX(57, FUNC0)>;
+			output-enable;
+			output-low;
+	};
+	/omit-if-no-ref/ kso14_sleep_gpio058: kso14_sleep_gpio058 {
+			pinmux = <REALTEK_RTS5912_PINMUX(58, FUNC0)>;
+			output-enable;
+			output-low;
+	};
+	/omit-if-no-ref/ kso15_sleep_gpio059: kso15_sleep_gpio059 {
+			pinmux = <REALTEK_RTS5912_PINMUX(59, FUNC0)>;
+			output-enable;
+			output-low;
+	};
+
+	/omit-if-no-ref/ kso16_sleep_gpio060: kso16_sleep_gpio060 {
+			pinmux = <REALTEK_RTS5912_PINMUX(60, FUNC0)>;
+			output-enable;
+			output-low;
+	};
+	/omit-if-no-ref/ kso17_sleep_gpio061: kso17_sleep_gpio061 {
+			pinmux = <REALTEK_RTS5912_PINMUX(61, FUNC0)>;
+			output-enable;
+			output-low;
+	};
+	/omit-if-no-ref/ kso18_sleep_gpio092: kso18_sleep_gpio092 {
+			pinmux = <REALTEK_RTS5912_PINMUX(92, FUNC0)>;
+			output-enable;
+			output-low;
+	};
+	/omit-if-no-ref/ kso19_sleep_gpio093: kso19_sleep_gpio093 {
+			pinmux = <REALTEK_RTS5912_PINMUX(93, FUNC0)>;
+			output-enable;
+			output-low;
+	};
+	/* KSO PINCTRL SLEEP SETTING END */
 	/* KSI PINCTRL SETTING START */
 	/omit-if-no-ref/ ksi0_gpio064: ksi0_gpio064 {
 		pinmux = <REALTEK_RTS5912_PINMUX(64, FUNC1)>;
