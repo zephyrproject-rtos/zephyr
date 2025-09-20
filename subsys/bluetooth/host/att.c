@@ -3489,7 +3489,10 @@ static int bt_att_accept(struct bt_conn *conn, struct bt_l2cap_chan **ch)
  * placed as the last one to ensure that SMP channel is properly initialized before bt_att_connected
  * tries to send security request.
  */
-BT_L2CAP_CHANNEL_DEFINE(z_att_fixed_chan, BT_L2CAP_CID_ATT, bt_att_accept, NULL);
+BT_L2CAP_FIXED_CHANNEL_DEFINE(z_att_fixed_chan) = {
+	.cid = BT_L2CAP_CID_ATT,
+	.accept = bt_att_accept,
+};
 
 #if defined(CONFIG_BT_EATT)
 static k_timeout_t credit_based_connection_delay(struct bt_conn *conn)
