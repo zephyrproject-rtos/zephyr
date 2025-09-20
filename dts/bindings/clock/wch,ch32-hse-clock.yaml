@@ -1,0 +1,18 @@
+# Copyright (c) 2025 Fiona Behrens
+# SPDX-License-Identifier: Apache-2.0
+
+description: WCH CH32 High Speed External Clock
+
+compatible: "wch,ch32-hse-clock"
+
+include: [fixed-clock.yaml]
+
+properties:
+  "#clock-cells":
+    const: 0
+
+  hse-bypass:
+    type: boolean
+    description: |
+      HSE crystal oscillator bypass
+      Set to the property to by-pass the oscillator with an external clock.

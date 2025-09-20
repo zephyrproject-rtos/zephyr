@@ -1,0 +1,12 @@
+# Copyright (c) 2025 Fiona Behrens
+# SPDX-License-Identifier: Apache-2.0
+
+description: WCH CH32 System Clock
+
+compatible: "wch,ch32-sys-clock"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  "#clock-cells":
+    const: 0
