@@ -9,8 +9,8 @@
 #include <arm/xilinx/zynqmp_rpu.dtsi>
 
 / {
-	model = "QEMU Cortex-R5";
 	compatible = "xlnx,zynqmp-qemu";
+	model = "QEMU Cortex-R5";
 
 	sram0: memory@4000000 {
 		compatible = "mmio-sram";
@@ -27,12 +27,12 @@
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
 	clock-frequency = <99999901>;
+	status = "okay";
 };
 
 &ttc0 {
-	status = "okay";
 	clock-frequency = <5000000>;
+	status = "okay";
 };
