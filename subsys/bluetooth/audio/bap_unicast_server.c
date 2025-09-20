@@ -222,3 +222,8 @@ void bt_bap_unicast_server_foreach_ep(struct bt_conn *conn, bt_bap_ep_func_t fun
 {
 	bt_ascs_foreach_ep(conn, func, user_data);
 }
+
+bool bt_bap_unicast_server_has_ep(const struct bt_bap_ep *ep)
+{
+	return bt_ascs_has_ep(ep);
+}
