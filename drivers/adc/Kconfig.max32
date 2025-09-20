@@ -10,3 +10,16 @@ config ADC_MAX32
 	select PINCTRL
 	help
 	  Enable ADC driver for ADI MAX32xxx MCUs.
+
+config ADC_MAX32_REVB_ME18
+	bool "revb"
+	help
+	  Use this configuration option when SoC supports revb and me18.
+	  This configuration option is necessary if ADC_STREAM is used.
+
+config ADC_MAX32_STREAM
+	bool "Use FIFO to stream data"
+	select ADC_ASYNC
+	depends on ADC_MAX32_REVB_ME18
+	help
+	  Use this configuration option to enable streaming ADC data via RTIO.
