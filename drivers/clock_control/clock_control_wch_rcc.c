@@ -34,6 +34,12 @@
 #define WCH_RCC_SRC_IS_HSI 1
 #endif
 
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_lse), wch_ch32v00x_hse_clock, okay)
+#define WCH_HSE_BYPASS DT_PROP(DT_NODELABEL(clk_lse), lse_bypass)
+#else
+#define WCH_HSE_BYPASS 0
+#endif
+
 struct clock_control_wch_rcc_config {
 	RCC_TypeDef *regs;
 	uint8_t mul;
@@ -134,6 +140,9 @@ static int clock_control_wch_rcc_init(const struct device *dev)
 	}
 
 	if (IS_ENABLED(CONFIG_DT_HAS_WCH_CH32V00X_HSE_CLOCK_ENABLED)) {
+		if (WCH_HSE_BYPASS) {
+			RCC->CTLR |= RCC_HSEBYP;
+		}
 		RCC->CTLR |= RCC_HSEON;
 		while ((RCC->CTLR & RCC_HSERDY) == 0) {
 		}
