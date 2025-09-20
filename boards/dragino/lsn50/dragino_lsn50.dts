@@ -9,8 +9,8 @@
 #include <st/l0/stm32l072c(b-z)tx-pinctrl.dtsi>
 
 / {
-	model = "Dragino LSN50 LoRA Sensor Node";
 	compatible = "vendor,dragino";
+	model = "Dragino LSN50 LoRA Sensor Node";
 
 	chosen {
 		zephyr,console = &usart1;
