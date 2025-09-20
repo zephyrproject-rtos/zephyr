@@ -109,4 +109,9 @@ config BT_NXP_IW610
 
 endchoice # BT_NXP_MODULE
 
+config BT_NXP_PCM_PINS_DIR_REVERSE
+	bool "Reverse BT module PCM pins direction"
+	help
+	  If enabled, PCM pins direction for the Bluetooth module will be reversed.
+
 endif # BT_H4_NXP_CTLR
