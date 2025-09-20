@@ -2020,7 +2020,15 @@ static void smp_timeout(struct k_work *work)
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 	struct bt_smp *smp = CONTAINER_OF(dwork, struct bt_smp, work);
 
-	LOG_ERR("SMP Timeout");
+	/* if number of flags or supported commands exceed capacity of one
+	 * atomic variable following error log shall be extended
+	 */
+	BUILD_ASSERT(ATOMIC_BITMAP_SIZE(SMP_NUM_FLAGS) == 1);
+	BUILD_ASSERT(ATOMIC_BITMAP_SIZE(BT_SMP_NUM_CMDS) == 1);
+
+	LOG_ERR("SMP Timeout (flags:0x%08x allowed_cmds:0x%08x)",
+		(unsigned int)atomic_get(&smp->flags[0]),
+		(unsigned int)atomic_get(&smp->allowed_cmds[0]));
 
 	smp_pairing_complete(smp, BT_SMP_ERR_UNSPECIFIED);
 
