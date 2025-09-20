@@ -27,6 +27,15 @@ extern "C" {
  */
 
 /**
+ * @brief Default GAP service name
+ *
+ * Use this name as a first argument for BT_GATT_SERVICE_DEFINE when creating
+ * GAP service implementation.
+ * This ensures that the GAP service would be placed just after BT_UUID_GATT.
+ */
+#define BT_GATT_GAP_SVC_DEFAULT_NAME _2_gap_svc
+
+/**
  * @name Company Identifiers (see Bluetooth Assigned Numbers)
  * @{
  */
