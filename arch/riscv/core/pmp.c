@@ -350,6 +350,14 @@ static unsigned int global_pmp_end_index;
  */
 void z_riscv_pmp_init(void)
 {
+	/*
+	 * Ensure we are in M-mode and that memory accesses use M-mode privileges
+	 * (MPRV=0) before configuring PMP registers. The PMP registers are
+	 * accessible only in M-mode.
+	 */
+	csr_clear(mstatus, MSTATUS_MPRV);
+	csr_set(mstatus, MSTATUS_MPP);
+
 	unsigned long pmp_addr[CONFIG_PMP_SLOTS];
 	unsigned long pmp_cfg[CONFIG_PMP_SLOTS / PMPCFG_STRIDE];
 	unsigned int index = 0;
