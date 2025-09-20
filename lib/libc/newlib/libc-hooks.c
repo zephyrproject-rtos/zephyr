@@ -307,6 +307,20 @@ __weak void _exit(int status)
 	}
 }
 
+/* Address undefined _fini for the exit call
+ *
+ * With gcc command-line options -nostartfiles or -nostdlib, the gcc
+ * built-in object files crti.o/crtn.o which implement _init/_fini
+ * won't get linked in automatically and will cause undefined reference
+ * to _fini error when exit is invoked.
+ *
+ * This is fixed by providing one dummy _fini to let linker pass.
+ */
+__weak void _fini(void)
+{
+	/* This function is usually overridden and thus it's kept empty. */
+}
+
 #ifndef CONFIG_NEWLIB_LIBC_CUSTOM_SBRK
 void *_sbrk(intptr_t count)
 {
