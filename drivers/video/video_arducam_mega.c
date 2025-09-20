@@ -979,7 +979,7 @@ const int64_t arducam_mega_link_frequency[] = {
 	ARDUCAM_MEGA_1600_1200_LINK_FREQ,
 };
 
-static int arducam_mega_controls(const struct device *dev)
+static int arducam_mega_init_controls(const struct device *dev)
 {
 	int ret;
 	struct arducam_mega_data *drv_data = dev->data;
@@ -1154,7 +1154,7 @@ static int arducam_mega_init(const struct device *dev)
 		LOG_ERR("Unable to configure default format");
 		return -EIO;
 	}
-	ret = arducam_mega_controls(dev);
+	ret = arducam_mega_init_controls(dev);
 	if (ret < 0) {
 		LOG_ERR("Unable to initialize controls");
 		return -EIO;
