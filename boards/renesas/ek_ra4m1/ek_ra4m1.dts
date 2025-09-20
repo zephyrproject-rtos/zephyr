@@ -12,8 +12,8 @@
 #include "ek_ra4m1-pinctrl.dtsi"
 
 / {
-	model = "Renesas EK-RA4M1";
 	compatible = "renesas,ra4m1", "renesas,ra";
+	model = "Renesas EK-RA4M1";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -98,9 +98,9 @@
 };
 
 &adc0 {
-	status = "okay";
 	pinctrl-0 = <&adc0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &dac0 {

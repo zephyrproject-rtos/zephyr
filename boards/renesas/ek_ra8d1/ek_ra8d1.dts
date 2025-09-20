@@ -17,8 +17,8 @@
 #include "ek_ra8d1-pinctrl.dtsi"
 
 / {
-	model = "Renesas EK-RA8D1";
 	compatible = "renesas,ra8d1", "renesas,ra8";
+	model = "Renesas EK-RA8D1";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -91,8 +91,8 @@
 
 	sdram1: sdram@68000000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
-		device_type = "memory";
 		reg = <0x68000000 DT_SIZE_M(64)>;	/* 512 Mbits */
+		device_type = "memory";
 		zephyr,memory-region = "SDRAM";
 		status = "okay";
 	};
@@ -174,15 +174,15 @@
 };
 
 &pll2 {
-	status = "okay";
 	clocks = <&xtal>;
 	div = <2>;
 	mul = <80 0>;
+	status = "okay";
 
 	pll2p {
-		status = "okay";
 		freq = <DT_FREQ_M(400)>;
 		div = <2>;
+		status = "okay";
 	};
 };
 
@@ -318,8 +318,8 @@
 		#size-cells = <1>;
 
 		storage_partition: partition@0 {
-			label = "storage";
 			reg = <0X0 DT_SIZE_K(12)>;
+			label = "storage";
 		};
 	};
 };
@@ -332,10 +332,10 @@
 
 	cam_clock: pwmclock {
 		compatible = "pwm-clock";
-		status = "disabled";
 		#clock-cells = <1>;
 		clock-frequency = <24000000>;
 		pwms = <&pwm3 0 PWM_KHZ(24000) PWM_POLARITY_NORMAL>;
+		status = "disabled";
 	};
 };
 
@@ -368,8 +368,8 @@
 
 &eth {
 	local-mac-address = [74 90 50 B0 5D E9];
-	status = "okay";
 	phy-handle = <&phy>;
+	status = "okay";
 };
 
 &mdio {
@@ -400,9 +400,9 @@
 };
 
 &adc0 {
-	status = "okay";
 	pinctrl-0 = <&adc0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &dac0 {
@@ -424,7 +424,6 @@
 &sdram {
 	pinctrl-0 = <&sdram_default>;
 	pinctrl-names = "default";
-	status = "okay";
 	auto-refresh-interval = <SDRAM_AUTO_REFREDSH_INTERVEL_10CYCLES>;
 	auto-refresh-count = <SDRAM_AUTO_REFREDSH_COUNT_8TIMES>;
 	precharge-cycle-count = <SDRAM_AUTO_PRECHARGE_CYCLE_3CYCLES>;
@@ -432,6 +431,7 @@
 	edian-mode = "little-endian";
 	continuous-access;
 	bus-width = "16-bit";
+	status = "okay";
 
 	bank@0 {
 		reg = <0>;
@@ -500,10 +500,10 @@ dvp_20pin_interface: &ceu {};
 
 	s28hl512t: ospi-nor-flash@90000000 {
 		compatible = "renesas,ra-ospi-b-nor";
+		reg = <0x90000000 DT_SIZE_M(64)>;
 		protocol-mode = <XSPI_OCTO_MODE>;
 		data-rate = <XSPI_DTR_TRANSFER>;
 		ospi-max-frequency = <DT_FREQ_M(200)>;
-		reg = <0x90000000 DT_SIZE_M(64)>;
 		write-block-size = <1>;
 		status = "okay";
 
@@ -530,8 +530,8 @@ dvp_20pin_interface: &ceu {};
 			#size-cells = <1>;
 
 			partition@0 {
-				label = "nor";
 				reg = <0x00000000 DT_SIZE_M(64)>;
+				label = "nor";
 			};
 		};
 	};

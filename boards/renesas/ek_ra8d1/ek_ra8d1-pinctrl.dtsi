@@ -63,6 +63,7 @@
 			psels = <RA_PSEL(RA_PSEL_GPT1, 4, 3)>;
 			drive-strength = "medium";
 		};
+
 		group2 {
 			/* GTIOC3B */
 			psels = <RA_PSEL(RA_PSEL_GPT1, 4, 4)>;

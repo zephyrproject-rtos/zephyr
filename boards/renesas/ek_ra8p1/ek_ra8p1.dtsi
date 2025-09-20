@@ -49,8 +49,8 @@
 
 	sdram1: sdram@68000000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
-		device_type = "memory";
 		reg = <0x68000000 DT_SIZE_M(64)>;
+		device_type = "memory";
 		zephyr,memory-region = "SDRAM";
 		status = "okay";
 	};
@@ -193,7 +193,6 @@
 &sdram {
 	pinctrl-0 = <&sdram_default>;
 	pinctrl-names = "default";
-	status = "okay";
 	auto-refresh-interval = <SDRAM_AUTO_REFREDSH_INTERVEL_10CYCLES>;
 	auto-refresh-count = <SDRAM_AUTO_REFREDSH_COUNT_8TIMES>;
 	precharge-cycle-count = <SDRAM_AUTO_PRECHARGE_CYCLE_3CYCLES>;
@@ -201,6 +200,7 @@
 	edian-mode = "little-endian";
 	continuous-access;
 	bus-width = "32-bit";
+	status = "okay";
 
 	bank@0 {
 		reg = <0>;
