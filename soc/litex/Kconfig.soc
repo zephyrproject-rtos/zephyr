@@ -1,9 +1,10 @@
 # SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_LITEX_VEXRISCV
+config SOC_FAMILY_LITEX
+	bool
 
-config NUM_IRQS
-	default 12
+config SOC_FAMILY
+	default "litex" if SOC_FAMILY_LITEX
 
-endif # SOC_LITEX_VEXRISCV
+rsource "*/Kconfig.soc"
