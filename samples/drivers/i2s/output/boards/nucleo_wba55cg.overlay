@@ -1,0 +1,51 @@
+/*
+ * Copyright (c) 2025 Mario Paja
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		i2s-tx = &sai1_b;
+	};
+};
+
+&pll1 {
+	/* 43.945KHz (-0.35% Error) */
+	div-m = <4>;
+	mul-n = <44>;
+	div-q = <2>;
+	div-p = <2>;
+	div-r = <2>;
+	clocks = <&clk_hsi>;
+	status = "okay";
+};
+
+&gpdma1 {
+	status = "okay";
+};
+
+&sai1_b {
+	/* 32KHz - OK */
+	/*
+	clocks = <&rcc STM32_CLOCK(APB2, 21U)>,
+			<&rcc STM32_SRC_HSI16 SAI1_SEL(2)>;
+	*/
+	pinctrl-0 = <&sai1_mclk_b_pb4 &sai1_sd_b_pb7
+		&sai1_fs_b_pb5 &sai1_sck_b_pb6>;
+	pinctrl-names = "default";
+	status = "okay";
+	mclk-enable;
+	mclk-divider = "div-256";
+	dma-names = "tx";
+};
+
+/* conflicts with SAI */
+&spi1 {
+	status = "disabled";
+};
+
+/* conflicts with SAI */
+&lpuart1 {
+	status = "disabled";
+};
