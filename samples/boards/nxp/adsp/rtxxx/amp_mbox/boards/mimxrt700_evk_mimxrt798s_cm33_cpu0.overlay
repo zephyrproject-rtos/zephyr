@@ -6,6 +6,6 @@
 
 / {
 	aliases {
-		mbox = &mbox4;
+		mbox = &mbox4_a;
 	};
 };
