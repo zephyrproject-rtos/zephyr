@@ -11,6 +11,11 @@
 #ifndef ZEPHYR_INCLUDE_NET_HOSTNAME_H_
 #define ZEPHYR_INCLUDE_NET_HOSTNAME_H_
 
+#include <errno.h>
+
+#include <zephyr/sys/util.h>
+#include <zephyr/toolchain.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
