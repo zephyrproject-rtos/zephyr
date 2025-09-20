@@ -4359,6 +4359,7 @@ STM32 Platforms:
   files-exclude:
     - boards/st/*wb*/
     - drivers/bluetooth/hci/*stm32*.c
+    - drivers/ieee802154/*stm32*.c
     - soc/st/stm32/stm32wb*/
   labels:
     - "platform: STM32"
@@ -4372,7 +4373,6 @@ STM32 Wireless Platforms:
   collaborators:
     - asm5878
     - HoZHel
-    - benothmn-st
     - mathieuchopstm
   files:
     - boards/shields/x_nucleo_bnrg2a1/
@@ -4381,12 +4381,13 @@ STM32 Wireless Platforms:
     - boards/st/*wb*/
     - drivers/bluetooth/hci/*stm32*.c
     - drivers/bluetooth/hci/hci_spi_st.c
+    - drivers/ieee802154/*stm32*.c
     - soc/st/stm32/stm32wb*/
   labels:
     - "platform: STM32"
   description: >-
-    STM32WB SOCs, dts files and related drivers. STM32WB development boards
-    and ST bluetooth shields.
+    STM32WB and STM32WBA SOCs, dts files and related drivers.
+    STM32WB and STM32WBA development boards and ST bluetooth shields.
 
 Samples:
   status: maintained
