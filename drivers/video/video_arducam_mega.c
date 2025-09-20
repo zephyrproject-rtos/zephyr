@@ -1015,8 +1015,8 @@ static int arducam_mega_init_controls(const struct device *dev)
 	if (ret < 0) {
 		return ret;
 	}
-	ret = video_init_ctrl(&ctrls->colorfx, dev, VIDEO_CID_ARDUCAM_COLOR_FX,
-			      (struct video_ctrl_range){.min = 0, .max = 9, .step = 1, .def = 0});
+	ret = video_init_ctrl(&ctrls->colorfx, dev, VIDEO_CID_COLORFX,
+			      (struct video_ctrl_range){.min = 0, .max = 14, .step = 1, .def = 0});
 	if (ret < 0) {
 		return ret;
 	}
