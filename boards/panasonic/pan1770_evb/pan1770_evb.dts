@@ -12,8 +12,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "pan1770-evb";
 	compatible = "panasonic-industrial-devices-europe-gmbh,pan1770-evb";
+	model = "pan1770-evb";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -173,27 +173,27 @@
 
 &uart0 {
 	compatible = "nordic,nrf-uarte";
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 arduino_serial: &uart1 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart1_default>;
 	pinctrl-1 = <&uart1_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 arduino_i2c: &i2c0 {
 	compatible = "nordic,nrf-twi";
-	status = "okay";
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-1 = <&i2c0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &i2c1 {
@@ -205,10 +205,10 @@ arduino_i2c: &i2c0 {
 };
 
 &pwm0 {
-	status = "okay";
 	pinctrl-0 = <&pwm0_default>;
 	pinctrl-1 = <&pwm0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &spi0 {
@@ -221,10 +221,10 @@ arduino_i2c: &i2c0 {
 
 &spi1 {
 	compatible = "nordic,nrf-spi";
-	status = "okay";
 	pinctrl-0 = <&spi1_default>;
 	pinctrl-1 = <&spi1_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &spi2 {
@@ -243,7 +243,6 @@ arduino_i2c: &i2c0 {
 };
 
 arduino_spi: &spi3 {
-	status = "disabled";
 	/* Cannot be used together with evb_led1, evb_led2, evb_led3, evb_sw2
 	 * and pwm0 so disabled by default.
 	 */
@@ -251,6 +250,7 @@ arduino_spi: &spi3 {
 	pinctrl-0 = <&spi3_default>;
 	pinctrl-1 = <&spi3_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "disabled";
 };
 
 &ieee802154 {
@@ -264,28 +264,28 @@ arduino_spi: &spi3 {
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x000000000 0x0000C000>;
+			label = "mcuboot";
 		};
 
 		slot0_partition: partition@c000 {
-			label = "image-0";
 			reg = <0x0000C000 0x00067000>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@73000 {
-			label = "image-1";
 			reg = <0x00073000 0x00067000>;
+			label = "image-1";
 		};
 
 		scratch_partition: partition@da000 {
-			label = "image-scratch";
 			reg = <0x000da000 0x0001e000>;
+			label = "image-scratch";
 		};
 
 		storage_partition: partition@f8000 {
-			label = "storage";
 			reg = <0x000f8000 0x00008000>;
+			label = "storage";
 		};
 	};
 };
