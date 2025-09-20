@@ -403,4 +403,23 @@ void mdns_plat_monitor_interface(struct net_if *ail_iface)
 		otPlatMdnsHandleHostAddressEvent(ot_instance_ptr, &ip6_addr, true,
 						 ail_iface_index);
 	}
+
+#if defined(CONFIG_NET_IPV4) && defined(CONFIG_NET_IPV4_MAPPING_TO_IPV6)
+	struct net_if_ipv4 *ipv4 = NULL;
+	otIp4Address ip4_addr = {0};
+
+	ipv4 = ail_iface->config.ip.ipv4;
+	ARRAY_FOR_EACH(ipv4->unicast, idx) {
+		unicast = &ipv4->unicast[idx].ipv4;
+
+		if (!unicast->is_used) {
+			continue;
+		}
+		memcpy(&ip4_addr.mFields.m32, &unicast->address.in_addr.s4_addr32,
+		       sizeof(otIp4Address));
+		otIp4ToIp4MappedIp6Address(&ip4_addr, &ip6_addr);
+		otPlatMdnsHandleHostAddressEvent(ot_instance_ptr, &ip6_addr, true,
+						 ail_iface_index);
+	}
+#endif /* CONFIG_NET_IPV4 && CONFIG_NET_IPV4_MAPPING_TO_IPV6 */
 }
