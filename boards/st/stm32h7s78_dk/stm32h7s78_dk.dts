@@ -107,6 +107,18 @@
 	status = "okay";
 };
 
+&pll2 {
+	div-m = <2>;
+	mul-n = <50>;
+	div-p = <2>;
+	div-q = <2>;
+	div-r = <2>;
+	div-s = <4>;
+	div-t = <2>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
 &rcc {
 	clocks = <&pll>;
 	clock-frequency = <DT_FREQ_M(250)>;
@@ -303,3 +315,15 @@ usb2: &usbotg_fs {
 };
 
 zephyr_udc0: &usb2 {};
+
+&sdmmc1 {
+	pinctrl-0 = <&sdmmc1_d0_pc8 &sdmmc1_d1_pc9
+		     &sdmmc1_d2_pc10 &sdmmc1_d3_pc11
+		     &sdmmc1_ck_pc12 &sdmmc1_cmd_pd2>;
+	pinctrl-names = "default";
+	clk-div = <13>;
+	bus-width = <4>;
+	cd-gpios = <&gpiom 14 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+	disk-name = "SD";
+	status = "okay";
+};
