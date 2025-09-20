@@ -18,6 +18,14 @@ The simplest configuration would be to connect ``SWDIO`` to ``dio``, ``SWDCLK`` 
 and optionally ``nRESET`` to ``reset``.  The optional ``noe`` pin is used to enable the port,
 e.g. if the SWD connections are multiplexed.
 
+Configuration
+************
+To configure the pinouts for existing boards or add a new board edit or copy the device overlays files in the boards folder.
+
+The ios that can be configured are clk, dio, dout, dnoe, noe and reset.
+
+If a dout pin is configured the dio pin is used as input only.
+
 Building and Running
 ********************
 
