@@ -6,12 +6,20 @@
 
 #include <mem.h>
 #include <silabs/xg27/efr32bg27.dtsi>
+#include <zephyr/dt-bindings/regulator/silabs_dcdc.h>
 
 / {
 	soc {
-		compatible = "silabs,efr32bg27c140f768im40", "silabs,efr32bg27", "silabs,xg27",
+		compatible = "silabs,efr32bg27c230f768im32", "silabs,efr32bg27", "silabs,xg27",
 			     "silabs,efr32", "simple-bus";
 	};
+};
+
+&dcdc {
+	regulator-boot-on;
+	regulator-init-microvolt = <1800000>;
+	regulator-initial-mode = <SILABS_DCDC_MODE_BOOST>;
+	status = "okay";
 };
 
 &flash0 {

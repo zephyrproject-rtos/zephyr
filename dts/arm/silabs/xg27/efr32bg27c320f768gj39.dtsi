@@ -9,7 +9,7 @@
 
 / {
 	soc {
-		compatible = "silabs,efr32bg27c140f768im40", "silabs,efr32bg27", "silabs,xg27",
+		compatible = "silabs,efr32bg27c320f768gj39", "silabs,efr32bg27", "silabs,xg27",
 			     "silabs,efr32", "simple-bus";
 	};
 };
