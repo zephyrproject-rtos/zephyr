@@ -4,16 +4,17 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config MODEM_QUECTEL_BG9X
-	bool "Quectel modem driver [ DEPRECATED ]"
+	bool "Quectel modem driver"
 	select MODEM_CONTEXT
 	select MODEM_CMD_HANDLER
 	select MODEM_IFACE_UART
 	select MODEM_SOCKET
 	select NET_SOCKETS_OFFLOAD
-	select DEPRECATED
 	help
-	  Choose this setting to enable quectel BG9x LTE-CatM1/NB-IoT modem
-	  driver.
+	  Quectel BG9x LTE-CatM1/NB-IoT off-load modem driver. This should be
+	  used when off-load drivers are needed. This is the preferred mode
+	  only when user needs PSM/eDRX power saving modes. Otherwise, the
+	  celullar modem is the recommended solution.
 
 if MODEM_QUECTEL_BG9X
 
