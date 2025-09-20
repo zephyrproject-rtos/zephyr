@@ -1,0 +1,25 @@
+# Copyright (c) 2025 Beechwoods Software Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Infineon AIROC Wirless Controller
+  GPIO Port
+
+compatible: "infineon,airoc-gpio"
+
+include: gpio-controller.yaml
+
+properties:
+  "#gpio-cells":
+    const: 2
+
+  ngpios:
+    type: int
+    required: true
+    const: 5
+    description: Number of GPIOs supported
+
+gpio-cells:
+  - pin
+  - flags
