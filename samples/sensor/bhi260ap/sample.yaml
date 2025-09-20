@@ -1,0 +1,9 @@
+sample:
+  name: BHI260AP Sensor sample
+tests:
+  sample.sensor.bhi260ap:
+    harness: sensor
+    tags:
+      - samples
+      - sensor
+    depends_on: i2c
