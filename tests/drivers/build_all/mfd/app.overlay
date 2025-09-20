@@ -15,6 +15,28 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
+		test_i2c: i2c@33335555{
+			status = "okay";
+			compatible = "vnd,i2c";
+			reg = <0x33335555 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			sc18is606: sc18is606@28 {
+				compatible ="nxp,sc18is606";
+				status = "okay";
+				reg = <0x28>;
+
+				spi_ext: sc18is606_spi {
+					compatible = "nxp,sc18is606-spi";
+					status = "okay";
+					#address-cells = <1>;
+					#size-cells = <0>;
+					frequency = <1875>;
+				};
+			};
+		};
+
 		test_uart: uart@55556666 {
 			compatible = "vnd,serial";
 			reg = <0x55556666 0x1000>;

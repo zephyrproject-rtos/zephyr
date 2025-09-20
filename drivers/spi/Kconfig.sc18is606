@@ -1,0 +1,22 @@
+# Copyright (c) 2025, tinyvision.ai
+# SPDX-License-Identifier: Apache-2.0
+
+config SPI_SC18IS606
+	bool  "NXP SC18IS606 SPI controller driver"
+	default y
+	select I2C
+	depends on DT_HAS_NXP_SC18IS606_SPI_ENABLED
+	help
+	  Enable driver for the NXP SC18IS606 SPI controller driver
+
+if SPI_SC18IS606
+
+config SPI_SC18IS606_INIT_PRIORITY
+	int "SC18IS606 SPI init priority"
+	default 59
+	help
+	  SC18IS606 SPI controller initialization priority
+
+	  Note: Has to be greater than the I2C initialization priority.
+
+endif
