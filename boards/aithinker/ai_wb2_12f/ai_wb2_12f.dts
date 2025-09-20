@@ -12,8 +12,8 @@
 #include "ai_wb2_12f-pinctrl.dtsi"
 
 / {
-	model = "Ai-Thinker WB2-12F development board";
 	compatible = "bflb,bl602";
+	model = "Ai-Thinker WB2-12F development board";
 
 	chosen {
 		zephyr,flash = &flash0;
@@ -34,25 +34,26 @@
 		compatible = "gpio-leds";
 
 		blue_led: led_0 {
-			gpios =  <&gpio0 3 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>;
 			label = "Blue - LED0";
 		};
 
 		green_led: led_1 {
-			gpios =  <&gpio0 17 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio0 17 GPIO_ACTIVE_HIGH>;
 			label = "Green - LED1";
 		};
 
 		red_led: led_2 {
-			gpios =  <&gpio0 14 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;
 			label = "Red - LED2";
 		};
 	};
 
 	buttons {
 		compatible = "gpio-keys";
+
 		button_0: sw0 {
-			gpios = <&gpio0 8 (GPIO_ACTIVE_HIGH)>;
+			gpios = <&gpio0 8 GPIO_ACTIVE_HIGH>;
 			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
@@ -76,26 +77,26 @@
 			#size-cells = <1>;
 
 			slot0_partition: partition@0 {
-				label = "image-0";
 				reg = <0x00000000 0x00100000>;
+				label = "image-0";
 				read-only;
 			};
 
 			storage_partition: partition@100000 {
-				label = "storage";
 				reg = <0x00100000 (0x300000 - 0x2000)>;
+				label = "storage";
 			};
 		};
 	};
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
 
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &gpio0 {
