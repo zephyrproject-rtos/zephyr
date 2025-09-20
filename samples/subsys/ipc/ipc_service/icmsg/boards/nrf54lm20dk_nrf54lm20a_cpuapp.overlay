@@ -1,0 +1,42 @@
+/*
+ * Copyright (c) 2025 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	soc {
+		reserved-memory {
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			sram_rx: memory@20057c00 {
+				reg = <0x20057c00 0x8000>;
+			};
+
+			sram_tx: memory@2005fc00 {
+				reg = <0x2005fc00 0x8000>;
+			};
+		};
+	};
+
+	ipc {
+		ipc0: ipc0 {
+			compatible = "zephyr,ipc-icmsg";
+			dcache-alignment = <32>;
+			tx-region = <&sram_tx>;
+			rx-region = <&sram_rx>;
+			mboxes = <&cpuapp_vevif_rx 20>, <&cpuapp_vevif_tx 21>;
+			mbox-names = "rx", "tx";
+			status = "okay";
+		};
+	};
+};
+
+&cpuapp_vevif_rx {
+	status = "okay";
+};
+
+&cpuapp_vevif_tx {
+	status = "okay";
+};
