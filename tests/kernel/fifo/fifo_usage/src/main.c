@@ -58,42 +58,49 @@ static struct k_sem end_sema;
 /*entry of contexts*/
 static void tIsr_entry_put(const void *p)
 {
+	struct k_fifo *fifo = (void *)p;
 	uint32_t i;
 
 	/* Put items into fifo */
 	for (i = 0U; i < LIST_LEN; i++) {
-		k_fifo_put((struct k_fifo *)p, (void *)&data_isr[i]);
+		k_fifo_put(fifo, (void *)&data_isr[i]);
 	}
-	zassert_false(k_fifo_is_empty((struct k_fifo *)p));
+	zassert_false(k_fifo_is_empty(fifo));
+	zassert_not_equal(0, k_fifo_len(fifo));
 }
 
 static void tIsr_entry_get(const void *p)
 {
+	struct k_fifo *fifo = (void *)p;
 	void *rx_data;
 	uint32_t i;
 
 	/* Get items from fifo */
 	for (i = 0U; i < LIST_LEN; i++) {
-		rx_data = k_fifo_get((struct k_fifo *)p, K_NO_WAIT);
+		rx_data = k_fifo_get(fifo, K_NO_WAIT);
 		zassert_equal(rx_data, (void *)&data_isr[i]);
 	}
-	zassert_true(k_fifo_is_empty((struct k_fifo *)p));
+	zassert_true(k_fifo_is_empty(fifo));
+	zassert_equal(0, k_fifo_len(fifo));
 }
 
 static void thread_entry_fn_single(void *p1, void *p2, void *p3)
 {
+	struct k_fifo *fifo = p1;
 	void *rx_data;
 	uint32_t i;
 
 	/* Get items from fifo */
 	for (i = 0U; i < LIST_LEN; i++) {
-		rx_data = k_fifo_get((struct k_fifo *)p1, K_NO_WAIT);
+		zassert_equal(LIST_LEN - i, k_fifo_len(fifo));
+		rx_data = k_fifo_get(fifo, K_NO_WAIT);
 		zassert_equal(rx_data, (void *)&data1[i]);
 	}
 
 	/* Put items into fifo */
 	for (i = 0U; i < LIST_LEN; i++) {
-		k_fifo_put((struct k_fifo *)p1, (void *)&data2[i]);
+		zassert_equal(i, k_fifo_len(fifo));
+		k_fifo_put(fifo, (void *)&data2[i]);
 	}
 
 	/* Give control back to Test thread */
@@ -102,16 +109,18 @@ static void thread_entry_fn_single(void *p1, void *p2, void *p3)
 
 static void thread_entry_fn_dual(void *p1, void *p2, void *p3)
 {
+	struct k_fifo *fifo1 = p1;
+	struct k_fifo *fifo2 = p2;
 	void *rx_data;
 	uint32_t i;
 
 	for (i = 0U; i < LIST_LEN; i++) {
 		/* Get items from fifo2 */
-		rx_data = k_fifo_get((struct k_fifo *)p2, K_FOREVER);
+		rx_data = k_fifo_get(fifo2, K_FOREVER);
 		zassert_equal(rx_data, (void *)&data2[i]);
 
 		/* Put items into fifo1 */
-		k_fifo_put((struct k_fifo *)p1, (void *)&data1[i]);
+		k_fifo_put(fifo1, (void *)&data1[i]);
 	}
 }
 

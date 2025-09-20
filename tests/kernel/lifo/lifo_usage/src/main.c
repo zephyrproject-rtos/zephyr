@@ -309,6 +309,30 @@ ZTEST(lifo_usage, test_timeout_non_empty_lifo)
 }
 
 /**
+ * @brief Test LIFO queue length operations
+ * @see k_lifo_len()
+ */
+ZTEST(lifo_usage, test_lifo_len)
+{
+	void *scratch_packet;
+	struct k_lifo lifo;
+
+	k_lifo_init(&lifo);
+
+	for (int i = 0; i < NUM_SCRATCH_LIFO_PACKETS; i++) {
+		scratch_packet = get_scratch_packet();
+		zassert_equal(i, k_lifo_len(&lifo));
+		k_lifo_put(&lifo, scratch_packet);
+	}
+
+	for (int i = 0; i < NUM_SCRATCH_LIFO_PACKETS; i++) {
+		zassert_equal(NUM_SCRATCH_LIFO_PACKETS - i, k_lifo_len(&lifo));
+		scratch_packet = k_lifo_get(&lifo, K_FOREVER);
+		put_scratch_packet(scratch_packet);
+	}
+}
+
+/**
  * @brief Test LIFO with timeout
  * @see k_lifo_put(), k_lifo_get()
  */
