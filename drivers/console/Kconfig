@@ -304,4 +304,22 @@ config WINSTREAM_CONSOLE_STATIC_SIZE
 
 endif # WINSTREAM_CONSOLE
 
+DT_CHOSEN_Z_IPC := zephyr,ipc
+DT_CHOSEN_Z_IPC_SHM := zephyr,ipc_shm
+
+config RPMSG_CONSOLE
+	bool "Use RPMSG console"
+	select IPM
+	select OPENAMP
+	select CONSOLE_HAS_DRIVER
+	depends on (HEAP_MEM_POOL_SIZE > 0)
+	depends on (OPENAMP_RSC_TABLE_NUM_RPMSG_BUFF > 0)
+	depends on $(dt_chosen_enabled,$(DT_CHOSEN_Z_IPC))
+	depends on $(dt_chosen_enabled,$(DT_CHOSEN_Z_IPC_SHM))
+	help
+	  Enable console using RPMSG.
+
+	  This can be used when the application is loaded onto the co-processor
+	  using remoteproc.
+
 endif # CONSOLE
