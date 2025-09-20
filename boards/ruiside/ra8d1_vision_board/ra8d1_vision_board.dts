@@ -13,8 +13,8 @@
 #include "ra8d1_vision_board-pinctrl.dtsi"
 
 / {
-	model = "Ruiside Electronic RA8D1-VISION-BOARD";
 	compatible = "ruiside,ra8d1-vision-board";
+	model = "Ruiside Electronic RA8D1-VISION-BOARD";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -164,8 +164,8 @@
 		#size-cells = <1>;
 
 		storage_partition: partition@0 {
-			label = "storage";
 			reg = <0X0 DT_SIZE_K(12)>;
+			label = "storage";
 		};
 	};
 };
@@ -178,7 +178,6 @@
 &sdram {
 	pinctrl-0 = <&sdram_default>;
 	pinctrl-names = "default";
-	status = "okay";
 	auto-refresh-interval = <SDRAM_AUTO_REFREDSH_INTERVEL_10CYCLES>;
 	auto-refresh-count = <SDRAM_AUTO_REFREDSH_COUNT_8TIMES>;
 	precharge-cycle-count = <SDRAM_AUTO_PRECHARGE_CYCLE_3CYCLES>;
@@ -186,6 +185,7 @@
 	edian-mode = "little-endian";
 	continuous-access;
 	bus-width = "16-bit";
+	status = "okay";
 
 	bank@0 {
 		reg = <0>;
