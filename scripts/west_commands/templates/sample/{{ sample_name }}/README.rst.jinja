@@ -1,0 +1,36 @@
+.. zephyr:code-sample:: {{ sample_name }}
+   :name: A descriptive short name for the sample
+   :relevant-api: space-separated list of Doxygen groups of APIs this sample is a good showcase of
+
+   Short text description of the sample. It is recommended to word this as if you were completing
+   the sentence "This code sample shows how to ...").
+
+Overview
+********
+
+[A longer description about the sample and what it does]
+
+Requirements
+************
+
+[List of required software and hardware components. Provide pointers to
+hardware components such as sensors and shields]
+
+Building and Running
+********************
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/{{ sample_name }}
+   :host-os: unix
+   :board: {{ reference_board if reference_board != 'other' else reference_board_other }}
+   :goals: run
+   :compact:
+
+References
+**********
+
+.. target-notes::
+
+[ Links to external references such as datasheets or additional documentation]
+
+
