@@ -1,0 +1,47 @@
+#
+# Copyright (c) 2025 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+source "share/sysbuild/Kconfig"
+
+choice
+	prompt "Remote board target"
+	default REMOTE_BOARD_NRF54H20_CPURAD if BOARD = "nrf54h20dk"
+	default REMOTE_BOARD_NRF5340_CPUNET if BOARD = "nrf5340dk"
+	default REMOTE_BOARD_NRF5340_CPUNET_SIM if BOARD = "nrf5340bsim"
+
+config REMOTE_BOARD_NRF54H20_CPURAD
+	bool "nrf54h20dk/nrf54h20/cpurad"
+
+config REMOTE_BOARD_NRF54H20_CPUPPR
+	bool "nrf54h20dk/nrf54h20/cpuppr"
+
+config REMOTE_BOARD_NRF54H20_CPUPPR_XIP
+	bool "nrf54h20dk/nrf54h20/cpuppr/xip"
+
+## Do not fit on nRF54H20_CPUFLPR without XIP
+
+config REMOTE_BOARD_NRF54H20_CPUFLPR_XIP
+	bool "nrf54h20dk/nrf54h20/cpuflpr/xip"
+
+config REMOTE_BOARD_NRF5340_CPUNET
+	bool "nrf5340dk/nrf5340/cpunet"
+
+config REMOTE_BOARD_NRF5340_CPUNET_SIM
+	bool "nrf5340bsim/nrf5340/cpunet"
+	help
+	  Use this option to run the sample on nRF5340 CPU network simulator target.
+	  This option is useful for development and testing without requiring physical hardware.
+
+endchoice
+
+config REMOTE_BOARD
+	string "The board used for remote target"
+	default "nrf54h20dk/nrf54h20/cpurad" if REMOTE_BOARD_NRF54H20_CPURAD
+	default "nrf54h20dk/nrf54h20/cpuppr" if REMOTE_BOARD_NRF54H20_CPUPPR
+	default "nrf54h20dk/nrf54h20/cpuppr/xip" if REMOTE_BOARD_NRF54H20_CPUPPR_XIP
+	default "nrf54h20dk/nrf54h20/cpuflpr/xip" if REMOTE_BOARD_NRF54H20_CPUFLPR_XIP
+	default "nrf5340dk/nrf5340/cpunet" if REMOTE_BOARD_NRF5340_CPUNET
+	default "nrf5340bsim/nrf5340/cpunet" if REMOTE_BOARD_NRF5340_CPUNET_SIM

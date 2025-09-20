@@ -107,6 +107,19 @@ config ZBUS_ASSERT_MOCK
 	  enabled, _ZBUS_ASSERT returns -EFAULT instead of assert. It makes it more straightforward to test invalid
 	  parameters.
 
+config ZBUS_MULTIDOMAIN
+	bool "ZBus multidomain support"
+	select ZBUS_MSG_SUBSCRIBER
+	select ZBUS_CHANNEL_NAME
+	help
+	  Enables support for ZBus multidomain. This feature allows the ZBus to work with multiple domains,
+	  enabling communication between them.
+
+if ZBUS_MULTIDOMAIN
+
+rsource "multidomain/Kconfig"
+
+endif # ZBUS_MULTIDOMAIN
 
 config HEAP_MEM_POOL_ADD_SIZE_ZBUS
 	int "ZBus requested heap pool size."
