@@ -5,6 +5,7 @@
  */
 
 #include "picolibc-hooks.h"
+#include "stdio-bufio.h"
 
 static LIBC_DATA int (*_stdout_hook)(int);
 
@@ -28,8 +29,10 @@ static int picolibc_put(char a, FILE *f)
 	return 0;
 }
 
-static LIBC_DATA FILE __stdout = FDEV_SETUP_STREAM(picolibc_put, NULL, NULL, 0);
-static LIBC_DATA FILE __stdin = FDEV_SETUP_STREAM(NULL, NULL, NULL, 0);
+#ifndef CONFIG_ZVFS
+static LIBC_DATA FILE __stdout = FDEV_SETUP_STREAM(picolibc_put, NULL, NULL, _FDEV_SETUP_WRITE);
+static LIBC_DATA FILE __stdin = FDEV_SETUP_STREAM(NULL, NULL, NULL, _FDEV_SETUP_READ);
+#endif
 
 #ifdef __strong_reference
 #define STDIO_ALIAS(x) __strong_reference(stdout, x);
@@ -37,18 +40,35 @@ static LIBC_DATA FILE __stdin = FDEV_SETUP_STREAM(NULL, NULL, NULL, 0);
 #define STDIO_ALIAS(x) FILE *const x = &__stdout;
 #endif
 
+#ifndef CONFIG_ZVFS
 FILE *const stdin = &__stdin;
 FILE *const stdout = &__stdout;
 STDIO_ALIAS(stderr);
+#endif
 
 void __stdout_hook_install(int (*hook)(int))
 {
 	_stdout_hook = hook;
-	__stdout.flags |= _FDEV_SETUP_WRITE;
+#ifdef CONFIG_ZVFS
+	stdout->put = picolibc_put;
+	stdout->flags |= _FDEV_SETUP_WRITE;
+
+	struct __file_bufio *bp = (struct __file_bufio *)stdout;
+
+	bp->ptr = INT_TO_POINTER(1 /* STDOUT_FILENO */);
+	bp->bflags |= _FDEV_SETUP_WRITE;
+#endif
 }
 
 void __stdin_hook_install(unsigned char (*hook)(void))
 {
-	__stdin.get = (int (*)(FILE *)) hook;
-	__stdin.flags |= _FDEV_SETUP_READ;
+	stdin->get = (int (*)(FILE *))hook;
+#ifdef CONFIG_ZVFS
+	stdin->flags |= _FDEV_SETUP_READ;
+	struct __file_bufio *bp = (struct __file_bufio *)stdin;
+
+	bp->bflags |= _FDEV_SETUP_READ;
+	/* bp->get = (int (*)(FILE *))hook; */
+	bp->ptr = INT_TO_POINTER(0 /* STDIN_FILENO */);
+#endif
 }

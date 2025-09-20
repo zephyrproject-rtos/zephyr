@@ -12,7 +12,7 @@ common:
 tests:
   libraries.libc.c11_threads.minimal:
     tags: minimal_libc
-    filter: CONFIG_MINIMAL_LIBC_SUPPORTED
+    filter: CONFIG_MINIMAL_LIBC_SUPPORTED and not CONFIG_REQUIRES_FULL_LIBC
     extra_configs:
       - CONFIG_MINIMAL_LIBC=y
       - CONFIG_MINIMAL_LIBC_NON_REENTRANT_FUNCTIONS=y

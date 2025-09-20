@@ -75,6 +75,47 @@ static struct fd_entry fdtable[CONFIG_ZVFS_OPEN_MAX] = {
 
 static K_MUTEX_DEFINE(fdtable_lock);
 
+#ifdef CONFIG_MINIMAL_LIBC
+void zvfs_libc_file_alloc_cb(int fd, const char *mode, FILE *fp)
+{
+	ARG_UNUSED(fd);
+	ARG_UNUSED(mode);
+	ARG_UNUSED(fp);
+}
+
+int zvfs_libc_file_alloc(int fd, const char *mode, FILE **fp, k_timeout_t timeout)
+{
+	ARG_UNUSED(mode);
+	ARG_UNUSED(timeout);
+
+	__ASSERT_NO_MSG(mode != NULL);
+	__ASSERT_NO_MSG(fp != NULL);
+
+	*fp = (FILE *)&fdtable[fd];
+
+	return 0;
+}
+
+void zvfs_libc_file_free(FILE *fp)
+{
+	ARG_UNUSED(fp);
+}
+
+int zvfs_libc_file_get_fd(FILE *fp)
+{
+	return (const struct fd_entry *)fp - fdtable;
+}
+
+FILE *zvfs_libc_file_from_fd(int fd)
+{
+	if ((fd < 0) || (fd >= ARRAY_SIZE(fdtable))) {
+		return NULL;
+	}
+
+	return (FILE *)&fdtable[fd];
+}
+#endif
+
 static int z_fd_ref(int fd)
 {
 	return atomic_inc(&fdtable[fd].refcount) + 1;
@@ -406,6 +447,7 @@ int zvfs_close(int fd)
 	}
 	k_mutex_unlock(&fdtable[fd].lock);
 
+	zvfs_libc_file_free(zvfs_libc_file_from_fd(fd));
 	zvfs_free_fd(fd);
 
 	return res;
@@ -413,23 +455,33 @@ int zvfs_close(int fd)
 
 FILE *zvfs_fdopen(int fd, const char *mode)
 {
-	ARG_UNUSED(mode);
+	int ret;
+	FILE *fp = NULL;
 
 	if (_check_fd(fd) < 0) {
 		return NULL;
 	}
 
-	return (FILE *)&fdtable[fd];
+	ret = zvfs_libc_file_alloc(fd, mode, &fp, K_NO_WAIT);
+	if (ret < 0) {
+		errno = ENOMEM;
+	} else {
+		__ASSERT(fp != NULL, "zvfs_libc_file_alloc() returned an invalid file pointer");
+	}
+
+	return fp;
 }
 
 int zvfs_fileno(FILE *file)
 {
-	if (!IS_ARRAY_ELEMENT(fdtable, file)) {
+	int fd = zvfs_libc_file_get_fd(file);
+
+	if (fd < 0 || fd >= ARRAY_SIZE(fdtable)) {
 		errno = EBADF;
 		return -1;
 	}
 
-	return (struct fd_entry *)file - fdtable;
+	return fd;
 }
 
 int zvfs_fstat(int fd, struct stat *buf)
@@ -541,11 +593,26 @@ int zvfs_ioctl(int fd, unsigned long request, va_list args)
  * fd operations for stdio/stdout/stderr
  */
 
+int z_impl_zephyr_read_stdin(char *buf, int nbytes);
 int z_impl_zephyr_write_stdout(const char *buf, int nbytes);
 
 static ssize_t stdinout_read_vmeth(void *obj, void *buffer, size_t count)
 {
-	return 0;
+#if defined(CONFIG_NEWLIB_LIBC) || defined(CONFIG_ARCMWDT_LIBC)
+	return z_impl_zephyr_read_stdin(buffer, count);
+#else
+	int r = 0;
+
+	while (r < count) {
+		int c = getchar();
+
+		if (c == '\n' || c == '\r') {
+			break;
+		}
+		((char *)buffer)[r++] = c;
+	}
+	return r;
+#endif
 }
 
 static ssize_t stdinout_write_vmeth(void *obj, const void *buffer, size_t count)
@@ -553,7 +620,7 @@ static ssize_t stdinout_write_vmeth(void *obj, const void *buffer, size_t count)
 #if defined(CONFIG_NEWLIB_LIBC) || defined(CONFIG_ARCMWDT_LIBC)
 	return z_impl_zephyr_write_stdout(buffer, count);
 #else
-	return 0;
+	return printf("%.*s", (int)count, (const char *)buffer);
 #endif
 }
 
