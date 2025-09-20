@@ -11,26 +11,25 @@
 };
 
 &zephyr_lcd_controller {
-	status = "okay";
 	ext-sdram = <&sdram2>;
 	def-back-color-red = <0>;
 	def-back-color-green = <0>;
 	def-back-color-blue = <0>;
+	status = "okay";
 };
 
 /* ltdc uses pll3_r as pixel clock */
 &pll3 {
-	status = "okay";
 	clocks = <&clk_hse>;
 	div-m = <5>;
 	mul-n = <132>;
 	div-p = <2>;
 	div-q = <2>;
 	div-r = <24>; /* 27.5 MHz */
+	status = "okay";
 };
 
 &zephyr_mipi_dsi {
-	status = "okay";
 
 	/* DSI HOST dedicated PLL
 	 * F_VCO = CLK_IN / pll-idf * 2 * pll-ndiv
@@ -44,4 +43,5 @@
 	vs-active-high;
 	hs-active-high;
 	de-active-high;
+	status = "okay";
 };

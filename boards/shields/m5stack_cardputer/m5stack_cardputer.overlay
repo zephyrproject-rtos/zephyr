@@ -95,9 +95,9 @@
 };
 
 &adc0 {
-	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
+	status = "okay";
 
 	channel@9 {
 		reg = <9>;
@@ -109,20 +109,20 @@
 };
 
 &spi3 {
-	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
-	status = "okay";
 	pinctrl-0 = <&spim3_default>;
 	pinctrl-names = "default";
 	clock-frequency = <25000000>;
 	cs-gpios = <&gpio0 12 GPIO_ACTIVE_LOW>; /* TF-CARD */
+	status = "okay";
+	status = "okay";
 
 	sd0: sd@0 {
 		compatible = "zephyr,sdhc-spi-slot";
 		reg = <0>;
-		status = "okay";
 		spi-max-frequency = <25000000>;
+		status = "okay";
 
 		mmc {
 			compatible = "zephyr,sdmmc-disk";

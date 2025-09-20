@@ -17,7 +17,6 @@
 
 	nrf70: nrf7002@0 {
 		compatible = "nordic,nrf7002-spi";
-		status = "okay";
 		reg = <0>;
 		spi-max-frequency = <DT_FREQ_M(8)>;
 
@@ -25,14 +24,6 @@
 		iovdd-ctrl-gpios = <&edge_connector 9 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 		host-irq-gpios = <&edge_connector 19 GPIO_ACTIVE_HIGH>;
 		srrf-switch-gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>;
-
-		wlan0: wlan0 {
-			compatible = "nordic,wlan";
-		};
-
-		wlan1: wlan1 {
-			compatible = "nordic,wlan";
-		};
 
 		wifi-max-tx-pwr-2g-dsss = <21>;
 		wifi-max-tx-pwr-2g-mcs0 = <16>;
@@ -43,5 +34,14 @@
 		wifi-max-tx-pwr-5g-mid-mcs7 = <13>;
 		wifi-max-tx-pwr-5g-high-mcs0 = <12>;
 		wifi-max-tx-pwr-5g-high-mcs7 = <12>;
+		status = "okay";
+
+		wlan0: wlan0 {
+			compatible = "nordic,wlan";
+		};
+
+		wlan1: wlan1 {
+			compatible = "nordic,wlan";
+		};
 	};
 };

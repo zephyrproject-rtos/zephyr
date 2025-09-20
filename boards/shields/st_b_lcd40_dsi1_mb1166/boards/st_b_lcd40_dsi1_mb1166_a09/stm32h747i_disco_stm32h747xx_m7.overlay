@@ -5,8 +5,8 @@
  */
 
 &zephyr_mipi_dsi {
-	status = "okay";
 	loosely-packed;
 	largest-packet-size = <64>;
 	bta-ack-disable;
+	status = "okay";
 };

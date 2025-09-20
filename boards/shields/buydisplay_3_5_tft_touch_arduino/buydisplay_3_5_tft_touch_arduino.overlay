@@ -32,8 +32,8 @@
 
 		ili9488_buydisplay_3_5_tft_touch_arduino: ili9488@0 {
 			compatible = "ilitek,ili9488";
-			mipi-max-frequency = <25000000>;
 			reg = <0>;
+			mipi-max-frequency = <25000000>;
 			pixel-format = <ILI9XXX_PIXEL_FORMAT_RGB888>;
 			width = <320>;
 			height = <480>;
@@ -48,8 +48,8 @@
 };
 
 &arduino_spi {
-	status = "okay";
 	cs-gpios = <&arduino_header ARDUINO_HEADER_R3_D9 GPIO_ACTIVE_LOW>;
+	status = "okay";
 };
 
 &arduino_i2c {

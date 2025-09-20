@@ -30,9 +30,12 @@
 };
 
 &zephyr_lcdif {
-	status = "okay";
 	width = <480>;
 	height = <272>;
+	pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+	data-bus-width = "16-bit";
+	backlight-gpios = <&nxp_parallel_lcd_connector 0 GPIO_ACTIVE_HIGH>;
+	status = "okay";
 
 	display-timings {
 		compatible = "zephyr,panel-timing";
@@ -48,7 +51,4 @@
 		vsync-active = <0>;
 		clock-frequency = <9210240>;
 	};
-	pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
-	data-bus-width = "16-bit";
-	backlight-gpios = <&nxp_parallel_lcd_connector 0 GPIO_ACTIVE_HIGH>;
 };

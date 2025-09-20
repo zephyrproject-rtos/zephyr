@@ -7,10 +7,9 @@
 #include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
 
 &arduino_spi {
-	status = "okay";
-
 	cs-gpios = <&arduino_header ARDUINO_HEADER_R3_D10
 		    (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+	status = "okay";
 
 	ft800_ftdi_vm800c: ft800@0 {
 		compatible = "ftdi,ft800";

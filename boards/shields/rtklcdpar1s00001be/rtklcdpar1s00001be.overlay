@@ -28,12 +28,12 @@
 };
 
 &zephyr_lcdif {
-	status = "okay";
 	width = <1024>;
 	height = <600>;
 	input-pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
 	output-pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
 	backlight-gpios = <&renesas_parallel_graphics_connector 1 GPIO_ACTIVE_HIGH>;
+	status = "okay";
 
 	display-timings {
 		compatible = "zephyr,panel-timing";

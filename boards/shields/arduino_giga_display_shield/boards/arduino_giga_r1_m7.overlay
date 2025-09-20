@@ -28,7 +28,6 @@
 };
 
 &zephyr_lcd_controller {
-	status = "okay";
 	ext-sdram = <&sdram1>;
 	width = <480>;
 	height = <800>;
@@ -39,6 +38,7 @@
 
 	disp-on-gpios = <&gpioc 6 GPIO_ACTIVE_HIGH>;
 	bl-ctrl-gpios = <&gpiob 12 GPIO_ACTIVE_HIGH>;
+	status = "okay";
 
 	/* sitronix, st7701 */
 	display-timings {
@@ -58,18 +58,16 @@
 
 /* ltdc uses pll3_r as pixel clock */
 &pll3 {
-	status = "okay";
 	clocks = <&clk_hse>;
 	div-m = <16>;
 	mul-n = <110>;
 	div-p = <2>;
 	div-q = <2>;
 	div-r = <4>; /* 27.5 MHz */
+	status = "okay";
 };
 
 &zephyr_mipi_dsi {
-	status = "okay";
-
 	pll-ndiv = <125>;
 	pll-idf = <4>;
 	pll-odf = <0>;
@@ -78,6 +76,7 @@
 	largest-packet-size = <0>;
 
 	phy-timings = <35 35 35 35 0 10>;
+	status = "okay";
 };
 
 &i2c4 {

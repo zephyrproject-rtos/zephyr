@@ -22,7 +22,6 @@
 	status = "okay";
 
 	nt35510: nt35510@0 {
-		status = "okay";
 		compatible = "frida,nt35510";
 		reg = <0x0>;
 		height = <800>;
@@ -32,14 +31,15 @@
 		data-lanes = <2>;
 		pixel-format = <MIPI_DSI_PIXFMT_RGB888>;
 		rotation = <90>;
+		status = "okay";
 	};
 };
 
 &zephyr_lcd_controller {
-	status = "okay";
 	width = <800>;
 	height = <480>;
 	pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
+	status = "okay";
 
 	/* frida, nt35510 */
 	display-timings {
