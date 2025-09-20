@@ -26,6 +26,7 @@ tests:
     platform_allow:
       - nucleo_h563zi
       - nucleo_h743zi
+      - nucleo_h753zi
       - nucleo_f429zi
       - nucleo_f746zg
       - stm32h573i_dk
