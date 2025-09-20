@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2016 Intel Corporation.
  * Copyright (c) 2020-2021 Vestas Wind Systems A/S
+ * Copyright (c) 2025 Basalte bv
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -35,6 +36,7 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/sys_clock.h>
 #include <zephyr/sys/math_extras.h>
+#include <zephyr/sys/slist.h>
 #include <zephyr/toolchain.h>
 
 #include <zephyr/dt-bindings/pwm/pwm.h>
@@ -76,12 +78,29 @@ extern "C" {
 /** @} */
 
 /**
+ * @name PWM event configuration flags
+ * @anchor PWM_EVENT_FLAGS
+ * @{
+ */
+
+#define PWM_EVENT_TYPE_SHIFT		0U
+
+/** Configure the event to trigger at the end of each PWM period */
+#define PWM_EVENT_TYPE_PERIOD		(1U << PWM_EVENT_TYPE_SHIFT)
+
+/** Configure the event to trigger at a fault */
+#define PWM_EVENT_TYPE_FAULT		(2U << PWM_EVENT_TYPE_SHIFT)
+
+/** @} */
+
+/**
  * @brief Provides a type to hold PWM configuration flags.
  *
  * The lower 8 bits are used for standard flags.
  * The upper 8 bits are reserved for SoC specific flags.
  *
  * @see @ref PWM_CAPTURE_FLAGS.
+ * @see @ref PWM_EVENT_FLAGS.
  */
 
 typedef uint16_t pwm_flags_t;
@@ -400,6 +419,52 @@ typedef void (*pwm_capture_callback_handler_t)(const struct device *dev,
 					       uint32_t pulse_cycles,
 					       int status, void *user_data);
 
+struct pwm_event_callback;
+
+/**
+ * @brief PWM event callback handler function signature.
+ *
+ * @note The callback handler can be called in an interrupt context.
+ *
+ * @note @kconfig{CONFIG_PWM_EVENT} must be selected to enable PWM event
+ * support.
+ *
+ * @param[in] dev PWM device instance.
+ * @param callback Original struct gpio_callback owning this handler.
+ * @param channel PWM channel.
+ * @param events Event mask. See @ref PWM_EVENT_FLAGS.
+ *
+ */
+typedef void (*pwm_event_callback_handler_t)(const struct device *dev,
+					     struct pwm_event_callback *callback, uint32_t channel,
+					     pwm_flags_t events);
+
+/**
+ * @brief PWM event callback structure
+ *
+ * Used to register an event callback in the driver instance callback list.
+ * As many callbacks as needed can be added as long as each of them
+ * are unique pointers of struct pwm_event_callback.
+ * Beware such structure should not be allocated on stack.
+ *
+ * Note: to help setting it, see pwm_init_event_callback().
+ *
+ */
+struct pwm_event_callback {
+	/** @cond INTERNAL_HIDDEN */
+	sys_snode_t node;
+	/** @endcond */
+
+	/** Actual callback function being called when relevant. */
+	pwm_event_callback_handler_t handler;
+
+	/** Channel the callback is interested in. */
+	uint32_t channel;
+
+	/** A mask of events the callback is interested in. */
+	pwm_flags_t event_mask;
+};
+
 /** @cond INTERNAL_HIDDEN */
 /**
  * @brief PWM driver API call to configure PWM pin period and pulse width.
@@ -440,6 +505,16 @@ typedef int (*pwm_disable_capture_t)(const struct device *dev,
 				     uint32_t channel);
 #endif /* CONFIG_PWM_CAPTURE */
 
+#ifdef CONFIG_PWM_EVENT
+
+/**
+ * @brief PWM driver API to manage callbacks for events.
+ * @see pwm_set_event_callback() and pwm_remove_event_callback() for argument description.
+ */
+typedef int (*pwm_manage_event_callback_t)(const struct device *dev,
+					   struct pwm_event_callback *callback, bool set);
+#endif /* CONFIG_PWM_EVENT */
+
 /** @brief PWM driver API definition. */
 __subsystem struct pwm_driver_api {
 	pwm_set_cycles_t set_cycles;
@@ -449,6 +524,9 @@ __subsystem struct pwm_driver_api {
 	pwm_enable_capture_t enable_capture;
 	pwm_disable_capture_t disable_capture;
 #endif /* CONFIG_PWM_CAPTURE */
+#ifdef CONFIG_PWM_EVENT
+	pwm_manage_event_callback_t manage_event_callback;
+#endif /* CONFIG_PWM_EVENT */
 };
 /** @endcond */
 
@@ -932,6 +1010,74 @@ static inline int pwm_capture_nsec(const struct device *dev, uint32_t channel,
 
 	return 0;
 }
+
+#ifdef CONFIG_PWM_EVENT
+/**
+ * @brief Helper to initialize a struct pwm_event_callback properly.
+ *
+ * @param callback A valid application's callback structure pointer.
+ * @param handler A valid handler function pointer.
+ * @param channel Relevant channel for the handler.
+ * @param event_mask A bit mask of relevant events for the handler.
+ */
+static inline void pwm_init_event_callback(struct pwm_event_callback *callback,
+					   pwm_event_callback_handler_t handler,
+					   uint32_t channel, pwm_flags_t event_mask)
+{
+	__ASSERT_NO_MSG(callback != NULL);
+	__ASSERT_NO_MSG(handler != NULL);
+
+	callback->handler = handler;
+	callback->channel = channel;
+	callback->event_mask = event_mask;
+}
+
+/**
+ * @brief Add an application event callback.
+ *
+ * @note As many callbacks as needed can be added on a PWM device instance.
+ *
+ * @param[in] dev PWM device instance.
+ * @param callback A valid applications callback structure pointer.
+ *
+ * @retval 0 on success.
+ * @retval -ENOSYS if driver does not manage event callbacks.
+ * @retval negative errno on failure.
+ */
+static inline int pwm_add_event_callback(const struct device *dev,
+					 struct pwm_event_callback *callback)
+{
+	const struct pwm_driver_api *api = (const struct pwm_driver_api *)dev->api;
+
+	if (api->manage_event_callback == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->manage_event_callback(dev, callback, true);
+}
+
+/**
+ * @brief Remove an application event callback.
+ *
+ * @param[in] dev PWM device instance.
+ * @param callback A valid applications callback structure pointer.
+ *
+ * @retval 0 on success.
+ * @retval -ENOSYS if driver does not manage event callbacks.
+ * @retval negative errno on failure.
+ */
+static inline int pwm_remove_event_callback(const struct device *dev,
+					    struct pwm_event_callback *callback)
+{
+	const struct pwm_driver_api *api = (const struct pwm_driver_api *)dev->api;
+
+	if (api->manage_event_callback == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->manage_event_callback(dev, callback, false);
+}
+#endif /* CONFIG_PWM_EVENT */
 
 /**
  * @brief Validate that the PWM device is ready.
