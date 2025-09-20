@@ -255,7 +255,9 @@
 
 &lpspi1 {
 	status = "okay";
-	cs-gpios = <&gpio2 11 GPIO_ACTIVE_LOW>;
+	pcs-sck-delay = <50>;
+	sck-pcs-delay = <50>;
+	transfer-delay = <50>;
 
 	icm42686_0: icm42686p0@0 {
 		compatible = "invensense,icm42686", "invensense,icm4268x";
@@ -281,7 +283,9 @@
 
 &lpspi2 {
 	status = "okay";
-	cs-gpios = <&gpio3 24 GPIO_ACTIVE_LOW>;
+	pcs-sck-delay = <50>;
+	sck-pcs-delay = <50>;
+	transfer-delay = <50>;
 
 	icm42688_0: icm42688p0@0 {
 		compatible = "invensense,icm42688", "invensense,icm4268x";
