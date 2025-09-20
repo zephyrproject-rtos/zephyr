@@ -443,6 +443,7 @@ miramems	MiraMEMS Sensing Technology Co., Ltd.
 mitsubishi	Mitsubishi Electric Corporation
 modtronix	Modtronix Engineering
 mosaixtech	Mosaix Technologies, Inc.
+motorcomm	Motorcomm Electronic Technology Co., Ltd.
 motorola	Motorola, Inc.
 moxa	Moxa Inc.
 mpl	MPL AG
