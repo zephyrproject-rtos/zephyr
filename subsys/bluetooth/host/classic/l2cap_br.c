@@ -19,6 +19,7 @@
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/classic/avrcp.h>
 #include <zephyr/bluetooth/classic/l2cap_br.h>
 
 #include "host/buf_view.h"
