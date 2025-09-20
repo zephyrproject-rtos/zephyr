@@ -20,6 +20,8 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,ccm = &ccm0;
+		zephyr,display = &ltdc;
+		zephyr,touch = &ft5336;
 	};
 
 	sdram1: sdram@c0000000 {
@@ -53,6 +55,12 @@
 		};
 	};
 
+	lvgl_pointer {
+		compatible = "zephyr,lvgl-pointer-input";
+		input = <&ft5336>;
+		invert-y;
+	};
+
 	gpio_keys {
 		compatible = "gpio-keys";
 
@@ -61,6 +69,19 @@
 			gpios = <&gpioa 0 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_0>;
 		};
+	};
+
+	dsi_lcd_qsh_030: connector_dsi_lcd {
+		compatible = "st,dsi-lcd-qsh-030";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map =  <4 0 &gpioj 5 0>,	/* TOUCH_INT */
+			   <40 0 &gpiob 9 0>,	/* I2C1_SDA */
+			   <44 0 &gpiob 8 0>,	/* I2C1_SCL */
+			   <49 0 &gpioj 2 0>,	/* DSI_TE */
+			   <53 0 &gpioa 3 0>,	/* LCD_BL_CTRL */
+			   <57 0 &gpioh 7 0>;	/* DSI_RESET */
 	};
 
 	aliases {
@@ -86,6 +107,17 @@
 	mul-n = <336>;
 	div-p = <2>;
 	div-q = <7>;
+	div-r = <6>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&pllsai {
+	div-m = <8>;
+	mul-n = <266>;
+	div-p = <2>;
+	div-r = <5>;
+	div-divr  = <2>;
 	clocks = <&clk_hse>;
 	status = "okay";
 };
@@ -116,6 +148,13 @@
 	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
 	pinctrl-names = "default";
 	status = "okay";
+
+	ft5336: ft5336@2a {
+		compatible = "focaltech,ft5336";
+		reg = <0x2a>;
+		int-gpios = <&gpioj 5 0>;
+		status = "okay";
+	};
 };
 
 &spi2 {
@@ -198,4 +237,60 @@ zephyr_udc0: &usbotg_fs {
 			st,sdram-timing = <2 6 4 6 2 2 2>;
 		};
 	};
+};
+
+&mipi_dsi {
+	status = "okay";
+	otm8009a: otm8009a@0 {
+		status = "okay";
+		compatible = "orisetech,otm8009a";
+		reg = <0x0>;
+		height = <800>;
+		width = <480>;
+		reset-gpios = <&gpioh 7 0>;
+		bl-gpios = <&gpioa 3 0>;
+		data-lanes = <2>;
+		pixel-format = <MIPI_DSI_PIXFMT_RGB888>;
+		rotation = <90>;
+	};
+
+	/* DSI HOST dedicated PLL
+	 * F_VCO = CLK_IN / pll-idf * 2 * pll-ndiv
+	 * PHI = F_VCO / 2 / (1 << pll-odf) = lane_byte_clk
+	 *     = 8 MHz / 2 * 2 * 125 / 2 / (1<<0) / 8 = 62.5 MHz
+	 */
+	pll-ndiv = <125>;
+	pll-idf = <2>;
+	pll-odf = <0>;
+
+	vs-active-high;
+	hs-active-high;
+	de-active-high;
+};
+
+&ltdc {
+	status = "okay";
+	width = <800>;
+	height = <480>;
+	pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
+	ext-sdram = <&sdram1>;
+	/* orisetech, otm8009a */
+	display-timings {
+		compatible = "zephyr,panel-timing";
+		hsync-active = <0>;
+		vsync-active = <0>;
+		de-active = <0>;
+		pixelclk-active = <0>;
+		hsync-len = <2>;
+		vsync-len = <1>;
+		hback-porch = <34>;
+		vback-porch = <15>;
+		hfront-porch = <34>;
+		vfront-porch = <16>;
+	};
+
+	def-back-color-red = <0>;
+	def-back-color-green = <0>;
+	def-back-color-blue = <0>;
+
 };
