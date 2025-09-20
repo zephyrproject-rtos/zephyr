@@ -10,6 +10,12 @@ config SOC_FAMILY
 # List of Peripheral IPs available in SOC_FAMILY_MICROCHIP_SAM_D5X_E5X family
 if SOC_FAMILY_MICROCHIP_SAM_D5X_E5X
 
+config FLASH_MCHP_NVMCTRL_U2409_1_0_0
+	bool
+	default y
+	help
+	  Enable FLASH peripheral IP version 1.0.0 (U2409).
+
 config PINCTRL_MCHP_PORT_U2210_2_2_0
 	bool
 	default y
