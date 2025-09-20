@@ -707,12 +707,11 @@ validate_transfer_length(struct scsi_ctx *ctx, uint32_t lba, uint16_t length)
 	return 0;
 }
 
-static size_t fill_read_10(struct scsi_ctx *ctx,
-			   uint8_t buf[static CONFIG_USBD_MSC_SCSI_BUFFER_SIZE])
+static size_t fill_read_10(struct scsi_ctx *ctx, uint8_t *buf, size_t length)
 {
 	uint32_t sectors;
 
-	sectors = MIN(CONFIG_USBD_MSC_SCSI_BUFFER_SIZE, ctx->remaining_data) / ctx->sector_size;
+	sectors = MIN(length, ctx->remaining_data) / ctx->sector_size;
 	if (disk_access_read(ctx->disk, buf, ctx->lba, sectors) != 0) {
 		/* Terminate transfer */
 		sectors = 0;
@@ -897,15 +896,14 @@ size_t scsi_cmd_remaining_data_len(struct scsi_ctx *ctx)
 	return ctx->remaining_data;
 }
 
-size_t scsi_read_data(struct scsi_ctx *ctx,
-		      uint8_t buf[static CONFIG_USBD_MSC_SCSI_BUFFER_SIZE])
+size_t scsi_read_data(struct scsi_ctx *ctx, uint8_t *buf, size_t length)
 {
 	size_t retrieved = 0;
 
 	__ASSERT_NO_MSG(ctx->cmd_is_data_read);
 
 	if ((ctx->remaining_data > 0) && ctx->read_cb) {
-		retrieved = ctx->read_cb(ctx, buf);
+		retrieved = ctx->read_cb(ctx, buf, length);
 	}
 	ctx->remaining_data -= retrieved;
 	if (retrieved == 0) {
