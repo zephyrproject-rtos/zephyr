@@ -10,8 +10,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Nuvoton PFM M487 board";
 	compatible = "nuvoton,pfm-m487", "nuvoton,m487";
+	model = "Nuvoton PFM M487 board";
 
 	aliases {
 		led0 = &red_led;
@@ -90,7 +90,7 @@
 
 &uart0 {
 	current-speed = <115200>;
-	status = "okay";
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };

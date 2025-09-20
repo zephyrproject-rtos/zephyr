@@ -54,39 +54,39 @@
 
 /* Overwrite default device properties with overlays in board dt file here. */
 &uart1 {
-	status = "okay";
 	current-speed = <115200>;
 	/* Use UART1_SL2 ie. PIN64.65 */
 	pinctrl-0 = <&uart1_2_sin_gp64
 		     &uart1_2_sout_gp65>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &pwm6 {
-	status = "okay";
 	pinctrl-0 = <&pwm6_gpc0>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &adc0 {
-	status = "okay";
 	/* Use adc0 channel 0 and 2 for 'adc_api' driver tests */
 	pinctrl-0 = <&adc0_chan0_gp45
 		     &adc0_chan2_gp43>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &espi0 {
-	status = "okay";
 	pinctrl-0 = <&espi_lpc_gp46_47_51_52_53_54_55_57>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &i2c0_0 {
-	status = "okay";
 	pinctrl-0 = <&i2c0_0_sda_scl_gpb4_b5>;
 	pinctrl-names = "default";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 };
 
 &i2c_ctrl0 {
@@ -94,18 +94,18 @@
 };
 
 &tach1 {
-	status = "okay";
 	pinctrl-0 = <&ta1_1_in_gp40>;
 	pinctrl-names = "default";
 	port = <NPCX_TACH_PORT_A>; /* port-A is selected */
 	sample-clk = <NPCX_TACH_FREQ_LFCLK>; /* Use LFCLK as sampling clock */
 	pulses-per-round = <1>; /* number of pulses per round of encoder */
+	status = "okay";
 };
 
 &peci0 {
-	status = "okay";
 	pinctrl-0 = <&peci_dat_gp81>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &kbd {
