@@ -272,11 +272,15 @@ static const struct json_obj_descr array_2dim_extra_named_descr[] = {
 
 struct test_json_tok_encoded_obj {
 	const char *encoded_obj;
+	const char *encoded_obj_array[3];
+	size_t encoded_obj_array_len;
 	int ok;
 };
 
 static const struct json_obj_descr test_json_tok_encoded_obj_descr[] = {
 	JSON_OBJ_DESCR_PRIM(struct test_json_tok_encoded_obj, encoded_obj, JSON_TOK_ENCODED_OBJ),
+	JSON_OBJ_DESCR_ARRAY(struct test_json_tok_encoded_obj, encoded_obj_array,
+			     3, encoded_obj_array_len, JSON_TOK_ENCODED_OBJ),
 	JSON_OBJ_DESCR_PRIM(struct test_json_tok_encoded_obj, ok, JSON_TOK_NUMBER),
 };
 
@@ -2072,10 +2076,19 @@ ZTEST(lib_json_test, test_large_descriptor)
 
 ZTEST(lib_json_test, test_json_encoded_object_tok_encoding)
 {
-	static const char encoded[] =
-		"{\"encoded_obj\":{\"test\":{\"nested\":\"yes\"}},\"ok\":1234}";
+	static const char encoded[] = "{"
+		"\"encoded_obj\":{\"test\":{\"nested\":\"yes\"}},"
+		"\"encoded_obj_array\":["
+		"{\"array_1\":{\"nested\":\"yes\"}},"
+		"{\"array_2\":{\"nested\":\"yes\"}},"
+		"{\"array_3\":{\"nested\":\"yes\"}}],"
+		"\"ok\":1234}";
 	const struct test_json_tok_encoded_obj obj = {
 		.encoded_obj = "{\"test\":{\"nested\":\"yes\"}}",
+		.encoded_obj_array[0] = "{\"array_1\":{\"nested\":\"yes\"}}",
+		.encoded_obj_array[1] = "{\"array_2\":{\"nested\":\"yes\"}}",
+		.encoded_obj_array[2] = "{\"array_3\":{\"nested\":\"yes\"}}",
+		.encoded_obj_array_len = 3,
 		.ok = 1234,
 	};
 	char buffer[sizeof(encoded)];
