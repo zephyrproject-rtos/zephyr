@@ -240,7 +240,7 @@ static void shell_a2dp_print_capabilities(struct bt_a2dp_ep_info *ep_info)
 		if (0U != (codec_ie[0U] & A2DP_SBC_CH_MODE_DUAL)) {
 			bt_shell_print("	Dual ");
 		}
-		if (0U != (codec_ie[0U] & A2DP_SBC_CH_MODE_STREO)) {
+		if (0U != (codec_ie[0U] & A2DP_SBC_CH_MODE_STEREO)) {
 			bt_shell_print("	Stereo ");
 		}
 		if (0U != (codec_ie[0U] & A2DP_SBC_CH_MODE_JOINT)) {

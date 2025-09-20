@@ -32,10 +32,10 @@ extern "C" {
 #define A2DP_SBC_SAMP_FREQ_48000 BIT(4)
 
 /* Channel Mode */
-#define A2DP_SBC_CH_MODE_MONO  BIT(3)
-#define A2DP_SBC_CH_MODE_DUAL  BIT(2)
-#define A2DP_SBC_CH_MODE_STREO BIT(1)
-#define A2DP_SBC_CH_MODE_JOINT BIT(0)
+#define A2DP_SBC_CH_MODE_MONO   BIT(3)
+#define A2DP_SBC_CH_MODE_DUAL   BIT(2)
+#define A2DP_SBC_CH_MODE_STEREO BIT(1)
+#define A2DP_SBC_CH_MODE_JOINT  BIT(0)
 
 /* Block Length */
 #define A2DP_SBC_BLK_LEN_4  BIT(7)
