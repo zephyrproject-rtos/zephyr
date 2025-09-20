@@ -16,8 +16,8 @@
 #include "feather_connector.dtsi"
 
 / {
-	model = "Adafruit Feather RP2040 RFM95 Lora";
 	compatible = "adafruit,feather_rfm95_rp2040";
+	model = "Adafruit Feather RP2040 RFM95 Lora";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -65,7 +65,7 @@
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
 		gpio-map = <0 0 &gpio0 3 0>, /* SCL */
-			<1 0 &gpio0 2 0>; /* SDA */
+			   <1 0 &gpio0 2 0>; /* SDA */
 	};
 };
 
@@ -79,8 +79,8 @@
 
 		/* Reserved memory for the second stage bootloader */
 		second_stage_bootloader: partition@0 {
-			label = "second_stage_bootloader";
 			reg = <0x00000000 0x100>;
+			label = "second_stage_bootloader";
 			read-only;
 		};
 
@@ -89,8 +89,8 @@
 		 * size is 8 MB minus the 0x100 bytes taken by the bootloader.
 		 */
 		code_partition: partition@100 {
-			label = "code-partition";
 			reg = <0x100 (DT_SIZE_M(8) - 0x100)>;
+			label = "code-partition";
 			read-only;
 		};
 	};
@@ -102,34 +102,34 @@
 
 &uart0 {
 	current-speed = <115200>;
-	status = "okay";
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 zephyr_i2c: &i2c1 {
-	status = "okay";
 	pinctrl-0 = <&i2c1_default>;
 	pinctrl-names = "default";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 };
 
 &spi1 {
 	pinctrl-0 = <&spi1_default>;
 	pinctrl-names = "default";
-	status = "okay";
 	cs-gpios = <&gpio0 16 GPIO_ACTIVE_LOW>;
+	status = "okay";
 
 	lora: radio@0 {
-		reg = <0>;
 		compatible = "semtech,sx1276";
+		reg = <0>;
 		reset-gpios = <&gpio0 17 GPIO_ACTIVE_LOW>;
 		dio-gpios = <&gpio0 21 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>, /* SX1276 DIO0 */
-			<&gpio0 22 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>, /* SX1276 DIO1 */
-			<&gpio0 23 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>, /* SX1276 DIO2 */
-			<&gpio0 19 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>, /* SX1276 DIO3 */
-			<&gpio0 20 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>, /* SX1276 DIO4 */
-			<&gpio0 18 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>; /* SX1276 DIO5 */
+			    <&gpio0 22 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>, /* SX1276 DIO1 */
+			    <&gpio0 23 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>, /* SX1276 DIO2 */
+			    <&gpio0 19 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>, /* SX1276 DIO3 */
+			    <&gpio0 20 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>, /* SX1276 DIO4 */
+			    <&gpio0 18 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>; /* SX1276 DIO5 */
 		spi-max-frequency = <10000000>;
 		power-amplifier-output = "pa-boost";
 	};
@@ -144,11 +144,11 @@ zephyr_i2c: &i2c1 {
 };
 
 &adc {
-	status = "okay";
 	pinctrl-0 = <&adc_default>;
 	pinctrl-names = "default";
 	#address-cells = <1>;
 	#size-cells = <0>;
+	status = "okay";
 
 	channel@0 {
 		reg = <0>;
@@ -188,20 +188,20 @@ zephyr_i2c: &i2c1 {
 
 	pio-ws2812 {
 		compatible = "worldsemi,ws2812-rpi_pico-pio";
-		status = "okay";
 		pinctrl-0 = <&ws2812_pio0_default>;
 		pinctrl-names = "default";
 		bit-waveform = <3>, <3>, <4>;
+		status = "okay";
 
 		ws2812: ws2812 {
-			status = "okay";
 			gpios = <&gpio0 4 GPIO_ACTIVE_HIGH>;
 			chain-length = <1>;
 			color-mapping = <LED_COLOR_ID_GREEN
-				LED_COLOR_ID_RED
-				LED_COLOR_ID_BLUE>;
+					 LED_COLOR_ID_RED
+					 LED_COLOR_ID_BLUE>;
 			reset-delay = <280>;
 			frequency = <800000>;
+			status = "okay";
 		};
 	};
 };
