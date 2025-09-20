@@ -191,6 +191,17 @@
 			status = "disabled";
 		};
 
+		usb: usb@50000000 {
+			compatible = "wch,usbfs";
+			reg = <0x50000000 92>;
+			clocks = <&rcc CH32V20X_V30X_CLOCK_OTG_FS>;
+			num-bidir-endpoints = <16>;
+			maximum-speed = "full-speed";
+			interrupt-parent = <&pfic>;
+			interrupts = <83>;
+			status = "disabled";
+		};
+
 		rcc: rcc@40021000 {
 			compatible = "wch,rcc";
 			reg = <0x40021000 16>;
