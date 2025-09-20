@@ -77,9 +77,9 @@
 &usart0 {
 	pinctrl-0 = <&usart0_default>;
 	pinctrl-names = "default";
-	status = "okay";
 
 	cs-gpios = <&gpioc 3 GPIO_ACTIVE_LOW>;
+	status = "okay";
 
 	mx25r80: mx25r8035f@0 {
 		compatible = "jedec,spi-nor";
