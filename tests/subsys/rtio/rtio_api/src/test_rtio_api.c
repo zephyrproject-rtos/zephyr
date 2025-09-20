@@ -882,14 +882,47 @@ RTIO_DEFINE(r_await1, SQE_POOL_SIZE, CQE_POOL_SIZE);
 RTIO_IODEV_TEST_DEFINE(iodev_test_await0);
 
 /**
- * @brief Test await requests
+ * @brief Test early signalling on await requests
  *
- * Ensures we can block execution of an RTIO context using the AWAIT operation,
- * and unblock it by calling rtio_seq_signal(), and that the AWAIT operation
- * will be skipped if rtio_seq_signal() was called before the AWAIT SQE is
- * executed.
+ * Ensures that the AWAIT operation will be skipped if rtio_seq_signal() was
+ * called before the AWAIT SQE is executed.
  */
-void test_rtio_await_(struct rtio *rtio0, struct rtio *rtio1)
+void test_rtio_await_early_signal_(struct rtio *r)
+{
+	int res;
+	int32_t userdata = 0;
+	struct rtio_sqe *sqe;
+	struct rtio_cqe *cqe;
+
+	rtio_iodev_test_init(&iodev_test_await0);
+
+	TC_PRINT("Prepare await sqe\n");
+	sqe = rtio_sqe_acquire(r);
+	zassert_not_null(sqe, "Expected a valid sqe");
+	rtio_sqe_prep_await(sqe, &iodev_test_await0, RTIO_PRIO_LOW, &userdata);
+	sqe->flags = 0;
+
+	TC_PRINT("Signal await sqe prior to submission\n");
+	rtio_sqe_signal(sqe);
+
+	TC_PRINT("Submit await sqe\n");
+	res = rtio_submit(r, 0);
+	zassert_ok(res, "Submission failed");
+
+	TC_PRINT("Ensure await sqe completed\n");
+	cqe = rtio_cqe_consume_block(r);
+	zassert_not_null(cqe, "Expected a valid cqe");
+	zassert_equal(cqe->userdata, &userdata);
+	rtio_cqe_release(r, cqe);
+}
+
+/**
+ * @brief Test blocking rtio_iodev using await requests
+ *
+ * Ensures we can block execution of an RTIO iodev using the AWAIT operation,
+ * and unblock it by calling rtio_seq_signal().
+ */
+void test_rtio_await_iodev_(struct rtio *rtio0, struct rtio *rtio1)
 {
 	int res;
 	int32_t userdata[3] = {0, 1, 2};
@@ -902,7 +935,7 @@ void test_rtio_await_(struct rtio *rtio0, struct rtio *rtio1)
 	sqe = rtio_sqe_acquire(rtio0);
 	zassert_not_null(sqe, "Expected a valid sqe");
 	rtio_sqe_prep_nop(sqe, &iodev_test_await0, &userdata[0]);
-	sqe->flags = RTIO_SQE_CHAINED;
+	sqe->flags = RTIO_SQE_TRANSACTION;
 
 	await_sqe = rtio_sqe_acquire(rtio0);
 	zassert_not_null(await_sqe, "Expected a valid sqe");
@@ -919,11 +952,8 @@ void test_rtio_await_(struct rtio *rtio0, struct rtio *rtio1)
 	res = rtio_submit(rtio0, 0);
 	zassert_ok(res, "Submission failed");
 
-	TC_PRINT("Wait for nop sqe from rtio0 completed\n");
-	cqe = rtio_cqe_consume_block(rtio0);
-	zassert_not_null(sqe, "Expected a valid sqe");
-	zassert_equal(cqe->userdata, &userdata[0]);
-	rtio_cqe_release(rtio0, cqe);
+	TC_PRINT("Ensure rtio0 has started execution\n");
+	k_sleep(K_MSEC(20));
 
 	TC_PRINT("Submitting sqe from rtio1\n");
 	res = rtio_submit(rtio1, 0);
@@ -937,7 +967,11 @@ void test_rtio_await_(struct rtio *rtio0, struct rtio *rtio1)
 	TC_PRINT("Signal await sqe from rtio0\n");
 	rtio_sqe_signal(await_sqe);
 
-	TC_PRINT("Ensure sqe from rtio0 completed\n");
+	TC_PRINT("Ensure both sqe from rtio0 completed\n");
+	cqe = rtio_cqe_consume_block(rtio0);
+	zassert_not_null(cqe, "Expected a valid cqe");
+	zassert_equal(cqe->userdata, &userdata[0]);
+	rtio_cqe_release(rtio0, cqe);
 	cqe = rtio_cqe_consume_block(rtio0);
 	zassert_not_null(cqe, "Expected a valid cqe");
 	zassert_equal(cqe->userdata, &userdata[1]);
@@ -1039,7 +1073,8 @@ void test_rtio_await_executor_(struct rtio *rtio0, struct rtio *rtio1)
 
 ZTEST(rtio_api, test_rtio_await)
 {
-	test_rtio_await_(&r_await0, &r_await1);
+	test_rtio_await_early_signal_(&r_await0);
+	test_rtio_await_iodev_(&r_await0, &r_await1);
 	test_rtio_await_executor_(&r_await0, &r_await1);
 }
 
