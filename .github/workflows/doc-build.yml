@@ -112,6 +112,7 @@ jobs:
       with:
         app-path: zephyr
         toolchains: 'all'
+        enable-ccache: false
 
     - name: install-pip
       working-directory: zephyr
