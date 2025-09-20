@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2020, Teslabs Engineering S.L.
  * Copyright (c) 2022, Basalte bv
+ * Copyright (c) 2025, ZAL Zentrum für Angewandte Luftfahrtforschung GmbH
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,7 +11,12 @@
 #include <zephyr/ztest.h>
 
 /** Buffer size. */
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(psram))
+#define BUF_SIZE 524288U
+#else
 #define BUF_SIZE 64U
+#endif
+
 #define BUF_DEF(label) static uint32_t buf_##label[BUF_SIZE]			\
 	Z_GENERIC_SECTION(LINKER_DT_NODE_REGION_NAME(DT_NODELABEL(label)))
 
