@@ -46,6 +46,14 @@ properties:
       property value should ensure the flags properly describe the signal
       that is presented to the driver.
 
+  sd-gpios:
+    type: phandle-array
+    description: |
+      SDIO Reset pin
+      This pin defaults to active high when consumed by the SD card. The
+      property value should ensure the flags properly describe the signal
+      that is presented to the driver.
+
   cd-gpios:
     type: phandle-array
     description: |

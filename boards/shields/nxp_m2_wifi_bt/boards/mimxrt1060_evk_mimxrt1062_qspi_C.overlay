@@ -34,6 +34,13 @@
 	pinctrl-names = "default", "slow", "med", "fast", "nopull";
 };
 
+&usdhc1 {
+	nxp_wifi {
+		pwr-gpios = <&gpio1 19 GPIO_ACTIVE_HIGH>;
+		sd-gpios = <&gpio1 24 GPIO_ACTIVE_HIGH>;
+	};
+};
+
 &pinctrl {
 	/* removes pull on dat3 for card detect */
 	pinmux_usdhc1_dat3_nopull: pinmux_usdhc1_dat3_nopull {
