@@ -71,10 +71,7 @@ static inline enum net_verdict process_data(struct net_pkt *pkt)
 {
 	int ret;
 
-	ret = net_packet_socket_input(pkt, ETH_P_ALL, SOCK_RAW);
-	if (ret != NET_CONTINUE) {
-		return ret;
-	}
+	net_packet_socket_input(pkt, ETH_P_ALL, SOCK_RAW);
 
 	/* If there is no data, then drop the packet. */
 	if (!pkt->frags) {
@@ -104,10 +101,7 @@ static inline enum net_verdict process_data(struct net_pkt *pkt)
 	net_pkt_cursor_init(pkt);
 
 	if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET_DGRAM)) {
-		ret = net_packet_socket_input(pkt, net_pkt_ll_proto_type(pkt), SOCK_DGRAM);
-		if (ret != NET_CONTINUE) {
-			return ret;
-		}
+		net_packet_socket_input(pkt, net_pkt_ll_proto_type(pkt), SOCK_DGRAM);
 	}
 
 	uint8_t family = net_pkt_family(pkt);
