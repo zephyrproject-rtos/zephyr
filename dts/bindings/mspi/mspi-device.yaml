@@ -193,20 +193,30 @@ properties:
         .size           = 0;
       >
 
-  ce-break-config:
-    type: array
+  memory-boundary:
+    type: int
     description: |
-      Array of parameters to configure the auto CE break feature.
-      mem_boundary: Memory boundary in bytes of a device that a transfer
-                    should't cross.
-      time_to_break: The maximum time of a transfer should't exceed for
-                     a device in micro seconds(us).
+      The Device memory boundary in bytes. This can be used for controller to
+      determine when to automatically break a transfer in to two.
 
-      This is typically used with devices that has memory boundaries or
-      requires periodic internal refresh. e.g. psram
+  mspi-ce-max-active:
+    type: int
+    description: |
+      The maximum CE active time, previously was time_to_break.
+      The maximum time of a transfer should't exceed for a device
+      in micro seconds(us).
 
-      default =
-      <
-        .mem_boundary    = 0;
-        .time_to_break   = 0;
-      >
+  mspi-ce-setup:
+    type: int
+    description: |
+      The minimum CE active time before the first CLK active edge in nano seconds(ns).
+
+  mspi-ce-hold:
+    type: int
+    description: |
+      The minimum CE active time after the last CLK active edge nano seconds(ns).
+
+  mspi-ce-min-inactive:
+    type: int
+    description: |
+      The minimum CE inactive time between transfers in nano seconds(ns).

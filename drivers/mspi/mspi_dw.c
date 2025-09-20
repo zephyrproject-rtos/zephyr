@@ -599,9 +599,9 @@ static int _api_dev_config(const struct device *dev,
 		}
 	}
 
-	if (param_mask & MSPI_DEVICE_CONFIG_CE_POL) {
-		if (cfg->ce_polarity != MSPI_CE_ACTIVE_LOW) {
-			LOG_ERR("Only active low CE is supported.");
+	if (param_mask & MSPI_DEVICE_CONFIG_CE) {
+		if (cfg->ce.ce_mode != MSPI_CE_MODE_GPIO) {
+			LOG_ERR("Only GPIO CE is supported.");
 			return -ENOTSUP;
 		}
 	}
@@ -613,11 +613,12 @@ static int _api_dev_config(const struct device *dev,
 		}
 	}
 
-	if (param_mask & MSPI_DEVICE_CONFIG_BREAK_TIME) {
-		if (cfg->time_to_break) {
+	if (param_mask & MSPI_DEVICE_CONFIG_CE_TIMING) {
+		if (cfg->ce_timing.t_ce_max_act) {
 			LOG_ERR("Auto CE break is not supported.");
 			return -ENOTSUP;
 		}
+		LOG_WRN("CE timing configuration is ignored.");
 	}
 
 	if (param_mask & MSPI_DEVICE_CONFIG_IO_MODE) {

@@ -180,7 +180,9 @@
 		rx-dummy = <7>;
 		tx-dummy = <8>;
 		xip-config = <1 0 DT_SIZE_M(64) 0>;
-		ce-break-config = <1024 4>;
+		memory-boundary = <1024>;
+		mspi-ce-max-active = <4>;
+		mspi-ce-setup = <3>;
 		ambiq,timing-config-mask = <0x62>;
 		ambiq,timing-config = <8 7 1 0 0 3 10>;
 		zephyr,pm-device-runtime-auto;
@@ -219,7 +221,6 @@
 		rx-dummy = <16>;
 		tx-dummy = <0>;
 		xip-config = <1 0 DT_SIZE_M(8) 0>;
-		ce-break-config = <0 0>;
 		ambiq,timing-config-mask = <0x62>;
 		ambiq,timing-config = <0 16 1 0 0 5 20>;
 	};
