@@ -122,6 +122,18 @@ if("${IAR_TOOLCHAIN_VARIANT}" STREQUAL "iccarm")
     if(CONFIG_FPU)
       list(APPEND IAR_COMMON_FLAGS --fpu=${ICCARM_FPU})
       list(APPEND IAR_ASM_FLAGS -mfpu=${GCC_M_FPU})
+      if(CONFIG_DCLS AND NOT CONFIG_FP_HARDABI)
+        # If the processor is equipped with VFP and configured in DCLS topology,
+        # the FP "hard" ABI must be used in order to facilitate the FP register
+        # initialisation and synchronisation.
+        set(FORCE_FP_HARDABI TRUE)
+      endif()
+
+      if(CONFIG_FP_HARDABI OR FORCE_FP_HARDABI)
+        list(APPEND IAR_ASM_FLAGS -mfloat-abi=hard)
+      elseif(CONFIG_FP_SOFTABI)
+        list(APPEND ARM_ASM_FLAGS -mfloat-abi=softfp)
+      endif()
     endif()
   endif()
 
