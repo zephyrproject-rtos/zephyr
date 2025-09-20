@@ -1,0 +1,149 @@
+# Copyright (c) 2025 ZAL Zentrum für Angewandte Luftfahrtforschung GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+title: STM32 OSPI PSRAM Controller
+
+description: |
+  STM32 OSPI PSRAM memory controller.
+  Provides a communication interface allowing the microcontroller
+  to communicate with an external PSRAM memory via the OSPI peripheral.
+  The PSRAM can be configured as memory mapped and allows read/write
+  operations like an internal device.
+
+compatible: "st,stm32-ospi-psram"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  size:
+    type: int
+    required: true
+    description: Memory size in bits
+
+  max-frequency:
+    type: int
+    required: true
+    description: Maximum clock frequency of device's OSPI interface in Hz
+
+  fixed-latency:
+    type: boolean
+    description: Read latency — fixed when set, variable otherwise.
+
+  drive-strength:
+    type: int
+    default: 0
+    description: |
+      Drive strength code:
+      - 0: Full
+      - 1: Half
+      - 2: 1/4
+      - 3: 1/8
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+
+  read-latency:
+    type: int
+    default: 5
+    description: |
+      Read latency code
+      - 0: LCx2 3 / Fmax 66 MHz
+      - 1: LCx2 4 / Fmax 104 MHz
+      - 2: LCx2 5 / Fmax 133 MHz
+      - 3: LCx2 6 / Fmax 133 MHz
+      - 4: LCx2 7 / Fmax 133 MHz
+      - 5: LCx2 8 / Fmax 133 MHz
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+
+  write-latency:
+    type: int
+    default: 2
+    description: |
+      Write latency code:
+      - 0: LC 3 / Fmax 66 MHz
+      - 1: LC 4 / Fmax 104 MHz
+      - 2: LC 5 / Fmax 133 MHz
+      - 3: LC 6 / Fmax 133 MHz
+      - 4: LC 7 / Fmax 133 MHz
+      - 5: LC 8 / Fmax 133 MHz
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+
+  adaptive-refresh-rate:
+    type: int
+    default: 0
+    description: |
+      - 0: Fast Refresh
+      - 1: Enables Slow Refresh when temperature allows
+    enum:
+      - 0
+      - 1
+
+  pasr:
+    type: int
+    default: 0
+    description: |
+      Partial Array Self-Refresh coverage:
+      - 0: Full array
+      - 1: Bottom 1/2 array
+      - 2: Bottom 1/4 array
+      - 3: Bottom 1/8 array
+      - 4: None
+      - 5: Top 1/2 array
+      - 6: Top 1/4 array
+      - 7: Top 1/8 array
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+
+  rbx:
+    type: boolean
+    description: |
+      If not enabled, reads stay within page (row) boundary.
+      If enabled, allows reads cross page (row) boundary.
+
+  burst-length:
+    type: int
+    default: 1
+    description: |
+      Burst length:
+      0: 16 Byte/Word Wrap
+      1: 32 Byte/Word Wrap
+      2: 64 Byte/Word Wrap
+      3: 1K Word Wrap
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+
+  burst-type-hybrid-wrap:
+    type: boolean
+    description: |
+      If not enabled, burst-length sets the burst address space in which the
+      device will continually wrap within.
+      If enabled, the device will burst through the initial wrapped burst length
+      once, then continue to burst incrementally up to maximum column address
+      (1K) before wrapping around within the entire column address space.
