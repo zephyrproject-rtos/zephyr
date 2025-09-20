@@ -184,10 +184,10 @@ zephyr_i2c: &i2c1 {
 	pinctrl-names = "default";
 	status = "okay";
 
-	mx25l12833f: qspi-nor-flash@0 {
+	qspi_flash: mx25l12833f: qspi-nor-flash@0 {
 		compatible = "st,stm32-qspi-nor";
 		reg = <0>;
-		size = <DT_SIZE_M(128)>; /* 128 Mbits */
+		size = <DT_SIZE_M(128)>; /* 128 Mbits (16 MB) */
 		qspi-max-frequency = <40000000>;
 		cs-high-time = <2>; /* >= 30 ns */
 		sfdp-bfp = [e5 20 f1 ff ff ff ff 07 44 eb 08 6b 08 3b 04 bb
@@ -197,24 +197,9 @@ zephyr_i2c: &i2c1 {
 		jedec-id = [66 66 20];
 		spi-bus-width = <4>;
 		status = "okay";
-
-		partitions {
-			compatible = "fixed-partitions";
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			storage_partition: partition@0 {
-				label = "storage";
-				reg = <0x0 DT_SIZE_K(15872)>;
-			};
-
-			wifi_firmware: partition@f80000 {
-				label = "wifi-firmware";
-				reg = <0xf80000 DT_SIZE_K(512)>;
-			};
-		};
 	};
 };
+#include <arduino/partitions_qspi_h7.dtsi>
 
 &rng {
 	status = "okay";
