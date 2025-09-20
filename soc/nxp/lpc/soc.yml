@@ -15,6 +15,9 @@ family:
       cpuclusters:
       - name: m4
       - name: m0
+  - name: lpc84x
+    socs:
+    - name: lpc845
   - name: lpc55xxx
     socs:
     - name: lpc55s06
