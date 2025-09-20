@@ -32,10 +32,10 @@ extern "C" {
 #define A2DP_SBC_SAMP_FREQ_48000 BIT(4)
 
 /* Channel Mode */
-#define A2DP_SBC_CH_MODE_MONO  BIT(3)
-#define A2DP_SBC_CH_MODE_DUAL  BIT(2)
-#define A2DP_SBC_CH_MODE_STREO BIT(1)
-#define A2DP_SBC_CH_MODE_JOINT BIT(0)
+#define A2DP_SBC_CH_MODE_MONO   BIT(3)
+#define A2DP_SBC_CH_MODE_DUAL   BIT(2)
+#define A2DP_SBC_CH_MODE_STEREO BIT(1)
+#define A2DP_SBC_CH_MODE_JOINT  BIT(0)
 
 /* Block Length */
 #define A2DP_SBC_BLK_LEN_4  BIT(7)
@@ -111,6 +111,14 @@ struct bt_a2dp_codec_sbc_params {
  */
 uint8_t bt_a2dp_sbc_get_channel_num(struct bt_a2dp_codec_sbc_params *sbc_codec);
 
+/** @brief get channel mode of a2dp sbc config.
+ *
+ *  @param sbc_codec The a2dp sbc parameter.
+ *
+ *  @return the channel mode.
+ */
+enum sbc_ch_mode bt_a2dp_sbc_get_channel_mode(struct bt_a2dp_codec_sbc_params *sbc_codec);
+
 /** @brief get sample rate of a2dp sbc config.
  *
  *  @param sbc_codec The a2dp sbc parameter.
@@ -118,6 +126,30 @@ uint8_t bt_a2dp_sbc_get_channel_num(struct bt_a2dp_codec_sbc_params *sbc_codec);
  *  @return the sample rate.
  */
 uint32_t bt_a2dp_sbc_get_sampling_frequency(struct bt_a2dp_codec_sbc_params *sbc_codec);
+
+/** @brief get subband num of a2dp sbc config.
+ *
+ *  @param sbc_codec The a2dp sbc parameter.
+ *
+ *  @return the subband num.
+ */
+uint8_t bt_a2dp_sbc_get_subband_num(struct bt_a2dp_codec_sbc_params *sbc_codec);
+
+/** @brief get block length of a2dp sbc config.
+ *
+ *  @param sbc_codec The a2dp sbc parameter.
+ *
+ *  @return the block length.
+ */
+uint8_t bt_a2dp_sbc_get_block_length(struct bt_a2dp_codec_sbc_params *sbc_codec);
+
+/** @brief get allocation method of a2dp sbc config.
+ *
+ *  @param sbc_codec The a2dp sbc parameter.
+ *
+ *  @return the allocation method.
+ */
+enum sbc_alloc_mthd bt_a2dp_sbc_get_allocation_method(struct bt_a2dp_codec_sbc_params *sbc_codec);
 
 #ifdef __cplusplus
 }
