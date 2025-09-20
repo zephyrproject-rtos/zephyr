@@ -1,0 +1,82 @@
+# Copyright (c) 2025 LiteX Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config LITEX_CLIC
+	bool "LiteX Core Local Interrupt Controller (CLIC)"
+	default y
+	depends on DT_HAS_LITEX_CLIC_ENABLED
+	depends on SOC_LITEX_VEXRISCV
+	select RISCV_SOC_HAS_CUSTOM_IRQ_HANDLING
+	help
+	  LiteX CLIC provides interrupt management for VexRiscv cores
+	  in LiteX SoCs. This implementation supports up to 64 interrupts
+	  with CSR-based control for the first 16 interrupts.
+	  
+	  Note: This driver includes workarounds for CSRStorage pending
+	  bit limitations that prevent hardware auto-clearing.
+
+if LITEX_CLIC
+
+config LITEX_CLIC_MAX_INTERRUPTS
+	int "Maximum number of interrupts supported"
+	range 16 64
+	default 64
+	help
+	  Maximum number of interrupts that can be handled by the
+	  LiteX CLIC. The first 16 interrupts have CSR control,
+	  while interrupts 16-63 are hardware-controlled only.
+
+config LITEX_CLIC_PRIORITY_BITS
+	int "Number of priority bits"
+	range 1 8
+	default 8
+	help
+	  Number of bits used for interrupt priority encoding.
+	  More bits provide finer priority granularity.
+	  8 bits = 256 priority levels (0-255).
+
+config LITEX_CLIC_NESTED_INTERRUPTS
+	bool "Enable nested interrupt handling"
+	default n
+	help
+	  When enabled, the interrupt handler will recursively process
+	  higher priority interrupts that become pending during ISR
+	  execution. This can improve interrupt latency for high-priority
+	  interrupts but increases stack usage.
+
+config LITEX_CLIC_DEBUG_REGISTERS
+	bool "Enable debug register access"
+	default n
+	help
+	  Enable access to debug registers that show the hardware bridge
+	  state. Useful for debugging CSR-to-hardware connection issues
+	  and verifying interrupt arbitration logic.
+
+config LITEX_CLIC_DIRECT_API
+	bool "Export direct device API functions"
+	default n
+	help
+	  Export the litex_clic_* functions directly for use by other
+	  drivers or applications. Normally only arch_irq_* functions
+	  are exposed.
+
+config LITEX_CLIC_WORKAROUND_AUTOCLEAR
+	bool "Enable pending bit auto-clear workaround"
+	default y
+	help
+	  Enable software workaround for CSRStorage pending bits that
+	  don't auto-clear. This temporarily disables interrupts during
+	  pending bit clearing to prevent infinite loops.
+	  
+	  WARNING: Disabling this may cause system hangs when interrupts
+	  are enabled!
+
+config LITEX_CLIC_LOG_LEVEL
+	int "Log level for LiteX CLIC driver"
+	range 0 4
+	default 2
+	help
+	  Sets the log level for the LiteX CLIC driver.
+	  0 = OFF, 1 = ERROR, 2 = WARNING, 3 = INFO, 4 = DEBUG
+
+endif # LITEX_CLIC

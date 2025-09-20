@@ -1,0 +1,61 @@
+# Copyright (c) 2025 LiteX Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  LiteX CLIC (Core Local Interrupt Controller)
+  
+  This is a custom CLIC implementation for LiteX SoCs with CSR-based
+  register access. It provides interrupt management for VexRiscv cores
+  with support for up to 64 interrupts, where the first 16 are
+  software-controllable via CSR registers.
+  
+  Note: This implementation has a known limitation with CSRStorage-based
+  pending bits that don't auto-clear, requiring software workarounds.
+
+compatible: "litex,clic"
+
+include: [interrupt-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+    description: |
+      Base address and size of the CLIC memory-mapped registers.
+      The register layout includes:
+      - 0x0000-0x003F: Interrupt pending bits (CLICINTIP)
+      - 0x0040-0x007F: Interrupt enable bits (CLICINTIE)
+      - 0x0080-0x00BF: Interrupt attributes (CLICINTATTR)
+      - 0x00C0-0x00FF: Interrupt priorities (CLICIPRIO)
+      - 0x0100-0x023F: Debug registers (hardware bridge verification)
+
+  "#interrupt-cells":
+    const: 2
+    description: |
+      Number of cells to encode an interrupt specifier.
+      - Cell 1: IRQ number (0-63)
+      - Cell 2: Interrupt priority (0-255)
+
+  num-interrupts:
+    type: int
+    default: 64
+    description: |
+      Number of interrupts supported by this CLIC instance.
+      Maximum is 64, but only the first 16 have CSR control.
+
+  priority-bits:
+    type: int
+    default: 8
+    description: |
+      Number of bits used for priority encoding (1-8).
+      Higher values provide more priority levels.
+
+  nested-interrupts:
+    type: boolean
+    description: |
+      Enable nested interrupt handling support.
+      When enabled, the handler will recursively process
+      higher priority interrupts that become pending.
+
+interrupt-cells:
+  - irq
+  - priority
