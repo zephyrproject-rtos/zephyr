@@ -1,0 +1,13 @@
+# MAX17043 Li-Ion battery fuel gauge
+
+# Copyright (c) 2025, Mohammed Billoo <mab@mab-labs.com>
+# SPDX-License-Identifier: Apache-2.0
+
+
+config MAX17043
+	bool "MAX17043 Li-Po fuel gauge"
+	default y
+	depends on DT_HAS_MAXIM_MAX17043_ENABLED
+	select I2C
+	help
+	  Enable driver for the MAX17043 fuel gauge device.
