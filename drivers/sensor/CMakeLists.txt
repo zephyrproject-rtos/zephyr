@@ -72,6 +72,7 @@ add_subdirectory_ifdef(CONFIG_VOLTAGE_DIVIDER voltage_divider)
 add_subdirectory_ifdef(CONFIG_XBR818 xbr818)
 add_subdirectory_ifdef(CONFIG_TACH_ENE_KB1200 ene_tach_kb1200)
 add_subdirectory_ifdef(CONFIG_MB7040 mb7040)
+add_subdirectory_ifdef(CONFIG_HX7XX hx7xx)
 
 zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/drivers/sensor.h)
 
