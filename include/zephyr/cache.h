@@ -15,6 +15,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/arch/cpu.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/debug/sparse.h>
 
 #ifdef __cplusplus
@@ -34,6 +35,57 @@ extern "C" {
  * @ingroup os_services
  * @{
  */
+
+/** @brief Ensures a variable is aligned to the data cache line size.
+ *
+ * Use this macro to align a variable to the system's data cache line size,
+ * as defined by CONFIG_DCACHE_LINE_SIZE. This is important for variables
+ * that are accessed by hardware peripherals or DMA engines, where cache line
+ * alignment helps ensure correct cache maintenance (e.g., flush or invalidate).
+ *
+ * @note This macro changes the alignment of the variable but does NOT change
+ * the variable's size. It does not guarantee that the variable occupies a
+ * full cache line; multiple variables may share a single cache line unless
+ * their size is explicitly a multiple of the cache line size.
+ *
+ * Usage example:
+ *     static uint8_t buffer[6] __cacheline_aligned;
+ */
+#ifndef __cacheline_aligned
+#if defined(CONFIG_DCACHE_LINE_SIZE)
+#define __cacheline_aligned __aligned(CONFIG_DCACHE_LINE_SIZE)
+#else
+#define __cacheline_aligned
+#endif
+#endif
+
+/** @brief Ensures a variable is aligned and in a unique data cache line.
+ *
+ * Use this macro for variables that are modified by entities outside the current CPU
+ * (such as another CPU, DMA or hardware peripherals), and which may require cache invalidation.
+ * Variables declared with this macro are aligned to the data cache line size and
+ * placed in a dedicated section (.data_cache) in the main RAM which ensures each one is in a different data cache line.
+ *
+ * @note This macro does NOT pad the variable's size to the cache line size; it only
+ * changes alignment and placement.
+ *
+ * Usage example:
+ *     static uint8_t buffer[6] __cacheline_padded;
+ *
+ * @warning Defining many variables with this macro may increase the number of small
+ * linker sections, potentially increasing the binary size.
+ *
+ * @see __cacheline_aligned
+ */
+#ifndef __cacheline_padded
+#if defined(CONFIG_DCACHE_LINE_SIZE)
+#define __cacheline_padded \
+	__in_section_unique(data_cache) \
+	__aligned(CONFIG_DCACHE_LINE_SIZE)
+#else
+#define __cacheline_padded
+#endif
+#endif
 
 /**
  * @brief Enable the d-cache
