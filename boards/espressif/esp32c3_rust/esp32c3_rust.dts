@@ -13,8 +13,8 @@
 #include <espressif/partitions_0x0_default.dtsi>
 
 / {
-	model = "Espressif ESP32C3-RUST";
 	compatible = "espressif,esp32c3_rust";
+	model = "Espressif ESP32C3-RUST";
 
 	chosen {
 		zephyr,sram = &sram1;
@@ -55,12 +55,12 @@
 &spi2 {
 	#address-cells = <1>;
 	#size-cells = <0>;
-	status = "okay";
 	pinctrl-0 = <&spim2_default>;
 	pinctrl-names = "default";
 
 	/* Workaround to support WS2812 driver */
 	line-idle-low;
+	status = "okay";
 	status = "okay";
 
 	led_strip: ws2812@0 {
@@ -86,19 +86,19 @@
 };
 
 &i2c0 {
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	icm42670@68 {
 		compatible = "invensense,icm42670";
 		reg = <0x68>;
-		status = "okay";
 		accel-hz = <800>;
 		accel-fs = <16>;
 		gyro-hz = <800>;
 		gyro-fs = <2000>;
+		status = "okay";
 	};
 
 	shtc3@70 {

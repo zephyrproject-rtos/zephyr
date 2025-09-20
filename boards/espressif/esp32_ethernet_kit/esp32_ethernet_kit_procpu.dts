@@ -10,8 +10,8 @@
 #include <espressif/partitions_0x1000_amp.dtsi>
 
 / {
-	model = "Espressif ESP32-Ethernet-Kit PROCPU";
 	compatible = "espressif,esp32";
+	model = "Espressif ESP32-Ethernet-Kit PROCPU";
 
 	aliases {
 		uart-0 = &uart0;
@@ -29,10 +29,10 @@
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &gpio0 {
@@ -58,9 +58,9 @@
 &spi2 {
 	#address-cells = <1>;
 	#size-cells = <0>;
-	status = "okay";
 	pinctrl-0 = <&spim2_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &timer0 {
@@ -89,8 +89,8 @@
 
 	phy: ethernet-phy@1 {
 		compatible = "ethernet-phy";
-		status = "disabled";
 		reg = <1>;
+		status = "disabled";
 	};
 };
 
