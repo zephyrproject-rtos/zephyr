@@ -195,6 +195,7 @@ static const struct can_mcan_ops mcux_mcan_ops = {
 #define MCUX_MCAN_INIT(n)						\
 	CAN_MCAN_DT_INST_BUILD_ASSERT_MRAM_CFG(n);			\
 	PINCTRL_DT_INST_DEFINE(n);					\
+	CLOCK_CONTROL_DT_SPEC_INST_DEFINE(n, clocks);			\
 									\
 	static void mcux_mcan_irq_config_##n(const struct device *dev); \
 									\
@@ -206,7 +207,7 @@ static const struct can_mcan_ops mcux_mcan_ops = {
 		.mram = (mem_addr_t)POINTER_TO_UINT(&mcux_mcan_mram_##n), \
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),	\
 		.clock_subsys = (clock_control_subsys_t)		\
-			DT_INST_CLOCKS_CELL(n, name),			\
+		CLOCK_CONTROL_DT_SPEC_INST_GET(n, clocks),		\
 		.irq_config_func = mcux_mcan_irq_config_##n,		\
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
 		.reset = RESET_DT_SPEC_INST_GET(n),			\

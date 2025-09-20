@@ -386,6 +386,8 @@ static DEVICE_API(i2c, mcux_lpi2c_driver_api) = {
 #define I2C_MCUX_LPI2C_INIT(n)						\
 	PINCTRL_DT_INST_DEFINE(n);					\
 									\
+	CLOCK_CONTROL_DT_SPEC_INST_DEFINE(n, clocks);			\
+									\
 	static void mcux_lpi2c_config_func_##n(const struct device *dev)\
 	{								\
 		I2C_MCUX_LPI2C_IRQ_SETUP_FUNC(n);			\
@@ -395,7 +397,7 @@ static DEVICE_API(i2c, mcux_lpi2c_driver_api) = {
 		DEVICE_MMIO_NAMED_ROM_INIT(reg_base, DT_DRV_INST(n)),	\
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),	\
 		.clock_subsys =						\
-			(clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),\
+			CLOCK_CONTROL_DT_SPEC_INST_GET(n, clocks),	\
 		.irq_config_func = mcux_lpi2c_config_func_##n,		\
 		.bitrate = DT_INST_PROP(n, clock_frequency),		\
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\

@@ -1078,10 +1078,12 @@ static DEVICE_API(sdhc, usdhc_api) = {
                                                                                                    \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
                                                                                                    \
+	CLOCK_CONTROL_DT_SPEC_INST_DEFINE(n, clocks);                                             \
+                                                                                                   \
 	static const struct usdhc_config usdhc_##n##_config = {                                    \
 		DEVICE_MMIO_NAMED_ROM_INIT(usdhc_mmio, DT_DRV_INST(n)),                            \
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
-		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),              \
+		.clock_subsys = CLOCK_CONTROL_DT_SPEC_INST_GET(n, clocks),                         \
 		.nusdhc = n,                                                                       \
 		.pwr_gpio = GPIO_DT_SPEC_INST_GET_OR(n, pwr_gpios, {0}),                           \
 		.detect_gpio = GPIO_DT_SPEC_INST_GET_OR(n, cd_gpios, {0}),                         \

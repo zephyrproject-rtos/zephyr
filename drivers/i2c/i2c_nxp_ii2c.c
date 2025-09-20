@@ -379,14 +379,14 @@ static DEVICE_API(i2c, nxp_ii2c_driver_api) = {
 
 #define I2C_DEVICE_INIT_MCUX(n)			\
 	PINCTRL_DT_INST_DEFINE(n);					\
+	CLOCK_CONTROL_DT_SPEC_INST_DEFINE(n, clocks);			\
 									\
 	static void nxp_ii2c_config_func_ ## n(const struct device *dev); \
 									\
 	static const struct nxp_ii2c_config nxp_ii2c_config_ ## n = {	\
 		DEVICE_MMIO_NAMED_ROM_INIT(reg_base, DT_DRV_INST(n)),	\
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),	\
-		.clock_subsys =						\
-			(clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),\
+		.clock_subsys = CLOCK_CONTROL_DT_SPEC_INST_GET(n, clocks),\
 		.irq_config_func = nxp_ii2c_config_func_ ## n,		\
 		.bitrate = DT_INST_PROP(n, clock_frequency),		\
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\

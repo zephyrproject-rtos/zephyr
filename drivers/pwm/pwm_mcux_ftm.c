@@ -576,8 +576,7 @@ FTM_ISR_FUNC(6, 7)
 static const struct mcux_ftm_config mcux_ftm_config_##n = { \
 	.base = (FTM_Type *)DT_INST_REG_ADDR(n),\
 	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)), \
-	.clock_subsys = (clock_control_subsys_t) \
-		DT_INST_CLOCKS_CELL(n, name), \
+	.clock_subsys = CLOCK_CONTROL_DT_SPEC_INST_GET(n, clocks), \
 	.ftm_clock_source = (ftm_clock_source_t)(DT_INST_ENUM_IDX(n, clock_source) + 1U), \
 	.prescale = TO_FTM_PRESCALE_DIVIDE(DT_INST_PROP(n, prescaler)),\
 	.channel_count = FSL_FEATURE_FTM_CHANNEL_COUNTn((FTM_Type *) \
@@ -588,6 +587,7 @@ static const struct mcux_ftm_config mcux_ftm_config_##n = { \
 }
 
 #define FTM_DEVICE(n) \
+	CLOCK_CONTROL_DT_SPEC_INST_DEFINE(n, clocks); \
 	PINCTRL_DT_INST_DEFINE(n); \
 	static struct mcux_ftm_data mcux_ftm_data_##n; \
 	static const struct mcux_ftm_config mcux_ftm_config_##n; \

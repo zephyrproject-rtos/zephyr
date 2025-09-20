@@ -499,9 +499,11 @@ static DEVICE_API(gpio, gpio_lpc11u6x_driver_api) = {
  * shared between all the ports (IRQ lines, clock).
  */
 
+CLOCK_CONTROL_DT_SPEC_INST_DEFINE(0, clocks);
+
 static const struct gpio_lpc11u6x_shared gpio_lpc11u6x_shared = {
 	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(0)),
-	.clock_subsys = (clock_control_subsys_t) DT_INST_PHA(0, clocks, clkid),
+	.clock_subsys = CLOCK_CONTROL_DT_SPEC_INST_GET(0, clocks),
 	.gpio_base = DT_INST_REG_ADDR_BY_IDX(0, 0),
 	.syscon_base = DT_INST_REG_ADDR_BY_IDX(0, 1),
 	.nirqs = DT_NUM_IRQS(DT_DRV_INST(0)),

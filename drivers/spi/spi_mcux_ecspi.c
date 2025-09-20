@@ -317,13 +317,14 @@ static DEVICE_API(spi, spi_mcux_driver_api) = {
 
 #define SPI_MCUX_ECSPI_INIT(n)									\
 	PINCTRL_DT_INST_DEFINE(n);								\
+	CLOCK_CONTROL_DT_SPEC_INST_DEFINE(n, clocks);						\
 	static void spi_mcux_config_func_##n(const struct device *dev);				\
 												\
 	static const struct spi_mcux_config spi_mcux_config_##n = {				\
 		.base = (ECSPI_Type *) DT_INST_REG_ADDR(n),					\
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),					\
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),				\
-		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),		\
+		.clock_subsys = CLOCK_CONTROL_DT_SPEC_INST_GET(n, clocks),			\
 		.irq_config_func = spi_mcux_config_func_##n,					\
 	};											\
 												\

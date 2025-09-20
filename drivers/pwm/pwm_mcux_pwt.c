@@ -338,6 +338,8 @@ static DEVICE_API(pwm, mcux_pwt_driver_api) = {
 #define PWT_DEVICE(n) \
 	static void mcux_pwt_config_func_##n(const struct device *dev);	\
 									\
+	CLOCK_CONTROL_DT_SPEC_INST_DEFINE(n, clocks);			\
+									\
 	PINCTRL_DT_INST_DEFINE(n);					\
 									\
 	static const struct mcux_pwt_config mcux_pwt_config_##n = {	\
@@ -345,6 +347,7 @@ static DEVICE_API(pwm, mcux_pwt_driver_api) = {
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),	\
 		.clock_subsys =						\
 		(clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),	\
+		CLOCK_CONTROL_DT_SPEC_INST_GET(n, clocks),		\
 		.pwt_clock_source = kPWT_BusClock,			\
 		.prescale =						\
 		TO_PWT_PRESCALE_DIVIDE(DT_INST_PROP(n, prescaler)),	\

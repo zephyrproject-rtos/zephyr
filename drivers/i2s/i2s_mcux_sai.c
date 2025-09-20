@@ -1185,6 +1185,8 @@ static DEVICE_API(i2s, i2s_mcux_driver_api) = {
 #define I2S_MCUX_INIT(i2s_id)                                                                      \
 	static void i2s_irq_connect_##i2s_id(const struct device *dev);                            \
                                                                                                    \
+	CLOCK_CONTROL_DT_SPEC_INST_DEFINE(i2s_id, clocks);                                         \
+                                                                                                   \
 	PINCTRL_DT_INST_DEFINE(i2s_id);                                                            \
                                                                                                    \
 	static const struct i2s_mcux_config i2s_##i2s_id##_config = {                              \
@@ -1202,7 +1204,7 @@ static DEVICE_API(i2s, i2s_mcux_driver_api) = {
 		.mclk_pin_offset = DT_PHA_BY_IDX(DT_DRV_INST(i2s_id), pinmuxes, 0, offset),        \
 		.mclk_output = DT_INST_PROP_OR(i2s_id, mclk_output, 0),                            \
 		.clk_sub_sys =                                                                     \
-			(clock_control_subsys_t)DT_INST_CLOCKS_CELL_BY_IDX(i2s_id, 0, name),       \
+			CLOCK_CONTROL_DT_SPEC_INST_GET(i2s_id, clocks),                            \
 		.ccm_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(i2s_id)),                             \
 		.irq_connect = i2s_irq_connect_##i2s_id,                                           \
 		.pinctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(i2s_id),                                 \

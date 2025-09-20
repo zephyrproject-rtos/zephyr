@@ -709,11 +709,11 @@ static const struct _dmic_ops dmic_ops = {
 	};									\
 										\
 	PINCTRL_DT_INST_DEFINE(idx);						\
+	CLOCK_CONTROL_DT_SPEC_INST_DEFINE(idx, clocks);			\
 	static struct mcux_dmic_cfg mcux_dmic_cfg##idx = {			\
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),			\
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(idx)),		\
-		.clock_name = (clock_control_subsys_t)				\
-				DT_INST_CLOCKS_CELL(idx, name),			\
+		.clock_name = CLOCK_CONTROL_DT_SPEC_INST_GET(idx, clocks),	\
 		.use2fs = DT_INST_PROP(idx, use2fs),				\
 	};									\
 										\

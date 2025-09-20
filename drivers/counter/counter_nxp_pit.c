@@ -311,6 +311,9 @@ static DEVICE_API(counter, nxp_pit_driver_api) = {
 #define COUNTER_NXP_PIT_DEVICE_INIT(n)								\
 												\
 	/* Setup the IRQ either for parent irq or per channel irq */				\
+	CLOCK_CONTROL_DT_SPEC_INST_DEFINE(n, clocks);						\
+												\
+	/* Setup the IRQ either for parent irq or per channel irq */				\
 	NXP_PIT_SETUP_IRQ_CONFIG(n)								\
 												\
 	/* Create channel declarations */							\
@@ -359,8 +362,7 @@ static DEVICE_API(counter, nxp_pit_driver_api) = {
 		.num_channels = DT_INST_FOREACH_CHILD_SEP_VARGS(				\
 			n, DT_NODE_HAS_COMPAT, (+), nxp_pit_channel),				\
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),				\
-		.clock_subsys = (clock_control_subsys_t)					\
-				DT_INST_CLOCKS_CELL(n, name),					\
+		.clock_subsys = CLOCK_CONTROL_DT_SPEC_INST_GET(n, clocks),			\
 		.data = nxp_pit_##n##_channel_datas,						\
 		.channels = nxp_pit_##n##_channels,						\
 	};											\

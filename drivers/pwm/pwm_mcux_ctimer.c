@@ -262,11 +262,12 @@ static DEVICE_API(pwm, pwm_mcux_ctimer_driver_api) = {
 		.is_period_channel_set = false,                                                    \
 	};                                                                                         \
 	PWM_MCUX_CTIMER_PINCTRL_DEFINE(n)                                                          \
+	CLOCK_CONTROL_DT_SPEC_INST_DEFINE(n, clocks);                                             \
 	static const struct pwm_mcux_ctimer_config pwm_mcux_ctimer_config_##n = {                  \
 		.base = (CTIMER_Type *)DT_INST_REG_ADDR(n),                                        \
 		.prescale = DT_INST_PROP(n, prescaler),                                            \
 		.clock_control = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                            \
-		.clock_id = (clock_control_subsys_t)(DT_INST_CLOCKS_CELL(n, name)),                \
+		.clock_id = CLOCK_CONTROL_DT_SPEC_INST_GET(n, clocks),                             \
 		PWM_MCUX_CTIMER_PINCTRL_INIT(n)};                                                  \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, mcux_ctimer_pwm_init, NULL, &pwm_mcux_ctimer_data_##n,            \

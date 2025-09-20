@@ -1425,6 +1425,8 @@ static DEVICE_API(can, mcux_flexcan_fd_driver_api) = {
 #define FLEXCAN_DEVICE_INIT_MCUX(id)					\
 	PINCTRL_DT_INST_DEFINE(id);					\
 									\
+	CLOCK_CONTROL_DT_SPEC_INST_DEFINE(id, clocks);			\
+									\
 	static void mcux_flexcan_irq_config_##id(const struct device *dev); \
 	static void mcux_flexcan_irq_enable_##id(void); \
 	static void mcux_flexcan_irq_disable_##id(void); \
@@ -1433,8 +1435,7 @@ static DEVICE_API(can, mcux_flexcan_fd_driver_api) = {
 		DEVICE_MMIO_NAMED_ROM_INIT(flexcan_mmio, DT_DRV_INST(id)),	\
 		.common = CAN_DT_DRIVER_CONFIG_INST_GET(id, 0, FLEXCAN_MAX_BITRATE(id)), \
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(id)),	\
-		.clock_subsys = (clock_control_subsys_t)		\
-			DT_INST_CLOCKS_CELL(id, name),			\
+		.clock_subsys = CLOCK_CONTROL_DT_SPEC_INST_GET(id, clocks), \
 		.clk_source = DT_INST_PROP(id, clk_source),		\
 		IF_ENABLED(CONFIG_CAN_MCUX_FLEXCAN_FD, (		\
 			.flexcan_fd = DT_INST_NODE_HAS_COMPAT(id, FLEXCAN_FD_DRV_COMPAT), \

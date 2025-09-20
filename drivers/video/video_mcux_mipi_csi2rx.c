@@ -312,12 +312,14 @@ static int mipi_csi2rx_init(const struct device *dev)
 #define SOURCE_DEV(n) DEVICE_DT_GET(DT_NODE_REMOTE_DEVICE(DT_INST_ENDPOINT_BY_ID(n, 1, 0)))
 
 #define MIPI_CSI2RX_INIT(n)                                                                        \
+	CLOCK_CONTROL_DT_SPEC_INST_DEFINE(n, clocks);                                             \
+                                                                                                   \
 	static struct mipi_csi2rx_data mipi_csi2rx_data_##n = {                                    \
 		.csi2rxConfig.laneNum = DT_PROP_LEN(DT_INST_ENDPOINT_BY_ID(n, 1, 0), data_lanes),  \
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
-		.clock_root = (clock_control_subsys_t)DT_INST_CLOCKS_CELL_BY_IDX(n, 0, name),      \
-		.clock_ui = (clock_control_subsys_t)DT_INST_CLOCKS_CELL_BY_IDX(n, 1, name),        \
-		.clock_esc = (clock_control_subsys_t)DT_INST_CLOCKS_CELL_BY_IDX(n, 2, name),       \
+		.clock_root = CLOCK_CONTROL_DT_SPEC_INST_GET(n, clocks, 0),                        \
+		.clock_ui = CLOCK_CONTROL_DT_SPEC_INST_GET(n, clocks, 1),                          \
+		.clock_esc = CLOCK_CONTROL_DT_SPEC_INST_GET(n, clocks, 2),                         \
 	};                                                                                         \
                                                                                                    \
 	static const struct mipi_csi2rx_config mipi_csi2rx_config_##n = {                          \

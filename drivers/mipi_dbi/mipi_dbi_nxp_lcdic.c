@@ -946,6 +946,7 @@ static int mipi_dbi_lcdic_init(const struct device *dev)
 	}								\
 									\
 	PINCTRL_DT_INST_DEFINE(n);					\
+	CLOCK_CONTROL_DT_SPEC_INST_DEFINE(n, clocks);			\
 	static const struct mipi_dbi_lcdic_config			\
 	    mipi_dbi_lcdic_config_##n = {				\
 		.base = (LCDIC_Type *)DT_INST_REG_ADDR(n),		\
@@ -953,6 +954,7 @@ static int mipi_dbi_lcdic_init(const struct device *dev)
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),	\
 		.clock_subsys = (clock_control_subsys_t)		\
 		    DT_INST_CLOCKS_CELL(n, name),			\
+		.clock_subsys = CLOCK_CONTROL_DT_SPEC_INST_GET(n, clocks), \
 		.irq_config_func = mipi_dbi_lcdic_config_func_##n,	\
 		.swap_bytes = DT_INST_PROP(n, nxp_swap_bytes),		\
 		.write_active_min =					\
