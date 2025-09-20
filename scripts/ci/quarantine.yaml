@@ -1,0 +1,16 @@
+# Configurations being a product of scenarios and platforms fields
+# in a given entry will be skipped by twister if quarantine is used.
+# More details here:
+# https://docs.zephyrproject.org/latest/guides/test/twister.html#quarantine
+#
+# Example of entry:
+# - scenarios:
+#     - kernel.common
+#     - kernel.common.(misra|tls)
+#     - kernel.common.nano64
+#   platforms:
+#     - .*_cortex_.*
+#     - native_sim
+#   comment: "Link to the issue: https://github.com/zephyrproject-rtos/zephyr/pull/33287"
+#
+# IMPORTANT: Each entry must include a link to a reported issue in comment section
