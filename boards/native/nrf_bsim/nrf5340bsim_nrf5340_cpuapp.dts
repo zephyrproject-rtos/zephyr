@@ -11,8 +11,8 @@
 #include <../boards/nordic/nrf5340dk/nrf5340_cpuapp_common-pinctrl.dtsi>
 
 / {
-	model = "Nordic NRF5340 BSIM NRF5340 Application";
 	compatible = "bsim,nrf5340-bsim-nrf5340-cpuapp", "bsim,nrf53";
+	model = "Nordic NRF5340 BSIM NRF5340 Application";
 
 	/* We need to remove aliases to nodes we delete */
 	aliases {
@@ -104,8 +104,8 @@
 		#size-cells = <1>;
 
 		storage_partition: partition@0 {
-			label = "storage";
 			reg = <0x00000000 DT_SIZE_K(1024)>;
+			label = "storage";
 		};
 	};
 };
@@ -123,11 +123,11 @@
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 /* We re-use the IPC shared buffer definition from the real HW. But note the start address of the
