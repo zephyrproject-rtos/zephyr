@@ -15,9 +15,6 @@
 	compatible = "arduino,giga-r1";
 
 	chosen {
-		zephyr,console = &usart1;
-		zephyr,shell-uart = &usart1;
-		zephyr,uart-mcumgr = &usart1;
 		zephyr,bt-hci = &bt_hci_uart;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
@@ -252,6 +249,8 @@ zephyr_udc0: &usbotg_fs {
 	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12>;
 	pinctrl-names = "default";
 };
+
+#include <../boards/common/usb/cdc_acm_serial.dtsi>
 
 /* alias used by display shields */
 zephyr_mipi_dsi: &mipi_dsi {};
