@@ -12,8 +12,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "STMicroelectronics STM32F722ZE-NUCLEO board";
 	compatible = "st,stm32f722ze-nucleo";
+	model = "STMicroelectronics STM32F722ZE-NUCLEO board";
 
 	chosen {
 		zephyr,console = &usart3;
@@ -96,12 +96,12 @@
 };
 
 &sdmmc1 {
-	status = "okay";
 	pinctrl-0 = <&sdmmc1_d0_pc8 &sdmmc1_d1_pc9 &sdmmc1_d2_pc10
 		     &sdmmc1_d3_pc11 &sdmmc1_ck_pc12 &sdmmc1_cmd_pd2>;
 	pinctrl-names = "default";
 	cd-gpios = <&gpioi 15 GPIO_ACTIVE_LOW>;
 	disk-name = "SD";
+	status = "okay";
 };
 
 &adc1 {
@@ -121,8 +121,8 @@
 &i2c2 {
 	pinctrl-0 = <&i2c2_scl_pf1 &i2c2_sda_pf0>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 };
 
 &can1 {
@@ -162,9 +162,9 @@
 	status = "okay";
 
 	pwm1: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim1_ch2_pe11 &tim1_ch3_pe13>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
@@ -228,33 +228,33 @@ zephyr_udc0: &usbotg_fs {
 
 		/* sectors 0-3 */
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(64)>;
+			label = "mcuboot";
 			read-only;
 		};
 
 		/* sector 4 */
 		storage_partition: partition@10000 {
-			label = "storage";
 			reg = <0x00010000 DT_SIZE_K(64)>;
+			label = "storage";
 		};
 
 		/* sector 5 */
 		slot0_partition: partition@20000 {
-			label = "image-0";
 			reg = <0x00020000 DT_SIZE_K(128)>;
+			label = "image-0";
 		};
 
 		/* sector 6 */
 		slot1_partition: partition@40000 {
-			label = "image-1";
 			reg = <0x00040000 DT_SIZE_K(128)>;
+			label = "image-1";
 		};
 
 		/* sector 7 */
 		scratch_partition: partition@60000 {
-			label = "image-scratch";
 			reg = <0x00060000 DT_SIZE_K(128)>;
+			label = "image-scratch";
 		};
 	};
 };

@@ -10,8 +10,8 @@
 #include "stm32h745i_disco.dtsi"
 
 / {
-	model = "STMicroelectronics STM32H745I-DISCO board";
 	compatible = "st,stm32h745i-disco";
+	model = "STMicroelectronics STM32H745I-DISCO board";
 
 	/* HW resources belonging to CM7 */
 	chosen {
@@ -36,8 +36,8 @@
 	/* RM0455 - 23.6 External device address mapping */
 	sdram2: sdram@d0000000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
-		device_type = "memory";
 		reg = <0xd0000000 DT_SIZE_M(16)>; /* 128Mbit */
+		device_type = "memory";
 		zephyr,memory-region = "SDRAM2";
 		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
 	};
@@ -121,14 +121,13 @@
 	status = "okay";
 
 	pwm11: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim1_ch1_pa8>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
 &mac {
-	status = "okay";
 	/* MII */
 	pinctrl-0 = <&eth_ref_clk_pa1
 		     &eth_crs_dv_pa7
@@ -146,12 +145,13 @@
 	pinctrl-names = "default";
 	phy-connection-type = "mii";
 	phy-handle = <&eth_phy>;
+	status = "okay";
 };
 
 &mdio {
-	status = "okay";
 	pinctrl-0 = <&eth_mdio_pa2 &eth_mdc_pc1>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	eth_phy: ethernet-phy@1 {
 		compatible = "ethernet-phy";
@@ -209,23 +209,23 @@
 };
 
 &i2c4 {
-	status = "okay";
 	pinctrl-0 = <&i2c4_scl_pd12 &i2c4_sda_pd13>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &spi2 {
-	status = "okay";
 	pinctrl-0 = <&spi2_nss_pb4 &spi2_mosi_pb15 &spi2_miso_pi2 &spi2_sck_pd3>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &fdcan1 {
-	status = "okay";
 	pinctrl-0 = <&fdcan1_tx_ph13 &fdcan1_rx_ph14>;
 	pinctrl-names = "default";
 	clocks = <&rcc STM32_CLOCK(APB1_2, 8)>,
 		 <&rcc STM32_SRC_PLL2_Q FDCAN_SEL(2)>;
+	status = "okay";
 
 	can-transceiver {
 		max-bitrate = <5000000>;
@@ -233,11 +233,11 @@
 };
 
 &fdcan2 {
-	status = "okay";
 	pinctrl-0 = <&fdcan2_tx_pb13 &fdcan2_rx_pb5>;
 	pinctrl-names = "default";
 	clocks = <&rcc STM32_CLOCK(APB1_2, 8)>,
 		 <&rcc STM32_SRC_PLL2_Q FDCAN_SEL(2)>;
+	status = "okay";
 
 	can-transceiver {
 		max-bitrate = <5000000>;
@@ -260,11 +260,11 @@
 	status = "okay";
 
 	sdram {
-		status = "okay";
 		power-up-delay = <100>;
 		num-auto-refresh = <8>;
 		mode-register = <0x220>;
 		refresh-rate = <0x603>;
+		status = "okay";
 
 		bank@1 {
 			reg = <1>;

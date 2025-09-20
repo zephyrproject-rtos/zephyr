@@ -51,8 +51,8 @@
 };
 
 &clk_msi {
-	status = "okay";
 	msi-range = <6>;
+	status = "okay";
 };
 
 &pll {
@@ -78,9 +78,9 @@
 };
 
 &dac1 {
-	status = "okay";
 	pinctrl-0 = <&dac1_out1_pa4>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &adc1 {

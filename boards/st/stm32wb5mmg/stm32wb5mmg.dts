@@ -10,8 +10,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "STMicroelectronics STM32WB5MMG Bluetooth module";
 	compatible = "st,stm32wb5mmgh6";
+	model = "STMicroelectronics STM32WB5MMG Bluetooth module";
 
 	chosen {
 		zephyr,console = &usart1;
@@ -75,9 +75,9 @@
 };
 
 zephyr_udc0: &usb {
-	status = "okay";
 	pinctrl-0 = <&usb_dm_pa11 &usb_dp_pa12>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &flash0 {
@@ -94,13 +94,13 @@ zephyr_udc0: &usb {
 		 */
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(48)>;
+			label = "mcuboot";
 		};
 
 		slot0_partition: partition@c000 {
-			label = "image-0";
 			reg = <0x0000c000 DT_SIZE_K(400)>;
+			label = "image-0";
 		};
 	};
 };

@@ -12,8 +12,8 @@
 #include <zephyr/dt-bindings/sensor/ism330dhcx.h>
 
 / {
-	model = "STMicroelectronics STM32WB5MM Discovery Development Kit";
 	compatible = "st,stm32wb5mm-dk";
+	model = "STMicroelectronics STM32WB5MM Discovery Development Kit";
 
 	chosen {
 		zephyr,console = &usart1;
@@ -122,9 +122,9 @@
 };
 
 zephyr_udc0: &usb {
-	status = "okay";
 	pinctrl-0 = <&usb_dm_pa11 &usb_dp_pa12>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &aes1 {
@@ -145,28 +145,28 @@ zephyr_udc0: &usb {
 		 */
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(48)>;
+			label = "mcuboot";
 		};
 
 		slot0_partition: partition@c000 {
-			label = "image-0";
 			reg = <0x0000c000 DT_SIZE_K(400)>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@70000 {
-			label = "image-1";
 			reg = <0x00070000 DT_SIZE_K(400)>;
+			label = "image-1";
 		};
 
 		scratch_partition: partition@d4000 {
-			label = "image-scratch";
 			reg = <0x000d4000 DT_SIZE_K(16)>;
+			label = "image-scratch";
 		};
 
 		storage_partition: partition@d8000 {
-			label = "storage";
 			reg = <0x000d8000 DT_SIZE_K(8)>;
+			label = "storage";
 		};
 	};
 };
@@ -183,8 +183,8 @@ zephyr_udc0: &usb {
 &i2c3 {
 	pinctrl-0 = <&i2c3_scl_pb13 &i2c3_sda_pb11>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 
 	vl53l0x@29 {
 		compatible = "st,vl53l0x";

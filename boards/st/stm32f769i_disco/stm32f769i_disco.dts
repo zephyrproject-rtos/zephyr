@@ -13,8 +13,8 @@
 #include <zephyr/dt-bindings/mipi_dsi/mipi_dsi.h>
 
 / {
-	model = "STMicroelectronics STM32F769I DISCOVERY board";
 	compatible = "st,stm32f769I-disco";
+	model = "STMicroelectronics STM32F769I DISCOVERY board";
 
 	chosen {
 		zephyr,console = &usart1;
@@ -28,8 +28,8 @@
 
 	sdram1: sdram@c0000000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
-		device_type = "memory";
 		reg = <0xc0000000 DT_SIZE_M(16)>;
+		device_type = "memory";
 		zephyr,memory-region = "SDRAM1";
 		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
 	};
@@ -147,15 +147,15 @@ arduino_serial: &usart6 {};
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 };
 
 qsh_030_i2c: &i2c4 {
 	pinctrl-0 = <&i2c4_scl_pd12 &i2c4_sda_pb7>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 
 	ft6202: ft6202@2a {
 		compatible = "focaltech,ft5336";
@@ -171,7 +171,6 @@ qsh_030_i2c: &i2c4 {
 };
 
 &mac {
-	status = "okay";
 	pinctrl-0 = <&eth_rxd0_pc4
 		     &eth_rxd1_pc5
 		     &eth_ref_clk_pa1
@@ -182,12 +181,13 @@ qsh_030_i2c: &i2c4 {
 	pinctrl-names = "default";
 	phy-connection-type = "rmii";
 	phy-handle = <&eth_phy>;
+	status = "okay";
 };
 
 &mdio {
-	status = "okay";
 	pinctrl-0 = <&eth_mdio_pa2 &eth_mdc_pc1>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	eth_phy: ethernet-phy@0 {
 		compatible = "ethernet-phy";
@@ -196,13 +196,13 @@ qsh_030_i2c: &i2c4 {
 };
 
 &sdmmc2 {
-	status = "okay";
 	pinctrl-0 = <&sdmmc2_d0_pg9 &sdmmc2_d1_pg10
 		     &sdmmc2_d2_pb3 &sdmmc2_d3_pb4
 		     &sdmmc2_ck_pd6 &sdmmc2_cmd_pd7>;
 	pinctrl-names = "default";
 	cd-gpios = <&gpioi 15 GPIO_ACTIVE_LOW>;
 	disk-name = "SD";
+	status = "okay";
 };
 
 &quadspi {
@@ -226,20 +226,19 @@ qsh_030_i2c: &i2c4 {
 			#size-cells = <1>;
 
 			slot1_partition: partition@0 {
-				label = "image-1";
 				reg = <0x00000000 DT_SIZE_K(16)>;
+				label = "image-1";
 			};
 
 			storage_partition: partition@1a0000 {
-				label = "storage";
 				reg = <0x001a0000 DT_SIZE_M(62)>;
+				label = "storage";
 			};
 		};
 	};
 };
 
 &fmc {
-	status = "okay";
 	pinctrl-0 = <&fmc_nbl0_pe0 &fmc_nbl1_pe1 &fmc_nbl2_pi4 &fmc_nbl3_pi5
 		     &fmc_sdclk_pg8 &fmc_sdnwe_ph5 &fmc_sdcke0_ph2 &fmc_sdne0_ph3
 		     &fmc_sdnras_pf11 &fmc_sdncas_pg15
@@ -256,14 +255,14 @@ qsh_030_i2c: &i2c4 {
 		     &fmc_d24_pi0 &fmc_d25_pi1 &fmc_d26_pi2 &fmc_d27_pi3
 		     &fmc_d28_pi6 &fmc_d29_pi7 &fmc_d30_pi9 &fmc_d31_pi10>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	sdram {
-		status = "okay";
-
 		power-up-delay = <100>;
 		num-auto-refresh = <8>;
 		mode-register = <0x230>;
 		refresh-rate = <603>;
+		status = "okay";
 
 		bank@0 {
 			reg = <0>;
@@ -302,4 +301,5 @@ zephyr_udc0: &usbotg_hs {
 
 /* alias used by display shields */
 zephyr_mipi_dsi: &mipi_dsi {};
+
 zephyr_lcd_controller: &ltdc {};

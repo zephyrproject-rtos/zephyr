@@ -11,8 +11,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "STMicroelectronics STM32U385RG-NUCLEO-Q board";
 	compatible = "st,stm32u385rg-nucleo-q";
+	model = "STMicroelectronics STM32U385RG-NUCLEO-Q board";
 
 	chosen {
 		zephyr,canbus = &fdcan1;
@@ -61,23 +61,23 @@
 		 * Place partitions within first 512 KiB to make use of the whole Bank1.
 		 */
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(64)>;
+			label = "mcuboot";
 		};
 
 		slot0_partition: partition@10000 {
-			label = "image-0";
 			reg = <0x00010000 DT_SIZE_K(192)>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@40000 {
-			label = "image-1";
 			reg = <0x00040000 DT_SIZE_K(192)>;
+			label = "image-1";
 		};
 
 		storage_partition: partition@70000 {
-			label = "storage";
 			reg = <0x00070000 DT_SIZE_K(64)>;
+			label = "storage";
 		};
 	};
 };
@@ -120,9 +120,9 @@
 };
 
 &clk_msis {
-	status = "okay";
 	msi-pll-mode;
 	msi-range = <0>; /* 96MHz (reset value) */
+	status = "okay";
 };
 
 &rcc {
@@ -145,9 +145,9 @@
 };
 
 &dac1 {
-	status = "okay";
 	pinctrl-0 = <&dac1_out1_pa4>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &fdcan1 {

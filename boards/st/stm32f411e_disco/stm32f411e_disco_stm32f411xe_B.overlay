@@ -18,16 +18,16 @@
 
 	lsm303dlhc_magn: lsm303dlhc-magn@1e {
 		compatible = "st,lsm303dlhc-magn";
-		status = "okay";
 		reg = <0x1e>;
+		status = "okay";
 	};
 
 	lsm303dlhc_accel: lsm303dlhc-accel@19 {
 		compatible = "st,lis2dh", "st,lsm303dlhc-accel";
-		status = "okay";
 		reg = <0x19>;
 		irq-gpios = <&gpioe 4 GPIO_ACTIVE_HIGH>,
 			    <&gpioe 5 GPIO_ACTIVE_HIGH>;
+		status = "okay";
 	};
 };
 

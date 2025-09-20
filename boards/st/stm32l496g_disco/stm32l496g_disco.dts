@@ -11,8 +11,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "STMicroelectronics STM32L496G-DISCO board";
 	compatible = "st,stm32l496g-disco";
+	model = "STMicroelectronics STM32L496G-DISCO board";
 
 	chosen {
 		zephyr,console = &usart2;
@@ -132,17 +132,17 @@
 	status = "okay";
 
 	pwm2: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim2_ch1_pa0>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb7>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 };
 
 &spi1 {
@@ -212,8 +212,8 @@ zephyr_udc0: &usbotg_fs {
 		size = <DT_SIZE_M(64)>; /* 64 Mbits */
 		qspi-max-frequency = <8000000>;
 		cs-high-time = <3>; /* >= 30 ns */
-		status = "okay";
 		spi-bus-width = <4>;
 		writeoc = "PP_1_4_4";
+		status = "okay";
 	};
 };
