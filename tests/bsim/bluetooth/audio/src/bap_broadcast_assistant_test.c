@@ -179,8 +179,13 @@ static void bap_broadcast_assistant_recv_state_cb(
 
 #if defined(CONFIG_BT_PER_ADV_SYNC_TRANSFER_SENDER)
 	if (state->pa_sync_state == BT_BAP_PA_STATE_INFO_REQ) {
-		err = bt_le_per_adv_sync_transfer(g_pa_sync, conn,
-						  BT_UUID_BASS_VAL);
+		uint8_t past_addr_type = PAST_FORWARD_SYNC;
+		uint8_t src_id = g_pa_sync->sid;
+
+		err = bt_le_per_adv_sync_transfer(g_pa_sync,
+				conn,
+				BT_BAP_PAST_SERVICE_DATA(past_addr_type, src_id));
+
 		if (err != 0) {
 			FAIL("Could not transfer periodic adv sync: %d\n", err);
 			return;
@@ -309,6 +314,11 @@ static void sync_cb(struct bt_le_per_adv_sync *sync,
 	       bt_le_per_adv_sync_get_index(sync), le_addr, info->interval,
 	       info->interval * 5 / 4, phy2str(info->phy));
 
+	if (BT_BAP_PAST_GET_ADDR_TYPE(sync->service_data) == PAST_FORWARD_SYNC) {
+		printk("PAST forwarding the sync\n");
+	} else if (BT_BAP_PAST_GET_ADDR_TYPE(sync->service_data) == PAST_MIMIC_DEVICE) {
+		printk("PAST pretending to be the other device\n");
+	}
 	SET_FLAG(flag_pa_synced);
 }
 
