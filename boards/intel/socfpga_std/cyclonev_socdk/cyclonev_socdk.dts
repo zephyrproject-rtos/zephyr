@@ -10,13 +10,13 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 
 / {
-	model = "Altera SOCFPGA Cyclone V SoC Development Kit";
 	compatible = "altr,socfpga-cyclonev-socdk", "altr,socfpga-cyclonev", "altr,socfpga";
+	model = "Altera SOCFPGA Cyclone V SoC Development Kit";
 
 	ddr0: memory@0 {
+		reg = <0x0 0x40000000>; /* 1GB */
 		name = "memory";
 		device_type = "memory";
-		reg = <0x0 0x40000000>; /* 1GB */
 	};
 
 	aliases {
@@ -50,8 +50,8 @@
 
 	soc {
 		gmac1: ethernet@ff702000 {
-			status = "okay";
 			local-mac-address = [e6 88 2d 82 1f d4];
+			status = "okay";
 		};
 
 		gpio0: gpio@ff708000 {
@@ -71,12 +71,12 @@
 
 			eeprom: eeprom@51 {
 				compatible = "microchip,at24lc32a", "atmel,at24";
-				status = "okay";
 				reg = <0x51>;
 				size = <4096>;
 				address-width = <8>;
 				timeout = <25>;
 				pagesize = <32>;
+				status = "okay";
 			};
 
 			ds3231: rtc@68 {
