@@ -442,28 +442,12 @@ static void udc_mcux_work_handler(struct k_work *item)
 		mcux_msg = &ev->mcux_msg;
 
 		if (mcux_msg->code == kUSB_DeviceNotifyBusReset) {
-			struct udc_ep_config *cfg;
-
 			udc_mcux_control(ev->dev, kUSB_DeviceControlSetDefaultStatus, NULL);
-			cfg = udc_get_ep_cfg(ev->dev, USB_CONTROL_EP_OUT);
-			if (cfg->stat.enabled) {
-				udc_ep_disable_internal(ev->dev, USB_CONTROL_EP_OUT);
-			}
-			cfg = udc_get_ep_cfg(ev->dev, USB_CONTROL_EP_IN);
-			if (cfg->stat.enabled) {
-				udc_ep_disable_internal(ev->dev, USB_CONTROL_EP_IN);
-			}
-			if (udc_ep_enable_internal(ev->dev, USB_CONTROL_EP_OUT,
-						USB_EP_TYPE_CONTROL,
-						USB_MCUX_EP0_SIZE, 0)) {
+			(void)udc_ep_disable_control(ev->dev);
+			if (udc_ep_enable_control(ev->dev, USB_MCUX_EP0_SIZE)) {
 				LOG_ERR("Failed to enable control endpoint");
 			}
 
-			if (udc_ep_enable_internal(ev->dev, USB_CONTROL_EP_IN,
-						USB_EP_TYPE_CONTROL,
-						USB_MCUX_EP0_SIZE, 0)) {
-				LOG_ERR("Failed to enable control endpoint");
-			}
 			udc_submit_event(ev->dev, UDC_EVT_RESET, 0);
 		} else {
 			ep  = mcux_msg->code;

@@ -1048,14 +1048,7 @@ static int udc_rpi_pico_enable(const struct device *dev)
 			    USB_USB_PWR_VBUS_DETECT_OVERRIDE_EN_BITS, (mm_reg_t)&base->pwr);
 	}
 
-	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_OUT,
-				   USB_EP_TYPE_CONTROL, 64, 0)) {
-		LOG_ERR("Failed to enable control endpoint");
-		return -EIO;
-	}
-
-	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_IN,
-				   USB_EP_TYPE_CONTROL, 64, 0)) {
+	if (udc_ep_enable_control(dev, 64)) {
 		LOG_ERR("Failed to enable control endpoint");
 		return -EIO;
 	}
@@ -1098,16 +1091,10 @@ static int udc_rpi_pico_disable(const struct device *dev)
 {
 	const struct rpi_pico_config *config = dev->config;
 
-	if (udc_ep_disable_internal(dev, USB_CONTROL_EP_OUT)) {
+	if (udc_ep_disable_control(dev)) {
 		LOG_ERR("Failed to disable control endpoint");
 		return -EIO;
 	}
-
-	if (udc_ep_disable_internal(dev, USB_CONTROL_EP_IN)) {
-		LOG_ERR("Failed to disable control endpoint");
-		return -EIO;
-	}
-
 	config->irq_disable_func(dev);
 	LOG_DBG("Disable device %p", dev);
 
@@ -1118,7 +1105,19 @@ static int udc_rpi_pico_init(const struct device *dev)
 {
 	const struct rpi_pico_config *config = dev->config;
 	const struct pinctrl_dev_config *const pcfg = config->pcfg;
+	struct udc_data *data = dev->data;
 	int err;
+
+	/*
+	 * There are 3840 bytes available for endpoint buffers, including
+	 * control endpoints, in DPSRAM. This means that 3712 bytes
+	 * (58 x 64 byte blocks) are available for interface endpoints.
+	 */
+	if ((data->rx_size + data->tx_size) > 3712U) {
+		LOG_ERR("Required memory size %u + %u exceeds available DPRAM space %u",
+			data->rx_size, data->tx_size, 3712U);
+		return -ENOMEM;
+	}
 
 	if (pcfg != NULL) {
 		err = pinctrl_apply_state(pcfg, PINCTRL_STATE_DEFAULT);

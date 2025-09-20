@@ -817,12 +817,7 @@ static enum udc_bus_speed udc_smartbond_device_speed(const struct device *dev)
 
 static int udc_smartbond_shutdown(const struct device *dev)
 {
-	if (udc_ep_disable_internal(dev, USB_CONTROL_EP_OUT)) {
-		LOG_ERR("Failed to disable control endpoint");
-		return -EIO;
-	}
-
-	if (udc_ep_disable_internal(dev, USB_CONTROL_EP_IN)) {
+	if (udc_ep_disable_control(dev)) {
 		LOG_ERR("Failed to disable control endpoint");
 		return -EIO;
 	}
@@ -1597,12 +1592,7 @@ static int udc_smartbond_enable(const struct device *dev)
 
 	usb_change_state(data, true, data->vbus_present);
 
-	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_OUT, USB_EP_TYPE_CONTROL, 8, 0)) {
-		LOG_ERR("Failed to enable control endpoint");
-		return -EIO;
-	}
-
-	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_IN, USB_EP_TYPE_CONTROL, 8, 0)) {
+	if (udc_ep_enable_control(dev, 8)) {
 		LOG_ERR("Failed to enable control endpoint");
 		return -EIO;
 	}

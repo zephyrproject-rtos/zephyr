@@ -330,6 +330,7 @@ int udc_ep_enable_internal(const struct device *dev,
 			   const uint8_t ep,
 			   const uint8_t attributes,
 			   const uint16_t mps,
+			   const uint16_t m_mps,
 			   const uint8_t interval)
 {
 	const struct udc_api *api = dev->api;
@@ -353,6 +354,7 @@ int udc_ep_enable_internal(const struct device *dev,
 
 	cfg->attributes = attributes;
 	cfg->mps = mps;
+	cfg->m_mps = m_mps;
 	cfg->interval = interval;
 
 	cfg->stat.halted = 0;
@@ -367,6 +369,7 @@ int udc_ep_enable(const struct device *dev,
 		  const uint8_t ep,
 		  const uint8_t attributes,
 		  const uint16_t mps,
+		  const uint16_t m_mps,
 		  const uint8_t interval)
 {
 	const struct udc_api *api = dev->api;
@@ -383,7 +386,7 @@ int udc_ep_enable(const struct device *dev,
 		goto ep_enable_error;
 	}
 
-	ret = udc_ep_enable_internal(dev, ep, attributes, mps, interval);
+	ret = udc_ep_enable_internal(dev, ep, attributes, mps, m_mps, interval);
 
 ep_enable_error:
 	api->unlock(dev);
@@ -748,14 +751,13 @@ udc_disable_error:
 	return ret;
 }
 
-int udc_init(const struct device *dev,
-	     udc_event_cb_t event_cb, const void *const event_ctx)
+int udc_init(const struct device *dev, const struct udc_init_args *args)
 {
 	const struct udc_api *api = dev->api;
 	struct udc_data *data = dev->data;
 	int ret;
 
-	if (event_cb == NULL || event_ctx == NULL) {
+	if (args->event_cb == NULL || args->event_ctx == NULL) {
 		return -EINVAL;
 	}
 
@@ -766,8 +768,13 @@ int udc_init(const struct device *dev,
 		goto udc_init_error;
 	}
 
-	data->event_cb = event_cb;
-	data->event_ctx = event_ctx;
+	data->event_cb = args->event_cb;
+	data->event_ctx = args->event_ctx;
+#if CONFIG_UDC_DRIVER_REQUIRES_MEMORY_STATS
+	data->rx_size = args->rx_size;
+	data->tx_size = args->tx_size;
+	data->rx_m_tpl = args->rx_m_tpl;
+#endif
 
 	ret = api->init(dev);
 	if (ret == 0) {
