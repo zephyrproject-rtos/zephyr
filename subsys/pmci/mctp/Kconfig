@@ -1,4 +1,5 @@
 # Copyright (c) 2024 Intel Corporation
+# Copyright 2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig MCTP
@@ -42,9 +43,17 @@ config MCTP_I2C_GPIO_TARGET
 	  Build the MCTP I2C+GPIO target binding to use MCTP over Zephyr's I2C target
 	  interface and GPIO to signal writes to the bus controller.
 
+config MCTP_USB
+	bool "MCTP USB Binding"
+	depends on USB_DEVICE_STACK_NEXT
+	depends on USBD_MCTP_CLASS
+	help
+	  Build the MCTP USB binding to use MCTP over Zephyr's USBD "next" interface.
 
 module = MCTP
 module-str = MCTP
 source "subsys/logging/Kconfig.template.log_config"
+
+rsource "Kconfig.usb"
 
 endif
