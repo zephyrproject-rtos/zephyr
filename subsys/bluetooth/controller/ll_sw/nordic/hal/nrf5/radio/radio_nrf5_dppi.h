@@ -106,17 +106,17 @@ static inline void hal_event_timer_start_ppi_config(void)
 	nrf_grtc_publish_set(NRF_GRTC, HAL_CNTR_GRTC_EVENT_COMPARE_RADIO,
 			     HAL_EVENT_TIMER_START_PPI);
 
-	/* Enable same DPPI in Peripheral domain */
-	nrf_dppi_channels_enable(NRF_DPPIC20,
-				 BIT(HAL_EVENT_TIMER_START_PPI));
+	/* Setup PPIB receive publish */
+	nrf_ppib_publish_set(NRF_PPIB11, HAL_PPIB_RECEIVE_EVENT_TIMER_START_PPI,
+			     HAL_EVENT_TIMER_START_PPI);
 
 	/* Setup PPIB send subscribe */
 	nrf_ppib_subscribe_set(NRF_PPIB21, HAL_PPIB_SEND_EVENT_TIMER_START_PPI,
 			       HAL_EVENT_TIMER_START_PPI);
 
-	/* Setup PPIB receive publish */
-	nrf_ppib_publish_set(NRF_PPIB11, HAL_PPIB_RECEIVE_EVENT_TIMER_START_PPI,
-			     HAL_EVENT_TIMER_START_PPI);
+	/* Enable same DPPI in Peripheral domain */
+	nrf_dppi_channels_enable(NRF_DPPIC20,
+				 BIT(HAL_EVENT_TIMER_START_PPI));
 
 #else /* !CONFIG_BT_CTLR_NRF_GRTC */
 	nrf_rtc_publish_set(NRF_RTC, NRF_RTC_EVENT_COMPARE_2, HAL_EVENT_TIMER_START_PPI);
@@ -148,22 +148,22 @@ static inline void hal_radio_ready_time_capture_ppi_config(void)
  */
 static inline void hal_trigger_crypt_ppi_config(void)
 {
+#if defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
+	nrf_radio_publish_set(NRF_RADIO, NRF_RADIO_EVENT_PAYLOAD, HAL_TRIGGER_CRYPT_PPI);
 	nrf_ccm_subscribe_set(NRF_CCM, NRF_CCM_TASK_START, HAL_TRIGGER_CRYPT_PPI);
 
-#if !defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
-	nrf_radio_publish_set(NRF_RADIO, NRF_RADIO_EVENT_ADDRESS, HAL_TRIGGER_CRYPT_PPI);
-
-#else /* !CONFIG_SOC_COMPATIBLE_NRF54LX */
-	nrf_radio_publish_set(NRF_RADIO, NRF_RADIO_EVENT_PAYLOAD, HAL_TRIGGER_CRYPT_PPI);
-
-	/* Enable same DPPI in MCU  domain */
-	nrf_dppi_channels_enable(NRF_DPPIC00, BIT(HAL_TRIGGER_CRYPT_PPI));
+	/* Setup PPIB receive publish */
+	nrf_ppib_publish_set(NRF_PPIB00, HAL_PPIB_RECEIVE_TRIGGER_CRYPT_PPI, HAL_TRIGGER_CRYPT_PPI);
 
 	/* Setup PPIB send subscribe */
 	nrf_ppib_subscribe_set(NRF_PPIB10, HAL_PPIB_SEND_TRIGGER_CRYPT_PPI, HAL_TRIGGER_CRYPT_PPI);
 
-	/* Setup PPIB receive publish */
-	nrf_ppib_publish_set(NRF_PPIB00, HAL_PPIB_RECEIVE_TRIGGER_CRYPT_PPI, HAL_TRIGGER_CRYPT_PPI);
+	/* Enable same DPPI in MCU  domain */
+	nrf_dppi_channels_enable(NRF_DPPIC00, BIT(HAL_TRIGGER_CRYPT_PPI));
+
+#else /* !CONFIG_SOC_COMPATIBLE_NRF54LX */
+	nrf_radio_publish_set(NRF_RADIO, NRF_RADIO_EVENT_ADDRESS, HAL_TRIGGER_CRYPT_PPI);
+	nrf_ccm_subscribe_set(NRF_CCM, NRF_CCM_TASK_START, HAL_TRIGGER_CRYPT_PPI);
 #endif /* !CONFIG_SOC_COMPATIBLE_NRF54LX */
 }
 

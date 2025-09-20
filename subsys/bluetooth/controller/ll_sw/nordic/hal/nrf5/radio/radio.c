@@ -2104,10 +2104,13 @@ static void *radio_ccm_ext_rx_pkt_set(struct ccm *cnf, uint8_t phy, uint8_t pdu_
 	NRF_CCM->ENABLE = CCM_ENABLE_ENABLE_Disabled;
 	NRF_CCM->ENABLE = CCM_ENABLE_ENABLE_Enabled;
 
-	mode = (CCM_MODE_MODE_Decryption << CCM_MODE_MODE_Pos) &
+#if defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
+	/* NOTE: Use fast decryption as rx data is decrypt after payload is received, compared to
+	 *       decrypting in parallel with radio reception of address in nRF51/nRF52/nRF53.
+	 */
+	mode = (CCM_MODE_MODE_FastDecryption << CCM_MODE_MODE_Pos) &
 	       CCM_MODE_MODE_Msk;
 
-#if defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
 	/* Enable CCM Protocol Mode Bluetooth LE */
 	mode |= (CCM_MODE_PROTOCOL_Ble << CCM_MODE_PROTOCOL_Pos) &
 		CCM_MODE_PROTOCOL_Msk;
@@ -2117,20 +2120,26 @@ static void *radio_ccm_ext_rx_pkt_set(struct ccm *cnf, uint8_t phy, uint8_t pdu_
 		CCM_MODE_MACLEN_Msk;
 
 #elif !defined(CONFIG_SOC_SERIES_NRF51X)
+	mode = (CCM_MODE_MODE_Decryption << CCM_MODE_MODE_Pos) &
+	       CCM_MODE_MODE_Msk;
+
 	/* Enable CCM support for 8-bit length field PDUs. */
 	mode |= (CCM_MODE_LENGTH_Extended << CCM_MODE_LENGTH_Pos) &
 		CCM_MODE_LENGTH_Msk;
-#endif /* !CONFIG_SOC_SERIES_NRF51X */
+
+#else /* CONFIG_SOC_SERIES_NRF51X */
+	mode = (CCM_MODE_MODE_Decryption << CCM_MODE_MODE_Pos) &
+	       CCM_MODE_MODE_Msk;
+#endif /* CONFIG_SOC_SERIES_NRF51X */
 
 	/* Select CCM data rate based on current PHY in use. */
 	switch (phy) {
 	default:
 	case PHY_1M:
-#if !defined(CONFIG_SOC_SERIES_NRF51X)
-		mode |= (CCM_MODE_DATARATE_1Mbit <<
-			 CCM_MODE_DATARATE_Pos) &
+#if !defined(CONFIG_SOC_SERIES_NRF51X) && !defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
+		mode |= (CCM_MODE_DATARATE_1Mbit << CCM_MODE_DATARATE_Pos) &
 			CCM_MODE_DATARATE_Msk;
-#endif /* !CONFIG_SOC_SERIES_NRF51X */
+#endif /* !CONFIG_SOC_SERIES_NRF51X && !CONFIG_SOC_COMPATIBLE_NRF54LX */
 
 		if (false) {
 
@@ -2153,11 +2162,10 @@ static void *radio_ccm_ext_rx_pkt_set(struct ccm *cnf, uint8_t phy, uint8_t pdu_
 		break;
 
 	case PHY_2M:
-#if !defined(CONFIG_SOC_SERIES_NRF51X)
-		mode |= (CCM_MODE_DATARATE_2Mbit <<
-			 CCM_MODE_DATARATE_Pos) &
+#if !defined(CONFIG_SOC_SERIES_NRF51X) && !defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
+		mode |= (CCM_MODE_DATARATE_2Mbit << CCM_MODE_DATARATE_Pos) &
 			CCM_MODE_DATARATE_Msk;
-#endif /* !CONFIG_SOC_SERIES_NRF51X */
+#endif /* !CONFIG_SOC_SERIES_NRF51X && !CONFIG_SOC_COMPATIBLE_NRF54LX */
 
 		hal_trigger_crypt_ppi_config();
 		hal_radio_nrf_ppi_channels_enable(BIT(HAL_TRIGGER_CRYPT_PPI));
@@ -2167,9 +2175,10 @@ static void *radio_ccm_ext_rx_pkt_set(struct ccm *cnf, uint8_t phy, uint8_t pdu_
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
 #if defined(CONFIG_HAS_HW_NRF_RADIO_BLE_CODED)
 	case PHY_CODED:
-		mode |= (CCM_MODE_DATARATE_125Kbps <<
-			 CCM_MODE_DATARATE_Pos) &
+#if !defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
+		mode |= (CCM_MODE_DATARATE_125Kbps << CCM_MODE_DATARATE_Pos) &
 			CCM_MODE_DATARATE_Msk;
+#endif /* !CONFIG_SOC_COMPATIBLE_NRF54LX */
 
 		NRF_CCM->RATEOVERRIDE =
 			(CCM_RATEOVERRIDE_RATEOVERRIDE_500Kbps <<
