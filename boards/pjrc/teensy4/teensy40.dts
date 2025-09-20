@@ -12,8 +12,8 @@
 #include <mem.h>
 
 / {
-	model = "PJRC TEENSY 4.0 board";
 	compatible = "nxp,mimxrt1062";
+	model = "PJRC TEENSY 4.0 board";
 
 	aliases {
 		led0 = &board_led;
@@ -41,21 +41,20 @@
 };
 
 &flexspi {
-	status = "okay";
-
 	reg = <0x402a8000 0x4000>, <0x60000000 DT_SIZE_M(2)>;
+	status = "okay";
 
 	/* WINBOND flash memory*/
 	w25q16jvuxim: w25q16jvuxim@0 {
 		compatible = "nxp,imx-flexspi-nor";
-		size = <DT_SIZE_M(2 * 8)>;
 		reg = <0>;
+		size = <DT_SIZE_M(2 * 8)>;
 		spi-max-frequency = <DT_FREQ_M(133)>;
-		status = "okay";
 		jedec-id = [ef 40 15];
 
 		erase-block-size = <4096>;
 		write-block-size = <1>;
+		status = "okay";
 	};
 };
 
@@ -64,8 +63,8 @@ zephyr_udc0: &usb1 {
 };
 
 &lpuart6 {
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 };
 
 &edma0 {
