@@ -126,6 +126,12 @@
 	pinctrl-names = "default";
 };
 
+&lpadc1 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpadc1>;
+	pinctrl-names = "default";
+};
+
 &lpcmp0 {
 	pinctrl-0 = <&pinmux_lpcmp0>;
 	pinctrl-names = "default";
@@ -194,4 +200,16 @@
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_lpuart3>;
 	pinctrl-names = "default";
+};
+
+&opamp0 {
+	pinctrl-0 = <&pinmux_opamp0>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&opamp1 {
+	pinctrl-0 = <&pinmux_opamp1>;
+	pinctrl-names = "default";
+	status = "okay";
 };

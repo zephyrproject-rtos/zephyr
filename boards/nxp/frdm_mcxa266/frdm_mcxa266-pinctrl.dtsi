@@ -52,12 +52,30 @@
 		};
 	};
 
+	pinmux_lpadc1: pinmux_lpadc1 {
+		group0 {
+			pinmux = <ADC1_A2_P2_19>;
+			slew-rate = "fast";
+			drive-strength = "low";
+		};
+	};
+
 	pinmux_lpcmp0: pinmux_lpcmp0 {
 		group0 {
 			pinmux = <CMP0_IN1_P1_3>;
 			drive-strength = "low";
 			slew-rate = "fast";
 			bias-pull-up;
+		};
+	};
+
+	pinmux_opamp0: pinmux_opamp0 {
+		group0 {
+			pinmux = <OPAMP0_INP_P2_12>,
+					<OPAMP0_INN_P2_13>,
+					<OPAMP0_OUT_P2_15>;
+			drive-strength = "low";
+			slew-rate = "fast";
 		};
 	};
 

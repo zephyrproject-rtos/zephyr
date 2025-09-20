@@ -223,6 +223,26 @@ void board_early_init_hook(void)
 	SPC_EnableActiveModeAnalogModules(SPC0, (kSPC_controlCmp2 | kSPC_controlCmp2Dac));
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(opamp0))
+	RESET_ReleasePeripheralReset(kOPAMP0_RST_SHIFT_RSTn);
+	SPC_EnableActiveModeAnalogModules(SPC0, kSPC_controlOpamp0);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(opamp1))
+	RESET_ReleasePeripheralReset(kOPAMP1_RST_SHIFT_RSTn);
+	SPC_EnableActiveModeAnalogModules(SPC0, kSPC_controlOpamp1);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(opamp2))
+	RESET_ReleasePeripheralReset(kOPAMP2_RST_SHIFT_RSTn);
+	SPC_EnableActiveModeAnalogModules(SPC0, kSPC_controlOpamp2);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(opamp3))
+	RESET_ReleasePeripheralReset(kOPAMP3_RST_SHIFT_RSTn);
+	SPC_EnableActiveModeAnalogModules(SPC0, kSPC_controlOpamp3);
+#endif
+
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpi2c0))
 	CLOCK_SetClockDiv(kCLOCK_DivLPI2C0, 1u);
 	CLOCK_AttachClk(kFRO_LF_DIV_to_LPI2C0);

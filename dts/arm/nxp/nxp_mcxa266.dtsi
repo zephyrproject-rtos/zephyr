@@ -371,6 +371,34 @@
 			#io-channel-cells = <2>;
 		};
 
+		opamp0: opamp@400b7000 {
+			compatible = "nxp,opamp-fast";
+			reg = <0x400b7000 0x1000>;
+			status = "disabled";
+			clocks = <&syscon MCUX_OPAMP0_CLK>;
+		};
+
+		opamp1: opamp@400b8000 {
+			compatible = "nxp,opamp-fast";
+			reg = <0x400b8000 0x1000>;
+			status = "disabled";
+			clocks = <&syscon MCUX_OPAMP1_CLK>;
+		};
+
+		opamp2: opamp@400b9000 {
+			compatible = "nxp,opamp-fast";
+			reg = <0x400b9000 0x1000>;
+			status = "disabled";
+			clocks = <&syscon MCUX_OPAMP2_CLK>;
+		};
+
+		opamp3: opamp@400ba000 {
+			compatible = "nxp,opamp-fast";
+			reg = <0x400ba000 0x1000>;
+			status = "disabled";
+			clocks = <&syscon MCUX_OPAMP3_CLK>;
+		};
+
 		lpi2c0: i2c@4009a000 {
 			compatible = "nxp,lpi2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
