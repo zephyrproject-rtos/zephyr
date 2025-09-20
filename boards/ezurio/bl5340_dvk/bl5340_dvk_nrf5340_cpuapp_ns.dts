@@ -10,8 +10,8 @@
 #include "bl5340_dvk_nrf5340_cpuapp_common.dtsi"
 
 / {
-	model = "Ezurio BL5340 (nRF5340) Application";
 	compatible = "ezurio,bl5340-dvk-cpuapp";
+	model = "Ezurio BL5340 (nRF5340) Application";
 
 	chosen {
 		zephyr,sram = &sram0_ns;

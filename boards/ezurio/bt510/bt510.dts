@@ -11,8 +11,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Ezurio Sentrius BT510 Sensor";
 	compatible = "ezurio,bt510";
+	model = "Ezurio Sentrius BT510 Sensor";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -100,19 +100,19 @@
 &uart0 {
 	compatible = "nordic,nrf-uarte";
 	current-speed = <115200>;
-	status = "okay";
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &i2c0 {
 	compatible = "nordic,nrf-twim";
-	status = "okay";
 
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-1 = <&i2c0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	lis2dh12: lis2dh12@18 {
 		compatible = "st,lis2dh12", "st,lis2dh";
@@ -140,26 +140,26 @@
 
 		/* 96K */
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 0x00018000>;
+			label = "mcuboot";
 		};
 
 		/* 396K */
 		slot0_partition: partition@18000 {
-			label = "image-0";
 			reg = <0x00018000 0x00063000>;
+			label = "image-0";
 		};
 
 		/* 396K */
 		slot1_partition: partition@7b000 {
-			label = "image-1";
 			reg = <0x0007b000 0x00063000>;
+			label = "image-1";
 		};
 
 		/* 8K */
 		scratch_partition: partition@de000 {
-			label = "image-scratch";
 			reg = <0x000de000 0x00002000>;
+			label = "image-scratch";
 		};
 
 		/*
@@ -173,8 +173,8 @@
 		 */
 		/* 128K */
 		storage_partition: partition@e0000 {
-			label = "storage";
 			reg = <0x000e0000 0x00020000>;
+			label = "storage";
 		};
 	};
 };
