@@ -9,8 +9,8 @@
 #include "dt_bl10_devkit-pinctrl.dtsi"
 
 / {
-	model = "2.4GHz Wi-Fi and BLE coexistence Module Development Kit";
 	compatible = "bflb,bl602";
+	model = "2.4GHz Wi-Fi and BLE coexistence Module Development Kit";
 
 	chosen {
 		zephyr,flash = &flash0;
@@ -41,24 +41,24 @@
 			#size-cells = <1>;
 
 			slot0_partition: partition@0 {
-				label = "image-0";
 				reg = <0x00000000 0x100000>;
+				label = "image-0";
 				read-only;
 			};
 
 			storage_partition: partition@100000 {
-				label = "storage";
 				reg = <0x00100000 (0xF00000 - 0x2000)>;
+				label = "storage";
 			};
 		};
 	};
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
 
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
