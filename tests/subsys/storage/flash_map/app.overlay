@@ -4,7 +4,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  *
- * Test compilation with disabled flash nodes.
+ * Test compilation with subpartitions and disabled flash nodes.
  */
 
 / {
@@ -19,12 +19,40 @@
 			#size-cells = <1>;
 
 			disabled_a: partition@0 {
+				compatible = "fixed-subpartitions";
 				label = "disabled_a";
 				reg = <0x00000000 0x00001000>;
+				ranges = <0x0 0x0 0x1000>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				disabled_a_a: partition@0 {
+					label = "disabled_a_a";
+					reg = <0x00000000 0x100>;
+				};
+
+				disabled_a_b: partition@100 {
+					label = "disabled_a_b";
+					reg = <0x00000100 0xF00>;
+				};
 			};
 			disabled_b: partition@1000 {
+				compatible = "fixed-subpartitions";
 				label = "disabled_b";
 				reg = <0x00001000 0x00001000>;
+				ranges = <0x0 0x1000 0x1000>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				disabled_b_a: partition@0 {
+					label = "disabled_b_a";
+					reg = <0x00000000 0x100>;
+				};
+
+				disabled_b_b: partition@100 {
+					label = "disabled_b_b";
+					reg = <0x00000100 0xF00>;
+				};
 			};
 		};
 	};
