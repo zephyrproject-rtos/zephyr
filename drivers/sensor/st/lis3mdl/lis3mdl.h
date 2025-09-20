@@ -10,85 +10,88 @@
 #include <zephyr/device.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/types.h>
-#include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/kernel.h>
 
-#define LIS3MDL_REG_WHO_AM_I            0x0F
-#define LIS3MDL_CHIP_ID                 0x3D
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+#include <zephyr/drivers/spi.h>
+#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(spi) */
 
-#define LIS3MDL_REG_CTRL1               0x20
-#define LIS3MDL_TEMP_EN_MASK            BIT(7)
-#define LIS3MDL_TEMP_EN_SHIFT           7
-#define LIS3MDL_OM_MASK                 (BIT(6) | BIT(5))
-#define LIS3MDL_OM_SHIFT                5
-#define LIS3MDL_MAG_DO_MASK             (BIT(4) | BIT(3) | BIT(2))
-#define LIS3MDL_DO_SHIFT                2
-#define LIS3MDL_FAST_ODR_MASK           BIT(1)
-#define LIS3MDL_FAST_ODR_SHIFT          1
-#define LIS3MDL_ST_MASK                 BIT(0)
-#define LIS3MDL_ST_SHIFT                0
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
+#include <zephyr/drivers/i2c.h>
+#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c) */
 
-#define LIS3MDL_ODR_BITS(om_bits, do_bits, fast_odr)	\
-	(((om_bits) << LIS3MDL_OM_SHIFT) |		\
-	 ((do_bits) << LIS3MDL_DO_SHIFT) |		\
+#define LIS3MDL_REG_WHO_AM_I 0x0F
+#define LIS3MDL_CHIP_ID      0x3D
+
+#define LIS3MDL_REG_CTRL1      0x20
+#define LIS3MDL_TEMP_EN_MASK   BIT(7)
+#define LIS3MDL_TEMP_EN_SHIFT  7
+#define LIS3MDL_OM_MASK        (BIT(6) | BIT(5))
+#define LIS3MDL_OM_SHIFT       5
+#define LIS3MDL_MAG_DO_MASK    (BIT(4) | BIT(3) | BIT(2))
+#define LIS3MDL_DO_SHIFT       2
+#define LIS3MDL_FAST_ODR_MASK  BIT(1)
+#define LIS3MDL_FAST_ODR_SHIFT 1
+#define LIS3MDL_ST_MASK        BIT(0)
+#define LIS3MDL_ST_SHIFT       0
+
+#define LIS3MDL_ODR_BITS(om_bits, do_bits, fast_odr)                                               \
+	(((om_bits) << LIS3MDL_OM_SHIFT) | ((do_bits) << LIS3MDL_DO_SHIFT) |                       \
 	 ((fast_odr) << LIS3MDL_FAST_ODR_SHIFT))
 
-#define LIS3MDL_REG_CTRL2               0x21
-#define LIS3MDL_FS_MASK                 (BIT(6) | BIT(5))
-#define LIS3MDL_FS_SHIFT                5
-#define LIS3MDL_REBOOT_MASK             BIT(3)
-#define LIS3MDL_REBOOT_SHIFT            3
-#define LIS3MDL_SOFT_RST_MASK           BIT(2)
-#define LIS3MDL_SOFT_RST_SHIFT          2
+#define LIS3MDL_REG_CTRL2      0x21
+#define LIS3MDL_FS_MASK        (BIT(6) | BIT(5))
+#define LIS3MDL_FS_SHIFT       5
+#define LIS3MDL_REBOOT_MASK    BIT(3)
+#define LIS3MDL_REBOOT_SHIFT   3
+#define LIS3MDL_SOFT_RST_MASK  BIT(2)
+#define LIS3MDL_SOFT_RST_SHIFT 2
 
-#define LIS3MDL_FS_IDX                  ((CONFIG_LIS3MDL_FS / 4) - 1)
+#define LIS3MDL_FS_IDX ((CONFIG_LIS3MDL_FS / 4) - 1)
 
 /* guard against invalid CONFIG_LIS3MDL_FS values */
 #if CONFIG_LIS3MDL_FS % 4 != 0 || LIS3MDL_FS_IDX < -1 || LIS3MDL_FS_IDX >= 4
 #error "Invalid value for CONFIG_LIS3MDL_FS"
 #endif
 
-#define LIS3MDL_REG_CTRL3               0x22
-#define LIS3MDL_LP_MASK                 BIT(5)
-#define LIS3MDL_LP_SHIFT                5
-#define LIS3MDL_SIM_MASK                BIT(2)
-#define LIS3MDL_SIM_SHIFT               2
-#define LIS3MDL_MD_MASK                 (BIT(1) | BIT(0))
-#define LIS3MDL_MD_SHIFT                0
+#define LIS3MDL_REG_CTRL3 0x22
+#define LIS3MDL_LP_MASK   BIT(5)
+#define LIS3MDL_LP_SHIFT  5
+#define LIS3MDL_SIM_MASK  BIT(2)
+#define LIS3MDL_SIM_SHIFT 2
+#define LIS3MDL_MD_MASK   (BIT(1) | BIT(0))
+#define LIS3MDL_MD_SHIFT  0
 
-#define LIS3MDL_MD_CONTINUOUS           0
-#define LIS3MDL_MD_SINGLE               1
-#define LIS3MDL_MD_POWER_DOWN           2
-#define LIS3MDL_MD_POWER_DOWN_AUTO      3
+#define LIS3MDL_MD_CONTINUOUS      0
+#define LIS3MDL_MD_SINGLE          1
+#define LIS3MDL_MD_POWER_DOWN      2
+#define LIS3MDL_MD_POWER_DOWN_AUTO 3
 
-#define LIS3MDL_REG_CTRL4               0x23
-#define LIS3MDL_OMZ_MASK                (BIT(3) | BIT(2))
-#define LIS3MDL_OMZ_SHIFT               2
-#define LIS3MDL_BLE_MASK                BIT(1)
-#define LIS3MDL_BLE_SHIFT               1
+#define LIS3MDL_REG_CTRL4 0x23
+#define LIS3MDL_OMZ_MASK  (BIT(3) | BIT(2))
+#define LIS3MDL_OMZ_SHIFT 2
+#define LIS3MDL_BLE_MASK  BIT(1)
+#define LIS3MDL_BLE_SHIFT 1
 
-#define LIS3MDL_REG_CTRL5               0x24
-#define LIS3MDL_FAST_READ_MASK          BIT(7)
-#define LIS3MDL_FAST_READ_SHIFT         7
-#define LIS3MDL_BDU_MASK                BIT(6)
-#define LIS3MDL_BDU_SHIFT               6
+#define LIS3MDL_REG_CTRL5       0x24
+#define LIS3MDL_FAST_READ_MASK  BIT(7)
+#define LIS3MDL_FAST_READ_SHIFT 7
+#define LIS3MDL_BDU_MASK        BIT(6)
+#define LIS3MDL_BDU_SHIFT       6
 
-#define LIS3MDL_BDU_EN                  (1 << LIS3MDL_BDU_SHIFT)
+#define LIS3MDL_BDU_EN (1 << LIS3MDL_BDU_SHIFT)
 
-#define LIS3MDL_REG_SAMPLE_START        0x28
+#define LIS3MDL_REG_SAMPLE_START 0x28
 
-#define LIS3MDL_REG_INT_CFG             0x30
-#define LIS3MDL_INT_X_EN                BIT(7)
-#define LIS3MDL_INT_Y_EN                BIT(6)
-#define LIS3MDL_INT_Z_EN                BIT(5)
-#define LIS3MDL_INT_XYZ_EN              \
-	(LIS3MDL_INT_X_EN | LIS3MDL_INT_Y_EN | LIS3MDL_INT_Z_EN)
+#define LIS3MDL_REG_INT_CFG 0x30
+#define LIS3MDL_INT_X_EN    BIT(7)
+#define LIS3MDL_INT_Y_EN    BIT(6)
+#define LIS3MDL_INT_Z_EN    BIT(5)
+#define LIS3MDL_INT_XYZ_EN  (LIS3MDL_INT_X_EN | LIS3MDL_INT_Y_EN | LIS3MDL_INT_Z_EN)
 
-static const char * const lis3mdl_odr_strings[] = {
-	"0.625", "1.25", "2.5", "5", "10", "20",
-	"40", "80", "155", "300", "560", "1000"
-};
+static const char *const lis3mdl_odr_strings[] = {"0.625", "1.25", "2.5", "5",   "10",  "20",
+						  "40",    "80",   "155", "300", "560", "1000"};
 
 static const uint8_t lis3mdl_odr_bits[] = {
 	LIS3MDL_ODR_BITS(0, 0, 0), /* 0.625 Hz */
@@ -105,9 +108,11 @@ static const uint8_t lis3mdl_odr_bits[] = {
 	LIS3MDL_ODR_BITS(0, 0, 1)  /* 1000 Hz */
 };
 
-static const uint16_t lis3mdl_magn_gain[] = {
-	6842, 3421, 2281, 1711
-};
+// Read / write interface
+typedef int (*lis3mdl_write_t)(const struct device *, const uint8_t, uint8_t *, uint8_t);
+typedef int (*lis3mdl_read_t)(const struct device *, const uint8_t, uint8_t *, uint8_t);
+
+static const uint16_t lis3mdl_magn_gain[] = {6842, 3421, 2281, 1711};
 
 struct lis3mdl_data {
 	int16_t x_sample;
@@ -134,15 +139,23 @@ struct lis3mdl_data {
 };
 
 struct lis3mdl_config {
-	struct i2c_dt_spec i2c;
+	union {
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
+		const struct i2c_dt_spec i2c;
+#endif
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+		const struct spi_dt_spec spi;
+#endif
+	};
+	lis3mdl_write_t write;
+	lis3mdl_read_t read;
 #ifdef CONFIG_LIS3MDL_TRIGGER
 	struct gpio_dt_spec irq_gpio;
 #endif
 };
 
 #ifdef CONFIG_LIS3MDL_TRIGGER
-int lis3mdl_trigger_set(const struct device *dev,
-			const struct sensor_trigger *trig,
+int lis3mdl_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
 			sensor_trigger_handler_t handler);
 
 int lis3mdl_sample_fetch(const struct device *dev, enum sensor_channel chan);
