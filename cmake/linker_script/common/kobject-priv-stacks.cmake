@@ -7,7 +7,7 @@ if(CONFIG_USERSPACE)
     # Padding is needed to preserve kobject addresses
     # if we have reserved more space than needed.
     zephyr_linker_section(NAME .priv_stacks_noinit GROUP NOINIT_REGION NOINPUT NOINIT
-                MIN_SIZE @KOBJECT_PRIV_STACKS_SZ,undef:0@ MAX_SIZE @KOBJECT_PRIV_STACKS_SZ,undef:0@)
+                MIN_SIZE @KOBJECT_PRIV_STACKS_SZ:undef=0@ MAX_SIZE @KOBJECT_PRIV_STACKS_SZ:undef=0@)
 
     zephyr_linker_section_configure(
       SECTION .priv_stacks_noinit
@@ -23,7 +23,7 @@ if(CONFIG_USERSPACE)
     # during the final stages of linking (LINKER_ZEPHYR_FINAL).
     zephyr_linker_section_configure(
       SECTION .priv_stacks_noinit
-      ALIGN @KOBJECT_PRIV_STACKS_ALIGN,undef:0@
+      ALIGN @KOBJECT_PRIV_STACKS_ALIGN:undef=0@
       INPUT ".priv_stacks.noinit"
       KEEP
       PASS LINKER_ZEPHYR_PREBUILT LINKER_ZEPHYR_FINAL
