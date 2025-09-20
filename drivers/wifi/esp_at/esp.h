@@ -221,6 +221,7 @@ struct esp_data {
 	uint8_t mode;
 
 	char conn_cmd[CONN_CMD_MAX_LEN];
+	enum wifi_conn_status conn_status;
 
 	/* addresses  */
 	struct in_addr ip;
