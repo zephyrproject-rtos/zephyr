@@ -71,8 +71,8 @@
 
 		/* Reserved memory for the second stage bootloader */
 		second_stage_bootloader: partition@0 {
-			label = "second_stage_bootloader";
 			reg = <0x00000000 0x100>;
+			label = "second_stage_bootloader";
 			read-only;
 		};
 
@@ -81,8 +81,8 @@
 		 * size is 2MB minus the 0x100 bytes taken by the bootloader.
 		 */
 		code_partition: partition@100 {
-			label = "code-partition";
 			reg = <0x100 (DT_SIZE_M(2) - 0x100)>;
+			label = "code-partition";
 			read-only;
 		};
 	};
@@ -90,9 +90,9 @@
 
 &uart0 {
 	current-speed = <115200>;
-	status = "okay";
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &gpio0 {
@@ -101,23 +101,23 @@
 
 &i2c0 {
 	clock-frequency = <I2C_BITRATE_STANDARD>;
-	status = "okay";
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &i2c1 {
 	pinctrl-0 = <&i2c1_default>;
 	pinctrl-names = "default";
-	status = "disabled";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "disabled";
 };
 
 &spi0 {
 	clock-frequency = <DT_FREQ_M(8)>;
-	status = "okay";
 	pinctrl-0 = <&spi0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &timer {
@@ -134,9 +134,9 @@
 };
 
 &adc {
-	status = "okay";
 	pinctrl-0 = <&adc_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 zephyr_udc0: &usbd {
