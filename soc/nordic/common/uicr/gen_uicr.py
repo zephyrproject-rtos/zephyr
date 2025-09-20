@@ -25,6 +25,8 @@ PERIPHCONF_SECTION = "uicr_periphconf_entry"
 ENABLED_VALUE = 0xFFFF_FFFF
 DISABLED_VALUE = 0xBD23_28A8
 
+KB_4 = 4096
+
 
 class ScriptError(RuntimeError): ...
 
@@ -256,6 +258,16 @@ def main() -> None:
         help="Absolute flash address of the UICR region (decimal or 0x-prefixed hex)",
     )
     parser.add_argument(
+        "--protectedmem",
+        action="store_true",
+        help="Enable protected memory region in UICR",
+    )
+    parser.add_argument(
+        "--protectedmem-size-bytes",
+        type=int,
+        help="Protected memory size in bytes (must be divisible by 4096)",
+    )
+    parser.add_argument(
         "--secondary",
         action="store_true",
         help="Enable secondary firmware support in UICR",
@@ -265,6 +277,12 @@ def main() -> None:
         default=None,
         type=lambda s: int(s, 0),
         help="Absolute flash address of the secondary firmware (decimal or 0x-prefixed hex)",
+    )
+    parser.add_argument(
+        "--secondary-processor",
+        default=0xBD2328A8,
+        type=lambda s: int(s, 0),
+        help="Processor to boot for the secondary firmware ",
     )
     parser.add_argument(
         "--secondary-periphconf-address",
@@ -333,6 +351,16 @@ def main() -> None:
         uicr.VERSION.MAJOR = UICR_FORMAT_VERSION_MAJOR
         uicr.VERSION.MINOR = UICR_FORMAT_VERSION_MINOR
 
+        # Handle protected memory configuration
+        if args.protectedmem:
+            if args.protectedmem_size_bytes % KB_4 != 0:
+                raise ScriptError(
+                    f"Protected memory size ({args.protectedmem_size_bytes} bytes) "
+                    f"must be divisible by {KB_4}"
+                )
+            uicr.PROTECTEDMEM.ENABLE = ENABLED_VALUE
+            uicr.PROTECTEDMEM.SIZE4KB = args.protectedmem_size_bytes // KB_4
+
         # Process periphconf data first and configure UICR completely before creating hex objects
         periphconf_hex = IntelHex()
         secondary_periphconf_hex = IntelHex()
@@ -366,6 +394,7 @@ def main() -> None:
         if args.secondary:
             uicr.SECONDARY.ENABLE = ENABLED_VALUE
             uicr.SECONDARY.ADDRESS = args.secondary_address
+            uicr.SECONDARY.PROCESSOR = args.secondary_processor
 
             # Handle secondary periphconf if provided
             if args.out_secondary_periphconf_hex:
