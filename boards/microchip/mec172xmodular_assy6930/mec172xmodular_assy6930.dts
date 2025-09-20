@@ -10,8 +10,8 @@
 #include <microchip/mec/mec172x/mec172xnsz-pinctrl.dtsi>
 
 / {
-	model = "Microchip MEC172XMODULAR_ASSY6930 evaluation board";
 	compatible = "microchip,mec172xmodular_assy6930", "microchip,mec172xnsz";
+	model = "Microchip MEC172XMODULAR_ASSY6930 evaluation board";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -75,26 +75,26 @@
 };
 
 &uart1 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart1_tx_gpio170 &uart1_rx_gpio171>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &adc0 {
-	status = "okay";
 	pinctrl-0 = <&adc00_gpio200 &adc03_gpio203
 		     &adc04_gpio204 &adc05_gpio205>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &espi0 {
-	status = "okay";
 	pinctrl-0 = <&espi_reset_n_gpio061 &espi_cs_n_gpio066
 		     &espi_alert_n_gpio063 &espi_clk_gpio065
 		     &espi_io0_gpio070 &espi_io1_gpio071
 		     &espi_io2_gpio072 &espi_io3_gpio073>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 /* enable various eSPI child devices (host facing) */
@@ -120,11 +120,11 @@
 
 /* I2C */
 &i2c_smb_0 {
-	status = "okay";
 	port-sel = <0>;
 
 	pinctrl-0 = <&i2c00_scl_gpio004 &i2c00_sda_gpio003>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &i2c00_scl_gpio004 {
@@ -140,10 +140,10 @@
 };
 
 &i2c_smb_1 {
-	status = "okay";
 	port-sel = <1>;
 	pinctrl-0 = <&i2c01_scl_gpio131 &i2c01_sda_gpio130>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &i2c01_scl_gpio131 {
@@ -159,10 +159,10 @@
 };
 
 &i2c_smb_2 {
-	status = "okay";
 	port-sel = <7>;
 	pinctrl-0 = <&i2c07_scl_gpio013 &i2c07_sda_gpio012>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &i2c07_scl_gpio013 {
@@ -178,7 +178,6 @@
 };
 
 &spi0 {
-	status = "okay";
 	compatible = "microchip,xec-qmspi-ldma";
 	clock-frequency = <4000000>;
 	lines = <4>;
@@ -191,11 +190,10 @@
 		     &shd_io2_gpio227
 		     &shd_io3_gpio016>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &kbd0 {
-	status = "okay";
-
 	pinctrl-0 = <&ksi0_gpio017 &ksi1_gpio020 &ksi2_gpio021 &ksi3_gpio026
 		     &ksi4_gpio027 &ksi5_gpio030 &ksi6_gpio031 &ksi7_gpio032
 		     &kso00_gpio040 &kso01_gpio045 &kso02_gpio046 &kso03_gpio047
@@ -213,6 +211,7 @@
 	pinctrl-names = "default", "sleep";
 	row-size = <8>;
 	col-size = <16>;
+	status = "okay";
 };
 
 &ksi0_gpio017 {
@@ -248,19 +247,19 @@
 };
 
 &pwm0 {
-	status = "okay";
 	pinctrl-0 = <&pwm0_gpio053>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &tach0 {
-	status = "okay";
 	pinctrl-0 = <&tach0_gpio050>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &ps2_0 {
-	status = "okay";
 	pinctrl-0 = <&ps2_clk0a_gpio114 &ps2_dat0a_gpio115>;
 	pinctrl-names = "default";
+	status = "okay";
 };
