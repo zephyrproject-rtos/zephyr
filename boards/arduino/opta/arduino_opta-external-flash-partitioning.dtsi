@@ -16,26 +16,26 @@
 
 			/* Partition 1: WiFi firmware and certificates 1MB - 4kB */
 			wlan_partition: partition@1000 {
-				label = "wlan";
 				reg = <0x001000 DT_SIZE_K(1020)>;
+				label = "wlan";
 			};
 
 			/* Partition 2: OTA 5MB */
 			ota_partition: partition@100000 {
-				label = "ota";
 				reg = <0x100000 DT_SIZE_M(5)>;
+				label = "ota";
 			};
 
 			/* Partition 3: Provisioning KVStore 1MB */
 			kvs_partition: partition@600000 {
-				label = "kvs";
 				reg = <0x600000 DT_SIZE_M(1)>;
+				label = "kvs";
 			};
 
 			/* Partition 4: User data / OPTA PLC runtime 7MB (littlefs) */
 			user_partition: partition@700000 {
-				label = "user";
 				reg = <0x00000 DT_SIZE_M(7)>;
+				label = "user";
 			};
 		};
 	};

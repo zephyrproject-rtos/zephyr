@@ -11,8 +11,8 @@
 #include <zephyr/dt-bindings/led/led.h>
 
 / {
-	model = "Arduino Nicla Sense ME";
 	compatible = "arduino,arduino_nicla_sense_me";
+	model = "Arduino Nicla Sense ME";
 
 	gpio_keys {
 		compatible = "gpio-keys";
@@ -20,8 +20,8 @@
 		user_button: button {
 			label = "user button";
 			gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
-			status = "okay";
 			zephyr,code = <INPUT_KEY_0>;
+			status = "okay";
 		};
 	};
 
@@ -60,20 +60,20 @@
 
 &uart0 {
 	compatible = "nordic,nrf-uarte";
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 /* I2C0 in datasheet */
 &i2c0 {
 	compatible = "nordic,nrf-twim";
-	status = "okay";
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-1 = <&i2c0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	is31fl3194@53 {
 		compatible = "issi,is31fl3194";
@@ -92,11 +92,11 @@
 /* I2C1 in datasheet */
 zephyr_i2c: &i2c1 {
 	compatible = "nordic,nrf-twim";
-	/* Cannot be used together with spi1. */
-	status = "okay";
 	pinctrl-0 = <&i2c1_default>;
 	pinctrl-1 = <&i2c1_sleep>;
 	pinctrl-names = "default", "sleep";
+	/* Cannot be used together with spi1. */
+	status = "okay";
 };
 
 /* SPI1 in datasheet */
@@ -112,11 +112,11 @@ zephyr_i2c: &i2c1 {
 /* SPI0 in datasheet */
 &spi2 {
 	compatible = "nordic,nrf-spi";
-	status = "okay";
 	pinctrl-0 = <&spi2_default>;
 	pinctrl-1 = <&spi2_sleep>;
 	pinctrl-names = "default", "sleep";
 	cs-gpios = <&gpio0 26 GPIO_ACTIVE_LOW>;
+	status = "okay";
 
 	mx25r1635f: mx25r1635f@0 {
 		compatible = "jedec,spi-nor";
@@ -134,8 +134,8 @@ zephyr_i2c: &i2c1 {
 			#size-cells = <1>;
 
 			logging_partition: partition@0 {
-				label = "logging";
 				reg = <0x00000000 DT_SIZE_M(16)>;
+				label = "logging";
 			};
 		};
 	};
@@ -148,29 +148,29 @@ zephyr_i2c: &i2c1 {
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "sam-ba";
 			reg = <0x00000000 0x00010000>;
+			label = "sam-ba";
 			read-only;
 		};
 
 		slot0_partition: partition@10000 {
-			label = "image-0";
 			reg = <0x00010000 0x30000>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@40000 {
-			label = "image-1";
 			reg = <0x00040000 0x30000>;
+			label = "image-1";
 		};
 
 		scratch_partition: partition@70000 {
-			label = "image-scratch";
 			reg = <0x00070000 0xa000>;
+			label = "image-scratch";
 		};
 
 		storage_partition: partition@7a000 {
-			label = "storage";
 			reg = <0x0007a000 0x00006000>;
+			label = "storage";
 		};
 	};
 };

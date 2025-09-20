@@ -67,9 +67,9 @@ sdhc: &sdmmc1 {
 	status = "okay";
 
 	wifi: airoc-wifi {
-		status = "okay";
 		compatible = "infineon,airoc-wifi";
 		wifi-reg-on-gpios = <&gpiob 10 GPIO_ACTIVE_HIGH>;
 		wifi-host-wake-gpios = <&gpioi 8 GPIO_ACTIVE_HIGH>;
+		status = "okay";
 	};
 };

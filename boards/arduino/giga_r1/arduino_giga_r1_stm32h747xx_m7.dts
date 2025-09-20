@@ -11,8 +11,8 @@
 #include "arduino_giga_r1.dtsi"
 
 / {
-	model = "Arduino GIGA R1 WiFi Board (M7)";
 	compatible = "arduino,giga-r1";
+	model = "Arduino GIGA R1 WiFi Board (M7)";
 
 	chosen {
 		zephyr,console = &usart1;
@@ -27,8 +27,8 @@
 
 	sdram1: sdram@c0000000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
-		device_type = "memory";
 		reg = <0xc0000000 DT_SIZE_M(8)>;
+		device_type = "memory";
 		zephyr,memory-region = "SDRAM1";
 		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
 	};
@@ -41,8 +41,8 @@
 };
 
 &clk_hse {
-	status = "okay";
 	clock-frequency = <DT_FREQ_M(16)>;
+	status = "okay";
 };
 
 &clk_lse {
@@ -69,24 +69,24 @@
 };
 
 &usart1 {
-	status = "okay";
 	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pb7>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
+	status = "okay";
 };
 
 &usart6 {
-	status = "disabled";
 	pinctrl-0 = <&usart6_tx_pg14 &usart6_rx_pc7>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
+	status = "disabled";
 };
 
 &uart4 {
-	status = "disabled";
 	pinctrl-0 = <&uart4_tx_ph13 &uart4_rx_pi9>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
+	status = "disabled";
 };
 
 &uart7 {
@@ -94,8 +94,8 @@
 		     &uart7_cts_pf9 &uart7_rts_pf8>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
-	status = "okay";
 	hw-flow-control;
+	status = "okay";
 
 	bt_hci_uart: bt_hci_uart {
 		compatible = "zephyr,bt-hci-uart";
@@ -112,39 +112,39 @@
 };
 
 &i2c4 {
-	status = "okay";
 	pinctrl-0 = <&i2c4_scl_pb6 &i2c4_sda_ph12>;
 	pinctrl-names = "default";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
+	status = "okay";
 };
 
 &i2c1 {
-	status = "disabled";
 	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
 	pinctrl-names = "default";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "disabled";
 };
 
 &i2c2 {
-	status = "disabled";
 	pinctrl-0 = <&i2c2_scl_ph4 &i2c2_sda_pb11>;
 	pinctrl-names = "default";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "disabled";
 };
 
 &spi5 {
-	status = "okay";
 	pinctrl-0 = <&spi5_nss_pk1 &spi5_sck_ph6
 		     &spi5_miso_pj11 &spi5_mosi_pj10>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &fdcan2 {
-	status = "okay";
 	pinctrl-0 = <&fdcan2_tx_pb13 &fdcan2_rx_pb5>;
 	pinctrl-names = "default";
 	clocks = <&rcc STM32_CLOCK(APB1_2, 8)>,
 		 <&rcc STM32_SRC_PLL1_Q FDCAN_SEL(1)>;
+	status = "okay";
 };
 
 &flash0 {
@@ -154,14 +154,14 @@
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "bootloader";
 			reg = <0x0 0x40000>;
+			label = "bootloader";
 			read-only;
 		};
 
 		slot0_partition: partition@40000 {
-			label = "image-0";
 			reg = <0x40000 0x000c0000>;
+			label = "image-0";
 		};
 	};
 };
@@ -187,13 +187,13 @@
 			#size-cells = <1>;
 
 			slot1_partition: partition@0 {
-				label = "image-1";
 				reg = <0x00000000 DT_SIZE_M(1)>;
+				label = "image-1";
 			};
 
 			storage_partition: partition@100000 {
-				label = "storage";
 				reg = <0x00100000 DT_SIZE_M(15)>;
+				label = "storage";
 			};
 		};
 	};
@@ -204,13 +204,12 @@
 };
 
 &dac1 {
-	status = "okay";
 	pinctrl-0 = <&dac1_out1_pa4 &dac1_out2_pa5>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &fmc {
-	status = "okay";
 	pinctrl-0 = <&fmc_nbl0_pe0 &fmc_nbl1_pe1
 		     &fmc_sdclk_pg8 &fmc_sdnwe_ph5 &fmc_sdcke0_ph2
 		     &fmc_sdne0_ph3 &fmc_sdnras_pf11 &fmc_sdncas_pg15
@@ -223,14 +222,14 @@
 		     &fmc_d8_pe11 &fmc_d9_pe12 &fmc_d10_pe13 &fmc_d11_pe14
 		     &fmc_d12_pe15 &fmc_d13_pd8 &fmc_d14_pd9 &fmc_d15_pd10>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	sdram {
-		status = "okay";
-
 		power-up-delay = <100>;
 		num-auto-refresh = <8>;
 		mode-register = <0x220>;
 		refresh-rate = <603>;
+		status = "okay";
 
 		bank@0 {
 			reg = <0>;
@@ -248,9 +247,9 @@
 };
 
 zephyr_udc0: &usbotg_fs {
-	status = "okay";
 	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 /* alias used by display shields */
