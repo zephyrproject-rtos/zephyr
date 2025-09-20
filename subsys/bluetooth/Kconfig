@@ -15,6 +15,12 @@ menuconfig BT
 
 if BT
 
+config BT_ORIGINAL_API
+	bool "Enable Original API"
+	default y
+	help
+		Enable Original API for Bluetooth.
+
 choice BT_STACK_SELECTION
 	prompt "Bluetooth Stack Selection"
 	default BT_HCI

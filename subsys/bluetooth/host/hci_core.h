@@ -165,6 +165,9 @@ enum {
 };
 
 struct bt_le_ext_adv {
+	/* HCI device this advertiser belongs to */
+	struct bt_dev *hdev;
+
 	/* ID Address used for advertising */
 	uint8_t                 id;
 
@@ -338,6 +341,9 @@ struct bt_dev_br {
 
 /* State tracking for the local Bluetooth controller */
 struct bt_dev {
+	/* Local Bluetooth Device identity */
+	uint8_t dev_id;
+
 	/* Local Identity Address(es) */
 	bt_addr_le_t            id_addr[CONFIG_BT_ID_MAX];
 	uint8_t                    id_count;
@@ -414,6 +420,12 @@ struct bt_dev {
 	/* Queue for outgoing HCI commands */
 	struct k_fifo		cmd_tx_queue;
 
+	/* Work for handling HCI events & ACL data */
+	struct k_work       rx_work;
+
+	/* Work used to process Tx data */
+	struct k_work       tx_work;
+
 	const struct device *hci;
 
 #if defined(CONFIG_BT_PRIVACY)
@@ -440,6 +452,8 @@ struct bt_dev {
 	/* Appearance Value */
 	uint16_t		appearance;
 #endif
+
+	bt_ready_cb_t ready_cb;
 };
 
 extern struct bt_dev bt_dev;
@@ -447,7 +461,7 @@ extern const struct bt_conn_auth_cb *bt_auth;
 extern sys_slist_t bt_auth_info_cbs;
 enum bt_security_err bt_security_err_get(uint8_t hci_err);
 
-int bt_hci_recv(const struct device *dev, struct net_buf *buf);
+int bt_hci_recv(const struct device *dev, struct net_buf *buf, void *user_data);
 
 /* Data type to store state related with command to be updated
  * when command completes successfully.
@@ -460,6 +474,8 @@ struct bt_hci_cmd_state_set {
 	/* Value to determine if enable or disable bit */
 	bool val;
 };
+
+struct bt_dev *bt_dev_get(uint8_t dev_id);
 
 /* Set command state related with the command buffer */
 void bt_hci_cmd_state_set_init(struct net_buf *buf,
@@ -490,7 +506,7 @@ int bt_le_create_conn_synced(const struct bt_conn *conn, const struct bt_le_ext_
 
 const bt_addr_le_t *bt_lookup_id_addr(uint8_t id, const bt_addr_le_t *addr);
 
-int bt_send(struct net_buf *buf);
+int bt_send(struct bt_dev *hdev, struct net_buf *buf);
 
 /* Don't require everyone to include keys.h */
 struct bt_keys;
@@ -499,10 +515,10 @@ void bt_id_del(struct bt_keys *keys);
 
 struct bt_keys *bt_id_find_conflict(struct bt_keys *candidate);
 
-int bt_setup_random_id_addr(void);
-int bt_setup_public_id_addr(void);
+int bt_setup_random_id_addr(struct bt_dev *hdev);
+int bt_setup_public_id_addr(struct bt_dev *hdev);
 
-void bt_finalize_init(void);
+void bt_finalize_init(struct bt_dev *hdev);
 
 void bt_hci_host_num_completed_packets(struct net_buf *buf);
 
@@ -574,8 +590,8 @@ void bt_hci_le_per_adv_response_report(struct net_buf *buf);
 
 int bt_hci_read_remote_version(struct bt_conn *conn);
 int bt_hci_le_read_remote_features(struct bt_conn *conn);
-int bt_hci_le_read_max_data_len(uint16_t *tx_octets, uint16_t *tx_time);
+int bt_hci_le_read_max_data_len(struct bt_dev *hdev, uint16_t *tx_octets, uint16_t *tx_time);
 
 bool bt_drv_quirk_no_auto_dle(void);
 
-void bt_tx_irq_raise(void);
+void bt_tx_irq_raise(struct bt_dev *hdev);

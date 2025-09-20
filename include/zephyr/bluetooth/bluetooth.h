@@ -298,7 +298,7 @@ struct bt_le_ext_adv_cb {
  *
  * @param err zero on success or (negative) error code otherwise.
  */
-typedef void (*bt_ready_cb_t)(int err);
+typedef void (*bt_ready_cb_t)(uint8_t dev_id, int err);
 
 /**
  * @brief Enable Bluetooth
@@ -319,7 +319,13 @@ typedef void (*bt_ready_cb_t)(int err);
  *
  * @return Zero on success or (negative) error code otherwise.
  */
-int bt_enable(bt_ready_cb_t cb);
+int bt_enable_mc(uint8_t dev_id, bt_ready_cb_t cb);
+#ifdef CONFIG_BT_ORIGINAL_API
+static inline int bt_enable(bt_ready_cb_t cb)
+{
+	return bt_enable_mc(0, cb);
+}
+#endif
 
 /**
  * @brief Disable Bluetooth
@@ -340,14 +346,19 @@ int bt_enable(bt_ready_cb_t cb);
  *
  * @return Zero on success or (negative) error code otherwise.
  */
-int bt_disable(void);
-
+int bt_disable_mc(uint8_t dev_id);
+#ifdef CONFIG_BT_ORIGINAL_API
+static inline int bt_disable(void)
+{
+	return bt_disable_mc(0);
+}
+#endif
 /**
  * @brief Check if Bluetooth is ready
  *
  * @return true when Bluetooth is ready, false otherwise
  */
-bool bt_is_ready(void);
+bool bt_is_ready(uint8_t dev_id);
 
 /**
  * @brief Set Bluetooth Device Name
@@ -423,7 +434,13 @@ int bt_set_appearance(uint16_t new_appearance);
  * @param count Should be initialized to the array size. Once the function returns
  *              it will contain the number of returned identity addresses.
  */
-void bt_id_get(bt_addr_le_t *addrs, size_t *count);
+void bt_id_get_mc(uint8_t dev_id, bt_addr_le_t *addrs, size_t *count);
+#ifdef CONFIG_BT_ORIGINAL_API
+static inline void bt_id_get(bt_addr_le_t *addrs, size_t *count)
+{
+	bt_id_get_mc(0, addrs, count);
+}
+#endif
 
 /**
  * @brief Create a new identity address.
@@ -467,7 +484,13 @@ void bt_id_get(bt_addr_le_t *addrs, size_t *count);
  *
  * @return Identity handle (>= 0) in case of success, or a negative error code on failure.
  */
-int bt_id_create(bt_addr_le_t *addr, uint8_t *irk);
+int bt_id_create_mc(uint8_t dev_id, bt_addr_le_t *addr, uint8_t *irk);
+#ifdef CONFIG_BT_ORIGINAL_API
+static inline int bt_id_create(bt_addr_le_t *addr, uint8_t *irk)
+{
+	return bt_id_create_mc(0, addr, irk);
+}
+#endif
 
 /**
  * @brief Reset/reclaim an identity address for reuse.
@@ -495,7 +518,13 @@ int bt_id_create(bt_addr_le_t *addr, uint8_t *irk);
  *
  * @return Identity handle (>= 0) in case of success, or a negative error code on failure.
  */
-int bt_id_reset(uint8_t id, bt_addr_le_t *addr, uint8_t *irk);
+int bt_id_reset_mc(uint8_t dev_id, uint8_t id, bt_addr_le_t *addr, uint8_t *irk);
+#ifdef CONFIG_BT_ORIGINAL_API
+static inline int bt_id_reset(uint8_t id, bt_addr_le_t *addr, uint8_t *irk)
+{
+	return bt_id_reset_mc(0, id, addr, irk);
+}
+#endif
 
 /**
  * @brief Delete an identity address.
@@ -513,7 +542,13 @@ int bt_id_reset(uint8_t id, bt_addr_le_t *addr, uint8_t *irk);
  *
  * @return 0 in case of success, or a negative error code on failure.
  */
-int bt_id_delete(uint8_t id);
+int bt_id_delete_mc(uint8_t dev_id, uint8_t id);
+#ifdef CONFIG_BT_ORIGINAL_API
+static inline int bt_id_delete(uint8_t id)
+{
+	return bt_id_delete_mc(0, id);
+}
+#endif
 
 /**
  * @brief Bluetooth data serialized size.
@@ -2778,7 +2813,13 @@ int bt_le_filter_accept_list_clear(void);
  * @return Zero on success or error code otherwise, positive in case of
  *         protocol error or negative (POSIX) in case of stack internal error.
  */
-int bt_le_set_chan_map(uint8_t chan_map[5]);
+int bt_le_set_chan_map_mc(uint8_t dev_id, uint8_t chan_map[5]);
+#ifdef CONFIG_BT_ORIGINAL_API
+static inline int bt_le_set_chan_map(uint8_t chan_map[5])
+{
+	return bt_le_set_chan_map_mc(0, chan_map);
+}
+#endif
 
 /**
  * @brief Set the Resolvable Private Address timeout in runtime
@@ -2944,8 +2985,15 @@ void bt_foreach_bond(uint8_t id, void (*func)(const struct bt_bond_info *info,
  *
  * @return 0 in case of success or negative value in case of error.
  */
-int bt_configure_data_path(uint8_t dir, uint8_t id, uint8_t vs_config_len,
-			   const uint8_t *vs_config);
+int bt_configure_data_path_mc(uint8_t dev_id, uint8_t dir, uint8_t id, uint8_t vs_config_len,
+	const uint8_t *vs_config);
+#ifdef CONFIG_BT_ORIGINAL_API
+static inline int bt_configure_data_path(uint8_t dir, uint8_t id, uint8_t vs_config_len,
+			   const uint8_t *vs_config)
+{
+	return bt_configure_data_path_mc(0, dir, id, vs_config_len, vs_config);
+}
+#endif
 
 /**
  * @brief Parameters for synchronizing with specific periodic advertising subevents.
