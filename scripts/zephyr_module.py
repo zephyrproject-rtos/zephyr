@@ -178,6 +178,15 @@ mapping:
             type: seq
             sequence:
               - type: str
+      uv:
+        required: false
+        type: map
+        mapping:
+          requirement-files:
+            required: false
+            type: seq
+            sequence:
+              - type: str
   runners:
     required: false
     type: seq
