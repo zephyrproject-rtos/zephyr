@@ -123,6 +123,8 @@ source "drivers/watchdog/Kconfig.smartbond"
 
 source "drivers/watchdog/Kconfig.ti_tps382x"
 
+source "drivers/watchdog/Kconfig.ti_tps3851"
+
 source "drivers/watchdog/Kconfig.tco"
 
 source "drivers/watchdog/Kconfig.xlnx"

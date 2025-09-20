@@ -1,0 +1,31 @@
+# Copyright (c) 2025 Alex Fabre
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config WDT_TI_TPS3851
+	bool "External TI TPS3851 Watchdog (WDT) Driver"
+	default y
+	depends on DT_HAS_TI_TPS3851_ENABLED
+	depends on GPIO
+	help
+	  Enable WDT driver for TI TPS3851. This is an external IC and requires
+	  three GPIO connections from the processor.
+
+if WDT_TI_TPS3851
+
+config WDT_TI_TPS3851_CALLBACK
+	bool "Output pin WDO triggers a callback"
+	default y
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_TI_TPS3851),wdo-gpios)
+	help
+	  When set, WDO GPIO triggers the watchdog callback on falling-edge event.
+
+config WDT_TI_TPS3851_SET1_CONTROL
+	bool "TPS3851 SET1 (Enable/disable pin) is controlled by mcu"
+	default y
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_TI_TPS3851),set1-gpios)
+	help
+	  When set, the SET1 pin will be handled to enable and disable the watchdog timer.
+	  When unset, the watchdog timer is considered always enabled.
+
+endif # WDT_TI_TPS3851
