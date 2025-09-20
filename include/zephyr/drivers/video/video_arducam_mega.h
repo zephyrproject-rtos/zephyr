@@ -18,7 +18,6 @@ extern "C" {
 /* Read only registers */
 #define VIDEO_CID_ARDUCAM_SUPP_RES     (VIDEO_CID_PRIVATE_BASE + 7)
 #define VIDEO_CID_ARDUCAM_SUPP_SP_EFF  (VIDEO_CID_PRIVATE_BASE + 8)
-#define VIDEO_CID_ARDUCAM_EN_FOCUS     (VIDEO_CID_PRIVATE_BASE + 9)
 #define VIDEO_CID_ARDUCAM_EN_SHARPNESS (VIDEO_CID_PRIVATE_BASE + 10)
 #define VIDEO_CID_ARDUCAM_DEV_ADDR     (VIDEO_CID_PRIVATE_BASE + 11)
 #define VIDEO_CID_ARDUCAM_CAM_ID       (VIDEO_CID_PRIVATE_BASE + 12)
@@ -112,6 +111,18 @@ enum mega_sharpness_level {
 	MEGA_SHARPNESS_LEVEL_6,        /**<Sharpness Level 6 */
 	MEGA_SHARPNESS_LEVEL_7,        /**<Sharpness Level 7 */
 	MEGA_SHARPNESS_LEVEL_8,        /**<Sharpness Level 8 */
+};
+
+/**
+ * @enum mega_auto_focus_level
+ * @brief Configure camera auto focus level
+ */
+enum mega_auto_focus_level {
+	MEGA_AUTO_FOCUS_ON= 0,		/**<Auto focus On */
+	MEGA_AUTO_FOCUS_SINGLE,		/**<Auto focus Single */
+	MEGA_AUTO_FOCUS_CONT,		/**<Auto focus Continous */
+	MEGA_AUTO_FOCUS_PAUSE,		/**<Auto focus Pause */
+	MEGA_AUTO_FOCUS_OFF,		/**<Auto focus Off */
 };
 
 /**
