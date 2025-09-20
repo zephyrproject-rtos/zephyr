@@ -90,7 +90,6 @@ static inline bool is_panic_mode(void)
 
 static int data_out_drop_mode(uint8_t *data, size_t length, void *ctx)
 {
-	(void) ctx;
 	uint8_t *pos;
 
 	if (is_sync_mode()) {
