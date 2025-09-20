@@ -46,16 +46,16 @@ extern "C" {
  */
 
 /** @brief Cast @p x, a pointer, to an unsigned integer. */
-#define POINTER_TO_UINT(x) ((uintptr_t) (x))
+#define POINTER_TO_UINT(x) ((uintptr_t)(x))
 /** @brief Cast @p x, an unsigned integer, to a <tt>void*</tt>. */
-#define UINT_TO_POINTER(x) ((void *) (uintptr_t) (x))
+#define UINT_TO_POINTER(x) ((void *)(uintptr_t)(x))
 /** @brief Cast @p x, a pointer, to a signed integer. */
-#define POINTER_TO_INT(x)  ((intptr_t) (x))
+#define POINTER_TO_INT(x)  ((intptr_t)(x))
 /** @brief Cast @p x, a signed integer, to a <tt>void*</tt>. */
-#define INT_TO_POINTER(x)  ((void *) (intptr_t) (x))
+#define INT_TO_POINTER(x)  ((void *)(intptr_t)(x))
 
 #if !(defined(__CHAR_BIT__) && defined(__SIZEOF_LONG__) && defined(__SIZEOF_LONG_LONG__))
-#	error Missing required predefined macros for BITS_PER_LONG calculation
+#error Missing required predefined macros for BITS_PER_LONG calculation
 #endif
 
 /** Number of bits in a byte. */
@@ -68,27 +68,25 @@ extern "C" {
 #define NIBBLES_PER_BYTE (BITS_PER_BYTE / BITS_PER_NIBBLE)
 
 /** Number of bits in a long int. */
-#define BITS_PER_LONG	(__CHAR_BIT__ * __SIZEOF_LONG__)
+#define BITS_PER_LONG (__CHAR_BIT__ * __SIZEOF_LONG__)
 
 /** Number of bits in a long long int. */
-#define BITS_PER_LONG_LONG	(__CHAR_BIT__ * __SIZEOF_LONG_LONG__)
+#define BITS_PER_LONG_LONG (__CHAR_BIT__ * __SIZEOF_LONG_LONG__)
 
 /**
  * @brief Create a contiguous bitmask starting at bit position @p l
  *        and ending at position @p h.
  */
-#define GENMASK(h, l) \
-	(((~0UL) - (1UL << (l)) + 1) & (~0UL >> (BITS_PER_LONG - 1 - (h))))
+#define GENMASK(h, l) (((~0UL) - (1UL << (l)) + 1) & (~0UL >> (BITS_PER_LONG - 1 - (h))))
 
 /**
  * @brief Create a contiguous 64-bit bitmask starting at bit position @p l
  *        and ending at position @p h.
  */
-#define GENMASK64(h, l) \
-	(((~0ULL) - (1ULL << (l)) + 1) & (~0ULL >> (BITS_PER_LONG_LONG - 1 - (h))))
+#define GENMASK64(h, l) (((~0ULL) - (1ULL << (l)) + 1) & (~0ULL >> (BITS_PER_LONG_LONG - 1 - (h))))
 
 /** @brief 0 if @p cond is true-ish; causes a compile error otherwise. */
-#define ZERO_OR_COMPILE_ERROR(cond) ((int) sizeof(char[1 - (2 * !(cond))]) - 1)
+#define ZERO_OR_COMPILE_ERROR(cond) ((int)sizeof(char[1 - (2 * !(cond))]) - 1)
 
 #if defined(__cplusplus)
 
@@ -104,10 +102,9 @@ extern "C" {
  *
  * This macro is available only from C, not C++.
  */
-#define IS_ARRAY(array) \
-	ZERO_OR_COMPILE_ERROR( \
-		!__builtin_types_compatible_p(__typeof__(array), \
-					      __typeof__(&(array)[0])))
+#define IS_ARRAY(array)                                                                            \
+	ZERO_OR_COMPILE_ERROR(                                                                     \
+		!__builtin_types_compatible_p(__typeof__(array), __typeof__(&(array)[0])))
 
 /**
  * @brief Number of elements in the given @p array
@@ -118,8 +115,7 @@ extern "C" {
  *
  * In C, passing a pointer as @p array causes a compile error.
  */
-#define ARRAY_SIZE(array) \
-	((size_t) (IS_ARRAY(array) + (sizeof(array) / sizeof((array)[0]))))
+#define ARRAY_SIZE(array) ((size_t)(IS_ARRAY(array) + (sizeof(array) / sizeof((array)[0]))))
 
 #endif /* __cplusplus */
 
@@ -140,10 +136,11 @@ extern "C" {
  * It is specially useful for cases where flexible arrays are
  * used in unions or are not the last element in the struct.
  */
-#define FLEXIBLE_ARRAY_DECLARE(type, name) \
-	struct { \
-		struct { } __unused_##name; \
-		type name[]; \
+#define FLEXIBLE_ARRAY_DECLARE(type, name)                                                         \
+	struct {                                                                                   \
+		struct {                                                                           \
+		} __unused_##name;                                                                 \
+		type name[];                                                                       \
 	}
 
 /**
@@ -161,7 +158,7 @@ extern "C" {
  * @return 1 if @p ptr is part of @p array, 0 otherwise
  */
 #define IS_ARRAY_ELEMENT(array, ptr)                                                               \
-	((ptr) && POINTER_TO_UINT(array) <= POINTER_TO_UINT(ptr) &&                          \
+	((ptr) && POINTER_TO_UINT(array) <= POINTER_TO_UINT(ptr) &&                                \
 	 POINTER_TO_UINT(ptr) < POINTER_TO_UINT(&(array)[ARRAY_SIZE(array)]) &&                    \
 	 (POINTER_TO_UINT(ptr) - POINTER_TO_UINT(array)) % sizeof((array)[0]) == 0)
 
@@ -253,9 +250,8 @@ extern "C" {
  * @brief Validate CONTAINER_OF parameters, only applies to C mode.
  */
 #ifndef __cplusplus
-#define CONTAINER_OF_VALIDATE(ptr, type, field)               \
-	BUILD_ASSERT(SAME_TYPE(*(ptr), ((type *)0)->field) || \
-		     SAME_TYPE(*(ptr), void),                 \
+#define CONTAINER_OF_VALIDATE(ptr, type, field)                                                    \
+	BUILD_ASSERT(SAME_TYPE(*(ptr), ((type *)0)->field) || SAME_TYPE(*(ptr), void),             \
 		     "pointer type mismatch in CONTAINER_OF");
 #else
 #define CONTAINER_OF_VALIDATE(ptr, type, field)
@@ -282,10 +278,10 @@ extern "C" {
  * @param field the name of the field within the struct @p ptr points to
  * @return a pointer to the structure that contains @p ptr
  */
-#define CONTAINER_OF(ptr, type, field)                               \
-	({                                                           \
-		CONTAINER_OF_VALIDATE(ptr, type, field)              \
-		((type *)(((char *)(ptr)) - offsetof(type, field))); \
+#define CONTAINER_OF(ptr, type, field)                                                             \
+	({                                                                                         \
+		CONTAINER_OF_VALIDATE(ptr, type, field)                                            \
+		((type *)(((char *)(ptr)) - offsetof(type, field)));                               \
 	})
 
 /**
@@ -309,8 +305,7 @@ extern "C" {
  *
  * @return Concatenated token.
  */
-#define CONCAT(...) \
-	UTIL_CAT(_CONCAT_, NUM_VA_ARGS_LESS_1(__VA_ARGS__))(__VA_ARGS__)
+#define CONCAT(...) UTIL_CAT(_CONCAT_, NUM_VA_ARGS_LESS_1(__VA_ARGS__))(__VA_ARGS__)
 
 /**
  * @brief Check if @p ptr is aligned to @p align alignment
@@ -320,14 +315,14 @@ extern "C" {
 /**
  * @brief Value of @p x rounded up to the next multiple of @p align.
  */
-#define ROUND_UP(x, align)                                   \
-	((((unsigned long)(x) + ((unsigned long)(align) - 1)) / \
-	  (unsigned long)(align)) * (unsigned long)(align))
+#define ROUND_UP(x, align)                                                                         \
+	((((unsigned long)(x) + ((unsigned long)(align) - 1)) / (unsigned long)(align)) *          \
+	 (unsigned long)(align))
 
 /**
  * @brief Value of @p x rounded down to the previous multiple of @p align.
  */
-#define ROUND_DOWN(x, align)                                 \
+#define ROUND_DOWN(x, align)                                                                       \
 	(((unsigned long)(x) / (unsigned long)(align)) * (unsigned long)(align))
 
 /** @brief Value of @p x rounded up to the next word boundary. */
@@ -784,7 +779,7 @@ static inline int64_t sign_extend_64(uint64_t value, uint8_t index)
 
 #define __z_log2d(x) (32 - __builtin_clz(x) - 1)
 #define __z_log2q(x) (64 - __builtin_clzll(x) - 1)
-#define __z_log2(x) (sizeof(__typeof__(x)) > 4 ? __z_log2q(x) : __z_log2d(x))
+#define __z_log2(x)  (sizeof(__typeof__(x)) > 4 ? __z_log2q(x) : __z_log2d(x))
 
 /**
  * @brief Compute log2(x)
@@ -808,7 +803,7 @@ static inline int64_t sign_extend_64(uint64_t value, uint8_t index)
  *
  * @return ceil(log2(x)) when 1 <= x <= max(type(x)), 0 when x < 1
  */
-#define LOG2CEIL(x) ((x) <= 1 ?  0 : __z_log2((x)-1) + 1)
+#define LOG2CEIL(x) ((x) <= 1 ? 0 : __z_log2((x) - 1) + 1)
 
 /**
  * @brief Compute next highest power of two
@@ -822,7 +817,7 @@ static inline int64_t sign_extend_64(uint64_t value, uint8_t index)
  *
  * @return 2^ceil(log2(x)) or 0 if 2^ceil(log2(x)) would saturate 64-bits
  */
-#define NHPOT(x) ((x) < 1 ? 1 : ((x) > (1ULL<<63) ? 0 : 1ULL << LOG2CEIL(x)))
+#define NHPOT(x) ((x) < 1 ? 1 : ((x) > (1ULL << 63) ? 0 : 1ULL << LOG2CEIL(x)))
 
 /**
  * @brief Determine if a buffer exceeds highest address
@@ -836,9 +831,8 @@ static inline int64_t sign_extend_64(uint64_t value, uint8_t index)
  *
  * @return true if pointer overflow detected, false otherwise
  */
-#define Z_DETECT_POINTER_OVERFLOW(addr, buflen)  \
-	(((buflen) != 0) &&                        \
-	((UINTPTR_MAX - (uintptr_t)(addr)) <= ((uintptr_t)((buflen) - 1))))
+#define Z_DETECT_POINTER_OVERFLOW(addr, buflen)                                                    \
+	(((buflen) != 0) && ((UINTPTR_MAX - (uintptr_t)(addr)) <= ((uintptr_t)((buflen) - 1))))
 
 /**
  * @brief XOR n bytes
