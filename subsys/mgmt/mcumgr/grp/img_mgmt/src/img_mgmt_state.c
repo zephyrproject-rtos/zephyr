@@ -680,6 +680,17 @@ int img_mgmt_set_next_boot_slot(int slot, bool confirm)
 	}
 #endif
 
+	/* The rules above apply only to the inactive image.
+	 * To effectively prevent confirming something that might not have been
+	 * verified to actually be bootable, a new policy was introduced,
+	 * that applies to both active and inactive images.
+	 */
+#ifndef MCUMGR_GRP_IMG_ALLOW_CONFIRM_NON_ACTIVE_SLOT
+	if (confirm && slot != active_slot) {
+		return IMG_MGMT_ERR_IMAGE_CONFIRMATION_DENIED;
+	}
+#endif
+
 	/* Setting test to active slot is not allowed. */
 	if (!confirm && slot == active_slot) {
 		return IMG_MGMT_ERR_IMAGE_SETTING_TEST_TO_ACTIVE_DENIED;
@@ -728,8 +739,9 @@ int img_mgmt_set_next_boot_slot(int slot, bool confirm)
 #else
 int img_mgmt_set_next_boot_slot(int slot, bool confirm)
 {
+	int image = img_mgmt_slot_to_image(slot);
+	int active_slot = img_mgmt_active_slot(image);
 	int active_image = img_mgmt_active_image();
-	int active_slot = img_mgmt_active_slot(active_image);
 
 	LOG_DBG("(%d, %s)", slot, confirm ? "confirm" : "test");
 	LOG_DBG("aimg = %d, aslot = %d, slot = %d",
@@ -738,6 +750,12 @@ int img_mgmt_set_next_boot_slot(int slot, bool confirm)
 	if (slot == active_slot && !confirm) {
 		return IMG_MGMT_ERR_IMAGE_SETTING_TEST_TO_ACTIVE_DENIED;
 	}
+
+#ifndef MCUMGR_GRP_IMG_ALLOW_CONFIRM_NON_ACTIVE_SLOT
+	if (slot != active_slot && confirm) {
+		return IMG_MGMT_ERR_IMAGE_CONFIRMATION_DENIED;
+	}
+#endif
 
 	return img_mgmt_set_next_boot_slot_common(slot, active_slot, confirm);
 }
