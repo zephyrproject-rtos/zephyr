@@ -122,7 +122,7 @@ static int rts5912_sha256_process(const struct device *dev, uint8_t *input, size
 	return 0;
 }
 
-static int rts5912_sha256_update(const struct device *dev, uint8_t *input, size_t len)
+static int rts5912_sha256_update(const struct device *dev, const uint8_t *input, size_t len)
 {
 	struct rts5912_sha256_context *rts5912_sha256_ctx = dev->data;
 	uint32_t remain, fill, blk_size = 0, ret_val = 0;

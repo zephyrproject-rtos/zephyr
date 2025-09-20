@@ -358,7 +358,7 @@ static int xec_symcr_do_hash(struct hash_ctx *ctx, struct hash_pkt *pkt, bool fi
 		hs->blklen = 0; /* consumed */
 	}
 
-	ret = mchp_xec_rom_hash_feed_wrapper(c, (const uint8_t *)pkt->in_buf, fill_len);
+	ret = mchp_xec_rom_hash_feed_wrapper(c, pkt->in_buf, fill_len);
 	if (ret) {
 		LOG_ERR("ROM hash feed error %d", ret);
 		return ret;
