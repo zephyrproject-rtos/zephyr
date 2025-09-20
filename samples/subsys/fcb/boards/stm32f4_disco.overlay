@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2025 Tomas Jurena
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		storage_partition: partition@20000 {
+			label = "FCB";
+			reg = <0x00020000 DT_SIZE_K(256)>;
+		};
+	};
+};
