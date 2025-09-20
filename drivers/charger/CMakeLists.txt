@@ -5,7 +5,7 @@ zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/drivers/charger.h)
 
 zephyr_library_sources_ifdef(CONFIG_CHARGER_AXP2101 charger_axp2101.c)
 zephyr_library_sources_ifdef(CONFIG_CHARGER_BQ24190 charger_bq24190.c)
-zephyr_library_sources_ifdef(CONFIG_CHARGER_BQ25180 charger_bq25180.c)
+zephyr_library_sources_ifdef(CONFIG_CHARGER_BQ2518X charger_bq2518x.c)
 zephyr_library_sources_ifdef(CONFIG_CHARGER_BQ25713 charger_bq25713.c)
 zephyr_library_sources_ifdef(CONFIG_CHARGER_MAX20335 charger_max20335.c)
 zephyr_library_sources_ifdef(CONFIG_CHARGER_PF1550 charger_pf1550.c)
