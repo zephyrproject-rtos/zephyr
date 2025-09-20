@@ -670,6 +670,8 @@ static void espi_periph_ch_setup(const struct device *dev)
 
 #ifdef CONFIG_ESPI_PERIPHERAL_DEBUG_PORT_80
 
+#define P80_FIFO_TIMEOUT_MS 5
+
 static void espi_port80_isr(const struct device *dev)
 {
 	const struct espi_rts5912_config *const espi_config = dev->config;
@@ -679,8 +681,18 @@ static void espi_port80_isr(const struct device *dev)
 				 ESPI_PERIPHERAL_NODATA};
 	volatile struct port80_reg *const port80_reg = espi_config->port80_reg;
 
-	evt.evt_data = port80_reg->DATA;
-	espi_send_callbacks(&espi_data->callbacks, dev, evt);
+	int32_t start_time = k_uptime_get_32();
+
+	while (!(port80_reg->STS & PORT80_STS_FIFOEM)) {
+		evt.evt_data = port80_reg->DATA;
+		espi_send_callbacks(&espi_data->callbacks, dev, evt);
+		int32_t end_time = k_uptime_get_32();
+
+		if (end_time - start_time > P80_FIFO_TIMEOUT_MS) {
+			LOG_ERR("P80 FIFO timeout");
+			break;
+		}
+	}
 }
 
 static int espi_peri_ch_port80_setup(const struct device *dev)
