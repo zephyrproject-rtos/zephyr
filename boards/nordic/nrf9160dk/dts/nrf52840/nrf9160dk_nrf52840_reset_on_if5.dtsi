@@ -9,6 +9,6 @@
 };
 
 &reset_input {
-	status = "okay";
 	gpios = <&interface_to_nrf9160 5 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
+	status = "okay";
 };

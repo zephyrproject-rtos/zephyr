@@ -41,9 +41,9 @@
 	 * needs to happen both in the flash_layout.h and in this file at the same time.
 	 */
 	reserved-memory {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		sram0_s: image_s@20000000 {
 			/* Secure image memory */
@@ -71,33 +71,33 @@
 		 * needs to happen both in the flash_layout.h and in this file at the same time.
 		 */
 		slot0_partition: partition@0 {
-			label = "image-0";
 			reg = <0x0000000 DT_SIZE_K(384)>;
+			label = "image-0";
 		};
 
 		tfm_ps_partition: partition@60000 {
-			label = "tfm-ps";
 			reg = <0x00060000 DT_SIZE_K(16)>;
+			label = "tfm-ps";
 		};
 
 		tfm_its_partition: partition@64000 {
-			label = "tfm-its";
 			reg = <0x00064000 DT_SIZE_K(16)>;
+			label = "tfm-its";
 		};
 
 		tfm_otp_partition: partition@68000 {
-			label = "tfm-otp";
 			reg = <0x00068000 DT_SIZE_K(8)>;
+			label = "tfm-otp";
 		};
 
 		slot0_ns_partition: partition@6A000 {
-			label = "image-0-nonsecure";
 			reg = <0x0006A000 DT_SIZE_K(494)>;
+			label = "image-0-nonsecure";
 		};
 
 		storage_partition: partition@E5800 {
-			label = "storage";
 			reg = <0x000E5800 DT_SIZE_K(32)>;
+			label = "storage";
 		};
 	};
 };

@@ -9,8 +9,8 @@
 #include "nrf54lm20dk_nrf54lm20a-common.dtsi"
 
 / {
-	model = "Nordic nRF54LM20 DK nRF54LM20A FLPR MCU";
 	compatible = "nordic,nrf54lm20dk_nrf54lm20a-cpuflpr";
+	model = "Nordic nRF54LM20 DK nRF54LM20A FLPR MCU";
 
 	chosen {
 		zephyr,console = &uart30;
@@ -32,8 +32,8 @@
 		#size-cells = <1>;
 
 		cpuflpr_code_partition: partition@0 {
-			label = "image-0";
 			reg = <0x0 DT_SIZE_K(96)>;
+			label = "image-0";
 		};
 	};
 };

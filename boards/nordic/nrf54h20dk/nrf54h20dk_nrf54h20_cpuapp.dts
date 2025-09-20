@@ -111,7 +111,6 @@
 };
 
 &cpuapp_bellboard {
-	status = "okay";
 	interrupts = <96 NRF_DEFAULT_IRQ_PRIORITY>;
 	interrupt-names = "irq0";
 	/* irq0:
@@ -122,6 +121,7 @@
 	 *  - 18: cpuapp-cpurad
 	 */
 	nordic,interrupt-mapping = <0x00046041 0>;
+	status = "okay";
 };
 
 &cpurad_bellboard {
@@ -133,8 +133,8 @@
 };
 
 &cpusec_cpuapp_ipc {
-	status = "okay";
 	mbox-names = "tx", "rx";
+	status = "okay";
 };
 
 &cpusec_bellboard {
@@ -142,12 +142,12 @@
 };
 
 ipc0: &cpuapp_cpurad_ipc {
-	status = "okay";
 	mbox-names = "rx", "tx";
 	tx-region = <&cpuapp_cpurad_ipc_shm>;
 	rx-region = <&cpurad_cpuapp_ipc_shm>;
 	tx-blocks = <32>;
 	rx-blocks = <32>;
+	status = "okay";
 
 	bt_hci_ipc0: bt_hci_ipc0 {
 		compatible = "zephyr,bt-hci-ipc";
@@ -156,10 +156,10 @@ ipc0: &cpuapp_cpurad_ipc {
 };
 
 &cpuapp_cpusys_ipc {
-	status = "okay";
 	mbox-names = "rx", "tx";
 	tx-region = <&cpuapp_cpusys_ipc_shm>;
 	rx-region = <&cpusys_cpuapp_ipc_shm>;
+	status = "okay";
 };
 
 &cpuapp_cpuppr_ipc {
@@ -211,13 +211,13 @@ slot3_partition: &cpurad_slot1_partition {
 };
 
 &nfct {
-	status = "okay";
 	memory-regions = <&cpuapp_dma_region>;
+	status = "okay";
 };
 
 &gpiote130 {
-	status = "okay";
 	owned-channels = <0 1 2 3 4 5 6 7>;
+	status = "okay";
 };
 
 &gpio0 {
@@ -229,10 +229,10 @@ slot3_partition: &cpurad_slot1_partition {
 };
 
 &grtc {
-	status = "okay";
 	child-owned-channels = <5 6>;
 	nonsecure-channels = <5 6>;
 	owned-channels = <4 5 6>;
+	status = "okay";
 };
 
 &uart120 {
@@ -250,12 +250,12 @@ slot3_partition: &cpurad_slot1_partition {
 };
 
 &uart136 {
-	status = "okay";
 	memory-regions = <&cpuapp_dma_region>;
 	current-speed = <115200>;
 	pinctrl-0 = <&uart136_default>;
 	pinctrl-1 = <&uart136_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &gpio6 {
@@ -270,7 +270,6 @@ slot3_partition: &cpurad_slot1_partition {
 
 	mx25uw63: mx25uw6345g@0 {
 		compatible = "mxicy,mx25u", "jedec,mspi-nor";
-		status = "disabled";
 		reg = <0>;
 		jedec-id = [c2 84 37];
 		sfdp-bfp = [e5 20 8a ff ff ff ff 03 00 ff 00 ff 00 ff 00 ff
@@ -296,6 +295,7 @@ slot3_partition: &cpurad_slot1_partition {
 		mspi-cpp-mode = "MSPI_CPP_MODE_0";
 		mspi-endian = "MSPI_BIG_ENDIAN";
 		mspi-ce-polarity = "MSPI_CE_ACTIVE_LOW";
+		status = "disabled";
 	};
 };
 
@@ -312,17 +312,17 @@ zephyr_udc0: &usbhs {
 };
 
 &can120 {
-	status = "okay";
 	pinctrl-0 = <&can120_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &pwm130 {
-	status = "okay";
 	pinctrl-0 = <&pwm130_default>;
 	pinctrl-1 = <&pwm130_sleep>;
 	pinctrl-names = "default", "sleep";
 	memory-regions = <&cpuapp_dma_region>;
+	status = "okay";
 };
 
 &adc {
