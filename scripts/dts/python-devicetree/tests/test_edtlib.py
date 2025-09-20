@@ -130,6 +130,116 @@ def test_interrupts():
         edtlib.ControllerAndData(node=node, controller=edt.get_node('/interrupt-map-bitops-test/controller'), data={'one': 3, 'two': 2}, name=None, basename=None)
     ]
 
+
+def test_maps():
+    '''Tests for the maps property.'''
+    with from_here():
+        edt = edtlib.EDT("test.dts", ["test-bindings"])
+
+    nexus = edt.get_node("/interrupt-map-test/nexus")
+    controller_0 = edt.get_node("/interrupt-map-test/controller-0")
+    controller_1 = edt.get_node("/interrupt-map-test/controller-1")
+    controller_2 = edt.get_node("/interrupt-map-test/controller-2")
+
+    assert nexus.maps == [
+        edtlib.ControllerAndData(
+            node=nexus,
+            controller=controller_0,
+            data={
+                "child_specifier_0": 0,
+                "child_specifier_1": 0,
+                "child_specifier_2": 0,
+                "child_specifier_3": 0,
+                "parent_specifier_0": 0,
+                "parent_specifier_1": 0,
+            },
+            name=None,
+            basename="interrupt",
+        ),
+        edtlib.ControllerAndData(
+            node=nexus,
+            controller=controller_1,
+            data={
+                "child_specifier_0": 0,
+                "child_specifier_1": 0,
+                "child_specifier_2": 0,
+                "child_specifier_3": 1,
+                "parent_specifier_0": 0,
+                "parent_specifier_1": 0,
+                "parent_specifier_2": 0,
+                "parent_specifier_3": 1,
+            },
+            name=None,
+            basename="interrupt",
+        ),
+        edtlib.ControllerAndData(
+            node=nexus,
+            controller=controller_2,
+            data={
+                "child_specifier_0": 0,
+                "child_specifier_1": 0,
+                "child_specifier_2": 0,
+                "child_specifier_3": 2,
+                "parent_specifier_0": 0,
+                "parent_specifier_1": 0,
+                "parent_specifier_2": 0,
+                "parent_specifier_3": 0,
+                "parent_specifier_4": 0,
+                "parent_specifier_5": 2,
+            },
+            name=None,
+            basename="interrupt",
+        ),
+        edtlib.ControllerAndData(
+            node=nexus,
+            controller=controller_0,
+            data={
+                "child_specifier_0": 0,
+                "child_specifier_1": 1,
+                "child_specifier_2": 0,
+                "child_specifier_3": 0,
+                "parent_specifier_0": 0,
+                "parent_specifier_1": 3,
+            },
+            name=None,
+            basename="interrupt",
+        ),
+        edtlib.ControllerAndData(
+            node=nexus,
+            controller=controller_1,
+            data={
+                "child_specifier_0": 0,
+                "child_specifier_1": 1,
+                "child_specifier_2": 0,
+                "child_specifier_3": 1,
+                "parent_specifier_0": 0,
+                "parent_specifier_1": 0,
+                "parent_specifier_2": 0,
+                "parent_specifier_3": 4,
+            },
+            name=None,
+            basename="interrupt",
+        ),
+        edtlib.ControllerAndData(
+            node=nexus,
+            controller=controller_2,
+            data={
+                "child_specifier_0": 0,
+                "child_specifier_1": 1,
+                "child_specifier_2": 0,
+                "child_specifier_3": 2,
+                "parent_specifier_0": 0,
+                "parent_specifier_1": 0,
+                "parent_specifier_2": 0,
+                "parent_specifier_3": 0,
+                "parent_specifier_4": 0,
+                "parent_specifier_5": 5,
+            },
+            name=None,
+            basename="interrupt",
+        ),
+    ]
+
 def test_ranges():
     '''Tests for the ranges property'''
     with from_here():
