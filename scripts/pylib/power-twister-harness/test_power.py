@@ -1,6 +1,7 @@
 # Copyright: (c)  2024, Intel Corporation
 
 import logging
+import os
 
 import pytest
 from abstract.PowerMonitor import PowerMonitor
@@ -26,6 +27,11 @@ def test_power_harness(probe_class: PowerMonitor, test_data, request, dut: Devic
     # Initialize the probe with the provided path
     probe = probe_class  # Instantiate the power monitor probe
 
+    # Set path for raw output data
+    build_dir_path = request.config.getoption("--build-dir")
+    if os.path.exists(build_dir_path):
+        probe.power_shield_conf.output_file = os.path.join(build_dir_path, "power_raw_data.csv")
+
     # Get test data
     measurements_dict = test_data
 
@@ -45,10 +51,10 @@ def test_power_harness(probe_class: PowerMonitor, test_data, request, dut: Devic
         padding=measurements_dict['peak_padding'],
     )
 
-    # # Convert measured values from amps to milliamps for comparison
+    # Convert measured values from amps to milliamps for comparison
     rms_values_in_milliamps = [value * 1e3 for value in rms_values_measured]
 
-    # # Log the calculated values in milliamps for debugging purposes
+    # Log the calculated values in milliamps for debugging purposes
     logger.debug(f"Measured RMS values in mA: {rms_values_in_milliamps}")
 
     tuples = zip(measurements_dict['expected_rms_values'], rms_values_in_milliamps, strict=False)

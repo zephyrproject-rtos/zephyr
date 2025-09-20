@@ -1,5 +1,6 @@
 # Copyright: (c)  2025, Intel Corporation
 # Author: Arkadiusz Cholewinski <arkadiuszx.cholewinski@intel.com>
+import os
 from dataclasses import dataclass, field
 
 
@@ -70,7 +71,11 @@ class PowerShieldConf:
         FREQ_2 = "2"  # 2 Hz frequency
         FREQ_1 = "1"  # 1 Hz frequency
 
-    output_file: str = "rawData.csv"
+    output_file: str = field(
+        default_factory=lambda: os.path.join(
+            os.environ.get("ZEPHYR_BASE", "."), "twister-out", "power_raw_data.csv"
+        )
+    )
     sampling_frequency: str = SamplingFrequency.FREQ_1K
     data_format: str = DataFormat.BIN_HEXA
     function_mode: str = FunctionMode.HIGH
