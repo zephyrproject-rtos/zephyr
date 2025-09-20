@@ -92,8 +92,8 @@ to your build:
 
 Details on the configuration settings are captured in the following files:
 
-- :zephyr_file:`snippets/cdc-acm-console/cdc-acm-console.conf`.
-- :zephyr_file:`snippets/cdc-acm-console/cdc-acm-console.overlay`.
+- :zephyr_file:`snippets/generic/cdc-acm-console/cdc-acm-console.conf`.
+- :zephyr_file:`snippets/generic/cdc-acm-console/cdc-acm-console.overlay`.
 
 Bluetooth LE (NUS)
 ==================
@@ -107,8 +107,8 @@ to your build:
 
 Details on the configuration settings are captured in the following files:
 
-- :zephyr_file:`snippets/nus-console/nus-console.conf`.
-- :zephyr_file:`snippets/nus-console/nus-console.overlay`.
+- :zephyr_file:`snippets/generic/nus-console/nus-console.conf`.
+- :zephyr_file:`snippets/generic/nus-console/nus-console.overlay`.
 
 Segger RTT
 ==========

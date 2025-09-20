@@ -213,7 +213,7 @@ def parse_args():
     parser.add_argument('--snippet', dest='snippets', default=[], action='append',
                         help='''a SNIPPET element; may be given
                         multiple times''')
-    parser.add_argument('--cmake-out', type=Path,
+    parser.add_argument('--cmake-out', type=Path, required=True,
                         help='''file to write cmake output to; include()
                         this file after calling this script''')
     parser.add_argument('--sysbuild', action="store_true",
