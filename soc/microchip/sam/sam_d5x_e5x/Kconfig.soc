@@ -22,6 +22,12 @@ config UART_MCHP_SERCOM_U2201_5_0_0
 	help
 	  Enable SERCOM UART peripheral IP version 5.0.0 (U2201).
 
+config DMA_MCHP_DMAC_U2503_1_0_1
+	bool
+	default y
+	help
+	  Enable DMAC peripheral IP version 1.0.1 (U2503).
+
 endif # SOC_FAMILY_MICROCHIP_SAM_D5X_E5X
 
 rsource "*/Kconfig.soc"

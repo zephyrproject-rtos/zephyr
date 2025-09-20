@@ -1,0 +1,32 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config DMA_MCHP_DMAC_G1
+	bool "Microchip DMA driver for DMAC G1 Peripherals"
+	default y
+	select KERNEL_MEM_POOL
+	depends on DT_HAS_MICROCHIP_DMAC_G1_DMA_ENABLED && !DMA_64BIT
+	help
+	  Enables the DMA driver support for Microchip MCUs.
+
+if DMA_MCHP_DMAC_G1
+
+config DMA_MCHP_DMAC_G1_MAX_DESC
+	int "Number of DMA descriptors allocated in DMA descriptor pool"
+	range 4 256
+	default 128
+	help
+	  Defines the number of DMA descriptors in the dynamically allocated pool.
+	  All DMA channels will share this common pool of descriptors.
+	  Increasing this value may improve performance for systems with high
+	  DMA usage but will increase memory consumption.
+
+config HEAP_MEM_POOL_ADD_SIZE_DMA
+	int
+	default 8192
+	help
+	  Specifies the heap memory required for allocating DMA descriptors
+	  in the memory pool (in bytes). Ensuring sufficient heap memory helps prevent
+	  allocation failures and ensures reliable DMA operation.
+
+endif # DMA_MCHP_DMAC_G1
