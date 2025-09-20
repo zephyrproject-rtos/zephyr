@@ -172,7 +172,7 @@ static ALWAYS_INLINE struct k_thread *next_up(void)
 	struct k_thread *mirqp = _current_cpu->metairq_preempted;
 
 	if (mirqp != NULL && (thread == NULL || !thread_is_metairq(thread))) {
-		if (!z_is_thread_prevented_from_running(mirqp)) {
+		if (z_is_thread_ready(mirqp)) {
 			thread = mirqp;
 		} else {
 			_current_cpu->metairq_preempted = NULL;
@@ -204,7 +204,7 @@ static ALWAYS_INLINE struct k_thread *next_up(void)
 	 * queue such that we don't want to re-add it".
 	 */
 	bool queued = z_is_thread_queued(_current);
-	bool active = !z_is_thread_prevented_from_running(_current);
+	bool active = z_is_thread_ready(_current);
 
 	if (thread == NULL) {
 		thread = _current_cpu->idle_thread;
@@ -409,8 +409,8 @@ static ALWAYS_INLINE void z_thread_halt(struct k_thread *thread, k_spinlock_key_
 		arch_sched_directed_ipi(IPI_CPU_MASK(cpu->id));
 #else
 		arch_sched_broadcast_ipi();
-#endif
-#endif
+#endif /* CONFIG_ARCH_HAS_DIRECTED_IPIS */
+#endif /* CONFIG_SMP && CONFIG_SCHED_IPI_SUPPORTED */
 		if (arch_is_in_isr()) {
 			thread_halt_spin(thread, key);
 		} else  {
@@ -856,10 +856,7 @@ void *z_get_next_switch_handle(void *interrupted)
 
 	K_SPINLOCK(&_sched_spinlock) {
 		struct k_thread *old_thread = _current, *new_thread;
-
-		if (IS_ENABLED(CONFIG_SMP)) {
-			old_thread->switch_handle = NULL;
-		}
+		old_thread->switch_handle = NULL;
 		new_thread = next_up();
 
 		z_sched_usage_switch(new_thread);
@@ -907,10 +904,8 @@ void *z_get_next_switch_handle(void *interrupted)
 		}
 		old_thread->switch_handle = interrupted;
 		ret = new_thread->switch_handle;
-		if (IS_ENABLED(CONFIG_SMP)) {
-			/* Active threads MUST have a null here */
-			new_thread->switch_handle = NULL;
-		}
+		/* Active threads MUST have a null here */
+		new_thread->switch_handle = NULL;
 	}
 	signal_pending_ipi();
 	return ret;
