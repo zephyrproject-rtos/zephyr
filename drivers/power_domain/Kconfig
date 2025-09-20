@@ -126,5 +126,6 @@ endif #POWER_DOMAIN_TISCI
 rsource "Kconfig.nrfs_gdpwr"
 rsource "Kconfig.nrfs_swext"
 rsource "Kconfig.nrf_gpio_pad_group"
+rsource "Kconfig.silabs_siwx91x"
 
 endif
