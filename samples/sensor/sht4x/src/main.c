@@ -18,7 +18,7 @@
 int main(void)
 {
 	const struct device *const sht = DEVICE_DT_GET_ANY(sensirion_sht4x);
-	struct sensor_value temp, hum;
+	struct sensor_value temp, hum, uid;
 
 	if (!device_is_ready(sht)) {
 		printf("Device %s is not ready.\n", sht->name);
@@ -34,6 +34,10 @@ int main(void)
 	sensor_attr_set(sht, SENSOR_CHAN_ALL, SENSOR_ATTR_SHT4X_HEATER_POWER, &heater_p);
 	sensor_attr_set(sht, SENSOR_CHAN_ALL, SENSOR_ATTR_SHT4X_HEATER_DURATION, &heater_d);
 #endif
+
+	if (!sensor_attr_get(sht, SENSOR_CHAN_ALL, SENSOR_ATTR_UNIQUE_ID, &uid)) {
+		printf("SHT4X UID: 0x%" PRIx64 "\n", sensor_value_to_uid(&uid));
+	}
 
 	while (true) {
 		if (sensor_sample_fetch(sht)) {
