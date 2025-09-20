@@ -1,0 +1,9 @@
+# Copyright (C) 2025 embedded brains GmbH & Co. KG
+# SPDX-License-Identifier: Apache-2.0
+
+config CAN_MCHP_MSS
+	bool "Microchip PolarFire SoC CAN driver"
+	depends on DT_HAS_MICROCHIP_MPFS_CAN_ENABLED
+	help
+	  This option enables the CAN driver for Microchip's PolarFire SoC
+	  platform.
