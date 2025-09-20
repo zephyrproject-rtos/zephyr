@@ -724,7 +724,11 @@ static int uart_ns16550_configure(const struct device *dev,
 	(void)ns16550_read_char(dev, &c);
 
 	/* disable interrupts  */
+#ifdef CONFIG_UART_NS16550_PXA
+	ns16550_outbyte(dev_cfg, IER(dev), 0x40);
+#else
 	ns16550_outbyte(dev_cfg, IER(dev), 0x00);
+#endif
 	ret = 0;
 
 out:
