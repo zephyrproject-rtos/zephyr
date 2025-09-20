@@ -1,0 +1,30 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ * Copyright (c) 2025 Alexander Kozhinov <ak.alexander.kozhinov@gmail.com>
+ */
+
+ #include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	aliases {
+		test-comp = &comp1;
+	};
+
+	zephyr,user {
+		/* connected also to green led and will toggle it */
+		test-gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+/*
+ * IMPORTANT: CN8.A1 (PA1) shall be connected to CN5.D13 (PA5) by a jumper wire
+ */
+
+&comp1 {
+	status = "okay";
+	pinctrl-0 = <&comp1_inp_pa1 &comp1_out_pa6>;
+	pinctrl-names = "default";
+	positive-input = "IN0";
+	negative-input = "1_4VREFINT";
+	invert-output = "NONINVERTED";
+};
