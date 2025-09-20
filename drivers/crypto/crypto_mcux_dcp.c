@@ -99,14 +99,23 @@ static int crypto_dcp_aes_cbc_encrypt(struct cipher_ctx *ctx, struct cipher_pkt 
 		p_iv = iv_loc;
 	}
 
-	sys_cache_data_disable();
+	k_sched_lock();
+
+	sys_cache_data_flush_range(pkt->in_buf, pkt->in_len);
+	sys_cache_data_flush_range(pkt->out_buf, pkt->out_buf_max);
+	sys_cache_data_flush_range(p_iv, 16);
+
 	status = DCP_AES_EncryptCbc(cfg->base, &session->handle, pkt->in_buf,
 				    pkt->out_buf + iv_bytes, pkt->in_len, p_iv);
-	sys_cache_data_enable();
-
 	if (status != kStatus_Success) {
+		k_sched_unlock();
 		return fsl_to_errno(status);
 	}
+
+	sys_cache_data_invd_range_aligned(pkt->out_buf, pkt->out_buf_max);
+	sys_cache_data_invd_range_aligned(p_iv, 16);
+
+	k_sched_unlock();
 
 	pkt->out_len = pkt->in_len + iv_bytes;
 
@@ -130,14 +139,23 @@ static int crypto_dcp_aes_cbc_decrypt(struct cipher_ctx *ctx, struct cipher_pkt 
 		p_iv = iv_loc;
 	}
 
-	sys_cache_data_disable();
+	k_sched_lock();
+
+	sys_cache_data_flush_range(pkt->in_buf, pkt->in_len);
+	sys_cache_data_flush_range(pkt->out_buf, pkt->out_buf_max);
+	sys_cache_data_flush_range(p_iv, 16);
+
 	status = DCP_AES_DecryptCbc(cfg->base, &session->handle, pkt->in_buf + iv_bytes,
 				    pkt->out_buf, pkt->in_len, p_iv);
-	sys_cache_data_enable();
-
 	if (status != kStatus_Success) {
+		k_sched_unlock();
 		return fsl_to_errno(status);
 	}
+
+	sys_cache_data_invd_range_aligned(pkt->out_buf, pkt->out_buf_max);
+	sys_cache_data_invd_range_aligned(p_iv, 16);
+
+	k_sched_unlock();
 
 	pkt->out_len = pkt->in_len - iv_bytes;
 
@@ -150,14 +168,21 @@ static int crypto_dcp_aes_ecb_encrypt(struct cipher_ctx *ctx, struct cipher_pkt 
 	struct crypto_dcp_session *session = ctx->drv_sessn_state;
 	status_t status;
 
-	sys_cache_data_disable();
+	k_sched_lock();
+
+	sys_cache_data_flush_range(pkt->in_buf, pkt->in_len);
+	sys_cache_data_flush_range(pkt->out_buf, pkt->out_buf_max);
+
 	status = DCP_AES_EncryptEcb(cfg->base, &session->handle, pkt->in_buf, pkt->out_buf,
 				    pkt->in_len);
-	sys_cache_data_enable();
-
 	if (status != kStatus_Success) {
+		k_sched_unlock();
 		return fsl_to_errno(status);
 	}
+
+	sys_cache_data_invd_range_aligned(pkt->out_buf, pkt->out_buf_max);
+
+	k_sched_unlock();
 
 	pkt->out_len = pkt->in_len;
 
@@ -170,14 +195,21 @@ static int crypto_dcp_aes_ecb_decrypt(struct cipher_ctx *ctx, struct cipher_pkt 
 	struct crypto_dcp_session *session = ctx->drv_sessn_state;
 	status_t status;
 
-	sys_cache_data_disable();
+	k_sched_lock();
+
+	sys_cache_data_flush_range(pkt->in_buf, pkt->in_len);
+	sys_cache_data_flush_range(pkt->out_buf, pkt->out_buf_max);
+
 	status = DCP_AES_DecryptEcb(cfg->base, &session->handle, pkt->in_buf, pkt->out_buf,
 				    pkt->in_len);
-	sys_cache_data_enable();
-
 	if (status != kStatus_Success) {
+		k_sched_unlock();
 		return fsl_to_errno(status);
 	}
+
+	sys_cache_data_invd_range_aligned(pkt->out_buf, pkt->out_buf_max);
+
+	k_sched_unlock();
 
 	pkt->out_len = pkt->in_len;
 
@@ -249,19 +281,25 @@ static int crypto_dcp_sha256(struct hash_ctx *ctx, struct hash_pkt *pkt, bool fi
 	struct crypto_dcp_session *session = ctx->drv_sessn_state;
 	status_t status;
 
-	sys_cache_data_disable();
+	k_sched_lock();
+
+	sys_cache_data_flush_range(pkt->in_buf, pkt->in_len);
+
 	status = DCP_HASH_Update(cfg->base, &session->hash_ctx, pkt->in_buf, pkt->in_len);
-	sys_cache_data_enable();
 
 	if (status != kStatus_Success) {
+		k_sched_unlock();
 		return fsl_to_errno(status);
 	}
 
 	if (finish) {
-		sys_cache_data_disable();
 		status = DCP_HASH_Finish(cfg->base, &session->hash_ctx, pkt->out_buf, NULL);
-		sys_cache_data_enable();
+		/* no invalidation of pkt->out_buf needed, since it gets copied by
+		 * dcp_reverse_and_copy
+		 */
 	}
+
+	k_sched_unlock();
 
 	return fsl_to_errno(status);
 }
