@@ -133,3 +133,13 @@ properties:
       output data at a higher clock rate than the standard read command.  This
       property indicates that the device supports the fast read command with
       8 dummy cycles after the address phase of the command.
+
+  write-block-size:
+    type: int
+    description: |
+      Address alignment required by flash write operations.
+
+      For SPI NOR devices, this is always 1 byte. This property is
+      only here, because it is expected to be available by mcuboot.
+    const: 1
+    default: 1
