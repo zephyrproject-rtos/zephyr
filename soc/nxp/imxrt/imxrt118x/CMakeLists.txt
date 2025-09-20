@@ -6,15 +6,6 @@
 
 zephyr_sources(soc.c)
 
-if(CONFIG_SOC_MIMXRT1189_CM33)
-  zephyr_sources(m33/mpu_regions.c)
-  zephyr_linker_sources(DTCM_SECTION m33/dtcm.ld)
-endif()
-
-if(CONFIG_SOC_MIMXRT1189_CM7)
-  zephyr_sources(m7/mpu_regions.c)
-endif()
-
 zephyr_include_directories(.)
 
 if(CONFIG_MEMC_MCUX_FLEXSPI)
