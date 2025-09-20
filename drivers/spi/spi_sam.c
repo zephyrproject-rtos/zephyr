@@ -101,6 +101,20 @@ static int spi_sam_configure(const struct device *dev,
 	uint16_t spi_csr_idx = spi_cs_is_gpio(config) ? 0 : config->slave;
 	int div;
 
+#ifdef SOC_ATMEL_SAM_MCK_FREQ_HZ
+	uint32_t rate = SOC_ATMEL_SAM_MCK_FREQ_HZ;
+#else
+	uint32_t rate;
+	int ret;
+
+	ret = clock_control_get_rate(SAM_DT_PMC_CONTROLLER,
+				     (clock_control_subsys_t)&cfg->clock_cfg,
+				     &rate);
+	if (ret) {
+		return ret;
+	}
+#endif
+
 	if (spi_context_configured(&data->ctx, config)) {
 		return 0;
 	}
@@ -146,7 +160,7 @@ static int spi_sam_configure(const struct device *dev,
 	}
 
 	/* Use the requested or next highest possible frequency */
-	div = SOC_ATMEL_SAM_MCK_FREQ_HZ / config->frequency;
+	div = rate / config->frequency;
 	div = CLAMP(div, 1, UINT8_MAX);
 	spi_csr |= SPI_CSR_SCBR(div);
 
