@@ -53,6 +53,7 @@ config IVSHMEM_INT_PRIORITY
 config IVSHMEM_SHELL
 	bool "IVshmem shell module"
 	depends on SHELL
+	default y if SHELL_ALL
 	help
 	  This is mostly a module to help getting info the ivshmem and/or
 	  quickly testing your ivshmem client application (from another VM).

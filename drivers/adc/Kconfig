@@ -18,6 +18,7 @@ if ADC
 config ADC_SHELL
 	bool "ADC Shell"
 	depends on SHELL
+	default y if SHELL_ALL
 	help
 	  Enable ADC Shell for testing.
 

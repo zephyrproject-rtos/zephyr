@@ -48,6 +48,7 @@ config WIFI_ESWIFI_THREAD_PRIO
 
 config WIFI_ESWIFI_SHELL
 	bool "esWiFi shell"
+	default y if SHELL_ALL
 	depends on SHELL
 	help
 	  Enable esWiFi shell

@@ -29,6 +29,7 @@ config CLOCK_CONTROL_NRF_K32SRC_FREQUENCY
 config CLOCK_CONTROL_NRF_SHELL
 	bool "Shell commands"
 	depends on SHELL
+	default y if SHELL_ALL
 
 choice CLOCK_CONTROL_NRF_SOURCE
 	prompt "32KHz clock source"

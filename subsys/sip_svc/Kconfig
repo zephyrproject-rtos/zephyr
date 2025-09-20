@@ -68,6 +68,7 @@ config ARM_SIP_SVC_SUBSYS_SINGLY_OPEN
 
 config ARM_SIP_SVC_SUBSYS_SHELL
 	bool "ARM SiP SVC service shell"
+	default y if SHELL_ALL
 	depends on SHELL
 	help
 	  Enable ARM SiP SVC service shell support to communicate with EL3/EL2

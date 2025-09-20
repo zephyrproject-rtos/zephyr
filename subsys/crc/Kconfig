@@ -156,6 +156,7 @@ config CRC32_K_4_2_TABLE_256
 config CRC_SHELL
 	bool "CRC Shell"
 	depends on SHELL
+	default y if SHELL_ALL
 	select POSIX_C_LIB_EXT
 	help
 	  Enable CRC checking for memory regions from the shell.

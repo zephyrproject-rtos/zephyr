@@ -36,6 +36,7 @@ if MCUBOOT_IMG_MANAGER
 
 config MCUBOOT_SHELL
 	bool "MCUboot shell"
+	default y if SHELL_ALL
 	depends on SHELL
 	help
 	  Enable shell module, which provides information about image slots and

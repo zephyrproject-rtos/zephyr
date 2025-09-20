@@ -16,6 +16,7 @@ if I2C
 config I2C_SHELL
 	bool "I2C Shell"
 	depends on SHELL
+	default y if SHELL_ALL
 	help
 	  Enable I2C Shell.
 

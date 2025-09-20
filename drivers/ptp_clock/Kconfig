@@ -20,6 +20,7 @@ config PTP_CLOCK_INIT_PRIORITY
 config PTP_CLOCK_SHELL
 	bool "PTP Clock Shell"
 	depends on SHELL
+	default y if SHELL_ALL
 	help
 	  Enable PTP Clock Shell.
 

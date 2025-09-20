@@ -21,6 +21,7 @@ config STEPPER_INIT_PRIORITY
 config STEPPER_SHELL
 	bool "Stepper shell"
 	depends on SHELL
+	default y if SHELL_ALL
 	help
 	  Enable stepper shell for testing.
 

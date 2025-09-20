@@ -76,6 +76,7 @@ config INPUT_EVENT_DUMP
 
 config INPUT_SHELL
 	bool "Input shell"
+	default y if SHELL_ALL
 	depends on SHELL
 	help
 	  Enable the input shell, for interacting with the input subsystem

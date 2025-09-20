@@ -37,6 +37,7 @@ config RTC_CALIBRATION
 
 config RTC_SHELL
 	bool "RTC Shell commands"
+	default y if SHELL_ALL
 	depends on SHELL
 	help
 	  RTC Shell commands

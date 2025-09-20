@@ -33,6 +33,7 @@ config PM_CPU_OPS_PSCI
 config PSCI_SHELL
 	bool "Support for PSCI interface shell commands"
 	depends on SHELL && PM_CPU_OPS_PSCI
+	default y if SHELL_ALL
 	help
 	  Say Y here if you need to enable PSCI interface shell commands
 	  like 'warm' and 'cold' reset commands.
