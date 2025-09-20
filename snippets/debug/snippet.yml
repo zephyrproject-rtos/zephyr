@@ -1,0 +1,3 @@
+name: debug
+append:
+  EXTRA_CONF_FILE: debug.conf
