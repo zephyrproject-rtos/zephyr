@@ -32,6 +32,7 @@ class ProbeRsBinaryRunner(ZephyrBinaryRunner):
             self.args += tool_opt
 
         self.elf_name = cfg.elf_file
+        self.hex_file = cfg.hex_file
 
         self.gdb_cmd = cfg.gdb
         self.gdb_host = gdb_host
@@ -88,7 +89,15 @@ class ProbeRsBinaryRunner(ZephyrBinaryRunner):
         download_args = []
         if self.erase:
             download_args += ['--chip-erase']
-        download_args += [self.elf_name]
+
+        if self.hex_file is not None:
+            download_args += ['--binary-format', 'hex']
+            download_args += [self.hex_file]
+        elif self.elf_name is not None:
+            download_args += ['--binary-format', 'elf']
+            download_args += [self.elf_name]
+        else:
+            raise ValueError('Cannot flash; hex or elf file required.')
 
         self.check_call([self.probe_rs, 'download']
                         + self.args + download_args)
