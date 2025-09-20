@@ -21,6 +21,12 @@ config LED_STRIP_INIT_PRIORITY
 	help
 	  System initialization priority for LED strip drivers.
 
+config LED_STRIP_SHELL
+	bool "LED strip shell"
+	depends on SHELL
+	help
+	  Enable LED strip shell for testing.
+
 # Hidden option. The extra byte enables efficient serialization and transmission
 # for drivers which require 4 B on wire for every 3 B of color, e.g. APA102, but
 # is not normally needed.
