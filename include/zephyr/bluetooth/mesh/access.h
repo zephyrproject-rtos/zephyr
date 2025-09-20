@@ -15,6 +15,10 @@
 #include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/mesh/msg.h>
 
+/**
+ * @cond INTERNAL_HIDDEN
+ */
+
 /* Internal macros used to initialize array members */
 #define BT_MESH_KEY_UNUSED_ELT_(IDX, _) BT_MESH_KEY_UNUSED
 #define BT_MESH_ADDR_UNASSIGNED_ELT_(IDX, _) BT_MESH_ADDR_UNASSIGNED
@@ -30,6 +34,8 @@
 #else
 #define BT_MESH_MODEL_UUIDS_UNASSIGNED()
 #endif
+
+/** @endcond */
 
 #define BT_MESH_MODEL_RUNTIME_INIT(_user_data)			\
 	.rt = &(struct bt_mesh_model_rt_ctx){ .user_data = (_user_data) },
@@ -199,8 +205,11 @@ struct bt_mesh_model_op {
 			  struct net_buf_simple *buf);
 };
 
+/** Macro for encoding a 1-byte opcode (used by Bluetooth SIG defined models). */
 #define BT_MESH_MODEL_OP_1(b0) (b0)
+/** Macro for encoding a 2-byte opcode (used by Bluetooth SIG defined models). */
 #define BT_MESH_MODEL_OP_2(b0, b1) (((b0) << 8) | (b1))
+/** Macro for encoding a 3-byte opcode (vendor-specific message). */
 #define BT_MESH_MODEL_OP_3(b0, cid) ((((b0) << 16) | 0xc00000) | (cid))
 
 /** Macro for encoding exact message length for fixed-length messages.  */
@@ -593,13 +602,13 @@ struct bt_mesh_model_pub {
  *  BT_MESH_MODELS_METADATA_ENTRY macro.
  */
 struct bt_mesh_models_metadata_entry {
-	/* Length of the metadata */
+	/** Length of the metadata */
 	const uint16_t len;
 
-	/* ID of the metadata */
+	/** ID of the metadata */
 	const uint16_t id;
 
-	/* Pointer to raw data */
+	/** Pointer to raw data */
 	const void * const data;
 };
 
