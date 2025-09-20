@@ -27,6 +27,12 @@
 #define JESD216_CMD_BURST_SFDP  0x5B
 #define JESD216_OCMD_READ_SFDP  0x5AA5
 
+/* The maximum frequency, that all SFDP compliant devices have to support,
+ * at which the JESD216 read SFDP command may be issued is 50 MHz, according
+ * to JESD216 section 4.4.
+ */
+#define JESD216_CMD_READ_SFDP_MAX_FREQUENCY  MHZ(50)
+
 /* Layout of a JESD216 parameter header. */
 struct jesd216_param_header {
 	uint8_t id_lsb;		/* ID LSB */
