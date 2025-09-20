@@ -401,6 +401,20 @@
 			#io-channel-cells = <1>;
 			status = "disabled";
 		};
+
+		gpdma0: gpdma@21080000 {
+			compatible = "silabs,gpdma";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x21080000 0x1720>;
+			interrupts = <31 0>;
+			interrupt-names = "gpdma0";
+			clocks = <&clock0 SIWX91X_CLK_GPDMA0>;
+			silabs,channel-reg-base = <0x21081004>;
+			silabs,dma-channel-count = <8>;
+			#dma-cells = <2>;
+			status = "disabled";
+		};
 	};
 };
 
