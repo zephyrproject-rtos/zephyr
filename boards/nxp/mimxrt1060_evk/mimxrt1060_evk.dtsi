@@ -12,8 +12,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "NXP MIMXRT1060-EVK board";
 	compatible = "nxp,mimxrt1062";
+	model = "NXP MIMXRT1060-EVK board";
 
 	aliases {
 		led0 = &green_led;
@@ -35,9 +35,9 @@
 	};
 
 	sdram0: memory@80000000 {
+		reg = <0x80000000 DT_SIZE_M(32)>;
 		/* Micron MT48LC16M16A2B4-6AIT:G */
 		device_type = "memory";
-		reg = <0x80000000 DT_SIZE_M(32)>;
 	};
 
 	/*
@@ -139,17 +139,17 @@ zephyr_lcdif: &lcdif {
 nxp_touch_i2c: &lpi2c1 {};
 
 arduino_i2c: &lpi2c1 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpi2c1>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &lpuart1 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_lpuart1>;
 	pinctrl-1 = <&pinmux_lpuart1_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &lpuart8 {
@@ -160,68 +160,68 @@ arduino_i2c: &lpi2c1 {
 };
 
 &enet_mac {
-	status = "okay";
 	pinctrl-0 = <&pinmux_enet>;
 	pinctrl-names = "default";
 	phy-handle = <&phy>;
-	zephyr,random-mac-address;
 	phy-connection-type = "rmii";
+	zephyr,random-mac-address;
+	status = "okay";
 };
 
 &enet_mdio {
-	status = "okay";
 	pinctrl-0 = <&pinmux_enet_mdio>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	phy: phy@0 {
 		compatible = "microchip,ksz8081";
 		reg = <0>;
-		status = "okay";
 		reset-gpios = <&gpio1 9 GPIO_ACTIVE_HIGH>;
 		int-gpios = <&gpio1 10 GPIO_ACTIVE_HIGH>;
 		microchip,interface-type = "rmii";
+		status = "okay";
 	};
 };
 
 &enet_ptp_clock {
-	status = "okay";
 	pinctrl-0 = <&pinmux_ptp>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &adc1 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_adc1>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 zephyr_udc0: &usb1 {
-	status = "okay";
 	phy-handle = <&usbphy1>;
+	status = "okay";
 };
 
 zephyr_uhc0: &usbh1 {
-	status = "okay";
 	phy-handle = <&usbphy1>;
+	status = "okay";
 };
 
 zephyr_uhc1: &usbh2 {
-	status = "okay";
 	phy-handle = <&usbphy2>;
+	status = "okay";
 };
 
 &usbphy1 {
-	status = "okay";
 	tx-d-cal = <12>;
 	tx-cal-45-dp-ohms = <6>;
 	tx-cal-45-dm-ohms = <6>;
+	status = "okay";
 };
 
 &usbphy2 {
-	status = "okay";
 	tx-d-cal = <12>;
 	tx-cal-45-dp-ohms = <6>;
 	tx-cal-45-dm-ohms = <6>;
+	status = "okay";
 };
 
 &csi {
@@ -230,9 +230,9 @@ zephyr_uhc1: &usbh2 {
 };
 
 &flexpwm2_pwm3 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm2_3>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &flexpwm1_pwm0 {
@@ -246,16 +246,16 @@ zephyr_uhc1: &usbh2 {
 };
 
 &usdhc1 {
-	status = "okay";
 	power-delay-ms = <1000>;
 	pwr-gpios = <&gpio1 5 GPIO_ACTIVE_HIGH>;
 	cd-gpios = <&gpio2 28 GPIO_ACTIVE_LOW>;
-	status = "okay";
 	pinctrl-0 = <&pinmux_usdhc1>;
 	pinctrl-1 = <&pinmux_usdhc1_slow>;
 	pinctrl-2 = <&pinmux_usdhc1_med>;
 	pinctrl-3 = <&pinmux_usdhc1_fast>;
 	pinctrl-names = "default", "slow", "med", "fast";
+	status = "okay";
+	status = "okay";
 
 	sdmmc {
 		compatible = "zephyr,sdmmc-disk";
@@ -269,9 +269,9 @@ zephyr_uhc1: &usbh2 {
 };
 
 &flexcan3 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_flexcan3>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	can-transceiver {
 		max-bitrate = <5000000>;
@@ -283,27 +283,27 @@ zephyr_uhc1: &usbh2 {
 };
 
 arduino_spi: &lpspi1 {
-	status = "okay";
 	/* DMA channels 0 and 1, muxed to LPSPI1 RX and TX */
 	dmas = <&edma0 0 13>, <&edma0 1 14>;
 	dma-names = "rx", "tx";
 	pinctrl-0 = <&pinmux_lpspi1>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &lpspi3 {
-	status = "okay";
 	/* DMA channels 2 and 3, muxed to LPSPI3 RX and TX */
 	dmas = <&edma0 2 15>, <&edma0 3 16>;
 	dma-names = "rx", "tx";
 	pinctrl-0 = <&pinmux_lpspi3>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &sai1 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_sai1>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 /* GPT and Systick are enabled. If power management is enabled, the GPT

@@ -8,8 +8,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "NXP Freedom MK64F board";
 	compatible = "nxp,mk64f12", "nxp,k64f", "nxp,k6x";
+	model = "NXP Freedom MK64F board";
 
 	aliases {
 		led0 = &green_led;
@@ -107,10 +107,10 @@
 };
 
 arduino_serial: &uart3 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart3_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &cpu0 {
@@ -118,15 +118,15 @@ arduino_serial: &uart3 {
 };
 
 &adc0 {
-	status = "okay";
 	pinctrl-0 = <&adc0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &adc1 {
-	status = "okay";
 	pinctrl-0 = <&adc1_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &temp1 {
@@ -134,14 +134,14 @@ arduino_serial: &uart3 {
 };
 
 &dac0 {
-	status = "okay";
 	voltage-reference = <2>;
+	status = "okay";
 };
 
 arduino_i2c: &i2c0 {
-	status = "okay";
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	fxos8700: fxos8700@1d {
 		compatible = "nxp,fxos8700";
@@ -152,20 +152,21 @@ arduino_i2c: &i2c0 {
 };
 
 arduino_spi: &spi0 {
-	status = "okay";
 	pinctrl-0 = <&spi0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &spi1 {
-	status = "okay";
 	pinctrl-0 = <&spi1_default>;
 	pinctrl-names = "default";
 	cs-gpios = <&gpioe 4 GPIO_ACTIVE_LOW>;
+	status = "okay";
 
 	sdhc0: sdhc@0 {
 		compatible = "zephyr,sdhc-spi-slot";
 		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(24)>;
 		status = "okay";
 
 		sdmmc {
@@ -173,33 +174,32 @@ arduino_spi: &spi0 {
 			disk-name = "SD";
 			status = "okay";
 		};
-		spi-max-frequency = <DT_FREQ_M(24)>;
 	};
 };
 
 &ftm0 {
-	status = "okay";
 	compatible = "nxp,ftm-pwm";
 	#pwm-cells = <3>;
 	pinctrl-0 = <&ftm0_default>;
 	pinctrl-names = "default";
 	clock-source = "fixed";
+	status = "okay";
 };
 
 &ftm3 {
-	status = "okay";
 	compatible = "nxp,ftm-pwm";
 	#pwm-cells = <3>;
 	pinctrl-0 = <&ftm3_default>;
 	pinctrl-names = "default";
 	clock-source = "fixed";
+	status = "okay";
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &uart2 {
@@ -209,8 +209,8 @@ arduino_spi: &spi0 {
 
 zephyr_udc0: &usbotg {
 	compatible = "nxp,kinetis-usbd";
-	status = "okay";
 	num-bidir-endpoints = <8>;
+	status = "okay";
 };
 
 &gpioa {
@@ -244,60 +244,60 @@ zephyr_udc0: &usbotg {
 		 * to the flash memory sector size of 4KB.
 		 */
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(64)>;
+			label = "mcuboot";
 			read-only;
 		};
 
 		slot0_partition: partition@10000 {
-			label = "image-0";
 			reg = <0x00010000 DT_SIZE_K(420)>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@79000 {
-			label = "image-1";
 			reg = <0x00079000 DT_SIZE_K(420)>;
+			label = "image-1";
 		};
 
 		storage_partition: partition@e2000 {
-			label = "storage";
 			reg = <0x000e2000 DT_SIZE_K(120)>;
+			label = "storage";
 		};
 	};
 };
 
 &enet_mac {
-	status = "okay";
 	pinctrl-0 = <&pinmux_enet>;
 	pinctrl-names = "default";
 	phy-handle = <&phy>;
-	zephyr,random-mac-address;
 	phy-connection-type = "rmii";
+	zephyr,random-mac-address;
+	status = "okay";
 };
 
 &enet_mdio {
-	status = "okay";
 	pinctrl-0 = <&pinmux_enet_mdio>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	phy: phy@0 {
 		compatible = "microchip,ksz8081";
 		reg = <0>;
-		status = "okay";
 		microchip,interface-type = "rmii-25MHz";
+		status = "okay";
 	};
 };
 
 &enet_ptp_clock {
-	status = "okay";
 	pinctrl-0 = <&pinmux_ptp>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &flexcan0 {
-	status = "okay";
 	pinctrl-0 = <&flexcan0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &edma0 {

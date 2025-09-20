@@ -10,8 +10,8 @@
 #include "imx943_evk-pinctrl.dtsi"
 
 / {
-	model = "NXP i.MX943 A55";
 	compatible = "fsl,mimx943";
+	model = "NXP i.MX943 A55";
 
 	chosen {
 		zephyr,console = &lpuart1;
@@ -40,10 +40,10 @@
 };
 
 &lpuart1 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&lpuart1_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &emdio {
@@ -111,20 +111,20 @@
 };
 
 &switch_port0 {
-	zephyr,random-mac-address;
 	pinctrl-0 = <&eth0_default>;
 	pinctrl-names = "default";
 	phy-handle = <&phy0>;
 	phy-connection-type = "mii";
+	zephyr,random-mac-address;
 	status = "disabled";
 };
 
 &switch_port1 {
-	zephyr,random-mac-address;
 	pinctrl-0 = <&eth1_default>;
 	pinctrl-names = "default";
 	phy-handle = <&phy1>;
 	phy-connection-type = "mii";
+	zephyr,random-mac-address;
 	status = "disabled";
 };
 

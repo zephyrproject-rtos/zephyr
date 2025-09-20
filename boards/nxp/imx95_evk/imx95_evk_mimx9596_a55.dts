@@ -10,8 +10,8 @@
 #include "imx95_evk-pinctrl.dtsi"
 
 / {
-	model = "NXP i.MX95 A55";
 	compatible = "fsl,mimx95";
+	model = "NXP i.MX95 A55";
 
 	chosen {
 		zephyr,console = &lpuart1;
@@ -85,8 +85,8 @@
 };
 
 &lpuart1 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&lpuart1_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };

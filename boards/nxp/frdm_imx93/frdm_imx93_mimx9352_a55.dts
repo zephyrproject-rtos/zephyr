@@ -11,8 +11,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "NXP FRDM-IMX93 A55";
 	compatible = "fsl,mimx93";
+	model = "NXP FRDM-IMX93 A55";
 
 	aliases {
 		led0 = &led_r;
@@ -89,10 +89,10 @@
 };
 
 &lpi2c2 {
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 	pinctrl-0 = <&i2c2_default>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	gpio_exp0: pcal6524@22 {
 		compatible = "nxp,pcal6524";
