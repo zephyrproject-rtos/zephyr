@@ -894,6 +894,7 @@ static DEVICE_API(spi, spi_mcux_driver_api) = {
 #define SPI_MCUX_DSPI_DEVICE(id)					\
 	PINCTRL_DT_INST_DEFINE(id);					\
 	static void spi_mcux_config_func_##id(const struct device *dev);\
+	CLOCK_CONTROL_DT_SPEC_INST_DEFINE(id, clocks);			\
 	TX_BUFFER(id);							\
 	RX_BUFFER(id);							\
 	static struct spi_mcux_data spi_mcux_data_##id = {		\
@@ -906,7 +907,7 @@ static DEVICE_API(spi, spi_mcux_driver_api) = {
 		.base = (SPI_Type *)DT_INST_REG_ADDR(id),		\
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(id)),	\
 		.clock_subsys = 					\
-		(clock_control_subsys_t)DT_INST_CLOCKS_CELL(id, name),	\
+		CLOCK_CONTROL_DT_SPEC_INST_GET(id, clocks),		\
 		.irq_config_func = spi_mcux_config_func_##id,		\
 		.pcs_sck_delay =					\
 		    DT_INST_PROP_OR(id, pcs_sck_delay, 0),		\

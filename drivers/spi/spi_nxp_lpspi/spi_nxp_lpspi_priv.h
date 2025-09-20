@@ -93,9 +93,10 @@ int lpspi_wait_tx_fifo_empty(const struct device *dev);
 
 #define SPI_LPSPI_CONFIG_INIT(n)                                                              \
 	static const struct lpspi_config lpspi_config_##n = {                                \
+		CLOCK_CONTROL_DT_SPEC_INST_DEFINE(n, clocks);                                  \
 		DEVICE_MMIO_NAMED_ROM_INIT(reg_base, DT_DRV_INST(n)),                              \
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
-		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),              \
+		.clock_subsys = CLOCK_CONTROL_DT_SPEC_INST_GET(n, clocks),                         \
 		.irq_config_func = lpspi_config_func_##n,                                          \
 		.pcs_sck_delay = DT_INST_PROP_OR(n, pcs_sck_delay, 0),                             \
 		.sck_pcs_delay = DT_INST_PROP_OR(n, sck_pcs_delay, 0),                             \

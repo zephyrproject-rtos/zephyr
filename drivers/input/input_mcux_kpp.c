@@ -179,12 +179,13 @@ static int input_kpp_init(const struct device *dev)
 #define INPUT_KPP_INIT(n)                                                               \
 	static struct kpp_data kpp_data_##n;                                            \
                                                                                         \
+	CLOCK_CONTROL_DT_SPEC_INST_DEFINE(n, clocks);                                   \
+                                                                                        \
 	PINCTRL_DT_INST_DEFINE(n);                                                      \
                                                                                         \
 	static const struct kpp_config kpp_config_##n = {                               \
 		.base = (KPP_Type *)DT_INST_REG_ADDR(n),                                \
-		.clk_sub_sys =                                                          \
-			(clock_control_subsys_t)DT_INST_CLOCKS_CELL_BY_IDX(n, 0, name),	\
+		.clk_sub_sys = CLOCK_CONTROL_DT_SPEC_INST_GET(n, clocks),               \
 		.ccm_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                       \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                              \
 	};                                                                              \

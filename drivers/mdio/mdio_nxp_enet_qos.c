@@ -8,6 +8,7 @@
 
 #include <zephyr/net/mdio.h>
 #include <zephyr/drivers/mdio.h>
+#include <zephyr/drivers/clock_control.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/ethernet/eth_nxp_enet_qos.h>
@@ -258,6 +259,8 @@ static int nxp_enet_qos_mdio_init(const struct device *dev)
 }
 
 #define NXP_ENET_QOS_MDIO_INIT(inst)						\
+										\
+	CLOCK_CONTROL_DT_SPEC_INST_DEFINE(inst, clocks);			\
 										\
 	static const struct nxp_enet_qos_mdio_config				\
 	nxp_enet_qos_mdio_cfg_##inst = {					\

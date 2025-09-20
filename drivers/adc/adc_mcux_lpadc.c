@@ -562,6 +562,7 @@ static DEVICE_API(adc, mcux_lpadc_driver_api) = {
 	static void mcux_lpadc_config_func_##n(const struct device *dev);	\
 									\
 	PINCTRL_DT_INST_DEFINE(n);						\
+	CLOCK_CONTROL_DT_SPEC_INST_DEFINE(n, clocks);				\
 	static const struct mcux_lpadc_config mcux_lpadc_config_##n = {	\
 		.base = (ADC_Type *)DT_INST_REG_ADDR(n),	\
 		.voltage_ref =	DT_INST_PROP(n, voltage_ref),	\
@@ -575,7 +576,7 @@ static DEVICE_API(adc, mcux_lpadc_driver_api) = {
 						(DEVICE_DT_GET(DT_PHANDLE(DT_DRV_INST(n),\
 						nxp_references))), (NULL)),\
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
-		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),\
+		.clock_subsys = CLOCK_CONTROL_DT_SPEC_INST_GET(n, clocks),\
 		.ref_supply_val = COND_CODE_1(\
 						DT_INST_NODE_HAS_PROP(n, nxp_references),\
 						(DT_PHA(DT_DRV_INST(n), nxp_references, vref_mv)), \

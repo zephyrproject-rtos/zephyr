@@ -202,6 +202,7 @@ static DEVICE_API(wdt, mcux_rtwdog_api) = {
 
 #define MCUX_RTWDOG_INIT(n)                                                                        \
                                                                                                    \
+	CLOCK_CONTROL_DT_SPEC_INST_DEFINE(n, clocks);                                             \
 	static struct mcux_rtwdog_data mcux_rtwdog_data_##n;                                       \
 	static void mcux_rtwdog_config_func_##n(const struct device *dev);                         \
                                                                                                    \
@@ -209,7 +210,7 @@ static DEVICE_API(wdt, mcux_rtwdog_api) = {
 		.base = (RTWDOG_Type *)DT_INST_REG_ADDR(n),                                        \
 		.irq_config_func = mcux_rtwdog_config_func_##n,                                    \
 		.clock_frequency = DT_INST_PROP_BY_PHANDLE(n, clocks, clock_frequency),            \
-		.clk_source = TO_RTWDOG_CLK_SRC(DT_INST_PROP(n, clk_source)),                      \
+		.clk_source = CLOCK_CONTROL_DT_SPEC_INST_GET(n, clocks),                           \
 		.clk_divider = TO_RTWDOG_CLK_DIV(DT_INST_PROP(n, clk_divider)),                    \
 	};                                                                                         \
 	static void mcux_rtwdog_config_func_##n(const struct device *dev)                          \

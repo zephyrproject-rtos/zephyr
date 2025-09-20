@@ -246,6 +246,7 @@ static DEVICE_API(pwm, pwm_mcux_driver_api) = {
 #define PWM_DEVICE_INIT_MCUX(n)			  \
 	static struct pwm_mcux_data pwm_mcux_data_ ## n;		  \
 	PINCTRL_DT_INST_DEFINE(n);					  \
+	CLOCK_CONTROL_DT_SPEC_INST_DEFINE(n, clocks);			  \
 									  \
 	static const struct pwm_mcux_config pwm_mcux_config_ ## n = {     \
 		.base = (PWM_Type *)DT_REG_ADDR(DT_INST_PARENT(n)),	  \
@@ -255,7 +256,7 @@ static DEVICE_API(pwm, pwm_mcux_driver_api) = {
 		.reload = DT_ENUM_IDX_OR(DT_DRV_INST(n), nxp_reload,\
 				kPWM_ReloadPwmFullCycle),\
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),		\
-		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),\
+		.clock_subsys = CLOCK_CONTROL_DT_SPEC_INST_GET(n, clocks),\
 		.run_wait = DT_INST_PROP(n, run_in_wait),		  \
 		.run_debug = DT_INST_PROP(n, run_in_debug),		  \
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		  \

@@ -354,6 +354,8 @@ static DEVICE_API(i2c, i2c_api) = {
 									      \
 static void lpc11u6x_i2c_isr_config_##idx(const struct device *dev);	      \
 									      \
+CLOCK_CONTROL_DT_SPEC_INST_DEFINE(idx, clocks);			      \
+									      \
 PINCTRL_DT_INST_DEFINE(idx);                                                  \
 									      \
 static const struct lpc11u6x_i2c_config i2c_cfg_##idx = {		      \
@@ -362,7 +364,7 @@ static const struct lpc11u6x_i2c_config i2c_cfg_##idx = {		      \
 	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(idx)),		      \
 	.irq_config_func = lpc11u6x_i2c_isr_config_##idx,		      \
 	.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),                        \
-	.clkid = DT_INST_PHA_BY_IDX(idx, clocks, 0, clkid),		      \
+	.clkid = CLOCK_CONTROL_DT_SPEC_INST_GET(idx, clocks),		      \
 };									      \
 									      \
 static struct lpc11u6x_i2c_data i2c_data_##idx;			              \

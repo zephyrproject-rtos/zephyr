@@ -317,7 +317,7 @@ static DEVICE_API(uart, mcux_lpsci_driver_api) = {
 static const struct mcux_lpsci_config mcux_lpsci_##n##_config = {	\
 	.base = (UART0_Type *)DT_INST_REG_ADDR(n),			\
 	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),		\
-	.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),\
+	.clock_subsys = CLOCK_CONTROL_DT_SPEC_INST_GET(n, clocks),	\
 	.baud_rate = DT_INST_PROP(n, current_speed),			\
 	.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
 	IRQ_FUNC_INIT							\
@@ -325,6 +325,8 @@ static const struct mcux_lpsci_config mcux_lpsci_##n##_config = {	\
 
 #define MCUX_LPSCI_INIT(n)						\
 	PINCTRL_DT_INST_DEFINE(n);					\
+									\
+	CLOCK_CONTROL_DT_SPEC_INST_DEFINE(n, clocks);			\
 									\
 	static struct mcux_lpsci_data mcux_lpsci_##n##_data;		\
 									\

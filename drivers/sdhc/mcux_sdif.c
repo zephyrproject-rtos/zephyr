@@ -424,6 +424,8 @@ static DEVICE_API(sdhc, sdif_api) = {
 
 #define MCUX_SDIF_INIT(n)							\
 	static void sdif_##n##_irq_config_func(const struct device *dev)	\
+									\
+	CLOCK_CONTROL_DT_SPEC_INST_DEFINE(n, clocks);				\
 	{									\
 		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),		\
 			mcux_sdif_isr, DEVICE_DT_INST_GET(n), 0);		\
@@ -440,7 +442,7 @@ static DEVICE_API(sdhc, sdif_api) = {
 		.data_timeout = DT_INST_PROP(n, data_timeout),			\
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),		\
 		.clock_subsys =							\
-			(clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),	\
+			CLOCK_CONTROL_DT_SPEC_INST_GET(n, clocks),		\
 		.irq_config_func = sdif_##n##_irq_config_func,			\
 	};									\
 										\

@@ -165,11 +165,12 @@ static DEVICE_API(wdt, mcux_wdog_api) = {
 
 static void mcux_wdog_config_func_0(const struct device *dev);
 
+CLOCK_CONTROL_DT_SPEC_INST_DEFINE(0, clocks);
+
 static const struct mcux_wdog_config mcux_wdog_config_0 = {
 	.base = (WDOG_Type *) DT_INST_REG_ADDR(0),
 	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(0)),
-	.clock_subsys = (clock_control_subsys_t)
-		DT_INST_CLOCKS_CELL(0, name),
+	.clock_subsys = CLOCK_CONTROL_DT_SPEC_INST_GET(0, clocks),
 	.irq_config_func = mcux_wdog_config_func_0,
 };
 

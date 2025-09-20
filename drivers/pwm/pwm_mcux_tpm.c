@@ -228,12 +228,12 @@ static DEVICE_API(pwm, mcux_tpm_driver_api) = {
 #define TO_TPM_PRESCALE_DIVIDE(val) _DO_CONCAT(kTPM_Prescale_Divide_, val)
 
 #define TPM_DEVICE(n) \
+	CLOCK_CONTROL_DT_SPEC_INST_DEFINE(n, clocks); \
 	PINCTRL_DT_INST_DEFINE(n); \
 	static const struct mcux_tpm_config mcux_tpm_config_##n = { \
 		DEVICE_MMIO_NAMED_ROM_INIT(base, DT_DRV_INST(n)), \
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)), \
-		.clock_subsys = (clock_control_subsys_t) \
-			DT_INST_CLOCKS_CELL(n, name), \
+		.clock_subsys = CLOCK_CONTROL_DT_SPEC_INST_GET(n, clocks), \
 		.tpm_clock_source = kTPM_SystemClock, \
 		.prescale = TO_TPM_PRESCALE_DIVIDE(DT_INST_PROP(n, prescaler)), \
 		.channel_count = FSL_FEATURE_TPM_CHANNEL_COUNTn((TPM_Type *) \
