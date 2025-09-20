@@ -4033,6 +4033,20 @@ Peregrine Platforms:
   labels:
     - "platform: Peregrine"
 
+Performance States:
+  status: maintained
+  maintainers:
+    - peter-mitsis
+    - seankyer
+  files:
+    - include/zephyr/cpu_freq/
+    - include/zephyr/cpu_load/
+    - subsys/cpu_load/
+    - subsys/cpu_freq/
+    - dts/bindings/p_state/
+  labels:
+    - "area: Performance States"
+
 Power management:
   status: maintained
   maintainers:
