@@ -1,0 +1,10 @@
+# Copyright (c) 2025 MASSDRIVER EI <massdriver.space>
+# SPDX-License-Identifier: Apache-2.0
+
+config CACHE_BFLB_L1C
+	bool "Xuantie T-HEAD xtheadcmo extension cache control driver"
+	default y
+	select CACHE_HAS_DRIVER
+	depends on DT_HAS_BFLB_L1C_ENABLED
+	help
+	  This option enables the CACHE driver for xuantie cores using the xtheadcmo extension
