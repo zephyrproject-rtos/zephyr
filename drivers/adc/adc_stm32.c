@@ -1210,6 +1210,11 @@ static int adc_stm32_sampling_time_check(const struct device *dev, uint16_t acq_
 		return STM32_NB_SAMPLING_TIME - 1;
 	}
 
+	if (ADC_ACQ_TIME_UNIT(acq_time) != ADC_ACQ_TIME_TICKS) {
+		LOG_ERR("Acquisition time expected in ticks only");
+		return -EINVAL;
+	}
+
 	for (int i = 0; i < STM32_NB_SAMPLING_TIME; i++) {
 		if (acq_time == ADC_ACQ_TIME(ADC_ACQ_TIME_TICKS,
 					     config->sampling_time_table[i])) {
