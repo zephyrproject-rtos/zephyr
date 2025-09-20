@@ -11,6 +11,7 @@
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/rtio/rtio.h>
+#include <zephyr/rtio/regmap.h>
 #include "rm3100_reg.h"
 
 /* RM3100 produces 3 bytes (24-bit) of data per axis */
@@ -60,13 +61,14 @@ struct rm3100_data {
 	struct {
 		struct rtio_iodev *iodev;
 		struct rtio *ctx;
+		rtio_bus_type type;
 	} rtio;
 	struct {
 		uint8_t odr;
 	} settings;
-#if defined(CONFIG_RM3100_STREAM)
+#if defined(CONFIG_RM3100_HAS_TRIGGER)
 	struct rm3100_stream stream;
-#endif /* CONFIG_RM3100_STREAM */
+#endif /* CONFIG_RM3100_HAS_TRIGGER */
 };
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_PNI_RM3100_H_ */

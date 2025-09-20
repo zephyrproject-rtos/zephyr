@@ -7,6 +7,6 @@ zephyr_library_sources(
 	rm3100.c
 	rm3100_decoder.c
 )
-zephyr_library_sources_ifdef(CONFIG_RM3100_STREAM
+zephyr_library_sources_ifdef(CONFIG_RM3100_HAS_TRIGGER
 	rm3100_stream.c
 )
