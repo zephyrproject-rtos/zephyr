@@ -1188,7 +1188,7 @@ static void modem_cellular_wait_for_apn_event_handler(struct modem_cellular_data
 static int modem_cellular_on_run_apn_script_state_enter(struct modem_cellular_data *data)
 {
 	/* Allow modem time to enter command mode before running apn script */
-	modem_cellular_start_timer(data, K_MSEC(100));
+	modem_cellular_start_timer(data, K_MSEC(200));
 	modem_cellular_build_apn_script(data);
 	return 0;
 }
@@ -2077,7 +2077,7 @@ static void modem_cellular_init_apn(struct modem_cellular_data *data)
 	modem_chat_script_set_abort_matches(&data->apn_script,
 					    abort_matches,
 					    ARRAY_SIZE(abort_matches));
-	modem_chat_script_set_timeout(&data->apn_script, 5);
+	modem_chat_script_set_timeout(&data->apn_script, 1);
 	modem_chat_script_set_callback(&data->apn_script,
 				       modem_cellular_chat_callback_handler);
 }
