@@ -7,9 +7,8 @@
 # Top-level configuration file for LORA drivers.
 
 menuconfig LORA
-	bool "LoRa drivers [EXPERIMENTAL]"
+	bool "LoRa drivers"
 	select POLL
-	select EXPERIMENTAL
 	help
 	  Include LoRa drivers in the system configuration.
 
