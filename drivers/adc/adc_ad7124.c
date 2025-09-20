@@ -119,13 +119,14 @@ LOG_MODULE_REGISTER(adc_ad7124, CONFIG_ADC_LOG_LEVEL);
 #define AD7124_ADC_CTRL_REG_MODE_MSK GENMASK(5, 2)
 
 /* IO Control 1 register bits */
+#define AD7124_IO_CONTROL_1_REG_PDSW_EN		BIT(15)
 #define AD7124_IOUT1_CURRENT_MSK GENMASK(13, 11)
 #define AD7124_IOUT0_CURRENT_MSK GENMASK(10, 8)
 #define AD7124_IOUT1_CHANNEL_MSK GENMASK(7, 4)
 #define AD7124_IOUT0_CHANNEL_MSK GENMASK(3, 0)
 #define AD7124_IOUT_MSK                                                                            \
-	(AD7124_IOUT1_CURRENT_MSK | AD7124_IOUT0_CURRENT_MSK | AD7124_IOUT1_CHANNEL_MSK |          \
-	 AD7124_IOUT0_CHANNEL_MSK)
+	(AD7124_IO_CONTROL_1_REG_PDSW_EN, AD7124_IOUT1_CURRENT_MSK | AD7124_IOUT0_CURRENT_MSK | 		   \
+		AD7124_IOUT1_CHANNEL_MSK | AD7124_IOUT0_CHANNEL_MSK)
 
 /* Current source configuration bits */
 #define AD7124_CURRENT_SOURCE_IOUT_MSK    BIT(3)
@@ -264,6 +265,7 @@ struct adc_ad7124_config {
 	enum ad7124_device_type active_device;
 	uint8_t resolution;
 	bool ref_en;
+	bool pdsw_en;
 };
 
 struct adc_ad7124_data {
@@ -710,6 +712,7 @@ static int adc_ad7124_setup_cfg(const struct device *dev, const struct ad7124_ch
 	int configuration_setup = 0;
 	int configuration_mask = 0;
 	int ref_internal = 0;
+	int pd_switch = 0;
 
 	if (cfg->props.bipolar) {
 		configuration_setup |= AD7124_CFG_REG_BIPOLAR;
@@ -737,12 +740,22 @@ static int adc_ad7124_setup_cfg(const struct device *dev, const struct ad7124_ch
 		ref_internal = AD7124_ADC_CTRL_REG_REF_EN;
 	}
 
+	if (config->pdsw_en) {
+		pd_switch = AD7124_IO_CONTROL_1_REG_PDSW_EN;
+	}
+
 	if (cfg->props.refsel == INTERNAL_REF) {
 		ret = adc_ad7124_reg_write_msk(dev, AD7124_ADC_CONTROL, AD7124_ADC_CONTROL_REG_LEN,
 					       ref_internal, AD7124_ADC_CTRL_REG_REF_EN);
 		if (ret) {
 			return ret;
 		}
+	}
+
+	ret = adc_ad7124_reg_write_msk(dev, AD7124_IO_CONTROL_1, AD7124_IO_CONTROL_1_REG_LEN,
+					pd_switch, AD7124_IO_CONTROL_1_REG_PDSW_EN);
+	if (ret) {
+		return ret;
 	}
 
 	return 0;
@@ -1447,6 +1460,7 @@ static DEVICE_API(adc, adc_ad7124_api) = {
 		.power_mode = DT_INST_PROP(inst, power_mode),                                      \
 		.active_device = DT_INST_PROP(inst, active_device),                                \
 		.ref_en = DT_INST_PROP(inst, reference_enable),                                    \
+		.pdsw_en = DT_INST_PROP(inst, pd_switch_enable),								   \
 	};                                                                                         \
 	static struct adc_ad7124_data adc_ad7124_data##inst = {                                    \
 		ADC_CONTEXT_INIT_LOCK(adc_ad7124_data##inst, ctx),                                 \
