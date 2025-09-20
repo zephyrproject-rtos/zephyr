@@ -17,3 +17,4 @@ supported:
   - entropy
   - i2c
   - i2s
+  - netif:openthread

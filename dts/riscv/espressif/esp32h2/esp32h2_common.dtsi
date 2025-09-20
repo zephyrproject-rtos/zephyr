@@ -54,6 +54,11 @@
 		status = "okay";
 	};
 
+	ieee802154: ieee802154 {
+		compatible = "espressif,esp32-ieee802154";
+		status = "disabled";
+	};
+
 	soc {
 		#address-cells = <1>;
 		#size-cells = <1>;

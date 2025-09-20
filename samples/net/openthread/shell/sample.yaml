@@ -24,3 +24,9 @@ tests:
     platform_allow:
       - frdm_rw612
       - rd_rw612_bga
+  sample.net.openthread.shell.esp:
+    build_only: true
+    extra_args:
+      - CONFIG_BUILD_ONLY_NO_BLOBS=y
+    platform_allow:
+      - esp32h2_devkitm
