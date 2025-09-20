@@ -41,7 +41,7 @@ void soc_early_init_hook(void)
 
 	extern volatile uint16_t g_protect_counters[];
 
-	for (uint32_t i = 0; i < 4; i++) {
+	for (uint32_t i = 0; i < 5; i++) {
 		g_protect_counters[i] = 0;
 	}
 
