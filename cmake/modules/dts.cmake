@@ -248,6 +248,17 @@ if(DEFINED CMAKE_DTS_PREPROCESSOR)
 else()
   set(dts_preprocessor ${CMAKE_C_COMPILER})
 endif()
+if(BOARD_QUALIFIERS MATCHES ".+/.+")
+  string(REPLACE "/" ";" BOARD_QUALIFIERS_LIST "${BOARD_QUALIFIERS}")
+  list(GET BOARD_QUALIFIERS_LIST 1 SOC_NAME)
+  list(GET BOARD_QUALIFIERS_LIST 2 CPU_NAME)
+  string(TOUPPER "${SOC_NAME}" SOC_NAME)
+  string(TOUPPER "${CPU_NAME}" CPU_NAME)
+  list(APPEND DTS_EXTRA_CPPFLAGS
+    "-DDTS_SOC_${SOC_NAME}"
+    "-DDTS_CPU_${CPU_NAME}"
+  )
+endif()
 zephyr_dt_preprocess(
   CPP ${dts_preprocessor}
   SOURCE_FILES ${dts_files}
