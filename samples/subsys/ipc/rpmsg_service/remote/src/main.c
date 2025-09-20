@@ -17,7 +17,7 @@
 
 #include <zephyr/ipc/rpmsg_service.h>
 
-#define APP_TASK_STACK_SIZE (1024)
+#define APP_TASK_STACK_SIZE (2048)
 K_THREAD_STACK_DEFINE(thread_stack, APP_TASK_STACK_SIZE);
 static struct k_thread thread_data;
 
