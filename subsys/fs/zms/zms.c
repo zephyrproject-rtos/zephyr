@@ -1146,6 +1146,8 @@ static int zms_init(struct zms_fs *fs)
 	uint32_t i;
 	uint32_t closed_sectors = 0;
 	bool zms_magic_exist = false;
+	bool ebw_required =
+		flash_params_get_erase_cap(fs->flash_parameters) & FLASH_ERASE_C_EXPLICIT;
 
 	k_mutex_lock(&fs->zms_lock, K_FOREVER);
 
@@ -1279,9 +1281,25 @@ static int zms_init(struct zms_fs *fs)
 		if (rc) {
 			goto end;
 		}
-		if (!zms_ate_valid(fs, &last_ate)) {
-			/* found empty location */
-			break;
+
+		/* Verify that the next location is empty.
+		 * For devices that do not need erase this should be a non valid ATE.
+		 * For devices that needs erase this should be filled with erase_value.
+		 */
+		if (ebw_required) {
+			struct zms_ate erase_ate;
+			memset(&erase_ate, fs->flash_parameters->erase_value,
+			       sizeof(struct zms_ate));
+			rc = memcmp(&erase_ate, &last_ate, sizeof(struct zms_ate));
+			if (!rc) {
+				/* found ff empty location */
+				break;
+			}
+		} else {
+			if (!zms_ate_valid(fs, &last_ate)) {
+				/* found empty location */
+				break;
+			}
 		}
 
 		/* ate on the last position within the sector is
