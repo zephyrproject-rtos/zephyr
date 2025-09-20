@@ -11,8 +11,8 @@
 #include "ip_k66f-pinctrl.dtsi"
 
 / {
-	model = "SEGGER MK66F IP Switch board";
 	compatible = "nxp,mk66f18", "nxp,k66f", "nxp,k6x";
+	model = "SEGGER MK66F IP Switch board";
 
 	aliases {
 		led0 = &red0_led;
@@ -73,8 +73,8 @@
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 0x00010000>;
+			label = "mcuboot";
 			read-only;
 		};
 
@@ -84,56 +84,56 @@
 		 * by the application.
 		 */
 		storage_partition: partition@1e000 {
-			label = "storage";
 			reg = <0x0001e000 0x00002000>;
+			label = "storage";
 		};
 
 		slot0_partition: partition@20000 {
-			label = "image-0";
 			reg = <0x00020000 0x00060000>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@80000 {
-			label = "image-1";
 			reg = <0x00080000 0x00060000>;
+			label = "image-1";
 		};
 
 		scratch_partition: partition@e0000 {
-			label = "image-scratch";
 			reg = <0x000e0000 0x00020000>;
+			label = "image-scratch";
 		};
 	};
 };
 
 &enet_mac {
-	status = "okay";
 	pinctrl-0 = <&enet_default>;
 	pinctrl-names = "default";
-	zephyr,random-mac-address;
 	phy-connection-type = "rmii";
 	phy-handle = <&phy>;
+	zephyr,random-mac-address;
+	status = "okay";
 };
 
 &enet_mdio {
-	status = "okay";
 	pinctrl-0 = <&enet_default>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	phy: phy@0 {
 		compatible = "ethernet-phy";
 		reg = <0>;
-		status = "okay";
 		fixed-link = "100BASE-T Full-Duplex";
+		status = "okay";
 	};
 };
 
 &spi1 {
-	status = "okay";
 	pinctrl-0 = <&spi1_default>;
 	pinctrl-names = "default";
 
 	clock-frequency = <44000000>;
 	cs-gpios = <&gpioe 4 GPIO_ACTIVE_LOW>;
+	status = "okay";
 
 	ksz8794: dsa@0 {
 		compatible = "microchip,ksz8794";
