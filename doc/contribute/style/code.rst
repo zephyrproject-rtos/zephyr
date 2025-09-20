@@ -17,7 +17,7 @@ In general, follow the `Linux kernel coding style`_, with the following
 exceptions and clarifications:
 
 * Tabs are 8 characters.
-* Use `snake case`_ for code and variables.
+* Use `snake case`_ for code and variables (leading underscore is allowed).
 * The line length is 100 columns or fewer. In the documentation, longer lines
   for URL references are an allowed exception.
 * Add braces to every ``if``, ``else``, ``do``, ``while``, ``for`` and
