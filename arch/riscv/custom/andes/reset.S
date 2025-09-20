@@ -1,22 +1,21 @@
 /*
- * Copyright (c) 2021 Andes Technology Corporation
- *
+ * Copyright (c) 2025 Andes Technology Corporation
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "soc_v5.h"
-
+#include <andes_csr.h>
 #include <zephyr/toolchain.h>
+#include <zephyr/devicetree.h>
 
 /* exports */
-GTEXT(entry)
+GTEXT(__reset)
 
-SECTION_FUNC(init, entry)
-	/* Disable linker relaxation before GP register initialization. */
-	.option push
-	.option norelax
+/* imports */
+GTEXT(__initialize)
 
-#ifdef CONFIG_SOC_ANDES_V5_EXECIT
+SECTION_FUNC(reset, __reset)
+
+#ifdef CONFIG_RISCV_CUSTOM_CSR_ANDES_EXECIT
 	/* Initialize EXECIT table */
 	la t0, _ITB_BASE_
 	csrw NDS_UITB, t0
@@ -30,12 +29,17 @@ SECTION_FUNC(init, entry)
 
 #ifdef CONFIG_DCACHE
 	/*
-	 * Enable D cache with HW prefetcher, D-cache write-around
-	 * (threshold: 4 cache lines), and CM (Coherence Manager).
+	 * Enable D cache with HW prefetcher and D-cache write-around
+	 * (threshold: 4 cache lines).
 	 */
 	li t0, (0x3 << 13)
 	csrc NDS_MCACHE_CTL, t0
-	li t0, (1 << 19) | (1 << 13) | (1 << 10) | (1 << 1)
+	li t0, (1 << 13) | (1 << 10) | (1 << 1)
+	csrs NDS_MCACHE_CTL, t0
+
+#if DT_HAS_COMPAT_STATUS_OKAY(andestech_l2c)
+	/* Enable D-cache CM (Coherence Manager). */
+	li t0, (1 << 19)
 	csrs NDS_MCACHE_CTL, t0
 
 	/* Check if CPU support CM or not. */
@@ -52,12 +56,12 @@ check_cm_enabled:
 	beqz t0, check_cm_enabled
 
 cache_enable_finish:
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(andestech_l2c) */
 #endif
 
 	/* Enable misaligned access and non-blocking load */
 	li t0, (1 << 8) | (1 << 6)
 	csrs NDS_MMISC_CTL, t0
 
-	j __start
-
-	.option pop
+	/* Jump to __initialize */
+	call __initialize

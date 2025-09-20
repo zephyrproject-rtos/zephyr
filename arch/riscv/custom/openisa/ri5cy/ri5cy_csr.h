@@ -4,8 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef SOC_RISCV32_OPENISA_RV32M1_SOC_RI5CY_H_
-#define SOC_RISCV32_OPENISA_RV32M1_SOC_RI5CY_H_
+#ifndef ZEPHYR_ARCH_RISCV_CUSTOM_OPENISA_RI5CY_CSR_H_
+#define ZEPHYR_ARCH_RISCV_CUSTOM_OPENISA_RI5CY_CSR_H_
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* Control and Status Registers (CSRs) available for RI5CY. */
 #define RI5CY_USTATUS   0x000
@@ -40,4 +44,8 @@
 #define RI5CY_PRIVLV    0xC10
 #define RI5CY_MHARTID   0xF14
 
-#endif /* SOC_RISCV32_OPENISA_RV32M1_SOC_RI5CY_H_ */
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* ZEPHYR_ARCH_RISCV_CUSTOM_OPENISA_RI5CY_CSR_H_ */

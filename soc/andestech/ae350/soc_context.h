@@ -11,33 +11,17 @@
 #ifndef SOC_RISCV_ANDES_V5_SOC_CONTEXT_H_
 #define SOC_RISCV_ANDES_V5_SOC_CONTEXT_H_
 
+#include <csr_context.h>
+
 #ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
 
 /* Andes V5 specific registers. */
-#if defined(CONFIG_SOC_ANDES_V5_PFT) && defined(CONFIG_SOC_ANDES_V5_HWDSP)
-	#define SOC_ESF_MEMBERS				\
-		uint32_t mxstatus;			\
-		uint32_t ucode				\
 
-	#define SOC_ESF_INIT				\
-		0,					\
-		0
+#define SOC_ESF_MEMBERS				\
+	CUSTOM_CSR_ESF_MEMBERS
 
-#elif defined(CONFIG_SOC_ANDES_V5_PFT)
-	#define SOC_ESF_MEMBERS				\
-		uint32_t mxstatus
-
-	#define SOC_ESF_INIT				\
-		0
-
-#elif defined(CONFIG_SOC_ANDES_V5_HWDSP)
-	#define SOC_ESF_MEMBERS				\
-		uint32_t ucode
-
-	#define SOC_ESF_INIT				\
-		0
-
-#endif
+#define SOC_ESF_INIT				\
+	CUSTOM_CSR_ESF_INIT
 
 #endif /* CONFIG_RISCV_SOC_CONTEXT_SAVE */
 

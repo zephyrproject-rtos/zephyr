@@ -96,10 +96,10 @@ static inline uint32_t rv32m1_intmux_line(unsigned int irq)
 
 #endif	/* !_ASMLANGUAGE */
 
-#if defined(CONFIG_SOC_OPENISA_RV32M1_RI5CY)
-#include "soc_ri5cy.h"
-#elif defined(CONFIG_SOC_OPENISA_RV32M1_ZERO_RISCY)
-#include "soc_zero_riscy.h"
+#if defined(CONFIG_DT_HAS_OPENISA_RI5CY_ENABLED)
+#include <ri5cy_csr.h>
+#elif defined(CONFIG_DT_HAS_OPENISA_ZERO_RI5CY_ENABLED)
+#include <zero_riscy_csr.h>
 #endif
 
 /* helper macro to convert from a DT_INST to HAL clock_ip_name */

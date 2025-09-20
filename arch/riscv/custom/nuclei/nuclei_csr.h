@@ -13,8 +13,8 @@
  * Use arch/riscv/csr.h for RISC-V standard CSR and definitions.
  */
 
-#ifndef ZEPHYR_SOC_RISCV_RISCV_PRIVILEGED_COMMON_NUCLEI_NUCLEI_CSR_H_
-#define ZEPHYR_SOC_RISCV_RISCV_PRIVILEGED_COMMON_NUCLEI_NUCLEI_CSR_H_
+#ifndef ZEPHYR_ARCH_RISCV_CUSTOM_NUCLEI_CSR_H_
+#define ZEPHYR_ARCH_RISCV_CUSTOM_NUCLEI_CSR_H_
 
 #include <zephyr/sys/util_macro.h>
 
@@ -239,4 +239,4 @@ extern "C" {
 }
 #endif
 
-#endif /* ZEPHYR_SOC_RISCV_RISCV_PRIVILEGED_COMMON_NUCLEI_NUCLEI_CSR_H_ */
+#endif /* ZEPHYR_ARCH_RISCV_CUSTOM_NUCLEI_CSR_H_ */
