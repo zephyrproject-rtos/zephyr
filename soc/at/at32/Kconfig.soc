@@ -1,0 +1,12 @@
+# Artery AT32 MCU line
+
+# Copyright (c) 2024, Maxjta
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_AT32
+	bool
+
+config SOC_FAMILY
+	default "at32" if SOC_FAMILY_AT32
+
+rsource "*/Kconfig.soc"

@@ -1,0 +1,93 @@
+# Copyright (c) 2021, Linaro ltd
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  AT32 Clock and Reset controller node.
+  This node is in charge of system clock ('SYSCLK') source selection and controlling
+  clocks for AHB (Advanced High Performance) and APB (Advanced Peripheral) bus domains.
+
+  Configuring AT32 Clock and Reset controller node:
+
+  System clock source should be selected amongst the clock nodes available in "clocks"
+  node (typically 'clk_hext, clk_hick', 'pll', ...).
+  Core clock frequency should also be defined, using "clock-frequency" property.
+  Note:
+          Core clock frequency  = SYSCLK / AHB prescaler
+  Last, peripheral bus clocks (typically PCLK1, PCLK2) should be configured using matching
+  prescaler properties.
+  Here is an example of correctly configured rcc node:
+  &rcc {
+           clocks = <&pll>;  /* Select 80MHz pll as SYSCLK source */
+           ahb-prescaler = <2>;
+           clock-frequency = <DT_FREQ_M(40)>; /* = SYSCLK / AHB prescaler */
+           apb1-presacler = <1>;
+           apb2-presacler = <1>;
+  }
+
+compatible: "at,at32-crm"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  "#clock-cells":
+    const: 2
+
+  clock-frequency:
+    required: true
+    type: int
+    description: |
+      default frequency in Hz for clock output
+
+  ahb-prescaler:
+    type: int
+    required: true
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+      - 64
+      - 128
+      - 256
+      - 512
+    description: |
+        AHB prescaler. Defines actual core clock frequency (HCLK)
+        based on system frequency input.
+        The HCLK clocks CPU, AHB, memories and DMA.
+
+  apb1-prescaler:
+    type: int
+    required: true
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+
+  apb2-prescaler:
+    type: int
+    required: true
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+
+  undershoot-prevention:
+    type: boolean
+    description: |
+      On some parts, it could be required to set up highest core frequencies
+      (>80MHz) in two steps in order to prevent undershoot.
+      This is done by applying an intermediate AHB prescaler before switching
+      System Clock source to PLL. Once done, prescaler is set back to expected
+      value.
+
+clock-cells:
+  - bus
+  - bits
