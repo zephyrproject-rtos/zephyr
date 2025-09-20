@@ -1138,6 +1138,24 @@
 				STM32_DMA_16BITS) 0>;
 			status = "disabled";
 		};
+
+		comp1_ch1: comparator@5800380c {
+			compatible = "st,stm32h7-comp", "st,stm32-comp";
+			reg = <0x5800380c 0x200>;
+			interrupts = <137 0>;
+			st,exti-line = <20>;
+			clocks = <&rcc STM32_CLOCK(APB4, 14)>;
+			status = "disabled";
+		};
+
+		comp1_ch2: comparator@58003810 {
+			compatible = "st,stm32h7-comp", "st,stm32-comp";
+			reg = <0x58003810 0x200>;
+			interrupts = <137 0>;
+			st,exti-line = <20>;
+			clocks = <&rcc STM32_CLOCK(APB4, 14)>;
+			status = "disabled";
+		};
 	};
 
 	die_temp: dietemp {
