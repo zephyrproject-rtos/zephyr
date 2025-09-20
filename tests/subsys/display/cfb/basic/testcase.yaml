@@ -6,7 +6,9 @@ common:
     - display
     - drivers
     - cfb
-  harness: display
+  harness: ztest
+  harness_config:
+    fixture: display
   platform_allow:
     - native_sim
 tests:
