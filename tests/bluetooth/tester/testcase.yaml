@@ -45,8 +45,6 @@ tests:
     harness: bsim
     harness_config:
       bsim_exe_name: tests_bluetooth_tester_prj_conf
-    extra_args:
-      - EXTRA_CONF_FILE="gap_iso.conf"
     sysbuild: true
   bluetooth.general.tester_le_audio:
     build_only: true
