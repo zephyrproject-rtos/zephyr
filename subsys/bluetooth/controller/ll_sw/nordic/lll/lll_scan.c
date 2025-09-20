@@ -792,10 +792,10 @@ static void isr_tx(void *param)
 
 	/* assert if radio packet ptr is not set and radio started rx */
 	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
-		LL_ASSERT_MSG(!radio_is_address(), "%s: Radio ISR latency: %u", __func__,
+		LL_ASSERT_MSG(!radio_is_ready(), "%s: Radio ISR latency: %u", __func__,
 			      lll_prof_latency_get());
 	} else {
-		LL_ASSERT(!radio_is_address());
+		LL_ASSERT(!radio_is_ready());
 	}
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
@@ -1217,10 +1217,10 @@ static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 
 		/* assert if radio packet ptr is not set and radio started tx */
 		if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
-			LL_ASSERT_MSG(!radio_is_address(), "%s: Radio ISR latency: %u", __func__,
+			LL_ASSERT_MSG(!radio_is_ready(), "%s: Radio ISR latency: %u", __func__,
 				      lll_prof_latency_get());
 		} else {
-			LL_ASSERT(!radio_is_address());
+			LL_ASSERT(!radio_is_ready());
 		}
 
 		if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
@@ -1354,10 +1354,10 @@ static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 
 		/* assert if radio packet ptr is not set and radio started tx */
 		if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
-			LL_ASSERT_MSG(!radio_is_address(), "%s: Radio ISR latency: %u", __func__,
+			LL_ASSERT_MSG(!radio_is_ready(), "%s: Radio ISR latency: %u", __func__,
 				      lll_prof_latency_get());
 		} else {
-			LL_ASSERT(!radio_is_address());
+			LL_ASSERT(!radio_is_ready());
 		}
 
 		if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
