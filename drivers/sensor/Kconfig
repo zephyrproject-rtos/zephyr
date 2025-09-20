@@ -30,6 +30,16 @@ config SENSOR_ASYNC_API
 	help
 	  Enables the asynchronous sensor API by leveraging the RTIO subsystem.
 
+if SENSOR_ASYNC_API
+
+config SENSOR_FETCH_GET_COMPAT
+	bool "Compatibility layer to enable fetch/get via. the read/decode implementations"
+	default n
+	help
+	  Compatibility layer to enable fetch/get via. the read/decode implementations
+
+endif
+
 config SENSOR_SHELL
 	bool "Sensor shell"
 	depends on SHELL
