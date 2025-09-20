@@ -111,10 +111,13 @@ struct arducam_mega_ctrls {
 		struct video_ctrl gain;
 		struct video_ctrl gain_auto;
 	};
+	struct {
+		struct video_ctrl enable_focus;
+		struct video_ctrl focus_auto;
+	};
 	/* Read only registers */
 	struct video_ctrl support_resolution;
 	struct video_ctrl support_special_effects;
-	struct video_ctrl enable_focus;
 	struct video_ctrl linkfreq;
 	struct video_ctrl device_address;
 	struct video_ctrl camera_id;
@@ -339,6 +342,21 @@ static int arducam_mega_set_sharpness(const struct device *dev, enum mega_sharpn
 
 	return arducam_mega_write_reg_wait(&cfg->bus, CAM_REG_SHARPNESS_CONTROL, level, 3,
 					   "sharpness level");
+}
+
+static int arducam_mega_set_auto_focus(const struct device *dev, enum mega_auto_focus_level level)
+{
+	struct arducam_mega_data *drv_data = dev->data;
+	struct arducam_mega_ctrls *drv_ctrls = &drv_data->ctrls;
+	const struct arducam_mega_config *cfg = dev->config;
+
+	if (!drv_ctrls->enable_focus.val) {
+		LOG_ERR("This device does not support setting auto focus.");
+		return -ENOTSUP;
+	}
+
+	return arducam_mega_write_reg_wait(&cfg->bus, CAM_REG_AUTO_FOCUS_CONTROL, level, 3,
+					   "focus level");
 }
 
 static int arducam_mega_set_special_effects(const struct device *dev, enum video_colorfx effect)
@@ -940,6 +958,8 @@ static int arducam_mega_set_ctrl(const struct device *dev, uint32_t id)
 		return arducam_mega_set_EV(dev, drv_data->ctrls.ev.val);
 	case VIDEO_CID_SHARPNESS:
 		return arducam_mega_set_sharpness(dev, drv_data->ctrls.sharpness.val);
+	case VIDEO_CID_FOCUS_AUTO:
+		return arducam_mega_set_auto_focus(dev, drv_data->ctrls.focus_auto.val);
 	case VIDEO_CID_COLORFX:
 		return arducam_mega_set_special_effects(
 			dev, drv_data->ctrls.support_special_effects.val);
@@ -1064,6 +1084,12 @@ static int arducam_mega_init_controls(const struct device *dev)
 	if (ret < 0) {
 		return ret;
 	}
+	ret = video_init_ctrl(
+		&ctrls->focus_auto, dev, VIDEO_CID_FOCUS_AUTO,
+		(struct video_ctrl_range){.min = 0, .max = 65535, .step = 1, .def = 0});
+	if (ret < 0) {
+		return ret;
+	}
 	/* Read only controls */
 	ret = video_init_ctrl(
 		&ctrls->support_resolution, dev, VIDEO_CID_ARDUCAM_SUPP_RES,
@@ -1076,13 +1102,6 @@ static int arducam_mega_init_controls(const struct device *dev)
 		&ctrls->support_special_effects, dev, VIDEO_CID_ARDUCAM_SUPP_SP_EFF,
 		(struct video_ctrl_range){.min = 0, .max = 65535, .step = 1, .def = 0});
 	ctrls->support_special_effects.flags |= VIDEO_CTRL_FLAG_READ_ONLY;
-	if (ret < 0) {
-		return ret;
-	}
-	ret = video_init_ctrl(
-		&ctrls->enable_focus, dev, VIDEO_CID_ARDUCAM_EN_FOCUS,
-		(struct video_ctrl_range){.min = 0, .max = 65535, .step = 1, .def = 0});
-	ctrls->enable_focus.flags |= VIDEO_CTRL_FLAG_READ_ONLY;
 	if (ret < 0) {
 		return ret;
 	}
