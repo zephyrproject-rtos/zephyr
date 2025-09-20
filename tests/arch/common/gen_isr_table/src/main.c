@@ -12,6 +12,10 @@
 #include <zephyr/interrupt_util.h>
 #include <zephyr/sys/barrier.h>
 
+#if defined(CONFIG_HAZARD3_INTC)
+#include <hardware/irq.h>
+#endif
+
 extern const uintptr_t _irq_vector_table[];
 
 #if defined(ARCH_IRQ_DIRECT_CONNECT) && defined(CONFIG_GEN_IRQ_VECTOR_TABLE)
@@ -56,6 +60,12 @@ extern const uintptr_t _irq_vector_table[];
 #define ISR3_OFFSET	20
 #define ISR5_OFFSET	21
 #define TRIG_CHECK_SIZE	22
+#elif defined(CONFIG_HAZARD3_INTC)
+#define ISR3_OFFSET SPARE_IRQ_2
+#define ISR4_OFFSET SPARE_IRQ_3
+#define ISR5_OFFSET SPARE_IRQ_4
+#define ISR6_OFFSET SPARE_IRQ_5
+#define TRIG_CHECK_SIZE (ISR6_OFFSET + 1)
 #else
 
 #if !defined(IRQ1_USED)

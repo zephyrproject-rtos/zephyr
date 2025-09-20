@@ -1,0 +1,43 @@
+/*
+ * Copyright (c) 2025 Andrew Featherstone
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "skeleton.dtsi"
+
+/ {
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "simple-bus";
+		interrupt-parent = <&intc>;
+		ranges;
+
+		intc: interrupt-controller  {
+			compatible = "hazard3,hazard3-intc";
+			interrupt-controller;
+			#interrupt-cells = <2>;
+		};
+
+		mtimer: timer@d00001b0 {
+			compatible = "riscv,machine-timer";
+			interrupts-extended = <&intc 29 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
+			reg = <0xd00001b0 0x8 0xd00001b8 0x8>;
+			reg-names = "mtime", "mtimecmp";
+		};
+	};
+};
+
+/* Model in the device tree a Hazard3 core being 'plugged' into each
+ * 'socket' within the SoC. Within the datasheet these are core 0 and core 1.
+ */
+&cpu0 {
+	compatible = "riscv";
+	riscv,isa = "rv32imac_zicsr_zifencei";
+};
+
+&cpu1 {
+	compatible = "riscv";
+	riscv,isa = "rv32imac_zicsr_zifencei";
+};

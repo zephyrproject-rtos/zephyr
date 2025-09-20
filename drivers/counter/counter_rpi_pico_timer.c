@@ -11,7 +11,6 @@
 #include <zephyr/drivers/reset.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/irq.h>
-#include <cmsis_core.h>
 
 #define LOG_LEVEL CONFIG_COUNTER_LOG_LEVEL
 #include <zephyr/logging/log.h>
