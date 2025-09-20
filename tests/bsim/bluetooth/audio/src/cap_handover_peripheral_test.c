@@ -67,7 +67,7 @@ static const struct bt_bap_scan_delegator_recv_state *cached_recv_state;
 static uint32_t cached_bis_sync_req;
 static uint16_t cached_pa_interval;
 static struct audio_test_stream
-	streams[MIN(CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT,
+	streams[GENERIC_MIN(CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT,
 		    CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT + CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT)];
 static uint8_t received_base[UINT8_MAX];
 static size_t received_base_size;

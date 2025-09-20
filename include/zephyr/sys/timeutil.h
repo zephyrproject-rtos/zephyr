@@ -58,7 +58,7 @@ extern "C" {
 /* Define a timespec */
 #define SYS_TIMESPEC(sec, nsec)                                                                    \
 	((struct timespec){                                                                        \
-		.tv_sec = (time_t)CLAMP((int64_t)(sec), SYS_TIME_T_MIN, SYS_TIME_T_MAX),           \
+		.tv_sec = (time_t)GENERIC_CLAMP((int64_t)(sec), SYS_TIME_T_MIN, SYS_TIME_T_MAX),   \
 		.tv_nsec = (long)(nsec),                                                           \
 	})
 

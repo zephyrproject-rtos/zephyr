@@ -25,7 +25,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_MGMT_EVENT_LOG_LEVEL);
 #define TEST_MGMT_EVENT			0x97AB1234
 #define TEST_MGMT_EVENT_UNHANDLED	0x97AB4321
 #define TEST_MGMT_EVENT_INFO_SIZE	\
-	MAX(sizeof(TEST_INFO_STRING), sizeof(struct in6_addr))
+	GENERIC_MAX(sizeof(TEST_INFO_STRING), sizeof(struct in6_addr))
 
 /* Notifier infra */
 static uint64_t event2throw;

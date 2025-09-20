@@ -570,7 +570,8 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 		return;
 	}
 
-	ticks = (ticks == K_TICKS_FOREVER) ? MAX_TICKS : MIN(MAX_TICKS, MAX(ticks, 0));
+	ticks = (ticks == K_TICKS_FOREVER) ? MAX_TICKS : GENERIC_MIN(MAX_TICKS,
+								     GENERIC_MAX(ticks, 0));
 
 	uint64_t delta_time = ticks * CYC_PER_TICK;
 

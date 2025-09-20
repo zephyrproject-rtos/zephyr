@@ -118,12 +118,14 @@ struct tbs_inst {
 static struct tbs_inst svc_insts[CONFIG_BT_TBS_BEARER_COUNT];
 static struct tbs_inst gtbs_inst;
 
-#define READ_BUF_SIZE                                                                             \
-	MAX(BT_ATT_MAX_ATTRIBUTE_LEN,                                                             \
-	    MAX((CONFIG_BT_TBS_MAX_CALLS * sizeof(struct bt_tbs_current_call_item) *              \
-		(1U + ARRAY_SIZE(svc_insts))),                                                    \
-		(CONFIG_BT_TBS_BEARER_COUNT * CONFIG_BT_TBS_MAX_SCHEME_LIST_LENGTH +              \
-		CONFIG_BT_TBS_MAX_SCHEME_LIST_LENGTH)))
+#define READ_BUF_SIZE                                                       \
+	GENERIC_MAX(BT_ATT_MAX_ATTRIBUTE_LEN,                               \
+		    GENERIC_MAX((CONFIG_BT_TBS_MAX_CALLS *                  \
+				 sizeof(struct bt_tbs_current_call_item) *  \
+				 (1U + ARRAY_SIZE(svc_insts))),             \
+				 (CONFIG_BT_TBS_BEARER_COUNT *              \
+				  CONFIG_BT_TBS_MAX_SCHEME_LIST_LENGTH +    \
+				  CONFIG_BT_TBS_MAX_SCHEME_LIST_LENGTH)))
 NET_BUF_SIMPLE_DEFINE_STATIC(read_buf, READ_BUF_SIZE);
 
 /* Used to notify app with held calls in case of join */

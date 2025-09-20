@@ -32,7 +32,7 @@ typedef uintptr_t arch_thread_hw_shadow_stack_t;
 #define ARCH_THREAD_HW_SHADOW_STACK_ARRAY_DEFINE(name, nmemb, size) \
 	arch_thread_hw_shadow_stack_t Z_GENERIC_SECTION(.x86shadowstack.arr_ ##name) \
 	__aligned(CONFIG_X86_CET_SHADOW_STACK_ALIGNMENT) \
-	name[MAX(nmemb, 1)][size / sizeof(arch_thread_hw_shadow_stack_t)] = \
+	name[GENERIC_MAX(nmemb, 1)][size / sizeof(arch_thread_hw_shadow_stack_t)] = \
 		{ \
 			[0][0] = nmemb, \
 		}

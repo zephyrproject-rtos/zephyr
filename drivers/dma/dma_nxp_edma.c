@@ -229,7 +229,7 @@ static int edma_config(const struct device *dev, uint32_t chan_id,
 	 * NCE bit (see CHn_ES register).
 	 */
 	if (dma_cfg->source_burst_length %
-	    MAX(dma_cfg->source_data_size, dma_cfg->dest_data_size)) {
+	    GENERIC_MAX(dma_cfg->source_data_size, dma_cfg->dest_data_size)) {
 		LOG_ERR("NBYTES %d should be a multiple of MAX(SSIZE(%d), DSIZE(%d))",
 			dma_cfg->source_burst_length,
 			dma_cfg->source_data_size,

@@ -176,7 +176,7 @@ union recv_ntb {
  */
 UDC_BUF_POOL_DEFINE(cdc_ncm_ep_pool,
 		    DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) * 2,
-		    MAX(CDC_NCM_SEND_NTB_MAX_SIZE, CDC_NCM_RECV_NTB_MAX_SIZE),
+		    GENERIC_MAX(CDC_NCM_SEND_NTB_MAX_SIZE, CDC_NCM_RECV_NTB_MAX_SIZE),
 		    sizeof(struct udc_buf_info), NULL);
 
 /*

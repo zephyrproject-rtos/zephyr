@@ -24,7 +24,7 @@
  * Leave one byte left in tx to avoid filling it completely which will block the UART
  * tx ready IRQ event.
  */
-#define SAMPLE_DATA_SIZE MIN(EMUL_UART_RX_FIFO_SIZE, EMUL_UART_TX_FIFO_SIZE) - 1
+#define SAMPLE_DATA_SIZE GENERIC_MIN(EMUL_UART_RX_FIFO_SIZE, EMUL_UART_TX_FIFO_SIZE) - 1
 
 struct uart_emul_device_fixture {
 	const struct device *dev;

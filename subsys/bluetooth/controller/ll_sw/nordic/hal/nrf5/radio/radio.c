@@ -683,9 +683,9 @@ uint32_t radio_crc_is_valid(void)
  *       making it tight to execute Controller code in the tIFS between Tx-Rx
  *       PDU's Radio ISRs.
  */
-static uint8_t MALIGN(4) _pkt_empty[MAX(HAL_RADIO_PDU_LEN_MAX,
+static uint8_t MALIGN(4) _pkt_empty[GENERIC_MAX(HAL_RADIO_PDU_LEN_MAX,
 					PDU_EM_LL_SIZE_MAX)];
-static uint8_t MALIGN(4) _pkt_scratch[MAX((HAL_RADIO_PDU_LEN_MAX + 3),
+static uint8_t MALIGN(4) _pkt_scratch[GENERIC_MAX((HAL_RADIO_PDU_LEN_MAX + 3),
 				       PDU_AC_LL_SIZE_MAX)];
 
 void *radio_pkt_empty_get(void)
@@ -703,7 +703,7 @@ void *radio_pkt_scratch_get(void)
 	defined(HAL_RADIO_PDU_LEN_MAX) && \
 	(!defined(CONFIG_BT_CTLR_DATA_LENGTH_MAX) || \
 	 (CONFIG_BT_CTLR_DATA_LENGTH_MAX < (HAL_RADIO_PDU_LEN_MAX - 4)))
-static uint8_t MALIGN(4) _pkt_decrypt[MAX((HAL_RADIO_PDU_LEN_MAX + 3),
+static uint8_t MALIGN(4) _pkt_decrypt[GENERIC_MAX((HAL_RADIO_PDU_LEN_MAX + 3),
 				       PDU_AC_LL_SIZE_MAX)];
 
 void *radio_pkt_decrypt_get(void)

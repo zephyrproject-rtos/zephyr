@@ -349,16 +349,16 @@ struct usb_association_descriptor {
 #define USB_EP_TYPE_INTERRUPT		3U
 
 /** Calculate full speed interrupt endpoint bInterval from a value in microseconds */
-#define USB_FS_INT_EP_INTERVAL(us)	CLAMP(((us) / 1000U), 1U, 255U)
+#define USB_FS_INT_EP_INTERVAL(us)	GENERIC_CLAMP(((us) / 1000U), 1U, 255U)
 
 /** Calculate high speed interrupt endpoint bInterval from a value in microseconds */
-#define USB_HS_INT_EP_INTERVAL(us)	CLAMP((ilog2((us) / 125U) + 1U), 1U, 16U)
+#define USB_HS_INT_EP_INTERVAL(us)	GENERIC_CLAMP((ilog2((us) / 125U) + 1U), 1U, 16U)
 
 /** Calculate full speed isochronous endpoint bInterval from a value in microseconds */
-#define USB_FS_ISO_EP_INTERVAL(us)	CLAMP((ilog2((us) / 1000U) + 1U), 1U, 16U)
+#define USB_FS_ISO_EP_INTERVAL(us)	GENERIC_CLAMP((ilog2((us) / 1000U) + 1U), 1U, 16U)
 
 /** Calculate high speed isochronous endpoint bInterval from a value in microseconds */
-#define USB_HS_ISO_EP_INTERVAL(us)	CLAMP((ilog2((us) / 125U) + 1U), 1U, 16U)
+#define USB_HS_ISO_EP_INTERVAL(us)	GENERIC_CLAMP((ilog2((us) / 125U) + 1U), 1U, 16U)
 
 /** Get endpoint size field from Max Packet Size value */
 #define USB_MPS_EP_SIZE(mps)		((mps) & BIT_MASK(11))

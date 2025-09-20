@@ -154,8 +154,8 @@ static int pull_req_max(const struct bt_mesh_blob_srv *srv)
 		/* It is possible that the friend node cannot hold all segments per chunk. In this
 		 * case, we should request at least 1 chunk. As requesting `0` would be invalid.
 		 */
-		count = MAX(1, MIN(CONFIG_BT_MESH_BLOB_SRV_PULL_REQ_COUNT,
-			    bt_mesh.lpn.queue_size / segments_per_chunk));
+		count = GENERIC_MAX(1, GENERIC_MIN(CONFIG_BT_MESH_BLOB_SRV_PULL_REQ_COUNT,
+						   bt_mesh.lpn.queue_size / segments_per_chunk));
 
 	}
 #endif

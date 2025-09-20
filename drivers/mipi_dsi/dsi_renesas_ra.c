@@ -226,20 +226,21 @@ static int mipi_dsi_renesas_ra_init(const struct device *dev)
 
 #define RENESAS_RA_MIPI_PHYS_SETTING_DEFINE(n)                                                     \
 	static const mipi_phy_timing_t mipi_phy_##n##_timing = {                                   \
-		.t_init = CLAMP(DT_PROP(DT_INST_CHILD(n, phys_timing), t_init), 0, 0x7FFF),        \
+		.t_init = GENERIC_CLAMP(DT_PROP(DT_INST_CHILD(n, phys_timing), t_init), 0, 0x7FFF),\
 		.dphytim2_b =                                                                      \
 			{                                                                          \
 				.t_clk_prep =                                                      \
-					CLAMP(DT_PROP(DT_INST_CHILD(n, phys_timing), t_clk_prep),  \
-					      0, 0xFF),                                            \
+					GENERIC_CLAMP(DT_PROP(DT_INST_CHILD(n, phys_timing),       \
+							      t_clk_prep), 0, 0xFF),               \
 			},                                                                         \
 		.dphytim3_b =                                                                      \
 			{                                                                          \
 				.t_hs_prep =                                                       \
-					CLAMP(DT_PROP(DT_INST_CHILD(n, phys_timing), t_hs_prep),   \
-					      0, 0xFF),                                            \
+					GENERIC_CLAMP(DT_PROP(DT_INST_CHILD(n, phys_timing),       \
+							      t_hs_prep), 0, 0xFF),                \
 			},                                                                         \
-		.t_lp_exit = CLAMP(DT_PROP(DT_INST_CHILD(n, phys_timing), t_lp_exit), 0, 0xFF),    \
+		.t_lp_exit = GENERIC_CLAMP(DT_PROP(DT_INST_CHILD(n, phys_timing),                  \
+						   t_lp_exit), 0, 0xFF),                           \
 		.dphytim4_b =                                                                      \
 			{                                                                          \
 				.t_clk_zero = DT_PROP_BY_IDX(DT_INST_CHILD(n, phys_timing),        \
@@ -267,9 +268,10 @@ static int mipi_dsi_renesas_ra_init(const struct device *dev)
 			{                                                                          \
 				.div = DT_INST_PROP(n, pll_div) - 1,                               \
 				.mul_frac = DT_INST_ENUM_IDX(n, pll_mul_frac),                     \
-				.mul_int = CLAMP(DT_INST_PROP(n, pll_mul_int), 20, 180) - 1,       \
+				.mul_int = GENERIC_CLAMP(DT_INST_PROP(n, pll_mul_int),             \
+							 20, 180) - 1,                             \
 			},                                                                         \
-		.lp_divisor = CLAMP(DT_INST_PROP(n, lp_divisor), 1, 32) - 1,                       \
+		.lp_divisor = GENERIC_CLAMP(DT_INST_PROP(n, lp_divisor), 1, 32) - 1,               \
 		.p_timing = &mipi_phy_##n##_timing,                                                \
 		.dsi_mode = true, /* enable DSI mode, disable CSI mode */                          \
 	};                                                                                         \

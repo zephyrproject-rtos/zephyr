@@ -60,8 +60,8 @@ LOG_MODULE_REGISTER(bt_ascs, CONFIG_BT_ASCS_LOG_LEVEL);
 
 #define NTF_HEADER_SIZE (3) /* opcode (1) + handle (2) */
 
-BUILD_ASSERT(CONFIG_BT_ASCS_MAX_ACTIVE_ASES <= MAX(MAX_ASES_SESSIONS,
-						   CONFIG_BT_ISO_MAX_CHAN),
+BUILD_ASSERT(CONFIG_BT_ASCS_MAX_ACTIVE_ASES <= GENERIC_MAX(MAX_ASES_SESSIONS,
+							   CONFIG_BT_ISO_MAX_CHAN),
 	     "Max active ASEs are set to more than actual number of ASEs or ISOs");
 
 #if defined(CONFIG_BT_BAP_UNICAST_SERVER)
@@ -101,9 +101,9 @@ struct bt_ascs {
  * of them can be the largest state
  */
 #define ASE_BUF_SIZE                                                                               \
-	MIN(BT_ATT_MAX_ATTRIBUTE_LEN,                                                              \
-	    MAX(MIN_CONFIG_STATE_SIZE + CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE,                   \
-		MIN_QOS_STATE_SIZE + CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE))
+	GENERIC_MIN(BT_ATT_MAX_ATTRIBUTE_LEN,                                                      \
+		    GENERIC_MAX(MIN_CONFIG_STATE_SIZE + CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE,   \
+				MIN_QOS_STATE_SIZE + CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE))
 
 /* Verify that the prepare count is large enough to cover the maximum value we support a client
  * writing

@@ -232,10 +232,10 @@ static void dma_emul_work_handler(struct k_work *work)
 			k_spin_unlock(&data->lock, key);
 
 			/* transfer data in bursts */
-			for (bytes = MIN(block.block_size, xfer_config.dest_burst_length);
+			for (bytes = GENERIC_MIN(block.block_size, xfer_config.dest_burst_length);
 			     bytes > 0; block.block_size -= bytes, block.source_address += bytes,
 			    block.dest_address += bytes,
-			    bytes = MIN(block.block_size, xfer_config.dest_burst_length)) {
+			    bytes = GENERIC_MIN(block.block_size, xfer_config.dest_burst_length)) {
 
 				key = k_spin_lock(&data->lock);
 				state = dma_emul_get_channel_state(dev, channel);

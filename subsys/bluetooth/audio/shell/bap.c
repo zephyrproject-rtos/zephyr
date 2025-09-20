@@ -61,8 +61,8 @@
 
 #if defined(CONFIG_BT_BAP_UNICAST)
 
-struct shell_stream unicast_streams[CONFIG_BT_MAX_CONN *
-				    MAX(UNICAST_SERVER_STREAM_COUNT, UNICAST_CLIENT_STREAM_COUNT)];
+struct shell_stream unicast_streams[CONFIG_BT_MAX_CONN * GENERIC_MAX(UNICAST_SERVER_STREAM_COUNT,
+								     UNICAST_CLIENT_STREAM_COUNT)];
 
 #if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
 struct bt_bap_unicast_group *default_unicast_group;

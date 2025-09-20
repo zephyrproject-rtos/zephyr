@@ -16,7 +16,7 @@
 
 #define MSPI_AMBIQ_HEAP_DEFINE(name, bytes)                                                       \
 	char __attribute__((section(".mspi_buff")))                                               \
-		kheap_##name[MAX(bytes, MSPI_AMBIQ_HEAP_MIN_SIZE)];                               \
+		kheap_##name[GENERIC_MAX(bytes, MSPI_AMBIQ_HEAP_MIN_SIZE)];                       \
 	STRUCT_SECTION_ITERABLE(k_heap, name) = {                                                 \
 		.heap =                                                                           \
 			{                                                                         \

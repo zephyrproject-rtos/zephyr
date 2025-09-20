@@ -205,8 +205,8 @@ static int http1_send_headers(struct http_client_ctx *client, enum http_status s
 {
 	int ret;
 	bool content_type_sent = false;
-	char http_response[MAX(sizeof(RESPONSE_TEMPLATE_DYNAMIC_PART1) + sizeof("xxx"),
-			       CONFIG_HTTP_SERVER_MAX_HEADER_LEN + 2)];
+	char http_response[GENERIC_MAX(sizeof(RESPONSE_TEMPLATE_DYNAMIC_PART1) + sizeof("xxx"),
+				       CONFIG_HTTP_SERVER_MAX_HEADER_LEN + 2)];
 
 	if (status < HTTP_100_CONTINUE || status > HTTP_511_NETWORK_AUTHENTICATION_REQUIRED) {
 		LOG_DBG("Invalid HTTP status code: %d", status);

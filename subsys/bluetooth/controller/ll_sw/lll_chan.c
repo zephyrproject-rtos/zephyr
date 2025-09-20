@@ -327,7 +327,7 @@ static uint8_t chan_d(uint8_t n)
 	}
 
 	/* Calculate d using the above sub expressions */
-	return MAX(1, MAX(MIN(3, x), MIN(11, y)));
+	return GENERIC_MAX(1, GENERIC_MAX(GENERIC_MIN(3, x), GENERIC_MIN(11, y)));
 }
 #endif /* CONFIG_BT_CTLR_ISO */
 

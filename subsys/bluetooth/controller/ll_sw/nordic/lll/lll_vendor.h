@@ -89,4 +89,4 @@
 /* Time needed to set up a CIS from ACL instant to prepare (incl. radio). Used
  * for CIS_Offset_Min.
  */
-#define EVENT_OVERHEAD_CIS_SETUP_US         MAX(EVENT_OVERHEAD_START_US, 500U)
+#define EVENT_OVERHEAD_CIS_SETUP_US         GENERIC_MAX(EVENT_OVERHEAD_START_US, 500U)

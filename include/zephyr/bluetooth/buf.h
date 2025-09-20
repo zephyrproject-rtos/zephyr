@@ -155,7 +155,7 @@ static inline enum bt_buf_type bt_buf_type_from_h4(uint8_t h4_type, enum bt_buf_
   *       remove the MAX and only keep the 1.
   */
 #define BT_BUF_ACL_RX_COUNT_EXTRA CONFIG_BT_BUF_ACL_RX_COUNT_EXTRA
-#define BT_BUF_ACL_RX_COUNT       (MAX(CONFIG_BT_BUF_ACL_RX_COUNT, 1) + BT_BUF_ACL_RX_COUNT_EXTRA)
+#define BT_BUF_ACL_RX_COUNT (GENERIC_MAX(CONFIG_BT_BUF_ACL_RX_COUNT, 1) + BT_BUF_ACL_RX_COUNT_EXTRA)
 #else
 #define BT_BUF_ACL_RX_COUNT_EXTRA 0
 #define BT_BUF_ACL_RX_COUNT       0
@@ -169,7 +169,7 @@ BUILD_ASSERT(BT_BUF_ACL_RX_COUNT <= BT_BUF_ACL_RX_COUNT_MAX,
 	     "Maximum number of ACL RX buffer is 65535, reduce CONFIG_BT_BUF_ACL_RX_COUNT_EXTRA");
 
 /** Data size needed for HCI ACL, HCI ISO or Event RX buffers */
-#define BT_BUF_RX_SIZE (MAX(MAX(BT_BUF_ACL_RX_SIZE, BT_BUF_EVT_RX_SIZE), \
+#define BT_BUF_RX_SIZE (GENERIC_MAX(GENERIC_MAX(BT_BUF_ACL_RX_SIZE, BT_BUF_EVT_RX_SIZE), \
 			    BT_BUF_ISO_RX_SIZE))
 
 /* Controller can generate up to CONFIG_BT_BUF_ACL_TX_COUNT number of unique HCI Number of Completed
@@ -180,7 +180,7 @@ BUILD_ASSERT(CONFIG_BT_BUF_EVT_RX_COUNT > CONFIG_BT_BUF_ACL_TX_COUNT,
 
 /** Buffer count needed for HCI ACL or HCI ISO plus Event RX buffers */
 #define BT_BUF_RX_COUNT (CONFIG_BT_BUF_EVT_RX_COUNT + \
-			 MAX(BT_BUF_ACL_RX_COUNT, BT_BUF_ISO_RX_COUNT))
+			 GENERIC_MAX(BT_BUF_ACL_RX_COUNT, BT_BUF_ISO_RX_COUNT))
 
 /** Data size needed for HCI Command buffers. */
 #define BT_BUF_CMD_TX_SIZE BT_BUF_CMD_SIZE(CONFIG_BT_BUF_CMD_TX_SIZE)

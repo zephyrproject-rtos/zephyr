@@ -46,7 +46,8 @@ static inline void socketcan_to_can_frame(const struct socketcan_frame *sframe,
 
 	if ((zframe->flags & CAN_FRAME_RTR) == 0U) {
 		memcpy(zframe->data, sframe->data,
-		       MIN(sframe->len, MIN(sizeof(sframe->data), sizeof(zframe->data))));
+		       GENERIC_MIN(sframe->len, GENERIC_MIN(sizeof(sframe->data),
+							    sizeof(zframe->data))));
 	}
 }
 
@@ -76,7 +77,8 @@ static inline void socketcan_from_can_frame(const struct can_frame *zframe,
 
 	if ((zframe->flags & CAN_FRAME_RTR) == 0U) {
 		memcpy(sframe->data, zframe->data,
-		       MIN(sframe->len, MIN(sizeof(zframe->data), sizeof(sframe->data))));
+		       GENERIC_MIN(sframe->len, GENERIC_MIN(sizeof(zframe->data),
+							    sizeof(sframe->data))));
 	}
 }
 
