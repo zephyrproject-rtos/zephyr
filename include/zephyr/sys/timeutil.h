@@ -53,7 +53,7 @@ extern "C" {
 #define SYS_TICKS_TO_NSECS(ticks)                                                                  \
 	(((uint64_t)(ticks) >= (uint64_t)K_TICKS_FOREVER)                                          \
 		 ? (NSEC_PER_SEC - 1)                                                              \
-		 : k_ticks_to_ns_floor32((uint64_t)(ticks) % CONFIG_SYS_CLOCK_TICKS_PER_SEC))
+		 : k_ticks_to_ns_floor64((uint64_t)(ticks) % CONFIG_SYS_CLOCK_TICKS_PER_SEC))
 
 /* Define a timespec */
 #define SYS_TIMESPEC(sec, nsec)                                                                    \
@@ -415,82 +415,7 @@ static inline bool timespec_is_valid(const struct timespec *ts)
  *
  * @return `true` if the operation completes successfully, otherwise `false`.
  */
-static inline bool timespec_normalize(struct timespec *ts)
-{
-	__ASSERT_NO_MSG(ts != NULL);
-
-#if defined(CONFIG_SPEED_OPTIMIZATIONS) && HAS_BUILTIN(__builtin_add_overflow)
-
-	int64_t sec = 0;
-	int sign = (ts->tv_nsec >= 0) - (ts->tv_nsec < 0);
-
-	/* only one of the following should be non-zero */
-	sec += (ts->tv_nsec >= (long)NSEC_PER_SEC) * (ts->tv_nsec / (long)NSEC_PER_SEC);
-	sec += ((sizeof(ts->tv_nsec) != sizeof(int64_t)) && (ts->tv_nsec != LONG_MIN) &&
-		(ts->tv_nsec < 0)) *
-	       DIV_ROUND_UP((unsigned long)-ts->tv_nsec, (long)NSEC_PER_SEC);
-	sec += ((sizeof(ts->tv_nsec) == sizeof(int64_t)) && (ts->tv_nsec != INT64_MIN) &&
-		(ts->tv_nsec < 0)) *
-	       DIV_ROUND_UP((uint64_t)-ts->tv_nsec, NSEC_PER_SEC);
-	sec += ((sizeof(ts->tv_nsec) != sizeof(int64_t)) && (ts->tv_nsec == LONG_MIN)) *
-	       ((LONG_MAX / NSEC_PER_SEC) + 1);
-	sec += ((sizeof(ts->tv_nsec) == sizeof(int64_t)) && (ts->tv_nsec == INT64_MIN)) *
-	       ((INT64_MAX / NSEC_PER_SEC) + 1);
-
-	ts->tv_nsec -= sec * sign * NSEC_PER_SEC;
-
-	bool overflow = __builtin_add_overflow(ts->tv_sec, sign * sec, &ts->tv_sec);
-
-	if (!overflow) {
-		__ASSERT_NO_MSG(timespec_is_valid(ts));
-	}
-
-	return !overflow;
-
-#else
-
-	long sec;
-
-	if (ts->tv_nsec >= (long)NSEC_PER_SEC) {
-		sec = ts->tv_nsec / (long)NSEC_PER_SEC;
-	} else if (ts->tv_nsec < 0) {
-		sec = DIV_ROUND_UP((unsigned long)-ts->tv_nsec, NSEC_PER_SEC);
-	} else {
-		sec = 0;
-	}
-
-	if ((ts->tv_nsec < 0) && (ts->tv_sec < 0) && (ts->tv_sec - SYS_TIME_T_MIN < sec)) {
-		/*
-		 * When `tv_nsec` is negative and `tv_sec` is already most negative,
-		 * further subtraction would cause integer overflow.
-		 */
-		return false;
-	}
-
-	if ((ts->tv_nsec >= (long)NSEC_PER_SEC) && (ts->tv_sec > 0) &&
-	    (SYS_TIME_T_MAX - ts->tv_sec < sec)) {
-		/*
-		 * When `tv_nsec` is >= `NSEC_PER_SEC` and `tv_sec` is already most
-		 * positive, further addition would cause integer overflow.
-		 */
-		return false;
-	}
-
-	if (ts->tv_nsec >= (long)NSEC_PER_SEC) {
-		ts->tv_sec += sec;
-		ts->tv_nsec -= sec * (long)NSEC_PER_SEC;
-	} else if (ts->tv_nsec < 0) {
-		ts->tv_sec -= sec;
-		ts->tv_nsec += sec * (long)NSEC_PER_SEC;
-	} else {
-		/* no change: SonarQube was complaining */
-	}
-
-	__ASSERT_NO_MSG(timespec_is_valid(ts));
-
-	return true;
-#endif
-}
+bool timespec_normalize(struct timespec *ts);
 
 /**
  * @brief Add one timespec to another
