@@ -168,7 +168,8 @@ struct pm_state_info {
 };
 
 /**
- * Power state information needed to lock a power state.
+ * Information needed to be able to reference a power state as a constraint
+ * on some device or system functions.
  */
 struct pm_state_constraint {
 	 /**
@@ -183,6 +184,11 @@ struct pm_state_constraint {
 	  * @see pm_state
 	  **/
 	uint8_t substate_id;
+};
+
+struct pm_state_constraints {
+	struct pm_state_constraint *list;
+	size_t count;
 };
 
 /** @cond INTERNAL_HIDDEN */
@@ -359,6 +365,34 @@ struct pm_state_constraint {
 			Z_PM_STATE_FROM_DT_CPU, (), node_id)		       \
 	}
 
+/**
+ * @brief initialize a device pm constraint with information from devicetree.
+ *
+ * @param node_id Node identifier.
+ */
+#define PM_STATE_CONSTRAINT_INIT(node_id)                                     \
+	{                                                                     \
+		.state = PM_STATE_DT_INIT(node_id),                           \
+		.substate_id = DT_PROP_OR(node_id, substate_id, 0),           \
+	}
+
+#define Z_PM_STATE_CONSTRAINT_REF(node_id, phandle, idx)                        \
+	PM_STATE_CONSTRAINT_INIT(DT_PHANDLE_BY_IDX(node_id, phandle, idx))
+
+#define Z_PM_STATE_CONSTRAINTS_LIST_NAME(node_id, phandles)                   \
+	_CONCAT_4(node_id, _, phandles, _constraints)
+
+#define PM_STATE_CONSTRAINTS_LIST_DEFINE(node_id, prop)                                    \
+	struct pm_state_constraint Z_PM_STATE_CONSTRAINTS_LIST_NAME(node_id, prop)[] =     \
+	{                                                                                  \
+		DT_FOREACH_PROP_ELEM_SEP(node_id, prop, Z_PM_STATE_CONSTRAINT_REF, (,))    \
+	}
+
+#define PM_STATE_CONSTRAINTS_GET(node_id, prop)                                            \
+	{                                                                                  \
+		.list = Z_PM_STATE_CONSTRAINTS_LIST_NAME(node_id, prop),                   \
+		.count = DT_PROP_LEN(node_id, prop),                                       \
+	}
 
 #if defined(CONFIG_PM) || defined(__DOXYGEN__)
 /**
@@ -403,6 +437,11 @@ const char *pm_state_to_str(enum pm_state state);
  * @return 0 on success, -EINVAL if the string is invalid or NULL.
  */
 int pm_state_from_str(const char *name, enum pm_state *out);
+
+
+bool pm_state_in_constraints(const struct pm_state_constraints *constraints,
+			     const struct pm_state_constraint match);
+
 /**
  * @}
  */
@@ -428,6 +467,14 @@ static inline const struct pm_state_info *pm_state_get(uint8_t cpu,
 	return NULL;
 }
 
+static inline bool pm_state_in_constraints(struct pm_state_constraints *constraints,
+					   struct pm_state_constraint match)
+{
+	ARG_UNUSED(constraints_list);
+	ARG_UNUSED(match);
+
+	return false;
+}
 #endif /* CONFIG_PM */
 
 #ifdef __cplusplus
