@@ -7,6 +7,7 @@
 #include <freq.h>
 
 #include <zephyr/dt-bindings/clock/sf32lb52x-clocks.h>
+#include <zephyr/dt-bindings/pinctrl/sf32lb52x-pinctrl.h>
 
 / {
 	cpus {
@@ -88,6 +89,7 @@
 			reg = <0x50003000 0x34>, <0x50003034 0xb4>;
 			reg-names = "pad_sa", "pad_pa";
 			clocks = <&rcc_clk SF32LB52X_CLOCK_PINMUX1>;
+			#sifli,pinmux-cells = <2>;
 			sifli,cfg = <&cfg>;
 			status = "disabled";
 		};
@@ -115,6 +117,41 @@
 			reg = <0x50084000 0x400>;
 			interrupts = <59 0>;
 			status = "disabled";
+		};
+
+		gpioa: gpio@500a0000 {
+			compatible = "sifli,sf32lb-gpio-parent";
+			reg = <0x500a0000 0x1000>;
+			ranges = <0x0 0x500a0000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			clocks = <&rcc_clk SF32LB52X_CLOCK_GPIO1>;
+			interrupts = <84 0>;
+
+			/*
+			 * Split into 32 pin blocks due to Zephyr requiring GPIO
+			 * ports to have a maximum of 32 pins. This is a
+			 * Zephyrism, but it is what it is!
+			 */
+			gpioa_00_31: gpio@0 {
+				compatible = "sifli,sf32lb-gpio";
+				reg = <0x0 0x6c>;
+				#gpio-cells = <2>;
+				gpio-controller;
+				ngpios = <32>;
+				sifli,pinmuxs = <&pinctrl SF32LB_PORT_PA 0x0>;
+				status = "disabled";
+			};
+
+			gpioa_32_44: gpio@80 {
+				compatible = "sifli,sf32lb-gpio";
+				reg = <0x80 0x6c>;
+				#gpio-cells = <2>;
+				gpio-controller;
+				ngpios = <13>;
+				sifli,pinmuxs = <&pinctrl SF32LB_PORT_PA 0x80>;
+				status = "disabled";
+			};
 		};
 
 		cfg: syscon@5000b000 {
