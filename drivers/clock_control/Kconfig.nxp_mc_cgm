@@ -1,0 +1,9 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_NXP_MC_CGM
+	bool "NXP MC_CGM clock driver"
+	default y
+	depends on DT_HAS_NXP_MC_CGM_ENABLED
+	help
+	  Enable support for NXP MC_CGM clock driver.
