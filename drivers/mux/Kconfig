@@ -1,0 +1,27 @@
+# Copyright NXP 2025
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig MUX_CONTROL
+	bool "Mux control drivers"
+	help
+	  Enable support for mux control hardware drivers. This is
+	  for hardware devices which are used to mux and enable or
+	  disable various signals either on or off SOCs.
+
+if MUX_CONTROL
+
+config MUX_CONTROL_INIT_PRIORITY
+	int "Mux control init priority"
+	default KERNEL_INIT_PRIORITY_DEFAULT
+	help
+	  Mux control device driver init priority.
+
+module = MUX_CONTROL
+module-str = mux control
+source "subsys/logging/Kconfig.template.log_config"
+
+source "drivers/mux/Kconfig.reg_mux"
+source "drivers/mux/Kconfig.nxp_inputmux"
+source "drivers/mux/Kconfig.gpio_mux"
+
+endif # MUX_CONTROL
