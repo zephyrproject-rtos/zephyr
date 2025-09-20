@@ -5,7 +5,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if defined(CONFIG_FUSE_LIBRARY_V3)
+#define FUSE_USE_VERSION 30
+#else
 #define FUSE_USE_VERSION 26
+#endif
 
 #undef _XOPEN_SOURCE
 #define _XOPEN_SOURCE 700
@@ -40,6 +44,9 @@
 
 static pthread_t fuse_thread;
 static struct ffa_op_callbacks *op_callbacks;
+#if defined(CONFIG_FUSE_LIBRARY_V3)
+static sem_t fuse_started; /* semaphore to signal fuse_main has started */
+#endif
 
 /* Pending operation the bottom/fuse thread is queuing into the Zephyr thread */
 struct {
@@ -197,8 +204,14 @@ static bool is_mount_point(const char *path)
 	return strcmp(dirname(dir_path), "/") == 0;
 }
 
+#if defined(CONFIG_FUSE_LIBRARY_V3)
+static int fuse_fs_access_getattr(const char *path, struct stat *st, struct fuse_file_info *fi)
+{
+	NSI_ARG_UNUSED(fi);
+#else
 static int fuse_fs_access_getattr(const char *path, struct stat *st)
 {
+#endif
 	struct ffa_dirent entry;
 	int err;
 
@@ -266,8 +279,13 @@ static int fuse_fs_access_readmount(void *buf, fuse_fill_dir_t filler)
 	st.st_blksize = 0;
 	st.st_blocks = 0;
 
+#if defined(CONFIG_FUSE_LIBRARY_V3)
+	filler(buf, ".", &st, 0, 0);
+	filler(buf, "..", NULL, 0, 0);
+#else
 	filler(buf, ".", &st, 0);
 	filler(buf, "..", NULL, 0);
+#endif
 
 	do {
 		struct op_args_readmount args;
@@ -282,7 +300,11 @@ static int fuse_fs_access_readmount(void *buf, fuse_fill_dir_t filler)
 			break;
 		}
 
+#if defined(CONFIG_FUSE_LIBRARY_V3)
+		filler(buf, &mnt_name[1], &st, 0, 0);
+#else
 		filler(buf, &mnt_name[1], &st, 0);
+#endif
 
 	} while (true);
 
@@ -293,9 +315,16 @@ static int fuse_fs_access_readmount(void *buf, fuse_fill_dir_t filler)
 	return err;
 }
 
+#if defined(CONFIG_FUSE_LIBRARY_V3)
+static int fuse_fs_access_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t off,
+				  struct fuse_file_info *fi, enum fuse_readdir_flags flags)
+{
+	NSI_ARG_UNUSED(flags);
+#else
 static int fuse_fs_access_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t off,
 				  struct fuse_file_info *fi)
 {
+#endif
 	NSI_ARG_UNUSED(off);
 	NSI_ARG_UNUSED(fi);
 
@@ -345,8 +374,13 @@ static int fuse_fs_access_readdir(const char *path, void *buf, fuse_fill_dir_t f
 	st.st_blksize = 0;
 	st.st_blocks = 0;
 
+#if defined(CONFIG_FUSE_LIBRARY_V3)
+	filler(buf, ".", &st, 0, 0);
+	filler(buf, "..", &st, 0, 0);
+#else
 	filler(buf, ".", &st, 0);
 	filler(buf, "..", &st, 0);
+#endif
 
 	do {
 		err = queue_op(OP_READDIR_READ_NEXT, (void *)&entry);
@@ -366,7 +400,13 @@ static int fuse_fs_access_readdir(const char *path, void *buf, fuse_fill_dir_t f
 			st.st_size = entry.size;
 		}
 
-		if (filler(buf, entry.name, &st, 0)) {
+#if defined(CONFIG_FUSE_LIBRARY_V3)
+		bool full = filler(buf, entry.name, &st, 0, 0);
+#else
+		bool full = filler(buf, entry.name, &st, 0);
+#endif
+
+		if (full) {
 			break;
 		}
 	} while (1);
@@ -468,6 +508,7 @@ static int fuse_fs_access_write(const char *path, const char *buf, size_t size, 
 	return -nsi_errno_from_mid(err);
 }
 
+#if !defined(CONFIG_FUSE_LIBRARY_V3)
 static int fuse_fs_access_ftruncate(const char *path, off_t size, struct fuse_file_info *fi)
 {
 	struct op_args_ftruncate args;
@@ -486,9 +527,16 @@ static int fuse_fs_access_ftruncate(const char *path, off_t size, struct fuse_fi
 
 	return -nsi_errno_from_mid(err);
 }
+#endif
 
+#if defined(CONFIG_FUSE_LIBRARY_V3)
+static int fuse_fs_access_truncate(const char *path, off_t size, struct fuse_file_info *fi)
+{
+	NSI_ARG_UNUSED(fi);
+#else
 static int fuse_fs_access_truncate(const char *path, off_t size)
 {
+#endif
 	struct op_args_truncate args;
 	int err;
 
@@ -521,18 +569,35 @@ static int fuse_fs_access_statfs(const char *path, struct statvfs *buf)
 	return 0;
 }
 
+#if defined(CONFIG_FUSE_LIBRARY_V3)
+static int fuse_fs_access_utimens(const char *path, const struct timespec tv[2],
+				  struct fuse_file_info *fi)
+{
+	NSI_ARG_UNUSED(fi);
+#else
 static int fuse_fs_access_utimens(const char *path, const struct timespec tv[2])
 {
+#endif
 	/* dummy */
 	NSI_ARG_UNUSED(path);
 	NSI_ARG_UNUSED(tv);
 	return 0;
 }
 
+#if defined(CONFIG_FUSE_LIBRARY_V3)
+static void *fuse_fs_access_init(struct fuse_conn_info *conn, struct fuse_config *cfg)
+{
+	NSI_ARG_UNUSED(conn);
+	NSI_ARG_UNUSED(cfg);
+
+	sem_post(&fuse_started);
+	return NULL;
+}
+#endif
+
 static struct fuse_operations fuse_fs_access_oper = {
 	.getattr = fuse_fs_access_getattr,
 	.readlink = NULL,
-	.getdir = NULL,
 	.mknod = NULL,
 	.mkdir = fuse_fs_access_mkdir,
 	.unlink = fuse_fs_access_unlink,
@@ -543,7 +608,6 @@ static struct fuse_operations fuse_fs_access_oper = {
 	.chmod = NULL,
 	.chown = NULL,
 	.truncate = fuse_fs_access_truncate,
-	.utime = NULL,
 	.open = fuse_fs_access_open,
 	.read = fuse_fs_access_read,
 	.write = fuse_fs_access_write,
@@ -559,19 +623,24 @@ static struct fuse_operations fuse_fs_access_oper = {
 	.readdir = fuse_fs_access_readdir,
 	.releasedir = NULL,
 	.fsyncdir = NULL,
-	.init = NULL,
+#if defined(CONFIG_FUSE_LIBRARY_V3)
+	.init = fuse_fs_access_init,
+#endif
 	.destroy = NULL,
 	.access = NULL,
 	.create = fuse_fs_access_create,
+#if !defined(CONFIG_FUSE_LIBRARY_V3)
 	.ftruncate = fuse_fs_access_ftruncate,
-	.fgetattr = NULL,
+#endif
 	.lock = NULL,
 	.utimens = fuse_fs_access_utimens,
 	.bmap = NULL,
+#if !defined(CONFIG_FUSE_LIBRARY_V3)
 	.flag_nullpath_ok = 0,
 	.flag_nopath = 0,
 	.flag_utime_omit_ok = 0,
 	.flag_reserved = 0,
+#endif
 	.ioctl = NULL,
 	.poll = NULL,
 	.write_buf = NULL,
@@ -615,15 +684,38 @@ void ffsa_init_bottom(const char *fuse_mountpoint, struct ffa_op_callbacks *op_c
 		nsi_print_error_and_exit("%s is not a directory\n", fuse_mountpoint);
 	}
 
-	err = pthread_create(&fuse_thread, NULL, ffsa_main, (void *)fuse_mountpoint);
-	if (err < 0) {
-		nsi_print_error_and_exit("Failed to create thread for fuse_fs_access_main\n");
+#if defined(CONFIG_FUSE_LIBRARY_V3)
+	/* Fuse3's fuse_daemonize() changes the cwd to "/" which is a quite undesirable
+	 * side-effect, so we will revert back to where we were once it has initialized
+	 */
+	char *cwd = getcwd(NULL, 0);
+
+	err = sem_init(&fuse_started, 0, 0);
+	if (err) {
+		nsi_print_error_and_exit("Failed to initialize semaphore\n");
 	}
+#endif
 
 	err = sem_init(&op_queue.op_done, 0, 0);
 	if (err) {
 		nsi_print_error_and_exit("Failed to initialize semaphore\n");
 	}
+
+	err = pthread_create(&fuse_thread, NULL, ffsa_main, (void *)fuse_mountpoint);
+	if (err < 0) {
+		nsi_print_error_and_exit("Failed to create thread for ffsa_main()\n");
+	}
+
+#if defined(CONFIG_FUSE_LIBRARY_V3)
+	if (cwd != NULL) {
+		sem_wait(&fuse_started);
+		if (chdir(cwd)) {
+			nsi_print_error_and_exit("Failed to change directory back to %s "
+						 "after starting FUSE\n");
+		}
+		free(cwd);
+	}
+#endif
 }
 
 void ffsa_cleanup_bottom(const char *fuse_mountpoint)

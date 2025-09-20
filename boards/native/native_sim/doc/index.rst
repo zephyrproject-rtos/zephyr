@@ -676,20 +676,25 @@ crashes, you can cleanup the stale mount point by using the program
 
    $ fusermount -u flash
 
-Note that this feature requires a 32-bit version of the FUSE library, with a
-minimal version of 2.6, on the host system and ``pkg-config`` settings to
-correctly pickup the FUSE install path and compiler flags.
+You can chose to use the v2 FUSE host library or the v3 with
+:kconfig:option:`CONFIG_FUSE_LIBRARY_VERSION`.
+When using the v2, a minimal version of 2.6 is necessary. For v3, 3.0 should suffice.
+You will also need ``pkg-config`` setup to correctly pickup the FUSE install path and compiler flags.
+Note that using this feature with the 32-bit native_sim variant requires the 32-bit version of the
+corresponding FUSE library.
 
-On a Ubuntu 22.04 host system, for example, install the ``pkg-config`` and
-``libfuse-dev:i386`` packages, and configure the pkg-config search path with
-these commands:
+For example, to use the v2 of the library, on a Ubuntu 24.04 host system, install the ``pkg-config``
+and ``libfuse-dev:i386`` for 32-bit builds, and ``libfuse-dev`` for 64-bit builds:
 
 .. code-block:: console
 
    $ sudo dpkg --add-architecture i386
    $ sudo apt update
-   $ sudo apt-get install pkg-config libfuse-dev:i386
+   $ sudo apt-get install pkg-config libfuse-dev:i386 libfuse-dev
    $ export PKG_CONFIG_PATH=/usr/lib/i386-linux-gnu/pkgconfig
+
+Similarly ``libfuse3-dev:i386`` and ``libfuse3-dev`` provide the 32 and 64-bit FUSE v3 library
+and headers.
 
 .. _native_sim_peripherals_c_compat:
 
