@@ -30,7 +30,7 @@ Hardware
 
 FK7B0M1-VBT6 provides the following hardware components:
 
-- STM32H7B6VB in LQFP100 package
+- STM32H7B0VB in LQFP100 package
 - ARM 32-bit Cortex-M7 CPU with FPU
 - 280 MHz max CPU frequency
 - VDD from 1.62 V to 3.6 V
