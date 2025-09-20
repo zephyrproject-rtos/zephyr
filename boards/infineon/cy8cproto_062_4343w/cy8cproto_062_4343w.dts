@@ -10,8 +10,8 @@
 #include "cy8cproto_062_4343w-pinctrl.dtsi"
 
 / {
-	model = "cy8cproto_062_4343w with an Cypress PSOC™ 6 SoC";
 	compatible = "cypress,cy8cproto_062_4343w", "cypress,PSOC6";
+	model = "cy8cproto_062_4343w with an Cypress PSOC™ 6 SoC";
 
 	aliases {
 		uart-5 = &uart5;
@@ -35,16 +35,15 @@
 
 uart5: &scb5 {
 	compatible = "infineon,cat1-uart";
-	status = "okay";
 	current-speed = <115200>;
 
 	pinctrl-0 = <&p5_1_scb5_uart_tx &p5_0_scb5_uart_rx>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 uart2: &scb2 {
 	compatible = "infineon,cat1-uart";
-	status = "okay";
 
 	/* The UART bus speed (current_speed) for zephyr_bt_uart should be the same
 	 * as the default baudrate defined in CYW43xx firmware (default 115200).
@@ -57,12 +56,12 @@ uart2: &scb2 {
 
 	/* HW Flow control must be enabled for HCI H4 */
 	hw-flow-control;
+	status = "okay";
 
 	bt_hci_uart: bt_hci_uart {
 		compatible = "zephyr,bt-hci-uart";
 
 		murata-1dx {
-			status = "okay";
 			compatible = "infineon,cyw43xxx-bt-hci";
 			bt-reg-on-gpios = <&gpio_prt3 4 GPIO_ACTIVE_HIGH>;
 
@@ -73,33 +72,34 @@ uart2: &scb2 {
 			 * default speed.
 			 */
 			fw-download-speed = <3000000>;
+			status = "okay";
 		};
 	};
 };
 
 &sdhc0 {
-	status = "okay";
 
 	/* SDIO pins */
 	pinctrl-0 = <&p2_4_sdio_cmd &p2_5_sdio_clk &p2_0_sdio_data0
 		     &p2_1_sdio_data1 &p2_2_sdio_data2 &p2_3_sdio_data3>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	/* Wi-Fi configuration */
 	airoc-wifi {
-		status = "okay";
 		compatible = "infineon,airoc-wifi";
 
 		/* Wi-Fi control gpios */
 		wifi-reg-on-gpios = <&gpio_prt2 6 GPIO_ACTIVE_HIGH>;
 		wifi-host-wake-gpios = <&gpio_prt0 4 GPIO_ACTIVE_HIGH>;
+		status = "okay";
 	};
 };
 
 /* System clock configuration */
 &fll0 {
-	status = "okay";
 	clock-frequency = <100000000>;
+	status = "okay";
 };
 
 &clk_hf0 {

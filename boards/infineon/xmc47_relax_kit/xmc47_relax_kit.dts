@@ -14,8 +14,8 @@
 #include "arduino_r3_connector.dtsi"
 
 / {
-	model = "Infineon XMC4700 Relax Kit board";
 	compatible = "infineon,xmc4700", "infineon,xmc4xxx";
+	model = "Infineon XMC4700 Relax Kit board";
 
 	aliases {
 		led0 = &led1;
@@ -85,8 +85,8 @@
 		};
 
 		storage_partition: partition@80000 {
-			label = "storage";
 			reg = <0x80000 0x80000>;
+			label = "storage";
 		};
 	};
 };
@@ -126,15 +126,14 @@
 	miso-src = "DX0C";
 	interrupts = <96 1 97 1>;
 	interrupt-names = "tx", "rx";
-	status = "okay";
 
 	#address-cells = <1>;
 	#size-cells = <0>;
+	status = "okay";
 };
 
 &usic1ch1 {
 	compatible = "infineon,xmc4xxx-i2c";
-	status = "okay";
 
 	pinctrl-0 = <&i2c_scl_p0_13_u1c1 &i2c_sda_p3_15_u1c1>;
 	pinctrl-names = "default";
@@ -144,6 +143,7 @@
 
 	#address-cells = <1>;
 	#size-cells = <0>;
+	status = "okay";
 };
 
 &adc0 {
@@ -178,7 +178,6 @@
 };
 
 &eth {
-	status = "okay";
 	pinctrl-0 = <&eth_p2_4_rxer &eth_p2_2_rxd0 &eth_p2_3_rxd1
 		     &eth_p15_8_clk_rmii &eth_p15_9_crs_dv &eth_p2_5_tx_en
 		     &eth_p2_8_txd0 &eth_p2_9_txd1>;
@@ -192,13 +191,14 @@
 
 	phy-connection-type = "rmii";
 	phy-handle = <&phy>;
+	status = "okay";
 };
 
 &mdio {
-	status = "okay";
 	mdi-port-ctrl = "P2_0";
 	pinctrl-0 = <&eth_p2_0_mdo &eth_p2_7_mdc>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	phy: ethernet-phy@0 {
 		compatible = "ethernet-phy";
@@ -215,8 +215,8 @@
 };
 
 &can_node1 {
-	status = "okay";
 	input-src = "RXDC";
 	pinctrl-0 = <&can_tx_p1_12_node1 &can_rx_p1_13_node1>;
 	pinctrl-names = "default";
+	status = "okay";
 };
