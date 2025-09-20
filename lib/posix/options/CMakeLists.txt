@@ -143,6 +143,7 @@ if (NOT CONFIG_TC_PROVIDES_POSIX_THREADS)
     key.c
     mutex.c
     pthread.c
+    pthread_common.c
     pwd.c
   )
 endif()
@@ -154,6 +155,13 @@ if(NOT CONFIG_TC_PROVIDES_XSI_REALTIME)
   zephyr_library_sources_ifdef(CONFIG_POSIX_MESSAGE_PASSING mqueue.c)
   zephyr_library_sources_ifdef(CONFIG_POSIX_PRIORITY_SCHEDULING sched.c)
   zephyr_library_sources_ifdef(CONFIG_POSIX_SHARED_MEMORY_OBJECTS shm.c)
+endif()
+
+if(NOT CONFIG_TC_PROVIDES_XSI_REALTIME_THREADS)
+  zephyr_library_sources_ifdef(CONFIG_XSI_REALTIME_THREADS
+    pthread_common.c
+    xsi_realtime_threads.c
+  )
 endif()
 
 zephyr_library_sources_ifdef(CONFIG_XOPEN_STREAMS stropts.c)
