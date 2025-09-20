@@ -1,0 +1,8 @@
+# Copyright (c) 2025 Egis Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_EGIS_ET171
+
+rsource "*/Kconfig"
+
+endif # SOC_EGIS_ET171
