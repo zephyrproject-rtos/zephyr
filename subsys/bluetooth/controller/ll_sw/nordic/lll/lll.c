@@ -101,7 +101,9 @@ ISR_DIRECT_DECLARE(radio_nrf5_isr)
 {
 	DEBUG_RADIO_ISR(1);
 
-	lll_prof_enter_radio();
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		lll_prof_enter_radio();
+	}
 
 	isr_radio();
 
@@ -109,7 +111,9 @@ ISR_DIRECT_DECLARE(radio_nrf5_isr)
 	ISR_DIRECT_PM();
 #endif /* !CONFIG_BT_CTLR_ZLI */
 
-	lll_prof_exit_radio();
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		lll_prof_exit_radio();
+	}
 
 	DEBUG_RADIO_ISR(0);
 
@@ -133,7 +137,9 @@ ISR_DIRECT_DECLARE(timer_nrf5_isr)
 {
 	DEBUG_RADIO_ISR(1);
 
-	lll_prof_enter_radio();
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		lll_prof_enter_radio();
+	}
 
 	isr_radio_tmr();
 
@@ -141,7 +147,9 @@ ISR_DIRECT_DECLARE(timer_nrf5_isr)
 	ISR_DIRECT_PM();
 #endif /* !CONFIG_BT_CTLR_ZLI */
 
-	lll_prof_exit_radio();
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		lll_prof_exit_radio();
+	}
 
 	DEBUG_RADIO_ISR(0);
 
@@ -160,7 +168,9 @@ static void rtc0_nrf5_isr(const void *arg)
 {
 	DEBUG_TICKER_ISR(1);
 
-	lll_prof_enter_ull_high();
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		lll_prof_enter_ull_high();
+	}
 
 	/* On compare0 run ticker worker instance0 */
 #if defined(CONFIG_BT_CTLR_NRF_GRTC)
@@ -176,15 +186,21 @@ static void rtc0_nrf5_isr(const void *arg)
 
 	mayfly_run(TICKER_USER_ID_ULL_HIGH);
 
-	lll_prof_exit_ull_high();
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		lll_prof_exit_ull_high();
+	}
 
 #if !defined(CONFIG_BT_CTLR_LOW_LAT) && \
 	(CONFIG_BT_CTLR_ULL_HIGH_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)
-	lll_prof_enter_ull_low();
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		lll_prof_enter_ull_low();
+	}
 
 	mayfly_run(TICKER_USER_ID_ULL_LOW);
 
-	lll_prof_exit_ull_low();
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		lll_prof_exit_ull_low();
+	}
 #endif
 
 	DEBUG_TICKER_ISR(0);
@@ -194,11 +210,15 @@ static void swi_lll_nrf5_isr(const void *arg)
 {
 	DEBUG_RADIO_ISR(1);
 
-	lll_prof_enter_lll();
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		lll_prof_enter_lll();
+	}
 
 	mayfly_run(TICKER_USER_ID_LLL);
 
-	lll_prof_exit_lll();
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		lll_prof_exit_lll();
+	}
 
 	DEBUG_RADIO_ISR(0);
 }
@@ -209,11 +229,15 @@ static void swi_ull_low_nrf5_isr(const void *arg)
 {
 	DEBUG_TICKER_JOB(1);
 
-	lll_prof_enter_ull_low();
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		lll_prof_enter_ull_low();
+	}
 
 	mayfly_run(TICKER_USER_ID_ULL_LOW);
 
-	lll_prof_exit_ull_low();
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		lll_prof_exit_ull_low();
+	}
 
 	DEBUG_TICKER_JOB(0);
 }
