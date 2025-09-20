@@ -24,4 +24,5 @@ supported:
   - i2c
   - rtc
   - usbd
+  - memc
 vendor: st
