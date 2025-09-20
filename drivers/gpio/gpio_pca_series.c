@@ -1656,6 +1656,115 @@ static void gpio_pca_series_gpio_int_handler(const struct device *dev,
 
 #endif /* CONFIG_GPIO_PCA_SERIES_INTERRUPT */
 
+#ifdef CONFIG_GPIO_GET_CONFIG
+static int gpio_pca_series_pin_get_config(const struct device *dev, gpio_pin_t pin,
+					  gpio_flags_t *flags)
+{
+	const struct gpio_pca_series_config *cfg = dev->config;
+	struct gpio_pca_series_data *data = dev->data;
+	uint32_t reg_value = 0;
+	int ret = 0;
+	*flags = 0;
+
+	/* Can't do I2C bus operations from an ISR */
+	if (k_is_in_isr()) {
+		return -EWOULDBLOCK;
+	}
+
+	LOG_DBG("dev %s pin_get_config %d", dev->name, pin);
+
+	k_sem_take(&data->lock, K_FOREVER);
+
+	if (cfg->part_cfg->flags & PCA_HAS_OUT_CONFIG) {
+		/* read PCA_REG_TYPE_1B_OUTPUT_CONFIG */
+		ret = gpio_pca_series_reg_cache_read(dev, PCA_REG_TYPE_1B_OUTPUT_CONFIG,
+						     (uint8_t *)&reg_value);
+		if (ret < 0) {
+			goto out;
+		}
+
+		reg_value = sys_le32_to_cpu(reg_value);
+		if (reg_value & BIT(pin)) {
+			*flags |= GPIO_SINGLE_ENDED; /* set bit to set open-drain */
+		} else {
+			*flags |= GPIO_PUSH_PULL; /* clear bit to set push-pull */
+		}
+	}
+
+	if ((cfg->part_cfg->flags & PCA_HAS_PULL)) {
+		/* read PCA_REG_TYPE_1B_PULL_ENABLE */
+		ret = gpio_pca_series_reg_cache_read(dev, PCA_REG_TYPE_1B_PULL_ENABLE,
+						     (uint8_t *)&reg_value);
+		if (ret < 0) {
+			LOG_DBG("%s() failed: %d", "gpio_pca_series_reg_cache_read", ret);
+			goto out;
+		}
+
+		reg_value = sys_le32_to_cpu(reg_value);
+		if (reg_value & BIT(pin)) {
+			/* configure PCA_REG_TYPE_1B_PULL_SELECT */
+			ret = gpio_pca_series_reg_cache_read(dev, PCA_REG_TYPE_1B_PULL_SELECT,
+							     (uint8_t *)&reg_value);
+			if (ret < 0) {
+				LOG_DBG("%s() failed: %d", "gpio_pca_series_reg_cache_read", ret);
+				goto out;
+			}
+
+			reg_value = sys_le32_to_cpu(reg_value);
+			if (reg_value & BIT(pin)) {
+				*flags |= GPIO_PULL_UP;
+			} else {
+				*flags |= GPIO_PULL_DOWN;
+			}
+		}
+	}
+
+	/* configure PCA_REG_TYPE_1B_CONFIGURATION */
+	ret = gpio_pca_series_reg_cache_read(dev, PCA_REG_TYPE_1B_CONFIGURATION,
+					     (uint8_t *)&reg_value);
+	if (ret < 0) {
+		LOG_DBG("%s() failed: %d", "gpio_pca_series_reg_cache_read", ret);
+		goto out;
+	}
+
+	reg_value = sys_le32_to_cpu(reg_value);
+	if (reg_value & BIT(pin)) {
+		*flags |= GPIO_INPUT; /* set bit to set input */
+	} else {
+		*flags |= GPIO_OUTPUT; /* clear bit to set output */
+
+		uint32_t out_old;
+
+#ifdef CONFIG_GPIO_PCA_SERIES_CACHE_ALL
+		/* get output register old value from reg cache */
+		ret = gpio_pca_series_reg_cache_read(dev, PCA_REG_TYPE_1B_OUTPUT_PORT,
+						     (uint8_t *)&out_old);
+		if (ret < 0) {
+			LOG_DBG("%s() failed: %d", "gpio_pca_series_reg_cache_read", ret);
+			goto out;
+		}
+#else  /* CONFIG_GPIO_PCA_SERIES_CACHE_ALL */
+		out_old = gpio_pca_series_reg_cache_mini_get(dev)->output;
+#endif /* CONFIG_GPIO_PCA_SERIES_CACHE_ALL */
+
+		out_old = sys_le32_to_cpu(out_old);
+
+		if (out_old & BIT(pin)) {
+			*flags |= GPIO_OUTPUT_INIT_HIGH;
+		} else {
+			*flags |= GPIO_OUTPUT_INIT_LOW;
+		}
+
+		/* TODO: PCA_REG_TYPE_2B_OUTPUT_DRIVE_STRENGTH */
+	}
+
+out:
+	k_sem_give(&data->lock);
+	LOG_DBG("dev %s pin_get_config %d return %d", dev->name, pin, ret);
+	return ret;
+}
+#endif /* CONFIG_GPIO_GET_CONFIG */
+
 /**
  * }
  * gpio_pca_zephyr_gpio_api
@@ -1672,6 +1781,9 @@ static DEVICE_API(gpio, gpio_pca_series_api_funcs_standard) = {
 	.pin_interrupt_configure = gpio_pca_series_pin_interrupt_configure_standard,
 	.manage_callback = gpio_pca_series_manage_callback,
 #endif
+#ifdef CONFIG_GPIO_GET_CONFIG
+	.pin_get_config = gpio_pca_series_pin_get_config,
+#endif
 };
 
 static DEVICE_API(gpio, gpio_pca_series_api_funcs_extended) = {
@@ -1684,6 +1796,9 @@ static DEVICE_API(gpio, gpio_pca_series_api_funcs_extended) = {
 #ifdef CONFIG_GPIO_PCA_SERIES_INTERRUPT
 	.pin_interrupt_configure = gpio_pca_series_pin_interrupt_configure_extended,
 	.manage_callback = gpio_pca_series_manage_callback,
+#endif
+#ifdef CONFIG_GPIO_GET_CONFIG
+	.pin_get_config = gpio_pca_series_pin_get_config,
 #endif
 };
 
@@ -1706,11 +1821,6 @@ static int gpio_pca_series_init(const struct device *dev)
 		LOG_ERR("i2c bus device not found");
 		goto out_bus;
 	}
-
-	/** device reset */
-	gpio_pca_series_reset(dev);
-	LOG_DBG("device reset done");
-
 #ifdef GPIO_NXP_PCA_SERIES_DEBUG
 # ifdef CONFIG_GPIO_PCA_SERIES_CACHE_ALL
 	gpio_pca_series_cache_test(dev);
@@ -1728,6 +1838,10 @@ static int gpio_pca_series_init(const struct device *dev)
 		goto out;
 	}
 	LOG_DBG("cache init done");
+
+	/** device reset */
+	gpio_pca_series_reset(dev);
+	LOG_DBG("device reset done");
 
 	/** configure interrupt */
 #ifdef CONFIG_GPIO_PCA_SERIES_INTERRUPT
