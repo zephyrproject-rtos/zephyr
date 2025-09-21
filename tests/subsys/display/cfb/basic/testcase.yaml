@@ -11,6 +11,7 @@ common:
     fixture: display
   platform_allow:
     - native_sim
+    - native_sim/native/64
 tests:
   display.cfb.basic.mono01.vtiled.msbfirst.lsbfirst_font:
     extra_configs:
