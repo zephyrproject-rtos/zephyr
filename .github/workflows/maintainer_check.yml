@@ -23,12 +23,16 @@ jobs:
         uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6.0.0
         with:
           python-version: 3.12
-          cache: pip
-          cache-dependency-path: scripts/requirements-actions.txt
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@b75a909f75acd358c2196fb9a5f1299a9a8868a4 # 6.7.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: "pyproject.toml"
 
       - name: Install Python packages
         run: |
-          pip install -r scripts/requirements-actions.txt --require-hashes
+          uv sync --group actions
 
       - name: Fetch MAINTAINERS.yml from pull request
         run: |
@@ -39,5 +43,5 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.ZB_PR_ASSIGNER_GITHUB_TOKEN }}
         run: |
-          python  ./scripts/ci/check_maintainer_changes.py  \
+          uv run python  ./scripts/ci/check_maintainer_changes.py  \
             --repo zephyrproject-rtos/zephyr MAINTAINERS.yml pr_MAINTAINERS.yml

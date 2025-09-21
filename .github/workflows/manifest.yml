@@ -19,15 +19,26 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      - name: Set up Python
+        uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6.0.0
+        with:
+          python-version: 3.12
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@b75a909f75acd358c2196fb9a5f1299a9a8868a4 # 6.7.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: "zephyrproject/zephyr/pyproject.toml"
+
       - name: west setup
         env:
           BASE_REF: ${{ github.base_ref }}
         working-directory: zephyrproject/zephyr
         run: |
-          pip install -r scripts/requirements-west.txt --require-hashes
+          uv sync --group west
           git config --global user.email "you@example.com"
           git config --global user.name "Your Name"
-          west init -l . || true
+          uv run west init -l . || true
 
       - name: Manifest
         uses: zephyrproject-rtos/action-manifest@09983f53d3d878791aa37a7755ae44d695f4c1e5 # v2.0.0
