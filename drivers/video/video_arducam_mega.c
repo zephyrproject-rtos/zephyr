@@ -1,6 +1,7 @@
 /**
  * Copyright (c) 2023 Arducam Technology Co., Ltd. <www.arducam.com>
- *
+ * Copyright The Zephyr Project Contributors
+ * 
  * SPDX-License-Identifier: Apache-2.0
  */
 
