@@ -280,19 +280,19 @@ static int arducam_mega_await_bus_idle(const struct spi_dt_spec *spec, uint8_t t
 }
 
 static int arducam_mega_write_reg_wait(const struct arducam_mega_bus *bus, uint16_t reg,
-				       uint8_t value, uint32_t idle_timeout_ms, const char *label)
+				       uint8_t value, uint32_t idle_timeout_ms)
 {
 	int ret;
 
 	ret = arducam_mega_await_bus_idle(bus, idle_timeout_ms);
 	if (ret < 0) {
-		LOG_ERR("Bus idle wait failed before writing %s", label);
+		LOG_ERR("Bus idle wait failed before writing register 0x%04x", reg);
 		return ret;
 	}
 
 	ret = arducam_mega_write_reg(bus, reg, value);
 	if (ret < 0) {
-		LOG_ERR("Failed to write %s (reg 0x%04x)", label, reg);
+		LOG_ERR("Failed to write register 0x%04x)", reg);
 	}
 
 	return ret;
@@ -302,31 +302,28 @@ static int arducam_mega_set_brightness(const struct device *dev, enum mega_brigh
 {
 	const struct arducam_mega_config *cfg = dev->config;
 
-	return arducam_mega_write_reg_wait(&cfg->bus, CAM_REG_BRIGHTNESS_CONTROL, level, 3,
-					   "brightness level");
+	return arducam_mega_write_reg_wait(&cfg->bus, CAM_REG_BRIGHTNESS_CONTROL, level, 3);
 }
 
 static int arducam_mega_set_saturation(const struct device *dev, enum mega_saturation_level level)
 {
 	const struct arducam_mega_config *cfg = dev->config;
 
-	return arducam_mega_write_reg_wait(&cfg->bus, CAM_REG_SATURATION_CONTROL, level, 3,
-					   "saturation level");
+	return arducam_mega_write_reg_wait(&cfg->bus, CAM_REG_SATURATION_CONTROL, level, 3);
 }
 
 static int arducam_mega_set_contrast(const struct device *dev, enum mega_contrast_level level)
 {
 	const struct arducam_mega_config *cfg = dev->config;
 
-	return arducam_mega_write_reg_wait(&cfg->bus, CAM_REG_CONTRAST_CONTROL, level, 3,
-					   "contrast level");
+	return arducam_mega_write_reg_wait(&cfg->bus, CAM_REG_CONTRAST_CONTROL, level, 3);
 }
 
 static int arducam_mega_set_EV(const struct device *dev, enum mega_ev_level level)
 {
 	const struct arducam_mega_config *cfg = dev->config;
 
-	return arducam_mega_write_reg_wait(&cfg->bus, CAM_REG_EV_CONTROL, level, 3, "EV level");
+	return arducam_mega_write_reg_wait(&cfg->bus, CAM_REG_EV_CONTROL, level, 3);
 }
 
 static int arducam_mega_set_sharpness(const struct device *dev, enum mega_sharpness_level level)
@@ -340,8 +337,7 @@ static int arducam_mega_set_sharpness(const struct device *dev, enum mega_sharpn
 		return -ENOTSUP;
 	}
 
-	return arducam_mega_write_reg_wait(&cfg->bus, CAM_REG_SHARPNESS_CONTROL, level, 3,
-					   "sharpness level");
+	return arducam_mega_write_reg_wait(&cfg->bus, CAM_REG_SHARPNESS_CONTROL, level, 3);
 }
 
 static int arducam_mega_set_auto_focus(const struct device *dev, enum mega_auto_focus_level level)
@@ -355,8 +351,7 @@ static int arducam_mega_set_auto_focus(const struct device *dev, enum mega_auto_
 		return -ENOTSUP;
 	}
 
-	return arducam_mega_write_reg_wait(&cfg->bus, CAM_REG_AUTO_FOCUS_CONTROL, level, 3,
-					   "focus level");
+	return arducam_mega_write_reg_wait(&cfg->bus, CAM_REG_AUTO_FOCUS_CONTROL, level, 3);
 }
 
 static int arducam_mega_set_special_effects(const struct device *dev, enum video_colorfx effect)
@@ -391,8 +386,7 @@ static int arducam_mega_set_special_effects(const struct device *dev, enum video
 		return -ENOTSUP;
 	}
 
-	return arducam_mega_write_reg_wait(&cfg->bus, CAM_REG_COLOR_EFFECT_CONTROL, mega_effect, 3,
-					   "special effects");
+	return arducam_mega_write_reg_wait(&cfg->bus, CAM_REG_COLOR_EFFECT_CONTROL, mega_effect, 3);
 }
 
 static int arducam_mega_set_output_format(const struct device *dev, int output_format)
@@ -415,8 +409,7 @@ static int arducam_mega_set_output_format(const struct device *dev, int output_f
 		return -ENOTSUP;
 	}
 
-	int ret = arducam_mega_write_reg_wait(&cfg->bus, CAM_REG_FORMAT, format_val, 3,
-					      "output format");
+	int ret = arducam_mega_write_reg_wait(&cfg->bus, CAM_REG_FORMAT, format_val, 3);
 	if (ret < 0) {
 		return ret;
 	}
@@ -441,7 +434,7 @@ static int arducam_mega_set_JPEG_quality(const struct device *dev, enum mega_ima
 		return -ENOTSUP;
 	}
 
-	return arducam_mega_write_reg_wait(&cfg->bus, CAM_REG_IMAGE_QUALITY, qc, 3, "JPEG quality");
+	return arducam_mega_write_reg_wait(&cfg->bus, CAM_REG_IMAGE_QUALITY, qc, 3);
 }
 
 static int arducam_mega_set_white_bal_enable(const struct device *dev, int enable)
@@ -454,7 +447,7 @@ static int arducam_mega_set_white_bal_enable(const struct device *dev, int enabl
 	}
 
 	int ret = arducam_mega_write_reg_wait(&cfg->bus, CAM_REG_EXPOSURE_GAIN_WHITEBAL_ENABLE, reg,
-					      3, "white balance enable");
+					      3);
 	if (ret < 0) {
 		return ret;
 	}
@@ -471,8 +464,7 @@ static int arducam_mega_set_white_bal(const struct device *dev, enum mega_ev_lev
 {
 	const struct arducam_mega_config *cfg = dev->config;
 
-	return arducam_mega_write_reg_wait(&cfg->bus, CAM_REG_WHITEBALANCE_CONTROL, level, 3,
-					   "white balance level");
+	return arducam_mega_write_reg_wait(&cfg->bus, CAM_REG_WHITEBALANCE_CONTROL, level, 3);
 }
 
 static int arducam_mega_set_gain_enable(const struct device *dev, int enable)
@@ -485,7 +477,7 @@ static int arducam_mega_set_gain_enable(const struct device *dev, int enable)
 	}
 
 	int ret = arducam_mega_write_reg_wait(&cfg->bus, CAM_REG_EXPOSURE_GAIN_WHITEBAL_ENABLE, reg,
-					      3, "gain enable");
+					      3);
 	if (ret < 0) {
 		return ret;
 	}
@@ -511,8 +503,7 @@ static int arducam_mega_set_lowpower_enable(const struct device *dev, int enable
 
 	uint8_t reg_val = enable ? 0x07 : 0x05;
 
-	return arducam_mega_write_reg_wait(&cfg->bus, CAM_REG_POWER_CONTROL, reg_val, 3,
-					   "lowpower enable");
+	return arducam_mega_write_reg_wait(&cfg->bus, CAM_REG_POWER_CONTROL, reg_val, 3);
 }
 
 static int arducam_mega_set_gain(const struct device *dev, uint16_t value)
@@ -521,13 +512,12 @@ static int arducam_mega_set_gain(const struct device *dev, uint16_t value)
 	int ret;
 
 	ret = arducam_mega_write_reg_wait(&cfg->bus, CAM_REG_MANUAL_GAIN_BIT_9_8,
-					  (value >> 8) & 0xFF, 3, "gain bits [9:8]");
+					  (value >> 8) & 0xFF, 3);
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = arducam_mega_write_reg_wait(&cfg->bus, CAM_REG_MANUAL_GAIN_BIT_7_0, value & 0xFF, 10,
-					  "gain bits [7:0]");
+	ret = arducam_mega_write_reg_wait(&cfg->bus, CAM_REG_MANUAL_GAIN_BIT_7_0, value & 0xFF, 10);
 	if (ret < 0) {
 		return ret;
 	}
@@ -550,7 +540,7 @@ static int arducam_mega_set_exposure_enable(const struct device *dev, int enable
 	}
 
 	int ret = arducam_mega_write_reg_wait(&cfg->bus, CAM_REG_EXPOSURE_GAIN_WHITEBAL_ENABLE, reg,
-					      3, "exposure enable");
+					      3);
 	if (ret < 0) {
 		return ret;
 	}
@@ -569,19 +559,19 @@ static int arducam_mega_set_exposure(const struct device *dev, uint32_t value)
 	int ret;
 
 	ret = arducam_mega_write_reg_wait(&cfg->bus, CAM_REG_MANUAL_EXPOSURE_BIT_19_16,
-					  (value >> 16) & 0xFF, 3, "exposure bits [19:16]");
+					  (value >> 16) & 0xFF, 3);
 	if (ret < 0) {
 		return ret;
 	}
 
 	ret = arducam_mega_write_reg_wait(&cfg->bus, CAM_REG_MANUAL_EXPOSURE_BIT_15_8,
-					  (value >> 8) & 0xFF, 10, "exposure bits [15:8]");
+					  (value >> 8) & 0xFF, 10);
 	if (ret < 0) {
 		return ret;
 	}
 
 	ret = arducam_mega_write_reg_wait(&cfg->bus, CAM_REG_MANUAL_EXPOSURE_BIT_7_0, value & 0xFF,
-					  10, "exposure bits [7:0]");
+					  10);
 	if (ret < 0) {
 		return ret;
 	}
@@ -598,8 +588,8 @@ static int arducam_mega_set_resolution(const struct device *dev, enum mega_resol
 {
 	const struct arducam_mega_config *cfg = dev->config;
 
-	int ret = arducam_mega_write_reg_wait(&cfg->bus, CAM_REG_CAPTURE_RESOLUTION, resolution, 10,
-					      "capture resolution");
+	int ret =
+		arducam_mega_write_reg_wait(&cfg->bus, CAM_REG_CAPTURE_RESOLUTION, resolution, 10);
 	if (ret < 0) {
 		return ret;
 	}
