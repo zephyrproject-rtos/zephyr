@@ -30,16 +30,22 @@ inline uint32_t mono_pixel_order(uint32_t order)
 
 uint32_t display_pixel(int x, int y)
 {
-	const uint8_t *ptr = read_buffer + (display_width * (y / 8) + x);
 	struct display_capabilities display_caps;
+	bool pixel_on;
 
 	display_get_capabilities(dev, &display_caps);
 
-	if (display_caps.current_pixel_format == PIXEL_FORMAT_MONO10) {
-		return !(*ptr & mono_pixel_order(y % 8));
+	if (IS_ENABLED(CONFIG_SDL_DISPLAY_MONO_VTILED)) {
+		const uint8_t *ptr = read_buffer + (display_width * (y / 8)) + x;
+
+		pixel_on = !!(*ptr & mono_pixel_order(y % 8));
+	} else {
+		const uint8_t *ptr = read_buffer + (y * (display_width / 8)) + (x / 8);
+
+		pixel_on = !!(*ptr & mono_pixel_order(x % 8));
 	}
 
-	return !!(*ptr & mono_pixel_order(y % 8));
+	return (display_caps.current_pixel_format == PIXEL_FORMAT_MONO10) ? !pixel_on : pixel_on;
 }
 
 uint32_t image_pixel(const uint32_t *img, size_t width, int x, int y)
