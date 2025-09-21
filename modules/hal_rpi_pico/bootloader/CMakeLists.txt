@@ -37,6 +37,7 @@ target_include_directories(boot_stage2 PUBLIC
   ${rp2040_dir}/pico_platform/include
   ${rp2040_dir}/hardware_regs/include
   ${common_dir}/pico_base_headers/include
+  ${rp2_common_dir}/pico_platform_common/include
   ${rp2_common_dir}/pico_platform_compiler/include
   ${rp2_common_dir}/pico_platform_sections/include
   ${rp2_common_dir}/pico_platform_panic/include
