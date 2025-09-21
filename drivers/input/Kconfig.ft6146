@@ -1,0 +1,28 @@
+# Copyright (c) 2025 Qingsong Gou <gouqs@hotmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig INPUT_FT6146
+	bool "FT6146 touch controller"
+	default y
+	depends on DT_HAS_FOCALTECH_FT6146_ENABLED
+	select I2C
+	select INPUT_TOUCH
+	help
+	  Enable driver for FT6146 capacitive touch controller.
+
+if INPUT_FT6146
+
+config INPUT_FT6146_PERIOD
+	int "Sample period"
+	depends on !INPUT_FT6146_INTERRUPT
+	default 10
+	help
+	  Sample period in milliseconds when in polling mode.
+
+config INPUT_FT6146_INTERRUPT
+	bool "FT6146 interrupt support"
+	default y if $(dt_compat_any_has_prop,$(DT_COMPAT_FOCALTECH_FT6146),int-gpios)
+	help
+	  Enable interrupt support for the FT6146 touch controller.
+
+endif # INPUT_FT6146
