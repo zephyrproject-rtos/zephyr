@@ -67,7 +67,10 @@ void socket_offload_dns_enable(bool enable);
 #if defined(CONFIG_NET_SOCKETS_OFFLOAD)
 bool socket_offload_dns_is_enabled(void);
 #else
-#define socket_offload_dns_is_enabled() false
+static inline bool socket_offload_dns_is_enabled(void)
+{
+	return false;
+}
 #endif /* defined(CONFIG_NET_SOCKETS_OFFLOAD) */
 
 
