@@ -74,19 +74,19 @@ config USBD_MAX_UDC_MSG
 	help
 	  Maximum number of USB device controller events that can be queued.
 
+config USBD_MSG_SLAB_COUNT
+	int "Maximum number of USB device notification messages"
+	range 4 64
+	default 8
+	help
+	  Maximum number of USB device notification messages that can be queued.
+
 config USBD_MSG_DEFERRED_MODE
 	bool "Execute message callback from system workqueue"
 	default y
 	help
 	  Execute message callback from system workqueue. If disabled, message
 	  callback will be executed in the device stack context.
-
-config USBD_MSG_SLAB_COUNT
-	int "Maximum number of USB device notification messages" if USBD_MSG_DEFERRED_MODE
-	range 4 64
-	default 8
-	help
-	  Maximum number of USB device notification messages that can be queued.
 
 config USBD_MSG_WORK_DELAY
 	int "USB device notification messages work delay" if USBD_MSG_DEFERRED_MODE
