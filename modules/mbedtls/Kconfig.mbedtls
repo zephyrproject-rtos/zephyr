@@ -485,7 +485,7 @@ config MBEDTLS_ENTROPY_POLL_ZEPHYR
 
 config MBEDTLS_OPENTHREAD_OPTIMIZATIONS_ENABLED
 	bool "MbedTLS optimizations for OpenThread"
-	depends on OPENTHREAD
+	depends on NET_L2_OPENTHREAD
 	default y if !NET_SOCKETS_SOCKOPT_TLS
 	help
 	  Enable some OpenThread specific mbedTLS optimizations that allows to
