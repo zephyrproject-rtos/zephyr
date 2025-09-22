@@ -1,0 +1,85 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+/ {
+	chosen {
+		zephyr,console = &uart30;
+		zephyr,shell-uart = &uart30;
+	};
+};
+
+&pinctrl {
+	uart20_default: uart20_default {
+		group1 {
+			psels = <NRF_PSEL(UART_TX, 1, 15)>,
+				<NRF_PSEL(UART_RX, 1, 8)>;
+				bias-pull-up;
+		};
+	};
+
+	uart20_sleep: uart20_sleep {
+		group1 {
+			psels = <NRF_PSEL(UART_TX, 1, 15)>,
+				<NRF_PSEL(UART_RX, 1, 8)>;
+			low-power-enable;
+		};
+	};
+
+	uart21_default: uart21_default {
+		group1 {
+			psels = <NRF_PSEL(UART_TX, 1, 9)>,
+				<NRF_PSEL(UART_RX, 1, 14)>;
+				bias-pull-up;
+		};
+	};
+
+	uart21_sleep: uart21_sleep {
+		group1 {
+			psels = <NRF_PSEL(UART_TX, 1, 9)>,
+				<NRF_PSEL(UART_RX, 1, 14)>;
+			low-power-enable;
+		};
+	};
+
+	uart30_default: uart30_default {
+		group1 {
+			psels = <NRF_PSEL(UART_TX, 0, 0)>;
+		};
+		group2 {
+			psels = <NRF_PSEL(UART_RX, 0, 1)>;
+			bias-pull-up;
+		};
+	};
+
+	uart30_sleep: uart30_sleep {
+		group1 {
+			psels = <NRF_PSEL(UART_TX, 0, 0)>,
+				<NRF_PSEL(UART_RX, 0, 1)>;
+			low-power-enable;
+		};
+	};
+};
+
+
+&uart30 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart30_default>;
+	pinctrl-1 = <&uart30_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+dut: &uart20 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart20_default>;
+	pinctrl-1 = <&uart20_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+dut_aux: &uart21 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart21_default>;
+	pinctrl-1 = <&uart21_sleep>;
+	pinctrl-names = "default", "sleep";
+};
