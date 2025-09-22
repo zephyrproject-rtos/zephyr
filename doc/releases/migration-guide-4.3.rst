@@ -58,6 +58,11 @@ Device Drivers and Devicetree
 
 .. zephyr-keep-sorted-start re(^\w)
 
+Crypto
+======
+
+* Mbed TLS shim driver now uses PSA API as backend for hash operations.
+
 Phy
 ===
 
@@ -173,6 +178,19 @@ Other subsystems
 
 .. zephyr-keep-sorted-start re(^\w)
 
+JWT
+===
+
+* Kconfig option ``CONFIG_JWT_SIGN_RSA_LEGACY`` is removed.
+
+Flash Map
+=========
+
+* ``CONFIG_FLASH_AREA_CHECK_INTEGRITY_MBEDTLS`` is removed. PSA API is used as default backend
+  for hash computations.
+* :kconfig:option:`CONFIG_FLASH_AREA_CHECK_INTEGRITY_PSA` is now promptless as it's automatically
+  enabled as soon as :kconfig:option:`CONFIG_FLASH_AREA_CHECK_INTEGRITY` is set.
+
 Logging
 =======
 
@@ -181,6 +199,11 @@ Logging
   more generic script of :zephyr_file:`scripts/logging/dictionary/live_log_parser.py` should be
   used. The new script supports the same functionality (and more), but requires different command
   line arguments when invoked.
+
+McuMgr
+======
+
+* PSA API are now used by default to perform hash hash computations.
 
 Secure storage
 ==============
@@ -203,6 +226,11 @@ Shell
   compatibility.
   (:github:`92677`).
 
+Update Hub
+==========
+
+* PSA API are now used by default to perform hash hash computations.
+
 .. zephyr-keep-sorted-stop
 
 Modules
@@ -220,6 +248,8 @@ Modules
       :kconfig:option:`CONFIG_PSA_WANT_ALG_SHA_1`.
     * :kconfig:option:`CONFIG_MBEDTLS_SHA224`. Switch to
       :kconfig:option:`CONFIG_PSA_WANT_ALG_SHA_224`.
+    * :kconfig:option:`CONFIG_MBEDTLS_SHA256`. Switch to
+      :kconfig:option:`CONFIG_PSA_WANT_ALG_SHA_256`.
 
 Silabs
 ======
