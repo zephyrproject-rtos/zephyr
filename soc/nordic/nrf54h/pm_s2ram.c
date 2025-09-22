@@ -15,13 +15,6 @@
 
 #define NVIC_MEMBER_SIZE(member) ARRAY_SIZE(((NVIC_Type *)0)->member)
 
-/* Coprocessor Power Control Register Definitions */
-#define SCnSCB_CPPWR_SU11_Pos 22U                            /*!< CPPWR: SU11 Position */
-#define SCnSCB_CPPWR_SU11_Msk (1UL << SCnSCB_CPPWR_SU11_Pos) /*!< CPPWR: SU11 Mask */
-
-#define SCnSCB_CPPWR_SU10_Pos 20U                            /*!< CPPWR: SU10 Position */
-#define SCnSCB_CPPWR_SU10_Msk (1UL << SCnSCB_CPPWR_SU10_Pos) /*!< CPPWR: SU10 Mask */
-
 /* Currently dynamic regions are only used in case of userspace or stack guard and
  * stack guard is not used by default on Cortex-M33 because there is a dedicated
  * mechanism for stack overflow detection. Unless those condition change we don't
@@ -62,25 +55,12 @@ typedef struct {
 	uint32_t MMFAR;
 	uint32_t BFAR;
 	uint32_t AFSR;
-	uint32_t CPACR;
 } _scb_context_t;
-
-#if defined(CONFIG_FPU) && !defined(CONFIG_FPU_SHARING)
-typedef struct {
-	uint32_t FPCCR;
-	uint32_t FPCAR;
-	uint32_t FPDSCR;
-	uint32_t S[32];
-} _fpu_context_t;
-#endif
 
 struct backup {
 	_nvic_context_t nvic_context;
 	_mpu_context_t mpu_context;
 	_scb_context_t scb_context;
-#if defined(CONFIG_FPU) && !defined(CONFIG_FPU_SHARING)
-	_fpu_context_t fpu_context;
-#endif
 };
 
 static __noinit struct backup backup_data;
@@ -91,7 +71,7 @@ extern int z_arm_mpu_init(void);
 /* MPU registers cannot be simply copied because content of RBARx RLARx registers
  * depends on region which is selected by RNR register.
  */
-static void mpu_save(_mpu_context_t *backup)
+static void mpu_suspend(_mpu_context_t *backup)
 {
 	if (!MPU_USE_DYNAMIC_REGIONS) {
 		return;
@@ -109,7 +89,7 @@ static void mpu_save(_mpu_context_t *backup)
 	backup->CTRL = MPU->CTRL;
 }
 
-static void mpu_restore(_mpu_context_t *backup)
+static void mpu_resume(_mpu_context_t *backup)
 {
 	if (!MPU_USE_DYNAMIC_REGIONS) {
 		z_arm_mpu_init();
@@ -131,21 +111,21 @@ static void mpu_restore(_mpu_context_t *backup)
 	MPU->CTRL = backup->CTRL;
 }
 
-static void nvic_save(_nvic_context_t *backup)
+static void nvic_suspend(_nvic_context_t *backup)
 {
 	memcpy(backup->ISER, (uint32_t *)NVIC->ISER, sizeof(NVIC->ISER));
 	memcpy(backup->ISPR, (uint32_t *)NVIC->ISPR, sizeof(NVIC->ISPR));
 	memcpy(backup->IPR, (uint32_t *)NVIC->IPR, sizeof(NVIC->IPR));
 }
 
-static void nvic_restore(_nvic_context_t *backup)
+static void nvic_resume(_nvic_context_t *backup)
 {
 	memcpy((uint32_t *)NVIC->ISER, backup->ISER, sizeof(NVIC->ISER));
 	memcpy((uint32_t *)NVIC->ISPR, backup->ISPR, sizeof(NVIC->ISPR));
 	memcpy((uint32_t *)NVIC->IPR, backup->IPR, sizeof(NVIC->IPR));
 }
 
-static void scb_save(_scb_context_t *backup)
+static void scb_suspend(_scb_context_t *backup)
 {
 	backup->ICSR = SCB->ICSR;
 	backup->VTOR = SCB->VTOR;
@@ -160,10 +140,9 @@ static void scb_save(_scb_context_t *backup)
 	backup->MMFAR = SCB->MMFAR;
 	backup->BFAR = SCB->BFAR;
 	backup->AFSR = SCB->AFSR;
-	backup->CPACR = SCB->CPACR;
 }
 
-static void scb_restore(_scb_context_t *backup)
+static void scb_resume(_scb_context_t *backup)
 {
 	SCB->ICSR = backup->ICSR;
 	SCB->VTOR = backup->VTOR;
@@ -178,77 +157,25 @@ static void scb_restore(_scb_context_t *backup)
 	SCB->MMFAR = backup->MMFAR;
 	SCB->BFAR = backup->BFAR;
 	SCB->AFSR = backup->AFSR;
-	SCB->CPACR = backup->CPACR;
 }
-
-#if defined(CONFIG_FPU)
-static void fpu_power_down(void)
-{
-	SCB->CPACR &= (~(CPACR_CP10_Msk | CPACR_CP11_Msk));
-	SCnSCB->CPPWR |= (SCnSCB_CPPWR_SU11_Msk | SCnSCB_CPPWR_SU10_Msk);
-	__DSB();
-	__ISB();
-}
-
-static void fpu_power_up(void)
-{
-	SCnSCB->CPPWR &= (~(SCnSCB_CPPWR_SU11_Msk | SCnSCB_CPPWR_SU10_Msk));
-	SCB->CPACR |= (CPACR_CP10_Msk | CPACR_CP11_Msk);
-	__DSB();
-	__ISB();
-}
-
-#if !defined(CONFIG_FPU_SHARING)
-static void fpu_save(_fpu_context_t *backup)
-{
-	backup->FPCCR = FPU->FPCCR;
-	backup->FPCAR = FPU->FPCAR;
-	backup->FPDSCR = FPU->FPDSCR;
-
-	__asm__ volatile("vstmia %0, {s0-s31}\n" : : "r"(backup->S) : "memory");
-}
-
-static void fpu_restore(_fpu_context_t *backup)
-{
-	FPU->FPCCR = backup->FPCCR;
-	FPU->FPCAR = backup->FPCAR;
-	FPU->FPDSCR = backup->FPDSCR;
-
-	__asm__ volatile("vldmia %0, {s0-s31}\n" : : "r"(backup->S) : "memory");
-}
-#endif /* !defined(CONFIG_FPU_SHARING) */
-#endif /* defined(CONFIG_FPU) */
 
 int soc_s2ram_suspend(pm_s2ram_system_off_fn_t system_off)
 {
 	int ret;
 
-	scb_save(&backup_data.scb_context);
-#if defined(CONFIG_FPU)
-#if !defined(CONFIG_FPU_SHARING)
-	fpu_save(&backup_data.fpu_context);
-#endif
-	fpu_power_down();
-#endif
-	nvic_save(&backup_data.nvic_context);
-	mpu_save(&backup_data.mpu_context);
+	scb_suspend(&backup_data.scb_context);
+	nvic_suspend(&backup_data.nvic_context);
+	mpu_suspend(&backup_data.mpu_context);
 	ret = arch_pm_s2ram_suspend(system_off);
-	/* Cache and FPU are powered down so power up is needed even if s2ram failed. */
+	/* Cache is powered down so power up is needed even if s2ram failed. */
 	nrf_power_up_cache();
-#if defined(CONFIG_FPU)
-	fpu_power_up();
-#if !defined(CONFIG_FPU_SHARING)
-	/* Also the FPU content might be lost. */
-	fpu_restore(&backup_data.fpu_context);
-#endif
-#endif
 	if (ret < 0) {
 		return ret;
 	}
 
-	mpu_restore(&backup_data.mpu_context);
-	nvic_restore(&backup_data.nvic_context);
-	scb_restore(&backup_data.scb_context);
+	mpu_resume(&backup_data.mpu_context);
+	nvic_resume(&backup_data.nvic_context);
+	scb_resume(&backup_data.scb_context);
 
 	return ret;
 }
