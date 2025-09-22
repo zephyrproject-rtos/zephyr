@@ -17,7 +17,7 @@ menuconfig GPIO_MCP230XX
 	           DT_HAS_MICROCHIP_MCP23016_ENABLED || \
 	           DT_HAS_MICROCHIP_MCP23017_ENABLED || \
 	           DT_HAS_MICROCHIP_MCP23018_ENABLED
-	depends on I2C
+	select I2C
 	select GPIO_MCP23XXX
 	help
 	  Enable driver for MCP230XX I2C-based GPIO chip.
