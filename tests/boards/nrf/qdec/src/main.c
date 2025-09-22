@@ -17,11 +17,7 @@ static const struct gpio_dt_spec phase_b = GPIO_DT_SPEC_GET(DT_ALIAS(qencb), gpi
 static const struct device *const qdec_dev = DEVICE_DT_GET(DT_ALIAS(qdec0));
 static const uint32_t qdec_config_step = DT_PROP(DT_ALIAS(qdec0), steps);
 
-/* Disable testing second QDEC instance
- * until the issue with multiple
- * QDEC instances support is resolved
- */
-#if DT_NODE_EXISTS(DT_ALIAS(qdecX))
+#if DT_NODE_EXISTS(DT_ALIAS(qdec1))
 #define SECOND_QDEC_INSTANCE
 
 static const struct gpio_dt_spec phase_a1 = GPIO_DT_SPEC_GET(DT_ALIAS(qenca1), gpios);
