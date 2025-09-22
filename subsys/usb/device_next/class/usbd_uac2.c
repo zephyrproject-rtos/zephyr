@@ -26,9 +26,9 @@ LOG_MODULE_REGISTER(usbd_uac2, CONFIG_USBD_UAC2_LOG_LEVEL);
 
 #define COUNT_UAC2_AS_ENDPOINT_BUFFERS(node)					\
 	IF_ENABLED(DT_NODE_HAS_COMPAT(node, zephyr_uac2_audio_streaming), (	\
-		+ AS_HAS_ISOCHRONOUS_DATA_ENDPOINT(node)			\
-		+ AS_IS_USB_ISO_IN(node) /* ISO IN double buffering */		\
-		+ AS_HAS_EXPLICIT_FEEDBACK_ENDPOINT(node)))
+		+ AS_HAS_ISOCHRONOUS_DATA_ENDPOINT(node) +			\
+		+ AS_IS_USB_ISO_IN(node) /* ISO IN double buffering */ +	\
+		AS_HAS_EXPLICIT_FEEDBACK_ENDPOINT(node)))
 #define COUNT_UAC2_EP_BUFFERS(i)						\
 	+ DT_PROP(DT_DRV_INST(i), interrupt_endpoint)				\
 	DT_INST_FOREACH_CHILD(i, COUNT_UAC2_AS_ENDPOINT_BUFFERS)
