@@ -35,11 +35,3 @@ slot0_partition: &cpuapp_slot0_partition {
 slot1_partition: &cpuapp_slot1_partition {
 	label = "image-1";
 };
-
-slot2_partition: &cpurad_slot0_partition {
-	label = "image-2";
-};
-
-slot3_partition: &cpurad_slot1_partition {
-	label = "image-3";
-};

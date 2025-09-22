@@ -175,8 +175,7 @@ void soc_late_init_hook(void)
 
 	void *radiocore_address =
 		(void *)(DT_REG_ADDR(DT_GPARENT(DT_NODELABEL_CPURAD_SLOT0_PARTITION)) +
-			 DT_REG_ADDR(DT_NODELABEL_CPURAD_SLOT0_PARTITION) +
-			 CONFIG_ROM_START_OFFSET);
+				 DT_REG_ADDR(DT_NODELABEL_CPURAD_SLOT0_PARTITION));
 
 	/* Don't wait as this is not yet supported. */
 	bool cpu_wait = false;
