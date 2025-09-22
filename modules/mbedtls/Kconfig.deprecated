@@ -22,3 +22,10 @@ config MBEDTLS_SHA224
 	help
 	  Legacy crypto support is going to be removed starting from the next
 	  Mbed TLS release. Please switch to PSA API.
+
+config MBEDTLS_SHA256
+	bool "SHA-256 hash algorithm"
+	select DEPRECATED
+	help
+	  Legacy crypto support is going to be removed starting from the next
+	  Mbed TLS release. Please switch to PSA API.

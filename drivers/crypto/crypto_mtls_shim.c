@@ -26,8 +26,7 @@
 #endif
 #include <mbedtls/aes.h>
 
-#include <mbedtls/sha256.h>
-#include <mbedtls/sha512.h>
+#include <psa/crypto.h>
 
 #define MTLS_SUPPORT (CAP_RAW_KEY | CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS | \
 		      CAP_NO_IV_PREFIX)
@@ -43,13 +42,12 @@ struct mtls_shim_session {
 		mbedtls_gcm_context mtls_gcm;
 #endif
 		mbedtls_aes_context mtls_aes;
-		mbedtls_sha256_context mtls_sha256;
-		mbedtls_sha512_context mtls_sha512;
+		psa_hash_operation_t hash_op;
 	};
 	bool in_use;
 	union {
 		enum cipher_mode mode;
-		enum hash_algo algo;
+		psa_algorithm_t psa_alg;
 	};
 };
 
@@ -462,25 +460,17 @@ static int mtls_session_free(const struct device *dev, struct cipher_ctx *ctx)
 	return 0;
 }
 
-static int mtls_sha256_compute(struct hash_ctx *ctx, struct hash_pkt *pkt,
-			       bool finish)
+static int mtls_hash_compute(struct hash_ctx *ctx, struct hash_pkt *pkt, bool finish)
 {
-	int ret;
-	mbedtls_sha256_context *sha256_ctx = MTLS_GET_CTX(ctx, sha256);
-
+	struct mtls_shim_session *mtls_session =
+		(struct mtls_shim_session *)ctx->drv_sessn_state;
+	size_t hash_out_len;
 
 	if (!ctx->started) {
-		ret = mbedtls_sha256_starts(sha256_ctx,
-					    MTLS_GET_ALGO(ctx) == CRYPTO_HASH_ALGO_SHA224);
-		if (ret != 0) {
-			LOG_ERR("Could not compute the hash");
-			return -EINVAL;
-		}
 		ctx->started = true;
 	}
 
-	ret = mbedtls_sha256_update(sha256_ctx, pkt->in_buf, pkt->in_len);
-	if (ret != 0) {
+	if (psa_hash_update(&mtls_session->hash_op, pkt->in_buf, pkt->in_len) != PSA_SUCCESS) {
 		LOG_ERR("Could not update the hash");
 		ctx->started = false;
 		return -EINVAL;
@@ -488,43 +478,13 @@ static int mtls_sha256_compute(struct hash_ctx *ctx, struct hash_pkt *pkt,
 
 	if (finish) {
 		ctx->started = false;
-		ret = mbedtls_sha256_finish(sha256_ctx, pkt->out_buf);
-		if (ret != 0) {
-			LOG_ERR("Could not compute the hash");
-			return -EINVAL;
-		}
-	}
-
-	return 0;
-}
-
-static int mtls_sha512_compute(struct hash_ctx *ctx, struct hash_pkt *pkt,
-			       bool finish)
-{
-	int ret;
-	mbedtls_sha512_context *sha512_ctx = MTLS_GET_CTX(ctx, sha512);
-
-	if (!ctx->started) {
-		ret = mbedtls_sha512_starts(sha512_ctx,
-					    MTLS_GET_ALGO(ctx) == CRYPTO_HASH_ALGO_SHA384);
-		if (ret != 0) {
-			LOG_ERR("Could not compute the hash");
-			return -EINVAL;
-		}
-		ctx->started = true;
-	}
-
-	ret = mbedtls_sha512_update(sha512_ctx, pkt->in_buf, pkt->in_len);
-	if (ret != 0) {
-		LOG_ERR("Could not update the hash");
-		ctx->started = false;
-		return -EINVAL;
-	}
-
-	if (finish) {
-		ctx->started = false;
-		ret = mbedtls_sha512_finish(sha512_ctx, pkt->out_buf);
-		if (ret != 0) {
+		/* Here Zephyr API assume that the output buffer is large enough to
+		 * contain all data, but there's no way to check this. This may lead
+		 * to buffer overrun...
+		 */
+		if (psa_hash_finish(&mtls_session->hash_op, pkt->out_buf,
+				    PSA_HASH_LENGTH(mtls_session->psa_alg),
+				    &hash_out_len) != PSA_SUCCESS) {
 			LOG_ERR("Could not compute the hash");
 			return -EINVAL;
 		}
@@ -537,18 +497,11 @@ static int mtls_hash_session_setup(const struct device *dev,
 				   struct hash_ctx *ctx,
 				   enum hash_algo algo)
 {
+	struct mtls_shim_session *mtls_session;
 	int ctx_idx;
 
 	if (ctx->flags & ~(MTLS_SUPPORT)) {
 		LOG_ERR("Unsupported flag");
-		return -EINVAL;
-	}
-
-	if ((algo != CRYPTO_HASH_ALGO_SHA224) &&
-	    (algo != CRYPTO_HASH_ALGO_SHA256) &&
-	    (algo != CRYPTO_HASH_ALGO_SHA384) &&
-	    (algo != CRYPTO_HASH_ALGO_SHA512)) {
-		LOG_ERR("Unsupported algo: %d", algo);
 		return -EINVAL;
 	}
 
@@ -558,22 +511,35 @@ static int mtls_hash_session_setup(const struct device *dev,
 		return -ENOSPC;
 	}
 
-	mtls_sessions[ctx_idx].algo = algo;
-	ctx->drv_sessn_state = &mtls_sessions[ctx_idx];
-	ctx->started = false;
-
-	if ((algo == CRYPTO_HASH_ALGO_SHA224) ||
-	    (algo == CRYPTO_HASH_ALGO_SHA256)) {
-		mbedtls_sha256_context *sha256_ctx =
-			&mtls_sessions[ctx_idx].mtls_sha256;
-		mbedtls_sha256_init(sha256_ctx);
-		ctx->hash_hndlr = mtls_sha256_compute;
-	} else {
-		mbedtls_sha512_context *sha512_ctx =
-			&mtls_sessions[ctx_idx].mtls_sha512;
-		mbedtls_sha512_init(sha512_ctx);
-		ctx->hash_hndlr = mtls_sha512_compute;
+	mtls_session = &mtls_sessions[ctx_idx];
+	mtls_session->hash_op = psa_hash_operation_init();
+	switch (algo) {
+	case CRYPTO_HASH_ALGO_SHA224:
+		mtls_session->psa_alg = PSA_ALG_SHA_224;
+		break;
+	case CRYPTO_HASH_ALGO_SHA256:
+		mtls_session->psa_alg = PSA_ALG_SHA_256;
+		break;
+	case CRYPTO_HASH_ALGO_SHA384:
+		mtls_session->psa_alg = PSA_ALG_SHA_384;
+		break;
+	case CRYPTO_HASH_ALGO_SHA512:
+		mtls_session->psa_alg = PSA_ALG_SHA_512;
+		break;
+	default:
+		LOG_ERR("Unsupported algo: %d", algo);
+		return -EINVAL;
 	}
+
+	if (psa_hash_setup(mtls_session->hash_op, mtls_session->psa_alg) != PSA_SUCCESS) {
+		LOG_ERR("PSA hash operation setup failed");
+		return -EIO;
+	}
+	mtls_session->in_use = true;
+
+	ctx->hash_hndlr = mtls_hash_compute;
+	ctx->drv_sessn_state = mtls_session;
+	ctx->started = false;
 
 	return 0;
 }
@@ -583,10 +549,9 @@ static int mtls_hash_session_free(const struct device *dev, struct hash_ctx *ctx
 	struct mtls_shim_session *mtls_session =
 		(struct mtls_shim_session *)ctx->drv_sessn_state;
 
-	if (mtls_session->algo == CRYPTO_HASH_ALGO_SHA256) {
-		mbedtls_sha256_free(&mtls_session->mtls_sha256);
-	} else {
-		mbedtls_sha512_free(&mtls_session->mtls_sha512);
+	if (psa_hash_abort(mtls_session->hash_op) != PSA_SUCCESS) {
+		LOG_ERR("PSA hash abort failed");
+		return -EIO;
 	}
 	mtls_session->in_use = false;
 

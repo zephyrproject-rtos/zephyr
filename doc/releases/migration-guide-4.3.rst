@@ -72,6 +72,11 @@ Comparator
   and :c:macro:`NRF_COMP_AIN_VDDH_DIV5` represents VDDH/5.
   The old ``string`` properties type is deprecated.
 
+Crypto
+======
+
+* Mbed TLS shim driver now uses PSA API as backend for hash operations.
+
 MFD
 ===
 
@@ -256,6 +261,19 @@ Cellular
  * :c:enum:`cellular_access_technology` values have been redefined to align with 3GPP TS 27.007.
  * :c:enum:`cellular_registration_status` values have been extended to align with 3GPP TS 27.007.
 
+Flash Map
+=========
+
+* ``CONFIG_FLASH_AREA_CHECK_INTEGRITY_MBEDTLS`` is removed. PSA API is used as default backend
+  for hash computations.
+* :kconfig:option:`CONFIG_FLASH_AREA_CHECK_INTEGRITY_PSA` is now promptless as it's automatically
+  enabled as soon as :kconfig:option:`CONFIG_FLASH_AREA_CHECK_INTEGRITY` is set.
+
+JWT
+===
+
+* Kconfig option ``CONFIG_JWT_SIGN_RSA_LEGACY`` is removed.
+
 Logging
 =======
 
@@ -273,6 +291,8 @@ MCUmgr
   revision, which now includes the SoC and board variant. The old behaviour has been deprecated,
   but can still be used by enabling
   :kconfig:option:`CONFIG_MCUMGR_GRP_OS_INFO_HARDWARE_INFO_SHORT_HARDWARE_PLATFORM`.
+
+* PSA API are now used by default to perform hash hash computations.
 
 RTIO
 ====
@@ -303,6 +323,11 @@ Shell
   compatibility.
   (:github:`92677`).
 
+Update Hub
+==========
+
+* PSA API are now used by default to perform hash hash computations.
+
 .. zephyr-keep-sorted-stop
 
 Modules
@@ -320,6 +345,8 @@ Modules
       :kconfig:option:`CONFIG_PSA_WANT_ALG_SHA_1`.
     * :kconfig:option:`CONFIG_MBEDTLS_SHA224`. Switch to
       :kconfig:option:`CONFIG_PSA_WANT_ALG_SHA_224`.
+    * :kconfig:option:`CONFIG_MBEDTLS_SHA256`. Switch to
+      :kconfig:option:`CONFIG_PSA_WANT_ALG_SHA_256`.
 
 Silabs
 ======

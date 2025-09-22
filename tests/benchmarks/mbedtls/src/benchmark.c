@@ -313,13 +313,6 @@ int main(void)
 	}
 #endif
 
-#if defined(MBEDTLS_SHA256_C)
-	if (todo.sha256) {
-		TIME_AND_TSC("SHA-256", mbedtls_sha256(buf,
-						   BUFSIZE, tmp, 0));
-	}
-#endif
-
 #if defined(MBEDTLS_SHA512_C)
 	if (todo.sha512) {
 		TIME_AND_TSC("SHA-512", mbedtls_sha512(buf,
@@ -640,44 +633,6 @@ int main(void)
 	}
 #endif
 
-#if defined(MBEDTLS_HMAC_DRBG_C)
-	if (todo.hmac_drbg) {
-		mbedtls_hmac_drbg_context hmac_drbg;
-		const mbedtls_md_info_t *md_info;
-
-		mbedtls_hmac_drbg_init(&hmac_drbg);
-
-#if defined(MBEDTLS_SHA256_C)
-		md_info = mbedtls_md_info_from_type(MBEDTLS_MD_SHA256);
-		if (md_info == NULL) {
-			mbedtls_exit(1);
-		}
-
-		if (mbedtls_hmac_drbg_seed(&hmac_drbg, md_info,
-					   myrand, NULL, NULL, 0) != 0) {
-			mbedtls_exit(1);
-		}
-
-		TIME_AND_TSC("HMAC_DRBG SHA-256 (NOPR)",
-			     mbedtls_hmac_drbg_random(&hmac_drbg, buf,
-						      BUFSIZE));
-
-		if (mbedtls_hmac_drbg_seed(&hmac_drbg, md_info, myrand,
-					   NULL, NULL, 0) != 0) {
-			mbedtls_exit(1);
-		}
-
-		mbedtls_hmac_drbg_set_prediction_resistance(&hmac_drbg,
-					MBEDTLS_HMAC_DRBG_PR_ON);
-
-		TIME_AND_TSC("HMAC_DRBG SHA-256 (PR)",
-			     mbedtls_hmac_drbg_random(&hmac_drbg, buf,
-						      BUFSIZE));
-#endif
-		mbedtls_hmac_drbg_free(&hmac_drbg);
-	}
-#endif
-
 #if defined(MBEDTLS_RSA_C) && defined(MBEDTLS_GENPRIME)
 	if (todo.rsa) {
 		int keysize;
@@ -762,70 +717,6 @@ int main(void)
 						NULL));
 
 			mbedtls_dhm_free(&dhm);
-		}
-	}
-#endif
-
-#if defined(MBEDTLS_ECDSA_C) && defined(MBEDTLS_SHA256_C)
-	if (todo.ecdsa) {
-		size_t sig_len;
-		const mbedtls_ecp_curve_info *curve_info;
-		mbedtls_ecdsa_context ecdsa;
-
-		memset(buf, 0x2A, sizeof(buf));
-
-		for (curve_info = mbedtls_ecp_curve_list();
-		     curve_info->grp_id != MBEDTLS_ECP_DP_NONE;
-		     curve_info++) {
-			mbedtls_ecdsa_init(&ecdsa);
-
-			if (mbedtls_ecdsa_genkey(&ecdsa, curve_info->grp_id,
-						 myrand, NULL) != 0) {
-				mbedtls_exit(1);
-			}
-
-			ecp_clear_precomputed(&ecdsa.grp);
-
-			snprintk(title, sizeof(title), "ECDSA-%s",
-				 curve_info->name);
-
-			TIME_PUBLIC(title, "sign",
-				    ret = mbedtls_ecdsa_write_signature(
-						&ecdsa, MBEDTLS_MD_SHA256,
-						buf, curve_info->bit_size,
-						tmp, sizeof(tmp), &sig_len,
-						myrand, NULL));
-
-			mbedtls_ecdsa_free(&ecdsa);
-		}
-
-		for (curve_info = mbedtls_ecp_curve_list();
-		     curve_info->grp_id != MBEDTLS_ECP_DP_NONE;
-		     curve_info++) {
-			mbedtls_ecdsa_init(&ecdsa);
-
-			if (mbedtls_ecdsa_genkey(&ecdsa, curve_info->grp_id,
-						 myrand, NULL) != 0 ||
-			    mbedtls_ecdsa_write_signature(&ecdsa,
-						MBEDTLS_MD_SHA256, buf,
-						curve_info->bit_size,
-						tmp, sizeof(tmp),
-						&sig_len, myrand,
-						NULL) != 0) {
-				mbedtls_exit(1);
-			}
-
-			ecp_clear_precomputed(&ecdsa.grp);
-
-			snprintk(title, sizeof(title), "ECDSA-%s",
-				 curve_info->name);
-
-			TIME_PUBLIC(title, "verify",
-				    ret = mbedtls_ecdsa_read_signature(&ecdsa,
-						buf, curve_info->bit_size,
-						tmp, sig_len));
-
-			mbedtls_ecdsa_free(&ecdsa);
 		}
 	}
 #endif

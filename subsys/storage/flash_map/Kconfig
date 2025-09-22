@@ -42,28 +42,11 @@ config FLASH_MAP_LABELS
 	  at runtime. The available labels will also be displayed in the
 	  flash_map list shell command.
 
-if FLASH_AREA_CHECK_INTEGRITY
-
-choice FLASH_AREA_CHECK_INTEGRITY_BACKEND
-	prompt "Crypto backend for the flash check functions"
-	default FLASH_AREA_CHECK_INTEGRITY_PSA if BUILD_WITH_TFM
-	default FLASH_AREA_CHECK_INTEGRITY_MBEDTLS if !BUILD_WITH_TFM
-
 config FLASH_AREA_CHECK_INTEGRITY_PSA
-	bool "Use PSA"
+	bool
+	depends on FLASH_AREA_CHECK_INTEGRITY
 	select PSA_WANT_ALG_SHA_256
 	help
 	  Use the PSA API to perform the integrity check.
-
-config FLASH_AREA_CHECK_INTEGRITY_MBEDTLS
-	bool "Use Mbed TLS"
-	select MBEDTLS
-	select MBEDTLS_SHA256
-	help
-	  Use the Mbed TLS library to perform the integrity check.
-
-endchoice
-
-endif # FLASH_AREA_CHECK_INTEGRITY
 
 endif

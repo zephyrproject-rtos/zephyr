@@ -74,4 +74,23 @@ ZTEST_USER(test_mbedtls_psa, test_sha224)
 	zassert_mem_equal(out_buf, out_buf_ref, sizeof(out_buf_ref));
 }
 
+ZTEST_USER(test_mbedtls_psa, test_sha256)
+{
+	uint8_t in_buf[] = { 'a' };
+	uint8_t out_buf[PSA_HASH_LENGTH(PSA_ALG_SHA_256)] = { 0 };
+	uint8_t out_buf_ref[PSA_HASH_LENGTH(PSA_ALG_SHA_256)] = {
+		0xca, 0x97, 0x81, 0x12, 0xca, 0x1b, 0xbd, 0xca, 0xfa, 0xc2,
+		0x31, 0xb3, 0x9a, 0x23, 0xdc, 0x4d, 0xa7, 0x86, 0xef, 0xf8,
+		0x14, 0x7c, 0x4e, 0x72, 0xb9, 0x80, 0x77, 0x85, 0xaf, 0xee,
+		0x48, 0xbb
+	};
+	size_t out_len;
+	psa_status_t status;
+
+	status = psa_hash_compute(PSA_ALG_SHA_256, in_buf, sizeof(in_buf),
+				  out_buf, sizeof(out_buf), &out_len);
+	zassert_equal(status, PSA_SUCCESS);
+	zassert_mem_equal(out_buf, out_buf_ref, sizeof(out_buf_ref));
+}
+
 ZTEST_SUITE(test_mbedtls_psa, NULL, NULL, NULL, NULL, NULL);

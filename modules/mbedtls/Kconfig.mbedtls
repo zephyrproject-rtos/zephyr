@@ -340,13 +340,9 @@ config MBEDTLS_HASH_ALL_ENABLED
 	select MBEDTLS_SHA512
 	select MBEDTLS_POLY1305
 
-config MBEDTLS_SHA256
-	bool "SHA-256 hash algorithm"
-	default y
-
 config MBEDTLS_SHA256_SMALLER
 	bool "Smaller SHA-256 implementation"
-	depends on MBEDTLS_SHA256
+	depends on MBEDTLS_SHA256 || PSA_WANT_ALG_SHA_256
 	default y
 	help
 	  Enable an implementation of SHA-256 that has a
@@ -594,7 +590,6 @@ config MBEDTLS_PSA_CRYPTO_CLIENT
 config MBEDTLS_LMS
 	bool "Support LMS signature schemes"
 	depends on MBEDTLS_PSA_CRYPTO_CLIENT
-	depends on MBEDTLS_SHA256
 	select PSA_WANT_ALG_SHA_256
 
 if MBEDTLS_PSA_CRYPTO_C
