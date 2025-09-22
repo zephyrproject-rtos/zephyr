@@ -72,8 +72,6 @@ static void nrf_wifi_rpu_recovery_work_handler(struct k_work *work)
 								struct nrf_wifi_vif_ctx_zep,
 								nrf_wifi_rpu_recovery_work);
 	struct nrf_wifi_ctx_zep *rpu_ctx_zep = NULL;
-	struct nrf_wifi_fmac_dev_ctx *fmac_dev_ctx = NULL;
-	struct nrf_wifi_hal_dev_ctx *hal_dev_ctx = NULL;
 	int ret;
 
 	if (!vif_ctx_zep) {
@@ -89,18 +87,6 @@ static void nrf_wifi_rpu_recovery_work_handler(struct k_work *work)
 	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
 	if (!rpu_ctx_zep || !rpu_ctx_zep->rpu_ctx) {
 		LOG_ERR("%s: rpu_ctx_zep is NULL", __func__);
-		return;
-	}
-
-	fmac_dev_ctx = rpu_ctx_zep->rpu_ctx;
-	if (!fmac_dev_ctx) {
-		LOG_ERR("%s: fmac_dev_ctx is NULL", __func__);
-		return;
-	}
-
-	hal_dev_ctx = fmac_dev_ctx->hal_dev_ctx;
-	if (!hal_dev_ctx) {
-		LOG_ERR("%s: hal_dev_ctx is NULL", __func__);
 		return;
 	}
 
@@ -148,8 +134,6 @@ static void nrf_wifi_rpu_recovery_work_handler(struct k_work *work)
 	}
 #endif
 	rpu_ctx_zep->rpu_recovery_in_progress = true;
-	rpu_ctx_zep->wdt_irq_received += hal_dev_ctx->wdt_irq_received;
-	rpu_ctx_zep->wdt_irq_ignored += hal_dev_ctx->wdt_irq_ignored;
 #ifdef CONFIG_NRF_WIFI_RPU_RECOVERY_DEBUG
 	LOG_ERR("%s: Bringing the interface down", __func__);
 #else

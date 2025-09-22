@@ -118,8 +118,6 @@ struct nrf_wifi_ctx_zep {
 	unsigned int rpu_recovery_retries;
 	int rpu_recovery_success;
 	int rpu_recovery_failure;
-	int wdt_irq_received;
-	int wdt_irq_ignored;
 #endif /* CONFIG_NRF_WIFI_RPU_RECOVERY */
 };
 
