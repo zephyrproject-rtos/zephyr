@@ -1987,38 +1987,22 @@ int bt_id_set_adv_own_addr(struct bt_le_ext_adv *adv, uint32_t options,
 			 */
 #if defined(CONFIG_BT_OBSERVER)
 			bool scan_disabled = false;
-			bool dev_scanning = atomic_test_bit(bt_dev.flags,
-							    BT_DEV_SCANNING);
 
 			/* If active scan with NRPA is ongoing refresh NRPA */
 			if (!IS_ENABLED(CONFIG_BT_PRIVACY) &&
 			    !IS_ENABLED(CONFIG_BT_SCAN_WITH_IDENTITY) &&
-			    dev_scanning) {
+			    atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING)) {
 				scan_disabled = true;
 				bt_le_scan_set_enable(BT_HCI_LE_SCAN_DISABLE);
 			}
+#endif /* defined(CONFIG_BT_OBSERVER) */
+			err = bt_id_set_adv_private_addr(adv);
+			*own_addr_type = BT_HCI_OWN_ADDR_RANDOM;
 
-			/* If we are scanning with the identity address, it does
-			 * not make sense to set an NRPA.
-			 */
-			if (!IS_ENABLED(CONFIG_BT_SCAN_WITH_IDENTITY) ||
-			    !dev_scanning) {
-				err = bt_id_set_adv_private_addr(adv);
-				*own_addr_type = BT_HCI_OWN_ADDR_RANDOM;
-			} else {
-				if (id_addr->type == BT_ADDR_LE_RANDOM) {
-					*own_addr_type = BT_HCI_OWN_ADDR_RANDOM;
-				} else if (id_addr->type == BT_ADDR_LE_PUBLIC) {
-					*own_addr_type = BT_HCI_OWN_ADDR_PUBLIC;
-				}
-			}
-
+#if defined(CONFIG_BT_OBSERVER)
 			if (scan_disabled) {
 				bt_le_scan_set_enable(BT_HCI_LE_SCAN_ENABLE);
 			}
-#else
-			err = bt_id_set_adv_private_addr(adv);
-			*own_addr_type = BT_HCI_OWN_ADDR_RANDOM;
 #endif /* defined(CONFIG_BT_OBSERVER) */
 		} else {
 			err = bt_id_set_adv_private_addr(adv);
