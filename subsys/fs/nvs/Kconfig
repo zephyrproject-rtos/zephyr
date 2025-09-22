@@ -29,15 +29,6 @@ config NVS_LOOKUP_CACHE_SIZE
 	  Number of entries in Non-volatile Storage lookup cache.
 	  It is recommended that it be a power of 2.
 
-config NVS_LOOKUP_CACHE_FOR_SETTINGS
-	bool "Non-volatile Storage lookup cache optimized for settings"
-	depends on NVS_LOOKUP_CACHE
-	help
-	  Use the lookup cache hash function that results in the least number of
-	  collissions and, in turn, the best NVS performance provided that the NVS
-	  is used as the settings backend only. This option should NOT be enabled
-	  if the NVS is also written to directly, outside the settings layer.
-
 config NVS_DATA_CRC
 	bool "Non-volatile Storage CRC protection on the data"
 	help
