@@ -18,7 +18,3 @@
 		};
 	};
 };
-
-&s28hl512t {
-	status = "disabled";
-};
