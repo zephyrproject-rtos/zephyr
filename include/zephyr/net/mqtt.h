@@ -809,11 +809,6 @@ struct mqtt_transport {
 	 */
 	enum mqtt_transport_type type;
 
-	/** Name of the interface that the MQTT client instance should be bound to.
-	 *  Leave as NULL if not specified.
-	 */
-	const char *if_name;
-
 	/** Use either unsecured TCP or secured TLS transport */
 	union {
 		/** TCP socket transport for MQTT */
