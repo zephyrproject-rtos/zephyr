@@ -478,6 +478,10 @@ struct bt_hci_cp_accept_conn_req {
 	 BT_HCI_VOICE_SETTING_DATA_FMT_PREP(data_fmt) | \
 	 BT_HCI_VOICE_SETTING_CODING_FMT_PREP(coding_fmt))
 
+#define BT_HCI_SCO_MAX_LATENCY_DEFAULT 0xffff /* do not care about SCO link latency */
+
+#define BT_HCI_SCO_RETRANS_EFFORT_DEFAULT 0xff /* do not care about SCO retransmission effort */
+
 #define BT_HCI_OP_SETUP_SYNC_CONN               BT_OP(BT_OGF_LINK_CTRL, 0x0028) /* 0x0428 */
 struct bt_hci_cp_setup_sync_conn {
 	uint16_t  handle;
