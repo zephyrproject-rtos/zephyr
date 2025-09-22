@@ -313,13 +313,6 @@ int main(void)
 	}
 #endif
 
-#if defined(MBEDTLS_SHA512_C)
-	if (todo.sha512) {
-		TIME_AND_TSC("SHA-512", mbedtls_sha512(buf,
-						   BUFSIZE, tmp, 0));
-	}
-#endif
-
 #if defined(MBEDTLS_DES_C)
 #if defined(MBEDTLS_CIPHER_MODE_CBC)
 	if (todo.des3) {

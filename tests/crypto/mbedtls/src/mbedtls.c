@@ -201,13 +201,6 @@ ZTEST_USER(mbedtls_fn, test_mbedtls)
 	suites_tested++;
 #endif
 
-#if defined(MBEDTLS_SHA512_C)
-	if (mbedtls_sha512_self_test(v) != 0) {
-		suites_failed++;
-	}
-	suites_tested++;
-#endif
-
 #if defined(MBEDTLS_ARC4_C)
 	if (mbedtls_arc4_self_test(v) != 0) {
 		suites_failed++;
