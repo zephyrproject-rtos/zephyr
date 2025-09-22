@@ -78,13 +78,6 @@ config SOC_NRF54H20_CPURAD_ENABLE
 	  Radiocore, and also power will be requested to the Radiocore
 	  subsystem. The Radiocore will then start executing instructions.
 
-config SOC_NRF54H20_CPURAD_ENABLE_CHECK_VTOR
-	bool "Check VTOR before booting Radio core"
-	default y
-	depends on SOC_NRF54H20_CPURAD_ENABLE
-	help
-	  Verify that VTOR is not 0xFFFFFFFF before booting the Radiocore.
-
 config SOC_NRF54H20_CPURAD
 	select SOC_NRF54H20_CPURAD_COMMON
 
