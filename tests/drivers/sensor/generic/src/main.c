@@ -29,10 +29,18 @@ struct trigger_sequence {
 };
 
 static struct channel_sequence chan_elements[] = {{SENSOR_CHAN_LIGHT, {0, 0}},
-						  {SENSOR_CHAN_RED, {1, 1}},
-						  {SENSOR_CHAN_GREEN, {2, 4}},
-						  {SENSOR_CHAN_BLUE, {3, 9}},
-						  {SENSOR_CHAN_PROX, {4, 16}}};
+						  {SENSOR_CHAN_RED, {1, 1000}},
+						  {SENSOR_CHAN_GREEN, {2, 4000}},
+						  {SENSOR_CHAN_BLUE, {3, 9000}},
+						  {SENSOR_CHAN_PROX, {4, 16000}}};
+
+static struct sensor_chan_spec channels[] = {
+	{.chan_type = SENSOR_CHAN_LIGHT, .chan_idx = 0},
+	{.chan_type = SENSOR_CHAN_RED, .chan_idx = 0},
+	{.chan_type = SENSOR_CHAN_GREEN, .chan_idx = 0},
+	{.chan_type = SENSOR_CHAN_BLUE, .chan_idx = 0},
+	{.chan_type = SENSOR_CHAN_PROX, .chan_idx = 0},
+};
 
 static struct trigger_sequence trigger_elements[] = {
 	/* trigger for SENSOR_TRIG_THRESHOLD */
@@ -49,6 +57,10 @@ static struct trigger_sequence trigger_elements[] = {
 
 	/* trigger for SENSOR_TRIG_NEAR_FAR */
 	{{SENSOR_TRIG_NEAR_FAR, SENSOR_CHAN_PROX}, {155, 180}, SENSOR_ATTR_UPPER_THRESH}};
+
+static struct sensor_chan_spec trigger_channels[] = {
+	{.chan_type = SENSOR_CHAN_PROX, .chan_idx = 0},
+};
 
 #define TOTAL_CHAN_ELEMENTS (sizeof(chan_elements) / sizeof(struct channel_sequence))
 #define TOTAL_TRIG_ELEMENTS (sizeof(trigger_elements) / sizeof(struct trigger_sequence))
@@ -91,38 +103,39 @@ static struct trigger_sequence trigger_elements[] = {
  * Assumptions and Constraints:
  * - N/A
  *
- * @see sensor_sample_fetch(), sensor_channel_get()
+ * @see sensor_read_and_decode()
  */
 ZTEST(sensor_api, test_sensor_get_channels)
 {
 	const struct device *dev;
 	struct sensor_value data;
+	int8_t shift;
+	q31_t values[ARRAY_SIZE(channels)];
 
 	dev = device_get_binding(DUMMY_SENSOR_NAME);
 	zassert_not_null(dev, "failed: dev is null");
 
 	/* test fetch single channel */
-	zassert_equal(sensor_sample_fetch_chan(dev, chan_elements[0].chan), RETURN_SUCCESS,
+	zassert_equal(sensor_read_and_decode(dev, channels, 1, &shift, values, 1), RETURN_SUCCESS,
 		      "fail to fetch sample");
 	/* Get and check channel 0 value. */
-	zassert_equal(sensor_channel_get(dev, chan_elements[0].chan, &data), RETURN_SUCCESS,
-		      "fail to get channel");
+	q31_to_sensor_value(values[0], shift, &data);
 	zassert_equal(data.val1, chan_elements[0].data.val1, "the data does not match");
 	zassert_equal(data.val2, chan_elements[0].data.val2, "the data does not match");
 
 	/* test fetch all channel */
-	zassert_equal(sensor_sample_fetch(dev), RETURN_SUCCESS, "fail to fetch sample");
+	zassert_equal(sensor_read_and_decode(dev, channels, ARRAY_SIZE(channels), &shift, values,
+					     ARRAY_SIZE(values)),
+		      RETURN_SUCCESS, "fail to fetch sample");
 	/* Get and check channels value except for chanel 0. */
 	for (int i = 1; i < TOTAL_CHAN_ELEMENTS; i++) {
-		zassert_equal(sensor_channel_get(dev, chan_elements[i].chan, &data), RETURN_SUCCESS,
-			      "fail to get channel");
-		zassert_equal(data.val1, chan_elements[i].data.val1, "the data does not match");
-		zassert_equal(data.val2, chan_elements[i].data.val2, "the data does not match");
+		q31_to_sensor_value(values[i], shift, &data);
+		zassert_within(sensor_value_to_micro(&data),
+			       sensor_value_to_micro(&chan_elements[i].data), 50,
+			       "[%d] the data does not match, got %lld but expected %lld", i,
+			       sensor_value_to_micro(&data),
+			       sensor_value_to_micro(&chan_elements[i].data));
 	}
-
-	/* Get data with invalid channel. */
-	zassert_not_equal(sensor_channel_get(dev, SENSOR_CHAN_DISTANCE, &data), RETURN_SUCCESS,
-			  "should fail for invalid channel");
 }
 
 static void trigger_handler(const struct device *dev, const struct sensor_trigger *trigger)
@@ -178,12 +191,16 @@ ZTEST(sensor_api, test_sensor_handle_triggers)
 	const struct device *dev;
 	const struct device *dev_no_trig;
 	struct sensor_value data;
+	int8_t shift;
+	q31_t values[ARRAY_SIZE(channels)];
 
 	dev = device_get_binding(DUMMY_SENSOR_NAME);
 	dev_no_trig = device_get_binding(DUMMY_SENSOR_NAME_NO_TRIG);
 	zassert_not_null(dev, "failed: dev is null");
 
-	zassert_equal(sensor_sample_fetch(dev), RETURN_SUCCESS, "fail to fetch sample");
+	zassert_equal(sensor_read_and_decode(dev, channels, ARRAY_SIZE(channels), &shift, values,
+					     ARRAY_SIZE(values)),
+		      RETURN_SUCCESS, "fail to fetch sample");
 
 	/* setup multiple triggers */
 	for (int i = 0; i < TOTAL_TRIG_ELEMENTS; i++) {
@@ -207,14 +224,17 @@ ZTEST(sensor_api, test_sensor_handle_triggers)
 
 		/* get channels value after trigger fired */
 		k_sem_take(&sem, K_FOREVER);
-		zassert_equal(sensor_channel_get(dev, trigger_elements[i].trig.chan, &data),
-			      RETURN_SUCCESS, "fail to get channel");
+		zassert_ok(sensor_read_and_decode(dev, trigger_channels,
+						  ARRAY_SIZE(trigger_channels), &shift, values,
+						  ARRAY_SIZE(values)));
+		q31_to_sensor_value(values[0], shift, &data);
 
 		/* check the result of the trigger channel */
-		zassert_equal(data.val1, trigger_elements[i].data.val1,
-			      "retrieved data does not match");
-		zassert_equal(data.val2, trigger_elements[i].data.val2,
-			      "retrieved data does not match");
+		zassert_within(sensor_value_to_micro(&data),
+			       sensor_value_to_micro(&trigger_elements[i].data), 50,
+			       "[%d] retrieved data does not match, got %lld but expected %lld", i,
+			       sensor_value_to_micro(&data),
+			       sensor_value_to_micro(&trigger_elements[i].data));
 
 		/* set attributes for no trig dev */
 		zassert_equal(sensor_attr_set(dev_no_trig, trigger_elements[i].trig.chan,

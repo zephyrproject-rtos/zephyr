@@ -18,7 +18,7 @@ static struct dummy_sensor_data dummy_data;
 static const struct dummy_sensor_config dummy_config = {.i2c_name = "dummy I2C",
 							.i2c_address = 123};
 
-static int dummy_sensor_sample_fetch(const struct device *dev, enum sensor_channel chan)
+static int dummy_sensor_sample_fetch_impl(const struct device *dev, enum sensor_channel chan)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(chan);
@@ -27,7 +27,7 @@ static int dummy_sensor_sample_fetch(const struct device *dev, enum sensor_chann
 	return 0;
 }
 
-static int dummy_sensor_channel_get(const struct device *dev, enum sensor_channel chan,
+static int dummy_sensor_channel_get_impl(const struct device *dev, enum sensor_channel chan,
 				    struct sensor_value *val)
 {
 	struct dummy_sensor_data *data = dev->data;
@@ -92,7 +92,7 @@ static int dummy_sensor_init(const struct device *dev)
 	/* initialize the channels value for dummy driver */
 	for (int i = 0; i < SENSOR_CHANNEL_NUM; i++) {
 		data->val[i].val1 = i;
-		data->val[i].val2 = i * i;
+		data->val[i].val2 = i * i * 1000;
 	}
 
 	return 0;
@@ -151,16 +151,16 @@ int dummy_sensor_trigger_set(const struct device *dev, const struct sensor_trigg
 }
 
 static DEVICE_API(sensor, dummy_sensor_api) = {
-	.sample_fetch = &dummy_sensor_sample_fetch,
-	.channel_get = &dummy_sensor_channel_get,
+	.sample_fetch = &dummy_sensor_sample_fetch_impl,
+	.channel_get = &dummy_sensor_channel_get_impl,
 	.attr_set = dummy_sensor_attr_set,
 	.attr_get = dummy_sensor_attr_get,
 	.trigger_set = dummy_sensor_trigger_set,
 };
 
 static DEVICE_API(sensor, dummy_sensor_no_trig_api) = {
-	.sample_fetch = &dummy_sensor_sample_fetch,
-	.channel_get = &dummy_sensor_channel_get,
+	.sample_fetch = &dummy_sensor_sample_fetch_impl,
+	.channel_get = &dummy_sensor_channel_get_impl,
 	.attr_set = NULL,
 	.attr_get = NULL,
 	.trigger_set = NULL,

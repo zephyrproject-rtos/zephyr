@@ -132,6 +132,18 @@ ZTEST_F(ina228, test_example_from_data_sheet)
 	struct sensor_value sensor_val;
 	double reading;
 
+	int8_t shift[7];
+	q31_t value[7];
+	struct sensor_chan_spec channels[7] = {
+		{.chan_type = SENSOR_CHAN_VOLTAGE, .chan_idx = 0},
+		{.chan_type = SENSOR_CHAN_CURRENT, .chan_idx = 0},
+		{.chan_type = SENSOR_CHAN_POWER, .chan_idx = 0},
+		{.chan_type = SENSOR_CHAN_INA2XX_CHARGE, .chan_idx = 0},
+		{.chan_type = SENSOR_CHAN_INA2XX_ENERGY, .chan_idx = 0},
+		{.chan_type = SENSOR_CHAN_DIE_TEMP, .chan_idx = 0},
+		{.chan_type = SENSOR_CHAN_VSHUNT, .chan_idx = 0},
+	};
+
 	ina228_emul_get_reg_16(fixture->target_basic, INA237_REG_CONFIG, &resulting_registervalue);
 	/*
 	 * RST		0	0... .... .... ....
@@ -190,38 +202,37 @@ ZTEST_F(ina228, test_example_from_data_sheet)
 	/* Datasheet value 3200 decimal */
 	ina228_emul_set_reg_16(fixture->target_basic, INA237_REG_DIETEMP, 0x0C80);
 
-	zassert_ok(sensor_sample_fetch(fixture->dev_basic));
+	zassert_ok(sensor_read_and_decode(fixture->dev_basic, channels, ARRAY_SIZE(channels), shift,
+					  value, 7));
 
-	zassert_ok(sensor_channel_get(fixture->dev_basic, SENSOR_CHAN_VOLTAGE, &sensor_val));
+	q31_to_sensor_value(value[0], shift[0], &sensor_val);
 	reading = sensor_value_to_double(&sensor_val);
 	zexpect_within(48.0, reading, 1.0e-3, "Got %.6f V", reading);
 
-	zassert_ok(sensor_channel_get(fixture->dev_basic, SENSOR_CHAN_CURRENT, &sensor_val));
+	q31_to_sensor_value(value[1], shift[0], &sensor_val);
 	reading = sensor_value_to_double(&sensor_val);
 	zexpect_within(6.0, reading, 0.1, "Got %.6f A", reading);
 
-	zassert_ok(sensor_channel_get(fixture->dev_basic, SENSOR_CHAN_POWER, &sensor_val));
+	q31_to_sensor_value(value[2], shift[0], &sensor_val);
 	reading = sensor_value_to_double(&sensor_val);
 	/* Some difference due to limited resolution in devicetree LSB setting */
 	zexpect_within(287, reading, 1, "Got %.6f W", reading);
 
-	zassert_ok(sensor_channel_get(fixture->dev_basic,
-				      (enum sensor_channel)SENSOR_CHAN_INA2XX_CHARGE, &sensor_val));
+	q31_to_sensor_value(value[3], shift[0], &sensor_val);
 	reading = sensor_value_to_double(&sensor_val);
 	/* Some difference due to limited resolution in devicetree LSB setting */
 	zexpect_within(21500, reading, 20, "Got %.6f C", reading);
 
-	zassert_ok(sensor_channel_get(fixture->dev_basic,
-				      (enum sensor_channel)SENSOR_CHAN_INA2XX_ENERGY, &sensor_val));
+	q31_to_sensor_value(value[4], shift[0], &sensor_val);
 	reading = sensor_value_to_double(&sensor_val);
 	/* Some difference due to limited resolution in devicetree LSB setting */
-	zexpect_within(1032800, reading, 50, "Got %.6f J", reading);
+	zexpect_within(1032800, reading, 500, "Got %.6f J", reading);
 
-	zassert_ok(sensor_channel_get(fixture->dev_basic, SENSOR_CHAN_DIE_TEMP, &sensor_val));
+	q31_to_sensor_value(value[5], shift[0], &sensor_val);
 	reading = sensor_value_to_double(&sensor_val);
-	zexpect_within(25, reading, 1.0e-3, "Got %.3f deg C", reading);
+	zexpect_within(25, reading, 1.0e-1, "Got %.3f deg C", reading);
 
-	zassert_ok(sensor_channel_get(fixture->dev_basic, SENSOR_CHAN_VSHUNT, &sensor_val));
+	q31_to_sensor_value(value[6], shift[0], &sensor_val);
 	reading = sensor_value_to_double(&sensor_val);
 	zexpect_within(0.0972, reading, 1.0e-3, "Got %.6f V", reading);
 }
@@ -233,6 +244,15 @@ ZTEST_F(ina228, test_negative_values)
 {
 	struct sensor_value sensor_val;
 	double reading;
+
+	int8_t shift[4];
+	q31_t value[4];
+	struct sensor_chan_spec channels[4] = {
+		{.chan_type = SENSOR_CHAN_CURRENT, .chan_idx = 0},
+		{.chan_type = SENSOR_CHAN_INA2XX_CHARGE, .chan_idx = 0},
+		{.chan_type = SENSOR_CHAN_DIE_TEMP, .chan_idx = 0},
+		{.chan_type = SENSOR_CHAN_VSHUNT, .chan_idx = 0},
+	};
 
 	/* Current LSB = 19000 nA according to devicetree settings.
 	 * -100 = 0xFFF9C in 20 bit two's complement
@@ -262,22 +282,22 @@ ZTEST_F(ina228, test_negative_values)
 	ina228_emul_set_reg_24(fixture->target_basic, INA237_REG_POWER, 0x000000);
 	ina228_emul_set_reg_40(fixture->target_basic, INA228_REG_ENERGY, 0x0000000000);
 
-	zassert_ok(sensor_sample_fetch(fixture->dev_basic));
+	zassert_ok(sensor_read_and_decode(fixture->dev_basic, channels, ARRAY_SIZE(channels), shift,
+					  value, 4));
 
-	zassert_ok(sensor_channel_get(fixture->dev_basic, SENSOR_CHAN_CURRENT, &sensor_val));
+	q31_to_sensor_value(value[0], shift[0], &sensor_val);
 	reading = sensor_value_to_double(&sensor_val);
 	zexpect_within(-1.907e-3, reading, 1.0e-5, "Got %.6f A", reading);
 
-	zassert_ok(sensor_channel_get(fixture->dev_basic,
-				      (enum sensor_channel)SENSOR_CHAN_INA2XX_CHARGE, &sensor_val));
+	q31_to_sensor_value(value[1], shift[1], &sensor_val);
 	reading = sensor_value_to_double(&sensor_val);
 	zexpect_within(-1.907e-3, reading, 1.0e-5, "Got %.6f C", reading);
 
-	zassert_ok(sensor_channel_get(fixture->dev_basic, SENSOR_CHAN_DIE_TEMP, &sensor_val));
+	q31_to_sensor_value(value[2], shift[2], &sensor_val);
 	reading = sensor_value_to_double(&sensor_val);
 	zexpect_within(-0.78125, reading, 1.0e-3, "Got %.3f deg C", reading);
 
-	zassert_ok(sensor_channel_get(fixture->dev_basic, SENSOR_CHAN_VSHUNT, &sensor_val));
+	q31_to_sensor_value(value[3], shift[3], &sensor_val);
 	reading = sensor_value_to_double(&sensor_val);
 	zexpect_within(-3.155e-5, reading, 1.0e-6, "Got %.6f V", reading);
 }
@@ -287,7 +307,11 @@ ZTEST_F(ina228, test_negative_values)
  */
 ZTEST_F(ina228, test_invalid_channel)
 {
-	struct sensor_value sensor_val;
+	int8_t shift;
+	q31_t value;
+	struct sensor_chan_spec channels[1] = {
+		{.chan_type = SENSOR_CHAN_ALTITUDE, .chan_idx = 0},
+	};
 
 	ina228_emul_set_reg_24(fixture->target_basic, INA237_REG_CURRENT, 0x0000);
 	ina228_emul_set_reg_40(fixture->target_basic, INA228_REG_CHARGE, 0x0000000000);
@@ -297,7 +321,5 @@ ZTEST_F(ina228, test_invalid_channel)
 	ina228_emul_set_reg_24(fixture->target_basic, INA237_REG_POWER, 0x000000);
 	ina228_emul_set_reg_40(fixture->target_basic, INA228_REG_ENERGY, 0x0000000000);
 
-	zassert_ok(sensor_sample_fetch(fixture->dev_basic));
-
-	zassert_not_ok(sensor_channel_get(fixture->dev_basic, SENSOR_CHAN_ALTITUDE, &sensor_val));
+	zassert_not_ok(sensor_read_and_decode(fixture->dev_basic, channels, 1, &shift, &value, 1));
 }

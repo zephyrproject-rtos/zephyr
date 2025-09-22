@@ -18,17 +18,19 @@ ZTEST(temp_sensor, test_polling)
 	int rc;
 	int cnt;
 	struct sensor_value val;
+	int8_t shift;
+	q31_t value;
+	struct sensor_chan_spec channels;
 
 	cnt = 0;
 	while (1) {
 		int32_t temp_val;
 
-		rc = sensor_sample_fetch_chan(temp_dev, chan_to_use);
+		channels.chan_type = chan_to_use;
+		rc = sensor_read_and_decode(temp_dev, &channels, 1, &shift, &value, 1);
 		zassert_ok(rc, "Cannot fetch chan sample: %d.", rc);
 
-		rc = sensor_channel_get(temp_dev, chan_to_use, &val);
-		zassert_ok(rc, "Cannot read from channel %d: %d.", chan_to_use, rc);
-
+		q31_to_sensor_value(value, shift, &val);
 		temp_val = (val.val1 * 100) + (val.val2 / 10000);
 		TC_PRINT("Temperature: %d.%02u\n", temp_val / 100, abs(temp_val) % 100);
 
@@ -57,6 +59,9 @@ ZTEST(temp_sensor, test_trigger)
 	int rc;
 	struct sensor_value val;
 	struct sensor_trigger trig = {.type = SENSOR_TRIG_THRESHOLD, .chan = chan_to_use};
+	int8_t shift;
+	q31_t value;
+	struct sensor_chan_spec channel = {.chan_type = chan_to_use, .chan_idx = 0};
 
 	/* Check if the sensor allows setting a threshold trigger.
 	 * If not, skip the test.
@@ -67,9 +72,10 @@ ZTEST(temp_sensor, test_trigger)
 		ztest_test_skip();
 	}
 
-	rc = sensor_channel_get(temp_dev, chan_to_use, &val);
+	rc = sensor_read_and_decode(temp_dev, &channel, 1, &shift, &value, 1);
 	zassert_ok(rc, "Cannot read from channel %d: %d.", chan_to_use, rc);
 
+	q31_to_sensor_value(value, shift, &val);
 	/* Set the upper threshold somewhat below the temperature read above. */
 	val.val1 -= 5;
 	rc = sensor_attr_set(temp_dev, chan_to_use, SENSOR_ATTR_UPPER_THRESH, &val);
@@ -107,38 +113,36 @@ static void before(void *fixture)
 {
 	ARG_UNUSED(fixture);
 
-	int rc;
-	int cnt;
-	struct sensor_value val;
+	int rc = 0;
+	int cnt = 0;
+	int8_t shift;
+	q31_t value;
+	struct sensor_chan_spec channels[] = {
+		{.chan_type = SENSOR_CHAN_DIE_TEMP, .chan_idx = 0},
+		{.chan_type = SENSOR_CHAN_AMBIENT_TEMP, .chan_idx = 0},
+	};
 
 	zassert_true(device_is_ready(temp_dev), "Device %s is not ready.", temp_dev->name);
 
-	cnt = 0;
-	/* Try to fetch a sample to check if the sensor is ready to work.
-	 * Try several times if it appears to be needing a while for some
-	 * initialization of communication etc.
-	 */
-	while (1) {
-		rc = sensor_sample_fetch(temp_dev);
-		if (rc != -EAGAIN && rc != -ENOTCONN) {
-			break;
+	for (int i = 0; i < 2; ++i) {
+		/* Try to fetch a sample to check if the sensor is ready to work.
+		 * Try several times if it appears to be needing a while for some
+		 * initialization of communication etc.
+		 */
+		while (cnt < (i + 1) * 3) {
+			rc = sensor_read_and_decode(temp_dev, &channels[i], 1, &shift, &value, 1);
+			if (rc != -EAGAIN && rc != -ENOTCONN) {
+				chan_to_use = channels[i].chan_type;
+				break;
+			}
+
+			++cnt;
+
+			k_sleep(K_MSEC(1000));
 		}
-
-		++cnt;
-		zassert_false(cnt >= 3, "Cannot fetch a sample: %d.", rc);
-
-		k_sleep(K_MSEC(1000));
 	}
+	zassert_false(cnt > 6, "Cannot fetch a sample: %d.", rc);
 	zassert_ok(rc, "Cannot fetch a sample: %d.", rc);
-
-	/* Check if the sensor provides the die temperature.
-	 * If not, switch to the ambient one.
-	 */
-	chan_to_use = SENSOR_CHAN_DIE_TEMP;
-	rc = sensor_channel_get(temp_dev, chan_to_use, &val);
-	if (rc == -ENOTSUP) {
-		chan_to_use = SENSOR_CHAN_AMBIENT_TEMP;
-	}
 }
 
 ZTEST_SUITE(temp_sensor, NULL, NULL, before, NULL, NULL);
