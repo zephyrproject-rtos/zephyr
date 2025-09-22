@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT nordic_npm1300_gpio
+
 #include <errno.h>
 
 #include <zephyr/drivers/gpio.h>
@@ -210,25 +212,18 @@ static int gpio_npm13xx_init(const struct device *dev)
 	return 0;
 }
 
-#define GPIO_NPM13XX_DEFINE(partno, n)                                                             \
-	static const struct gpio_npm13xx_config gpio_##partno##_config##n = {                      \
+#define GPIO_NPM13XX_DEFINE(n)                                                                     \
+	static const struct gpio_npm13xx_config gpio_npm13xx_config##n = {                         \
 		.common =                                                                          \
 			{                                                                          \
 				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),               \
 			},                                                                         \
 		.mfd = DEVICE_DT_GET(DT_INST_PARENT(n))};                                          \
                                                                                                    \
-		static struct gpio_npm13xx_data gpio_##partno##_data##n;                           \
+		static struct gpio_npm13xx_data gpio_npm13xx_data##n;                              \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, gpio_npm13xx_init, NULL, &gpio_##partno##_data##n,                \
-			      &gpio_##partno##_config##n, POST_KERNEL,                             \
+	DEVICE_DT_INST_DEFINE(n, gpio_npm13xx_init, NULL, &gpio_npm13xx_data##n,                   \
+			      &gpio_npm13xx_config##n, POST_KERNEL,                                \
 			      CONFIG_GPIO_NPM13XX_INIT_PRIORITY, &gpio_npm13xx_api);
 
-#define DT_DRV_COMPAT nordic_npm1300_gpio
-#define GPIO_NPM1300_DEFINE(n) GPIO_NPM13XX_DEFINE(npm1300, n)
-DT_INST_FOREACH_STATUS_OKAY(GPIO_NPM1300_DEFINE)
-
-#undef DT_DRV_COMPAT
-#define DT_DRV_COMPAT nordic_npm1304_gpio
-#define GPIO_NPM1304_DEFINE(n) GPIO_NPM13XX_DEFINE(npm1304, n)
-DT_INST_FOREACH_STATUS_OKAY(GPIO_NPM1304_DEFINE)
+DT_INST_FOREACH_STATUS_OKAY(GPIO_NPM13XX_DEFINE)

@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT nordic_npm1300
+
 #include <errno.h>
 
 #include <zephyr/drivers/i2c.h>
@@ -306,26 +308,18 @@ int mfd_npm13xx_remove_callback(const struct device *dev, struct gpio_callback *
 	return gpio_manage_callback(&data->callbacks, callback, false);
 }
 
-#define MFD_NPM13XX_DEFINE(partno, n)                                                              \
-	static struct mfd_npm13xx_data mfd_##partno##_data##n;                                     \
+#define MFD_NPM13XX_DEFINE(inst)                                                                   \
+	static struct mfd_npm13xx_data data_##inst;                                                \
                                                                                                    \
-	static const struct mfd_npm13xx_config mfd_##partno##_config##n = {                        \
-		.i2c = I2C_DT_SPEC_INST_GET(n),                                                    \
-		.host_int_gpios = GPIO_DT_SPEC_INST_GET_OR(n, host_int_gpios, {0}),                \
-		.pmic_int_pin = DT_INST_PROP_OR(n, pmic_int_pin, 0),                               \
-		.active_time = DT_INST_ENUM_IDX(n, ship_to_active_time_ms),                        \
-		.lp_reset = DT_INST_ENUM_IDX_OR(n, long_press_reset, 0),                           \
+	static const struct mfd_npm13xx_config config##inst = {                                    \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
+		.host_int_gpios = GPIO_DT_SPEC_INST_GET_OR(inst, host_int_gpios, {0}),             \
+		.pmic_int_pin = DT_INST_PROP_OR(inst, pmic_int_pin, 0),                            \
+		.active_time = DT_INST_ENUM_IDX(inst, ship_to_active_time_ms),                     \
+		.lp_reset = DT_INST_ENUM_IDX_OR(inst, long_press_reset, 0),                        \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, mfd_npm13xx_init, NULL, &mfd_##partno##_data##n,                  \
-			      &mfd_##partno##_config##n, POST_KERNEL,                              \
-			      CONFIG_MFD_NPM13XX_INIT_PRIORITY, NULL);
+	DEVICE_DT_INST_DEFINE(inst, mfd_npm13xx_init, NULL, &data_##inst, &config##inst,           \
+			      POST_KERNEL, CONFIG_MFD_NPM13XX_INIT_PRIORITY, NULL);
 
-#define DT_DRV_COMPAT nordic_npm1300
-#define MFD_NPM1300_DEFINE(n) MFD_NPM13XX_DEFINE(npm1300, n)
-DT_INST_FOREACH_STATUS_OKAY(MFD_NPM1300_DEFINE)
-
-#undef DT_DRV_COMPAT
-#define DT_DRV_COMPAT nordic_npm1304
-#define MFD_NPM1304_DEFINE(n) MFD_NPM13XX_DEFINE(npm1304, n)
-DT_INST_FOREACH_STATUS_OKAY(MFD_NPM1304_DEFINE)
+DT_INST_FOREACH_STATUS_OKAY(MFD_NPM13XX_DEFINE)

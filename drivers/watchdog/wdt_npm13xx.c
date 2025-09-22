@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT nordic_npm13xx_wdt
+
 #include <errno.h>
 
 #include <zephyr/kernel.h>
@@ -152,23 +154,15 @@ static int wdt_npm13xx_init(const struct device *dev)
 	return 0;
 }
 
-#define WDT_NPM13XX_DEFINE(partno, n)                                                              \
-	static struct wdt_npm13xx_data wdt_##partno##_data##n;                                     \
+#define WDT_NPM13XX_DEFINE(n)                                                                      \
+	static struct wdt_npm13xx_data data##n;                                                    \
                                                                                                    \
-	static const struct wdt_npm13xx_config wdt_##partno##_config##n = {                        \
+	static const struct wdt_npm13xx_config config##n = {                                       \
 		.mfd = DEVICE_DT_GET(DT_INST_PARENT(n)),                                           \
 		.reset_gpios = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {0}),                      \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, &wdt_npm13xx_init, NULL, &wdt_##partno##_data##n,                 \
-			      &wdt_##partno##_config##n, POST_KERNEL,                              \
+	DEVICE_DT_INST_DEFINE(n, &wdt_npm13xx_init, NULL, &data##n, &config##n, POST_KERNEL,       \
 			      CONFIG_WDT_NPM13XX_INIT_PRIORITY, &wdt_npm13xx_api);
 
-#define DT_DRV_COMPAT nordic_npm1300_wdt
-#define WDT_NPM1300_DEFINE(n) WDT_NPM13XX_DEFINE(npm1300, n)
-DT_INST_FOREACH_STATUS_OKAY(WDT_NPM1300_DEFINE)
-
-#undef DT_DRV_COMPAT
-#define DT_DRV_COMPAT nordic_npm1304_wdt
-#define WDT_NPM1304_DEFINE(n) WDT_NPM13XX_DEFINE(npm1304, n)
-DT_INST_FOREACH_STATUS_OKAY(WDT_NPM1304_DEFINE)
+DT_INST_FOREACH_STATUS_OKAY(WDT_NPM13XX_DEFINE)
