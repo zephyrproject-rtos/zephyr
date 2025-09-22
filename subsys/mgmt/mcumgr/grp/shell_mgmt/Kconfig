@@ -14,6 +14,7 @@
 
 menuconfig MCUMGR_GRP_SHELL
 	bool "Mcumgr handlers for shell management"
+	default y if SHELL_ALL
 	depends on SHELL
 	depends on SHELL_BACKEND_DUMMY
 	select MCUMGR_SMP_CBOR_MIN_DECODING_LEVEL_2

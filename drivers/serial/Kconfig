@@ -151,6 +151,7 @@ config UART_ASYNC_TO_INT_DRIVEN_RX_TIMEOUT
 config UART_SHELL
 	bool "UART Shell commands"
 	depends on SHELL
+	default y if SHELL_ALL
 	help
 	  UART Shell commands
 

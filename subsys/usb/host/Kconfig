@@ -31,6 +31,7 @@ config USBH_USB_DEVICE_HEAP
 
 config USBH_SHELL
 	bool "USB host shell"
+	default y if SHELL_ALL
 	depends on SHELL
 	help
 	  Shell commands for USB host support.

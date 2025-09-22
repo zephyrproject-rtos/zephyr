@@ -65,6 +65,7 @@ config UPDATEHUB_SERVER
 
 config UPDATEHUB_SHELL
 	bool "UpdateHub shell utilities"
+	default y if SHELL_ALL
 	depends on SHELL
 	select KERNEL_SHELL
 	help

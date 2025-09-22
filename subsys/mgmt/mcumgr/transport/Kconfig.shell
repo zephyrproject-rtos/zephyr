@@ -12,6 +12,7 @@
 menuconfig MCUMGR_TRANSPORT_SHELL
 	bool "Shell mcumgr SMP transport"
 	depends on SHELL
+	default y if SHELL_ALL
 	depends on BASE64
 	depends on CRC
 	help

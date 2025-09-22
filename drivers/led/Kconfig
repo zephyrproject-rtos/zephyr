@@ -23,6 +23,7 @@ config LED_INIT_PRIORITY
 config LED_SHELL
 	bool "LED shell"
 	depends on SHELL
+	default y if SHELL_ALL
 	help
 	  Enable LED shell for testing.
 

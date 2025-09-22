@@ -5,6 +5,7 @@ if POSIX_SINGLE_PROCESS
 
 config POSIX_UNAME_SHELL
 	bool "Support for `uname` command"
+	default y if SHELL_ALL
 	select SHELL_GETOPT
 	select POSIX_SHELL
 	help

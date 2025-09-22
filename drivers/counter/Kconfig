@@ -19,6 +19,7 @@ config COUNTER_INIT_PRIORITY
 config COUNTER_SHELL
 	bool "Counter shell"
 	depends on SHELL
+	default y if SHELL_ALL
 	help
 	  Enable Shell Commands for Counter and Timer
 

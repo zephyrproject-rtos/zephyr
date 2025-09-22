@@ -23,6 +23,7 @@ config FPGA_INIT_PRIORITY
 config FPGA_SHELL
 	bool "FPGA Shell"
 	depends on SHELL && FPGA
+	default y if SHELL_ALL
 	help
 	  Enable FPGA Shell support.
 
