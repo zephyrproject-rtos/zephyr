@@ -340,9 +340,9 @@ static int accept_sco_conn(const bt_addr_t *bdaddr, struct bt_conn *sco_conn)
 
 	cp = net_buf_add(buf, sizeof(*cp));
 	bt_addr_copy(&cp->bdaddr, bdaddr);
-	cp->pkt_type = sco_conn->sco.pkt_type;
-	cp->tx_bandwidth = 0x00001f40;
-	cp->rx_bandwidth = 0x00001f40;
+	cp->pkt_type = sys_cpu_to_le16(sco_conn->sco.pkt_type);
+	cp->tx_bandwidth = sys_cpu_to_le32(0x00001f40);
+	cp->rx_bandwidth = sys_cpu_to_le32(0x00001f40);
 	cp->max_latency = sys_cpu_to_le16(BT_HCI_SCO_MAX_LATENCY_DEFAULT);
 	cp->retrans_effort = BT_HCI_SCO_RETRANS_EFFORT_DEFAULT;
 	cp->content_format = sys_cpu_to_le16(sco_conn->sco.chan->voice_setting);
@@ -422,10 +422,10 @@ static int sco_setup_sync_conn(struct bt_conn *sco_conn)
 
 	LOG_DBG("handle : %x", sco_conn->sco.acl->handle);
 
-	cp->handle = sco_conn->sco.acl->handle;
-	cp->pkt_type = sco_conn->sco.pkt_type;
-	cp->tx_bandwidth = 0x00001f40;
-	cp->rx_bandwidth = 0x00001f40;
+	cp->handle = sys_cpu_to_le16(sco_conn->sco.acl->handle);
+	cp->pkt_type = sys_cpu_to_le16(sco_conn->sco.pkt_type);
+	cp->tx_bandwidth = sys_cpu_to_le32(0x00001f40);
+	cp->rx_bandwidth = sys_cpu_to_le32(0x00001f40);
 	cp->max_latency = sys_cpu_to_le16(BT_HCI_SCO_MAX_LATENCY_DEFAULT);
 	cp->retrans_effort = BT_HCI_SCO_RETRANS_EFFORT_DEFAULT;
 	cp->content_format = sys_cpu_to_le16(sco_conn->sco.chan->voice_setting);
