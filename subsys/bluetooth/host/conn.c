@@ -649,7 +649,7 @@ static bool is_acl_conn(struct bt_conn *conn)
 }
 
 static int send_buf(struct bt_conn *conn, struct net_buf *buf,
-		    size_t len, bt_conn_tx_cb_t cb, void *ud)
+		    size_t len, void *cb, void *ud)
 {
 	struct net_buf *frag = NULL;
 	struct bt_conn_tx *tx = NULL;
@@ -659,15 +659,13 @@ static int send_buf(struct bt_conn *conn, struct net_buf *buf,
 	if (buf->len == 0) {
 		__ASSERT_NO_MSG(0);
 
-		err = -EMSGSIZE;
-		goto error_return;
+		return -EMSGSIZE;
 	}
 
 	if (bt_buf_has_view(buf)) {
 		__ASSERT_NO_MSG(0);
 
-		err = -EIO;
-		goto error_return;
+		return -EIO;
 	}
 
 	LOG_DBG("conn %p buf %p len %zu buf->len %u cb %p ud %p",
@@ -682,8 +680,7 @@ static int send_buf(struct bt_conn *conn, struct net_buf *buf,
 		 */
 		__ASSERT(0, "No controller bufs");
 
-		err = -ENOMEM;
-		goto error_return;
+		return -ENOMEM;
 	}
 
 	/* Allocate and set the TX context */
@@ -692,9 +689,8 @@ static int send_buf(struct bt_conn *conn, struct net_buf *buf,
 	/* See big comment above */
 	if (!tx) {
 		__ASSERT(0, "No TX context");
-		k_sem_give(bt_conn_get_pkts(conn));
-		err = -ENOMEM;
-		goto error_return;
+
+		return -ENOMEM;
 	}
 
 	tx->cb = cb;
@@ -702,17 +698,18 @@ static int send_buf(struct bt_conn *conn, struct net_buf *buf,
 
 	uint16_t frag_len = MIN(conn_mtu(conn), len);
 
-	/* Check that buf->ref is 1 or 2. It would be 1 if this
-	 * was the only reference (e.g. buf was removed
-	 * from the conn tx_queue). It would be 2 if the
-	 * tx_data_pull kept it on the tx_queue for segmentation.
-	 */
-	__ASSERT_NO_MSG((buf->ref == 1) || (buf->ref == 2));
+	__ASSERT_NO_MSG(buf->ref == 1);
 
-	/* The reference is always transferred to the frag, so when
-	 * the frag is destroyed, the parent reference is decremented.
-	 */
-	frag = get_data_frag(buf, frag_len);
+	if (buf->len > frag_len) {
+		LOG_DBG("keep %p around", buf);
+		frag = get_data_frag(net_buf_ref(buf), frag_len);
+	} else {
+		LOG_DBG("move %p ref in", buf);
+		/* Move the ref into `frag` for the last TX. That way `buf` will
+		 * get destroyed when `frag` is destroyed.
+		 */
+		frag = get_data_frag(buf, frag_len);
+	}
 
 	/* Caller is supposed to check we have all resources to send */
 	__ASSERT_NO_MSG(frag != NULL);
@@ -726,7 +723,7 @@ static int send_buf(struct bt_conn *conn, struct net_buf *buf,
 		conn->next_is_frag = false;
 	}
 
-	LOG_DBG("send frag: buf %p len %d", frag, frag_len);
+	LOG_DBG("send frag: buf %p len %d", buf, frag_len);
 
 	/* At this point, the buffer is either a fragment or a full HCI packet.
 	 * The flags are also valid.
@@ -769,26 +766,15 @@ static int send_buf(struct bt_conn *conn, struct net_buf *buf,
 	 */
 	net_buf_unref(frag);
 
-	/* `buf` might not get destroyed right away because it may
-	 * still be on a conn tx_queue, and its `tx` pointer will still
-	 * be reachable. Make sure that we don't try to use the
-	 * destroyed context later.
+	/* `buf` might not get destroyed right away, and its `tx`
+	 * pointer will still be reachable. Make sure that we don't try
+	 * to use the destroyed context later.
 	 */
 	conn_tx_destroy(conn, tx);
 	k_sem_give(bt_conn_get_pkts(conn));
 
 	/* Merge HCI driver errors */
 	return -EIO;
-
-error_return:
-	/* Runtime handling of fatal errors when ASSERTS are disabled.
-	 * Unref the buf and invoke callback with the error.
-	 */
-	net_buf_unref(buf);
-	if (cb) {
-		cb(conn, ud, err);
-	}
-	return err;
 }
 
 static struct k_poll_signal conn_change =
@@ -970,8 +956,8 @@ struct bt_conn *get_conn_ready(void)
 			sys_slist_remove(&bt_dev.le.conn_ready, prev, &conn->_conn_ready);
 			(void)atomic_set(&conn->_conn_ready_lock, 0);
 
-			/* Append connection to list if it is connected and still has data */
-			if (conn->has_data(conn) && (conn->state == BT_CONN_CONNECTED)) {
+			/* Append connection to list if it still has data */
+			if (conn->has_data(conn)) {
 				LOG_DBG("appending %p to back of TX queue", conn);
 				bt_conn_data_ready(conn);
 			}
@@ -998,6 +984,30 @@ static void acl_get_and_clear_cb(struct bt_conn *conn, struct net_buf *buf,
 	memset(buf->user_data, 0, buf->user_data_size);
 }
 #endif	/* defined(CONFIG_BT_CONN) */
+
+/* Acts as a "null-routed" bt_send(). This fn will decrease the refcount of
+ * `buf` and call the user callback with an error code.
+ */
+static void destroy_and_callback(struct bt_conn *conn,
+				 struct net_buf *buf,
+				 bt_conn_tx_cb_t cb,
+				 void *ud)
+{
+	if (!cb) {
+		conn->get_and_clear_cb(conn, buf, &cb, &ud);
+	}
+
+	LOG_DBG("pop: cb %p userdata %p", cb, ud);
+
+	/* bt_send() would've done an unref. Do it here also, so the buffer is
+	 * hopefully destroyed and the user callback can allocate a new one.
+	 */
+	net_buf_unref(buf);
+
+	if (cb) {
+		cb(conn, ud, -ESHUTDOWN);
+	}
+}
 
 static volatile bool _suspend_tx;
 
@@ -1041,7 +1051,17 @@ void bt_conn_tx_processor(void)
 
 	if (conn->state != BT_CONN_CONNECTED) {
 		LOG_WRN("conn %p: not connected", conn);
-		goto raise_and_exit;
+
+		/* Call the user callbacks & destroy (final-unref) the buffers
+		 * we were supposed to send.
+		 */
+		buf = conn->tx_data_pull(conn, SIZE_MAX, &buf_len);
+		while (buf) {
+			destroy_and_callback(conn, buf, cb, ud);
+			buf = conn->tx_data_pull(conn, SIZE_MAX, &buf_len);
+		}
+
+		goto exit;
 	}
 
 	/* now that we are guaranteed resources, we can pull data from the upper
@@ -1075,12 +1095,25 @@ void bt_conn_tx_processor(void)
 	int err = send_buf(conn, buf, buf_len, cb, ud);
 
 	if (err) {
+		/* -EIO means `unrecoverable error`. It can be an assertion that
+		 *  failed or an error from the HCI driver.
+		 *
+		 * -ENOMEM means we thought we had all the resources to send the
+		 *  buf (ie. TX context + controller buffer) but one of them was
+		 *  not available. This is likely due to a failure of
+		 *  assumption, likely that we have been pre-empted somehow and
+		 *  that `tx_processor()` has been re-entered.
+		 *
+		 *  In both cases, we destroy the buffer and mark the connection
+		 *  as dead.
+		 */
 		LOG_ERR("Fatal error (%d). Disconnecting %p", err, conn);
+		destroy_and_callback(conn, buf, cb, ud);
 		bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+
 		goto exit;
 	}
 
-raise_and_exit:
 	/* Always kick the TX work. It will self-suspend if it doesn't get
 	 * resources or there is nothing left to send.
 	 */
