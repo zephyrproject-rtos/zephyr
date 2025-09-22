@@ -436,7 +436,7 @@ static void ev_sof_handler(void)
 
 	m_ep_armed &= ~USBD_EPISO_BIT_MASK;
 
-	udc_submit_sof_event(udc_nrf_dev);
+	udc_submit_event(udc_nrf_dev, UDC_EVT_SOF, 0);
 }
 
 static void usbd_in_packet_sent(uint8_t ep)
@@ -1547,7 +1547,7 @@ static void udc_nrf_power_handler(nrfx_power_usb_evt_t pwr_evt)
 		break;
 	case NRFX_POWER_USB_EVT_READY:
 		LOG_DBG("POWER event ready");
-		nrf_usbd_legacy_start(IS_ENABLED(CONFIG_UDC_ENABLE_SOF));
+		nrf_usbd_legacy_start(true);
 		break;
 	case NRFX_POWER_USB_EVT_REMOVED:
 		LOG_DBG("POWER event removed");

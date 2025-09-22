@@ -233,10 +233,6 @@ static int udc_skeleton_init(const struct device *dev)
 		return -EIO;
 	}
 
-	if (IS_ENABLED(CONFIG_UDC_ENABLE_SOF)) {
-		LOG_INF("Enable SOF interrupt");
-	}
-
 	return 0;
 }
 
