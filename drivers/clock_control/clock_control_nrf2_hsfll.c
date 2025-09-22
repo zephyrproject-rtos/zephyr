@@ -25,7 +25,7 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
 #define HSFLL_FREQ_MEDLOW MHZ(128)
 #define HSFLL_FREQ_HIGH   MHZ(320)
 
-#define NRFS_DVFS_TIMEOUT K_MSEC(CONFIG_CLOCK_CONTROL_NRF_HSFLL_LOCAL_NRFS_DVFS_TIMEOUT_MS)
+#define NRFS_DVFS_TIMEOUT K_MSEC(CONFIG_CLOCK_CONTROL_NRF2_NRFS_DVFS_TIMEOUT_MS)
 
 /* Clock options sorted from lowest to highest frequency */
 static const struct clock_options {
@@ -262,7 +262,7 @@ static struct hsfll_dev_data hsfll_data;
 #ifdef CONFIG_CLOCK_CONTROL_NRF2_HSFLL_REQ_LOW_FREQ
 static int dvfs_low_init(void)
 {
-	static const k_timeout_t timeout = NRFS_DVFS_TIMEOUT;
+	static const k_timeout_t timeout = K_MSEC(CONFIG_CLOCK_CONTROL_NRF2_NRFS_DVFS_TIMEOUT_MS);
 	static const struct device *hsfll_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_NODELABEL(cpu)));
 	static const struct nrf_clock_spec clk_spec = {
 		.frequency = HSFLL_FREQ_LOW
