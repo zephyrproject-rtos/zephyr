@@ -107,6 +107,12 @@ struct bt_cap_initiator_proc_param {
 		} meta_update;
 		struct {
 			bool release;
+			/** Since releasing may end up with the ASE state going from
+			 * BT_BAP_EP_STATE_CODEC_CONFIGURED -> BT_BAP_EP_STATE_RELEASING ->
+			 * BT_BAP_EP_STATE_CODEC_CONFIGURED we cannot rely 100% on the ASE state to
+			 * determine the state of the procedure
+			 */
+			bool completed;
 		} stop;
 	};
 	bool in_progress;

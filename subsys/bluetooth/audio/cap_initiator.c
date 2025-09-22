@@ -688,8 +688,7 @@ static void update_proc_done_cnt(struct bt_cap_common_proc *active_proc)
 				}
 				break;
 			case BT_CAP_COMMON_SUBPROC_TYPE_RELEASE:
-				if (state == BT_BAP_EP_STATE_IDLE ||
-				    state == BT_BAP_EP_STATE_CODEC_CONFIGURED) {
+				if (proc_param->stop.completed) {
 					proc_done_cnt++;
 				}
 				break;
@@ -805,8 +804,7 @@ get_next_proc_param(struct bt_cap_common_proc *active_proc)
 			}
 			break;
 		case BT_CAP_COMMON_SUBPROC_TYPE_RELEASE:
-			if (proc_param->stop.release && state != BT_BAP_EP_STATE_IDLE &&
-			    state != BT_BAP_EP_STATE_CODEC_CONFIGURED) {
+			if (proc_param->stop.release && !proc_param->stop.completed) {
 				return proc_param;
 			}
 			break;
@@ -1157,9 +1155,11 @@ bool bt_cap_initiator_valid_unicast_audio_start_param(
 		const union bt_cap_set_member *member = &stream_param->member;
 		const struct bt_cap_stream *cap_stream = stream_param->stream;
 		const struct bt_audio_codec_cfg *codec_cfg = stream_param->codec_cfg;
+		const struct bt_bap_ep *ep = stream_param->ep;
 		const struct bt_bap_stream *bap_stream;
 		const struct bt_conn *member_conn =
 			bt_cap_common_get_member_conn(param->type, member);
+		struct bt_conn *ep_conn;
 
 		if (member == NULL) {
 			LOG_DBG("param->members[%zu] is NULL", i);
@@ -1181,15 +1181,25 @@ bool bt_cap_initiator_valid_unicast_audio_start_param(
 			return false;
 		}
 
-		if (stream_param->ep == NULL) {
+		if (ep == NULL) {
 			LOG_DBG("param->stream_params[%zu].ep is NULL", i);
 			return false;
 		}
 
-		if (member == NULL) {
-			LOG_DBG("param->stream_params[%zu].member is NULL", i);
+		ep_conn = bt_bap_ep_get_conn(ep);
+		if (ep_conn == NULL) {
+			LOG_DBG("param->stream_params[%zu].ep is invalid", i);
 			return false;
 		}
+		if (ep_conn != member_conn) {
+			LOG_DBG("param->stream_params[%zu].ep conn %p does not match "
+				"param->members[%zu] %p",
+				i, ep_conn, i, member_conn);
+			bt_conn_unref(ep_conn);
+
+			return false;
+		}
+		bt_conn_unref(ep_conn);
 
 		if (cap_stream == NULL) {
 			LOG_DBG("param->streams[%zu] is NULL", i);
@@ -2174,11 +2184,8 @@ static bool can_release_stream(const struct bt_bap_stream *bap_stream)
 
 	state = bt_cap_initiator_stream_get_state(bap_stream);
 
-	/* We cannot release idle endpoints.
-	 * We do not know if we can release endpoints in the Codec Configured state as servers may
-	 * cache it, so treat it as idle
-	 */
-	return state != BT_BAP_EP_STATE_IDLE && state != BT_BAP_EP_STATE_CODEC_CONFIGURED;
+	/* We cannot release idle endpoints. */
+	return state != BT_BAP_EP_STATE_IDLE;
 }
 
 static bool can_disable_stream(const struct bt_bap_stream *bap_stream)
@@ -2318,6 +2325,7 @@ int cap_initiator_unicast_audio_stop(const struct bt_cap_unicast_audio_stop_para
 
 		active_proc->proc_param.initiator[i].stream = cap_stream;
 		active_proc->proc_param.initiator[i].stop.release = param->release;
+		active_proc->proc_param.initiator[i].stop.completed = false;
 
 		if (!can_disable && can_disable_stream(bap_stream)) {
 			can_disable = true;
@@ -2601,6 +2609,14 @@ void bt_cap_initiator_released(struct bt_cap_stream *cap_stream)
 		/* Unexpected callback - Abort */
 		bt_cap_common_abort_proc(cap_stream->bap_stream.conn, -EBADMSG);
 	} else {
+		/* Mark released as completed */
+		for (size_t i = 0U; i < active_proc->proc_cnt; i++) {
+			if (active_proc->proc_param.initiator[i].stream == cap_stream) {
+				active_proc->proc_param.initiator[i].stop.completed = true;
+				break;
+			}
+		}
+
 		update_proc_done_cnt(active_proc);
 
 		LOG_DBG("Stream %p released (%zu/%zu streams done)", cap_stream,
