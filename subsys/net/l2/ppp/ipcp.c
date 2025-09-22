@@ -228,37 +228,6 @@ static int ipcp_server_nak_ip_address(struct ppp_fsm *fsm,
 #endif
 
 #if defined(CONFIG_NET_L2_PPP_OPTION_SERVE_DNS)
-
-static int ipcp_dns1_address_parse(struct ppp_fsm *fsm, struct net_pkt *pkt,
-				  void *user_data)
-{
-	struct ppp_context *ctx =
-		CONTAINER_OF(fsm, struct ppp_context, ipcp.fsm);
-	int ret;
-
-	ret = ipcp_dns_address_parse(fsm, pkt, user_data);
-
-	if (ret == -EINVAL && ctx->ipcp.peer_options.dns1_address.s_addr == INADDR_ANY) {
-		return -ENOTSUP;
-	}
-	return ret;
-}
-
-static int ipcp_dns2_address_parse(struct ppp_fsm *fsm, struct net_pkt *pkt,
-				  void *user_data)
-{
-	struct ppp_context *ctx =
-		CONTAINER_OF(fsm, struct ppp_context, ipcp.fsm);
-	int ret;
-
-	ret = ipcp_dns_address_parse(fsm, pkt, user_data);
-
-	if (ret == -EINVAL && ctx->ipcp.peer_options.dns2_address.s_addr == INADDR_ANY) {
-		return -ENOTSUP;
-	}
-	return ret;
-}
-
 static int ipcp_server_nak_dns1_address(struct ppp_fsm *fsm,
 					struct net_pkt *ret_pkt,
 					void *user_data)
@@ -294,9 +263,9 @@ static const struct ppp_peer_option_info ipcp_peer_options[] = {
 	PPP_PEER_OPTION(IPCP_OPTION_IP_ADDRESS, ipcp_ip_address_parse, NULL),
 #endif
 #if defined(CONFIG_NET_L2_PPP_OPTION_SERVE_DNS)
-	PPP_PEER_OPTION(IPCP_OPTION_DNS1, ipcp_dns1_address_parse,
+	PPP_PEER_OPTION(IPCP_OPTION_DNS1, ipcp_dns_address_parse,
 			ipcp_server_nak_dns1_address),
-	PPP_PEER_OPTION(IPCP_OPTION_DNS2, ipcp_dns2_address_parse,
+	PPP_PEER_OPTION(IPCP_OPTION_DNS2, ipcp_dns_address_parse,
 			ipcp_server_nak_dns2_address),
 #endif
 };
