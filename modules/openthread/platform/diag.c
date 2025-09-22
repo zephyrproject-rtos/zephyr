@@ -10,7 +10,6 @@
 #include <openthread/error.h>
 #include <openthread/platform/alarm-milli.h>
 #include <openthread/platform/diag.h>
-#include <openthread/platform/logging.h>
 #include <openthread/platform/radio.h>
 
 #include "platform-zephyr.h"
