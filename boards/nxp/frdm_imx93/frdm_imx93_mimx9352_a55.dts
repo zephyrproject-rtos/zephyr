@@ -103,6 +103,8 @@
 		compatible = "motorcomm,yt8521";
 		reg = <2>;
 		status = "okay";
+		motorcomm,rx-delay-sel = <13>;
+		motorcomm,tx-delay-sel = <13>;
 	};
 };
 

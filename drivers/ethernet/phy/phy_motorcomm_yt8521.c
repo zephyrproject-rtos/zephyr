@@ -25,58 +25,58 @@ LOG_MODULE_REGISTER(phy_motorcomm_yt8521, CONFIG_PHY_LOG_LEVEL);
 #define PHY_ID_YT8521 (0x0000011A)
 
 /* PHY Specific Status Register */
-#define SPEC_STATUS_REG_DUPLEX_MASK (1U << 13)
-#define PHY_DUPLEX_HALF             (0U << 13)
-#define PHY_DUPLEX_FULL             (1U << 13)
+#define SPEC_STATUS_REG_DUPLEX_MASK    (1U << 13)
+#define PHY_DUPLEX_HALF                (0U << 13)
+#define PHY_DUPLEX_FULL                (1U << 13)
 
-#define SPEC_STATUS_REG_SPEED_MASK (0x3U << 14)
-#define PHY_SPEED_10M              (0U << 14)
-#define PHY_SPEED_100M             (1U << 14)
-#define PHY_SPEED_1000M            (2U << 14)
+#define SPEC_STATUS_REG_SPEED_MASK     (0x3U << 14)
+#define PHY_SPEED_10M                  (0U << 14)
+#define PHY_SPEED_100M                 (1U << 14)
+#define PHY_SPEED_1000M                (2U << 14)
 
 /* Specific Status Register */
-#define YTPHY_SPECIFIC_STATUS_REG 0x11
-#define YTPHY_SSR_LINK            BIT(10)
+#define YTPHY_SPECIFIC_STATUS_REG      0x11
+#define YTPHY_SSR_LINK                 BIT(10)
 
 /* Extended Register's Address Offset Register */
-#define YTPHY_PAGE_SELECT 0x1E
+#define YTPHY_PAGE_SELECT              0x1E
 /* Extended Register's Data Register */
-#define YTPHY_PAGE_DATA   0x1F
+#define YTPHY_PAGE_DATA                0x1F
 
-#define YT8521_REG_SPACE_SELECT_REG 0xA000
+#define YT8521_REG_SPACE_SELECT_REG    0xA000
 
-#define YT8521_CHIP_CONFIG_REG 0xA001
-#define YT8521_CCR_RXC_DLY_EN  BIT(8)
+#define YT8521_CHIP_CONFIG_REG         0xA001
+#define YT8521_CCR_RXC_DLY_EN          BIT(8)
 
 #define YT8521_EXTREG_SLEEP_CONTROL1_REG 0x27
-#define YT8521_ESC1R_SLEEP_SW            BIT(15)
+#define YT8521_ESC1R_SLEEP_SW          BIT(15)
 
-#define YT8521_RSSR_UTP_SPACE      (0x0 << 1)
-#define YT8521_RC1R_RGMII_1_950_NS 13
+#define YT8521_RSSR_UTP_SPACE          (0x0 << 1)
 
-#define YT8521_RGMII_CONFIG1_REG     0xA003
-#define YT8521_RC1R_RX_DELAY_MASK    GENMASK(13, 10)
-#define YT8521_RC1R_GE_TX_DELAY_MASK GENMASK(3, 0)
+#define YT8521_RGMII_CONFIG1_REG       0xA003
+#define YT8521_RC1R_RX_DELAY_MASK      GENMASK(13, 10)
+#define YT8521_RC1R_TX_DELAY_MASK      GENMASK(3, 0)
 
-#define YTPHY_WOL_CONFIG_REG 0xA00A
-#define YTPHY_WCR_ENABLE     BIT(3)
+#define YTPHY_WOL_CONFIG_REG           0xA00A
+#define YTPHY_WCR_ENABLE               BIT(3)
 
-#define YTPHY_SYNCE_CFG_REG     0xA012
-#define YT8521_SCR_SYNCE_ENABLE BIT(5)
+#define YTPHY_SYNCE_CFG_REG            0xA012
+#define YT8521_SCR_SYNCE_ENABLE        BIT(5)
 
-#define BIT_SET(t, v, b)                                                                           \
-	do {                                                                                       \
-		if (t) {                                                                           \
-			(v) |= (b);                                                                \
-		}                                                                                  \
+#define BIT_SET(t, v, b)        \
+	do {                        \
+		if (t) {                \
+			(v) |= (b);         \
+		}                       \
 	} while (0)
-#define BIT_SET_CLR(t, v, b)                                                                       \
-	do {                                                                                       \
-		if (t) {                                                                           \
-			(v) |= (b);                                                                \
-		} else {                                                                           \
-			(v) &= ~(b);                                                               \
-		}                                                                                  \
+
+#define BIT_SET_CLR(t, v, b)    \
+	do {                        \
+		if (t) {                \
+			(v) |= (b);         \
+		} else {                \
+			(v) &= ~(b);        \
+		}                       \
 	} while (0)
 
 static int mc_ytphy_get_link_state(const struct device *dev, struct phy_link_state *state);
@@ -91,6 +91,8 @@ struct mc_ytphy_config {
 	bool fixed_link;
 	int fixed_speed;
 	const struct device *mdio_dev;
+	uint8_t rx_delay_sel;
+	uint8_t tx_delay_sel;
 };
 
 struct mc_ytphy_data {
@@ -208,7 +210,6 @@ static int mc_ytphy_soft_reset(const struct device *dev)
 
 static int mc_ytphy_cfg_clock_delay(const struct device *dev)
 {
-	uint32_t delay = YT8521_RC1R_RGMII_1_950_NS;
 	uint16_t mask, val = 0;
 	int ret;
 
@@ -217,10 +218,10 @@ static int mc_ytphy_cfg_clock_delay(const struct device *dev)
 		return ret;
 	}
 
-	mask = YT8521_RC1R_RX_DELAY_MASK | YT8521_RC1R_GE_TX_DELAY_MASK;
+	mask = YT8521_RC1R_RX_DELAY_MASK | YT8521_RC1R_TX_DELAY_MASK;
 
-	val = FIELD_PREP(YT8521_RC1R_RX_DELAY_MASK, delay);
-	val |= FIELD_PREP(YT8521_RC1R_GE_TX_DELAY_MASK, delay);
+	val |= FIELD_PREP(YT8521_RC1R_RX_DELAY_MASK, dev->config->rx_delay_sel);
+	val |= FIELD_PREP(YT8521_RC1R_TX_DELAY_MASK, dev->config->tx_delay_sel);
 
 	return mc_ytphy_modify_ext(dev, YT8521_RGMII_CONFIG1_REG, mask, val);
 }
@@ -341,7 +342,7 @@ static int mc_ytphy_update_link_state(const struct device *dev)
 	autoneg_done = data->autoneg_done;
 	data->autoneg_done = bmsr_reg & MII_BMSR_AUTONEG_COMPLETE ? 1 : 0;
 	if (data->autoneg_done && !autoneg_done) {
-		LOG_INF("PHY (%d) Link autoneg is done.\n", cfg->addr);
+		LOG_INF("PHY (%d) Link autoneg is done.\inst", cfg->addr);
 	}
 
 	speed = stat_reg & SPEC_STATUS_REG_SPEED_MASK;
@@ -580,7 +581,7 @@ static int mc_ytphy_init(const struct device *dev)
 		data->state.speed = speed_to_phy_link_speed[config->fixed_speed];
 		val = mii_bmcr_encode_fixed(data->state.speed);
 
-		LOG_INF("fixed_link: speed:%d-0x%X\n", config->fixed_speed, data->state.speed);
+		LOG_INF("fixed_link: speed:%d-0x%X\inst", config->fixed_speed, data->state.speed);
 		mask = ~(MII_BMCR_LOOPBACK | MII_BMCR_ISOLATE | MII_BMCR_POWER_DOWN);
 		mc_ytphy_modify(dev, MII_BMCR, mask, val);
 
@@ -606,18 +607,18 @@ static DEVICE_API(ethphy, mc_ytphy_driver_api) = {
 	.write = mc_ytphy_write,
 };
 
-#define MC_YTPHY_CONFIG(n)                                                                         \
-	static const struct mc_ytphy_config mc_ytphy_config_##n = {                                \
-		.addr = DT_INST_REG_ADDR(n),                                                       \
-		.fixed_link = DT_INST_NODE_HAS_PROP(n, fixed_link),                                \
-		.fixed_speed = DT_INST_ENUM_IDX_OR(n, fixed_link, 0),                              \
-		.mdio_dev = DEVICE_DT_GET(DT_INST_BUS(n)),                                         \
-	};
-
-#define MC_YTPHY_DEVICE(n)                                                                         \
-	MC_YTPHY_CONFIG(n);                                                                        \
-	static struct mc_ytphy_data mc_ytphy_data_##n;                                             \
-	DEVICE_DT_INST_DEFINE(n, &mc_ytphy_init, NULL, &mc_ytphy_data_##n, &mc_ytphy_config_##n,   \
-			      POST_KERNEL, CONFIG_PHY_INIT_PRIORITY, &mc_ytphy_driver_api);
+#define MC_YTPHY_DEVICE(inst) \
+	static const struct mc_ytphy_config mc_ytphy_config_##inst = {        \
+		.addr = DT_INST_REG_ADDR(inst),                                   \
+		.fixed_link = DT_INST_NODE_HAS_PROP(inst, fixed_link),            \
+		.fixed_speed = DT_INST_ENUM_IDX_OR(inst, fixed_link, 0),          \
+		.mdio_dev = DEVICE_DT_GET(DT_INST_BUS(inst)),                     \
+		.rx_delay_sel = DT_INST_PROP_OR(inst, motorcomm_rx_delay_sel, 0), \
+		.tx_delay_sel = DT_INST_PROP_OR(inst, motorcomm_tx_delay_sel, 0), \
+	}; \
+	static struct mc_ytphy_data mc_ytphy_data_##inst; \
+	DEVICE_DT_INST_DEFINE(inst, &mc_ytphy_init, NULL, \
+		&mc_ytphy_data_##inst, &mc_ytphy_config_##inst, \
+		POST_KERNEL, CONFIG_PHY_INIT_PRIORITY, &mc_ytphy_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MC_YTPHY_DEVICE)
