@@ -70,14 +70,14 @@ config SOC_FLASH_NRF_TIMEOUT_MULTIPLIER
 
 config NRF_RRAM_REGION_ADDRESS_RESOLUTION
 	hex
-	default 0x1000
+	default 0x400
 	help
 	  RRAMC's region protection address resolution.
 	  Applies to region with configurable start address.
 
 config NRF_RRAM_REGION_SIZE_UNIT
 	hex
-	default 0x1000
+	default 0x400
 	help
 	  Base unit for the size of RRAMC's region protection.
 
