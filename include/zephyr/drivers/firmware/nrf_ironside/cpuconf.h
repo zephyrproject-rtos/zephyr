@@ -3,14 +3,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_SOC_NORDIC_IRONSIDE_INCLUDE_NRF_IRONSIDE_CPUCONF_H_
-#define ZEPHYR_SOC_NORDIC_IRONSIDE_INCLUDE_NRF_IRONSIDE_CPUCONF_H_
+#ifndef ZEPHYR_INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_NRF_IRONSIDE_CPUCONF_H_
+#define ZEPHYR_INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_NRF_IRONSIDE_CPUCONF_H_
 
 #include <stdbool.h>
 #include <stddef.h>
+#include <zephyr/drivers/firmware/nrf_ironside/call.h>
 #include <zephyr/toolchain/common.h>
 #include <nrf.h>
-#include <nrf_ironside/call.h>
 
 /**
  * @name CPUCONF service error codes.
@@ -71,4 +71,4 @@ BUILD_ASSERT(IRONSIDE_CPUCONF_NUM_ARGS <= NRF_IRONSIDE_CALL_NUM_ARGS);
 int ironside_cpuconf(NRF_PROCESSORID_Type cpu, const void *vector_table, bool cpu_wait,
 		     const uint8_t *msg, size_t msg_size);
 
-#endif /* ZEPHYR_SOC_NORDIC_IRONSIDE_INCLUDE_NRF_IRONSIDE_CPUCONF_H_ */
+#endif /* ZEPHYR_INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_NRF_IRONSIDE_CPUCONF_H_ */

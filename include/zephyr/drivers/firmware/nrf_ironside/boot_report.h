@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_SOC_NORDIC_IRONSIDE_INCLUDE_NRF_IRONSIDE_BOOT_REPORT_H_
-#define ZEPHYR_SOC_NORDIC_IRONSIDE_INCLUDE_NRF_IRONSIDE_BOOT_REPORT_H_
+#ifndef ZEPHYR_INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_NRF_IRONSIDE_BOOT_REPORT_H_
+#define ZEPHYR_INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_NRF_IRONSIDE_BOOT_REPORT_H_
 
 #include <stdint.h>
 #include <stddef.h>
@@ -74,4 +74,4 @@ struct ironside_boot_report {
  */
 int ironside_boot_report_get(const struct ironside_boot_report **report);
 
-#endif /* ZEPHYR_SOC_NORDIC_IRONSIDE_INCLUDE_NRF_IRONSIDE_BOOT_REPORT_H_ */
+#endif /* ZEPHYR_INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_NRF_IRONSIDE_BOOT_REPORT_H_ */

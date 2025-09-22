@@ -5,8 +5,8 @@
 #include <hal/nrf_hsfll.h>
 #include <zephyr/kernel.h>
 
-#include <nrf_ironside/dvfs.h>
-#include <nrf_ironside/call.h>
+#include <zephyr/drivers/firmware/nrf_ironside/dvfs.h>
+#include <zephyr/drivers/firmware/nrf_ironside/call.h>
 
 static enum ironside_dvfs_oppoint current_dvfs_oppoint = IRONSIDE_DVFS_OPP_HIGH;
 

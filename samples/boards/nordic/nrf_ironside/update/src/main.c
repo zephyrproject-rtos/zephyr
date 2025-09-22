@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <nrf_ironside/boot_report.h>
-#include <nrf_ironside/update.h>
+#include <zephyr/drivers/firmware/nrf_ironside/boot_report.h>
+#include <zephyr/drivers/firmware/nrf_ironside/update.h>
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(app, LOG_LEVEL_INF);

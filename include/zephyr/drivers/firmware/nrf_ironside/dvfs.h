@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_SOC_NORDIC_IRONSIDE_INCLUDE_NRF_IRONSIDE_DVFS_H_
-#define ZEPHYR_SOC_NORDIC_IRONSIDE_INCLUDE_NRF_IRONSIDE_DVFS_H_
+#ifndef ZEPHYR_INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_NRF_IRONSIDE_DVFS_H_
+#define ZEPHYR_INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_NRF_IRONSIDE_DVFS_H_
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -89,4 +89,4 @@ static inline bool ironside_dvfs_is_oppoint_valid(enum ironside_dvfs_oppoint dvf
 	return true;
 }
 
-#endif /* ZEPHYR_SOC_NORDIC_IRONSIDE_INCLUDE_NRF_IRONSIDE_DVFS_H_ */
+#endif /* ZEPHYR_INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_NRF_IRONSIDE_DVFS_H_ */

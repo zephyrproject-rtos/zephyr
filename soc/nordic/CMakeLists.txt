@@ -47,4 +47,3 @@ endif()
 
 add_subdirectory(${SOC_SERIES})
 add_subdirectory(common)
-add_subdirectory(ironside)
