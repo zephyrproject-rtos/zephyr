@@ -13,11 +13,7 @@
 #include <zephyr/sys/crc.h>
 #include "zms_priv.h"
 #ifdef CONFIG_ZMS_LOOKUP_CACHE_FOR_SETTINGS
-#ifdef CONFIG_SETTINGS_ZMS_LEGACY
-#include <settings/settings_zms_legacy.h>
-#else
 #include <settings/settings_zms.h>
-#endif
 #endif
 
 #include <zephyr/logging/log.h>
@@ -36,40 +32,6 @@ static int zms_ate_valid_different_sector(struct zms_fs *fs, const struct zms_at
 static inline size_t zms_lookup_cache_pos(zms_id_t id)
 {
 #ifdef CONFIG_ZMS_LOOKUP_CACHE_FOR_SETTINGS
-#ifdef CONFIG_SETTINGS_ZMS_LEGACY
-	/*
-	 * 1. The ZMS settings backend uses up to (ZMS_NAME_ID_OFFSET - 1) ZMS IDs to
-	      store keys and equal number of ZMS IDs to store values.
-	 * 2. For each key-value pair, the value is stored at ZMS ID greater by exactly
-	 *    ZMS_NAME_ID_OFFSET than ZMS ID that holds the key.
-	 * 3. The backend tries to minimize the range of ZMS IDs used to store keys.
-	 *    That is, ZMS IDs are allocated sequentially, and freed ZMS IDs are reused
-	 *    before allocating new ones.
-	 *
-	 * Therefore, to assure the least number of collisions in the lookup cache,
-	 * the least significant bit of the hash indicates whether the given ZMS ID
-	 * represents a key or a value, and remaining bits of the hash are set to
-	 * the ordinal number of the key-value pair. Consequently, the hash function
-	 * provides the following mapping:
-	 *
-	 * 1st settings key   => hash 0
-	 * 1st settings value => hash 1
-	 * 2nd settings key   => hash 2
-	 * 2nd settings value => hash 3
-	 * ...
-	 */
-	BUILD_ASSERT(IS_POWER_OF_TWO(ZMS_NAMECNT_ID), "ZMS_NAMECNT_ID is not power of 2");
-	BUILD_ASSERT(IS_POWER_OF_TWO(ZMS_NAME_ID_OFFSET), "ZMS_NAME_ID_OFFSET is not power of 2");
-
-	uint32_t key_value_bit;
-	uint32_t key_value_ord;
-	uint32_t hash;
-
-	key_value_bit = (id >> LOG2(ZMS_NAME_ID_OFFSET)) & 1;
-	key_value_ord = id & (ZMS_NAME_ID_OFFSET - 1);
-
-	hash = ((key_value_ord << 1) | key_value_bit);
-#else
 	/*
 	 * 1. Settings subsystem is storing the name ID and the linked list node ID
 	 *    with only one bit difference at BIT(0).
@@ -95,7 +57,6 @@ static inline size_t zms_lookup_cache_pos(zms_id_t id)
 	key_value_ll = id & BIT(0);
 
 	hash = (key_value_hash << 2) | (key_value_bit << 1) | key_value_ll;
-#endif /* CONFIG_SETTINGS_ZMS_LEGACY */
 
 #elif defined(CONFIG_ZMS_ID_64BIT)
 	/* 64-bit integer hash function found by https://github.com/skeeto/hash-prospector. */
