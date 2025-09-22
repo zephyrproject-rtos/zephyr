@@ -11,11 +11,11 @@ tests:
   sample.bluetooth.iso_central.bt_ll_sw_split:
     harness: bluetooth
     platform_allow:
+      - qemu_cortex_m3
+      - qemu_x86
       - nrf52_bsim
       - nrf52833dk/nrf52833
     integration_platforms:
       - nrf52833dk/nrf52833
-    extra_args:
-      - EXTRA_CONF_FILE=overlay-bt_ll_sw_split.conf
-      - SNIPPET="bt-ll-sw-split"
+    extra_args: EXTRA_CONF_FILE=overlay-bt_ll_sw_split.conf
     tags: bluetooth

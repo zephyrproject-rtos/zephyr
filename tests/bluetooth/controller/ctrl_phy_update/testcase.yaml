@@ -6,10 +6,6 @@ common:
 tests:
   bluetooth.controller.ctrl_phy_update.test:
     type: unit
-    extra_args:
-      - SNIPPET="bt-ll-sw-split"
   bluetooth.controller.ctrl_phy_update.test_reduced_buf:
     type: unit
-    extra_args:
-      - CONF_FILE=prj_rx_cnt.conf
-      - SNIPPET="bt-ll-sw-split"
+    extra_args: CONF_FILE=prj_rx_cnt.conf

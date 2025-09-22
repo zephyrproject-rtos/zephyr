@@ -7,18 +7,11 @@ common:
 tests:
   bluetooth.controller.ctrl_conn_update.test:
     type: unit
-    extra_args:
-      - SNIPPET="bt-ll-sw-split"
 
   bluetooth.controller.ctrl_conn_update.apm_test:
     type: unit
-    extra_args:
-      - CONF_FILE=prj_apm.conf
-      - SNIPPET="bt-ll-sw-split"
-
+    extra_args: CONF_FILE=prj_apm.conf
 
   bluetooth.controller.ctrl_conn_update.no_param_req_test:
     type: unit
-    extra_args:
-      - CONF_FILE=prj_no_param_req.conf
-      - SNIPPET="bt-ll-sw-split"
+    extra_args: CONF_FILE=prj_no_param_req.conf

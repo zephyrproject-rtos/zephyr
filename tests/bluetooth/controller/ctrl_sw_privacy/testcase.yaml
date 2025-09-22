@@ -4,5 +4,3 @@ common:
 tests:
   bluetooth.ctrl_sw_privacy.test:
     platform_allow: nrf52_bsim
-    extra_args:
-      - SNIPPET="bt-ll-sw-split"

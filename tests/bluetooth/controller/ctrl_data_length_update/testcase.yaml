@@ -6,17 +6,11 @@ common:
 tests:
   bluetooth.controller.ctrl_data_length_update.test:
     type: unit
-    extra_args:
-      - SNIPPET="bt-ll-sw-split"
 
   bluetooth.controller.ctrl_data_length_update.test_nocodedphy:
     type: unit
-    extra_args:
-      - CONF_FILE=prj_nocoded.conf
-      - SNIPPET="bt-ll-sw-split"
+    extra_args: CONF_FILE=prj_nocoded.conf
 
   bluetooth.controller.ctrl_data_length_update.test_nophy:
     type: unit
-    extra_args:
-      - CONF_FILE=prj_nophy.conf
-      - SNIPPET="bt-ll-sw-split"
+    extra_args: CONF_FILE=prj_nophy.conf

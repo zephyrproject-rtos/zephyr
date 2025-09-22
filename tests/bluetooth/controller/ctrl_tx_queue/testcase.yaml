@@ -5,5 +5,3 @@ common:
 tests:
   bluetooth.ctrl_tx_queue.test:
     type: unit
-    extra_args:
-      - SNIPPET="bt-ll-sw-split"

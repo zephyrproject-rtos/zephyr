@@ -18,10 +18,6 @@ if(NOT("${SB_CONFIG_NET_CORE_BOARD}" STREQUAL ""))
 	 CACHE INTERNAL ""
 	)
 
-	list(APPEND ${NET_APP}_SNIPPET ${SNIPPET})
-	list(APPEND ${NET_APP}_SNIPPET bt-ll-sw-split)
-	set(${NET_APP}_SNIPPET ${${NET_APP}_SNIPPET} CACHE STRING "" FORCE)
-
 	native_simulator_set_child_images(${DEFAULT_IMAGE} ${NET_APP})
 endif()
 

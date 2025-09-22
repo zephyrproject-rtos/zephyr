@@ -20,9 +20,7 @@ tests:
     platform_allow: nrf52833dk/nrf52833
     integration_platforms:
       - nrf52833dk/nrf52833
-    extra_args:
-      - DTC_OVERLAY_FILE=./boards/nrf52833dk_nrf52833_df.overlay
-      - SNIPPET="bt-ll-sw-split"
+    extra_args: DTC_OVERLAY_FILE=./boards/nrf52833dk_nrf52833_df.overlay
     extra_configs:
       - CONFIG_BT_CTLR_DF=y
     tags:
@@ -31,9 +29,7 @@ tests:
   sample.bluetooth.hci_uart.nrf5340_netcore.df:
     harness: bluetooth
     platform_allow: nrf5340dk/nrf5340/cpunet
-    extra_args:
-      - DTC_OVERLAY_FILE=./boards/nrf5340dk_nrf5340_cpunet_df.overlay
-      - SNIPPET="bt-ll-sw-split"
+    extra_args: DTC_OVERLAY_FILE=./boards/nrf5340dk_nrf5340_cpunet_df.overlay
     extra_configs:
       - CONFIG_BT_CTLR_DF=y
     tags:
@@ -44,9 +40,7 @@ tests:
     platform_allow: nrf52833dk/nrf52833
     integration_platforms:
       - nrf52833dk/nrf52833
-    extra_args:
-      - DTC_OVERLAY_FILE=./boards/nrf52833dk_nrf52833_df.overlay
-      - SNIPPET="bt-ll-sw-split"
+    extra_args: DTC_OVERLAY_FILE=./boards/nrf52833dk_nrf52833_df.overlay
     extra_configs:
       - CONFIG_BT_CTLR_DF=y
       - CONFIG_BT_CTLR_DTM_HCI_DF_IQ_REPORT=y
@@ -56,9 +50,7 @@ tests:
   sample.bluetooth.hci_uart.nrf5340_netcore.df.iq_report:
     harness: bluetooth
     platform_allow: nrf5340dk/nrf5340/cpunet
-    extra_args:
-      - DTC_OVERLAY_FILE=./boards/nrf5340dk_nrf5340_cpunet_df.overlay
-      - SNIPPET="bt-ll-sw-split"
+    extra_args: DTC_OVERLAY_FILE=./boards/nrf5340dk_nrf5340_cpunet_df.overlay
     extra_configs:
       - CONFIG_BT_CTLR_DF=y
       - CONFIG_BT_CTLR_DTM_HCI_DF_IQ_REPORT=y
@@ -92,7 +84,6 @@ tests:
     extra_args:
       - EXTRA_CONF_FILE=overlay-all-bt_ll_sw_split.conf
       - DTC_OVERLAY_FILE=./boards/nrf52833dk_nrf52833_df.overlay
-      - SNIPPET="bt-ll-sw-split"
     tags:
       - uart
       - bluetooth
@@ -104,7 +95,6 @@ tests:
     extra_args:
       - EXTRA_CONF_FILE=overlay-all-bt_ll_sw_split.conf
       - DTC_OVERLAY_FILE=./boards/nrf54l15dk_nrf54l15_cpuapp_df.overlay
-      - SNIPPET="bt-ll-sw-split"
     tags:
       - uart
       - bluetooth

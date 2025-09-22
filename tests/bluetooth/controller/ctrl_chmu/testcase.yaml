@@ -6,5 +6,3 @@ common:
 tests:
   bluetooth.controller.ctrl_chmu.test:
     type: unit
-    extra_args:
-      - SNIPPET="bt-ll-sw-split"
