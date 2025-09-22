@@ -237,7 +237,7 @@ static int znet_mgmt_getsockopt(struct net_mgmt_socket *mgmt, int level,
 	}
 
 	if (IS_ENABLED(CONFIG_NET_L2_ETHERNET_MGMT)) {
-		if (optname == SO_NET_MGMT_ETHERNET_GET_QAV_PARAM) {
+		if (optname == NET_REQUEST_ETHERNET_GET_QAV_PARAM) {
 			int ret;
 
 			ret = net_mgmt(NET_REQUEST_ETHERNET_GET_QAV_PARAM,
@@ -274,7 +274,7 @@ static int znet_mgmt_setsockopt(struct net_mgmt_socket *mgmt, int level,
 	}
 
 	if (IS_ENABLED(CONFIG_NET_L2_ETHERNET_MGMT)) {
-		if (optname == SO_NET_MGMT_ETHERNET_SET_QAV_PARAM) {
+		if (optname == NET_REQUEST_ETHERNET_SET_QAV_PARAM) {
 			int ret;
 
 			ret = net_mgmt(NET_REQUEST_ETHERNET_SET_QAV_PARAM,
