@@ -94,7 +94,6 @@ static inline int _cache_all(NRF_CACHE_Type *cache, enum k_nrf_cache_op op)
 	return 0;
 }
 
-#if NRF_CACHE_HAS_LINEADDR
 static inline void _cache_line(NRF_CACHE_Type *cache, enum k_nrf_cache_op op, uintptr_t line_addr)
 {
 	do {
@@ -161,7 +160,7 @@ static inline int _cache_checks(NRF_CACHE_Type *cache, enum k_nrf_cache_op op, v
 				size_t size, bool is_range)
 {
 	/* Check if the cache is enabled */
-	if (!nrf_cache_enable_check(cache)) {
+	if (!(cache->ENABLE & CACHE_ENABLE_ENABLE_Enabled)) {
 		return -EAGAIN;
 	}
 
@@ -176,16 +175,6 @@ static inline int _cache_checks(NRF_CACHE_Type *cache, enum k_nrf_cache_op op, v
 
 	return _cache_range(cache, op, addr, size);
 }
-#else
-static inline int _cache_all_checks(NRF_CACHE_Type *cache, enum k_nrf_cache_op op)
-{
-	/* Check if the cache is enabled */
-	if (!nrf_cache_enable_check(cache)) {
-		return -EAGAIN;
-	}
-	return _cache_all(cache, op);
-}
-#endif /* NRF_CACHE_HAS_LINEADDR */
 
 #if defined(NRF_DCACHE) && NRF_CACHE_HAS_TASKS
 
@@ -307,11 +296,7 @@ void cache_instr_disable(void)
 int cache_instr_flush_all(void)
 {
 #if NRF_CACHE_HAS_TASK_CLEAN
-#if NRF_CACHE_HAS_LINEADDR
 	return _cache_checks(NRF_ICACHE, K_NRF_CACHE_CLEAN, NULL, 0, false);
-#else
-	return _cache_all_checks(NRF_ICACHE, K_NRF_CACHE_CLEAN);
-#endif
 #else
 	return -ENOTSUP;
 #endif
@@ -319,21 +304,13 @@ int cache_instr_flush_all(void)
 
 int cache_instr_invd_all(void)
 {
-#if NRF_CACHE_HAS_LINEADDR
 	return _cache_checks(NRF_ICACHE, K_NRF_CACHE_INVD, NULL, 0, false);
-#else
-	return _cache_all_checks(NRF_ICACHE, K_NRF_CACHE_INVD);
-#endif
 }
 
 int cache_instr_flush_and_invd_all(void)
 {
 #if NRF_CACHE_HAS_TASK_FLUSH
-#if NRF_CACHE_HAS_LINEADDR
 	return _cache_checks(NRF_ICACHE, K_NRF_CACHE_FLUSH, NULL, 0, false);
-#else
-	return _cache_all_checks(NRF_ICACHE, K_NRF_CACHE_FLUSH);
-#endif
 #else
 	return -ENOTSUP;
 #endif
@@ -341,7 +318,7 @@ int cache_instr_flush_and_invd_all(void)
 
 int cache_instr_flush_range(void *addr, size_t size)
 {
-#if NRF_CACHE_HAS_TASK_CLEAN && NRF_CACHE_HAS_LINEADDR
+#if NRF_CACHE_HAS_TASK_CLEAN
 	return _cache_checks(NRF_ICACHE, K_NRF_CACHE_CLEAN, addr, size, true);
 #else
 	return -ENOTSUP;
@@ -350,16 +327,12 @@ int cache_instr_flush_range(void *addr, size_t size)
 
 int cache_instr_invd_range(void *addr, size_t size)
 {
-#if NRF_CACHE_HAS_LINEADDR
 	return _cache_checks(NRF_ICACHE, K_NRF_CACHE_INVD, addr, size, true);
-#else
-	return -ENOTSUP;
-#endif
 }
 
 int cache_instr_flush_and_invd_range(void *addr, size_t size)
 {
-#if NRF_CACHE_HAS_TASK_FLUSH && NRF_CACHE_HAS_LINEADDR
+#if NRF_CACHE_HAS_TASK_FLUSH
 	return _cache_checks(NRF_ICACHE, K_NRF_CACHE_FLUSH, addr, size, true);
 #else
 	return -ENOTSUP;
