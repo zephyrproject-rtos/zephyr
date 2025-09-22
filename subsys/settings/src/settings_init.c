@@ -14,7 +14,8 @@
 #include <zephyr/settings/settings.h>
 #include "settings/settings_file.h"
 #include <zephyr/kernel.h>
-#include "settings_priv.h"
+
+extern struct k_mutex settings_lock;
 
 bool settings_subsys_initialized;
 
@@ -27,7 +28,7 @@ int settings_subsys_init(void)
 
 	int err = 0;
 
-	settings_lock_take();
+	k_mutex_lock(&settings_lock, K_FOREVER);
 
 	if (!settings_subsys_initialized) {
 		settings_init();
@@ -39,7 +40,7 @@ int settings_subsys_init(void)
 		}
 	}
 
-	settings_lock_release();
+	k_mutex_unlock(&settings_lock);
 
 	return err;
 }

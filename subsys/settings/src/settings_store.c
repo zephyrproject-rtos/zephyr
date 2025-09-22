@@ -22,6 +22,7 @@ LOG_MODULE_DECLARE(settings, CONFIG_SETTINGS_LOG_LEVEL);
 
 sys_slist_t settings_load_srcs;
 struct settings_store *settings_save_dst;
+extern struct k_mutex settings_lock;
 
 void settings_src_register(struct settings_store *cs)
 {
@@ -52,12 +53,12 @@ int settings_load_subtree(const char *subtree)
 	 *    apply config
 	 *    commit all
 	 */
-	settings_lock_take();
+	k_mutex_lock(&settings_lock, K_FOREVER);
 	SYS_SLIST_FOR_EACH_CONTAINER(&settings_load_srcs, cs, cs_next) {
 		cs->cs_itf->csi_load(cs, &arg);
 	}
 	rc = settings_commit_subtree(subtree);
-	settings_lock_release();
+	k_mutex_unlock(&settings_lock);
 	return rc;
 }
 
@@ -79,11 +80,11 @@ int settings_load_subtree_direct(
 	 *    apply config
 	 *    commit all
 	 */
-	settings_lock_take();
+	k_mutex_lock(&settings_lock, K_FOREVER);
 	SYS_SLIST_FOR_EACH_CONTAINER(&settings_load_srcs, cs, cs_next) {
 		cs->cs_itf->csi_load(cs, &arg);
 	}
-	settings_lock_release();
+	k_mutex_unlock(&settings_lock);
 	return 0;
 }
 
@@ -143,7 +144,7 @@ ssize_t settings_get_val_len(const char *name)
 	 * for every config store that supports this function
 	 * get the value's length.
 	 */
-	settings_lock_take();
+	k_mutex_lock(&settings_lock, K_FOREVER);
 	SYS_SLIST_FOR_EACH_CONTAINER(&settings_load_srcs, cs, cs_next) {
 		if (cs->cs_itf->csi_get_val_len) {
 			val_len = cs->cs_itf->csi_get_val_len(cs, name);
@@ -156,7 +157,7 @@ ssize_t settings_get_val_len(const char *name)
 			rc = cs->cs_itf->csi_load(cs, &arg);
 		}
 	}
-	settings_lock_release();
+	k_mutex_unlock(&settings_lock);
 
 	if (rc >= 0) {
 		return val_len;
@@ -176,7 +177,7 @@ ssize_t settings_load_one(const char *name, void *buf, size_t buf_len)
 	 * For every config store that defines csi_load_one() function use it.
 	 * Otherwise, use the csi_load() function to load the key/value pair
 	 */
-	settings_lock_take();
+	k_mutex_lock(&settings_lock, K_FOREVER);
 	SYS_SLIST_FOR_EACH_CONTAINER(&settings_load_srcs, cs, cs_next) {
 		if (cs->cs_itf->csi_load_one) {
 			rc = cs->cs_itf->csi_load_one(cs, name, (char *)buf, buf_len);
@@ -195,7 +196,7 @@ ssize_t settings_load_one(const char *name, void *buf, size_t buf_len)
 			rc = cs->cs_itf->csi_load(cs, &arg);
 		}
 	}
-	settings_lock_release();
+	k_mutex_unlock(&settings_lock);
 
 	if (rc >= 0) {
 		return val_len;
@@ -216,11 +217,11 @@ int settings_save_one(const char *name, const void *value, size_t val_len)
 		return -ENOENT;
 	}
 
-	settings_lock_take();
+	k_mutex_lock(&settings_lock, K_FOREVER);
 
 	rc = cs->cs_itf->csi_save(cs, name, (char *)value, val_len);
 
-	settings_lock_release();
+	k_mutex_unlock(&settings_lock);
 
 	return rc;
 }

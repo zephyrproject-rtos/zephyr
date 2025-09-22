@@ -23,9 +23,8 @@ LOG_MODULE_REGISTER(settings, CONFIG_SETTINGS_LOG_LEVEL);
 sys_slist_t settings_handlers;
 #endif /* CONFIG_SETTINGS_DYNAMIC_HANDLERS */
 
-#ifdef CONFIG_MULTITHREADING
-static K_MUTEX_DEFINE(settings_lock);
-#endif
+K_MUTEX_DEFINE(settings_lock);
+
 
 void settings_store_init(void);
 
@@ -48,7 +47,7 @@ int settings_register_with_cprio(struct settings_handler *handler, int cprio)
 		}
 	}
 
-	settings_lock_take();
+	k_mutex_lock(&settings_lock, K_FOREVER);
 
 	struct settings_handler *ch;
 	SYS_SLIST_FOR_EACH_CONTAINER(&settings_handlers, ch, node) {
@@ -62,7 +61,7 @@ int settings_register_with_cprio(struct settings_handler *handler, int cprio)
 	sys_slist_append(&settings_handlers, &handler->node);
 
 end:
-	settings_lock_release();
+	k_mutex_unlock(&settings_lock);
 	return rc;
 }
 
@@ -319,18 +318,4 @@ int settings_commit_subtree(const char *subtree)
 	}
 
 	return rc;
-}
-
-void settings_lock_take(void)
-{
-#ifdef CONFIG_MULTITHREADING
-	k_mutex_lock(&settings_lock, K_FOREVER);
-#endif
-}
-
-void settings_lock_release(void)
-{
-#ifdef CONFIG_MULTITHREADING
-	k_mutex_unlock(&settings_lock);
-#endif
 }
