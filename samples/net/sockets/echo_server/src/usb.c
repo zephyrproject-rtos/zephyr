@@ -26,7 +26,8 @@ int init_usb(void)
 		return err;
 	}
 
-	(void)net_config_init_app(NULL, "Initializing network");
+	(void)net_config_init_app(DEVICE_DT_GET(DT_NODELABEL(cdc_ncm_eth0)),
+				  "Initializing network");
 
 	return 0;
 }
