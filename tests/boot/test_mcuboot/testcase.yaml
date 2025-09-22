@@ -55,6 +55,7 @@ tests:
       - esp32c6_devkitc/esp32c6/hpcore
       - esp8684_devkitm
       - stm32h750b_dk/stm32h750xx/ext_flash_app
+      - sam_e54_xpro
     integration_platforms:
       - frdm_k64f
       - nrf52840dk/nrf52840
