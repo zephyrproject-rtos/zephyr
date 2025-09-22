@@ -2033,17 +2033,6 @@ struct bt_conn_cb {
 
 #endif
 
-#if defined(CONFIG_BT_CLASSIC)
-	/** @brief The role of the connection has changed.
-	 *
-	 *  This callback notifies the application that the role switch procedure has completed.
-	 *
-	 *  @param conn Connection object.
-	 *  @param status HCI status of role change event.
-	 */
-	void (*role_changed)(struct bt_conn *conn, uint8_t status);
-#endif
-
 	/** @internal Internally used field for list handling */
 	sys_snode_t _node;
 };

@@ -1826,25 +1826,6 @@ void bt_conn_connected(struct bt_conn *conn)
 	notify_connected(conn);
 }
 
-#if defined(CONFIG_BT_CLASSIC)
-void bt_conn_role_changed(struct bt_conn *conn, uint8_t status)
-{
-	struct bt_conn_cb *callback;
-
-	SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, callback, _node) {
-		if (callback->role_changed) {
-			callback->role_changed(conn, status);
-		}
-	}
-
-	STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
-		if (cb->role_changed) {
-			cb->role_changed(conn, status);
-		}
-	}
-}
-#endif
-
 static int conn_disconnect(struct bt_conn *conn, uint8_t reason)
 {
 	int err;

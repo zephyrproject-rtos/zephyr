@@ -681,21 +681,21 @@ void bt_hci_role_change(struct net_buf *buf)
 
 	LOG_DBG("status 0x%02x role %u addr %s", evt->status, evt->role, bt_addr_str(&evt->bdaddr));
 
+	if (evt->status) {
+		return;
+	}
+
 	conn = bt_conn_lookup_addr_br(&evt->bdaddr);
 	if (!conn) {
 		LOG_ERR("Can't find conn for %s", bt_addr_str(&evt->bdaddr));
 		return;
 	}
 
-	if (evt->status == 0) {
-		if (evt->role == BT_HCI_ROLE_PERIPHERAL) {
-			conn->role = BT_CONN_ROLE_PERIPHERAL;
-		} else {
-			conn->role = BT_CONN_ROLE_CENTRAL;
-		}
+	if (evt->role) {
+		conn->role = BT_CONN_ROLE_PERIPHERAL;
+	} else {
+		conn->role = BT_CONN_ROLE_CENTRAL;
 	}
-
-	bt_conn_role_changed(conn, evt->status);
 
 	bt_conn_unref(conn);
 }
