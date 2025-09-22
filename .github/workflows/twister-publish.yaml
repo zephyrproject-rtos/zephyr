@@ -31,11 +31,16 @@ jobs:
         uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6.0.0
         with:
           python-version: 3.12
-          cache: pip
-          cache-dependency-path: scripts/requirements-actions.txt
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@b75a909f75acd358c2196fb9a5f1299a9a8868a4 # 6.7.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: "pyproject.toml"
+
       - name: Install Python packages
         run: |
-          pip install -r scripts/requirements-actions.txt --require-hashes
+          uv sync --group actions
 
       - name: Download Artifacts
         id: download-artifacts
@@ -52,12 +57,12 @@ jobs:
           # set run date on upload to get consistent and unified data across the matrix.
           run_date=`date --iso-8601=minutes`
           if [ "${{github.event.workflow_run.event}}" = "push" ]; then
-            python3 ./scripts/ci/upload_test_results_es.py -r ${run_date} \
+            uv run python3 ./scripts/ci/upload_test_results_es.py -r ${run_date} \
             --run-attempt ${{github.run_attempt}} \
             --run-branch ${{github.ref_name}} \
             --index zephyr-main-ci-push-1 artifacts/*/*/twister.json
           elif [ "${{github.event.workflow_run.event}}" = "schedule" ]; then
-            python3 ./scripts/ci/upload_test_results_es.py -r ${run_date} \
+            uv run python3 ./scripts/ci/upload_test_results_es.py -r ${run_date} \
             --run-attempt ${{github.run_attempt}} \
             --run-branch ${{github.ref_name}} \
             --index zephyr-main-ci-weekly-1 artifacts/*/*/twister.json

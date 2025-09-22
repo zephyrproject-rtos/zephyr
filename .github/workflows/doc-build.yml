@@ -113,10 +113,16 @@ jobs:
         app-path: zephyr
         toolchains: 'all'
 
-    - name: install-pip
+    - name: Install uv
+      uses: astral-sh/setup-uv@b75a909f75acd358c2196fb9a5f1299a9a8868a4 # 6.7.0
+      with:
+        enable-cache: true
+        cache-dependency-glob: "zephyr/pyproject.toml"
+
+    - name: install-python-deps
       working-directory: zephyr
       run: |
-        pip install -r doc/requirements.txt --require-hashes
+        uv sync --group docs
 
     - name: build-docs
       shell: bash
@@ -140,7 +146,7 @@ jobs:
         make -C doc ${DOC_TARGET}
 
         # API documentation coverage
-        python3 -m coverxygen --xml-dir  doc/_build/html/doxygen/xml/ --src-dir include/ --output doc-coverage.info
+        uv run python3 -m coverxygen --xml-dir  doc/_build/html/doxygen/xml/ --src-dir include/ --output doc-coverage.info
         # deprecated page causing issues
         lcov --remove doc-coverage.info \*/deprecated > new.info
         genhtml --no-function-coverage --no-branch-coverage new.info -o coverage-report
@@ -235,7 +241,7 @@ jobs:
     - name: install-pip-pkgs
       working-directory: zephyr
       run: |
-        pip install -r doc/requirements.txt --require-hashes
+        # Dependencies already installed via uv sync --group docs
 
     - name: build-docs
       shell: bash

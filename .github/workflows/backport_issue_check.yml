@@ -32,18 +32,22 @@ jobs:
         uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6.0.0
         with:
           python-version: 3.12
-          cache: pip
-          cache-dependency-path: scripts/requirements-actions.txt
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@b75a909f75acd358c2196fb9a5f1299a9a8868a4 # 6.7.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: "pyproject.toml"
 
       - name: Install Python packages
         run: |
-          pip install -r scripts/requirements-actions.txt --require-hashes
+          uv sync --group actions
 
       - name: Run backport issue checker
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          ./scripts/release/list_backports.py \
+          uv run ./scripts/release/list_backports.py \
           -o ${{ github.event.repository.owner.login }} \
           -r ${{ github.event.repository.name }} \
           -b ${{ github.event.pull_request.base.ref }} \

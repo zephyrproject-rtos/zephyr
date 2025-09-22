@@ -75,17 +75,21 @@ jobs:
         uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6.0.0
         with:
           python-version: 3.12
-          cache: pip
-          cache-dependency-path: scripts/requirements-actions.txt
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@b75a909f75acd358c2196fb9a5f1299a9a8868a4 # 6.7.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: "pyproject.toml"
 
       - name: Install Python packages
         run: |
-          pip install -r scripts/requirements-actions.txt --require-hashes
+          uv sync --group actions
 
       - name: west setup
         run: |
-          west init -l . || true
-          west update 1> west.update.log || west update 1> west.update-2.log
+          uv run west init -l . || true
+          uv run west update 1> west.update.log || uv run west update 1> west.update-2.log
 
       - name: Environment Setup
         run: |
@@ -118,7 +122,7 @@ jobs:
       - name: Build Doxygen Coverage
         if: matrix.platform == 'unit_testing'
         run: |
-          pip install -r doc/requirements.txt --require-hashes
+          uv sync --group docs
           sudo apt-get update
           sudo apt-get install -y graphviz # dot is needed but currently missing from the Docker image
           cmake -B doc/_build -S doc
@@ -169,12 +173,16 @@ jobs:
         uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6.0.0
         with:
           python-version: 3.12
-          cache: pip
-          cache-dependency-path: scripts/requirements-actions.txt
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@b75a909f75acd358c2196fb9a5f1299a9a8868a4 # 6.7.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: "pyproject.toml"
 
       - name: Install Python packages
         run: |
-          pip install -r scripts/requirements-actions.txt --require-hashes
+          uv sync --group actions
 
       - name: Download Artifacts
         uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0

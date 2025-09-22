@@ -54,14 +54,19 @@ jobs:
         uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6.0.0
         with:
           python-version: 3.12
-          cache: pip
-          cache-dependency-path: scripts/requirements-actions.txt
+
+      - name: Set up uv
+        if: github.event_name == 'pull_request'
+        uses: astral-sh/setup-uv@b75a909f75acd358c2196fb9a5f1299a9a8868a4 # 6.7.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: "zephyr/pyproject.toml"
 
       - name: install-packages
         working-directory: zephyr
         if: github.event_name == 'pull_request'
         run: |
-          pip install -r scripts/requirements-actions.txt --require-hashes
+          uv sync --group actions
 
       - name: Setup Zephyr project
         if: github.event_name == 'pull_request'
@@ -89,7 +94,7 @@ jobs:
         run: |
           export ZEPHYR_BASE=${PWD}
           export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
-          python3 ./scripts/ci/test_plan.py -c origin/${BASE_REF}.. --pull-request -t $TESTS_PER_BUILDER
+          uv run python3 ./scripts/ci/test_plan.py -c origin/${BASE_REF}.. --pull-request -t $TESTS_PER_BUILDER
           if [ -s .testplan ]; then
             cat .testplan >> $GITHUB_ENV
           else
@@ -210,10 +215,21 @@ jobs:
           echo "github.base_ref: ${{ github.base_ref }}"
           echo "github.ref_name: ${{ github.ref_name }}"
 
+      - name: Set up Python
+        uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6.0.0
+        with:
+          python-version: 3.12
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@b75a909f75acd358c2196fb9a5f1299a9a8868a4 # 6.7.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: "pyproject.toml"
+
       - name: Install Python packages
         run: |
-          pip install -r scripts/requirements-actions.txt --require-hashes
-          west packages pip --install
+          uv sync --group run-test
+          uv run west packages pip --install
 
       - name: Set up ccache
         run: |
@@ -253,7 +269,7 @@ jobs:
           rm -f testplan.json
           export ZEPHYR_BASE=${PWD}
           export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
-          python3 ./scripts/ci/test_plan.py -c origin/${BASE_REF}.. --pull-request
+          uv run python3 ./scripts/ci/test_plan.py -c origin/${BASE_REF}.. --pull-request
           ./scripts/twister --subset ${{matrix.subset}}/${{ strategy.job-total }} --load-tests testplan.json ${TWISTER_COMMON} ${PR_OPTIONS}
           if [ "${{matrix.subset}}" = "1" -a ${{needs.twister-build-prep.outputs.fullrun}} = 'True' ]; then
             ./scripts/zephyr_module.py --twister-out module_tests.args
@@ -333,12 +349,16 @@ jobs:
         uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6.0.0
         with:
           python-version: 3.12
-          cache: pip
-          cache-dependency-path: scripts/requirements-actions.txt
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@b75a909f75acd358c2196fb9a5f1299a9a8868a4 # 6.7.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: "pyproject.toml"
 
       - name: Install Python packages
         run: |
-          pip install -r scripts/requirements-actions.txt --require-hashes
+          uv sync --group actions
 
       - name: Download Artifacts
         uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
@@ -347,8 +367,8 @@ jobs:
 
       - name: Merge Test Results
         run: |
-          junitparser merge --glob 'artifacts/*/twister.xml' 'artifacts/*/*/twister.xml' junit.xml
-          junit2html junit.xml junit.html
+          uv run junitparser merge --glob 'artifacts/*/twister.xml' 'artifacts/*/*/twister.xml' junit.xml
+          uv run junit2html junit.xml junit.html
 
       - name: Upload Unit Test Results
         if: always()
@@ -376,7 +396,7 @@ jobs:
       - name: Analyze Twister Reports
         if: needs.twister-build.result == 'failure'
         run: |
-          ./scripts/ci/twister_report_analyzer.py artifacts/*/*/twister.json --long-summary --platforms --output-md errors.md
+          uv run ./scripts/ci/twister_report_analyzer.py artifacts/*/*/twister.json --long-summary --platforms --output-md errors.md
           if [[ -s "errors.md" ]]; then
             echo '### Error Summary! 🚀' >> $GITHUB_STEP_SUMMARY
             cat errors.md  >> $GITHUB_STEP_SUMMARY
