@@ -752,8 +752,6 @@ ZTEST_F(zms, test_zms_cache_init)
 
 	num = num_matching_cache_entries(ate_addr, false, &fixture->fs);
 	zassert_equal(num, 1, "invalid cache entry after restart");
-#else
-	ztest_test_skip();
 #endif
 }
 
@@ -782,8 +780,6 @@ ZTEST_F(zms, test_zms_cache_collission)
 		zassert_equal(err, sizeof(data), "zms_read call failure: %d", err);
 		zassert_equal(data, id, "incorrect data read");
 	}
-#else
-	ztest_test_skip();
 #endif
 }
 
@@ -833,8 +829,6 @@ ZTEST_F(zms, test_zms_cache_gc)
 
 	num = num_matching_cache_entries(2ULL << ADDR_SECT_SHIFT, true, &fixture->fs);
 	zassert_equal(num, 2, "invalid cache content after gc");
-#else
-	ztest_test_skip();
 #endif
 }
 
@@ -892,7 +886,6 @@ ZTEST_F(zms, test_zms_cache_hash_quality)
 	TC_PRINT("Cache occupancy: %u\n", (unsigned int)num);
 	zassert_between_inclusive(num, MIN_CACHE_OCCUPANCY, CONFIG_ZMS_LOOKUP_CACHE_SIZE,
 				  "too low cache occupancy - poor hash quality");
-#else
-	ztest_test_skip();
+
 #endif
 }
