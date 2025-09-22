@@ -173,6 +173,31 @@ int bt_bap_ep_get_info(const struct bt_bap_ep *ep, struct bt_bap_ep_info *info)
 	return 0;
 }
 
+struct bt_conn *bt_bap_ep_get_conn(const struct bt_bap_ep *ep)
+{
+	struct bt_conn *conn;
+
+	if (ep == NULL) {
+		LOG_DBG("ep is NULL");
+
+		return NULL;
+	}
+
+	if ((IS_ENABLED(CONFIG_BT_BAP_BROADCAST_SOURCE) && bt_bap_broadcast_source_has_ep(ep)) ||
+	    (IS_ENABLED(CONFIG_BT_BAP_BROADCAST_SINK) && bt_bap_broadcast_sink_has_ep(ep))) {
+		conn = NULL;
+	} else if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT) && bt_bap_unicast_client_has_ep(ep)) {
+		conn = bt_bap_unicast_client_ep_get_conn(ep);
+	} else if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_SERVER) && bt_bap_unicast_server_has_ep(ep)) {
+		conn = bt_bap_unicast_server_ep_get_conn(ep);
+	} else {
+		LOG_DBG("Invalid endpoint %p", ep);
+		conn = NULL;
+	}
+
+	return conn;
+}
+
 enum bt_bap_ascs_reason bt_audio_verify_qos(const struct bt_bap_qos_cfg *qos)
 {
 	if (qos->interval < BT_ISO_SDU_INTERVAL_MIN ||
