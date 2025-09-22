@@ -369,9 +369,9 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
         if self.family in ('nrf54h', 'nrf92'):
             erase_arg = 'ERASE_NONE'
 
-            regtool_generated_uicr = self.build_conf.getboolean('CONFIG_NRF_REGTOOL_GENERATE_UICR')
+            generated_uicr = self.build_conf.getboolean('CONFIG_NRF_REGTOOL_GENERATE_UICR')
 
-            if regtool_generated_uicr and not self.hex_get_uicrs().get(core):
+            if generated_uicr and not self.hex_get_uicrs().get(core):
                 raise RuntimeError(
                     f"Expected a UICR to be contained in: {self.hex_}\n"
                     "Please ensure that the correct version of nrf-regtool is "
@@ -434,27 +434,7 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
                             core='Application',
                         )
 
-            if self.build_conf.getboolean("CONFIG_NRF_HALTIUM_GENERATE_UICR"):
-                zephyr_build_dir = Path(self.cfg.build_dir) / 'zephyr'
-
-                self.op_program(
-                    str(zephyr_build_dir / 'uicr.hex'),
-                    'ERASE_NONE',
-                    None,
-                    defer=True,
-                    core='Application',
-                )
-
-                if self.build_conf.getboolean("CONFIG_NRF_HALTIUM_UICR_PERIPHCONF"):
-                    self.op_program(
-                        str(zephyr_build_dir / 'periphconf.hex'),
-                        'ERASE_NONE',
-                        None,
-                        defer=True,
-                        core='Application',
-                    )
-
-            if not self.erase and regtool_generated_uicr:
+            if not self.erase and generated_uicr:
                 self.exec_op('erase', core=core, kind='uicr')
         else:
             if self.erase:
