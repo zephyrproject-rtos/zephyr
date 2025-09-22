@@ -20,5 +20,4 @@ supported:
   - i2s
   - pwm
   - spi
-  - usbd
   - watchdog
