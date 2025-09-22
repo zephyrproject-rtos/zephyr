@@ -372,7 +372,7 @@ static bool apply_cmd_length(struct mspi_dw_data *dev_data, uint32_t cmd_length)
 						   SPI_CTRLR0_INST_L16);
 		break;
 	default:
-		LOG_ERR("Command length %u not supported", cmd_length);
+		LOG_ERR("Command length %d not supported", cmd_length);
 		return false;
 	}
 
@@ -382,11 +382,6 @@ static bool apply_cmd_length(struct mspi_dw_data *dev_data, uint32_t cmd_length)
 static bool apply_addr_length(struct mspi_dw_data *dev_data,
 			      uint32_t addr_length)
 {
-	if (addr_length > 4) {
-		LOG_ERR("Address length %u not supported", addr_length);
-		return false;
-	}
-
 	dev_data->spi_ctrlr0 |= FIELD_PREP(SPI_CTRLR0_ADDR_L_MASK,
 					   addr_length * 2);
 
@@ -498,7 +493,7 @@ static bool apply_xip_cmd_length(const struct mspi_dw_data *dev_data,
 					  XIP_WRITE_CTRL_INST_L16);
 		break;
 	default:
-		LOG_ERR("Command length %u not supported", cmd_length);
+		LOG_ERR("Command length %d not supported", cmd_length);
 		return false;
 	}
 
@@ -509,11 +504,6 @@ static bool apply_xip_addr_length(const struct mspi_dw_data *dev_data,
 				  struct xip_ctrl *ctrl)
 {
 	uint8_t addr_length = dev_data->xip_params_active.addr_length;
-
-	if (addr_length > 4) {
-		LOG_ERR("Address length %u not supported", addr_length);
-		return false;
-	}
 
 	ctrl->read |= FIELD_PREP(XIP_CTRL_ADDR_L_MASK, addr_length * 2);
 	ctrl->write |= FIELD_PREP(XIP_WRITE_CTRL_ADDR_L_MASK, addr_length * 2);
@@ -980,7 +970,8 @@ static int _api_transceive(const struct device *dev,
 	struct mspi_dw_data *dev_data = dev->data;
 	int rc;
 
-	dev_data->spi_ctrlr0 &= ~SPI_CTRLR0_INST_L_MASK
+	dev_data->spi_ctrlr0 &= ~SPI_CTRLR0_WAIT_CYCLES_MASK
+			     &  ~SPI_CTRLR0_INST_L_MASK
 			     &  ~SPI_CTRLR0_ADDR_L_MASK;
 
 	if (!apply_cmd_length(dev_data, req->cmd_length) ||
@@ -1100,8 +1091,8 @@ static int _api_xip_config(const struct device *dev,
 			return -EINVAL;
 		}
 
-		if (params->rx_dummy > XIP_CTRL_WAIT_CYCLES_MAX ||
-		    params->tx_dummy > XIP_WRITE_CTRL_WAIT_CYCLES_MAX) {
+		if (params->rx_dummy > SPI_CTRLR0_WAIT_CYCLES_MAX ||
+		    params->tx_dummy > SPI_CTRLR0_WAIT_CYCLES_MAX) {
 			LOG_ERR("Unsupported RX (%u) or TX (%u) dummy cycles",
 				params->rx_dummy, params->tx_dummy);
 			return -EINVAL;
