@@ -1831,33 +1831,6 @@ static void le_read_all_remote_feat_complete(struct net_buf *buf)
 }
 #endif /* CONFIG_BT_LE_EXTENDED_FEAT_SET */
 
-#if defined(CONFIG_BT_FRAME_SPACE_UPDATE)
-static void le_frame_space_update_complete(struct net_buf *buf)
-{
-	struct bt_hci_evt_le_frame_space_update_complete *evt = (void *)buf->data;
-	struct bt_conn *conn;
-	struct bt_conn_le_frame_space_updated params;
-	uint16_t handle = sys_le16_to_cpu(evt->handle);
-
-	conn = bt_conn_lookup_handle(handle, BT_CONN_TYPE_LE);
-	if (conn == NULL) {
-		LOG_ERR("Unknown conn handle 0x%04X", handle);
-		return;
-	}
-
-	params.status = evt->status;
-
-	if (params.status == BT_HCI_ERR_SUCCESS) {
-		params.phys = evt->phys;
-		params.spacing_types = evt->spacing_types;
-		params.frame_space = evt->frame_space;
-		params.initiator = evt->initiator;
-	}
-
-	notify_frame_space_update_complete(conn, &params);
-}
-#endif /* CONFIG_BT_FRAME_SPACE_UPDATE */
-
 #if defined(CONFIG_BT_DATA_LEN_UPDATE)
 static void le_data_len_change(struct net_buf *buf)
 {
@@ -2985,11 +2958,6 @@ static const struct event_handler meta_events[] = {
 		      le_read_all_remote_feat_complete,
 		      sizeof(struct bt_hci_evt_le_read_all_remote_feat_complete)),
 #endif /* CONFIG_BT_LE_EXTENDED_FEAT_SET */
-#if defined(CONFIG_BT_FRAME_SPACE_UPDATE)
-	EVENT_HANDLER(BT_HCI_EVT_LE_FRAME_SPACE_UPDATE_COMPLETE,
-		      le_frame_space_update_complete,
-		      sizeof(struct bt_hci_evt_le_frame_space_update_complete)),
-#endif /* CONFIG_BT_FRAME_SPACE_UPDATE */
 #endif /* CONFIG_BT_CONN */
 #if defined(CONFIG_BT_CHANNEL_SOUNDING)
 	EVENT_HANDLER(BT_HCI_EVT_LE_CS_READ_REMOTE_SUPPORTED_CAPABILITIES_COMPLETE,
@@ -3555,11 +3523,6 @@ static int le_set_event_mask(void)
 		if (IS_ENABLED(CONFIG_BT_LE_EXTENDED_FEAT_SET) &&
 		    BT_FEAT_LE_EXTENDED_FEAT_SET(bt_dev.le.features)) {
 			mask |= BT_EVT_MASK_LE_READ_ALL_REMOTE_FEAT_COMPLETE;
-		}
-
-		if (IS_ENABLED(CONFIG_BT_FRAME_SPACE_UPDATE) &&
-		    BT_FEAT_LE_FRAME_SPACE_UPDATE_SET(bt_dev.le.features)) {
-			mask |= BT_EVT_MASK_LE_FRAME_SPACE_UPDATE_COMPLETE;
 		}
 	}
 
