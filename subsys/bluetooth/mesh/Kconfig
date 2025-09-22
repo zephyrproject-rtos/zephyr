@@ -59,16 +59,12 @@ choice BT_MESH_ADV
 
 menuconfig BT_MESH_ADV_LEGACY
 	bool "Legacy advertising"
-	depends on BT_LL_SW_SPLIT
 	help
 	  Use legacy advertising commands for mesh sending. Legacy
-	  advertising is significantly slower than the extended advertising.
+	  advertising is significantly slower than the extended advertising, but
+	  is supported by all controllers.
 
-	  WARNING: This feature is not supported in NCS. The legacy advertiser will not work
-	  with SDC, as attempting to start an advertisement during the scanner duty cycle
-	  will result in an error. The Zephyr Link Layer can be used experimentally as an
-	  alternative.
-	  The legacy advertiser can occasionally do more message
+	  WARNING: The legacy advertiser can occasionally do more message
 	  retransmissions than requested because of limitations of HCI
 	  interface API.
 
