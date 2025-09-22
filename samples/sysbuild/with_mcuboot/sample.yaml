@@ -19,6 +19,7 @@ tests:
       - stm32h7s78_dk
       - stm32h573i_dk
       - stm32h750b_dk/stm32h750xx/ext_flash_app
+      - sam_e54_xpro
     integration_platforms:
       - nrf52840dk/nrf52840
       - esp32_devkitc/esp32/procpu
