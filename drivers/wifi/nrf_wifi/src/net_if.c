@@ -18,7 +18,6 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(wifi_nrf, CONFIG_WIFI_NRF70_LOG_LEVEL);
 
-#include <zephyr/net/conn_mgr_monitor.h>
 #include <zephyr/sys/reboot.h>
 
 #include "net_private.h"
@@ -702,11 +701,6 @@ void nrf_wifi_if_init_zep(struct net_if *iface)
 	k_work_init(&vif_ctx_zep->nrf_wifi_net_iface_work,
 		    nrf_wifi_net_iface_work_handler);
 #endif /* CONFIG_NRF70_DATA_TX */
-
-#ifdef CONFIG_NRF70_SCAN_ONLY
-	/* In scan only mode this interface should be ignored by the connectivity manager */
-	conn_mgr_ignore_iface(iface);
-#endif /* CONFIG_NRF70_SCAN_ONLY */
 
 #ifdef CONFIG_NRF_WIFI_RPU_RECOVERY
 	k_work_init(&vif_ctx_zep->nrf_wifi_rpu_recovery_work,
