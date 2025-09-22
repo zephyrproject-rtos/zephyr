@@ -577,7 +577,7 @@ rsource "Kconfig.obj_core"
 menu "System Work Queue Options"
 config SYSTEM_WORKQUEUE_STACK_SIZE
 	int "System workqueue stack size"
-	default 4096 if COVERAGE_GCOV || WIFI_NRF70
+	default 4096 if COVERAGE_GCOV
 	default 2560 if WIFI_NM_WPA_SUPPLICANT
 	default 1024
 
