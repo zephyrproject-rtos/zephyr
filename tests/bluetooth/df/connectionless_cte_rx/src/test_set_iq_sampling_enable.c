@@ -56,7 +56,8 @@ int send_set_scan_cte_rx_enable(uint16_t sync_handle,
 	struct bt_hci_cp_le_set_cl_cte_sampling_enable *cp;
 	struct net_buf *buf;
 
-	buf = bt_hci_cmd_alloc(K_FOREVER);
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_CL_CTE_SAMPLING_ENABLE,
+				sizeof(*cp) + params->num_ant_ids);
 	if (!buf) {
 		return -ENOBUFS;
 	}
