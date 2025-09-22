@@ -14,6 +14,7 @@
 #include <zephyr/dt-bindings/misc/nordic-domain-id-nrf54h20.h>
 #include <zephyr/dt-bindings/misc/nordic-owner-id-nrf54h20.h>
 #include <zephyr/dt-bindings/misc/nordic-tddconf.h>
+#include <zephyr/dt-bindings/reserved-memory/nordic-owned-memory.h>
 #include <zephyr/dt-bindings/power/nordic-nrf-gpd.h>
 
 /delete-node/ &sw_pwm;

@@ -109,6 +109,18 @@
 	};
 };
 
+&cpuapp_ram0x_region {
+	status = "okay";
+};
+
+&etr_buf_ram0x_region {
+	status = "okay";
+};
+
+&ram21_region {
+	status = "okay";
+};
+
 &cpuapp_bellboard {
 	status = "okay";
 	interrupts = <96 NRF_DEFAULT_IRQ_PRIORITY>;

@@ -7,6 +7,10 @@
 	status = "okay";
 };
 
+&cpuppr_ram3x_region {
+	status = "okay";
+};
+
 &cpuflpr_vpr {
 	status = "okay";
 };
