@@ -76,9 +76,6 @@ set_compiler_property(PROPERTY no_strict_aliasing)
 set_property(TARGET compiler PROPERTY warnings_as_errors)
 set_property(TARGET asm PROPERTY warnings_as_errors)
 
-set_property(TARGET compiler PROPERTY no_deprecation_warning)
-set_property(TARGET asm PROPERTY no_deprecation_warning)
-
 # Flag for disabling exceptions in C++
 set_property(TARGET compiler-cpp PROPERTY no_exceptions)
 

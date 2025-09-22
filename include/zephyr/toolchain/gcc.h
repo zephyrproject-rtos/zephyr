@@ -334,13 +334,11 @@ do {                                                                    \
 #define __WARN1(s) _Pragma(#s)
 
 /* Generic message */
-#ifndef CONFIG_DEPRECATION_TEST
+#ifndef __DEPRECATED_MACRO
 #define __DEPRECATED_MACRO __WARN("Macro is deprecated")
 /* When adding this, remember to follow the instructions in
  * https://docs.zephyrproject.org/latest/develop/api/api_lifecycle.html#deprecated
  */
-#else
-#define __DEPRECATED_MACRO
 #endif
 
 /* These macros allow having ARM asm functions callable from thumb */
