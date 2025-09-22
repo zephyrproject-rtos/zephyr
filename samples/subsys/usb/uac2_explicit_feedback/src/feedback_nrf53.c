@@ -12,56 +12,18 @@
 #include <nrfx_gpiote.h>
 #include <nrfx_timer.h>
 #include <hal/nrf_gpio.h>
+#include <hal/nrf_usbd.h>
+#include <hal/nrf_i2s.h>
 #include <helpers/nrfx_gppi.h>
 
 LOG_MODULE_REGISTER(feedback, LOG_LEVEL_INF);
 
-#define FEEDBACK_TIMER_USBD_SOF_CAPTURE 0
-#define FEEDBACK_TIMER_I2S_FRAMESTART_CAPTURE 1
-
-#if IS_ENABLED(CONFIG_SOC_COMPATIBLE_NRF5340_CPUAPP)
-
-#include <hal/nrf_usbd.h>
-#include <hal/nrf_i2s.h>
+static const nrfx_gpiote_t gpiote = NRFX_GPIOTE_INSTANCE(0);
 
 #define FEEDBACK_PIN NRF_GPIO_PIN_MAP(1, 9)
-#define FEEDBACK_GPIOTE_INSTANCE_NUMBER 0
 #define FEEDBACK_TIMER_INSTANCE_NUMBER 2
-#define USB_SOF_EVENT_ADDRESS nrf_usbd_event_address_get(NRF_USBD, NRF_USBD_EVENT_SOF)
-#define I2S_FRAMESTART_EVENT_ADDRESS nrf_i2s_event_address_get(NRF_I2S0, NRF_I2S_EVENT_FRAMESTART)
-
-static inline void feedback_target_init(void)
-{
-	if (IS_ENABLED(CONFIG_APP_USE_I2S_LRCLK_EDGES_COUNTER)) {
-		/* App core is using feedback pin */
-		nrf_gpio_pin_control_select(FEEDBACK_PIN, NRF_GPIO_PIN_SEL_APP);
-	}
-}
-
-#elif IS_ENABLED(CONFIG_SOC_SERIES_NRF54HX)
-
-#include <hal/nrf_tdm.h>
-
-#define FEEDBACK_PIN NRF_GPIO_PIN_MAP(0, 8)
-#define FEEDBACK_GPIOTE_INSTANCE_NUMBER 130
-#define FEEDBACK_TIMER_INSTANCE_NUMBER 131
-#define USB_SOF_EVENT_ADDRESS nrf_timer_event_address_get(NRF_TIMER131, NRF_TIMER_EVENT_COMPARE5)
-#define I2S_FRAMESTART_EVENT_ADDRESS nrf_tdm_event_address_get(NRF_TDM130, NRF_TDM_EVENT_MAXCNT)
-
-static inline void feedback_target_init(void)
-{
-	/* Enable Start-of-Frame workaround in TIMER131 */
-	*(volatile uint32_t *)0x5F9A3C04 = 0x00000002;
-	*(volatile uint32_t *)0x5F9A3C04 = 0x00000003;
-	*(volatile uint32_t *)0x5F9A3C80 = 0x00000082;
-}
-
-#else
-#error "Unsupported target"
-#endif
-
-static const nrfx_gpiote_t gpiote =
-	NRFX_GPIOTE_INSTANCE(FEEDBACK_GPIOTE_INSTANCE_NUMBER);
+#define FEEDBACK_TIMER_USBD_SOF_CAPTURE 0
+#define FEEDBACK_TIMER_I2S_FRAMESTART_CAPTURE 1
 
 static const nrfx_timer_t feedback_timer_instance =
 	NRFX_TIMER_INSTANCE(FEEDBACK_TIMER_INSTANCE_NUMBER);
@@ -118,11 +80,12 @@ static nrfx_err_t feedback_edge_counter_setup(void)
 		.trigger = NRFX_GPIOTE_TRIGGER_TOGGLE,
 		.p_in_channel = &feedback_gpiote_channel,
 	};
-	nrf_gpio_pin_pull_t pull = NRF_GPIO_PIN_PULLUP;
 	nrfx_gpiote_input_pin_config_t input_pin_config = {
-		.p_pull_config = &pull,
 		.p_trigger_config = &trigger_config,
 	};
+
+	/* App core is using feedback pin */
+	nrf_gpio_pin_control_select(FEEDBACK_PIN, NRF_GPIO_PIN_SEL_APP);
 
 	err = nrfx_gpiote_channel_alloc(&gpiote, &feedback_gpiote_channel);
 	if (err != NRFX_SUCCESS) {
@@ -188,8 +151,6 @@ struct feedback_ctx *feedback_init(void)
 	uint8_t usbd_sof_gppi_channel;
 	uint8_t i2s_framestart_gppi_channel;
 
-	feedback_target_init();
-
 	feedback_reset_ctx(&fb_ctx);
 
 	if (IS_ENABLED(CONFIG_APP_USE_I2S_LRCLK_EDGES_COUNTER)) {
@@ -210,7 +171,7 @@ struct feedback_ctx *feedback_init(void)
 	}
 
 	nrfx_gppi_channel_endpoints_setup(usbd_sof_gppi_channel,
-		USB_SOF_EVENT_ADDRESS,
+		nrf_usbd_event_address_get(NRF_USBD, NRF_USBD_EVENT_SOF),
 		nrfx_timer_capture_task_address_get(&feedback_timer_instance,
 			FEEDBACK_TIMER_USBD_SOF_CAPTURE));
 	nrfx_gppi_fork_endpoint_setup(usbd_sof_gppi_channel,
@@ -227,7 +188,7 @@ struct feedback_ctx *feedback_init(void)
 	}
 
 	nrfx_gppi_channel_endpoints_setup(i2s_framestart_gppi_channel,
-		I2S_FRAMESTART_EVENT_ADDRESS,
+		nrf_i2s_event_address_get(NRF_I2S0, NRF_I2S_EVENT_FRAMESTART),
 		nrfx_timer_capture_task_address_get(&feedback_timer_instance,
 			FEEDBACK_TIMER_I2S_FRAMESTART_CAPTURE));
 
