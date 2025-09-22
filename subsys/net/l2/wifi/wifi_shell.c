@@ -1484,7 +1484,7 @@ static int cmd_wifi_status(const struct shell *sh, size_t argc, char *argv[])
 		PR("DTIM: %d\n", status.dtim_period);
 		PR("TWT: %s\n",
 		   status.twt_capable ? "Supported" : "Not supported");
-		PR("Current PHY TX rate (Mbps) : %.1f\n", (double)status.current_phy_tx_rate);
+		PR("Current PHY TX rate (Mbps) : %d\n", status.current_phy_tx_rate);
 	}
 
 	return 0;
