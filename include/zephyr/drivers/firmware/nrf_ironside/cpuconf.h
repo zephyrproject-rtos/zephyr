@@ -63,7 +63,7 @@ BUILD_ASSERT(IRONSIDE_CPUCONF_NUM_ARGS <= NRF_IRONSIDE_CALL_NUM_ARGS);
  * If the given msg_size is less than that, the remaining bytes are set to zero.
  *
  * @retval 0 on success or if the CPU has already booted.
- * @retval Positive non-0 error status if reported by IronSide call.
+ * @retval Positive non-0 error status if reported by IRONside call.
  * @retval -IRONSIDE_CPUCONF_ERROR_WRONG_CPU if cpu is unrecognized
  * @retval -IRONSIDE_CPUCONF_ERROR_MESSAGE_TOO_LARGE if msg_size is greater than
  * IRONSIDE_CPUCONF_SERVICE_MSG_MAX_SIZE.

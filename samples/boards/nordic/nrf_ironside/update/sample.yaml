@@ -1,6 +1,6 @@
 sample:
-  name: Nordic IronSide SE update service
-  description: Demonstrates how to update the Nordic IronSide SE firmware
+  name: Nordic IRONside SE update service
+  description: Demonstrates how to update the Nordic IRONside SE firmware
 common:
   build_only: true
   tags: nrf_ironside

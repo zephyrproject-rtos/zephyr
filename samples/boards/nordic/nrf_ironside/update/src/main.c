@@ -28,7 +28,7 @@ int main(void)
 	LOG_HEXDUMP_INF((void *)report->random_data, sizeof(report->random_data), "random data");
 
 	err = ironside_update(update);
-	LOG_INF("IronSide update retval: 0x%x", err);
+	LOG_INF("IRONside update retval: 0x%x", err);
 
 	if (err == 0) {
 		LOG_HEXDUMP_INF(update->manifest, sizeof(update->manifest), "Update manifest:");

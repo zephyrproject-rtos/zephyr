@@ -18,15 +18,15 @@ enum ironside_dvfs_oppoint {
 };
 
 /**
- * @brief Number of DVFS oppoints supported by IronSide.
+ * @brief Number of DVFS oppoints supported by IRONside.
  *
- * This is the number of different DVFS oppoints that can be set on IronSide.
+ * This is the number of different DVFS oppoints that can be set on IRONside.
  * The oppoints are defined in the `ironside_dvfs_oppoint` enum.
  */
 #define IRONSIDE_DVFS_OPPOINT_COUNT (3)
 
 /**
- * @name IronSide DVFS service error codes.
+ * @name IRONside DVFS service error codes.
  * @{
  */
 
@@ -49,10 +49,10 @@ enum ironside_dvfs_oppoint {
  * @}
  */
 
-/* IronSide call identifiers with implicit versions.
+/* IRONside call identifiers with implicit versions.
  *
  * With the initial "version 0", the service ABI is allowed to break until the
- * first production release of IronSide SE.
+ * first production release of IRONside SE.
  */
 #define IRONSIDE_CALL_ID_DVFS_SERVICE_V0 3
 

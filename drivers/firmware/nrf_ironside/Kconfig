@@ -5,7 +5,7 @@ config NRF_IRONSIDE
 	bool
 	depends on SOC_NRF54H20_IRON || SOC_NRF9280_IRON
 	help
-	  This is selected by drivers interacting with Nordic IronSide firmware.
+	  This is selected by drivers interacting with Nordic IRONside firmware.
 
 config NRF_IRONSIDE_CALL
 	bool
@@ -14,44 +14,44 @@ config NRF_IRONSIDE_CALL
 	select EVENTS
 	select MBOX
 	help
-	  This is selected by features that require support for IronSide calls.
+	  This is selected by features that require support for IRONside calls.
 
 if NRF_IRONSIDE_CALL
 
 config NRF_IRONSIDE_CALL_INIT_PRIORITY
-	int "IronSide calls' initialization priority"
+	int "IRONside calls' initialization priority"
 	default 41
 	help
-	  Initialization priority of IronSide calls. It must be below MBOX_INIT_PRIORITY,
+	  Initialization priority of IRONside calls. It must be below MBOX_INIT_PRIORITY,
 	  but higher than the priority of any feature that selects NRF_IRONSIDE_CALL.
 
 endif # NRF_IRONSIDE_CALL
 
-menu "Nordic IronSide services"
+menu "Nordic IRONside services"
 	depends on SOC_NRF54H20_IRON || SOC_NRF9280_IRON
 
 config NRF_IRONSIDE_CPUCONF_SERVICE
-	bool "IronSide CPUCONF service"
+	bool "IRONside CPUCONF service"
 	depends on SOC_NRF54H20_CPUAPP || SOC_NRF9280_CPUAPP
 	select NRF_IRONSIDE_CALL
 	help
 	  Service used to boot local domain cores.
 
 config NRF_IRONSIDE_UPDATE_SERVICE
-	bool "IronSide update service"
+	bool "IRONside update service"
 	select NRF_IRONSIDE_CALL
 	help
-	  Service used to update the IronSide SE firmware.
+	  Service used to update the IRONside SE firmware.
 
 config NRF_IRONSIDE_BOOT_REPORT
-	bool "IronSide boot report"
+	bool "IRONside boot report"
 	depends on $(dt_nodelabel_exists,ironside_se_boot_report)
 	select NRF_IRONSIDE
 	help
-	  Support for parsing the Boot Report populated by Nordic IronSide firmware.
+	  Support for parsing the Boot Report populated by Nordic IRONside firmware.
 
 config NRF_IRONSIDE_DVFS_SERVICE
-	bool "IronSide DVFS service"
+	bool "IRONside DVFS service"
 	depends on SOC_NRF54H20_CPUAPP
 	select NRF_IRONSIDE_CALL
 	help
