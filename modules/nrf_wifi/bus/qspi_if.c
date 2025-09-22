@@ -1196,9 +1196,7 @@ struct device qspi_perip = {
 
 int qspi_deinit(void)
 {
-	if (nrfx_qspi_init_check()) {
-		_qspi_device_uninit(&qspi_perip);
-	}
+	_qspi_device_uninit(&qspi_perip);
 
 	return 0;
 }
