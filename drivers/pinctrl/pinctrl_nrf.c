@@ -428,8 +428,7 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 			input = NRF_GPIO_PIN_INPUT_CONNECT;
 			break;
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_can) */
-#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_exmif) || \
-	DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_exmif_spi)
+#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_exmif)
 		/* Pin routing is controlled by secure domain, via UICR */
 		case NRF_FUN_EXMIF_CK:
 		case NRF_FUN_EXMIF_DQ0:

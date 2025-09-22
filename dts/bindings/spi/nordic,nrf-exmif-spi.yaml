@@ -1,8 +1,0 @@
-# Copyright (c) 2024 Nordic Semiconductor ASA
-# SPDX-License-Identifier: Apache-2.0
-
-description: Nordic External Memory Interface (EXMIF) used in SPI mode only
-
-compatible: "nordic,nrf-exmif-spi"
-
-include: snps,designware-spi.yaml
