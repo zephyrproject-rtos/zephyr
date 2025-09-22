@@ -355,10 +355,9 @@ static inline int nrf_clock_control_resolve(const struct device *dev,
 }
 
 /**
- * @brief Get the startup time of a clock.
+ * @brief Get the startup timme of a clock.
  *
  * @param dev Device structure.
- * @param spec Clock specification to get startup time for.
  * @param startup_time_us Destination for startup time in microseconds.
  *
  * @retval Successful if successful.
