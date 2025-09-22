@@ -63,7 +63,7 @@
 
 #define IRQ0_PRIO	1
 #define IRQ1_PRIO	2
-#elif defined(CONFIG_SOC_SERIES_NRF54HX) && defined(CONFIG_RISCV_CORE_NORDIC_VPR)
+#elif defined(CONFIG_SOC_NRF54H20_CPUPPR)
 #define IRQ0_LINE	14
 #define IRQ1_LINE	15
 
