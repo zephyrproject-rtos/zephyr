@@ -10,6 +10,8 @@
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 #include <zephyr/drivers/counter.h>
+#include <zephyr/ztress.h>
+#include <zephyr/random/random.h>
 
 #include <dmm.h>
 
@@ -381,6 +383,182 @@ ZTEST_USER_F(dmm, test_check_multiple_alloc_and_free)
 		TC_PRINT("Stats start_address:%p current use:%d%% max use:%d%%\n",
 			(void *)start_address, curr_use2, max_use);
 	}
+}
+
+struct dmm_stress_data {
+	void *mem_reg;
+	void *alloc_ptr[32];
+	uint8_t alloc_token[32];
+	size_t alloc_len[32];
+	atomic_t alloc_mask;
+	atomic_t busy_mask;
+	atomic_t fails;
+	atomic_t cnt;
+	bool cached;
+};
+
+static void stress_free_op(struct dmm_stress_data *data, int prio, int id)
+{
+	/* buffer is allocated. */
+	uint8_t token = data->alloc_token[id];
+	size_t len = data->alloc_len[id];
+	uint8_t *ptr = data->alloc_ptr[id];
+	int rv;
+
+	for (int j = 0; j < len; j++) {
+		uint8_t exp_val = (uint8_t)(token + j);
+
+		if (ptr[j] != exp_val) {
+			for (int k = 0; k < len; k++) {
+				printk("%02x ", ptr[k]);
+			}
+		}
+		zassert_equal(ptr[j], exp_val, "At %d got:%d exp:%d, len:%d id:%d, alloc_cnt:%d",
+				j, ptr[j], exp_val, len, id, (uint32_t)data->cnt);
+	}
+
+	rv = dmm_buffer_in_release(data->mem_reg, ptr, len, ptr);
+	zassert_ok(rv);
+	/* Indicate that buffer is released. */
+	atomic_and(&data->alloc_mask, ~BIT(id));
+}
+
+static bool stress_alloc_op(struct dmm_stress_data *data, int prio, int id)
+{
+	uint32_t r32 = sys_rand32_get();
+	size_t len = r32 % 512;
+	uint8_t *ptr = data->alloc_ptr[id];
+	int rv;
+
+	/* Rarely allocate bigger buffer. */
+	if ((r32 & 0x7) == 0) {
+		len += 512;
+	}
+
+	rv = dmm_buffer_in_prepare(data->mem_reg, &r32/*dummy*/, len, (void **)&ptr);
+	if (rv < 0) {
+		atomic_inc(&data->fails);
+		return true;
+	}
+
+	uint8_t token = r32 >> 24;
+
+	data->alloc_ptr[id] = ptr;
+	data->alloc_len[id] = len;
+	data->alloc_token[id] = token;
+	for (int j = 0; j < len; j++) {
+		ptr[j] = (uint8_t)(j + token);
+	}
+	if (data->cached) {
+		sys_cache_data_flush_range(ptr, len);
+	}
+	atomic_inc(&data->cnt);
+	return false;
+}
+
+bool stress_func(void *user_data, uint32_t cnt, bool last, int prio)
+{
+	struct dmm_stress_data *data = user_data;
+	uint32_t r = sys_rand32_get();
+	int rpt = r & 0x3;
+
+	r >>= 2;
+
+	for (int i = 0; i < rpt + 1; i++) {
+		int id = r % 32;
+		int key;
+		bool free_op;
+		bool clear_bit;
+
+		key = irq_lock();
+		if ((data->busy_mask & BIT(id)) == 0) {
+			data->busy_mask |= BIT(id);
+			if (data->alloc_mask & BIT(id)) {
+				free_op = true;
+			} else {
+				data->alloc_mask |= BIT(id);
+				free_op = false;
+			}
+		} else {
+			irq_unlock(key);
+			continue;
+		}
+
+		irq_unlock(key);
+		r >>= 5;
+
+		if (free_op) {
+			stress_free_op(data, prio, id);
+			clear_bit = true;
+		} else {
+			clear_bit = stress_alloc_op(data, prio, id);
+		}
+
+		key = irq_lock();
+		data->busy_mask &= ~BIT(id);
+		if (clear_bit) {
+			data->alloc_mask &= ~BIT(id);
+		}
+		irq_unlock(key);
+	}
+
+	return true;
+}
+
+static void free_all(struct dmm_stress_data *data)
+{
+	while (data->alloc_mask) {
+		int id = 31 - __builtin_clz(data->alloc_mask);
+
+		stress_free_op(data, 0, id);
+		data->alloc_mask &= ~BIT(id);
+	}
+}
+
+static void stress_allocator(void *mem_reg, bool cached)
+{
+	uint32_t timeout = 3000;
+	struct dmm_stress_data ctx;
+	int rv;
+	uint32_t curr_use;
+
+	memset(&ctx, 0, sizeof(ctx));
+	ctx.mem_reg = mem_reg;
+	ctx.cached = cached;
+
+	if (IS_ENABLED(CONFIG_DMM_STATS)) {
+		rv = dmm_stats_get(ctx.mem_reg, NULL, &curr_use, NULL);
+		zassert_ok(rv);
+	}
+
+	ztress_set_timeout(K_MSEC(timeout));
+
+	ZTRESS_EXECUTE(ZTRESS_THREAD(stress_func, &ctx, INT32_MAX, INT32_MAX, Z_TIMEOUT_TICKS(4)),
+		       ZTRESS_THREAD(stress_func, &ctx, INT32_MAX, INT32_MAX, Z_TIMEOUT_TICKS(4)),
+		       ZTRESS_THREAD(stress_func, &ctx, INT32_MAX, INT32_MAX, Z_TIMEOUT_TICKS(4)));
+
+	free_all(&ctx);
+	TC_PRINT("Executed %d allocation operation. Failed to allocate %d times.\n",
+			(uint32_t)ctx.cnt, (uint32_t)ctx.fails);
+
+	if (IS_ENABLED(CONFIG_DMM_STATS)) {
+		uint32_t curr_use2;
+
+		rv = dmm_stats_get(ctx.mem_reg, NULL, &curr_use2, NULL);
+		zassert_ok(rv);
+		zassert_equal(curr_use, curr_use2, "Unexpected usage got:%d exp:%d",
+				curr_use2, curr_use);
+	}
+}
+
+ZTEST_F(dmm, test_stress_allocator_nocache)
+{
+	stress_allocator(fixture->regions[DMM_TEST_REGION_NOCACHE].mem_reg, false);
+}
+
+ZTEST_F(dmm, test_stress_allocator_cache)
+{
+	stress_allocator(fixture->regions[DMM_TEST_REGION_CACHE].mem_reg, true);
 }
 
 ZTEST_SUITE(dmm, NULL, test_setup, NULL, test_cleanup, NULL);
