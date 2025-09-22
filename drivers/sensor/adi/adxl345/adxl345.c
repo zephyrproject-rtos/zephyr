@@ -355,7 +355,7 @@ static int adxl345_sample_fetch(const struct device *dev,
 
 	/* new sample available, reset book-keeping */
 	data->sample_idx = 0;
-	data->sample_number = count;
+	data->fifo_entries = count;
 
 	return 0;
 }
@@ -375,7 +375,7 @@ static int adxl345_channel_get(const struct device *dev,
 	struct adxl345_dev_data *data = dev->data;
 	int idx;
 
-	if (data->sample_number <= 0) { /* empty */
+	if (data->fifo_entries <= 0) { /* empty */
 		val->val1 = 0;
 		val->val2 = 0;
 		if (chan == SENSOR_CHAN_ACCEL_XYZ) {
@@ -387,7 +387,7 @@ static int adxl345_channel_get(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	data->sample_idx = data->sample_idx % data->sample_number;
+	data->sample_idx = data->sample_idx % data->fifo_entries;
 	idx = data->sample_idx;
 
 	switch (chan) {

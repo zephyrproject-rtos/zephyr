@@ -185,7 +185,7 @@ struct adxl345_sample {
 
 struct adxl345_dev_data {
 	struct adxl345_sample sample[ADXL345_MAX_FIFO_SIZE];
-	uint8_t sample_number; /* number of samples to read from sensor */
+	uint8_t fifo_entries; /* the actual read FIFO entries */
 	uint8_t sample_idx; /* index counting up sample_number entries */
 	struct adxl345_fifo_config fifo_config;
 	bool is_full_res;
@@ -218,11 +218,10 @@ struct adxl345_dev_data {
 	struct rtio *rtio_ctx;
 	struct rtio_iodev *iodev;
 	uint8_t status1;
-	uint8_t fifo_ent[1];
+	uint8_t reg_fifo_status; /* FIFO status register */
 	uint64_t timestamp;
 	struct rtio *r_cb;
 	uint8_t fifo_watermark_irq;
-	uint8_t fifo_samples;
 #endif /* CONFIG_ADXL345_STREAM */
 };
 
@@ -260,6 +259,7 @@ struct adxl345_dev_config {
 	struct gpio_dt_spec gpio_int1;
 	struct gpio_dt_spec gpio_int2;
 	int8_t drdy_pad;
+	uint8_t fifo_samples;
 #endif
 };
 
