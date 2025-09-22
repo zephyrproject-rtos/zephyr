@@ -83,17 +83,6 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
 #endif /* CONFIG_INIT_ARCH_HW_AT_BOOT */
 
 #if defined(CONFIG_PM_S2RAM)
-#if DT_NODE_EXISTS(DT_NODELABEL(pm_s2ram_stack)) &&\
-	DT_NODE_HAS_COMPAT(DT_NODELABEL(pm_s2ram_stack), zephyr_memory_region)
-    /* In certain scenarios, the interrupt stack is actually not safe to overwrite.
-     * For example, when MCUboot is used, the bootloader's "z_interrupt_stack" and the
-     * loaded image's "z_interrupt_stacks" are NOT at the same address, and writing to
-     * the former would corrupt unrelated data from the loaded image. To support such
-     * scenarios, if the Device Tree provides a specially named "zephyr,memory-region",
-     * use it as the stack to run arch_pm_s2ram_resume instead of the interrupt stack.
-     */
-    ldr r0, =DT_REG_ADDR(DT_NODELABEL(pm_s2ram_stack)) + DT_REG_SIZE(DT_NODELABEL(pm_s2ram_stack))
-#else
     /*
      * Temporarily set MSP to interrupt stack so that arch_pm_s2ram_resume can
      * use stack for calling pm_s2ram_mark_check_and_clear.
@@ -106,7 +95,6 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
      * a short while, there is no change in behavior in either of the paths.
      */
     ldr r0, =z_interrupt_stacks + CONFIG_ISR_STACK_SIZE + MPU_GUARD_ALIGN_AND_SIZE
-#endif
     msr msp, r0
 
     bl arch_pm_s2ram_resume

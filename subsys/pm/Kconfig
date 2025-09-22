@@ -41,11 +41,6 @@ config PM_S2RAM
 	  When enabled on Cortex-M, and a 'zephyr,memory-region' compatible node with nodelabel
 	  'pm_s2ram' is defined in DT, _cpu_context symbol (located in arch/arm/core/cortex_m/pm_s2ram.c)
 	  is placed in linker section given by 'zephyr,memory-region' property of aforementioned node.
-	  Additionally on Cortex-M, if a 'zephyr,memory-region' compatible node with nodelabel
-	  'pm_s2ram_stack' is defined in DT, this region will be used as a temporary program stack
-	  for the S2RAM resume logic. The assembly reset handling code itself makes a single push of
-	  the return address, but the SoC-specific function (pm_s2ram_mark_check_and_clear) must be
-	  analyzed to determine the required stack size.
 
 config PM_S2RAM_CUSTOM_MARKING
 	bool "Use custom marking functions"
