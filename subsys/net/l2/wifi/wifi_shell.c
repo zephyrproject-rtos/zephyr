@@ -2865,11 +2865,11 @@ void parse_mode_args_to_params(const struct shell *sh, int argc,
 		{"monitor", no_argument, 0, 'm'},
 		{"ap", no_argument, 0, 'a'},
 		{"softap", no_argument, 0, 'k'},
+		{"get", no_argument, 0, 'g'},
 		{"help", no_argument, 0, 'h'},
 		{0, 0, 0, 0}};
 
-	mode->oper = WIFI_MGMT_GET;
-	while ((opt = getopt_long(argc, argv, "i:smtpakh",
+	while ((opt = getopt_long(argc, argv, "i:smtpakgh",
 				  long_options, &opt_index)) != -1) {
 		state = getopt_state_get();
 		switch (opt) {
@@ -2889,6 +2889,10 @@ void parse_mode_args_to_params(const struct shell *sh, int argc,
 			mode->mode |= WIFI_SOFTAP_MODE;
 			opt_num++;
 			break;
+		case 'g':
+			mode->oper = WIFI_MGMT_GET;
+			opt_num++;
+			break;
 		case 'i':
 			mode->if_index = (uint8_t)atoi(state->optarg);
 			/* Don't count iface as it's common for both get and set */
@@ -2904,7 +2908,7 @@ void parse_mode_args_to_params(const struct shell *sh, int argc,
 		}
 	}
 
-	if (opt_num != 0) {
+	if (opt_num == 0) {
 		mode->oper = WIFI_MGMT_SET;
 	}
 }
@@ -4060,8 +4064,9 @@ SHELL_SUBCMD_ADD((wifi), mode, NULL,
 		 "[-a, --ap] : AP mode\n"
 		 "[-k, --softap] : Softap mode\n"
 		 "[-h, --help] : Help\n"
+		 "[-g, --get] : Get current mode for a specific interface index\n"
 		 "Usage: Get operation example for interface index 1\n"
-		 "wifi mode -i1\n"
+		 "wifi mode -g -i1\n"
 		 "Set operation example for interface index 1 - set station+promiscuous\n"
 		 "wifi mode -i1 -sp.\n",
 		 cmd_wifi_mode,
