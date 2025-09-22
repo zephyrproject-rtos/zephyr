@@ -179,12 +179,7 @@ static void nrf5_rx_thread(void *arg1, void *arg2, void *arg3)
 		}
 
 #if defined(CONFIG_NET_BUF_DATA_SIZE)
-		if (pkt_len > CONFIG_NET_BUF_DATA_SIZE) {
-			LOG_ERR("Received a frame exceeding the buffer size (%u): %u",
-				CONFIG_NET_BUF_DATA_SIZE, pkt_len);
-			LOG_HEXDUMP_ERR(rx_frame->psdu, rx_frame->psdu[0] + 1, "Received PSDU");
-			goto drop;
-		}
+		__ASSERT_NO_MSG(pkt_len <= CONFIG_NET_BUF_DATA_SIZE);
 #endif
 
 		LOG_DBG("Frame received");
@@ -237,9 +232,7 @@ drop:
 		rx_frame->psdu = NULL;
 		nrf_802154_buffer_free_raw(psdu);
 
-		if (pkt) {
-			net_pkt_unref(pkt);
-		}
+		net_pkt_unref(pkt);
 	}
 }
 
