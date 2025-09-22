@@ -19,25 +19,15 @@
 #define SLEEP_TIME_MS  100
 #define UPDATE_TIME_MS 2000
 
-#if CONFIG_SHIELD_NPM1300_EK
-#define SHIELD_LABEL(component) DT_NODELABEL(npm1300_ek_ ## component)
-#elif CONFIG_SHIELD_NPM1304_EK
-#define SHIELD_LABEL(component) DT_NODELABEL(npm1304_ek_ ## component)
-#else
-#error "either npm1300_ek or npm1304_ek shield should be selected"
-#endif
-
-#define NPM13XX_DEVICE(dev) DEVICE_DT_GET(SHIELD_LABEL(dev))
-
 static const struct gpio_dt_spec button1 = GPIO_DT_SPEC_GET(DT_ALIAS(sw0), gpios);
 
-static const struct device *regulators = NPM13XX_DEVICE(regulators);
+static const struct device *regulators = DEVICE_DT_GET(DT_NODELABEL(npm1300_ek_regulators));
 
-static const struct device *charger = NPM13XX_DEVICE(charger);
+static const struct device *charger = DEVICE_DT_GET(DT_NODELABEL(npm1300_ek_charger));
 
-static const struct device *leds = NPM13XX_DEVICE(leds);
+static const struct device *leds = DEVICE_DT_GET(DT_NODELABEL(npm1300_ek_leds));
 
-static const struct device *pmic = NPM13XX_DEVICE(pmic);
+static const struct device *pmic = DEVICE_DT_GET(DT_NODELABEL(npm1300_ek_pmic));
 
 void configure_ui(void)
 {
@@ -63,14 +53,9 @@ void configure_ui(void)
 	}
 }
 
-static void event_callback(const struct device *dev, struct gpio_callback *cb, uint32_t events)
+static void event_callback(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
 {
-	if (events & BIT(NPM13XX_EVENT_SHIPHOLD_PRESS)) {
-		printk("SHPHLD pressed\n");
-	}
-	if (events & BIT(NPM13XX_EVENT_SHIPHOLD_RELEASE)) {
-		printk("SHPHLD released\n");
-	}
+	printk("Event detected\n");
 }
 
 void configure_events(void)
@@ -83,8 +68,7 @@ void configure_events(void)
 	/* Setup callback for shiphold button press */
 	static struct gpio_callback event_cb;
 
-	gpio_init_callback(&event_cb, event_callback, BIT(NPM13XX_EVENT_SHIPHOLD_PRESS) |
-			   BIT(NPM13XX_EVENT_SHIPHOLD_RELEASE));
+	gpio_init_callback(&event_cb, event_callback, BIT(NPM13XX_EVENT_SHIPHOLD_PRESS));
 
 	mfd_npm13xx_add_callback(pmic, &event_cb);
 }
