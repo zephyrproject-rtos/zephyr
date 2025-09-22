@@ -14,7 +14,6 @@
 #include <zephyr/logging/log_frontend_stmesp.h>
 #endif
 
-#include <hal/nrf_gpio.h>
 #include <hal/nrf_hsfll.h>
 #include <hal/nrf_lrcconf.h>
 #include <hal/nrf_spu.h>
@@ -173,17 +172,6 @@ void soc_early_init_hook(void)
 	     DT_NODE_HAS_STATUS(DT_NODELABEL(nfct), reserved)) &&
 	    DT_PROP_OR(DT_NODELABEL(nfct), nfct_pins_as_gpios, 0)) {
 		nrf_nfct_pad_config_enable_set(NRF_NFCT, false);
-	}
-
-	/* This is a workaround for not yet having upstream patches for properly handling
-	 * pin retention. It should be removed as part of the next upmerge.
-	 */
-	if (IS_ENABLED(CONFIG_SOC_NRF54H20_DISABLE_ALL_GPIO_RETENTION_WORKAROUND)) {
-		NRF_GPIO_Type *gpio_regs[GPIO_COUNT] = GPIO_REG_LIST;
-
-		for (int i = 0; i < NRFX_ARRAY_SIZE(gpio_regs); i++) {
-			nrf_gpio_port_retain_set(gpio_regs[i], 0);
-		}
 	}
 }
 
