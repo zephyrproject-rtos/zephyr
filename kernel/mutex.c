@@ -114,18 +114,20 @@ int z_impl_k_mutex_lock(struct k_mutex *mutex, k_timeout_t timeout)
 
 	key = k_spin_lock(&lock);
 
-	if (likely((mutex->lock_count == 0U) || (mutex->owner == _current))) {
+	if (likely((mutex->lock_count == 0U) || (mutex->owner == _current) ||
+		   (mutex->owner == NULL))) {
+		if (mutex->owner == NULL) {
+			mutex->owner = _current;
+		}
 
-		mutex->owner_orig_prio = (mutex->lock_count == 0U) ?
-					_current->base.prio :
-					mutex->owner_orig_prio;
+		mutex->owner_orig_prio =
+			(mutex->lock_count == 0U) ? _current->base.prio : mutex->owner_orig_prio;
 
 		mutex->lock_count++;
 		mutex->owner = _current;
 
-		LOG_DBG("%p took mutex %p, count: %d, orig prio: %d",
-			_current, mutex, mutex->lock_count,
-			mutex->owner_orig_prio);
+		LOG_DBG("%p took mutex %p, count: %d, orig prio: %d", _current, mutex,
+			mutex->lock_count, mutex->owner_orig_prio);
 
 		k_spin_unlock(&lock, key);
 
