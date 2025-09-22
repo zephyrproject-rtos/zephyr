@@ -77,8 +77,6 @@ enum tls_credential_type {
  */
 typedef int sec_tag_t;
 
-#define SEC_TAG_TLS_INVALID (-1) /**< Invalid secure tag value. */
-
 /**
  * @brief Add a TLS credential.
  *
