@@ -29,7 +29,7 @@ LOG_MODULE_REGISTER(usbd_uac2, CONFIG_USBD_UAC2_LOG_LEVEL);
 		+ AS_HAS_ISOCHRONOUS_DATA_ENDPOINT(node)			\
 		+ AS_IS_USB_ISO_IN(node) /* ISO IN double buffering */		\
 		+ AS_IS_USB_ISO_OUT(node) /* ISO OUT double buffering */	\
-		+ 2 * AS_HAS_EXPLICIT_FEEDBACK_ENDPOINT(node)))
+		+ AS_HAS_EXPLICIT_FEEDBACK_ENDPOINT(node)))
 #define COUNT_UAC2_EP_BUFFERS(i)						\
 	+ DT_PROP(DT_DRV_INST(i), interrupt_endpoint)				\
 	DT_INST_FOREACH_CHILD(i, COUNT_UAC2_AS_ENDPOINT_BUFFERS)
@@ -88,7 +88,6 @@ struct uac2_ctx {
 	atomic_t as_queued;
 	atomic_t as_double;
 	uint32_t fb_queued;
-	uint32_t fb_double;
 };
 
 /* UAC2 device constant data */
@@ -442,11 +441,7 @@ static void write_explicit_feedback(struct usbd_class_data *const c_data,
 		LOG_ERR("Failed to enqueue net_buf for 0x%02x", ep);
 		net_buf_unref(buf);
 	} else {
-		if (ctx->fb_queued & BIT(as_idx)) {
-			ctx->fb_double |= BIT(as_idx);
-		} else {
-			ctx->fb_queued |= BIT(as_idx);
-		}
+		ctx->fb_queued |= BIT(as_idx);
 	}
 }
 
@@ -818,17 +813,7 @@ static int uac2_request(struct usbd_class_data *const c_data, struct net_buf *bu
 	terminal = cfg->as_terminals[as_idx];
 
 	if (is_feedback) {
-		bool clear_double = buf->frags;
-
-		if (ctx->fb_queued & BIT(as_idx)) {
-			ctx->fb_queued &= ~BIT(as_idx);
-		} else {
-			clear_double = true;
-		}
-
-		if (clear_double) {
-			ctx->fb_double &= ~BIT(as_idx);
-		}
+		ctx->fb_queued &= ~BIT(as_idx);
 	} else if (!atomic_test_and_clear_bit(&ctx->as_queued, as_idx) || buf->frags) {
 		atomic_clear_bit(&ctx->as_double, as_idx);
 	}
@@ -895,7 +880,7 @@ static void uac2_sof(struct usbd_class_data *const c_data)
 		 * for now to allow faster recovery (i.e. reduce workload to be
 		 * done during this frame).
 		 */
-		if (ctx->fb_queued & ctx->fb_double & BIT(as_idx)) {
+		if (ctx->fb_queued & BIT(as_idx)) {
 			continue;
 		}
 
