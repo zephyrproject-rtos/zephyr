@@ -418,6 +418,12 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
 
                 self.run_telnet_client('localhost', self.rtt_port, sock,
                                        send_on_connect=rtt_config)
+            except ValueError as e:
+                # ValueError exception is thrown, if PC can't connect to the J-Link and
+                # we still try to open a socket to it.
+                # Silently capture the exception, the prompt from JLinkExe already
+                # contains good message about what happened.
+                self.logger.debug(f'ValueError during RTT connection: {e}')
             except OSError as e:
                 self.logger.error(
                     f'Failed to connect to the localhost:{self.rtt_port} socket: {e}',
@@ -425,6 +431,9 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
             finally:
                 server_proc.terminate()
                 server_proc.wait()
+                # Print a single newline so that terminal prompt appears on a separate
+                # line.
+                print()
         else:
             if self.gdb_cmd is None:
                 raise ValueError('Cannot debug; gdb is missing')
