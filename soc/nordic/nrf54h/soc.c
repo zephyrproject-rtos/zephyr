@@ -216,7 +216,7 @@ void soc_late_init_hook(void)
 				 DT_REG_ADDR(DT_NODELABEL(cpurad_slot0_partition)) +
 				 CONFIG_ROM_START_OFFSET);
 	}
-#elif DT_NODE_EXISTS(DT_NODELABEL(cpurad_slot0_partition))
+#else
 	radiocore_address =
 		(void *)(DT_REG_ADDR(DT_GPARENT(DT_NODELABEL(cpurad_slot0_partition))) +
 			 DT_REG_ADDR(DT_NODELABEL(cpurad_slot0_partition)) +
