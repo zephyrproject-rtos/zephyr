@@ -376,8 +376,7 @@ static void ipcp_set_dns_servers(struct ppp_fsm *fsm)
 
 	dnsctx = dns_resolve_get_default();
 	ret = dns_resolve_reconfigure_with_interfaces(dnsctx, NULL, dns_servers,
-						      interfaces,
-						      DNS_SOURCE_PPP);
+						      interfaces);
 	if (ret < 0) {
 		NET_ERR("Could not set DNS servers");
 		return;

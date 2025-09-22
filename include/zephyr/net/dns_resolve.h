@@ -42,24 +42,6 @@ enum dns_query_type {
 	DNS_QUERY_TYPE_AAAA = 28
 };
 
-/**
- * Entity that added the DNS server.
- */
-enum dns_server_source {
-	/** Source is unknown */
-	DNS_SOURCE_UNKNOWN = 0,
-	/** Server information is added manually, for example by an application */
-	DNS_SOURCE_MANUAL,
-	/** Server information is from DHCPv4 server */
-	DNS_SOURCE_DHCPV4,
-	/** Server information is from DHCPv6 server */
-	DNS_SOURCE_DHCPV6,
-	/** Server information is from IPv6 SLAAC (router advertisement) */
-	DNS_SOURCE_IPV6_RA,
-	/** Server information is from PPP */
-	DNS_SOURCE_PPP,
-};
-
 /** Max size of the resolved name. */
 #ifndef DNS_MAX_NAME_SIZE
 #define DNS_MAX_NAME_SIZE 20
@@ -363,9 +345,6 @@ struct dns_resolve_context {
 		 */
 		int if_index;
 
-		/** Source of the DNS server, e.g., manual, DHCPv4/6, etc. */
-		enum dns_server_source source;
-
 		/** Is this server mDNS one */
 		uint8_t is_mdns : 1;
 
@@ -539,14 +518,12 @@ int dns_resolve_close(struct dns_resolve_context *ctx);
  * @param servers_sa DNS server addresses as struct sockaddr. The array
  * is NULL terminated. Port numbers are optional in struct sockaddr, the
  * default will be used if set to 0.
- * @param source Source of the DNS servers, e.g., manual, DHCPv4/6, etc.
  *
  * @return 0 if ok, <0 if error.
  */
 int dns_resolve_reconfigure(struct dns_resolve_context *ctx,
 			    const char *servers_str[],
-			    const struct sockaddr *servers_sa[],
-			    enum dns_server_source source);
+			    const struct sockaddr *servers_sa[]);
 
 /**
  * @brief Reconfigure DNS resolving context with new server list and
@@ -566,15 +543,13 @@ int dns_resolve_reconfigure(struct dns_resolve_context *ctx,
  * @param interfaces Network interfaces to which the DNS servers are bound.
  *        This is an array of network interface indices. The array must be
  *        the same length as the servers_str and servers_sa arrays.
- * @param source Source of the DNS servers, e.g., manual, DHCPv4/6, etc.
  *
  * @return 0 if ok, <0 if error.
  */
 int dns_resolve_reconfigure_with_interfaces(struct dns_resolve_context *ctx,
 					    const char *servers_str[],
 					    const struct sockaddr *servers_sa[],
-					    int interfaces[],
-					    enum dns_server_source source);
+					    int interfaces[]);
 
 /**
  * @brief Remove servers from the DNS resolving context.
@@ -725,15 +700,6 @@ static inline int dns_cancel_addr_info(uint16_t dns_id)
  */
 
 /** @cond INTERNAL_HIDDEN */
-
-/**
- * @brief Get string representation of the DNS server source.
- *
- * @param source Source of the DNS server.
- *
- * @return String representation of the DNS server source.
- */
-const char *dns_get_source_str(enum dns_server_source source);
 
 /**
  * @brief Initialize DNS subsystem.
