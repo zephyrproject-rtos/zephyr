@@ -1,0 +1,22 @@
+# Copyright 2025 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config AUDIO_DMIC_NXP_PDM
+	bool "NXP PDM driver"
+	default y
+	depends on DT_HAS_NXP_PDM_ENABLED
+	select HAS_MCUX
+	select CLOCK_CONTROL
+	help
+	  Enable NXP PDM driver.
+
+if AUDIO_DMIC_NXP_PDM
+
+config DMIC_NXP_PDM_QUEUE_SIZE
+	int "Message queue depth"
+	default 4
+	help
+	  Depth of the message queue used to pass filled buffers to the app.
+
+endif # AUDIO_DMIC_NXP_PDM
