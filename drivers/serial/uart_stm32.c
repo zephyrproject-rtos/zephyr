@@ -1369,8 +1369,8 @@ static void uart_stm32_isr(const struct device *dev)
 		return;
 	}
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
-	if (LL_USART_IsEnabledIT_IDLE(usart) &&
-			LL_USART_IsActiveFlag_IDLE(usart)) {
+
+	if (LL_USART_IsEnabledIT_IDLE(usart) && LL_USART_IsActiveFlag_IDLE(usart)) {
 
 		LL_USART_ClearFlag_IDLE(usart);
 
@@ -1391,8 +1391,7 @@ static void uart_stm32_isr(const struct device *dev)
 			async_timer_start(&data->dma_rx.timeout_work,
 								data->dma_rx.timeout);
 		}
-	} else if (LL_USART_IsEnabledIT_TC(usart) &&
-			LL_USART_IsActiveFlag_TC(usart)) {
+	} else if (LL_USART_IsEnabledIT_TC(usart) && LL_USART_IsActiveFlag_TC(usart)) {
 
 		LL_USART_DisableIT_TC(usart);
 		/* Generate TX_DONE event when transmission is done */
@@ -1400,8 +1399,7 @@ static void uart_stm32_isr(const struct device *dev)
 #ifdef CONFIG_PM
 		uart_stm32_pm_policy_state_lock_put_unconditional();
 #endif
-	} else if (LL_USART_IsEnabledIT_RXNE(usart) &&
-			LL_USART_IsActiveFlag_RXNE(usart)) {
+	} else if (LL_USART_IsEnabledIT_RXNE(usart) && LL_USART_IsActiveFlag_RXNE(usart)) {
 #ifdef USART_SR_RXNE
 		/* clear the RXNE flag, because Rx data was not read */
 		LL_USART_ClearFlag_RXNE(usart);
@@ -1772,8 +1770,7 @@ static int uart_stm32_async_rx_enable(const struct device *dev,
 	data->dma_rx.blk_cfg.block_size = buf_size;
 	data->dma_rx.blk_cfg.dest_address = (uint32_t)data->dma_rx.buffer;
 
-	ret = dma_config(data->dma_rx.dma_dev, data->dma_rx.dma_channel,
-				&data->dma_rx.dma_cfg);
+	ret = dma_config(data->dma_rx.dma_dev, data->dma_rx.dma_channel, &data->dma_rx.dma_cfg);
 
 	if (ret != 0) {
 		LOG_ERR("UART ERR: RX DMA config failed!");
