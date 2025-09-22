@@ -427,3 +427,8 @@ dvp_20pin_interface: &video_sdma {};
 	pinctrl-0 = <&pinmux_sai1>;
 	pinctrl-names = "default";
 };
+
+&pdm {
+	pinctrl-0 = <&pinmux_pdm>;
+	pinctrl-names = "default";
+};

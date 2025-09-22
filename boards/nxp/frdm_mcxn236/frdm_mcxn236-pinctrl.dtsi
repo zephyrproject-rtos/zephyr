@@ -233,4 +233,14 @@
 			input-enable;
 		};
 	};
+
+	pinmux_pdm: pinmux_pdm {
+		group0 {
+			pinmux = <PDM0_CLK_PIO0_16>,
+				 <PDM0_DATA0_PIO0_17>;
+			drive-strength = "high";
+			slew-rate = "fast";
+			input-enable;
+		};
+	};
 };
