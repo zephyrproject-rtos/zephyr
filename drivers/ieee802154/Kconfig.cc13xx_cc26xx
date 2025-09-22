@@ -57,6 +57,7 @@ endif # IEEE802154_CC13XX_CC26XX
 
 menuconfig IEEE802154_CC13XX_CC26XX_SUB_GHZ
 	bool "TI CC13xx / CC26xx IEEE 802.15.4g driver support"
+	select CRC
 	default y
 	depends on DT_HAS_TI_CC13XX_CC26XX_IEEE802154_SUBGHZ_ENABLED
 
