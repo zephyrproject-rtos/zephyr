@@ -16,6 +16,14 @@
 
 #include <soc.h>
 
+#if DT_ANY_INST_HAS_BOOL_STATUS_OKAY(rx_fifo_rx_we)
+#define USES_RX_FIFO_RX_WE 1
+#endif
+
+BUILD_ASSERT(DT_ANY_INST_HAS_BOOL_STATUS_OKAY(rx_fifo_rx_we) ==
+		     DT_ALL_INST_HAS_BOOL_STATUS_OKAY(rx_fifo_rx_we),
+	     "rx-fifo-rx-we property must be set for all or none of the instances");
+
 #define UART_EV_TX		BIT(0)
 #define UART_EV_RX		BIT(1)
 
@@ -73,11 +81,12 @@ static int uart_litex_poll_in(const struct device *dev, unsigned char *c)
 
 	if (!litex_read8(config->rxempty_addr)) {
 		*c = litex_read8(config->rxtx_addr);
-
+#ifndef USES_RX_FIFO_RX_WE
 		/* refresh UART_RXEMPTY by writing UART_EV_RX
 		 * to UART_EV_PENDING
 		 */
 		litex_write8(UART_EV_RX, config->ev_pending_addr);
+#endif
 		return 0;
 	}
 
@@ -193,6 +202,12 @@ static int uart_litex_fifo_fill(const struct device *dev,
 		litex_write8(tx_data[i], config->rxtx_addr);
 	}
 
+#ifndef USES_RX_FIFO_RX_WE
+	/* LiteX uses EventSourceLevel for the UART since 22.09.2025,
+	 * where TX event is level triggered and pending is self-flushing,
+	 * so this is not needed anymore for new designs. When the dt property
+	 * rx-fifo-rx-we is set, we assume the design is new enough.
+	 */
 	if (litex_read8(config->txfull_addr)) {
 		/* only flush TX event if TX is really full */
 		litex_write8(UART_EV_TX, config->ev_pending_addr);
@@ -202,6 +217,7 @@ static int uart_litex_fifo_fill(const struct device *dev,
 			litex_write8(0, config->rxtx_addr);
 		}
 	}
+#endif
 
 	return i;
 }
@@ -223,11 +239,12 @@ static int uart_litex_fifo_read(const struct device *dev,
 
 	for (i = 0; i < size && !litex_read8(config->rxempty_addr); i++) {
 		rx_data[i] = litex_read8(config->rxtx_addr);
-
+#ifndef USES_RX_FIFO_RX_WE
 		/* refresh UART_RXEMPTY by writing UART_EV_RX
 		 * to UART_EV_PENDING
 		 */
 		litex_write8(UART_EV_RX, config->ev_pending_addr);
+#endif
 	}
 
 	return i;
