@@ -348,9 +348,6 @@ config MBEDTLS_SHA256_SMALLER
 	  Enable an implementation of SHA-256 that has a
 	  smaller ROM footprint but also lower performance.
 
-config MBEDTLS_SHA384
-	bool "SHA-384 hash algorithm"
-
 config MBEDTLS_SHA512
 	bool "SHA-512 hash algorithm"
 

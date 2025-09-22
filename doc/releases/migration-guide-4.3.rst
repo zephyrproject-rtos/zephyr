@@ -347,6 +347,8 @@ Modules
       :kconfig:option:`CONFIG_PSA_WANT_ALG_SHA_224`.
     * :kconfig:option:`CONFIG_MBEDTLS_SHA256`. Switch to
       :kconfig:option:`CONFIG_PSA_WANT_ALG_SHA_256`.
+    * :kconfig:option:`CONFIG_MBEDTLS_SHA384`. Switch to
+      :kconfig:option:`CONFIG_PSA_WANT_ALG_SHA_384`.
 
 Silabs
 ======
