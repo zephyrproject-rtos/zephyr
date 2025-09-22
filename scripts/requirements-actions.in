@@ -22,7 +22,6 @@ pykwalify
 pylint>=3
 pyserial
 pytest
-python-dotenv
 python-magic-bin; sys_platform == "win32"
 python-magic; sys_platform != "win32"
 pyyaml
