@@ -522,7 +522,7 @@ int bt_le_cs_start_test(const struct bt_le_cs_test_param *params)
 	struct bt_hci_op_le_cs_test *cp;
 	struct net_buf *buf;
 
-	buf = bt_hci_cmd_alloc(K_FOREVER);
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_CS_TEST, sizeof(*cp));
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -616,6 +616,10 @@ int bt_le_cs_start_test(const struct bt_le_cs_test_param *params)
 	}
 
 	cp->override_parameters_length = override_parameters_length;
+
+	struct bt_hci_cmd_hdr *hdr = (struct bt_hci_cmd_hdr *)buf->data;
+
+	hdr->param_len += override_parameters_length;
 
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_CS_TEST, buf, NULL);
 }
