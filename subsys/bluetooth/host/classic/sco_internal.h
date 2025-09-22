@@ -52,6 +52,9 @@ struct bt_sco_chan {
 	/** Channel operations reference */
 	const struct bt_sco_chan_ops *ops;
 
+	/** Voice setting for the connection */
+	uint8_t                      voice_setting;
+
 	enum bt_sco_state            state;
 };
 
