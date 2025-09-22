@@ -22,33 +22,10 @@
 
 #include <zephyr/net/wifi_credentials.h>
 
-LOG_MODULE_REGISTER(wifi_credentials_shell, CONFIG_WIFI_CREDENTIALS_LOG_LEVEL);
-
 #define MAX_BANDS_STR_LEN 64
 #define MACSTR "%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx"
 
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
-#ifdef CONFIG_WIFI_CREDENTIALS_RUNTIME_CERTIFICATES
-#include <zephyr/net/tls_credentials.h>
-enum wifi_enterprise_cert_sec_tags {
-	WIFI_CERT_CA_SEC_TAG = 0x1020001,
-	WIFI_CERT_CLIENT_KEY_SEC_TAG,
-	WIFI_CERT_SERVER_KEY_SEC_TAG,
-	WIFI_CERT_CLIENT_SEC_TAG,
-	WIFI_CERT_SERVER_SEC_TAG,
-	/* Phase 2 */
-	WIFI_CERT_CA_P2_SEC_TAG,
-	WIFI_CERT_CLIENT_KEY_P2_SEC_TAG,
-	WIFI_CERT_CLIENT_P2_SEC_TAG,
-};
-
-struct wifi_cert_data {
-	enum tls_credential_type type;
-	uint32_t sec_tag;
-	uint8_t **data;
-	size_t *len;
-};
-#else
 static const char ca_cert_test[] = {
 	#include <wifi_enterprise_test_certs/ca.pem.inc>
 	'\0'
@@ -75,184 +52,25 @@ static const char client_cert2_test[] = {
 static const char client_key2_test[] = {
 	#include <wifi_enterprise_test_certs/client-key2.pem.inc>
 	'\0'};
-#endif /* CONFIG_WIFI_CREDENTIALS_RUNTIME_CERTIFICATES */
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE */
 
 #if defined CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
-#ifdef CONFIG_WIFI_CREDENTIALS_RUNTIME_CERTIFICATES
-
-struct wifi_enterprise_creds_params enterprise_creds_params;
-
-static int process_certificates(struct wifi_cert_data *certs, size_t cert_count)
-{
-	for (size_t i = 0; i < cert_count; i++) {
-		int err;
-		size_t len = 0;
-		uint8_t *cert_tmp;
-
-		err = tls_credential_get(certs[i].sec_tag, certs[i].type, NULL, &len);
-		if (err != -EFBIG) {
-			LOG_ERR("Failed to get credential tag: %d length, err: %d",
-				certs[i].sec_tag, err);
-			return err;
-		}
-
-		cert_tmp = k_malloc(len);
-		if (!cert_tmp) {
-			LOG_ERR("Failed to allocate memory for credential tag: %d",
-				certs[i].sec_tag);
-			return -ENOMEM;
-		}
-
-		err = tls_credential_get(certs[i].sec_tag, certs[i].type, cert_tmp, &len);
-		if (err) {
-			LOG_ERR("Failed to get credential tag: %d", certs[i].sec_tag);
-			k_free(cert_tmp);
-			return err;
-		}
-
-		*certs[i].data = cert_tmp;
-		*certs[i].len = len;
-	}
-
-	return 0;
-}
-
-static void set_enterprise_creds_params(struct wifi_enterprise_creds_params *params,
-					bool is_ap)
-{
-	struct wifi_cert_data certs_common[] = {
-		{
-			.type = TLS_CREDENTIAL_CA_CERTIFICATE,
-			.sec_tag = WIFI_CERT_CA_SEC_TAG,
-			.data = &params->ca_cert,
-			.len = &params->ca_cert_len,
-		},
-	};
-
-	struct wifi_cert_data certs_sta[] = {
-		{
-			.type = TLS_CREDENTIAL_PRIVATE_KEY,
-			.sec_tag = WIFI_CERT_CLIENT_KEY_SEC_TAG,
-			.data = &params->client_key,
-			.len = &params->client_key_len,
-		},
-		{
-			.type = TLS_CREDENTIAL_PUBLIC_CERTIFICATE,
-			.sec_tag = WIFI_CERT_CLIENT_SEC_TAG,
-			.data = &params->client_cert,
-			.len = &params->client_cert_len,
-		},
-		{
-			.type = TLS_CREDENTIAL_CA_CERTIFICATE,
-			.sec_tag = WIFI_CERT_CA_P2_SEC_TAG,
-			.data = &params->ca_cert2,
-			.len = &params->ca_cert2_len,
-		},
-		{
-			.type = TLS_CREDENTIAL_PRIVATE_KEY,
-			.sec_tag = WIFI_CERT_CLIENT_KEY_P2_SEC_TAG,
-			.data = &params->client_key2,
-			.len = &params->client_key2_len,
-		},
-		{
-			.type = TLS_CREDENTIAL_PUBLIC_CERTIFICATE,
-			.sec_tag = WIFI_CERT_CLIENT_P2_SEC_TAG,
-			.data = &params->client_cert2,
-			.len = &params->client_cert2_len,
-		},
-	};
-
-	memset(params, 0, sizeof(*params));
-
-	/* Process common certificates */
-	if (process_certificates(certs_common, ARRAY_SIZE(certs_common)) != 0) {
-		goto cleanup;
-	}
-
-	/* Process STA-specific certificates */
-	if (!is_ap) {
-		if (process_certificates(certs_sta, ARRAY_SIZE(certs_sta)) != 0) {
-			goto cleanup;
-		}
-	}
-
-	memcpy(&enterprise_creds_params, params, sizeof(*params));
-	return;
-
-cleanup:
-	for (size_t i = 0; i < ARRAY_SIZE(certs_common); i++) {
-		if (certs_common[i].data) {
-			k_free(*certs_common[i].data);
-			*certs_common[i].data = NULL;
-		}
-	}
-
-	if (!is_ap) {
-		for (size_t i = 0; i < ARRAY_SIZE(certs_sta); i++) {
-			if (certs_sta[i].data) {
-				k_free(*certs_sta[i].data);
-				*certs_sta[i].data = NULL;
-			}
-		}
-	}
-
-}
-
-static void clear_enterprise_creds_params(struct wifi_enterprise_creds_params *params)
-{
-	if (params == NULL) {
-		return;
-	}
-
-	const uint8_t *certs[] = {
-		params->ca_cert,
-		params->client_cert,
-		params->client_key,
-		params->ca_cert2,
-		params->client_cert2,
-		params->client_key2,
-	};
-
-	for (size_t i = 0; i < ARRAY_SIZE(certs); i++) {
-		k_free((void *)certs[i]);
-	}
-	memset(params, 0, sizeof(*params));
-}
-#else
-static void set_enterprise_creds_params(struct wifi_enterprise_creds_params *params,
-					 bool is_ap)
-{
-	params->ca_cert = (uint8_t *)ca_cert_test;
-	params->ca_cert_len = ARRAY_SIZE(ca_cert_test);
-
-	if (!is_ap) {
-		params->client_cert = (uint8_t *)client_cert_test;
-		params->client_cert_len = ARRAY_SIZE(client_cert_test);
-		params->client_key = (uint8_t *)client_key_test;
-		params->client_key_len = ARRAY_SIZE(client_key_test);
-		params->ca_cert2 = (uint8_t *)ca_cert2_test;
-		params->ca_cert2_len = ARRAY_SIZE(ca_cert2_test);
-		params->client_cert2 = (uint8_t *)client_cert2_test;
-		params->client_cert2_len = ARRAY_SIZE(client_cert2_test);
-		params->client_key2 = (uint8_t *)client_key2_test;
-		params->client_key2_len = ARRAY_SIZE(client_key2_test);
-
-		return;
-	}
-}
-#endif /* CONFIG_WIFI_CREDENTIALS_RUNTIME_CERTIFICATES */
-
-static int wifi_set_enterprise_creds(const struct shell *sh, struct net_if *iface,
-				     bool is_ap)
+static int cmd_wifi_set_enterprise_creds(const struct shell *sh, struct net_if *iface)
 {
 	struct wifi_enterprise_creds_params params = {0};
 
-#ifdef CONFIG_WIFI_SHELL_RUNTIME_CERTIFICATES
-	clear_enterprise_creds_params(&enterprise_creds_params);
-#endif /* CONFIG_WIFI_SHELL_RUNTIME_CERTIFICATES */
-
-	set_enterprise_creds_params(&params, is_ap);
+	params.ca_cert = (uint8_t *)ca_cert_test;
+	params.ca_cert_len = ARRAY_SIZE(ca_cert_test);
+	params.client_cert = (uint8_t *)client_cert_test;
+	params.client_cert_len = ARRAY_SIZE(client_cert_test);
+	params.client_key = (uint8_t *)client_key_test;
+	params.client_key_len = ARRAY_SIZE(client_key_test);
+	params.ca_cert2 = (uint8_t *)ca_cert2_test;
+	params.ca_cert2_len = ARRAY_SIZE(ca_cert2_test);
+	params.client_cert2 = (uint8_t *)client_cert2_test;
+	params.client_cert2_len = ARRAY_SIZE(client_cert2_test);
+	params.client_key2 = (uint8_t *)client_key2_test;
+	params.client_key2_len = ARRAY_SIZE(client_key2_test);
 
 	if (net_mgmt(NET_REQUEST_WIFI_ENTERPRISE_CREDS, iface, &params, sizeof(params))) {
 		shell_warn(sh, "Set enterprise credentials failed\n");
@@ -522,7 +340,7 @@ static int cmd_add_network(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
-	struct net_if *iface = net_if_get_wifi_sta();
+	struct net_if *iface = net_if_get_first_by_type(&NET_L2_GET_NAME(ETHERNET));
 
 	/* Load the enterprise credentials if needed */
 	if (creds.header.type == WIFI_SECURITY_TYPE_EAP_TLS ||
@@ -530,7 +348,7 @@ static int cmd_add_network(const struct shell *sh, size_t argc, char *argv[])
 	    creds.header.type == WIFI_SECURITY_TYPE_EAP_PEAP_GTC ||
 	    creds.header.type == WIFI_SECURITY_TYPE_EAP_TTLS_MSCHAPV2 ||
 	    creds.header.type == WIFI_SECURITY_TYPE_EAP_PEAP_TLS) {
-		wifi_set_enterprise_creds(sh, iface, 0);
+		cmd_wifi_set_enterprise_creds(sh, iface);
 	}
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE */
 
@@ -550,12 +368,6 @@ static int cmd_delete_network(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	shell_print(sh, "\tDeleting network ssid: \"%s\", ssid_len: %d", argv[1], strlen(argv[1]));
-
-#ifdef CONFIG_WIFI_SHELL_RUNTIME_CERTIFICATES
-	/* Clear the certificates */
-	clear_enterprise_creds_params(&enterprise_creds_params);
-#endif /* CONFIG_WIFI_SHELL_RUNTIME_CERTIFICATES */
-
 	return wifi_credentials_delete_by_ssid(argv[1], strlen(argv[1]));
 }
 
@@ -569,11 +381,7 @@ static int cmd_list_networks(const struct shell *sh, size_t argc, char *argv[])
 
 static int cmd_auto_connect(const struct shell *sh, size_t argc, char *argv[])
 {
-	struct net_if *iface = net_if_get_wifi_sta();
-
-#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
-	wifi_set_enterprise_creds(sh, iface, 0);
-#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE */
+	struct net_if *iface = net_if_get_first_by_type(&NET_L2_GET_NAME(ETHERNET));
 	int rc = net_mgmt(NET_REQUEST_WIFI_CONNECT_STORED, iface, NULL, 0);
 
 	if (rc) {
