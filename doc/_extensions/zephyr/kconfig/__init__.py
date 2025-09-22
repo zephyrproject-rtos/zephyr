@@ -106,9 +106,6 @@ def kconfig_load(app: Sphinx) -> tuple[kconfiglib.Kconfig, kconfiglib.Kconfig, d
             for folder in soc_folders:
                 f.write('source "' + (Path(folder) / 'Kconfig.soc').as_posix() + '"\n')
 
-                if "nordic" in folder:
-                    f.write('osource "' + (Path(folder) / 'Kconfig.sysbuild').as_posix() + '"\n')
-
         with open(Path(td) / "soc" / "Kconfig", "w") as f:
             for folder in soc_folders:
                 f.write('osource "' + (Path(folder) / 'Kconfig').as_posix() + '"\n')
