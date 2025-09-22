@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2024 Nordic Semiconductor ASA
- * Copyright (c) 2025 Tenstorrent AI ULC
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,9 +8,7 @@
 
 #include <zephyr/drivers/mspi.h>
 #include <zephyr/drivers/gpio.h>
-#if defined(CONFIG_PINCTRL)
 #include <zephyr/drivers/pinctrl.h>
-#endif
 #include <zephyr/logging/log.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
