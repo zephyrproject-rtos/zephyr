@@ -147,8 +147,6 @@ class NrfUtilBinaryRunner(NrfBinaryRunner):
             cmd += ['--reset-kind', _op['kind']]
         elif op_type == 'erase':
             cmd.append(f'--{_op["kind"]}')
-        elif op_type == 'x-provision-keys':
-            cmd += ['--key-file', _op['keyfile']]
 
         cmd += ['--core', op['core']] if op.get('core') else []
         cmd += ['--x-family', f'{self.family}']
