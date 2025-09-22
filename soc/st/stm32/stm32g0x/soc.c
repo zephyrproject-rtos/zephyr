@@ -82,7 +82,14 @@ void soc_early_init_hook(void)
 {
 	/* Enable ART Accelerator I-cache and prefetch */
 	LL_FLASH_EnableInstCache();
+#ifndef CONFIG_SOC_STM32G0B1XX
+	/* See ErrataSheet ES0548 2.2.10 "Prefetch failure when branching across flash memory banks
+	 * which causes code execution corruption and may lead to HardFault interrupt"
+	 * Do not enable Prefetch for the stm32G0B1xB/C/E to prevent failing
+	 * branching instructions between memory banks
+	 */
 	LL_FLASH_EnablePrefetch();
+#endif /* CONFIG_SOC_STM32G0B1XX */
 
 	/* Update CMSIS SystemCoreClock variable (HCLK) */
 	/* At reset, system core clock is set to 16 MHz from HSI */
