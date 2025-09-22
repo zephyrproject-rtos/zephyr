@@ -78,7 +78,7 @@ class TitleMaxLengthRevert(LineRule):
     name = "title-max-length-no-revert"
     id = "UC5"
     target = CommitMessageTitle
-    options_spec = [IntOption('line-length', 120, "Max line length")]
+    options_spec = [IntOption('line-length', 75, "Max line length")]
     violation_message = "Commit title exceeds max length ({0}>{1})"
 
     def validate(self, line, _commit):
@@ -103,7 +103,7 @@ class MaxLineLengthExceptions(LineRule):
     name = "max-line-length-with-exceptions"
     id = "UC4"
     target = CommitMessageBody
-    options_spec = [IntOption('line-length', 120, "Max line length")]
+    options_spec = [IntOption('line-length', 75, "Max line length")]
     violation_message = "Commit message body line exceeds max length ({0}>{1})"
 
     def validate(self, line, _commit):
