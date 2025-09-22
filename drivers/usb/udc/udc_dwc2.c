@@ -4,8 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT snps_dwc2
-
 #include "udc_common.h"
 #include "udc_dwc2.h"
 
@@ -24,6 +22,7 @@
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(udc_dwc2, CONFIG_UDC_DRIVER_LOG_LEVEL);
+#include "udc_dwc2_vendor_quirks.h"
 
 enum dwc2_drv_event_type {
 	/* USB connection speed determined after bus reset */
@@ -3196,6 +3195,13 @@ static const struct udc_api udc_dwc2_api = {
 	.ep_enqueue = udc_dwc2_ep_enqueue,
 	.ep_dequeue = udc_dwc2_ep_dequeue,
 };
+
+#define DT_DRV_COMPAT snps_dwc2
+
+#define UDC_DWC2_VENDOR_QUIRK_GET(n)						\
+	COND_CODE_1(DT_NODE_VENDOR_HAS_IDX(DT_DRV_INST(n), 1),			\
+		    (&dwc2_vendor_quirks_##n),					\
+		    (NULL))
 
 #define UDC_DWC2_DT_INST_REG_ADDR(n)						\
 	COND_CODE_1(DT_NUM_REGS(DT_DRV_INST(n)), (DT_INST_REG_ADDR(n)),		\

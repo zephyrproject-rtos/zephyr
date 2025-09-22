@@ -25,6 +25,8 @@ struct usb_dw_stm32_clk {
 	size_t pclken_len;
 };
 
+#define DT_DRV_COMPAT snps_dwc2
+
 static inline int stm32f4_fsotg_enable_clk(const struct usb_dw_stm32_clk *const clk)
 {
 	int ret;
@@ -92,7 +94,7 @@ static inline int stm32f4_fsotg_disable_phy(const struct device *dev)
 		return stm32f4_fsotg_enable_clk(&stm32f4_clk_##n);		\
 	}									\
 										\
-	const struct dwc2_vendor_quirks dwc2_vendor_quirks_##n = {		\
+	struct dwc2_vendor_quirks dwc2_vendor_quirks_##n = {			\
 		.pre_enable = stm32f4_fsotg_enable_clk_##n,			\
 		.post_enable = stm32f4_fsotg_enable_phy,			\
 		.disable = stm32f4_fsotg_disable_phy,				\
@@ -102,11 +104,14 @@ static inline int stm32f4_fsotg_disable_phy(const struct device *dev)
 
 DT_INST_FOREACH_STATUS_OKAY(QUIRK_STM32F4_FSOTG_DEFINE)
 
+#undef DT_DRV_COMPAT
+
 #endif /*DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_fsotg) */
 
 #if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_usbhs)
 
-#include <zephyr/logging/log.h>
+#define DT_DRV_COMPAT snps_dwc2
+
 #include <nrfs_backend_ipc_service.h>
 #include <nrfs_usb.h>
 
@@ -124,7 +129,6 @@ static K_EVENT_DEFINE(usbhs_events);
 
 static void usbhs_vbus_handler(nrfs_usb_evt_t const *p_evt, void *const context)
 {
-	LOG_MODULE_DECLARE(udc_dwc2, CONFIG_UDC_DRIVER_LOG_LEVEL);
 	const struct device *dev = context;
 
 	switch (p_evt->type) {
@@ -152,7 +156,6 @@ static void usbhs_vbus_handler(nrfs_usb_evt_t const *p_evt, void *const context)
 
 static inline int usbhs_enable_nrfs_service(const struct device *dev)
 {
-	LOG_MODULE_DECLARE(udc_dwc2, CONFIG_UDC_DRIVER_LOG_LEVEL);
 	nrfs_err_t nrfs_err;
 	int err;
 
@@ -179,7 +182,6 @@ static inline int usbhs_enable_nrfs_service(const struct device *dev)
 
 static inline int usbhs_enable_core(const struct device *dev)
 {
-	LOG_MODULE_DECLARE(udc_dwc2, CONFIG_UDC_DRIVER_LOG_LEVEL);
 	NRF_USBHS_Type *wrapper = USBHS_DT_WRAPPER_REG_ADDR(0);
 	k_timeout_t timeout = K_FOREVER;
 
@@ -227,7 +229,6 @@ static inline int usbhs_disable_core(const struct device *dev)
 
 static inline int usbhs_disable_nrfs_service(const struct device *dev)
 {
-	LOG_MODULE_DECLARE(udc_dwc2, CONFIG_UDC_DRIVER_LOG_LEVEL);
 	nrfs_err_t nrfs_err;
 
 	nrfs_err = nrfs_usb_disable_request((void *)dev);
@@ -296,7 +297,7 @@ static inline int usbhs_pre_hibernation_exit(const struct device *dev)
 }
 
 #define QUIRK_NRF_USBHS_DEFINE(n)						\
-	const struct dwc2_vendor_quirks dwc2_vendor_quirks_##n = {		\
+	struct dwc2_vendor_quirks dwc2_vendor_quirks_##n = {			\
 		.init = usbhs_enable_nrfs_service,				\
 		.pre_enable = usbhs_enable_core,				\
 		.disable = usbhs_disable_core,					\
@@ -309,6 +310,8 @@ static inline int usbhs_pre_hibernation_exit(const struct device *dev)
 	};
 
 DT_INST_FOREACH_STATUS_OKAY(QUIRK_NRF_USBHS_DEFINE)
+
+#undef DT_DRV_COMPAT
 
 #endif /*DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_usbhs) */
 
