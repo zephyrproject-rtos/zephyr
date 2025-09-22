@@ -7,8 +7,8 @@
 &pinctrl {
 	pdm20_default_alt: pdm20_default_alt {
 		group1 {
-			psels = <NRF_PSEL(PDM_CLK, 1, 23)>,
-				<NRF_PSEL(PDM_DIN, 1, 24)>;
+			psels = <NRF_PSEL(PDM_CLK, 1, 10)>,
+				<NRF_PSEL(PDM_DIN, 1, 11)>;
 		};
 	};
 };
