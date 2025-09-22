@@ -2,9 +2,7 @@ common:
   tags:
     - spdx
   integration_platforms:
-    - qemu_cortex_m3
-  platform_allow:
-    - qemu_cortex_m3
+    - native_sim
   harness: ctest
 tests:
   buildsystem.sbom.spdx: {}
