@@ -23,8 +23,6 @@ import textwrap
 import unidiff
 import yaml
 
-from dotenv import load_dotenv
-
 from yamllint import config, linter
 
 from junitparser import TestCase, TestSuite, JUnitXml, Skipped, Error, Failure
@@ -732,14 +730,14 @@ class KconfigCheck(ComplianceTest):
         os.environ["KCONFIG_BINARY_DIR"] = kconfiglib_dir
         os.environ['DEVICETREE_CONF'] = "dummy"
         os.environ['TOOLCHAIN_HAS_NEWLIB'] = "y"
-        kconfig_env_file = os.path.join(kconfiglib_dir, "kconfig_module_dirs.env")
+        os.environ['KCONFIG_ENV_FILE'] = os.path.join(kconfiglib_dir, "kconfig_module_dirs.env")
 
         # Older name for DEVICETREE_CONF, for compatibility with older Zephyr
         # versions that don't have the renaming
         os.environ["GENERATED_DTS_BOARD_CONF"] = "dummy"
 
         # For multi repo support
-        self.get_modules(kconfig_env_file,
+        self.get_modules(os.environ['KCONFIG_ENV_FILE'],
                          os.path.join(kconfiglib_dir, "Kconfig.modules"),
                          os.path.join(kconfiglib_dir, "Kconfig.sysbuild.modules"),
                          os.path.join(kconfiglib_dir, "settings_file.txt"))
@@ -752,8 +750,6 @@ class KconfigCheck(ComplianceTest):
         # Tells Kconfiglib to generate warnings for all references to undefined
         # symbols within Kconfig files
         os.environ["KCONFIG_WARN_UNDEF"] = "y"
-
-        load_dotenv(kconfig_env_file)
 
         try:
             # Note this will both print warnings to stderr _and_ return
