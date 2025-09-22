@@ -363,7 +363,7 @@ enum ethernet_hw_caps nrf_wifi_if_caps_get(const struct device *dev)
 int nrf_wifi_if_send(const struct device *dev,
 		     struct net_pkt *pkt)
 {
-	int ret = -EINVAL;
+	int ret = -1;
 #ifdef CONFIG_NRF70_DATA_TX
 	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = NULL;
 	struct nrf_wifi_ctx_zep *rpu_ctx_zep = NULL;
@@ -404,7 +404,6 @@ int nrf_wifi_if_send(const struct device *dev,
 
 	if (nbuf == NULL) {
 		LOG_ERR("%s: allocation failed", __func__);
-		ret = -ENOMEM;
 		goto drop;
 	}
 
@@ -421,7 +420,6 @@ int nrf_wifi_if_send(const struct device *dev,
 #endif /* CONFIG_NRF70_RAW_DATA_TX */
 		if ((vif_ctx_zep->if_carr_state != NRF_WIFI_FMAC_IF_CARR_STATE_ON) ||
 		    (!vif_ctx_zep->authorized && !is_eapol(pkt))) {
-			ret = -EPERM;
 			goto drop;
 		}
 
@@ -434,8 +432,6 @@ int nrf_wifi_if_send(const struct device *dev,
 	if (ret == NRF_WIFI_STATUS_FAIL) {
 		/* FMAC API takes care of freeing the nbuf */
 		host_stats->total_tx_drop_pkts++;
-		/* Could be many reasons, but likely no space in the queue */
-		ret = -ENOBUFS;
 	}
 	goto unlock;
 drop:
