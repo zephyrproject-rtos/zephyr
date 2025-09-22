@@ -2217,16 +2217,6 @@ static void dhcpv6_iface_event_handler(struct net_mgmt_event_callback *cb,
 	if (mgmt_event == NET_EVENT_IF_DOWN) {
 		NET_DBG("Interface %p going down", iface);
 		dhcpv6_set_timeout(iface, UINT64_MAX);
-
-		/* Remove DNS servers as interface is gone. We only need to
-		 * do this for this interface. If using global setting, the
-		 * DNS servers are removed automatically when the interface
-		 * comes back up.
-		 */
-		if (IS_ENABLED(CONFIG_NET_DHCPV6_DNS_SERVER_VIA_INTERFACE)) {
-			dns_resolve_remove(dns_resolve_get_default(),
-					   net_if_get_by_iface(iface));
-		}
 	} else if (mgmt_event == NET_EVENT_IF_UP) {
 		NET_DBG("Interface %p coming up", iface);
 		dhcpv6_enter_state(iface, NET_DHCPV6_INIT);

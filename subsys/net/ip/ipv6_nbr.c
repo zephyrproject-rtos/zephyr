@@ -2469,9 +2469,6 @@ static inline bool handle_ra_rdnss(struct net_pkt *pkt, uint8_t len)
 	const struct sockaddr *dns_servers[] = {
 		(struct sockaddr *)&dns, NULL
 	};
-	int interfaces[] = {
-		net_if_get_by_iface(net_pkt_iface(pkt))
-	};
 	size_t rdnss_size;
 	int ret;
 
@@ -2508,8 +2505,7 @@ static inline bool handle_ra_rdnss(struct net_pkt *pkt, uint8_t len)
 
 	/* TODO: Handle lifetime. */
 	ctx = dns_resolve_get_default();
-	ret = dns_resolve_reconfigure_with_interfaces(ctx, NULL, dns_servers,
-						      interfaces);
+	ret = dns_resolve_reconfigure(ctx, NULL, dns_servers);
 	if (ret < 0) {
 		NET_DBG("Failed to set RDNSS resolve address: %d", ret);
 	}

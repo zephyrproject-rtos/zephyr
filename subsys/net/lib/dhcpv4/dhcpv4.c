@@ -1668,16 +1668,6 @@ static void dhcpv4_iface_event_handler(struct net_mgmt_event_callback *cb,
 			if (!net_if_ipv4_addr_rm(iface, &iface->config.dhcpv4.requested_ip)) {
 				NET_DBG("Failed to remove addr from iface");
 			}
-
-			/* Remove DNS servers as interface is gone. We only need to
-			 * do this for this interface. If using global setting, the
-			 * DNS servers are removed automatically when the interface
-			 * comes back up.
-			 */
-			if (IS_ENABLED(CONFIG_NET_DHCPV4_DNS_SERVER_VIA_INTERFACE)) {
-				dns_resolve_remove(dns_resolve_get_default(),
-						   net_if_get_by_iface(iface));
-			}
 		}
 	} else if (mgmt_event == NET_EVENT_IF_UP) {
 		NET_DBG("Interface %p coming up", iface);

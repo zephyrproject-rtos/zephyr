@@ -175,14 +175,11 @@ static void *test_init(void)
 ZTEST(dns_dispatcher, test_dns_dispatcher)
 {
 	struct dns_resolve_context *ctx;
-	int ret, sock1, sock2 = -1;
+	int sock1, sock2 = -1;
 
 	ctx = dns_resolve_get_default();
 
-	dns_resolve_close(ctx);
-
-	ret = dns_resolve_init_default(ctx);
-	zassert_equal(ret, 0, "Cannot initialize DNS resolver (%d)", ret);
+	dns_resolve_init_default(ctx);
 
 	sock1 = ctx->servers[0].sock;
 
