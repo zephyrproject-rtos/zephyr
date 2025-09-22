@@ -8,18 +8,51 @@ common:
   extra_configs:
     - arch:posix:CONFIG_UART_NATIVE_PTY_0_ON_STDINOUT=y
   min_ram: 40
-  integration_platforms:
-    - native_sim
-    - qemu_cortex_m3
 tests:
   sample.pytest.shell:
     harness: pytest
+    integration_platforms:
+      - native_sim
+      - qemu_cortex_m3
   sample.pytest.shell.vt100_colors_off:
     harness: pytest
+    integration_platforms:
+      - native_sim
+      - qemu_cortex_m3
     extra_configs:
       - CONFIG_SHELL_VT100_COLORS=n
+  sample.pytest.rtt:
+    harness: pytest
+    integration_platforms:
+      - native_sim
+    platform_exclude:
+      - qemu_leon3/leon3
+      - qemu_malta/qemu_malta/be
+      - qemu_malta/qemu_malta
+      - qemu_riscv32/qemu_virt_riscv32
+      - qemu_riscv32e/qemu_virt_riscv32e
+      - qemu_riscv64/qemu_virt_riscv64
+      - qemu_x86/atom
+      - qemu_arc/qemu_arc_em
+      - qemu_arc/qemu_arc_hs/xip
+      - qemu_arc/qemu_arc_hs
+      - qemu_arc/qemu_arc_hs5x
+      - qemu_arc/qemu_arc_hs6x
+      - qemu_cortex_a53/qemu_cortex_a53
+      - qemu_cortex_a9/xc7z007s
+      - qemu_cortex_m3/ti_lm3s6965
+      - qemu_cortex_r5/zynqmp_rpu
+      - mps2/an385
+      - mps2/an386
+      - mps2/an521/cpu0
+      - mps3/corstone300/an547
+    extra_args:
+      - EXTRA_CONF_FILE=overlay-rtt-shell.conf
   sample.harness.shell:
     harness: shell
+    integration_platforms:
+      - native_sim
+      - qemu_cortex_m3
     harness_config:
       shell_commands: &kernel_commands
         - command: "kernel cycles"
@@ -29,11 +62,17 @@ tests:
         - command: "kernel sleep 100"
   sample.harness.shell.vt100_colors_off:
     harness: shell
+    integration_platforms:
+      - native_sim
+      - qemu_cortex_m3
     extra_configs:
       - CONFIG_SHELL_VT100_COLORS=n
     harness_config:
       shell_commands: *kernel_commands
   sample.pytest.required_app_demo:
+    integration_platforms:
+      - native_sim
+      - qemu_cortex_m3
     required_applications:
       - name: sample.pytest.shell
       - name: sample.harness.shell

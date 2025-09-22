@@ -32,7 +32,7 @@ class HardwareAdapter(DeviceAdapter):
         super().__init__(device_config)
         self._flashing_timeout: float = device_config.flash_timeout
         self._serial_connection: serial.Serial | None = None
-        self._serial_pty_proc: subprocess.Popen | None = None
+        self._proc: subprocess.Popen | None = None
         self._serial_buffer: bytearray = bytearray()
 
         self.device_log_path: Path = device_config.build_dir / 'device.log'
@@ -75,6 +75,25 @@ class HardwareAdapter(DeviceAdapter):
             command.append('--')
             command.extend(command_extra_args)
         self.command = command
+
+    def generate_rtt_command(self):
+        """Return command to connect to the device via RTT."""
+
+        command = ["west", "rtt", "--skip-rebuild", "-d",
+                               str(self.device_config.build_dir)]
+
+        rtt_runner = self.device_config.rtt_runner
+        if rtt_runner:
+            command.append("--runner")
+            command.append(rtt_runner)
+
+            if rtt_runner in ("jlink", "pyocd"):
+                command.append("--dev-id")
+                command.append(self.device_config.id)
+
+        # Since _start_pty expects a string, we need to convert the command list into
+        # one.
+        return " ".join(command)
 
     def _prepare_runner_args(self) -> tuple[list[str], list[str]]:
         base_args: list[str] = []
@@ -152,7 +171,13 @@ class HardwareAdapter(DeviceAdapter):
                 raise TwisterHarnessException(msg)
 
     def _connect_device(self) -> None:
-        serial_name = self._open_serial_pty() or self.device_config.serial
+        if self.device_config.serial_pty:
+            serial_name = self._open_pty(self.device_config.serial_pty)
+        elif self.device_config.use_rtt:
+            serial_name = self._open_pty(self.generate_rtt_command())
+        else:
+            serial_name = self.device_config.serial
+
         logger.debug('Opening serial connection for %s', serial_name)
         try:
             self._serial_connection = serial.Serial(
@@ -165,17 +190,15 @@ class HardwareAdapter(DeviceAdapter):
             )
         except serial.SerialException as exc:
             logger.exception('Cannot open connection: %s', exc)
-            self._close_serial_pty()
+            self._close_pty()
             raise
 
         self._serial_connection.flush()
         self._serial_connection.reset_input_buffer()
         self._serial_connection.reset_output_buffer()
 
-    def _open_serial_pty(self) -> str | None:
-        """Open a pty pair, run process and return tty name"""
-        if not self.device_config.serial_pty:
-            return None
+    def _open_pty(self, command: str) -> str | None:
+        """Open a pty pair, run process with command and return tty name."""
 
         try:
             master, slave = pty.openpty()
@@ -184,14 +207,14 @@ class HardwareAdapter(DeviceAdapter):
             raise exc
 
         try:
-            self._serial_pty_proc = subprocess.Popen(
-                re.split(',| ', self.device_config.serial_pty),
+            self._proc = subprocess.Popen(
+                re.split(',| ', command),
                 stdout=master,
                 stdin=master,
                 stderr=master
             )
         except subprocess.CalledProcessError as exc:
-            logger.exception('Failed to run subprocess %s, error %s', self.device_config.serial_pty, str(exc))
+            logger.exception('Failed to run subprocess %s, error %s', command, str(exc))
             raise
         return os.ttyname(slave)
 
@@ -199,17 +222,22 @@ class HardwareAdapter(DeviceAdapter):
         if self._serial_connection:
             serial_name = self._serial_connection.port
             self._serial_connection.close()
-            # self._serial_connection = None
             logger.debug('Closed serial connection for %s', serial_name)
-        self._close_serial_pty()
+        self._close_pty()
 
-    def _close_serial_pty(self) -> None:
-        """Terminate the process opened for serial pty script"""
-        if self._serial_pty_proc:
-            self._serial_pty_proc.terminate()
-            self._serial_pty_proc.communicate(timeout=self.base_timeout)
-            logger.debug('Process %s terminated', self.device_config.serial_pty)
-            self._serial_pty_proc = None
+    def _close_pty(self) -> None:
+        """Terminate the process opened for serial pty script or RTT."""
+        if self._proc:
+            terminate_process(self._proc)
+            self._proc.communicate(timeout=self.base_timeout)
+
+            if self.device_config.serial_pty:
+                proc = self.device_config.serial_pty
+            else:
+                proc = "west rtt"
+
+            logger.debug('Process %s terminated', proc)
+            self._proc = None
 
     def _close_device(self) -> None:
         if self.device_config.post_script:
@@ -280,7 +308,7 @@ class HardwareAdapter(DeviceAdapter):
     def _clear_internal_resources(self) -> None:
         super()._clear_internal_resources()
         self._serial_connection = None
-        self._serial_pty_proc = None
+        self._proc = None
         self._serial_buffer.clear()
 
     @staticmethod
