@@ -35,7 +35,7 @@ enum {
 	IRONSIDE_BOOTMODE_SERVICE_MSG_1_IDX,
 	IRONSIDE_BOOTMODE_SERVICE_MSG_2_IDX,
 	IRONSIDE_BOOTMODE_SERVICE_MSG_3_IDX,
-	/* The last enum value is reserved for the number of arguments */
+	/* The last enum value is reserved for the number of arguments. */
 	IRONSIDE_BOOTMODE_SERVICE_NUM_ARGS,
 };
 
