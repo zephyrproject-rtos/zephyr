@@ -1121,12 +1121,8 @@ void nrf_802154_received_timestamp_raw(uint8_t *data, int8_t power, uint8_t lqi,
 		nrf5_data.rx_frames[i].lqi = lqi;
 
 #if defined(CONFIG_NET_PKT_TIMESTAMP)
-		if (time != NRF_802154_NO_TIMESTAMP) {
-			nrf5_data.rx_frames[i].time =
-				nrf_802154_timestamp_end_to_phr_convert(time, data[0]);
-		} else {
-			nrf5_data.rx_frames[i].time = 0;
-		}
+		nrf5_data.rx_frames[i].time =
+			nrf_802154_timestamp_end_to_phr_convert(time, data[0]);
 #endif
 
 		nrf5_data.rx_frames[i].ack_fpb = nrf5_data.last_frame_ack_fpb;
