@@ -365,7 +365,6 @@ struct bt_hci_cmd_hdr {
 
 /* OpCode Group Fields */
 #define BT_OGF_LINK_CTRL                        0x01
-#define BT_OGF_LINK_POLICY                      0x02
 #define BT_OGF_BASEBAND                         0x03
 #define BT_OGF_INFO                             0x04
 #define BT_OGF_STATUS                           0x05
@@ -559,43 +558,6 @@ struct bt_hci_cp_user_passkey_neg_reply {
 struct bt_hci_cp_io_capability_neg_reply {
 	bt_addr_t bdaddr;
 	uint8_t   reason;
-} __packed;
-
-#define BT_HCI_OP_SWITCH_ROLE                   BT_OP(BT_OGF_LINK_POLICY, 0x000b)
-struct bt_hci_cp_switch_role {
-	bt_addr_t bdaddr;
-	uint8_t   role;
-} __packed;
-
-#define BT_HCI_LINK_POLICY_SETTINGS_ENABLE_ROLE_SWITCH  BIT(0)
-#define BT_HCI_LINK_POLICY_SETTINGS_ENABLE_HOLD_MODE    BIT(1)
-#define BT_HCI_LINK_POLICY_SETTINGS_ENABLE_SNIFF_SWITCH BIT(2)
-
-#define BT_HCI_OP_READ_LINK_POLICY_SETTINGS     BT_OP(BT_OGF_LINK_POLICY, 0x000c)
-struct bt_hci_cp_read_link_policy_settings {
-	uint16_t handle;
-} __packed;
-struct bt_hci_rp_read_link_policy_settings {
-	uint8_t  status;
-	uint16_t handle;
-	uint16_t link_policy_settings;
-} __packed;
-
-#define BT_HCI_OP_WRITE_LINK_POLICY_SETTINGS    BT_OP(BT_OGF_LINK_POLICY, 0x000d)
-struct bt_hci_cp_write_link_policy_settings {
-	uint16_t handle;
-	uint16_t link_policy_settings;
-} __packed;
-
-#define BT_HCI_OP_READ_DEFAULT_LINK_POLICY_SETTINGS  BT_OP(BT_OGF_LINK_POLICY, 0x000e)
-struct bt_hci_rp_read_default_link_policy_settings {
-	uint8_t  status;
-	uint16_t default_link_policy_settings;
-} __packed;
-
-#define BT_HCI_OP_WRITE_DEFAULT_LINK_POLICY_SETTINGS BT_OP(BT_OGF_LINK_POLICY, 0x000f)
-struct bt_hci_cp_write_default_link_policy_settings {
-	uint16_t default_link_policy_settings;
 } __packed;
 
 #define BT_HCI_OP_SET_EVENT_MASK                BT_OP(BT_OGF_BASEBAND, 0x0001) /* 0x0c01 */

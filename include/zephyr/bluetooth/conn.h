@@ -2746,29 +2746,6 @@ struct bt_conn *bt_conn_lookup_addr_br(const bt_addr_t *peer);
  */
 const bt_addr_t *bt_conn_get_dst_br(const struct bt_conn *conn);
 
-/** @brief Change the role of the conn.
- *
- *  @param conn Connection object.
- *  @param role The role that want to switch as, the value is @ref BT_HCI_ROLE_CENTRAL and
- *              @ref BT_HCI_ROLE_PERIPHERAL from hci_types.h.
- *
- *  @return Zero on success or (negative) error code on failure.
- *  @return -ENOBUFS HCI command buffer is not available.
- *  @return -EINVAL @p conn is not a valid @ref BT_CONN_TYPE_BR connection
- */
-int bt_conn_br_switch_role(const struct bt_conn *conn, uint8_t role);
-
-/** @brief Enable/disable role switch of the connection by setting the connection's link policy.
- *
- *  @param conn Connection object.
- *  @param enable Value enable/disable role switch of controller.
- *
- *  @return Zero on success or (negative) error code on failure.
- *  @return -ENOBUFS HCI command buffer is not available.
- *  @return -EINVAL @p conn is not a valid @ref BT_CONN_TYPE_BR connection.
- */
-int bt_conn_br_set_role_switch_enable(const struct bt_conn *conn, bool enable);
-
 #ifdef __cplusplus
 }
 #endif
