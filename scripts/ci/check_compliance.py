@@ -291,37 +291,37 @@ class CheckPatch(ComplianceTest):
             cmd = [checkpatch]
 
         cmd.extend(['--mailback', '--no-tree', '-'])
-        with subprocess.Popen(('git', 'diff', '--no-ext-diff', COMMIT_RANGE),
+        diff = subprocess.Popen(('git', 'diff', '--no-ext-diff', COMMIT_RANGE),
                                 stdout=subprocess.PIPE,
-                                cwd=GIT_TOP) as diff:
-            try:
-                subprocess.run(cmd,
-                               check=True,
-                               stdin=diff.stdout,
-                               stdout=subprocess.PIPE,
-                               stderr=subprocess.STDOUT,
-                               shell=False, cwd=GIT_TOP)
+                                cwd=GIT_TOP)
+        try:
+            subprocess.run(cmd,
+                           check=True,
+                           stdin=diff.stdout,
+                           stdout=subprocess.PIPE,
+                           stderr=subprocess.STDOUT,
+                           shell=False, cwd=GIT_TOP)
 
-            except subprocess.CalledProcessError as ex:
-                output = ex.output.decode("utf-8")
-                regex = r'^\s*\S+:(\d+):\s*(ERROR|WARNING):(.+?):(.+)(?:\n|\r\n?)+' \
-                        r'^\s*#(\d+):\s*FILE:\s*(.+):(\d+):'
+        except subprocess.CalledProcessError as ex:
+            output = ex.output.decode("utf-8")
+            regex = r'^\s*\S+:(\d+):\s*(ERROR|WARNING):(.+?):(.+)(?:\n|\r\n?)+' \
+                    r'^\s*#(\d+):\s*FILE:\s*(.+):(\d+):'
 
-                matches = re.findall(regex, output, re.MULTILINE)
+            matches = re.findall(regex, output, re.MULTILINE)
 
-                # add a guard here for excessive number of errors, do not try and
-                # process each one of them and instead push this as one failure.
-                if len(matches) > 500:
-                    self.failure(output)
-                    return
+            # add a guard here for excessive number of errors, do not try and
+            # process each one of them and instead push this as one failure.
+            if len(matches) > 500:
+                self.failure(output)
+                return
 
-                for m in matches:
-                    self.fmtd_failure(m[1].lower(), m[2], m[5], m[6], col=None,
-                            desc=m[3])
+            for m in matches:
+                self.fmtd_failure(m[1].lower(), m[2], m[5], m[6], col=None,
+                        desc=m[3])
 
-                # If the regex has not matched add the whole output as a failure
-                if len(matches) == 0:
-                    self.failure(output)
+            # If the regex has not matched add the whole output as a failure
+            if len(matches) == 0:
+                self.failure(output)
 
 
 class BoardYmlCheck(ComplianceTest):
