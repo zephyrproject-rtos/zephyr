@@ -36,6 +36,13 @@ void board_early_init_hook(void)
 {
 	frdm_rw612_power_init_config();
 
+	/* If this is a wakeup from PM3 then return after configuring
+	 * the power supplies.
+	 */
+	if (PMU->PWR_MODE_STATUS == 2U) {
+		return;
+	}
+
 #if CONFIG_PM
 	static struct pm_notifier frdm_rw612_pm_notifier = {
 		.state_exit = frdm_rw612_pm_state_exit,
