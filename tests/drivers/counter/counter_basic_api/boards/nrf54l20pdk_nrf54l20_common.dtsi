@@ -1,0 +1,36 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+&timer00 {
+	prescaler = <6>;
+	status = "okay";
+};
+
+&timer10 {
+	prescaler = <4>;
+	status = "okay";
+};
+
+&timer20 {
+	prescaler = <4>;
+	status = "okay";
+};
+
+&timer21 {
+	prescaler = <4>;
+	status = "okay";
+};
+
+&timer22 {
+	prescaler = <4>;
+	status = "okay";
+};
+
+&timer23 {
+	prescaler = <4>;
+	status = "okay";
+};
+
+&timer24 {
+	prescaler = <4>;
+	status = "okay";
+};
