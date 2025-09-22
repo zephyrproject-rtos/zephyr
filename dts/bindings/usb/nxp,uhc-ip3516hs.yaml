@@ -8,5 +8,5 @@ compatible: "nxp,uhc-ip3516hs"
 include: [usb-controller.yaml, pinctrl-device.yaml]
 
 properties:
-  phy-handle:
+  phy_handle:
     type: phandle
