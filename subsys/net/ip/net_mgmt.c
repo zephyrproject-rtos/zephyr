@@ -27,7 +27,7 @@ struct mgmt_event_entry {
 #endif /* CONFIG_NET_MGMT_EVENT_QUEUE */
 	size_t info_length;
 #endif /* CONFIG_NET_MGMT_EVENT_INFO */
-	uint64_t event;
+	uint32_t event;
 	struct net_if *iface;
 };
 
@@ -47,7 +47,7 @@ K_KERNEL_STACK_DEFINE(mgmt_stack, CONFIG_NET_MGMT_EVENT_STACK_SIZE);
 static struct k_work_q mgmt_work_q_obj;
 #endif
 
-static uint64_t global_event_mask;
+static uint32_t global_event_mask;
 static sys_slist_t event_callbacks = SYS_SLIST_STATIC_INIT(&event_callbacks);
 
 /* Forward declaration for the actual caller */
@@ -67,7 +67,7 @@ static struct k_work_q *mgmt_work_q = COND_CODE_1(CONFIG_NET_MGMT_EVENT_SYSTEM_W
 static void mgmt_event_work_handler(struct k_work *work);
 static K_WORK_DEFINE(mgmt_work, mgmt_event_work_handler);
 
-static inline void mgmt_push_event(uint64_t mgmt_event, struct net_if *iface,
+static inline void mgmt_push_event(uint32_t mgmt_event, struct net_if *iface,
 				   const void *info, size_t length)
 {
 #ifndef CONFIG_NET_MGMT_EVENT_INFO
@@ -85,7 +85,7 @@ static inline void mgmt_push_event(uint64_t mgmt_event, struct net_if *iface,
 			memcpy(new_event.info, info, length);
 			new_event.info_length = length;
 		} else {
-			NET_ERR("Event 0x%" PRIx64 " info length %zu > max size %zu",
+			NET_ERR("Event %u info length %zu > max size %zu",
 				mgmt_event, length, NET_EVENT_INFO_MAX_SIZE);
 			(void)k_mutex_unlock(&net_mgmt_event_lock);
 
@@ -99,7 +99,7 @@ static inline void mgmt_push_event(uint64_t mgmt_event, struct net_if *iface,
 
 	if (k_msgq_put(&event_msgq, &new_event,
 		K_MSEC(CONFIG_NET_MGMT_EVENT_QUEUE_TIMEOUT)) != 0) {
-		NET_WARN("Failure to push event (0x%" PRIx64 "), "
+		NET_WARN("Failure to push event (%u), "
 			 "try increasing the 'CONFIG_NET_MGMT_EVENT_QUEUE_SIZE' "
 			 "or 'CONFIG_NET_MGMT_EVENT_QUEUE_TIMEOUT' options.",
 			 mgmt_event);
@@ -128,7 +128,7 @@ static void mgmt_event_work_handler(struct k_work *work)
 
 #else
 
-static inline void mgmt_push_event(uint64_t event, struct net_if *iface,
+static inline void mgmt_push_event(uint32_t event, struct net_if *iface,
 				   const void *info, size_t length)
 {
 #ifndef CONFIG_NET_MGMT_EVENT_INFO
@@ -149,7 +149,7 @@ static inline void mgmt_push_event(uint64_t event, struct net_if *iface,
 
 #endif /* CONFIG_NET_MGMT_EVENT_QUEUE */
 
-static inline void mgmt_add_event_mask(uint64_t event_mask)
+static inline void mgmt_add_event_mask(uint32_t event_mask)
 {
 	global_event_mask |= event_mask;
 }
@@ -169,7 +169,7 @@ static inline void mgmt_rebuild_global_event_mask(void)
 	}
 }
 
-static inline bool mgmt_is_event_handled(uint64_t mgmt_event)
+static inline bool mgmt_is_event_handled(uint32_t mgmt_event)
 {
 	return (((NET_MGMT_GET_LAYER(mgmt_event) &
 		  NET_MGMT_GET_LAYER(global_event_mask)) ==
@@ -188,7 +188,7 @@ static inline void mgmt_run_slist_callbacks(const struct mgmt_event_entry * cons
 	struct net_mgmt_event_callback *cb, *tmp;
 
 	/* Readable layer code is starting from 1, thus the increment */
-	NET_DBG("Event layer 0x%" PRIx64 " code 0x%" PRIx64 " cmd 0x%" PRIx64,
+	NET_DBG("Event layer %u code %u cmd %u",
 		NET_MGMT_GET_LAYER(mgmt_event->event) + 1,
 		NET_MGMT_GET_LAYER_CODE(mgmt_event->event),
 		NET_MGMT_GET_COMMAND(mgmt_event->event));
@@ -283,8 +283,8 @@ static void mgmt_run_callbacks(const struct mgmt_event_entry * const mgmt_event)
 }
 
 static int mgmt_event_wait_call(struct net_if *iface,
-				uint64_t mgmt_event_mask,
-				uint64_t *raised_event,
+				uint32_t mgmt_event_mask,
+				uint32_t *raised_event,
 				struct net_if **event_iface,
 				const void **info,
 				size_t *info_length,
@@ -303,7 +303,7 @@ static int mgmt_event_wait_call(struct net_if *iface,
 		sync_data.iface = iface;
 	}
 
-	NET_DBG("Synchronous event 0x%" PRIx64 " wait %p", sync.event_mask, &sync);
+	NET_DBG("Synchronous event 0x%08x wait %p", sync.event_mask, &sync);
 
 	net_mgmt_add_event_callback(&sync);
 
@@ -367,12 +367,12 @@ void net_mgmt_del_event_callback(struct net_mgmt_event_callback *cb)
 	(void)k_mutex_unlock(&net_mgmt_callback_lock);
 }
 
-void net_mgmt_event_notify_with_info(uint64_t mgmt_event, struct net_if *iface,
+void net_mgmt_event_notify_with_info(uint32_t mgmt_event, struct net_if *iface,
 				     const void *info, size_t length)
 {
 	if (mgmt_is_event_handled(mgmt_event)) {
 		/* Readable layer code is starting from 1, thus the increment */
-		NET_DBG("Notifying Event layer 0x%" PRIx64 " code 0x%" PRIx64 " type 0x%" PRIx64,
+		NET_DBG("Notifying Event layer %u code %u type %u",
 			NET_MGMT_GET_LAYER(mgmt_event) + 1,
 			NET_MGMT_GET_LAYER_CODE(mgmt_event),
 			NET_MGMT_GET_COMMAND(mgmt_event));
@@ -381,8 +381,8 @@ void net_mgmt_event_notify_with_info(uint64_t mgmt_event, struct net_if *iface,
 	}
 }
 
-int net_mgmt_event_wait(uint64_t mgmt_event_mask,
-			uint64_t *raised_event,
+int net_mgmt_event_wait(uint32_t mgmt_event_mask,
+			uint32_t *raised_event,
 			struct net_if **iface,
 			const void **info,
 			size_t *info_length,
@@ -394,8 +394,8 @@ int net_mgmt_event_wait(uint64_t mgmt_event_mask,
 }
 
 int net_mgmt_event_wait_on_iface(struct net_if *iface,
-				 uint64_t mgmt_event_mask,
-				 uint64_t *raised_event,
+				 uint32_t mgmt_event_mask,
+				 uint32_t *raised_event,
 				 const void **info,
 				 size_t *info_length,
 				 k_timeout_t timeout)

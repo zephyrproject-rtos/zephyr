@@ -30,7 +30,7 @@ static struct net_mgmt_event_callback net_l4_mgmt_cb;
 K_SEM_DEFINE(net_conn_sem, 0, 1);
 
 static void net_l4_evt_handler(struct net_mgmt_event_callback *cb,
-				uint64_t mgmt_event, struct net_if *iface)
+				uint32_t mgmt_event, struct net_if *iface)
 {
 	switch (mgmt_event) {
 	case NET_EVENT_L4_CONNECTED:

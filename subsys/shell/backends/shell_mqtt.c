@@ -508,7 +508,7 @@ static void net_disconnect_handler(struct k_work *work)
 }
 
 /* Network connection event handler */
-static void network_evt_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt_event,
+static void network_evt_handler(struct net_mgmt_event_callback *cb, uint32_t mgmt_event,
 				struct net_if *iface)
 {
 	struct shell_mqtt *sh = sh_mqtt;

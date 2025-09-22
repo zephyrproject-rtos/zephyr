@@ -518,7 +518,7 @@ static void handle_wifi_neighbor_rep_complete(struct net_mgmt_event_callback *cb
 #endif
 
 static void wifi_mgmt_event_handler(struct net_mgmt_event_callback *cb,
-				    uint64_t mgmt_event, struct net_if *iface)
+				    uint32_t mgmt_event, struct net_if *iface)
 {
 	switch (mgmt_event) {
 	case NET_EVENT_WIFI_CONNECT_RESULT:
@@ -556,7 +556,7 @@ static void wifi_mgmt_event_handler(struct net_mgmt_event_callback *cb,
 }
 
 static void wifi_mgmt_scan_event_handler(struct net_mgmt_event_callback *cb,
-					 uint64_t mgmt_event, struct net_if *iface)
+				    uint32_t mgmt_event, struct net_if *iface)
 {
 	switch (mgmt_event) {
 	case NET_EVENT_WIFI_SCAN_RESULT:

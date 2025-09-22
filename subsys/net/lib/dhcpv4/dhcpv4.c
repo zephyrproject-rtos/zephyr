@@ -1637,7 +1637,7 @@ drop:
 }
 
 static void dhcpv4_iface_event_handler(struct net_mgmt_event_callback *cb,
-				       uint64_t mgmt_event, struct net_if *iface)
+				       uint32_t mgmt_event, struct net_if *iface)
 {
 	sys_snode_t *node = NULL;
 
@@ -1699,7 +1699,7 @@ out:
 
 #if defined(CONFIG_NET_IPV4_ACD)
 static void dhcpv4_acd_event_handler(struct net_mgmt_event_callback *cb,
-				     uint64_t mgmt_event, struct net_if *iface)
+				     uint32_t mgmt_event, struct net_if *iface)
 {
 	sys_snode_t *node = NULL;
 	struct in_addr *addr;
