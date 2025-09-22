@@ -31,11 +31,6 @@ extern uintptr_t _irq_vector_table[];
 #define ISR3_OFFSET	15
 #define ISR5_OFFSET	16
 #define TRIG_CHECK_SIZE	17
-#elif defined(CONFIG_SOC_NRF9280_CPUPPR)
-#define ISR1_OFFSET	14
-#define ISR3_OFFSET	15
-#define ISR5_OFFSET	16
-#define TRIG_CHECK_SIZE	17
 #else
 #error "Target not supported"
 #endif
