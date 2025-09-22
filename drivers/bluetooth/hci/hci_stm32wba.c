@@ -432,7 +432,7 @@ static int bt_hci_stm32wba_setup(const struct device *dev,
 		return -ENOMSG;
 	}
 
-	buf = bt_hci_cmd_alloc(K_FOREVER);
+	buf = bt_hci_cmd_create(ACI_HAL_WRITE_CONFIG_DATA, sizeof(*param));
 	if (!buf) {
 		return -ENOBUFS;
 	}

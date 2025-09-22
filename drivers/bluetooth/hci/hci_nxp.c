@@ -94,7 +94,7 @@ static int nxp_bt_send_vs_command(uint16_t opcode, const uint8_t *params, uint8_
 		struct net_buf *buf;
 
 		/* Allocate buffer for the hci command */
-		buf = bt_hci_cmd_alloc(K_FOREVER);
+		buf = bt_hci_cmd_create(opcode, params_len);
 		if (buf == NULL) {
 			LOG_ERR("Unable to allocate command buffer");
 			return -ENOMEM;

@@ -396,7 +396,8 @@ static int bt_apollo_set_nvds(void)
 #else
 	uint8_t *p;
 
-	buf = bt_hci_cmd_alloc(K_FOREVER);
+	buf = bt_hci_cmd_create(HCI_VSC_UPDATE_NVDS_CFG_CMD_OPCODE,
+				HCI_VSC_UPDATE_NVDS_CFG_CMD_LENGTH);
 	if (!buf) {
 		return -ENOBUFS;
 	}
