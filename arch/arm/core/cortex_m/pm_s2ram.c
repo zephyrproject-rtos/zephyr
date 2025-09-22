@@ -28,7 +28,7 @@ __noinit
 #endif
 _cpu_context_t _cpu_context;
 
-#ifndef CONFIG_PM_S2RAM_CUSTOM_MARKING
+#ifndef CONFIG_HAS_PM_S2RAM_CUSTOM_MARKING
 /**
  * S2RAM Marker
  */
@@ -50,4 +50,4 @@ bool pm_s2ram_mark_check_and_clear(void)
 	return false;
 }
 
-#endif /* CONFIG_PM_S2RAM_CUSTOM_MARKING */
+#endif /* CONFIG_HAS_PM_S2RAM_CUSTOM_MARKING */
