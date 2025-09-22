@@ -2472,7 +2472,7 @@ int bt_conn_le_start_encryption(struct bt_conn *conn, uint8_t rand[8],
 		return -EINVAL;
 	}
 
-	buf = bt_hci_cmd_alloc(K_FOREVER);
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_START_ENCRYPTION, sizeof(*cp));
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -2511,7 +2511,8 @@ uint8_t bt_conn_enc_key_size(const struct bt_conn *conn)
 		struct net_buf *rsp;
 		uint8_t key_size;
 
-		buf = bt_hci_cmd_alloc(K_FOREVER);
+		buf = bt_hci_cmd_create(BT_HCI_OP_READ_ENCRYPTION_KEY_SIZE,
+					sizeof(*cp));
 		if (!buf) {
 			return 0;
 		}
@@ -2977,7 +2978,7 @@ static int bt_conn_get_tx_power_level(struct bt_conn *conn, uint8_t type,
 	struct bt_hci_cp_read_tx_power_level *cp;
 	struct net_buf *buf;
 
-	buf = bt_hci_cmd_alloc(K_FOREVER);
+	buf = bt_hci_cmd_create(BT_HCI_OP_READ_TX_POWER_LEVEL, sizeof(*cp));
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -3036,7 +3037,7 @@ int bt_conn_le_enhanced_get_tx_power_level(struct bt_conn *conn,
 		return -EINVAL;
 	}
 
-	buf = bt_hci_cmd_alloc(K_FOREVER);
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_ENH_READ_TX_POWER_LEVEL, sizeof(*cp));
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -3074,7 +3075,7 @@ int bt_conn_le_get_remote_tx_power_level(struct bt_conn *conn,
 		return -EINVAL;
 	}
 
-	buf = bt_hci_cmd_alloc(K_FOREVER);
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_READ_REMOTE_TX_POWER_LEVEL, sizeof(*cp));
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -3098,7 +3099,7 @@ int bt_conn_le_set_tx_power_report_enable(struct bt_conn *conn,
 		return -EINVAL;
 	}
 
-	buf = bt_hci_cmd_alloc(K_FOREVER);
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_TX_POWER_REPORT_ENABLE, sizeof(*cp));
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -3174,7 +3175,7 @@ int bt_conn_le_set_path_loss_mon_param(struct bt_conn *conn,
 		return -EINVAL;
 	}
 
-	buf = bt_hci_cmd_alloc(K_FOREVER);
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_PATH_LOSS_REPORTING_PARAMETERS, sizeof(*cp));
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -3200,7 +3201,7 @@ int bt_conn_le_set_path_loss_mon_enable(struct bt_conn *conn, bool reporting_ena
 		return -EINVAL;
 	}
 
-	buf = bt_hci_cmd_alloc(K_FOREVER);
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_PATH_LOSS_REPORTING_ENABLE, sizeof(*cp));
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -3275,7 +3276,7 @@ int bt_conn_le_subrate_set_defaults(const struct bt_conn_le_subrate_param *param
 		return -EINVAL;
 	}
 
-	buf = bt_hci_cmd_alloc(K_FOREVER);
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_DEFAULT_SUBRATE, sizeof(*cp));
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -3305,7 +3306,7 @@ int bt_conn_le_subrate_request(struct bt_conn *conn,
 		return -EINVAL;
 	}
 
-	buf = bt_hci_cmd_alloc(K_FOREVER);
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SUBRATE_REQUEST, sizeof(*cp));
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -3935,7 +3936,8 @@ int bt_conn_le_conn_update(struct bt_conn *conn,
 	struct hci_cp_le_conn_update *conn_update;
 	struct net_buf *buf;
 
-	buf = bt_hci_cmd_alloc(K_FOREVER);
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_CONN_UPDATE,
+				sizeof(*conn_update));
 	if (!buf) {
 		return -ENOBUFS;
 	}
