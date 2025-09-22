@@ -39,7 +39,6 @@ typedef struct {
  * smaller IDs compared to the 64-bit ones that PSA Secure Storage specifies.
  * Zephyr defines ranges of IDs to be used by different users of the API (subsystems, application)
  * which guarantees 1. no collisions and 2. that the IDs used fit within `uid`.
- * @see @ref zephyr/psa/key_ids.h and the other header files under `zephyr/psa`.
  */
 typedef struct {
 	psa_storage_uid_t uid : SECURE_STORAGE_ITS_UID_BIT_SIZE;
