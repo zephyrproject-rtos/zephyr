@@ -755,8 +755,6 @@ static int db_hash_finish(struct gen_hash_state *state)
 	size_t mac_length;
 	psa_status_t ret = psa_mac_sign_finish(&(state->operation), db_hash.hash, 16, &mac_length);
 
-	psa_destroy_key(state->key);
-
 	if (ret != PSA_SUCCESS) {
 		LOG_ERR("CMAC finish failed %d", ret);
 		return -EIO;
