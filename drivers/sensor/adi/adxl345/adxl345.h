@@ -223,7 +223,6 @@ struct adxl345_dev_data {
 	struct rtio *r_cb;
 	uint8_t fifo_watermark_irq;
 	uint8_t fifo_samples;
-	uint16_t fifo_total_bytes;
 #endif /* CONFIG_ADXL345_STREAM */
 };
 

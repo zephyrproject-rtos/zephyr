@@ -37,7 +37,6 @@ static void adxl345_fifo_read_cb(struct rtio *rtio_ctx, const struct rtio_sqe *s
 	struct rtio_iodev_sqe *iodev_sqe = sqe->userdata;
 
 	if (data->fifo_samples == 0) {
-		data->fifo_total_bytes = 0;
 		rtio_iodev_sqe_ok(iodev_sqe, 0);
 		adxl345_set_gpios_en(dev, true);
 	}
@@ -143,9 +142,8 @@ static void adxl345_process_fifo_samples_cb(struct rtio *r, const struct rtio_sq
 								1, NULL);
 		write_fifo_addr->flags |= RTIO_SQE_TRANSACTION;
 		rtio_sqe_prep_read(read_fifo_data, data->iodev, RTIO_PRIO_NORM,
-							read_buf + data->fifo_total_bytes,
+							(read_buf + i * ADXL345_FIFO_SAMPLE_SIZE),
 							ADXL345_FIFO_SAMPLE_SIZE, current_sqe);
-		data->fifo_total_bytes += ADXL345_FIFO_SAMPLE_SIZE;
 		if (cfg->bus_type == ADXL345_BUS_I2C) {
 			read_fifo_data->iodev_flags |= RTIO_IODEV_I2C_STOP | RTIO_IODEV_I2C_RESTART;
 		}
