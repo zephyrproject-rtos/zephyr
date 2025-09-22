@@ -5,20 +5,7 @@ description: Generic NOR flash on MSPI bus
 
 compatible: "jedec,mspi-nor"
 
-include:
-  - name: mspi-device.yaml
-  - name: jedec,spi-nor-common.yaml
-    property-allowlist:
-      - jedec-id
-      - size
-      - sfdp-bfp
-      - sfdp-ff05
-      - sfdp-ff84
-      - quad-enable-requirements
-      - has-dpd
-      - dpd-wakeup-sequence
-      - t-enter-dpd
-      - t-exit-dpd
+include: [mspi-device.yaml, "jedec,spi-nor-common.yaml"]
 
 properties:
   reset-gpios:
@@ -43,12 +30,3 @@ properties:
       Maximum time, in milliseconds, allowed for a single transfer on the MSPI
       bus in communication with the flash chip. The default value is the one
       that was previously hard-coded in the flash_mspi_nor driver.
-
-  use-4byte-addressing:
-    type: boolean
-    description: |
-      Indicates that 4-byte addressing is to be used in communication with
-      the flash chip. The driver will use dedicated 4-byte address instruction
-      codes for commands that require addresses (like Read, Page Program,
-      or Erase) if those are supported by the flash chip, or if necessary,
-      it will switch the chip to 4-byte addressing mode.
