@@ -152,6 +152,10 @@
 	reserved-memory {
 		#address-cells = <1>;
 		#size-cells = <1>;
+
+		suit_storage_partition: memory@e1ed000 {
+			reg = <0xe1ed000 DT_SIZE_K(20)>;
+		};
 	};
 
 	clocks {

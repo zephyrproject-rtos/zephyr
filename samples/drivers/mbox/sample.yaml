@@ -65,7 +65,6 @@ tests:
     integration_platforms:
       - nrf54h20dk/nrf54h20/cpuapp
     extra_args:
-      - mbox_CONFIG_SOC_NRF54H20_CPURAD_ENABLE=y
       - SB_CONF_FILE=sysbuild/nrf54h20dk_nrf54h20_cpurad.conf
     sysbuild: true
     harness: console

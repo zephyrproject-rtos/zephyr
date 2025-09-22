@@ -5,8 +5,8 @@ common:
   build_only: true
   tags: nrf_ironside
   integration_platforms:
-    - nrf54h20dk/nrf54h20/cpuapp
+    - nrf54h20dk/nrf54h20/cpuapp/iron
 
 tests:
   sample.boards.nordic.nrf_ironside.update:
-    platform_allow: nrf54h20dk/nrf54h20/cpuapp
+    platform_allow: nrf54h20dk/nrf54h20/cpuapp/iron

@@ -1,4 +1,4 @@
-# Copyright (c) 2024 Nordic Semiconductor ASA
+# Copyright (c) 2025 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
 # Enable UART driver
@@ -7,8 +7,6 @@ CONFIG_SERIAL=y
 # Enable console
 CONFIG_CONSOLE=y
 CONFIG_UART_CONSOLE=y
-
-CONFIG_USE_DT_CODE_PARTITION=y
 
 # Enable MPU
 CONFIG_ARM_MPU=y
@@ -23,3 +21,6 @@ CONFIG_EXTERNAL_CACHE=y
 
 # Enable GPIO
 CONFIG_GPIO=y
+
+# UICR generation is not supported, and when reintroduced will not use nrf-regtool.
+CONFIG_NRF_REGTOOL_GENERATE_UICR=n
