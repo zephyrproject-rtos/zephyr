@@ -81,6 +81,11 @@
 					compatible = "sifli,sf32lb-dll";
 					status = "disabled";
 				};
+
+				dll2: dll2 {
+					compatible = "sifli,sf32lb-dll";
+					status = "disabled";
+				};
 			};
 		};
 
