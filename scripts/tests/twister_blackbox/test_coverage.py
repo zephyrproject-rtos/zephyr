@@ -7,7 +7,7 @@ Blackbox tests for twister's command line functions
 """
 import importlib
 import re
-from unittest import mock
+import mock
 import os
 import pytest
 import sys

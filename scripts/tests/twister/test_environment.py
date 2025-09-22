@@ -7,7 +7,7 @@
 Tests for environment.py classes' methods
 """
 
-from unittest import mock
+import mock
 import os
 import pytest
 import shutil

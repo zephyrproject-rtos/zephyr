@@ -6,7 +6,7 @@
 """
 This test file contains testsuites for the Harness classes of twister
 """
-from unittest import mock
+import mock
 import sys
 import os
 import pytest

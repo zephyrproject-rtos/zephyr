@@ -8,7 +8,7 @@ Tests for handlers.py classes' methods
 """
 
 import itertools
-from unittest import mock
+import mock
 import os
 import pytest
 import signal

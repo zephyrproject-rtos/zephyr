@@ -6,7 +6,7 @@
 Tests for cmakecache.py classes' methods
 """
 
-from unittest import mock
+import mock
 import pytest
 
 from contextlib import nullcontext

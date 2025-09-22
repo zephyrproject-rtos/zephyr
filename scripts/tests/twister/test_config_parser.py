@@ -9,7 +9,7 @@ Tests for config_parser.py
 
 import os
 import pytest
-from unittest import mock
+import mock
 import scl
 
 from twisterlib.config_parser import TwisterConfigParser, extract_fields_from_arg_list, ConfigurationError

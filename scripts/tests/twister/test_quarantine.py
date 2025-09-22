@@ -6,7 +6,7 @@
 Tests for quarantine.py classes' methods
 """
 
-from unittest import mock
+import mock
 import os
 import pytest
 import textwrap

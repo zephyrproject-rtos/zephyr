@@ -653,6 +653,10 @@ mccabe==0.7.0 \
     --hash=sha256:348e0240c33b60bbdf4e523192ef919f28cb2c3d7d5c7794f74009290f236325 \
     --hash=sha256:6c2d30ab6be0e4a46919781807b4f0d834ebdd6c6e3dca0bda5a15f863427b6e
     # via pylint
+mock==5.2.0 \
+    --hash=sha256:4e460e818629b4b173f32d08bf30d3af8123afbb8e04bb5707a1fd4799e503f0 \
+    --hash=sha256:7ba87f72ca0e915175596069dbbcc7c75af7b5e9b9bc107ad6349ede0819982f
+    # via -r requirements-actions.in
 msgpack==1.1.1 ; sys_platform != 'win32' \
     --hash=sha256:196a736f0526a03653d829d7d4c5500a97eea3648aebfd4b6743875f28aa2af8 \
     --hash=sha256:1abfc6e949b352dadf4bce0eb78023212ec5ac42f6abfd469ce91d783c149c2a \

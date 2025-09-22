@@ -8,7 +8,7 @@ Blackbox tests for twister's command line functions
 # pylint: disable=duplicate-code
 
 import importlib
-from unittest import mock
+import mock
 import os
 import pytest
 import re

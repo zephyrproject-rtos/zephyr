@@ -8,13 +8,12 @@ Blackbox tests for twister's command line functions related to Twister's tooling
 # pylint: disable=duplicate-code
 
 import importlib
-from unittest import mock
+import mock
 import os
 import pytest
 import sys
 import json
 
-# pylint: disable=no-name-in-module
 from conftest import ZEPHYR_BASE, TEST_DATA, sample_filename_mock, testsuite_filename_mock
 from twisterlib.statuses import TwisterStatus
 from twisterlib.testplan import TestPlan

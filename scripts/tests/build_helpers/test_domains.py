@@ -6,10 +6,10 @@
 Tests for domains.py classes
 """
 
+import mock
 import os
 import sys
 from contextlib import nullcontext
-from unittest import mock
 
 import pytest
 

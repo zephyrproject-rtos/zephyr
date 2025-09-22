@@ -8,7 +8,7 @@ Blackbox tests for twister's command line functions related to Zephyr platforms.
 
 import importlib
 import re
-from unittest import mock
+import mock
 import os
 import pytest
 import sys

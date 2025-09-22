@@ -7,7 +7,7 @@ Tests for jobserver.py classes' methods
 """
 
 import functools
-from unittest import mock
+import mock
 import os
 import pytest
 import sys

@@ -7,7 +7,7 @@ Blackbox tests for twister's command line functions - simple does-error-out or n
 """
 
 import importlib
-from unittest import mock
+import mock
 import os
 import pytest
 import sys

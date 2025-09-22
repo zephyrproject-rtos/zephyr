@@ -6,12 +6,11 @@
 Blackbox tests for twister's command line functions
 """
 import importlib
-from unittest import mock
+import mock
 import os
 import pytest
 import sys
 
-# pylint: disable=no-name-in-module
 from conftest import ZEPHYR_BASE, testsuite_filename_mock, clear_log_in_test
 from twisterlib.testplan import TestPlan
 
