@@ -38,6 +38,8 @@ enum video_ctrl_type {
 	VIDEO_CTRL_TYPE_STRING = 5,
 	/** Menu integer type, standard or driver-defined menu */
 	VIDEO_CTRL_TYPE_INTEGER_MENU = 6,
+	/** Command-like type, triggers an action when written, without storing a value */
+	VIDEO_CTRL_TYPE_BUTTON = 7,
 };
 
 struct video_device;

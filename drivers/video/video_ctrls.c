@@ -131,6 +131,10 @@ static inline void set_type_flag(struct video_ctrl *ctrl)
 		}
 		break;
 	}
+
+	if (ctrl->type == VIDEO_CTRL_TYPE_BUTTON) {
+		ctrl->flags |= VIDEO_CTRL_FLAG_WRITE_ONLY | VIDEO_CTRL_FLAG_EXECUTE_ON_WRITE;
+	}
 }
 
 int video_init_ctrl(struct video_ctrl *ctrl, const struct device *const dev)
