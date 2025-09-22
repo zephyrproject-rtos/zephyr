@@ -217,6 +217,8 @@ New APIs and options
   * hawkBit
 
     * :kconfig:option:`CONFIG_HAWKBIT_REBOOT_NONE`
+    * :kconfig:option:`CONFIG_HAWKBIT_CONFIRM_IMG_ON_INIT`
+    * :kconfig:option:`CONFIG_HAWKBIT_ERASE_SECOND_SLOT_ON_CONFIRM`
 
 * Modem
 

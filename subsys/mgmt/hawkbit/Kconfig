@@ -258,6 +258,21 @@ config HAWKBIT_SAVE_PROGRESS_INTERVAL
 	  Set the interval (in percent) that the hawkBit update download progress will be saved.
 	  0 means that the progress will be saved every time a new chunk is downloaded.
 
+config HAWKBIT_CONFIRM_IMG_ON_INIT
+	bool "Confirm boot image at hawkBit init"
+	default y
+	help
+	  Automatically confirm current boot image at hawkBit initialization.
+	  Application shall handle image confirmation when set to false.
+
+config HAWKBIT_ERASE_SECOND_SLOT_ON_CONFIRM
+	bool "Erase second slot after confirming boot image"
+	default y
+	depends on HAWKBIT_CONFIRM_IMG_ON_INIT
+	help
+	  Erase the second image slot partition contents after confirming current boot image
+	  at hawkBit init.
+
 module = HAWKBIT
 module-str = Log Level for hawkbit
 module-help = Enables logging for hawkBit code.
