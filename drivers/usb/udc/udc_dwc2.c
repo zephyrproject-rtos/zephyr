@@ -121,7 +121,6 @@ struct udc_dwc2_data {
 	/* Isochronous endpoint enabled (IN on bits 0-15, OUT on bits 16-31) */
 	uint32_t iso_enabled;
 	uint16_t iso_in_rearm;
-	uint16_t iso_out_rearm;
 	uint16_t ep_out_disable;
 	uint16_t ep_out_stall;
 	uint16_t txf_set;
@@ -2777,7 +2776,6 @@ static inline void dwc2_handle_oepint(const struct device *dev)
 	while (epint) {
 		uint8_t n = find_lsb_set(epint) - 1;
 		mem_addr_t doepint_reg = (mem_addr_t)&base->out_ep[n].doepint;
-		mem_addr_t doepctl_reg = (mem_addr_t)&base->out_ep[n].doepctl;
 		uint32_t doepint;
 		uint32_t status;
 
@@ -2830,20 +2828,7 @@ static inline void dwc2_handle_oepint(const struct device *dev)
 		}
 
 		if (status & USB_DWC2_DOEPINT_EPDISBLD) {
-			uint32_t doepctl = sys_read32(doepctl_reg);
-
 			k_event_post(&priv->ep_disabled, BIT(16 + n));
-
-			if ((usb_dwc2_get_depctl_eptype(doepctl) == USB_DWC2_DEPCTL_EPTYPE_ISO) &&
-			    (priv->iso_out_rearm & BIT(n))) {
-				struct udc_ep_config *cfg;
-
-				/* Try to queue next packet before SOF */
-				cfg = udc_get_ep_cfg(dev, n | USB_EP_DIR_OUT);
-				dwc2_handle_xfer_next(dev, cfg);
-
-				priv->iso_out_rearm &= ~BIT(n);
-			}
 		}
 
 		epint &= ~BIT(n);
@@ -2928,7 +2913,6 @@ static void dwc2_handle_incompisoout(const struct device *dev)
 		((priv->sof_num & 1) ? USB_DWC2_DEPCTL_DPID : 0) |
 		USB_DWC2_DEPCTL_USBACTEP;
 	uint32_t eps = (priv->iso_enabled & 0xFFFF0000UL) >> 16;
-	uint16_t rearm = 0;
 
 	while (eps) {
 		uint8_t i = find_lsb_set(eps) - 1;
@@ -2951,16 +2935,11 @@ static void dwc2_handle_incompisoout(const struct device *dev)
 			buf = udc_buf_get(cfg);
 			if (buf) {
 				udc_submit_ep_event(dev, buf, 0);
-
-				rearm |= BIT(i);
 			}
 		}
 
 		eps &= ~BIT(i);
 	}
-
-	/* Mark endpoints to re-arm in EPDISBLD handler */
-	priv->iso_out_rearm = rearm;
 
 	sys_write32(USB_DWC2_GINTSTS_INCOMPISOOUT, gintsts_reg);
 }
