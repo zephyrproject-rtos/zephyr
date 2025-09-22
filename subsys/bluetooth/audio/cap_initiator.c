@@ -1161,9 +1161,11 @@ static bool valid_unicast_audio_start_param(const struct bt_cap_unicast_audio_st
 		const union bt_cap_set_member *member = &stream_param->member;
 		const struct bt_cap_stream *cap_stream = stream_param->stream;
 		const struct bt_audio_codec_cfg *codec_cfg = stream_param->codec_cfg;
+		const struct bt_bap_ep *ep = stream_param->ep;
 		const struct bt_bap_stream *bap_stream;
 		const struct bt_conn *member_conn =
 			bt_cap_common_get_member_conn(param->type, member);
+		struct bt_conn *ep_conn;
 
 		if (member == NULL) {
 			LOG_DBG("param->members[%zu] is NULL", i);
@@ -1185,10 +1187,25 @@ static bool valid_unicast_audio_start_param(const struct bt_cap_unicast_audio_st
 			return false;
 		}
 
-		CHECKIF(stream_param->ep == NULL) {
+		if (ep == NULL) {
 			LOG_DBG("param->stream_params[%zu].ep is NULL", i);
 			return false;
 		}
+
+		ep_conn = bt_bap_ep_get_conn(ep);
+		if (ep_conn == NULL) {
+			LOG_DBG("param->stream_params[%zu].ep is invalid", i);
+			return false;
+		}
+		if (ep_conn != member_conn) {
+			LOG_DBG("param->stream_params[%zu].ep conn %p does not match "
+				"param->members[%zu] %p",
+				i, ep_conn, i, member_conn);
+			bt_conn_unref(ep_conn);
+
+			return false;
+		}
+		bt_conn_unref(ep_conn);
 
 		CHECKIF(member == NULL) {
 			LOG_DBG("param->stream_params[%zu].member is NULL", i);
