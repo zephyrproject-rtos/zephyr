@@ -217,6 +217,10 @@ struct udc_numaker_data {
 	 * as allocate request. Manually track it instead.
 	 */
 	uint32_t ctrlout_tailroom;
+
+#if defined(CONFIG_UDC_NUMAKER_DMA)
+	struct k_sem sem_dma_done;
+#endif
 };
 
 static inline void numaker_usbd_sw_connect(const struct device *dev)
@@ -243,7 +247,10 @@ static inline void numaker_usbd_sw_connect(const struct device *dev)
 
 	/* Enable relevant interrupts */
 	base->GINTEN = HSUSBD_GINTEN_CEPIEN_Msk | HSUSBD_GINTEN_USBIEN_Msk;
-	base->BUSINTEN = HSUSBD_BUSINTEN_VBUSDETIEN_Msk | HSUSBD_BUSINTEN_SUSPENDIEN_Msk |
+	base->BUSINTEN = HSUSBD_BUSINTEN_VBUSDETIEN_Msk |
+			 IF_ENABLED(CONFIG_UDC_NUMAKER_DMA,
+				    (HSUSBD_BUSINTEN_DMADONEIEN_Msk |)) /* DMA */
+			 HSUSBD_BUSINTEN_SUSPENDIEN_Msk |
 			 HSUSBD_BUSINTEN_RESUMEIEN_Msk | HSUSBD_BUSINTEN_RSTIEN_Msk |
 			 COND_CODE_1(CONFIG_UDC_ENABLE_SOF, (HSUSBD_BUSINTEN_SOFIEN_Msk),
 				     (0)); /* CPU load concern */
@@ -410,8 +417,8 @@ static int numaker_usbd_enable_usb_phy(const struct device *dev)
 	base->ATTR |= USBD_ATTR_USBEN_Msk | USBD_ATTR_PHYEN_Msk;
 #elif DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_hsusbd)
 	base->PHYCTL |= HSUSBD_PHYCTL_PHYEN_Msk;
-	WAIT_FOR(base->PHYCTL & HSUSBD_PHYCTL_PHYCLKSTB_Msk,
-	    NUMAKER_HSUSBD_PHY_STABLE_TIMEOUT_US, ;);
+	WAIT_FOR(base->PHYCTL & HSUSBD_PHYCTL_PHYCLKSTB_Msk, NUMAKER_HSUSBD_PHY_STABLE_TIMEOUT_US,
+		 ;);
 	if (!(base->PHYCTL & HSUSBD_PHYCTL_PHYCLKSTB_Msk)) {
 		return -EIO;
 	}
@@ -971,6 +978,59 @@ static void numaker_usbd_setup_copy_to_user(const struct device *dev, uint8_t *u
 }
 
 #if DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_hsusbd)
+#if defined(CONFIG_UDC_NUMAKER_DMA)
+/* Transfer data between user buffer and USB buffer by DMA
+ *
+ * size holds size to copy/copied on input/output
+ */
+static int numaker_hsusbd_ep_xfer_user_dma(struct numaker_usbd_ep *ep_cur, uint8_t *usrbuf,
+					   uint32_t *size)
+{
+	const struct device *dev = ep_cur->dev;
+	const struct udc_numaker_config *config = dev->config;
+	struct udc_numaker_data *priv = udc_get_private(dev);
+	USBD_T *base = config->base;
+	int err;
+
+	/* Reset DMA semaphore */
+	k_sem_reset(&priv->sem_dma_done);
+
+	/* Reset DMA */
+	base->DMACNT = 0;
+	base->DMACTL = HSUSBD_DMACTL_DMARST_Msk;
+	base->DMACTL = 0;
+	base->BUSINTSTS = HSUSBD_BUSINTSTS_DMADONEIF_Msk;
+
+	/* DMA memory address */
+	base->DMAADDR = (uint32_t)usrbuf;
+
+	/* DMA transfer size */
+	base->DMACNT = *size;
+
+	/* DMA EP address */
+	base->DMACTL = USB_EP_DIR_IS_IN(ep_cur->addr)
+			       ? (HSUSBD_DMACTL_SVINEP_Msk | HSUSBD_DMACTL_DMARD_Msk)
+			       : 0;
+	base->DMACTL |= USB_EP_GET_IDX(ep_cur->addr) << HSUSBD_DMACTL_EPNUM_Pos;
+
+	/* Start DMA */
+	base->DMACTL |= HSUSBD_DMACTL_DMAEN_Msk;
+
+	/* Wait for DMA done */
+	err = k_sem_take(&priv->sem_dma_done, K_MSEC(CONFIG_UDC_NUMAKER_DMA_TIMEOUT_MS));
+	if (err != 0) {
+		err = -EIO;
+
+		/* Abort DMA for safe */
+		base->DMACNT = 0;
+		base->DMACTL = HSUSBD_DMACTL_DMARST_Msk;
+		base->DMACTL = 0;
+	}
+
+	return err;
+}
+#endif
+
 /* Copy data to user buffer
  *
  * size holds size to copy/copied on input/output
@@ -996,6 +1056,13 @@ static int numaker_hsusbd_ep_copy_to_user(struct numaker_usbd_ep *ep_cur, uint8_
 
 		*size -= rmn;
 	} else {
+#if defined(CONFIG_UDC_NUMAKER_DMA)
+		int err = numaker_hsusbd_ep_xfer_user_dma(ep_cur, usrbuf, size);
+
+		if (err < 0) {
+			return err;
+		}
+#else
 		uint8_t *usrbuf_pos = usrbuf;
 		uint32_t rmn = *size;
 
@@ -1005,6 +1072,7 @@ static int numaker_hsusbd_ep_copy_to_user(struct numaker_usbd_ep *ep_cur, uint8_
 		}
 
 		*size -= rmn;
+#endif
 	}
 
 	return 0;
@@ -1035,6 +1103,13 @@ static int numaker_hsusbd_ep_copy_from_user(struct numaker_usbd_ep *ep_cur, cons
 
 		*size -= rmn;
 	} else {
+#if defined(CONFIG_UDC_NUMAKER_DMA)
+		int err = numaker_hsusbd_ep_xfer_user_dma(ep_cur, (uint8_t *)usrbuf, size);
+
+		if (err < 0) {
+			return err;
+		}
+#else
 		const uint8_t *usrbuf_pos = usrbuf;
 		uint32_t rmn = *size;
 
@@ -1044,6 +1119,7 @@ static int numaker_hsusbd_ep_copy_from_user(struct numaker_usbd_ep *ep_cur, cons
 		}
 
 		*size -= rmn;
+#endif
 	}
 
 	return 0;
@@ -2326,6 +2402,13 @@ static void numaker_usbd_isr(const struct device *dev)
 		numaker_usbd_sof_th(dev);
 	}
 
+	/* DMA done */
+#if defined(CONFIG_UDC_NUMAKER_DMA)
+	if (busintsts & HSUSBD_BUSINTSTS_DMADONEIF_Msk) {
+		k_sem_give(&priv->sem_dma_done);
+	}
+#endif
+
 	/* USB CEP */
 	if (cepintsts) {
 		/* Clear event flag */
@@ -2739,6 +2822,10 @@ static int udc_numaker_driver_preinit(const struct device *dev)
 	}
 
 	config->make_thread(dev);
+
+#if defined(CONFIG_UDC_NUMAKER_DMA)
+	k_sem_init(&priv->sem_dma_done, 0, 1);
+#endif
 
 	return 0;
 }

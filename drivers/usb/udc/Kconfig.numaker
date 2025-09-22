@@ -31,4 +31,18 @@ config UDC_NUMAKER_THREAD_PRIORITY
 	help
 	  Priority of the driver internal thread.
 
+config UDC_NUMAKER_DMA
+	bool "UDC NuMaker DMA support"
+	default y
+	depends on DT_HAS_NUVOTON_NUMAKER_HSUSBD_ENABLED
+	help
+	  This enables DMA transfer between user buffer and USB buffer.
+
+config UDC_NUMAKER_DMA_TIMEOUT_MS
+	int "UDC NuMaker DMA timeout"
+	default 2000
+	depends on UDC_NUMAKER_DMA
+	help
+	  This configures timeout of DMA transfer in milliseconds.
+
 endif # UDC_NUMAKER
