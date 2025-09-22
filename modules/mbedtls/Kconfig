@@ -43,11 +43,10 @@ config MBEDTLS_LIBRARY
 
 endchoice
 
+# subsystems cannot deselect MBEDTLS_BUILTIN, but they can select
+# DISABLE_MBEDTLS_BUILTIN.
 config DISABLE_MBEDTLS_BUILTIN
 	bool
-	help
-	  Subsystems cannot deselect MBEDTLS_BUILTIN, but they can select
-	  DISABLE_MBEDTLS_BUILTIN.
 
 config CUSTOM_MBEDTLS_CFG_FILE
 	bool "Custom mbed TLS configuration file"
