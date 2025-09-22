@@ -142,11 +142,6 @@ static int eth_xlnx_gem_dev_init(const struct device *dev)
 #endif
 
 	/* AMBA AHB configuration options */
-	__ASSERT((dev_conf->amba_dbus_width == AMBA_AHB_DBUS_WIDTH_32BIT ||
-		 dev_conf->amba_dbus_width == AMBA_AHB_DBUS_WIDTH_64BIT ||
-		 dev_conf->amba_dbus_width == AMBA_AHB_DBUS_WIDTH_128BIT),
-		 "%s AMBA AHB bus width configuration is invalid",
-		 dev->name);
 	__ASSERT((dev_conf->ahb_burst_length == AHB_BURST_SINGLE ||
 		 dev_conf->ahb_burst_length == AHB_BURST_INCR4 ||
 		 dev_conf->ahb_burst_length == AHB_BURST_INCR8 ||
@@ -946,6 +941,7 @@ static void eth_xlnx_gem_set_initial_nwcfg(const struct device *dev)
 {
 	const struct eth_xlnx_gem_dev_cfg *dev_conf = dev->config;
 	uint32_t reg_val = 0;
+	uint32_t design_cfg5_reg_val;
 
 	if (dev_conf->ignore_ipg_rxer) {
 		/* [30]     ignore IPG rx_er */
@@ -979,10 +975,11 @@ static void eth_xlnx_gem_set_initial_nwcfg(const struct device *dev)
 		/* [23]     Do not copy pause Frames to memory */
 		reg_val |= ETH_XLNX_GEM_NWCFG_PAUSECOPYDI_BIT;
 	}
-	/* [22..21] Data bus width */
-	reg_val |= (((uint32_t)(dev_conf->amba_dbus_width) &
-		   ETH_XLNX_GEM_NWCFG_DBUSW_MASK) <<
-		   ETH_XLNX_GEM_NWCFG_DBUSW_SHIFT);
+	/* [22..21] Data bus width -> obtain from design_cfg5 register */
+	design_cfg5_reg_val = sys_read32(dev_conf->base_addr + ETH_XLNX_GEM_DESIGN_CFG5_OFFSET);
+	design_cfg5_reg_val >>= ETH_XLNX_GEM_DESIGN_CFG5_DBUSW_SHIFT;
+	design_cfg5_reg_val &= ETH_XLNX_GEM_NWCFG_DBUSW_MASK;
+	reg_val |= (design_cfg5_reg_val << ETH_XLNX_GEM_NWCFG_DBUSW_SHIFT);
 	/* [20..18] MDC clock divider */
 	reg_val |= (((uint32_t)dev_conf->mdc_divider &
 		   ETH_XLNX_GEM_NWCFG_MDC_MASK) <<
