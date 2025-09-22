@@ -525,32 +525,6 @@ int dns_resolve_reconfigure(struct dns_resolve_context *ctx,
 			    const struct sockaddr *servers_sa[]);
 
 /**
- * @brief Reconfigure DNS resolving context with new server list and
- *        allowing servers to be specified to a specific network interface.
- *
- * @param ctx DNS context
- * @param servers_str DNS server addresses using textual strings. The
- *        array is NULL terminated. The port number can be given in the string.
- *        Syntax for the server addresses with or without port numbers:
- *           IPv4        : 10.0.9.1
- *           IPv4 + port : 10.0.9.1:5353
- *           IPv6        : 2001:db8::22:42
- *           IPv6 + port : [2001:db8::22:42]:5353
- * @param servers_sa DNS server addresses as struct sockaddr. The array
- *        is NULL terminated. Port numbers are optional in struct sockaddr, the
- *        default will be used if set to 0.
- * @param interfaces Network interfaces to which the DNS servers are bound.
- *        This is an array of network interface indices. The array must be
- *        the same length as the servers_str and servers_sa arrays.
- *
- * @return 0 if ok, <0 if error.
- */
-int dns_resolve_reconfigure_with_interfaces(struct dns_resolve_context *ctx,
-					    const char *servers_str[],
-					    const struct sockaddr *servers_sa[],
-					    int interfaces[]);
-
-/**
  * @brief Cancel a pending DNS query.
  *
  * @details This releases DNS resources used by a pending query.

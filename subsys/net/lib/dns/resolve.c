@@ -1877,10 +1877,9 @@ static bool dns_servers_exists(struct dns_resolve_context *ctx,
 	return true;
 }
 
-int dns_resolve_reconfigure_with_interfaces(struct dns_resolve_context *ctx,
-					    const char *servers[],
-					    const struct sockaddr *servers_sa[],
-					    int interfaces[])
+int dns_resolve_reconfigure(struct dns_resolve_context *ctx,
+			    const char *servers[],
+			    const struct sockaddr *servers_sa[])
 {
 	int err;
 
@@ -1910,23 +1909,12 @@ int dns_resolve_reconfigure_with_interfaces(struct dns_resolve_context *ctx,
 		}
 	}
 
-	err = dns_resolve_init_locked(ctx, servers, servers_sa,
-				      &resolve_svc, 0, interfaces);
+	err = dns_resolve_init_locked(ctx, servers, servers_sa, &resolve_svc, 0, NULL);
 
 unlock:
 	k_mutex_unlock(&ctx->lock);
 
 	return err;
-}
-
-int dns_resolve_reconfigure(struct dns_resolve_context *ctx,
-			    const char *servers[],
-			    const struct sockaddr *servers_sa[])
-{
-	return dns_resolve_reconfigure_with_interfaces(ctx,
-						       servers,
-						       servers_sa,
-						       NULL);
 }
 
 struct dns_resolve_context *dns_resolve_get_default(void)
