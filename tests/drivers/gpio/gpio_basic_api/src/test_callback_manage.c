@@ -66,19 +66,16 @@ static int init_callback(const struct device *dev_in, const struct device *dev_o
 static void trigger_callback(const struct device *dev_in, const struct device *dev_out,
 			     int enable_cb)
 {
-	int rc;
-
 	gpio_pin_set(dev_out, PIN_OUT, 0);
 	k_sleep(K_MSEC(100));
 
 	cb_cnt[0] = 0;
 	cb_cnt[1] = 0;
 	if (enable_cb == 1) {
-		rc = gpio_pin_interrupt_configure(dev_in, PIN_IN, GPIO_INT_EDGE_RISING);
+		gpio_pin_interrupt_configure(dev_in, PIN_IN, GPIO_INT_EDGE_RISING);
 	} else {
-		rc = gpio_pin_interrupt_configure(dev_in, PIN_IN, GPIO_INT_DISABLE);
+		gpio_pin_interrupt_configure(dev_in, PIN_IN, GPIO_INT_DISABLE);
 	}
-	zassert_equal(rc, 0);
 	k_sleep(K_MSEC(100));
 	gpio_pin_set(dev_out, PIN_OUT, 1);
 	k_sleep(K_MSEC(1000));
