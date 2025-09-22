@@ -11,33 +11,6 @@
 
 LOG_MODULE_DECLARE(secure_storage, CONFIG_SECURE_STORAGE_LOG_LEVEL);
 
-#ifndef CONFIG_SECURE_STORAGE_64_BIT_UID
-BUILD_ASSERT(sizeof(secure_storage_its_uid_t) == 4); /* ITS UIDs are 32-bit */
-BUILD_ASSERT(1 << SECURE_STORAGE_ITS_CALLER_ID_BIT_SIZE >= SECURE_STORAGE_ITS_CALLER_COUNT);
-BUILD_ASSERT(SECURE_STORAGE_ITS_CALLER_ID_BIT_SIZE + SECURE_STORAGE_ITS_UID_BIT_SIZE == 32);
-#endif
-
-static psa_status_t make_its_uid(secure_storage_its_caller_id_t caller_id, psa_storage_uid_t uid,
-				 secure_storage_its_uid_t *its_uid)
-{
-	if (uid == 0) {
-		return PSA_ERROR_INVALID_ARGUMENT;
-	}
-
-#ifndef CONFIG_SECURE_STORAGE_64_BIT_UID
-	/* Check that the UID is not bigger than the maximum defined size. */
-	if (uid & GENMASK64(63, SECURE_STORAGE_ITS_UID_BIT_SIZE)) {
-		LOG_DBG("UID %u/0x%llx cannot be used as it has bits set past "
-			"the first " STRINGIFY(SECURE_STORAGE_ITS_UID_BIT_SIZE) " ones.",
-			caller_id, (unsigned long long)uid);
-		return PSA_ERROR_INVALID_ARGUMENT;
-	}
-#endif /* !CONFIG_SECURE_STORAGE_64_BIT_UID */
-
-	*its_uid = (secure_storage_its_uid_t){.caller_id = caller_id, .uid = uid};
-	return PSA_SUCCESS;
-}
-
 static void log_failed_operation(const char *operation, const char *preposition, psa_status_t ret)
 {
 	LOG_ERR("Failed to %s data %s storage. (%d)", operation, preposition, ret);
@@ -144,17 +117,12 @@ static psa_status_t store_entry(secure_storage_its_uid_t uid, size_t data_length
 	return ret;
 }
 
-psa_status_t secure_storage_its_set(secure_storage_its_caller_id_t caller_id, psa_storage_uid_t uid,
-				    size_t data_length, const void *p_data,
-				    psa_storage_create_flags_t create_flags)
+psa_status_t secure_storage_its_set(secure_storage_its_uid_t uid, size_t data_length,
+				    const void *p_data, psa_storage_create_flags_t create_flags)
 {
 	psa_status_t ret;
-	secure_storage_its_uid_t its_uid;
 
-	if (make_its_uid(caller_id, uid, &its_uid) != PSA_SUCCESS) {
-		return PSA_ERROR_INVALID_ARGUMENT;
-	}
-	if (p_data == NULL && data_length != 0) {
+	if (uid.uid == 0 || (p_data == NULL && data_length != 0)) {
 		return PSA_ERROR_INVALID_ARGUMENT;
 	}
 	if (create_flags & ~SECURE_STORAGE_ALL_CREATE_FLAGS) {
@@ -166,49 +134,43 @@ psa_status_t secure_storage_its_set(secure_storage_its_caller_id_t caller_id, ps
 		return PSA_ERROR_INSUFFICIENT_STORAGE;
 	}
 
-	if (keep_stored_entry(its_uid, data_length, p_data, create_flags, &ret)) {
+	if (keep_stored_entry(uid, data_length, p_data, create_flags, &ret)) {
 		return ret;
 	}
 
-	ret = store_entry(its_uid, data_length, p_data, create_flags);
+	ret = store_entry(uid, data_length, p_data, create_flags);
 	return ret;
 }
-psa_status_t secure_storage_its_get(secure_storage_its_caller_id_t caller_id, psa_storage_uid_t uid,
-				    size_t data_offset, size_t data_size,
-				    void *p_data, size_t *p_data_length)
-{
-	psa_status_t ret;
-	secure_storage_its_uid_t its_uid;
-	uint8_t stored_data[SECURE_STORAGE_ITS_TRANSFORM_MAX_STORED_DATA_SIZE];
-	size_t stored_data_len;
-	psa_storage_create_flags_t create_flags;
 
-	if (make_its_uid(caller_id, uid, &its_uid) != PSA_SUCCESS) {
-		return PSA_ERROR_INVALID_ARGUMENT;
-	}
-	if ((p_data == NULL && data_size != 0) || p_data_length == NULL) {
+psa_status_t secure_storage_its_get(secure_storage_its_uid_t uid, size_t data_offset,
+				    size_t data_size, void *p_data, size_t *p_data_length)
+{
+	if (uid.uid == 0 || (p_data == NULL && data_size != 0) || p_data_length == NULL) {
 		return PSA_ERROR_INVALID_ARGUMENT;
 	}
 	if (data_size == 0) {
 		*p_data_length = 0;
 		return PSA_SUCCESS;
 	}
+	psa_status_t ret;
+	uint8_t stored_data[SECURE_STORAGE_ITS_TRANSFORM_MAX_STORED_DATA_SIZE];
+	size_t stored_data_len;
+	psa_storage_create_flags_t create_flags;
 
-
-	ret = get_stored_data(its_uid, stored_data, &stored_data_len);
+	ret = get_stored_data(uid, stored_data, &stored_data_len);
 	if (ret != PSA_SUCCESS) {
 		return ret;
 	}
 	if (data_offset == 0
 	 && data_size >= SECURE_STORAGE_ITS_TRANSFORM_DATA_SIZE(stored_data_len)) {
 		/* All the data fits directly in the provided buffer. */
-		return transform_stored_data(its_uid, stored_data_len, stored_data, data_size,
-					     p_data, p_data_length, &create_flags);
+		return transform_stored_data(uid, stored_data_len, stored_data, data_size, p_data,
+					     p_data_length, &create_flags);
 	}
 	uint8_t data[CONFIG_SECURE_STORAGE_ITS_MAX_DATA_SIZE];
 	size_t data_len;
 
-	ret = transform_stored_data(its_uid, stored_data_len, stored_data, sizeof(data), data,
+	ret = transform_stored_data(uid, stored_data_len, stored_data, sizeof(data), data,
 				    &data_len, &create_flags);
 	if (ret == PSA_SUCCESS) {
 		if (data_offset > data_len) {
@@ -222,47 +184,41 @@ psa_status_t secure_storage_its_get(secure_storage_its_caller_id_t caller_id, ps
 	return ret;
 }
 
-psa_status_t secure_storage_its_get_info(secure_storage_its_caller_id_t caller_id,
-					 psa_storage_uid_t uid, struct psa_storage_info_t *p_info)
+psa_status_t secure_storage_its_get_info(secure_storage_its_uid_t uid,
+					 struct psa_storage_info_t *p_info)
 {
 	psa_status_t ret;
-	secure_storage_its_uid_t its_uid;
 	uint8_t data[CONFIG_SECURE_STORAGE_ITS_MAX_DATA_SIZE];
 
-	if (make_its_uid(caller_id, uid, &its_uid) != PSA_SUCCESS) {
-		return PSA_ERROR_INVALID_ARGUMENT;
-	}
-	if (p_info == NULL) {
+	if (uid.uid == 0 || p_info == NULL) {
 		return PSA_ERROR_INVALID_ARGUMENT;
 	}
 
-	ret = get_entry(its_uid, sizeof(data), data, &p_info->size, &p_info->flags);
+	ret = get_entry(uid, sizeof(data), data, &p_info->size, &p_info->flags);
 	if (ret == PSA_SUCCESS) {
 		p_info->capacity = p_info->size;
 	}
 	return ret;
 }
 
-psa_status_t secure_storage_its_remove(secure_storage_its_caller_id_t caller_id,
-				       psa_storage_uid_t uid)
+psa_status_t secure_storage_its_remove(secure_storage_its_uid_t uid)
 {
 	psa_status_t ret;
-	secure_storage_its_uid_t its_uid;
 	psa_storage_create_flags_t create_flags;
 	uint8_t data[CONFIG_SECURE_STORAGE_ITS_MAX_DATA_SIZE];
 	size_t data_len;
 
-	if (make_its_uid(caller_id, uid, &its_uid) != PSA_SUCCESS) {
+	if (uid.uid == 0) {
 		return PSA_ERROR_INVALID_ARGUMENT;
 	}
 
-	ret = get_entry(its_uid, sizeof(data), data, &data_len, &create_flags);
+	ret = get_entry(uid, sizeof(data), data, &data_len, &create_flags);
 	if (ret == PSA_SUCCESS && (create_flags & PSA_STORAGE_FLAG_WRITE_ONCE)) {
 		return PSA_ERROR_NOT_PERMITTED;
 	}
 	/* Allow overwriting corrupted entries as well to not be stuck with them forever. */
 	if (ret == PSA_SUCCESS || ret == PSA_ERROR_STORAGE_FAILURE) {
-		ret = secure_storage_its_store_remove(its_uid);
+		ret = secure_storage_its_store_remove(uid);
 		if (ret != PSA_SUCCESS) {
 			log_failed_operation("remove", "from", ret);
 			return PSA_ERROR_STORAGE_FAILURE;
