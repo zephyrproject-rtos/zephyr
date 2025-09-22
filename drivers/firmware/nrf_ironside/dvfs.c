@@ -10,14 +10,6 @@
 
 static enum ironside_dvfs_oppoint current_dvfs_oppoint = IRONSIDE_DVFS_OPP_HIGH;
 
-#if defined(CONFIG_SOC_SERIES_NRF54HX)
-#define ABB_STATUSANA_LOCKED_L_Pos (0UL)
-#define ABB_STATUSANA_LOCKED_L_Msk (0x1UL << ABB_STATUSANA_LOCKED_L_Pos)
-#define ABB_STATUSANA_REG_OFFSET   (0x102UL)
-#else
-#error "Unsupported SoC series for IRONside DVFS"
-#endif
-
 struct dvfs_hsfll_data_t {
 	uint32_t new_f_mult;
 	uint32_t new_f_trim_entry;
@@ -126,10 +118,7 @@ static void ironside_dvfs_change_oppoint_complete(enum ironside_dvfs_oppoint dvf
 static inline bool ironside_dvfs_is_abb_locked(NRF_ABB_Type *abb)
 {
 	/* Check if ABB analog part is locked. */
-	/* Temporary workaround until STATUSANA register is visible. */
-	volatile const uint32_t *statusana = (uint32_t *)abb + ABB_STATUSANA_REG_OFFSET;
-
-	return ((*statusana & ABB_STATUSANA_LOCKED_L_Msk) != 0);
+	return ((abb->STATUSANA & ABB_STATUSANA_LOCKED_Msk) != 0);
 }
 
 /**
