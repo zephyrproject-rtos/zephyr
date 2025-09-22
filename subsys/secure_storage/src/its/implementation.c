@@ -115,15 +115,8 @@ static bool keep_stored_entry(secure_storage_its_uid_t uid, size_t data_length, 
 	if (existing_data_len == data_length &&
 	    existing_create_flags == create_flags &&
 	    !memcmp(existing_data, p_data, data_length)) {
-#ifdef CONFIG_SECURE_STORAGE_64_BIT_UID
-		LOG_DBG("Not writing entry %u/%#llx to storage because its stored data"
-			" (of length %zu) is identical.", uid.caller_id,
-			(unsigned long long)uid.uid, data_length);
-#else
-		LOG_DBG("Not writing entry %u/%#lx to storage because its stored data"
-			" (of length %zu) is identical.", uid.caller_id,
-			(unsigned long)uid.uid, data_length);
-#endif
+		LOG_DBG("Not writing entry %u/%llu to storage because its stored data"
+			" (of length %zu) is identical.", uid.caller_id, uid.uid, data_length);
 		*ret = PSA_SUCCESS;
 		return true;
 	}
