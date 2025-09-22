@@ -40,8 +40,6 @@ zephyr_interface_library_named(mbedTLS)
     # Add regular includes
     target_include_directories(mbedTLS INTERFACE
         ${ZEPHYR_CURRENT_MODULE_DIR}/include
-        ${ZEPHYR_CURRENT_MODULE_DIR}/include/library
-        ${ZEPHYR_CURRENT_MODULE_DIR}/library
         configs
         include
     )
