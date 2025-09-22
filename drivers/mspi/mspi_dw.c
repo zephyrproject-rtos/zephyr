@@ -820,9 +820,8 @@ static int start_next_packet(const struct device *dev, k_timeout_t timeout)
 	dev_data->dummy_bytes = 0;
 	dev_data->bytes_to_discard = 0;
 
-	dev_data->ctrlr0 &= ~(CTRLR0_TMOD_MASK)
-			  & ~(CTRLR0_DFS_MASK)
-			  & ~(CTRLR0_DFS32_MASK);
+	dev_data->ctrlr0 &= ~CTRLR0_TMOD_MASK
+			 &  ~CTRLR0_DFS_MASK;
 
 	dev_data->spi_ctrlr0 &= ~SPI_CTRLR0_WAIT_CYCLES_MASK;
 
@@ -831,20 +830,16 @@ static int start_next_packet(const struct device *dev, k_timeout_t timeout)
 	     dev_data->xfer.addr_length != 0)) {
 		dev_data->bytes_per_frame_exp = 0;
 		dev_data->ctrlr0 |= FIELD_PREP(CTRLR0_DFS_MASK, 7);
-		dev_data->ctrlr0 |= FIELD_PREP(CTRLR0_DFS32_MASK, 7);
 	} else {
 		if ((packet->num_bytes % 4) == 0) {
 			dev_data->bytes_per_frame_exp = 2;
 			dev_data->ctrlr0 |= FIELD_PREP(CTRLR0_DFS_MASK, 31);
-			dev_data->ctrlr0 |= FIELD_PREP(CTRLR0_DFS32_MASK, 31);
 		} else if ((packet->num_bytes % 2) == 0) {
 			dev_data->bytes_per_frame_exp = 1;
 			dev_data->ctrlr0 |= FIELD_PREP(CTRLR0_DFS_MASK, 15);
-			dev_data->ctrlr0 |= FIELD_PREP(CTRLR0_DFS32_MASK, 15);
 		} else {
 			dev_data->bytes_per_frame_exp = 0;
 			dev_data->ctrlr0 |= FIELD_PREP(CTRLR0_DFS_MASK, 7);
-			dev_data->ctrlr0 |= FIELD_PREP(CTRLR0_DFS32_MASK, 7);
 		}
 	}
 
