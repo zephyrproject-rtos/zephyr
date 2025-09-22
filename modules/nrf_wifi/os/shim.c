@@ -199,11 +199,11 @@ static void *zep_shim_spinlock_alloc(void)
 {
 	struct k_mutex *lock = NULL;
 
-	lock = k_heap_aligned_alloc(wifi_ctrl_pool, WORD_SIZE, sizeof(*lock), K_FOREVER);
-	if (!lock) {
+	slock = k_heap_aligned_alloc(wifi_ctrl_pool, WORD_SIZE, sizeof(*slock), K_FOREVER);
+	if (!slock) {
 		LOG_ERR("%s: Unable to allocate memory for spinlock", __func__);
 	} else {
-		memset(lock, 0, sizeof(*lock));
+		memset(slock, 0, sizeof(*slock));
 	}
 
 	return lock;
