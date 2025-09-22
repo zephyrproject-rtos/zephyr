@@ -64,6 +64,11 @@ New APIs and options
 
 .. zephyr-keep-sorted-start re(^\* \w)
 
+* Bluetooth
+
+  * Audio
+
+    * :c:func:`bt_bap_ep_get_conn`
 
 .. zephyr-keep-sorted-stop
 
