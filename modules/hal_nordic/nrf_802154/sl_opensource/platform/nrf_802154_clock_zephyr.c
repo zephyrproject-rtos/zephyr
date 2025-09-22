@@ -88,8 +88,7 @@ void nrf_802154_clock_hfclk_stop(void)
 	hfclk_is_running = false;
 }
 
-#elif DT_NODE_HAS_STATUS(DT_NODELABEL(hfxo), okay) && \
-	DT_NODE_HAS_COMPAT(DT_NODELABEL(hfxo), nordic_nrf54h_hfxo)
+#elif defined(CONFIG_CLOCK_CONTROL_NRF2)
 
 void nrf_802154_clock_hfclk_start(void)
 {
