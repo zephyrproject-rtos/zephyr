@@ -1412,25 +1412,7 @@ static int dhcpv6_handle_dns_server_option(struct net_pkt *pkt)
 	}
 
 	ctx = dns_resolve_get_default();
-
-	if (IS_ENABLED(CONFIG_NET_DHCPV6_DNS_SERVER_VIA_INTERFACE)) {
-		/* If we are using the interface to resolve DNS servers,
-		 * we need to save the interface index.
-		 */
-		int ifindex = net_if_get_by_iface(net_pkt_iface(pkt));
-		int interfaces[MAX_DNS_SERVERS];
-
-		for (uint8_t i = 0; i < server_count; i++) {
-			interfaces[i] = ifindex;
-		}
-
-		status = dns_resolve_reconfigure_with_interfaces(ctx, NULL,
-								 dns_servers,
-								 interfaces);
-	} else {
-		status = dns_resolve_reconfigure(ctx, NULL, dns_servers);
-	}
-
+	status = dns_resolve_reconfigure(ctx, NULL, dns_servers);
 	if (status < 0) {
 		NET_DBG("Failed to reconfigure DNS resolver from DHCPv6 "
 			"option: %d", status);
