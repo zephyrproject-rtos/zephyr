@@ -35,8 +35,7 @@ menuconfig FLASH_MSPI_NOR
 	select FLASH_MSPI
 	select FLASH_HAS_EXPLICIT_ERASE
 	select FLASH_JESD216
-	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_JEDEC_MSPI_NOR),reset-gpios) \
-		    || $(dt_compat_any_has_prop,$(DT_COMPAT_JEDEC_MSPI_NOR),supply-gpios)
+	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_JEDEC_MSPI_NOR),reset-gpios)
 
 if FLASH_MSPI_NOR
 

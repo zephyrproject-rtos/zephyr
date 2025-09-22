@@ -35,8 +35,6 @@ properties:
     type: int
     description: |
       Minimum time, in nanoseconds, the flash chip needs to recover after reset.
-      Such delay is performed when a GPIO or software reset is done, or after
-      power is supplied to the chip if the "supply-gpios" property is specified.
 
   transfer-timeout:
     type: int
