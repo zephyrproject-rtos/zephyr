@@ -172,6 +172,11 @@ Display
 
 * SSD1363's properties using 'greyscale' now use 'grayscale'.
 
+Video
+*******
+
+* The :c:func:`video_init_ctrl` signature is changed.
+
 PTP Clock
 *********
 
