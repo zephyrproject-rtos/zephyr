@@ -84,7 +84,7 @@ static int trim_hsfll(void)
 	return 0;
 }
 
-void soc_early_init_hook(void)
+static int nordicsemi_nrf92_init(void)
 {
 	sys_cache_instr_enable();
 	sys_cache_data_enable();
@@ -102,9 +102,13 @@ void soc_early_init_hook(void)
 
 	nrf_spu_periph_perm_dmasec_set(spu, nrf_address_slave_get(ccm030_addr), true);
 #endif
+
+	return 0;
 }
 
 void arch_busy_wait(uint32_t time_us)
 {
 	nrfx_coredep_delay_us(time_us);
 }
+
+SYS_INIT(nordicsemi_nrf92_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
