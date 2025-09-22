@@ -17,4 +17,5 @@ if(CONFIG_BOARD_MPS2_AN521_CPU1 AND NOT CONFIG_OPENAMP)
     BUILD_BYPRODUCTS "${CPU0_BINARY_DIR}/${KERNEL_BIN_NAME}"
     BUILD_ALWAYS True
   )
+  add_dependencies(app empty_cpu0)
 endif()
