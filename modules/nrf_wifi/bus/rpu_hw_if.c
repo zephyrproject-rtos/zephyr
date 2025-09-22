@@ -260,15 +260,15 @@ static int rpu_pwroff(void)
 {
 	int ret;
 
-	ret = gpio_pin_set_dt(&iovdd_ctrl_spec, 0); /* IOVDD CNTRL = 0 */
-	if (ret) {
-		LOG_ERR("IOVDD GPIO set failed...");
-		return ret;
-	}
-
 	ret = gpio_pin_set_dt(&bucken_spec, 0); /* BUCKEN = 0 */
 	if (ret) {
 		LOG_ERR("BUCKEN GPIO set failed...");
+		return ret;
+	}
+
+	ret = gpio_pin_set_dt(&iovdd_ctrl_spec, 0); /* IOVDD CNTRL = 0 */
+	if (ret) {
+		LOG_ERR("IOVDD GPIO set failed...");
 		return ret;
 	}
 
