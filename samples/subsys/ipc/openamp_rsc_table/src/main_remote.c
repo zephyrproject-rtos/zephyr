@@ -24,7 +24,7 @@
 #endif
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(openamp_rsc_table);
+LOG_MODULE_REGISTER(openamp_rsc_table, LOG_LEVEL_INF);
 
 #define SHM_DEVICE_NAME	"shm"
 
