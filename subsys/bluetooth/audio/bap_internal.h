@@ -147,3 +147,5 @@ bool bt_bap_broadcast_sink_has_ep(const struct bt_bap_ep *ep);
 bool bt_bap_broadcast_source_has_ep(const struct bt_bap_ep *ep);
 bool bt_bap_unicast_client_has_ep(const struct bt_bap_ep *ep);
 bool bt_bap_unicast_server_has_ep(const struct bt_bap_ep *ep);
+struct bt_conn *bt_bap_unicast_client_ep_get_conn(const struct bt_bap_ep *ep);
+struct bt_conn *bt_bap_unicast_server_ep_get_conn(const struct bt_bap_ep *ep);
