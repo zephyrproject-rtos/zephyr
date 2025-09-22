@@ -153,9 +153,7 @@ void soc_early_init_hook(void)
 	nrf_spu_periph_perm_dmasec_set(spu, nrf_address_slave_get(ccm030_addr), true);
 #endif
 
-	if (((IS_ENABLED(CONFIG_SOC_NRF54H20_CPUAPP) &&
-	      DT_NODE_HAS_STATUS(DT_NODELABEL(nfct), disabled)) ||
-	     DT_NODE_HAS_STATUS(DT_NODELABEL(nfct), reserved)) &&
+	if (DT_NODE_HAS_STATUS(DT_NODELABEL(nfct), disabled) &&
 	    DT_PROP_OR(DT_NODELABEL(nfct), nfct_pins_as_gpios, 0)) {
 		nrf_nfct_pad_config_enable_set(NRF_NFCT, false);
 	}
