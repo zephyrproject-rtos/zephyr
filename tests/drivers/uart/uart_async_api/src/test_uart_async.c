@@ -1068,12 +1068,7 @@ static void *var_buf_length_setup(void)
 static void test_uart_async_var_buf(size_t buf_len, size_t tx_len)
 {
 	int ret;
-
-#if NOCACHE_MEM
-static __aligned(sizeof(void *)) uint8_t tx_buffer[VAR_LENGTH_TX_BUF_SIZE] __used __NOCACHE;
-#else
-static ZTEST_BMEM uint8_t tx_buffer[VAR_LENGTH_TX_BUF_SIZE];
-#endif /* NOCACHE_MEM */
+	uint8_t tx_buffer[VAR_LENGTH_TX_BUF_SIZE];
 
 	for (size_t i = 0; i < VAR_LENGTH_TX_BUF_SIZE; ++i) {
 		tx_buffer[i] = tx_len;
