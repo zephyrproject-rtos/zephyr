@@ -562,6 +562,9 @@ fill_query:
 		cq->int_menu = ctrl->int_menu;
 	}
 	cq->name = video_get_ctrl_name(cq->id);
+	if (cq->name == NULL) {
+		cq->name = ctrl->name;
+	}
 
 	return 0;
 }

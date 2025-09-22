@@ -61,6 +61,7 @@ struct video_ctrl {
 		const char *const *menu;
 		const int64_t *int_menu;
 	};
+	const char *name;
 
 	/* Fields should not be touched by drivers */
 	const struct video_device *vdev;
