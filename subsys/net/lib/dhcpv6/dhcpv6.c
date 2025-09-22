@@ -2226,9 +2226,8 @@ static void dhcpv6_iface_event_handler(struct net_mgmt_event_callback *cb,
 		 * comes back up.
 		 */
 		if (IS_ENABLED(CONFIG_NET_DHCPV6_DNS_SERVER_VIA_INTERFACE)) {
-			dns_resolve_remove_source(dns_resolve_get_default(),
-						  net_if_get_by_iface(iface),
-						  DNS_SOURCE_DHCPV6);
+			dns_resolve_remove(dns_resolve_get_default(),
+					   net_if_get_by_iface(iface));
 		}
 	} else if (mgmt_event == NET_EVENT_IF_UP) {
 		NET_DBG("Interface %p coming up", iface);
@@ -2323,12 +2322,6 @@ void net_dhcpv6_stop(struct net_if *iface)
 			net_dhcpv6_state_name(iface->config.dhcpv6.state));
 
 		(void)dhcpv6_enter_state(iface, NET_DHCPV6_DISABLED);
-
-		if (IS_ENABLED(CONFIG_NET_DHCPV6_DNS_SERVER_VIA_INTERFACE)) {
-			dns_resolve_remove_source(dns_resolve_get_default(),
-						  net_if_get_by_iface(iface),
-						  DNS_SOURCE_DHCPV6);
-		}
 
 		sys_slist_find_and_remove(&dhcpv6_ifaces,
 					  &iface->config.dhcpv6.node);

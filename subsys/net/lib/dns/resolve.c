@@ -2163,9 +2163,7 @@ int dns_resolve_reconfigure(struct dns_resolve_context *ctx,
 					  source);
 }
 
-static int dns_resolve_remove_and_check_source(struct dns_resolve_context *ctx, int if_index,
-					       bool check_source,
-					       enum dns_server_source source)
+int dns_resolve_remove(struct dns_resolve_context *ctx, int if_index)
 {
 	int i;
 	int ret = -ENOENT;
@@ -2190,10 +2188,6 @@ static int dns_resolve_remove_and_check_source(struct dns_resolve_context *ctx, 
 			continue;
 		}
 
-		if (check_source && ctx->servers[i].source != source) {
-			continue;
-		}
-
 		ctx->servers[i].if_index = 0;
 
 		/* See comment in dns_resolve_close_locked() about
@@ -2213,18 +2207,6 @@ static int dns_resolve_remove_and_check_source(struct dns_resolve_context *ctx, 
 	k_mutex_unlock(&ctx->lock);
 
 	return st;
-}
-
-int dns_resolve_remove(struct dns_resolve_context *ctx, int if_index)
-{
-	return dns_resolve_remove_and_check_source(ctx, if_index, false,
-						   DNS_SOURCE_UNKNOWN);
-}
-
-int dns_resolve_remove_source(struct dns_resolve_context *ctx, int if_index,
-			      enum dns_server_source source)
-{
-	return dns_resolve_remove_and_check_source(ctx, if_index, true, source);
 }
 
 struct dns_resolve_context *dns_resolve_get_default(void)

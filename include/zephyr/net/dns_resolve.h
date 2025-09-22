@@ -587,19 +587,6 @@ int dns_resolve_reconfigure_with_interfaces(struct dns_resolve_context *ctx,
 int dns_resolve_remove(struct dns_resolve_context *ctx, int if_index);
 
 /**
- * @brief Remove servers from the DNS resolving context that were added by
- *        a specific source.
- *
- * @param ctx DNS context
- * @param if_index Network interface from which the DNS servers are removed.
- * @param source Source of the DNS servers, e.g., manual, DHCPv4/6, etc.
- *
- * @return 0 if ok, <0 if error.
- */
-int dns_resolve_remove_source(struct dns_resolve_context *ctx, int if_index,
-			      enum dns_server_source source);
-
-/**
  * @brief Cancel a pending DNS query.
  *
  * @details This releases DNS resources used by a pending query.
