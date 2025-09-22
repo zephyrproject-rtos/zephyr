@@ -11,4 +11,3 @@ Networking Technologies
    thread.rst
    ppp.rst
    wifi.rst
-   wifi_credentials.rst
