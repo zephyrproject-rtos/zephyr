@@ -162,11 +162,10 @@ typedef struct {
 /** @endcond */
 
 #ifndef CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
-#if defined(CONFIG_SYS_CLOCK_EXISTS)
-#if CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC == 0
+#if defined(CONFIG_SYS_CLOCK_EXISTS) && \
+	(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC == 0)
 #error "SYS_CLOCK_HW_CYCLES_PER_SEC must be non-zero!"
-#endif /* CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC == 0 */
-#endif /* CONFIG_SYS_CLOCK_EXISTS */
+#endif
 #endif /* CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME */
 
 /* kernel clocks */
