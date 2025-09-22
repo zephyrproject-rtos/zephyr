@@ -1408,10 +1408,10 @@ static DEVICE_API(mspi, drv_api) = {
 };
 
 #define MSPI_DW_INST_IRQ(idx, inst)					\
-	IRQ_CONNECT(DT_INST_IRQN_BY_IDX(inst, idx),			\
+	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(inst, idx, irq),			\
 		    DT_INST_IRQ_BY_IDX(inst, idx, priority),		\
 		    mspi_dw_isr, DEVICE_DT_INST_GET(inst), 0);		\
-	irq_enable(DT_INST_IRQN_BY_IDX(inst, idx))
+	irq_enable(DT_INST_IRQ_BY_IDX(inst, idx, irq))
 
 #define MSPI_DW_MMIO_ROM_INIT(node_id)					\
 	COND_CODE_1(DT_REG_HAS_NAME(node_id, core),			\
