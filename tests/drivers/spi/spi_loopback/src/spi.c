@@ -291,9 +291,6 @@ ZTEST(spi_loopback, test_spi_complete_multiple)
 /* same as the test_spi_complete_multiple test, but seeing if there is any unreasonable latency */
 ZTEST(spi_loopback, test_spi_complete_multiple_timed)
 {
-	/* Do not check timing when coverage is enabled */
-	Z_TEST_SKIP_IFDEF(CONFIG_COVERAGE);
-
 	struct spi_dt_spec *spec = loopback_specs[spec_idx];
 	const struct spi_buf_set tx = spi_loopback_setup_xfer(tx_bufs_pool, 2,
 							      buffer_tx, BUF_SIZE,
