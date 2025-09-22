@@ -64,26 +64,3 @@ endif # MODEM_BACKEND_UART_ASYNC_HWFC
 endif # MODEM_BACKEND_UART_ASYNC
 
 endif # MODEM_BACKEND_UART
-
-config MODEM_BACKEND_UART_SLM
-	bool "SLM-optimized modem UART backend"
-	select MODEM_PIPE
-	select RING_BUFFER
-	depends on UART_ASYNC_API
-
-if MODEM_BACKEND_UART_SLM
-
-config MODEM_BACKEND_UART_SLM_BUFFER_COUNT
-	int "SLM modem UART backend buffer count"
-	range 2 4
-	default 3
-
-config MODEM_BACKEND_UART_SLM_TRANSMIT_TIMEOUT_MS
-	int "SLM modem UART transmit timeout in milliseconds"
-	default 1000
-
-config MODEM_BACKEND_UART_SLM_RECEIVE_IDLE_TIMEOUT_MS
-	int "SLM modem UART receive idle timeout in milliseconds"
-	default 30
-
-endif # MODEM_BACKEND_UART_SLM
