@@ -44,6 +44,16 @@ module-str = Log level for OpenThread driver
 module-help = Enables OpenThread driver to output debug messages.
 source "subsys/net/Kconfig.template.log_config.net"
 
+if OPENTHREAD_ZEPHYR_BORDER_ROUTER
+
+module = OPENTHREAD_L2_BORDER_ROUTER
+module-dep = NET_LOG
+module-str = Log level for OpenThread Border Router
+module-help = Enables OpenThread Border Router to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+
+endif # OPENTHREAD_ZEPHYR_BORDER_ROUTER
+
 endmenu # "Logging"
 
 endif # NET_L2_OPENTHREAD
