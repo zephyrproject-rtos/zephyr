@@ -433,7 +433,7 @@ int zsock_getaddrinfo(const char *host, const char *service,
 		      const struct zsock_addrinfo *hints,
 		      struct zsock_addrinfo **res)
 {
-	if (socket_offload_dns_is_enabled()) {
+	if (IS_ENABLED(CONFIG_NET_SOCKETS_OFFLOAD)) {
 		return socket_offload_getaddrinfo(host, service, hints, res);
 	}
 
@@ -471,7 +471,7 @@ int zsock_getaddrinfo(const char *host, const char *service,
 
 void zsock_freeaddrinfo(struct zsock_addrinfo *ai)
 {
-	if (socket_offload_dns_is_enabled()) {
+	if (IS_ENABLED(CONFIG_NET_SOCKETS_OFFLOAD)) {
 		socket_offload_freeaddrinfo(ai);
 		return;
 	}
