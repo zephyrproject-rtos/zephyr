@@ -45,12 +45,6 @@ enum {
 	/* Bit 2 and 3 might accidentally exist in old stored keys */
 	BT_KEYS_SC = BIT(4),
 	BT_KEYS_OOB = BIT(5),
-	/** Indicates that the keys are in conflict with existing keys.
-	 *
-	 * This is used to indicate that the keys being added conflict with
-	 * existing keys from different identity.
-	 */
-	BT_KEYS_ID_CONFLICT = BIT(6),
 };
 
 struct bt_ltk {

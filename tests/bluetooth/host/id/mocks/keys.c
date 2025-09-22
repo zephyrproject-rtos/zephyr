@@ -10,4 +10,3 @@
 
 DEFINE_FAKE_VALUE_FUNC(struct bt_keys *, bt_keys_find_irk, uint8_t, const bt_addr_le_t *);
 DEFINE_FAKE_VOID_FUNC(bt_keys_foreach_type, enum bt_keys_type, bt_keys_foreach_type_cb, void *);
-DEFINE_FAKE_VALUE_FUNC(struct bt_keys *, bt_keys_get_addr, uint8_t, const bt_addr_le_t *);

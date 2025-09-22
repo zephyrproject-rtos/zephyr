@@ -500,28 +500,7 @@ struct bt_keys;
 void bt_id_add(struct bt_keys *keys);
 void bt_id_del(struct bt_keys *keys);
 
-/** @brief Find a conflict in the resolving list for a candidate IRK.
- *
- * @param candidate The candidate keys to check for conflicts.
- * @param all If true, check all IRKs, otherwise check only added keys.
- *
- * @return The conflicting key if there is one, or NULL if no conflict was found.
- */
-struct bt_keys *bt_id_find_conflict(struct bt_keys *candidate, bool all);
-
-/** * @brief Find multiple conflicts in the resolving list for a candidate IRK.
- *
- * This function iterates over all keys (added and not added to the Resolving List). If there are
- * multiple conflicts, this function will return true. Otherwise, it will return false.
- *
- * If @c firt_conflict is not NULL, it will be set to the first found conflict.
- *
- * @param candidate The candidate key to check for conflicts.
- * @param first_conflict Pointer to store the first found conflict, if any. Can be NULL.
- *
- * @return True if there are multiple conflicts, otherwise it returns false.
- */
-bool bt_id_find_conflict_multiple(struct bt_keys *candidate, struct bt_keys **first_conflict);
+struct bt_keys *bt_id_find_conflict(struct bt_keys *candidate);
 
 int bt_setup_random_id_addr(void);
 int bt_setup_public_id_addr(void);
