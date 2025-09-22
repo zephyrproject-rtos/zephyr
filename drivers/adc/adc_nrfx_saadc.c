@@ -141,8 +141,12 @@ static struct driver_data m_data = {
 };
 
 /* Helper function to convert number of samples to the byte representation. */
-static uint32_t samples_to_bytes(uint16_t number_of_samples)
+static uint32_t samples_to_bytes(const struct adc_sequence *sequence, uint16_t number_of_samples)
 {
+	if (NRF_SAADC_8BIT_SAMPLE_WIDTH == 8 && sequence->resolution == 8) {
+		return number_of_samples;
+	}
+
 	return number_of_samples * 2;
 }
 
@@ -406,11 +410,11 @@ static void adc_context_update_buffer_pointer(struct adc_context *ctx,
 	if (!repeat) {
 #if defined(ADC_BUFFER_IN_RAM)
 		m_data.user_buffer = (uint8_t *)m_data.user_buffer +
-			samples_to_bytes(nrfy_saadc_amount_get(NRF_SAADC));
+			samples_to_bytes(&ctx->sequence, nrfy_saadc_amount_get(NRF_SAADC));
 #else
 		nrf_saadc_value_t *buffer =
 			(uint8_t *)nrf_saadc_buffer_pointer_get(NRF_SAADC) +
-			samples_to_bytes(nrfy_saadc_amount_get(NRF_SAADC));
+			samples_to_bytes(&ctx->sequence, nrfy_saadc_amount_get(NRF_SAADC));
 		nrfy_saadc_buffer_pointer_set(NRF_SAADC, buffer);
 #endif
 	}
@@ -497,7 +501,7 @@ static int check_buffer_size(const struct adc_sequence *sequence,
 {
 	size_t needed_buffer_size;
 
-	needed_buffer_size = samples_to_bytes(active_channels);
+	needed_buffer_size = samples_to_bytes(sequence, active_channels);
 
 	if (sequence->options) {
 		needed_buffer_size *= (1 + sequence->options->extra_samplings);
@@ -542,6 +546,7 @@ static int start_read(const struct device *dev,
 {
 	int error;
 	uint32_t selected_channels = sequence->channels;
+	uint8_t resolution = sequence->resolution;
 	uint8_t active_channels;
 	uint8_t channel_id;
 	nrf_saadc_burst_t burst;
@@ -569,6 +574,22 @@ static int start_read(const struct device *dev,
 			if (m_data.positive_inputs[channel_id] == 0U) {
 				LOG_ERR("Channel %u not configured",
 					    channel_id);
+				return -EINVAL;
+			}
+			/* Signal an error if the channel is configured as
+			 * single ended with a resolution which is identical
+			 * to the sample bit size. The SAADC's "single ended"
+			 * mode is really differential mode with the
+			 * negative input tied to ground. We can therefore
+			 * observe negative values if the positive input falls
+			 * below ground. If the sample bitsize is larger than
+			 * the resolution, we can detect negative values and
+			 * correct them to 0 after the sequencen has ended.
+			 */
+			if ((m_data.single_ended_channels & BIT(channel_id)) &&
+			    (NRF_SAADC_8BIT_SAMPLE_WIDTH == 8 && resolution == 8)) {
+				LOG_ERR("Channel %u invalid single ended resolution",
+					channel_id);
 				return -EINVAL;
 			}
 			/* When oversampling is used, the burst mode needs to
@@ -692,7 +713,7 @@ static void saadc_irq_handler(const struct device *dev)
 
 #if defined(ADC_BUFFER_IN_RAM)
 		memcpy(m_data.user_buffer, m_data.samples_buffer,
-			samples_to_bytes(m_data.active_channels));
+			samples_to_bytes(&m_data.ctx.sequence, m_data.active_channels));
 #endif
 
 		adc_context_on_sampling_done(&m_data.ctx, dev);
