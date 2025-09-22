@@ -65,9 +65,7 @@ static const uint32_t saadc_psels[NRF_SAADC_DVDD + 1] = {
 	[NRF_SAADC_AIN6] = NRF_PIN_PORT_TO_PIN_NUMBER(4U, 1),
 	[NRF_SAADC_AIN7] = NRF_PIN_PORT_TO_PIN_NUMBER(3U, 1),
 	[NRF_SAADC_VDD]  = NRF_SAADC_INPUT_VDD,
-#if defined(NRF_SAADC_INPUT_AVDD)
 	[NRF_SAADC_AVDD] = NRF_SAADC_INPUT_AVDD,
-#endif
 	[NRF_SAADC_DVDD] = NRF_SAADC_INPUT_DVDD,
 };
 #endif
@@ -233,7 +231,6 @@ static int adc_nrfx_channel_setup(const struct device *dev,
 		return -EINVAL;
 	}
 
-#if NRF_SAADC_HAS_CH_GAIN
 	switch (channel_cfg->gain) {
 #if defined(SAADC_CH_CONFIG_GAIN_Gain1_6)
 	case ADC_GAIN_1_6:
@@ -287,9 +284,6 @@ static int adc_nrfx_channel_setup(const struct device *dev,
 		break;
 #endif
 	default:
-#else
-	if (channel_cfg->gain != ADC_GAIN_1) {
-#endif /* defined(NRF_SAADC_HAS_CH_GAIN) */
 		LOG_ERR("Selected ADC gain is not valid");
 		return -EINVAL;
 	}
