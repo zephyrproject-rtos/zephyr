@@ -49,4 +49,3 @@ source "subsys/logging/Kconfig.template.log_config"
 endif # MRAM_LATENCY
 
 rsource "vpr/Kconfig"
-rsource "uicr/Kconfig"

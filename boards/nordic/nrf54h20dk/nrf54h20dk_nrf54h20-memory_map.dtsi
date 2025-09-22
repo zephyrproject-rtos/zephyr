@@ -162,9 +162,5 @@
 		storage_partition: partition@1a4000 {
 			reg = <0x1a4000 DT_SIZE_K(40)>;
 		};
-
-		periphconf_partition: partition@1ae000 {
-			reg = <0x1ae000 DT_SIZE_K(8)>;
-		};
 	};
 };
