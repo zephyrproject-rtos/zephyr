@@ -54,24 +54,30 @@ class Shell:
         self, command: str, timeout: float | None = None, print_output: bool = True
     ) -> list[str]:
         """
-        Send shell command to a device and return response. Passed command
-        is extended by double enter sings - first one to execute this command
-        on a device, second one to receive next prompt what is a signal that
-        execution was finished. Method returns printout of the executed command.
+        Send shell command to a device and return response. Method returns printout of
+        the executed command.
         """
         timeout = timeout or self.base_timeout
-        command_ext = f'{command}\n\n'
+        command_ext = f'{command}\n'
         regex_prompt = re.escape(self.prompt)
         regex_command = f'.*{re.escape(command)}'
+
+        # Execute command
         self._device.clear_buffer()
         self._device.write(command_ext.encode())
         lines: list[str] = []
-        # wait for device command print - it should be done immediately after sending command to device
+        # wait for device command print - it should be done immediately after sending
+        # command to device.
         lines.extend(
             self._device.readlines_until(
                 regex=regex_command, timeout=1.0, print_output=print_output
             )
         )
+
+        # Send single enter to get next prompt after command execution, as it signals
+        # that execution finished.
+        self._device.write(b"\n")
+
         # wait for device command execution
         lines.extend(
             self._device.readlines_until(

@@ -45,3 +45,7 @@ or build shell application by west and call pytest directly:
   # hardware
   west build -p -b nrf52840dk/nrf52840
   pytest --twister-harness --device-type=hardware --device-serial=/dev/ttyACM0 --build-dir=build -p twister_harness.plugin
+
+  # hardware over RTT
+  west build -p -b nrf52840dk/nrf52840 . -T sample.pytest.rtt
+  pytest --twister-harness --device-type=hardware --device-rtt=True --build-dir=build -p twister_harness.plugin
