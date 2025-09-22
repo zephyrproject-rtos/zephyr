@@ -133,7 +133,7 @@ static int cmd_le_set_ext_scan_enable(bool enable, bool filter_duplicates, uint1
 	struct net_buf *buf;
 	int err;
 
-	buf = bt_hci_cmd_alloc(K_FOREVER);
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_EXT_SCAN_ENABLE, sizeof(*cp));
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -163,7 +163,7 @@ static int cmd_le_set_scan_enable_legacy(bool enable, bool filter_duplicates)
 	struct net_buf *buf;
 	int err;
 
-	buf = bt_hci_cmd_alloc(K_FOREVER);
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_SCAN_ENABLE, sizeof(*cp));
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -252,7 +252,10 @@ static int start_le_scan_ext(struct bt_le_scan_param *scan_param)
 		return err;
 	}
 
-	buf = bt_hci_cmd_alloc(K_FOREVER);
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_EXT_SCAN_PARAM,
+				sizeof(*set_param) +
+				(phy_1m ? sizeof(*phy_1m) : 0) +
+				(phy_coded ? sizeof(*phy_coded) : 0));
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -319,7 +322,7 @@ static int start_le_scan_legacy(struct bt_le_scan_param *param)
 		return err;
 	}
 
-	buf = bt_hci_cmd_alloc(K_FOREVER);
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_SCAN_PARAM, sizeof(set_param));
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -1163,7 +1166,8 @@ static int per_adv_sync_terminate(uint16_t handle)
 	struct bt_hci_cp_le_per_adv_terminate_sync *cp;
 	struct net_buf *buf;
 
-	buf = bt_hci_cmd_alloc(K_FOREVER);
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_PER_ADV_TERMINATE_SYNC,
+				sizeof(*cp));
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -1355,7 +1359,9 @@ int bt_le_per_adv_sync_subevent(struct bt_le_per_adv_sync *per_adv_sync,
 		return -EINVAL;
 	}
 
-	buf = bt_hci_cmd_alloc(K_FOREVER);
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_PER_ADV_SYNC_SUBEVENT,
+				sizeof(*cp) + params->num_subevents);
+
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -1393,7 +1399,9 @@ int bt_le_per_adv_set_response_data(struct bt_le_per_adv_sync *per_adv_sync,
 		return -EINVAL;
 	}
 
-	buf = bt_hci_cmd_alloc(K_FOREVER);
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_PER_ADV_RESPONSE_DATA,
+				sizeof(*cp) + data->len);
+
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -1919,7 +1927,7 @@ int bt_le_per_adv_sync_create(const struct bt_le_per_adv_sync_param *param,
 		return -ENOMEM;
 	}
 
-	buf = bt_hci_cmd_alloc(K_FOREVER);
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_PER_ADV_CREATE_SYNC, sizeof(*cp));
 	if (!buf) {
 		per_adv_sync_delete(per_adv_sync);
 		return -ENOBUFS;
@@ -2026,7 +2034,7 @@ static int bt_le_per_adv_sync_create_cancel(
 		return err;
 	}
 
-	buf = bt_hci_cmd_alloc(K_FOREVER);
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_PER_ADV_CREATE_SYNC_CANCEL, 0);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -2122,7 +2130,8 @@ static int bt_le_set_per_adv_recv_enable(
 		return -EALREADY;
 	}
 
-	buf = bt_hci_cmd_alloc(K_FOREVER);
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_PER_ADV_RECV_ENABLE,
+				sizeof(*cp));
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -2180,7 +2189,8 @@ int bt_le_per_adv_sync_transfer(const struct bt_le_per_adv_sync *per_adv_sync,
 		return -ENOTSUP;
 	}
 
-	buf = bt_hci_cmd_alloc(K_FOREVER);
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_PER_ADV_SYNC_TRANSFER,
+				sizeof(*cp));
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -2220,7 +2230,7 @@ static int past_param_set(const struct bt_conn *conn, uint8_t mode,
 	struct bt_hci_cp_le_past_param *cp;
 	struct net_buf *buf;
 
-	buf = bt_hci_cmd_alloc(K_FOREVER);
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_PAST_PARAM, sizeof(*cp));
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -2243,7 +2253,7 @@ static int default_past_param_set(uint8_t mode, uint16_t skip, uint16_t timeout,
 	struct bt_hci_cp_le_default_past_param *cp;
 	struct net_buf *buf;
 
-	buf = bt_hci_cmd_alloc(K_FOREVER);
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_DEFAULT_PAST_PARAM, sizeof(*cp));
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -2371,7 +2381,8 @@ int bt_le_per_adv_list_add(const bt_addr_le_t *addr, uint8_t sid)
 		return -EAGAIN;
 	}
 
-	buf = bt_hci_cmd_alloc(K_FOREVER);
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_ADD_DEV_TO_PER_ADV_LIST,
+				sizeof(*cp));
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -2401,7 +2412,8 @@ int bt_le_per_adv_list_remove(const bt_addr_le_t *addr, uint8_t sid)
 		return -EAGAIN;
 	}
 
-	buf = bt_hci_cmd_alloc(K_FOREVER);
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_REM_DEV_FROM_PER_ADV_LIST,
+				sizeof(*cp));
 	if (!buf) {
 		return -ENOBUFS;
 	}
