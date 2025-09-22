@@ -189,12 +189,8 @@ static void bt_hci_tx_sync_in(struct usbd_class_data *const c_data,
 	}
 
 	net_buf_add_mem(buf, bt_buf->data, bt_buf->len);
-	if (usbd_ep_enqueue(c_data, buf)) {
-		LOG_ERR("Failed to enqueue transfer");
-	} else {
-		k_sem_take(&hci_data->sync_sem, K_FOREVER);
-	}
-
+	usbd_ep_enqueue(c_data, buf);
+	k_sem_take(&hci_data->sync_sem, K_FOREVER);
 	net_buf_unref(buf);
 }
 
