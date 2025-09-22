@@ -183,6 +183,10 @@
 
 			#address-cells = <1>;
 			#size-cells = <0>;
+			silabs,port-count = <4>;
+			silabs,max-pin-usage-count = <8>;
+			power-domains = <&siwx91x_soc_pd>;
+			zephyr,pm-device-runtime-auto;
 
 			gpioa: gpio@0 {
 				compatible = "silabs,siwx91x-gpio-port";
@@ -235,6 +239,10 @@
 
 			#address-cells = <1>;
 			#size-cells = <0>;
+			silabs,port-count = <1>;
+			silabs,max-pin-usage-count = <4>;
+			power-domains = <&siwx91x_soc_pd>;
+			zephyr,pm-device-runtime-auto;
 
 			ulpgpio: ulpgpio@0 {
 				compatible = "silabs,siwx91x-gpio-port";
