@@ -62,18 +62,10 @@ config SOC_NRF54LM20A_ENGA_CPUFLPR
 if SOC_SERIES_NRF54LX
 
 config SOC_NRF54LX_SKIP_CLOCK_CONFIG
-	bool
-	prompt "Skip clock frequency configuration in system initialization" if TRUSTED_EXECUTION_SECURE
-	default y if TRUSTED_EXECUTION_NONSECURE
+	bool "Skip clock frequency configuration in system initialization"
 	help
-	  With this option, the CPU clock frequency is not set during this
-	  Zephyr image's system initialization. The CPU runs with either
-	  the HW reset values, or with the configuration set by an image
-	  earlier in the boot chain.
-
-	  Note that for security reasons it is not supported to configure
-	  the clock peripheral (NRF_OSCILLATORS) from the non-secure
-	  domain.
+	  With this option, the CPU clock frequency is not set during system initialization.
+	  The CPU runs with the default, hardware-selected frequency.
 
 config SOC_NRF54LX_DISABLE_FICR_TRIMCNF
 	bool "Disable trimming of the device"
