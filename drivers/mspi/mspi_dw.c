@@ -940,6 +940,7 @@ static int start_next_packet(const struct device *dev, k_timeout_t timeout)
 	write_spi_ctrlr0(dev, dev_data->spi_ctrlr0);
 	write_baudr(dev, dev_data->baudr);
 	write_rx_sample_dly(dev, dev_data->rx_sample_dly);
+	write_ser(dev, BIT(dev_data->dev_id->dev_idx));
 
 	if (xip_enabled) {
 		write_ssienr(dev, SSIENR_SSIC_EN_BIT);
@@ -1026,17 +1027,8 @@ static int start_next_packet(const struct device *dev, k_timeout_t timeout)
 		}
 	}
 
-	/* Prefill TX FIFO with any data we can */
-	if (dev_data->dummy_bytes && tx_dummy_bytes(dev)) {
-		imr = IMR_RXFIM_BIT;
-	} else if (packet->dir == MSPI_TX && packet->num_bytes) {
-		tx_data(dev, packet);
-	}
-
 	/* Enable interrupts now and wait until the packet is done. */
 	write_imr(dev, imr);
-	/* Write SER to start transfer */
-	write_ser(dev, BIT(dev_data->dev_id->dev_idx));
 
 	rc = k_sem_take(&dev_data->finished, timeout);
 	if (read_risr(dev) & RISR_RXOIR_BIT) {
@@ -1066,8 +1058,6 @@ static int start_next_packet(const struct device *dev, k_timeout_t timeout)
 	} else {
 		write_ssienr(dev, 0);
 	}
-	/* Clear SER */
-	write_ser(dev, 0);
 
 	if (dev_data->dev_id->ce.port) {
 		int rc2;
