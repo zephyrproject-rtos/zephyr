@@ -46,10 +46,10 @@ static struct log_backend_net_ctx {
 static int line_out(uint8_t *data, size_t length, void *output_ctx)
 {
 	struct log_backend_net_ctx *ctx = (struct log_backend_net_ctx *)output_ctx;
-	int ret = -ENOMEM;
 	struct msghdr msg = { 0 };
 	struct iovec io_vector[2];
 	int pos = 0;
+	int ret;
 
 	if (ctx == NULL) {
 		return length;
@@ -129,6 +129,16 @@ static int do_net_init(struct log_backend_net_ctx *ctx)
 	if (ret < 0) {
 		ret = -errno;
 		DBG("Cannot connect socket (%d)\n", ret);
+		goto err;
+	}
+
+	/* Close the reading side of the TCP or UDP socket just in case so that we will
+	 * not run out of RX buffers because we do not read anything.
+	 */
+	ret = zsock_shutdown(ctx->sock, ZSOCK_SHUT_RD);
+	if (ret < 0) {
+		ret = -errno;
+		DBG("Cannot shutdown reading side of the socket (%d)\n", ret);
 		goto err;
 	}
 
