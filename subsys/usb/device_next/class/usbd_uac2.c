@@ -399,8 +399,6 @@ static void schedule_iso_out_read(struct usbd_class_data *const c_data,
 	if (ret) {
 		LOG_ERR("Failed to enqueue net_buf for 0x%02x", ep);
 		net_buf_unref(buf);
-		ctx->ops->data_recv_cb(dev, terminal,
-				       data_buf, 0, ctx->user_data);
 		atomic_clear_bit(queued_bits, as_idx);
 	}
 }
