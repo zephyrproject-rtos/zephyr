@@ -343,8 +343,8 @@ zephyr_udc0: &usbhs {
 
 /* Trim this RAM block for making room on all run-time common S2RAM cpu context. */
 &cpuapp_ram0 {
-	reg = <0x22000000 (DT_SIZE_K(32) - 32)>;
-	ranges = <0x0 0x22000000 (0x8000 - 0x20)>;
+	reg = <0x22000000 (DT_SIZE_K(32)-32)>;
+	ranges = <0x0 0x22000000 (0x8000-0x20)>;
 };
 
 / {
