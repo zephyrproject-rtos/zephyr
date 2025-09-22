@@ -17,7 +17,6 @@
 #include <zephyr/pm/device_runtime.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
-#include <zephyr/drivers/mspi/mspi_dw.h>
 
 #include "mspi_dw.h"
 
@@ -49,7 +48,6 @@ struct mspi_dw_data {
 	uint32_t ctrlr0;
 	uint32_t spi_ctrlr0;
 	uint32_t baudr;
-	uint32_t rx_sample_dly;
 
 #if defined(CONFIG_MSPI_XIP)
 	uint32_t xip_freq;
@@ -115,7 +113,6 @@ DEFINE_MM_REG_WR(imr,		0x2c)
 DEFINE_MM_REG_RD(isr,		0x30)
 DEFINE_MM_REG_RD(risr,		0x34)
 DEFINE_MM_REG_RD_WR(dr,		0x60)
-DEFINE_MM_REG_WR(rx_sample_dly,	0xf0)
 DEFINE_MM_REG_WR(spi_ctrlr0,	0xf4)
 
 #if defined(CONFIG_MSPI_XIP)
@@ -939,7 +936,6 @@ static int start_next_packet(const struct device *dev, k_timeout_t timeout)
 		: 0);
 	write_spi_ctrlr0(dev, dev_data->spi_ctrlr0);
 	write_baudr(dev, dev_data->baudr);
-	write_rx_sample_dly(dev, dev_data->rx_sample_dly);
 	write_ser(dev, BIT(dev_data->dev_id->dev_idx));
 
 	if (xip_enabled) {
@@ -1266,20 +1262,6 @@ static int _api_xip_config(const struct device *dev,
 	return 0;
 }
 
-static int api_timing_config(const struct device *dev,
-			     const struct mspi_dev_id *dev_id,
-			     const uint32_t param_mask, void *cfg)
-{
-	struct mspi_dw_data *dev_data = dev->data;
-	struct mspi_dw_timing_cfg *config = cfg;
-
-	if (param_mask & MSPI_DW_RX_TIMING_CFG) {
-		dev_data->rx_sample_dly = config->rx_sample_dly;
-		return 0;
-	}
-	return -ENOTSUP;
-}
-
 static int api_xip_config(const struct device *dev,
 			  const struct mspi_dev_id *dev_id,
 			  const struct mspi_xip_cfg *cfg)
@@ -1425,7 +1407,6 @@ static DEVICE_API(mspi, drv_api) = {
 	.dev_config         = api_dev_config,
 	.get_channel_status = api_get_channel_status,
 	.transceive         = api_transceive,
-	.timing_config      = api_timing_config,
 #if defined(CONFIG_MSPI_XIP)
 	.xip_config         = api_xip_config,
 #endif
