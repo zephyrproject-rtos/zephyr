@@ -102,30 +102,18 @@ int i2c_nrfx_twim_msg_transfer(const struct device *dev, uint8_t flags, uint8_t 
 	return ret;
 }
 
-void twim_nrfx_pm_resume(const struct device *dev)
-{
-	const struct i2c_nrfx_twim_common_config *config = dev->config;
-
-	(void)pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
-	nrfx_twim_enable(&config->twim);
-}
-
-void twim_nrfx_pm_suspend(const struct device *dev)
-{
-	const struct i2c_nrfx_twim_common_config *config = dev->config;
-
-	nrfx_twim_disable(&config->twim);
-	(void)pinctrl_apply_state(config->pcfg, PINCTRL_STATE_SLEEP);
-}
-
 int twim_nrfx_pm_action(const struct device *dev, enum pm_device_action action)
 {
+	const struct i2c_nrfx_twim_common_config *config = dev->config;
+
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
-		twim_nrfx_pm_resume(dev);
+		(void)pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+		nrfx_twim_enable(&config->twim);
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
-		twim_nrfx_pm_suspend(dev);
+		nrfx_twim_disable(&config->twim);
+		(void)pinctrl_apply_state(config->pcfg, PINCTRL_STATE_SLEEP);
 		break;
 	default:
 		return -ENOTSUP;
@@ -149,32 +137,4 @@ int i2c_nrfx_twim_common_init(const struct device *dev)
 	}
 
 	return pm_device_driver_init(dev, twim_nrfx_pm_action);
-}
-
-int i2c_nrfx_twim_common_deinit(const struct device *dev)
-{
-	const struct i2c_nrfx_twim_common_config *config = dev->config;
-#if CONFIG_PM_DEVICE
-	enum pm_device_state state;
-#endif
-
-#if CONFIG_PM_DEVICE
-	/*
-	 * PM must have suspended the device before driver can
-	 * be deinitialized
-	 */
-	(void)pm_device_state_get(dev, &state);
-	if (state != PM_DEVICE_STATE_SUSPENDED &&
-	    state != PM_DEVICE_STATE_OFF) {
-		LOG_ERR("device active");
-		return -EBUSY;
-	}
-#else
-	/* Suspend device */
-	twim_nrfx_pm_suspend(dev);
-#endif
-
-	/* Uninit device hardware */
-	nrfx_twim_uninit(&config->twim);
-	return 0;
 }

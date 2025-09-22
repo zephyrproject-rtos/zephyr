@@ -203,17 +203,12 @@ static DEVICE_API(i2c, i2c_nrfx_twim_driver_api) = {
 	.iodev_submit = i2c_nrfx_twim_rtio_submit,
 };
 
-static int i2c_nrfx_twim_rtio_init(const struct device *dev)
+int i2c_nrfx_twim_rtio_init(const struct device *dev)
 {
 	const struct i2c_nrfx_twim_rtio_config *config = dev->config;
 
 	i2c_rtio_init(config->ctx, dev);
 	return i2c_nrfx_twim_common_init(dev);
-}
-
-static int i2c_nrfx_twim_rtio_deinit(const struct device *dev)
-{
-	return i2c_nrfx_twim_common_deinit(dev);
 }
 
 #define CONCAT_BUF_SIZE(idx)                                                                       \
@@ -287,10 +282,9 @@ static int i2c_nrfx_twim_rtio_deinit(const struct device *dev)
 		.ctx = &_i2c##idx##_twim_rtio,                                                     \
 	};                                                                                         \
 	PM_DEVICE_DT_DEFINE(I2C(idx), twim_nrfx_pm_action, PM_DEVICE_ISR_SAFE);                    \
-	I2C_DEVICE_DT_DEINIT_DEFINE(I2C(idx), i2c_nrfx_twim_rtio_init, i2c_nrfx_twim_rtio_deinit,  \
-			     PM_DEVICE_DT_GET(I2C(idx)), &twim_##idx##z_data,                      \
-			     &twim_##idx##z_config, POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,         \
-			     &i2c_nrfx_twim_driver_api);
+	I2C_DEVICE_DT_DEFINE(I2C(idx), i2c_nrfx_twim_rtio_init, PM_DEVICE_DT_GET(I2C(idx)),        \
+			     &twim_##idx##z_data, &twim_##idx##z_config, POST_KERNEL,              \
+			     CONFIG_I2C_INIT_PRIORITY, &i2c_nrfx_twim_driver_api);
 
 #ifdef CONFIG_HAS_HW_NRF_TWIM0
 I2C_NRFX_TWIM_RTIO_DEVICE(0);
