@@ -118,8 +118,7 @@ LOG_MODULE_REGISTER(ipc_icbmsg,
 #define FLAG_EPT_COUNT_MASK 0xFFFF
 
 /** Workqueue stack size for bounding processing (this configuration is not optimized). */
-#define EP_BOUND_WORK_Q_STACK_SIZE \
-	(CONFIG_IPC_SERVICE_BACKEND_ICBMSG_EP_BOUND_WORK_Q_STACK_SIZE)
+#define EP_BOUND_WORK_Q_STACK_SIZE (512U)
 
 /** Workqueue priority for bounding processing. */
 #define EP_BOUND_WORK_Q_PRIORITY (CONFIG_SYSTEM_WORKQUEUE_PRIORITY)

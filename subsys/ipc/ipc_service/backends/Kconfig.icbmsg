@@ -23,14 +23,6 @@ config IPC_SERVICE_BACKEND_ICBMSG_NUM_EP
 	  backend. The number of endpoints are applied to all the instances,
 	  so this value should be maximum number among all the instances.
 
-config IPC_SERVICE_BACKEND_ICBMSG_EP_BOUND_WORK_Q_STACK_SIZE
-	int "Workqueue stack size"
-	default 1024 if NO_OPTIMIZATIONS
-	default 512
-	help
-	  Workqueue stack size for bounding processing
-	  (this configuration is not optimized).
-
 module = IPC_SERVICE_BACKEND_ICBMSG
 module-str = ICMSG backend with separate buffers
 module-help = Sets log level for ICMsg backend with buffers
