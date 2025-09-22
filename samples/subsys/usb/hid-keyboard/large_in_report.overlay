@@ -7,7 +7,7 @@
 / {
 	hid_dev_0: hid_dev_0 {
 		compatible = "zephyr,hid-device";
-		label = "HID0";
+		interface-name = "HID0";
 		in-report-size = <256>;
 		in-polling-period-us = <1000>;
 	};
