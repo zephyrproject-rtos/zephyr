@@ -396,6 +396,17 @@
 				status = "disabled";
 			};
 
+			spi11: spi@400 {
+				compatible = "atmel,sam-spi";
+				reg = <0x400 0x200>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 49>;
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 49 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+
 			usart11: serial@200 {
 				compatible = "atmel,sam-usart";
 				reg = <0x200 0x200>;

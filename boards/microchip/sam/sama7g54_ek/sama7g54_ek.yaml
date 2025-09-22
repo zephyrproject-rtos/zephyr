@@ -11,5 +11,6 @@ ram: 128
 supported:
   - sdhc
   - shell
+  - spi
   - uart
 vendor: microchip
