@@ -46,7 +46,6 @@ LOG_MODULE_REGISTER(bt_l2cap, CONFIG_BT_L2CAP_LOG_LEVEL);
 #define CHAN_RX(_w) CONTAINER_OF(_w, struct bt_l2cap_le_chan, rx_work)
 
 #define L2CAP_LE_MIN_MTU		23
-#define L2CAP_LE_MIN_MPS		23
 
 #define L2CAP_LE_MAX_CREDITS		(BT_BUF_ACL_RX_COUNT - 1)
 
@@ -1479,7 +1478,7 @@ static void le_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 
 	LOG_DBG("psm 0x%02x scid 0x%04x mtu %u mps %u credits %u", psm, scid, mtu, mps, credits);
 
-	if (mtu < L2CAP_LE_MIN_MTU || mps < L2CAP_LE_MIN_MPS) {
+	if (mtu < L2CAP_LE_MIN_MTU || mps < L2CAP_LE_MIN_MTU) {
 		LOG_ERR("Invalid LE-Conn Req params: mtu %u mps %u", mtu, mps);
 		return;
 	}
@@ -1578,7 +1577,7 @@ static void le_ecred_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 
 	LOG_DBG("psm 0x%02x mtu %u mps %u credits %u", psm, mtu, mps, credits);
 
-	if (mtu < BT_L2CAP_ECRED_MIN_MTU || mps < BT_L2CAP_ECRED_MIN_MPS) {
+	if (mtu < BT_L2CAP_ECRED_MIN_MTU || mps < BT_L2CAP_ECRED_MIN_MTU) {
 		LOG_ERR("Invalid ecred conn req params. mtu %u mps %u", mtu, mps);
 		result = BT_L2CAP_LE_ERR_INVALID_PARAMS;
 		goto response;
@@ -1686,7 +1685,7 @@ static void le_ecred_reconf_req(struct bt_l2cap *l2cap, uint8_t ident,
 	mtu = sys_le16_to_cpu(req->mtu);
 	mps = sys_le16_to_cpu(req->mps);
 
-	if (mps < BT_L2CAP_ECRED_MIN_MPS) {
+	if (mps < BT_L2CAP_ECRED_MIN_MTU) {
 		result = BT_L2CAP_RECONF_OTHER_UNACCEPT;
 		goto response;
 	}
