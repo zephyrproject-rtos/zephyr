@@ -11,53 +11,12 @@
 
 LOG_MODULE_DECLARE(ADXL345, CONFIG_SENSOR_LOG_LEVEL);
 
-void adxl345_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
-{
-	const struct sensor_read_config *cfg =
-			(const struct sensor_read_config *) iodev_sqe->sqe.iodev->data;
-	struct adxl345_dev_data *data = (struct adxl345_dev_data *)dev->data;
-	uint8_t int_value = (uint8_t)~ADXL345_INT_WATERMARK;
-	uint8_t fifo_watermark_irq = 0;
-	int rc;
+static void adxl345_fifo_flush_rtio(const struct device *dev);
 
-	if (adxl345_set_gpios_en(dev, false)) {
-		return;
-	}
+/* auxiliary functions */
 
-	for (size_t i = 0; i < cfg->count; i++) {
-		if (cfg->triggers[i].trigger == SENSOR_TRIG_FIFO_WATERMARK) {
-			int_value = ADXL345_INT_WATERMARK;
-			fifo_watermark_irq = 1;
-		}
-	}
-		uint8_t status;
-	if (fifo_watermark_irq != data->fifo_watermark_irq) {
-		data->fifo_watermark_irq = fifo_watermark_irq;
-		rc = adxl345_reg_write_mask(dev, ADXL345_INT_MAP_REG,
-					    ADXL345_INT_WATERMARK, int_value);
-		if (rc < 0) {
-			return;
-		}
 
-		/* Flush the FIFO by disabling it. Save current mode for after the reset. */
-		enum adxl345_fifo_mode current_fifo_mode = data->fifo_config.fifo_mode;
-
-		if (current_fifo_mode == ADXL345_FIFO_BYPASSED) {
-			current_fifo_mode = ADXL345_FIFO_STREAMED;
-		}
-		adxl345_configure_fifo(dev, ADXL345_FIFO_BYPASSED, data->fifo_config.fifo_trigger,
-				data->fifo_config.fifo_samples);
-		adxl345_configure_fifo(dev, current_fifo_mode, data->fifo_config.fifo_trigger,
-				data->fifo_config.fifo_samples);
-		rc = adxl345_reg_read_byte(dev, ADXL345_FIFO_STATUS_REG, &status);
-	}
-
-	if (adxl345_set_gpios_en(dev, true)) {
-		return;
-	}
-
-	data->sqe = iodev_sqe;
-}
+/* streaming callbacks and calls */
 
 static void adxl345_irq_en_cb(struct rtio *r, const struct rtio_sqe *sqe, int result, void *arg)
 {
@@ -66,38 +25,6 @@ static void adxl345_irq_en_cb(struct rtio *r, const struct rtio_sqe *sqe, int re
 	const struct device *dev = (const struct device *)arg;
 
 	adxl345_set_gpios_en(dev, true);
-}
-
-static void adxl345_fifo_flush_rtio(const struct device *dev)
-{
-	struct adxl345_dev_data *data = dev->data;
-	uint8_t fifo_config;
-
-	fifo_config = ADXL345_FIFO_CTL_TRIGGER_UNSET |
-			adxl345_fifo_ctl_mode_init[ADXL345_FIFO_BYPASSED] |
-			data->fifo_config.fifo_samples;
-
-	struct rtio_sqe *write_fifo_addr = rtio_sqe_acquire(data->rtio_ctx);
-	const uint8_t reg_addr_w2[2] = {ADXL345_FIFO_CTL_REG, fifo_config};
-
-	rtio_sqe_prep_tiny_write(write_fifo_addr, data->iodev, RTIO_PRIO_NORM, reg_addr_w2,
-					2, NULL);
-
-	fifo_config = ADXL345_FIFO_CTL_TRIGGER_UNSET |
-			adxl345_fifo_ctl_mode_init[data->fifo_config.fifo_mode] |
-			data->fifo_config.fifo_samples;
-
-	write_fifo_addr = rtio_sqe_acquire(data->rtio_ctx);
-	const uint8_t reg_addr_w3[2] = {ADXL345_FIFO_CTL_REG, fifo_config};
-
-	rtio_sqe_prep_tiny_write(write_fifo_addr, data->iodev, RTIO_PRIO_NORM, reg_addr_w3,
-					2, NULL);
-	write_fifo_addr->flags |= RTIO_SQE_CHAINED;
-
-	struct rtio_sqe *complete_op = rtio_sqe_acquire(data->rtio_ctx);
-
-	rtio_sqe_prep_callback(complete_op, adxl345_irq_en_cb, (void *)dev, NULL);
-	rtio_submit(data->rtio_ctx, 0);
 }
 
 static void adxl345_fifo_read_cb(struct rtio *rtio_ctx, const struct rtio_sqe *sqe,
@@ -357,6 +284,90 @@ static void adxl345_process_status1_cb(struct rtio *r, const struct rtio_sqe *sq
 							current_sqe);
 
 	rtio_submit(data->rtio_ctx, 0);
+}
+
+static void adxl345_fifo_flush_rtio(const struct device *dev)
+{
+	struct adxl345_dev_data *data = dev->data;
+	uint8_t fifo_config;
+
+	fifo_config = ADXL345_FIFO_CTL_TRIGGER_UNSET |
+			adxl345_fifo_ctl_mode_init[ADXL345_FIFO_BYPASSED] |
+			data->fifo_config.fifo_samples;
+
+	struct rtio_sqe *write_fifo_addr = rtio_sqe_acquire(data->rtio_ctx);
+	const uint8_t reg_addr_w2[2] = {ADXL345_FIFO_CTL_REG, fifo_config};
+
+	rtio_sqe_prep_tiny_write(write_fifo_addr, data->iodev, RTIO_PRIO_NORM,
+				 reg_addr_w2, 2, NULL);
+
+	fifo_config = ADXL345_FIFO_CTL_TRIGGER_UNSET |
+			adxl345_fifo_ctl_mode_init[data->fifo_config.fifo_mode] |
+			data->fifo_config.fifo_samples;
+
+	write_fifo_addr = rtio_sqe_acquire(data->rtio_ctx);
+	const uint8_t reg_addr_w3[2] = {ADXL345_FIFO_CTL_REG, fifo_config};
+
+	rtio_sqe_prep_tiny_write(write_fifo_addr, data->iodev, RTIO_PRIO_NORM,
+				 reg_addr_w3, 2, NULL);
+	write_fifo_addr->flags |= RTIO_SQE_CHAINED;
+
+	struct rtio_sqe *complete_op = rtio_sqe_acquire(data->rtio_ctx);
+
+	rtio_sqe_prep_callback(complete_op, adxl345_irq_en_cb, (void *)dev, NULL);
+	rtio_submit(data->rtio_ctx, 0);
+}
+
+/* Consumer calls */
+
+void adxl345_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
+{
+	const struct sensor_read_config *cfg =
+			(const struct sensor_read_config *)iodev_sqe->sqe.iodev->data;
+	struct adxl345_dev_data *data = (struct adxl345_dev_data *)dev->data;
+	uint8_t int_value = (uint8_t)~ADXL345_INT_WATERMARK;
+	uint8_t fifo_watermark_irq = 0;
+	int rc;
+
+	if (adxl345_set_gpios_en(dev, false)) {
+		return;
+	}
+
+	for (size_t i = 0; i < cfg->count; i++) {
+		if (cfg->triggers[i].trigger == SENSOR_TRIG_FIFO_WATERMARK) {
+			int_value = ADXL345_INT_WATERMARK;
+			fifo_watermark_irq = 1;
+		}
+	}
+		uint8_t status;
+	if (fifo_watermark_irq != data->fifo_watermark_irq) {
+		data->fifo_watermark_irq = fifo_watermark_irq;
+		rc = adxl345_reg_write_mask(dev, ADXL345_INT_MAP_REG,
+					    ADXL345_INT_WATERMARK, int_value);
+		if (rc < 0) {
+			return;
+		}
+
+		/* Flush the FIFO by disabling it. Save current mode for after the reset. */
+		enum adxl345_fifo_mode current_fifo_mode = data->fifo_config.fifo_mode;
+
+		if (current_fifo_mode == ADXL345_FIFO_BYPASSED) {
+			current_fifo_mode = ADXL345_FIFO_STREAMED;
+		}
+		adxl345_configure_fifo(dev, ADXL345_FIFO_BYPASSED,
+				       data->fifo_config.fifo_trigger,
+				       data->fifo_config.fifo_samples);
+		adxl345_configure_fifo(dev, current_fifo_mode,
+				       data->fifo_config.fifo_trigger,
+				       data->fifo_config.fifo_samples);
+		rc = adxl345_reg_read_byte(dev, ADXL345_FIFO_STATUS_REG, &status);
+	}
+
+	if (adxl345_set_gpios_en(dev, true)) {
+		return;
+	}
+
+	data->sqe = iodev_sqe;
 }
 
 void adxl345_stream_irq_handler(const struct device *dev)
