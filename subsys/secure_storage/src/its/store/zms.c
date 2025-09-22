@@ -69,7 +69,7 @@ psa_status_t secure_storage_its_store_set(secure_storage_its_uid_t uid,
 	} else {
 		psa_ret = PSA_ERROR_STORAGE_FAILURE;
 	}
-	LOG_DBG("%s %#x with %zu bytes. (%zd)", (psa_ret == PSA_SUCCESS) ?
+	LOG_DBG("%s 0x%x with %zu bytes. (%zd)", (psa_ret == PSA_SUCCESS) ?
 		"Wrote" : "Failed to write", zms_id, data_length, zms_ret);
 	return psa_ret;
 }
@@ -90,7 +90,7 @@ psa_status_t secure_storage_its_store_get(secure_storage_its_uid_t uid, size_t d
 	} else {
 		psa_ret = PSA_ERROR_STORAGE_FAILURE;
 	}
-	LOG_DBG("%s %#x for up to %zu bytes. (%zd)", (psa_ret != PSA_ERROR_STORAGE_FAILURE) ?
+	LOG_DBG("%s 0x%x for up to %zu bytes. (%zd)", (psa_ret != PSA_ERROR_STORAGE_FAILURE) ?
 		"Read" : "Failed to read", zms_id, data_size, zms_ret);
 	return psa_ret;
 }
@@ -101,7 +101,7 @@ psa_status_t secure_storage_its_store_remove(secure_storage_its_uid_t uid)
 	const uint32_t zms_id = zms_id_from(uid);
 
 	ret = zms_delete(&s_zms, zms_id);
-	LOG_DBG("%s %#x. (%d)", ret ? "Failed to delete" : "Deleted", zms_id, ret);
+	LOG_DBG("%s 0x%x. (%d)", ret ? "Failed to delete" : "Deleted", zms_id, ret);
 
 	return ret ? PSA_ERROR_STORAGE_FAILURE : PSA_SUCCESS;
 }

@@ -27,7 +27,7 @@ static psa_status_t make_its_uid(secure_storage_its_caller_id_t caller_id, psa_s
 #ifndef CONFIG_SECURE_STORAGE_64_BIT_UID
 	/* Check that the UID is not bigger than the maximum defined size. */
 	if (uid & GENMASK64(63, SECURE_STORAGE_ITS_UID_BIT_SIZE)) {
-		LOG_DBG("UID %u/%#llx cannot be used as it has bits set past "
+		LOG_DBG("UID %u/0x%llx cannot be used as it has bits set past "
 			"the first " STRINGIFY(SECURE_STORAGE_ITS_UID_BIT_SIZE) " ones.",
 			caller_id, (unsigned long long)uid);
 		return PSA_ERROR_INVALID_ARGUMENT;
