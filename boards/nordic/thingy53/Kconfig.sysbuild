@@ -1,5 +1,0 @@
-# Copyright (c) 2024 Nordic Semiconductor ASA
-# SPDX-License-Identifier: Apache-2.0
-
-config PM_EXTERNAL_FLASH_MCUBOOT_SECONDARY
-	default y if BOOTLOADER_MCUBOOT
