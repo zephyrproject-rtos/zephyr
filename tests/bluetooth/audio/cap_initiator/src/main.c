@@ -43,7 +43,7 @@ struct cap_initiator_test_suite_fixture {
 static void cap_initiator_test_suite_fixture_init(struct cap_initiator_test_suite_fixture *fixture)
 {
 	for (size_t i = 0; i < ARRAY_SIZE(fixture->conns); i++) {
-		test_conn_init(&fixture->conns[i]);
+		test_conn_init(&fixture->conns[i], i);
 	}
 }
 
