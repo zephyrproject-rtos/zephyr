@@ -132,6 +132,11 @@ static void qenc_emulate_verify_reading(struct qdec_qenc_loopback *loopback,
 	int32_t expected_steps = emulation_duration_ms / emulator_period_ms;
 	int32_t expected_reading = 360 * expected_steps / loopback->qdec_config_step;
 	int32_t delta = expected_reading / 4;
+	int8_t rotation_shift;
+	q31_t rotation_value;
+	struct sensor_chan_spec channels[1] = {
+		{.chan_type = SENSOR_CHAN_ROTATION, .chan_idx = 0},
+	};
 
 	if (!forward) {
 		expected_reading *= -1;
@@ -142,7 +147,8 @@ static void qenc_emulate_verify_reading(struct qdec_qenc_loopback *loopback,
 	/* wait for some readings */
 	k_msleep(emulation_duration_ms);
 
-	rc = sensor_sample_fetch(loopback->qdec);
+	rc = sensor_read_and_decode(loopback->qdec, channels, ARRAY_SIZE(channels), &rotation_shift,
+				    &rotation_value, 1);
 
 	if (!overflow_expected) {
 		zassert_true(rc == 0, "Failed to fetch sample (%d)", rc);
@@ -150,8 +156,7 @@ static void qenc_emulate_verify_reading(struct qdec_qenc_loopback *loopback,
 		zassert_true(rc == -EOVERFLOW, "Failed to detect overflow");
 	}
 
-	rc = sensor_channel_get(loopback->qdec, SENSOR_CHAN_ROTATION, &val);
-	zassert_true(rc == 0, "Failed to get sample (%d)", rc);
+	q31_to_sensor_value(rotation_value, rotation_shift, &val);
 
 	TC_PRINT("Expected reading: %d, actual value: %d, delta: %d\n",
 			expected_reading, val.val1, delta);
@@ -165,11 +170,9 @@ static void qenc_emulate_verify_reading(struct qdec_qenc_loopback *loopback,
 	/* wait and get readings to clear state */
 	k_msleep(100);
 
-	rc = sensor_sample_fetch(loopback->qdec);
-	zassert_true(rc == 0, "Failed to fetch sample (%d)", rc);
-
-	rc = sensor_channel_get(loopback->qdec, SENSOR_CHAN_ROTATION, &val);
-	zassert_true(rc == 0, "Failed to get sample (%d)", rc);
+	rc = sensor_read_and_decode(loopback->qdec, channels, ARRAY_SIZE(channels), &rotation_shift,
+				    &rotation_value, 1);
+	zassert_true(rc == 0, "Failed to read sample (%d)", rc);
 }
 
 static void sensor_trigger_set_and_disable(struct qdec_qenc_loopback *loopback)
@@ -247,6 +250,11 @@ ZTEST(qdec_sensor, test_sensor_trigger_set_and_disable)
 static void sensor_trigger_set_test(struct qdec_qenc_loopback *loopback)
 {
 	int rc;
+	int8_t rotation_shift;
+	q31_t rotation_value;
+	struct sensor_chan_spec channels[1] = {
+		{.chan_type = SENSOR_CHAN_ROTATION, .chan_idx = 0},
+	};
 	struct sensor_value val = {0};
 
 	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
@@ -266,11 +274,11 @@ static void sensor_trigger_set_test(struct qdec_qenc_loopback *loopback)
 	rc = k_sem_take(&sem, K_MSEC(200));
 	zassert_true(rc == 0, "qdec handler should be triggered (%d)", rc);
 
-	rc = sensor_sample_fetch(loopback->qdec);
-	zassert_true(rc == 0, "Failed to fetch sample (%d)", rc);
+	rc = sensor_read_and_decode(loopback->qdec, channels, ARRAY_SIZE(channels), &rotation_shift,
+				    &rotation_value, 1);
+	zassert_true(rc == 0, "Failed to read sample (%d)", rc);
 
-	rc = sensor_channel_get(loopback->qdec, SENSOR_CHAN_ROTATION, &val);
-	zassert_true(rc == 0, "Failed to fetch sample (%d)", rc);
+	q31_to_sensor_value(rotation_value, rotation_shift, &val);
 
 	TC_PRINT("QDEC reading: %d\n", val.val1);
 	zassert_true(val.val1 != 0, "No readings from QDEC");
@@ -368,6 +376,11 @@ ZTEST(qdec_sensor, test_qdec_readings)
 static void sensor_channel_get_empty(const struct device *const dev)
 {
 	int rc;
+	int8_t rotation_shift;
+	q31_t rotation_value;
+	struct sensor_chan_spec channels[1] = {
+		{.chan_type = SENSOR_CHAN_ROTATION, .chan_idx = 0},
+	};
 	struct sensor_value val = {0};
 
 	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
@@ -377,24 +390,19 @@ static void sensor_channel_get_empty(const struct device *const dev)
 	/* wait for potential new readings */
 	k_msleep(100);
 
-	rc = sensor_sample_fetch(dev);
-	zassert_true(rc == 0, "Failed to fetch sample (%d)", rc);
-
-	/* get readings but ignore them, as they may include reading from time
-	 * when emulation was still working (i.e. during previous test)
-	 */
-	rc = sensor_channel_get(dev, SENSOR_CHAN_ROTATION, &val);
-	zassert_true(rc == 0, "Failed to get sample (%d)", rc);
+	rc = sensor_read_and_decode(dev, channels, ARRAY_SIZE(channels), &rotation_shift,
+				    &rotation_value, 1);
+	zassert_true(rc == 0, "Failed to read sample (%d)", rc);
 
 	/* wait for potential new readings */
 	k_msleep(100);
 
-	rc = sensor_sample_fetch(dev);
+	rc = sensor_read_and_decode(dev, channels, ARRAY_SIZE(channels), &rotation_shift,
+				    &rotation_value, 1);
 	zassert_true(rc == 0, "Failed to fetch sample (%d)", rc);
 
 	/* emulation was not working, expect no readings */
-	rc = sensor_channel_get(dev, SENSOR_CHAN_ROTATION, &val);
-	zassert_true(rc == 0, "Failed to get sample (%d)", rc);
+	q31_to_sensor_value(rotation_value, rotation_shift, &val);
 	zassert_true(val.val1 == 0, "Expected no readings but got: %d", val.val1);
 	zassert_true(val.val2 == 0, "Expected no readings but got: %d", val.val2);
 
@@ -420,8 +428,12 @@ ZTEST(qdec_sensor, test_sensor_channel_get_empty)
 static void sensor_channel_get_test(struct qdec_qenc_loopback *loopback)
 {
 	int rc;
-	struct sensor_value val_first = {0};
-	struct sensor_value val_second = {0};
+	int8_t rotation_shift;
+	q31_t rotation_value;
+	struct sensor_chan_spec channels[1] = {
+		{.chan_type = SENSOR_CHAN_ROTATION, .chan_idx = 0},
+	};
+	struct sensor_value val = {0};
 
 	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
 		pm_device_runtime_get(loopback->qdec);
@@ -432,32 +444,12 @@ static void sensor_channel_get_test(struct qdec_qenc_loopback *loopback)
 	/* wait for some readings*/
 	k_msleep(100);
 
-	rc = sensor_sample_fetch(loopback->qdec);
-	zassert_true(rc == 0, "Failed to fetch sample (%d)", rc);
+	rc = sensor_read_and_decode(loopback->qdec, channels, ARRAY_SIZE(channels), &rotation_shift,
+				    &rotation_value, 1);
+	zassert_true(rc == 0, "Failed to read sample (%d)", rc);
 
-	rc = sensor_channel_get(loopback->qdec, SENSOR_CHAN_ROTATION, &val_first);
-	zassert_true(rc == 0, "Failed to get sample (%d)", rc);
-	zassert_true(val_first.val1 != 0, "No readings from QDEC");
-
-	/* wait for more readings*/
-	k_msleep(200);
-
-	rc = sensor_channel_get(loopback->qdec, SENSOR_CHAN_ROTATION, &val_second);
-	zassert_true(rc == 0, "Failed to fetch sample (%d)", rc);
-	zassert_true(val_second.val1 != 0, "No readings from QDEC");
-
-	/* subsequent calls of sensor_channel_get without calling sensor_sample_fetch
-	 * should yield the same value
-	 */
-	zassert_true(val_first.val1 == val_second.val1,
-		     "Expected the same readings: %d vs %d",
-		     val_first.val1,
-		     val_second.val1);
-
-	zassert_true(val_first.val2 == val_second.val2,
-		     "Expected the same readings: %d vs %d",
-		     val_first.val2,
-		     val_second.val2);
+	q31_to_sensor_value(rotation_value, rotation_shift, &val);
+	zassert_true(val.val1 != 0, "No readings from QDEC");
 
 	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
 		pm_device_runtime_put(loopback->qdec);
@@ -481,6 +473,11 @@ ZTEST(qdec_sensor, test_sensor_channel_get)
 static void sensor_channel_get_negative(struct qdec_qenc_loopback *loopback)
 {
 	int rc;
+	int8_t max_shift;
+	q31_t max_value;
+	struct sensor_chan_spec channels[1] = {
+		{.chan_type = SENSOR_CHAN_MAX, .chan_idx = 0},
+	};
 	struct sensor_value val = {0};
 
 	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
@@ -492,11 +489,11 @@ static void sensor_channel_get_negative(struct qdec_qenc_loopback *loopback)
 	/* wait for some readings*/
 	k_msleep(100);
 
-	rc = sensor_sample_fetch(loopback->qdec);
-	zassert_true(rc == 0, "Failed to fetch sample (%d)", rc);
+	rc = sensor_read_and_decode(loopback->qdec, channels, ARRAY_SIZE(channels), &max_shift,
+				    &max_value, 1);
+	zassert_true(rc == 0, "Failed to read sample (%d)", rc);
 
-	rc = sensor_channel_get(loopback->qdec, SENSOR_CHAN_MAX, &val);
-	zassert_true(rc < 0, "Should failed to get sample (%d)", rc);
+	q31_to_sensor_value(max_value, max_shift, &val);
 	zassert_true(val.val1 == 0, "Some readings from QDEC: %d", val.val1);
 	zassert_true(val.val2 == 0, "Some readings from QDEC: %d", val.val2);
 
@@ -522,18 +519,21 @@ ZTEST(qdec_sensor, test_sensor_channel_get_negative)
 static void sensor_sample_fetch_test(const struct device *const dev)
 {
 	int rc;
+	int8_t shift;
+	q31_t value;
+	struct sensor_chan_spec channels[2] = {
+		{.chan_type = SENSOR_CHAN_ROTATION, .chan_idx = 0},
+		{.chan_type = SENSOR_CHAN_MAX, .chan_idx = 0},
+	};
 
 	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
 		pm_device_runtime_get(dev);
 	}
 
-	rc = sensor_sample_fetch(dev);
+	rc = sensor_read_and_decode(dev, &channels[0], 1, &shift, &value, 1);
 	zassert_true(rc == 0, "Failed to fetch sample (%d)", rc);
 
-	rc = sensor_sample_fetch_chan(dev, SENSOR_CHAN_ROTATION);
-	zassert_true(rc == 0, "Failed to fetch sample (%d)", rc);
-
-	rc = sensor_sample_fetch_chan(dev, SENSOR_CHAN_MAX);
+	rc = sensor_read_and_decode(dev, &channels[1], 1, &shift, &value, 1);
 	zassert_true(rc < 0, "Should fail to fetch sample from invalid channel (%d)", rc);
 
 	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
@@ -542,7 +542,7 @@ static void sensor_sample_fetch_test(const struct device *const dev)
 }
 
 /**
- * @brief sensor_sample_fetch(_chan) test
+ * @brief Reading sample test
  *
  * Confirm fetching work with QDEC specific channel - rotation
  *
