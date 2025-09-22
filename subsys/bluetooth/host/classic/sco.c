@@ -12,6 +12,7 @@
 
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/check.h>
+#include <zephyr/sys/byteorder.h>
 
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/bluetooth.h>
@@ -344,7 +345,7 @@ static int accept_sco_conn(const bt_addr_t *bdaddr, struct bt_conn *sco_conn)
 	cp->rx_bandwidth = 0x00001f40;
 	cp->max_latency = 0x0007;
 	cp->retrans_effort = 0x01;
-	cp->content_format = BT_VOICE_CVSD_16BIT;
+	cp->content_format = sys_cpu_to_le16(sco_conn->sco.chan->voice_setting);
 
 	notify_accept_sco_req_cmd(cp);
 
@@ -427,7 +428,7 @@ static int sco_setup_sync_conn(struct bt_conn *sco_conn)
 	cp->rx_bandwidth = 0x00001f40;
 	cp->max_latency = 0x0007;
 	cp->retrans_effort = 0x01;
-	cp->content_format = BT_VOICE_CVSD_16BIT;
+	cp->content_format = sys_cpu_to_le16(sco_conn->sco.chan->voice_setting);
 
 	notify_setup_sco_cmd(sco_conn->sco.acl, cp);
 
