@@ -38,23 +38,6 @@ config BT_ATT_RETRY_ON_SEC_ERR
 	  If an ATT request fails due to insufficient security, the host will
 	  try to elevate the security level and retry the ATT request.
 
-config BT_ATT_SENT_CB_AFTER_TX
-	bool "Delay ATT sent callback until data transmission is done by controller [EXPERIMENTAL]"
-	select EXPERIMENTAL
-	help
-	  By default, the BLE stack calls sent callback for ATT data when the
-	  data is passed to BLE controller for transmission. Enabling this
-	  Kconfig option delays calling the sent callback until data
-	  transmission is finished by BLE controller (the callback is called
-	  upon receiving the Number of Completed Packets HCI Event).
-
-	  The feature is not available in Zephyr RTOS (it's specific to NCS
-	  Zephyr fork). It is a temporary solution allowing to control flow of
-	  GATT notifications with HID reports for HID use-case.
-
-	  Enabling this option may require increasing CONFIG_BT_CONN_TX_MAX in
-	  configuration, because ATT would use additional TX contexts.
-
 config BT_EATT
 	bool "Enhanced ATT Bearers support [EXPERIMENTAL]"
 	depends on BT_L2CAP_ECRED
