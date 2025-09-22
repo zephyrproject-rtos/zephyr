@@ -27,6 +27,12 @@ static const struct device *dmic_dev = DEVICE_DT_GET(DT_ALIAS(dmic_dev));
 #define BYTES_PER_SAMPLE sizeof(int16_t)
 #define SLAB_ALIGN 4
 #define MAX_SAMPLE_RATE  48000
+#elif DT_HAS_COMPAT_STATUS_OKAY(nxp_pdm)
+#define PDM_CHANNELS 2
+#define SAMPLE_BIT_WIDTH 24
+#define BYTES_PER_SAMPLE 3
+#define SLAB_ALIGN 4
+#define MAX_SAMPLE_RATE  16000
 #else
 #error "Unsupported DMIC device"
 #endif

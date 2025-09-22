@@ -1,0 +1,23 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		dmic-dev = &pdm;
+	};
+};
+
+&pdm {
+	status = "okay";
+
+	channel0: pdm-channel@0 {
+		status = "okay";
+	};
+
+	channel1: pdm-channel@1 {
+		status = "okay";
+	};
+};
