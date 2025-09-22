@@ -17,10 +17,6 @@ from itertools import groupby
 from elftools.elf.elffile import ELFFile
 from intelhex import IntelHex
 
-# The UICR format version produced by this script
-UICR_FORMAT_VERSION_MAJOR = 2
-UICR_FORMAT_VERSION_MINOR = 0
-
 # Name of the ELF section containing PERIPHCONF entries.
 # Must match the name used in the linker script.
 PERIPHCONF_SECTION = "uicr_periphconf_entry"
@@ -47,14 +43,6 @@ class PeriphconfEntry(c.LittleEndianStructure):
 
 
 PERIPHCONF_ENTRY_SIZE = c.sizeof(PeriphconfEntry)
-
-
-class Version(c.LittleEndianStructure):
-    _pack_ = 1
-    _fields_ = [
-        ("MINOR", c.c_uint16),
-        ("MAJOR", c.c_uint16),
-    ]
 
 
 class Approtect(c.LittleEndianStructure):
@@ -116,7 +104,7 @@ class Mpcconf(c.LittleEndianStructure):
 class Uicr(c.LittleEndianStructure):
     _pack_ = 1
     _fields_ = [
-        ("VERSION", Version),
+        ("VERSION", c.c_uint32),
         ("RESERVED", c.c_uint32),
         ("LOCK", c.c_uint32),
         ("RESERVED1", c.c_uint32),
@@ -182,9 +170,6 @@ def main() -> None:
     try:
         init_values = DISABLED_VALUE.to_bytes(4, "little") * (c.sizeof(Uicr) // 4)
         uicr = Uicr.from_buffer_copy(init_values)
-
-        uicr.VERSION.MAJOR = UICR_FORMAT_VERSION_MAJOR
-        uicr.VERSION.MINOR = UICR_FORMAT_VERSION_MINOR
 
         kconfig_str = args.in_config.read()
         kconfig = parse_kconfig(kconfig_str)
