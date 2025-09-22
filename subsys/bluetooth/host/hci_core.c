@@ -1800,37 +1800,6 @@ static void le_remote_feat_complete(struct net_buf *buf)
 	bt_conn_unref(conn);
 }
 
-#if defined(CONFIG_BT_LE_EXTENDED_FEAT_SET)
-static void le_read_all_remote_feat_complete(struct net_buf *buf)
-{
-	struct bt_hci_evt_le_read_all_remote_feat_complete *evt = (void *)buf->data;
-	struct bt_conn *conn;
-	struct bt_conn_le_read_all_remote_feat_complete params;
-	uint16_t handle = sys_le16_to_cpu(evt->handle);
-
-	LOG_DBG("Read all remote feature complete: 0x%02x %s handle %u", evt->status,
-		bt_hci_err_to_str(evt->status), handle);
-
-	conn = bt_conn_lookup_handle(handle, BT_CONN_TYPE_LE);
-	if (conn == NULL) {
-		LOG_ERR("Unknown conn handle 0x%04X", handle);
-		return;
-	}
-
-	params.status = evt->status;
-
-	if (params.status == BT_HCI_ERR_SUCCESS) {
-		params.max_remote_page = evt->max_remote_page;
-		params.max_valid_page = evt->max_valid_page;
-		params.features = evt->features;
-	}
-
-	notify_read_all_remote_feat_complete(conn, &params);
-
-	bt_conn_unref(conn);
-}
-#endif /* CONFIG_BT_LE_EXTENDED_FEAT_SET */
-
 #if defined(CONFIG_BT_DATA_LEN_UPDATE)
 static void le_data_len_change(struct net_buf *buf)
 {
@@ -2953,11 +2922,6 @@ static const struct event_handler meta_events[] = {
 	EVENT_HANDLER(BT_HCI_EVT_LE_ENH_CONN_COMPLETE_V2, le_enh_conn_complete_v2,
 		      sizeof(struct bt_hci_evt_le_enh_conn_complete_v2)),
 #endif /* CONFIG_BT_PER_ADV_RSP || CONFIG_BT_PER_ADV_SYNC_RSP */
-#if defined(CONFIG_BT_LE_EXTENDED_FEAT_SET)
-	EVENT_HANDLER(BT_HCI_EVT_LE_READ_ALL_REMOTE_FEAT_COMPLETE,
-		      le_read_all_remote_feat_complete,
-		      sizeof(struct bt_hci_evt_le_read_all_remote_feat_complete)),
-#endif /* CONFIG_BT_LE_EXTENDED_FEAT_SET */
 #endif /* CONFIG_BT_CONN */
 #if defined(CONFIG_BT_CHANNEL_SOUNDING)
 	EVENT_HANDLER(BT_HCI_EVT_LE_CS_READ_REMOTE_SUPPORTED_CAPABILITIES_COMPLETE,
@@ -3194,45 +3158,7 @@ static void read_le_features_complete(struct net_buf *buf)
 
 	LOG_DBG("status 0x%02x %s", rp->status, bt_hci_err_to_str(rp->status));
 
-	memcpy(bt_dev.le.features, rp->features, sizeof(rp->features));
-}
-
-static void read_le_all_supported_features_complete(struct net_buf *buf)
-{
-	struct bt_hci_rp_le_read_all_local_supported_features *rp = (void *)buf->data;
-
-	LOG_DBG("status 0x%02x %s", rp->status, bt_hci_err_to_str(rp->status));
-
 	memcpy(bt_dev.le.features, rp->features, sizeof(bt_dev.le.features));
-}
-
-static int read_le_local_supported_features(void)
-{
-	struct net_buf *rsp;
-	int err;
-
-	/* Read Low Energy Supported Features */
-	if (IS_ENABLED(CONFIG_BT_LE_EXTENDED_FEAT_SET) &&
-	    BT_READ_ALL_LOCAL_FEATURES_SUPPORTED(bt_dev.supported_commands)) {
-		err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_READ_ALL_LOCAL_SUPPORTED_FEATURES, NULL,
-					   &rsp);
-		if (err != 0) {
-			return err;
-		}
-
-		read_le_all_supported_features_complete(rsp);
-	} else {
-		err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_READ_LOCAL_FEATURES, NULL,
-					   &rsp);
-		if (err != 0) {
-			return err;
-		}
-
-		read_le_features_complete(rsp);
-	}
-
-	net_buf_unref(rsp);
-	return 0;
 }
 
 #if defined(CONFIG_BT_CONN)
@@ -3519,11 +3445,6 @@ static int le_set_event_mask(void)
 		    BT_FEAT_LE_CONN_SUBRATING(bt_dev.le.features)) {
 			mask |= BT_EVT_MASK_LE_SUBRATE_CHANGE;
 		}
-
-		if (IS_ENABLED(CONFIG_BT_LE_EXTENDED_FEAT_SET) &&
-		    BT_FEAT_LE_EXTENDED_FEAT_SET(bt_dev.le.features)) {
-			mask |= BT_EVT_MASK_LE_READ_ALL_REMOTE_FEAT_COMPLETE;
-		}
 	}
 
 	if (IS_ENABLED(CONFIG_BT_SMP) &&
@@ -3662,10 +3583,15 @@ static int le_init(void)
 		return -ENODEV;
 	}
 
-	err = read_le_local_supported_features();
+	/* Read Low Energy Supported Features */
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_READ_LOCAL_FEATURES, NULL,
+				   &rsp);
 	if (err) {
 		return err;
 	}
+
+	read_le_features_complete(rsp);
+	net_buf_unref(rsp);
 
 	if (IS_ENABLED(CONFIG_BT_ISO) &&
 	    BT_FEAT_LE_ISO(bt_dev.le.features)) {
