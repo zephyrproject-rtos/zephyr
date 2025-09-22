@@ -152,7 +152,7 @@ static inline void stats(struct net_if *iface)
 #endif
 
 #if defined(CONFIG_NET_STATISTICS_TCP)
-		NET_INFO("TCP bytes recv %llu\tsent\t%llu",
+		NET_INFO("TCP bytes recv %u\tsent\t%u",
 			 GET_STAT(iface, tcp.bytes.received),
 			 GET_STAT(iface, tcp.bytes.sent));
 		NET_INFO("TCP seg recv   %u\tsent\t%u\tdrop\t%u",
@@ -172,8 +172,8 @@ static inline void stats(struct net_if *iface)
 			 GET_STAT(iface, tcp.connrst));
 #endif
 
-		NET_INFO("Bytes received %llu", GET_STAT(iface, bytes.received));
-		NET_INFO("Bytes sent     %llu", GET_STAT(iface, bytes.sent));
+		NET_INFO("Bytes received %u", GET_STAT(iface, bytes.received));
+		NET_INFO("Bytes sent     %u", GET_STAT(iface, bytes.sent));
 		NET_INFO("Processing err %u",
 			 GET_STAT(iface, processing_error));
 
@@ -183,7 +183,7 @@ static inline void stats(struct net_if *iface)
 		NET_INFO("TC  Priority\tSent pkts\tbytes");
 
 		for (i = 0; i < NET_TC_TX_COUNT; i++) {
-			NET_INFO("[%d] %s (%u)\t%u\t\t%llu", i,
+			NET_INFO("[%d] %s (%u)\t%u\t\t%u", i,
 				 priority2str(GET_STAT(iface,
 						       tc.sent[i].priority)),
 				 GET_STAT(iface, tc.sent[i].priority),
@@ -197,7 +197,7 @@ static inline void stats(struct net_if *iface)
 		NET_INFO("TC  Priority\tRecv pkts\tbytes");
 
 		for (i = 0; i < NET_TC_RX_COUNT; i++) {
-			NET_INFO("[%d] %s (%u)\t%u\t\t%llu", i,
+			NET_INFO("[%d] %s (%u)\t%u\t\t%u", i,
 				 priority2str(GET_STAT(iface,
 						       tc.recv[i].priority)),
 				 GET_STAT(iface, tc.recv[i].priority),
