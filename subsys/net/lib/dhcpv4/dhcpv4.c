@@ -1171,25 +1171,7 @@ static bool dhcpv4_parse_options(struct net_pkt *pkt,
 			for (uint8_t i = 0; i < dns_servers_cnt; i++) {
 				dnses[i].sin_family = AF_INET;
 			}
-
-			if (IS_ENABLED(CONFIG_NET_DHCPV4_DNS_SERVER_VIA_INTERFACE)) {
-				/* If we are using the interface to resolve DNS servers,
-				 * we need to save the interface index.
-				 */
-				int ifindex = net_if_get_by_iface(iface);
-				int interfaces[MAX_DNS_SERVERS];
-
-				for (uint8_t i = 0; i < dns_servers_cnt; i++) {
-					interfaces[i] = ifindex;
-				}
-
-				status = dns_resolve_reconfigure_with_interfaces(ctx, NULL,
-										 dns_servers,
-										 interfaces);
-			} else {
-				status = dns_resolve_reconfigure(ctx, NULL, dns_servers);
-			}
-
+			status = dns_resolve_reconfigure(ctx, NULL, dns_servers);
 			if (status < 0) {
 				NET_DBG("options_dns, failed to set "
 					"resolve address: %d", status);
