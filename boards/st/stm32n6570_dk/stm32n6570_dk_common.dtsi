@@ -49,7 +49,7 @@
 		 */
 		reg = <0x90000000 (DT_SIZE_M(32) - 32)>;
 		zephyr,memory-region = "PSRAM";
-		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)>;
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
 	};
 
 	leds: leds {
