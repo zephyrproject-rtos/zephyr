@@ -9,13 +9,6 @@
 
 /* Flash chip specific quirks */
 struct flash_mspi_nor_quirks {
-	/* Called at the beginning of the flash chip initialization,
-	 * right after reset if any is performed. Can be used to alter
-	 * structures that define communication with the chip, like
-	 * `cmd_info`, `switch_info`, and `erase_types`, which are set
-	 * to default values at this point.
-	 */
-	int (*pre_init)(const struct device *dev);
 	/* Called after switching to default IO mode. */
 	int (*post_switch_mode)(const struct device *dev);
 };
@@ -183,56 +176,7 @@ static inline int mxicy_mx25u_post_switch_mode(const struct device *dev)
 	return rc;
 }
 
-static int mxicy_mx25u_pre_init(const struct device *dev)
-{
-	const struct flash_mspi_nor_config *dev_config = dev->config;
-	struct flash_mspi_nor_data *dev_data = dev->data;
-	static const uint8_t dummy_cycles[8] = {
-		20, 18, 16, 14, 12, 10, 8, 6
-	};
-	uint8_t cfg_reg;
-	int rc;
-
-	if (dev_config->mspi_nor_cfg.io_mode != MSPI_IO_MODE_OCTAL) {
-		return 0;
-	}
-
-	if (dev_config->mspi_nor_cfg.data_rate == MSPI_DATA_RATE_SINGLE) {
-		dev_data->cmd_info.cmd_extension = CMD_EXTENSION_INVERSE;
-	}
-
-	/*
-	 * TODO - replace this with a generic routine that uses information
-	 *        from SFDP header FF87 (Status, Control and Configuration
-	 *        Register Map)
-	 */
-
-	/* Read configured number of dummy cycles for memory reading commands. */
-	const struct flash_mspi_nor_cmd cmd_rd_cr2 = {
-		.dir = MSPI_RX,
-		.cmd = SPI_NOR_CMD_RD_CFGREG2,
-		.cmd_length = 1,
-		.addr_length = 4,
-	};
-
-	flash_mspi_command_set(dev, &cmd_rd_cr2);
-	dev_data->packet.address   = 0x300;
-	dev_data->packet.data_buf  = &cfg_reg;
-	dev_data->packet.num_bytes = sizeof(cfg_reg);
-	rc = mspi_transceive(dev_config->bus, &dev_config->mspi_id, &dev_data->xfer);
-	if (rc < 0) {
-		LOG_ERR("Failed to read Dummy Cycle from CFGREG2");
-		return rc;
-	}
-
-	dev_data->cmd_info.read_mode_bit_cycles = 0;
-	dev_data->cmd_info.read_dummy_cycles = dummy_cycles[cfg_reg & 0x7];
-
-	return 0;
-}
-
 struct flash_mspi_nor_quirks flash_quirks_mxicy_mx25u = {
-	.pre_init = mxicy_mx25u_pre_init,
 	.post_switch_mode = mxicy_mx25u_post_switch_mode,
 };
 
