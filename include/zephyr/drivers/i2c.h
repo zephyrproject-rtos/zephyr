@@ -635,7 +635,7 @@ static inline void i2c_xfer_stats(const struct device *dev, struct i2c_msg *msgs
 /** @endcond */
 
 /**
- * @brief Like DEVICE_DT_DEINIT_DEFINE() with I2C specifics.
+ * @brief Like DEVICE_DT_DEFINE() with I2C specifics.
  *
  * @details Defines a device which implements the I2C API. May
  * generate a custom device_state container struct and init_fn
@@ -644,8 +644,6 @@ static inline void i2c_xfer_stats(const struct device *dev, struct i2c_msg *msgs
  * @param node_id The devicetree node identifier.
  *
  * @param init_fn Name of the init function of the driver. Can be `NULL`.
- *
- * @param deinit_fn Name of the deinit function of the driver. Can be `NULL`.
  *
  * @param pm PM device resources reference (NULL if device does not use PM).
  *
@@ -663,14 +661,14 @@ static inline void i2c_xfer_stats(const struct device *dev, struct i2c_msg *msgs
  * @param api Provides an initial pointer to the API function struct
  * used by the driver. Can be NULL.
  */
-#define I2C_DEVICE_DT_DEINIT_DEFINE(node_id, init_fn, deinit_fn, pm,	\
-				    data, config, level, prio, api, ...)\
+#define I2C_DEVICE_DT_DEFINE(node_id, init_fn, pm, data, config, level,	\
+			     prio, api, ...)				\
 	Z_I2C_DEVICE_STATE_DEFINE(Z_DEVICE_DT_DEV_ID(node_id));		\
 	Z_I2C_INIT_FN(Z_DEVICE_DT_DEV_ID(node_id), init_fn)		\
 	Z_DEVICE_DEFINE(node_id, Z_DEVICE_DT_DEV_ID(node_id),		\
 			DEVICE_DT_NAME(node_id),			\
 			&UTIL_CAT(Z_DEVICE_DT_DEV_ID(node_id), _init),	\
-			deinit_fn, Z_DEVICE_DT_FLAGS(node_id), pm, data,\
+			NULL, Z_DEVICE_DT_FLAGS(node_id), pm, data,	\
 			config,	level, prio, api,			\
 			&(Z_DEVICE_STATE_NAME(Z_DEVICE_DT_DEV_ID(node_id)).devstate), \
 			__VA_ARGS__)
@@ -685,32 +683,12 @@ static inline void i2c_xfer_stats(const struct device *dev, struct i2c_msg *msgs
 	ARG_UNUSED(num_msgs);
 }
 
-#define I2C_DEVICE_DT_DEINIT_DEFINE(node_id, init_fn, deinit_fn, pm,	\
-				    data, config, level, prio, api, ...)\
-	DEVICE_DT_DEINIT_DEFINE(node_id, init_fn, deinit_fn, pm, data,	\
-				config, level, prio, api, __VA_ARGS__)
-
-#endif /* CONFIG_I2C_STATS */
-
-/**
- * @brief Like I2C_DEVICE_DT_DEINIT_DEFINE() but without deinit_fn
- */
 #define I2C_DEVICE_DT_DEFINE(node_id, init_fn, pm, data, config, level,	\
 			     prio, api, ...)				\
-	I2C_DEVICE_DT_DEINIT_DEFINE(node_id, init_fn, NULL, pm, data,	\
-				    config, level, prio, api,		\
-				    __VA_ARGS__)
+	DEVICE_DT_DEFINE(node_id, init_fn, pm, data, config, level,	\
+			 prio, api, __VA_ARGS__)
 
-/**
- * @brief Like I2C_DEVICE_DT_DEINIT_DEFINE() for an instance of a DT_DRV_COMPAT compatible
- *
- * @param inst instance number. This is replaced by
- * <tt>DT_DRV_COMPAT(inst)</tt> in the call to I2C_DEVICE_DT_DEINIT_DEFINE().
- *
- * @param ... other parameters as expected by I2C_DEVICE_DT_DEINIT_DEFINE().
- */
-#define I2C_DEVICE_DT_INST_DEINIT_DEFINE(inst, ...)		\
-	I2C_DEVICE_DT_DEINIT_DEFINE(DT_DRV_INST(inst), __VA_ARGS__)
+#endif /* CONFIG_I2C_STATS */
 
 /**
  * @brief Like I2C_DEVICE_DT_DEFINE() for an instance of a DT_DRV_COMPAT compatible
@@ -722,6 +700,7 @@ static inline void i2c_xfer_stats(const struct device *dev, struct i2c_msg *msgs
  */
 #define I2C_DEVICE_DT_INST_DEFINE(inst, ...)		\
 	I2C_DEVICE_DT_DEFINE(DT_DRV_INST(inst), __VA_ARGS__)
+
 
 /**
  * @brief Configure operation of a host controller.
