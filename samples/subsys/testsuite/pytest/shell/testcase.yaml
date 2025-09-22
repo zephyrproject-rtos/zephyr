@@ -18,6 +18,13 @@ tests:
     harness: pytest
     extra_configs:
       - CONFIG_SHELL_VT100_COLORS=n
+  sample.pytest.rtt:
+    harness: pytest
+    extra_configs:
+      - CONFIG_USE_SEGGER_RTT=y
+      - CONFIG_LOG_MODE_DEFERRED=y
+      - CONFIG_SHELL_BACKEND_RTT=y
+      - CONFIG_SHELL_BACKEND_SERIAL=n
   sample.harness.shell:
     harness: shell
     harness_config:
