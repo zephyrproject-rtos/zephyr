@@ -66,19 +66,6 @@
 #define ISR_RXFIS_BIT		BIT(4)
 #define ISR_MSTIS_BIT		BIT(5)
 
-/* RISR - Raw Interrupt Status Register */
-#define RISR_TXEIR_BIT		BIT(0)
-#define RISR_TXOIR_BIT		BIT(1)
-#define RISR_RXUIR_BIT		BIT(2)
-#define RISR_RXOIR_BIT		BIT(3)
-#define RISR_RXFIR_BIT		BIT(4)
-#define RISR_MSTIR_BIT		BIT(5)
-#define RISR_XRXOIR_BIT		BIT(6)
-#define RISR_TXUIR_BIT		BIT(7)
-#define RISR_AXIER_BIT		BIT(8)
-#define RISR_SPITER_BIT		BIT(10)
-#define RISR_DONER_BIT		BIT(11)
-
 /* SPI_CTRLR0 - SPI Control Register */
 #define SPI_CTRLR0_CLK_STRETCH_EN_BIT		BIT(30)
 #define SPI_CTRLR0_XIP_PREFETCH_EN_BIT		BIT(29)
