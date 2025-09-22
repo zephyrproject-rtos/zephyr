@@ -34,14 +34,7 @@
 
 LOG_MODULE_REGISTER(wifi_nrf, CONFIG_WIFI_NRF70_LOG_LEVEL);
 
-/* Memory pool management - unified pool-based API */
-#if defined(CONFIG_NRF_WIFI_GLOBAL_HEAP)
-/* Use global system heap */
-extern struct sys_heap _system_heap;
-static struct k_heap * const wifi_ctrl_pool = &_system_heap;
-static struct k_heap * const wifi_data_pool = &_system_heap;
-#else
-/* Use dedicated heaps */
+#if !defined(CONFIG_NRF_WIFI_GLOBAL_HEAP)
 #if defined(CONFIG_NOCACHE_MEMORY)
 K_HEAP_DEFINE_NOCACHE(wifi_drv_ctrl_mem_pool, CONFIG_NRF_WIFI_CTRL_HEAP_SIZE);
 K_HEAP_DEFINE_NOCACHE(wifi_drv_data_mem_pool, CONFIG_NRF_WIFI_DATA_HEAP_SIZE);
@@ -49,8 +42,6 @@ K_HEAP_DEFINE_NOCACHE(wifi_drv_data_mem_pool, CONFIG_NRF_WIFI_DATA_HEAP_SIZE);
 K_HEAP_DEFINE(wifi_drv_ctrl_mem_pool, CONFIG_NRF_WIFI_CTRL_HEAP_SIZE);
 K_HEAP_DEFINE(wifi_drv_data_mem_pool, CONFIG_NRF_WIFI_DATA_HEAP_SIZE);
 #endif /* CONFIG_NOCACHE_MEMORY */
-static struct k_heap * const wifi_ctrl_pool = &wifi_drv_ctrl_mem_pool;
-static struct k_heap * const wifi_data_pool = &wifi_drv_data_mem_pool;
 #endif /* CONFIG_NRF_WIFI_GLOBAL_HEAP */
 
 #define WORD_SIZE 4
@@ -61,14 +52,22 @@ static void *zep_shim_mem_alloc(size_t size)
 {
 	size_t size_aligned = ROUND_UP(size, 4);
 
-	return k_heap_aligned_alloc(wifi_ctrl_pool, WORD_SIZE, size_aligned, K_FOREVER);
+#if defined(CONFIG_NRF_WIFI_GLOBAL_HEAP)
+	return k_malloc(size_aligned);
+#else /* CONFIG_NRF_WIFI_GLOBAL_HEAP */
+	return k_heap_aligned_alloc(&wifi_drv_ctrl_mem_pool, WORD_SIZE, size_aligned, K_FOREVER);
+#endif /* CONFIG_NRF_WIFI_GLOBAL_HEAP */
 }
 
 static void *zep_shim_data_mem_alloc(size_t size)
 {
 	size_t size_aligned = ROUND_UP(size, 4);
 
-	return k_heap_aligned_alloc(wifi_data_pool, WORD_SIZE, size_aligned, K_FOREVER);
+#if defined(CONFIG_NRF_WIFI_GLOBAL_HEAP)
+	return k_malloc(size_aligned);
+#else /* CONFIG_NRF_WIFI_GLOBAL_HEAP */
+	return k_heap_aligned_alloc(&wifi_drv_data_mem_pool, WORD_SIZE, size_aligned, K_FOREVER);
+#endif /* CONFIG_NRF_WIFI_GLOBAL_HEAP */
 }
 
 static void *zep_shim_mem_zalloc(size_t size)
@@ -112,14 +111,22 @@ static void *zep_shim_data_mem_zalloc(size_t size)
 static void zep_shim_mem_free(void *buf)
 {
 	if (buf) {
-		k_heap_free(wifi_ctrl_pool, buf);
+#if defined(CONFIG_NRF_WIFI_GLOBAL_HEAP)
+		k_free(buf);
+#else /* CONFIG_NRF_WIFI_GLOBAL_HEAP */
+		k_heap_free(&wifi_drv_ctrl_mem_pool, buf);
+#endif /* CONFIG_NRF_WIFI_GLOBAL_HEAP */
 	}
 }
 
 static void zep_shim_data_mem_free(void *buf)
 {
 	if (buf) {
-		k_heap_free(wifi_data_pool, buf);
+#if defined(CONFIG_NRF_WIFI_GLOBAL_HEAP)
+		k_free(buf);
+#else /* CONFIG_NRF_WIFI_GLOBAL_HEAP */
+		k_heap_free(&wifi_drv_data_mem_pool, buf);
+#endif /* CONFIG_NRF_WIFI_GLOBAL_HEAP */
 	}
 }
 
@@ -204,11 +211,9 @@ static void *zep_shim_spinlock_alloc(void)
 {
 	struct zep_shim_spinlock *slock = NULL;
 
-	slock = k_heap_aligned_alloc(wifi_ctrl_pool, WORD_SIZE, sizeof(*slock), K_FOREVER);
+	slock = k_calloc(sizeof(*slock), sizeof(char));
 	if (!slock) {
 		LOG_ERR("%s: Unable to allocate memory for spinlock", __func__);
-	} else {
-		memset(slock, 0, sizeof(*slock));
 	}
 
 	return slock;
@@ -216,9 +221,11 @@ static void *zep_shim_spinlock_alloc(void)
 
 static void zep_shim_spinlock_free(void *lock)
 {
-	if (lock) {
-		k_heap_free(wifi_ctrl_pool, lock);
-	}
+#if defined(CONFIG_NRF_WIFI_GLOBAL_HEAP)
+	k_free(lock);
+#else
+	k_heap_free(&wifi_drv_ctrl_mem_pool, lock);
+#endif
 }
 
 static void zep_shim_spinlock_init(void *lock)
