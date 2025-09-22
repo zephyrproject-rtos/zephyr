@@ -96,16 +96,6 @@ config USBD_MSG_WORK_DELAY
 	  Message work may need to be delayed because the device stack is not
 	  yet ready to publish the message. The delay unit is milliseconds.
 
-config USBD_HWINFO_DEVID_LENGTH
-	int "The length of the device ID requested from HWINFO in bytes"
-	depends on HWINFO
-	range 8 128
-	default 16
-	help
-	  Each byte represents two digits in the serial number string
-	  descriptor. This option can be used to limit the length requested
-	  from HWINFO to a meaningful number of digits.
-
 rsource "class/Kconfig"
 rsource "app/Kconfig.cdc_acm_serial"
 

@@ -533,13 +533,13 @@ static int sreq_get_desc_cfg(struct usbd_context *const uds_ctx,
 	return 0;
 }
 
-#define USBD_SN_ASCII7_LENGTH (CONFIG_USBD_HWINFO_DEVID_LENGTH * 2)
+#define USBD_HWID_SN_MAX 32U
 
 /* Generate valid USB device serial number from hwid */
-static ssize_t get_sn_from_hwid(uint8_t sn[static USBD_SN_ASCII7_LENGTH])
+static ssize_t get_sn_from_hwid(uint8_t sn[static USBD_HWID_SN_MAX])
 {
 	static const char hex[] = "0123456789ABCDEF";
-	uint8_t hwid[USBD_SN_ASCII7_LENGTH / 2U];
+	uint8_t hwid[USBD_HWID_SN_MAX / 2U];
 	ssize_t hwid_len = -ENOSYS;
 
 	if (IS_ENABLED(CONFIG_HWINFO)) {
@@ -554,37 +554,36 @@ static ssize_t get_sn_from_hwid(uint8_t sn[static USBD_SN_ASCII7_LENGTH])
 		return hwid_len;
 	}
 
-	for (ssize_t i = 0; i < MIN(hwid_len, sizeof(hwid)); i++) {
+	for (ssize_t i = 0; i < hwid_len; i++) {
 		sn[i * 2] = hex[hwid[i] >> 4];
 		sn[i * 2 + 1] = hex[hwid[i] & 0xF];
 	}
 
-	return MIN(hwid_len, sizeof(hwid)) * 2;
+	return hwid_len * 2;
 }
 
 /* Copy and convert ASCII-7 string descriptor to UTF16-LE */
 static void string_ascii7_to_utf16le(struct usbd_desc_node *const dn,
 				     struct net_buf *const buf, const uint16_t wLength)
 {
-	uint8_t sn_ascii7_str[USBD_SN_ASCII7_LENGTH];
+	uint8_t hwid_sn[USBD_HWID_SN_MAX];
 	struct usb_desc_header head = {
 		.bDescriptorType = dn->bDescriptorType,
 	};
-	const uint8_t *ascii7_str;
+	uint8_t *ascii7_str;
 	size_t len;
 	size_t i;
 
-	if (IS_ENABLED(CONFIG_HWINFO) &&
-	    dn->str.utype == USBD_DUT_STRING_SERIAL_NUMBER && dn->str.use_hwinfo) {
-		ssize_t sn_ascii7_str_len = get_sn_from_hwid(sn_ascii7_str);
+	if (dn->str.utype == USBD_DUT_STRING_SERIAL_NUMBER && dn->str.use_hwinfo) {
+		ssize_t hwid_len = get_sn_from_hwid(hwid_sn);
 
-		if (sn_ascii7_str_len < 0) {
+		if (hwid_len < 0) {
 			errno = -ENOTSUP;
 			return;
 		}
 
-		head.bLength = sizeof(head) + sn_ascii7_str_len * 2;
-		ascii7_str = sn_ascii7_str;
+		head.bLength = sizeof(head) + hwid_len * 2;
+		ascii7_str = hwid_sn;
 	} else {
 		head.bLength = dn->bLength;
 		ascii7_str = (uint8_t *)dn->ptr;
