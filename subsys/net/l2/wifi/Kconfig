@@ -126,11 +126,6 @@ config WIFI_ENT_IDENTITY_MAX_USERS
 	help
 	  This option defines the maximum number of identity users allowed connection.
 
-config WIFI_CERTIFICATE_LIB
-	bool
-	help
-	  Enable this option to process certificates in enterprise mode.
-
 if WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
 
 config WIFI_SHELL_RUNTIME_CERTIFICATES
