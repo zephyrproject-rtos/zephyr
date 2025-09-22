@@ -391,16 +391,6 @@
 				interrupts = <37 NRF_DEFAULT_IRQ_PRIORITY>;
 			};
 
-			gpiote0: gpiote@27000 {
-				compatible = "nordic,nrf-gpiote";
-				reg = <0x27000 0x1000>;
-				status = "disabled";
-				interrupts = <39 NRF_DEFAULT_IRQ_PRIORITY>;
-				instance = <0>;
-				no-port-event;
-				fixed-channels-supported;
-			};
-
 			timer020: timer@28000 {
 				compatible = "nordic,nrf-timer";
 				reg = <0x28000 0x1000>;
