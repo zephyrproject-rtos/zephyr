@@ -117,7 +117,6 @@ DEFINE_MM_REG_RD(risr,		0x34)
 DEFINE_MM_REG_RD_WR(dr,		0x60)
 DEFINE_MM_REG_WR(rx_sample_dly,	0xf0)
 DEFINE_MM_REG_WR(spi_ctrlr0,	0xf4)
-DEFINE_MM_REG_WR(txd_drive_edge, 0xf8)
 
 #if defined(CONFIG_MSPI_XIP)
 DEFINE_MM_REG_WR(xip_incr_inst,		0x100)
@@ -692,21 +691,8 @@ static int _api_dev_config(const struct device *dev,
 
 	if (param_mask & MSPI_DEVICE_CONFIG_DATA_RATE) {
 		/* TODO: add support for DDR */
-		dev_data->spi_ctrlr0 &= ~(SPI_CTRLR0_SPI_DDR_EN_BIT |
-					  SPI_CTRLR0_INST_DDR_EN_BIT);
-		switch (cfg->data_rate) {
-		case MSPI_DATA_RATE_SINGLE:
-			break;
-		case MSPI_DATA_RATE_DUAL:
-			dev_data->spi_ctrlr0 |= SPI_CTRLR0_INST_DDR_EN_BIT;
-			/* Also need to set DDR_EN bit */
-			__fallthrough;
-		case MSPI_DATA_RATE_S_D_D:
-			dev_data->spi_ctrlr0 |= SPI_CTRLR0_SPI_DDR_EN_BIT;
-			break;
-		default:
-			LOG_ERR("Data rate %d not supported",
-				cfg->data_rate);
+		if (cfg->data_rate != MSPI_DATA_RATE_SINGLE) {
+			LOG_ERR("Only single data rate is supported.");
 			return -ENOTSUP;
 		}
 	}
@@ -954,12 +940,6 @@ static int start_next_packet(const struct device *dev, k_timeout_t timeout)
 	write_spi_ctrlr0(dev, dev_data->spi_ctrlr0);
 	write_baudr(dev, dev_data->baudr);
 	write_rx_sample_dly(dev, dev_data->rx_sample_dly);
-	if (dev_data->spi_ctrlr0 & (SPI_CTRLR0_SPI_DDR_EN_BIT |
-				    SPI_CTRLR0_INST_DDR_EN_BIT)) {
-		write_txd_drive_edge(dev, dev_data->baudr / 4);
-	} else {
-		write_txd_drive_edge(dev, 0);
-	}
 
 	if (xip_enabled) {
 		write_ssienr(dev, SSIENR_SSIC_EN_BIT);
