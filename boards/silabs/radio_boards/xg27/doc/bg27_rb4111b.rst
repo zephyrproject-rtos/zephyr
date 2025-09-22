@@ -47,6 +47,13 @@ Serial Port
 The EFR32BG27 SoC has two USARTs and one EUSART.
 USART1 is connected to the board controller and is used for the console.
 
+Buttons and LEDs
+================
+
+This board has two buttons and two LEDs that share GPIO pins. If an application wants to use both
+a button and a LED with the same number (e.g. button 0 and LED 0), it needs to time multiplex the
+two functions.
+
 Programming and Debugging
 *************************
 
