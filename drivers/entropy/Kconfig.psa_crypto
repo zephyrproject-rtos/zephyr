@@ -7,7 +7,6 @@ config ENTROPY_PSA_CRYPTO_RNG
 	bool "PSA Crypto Random source Entropy driver"
 	depends on DT_HAS_ZEPHYR_PSA_CRYPTO_RNG_ENABLED
 	select ENTROPY_HAS_DRIVER
-	select PSA_WANT_GENERATE_RANDOM
 	default y
 	help
 	  Enable the PSA Crypto source Entropy driver.
