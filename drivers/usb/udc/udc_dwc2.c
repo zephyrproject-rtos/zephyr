@@ -116,8 +116,6 @@ struct udc_dwc2_data {
 	uint32_t max_pktcnt;
 	uint32_t tx_len[16];
 	uint32_t rx_siz[16];
-	/* Isochronous endpoint enabled (IN on bits 0-15, OUT on bits 16-31) */
-	uint32_t iso_enabled;
 	uint16_t txf_set;
 	uint16_t pending_tx_flush;
 	uint16_t dfifodepth;
@@ -1477,12 +1475,6 @@ static int udc_dwc2_ep_activate(const struct device *dev,
 	dwc2_set_epint(dev, cfg, true);
 	sys_write32(dxepctl, dxepctl_reg);
 
-	if (dwc2_ep_is_iso(cfg)) {
-		uint8_t ep_bit = ep_idx + (USB_EP_DIR_IS_OUT(cfg->addr) ? 16 : 0);
-
-		priv->iso_enabled |= BIT(ep_bit);
-	}
-
 	for (uint8_t i = 1U; i < priv->ineps; i++) {
 		LOG_DBG("DIEPTXF%u %08x DIEPCTL%u %08x",
 			i, sys_read32((mem_addr_t)&base->dieptxf[i - 1U]), i, dxepctl);
@@ -1676,7 +1668,6 @@ static void udc_dwc2_ep_disable(const struct device *dev,
 static int udc_dwc2_ep_deactivate(const struct device *dev,
 				  struct udc_ep_config *const cfg)
 {
-	struct udc_dwc2_data *const priv = udc_get_private(dev);
 	uint8_t ep_idx = USB_EP_GET_IDX(cfg->addr);
 	mem_addr_t dxepctl_reg;
 	uint32_t dxepctl;
@@ -1704,12 +1695,6 @@ static int udc_dwc2_ep_deactivate(const struct device *dev,
 
 	sys_write32(dxepctl, dxepctl_reg);
 	dwc2_set_epint(dev, cfg, false);
-
-	if (dwc2_ep_is_iso(cfg)) {
-		uint8_t ep_bit = ep_idx + (USB_EP_DIR_IS_OUT(cfg->addr) ? 16 : 0);
-
-		priv->iso_enabled &= ~BIT(ep_bit);
-	}
 
 	return 0;
 }
@@ -2321,7 +2306,6 @@ static int dwc2_driver_preinit(const struct device *dev)
 	k_event_init(&priv->drv_evt);
 	atomic_clear(&priv->xfer_new);
 	atomic_clear(&priv->xfer_finished);
-	priv->iso_enabled = 0;
 
 	data->caps.rwup = true;
 	data->caps.addr_before_status = true;
@@ -2778,37 +2762,38 @@ static void dwc2_handle_incompisoin(const struct device *dev)
 		USB_DWC2_DEPCTL_EPENA |
 		usb_dwc2_set_depctl_eptype(USB_DWC2_DEPCTL_EPTYPE_ISO) |
 		USB_DWC2_DEPCTL_USBACTEP;
-	uint32_t eps = priv->iso_enabled & 0x0000FFFFUL;
 
-	while (eps) {
-		uint8_t i = find_lsb_set(eps) - 1;
-		mem_addr_t diepctl_reg = dwc2_get_dxepctl_reg(dev, i | USB_EP_DIR_IN);
-		uint32_t diepctl;
+	for (uint8_t i = 1U; i < priv->numdeveps; i++) {
+		uint32_t epdir = usb_dwc2_get_ghwcfg1_epdir(priv->ghwcfg1, i);
 
-		diepctl = sys_read32(diepctl_reg);
+		if (epdir == USB_DWC2_GHWCFG1_EPDIR_IN ||
+		    epdir == USB_DWC2_GHWCFG1_EPDIR_BDIR) {
+			mem_addr_t diepctl_reg = dwc2_get_dxepctl_reg(dev, i | USB_EP_DIR_IN);
+			uint32_t diepctl;
 
-		/* Check if endpoint didn't receive ISO IN data */
-		if ((diepctl & mask) == val) {
-			struct udc_ep_config *cfg;
-			struct net_buf *buf;
+			diepctl = sys_read32(diepctl_reg);
 
-			cfg = udc_get_ep_cfg(dev, i | USB_EP_DIR_IN);
-			__ASSERT_NO_MSG(cfg && cfg->stat.enabled &&
-					dwc2_ep_is_iso(cfg));
+			/* Check if endpoint didn't receive ISO OUT data */
+			if ((diepctl & mask) == val) {
+				struct udc_ep_config *cfg;
+				struct net_buf *buf;
 
-			udc_dwc2_ep_disable(dev, cfg, false);
+				cfg = udc_get_ep_cfg(dev, i | USB_EP_DIR_IN);
+				__ASSERT_NO_MSG(cfg && cfg->stat.enabled &&
+						dwc2_ep_is_iso(cfg));
 
-			buf = udc_buf_get(cfg);
-			if (buf) {
-				/* Data is no longer relevant */
-				udc_submit_ep_event(dev, buf, 0);
+				udc_dwc2_ep_disable(dev, cfg, false);
 
-				/* Try to queue next packet before SOF */
-				dwc2_handle_xfer_next(dev, cfg);
+				buf = udc_buf_get(cfg);
+				if (buf) {
+					/* Data is no longer relevant */
+					udc_submit_ep_event(dev, buf, 0);
+
+					/* Try to queue next packet before SOF */
+					dwc2_handle_xfer_next(dev, cfg);
+				}
 			}
 		}
-
-		eps &= ~BIT(i);
 	}
 
 	sys_write32(USB_DWC2_GINTSTS_INCOMPISOIN, gintsts_reg);
@@ -2832,33 +2817,34 @@ static void dwc2_handle_incompisoout(const struct device *dev)
 		usb_dwc2_set_depctl_eptype(USB_DWC2_DEPCTL_EPTYPE_ISO) |
 		((priv->sof_num & 1) ? USB_DWC2_DEPCTL_DPID : 0) |
 		USB_DWC2_DEPCTL_USBACTEP;
-	uint32_t eps = (priv->iso_enabled & 0xFFFF0000UL) >> 16;
 
-	while (eps) {
-		uint8_t i = find_lsb_set(eps) - 1;
-		mem_addr_t doepctl_reg = dwc2_get_dxepctl_reg(dev, i);
-		uint32_t doepctl;
+	for (uint8_t i = 1U; i < priv->numdeveps; i++) {
+		uint32_t epdir = usb_dwc2_get_ghwcfg1_epdir(priv->ghwcfg1, i);
 
-		doepctl = sys_read32(doepctl_reg);
+		if (epdir == USB_DWC2_GHWCFG1_EPDIR_OUT ||
+		    epdir == USB_DWC2_GHWCFG1_EPDIR_BDIR) {
+			mem_addr_t doepctl_reg = dwc2_get_dxepctl_reg(dev, i);
+			uint32_t doepctl;
 
-		/* Check if endpoint didn't receive ISO OUT data */
-		if ((doepctl & mask) == val) {
-			struct udc_ep_config *cfg;
-			struct net_buf *buf;
+			doepctl = sys_read32(doepctl_reg);
 
-			cfg = udc_get_ep_cfg(dev, i);
-			__ASSERT_NO_MSG(cfg && cfg->stat.enabled &&
-					dwc2_ep_is_iso(cfg));
+			/* Check if endpoint didn't receive ISO OUT data */
+			if ((doepctl & mask) == val) {
+				struct udc_ep_config *cfg;
+				struct net_buf *buf;
 
-			udc_dwc2_ep_disable(dev, cfg, false);
+				cfg = udc_get_ep_cfg(dev, i);
+				__ASSERT_NO_MSG(cfg && cfg->stat.enabled &&
+						dwc2_ep_is_iso(cfg));
 
-			buf = udc_buf_get(cfg);
-			if (buf) {
-				udc_submit_ep_event(dev, buf, 0);
+				udc_dwc2_ep_disable(dev, cfg, false);
+
+				buf = udc_buf_get(cfg);
+				if (buf) {
+					udc_submit_ep_event(dev, buf, 0);
+				}
 			}
 		}
-
-		eps &= ~BIT(i);
 	}
 
 	sys_write32(USB_DWC2_GINTSTS_INCOMPISOOUT, gintsts_reg);
