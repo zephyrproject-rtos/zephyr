@@ -264,14 +264,14 @@ slot3_partition: &cpurad_slot1_partition {
 };
 
 &gpio6 {
-	status = "disabled";
+	status = "okay";
 };
 
 &exmif {
 	pinctrl-0 = <&exmif_default>;
 	pinctrl-1 = <&exmif_sleep>;
 	pinctrl-names = "default", "sleep";
-	status = "disabled";
+	status = "okay";
 
 	mx25uw63: mx25uw6345g@0 {
 		compatible = "mxicy,mx25u", "jedec,mspi-nor";
