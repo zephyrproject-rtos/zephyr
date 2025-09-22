@@ -6,6 +6,7 @@
 menuconfig ZVFS
 	bool "Zephyr virtual filesystem (ZVFS) support [EXPERIMENTAL]"
 	select FDTABLE
+	select EXPERIMENTAL
 	help
 	  ZVFS is a central, Zephyr-native library that provides a common interoperable API for all
 	  types of file descriptors such as those from the non-virtual FS, sockets, eventfds, FILE *'s
