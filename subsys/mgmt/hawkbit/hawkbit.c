@@ -910,7 +910,8 @@ int hawkbit_init(void)
 
 	image_ok = boot_is_img_confirmed();
 	LOG_INF("Current image is%s confirmed", image_ok ? "" : " not");
-	if (!image_ok) {
+
+	if (IS_ENABLED(CONFIG_HAWKBIT_CONFIRM_IMG_ON_INIT) && !image_ok) {
 		ret = boot_write_img_confirmed();
 		if (ret < 0) {
 			LOG_ERR("Failed to confirm current image: %d", ret);
@@ -918,10 +919,13 @@ int hawkbit_init(void)
 		}
 
 		LOG_DBG("Marked current image as OK");
-		ret = boot_erase_img_bank(flash_img_get_upload_slot());
-		if (ret < 0) {
-			LOG_ERR("Failed to erase second slot: %d", ret);
-			return ret;
+
+		if (IS_ENABLED(CONFIG_HAWKBIT_ERASE_SECOND_SLOT_ON_CONFIRM)) {
+			ret = boot_erase_img_bank(flash_img_get_upload_slot());
+			if (ret < 0) {
+				LOG_ERR("Failed to erase second slot: %d", ret);
+				return ret;
+			}
 		}
 
 		hawkbit_event_raise(HAWKBIT_EVENT_CONFIRMED_CURRENT_IMAGE);
