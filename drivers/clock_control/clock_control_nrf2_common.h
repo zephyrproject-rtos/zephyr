@@ -37,6 +37,16 @@ struct clock_onoff {
 	}
 
 /**
+ * @brief Obtain LFOSC accuracy in ppm.
+ *
+ * @param[out] accuracy Accuracy in ppm.
+ *
+ * @retval 0 On success
+ * @retval -EINVAL If accuracy is not configured.
+ */
+int lfosc_get_accuracy(uint16_t *accuracy);
+
+/**
  * @brief Initializes a clock configuration structure.
  *
  * @param clk_cfg pointer to the structure to be initialized.
