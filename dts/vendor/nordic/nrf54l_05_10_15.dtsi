@@ -320,8 +320,6 @@
 				status = "disabled";
 				endtx-stoptx-supported;
 				frame-timeout-supported;
-				default-gpio-port = <&gpio1>;
-				cross-domain-pins-supported;
 			};
 
 			i2c21: i2c@c7000 {
@@ -361,8 +359,6 @@
 				status = "disabled";
 				endtx-stoptx-supported;
 				frame-timeout-supported;
-				default-gpio-port = <&gpio1>;
-				cross-domain-pins-supported;
 			};
 
 			i2c22: i2c@c8000 {
