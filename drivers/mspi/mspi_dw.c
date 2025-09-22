@@ -844,16 +844,13 @@ static int start_next_packet(const struct device *dev, k_timeout_t timeout)
 		    (dev_data->xfer.cmd_length != 0 ||
 		     dev_data->xfer.addr_length != 0)) {
 			uint32_t rx_total_bytes;
-			uint32_t dummy_cycles = dev_data->xfer.rx_dummy;
 
 			dev_data->bytes_to_discard = dev_data->xfer.cmd_length
-						   + dev_data->xfer.addr_length
-						   + dummy_cycles / 8;
+						   + dev_data->xfer.addr_length;
 			rx_total_bytes = dev_data->bytes_to_discard
 				       + packet->num_bytes;
 
-			dev_data->dummy_bytes = dummy_cycles / 8
-					      + packet->num_bytes;
+			dev_data->dummy_bytes = packet->num_bytes;
 
 			imr = IMR_TXEIM_BIT | IMR_RXFIM_BIT;
 			tmod = CTRLR0_TMOD_TX_RX;
@@ -865,13 +862,11 @@ static int start_next_packet(const struct device *dev, k_timeout_t timeout)
 			tmod = CTRLR0_TMOD_RX;
 			rx_fifo_threshold = MIN(packet_frames - 1,
 						dev_config->rx_fifo_threshold);
-
-			dev_data->spi_ctrlr0 |=
-				FIELD_PREP(SPI_CTRLR0_WAIT_CYCLES_MASK,
-					   dev_data->xfer.rx_dummy);
 		}
 
 		dev_data->ctrlr0 |= FIELD_PREP(CTRLR0_TMOD_MASK, tmod);
+		dev_data->spi_ctrlr0 |= FIELD_PREP(SPI_CTRLR0_WAIT_CYCLES_MASK,
+						   dev_data->xfer.rx_dummy);
 
 		write_rxftlr(dev, FIELD_PREP(RXFTLR_RFT_MASK,
 					     rx_fifo_threshold));
@@ -1044,15 +1039,10 @@ static int _api_transceive(const struct device *dev,
 		return -EINVAL;
 	}
 
-	if (dev_data->standard_spi) {
-		if (req->tx_dummy) {
-			LOG_ERR("TX dummy cycles unsupported in single line mode");
-			return -EINVAL;
-		}
-		if (req->rx_dummy % 8) {
-			LOG_ERR("Unsupported RX (%u) dummy cycles", req->rx_dummy);
-			return -EINVAL;
-		}
+	if (dev_data->standard_spi &&
+	    (req->rx_dummy != 0 || req->tx_dummy != 0)) {
+		LOG_ERR("Dummy cycles unsupported in single line mode");
+		return -EINVAL;
 	} else if (req->rx_dummy > SPI_CTRLR0_WAIT_CYCLES_MAX ||
 		   req->tx_dummy > SPI_CTRLR0_WAIT_CYCLES_MAX) {
 		LOG_ERR("Unsupported RX (%u) or TX (%u) dummy cycles",
