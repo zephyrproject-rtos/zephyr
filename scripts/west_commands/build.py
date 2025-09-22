@@ -624,12 +624,7 @@ class Build(Forceable):
         if user_args:
             cmake_opts.extend(shlex.split(user_args))
 
-        config_sysbuild = config_getboolean('sysbuild', None)
-
-        if config_sysbuild is None:
-            # If no option is set, then enable sysbuild globally
-            config_sysbuild = True
-
+        config_sysbuild = config_getboolean('sysbuild', False)
         if self.args.sysbuild or (config_sysbuild and not self.args.no_sysbuild):
             cmake_opts.extend([f'-S{SYSBUILD_PROJ_DIR}',
                                f'-DAPP_DIR:PATH={self.source_dir}'])
