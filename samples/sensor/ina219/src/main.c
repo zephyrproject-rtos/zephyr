@@ -8,7 +8,6 @@
 #include <stdio.h>
 #include <zephyr/drivers/sensor.h>
 
-
 int main(void)
 {
 	const struct device *const ina = DEVICE_DT_GET_ONE(ti_ina219);
@@ -32,10 +31,9 @@ int main(void)
 		sensor_channel_get(ina, SENSOR_CHAN_CURRENT, &current);
 
 		printf("Bus: %f [V] -- "
-			"Power: %f [W] -- "
-			"Current: %f [A]\n",
-		       sensor_value_to_double(&v_bus),
-		       sensor_value_to_double(&power),
+		       "Power: %f [W] -- "
+		       "Current: %f [A]\n",
+		       sensor_value_to_double(&v_bus), sensor_value_to_double(&power),
 		       sensor_value_to_double(&current));
 		k_sleep(K_MSEC(2000));
 	}

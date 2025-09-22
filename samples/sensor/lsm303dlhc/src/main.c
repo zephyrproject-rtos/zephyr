@@ -10,8 +10,7 @@
 #include <stdio.h>
 #include <zephyr/sys/util.h>
 
-static int32_t read_sensor(const struct device *sensor,
-			   enum sensor_channel channel)
+static int32_t read_sensor(const struct device *sensor, enum sensor_channel channel)
 {
 	struct sensor_value val[3];
 	int32_t ret = 0;
@@ -29,8 +28,7 @@ static int32_t read_sensor(const struct device *sensor,
 	}
 
 	printf("( x y z ) = ( %f  %f  %f )\n", sensor_value_to_double(&val[0]),
-					       sensor_value_to_double(&val[1]),
-					       sensor_value_to_double(&val[2]));
+	       sensor_value_to_double(&val[1]), sensor_value_to_double(&val[2]));
 
 end:
 	return ret;

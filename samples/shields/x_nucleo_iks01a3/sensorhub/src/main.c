@@ -13,8 +13,7 @@
 #ifdef CONFIG_LIS2DW12_TRIGGER
 static int lis2dw12_trig_cnt;
 
-static void lis2dw12_trigger_handler(const struct device *dev,
-				     const struct sensor_trigger *trig)
+static void lis2dw12_trigger_handler(const struct device *dev, const struct sensor_trigger *trig)
 {
 	sensor_sample_fetch_chan(dev, SENSOR_CHAN_ACCEL_XYZ);
 	lis2dw12_trig_cnt++;
@@ -24,8 +23,7 @@ static void lis2dw12_trigger_handler(const struct device *dev,
 #ifdef CONFIG_LSM6DSO_TRIGGER
 static int lsm6dso_acc_trig_cnt;
 
-static void lsm6dso_acc_trig_handler(const struct device *dev,
-				     const struct sensor_trigger *trig)
+static void lsm6dso_acc_trig_handler(const struct device *dev, const struct sensor_trigger *trig)
 {
 	sensor_sample_fetch(dev);
 	lsm6dso_acc_trig_cnt++;
@@ -40,16 +38,16 @@ static void lis2dw12_config(const struct device *lis2dw12)
 	odr_attr.val1 = 100;
 	odr_attr.val2 = 0;
 
-	if (sensor_attr_set(lis2dw12, SENSOR_CHAN_ACCEL_XYZ,
-			    SENSOR_ATTR_SAMPLING_FREQUENCY, &odr_attr) < 0) {
+	if (sensor_attr_set(lis2dw12, SENSOR_CHAN_ACCEL_XYZ, SENSOR_ATTR_SAMPLING_FREQUENCY,
+			    &odr_attr) < 0) {
 		printk("Cannot set sampling frequency for LIS2DW12 accel\n");
 		return;
 	}
 
 	sensor_g_to_ms2(16, &fs_attr);
 
-	if (sensor_attr_set(lis2dw12, SENSOR_CHAN_ACCEL_XYZ,
-			    SENSOR_ATTR_FULL_SCALE, &fs_attr) < 0) {
+	if (sensor_attr_set(lis2dw12, SENSOR_CHAN_ACCEL_XYZ, SENSOR_ATTR_FULL_SCALE, &fs_attr) <
+	    0) {
 		printk("Cannot set sampling frequency for LIS2DW12 gyro\n");
 		return;
 	}
@@ -71,16 +69,15 @@ static void lsm6dso_config(const struct device *lsm6dso)
 	odr_attr.val1 = 208;
 	odr_attr.val2 = 0;
 
-	if (sensor_attr_set(lsm6dso, SENSOR_CHAN_ACCEL_XYZ,
-			    SENSOR_ATTR_SAMPLING_FREQUENCY, &odr_attr) < 0) {
+	if (sensor_attr_set(lsm6dso, SENSOR_CHAN_ACCEL_XYZ, SENSOR_ATTR_SAMPLING_FREQUENCY,
+			    &odr_attr) < 0) {
 		printk("Cannot set sampling frequency for LSM6DSO accel\n");
 		return;
 	}
 
 	sensor_g_to_ms2(16, &fs_attr);
 
-	if (sensor_attr_set(lsm6dso, SENSOR_CHAN_ACCEL_XYZ,
-			    SENSOR_ATTR_FULL_SCALE, &fs_attr) < 0) {
+	if (sensor_attr_set(lsm6dso, SENSOR_CHAN_ACCEL_XYZ, SENSOR_ATTR_FULL_SCALE, &fs_attr) < 0) {
 		printk("Cannot set fs for LSM6DSO accel\n");
 		return;
 	}
@@ -89,16 +86,15 @@ static void lsm6dso_config(const struct device *lsm6dso)
 	odr_attr.val1 = 208;
 	odr_attr.val2 = 0;
 
-	if (sensor_attr_set(lsm6dso, SENSOR_CHAN_GYRO_XYZ,
-			    SENSOR_ATTR_SAMPLING_FREQUENCY, &odr_attr) < 0) {
+	if (sensor_attr_set(lsm6dso, SENSOR_CHAN_GYRO_XYZ, SENSOR_ATTR_SAMPLING_FREQUENCY,
+			    &odr_attr) < 0) {
 		printk("Cannot set sampling frequency for LSM6DSO gyro\n");
 		return;
 	}
 
 	sensor_degrees_to_rad(250, &fs_attr);
 
-	if (sensor_attr_set(lsm6dso, SENSOR_CHAN_GYRO_XYZ,
-			    SENSOR_ATTR_FULL_SCALE, &fs_attr) < 0) {
+	if (sensor_attr_set(lsm6dso, SENSOR_CHAN_GYRO_XYZ, SENSOR_ATTR_FULL_SCALE, &fs_attr) < 0) {
 		printk("Cannot set fs for LSM6DSO gyro\n");
 		return;
 	}
@@ -108,16 +104,16 @@ static void lsm6dso_config(const struct device *lsm6dso)
 	odr_attr.val2 = 0;
 
 #ifdef CONFIG_LSM6DSO_EXT_LIS2MDL
-	if (sensor_attr_set(lsm6dso, SENSOR_CHAN_MAGN_XYZ,
-			    SENSOR_ATTR_SAMPLING_FREQUENCY, &odr_attr) < 0) {
+	if (sensor_attr_set(lsm6dso, SENSOR_CHAN_MAGN_XYZ, SENSOR_ATTR_SAMPLING_FREQUENCY,
+			    &odr_attr) < 0) {
 		printk("Cannot set sampling frequency for LSM6DSO ext magn\n");
 		return;
 	}
 #endif
 
 #ifdef CONFIG_LSM6DSO_EXT_LPS22HH
-	if (sensor_attr_set(lsm6dso, SENSOR_CHAN_PRESS,
-			    SENSOR_ATTR_SAMPLING_FREQUENCY, &odr_attr) < 0) {
+	if (sensor_attr_set(lsm6dso, SENSOR_CHAN_PRESS, SENSOR_ATTR_SAMPLING_FREQUENCY, &odr_attr) <
+	    0) {
 		printk("Cannot set sampling frequency for LSM6DSO ext pressure\n");
 		return;
 	}
@@ -125,8 +121,8 @@ static void lsm6dso_config(const struct device *lsm6dso)
 
 #ifdef CONFIG_LSM6DSO_EXT_HTS221
 	odr_attr.val1 = 12;
-	if (sensor_attr_set(lsm6dso, SENSOR_CHAN_HUMIDITY,
-			    SENSOR_ATTR_SAMPLING_FREQUENCY, &odr_attr) < 0) {
+	if (sensor_attr_set(lsm6dso, SENSOR_CHAN_HUMIDITY, SENSOR_ATTR_SAMPLING_FREQUENCY,
+			    &odr_attr) < 0) {
 		printk("Cannot set sampling frequency for LSM6DSO ext humidity\n");
 		return;
 	}
@@ -213,44 +209,36 @@ int main(void)
 		printf("X-NUCLEO-IKS01A3 sensor dashboard\n\n");
 
 		printf("LIS2DW12: Accel (m.s-2): x: %.3f, y: %.3f, z: %.3f\n",
-			sensor_value_to_double(&accel2[0]),
-			sensor_value_to_double(&accel2[1]),
-			sensor_value_to_double(&accel2[2]));
+		       sensor_value_to_double(&accel2[0]), sensor_value_to_double(&accel2[1]),
+		       sensor_value_to_double(&accel2[2]));
 
 		printf("LSM6DSO: Accel (m.s-2): x: %.3f, y: %.3f, z: %.3f\n",
-			sensor_value_to_double(&accel1[0]),
-			sensor_value_to_double(&accel1[1]),
-			sensor_value_to_double(&accel1[2]));
+		       sensor_value_to_double(&accel1[0]), sensor_value_to_double(&accel1[1]),
+		       sensor_value_to_double(&accel1[2]));
 
 		printf("LSM6DSO: GYro (dps): x: %.3f, y: %.3f, z: %.3f\n",
-			sensor_value_to_double(&gyro[0]),
-			sensor_value_to_double(&gyro[1]),
-			sensor_value_to_double(&gyro[2]));
+		       sensor_value_to_double(&gyro[0]), sensor_value_to_double(&gyro[1]),
+		       sensor_value_to_double(&gyro[2]));
 
 #ifdef CONFIG_LSM6DSO_ENABLE_TEMP
 		/* temperature */
-		printf("LSM6DSO: Temperature: %.1f C\n",
-		       sensor_value_to_double(&die_temp));
+		printf("LSM6DSO: Temperature: %.1f C\n", sensor_value_to_double(&die_temp));
 #endif
 
 #ifdef CONFIG_LSM6DSO_EXT_LIS2MDL
 		printf("LSM6DSO: Magn (gauss): x: %.3f, y: %.3f, z: %.3f\n",
-		       sensor_value_to_double(&magn[0]),
-		       sensor_value_to_double(&magn[1]),
+		       sensor_value_to_double(&magn[0]), sensor_value_to_double(&magn[1]),
 		       sensor_value_to_double(&magn[2]));
 #endif
 
 #ifdef CONFIG_LSM6DSO_EXT_LPS22HH
-		printf("LSM6DSO: Temperature: %.1f C\n",
-		       sensor_value_to_double(&temp2));
+		printf("LSM6DSO: Temperature: %.1f C\n", sensor_value_to_double(&temp2));
 
-		printf("LSM6DSO: Pressure:%.3f kpa\n",
-		       sensor_value_to_double(&press));
+		printf("LSM6DSO: Pressure:%.3f kpa\n", sensor_value_to_double(&press));
 #endif
 
 #ifdef CONFIG_LSM6DSO_EXT_HTS221
-		printf("LSM6DSO: Relative Humidity: %.1f%%\n",
-		       sensor_value_to_double(&hum));
+		printf("LSM6DSO: Relative Humidity: %.1f%%\n", sensor_value_to_double(&hum));
 
 #endif
 

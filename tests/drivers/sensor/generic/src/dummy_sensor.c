@@ -15,13 +15,10 @@ static struct dummy_sensor_data dummy_data;
 /**
  * @brief config bus address at compile time
  */
-static const struct dummy_sensor_config dummy_config = {
-	.i2c_name = "dummy I2C",
-	.i2c_address = 123
-};
+static const struct dummy_sensor_config dummy_config = {.i2c_name = "dummy I2C",
+							.i2c_address = 123};
 
-static int dummy_sensor_sample_fetch(const struct device *dev,
-				     enum sensor_channel chan)
+static int dummy_sensor_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(chan);
@@ -30,8 +27,7 @@ static int dummy_sensor_sample_fetch(const struct device *dev,
 	return 0;
 }
 
-static int dummy_sensor_channel_get(const struct device *dev,
-				    enum sensor_channel chan,
+static int dummy_sensor_channel_get(const struct device *dev, enum sensor_channel chan,
 				    struct sensor_value *val)
 {
 	struct dummy_sensor_data *data = dev->data;
@@ -96,21 +92,18 @@ static int dummy_sensor_init(const struct device *dev)
 	/* initialize the channels value for dummy driver */
 	for (int i = 0; i < SENSOR_CHANNEL_NUM; i++) {
 		data->val[i].val1 = i;
-		data->val[i].val2 = i*i;
+		data->val[i].val2 = i * i;
 	}
 
 	return 0;
 }
 
-int dummy_sensor_attr_set(const struct device *dev,
-			  enum sensor_channel chan,
-			  enum sensor_attribute attr,
-			  const struct sensor_value *val)
+int dummy_sensor_attr_set(const struct device *dev, enum sensor_channel chan,
+			  enum sensor_attribute attr, const struct sensor_value *val)
 {
 	struct dummy_sensor_data *data = dev->data;
 
-	if (chan == SENSOR_CHAN_PROX &&
-	    attr == SENSOR_ATTR_UPPER_THRESH) {
+	if (chan == SENSOR_CHAN_PROX && attr == SENSOR_ATTR_UPPER_THRESH) {
 		data->val[4].val1 = val->val1;
 		data->val[4].val2 = val->val2;
 		return 0;
@@ -119,15 +112,12 @@ int dummy_sensor_attr_set(const struct device *dev,
 	return -ENOTSUP;
 }
 
-int dummy_sensor_attr_get(const struct device *dev,
-			  enum sensor_channel chan,
-			  enum sensor_attribute attr,
-			  struct sensor_value *val)
+int dummy_sensor_attr_get(const struct device *dev, enum sensor_channel chan,
+			  enum sensor_attribute attr, struct sensor_value *val)
 {
 	struct dummy_sensor_data *data = dev->data;
 
-	if (chan == SENSOR_CHAN_PROX &&
-	    attr == SENSOR_ATTR_UPPER_THRESH) {
+	if (chan == SENSOR_CHAN_PROX && attr == SENSOR_ATTR_UPPER_THRESH) {
 		val->val1 = data->val[4].val1;
 		val->val2 = data->val[4].val2;
 		return 0;
@@ -136,8 +126,7 @@ int dummy_sensor_attr_get(const struct device *dev,
 	return -ENOTSUP;
 }
 
-int dummy_sensor_trigger_set(const struct device *dev,
-			     const struct sensor_trigger *trig,
+int dummy_sensor_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
 			     sensor_trigger_handler_t handler)
 {
 	struct dummy_sensor_data *data = dev->data;
@@ -177,10 +166,9 @@ static DEVICE_API(sensor, dummy_sensor_no_trig_api) = {
 	.trigger_set = NULL,
 };
 
-DEVICE_DEFINE(dummy_sensor, DUMMY_SENSOR_NAME, &dummy_sensor_init,
-		    NULL, &dummy_data, &dummy_config, POST_KERNEL,
-		    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &dummy_sensor_api);
+DEVICE_DEFINE(dummy_sensor, DUMMY_SENSOR_NAME, &dummy_sensor_init, NULL, &dummy_data, &dummy_config,
+	      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &dummy_sensor_api);
 
-DEVICE_DEFINE(dummy_sensor_no_trig, DUMMY_SENSOR_NAME_NO_TRIG, &dummy_sensor_init,
-		    NULL, &dummy_data, &dummy_config, POST_KERNEL,
-		    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &dummy_sensor_no_trig_api);
+DEVICE_DEFINE(dummy_sensor_no_trig, DUMMY_SENSOR_NAME_NO_TRIG, &dummy_sensor_init, NULL,
+	      &dummy_data, &dummy_config, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+	      &dummy_sensor_no_trig_api);

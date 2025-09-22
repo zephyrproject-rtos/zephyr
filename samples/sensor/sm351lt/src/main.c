@@ -19,21 +19,17 @@ static void fetch_and_display(const struct device *sensor)
 
 	++count;
 	if (rc == 0) {
-		rc = sensor_channel_get(sensor,
-					SENSOR_CHAN_PROX,
-					&mag);
+		rc = sensor_channel_get(sensor, SENSOR_CHAN_PROX, &mag);
 	}
 	if (rc < 0) {
 		printf("ERROR: Update failed: %d\n", rc);
 	} else {
-		printf("#%u @ %u ms: %d\n",
-		       count, k_uptime_get_32(), mag.val1);
+		printf("#%u @ %u ms: %d\n", count, k_uptime_get_32(), mag.val1);
 	}
 }
 
 #ifdef CONFIG_SM351LT_TRIGGER
-static void trigger_handler(const struct device *dev,
-			    const struct sensor_trigger *trig)
+static void trigger_handler(const struct device *dev, const struct sensor_trigger *trig)
 {
 	fetch_and_display(dev);
 }
@@ -60,9 +56,7 @@ int main(void)
 			.val1 = GPIO_INT_EDGE_BOTH,
 		};
 
-		rc = sensor_attr_set(sensor, trig.chan,
-				     SENSOR_ATTR_PRIV_START,
-				     &trigger_type);
+		rc = sensor_attr_set(sensor, trig.chan, SENSOR_ATTR_PRIV_START, &trigger_type);
 		if (rc != 0) {
 			printf("Failed to set trigger type: %d\n", rc);
 			return 0;
@@ -79,7 +73,7 @@ int main(void)
 			k_sleep(K_MSEC(2000));
 		}
 	}
-#else /* CONFIG_SM351LT_TRIGGER */
+#else  /* CONFIG_SM351LT_TRIGGER */
 	printf("Polling at 0.5 Hz\n");
 	while (true) {
 		fetch_and_display(sensor);

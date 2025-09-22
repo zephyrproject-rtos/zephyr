@@ -14,16 +14,16 @@
 /*
  * Get button configuration from the devicetree sw0 alias. This is mandatory.
  */
-#define SW0_NODE        DT_ALIAS(sw0)
+#define SW0_NODE DT_ALIAS(sw0)
 #if !DT_NODE_HAS_STATUS_OKAY(SW0_NODE)
 #error "Unsupported board: sw0 devicetree alias is not defined"
 #endif
 
-#define N_MODES ARRAY_SIZE(modes)
+#define N_MODES   ARRAY_SIZE(modes)
 #define N_SENSORS ARRAY_SIZE(sensors)
-#define LEFT   sensors[0]
-#define CENTER sensors[1]
-#define RIGHT  sensors[2]
+#define LEFT      sensors[0]
+#define CENTER    sensors[1]
+#define RIGHT     sensors[2]
 
 typedef void (*fsm_state)(void);
 
@@ -66,22 +66,18 @@ static void mode_show_presence(void)
 {
 	int i, ret;
 	struct sensor_value value;
-	uint8_t text[4] = { CHAR_OFF, CHAR_OFF, CHAR_OFF, CHAR_OFF };
+	uint8_t text[4] = {CHAR_OFF, CHAR_OFF, CHAR_OFF, CHAR_OFF};
 
 	for (i = 0; i < N_SENSORS; i++) {
 		ret = sensor_sample_fetch(sensors[i]);
 		if (ret) {
-			printk("sensor_sample_fetch(%s) failed -> %d\n",
-			       sensors[i]->name, ret);
+			printk("sensor_sample_fetch(%s) failed -> %d\n", sensors[i]->name, ret);
 			display_chars(TEXT_Err);
 			return;
 		}
-		ret = sensor_channel_get(sensors[i],
-					 SENSOR_CHAN_PROX,
-					 &value);
+		ret = sensor_channel_get(sensors[i], SENSOR_CHAN_PROX, &value);
 		if (ret) {
-			printk("sensor_channel_get(%s) failed -> %d\n",
-			       sensors[i]->name, ret);
+			printk("sensor_channel_get(%s) failed -> %d\n", sensors[i]->name, ret);
 			display_chars(TEXT_Err);
 			return;
 		}
@@ -101,9 +97,9 @@ static fsm_state modes[] = {
 
 static void change_mode(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
 {
-	(void) dev;
-	(void) cb;
-	(void) pins;
+	(void)dev;
+	(void)cb;
+	(void)pins;
 
 	int64_t now = k_uptime_get();
 
@@ -113,19 +109,17 @@ static void change_mode(const struct device *dev, struct gpio_callback *cb, uint
 	}
 }
 
-
 int main(void)
 {
 	struct gpio_callback button_cb_data;
-	const uint8_t Hello[4] = { CHAR_H, CHAR_E, CHAR_PIPE | CHAR_1, CHAR_0 };
+	const uint8_t Hello[4] = {CHAR_H, CHAR_E, CHAR_PIPE | CHAR_1, CHAR_0};
 	const struct gpio_dt_spec button = GPIO_DT_SPEC_GET(SW0_NODE, gpios);
 
 	display_chars(Hello);
 	k_sleep(K_MSEC(1000));
 
 	if (!gpio_is_ready_dt(&button)) {
-		printk("Error: button device %s is not ready\n",
-		       button.port->name);
+		printk("Error: button device %s is not ready\n", button.port->name);
 		return 0;
 	}
 

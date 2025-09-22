@@ -116,8 +116,8 @@ static void qenc_emulate_stop(void)
 }
 
 static void qenc_emulate_verify_reading(const struct device *const dev, int emulator_period_ms,
-		int emulation_duration_ms, bool forward, bool overflow_expected,
-		const uint32_t config_step)
+					int emulation_duration_ms, bool forward,
+					bool overflow_expected, const uint32_t config_step)
 {
 	int rc;
 	struct sensor_value val = {0};
@@ -145,8 +145,8 @@ static void qenc_emulate_verify_reading(const struct device *const dev, int emul
 	rc = sensor_channel_get(dev, SENSOR_CHAN_ROTATION, &val);
 	zassert_true(rc == 0, "Failed to get sample (%d)", rc);
 
-	TC_PRINT("Expected reading: %d, actual value: %d, delta: %d\n",
-			expected_reading, val.val1, delta);
+	TC_PRINT("Expected reading: %d, actual value: %d, delta: %d\n", expected_reading, val.val1,
+		 delta);
 	if (!overflow_expected) {
 		zassert_within(val.val1, expected_reading, delta,
 			       "Expected reading: %d,  but got: %d", expected_reading, val.val1);
@@ -233,7 +233,6 @@ ZTEST(qdec_sensor, test_sensor_trigger_set_and_disable)
 	TC_PRINT("Testing QDEC-1, address: %p\n", qdec_1_dev);
 	sensor_trigger_set_and_disable(qdec_1_dev);
 #endif
-
 }
 
 static void sensor_trigger_set_test(const struct device *const dev)
@@ -459,15 +458,11 @@ static void sensor_channel_get_test(const struct device *const dev)
 	/* subsequent calls of sensor_channel_get without calling sensor_sample_fetch
 	 * should yield the same value
 	 */
-	zassert_true(val_first.val1 == val_second.val1,
-		     "Expected the same readings: %d vs %d",
-		     val_first.val1,
-		     val_second.val1);
+	zassert_true(val_first.val1 == val_second.val1, "Expected the same readings: %d vs %d",
+		     val_first.val1, val_second.val1);
 
-	zassert_true(val_first.val2 == val_second.val2,
-		     "Expected the same readings: %d vs %d",
-		     val_first.val2,
-		     val_second.val2);
+	zassert_true(val_first.val2 == val_second.val2, "Expected the same readings: %d vs %d",
+		     val_first.val2, val_second.val2);
 
 	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
 		pm_device_runtime_put(qdec_dev);

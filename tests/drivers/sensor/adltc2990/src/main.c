@@ -68,7 +68,7 @@ static void reset_mock_i2c_transfer_fake(void)
 		sensor_val[index].val1 + (float)sensor_val[index].val2 / 1000000,                  \
 		(pin_voltage - 0.01f) * ((r1 + r2) / (float)r2),                                   \
 		(pin_voltage + 0.01f) * ((r1 + r2) / (float)r2),                                   \
-		"%f Out of Range [%f,%f] input %f, [%dmΩ, %dmΩ] "                                \
+		"%f Out of Range [%f,%f] input %f, [%dmΩ, %dmΩ] "                                  \
 		"\nCheck if the sensor node is configured correctly",                              \
 		(double)(sensor_val[index].val1 + (float)sensor_val[index].val2 / 1000000),        \
 		(double)((pin_voltage - 0.01f) * ((r1 + r2) / (float)r2)),                         \
@@ -82,7 +82,7 @@ static void reset_mock_i2c_transfer_fake(void)
 		sensor_val[index].val1 + (float)sensor_val[index].val2 / 1000000,                  \
 		(pin_voltage - 0.01f) * ADLTC2990_MICROOHM_CONVERSION_FACTOR / r_microohms,        \
 		(pin_voltage + 0.01f) * ADLTC2990_MICROOHM_CONVERSION_FACTOR / r_microohms,        \
-		"%f Out of Range [%f,%f] input %f, current-resistor: %dµΩ\nCheck if the sensor " \
+		"%f Out of Range [%f,%f] input %f, current-resistor: %dµΩ\nCheck if the sensor "   \
 		"node is configured correctly",                                                    \
 		(double)(sensor_val[index].val1 + (float)sensor_val[index].val2 / 1000000),        \
 		(double)((pin_voltage - 0.001f) * ADLTC2990_MICROOHM_CONVERSION_FACTOR /           \

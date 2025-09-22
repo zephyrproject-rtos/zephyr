@@ -13,8 +13,7 @@
 #ifdef CONFIG_LSM6DSL_TRIGGER
 static int lsm6dsl_trig_cnt;
 
-static void lsm6dsl_trigger_handler(const struct device *dev,
-				    const struct sensor_trigger *trig)
+static void lsm6dsl_trigger_handler(const struct device *dev, const struct sensor_trigger *trig)
 {
 	sensor_sample_fetch_chan(dev, SENSOR_CHAN_ALL);
 	lsm6dsl_trig_cnt++;
@@ -47,14 +46,14 @@ int main(void)
 	odr_attr.val1 = 104;
 	odr_attr.val2 = 0;
 
-	if (sensor_attr_set(lsm6dsl, SENSOR_CHAN_ACCEL_XYZ,
-			    SENSOR_ATTR_SAMPLING_FREQUENCY, &odr_attr) < 0) {
+	if (sensor_attr_set(lsm6dsl, SENSOR_CHAN_ACCEL_XYZ, SENSOR_ATTR_SAMPLING_FREQUENCY,
+			    &odr_attr) < 0) {
 		printk("Cannot set sampling frequency for accelerometer.\n");
 		return 0;
 	}
 
-	if (sensor_attr_set(lsm6dsl, SENSOR_CHAN_GYRO_XYZ,
-			    SENSOR_ATTR_SAMPLING_FREQUENCY, &odr_attr) < 0) {
+	if (sensor_attr_set(lsm6dsl, SENSOR_CHAN_GYRO_XYZ, SENSOR_ATTR_SAMPLING_FREQUENCY,
+			    &odr_attr) < 0) {
 		printk("Cannot set sampling frequency for gyro.\n");
 		return 0;
 	}
@@ -98,28 +97,23 @@ int main(void)
 
 		/* lsm6dsl accel */
 		printf("LSM6DSL: Accel (m.s-2): x: %.1f, y: %.1f, z: %.1f\n",
-		       sensor_value_to_double(&accel[0]),
-		       sensor_value_to_double(&accel[1]),
+		       sensor_value_to_double(&accel[0]), sensor_value_to_double(&accel[1]),
 		       sensor_value_to_double(&accel[2]));
 
 		/* lsm6dsl gyro */
 		printf("LSM6DSL: Gyro (dps): x: %.3f, y: %.3f, z: %.3f\n",
-		       sensor_value_to_double(&gyro[0]),
-		       sensor_value_to_double(&gyro[1]),
+		       sensor_value_to_double(&gyro[0]), sensor_value_to_double(&gyro[1]),
 		       sensor_value_to_double(&gyro[2]));
 
 #ifdef CONFIG_LSM6DSL_EXT0_LPS22HB
-		printf("LSM6DSL: Temperature: %.1f C\n",
-		       sensor_value_to_double(&temp));
+		printf("LSM6DSL: Temperature: %.1f C\n", sensor_value_to_double(&temp));
 
-		printf("LSM6DSL: Pressure:%.3f kpa\n",
-		       sensor_value_to_double(&press));
+		printf("LSM6DSL: Pressure:%.3f kpa\n", sensor_value_to_double(&press));
 #endif
 
 #ifdef CONFIG_LSM6DSL_EXT0_LIS2MDL
 		printf("LSM6DSL: Magn (gauss): x: %.3f, y: %.3f, z: %.3f\n",
-		       sensor_value_to_double(&magn[0]),
-		       sensor_value_to_double(&magn[1]),
+		       sensor_value_to_double(&magn[0]), sensor_value_to_double(&magn[1]),
 		       sensor_value_to_double(&magn[2]));
 #endif
 

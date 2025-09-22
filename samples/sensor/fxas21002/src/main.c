@@ -8,10 +8,9 @@
 #include <zephyr/drivers/sensor.h>
 #include <stdio.h>
 
-K_SEM_DEFINE(sem, 0, 1);	/* starts off "not available" */
+K_SEM_DEFINE(sem, 0, 1); /* starts off "not available" */
 
-static void trigger_handler(const struct device *dev,
-			    const struct sensor_trigger *trigger)
+static void trigger_handler(const struct device *dev, const struct sensor_trigger *trigger)
 {
 	k_sem_give(&sem);
 }
@@ -42,10 +41,8 @@ int main(void)
 		sensor_channel_get(dev, SENSOR_CHAN_GYRO_XYZ, gyro);
 
 		/* Print gyro x,y,z */
-		printf("X=%10.3f Y=%10.3f Z=%10.3f\n",
-		       sensor_value_to_double(&gyro[0]),
-		       sensor_value_to_double(&gyro[1]),
-		       sensor_value_to_double(&gyro[2]));
+		printf("X=%10.3f Y=%10.3f Z=%10.3f\n", sensor_value_to_double(&gyro[0]),
+		       sensor_value_to_double(&gyro[1]), sensor_value_to_double(&gyro[2]));
 	}
 	return 0;
 }

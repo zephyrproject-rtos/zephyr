@@ -17,15 +17,13 @@ static void finger_find(const struct device *dev)
 {
 	int ret;
 
-	ret = sensor_attr_set(dev, SENSOR_CHAN_FINGERPRINT,
-			SENSOR_ATTR_R502A_CAPTURE, NULL);
+	ret = sensor_attr_set(dev, SENSOR_CHAN_FINGERPRINT, SENSOR_ATTR_R502A_CAPTURE, NULL);
 	if (ret != 0) {
 		printk("Capture fingerprint failed %d\n", ret);
 		return;
 	}
 
-	ret = sensor_attr_get(dev, SENSOR_CHAN_FINGERPRINT,
-		SENSOR_ATTR_R502A_RECORD_FIND, &find);
+	ret = sensor_attr_get(dev, SENSOR_CHAN_FINGERPRINT, SENSOR_ATTR_R502A_RECORD_FIND, &find);
 	if (ret != 0) {
 		printk("Find fingerprint failed %d\n", ret);
 		return;
@@ -38,22 +36,20 @@ static void finger_enroll(const struct device *dev)
 {
 	int ret;
 
-	ret = sensor_attr_set(dev, SENSOR_CHAN_FINGERPRINT,
-			SENSOR_ATTR_R502A_CAPTURE, NULL);
+	ret = sensor_attr_set(dev, SENSOR_CHAN_FINGERPRINT, SENSOR_ATTR_R502A_CAPTURE, NULL);
 	if (ret != 0) {
 		printk("Capture fingerprint failed %d\n", ret);
 		return;
 	}
 
-	ret = sensor_attr_set(dev, SENSOR_CHAN_FINGERPRINT,
-			SENSOR_ATTR_R502A_TEMPLATE_CREATE, NULL);
+	ret = sensor_attr_set(dev, SENSOR_CHAN_FINGERPRINT, SENSOR_ATTR_R502A_TEMPLATE_CREATE,
+			      NULL);
 	if (ret != 0) {
 		printk("Create template failed %d\n", ret);
 		return;
 	}
 
-	ret = sensor_attr_set(dev, SENSOR_CHAN_FINGERPRINT,
-			SENSOR_ATTR_R502A_RECORD_ADD, &fid_get);
+	ret = sensor_attr_set(dev, SENSOR_CHAN_FINGERPRINT, SENSOR_ATTR_R502A_RECORD_ADD, &fid_get);
 	if (!ret) {
 		printk("Fingerprint successfully stored at #%d\n", fid_get.val1);
 		enroll = false;
@@ -85,9 +81,9 @@ static int r502a_led(void)
 	const int led_num = 0;
 	const int led_color_a_inst = 1;
 	uint8_t led_color = R502A_LED_COLOR_PURPLE;
-	const struct device *led_dev =  DEVICE_DT_GET_ONE(hzgrow_r502a_led);
+	const struct device *led_dev = DEVICE_DT_GET_ONE(hzgrow_r502a_led);
 
-	if (led_dev ==  NULL) {
+	if (led_dev == NULL) {
 		printk("Error: no device found\n");
 		return -ENODEV;
 	}
@@ -111,8 +107,7 @@ static int r502a_led(void)
 	return 0;
 }
 
-static void trigger_handler(const struct device *dev,
-			    const struct sensor_trigger *trigger)
+static void trigger_handler(const struct device *dev, const struct sensor_trigger *trigger)
 {
 	if (enroll) {
 		finger_enroll(dev);
@@ -143,9 +138,9 @@ int main(void)
 {
 	int ret;
 
-	const struct device *dev =  DEVICE_DT_GET_ONE(hzgrow_r502a);
+	const struct device *dev = DEVICE_DT_GET_ONE(hzgrow_r502a);
 
-	if (dev ==  NULL) {
+	if (dev == NULL) {
 		printk("Error: no device found\n");
 		return 0;
 	}
@@ -173,8 +168,8 @@ int main(void)
 	}
 	printk("Fingerprint Deleted at ID #%d\n", del.val1);
 
-	ret = sensor_attr_get(dev, SENSOR_CHAN_FINGERPRINT,
-					SENSOR_ATTR_R502A_RECORD_FREE_IDX, &fid_get);
+	ret = sensor_attr_get(dev, SENSOR_CHAN_FINGERPRINT, SENSOR_ATTR_R502A_RECORD_FREE_IDX,
+			      &fid_get);
 	if (ret != 0) {
 		printk("Sensor attr get failed %d\n", ret);
 		return 0;
@@ -182,7 +177,8 @@ int main(void)
 	printk("Fingerprint template free idx at ID #%d\n", fid_get.val1);
 
 	printk("Waiting for valid finger to enroll as ID #%d\n"
-		"Place your finger\n", fid_get.val1);
+	       "Place your finger\n",
+	       fid_get.val1);
 	enroll = true;
 
 	if (IS_ENABLED(CONFIG_GROW_R502A_TRIGGER)) {

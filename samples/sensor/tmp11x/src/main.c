@@ -12,7 +12,7 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/__assert.h>
 
-#define TMP11X_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(ti_tmp11x)
+#define TMP11X_NODE        DT_COMPAT_GET_ANY_STATUS_OKAY(ti_tmp11x)
 #define TMP11X_EEPROM_NODE DT_CHILD(TMP11X_NODE, ti_tmp11x_eeprom_0)
 
 static uint8_t eeprom_content[EEPROM_TMP11X_SIZE];
@@ -36,11 +36,9 @@ int main(void)
 
 	ret = eeprom_read(eeprom, 0, eeprom_content, sizeof(eeprom_content));
 	if (ret == 0) {
-		printk("eeprom content %02x%02x%02x%02x%02x%02x%02x%02x\n",
-		       eeprom_content[0], eeprom_content[1],
-		       eeprom_content[2], eeprom_content[3],
-		       eeprom_content[4], eeprom_content[5],
-		       eeprom_content[6], eeprom_content[7]);
+		printk("eeprom content %02x%02x%02x%02x%02x%02x%02x%02x\n", eeprom_content[0],
+		       eeprom_content[1], eeprom_content[2], eeprom_content[3], eeprom_content[4],
+		       eeprom_content[5], eeprom_content[6], eeprom_content[7]);
 	} else {
 		printk("Failed to get eeprom content\n");
 	}
@@ -52,8 +50,7 @@ int main(void)
 	 */
 	offset_value.val1 = 0;
 	offset_value.val2 = 0;
-	ret = sensor_attr_set(dev, SENSOR_CHAN_AMBIENT_TEMP,
-			      SENSOR_ATTR_OFFSET, &offset_value);
+	ret = sensor_attr_set(dev, SENSOR_CHAN_AMBIENT_TEMP, SENSOR_ATTR_OFFSET, &offset_value);
 	if (ret) {
 		printk("sensor_attr_set failed ret = %d\n", ret);
 		printk("SENSOR_ATTR_OFFSET is only supported by TMP117 and TMP119\n");
@@ -65,8 +62,7 @@ int main(void)
 			return 0;
 		}
 
-		ret = sensor_channel_get(dev, SENSOR_CHAN_AMBIENT_TEMP,
-					 &temp_value);
+		ret = sensor_channel_get(dev, SENSOR_CHAN_AMBIENT_TEMP, &temp_value);
 		if (ret) {
 			printk("Failed to get measurements (%d)\n", ret);
 			return 0;

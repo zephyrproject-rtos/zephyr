@@ -13,8 +13,7 @@
 #ifdef CONFIG_LIS3MDL_TRIGGER
 static int lis3mdl_trig_cnt;
 
-static void lis3mdl_trigger_handler(const struct device *dev,
-				    const struct sensor_trigger *trig)
+static void lis3mdl_trigger_handler(const struct device *dev, const struct sensor_trigger *trig)
 {
 	sensor_sample_fetch_chan(dev, trig->chan);
 	lis3mdl_trig_cnt++;
@@ -96,31 +95,23 @@ int main(void)
 		printf("X-NUCLEO-IKS01A1 sensor dashboard\n\n");
 
 		/* temperature */
-		printf("HTS221: Temperature: %.1f C\n",
-		       sensor_value_to_double(&temp));
+		printf("HTS221: Temperature: %.1f C\n", sensor_value_to_double(&temp));
 
 		/* humidity */
-		printf("HTS221: Relative Humidity: %.1f%%\n",
-		       sensor_value_to_double(&hum));
+		printf("HTS221: Relative Humidity: %.1f%%\n", sensor_value_to_double(&hum));
 
 		/* pressure */
-		printf("LPS25HB: Pressure:%.1f kpa\n",
-		       sensor_value_to_double(&press));
+		printf("LPS25HB: Pressure:%.1f kpa\n", sensor_value_to_double(&press));
 
 		/* magneto data */
-		printf(
-		 "LIS3MDL: Magnetic field (gauss): x: %.1f, y: %.1f, z: %.1f\n",
-		 sensor_value_to_double(&magn_xyz[0]),
-		 sensor_value_to_double(&magn_xyz[1]),
-		 sensor_value_to_double(&magn_xyz[2]));
+		printf("LIS3MDL: Magnetic field (gauss): x: %.1f, y: %.1f, z: %.1f\n",
+		       sensor_value_to_double(&magn_xyz[0]), sensor_value_to_double(&magn_xyz[1]),
+		       sensor_value_to_double(&magn_xyz[2]));
 
 		/* acceleration */
-		printf(
-		   "LSM6DS0: Acceleration (m.s-2): x: %.1f, y: %.1f, z: %.1f\n",
-		   sensor_value_to_double(&accel_xyz[0]),
-		   sensor_value_to_double(&accel_xyz[1]),
-		   sensor_value_to_double(&accel_xyz[2]));
-
+		printf("LSM6DS0: Acceleration (m.s-2): x: %.1f, y: %.1f, z: %.1f\n",
+		       sensor_value_to_double(&accel_xyz[0]), sensor_value_to_double(&accel_xyz[1]),
+		       sensor_value_to_double(&accel_xyz[2]));
 
 #if defined(CONFIG_LIS3MDL_TRIGGER)
 		printk("%d:: lis3mdl trig %d\n", cnt, lis3mdl_trig_cnt);

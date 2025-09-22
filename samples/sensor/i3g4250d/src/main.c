@@ -10,7 +10,7 @@
 #include <zephyr/drivers/sensor.h>
 
 #define SAMPLING_INTERVAL_MS 10
-#define DISPLAY_INTERVAL_MS 50
+#define DISPLAY_INTERVAL_MS  50
 
 static int set_sampling_frequency(const struct device *sensor, double sampling_frequency)
 {
@@ -18,8 +18,8 @@ static int set_sampling_frequency(const struct device *sensor, double sampling_f
 
 	(void)sensor_value_from_double(&setting, sampling_frequency);
 
-	return sensor_attr_set(sensor,
-			       SENSOR_CHAN_GYRO_XYZ, SENSOR_ATTR_SAMPLING_FREQUENCY, &setting);
+	return sensor_attr_set(sensor, SENSOR_CHAN_GYRO_XYZ, SENSOR_ATTR_SAMPLING_FREQUENCY,
+			       &setting);
 }
 
 static void fetch_and_display(const struct device *sensor)
@@ -33,20 +33,15 @@ static void fetch_and_display(const struct device *sensor)
 		return;
 	}
 
-	rc = sensor_channel_get(sensor,
-				SENSOR_CHAN_GYRO_XYZ,
-				gyro);
+	rc = sensor_channel_get(sensor, SENSOR_CHAN_GYRO_XYZ, gyro);
 
 	if (rc != 0) {
 		printf("ERROR: Failed getting gyro values: %d\n", rc);
 		return;
 	}
 
-	printf("%u ms: x %f , y %f , z %f\n",
-	       k_uptime_get_32(),
-	       sensor_value_to_double(&gyro[0]),
-	       sensor_value_to_double(&gyro[1]),
-	       sensor_value_to_double(&gyro[2]));
+	printf("%u ms: x %f , y %f , z %f\n", k_uptime_get_32(), sensor_value_to_double(&gyro[0]),
+	       sensor_value_to_double(&gyro[1]), sensor_value_to_double(&gyro[2]));
 }
 
 int main(void)

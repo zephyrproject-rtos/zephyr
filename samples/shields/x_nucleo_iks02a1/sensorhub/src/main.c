@@ -13,8 +13,7 @@
 #ifdef CONFIG_IIS2DLPC_TRIGGER
 static int iis2dlpc_trig_cnt;
 
-static void iis2dlpc_trigger_handler(const struct device *dev,
-				     const struct sensor_trigger *trig)
+static void iis2dlpc_trigger_handler(const struct device *dev, const struct sensor_trigger *trig)
 {
 	sensor_sample_fetch_chan(dev, SENSOR_CHAN_ACCEL_XYZ);
 	iis2dlpc_trig_cnt++;
@@ -26,15 +25,13 @@ static int ism330dhcx_acc_trig_cnt;
 static int ism330dhcx_gyr_trig_cnt;
 static int ism330dhcx_temp_trig_cnt;
 
-static void ism330dhcx_acc_trig_handler(const struct device *dev,
-					const struct sensor_trigger *trig)
+static void ism330dhcx_acc_trig_handler(const struct device *dev, const struct sensor_trigger *trig)
 {
 	sensor_sample_fetch_chan(dev, SENSOR_CHAN_ACCEL_XYZ);
 	ism330dhcx_acc_trig_cnt++;
 }
 
-static void ism330dhcx_gyr_trig_handler(const struct device *dev,
-					const struct sensor_trigger *trig)
+static void ism330dhcx_gyr_trig_handler(const struct device *dev, const struct sensor_trigger *trig)
 {
 	sensor_sample_fetch_chan(dev, SENSOR_CHAN_GYRO_XYZ);
 	ism330dhcx_gyr_trig_cnt++;
@@ -56,16 +53,16 @@ static void iis2dlpc_config(const struct device *iis2dlpc)
 	odr_attr.val1 = 100;
 	odr_attr.val2 = 0;
 
-	if (sensor_attr_set(iis2dlpc, SENSOR_CHAN_ACCEL_XYZ,
-			    SENSOR_ATTR_SAMPLING_FREQUENCY, &odr_attr) < 0) {
+	if (sensor_attr_set(iis2dlpc, SENSOR_CHAN_ACCEL_XYZ, SENSOR_ATTR_SAMPLING_FREQUENCY,
+			    &odr_attr) < 0) {
 		printk("Cannot set sampling frequency for IIS2DLPC accel\n");
 		return;
 	}
 
 	sensor_g_to_ms2(16, &fs_attr);
 
-	if (sensor_attr_set(iis2dlpc, SENSOR_CHAN_ACCEL_XYZ,
-			    SENSOR_ATTR_FULL_SCALE, &fs_attr) < 0) {
+	if (sensor_attr_set(iis2dlpc, SENSOR_CHAN_ACCEL_XYZ, SENSOR_ATTR_FULL_SCALE, &fs_attr) <
+	    0) {
 		printk("Cannot set sampling frequency for IIS2DLPC gyro\n");
 		return;
 	}
@@ -87,16 +84,16 @@ static void ism330dhcx_config(const struct device *ism330dhcx)
 	odr_attr.val1 = 208;
 	odr_attr.val2 = 0;
 
-	if (sensor_attr_set(ism330dhcx, SENSOR_CHAN_ACCEL_XYZ,
-			    SENSOR_ATTR_SAMPLING_FREQUENCY, &odr_attr) < 0) {
+	if (sensor_attr_set(ism330dhcx, SENSOR_CHAN_ACCEL_XYZ, SENSOR_ATTR_SAMPLING_FREQUENCY,
+			    &odr_attr) < 0) {
 		printk("Cannot set sampling frequency for ISM330DHCX accel\n");
 		return;
 	}
 
 	sensor_g_to_ms2(16, &fs_attr);
 
-	if (sensor_attr_set(ism330dhcx, SENSOR_CHAN_ACCEL_XYZ,
-			    SENSOR_ATTR_FULL_SCALE, &fs_attr) < 0) {
+	if (sensor_attr_set(ism330dhcx, SENSOR_CHAN_ACCEL_XYZ, SENSOR_ATTR_FULL_SCALE, &fs_attr) <
+	    0) {
 		printk("Cannot set fs for ISM330DHCX accel\n");
 		return;
 	}
@@ -105,16 +102,16 @@ static void ism330dhcx_config(const struct device *ism330dhcx)
 	odr_attr.val1 = 208;
 	odr_attr.val2 = 0;
 
-	if (sensor_attr_set(ism330dhcx, SENSOR_CHAN_GYRO_XYZ,
-			    SENSOR_ATTR_SAMPLING_FREQUENCY, &odr_attr) < 0) {
+	if (sensor_attr_set(ism330dhcx, SENSOR_CHAN_GYRO_XYZ, SENSOR_ATTR_SAMPLING_FREQUENCY,
+			    &odr_attr) < 0) {
 		printk("Cannot set sampling frequency for ISM330DHCX gyro\n");
 		return;
 	}
 
 	sensor_degrees_to_rad(250, &fs_attr);
 
-	if (sensor_attr_set(ism330dhcx, SENSOR_CHAN_GYRO_XYZ,
-			    SENSOR_ATTR_FULL_SCALE, &fs_attr) < 0) {
+	if (sensor_attr_set(ism330dhcx, SENSOR_CHAN_GYRO_XYZ, SENSOR_ATTR_FULL_SCALE, &fs_attr) <
+	    0) {
 		printk("Cannot set fs for ISM330DHCX gyro\n");
 		return;
 	}
@@ -124,8 +121,8 @@ static void ism330dhcx_config(const struct device *ism330dhcx)
 	odr_attr.val2 = 0;
 
 #ifdef CONFIG_ISM330DHCX_EXT_IIS2MDC
-	if (sensor_attr_set(ism330dhcx, SENSOR_CHAN_MAGN_XYZ,
-			    SENSOR_ATTR_SAMPLING_FREQUENCY, &odr_attr) < 0) {
+	if (sensor_attr_set(ism330dhcx, SENSOR_CHAN_MAGN_XYZ, SENSOR_ATTR_SAMPLING_FREQUENCY,
+			    &odr_attr) < 0) {
 		printk("Cannot set sampling frequency for ISM330DHCX ext magn\n");
 		return;
 	}
@@ -207,30 +204,25 @@ int main(void)
 		printf("X-NUCLEO-IKS02A1 sensor Mode 2 dashboard\n\n");
 
 		printf("IIS2DLPC: Accel (m.s-2): x: %.3f, y: %.3f, z: %.3f\n",
-			sensor_value_to_double(&accel2[0]),
-			sensor_value_to_double(&accel2[1]),
-			sensor_value_to_double(&accel2[2]));
+		       sensor_value_to_double(&accel2[0]), sensor_value_to_double(&accel2[1]),
+		       sensor_value_to_double(&accel2[2]));
 
 		printf("ISM330DHCX: Accel (m.s-2): x: %.3f, y: %.3f, z: %.3f\n",
-			sensor_value_to_double(&accel1[0]),
-			sensor_value_to_double(&accel1[1]),
-			sensor_value_to_double(&accel1[2]));
+		       sensor_value_to_double(&accel1[0]), sensor_value_to_double(&accel1[1]),
+		       sensor_value_to_double(&accel1[2]));
 
 		printf("ISM330DHCX: GYro (dps): x: %.3f, y: %.3f, z: %.3f\n",
-			sensor_value_to_double(&gyro[0]),
-			sensor_value_to_double(&gyro[1]),
-			sensor_value_to_double(&gyro[2]));
+		       sensor_value_to_double(&gyro[0]), sensor_value_to_double(&gyro[1]),
+		       sensor_value_to_double(&gyro[2]));
 
 #ifdef CONFIG_ISM330DHCX_ENABLE_TEMP
 		/* temperature */
-		printf("ISM330DHCX: Temperature: %.1f C\n",
-		       sensor_value_to_double(&die_temp));
+		printf("ISM330DHCX: Temperature: %.1f C\n", sensor_value_to_double(&die_temp));
 #endif
 
 #ifdef CONFIG_ISM330DHCX_EXT_IIS2MDC
 		printf("ISM330DHCX: Magn (gauss): x: %.3f, y: %.3f, z: %.3f\n",
-		       sensor_value_to_double(&magn[0]),
-		       sensor_value_to_double(&magn[1]),
+		       sensor_value_to_double(&magn[0]), sensor_value_to_double(&magn[1]),
 		       sensor_value_to_double(&magn[2]));
 #endif
 

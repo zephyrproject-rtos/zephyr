@@ -18,8 +18,7 @@ static void do_main(const struct device *dev)
 
 	attr.val1 = 150;
 	attr.val2 = 0;
-	ret = sensor_attr_set(dev, SENSOR_CHAN_AMBIENT_TEMP,
-			      SENSOR_ATTR_FULL_SCALE, &attr);
+	ret = sensor_attr_set(dev, SENSOR_CHAN_AMBIENT_TEMP, SENSOR_ATTR_FULL_SCALE, &attr);
 	if (ret) {
 		printk("sensor_attr_set failed ret %d\n", ret);
 		return;
@@ -27,8 +26,7 @@ static void do_main(const struct device *dev)
 
 	attr.val1 = 8;
 	attr.val2 = 0;
-	ret = sensor_attr_set(dev, SENSOR_CHAN_AMBIENT_TEMP,
-			      SENSOR_ATTR_SAMPLING_FREQUENCY, &attr);
+	ret = sensor_attr_set(dev, SENSOR_CHAN_AMBIENT_TEMP, SENSOR_ATTR_SAMPLING_FREQUENCY, &attr);
 	if (ret) {
 		printk("sensor_attr_set failed ret %d\n", ret);
 		return;
@@ -47,8 +45,7 @@ static void do_main(const struct device *dev)
 			return;
 		}
 
-		printk("temp is %d (%d micro)\n", temp_value.val1,
-		       temp_value.val2);
+		printk("temp is %d (%d micro)\n", temp_value.val1, temp_value.val2);
 
 		k_sleep(K_MSEC(1000));
 	}

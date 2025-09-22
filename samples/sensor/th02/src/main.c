@@ -19,8 +19,12 @@ struct channel_info {
 };
 
 static struct channel_info info[] = {
-	{ SENSOR_CHAN_AMBIENT_TEMP, },
-	{ SENSOR_CHAN_HUMIDITY, },
+	{
+		SENSOR_CHAN_AMBIENT_TEMP,
+	},
+	{
+		SENSOR_CHAN_HUMIDITY,
+	},
 };
 
 int main(void)
@@ -42,8 +46,7 @@ int main(void)
 	}
 
 	/* configure LCD */
-	glcd_function_set(glcd, GLCD_FS_ROWS_2 | GLCD_FS_DOT_SIZE_LITTLE |
-			  GLCD_FS_8BIT_MODE);
+	glcd_function_set(glcd, GLCD_FS_ROWS_2 | GLCD_FS_DOT_SIZE_LITTLE | GLCD_FS_8BIT_MODE);
 	glcd_display_state_set(glcd, GLCD_DS_DISPLAY_ON);
 
 	while (1) {
@@ -72,14 +75,12 @@ int main(void)
 
 		/* display temperature on LCD */
 		glcd_cursor_pos_set(glcd, 0, 0);
-		sprintf(row, "T:%.1f%cC", sensor_value_to_double(val),
-			223 /* degree symbol */);
+		sprintf(row, "T:%.1f%cC", sensor_value_to_double(val), 223 /* degree symbol */);
 		glcd_print(glcd, row, strlen(row));
 
 		/* display humidity on LCD */
 		glcd_cursor_pos_set(glcd, 17 - strlen(row), 0);
-		sprintf(row, "RH:%.0f%c", sensor_value_to_double(val + 1),
-			37 /* percent symbol */);
+		sprintf(row, "RH:%.0f%c", sensor_value_to_double(val + 1), 37 /* percent symbol */);
 		glcd_print(glcd, row, strlen(row));
 
 		k_sleep(K_MSEC(2000));

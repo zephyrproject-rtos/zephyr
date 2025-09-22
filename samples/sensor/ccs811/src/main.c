@@ -30,8 +30,7 @@ static const char *now_str(void)
 	now /= 60U;
 	h = now;
 
-	snprintf(buf, sizeof(buf), "%u:%02u:%02u.%03u",
-		 h, min, s, ms);
+	snprintf(buf, sizeof(buf), "%u:%02u:%02u.%03u", h, min, s, ms);
 	return buf;
 }
 
@@ -58,10 +57,10 @@ static int do_fetch(const struct device *dev)
 		sensor_channel_get(dev, SENSOR_CHAN_VOC, &tvoc);
 		sensor_channel_get(dev, SENSOR_CHAN_VOLTAGE, &voltage);
 		sensor_channel_get(dev, SENSOR_CHAN_CURRENT, &current);
-		printk("\n[%s]: CCS811: %u ppm eCO2; %u ppb eTVOC\n",
-		       now_str(), co2.val1, tvoc.val1);
-		printk("Voltage: %d.%06dV; Current: %d.%06dA\n", voltage.val1,
-		       voltage.val2, current.val1, current.val2);
+		printk("\n[%s]: CCS811: %u ppm eCO2; %u ppb eTVOC\n", now_str(), co2.val1,
+		       tvoc.val1);
+		printk("Voltage: %d.%06dV; Current: %d.%06dA\n", voltage.val1, voltage.val2,
+		       current.val1, current.val2);
 #ifdef CONFIG_APP_MONITOR_BASELINE
 		printk("BASELINE %04x\n", baseline);
 #endif
@@ -78,8 +77,7 @@ static int do_fetch(const struct device *dev)
 
 #ifndef CONFIG_CCS811_TRIGGER_NONE
 
-static void trigger_handler(const struct device *dev,
-			    const struct sensor_trigger *trig)
+static void trigger_handler(const struct device *dev, const struct sensor_trigger *trig)
 {
 	int rc = do_fetch(dev);
 
@@ -126,23 +124,21 @@ int main(void)
 
 	rc = ccs811_configver_fetch(dev, &cfgver);
 	if (rc == 0) {
-		printk("HW %02x; FW Boot %04x App %04x ; mode %02x\n",
-		       cfgver.hw_version, cfgver.fw_boot_version,
-		       cfgver.fw_app_version, cfgver.mode);
+		printk("HW %02x; FW Boot %04x App %04x ; mode %02x\n", cfgver.hw_version,
+		       cfgver.fw_boot_version, cfgver.fw_app_version, cfgver.mode);
 		app_fw_2 = (cfgver.fw_app_version >> 8) > 0x11;
 	}
 
 #ifdef CONFIG_APP_USE_ENVDATA
-	struct sensor_value temp = { CONFIG_APP_ENV_TEMPERATURE };
-	struct sensor_value humidity = { CONFIG_APP_ENV_HUMIDITY };
+	struct sensor_value temp = {CONFIG_APP_ENV_TEMPERATURE};
+	struct sensor_value humidity = {CONFIG_APP_ENV_HUMIDITY};
 
 	rc = ccs811_envdata_update(dev, &temp, &humidity);
-	printk("ENV_DATA set for %d Cel, %d %%RH got %d\n",
-	       temp.val1, humidity.val1, rc);
+	printk("ENV_DATA set for %d Cel, %d %%RH got %d\n", temp.val1, humidity.val1, rc);
 #endif
 
 #ifdef CONFIG_CCS811_TRIGGER
-	struct sensor_trigger trig = { 0 };
+	struct sensor_trigger trig = {0};
 
 #ifdef CONFIG_APP_TRIGGER_ON_THRESHOLD
 	printk("Triggering on threshold:\n");
@@ -150,18 +146,14 @@ int main(void)
 		struct sensor_value thr = {
 			.val1 = CONFIG_APP_CO2_MEDIUM_PPM,
 		};
-		rc = sensor_attr_set(dev, SENSOR_CHAN_CO2,
-				     SENSOR_ATTR_LOWER_THRESH,
-				     &thr);
+		rc = sensor_attr_set(dev, SENSOR_CHAN_CO2, SENSOR_ATTR_LOWER_THRESH, &thr);
 		printk("L/M threshold to %d got %d\n", thr.val1, rc);
 	}
 	if (rc == 0) {
 		struct sensor_value thr = {
 			.val1 = CONFIG_APP_CO2_HIGH_PPM,
 		};
-		rc = sensor_attr_set(dev, SENSOR_CHAN_CO2,
-				     SENSOR_ATTR_UPPER_THRESH,
-				     &thr);
+		rc = sensor_attr_set(dev, SENSOR_CHAN_CO2, SENSOR_ATTR_UPPER_THRESH, &thr);
 		printk("M/H threshold to %d got %d\n", thr.val1, rc);
 	}
 	trig.type = SENSOR_TRIG_THRESHOLD;

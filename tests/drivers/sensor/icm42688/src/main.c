@@ -218,7 +218,8 @@ ZTEST_F(icm42688, test_fetch_gyro)
 	test_fetch_gyro_with_range(fixture, 15625, gyro_percent);
 }
 
-FAKE_VOID_FUNC(test_interrupt_trigger_handler, const struct device*, const struct sensor_trigger*);
+FAKE_VOID_FUNC(test_interrupt_trigger_handler, const struct device *,
+	       const struct sensor_trigger *);
 
 ZTEST_F(icm42688, test_interrupt)
 {

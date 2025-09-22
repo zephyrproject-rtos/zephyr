@@ -33,10 +33,8 @@ int main(void)
 		ret = sensor_channel_get(dev, SENSOR_CHAN_MAGN_X, &value_x);
 		ret = sensor_channel_get(dev, SENSOR_CHAN_MAGN_Y, &value_y);
 		ret = sensor_channel_get(dev, SENSOR_CHAN_MAGN_Z, &value_z);
-		printf("( x y z ) = ( %f  %f  %f )\n",
-		       sensor_value_to_double(&value_x),
-		       sensor_value_to_double(&value_y),
-		       sensor_value_to_double(&value_z));
+		printf("( x y z ) = ( %f  %f  %f )\n", sensor_value_to_double(&value_x),
+		       sensor_value_to_double(&value_y), sensor_value_to_double(&value_z));
 
 		k_sleep(K_MSEC(500));
 	}

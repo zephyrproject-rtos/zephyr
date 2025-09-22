@@ -38,7 +38,6 @@ static void process_sample(const struct device *dev)
 
 	/* display temperature */
 	printf("Temperature:%.1f C\n", sensor_value_to_double(&temp));
-
 }
 
 int main(void)

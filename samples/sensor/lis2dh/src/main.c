@@ -26,17 +26,13 @@ static void fetch_and_display(const struct device *sensor)
 		rc = 0;
 	}
 	if (rc == 0) {
-		rc = sensor_channel_get(sensor,
-					SENSOR_CHAN_ACCEL_XYZ,
-					accel);
+		rc = sensor_channel_get(sensor, SENSOR_CHAN_ACCEL_XYZ, accel);
 	}
 	if (rc < 0) {
 		printf("ERROR: Update failed: %d\n", rc);
 	} else {
-		printf("#%u @ %u ms: %sx %f , y %f , z %f",
-		       count, k_uptime_get_32(), overrun,
-		       sensor_value_to_double(&accel[0]),
-		       sensor_value_to_double(&accel[1]),
+		printf("#%u @ %u ms: %sx %f , y %f , z %f", count, k_uptime_get_32(), overrun,
+		       sensor_value_to_double(&accel[0]), sensor_value_to_double(&accel[1]),
 		       sensor_value_to_double(&accel[2]));
 	}
 
@@ -56,8 +52,7 @@ static void fetch_and_display(const struct device *sensor)
 }
 
 #ifdef CONFIG_LIS2DH_TRIGGER
-static void trigger_handler(const struct device *dev,
-			    const struct sensor_trigger *trig)
+static void trigger_handler(const struct device *dev, const struct sensor_trigger *trig)
 {
 	fetch_and_display(dev);
 }
@@ -89,8 +84,7 @@ int main(void)
 				.val1 = 1,
 			};
 
-			rc = sensor_attr_set(sensor, trig.chan,
-					     SENSOR_ATTR_SAMPLING_FREQUENCY,
+			rc = sensor_attr_set(sensor, trig.chan, SENSOR_ATTR_SAMPLING_FREQUENCY,
 					     &odr);
 			if (rc != 0) {
 				printf("Failed to set odr: %d\n", rc);
@@ -110,7 +104,7 @@ int main(void)
 			k_sleep(K_MSEC(2000));
 		}
 	}
-#else /* CONFIG_LIS2DH_TRIGGER */
+#else  /* CONFIG_LIS2DH_TRIGGER */
 	printf("Polling at 0.5 Hz\n");
 	while (true) {
 		fetch_and_display(sensor);

@@ -43,8 +43,7 @@ ZTEST(ina230_0, test_default_config)
 	/* confirm default DT configuration */
 	uint16_t expected = 0x0127;
 
-	zexpect_equal(expected, config->config, "0x%x != config (0x%x)",
-		expected, config->config);
+	zexpect_equal(expected, config->config, "0x%x != config (0x%x)", expected, config->config);
 }
 
 static void test_datasheet_example(struct ina230_fixture *fixture)
@@ -94,31 +93,23 @@ static void test_datasheet_example(struct ina230_fixture *fixture)
 static void test_shunt_cal(struct ina230_fixture *fixture)
 {
 	/* Confirm SHUNT_CAL register which is 5120e-6 / Current_LSB * Rshunt */
-	double shunt_cal = 5120e-6 / (fixture->current_lsb_uA * 1e-6 *
-		fixture->rshunt_uOhms * 1e-6);
+	double shunt_cal =
+		5120e-6 / (fixture->current_lsb_uA * 1e-6 * fixture->rshunt_uOhms * 1e-6);
 
 	uint32_t shunt_register_actual;
 	uint16_t shunt_register_expected = (uint16_t)shunt_cal;
 
 	zassert_ok(ina230_mock_get_register(fixture->mock->data, INA230_REG_CALIB,
-		&shunt_register_actual));
-	zexpect_within(shunt_register_expected, shunt_register_actual, 1,
-		"Expected %d, got %d", shunt_register_expected, shunt_register_actual);
+					    &shunt_register_actual));
+	zexpect_within(shunt_register_expected, shunt_register_actual, 1, "Expected %d, got %d",
+		       shunt_register_expected, shunt_register_actual);
 }
 
 static void test_current(struct ina230_fixture *fixture)
 {
 	/* 16-bit signed value for current register */
 	const int16_t current_reg_vectors[] = {
-		32767,
-		1000,
-		100,
-		1,
-		0,
-		-1,
-		-100,
-		-1000,
-		-32768,
+		32767, 1000, 100, 1, 0, -1, -100, -1000, -32768,
 	};
 
 	for (int idx = 0; idx < ARRAY_SIZE(current_reg_vectors); idx++) {
@@ -134,8 +125,8 @@ static void test_current(struct ina230_fixture *fixture)
 		zassert_ok(sensor_channel_get(fixture->dev, SENSOR_CHAN_CURRENT, &sensor_val));
 		double current_actual_A = sensor_value_to_double(&sensor_val);
 
-		zexpect_within(current_expected_A, current_actual_A, fixture->current_lsb_uA*1e-6,
-			"Expected %.6f A, got %.6f A", current_expected_A, current_actual_A);
+		zexpect_within(current_expected_A, current_actual_A, fixture->current_lsb_uA * 1e-6,
+			       "Expected %.6f A, got %.6f A", current_expected_A, current_actual_A);
 	}
 }
 
@@ -145,12 +136,8 @@ static void test_bus_voltage(struct ina230_fixture *fixture)
 
 	/* 16-bit signed value for voltage register (but always positive) 1.25 mV/bit */
 	const int16_t voltage_reg_vectors[] = {
-		32767,
-		28800,	/* 36V maximum voltage */
-		1000,
-		100,
-		1,
-		0,
+		32767, 28800, /* 36V maximum voltage */
+		1000,  100,   1, 0,
 	};
 
 	double bitres = fixture->dev_type == INA236 ? 1.6e-3 : 1.25e-3;
@@ -159,7 +146,7 @@ static void test_bus_voltage(struct ina230_fixture *fixture)
 		struct sensor_value sensor_val;
 
 		ina230_mock_set_register(fixture->mock->data, INA230_REG_BUS_VOLT,
-			voltage_reg_vectors[idx]);
+					 voltage_reg_vectors[idx]);
 
 		/* Verify sensor value is correct */
 		zassert_ok(sensor_sample_fetch(fixture->dev));
@@ -169,7 +156,7 @@ static void test_bus_voltage(struct ina230_fixture *fixture)
 		double voltage_expected_V = voltage_reg_vectors[idx] * bitres;
 
 		zexpect_within(voltage_expected_V, voltage_actual_V, 1e-6,
-			"Expected %.6f A, got %.6f A", voltage_expected_V, voltage_actual_V);
+			       "Expected %.6f A, got %.6f A", voltage_expected_V, voltage_actual_V);
 	}
 }
 
@@ -177,13 +164,7 @@ static void test_power(struct ina230_fixture *fixture)
 {
 	/* 16-bit unsigned value for power register */
 	const uint16_t power_reg_vectors[] = {
-		65535,
-		32767,
-		10000,
-		1000,
-		100,
-		1,
-		0,
+		65535, 32767, 10000, 1000, 100, 1, 0,
 	};
 
 	int scale = fixture->dev_type == INA236 ? 32 : 25;

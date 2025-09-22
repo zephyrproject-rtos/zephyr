@@ -15,7 +15,7 @@
 #include <string.h>
 #endif
 
-#define SLEEP_TIME	K_MSEC(1000)
+#define SLEEP_TIME K_MSEC(1000)
 
 int main(void)
 {
@@ -38,8 +38,7 @@ int main(void)
 	}
 
 	/* configure LCD */
-	glcd_function_set(glcd, GLCD_FS_ROWS_2 | GLCD_FS_DOT_SIZE_LITTLE |
-			  GLCD_FS_8BIT_MODE);
+	glcd_function_set(glcd, GLCD_FS_ROWS_2 | GLCD_FS_DOT_SIZE_LITTLE | GLCD_FS_8BIT_MODE);
 	glcd_display_state_set(glcd, GLCD_DS_DISPLAY_ON);
 #endif
 
@@ -64,12 +63,9 @@ int main(void)
 		/* display temperature on LCD */
 		glcd_cursor_pos_set(glcd, 0, 0);
 #ifdef CONFIG_REQUIRES_FLOAT_PRINTF
-		sprintf(row, "T:%.2f%cC",
-			sensor_value_to_double(&temp),
-			223 /* degree symbol */);
+		sprintf(row, "T:%.2f%cC", sensor_value_to_double(&temp), 223 /* degree symbol */);
 #else
-		sprintf(row, "T:%d%cC", temp.val1,
-			223 /* degree symbol */);
+		sprintf(row, "T:%d%cC", temp.val1, 223 /* degree symbol */);
 #endif
 		glcd_print(glcd, row, strlen(row));
 

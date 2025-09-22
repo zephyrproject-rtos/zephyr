@@ -21,18 +21,15 @@ static const struct device *const dev_info[] = {
 int get_hdc1010_val(struct sensor_value *val)
 {
 	if (sensor_sample_fetch(dev_info[DEV_IDX_HDC1010])) {
-		printk("Failed to fetch sample for device %s\n",
-		       dev_info[DEV_IDX_HDC1010]->name);
+		printk("Failed to fetch sample for device %s\n", dev_info[DEV_IDX_HDC1010]->name);
 		return -1;
 	}
 
-	if (sensor_channel_get(dev_info[DEV_IDX_HDC1010],
-			       SENSOR_CHAN_AMBIENT_TEMP, &val[0])) {
+	if (sensor_channel_get(dev_info[DEV_IDX_HDC1010], SENSOR_CHAN_AMBIENT_TEMP, &val[0])) {
 		return -1;
 	}
 
-	if (sensor_channel_get(dev_info[DEV_IDX_HDC1010],
-			       SENSOR_CHAN_HUMIDITY, &val[1])) {
+	if (sensor_channel_get(dev_info[DEV_IDX_HDC1010], SENSOR_CHAN_HUMIDITY, &val[1])) {
 		return -1;
 	}
 
@@ -42,13 +39,11 @@ int get_hdc1010_val(struct sensor_value *val)
 int get_mma8652_val(struct sensor_value *val)
 {
 	if (sensor_sample_fetch(dev_info[DEV_IDX_MMA8652])) {
-		printk("Failed to fetch sample for device %s\n",
-		       dev_info[DEV_IDX_MMA8652]->name);
+		printk("Failed to fetch sample for device %s\n", dev_info[DEV_IDX_MMA8652]->name);
 		return -1;
 	}
 
-	if (sensor_channel_get(dev_info[DEV_IDX_MMA8652],
-			       SENSOR_CHAN_ACCEL_XYZ, &val[0])) {
+	if (sensor_channel_get(dev_info[DEV_IDX_MMA8652], SENSOR_CHAN_ACCEL_XYZ, &val[0])) {
 		return -1;
 	}
 
@@ -58,18 +53,15 @@ int get_mma8652_val(struct sensor_value *val)
 int get_apds9960_val(struct sensor_value *val)
 {
 	if (sensor_sample_fetch(dev_info[DEV_IDX_APDS9960])) {
-		printk("Failed to fetch sample for device %s\n",
-		       dev_info[DEV_IDX_APDS9960]->name);
+		printk("Failed to fetch sample for device %s\n", dev_info[DEV_IDX_APDS9960]->name);
 		return -1;
 	}
 
-	if (sensor_channel_get(dev_info[DEV_IDX_APDS9960],
-			       SENSOR_CHAN_LIGHT, &val[0])) {
+	if (sensor_channel_get(dev_info[DEV_IDX_APDS9960], SENSOR_CHAN_LIGHT, &val[0])) {
 		return -1;
 	}
 
-	if (sensor_channel_get(dev_info[DEV_IDX_APDS9960],
-			       SENSOR_CHAN_PROX, &val[1])) {
+	if (sensor_channel_get(dev_info[DEV_IDX_APDS9960], SENSOR_CHAN_PROX, &val[1])) {
 		return -1;
 	}
 
@@ -97,8 +89,7 @@ static void motion_timeout(struct k_work *work)
 	}
 }
 
-static void motion_handler(const struct device *dev,
-			   const struct sensor_trigger *trig)
+static void motion_handler(const struct device *dev, const struct sensor_trigger *trig)
 {
 	int err;
 
@@ -130,7 +121,6 @@ static void configure_accel(void)
 		printk("setting motion trigger failed, err %d\n", err);
 		return;
 	}
-
 
 	k_work_init_delayable(&motion_work, motion_timeout);
 	k_work_schedule(&motion_work, MOTION_TIMEOUT);

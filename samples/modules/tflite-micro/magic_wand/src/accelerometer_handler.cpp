@@ -27,9 +27,9 @@ int begin_index = 0;
 const struct device *const sensor = DEVICE_DT_GET_ONE(adi_adxl345);
 int current_index = 0;
 
-float bufx[BUFLEN] = { 0.0f };
-float bufy[BUFLEN] = { 0.0f };
-float bufz[BUFLEN] = { 0.0f };
+float bufx[BUFLEN] = {0.0f};
+float bufy[BUFLEN] = {0.0f};
+float bufz[BUFLEN] = {0.0f};
 
 bool initial = true;
 

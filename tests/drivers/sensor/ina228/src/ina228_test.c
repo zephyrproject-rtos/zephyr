@@ -155,8 +155,7 @@ ZTEST_F(ina228, test_example_from_data_sheet)
 	zexpect_equal(resulting_registervalue, 0xFB68, "ADC_CONFIG: got 0x%04X",
 		      resulting_registervalue);
 
-	ina228_emul_get_reg_16(fixture->target_basic, INA237_REG_CALIB,
-			       &resulting_registervalue);
+	ina228_emul_get_reg_16(fixture->target_basic, INA237_REG_CALIB, &resulting_registervalue);
 	resulting_shunt_cal = resulting_registervalue & 0x7FFF;
 	zexpect_within(resulting_shunt_cal, expected_shunt_cal, 2,
 		       "Expected shunt calib setting 0x%04X, got 0x%04X", expected_shunt_cal,

@@ -12,23 +12,23 @@
 #include <stdio.h>
 
 #ifdef CONFIG_BOARD_TWR_KE18F
-#define ACMP_NODE  DT_NODELABEL(cmp2)
+#define ACMP_NODE     DT_NODELABEL(cmp2)
 #define ACMP_POSITIVE 5
 #define ACMP_NEGATIVE 5
 #define ACMP_DAC_VREF 0
 #elif (defined(CONFIG_BOARD_MIMXRT1170_EVK) || defined(CONFIG_BOARD_MIMXRT1180_EVK))
-#define ACMP_NODE  DT_NODELABEL(acmp1)
+#define ACMP_NODE     DT_NODELABEL(acmp1)
 #define ACMP_POSITIVE 2
 #define ACMP_NEGATIVE 7
 /* Select Vin2. Vin1 is not used and tied to ground on this chip. Vin2 is from VDDA_1P8_IN. */
 #define ACMP_DAC_VREF 1
 #elif (defined(CONFIG_BOARD_FRDM_KE17Z) || defined(CONFIG_BOARD_FRDM_KE17Z512))
-#define ACMP_NODE  DT_NODELABEL(cmp0)
+#define ACMP_NODE     DT_NODELABEL(cmp0)
 #define ACMP_POSITIVE 4
 #define ACMP_NEGATIVE 4
 #define ACMP_DAC_VREF 0
 #elif (defined(CONFIG_BOARD_MIMXRT700_EVK))
-#define ACMP_NODE  DT_NODELABEL(acmp)
+#define ACMP_NODE     DT_NODELABEL(acmp)
 #define ACMP_POSITIVE 1
 #define ACMP_NEGATIVE 7
 #define ACMP_DAC_VREF 1
@@ -46,34 +46,31 @@ struct acmp_attr {
 static const struct acmp_attr attrs[] = {
 #if MCUX_ACMP_HAS_INPSEL
 	/* Positive input port set to MUX */
-	{ .attr = SENSOR_ATTR_MCUX_ACMP_POSITIVE_PORT_INPUT, .val = 1 },
+	{.attr = SENSOR_ATTR_MCUX_ACMP_POSITIVE_PORT_INPUT, .val = 1},
 #endif
 	/* Positive input channel */
-	{ .attr = SENSOR_ATTR_MCUX_ACMP_POSITIVE_MUX_INPUT,
-	  .val = ACMP_POSITIVE },
+	{.attr = SENSOR_ATTR_MCUX_ACMP_POSITIVE_MUX_INPUT, .val = ACMP_POSITIVE},
 #if MCUX_ACMP_HAS_INNSEL
 	/* Negative input port set to DAC */
-	{ .attr = SENSOR_ATTR_MCUX_ACMP_NEGATIVE_PORT_INPUT, .val = 0 },
+	{.attr = SENSOR_ATTR_MCUX_ACMP_NEGATIVE_PORT_INPUT, .val = 0},
 #endif
 	/* Negative input channel */
-	{ .attr = SENSOR_ATTR_MCUX_ACMP_NEGATIVE_MUX_INPUT,
-	  .val = ACMP_NEGATIVE },
+	{.attr = SENSOR_ATTR_MCUX_ACMP_NEGATIVE_MUX_INPUT, .val = ACMP_NEGATIVE},
 	/* DAC voltage reference */
-	{ .attr = SENSOR_ATTR_MCUX_ACMP_DAC_VOLTAGE_REFERENCE,
-	  .val = ACMP_DAC_VREF },
+	{.attr = SENSOR_ATTR_MCUX_ACMP_DAC_VOLTAGE_REFERENCE, .val = ACMP_DAC_VREF},
 	/* DAC value */
-	{ .attr = SENSOR_ATTR_MCUX_ACMP_DAC_VALUE, .val = ACMP_DAC_VALUE },
+	{.attr = SENSOR_ATTR_MCUX_ACMP_DAC_VALUE, .val = ACMP_DAC_VALUE},
 #if MCUX_ACMP_HAS_HYSTCTR
 	/* Hysteresis level */
-	{ .attr = SENSOR_ATTR_MCUX_ACMP_HYSTERESIS_LEVEL, .val = 3 },
+	{.attr = SENSOR_ATTR_MCUX_ACMP_HYSTERESIS_LEVEL, .val = 3},
 #endif
 #if MCUX_ACMP_HAS_DISCRETE_MODE
 	/* Discrete mode */
-	{ .attr = SENSOR_ATTR_MCUX_ACMP_POSITIVE_DISCRETE_MODE, .val = 1 },
+	{.attr = SENSOR_ATTR_MCUX_ACMP_POSITIVE_DISCRETE_MODE, .val = 1},
 #endif
 #if MCUX_ACMP_HAS_OFFSET
 	/* Offset level */
-	{ .attr = SENSOR_ATTR_MCUX_ACMP_OFFSET_LEVEL, .val = 0 },
+	{.attr = SENSOR_ATTR_MCUX_ACMP_OFFSET_LEVEL, .val = 0},
 #endif
 };
 
@@ -91,19 +88,18 @@ static void acmp_input_handler(bool above_threshold)
 	}
 }
 
-static void acmp_trigger_handler(const struct device *dev,
-				 const struct sensor_trigger *trigger)
+static void acmp_trigger_handler(const struct device *dev, const struct sensor_trigger *trigger)
 {
 	ARG_UNUSED(dev);
 
-	acmp_input_handler((int16_t)trigger->type ==
-			   SENSOR_TRIG_MCUX_ACMP_OUTPUT_RISING);
+	acmp_input_handler((int16_t)trigger->type == SENSOR_TRIG_MCUX_ACMP_OUTPUT_RISING);
 }
 
 int main(void)
 {
 	struct sensor_trigger trigger[ARRAY_SIZE(triggers)] = {
-		[0] = {
+		[0] =
+			{
 				.chan = SENSOR_CHAN_MCUX_ACMP_OUTPUT,
 				.type = triggers[0],
 			},
@@ -126,8 +122,7 @@ int main(void)
 	val.val2 = 0;
 	for (i = 0; i < ARRAY_SIZE(attrs); i++) {
 		val.val1 = attrs[i].val;
-		err = sensor_attr_set(acmp, SENSOR_CHAN_MCUX_ACMP_OUTPUT,
-				      attrs[i].attr, &val);
+		err = sensor_attr_set(acmp, SENSOR_CHAN_MCUX_ACMP_OUTPUT, attrs[i].attr, &val);
 		if (err) {
 			printf("failed to set attribute %d (err %d)", i, err);
 			return 0;

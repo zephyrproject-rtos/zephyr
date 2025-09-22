@@ -13,8 +13,7 @@
 #ifdef CONFIG_LSM6DSL_TRIGGER
 static int lsm6dsl_trig_cnt;
 
-static void lsm6dsl_trigger_handler(const struct device *dev,
-				    const struct sensor_trigger *trig)
+static void lsm6dsl_trigger_handler(const struct device *dev, const struct sensor_trigger *trig)
 {
 	sensor_sample_fetch_chan(dev, SENSOR_CHAN_ALL);
 	lsm6dsl_trig_cnt++;
@@ -63,14 +62,14 @@ int main(void)
 	odr_attr.val1 = 208;
 	odr_attr.val2 = 0;
 
-	if (sensor_attr_set(lsm6dsl, SENSOR_CHAN_ACCEL_XYZ,
-			    SENSOR_ATTR_SAMPLING_FREQUENCY, &odr_attr) < 0) {
+	if (sensor_attr_set(lsm6dsl, SENSOR_CHAN_ACCEL_XYZ, SENSOR_ATTR_SAMPLING_FREQUENCY,
+			    &odr_attr) < 0) {
 		printk("Cannot set sampling frequency for accelerometer.\n");
 		return 0;
 	}
 
-	if (sensor_attr_set(lsm6dsl, SENSOR_CHAN_GYRO_XYZ,
-			    SENSOR_ATTR_SAMPLING_FREQUENCY, &odr_attr) < 0) {
+	if (sensor_attr_set(lsm6dsl, SENSOR_CHAN_GYRO_XYZ, SENSOR_ATTR_SAMPLING_FREQUENCY,
+			    &odr_attr) < 0) {
 		printk("Cannot set sampling frequency for gyro.\n");
 		return 0;
 	}
@@ -131,31 +130,25 @@ int main(void)
 		printf("X-NUCLEO-IKS01A2 sensor dashboard\n\n");
 
 		/* temperature */
-		printf("HTS221: Temperature: %.1f C\n",
-		       sensor_value_to_double(&temp1));
+		printf("HTS221: Temperature: %.1f C\n", sensor_value_to_double(&temp1));
 
 		/* humidity */
-		printf("HTS221: Relative Humidity: %.1f%%\n",
-		       sensor_value_to_double(&hum));
+		printf("HTS221: Relative Humidity: %.1f%%\n", sensor_value_to_double(&hum));
 
 		/* pressure */
-		printf("LPS22HB: Pressure:%.3f kpa\n",
-		       sensor_value_to_double(&press));
+		printf("LPS22HB: Pressure:%.3f kpa\n", sensor_value_to_double(&press));
 
 		/* lps22hb temperature */
-		printf("LPS22HB: Temperature: %.1f C\n",
-		       sensor_value_to_double(&temp2));
+		printf("LPS22HB: Temperature: %.1f C\n", sensor_value_to_double(&temp2));
 
 		/* lsm6dsl accel */
 		printf("LSM6DSL: Accel (m.s-2): x: %.1f, y: %.1f, z: %.1f\n",
-		       sensor_value_to_double(&accel1[0]),
-		       sensor_value_to_double(&accel1[1]),
+		       sensor_value_to_double(&accel1[0]), sensor_value_to_double(&accel1[1]),
 		       sensor_value_to_double(&accel1[2]));
 
 		/* lsm6dsl gyro */
 		printf("LSM6DSL: Gyro (dps): x: %.3f, y: %.3f, z: %.3f\n",
-		       sensor_value_to_double(&gyro[0]),
-		       sensor_value_to_double(&gyro[1]),
+		       sensor_value_to_double(&gyro[0]), sensor_value_to_double(&gyro[1]),
 		       sensor_value_to_double(&gyro[2]));
 
 #if defined(CONFIG_LSM6DSL_TRIGGER)
@@ -164,14 +157,12 @@ int main(void)
 
 		/* lsm303agr accel */
 		printf("LSM303AGR: Accel (m.s-2): x: %.1f, y: %.1f, z: %.1f\n",
-		       sensor_value_to_double(&accel2[0]),
-		       sensor_value_to_double(&accel2[1]),
+		       sensor_value_to_double(&accel2[0]), sensor_value_to_double(&accel2[1]),
 		       sensor_value_to_double(&accel2[2]));
 
 		/* lsm303agr magn */
 		printf("LSM303AGR: Magn (gauss): x: %.3f, y: %.3f, z: %.3f\n",
-		       sensor_value_to_double(&magn[0]),
-		       sensor_value_to_double(&magn[1]),
+		       sensor_value_to_double(&magn[0]), sensor_value_to_double(&magn[1]),
 		       sensor_value_to_double(&magn[2]));
 
 		k_sleep(K_MSEC(2000));

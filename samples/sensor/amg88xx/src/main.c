@@ -14,8 +14,7 @@ static struct sensor_value temp_value[64];
 #ifdef CONFIG_AMG88XX_TRIGGER
 K_SEM_DEFINE(sem, 0, 1);
 
-static void trigger_handler(const struct device *dev,
-			    const struct sensor_trigger *trigger)
+static void trigger_handler(const struct device *dev, const struct sensor_trigger *trigger)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(trigger);
@@ -23,7 +22,6 @@ static void trigger_handler(const struct device *dev,
 	k_sem_give(&sem);
 }
 #endif
-
 
 void print_buffer(void *ptr, size_t l)
 {
@@ -66,8 +64,7 @@ int main(void)
 		.val2 = 0,
 	};
 
-	if (sensor_attr_set(dev, SENSOR_CHAN_AMBIENT_TEMP,
-			    SENSOR_ATTR_UPPER_THRESH, &attr)) {
+	if (sensor_attr_set(dev, SENSOR_CHAN_AMBIENT_TEMP, SENSOR_ATTR_UPPER_THRESH, &attr)) {
 		printk("Could not set threshold\n");
 		return 0;
 	}

@@ -11,13 +11,12 @@
 #include <zephyr/drivers/sensor/fdc2x1x.h>
 #include <stdio.h>
 
-#define CH_BUF_INIT(m)          {},
+#define CH_BUF_INIT(m) {},
 
 K_SEM_DEFINE(sem, 0, 1);
 
 #ifdef CONFIG_FDC2X1X_TRIGGER
-static void trigger_handler(const struct device *dev,
-			    const struct sensor_trigger *trigger)
+static void trigger_handler(const struct device *dev, const struct sensor_trigger *trigger)
 {
 	switch (trigger->type) {
 	case SENSOR_TRIG_DATA_READY:
@@ -62,9 +61,7 @@ static void pm_info(enum pm_device_action action, int status)
 
 int main(void)
 {
-	struct sensor_value ch_buf[] = {
-		DT_FOREACH_CHILD(DEVICE_NODE, CH_BUF_INIT)
-	};
+	struct sensor_value ch_buf[] = {DT_FOREACH_CHILD(DEVICE_NODE, CH_BUF_INIT)};
 
 	uint8_t num_ch = ARRAY_SIZE(ch_buf);
 	enum sensor_channel base;
@@ -129,7 +126,6 @@ int main(void)
 			printf("ch%d: %f pF ", i, sensor_value_to_double(&ch_buf[i]));
 		}
 		printf("\n\n");
-
 
 #ifdef CONFIG_PM_DEVICE
 		p_action = PM_DEVICE_ACTION_TURN_OFF;

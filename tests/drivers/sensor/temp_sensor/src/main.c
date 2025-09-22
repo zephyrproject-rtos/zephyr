@@ -27,12 +27,10 @@ ZTEST(temp_sensor, test_polling)
 		zassert_ok(rc, "Cannot fetch chan sample: %d.", rc);
 
 		rc = sensor_channel_get(temp_dev, chan_to_use, &val);
-		zassert_ok(rc, "Cannot read from channel %d: %d.",
-			   chan_to_use, rc);
+		zassert_ok(rc, "Cannot read from channel %d: %d.", chan_to_use, rc);
 
 		temp_val = (val.val1 * 100) + (val.val2 / 10000);
-		TC_PRINT("Temperature: %d.%02u\n",
-			temp_val/100, abs(temp_val) % 100);
+		TC_PRINT("Temperature: %d.%02u\n", temp_val / 100, abs(temp_val) % 100);
 
 		zassert_true(val.val1 > 10, "Too cold");
 		zassert_true(val.val1 < 35, "Too hot");
@@ -46,8 +44,7 @@ ZTEST(temp_sensor, test_polling)
 	}
 }
 
-static void trigger_handler(const struct device *temp_dev,
-			    const struct sensor_trigger *trig)
+static void trigger_handler(const struct device *temp_dev, const struct sensor_trigger *trig)
 {
 	ARG_UNUSED(temp_dev);
 	ARG_UNUSED(trig);
@@ -59,8 +56,7 @@ ZTEST(temp_sensor, test_trigger)
 {
 	int rc;
 	struct sensor_value val;
-	struct sensor_trigger trig = { .type = SENSOR_TRIG_THRESHOLD,
-				       .chan = chan_to_use };
+	struct sensor_trigger trig = {.type = SENSOR_TRIG_THRESHOLD, .chan = chan_to_use};
 
 	/* Check if the sensor allows setting a threshold trigger.
 	 * If not, skip the test.
@@ -72,26 +68,22 @@ ZTEST(temp_sensor, test_trigger)
 	}
 
 	rc = sensor_channel_get(temp_dev, chan_to_use, &val);
-	zassert_ok(rc, "Cannot read from channel %d: %d.",
-			chan_to_use, rc);
+	zassert_ok(rc, "Cannot read from channel %d: %d.", chan_to_use, rc);
 
 	/* Set the upper threshold somewhat below the temperature read above. */
 	val.val1 -= 5;
-	rc = sensor_attr_set(temp_dev, chan_to_use,
-			     SENSOR_ATTR_UPPER_THRESH, &val);
+	rc = sensor_attr_set(temp_dev, chan_to_use, SENSOR_ATTR_UPPER_THRESH, &val);
 	zassert_ok(rc, "Cannot set upper threshold: %d.", rc);
 
 	/* And the lower threshold below the upper one. */
 	val.val1 -= 1;
-	rc = sensor_attr_set(temp_dev, chan_to_use,
-			     SENSOR_ATTR_LOWER_THRESH, &val);
+	rc = sensor_attr_set(temp_dev, chan_to_use, SENSOR_ATTR_LOWER_THRESH, &val);
 	zassert_ok(rc, "Cannot set lower threshold: %d.", rc);
 
 	/* Set sampling frequency to 10 Hz, to expect a trigger after 100 ms. */
 	val.val1 = 10;
 	val.val2 = 0;
-	rc = sensor_attr_set(temp_dev, chan_to_use,
-			     SENSOR_ATTR_SAMPLING_FREQUENCY, &val);
+	rc = sensor_attr_set(temp_dev, chan_to_use, SENSOR_ATTR_SAMPLING_FREQUENCY, &val);
 	zassert_ok(rc, "Cannot set sampling frequency: %d.", rc);
 
 	trigger_handler_called = false;
@@ -119,8 +111,7 @@ static void before(void *fixture)
 	int cnt;
 	struct sensor_value val;
 
-	zassert_true(device_is_ready(temp_dev),
-		"Device %s is not ready.", temp_dev->name);
+	zassert_true(device_is_ready(temp_dev), "Device %s is not ready.", temp_dev->name);
 
 	cnt = 0;
 	/* Try to fetch a sample to check if the sensor is ready to work.
