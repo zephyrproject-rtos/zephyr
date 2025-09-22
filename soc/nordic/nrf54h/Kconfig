@@ -100,11 +100,6 @@ config SOC_NRF54H20_DISABLE_ALL_GPIO_RETENTION_WORKAROUND
 	default y
 	depends on SOC_NRF54H20_CPUAPP || SOC_NRF54H20_CPURAD
 
-config SOC_NRF54H20_PM_S2RAM_OVERRIDE
-	bool "Override `pm_s2ram` implementation"
-	help
-	  Override Nordic s2ram implementation.
-
 config SOC_NRF54H20_CPURAD
 	select SOC_NRF54H20_CPURAD_COMMON
 
