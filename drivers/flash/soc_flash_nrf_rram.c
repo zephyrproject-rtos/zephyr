@@ -54,11 +54,6 @@ LOG_MODULE_REGISTER(flash_nrf_rram, CONFIG_FLASH_LOG_LEVEL);
 #define WRITE_BLOCK_SIZE_FROM_DT DT_PROP(RRAM, write_block_size)
 #define ERASE_VALUE              0xFF
 
-#if CONFIG_TRUSTED_EXECUTION_NONSECURE && USE_PARTITION_MANAGER
-#include <soc_secure.h>
-#include <pm_config.h>
-#endif /* CONFIG_TRUSTED_EXECUTION_NONSECURE && USE_PARTITION_MANAGER */
-
 #ifdef CONFIG_MULTITHREADING
 static struct k_sem sem_lock;
 #define SYNC_INIT()   k_sem_init(&sem_lock, 1, 1)
@@ -283,12 +278,6 @@ static int nrf_rram_read(const struct device *dev, off_t addr, void *data, size_
 		return -EINVAL;
 	}
 	addr += RRAM_START;
-
-#if CONFIG_TRUSTED_EXECUTION_NONSECURE && USE_PARTITION_MANAGER && PM_APP_ADDRESS
-	if (addr < PM_APP_ADDRESS) {
-		return soc_secure_mem_read(data, (void *)addr, len);
-	}
-#endif
 
 	memcpy(data, (void *)addr, len);
 
