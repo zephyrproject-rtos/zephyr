@@ -1,7 +1,7 @@
 # Copyright (c) 2021 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-zephyr_library()
+zephyr_library_named("nrfx")
 
 # The nrfx source directory can be override through the definition of the NRFX_DIR symbol
 # during the invocation of the build system
