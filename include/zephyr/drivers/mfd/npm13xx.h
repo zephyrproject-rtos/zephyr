@@ -11,7 +11,7 @@ extern "C" {
 #endif
 
 /**
- * @defgroup mfd_interface_npm13xx MFD NPM13XX Interface
+ * @defgroup mdf_interface_npm1300 MFD NPM1300 Interface
  * @ingroup mfd_interfaces
  * @{
  */
@@ -22,28 +22,28 @@ extern "C" {
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
 
-enum mfd_npm13xx_event_t {
-	NPM13XX_EVENT_CHG_COMPLETED,
-	NPM13XX_EVENT_CHG_ERROR,
-	NPM13XX_EVENT_BATTERY_DETECTED,
-	NPM13XX_EVENT_BATTERY_REMOVED,
-	NPM13XX_EVENT_SHIPHOLD_PRESS,
-	NPM13XX_EVENT_SHIPHOLD_RELEASE,
-	NPM13XX_EVENT_WATCHDOG_WARN,
-	NPM13XX_EVENT_VBUS_DETECTED,
-	NPM13XX_EVENT_VBUS_REMOVED,
-	NPM13XX_EVENT_GPIO0_EDGE,
-	NPM13XX_EVENT_GPIO1_EDGE,
-	NPM13XX_EVENT_GPIO2_EDGE,
-	NPM13XX_EVENT_GPIO3_EDGE,
-	NPM13XX_EVENT_GPIO4_EDGE,
-	NPM13XX_EVENT_MAX
+enum mfd_npm1300_event_t {
+	NPM1300_EVENT_CHG_COMPLETED,
+	NPM1300_EVENT_CHG_ERROR,
+	NPM1300_EVENT_BATTERY_DETECTED,
+	NPM1300_EVENT_BATTERY_REMOVED,
+	NPM1300_EVENT_SHIPHOLD_PRESS,
+	NPM1300_EVENT_SHIPHOLD_RELEASE,
+	NPM1300_EVENT_WATCHDOG_WARN,
+	NPM1300_EVENT_VBUS_DETECTED,
+	NPM1300_EVENT_VBUS_REMOVED,
+	NPM1300_EVENT_GPIO0_EDGE,
+	NPM1300_EVENT_GPIO1_EDGE,
+	NPM1300_EVENT_GPIO2_EDGE,
+	NPM1300_EVENT_GPIO3_EDGE,
+	NPM1300_EVENT_GPIO4_EDGE,
+	NPM1300_EVENT_MAX
 };
 
 /**
- * @brief Read multiple registers from npm13xx
+ * @brief Read multiple registers from npm1300
  *
- * @param dev npm13xx mfd device
+ * @param dev npm1300 mfd device
  * @param base Register base address (bits 15..8 of 16-bit address)
  * @param offset Register offset address (bits 7..0 of 16-bit address)
  * @param data Pointer to buffer for received data
@@ -51,37 +51,37 @@ enum mfd_npm13xx_event_t {
  * @retval 0 If successful
  * @retval -errno In case of any bus error (see i2c_write_read_dt())
  */
-int mfd_npm13xx_reg_read_burst(const struct device *dev, uint8_t base, uint8_t offset, void *data,
+int mfd_npm1300_reg_read_burst(const struct device *dev, uint8_t base, uint8_t offset, void *data,
 			       size_t len);
 
 /**
- * @brief Read single register from npm13xx
+ * @brief Read single register from npm1300
  *
- * @param dev npm13xx mfd device
+ * @param dev npm1300 mfd device
  * @param base Register base address (bits 15..8 of 16-bit address)
  * @param offset Register offset address (bits 7..0 of 16-bit address)
  * @param data Pointer to buffer for received data
  * @retval 0 If successful
  * @retval -errno In case of any bus error (see i2c_write_read_dt())
  */
-int mfd_npm13xx_reg_read(const struct device *dev, uint8_t base, uint8_t offset, uint8_t *data);
+int mfd_npm1300_reg_read(const struct device *dev, uint8_t base, uint8_t offset, uint8_t *data);
 
 /**
- * @brief Write single register to npm13xx
+ * @brief Write single register to npm1300
  *
- * @param dev npm13xx mfd device
+ * @param dev npm1300 mfd device
  * @param base Register base address (bits 15..8 of 16-bit address)
  * @param offset Register offset address (bits 7..0 of 16-bit address)
  * @param data data to write
  * @retval 0 If successful
  * @retval -errno In case of any bus error (see i2c_write_dt())
  */
-int mfd_npm13xx_reg_write(const struct device *dev, uint8_t base, uint8_t offset, uint8_t data);
+int mfd_npm1300_reg_write(const struct device *dev, uint8_t base, uint8_t offset, uint8_t data);
 
 /**
- * @brief Write two registers to npm13xx
+ * @brief Write two registers to npm1300
  *
- * @param dev npm13xx mfd device
+ * @param dev npm1300 mfd device
  * @param base Register base address (bits 15..8 of 16-bit address)
  * @param offset Register offset address (bits 7..0 of 16-bit address)
  * @param data1 first byte of data to write
@@ -89,13 +89,13 @@ int mfd_npm13xx_reg_write(const struct device *dev, uint8_t base, uint8_t offset
  * @retval 0 If successful
  * @retval -errno In case of any bus error (see i2c_write_dt())
  */
-int mfd_npm13xx_reg_write2(const struct device *dev, uint8_t base, uint8_t offset, uint8_t data1,
+int mfd_npm1300_reg_write2(const struct device *dev, uint8_t base, uint8_t offset, uint8_t data1,
 			   uint8_t data2);
 
 /**
- * @brief Update selected bits in npm13xx register
+ * @brief Update selected bits in npm1300 register
  *
- * @param dev npm13xx mfd device
+ * @param dev npm1300 mfd device
  * @param base Register base address (bits 15..8 of 16-bit address)
  * @param offset Register offset address (bits 7..0 of 16-bit address)
  * @param data data to write
@@ -103,59 +103,59 @@ int mfd_npm13xx_reg_write2(const struct device *dev, uint8_t base, uint8_t offse
  * @retval 0 If successful
  * @retval -errno In case of any bus error (see i2c_write_read_dt(), i2c_write_dt())
  */
-int mfd_npm13xx_reg_update(const struct device *dev, uint8_t base, uint8_t offset, uint8_t data,
+int mfd_npm1300_reg_update(const struct device *dev, uint8_t base, uint8_t offset, uint8_t data,
 			   uint8_t mask);
 
 /**
- * @brief Write npm13xx timer register
+ * @brief Write npm1300 timer register
  *
- * @param dev npm13xx mfd device
+ * @param dev npm1300 mfd device
  * @param time_ms timer value in ms
  * @retval 0 If successful
  * @retval -EINVAL if time value is too large
  * @retval -errno In case of any bus error (see i2c_write_dt())
  */
-int mfd_npm13xx_set_timer(const struct device *dev, uint32_t time_ms);
+int mfd_npm1300_set_timer(const struct device *dev, uint32_t time_ms);
 
 /**
- * @brief npm13xx full power reset
+ * @brief npm1300 full power reset
  *
- * @param dev npm13xx mfd device
+ * @param dev npm1300 mfd device
  * @retval 0 If successful
  * @retval -errno In case of any bus error (see i2c_write_dt())
  */
-int mfd_npm13xx_reset(const struct device *dev);
+int mfd_npm1300_reset(const struct device *dev);
 
 /**
- * @brief npm13xx hibernate
+ * @brief npm1300 hibernate
  *
  * Enters low power state, and wakes after specified time
  *
- * @param dev npm13xx mfd device
+ * @param dev npm1300 mfd device
  * @param time_ms timer value in ms
  * @retval 0 If successful
  * @retval -EINVAL if time value is too large
  * @retval -errno In case of any bus error (see i2c_write_dt())
  */
-int mfd_npm13xx_hibernate(const struct device *dev, uint32_t time_ms);
+int mfd_npm1300_hibernate(const struct device *dev, uint32_t time_ms);
 
 /**
- * @brief Add npm13xx event callback
+ * @brief Add npm1300 event callback
  *
- * @param dev npm13xx mfd device
+ * @param dev npm1300 mfd device
  * @param callback callback
  * @return 0 on success, -errno on failure
  */
-int mfd_npm13xx_add_callback(const struct device *dev, struct gpio_callback *callback);
+int mfd_npm1300_add_callback(const struct device *dev, struct gpio_callback *callback);
 
 /**
- * @brief Remove npm13xx event callback
+ * @brief Remove npm1300 event callback
  *
- * @param dev npm13xx mfd device
+ * @param dev npm1300 mfd device
  * @param callback callback
  * @return 0 on success, -errno on failure
  */
-int mfd_npm13xx_remove_callback(const struct device *dev, struct gpio_callback *callback);
+int mfd_npm1300_remove_callback(const struct device *dev, struct gpio_callback *callback);
 
 /** @} */
 
