@@ -3357,13 +3357,11 @@ int bt_conn_le_subrate_request(struct bt_conn *conn,
 void notify_read_all_remote_feat_complete(struct bt_conn *conn,
 					  struct bt_conn_le_read_all_remote_feat_complete *params)
 {
-	if (IS_ENABLED(CONFIG_BT_CONN_DYNAMIC_CALLBACKS)) {
-		struct bt_conn_cb *callback;
+	struct bt_conn_cb *callback;
 
-		SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, callback, _node) {
-			if (callback->read_all_remote_feat_complete != NULL) {
-				callback->read_all_remote_feat_complete(conn, params);
-			}
+	SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, callback, _node) {
+		if (callback->read_all_remote_feat_complete != NULL) {
+			callback->read_all_remote_feat_complete(conn, params);
 		}
 	}
 

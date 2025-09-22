@@ -121,7 +121,8 @@ config BT_LE_MAX_LOCAL_SUPPORTED_FEATURE_PAGE
 	range 0 10
 	depends on BT_LE_EXTENDED_FEAT_SET
 	help
-	  Maximum feature page that can be stored for local supported features.
+	  Maximum supported feature page that can be stored locally and fetched
+	  from the remote connection with the LL Extended Feature Set feature.
 
 config BT_LE_EXTENDED_FEAT_SET
 	bool "LL Extended Feature Set"
