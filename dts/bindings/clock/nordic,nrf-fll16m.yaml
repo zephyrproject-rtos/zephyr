@@ -32,5 +32,4 @@ properties:
 
   open-loop-accuracy-ppm:
     type: int
-    description: Clock accuracy in parts per million
-    required: true
+    description: Clock accuracy in parts per million if open-loop clock source is used.
