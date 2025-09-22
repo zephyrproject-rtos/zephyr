@@ -22,6 +22,9 @@
 #include <zephyr/net/socket.h>
 #include <zephyr/net/icmp.h>
 #include <icmpv6.h>
+#include <zephyr/logging/log.h>
+
+LOG_MODULE_REGISTER(net_otPlat_infra_if, CONFIG_OPENTHREAD_BORDER_ROUTER_PLATFORM_LOG_LEVEL);
 
 static struct otInstance *ot_instance;
 static struct net_if *ail_iface_ptr;
@@ -70,6 +73,8 @@ exit:
 			pkt = NULL;
 		}
 	}
+
+	LOG_DBG("%s : finished with code %d", __func__, error);
 
 	return error;
 }
@@ -127,6 +132,8 @@ otError infra_if_init(otInstance *instance, struct net_if *ail_iface)
 	VerifyOrExit(net_ipv6_mld_join(ail_iface, &addr) == 0, error = OT_ERROR_FAILED);
 
 exit:
+	LOG_DBG("%s : finished with code %d", __func__, error);
+
 	return error;
 }
 
@@ -218,6 +225,8 @@ static int handle_icmp6_input(struct net_icmp_ctx *ctx, struct net_pkt *pkt,
 	}
 
 exit:
+	LOG_DBG("%s : finished with code %d", __func__, error);
+
 	if (error == OT_ERROR_NONE) {
 		return 0;
 	}
@@ -244,6 +253,8 @@ otError infra_if_start_icmp6_listener(void)
 		     error = OT_ERROR_FAILED);
 
 exit:
+	LOG_DBG("%s : finished with code %d", __func__, error);
+
 	return error;
 }
 

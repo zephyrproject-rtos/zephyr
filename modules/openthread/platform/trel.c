@@ -14,6 +14,9 @@
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_ip.h>
 #include "sockets_internal.h"
+#include <zephyr/logging/log.h>
+
+LOG_MODULE_REGISTER(net_otPlat_trel, CONFIG_OPENTHREAD_BORDER_ROUTER_PLATFORM_LOG_LEVEL);
 
 #define MAX_SERVICES   1
 
@@ -34,6 +37,8 @@ void otPlatTrelEnable(otInstance *aInstance, uint16_t *aUdpPort)
 				    .sin6_addr = IN6ADDR_ANY_INIT,
 				    .sin6_scope_id = 0};
 	socklen_t len = sizeof(addr);
+
+	LOG_DBG("%s : Enabling TREL platform", __func__);
 
 	trel_sock = zsock_socket(AF_INET6, SOCK_DGRAM | SOCK_NONBLOCK, IPPROTO_UDP);
 	VerifyOrExit(trel_sock >= 0);
@@ -59,6 +64,8 @@ void otPlatTrelDisable(otInstance *aInstance)
 
 	VerifyOrExit(trel_sock != -1);
 	VerifyOrExit(zsock_close(trel_sock) == 0);
+
+	LOG_DBG("%s : Disabling TREL platform", __func__);
 
 	sockfd_udp[0].fd = -1;
 	trel_sock = -1;
@@ -113,6 +120,8 @@ static void trel_receive_handler(struct net_socket_service_event *evt)
 	ssize_t len = 0;
 	struct otbr_msg_ctx *req = NULL;
 
+	LOG_DBG("%s : Received message for TREL module", __func__);
+
 	trel_counters.mRxPackets++;
 
 	VerifyOrExit(evt->event.revents & ZSOCK_POLLIN);
@@ -164,5 +173,7 @@ otError trel_plat_init(otInstance *instance, struct net_if *ail_iface_ptr)
 						 ARRAY_SIZE(sockfd_udp), NULL) == 0,
 		     error = OT_ERROR_FAILED);
 exit:
+	LOG_DBG("%s : finished with code %d", __func__, error);
+
 	return error;
 }

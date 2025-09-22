@@ -20,6 +20,9 @@
 #include <zephyr/net/socket_service.h>
 #include <openthread/nat64.h>
 #include "sockets_internal.h"
+#include <zephyr/logging/log.h>
+
+LOG_MODULE_REGISTER(net_otPlat_mdns_socket, CONFIG_OPENTHREAD_BORDER_ROUTER_PLATFORM_LOG_LEVEL);
 
 #define MULTICAST_PORT 5353
 #if defined(CONFIG_NET_IPV4) && defined(CONFIG_NET_IPV6)
@@ -53,6 +56,8 @@ otError mdns_plat_socket_init(otInstance *ot_instance, uint32_t ail_iface_idx)
 {
 	ot_instance_ptr = ot_instance;
 	ail_iface_index = ail_iface_idx;
+
+	LOG_DBG("%s : finished with code %d", __func__, OT_ERROR_NONE);
 
 	return OT_ERROR_NONE;
 }
@@ -154,6 +159,7 @@ static otError mdns_socket_init_v6(uint32_t ail_iface_idx)
 		     error = OT_ERROR_FAILED);
 
 exit:
+	LOG_DBG("%s : finished with code %d", __func__, error);
 	return error;
 }
 
@@ -212,6 +218,8 @@ static otError mdns_socket_init_v4(uint32_t ail_iface_idx)
 		     error = OT_ERROR_FAILED);
 
 exit:
+	LOG_DBG("%s : finished with code %d", __func__, error);
+
 	return error;
 }
 #endif /* CONFIG_NET_IPV4 */
@@ -234,6 +242,7 @@ static otError mdns_socket_deinit(void)
 	mdns_sock_v4 = -1;
 #endif /* CONFIG_NET_IPV4 */
 exit:
+	LOG_DBG("%s : finished with code %d", __func__, error);
 	return error;
 }
 
@@ -388,6 +397,8 @@ void mdns_plat_monitor_interface(struct net_if *ail_iface)
 	struct net_if_ipv6 *ipv6 = NULL;
 	otIp6Address ip6_addr = {0};
 	struct net_if_addr *unicast = NULL;
+
+	LOG_DBG("%s : Monitoring address changed on iface %d", __func__, ail_iface_index);
 
 	otPlatMdnsHandleHostAddressRemoveAll(ot_instance_ptr, ail_iface_index);
 
