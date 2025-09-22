@@ -89,8 +89,6 @@ static void conn_handler_cb(struct net_conn *conn, void *user_data)
 
 	} else if (conn->local_addr.sa_family == AF_UNSPEC) {
 		snprintk(addr_local, sizeof(addr_local), "AF_UNSPEC");
-	} else if (conn->local_addr.sa_family == AF_PACKET) {
-		snprintk(addr_local, sizeof(addr_local), "AF_PACKET");
 	} else {
 		snprintk(addr_local, sizeof(addr_local), "AF_UNK(%d)",
 			 conn->local_addr.sa_family);
