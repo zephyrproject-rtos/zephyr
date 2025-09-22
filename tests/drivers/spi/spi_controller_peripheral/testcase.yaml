@@ -102,18 +102,3 @@ tests:
       - CONFIG_PM_DEVICE=y
       - CONFIG_PM_DEVICE_RUNTIME=y
     filter: CONFIG_SOC_FAMILY_NORDIC_NRF
-
-  drivers.spi.spi_cross_domain:
-    harness_config:
-      fixture: spi_p1_p2_loopback
-    extra_configs:
-      - CONFIG_TESTED_SPI_MODE=0
-      - CONFIG_NRF_SYS_EVENT=y
-    extra_args: DTC_OVERLAY_FILE="boards/nrf54l15dk_nrf54l15_cpuapp_cross_domain.overlay"
-    platform_exclude:
-      - nrf52840dk/nrf52840
-      - nrf54h20dk/nrf54h20/cpuapp
-      - nrf54h20dk/nrf54h20/cpurad
-      - nrf54h20dk/nrf54h20/cpuppr
-      - nrf54l20pdk/nrf54l20/cpuapp
-      - ophelia4ev/nrf54l15/cpuapp

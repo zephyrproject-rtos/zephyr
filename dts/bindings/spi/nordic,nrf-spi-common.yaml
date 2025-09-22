@@ -61,13 +61,3 @@ properties:
         and SPI master again keeps the line in the low state
       Please note that the line must be configured and properly handled on
       both sides for the mechanism to work correctly.
-
-  default-gpio-port:
-    type: phandle
-    description: |
-      SPI default GPIO port.
-
-  cross-domain-pins-supported:
-    type: boolean
-    description: |
-      SPI allows usage of cross domain pins with constant latency mode required.
