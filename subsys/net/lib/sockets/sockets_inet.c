@@ -225,11 +225,21 @@ static void zsock_received_cb(struct net_context *ctx,
 			      int status,
 			      void *user_data)
 {
+	if (sock_is_eof(ctx)) {
+		/* If receiving is not desired and socket is shutdown,
+		 * ignore all incoming data.
+		 */
+		NET_DBG("%sctx=%p, pkt=%p, st=%d, user_data=%p",
+			"DROP: ", ctx, pkt, status, user_data);
+		net_pkt_unref(pkt);
+		return;
+	}
+
 	if (ctx->cond.lock) {
 		(void)k_mutex_lock(ctx->cond.lock, K_FOREVER);
 	}
 
-	NET_DBG("ctx=%p, pkt=%p, st=%d, user_data=%p", ctx, pkt, status,
+	NET_DBG("%sctx=%p, pkt=%p, st=%d, user_data=%p", "", ctx, pkt, status,
 		user_data);
 
 	if (status < 0) {
@@ -363,12 +373,16 @@ int zsock_connect_ctx(struct net_context *ctx, const struct sockaddr *addr,
 			errno = -ret;
 			return -1;
 		}
-		ret = net_context_recv(ctx, zsock_received_cb,
-				       K_NO_WAIT, ctx->user_data);
-		if (ret < 0) {
-			errno = -ret;
-			return -1;
+
+		if (!sock_is_eof(ctx)) {
+			ret = net_context_recv(ctx, zsock_received_cb,
+					       K_NO_WAIT, ctx->user_data);
+			if (ret < 0) {
+				errno = -ret;
+				return -1;
+			}
 		}
+
 		return 0;
 	}
 #endif
@@ -416,11 +430,14 @@ int zsock_connect_ctx(struct net_context *ctx, const struct sockaddr *addr,
 			errno = -ret;
 			return -1;
 		}
-		ret = net_context_recv(ctx, zsock_received_cb,
-					K_NO_WAIT, ctx->user_data);
-		if (ret < 0) {
-			errno = -ret;
-			return -1;
+
+		if (!sock_is_eof(ctx)) {
+			ret = net_context_recv(ctx, zsock_received_cb,
+					       K_NO_WAIT, ctx->user_data);
+			if (ret < 0) {
+				errno = -ret;
+				return -1;
+			}
 		}
 	}
 
@@ -643,11 +660,13 @@ ssize_t zsock_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 	/* Register the callback before sending in order to receive the response
 	 * from the peer.
 	 */
-	status = net_context_recv(ctx, zsock_received_cb,
-				  K_NO_WAIT, ctx->user_data);
-	if (status < 0) {
-		errno = -status;
-		return -1;
+	if (!sock_is_eof(ctx)) {
+		status = net_context_recv(ctx, zsock_received_cb,
+					  K_NO_WAIT, ctx->user_data);
+		if (status < 0) {
+			errno = -status;
+			return -1;
+		}
 	}
 
 	while (1) {
