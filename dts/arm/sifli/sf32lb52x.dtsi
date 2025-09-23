@@ -168,6 +168,13 @@
 			compatible = "sifli,sf32lb-pmuc", "syscon";
 			reg = <0x500ca000 0x1000>;
 		};
+
+		wdt: watchdog@50094000 {
+			compatible = "sifli,sf32lb-watchdog";
+			reg = <0x50094000 0x400>;
+			interrupts = <26 0>;
+			status = "disabled";
+		};
 	};
 };
 
