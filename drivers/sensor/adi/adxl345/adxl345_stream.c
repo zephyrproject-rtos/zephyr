@@ -86,7 +86,7 @@ static void adxl345_process_fifo_samples_cb(struct rtio *r, const struct rtio_sq
 
 	hdr->is_fifo = 1;
 	hdr->timestamp = data->timestamp;
-	hdr->int_status = data->status1;
+	hdr->int_status = data->reg_int_source;
 	hdr->is_full_res = data->is_full_res;
 	hdr->selected_range = data->selected_range;
 	hdr->accel_odr = data->odr;
@@ -169,7 +169,7 @@ static void adxl345_process_status1_cb(struct rtio *r, const struct rtio_sqe *sq
 	const struct adxl345_dev_config *cfg = (const struct adxl345_dev_config *) dev->config;
 	struct rtio_iodev_sqe *current_sqe = data->sqe;
 	struct sensor_read_config *read_config;
-	uint8_t status1 = data->status1;
+	uint8_t status1 = data->reg_int_source;
 
 	if (data->sqe == NULL) {
 		return;
@@ -386,9 +386,12 @@ void adxl345_stream_irq_handler(const struct device *dev)
 	struct rtio_sqe *check_status_reg = rtio_sqe_acquire(data->rtio_ctx);
 	uint8_t reg = ADXL345_REG_READ(ADXL345_INT_SOURCE_REG);
 
-	rtio_sqe_prep_tiny_write(write_status_addr, data->iodev, RTIO_PRIO_NORM, &reg, 1, NULL);
+	rtio_sqe_prep_tiny_write(write_status_addr, data->iodev,
+				 RTIO_PRIO_NORM, &reg, sizeof(reg), NULL);
 	write_status_addr->flags |= RTIO_SQE_TRANSACTION;
-	rtio_sqe_prep_read(read_status_reg, data->iodev, RTIO_PRIO_NORM, &data->status1, 1, NULL);
+	rtio_sqe_prep_read(read_status_reg, data->iodev, RTIO_PRIO_NORM,
+			   &data->reg_int_source, sizeof(data->reg_int_source),
+			   NULL);
 	read_status_reg->flags |= RTIO_SQE_CHAINED;
 
 	if (cfg->bus_type == ADXL345_BUS_I2C) {
