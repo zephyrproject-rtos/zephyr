@@ -76,6 +76,52 @@ static void adxl345_sqe_done(const struct device *dev,
 	adxl345_set_gpios_en(dev, true);
 }
 
+static void adxl345_rtio_init_hdr(struct adxl345_fifo_data *hdr,
+				  struct adxl345_dev_data *data,
+				  uint32_t fifo_byte_count)
+{
+	hdr->is_fifo = 1;
+	hdr->timestamp = data->timestamp;
+	hdr->int_status = data->reg_int_source;
+	hdr->is_full_res = data->is_full_res;
+	hdr->selected_range = data->selected_range;
+	hdr->accel_odr = data->odr;
+	hdr->sample_set_size = ADXL345_FIFO_SAMPLE_SIZE;
+
+	hdr->fifo_byte_count = fifo_byte_count;
+}
+
+static int adxl345_rtio_init_buffer(struct adxl345_dev_data *data,
+				    uint8_t **read_buf, uint16_t fifo_bytes,
+				    struct rtio_iodev_sqe *current_iodev_sqe)
+{
+	const size_t min_read_size = sizeof(struct adxl345_fifo_data) + ADXL345_FIFO_SAMPLE_SIZE;
+	const size_t ideal_read_size = sizeof(struct adxl345_fifo_data) + fifo_bytes;
+	uint8_t *buf;
+	uint32_t buf_avail, buf_length;
+
+	if (rtio_sqe_rx_buf(current_iodev_sqe, min_read_size, ideal_read_size, &buf,
+			    &buf_length)) {
+		LOG_ERR("Failed to get buffer");
+		return -EINVAL;
+	}
+	buf_avail = buf_length - sizeof(struct adxl345_fifo_data);
+	uint32_t read_len = MIN(fifo_bytes, buf_avail);
+
+	if (buf_avail < fifo_bytes) {
+		uint32_t pkts = read_len / ADXL345_FIFO_SAMPLE_SIZE;
+
+		read_len = pkts * ADXL345_FIFO_SAMPLE_SIZE;
+	}
+
+	__ASSERT_NO_MSG(read_len % ADXL345_FIFO_SAMPLE_SIZE == 0);
+	adxl345_rtio_init_hdr((struct adxl345_fifo_data *)buf, data, read_len);
+
+	*read_buf = buf + sizeof(struct adxl345_fifo_data);
+
+	return 0;
+}
+
 /* streaming callbacks and calls */
 
 static void adxl345_irq_en_cb(struct rtio *r, const struct rtio_sqe *sqe, int result, void *arg)
@@ -109,7 +155,6 @@ static void adxl345_process_fifo_samples_cb(struct rtio *r, const struct rtio_sq
 	struct rtio_iodev_sqe *current_sqe = data->sqe;
 	data->fifo_entries = FIELD_GET(ADXL345_FIFO_ENTRIES_MSK, data->reg_fifo_status);
 	uint8_t fifo_entries = data->fifo_entries;
-	size_t sample_set_size = ADXL345_FIFO_SAMPLE_SIZE;
 	uint16_t fifo_bytes = fifo_entries * ADXL345_FIFO_SAMPLE_SIZE;
 
 	data->sqe = NULL;
@@ -121,45 +166,11 @@ static void adxl345_process_fifo_samples_cb(struct rtio *r, const struct rtio_sq
 		return;
 	}
 
-	const size_t min_read_size = sizeof(struct adxl345_fifo_data) + sample_set_size;
-	const size_t ideal_read_size = sizeof(struct adxl345_fifo_data) + fifo_bytes;
+	uint8_t *read_buf;
 
-	uint8_t *buf;
-	uint32_t buf_len;
-
-	if (rtio_sqe_rx_buf(current_sqe, min_read_size, ideal_read_size, &buf, &buf_len) != 0) {
-		LOG_ERR("Failed to get buffer");
+	if (adxl345_rtio_init_buffer(data, &read_buf, fifo_bytes, current_sqe)) {
 		goto err;
 	}
-	LOG_DBG("Requesting buffer [%u, %u] got %u", (unsigned int)min_read_size,
-		(unsigned int)ideal_read_size, buf_len);
-
-	/* Read FIFO and call back to rtio with rtio_sqe completion */
-	struct adxl345_fifo_data *hdr = (struct adxl345_fifo_data *) buf;
-
-	hdr->is_fifo = 1;
-	hdr->timestamp = data->timestamp;
-	hdr->int_status = data->reg_int_source;
-	hdr->is_full_res = data->is_full_res;
-	hdr->selected_range = data->selected_range;
-	hdr->accel_odr = data->odr;
-	hdr->sample_set_size = sample_set_size;
-
-	uint32_t buf_avail = buf_len;
-
-	buf_avail -= sizeof(*hdr);
-
-	uint32_t read_len = MIN(fifo_bytes, buf_avail);
-
-	if (buf_avail < fifo_bytes) {
-		uint32_t pkts = read_len / sample_set_size;
-
-		read_len = pkts * sample_set_size;
-	}
-
-	((struct adxl345_fifo_data *)buf)->fifo_byte_count = read_len;
-
-	uint8_t *read_buf = buf + sizeof(*hdr);
 
 	/* Flush completions */
 	struct rtio_cqe *cqe;
@@ -283,13 +294,8 @@ static void adxl345_process_status1_cb(struct rtio *r, const struct rtio_sqe *sq
 			goto err;
 		}
 
-		struct adxl345_fifo_data *rx_data = (struct adxl345_fifo_data *)buf;
-
 		memset(buf, 0, buf_len);
-		rx_data->is_fifo = 1;
-		rx_data->timestamp = data->timestamp;
-		rx_data->int_status = status1;
-		rx_data->fifo_byte_count = 0;
+		adxl345_rtio_init_hdr((struct adxl345_fifo_data *)buf, data, 0);
 
 		if (data_opt == SENSOR_STREAM_DATA_DROP) {
 			/* Flush the FIFO by disabling it. Save current mode for after the reset. */
