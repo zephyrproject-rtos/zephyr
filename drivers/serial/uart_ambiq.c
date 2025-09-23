@@ -90,40 +90,32 @@ struct uart_ambiq_data {
 
 static void uart_ambiq_pm_policy_state_lock_get_unconditional(void)
 {
-	if (IS_ENABLED(CONFIG_PM)) {
-		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
-	}
+	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
 }
 
 static void uart_ambiq_pm_policy_state_lock_get(const struct device *dev)
 {
-	if (IS_ENABLED(CONFIG_PM)) {
-		struct uart_ambiq_data *data = dev->data;
+	struct uart_ambiq_data *data = dev->data;
 
-		if (!data->pm_policy_state_on) {
-			data->pm_policy_state_on = true;
-			uart_ambiq_pm_policy_state_lock_get_unconditional();
-		}
+	if (!data->pm_policy_state_on) {
+		data->pm_policy_state_on = true;
+		uart_ambiq_pm_policy_state_lock_get_unconditional();
 	}
 }
 
 #if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API)
 static void uart_ambiq_pm_policy_state_lock_put_unconditional(void)
 {
-	if (IS_ENABLED(CONFIG_PM)) {
-		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
-	}
+	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
 }
 
 static void uart_ambiq_pm_policy_state_lock_put(const struct device *dev)
 {
-	if (IS_ENABLED(CONFIG_PM)) {
-		struct uart_ambiq_data *data = dev->data;
+	struct uart_ambiq_data *data = dev->data;
 
-		if (data->pm_policy_state_on) {
-			data->pm_policy_state_on = false;
-			uart_ambiq_pm_policy_state_lock_put_unconditional();
-		}
+	if (data->pm_policy_state_on) {
+		data->pm_policy_state_on = false;
+		uart_ambiq_pm_policy_state_lock_put_unconditional();
 	}
 }
 #endif

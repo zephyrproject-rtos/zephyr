@@ -59,27 +59,23 @@ struct i2c_ambiq_data {
 
 static void i2c_ambiq_pm_policy_state_lock_get(const struct device *dev)
 {
-	if (IS_ENABLED(CONFIG_PM)) {
-		struct i2c_ambiq_data *data = dev->data;
+	struct i2c_ambiq_data *data = dev->data;
 
-		if (!data->pm_policy_state_on) {
-			data->pm_policy_state_on = true;
-			pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
-			pm_device_runtime_get(dev);
-		}
+	if (!data->pm_policy_state_on) {
+		data->pm_policy_state_on = true;
+		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
+		pm_device_runtime_get(dev);
 	}
 }
 
 static void i2c_ambiq_pm_policy_state_lock_put(const struct device *dev)
 {
-	if (IS_ENABLED(CONFIG_PM)) {
-		struct i2c_ambiq_data *data = dev->data;
+	struct i2c_ambiq_data *data = dev->data;
 
-		if (data->pm_policy_state_on) {
-			data->pm_policy_state_on = false;
-			pm_device_runtime_put(dev);
-			pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
-		}
+	if (data->pm_policy_state_on) {
+		data->pm_policy_state_on = false;
+		pm_device_runtime_put(dev);
+		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
 	}
 }
 
@@ -249,10 +245,11 @@ static int i2c_ambiq_transfer(const struct device *dev, struct i2c_msg *msgs, ui
 		return 0;
 	}
 
-	i2c_ambiq_pm_policy_state_lock_get(dev);
-
 	/* Send out messages */
 	k_sem_take(&data->bus_sem, K_FOREVER);
+
+	/* Prevent driver from being suspended by PM until I2C transaction is complete */
+	i2c_ambiq_pm_policy_state_lock_get(dev);
 
 	for (int i = 0; i < num_msgs; i++) {
 		if (msgs[i].flags & I2C_MSG_READ) {
@@ -274,9 +271,9 @@ static int i2c_ambiq_transfer(const struct device *dev, struct i2c_msg *msgs, ui
 		}
 	}
 
-	k_sem_give(&data->bus_sem);
-
 	i2c_ambiq_pm_policy_state_lock_put(dev);
+
+	k_sem_give(&data->bus_sem);
 
 	return ret;
 }

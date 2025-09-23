@@ -54,27 +54,23 @@ struct amic_ambiq_audadc_cfg {
 
 static void amic_ambiq_audadc_pm_policy_state_lock_get(const struct device *dev)
 {
-	if (IS_ENABLED(CONFIG_PM)) {
-		struct amic_ambiq_audadc_data *data = dev->data;
+	struct amic_ambiq_audadc_data *data = dev->data;
 
-		if (!data->pm_policy_state_on) {
-			data->pm_policy_state_on = true;
-			pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
-			pm_device_runtime_get(dev);
-		}
+	if (!data->pm_policy_state_on) {
+		data->pm_policy_state_on = true;
+		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
+		pm_device_runtime_get(dev);
 	}
 }
 
 static void amic_ambiq_audadc_pm_policy_state_lock_put(const struct device *dev)
 {
-	if (IS_ENABLED(CONFIG_PM)) {
-		struct amic_ambiq_audadc_data *data = dev->data;
+	struct amic_ambiq_audadc_data *data = dev->data;
 
-		if (data->pm_policy_state_on) {
-			data->pm_policy_state_on = false;
-			pm_device_runtime_put(dev);
-			pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
-		}
+	if (data->pm_policy_state_on) {
+		data->pm_policy_state_on = false;
+		pm_device_runtime_put(dev);
+		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
 	}
 }
 

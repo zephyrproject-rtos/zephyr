@@ -49,27 +49,23 @@ typedef void (*spi_context_update_trx)(struct spi_context *ctx, uint8_t dfs, uin
 
 static void spi_ambiq_pm_policy_state_lock_get(const struct device *dev)
 {
-	if (IS_ENABLED(CONFIG_PM)) {
-		struct spi_ambiq_data *data = dev->data;
+	struct spi_ambiq_data *data = dev->data;
 
-		if (!data->pm_policy_state_on) {
-			data->pm_policy_state_on = true;
-			pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
-			pm_device_runtime_get(dev);
-		}
+	if (!data->pm_policy_state_on) {
+		data->pm_policy_state_on = true;
+		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
+		pm_device_runtime_get(dev);
 	}
 }
 
 static void spi_ambiq_pm_policy_state_lock_put(const struct device *dev)
 {
-	if (IS_ENABLED(CONFIG_PM)) {
-		struct spi_ambiq_data *data = dev->data;
+	struct spi_ambiq_data *data = dev->data;
 
-		if (data->pm_policy_state_on) {
-			data->pm_policy_state_on = false;
-			pm_device_runtime_put(dev);
-			pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
-		}
+	if (data->pm_policy_state_on) {
+		data->pm_policy_state_on = false;
+		pm_device_runtime_put(dev);
+		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
 	}
 }
 
