@@ -531,6 +531,15 @@ int netc_eth_set_config(const struct device *dev, enum ethernet_config_type type
 			data->mac_addr[0], data->mac_addr[1], data->mac_addr[2], data->mac_addr[3],
 			data->mac_addr[4], data->mac_addr[5]);
 		break;
+#if defined(CONFIG_NET_PROMISCUOUS_MODE)
+	case ETHERNET_CONFIG_TYPE_PROMISC_MODE:
+		if (config->promisc_mode) {
+			NETC_EnetcEnablePromiscuous(data->handle.hw.base, 0, true, true);
+		} else {
+			NETC_EnetcEnablePromiscuous(data->handle.hw.base, 0, false, false);
+		}
+		break;
+#endif
 	default:
 		ret = -ENOTSUP;
 		break;
