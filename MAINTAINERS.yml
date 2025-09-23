@@ -4377,6 +4377,25 @@ Renesas RA Platforms:
     Renesas RA SOCs, dts files, and related drivers. Boards based
     on Renesas RA SoCs.
 
+Renesas RX Platform:
+  status: maintained
+  maintainers:
+    - duynguyenxa
+  collaborators:
+    - quytranpzz
+  files:
+    - boards/renesas/*rx*/
+    - drivers/*/*renesas_rx*
+    - drivers/pinctrl/renesas/rx/
+    - dts/rx/renesas/
+    - dts/bindings/*/*renesas,rx*
+    - soc/renesas/rx/
+  labels:
+    - "platform: Renesas RX"
+  description: >-
+    Renesas RX SOCs, dts files, and related drivers. Renesas boards based
+    on RX SoCs.
+
 Renesas RZ Platforms:
   status: maintained
   maintainers:
