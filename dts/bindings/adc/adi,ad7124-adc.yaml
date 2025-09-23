@@ -19,13 +19,12 @@ properties:
 
   pd-switch-enable:
     type: boolean
-    default: false
     description: |
-      Enable internal low side power switch for AD7124
-      - true: The switch is in the open position
-      - false: The switched is in the closed position
+      Enable internal low-side power-down switch for AD7124
+      - true: The switch is in the closed position
+      - false: The switch is in the open position
       The default configuration places the switch in the
-      closed position for control setup upon power-up 
+      open position for control setup upon power-up
       or after reset.
 
   filter-type-mask:
