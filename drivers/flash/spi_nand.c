@@ -299,7 +299,7 @@ static int spi_nand_wait_until_ready(const struct device *dev)
 			return ret;
 		}
 
-		if (!(reg & SPI_NAND_WIP_BIT) == 0U) {
+		if ((reg & SPI_NAND_WIP_BIT) == 0U) {
 			return ret;
 		}
 	} while ((k_uptime_get() - start_time) < timeout_ms);
@@ -771,10 +771,6 @@ static int spi_nand_check_id(const struct device *dev)
 	uint8_t const *expected_id = cfg->id;
 	uint8_t read_id[SPI_NAND_ID_LEN];
 
-	if (read_id == NULL) {
-		return -EINVAL;
-	}
-
 	acquire_device(dev);
 	int ret = spi_nand_access(dev, SPI_NAND_CMD_RDID, NAND_ACCESS_DUMMY, 0, read_id,
 				  SPI_NAND_ID_LEN);
@@ -944,7 +940,7 @@ static int spi_nand_configure(const struct device *dev)
 	uint8_t reg = 0;
 	int ret;
 	/* Validate bus and CS is ready */
-	if (spi_is_ready_dt(&cfg->spi)) {
+	if (!spi_is_ready_dt(&cfg->spi)) {
 		return -ENODEV;
 	}
 	ret = spi_nand_check_id(dev);

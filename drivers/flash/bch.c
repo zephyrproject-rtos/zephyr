@@ -312,9 +312,10 @@ int bch_decode(bch_t *bch, uint8_t *data, uint8_t *ecc)
 	bch_encode(bch, data, NULL);
 	memcpy(bch->ecc2, ecc, bch->ecc_bytes);
 	for (i = 0; i < bch->ecc_words; i++) {
-		LOG_ERR("<word %d> %08X : %08X %s\r\n", i, bch->ecc[i], swap32_byte(bch->ecc2[i]),
-			bch->ecc[i] != swap32_byte(bch->ecc2[i]) ? "**" : "");
-		bch->ecc[i] ^= swap32_byte(bch->ecc2[i]);
+		uint32_t ecc_word_le = swap32_byte(bch->ecc2[i]);
+		LOG_ERR("<word %d> %08X : %08X %s\r\n", i, bch->ecc[i], ecc_word_le,
+			bch->ecc[i] != ecc_word_le ? "**" : "");
+		bch->ecc[i] ^= ecc_word_le;
 		err |= bch->ecc[i];
 	}
 	if (err == 0) {
@@ -364,6 +365,14 @@ int bch_init(int m, int t, uint32_t size_step, bch_t **bch_ret)
 		return -EINVAL;
 	}
 	bch = bch_alloc(sizeof(bch_t), &err);
+	if (bch == NULL) {
+		return -ENOMEM;
+	}
+	bch->m = m;
+	bch->t = t;
+	bch->n = (1 << m) - 1;
+	bch->ecc_words = (m * t + 31) / 32;
+	bch->len = (bch->n + 1) / 8;
 	bch->a_pow = bch_alloc((bch->n + 1) * sizeof(*bch->a_pow), &err);
 	bch->a_log = bch_alloc((bch->n + 1) * sizeof(*bch->a_log), &err);
 	bch->mod_tab = bch_alloc(bch->ecc_words * 16 * 4 * sizeof(*bch->mod_tab), &err);
@@ -418,6 +427,6 @@ void bch_free(bch_t *bch)
 		k_heap_free(&bch_heap, bch->buf2);
 		k_heap_free(&bch_heap, bch->buf3);
 		k_heap_free(&bch_heap, bch->g);
-		k_heap_free(bch);
+		k_heap_free(&bch_heap, bch);
 	}
 }
