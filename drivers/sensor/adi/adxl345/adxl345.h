@@ -35,7 +35,8 @@
 #define ADXL345_READ_CMD           0x80
 #define ADXL345_MULTIBYTE_FLAG     0x40
 
-#define ADXL345_REG_READ(x)	((x & 0xFF) | ADXL345_READ_CMD)
+#define ADXL345_REG_READ(x)			(FIELD_GET(UCHAR_MAX, x) | ADXL345_READ_CMD)
+#define ADXL345_REG_READ_MULTIBYTE(x)		(ADXL345_REG_READ(x) | ADXL345_MULTIBYTE_FLAG)
 
 #define ADXL345_FIFO_SAMPLE_SIZE		6
 #define ADXL345_FIFO_ENTRIES_MSK		GENMASK(5, 0) /* FIFO status entries */
@@ -184,6 +185,13 @@ struct adxl345_sample {
 } __attribute__((__packed__));
 
 struct adxl345_dev_data {
+	uint8_t cache_reg_power_ctl;
+	uint8_t cache_reg_int_enable;
+	uint8_t cache_reg_int_map;
+	uint8_t cache_reg_data_format;
+	uint8_t cache_reg_rate;
+	uint8_t cache_reg_fifo_ctl;
+	uint8_t cache_reg_act_thresh;
 	struct adxl345_sample sample[ADXL345_MAX_FIFO_SIZE];
 	uint8_t fifo_entries; /* the actual read FIFO entries */
 	uint8_t sample_idx; /* index counting up sample_number entries */
@@ -295,8 +303,11 @@ int adxl345_reg_access(const struct device *dev, uint8_t cmd, uint8_t addr,
 int adxl345_reg_write(const struct device *dev, uint8_t addr, uint8_t *data,
 				    uint8_t len);
 
-int adxl345_reg_read(const struct device *dev, uint8_t addr, uint8_t *data,
-				   uint8_t len);
+#if defined(CONFIG_ADXL345_STREAM)
+int adxl345_rtio_reg_read(const struct device *dev, uint8_t reg,
+			  uint8_t *buf, size_t buflen, void *userdata,
+			  rtio_callback_t cb);
+#endif
 
 int adxl345_reg_write_byte(const struct device *dev, uint8_t addr, uint8_t val);
 
@@ -314,4 +325,8 @@ int adxl345_configure_fifo(const struct device *dev, enum adxl345_fifo_mode mode
 #ifdef CONFIG_ADXL345_STREAM
 size_t adxl345_get_packet_size(const struct adxl345_dev_config *cfg);
 #endif /* CONFIG_ADXL345_STREAM */
+
+int adxl345_raw_reg_read(const struct device *dev, uint8_t addr, uint8_t *data,
+			 uint8_t len);
+
 #endif /* ZEPHYR_DRIVERS_SENSOR_ADX345_ADX345_H_ */

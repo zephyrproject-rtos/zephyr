@@ -15,6 +15,55 @@ static void adxl345_fifo_flush_rtio(const struct device *dev);
 
 /* auxiliary functions */
 
+int adxl345_rtio_reg_read(const struct device *dev, uint8_t reg,
+			  uint8_t *buf, size_t buflen, void *userdata,
+			  rtio_callback_t cb)
+{
+	struct adxl345_dev_data *data = (struct adxl345_dev_data *)dev->data;
+	const struct adxl345_dev_config *cfg = dev->config;
+	uint8_t r = buflen > 1 ? ADXL345_REG_READ_MULTIBYTE(reg) : ADXL345_REG_READ(reg);
+	struct rtio_sqe *write_sqe = rtio_sqe_acquire(data->rtio_ctx);
+
+	if (!write_sqe) {
+		LOG_WRN("write_sqe failed");
+		goto err;
+	}
+	rtio_sqe_prep_tiny_write(write_sqe, data->iodev, RTIO_PRIO_NORM, &r,
+				 sizeof(r), NULL);
+	write_sqe->flags |= RTIO_SQE_TRANSACTION;
+
+	struct rtio_sqe *read_sqe = rtio_sqe_acquire(data->rtio_ctx);
+
+	if (!read_sqe) {
+		LOG_WRN("read_sqe failed");
+		goto err;
+	}
+
+	rtio_sqe_prep_read(read_sqe, data->iodev, RTIO_PRIO_NORM,
+			   buf, buflen, userdata);
+
+	if (cfg->bus_type == ADXL345_BUS_I2C) {
+		read_sqe->iodev_flags |= RTIO_IODEV_I2C_STOP | RTIO_IODEV_I2C_RESTART;
+	}
+
+	if (cb) {
+		read_sqe->flags |= RTIO_SQE_CHAINED;
+		struct rtio_sqe *check_status_sqe = rtio_sqe_acquire(data->rtio_ctx);
+
+		if (!check_status_sqe) {
+			LOG_WRN("check_status_sqe failed");
+			goto err;
+		}
+		rtio_sqe_prep_callback_no_cqe(check_status_sqe, cb, (void *)dev,
+					      userdata);
+	}
+
+	return rtio_submit(data->rtio_ctx, 0);
+err:
+	LOG_WRN("low on memory");
+	return -ENOMEM;
+}
+
 static void adxl345_sqe_done(const struct device *dev,
 			     struct rtio_iodev_sqe *iodev_sqe, int res)
 {
@@ -57,7 +106,6 @@ static void adxl345_process_fifo_samples_cb(struct rtio *r, const struct rtio_sq
 
 	const struct device *dev = (const struct device *)arg;
 	struct adxl345_dev_data *data = (struct adxl345_dev_data *) dev->data;
-	const struct adxl345_dev_config *cfg = (const struct adxl345_dev_config *) dev->config;
 	struct rtio_iodev_sqe *current_sqe = data->sqe;
 	data->fifo_entries = FIELD_GET(ADXL345_FIFO_ENTRIES_MSK, data->reg_fifo_status);
 	uint8_t fifo_entries = data->fifo_entries;
@@ -136,29 +184,13 @@ static void adxl345_process_fifo_samples_cb(struct rtio *r, const struct rtio_sq
 
 	for (size_t i = 0; i < fifo_entries; i++) {
 		data->fifo_entries--;
-		struct rtio_sqe *write_fifo_addr = rtio_sqe_acquire(data->rtio_ctx);
-		struct rtio_sqe *read_fifo_data = rtio_sqe_acquire(data->rtio_ctx);
-
-		const uint8_t reg_addr = ADXL345_REG_READ(ADXL345_REG_DATA_XYZ_REGS)
-				| ADXL345_MULTIBYTE_FLAG;
-
-		rtio_sqe_prep_tiny_write(write_fifo_addr, data->iodev, RTIO_PRIO_NORM, &reg_addr,
-								1, NULL);
-		write_fifo_addr->flags |= RTIO_SQE_TRANSACTION;
-		rtio_sqe_prep_read(read_fifo_data, data->iodev, RTIO_PRIO_NORM,
-							(read_buf + i * ADXL345_FIFO_SAMPLE_SIZE),
-							ADXL345_FIFO_SAMPLE_SIZE, current_sqe);
-		if (cfg->bus_type == ADXL345_BUS_I2C) {
-			read_fifo_data->iodev_flags |= RTIO_IODEV_I2C_STOP | RTIO_IODEV_I2C_RESTART;
+		if (adxl345_rtio_reg_read(dev, ADXL345_REG_DATA_XYZ_REGS,
+					  (read_buf + i * ADXL345_FIFO_SAMPLE_SIZE),
+					  ADXL345_FIFO_SAMPLE_SIZE, current_sqe,
+					  (i == fifo_entries - 1) ? adxl345_fifo_read_cb : NULL)) {
+			LOG_WRN("RTIO reading the XYZ regs failed");
+			goto err;
 		}
-		if (i == fifo_entries - 1) {
-			struct rtio_sqe *complete_op = rtio_sqe_acquire(data->rtio_ctx);
-
-			read_fifo_data->flags |= RTIO_SQE_CHAINED;
-			rtio_sqe_prep_callback(complete_op, adxl345_fifo_read_cb, (void *)dev,
-				current_sqe);
-		}
-		rtio_submit(data->rtio_ctx, 0);
 		ARG_UNUSED(rtio_cqe_consume(data->rtio_ctx));
 	}
 
@@ -175,7 +207,6 @@ static void adxl345_process_status1_cb(struct rtio *r, const struct rtio_sqe *sq
 
 	const struct device *dev = (const struct device *)arg;
 	struct adxl345_dev_data *data = (struct adxl345_dev_data *) dev->data;
-	const struct adxl345_dev_config *cfg = (const struct adxl345_dev_config *) dev->config;
 	struct rtio_iodev_sqe *current_sqe = data->sqe;
 	struct sensor_read_config *read_config;
 	uint8_t status1 = data->reg_int_source;
@@ -269,23 +300,12 @@ static void adxl345_process_status1_cb(struct rtio *r, const struct rtio_sqe *sq
 		return;
 	}
 
-	struct rtio_sqe *write_fifo_addr = rtio_sqe_acquire(data->rtio_ctx);
-	struct rtio_sqe *read_fifo_data = rtio_sqe_acquire(data->rtio_ctx);
-	struct rtio_sqe *complete_op = rtio_sqe_acquire(data->rtio_ctx);
-	const uint8_t reg_addr = ADXL345_REG_READ(ADXL345_FIFO_STATUS_REG);
-
-	rtio_sqe_prep_tiny_write(write_fifo_addr, data->iodev, RTIO_PRIO_NORM, &reg_addr, 1, NULL);
-	write_fifo_addr->flags |= RTIO_SQE_TRANSACTION;
-	rtio_sqe_prep_read(read_fifo_data, data->iodev, RTIO_PRIO_NORM, &data->reg_fifo_status,
-			   sizeof(data->reg_fifo_status), current_sqe);
-	read_fifo_data->flags |= RTIO_SQE_CHAINED;
-	if (cfg->bus_type == ADXL345_BUS_I2C) {
-		read_fifo_data->iodev_flags |= RTIO_IODEV_I2C_STOP | RTIO_IODEV_I2C_RESTART;
+	if (adxl345_rtio_reg_read(dev, ADXL345_FIFO_STATUS_REG, &data->reg_fifo_status,
+				  sizeof(data->reg_fifo_status), current_sqe,
+				  adxl345_process_fifo_samples_cb)) {
+		LOG_WRN("Reading the FIFO samples failed");
+		goto err;
 	}
-	rtio_sqe_prep_callback(complete_op, adxl345_process_fifo_samples_cb, (void *)dev,
-							current_sqe);
-
-	rtio_submit(data->rtio_ctx, 0);
 
 	return;
 err:
@@ -374,7 +394,6 @@ void adxl345_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iode
 void adxl345_stream_irq_handler(const struct device *dev)
 {
 	struct adxl345_dev_data *data = (struct adxl345_dev_data *) dev->data;
-	const struct adxl345_dev_config *cfg = (const struct adxl345_dev_config *) dev->config;
 	struct rtio_iodev_sqe *current_sqe = data->sqe;
 	uint64_t cycles;
 	int rc;
@@ -390,24 +409,16 @@ void adxl345_stream_irq_handler(const struct device *dev)
 	}
 
 	data->timestamp = sensor_clock_cycles_to_ns(cycles);
-	struct rtio_sqe *write_status_addr = rtio_sqe_acquire(data->rtio_ctx);
-	struct rtio_sqe *read_status_reg = rtio_sqe_acquire(data->rtio_ctx);
-	struct rtio_sqe *check_status_reg = rtio_sqe_acquire(data->rtio_ctx);
-	uint8_t reg = ADXL345_REG_READ(ADXL345_INT_SOURCE_REG);
 
-	rtio_sqe_prep_tiny_write(write_status_addr, data->iodev,
-				 RTIO_PRIO_NORM, &reg, sizeof(reg), NULL);
-	write_status_addr->flags |= RTIO_SQE_TRANSACTION;
-	rtio_sqe_prep_read(read_status_reg, data->iodev, RTIO_PRIO_NORM,
-			   &data->reg_int_source, sizeof(data->reg_int_source),
-			   NULL);
-	read_status_reg->flags |= RTIO_SQE_CHAINED;
-
-	if (cfg->bus_type == ADXL345_BUS_I2C) {
-		read_status_reg->iodev_flags |= RTIO_IODEV_I2C_STOP | RTIO_IODEV_I2C_RESTART;
+	if (adxl345_rtio_reg_read(dev, ADXL345_INT_SOURCE_REG,
+				  &data->reg_int_source,
+				  sizeof(data->reg_int_source),
+				  NULL, adxl345_process_status1_cb)) {
+		LOG_ERR("Processing the FIFO status failed");
+		goto err;
 	}
-	rtio_sqe_prep_callback(check_status_reg, adxl345_process_status1_cb, (void *)dev, NULL);
-	rtio_submit(data->rtio_ctx, 0);
+
+	adxl345_sqe_done(dev, current_sqe, 0);
 
 	return;
 err:

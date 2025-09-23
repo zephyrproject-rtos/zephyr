@@ -87,22 +87,111 @@ int adxl345_reg_write(const struct device *dev, uint8_t addr, uint8_t *data,
 	return adxl345_reg_access(dev, ADXL345_WRITE_CMD, addr, data, len);
 }
 
-int adxl345_reg_read(const struct device *dev, uint8_t addr, uint8_t *data,
-				   uint8_t len)
+int adxl345_raw_reg_read(const struct device *dev, uint8_t addr,
+			 uint8_t *data, uint8_t len)
 {
 
 	return adxl345_reg_access(dev, ADXL345_READ_CMD, addr, data, len);
 }
 
-int adxl345_reg_write_byte(const struct device *dev, uint8_t addr, uint8_t val)
-{
-	return adxl345_reg_write(dev, addr, &val, 1);
-}
-
 int adxl345_reg_read_byte(const struct device *dev, uint8_t addr, uint8_t *buf)
 
 {
-	return adxl345_reg_read(dev, addr, buf, 1);
+	struct adxl345_dev_data *data = dev->data;
+
+	/* caching for particular config registers */
+	switch (addr) {
+	case ADXL345_POWER_CTL_REG:
+		*buf = data->cache_reg_power_ctl;
+		return 0;
+	case ADXL345_INT_ENABLE_REG:
+		*buf = data->cache_reg_int_enable;
+		return 0;
+	case ADXL345_INT_MAP_REG:
+		*buf = data->cache_reg_int_map;
+		return 0;
+	case ADXL345_DATA_FORMAT_REG:
+		*buf = data->cache_reg_data_format;
+		return 0;
+	case ADXL345_RATE_REG:
+		*buf = data->cache_reg_rate;
+		return 0;
+	case ADXL345_FIFO_CTL_REG:
+		*buf = data->cache_reg_fifo_ctl;
+		return 0;
+	case ADXL345_THRESH_ACT_REG:
+		*buf = data->cache_reg_act_thresh;
+		return 0;
+	default:
+#if defined(CONFIG_ADXL345_STREAM)
+		LOG_DBG("Fall through reading 0x%02x on RTIO might need a %s",
+			addr, "callback for evaluation!");
+		return adxl345_rtio_reg_read(dev, addr, buf, 1, NULL, NULL);
+#else
+		return adxl345_raw_reg_read(dev, addr, buf, 1);
+#endif
+	}
+}
+
+int adxl345_reg_write_byte(const struct device *dev, uint8_t addr, uint8_t val)
+{
+	struct adxl345_dev_data *data = dev->data;
+
+	/* caching for particular config registers */
+	switch (addr) {
+	case ADXL345_POWER_CTL_REG:
+		data->cache_reg_power_ctl = val;
+		break;
+	case ADXL345_INT_ENABLE_REG:
+		data->cache_reg_int_enable = val;
+		break;
+	case ADXL345_INT_MAP_REG:
+		data->cache_reg_int_map = val;
+		break;
+	case ADXL345_DATA_FORMAT_REG:
+		data->cache_reg_data_format = val;
+		break;
+	case ADXL345_RATE_REG:
+		data->cache_reg_rate = val;
+		break;
+	case ADXL345_FIFO_CTL_REG:
+		data->cache_reg_fifo_ctl = val;
+		break;
+	case ADXL345_THRESH_ACT_REG:
+		data->cache_reg_act_thresh = val;
+		break;
+	default:
+		break;
+	}
+
+#if defined(CONFIG_ADXL345_STREAM)
+	const struct adxl345_dev_config *cfg = dev->config;
+	struct rtio_sqe *write_reg_sqe = rtio_sqe_acquire(data->rtio_ctx);
+
+	rtio_sqe_prep_tiny_write(write_reg_sqe, data->iodev, RTIO_PRIO_NORM,
+				 &addr, sizeof(addr), NULL);
+	write_reg_sqe->flags |= RTIO_SQE_TRANSACTION;
+
+	/*
+	 * Use a tiny write for register and an additional write for register
+	 * content. It's not possible to pass two byte directly as tiny write,
+	 * since the sqe buffer was defined holding just one byte.
+	 */
+	struct rtio_sqe *write_buf_sqe = rtio_sqe_acquire(data->rtio_ctx);
+
+	rtio_sqe_prep_tiny_write(write_buf_sqe, data->iodev, RTIO_PRIO_NORM,
+				 &val, sizeof(val), NULL);
+
+	if (cfg->bus_type == ADXL345_BUS_I2C) {
+		write_buf_sqe->iodev_flags |= RTIO_IODEV_I2C_STOP | RTIO_IODEV_I2C_RESTART;
+	}
+
+	rtio_submit(data->rtio_ctx, 2); /* keep control commands blocking */
+
+	return 0;
+#else
+	return adxl345_reg_write(dev, addr, &val, 1);
+#endif
 }
 
 int adxl345_reg_write_mask(const struct device *dev,
@@ -175,8 +264,8 @@ int adxl345_flush_fifo(const struct device *dev)
 
 	sample_number = adxl345_get_fifo_entries(dev);
 	while (sample_number >= 0) { /* Read FIFO entries + 1 sample lines */
-		rc = adxl345_reg_read(dev, ADXL345_REG_DATA_XYZ_REGS,
-				      &regval, ADXL345_FIFO_SAMPLE_SIZE);
+		rc = adxl345_raw_reg_read(dev, ADXL345_REG_DATA_XYZ_REGS,
+					  &regval, ADXL345_FIFO_SAMPLE_SIZE);
 		if (rc) {
 			return rc;
 		}
@@ -314,8 +403,8 @@ int adxl345_read_sample(const struct device *dev,
 	uint8_t axis_data[ADXL345_FIFO_SAMPLE_SIZE];
 	int rc;
 
-	rc = adxl345_reg_read(dev, ADXL345_REG_DATA_XYZ_REGS,
-			      axis_data, ADXL345_FIFO_SAMPLE_SIZE);
+	rc = adxl345_raw_reg_read(dev, ADXL345_REG_DATA_XYZ_REGS,
+				  axis_data, ADXL345_FIFO_SAMPLE_SIZE);
 	if (rc < 0) {
 		LOG_ERR("Samples read failed with rc=%d\n", rc);
 		return rc;
@@ -474,19 +563,41 @@ static int adxl345_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	rc = adxl345_reg_read_byte(dev, ADXL345_DEVICE_ID_REG, &dev_id);
+	rc = adxl345_raw_reg_read(dev, ADXL345_DEVICE_ID_REG, &dev_id, 1);
 	if (rc < 0 || dev_id != ADXL345_PART_ID) {
 		LOG_ERR("Read PART ID failed: 0x%x\n", rc);
 		return -ENODEV;
 	}
 
-#if CONFIG_ADXL345_STREAM
-	rc = adxl345_reg_write_byte(dev, ADXL345_FIFO_CTL_REG, ADXL345_FIFO_STREAM_MODE);
-	if (rc < 0) {
-		LOG_ERR("FIFO enable failed\n");
-		return -EIO;
+	/*
+	 * Preset used config registers and init caches in order to use bit
+	 * changes also for STREAM mode in a more efficient way
+	 */
+	rc = adxl345_reg_write_byte(dev, ADXL345_POWER_CTL_REG, 0x00);
+	if (rc) {
+		return rc;
 	}
-#endif
+
+	rc = adxl345_reg_write_byte(dev, ADXL345_INT_ENABLE_REG, 0x00);
+	if (rc) {
+		return rc;
+	}
+
+	rc = adxl345_reg_write_byte(dev, ADXL345_INT_MAP_REG, 0x00);
+	if (rc) {
+		return rc;
+	}
+
+	rc = adxl345_reg_write_byte(dev, ADXL345_RATE_REG, 0x00);
+	if (rc) {
+		return rc;
+	}
+
+	rc = adxl345_reg_write_byte(dev, ADXL345_FIFO_CTL_REG, ADXL345_FIFO_CTL_MODE_BYPASSED);
+	if (rc) {
+		return rc;
+	}
+
 	data->selected_range = ADXL345_RANGE_8G;
 	data->is_full_res = true;
 
@@ -532,9 +643,8 @@ static int adxl345_init(const struct device *dev)
 		 * soldered. Anyway, for individual interrupt mapping, set up
 		 * DTB bindings.
 		 */
-		uint8_t int_mask = UCHAR_MAX;
 
-		rc = adxl345_reg_assign_bits(dev, ADXL345_INT_MAP_REG, int_mask,
+		rc = adxl345_reg_assign_bits(dev, ADXL345_INT_MAP_REG, UCHAR_MAX,
 					     (cfg->drdy_pad == 2));
 		if (rc) {
 			return rc;
