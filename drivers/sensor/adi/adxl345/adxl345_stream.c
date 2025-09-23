@@ -122,6 +122,25 @@ static int adxl345_rtio_init_buffer(struct adxl345_dev_data *data,
 	return 0;
 }
 
+static int adxl345_rtio_cqe_consume(struct adxl345_dev_data *data)
+{
+	struct rtio_cqe *cqe = rtio_cqe_consume(data->rtio_ctx);
+	int res = 0;
+
+	do {
+		cqe = rtio_cqe_consume(data->rtio_ctx);
+		if (cqe) {
+			if ((cqe->result < 0 && res == 0)) {
+				LOG_ERR("Bus error: %d", cqe->result);
+				res = cqe->result;
+			}
+			rtio_cqe_release(data->rtio_ctx, cqe);
+		}
+	} while (cqe);
+
+	return res;
+}
+
 /* streaming callbacks and calls */
 
 static void adxl345_irq_en_cb(struct rtio *r, const struct rtio_sqe *sqe, int result, void *arg)
@@ -173,25 +192,9 @@ static void adxl345_process_fifo_samples_cb(struct rtio *r, const struct rtio_sq
 	}
 
 	/* Flush completions */
-	struct rtio_cqe *cqe;
-	int res = 0;
-
-	do {
-		cqe = rtio_cqe_consume(data->rtio_ctx);
-		if (cqe != NULL) {
-			if ((cqe->result < 0 && res == 0)) {
-				LOG_ERR("Bus error: %d", cqe->result);
-				res = cqe->result;
-			}
-			rtio_cqe_release(data->rtio_ctx, cqe);
-		}
-	} while (cqe != NULL);
-
-	/* Bail/cancel attempt to read sensor on any error */
-	if (res != 0) {
+	if (adxl345_rtio_cqe_consume(data)) {
 		goto err;
 	}
-
 
 	for (size_t i = 0; i < fifo_entries; i++) {
 		data->fifo_entries--;
@@ -257,30 +260,16 @@ static void adxl345_process_status1_cb(struct rtio *r, const struct rtio_sqe *sq
 		goto err;
 	}
 
-	/* Flush completions */
-	struct rtio_cqe *cqe;
-	int res = 0;
-
-	do {
-		cqe = rtio_cqe_consume(data->rtio_ctx);
-		if (cqe != NULL) {
-			if ((cqe->result < 0) && (res == 0)) {
-				LOG_ERR("Bus error: %d", cqe->result);
-				res = cqe->result;
-			}
-			rtio_cqe_release(data->rtio_ctx, cqe);
-		}
-	} while (cqe != NULL);
-
-	/* Bail/cancel attempt to read sensor on any error */
-	if (res != 0) {
-		goto err;
-	}
-
 	enum sensor_stream_data_opt data_opt;
 
 	if (fifo_wmark_cfg != NULL) {
 		data_opt = fifo_wmark_cfg->opt;
+	}
+
+	/* Flush completions, in case cancel out */
+	if (adxl345_rtio_cqe_consume(data)) {
+		LOG_WRN("CQE consume failed");
+		goto err;
 	}
 
 	if (data_opt == SENSOR_STREAM_DATA_NOP || data_opt == SENSOR_STREAM_DATA_DROP) {
