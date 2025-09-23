@@ -86,6 +86,10 @@ jobs:
           gcc --version
           ls -la
 
+      - name: Install Python packages
+        run: |
+          pip install -r scripts/requirements-actions.txt --require-hashes
+
       - name: Set up ccache
         run: |
           mkdir -p ${CCACHE_DIR}
