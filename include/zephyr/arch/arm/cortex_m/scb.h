@@ -23,9 +23,16 @@
 	defined(CONFIG_CPU_CORTEX_M1) || \
 	defined(CONFIG_CPU_CORTEX_M23)
 #define SHPR_SIZE_W 2
+#define SHPR_REG ((volatile uint32_t *)SCB->SHP)
 #else
 #define SHPR_SIZE_W 3
 #define CPACR_PRESENT 1
+#if defined(CONFIG_CPU_CORTEX_M3) || \
+	defined(CONFIG_CPU_CORTEX_M4)
+#define SHPR_REG ((volatile uint32_t *)SCB->SHP)
+#else
+#define SHPR_REG ((volatile uint32_t *)SCB->SHPR)
+#endif
 #endif
 
 /**
