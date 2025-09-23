@@ -313,6 +313,7 @@ int bch_decode(bch_t *bch, uint8_t *data, uint8_t *ecc)
 	memcpy(bch->ecc2, ecc, bch->ecc_bytes);
 	for (i = 0; i < bch->ecc_words; i++) {
 		uint32_t ecc_word_le = swap32_byte(bch->ecc2[i]);
+
 		LOG_ERR("<word %d> %08X : %08X %s\r\n", i, bch->ecc[i], ecc_word_le,
 			bch->ecc[i] != ecc_word_le ? "**" : "");
 		bch->ecc[i] ^= ecc_word_le;

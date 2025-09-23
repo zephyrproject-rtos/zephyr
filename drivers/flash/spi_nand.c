@@ -168,14 +168,8 @@ static int spi_nand_access(const struct device *const dev, uint8_t opcode, unsig
 	uint8_t buf[5] = {0};
 	uint8_t address_len = 0;
 	struct spi_buf spi_buf[2] = {
-		{
-			.buf = buf,
-			.len = 1,
-		},
-		{
-			.buf = data,
-			.len = length
-		},
+		{.buf = buf, .len = 1},
+		{.buf = data, .len = length},
 	};
 
 	buf[0] = opcode;

@@ -7,7 +7,7 @@
 #define _BCH_H
 
 #include <stdint.h>
-#define ROUNDUP_DIV(_val, _base) (((_base)-1 + (_val)) / (_base))
+#define ROUNDUP_DIV(_val, _base) (((_base) - 1 + (_val)) / (_base))
 
 typedef struct _bch {
 	bool le; /* little endian */
