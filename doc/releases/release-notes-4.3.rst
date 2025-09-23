@@ -187,6 +187,11 @@ New APIs and options
 
    * :c:func:`pm_device_driver_deinit`
    * :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME_DEFAULT_ENABLE`
+   * :kconfig:option:`CONFIG_PM_S2RAM` has been refactored to be promptless. The application now
+     only needs to enable any "suspend-to-ram" power state in the devicetree.
+   * The :kconfig:option:`PM_S2RAM_CUSTOM_MARKING` has been renamed to
+     :kconfig:option:`HAS_PM_S2RAM_CUSTOM_MARKING` and refactored to be promptless. This option
+     is now selected by SoCs if they need it for their "suspend-to-ram" implementations.
 
 * Settings
 
