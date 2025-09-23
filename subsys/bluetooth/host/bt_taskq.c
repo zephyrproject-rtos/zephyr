@@ -16,10 +16,8 @@ struct k_work_q bt_taskq;
 
 static int bt_taskq_init(void)
 {
-	const struct k_work_queue_config cfg = {
+	struct k_work_queue_config cfg = {
 		.name = "bt_taskq",
-		/* Enable CONFIG_WORKQUEUE_WORK_TIMEOUT to detect tasks that take too long. */
-		.work_timeout_ms = 10,
 	};
 
 	k_work_queue_start(&bt_taskq, bt_taskq_stack, K_THREAD_STACK_SIZEOF(bt_taskq_stack),

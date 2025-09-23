@@ -48,6 +48,7 @@
 
 #include "addr_internal.h"
 #include "adv.h"
+#include "bt_taskq.h"
 #include "common/hci_common_internal.h"
 #include "common/bt_str.h"
 #include "common/rpa.h"
@@ -281,8 +282,6 @@ void bt_send_one_host_num_completed_packets(uint16_t handle)
 	err = bt_hci_cmd_send(BT_HCI_OP_HOST_NUM_COMPLETED_PACKETS, buf);
 	BT_ASSERT_MSG(err == 0, "Unable to send Host NCP (err %d)", err);
 }
-
-#include "bt_taskq.h"
 
 #if defined(CONFIG_BT_TESTING)
 __weak void bt_testing_trace_event_acl_pool_destroy(struct net_buf *buf)
@@ -5038,5 +5037,5 @@ static K_WORK_DEFINE(tx_work, tx_processor);
 void bt_tx_irq_raise(void)
 {
 	LOG_DBG("kick TX");
-	k_work_submit(&tx_work);
+	k_work_submit_to_queue(&bt_taskq, &tx_work);
 }
