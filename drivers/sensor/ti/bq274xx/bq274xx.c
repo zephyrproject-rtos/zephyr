@@ -363,7 +363,7 @@ static int bq274xx_ensure_chemistry(const struct device *dev)
 
 		uint16_t cmd;
 
-		switch (val) {
+		switch (chem_id) {
 		case BQ27427_CHEM_ID_A:
 			cmd = BQ27427_CTRL_CHEM_A;
 			break;

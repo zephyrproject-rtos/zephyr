@@ -81,7 +81,8 @@ static int flash_stm32_check_status(const struct device *dev)
 
 int flash_stm32_wait_flash_idle(const struct device *dev)
 {
-	int64_t timeout_time = k_uptime_get() + STM32_FLASH_TIMEOUT;
+	k_timepoint_t timeout = sys_timepoint_calc(K_MSEC(STM32_FLASH_TIMEOUT));
+	bool expired = false;
 	int rc;
 	uint32_t busy_flags;
 
@@ -98,10 +99,16 @@ int flash_stm32_wait_flash_idle(const struct device *dev)
 #endif
 
 	while ((FLASH_STM32_REGS(dev)->FLASH_STM32_SR & busy_flags)) {
-		if (k_uptime_get() > timeout_time) {
-			LOG_ERR("Timeout! val: %d", STM32_FLASH_TIMEOUT);
+		if (expired) {
+			LOG_ERR("Timeout! val: %d ms", STM32_FLASH_TIMEOUT);
 			return -EIO;
 		}
+
+		/* Check if expired, but always read status register one more time.
+		 * If the calling thread is pre-emptive we may have been scheduled out after reading
+		 * the status register, and scheduled back after timeout has expired.
+		 */
+		expired = sys_timepoint_expired(timeout);
 	}
 
 	return 0;
@@ -112,7 +119,8 @@ static void flash_stm32_flush_caches(const struct device *dev,
 {
 #if defined(CONFIG_SOC_SERIES_STM32F0X) || defined(CONFIG_SOC_SERIES_STM32F3X) || \
 	defined(CONFIG_SOC_SERIES_STM32G0X) || defined(CONFIG_SOC_SERIES_STM32L5X) || \
-	defined(CONFIG_SOC_SERIES_STM32U5X) || defined(CONFIG_SOC_SERIES_STM32H5X)
+	defined(CONFIG_SOC_SERIES_STM32U3X) || defined(CONFIG_SOC_SERIES_STM32U5X) || \
+	defined(CONFIG_SOC_SERIES_STM32H5X)
 	ARG_UNUSED(dev);
 	ARG_UNUSED(offset);
 	ARG_UNUSED(len);

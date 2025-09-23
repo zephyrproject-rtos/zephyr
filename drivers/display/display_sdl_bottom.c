@@ -109,7 +109,7 @@ int sdl_display_init_bottom(uint16_t height, uint16_t width, uint16_t zoom_pct,
 void sdl_display_write_bottom(const uint16_t height, const uint16_t width, const uint16_t x,
 			      const uint16_t y, void *renderer, void *mutex, void *texture,
 			      void *background_texture, uint8_t *buf, bool display_on,
-			      bool frame_incomplete)
+			      bool frame_incomplete, uint32_t color_tint)
 {
 	SDL_Rect rect;
 	int err;
@@ -130,7 +130,12 @@ void sdl_display_write_bottom(const uint16_t height, const uint16_t width, const
 	if (display_on && !frame_incomplete) {
 		SDL_RenderClear(renderer);
 		SDL_RenderCopy(renderer, background_texture, NULL, NULL);
+		SDL_SetTextureColorMod(texture,
+				       (color_tint >> 16) & 0xff,
+				       (color_tint >> 8) & 0xff,
+				       color_tint & 0xff);
 		SDL_RenderCopy(renderer, texture, NULL, NULL);
+		SDL_SetTextureColorMod(texture, 255, 255, 255);
 		SDL_RenderPresent(renderer);
 	}
 
@@ -171,11 +176,17 @@ int sdl_display_read_bottom(const uint16_t height, const uint16_t width,
 	return err;
 }
 
-void sdl_display_blanking_off_bottom(void *renderer, void *texture, void *background_texture)
+void sdl_display_blanking_off_bottom(void *renderer, void *texture, void *background_texture,
+				     uint32_t color_tint)
 {
 	SDL_RenderClear(renderer);
 	SDL_RenderCopy(renderer, background_texture, NULL, NULL);
+	SDL_SetTextureColorMod(texture,
+			       (color_tint >> 16) & 0xff,
+			       (color_tint >> 8) & 0xff,
+			       color_tint & 0xff);
 	SDL_RenderCopy(renderer, texture, NULL, NULL);
+	SDL_SetTextureColorMod(texture, 255, 255, 255);
 	SDL_RenderPresent(renderer);
 }
 

@@ -1,0 +1,22 @@
+# PCAL9722 GPIO configuration options
+
+# Copyright 2025 Michael Estes
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig GPIO_PCAL9722
+	bool "PCAL9722 SPI GPIO chip"
+	default y
+	depends on DT_HAS_NXP_PCAL9722_ENABLED
+	depends on SPI
+	help
+	  Enable driver for PCAL9722 SPI GPIO chip.
+
+if GPIO_PCAL9722
+
+config GPIO_PCAL9722_INIT_PRIORITY
+	int "Init priority"
+	default 70
+	help
+	  PCAL9722 Device driver initialization priority.
+
+endif # GPIO_PCAL9722

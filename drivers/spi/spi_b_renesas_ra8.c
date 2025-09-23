@@ -86,6 +86,7 @@ static int ra_spi_b_configure(const struct device *dev, const struct spi_config 
 {
 	struct ra_spi_data *data = dev->data;
 	fsp_err_t fsp_err;
+	uint8_t word_size = SPI_WORD_SIZE_GET(config->operation);
 
 	if (spi_context_configured(&data->ctx, config)) {
 		/* Nothing to do */
@@ -97,6 +98,11 @@ static int ra_spi_b_configure(const struct device *dev, const struct spi_config 
 	}
 
 	if ((config->operation & SPI_FRAME_FORMAT_TI) == SPI_FRAME_FORMAT_TI) {
+		return -ENOTSUP;
+	}
+
+	if (word_size < 4 || word_size > 32) {
+		LOG_ERR("Unsupported SPI word size: %u", word_size);
 		return -ENOTSUP;
 	}
 
@@ -142,7 +148,7 @@ static int ra_spi_b_configure(const struct device *dev, const struct spi_config 
 	data->fsp_config.p_extend = &data->fsp_config_extend;
 
 	data->fsp_config.p_callback = spi_cb;
-	data->fsp_config.p_context = dev;
+	data->fsp_config.p_context = (void *)dev;
 	fsp_err = R_SPI_B_Open(&data->spi, &data->fsp_config);
 	if (fsp_err != FSP_SUCCESS) {
 		LOG_ERR("R_SPI_B_Open error: %d", fsp_err);
@@ -306,6 +312,11 @@ static int transceive(const struct device *dev, const struct spi_config *config,
 	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, data->dfs);
 
 	spi_context_cs_control(&data->ctx, true);
+
+	if ((!spi_context_tx_buf_on(&data->ctx)) && (!spi_context_rx_buf_on(&data->ctx))) {
+		/* If current buffer has no data, do nothing */
+		goto end;
+	}
 
 #ifdef CONFIG_SPI_B_INTERRUPT
 	spi_bit_width_t spi_width =
@@ -622,6 +633,11 @@ static void ra_spi_eri_isr(const struct device *dev)
 			EVENT_SPI_TEI(DT_INST_PROP(index, channel));                               \
 		R_ICU->IELSR[DT_INST_IRQ_BY_NAME(index, eri, irq)] =                               \
 			EVENT_SPI_ERI(DT_INST_PROP(index, channel));                               \
+                                                                                                   \
+		BSP_ASSIGN_EVENT_TO_CURRENT_CORE(EVENT_SPI_RXI(DT_INST_PROP(index, channel)));     \
+		BSP_ASSIGN_EVENT_TO_CURRENT_CORE(EVENT_SPI_TXI(DT_INST_PROP(index, channel)));     \
+		BSP_ASSIGN_EVENT_TO_CURRENT_CORE(EVENT_SPI_TEI(DT_INST_PROP(index, channel)));     \
+		BSP_ASSIGN_EVENT_TO_CURRENT_CORE(EVENT_SPI_ERI(DT_INST_PROP(index, channel)));     \
                                                                                                    \
 		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, rxi, irq),                                  \
 			    DT_INST_IRQ_BY_NAME(index, rxi, priority), ra_spi_rxi_isr,             \

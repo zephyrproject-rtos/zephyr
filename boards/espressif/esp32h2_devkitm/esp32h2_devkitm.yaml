@@ -1,0 +1,14 @@
+identifier: esp32h2_devkitm/esp32h2
+name: ESP32-H2-DevKitM
+vendor: espressif
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - watchdog
+  - uart
+  - counter
+  - entropy
+  - spi

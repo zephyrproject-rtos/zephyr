@@ -3,5 +3,3 @@
 
 config BOARD_INTEL_SOCFPGA_AGILEX_SOCDK
 	select SOC_AGILEX
-	help
-	  Intel SoC FPGA Development Kit (Agilex)

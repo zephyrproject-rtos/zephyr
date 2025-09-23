@@ -227,7 +227,7 @@ NET_DEVICE_INIT(net_test_igmp, "net_test_igmp",
 		127);
 
 static void group_joined(struct net_mgmt_event_callback *cb,
-			 uint32_t nm_event, struct net_if *iface)
+			 uint64_t nm_event, struct net_if *iface)
 {
 	if (nm_event != NET_EVENT_IPV4_MCAST_JOIN) {
 		/* Spurious callback. */
@@ -240,7 +240,7 @@ static void group_joined(struct net_mgmt_event_callback *cb,
 }
 
 static void group_left(struct net_mgmt_event_callback *cb,
-			 uint32_t nm_event, struct net_if *iface)
+			 uint64_t nm_event, struct net_if *iface)
 {
 	if (nm_event != NET_EVENT_IPV4_MCAST_LEAVE) {
 		/* Spurious callback. */
@@ -253,7 +253,7 @@ static void group_left(struct net_mgmt_event_callback *cb,
 }
 
 static struct mgmt_events {
-	uint32_t event;
+	uint64_t event;
 	net_mgmt_event_handler_t handler;
 	struct net_mgmt_event_callback cb;
 } mgmt_events[] = {
@@ -596,7 +596,7 @@ static void igmp_send_query(bool is_imgpv3)
 	pkt = prepare_igmp_query(net_iface, is_imgpv3);
 	zassert_not_null(pkt, "IGMPv2 query packet prep failed");
 
-	zassert_equal(net_ipv4_input(pkt, false), NET_OK, "Failed to send");
+	zassert_equal(net_ipv4_input(pkt), NET_OK, "Failed to send");
 
 	zassert_ok(k_sem_take(&wait_data, K_MSEC(WAIT_TIME)), "Timeout while waiting query event");
 

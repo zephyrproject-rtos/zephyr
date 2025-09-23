@@ -27,6 +27,11 @@
 #define ACMP_POSITIVE 4
 #define ACMP_NEGATIVE 4
 #define ACMP_DAC_VREF 0
+#elif (defined(CONFIG_BOARD_MIMXRT700_EVK))
+#define ACMP_NODE  DT_NODELABEL(acmp)
+#define ACMP_POSITIVE 1
+#define ACMP_NEGATIVE 7
+#define ACMP_DAC_VREF 1
 #else
 #error Unsupported board
 #endif
@@ -97,7 +102,16 @@ static void acmp_trigger_handler(const struct device *dev,
 
 int main(void)
 {
-	struct sensor_trigger trigger;
+	struct sensor_trigger trigger[ARRAY_SIZE(triggers)] = {
+		[0] = {
+				.chan = SENSOR_CHAN_MCUX_ACMP_OUTPUT,
+				.type = triggers[0],
+			},
+		[1] = {
+			.chan = SENSOR_CHAN_MCUX_ACMP_OUTPUT,
+			.type = triggers[1],
+		}};
+
 	const struct device *const acmp = DEVICE_DT_GET(ACMP_NODE);
 	struct sensor_value val;
 	int err;
@@ -124,10 +138,8 @@ int main(void)
 	k_sleep(K_MSEC(1));
 
 	/* Set ACMP triggers */
-	trigger.chan = SENSOR_CHAN_MCUX_ACMP_OUTPUT;
 	for (i = 0; i < ARRAY_SIZE(triggers); i++) {
-		trigger.type = triggers[i];
-		err = sensor_trigger_set(acmp, &trigger, acmp_trigger_handler);
+		err = sensor_trigger_set(acmp, &trigger[i], acmp_trigger_handler);
 		if (err) {
 			printf("failed to set trigger %d (err %d)", i, err);
 			return 0;

@@ -1,0 +1,205 @@
+/*
+ * Copyright (c) 2025 Pete Johanson
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+/* The build system assumes that there's a cpucluster-specific file.
+ *
+ * This file provides composition of the device tree:
+ * 1. The common features of the SoC
+ * 2. Core-specific configuration.
+ * 3. Board-specific configuration.
+ */
+#include <raspberrypi/rpi_pico/rp2350b.dtsi>
+#include <raspberrypi/rpi_pico/m33.dtsi>
+
+#include <freq.h>
+
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/led/led.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+#include "adafruit_metro_rp2350-pinctrl.dtsi"
+
+/ {
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,code-partition = &code_partition;
+	};
+
+	aliases {
+		watchdog0 = &wdt0;
+		led-strip = &ws2812;
+		led0 = &user_led;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		user_led: user_led {
+			gpios = <&gpio0 23 GPIO_ACTIVE_LOW>;
+			label = "USER_LED";
+		};
+	};
+
+	arduino_header: connector {
+		compatible = "arduino-header-r3";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map =
+			   <ARDUINO_HEADER_R3_A0 0 &gpio0_hi 9 0>,
+			   <ARDUINO_HEADER_R3_A1 0 &gpio0_hi 10 0>,
+			   <ARDUINO_HEADER_R3_A2 0 &gpio0_hi 11 0>,
+			   <ARDUINO_HEADER_R3_A3 0 &gpio0_hi 12 0>,
+			   <ARDUINO_HEADER_R3_A4 0 &gpio0_hi 13 0>,
+			   <ARDUINO_HEADER_R3_A5 0 &gpio0_hi 14 0>,
+			   <ARDUINO_HEADER_R3_D0 0 &gpio0 1 0>,
+			   <ARDUINO_HEADER_R3_D1 0 &gpio0 0 0>,
+			   <ARDUINO_HEADER_R3_D2 0 &gpio0 2 0>,
+			   <ARDUINO_HEADER_R3_D3 0 &gpio0 3 0>,
+			   <ARDUINO_HEADER_R3_D4 0 &gpio0 4 0>,
+			   <ARDUINO_HEADER_R3_D5 0 &gpio0 5 0>,
+			   <ARDUINO_HEADER_R3_D6 0 &gpio0 6 0>,
+			   <ARDUINO_HEADER_R3_D7 0 &gpio0 7 0>,
+			   <ARDUINO_HEADER_R3_D8 0 &gpio0 8 0>,
+			   <ARDUINO_HEADER_R3_D9 0 &gpio0 9 0>,
+			   <ARDUINO_HEADER_R3_D10 0 &gpio0 10 0>,
+			   <ARDUINO_HEADER_R3_D11 0 &gpio0 11 0>,
+			   <ARDUINO_HEADER_R3_D12 0 &gpio0 22 0>,
+			   <ARDUINO_HEADER_R3_D13 0 &gpio0 23 0>,
+			   <ARDUINO_HEADER_R3_D14 0 &gpio0 16 0>,
+			   <ARDUINO_HEADER_R3_D15 0 &gpio0 17 0>;
+	};
+
+	arduino_adc: analog-connector {
+		compatible = "arduino,uno-adc";
+		#io-channel-cells = <1>;
+		io-channel-map = <0 &adc 1>,	/* A0 = GPIO41 = ADC1 */
+				 <1 &adc 2>,	/* A1 = GPIO42 = ADC2 */
+				 <2 &adc 3>,	/* A2 = GPIO43 = ADC3 */
+				 <3 &adc 4>,	/* A3 = GPIO44 = ADC4 */
+				 <4 &adc 5>,	/* A4 = GPIO45 = ADC5 */
+				 <5 &adc 6>;	/* A5 = GPIO46 = ADC6 */
+	};
+};
+
+&flash0 {
+	reg = <0x10000000 DT_SIZE_M(16)>;
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Reserved memory for an image definition block. The block is much
+		 * smaller than 256 bytes, but in practice the linker places the vector
+		 * table at a much larger alignment offset.
+		 */
+		image_def: partition@0 {
+			label = "image_def";
+			reg = <0x00000000 0x100>;
+			read-only;
+		};
+
+		/*
+		 * Usable flash. Starts at 0x100, after the image definition block.
+		 * The partition size is 4MB minus the 0x100 bytes taken by the
+		 * image definition.
+		 */
+		code_partition: partition@100 {
+			label = "code-partition";
+			reg = <0x100 (DT_SIZE_M(16) - 0x100)>;
+			read-only;
+		};
+	};
+};
+
+&uart0 {
+	current-speed = <115200>;
+	status = "okay";
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&i2c0 {
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&adc {
+	pinctrl-0 = <&adc_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&pwm {
+	pinctrl-0 = <&pwm_default>;
+	pinctrl-names = "default";
+	divider-int-0 = <255>;
+};
+
+&timer0 {
+	status = "okay";
+};
+
+zephyr_udc0: &usbd {
+	status = "okay";
+};
+
+&pio0 {
+	status = "okay";
+
+	arduion_spi: pio0_spi0 {
+		compatible = "raspberrypi,pico-spi-pio";
+		clocks = < &clocks RPI_PICO_CLKID_CLK_SYS >;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		cs-gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
+		clk-gpios = <&gpio0 13 GPIO_ACTIVE_HIGH>;
+		mosi-gpios = <&gpio0 11 GPIO_ACTIVE_HIGH>;
+		miso-gpios = <&gpio0 12 GPIO_ACTIVE_HIGH>;
+		pinctrl-0 = <&pio0_spi0_default>;
+		pinctrl-names = "default";
+	};
+};
+
+&pio1 {
+	status = "okay";
+
+	pio-ws2812 {
+		compatible = "worldsemi,ws2812-rpi_pico-pio";
+		status = "okay";
+		pinctrl-0 = <&pio1_ws2812_default>;
+		pinctrl-names = "default";
+		bit-waveform = <3>, <3>, <4>;
+
+		ws2812: ws2812 {
+			status = "okay";
+			gpios = <&gpio0 25 GPIO_ACTIVE_HIGH>;
+			chain-length = <1>;
+			color-mapping = <LED_COLOR_ID_GREEN
+					LED_COLOR_ID_RED
+					LED_COLOR_ID_BLUE>;
+			reset-delay = <280>;
+			frequency = <800000>;
+		};
+	};
+};
+
+
+arduino_serial: &uart0 {};
+arduino_i2c: &i2c0 {};

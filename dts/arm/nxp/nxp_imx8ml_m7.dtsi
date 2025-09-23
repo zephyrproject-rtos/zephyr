@@ -170,6 +170,90 @@
 			status = "disabled";
 		};
 
+		i2c1: i2c@30a20000 {
+			compatible = "nxp,ii2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x30a20000 0x10000>;
+			interrupts = <35 0>;
+			clocks = <&ccm IMX_CCM_I2C1_CLK 0 0>;
+			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,\
+						RDC_DOMAIN_PERM_RW)|\
+					RDC_DOMAIN_PERM(M7_DOMAIN_ID,\
+						RDC_DOMAIN_PERM_RW))>;
+			status = "disabled";
+		};
+
+		i2c2: i2c@30a30000 {
+			compatible = "nxp,ii2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x30a30000 0x10000>;
+			interrupts = <36 0>;
+			clocks = <&ccm IMX_CCM_I2C2_CLK 0 0>;
+			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,\
+							RDC_DOMAIN_PERM_RW)|\
+					RDC_DOMAIN_PERM(M7_DOMAIN_ID,\
+							RDC_DOMAIN_PERM_RW))>;
+			status = "disabled";
+		};
+
+		i2c3: i2c@30a40000 {
+			compatible = "nxp,ii2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x30a40000 0x10000>;
+			interrupts = <37 0>;
+			clocks = <&ccm IMX_CCM_I2C3_CLK 0 0>;
+			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,\
+							RDC_DOMAIN_PERM_RW)|\
+					RDC_DOMAIN_PERM(M7_DOMAIN_ID,\
+							RDC_DOMAIN_PERM_RW))>;
+			status = "disabled";
+		};
+
+		i2c4: i2c@30a50000 {
+			compatible = "nxp,ii2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x30a50000 0x10000>;
+			interrupts = <38 0>;
+			clocks = <&ccm IMX_CCM_I2C4_CLK 0 0>;
+			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,\
+							RDC_DOMAIN_PERM_RW)|\
+					RDC_DOMAIN_PERM(M7_DOMAIN_ID,\
+							RDC_DOMAIN_PERM_RW))>;
+			status = "disabled";
+		};
+
+		i2c5: i2c@30ad0000 {
+			compatible = "nxp,ii2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x30ad0000 0x10000>;
+			interrupts = <76 0>;
+			clocks = <&ccm IMX_CCM_I2C5_CLK 0 0>;
+			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,\
+							RDC_DOMAIN_PERM_RW)|\
+					RDC_DOMAIN_PERM(M7_DOMAIN_ID,\
+							RDC_DOMAIN_PERM_RW))>;
+			status = "disabled";
+		};
+
+		i2c6: i2c@30ae0000 {
+			compatible = "nxp,ii2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x30ae0000 0x10000>;
+			interrupts = <77 0>;
+			clocks = <&ccm IMX_CCM_I2C6_CLK 0 0>;
+			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,\
+							RDC_DOMAIN_PERM_RW)|\
+					RDC_DOMAIN_PERM(M7_DOMAIN_ID,\
+							RDC_DOMAIN_PERM_RW))>;
+			status = "disabled";
+		};
+
 		mailbox0: mailbox@30ab0000 {
 			compatible = "nxp,imx-mu";
 			reg = <0x30ab0000 DT_SIZE_K(64)>;

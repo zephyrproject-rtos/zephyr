@@ -139,6 +139,98 @@ done:
 	return 0;
 }
 
+#ifdef CONFIG_ARM64_DCACHE_ALL_OPS
+
+/*
+ * operation for all data cache
+ * ops:  K_CACHE_INVD: invalidate
+ *	 K_CACHE_WB: clean
+ *	 K_CACHE_WB_INVD: clean and invalidate
+ */
+static ALWAYS_INLINE int arm64_dcache_all(int op)
+{
+	uint32_t clidr_el1, csselr_el1, ccsidr_el1;
+	uint8_t loc, ctype, cache_level, line_size, way_pos;
+	uint32_t max_ways, max_sets, dc_val, set, way;
+
+	if (op != K_CACHE_INVD && op != K_CACHE_WB && op != K_CACHE_WB_INVD) {
+		return -ENOTSUP;
+	}
+
+	/* Data barrier before start */
+	barrier_dsync_fence_full();
+
+	clidr_el1 = read_clidr_el1();
+
+	loc = (clidr_el1 >> CLIDR_EL1_LOC_SHIFT) & CLIDR_EL1_LOC_MASK;
+	if (!loc) {
+		return 0;
+	}
+
+	for (cache_level = 0; cache_level < loc; cache_level++) {
+		ctype = (clidr_el1 >> CLIDR_EL1_CTYPE_SHIFT(cache_level)) & CLIDR_EL1_CTYPE_MASK;
+		/* No data cache, continue */
+		if (ctype < 2) {
+			continue;
+		}
+
+		/* select cache level */
+		csselr_el1 = cache_level << 1;
+		write_csselr_el1(csselr_el1);
+		barrier_isync_fence_full();
+
+		ccsidr_el1 = read_ccsidr_el1();
+		line_size = (ccsidr_el1 >> CCSIDR_EL1_LN_SZ_SHIFT & CCSIDR_EL1_LN_SZ_MASK) + 4;
+		max_ways = (ccsidr_el1 >> CCSIDR_EL1_WAYS_SHIFT) & CCSIDR_EL1_WAYS_MASK;
+		max_sets = (ccsidr_el1 >> CCSIDR_EL1_SETS_SHIFT) & CCSIDR_EL1_SETS_MASK;
+		/* 32-log2(ways), bit position of way in DC operand */
+		way_pos = __builtin_clz(max_ways);
+
+		for (set = 0; set <= max_sets; set++) {
+			for (way = 0; way <= max_ways; way++) {
+				/* way number, aligned to pos in DC operand */
+				dc_val = way << way_pos;
+				/* cache level, aligned to pos in DC operand */
+				dc_val |= csselr_el1;
+				/* set number, aligned to pos in DC operand */
+				dc_val |= set << line_size;
+
+				if (op == K_CACHE_INVD) {
+					dc_ops("isw", dc_val);
+				} else if (op == K_CACHE_WB_INVD) {
+					dc_ops("cisw", dc_val);
+				} else if (op == K_CACHE_WB) {
+					dc_ops("csw", dc_val);
+				}
+			}
+		}
+	}
+
+	/* Restore csselr_el1 to level 0 */
+	write_csselr_el1(0);
+	barrier_dsync_fence_full();
+	barrier_isync_fence_full();
+
+	return 0;
+}
+
+static ALWAYS_INLINE int arch_dcache_flush_all(void)
+{
+	return arm64_dcache_all(K_CACHE_WB);
+}
+
+static ALWAYS_INLINE int arch_dcache_invd_all(void)
+{
+	return arm64_dcache_all(K_CACHE_INVD);
+}
+
+static ALWAYS_INLINE int arch_dcache_flush_and_invd_all(void)
+{
+	return arm64_dcache_all(K_CACHE_WB_INVD);
+}
+
+#else
+
 static ALWAYS_INLINE int arch_dcache_flush_all(void)
 {
 	return -ENOTSUP;
@@ -153,6 +245,8 @@ static ALWAYS_INLINE int arch_dcache_flush_and_invd_all(void)
 {
 	return -ENOTSUP;
 }
+
+#endif /* CONFIG_ARM64_DCACHE_ALL_OPS */
 
 static ALWAYS_INLINE int arch_dcache_flush_range(void *addr, size_t size)
 {

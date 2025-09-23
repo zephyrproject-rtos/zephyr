@@ -25,4 +25,5 @@ description: |
 
 compatible: "nxp,flexcan-fd"
 
-include: ["nxp,flexcan.yaml", "can-fd-controller.yaml", "pinctrl-device.yaml"]
+include: ["nxp,flexcan.yaml", "can-fd-controller.yaml", "pinctrl-device.yaml",
+          "nxp,rdc-policy.yaml"]

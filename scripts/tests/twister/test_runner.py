@@ -7,7 +7,7 @@ Tests for runner.py classes
 """
 
 import errno
-import mock
+from unittest import mock
 import os
 import pathlib
 import pytest
@@ -558,19 +558,6 @@ TESTDATA_3 = [
         {os.path.join('other', 'zephyr', 'dummy.testsuite.name'): False}
     ),
     (
-        'other', ['other'], True,
-        False, None, True,
-        'Dummy parse results', True,
-        None,
-        None,
-        {},
-        {},
-        {},
-        None,
-        ['Sysbuild test will be skipped. West must be used for flashing.'],
-        {os.path.join('other', 'zephyr', 'dummy.testsuite.name'): True}
-    ),
-    (
         'other', ['other'], False,
         True, None, False,
         'Dummy parse results', True,
@@ -652,8 +639,7 @@ TESTDATA_3 = [
     ' expected_edt,' \
     ' expected_logs, expected_return',
     TESTDATA_3,
-    ids=['unit testing', 'domain', 'kconfig', 'no cache',
-         'no west options', 'no edt',
+    ids=['unit testing', 'domain', 'kconfig', 'no cache', 'no edt',
          'parse result', 'no parse result', 'no testsuite filter', 'parse err']
 )
 def test_filterbuilder_parse_generated(
@@ -2530,7 +2516,7 @@ def test_twisterrunner_run(
     pipeline_q = queue.LifoQueue()
     done_q = queue.LifoQueue()
     done_instance = mock.Mock(
-        metrics={'k2': 'v2'},
+        metrics={'k': 'v2'},
         execution_time=30
     )
     done_instance.name='dummy instance'
@@ -2545,6 +2531,8 @@ def test_twisterrunner_run(
     results_mock().iteration = 0
     results_mock().failed = 2
     results_mock().total = 9
+    results_mock().filtered_static = 0
+    results_mock().skipped = 0
 
     def iteration_increment(value=1, decrement=False):
         results_mock().iteration += value * (-1 if decrement else 1)
@@ -2568,8 +2556,7 @@ def test_twisterrunner_run(
     assert tr.jobserver.name == expected_jobserver
 
     assert tr.instances['dummy instance'].metrics == {
-        'k': 'v',
-        'k2': 'v2',
+        'k': 'v2',
         'handler_time': 30
     }
 
@@ -2608,7 +2595,7 @@ def test_twisterrunner_update_counting_before_pipeline():
         ),
         'dummy5': mock.Mock(
             status=TwisterStatus.SKIP,
-            reason=None,
+            reason="Quarantine",
             testsuite=mock.Mock(
                 testcases=[mock.Mock()]
             )
@@ -2629,6 +2616,7 @@ def test_twisterrunner_update_counting_before_pipeline():
         error = 0,
         cases = 0,
         filtered_cases = 0,
+        skipped = 0,
         skipped_cases = 0,
         failed_cases = 0,
         error_cases = 0,
@@ -2652,14 +2640,22 @@ def test_twisterrunner_update_counting_before_pipeline():
     def filtered_cases_increment(value=1, decrement=False):
         tr.results.filtered_cases += value * (-1 if decrement else 1)
     tr.results.filtered_cases_increment = filtered_cases_increment
+    def skipped_increment(value=1, decrement=False):
+        tr.results.skipped += value * (-1 if decrement else 1)
+    tr.results.skipped_increment = skipped_increment
+    def skipped_cases_increment(value=1, decrement=False):
+        tr.results.skipped_cases += value * (-1 if decrement else 1)
+    tr.results.skipped_cases_increment = skipped_cases_increment
 
     tr.update_counting_before_pipeline()
 
     assert tr.results.filtered_static == 1
     assert tr.results.filtered_configs == 1
     assert tr.results.filtered_cases == 4
-    assert tr.results.cases == 4
+    assert tr.results.cases == 5
     assert tr.results.error == 1
+    assert tr.results.skipped == 1
+    assert tr.results.skipped_cases == 1
 
 
 def test_twisterrunner_show_brief(caplog):

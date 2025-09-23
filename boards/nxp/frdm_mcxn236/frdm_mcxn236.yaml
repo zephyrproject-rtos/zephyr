@@ -21,10 +21,12 @@ supported:
   - flash
   - gpio
   - i2c
+  - i2s
   - i3c
   - pwm
   - regulator
   - spi
   - usbd
+  - video
   - watchdog
 vendor: nxp

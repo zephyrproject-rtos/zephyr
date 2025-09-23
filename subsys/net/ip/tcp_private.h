@@ -6,6 +6,7 @@
  */
 
 #include "tp.h"
+#include <zephyr/toolchain/gcc.h>
 
 #define is(_a, _b) (strcmp((_a), (_b)) == 0)
 
@@ -13,13 +14,14 @@
 #define MIN3(_a, _b, _c) MIN((_a), MIN((_b), (_c)))
 #endif
 
-#define th_sport(_x) UNALIGNED_GET(&(_x)->th_sport)
-#define th_dport(_x) UNALIGNED_GET(&(_x)->th_dport)
-#define th_seq(_x) ntohl(UNALIGNED_GET(&(_x)->th_seq))
-#define th_ack(_x) ntohl(UNALIGNED_GET(&(_x)->th_ack))
+#define th_sport(_x) UNALIGNED_GET(UNALIGNED_MEMBER_ADDR((_x), th_sport))
+#define th_dport(_x) UNALIGNED_GET(UNALIGNED_MEMBER_ADDR((_x), th_dport))
+#define th_seq(_x) ntohl(UNALIGNED_GET(UNALIGNED_MEMBER_ADDR((_x), th_seq)))
+#define th_ack(_x) ntohl(UNALIGNED_GET(UNALIGNED_MEMBER_ADDR((_x), th_ack)))
+
 #define th_off(_x) ((_x)->th_off)
-#define th_flags(_x) UNALIGNED_GET(&(_x)->th_flags)
-#define th_win(_x) UNALIGNED_GET(&(_x)->th_win)
+#define th_flags(_x) UNALIGNED_GET(UNALIGNED_MEMBER_ADDR((_x), th_flags))
+#define th_win(_x) UNALIGNED_GET(UNALIGNED_MEMBER_ADDR((_x), th_win))
 
 #define tcp_slist(_conn, _slist, _op, _type, _link)			\
 ({									\
@@ -137,7 +139,7 @@
 
 #define conn_state(_conn, _s)						\
 ({									\
-	NET_DBG("%s->%s",						\
+	NET_DBG("[%p] %s->%s", _conn,					\
 		tcp_state_to_str((_conn)->state, false),		\
 		tcp_state_to_str((_s), false));				\
 	(_conn)->state = _s;						\
@@ -145,12 +147,12 @@
 
 #define conn_send_data_dump(_conn)                                             \
 	({                                                                     \
-		NET_DBG("conn: %p total=%zd, unacked_len=%d, "                 \
+		NET_DBG("[%p] total=%zd, unacked_len=%d, "		       \
 			"send_win=%hu, mss=%hu",                               \
 			(_conn), net_pkt_get_len((_conn)->send_data),          \
 			_conn->unacked_len, _conn->send_win,                   \
 			(uint16_t)conn_mss((_conn)));                          \
-		NET_DBG("conn: %p send_data_timer=%hu, send_data_retries=%hu", \
+		NET_DBG("[%p] send_data_timer=%hu, send_data_retries=%hu",     \
 			(_conn),                                               \
 			(bool)k_ticks_to_ms_ceil32(                            \
 				k_work_delayable_remaining_get(                \

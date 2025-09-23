@@ -53,7 +53,7 @@ Default Zephyr Peripheral Mapping:
 - LD3 : PD4
 - User Button: PC13
 - I2C1 SCL/SDA : PG14/PG13
-- I2C2 SCL/SDA : PB10/PB11
+- I2C2 SCL/SDA : PF1/PF0
 - SPI1 SCK/MISO/MOSI/CS : PA5/PA6/PB5/PA3
 - ADC1 : channel5 PA0, channel12 PA7
 - ADC4 : channel4 PC3

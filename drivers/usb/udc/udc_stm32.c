@@ -51,7 +51,7 @@ LOG_MODULE_REGISTER(udc_stm32, CONFIG_UDC_DRIVER_LOG_LEVEL);
  * The following defines are used to map the value of the "maxiumum-speed"
  * DT property to the corresponding definition used by the STM32 HAL.
  */
-#if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(USB_OTG_HS_EMB_PHY)
+#if defined(CONFIG_SOC_SERIES_STM32H7X) || USB_OTG_HS_EMB_PHY
 #define UDC_STM32_HIGH_SPEED             USB_OTG_SPEED_HIGH_IN_FULL
 #else
 #define UDC_STM32_HIGH_SPEED             USB_OTG_SPEED_HIGH
@@ -65,6 +65,17 @@ LOG_MODULE_REGISTER(udc_stm32, CONFIG_UDC_DRIVER_LOG_LEVEL);
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_otghs)
 #define USB_USBPHYC_CR_FSEL_24MHZ        USB_USBPHYC_CR_FSEL_1
+#endif
+
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs) && defined(CONFIG_SOC_SERIES_STM32U5X)
+static const int syscfg_otg_hs_phy_clk[] = {
+	SYSCFG_OTG_HS_PHY_CLK_SELECT_1,	/* 16Mhz   */
+	SYSCFG_OTG_HS_PHY_CLK_SELECT_2,	/* 19.2Mhz */
+	SYSCFG_OTG_HS_PHY_CLK_SELECT_3,	/* 20Mhz   */
+	SYSCFG_OTG_HS_PHY_CLK_SELECT_4,	/* 24Mhz   */
+	SYSCFG_OTG_HS_PHY_CLK_SELECT_5,	/* 26Mhz   */
+	SYSCFG_OTG_HS_PHY_CLK_SELECT_6,	/* 32Mhz   */
+};
 #endif
 
 struct udc_stm32_data  {
@@ -132,6 +143,7 @@ void HAL_PCD_ResetCallback(PCD_HandleTypeDef *hpcd)
 				EP_TYPE_CTRL);
 	}
 
+	udc_set_suspended(dev, false);
 	udc_submit_event(priv->dev, UDC_EVT_RESET, 0);
 }
 
@@ -182,7 +194,7 @@ void HAL_PCD_SOFCallback(PCD_HandleTypeDef *hpcd)
 {
 	struct udc_stm32_data *priv = hpcd2data(hpcd);
 
-	udc_submit_event(priv->dev, UDC_EVT_SOF, 0);
+	udc_submit_sof_event(priv->dev);
 }
 
 static int usbd_ctrl_feed_dout(const struct device *dev, const size_t length)
@@ -750,6 +762,9 @@ static int udc_stm32_host_wakeup(const struct device *dev)
 		return -EIO;
 	}
 
+	udc_set_suspended(dev, false);
+	udc_submit_event(dev, UDC_EVT_RESUME, 0);
+
 	return 0;
 }
 
@@ -1059,7 +1074,9 @@ static int priv_clock_enable(void)
 
 	/* Set the OTG PHY reference clock selection (through SYSCFG) block */
 	LL_APB3_GRP1_EnableClock(LL_APB3_GRP1_PERIPH_SYSCFG);
-	HAL_SYSCFG_SetOTGPHYReferenceClockSelection(SYSCFG_OTG_HS_PHY_CLK_SELECT_1);
+	HAL_SYSCFG_SetOTGPHYReferenceClockSelection(
+		syscfg_otg_hs_phy_clk[DT_ENUM_IDX(DT_NODELABEL(otghs_phy), clock_reference)]
+	);
 	/* Configuring the SYSCFG registers OTG_HS PHY : OTG_HS PHY enable*/
 	HAL_SYSCFG_EnableOTGPHY(SYSCFG_OTG_HS_PHY_ENABLE);
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_otghs)
@@ -1143,9 +1160,6 @@ static int priv_clock_enable(void)
 	LL_AHB1_GRP1_DisableClockSleep(LL_AHB1_GRP1_PERIPH_USB1OTGHSULPI);
 #elif defined(CONFIG_SOC_SERIES_STM32U5X)
 	LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_USBPHY);
-	/* Both OTG HS and USBPHY sleep clock MUST be disabled here at the same time */
-	LL_AHB2_GRP1_DisableClockStopSleep(LL_AHB2_GRP1_PERIPH_OTG_HS ||
-						LL_AHB2_GRP1_PERIPH_USBPHY);
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_otghs)
 	/* Reset specific configuration bits before setting new values */
 	USB1_HS_PHYC->USBPHYC_CR &= ~USB_USBPHYC_CR_FSEL_Msk;

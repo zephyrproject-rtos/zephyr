@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <dt-bindings/pinctrl/silabs/xg29-pinctrl.h>
+#include <zephyr/dt-bindings/pinctrl/silabs/xg29-pinctrl.h>
 
 &pinctrl {
 	eusart1_default: eusart1_default {
@@ -34,6 +34,22 @@
 			pins = <I2C0_SCL_PB2>, <I2C0_SDA_PB3>;
 			bias-pull-up;
 			drive-open-drain;
+		};
+	};
+
+	letimer0_default: letimer0_default {
+		group0 {
+			pins = <LETIMER0_OUT0_PB0>;
+			drive-open-drain;
+			bias-pull-up;
+		};
+	};
+
+	pti_default: pti_default {
+		group0 {
+			pins = <PTI_DOUT_PC4>, <PTI_DFRAME_PC5>;
+			drive-push-pull;
+			output-high;
 		};
 	};
 

@@ -105,6 +105,7 @@ static int tmc50xx_stepper_set_event_callback(const struct device *dev,
 
 static int read_vactual(const struct tmc50xx_stepper_config *config, int32_t *actual_velocity)
 {
+	__ASSERT(actual_velocity != NULL, "actual_velocity pointer must not be NULL");
 	int err;
 
 	err = tmc50xx_read(config->controller, TMC50XX_VACTUAL(config->index), actual_velocity);
@@ -174,7 +175,6 @@ static void stallguard_work_handler(struct k_work *work)
 		return;
 	}
 }
-
 
 static void execute_callback(const struct device *dev, const enum stepper_event event)
 {
@@ -369,11 +369,6 @@ int tmc50xx_stepper_set_max_velocity(const struct device *dev, uint32_t velocity
 static int tmc50xx_stepper_set_micro_step_res(const struct device *dev,
 					      enum stepper_micro_step_resolution res)
 {
-	if (!VALID_MICRO_STEP_RES(res)) {
-		LOG_ERR("Invalid micro step resolution %d", res);
-		return -ENOTSUP;
-	}
-
 	const struct tmc50xx_stepper_config *config = dev->config;
 	uint32_t reg_value;
 	int err;
@@ -547,6 +542,25 @@ static int tmc50xx_stepper_run(const struct device *dev, const enum stepper_dire
 	return 0;
 }
 
+static int tmc50xx_stepper_stop(const struct device *dev)
+{
+	const struct tmc50xx_stepper_config *config = dev->config;
+	int err;
+
+	err = tmc50xx_write(config->controller, TMC50XX_RAMPMODE(config->index),
+			    TMC5XXX_RAMPMODE_POSITIVE_VELOCITY_MODE);
+	if (err != 0) {
+		return -EIO;
+	}
+
+	err = tmc50xx_write(config->controller, TMC50XX_VMAX(config->index), 0);
+	if (err != 0) {
+		return -EIO;
+	}
+
+	return 0;
+}
+
 #ifdef CONFIG_STEPPER_ADI_TMC50XX_RAMP_GEN
 
 int tmc50xx_stepper_set_ramp(const struct device *dev,
@@ -708,6 +722,7 @@ static DEVICE_API(stepper, tmc50xx_stepper_api) = {
 	.get_actual_position = tmc50xx_stepper_get_actual_position,
 	.move_to = tmc50xx_stepper_move_to,
 	.run = tmc50xx_stepper_run,
+	.stop = tmc50xx_stepper_stop,
 	.set_event_callback = tmc50xx_stepper_set_event_callback,
 };
 

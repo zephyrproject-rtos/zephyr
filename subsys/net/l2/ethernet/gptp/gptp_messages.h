@@ -115,6 +115,9 @@ extern "C" {
 #define GPTP_FUP_TLV_ORG_ID_BYTE_2  0xC2
 #define GPTP_FUP_TLV_ORG_SUB_TYPE   0x01
 
+/* Organizationally Unique Identifiers */
+#define OUI_IEEE_802_1_COMMITTEE 0x00, 0x80, 0xC2
+
 /**
  * @brief gPTP Clock Quality
  *

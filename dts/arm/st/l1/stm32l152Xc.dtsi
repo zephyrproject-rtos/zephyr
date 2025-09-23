@@ -22,7 +22,8 @@
 		timers5: timers@40000c00 {
 			compatible = "st,stm32-timers";
 			reg = <0x40000c00 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB1, 3U)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 3)>,
+				 <&rcc STM32_SRC_TIMPCLK1 NO_SEL>;
 			resets = <&rctl STM32_RESET(APB1, 3U)>;
 			interrupts = <45 0>;
 			interrupt-names = "global";
@@ -41,7 +42,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40003c00 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB1, 15U)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 15)>;
 			interrupts = <47 0>;
 			status = "disabled";
 		};

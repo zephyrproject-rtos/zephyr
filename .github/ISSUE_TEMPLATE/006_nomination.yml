@@ -1,0 +1,57 @@
+name: Contributor Nomination
+description: Nominate a GitHub user for the Contributor role with triage permissions
+labels: [Role Nomination]
+assignees: ['nashif']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Background
+
+        The [TSC Project Roles](https://docs.zephyrproject.org/latest/project/project_roles.html) defines the main roles for the Zephyr Project, including Maintainer, Collaborator, and Contributor.
+
+        By default, anyone who contributes code or documentation is a Contributor, but with the lowest [GitHub Permission Level](https://docs.github.com/en/organizations/managing-access-to-your-organizations-repositories/repository-roles-for-an-organization) of **Read**.
+
+        Use this form to nominate a user for the **Contributor** role with **Triage** permission, which allows the user to:
+        - Add reviewers to pull requests
+        - Be added as a reviewer by others
+
+  - type: input
+    id: full-name
+    attributes:
+      label: Full Name
+      description: Full name of the nominated contributor.
+      placeholder: e.g., Jane Doe
+    validations:
+      required: true
+
+  - type: input
+    id: github-username
+    attributes:
+      label: GitHub Username
+      description: GitHub handle of the nominated contributor.
+      placeholder: e.g., @janedoe
+    validations:
+      required: true
+
+  - type: input
+    id: organization
+    attributes:
+      label: Organization
+      description: Organization the nominee is affiliated with (optional).
+      placeholder: e.g., Acme Corp
+    validations:
+      required: false
+
+  - type: textarea
+    id: supporting-documents
+    attributes:
+      label: Supporting Documents
+      description: Provide links to 3–5 pull requests authored or reviewed by the nominee that demonstrate their dedication to the Zephyr project.
+      placeholder: |
+        e.g.,
+        - https://github.com/zephyrproject-rtos/zephyr/pull/12345
+        - https://github.com/zephyrproject-rtos/zephyr/pull/23456
+        - https://github.com/zephyrproject-rtos/zephyr/pull/34567
+    validations:
+      required: true

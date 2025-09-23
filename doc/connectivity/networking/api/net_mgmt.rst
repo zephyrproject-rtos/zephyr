@@ -97,7 +97,7 @@ An example follows.
 	struct net_mgmt_event_callback ipv4_callback;
 
 	void callback_handler(struct net_mgmt_event_callback *cb,
-			      uint32_t mgmt_event,
+			      uint64_t mgmt_event,
 			      struct net_if *iface)
 	{
 		if (mgmt_event == NET_EVENT_IF_xxx) {
@@ -139,7 +139,7 @@ Or similarly using :c:macro:`NET_MGMT_REGISTER_EVENT_HANDLER`.
 	#define EVENT_IFACE_SET (NET_EVENT_IF_xxx | NET_EVENT_IF_yyy)
 	#define EVENT_IPV4_SET (NET_EVENT_IPV4_xxx | NET_EVENT_IPV4_yyy)
 
-	static void event_handler(uint32_t mgmt_event, struct net_if *iface,
+	static void event_handler(uint64_t mgmt_event, struct net_if *iface,
 				  void *info, size_t info_length,
 				  void *user_data)
 	{
@@ -183,7 +183,7 @@ You define your handler modeled with this signature:
 
 .. code-block:: c
 
-   static int your_handler(uint32_t mgmt_event, struct net_if *iface,
+   static int your_handler(uint64_t mgmt_event, struct net_if *iface,
                            void *data, size_t len);
 
 and then register it with an associated mgmt_request code:

@@ -6,9 +6,10 @@ description: |
 
     Representation of a serial flash on a quadspi bus:
 
-        mx25r6435f: qspi-nor-flash@90000000 {
+        mx25r6435f: qspi-nor-flash@0 {
                 compatible = "st,stm32-qspi-nor";
-                reg = <0x90000000 DT_SIZE_M(8)>; /* 64 Mbits */
+                reg = <0>;
+                size = <DT_SIZE_M(64)>; /* 64 Mbits */
                 qspi-max-frequency = <80000000>;
                 reset-gpios = <&gpiod 3 GPIO_ACTIVE_LOW>;
                 reset-gpios-duration = <1>;
@@ -23,6 +24,9 @@ include: ["flash-controller.yaml", "jedec,jesd216.yaml"]
 on-bus: qspi
 
 properties:
+  size:
+    required: true
+    description: Flash Memory size in bits
   reg:
     required: true
     description: Flash Memory base address and size in bytes
@@ -76,3 +80,26 @@ properties:
     type: int
     default: 8
     description: The number of dummy-cycles required when reading jedec id
+
+  cs-high-time:
+    type: int
+    default: 8
+    enum:
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+      - 8
+    description: |
+      Minimum number of QSPI clock cycles the chip select signal must remain
+      high between commands issued to the flash memory.
+
+      The minimum acceptable value depends on the flash memory model and the
+      QSPI clock frequency. Using a value higher than the minimum required
+      by the flash memory would not lead to communication errors but is
+      suboptimal as it would reduce the throughput.
+
+      Defaults to 8 clock cycles, which is the maximum supported value.

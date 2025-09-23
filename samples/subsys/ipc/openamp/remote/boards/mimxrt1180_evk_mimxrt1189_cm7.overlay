@@ -21,8 +21,8 @@
 	ocram2_sh_mem: memory@20500000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x20500000 DT_SIZE_K(32)>;
-		zephyr,memory-region="OCRAM2_SH_MEM";
-		zephyr,memory-attr = <(DT_MEM_ARM(ATTR_MPU_IO))>;
+		zephyr,memory-region = "OCRAM2_SH_MEM";
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_IO)>;
 	};
 
 	mailbox_b: ipm-mbox {

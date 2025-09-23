@@ -2186,4 +2186,9 @@ struct mdma_reg {
 /* Channel 0/1 Current Transfer Count Register (MDMA_CTCNT0/MDMA_CTCNT1) */
 #define NPCX_MDMA_CTCNT_CURRENT_TFR_CNT FIELD(0, 13)
 
+/* BBRM register fields */
+#define NPCX_BKUPSTS_VCC1_STS BIT(0)
+#define NPCX_BKUPSTS_VSBY_STS BIT(1)
+#define NPCX_BKUPSTS_IBBR     BIT(7)
+
 #endif /* _NUVOTON_NPCX_REG_DEF_H */

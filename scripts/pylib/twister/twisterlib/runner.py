@@ -828,23 +828,6 @@ class FilterBuilder(CMake):
             filter_data.update(self.defconfig)
         filter_data.update(self.cmake_cache)
 
-        # Verify that twister's arguments support sysbuild.
-        # Twister sysbuild flashing currently only works with west,
-        # so --west-flash must be passed.
-        if (
-            self.instance.sysbuild
-            and self.env.options.device_testing
-            and self.env.options.west_flash is None
-        ):
-            logger.warning("Sysbuild test will be skipped. West must be used for flashing.")
-            return {
-                os.path.join(
-                    self.platform.name,
-                    self.instance.toolchain,
-                    self.testsuite.name
-                ): True
-            }
-
         if self.testsuite and self.testsuite.filter:
             try:
                 if os.path.exists(edt_pickle):
@@ -1885,7 +1868,7 @@ class TwisterRunner:
                     self.results.done -= self.results.error
                     self.results.error = 0
             else:
-                self.results.done = self.results.filtered_static
+                self.results.done = self.results.filtered_static + self.results.skipped
 
             self.execute(pipeline, done_queue)
 
@@ -1895,7 +1878,6 @@ class TwisterRunner:
                 except queue.Empty:
                     break
                 else:
-                    inst.metrics.update(self.instances[inst.name].metrics)
                     inst.metrics["handler_time"] = inst.execution_time
                     self.instances[inst.name] = inst
 
@@ -1922,6 +1904,10 @@ class TwisterRunner:
                 self.results.filtered_static_increment()
                 self.results.filtered_configs_increment()
                 self.results.filtered_cases_increment(len(instance.testsuite.testcases))
+                self.results.cases_increment(len(instance.testsuite.testcases))
+            elif instance.status == TwisterStatus.SKIP and "overflow" not in instance.reason:
+                self.results.skipped_increment()
+                self.results.skipped_cases_increment(len(instance.testsuite.testcases))
                 self.results.cases_increment(len(instance.testsuite.testcases))
             elif instance.status == TwisterStatus.ERROR:
                 self.results.error_increment()

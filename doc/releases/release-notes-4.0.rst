@@ -113,7 +113,7 @@ Deprecated in this release
 * Deprecated the TinyCrypt shim driver ``CONFIG_CRYPTO_TINYCRYPT_SHIM``.
 
 * ``native_posix`` has been deprecated in favour of
-  :ref:`native_sim<native_sim>`.
+  :zephyr:board:`native_sim<native_sim>`.
 
 * ``include/zephyr/net/buf.h`` is deprecated in favor of
   ``include/zephyr/net_buf.h>``. The old header will be removed in future releases
@@ -290,7 +290,7 @@ Boards & SoC Support
    * :zephyr:board:`Gardena Smart Garden Radio Module <sgrm>` (``sgrm``)
    * :zephyr:board:`mikroe STM32 M4 Clicker <mikroe_stm32_m4_clicker>` (``mikroe_stm32_m4_clicker``)
    * :zephyr:board:`Nordic Semiconductor nRF54L15 DK <nrf54l15dk>` (``nrf54l15dk``)
-   * :zephyr:board:`Nordic Semiconductor nRF54L20 PDK <nrf54l20pdk>` (``nrf54l20pdk``)
+   * Nordic Semiconductor nRF54L20 PDK (``nrf54l20pdk``)
    * :zephyr:board:`Nordic Semiconductor nRF7002 DK <nrf7002dk>` (``nrf7002dk``)
    * :zephyr:board:`Nuvoton NPCM400_EVB <npcm400_evb>` (``npcm400_evb``)
    * :zephyr:board:`NXP FRDM-MCXA156 <frdm_mcxa156>` (``frdm_mcxa156``)
@@ -1542,7 +1542,7 @@ Tests and Samples
 *****************
 
 * Together with the deprecation of ``native_posix``, many tests which were
-  explicitly run in native_posix now run in :ref:`native_sim<native_sim>` instead.
+  explicitly run in native_posix now run in :zephyr:board:`native_sim<native_sim>` instead.
   native_posix as a platform remains tested though.
 * Extended the tests of counter_basic_api with a testcase for counters without alarms
 * Added support for testing SDMMC devices to the fatfs API test

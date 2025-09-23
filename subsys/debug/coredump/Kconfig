@@ -45,7 +45,7 @@ config DEBUG_COREDUMP_BACKEND_INTEL_ADSP_MEM_WINDOW
 	help
 	  Core dump is done via memory window slot[1].
 	  It is Intel ADSP memory region shared with xtensa DSP.
-	  Window 2 slot [1] is reserved for debuging information.
+	  Window 2 slot [1] is reserved for debugging information.
 
 config DEBUG_COREDUMP_BACKEND_OTHER
 	bool "Backend subsystem for coredump defined out of tree"

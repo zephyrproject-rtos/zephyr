@@ -29,6 +29,7 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 		uint8_t remap = (pins->config >> CH32V003_PINCTRL_RM_SHIFT) & 0x3;
 		GPIO_TypeDef *regs = wch_afio_pinctrl_regs[port];
 		uint8_t cfg = 0;
+		bool is_adc = (bit0 == CH32V003_PINMUX_ADC1_RM);
 
 		if (pins->output_high || pins->output_low) {
 			cfg |= (pins->slew_rate + 1);
@@ -39,20 +40,24 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 			cfg |= BIT(3);
 		} else {
 			if (pins->bias_pull_up || pins->bias_pull_down) {
+				/* "With pull up and pull down" mode */
 				cfg |= BIT(3);
+			} else if (is_adc) {
+				/* Analog input mode */
+				cfg = 0;
+			} else {
+				/* Floating input mode */
+				cfg |= BIT(2);
 			}
 		}
 		regs->CFGLR = (regs->CFGLR & ~(0x0F << (pin * 4))) | (cfg << (pin * 4));
 
 		if (pins->output_high) {
-			regs->OUTDR |= BIT(pin);
-			regs->BSHR |= BIT(pin);
+			regs->BSHR = BIT(pin);
 		} else if (pins->output_low) {
-			regs->OUTDR |= BIT(pin);
 			/* Reset the pin. */
-			regs->BSHR |= BIT(pin + 16);
+			regs->BCR = BIT(pin);
 		} else {
-			regs->OUTDR &= ~(1 << pin);
 			if (pins->bias_pull_up) {
 				regs->BSHR = BIT(pin);
 			}

@@ -3,15 +3,33 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Header file for extended sensor API of ADLTC2990 sensor
+ * @ingroup adltc2990_interface
+ */
+
 #ifndef ZEPHYR_INCLUDE_DRIVERS_SENSOR_ADLTC2990_H_
 #define ZEPHYR_INCLUDE_DRIVERS_SENSOR_ADLTC2990_H_
+
+/**
+ * @brief Analog Devices ADLTC2990 Quad I2C Voltage, Current and Temperature Monitor
+ * @defgroup adltc2990_interface ADLTC2990
+ * @ingroup sensor_interface_ext
+ * @{
+ */
 
 #include <stdbool.h>
 
 #include <zephyr/device.h>
 
+/**
+ * @brief Acquisition format
+ */
 enum adltc2990_acquisition_format {
+	/** Repeated acquisition */
 	ADLTC2990_REPEATED_ACQUISITION,
+	/** Single shot acquisition */
 	ADLTC2990_SINGLE_SHOT_ACQUISITION,
 };
 
@@ -37,5 +55,9 @@ int adltc2990_is_busy(const struct device *dev, bool *is_busy);
  */
 int adltc2990_trigger_measurement(const struct device *dev,
 				  enum adltc2990_acquisition_format format);
+
+/**
+ * @}
+ */
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_SENSOR_ADLTC2990_H_ */

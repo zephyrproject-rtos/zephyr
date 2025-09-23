@@ -23,6 +23,7 @@ zephyr_library_sources_ifdef(CONFIG_XTENSA_ENABLE_BACKTRACE debug_helpers_asm.S)
 zephyr_library_sources_ifdef(CONFIG_DEBUG_COREDUMP coredump.c)
 zephyr_library_sources_ifdef(CONFIG_TIMING_FUNCTIONS timing.c)
 zephyr_library_sources_ifdef(CONFIG_GDBSTUB gdbstub.c)
+zephyr_library_sources_ifdef(CONFIG_SEMIHOST semihost.c)
 zephyr_library_sources_ifdef(CONFIG_XTENSA_MMU ptables.c mmu.c)
 zephyr_library_sources_ifdef(CONFIG_XTENSA_MPU mpu.c)
 zephyr_library_sources_ifdef(CONFIG_USERSPACE userspace.S syscall_helper.c)
@@ -88,6 +89,10 @@ if(CONFIG_KERNEL_COHERENCE AND NOT CONFIG_SCHED_CPU_MASK_PIN_ONLY)
   set(NEED_FLUSH_SCRATCH_REG true)
 else()
   set(NEED_FLUSH_SCRATCH_REG false)
+endif()
+
+if(CONFIG_SEMIHOST)
+  zephyr_library_include_directories(${ZEPHYR_BASE}/arch/common/include)
 endif()
 
 # Generates a list of device-specific scratch register choices

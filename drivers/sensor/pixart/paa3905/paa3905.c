@@ -82,7 +82,7 @@ static void paa3905_submit_one_shot(const struct device *dev, struct rtio_iodev_
 	struct rtio_sqe *read_sqe = rtio_sqe_acquire(data->rtio.ctx);
 	struct rtio_sqe *complete_sqe = rtio_sqe_acquire(data->rtio.ctx);
 
-	if (!write_sqe || !read_sqe | !complete_sqe) {
+	if (!write_sqe || !read_sqe || !complete_sqe) {
 		LOG_ERR("Failed to acquire RTIO SQEs");
 		rtio_iodev_sqe_err(iodev_sqe, -ENOMEM);
 		return;
@@ -180,6 +180,13 @@ static int paa3905_configure(const struct device *dev)
 	uint8_t val;
 	int err;
 
+	/* Start with disabled sequence, and override it if need be. */
+	struct reg_val_pair led_control_regs[] = {
+		{.reg = 0x7F, .val = 0x14},
+		{.reg = 0x6F, .val = 0x2C},
+		{.reg = 0x7F, .val = 0x00},
+	};
+
 	/* Configure registers for Standard detection mode */
 	err = detection_mode_standard(dev);
 	if (err) {
@@ -195,21 +202,18 @@ static int paa3905_configure(const struct device *dev)
 	}
 
 	if (cfg->led_control) {
-		struct reg_val_pair led_control_regs[] = {
-			{.reg = 0x7F, .val = 0x14},
-			{.reg = 0x6F, .val = 0x0C},
-			{.reg = 0x7F, .val = 0x00},
-		};
+		/* Enable sequence command */
+		led_control_regs[1].val = 0x0C;
+	}
 
-		for (size_t i = 0 ; i < ARRAY_SIZE(led_control_regs) ; i++) {
-			err = paa3905_bus_write(dev,
-						led_control_regs[i].reg,
-						&led_control_regs[i].val,
-						1);
-			if (err) {
-				LOG_ERR("Failed to write LED control reg");
-				return err;
-			}
+	for (size_t i = 0 ; i < ARRAY_SIZE(led_control_regs) ; i++) {
+		err = paa3905_bus_write(dev,
+					led_control_regs[i].reg,
+					&led_control_regs[i].val,
+					1);
+		if (err) {
+			LOG_ERR("Failed to write LED control reg");
+			return err;
 		}
 	}
 

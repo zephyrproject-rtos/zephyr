@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2019 Interay Solutions B.V.
+ * Copyright (c) 2019 Oane Kingma
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <silabs/gg11/efm32gg11.dtsi>
+
+/ {
+	soc {
+		compatible = "silabs,efm32gg11b820f2048gl192", "silabs,efm32gg11b", "silabs,efm32",
+			     "simple-bus";
+
+		eth0: eth@40024000 { /* ETH0 */
+			compatible = "silabs,gecko-ethernet";
+			reg = <0x40024000 0xC14>;
+			interrupts = <59 0>;
+			status = "disabled";
+		};
+	};
+
+};
+
+&flash0 {
+	reg = <0 DT_SIZE_K(2048)>;
+};
+
+&sram0 {
+	reg = <0x20000000 DT_SIZE_K(256)>;
+};

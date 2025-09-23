@@ -5,7 +5,7 @@ description: TI DP83867 Ethernet PHY device
 
 compatible: "ti,dp83867"
 
-include: ethernet-phy.yaml
+include: ethernet-phy-common.yaml
 
 properties:
   reset-gpios:
@@ -14,3 +14,25 @@ properties:
   int-gpios:
     type: phandle-array
     description: GPIO for interrupt signal indicating PHY state change.
+  ti,rx-internal-delay:
+    type: int
+    description:
+      RX internal delay setting for the PHY. Required only if interface
+      type is PHY_INTERFACE_MODE_RGMII_ID or PHY_INTERFACE_MODE_RGMII_RXID.
+  ti,tx-internal-delay:
+    type: int
+    description:
+      TX internal delay setting for the PHY. Required only if interface type is
+      PHY_INTERFACE_MODE_RGMII_ID or PHY_INTERFACE_MODE_RGMII_TXID.
+  ti,interface-type:
+    type: string
+    description: Which type of phy connection the phy is set up for
+    default: "rgmii"
+    enum:
+      - "rgmii"
+      - "rgmii-id"
+      - "rgmii-rxid"
+      - "rgmii-txid"
+  default-speeds:
+    default: ["10BASE Half-Duplex", "10BASE Full-Duplex", "100BASE Half-Duplex",
+              "100BASE Full-Duplex", "1000BASE Half-Duplex", "1000BASE Full-Duplex"]

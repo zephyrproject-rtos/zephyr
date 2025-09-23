@@ -1,0 +1,43 @@
+name: Maintainer file check
+
+on:
+  pull_request_target:
+    branches:
+      - main
+    paths:
+      - MAINTAINERS.yml
+
+permissions:
+  contents: read
+
+jobs:
+  assignment:
+    name: Check MAINTAINERS.yml changes
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Check out source code
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Set up Python
+        uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6.0.0
+        with:
+          python-version: 3.12
+          cache: pip
+          cache-dependency-path: scripts/requirements-actions.txt
+
+      - name: Install Python packages
+        run: |
+          pip install -r scripts/requirements-actions.txt --require-hashes
+
+      - name: Fetch MAINTAINERS.yml from pull request
+        run: |
+          git fetch origin pull/${{ github.event.pull_request.number }}/head
+          git show FETCH_HEAD:MAINTAINERS.yml > pr_MAINTAINERS.yml
+
+      - name: Check maintainer file changes
+        env:
+          GITHUB_TOKEN: ${{ secrets.ZB_PR_ASSIGNER_GITHUB_TOKEN }}
+        run: |
+          python  ./scripts/ci/check_maintainer_changes.py  \
+            --repo zephyrproject-rtos/zephyr MAINTAINERS.yml pr_MAINTAINERS.yml

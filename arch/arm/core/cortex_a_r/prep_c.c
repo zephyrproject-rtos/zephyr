@@ -24,6 +24,8 @@
 #include <zephyr/arch/arm/cortex_a_r/lib_helpers.h>
 #include <zephyr/platform/hooks.h>
 #include <zephyr/arch/cache.h>
+#include <zephyr/arch/common/xip.h>
+#include <zephyr/arch/common/init.h>
 
 #if defined(CONFIG_ARMV7_R) || defined(CONFIG_ARMV7_A)
 #include <cortex_a_r/stack.h>
@@ -96,7 +98,7 @@ extern FUNC_NORETURN void z_cstart(void);
  * This routine prepares for the execution of and runs C code.
  *
  */
-void z_prep_c(void)
+FUNC_NORETURN void z_prep_c(void)
 {
 #if defined(CONFIG_SOC_PREP_HOOK)
 	soc_prep_hook();
@@ -107,8 +109,8 @@ void z_prep_c(void)
 #if defined(CONFIG_CPU_HAS_FPU)
 	z_arm_floating_point_init();
 #endif
-	z_bss_zero();
-	z_data_copy();
+	arch_bss_zero();
+	arch_data_copy();
 #if ((defined(CONFIG_ARMV7_R) || defined(CONFIG_ARMV7_A)) && defined(CONFIG_INIT_STACKS))
 	z_arm_init_stacks();
 #endif

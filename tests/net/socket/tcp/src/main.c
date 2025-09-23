@@ -2349,7 +2349,7 @@ ZTEST(net_socket_tcp, test_connect_and_wait_for_v4_poll)
 	zassert_equal(ret, 0, "close failed, %d", errno);
 }
 
-ZTEST(net_socket_tcp, test_so_keepalive)
+ZTEST(net_socket_tcp, test_so_keepalive_opt)
 {
 	struct sockaddr_in bind_addr4;
 	int sock, ret;
@@ -2430,55 +2430,92 @@ ZTEST(net_socket_tcp, test_so_keepalive)
 	test_context_cleanup();
 }
 
-ZTEST(net_socket_tcp, test_keepalive_timeout)
+static void test_prepare_keepalive_socks(int *c_sock, int *s_sock, int *new_sock)
 {
 	struct sockaddr_in c_saddr, s_saddr;
-	int c_sock, s_sock, new_sock;
-	uint8_t rx_buf;
 	int optval;
 	int ret;
 
-	prepare_sock_tcp_v4(MY_IPV4_ADDR, ANY_PORT, &c_sock, &c_saddr);
-	prepare_sock_tcp_v4(MY_IPV4_ADDR, SERVER_PORT, &s_sock, &s_saddr);
+	prepare_sock_tcp_v4(MY_IPV4_ADDR, ANY_PORT, c_sock, &c_saddr);
+	prepare_sock_tcp_v4(MY_IPV4_ADDR, SERVER_PORT, s_sock, &s_saddr);
 
 	/* Enable keep-alive on both ends and set timeouts/retries to minimum */
 	optval = 1;
-	ret = zsock_setsockopt(c_sock, SOL_SOCKET, SO_KEEPALIVE,
+	ret = zsock_setsockopt(*c_sock, SOL_SOCKET, SO_KEEPALIVE,
 			       &optval, sizeof(optval));
 	zassert_equal(ret, 0, "setsockopt failed (%d)", errno);
-	ret = zsock_setsockopt(s_sock, SOL_SOCKET, SO_KEEPALIVE,
-			       &optval, sizeof(optval));
-	zassert_equal(ret, 0, "setsockopt failed (%d)", errno);
-
-	optval = 1;
-	ret = zsock_setsockopt(c_sock, IPPROTO_TCP, TCP_KEEPIDLE,
-			       &optval, sizeof(optval));
-	zassert_equal(ret, 0, "setsockopt failed (%d)", errno);
-	ret = zsock_setsockopt(s_sock, IPPROTO_TCP, TCP_KEEPIDLE,
+	ret = zsock_setsockopt(*s_sock, SOL_SOCKET, SO_KEEPALIVE,
 			       &optval, sizeof(optval));
 	zassert_equal(ret, 0, "setsockopt failed (%d)", errno);
 
 	optval = 1;
-	ret = zsock_setsockopt(c_sock, IPPROTO_TCP, TCP_KEEPINTVL,
+	ret = zsock_setsockopt(*c_sock, IPPROTO_TCP, TCP_KEEPIDLE,
 			       &optval, sizeof(optval));
 	zassert_equal(ret, 0, "setsockopt failed (%d)", errno);
-	ret = zsock_setsockopt(s_sock, IPPROTO_TCP, TCP_KEEPINTVL,
+	ret = zsock_setsockopt(*s_sock, IPPROTO_TCP, TCP_KEEPIDLE,
 			       &optval, sizeof(optval));
 	zassert_equal(ret, 0, "setsockopt failed (%d)", errno);
 
 	optval = 1;
-	ret = zsock_setsockopt(c_sock, IPPROTO_TCP, TCP_KEEPCNT,
+	ret = zsock_setsockopt(*c_sock, IPPROTO_TCP, TCP_KEEPINTVL,
 			       &optval, sizeof(optval));
 	zassert_equal(ret, 0, "setsockopt failed (%d)", errno);
-	ret = zsock_setsockopt(s_sock, IPPROTO_TCP, TCP_KEEPCNT,
+	ret = zsock_setsockopt(*s_sock, IPPROTO_TCP, TCP_KEEPINTVL,
+			       &optval, sizeof(optval));
+	zassert_equal(ret, 0, "setsockopt failed (%d)", errno);
+
+	optval = 1;
+	ret = zsock_setsockopt(*c_sock, IPPROTO_TCP, TCP_KEEPCNT,
+			       &optval, sizeof(optval));
+	zassert_equal(ret, 0, "setsockopt failed (%d)", errno);
+	ret = zsock_setsockopt(*s_sock, IPPROTO_TCP, TCP_KEEPCNT,
 			       &optval, sizeof(optval));
 	zassert_equal(ret, 0, "setsockopt failed (%d)", errno);
 
 	/* Establish connection */
-	test_bind(s_sock, (struct sockaddr *)&s_saddr, sizeof(s_saddr));
-	test_listen(s_sock);
-	test_connect(c_sock, (struct sockaddr *)&s_saddr, sizeof(s_saddr));
-	test_accept(s_sock, &new_sock, NULL, NULL);
+	test_bind(*s_sock, (struct sockaddr *)&s_saddr, sizeof(s_saddr));
+	test_listen(*s_sock);
+	test_connect(*c_sock, (struct sockaddr *)&s_saddr, sizeof(s_saddr));
+	test_accept(*s_sock, new_sock, NULL, NULL);
+}
+
+ZTEST(net_socket_tcp, test_keepalive)
+{
+	int c_sock, s_sock, new_sock;
+	struct timeval optval = {
+		.tv_sec = 2,
+		.tv_usec = 500000,
+	};
+	uint8_t rx_buf;
+	int ret;
+
+	test_prepare_keepalive_socks(&c_sock, &s_sock, &new_sock);
+
+	ret = zsock_setsockopt(c_sock, SOL_SOCKET, SO_RCVTIMEO, &optval,
+			       sizeof(optval));
+	zassert_equal(ret, 0, "setsockopt failed (%d)", errno);
+
+	/* recv() should fail, but due to receive timeout (no data), not
+	 * connection timeout (keepalive).
+	 */
+	ret = zsock_recv(c_sock, &rx_buf, sizeof(rx_buf), 0);
+	zassert_equal(ret, -1, "recv() should've failed");
+	zassert_equal(errno, EAGAIN, "wrong errno value, %d", errno);
+
+	test_close(c_sock);
+	test_close(new_sock);
+	test_close(s_sock);
+
+	test_context_cleanup();
+}
+
+ZTEST(net_socket_tcp, test_keepalive_timeout)
+{
+	int c_sock, s_sock, new_sock;
+	uint8_t rx_buf;
+	int ret;
+
+	test_prepare_keepalive_socks(&c_sock, &s_sock, &new_sock);
 
 	/* Kill communication - expect that connection will be closed after
 	 * a timeout period.

@@ -1,0 +1,24 @@
+/*
+ * Copyright (c) 2025 Shontal Biton
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <silabs/xg28/efr32zg28.dtsi>
+
+/ {
+	soc {
+		compatible = "silabs,efr32zg28b322f1024im68",
+					 "silabs,efr32zg28", "silabs,efr32",
+					 "simple-bus";
+	};
+};
+
+&flash0 {
+	reg = <0x08000000 DT_SIZE_K(1024)>;
+};
+
+&sram0 {
+	reg = <0x20000000 DT_SIZE_K(256)>;
+};

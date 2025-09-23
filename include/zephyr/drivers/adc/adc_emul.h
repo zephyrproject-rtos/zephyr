@@ -22,6 +22,7 @@ extern "C" {
 /**
  * @brief Emulated ADC backend API
  * @defgroup adc_emul Emulated ADC
+ * @ingroup io_emulators
  * @ingroup adc_interface
  * @{
  *

@@ -7,7 +7,7 @@
 #define ZEPHYR_INCLUDE_DT_BINDINGS_ADI_ADX372_H_
 
 /**
- * @defgroup ADXL372 ADI DT Options
+ * @defgroup adxl372 ADXL372 DT Options
  * @ingroup sensor_interface
  * @{
  */

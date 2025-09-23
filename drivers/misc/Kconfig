@@ -5,6 +5,7 @@
 
 menu "Miscellaneous Drivers"
 
+source "drivers/misc/ethos_u/Kconfig"
 source "drivers/misc/ft8xx/Kconfig"
 source "drivers/misc/grove_lcd_rgb/Kconfig"
 source "drivers/misc/pio_rpi_pico/Kconfig"
@@ -15,7 +16,11 @@ source "drivers/misc/devmux/Kconfig"
 source "drivers/misc/nordic_vpr_launcher/Kconfig"
 source "drivers/misc/mcux_flexio/Kconfig"
 source "drivers/misc/coresight/Kconfig"
+source "drivers/misc/interconn/Kconfig"
 source "drivers/misc/renesas_ra_external_interrupt/Kconfig"
+source "drivers/misc/renesas_rx_external_interrupt/Kconfig"
 source "drivers/misc/nxp_rtxxx_dsp_ctrl/Kconfig"
+source "drivers/misc/stm32n6_axisram/Kconfig"
+source "drivers/misc/nxp_inputmux/Kconfig"
 
 endmenu

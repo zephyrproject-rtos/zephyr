@@ -38,7 +38,16 @@
 	};
 };
 
+
+&ioport0 {
+	status = "okay";
+};
+
 &ioport1 {
+	status = "okay";
+};
+
+&ioport3 {
 	status = "okay";
 };
 

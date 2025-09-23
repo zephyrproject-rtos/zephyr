@@ -1,0 +1,110 @@
+/*
+ * Copyright (c) 2024-2025 MASSDRIVER EI (massdriver.space)
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <bflb/bl616.dtsi>
+#include "ai_m62_12f-pinctrl.dtsi"
+
+/ {
+	model = "Ai-Thinker M62-12F development board";
+	compatible = "bflb,bl616";
+
+	chosen {
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,itcm = &sram1;
+		zephyr,sram = &sram0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+	};
+
+	aliases {
+		led0 = &blue_led;
+		sw0 = &button_0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		blue_led: led_0 {
+			gpios =  <&gpio0 0 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+			label = "Blue - LED0";
+		};
+
+		green_led: led_1 {
+			gpios =  <&gpio0 30 GPIO_ACTIVE_HIGH>;
+			label = "Green - LED1";
+		};
+
+		red_led: led_2 {
+			gpios =  <&gpio0 1 GPIO_ACTIVE_HIGH>;
+			label = "Red - LED2";
+		};
+
+		white_led: led_3 {
+			gpios =  <&gpio0 29 GPIO_ACTIVE_HIGH>;
+			label = "White - LED3";
+		};
+
+		warmwhite_led: led_4 {
+			gpios =  <&gpio0 27 GPIO_ACTIVE_HIGH>;
+			label = "Warm White - LED4";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		button_0: sw0 {
+			gpios = <&gpio0 2 (GPIO_ACTIVE_HIGH)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+};
+
+&cpu0 {
+	clock-frequency = <DT_FREQ_M(320)>;
+};
+
+&flashctrl {
+	flash0: flash@A0000000 {
+		compatible = "soc-nv-flash", "gd,25lq32d";
+		reg = <0xA0000000 (0x400000 - 0x2000)>;
+		write-block-size = <256>;
+		erase-block-size = <DT_SIZE_K(4)>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			slot0_partition: partition@0 {
+				label = "image-0";
+				reg = <0x00000000 0x00100000>;
+				read-only;
+			};
+
+			storage_partition: partition@100000 {
+				label = "storage";
+				reg = <0x00100000 (0x300000 - 0x2000)>;
+			};
+		};
+	};
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&gpio0 {
+	status = "okay";
+};

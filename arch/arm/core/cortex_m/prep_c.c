@@ -22,6 +22,9 @@
 #include <zephyr/sys/barrier.h>
 #include <zephyr/platform/hooks.h>
 #include <zephyr/arch/cache.h>
+#include <cortex_m/debug.h>
+#include <zephyr/arch/common/xip.h>
+#include <zephyr/arch/common/init.h>
 
 /*
  * GCC can detect if memcpy is passed a NULL argument, however one of
@@ -58,7 +61,7 @@ void __weak relocate_vector_table(void)
 	/* Copy vector table to its location in SRAM */
 	size_t vector_size = (size_t)_vector_end - (size_t)_vector_start;
 
-	z_early_memcpy(_sram_vector_start, _vector_start, vector_size);
+	arch_early_memcpy(_sram_vector_start, _vector_start, vector_size);
 #endif
 	SCB->VTOR = VECTOR_ADDRESS & VTOR_MASK;
 	barrier_dsync_fence_full();
@@ -192,7 +195,7 @@ extern FUNC_NORETURN void z_cstart(void);
  * This routine prepares for the execution of and runs C code.
  *
  */
-void z_prep_c(void)
+FUNC_NORETURN void z_prep_c(void)
 {
 #if defined(CONFIG_SOC_PREP_HOOK)
 	soc_prep_hook();
@@ -202,8 +205,8 @@ void z_prep_c(void)
 #if defined(CONFIG_CPU_HAS_FPU)
 	z_arm_floating_point_init();
 #endif
-	z_bss_zero();
-	z_data_copy();
+	arch_bss_zero();
+	arch_data_copy();
 #if defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
 	/* Invoke SoC-specific interrupt controller initialization */
 	z_soc_irq_init();

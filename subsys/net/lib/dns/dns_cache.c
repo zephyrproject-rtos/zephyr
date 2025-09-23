@@ -75,6 +75,10 @@ int dns_cache_add(struct dns_cache *cache, char const *query, struct dns_addrinf
 
 int dns_cache_remove(struct dns_cache *cache, char const *query)
 {
+	if (cache == NULL || query == NULL) {
+		return -EINVAL;
+	}
+
 	NET_DBG("Remove all entries with query \"%s\"", query);
 	if (strlen(query) >= CONFIG_DNS_RESOLVER_MAX_QUERY_LEN) {
 		NET_WARN("Query string to big to be processed %u >= "

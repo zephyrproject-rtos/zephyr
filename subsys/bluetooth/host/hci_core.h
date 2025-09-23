@@ -130,10 +130,6 @@ enum {
 	BT_ADV_LIMITED,
 	/* Advertiser set is currently advertising in the controller. */
 	BT_ADV_ENABLED,
-	/* Advertiser should include name in advertising data */
-	BT_ADV_INCLUDE_NAME_AD,
-	/* Advertiser should include name in scan response data */
-	BT_ADV_INCLUDE_NAME_SD,
 	/* Advertiser set is connectable */
 	BT_ADV_CONNECTABLE,
 	/* Advertiser set is scannable */
@@ -175,6 +171,17 @@ struct bt_le_ext_adv {
 	/* Advertising handle */
 	uint8_t                 handle;
 
+#if defined(CONFIG_BT_EXT_ADV)
+	/* TX Power in use by the controller */
+	int8_t                    tx_power;
+
+	/* Advertising Set ID */
+	uint8_t                   sid;
+
+	/* Callbacks for the advertising set */
+	const struct bt_le_ext_adv_cb *cb;
+#endif /* defined(CONFIG_BT_EXT_ADV) */
+
 	/* Current local Random Address */
 	bt_addr_le_t            random_addr;
 
@@ -182,13 +189,6 @@ struct bt_le_ext_adv {
 	bt_addr_le_t            target_addr;
 
 	ATOMIC_DEFINE(flags, BT_ADV_NUM_FLAGS);
-
-#if defined(CONFIG_BT_EXT_ADV)
-	const struct bt_le_ext_adv_cb *cb;
-
-	/* TX Power in use by the controller */
-	int8_t                    tx_power;
-#endif /* defined(CONFIG_BT_EXT_ADV) */
 
 	struct k_work_delayable	lim_adv_timeout_work;
 
@@ -321,14 +321,12 @@ struct bt_dev_le {
 	sys_slist_t		conn_ready;
 };
 
-#if defined(CONFIG_BT_CLASSIC)
 struct bt_dev_br {
 	/* Max controller's acceptable ACL packet length */
 	uint16_t         mtu;
 	struct k_sem  pkts;
 	uint16_t         esco_pkt_type;
 };
-#endif
 
 /* The theoretical max for these is 8 and 64, but there's no point
  * in allocating the full memory if we only support a small subset.
@@ -445,11 +443,9 @@ struct bt_dev {
 };
 
 extern struct bt_dev bt_dev;
-#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_CLASSIC)
 extern const struct bt_conn_auth_cb *bt_auth;
 extern sys_slist_t bt_auth_info_cbs;
 enum bt_security_err bt_security_err_get(uint8_t hci_err);
-#endif /* CONFIG_BT_SMP || CONFIG_BT_CLASSIC */
 
 int bt_hci_recv(const struct device *dev, struct net_buf *buf);
 
@@ -474,6 +470,7 @@ int bt_hci_disconnect(uint16_t handle, uint8_t reason);
 
 bool bt_le_conn_params_valid(const struct bt_le_conn_param *param);
 int bt_le_set_data_len(struct bt_conn *conn, uint16_t tx_octets, uint16_t tx_time);
+int bt_le_set_default_phy(uint8_t all_phys, uint8_t pref_tx_phy, uint8_t pref_rx_phy);
 int bt_le_set_phy(struct bt_conn *conn, uint8_t all_phys,
 		  uint8_t pref_tx_phy, uint8_t pref_rx_phy, uint8_t phy_opts);
 uint8_t bt_get_phy(uint8_t hci_phy);

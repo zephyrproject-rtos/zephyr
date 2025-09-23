@@ -3,34 +3,37 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import os
+from dataclasses import dataclass
 
 from west import log
 
 from zspdx.scanner import ScannerConfig, scanDocument
+from zspdx.version import SPDX_VERSION_2_3
 from zspdx.walker import Walker, WalkerConfig
 from zspdx.writer import writeSPDX
 
 
 # SBOMConfig contains settings that will be passed along to the various
 # SBOM maker subcomponents.
+@dataclass(eq=True)
 class SBOMConfig:
-    def __init__(self):
-        super().__init__()
+    # prefix for Document namespaces; should not end with "/"
+    namespacePrefix: str = ""
 
-        # prefix for Document namespaces; should not end with "/"
-        self.namespacePrefix = ""
+    # location of build directory
+    buildDir: str = ""
 
-        # location of build directory
-        self.buildDir = ""
+    # location of SPDX document output directory
+    spdxDir: str = ""
 
-        # location of SPDX document output directory
-        self.spdxDir = ""
+    # SPDX specification version to use
+    spdxVersion: str = SPDX_VERSION_2_3
 
-        # should also analyze for included header files?
-        self.analyzeIncludes = False
+    # should also analyze for included header files?
+    analyzeIncludes: bool = False
 
-        # should also add an SPDX document for the SDK?
-        self.includeSDK = False
+    # should also add an SPDX document for the SDK?
+    includeSDK: bool = False
 
 
 # create Cmake file-based API directories and query file
@@ -101,31 +104,33 @@ def makeSPDX(cfg):
 
     # write SDK document, if we made one
     if cfg.includeSDK:
-        retval = writeSPDX(os.path.join(cfg.spdxDir, "sdk.spdx"), w.docSDK)
+        retval = writeSPDX(os.path.join(cfg.spdxDir, "sdk.spdx"), w.docSDK, cfg.spdxVersion)
         if not retval:
             log.err("SPDX writer failed for SDK document; bailing")
             return False
 
     # write app document
-    retval = writeSPDX(os.path.join(cfg.spdxDir, "app.spdx"), w.docApp)
+    retval = writeSPDX(os.path.join(cfg.spdxDir, "app.spdx"), w.docApp, cfg.spdxVersion)
     if not retval:
         log.err("SPDX writer failed for app document; bailing")
         return False
 
     # write zephyr document
-    writeSPDX(os.path.join(cfg.spdxDir, "zephyr.spdx"), w.docZephyr)
+    retval = writeSPDX(os.path.join(cfg.spdxDir, "zephyr.spdx"), w.docZephyr, cfg.spdxVersion)
     if not retval:
         log.err("SPDX writer failed for zephyr document; bailing")
         return False
 
     # write build document
-    writeSPDX(os.path.join(cfg.spdxDir, "build.spdx"), w.docBuild)
+    retval = writeSPDX(os.path.join(cfg.spdxDir, "build.spdx"), w.docBuild, cfg.spdxVersion)
     if not retval:
         log.err("SPDX writer failed for build document; bailing")
         return False
 
     # write modules document
-    writeSPDX(os.path.join(cfg.spdxDir, "modules-deps.spdx"), w.docModulesExtRefs)
+    retval = writeSPDX(
+        os.path.join(cfg.spdxDir, "modules-deps.spdx"), w.docModulesExtRefs, cfg.spdxVersion
+    )
     if not retval:
         log.err("SPDX writer failed for modules-deps document; bailing")
         return False

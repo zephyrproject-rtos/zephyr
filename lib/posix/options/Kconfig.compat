@@ -7,7 +7,6 @@ menu "Miscellaneous POSIX-related options"
 
 config EVENTFD
 	bool "Support for eventfd"
-	depends on !NATIVE_APPLICATION
 	select ZVFS
 	select ZVFS_EVENTFD
 	help

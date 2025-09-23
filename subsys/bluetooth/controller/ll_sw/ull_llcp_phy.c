@@ -542,12 +542,11 @@ static void lp_pu_send_phy_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8
 static void lp_pu_send_phy_update_ind(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				      void *param)
 {
-	if (llcp_lr_ispaused(conn) || !llcp_tx_alloc_peek(conn, ctx)) {
+	if (llcp_lr_ispaused(conn) || !llcp_tx_alloc_peek(conn, ctx) ||
+	    (ull_tx_q_peek(&conn->tx_q) != NULL) || !ull_conn_lll_tx_queue_is_empty(conn)) {
 		ctx->state = LP_PU_STATE_WAIT_TX_PHY_UPDATE_IND;
 	} else {
 		ctx->tx_opcode = PDU_DATA_LLCTRL_TYPE_PHY_UPD_IND;
-
-		/* Allocate TX node */
 		ctx->node_ref.tx = llcp_tx_alloc(conn, ctx);
 		lp_pu_tx(conn, ctx, evt, param);
 	}
@@ -770,7 +769,9 @@ static void lp_pu_st_wait_rx_phy_update_ind(struct ll_conn *conn, struct proc_ct
 static void lp_pu_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				void *param)
 {
-	if (is_instant_reached_or_passed(ctx->data.pu.instant, ull_conn_event_counter(conn))) {
+	uint16_t event_counter = ull_conn_event_counter_at_prepare(conn);
+
+	if (is_instant_reached_or_passed(ctx->data.pu.instant, event_counter)) {
 		const uint8_t phy_changed = pu_apply_phy_update(conn, ctx);
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 		if (phy_changed) {
@@ -1009,14 +1010,13 @@ static void rp_pu_send_phy_update_ind(struct ll_conn *conn, struct proc_ctx *ctx
 {
 	if (llcp_rr_ispaused(conn) || !llcp_tx_alloc_peek(conn, ctx) ||
 	    (llcp_rr_get_paused_cmd(conn) == PROC_PHY_UPDATE) ||
-	    !ull_is_lll_tx_queue_empty(conn)) {
+	    (ull_tx_q_peek(&conn->tx_q) != NULL) || !ull_conn_lll_tx_queue_is_empty(conn)) {
 		ctx->state = RP_PU_STATE_WAIT_TX_PHY_UPDATE_IND;
 	} else {
 		llcp_rr_set_paused_cmd(conn, PROC_CTE_REQ);
 		ctx->tx_opcode = PDU_DATA_LLCTRL_TYPE_PHY_UPD_IND;
 		ctx->node_ref.tx = llcp_tx_alloc(conn, ctx);
 		rp_pu_tx(conn, ctx, evt, param);
-
 	}
 }
 #endif /* CONFIG_BT_CENTRAL */
@@ -1191,7 +1191,9 @@ static void rp_pu_st_wait_rx_phy_update_ind(struct ll_conn *conn, struct proc_ct
 static void rp_pu_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				void *param)
 {
-	if (is_instant_reached_or_passed(ctx->data.pu.instant, ull_conn_event_counter(conn))) {
+	uint16_t event_counter = ull_conn_event_counter_at_prepare(conn);
+
+	if (is_instant_reached_or_passed(ctx->data.pu.instant, event_counter)) {
 		ctx->data.pu.error = BT_HCI_ERR_SUCCESS;
 		const uint8_t phy_changed = pu_apply_phy_update(conn, ctx);
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)

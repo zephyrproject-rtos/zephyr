@@ -133,16 +133,11 @@ static void mcux_dcnano_lcdif_get_capabilities(const struct device *dev,
 
 	capabilities->y_resolution = config->dpi_config.panelHeight;
 	capabilities->x_resolution = config->dpi_config.panelWidth;
-	capabilities->supported_pixel_formats =
-		(PIXEL_FORMAT_BGR_565 | PIXEL_FORMAT_ARGB_8888);
+	capabilities->supported_pixel_formats = (PIXEL_FORMAT_RGB_565 | PIXEL_FORMAT_ARGB_8888);
 	capabilities->current_orientation = DISPLAY_ORIENTATION_NORMAL;
 	switch (data->fb_config.format) {
 	case kLCDIF_PixelFormatRGB565:
-		/* Zephyr stores RGB565 as big endian, and LCDIF
-		 * expects little endian. Use BGR565 format to resolve
-		 * this.
-		 */
-		capabilities->current_pixel_format = PIXEL_FORMAT_BGR_565;
+		capabilities->current_pixel_format = PIXEL_FORMAT_RGB_565;
 		break;
 #if DT_ENUM_IDX_OR(DT_NODELABEL(lcdif), version, 0) == 1
 	case kLCDIF_PixelFormatARGB8888:
@@ -185,11 +180,7 @@ static int mcux_dcnano_lcdif_set_pixel_format(const struct device *dev,
 	struct mcux_dcnano_lcdif_data *data = dev->data;
 
 	switch (pixel_format) {
-	case PIXEL_FORMAT_BGR_565:
-		/* Zephyr stores RGB565 as big endian, and LCDIF
-		 * expects little endian. Use BGR565 format to resolve
-		 * this.
-		 */
+	case PIXEL_FORMAT_RGB_565:
 		data->fb_config.format = kLCDIF_PixelFormatRGB565;
 		data->pixel_bytes = 2;
 		break;

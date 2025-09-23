@@ -295,7 +295,7 @@ bool log_backend_net_set_ip(const struct sockaddr *addr)
 }
 
 #if defined(CONFIG_NET_HOSTNAME_ENABLE)
-void log_backend_net_hostname_set(char *hostname, size_t len)
+void log_backend_net_hostname_set(const char *hostname, size_t len)
 {
 	(void)strncpy(dev_hostname, hostname, MIN(len, MAX_HOSTNAME_LEN));
 	log_output_hostname_set(&log_output_net, dev_hostname);
@@ -367,7 +367,7 @@ const struct log_backend *log_backend_net_get(void)
 }
 
 #if defined(CONFIG_LOG_BACKEND_NET_USE_CONNECTION_MANAGER)
-static void l4_event_handler(uint32_t mgmt_event, struct net_if *iface, void *info,
+static void l4_event_handler(uint64_t mgmt_event, struct net_if *iface, void *info,
 			     size_t info_length, void *user_data)
 {
 	ARG_UNUSED(iface);

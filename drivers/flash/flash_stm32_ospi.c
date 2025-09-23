@@ -39,8 +39,8 @@ LOG_MODULE_REGISTER(flash_stm32_ospi, CONFIG_FLASH_LOG_LEVEL);
 #define DT_OSPI_PROP_OR(prop, default_value) \
 	DT_PROP_OR(STM32_OSPI_NODE, prop, default_value)
 
-/* Get the base address of the flash from the DTS node */
-#define STM32_OSPI_BASE_ADDRESS DT_INST_REG_ADDR(0)
+/* Get the base address of the flash from the DTS st,stm32-ospi node */
+#define STM32_OSPI_BASE_ADDRESS DT_REG_ADDR_BY_IDX(STM32_OSPI_NODE, 1)
 
 #define STM32_OSPI_RESET_GPIO DT_INST_NODE_HAS_PROP(0, reset_gpios)
 
@@ -1702,11 +1702,21 @@ static void flash_stm32_ospi_pages_layout(const struct device *dev,
 }
 #endif
 
+static int flash_stm32_ospi_get_size(const struct device *dev, uint64_t *size)
+{
+	const struct flash_stm32_ospi_config *dev_cfg = dev->config;
+
+	*size = (uint64_t)dev_cfg->flash_size;
+
+	return 0;
+}
+
 static DEVICE_API(flash, flash_stm32_ospi_driver_api) = {
 	.read = flash_stm32_ospi_read,
 	.write = flash_stm32_ospi_write,
 	.erase = flash_stm32_ospi_erase,
 	.get_parameters = flash_stm32_ospi_get_parameters,
+	.get_size = flash_stm32_ospi_get_size,
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	.page_layout = flash_stm32_ospi_pages_layout,
 #endif
@@ -2219,12 +2229,9 @@ static int flash_stm32_ospi_init(const struct device *dev)
 	dma_cfg.user_data = &hdma;
 	/* HACK: This field is used to inform driver that it is overridden */
 	dma_cfg.linked_channel = STM32_DMA_HAL_OVERRIDE;
-	/* Because of the STREAM OFFSET, the DMA channel given here is from 1 - 8 */
-	ret = dma_config(dev_data->dma.dev,
-			 (dev_data->dma.channel + STM32_DMA_STREAM_OFFSET), &dma_cfg);
+	ret = dma_config(dev_data->dma.dev, dev_data->dma.channel, &dma_cfg);
 	if (ret != 0) {
-		LOG_ERR("Failed to configure DMA channel %d",
-			dev_data->dma.channel + STM32_DMA_STREAM_OFFSET);
+		LOG_ERR("Failed to configure DMA channel %d", dev_data->dma.channel);
 		return ret;
 	}
 
@@ -2256,27 +2263,12 @@ static int flash_stm32_ospi_init(const struct device *dev)
 	hdma.Init.Mode = DMA_NORMAL;
 	hdma.Init.Priority = table_priority[dma_cfg.channel_priority];
 	hdma.Init.Direction = DMA_PERIPH_TO_MEMORY;
+	hdma.Instance = STM32_DMA_GET_INSTANCE(dev_data->dma.reg, dev_data->dma.channel);
 #ifdef CONFIG_DMA_STM32_V1
 	/* TODO: Not tested in this configuration */
 	hdma.Init.Channel = dma_cfg.dma_slot;
-	hdma.Instance = __LL_DMA_GET_STREAM_INSTANCE(dev_data->dma.reg,
-						     dev_data->dma.channel);
 #else
 	hdma.Init.Request = dma_cfg.dma_slot;
-#if CONFIG_DMA_STM32U5
-	hdma.Instance = LL_DMA_GET_CHANNEL_INSTANCE(dev_data->dma.reg,
-						      dev_data->dma.channel);
-#elif defined(CONFIG_DMAMUX_STM32)
-	/*
-	 * HAL expects a valid DMA channel (not DMAMUX).
-	 * The channel is from 0 to 7 because of the STM32_DMA_STREAM_OFFSET in the dma_stm32 driver
-	 */
-	hdma.Instance = __LL_DMA_GET_CHANNEL_INSTANCE(dev_data->dma.reg,
-						      dev_data->dma.channel);
-#else
-	hdma.Instance = __LL_DMA_GET_CHANNEL_INSTANCE(dev_data->dma.reg,
-						      dev_data->dma.channel-1);
-#endif /* CONFIG_DMA_STM32U5 */
 #endif /* CONFIG_DMA_STM32_V1 */
 
 	/* Initialize DMA HAL */
@@ -2658,7 +2650,7 @@ static const struct flash_stm32_ospi_config flash_stm32_ospi_cfg = {
 		       .enr = DT_CLOCKS_CELL_BY_NAME(STM32_OSPI_NODE, ospi_mgr, bits)},
 #endif
 	.irq_config = flash_stm32_ospi_irq_config_func,
-	.flash_size = DT_INST_REG_SIZE(0),
+	.flash_size = DT_INST_PROP(0, size) / 8, /* In Bytes */
 	.max_frequency = DT_INST_PROP(0, ospi_max_frequency),
 	.data_mode = DT_INST_PROP(0, spi_bus_width), /* SPI or OPI */
 	.data_rate = DT_INST_PROP(0, data_rate), /* DTR or STR */
@@ -2686,7 +2678,7 @@ static struct flash_stm32_ospi_data flash_stm32_ospi_dev_data = {
 	.qer_type = DT_QER_PROP_OR(0, JESD216_DW15_QER_VAL_S1B6),
 	.write_opcode = DT_WRITEOC_PROP_OR(0, SPI_NOR_WRITEOC_NONE),
 	.page_size = SPI_NOR_PAGE_SIZE, /* by default, to be updated by sfdp */
-#if DT_NODE_HAS_PROP(DT_INST(0, st_stm32_ospi_nor), jedec_id)
+#if DT_NODE_HAS_PROP(DT_INST(0, st_stm32_ospi_nor), jedec_id) && defined(CONFIG_FLASH_JESD216_API)
 	.jedec_id = DT_INST_PROP(0, jedec_id),
 #endif /* jedec_id */
 	OSPI_DMA_CHANNEL(STM32_OSPI_NODE, tx_rx)

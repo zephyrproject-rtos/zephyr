@@ -150,7 +150,7 @@ zephyr_udc0: &usbotg_fs {
 };
 
 &rtc {
-	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>,
+	clocks = <&rcc STM32_CLOCK(APB1, 28)>,
 		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
 	status = "okay";
 };
@@ -197,10 +197,12 @@ zephyr_udc0: &usbotg_fs {
 	pinctrl-names = "default";
 	status = "okay";
 
-	n25q128a1: qspi-nor-flash@90000000 {
+	n25q128a1: qspi-nor-flash@0 {
 		compatible = "st,stm32-qspi-nor";
-		reg = <0x90000000 DT_SIZE_M(16)>; /* 128 Mbits */
+		reg = <0>;
+		size = <DT_SIZE_M(128)>; /* 128 Mbits */
 		qspi-max-frequency = <72000000>;
+		cs-high-time = <4>; /* >= 50 ns */
 		status = "okay";
 
 		partitions {

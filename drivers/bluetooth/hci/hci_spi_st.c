@@ -335,7 +335,7 @@ static int bt_spi_send_aci_config(uint8_t offset, const uint8_t *value, size_t v
 	hdr.param_len = data_len;
 	buf = bt_buf_get_tx(BT_BUF_CMD, K_NO_WAIT, &hdr, sizeof(hdr));
 #else
-	buf = bt_hci_cmd_create(BLUENRG_ACI_WRITE_CONFIG_DATA, data_len);
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 #endif /* CONFIG_BT_HCI_RAW */
 
 	if (!buf) {
@@ -619,9 +619,14 @@ static int bt_spi_send(const struct device *dev, struct net_buf *buf)
 		}
 	}
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_hci_spi_v1) */
+
+	if (ret != 0) {
+		return ret;
+	}
+
 	net_buf_unref(buf);
 
-	return ret;
+	return 0;
 }
 
 static int bt_spi_open(const struct device *dev, bt_hci_recv_t recv)

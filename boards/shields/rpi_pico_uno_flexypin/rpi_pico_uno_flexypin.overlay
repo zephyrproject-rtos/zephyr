@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
+
 / {
 	arduino_header: connector {
 		compatible = "arduino-header-r3";
@@ -11,28 +13,28 @@
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
 		gpio-map =
-			<0 0 &pico_header 26 0>,  /* A0 */
-			<1 0 &pico_header 27 0>,  /* A1 */
-			<2 0 &pico_header 28 0>,  /* A2 */
-			<3 0 &pico_header 13 0>,  /* A3 */
-			<4 0 &pico_header 14 0>,  /* A4 */
-			<5 0 &pico_header 15 0>,  /* A5 */
-			<6 0 &pico_header 1 0>,   /* D0 */
-			<7 0 &pico_header 0 0>,   /* D1 */
-			<8 0 &pico_header 4 0>,   /* D2 */
-			<9 0 &pico_header 5 0>,   /* D3 */
-			<10 0 &pico_header 6 0>,  /* D4 */
-			<11 0 &pico_header 7 0>,  /* D5 */
-			<12 0 &pico_header 8 0>,  /* D6 */
-			<13 0 &pico_header 9 0>,  /* D7 */
-			<14 0 &pico_header 2 0>,  /* D8 */
-			<15 0 &pico_header 3 0>,  /* D9 */
-			<16 0 &pico_header 17 0>, /* D10 */
-			<17 0 &pico_header 19 0>, /* D11 */
-			<18 0 &pico_header 16 0>, /* D12 */
-			<19 0 &pico_header 18 0>, /* D13 */
-			<20 0 &pico_header 20 0>, /* D14 */
-			<21 0 &pico_header 21 0>; /* D15 */
+			<ARDUINO_HEADER_R3_A0 0 &pico_header 26 0>,
+			<ARDUINO_HEADER_R3_A1 0 &pico_header 27 0>,
+			<ARDUINO_HEADER_R3_A2 0 &pico_header 28 0>,
+			<ARDUINO_HEADER_R3_A3 0 &pico_header 13 0>,
+			<ARDUINO_HEADER_R3_A4 0 &pico_header 14 0>,
+			<ARDUINO_HEADER_R3_A5 0 &pico_header 15 0>,
+			<ARDUINO_HEADER_R3_D0 0 &pico_header 1 0>,
+			<ARDUINO_HEADER_R3_D1 0 &pico_header 0 0>,
+			<ARDUINO_HEADER_R3_D2 0 &pico_header 4 0>,
+			<ARDUINO_HEADER_R3_D3 0 &pico_header 5 0>,
+			<ARDUINO_HEADER_R3_D4 0 &pico_header 6 0>,
+			<ARDUINO_HEADER_R3_D5 0 &pico_header 7 0>,
+			<ARDUINO_HEADER_R3_D6 0 &pico_header 8 0>,
+			<ARDUINO_HEADER_R3_D7 0 &pico_header 9 0>,
+			<ARDUINO_HEADER_R3_D8 0 &pico_header 2 0>,
+			<ARDUINO_HEADER_R3_D9 0 &pico_header 3 0>,
+			<ARDUINO_HEADER_R3_D10 0 &pico_header 17 0>,
+			<ARDUINO_HEADER_R3_D11 0 &pico_header 19 0>,
+			<ARDUINO_HEADER_R3_D12 0 &pico_header 16 0>,
+			<ARDUINO_HEADER_R3_D13 0 &pico_header 18 0>,
+			<ARDUINO_HEADER_R3_D14 0 &pico_header 20 0>,
+			<ARDUINO_HEADER_R3_D15 0 &pico_header 21 0>;
 	};
 };
 

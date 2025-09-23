@@ -14,6 +14,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/kernel.h>
 #include <soc.h>
+#include <stm32_cache.h>
 #include <stm32_ll_i2c.h>
 #include <errno.h>
 #include <zephyr/drivers/i2c.h>
@@ -436,15 +437,16 @@ int i2c_stm32_target_register(const struct device *dev,
 		return ret;
 	}
 
-#if defined(CONFIG_PM_DEVICE_RUNTIME)
+	/* Mark device as active */
+	(void)pm_device_runtime_get(dev);
+
+#if !defined(CONFIG_SOC_SERIES_STM32F7X)
 	if (pm_device_wakeup_is_capable(dev)) {
-		/* Mark device as active */
-		(void)pm_device_runtime_get(dev);
 		/* Enable wake-up from stop */
 		LOG_DBG("i2c: enabling wakeup from stop");
 		LL_I2C_EnableWakeUpFromStop(cfg->i2c);
 	}
-#endif /* defined(CONFIG_PM_DEVICE_RUNTIME) */
+#endif /* CONFIG_SOC_SERIES_STM32F7X */
 
 	LL_I2C_Enable(i2c);
 
@@ -527,21 +529,21 @@ int i2c_stm32_target_unregister(const struct device *dev,
 		LL_I2C_Disable(i2c);
 	}
 
-#if defined(CONFIG_PM_DEVICE_RUNTIME)
+#if !defined(CONFIG_SOC_SERIES_STM32F7X)
 	if (pm_device_wakeup_is_capable(dev)) {
 		/* Disable wake-up from STOP */
 		LOG_DBG("i2c: disabling wakeup from stop");
 		LL_I2C_DisableWakeUpFromStop(i2c);
-		/* Release the device */
-		(void)pm_device_runtime_put(dev);
 	}
-#endif /* defined(CONFIG_PM_DEVICE_RUNTIME) */
+#endif /* CONFIG_SOC_SERIES_STM32F7X */
+
+	/* Release the device */
+	(void)pm_device_runtime_put(dev);
 
 	data->slave_attached = false;
 
 	return 0;
 }
-
 #endif /* defined(CONFIG_I2C_TARGET) */
 
 void i2c_stm32_event(const struct device *dev)
@@ -659,37 +661,6 @@ end:
 	return -EIO;
 }
 
-#if defined(CONFIG_DCACHE) && defined(CONFIG_I2C_STM32_V2_DMA)
-static bool buf_in_nocache(uintptr_t buf, size_t len_bytes)
-{
-	bool buf_within_nocache = false;
-
-#ifdef CONFIG_NOCACHE_MEMORY
-	/* Check if buffer is in nocache region defined by the linker */
-	buf_within_nocache = (buf >= ((uintptr_t)_nocache_ram_start)) &&
-		((buf + len_bytes - 1) <= ((uintptr_t)_nocache_ram_end));
-	if (buf_within_nocache) {
-		return true;
-	}
-#endif /* CONFIG_NOCACHE_MEMORY */
-
-#ifdef CONFIG_MEM_ATTR
-	/* Check if buffer is in nocache memory region defined in DT */
-	buf_within_nocache = mem_attr_check_buf(
-		(void *)buf, len_bytes, DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)) == 0;
-	if (buf_within_nocache) {
-		return true;
-	}
-#endif /* CONFIG_MEM_ATTR */
-
-	/* Check if buffer is in RO region (Flash..) */
-	buf_within_nocache = (buf >= ((uintptr_t)__rodata_region_start)) &&
-		((buf + len_bytes - 1) <= ((uintptr_t)__rodata_region_end));
-
-	return buf_within_nocache;
-}
-#endif /* CONFIG_DCACHE && CONFIG_I2C_STM32_V2_DMA */
-
 static int i2c_stm32_msg_write(const struct device *dev, struct i2c_msg *msg,
 			       uint8_t *next_msg_flags, uint16_t slave)
 {
@@ -705,13 +676,13 @@ static int i2c_stm32_msg_write(const struct device *dev, struct i2c_msg *msg,
 	data->current.is_err = 0U;
 	data->current.msg = msg;
 
-#if defined(CONFIG_DCACHE) && defined(CONFIG_I2C_STM32_V2_DMA)
-	if (!buf_in_nocache((uintptr_t)msg->buf, msg->len)) {
+#if defined(CONFIG_I2C_STM32_V2_DMA)
+	if (!stm32_buf_in_nocache((uintptr_t)msg->buf, msg->len)) {
 		LOG_DBG("Tx buffer at %p (len %zu) is in cached memory; cleaning cache", msg->buf,
 			msg->len);
 		sys_cache_data_flush_range((void *)msg->buf, msg->len);
 	}
-#endif /* CONFIG_DCACHE && CONFIG_I2C_STM32_V2_DMA*/
+#endif /* CONFIG_I2C_STM32_V2_DMA */
 
 	msg_init(dev, msg, next_msg_flags, slave, LL_I2C_REQUEST_WRITE);
 
@@ -783,14 +754,13 @@ static int i2c_stm32_msg_read(const struct device *dev, struct i2c_msg *msg,
 		k_sem_take(&data->device_sync_sem, K_FOREVER);
 		is_timeout = true;
 	}
-
-#if defined(CONFIG_DCACHE) && defined(CONFIG_I2C_STM32_V2_DMA)
-	if (!buf_in_nocache((uintptr_t)msg->buf, msg->len)) {
+#if defined(CONFIG_I2C_STM32_V2_DMA)
+	if (!stm32_buf_in_nocache((uintptr_t)msg->buf, msg->len)) {
 		LOG_DBG("Rx buffer at %p (len %zu) is in cached memory; invalidating cache",
 			msg->buf, msg->len);
 		sys_cache_data_invd_range((void *)msg->buf, msg->len);
 	}
-#endif /* CONFIG_DCACHE && CONFIG_I2C_STM32_V2_DMA */
+#endif /* CONFIG_I2C_STM32_V2_DMA */
 
 	if (data->current.is_nack || data->current.is_err ||
 	    data->current.is_arlo || is_timeout) {
@@ -874,7 +844,7 @@ static inline int msg_done(const struct device *dev,
 			return -EIO;
 		}
 		if ((k_uptime_get() - start_time) >
-		    STM32_I2C_TRANSFER_TIMEOUT_MSEC) {
+		    I2C_STM32_TRANSFER_TIMEOUT_MSEC) {
 			return -ETIMEDOUT;
 		}
 	}
@@ -883,7 +853,7 @@ static inline int msg_done(const struct device *dev,
 		LL_I2C_GenerateStopCondition(i2c);
 		while (!LL_I2C_IsActiveFlag_STOP(i2c)) {
 			if ((k_uptime_get() - start_time) >
-			    STM32_I2C_TRANSFER_TIMEOUT_MSEC) {
+			    I2C_STM32_TRANSFER_TIMEOUT_MSEC) {
 				return -ETIMEDOUT;
 			}
 		}
@@ -918,7 +888,7 @@ static int i2c_stm32_msg_write(const struct device *dev, struct i2c_msg *msg,
 			}
 
 			if ((k_uptime_get() - start_time) >
-			    STM32_I2C_TRANSFER_TIMEOUT_MSEC) {
+			    I2C_STM32_TRANSFER_TIMEOUT_MSEC) {
 				return -ETIMEDOUT;
 			}
 		}
@@ -949,7 +919,7 @@ static int i2c_stm32_msg_read(const struct device *dev, struct i2c_msg *msg,
 				return -EIO;
 			}
 			if ((k_uptime_get() - start_time) >
-			    STM32_I2C_TRANSFER_TIMEOUT_MSEC) {
+			    I2C_STM32_TRANSFER_TIMEOUT_MSEC) {
 				return -ETIMEDOUT;
 			}
 		}
@@ -1324,6 +1294,8 @@ int i2c_stm32_transaction(const struct device *dev,
 
 #ifndef CONFIG_I2C_STM32_INTERRUPT
 	struct i2c_stm32_data *data = dev->data;
+	const struct i2c_stm32_config *cfg = dev->config;
+	I2C_TypeDef *i2c = cfg->i2c;
 
 	if (ret == -ETIMEDOUT) {
 		if (LL_I2C_IsEnabledReloadMode(i2c)) {

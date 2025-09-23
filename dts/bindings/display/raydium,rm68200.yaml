@@ -4,7 +4,11 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-description: Raydium RM68200 Panel
+title: Raydium RM68200 display controller
+
+description: |
+    The Raydium RM68200 is a 16.7M colors TFT-LCD controller
+    with a maximum 480RGBx864 resolution.
 
 compatible: "raydium,rm68200"
 

@@ -1,0 +1,44 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RX MTU controller
+
+compatible: "renesas,rx-mtu"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+properties:
+  channel:
+    type: int
+    description: channel MTU
+
+  reg:
+    required: true
+
+  reg-names:
+    required: true
+
+  clocks:
+    required: true
+
+  counter-clear-channel:
+    type: int
+    description:
+      Choose one channel to act as counter clear channel. Not required in synchronous
+      mode if another synchronous MTU has a counter clear channel defined. If neither a channel
+      nor synchronous mode is chosen, it is not possible to set a period, but the MTU will use a
+      constant period of 0xffff cycles.
+
+  synchronous:
+    type: boolean
+    description:
+      if set, the device will operate in synchronous mode. All MTU devices in
+      synchronous mode have the same period (in cycles, but subject to different prescaler
+      settings). Only one of the synchronous devices has to specify a counter clear channel.
+
+  bit-idx:
+    type: int
+    required: true
+    description:
+      which bit of the common timer start register (TSTR) and timer synchronous
+      register (TSYR) to set for this device.

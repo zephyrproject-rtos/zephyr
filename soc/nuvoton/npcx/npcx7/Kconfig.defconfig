@@ -11,4 +11,7 @@ config NUM_IRQS
 config CORTEX_M_SYSTICK
 	default !NPCX_ITIM_TIMER
 
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_nodelabel_int_prop,itims,clock-frequency)
+
 endif # SOC_SERIES_NPCX7

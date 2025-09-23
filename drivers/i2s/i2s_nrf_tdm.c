@@ -30,6 +30,10 @@ LOG_MODULE_REGISTER(tdm_nrf, CONFIG_I2S_LOG_LEVEL);
  */
 #define NRFX_TDM_STATUS_TRANSFER_STOPPED BIT(1)
 
+/* Maximum clock divider value. Corresponds to CKDIV2. */
+#define NRFX_TDM_MAX_SCK_DIV_VALUE TDM_CONFIG_SCK_DIV_SCKDIV_Max
+#define NRFX_TDM_MAX_MCK_DIV_VALUE TDM_CONFIG_MCK_DIV_DIV_Max
+
 #define NRFX_TDM_NUM_OF_CHANNELS (TDM_CONFIG_CHANNEL_NUM_NUM_Max + 1)
 
 #define NRFX_TDM_TX_CHANNELS_MASK                                                                  \
@@ -127,7 +131,7 @@ static int audio_clock_request(struct tdm_drv_data *drv_data)
 {
 #if DT_NODE_HAS_STATUS_OKAY(NODE_ACLK) && CONFIG_CLOCK_CONTROL_NRF
 	return onoff_request(drv_data->clk_mgr, &drv_data->clk_cli);
-#elif DT_NODE_HAS_STATUS_OKAY(NODE_ACLK) && CONFIG_CLOCK_CONTROL_NRF2_AUDIOPLL
+#elif DT_NODE_HAS_STATUS_OKAY(NODE_ACLK) && CONFIG_CLOCK_CONTROL_NRFS_AUDIOPLL
 	return nrf_clock_control_request(audiopll, &aclk_spec, &drv_data->clk_cli);
 #else
 	(void)drv_data;
@@ -140,7 +144,7 @@ static int audio_clock_release(struct tdm_drv_data *drv_data)
 {
 #if DT_NODE_HAS_STATUS_OKAY(NODE_ACLK) && CONFIG_CLOCK_CONTROL_NRF
 	return onoff_release(drv_data->clk_mgr);
-#elif DT_NODE_HAS_STATUS_OKAY(NODE_ACLK) && CONFIG_CLOCK_CONTROL_NRF2_AUDIOPLL
+#elif DT_NODE_HAS_STATUS_OKAY(NODE_ACLK) && CONFIG_CLOCK_CONTROL_NRFS_AUDIOPLL
 	(void)drv_data;
 
 	return nrf_clock_control_release(audiopll, &aclk_spec);
@@ -814,11 +818,11 @@ static int trigger_start(const struct device *dev)
 
 	nrf_tdm_sck_configure(drv_cfg->p_reg,
 			      drv_cfg->sck_src == ACLK ? NRF_TDM_SRC_ACLK : NRF_TDM_SRC_PCLK32M,
-			      false);
+			      nrfx_cfg->sck_setup > NRFX_TDM_MAX_SCK_DIV_VALUE);
 
 	nrf_tdm_mck_configure(drv_cfg->p_reg,
 			      drv_cfg->mck_src == ACLK ? NRF_TDM_SRC_ACLK : NRF_TDM_SRC_PCLK32M,
-			      false);
+			      nrfx_cfg->mck_setup > NRFX_TDM_MAX_MCK_DIV_VALUE);
 	/* If it is required to use certain HF clock, request it to be running
 	 * first. If not, start the transfer directly.
 	 */
@@ -1192,6 +1196,7 @@ static DEVICE_API(i2s, tdm_nrf_drv_api) = {
 	BUILD_ASSERT((TDM_SCK_CLK_SRC(idx) != ACLK && TDM_MCK_CLK_SRC(idx) != ACLK) ||             \
 			     DT_NODE_HAS_STATUS_OKAY(NODE_ACLK),                                   \
 		     "Clock source ACLK requires the audiopll node.");                             \
+	NRF_DT_CHECK_NODE_HAS_REQUIRED_MEMORY_REGIONS(TDM(idx));                                   \
 	DEVICE_DT_DEFINE(TDM(idx), tdm_nrf_init##idx, NULL, &tdm_nrf_data##idx, &tdm_nrf_cfg##idx, \
 			 POST_KERNEL, CONFIG_I2S_INIT_PRIORITY, &tdm_nrf_drv_api);
 

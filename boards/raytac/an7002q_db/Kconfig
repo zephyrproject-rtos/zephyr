@@ -1,0 +1,29 @@
+# Raytac AN7002Q-DB-5340 board configuration
+
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# Copyright (c) 2025 Raytac Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config IPM_NRFX
+	default IPM
+
+config MBOX_NRFX_IPC
+	default MBOX
+
+if BOARD_RAYTAC_AN7002Q_DB_NRF5340_CPUAPP
+
+config BT_HCI_IPC
+	default y if BT
+
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+	int
+	default 4096 if BT_HCI_IPC
+
+endif
+
+if BOARD_RAYTAC_AN7002Q_DB_NRF5340_CPUNET
+
+config BT_ECC
+	default y if BT
+
+endif

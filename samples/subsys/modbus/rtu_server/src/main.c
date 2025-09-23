@@ -9,7 +9,6 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/modbus/modbus.h>
-#include <zephyr/usb/usb_device.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(mbs_sample, LOG_LEVEL_INF);
@@ -147,7 +146,7 @@ int main(void)
 	const struct device *const dev = DEVICE_DT_GET(DT_PARENT(MODBUS_NODE));
 	uint32_t dtr = 0;
 
-	if (!device_is_ready(dev) || usb_enable(NULL)) {
+	if (!device_is_ready(dev)) {
 		return 0;
 	}
 

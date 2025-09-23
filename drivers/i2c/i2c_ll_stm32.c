@@ -194,9 +194,7 @@ static int i2c_stm32_transfer(const struct device *dev, struct i2c_msg *msg,
 	k_sem_take(&data->bus_mutex, K_FOREVER);
 
 	/* Prevent driver from being suspended by PM until I2C transaction is complete */
-#ifdef CONFIG_PM_DEVICE_RUNTIME
 	(void)pm_device_runtime_get(dev);
-#endif
 
 	/* Prevent the clocks to be stopped during the i2c transaction */
 	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
@@ -220,9 +218,7 @@ static int i2c_stm32_transfer(const struct device *dev, struct i2c_msg *msg,
 
 	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 
-#ifdef CONFIG_PM_DEVICE_RUNTIME
 	(void)pm_device_runtime_put(dev);
-#endif
 
 	k_sem_give(&data->bus_mutex);
 
@@ -388,9 +384,7 @@ static int i2c_stm32_init(const struct device *dev)
 		return ret;
 	}
 
-#ifdef CONFIG_PM_DEVICE_RUNTIME
 	(void)pm_device_runtime_enable(dev);
-#endif
 
 	data->is_configured = true;
 
@@ -502,7 +496,8 @@ void i2c_stm32_dma_rx_cb(const struct device *dma_dev, void *user_data,
 }
 
 #define I2C_DMA_DATA_INIT(index, dir, src, dest)						\
-	.dma_##dir##_cfg = {									\
+	IF_ENABLED(DT_INST_DMAS_HAS_NAME(index, dir),						\
+		(.dma_##dir##_cfg = {								\
 		.dma_slot = STM32_DMA_SLOT(index, dir, slot),					\
 		.channel_direction = STM32_DMA_CONFIG_DIRECTION(				\
 					STM32_DMA_CHANNEL_CONFIG(index, dir)),			\
@@ -517,7 +512,7 @@ void i2c_stm32_dma_rx_cb(const struct device *dma_dev, void *user_data,
 		.source_burst_length = 1,							\
 		.dest_burst_length = 1,								\
 		.dma_callback = i2c_stm32_dma_##dir##_cb,					\
-	},											\
+	},))
 
 #else
 

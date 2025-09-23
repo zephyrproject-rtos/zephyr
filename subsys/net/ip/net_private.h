@@ -96,6 +96,7 @@ extern bool net_context_is_reuseaddr_set(struct net_context *context);
 extern bool net_context_is_reuseport_set(struct net_context *context);
 extern bool net_context_is_v6only_set(struct net_context *context);
 extern bool net_context_is_recv_pktinfo_set(struct net_context *context);
+extern bool net_context_is_recv_hoplimit_set(struct net_context *context);
 extern bool net_context_is_timestamping_set(struct net_context *context);
 extern void net_pkt_init(void);
 int net_context_get_local_addr(struct net_context *context,
@@ -120,6 +121,11 @@ static inline bool net_context_is_reuseport_set(struct net_context *context)
 	return false;
 }
 static inline bool net_context_is_recv_pktinfo_set(struct net_context *context)
+{
+	ARG_UNUSED(context);
+	return false;
+}
+static inline bool net_context_is_recv_hoplimit_set(struct net_context *context)
 {
 	ARG_UNUSED(context);
 	return false;
@@ -177,25 +183,21 @@ extern void loopback_enable_address_swap(bool swap_addresses);
 #endif /* CONFIG_NET_TEST */
 
 #if defined(CONFIG_NET_NATIVE)
-enum net_verdict net_ipv4_input(struct net_pkt *pkt, bool is_loopback);
-enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback);
+enum net_verdict net_ipv4_input(struct net_pkt *pkt);
+enum net_verdict net_ipv6_input(struct net_pkt *pkt);
 extern void net_tc_tx_init(void);
 extern void net_tc_rx_init(void);
 #else
-static inline enum net_verdict net_ipv4_input(struct net_pkt *pkt,
-					      bool is_loopback)
+static inline enum net_verdict net_ipv4_input(struct net_pkt *pkt)
 {
 	ARG_UNUSED(pkt);
-	ARG_UNUSED(is_loopback);
 
 	return NET_CONTINUE;
 }
 
-static inline enum net_verdict net_ipv6_input(struct net_pkt *pkt,
-					      bool is_loopback)
+static inline enum net_verdict net_ipv6_input(struct net_pkt *pkt)
 {
 	ARG_UNUSED(pkt);
-	ARG_UNUSED(is_loopback);
 
 	return NET_CONTINUE;
 }

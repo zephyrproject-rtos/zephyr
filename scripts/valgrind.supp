@@ -12,7 +12,8 @@
    Memcheck:Leak
    match-leak-kinds: reachable,possible
    ...
-   fun:posix_new_thread
+   fun:nct_new_thread
+   ...
    fun:arch_new_thread
 }
 {

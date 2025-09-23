@@ -42,6 +42,8 @@ source "drivers/counter/Kconfig.nrfx"
 
 source "drivers/counter/Kconfig.imx_epit"
 
+source "drivers/counter/Kconfig.ite_it51xxx"
+
 source "drivers/counter/Kconfig.ite_it8xxx2"
 
 source "drivers/counter/Kconfig.stm32_rtc"
@@ -67,6 +69,10 @@ source "drivers/counter/Kconfig.mcux_tpm"
 source "drivers/counter/Kconfig.xec"
 
 source "drivers/counter/Kconfig.mcux_lptmr"
+
+source "drivers/counter/Kconfig.mcux_lpit"
+
+source "drivers/counter/Kconfig.mcux_ftm"
 
 source "drivers/counter/Kconfig.maxim_ds3231"
 
@@ -119,5 +125,7 @@ source "drivers/counter/Kconfig.max32_wut"
 source "drivers/counter/Kconfig.cc23x0_rtc"
 
 source "drivers/counter/Kconfig.cc23x0_lgpt"
+
+source "drivers/counter/Kconfig.mspm0"
 
 endif # COUNTER

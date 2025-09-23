@@ -27,6 +27,14 @@ properties:
     required: true
     description: Maximum number of pins supported by platform
 
+  reg-upper32:
+    type: int
+    default: 0
+    description: |
+      Few platforms have 64 bit PWM register address,
+      this property will be used to share the higher
+      32 bits(63-32).
+
   "#pwm-cells":
     const: 2
 

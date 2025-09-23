@@ -34,7 +34,7 @@
  * definitions required by the interconnect/apb layer:
  * - NRFX_DPPI_PUB_CONFIG_ALLOWED_CHANNELS_MASK_BY_INST_NUM(inst_num)
  * - NRFX_DPPI_SUB_CONFIG_ALLOWED_CHANNELS_MASK_BY_INST_NUM(inst_num)
- * - NRFX_DPPI_PUB_OR_SUB_MASK(inst_num)
+ * - NRFX_DPPI_OWNED_MASK(inst_num)
  * - NRFX_DPPI_CHANNELS_SINGLE_VAR_NAME_BY_INST_NUM(inst_num)
  * - NRFX_INTERCONNECT_APB_GLOBAL_DPPI_DEFINE
  * - NRFX_INTERCONNECT_APB_LOCAL_DPPI_DEFINE
@@ -42,6 +42,14 @@
  */
 #if	DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_dppic_global) || \
 	DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_dppic_local)
+
+/* Channels masks generation. */
+#define NRFX_CONFIG_DPPI_MASK_DT(node_id) \
+	COND_CODE_1(DT_NODE_HAS_PROP(node_id, owned_channels), \
+		(NRFX_CONFIG_MASK_DT(node_id, owned_channels)), \
+		(COND_CODE_1(DT_NODE_HAS_COMPAT(node_id, nordic_nrf_dppic_local), \
+			(BIT64_MASK(DT_PROP(node_id, channels))), (0))))
+
 /* Source (publish) channels masks generation. */
 #define NRFX_DPPI_PUB_CONFIG_ALLOWED_CHANNELS_MASK_BY_INST_NUM(inst_num) \
 	NRFX_CONFIG_MASK_DT(DT_NODELABEL(_CONCAT(dppic, inst_num)), source_channels)
@@ -50,9 +58,9 @@
 #define NRFX_DPPI_SUB_CONFIG_ALLOWED_CHANNELS_MASK_BY_INST_NUM(inst_num) \
 	NRFX_CONFIG_MASK_DT(DT_NODELABEL(_CONCAT(dppic, inst_num)), sink_channels)
 
-#define NRFX_DPPI_PUB_OR_SUB_MASK(inst_num) \
-	UTIL_OR(DT_NODE_HAS_PROP(DT_NODELABEL(_CONCAT(dppic, inst_num)), source_channels), \
-		DT_NODE_HAS_PROP(DT_NODELABEL(_CONCAT(dppic, inst_num)), sink_channels))
+#define NRFX_DPPI_OWNED_MASK(inst_num) \
+	UTIL_OR(DT_NODE_HAS_PROP(DT_NODELABEL(_CONCAT(dppic, inst_num)), owned_channels), \
+		DT_NODE_HAS_PROP(DT_NODELABEL(_CONCAT(dppic, inst_num)), channels))
 
 /* Variables names generation. */
 #define NRFX_CONFIG_DPPI_CHANNELS_ENTRY_NAME(node_id) _CONCAT(_CONCAT(m_, node_id), _channels)
@@ -62,9 +70,7 @@
 /* Variables entries generation. */
 #define NRFX_CONFIG_DPPI_CHANNELS_ENTRY(node_id) \
 	static nrfx_atomic_t NRFX_CONFIG_DPPI_CHANNELS_ENTRY_NAME(node_id) \
-		__attribute__((used)) = \
-		NRFX_CONFIG_MASK_DT(node_id, source_channels) | \
-		NRFX_CONFIG_MASK_DT(node_id, sink_channels);
+		__attribute__((used)) = (uint32_t)NRFX_CONFIG_DPPI_MASK_DT(node_id);
 #define NRFX_INTERCONNECT_APB_GLOBAL_DPPI_DEFINE \
 	DT_FOREACH_STATUS_OKAY(nordic_nrf_dppic_global, NRFX_CONFIG_DPPI_CHANNELS_ENTRY)
 #define NRFX_INTERCONNECT_APB_LOCAL_DPPI_DEFINE \

@@ -1,0 +1,137 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_imx943_m33.dtsi>
+#include "imx943_evk-pinctrl.dtsi"
+
+/ {
+	model = "NXP i.MX943 EVK board";
+	compatible = "nxp,imx943_evk";
+
+	chosen {
+		/* TCM */
+		zephyr,flash = &itcm;
+		zephyr,sram = &dtcm;
+
+		zephyr,console = &lpuart8;
+		zephyr,shell-uart = &lpuart8;
+	};
+};
+
+&emdio {
+	pinctrl-0 = <&emdio_default>;
+	pinctrl-names = "default";
+	status = "disabled";
+
+	phy0: phy@2 {
+		compatible = "ethernet-phy";
+		reg = <0x2>;
+		status = "disabled";
+	};
+
+	phy1: phy@3 {
+		compatible = "ethernet-phy";
+		reg = <0x3>;
+		status = "disabled";
+	};
+
+	phy2: phy@5 {
+		compatible = "realtek,rtl8211f";
+		reg = <0x5>;
+		status = "disabled";
+	};
+
+	phy3: phy@6 {
+		compatible = "realtek,rtl8211f";
+		reg = <0x6>;
+		status = "disabled";
+	};
+
+	phy4: phy@7 {
+		compatible = "realtek,rtl8211f";
+		reg = <0x7>;
+		status = "disabled";
+	};
+};
+
+&enetc_psi0 {
+	pinctrl-0 = <&eth2_default>;
+	pinctrl-names = "default";
+	phy-handle = <&phy2>;
+	phy-connection-type = "rgmii";
+	status = "disabled";
+};
+
+&enetc_psi1 {
+	pinctrl-0 = <&eth3_default>;
+	pinctrl-names = "default";
+	phy-handle = <&phy3>;
+	phy-connection-type = "rgmii";
+	status = "disabled";
+};
+
+&enetc_psi2 {
+	pinctrl-0 = <&eth4_default>;
+	pinctrl-names = "default";
+	phy-handle = <&phy4>;
+	phy-connection-type = "rgmii";
+	status = "disabled";
+};
+
+&flexio1 {
+	status = "okay";
+	/* Signal can be checked by the connector J44 Pin10(M1_LED_TP1) via logic analyzer */
+	flexio1_pwm: flexio1_pwm {
+		compatible = "nxp,flexio-pwm";
+		#pwm-cells = <3>;
+		pinctrl-0 = <&flexio1_io5_default>;
+		pinctrl-names = "default";
+		pwm_1 {
+			pin-id = <5>;
+			prescaler = <1>;
+		};
+		status = "okay";
+	};
+};
+
+&lpi2c6 {
+	pinctrl-0 = <&lpi2c6_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&lpuart8 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&lpuart8_default>;
+	pinctrl-names = "default";
+};
+
+&switch_port0 {
+	zephyr,random-mac-address;
+	pinctrl-0 = <&eth0_default>;
+	pinctrl-names = "default";
+	phy-handle = <&phy0>;
+	phy-connection-type = "mii";
+	status = "disabled";
+};
+
+&switch_port1 {
+	zephyr,random-mac-address;
+	pinctrl-0 = <&eth1_default>;
+	pinctrl-names = "default";
+	phy-handle = <&phy1>;
+	phy-connection-type = "mii";
+	status = "disabled";
+};
+
+/* Internal port */
+&switch_port3 {
+	zephyr,random-mac-address;
+	status = "disabled";
+};

@@ -83,9 +83,8 @@ The list of command line options supported by twister can be viewed using:
 
    .. group-tab:: Linux
 
-      .. code-block:: bash
-
-         $ ./scripts/twister --help
+      .. command-output:: $ZEPHYR_BASE/scripts/twister --help
+         :shell:
 
    .. group-tab:: Windows
 
@@ -884,6 +883,9 @@ pytest_dut_scope: <function|class|module|package|session> (default function)
               - test_file_2.py::test_A
               - test_file_2.py::test_B[param_a]
 
+
+.. _twister_console_harness:
+
 Console
 =======
 
@@ -973,6 +975,8 @@ record: <recording options> (optional)
           }
       ]
 
+.. _twister_robot_harness:
+
 Robot
 =====
 
@@ -985,8 +989,11 @@ robot_testsuite: <robot file path> (default empty)
 robot_option: <robot option> (default empty)
     One or more options to be send to robotframework.
 
+.. _twister_power_harness:
+
 Power
 =====
+
 The ``power`` harness is used to measure and validate the current consumption.
 It integrates with 'pytest' to perform automated data collection and analysis using a hardware power monitor.
 
@@ -1023,6 +1030,8 @@ The harness executes the following steps:
 - **expected_rms_values** – Target RMS values for each identified execution phase (in milliamps).
 - **tolerance_percentage** – Allowed deviation percentage from the expected RMS values.
 
+.. _twister_bsim_harness:
+
 Bsim
 ====
 
@@ -1040,6 +1049,8 @@ bsim_exe_name: <string>
     If provided, the executable filename when copying to BabbleSim's bin
     directory, will be ``bs_<platform_name>_<bsim_exe_name>`` instead of the
     default based on the test path and scenario name.
+
+.. _twister_shell_harness:
 
 Shell
 =====
@@ -1431,6 +1442,33 @@ work. It is equivalent to following west and twister commands.
   and generate a correct hardware map automatically. You have to edit it
   manually according to above example. This is because the serial port
   of the PTY is not fixed and being allocated in the system at runtime.
+
+If west is not available or does not know how to flash your system, a custom
+flash command can be specified using the ``flash-command`` flag. The script is
+called with a ``--build-dir`` with the path of the current build, as well as a
+``--board-id`` flag to identify the specific device when multiple are available
+in a hardware map.
+
+.. tabs::
+
+   .. group-tab:: Linux
+
+      .. code-block:: bash
+
+         twister -p npcx9m6f_evb --device-testing --device-serial /dev/ttyACM0
+         --flash-command './custom_flash_script.py,--flag,"complex, argument"'
+
+   .. group-tab:: Windows
+
+      .. note::
+
+         python .\scripts\twister -p npcx9m6f_evb --device-testing
+         --device-serial COM1
+         --flash-command 'custom_flash_script.py,--flag,"complex, argument"'
+
+Would result in calling ``./custom_flash_script.py
+--build-dir <build directory> --board-id <board identification>
+--flag "complex, argument"``.
 
 Fixtures
 +++++++++

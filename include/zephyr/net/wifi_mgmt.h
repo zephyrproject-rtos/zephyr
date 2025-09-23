@@ -109,6 +109,8 @@ enum net_request_wifi_cmd {
 	NET_REQUEST_WIFI_CMD_RTS_THRESHOLD,
 	/** Configure AP parameter */
 	NET_REQUEST_WIFI_CMD_AP_CONFIG_PARAM,
+	/** Configure STA parameter */
+	NET_REQUEST_WIFI_CMD_CONFIG_PARAM,
 	/** DPP actions */
 	NET_REQUEST_WIFI_CMD_DPP,
 	/** BSS transition management query */
@@ -133,6 +135,8 @@ enum net_request_wifi_cmd {
 	NET_REQUEST_WIFI_CMD_CANDIDATE_SCAN,
 	/** AP WPS config */
 	NET_REQUEST_WIFI_CMD_AP_WPS_CONFIG,
+	/** Configure BSS maximum idle period */
+	NET_REQUEST_WIFI_CMD_BSS_MAX_IDLE_PERIOD,
 	/** @cond INTERNAL_HIDDEN */
 	NET_REQUEST_WIFI_CMD_MAX
 	/** @endcond */
@@ -267,6 +271,12 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_RTS_THRESHOLD);
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_AP_CONFIG_PARAM);
 
+/** Request a Wi-Fi STA parameters configuration */
+#define NET_REQUEST_WIFI_CONFIG_PARAM         \
+	(NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_CONFIG_PARAM)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_CONFIG_PARAM);
+
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP
 /** Request a Wi-Fi DPP operation */
 #define NET_REQUEST_WIFI_DPP			\
@@ -317,44 +327,78 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_START_ROAMING);
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_NEIGHBOR_REP_COMPLETE);
 
+#define NET_REQUEST_WIFI_BSS_MAX_IDLE_PERIOD				\
+	(NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_BSS_MAX_IDLE_PERIOD)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_BSS_MAX_IDLE_PERIOD);
+
+/** @cond INTERNAL_HIDDEN */
+
+enum {
+	NET_EVENT_WIFI_CMD_SCAN_RESULT_VAL,
+	NET_EVENT_WIFI_CMD_SCAN_DONE_VAL,
+	NET_EVENT_WIFI_CMD_CONNECT_RESULT_VAL,
+	NET_EVENT_WIFI_CMD_DISCONNECT_RESULT_VAL,
+	NET_EVENT_WIFI_CMD_IFACE_STATUS_VAL,
+	NET_EVENT_WIFI_CMD_TWT_VAL,
+	NET_EVENT_WIFI_CMD_TWT_SLEEP_STATE_VAL,
+	NET_EVENT_WIFI_CMD_RAW_SCAN_RESULT_VAL,
+	NET_EVENT_WIFI_CMD_DISCONNECT_COMPLETE_VAL,
+	NET_EVENT_WIFI_CMD_SIGNAL_CHANGE_VAL,
+	NET_EVENT_WIFI_CMD_NEIGHBOR_REP_RECEIVED_VAL,
+	NET_EVENT_WIFI_CMD_NEIGHBOR_REP_COMPLETE_VAL,
+	NET_EVENT_WIFI_CMD_AP_ENABLE_RESULT_VAL,
+	NET_EVENT_WIFI_CMD_AP_DISABLE_RESULT_VAL,
+	NET_EVENT_WIFI_CMD_AP_STA_CONNECTED_VAL,
+	NET_EVENT_WIFI_CMD_AP_STA_DISCONNECTED_VAL,
+	NET_EVENT_WIFI_CMD_SUPPLICANT_VAL,
+
+	NET_EVENT_WIFI_CMD_MAX,
+};
+
+BUILD_ASSERT(NET_EVENT_WIFI_CMD_MAX <= NET_MGMT_MAX_COMMANDS,
+	     "Number of events in net_event_wifi_cmd exceeds the limit");
+
+/** @endcond */
+
 /** @brief Wi-Fi management events */
 enum net_event_wifi_cmd {
 	/** Scan results available */
-	NET_EVENT_WIFI_CMD_SCAN_RESULT = 1,
+	NET_MGMT_CMD(NET_EVENT_WIFI_CMD_SCAN_RESULT),
 	/** Scan done */
-	NET_EVENT_WIFI_CMD_SCAN_DONE,
+	NET_MGMT_CMD(NET_EVENT_WIFI_CMD_SCAN_DONE),
 	/** Connect result */
-	NET_EVENT_WIFI_CMD_CONNECT_RESULT,
+	NET_MGMT_CMD(NET_EVENT_WIFI_CMD_CONNECT_RESULT),
 	/** Disconnect result */
-	NET_EVENT_WIFI_CMD_DISCONNECT_RESULT,
+	NET_MGMT_CMD(NET_EVENT_WIFI_CMD_DISCONNECT_RESULT),
 	/** Interface status */
-	NET_EVENT_WIFI_CMD_IFACE_STATUS,
+	NET_MGMT_CMD(NET_EVENT_WIFI_CMD_IFACE_STATUS),
 	/** TWT events */
-	NET_EVENT_WIFI_CMD_TWT,
+	NET_MGMT_CMD(NET_EVENT_WIFI_CMD_TWT),
 	/** TWT sleep status: awake or sleeping, can be used by application
 	 * to determine if it can send data or not.
 	 */
-	NET_EVENT_WIFI_CMD_TWT_SLEEP_STATE,
+	NET_MGMT_CMD(NET_EVENT_WIFI_CMD_TWT_SLEEP_STATE),
 	/** Raw scan results available */
-	NET_EVENT_WIFI_CMD_RAW_SCAN_RESULT,
+	NET_MGMT_CMD(NET_EVENT_WIFI_CMD_RAW_SCAN_RESULT),
 	/** Disconnect complete */
-	NET_EVENT_WIFI_CMD_DISCONNECT_COMPLETE,
+	NET_MGMT_CMD(NET_EVENT_WIFI_CMD_DISCONNECT_COMPLETE),
 	/** Signal change event */
-	NET_EVENT_WIFI_CMD_SIGNAL_CHANGE,
+	NET_MGMT_CMD(NET_EVENT_WIFI_CMD_SIGNAL_CHANGE),
 	/** Neighbor Report */
-	NET_EVENT_WIFI_CMD_NEIGHBOR_REP_RECEIVED,
+	NET_MGMT_CMD(NET_EVENT_WIFI_CMD_NEIGHBOR_REP_RECEIVED),
 	/** Neighbor Report complete */
-	NET_EVENT_WIFI_CMD_NEIGHBOR_REP_COMPLETE,
+	NET_MGMT_CMD(NET_EVENT_WIFI_CMD_NEIGHBOR_REP_COMPLETE),
 	/** AP mode enable result */
-	NET_EVENT_WIFI_CMD_AP_ENABLE_RESULT,
+	NET_MGMT_CMD(NET_EVENT_WIFI_CMD_AP_ENABLE_RESULT),
 	/** AP mode disable result */
-	NET_EVENT_WIFI_CMD_AP_DISABLE_RESULT,
+	NET_MGMT_CMD(NET_EVENT_WIFI_CMD_AP_DISABLE_RESULT),
 	/** STA connected to AP */
-	NET_EVENT_WIFI_CMD_AP_STA_CONNECTED,
+	NET_MGMT_CMD(NET_EVENT_WIFI_CMD_AP_STA_CONNECTED),
 	/** STA disconnected from AP */
-	NET_EVENT_WIFI_CMD_AP_STA_DISCONNECTED,
+	NET_MGMT_CMD(NET_EVENT_WIFI_CMD_AP_STA_DISCONNECTED),
 	/** Supplicant specific event */
-	NET_EVENT_WIFI_CMD_SUPPLICANT,
+	NET_MGMT_CMD(NET_EVENT_WIFI_CMD_SUPPLICANT),
 };
 
 /** Event emitted for Wi-Fi scan result */
@@ -539,43 +583,130 @@ struct wifi_connect_req_params {
 	uint8_t bssid[WIFI_MAC_ADDR_LEN];
 	/** Connect timeout in seconds, SYS_FOREVER_MS for no timeout */
 	int timeout;
-	/** anonymous identity */
+	/**
+	 * Anonymous identity used in EAP authentication (Phase 1) for Wi-Fi Enterprise networks.
+	 * In EAP methods such as PEAP or TTLS, the anonymous identity is sent in the initial
+	 * outer authentication exchange to protect the user's real identity (eap_identity).
+	 * This value is not always required; if not set, the real identity may be exposed.
+	 * Only used in Phase 1 (outer authentication).
+	 */
 	const uint8_t *anon_id;
-	/** anon_id length, max 64 */
+
+	/** Length of the anonymous identity, maximum 64 bytes. */
 	uint8_t aid_length;
-	/** Private key passwd for enterprise mode */
+
+	/**
+	 * Private key password for Wi-Fi Enterprise authentication.
+	 * Used when a client certificate and private key are required (e.g., EAP-TLS).
+	 * This is the password protecting the private key file.
+	 * Applies to Phase 1 (outer authentication) when client certificates are used.
+	 */
 	const uint8_t *key_passwd;
-	/** Private key passwd length, max 128 */
+
+	/** Length of the private key password, maximum 128 bytes. */
 	uint8_t key_passwd_length;
-	/** private key2 passwd */
+
+	/**
+	 * Password for a secondary private key, if required by the authentication method.
+	 * Rarely used; typically only needed for advanced enterprise setups.
+	 * Applies to Phase 1 (outer authentication) if a second private key is used.
+	 */
 	const uint8_t *key2_passwd;
-	/** key2 passwd length, max 128 */
+
+	/** Length of the secondary private key password, maximum 128 bytes. */
 	uint8_t key2_passwd_length;
-	/** wpa3 enterprise mode */
+
+	/**
+	 * WPA3 Enterprise mode type.
+	 * Selects the WPA3 Enterprise authentication variant to use.
+	 * WPA3 Enterprise is a security protocol for Wi-Fi networks, often used in organizations,
+	 * that provides enhanced security over WPA2. This field is only relevant for enterprise
+	 * networks.
+	 * Applies to Phase 1 (outer authentication).
+	 */
 	enum wifi_wpa3_enterprise_type wpa3_ent_mode;
-	/** TLS cipher */
+
+	/**
+	 * TLS cipher suite to use for EAP-TLS authentication.
+	 * This selects the cryptographic algorithms used for the secure connection.
+	 * Only relevant for enterprise networks using EAP-TLS or similar methods.
+	 * Applies to Phase 1 (outer authentication).
+	 */
 	uint8_t TLS_cipher;
-	/** eap version */
+
+	/**
+	 * EAP (Extensible Authentication Protocol) version to use.
+	 * EAP is a framework for network authentication, commonly used in enterprise Wi-Fi.
+	 * This field allows specifying the protocol version if required by the network.
+	 * Applies to Phase 1 (outer authentication).
+	 */
 	int eap_ver;
-	/** Identity for EAP */
+
+	/**
+	 * Identity string for EAP authentication (Phase 2, inner authentication).
+	 * This is the real username or identity presented to the authentication server
+	 * after the secure tunnel is established (e.g., inside PEAP or TTLS).
+	 * Required for most enterprise Wi-Fi networks (e.g., WPA2/WPA3 Enterprise).
+	 * Applies to Phase 2 (inner authentication).
+	 */
 	const uint8_t *eap_identity;
-	/** eap identity length, max 64 */
+
+	/** Length of the EAP identity, maximum 64 bytes. */
 	uint8_t eap_id_length;
-	/** Password string for EAP. */
+
+	/**
+	 * Password string for EAP authentication (Phase 2, inner authentication).
+	 * Used in EAP methods that require a password (e.g., PEAP, TTLS, EAP-FAST).
+	 * This is the user's password for the enterprise Wi-Fi network.
+	 * Applies to Phase 2 (inner authentication).
+	 */
 	const uint8_t *eap_password;
-	/** eap passwd length, max 128 */
+
+	/** Length of the EAP password, maximum 128 bytes. */
 	uint8_t eap_passwd_length;
-	/** Whether verify peer with CA or not: false-not verify, true-verify. */
+
+	/**
+	 * Whether to verify the server's certificate authority (CA) during authentication.
+	 * Set to true to require validation of the server's certificate (recommended for security).
+	 * Set to false to skip CA verification (not recommended, but sometimes used for testing).
+	 * Applies to Phase 1 (outer authentication).
+	 */
 	bool verify_peer_cert;
-	/** Fast BSS Transition used */
+
+	/**
+	 * Indicates if Fast BSS Transition (802.11r) is used.
+	 * Fast BSS Transition allows seamless roaming between access points in enterprise networks.
+	 * Applies to the overall connection, not specific to EAP phases.
+	 */
 	bool ft_used;
-	/** Number of EAP users */
+
+	/**
+	 * Number of EAP user identities provided.
+	 * Used for advanced enterprise authentication scenarios where multiple user credentials
+	 * are needed.
+	 * Applies to Phase 2 (inner authentication).
+	 */
 	int nusers;
-	/** Number of EAP passwds */
+
+	/**
+	 * Number of EAP passwords provided.
+	 * Used in conjunction with multiple user identities for enterprise authentication.
+	 * Applies to Phase 2 (inner authentication).
+	 */
 	uint8_t passwds;
-	/** User Identities */
+
+	/**
+	 * Array of pointers to user identity strings for EAP authentication.
+	 * Used for enterprise Wi-Fi networks that require multiple user identities.
+	 * Applies to Phase 2 (inner authentication).
+	 */
 	const uint8_t *identities[WIFI_ENT_IDENTITY_MAX_USERS];
-	/** User Passwords */
+
+	/**
+	 * Array of pointers to user password strings for EAP authentication.
+	 * Used for enterprise Wi-Fi networks that require multiple user passwords.
+	 * Applies to Phase 2 (inner authentication).
+	 */
 	const uint8_t *passwords[WIFI_ENT_IDENTITY_MAX_USERS];
 	/** Hidden SSID configure
 	 * 0: disabled (default)
@@ -672,7 +803,7 @@ struct wifi_iface_status {
 	/** is TWT capable? */
 	bool twt_capable;
 	/** The current 802.11 PHY TX data rate (in Mbps) */
-	int current_phy_tx_rate;
+	float current_phy_tx_rate;
 };
 
 /** @brief Wi-Fi power save parameters */
@@ -700,6 +831,20 @@ struct wifi_ps_params {
 	enum wifi_config_ps_param_fail_reason fail_reason;
 	/** Wi-Fi power save exit strategy */
 	enum wifi_ps_exit_strategy exit_strategy;
+};
+
+#define WIFI_BTWT_AGREEMENT_MAX 5
+
+/** @brief Wi-Fi broadcast TWT parameters */
+struct wifi_btwt_params {
+	/** Broadcast TWT ID */
+	uint8_t btwt_id;
+	/** Broadcast TWT mantissa */
+	uint16_t btwt_mantissa;
+	/** Broadcast TWT exponent */
+	uint8_t btwt_exponent;
+	/** Broadcast TWT range */
+	uint8_t btwt_nominal_wake;
 };
 
 /** @brief Wi-Fi TWT parameters */
@@ -748,20 +893,16 @@ struct wifi_twt_params {
 		} setup;
 		/** Setup specific parameters */
 		struct {
-			/** Broadcast TWT AP config */
-			uint16_t sub_id;
-			/** Range 64-255 */
-			uint8_t nominal_wake;
-			/** Max STA support */
-			uint8_t max_sta_support;
-			/** TWT mantissa */
-			uint16_t twt_mantissa;
-			/** TWT offset */
-			uint16_t twt_offset;
-			/** TWT exponent */
-			uint8_t twt_exponent;
-			/** SP gap */
-			uint8_t sp_gap;
+			/** Broadcast TWT station wait time */
+			uint8_t btwt_sta_wait;
+			/** Broadcast TWT offset */
+			uint16_t btwt_offset;
+			/** In multiple of 4 beacon interval */
+			uint8_t btwt_li;
+			/** Broadcast TWT agreement count */
+			uint8_t btwt_count;
+			/** Broadcast TWT agreement sets */
+			struct wifi_btwt_params btwt_set_cfg[WIFI_BTWT_AGREEMENT_MAX];
 		} btwt;
 		/** Teardown specific parameters */
 		struct {
@@ -1013,6 +1154,14 @@ struct wifi_ap_config_params {
 	/** Parameter used for setting VHT capabilities */
 	char vht_capab[WIFI_AP_IEEE_80211_CAPAB_MAX_LEN + 1];
 #endif
+};
+
+/** @brief Wi-Fi STA configuration parameter */
+struct wifi_config_params {
+	/** Parameter used to identify the different STA parameters */
+	enum wifi_config_param type;
+	/** Parameter used for opportunistic key caching */
+	int okc;
 };
 
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP
@@ -1445,6 +1594,14 @@ struct wifi_mgmt_ops {
 	 * @return 0 if ok, < 0 if error
 	 */
 	int (*btm_query)(const struct device *dev, uint8_t reason);
+
+	/** Check if ap support Neighbor Report or not.
+	 * @param dev Pointer to the device structure for the driver instance.
+	 *
+	 * @return true if support, false if not support
+	 */
+	bool (*bss_support_neighbor_rep)(const struct device *dev);
+
 	/** Judge ap whether support the capability
 	 *
 	 * @param dev Pointer to the device structure for the driver instance.
@@ -1499,7 +1656,14 @@ struct wifi_mgmt_ops {
 	 * @return 0 if ok, < 0 if error
 	 */
 	int (*ap_config_params)(const struct device *dev, struct wifi_ap_config_params *params);
-
+	/** Configure STA parameter
+	 *
+	 * @param dev Pointer to the device structure for the driver instance.
+	 * @param params STA mode parameter configuration parameter info
+	 *
+	 * @return 0 if ok, < 0 if error
+	 */
+	int (*config_params)(const struct device *dev, struct wifi_config_params *params);
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP
 	/** Dispatch DPP operations by action enum, with or without arguments in string format
 	 *
@@ -1559,6 +1723,15 @@ struct wifi_mgmt_ops {
 	 * @return 0 if ok, < 0 if error
 	 */
 	int (*start_11r_roaming)(const struct device *dev);
+	/** Set BSS max idle period
+	 *
+	 * @param dev Pointer to the device structure for the driver instance.
+	 * @param BSS max idle period value
+	 *
+	 * @return 0 if ok, < 0 if error
+	 */
+	int (*set_bss_max_idle_period)(const struct device *dev,
+			unsigned short bss_max_idle_period);
 };
 
 /** Wi-Fi management offload API */

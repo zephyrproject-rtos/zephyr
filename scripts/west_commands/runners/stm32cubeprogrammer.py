@@ -122,6 +122,10 @@ class STM32CubeProgrammerBinaryRunner(ZephyrBinaryRunner):
             return Path(os.environ["PROGRAMW6432"]) / cli
 
         if platform.system() == "Darwin":
+            cmd = shutil.which("STM32_Programmer_CLI")
+            if cmd is not None:
+                return Path(cmd)
+
             return (
                 Path("/Applications")
                 / "STMicroelectronics"
@@ -270,6 +274,8 @@ class STM32CubeProgrammerBinaryRunner(ZephyrBinaryRunner):
             self.check_call(cmd + ["--erase", "all"])
 
         # Define binary to be loaded
+        dl_file = None
+
         if self._use_elf:
             # Use elf file if instructed to do so.
             dl_file = self.cfg.elf_file

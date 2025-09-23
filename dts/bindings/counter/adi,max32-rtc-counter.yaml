@@ -7,3 +7,18 @@ description: ADI MAX32 compatible Counter RTC
 compatible: "adi,max32-rtc-counter"
 
 include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clock-source:
+    type: int
+    enum: [4, 5]
+    description: |
+      Clock source to be used by the RTC peripheral. The following options
+      are available:
+      - 4: "ADI_MAX32_PRPH_CLK_SRC_ERTCO" External Real-Time Clock Oscillator
+      - 5: "ADI_MAX32_PRPH_CLK_SRC_INRO" Internal Ring Oscillator
+      The target device might not support all option please take a look on
+      target device user guide

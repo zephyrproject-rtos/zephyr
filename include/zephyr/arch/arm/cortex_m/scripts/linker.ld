@@ -225,7 +225,7 @@ SECTIONS
 
 #include <zephyr/linker/cplusplus-rom.ld>
 
-#if defined(CONFIG_BUILD_ALIGN_LMA)
+#if defined(CONFIG_BUILD_ALIGN_LMA) || !defined(CONFIG_XIP)
     /*
      * Include a padding section here to make sure that the LMA address
      * of the sections in the RAMABLE_REGION are aligned with those

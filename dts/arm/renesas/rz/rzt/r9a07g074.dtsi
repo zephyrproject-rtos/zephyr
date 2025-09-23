@@ -90,6 +90,7 @@
 		};
 
 		icu: icu@81048000 {
+			compatible = "renesas,rz-icu";
 			reg = <0x81048000 0x1000>;
 			interrupt-parent = <&gic>;
 			#address-cells = <1>;

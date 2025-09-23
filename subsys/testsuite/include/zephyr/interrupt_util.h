@@ -7,6 +7,8 @@
 #ifndef INTERRUPT_UTIL_H_
 #define INTERRUPT_UTIL_H_
 
+#define k_str_out_count(s) k_str_out((s), sizeof(s) - 1);
+
 #if defined(CONFIG_CPU_CORTEX_M)
 #include <cmsis_core.h>
 
@@ -57,10 +59,10 @@ static inline uint32_t get_available_nvic_line(uint32_t initial_offset)
 
 static inline void trigger_irq(int irq)
 {
-	printk("Triggering irq : %d\n", irq);
-#if defined(CONFIG_SOC_TI_LM3S6965_QEMU) || defined(CONFIG_CPU_CORTEX_M0) \
-	|| defined(CONFIG_CPU_CORTEX_M0PLUS) || defined(CONFIG_CPU_CORTEX_M1)\
-	|| defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+	k_str_out_count("Triggering irq\n");
+#if defined(CONFIG_SOC_TI_LM3S6965_QEMU) || defined(CONFIG_CPU_CORTEX_M0) ||                       \
+	defined(CONFIG_CPU_CORTEX_M0PLUS) || defined(CONFIG_CPU_CORTEX_M1) ||                      \
+	defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
 	/* QEMU does not simulate the STIR register: this is a workaround */
 	NVIC_SetPendingIRQ(irq);
 #else
@@ -74,7 +76,7 @@ static inline void trigger_irq(int irq)
 
 static inline void trigger_irq(int irq)
 {
-	printk("Triggering irq : %d\n", irq);
+	k_str_out_count("Triggering irq\n");
 
 	/* Ensure that the specified IRQ number is a valid SGI interrupt ID */
 	zassert_true(irq <= 15, "%u is not a valid SGI interrupt ID", irq);
@@ -84,8 +86,7 @@ static inline void trigger_irq(int irq)
 	 * requesting CPU.
 	 */
 #if CONFIG_GIC_VER <= 2
-	sys_write32(GICD_SGIR_TGTFILT_REQONLY | GICD_SGIR_SGIINTID(irq),
-		    GICD_SGIR);
+	sys_write32(GICD_SGIR_TGTFILT_REQONLY | GICD_SGIR_SGIINTID(irq), GICD_SGIR);
 #else
 	uint64_t mpidr = GET_MPIDR();
 	uint8_t aff0 = MPIDR_AFFLVL(mpidr, 0);
@@ -97,7 +98,7 @@ static inline void trigger_irq(int irq)
 #elif defined(CONFIG_ARC)
 static inline void trigger_irq(int irq)
 {
-	printk("Triggering irq : %d\n", irq);
+	k_str_out_count("Triggering irq\n");
 	z_arc_v2_aux_reg_write(_ARC_V2_AUX_IRQ_HINT, irq);
 }
 
@@ -108,7 +109,7 @@ static inline void trigger_irq(int irq)
 #define VECTOR_MASK 0xFF
 #else
 #include <zephyr/arch/arch_interface.h>
-#define LOAPIC_ICR_IPI_TEST  0x00004000U
+#define LOAPIC_ICR_IPI_TEST 0x00004000U
 #endif
 
 /*
@@ -175,15 +176,36 @@ static inline void trigger_irq(int irq)
 {
 	uint32_t mip;
 
-	__asm__ volatile ("csrrs %0, mip, %1\n"
-			  : "=r" (mip)
-			  : "r" (1 << irq));
+	__asm__ volatile("csrrs %0, mip, %1\n" : "=r"(mip) : "r"(1 << irq));
 }
 #endif
 #elif defined(CONFIG_XTENSA)
 static inline void trigger_irq(int irq)
 {
-	z_xt_set_intset(BIT((unsigned int)irq));
+#if XCHAL_NUM_INTERRUPTS > 32
+	switch (irq >> 5) {
+	case 0:
+		z_xt_set_intset(1 << irq);
+		break;
+	case 1:
+		z_xt_set_intset1(1 << irq);
+		break;
+#if XCHAL_NUM_INTERRUPTS > 64
+	case 2:
+		z_xt_set_intset2(1 << irq);
+		break;
+#endif
+#if XCHAL_NUM_INTERRUPTS > 96
+	case 3:
+		z_xt_set_intset3(1 << irq);
+		break;
+#endif
+	default:
+		break;
+	}
+#else
+	z_xt_set_intset(1 << irq);
+#endif
 }
 
 #elif defined(CONFIG_SPARC)
@@ -218,7 +240,8 @@ static inline void trigger_irq(int irq)
 	__ASSERT(irq < CONFIG_NUM_IRQS, "attempting to trigger invalid IRQ (%u)", irq);
 	__ASSERT(irq >= CONFIG_GEN_IRQ_START_VECTOR, "attempting to trigger reserved IRQ (%u)",
 		 irq);
-	WRITE_BIT(REG(IR_BASE_ADDRESS + irq), 0, true);
+	_sw_isr_table[irq - CONFIG_GEN_IRQ_START_VECTOR].isr(
+		_sw_isr_table[irq - CONFIG_GEN_IRQ_START_VECTOR].arg);
 }
 
 #else

@@ -148,7 +148,7 @@ const struct bt_bap_base *bt_bap_base_get_base_from_ad(const struct bt_data *ad)
 	/* Pull all data to verify that the result BASE is valid */
 	base_pull_pd(&net_buf);
 	subgroup_count = net_buf_simple_pull_u8(&net_buf);
-	if (subgroup_count == 0 || subgroup_count > BASE_SUBGROUP_MAX_COUNT) {
+	if (!IN_RANGE(subgroup_count, 1U, BASE_SUBGROUP_MAX_COUNT)) {
 		LOG_DBG("Invalid subgroup count: %u", subgroup_count);
 
 		return NULL;
@@ -164,7 +164,7 @@ const struct bt_bap_base *bt_bap_base_get_base_from_ad(const struct bt_data *ad)
 		}
 
 		bis_count = base_pull_bis_count(&net_buf);
-		if (bis_count == 0 || bis_count > BT_ISO_MAX_GROUP_ISO_COUNT) {
+		if (!IN_RANGE(bis_count, 1U, BT_ISO_MAX_GROUP_ISO_COUNT)) {
 			LOG_DBG("Subgroup[%u]: Invalid BIS count: %u", i, bis_count);
 
 			return NULL;
@@ -202,7 +202,7 @@ const struct bt_bap_base *bt_bap_base_get_base_from_ad(const struct bt_data *ad)
 			}
 
 			bis_index = net_buf_simple_pull_u8(&net_buf);
-			if (bis_index == 0 || bis_index > BT_ISO_BIS_INDEX_MAX) {
+			if (!IN_RANGE(bis_index, 1U, BT_ISO_BIS_INDEX_MAX)) {
 				LOG_DBG("Subgroup[%u]: Invalid BIS index: %u", i, bis_index);
 
 				return NULL;

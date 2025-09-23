@@ -21,8 +21,9 @@ struct img_mgmt_upload_action;
 struct img_mgmt_upload_req;
 
 /**
- * @brief MCUmgr img_mgmt callback API
- * @defgroup mcumgr_callback_api_img_mgmt MCUmgr img_mgmt callback API
+ * @brief MCUmgr Image Management Callbacks API
+ * @defgroup mcumgr_callback_api_img_mgmt Image Management Callbacks
+ * @ingroup mcumgr_img_mgmt
  * @ingroup mcumgr_callback_api
  * @{
  */

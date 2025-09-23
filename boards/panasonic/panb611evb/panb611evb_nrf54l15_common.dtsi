@@ -1,0 +1,173 @@
+/*
+ * Copyright (c) 2025 Panasonic Industrial Devices Europe GmbH
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "panb611evb_nrf54l15-pinctrl.dtsi"
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
+
+/ {
+	leds {
+		compatible = "gpio-leds";
+
+		evb_led1: evb_led_1 {
+			gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
+			label = "LED1 on EVB";
+		};
+
+		evb_led2: evb_led_2 {
+			gpios = <&gpio1 10 GPIO_ACTIVE_LOW>;
+			label = "LED2 on EVB";
+		};
+
+		evb_led3: evb_led_3 {
+			gpios = <&gpio1 15 GPIO_ACTIVE_LOW>;
+			label = "LED3 on EVB";
+		};
+
+		evb_led4: evb_led_4 {
+			gpios = <&gpio2 7 GPIO_ACTIVE_LOW>;
+			label = "LED4 on EVB";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		/*
+		 * PWM signal can be exposed on GPIO pin only within same domain.
+		 * There is only one domain which contains both PWM and GPIO:
+		 * PWM20/21/22 and GPIO Port P1.
+		 * Only LEDs connected to P1 can work with PWM, for example LED1.
+		 */
+		pwm_evb_led1: pwm_evb_led_1 {
+			pwms = <&pwm20 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		evb_sw1: evb_sw_1 {
+			gpios = <&gpio1 11 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "SW1 on EVB";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		evb_sw2: evb_sw_2 {
+			gpios = <&gpio1 12 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "SW2 on EVB";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+
+		evb_sw3: evb_sw_3 {
+			gpios = <&gpio1 13 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "SW3 on EVB";
+			zephyr,code = <INPUT_KEY_2>;
+		};
+
+		evb_sw4: evb_sw_4 {
+			gpios = <&gpio1 14 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "SW4 on EVB";
+			zephyr,code = <INPUT_KEY_3>;
+		};
+	};
+
+	mikrobus_header: mikrobus-connector {
+		compatible = "mikro-bus";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpio1 6 0>,	/* AN */
+			/* Not a GPIO*/		/* RST */
+			<2 0 &gpio2 10 0>,	/* CS */
+			<3 0 &gpio2 6 0>,	/* SCK */
+			<4 0 &gpio2 9 0>,	/* MISO */
+			<5 0 &gpio2 8 0>,	/* MOSI */
+			/* +3.3V */
+			/* GND */
+			<6 0 &gpio1 15 0>,	/* PWM */
+			<7 0 &gpio2 7 0>,	/* INT */
+			<8 0 &gpio1 5 0>,	/* RX */
+			<9 0 &gpio1 4 0>,	/* TX */
+			<10 0 &gpio1 8 0>,	/* SCL */
+			<11 0 &gpio1 9 0>;	/* SDA */
+			/* +5V */
+			/* GND */
+	};
+
+	arduino_header: connector {
+		compatible = "arduino-header-r3";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <ARDUINO_HEADER_R3_A0 0 &gpio1 6 0>,
+			<ARDUINO_HEADER_R3_A1 0 &gpio1 7 0>,
+			<ARDUINO_HEADER_R3_A2 0 &gpio1 11 0>,
+			<ARDUINO_HEADER_R3_A3 0 &gpio1 12 0>,
+			<ARDUINO_HEADER_R3_A4 0 &gpio1 13 0>,
+			<ARDUINO_HEADER_R3_A5 0 &gpio1 14 0>,
+			<ARDUINO_HEADER_R3_D0 0 &gpio1 4 0>,
+			<ARDUINO_HEADER_R3_D1 0 &gpio1 5 0>,
+			<ARDUINO_HEADER_R3_D2 0 &gpio0 0 0>,
+			<ARDUINO_HEADER_R3_D3 0 &gpio1 2 0>,
+			<ARDUINO_HEADER_R3_D4 0 &gpio1 3 0>,
+			<ARDUINO_HEADER_R3_D5 0 &gpio1 10 0>,
+			<ARDUINO_HEADER_R3_D6 0 &gpio1 13 0>,
+			<ARDUINO_HEADER_R3_D7 0 &gpio1 14 0>,
+			<ARDUINO_HEADER_R3_D8 0 &gpio1 15 0>,
+			<ARDUINO_HEADER_R3_D9 0 &gpio2 7 0>,
+			<ARDUINO_HEADER_R3_D10 0 &gpio2 10 0>,
+			<ARDUINO_HEADER_R3_D11 0 &gpio2 8 0>,
+			<ARDUINO_HEADER_R3_D12 0 &gpio2 9 0>,
+			<ARDUINO_HEADER_R3_D13 0 &gpio2 6 0>,
+			<ARDUINO_HEADER_R3_D14 0 &gpio1 9 0>,
+			<ARDUINO_HEADER_R3_D15 0 &gpio1 8 0>;
+	};
+
+	arduino_adc: analog-connector {
+		compatible = "arduino,uno-adc";
+		#io-channel-cells = <1>;
+		io-channel-map = <0 &adc 0>,	/* A0 = P1.06 = AIN0 */
+			<1 &adc 1>,	/* A1 = P1.07 = AIN1 */
+			<2 &adc 2>,	/* A2 = P1.11 = AIN2 */
+			<3 &adc 3>,	/* A3 = P1.12 = AIN3 */
+			<4 &adc 4>,	/* A4 = P1.13 = AIN4 */
+			<5 &adc 5>;	/* A5 = P1.14 = AIN5 */
+	};
+
+	aliases {
+		led0 = &evb_led1;
+		led1 = &evb_led2;
+		led2 = &evb_led3;
+		led3 = &evb_led4;
+		pwm-led0 = &pwm_evb_led1;
+		sw0 = &evb_sw1;
+		sw1 = &evb_sw2;
+		sw2 = &evb_sw3;
+		sw3 = &evb_sw4;
+		watchdog0 = &wdt31;
+	};
+};
+
+&uart20 {
+	current-speed = <115200>;
+	pinctrl-0 = <&uart20_default>;
+	pinctrl-1 = <&uart20_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&uart30 {
+	current-speed = <115200>;
+	pinctrl-0 = <&uart30_default>;
+	pinctrl-1 = <&uart30_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&pwm20 {
+	status = "okay";
+	pinctrl-0 = <&pwm20_default>;
+	pinctrl-1 = <&pwm20_sleep>;
+	pinctrl-names = "default", "sleep";
+};

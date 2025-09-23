@@ -436,6 +436,9 @@ int icmsg_open(const struct icmsg_config_t *conf,
 			MAKE_RX_HANDSHAKE(dev_data->local_sid, SID_DISCONNECTED));
 	} else if (UNBOUND_DISABLED) {
 		ret = initialize_tx_with_sid_disabled(dev_data);
+		if (ret < 0) {
+			goto cleanup_and_exit;
+		}
 	}
 
 	if (old_state == ICMSG_STATE_OFF && (UNBOUND_ENABLED || UNBOUND_DETECT)) {

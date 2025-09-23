@@ -141,7 +141,7 @@
 		};
 	};
 
-	pinmux_lpadc0: pinmux_lpadc0 {
+	pinmux_lpadc1: pinmux_lpadc1 {
 		group0 {
 			pinmux = <&iomuxc_gpio_ad_06_adc1_ch0a>;
 			drive-strength = "high";

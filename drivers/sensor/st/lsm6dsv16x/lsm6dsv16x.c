@@ -1331,7 +1331,7 @@ static int lsm6dsv16x_pm_action(const struct device *dev, enum pm_device_action 
 				    CONFIG_SPI_RTIO),			\
 			(.rtio_ctx = &prefix##_rtio_ctx_##inst,	\
 			 .iodev = &prefix##_iodev_##inst,		\
-			 .bus_type = BUS_SPI,))				\
+			 .bus_type = RTIO_BUS_SPI,))			\
 	};								\
 	static const struct lsm6dsv16x_config prefix##_config_##inst =	\
 		LSM6DSV16X_CONFIG_SPI(inst, prefix);
@@ -1362,7 +1362,7 @@ static int lsm6dsv16x_pm_action(const struct device *dev, enum pm_device_action 
 				    CONFIG_I2C_RTIO),			\
 			(.rtio_ctx = &prefix##_rtio_ctx_##inst,	\
 			 .iodev = &prefix##_iodev_##inst,		\
-			 .bus_type = BUS_I2C,))				\
+			 .bus_type = RTIO_BUS_I2C,))			\
 	};								\
 	static const struct lsm6dsv16x_config prefix##_config_##inst =	\
 		LSM6DSV16X_CONFIG_I2C(inst, prefix);
@@ -1398,7 +1398,7 @@ static int lsm6dsv16x_pm_action(const struct device *dev, enum pm_device_action 
 				     CONFIG_I3C_RTIO),			\
 			(.rtio_ctx = &prefix##_rtio_ctx_##inst,		\
 			 .iodev = &prefix##_i3c_iodev_##inst,		\
-			 .bus_type = BUS_I3C,))				\
+			 .bus_type = RTIO_BUS_I3C,))			\
 	};								\
 	static const struct lsm6dsv16x_config prefix##_config_##inst =	\
 		LSM6DSV16X_CONFIG_I3C(inst, prefix);

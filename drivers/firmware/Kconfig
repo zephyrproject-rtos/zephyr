@@ -11,8 +11,8 @@ config ARM_SCMI
 	  Interface (SCMI).
 
 # zephyr-keep-sorted-start
-source "drivers/firmware/nrf_ironside/Kconfig"
 source "drivers/firmware/scmi/Kconfig"
+source "drivers/firmware/tisci/Kconfig"
 # zephyr-keep-sorted-stop
 
 endmenu

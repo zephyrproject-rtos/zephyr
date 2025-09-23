@@ -26,6 +26,11 @@ if (CONFIG_BUILD_WITH_TFM)
     endif()
   endif()
 
+  # Treat any warning as error
+  if (CONFIG_COMPILER_WARNINGS_AS_ERRORS)
+    list(APPEND TFM_CMAKE_ARGS -DCONFIG_TFM_WARNINGS_ARE_ERRORS:BOOL=ON)
+  endif()
+
   if (CONFIG_TFM_SFN)
     list(APPEND TFM_CMAKE_ARGS -DCONFIG_TFM_SPM_BACKEND="SFN")
   else() # CONFIG_TFM_IPC
@@ -314,6 +319,9 @@ if (CONFIG_BUILD_WITH_TFM)
 	# Leave PARALLEL_JOBS unset and use the default number of
 	# threads. Which is num_cores+2 on Ninja and MAKEFLAGS with Make.
   endif()
+
+  set(tfm_image_info MAP "name: tfm, source-dir: ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}")
+  build_info(images VALUE ${tfm_image_info})
 
   ExternalProject_Add(
     tfm

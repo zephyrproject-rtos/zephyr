@@ -74,6 +74,28 @@ void z_irq_spurious(const void *arg)
 	__asm__ volatile("rsr.intenable %0" : "=r"(ie));
 	LOG_ERR(" ** Spurious INTERRUPT(s) %p, INTENABLE = %p",
 		(void *)irqs, (void *)ie);
+
+#if XCHAL_NUM_INTERRUPTS > 32
+	__asm__ volatile("rsr.interrupt1 %0" : "=r"(irqs));
+	__asm__ volatile("rsr.intenable1 %0" : "=r"(ie));
+	LOG_ERR(" ** Spurious INTERRUPT1(s) %p, INTENABLE1 = %p",
+		(void *)irqs, (void *)ie);
+#endif
+
+#if XCHAL_NUM_INTERRUPTS > 64
+	__asm__ volatile("rsr.interrupt2 %0" : "=r"(irqs));
+	__asm__ volatile("rsr.intenable2 %0" : "=r"(ie));
+	LOG_ERR(" ** Spurious INTERRUPT2(s) %p, INTENABLE2 = %p",
+		(void *)irqs, (void *)ie);
+#endif
+
+#if XCHAL_NUM_INTERRUPTS > 96
+	__asm__ volatile("rsr.interrupt3 %0" : "=r"(irqs));
+	__asm__ volatile("rsr.intenable3 %0" : "=r"(ie));
+	LOG_ERR(" ** Spurious INTERRUPT3(s) %p, INTENABLE3 = %p",
+		(void *)irqs, (void *)ie);
+#endif
+
 	xtensa_fatal_error(K_ERR_SPURIOUS_IRQ, NULL);
 }
 
@@ -81,7 +103,30 @@ int xtensa_irq_is_enabled(unsigned int irq)
 {
 	uint32_t ie;
 
+#if XCHAL_NUM_INTERRUPTS > 32
+	switch (irq >> 5) {
+	case 0:
+		__asm__ volatile("rsr.intenable  %0" : "=r"(ie));
+		break;
+	case 1:
+		__asm__ volatile("rsr.intenable1 %0" : "=r"(ie));
+		break;
+#if XCHAL_NUM_INTERRUPTS > 64
+	case 2:
+		__asm__ volatile("rsr.intenable2 %0" : "=r"(ie));
+		break;
+#endif
+#if XCHAL_NUM_INTERRUPTS > 96
+	case 3:
+		__asm__ volatile("rsr.intenable3 %0" : "=r"(ie));
+		break;
+#endif
+	default:
+		break;
+	}
+#else
 	__asm__ volatile("rsr.intenable %0" : "=r"(ie));
+#endif
 
-	return (ie & (1 << irq)) != 0U;
+	return (ie & (1 << (irq & 31U))) != 0U;
 }

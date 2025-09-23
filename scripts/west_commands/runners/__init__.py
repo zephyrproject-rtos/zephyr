@@ -58,6 +58,8 @@ _names = [
     'rfp',
     'silabs_commander',
     'spi_burn',
+    'spsdk',
+    'stlink_gdbserver',
     'stm32cubeprogrammer',
     'stm32flash',
     'sy1xx',

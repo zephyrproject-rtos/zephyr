@@ -95,7 +95,7 @@
 };
 
 &rng {
-	clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x04000000>,
+	clocks = <&rcc STM32_CLOCK(AHB2, 26)>,
 		 <&rcc STM32_SRC_HSI48 CLK48_SEL(0)>;
 	status = "okay";
 };
@@ -153,13 +153,13 @@
 };
 
 stm32_lp_tick_source: &lptim1 {
-	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x80000000>,
+	clocks = <&rcc STM32_CLOCK(APB1, 31)>,
 		 <&rcc STM32_SRC_LSE LPTIM1_SEL(3)>;
 	status = "okay";
 };
 
 &rtc {
-	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000400>,
+	clocks = <&rcc STM32_CLOCK(APB1, 10)>,
 		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
 	status = "okay";
 };

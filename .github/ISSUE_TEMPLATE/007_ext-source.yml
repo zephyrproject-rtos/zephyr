@@ -1,0 +1,106 @@
+name: External Component Integration
+description: Propose integration of an external open source component
+labels: ["TSC"]
+assignees: []
+body:
+  - type: textarea
+    id: origin
+    attributes:
+      label: Origin
+      description: Name of project hosting the original open source code. Provide a link to the source.
+      placeholder: e.g., SQLite - https://sqlite.org
+    validations:
+      required: true
+
+  - type: textarea
+    id: purpose
+    attributes:
+      label: Purpose
+      description: Brief description of what this software does.
+      placeholder: |
+        e.g., A small, fast, self-contained SQL database engine.
+    validations:
+      required: true
+
+  - type: textarea
+    id: integration-mode
+    attributes:
+      label: Mode of Integration
+      description: Should this be integrated in the main tree or as a module? Explain your choice and suggest a module repo name if applicable.
+      placeholder: |
+        e.g., As a module - proposed repo name: zephyr-sqlite
+    validations:
+      required: true
+
+  - type: textarea
+    id: maintainership
+    attributes:
+      label: Maintainership
+      description: List maintainers (GitHub IDs) for this integration. Include at least one primary maintainer.
+      placeholder: |
+        e.g., @username1 (primary), @username2 (collaborator)
+    validations:
+      required: true
+
+  - type: input
+    id: pull-request
+    attributes:
+      label: Pull Request
+      description: Link to the pull request (if any) for this integration. Must be labeled "DNM" (Do Not Merge).
+      placeholder: |
+        e.g., https://github.com/zephyrproject-rtos/zephyr/pull/12345
+    validations:
+      required: false
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Long-form description to justify suitability of this component.
+      placeholder: |
+        - What is its primary functionality?
+        - What problem does it solve?
+        - Why is this the right component?
+    validations:
+      required: true
+
+  - type: textarea
+    id: security
+    attributes:
+      label: Security
+      description: Security-related aspects of this component, including cryptographic functions and known vulnerabilities.
+      placeholder: |
+        - Does it use cryptography?
+        - How are vulnerabilities handled?
+        - Any known CVEs?
+    validations:
+      required: false
+
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies
+      description: What does this component depend on, and how will it be integrated (directly or via abstraction)?
+      placeholder: |
+        - Other external packages?
+        - Direct or abstracted use in Zephyr?
+    validations:
+      required: false
+
+  - type: input
+    id: revision
+    attributes:
+      label: Version or SHA
+      description: Which version or specific commit should be initially integrated?
+      placeholder: e.g., v3.45.0 or 79cc94d
+    validations:
+      required: true
+
+  - type: input
+    id: license
+    attributes:
+      label: License (SPDX)
+      description: Provide the license using a valid SPDX identifier (e.g., BSD-3-Clause).
+      placeholder: e.g., MIT or BSD-3-Clause
+    validations:
+      required: true

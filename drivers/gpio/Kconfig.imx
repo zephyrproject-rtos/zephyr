@@ -6,8 +6,8 @@
 config GPIO_IMX
 	bool "IMX GPIO driver"
 	default y
-	depends on HAS_IMX_GPIO
 	depends on DT_HAS_NXP_IMX_GPIO_ENABLED
+	depends on SOC_SERIES_IMX6SX || SOC_SERIES_IMX7D
 	select PINCTRL
 	help
 	  Enable the IMX GPIO driver.

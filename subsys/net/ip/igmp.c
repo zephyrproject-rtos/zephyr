@@ -68,7 +68,7 @@ static int igmp_v2_create(struct net_pkt *pkt, const struct in_addr *addr,
 
 	igmp->type = type;
 	igmp->max_rsp = 0U;
-	net_ipaddr_copy(&igmp->address, addr);
+	net_ipaddr_copy(UNALIGNED_MEMBER_ADDR(igmp, address), addr);
 	igmp->chksum = 0;
 
 	if (net_pkt_set_data(pkt, &igmp_access)) {

@@ -415,6 +415,8 @@ class Gcovr(CoverageTool):
                "--gcov-ignore-parse-errors=negative_hits.warn_once_per_file",
                "--gcov-executable", self.gcov_tool,
                "-e", "tests/*"]
+        if self.version >= "7.0":
+            cmd += ["--gcov-object-directory", outdir]
         cmd += excludes + self.options + ["--json", "-o", coverage_file, outdir]
         cmd_str = " ".join(cmd)
         logger.debug(f"Running: {cmd_str}")
@@ -429,6 +431,9 @@ class Gcovr(CoverageTool):
         cmd += ["--gcov-executable", self.gcov_tool,
                 "-f", "tests/ztest", "-e", "tests/ztest/test/*",
                 "--json", "-o", ztest_file, outdir]
+        if self.version >= "7.0":
+            cmd += ["--gcov-object-directory", outdir]
+
         cmd_str = " ".join(cmd)
         logger.debug(f"Running: {cmd_str}")
         coveragelog.write(f"Running: {cmd_str}\n")
@@ -518,7 +523,11 @@ def try_making_symlink(source: str, link: str):
         source (str): The path to the source file.
         link (str): The path where the symbolic link should be created.
     """
-    if os.path.exists(link):
+    symlink_error = None
+
+    try:
+        os.symlink(source, link)
+    except FileExistsError:
         if os.path.islink(link):
             if os.readlink(link) == source:
                 # Link is already set up
@@ -529,19 +538,24 @@ def try_making_symlink(source: str, link: str):
             # File contents are the same
             return
 
-        # link exists, but points to a different file, remove the link. We'll
-        # try to create a new one below
-        os.remove(link)
-
-    # Create the symlink
-    try:
-        os.symlink(source, link)
+        # link exists, but points to a different file. We'll create a new link
+        # and replace it atomically with the old one
+        temp_filename = f"{link}.{os.urandom(8).hex()}"
+        try:
+            os.symlink(source, temp_filename)
+            os.replace(temp_filename, link)
+        except OSError as e:
+            symlink_error = e
     except OSError as e:
-        logger.error(
-            "Error creating symlink: %s, attempting to copy.". str(e)
-        )
-        shutil.copy(source, link)
+        symlink_error = e
 
+    if symlink_error:
+        logger.error(
+            "Error creating symlink: %s, attempting to copy.", str(symlink_error)
+        )
+        temp_filename = f"{link}.{os.urandom(8).hex()}"
+        shutil.copy(source, temp_filename)
+        os.replace(temp_filename, link)
 
 def choose_gcov_tool(options, is_system_gcov):
     gcov_tool = None

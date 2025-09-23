@@ -32,8 +32,8 @@ Supported Features
 
 .. zephyr:board-supported-hw::
 
-Bluetooh support
-----------------
+Bluetooth support
+-----------------
 
 BLE support is enabled; however, to build a Zephyr sample using this board,
 you first need to fetch the Bluetooth controller library into Zephyr as a binary BLOB.

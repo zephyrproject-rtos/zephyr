@@ -28,6 +28,13 @@ config UART_NRFX_UARTE
 	imply NRFX_UARTE_CONFIG_SKIP_PSEL_CONFIG if !UART_NRFX_UARTE_LEGACY_SHIM
 	imply NRFX_UARTE_CONFIG_SKIP_GPIO_CONFIG if !UART_NRFX_UARTE_LEGACY_SHIM
 
+config UART_NRFX_UARTE_USE_CLOCK_CONTROL
+	def_bool y
+	depends on UART_NRFX_UARTE
+	depends on $(dt_nodelabel_enabled,uart120)
+	depends on !SOC_NRF54H20_CPUFLPR && !SOC_NRF54H20_CPUPPR
+	select CLOCK_CONTROL
+
 config UART_NRFX_UARTE_NO_IRQ
 	bool "Polling without interrupt"
 	depends on UART_NRFX_UARTE
@@ -53,6 +60,7 @@ config UART_NRFX_UARTE_ENHANCED_RX
 	bool "Enhanced RX handling"
 	depends on UART_ASYNC_API
 	depends on UART_NRFX_UARTE_LEGACY_SHIM
+	depends on !(UART_0_NRF_HW_ASYNC || UART_1_NRF_HW_ASYNC || UART_2_NRF_HW_ASYNC)
 	default y
 	help
 	  Enable RX handling mode which is switching buffers on timeout. This is an
@@ -135,11 +143,6 @@ rsource "Kconfig.nrfx_uart_instance"
 endif
 
 if HAS_HW_NRF_UARTE120
-
-config UART_NRFX_UARTE_USE_CLOCK_CONTROL
-	def_bool y
-	select CLOCK_CONTROL
-
 nrfx_uart_num = 120
 rsource "Kconfig.nrfx_uart_instance"
 endif

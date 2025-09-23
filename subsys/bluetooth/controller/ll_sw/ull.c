@@ -335,8 +335,9 @@ static struct k_sem sem_ticker_api_cb;
 static struct k_sem *sem_recv;
 
 /* Declare prepare-event FIFO: mfifo_prep.
- * Queue of struct node_rx_event_done
  */
+#define EVENT_PIPELINE_MAX (7U + (EVENT_DEFER_MAX))
+
 static MFIFO_DEFINE(prep, sizeof(struct lll_event), EVENT_PIPELINE_MAX);
 
 /* Declare done-event RXFIFO. This is a composite pool-backed MFIFO for rx_nodes.
@@ -371,12 +372,12 @@ static MFIFO_DEFINE(prep, sizeof(struct lll_event), EVENT_PIPELINE_MAX);
 #if !defined(VENDOR_EVENT_DONE_MAX)
 #if defined(CONFIG_BT_CTLR_ADV_EXT) && defined(CONFIG_BT_OBSERVER)
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
-#define EVENT_DONE_MAX 6
+#define EVENT_DONE_MAX (6U + EVENT_DEFER_MAX)
 #else /* !CONFIG_BT_CTLR_PHY_CODED */
-#define EVENT_DONE_MAX 5
+#define EVENT_DONE_MAX (5U + EVENT_DEFER_MAX)
 #endif /* !CONFIG_BT_CTLR_PHY_CODED */
 #else /* !CONFIG_BT_CTLR_ADV_EXT || !CONFIG_BT_OBSERVER */
-#define EVENT_DONE_MAX 4
+#define EVENT_DONE_MAX (4U + EVENT_DEFER_MAX)
 #endif /* !CONFIG_BT_CTLR_ADV_EXT || !CONFIG_BT_OBSERVER */
 #else
 #define EVENT_DONE_MAX VENDOR_EVENT_DONE_MAX
@@ -783,8 +784,18 @@ int ll_init(struct k_sem *sem_rx)
 
 int ll_deinit(void)
 {
+	int err;
+
 	ll_reset();
-	return lll_deinit();
+
+	err = lll_deinit();
+	if (err) {
+		return err;
+	}
+
+	err = ticker_deinit(TICKER_INSTANCE_ID_CTLR);
+
+	return err;
 }
 
 void ll_reset(void)
@@ -958,8 +969,8 @@ void ll_reset(void)
 uint8_t ll_rx_get(void **node_rx, uint16_t *handle)
 {
 	struct node_rx_pdu *rx;
-	memq_link_t *link;
 	uint8_t cmplt = 0U;
+	memq_link_t *link;
 
 #if defined(CONFIG_BT_CONN) || \
 	(defined(CONFIG_BT_OBSERVER) && defined(CONFIG_BT_CTLR_ADV_EXT)) || \
@@ -973,6 +984,20 @@ ll_rx_get_again:
 	*/
 
 	*node_rx = NULL;
+
+#if defined(CONFIG_BT_CONN) || defined(CONFIG_BT_CTLR_ADV_ISO)
+	/* Save the tx_ack FIFO's last index to avoid the value being changed if there were no
+	 * Rx PDUs and we were pre-empted before calling `tx_cmplt_get()`, that may advance the
+	 * first index beyond ack_last value recorded in node_rx enqueued by `ll_rx_put()` call
+	 * when we are in the `else` clause below.
+	 */
+	uint8_t tx_ack_last = mfifo_fifo_tx_ack.l;
+
+	/* Ensure that the value is fetched before call to memq_peek, i.e. compiler shall not
+	 * reorder memory write before above read.
+	 */
+	cpu_dmb();
+#endif /* CONFIG_BT_CONN || CONFIG_BT_CTLR_ADV_ISO */
 
 	link = memq_peek(memq_ll_rx.head, memq_ll_rx.tail, (void **)&rx);
 	if (link) {
@@ -1054,8 +1079,11 @@ ll_rx_get_again:
 #if defined(CONFIG_BT_CONN) || defined(CONFIG_BT_CTLR_ADV_ISO)
 		}
 	} else {
-		cmplt = tx_cmplt_get(handle, &mfifo_fifo_tx_ack.f,
-				     mfifo_fifo_tx_ack.l);
+		/* Use the saved ack last value, before call was done to memq_peek, to ensure we
+		 * do not advance the first index `f` beyond the value that was the last index `l`
+		 * when memq_peek was called.
+		 */
+		cmplt = tx_cmplt_get(handle, &mfifo_fifo_tx_ack.f, tx_ack_last);
 #endif /* CONFIG_BT_CONN || CONFIG_BT_CTLR_ADV_ISO */
 	}
 
@@ -1382,6 +1410,7 @@ void ll_rx_dequeue(void)
 #if defined(CONFIG_BT_CTLR_DTM_HCI_DF_IQ_REPORT)
 	case NODE_RX_TYPE_DTM_IQ_SAMPLE_REPORT:
 #endif /* CONFIG_BT_CTLR_DTM_HCI_DF_IQ_REPORT */
+	case NODE_RX_TYPE_PATH_LOSS:
 
 	/* Ensure that at least one 'case' statement is present for this
 	 * code block.
@@ -1572,6 +1601,7 @@ void ll_rx_mem_release(void **node_rx)
 #if defined(CONFIG_BT_CTLR_ISO)
 		case NODE_RX_TYPE_ISO_PDU:
 #endif
+		case NODE_RX_TYPE_PATH_LOSS:
 
 		/* Ensure that at least one 'case' statement is present for this
 		 * code block.
@@ -1992,6 +2022,7 @@ int ull_disable(void *lll)
 	struct ull_hdr *hdr;
 	struct k_sem sem;
 	uint32_t ret;
+	int err;
 
 	hdr = HDR_LLL2ULL(lll);
 	if (!ull_ref_get(hdr)) {
@@ -2024,7 +2055,12 @@ int ull_disable(void *lll)
 			     &mfy);
 	LL_ASSERT(!ret);
 
-	return k_sem_take(&sem, ULL_DISABLE_TIMEOUT);
+	err = k_sem_take(&sem, ULL_DISABLE_TIMEOUT);
+	if (err != 0) {
+		return err;
+	}
+
+	return 0;
 }
 
 void *ull_pdu_rx_alloc_peek(uint8_t count)
@@ -2114,6 +2150,8 @@ void *ull_prepare_dequeue_iter(uint8_t *idx)
 
 void ull_prepare_dequeue(uint8_t caller_id)
 {
+	uint32_t param_normal_head_ticks = 0U;
+	uint32_t param_normal_next_ticks = 0U;
 	void *param_normal_head = NULL;
 	void *param_normal_next = NULL;
 	void *param_resume_head = NULL;
@@ -2150,6 +2188,7 @@ void ull_prepare_dequeue(uint8_t caller_id)
 
 	next = ull_prepare_dequeue_get();
 	while (next) {
+		uint32_t ticks = next->prepare_param.ticks_at_expire;
 		void *param = next->prepare_param.param;
 		uint8_t is_aborted = next->is_aborted;
 		uint8_t is_resume = next->is_resume;
@@ -2197,8 +2236,10 @@ void ull_prepare_dequeue(uint8_t caller_id)
 			if (!is_resume) {
 				if (!param_normal_head) {
 					param_normal_head = param;
+					param_normal_head_ticks = ticks;
 				} else if (!param_normal_next) {
 					param_normal_next = param;
+					param_normal_next_ticks = ticks;
 				}
 			} else {
 				if (!param_resume_head) {
@@ -2214,16 +2255,15 @@ void ull_prepare_dequeue(uint8_t caller_id)
 			 */
 			if (!next->is_aborted &&
 			    ((!next->is_resume &&
-			      ((next->prepare_param.param ==
-				param_normal_head) ||
-			       (next->prepare_param.param ==
-				param_normal_next))) ||
-			     (next->is_resume &&
-			      !param_normal_next &&
-			      ((next->prepare_param.param ==
-				param_resume_head) ||
-			       (next->prepare_param.param ==
-				param_resume_next))))) {
+			      (((next->prepare_param.param == param_normal_head) &&
+				(next->prepare_param.ticks_at_expire ==
+				 param_normal_head_ticks)) ||
+			       ((next->prepare_param.param == param_normal_next) &&
+				(next->prepare_param.ticks_at_expire ==
+				 param_normal_next_ticks)))) ||
+			     (next->is_resume && !param_normal_next &&
+			      ((next->prepare_param.param == param_resume_head) ||
+			       (next->prepare_param.param == param_resume_next))))) {
 				break;
 			}
 		}
@@ -2551,24 +2591,32 @@ static void rx_demux(void *param)
 	do {
 #endif /* CONFIG_BT_CTLR_LOW_LAT_ULL */
 		struct node_rx_hdr *rx;
-
-		link = memq_peek(memq_ull_rx.head, memq_ull_rx.tail,
-				 (void **)&rx);
-		if (link) {
 #if defined(CONFIG_BT_CONN)
-			struct node_tx *node_tx;
-			memq_link_t *link_tx;
-			uint16_t handle; /* Handle to Ack TX */
+		struct node_tx *tx;
+		memq_link_t *link_tx;
+		uint8_t ack_last;
+		uint16_t handle; /* Handle to Ack TX */
+
+		/* Save the ack_last, Tx Ack FIFO's last index to avoid the value being changed if
+		 * there were no Rx PDUs and we were pre-empted before calling
+		 * `rx_demux_conn_tx_ack()` in the `else` clause.
+		 */
+		link_tx = ull_conn_ack_peek(&ack_last, &handle, &tx);
+
+		/* Ensure that the value is fetched before call to memq_peek, i.e. compiler shall
+		 * not reorder memory write before above read.
+		 */
+		cpu_dmb();
 #endif /* CONFIG_BT_CONN */
 
+		link = memq_peek(memq_ull_rx.head, memq_ull_rx.tail, (void **)&rx);
+		if (link) {
 			LL_ASSERT(rx);
 
 #if defined(CONFIG_BT_CONN)
-			link_tx = ull_conn_ack_by_last_peek(rx->ack_last,
-							    &handle, &node_tx);
+			link_tx = ull_conn_ack_by_last_peek(rx->ack_last, &handle, &tx);
 			if (link_tx) {
-				rx_demux_conn_tx_ack(rx->ack_last, handle,
-						     link_tx, node_tx);
+				rx_demux_conn_tx_ack(rx->ack_last, handle, link_tx, tx);
 			} else
 #endif /* CONFIG_BT_CONN */
 			{
@@ -2580,21 +2628,14 @@ static void rx_demux(void *param)
 #endif /* !CONFIG_BT_CTLR_LOW_LAT_ULL */
 
 #if defined(CONFIG_BT_CONN)
-		} else {
-			struct node_tx *node_tx;
-			uint8_t ack_last;
-			uint16_t handle;
-
-			link = ull_conn_ack_peek(&ack_last, &handle, &node_tx);
-			if (link) {
-				rx_demux_conn_tx_ack(ack_last, handle,
-						      link, node_tx);
+		} else if (link_tx) {
+			rx_demux_conn_tx_ack(ack_last, handle, link_tx, tx);
 
 #if defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
-				rx_demux_yield();
-#endif /* CONFIG_BT_CTLR_LOW_LAT_ULL */
-
-			}
+			rx_demux_yield();
+#else /* !CONFIG_BT_CTLR_LOW_LAT_ULL */
+			link = link_tx;
+#endif /* !CONFIG_BT_CTLR_LOW_LAT_ULL */
 #endif /* CONFIG_BT_CONN */
 		}
 
@@ -2955,6 +2996,7 @@ static inline void rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 #if defined(CONFIG_BT_CTLR_SCAN_INDICATION)
 	case NODE_RX_TYPE_SCAN_INDICATION:
 #endif /* CONFIG_BT_CTLR_SCAN_INDICATION */
+	case NODE_RX_TYPE_PATH_LOSS:
 
 	case NODE_RX_TYPE_RELEASE:
 	{
@@ -2997,6 +3039,9 @@ static inline void rx_demux_event_done(memq_link_t *link,
 	if (ull_hdr) {
 		LL_ASSERT(ull_ref_get(ull_hdr));
 		ull_ref_dec(ull_hdr);
+	} else {
+		/* No reference count decrement, event placed back as resume event in the pipeline.
+		 */
 	}
 
 	/* Process role dependent event done */

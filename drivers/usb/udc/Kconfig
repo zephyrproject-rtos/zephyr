@@ -3,8 +3,7 @@
 
 
 menuconfig UDC_DRIVER
-	bool "USB device controller drivers [EXPERIMENTAL]"
-	select EXPERIMENTAL
+	bool "USB device controller drivers"
 	select NET_BUF
 	help
 	  USB device controller driver.
@@ -41,6 +40,12 @@ config UDC_BUF_FORCE_NOCACHE
 	help
 	  Place the buffer pools in the nocache memory region if the driver
 	  cannot handle buffers in cached memory.
+
+config UDC_ENABLE_SOF
+	bool "SOF interrupt processing"
+	help
+	  Enabled SoF interrupts can cause a very high CPU load on high-speed
+	  controllers because the interrupt rate would be 125 µs.
 
 config UDC_WORKQUEUE
 	bool "Use a dedicate work queue for UDC drivers"

@@ -40,3 +40,7 @@ tests:
   drivers.wifi.build.p2p:
     extra_configs:
       - CONFIG_NRF70_P2P_MODE=y
+  drivers.wifi.build.tx_align:
+    extra_configs:
+      - CONFIG_NET_PKT_BUF_TX_DATA_ALLOC_ALIGN_LEN=4
+      - CONFIG_NET_BUF_VARIABLE_DATA_SIZE=y

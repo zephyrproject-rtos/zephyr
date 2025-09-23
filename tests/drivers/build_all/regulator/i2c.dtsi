@@ -5,7 +5,8 @@
 
 /****************************************
  * PLEASE KEEP REG ADDRESSES SEQUENTIAL *
- ***************************************/
+ **************************************
+ */
 
 pca9420@0 {
 	compatible = "nxp,pca9420";
@@ -141,5 +142,19 @@ npm2100@8 {
 
 		BOOST {};
 		LDOSW {};
+	};
+};
+
+npm1304@9 {
+	compatible = "nordic,npm1304";
+	reg = <0x9>;
+
+	regulators {
+		compatible = "nordic,npm1304-regulator";
+
+		BUCK1 {};
+		BUCK2 {};
+		LDO1 {};
+		LDO2 {};
 	};
 };

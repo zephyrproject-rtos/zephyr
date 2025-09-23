@@ -22,6 +22,7 @@
 		zephyr,shell-uart = &usb_serial;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,ieee802154 = &ieee802154;
 	};
 
 	leds: leds {
@@ -37,6 +38,11 @@
 		watchdog0 = &wdt0;
 	};
 
+	rf_switch: rf_switch {
+		compatible = "seeed,xiao-gpio-rf-switch";
+		enable-gpios = <&gpio0 3 GPIO_ACTIVE_LOW>;
+		select-gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;
+	};
 };
 
 &trng0 {
@@ -78,5 +84,13 @@
 };
 
 &wifi {
+	status = "okay";
+};
+
+&ieee802154 {
+	status = "okay";
+};
+
+&esp32_bt_hci {
 	status = "okay";
 };

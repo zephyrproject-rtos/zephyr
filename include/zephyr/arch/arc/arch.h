@@ -10,7 +10,7 @@
  *
  * This header contains the ARC specific kernel interface.  It is
  * included by the kernel interface architecture-abstraction header
- * include/arch/cpu.h)
+ * (include/zephyr/arch/cpu.h).
  */
 
 #ifndef ZEPHYR_INCLUDE_ARCH_ARC_ARCH_H_
@@ -23,7 +23,7 @@
 #include <zephyr/arch/common/sys_bitops.h>
 #include "sys-io-common.h"
 
-#include <zephyr/arch/arc/v2/exception.h>
+#include <zephyr/arch/exception.h>
 #include <zephyr/arch/arc/v2/irq.h>
 #include <zephyr/arch/arc/v2/misc.h>
 #include <zephyr/arch/arc/v2/aux_regs.h>

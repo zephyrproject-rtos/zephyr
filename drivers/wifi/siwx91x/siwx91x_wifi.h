@@ -5,14 +5,14 @@
 #ifndef SIWX91X_WIFI_H
 #define SIWX91X_WIFI_H
 
-#include <zephyr/net/net_context.h>
 #include <zephyr/net/wifi_mgmt.h>
-#include <zephyr/net/wifi.h>
-#include <zephyr/kernel.h>
 
-#include "sl_ieee802_types.h"
 #include "sl_si91x_types.h"
-#include "sl_si91x_protocol_types.h"
+
+struct siwx91x_config {
+	uint8_t scan_tx_power;
+	uint8_t join_tx_power;
+};
 
 struct siwx91x_dev {
 	struct net_if *iface;
@@ -36,5 +36,9 @@ struct siwx91x_dev {
 	} fds_cb[SLI_NUMBER_OF_SOCKETS];
 #endif
 };
+
+int siwx91x_status(const struct device *dev, struct wifi_iface_status *status);
+bool siwx91x_param_changed(struct wifi_iface_status *prev_params,
+			   struct wifi_connect_req_params *new_params);
 
 #endif

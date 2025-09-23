@@ -60,7 +60,7 @@
 	reg = <0x402a8000 0x4000>, <0x60000000 DT_SIZE_M(8)>;
 	is25wp064: is25wp064@0 {
 		compatible = "nxp,imx-flexspi-nor";
-		size = <DT_SIZE_M(64 * 8)>;
+		size = <DT_SIZE_M(8 * 8)>;
 		reg = <0>;
 		spi-max-frequency = <104000000>;
 		status = "okay";

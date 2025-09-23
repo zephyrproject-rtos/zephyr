@@ -172,7 +172,6 @@ static int psoc6_bless_send(const struct device *dev, struct net_buf *buf)
 
 	if (k_sem_take(&psoc6_bless_operation_sem, K_MSEC(BLE_LOCK_TMOUT_MS)) != 0) {
 		LOG_ERR("Failed to acquire BLE DRV Semaphore");
-		net_buf_unref(buf);
 		return -EIO;
 	}
 
@@ -203,7 +202,7 @@ static int psoc6_bless_setup(const struct device *dev, const struct bt_hci_setup
 		addr[5], addr[4], addr[3], addr[2], addr[1], addr[0], BT_ADDR_LE_PUBLIC,
 	};
 
-	buf = bt_hci_cmd_create(PSOC6_BLESS_OP_SET_PUBLIC_ADDR, sizeof(hci_data));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (buf == NULL) {
 		LOG_ERR("Unable to allocate command buffer");
 		return -ENOMEM;

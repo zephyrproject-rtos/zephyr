@@ -35,9 +35,11 @@
 		};
 	};
 
-	wake_up_trigger: gpio-wake-up  {
-		compatible = "silabs,gecko-wake-up-trigger";
-		gpios = <&gpioa 5 GPIO_ACTIVE_LOW>;
+	exp_header: exp-header {
+		compatible = "silabs,exp-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0x0>;
+		gpio-map-pass-thru = <0x0 GPIO_DT_FLAGS_MASK>;
 	};
 
 	/* GPIOs that power up different sensors */
@@ -71,10 +73,6 @@
 	pinctrl-0 = <&itm_default>;
 	pinctrl-names = "default";
 	swo-ref-frequency = <DT_FREQ_K(76800)>;
-};
-
-&pstate_em3 {
-	status = "disabled";
 };
 
 &usart0 {
@@ -119,7 +117,6 @@
 };
 
 &gpio {
-	location-swo = <0>;
 	status = "okay";
 };
 

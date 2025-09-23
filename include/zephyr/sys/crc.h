@@ -52,6 +52,51 @@ extern "C" {
  */
 
 /**
+ * @brief CRC polynomial definitions
+ * @anchor CRC_POLYNOMIAL
+ *
+ * @{
+ */
+
+/** CRC4 polynomial */
+#define CRC4_POLY 0x3
+
+/** CRC4_TI polynomial */
+#define CRC4_REFLECT_POLY 0xC
+
+/** CRC7_BE polynomial */
+#define CRC7_BE_POLY 0x09
+
+/** CRC8 polynomial */
+#define CRC8_POLY 0x07
+
+/** CRC8_CCITT polynomial */
+#define CRC8_REFLECT_POLY 0xE0
+
+/** CRC8_ROHC polynomial */
+#define CRC16_POLY 0x8005
+
+/** CRC16_ANSI polynomial */
+#define CRC16_REFLECT_POLY 0xA001
+
+/** CRC16_CCITT polynomial */
+#define CRC16_CCITT_POLY 0x1021
+
+/** CRC16_ITU_T polynomial */
+#define CRC24_PGP_POLY 0x01864CFBU
+
+/** CRC32_C polynomial */
+#define CRC32_IEEE_POLY 0x04C11DB7U
+
+/** CRC32C polynomial */
+#define CRC32C_POLY 0x1EDC6F41U
+
+/** CRC32_K_4_2 polynomial */
+#define CRC32K_4_2_POLY 0x93A409EBU
+
+/** @} */
+
+/**
  * @brief CRC algorithm enumeration
  *
  * These values should be used with the @ref crc dispatch function.
@@ -390,6 +435,17 @@ uint32_t crc24_pgp(const uint8_t *data, size_t len);
  *         with CRC24_FINAL_VALUE_MASK to keep only the meaningful 24 bits of the CRC result.
  */
 uint32_t crc24_pgp_update(uint32_t crc, const uint8_t *data, size_t len);
+
+/**
+ * @brief Calculate an RTCM3 CRC24Q frame checksum
+ *
+ * @param[in] data RTCM3 Frame
+ * @param[in] len Frame length in bytes.
+ *
+ * @return 0 if the data-frame contains a checksum and it matches.
+ * @return Result if data-frame does not contain checksum.
+ */
+uint32_t crc24q_rtcm3(const uint8_t *data, size_t len);
 
 /**
  * @brief Compute a CRC checksum, in a generic way.

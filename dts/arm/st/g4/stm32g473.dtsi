@@ -13,7 +13,8 @@
 		timers5: timers@40000c00 {
 			compatible = "st,stm32-timers";
 			reg = <0x40000c00 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB1, 3U)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 3)>,
+				 <&rcc STM32_SRC_TIMPCLK1 NO_SEL>;
 			resets = <&rctl STM32_RESET(APB1L, 3U)>;
 			interrupts = <50 0>;
 			interrupt-names = "global";
@@ -30,7 +31,7 @@
 		adc4: adc@50000500 {
 			compatible = "st,stm32-adc";
 			reg = <0x50000500 0x100>;
-			clocks = <&rcc STM32_CLOCK(AHB2, 14U)>;
+			clocks = <&rcc STM32_CLOCK(AHB2, 14)>;
 			interrupts = <61 0>;
 			status = "disabled";
 			#io-channel-cells = <1>;
@@ -46,7 +47,7 @@
 		adc5: adc@50000600 {
 			compatible = "st,stm32-adc";
 			reg = <0x50000600 0x100>;
-			clocks = <&rcc STM32_CLOCK(AHB2, 14U)>;
+			clocks = <&rcc STM32_CLOCK(AHB2, 14)>;
 			interrupts = <62 0>;
 			status = "disabled";
 			#io-channel-cells = <1>;
@@ -64,7 +65,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40013c00 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB2, 15U)>;
+			clocks = <&rcc STM32_CLOCK(APB2, 15)>;
 			interrupts = <84 5>;
 			status = "disabled";
 		};
@@ -72,7 +73,7 @@
 		dac2: dac@50000c00 {
 			compatible = "st,stm32-dac";
 			reg = <0x50000c00 0x400>;
-			clocks = <&rcc STM32_CLOCK(AHB2, 17U)>;
+			clocks = <&rcc STM32_CLOCK(AHB2, 17)>;
 			status = "disabled";
 			#io-channel-cells = <1>;
 		};
@@ -80,7 +81,7 @@
 		dac4: dac@50001400 {
 			compatible = "st,stm32-dac";
 			reg = <0x50001400 0x400>;
-			clocks = <&rcc STM32_CLOCK(AHB2, 19U)>;
+			clocks = <&rcc STM32_CLOCK(AHB2, 19)>;
 			status = "disabled";
 			#io-channel-cells = <1>;
 		};
@@ -91,7 +92,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40008400 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB1_2, 1U)>;
+			clocks = <&rcc STM32_CLOCK(APB1_2, 1)>;
 			interrupts = <82 0>, <83 0>;
 			interrupt-names = "event", "error";
 			status = "disabled";
@@ -103,7 +104,7 @@
 			reg-names = "m_can", "message_ram";
 			interrupts = <88 0>, <89 0>;
 			interrupt-names = "int0", "int1";
-			clocks = <&rcc STM32_CLOCK(APB1, 25U)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 25)>;
 			bosch,mram-cfg = <0x6a0 28 8 3 3 0 3 3>;
 			status = "disabled";
 		};

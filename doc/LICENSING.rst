@@ -108,6 +108,15 @@ Python Devicetree library test files
 
   * Various yaml files under ``scripts/dts/python-devicetree/tests``
 
+FUSE Interface Definition Header File
+--------------------------------------
+
+* *Licensing:* `BSD-2-clause`_
+* *Impact:* This header is used in Zephyr build only if :kconfig:option:`CONFIG_FUSE_CLIENT` is enabled.
+* *Files*:
+
+  * :zephyr_file:`subsys/fs/fuse_client/fuse_abi.h`
+
 .. _Apache 2.0 License:
    https://github.com/zephyrproject-rtos/zephyr/blob/main/LICENSE
 
@@ -119,6 +128,9 @@ Python Devicetree library test files
 
 .. _BSD-3-clause:
    https://opensource.org/license/bsd-3-clause
+
+.. _BSD-2-clause:
+   https://opensource.org/license/bsd-2-clause
 
 .. _Coccinelle:
    https://coccinelle.gitlabpages.inria.fr/website/

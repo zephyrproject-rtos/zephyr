@@ -29,7 +29,7 @@
 	};
 };
 
-/{
+/ {
 	aliases {
 		i2c-channel-0 = &ch0;
 		i2c-channel-1 = &ch1;

@@ -561,7 +561,7 @@ const struct bt_mesh_blob_srv_cb _bt_mesh_dfu_srv_blob_cb = {
 void bt_mesh_dfu_srv_verified(struct bt_mesh_dfu_srv *srv)
 {
 	if (srv->update.phase != BT_MESH_DFU_PHASE_VERIFY) {
-		LOG_WRN("Wrong state");
+		LOG_DBG("Wrong state");
 		return;
 	}
 
@@ -574,7 +574,7 @@ void bt_mesh_dfu_srv_verified(struct bt_mesh_dfu_srv *srv)
 void bt_mesh_dfu_srv_rejected(struct bt_mesh_dfu_srv *srv)
 {
 	if (srv->update.phase != BT_MESH_DFU_PHASE_VERIFY) {
-		LOG_WRN("Wrong state");
+		LOG_DBG("Wrong state");
 		return;
 	}
 
@@ -587,7 +587,7 @@ void bt_mesh_dfu_srv_rejected(struct bt_mesh_dfu_srv *srv)
 void bt_mesh_dfu_srv_cancel(struct bt_mesh_dfu_srv *srv)
 {
 	if (srv->update.phase == BT_MESH_DFU_PHASE_IDLE) {
-		LOG_WRN("Wrong state");
+		LOG_DBG("Wrong state");
 		return;
 	}
 
@@ -597,7 +597,7 @@ void bt_mesh_dfu_srv_cancel(struct bt_mesh_dfu_srv *srv)
 void bt_mesh_dfu_srv_applied(struct bt_mesh_dfu_srv *srv)
 {
 	if (srv->update.phase != BT_MESH_DFU_PHASE_APPLYING) {
-		LOG_WRN("Wrong state");
+		LOG_DBG("Wrong state");
 		return;
 	}
 

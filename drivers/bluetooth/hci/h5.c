@@ -804,7 +804,7 @@ static DEVICE_API(bt_hci, h5_driver_api) = {
 	}; \
 	static struct h5_data h5_##inst; \
 	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &h5_##inst, &h5_config_##inst, \
-			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &h5_driver_api)
+			      POST_KERNEL, CONFIG_BT_HCI_INIT_PRIORITY, &h5_driver_api)
 
 
 DT_INST_FOREACH_STATUS_OKAY(BT_UART_DEVICE_INIT)

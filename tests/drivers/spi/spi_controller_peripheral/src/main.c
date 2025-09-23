@@ -28,7 +28,8 @@
 static struct spi_dt_spec spim = SPI_DT_SPEC_GET(DT_NODELABEL(dut_spi_dt), SPIM_OP, 0);
 static const struct device *spis_dev = DEVICE_DT_GET(DT_NODELABEL(dut_spis));
 static const struct spi_config spis_config = {
-	.operation = SPIS_OP
+	.operation = SPIS_OP,
+	.slave = DT_PROP_OR(DT_PATH(zephyr_user), peripheral_cs, 0),
 };
 
 static struct k_poll_signal async_sig = K_POLL_SIGNAL_INITIALIZER(async_sig);
@@ -40,9 +41,12 @@ static struct k_poll_event async_evt_spim =
 	K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY, &async_sig_spim);
 
 #define MEMORY_SECTION(node)                                                                       \
-	COND_CODE_1(DT_NODE_HAS_PROP(node, memory_regions),                                        \
-		    (__attribute__((__section__(                                                   \
-			    LINKER_DT_NODE_REGION_NAME(DT_PHANDLE(node, memory_regions)))))),      \
+	COND_CODE_1(IS_ENABLED(CONFIG_PREALLOC_BUFFERS),                                           \
+		    (COND_CODE_1(DT_NODE_HAS_PROP(node, memory_regions),                           \
+				 (__attribute__((__section__(                                      \
+				     LINKER_DT_NODE_REGION_NAME(DT_PHANDLE(node,                   \
+									   memory_regions)))))),   \
+				 ())),                                                             \
 		    ())
 
 static uint8_t spim_buffer[32] MEMORY_SECTION(DT_BUS(DT_NODELABEL(dut_spi_dt)));

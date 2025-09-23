@@ -49,6 +49,7 @@
 	".global " STRINGIFY(_EXCEPTION_STUB_NAME(handler, vector)) "\n\t" \
 	STRINGIFY(_EXCEPTION_STUB_NAME(handler, vector)) ":\n\t" \
 	"1:\n\t" \
+	"endbr32\n\t" \
 	codepush \
 	"push $" STRINGIFY(handler) "\n\t" \
 	"jmp _exception_enter\n\t" \

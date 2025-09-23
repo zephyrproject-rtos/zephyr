@@ -1,11 +1,12 @@
 /*
- * Copyright (c) 2023-2024 Analog Devices, Inc.
+ * Copyright (c) 2023-2025 Analog Devices, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <arm/armv7-m.dtsi>
 #include <adi/max32/max32xxx.dtsi>
+#include <zephyr/dt-bindings/dma/max32666_dma.h>
 
 &clk_ipo {
 	clock-frequency = <DT_FREQ_M(96)>;
@@ -187,6 +188,18 @@
 			};
 			power-delay-ms = <1500>;
 			clocks = <&gcr ADI_MAX32_CLOCK_BUS1 10>;
+		};
+
+		wut0: timer@40006400 {
+			compatible = "adi,max32-timer";
+			reg = <0x40006400 0x400>;
+			interrupts = <53 0>;
+			status = "disabled";
+			prescaler = <1>;
+			counter {
+				compatible = "adi,max32-wut";
+				status = "disabled";
+			};
 		};
 	};
 };

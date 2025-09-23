@@ -1,4 +1,4 @@
 # Copyright (c) 2023 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-source "${ZEPHYR_BASE}/samples/bluetooth/bap_broadcast_sink/Kconfig"
+source "$(ZEPHYR_BASE)/samples/bluetooth/bap_broadcast_sink/Kconfig"

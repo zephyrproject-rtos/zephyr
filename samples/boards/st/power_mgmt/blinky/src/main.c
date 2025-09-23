@@ -11,9 +11,9 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/pm/device_runtime.h>
 
-/* define SLEEP_TIME_MS higher than <st,counter-value> in ms */
-#if DT_PROP(DT_NODELABEL(stm32_lp_tick_source), st_counter_value)
-#define SLEEP_TIME_MS   (DT_PROP(DT_NODELABEL(stm32_lp_tick_source), st_counter_value) * 1400)
+#if DT_PROP(DT_NODELABEL(stm32_lp_tick_source), st_timeout)
+/* st,timeout is set. Application can be woken up exaclty on expected tick */
+#define SLEEP_TIME_MS   (DT_PROP(DT_NODELABEL(stm32_lp_tick_source), st_timeout) * 1000)
 #else
 #define SLEEP_TIME_MS   2000
 #endif

@@ -38,9 +38,10 @@
 		};
 	};
 
-
+	// PE6 can be used to discharge the 3v3 net. Disabled by default.
 	zephyr,user {
 		dischrg-gpios = <&gpioe 6 (GPIO_ACTIVE_LOW | GPIO_OPEN_DRAIN)>;
+		status = "disabled";
 	};
 
 	supply-3v3 {
@@ -173,7 +174,7 @@ zephyr_udc0: &usbotg_fs {
 };
 
 &rtc {
-	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>,
+	clocks = <&rcc STM32_CLOCK(APB1, 28)>,
 		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
 	status = "okay";
 };

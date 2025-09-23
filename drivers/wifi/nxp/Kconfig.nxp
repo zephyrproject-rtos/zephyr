@@ -31,6 +31,12 @@ config NXP_WIFI_CUSTOM
 	help
 	  Customize NXP Wi-Fi chip support.
 
+config NXP_WIFI_AUTO_INIT
+	bool "Auto initialize NXP Wi-Fi"
+	default y
+	help
+	  Automatically initialize NXP Wi-Fi driver and FW.
+
 choice NXP_WIFI_PART
 	prompt "Select NXP Wi-Fi part"
 	depends on !NXP_WIFI_CUSTOM
@@ -79,6 +85,13 @@ config NXP_88W8801
 	  Enable NXP 88W8801 Wi-Fi connectivity,
 	  More information about 88W8801 device you can find on
 	  https://www.nxp.com/products/wireless-connectivity/wi-fi-plus-bluetooth-plus-802-15-4/2-4-ghz-single-band-1x1-wi-fi-4-802-11n-solution:88W8801
+
+config NXP_IW610
+	bool "NXP IW610"
+	help
+	  Enable NXP IW610 Wi-Fi connectivity,
+	  More information about IW610 device you can find on
+	  https://www.nxp.com/products/wireless-connectivity/wi-fi-plus-bluetooth-plus-802-15-4/2-4-5ghz-dual-band-1x1-wi-fi-6-plus-bluetooth-low-energy-5-4-plus-802-15-4-tri-radio-solution:IW610
 
 endchoice
 
@@ -337,7 +350,7 @@ config NXP_88W8801_MURATA_2DS_USD
 	  https://www.murata.com/en-us/products/connectivitymodule/wi-fi-bluetooth/overview/lineup/type2ds
 	  https://www.murata.com/en-us/products/connectivitymodule/wi-fi-bluetooth/overview/lineup/usd-m2-adapter
 
-config NXP_88W8801_MURATA_2DS_USD
+config NXP_88W8801_MURATA_2DS_M2
 	bool "NXP MURATA-2DS-M2"
 	help
 	  Murata Type 2DS is a small high-performance module (integrated PCB antenna)
@@ -346,6 +359,36 @@ config NXP_88W8801_MURATA_2DS_USD
 
 	  Detailed information about Murata Type 2DS module you can find on
 	  https://www.murata.com/en-us/products/connectivitymodule/wi-fi-bluetooth/overview/lineup/type2ds
+
+endchoice
+
+choice NXP_IW610_MODULE
+	prompt "Select NXP IW610 module"
+	depends on NXP_IW610 && !NXP_WIFI_CUSTOM
+
+config NXP_IW610_MURATA_2LL_M2
+	bool "NXP IW610-MURATA-2LL-M2"
+	help
+	  Murata Type 2LL is a small and very high performance module based on NXP IW610G
+	  combo chipset which supports Wi-Fi™ 802.11a/b/g/n/ac/ax HE20 + Bluetooth®. 5.4
+	  Low Energy + 802.15.4 up to 114.7Mbps PHY data rate on Wi-Fi™ and 2Mbps PHY data
+	  rate on Bluetooth® Low Energy.
+
+	  Detailed information about Type 2LL module you can find on
+	  https://www.murata.com/en-us/products/connectivitymodule/wi-fi-bluetooth/overview/lineup/type2ll
+
+config NXP_IW610_RD_USD
+	bool "NXP IW610-RD-USD [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  The IW610 Family features a 1x1 Dual-band (2.4 GHz / 5 GHz) Wi-Fi 6 radio subsystem,
+	  offering improved network efficiency, reduced latency and extended range compared to
+	  previous Wi-Fi standards. Its Bluetooth LE radio supports a high-speed data rate of
+	  2 Mbit/s, along with long-range communication and extended advertising for network
+	  commissioning and sensor aggregation.
+
+	  Detailed information about Type RD USD module you can find on
+	  https://www.nxp.com/part/IW610CHN
 
 endchoice
 
@@ -555,9 +598,8 @@ config NXP_WIFI_11V
 
 config NXP_WIFI_11R
 	bool "802.11R Support"
-	default n if (NXP_RW610 && !WIFI_NM_WPA_SUPPLICANT)
 	default y
-	depends on NXP_88W8987 || NXP_IW416 || NXP_RW610 || NXP_WIFI_CUSTOM
+	depends on WIFI_NM_WPA_SUPPLICANT
 	help
 	  This option enables the use of 802.11r support.
 
@@ -566,6 +608,12 @@ config NXP_WIFI_RTS_THRESHOLD
 	default y
 	help
 	  This option enables the set of rts threshold support.
+
+config NXP_WIFI_CHANNEL_LOAD
+	bool "Set CHANNEL LOAD Support"
+	default y
+	help
+	  This option enables the set of channel load support.
 
 config NXP_WIFI_INACTIVITY_TIMEOUT_EXT
 	bool "Inactivity Timeout Ext Support"
@@ -616,7 +664,7 @@ config NXP_WIFI_CAPA
 	  This option enables uAP Wi-Fi Capability in the Wi-Fi driver.
 
 config NXP_WIFI_UAP_STA_MAC_ADDR_FILTER
-	bool "Wi-Fi SoftAP clients white/black list"
+	bool "Wi-Fi SoftAP clients allow/block list"
 	default y
 	help
 	  Allow/Block MAC addresses specified in the allowed list.
@@ -656,7 +704,7 @@ config NXP_WIFI_11AX
 	default y
 	select NXP_WIFI_11AC
 	select NXP_WIFI_WMM
-	depends on NXP_RW610 || NXP_IW61X || NXP_WIFI_CUSTOM
+	depends on NXP_RW610 || NXP_IW61X || NXP_IW610 || NXP_WIFI_CUSTOM
 	help
 	  This option enables the use of 802.11ax support.
 
@@ -664,7 +712,7 @@ config NXP_WIFI_11AC
 	bool "802.11AC Support"
 	default y
 	select NXP_WIFI_WMM
-	depends on NXP_RW610 || NXP_IW61X || NXP_88W8987 || NXP_WIFI_CUSTOM
+	depends on NXP_RW610 || NXP_IW61X || NXP_88W8987 || NXP_IW610 || NXP_WIFI_CUSTOM
 	help
 	  This option enables the use of 802.11ac support.
 
@@ -736,7 +784,7 @@ config NXP_WIFI_5GHz_SUPPORT
 
 config NXP_WIFI_TX_RX_ZERO_COPY
 	bool "Zero memory copy TX/RX data packets"
-	depends on NXP_RW610
+	depends on NXP_RW610 || NXP_WIFI_SDIO_MULTI_PORT_TX_AGGR
 	imply NET_IPV4_FRAGMENT
 	help
 	  This option enables the Zero memory copy of data packets in Wi-Fi driver data path.
@@ -755,13 +803,15 @@ config NXP_WIFI_TX_PER_TRACK
 config NXP_WIFI_CSI
 	bool "CSI support"
 	default y
-	depends on NXP_RW610 || NXP_88W8987 || NXP_WIFI_CUSTOM
+	depends on NXP_RW610 || NXP_88W8987 || NXP_IW610 || NXP_WIFI_CUSTOM
 	help
 	  This option enable/disable channel state information collection.
 
 config NXP_WIFI_RESET
 	bool "Wi-Fi reset"
 	default y
+	imply NXP_WIFI_IND_DNLD if NXP_IW610
+	imply NXP_WIFI_IND_RESET if NXP_IW610
 	help
 	  This option is used to enable/disable/reset Wi-Fi.
 
@@ -781,23 +831,11 @@ config NXP_WIFI_UNII4_BAND_SUPPORT
 
 config NXP_WIFI_RECOVERY
 	bool "RECOVERY"
-	depends on NXP_RW610
+	depends on NXP_RW610 || NXP_IW610
 	help
 	  This option is used to enable wifi recovery support.
 
-if NXP_RW610
-
-config NXP_WIFI_FW_VDLLV2
-	bool "Firmware virtual dynamic link library version 2"
-	default y
-	help
-	  This option is to load some firmware features in run-time.
-
-config NXP_WIFI_AUTO_NULL_TX
-	bool "Auto send null frame"
-	default y
-	help
-	  This option is to support sending null frame in period for CSI.
+if NXP_RW610 || NXP_IW610
 
 config NXP_WIFI_NET_MONITOR
 	bool "Networking monitor"
@@ -805,49 +843,11 @@ config NXP_WIFI_NET_MONITOR
 	help
 	  This option is used to set/get network monitor configuration.
 
-config NXP_WIFI_CAU_TEMPERATURE
-	bool "Cau temperature"
+config NXP_WIFI_HOST_TXRX_MGMT_FRAME
+	bool "Host send management and data frame in monitor mode"
 	default y
 	help
-	  This option is used to enable/disable Cau temperature.
-
-config NXP_WIFI_TSP
-	bool "Thermal Safeguard Protection"
-	default y
-	help
-	  This option is used to set and get Thermal Safeguard Protection configuration.
-
-config NXP_WIFI_IPS
-	bool "IPS"
-	default y
-	help
-	  This option enable/disable config for IPS in the Wi-Fi driver.
-
-config NXP_WIFI_RX_ABORT_CFG
-	bool "RX abort support"
-	default y
-	help
-	  This option enables rx abort config with static RSSI threshold
-	  in the Wi-Fi driver.
-
-config NXP_WIFI_RX_ABORT_CFG_EXT
-	bool "RX abort extension support"
-	default y
-	help
-	  This option enables rx abort extension config with dynamic
-	  RSSI threshold in the Wi-Fi driver.
-
-config NXP_WIFI_CCK_DESENSE_CFG
-	bool "CCK desense mode support"
-	default y
-	help
-	  This option enables cck desense mode in the Wi-Fi driver.
-
-config NXP_WIFI_COEX_DUTY_CYCLE
-	bool "Set duty cycle"
-	default y
-	help
-	  This option sets duty cycle in the Wi-Fi driver.
+	  This option is used to send management and data frame in monitor mode.
 
 config NXP_WIFI_MMSF
 	bool "11AX density config"
@@ -855,12 +855,86 @@ config NXP_WIFI_MMSF
 	help
 	  This option is used to specify/get 11ax density config in the Wi-Fi driver.
 
+endif # NXP_RW610 || NXP_IW610
+
+config NXP_OVERRIDE_CALIBRATION_DATA
+	bool "override default calibriation data"
+	help
+	  This option is used to override default calibration data.
+
+if NXP_IW61X
+
+config WLAN_CALDATA_2ANT_HI_ISO
+	bool "Select 2ANT HIGH ISOLATION"
+	help
+	  This option is used to select 2ANT High Isolation Caldata.
+
+config WLAN_CALDATA_2ANT_LO_ISO
+	bool "Select 2ANT LOW ISOLATION"
+	help
+	  This option is used to select 2ANT Low Isolation Caldata.
+
+endif # NXP_IW61X
+
+config NXP_WIFI_FW_VDLLV2
+	bool "Firmware virtual dynamic link library version 2"
+	default y
+	depends on NXP_RW610
+	help
+	  This option is to load some firmware features in run-time.
+
+config NXP_WIFI_AUTO_NULL_TX
+	bool "Auto send null frame"
+	default y if NXP_RW610 || NXP_IW610
+	help
+	  This option is to support sending null frame in period for CSI.
+
+config NXP_WIFI_TSP
+	bool "Thermal Safeguard Protection"
+	default y if NXP_RW610 || NXP_IW610
+	help
+	  This option is used to set and get Thermal Safeguard Protection configuration.
+
+config NXP_WIFI_IPS
+	bool "IPS"
+	default y if NXP_RW610 || NXP_IW610
+	help
+	  This option enable/disable config for IPS in the Wi-Fi driver.
+
+config NXP_WIFI_RX_ABORT_CFG
+	bool "RX abort support"
+	default y if NXP_RW610 || NXP_IW610
+	help
+	  This option enables rx abort config with static RSSI threshold
+	  in the Wi-Fi driver.
+
+config NXP_WIFI_RX_ABORT_CFG_EXT
+	bool "RX abort extension support"
+	default y if NXP_RW610 || NXP_IW610
+	help
+	  This option enables rx abort extension config with dynamic
+	  RSSI threshold in the Wi-Fi driver.
+
+config NXP_WIFI_CCK_DESENSE_CFG
+	bool "CCK desense mode support"
+	default y if NXP_RW610 || NXP_IW610
+	help
+	  This option enables cck desense mode in the Wi-Fi driver.
+
+config NXP_WIFI_COEX_DUTY_CYCLE
+	bool "Set duty cycle"
+	default y if NXP_RW610 || NXP_IW610
+	help
+	  This option sets duty cycle in the Wi-Fi driver.
+
 config NXP_WIFI_IMD3_CFG
 	bool "Set imd validation parameters"
-	default y
+	default y if NXP_RW610 || NXP_IW610
 	help
 	  This option is used to set IM3 configuration for Wi-Fi,
 	  BLE coex mode and antenna isolation debug.
+
+if NXP_RW610
 
 config NXP_WIFI_ANT_DETECT
 	bool "Antenna automatic detection"
@@ -884,11 +958,6 @@ config NXP_WIFI_WLAN_CALDATA_3ANT_DIVERSITY
 	help
 	  This option is used to enable three antenna diversity.
 
-config NXP_OVERRIDE_CALIBRATION_DATA
-	bool "override default calibriation data"
-	help
-	  This option is used to override default calibration data.
-
 endif # NXP_RW610
 
 config NXP_WIFI_11AX_TWT
@@ -900,7 +969,7 @@ config NXP_WIFI_11AX_TWT
 
 config NXP_WIFI_PKT_FWD
 	bool "Wi-Fi packet forward"
-	default y if NXP_RW610
+	default y if NXP_RW610 || NXP_IW610
 	depends on NXP_WIFI_SOFTAP_SUPPORT
 	help
 	  This option enables Wi-Fi packet forward on SoftAP.
@@ -913,31 +982,29 @@ config NXP_WIFI_DTIM_PERIOD
 
 config NXP_WIFI_MEM_ACCESS
 	bool
-	default y if NXP_RW610
 	help
 	  This option enables memory access cmd in the Wi-Fi driver.
 
 config NXP_WIFI_REG_ACCESS
 	bool
-	default y if NXP_RW610
 	help
 	  This option enables register access cmd in the Wi-Fi driver.
 
 config NXP_WIFI_SUBSCRIBE_EVENT_SUPPORT
 	bool "Subscribe event from firmware"
-	default y if NXP_RW610
+	default y if NXP_RW610 || NXP_IW610
 	help
 	  This option prints the get subscribe event from firmware for user test.
 
 config NXP_WIFI_TX_RX_HISTOGRAM
 	bool "TX/RX statistics"
-	default y if NXP_RW610
+	default y if NXP_RW610 || NXP_IW610
 	help
 	  This option enables TX/RX statistics in the Wi-Fi driver.
 
 config NXP_WIFI_RF_TEST_MODE
 	bool "WLAN RF Test Mode"
-	default y if NXP_RW610
+	default y if NXP_RW610 || NXP_IW610
 	help
 	  This option enables WLAN test mode commands.
 
@@ -947,7 +1014,7 @@ config NXP_WIFI_EU_VALIDATION
 	help
 	  This option enables EU Validation Support.
 
-if NXP_RW610 || NXP_IW61X
+if NXP_RW610 || NXP_IW61X || NXP_IW610
 
 config NXP_WIFI_CLOCKSYNC
 	bool "Clock sync using TSF latch"
@@ -958,14 +1025,14 @@ config NXP_WIFI_CLOCKSYNC
 config NXP_WIFI_COMPRESS_TX_PWTBL
 	bool "Compress TX Power Table Support"
 	default y
-	depends on (NXP_RW610 || NXP_IW61X_REGION_WW)
+	depends on (NXP_RW610 || NXP_IW61X_REGION_WW || NXP_IW610)
 	help
 	  This option enables the use of Compress TX Power Table support.
 
 config NXP_WIFI_COMPRESS_RU_TX_PWTBL
 	bool "Compress RU TX Power Table Support"
 	default y
-	depends on (NXP_RW610 || NXP_IW61X_REGION_WW)
+	depends on (NXP_RW610 || NXP_IW61X_REGION_WW || NXP_IW610)
 	help
 	  This option enables the use of Compress RU TX Power Table support.
 
@@ -997,14 +1064,13 @@ config NXP_WIFI_FIPS
 
 config NXP_WIFI_OWE
 	bool "Opportunistic Wireless Encryption"
-	default y
 	help
 	  This option enables Wi-Fi Opportunistic Wireless Encryption support
 	  in the Wi-Fi driver.
 
 config NXP_WIFI_TC_RELOCATE
 	bool "Traffic api relocate to RAM"
-	default y
+	default y if NXP_RW610
 	help
 	  Relocate Wi-Fi transmit and receive api to RAM to increase
 	  traffic throughput.
@@ -1014,7 +1080,7 @@ config NXP_WIFI_CUSTOM_CALDATA
 	help
 	  This option force to use custom calibration data.
 
-if NXP_88W8987 || NXP_IW416
+if NXP_88W8987 || NXP_IW416 || NXP_IW610
 
 config NXP_WIFI_FW_AUTO_RECONNECT
 	bool "Firmware Auto Reconnect"

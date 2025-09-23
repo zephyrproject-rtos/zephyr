@@ -2,4 +2,4 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_SLSTK3400A
-	select SOC_PART_NUMBER_EFM32HG322F64
+	select SOC_EFM32HG322F64

@@ -14,7 +14,7 @@ Requirements
 ************
 
 This sample needs a video capture device (e.g. a camera) but it is not mandatory.
-Supported camera modules on some i.MX RT boards can be found below.
+Supported boards and camera modules include:
 
 - `Camera iMXRT`_
 
@@ -26,6 +26,9 @@ Supported camera modules on some i.MX RT boards can be found below.
 
 - :zephyr:board:`frdm_mcxn947`
   with any ``arducam,dvp-20pin-connector`` camera module such as :ref:`dvp_20pin_ov7670`.
+
+- :zephyr:board:`stm32h7b3i_dk`
+  with the :ref:`st_b_cams_omv_mb1683` shield and a compatible camera module.
 
 Also :zephyr:board:`arduino_nicla_vision` can be used in this sample as capture device, in that case
 The user can transfer the captured frames through on board USB.
@@ -40,6 +43,10 @@ USB debug connector (J41) in order to get console output via the freelink interf
 On :zephyr:board:`mimxrt1170_evk`, the OV5640 camera module should be plugged into the
 J2 camera connector. A USB cable should be connected from a host to the micro
 USB debug connector (J11) in order to get console output via the daplink interface.
+
+On :zephyr:board:`stm32h7b3i_dk`, connect the :ref:`st_b_cams_omv_mb1683` shield to the
+board on CN7 connector. A USB cable should be connected from a host to the micro USB
+connector in order to get console output.
 
 For :zephyr:board:`arduino_nicla_vision` there is no extra wiring required.
 
@@ -83,11 +90,13 @@ using the :ref:`dvp_20pin_ov7670` and :ref:`lcd_par_s035` connected to the board
    :goals: build
    :compact:
 
-For :ref:`native_sim`, build this sample application with the following commands:
+For :zephyr:board:`stm32h7b3i_dk`, build this sample application with the following commands,
+using the :ref:`st_b_cams_omv_mb1683` shield with a compatible camera module:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/video/capture
-   :board: native_sim
+   :board: stm32h7b3i_dk
+   :shield: st_b_cams_omv_mb1683
    :goals: build
    :compact:
 
@@ -109,6 +118,16 @@ append ``-DCONFIG_VIDEO_SHELL=y`` to the build command:
    :zephyr-app: samples/drivers/video/capture
    :board: mimxrt1064_evk
    :shield: dvp_fpc24_mt9m114,rk043fn66hs_ctg
+   :gen-args: -DCONFIG_VIDEO_SHELL=y
+   :goals: build
+   :compact:
+
+For :zephyr:board:`stm32h7b3i_dk` with shell commands:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/video/capture
+   :board: stm32h7b3i_dk
+   :shield: st_b_cams_omv_mb1683
    :gen-args: -DCONFIG_VIDEO_SHELL=y
    :goals: build
    :compact:
@@ -148,21 +167,21 @@ If using the shell, the capture would not start, and instead it is possible to a
 
 .. code-block:: console
 
-   uart:~$ video
+   uart:~$ video --help
    video - Video driver commands
    Subcommands:
      start    : Start a video device and its sources
-                Usage: video start <device>
+                Usage: start <device>
      stop     : Stop a video device and its sources
-                Usage: video stop <device>
-     capture  : Capture a given number of frames from a device
-                Usage: video capture <device> <num-frames>
+                Usage: stop <device>
+     capture  : Capture a given number of buffers from a device
+                Usage: capture <device> <num-buffers>
      format   : Query or set the video format of a device
-                Usage: video format <device> <ep> [<fourcc> <width>x<height>]
+                Usage: format <device> <dir> [<fourcc> <width>x<height>]
      frmival  : Query or set the video frame rate/interval of a device
-                Usage: video frmival <device> <ep> [<n>fps|<n>ms|<n>us]
+                Usage: frmival <device> [<n>fps|<n>ms|<n>us]
      ctrl     : Query or set video controls of a device
-                Usage: video ctrl <device> [<ctrl> <value>]
+                Usage: ctrl <device> [<ctrl> <value>]
    uart:~$
 
 

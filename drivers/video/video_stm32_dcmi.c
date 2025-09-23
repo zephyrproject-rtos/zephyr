@@ -91,8 +91,7 @@ static void stm32_dcmi_isr(const struct device *dev)
 	HAL_DCMI_IRQHandler(&data->hdcmi);
 }
 
-static void dmci_dma_callback(const struct device *dev, void *arg,
-			 uint32_t channel, int status)
+static void dcmi_dma_callback(const struct device *dev, void *arg, uint32_t channel, int status)
 {
 	DMA_HandleTypeDef *hdma = arg;
 
@@ -137,12 +136,9 @@ static int stm32_dma_init(const struct device *dev)
 	dma_cfg.user_data = &hdma;
 	/* HACK: This field is used to inform driver that it is overridden */
 	dma_cfg.linked_channel = STM32_DMA_HAL_OVERRIDE;
-	/* Because of the STREAM OFFSET, the DMA channel given here is from 1 - 8 */
-	ret = dma_config(config->dma.dma_dev,
-			config->dma.channel + STM32_DMA_STREAM_OFFSET, &dma_cfg);
+	ret = dma_config(config->dma.dma_dev, config->dma.channel, &dma_cfg);
 	if (ret != 0) {
-		LOG_ERR("Failed to configure DMA channel %d",
-			config->dma.channel + STM32_DMA_STREAM_OFFSET);
+		LOG_ERR("Failed to configure DMA channel %d", config->dma.channel);
 		return ret;
 	}
 
@@ -156,10 +152,11 @@ static int stm32_dma_init(const struct device *dev)
 	hdma.Init.MemDataAlignment	= DMA_MDATAALIGN_WORD;
 	hdma.Init.Mode			= DMA_CIRCULAR;
 	hdma.Init.Priority		= DMA_PRIORITY_HIGH;
+	hdma.Instance			= STM32_DMA_GET_INSTANCE(config->dma.reg,
+								 config->dma.channel);
+#if defined(CONFIG_SOC_SERIES_STM32F7X) || defined(CONFIG_SOC_SERIES_STM32H7X)
 	hdma.Init.FIFOMode		= DMA_FIFOMODE_DISABLE;
-
-	hdma.Instance = __LL_DMA_GET_STREAM_INSTANCE(config->dma.reg,
-						config->dma.channel);
+#endif
 
 	/* Initialize DMA HAL */
 	__HAL_LINKDMA(&data->hdcmi, DMA_Handle, hdma);
@@ -448,7 +445,7 @@ static void video_stm32_dcmi_irq_config_func(const struct device *dev)
 		.dest_burst_length = 1,         /* SINGLE transfer */			\
 		.channel_priority = STM32_DMA_CONFIG_PRIORITY(				\
 			STM32_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),			\
-		.dma_callback = dmci_dma_callback,					\
+		.dma_callback = dcmi_dma_callback,					\
 	},										\
 
 PINCTRL_DT_INST_DEFINE(0);
@@ -472,18 +469,18 @@ static struct video_stm32_dcmi_data video_stm32_dcmi_data_0 = {
 		.Instance = (DCMI_TypeDef *) DT_INST_REG_ADDR(0),
 		.Init = {
 				.SynchroMode = DCMI_SYNCHRO_HARDWARE,
-				.PCKPolarity = DT_PROP_OR(DT_INST_ENDPOINT_BY_ID(n, 0, 0),
+				.PCKPolarity = DT_PROP_OR(DT_INST_ENDPOINT_BY_ID(0, 0, 0),
 							  pclk_sample, 0) ?
 							  DCMI_PCKPOLARITY_RISING :
 							  DCMI_PCKPOLARITY_FALLING,
-				.HSPolarity = DT_PROP_OR(DT_INST_ENDPOINT_BY_ID(n, 0, 0),
+				.HSPolarity = DT_PROP_OR(DT_INST_ENDPOINT_BY_ID(0, 0, 0),
 							 hsync_active, 0) ?
 							 DCMI_HSPOLARITY_HIGH : DCMI_HSPOLARITY_LOW,
-				.VSPolarity = DT_PROP_OR(DT_INST_ENDPOINT_BY_ID(n, 0, 0),
+				.VSPolarity = DT_PROP_OR(DT_INST_ENDPOINT_BY_ID(0, 0, 0),
 							 vsync_active, 0) ?
 							 DCMI_VSPOLARITY_HIGH : DCMI_VSPOLARITY_LOW,
 				.ExtendedDataMode = STM32_DCMI_GET_BUS_WIDTH(
-							DT_PROP_OR(DT_INST_ENDPOINT_BY_ID(n, 0, 0),
+							DT_PROP_OR(DT_INST_ENDPOINT_BY_ID(0, 0, 0),
 								   bus_width, 8)),
 				.JPEGMode = DCMI_JPEG_DISABLE,
 				.ByteSelectMode = DCMI_BSM_ALL,

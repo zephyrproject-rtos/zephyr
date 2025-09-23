@@ -192,4 +192,11 @@
 				 ambiq,pull-up-ohms = <12000>;
 		};
 	};
+	pwm2_default: pwm2_default{
+		group1 {
+			pinmux = <CT30_P30>;
+			drive-open-drain;
+			drive-strength = "0.5";
+		};
+	};
 };

@@ -17,11 +17,18 @@ config UART_NPCX
 	  processors.
 	  Say y if you wish to use serial port on NPCX MCU.
 
-# Expose this option when the reg porperty has two register base address.
-# i.e. One UART register bass address and one MDMA register base address.
+# Expose this option when the reg property has two register base addresses.
+# i.e. One UART register base address and one MDMA register base address.
 config UART_NPCX_USE_MDMA
 	bool "Nuvoton NPCX embedded controller (EC) serial driver DMA support"
 	depends on UART_NPCX && "$(dt_node_reg_addr_hex,$(DT_UART_NPCX),1)" != 0
 	select SERIAL_SUPPORT_ASYNC
 	help
 	  Enable support for npcx UART DMA mode.
+
+config UART_NPCX_FIFO_EX
+	bool "Extended NPCX UART FIFO driver support"
+	default y if DT_HAS_NUVOTON_NPCX_UART_NPCKN_ENABLED
+	help
+	  This option enables the extended UART FIFO driver for NPCKN variant
+	  of processors.

@@ -6,10 +6,10 @@
 
 /dts-v1/;
 #include <silabs/siwg917m111mgtba.dtsi>
-#include <dt-bindings/gpio/gpio.h>
-#include <dt-bindings/input/input-event-codes.h>
-#include <dt-bindings/pinctrl/silabs/siwx91x-pinctrl.h>
-#include <common/freq.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/pinctrl/silabs/siwx91x-pinctrl.h>
+#include <freq.h>
 
 / {
 	model = "Silicon Labs BRD4338A (SiWG917 Radio Board)";
@@ -101,13 +101,13 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		code_partition: partition@0 {
-			reg = <0x0000000 DT_SIZE_K(2008)>;
+		code_partition: partition@202000 {
+			reg = <0x00202000 DT_SIZE_K(2008)>;
 			label = "code_partition";
 		};
 
-		storage_partition: partition@1f6000 {
-			reg = <0x001f6000 DT_SIZE_K(32)>;
+		storage_partition: partition@3f8000 {
+			reg = <0x003f8000 DT_SIZE_K(32)>;
 			label = "storage";
 		};
 	};

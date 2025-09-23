@@ -127,15 +127,20 @@ static struct bt_sdp_attribute hfp_attrs[] = {
 	),
 	BT_SDP_LIST(
 		BT_SDP_ATTR_PROFILE_DESC_LIST,
-		BT_SDP_TYPE_SIZE_VAR(BT_SDP_SEQ8, 6),
+		BT_SDP_TYPE_SIZE_VAR(BT_SDP_SEQ8, 8),
 		BT_SDP_DATA_ELEM_LIST(
 		{
-			BT_SDP_TYPE_SIZE(BT_SDP_UUID16),
-			BT_SDP_ARRAY_16(BT_SDP_HANDSFREE_SVCLASS)
-		},
-		{
-			BT_SDP_TYPE_SIZE(BT_SDP_UINT16),
-			BT_SDP_ARRAY_16(0x0109)
+			BT_SDP_TYPE_SIZE_VAR(BT_SDP_SEQ8, 6),
+			BT_SDP_DATA_ELEM_LIST(
+			{
+				BT_SDP_TYPE_SIZE(BT_SDP_UUID16),
+				BT_SDP_ARRAY_16(BT_SDP_HANDSFREE_SVCLASS)
+			},
+			{
+				BT_SDP_TYPE_SIZE(BT_SDP_UINT16),
+				BT_SDP_ARRAY_16(0x0109)
+			},
+			)
 		},
 		)
 	),
@@ -4161,7 +4166,7 @@ static void hfp_hf_sco_disconnected(struct bt_sco_chan *chan, uint8_t reason)
 static int bt_hfp_hf_sco_accept(const struct bt_sco_accept_info *info,
 		      struct bt_sco_chan **chan)
 {
-	static struct bt_sco_chan_ops ops = {
+	static const struct bt_sco_chan_ops ops = {
 		.connected = hfp_hf_sco_connected,
 		.disconnected = hfp_hf_sco_disconnected,
 	};
@@ -4171,6 +4176,8 @@ static int bt_hfp_hf_sco_accept(const struct bt_sco_accept_info *info,
 	LOG_DBG("conn %p", info->acl);
 
 	index = (size_t)bt_conn_index(info->acl);
+	__ASSERT(index < ARRAY_SIZE(bt_hfp_hf_pool), "Index is out of bounds");
+
 	hf = &bt_hfp_hf_pool[index];
 	if (hf->acl != info->acl) {
 		LOG_ERR("ACL %p of HF is unaligned with SCO's %p", hf->acl, info->acl);

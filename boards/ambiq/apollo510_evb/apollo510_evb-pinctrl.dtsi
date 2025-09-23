@@ -18,6 +18,12 @@
 		};
 	};
 
+	uart0_sleep: uart0_sleep {
+		group1 {
+			pinmux = <GPIO_P30>, <GPIO_P55>;
+		};
+	};
+
 	swo_default: swo_default {
 		group0 {
 			pinmux = <SWO_P28>;
@@ -26,7 +32,7 @@
 
 	adc0_default: adc0_default{
 		group1 {
-			pinmux = <ADCSE4_P15>, <ADCSE7_P12>;
+			pinmux = <ADCSE5_P14>, <ADCSE6_P13>;
 			drive-strength = "0.1";
 		};
 	};
@@ -40,12 +46,24 @@
 		};
 	};
 
+	i2c0_sleep: i2c0_sleep {
+		group1 {
+			pinmux = <GPIO_P5>, <GPIO_P6>;
+		};
+	};
+
 	i2c1_default: i2c1_default {
 		group1 {
 			pinmux = <M1SCL_P8>, <M1SDAWIR3_P9>;
 			drive-open-drain;
 			drive-strength = "0.5";
 			bias-pull-up;
+		};
+	};
+
+	i2c1_sleep: i2c1_sleep {
+		group1 {
+			pinmux = <GPIO_P8>, <GPIO_P9>;
 		};
 	};
 
@@ -58,12 +76,39 @@
 		};
 	};
 
+	i2c2_sleep: i2c2_sleep {
+		group1 {
+			pinmux = <GPIO_P25>, <GPIO_P26>;
+		};
+	};
+
 	i2c3_default: i2c3_default {
 		group1 {
 			pinmux = <M3SCL_P31>, <M3SDAWIR3_P32>;
 			drive-open-drain;
 			drive-strength = "0.5";
 			bias-pull-up;
+		};
+	};
+
+	i2c3_sleep: i2c3_sleep {
+		group1 {
+			pinmux = <GPIO_P31>, <GPIO_P32>;
+		};
+	};
+
+	i2c4_default: i2c4_default {
+		group1 {
+			pinmux = <M4SCL_P34>, <M4SDAWIR3_P35>;
+			drive-open-drain;
+			drive-strength = "0.5";
+			bias-pull-up;
+		};
+	};
+
+	i2c4_sleep: i2c4_sleep {
+		group1 {
+			pinmux = <GPIO_P34>, <GPIO_P35>;
 		};
 	};
 
@@ -76,12 +121,24 @@
 		};
 	};
 
+	i2c5_sleep: i2c5_sleep {
+		group1 {
+			pinmux = <GPIO_P47>, <GPIO_P48>;
+		};
+	};
+
 	i2c6_default: i2c6_default {
 		group1 {
 			pinmux = <M6SCL_P61>, <M6SDAWIR3_P62>;
 			drive-open-drain;
 			drive-strength = "0.5";
 			bias-pull-up;
+		};
+	};
+
+	i2c6_sleep: i2c6_sleep {
+		group1 {
+			pinmux = <GPIO_P61>, <GPIO_P62>;
 		};
 	};
 
@@ -94,9 +151,21 @@
 		};
 	};
 
+	i2c7_sleep: i2c7_sleep {
+		group1 {
+			pinmux = <GPIO_P22>, <GPIO_P23>;
+		};
+	};
+
 	spid0_default: spid0_default {
 		group1 {
 			pinmux = <SLSCK_P11>, <SLMISO_P83>, <SLMOSI_P52>, <SLnCE_P13>;
+		};
+	};
+
+	spid0_sleep: spid0_sleep {
+		group1 {
+			pinmux = <GPIO_P11>, <GPIO_P83>, <GPIO_P52>, <GPIO_P13>;
 		};
 	};
 
@@ -106,9 +175,21 @@
 		};
 	};
 
+	spi0_sleep: spi0_sleep {
+		group1 {
+			pinmux = <GPIO_P5>, <GPIO_P7>, <GPIO_P6>;
+		};
+	};
+
 	spi1_default: spi1_default {
 		group1 {
 			pinmux = <M1SCK_P8>, <M1MISO_P10>, <M1MOSI_P9>;
+		};
+	};
+
+	spi1_sleep: spi1_sleep {
+		group1 {
+			pinmux = <GPIO_P8>, <GPIO_P10>, <GPIO_P9>;
 		};
 	};
 
@@ -118,9 +199,21 @@
 		};
 	};
 
+	spi2_sleep: spi2_sleep {
+		group1 {
+			pinmux = <GPIO_P25>, <GPIO_P27>, <GPIO_P26>;
+		};
+	};
+
 	spi3_default: spi3_default {
 		group1 {
 			pinmux = <M3SCK_P31>, <M3MISO_P33>, <M3MOSI_P32>;
+		};
+	};
+
+	spi3_sleep: spi3_sleep {
+		group1 {
+			pinmux = <GPIO_P31>, <GPIO_P33>, <GPIO_P32>;
 		};
 	};
 
@@ -130,9 +223,21 @@
 		};
 	};
 
+	spi4_sleep: spi4_sleep {
+		group1 {
+			pinmux = <GPIO_P34>, <GPIO_P36>, <GPIO_P35>;
+		};
+	};
+
 	spi5_default: spi5_default {
 		group1 {
 			pinmux = <M5SCK_P47>, <M5MISO_P49>, <M5MOSI_P48>;
+		};
+	};
+
+	spi5_sleep: spi5_sleep {
+		group1 {
+			pinmux = <GPIO_P47>, <GPIO_P49>, <GPIO_P48>;
 		};
 	};
 
@@ -142,9 +247,46 @@
 		};
 	};
 
+	spi6_sleep: spi6_sleep {
+		group1 {
+			pinmux = <GPIO_P61>, <GPIO_P63>, <GPIO_P62>;
+		};
+	};
+
 	spi7_default: spi7_default {
 		group1 {
 			pinmux = <M7SCK_P22>, <M7MISO_P24>, <M7MOSI_P23>;
+		};
+	};
+
+	spi7_sleep: spi7_sleep {
+		group1 {
+			pinmux = <GPIO_P22>, <GPIO_P24>, <GPIO_P23>;
+		};
+	};
+
+	pdm0_default: pdm0_default {
+		group0 {
+			pinmux = <PDM0_CLK_P50>,
+				 <PDM0_DATA_P51>;
+		};
+	};
+
+	i2s0_default: i2s0_default {
+		group0 {
+			pinmux = <I2S0_SDIN_P4>,
+				 <I2S0_CLK_P5>,
+				 <I2S0_SDOUT_P6>,
+				 <I2S0_WS_P7>;
+		};
+	};
+
+	i2s1_default: i2s1_default {
+		group0 {
+			pinmux = <I2S1_CLK_P16>,
+				 <I2S1_SDOUT_P17>,
+				 <I2S1_WS_P18>,
+				 <I2S1_SDIN_P19>;
 		};
 	};
 
@@ -261,6 +403,88 @@
 		group1 {
 			pinmux = <MNCE1_0_P53>;
 			drive-strength = "0.5";
+		};
+	};
+
+	pwm2_default: pwm2_default{
+		group1 {
+			pinmux = <CT165_P165>;
+			drive-open-drain;
+			drive-strength = "0.5";
+		};
+	};
+
+	sdio0_default: sdio0_default {
+		group0 {
+			pinmux = <SDIF0_DAT1_P85>,
+				 <SDIF0_DAT3_P87>,
+				 <SDIF0_DAT4_P156>,
+				 <SDIF0_DAT5_P157>,
+				 <SDIF0_DAT6_P158>,
+				 <SDIF0_DAT7_P159>;
+				 drive-strength = "1.0";
+		};
+		group1 {
+			pinmux = <SDIF0_DAT0_P84>,
+				 <SDIF0_DAT2_P86>,
+				 <SDIF0_CMD_P160>,
+				 <SDIF0_CLKOUT_P88>;
+				 drive-strength = "1.0";
+				 bias-pull-up;
+				 ambiq,pull-up-ohms = <12000>;
+		};
+		group2 {
+			pinmux = <GPIO_P161>;
+				 ambiq,sdif-cdwp = <1>;
+		};
+		group3 {
+			pinmux = <GPIO_P175>;
+				 ambiq,sdif-cdwp = <2>;
+		};
+		group4 {
+			pinmux = <GPIO_P161>;
+				 ambiq,sdif-cdwp = <3>;
+		};
+		group5 {
+			pinmux = <GPIO_P175>;
+				 ambiq,sdif-cdwp = <4>;
+		};
+	};
+
+	sdio1_default: sdio1_default {
+		group0 {
+			pinmux = <SDIF1_DAT1_P126>,
+				 <SDIF1_DAT3_P128>,
+				 <SDIF1_DAT4_P130>,
+				 <SDIF1_DAT5_P131>,
+				 <SDIF1_DAT6_P132>,
+				 <SDIF1_DAT7_P133>;
+				 drive-strength = "1.0";
+		};
+		group1 {
+			pinmux = <SDIF1_DAT0_P125>,
+				 <SDIF1_DAT2_P127>,
+				 <SDIF1_CMD_P134>,
+				 <SDIF1_CLKOUT_P129>;
+				 drive-strength = "1.0";
+				 bias-pull-up;
+				 ambiq,pull-up-ohms = <12000>;
+		};
+		group2 {
+			pinmux = <GPIO_P161>;
+				 ambiq,sdif-cdwp = <1>;
+		};
+		group3 {
+			pinmux = <GPIO_P175>;
+				 ambiq,sdif-cdwp = <2>;
+		};
+		group4 {
+			pinmux = <GPIO_P161>;
+				 ambiq,sdif-cdwp = <3>;
+		};
+		group5 {
+			pinmux = <GPIO_P175>;
+				 ambiq,sdif-cdwp = <4>;
 		};
 	};
 };

@@ -1,0 +1,98 @@
+/*
+ * Copyright 2024 Embeint Inc
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Default memory partitioning for nRF5340 application CPU.
+ */
+
+&flash0 {
+	/*
+	 * Default Flash planning for nRF5340 series SoCs.
+	 * This layout matches (by necessity) that in the TF-M repository:
+	 *
+	 * 0x0000_0000 BL2 - MCUBoot (64 KB)
+	 * 0x0001_0000 Primary image area (448 KB):
+	 *    0x0001_0000 Secure     image primary (256 KB)
+	 *    0x0005_0000 Non-secure image primary (192 KB)
+	 * 0x0008_0000 Secondary image area (448 KB):
+	 *    0x0008_0000 Secure     image secondary (256 KB)
+	 *    0x000c_0000 Non-secure image secondary (192 KB)
+	 * 0x000f_0000 Protected Storage Area (16 KB)
+	 * 0x000f_4000 Internal Trusted Storage Area (8 KB)
+	 * 0x000f_6000 OTP / NV counters area (8 KB)
+	 * 0x000f_8000 Non-secure storage, used when built with NRF_NS_STORAGE=ON,
+	 *             otherwise unused (32 KB)
+	 */
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0x10000>;
+		};
+
+		slot0_partition: partition@10000 {
+			compatible = "fixed-subpartitions";
+			label = "image-0";
+			reg = <0x00010000 0x70000>;
+			ranges = <0x0 0x10000 0x70000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			slot0_s_partition: partition@0 {
+				label = "image-0-secure";
+				reg = <0x00000000 0x40000>;
+			};
+
+			slot0_ns_partition: partition@40000 {
+				label = "image-0-nonsecure";
+				reg = <0x00040000 0x30000>;
+			};
+		};
+
+		slot1_partition: partition@80000 {
+			compatible = "fixed-subpartitions";
+			label = "image-1";
+			reg = <0x00080000 0x70000>;
+			ranges = <0x0 0x80000 0x70000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			slot1_s_partition: partition@0 {
+				label = "image-1-secure";
+				reg = <0x00000000 0x40000>;
+			};
+
+			slot1_ns_partition: partition@40000 {
+				label = "image-1-nonsecure";
+				reg = <0x00040000 0x30000>;
+			};
+		};
+
+		tfm_ps_partition: partition@f0000 {
+			label = "tfm-ps";
+			reg = <0x000f0000 0x00004000>;
+		};
+
+		tfm_its_partition: partition@f4000 {
+			label = "tfm-its";
+			reg = <0x000f4000 0x00002000>;
+		};
+
+		tfm_otp_partition: partition@f6000 {
+			label = "tfm-otp";
+			reg = <0x000f6000 0x00002000>;
+		};
+
+		storage_partition: partition@f8000 {
+			label = "storage";
+			reg = <0x000f8000 0x00008000>;
+		};
+	};
+};
+
+#include "nrf5340_sram_partition.dtsi"
+#include "nrf5340_shared_sram_partition.dtsi"

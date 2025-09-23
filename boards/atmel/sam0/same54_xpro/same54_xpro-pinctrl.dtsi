@@ -60,4 +60,11 @@
 				 <PA24H_USB_DM>;
 		};
 	};
+
+	dac0_default: dac0_default {
+		group1 {
+			pinmux = <PA2B_DAC_VOUT0>,
+				 <PA5B_DAC_VOUT1>;
+		};
+	};
 };

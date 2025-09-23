@@ -8,6 +8,7 @@
 
 #include <nxp/nxp_ke1xz.dtsi>
 #include "frdm_ke15z-pinctrl.dtsi"
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
@@ -57,6 +58,35 @@
 			gpios = <&gpiob 11 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_1>;
 		};
+	};
+
+	arduino_header: arduino-connector {
+		compatible = "arduino-header-r3";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <ARDUINO_HEADER_R3_A0 0 &gpioa 0 0>,
+			   <ARDUINO_HEADER_R3_A1 0 &gpioa 1 0>,
+			   <ARDUINO_HEADER_R3_A2 0 &gpioa 6 0>,
+			   <ARDUINO_HEADER_R3_A3 0 &gpioa 7 0>,
+			   <ARDUINO_HEADER_R3_A4 0 &gpioa 2 0>,
+			   <ARDUINO_HEADER_R3_A5 0 &gpioa 3 0>,
+			   <ARDUINO_HEADER_R3_D0 0 &gpioc 8 0>,
+			   <ARDUINO_HEADER_R3_D1 0 &gpioc 9 0>,
+			   <ARDUINO_HEADER_R3_D2 0 &gpiod 12 0>,
+			   <ARDUINO_HEADER_R3_D3 0 &gpioc 15 0>,
+			   <ARDUINO_HEADER_R3_D4 0 &gpioe 9 0>,
+			   <ARDUINO_HEADER_R3_D5 0 &gpioc 5 0>,
+			   <ARDUINO_HEADER_R3_D6 0 &gpioa 16 0>,
+			   <ARDUINO_HEADER_R3_D7 0 &gpioa 17 0>,
+			   <ARDUINO_HEADER_R3_D8 0 &gpioe 8 0>,
+			   <ARDUINO_HEADER_R3_D9 0 &gpioe 7 0>,
+			   <ARDUINO_HEADER_R3_D10 0 &gpioa 15 0>,
+			   <ARDUINO_HEADER_R3_D11 0 &gpioe 2 0>,
+			   <ARDUINO_HEADER_R3_D12 0 &gpioe 1 0>,
+			   <ARDUINO_HEADER_R3_D13 0 &gpioe 0 0>,
+			   <ARDUINO_HEADER_R3_D14 0 &gpiod 8 0>,
+			   <ARDUINO_HEADER_R3_D15 0 &gpiod 9 0>;
 	};
 };
 

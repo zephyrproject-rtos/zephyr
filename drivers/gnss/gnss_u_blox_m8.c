@@ -126,14 +126,15 @@ static int ubx_m8_msg_get(const struct device *dev, const struct ubx_frame *req,
 
 	err = modem_ubx_run_script(&data->ubx.inst, &data->script.inst);
 	if (err != 0 || (data->script.inst.response.buf_len < UBX_FRAME_SZ(min_rsp_size))) {
-		return -EIO;
+		err = -EIO;
+		goto unlock_return;
 	}
 
 	memcpy(rsp, rsp_frame->payload_and_checksum, min_rsp_size);
 
+unlock_return:
 	(void)k_mutex_unlock(&data->script.lock);
-
-	return 0;
+	return err;
 }
 
 static int ubx_m8_msg_send(const struct device *dev, const struct ubx_frame *req,
@@ -152,7 +153,7 @@ static int ubx_m8_msg_send(const struct device *dev, const struct ubx_frame *req
 	data->script.inst.retry_count = wait_for_ack ? 2 : 0;
 	data->script.inst.match.filter.class = wait_for_ack ? UBX_CLASS_ID_ACK : 0;
 	data->script.inst.match.filter.id = UBX_MSG_ID_ACK;
-	data->script.inst.request.buf = req;
+	data->script.inst.request.buf = (const void *)req;
 	data->script.inst.request.len = len;
 
 	err = modem_ubx_run_script(&data->ubx.inst, &data->script.inst);

@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
+
 / {
 	aliases {
 		accel0 = &lsm6dsv16x_6b_x_nucleo_iks4a1;
@@ -16,7 +18,7 @@
 		reg = <0x6b>;
 		accel-odr = <0x02>;
 		gyro-odr = <0x02>;
-		int1-gpios =  <&arduino_header 11 GPIO_ACTIVE_HIGH>; /* D5 */
+		int1-gpios =  <&arduino_header ARDUINO_HEADER_R3_D5 GPIO_ACTIVE_HIGH>;
 		drdy-pin = <1>;
 	};
 };

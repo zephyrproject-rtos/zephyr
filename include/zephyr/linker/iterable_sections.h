@@ -55,7 +55,7 @@
  * are indirectly referenced by iterating through the section.
  */
 #define ITERABLE_SECTION_ROM(struct_type, subalign) \
-	SECTION_PROLOGUE(struct_type##_area,,SUBALIGN(subalign)) \
+	SECTION_PROLOGUE(struct_type##_area, ,) \
 	{ \
 		Z_LINK_ITERABLE(struct_type); \
 	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
@@ -70,7 +70,7 @@
  * @see ITERABLE_SECTION_ROM()
  */
 #define ITERABLE_SECTION_ROM_NUMERIC(struct_type, subalign) \
-	SECTION_PROLOGUE(struct_type##_area, EMPTY, SUBALIGN(subalign)) \
+	SECTION_PROLOGUE(struct_type##_area, EMPTY,) \
 	{ \
 		Z_LINK_ITERABLE_NUMERIC(struct_type); \
 	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
@@ -88,7 +88,7 @@
  * Note that the symbols within the section can be garbage collected.
  */
 #define ITERABLE_SECTION_ROM_GC_ALLOWED(struct_type, subalign) \
-	SECTION_PROLOGUE(struct_type##_area,,SUBALIGN(subalign)) \
+	SECTION_PROLOGUE(struct_type##_area, ,) \
 	{ \
 		Z_LINK_ITERABLE_GC_ALLOWED(struct_type); \
 	} GROUP_LINK_IN(ROMABLE_REGION)
@@ -108,7 +108,7 @@
  * are indirectly referenced by iterating through the section.
  */
 #define ITERABLE_SECTION_RAM(struct_type, subalign) \
-	SECTION_DATA_PROLOGUE(struct_type##_area,,SUBALIGN(subalign)) \
+	SECTION_DATA_PROLOGUE(struct_type##_area, ,) \
 	{ \
 		Z_LINK_ITERABLE(struct_type); \
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
@@ -123,7 +123,7 @@
  * @see ITERABLE_SECTION_RAM()
  */
 #define ITERABLE_SECTION_RAM_NUMERIC(struct_type, subalign) \
-	SECTION_PROLOGUE(struct_type##_area, EMPTY, SUBALIGN(subalign)) \
+	SECTION_PROLOGUE(struct_type##_area, EMPTY,) \
 	{ \
 		Z_LINK_ITERABLE_NUMERIC(struct_type); \
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
@@ -141,7 +141,7 @@
  * Note that the symbols within the section can be garbage collected.
  */
 #define ITERABLE_SECTION_RAM_GC_ALLOWED(struct_type, subalign) \
-	SECTION_DATA_PROLOGUE(struct_type##_area,,SUBALIGN(subalign)) \
+	SECTION_DATA_PROLOGUE(struct_type##_area, ,) \
 	{ \
 		Z_LINK_ITERABLE_GC_ALLOWED(struct_type); \
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)

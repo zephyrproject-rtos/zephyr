@@ -11,6 +11,7 @@
 #include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/spi/rtio.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/irq.h>
 #include <zephyr/sys/util.h>
@@ -90,7 +91,8 @@ static int gspi_siwx91x_config(const struct device *dev, const struct spi_config
 		return -ENOTSUP;
 	}
 
-	if (SPI_WORD_SIZE_GET(spi_cfg->operation) > 16) {
+	if (SPI_WORD_SIZE_GET(spi_cfg->operation) != 8 &&
+	    SPI_WORD_SIZE_GET(spi_cfg->operation) != 16) {
 		LOG_ERR("Word size incorrect %d!", SPI_WORD_SIZE_GET(spi_cfg->operation));
 		return -ENOTSUP;
 	}
@@ -623,6 +625,9 @@ static DEVICE_API(spi, gspi_siwx91x_driver_api) = {
 	.transceive = gspi_siwx91x_transceive_sync,
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = gspi_siwx91x_transceive_async,
+#endif
+#ifdef CONFIG_SPI_RTIO
+	.iodev_submit = spi_rtio_iodev_default_submit,
 #endif
 	.release = gspi_siwx91x_release,
 };

@@ -1,7 +1,7 @@
 /* test_unicast_start.c - unit test for unicast start procedure */
 
 /*
- * Copyright (c) 2024 Nordic Semiconductor ASA
+ * Copyright (c) 2024-2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,6 +23,7 @@
 #include <sys/errno.h>
 
 #include "bap_endpoint.h"
+#include "bap_iso.h"
 #include "cap_initiator.h"
 #include "conn.h"
 #include "expects_util.h"
@@ -33,6 +34,7 @@
 struct cap_initiator_test_unicast_start_fixture {
 	struct bt_cap_stream cap_streams[CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT];
 	struct bt_bap_ep eps[CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT];
+	struct bt_bap_iso bap_iso[CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT];
 	struct bt_bap_unicast_group unicast_group;
 	struct bt_conn conns[CONFIG_BT_MAX_CONN];
 	struct bt_bap_lc3_preset preset;
@@ -57,6 +59,7 @@ static void cap_initiator_test_unicast_start_fixture_init(
 
 	for (size_t i = 0U; i < ARRAY_SIZE(fixture->eps); i++) {
 		fixture->eps[i].dir = (i & 1) + 1; /* Makes it either 1 or 2 (sink or source)*/
+		fixture->eps[i].iso = &fixture->bap_iso[i];
 	}
 }
 
@@ -129,9 +132,14 @@ static ZTEST_F(cap_initiator_test_unicast_start, test_initiator_unicast_start)
 	zexpect_call_count("bt_cap_initiator_cb.unicast_start_complete_cb", 1,
 			   mock_cap_initiator_unicast_start_complete_cb_fake.call_count);
 
+	zassert_equal(0, mock_cap_initiator_unicast_start_complete_cb_fake.arg0_history[0], "%d",
+		      mock_cap_initiator_unicast_start_complete_cb_fake.arg0_history[0]);
+	zassert_equal_ptr(NULL, mock_cap_initiator_unicast_start_complete_cb_fake.arg1_history[0],
+			  "%p", mock_cap_initiator_unicast_start_complete_cb_fake.arg1_history[0]);
+
 	for (size_t i = 0U; i < ARRAY_SIZE(stream_params); i++) {
 		const struct bt_bap_stream *bap_stream = &fixture->cap_streams[i].bap_stream;
-		const enum bt_bap_ep_state state = bap_stream->ep->status.state;
+		const enum bt_bap_ep_state state = bap_stream->ep->state;
 
 		zassert_equal(state, BT_BAP_EP_STATE_STREAMING,
 			      "[%zu]: Stream %p unexpected state: %d", i, bap_stream, state);
@@ -415,10 +423,14 @@ static ZTEST_F(cap_initiator_test_unicast_start,
 
 	zexpect_call_count("bt_cap_initiator_cb.unicast_start_complete_cb", 1,
 			   mock_cap_initiator_unicast_start_complete_cb_fake.call_count);
+	zassert_equal(0, mock_cap_initiator_unicast_start_complete_cb_fake.arg0_history[0], "%d",
+		      mock_cap_initiator_unicast_start_complete_cb_fake.arg0_history[0]);
+	zassert_equal_ptr(NULL, mock_cap_initiator_unicast_start_complete_cb_fake.arg1_history[0],
+			  "%p", mock_cap_initiator_unicast_start_complete_cb_fake.arg1_history[0]);
 
 	for (size_t i = 0U; i < ARRAY_SIZE(stream_params); i++) {
 		const struct bt_bap_stream *bap_stream = &fixture->cap_streams[i].bap_stream;
-		const enum bt_bap_ep_state state = bap_stream->ep->status.state;
+		const enum bt_bap_ep_state state = bap_stream->ep->state;
 
 		zassert_equal(state, BT_BAP_EP_STATE_STREAMING,
 			      "[%zu]: Stream %p unexpected state: %d", i, bap_stream, state);
@@ -452,10 +464,14 @@ static ZTEST_F(cap_initiator_test_unicast_start, test_initiator_unicast_start_st
 
 	zexpect_call_count("bt_cap_initiator_cb.unicast_start_complete_cb", 1,
 			   mock_cap_initiator_unicast_start_complete_cb_fake.call_count);
+	zassert_equal(0, mock_cap_initiator_unicast_start_complete_cb_fake.arg0_history[0], "%d",
+		      mock_cap_initiator_unicast_start_complete_cb_fake.arg0_history[0]);
+	zassert_equal_ptr(NULL, mock_cap_initiator_unicast_start_complete_cb_fake.arg1_history[0],
+			  "%p", mock_cap_initiator_unicast_start_complete_cb_fake.arg1_history[0]);
 
 	for (size_t i = 0U; i < ARRAY_SIZE(stream_params); i++) {
 		const struct bt_bap_stream *bap_stream = &fixture->cap_streams[i].bap_stream;
-		const enum bt_bap_ep_state state = bap_stream->ep->status.state;
+		const enum bt_bap_ep_state state = bap_stream->ep->state;
 
 		zassert_equal(state, BT_BAP_EP_STATE_STREAMING,
 			      "[%zu]: Stream %p unexpected state: %d", i, bap_stream, state);
@@ -489,10 +505,14 @@ static ZTEST_F(cap_initiator_test_unicast_start, test_initiator_unicast_start_st
 
 	zexpect_call_count("bt_cap_initiator_cb.unicast_start_complete_cb", 1,
 			   mock_cap_initiator_unicast_start_complete_cb_fake.call_count);
+	zassert_equal(0, mock_cap_initiator_unicast_start_complete_cb_fake.arg0_history[0], "%d",
+		      mock_cap_initiator_unicast_start_complete_cb_fake.arg0_history[0]);
+	zassert_equal_ptr(NULL, mock_cap_initiator_unicast_start_complete_cb_fake.arg1_history[0],
+			  "%p", mock_cap_initiator_unicast_start_complete_cb_fake.arg1_history[0]);
 
 	for (size_t i = 0U; i < ARRAY_SIZE(stream_params); i++) {
 		const struct bt_bap_stream *bap_stream = &fixture->cap_streams[i].bap_stream;
-		const enum bt_bap_ep_state state = bap_stream->ep->status.state;
+		const enum bt_bap_ep_state state = bap_stream->ep->state;
 
 		zassert_equal(state, BT_BAP_EP_STATE_STREAMING,
 			      "[%zu]: Stream %p unexpected state: %d", i, bap_stream, state);
@@ -529,7 +549,7 @@ static ZTEST_F(cap_initiator_test_unicast_start, test_initiator_unicast_start_st
 
 	for (size_t i = 0U; i < ARRAY_SIZE(stream_params); i++) {
 		const struct bt_bap_stream *bap_stream = &fixture->cap_streams[i].bap_stream;
-		const enum bt_bap_ep_state state = bap_stream->ep->status.state;
+		const enum bt_bap_ep_state state = bap_stream->ep->state;
 
 		zassert_equal(state, BT_BAP_EP_STATE_STREAMING,
 			      "[%zu]: Stream %p unexpected state: %d", i, bap_stream, state);

@@ -118,9 +118,9 @@
   #error "ARC MWDT doesn't support building with CONFIG_NEWLIB_LIBC as it doesn't have newlib"
 #endif /* CONFIG_NEWLIB_LIBC */
 
-#ifdef CONFIG_NATIVE_APPLICATION
+#ifdef CONFIG_NATIVE_BUILD
   #error "ARC MWDT doesn't support building Zephyr as an native application"
-#endif /* CONFIG_NATIVE_APPLICATION */
+#endif /* CONFIG_NATIVE_BUILD */
 
 
 #define __no_optimization __attribute__((optnone))

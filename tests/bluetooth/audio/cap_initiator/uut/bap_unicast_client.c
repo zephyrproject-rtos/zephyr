@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2023 Codecoup
- * Copyright (c) 2024 Nordic Semiconductor ASA
+ * Copyright (c) 2024-2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +14,7 @@
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/hci_types.h>
+#include <zephyr/bluetooth/iso.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/ztest_assert.h>
@@ -23,6 +24,7 @@
 #include "bap_iso.h"
 
 static struct bt_bap_unicast_client_cb *unicast_client_cb;
+static struct bt_bap_unicast_group bap_unicast_group;
 
 bool bt_bap_ep_is_unicast_client(const struct bt_bap_ep *ep)
 {
@@ -36,7 +38,7 @@ int bt_bap_unicast_client_config(struct bt_bap_stream *stream,
 		return -EINVAL;
 	}
 
-	switch (stream->ep->status.state) {
+	switch (stream->ep->state) {
 	case BT_BAP_EP_STATE_IDLE:
 	case BT_BAP_EP_STATE_CODEC_CONFIGURED:
 		break;
@@ -49,7 +51,7 @@ int bt_bap_unicast_client_config(struct bt_bap_stream *stream,
 					  BT_BAP_ASCS_REASON_NONE);
 	}
 
-	stream->ep->status.state = BT_BAP_EP_STATE_CODEC_CONFIGURED;
+	stream->ep->state = BT_BAP_EP_STATE_CODEC_CONFIGURED;
 
 	if (stream->ops != NULL && stream->ops->configured != NULL) {
 		const struct bt_bap_qos_cfg_pref pref = {0};
@@ -70,7 +72,7 @@ int bt_bap_unicast_client_qos(struct bt_conn *conn, struct bt_bap_unicast_group 
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&group->streams, stream, _node) {
 		if (stream->conn == conn) {
-			switch (stream->ep->status.state) {
+			switch (stream->ep->state) {
 			case BT_BAP_EP_STATE_CODEC_CONFIGURED:
 			case BT_BAP_EP_STATE_QOS_CONFIGURED:
 				break;
@@ -87,7 +89,7 @@ int bt_bap_unicast_client_qos(struct bt_conn *conn, struct bt_bap_unicast_group 
 						       BT_BAP_ASCS_REASON_NONE);
 			}
 
-			stream->ep->status.state = BT_BAP_EP_STATE_QOS_CONFIGURED;
+			stream->ep->state = BT_BAP_EP_STATE_QOS_CONFIGURED;
 
 			if (stream->ops != NULL && stream->ops->qos_set != NULL) {
 				stream->ops->qos_set(stream);
@@ -105,7 +107,7 @@ int bt_bap_unicast_client_enable(struct bt_bap_stream *stream, const uint8_t met
 		return -EINVAL;
 	}
 
-	switch (stream->ep->status.state) {
+	switch (stream->ep->state) {
 	case BT_BAP_EP_STATE_QOS_CONFIGURED:
 		break;
 	default:
@@ -117,7 +119,7 @@ int bt_bap_unicast_client_enable(struct bt_bap_stream *stream, const uint8_t met
 					  BT_BAP_ASCS_REASON_NONE);
 	}
 
-	stream->ep->status.state = BT_BAP_EP_STATE_ENABLING;
+	stream->ep->state = BT_BAP_EP_STATE_ENABLING;
 
 	if (stream->ops != NULL && stream->ops->enabled != NULL) {
 		stream->ops->enabled(stream);
@@ -133,7 +135,7 @@ int bt_bap_unicast_client_metadata(struct bt_bap_stream *stream, const uint8_t m
 		return -EINVAL;
 	}
 
-	switch (stream->ep->status.state) {
+	switch (stream->ep->state) {
 	case BT_BAP_EP_STATE_ENABLING:
 	case BT_BAP_EP_STATE_STREAMING:
 		break;
@@ -155,11 +157,15 @@ int bt_bap_unicast_client_metadata(struct bt_bap_stream *stream, const uint8_t m
 
 int bt_bap_unicast_client_connect(struct bt_bap_stream *stream)
 {
+	struct bt_bap_ep *ep;
+
 	if (stream == NULL) {
 		return -EINVAL;
 	}
 
-	switch (stream->ep->status.state) {
+	ep = stream->ep;
+
+	switch (ep->state) {
 	case BT_BAP_EP_STATE_QOS_CONFIGURED:
 	case BT_BAP_EP_STATE_ENABLING:
 		break;
@@ -167,13 +173,14 @@ int bt_bap_unicast_client_connect(struct bt_bap_stream *stream)
 		return -EINVAL;
 	}
 
+	ep->iso->chan.state = BT_ISO_STATE_CONNECTED;
 	if (stream->ops != NULL && stream->ops->connected != NULL) {
 		stream->ops->connected(stream);
 	}
 
-	if (stream->ep != NULL && stream->ep->dir == BT_AUDIO_DIR_SINK) {
+	if (ep->dir == BT_AUDIO_DIR_SINK) {
 		/* Mocking that the unicast server automatically starts the stream */
-		stream->ep->status.state = BT_BAP_EP_STATE_STREAMING;
+		ep->state = BT_BAP_EP_STATE_STREAMING;
 
 		if (stream->ops != NULL && stream->ops->started != NULL) {
 			stream->ops->started(stream);
@@ -190,7 +197,7 @@ int bt_bap_unicast_client_start(struct bt_bap_stream *stream)
 		return -EINVAL;
 	}
 
-	switch (stream->ep->status.state) {
+	switch (stream->ep->state) {
 	case BT_BAP_EP_STATE_ENABLING:
 		break;
 	default:
@@ -202,7 +209,7 @@ int bt_bap_unicast_client_start(struct bt_bap_stream *stream)
 					 BT_BAP_ASCS_REASON_NONE);
 	}
 
-	stream->ep->status.state = BT_BAP_EP_STATE_STREAMING;
+	stream->ep->state = BT_BAP_EP_STATE_STREAMING;
 
 	if (stream->ops != NULL && stream->ops->started != NULL) {
 		stream->ops->started(stream);
@@ -213,13 +220,13 @@ int bt_bap_unicast_client_start(struct bt_bap_stream *stream)
 
 int bt_bap_unicast_client_disable(struct bt_bap_stream *stream)
 {
-	printk("%s %p %d\n", __func__, stream, stream->ep->dir);
-
 	if (stream == NULL || stream->ep == NULL) {
 		return -EINVAL;
 	}
 
-	switch (stream->ep->status.state) {
+	printk("%s %p %d\n", __func__, stream, stream->ep->dir);
+
+	switch (stream->ep->state) {
 	case BT_BAP_EP_STATE_ENABLING:
 	case BT_BAP_EP_STATE_STREAMING:
 		break;
@@ -239,7 +246,7 @@ int bt_bap_unicast_client_disable(struct bt_bap_stream *stream)
 
 	/* Disabled sink ASEs go directly to the QoS configured state */
 	if (stream->ep->dir == BT_AUDIO_DIR_SINK) {
-		stream->ep->status.state = BT_BAP_EP_STATE_QOS_CONFIGURED;
+		stream->ep->state = BT_BAP_EP_STATE_QOS_CONFIGURED;
 
 		if (stream->ops != NULL && stream->ops->disabled != NULL) {
 			stream->ops->disabled(stream);
@@ -253,7 +260,7 @@ int bt_bap_unicast_client_disable(struct bt_bap_stream *stream)
 			stream->ops->qos_set(stream);
 		}
 	} else if (stream->ep->dir == BT_AUDIO_DIR_SOURCE) {
-		stream->ep->status.state = BT_BAP_EP_STATE_DISABLING;
+		stream->ep->state = BT_BAP_EP_STATE_DISABLING;
 
 		if (stream->ops != NULL && stream->ops->disabled != NULL) {
 			stream->ops->disabled(stream);
@@ -272,7 +279,7 @@ int bt_bap_unicast_client_stop(struct bt_bap_stream *stream)
 		return -EINVAL;
 	}
 
-	switch (stream->ep->status.state) {
+	switch (stream->ep->state) {
 	case BT_BAP_EP_STATE_DISABLING:
 		break;
 	default:
@@ -284,7 +291,7 @@ int bt_bap_unicast_client_stop(struct bt_bap_stream *stream)
 					BT_BAP_ASCS_REASON_NONE);
 	}
 
-	stream->ep->status.state = BT_BAP_EP_STATE_QOS_CONFIGURED;
+	stream->ep->state = BT_BAP_EP_STATE_QOS_CONFIGURED;
 
 	if (stream->ops != NULL && stream->ops->stopped != NULL) {
 		stream->ops->stopped(stream, BT_HCI_ERR_LOCALHOST_TERM_CONN);
@@ -305,7 +312,7 @@ int bt_bap_unicast_client_stop(struct bt_bap_stream *stream)
 		if (pair_ep != NULL && pair_ep->stream != NULL) {
 			struct bt_bap_stream *pair_stream = pair_ep->stream;
 
-			pair_stream->ep->status.state = BT_BAP_EP_STATE_QOS_CONFIGURED;
+			pair_stream->ep->state = BT_BAP_EP_STATE_QOS_CONFIGURED;
 
 			if (pair_stream->ops != NULL && pair_stream->ops->stopped != NULL) {
 				pair_stream->ops->stopped(pair_stream,
@@ -329,7 +336,7 @@ int bt_bap_unicast_client_release(struct bt_bap_stream *stream)
 		return -EINVAL;
 	}
 
-	switch (stream->ep->status.state) {
+	switch (stream->ep->state) {
 	case BT_BAP_EP_STATE_CODEC_CONFIGURED:
 	case BT_BAP_EP_STATE_QOS_CONFIGURED:
 	case BT_BAP_EP_STATE_ENABLING:
@@ -345,7 +352,7 @@ int bt_bap_unicast_client_release(struct bt_bap_stream *stream)
 					   BT_BAP_ASCS_REASON_NONE);
 	}
 
-	stream->ep->status.state = BT_BAP_EP_STATE_IDLE;
+	stream->ep->state = BT_BAP_EP_STATE_IDLE;
 	bt_bap_stream_reset(stream);
 
 	if (stream->ops != NULL && stream->ops->released != NULL) {
@@ -358,6 +365,107 @@ int bt_bap_unicast_client_release(struct bt_bap_stream *stream)
 int bt_bap_unicast_client_register_cb(struct bt_bap_unicast_client_cb *cb)
 {
 	unicast_client_cb = cb;
+
+	return 0;
+}
+
+int bt_bap_unicast_group_create(struct bt_bap_unicast_group_param *param,
+				struct bt_bap_unicast_group **unicast_group)
+{
+	if (bap_unicast_group.allocated) {
+		return -ENOMEM;
+	}
+
+	bap_unicast_group.allocated = true;
+	*unicast_group = &bap_unicast_group;
+
+	sys_slist_init(&bap_unicast_group.streams);
+	for (size_t i = 0U; i < param->params_count; i++) {
+		if (param->params[i].rx_param != NULL) {
+			sys_slist_append(&bap_unicast_group.streams,
+					 &param->params[i].rx_param->stream->_node);
+		}
+
+		if (param->params[i].tx_param != NULL) {
+			sys_slist_append(&bap_unicast_group.streams,
+					 &param->params[i].tx_param->stream->_node);
+		}
+	}
+
+	return 0;
+}
+
+int bt_bap_unicast_group_reconfig(struct bt_bap_unicast_group *unicast_group,
+				  const struct bt_bap_unicast_group_param *param)
+{
+	if (unicast_group == NULL || param == NULL) {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+int bt_bap_unicast_group_add_streams(struct bt_bap_unicast_group *unicast_group,
+				     struct bt_bap_unicast_group_stream_pair_param params[],
+				     size_t num_param)
+{
+	if (unicast_group == NULL || params == NULL) {
+		return -EINVAL;
+	}
+
+	for (size_t i = 0U; i < num_param; i++) {
+		if (params[i].rx_param != NULL) {
+			sys_slist_append(&unicast_group->streams,
+					 &params[i].rx_param->stream->_node);
+		}
+
+		if (params[i].tx_param != NULL) {
+			sys_slist_append(&unicast_group->streams,
+					 &params[i].tx_param->stream->_node);
+		}
+	}
+
+	return 0;
+}
+
+int bt_bap_unicast_group_delete(struct bt_bap_unicast_group *unicast_group)
+{
+	struct bt_bap_stream *stream, *next;
+
+	if (unicast_group == NULL) {
+		return -EINVAL;
+	}
+
+	unicast_group->allocated = false;
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&unicast_group->streams, stream, next, _node) {
+		sys_slist_remove(&unicast_group->streams, NULL, &stream->_node);
+	}
+
+	return 0;
+}
+
+int bt_bap_unicast_group_foreach_stream(struct bt_bap_unicast_group *unicast_group,
+					bt_bap_unicast_group_foreach_stream_func_t func,
+					void *user_data)
+{
+	struct bt_bap_stream *stream, *next;
+
+	if (unicast_group == NULL) {
+		return -EINVAL;
+	}
+
+	if (func == NULL) {
+		return -EINVAL;
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&unicast_group->streams, stream, next, _node) {
+		const bool stop = func(stream, user_data);
+
+		if (stop) {
+			return -ECANCELED;
+		}
+	}
 
 	return 0;
 }

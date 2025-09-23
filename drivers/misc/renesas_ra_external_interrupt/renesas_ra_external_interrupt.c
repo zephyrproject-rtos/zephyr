@@ -13,6 +13,18 @@
 #include <zephyr/drivers/misc/renesas_ra_external_interrupt/renesas_ra_external_interrupt.h>
 #include <soc.h>
 
+#ifndef R_ICU_IRQCR_IRQMD_Pos
+#define R_ICU_IRQCR_IRQMD_Pos R_ICU_IRQCRa_IRQMD_Pos
+#endif
+
+#ifndef R_ICU_IRQCR_IRQMD_Msk
+#define R_ICU_IRQCR_IRQMD_Msk R_ICU_IRQCRa_IRQMD_Msk
+#endif
+
+#ifndef R_ICU_IRQCR_FLTEN_Pos
+#define R_ICU_IRQCR_FLTEN_Pos R_ICU_IRQCRa_FLTEN_Pos
+#endif
+
 enum ext_irq_trigger {
 	EXT_INTERRUPT_EDGE_FALLING = 0,
 	EXT_INTERRUPT_EDGE_RISING,
@@ -107,7 +119,7 @@ void gpio_ra_interrupt_unset(const struct device *dev, uint8_t port_num, uint8_t
 	const struct gpio_ra_irq_config *config = dev->config;
 	struct gpio_ra_irq_data *data = dev->data;
 
-	if ((port_num != data->callback.port_num) && (pin != data->callback.pin)) {
+	if ((port_num != data->callback.port_num) || (pin != data->callback.pin)) {
 		return;
 	}
 
@@ -137,6 +149,8 @@ static int gpio_ra_interrupt_init(const struct device *dev)
 	return 0;
 }
 
+#define EVENT_ICU_IRQ(channel) BSP_PRV_IELS_ENUM(CONCAT(EVENT_ICU_IRQ, channel))
+
 #define GPIO_INTERRUPT_INIT(index)                                                                 \
 	static const struct gpio_ra_irq_config gpio_ra_irq_config##index = {                       \
 		.reg = DT_INST_REG_ADDR(index),                                                    \
@@ -152,7 +166,10 @@ static int gpio_ra_interrupt_init(const struct device *dev)
 	static int gpio_ra_irq_init##index(const struct device *dev)                               \
 	{                                                                                          \
 		R_ICU->IELSR[DT_INST_IRQ(index, irq)] =                                            \
-			BSP_PRV_IELS_ENUM(UTIL_CAT(EVENT_ICU_IRQ, DT_INST_PROP(index, channel)));  \
+			EVENT_ICU_IRQ(DT_INST_PROP(index, channel));                               \
+                                                                                                   \
+		BSP_ASSIGN_EVENT_TO_CURRENT_CORE(EVENT_ICU_IRQ(DT_INST_PROP(index, channel)));     \
+                                                                                                   \
 		IRQ_CONNECT(DT_INST_IRQ(index, irq), DT_INST_IRQ(index, priority), gpio_ra_isr,    \
 			    DEVICE_DT_INST_GET(index), 0);                                         \
 		return gpio_ra_interrupt_init(dev);                                                \

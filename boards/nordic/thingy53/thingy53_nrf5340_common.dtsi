@@ -101,7 +101,7 @@
 
 	fuel_gauge: fuel_gauge {
 		compatible = "zephyr,fuel-gauge-composite";
-		battery-voltage = <&vbatt>;
+		source-primary = <&vbatt>;
 		device-chemistry = "lithium-ion-polymer";
 		ocv-capacity-table-0 = <BATTERY_OCV_CURVE_LITHIUM_ION_POLYMER_DEFAULT>;
 		charge-full-design-microamp-hours = <1350000>;
@@ -325,6 +325,3 @@ zephyr_udc0: &usbd {
 	compatible = "nordic,nrf-usbd";
 	status = "okay";
 };
-
-/* Include default memory partition configuration file */
-#include <nordic/nrf5340_cpuapp_partition.dtsi>

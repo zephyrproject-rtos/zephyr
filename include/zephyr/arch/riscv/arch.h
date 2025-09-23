@@ -8,15 +8,17 @@
 /**
  * @file
  * @brief RISCV specific kernel interface header
+ *
  * This header contains the RISCV specific kernel interface.  It is
- * included by the generic kernel interface header (arch/cpu.h)
+ * included by the kernel interface architecture-abstraction header
+ * (include/zephyr/arch/cpu.h).
  */
 
 #ifndef ZEPHYR_INCLUDE_ARCH_RISCV_ARCH_H_
 #define ZEPHYR_INCLUDE_ARCH_RISCV_ARCH_H_
 
 #include <zephyr/arch/riscv/thread.h>
-#include <zephyr/arch/riscv/exception.h>
+#include <zephyr/arch/exception.h>
 #include <zephyr/arch/riscv/irq.h>
 #include <zephyr/arch/riscv/sys_io.h>
 #include <zephyr/arch/common/sys_bitops.h>
@@ -28,7 +30,6 @@
 #include <zephyr/sw_isr_table.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/arch/riscv/csr.h>
-#include <zephyr/arch/riscv/exception.h>
 
 /* stacks, for RISCV architecture stack should be 16byte-aligned */
 #define ARCH_STACK_PTR_ALIGN  16

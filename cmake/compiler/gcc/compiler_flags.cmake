@@ -116,6 +116,7 @@ set_compiler_property(PROPERTY cstd -std=)
 if (NOT CONFIG_NEWLIB_LIBC AND
     NOT (CONFIG_PICOLIBC AND NOT CONFIG_PICOLIBC_USE_MODULE) AND
     NOT COMPILER STREQUAL "xcc" AND
+    NOT COMPILER STREQUAL "xt-clang" AND
     NOT CONFIG_HAS_ESPRESSIF_HAL AND
     NOT CONFIG_NATIVE_BUILD)
   set_compiler_property(PROPERTY nostdinc -nostdinc)
@@ -145,6 +146,8 @@ set_property(TARGET compiler-cpp PROPERTY dialect_cpp20 "-std=c++20"
   "-Wno-register" "-Wno-volatile")
 set_property(TARGET compiler-cpp PROPERTY dialect_cpp2b "-std=c++2b"
   "-Wno-register" "-Wno-volatile")
+set_property(TARGET compiler-cpp PROPERTY dialect_cpp23 "-std=c++23"
+  "-Wno-register" "-Wno-volatile")
 
 # Flag for disabling strict aliasing rule in C and C++
 set_compiler_property(PROPERTY no_strict_aliasing -fno-strict-aliasing)
@@ -152,6 +155,10 @@ set_compiler_property(PROPERTY no_strict_aliasing -fno-strict-aliasing)
 # Extra warning options
 set_property(TARGET compiler PROPERTY warnings_as_errors -Werror)
 set_property(TARGET asm PROPERTY warnings_as_errors -Werror -Wa,--fatal-warnings)
+
+# Deprecation warning
+set_property(TARGET compiler PROPERTY no_deprecation_warning -Wno-deprecated-declarations)
+set_property(TARGET asm PROPERTY no_deprecation_warning -Wno-deprecated-declarations)
 
 # Disable exceptions flag in C++
 set_property(TARGET compiler-cpp PROPERTY no_exceptions "-fno-exceptions")

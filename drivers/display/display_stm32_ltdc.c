@@ -124,6 +124,7 @@ static int stm32_ltdc_set_pixel_format(const struct device *dev,
 		err = HAL_LTDC_SetPixelFormat(&data->hltdc, LTDC_PIXEL_FORMAT_ARGB8888, 0);
 		data->current_pixel_format = PIXEL_FORMAT_ARGB_8888;
 		data->current_pixel_size = 4u;
+		break;
 	default:
 		err = -ENOTSUP;
 		break;
@@ -223,7 +224,12 @@ static int stm32_ltdc_write(const struct device *dev, const uint16_t x,
 
 	data->pend_buf = pend_buf;
 
+	__HAL_LTDC_CLEAR_FLAG(&data->hltdc, LTDC_FLAG_LI);
+	__HAL_LTDC_ENABLE_IT(&data->hltdc, LTDC_IT_LI);
+
 	k_sem_take(&data->sem, K_FOREVER);
+
+	__HAL_LTDC_DISABLE_IT(&data->hltdc, LTDC_IT_LI);
 
 	return 0;
 }
@@ -444,7 +450,7 @@ static int stm32_ltdc_init(const struct device *dev)
 #if defined(CONFIG_STM32_LTDC_FB_USE_SHARED_MULTI_HEAP)
 	data->frame_buffer = shared_multi_heap_aligned_alloc(
 			CONFIG_STM32_LTDC_FB_SMH_ATTRIBUTE,
-			32,
+			CONFIG_STM32_LTDC_FB_SMH_ALIGN,
 			CONFIG_STM32_LTDC_FB_NUM * data->frame_buffer_len);
 
 	if (data->frame_buffer == NULL) {
@@ -477,9 +483,6 @@ static int stm32_ltdc_init(const struct device *dev)
 
 	/* Set the line interrupt position */
 	LTDC->LIPCR = 0U;
-
-	__HAL_LTDC_CLEAR_FLAG(&data->hltdc, LTDC_FLAG_LI);
-	__HAL_LTDC_ENABLE_IT(&data->hltdc, LTDC_IT_LI);
 
 	return 0;
 }

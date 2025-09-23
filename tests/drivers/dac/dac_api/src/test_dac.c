@@ -30,6 +30,7 @@
 	defined(CONFIG_BOARD_STM32U083C_DK) || \
 	defined(CONFIG_BOARD_B_U585I_IOT02A) || \
 	defined(CONFIG_BOARD_NUCLEO_U083RC) || \
+	defined(CONFIG_BOARD_NUCLEO_U385RG_Q) || \
 	defined(CONFIG_BOARD_NUCLEO_U575ZI_Q) || \
 	defined(CONFIG_BOARD_NUCLEO_U5A5ZJ_Q) || \
 	defined(CONFIG_BOARD_NUCLEO_WL55JC) || \
@@ -45,6 +46,9 @@
 #define DAC_CHANNEL_ID		2
 #define DAC_RESOLUTION		12
 
+/* Note external DAC MCP4725 is not populated on BL652_DVK, BL653_DVK and
+ * BL654_DVK at factory
+ */
 #elif defined(CONFIG_BOARD_TWR_KE18F) || \
 	defined(CONFIG_BOARD_FRDM_K64F) || \
 	defined(CONFIG_BOARD_FRDM_K22F) || \
@@ -54,19 +58,14 @@
 	defined(CONFIG_BOARD_SEEEDUINO_XIAO) || \
 	defined(CONFIG_BOARD_ARDUINO_MKRZERO) || \
 	defined(CONFIG_BOARD_ARDUINO_ZERO) || \
-	defined(CONFIG_BOARD_LPCXPRESSO55S36)
-
-#define DAC_DEVICE_NODE		DT_NODELABEL(dac0)
-#define DAC_RESOLUTION		12
-#define DAC_CHANNEL_ID		0
-
-#elif defined(CONFIG_BOARD_BL652_DVK) || \
+	defined(CONFIG_BOARD_LPCXPRESSO55S36) || \
+	defined(CONFIG_BOARD_SAME54_XPRO) || \
+	defined(CONFIG_BOARD_BL652_DVK) || \
 	defined(CONFIG_BOARD_BL653_DVK) || \
 	defined(CONFIG_BOARD_BL654_DVK) || \
-	defined(CONFIG_BOARD_BL5340_DVK)
- /* Note external DAC MCP4725 is not populated on BL652_DVK, BL653_DVK and
-  * BL654_DVK at factory
-  */
+	defined(CONFIG_BOARD_BL5340_DVK) || \
+	DT_HAS_COMPAT_STATUS_OKAY(renesas_ra_dac)
+
 #define DAC_DEVICE_NODE		DT_NODELABEL(dac0)
 #define DAC_RESOLUTION		12
 #define DAC_CHANNEL_ID		0
@@ -80,7 +79,9 @@
 	defined(CONFIG_BOARD_GD32F450I_EVAL) || \
 	defined(CONFIG_BOARD_GD32F450Z_EVAL) || \
 	defined(CONFIG_BOARD_GD32F470I_EVAL) || \
-	defined(CONFIG_BOARD_YD_ESP32)
+	defined(CONFIG_BOARD_YD_ESP32)       || \
+	defined(CONFIG_BOARD_MIMXRT1170_EVK) || \
+	defined(CONFIG_BOARD_MIMXRT1180_EVK)
 
 #define DAC_DEVICE_NODE		DT_NODELABEL(dac)
 #define DAC_RESOLUTION		12
@@ -100,17 +101,11 @@
 #define DAC_RESOLUTION		10
 #define DAC_CHANNEL_ID		0
 
-#elif DT_HAS_COMPAT_STATUS_OKAY(renesas_ra_dac)
+#elif defined(CONFIG_SOC_FAMILY_SILABS_S2)
 
-#define DAC_DEVICE_NODE DT_NODELABEL(dac0)
-#define DAC_RESOLUTION  12
-#define DAC_CHANNEL_ID  0
-
-#elif defined(CONFIG_BOARD_MIMXRT1170_EVK)
-
-#define DAC_DEVICE_NODE		DT_NODELABEL(dac)
-#define DAC_RESOLUTION	12
-#define DAC_CHANNEL_ID	0
+#define DAC_DEVICE_NODE		DT_NODELABEL(vdac0)
+#define DAC_RESOLUTION		12
+#define DAC_CHANNEL_ID		0
 
 #else
 #error "Unsupported board."

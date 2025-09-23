@@ -297,7 +297,7 @@ void test_reset_watchdog(uint32_t cause)
 
 			/* Flush cache as reboot may invalidate all lines. */
 			sys_cache_data_flush_range((void *) &machine_state, sizeof(machine_state));
-			LOG_INF("Watchdog shall fire in ~%u miliseconds", watchdog_window);
+			LOG_INF("Watchdog shall fire in ~%u milliseconds", watchdog_window);
 			print_bar();
 			k_sleep(K_FOREVER);
 		} else {

@@ -5,6 +5,7 @@ config UDC_MAX32
 	bool "MAX32 USB device controller driver"
 	default y
 	depends on DT_HAS_ADI_MAX32_USBHS_ENABLED
+	select UDC_DRIVER_HAS_HIGH_SPEED_SUPPORT
 	help
 	  MAX32 USB device controller driver.
 

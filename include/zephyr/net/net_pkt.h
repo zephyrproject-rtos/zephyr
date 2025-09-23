@@ -237,6 +237,7 @@ struct net_pkt {
 	uint8_t chksum_done : 1; /* Checksum has already been computed for
 				  * the packet.
 				  */
+	uint8_t loopback : 1; /* Packet is a loop back packet. */
 #if defined(CONFIG_NET_IP_FRAGMENT)
 	uint8_t ip_reassembled : 1; /* Packet is a reassembled IP packet. */
 #endif
@@ -1019,6 +1020,17 @@ static inline void net_pkt_set_ipv6_fragment_id(struct net_pkt *pkt,
 	ARG_UNUSED(id);
 }
 #endif /* CONFIG_NET_IPV6_FRAGMENT */
+
+static inline bool net_pkt_is_loopback(struct net_pkt *pkt)
+{
+	return !!(pkt->loopback);
+}
+
+static inline void net_pkt_set_loopback(struct net_pkt *pkt,
+					bool loopback)
+{
+	pkt->loopback = loopback;
+}
 
 #if defined(CONFIG_NET_IP_FRAGMENT)
 static inline bool net_pkt_is_ip_reassembled(struct net_pkt *pkt)
@@ -2564,11 +2576,12 @@ static inline size_t net_pkt_get_len(struct net_pkt *pkt)
 int net_pkt_update_length(struct net_pkt *pkt, size_t length);
 
 /**
- * @brief Remove data from the packet at current location
+ * @brief Remove data from the start of the packet.
  *
- * @details net_pkt's cursor should be properly initialized and,
- *          eventually, properly positioned using net_pkt_skip/read/write.
+ * @details net_pkt's cursor should be properly initialized.
  *          Note that net_pkt's cursor is reset by this function.
+ *          This functions works in similar way as net_buf_pull(),
+ *          but it can handle multiple net_buf fragments.
  *
  * @param pkt    Network packet
  * @param length Number of bytes to be removed

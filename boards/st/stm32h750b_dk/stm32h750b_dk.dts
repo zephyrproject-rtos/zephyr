@@ -111,7 +111,7 @@
 	ext-sdram = <&sdram2>;
 	status = "okay";
 
-	clocks = <&rcc STM32_CLOCK_BUS_APB3 0x00000008>,
+	clocks = <&rcc STM32_CLOCK(APB3, 3)>,
 		<&rcc STM32_SRC_PLL3_R NO_SEL>;
 
 	width = <480>;
@@ -187,10 +187,12 @@
 
 	/* Sector erase 64KB uniform granularity */
 	/* Subsector erase 4KB, 32KB granularity */
-	mt25ql512ab1: qspi-nor-flash-1@90000000 {
+	mt25ql512ab1: qspi-nor-flash-1@0 {
 		compatible = "st,stm32-qspi-nor";
-		reg = <0x90000000 DT_SIZE_M(64)>; /* 512 Mbits */
+		reg = <0>;
+		size = <DT_SIZE_M(512)>; /* 512 Mbits */
 		qspi-max-frequency = <72000000>;
+		cs-high-time = <4>; /* >= 50 ns */
 		spi-bus-width = <4>;
 		reset-cmd;
 		status = "okay";
@@ -217,9 +219,10 @@
 		};
 	};
 
-	mt25ql512ab2: qspi-nor-flash-2@90000000 {
+	mt25ql512ab2: qspi-nor-flash-2@0 {
 		compatible = "st,stm32-qspi-nor";
-		reg = <0x90000000 DT_SIZE_M(64)>; /* 512 Mbits */
+		reg = <0>;
+		size = <DT_SIZE_M(512)>; /* 512 Mbits */
 		qspi-max-frequency = <72000000>;
 		status = "okay";
 	};
@@ -263,7 +266,7 @@
 };
 
 &rtc {
-	clocks = <&rcc STM32_CLOCK_BUS_APB4 0x00010000>,
+	clocks = <&rcc STM32_CLOCK(APB4, 16)>,
 		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
 	status = "okay";
 };

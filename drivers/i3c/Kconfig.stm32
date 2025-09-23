@@ -10,6 +10,7 @@ config I3C_STM32
 	bool "STM32 I3C driver support"
 	depends on DT_HAS_ST_STM32_I3C_ENABLED
 	select I3C_IBI_WORKQUEUE if I3C_USE_IBI
+	select PINCTRL
 	default y
 	help
 	  Enable support for I3C on STM32 microcontrollers.

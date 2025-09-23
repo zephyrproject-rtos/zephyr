@@ -94,7 +94,8 @@ static int cmd_battery(const struct shell *sh, size_t argc, char **argv)
 		    volt.val1, volt.val2 / 10000);
 	shell_print(sh, "V-desired: %d.%02d V",
 		    v_desired.val1, v_desired.val2 / 10000);
-	shell_fprintf_normal(sh, "I:    %d mA", current.val1);
+	shell_fprintf_normal(sh, "I:    %lld mA",
+		    sensor_value_to_milli(&current));
 	if (current.val1 > 0) {
 		shell_fprintf_normal(sh, " (CHG)");
 	} else if (current.val1 < 0) {
@@ -109,10 +110,10 @@ static int cmd_battery(const struct shell *sh, size_t argc, char **argv)
 	shell_print(sh, "Charge: %d %%", charge.val1);
 	shell_print(sh, "V-design: %d.%02d V",
 		    v_design.val1, v_design.val2 / 10000);
-	shell_print(sh, "Remaining: %d mA",
+	shell_print(sh, "Remaining: %d mAh",
 		    charge_remain.val1);
-	shell_print(sh, "Cap-full: %d mA", cap.val1);
-	shell_print(sh, "Design: %d mA", nom_cap.val1);
+	shell_print(sh, "Cap-full: %d mAh", cap.val1);
+	shell_print(sh, "Design: %d mAh", nom_cap.val1);
 	shell_print(sh, "Time full: %dh:%02d",
 		    full.val1 / 60, full.val1 % 60);
 	shell_print(sh, "Time empty: %dh:%02d",

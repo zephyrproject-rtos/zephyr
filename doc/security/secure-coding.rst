@@ -216,7 +216,7 @@ and information disclosure vulnerabilities.
 .. Turn this into something specific. Can we find examples of
    mistakes.  Perhaps an example of things static analysis tool has sent us.
 
-.. _CWE/SANS top 25: http://cwe.mitre.org/top25/
+.. _CWE/SANS top 25: https://cwe.mitre.org/top25/
 
 .. _OWASP Top 10: https://owasp.org/www-project-top-ten/
 
@@ -285,4 +285,4 @@ and approved by consensus.
 .. [#attackf]  An attack_ resulted in a significant portion of DNS
    infrastructure being taken down.
 
-.. _attack: http://www.theverge.com/2016/10/21/13362354/dyn-dns-ddos-attack-cause-outage-status-explained
+.. _attack: https://www.theverge.com/2016/10/21/13362354/dyn-dns-ddos-attack-cause-outage-status-explained

@@ -3,7 +3,10 @@
 
 tests:
   drivers.watchdog.reset_none:
-    filter: dt_compat_enabled("nxp,s32-swt") or dt_compat_enabled("renesas,ra-wdt")
+    filter: |
+      dt_compat_enabled("nxp,s32-swt")
+      or dt_compat_enabled("renesas,ra-wdt")
+      or dt_compat_enabled("silabs,gecko-wdog")
     integration_platforms:
       - s32z2xxdc2/s32z270/rtu0
     tags:
@@ -15,9 +18,26 @@ tests:
     platform_allow:
       - frdm_mcxw71
       - frdm_mcxw72/mcxw727c/cpu0
+      - mimxrt1180_evk/mimxrt1189/cm33
+      - mimxrt1180_evk/mimxrt1189/cm7
+      - frdm_mcxn947/mcxn947/cpu0
+      - frdm_mcxn947/mcxn947/cpu1
     integration_platforms:
       - frdm_mcxw71
-    extra_args: DTC_OVERLAY_FILE="boards/mcxw7x_ewm.overlay"
+      - frdm_mcxw72/mcxw727c/cpu0
+      - mimxrt1180_evk/mimxrt1189/cm33
+      - mimxrt1180_evk/mimxrt1189/cm7
+    extra_args: DTC_OVERLAY_FILE="boards/app_ewm.overlay"
+    extra_configs:
+      - CONFIG_TEST_WDT_MAX_WINDOW_TIME=254
+      - CONFIG_TEST_WDT_SLEEP_TIME=68
+  drivers.watchdog.reset_none_ewm_ke1xz:
+    filter: dt_compat_enabled("nxp,ewm")
+    platform_allow:
+      - frdm_ke17z
+    integration_platforms:
+      - frdm_ke17z
+    extra_args: DTC_OVERLAY_FILE="boards/frdm_ke1xz.overlay"
     extra_configs:
       - CONFIG_TEST_WDT_MAX_WINDOW_TIME=254
       - CONFIG_TEST_WDT_SLEEP_TIME=68

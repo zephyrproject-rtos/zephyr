@@ -25,6 +25,8 @@
 		red-pwm-led = &red_pwm_led;
 		green-pwm-led = &green_pwm_led;
 		blue-pwm-led = &blue_pwm_led;
+
+		accel0 = &lsm6dsl;
 	};
 
 	chosen {
@@ -140,7 +142,7 @@
 	clock-frequency = <I2C_BITRATE_FAST>;
 	status = "okay";
 
-	lsm6dsl@6a {
+	lsm6dsl: lsm6dsl@6a {
 		compatible = "st,lsm6dsl";
 		reg = <0x6a>;
 	};
@@ -207,7 +209,7 @@
 };
 
 &rtc {
-	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>,
+	clocks = <&rcc STM32_CLOCK(APB1, 28)>,
 		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
 	status = "okay";
 };

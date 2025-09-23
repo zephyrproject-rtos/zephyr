@@ -1,4 +1,4 @@
-# Copyright (c) 2024 Ambiq Micro Inc. <www.ambiq.com>
+# Copyright (c) 2025 Ambiq Micro Inc. <www.ambiq.com>
 # SPDX-License-Identifier: Apache-2.0
 
 menu "MSPI flash device driver"
@@ -28,6 +28,16 @@ config FLASH_MSPI_ATXP032
 	select FLASH_JESD216
 	select MSPI_AMBIQ_CONTROLLER if SOC_FAMILY_AMBIQ
 
+config FLASH_MSPI_IS25XX0XX
+	bool "MSPI IS25L/WX064/032 driver"
+	default y
+	depends on DT_HAS_MSPI_IS25XX0XX_ENABLED
+	select FLASH_MSPI
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_EXPLICIT_ERASE
+	select FLASH_JESD216
+	select MSPI_AMBIQ_CONTROLLER if SOC_FAMILY_AMBIQ
+
 menuconfig FLASH_MSPI_NOR
 	bool "Generic MSPI NOR Flash"
 	default y
@@ -35,9 +45,28 @@ menuconfig FLASH_MSPI_NOR
 	select FLASH_MSPI
 	select FLASH_HAS_EXPLICIT_ERASE
 	select FLASH_JESD216
-	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_JEDEC_MSPI_NOR),reset-gpios)
+	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_JEDEC_MSPI_NOR),reset-gpios) \
+		    || $(dt_compat_any_has_prop,$(DT_COMPAT_JEDEC_MSPI_NOR),supply-gpios)
 
 if FLASH_MSPI_NOR
+
+config FLASH_MSPI_NOR_USE_SFDP
+	bool "Use Serial Flash Discoverable Parameters (SFDP)"
+	default $(dt_compat_any_has_prop,$(DT_COMPAT_JEDEC_MSPI_NOR),sfdp-bfp)
+	help
+	  Use information from SFDP for setting up flash command transfers
+	  and for configuring the flash chip.
+
+	  Currently, only build time processing of SFDP structures is supported,
+	  based on dts arrays provided as flash node properties like `sfdp-bfp`,
+	  `sfdp-ff05`, and `sfdp-ff84`. Depending on the IO mode used, some or
+	  all of these properties are required for building the flash driver.
+	  Data for these properties can be obtained with the `drivers/jesd216`
+	  sample. If a given SFDP table is not available in a flash chip,
+	  the related property can be defined as an empty array - this will
+	  prevent a related build assertion from failing and default values
+	  will be assigned to parameters that would otherwise be read from
+	  that SFDP table.
 
 config FLASH_MSPI_NOR_LAYOUT_PAGE_SIZE
 	int "Page size to use for FLASH_LAYOUT feature"
@@ -52,3 +81,29 @@ config FLASH_MSPI_NOR_LAYOUT_PAGE_SIZE
 endif # FLASH_MSPI_NOR
 
 endmenu
+
+if FLASH_MSPI
+
+config FLASH_MSPI_HANDLE_CACHE
+	bool "Turn on cache handling in flash peripheral drivers"
+	default y
+	depends on CACHE_MANAGEMENT && DCACHE
+	help
+	  Disable this if cache has been handled in upper layers.
+
+config FLASH_MSPI_RANGE_HANDLE_CACHE_SIZE
+	int "Threshold to do cache handling by range or in full, size in bytes"
+	default SOC_AMBIQ_DCACHE_SIZE if SOC_SERIES_APOLLO5X
+	default 0
+	help
+	  If size is larger than this number, it is uneconomical to handle cache in range.
+	  However, this is a number by experience and could be platform specific.
+
+config FLASH_MSPI_XIP_READ
+	bool "Turn on XIP read in flash_read"
+	depends on MSPI_XIP
+	help
+	  Enable this for those controllers that supports XIP and wishes to
+	  flash_read using XIP.
+
+endif # FLASH_MSPI

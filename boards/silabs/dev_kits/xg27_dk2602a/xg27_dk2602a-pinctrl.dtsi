@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <dt-bindings/pinctrl/silabs/xg27-pinctrl.h>
+#include <zephyr/dt-bindings/pinctrl/silabs/xg27-pinctrl.h>
 
 &pinctrl {
 	itm_default: itm_default {
@@ -20,6 +20,14 @@
 			pins = <I2C0_SDA_PD2>, <I2C0_SCL_PD3>;
 			bias-pull-up;
 			drive-open-drain;
+		};
+	};
+
+	pti_default: pti_default {
+		group0 {
+			pins = <PTI_DOUT_PC4>, <PTI_DFRAME_PC5>;
+			drive-push-pull;
+			output-high;
 		};
 	};
 

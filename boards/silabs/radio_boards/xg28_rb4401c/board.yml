@@ -1,0 +1,6 @@
+board:
+  name: xg28_rb4401c
+  full_name: EFR32xG28 868-915 MHz 20 dBm (xG28-RB4401C)
+  vendor: silabs
+  socs:
+    - name: efr32zg28b322f1024im68

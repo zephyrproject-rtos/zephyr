@@ -22,6 +22,10 @@
 		sw1 = &user_button_2;
 		watchdog0 = &wwdt0;
 		pwm-0 = &sc_timer;
+		i2s-codec-tx = &sai0;
+		i2s-tx = &sai0;
+		sdhc0 = &usdhc0;
+		rtc = &rtc0;
 	};
 
 	chosen {
@@ -127,6 +131,127 @@
 	pinctrl-names = "default";
 };
 
+&lpi2c15 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-0 = <&pinmux_lpi2c15>;
+	pinctrl-names = "default";
+
+	pca9422: pca9422@61 {
+		compatible = "nxp,pca9422";
+		reg = <0x61>;
+		interrupts = <138 0>;
+
+		charger: pca9422_charger {
+			compatible = "nxp,pca9422-charger";
+			constant-charge-current-max-microamp = <100000>;
+			constant-charge-voltage-max-microvolt = <4200000>;
+			precharge-current-percent = <16>;
+			charge-termination-current-percent = <25>;
+			re-charge-threshold-microvolt = <100000>;
+			input-current-limit-microamp = <470000>;
+			system-voltage-min-threshold-microvolt = <4550000>;
+		};
+
+		regulators: pca9422_regulators {
+			compatible = "nxp,pca9422-regulator";
+			nxp,vsys-uvlo-sel-millivolt = <2700>;
+
+			pca9422_sw1: BUCK1 {
+				regulator-boot-on;
+				low-power-mode = "Normal";
+				enable-mode = "All";
+				nxp,active-microvolt = <1000000>;
+				nxp,sleep-microvolt = <600000>;
+				nxp,standby-microvolt = <1000000>;
+			};
+
+			pca9422_sw2: BUCK2 {
+				regulator-boot-on;
+				low-power-mode = "Normal";
+				enable-mode = "All";
+				nxp,active-microvolt = <1100000>;
+				nxp,sleep-microvolt = <1100000>;
+				nxp,standby-microvolt = <1100000>;
+			};
+
+			pca9422_sw3: BUCK3 {
+				regulator-boot-on;
+				low-power-mode = "Normal";
+				enable-mode = "All";
+				nxp,active-microvolt = <1800000>;
+				nxp,sleep-microvolt = <1800000>;
+				nxp,standby-microvolt = <1800000>;
+			};
+
+			pca9422_sw4: BUCKBOOST {
+				regulator-boot-on;
+				low-power-mode = "Normal";
+				enable-mode = "All";
+				nxp,active-microvolt = <1800000>;
+				nxp,sleep-microvolt = <1800000>;
+				nxp,standby-microvolt = <1800000>;
+			};
+
+			pca9422_ldo1: LDO1 {
+				regulator-boot-on;
+				enable-mode = "All";
+				nxp,active-microvolt = <1800000>;
+				nxp,sleep-microvolt = <1800000>;
+				nxp,standby-microvolt = <1800000>;
+			};
+
+			pca9422_ldo2: LDO2 {
+				regulator-boot-on;
+				low-power-mode = "Normal";
+				enable-mode = "All";
+				nxp,active-microvolt = <1800000>;
+				nxp,sleep-microvolt = <1800000>;
+				nxp,standby-microvolt = <1800000>;
+			};
+
+			pca9422_ldo3: LDO3 {
+				regulator-boot-on;
+				low-power-mode = "Normal";
+				enable-mode = "All";
+				nxp,active-microvolt = <1200000>;
+				nxp,sleep-microvolt = <1200000>;
+				nxp,standby-microvolt = <1200000>;
+			};
+			pca9422_ldo4: LDO4 {
+				regulator-boot-on;
+				enable-mode = "All";
+				nxp,active-microvolt = <3300000>;
+				nxp,sleep-microvolt = <3300000>;
+				nxp,standby-microvolt = <3300000>;
+			};
+		};
+	};
+};
+
+&flexcomm2{
+	status = "okay";
+};
+
+&flexcomm2_lpi2c2 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_flexcomm2_i2c>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	audio_codec: wm8962@1a {
+		compatible = "wolfson,wm8962";
+		reg = <0x1a>;
+		clock-source = "MCLK";
+		clocks = <&clkctl0 MCUX_SAI0_CLK>;
+		clock-names = "mclk";
+	};
+};
+
 &flexcomm8{
 	status = "okay";
 };
@@ -159,6 +284,10 @@ zephyr_lcdif: &lcdif {};
 	status = "okay";
 };
 
+&gpio7 {
+	status = "okay";
+};
+
 &green_led {
 	status = "okay";
 };
@@ -175,6 +304,12 @@ zephyr_lcdif: &lcdif {};
 
 &mrt0_channel0 {
 	status = "okay";
+};
+
+&sai0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_sai0>;
+	pinctrl-names = "default";
 };
 
 &sc_timer {
@@ -211,8 +346,44 @@ zephyr_udc0: &usb0 {
 	tx-cal-45-dm-ohms = <6>;
 };
 
+&usdhc0 {
+	status = "okay";
+	pwr-gpios = <&gpio7 12 GPIO_ACTIVE_HIGH>;
+	mmc {
+		compatible = "zephyr,mmc-disk";
+		disk-name = "SD2";
+		status = "okay";
+	};
+	pinctrl-0 = <&pinmux_usdhc>;
+	pinctrl-names = "default";
+	mmc-hs200-1_8v;
+	mmc-hs400-1_8v;
+};
+
 &wwdt0 {
 	status = "okay";
 };
 
+&acmp {
+	status = "okay";
+	pinctrl-0 = <&pinmux_acmp>;
+	pinctrl-names = "default";
+};
+
 p3t1755dp_ard_i2c_interface: &flexcomm8_lpi2c8 {};
+
+&rtc0 {
+	status = "okay";
+};
+
+&dsp {
+	status = "okay";
+};
+
+&mbox4 {
+	status = "okay";
+};
+
+&pca9422 {
+	status = "okay";
+};

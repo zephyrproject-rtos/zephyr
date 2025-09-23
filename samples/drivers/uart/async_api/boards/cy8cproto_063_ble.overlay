@@ -1,0 +1,11 @@
+&dma0 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	compatible = "infineon,cat1-dma";
+	status = "okay";
+};
+
+dut: &scb5 {
+	dmas = <&dma0 22>, <&dma0 23>;
+	dma-names = "tx", "rx";
+};

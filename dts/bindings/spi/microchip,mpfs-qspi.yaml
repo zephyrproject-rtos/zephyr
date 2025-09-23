@@ -5,7 +5,7 @@ description: Microchip Polarfire SOC QSPI controller
 
 compatible: "microchip,mpfs-qspi"
 
-include: spi-controller.yaml
+include: [spi-controller.yaml, reset-device.yaml]
 
 properties:
   reg:

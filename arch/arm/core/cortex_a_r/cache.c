@@ -203,11 +203,16 @@ int arch_icache_flush_and_invd_all(void)
 
 int arch_icache_flush_range(void *start_addr, size_t size)
 {
+	ARG_UNUSED(start_addr);
+	ARG_UNUSED(size);
+
 	return -ENOTSUP;
 }
 
 int arch_icache_invd_range(void *start_addr, size_t size)
 {
+	ARG_UNUSED(start_addr);
+	ARG_UNUSED(size);
 	/* Cortex A/R do have the ICIMVAU operation to selectively invalidate
 	 * the instruction cache, but not currently supported by CMSIS.
 	 * For now, invalidate the entire cache.
@@ -219,6 +224,9 @@ int arch_icache_invd_range(void *start_addr, size_t size)
 
 int arch_icache_flush_and_invd_range(void *start_addr, size_t size)
 {
+	ARG_UNUSED(start_addr);
+	ARG_UNUSED(size);
+
 	return -ENOTSUP;
 }
 

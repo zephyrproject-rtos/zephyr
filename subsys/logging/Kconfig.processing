@@ -114,7 +114,7 @@ config LOG_PROCESS_THREAD_PRIORITY
 	depends on LOG_PROCESS_THREAD_CUSTOM_PRIORITY
 	help
 	  The priority of the log processing thread.
-	  When not set the prority is set to K_LOWEST_APPLICATION_THREAD_PRIO.
+	  When not set the priority is set to K_LOWEST_APPLICATION_THREAD_PRIO.
 
 endif # LOG_PROCESS_THREAD
 
@@ -160,7 +160,6 @@ config LOG_TIMESTAMP_64BIT
 config LOG_TIMESTAMP_USE_REALTIME
 	bool "Use real time clock for timestamp"
 	select LOG_TIMESTAMP_64BIT
-	depends on POSIX_TIMERS
 	help
 	  When enabled, real time clock is used for timestamping.
 

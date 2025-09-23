@@ -25,5 +25,5 @@
 			pinmux = <TWAI_TX_GPIO5>;
 			input-enable;	/* enable internal loopback */
 		};
-};
+	};
 };

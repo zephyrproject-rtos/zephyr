@@ -33,6 +33,9 @@
 #define STM32_SRC_PLL3_R	(STM32_SRC_PLL3_Q + 1)
 /** Clock muxes */
 #define STM32_SRC_CKPER		(STM32_SRC_PLL3_R + 1)
+/** Bus clocks */
+#define STM32_SRC_TIMPCLK1	(STM32_SRC_CKPER + 1)
+#define STM32_SRC_TIMPCLK2	(STM32_SRC_TIMPCLK1 + 1)
 /** Others: Not yet supported */
 /* #define STM32_SRC_I2SCKIN	TBD */
 /* #define STM32_SRC_SPDIFRX	TBD */

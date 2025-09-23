@@ -49,9 +49,9 @@ typedef uint32_t net_stats_t;
  */
 struct net_stats_bytes {
 	/** Number of bytes sent */
-	net_stats_t sent;
+	uint64_t sent;
 	/** Number of bytes received */
-	net_stats_t received;
+	uint64_t received;
 };
 
 /**
@@ -319,6 +319,8 @@ struct net_stats_rx_time {
 struct net_stats_tc {
 	/** TX statistics for each traffic class */
 	struct {
+		/** Number of bytes sent for this traffic class */
+		uint64_t bytes;
 		/** Helper for calculating average TX time statistics */
 		struct net_stats_tx_time tx_time;
 #if defined(CONFIG_NET_PKT_TXTIME_STATS_DETAIL)
@@ -330,14 +332,14 @@ struct net_stats_tc {
 		net_stats_t pkts;
 		/** Number of packets dropped for this traffic class */
 		net_stats_t dropped;
-		/** Number of bytes sent for this traffic class */
-		net_stats_t bytes;
 		/** Priority of this traffic class */
 		uint8_t priority;
 	} sent[NET_TC_TX_STATS_COUNT];
 
 	/** RX statistics for each traffic class */
 	struct {
+		/** Number of bytes received for this traffic class */
+		uint64_t bytes;
 		/** Helper for calculating average RX time statistics */
 		struct net_stats_rx_time rx_time;
 #if defined(CONFIG_NET_PKT_RXTIME_STATS_DETAIL)
@@ -349,8 +351,6 @@ struct net_stats_tc {
 		net_stats_t pkts;
 		/** Number of packets dropped for this traffic class */
 		net_stats_t dropped;
-		/** Number of bytes received for this traffic class */
-		net_stats_t bytes;
 		/** Priority of this traffic class */
 		uint8_t priority;
 	} recv[NET_TC_RX_STATS_COUNT];
@@ -404,14 +404,14 @@ struct net_stats_pkt_filter {
  * @brief All network statistics in one struct.
  */
 struct net_stats {
-	/** Count of malformed packets or packets we do not have handler for */
-	net_stats_t processing_error;
-
 	/**
 	 * This calculates amount of data transferred through all the
 	 * network interfaces.
 	 */
 	struct net_stats_bytes bytes;
+
+	/** Count of malformed packets or packets we do not have handler for */
+	net_stats_t processing_error;
 
 	/** IP layer errors */
 	struct net_stats_ip_errors ip_errors;

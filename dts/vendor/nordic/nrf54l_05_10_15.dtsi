@@ -311,6 +311,8 @@
 				rx-delay-supported;
 				rx-delay = <1>;
 				status = "disabled";
+				default-gpio-port = <&gpio1>;
+				cross-domain-pins-supported;
 			};
 
 			uart20: uart@c6000 {
@@ -320,6 +322,8 @@
 				status = "disabled";
 				endtx-stoptx-supported;
 				frame-timeout-supported;
+				default-gpio-port = <&gpio1>;
+				cross-domain-pins-supported;
 			};
 
 			i2c21: i2c@c7000 {
@@ -350,6 +354,8 @@
 				rx-delay-supported;
 				rx-delay = <1>;
 				status = "disabled";
+				default-gpio-port = <&gpio1>;
+				cross-domain-pins-supported;
 			};
 
 			uart21: uart@c7000 {
@@ -359,6 +365,8 @@
 				status = "disabled";
 				endtx-stoptx-supported;
 				frame-timeout-supported;
+				default-gpio-port = <&gpio1>;
+				cross-domain-pins-supported;
 			};
 
 			i2c22: i2c@c8000 {
@@ -477,6 +485,7 @@
 				reg = <0xd2000 0x1000>;
 				interrupts = <210 NRF_DEFAULT_IRQ_PRIORITY>;
 				#pwm-cells = <3>;
+				idleout-supported;
 			};
 
 			pwm21: pwm@d3000 {
@@ -485,6 +494,7 @@
 				reg = <0xd3000 0x1000>;
 				interrupts = <211 NRF_DEFAULT_IRQ_PRIORITY>;
 				#pwm-cells = <3>;
+				idleout-supported;
 			};
 
 			pwm22: pwm@d4000 {
@@ -493,6 +503,7 @@
 				reg = <0xd4000 0x1000>;
 				interrupts = <212 NRF_DEFAULT_IRQ_PRIORITY>;
 				#pwm-cells = <3>;
+				idleout-supported;
 			};
 
 			adc: adc@d5000 {

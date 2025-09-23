@@ -24,6 +24,7 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,bt-c2h-uart = &usart1;
+		zephyr,entropy = &rng;
 	};
 
 	leds: leds {
@@ -150,7 +151,7 @@
 	pinctrl-names = "default";
 	status = "okay";
 	/* Select 64MHz clock for SPI3 */
-	clocks = <&rcc STM32_CLOCK_BUS_APB1 (1 << 14)>,
+	clocks = <&rcc STM32_CLOCK(APB1, 14)>,
 		<&rcc STM32_SRC_SYSCLK SPI3_I2S3_SEL(3)>;
 };
 
@@ -165,6 +166,10 @@
 		pinctrl-names = "default";
 		status = "okay";
 	};
+};
+
+&rng {
+	status = "okay";
 };
 
 &flash0 {

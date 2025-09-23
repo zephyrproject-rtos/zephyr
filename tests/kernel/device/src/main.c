@@ -18,12 +18,17 @@
 #define DUMMY_PORT_2    "dummy_driver"
 #define DUMMY_NOINIT    "dummy_noinit"
 #define BAD_DRIVER	"bad_driver"
+#define DUMMY_DEINIT    "dummy_deinit"
 
 #define MY_DRIVER_A     "my_driver_A"
 #define MY_DRIVER_B     "my_driver_B"
 
 #define FAKEDEFERDRIVER0	DEVICE_DT_GET(DT_PATH(fakedeferdriver_e7000000))
 #define FAKEDEFERDRIVER1	DEVICE_DT_GET(DT_PATH(fakedeferdriver_e8000000))
+#define FAKEDEFERDRIVER2        DEVICE_DT_GET(DT_PATH(fakedeferdriver_f9000000))
+
+#define FAKEDRIVER0_NODEID    DT_PATH(fakedriver_e0000000)
+#define FAKEDRIVER0_NODELABEL "fake_driver_label"
 
 /* A device without init call */
 DEVICE_DEFINE(dummy_noinit, DUMMY_NOINIT, NULL, NULL, NULL, NULL,
@@ -38,6 +43,12 @@ DEVICE_DT_DEFINE(DT_INST(0, fakedeferdriver), NULL, NULL, NULL, NULL,
 DEVICE_DT_DEFINE(DT_INST(1, fakedeferdriver), NULL, NULL, NULL, NULL,
 	      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 	      &fakedeferdriverapi);
+
+/* fake devices used to test deferred initialization failure */
+static int fakedeferdriver_init(const struct device *dev);
+
+DEVICE_DT_DEFINE(DT_INST(2, fakedeferdriver), fakedeferdriver_init, NULL, NULL, NULL, POST_KERNEL,
+		 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
 
 /**
  * @brief Test cases to verify device objects
@@ -254,8 +265,19 @@ ZTEST(device, test_device_list)
 {
 	struct device const *devices;
 	size_t devcount = z_device_get_all_static(&devices);
+	bool found = false;
 
-	zassert_false((devcount == 0));
+	zassert_true(devcount > 0, "Should have at least one static device");
+	zassert_not_null(devices);
+	for (size_t i = 0; i < devcount; i++) {
+		struct device const *dev = devices + i;
+
+		if (strcmp(dev->name, DUMMY_NOINIT) == 0) {
+			found = true;
+			break;
+		}
+	}
+	zassert_true(found, "%s should be present in static device list", DUMMY_NOINIT);
 }
 
 static int sys_init_counter;
@@ -415,6 +437,38 @@ ZTEST(device, test_deferred_init)
 	zassert_true(device_is_ready(FAKEDEFERDRIVER0));
 }
 
+static int fakedeferdriver_init(const struct device *dev)
+{
+	return -EIO;
+}
+
+/**
+ * @brief Test deferred initialization error
+ *
+ * @details Verify device_init error cases and expected device states
+ *
+ * - case -errno: if the device initialization fails
+ * - case -EALREADY: if the device is already initialized.
+ *
+ * @see device_init
+ * @ingroup kernel_device_tests
+ */
+ZTEST(device, test_deferred_init_failure)
+{
+	int ret;
+	const struct device *dev = FAKEDEFERDRIVER2;
+
+	zassert_false(device_is_ready(dev));
+	ret = device_init(dev);
+	zassert_equal(ret, -EIO);
+	zassert_false(device_is_ready(dev));
+	zassert_equal(dev->state->init_res, EIO);
+
+	ret = device_init(dev);
+	zassert_equal(ret, -EALREADY);
+	zassert_equal(dev->state->init_res, EIO);
+}
+
 ZTEST(device, test_device_api)
 {
 	const struct device *dev;
@@ -440,6 +494,60 @@ ZTEST_USER(device, test_deferred_init_user)
 
 	zassert_true(device_is_ready(FAKEDEFERDRIVER1));
 }
+
+ZTEST(device, test_deinit_not_supported)
+{
+	const struct device *dev = device_get_binding(DUMMY_NOINIT);
+	int ret;
+
+	zassert_not_null(dev);
+
+	ret = device_deinit(dev);
+	zassert_equal(ret, -ENOTSUP, "Expected -ENOTSUP for device_deinit when not supported");
+}
+
+static int dummy_deinit(const struct device *dev)
+{
+	return 0;
+}
+
+/* A device with de-initialization function */
+DEVICE_DEINIT_DEFINE(dummy_deinit, DUMMY_DEINIT, NULL, dummy_deinit, NULL, NULL, NULL, POST_KERNEL,
+		     CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
+
+ZTEST(device, test_deinit_success_and_redeinit)
+{
+	const struct device *dev = device_get_binding(DUMMY_DEINIT);
+	int ret;
+
+	zassert_not_null(dev);
+
+	ret = device_deinit(dev);
+	zassert_equal(ret, 0, "device_deinit should succeed");
+
+	ret = device_deinit(dev);
+	zassert_equal(ret, -EPERM, "device_deinit should fail when not init or already deinit");
+}
+
+#ifdef CONFIG_DEVICE_DT_METADATA
+DEVICE_DT_DEFINE(FAKEDRIVER0_NODEID, NULL, NULL, NULL, NULL, POST_KERNEL,
+		 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
+
+ZTEST(device, test_device_get_by_dt_nodelabel)
+{
+	const struct device *dev = DEVICE_DT_GET(FAKEDRIVER0_NODEID);
+
+	zassert_not_null(dev);
+
+	const struct device *valid = device_get_by_dt_nodelabel(FAKEDRIVER0_NODELABEL);
+
+	zassert_not_null(valid, "Valid DT nodelabel should return a device");
+
+	const struct device *invalid = device_get_by_dt_nodelabel("does_not_exist");
+
+	zassert_is_null(invalid, "Invalid DT nodelabel should return NULL");
+}
+#endif
 
 void *user_setup(void)
 {

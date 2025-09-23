@@ -59,3 +59,9 @@ tests:
       - SNIPPET="rtt-tracing;rtt-console"
     platform_allow:
       - apard32690/max32690/m4
+  sample.sensor.accel_polling.shields:
+    build_only: true
+    platform_allow:
+      - adafruit_qt_py_rp2040/rp2040
+    extra_args:
+      - platform:adafruit_qt_py_rp2040/rp2040:SHIELD="adafruit_lis3dh"

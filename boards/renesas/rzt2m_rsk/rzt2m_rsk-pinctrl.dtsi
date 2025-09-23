@@ -20,4 +20,24 @@
 			input-enable;
 		};
 	};
+
+	/omit-if-no-ref/ gpt0_pins: gpt0 {
+		gpt0-pinmux {
+			pinmux = <RZT_PINMUX(PORT_17, 4, 3)>; /* GTIOCA */
+		};
+	};
+
+	/omit-if-no-ref/ gpt4_pins: gpt4 {
+		gpt4-pinmux {
+			pinmux = <RZT_PINMUX(PORT_03, 5, 4)>, /* GTIOCA */
+				 <RZT_PINMUX(PORT_03, 6, 5)>; /* GTIOCB */
+		};
+	};
+
+	/omit-if-no-ref/ i2c1_default: i2c1_default {
+		i2c1-pinmux {
+			pinmux = <RZT_PINMUX(PORT_22, 6, 2)>, /* SCL */
+				 <RZT_PINMUX(PORT_22, 7, 2)>; /* SDA */
+		};
+	};
 };

@@ -128,6 +128,10 @@ irq_disconnect_dynamic(unsigned int irq, unsigned int priority,
  * Although this routine is invoked at run-time, all of its arguments must be
  * computable by the compiler at build time.
  *
+ * @note
+ * All IRQs configured with the IRQ_ZERO_LATENCY flag must be declared as
+ * direct.
+ *
  * @param irq_p IRQ line number.
  * @param priority_p Interrupt priority.
  * @param isr_p Address of interrupt service routine.
@@ -170,6 +174,10 @@ irq_disconnect_dynamic(unsigned int irq, unsigned int priority,
  * and IRQ_DIRECT_FOOTER() invocations. It performs tasks necessary to
  * exit power management idle state. It takes no parameters and returns no
  * arguments. It may be omitted, but be careful!
+ *
+ * @warning
+ * This macro must not be used at all with IRQs configured with the
+ * IRQ_ZERO_LATENCY flag.
  */
 #define ISR_DIRECT_PM() ARCH_ISR_DIRECT_PM()
 
@@ -185,6 +193,10 @@ irq_disconnect_dynamic(unsigned int irq, unsigned int priority,
  * these interrupt types require different assembly language handling of
  * registers by the ISR, this will always generate code for the 'fast'
  * interrupt type.
+ *
+ * @warning
+ * Any ISRs that serve IRQs configured with the IRQ_ZERO_LATENCY flag must
+ * always return 0 in this macro.
  *
  * Example usage:
  *
@@ -227,16 +239,13 @@ irq_disconnect_dynamic(unsigned int irq, unsigned int priority,
  * (for example, ARM) will fail silently if invoked from user mode instead
  * of generating an exception.
  *
- * @note
- * This routine can be called by ISRs or by threads. If it is called by a
- * thread, the interrupt lock is thread-specific; this means that interrupts
- * remain disabled only while the thread is running. If the thread performs an
- * operation that allows another thread to run (for example, giving a semaphore
- * or sleeping for N milliseconds), the interrupt lock no longer applies and
- * interrupts may be re-enabled while other processing occurs. When the thread
- * once again becomes the current thread, the kernel re-establishes its
- * interrupt lock; this ensures the thread won't be interrupted until it has
- * explicitly released the interrupt lock it established.
+ * This routine can be called by ISRs and threads.
+ *
+ * @warning
+ * As long as all recursive calls to irq_lock() have not been balanced with
+ * corresponding irq_unlock() calls, the caller "holds the interrupt lock".
+ *
+ * "Holding the interrupt lock" when a context switch occurs is illegal.
  *
  * @warning
  * The lock-out key should never be used to manually re-enable interrupts

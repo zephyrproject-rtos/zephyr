@@ -1,0 +1,11 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config HWINFO_SILABS_S2
+	bool "Silabs Series 2 hwinfo"
+	default y
+	depends on SOC_FAMILY_SILABS_S2
+	select HWINFO_HAS_DRIVER
+	select SOC_GECKO_RMU
+	help
+	  Enable Silabs Series 2 hwinfo driver.

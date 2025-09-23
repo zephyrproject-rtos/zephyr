@@ -1,0 +1,26 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: Microchip GCLK (Generic Clock) peripheral
+
+description: |
+  peripheral channel gclk clock configuration.
+
+include: [base.yaml]
+
+compatible: "microchip,sam-d5x-e5x-gclkperiph"
+
+properties:
+  "#clock-cells":
+    const: 1
+    type: int
+    description: |
+      The subsystem cell is to identify a clock controller sub-system.
+
+      The subsystem can be referred from include\zephyr\dt-bindings\clock\mchp_sam_d5x_e5x_clock.h,
+      under the GCLKPERIPH_TYPE section of ids.
+      All clock control API use this value to specify the clock on which the API operates.
+      Since subsystem is opaque to the user, it can be accessed from the devicetree node and used.
+
+clock-cells:
+  - subsystem

@@ -1,0 +1,30 @@
+/*
+ * Copyright (c) 2025 TOKITA Hiroshi
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,entropy = &virtio_entropy;
+		zephyr,console = &virtio_console;
+	};
+};
+
+&virtio_mmio0 {
+	status = "okay";
+
+	virtio_entropy: virtio_entropy {
+		compatible = "virtio,device4";
+		status = "okay";
+	};
+};
+
+&virtio_mmio1 {
+	status = "okay";
+
+	virtio_console: virtio_console {
+		compatible = "virtio,console";
+		status = "okay";
+	};
+};

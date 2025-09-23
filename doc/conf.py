@@ -76,6 +76,7 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.graphviz",
     "sphinxcontrib.jquery",
+    "sphinxcontrib.programoutput",
     "zephyr.application",
     "zephyr.html_redirects",
     "zephyr.kconfig",
@@ -113,6 +114,14 @@ if not west_found:
 else:
     exclude_patterns.append("**/*west-not-found*")
 
+# Ensure only one of the two top-level indexes ever gets included.
+# This is a workaround for Sphinx issuing INFO notices about being referenced in
+# multiple toctrees.
+if tags.has("convertimages"):  # pylint: disable=undefined-variable  # noqa: F821
+    exclude_patterns.append("index.rst")
+else:
+    exclude_patterns.append("index-tex.rst")
+
 pygments_style = "sphinx"
 highlight_language = "none"
 
@@ -143,6 +152,9 @@ SDK_URL_BASE="https://github.com/zephyrproject-rtos/sdk-ng/releases/download"
 rst_epilog = f"""
 .. include:: /substitutions.txt
 
+.. |zephyr-version| replace:: ``{version}``
+.. |zephyr-version-ltrim| unicode:: {version}
+   :ltrim:
 .. |sdk-version-literal| replace:: ``{sdk_version}``
 .. |sdk-version-trim| unicode:: {sdk_version}
    :trim:
@@ -196,8 +208,8 @@ html_context = {
     "current_version": version,
     "versions": (
         ("latest", "/"),
+        ("4.2.0", "/4.2.0/"),
         ("4.1.0", "/4.1.0/"),
-        ("4.0.0", "/4.0.0/"),
         ("3.7.0 (LTS)", "/3.7.0/"),
     ),
     "display_gh_links": True,

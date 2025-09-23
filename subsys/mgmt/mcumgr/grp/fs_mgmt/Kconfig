@@ -70,7 +70,7 @@ config MCUMGR_GRP_FS_DL_CHUNK_SIZE_LIMIT
 	help
 	  By default file chunk, that will be read off storage and fit into
 	  MCUmgr frame, is automatically calculated to fit into buffer
-	  of size MCUGMR_TRANSPORT_NETBUF_SIZE with all headers.
+	  of size MCUMGR_TRANSPORT_NETBUF_SIZE with all headers.
 	  Enabling this option allows to set MAXIMUM value that will be
 	  allowed for such chunk.
 	  Look inside fs_mgmt_config.h for details.

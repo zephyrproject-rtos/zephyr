@@ -8,6 +8,7 @@
 #include <zephyr/irq.h>
 #include <kswap.h>
 #include <zephyr/tracing/tracing.h>
+#include <zephyr/drivers/clock_control/renesas_rx_cgc.h>
 
 typedef void (*fp)(void);
 extern void _start(void);
@@ -23,6 +24,14 @@ extern void z_rx_irq_exit(void);
 #define FVECT_SECT  __attribute__((section(".fvectors")))
 
 #define __ISR__ __attribute__((interrupt, naked))
+
+#define SET_OFS1_HOCO_BITS(reg, freq)                                                              \
+	((reg) & ~(0b11 << 12)) | ((((freq) == 24000000   ? 0b10                                   \
+				     : (freq) == 32000000 ? 0b11                                   \
+				     : (freq) == 48000000 ? 0b01                                   \
+				     : (freq) == 64000000 ? 0b00                                   \
+							  : 0b11)                                  \
+				    << 12))
 
 static ALWAYS_INLINE void REGISTER_SAVE(void)
 {
@@ -58,7 +67,7 @@ static void __ISR__ INT_Excep_SuperVisorInst(void)
 {
 	REGISTER_SAVE();
 	ISR_DIRECT_HEADER();
-	z_fatal_error(K_ERR_CPU_EXCEPTION, NULL);
+	z_rx_fatal_error(K_ERR_CPU_EXCEPTION, NULL);
 	ISR_DIRECT_FOOTER(1);
 	REGISTER_RESTORE_EXIT();
 }
@@ -68,7 +77,7 @@ static void __ISR__ INT_Excep_AccessInst(void)
 {
 	REGISTER_SAVE();
 	ISR_DIRECT_HEADER();
-	z_fatal_error(K_ERR_CPU_EXCEPTION, NULL);
+	z_rx_fatal_error(K_ERR_CPU_EXCEPTION, NULL);
 	ISR_DIRECT_FOOTER(1);
 	REGISTER_RESTORE_EXIT();
 }
@@ -78,7 +87,7 @@ static void __ISR__ INT_Excep_UndefinedInst(void)
 {
 	REGISTER_SAVE();
 	ISR_DIRECT_HEADER();
-	z_fatal_error(K_ERR_CPU_EXCEPTION, NULL);
+	z_rx_fatal_error(K_ERR_CPU_EXCEPTION, NULL);
 	ISR_DIRECT_FOOTER(1);
 	REGISTER_RESTORE_EXIT();
 }
@@ -88,7 +97,7 @@ static void __ISR__ INT_Excep_FloatingPoint(void)
 {
 	REGISTER_SAVE();
 	ISR_DIRECT_HEADER();
-	z_fatal_error(K_ERR_CPU_EXCEPTION, NULL);
+	z_rx_fatal_error(K_ERR_CPU_EXCEPTION, NULL);
 	ISR_DIRECT_FOOTER(1);
 	REGISTER_RESTORE_EXIT();
 }
@@ -134,6 +143,28 @@ static void __ISR__ reserved_isr(void)
 	REGISTER_SAVE();
 	ISR_DIRECT_HEADER();
 	z_fatal_error(K_ERR_CPU_EXCEPTION, NULL);
+	ISR_DIRECT_FOOTER(1);
+	REGISTER_RESTORE_EXIT();
+}
+
+static void __ISR__ INT_RuntimeFatalInterrupt(void)
+{
+	REGISTER_SAVE();
+	ISR_DIRECT_HEADER();
+
+	uint32_t reason;
+	const struct arch_esf *esf;
+
+	/* Read the current values of CPU registers r1 and r0 into C variables
+	 * 'reason' is expected to contain the exception reason (from r1)
+	 * 'esf' is expected to contain a pointer to the exception stack frame (from r0)
+	 */
+	__asm__ volatile("mov r1, %0\n\t"
+			 "mov r0, %1\n\t"
+			 : "=r"(reason), "=r"(esf));
+
+	z_rx_fatal_error(reason, esf);
+
 	ISR_DIRECT_FOOTER(1);
 	REGISTER_RESTORE_EXIT();
 }
@@ -394,12 +425,16 @@ INT_DEMUX(253);
 INT_DEMUX(254);
 INT_DEMUX(255);
 
+#if !CONFIG_HAS_EXCEPT_VECTOR_TABLE
+
 const void *FixedVectors[] FVECT_SECT = {
 	/* 0x00-0x4c: Reserved, must be 0xff (according to e2 studio example) */
 	/* Reserved for OFSM */
 	(fp)0xFFFFFFFF,
 	(fp)0xFFFFFFFF,
-	(fp)0xFFFFFFFF,
+	(fp)(SET_OFS1_HOCO_BITS(
+		0xFFFFFFFF,
+		(RX_CGC_PROP_HAS_STATUS_OKAY_OR(DT_NODELABEL(hoco), clock_frequency, 32000000)))),
 	(fp)0xFFFFFFFF,
 	/* Reserved area */
 	(fp)0xFFFFFFFF,
@@ -443,57 +478,145 @@ const void *FixedVectors[] FVECT_SECT = {
 	_start,
 };
 
+#else
+
+/* The reset vector ALWAYS is at address 0xFFFFFFFC. Set it to point at
+ * the start routine (in reset.S)
+ */
+const FVECT_SECT void *resetVector = _start;
+
+/* Exception vector table
+ * (see rx-family-rxv2-instruction-set-architecture-users-manual-software)
+ */
+const void *ExceptVectors[] EXVECT_SECT = {
+	/* 0x00-0x4c: Reserved, must be 0xff (according to e2 studio example) */
+	(fp)0xFFFFFFFF,
+	(fp)0xFFFFFFFF,
+	(fp)0xFFFFFFFF,
+	(fp)0xFFFFFFFF,
+	(fp)0xFFFFFFFF,
+	(fp)0xFFFFFFFF,
+	(fp)0xFFFFFFFF,
+	(fp)0xFFFFFFFF,
+	(fp)0xFFFFFFFF,
+	(fp)0xFFFFFFFF,
+	(fp)0xFFFFFFFF,
+	(fp)0xFFFFFFFF,
+	(fp)0xFFFFFFFF,
+	(fp)0xFFFFFFFF,
+	(fp)0xFFFFFFFF,
+	(fp)0xFFFFFFFF,
+	(fp)0xFFFFFFFF,
+	(fp)0xFFFFFFFF,
+	(fp)0xFFFFFFFF,
+	(fp)0xFFFFFFFF,
+	/* 0x50: Privileged instruction exception */
+	INT_Excep_SuperVisorInst,
+	/* 0x54: Access exception */
+	INT_Excep_AccessInst,
+	/* 0x58: Reserved */
+	Dummy,
+	/* 0x5c: Undefined Instruction Exception */
+	INT_Excep_UndefinedInst,
+	/* 0x60: Reserved */
+	Dummy,
+	/* 0x64: Floating Point Exception */
+	INT_Excep_FloatingPoint,
+	/* 0x68-0x74: Reserved */
+	Dummy,
+	Dummy,
+	Dummy,
+	Dummy,
+	/* 0x78: Non-maskable interrupt */
+	INT_NonMaskableInterrupt,
+};
+#endif
+
 const fp RelocatableVectors[] RVECT_SECT = {
-	reserved_isr,  switch_isr_wrapper, reserved_isr,  reserved_isr,  reserved_isr,
-	reserved_isr,  reserved_isr,       reserved_isr,  reserved_isr,  reserved_isr,
-	reserved_isr,  reserved_isr,       reserved_isr,  reserved_isr,  reserved_isr,
-	reserved_isr,  int_demux_16,       int_demux_17,  int_demux_18,  int_demux_19,
-	int_demux_20,  int_demux_21,       int_demux_22,  int_demux_23,  int_demux_24,
-	int_demux_25,  int_demux_26,       int_demux_27,  int_demux_28,  int_demux_29,
-	int_demux_30,  int_demux_31,       int_demux_32,  int_demux_33,  int_demux_34,
-	int_demux_35,  int_demux_36,       int_demux_37,  int_demux_38,  int_demux_39,
-	int_demux_40,  int_demux_41,       int_demux_42,  int_demux_43,  int_demux_44,
-	int_demux_45,  int_demux_46,       int_demux_47,  int_demux_48,  int_demux_49,
-	int_demux_50,  int_demux_51,       int_demux_52,  int_demux_53,  int_demux_54,
-	int_demux_55,  int_demux_56,       int_demux_57,  int_demux_58,  int_demux_59,
-	int_demux_60,  int_demux_61,       int_demux_62,  int_demux_63,  int_demux_64,
-	int_demux_65,  int_demux_66,       int_demux_67,  int_demux_68,  int_demux_69,
-	int_demux_70,  int_demux_71,       int_demux_72,  int_demux_73,  int_demux_74,
-	int_demux_75,  int_demux_76,       int_demux_77,  int_demux_78,  int_demux_79,
-	int_demux_80,  int_demux_81,       int_demux_82,  int_demux_83,  int_demux_84,
-	int_demux_85,  int_demux_86,       int_demux_87,  int_demux_88,  int_demux_89,
-	int_demux_90,  int_demux_91,       int_demux_92,  int_demux_93,  int_demux_94,
-	int_demux_95,  int_demux_96,       int_demux_97,  int_demux_98,  int_demux_99,
-	int_demux_100, int_demux_101,      int_demux_102, int_demux_103, int_demux_104,
-	int_demux_105, int_demux_106,      int_demux_107, int_demux_108, int_demux_109,
-	int_demux_110, int_demux_111,      int_demux_112, int_demux_113, int_demux_114,
-	int_demux_115, int_demux_116,      int_demux_117, int_demux_118, int_demux_119,
-	int_demux_120, int_demux_121,      int_demux_122, int_demux_123, int_demux_124,
-	int_demux_125, int_demux_126,      int_demux_127, int_demux_128, int_demux_129,
-	int_demux_130, int_demux_131,      int_demux_132, int_demux_133, int_demux_134,
-	int_demux_135, int_demux_136,      int_demux_137, int_demux_138, int_demux_139,
-	int_demux_140, int_demux_141,      int_demux_142, int_demux_143, int_demux_144,
-	int_demux_145, int_demux_146,      int_demux_147, int_demux_148, int_demux_149,
-	int_demux_150, int_demux_151,      int_demux_152, int_demux_153, int_demux_154,
-	int_demux_155, int_demux_156,      int_demux_157, int_demux_158, int_demux_159,
-	int_demux_160, int_demux_161,      int_demux_162, int_demux_163, int_demux_164,
-	int_demux_165, int_demux_166,      int_demux_167, int_demux_168, int_demux_169,
-	int_demux_170, int_demux_171,      int_demux_172, int_demux_173, int_demux_174,
-	int_demux_175, int_demux_176,      int_demux_177, int_demux_178, int_demux_179,
-	int_demux_180, int_demux_181,      int_demux_182, int_demux_183, int_demux_184,
-	int_demux_185, int_demux_186,      int_demux_187, int_demux_188, int_demux_189,
-	int_demux_190, int_demux_191,      int_demux_192, int_demux_193, int_demux_194,
-	int_demux_195, int_demux_196,      int_demux_197, int_demux_198, int_demux_199,
-	int_demux_200, int_demux_201,      int_demux_202, int_demux_203, int_demux_204,
-	int_demux_205, int_demux_206,      int_demux_207, int_demux_208, int_demux_209,
-	int_demux_210, int_demux_211,      int_demux_212, int_demux_213, int_demux_214,
-	int_demux_215, int_demux_216,      int_demux_217, int_demux_218, int_demux_219,
-	int_demux_220, int_demux_221,      int_demux_222, int_demux_223, int_demux_224,
-	int_demux_225, int_demux_226,      int_demux_227, int_demux_228, int_demux_229,
-	int_demux_230, int_demux_231,      int_demux_232, int_demux_233, int_demux_234,
-	int_demux_235, int_demux_236,      int_demux_237, int_demux_238, int_demux_239,
-	int_demux_240, int_demux_241,      int_demux_242, int_demux_243, int_demux_244,
-	int_demux_245, int_demux_246,      int_demux_247, int_demux_248, int_demux_249,
-	int_demux_250, int_demux_251,      int_demux_252, int_demux_253, int_demux_254,
+	reserved_isr,  switch_isr_wrapper, INT_RuntimeFatalInterrupt,
+	reserved_isr,  reserved_isr,       reserved_isr,
+	reserved_isr,  reserved_isr,       reserved_isr,
+	reserved_isr,  reserved_isr,       reserved_isr,
+	reserved_isr,  reserved_isr,       reserved_isr,
+	reserved_isr,  int_demux_16,       int_demux_17,
+	int_demux_18,  int_demux_19,       int_demux_20,
+	int_demux_21,  int_demux_22,       int_demux_23,
+	int_demux_24,  int_demux_25,       int_demux_26,
+	int_demux_27,  int_demux_28,       int_demux_29,
+	int_demux_30,  int_demux_31,       int_demux_32,
+	int_demux_33,  int_demux_34,       int_demux_35,
+	int_demux_36,  int_demux_37,       int_demux_38,
+	int_demux_39,  int_demux_40,       int_demux_41,
+	int_demux_42,  int_demux_43,       int_demux_44,
+	int_demux_45,  int_demux_46,       int_demux_47,
+	int_demux_48,  int_demux_49,       int_demux_50,
+	int_demux_51,  int_demux_52,       int_demux_53,
+	int_demux_54,  int_demux_55,       int_demux_56,
+	int_demux_57,  int_demux_58,       int_demux_59,
+	int_demux_60,  int_demux_61,       int_demux_62,
+	int_demux_63,  int_demux_64,       int_demux_65,
+	int_demux_66,  int_demux_67,       int_demux_68,
+	int_demux_69,  int_demux_70,       int_demux_71,
+	int_demux_72,  int_demux_73,       int_demux_74,
+	int_demux_75,  int_demux_76,       int_demux_77,
+	int_demux_78,  int_demux_79,       int_demux_80,
+	int_demux_81,  int_demux_82,       int_demux_83,
+	int_demux_84,  int_demux_85,       int_demux_86,
+	int_demux_87,  int_demux_88,       int_demux_89,
+	int_demux_90,  int_demux_91,       int_demux_92,
+	int_demux_93,  int_demux_94,       int_demux_95,
+	int_demux_96,  int_demux_97,       int_demux_98,
+	int_demux_99,  int_demux_100,      int_demux_101,
+	int_demux_102, int_demux_103,      int_demux_104,
+	int_demux_105, int_demux_106,      int_demux_107,
+	int_demux_108, int_demux_109,      int_demux_110,
+	int_demux_111, int_demux_112,      int_demux_113,
+	int_demux_114, int_demux_115,      int_demux_116,
+	int_demux_117, int_demux_118,      int_demux_119,
+	int_demux_120, int_demux_121,      int_demux_122,
+	int_demux_123, int_demux_124,      int_demux_125,
+	int_demux_126, int_demux_127,      int_demux_128,
+	int_demux_129, int_demux_130,      int_demux_131,
+	int_demux_132, int_demux_133,      int_demux_134,
+	int_demux_135, int_demux_136,      int_demux_137,
+	int_demux_138, int_demux_139,      int_demux_140,
+	int_demux_141, int_demux_142,      int_demux_143,
+	int_demux_144, int_demux_145,      int_demux_146,
+	int_demux_147, int_demux_148,      int_demux_149,
+	int_demux_150, int_demux_151,      int_demux_152,
+	int_demux_153, int_demux_154,      int_demux_155,
+	int_demux_156, int_demux_157,      int_demux_158,
+	int_demux_159, int_demux_160,      int_demux_161,
+	int_demux_162, int_demux_163,      int_demux_164,
+	int_demux_165, int_demux_166,      int_demux_167,
+	int_demux_168, int_demux_169,      int_demux_170,
+	int_demux_171, int_demux_172,      int_demux_173,
+	int_demux_174, int_demux_175,      int_demux_176,
+	int_demux_177, int_demux_178,      int_demux_179,
+	int_demux_180, int_demux_181,      int_demux_182,
+	int_demux_183, int_demux_184,      int_demux_185,
+	int_demux_186, int_demux_187,      int_demux_188,
+	int_demux_189, int_demux_190,      int_demux_191,
+	int_demux_192, int_demux_193,      int_demux_194,
+	int_demux_195, int_demux_196,      int_demux_197,
+	int_demux_198, int_demux_199,      int_demux_200,
+	int_demux_201, int_demux_202,      int_demux_203,
+	int_demux_204, int_demux_205,      int_demux_206,
+	int_demux_207, int_demux_208,      int_demux_209,
+	int_demux_210, int_demux_211,      int_demux_212,
+	int_demux_213, int_demux_214,      int_demux_215,
+	int_demux_216, int_demux_217,      int_demux_218,
+	int_demux_219, int_demux_220,      int_demux_221,
+	int_demux_222, int_demux_223,      int_demux_224,
+	int_demux_225, int_demux_226,      int_demux_227,
+	int_demux_228, int_demux_229,      int_demux_230,
+	int_demux_231, int_demux_232,      int_demux_233,
+	int_demux_234, int_demux_235,      int_demux_236,
+	int_demux_237, int_demux_238,      int_demux_239,
+	int_demux_240, int_demux_241,      int_demux_242,
+	int_demux_243, int_demux_244,      int_demux_245,
+	int_demux_246, int_demux_247,      int_demux_248,
+	int_demux_249, int_demux_250,      int_demux_251,
+	int_demux_252, int_demux_253,      int_demux_254,
 	int_demux_255,
 };

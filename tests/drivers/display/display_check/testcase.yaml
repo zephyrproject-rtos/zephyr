@@ -1,0 +1,83 @@
+common:
+  tags:
+    - drivers
+    - display
+  harness: display_capture
+  harness_config:
+    pytest_dut_scope: session
+    display_capture_config: "${DISPLAY_TEST_DIR}/display_config.yaml"
+tests:
+  tests.drivers.display.check.g1120b0mipi:
+    platform_allow:
+      - mimxrt595_evk/mimxrt595s/cm33
+      - mimxrt700_evk/mimxrt798s/cm33_cpu0
+    extra_args: SHIELD=g1120b0mipi
+    extra_configs:
+      - CONFIG_PM=y
+      - CONFIG_PM_DEVICE=y
+      - CONFIG_IDLE_STACK_SIZE=400
+      - CONFIG_TEST=y
+    harness_config:
+      pytest_dut_scope: session
+      fixture: fixture_display_g1120b0mipi
+      display_capture_config: "${DISPLAY_TEST_DIR}/display_config.yaml"
+  tests.drivers.display.check.st_b_lcd40_dsi1_mb1166_a09:
+    filter: dt_compat_enabled("frida,nt35510")
+    platform_allow: stm32h747i_disco/stm32h747xx/m7
+    extra_args: SHIELD=st_b_lcd40_dsi1_mb1166_a09
+    harness_config:
+      fixture: fixture_display
+      pytest_dut_scope: session
+      display_capture_config: "${DISPLAY_TEST_DIR}/display_config.yaml"
+  tests.drivers.display.check.rk043fn02h_ct:
+    platform_allow:
+      - mimxrt1064_evk
+      - mimxrt1060_evk@A/mimxrt1062/qspi
+      - mimxrt1060_evk@B/mimxrt1062/qspi
+      - mimxrt1060_evk@C/mimxrt1062/qspi
+      - mimxrt1050_evk/mimxrt1052/hyperflash
+      - mimxrt1040_evk
+    integration_platforms:
+      - mimxrt1040_evk
+    extra_args: SHIELD=rk043fn02h_ct
+    harness_config:
+      fixture: fixture_display
+      pytest_dut_scope: session
+      display_capture_config: "${DISPLAY_TEST_DIR}/display_config.yaml"
+  tests.drivers.display.check.shield:
+    # This test case is intended to verify support for shields on boards
+    # known to support them. It is not intended to cover all combinations
+    # of boards and shields, but rather serve as a method to test each
+    # display shield within Zephyr.
+    # Boards with built-in displays are also covered by this testcase.
+    filter: dt_chosen_enabled("zephyr,display")
+    harness_config:
+      fixture: fixture_display
+      pytest_dut_scope: session
+      display_capture_config: "${DISPLAY_TEST_DIR}/display_config.yaml"
+    extra_args:
+      - platform:lpcxpresso55s69/lpc55s69/cpu0:SHIELD=adafruit_2_8_tft_touch_v2
+      - platform:nrf52840dk/nrf52840:SHIELD=ssd1306_128x32
+      - platform:frdm_k64f/mk64f12:SHIELD=ssd1306_128x64
+      - platform:mimxrt685_evk/mimxrt685/cm33:SHIELD=waveshare_epaper_gdeh0213b1
+      - platform:nucleo_l433rc_p/stm32l433xx:SHIELD=waveshare_epaper_gdew042t2
+      - platform:nrf52dk/nrf52832:SHIELD=st7789v_tl019fqv01
+      - platform:mimxrt1010_evk/mimxrt1011:SHIELD=st7789v_waveshare_240x240
+      - platform:frdm_k22f/mk22f51212:SHIELD=ls013b7dh03
+      - platform:nrf52833dk/nrf52833:SHIELD=st7735r_ada_160x128
+      - platform:mimxrt1170_evk/mimxrt1176/cm7:SHIELD=rk055hdmipi4ma0
+      - platform:da1469x_dk_pro/da14699:DTC_OVERLAY_FILE=da1469x_dk_pro_mipi_dbi.overlay
+      - platform:nrf52840dk/nrf52840:SHIELD=max7219_8x8
+      - platform:stm32h747i_disco/stm32h747xx/m7:SHIELD=st_b_lcd40_dsi1_mb1166
+      - platform:mimxrt1064_evk/mimxrt1064:SHIELD=rk043fn66hs_ctg
+      - platform:mimxrt1060_evk/mimxrt1062:SHIELD=rk043fn66hs_ctg
+      - platform:mimxrt1050_evk/mimxrt1052:SHIELD=rk043fn66hs_ctg
+      - platform:mimxrt1040_evk/mimxrt1042:SHIELD=rk043fn66hs_ctg
+      - platform:frdm_mcxn947/mcxn947/cpu0:SHIELD=lcd_par_s035_8080
+      - platform:mcx_n9xx_evk/mcxn947/cpu0:SHIELD=lcd_par_s035_8080
+      - platform:frdm_mcxn236/mcxn236:SHIELD=lcd_par_s035_8080
+      - platform:frdm_mcxa156/mcxa156:SHIELD=lcd_par_s035_8080
+      - platform:frdm_rw612:SHIELD=lcd_par_s035_spi
+      - platform:ek_ra8d1:SHIELD=rtkmipilcdb00000be
+      - platform:ek_ra8d1:SHIELD=rtk7eka6m3b00001bu
+      - platform:nucleo_g071rb/stm32g071xx:SHIELD=x_nucleo_gfx01m2

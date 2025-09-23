@@ -1,5 +1,5 @@
 /*
- * Copyright 2020,2023 NXP
+ * Copyright 2020,2023-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -50,6 +50,7 @@ enum {
 	ERASE_BLOCK,
 	READ_ID,
 	READ_STATUS_REG,
+	WRITE_REG,
 	ERASE_CHIP,
 	READ_JESD216,
 	/* Entries after this should be for scratch commands */
@@ -76,7 +77,11 @@ struct flash_flexspi_nor_data {
 	flexspi_port_t port;
 	bool legacy_poll;
 	uint64_t size;
+	/* Expected jedec-id property from devicetree */
+	uint8_t jedec_id[JESD216_READ_ID_LEN];
+#if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	struct flash_pages_layout layout;
+#endif
 	struct flash_parameters flash_parameters;
 };
 
@@ -165,7 +170,7 @@ static int flash_flexspi_nor_read_id_helper(struct flash_flexspi_nor_data *data,
 		.SeqNumber = 1,
 		.seqIndex = READ_ID,
 		.data = &buffer,
-		.dataSize = 3,
+		.dataSize = JESD216_READ_ID_LEN,
 	};
 
 	LOG_DBG("Reading id");
@@ -175,12 +180,12 @@ static int flash_flexspi_nor_read_id_helper(struct flash_flexspi_nor_data *data,
 		return ret;
 	}
 
-	memcpy(vendor_id, &buffer, 3);
+	memcpy(vendor_id, &buffer, JESD216_READ_ID_LEN);
 
 	return ret;
 }
 
-static int flash_flexspi_nor_read_id(const struct device *dev, uint8_t *vendor_id)
+static int flash_flexspi_nor_read_jedec_id(const struct device *dev, uint8_t *vendor_id)
 {
 	struct flash_flexspi_nor_data *data = dev->data;
 
@@ -621,8 +626,8 @@ static int flash_flexspi_nor_quad_enable(struct flash_flexspi_nor_data *data,
 				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_WRSR2,
 				kFLEXSPI_Command_WRITE_SDR, kFLEXSPI_1PAD, 0x1);
 
-		/* Set bit 7 of status register 2 */
-		bit = BIT(7);
+		/* Set bit 1 of status register 2 */
+		bit = BIT(1);
 		rd_size = 1;
 		wr_size = 1;
 		break;
@@ -667,6 +672,60 @@ static int flash_flexspi_nor_quad_enable(struct flash_flexspi_nor_data *data,
 	return flash_flexspi_nor_wait_bus_busy(data);
 }
 
+/*
+ * This function enables octal mode, when supported. Otherwise it
+ * returns an error.
+ * @param dev: Flexspi device
+ * @param flexspi_lut: flexspi lut table, useful if instruction writes are needed
+ * @return 0 if octal mode was entered, or -ENOTSUP if octal mode is not supported
+ */
+static int flash_flexspi_nor_octal_enable(struct flash_flexspi_nor_data *data,
+					  uint32_t (*flexspi_lut)[MEMC_FLEXSPI_CMD_PER_SEQ])
+{
+	int ret;
+	uint32_t buffer = 0;
+
+	flexspi_transfer_t transfer = {
+		.deviceAddress = 0,
+		.port = data->port,
+		.SeqNumber = 1,
+		.data = &buffer,
+	};
+	flexspi_device_config_t config = {
+		.flexspiRootClk = MHZ(50),
+		.flashSize = FLEXSPI_FLSHCR0_FLSHSZ_MASK, /* Max flash size */
+		.ARDSeqNumber = 1,
+		.ARDSeqIndex = READ,
+	};
+
+	ret = memc_flexspi_set_device_config(&data->controller,
+				&config,
+				(uint32_t *)flexspi_lut,
+				FLEXSPI_INSTR_END * MEMC_FLEXSPI_CMD_PER_SEQ,
+				data->port);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* Enable write */
+	ret = flash_flexspi_nor_write_enable(data);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* Enable octal DDR mode */
+	buffer = 0xE7;
+	transfer.dataSize = 1;
+	transfer.seqIndex = WRITE_REG;
+	transfer.cmdType = kFLEXSPI_Write;
+	ret = memc_flexspi_transfer(&data->controller, &transfer);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* Wait for QE bit to complete programming */
+	return flash_flexspi_nor_wait_bus_busy(data);
+}
 /*
  * This function enables 4 byte addressing, when supported. Otherwise it
  * returns an error.
@@ -970,20 +1029,20 @@ flash_flexspi_nor_is25_clear_dummy_cycles(struct flash_flexspi_nor_data *data,
 	};
 
 	/*
-	 * Get Extended Read Parameters (Non-Volatile) command (RDERP, 81h)
+	 * Read AutoBoot Register command (RDABR, 14h)
 	 *
 	 * This is done to distinguish between an IS25LPXXX and IS25LPXXXD since
 	 * the former uses the read parameters (SRPV) to set drive strength and
 	 * dummy cycles, while IS25LPXXXD uses extended read parameters (SERPV)
 	 * for drive strength and read parameters (SRPV) for dummy cycles.
 	 */
-	uint32_t resp_data;
+	uint32_t resp_data = 0;
 
 	transfer.data = &resp_data;
 	transfer.cmdType = kFLEXSPI_Read;
 
 	flexspi_lut[SCRATCH_CMD][0] =
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0x81,
+		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0x14,
 				kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x1);
 	ret = memc_flexspi_set_device_config(&data->controller, &config, (uint32_t *)flexspi_lut,
 					     FLEXSPI_INSTR_END * MEMC_FLEXSPI_CMD_PER_SEQ,
@@ -996,12 +1055,12 @@ flash_flexspi_nor_is25_clear_dummy_cycles(struct flash_flexspi_nor_data *data,
 	ret = memc_flexspi_transfer(&data->controller, &transfer);
 
 	/*
-	 * Check that EB[7:4] is not all zero and that EB[0] (WIP)
-	 * is not 1, which should catch a chip responding to an
-	 * unsupported 81h command with either 0x00 or 0xFF
+	 * IS25LPXXX -> 0xff
+	 * IS25WPXXX -> 0
+	 * IS25LPXXXD -> 0
+	 * IS25WPXXXD -> 0
 	 */
-	const int has_extended_read_reg = resp_data & 0xF0 && !(resp_data & 0x01);
-	uint32_t read_params = has_extended_read_reg ? 0 : 0xE0U;
+	uint32_t read_params = resp_data == 0xff ? 0xE0U : 0;
 
 	/* Switch over to writing read_params (SRPV, C0h) */
 	transfer.cmdType = kFLEXSPI_Write;
@@ -1184,6 +1243,95 @@ static int flash_flexspi_nor_check_jedec(struct flash_flexspi_nor_data *data,
 				kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x01);
 		/* Device has no QE bit, 1-4-4 and 1-1-4 is always enabled */
 		return 0;
+	case 0x195b2c: /* MT35XU256 */
+	case 0x1a5b2c: /* MT35XU512 */
+	case 0x1b5b2c: /* MT35XU01G */
+	case 0x1c5b2c: /* MT35XU02G */
+	case 0x195a2c: /* MT35XL256 */
+	case 0x1a5a2c: /* MT35XL512 */
+	case 0x1b5a2c: /* MT35XL01G */
+	case 0x1c5a2c: /* MT35XL02G */
+		/* MT35X flash with more than 32MB, use 8 byte read/write */
+		flexspi_lut[READ][0] = FLEXSPI_LUT_SEQ(
+				kFLEXSPI_Command_SDR, kFLEXSPI_8PAD, SPI_NOR_OCMD_READ,
+				kFLEXSPI_Command_RADDR_DDR, kFLEXSPI_8PAD, 0x20);
+		/* Flash needs 16 dummy cycles */
+		flexspi_lut[READ][1] = FLEXSPI_LUT_SEQ(
+				kFLEXSPI_Command_DUMMY_DDR, kFLEXSPI_8PAD, 0x20,
+				kFLEXSPI_Command_READ_DDR, kFLEXSPI_8PAD, 0x04);
+		/* Update PROGRAM commands for 8 byte mode */
+		flexspi_lut[PAGE_PROGRAM][0] = FLEXSPI_LUT_SEQ(
+				kFLEXSPI_Command_SDR, kFLEXSPI_8PAD, SPI_NOR_CMD_PP_4B,
+				kFLEXSPI_Command_RADDR_DDR, kFLEXSPI_8PAD, 0x20);
+		flexspi_lut[PAGE_PROGRAM][1] = FLEXSPI_LUT_SEQ(
+				kFLEXSPI_Command_WRITE_DDR, kFLEXSPI_8PAD, 0x4,
+				kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0x0);
+		/* Update ERASE commands for 4 byte mode */
+		flexspi_lut[ERASE_SECTOR][0] = FLEXSPI_LUT_SEQ(
+				kFLEXSPI_Command_SDR, kFLEXSPI_8PAD, SPI_NOR_CMD_SE_4B,
+				kFLEXSPI_Command_RADDR_DDR, kFLEXSPI_8PAD, 0x20);
+		flexspi_lut[ERASE_BLOCK][0] = FLEXSPI_LUT_SEQ(
+				kFLEXSPI_Command_SDR, kFLEXSPI_8PAD, SPI_NOR_CMD_BE_4B,
+				kFLEXSPI_Command_RADDR_DDR, kFLEXSPI_8PAD, 0x20),
+		/* Read instruction used for polling is 0x05 */
+		data->legacy_poll = true;
+		flexspi_lut[READ_STATUS_REG][0] = FLEXSPI_LUT_SEQ(
+				kFLEXSPI_Command_SDR, kFLEXSPI_8PAD, SPI_NOR_CMD_RDSR,
+				kFLEXSPI_Command_DUMMY_DDR, kFLEXSPI_8PAD, 0x10);
+		flexspi_lut[READ_STATUS_REG][1] = FLEXSPI_LUT_SEQ(
+				kFLEXSPI_Command_READ_DDR,  kFLEXSPI_8PAD, 0x01,
+				kFLEXSPI_Command_STOP,      kFLEXSPI_1PAD, 0x00);
+		/* Write volatile register for 1 byte mode, used to enter OPI mode */
+		flexspi_lut[WRITE_REG][0] = FLEXSPI_LUT_SEQ(
+				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_WR_VCFGREG,
+				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0x00);
+		flexspi_lut[WRITE_REG][1] = FLEXSPI_LUT_SEQ(
+				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0x00,
+				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0x00);
+		flexspi_lut[WRITE_REG][2] = FLEXSPI_LUT_SEQ(
+				kFLEXSPI_Command_WRITE_SDR, kFLEXSPI_1PAD, 0x01,
+				kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0x00);
+		/* enable octal mode */
+		flash_flexspi_nor_octal_enable(data, flexspi_lut);
+		flexspi_lut[WRITE_ENABLE][0] = FLEXSPI_LUT_SEQ(
+				kFLEXSPI_Command_SDR, kFLEXSPI_8PAD, SPI_NOR_CMD_WREN,
+				kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0);
+		return 0;
+	case 0x1940C8: /* GD25Q256E */
+		flexspi_lut[READ][0] = FLEXSPI_LUT_SEQ(
+				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_4READ_4B,
+				kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_4PAD, 0x20);
+		/* Flash needs 15 dummy cycles */
+		flexspi_lut[READ][1] = FLEXSPI_LUT_SEQ(
+				kFLEXSPI_Command_MODE8_SDR, kFLEXSPI_4PAD, 0xF0,
+				kFLEXSPI_Command_DUMMY_SDR, kFLEXSPI_4PAD, 0x04);
+		flexspi_lut[READ][2] = FLEXSPI_LUT_SEQ(
+				kFLEXSPI_Command_READ_SDR, kFLEXSPI_4PAD, 0x04,
+				kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0x00);
+
+		data->legacy_poll = true;
+		flexspi_lut[READ_STATUS_REG][0] = FLEXSPI_LUT_SEQ(
+				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_RDSR,
+				kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x04);
+
+		flexspi_lut[ERASE_SECTOR][0] = FLEXSPI_LUT_SEQ(
+				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_SE_4B,
+				kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_1PAD, 0x20);
+
+		flexspi_lut[ERASE_BLOCK][0] = FLEXSPI_LUT_SEQ(
+				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_BE_4B,
+				kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_1PAD, 0x20);
+
+		flexspi_lut[PAGE_PROGRAM][0] = FLEXSPI_LUT_SEQ(
+				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_PP_1_1_4_4B,
+				kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_1PAD, 0x20);
+		flexspi_lut[PAGE_PROGRAM][1] = FLEXSPI_LUT_SEQ(
+				kFLEXSPI_Command_WRITE_SDR, kFLEXSPI_4PAD, 0x04,
+				kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0x00);
+
+		return flash_flexspi_nor_quad_enable(data, flexspi_lut,
+						JESD216_DW15_QER_VAL_S2B1v6);
+
 	default:
 		return -ENOTSUP;
 	}
@@ -1309,7 +1457,7 @@ static int flash_flexspi_nor_init(const struct device *dev)
 {
 	const struct flash_flexspi_nor_config *config = dev->config;
 	struct flash_flexspi_nor_data *data = dev->data;
-	uint32_t vendor_id;
+	uint8_t jedec_id[JESD216_READ_ID_LEN];
 
 	/* First step- use ROM pointer to controller device to create
 	 * a copy of the device structure in RAM we can use while in
@@ -1346,11 +1494,21 @@ static int flash_flexspi_nor_init(const struct device *dev)
 
 	memc_flexspi_reset(&data->controller);
 
-	if (flash_flexspi_nor_read_id(dev, (uint8_t *)&vendor_id)) {
-		LOG_ERR("Could not read vendor id");
+	if (flash_flexspi_nor_read_jedec_id(dev, jedec_id)) {
+		LOG_ERR("Could not read jedec id");
 		return -EIO;
 	}
-	LOG_DBG("Vendor id: 0x%0x", vendor_id);
+	LOG_DBG("Jedec id: %02x %02x %02x", jedec_id[0], jedec_id[1], jedec_id[2]);
+
+	if (data->jedec_id[0]) {
+		/* Check the JEDEC ID against the one from devicetree. */
+		if (memcmp(jedec_id, data->jedec_id, sizeof(jedec_id)) != 0) {
+			LOG_ERR("Jedec id %02x %02x %02x does not match devicetree %02x %02x %02x",
+				jedec_id[0], jedec_id[1], jedec_id[2],
+				data->jedec_id[0], data->jedec_id[1], data->jedec_id[2]);
+			return -EINVAL;
+		}
+	}
 
 	return 0;
 }
@@ -1366,7 +1524,7 @@ static DEVICE_API(flash, flash_flexspi_nor_api) = {
 #endif
 #if defined(CONFIG_FLASH_JESD216_API)
 	.sfdp_read = flash_flexspi_nor_sfdp_read,
-	.read_jedec_id = flash_flexspi_nor_read_id,
+	.read_jedec_id = flash_flexspi_nor_read_jedec_id,
 #endif
 };
 
@@ -1412,13 +1570,16 @@ static DEVICE_API(flash, flash_flexspi_nor_api) = {
 		.config = FLASH_FLEXSPI_DEVICE_CONFIG(n),		\
 		.port = DT_INST_REG_ADDR(n),				\
 		.size = DT_INST_PROP(n, size) / 8,			\
-		.layout = {						\
+		.jedec_id = DT_INST_PROP_OR(n, jedec_id, {0}),	\
+		IF_ENABLED(CONFIG_FLASH_PAGE_LAYOUT,	\
+		(.layout = {						\
 			.pages_count = DT_INST_PROP(n, size) / 8	\
 				/ SPI_NOR_SECTOR_SIZE,			\
 			.pages_size = SPI_NOR_SECTOR_SIZE,		\
-		},							\
+		},))							\
 		.flash_parameters = {					\
-			.write_block_size = NOR_WRITE_SIZE,		\
+			.write_block_size = DT_INST_PROP_OR(n,		\
+				write_block_size, NOR_WRITE_SIZE),	\
 			.erase_value = NOR_ERASE_VALUE,			\
 		},							\
 	};								\

@@ -1,0 +1,89 @@
+# Copyright (c) 2024 Texas Instruments
+# Copyright (c) 2025 Linumiz GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_MSPM0L
+	bool
+	select SOC_FAMILY_TI_MSPM0
+	help
+	  Enable support for TI MSPM0L series SoCs
+
+config SOC_MSPM0L1105
+	bool
+	select SOC_SERIES_MSPM0L
+
+config SOC_MSPM0L1106
+	bool
+	select SOC_SERIES_MSPM0L
+
+config SOC_MSPM0L1117
+	bool
+	select SOC_SERIES_MSPM0L
+
+config SOC_MSPM0L1227
+	bool
+	select SOC_SERIES_MSPM0L
+
+config SOC_MSPM0L1228
+	bool
+	select SOC_SERIES_MSPM0L
+
+config SOC_MSPM0L1303
+	bool
+	select SOC_SERIES_MSPM0L
+
+config SOC_MSPM0L1304
+	bool
+	select SOC_SERIES_MSPM0L
+
+config SOC_MSPM0L1305
+	bool
+	select SOC_SERIES_MSPM0L
+
+config SOC_MSPM0L1306
+	bool
+	select SOC_SERIES_MSPM0L
+
+config SOC_MSPM0L1343
+	bool
+	select SOC_SERIES_MSPM0L
+
+config SOC_MSPM0L1344
+	bool
+	select SOC_SERIES_MSPM0L
+
+config SOC_MSPM0L1345
+	bool
+	select SOC_SERIES_MSPM0L
+
+config SOC_MSPM0L1346
+	bool
+	select SOC_SERIES_MSPM0L
+
+config SOC_MSPM0L2227
+	bool
+	select SOC_SERIES_MSPM0L
+
+config SOC_MSPM0L2228
+	bool
+	select SOC_SERIES_MSPM0L
+
+config SOC_SERIES
+	default "mspm0l" if SOC_SERIES_MSPM0L
+
+config SOC
+	default "mspm0l1105" if SOC_MSPM0L1105
+	default "mspm0l1106" if SOC_MSPM0L1106
+	default "mspm0l1117" if SOC_MSPM0L1117
+	default "mspm0l1227" if SOC_MSPM0L1227
+	default "mspm0l1228" if SOC_MSPM0L1228
+	default "mspm0l1303" if SOC_MSPM0L1303
+	default "mspm0l1304" if SOC_MSPM0L1304
+	default "mspm0l1305" if SOC_MSPM0L1305
+	default "mspm0l1306" if SOC_MSPM0L1306
+	default "mspm0l1343" if SOC_MSPM0L1343
+	default "mspm0l1344" if SOC_MSPM0L1344
+	default "mspm0l1345" if SOC_MSPM0L1345
+	default "mspm0l1346" if SOC_MSPM0L1346
+	default "mspm0l2227" if SOC_MSPM0L2227
+	default "mspm0l2228" if SOC_MSPM0L2228

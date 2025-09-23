@@ -60,10 +60,10 @@ void akm09918c_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe
 		data->rtio_ctx, data->iodev, AKM09918C_REG_CNTL2, AKM09918C_CNTL2_SINGLE_MEASURE);
 	struct rtio_sqe *cb_sqe = rtio_sqe_acquire(data->rtio_ctx);
 
-	writeByte_sqe->flags |= RTIO_SQE_CHAINED;
-	rtio_sqe_prep_callback_no_cqe(cb_sqe, akm09918_after_start_cb, (void *)iodev_sqe, NULL);
-
 	if (writeByte_sqe != NULL && cb_sqe != NULL) {
+		writeByte_sqe->flags |= RTIO_SQE_CHAINED;
+		rtio_sqe_prep_callback_no_cqe(cb_sqe, akm09918_after_start_cb, (void *)iodev_sqe,
+					      NULL);
 		rtio_submit(data->rtio_ctx, 0);
 	} else {
 		rtio_sqe_drop_all(data->rtio_ctx);
@@ -138,15 +138,16 @@ void akm09918_async_fetch(struct k_work *work)
 
 	struct rtio_sqe *cb_sqe = rtio_sqe_acquire(data->rtio_ctx);
 
-	rtio_sqe_prep_callback_no_cqe(cb_sqe, akm09918_complete_cb, (void *)ctx->iodev_sqe, NULL);
-
-	if (burstRead_sqe != NULL && cb_sqe != NULL) {
-		burstRead_sqe->flags |= RTIO_SQE_CHAINED;
-		rtio_submit(data->rtio_ctx, 0);
-	} else {
+	if (burstRead_sqe == NULL || cb_sqe == NULL) {
 		rtio_sqe_drop_all(data->rtio_ctx);
 		rtio_iodev_sqe_err(ctx->iodev_sqe, -ENOMEM);
+		return;
 	}
+
+	rtio_sqe_prep_callback_no_cqe(cb_sqe, akm09918_complete_cb, (void *)ctx->iodev_sqe, NULL);
+
+	burstRead_sqe->flags |= RTIO_SQE_CHAINED;
+	rtio_submit(data->rtio_ctx, 0);
 }
 
 void akm09918_complete_cb(struct rtio *rtio_ctx, const struct rtio_sqe *sqe, void *arg0)

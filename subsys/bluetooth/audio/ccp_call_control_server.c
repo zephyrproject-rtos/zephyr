@@ -9,17 +9,20 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <string.h>
 
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/audio/tbs.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/check.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/util_utf8.h>
 
 LOG_MODULE_REGISTER(bt_ccp_call_control_server, CONFIG_BT_CCP_CALL_CONTROL_SERVER_LOG_LEVEL);
 
 /* A service instance can either be a GTBS or a TBS instance */
 struct bt_ccp_call_control_server_bearer {
+	char provider_name[CONFIG_BT_CCP_CALL_CONTROL_SERVER_PROVIDER_NAME_MAX_LENGTH + 1];
 	uint8_t tbs_index;
 	bool registered;
 };
@@ -70,6 +73,8 @@ int bt_ccp_call_control_server_register_bearer(const struct bt_tbs_register_para
 
 	free_bearer->registered = true;
 	free_bearer->tbs_index = (uint8_t)ret;
+	(void)utf8_lcpy(free_bearer->provider_name, param->provider_name,
+			sizeof(free_bearer->provider_name));
 	*bearer = free_bearer;
 
 	return 0;
@@ -102,6 +107,71 @@ int bt_ccp_call_control_server_unregister_bearer(struct bt_ccp_call_control_serv
 	}
 
 	bearer->registered = false;
+
+	return 0;
+}
+
+int bt_ccp_call_control_server_set_bearer_provider_name(
+	struct bt_ccp_call_control_server_bearer *bearer, const char *name)
+{
+	size_t len;
+
+	CHECKIF(bearer == NULL) {
+		LOG_DBG("bearer is NULL");
+
+		return -EINVAL;
+	}
+
+	CHECKIF(name == NULL) {
+		LOG_DBG("name is NULL");
+
+		return -EINVAL;
+	}
+
+	if (!bearer->registered) {
+		LOG_DBG("Bearer %p not registered", bearer);
+
+		return -EFAULT;
+	}
+
+	len = strlen(name);
+	if (len > CONFIG_BT_CCP_CALL_CONTROL_SERVER_PROVIDER_NAME_MAX_LENGTH || len == 0) {
+		LOG_DBG("Invalid name length: %zu", len);
+
+		return -EINVAL;
+	}
+
+	if (strcmp(bearer->provider_name, name) == 0) {
+		return 0;
+	}
+
+	(void)utf8_lcpy(bearer->provider_name, name, sizeof(bearer->provider_name));
+
+	return bt_tbs_set_bearer_provider_name(bearer->tbs_index, name);
+}
+
+int bt_ccp_call_control_server_get_bearer_provider_name(
+	struct bt_ccp_call_control_server_bearer *bearer, const char **name)
+{
+	CHECKIF(bearer == NULL) {
+		LOG_DBG("bearer is NULL");
+
+		return -EINVAL;
+	}
+
+	CHECKIF(name == NULL) {
+		LOG_DBG("name is NULL");
+
+		return -EINVAL;
+	}
+
+	if (!bearer->registered) {
+		LOG_DBG("Bearer %p not registered", bearer);
+
+		return -EFAULT;
+	}
+
+	*name = bearer->provider_name;
 
 	return 0;
 }

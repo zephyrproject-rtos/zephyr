@@ -40,9 +40,6 @@
 #include "hal/debug.h"
 
 static int init_reset(void);
-static void prepare(void *param);
-static void create_prepare_bh(void *param);
-static void prepare_bh(void *param);
 static int create_prepare_cb(struct lll_prepare_param *p);
 static int prepare_cb(struct lll_prepare_param *p);
 static int prepare_cb_common(struct lll_prepare_param *p);
@@ -101,14 +98,25 @@ int lll_sync_iso_reset(void)
 
 void lll_sync_iso_create_prepare(void *param)
 {
-	prepare(param);
-	create_prepare_bh(param);
+	int err;
+
+	err = lll_hfclock_on();
+	LL_ASSERT(err >= 0);
+
+	err = lll_prepare(is_abort_cb, abort_cb, create_prepare_cb, 0U,
+			  param);
+	LL_ASSERT(err == 0 || err == -EINPROGRESS);
 }
 
 void lll_sync_iso_prepare(void *param)
 {
-	prepare(param);
-	prepare_bh(param);
+	int err;
+
+	err = lll_hfclock_on();
+	LL_ASSERT(err >= 0);
+
+	err = lll_prepare(is_abort_cb, abort_cb, prepare_cb, 0U, param);
+	LL_ASSERT(err == 0 || err == -EINPROGRESS);
 }
 
 void lll_sync_iso_flush(uint8_t handle, struct lll_sync_iso *lll)
@@ -120,53 +128,6 @@ void lll_sync_iso_flush(uint8_t handle, struct lll_sync_iso *lll)
 static int init_reset(void)
 {
 	return 0;
-}
-
-static void prepare(void *param)
-{
-	struct lll_prepare_param *p;
-	struct lll_sync_iso *lll;
-	uint16_t elapsed;
-	int err;
-
-	err = lll_hfclock_on();
-	LL_ASSERT(err >= 0);
-
-	p = param;
-
-	/* Instants elapsed */
-	elapsed = p->lazy + 1U;
-
-	lll = p->param;
-
-	/* Save the (latency + 1) for use in event */
-	lll->latency_prepare += elapsed;
-
-	/* Accumulate window widening */
-	lll->window_widening_prepare_us += lll->window_widening_periodic_us *
-					   elapsed;
-	if (lll->window_widening_prepare_us > lll->window_widening_max_us) {
-		lll->window_widening_prepare_us = lll->window_widening_max_us;
-	}
-}
-
-static void create_prepare_bh(void *param)
-{
-	int err;
-
-	/* Invoke common pipeline handling of prepare */
-	err = lll_prepare(is_abort_cb, abort_cb, create_prepare_cb, 0U,
-			  param);
-	LL_ASSERT(!err || err == -EINPROGRESS);
-}
-
-static void prepare_bh(void *param)
-{
-	int err;
-
-	/* Invoke common pipeline handling of prepare */
-	err = lll_prepare(is_abort_cb, abort_cb, prepare_cb, 0U, param);
-	LL_ASSERT(!err || err == -EINPROGRESS);
 }
 
 static int create_prepare_cb(struct lll_prepare_param *p)
@@ -225,17 +186,25 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 
 	lll = p->param;
 
-	/* Deduce the latency */
-	lll->latency_event = lll->latency_prepare - 1U;
+	/* Calculate the current event latency */
+	lll->lazy_prepare = p->lazy;
+	lll->latency_event = lll->latency_prepare + lll->lazy_prepare;
 
 	/* Calculate the current event counter value */
 	event_counter = (lll->payload_count / lll->bn) + lll->latency_event;
 
 	/* Update BIS packet counter to next value */
-	lll->payload_count += (lll->latency_prepare * lll->bn);
+	lll->payload_count += (lll->latency_event + 1U) * lll->bn;
 
 	/* Reset accumulated latencies */
 	lll->latency_prepare = 0U;
+
+	/* Accumulate window widening */
+	lll->window_widening_prepare_us += lll->window_widening_periodic_us *
+					   (lll->lazy_prepare + 1U);
+	if (lll->window_widening_prepare_us > lll->window_widening_max_us) {
+		lll->window_widening_prepare_us = lll->window_widening_max_us;
+	}
 
 	/* Current window widening */
 	lll->window_widening_event_us += lll->window_widening_prepare_us;
@@ -476,6 +445,7 @@ static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
 static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 {
 	struct event_done_extra *e;
+	struct lll_sync_iso *lll;
 	int err;
 
 	/* NOTE: This is not a prepare being cancelled */
@@ -484,7 +454,7 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 		radio_disable();
 
 		if (IS_ENABLED(CONFIG_BT_CTLR_BROADCAST_ISO_ENC)) {
-			const struct lll_sync_iso *lll = param;
+			lll = param;
 
 			if (lll->enc) {
 				radio_ccm_disable();
@@ -499,6 +469,20 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 	 */
 	err = lll_hfclock_off();
 	LL_ASSERT(err >= 0);
+
+	/* Get reference to LLL connection context */
+	lll = prepare_param->param;
+
+	/* Accumulate the latency as event is aborted while being in pipeline */
+	lll->lazy_prepare = prepare_param->lazy;
+	lll->latency_prepare += (lll->lazy_prepare + 1U);
+
+	/* Accumulate window widening */
+	lll->window_widening_prepare_us += lll->window_widening_periodic_us *
+					   (prepare_param->lazy + 1);
+	if (lll->window_widening_prepare_us > lll->window_widening_max_us) {
+		lll->window_widening_prepare_us = lll->window_widening_max_us;
+	}
 
 	/* Extra done event, to check sync lost */
 	e = ull_event_done_extra_get();
@@ -715,17 +699,10 @@ static void isr_rx(void *param)
 			}
 
 			goto isr_rx_done;
-		} else {
-			/* Check if there are 2 free rx buffers, one will be
-			 * consumed to receive the current PDU, and the other
-			 * is to ensure a PDU can be setup for the radio DMA to
-			 * receive in the next sub_interval/iso_interval.
-			 */
-			node_rx = ull_iso_pdu_rx_alloc_peek(2U);
-			if (!node_rx) {
-				goto isr_rx_done;
-			}
 		}
+
+		node_rx = ull_iso_pdu_rx_alloc_peek(1U);
+		LL_ASSERT(node_rx);
 
 		pdu = (void *)node_rx->pdu;
 
@@ -733,6 +710,15 @@ static void isr_rx(void *param)
 		if (pdu->cstf && (pdu->cssn != lll->cssn_curr)) {
 			lll->cssn_next = pdu->cssn;
 			/* TODO: check same CSSN is used in every subevent */
+		}
+
+		/* Check if there are 2 free rx buffers, one will be
+		 * consumed to receive the current PDU, and the other
+		 * is to ensure a PDU can be setup for the radio DMA to
+		 * receive in the next sub_interval/iso_interval.
+		 */
+		if (ull_iso_pdu_rx_alloc_peek(2U) == NULL) {
+			goto isr_rx_done;
 		}
 
 		/* Check payload buffer overflow.
@@ -1315,6 +1301,13 @@ isr_rx_next_subevent:
 
 	radio_switch_complete_and_disable();
 
+	/* Setup Access Address capture for subsequent subevent if there has been no anchor point
+	 * sync previously.
+	 */
+	if (radio_tmr_aa_restore() == 0U) {
+		radio_tmr_aa_capture();
+	}
+
 	/* PDU Header Complete TimeOut, calculate the absolute timeout in
 	 * microseconds by when a PDU header is to be received for each
 	 * subevent.
@@ -1358,16 +1351,30 @@ isr_rx_next_subevent:
 		hcto -= radio_rx_chain_delay_get(lll->phy, PHY_FLAGS_S8);
 		hcto -= addr_us_get(lll->phy);
 		hcto -= radio_rx_ready_delay_get(lll->phy, PHY_FLAGS_S8);
+
 		overhead_us = radio_rx_chain_delay_get(lll->phy, PHY_FLAGS_S8);
 		overhead_us += addr_us_get(lll->phy);
 		overhead_us += radio_rx_ready_delay_get(lll->phy, PHY_FLAGS_S8);
 		overhead_us += (EVENT_CLOCK_JITTER_US << 1);
+
+		LL_ASSERT(EVENT_IFS_US > overhead_us);
+
 		jitter_max_us = (EVENT_IFS_US - overhead_us) >> 1;
-		jitter_max_us -= RANGE_DELAY_US + HAL_RADIO_TMR_START_DELAY_US;
+		jitter_max_us = (jitter_max_us * nse) / (lll->num_bis * lll->nse);
+		overhead_us = HAL_RADIO_TMR_START_DELAY_US;
+		if (jitter_max_us > overhead_us) {
+			jitter_max_us -= overhead_us;
+		} else {
+			jitter_max_us = 0U;
+		}
+
 		jitter_us = (EVENT_CLOCK_JITTER_US << 1) * nse;
 		if (jitter_us > jitter_max_us) {
 			jitter_us = jitter_max_us;
 		}
+
+		LL_ASSERT(hcto > jitter_us);
+
 		hcto -= jitter_us;
 
 		start_us = hcto;
@@ -1379,7 +1386,6 @@ isr_rx_next_subevent:
 		 * the current subevent we are listening.
 		 */
 		hcto += (jitter_us << 1);
-		hcto += RANGE_DELAY_US + HAL_RADIO_TMR_START_DELAY_US;
 	} else {
 		/* First subevent PDU was not received, hence setup radio packet
 		 * timer header complete timeout from where the first subevent

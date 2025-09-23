@@ -1,0 +1,44 @@
+/*
+ * Copyright (c) 2025 ZAL Zentrum für Angewandte Luftfahrtforschung GmbH
+ * Copyright (c) 2025 Mario Paja
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		i2s-tx = &sai1_a;
+	};
+
+	chosen {
+		zephyr,console = &lpuart1;
+		zephyr,shell-uart = &lpuart1;
+	};
+};
+
+/* 46.875KHz (6.29% Error) */
+&sai1_a {
+	pinctrl-0 = <&sai1_mclk_a_pb8 &sai1_sd_a_pc1
+		     &sai1_fs_a_pa9 &sai1_sck_a_pb10>;
+	pinctrl-names = "default";
+	status = "okay";
+	mclk-enable;
+	mclk-divider = "div-256";
+	dma-names = "tx";
+};
+
+&gpdma1 {
+	status = "okay";
+};
+
+&clk_msik {
+	status = "okay";
+};
+
+&i2c3 {
+	status = "disabled";
+};
+
+&usart1 {
+	status = "disabled";
+};

@@ -44,7 +44,7 @@ static const char unknown_event_str[] = "<unknown event>";
 struct event_msg {
 	struct net_if *iface;
 	size_t len;
-	uint32_t event;
+	uint64_t event;
 	uint8_t data[MAX_EVENT_INFO_SIZE];
 };
 
@@ -52,7 +52,7 @@ K_MSGQ_DEFINE(event_mon_msgq, sizeof(struct event_msg),
 	      CONFIG_NET_MGMT_EVENT_QUEUE_SIZE, sizeof(intptr_t));
 
 static void event_handler(struct net_mgmt_event_callback *cb,
-			  uint32_t mgmt_event, struct net_if *iface)
+			  uint64_t mgmt_event, struct net_if *iface)
 {
 	struct event_msg msg;
 	int ret;
@@ -563,7 +563,7 @@ static void event_mon_handler(const struct shell *sh, void *p2, void *p3)
 		}
 
 		if (desc == unknown_event_str) {
-			PR_INFO("EVENT: %s [%d] %s%s%s%s%s (0x%08x)\n", layer_str,
+			PR_INFO("EVENT: %s [%d] %s%s%s%s%s (0x%" PRIx64 ")\n", layer_str,
 				net_if_get_by_iface(msg.iface), desc,
 				desc2 ? " " : "", desc2 ? desc2 : "",
 				info ? " " : "", info ? info : "", msg.event);

@@ -161,6 +161,8 @@ static DEVICE_API(clock_control, npcx_clock_control_api) = {
 };
 
 /* valid clock frequency check */
+BUILD_ASSERT(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC == OFMCLK / (APB2DIV_VAL + 1),
+	     "SYS_CLOCK_HW_CYCLES_PER_SEC must equal to OFMCLK/APB2DIV_VAL");
 BUILD_ASSERT(OFMCLK <= MAX_OFMCLK, "Exceed maximum OFMCLK setting");
 BUILD_ASSERT(CORE_CLK <= MAX_OFMCLK && CORE_CLK >= MHZ(4) &&
 	     OFMCLK % CORE_CLK == 0 &&

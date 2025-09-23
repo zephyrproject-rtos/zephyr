@@ -1,0 +1,62 @@
+/*
+ * Copyright (c) 2025 Vestas Wind Systems A/S
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	test {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		test_gpio_0: gpio@1000 {
+			compatible = "vnd,gpio";
+			reg = <0x1000 0x1000>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "okay";
+		};
+
+		test_gpio_1: gpio@2000 {
+			compatible = "vnd,gpio";
+			reg = <0x2000 0x1000>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "okay";
+		};
+
+		test_gpio_2: gpio@3000 {
+			compatible = "vnd,gpio";
+			reg = <0x3000 0x1000>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "okay";
+		};
+
+		test_gpio_3: gpio@4000 {
+			compatible = "vnd,gpio";
+			reg = <0x4000 0x1000>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "okay";
+		};
+
+		test_can_0: gpio@5000 {
+			compatible = "vnd,can-controller";
+			reg = <0x5000 0x1000>;
+			status = "okay";
+		};
+
+		test_can_1: gpio@6000 {
+			compatible = "vnd,can-controller";
+			reg = <0x6000 0x1000>;
+			status = "okay";
+		};
+
+		test_can_2: gpio@7000 {
+			compatible = "vnd,can-controller";
+			reg = <0x7000 0x1000>;
+			status = "disabled";
+		};
+	};
+};

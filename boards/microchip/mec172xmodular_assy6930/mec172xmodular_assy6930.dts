@@ -6,8 +6,8 @@
 
 /dts-v1/;
 
-#include <microchip/mec172xnsz.dtsi>
-#include <microchip/mec172x/mec172xnsz-pinctrl.dtsi>
+#include <microchip/mec/mec172xnsz.dtsi>
+#include <microchip/mec/mec172x/mec172xnsz-pinctrl.dtsi>
 
 / {
 	model = "Microchip MEC172XMODULAR_ASSY6930 evaluation board";
@@ -261,8 +261,4 @@
 	status = "okay";
 	pinctrl-0 = <&ps2_clk0a_gpio114 &ps2_dat0a_gpio115>;
 	pinctrl-names = "default";
-};
-
-&timer5 {
-	status = "okay";
 };

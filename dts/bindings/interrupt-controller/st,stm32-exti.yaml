@@ -17,7 +17,14 @@ properties:
   num-lines:
     type: int
     required: true
-    description: Number of lines supported by the interrupt controller.
+    description: Total number of lines supported by the interrupt controller.
+
+  num-gpio-lines:
+    type: int
+    default: 16
+    description: |
+      Total number of EXTI lines dedicated to GPIO interrupts.
+      The default value of 16 mirrors hardware of most STM32 devices.
 
   line-ranges:
     type: array

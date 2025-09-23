@@ -12,7 +12,7 @@
 #define CPU_START_DELAY 10000
 
 /* IPIs happen  much faster than CPU startup */
-#define CPU_IPI_DELAY 1000
+#define CPU_IPI_DELAY 2500
 
 BUILD_ASSERT(CONFIG_SMP);
 BUILD_ASSERT(CONFIG_SMP_BOOT_DELAY);
@@ -33,13 +33,17 @@ static void thread_fn(void *a, void *b, void *c)
 
 ZTEST(smp_boot_delay, test_smp_boot_delay)
 {
+	k_tid_t thr;
+
 	/* Create a thread of lower priority.  This could run on
 	 * another CPU if it was available, but will not preempt us
 	 * unless we block (which we do not).
 	 */
-	k_thread_create(&cpu_thr, thr_stack, K_THREAD_STACK_SIZEOF(thr_stack),
-			thread_fn, NULL, NULL, NULL,
-			1, 0, K_NO_WAIT);
+	thr = k_thread_create(&cpu_thr, thr_stack, K_THREAD_STACK_SIZEOF(thr_stack),
+			      thread_fn, NULL, NULL, NULL,
+			      1, 0, K_FOREVER);
+	(void)k_thread_cpu_pin(thr, 1);
+	k_thread_start(thr);
 
 	/* Make sure that thread has not run (because the cpu is halted) */
 	k_busy_wait(CPU_START_DELAY);
@@ -61,9 +65,11 @@ ZTEST(smp_boot_delay, test_smp_boot_delay)
 	 * IPIs were correctly set up on the runtime-launched CPU.
 	 */
 	mp_flag = false;
-	k_thread_create(&cpu_thr, thr_stack, K_THREAD_STACK_SIZEOF(thr_stack),
-			thread_fn, NULL, NULL, NULL,
-			1, 0, K_NO_WAIT);
+	thr = k_thread_create(&cpu_thr, thr_stack, K_THREAD_STACK_SIZEOF(thr_stack),
+			      thread_fn, NULL, NULL, NULL,
+			      1, 0, K_FOREVER);
+	(void)k_thread_cpu_pin(thr, 1);
+	k_thread_start(thr);
 
 	k_busy_wait(CPU_IPI_DELAY);
 

@@ -10,3 +10,13 @@ config UART_ENE_KB1200
 	select PINCTRL
 	help
 	  This option enables the KB1200 serial driver.
+
+config UART_ENE_KB106X
+	bool "ENE KB106X serial driver"
+	default y
+	depends on DT_HAS_ENE_KB106X_UART_ENABLED
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	select PINCTRL
+	help
+	  This option enables the KB106X serial driver.

@@ -42,16 +42,16 @@ LOG_MODULE_REGISTER(net_conn, CONFIG_NET_CONN_LOG_LEVEL);
 /** Local address set */
 #define NET_CONN_LOCAL_ADDR_SET		BIT(2)
 
-/** Local port set */
+/** Remote port set */
 #define NET_CONN_REMOTE_PORT_SPEC	BIT(3)
 
-/** Remote port set */
+/** Local port set */
 #define NET_CONN_LOCAL_PORT_SPEC	BIT(4)
 
-/** Local address specified */
+/** Remote address specified */
 #define NET_CONN_REMOTE_ADDR_SPEC	BIT(5)
 
-/** Remote address specified */
+/** Local address specified */
 #define NET_CONN_LOCAL_ADDR_SPEC	BIT(6)
 
 #define NET_CONN_RANK(_flags)		(_flags & 0x78)
@@ -576,13 +576,11 @@ static bool conn_are_endpoints_valid(struct net_pkt *pkt, uint8_t family,
 	bool is_same_src_and_dst_addr;
 
 	if (IS_ENABLED(CONFIG_NET_IPV4) && family == AF_INET) {
-		is_my_src_addr = net_ipv4_is_my_addr(
-			(struct in_addr *)ip_hdr->ipv4->src);
+		is_my_src_addr = net_ipv4_is_my_addr_raw(ip_hdr->ipv4->src);
 		is_same_src_and_dst_addr = net_ipv4_addr_cmp_raw(
 			ip_hdr->ipv4->src, ip_hdr->ipv4->dst);
 	} else if (IS_ENABLED(CONFIG_NET_IPV6) && family == AF_INET6) {
-		is_my_src_addr = net_ipv6_is_my_addr(
-			(struct in6_addr *)ip_hdr->ipv6->src);
+		is_my_src_addr = net_ipv6_is_my_addr_raw(ip_hdr->ipv6->src);
 		is_same_src_and_dst_addr = net_ipv6_addr_cmp_raw(
 			ip_hdr->ipv6->src, ip_hdr->ipv6->dst);
 	} else {
@@ -639,7 +637,7 @@ out:
 #endif /* defined(CONFIG_NET_SOCKETS_PACKET) || defined(CONFIG_NET_SOCKETS_INET_RAW) */
 
 #if defined(CONFIG_NET_SOCKETS_PACKET)
-enum net_verdict net_conn_packet_input(struct net_pkt *pkt, uint16_t proto)
+enum net_verdict net_conn_packet_input(struct net_pkt *pkt, uint16_t proto, enum net_sock_type type)
 {
 	bool raw_sock_found = false;
 	bool raw_pkt_continue = false;
@@ -672,7 +670,7 @@ enum net_verdict net_conn_packet_input(struct net_pkt *pkt, uint16_t proto)
 			continue; /* wrong family */
 		}
 
-		if (conn->type == SOCK_DGRAM && !net_pkt_is_l2_processed(pkt)) {
+		if (conn->type == SOCK_DGRAM && type == SOCK_RAW) {
 			/* If DGRAM packet sockets are present, we shall continue
 			 * with this packet regardless the result.
 			 */
@@ -680,7 +678,7 @@ enum net_verdict net_conn_packet_input(struct net_pkt *pkt, uint16_t proto)
 			continue; /* L2 not processed yet */
 		}
 
-		if (conn->type == SOCK_RAW && net_pkt_is_l2_processed(pkt)) {
+		if (conn->type == SOCK_RAW && type != SOCK_RAW) {
 			continue; /* L2 already processed */
 		}
 
@@ -729,10 +727,11 @@ enum net_verdict net_conn_packet_input(struct net_pkt *pkt, uint16_t proto)
 	return NET_CONTINUE;
 }
 #else
-enum net_verdict net_conn_packet_input(struct net_pkt *pkt, uint16_t proto)
+enum net_verdict net_conn_packet_input(struct net_pkt *pkt, uint16_t proto, enum net_sock_type type)
 {
 	ARG_UNUSED(pkt);
 	ARG_UNUSED(proto);
+	ARG_UNUSED(type);
 
 	return NET_CONTINUE;
 }
@@ -926,14 +925,14 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 	 * need to deliver the packet to multiple recipients.
 	 */
 	if (IS_ENABLED(CONFIG_NET_IPV4) && pkt_family == AF_INET) {
-		if (net_ipv4_is_addr_mcast((struct in_addr *)ip_hdr->ipv4->dst)) {
+		if (net_ipv4_is_addr_mcast_raw(ip_hdr->ipv4->dst)) {
 			is_mcast_pkt = true;
-		} else if (net_if_ipv4_is_addr_bcast(pkt_iface,
-						     (struct in_addr *)ip_hdr->ipv4->dst)) {
+		} else if (net_if_ipv4_is_addr_bcast_raw(pkt_iface,
+							 ip_hdr->ipv4->dst)) {
 			is_bcast_pkt = true;
 		}
 	} else if (IS_ENABLED(CONFIG_NET_IPV6) && pkt_family == AF_INET6) {
-		is_mcast_pkt = net_ipv6_is_addr_mcast((struct in6_addr *)ip_hdr->ipv6->dst);
+		is_mcast_pkt = net_ipv6_is_addr_mcast_raw(ip_hdr->ipv6->dst);
 	}
 
 	k_mutex_lock(&conn_lock, K_FOREVER);
@@ -972,22 +971,22 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 			/* Is the candidate connection matching the packet's TCP/UDP
 			 * address and port?
 			 */
-			if (net_sin(&conn->remote_addr)->sin_port &&
+			if ((conn->flags & NET_CONN_REMOTE_PORT_SPEC) != 0 &&
 			    net_sin(&conn->remote_addr)->sin_port != src_port) {
 				continue; /* wrong remote port */
 			}
 
-			if (net_sin(&conn->local_addr)->sin_port &&
+			if ((conn->flags & NET_CONN_LOCAL_PORT_SPEC) != 0 &&
 			    net_sin(&conn->local_addr)->sin_port != dst_port) {
 				continue; /* wrong local port */
 			}
 
-			if ((conn->flags & NET_CONN_REMOTE_ADDR_SET) &&
+			if ((conn->flags & NET_CONN_REMOTE_ADDR_SET) != 0 &&
 			    !conn_addr_cmp(pkt, ip_hdr, &conn->remote_addr, true)) {
 				continue; /* wrong remote address */
 			}
 
-			if ((conn->flags & NET_CONN_LOCAL_ADDR_SET) &&
+			if ((conn->flags & NET_CONN_LOCAL_ADDR_SET) != 0 &&
 			    !conn_addr_cmp(pkt, ip_hdr, &conn->local_addr, false)) {
 
 				/* Check if we could do a v4-mapping-to-v6 and the IPv6 socket

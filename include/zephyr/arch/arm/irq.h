@@ -118,8 +118,8 @@ extern void z_arm_interrupt_init(void);
  */
 #define ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
 { \
-	BUILD_ASSERT(IS_ENABLED(CONFIG_ZERO_LATENCY_IRQS) || !(flags_p & IRQ_ZERO_LATENCY), \
-			"ZLI interrupt registered but feature is disabled"); \
+	BUILD_ASSERT(!(flags_p & IRQ_ZERO_LATENCY), \
+			"ZLI interrupts must be registered using IRQ_DIRECT_CONNECT()"); \
 	_CHECK_PRIO(priority_p, flags_p) \
 	Z_ISR_DECLARE(irq_p, 0, isr_p, isr_param_p); \
 	z_arm_irq_priority_set(irq_p, priority_p, flags_p); \
@@ -231,12 +231,18 @@ extern void z_arm_irq_direct_dynamic_dispatch_no_reschedule(void);
  *   direct interrupts, the decisions must be made at build time.
  *   They are controlled by @param resch to this macro.
  *
+ * @warning
+ * Just like with regular direct ISRs, any ISRs that serve IRQs configured with
+ * the IRQ_ZERO_LATENCY flag must not use the ISR_DIRECT_PM() macro and must
+ * return 0 (i.e. resch must be no_reschedule).
+ *
  * @param irq_p IRQ line number.
  * @param priority_p Interrupt priority.
  * @param flags_p Architecture-specific IRQ configuration flags.
  * @param resch Set flag to 'reschedule' to request thread
  *              re-scheduling upon ISR function. Set flag
  *              'no_reschedule' to skip thread re-scheduling
+ *              Must be 'no_reschedule' for zero-latency interrupts
  *
  * Note: the function is an ARM Cortex-M only API.
  *

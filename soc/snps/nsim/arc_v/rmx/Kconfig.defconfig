@@ -1,7 +1,7 @@
 # Copyright (c) 2024 Synopsys, Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_SERIES_RMX
+if SOC_SERIES_NSIM_ARC_V_RMX
 
 config RISCV_SOC_INTERRUPT_INIT
 	default y
@@ -18,4 +18,4 @@ config RISCV_PMP
 config PMP_SLOTS
 	default 16
 
-endif # SOC_SERIES_RMX
+endif # SOC_SERIES_NSIM_ARC_V_RMX

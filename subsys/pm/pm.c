@@ -199,8 +199,12 @@ bool pm_system_suspend(int32_t kernel_ticks)
 		/*
 		 * We need to set the timer to interrupt a little bit early to
 		 * accommodate the time required by the CPU to fully wake up.
+		 *
+		 * Since K_TICKS_FOREVER is defined as -1, ensure that -1
+		 * is not passed as the next timeout.
+		 *
 		 */
-		sys_clock_set_timeout(ticks - exit_latency_ticks, true);
+		sys_clock_set_timeout(MAX(0, ticks - exit_latency_ticks), true);
 	}
 
 	/*
@@ -226,7 +230,8 @@ bool pm_system_suspend(int32_t kernel_ticks)
 
 	if (IS_ENABLED(CONFIG_PM_STATS)) {
 		pm_stats_stop();
-		pm_stats_update(z_cpus_pm_state[id]->state);
+		pm_stats_update(z_cpus_pm_state[id] ?
+				z_cpus_pm_state[id]->state : PM_STATE_ACTIVE);
 	}
 
 	pm_system_resume();

@@ -173,7 +173,8 @@ static int wwdg_stm32_setup(const struct device *dev, uint8_t options)
 #elif defined(CONFIG_SOC_SERIES_STM32C0X) || defined(CONFIG_SOC_SERIES_STM32G0X)
 		LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_DBGMCU);
 #endif
-#if defined(CONFIG_SOC_SERIES_STM32H7X)
+
+#if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32MP2X)
 		LL_DBGMCU_APB3_GRP1_FreezePeriph(LL_DBGMCU_APB3_GRP1_WWDG1_STOP);
 #elif defined(CONFIG_SOC_SERIES_STM32MP1X)
 		LL_DBGMCU_APB1_GRP1_FreezePeriph(LL_DBGMCU_APB1_GRP1_WWDG1_STOP);
@@ -265,7 +266,9 @@ void wwdg_stm32_isr(const struct device *dev)
 	if (LL_WWDG_IsEnabledIT_EWKUP(wwdg)) {
 		if (LL_WWDG_IsActiveFlag_EWKUP(wwdg)) {
 			LL_WWDG_ClearFlag_EWKUP(wwdg);
-			data->callback(dev, 0);
+			if (data->callback != NULL) {
+				data->callback(dev, 0);
+			}
 		}
 	}
 }

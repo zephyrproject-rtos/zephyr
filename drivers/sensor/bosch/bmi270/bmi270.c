@@ -747,7 +747,7 @@ static int bmi270_init(const struct device *dev)
 		k_usleep(BMI270_CONFIG_FILE_POLL_PERIOD_US);
 	}
 
-	if (tries == BMI270_CONFIG_FILE_RETRIES) {
+	if (tries > BMI270_CONFIG_FILE_RETRIES) {
 		return -EIO;
 	}
 

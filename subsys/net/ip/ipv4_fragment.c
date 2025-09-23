@@ -32,16 +32,16 @@ static void reassembly_timeout(struct k_work *work);
 
 static struct net_ipv4_reassembly reassembly[CONFIG_NET_IPV4_FRAGMENT_MAX_COUNT];
 
-static struct net_ipv4_reassembly *reassembly_get(uint16_t id, struct in_addr *src,
-						  struct in_addr *dst, uint8_t protocol)
+static struct net_ipv4_reassembly *reassembly_get(uint16_t id, const uint8_t *src,
+						  const uint8_t *dst, uint8_t protocol)
 {
 	int i, avail = -1;
 
 	for (i = 0; i < CONFIG_NET_IPV4_FRAGMENT_MAX_COUNT; i++) {
 		if (k_work_delayable_remaining_get(&reassembly[i].timer) &&
 		    reassembly[i].id == id &&
-		    net_ipv4_addr_cmp(src, &reassembly[i].src) &&
-		    net_ipv4_addr_cmp(dst, &reassembly[i].dst) &&
+		    net_ipv4_addr_cmp_raw(src, reassembly[i].src.s4_addr) &&
+		    net_ipv4_addr_cmp_raw(dst, reassembly[i].dst.s4_addr) &&
 		    reassembly[i].protocol == protocol) {
 			return &reassembly[i];
 		}
@@ -61,8 +61,8 @@ static struct net_ipv4_reassembly *reassembly_get(uint16_t id, struct in_addr *s
 
 	k_work_reschedule(&reassembly[avail].timer, K_SECONDS(CONFIG_NET_IPV4_FRAGMENT_TIMEOUT));
 
-	net_ipaddr_copy(&reassembly[avail].src, src);
-	net_ipaddr_copy(&reassembly[avail].dst, dst);
+	net_ipv4_addr_copy_raw(reassembly[avail].src.s4_addr, src);
+	net_ipv4_addr_copy_raw(reassembly[avail].dst.s4_addr, dst);
 
 	reassembly[avail].protocol = protocol;
 	reassembly[avail].id = id;
@@ -211,9 +211,9 @@ static void reassemble_packet(struct net_ipv4_reassembly *reass)
 	/* We need to use the queue when feeding the packet back into the
 	 * IP stack as we might run out of stack if we call processing_data()
 	 * directly. As the packet does not contain link layer header, we
-	 * MUST NOT pass it to L2 so there will be a special check for that
-	 * in process_data() when handling the packet.
+	 * MUST NOT pass it to L2 so mark it as l2_processed.
 	 */
+	net_pkt_set_l2_processed(pkt, true);
 	if (net_recv_data(net_pkt_iface(pkt), pkt) >= 0) {
 		return;
 	}
@@ -331,8 +331,7 @@ enum net_verdict net_ipv4_handle_fragment_hdr(struct net_pkt *pkt, struct net_ip
 	flag = ntohs(*((uint16_t *)&hdr->offset));
 	id = ntohs(*((uint16_t *)&hdr->id));
 
-	reass = reassembly_get(id, (struct in_addr *)hdr->src,
-			       (struct in_addr *)hdr->dst, hdr->proto);
+	reass = reassembly_get(id, hdr->src, hdr->dst, hdr->proto);
 	if (!reass) {
 		LOG_ERR("Cannot get reassembly slot, dropping pkt %p", pkt);
 		goto drop;

@@ -32,6 +32,8 @@ source "drivers/clock_control/Kconfig.stm32"
 
 source "drivers/clock_control/Kconfig.beetle"
 
+source "drivers/clock_control/Kconfig.bflb"
+
 source "drivers/clock_control/Kconfig.fixed"
 
 source "drivers/clock_control/Kconfig.lpc11u6x"
@@ -102,8 +104,6 @@ source "drivers/clock_control/Kconfig.pwm"
 
 source "drivers/clock_control/Kconfig.rpi_pico"
 
-source "drivers/clock_control/Kconfig.nrf_auxpll"
-
 source "drivers/clock_control/Kconfig.arm_scmi"
 
 source "drivers/clock_control/Kconfig.silabs"
@@ -113,5 +113,7 @@ source "drivers/clock_control/Kconfig.siwx91x"
 source "drivers/clock_control/Kconfig.wch_rcc"
 
 source "drivers/clock_control/Kconfig.it51xxx"
+
+source "drivers/clock_control/Kconfig.mchp"
 
 endif # CLOCK_CONTROL

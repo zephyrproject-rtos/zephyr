@@ -6,7 +6,6 @@
 
 #include <zephyr/kernel.h>
 #include <kernel_internal.h>
-#include <ksched.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
@@ -50,4 +49,9 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack, char *sta
 	iframe->acc_h = 17;
 
 	thread->switch_handle = (void *)iframe;
+}
+
+int arch_coprocessors_disable(struct k_thread *thread)
+{
+	return -ENOTSUP;
 }

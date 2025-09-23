@@ -10,6 +10,7 @@ common:
     - platform:mimxrt1060_evk:SHIELD=rk043fn66hs_ctg
     - platform:mimxrt1170_evk/mimxrt1176/cm7:SHIELD=rk055hdmipi4ma0
     - platform:mimxrt595_evk/mimxrt595s/cm33:SHIELD=rk055hdmipi4ma0
+    - platform:mimxrt700_evk/mimxrt798s/cm33_cpu0:SHIELD=g1120b0mipi
   tags:
     - samples
     - display
@@ -34,21 +35,19 @@ tests:
   sample.modules.lvgl.demo_widgets:
     extra_configs:
       - CONFIG_LV_Z_DEMO_WIDGETS=y
-  sample.modules.lvgl.demo_flex_layout:
-    extra_configs:
-      - CONFIG_LV_Z_DEMO_FLEX_LAYOUT=y
   sample.modules.lvgl.demo_keypad_encoder:
     extra_configs:
       - CONFIG_LV_Z_DEMO_KEYPAD_AND_ENCODER=y
   sample.modules.lvgl.demo_render:
     extra_configs:
       - CONFIG_LV_Z_DEMO_RENDER=y
-  sample.modules.lvgl.demo_scroll:
+  sample.modules.lvgl.demo_benchmark.lvgl_auto:
     extra_configs:
-      - CONFIG_LV_Z_DEMO_SCROLL=y
-  sample.modules.lvgl.demo_multilang:
-    extra_configs:
-      - CONFIG_LV_Z_DEMO_MULTILANG=y
+      - CONFIG_LV_Z_DEMO_BENCHMARK=y
+      - CONFIG_LV_USE_DEMO_WIDGETS=y
+      - CONFIG_LV_Z_RUN_LVGL_ON_WORKQUEUE=y
+      - CONFIG_LV_Z_LVGL_WORKQUEUE_STACK_SIZE=8192
+      - CONFIG_LV_Z_LVGL_WORKQUEUE_PRIORITY=0
   sample.modules.lvgl.demos.st_b_lcd40_dsi1_mb1166:
     filter: dt_compat_enabled("orisetech,otm8009a")
     platform_allow: stm32h747i_disco/stm32h747xx/m7
@@ -73,8 +72,20 @@ tests:
   sample.modules.lvgl.demos.rtk7eka6m3b00001bu:
     platform_allow: ek_ra8d1
     extra_args:
-      - SHIELD=rtk7eka6m3b00001bu
+      - SHIELD="rtk7eka6m3b00001bu;ek_ra8d1_rtk7eka6m3b00001bu"
       - DTC_OVERLAY_FILE=rtk7eka6m3b00001bu.overlay
+    extra_configs:
+      - CONFIG_LV_DEMO_MUSIC_LANDSCAPE=y
+    tags:
+      - shield
+  sample.modules.lvgl.demos.rtklcdpar1s00001be:
+    platform_allow: ek_ra8p1/r7ka8p1kflcac/cm85
+    harness: console
+    harness_config:
+      fixture: fixture_display
+    extra_args:
+      - SHIELD=rtklcdpar1s00001be
+      - DTC_OVERLAY_FILE=rtklcdpar1s00001be.overlay
     extra_configs:
       - CONFIG_LV_DEMO_MUSIC_LANDSCAPE=y
     tags:

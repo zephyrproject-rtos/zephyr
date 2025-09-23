@@ -14,6 +14,7 @@
 #include "rsi_rom_clks.h"
 #include "rsi_sysrtc.h"
 #include "rsi_pll.h"
+#include "rsi_adc.h"
 #include "clock_update.h"
 #include "sl_si91x_clock_manager.h"
 
@@ -103,6 +104,9 @@ static int siwx91x_clock_on(const struct device *dev, clock_control_subsys_t sys
 		ULPCLK->ULP_I2S_CLK_GEN_REG_b.ULP_I2S_MASTER_SLAVE_MODE_b = 1;
 		RSI_ULPSS_PeripheralEnable(ULPCLK, ULP_I2S_CLK, ENABLE_STATIC_CLK);
 		break;
+	case SIWX91X_ADC_CLK:
+		RSI_ADC_PowerControl(ADC_POWER_ON);
+		break;
 	default:
 		return -EINVAL;
 	}
@@ -137,6 +141,9 @@ static int siwx91x_clock_off(const struct device *dev, clock_control_subsys_t sy
 		break;
 	case SIWX91X_CLK_STATIC_ULP_I2S:
 		RSI_ULPSS_PeripheralDisable(ULPCLK, ULP_I2S_CLK);
+		break;
+	case SIWX91X_ADC_CLK:
+		RSI_ADC_PowerControl(ADC_POWER_OFF);
 		break;
 	case SIWX91X_CLK_ULP_UART:
 	case SIWX91X_CLK_I2C0:
@@ -185,6 +192,9 @@ static int siwx91x_clock_get_rate(const struct device *dev, clock_control_subsys
 static int siwx91x_clock_set_rate(const struct device *dev, clock_control_subsys_t sys,
 				  clock_control_subsys_rate_t rate)
 {
+	ARG_UNUSED(dev);
+	int div_numerator = FIELD_GET(0xFFFF0000, *(uint32_t *)rate);
+	int div_denominator =  FIELD_GET(0x0000FFFF, *(uint32_t *)rate);
 	uintptr_t clockid = (uintptr_t)sys;
 	ULP_I2S_CLK_SELECT_T ref_clk;
 	uint32_t freq;
@@ -202,6 +212,9 @@ static int siwx91x_clock_set_rate(const struct device *dev, clock_control_subsys
 		if (ret) {
 			return -EIO;
 		}
+		return 0;
+	case SIWX91X_ADC_CLK:
+		RSI_ADC_ClkDivfactor(AUX_ADC_DAC_COMP, div_numerator, div_denominator);
 		return 0;
 	default:
 		/* For now, no other driver need clock rate */
@@ -225,6 +238,8 @@ static enum clock_control_status siwx91x_clock_get_status(const struct device *d
 static int siwx91x_clock_init(const struct device *dev)
 {
 	SystemCoreClockUpdate();
+
+	sl_si91x_clock_manager_init();
 
 	/* Use SoC PLL at configured frequency as core clock */
 	sl_si91x_clock_manager_m4_set_core_clk(M4_SOCPLLCLK, CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);

@@ -10,7 +10,7 @@ config RENESAS_NONE_USED_PORT_INIT
 	bool "Initialize unused ports"
 	default y
 	help
-	  Initialize the unsed pins of RX MCU followed by in the "Handling of
+	  Initialize the unused pins of RX MCU followed by in the "Handling of
 	  Unused Pins" section of PORT chapter of RX MCU of User's manual.
 	  Note: please MUST set "BSP_PACKAGE_PINS" definition to your device
 	  of pin type in r_bsp_config.h.

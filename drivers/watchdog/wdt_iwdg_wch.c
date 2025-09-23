@@ -77,7 +77,7 @@ static int iwdg_wch_feed(const struct device *dev, int channel_id)
 	return 0;
 }
 
-static const struct wdt_driver_api iwdg_wch_api = {
+static DEVICE_API(wdt, iwdg_wch_api) = {
 	.setup = iwdg_wch_setup,
 	.disable = iwdg_wch_disable,
 	.install_timeout = iwdg_wch_install_timeout,

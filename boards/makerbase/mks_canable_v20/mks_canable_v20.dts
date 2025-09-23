@@ -65,7 +65,7 @@
 };
 
 stm32_lp_tick_source: &lptim1 {
-	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x80000000>,
+	clocks = <&rcc STM32_CLOCK(APB1, 31)>,
 		 <&rcc STM32_SRC_LSE LPTIM1_SEL(3)>;
 	status = "okay";
 };
@@ -73,7 +73,7 @@ stm32_lp_tick_source: &lptim1 {
 zephyr_udc0: &usb {
 	pinctrl-0 = <&usb_dm_pa11 &usb_dp_pa12>;
 	pinctrl-names = "default";
-	clocks = <&rcc STM32_CLOCK(APB1, 23U)>,
+	clocks = <&rcc STM32_CLOCK(APB1, 23)>,
 		 <&rcc STM32_SRC_HSI48 CLK48_SEL(0)>;
 	status = "okay";
 };
@@ -81,7 +81,7 @@ zephyr_udc0: &usb {
 &fdcan1 {
 	pinctrl-0 = <&fdcan1_rx_pb8 &fdcan1_tx_pb9>;
 	pinctrl-names = "default";
-	clocks = <&rcc STM32_CLOCK(APB1, 25U)>,
+	clocks = <&rcc STM32_CLOCK(APB1, 25)>,
 		 <&rcc STM32_SRC_PLL_Q FDCAN_SEL(1)>;
 	status = "okay";
 };

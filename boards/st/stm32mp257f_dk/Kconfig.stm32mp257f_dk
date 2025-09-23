@@ -1,0 +1,5 @@
+# Copyright (C) 2025 Savoir-faire Linux, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_STM32MP257F_DK
+	select SOC_STM32MP2X_M33 if BOARD_STM32MP257F_DK_STM32MP257FXX_M33

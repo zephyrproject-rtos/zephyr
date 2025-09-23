@@ -14,7 +14,8 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
-#include "stm32_hsem.h"
+#include <stm32_backup_domain.h>
+#include <stm32_hsem.h>
 
 /* Macros to fill up prescaler values */
 #define fn_ahb_prescaler(v) LL_RCC_SYSCLK_DIV_ ## v
@@ -49,6 +50,8 @@ int enabled_clock(uint32_t src_clk)
 	    (src_clk == STM32_SRC_PCLK1) ||
 	    (src_clk == STM32_SRC_PCLK2) ||
 	    (src_clk == STM32_SRC_PCLK7) ||
+	    (src_clk == STM32_SRC_TIMPCLK1) ||
+	    (src_clk == STM32_SRC_TIMPCLK2) ||
 	    ((src_clk == STM32_SRC_HSE) && IS_ENABLED(STM32_HSE_ENABLED)) ||
 	    ((src_clk == STM32_SRC_HSI16) && IS_ENABLED(STM32_HSI_ENABLED)) ||
 	    ((src_clk == STM32_SRC_LSE) && IS_ENABLED(STM32_LSE_ENABLED)) ||
@@ -116,6 +119,11 @@ static int stm32_clock_control_configure(const struct device *dev,
 	if (err < 0) {
 		/* Attempt to configure a src clock not available or not valid */
 		return err;
+	}
+
+	if (pclken->enr == NO_SEL) {
+		/* Domain clock is fixed. Nothing to set. Exit */
+		return 0;
 	}
 
 	sys_clear_bits(DT_REG_ADDR(DT_NODELABEL(rcc)) + STM32_DT_CLKSEL_REG_GET(pclken->enr),
@@ -267,6 +275,12 @@ static int stm32_clock_control_get_subsys_rate(const struct device *dev,
 
 		break;
 #endif
+	case STM32_SRC_TIMPCLK1:
+		*rate = STM32_APB1_PRESCALER <= 2 ? ahb_clock : apb1_clock * 2;
+		break;
+	case STM32_SRC_TIMPCLK2:
+		*rate = STM32_APB2_PRESCALER <= 2 ? ahb_clock : apb2_clock * 2;
+		break;
 	default:
 		return -ENOTSUP;
 	}
@@ -467,29 +481,19 @@ static void set_up_fixed_clock_sources(void)
 	}
 
 	if (IS_ENABLED(STM32_LSI_ENABLED)) {
-		/* LSI belongs to the back-up domain, enable access.*/
-
-		/* Set the DBP bit in the Power control register 1 (PWR_CR1) */
-		LL_PWR_EnableBkUpAccess();
-		while (!LL_PWR_IsEnabledBkUpAccess()) {
-			/* Wait for Backup domain access */
-		}
+		/* LSI control belongs to the back-up domain */
+		stm32_backup_domain_enable_access();
 
 		LL_RCC_LSI1_Enable();
 		while (LL_RCC_LSI1_IsReady() != 1) {
 		}
 
-		LL_PWR_DisableBkUpAccess();
+		stm32_backup_domain_disable_access();
 	}
 
 	if (IS_ENABLED(STM32_LSE_ENABLED)) {
-		/* LSE belongs to the back-up domain, enable access.*/
-
-		/* Set the DBP bit in the Power control register 1 (PWR_CR1) */
-		LL_PWR_EnableBkUpAccess();
-		while (!LL_PWR_IsEnabledBkUpAccess()) {
-			/* Wait for Backup domain access */
-		}
+		/* LSE control belongs to the back-up domain */
+		stm32_backup_domain_enable_access();
 
 		/* Configure driving capability */
 		LL_RCC_LSE_SetDriveCapability(STM32_LSE_DRIVING << RCC_BDCR1_LSEDRV_Pos);
@@ -505,6 +509,8 @@ static void set_up_fixed_clock_sources(void)
 		/* Wait till LSESYS is ready */
 		while (!LL_RCC_LSE_IsPropagationReady()) {
 		}
+
+		stm32_backup_domain_disable_access();
 	}
 }
 

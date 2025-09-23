@@ -1,0 +1,22 @@
+# Copyright 2025 Espressif Systems Shanghai
+#
+# SPDX-License-Identifier: Apache-2.0
+
+name: flash-8M
+
+boards:
+  /.*/esp32/.*/:
+    append:
+      EXTRA_DTC_OVERLAY_FILE: soc/esp32_flash_8M.overlay
+  /.*/esp32s2/.*/:
+    append:
+      EXTRA_DTC_OVERLAY_FILE: soc/esp32s2_flash_8M.overlay
+  /.*/esp32s3/.*/:
+    append:
+      EXTRA_DTC_OVERLAY_FILE: soc/esp32s3_flash_8M.overlay
+  /.*/esp32c3/.*/:
+    append:
+      EXTRA_DTC_OVERLAY_FILE: soc/esp32c3_flash_8M.overlay
+  /.*/esp32c6/.*/:
+    append:
+      EXTRA_DTC_OVERLAY_FILE: soc/esp32c6_flash_8M.overlay

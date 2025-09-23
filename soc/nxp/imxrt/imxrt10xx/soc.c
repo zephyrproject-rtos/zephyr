@@ -33,23 +33,6 @@
 		     DT_PROP(DT_CHILD(CCM_NODE, podf), clock_div) <= (b), \
 		     #podf " is out of supported range (" #a ", " #b ")")
 
-#ifdef CONFIG_INIT_ARM_PLL
-/* ARM PLL configuration for RUN mode */
-const clock_arm_pll_config_t armPllConfig = {
-	.loopDivider = 100U
-};
-#endif
-
-#if CONFIG_INIT_SYS_PLL
-/* Configure System PLL */
-const clock_sys_pll_config_t sysPllConfig = {
-	.loopDivider = (DT_PROP(DT_CHILD(CCM_NODE, sys_pll), loop_div) - 20) / 2,
-	.numerator = DT_PROP(DT_CHILD(CCM_NODE, sys_pll), numerator),
-	.denominator = DT_PROP(DT_CHILD(CCM_NODE, sys_pll), denominator),
-	.src = DT_PROP(DT_CHILD(CCM_NODE, sys_pll), src),
-};
-#endif
-
 #if CONFIG_USB_DC_NXP_EHCI
 /* USB PHY configuration */
 #define BOARD_USB_PHY_D_CAL (0x0CU)
@@ -57,50 +40,11 @@ const clock_sys_pll_config_t sysPllConfig = {
 #define BOARD_USB_PHY_TXCAL45DM (0x06U)
 #endif
 
-#ifdef CONFIG_INIT_ENET_PLL
-/* ENET PLL configuration for RUN mode */
-const clock_enet_pll_config_t ethPllConfig = {
-#if defined(CONFIG_SOC_MIMXRT1011) || \
-	defined(CONFIG_SOC_MIMXRT1015) || \
-	defined(CONFIG_SOC_MIMXRT1021) || \
-	defined(CONFIG_SOC_MIMXRT1024)
-	.enableClkOutput500M = true,
-#endif
-#if defined(CONFIG_ETH_NXP_ENET)
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(enet))
-	.enableClkOutput = true,
-#endif
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(enet2))
-	.enableClkOutput1 = true,
-#endif
-#endif
-#if defined(CONFIG_PTP_CLOCK_NXP_ENET)
-	.enableClkOutput25M = true,
-#else
-	.enableClkOutput25M = false,
-#endif
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(enet))
-	.loopDivider = 1,
-#endif
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(enet2))
-	.loopDivider1 = 1,
-#endif
-};
-#endif
 
 #if CONFIG_USB_DC_NXP_EHCI
 	usb_phy_config_struct_t usbPhyConfig = {
 		BOARD_USB_PHY_D_CAL, BOARD_USB_PHY_TXCAL45DP, BOARD_USB_PHY_TXCAL45DM,
 	};
-#endif
-
-#ifdef CONFIG_INIT_VIDEO_PLL
-const clock_video_pll_config_t videoPllConfig = {
-	.loopDivider = 31,
-	.postDivider = 8,
-	.numerator = 0,
-	.denominator = 0,
-};
 #endif
 
 #ifdef CONFIG_NXP_IMXRT_BOOT_HEADER
@@ -151,29 +95,63 @@ __weak void clock_init(void)
 	/* Set PERIPH_CLK MUX to PERIPH_CLK2 */
 	CLOCK_SetMux(kCLOCK_PeriphMux, 0x1);
 
-#if CONFIG_ADJUST_DCDC
-	/* Setting the VDD_SOC value */
-	DCDC->REG3 = (DCDC->REG3 & (~DCDC_REG3_TRG_MASK)) | DCDC_REG3_TRG(CONFIG_DCDC_VALUE);
-	/* Waiting for DCDC_STS_DC_OK bit is asserted */
-	while (DCDC_REG0_STS_DC_OK_MASK !=
-			(DCDC_REG0_STS_DC_OK_MASK & DCDC->REG0)) {
-		;
+	if (IS_ENABLED(CONFIG_ADJUST_DCDC)) {
+		/* Setting the VDD_SOC value */
+		DCDC->REG3 = (DCDC->REG3 & (~DCDC_REG3_TRG_MASK)) |
+				DCDC_REG3_TRG(CONFIG_DCDC_VALUE);
+		/* Waiting for DCDC_STS_DC_OK bit is asserted */
+		while (DCDC_REG0_STS_DC_OK_MASK != (DCDC_REG0_STS_DC_OK_MASK & DCDC->REG0)) {
+			;
+		}
 	}
-#endif
 
 #ifdef CONFIG_INIT_ARM_PLL
+	/* ARM PLL configuration for RUN mode */
+	static const clock_arm_pll_config_t armPllConfig = {
+		.loopDivider = 100U
+	};
 	CLOCK_InitArmPll(&armPllConfig); /* Configure ARM PLL to 1200M */
 #endif
-#ifdef CONFIG_INIT_ENET_PLL
-	CLOCK_InitEnetPll(&ethPllConfig);
+
+	static const clock_enet_pll_config_t ethPllConfig = {
+		.enableClkOutput25M = IS_ENABLED(CONFIG_PTP_CLOCK_NXP_ENET),
+		.enableClkOutput = DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(enet)),
+		.loopDivider = DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(enet)),
+#if DT_NODE_EXISTS(DT_NODELABEL(enet2))
+		/* some platform don't have enet 2 and sdk doesn't have these fields for it */
+		.enableClkOutput1 = DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(enet2)),
+		.loopDivider1 = DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(enet2)),
 #endif
+#if IS_ENABLED(CONFIG_INIT_PLL6_500M)
+		/* this field only exists on some platforms, so ifdef is needed */
+		.enableClkOutput500M = true,
+#endif
+	};
+
+	if (IS_ENABLED(CONFIG_INIT_ENET_PLL)) {
+		CLOCK_InitEnetPll(&ethPllConfig);
+	}
+
 #ifdef CONFIG_INIT_VIDEO_PLL
+	static const clock_video_pll_config_t videoPllConfig = {
+		.loopDivider = 31,
+		.postDivider = 8,
+		.numerator = 0,
+		.denominator = 0,
+	};
 	CLOCK_InitVideoPll(&videoPllConfig);
 #endif
 
-#if CONFIG_INIT_SYS_PLL
-	CLOCK_InitSysPll(&sysPllConfig);
-#endif
+	const clock_sys_pll_config_t sysPllConfig = {
+		.loopDivider = (DT_PROP(DT_CHILD(CCM_NODE, sys_pll), loop_div) - 20) / 2,
+		.numerator = DT_PROP(DT_CHILD(CCM_NODE, sys_pll), numerator),
+		.denominator = DT_PROP(DT_CHILD(CCM_NODE, sys_pll), denominator),
+		.src = DT_PROP(DT_CHILD(CCM_NODE, sys_pll), src),
+	};
+
+	if (IS_ENABLED(CONFIG_INIT_SYS_PLL)) {
+		CLOCK_InitSysPll(&sysPllConfig);
+	}
 
 #if DT_NODE_EXISTS(DT_CHILD(CCM_NODE, arm_podf))
 	/* Set ARM PODF */
@@ -209,10 +187,22 @@ __weak void clock_init(void)
 	CLOCK_SetDiv(kCLOCK_Lpi2cDiv, 5); /* Set I2C divider to 6 */
 #endif
 
-#ifdef CONFIG_SPI_MCUX_LPSPI
+#ifdef CONFIG_SPI_NXP_LPSPI
 	/* Configure input clock to be able to reach the datasheet specified band rate. */
 	CLOCK_SetMux(kCLOCK_LpspiMux, 1); /* Set SPI source to USB1 PFD0 */
 	CLOCK_SetDiv(kCLOCK_LpspiDiv, 0); /* Set SPI divider to 1 */
+#endif
+
+#ifdef CONFIG_MCUX_FLEXIO
+	/* Configure input clock to be able to reach the datasheet specified baud rate.
+	 * FLEXIO can reach to 120MHz. Select USB pll(480M) as source and divide by 2.
+	 * pre divider by default is 1 which means divide by 2.
+	 */
+	CLOCK_SetMux(kCLOCK_Flexio1Mux, 3);
+	CLOCK_SetDiv(kCLOCK_Flexio1Div, 1);
+
+	CLOCK_SetMux(kCLOCK_Flexio2Mux, 3);
+	CLOCK_SetDiv(kCLOCK_Flexio2Div, 1);
 #endif
 
 #ifdef CONFIG_DISPLAY_MCUX_ELCDIF
@@ -315,21 +305,27 @@ void imxrt_audio_codec_pll_init(uint32_t clock_name, uint32_t clk_src,
 					uint32_t clk_pre_div, uint32_t clk_src_div)
 {
 	switch (clock_name) {
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sai1))
 	case IMX_CCM_SAI1_CLK:
 		CLOCK_SetMux(kCLOCK_Sai1Mux, clk_src);
 		CLOCK_SetDiv(kCLOCK_Sai1PreDiv, clk_pre_div);
 		CLOCK_SetDiv(kCLOCK_Sai1Div, clk_src_div);
 		break;
+#endif
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sai2))
 	case IMX_CCM_SAI2_CLK:
 		CLOCK_SetMux(kCLOCK_Sai2Mux, clk_src);
 		CLOCK_SetDiv(kCLOCK_Sai2PreDiv, clk_pre_div);
 		CLOCK_SetDiv(kCLOCK_Sai2Div, clk_src_div);
 		break;
+#endif
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sai3))
 	case IMX_CCM_SAI3_CLK:
-		CLOCK_SetMux(kCLOCK_Sai2Mux, clk_src);
-		CLOCK_SetDiv(kCLOCK_Sai2PreDiv, clk_pre_div);
-		CLOCK_SetDiv(kCLOCK_Sai2Div, clk_src_div);
+		CLOCK_SetMux(kCLOCK_Sai3Mux, clk_src);
+		CLOCK_SetDiv(kCLOCK_Sai3PreDiv, clk_pre_div);
+		CLOCK_SetDiv(kCLOCK_Sai3Div, clk_src_div);
 		break;
+#endif
 	default:
 		return;
 	}

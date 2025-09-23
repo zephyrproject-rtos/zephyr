@@ -9,7 +9,14 @@ simulation:
 arch: rx
 toolchain:
   - cross-compile
+  - zephyr
 supported:
   - serial
+testing:
+  default: true
+  ignore_tags:
+    - net
+    - bluetooth
+    - can
 ram: 96
 flash: 512

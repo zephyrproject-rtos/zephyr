@@ -385,7 +385,7 @@ static inline bool coap_service_in_section(const struct coap_service *service)
 	       STRUCT_SECTION_END(coap_service) > service;
 }
 
-static inline void coap_service_raise_event(const struct coap_service *service, uint32_t mgmt_event)
+static inline void coap_service_raise_event(const struct coap_service *service, uint64_t mgmt_event)
 {
 #if defined(CONFIG_NET_MGMT_EVENT_INFO)
 	const struct net_event_coap_service net_event = {

@@ -6,15 +6,16 @@
 
 /**
  * @file
- * @brief Public LED driver APIs
+ * @ingroup led_interface
+ * @brief Main header file for LED driver API.
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_LED_H_
 #define ZEPHYR_INCLUDE_DRIVERS_LED_H_
 
 /**
- * @brief LED Interface
- * @defgroup led_interface LED Interface
+ * @brief Interfaces for Light-Emitting Diode (LED) controllers.
+ * @defgroup led_interface LED
  * @since 1.12
  * @version 1.0.0
  * @ingroup io_interfaces
@@ -33,7 +34,7 @@ extern "C" {
 /**
  * @brief Maximum brightness level, range is 0 to 100.
  */
-#define LED_BRIGTHNESS_MAX 100u
+#define LED_BRIGHTNESS_MAX 100u
 
 /**
  * @brief LED information structure
@@ -213,7 +214,7 @@ static inline int z_impl_led_set_brightness(const struct device *dev,
 		}
 	}
 
-	if (value > LED_BRIGTHNESS_MAX) {
+	if (value > LED_BRIGHTNESS_MAX) {
 		return -EINVAL;
 	}
 
@@ -337,7 +338,7 @@ static inline int z_impl_led_on(const struct device *dev, uint32_t led)
 	}
 
 	if (api->on == NULL) {
-		return api->set_brightness(dev, led, LED_BRIGTHNESS_MAX);
+		return api->set_brightness(dev, led, LED_BRIGHTNESS_MAX);
 	}
 
 	return api->on(dev, led);

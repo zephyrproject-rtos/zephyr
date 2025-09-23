@@ -119,7 +119,7 @@ static int pca9633_led_set_brightness(const struct device *dev, uint32_t led,
 	uint8_t val;
 
 	/* Set the LED brightness value */
-	val = (value * 255U) / LED_BRIGTHNESS_MAX;
+	val = (value * 255U) / LED_BRIGHTNESS_MAX;
 	if (i2c_reg_write_byte_dt(&config->i2c,
 			       PCA9633_PWM_BASE + led,
 			       val)) {

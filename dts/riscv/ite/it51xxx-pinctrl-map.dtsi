@@ -40,6 +40,35 @@
 		pinmuxs = <&pinctrli 7 IT8XXX2_ALT_FUNC_1>;
 	};
 
+	/* FSPI alternate function */
+	fspi_fsce_gpg3_default: fspi_fsce_gpg3_default {
+		pinmuxs = <&pinctrlg 3 IT8XXX2_ALT_FUNC_1>;
+	};
+
+	fspi_fmosi_gpg4_default: fspi_fmosi_gpg4_default {
+		pinmuxs = <&pinctrlg 4 IT8XXX2_ALT_FUNC_1>;
+	};
+
+	fspi_fmiso_gpg5_default: fspi_fmiso_gpg5_default {
+		pinmuxs = <&pinctrlg 5 IT8XXX2_ALT_FUNC_1>;
+	};
+
+	fspi_fsce1_gpg6_default: fspi_fsce1_gpg6_default {
+		pinmuxs = <&pinctrlg 6 IT8XXX2_ALT_FUNC_1>;
+	};
+
+	fspi_fsck_gpg7_default: fspi_fsck_gpg7_default {
+		pinmuxs = <&pinctrlg 7 IT8XXX2_ALT_FUNC_1>;
+	};
+
+	fspi_fdio2_gph5_default: fspi_fdio2_gph5_default {
+		pinmuxs = <&pinctrlh 5 IT8XXX2_ALT_FUNC_1>;
+	};
+
+	fspi_fdio3_gph6_default: fspi_fdio3_gph6_default {
+		pinmuxs = <&pinctrlh 6 IT8XXX2_ALT_FUNC_1>;
+	};
+
 	/* I2C alternate function */
 	i2c0_clk_gpf2_default: i2c0_clk_gpf2_default {
 		pinmuxs = <&pinctrlf 2 IT8XXX2_ALT_FUNC_1>;

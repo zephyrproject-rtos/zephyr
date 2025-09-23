@@ -7,9 +7,13 @@ type: mcu
 arch: rx
 toolchain:
   - cross-compile
+  - zephyr
 supported:
   - gpio
   - serial
   - timer
+  - spi
+  - i2c
+  - adc
 ram: 48
 flash: 512

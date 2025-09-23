@@ -8,6 +8,7 @@
  */
 
 #include "sam_v71_xult-pinctrl.dtsi"
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
@@ -76,79 +77,91 @@
 		compatible = "atmel-xplained-pro-header";
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
-		gpio-map-pass-thru = <0 0x3f>;		/*           Shared */
-		gpio-map =	<0  0 &pioc 31 0>,	/* AFE1 AD6         */
-				<1  0 &pioa 19 0>,	/* AFE0 AD8         */
-				<2  0 &piob  3 0>,	/* RTS0             */
-				<3  0 &piob  2 0>,	/* CTS0             */
-				<4  0 &pioa  0 0>,	/* PWMC0_H0         */
-				<5  0 &pioc 30 0>,	/* TIOB5            */
-				<6  0 &piod 28 0>,	/* WKUP5            */
-				<7  0 &pioa  5 0>,	/* GPIO             */
-				<8  0 &pioa  3 0>,	/* TWD0        EXT2 */
-				<9  0 &pioa  4 0>,	/* TWCK0       EXT2 */
-				<10 0 &piob  0 0>,	/* RXD0             */
-				<11 0 &piob  1 0>,	/* TXD0             */
-				<12 0 &piod 25 0>,	/* SPI0(NPCS1)      */
-				<13 0 &piod 21 0>,	/* SPI0(MOSI)  EXT2 */
-				<14 0 &piod 20 0>,	/* SPI0(MISO)  EXT2 */
-				<15 0 &piod 22 0>;	/* SPI0(SCK)   EXT2 */
-							/* GND              */
-							/* +3.3V            */
+		gpio-map-pass-thru = <0 0x3f>;
+
+		/* dts-format off */
+					      /*           Shared */
+		gpio-map = <0  0 &pioc 31 0>, /* AFE1 AD6         */
+			   <1  0 &pioa 19 0>, /* AFE0 AD8         */
+			   <2  0 &piob  3 0>, /* RTS0             */
+			   <3  0 &piob  2 0>, /* CTS0             */
+			   <4  0 &pioa  0 0>, /* PWMC0_H0         */
+			   <5  0 &pioc 30 0>, /* TIOB5            */
+			   <6  0 &piod 28 0>, /* WKUP5            */
+			   <7  0 &pioa  5 0>, /* GPIO             */
+			   <8  0 &pioa  3 0>, /* TWD0        EXT2 */
+			   <9  0 &pioa  4 0>, /* TWCK0       EXT2 */
+			   <10 0 &piob  0 0>, /* RXD0             */
+			   <11 0 &piob  1 0>, /* TXD0             */
+			   <12 0 &piod 25 0>, /* SPI0(NPCS1)      */
+			   <13 0 &piod 21 0>, /* SPI0(MOSI)  EXT2 */
+			   <14 0 &piod 20 0>, /* SPI0(MISO)  EXT2 */
+			   <15 0 &piod 22 0>; /* SPI0(SCK)   EXT2 */
+					      /* GND              */
+					      /* +3.3V            */
+		/* dts-format on */
 	};
 
 	ext2_header: xplained-pro-connector2 {
 		compatible = "atmel-xplained-pro-header";
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
-		gpio-map-pass-thru = <0 0x3f>;		/*           Shared */
-		gpio-map =	<0  0 &piod 30 0>,	/* AFE0 AD0         */
-				<1  0 &pioc 13 0>,	/* AFE1 AD1         */
-				<2  0 &pioa  6 0>,	/* GPIO             */
-				<3  0 &piod 11 0>,	/* GPIO             */
-				<4  0 &pioc 19 0>,	/* PWMC0_H2         */
-				<5  0 &piod 26 0>,	/* PWMC0_L2         */
-				<6  0 &pioa  2 0>,	/* WKUP2            */
-				<7  0 &pioa 24 0>,	/* GPIO             */
-				<8  0 &pioa  3 0>,	/* TWD0        EXT1 */
-				<9  0 &pioa  4 0>,	/* TWCK0       EXT1 */
-				<10 0 &pioa 21 0>,	/* RXD1             */
-				<11 0 &piob  4 0>,	/* TXD1             */
-				<12 0 &piod 27 0>,	/* SPI0(NPCS3)      */
-				<13 0 &piod 21 0>,	/* SPI0(MOSI)  EXT1 */
-				<14 0 &piod 20 0>,	/* SPI0(MISO)  EXT1 */
-				<15 0 &piod 22 0>;	/* SPI0(SCK)   EXT1 */
-							/* GND              */
-							/* +3.3V            */
+		gpio-map-pass-thru = <0 0x3f>;
+
+		/* dts-format off */
+					      /*           Shared */
+		gpio-map = <0  0 &piod 30 0>, /* AFE0 AD0         */
+			   <1  0 &pioc 13 0>, /* AFE1 AD1         */
+			   <2  0 &pioa  6 0>, /* GPIO             */
+			   <3  0 &piod 11 0>, /* GPIO             */
+			   <4  0 &pioc 19 0>, /* PWMC0_H2         */
+			   <5  0 &piod 26 0>, /* PWMC0_L2         */
+			   <6  0 &pioa  2 0>, /* WKUP2            */
+			   <7  0 &pioa 24 0>, /* GPIO             */
+			   <8  0 &pioa  3 0>, /* TWD0        EXT1 */
+			   <9  0 &pioa  4 0>, /* TWCK0       EXT1 */
+			   <10 0 &pioa 21 0>, /* RXD1             */
+			   <11 0 &piob  4 0>, /* TXD1             */
+			   <12 0 &piod 27 0>, /* SPI0(NPCS3)      */
+			   <13 0 &piod 21 0>, /* SPI0(MOSI)  EXT1 */
+			   <14 0 &piod 20 0>, /* SPI0(MISO)  EXT1 */
+			   <15 0 &piod 22 0>; /* SPI0(SCK)   EXT1 */
+					      /* GND              */
+					      /* +3.3V            */
+		/* dts-format on */
 	};
 
 	arduino_header: connector {
 		compatible = "arduino-header-r3";
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
-		gpio-map-pass-thru = <0 0x3f>;		/*           Shared */
-		gpio-map =	<0  0 &piod 26 0>,	/*  A0-TD           */
-				<1  0 &pioc 31 0>,	/*  A1-AFE1 AD6   y */
-				<2  0 &pioa 19 0>,	/*  A2-AFE0 AD8   y */
-				<3  0 &piod 30 0>,	/*  A3-AFE0 AD0   y */
-				<4  0 &pioc 13 0>,	/*  A4-AFE1 AD1   y */
-				<5  0 &pioe  0 0>,	/*  A5-AFE1 AD11    */
-				<6  0 &piod 28 0>,	/*  D0-URXD3        */
-				<7  0 &piod 30 0>,	/*  D1-UTXD3        */
-				<8  0 &pioa  0 0>,	/*  D2-PWMC0_H0     */
-				<9  0 &pioa  6 0>,	/*  D3-GPIO         */
-				<10 0 &piod 27 0>,	/*  D4-SPI0_NPCS3 y */
-				<11 0 &piod 11 0>,	/*  D5-PWMC0_H0     */
-				<12 0 &pioc 19 0>,	/*  D6-PWMC0_H2     */
-				<13 0 &pioa  2 0>,	/*  D7-PWMC0_H1     */
-				<14 0 &pioa  5 0>,	/*  D8-PWMC1_PWML3  */
-				<15 0 &pioc  9 0>,	/*  D9-TIOB7        */
-				<16 0 &piod 25 0>,	/* D10-SPI0_NPCS1 y */
-				<17 0 &piod 21 0>,	/* D11-SPI0_MOSI  y */
-				<18 0 &piod 20 0>,	/* D12-SPI0_MISO  y */
-				<19 0 &piod 22 0>,	/* D13-SPI0_SPCK  y */
-				<20 0 &pioa  3 0>,	/* D14-TWD0       y */
-				<21 0 &pioa  4 0>;	/* D15-TWCK0      y */
+		gpio-map-pass-thru = <0 0x3f>;
+
+		/* dts-format off */
+								 /*        Shared */
+		gpio-map = <ARDUINO_HEADER_R3_A0  0 &piod 26 0>, /* TD            */
+			   <ARDUINO_HEADER_R3_A1  0 &pioc 31 0>, /* AFE1 AD6    y */
+			   <ARDUINO_HEADER_R3_A2  0 &pioa 19 0>, /* AFE0 AD8    y */
+			   <ARDUINO_HEADER_R3_A3  0 &piod 30 0>, /* AFE0 AD0    y */
+			   <ARDUINO_HEADER_R3_A4  0 &pioc 13 0>, /* AFE1 AD1    y */
+			   <ARDUINO_HEADER_R3_A5  0 &pioe  0 0>, /* AFE1 AD11     */
+			   <ARDUINO_HEADER_R3_D0  0 &piod 28 0>, /* URXD3         */
+			   <ARDUINO_HEADER_R3_D1  0 &piod 30 0>, /* UTXD3         */
+			   <ARDUINO_HEADER_R3_D2  0 &pioa  0 0>, /* PWMC0_H0      */
+			   <ARDUINO_HEADER_R3_D3  0 &pioa  6 0>, /* GPIO          */
+			   <ARDUINO_HEADER_R3_D4  0 &piod 27 0>, /* SPI0_NPCS3  y */
+			   <ARDUINO_HEADER_R3_D5  0 &piod 11 0>, /* PWMC0_H0      */
+			   <ARDUINO_HEADER_R3_D6  0 &pioc 19 0>, /* PWMC0_H2      */
+			   <ARDUINO_HEADER_R3_D7  0 &pioa  2 0>, /* PWMC0_H1      */
+			   <ARDUINO_HEADER_R3_D8  0 &pioa  5 0>, /* PWMC1_PWML3   */
+			   <ARDUINO_HEADER_R3_D9  0 &pioc  9 0>, /* TIOB7         */
+			   <ARDUINO_HEADER_R3_D10 0 &piod 25 0>, /* SPI0_NPCS1  y */
+			   <ARDUINO_HEADER_R3_D11 0 &piod 21 0>, /* SPI0_MOSI   y */
+			   <ARDUINO_HEADER_R3_D12 0 &piod 20 0>, /* SPI0_MISO   y */
+			   <ARDUINO_HEADER_R3_D13 0 &piod 22 0>, /* SPI0_SPCK   y */
+			   <ARDUINO_HEADER_R3_D14 0 &pioa  3 0>, /* TWD0        y */
+			   <ARDUINO_HEADER_R3_D15 0 &pioa  4 0>; /* TWCK0       y */
+		/* dts-format on */
 	};
 };
 

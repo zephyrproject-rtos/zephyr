@@ -57,7 +57,7 @@ def read_log_file(args):
         else:
             hexdata = ''
 
-            with open(args.logfile, "r", encoding="iso-8859-1") as hexfile:
+            with open(args.logfile, encoding="iso-8859-1") as hexfile:
                 for line in hexfile.readlines():
                     hexdata += line.strip()
 
@@ -90,14 +90,11 @@ def read_log_file(args):
 
             logdata = binascii.unhexlify(hexdata[:idx])
     else:
-        logfile = open(args.logfile, "rb")
-        if not logfile:
-            logger.error("ERROR: Cannot open binary log data file: %s, exiting...", args.logfile)
-            sys.exit(1)
-
-        logdata = logfile.read()
-
-        logfile.close()
+        with open(args.logfile, "rb") as logfile:
+            if not logfile:
+                logger.error(f"ERROR: Cannot open binary log data file: {args.logfile}, exiting...")
+                sys.exit(1)
+            logdata = logfile.read()
 
     return logdata
 
@@ -112,12 +109,20 @@ def main():
     else:
         logger.setLevel(logging.INFO)
 
+    log_parser = parserlib.get_log_parser(args.dbfile, logger)
+
     logdata = read_log_file(args)
     if logdata is None:
         logger.error("ERROR: cannot read log from file: %s, exiting...", args.logfile)
         sys.exit(1)
 
-    parserlib.parser(logdata, args.dbfile, logger)
+    parsed_data_offset = parserlib.parser(logdata, log_parser, logger)
+    if parsed_data_offset != len(logdata):
+        logger.error(
+            'ERROR: Not all data was parsed, %d bytes left unparsed',
+            len(logdata) - parsed_data_offset,
+        )
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()

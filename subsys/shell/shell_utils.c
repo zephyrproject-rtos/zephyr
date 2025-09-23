@@ -496,9 +496,16 @@ void z_shell_cmd_trim(const struct shell *sh)
 	sh->ctx->cmd_buff_pos = sh->ctx->cmd_buff_len;
 }
 
+enum shell_device_status {
+	SHELL_DEVICE_STATUS_ANY,
+	SHELL_DEVICE_STATUS_READY,
+	SHELL_DEVICE_STATUS_NON_READY
+};
+
 static const struct device *shell_device_internal(size_t idx,
 						  const char *prefix,
-						  shell_device_filter_t filter)
+						  shell_device_filter_t filter,
+						  enum shell_device_status status)
 {
 	size_t match_idx = 0;
 	const struct device *dev;
@@ -506,7 +513,11 @@ static const struct device *shell_device_internal(size_t idx,
 	const struct device *dev_end = dev + len;
 
 	while (dev < dev_end) {
-		if (device_is_ready(dev)
+		if ((status == SHELL_DEVICE_STATUS_ANY
+		     || (status == SHELL_DEVICE_STATUS_READY &&
+			 device_is_ready(dev))
+		     || (status == SHELL_DEVICE_STATUS_NON_READY &&
+			 !device_is_ready(dev)))
 		    && (dev->name != NULL)
 		    && (strlen(dev->name) != 0)
 		    && ((prefix == NULL)
@@ -527,13 +538,29 @@ static const struct device *shell_device_internal(size_t idx,
 const struct device *shell_device_filter(size_t idx,
 					 shell_device_filter_t filter)
 {
-	return shell_device_internal(idx, NULL, filter);
+	return shell_device_internal(idx, NULL, filter,
+				     SHELL_DEVICE_STATUS_READY);
 }
 
 const struct device *shell_device_lookup(size_t idx,
 					 const char *prefix)
 {
-	return shell_device_internal(idx, prefix, NULL);
+	return shell_device_internal(idx, prefix, NULL,
+				     SHELL_DEVICE_STATUS_READY);
+}
+
+const struct device *shell_device_lookup_all(size_t idx,
+					     const char *prefix)
+{
+	return shell_device_internal(idx, prefix, NULL,
+				     SHELL_DEVICE_STATUS_ANY);
+}
+
+const struct device *shell_device_lookup_non_ready(size_t idx,
+						   const char *prefix)
+{
+	return shell_device_internal(idx, prefix, NULL,
+				     SHELL_DEVICE_STATUS_NON_READY);
 }
 
 const struct device *shell_device_get_binding(const char *name)
@@ -545,6 +572,52 @@ const struct device *shell_device_get_binding(const char *name)
 	}
 
 	return dev;
+}
+
+#ifdef CONFIG_DEVICE_DT_METADATA
+static inline bool device_has_nodelabel(const struct device *dev,
+					const char *name)
+{
+	const struct device_dt_nodelabels *nl;
+
+	nl = device_get_dt_nodelabels(dev);
+	if (nl != NULL) {
+		size_t i;
+
+		for (i = 0; i < nl->num_nodelabels; i++) {
+			const char *dev_nl = nl->nodelabels[i];
+
+			if ((strlen(dev_nl) == strlen(name)) &&
+			    (strcmp(name, dev_nl) == 0)) {
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+#else
+#define device_has_nodelabel(...) false
+#endif /* CONFIG_DEVICE_DT_METADATA */
+
+const struct device *shell_device_get_binding_all(const char *name)
+{
+	const struct device *dev;
+	size_t len = z_device_get_all_static(&dev);
+	const struct device *dev_end = dev + len;
+
+	if (name != NULL) {
+		for (; dev < dev_end; dev++) {
+			if (((dev->name != NULL)
+			     && (strlen(dev->name) == strlen(name))
+			     && (strcmp(name, dev->name) == 0))
+			    || device_has_nodelabel(dev, name)) {
+				return dev;
+			}
+		}
+	}
+
+	return NULL;
 }
 
 long shell_strtol(const char *str, int base, int *err)

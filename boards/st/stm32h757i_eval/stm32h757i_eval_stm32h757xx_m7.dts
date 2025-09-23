@@ -246,7 +246,7 @@ zephyr_udc0: &usbotg_hs {
 
 &sdmmc1 {
 	status = "okay";
-	clocks = <&rcc STM32_CLOCK_BUS_AHB3 0x00010000>,
+	clocks = <&rcc STM32_CLOCK(AHB3, 16)>,
 			<&rcc STM32_SRC_PLL2_R SDMMC_SEL(1)>;
 	pinctrl-0 = <&sdmmc1_d0_pc8 &sdmmc1_d1_pc9
 			&sdmmc1_d2_pc10 &sdmmc1_d3_pc11
@@ -268,10 +268,12 @@ zephyr_udc0: &usbotg_hs {
 	dual-flash;
 	status = "okay";
 
-	mt25ql512ab1: qspi-nor-flash-1@90000000 {
+	mt25ql512ab1: qspi-nor-flash-1@0 {
 		compatible = "st,stm32-qspi-nor";
-		reg = <0x90000000 DT_SIZE_M(64)>; /* 512 Mbits */
+		reg = <0>;
+		size = <DT_SIZE_M(512)>; /* 512 Mbits */
 		qspi-max-frequency = <72000000>;
+		cs-high-time = <4>; /* >= 50 ns */
 		spi-bus-width = <4>;
 		reset-cmd;
 		status = "okay";
@@ -287,9 +289,10 @@ zephyr_udc0: &usbotg_hs {
 		};
 	};
 
-	mt25ql512ab2: qspi-nor-flash-2@90000000 {
+	mt25ql512ab2: qspi-nor-flash-2@0 {
 		compatible = "st,stm32-qspi-nor";
-		reg = <0x90000000 DT_SIZE_M(64)>; /* 512 Mbits */
+		reg = <0>;
+		size = <DT_SIZE_M(512)>; /* 512 Mbits */
 		qspi-max-frequency = <72000000>;
 		status = "okay";
 	};

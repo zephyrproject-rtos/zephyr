@@ -5,7 +5,6 @@
  */
 #include <zephyr/dt-bindings/sensor/lsm6dsv16x.h>
 
-
 /*
  * Nucleo F401RE board + shield iks4a1
  *
@@ -31,7 +30,7 @@
 		accel-fifo-batch-rate = <LSM6DSV16X_DT_XL_BATCHED_AT_60Hz>;
 		gyro-fifo-batch-rate = <LSM6DSV16X_DT_GY_BATCHED_AT_60Hz>;
 		temp-fifo-batch-rate = <LSM6DSV16X_DT_TEMP_BATCHED_AT_15Hz>;
-		int2-gpios =  <&arduino_header 10 GPIO_ACTIVE_HIGH>; /* D4 (PB5) */
+		int2-gpios = <&arduino_header 10 GPIO_ACTIVE_HIGH>; /* D4 (PB5) */
 		drdy-pin = <2>;
 		drdy-pulsed;
 	};

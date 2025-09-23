@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2025 Arch-Embedded B.V.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	fstab {
+		compatible = "zephyr,fstab";
+		ext2fs1: ext2fs1 {
+			compatible = "zephyr,fstab,ext2";
+			automount;
+			disk-access;
+			disk-name = "RAM";
+			mount-point = "/ext2";
+		};
+	};
+
+	ramdisk0 {
+		compatible = "zephyr,ram-disk";
+		disk-name = "RAM";
+		sector-size = <512>;
+		sector-count = <128>;
+	};
+};

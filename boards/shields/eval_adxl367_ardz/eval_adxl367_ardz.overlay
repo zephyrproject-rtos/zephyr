@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/dt-bindings/sensor/adxl367.h>
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
 
 / {
 	aliases {
@@ -19,7 +20,7 @@
 		compatible = "adi,adxl367";
 		reg = <0x0>;
 		spi-max-frequency = <DT_FREQ_M(1)>;
-		int1-gpios = <&arduino_header 8 GPIO_ACTIVE_HIGH>;
+		int1-gpios = <&arduino_header ARDUINO_HEADER_R3_D2 GPIO_ACTIVE_HIGH>;
 		fifo-mode = <ADXL367_FIFO_MODE_STREAM>;
 		status = "okay";
 	};

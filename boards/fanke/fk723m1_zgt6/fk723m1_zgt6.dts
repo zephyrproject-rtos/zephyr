@@ -1,0 +1,158 @@
+/*
+ * Copyright (c) 2020 Alexander Kozhinov <ak.alexander.kozhinov@gmail.com>
+ * Copyright (c) 2024 zack jiang <1125934312@qq.com>
+ * Copyright (c) 2025 Paul Wedeck <paulwedeck@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/h7/stm32h723Xg.dtsi>
+#include <st/h7/stm32h723zgtx-pinctrl.dtsi>
+
+/ {
+	model = "FK723M1-ZGT6 board";
+	compatible = "fanke,fk723m1-zgt6";
+
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+		zephyr,dtcm = &dtcm;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,canbus = &fdcan1;
+	};
+
+	leds: leds {
+		compatible = "gpio-leds";
+
+		blue_led: led_0 {
+			gpios = <&gpiog 7 GPIO_ACTIVE_LOW>;
+			label = "User LED";
+		};
+	};
+
+	aliases {
+		led0 = &blue_led;
+		sdhc0 = &sdmmc1;
+	};
+};
+
+&clk_lsi {
+	status = "okay";
+};
+
+&clk_hsi {
+	status = "okay";
+};
+
+&clk_hsi48 {
+	status = "okay";
+};
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(25)>;
+	status = "okay";
+};
+
+&clk_lse {
+	status = "okay";
+};
+
+&pll {
+	div-m = <2>;
+	mul-n = <44>;
+	div-p = <1>;
+	div-q = <22>;
+	div-r = <2>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&pll2 {
+	div-m = <2>;
+	mul-n = <32>;
+	div-p = <5>;
+	div-q = <5>;
+	div-r = <5>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(550)>;
+	d1cpre = <1>;
+	hpre = <2>;    /* HCLK: 275   MHz */
+	d1ppre = <2>;  /* APB1: 137.5 MHz */
+	d2ppre1 = <2>; /* APB2: 137.5 MHz */
+	d2ppre2 = <2>; /* APB3: 137.5 MHz */
+	d3ppre = <2>;  /* APB4: 137.5 MHz */
+};
+
+&usart1 {
+	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&rtc {
+	clocks = <&rcc STM32_CLOCK_BUS_APB4 0x00010000>,
+		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
+	status = "okay";
+};
+
+&backup_sram {
+	status = "okay";
+};
+
+zephyr_udc0: &usbotg_hs {
+	pinctrl-0 = <&usb_otg_hs_dm_pa11 &usb_otg_hs_dp_pa12>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&rng {
+	status = "okay";
+};
+
+&sdmmc1 {
+	pinctrl-0 = <&sdmmc1_d0_pc8 &sdmmc1_d1_pc9 &sdmmc1_d2_pc10
+		&sdmmc1_d3_pc11 &sdmmc1_ck_pc12 &sdmmc1_cmd_pd2>;
+	pinctrl-names = "default";
+	clocks = <&rcc STM32_CLOCK(AHB3, 16)>,
+		<&rcc STM32_SRC_PLL1_Q SDMMC_SEL(0)>;
+	disk-name = "SD";
+	status = "okay";
+	bus-width = <4>;
+};
+
+&octospi1 {
+	pinctrl-0 = <&octospim_p1_ncs_pg6 &octospim_p1_clk_pf10
+		&octospim_p1_io0_pf8 &octospim_p1_io1_pf9
+		&octospim_p1_io2_pf7 &octospim_p1_io3_pf6>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	/* Winbond external flash */
+	qspi: qspi-nor-flash@0 {
+		compatible = "st,stm32-ospi-nor";
+		reg = <0 DT_SIZE_M(8)>; /* 64 Mbits */
+		ospi-max-frequency = <DT_FREQ_M(133)>;
+		spi-bus-width = <OSPI_QUAD_MODE>;
+		data-rate = <OSPI_STR_TRANSFER>;
+		writeoc = "PP_1_1_4";
+		size = <DT_SIZE_M(64)>;
+		status = "okay";
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			storage_partition: partition@0 {
+				reg = <0x00000000 DT_SIZE_M(8)>; /* 64 Mbits */
+			};
+		};
+	};
+};

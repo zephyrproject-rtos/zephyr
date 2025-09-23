@@ -11,6 +11,7 @@ menuconfig STM32_LTDC
 	select USE_STM32_HAL_RIF if SOC_SERIES_STM32N6X
 	select CACHE_MANAGEMENT if CPU_HAS_DCACHE
 	select PINCTRL
+	select RESET
 	help
 	  Enable driver for STM32 LCT-TFT display controller periheral.
 
@@ -66,6 +67,11 @@ config STM32_LTDC_FB_SMH_ATTRIBUTE
 	  0: SMH_REG_ATTR_CACHEABLE
 	  1: SMH_REG_ATTR_NON_CACHEABLE
 	  2: SMH_REG_ATTR_EXTERNAL
+
+config STM32_LTDC_FB_SMH_ALIGN
+	int "Shared multi heap buffer alignment for the display buffer"
+	depends on STM32_LTDC_FB_USE_SHARED_MULTI_HEAP
+	default 32
 
 config STM32_LTDC_DISABLE_FMC_BANK1
 	bool "Disable FMC bank1 for STM32F7/H7 series"

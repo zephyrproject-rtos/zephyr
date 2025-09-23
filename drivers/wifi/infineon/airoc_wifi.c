@@ -258,7 +258,7 @@ static void scan_callback(whd_scan_result_t **result_ptr, void *user_data, whd_s
 		return;
 	}
 
-	/* We recived scan data so process it */
+	/* We received scan data so process it */
 	if ((result_ptr != NULL) && (*result_ptr != NULL)) {
 		memcpy(&whd_scan_result, *result_ptr, sizeof(whd_scan_result_t));
 		parse_scan_result(&whd_scan_result, &zephyr_scan_result);

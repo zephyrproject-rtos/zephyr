@@ -203,7 +203,7 @@ void bma4xx_emul_set_accel_data(const struct emul *target, q31_t value, int8_t s
 	int16_t reg_val;
 
 	/* 0x00 -> +/-2g; 0x01 -> +/-4g; 0x02 -> +/-8g; 0x03 -> +/- 16g; */
-	int64_t accel_range = (2 << data->regs[BMA4XX_REG_ACCEL_RANGE]);
+	int64_t accel_range = 2LL << data->regs[BMA4XX_REG_ACCEL_RANGE];
 
 	unshifted = shift < 0 ? ((int64_t)value >> -shift) : ((int64_t)value << shift);
 
@@ -244,6 +244,7 @@ static int bma4xx_emul_backend_set_channel(const struct emul *target, struct sen
 		bma4xx_emul_set_accel_data(target, value[0], shift, BMA4XX_REG_DATA_8);
 		bma4xx_emul_set_accel_data(target, value[1], shift, BMA4XX_REG_DATA_10);
 		bma4xx_emul_set_accel_data(target, value[2], shift, BMA4XX_REG_DATA_12);
+		break;
 	default:
 		return -ENOTSUP;
 	}

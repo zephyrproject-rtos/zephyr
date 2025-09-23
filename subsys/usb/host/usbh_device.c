@@ -18,7 +18,7 @@ K_MEM_SLAB_DEFINE_STATIC(usb_device_slab, sizeof(struct usb_device),
 
 K_HEAP_DEFINE(usb_device_heap, CONFIG_USBH_USB_DEVICE_HEAP);
 
-struct usb_device *usbh_device_alloc(struct usbh_contex *const uhs_ctx)
+struct usb_device *usbh_device_alloc(struct usbh_context *const uhs_ctx)
 {
 	struct usb_device *udev;
 
@@ -37,7 +37,7 @@ struct usb_device *usbh_device_alloc(struct usbh_contex *const uhs_ctx)
 
 void usbh_device_free(struct usb_device *const udev)
 {
-	struct usbh_contex *const uhs_ctx = udev->ctx;
+	struct usbh_context *const uhs_ctx = udev->ctx;
 
 	sys_bitarray_clear_bit(uhs_ctx->addr_ba, udev->addr);
 	sys_dlist_remove(&udev->node);
@@ -48,7 +48,7 @@ void usbh_device_free(struct usb_device *const udev)
 	k_mem_slab_free(&usb_device_slab, (void *)udev);
 }
 
-struct usb_device *usbh_device_get_any(struct usbh_contex *const uhs_ctx)
+struct usb_device *usbh_device_get_any(struct usbh_context *const uhs_ctx)
 {
 	sys_dnode_t *const node = sys_dlist_peek_head(&uhs_ctx->udevs);
 	struct usb_device *udev;
@@ -58,7 +58,7 @@ struct usb_device *usbh_device_get_any(struct usbh_contex *const uhs_ctx)
 	return udev;
 }
 
-struct usb_device *usbh_device_get(struct usbh_contex *const uhs_ctx, const uint8_t addr)
+struct usb_device *usbh_device_get(struct usbh_context *const uhs_ctx, const uint8_t addr)
 {
 	struct usb_device *udev;
 
@@ -99,7 +99,7 @@ static int validate_device_mps0(const struct usb_device *const udev)
 
 static int alloc_device_address(struct usb_device *const udev, uint8_t *const addr)
 {
-	struct usbh_contex *const uhs_ctx = udev->ctx;
+	struct usbh_context *const uhs_ctx = udev->ctx;
 	int val;
 	int err;
 
@@ -285,7 +285,7 @@ static int parse_configuration_descriptor(struct usb_device *const udev)
 	dhp = (void *)((uint8_t *)udev->cfg_desc + cfg_desc->bLength);
 	desc_end = (void *)((uint8_t *)udev->cfg_desc + cfg_desc->wTotalLength);
 
-	while ((dhp->bDescriptorType != 0 || dhp->bLength != 0) && (void *)dhp < desc_end) {
+	while ((void *)dhp < desc_end && (dhp->bDescriptorType != 0 || dhp->bLength != 0)) {
 		if (dhp->bDescriptorType == USB_DESC_INTERFACE_ASSOC) {
 			iad = (struct usb_association_descriptor *)dhp;
 			LOG_DBG("bFirstInterface %u", iad->bFirstInterface);
@@ -449,7 +449,7 @@ error:
 
 int usbh_device_init(struct usb_device *const udev)
 {
-	struct usbh_contex *const uhs_ctx = udev->ctx;
+	struct usbh_context *const uhs_ctx = udev->ctx;
 	uint8_t new_addr;
 	int err;
 

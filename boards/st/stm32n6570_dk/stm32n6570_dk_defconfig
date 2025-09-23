@@ -16,6 +16,3 @@ CONFIG_ARM_MPU=y
 
 # Enable HW stack protection
 CONFIG_HW_STACK_PROTECTION=y
-
-# No internal Flash
-CONFIG_XIP=n

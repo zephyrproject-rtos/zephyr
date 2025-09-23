@@ -24,6 +24,7 @@
 		pwm-0 = &flexpwm0_pwm0;
 		watchdog0 = &wwdt0;
 		ambient-temp0 = &p3t1755;
+		die-temp0 = &temp0;
 	};
 
 	chosen {
@@ -183,6 +184,13 @@
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_lpuart2>;
 	pinctrl-names = "default";
+};
+
+/*
+ * Uses OS timer as the kernel timer
+ */
+&ostimer0 {
+	status = "okay";
 };
 
 zephyr_udc0: &usb {

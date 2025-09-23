@@ -8,6 +8,7 @@
 #include <nordic/nrf52840_qiaa.dtsi>
 #include <nordic/nrf52840_partition.dtsi>
 #include "ubx_evkninab3_nrf52840-pinctrl.dtsi"
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
@@ -71,28 +72,28 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map = <0 0 &gpio0 04 0>,	/* A0 */
-			   <1 0 &gpio0 30 0>,	/* A1 */
-			   <2 0 &gpio0 5 0>,	/* A2 */
-			   <3 0 &gpio0 2 0>,	/* A3 */
-			   <4 0 &gpio0 28 0>,	/* A4 */
-			   <5 0 &gpio0 3 0>,	/* A5 */
-			   <6 0 &gpio0 29 0>,	/* D0 */
-			   <7 0 &gpio1 13 0>,	/* D1 */
-			   <8 0 &gpio1 12 0>,	/* D2 */
-			   <9 0 &gpio0 31 0>,	/* D3 */
-			   <10 0 &gpio0 13 0>,	/* D4 */
-			   <11 0 &gpio0 11 0>,	/* D5 */
-			   <12 0 &gpio0 9 0>,	/* D6 */
-			   <13 0 &gpio0 10 0>,	/* D7 */
-			   <14 0 &gpio1 9 0>,	/* D8 */
-			   <15 0 &gpio0 12 0>,	/* D9 */
-			   <16 0 &gpio0 14 0>,	/* D10 */
-			   <17 0 &gpio0 15 0>,	/* D11 */
-			   <18 0 &gpio1 0 0>,	/* D12 */
-			   <19 0 &gpio0 7 0>,	/* D13 */
-			   <20 0 &gpio0 16 0>,	/* D14 */
-			   <21 0 &gpio0 24 0>;	/* D15 */
+		gpio-map = <ARDUINO_HEADER_R3_A0 0 &gpio0 04 0>,
+			   <ARDUINO_HEADER_R3_A1 0 &gpio0 30 0>,
+			   <ARDUINO_HEADER_R3_A2 0 &gpio0 5 0>,
+			   <ARDUINO_HEADER_R3_A3 0 &gpio0 2 0>,
+			   <ARDUINO_HEADER_R3_A4 0 &gpio0 28 0>,
+			   <ARDUINO_HEADER_R3_A5 0 &gpio0 3 0>,
+			   <ARDUINO_HEADER_R3_D0 0 &gpio0 29 0>,
+			   <ARDUINO_HEADER_R3_D1 0 &gpio1 13 0>,
+			   <ARDUINO_HEADER_R3_D2 0 &gpio1 12 0>,
+			   <ARDUINO_HEADER_R3_D3 0 &gpio0 31 0>,
+			   <ARDUINO_HEADER_R3_D4 0 &gpio0 13 0>,
+			   <ARDUINO_HEADER_R3_D5 0 &gpio0 11 0>,
+			   <ARDUINO_HEADER_R3_D6 0 &gpio0 9 0>,
+			   <ARDUINO_HEADER_R3_D7 0 &gpio0 10 0>,
+			   <ARDUINO_HEADER_R3_D8 0 &gpio1 9 0>,
+			   <ARDUINO_HEADER_R3_D9 0 &gpio0 12 0>,
+			   <ARDUINO_HEADER_R3_D10 0 &gpio0 14 0>,
+			   <ARDUINO_HEADER_R3_D11 0 &gpio0 15 0>,
+			   <ARDUINO_HEADER_R3_D12 0 &gpio1 0 0>,
+			   <ARDUINO_HEADER_R3_D13 0 &gpio0 7 0>,
+			   <ARDUINO_HEADER_R3_D14 0 &gpio0 16 0>,
+			   <ARDUINO_HEADER_R3_D15 0 &gpio0 24 0>;
 	};
 
 	arduino_adc: analog-connector {

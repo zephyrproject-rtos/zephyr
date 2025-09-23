@@ -278,7 +278,10 @@ static int luatos_air530z_set_fix_rate(const struct device *dev, uint32_t fix_in
 	luatos_air530z_lock(dev);
 
 	ret = gnss_nmea0183_snprintk(data->dynamic_request_buf, sizeof(data->dynamic_request_buf),
-				    "PCAS02,%u", fix_interval_ms);
+				     "PCAS02,%u", fix_interval_ms);
+	if (ret < 0) {
+		goto unlock_return;
+	}
 
 	data->dynamic_script_chat.request_size = ret;
 

@@ -5,6 +5,7 @@
  */
 
 #include "frdm_rw612-pinctrl.dtsi"
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
@@ -55,6 +56,32 @@
 		gpio-map = <10  0 &hsgpio1 12 0>,  /* Pin 10, LCD and touch reset */
 			   <12  0 &hsgpio0 18 0>;  /* Pin 11, LCD touch INT */
 	};
+
+	arduino_header: arduino-connector {
+		compatible = "arduino-header-r3";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <ARDUINO_HEADER_R3_A0 0 &hsgpio1 10 0>,
+			   <ARDUINO_HEADER_R3_A1 0 &hsgpio1 11 0>,
+			   <ARDUINO_HEADER_R3_A2 0 &hsgpio1 13 0>,
+			   <ARDUINO_HEADER_R3_D0 0 &hsgpio0 9 0>,
+			   <ARDUINO_HEADER_R3_D1 0 &hsgpio0 8 0>,
+			   <ARDUINO_HEADER_R3_D2 0 &hsgpio0 11 0>,
+			   <ARDUINO_HEADER_R3_D3 0 &hsgpio0 15 0>,
+			   <ARDUINO_HEADER_R3_D4 0 &hsgpio0 18 0>,
+			   <ARDUINO_HEADER_R3_D5 0 &hsgpio0 27 0>,
+			   <ARDUINO_HEADER_R3_D6 0 &hsgpio0 0 0>,
+			   <ARDUINO_HEADER_R3_D7 0 &hsgpio0 20 0>,
+			   <ARDUINO_HEADER_R3_D8 0 &hsgpio1 18 0>,
+			   <ARDUINO_HEADER_R3_D9 0 &hsgpio1 20 0>,
+			   <ARDUINO_HEADER_R3_D10 0 &hsgpio0 6 0>,
+			   <ARDUINO_HEADER_R3_D11 0 &hsgpio0 9 0>,
+			   <ARDUINO_HEADER_R3_D12 0 &hsgpio0 8 0>,
+			   <ARDUINO_HEADER_R3_D13 0 &hsgpio0 7 0>,
+			   <ARDUINO_HEADER_R3_D14 0 &hsgpio0 16 0>,
+			   <ARDUINO_HEADER_R3_D15 0 &hsgpio0 17 0>;
+	};
 };
 
 &flexcomm3 {
@@ -101,6 +128,7 @@
 		reg = <0>;
 		size = <DT_SIZE_M(64 * 8)>;
 		status = "okay";
+		jedec-id = [ef 40 20];
 		erase-block-size = <4096>;
 		write-block-size = <1>;
 		spi-max-frequency = <104000000>;
@@ -163,7 +191,7 @@
 	pinctrl-0 = <&pinmux_enet>;
 	pinctrl-names = "default";
 	phy-handle = <&phy>;
-	zephyr,random-mac-address;
+	nxp,unique-mac;
 	phy-connection-type = "rmii";
 };
 

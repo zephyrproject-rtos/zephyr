@@ -77,6 +77,7 @@
 	soc {
 		#address-cells = <1>;
 		#size-cells = <1>;
+		#interrupt-cells = <3>;
 		compatible = "simple-bus";
 		ranges;
 
@@ -85,13 +86,14 @@
 			reg = <0x04700000 0x400>;
 			interrupt-parent = <&intc>;
 			interrupts = <14 IRQ_TYPE_FIXED_LEVEL_HIGH 2>;
+
 			status = "okay";
 		};
 
 		ipmhost: ipm@4100000 {
 			compatible = "intel,sedi-ipm";
-			reg = <0x4100000 0x1000>;
 			peripheral-id = <0>;
+			reg = <0x4100000 0x1000>;
 			interrupt-parent = <&intc>;
 			interrupts = <0 IRQ_TYPE_LOWEST_LEVEL_HIGH 2>;
 
@@ -100,48 +102,74 @@
 
 		uart0: uart@8100000 {
 			compatible = "intel,sedi-uart";
+			peripheral-id = <0>;
 			reg = <0x08100000 0x1000>;
 			interrupt-parent = <&intc>;
 			interrupts = <23 IRQ_TYPE_LOWEST_EDGE_RISING 6>;
-			peripheral-id = <0>;
-			current-speed = <115200>;
+
 			status = "okay";
+			current-speed = <115200>;
+		};
+
+		uart1: uart@8102000 {
+			compatible = "intel,sedi-uart";
+			peripheral-id = <1>;
+			reg = <0x08102000 0x1000>;
+			interrupt-parent = <&intc>;
+			interrupts = <24 IRQ_TYPE_LOWEST_EDGE_RISING 6>;
+
+			status = "disabled";
+			current-speed = <115200>;
+		};
+
+		uart2: uart@8104000 {
+			compatible = "intel,sedi-uart";
+			peripheral-id = <2>;
+			reg = <0x08104000 0x1000>;
+			interrupt-parent = <&intc>;
+			interrupts = <25 IRQ_TYPE_LOWEST_EDGE_RISING 6>;
+
+			status = "disabled";
+			current-speed = <115200>;
 		};
 
 		i2c0: i2c@0 {
 			compatible = "intel,sedi-i2c";
+			peripheral-id = <0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x0 0x1000>;
-			peripheral-id = <0>;
 			interrupt-parent = <&intc>;
 			interrupts = <15 IRQ_TYPE_LOWEST_LEVEL_HIGH 2>;
-			clock-frequency = <I2C_BITRATE_FAST>;
+
 			status = "okay";
+			clock-frequency = <I2C_BITRATE_FAST>;
 		};
 
 		i2c1: i2c@2000 {
 			compatible = "intel,sedi-i2c";
+			peripheral-id = <1>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x00002000 0x1000>;
-			peripheral-id = <1>;
 			interrupt-parent = <&intc>;
 			interrupts = <16 IRQ_TYPE_LOWEST_LEVEL_HIGH 2>;
-			clock-frequency = <I2C_BITRATE_FAST>;
+
 			status = "okay";
+			clock-frequency = <I2C_BITRATE_FAST>;
 		};
 
 		i2c2: i2c@4000 {
 			compatible = "intel,sedi-i2c";
+			peripheral-id = <2>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x00004000 0x1000>;
-			peripheral-id = <2>;
 			interrupt-parent = <&intc>;
 			interrupts = <17 IRQ_TYPE_LOWEST_LEVEL_HIGH 2>;
-			clock-frequency = <I2C_BITRATE_FAST>;
+
 			status = "disabled";
+			clock-frequency = <I2C_BITRATE_FAST>;
 		};
 
 		gpio0: gpio@100000 {
@@ -151,18 +179,18 @@
 			peripheral-id = <0>;
 			reg = <0x00100000 0x1000>;
 			interrupt-parent = <&intc>;
-			ngpios = <32>;
 			interrupts = <13 IRQ_TYPE_LOWEST_LEVEL_HIGH 2>;
+			ngpios = <32>;
 
 			status = "okay";
 		};
 
 		spi0: spi@8000000 {
 			compatible = "intel,sedi-spi";
+			peripheral-id = <0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x8000000 0x1000>;
-			peripheral-id = <0>;
 			interrupt-parent = <&intc>;
 			interrupts = <19 IRQ_TYPE_LOWEST_LEVEL_HIGH 2>;
 
@@ -171,10 +199,10 @@
 
 		spi1: spi@8002000 {
 			compatible = "intel,sedi-spi";
+			peripheral-id = <1>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x8002000 0x1000>;
-			peripheral-id = <1>;
 			interrupt-parent = <&intc>;
 			interrupts = <20 IRQ_TYPE_LOWEST_LEVEL_HIGH 2>;
 
@@ -183,14 +211,15 @@
 
 		dma0: dma@10100000 {
 			compatible = "intel,sedi-dma";
-			#dma-cells = <2>;
-			dma-channels = <8>;
 			peripheral-id = <0>;
 			reg = <0x10100000 0x1000>;
 			interrupts = <11 IRQ_TYPE_LOWEST_LEVEL_HIGH 2>;
 			interrupt-parent = <&intc>;
+			#dma-cells = <2>;
+			dma-channels = <8>;
 			dma-buf-size-alignment = <4>;
 			dma-copy-alignment = <4>;
+
 			status = "okay";
 		};
 	};

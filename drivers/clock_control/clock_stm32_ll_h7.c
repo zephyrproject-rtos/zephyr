@@ -16,8 +16,8 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
-#include "stm32_hsem.h"
-
+#include <stm32_backup_domain.h>
+#include <stm32_hsem.h>
 
 /* Macros to fill up prescaler values */
 #if defined(CONFIG_SOC_SERIES_STM32H7RSX)
@@ -144,10 +144,10 @@
 #define AHB_FREQ_MAX		280000000UL
 #define APBx_FREQ_MAX		140000000UL
 #elif defined(CONFIG_SOC_SERIES_STM32H7RSX)
-/* All h7RS SoC with maximum 500MHz SYSCLK (refer to Datasheet DS14359 rev 1) */
-#define SYSCLK_FREQ_MAX		500000000UL
-#define AHB_FREQ_MAX		250000000UL
-#define APBx_FREQ_MAX		125000000UL
+/* All h7RS SoC with maximum 600MHz SYSCLK (refer to Datasheet DS14359 rev 4) */
+#define SYSCLK_FREQ_MAX		600000000UL
+#define AHB_FREQ_MAX		300000000UL
+#define APBx_FREQ_MAX		150000000UL
 #else
 /* Default: All h7 SoC with maximum 280MHz SYSCLK */
 #define SYSCLK_FREQ_MAX		280000000UL
@@ -217,17 +217,12 @@ static uint32_t get_pllout_frequency(uint32_t pllsrc_freq,
 __unused
 static uint32_t get_pllsrc_frequency(void)
 {
-	switch (LL_RCC_PLL_GetSource()) {
-	case LL_RCC_PLLSOURCE_HSI:
-		return STM32_HSI_FREQ;
-	case LL_RCC_PLLSOURCE_CSI:
-		return STM32_CSI_FREQ;
-	case LL_RCC_PLLSOURCE_HSE:
-		return STM32_HSE_FREQ;
-	case LL_RCC_PLLSOURCE_NONE:
-	default:
-		return 0;
-	}
+/* M4 is not expected to call this function */
+#ifdef CONFIG_CPU_CORTEX_M7
+	return PLLSRC_FREQ;
+#else
+	return 0;
+#endif
 }
 
 __unused
@@ -351,6 +346,8 @@ int enabled_clock(uint32_t src_clk)
 	    ((src_clk == STM32_SRC_PLL2_R) && IS_ENABLED(STM32_PLL2_R_ENABLED)) ||
 	    ((src_clk == STM32_SRC_PLL3_P) && IS_ENABLED(STM32_PLL3_P_ENABLED)) ||
 	    ((src_clk == STM32_SRC_PLL3_Q) && IS_ENABLED(STM32_PLL3_Q_ENABLED)) ||
+	    (src_clk == STM32_SRC_TIMPCLK1) ||
+	    (src_clk == STM32_SRC_TIMPCLK2) ||
 #if defined(CONFIG_SOC_SERIES_STM32H7RSX)
 	    (src_clk == STM32_SRC_HCLK1) ||
 	    (src_clk == STM32_SRC_HCLK2) ||
@@ -642,6 +639,36 @@ static int stm32_clock_control_get_subsys_rate(const struct device *clock,
 	/* PLL 3  has no T-divider */
 #endif /* CONFIG_SOC_SERIES_STM32H7RSX */
 #endif /* STM32_PLL3_ENABLED */
+	case STM32_SRC_TIMPCLK1:
+#if defined(CONFIG_SOC_SERIES_STM32H7RSX)
+		if (IS_ENABLED(STM32_TIMER_PRESCALER)) {
+			*rate = STM32_PPRE1 <= 4 ? ahb_clock : apb1_clock * 4;
+		} else {
+			*rate = STM32_PPRE1 <= 2 ? ahb_clock : apb1_clock * 2;
+		}
+#else /* CONFIG_SOC_SERIES_STM32H7RSX */
+		if (IS_ENABLED(STM32_TIMER_PRESCALER)) {
+			*rate = STM32_D2PPRE1 <= 4 ? ahb_clock : apb1_clock * 4;
+		} else {
+			*rate = STM32_D2PPRE1 <= 2 ? ahb_clock : apb1_clock * 2;
+		}
+#endif /* CONFIG_SOC_SERIES_STM32H7RSX */
+		break;
+	case STM32_SRC_TIMPCLK2:
+#if defined(CONFIG_SOC_SERIES_STM32H7RSX)
+		if (IS_ENABLED(STM32_TIMER_PRESCALER)) {
+			*rate = STM32_PPRE2 <= 4 ? ahb_clock : apb2_clock * 4;
+		} else {
+			*rate = STM32_PPRE2 <= 2 ? ahb_clock : apb2_clock * 2;
+		}
+#else /* CONFIG_SOC_SERIES_STM32H7RSX */
+		if (IS_ENABLED(STM32_TIMER_PRESCALER)) {
+			*rate = STM32_D2PPRE2 <= 4 ? ahb_clock : apb1_clock * 4;
+		} else {
+			*rate = STM32_D2PPRE2 <= 2 ? ahb_clock : apb1_clock * 2;
+		}
+#endif /* CONFIG_SOC_SERIES_STM32H7RSX */
+		break;
 	default:
 		return -ENOTSUP;
 	}
@@ -715,8 +742,7 @@ static void set_up_fixed_clock_sources(void)
 	}
 
 	if (IS_ENABLED(STM32_LSE_ENABLED)) {
-		/* Enable backup domain */
-		LL_PWR_EnableBkUpAccess();
+		stm32_backup_domain_enable_access();
 
 		/* Configure driving capability */
 		LL_RCC_LSE_SetDriveCapability(STM32_LSE_DRIVING << RCC_BDCR_LSEDRV_Pos);
@@ -730,6 +756,8 @@ static void set_up_fixed_clock_sources(void)
 		LL_RCC_LSE_Enable();
 		while (LL_RCC_LSE_IsReady() != 1) {
 		}
+
+		stm32_backup_domain_disable_access();
 	}
 
 	if (IS_ENABLED(STM32_HSI48_ENABLED)) {
@@ -1015,14 +1043,14 @@ int stm32_clock_control_init(const struct device *dev)
 	/* Set up individual enabled clocks */
 	set_up_fixed_clock_sources();
 
+	/* Configure Voltage scale to comply with the desired system frequency */
+	prepare_regulator_voltage_scale();
+
 	/* Set up PLLs */
 	r = set_up_plls();
 	if (r < 0) {
 		return r;
 	}
-
-	/* Configure Voltage scale to comply with the desired system frequency */
-	prepare_regulator_voltage_scale();
 
 	/* Current hclk value */
 	old_hclk_freq = get_hclk_frequency();
@@ -1099,6 +1127,12 @@ int stm32_clock_control_init(const struct device *dev)
 
 	z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
 #endif /* CONFIG_CPU_CORTEX_M7 */
+
+	if (IS_ENABLED(STM32_TIMER_PRESCALER)) {
+		LL_RCC_SetTIMPrescaler(LL_RCC_TIM_PRESCALER_FOUR_TIMES);
+	} else {
+		LL_RCC_SetTIMPrescaler(LL_RCC_TIM_PRESCALER_TWICE);
+	}
 
 	ARG_UNUSED(dev);
 

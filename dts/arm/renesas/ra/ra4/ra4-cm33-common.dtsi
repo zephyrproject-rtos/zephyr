@@ -38,6 +38,14 @@
 			status = "okay";
 		};
 
+		elc: elc@40082000 {
+			compatible = "renesas,ra-elc";
+			reg = <0x40082000  0x70>;
+			#renesas-elc-cells = <2>;
+			clocks = <&pclkb MSTPC 14>;
+			status = "disabled";
+		};
+
 		flash: flash-controller@407e0000 {
 			compatible = "renesas,ra-flash-hp-controller";
 			reg = <0x407e0000 0x10000>;
@@ -94,6 +102,7 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 			ngpios = <16>;
+			vbatts-pins = <2 3 4>;
 			status = "disabled";
 		};
 
@@ -158,6 +167,17 @@
 			#size-cells = <0>;
 			channel = <1>;
 			reg = <0x4011a100 0x100>;
+			status = "disabled";
+		};
+
+		i3c0: i3c@4011f000 {
+			compatible = "renesas,ra-i3c";
+			#address-cells = <3>;
+			#size-cells = <0>;
+			reg = <0x4011f000 0x3e8>;
+			channel = <0>;
+			clocks = <&pclka MSTPB 4>, <&i3cclk 0 0>;
+			clock-names = "pclk", "tclk";
 			status = "disabled";
 		};
 
@@ -271,6 +291,13 @@
 			status = "disabled";
 		};
 
+		crc: crc@40108000{
+			compatible = "renesas,ra-crc";
+			reg = <0x40108000 0x1000>;
+			clocks = <&pclka MSTPC 1>;
+			status = "disabled";
+		};
+
 		dac_global: dac_global@40171000 {
 			compatible = "renesas,ra-dac-global";
 			reg = <0x40171000 0x10c4>;
@@ -320,27 +347,6 @@
 				compatible = "renesas,ra-udc";
 				status = "disabled";
 			};
-		};
-
-		option_setting_ofs: option_setting_ofs@100a100 {
-			compatible = "zephyr,memory-region";
-			reg = <0x0100a100 0x18>;
-			zephyr,memory-region = "OPTION_SETTING_OFS";
-			status = "okay";
-		};
-
-		option_setting_sas: option_setting_sas@100a134 {
-			compatible = "zephyr,memory-region";
-			reg = <0x0100a134 0xcc>;
-			zephyr,memory-region = "OPTION_SETTING_SAS";
-			status = "okay";
-		};
-
-		option_setting_s: option_setting_s@100a200 {
-			compatible = "zephyr,memory-region";
-			reg = <0x0100a200 0x100>;
-			zephyr,memory-region = "OPTION_SETTING_S";
-			status = "okay";
 		};
 
 		port_irq0: external-interrupt@40006000 {

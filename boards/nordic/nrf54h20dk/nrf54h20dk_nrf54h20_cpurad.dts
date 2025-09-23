@@ -24,6 +24,7 @@
 		zephyr,flash = &mram1x;
 		zephyr,sram = &cpurad_ram0;
 		zephyr,shell-uart = &uart135;
+		zephyr,uart-mcumgr = &uart135;
 		zephyr,ieee802154 = &cpurad_ieee802154;
 		zephyr,bt-hci-ipc = &ipc0;
 		nordic,802154-spinel-ipc = &ipc0;
@@ -33,14 +34,6 @@
 		ipc-to-cpusys = &cpurad_cpusys_ipc;
 		resetinfo = &cpurad_resetinfo;
 	};
-};
-
-&cpuapp_cpurad_ram0x_region {
-	status = "okay";
-};
-
-&cpurad_ram0x_region {
-	status = "okay";
 };
 
 &cpurad_bellboard {
@@ -62,8 +55,6 @@
 &cpusec_cpurad_ipc {
 	status = "okay";
 	mbox-names = "tx", "rx";
-	tx-region = <&cpurad_cpusec_ipc_shm>;
-	rx-region = <&cpusec_cpurad_ipc_shm>;
 };
 
 &cpusec_bellboard {
@@ -90,8 +81,12 @@ ipc0: &cpuapp_cpurad_ipc {
 	status = "okay";
 };
 
-&cpurad_rx_partitions {
-	status = "okay";
+slot0_partition: &cpurad_slot0_partition {
+	label = "image-0";
+};
+
+slot1_partition: &cpurad_slot1_partition {
+	label = "image-1";
 };
 
 &grtc {

@@ -7,6 +7,7 @@
 
 #include <nxp/nxp_mcxw71.dtsi>
 #include "frdm_mcxw71-pinctrl.dtsi"
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
@@ -18,6 +19,7 @@
 		blue-pwm-led = &blue_pwm_led;
 		green-pwm-led = &green_pwm_led;
 		red-pwm-led = &red_pwm_led;
+		rtc = &counter_rtc;
 	};
 
 	chosen {
@@ -61,6 +63,35 @@
 			zephyr,code = <INPUT_KEY_0>;
 			status = "okay";
 		};
+	};
+
+	arduino_header: arduino-connector {
+		compatible = "arduino-header-r3";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <ARDUINO_HEADER_R3_A0 0 &gpiod 1 0>,
+			   <ARDUINO_HEADER_R3_A1 0 &gpiod 2 0>,
+			   <ARDUINO_HEADER_R3_A2 0 &gpiod 3 0>,
+			   <ARDUINO_HEADER_R3_A3 0 &gpioa 4 0>,
+			   <ARDUINO_HEADER_R3_A4 0 &gpioc 3 0>,
+			   <ARDUINO_HEADER_R3_A5 0 &gpioc 2 0>,
+			   <ARDUINO_HEADER_R3_D0 0 &gpioa 16 0>,
+			   <ARDUINO_HEADER_R3_D1 0 &gpioa 17 0>,
+			   <ARDUINO_HEADER_R3_D2 0 &gpioc 4 0>,
+			   <ARDUINO_HEADER_R3_D3 0 &gpioc 5 0>,
+			   <ARDUINO_HEADER_R3_D4 0 &gpioa 19 0>,
+			   <ARDUINO_HEADER_R3_D5 0 &gpioc 1 0>,
+			   <ARDUINO_HEADER_R3_D6 0 &gpioa 20 0>,
+			   <ARDUINO_HEADER_R3_D7 0 &gpioa 21 0>,
+			   <ARDUINO_HEADER_R3_D8 0 &gpioc 4 0>,
+			   <ARDUINO_HEADER_R3_D9 0 &gpioa 18 0>,
+			   <ARDUINO_HEADER_R3_D10 0 &gpiob 0 0>,
+			   <ARDUINO_HEADER_R3_D11 0 &gpiob 3 0>,
+			   <ARDUINO_HEADER_R3_D12 0 &gpiob 1 0>,
+			   <ARDUINO_HEADER_R3_D13 0 &gpiob 2 0>,
+			   <ARDUINO_HEADER_R3_D14 0 &gpiob 4 0>,
+			   <ARDUINO_HEADER_R3_D15 0 &gpiob 5 0>;
 	};
 };
 
@@ -191,5 +222,9 @@
 };
 
 &rtc {
+	status = "okay";
+};
+
+&counter_rtc {
 	status = "okay";
 };

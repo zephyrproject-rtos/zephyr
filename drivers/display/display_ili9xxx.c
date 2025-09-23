@@ -331,7 +331,7 @@ static int ili9xxx_set_orientation(const struct device *dev,
 		} else if (orientation == DISPLAY_ORIENTATION_ROTATED_90) {
 			tx_data |= ILI9XXX_MADCTL_MV;
 		} else if (orientation == DISPLAY_ORIENTATION_ROTATED_180) {
-			tx_data |= ILI9XXX_MADCTL_MY;
+			tx_data |= ILI9XXX_MADCTL_MY | ILI9XXX_MADCTL_ML;
 		} else if (orientation == DISPLAY_ORIENTATION_ROTATED_270) {
 			tx_data |= ILI9XXX_MADCTL_MV | ILI9XXX_MADCTL_MX |
 				   ILI9XXX_MADCTL_MY;
@@ -342,7 +342,8 @@ static int ili9xxx_set_orientation(const struct device *dev,
 		} else if (orientation == DISPLAY_ORIENTATION_ROTATED_90) {
 			tx_data |= ILI9XXX_MADCTL_MV | ILI9XXX_MADCTL_MY;
 		} else if (orientation == DISPLAY_ORIENTATION_ROTATED_180) {
-			tx_data |= ILI9XXX_MADCTL_MY | ILI9XXX_MADCTL_MX;
+			tx_data |= ILI9XXX_MADCTL_MY | ILI9XXX_MADCTL_MX |
+				   ILI9XXX_MADCTL_ML;
 		} else if (orientation == DISPLAY_ORIENTATION_ROTATED_270) {
 			tx_data |= ILI9XXX_MADCTL_MV | ILI9XXX_MADCTL_MX;
 		}
@@ -422,6 +423,20 @@ static int ili9xxx_configure(const struct device *dev)
 		r = ili9xxx_transmit(dev, ILI9XXX_DINVON, NULL, 0U);
 		if (r < 0) {
 			return r;
+		}
+	}
+
+	if (config->te_mode != MIPI_DBI_TE_NO_EDGE) {
+		/* Attempt to enable TE signal */
+		r = mipi_dbi_configure_te(config->mipi_dev, config->te_mode, 0);
+		if (r == 0) {
+			/* TE was enabled, send TEON, and enable vblank only */
+			const uint8_t tx_data = 0x0; /* Set M bit to 0 */
+
+			r = ili9xxx_transmit(dev, ILI9XXX_TEON, &tx_data, 1U);
+			if (r < 0) {
+				return r;
+			}
 		}
 	}
 
@@ -535,6 +550,7 @@ static const struct ili9xxx_quirks ili9488_quirks = {
 		.x_resolution = ILI##t##_X_RES,                                \
 		.y_resolution = ILI##t##_Y_RES,                                \
 		.inversion = DT_PROP(INST_DT_ILI9XXX(n, t), display_inversion),\
+		.te_mode = MIPI_DBI_TE_MODE_DT(INST_DT_ILI9XXX(n, t), te_mode),\
 		.regs = &ili##t##_regs_##n,                                    \
 		.regs_init_fn = ili##t##_regs_init,                            \
 	};                                                                     \

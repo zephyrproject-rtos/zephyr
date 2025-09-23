@@ -18,7 +18,11 @@ supported:
   - rtc
   - hwinfo
   - clock_control
+  - usbd
+  - pdm
+  - i2s
   - mspi
+  - sdhc
 testing:
   ignore_tags:
     - net

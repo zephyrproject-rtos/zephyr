@@ -52,7 +52,6 @@
 	/* These aliases are provided for compatibility with samples */
 	aliases {
 		led0 = &blue_led;
-		bootloader-led0 = &blue_led;
 		pwm-led0 = &pwm_led0;
 		sw0 = &button0;
 		mcuboot-button0 = &button0;
@@ -124,7 +123,7 @@
 	pinctrl-names = "default", "sleep";
 };
 
-&i2c1 {
+zephyr_i2c: &i2c1 {
 	compatible = "nordic,nrf-twim";
 	status = "okay";
 

@@ -159,11 +159,17 @@ zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,no_str
 zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler-cpp,no_strict_aliasing>>)
 
 # Extra warnings options for twister run
-if (CONFIG_COMPILER_WARNINGS_AS_ERRORS)
+if(CONFIG_COMPILER_WARNINGS_AS_ERRORS)
   zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,warnings_as_errors>>)
   zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler,warnings_as_errors>>)
   zephyr_compile_options($<$<COMPILE_LANGUAGE:ASM>:$<TARGET_PROPERTY:asm,warnings_as_errors>>)
   zephyr_link_libraries($<TARGET_PROPERTY:linker,warnings_as_errors>)
+endif()
+
+if(CONFIG_DEPRECATION_TEST)
+  zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,no_deprecation_warning>>)
+  zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler,no_deprecation_warning>>)
+  zephyr_compile_options($<$<COMPILE_LANGUAGE:ASM>:$<TARGET_PROPERTY:asm,no_deprecation_warning>>)
 endif()
 
 # @Intent: Set compiler flags to enable buffer overflow checks in libc functions
@@ -208,24 +214,82 @@ endif()
 #    1) Using EXTRA_CFLAGS which is applied regardless of kconfig choice, or
 #    2) Rely on override support being implemented by your toolchain_cc_optimize_*()
 #
-get_property(OPTIMIZE_FOR_NO_OPTIMIZATIONS_FLAG TARGET compiler PROPERTY no_optimization)
-get_property(OPTIMIZE_FOR_DEBUG_FLAG TARGET compiler PROPERTY optimization_debug)
-get_property(OPTIMIZE_FOR_SPEED_FLAG TARGET compiler PROPERTY optimization_speed)
-get_property(OPTIMIZE_FOR_SIZE_FLAG  TARGET compiler PROPERTY optimization_size)
-get_property(OPTIMIZE_FOR_SIZE_AGGRESSIVE_FLAG TARGET compiler PROPERTY optimization_size_aggressive)
+get_property(COMPILER_OPTIMIZE_FOR_NO_OPTIMIZATIONS_FLAG TARGET compiler PROPERTY no_optimization)
+get_property(COMPILER_OPTIMIZE_FOR_DEBUG_FLAG TARGET compiler PROPERTY optimization_debug)
+get_property(COMPILER_OPTIMIZE_FOR_SPEED_FLAG TARGET compiler PROPERTY optimization_speed)
+get_property(COMPILER_OPTIMIZE_FOR_SIZE_FLAG  TARGET compiler PROPERTY optimization_size)
+get_property(COMPILER_OPTIMIZE_FOR_SIZE_AGGRESSIVE_FLAG TARGET compiler PROPERTY optimization_size_aggressive)
+
+get_property(ASM_OPTIMIZE_FOR_NO_OPTIMIZATIONS_FLAG TARGET asm PROPERTY no_optimization)
+get_property(ASM_OPTIMIZE_FOR_DEBUG_FLAG TARGET asm PROPERTY optimization_debug)
+get_property(ASM_OPTIMIZE_FOR_SPEED_FLAG TARGET asm PROPERTY optimization_speed)
+get_property(ASM_OPTIMIZE_FOR_SIZE_FLAG  TARGET asm PROPERTY optimization_size)
+get_property(ASM_OPTIMIZE_FOR_SIZE_AGGRESSIVE_FLAG TARGET asm PROPERTY optimization_size_aggressive)
+
+get_property(LINKER_OPTIMIZE_FOR_NO_OPTIMIZATIONS_FLAG TARGET linker PROPERTY no_optimization)
+get_property(LINKER_OPTIMIZE_FOR_DEBUG_FLAG TARGET linker PROPERTY optimization_debug)
+get_property(LINKER_OPTIMIZE_FOR_SPEED_FLAG TARGET linker PROPERTY optimization_speed)
+get_property(LINKER_OPTIMIZE_FOR_SIZE_FLAG  TARGET linker PROPERTY optimization_size)
+get_property(LINKER_OPTIMIZE_FOR_SIZE_AGGRESSIVE_FLAG TARGET linker PROPERTY optimization_size_aggressive)
+
+# Let the assembler inherit the optimization flags of the compiler if it is
+# not set explicitly.
+if(NOT ASM_OPTIMIZE_FOR_NO_OPTIMIZATIONS_FLAG)
+  set(ASM_OPTIMIZE_FOR_NO_OPTIMIZATIONS_FLAG ${COMPILER_OPTIMIZE_FOR_NO_OPTIMIZATIONS_FLAG})
+endif()
+if(NOT ASM_OPTIMIZE_FOR_DEBUG_FLAG)
+  set(ASM_OPTIMIZE_FOR_DEBUG_FLAG ${COMPILER_OPTIMIZE_FOR_DEBUG_FLAG})
+endif()
+if(NOT ASM_OPTIMIZE_FOR_SPEED_FLAG)
+  set(ASM_OPTIMIZE_FOR_SPEED_FLAG ${COMPILER_OPTIMIZE_FOR_SPEED_FLAG})
+endif()
+if(NOT ASM_OPTIMIZE_FOR_SIZE_FLAG)
+  set(ASM_OPTIMIZE_FOR_SIZE_FLAG ${COMPILER_OPTIMIZE_FOR_SIZE_FLAG})
+endif()
+if(NOT ASM_OPTIMIZE_FOR_SIZE_AGGRESSIVE_FLAG)
+  set(ASM_OPTIMIZE_FOR_SIZE_AGGRESSIVE_FLAG ${COMPILER_OPTIMIZE_FOR_SIZE_AGGRESSIVE_FLAG})
+endif()
+
+# Let the linker inherit the optimization flags of the compiler if it is
+# not set explicitly.
+if(NOT LINKER_OPTIMIZE_FOR_NO_OPTIMIZATIONS_FLAG)
+  set(LINKER_OPTIMIZE_FOR_NO_OPTIMIZATIONS_FLAG ${COMPILER_OPTIMIZE_FOR_NO_OPTIMIZATIONS_FLAG})
+endif()
+if(NOT LINKER_OPTIMIZE_FOR_DEBUG_FLAG)
+  set(LINKER_OPTIMIZE_FOR_DEBUG_FLAG ${COMPILER_OPTIMIZE_FOR_DEBUG_FLAG})
+endif()
+if(NOT LINKER_OPTIMIZE_FOR_SPEED_FLAG)
+  set(LINKER_OPTIMIZE_FOR_SPEED_FLAG ${COMPILER_OPTIMIZE_FOR_SPEED_FLAG})
+endif()
+if(NOT LINKER_OPTIMIZE_FOR_SIZE_FLAG)
+  set(LINKER_OPTIMIZE_FOR_SIZE_FLAG ${COMPILER_OPTIMIZE_FOR_SIZE_FLAG})
+endif()
+if(NOT LINKER_OPTIMIZE_FOR_SIZE_AGGRESSIVE_FLAG)
+  set(LINKER_OPTIMIZE_FOR_SIZE_AGGRESSIVE_FLAG ${COMPILER_OPTIMIZE_FOR_SIZE_AGGRESSIVE_FLAG})
+endif()
 
 # From kconfig choice, pick the actual OPTIMIZATION_FLAG to use.
 # Kconfig choice ensures only one of these CONFIG_*_OPTIMIZATIONS is set.
 if(CONFIG_NO_OPTIMIZATIONS)
-  set(OPTIMIZATION_FLAG ${OPTIMIZE_FOR_NO_OPTIMIZATIONS_FLAG})
+  set(COMPILER_OPTIMIZATION_FLAG ${COMPILER_OPTIMIZE_FOR_NO_OPTIMIZATIONS_FLAG})
+  set(ASM_OPTIMIZATION_FLAG ${ASM_OPTIMIZE_FOR_NO_OPTIMIZATIONS_FLAG})
+  set(LINKER_OPTIMIZATION_FLAG ${LINKER_OPTIMIZE_FOR_NO_OPTIMIZATIONS_FLAG})
 elseif(CONFIG_DEBUG_OPTIMIZATIONS)
-  set(OPTIMIZATION_FLAG ${OPTIMIZE_FOR_DEBUG_FLAG})
+  set(COMPILER_OPTIMIZATION_FLAG ${COMPILER_OPTIMIZE_FOR_DEBUG_FLAG})
+  set(ASM_OPTIMIZATION_FLAG ${ASM_OPTIMIZE_FOR_DEBUG_FLAG})
+  set(LINKER_OPTIMIZATION_FLAG ${LINKER_OPTIMIZE_FOR_DEBUG_FLAG})
 elseif(CONFIG_SPEED_OPTIMIZATIONS)
-  set(OPTIMIZATION_FLAG ${OPTIMIZE_FOR_SPEED_FLAG})
+  set(COMPILER_OPTIMIZATION_FLAG ${COMPILER_OPTIMIZE_FOR_SPEED_FLAG})
+  set(ASM_OPTIMIZATION_FLAG ${ASM_OPTIMIZE_FOR_SPEED_FLAG})
+  set(LINKER_OPTIMIZATION_FLAG ${LINKER_OPTIMIZE_FOR_SPEED_FLAG})
 elseif(CONFIG_SIZE_OPTIMIZATIONS)
-  set(OPTIMIZATION_FLAG ${OPTIMIZE_FOR_SIZE_FLAG}) # Default in kconfig
+  set(COMPILER_OPTIMIZATION_FLAG ${COMPILER_OPTIMIZE_FOR_SIZE_FLAG}) # Default in kconfig
+  set(ASM_OPTIMIZATION_FLAG ${ASM_OPTIMIZE_FOR_SIZE_FLAG})
+  set(LINKER_OPTIMIZATION_FLAG ${LINKER_OPTIMIZE_FOR_SIZE_FLAG})
 elseif(CONFIG_SIZE_OPTIMIZATIONS_AGGRESSIVE)
-  set(OPTIMIZATION_FLAG ${OPTIMIZE_FOR_SIZE_AGGRESSIVE_FLAG})
+  set(COMPILER_OPTIMIZATION_FLAG ${COMPILER_OPTIMIZE_FOR_SIZE_AGGRESSIVE_FLAG})
+  set(ASM_OPTIMIZATION_FLAG ${ASM_OPTIMIZE_FOR_SIZE_AGGRESSIVE_FLAG})
+  set(LINKER_OPTIMIZATION_FLAG ${LINKER_OPTIMIZE_FOR_SIZE_AGGRESSIVE_FLAG})
 else()
   message(FATAL_ERROR
     "Unreachable code. Expected optimization level to have been chosen. See Kconfig.zephyr")
@@ -239,8 +303,12 @@ SOC_* symbol.")
 endif()
 
 # Apply the final optimization flag(s)
-zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:${OPTIMIZATION_FLAG}>)
-zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:${OPTIMIZATION_FLAG}>)
+zephyr_compile_options($<$<COMPILE_LANGUAGE:ASM>:${ASM_OPTIMIZATION_FLAG}>)
+zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:${COMPILER_OPTIMIZATION_FLAG}>)
+zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:${COMPILER_OPTIMIZATION_FLAG}>)
+add_link_options(${LINKER_OPTIMIZATION_FLAG})
+compiler_simple_options(simple_options)
+toolchain_linker_add_compiler_options(${simple_options})
 
 if(CONFIG_LTO)
   zephyr_compile_options($<TARGET_PROPERTY:compiler,optimization_lto>)
@@ -295,6 +363,9 @@ if(CONFIG_CPP)
   elseif(CONFIG_STD_CPP2B)
     set(STD_CPP_DIALECT_FLAGS $<TARGET_PROPERTY:compiler-cpp,dialect_cpp2b>)
     list(APPEND CMAKE_CXX_COMPILE_FEATURES ${compile_features_cpp20})
+  elseif(CONFIG_STD_CPP23)
+    set(STD_CPP_DIALECT_FLAGS $<TARGET_PROPERTY:compiler-cpp,dialect_cpp23>)
+    list(APPEND CMAKE_CXX_COMPILE_FEATURES ${compile_features_cpp23})
   else()
     message(FATAL_ERROR
       "Unreachable code. Expected C++ standard to have been chosen. See Kconfig.zephyr.")
@@ -945,10 +1016,14 @@ add_custom_target(${DEVICE_API_LD_TARGET}
 
 zephyr_linker_include_generated(CMAKE ${DEVICE_API_LINKER_SECTIONS_CMAKE})
 
-# Add a pseudo-target that is up-to-date when all generated headers
-# are up-to-date.
+# Create an interface library which collects the dependencies to Zephyr
+# generated headers. Libraries containing files that include these headers can
+# use add_dependencies or target_link_libraries against this target to ensure
+# that generated headers are up-to-date before the libraries are built. This
+# ordering dependency can be propagated to these libraries' dependenents via
+# the PUBLIC or INTERFACE option of target_link_libraries.
 
-add_custom_target(zephyr_generated_headers)
+add_library(zephyr_generated_headers INTERFACE)
 add_dependencies(zephyr_generated_headers
   offsets_h version_h
   )
@@ -1045,8 +1120,10 @@ if(CONFIG_LLEXT)
   # Weak definitions for these must be added at the end of the link order
   # to avoid shadowing actual implementations.
   add_library(syscall_weakdefs syscall_weakdefs_llext.c)
-  add_dependencies(syscall_weakdefs zephyr_generated_headers)
-  target_link_libraries(syscall_weakdefs zephyr_interface)
+  target_link_libraries(syscall_weakdefs
+    zephyr_generated_headers
+    zephyr_interface
+  )
   list(APPEND NO_WHOLE_ARCHIVE_LIBS syscall_weakdefs)
 endif()
 
@@ -1695,8 +1772,12 @@ list(APPEND
 list(APPEND post_build_byproducts ${KERNEL_MAP_NAME})
 
 # Use ';' as separator to get proper space in resulting command.
-set(gap_fill_prop "$<TARGET_PROPERTY:bintools,elfconvert_flag_gapfill>")
-set(gap_fill "$<$<BOOL:${gap_fill_prop}>:${gap_fill_prop}${CONFIG_BUILD_GAP_FILL_PATTERN}>")
+# Ignore gapfill for RX target as some RX toolchains generate wrong output image when running
+# gapfill for binary format.
+if(NOT CONFIG_RX)
+  set(gap_fill_prop "$<TARGET_PROPERTY:bintools,elfconvert_flag_gapfill>")
+  set(gap_fill "$<$<BOOL:${gap_fill_prop}>:${gap_fill_prop}${CONFIG_BUILD_GAP_FILL_PATTERN}>")
+endif()
 
 if(CONFIG_OUTPUT_PRINT_MEMORY_USAGE)
   target_link_libraries(${logical_target_for_zephyr_elf} $<TARGET_PROPERTY:linker,memusage>)
@@ -1791,18 +1872,31 @@ endif()
 
 if(CONFIG_BUILD_OUTPUT_BIN AND CONFIG_BUILD_OUTPUT_UF2)
   if(CONFIG_BUILD_OUTPUT_UF2_USE_FLASH_BASE)
-    set(flash_addr "${CONFIG_FLASH_BASE_ADDRESS}")
+    set(code_address "${CONFIG_FLASH_BASE_ADDRESS}")
   else()
-    set(flash_addr "${CONFIG_FLASH_LOAD_OFFSET}")
+    set(code_address "${CONFIG_FLASH_LOAD_OFFSET}")
   endif()
 
   if(CONFIG_BUILD_OUTPUT_UF2_USE_FLASH_OFFSET)
     # Note, the `+ 0` in formula below avoids errors in cases where a Kconfig
     #       variable is undefined and thus expands to nothing.
-    math(EXPR flash_addr
-        "${flash_addr} + ${CONFIG_FLASH_LOAD_OFFSET} + 0"
+    math(EXPR code_address
+        "${code_address} + ${CONFIG_FLASH_LOAD_OFFSET} + 0"
          OUTPUT_FORMAT HEXADECIMAL
     )
+  endif()
+
+  # No-XIP images (such as ones for RP2350 with CONFIG_XIP=n)
+  # are typically loaded to RAM
+  if(NOT CONFIG_XIP)
+    if(CONFIG_BUILD_OUTPUT_ADJUST_LMA)
+      math(EXPR code_address
+          "${CONFIG_SRAM_BASE_ADDRESS} + ${CONFIG_BUILD_OUTPUT_ADJUST_LMA} + 0"
+          OUTPUT_FORMAT HEXADECIMAL
+      )
+    else()
+      set(code_address "${CONFIG_SRAM_BASE_ADDRESS}")
+    endif()
   endif()
 
   list(APPEND
@@ -1810,7 +1904,7 @@ if(CONFIG_BUILD_OUTPUT_BIN AND CONFIG_BUILD_OUTPUT_UF2)
     COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/uf2conv.py
             -c
             -f ${CONFIG_BUILD_OUTPUT_UF2_FAMILY_ID}
-            -b ${flash_addr}
+            -b ${code_address}
             -o ${KERNEL_UF2_NAME}
             ${KERNEL_BIN_NAME}
   )
@@ -1899,10 +1993,13 @@ if(CONFIG_BUILD_OUTPUT_S19)
 endif()
 
 if(CONFIG_OUTPUT_DISASSEMBLY)
-if(CONFIG_OUTPUT_DISASSEMBLE_ALL)
+  if(CONFIG_OUTPUT_DISASSEMBLE_ALL)
     set(disassembly_type "$<TARGET_PROPERTY:bintools,disassembly_flag_all>")
-  elseif (CONFIG_OUTPUT_DISASSEMBLY_WITH_SOURCE)
+  elseif(CONFIG_OUTPUT_DISASSEMBLY_WITH_SOURCE)
     set(disassembly_type "$<TARGET_PROPERTY:bintools,disassembly_flag_inline_source>")
+  endif()
+  if(CONFIG_OUTPUT_DISASSEMBLY_NO_ALIASES)
+    list(APPEND disassembly_type "$<TARGET_PROPERTY:bintools,disassembly_flag_no_aliases>")
   endif()
   list(APPEND
     post_build_commands
@@ -1978,32 +2075,20 @@ if(CONFIG_BUILD_OUTPUT_COMPRESS_DEBUG_SECTIONS)
 endif()
 
 if(CONFIG_BUILD_OUTPUT_EXE)
-  if (NOT CONFIG_NATIVE_LIBRARY)
-    list(APPEND
-      post_build_commands
-      COMMAND
-      ${CMAKE_COMMAND} -E copy ${KERNEL_ELF_NAME} ${KERNEL_EXE_NAME}
-      )
-    list(APPEND
-      post_build_byproducts
-      ${KERNEL_EXE_NAME}
-      )
-  else()
-    if(CMAKE_GENERATOR STREQUAL "Unix Makefiles")
-      set(MAKE "${CMAKE_MAKE_PROGRAM}" CACHE FILEPATH "cmake defined make")
-    endif()
-    find_program(MAKE make REQUIRED)
-    add_custom_target(native_runner_executable
-      ALL
-      COMMENT "Building native simulator runner, and linking final executable"
-      COMMAND
-      ${MAKE} -f ${ZEPHYR_BASE}/scripts/native_simulator/Makefile all --warn-undefined-variables
-        -r NSI_CONFIG_FILE=${APPLICATION_BINARY_DIR}/zephyr/NSI/nsi_config
-      # nsi_config is created by the board cmake file
-      DEPENDS ${logical_target_for_zephyr_elf}
-      BYPRODUCTS ${KERNEL_EXE_NAME}
-    )
+  if(CMAKE_GENERATOR STREQUAL "Unix Makefiles")
+    set(MAKE "${CMAKE_MAKE_PROGRAM}" CACHE FILEPATH "cmake defined make")
   endif()
+  find_program(MAKE make REQUIRED)
+  add_custom_target(native_runner_executable
+    ALL
+    COMMENT "Building native simulator runner, and linking final executable"
+    COMMAND
+    ${MAKE} -f ${ZEPHYR_BASE}/scripts/native_simulator/Makefile all --warn-undefined-variables
+      -r NSI_CONFIG_FILE=${APPLICATION_BINARY_DIR}/zephyr/NSI/nsi_config
+    # nsi_config is created by the board cmake file
+    DEPENDS ${logical_target_for_zephyr_elf}
+    BYPRODUCTS ${KERNEL_EXE_NAME}
+  )
   set(BYPRODUCT_KERNEL_EXE_NAME "${PROJECT_BINARY_DIR}/${KERNEL_EXE_NAME}" CACHE FILEPATH "Kernel exe file" FORCE)
 endif()
 
@@ -2090,6 +2175,16 @@ endif()
 if (CONFIG_BUILD_OUTPUT_VIF)
   include(${CMAKE_CURRENT_LIST_DIR}/cmake/vif.cmake)
 endif()
+
+get_property(post_build_patch_elf_commands
+  GLOBAL PROPERTY
+  post_build_patch_elf_commands
+  )
+
+list(PREPEND
+  post_build_commands
+  ${post_build_patch_elf_commands}
+  )
 
 get_property(extra_post_build_commands
   GLOBAL PROPERTY
@@ -2330,6 +2425,9 @@ add_subdirectory_ifdef(
   CONFIG_MAKEFILE_EXPORTS
   cmake/makefile_exports
   )
+
+# Ask the compiler to set the lib_include_dir and rt_library properties
+compiler_set_linker_properties()
 
 toolchain_linker_finalize()
 

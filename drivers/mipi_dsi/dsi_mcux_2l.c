@@ -9,11 +9,10 @@
 #define DT_DRV_COMPAT nxp_mipi_dsi_2l
 
 #include <zephyr/kernel.h>
+#include <zephyr/drivers/display.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/mipi_dsi.h>
 #include <zephyr/drivers/mipi_dsi/mipi_dsi_mcux_2l.h>
-#include <zephyr/drivers/dma.h>
-#include <zephyr/drivers/dma/dma_mcux_smartdma.h>
 #include <zephyr/logging/log.h>
 
 #include <fsl_mipi_dsi.h>
@@ -21,6 +20,8 @@
 #ifdef CONFIG_MIPI_DSI_MCUX_2L_SMARTDMA
 #include <fsl_inputmux.h>
 #include <fsl_smartdma.h>
+#include <zephyr/drivers/dma.h>
+#include <zephyr/drivers/dma/dma_mcux_smartdma.h>
 #endif
 #ifdef CONFIG_MIPI_DSI_MCUX_NXP_DCNANO_LCDIF
 #include <zephyr/drivers/mipi_dbi.h>
@@ -71,10 +72,11 @@ struct mcux_mipi_dsi_data {
 	uint8_t dma_slot;
 #endif
 #ifdef CONFIG_MIPI_DSI_MCUX_NXP_DCNANO_LCDIF
-	uint32_t width;
 	uint32_t height;
-	uint8_t src_bytes_per_pixel;
 #endif
+	uint8_t src_bytes_per_pixel;
+	bool update_tx_len;
+	uint32_t data_left_each_line;
 };
 
 
@@ -217,26 +219,8 @@ static status_t dsi_mcux_dcnano_transfer(const struct device *dev, uint8_t chann
 {
 	const struct mcux_mipi_dsi_config *config = dev->config;
 	struct mcux_mipi_dsi_data *data = dev->data;
-	uint8_t *tx_buf = (uint8_t *)msg->tx_buf;
-
-	/* Record the bpp, width, height of the buffer according to command. They are
-	 * necessary to configure the DCNano DBI in the following memory write.
-	 */
-	if (channel == 0U) {
-		if (msg->cmd == MIPI_DCS_SET_PIXEL_FORMAT) {
-			if (tx_buf[0] == MIPI_DCS_PIXEL_FORMAT_16BIT) {
-				data->src_bytes_per_pixel = 2U;
-			} else {
-				data->src_bytes_per_pixel = 3U;
-			}
-		} else if (msg->cmd == MIPI_DCS_SET_COLUMN_ADDRESS) {
-			data->width = ((tx_buf[2] << 8U) | tx_buf[3]) -
-				((tx_buf[0] << 8U) | tx_buf[1]) + 1U;
-		} else if (msg->cmd == MIPI_DCS_SET_PAGE_ADDRESS) {
-			data->height = ((tx_buf[2] << 8U) | tx_buf[3]) -
-				((tx_buf[0] << 8U) | tx_buf[1]) + 1U;
-		}
-	}
+	struct display_buffer_descriptor *desc =
+		(struct display_buffer_descriptor *)(msg->user_data);
 
 	/* When the DSI channel is 0, for and only for DCS long write like
 	 * MIPI_DCS_WRITE_MEMORY_START or MIPI_DCS_WRITE_MEMORY_CONTINUE, we can
@@ -251,24 +235,36 @@ static status_t dsi_mcux_dcnano_transfer(const struct device *dev, uint8_t chann
 		struct mipi_dbi_config dbi_config = {
 			.mode = MIPI_DBI_MODE_8080_BUS_16_BIT,
 		};
-		struct display_buffer_descriptor desc = {
-			.width = data->width,
+
+		/* Store the remaining height at the beginning of memory write. */
+		if (msg->cmd == MIPI_DCS_WRITE_MEMORY_START) {
+			data->height = desc->height;
+		}
+
+		struct display_buffer_descriptor local_desc = {
+			.width = desc->width,
 			.height = data->height,
-			.pitch = data->width,
+			.pitch = desc->pitch,
 		};
 
 		/* Every time buffer 64 pixels first before the transfer. */
 		DSI_SetDbiPixelFifoSendLevel(config->base, 64U);
 
-		/* Set payload size. */
-		if ((desc.height * desc.width * data->src_bytes_per_pixel) >
+		/* There is limitation for payload size, if the total byte count exceeds the
+		 * limit, send the data in several payloads.
+		 */
+		if ((local_desc.height * local_desc.width * data->src_bytes_per_pixel) >
 			MIPI_DSI_MAX_PAYLOAD_SIZE) {
-			desc.height = MIPI_DSI_MAX_PAYLOAD_SIZE /
-				(desc.width * data->src_bytes_per_pixel);
+			/* Calculate the max allowed height. */
+			local_desc.height = MIPI_DSI_MAX_PAYLOAD_SIZE /
+				(local_desc.width * data->src_bytes_per_pixel);
+			/* The left data will be sent in the following packet(s). */
+			data->height -= local_desc.height;
 		}
 
+		/* Set payload size. */
 		DSI_SetDbiPixelPayloadSize(config->base,
-			(desc.height * desc.width * data->src_bytes_per_pixel) >> 1U);
+			(local_desc.height * local_desc.width * data->src_bytes_per_pixel) >> 1U);
 
 		/* Get the source buffer pixel format and DBI output format
 		 * Currently only support RGB565 and RGB888 when using DCNano DBI.
@@ -302,9 +298,10 @@ static status_t dsi_mcux_dcnano_transfer(const struct device *dev, uint8_t chann
 
 		/* Send the frame buffer data. */
 		mipi_dbi_write_display(config->mipi_dbi, &dbi_config, msg->tx_buf,
-			&desc, pixfmt);
+			&local_desc, pixfmt);
 
-		msg->tx_len = desc.height * desc.width * data->src_bytes_per_pixel;
+		/* Update the actual tx_len. */
+		msg->tx_len = local_desc.height * local_desc.width * data->src_bytes_per_pixel;
 	} else {
 		/* For other DCS commands, the DCNano DBI cannot be used. */
 		if (DSI_TransferBlocking(config->base, dsi_xfer) != kStatus_Success) {
@@ -599,9 +596,7 @@ static int dsi_mcux_detach(const struct device *dev, uint8_t channel,
 static ssize_t dsi_mcux_transfer(const struct device *dev, uint8_t channel,
 				 struct mipi_dsi_msg *msg)
 {
-#if DT_PROP(DT_NODELABEL(mipi_dsi), ulps_control)
 	struct mcux_mipi_dsi_data *data = dev->data;
-#endif
 
 #ifndef CONFIG_MIPI_DSI_MCUX_NXP_DCNANO_LCDIF
 	const struct mcux_mipi_dsi_config *config = dev->config;
@@ -609,6 +604,17 @@ static ssize_t dsi_mcux_transfer(const struct device *dev, uint8_t channel,
 
 	dsi_transfer_t dsi_xfer = {0};
 	status_t status;
+	struct display_buffer_descriptor *desc =
+		(struct display_buffer_descriptor *)(msg->user_data);
+
+	/* Get and store the bytes-per-pixel for later usage. */
+	if (msg->cmd == MIPI_DCS_SET_PIXEL_FORMAT) {
+		if (((uint8_t *)msg->tx_buf)[0] == MIPI_DCS_PIXEL_FORMAT_16BIT) {
+			data->src_bytes_per_pixel = 2U;
+		} else {
+			data->src_bytes_per_pixel = 3U;
+		}
+	}
 
 	dsi_xfer.virtualChannel = channel;
 	dsi_xfer.txDataSize = msg->tx_len;
@@ -617,6 +623,48 @@ static ssize_t dsi_mcux_transfer(const struct device *dev, uint8_t channel,
 	dsi_xfer.rxData = msg->rx_buf;
 	/* default to high speed unless told to use low power */
 	dsi_xfer.flags = (msg->flags & MIPI_DSI_MSG_USE_LPM) ? 0 : kDSI_TransferUseHighSpeed;
+
+	/* When the message command is MIPI_DCS_WRITE_MEMORY_START, update tx_len
+	 * value if needed.
+	 */
+	if (msg->cmd == MIPI_DCS_WRITE_MEMORY_START) {
+#ifdef CONFIG_MIPI_DSI_MCUX_NXP_DCNANO_LCDIF
+		if (desc == NULL) {
+			LOG_ERR("Descriptor is needed as user data for DCNano DBI.");
+			return -EIO;
+		}
+		/* When NXP DCNano driver is used to send the data, it allows non-contiguous tx
+		 * buffer. So only need to check channel number first. If the channel is not 0
+		 * the NXP DCNano driver can not be used with MIPI-DSI, then update tx_len to
+		 * the length of each line if the pitch is larger than the image width.
+		 */
+		if (channel != 0U) {
+#else
+		/* When NXP DCNano driver is not used, the user data is optional. So if the
+		 * higher level passes the display descriptor as user data, it implies the
+		 * pitch may be larger than the image width, then update tx_len to the length
+		 * of each line.
+		 */
+		if (desc != NULL) {
+#endif
+			if ((desc->pitch * data->src_bytes_per_pixel) >
+				(msg->tx_len / desc->height)) {
+				data->data_left_each_line = desc->width * data->src_bytes_per_pixel;
+				msg->tx_len = data->data_left_each_line;
+				data->update_tx_len = true;
+			} else {
+				data->update_tx_len = false;
+			}
+		}
+	/* The descriptor for each memory write is unchanged, so the update_tx_len flag
+	 * only need to set once. Then when command is MIPI_DCS_WRITE_MEMORY_CONTINUE,
+	 * adjust the tx_len according to the flag.
+	 */
+	} else if (msg->cmd == MIPI_DCS_WRITE_MEMORY_CONTINUE) {
+		if (data->update_tx_len) {
+			msg->tx_len = data->data_left_each_line;
+		}
+	}
 
 #if DT_PROP(DT_NODELABEL(mipi_dsi), ulps_control)
 	data->flags = (msg->flags & MIPI_DSI_MSG_USE_LPM) ? MIPI_DSI_MSG_USE_LPM : 0U;
@@ -659,6 +707,18 @@ static ssize_t dsi_mcux_transfer(const struct device *dev, uint8_t channel,
 				LOG_ERR("Transmission failed");
 				return -EIO;
 			}
+
+			/* If the flag is set, adjust the data_left_each_line in case the data of
+			 * each line exceeds the dsi max tx payload size.
+			 */
+			if (data->update_tx_len) {
+				data->data_left_each_line -= ret;
+				if (data->data_left_each_line == 0U) {
+					data->data_left_each_line =
+						desc->width * data->src_bytes_per_pixel;
+				}
+			}
+
 			return ret;
 		}
 #endif

@@ -208,13 +208,15 @@ The following commands will setup a CAP broadcast source using the 16_2_1 preset
 
    bt init
    bap init
-   bt adv-create nconn-nscan ext-adv name
+   bt adv-create nconn-nscan ext-adv
    bt per-adv-param
    bap preset broadcast 16_2_1
    cap_initiator ac_12
-   bt adv-data discov
+   bt adv-data dev-name discov
    bt per-adv-data
    cap_initiator broadcast_start
+   bt adv-start
+   bt per-adv on
 
 
 The broadcast source is created by the :code:`cap_initiator ac_12`, :code:`cap_initiator ac_13`,

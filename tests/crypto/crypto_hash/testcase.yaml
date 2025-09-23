@@ -2,7 +2,9 @@ tests:
   crypto.hash:
     platform_allow:
       - native_sim
+      - nucleo_u575zi_q
     integration_platforms:
       - native_sim
+      - nucleo_u575zi_q
     extra_args: EXTRA_CONF_FILE=prj_mtls_shim.conf
     tags: crypto

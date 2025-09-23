@@ -10,7 +10,6 @@
 	};
 };
 
-
 &flexio {
 	status = "okay";
 	flexio0_pwm: flexio0_pwm {

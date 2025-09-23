@@ -23,6 +23,8 @@ extern "C" {
 /**
  * @brief Modem Ubx
  * @defgroup modem_ubx Modem Ubx
+ * @since 3.7
+ * @version 1.0.0
  * @ingroup modem
  * @{
  */
@@ -53,7 +55,7 @@ struct modem_ubx_match {
 
 struct modem_ubx_script {
 	struct {
-		const struct ubx_frame *buf;
+		const void *buf;
 		uint16_t len;
 	} request;
 	struct {

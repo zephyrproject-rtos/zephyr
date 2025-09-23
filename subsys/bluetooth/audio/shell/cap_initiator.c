@@ -42,6 +42,8 @@
 #define UNICAST_SINK_SUPPORTED (CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0)
 #define UNICAST_SRC_SUPPORTED  (CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0)
 
+struct bt_cap_unicast_group *cap_unicast_group;
+
 #define CAP_UNICAST_CLIENT_STREAM_COUNT ARRAY_SIZE(unicast_streams)
 
 static void cap_discover_cb(struct bt_conn *conn, int err,
@@ -88,13 +90,13 @@ static void unicast_stop_complete_cb(int err, struct bt_conn *conn)
 	} else {
 		bt_shell_print("Unicast stop completed");
 
-		if (default_unicast_group != NULL) {
-			err = bt_bap_unicast_group_delete(default_unicast_group);
+		if (cap_unicast_group != NULL) {
+			err = bt_cap_unicast_group_delete(cap_unicast_group);
 			if (err != 0) {
 				bt_shell_error("Failed to delete unicast group %p: %d",
-					       default_unicast_group, err);
+					       cap_unicast_group, err);
 			} else {
-				default_unicast_group = NULL;
+				cap_unicast_group = NULL;
 			}
 		}
 	}
@@ -146,15 +148,15 @@ static void populate_connected_conns(struct bt_conn *conn, void *data)
 static int cmd_cap_initiator_unicast_start(const struct shell *sh, size_t argc,
 					   char *argv[])
 {
-	struct bt_bap_unicast_group_stream_param
+	struct bt_cap_unicast_group_stream_param
 		group_stream_params[CAP_UNICAST_CLIENT_STREAM_COUNT] = {0};
-	struct bt_bap_unicast_group_stream_pair_param
+	struct bt_cap_unicast_group_stream_pair_param
 		pair_params[CAP_UNICAST_CLIENT_STREAM_COUNT] = {0};
 	struct bt_cap_unicast_audio_start_stream_param
 		stream_param[CAP_UNICAST_CLIENT_STREAM_COUNT] = {0};
 	struct bt_conn *connected_conns[CONFIG_BT_MAX_CONN] = {0};
 	struct bt_cap_unicast_audio_start_param start_param = {0};
-	struct bt_bap_unicast_group_param group_param = {0};
+	struct bt_cap_unicast_group_param group_param = {0};
 	size_t source_cnt = 1U;
 	ssize_t conn_cnt = 1U;
 	size_t sink_cnt = 1U;
@@ -262,8 +264,8 @@ static int cmd_cap_initiator_unicast_start(const struct shell *sh, size_t argc,
 			stream_param[start_param.count].codec_cfg = &uni_stream->codec_cfg;
 
 			group_stream_params[start_param.count].stream =
-				&stream_param[start_param.count].stream->bap_stream;
-			group_stream_params[start_param.count].qos = &uni_stream->qos;
+				stream_param[start_param.count].stream;
+			group_stream_params[start_param.count].qos_cfg = &uni_stream->qos;
 			pair_params[pair_cnt + j].tx_param =
 				&group_stream_params[start_param.count];
 
@@ -293,8 +295,8 @@ static int cmd_cap_initiator_unicast_start(const struct shell *sh, size_t argc,
 			copy_unicast_stream_preset(uni_stream, &default_source_preset);
 			stream_param[start_param.count].codec_cfg = &uni_stream->codec_cfg;
 			group_stream_params[start_param.count].stream =
-				&stream_param[start_param.count].stream->bap_stream;
-			group_stream_params[start_param.count].qos = &uni_stream->qos;
+				stream_param[start_param.count].stream;
+			group_stream_params[start_param.count].qos_cfg = &uni_stream->qos;
 			pair_params[pair_cnt + j].rx_param =
 				&group_stream_params[start_param.count];
 
@@ -318,8 +320,8 @@ static int cmd_cap_initiator_unicast_start(const struct shell *sh, size_t argc,
 	group_param.params_count = pair_cnt;
 	group_param.params = pair_params;
 
-	if (default_unicast_group == NULL) {
-		err = bt_bap_unicast_group_create(&group_param, &default_unicast_group);
+	if (cap_unicast_group == NULL) {
+		err = bt_cap_unicast_group_create(&group_param, &cap_unicast_group);
 		if (err != 0) {
 			shell_print(sh, "Failed to create group: %d", err);
 
@@ -748,7 +750,7 @@ int cap_ac_unicast(const struct shell *sh, const struct bap_unicast_ac_param *pa
 	size_t src_cnt = 0;
 	int err;
 
-	if (default_unicast_group != NULL) {
+	if (cap_unicast_group != NULL) {
 		shell_error(sh, "Unicast Group already exist, please delete first");
 		return -ENOEXEC;
 	}
@@ -840,11 +842,11 @@ int cap_ac_unicast(const struct shell *sh, const struct bap_unicast_ac_param *pa
 	if (err != 0) {
 		shell_error(sh, "Failed to start unicast audio: %d", err);
 
-		err = bt_bap_unicast_group_delete(default_unicast_group);
+		err = bt_cap_unicast_group_delete(cap_unicast_group);
 		if (err != 0) {
 			shell_error(sh, "Failed to delete group: %d", err);
 		} else {
-			default_unicast_group = NULL;
+			cap_unicast_group = NULL;
 		}
 
 		return -ENOEXEC;
@@ -1234,6 +1236,7 @@ int cap_ac_broadcast(const struct shell *sh, size_t argc, char **argv,
 						   BT_AUDIO_LOCATION_FRONT_LEFT)};
 	struct bt_cap_initiator_broadcast_subgroup_param subgroup_param = {0};
 	struct bt_cap_initiator_broadcast_create_param create_param = {0};
+	uint32_t broadcast_id = 0U;
 	struct bt_le_ext_adv *adv;
 	int err;
 
@@ -1247,6 +1250,15 @@ int cap_ac_broadcast(const struct shell *sh, size_t argc, char **argv,
 		shell_error(sh, "Extended advertising set is NULL");
 		return -ENOEXEC;
 	}
+
+	err = bt_rand(&broadcast_id, BT_AUDIO_BROADCAST_ID_SIZE);
+	if (err != 0) {
+		bt_shell_error("Unable to generate broadcast ID: %d\n", err);
+
+		return -ENOEXEC;
+	}
+
+	shell_print(sh, "Generated broadcast_id 0x%06X", broadcast_id);
 
 	copy_broadcast_source_preset(&default_source, &default_broadcast_source_preset);
 	default_source.qos.sdu *= param->chan_cnt;
@@ -1276,6 +1288,7 @@ int cap_ac_broadcast(const struct shell *sh, size_t argc, char **argv,
 	err = bt_cap_initiator_broadcast_audio_create(&create_param, &default_source.cap_source);
 	if (err != 0) {
 		shell_error(sh, "Failed to create broadcast source: %d", err);
+
 		return -ENOEXEC;
 	}
 
@@ -1288,6 +1301,7 @@ int cap_ac_broadcast(const struct shell *sh, size_t argc, char **argv,
 		    "and update / set the base via `bt per-adv data`",
 		    param->name);
 	default_source.is_cap = true;
+	default_source.broadcast_id = broadcast_id;
 
 	return 0;
 }
@@ -1427,49 +1441,6 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 SHELL_CMD_ARG_REGISTER(cap_initiator, &cap_initiator_cmds,
 		       "Bluetooth CAP initiator shell commands",
 		       cmd_cap_initiator, 1, 1);
-
-static size_t nonconnectable_ad_data_add(struct bt_data *data_array, const size_t data_array_size)
-{
-#if defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
-	if (default_source.cap_source != NULL && default_source.is_cap) {
-		static uint8_t ad_cap_broadcast_announcement[5] = {
-			BT_UUID_16_ENCODE(BT_UUID_BROADCAST_AUDIO_VAL),
-		};
-		uint32_t broadcast_id;
-		int err;
-
-		err = bt_rand(&broadcast_id, BT_AUDIO_BROADCAST_ID_SIZE);
-		if (err) {
-			bt_shell_error("Unable to generate broadcast ID: %d\n", err);
-
-			return 0;
-		}
-
-		sys_put_le24(broadcast_id, &ad_cap_broadcast_announcement[2]);
-		data_array[0].type = BT_DATA_SVC_DATA16;
-		data_array[0].data_len = ARRAY_SIZE(ad_cap_broadcast_announcement);
-		data_array[0].data = ad_cap_broadcast_announcement;
-
-		return 1;
-	}
-#endif /* CONFIG_BT_BAP_BROADCAST_SOURCE */
-
-	return 0;
-}
-
-size_t cap_initiator_ad_data_add(struct bt_data *data_array, const size_t data_array_size,
-				 const bool discoverable, const bool connectable)
-{
-	if (!discoverable) {
-		return 0;
-	}
-
-	if (!connectable) {
-		return nonconnectable_ad_data_add(data_array, data_array_size);
-	}
-
-	return 0;
-}
 
 size_t cap_initiator_pa_data_add(struct bt_data *data_array, const size_t data_array_size)
 {

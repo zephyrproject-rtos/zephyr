@@ -8,18 +8,58 @@ The following Kconfig options are available for the LLEXT subsystem:
 Heap size
 ----------
 
-The LLEXT subsystem needs a static heap to be allocated for extension related
-data. The following option controls this allocation.
+The LLEXT subsystem needs a heap to be allocated for extension related data.
+The following option controls this allocation, when allocating a static heap.
 
 :kconfig:option:`CONFIG_LLEXT_HEAP_SIZE`
 
         Size of the LLEXT heap in kilobytes.
+
+For boards using the Harvard architecture, the LLEXT heap is split into two:
+one heap in instruction memory and another in data memory. The following options
+control these allocations.
+
+:kconfig:option:`CONFIG_LLEXT_INSTR_HEAP_SIZE`
+
+        Size of the LLEXT heap in instruction memory in kilobytes.
+
+:kconfig:option:`CONFIG_LLEXT_DATA_HEAP_SIZE`
+
+        Size of the LLEXT heap in data memory in kilobytes.
+
+.. note::
+   The LLEXT instruction heap is grouped with Zephyr .rodata, which the linker
+   typically places after .text in instruction memory.
+
+.. warning::
+   LLEXT will be unable to link and execute extensions if instruction memory
+   (i.e., memory the processor can fetch instructions from) is not writable.
+
+Alternatively the application can configure a dynamic heap using the following
+option.
+
+:kconfig:option:`CONFIG_LLEXT_HEAP_DYNAMIC`
+
+        Some applications require loading extensions into the memory which does
+        not exist during the boot time and cannot be allocated statically. Make
+        the application responsible for LLEXT heap allocation. Do not allocate
+        LLEXT heap statically.
+
+        Application must call :c:func:`llext_heap_init` in order to assign a
+        buffer to be used as the LLEXT heap, otherwise LLEXT modules will not
+        load. When the application does not need LLEXT functionality any more,
+        it should call :c:func:`llext_heap_uninit` which releases control of
+        the buffer back to the application.
 
 .. note::
 
    When :ref:`user mode <usermode_api>` is enabled, the heap size must be
    large enough to allow the extension sections to be allocated with the
    alignment required by the architecture.
+
+.. note::
+   On Harvard architectures, applications must call
+   :c:func:`llext_heap_init_harvard`.
 
 .. _llext_kconfig_type:
 

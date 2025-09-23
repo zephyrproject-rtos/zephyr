@@ -11,8 +11,8 @@
 #include <zephyr/arch/cpu.h>
 #include <zephyr/arch/xtensa/arch.h>
 #include <zephyr/pm/pm.h>
+#include <zephyr/pm/policy.h>
 #include <zephyr/pm/device_runtime.h>
-#include <ksched.h>
 
 #include <soc.h>
 #include <adsp_boot.h>
@@ -147,6 +147,11 @@ void soc_start_core(int cpu_num)
 		} else {
 			*rom_jump_vector = (uint32_t) dsp_restore_vector;
 		}
+
+		/* The primary core cannot enter power gating if any of the secondary cores are
+		 * active.
+		 */
+		pm_policy_state_lock_get(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES);
 #else
 		*rom_jump_vector = (uint32_t) z_soc_mp_asm_entry;
 #endif

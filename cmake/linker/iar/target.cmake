@@ -41,32 +41,19 @@ macro(configure_linker_script linker_script_gen linker_pass_define)
   else()
     set(IAR_LIB_USED "")
   endif()
+  zephyr_linker_generate_linker_settings_file(${cmake_linker_script_settings})
 
-  file(GENERATE OUTPUT ${cmake_linker_script_settings} CONTENT
-       "set(FORMAT \"$<TARGET_PROPERTY:linker,FORMAT>\" CACHE INTERNAL \"\")\n
-        set(ENTRY \"$<TARGET_PROPERTY:linker,ENTRY>\" CACHE INTERNAL \"\")\n
-        set(MEMORY_REGIONS \"$<TARGET_PROPERTY:linker,MEMORY_REGIONS>\" CACHE INTERNAL \"\")\n
-        set(GROUPS \"$<TARGET_PROPERTY:linker,GROUPS>\" CACHE INTERNAL \"\")\n
-        set(SECTIONS \"$<TARGET_PROPERTY:linker,SECTIONS>\" CACHE INTERNAL \"\")\n
-        set(SECTION_SETTINGS \"$<TARGET_PROPERTY:linker,SECTION_SETTINGS>\" CACHE INTERNAL \"\")\n
-        set(SYMBOLS \"$<TARGET_PROPERTY:linker,SYMBOLS>\" CACHE INTERNAL \"\")\n
-       "
-    )
   add_custom_command(
     OUTPUT ${linker_script_gen}
            ${STEERING_FILE}
     DEPENDS
            ${extra_dependencies}
+           ${cmake_linker_script_settings}
            ${DEVICE_API_LD_TARGET}
     COMMAND ${CMAKE_COMMAND}
-      -C ${DEVICE_API_LINKER_SECTIONS_CMAKE}
       -C ${cmake_linker_script_settings}
       -DPASS="${linker_pass_define}"
       ${STEERING_FILE_ARG}
-      -DCONFIG_LINKER_LAST_SECTION_ID=${CONFIG_LINKER_LAST_SECTION_ID}
-      -DCONFIG_LINKER_LAST_SECTION_ID_PATTERN=${CONFIG_LINKER_LAST_SECTION_ID_PATTERN}
-      -DCONFIG_IAR_DATA_INIT=${CONFIG_IAR_DATA_INIT}
-      -DCONFIG_IAR_ZEPHYR_INIT=${CONFIG_IAR_ZEPHYR_INIT}
       -DOUT_FILE=${CMAKE_CURRENT_BINARY_DIR}/${linker_script_gen}
       ${IAR_LIB_USED}
       -P ${ZEPHYR_BASE}/cmake/linker/iar/config_file_script.cmake
@@ -83,9 +70,9 @@ function(toolchain_ld_link_elf)
     ${ARGN}                                                   # input args to parse
   )
 
-  foreach(lib ${ZEPHYR_LIBS_PROPERTY})
-    list(APPEND ZEPHYR_LIBS_OBJECTS $<TARGET_OBJECTS:${lib}>)
-    list(APPEND ZEPHYR_LIBS_OBJECTS $<TARGET_PROPERTY:${lib},LINK_LIBRARIES>)
+  set(whole_libs)
+  foreach(lib ${WHOLE_ARCHIVE_LIBS})
+	  list(APPEND whole_libs --whole_archive ${lib})
   endforeach()
 
   set(ILINK_SEMIHOSTING)
@@ -117,8 +104,8 @@ function(toolchain_ld_link_elf)
     --map=${TOOLCHAIN_LD_LINK_ELF_OUTPUT_MAP}
     --log_file=${TOOLCHAIN_LD_LINK_ELF_OUTPUT_MAP}.log
 
-    ${ZEPHYR_LIBS_OBJECTS}
-    kernel
+    ${whole_libs}
+    ${NO_WHOLE_ARCHIVE_LIBS}
     $<TARGET_OBJECTS:${OFFSETS_LIB}>
     --entry=$<TARGET_PROPERTY:linker,ENTRY>
 

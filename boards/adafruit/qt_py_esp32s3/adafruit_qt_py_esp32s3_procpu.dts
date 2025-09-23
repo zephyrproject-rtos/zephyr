@@ -71,7 +71,7 @@
 	pinctrl-names = "default";
 };
 
-&i2c1 {
+zephyr_i2c: &i2c1 {
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	pinctrl-0 = <&i2c1_default>;

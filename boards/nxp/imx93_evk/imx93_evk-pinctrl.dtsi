@@ -323,4 +323,15 @@
 			bias-pull-up;
 		};
 	};
+
+	tpm2_default: tpm2_default {
+		group0 {
+			pinmux = <&iomuxc1_i2c1_scl_tpm_ch_tpm2_ch0>,
+				<&iomuxc1_i2c1_sda_tpm_ch_tpm2_ch1>;
+			drive-open-drain;
+			slew-rate = "slightly_fast";
+			drive-strength = "x4";
+			input-enable;
+		};
+	};
 };

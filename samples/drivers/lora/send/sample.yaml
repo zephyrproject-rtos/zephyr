@@ -1,15 +1,25 @@
 common:
   tags: lora
   depends_on: lora
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "<inf> lora_send: Data sent 0!"
 sample:
   description: Demonstration of LoRa Send functionality
   name: LoRa Send Sample
 tests:
   sample.driver.lora.send:
-    harness: console
-    harness_config:
-      type: one_line
-      regex:
-        - "<inf> lora_send: Data sent 0!"
     integration_platforms:
       - b_l072z_lrwan1
+  sample.driver.lora.send.lbm:
+    filter: dt_compat_enabled("semtech,sx1261") or
+      dt_compat_enabled("semtech,sx1262") or
+      dt_compat_enabled("semtech,sx1272") or
+      dt_compat_enabled("semtech,sx1276")
+    integration_platforms:
+      - b_l072z_lrwan1
+      - rak11720
+    extra_configs:
+      - CONFIG_LORA_MODULE_BACKEND_LORA_BASICS_MODEM=y

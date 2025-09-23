@@ -3,8 +3,45 @@
 # Copyright (c) 2016-2018 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-# This file is contains Zephyr build system Kconfig references and is not
+# This file contains Zephyr build system Kconfig references and is not
 # re-usable outside the Zephyr tree.
+
+# These SOC_COMPATIBLE_NRF* options are common between real and simulated targets.
+# Most code and kconfig options use the COMPATIBLE option, but the few places which are specific
+# for real HW or simulated HW will use the corresponding real SOC_NRF* or BSIM option.
+
+config SOC_COMPATIBLE_NRF
+	bool
+
+config SOC_COMPATIBLE_NRF52X
+	bool
+
+config SOC_COMPATIBLE_NRF53X
+	bool
+
+config SOC_COMPATIBLE_NRF54LX
+	bool
+
+config SOC_COMPATIBLE_NRF52833
+	bool
+
+config SOC_COMPATIBLE_NRF5340_CPUNET
+	bool
+
+config SOC_COMPATIBLE_NRF5340_CPUAPP
+	bool
+
+config SOC_COMPATIBLE_NRF54L15
+	bool
+
+config SOC_COMPATIBLE_NRF54L15_CPUAPP
+	bool
+
+config SOC_COMPATIBLE_NRF54LM20A
+	bool
+
+config SOC_COMPATIBLE_NRF54LM20A_CPUAPP
+	bool
 
 config SOC_FAMILY_NORDIC_NRF
 	select SOC_COMPATIBLE_NRF
@@ -74,28 +111,6 @@ config NRF_ACL_FLASH_REGION_SIZE
 	depends on HAS_HW_NRF_ACL
 	help
 	  FLASH region size for the NRF_ACL peripheral.
-
-config NFCT_PINS_AS_GPIOS
-	bool "[DEPRECATED] NFCT pins as GPIOs"
-	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_NFCT))
-	select DEPRECATED
-	help
-	  Two pins are usually reserved for NFC in SoCs that implement the
-	  NFCT peripheral. This option switches them to normal GPIO mode.
-	  HW enabling happens once in the device lifetime, during the first
-	  system startup. Disabling this option will not switch back these
-	  pins to NFCT mode. Doing this requires UICR erase prior to
-	  flashing device using the image which has this option disabled.
-
-	  NFC pins in nRF52 series: P0.09 and P0.10
-	  NFC pins in nRF5340: P0.02 and P0.03
-
-	  This option is deprecated, please use devicetree to configure NFCT
-	  pins as GPIOS like this:
-
-	  &uicr {
-	      nfct-pins-as-gpios;
-	  };
 
 choice NRF_APPROTECT_HANDLING
 	bool "APPROTECT handling"

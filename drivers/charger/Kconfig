@@ -58,5 +58,6 @@ source "drivers/charger/Kconfig.bq25180"
 source "drivers/charger/Kconfig.bq25713"
 source "drivers/charger/Kconfig.max20335"
 source "drivers/charger/Kconfig.pf1550"
+source "drivers/charger/Kconfig.pca9422"
 
 endif # CHARGER

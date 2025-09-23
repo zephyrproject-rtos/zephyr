@@ -7,6 +7,7 @@
 /dts-v1/;
 #include <silabs/efm32hg322f64.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/pinctrl/gecko-pinctrl-s1.h>
 
 / {
 	model = "Silicon Labs EFM32HG SLSTK3400A board";

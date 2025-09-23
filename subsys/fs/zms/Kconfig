@@ -7,6 +7,7 @@
 
 config ZMS
 	bool "Zephyr Memory Storage"
+	depends on FLASH_MAP
 	select CRC
 	help
 	  Enable Zephyr Memory Storage, which is a key-value storage system designed to work with
@@ -63,7 +64,7 @@ config ZMS_NO_DOUBLE_WRITE
 	bool "Avoid writing the same data again in the storage"
 	help
 	  For some memory technologies, write cycles for memory cells are limited and any
-	  unncessary writes should be avoided.
+	  unnecessary writes should be avoided.
 	  Enable this config to avoid rewriting data in the storage if it already exists.
 	  This option will reduce write performance as it will need to do a research of the
 	  data in the whole storage before any write.

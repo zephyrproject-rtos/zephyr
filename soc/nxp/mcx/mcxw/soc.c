@@ -121,6 +121,7 @@ __weak void clock_init(void)
 	CLOCK_SetIpSrc(kCLOCK_Lpspi0, kCLOCK_IpSrcFro192M);
 	CLOCK_SetIpSrc(kCLOCK_Lpspi1, kCLOCK_IpSrcFro192M);
 	CLOCK_SetIpSrc(kCLOCK_Can0, kCLOCK_IpSrcFro192M);
+	CLOCK_SetIpSrc(kCLOCK_Lpit0, kCLOCK_IpSrcFro192M);
 	CLOCK_SetIpSrc(kCLOCK_Tpm0, kCLOCK_IpSrcFro192M);
 	CLOCK_SetIpSrc(kCLOCK_Tpm1, kCLOCK_IpSrcFro192M);
 	CLOCK_SetIpSrc(kCLOCK_Lpi2c0, kCLOCK_IpSrcFro192M);
@@ -131,6 +132,8 @@ __weak void clock_init(void)
 	CLOCK_SetIpSrc(kCLOCK_Lpspi1, kCLOCK_IpSrcFro192M);
 	CLOCK_SetIpSrc(kCLOCK_Lpadc0, kCLOCK_IpSrcFro192M);
 	CLOCK_SetIpSrcDiv(kCLOCK_Lpadc0, kSCG_SysClkDivBy10);
+	CLOCK_SetIpSrc(kCLOCK_Flexio0, kCLOCK_IpSrcFro192M);
+	CLOCK_SetIpSrcDiv(kCLOCK_Flexio0, kSCG_SysClkDivBy6);
 
 	/* Ungate clocks if the peripheral is enabled in devicetree */
 	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(gpioa), nxp_kinetis_gpio, okay)) {
@@ -151,6 +154,10 @@ __weak void clock_init(void)
 
 	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(lpuart1), nxp_lpuart, okay)) {
 		CLOCK_EnableClock(kCLOCK_Lpuart1);
+	}
+
+	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(tpm0), nxp_lpit, okay)) {
+		CLOCK_EnableClock(kCLOCK_Lpit0);
 	}
 
 	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(tpm0), nxp_kinetis_tpm, okay)) {
@@ -191,6 +198,10 @@ __weak void clock_init(void)
 
 	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(ewm0), nxp_ewm, okay)) {
 		CLOCK_EnableClock(kCLOCK_Ewm0);
+	}
+
+	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexio), nxp_flexio, okay)) {
+		CLOCK_EnableClock(kCLOCK_Flexio0);
 	}
 }
 

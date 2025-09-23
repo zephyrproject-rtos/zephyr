@@ -83,7 +83,7 @@ static inline void gpio_set_dir_masked_n(uint n, uint32_t mask, uint32_t value)
 #if PICO_USE_GPIO_COPROCESSOR
 		gpioc_hi_oe_xor((gpioc_hi_oe_get() ^ value) & mask);
 #else
-		sio_hw->gpio_oe_togl = (sio_hw->gpio_hi_oe ^ value) & mask;
+		sio_hw->gpio_hi_oe_togl = (sio_hw->gpio_hi_oe ^ value) & mask;
 #endif
 	}
 }
@@ -128,12 +128,12 @@ static int gpio_rpi_configure(const struct device *dev,
 	struct gpio_rpi_data *data = dev->data;
 
 	if (flags == GPIO_DISCONNECTED) {
-		gpio_disable_pulls(pin);
+		gpio_disable_pulls(pin + offset);
 		/* This is almost the opposite of the Pico SDK's gpio_set_function. */
-		hw_write_masked(&pads_bank0_hw->io[pin], PADS_BANK0_GPIO0_OD_BITS,
+		hw_write_masked(&pads_bank0_hw->io[pin + offset], PADS_BANK0_GPIO0_OD_BITS,
 				PADS_BANK0_GPIO0_IE_BITS | PADS_BANK0_GPIO0_OD_BITS);
-#ifdef SOC_SERIES_RP2350
-		hw_set_bits(&pads_bank0_hw->io[gpio], PADS_BANK0_GPIO0_ISO_BITS);
+#ifdef CONFIG_SOC_SERIES_RP2350
+		hw_set_bits(&pads_bank0_hw->io[pin + offset], PADS_BANK0_GPIO0_ISO_BITS);
 #endif
 		return 0;
 	}
@@ -161,11 +161,13 @@ static int gpio_rpi_configure(const struct device *dev,
 			if (flags & GPIO_LINE_OPEN_DRAIN) {
 				data->open_drain_mask |= BIT(pin);
 				gpio_put(pin + offset, 0);
-				gpio_set_dir(pin + offset, flags & GPIO_OUTPUT_INIT_LOW);
+				gpio_set_dir(pin + offset,
+					     (flags & GPIO_OUTPUT_INIT_LOW) ? GPIO_OUT : GPIO_IN);
 			} else {
 				data->open_drain_mask &= ~(BIT(pin));
 				gpio_put(pin + offset, 1);
-				gpio_set_dir(pin + offset, flags & GPIO_OUTPUT_INIT_HIGH);
+				gpio_set_dir(pin + offset,
+					     (flags & GPIO_OUTPUT_INIT_HIGH) ? GPIO_OUT : GPIO_IN);
 			}
 		} else {
 			data->single_ended_mask &= ~(BIT(pin));
@@ -205,7 +207,7 @@ static int gpio_rpi_get_config(const struct device *dev, gpio_pin_t pin, gpio_fl
 		}
 	}
 
-	if (pads_bank0_hw->io[pin] & PADS_BANK0_GPIO0_IE_BITS) {
+	if (pads_bank0_hw->io[pin + offset] & PADS_BANK0_GPIO0_IE_BITS) {
 		*flags |= GPIO_INPUT;
 	}
 
@@ -340,14 +342,16 @@ static uint32_t gpio_rpi_get_pending_int(const struct device *dev)
 static int gpio_rpi_port_get_direction(const struct device *port, gpio_port_pins_t map,
 				  gpio_port_pins_t *inputs, gpio_port_pins_t *outputs)
 {
+	const int offset = GPIO_RPI_PINS_PER_PORT * PORT_NO(port);
+
 	/* The Zephyr API considers a disconnected pin to be neither an input nor output.
 	 * Since we disable both OE and IE for disconnected pins clear the mask bits.
 	 */
 	for (int pin = 0; pin < NUM_BANK0_GPIOS; pin++) {
-		if (pads_bank0_hw->io[pin] & PADS_BANK0_GPIO0_OD_BITS) {
+		if (pads_bank0_hw->io[pin + offset] & PADS_BANK0_GPIO0_OD_BITS) {
 			map &= ~BIT(pin);
 		}
-		if (inputs && (pads_bank0_hw->io[pin] & PADS_BANK0_GPIO0_IE_BITS)) {
+		if (inputs && (pads_bank0_hw->io[pin + offset] & PADS_BANK0_GPIO0_IE_BITS)) {
 			*inputs |= BIT(pin);
 		}
 	}
@@ -388,7 +392,8 @@ static void gpio_rpi_isr(const struct device *dev)
 	uint32_t events;
 	uint32_t pin;
 
-	irq_ctrl_base = &iobank0_hw->proc0_irq_ctrl;
+	irq_ctrl_base = get_core_num() ? &io_bank0_hw->proc1_irq_ctrl
+				       : &io_bank0_hw->proc0_irq_ctrl;
 	for (pin = 0; pin < NUM_BANK0_GPIOS; pin++) {
 		status_reg = &irq_ctrl_base->ints[pin / 8];
 		events = (*status_reg >> 4 * (pin % 8)) & ALL_EVENTS;

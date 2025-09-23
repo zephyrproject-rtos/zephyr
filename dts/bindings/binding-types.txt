@@ -96,6 +96,7 @@ power	Power management
 power-domain	Power domain
 ppc	PPC architecture
 ps2	PS/2 (Personal System/2)
+psi5	PSI5 (Peripheral Sensor Interface, 5th generation)
 pwm	PWM (Pulse Width Modulation)
 qspi	QSPI (Quad Serial Peripheral Interface)
 regulator	Regulator
@@ -109,6 +110,7 @@ rtc	RTC (Real Time Clock)
 sd	SD (Secure Digital)
 sdhc	SDHC (Secure Digital High Capacity)
 sensor	Sensors
+sent	SENT (Single Edge Nibble Transmission)
 serial	Serial controller
 shi	SHI (Serial Host Interface)
 sip_svc	Service in Platform
@@ -126,6 +128,7 @@ timestamp	Timestamp
 usb	USB (Universal Serial Bus)
 usb-c	USB (Universal Serial Bus) Type-C
 video	Video
+virtio	Virtio
 virtualization	Virtualization
 w1	1-Wire
 watchdog	Watchdog

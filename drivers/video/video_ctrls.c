@@ -226,17 +226,17 @@ int video_init_int_menu_ctrl(struct video_ctrl *ctrl, const struct device *dev, 
 	return 0;
 }
 
-/* By definition, the cluster is in manual mode if the master control value is 0 */
-static inline bool is_cluster_manual(const struct video_ctrl *master)
+/* By definition, the cluster is in manual mode if the primary control value is 0 */
+static inline bool is_cluster_manual(const struct video_ctrl *primary)
 {
-	return master->type == VIDEO_CTRL_TYPE_INTEGER64 ? master->val64 == 0 : master->val == 0;
+	return primary->type == VIDEO_CTRL_TYPE_INTEGER64 ? primary->val64 == 0 : primary->val == 0;
 }
 
 void video_cluster_ctrl(struct video_ctrl *ctrls, uint8_t sz)
 {
 	bool has_volatiles = false;
 
-	__ASSERT(!sz && !ctrls, "The 1st control, i.e. the master, must not be NULL");
+	__ASSERT(!sz && !ctrls, "The 1st control, i.e. the primary control, must not be NULL");
 
 	for (uint8_t i = 0; i < sz; i++) {
 		ctrls[i].cluster_sz = sz;
@@ -549,30 +549,32 @@ static inline const char *video_get_ctrl_name(uint32_t id)
 	}
 }
 
-int video_query_ctrl(const struct device *dev, struct video_ctrl_query *cq)
+int video_query_ctrl(struct video_ctrl_query *cq)
 {
 	int ret;
 	struct video_device *vdev;
 	struct video_ctrl *ctrl = NULL;
 
-	__ASSERT_NO_MSG(dev != NULL);
 	__ASSERT_NO_MSG(cq != NULL);
+	__ASSERT_NO_MSG(cq->dev != NULL);
 
 	if (cq->id & VIDEO_CTRL_FLAG_NEXT_CTRL) {
-		vdev = video_find_vdev(dev);
 		cq->id &= ~VIDEO_CTRL_FLAG_NEXT_CTRL;
-		while (vdev) {
+		vdev = video_find_vdev(cq->dev);
+		while (vdev != NULL) {
 			SYS_DLIST_FOR_EACH_CONTAINER(&vdev->ctrls, ctrl, node) {
 				if (ctrl->id > cq->id) {
 					goto fill_query;
 				}
 			}
-			vdev = video_find_vdev(vdev->src_dev);
+			cq->id = 0;
+			cq->dev = vdev->src_dev;
+			vdev = video_find_vdev(cq->dev);
 		}
 		return -ENOTSUP;
 	}
 
-	ret = video_find_ctrl(dev, cq->id, &ctrl);
+	ret = video_find_ctrl(cq->dev, cq->id, &ctrl);
 	if (ret) {
 		return ret;
 	}
@@ -592,14 +594,14 @@ fill_query:
 	return 0;
 }
 
-void video_print_ctrl(const struct device *const dev, const struct video_ctrl_query *const cq)
+void video_print_ctrl(const struct video_ctrl_query *const cq)
 {
 	uint8_t i = 0;
 	const char *type = NULL;
 	char typebuf[8];
 
-	__ASSERT_NO_MSG(dev != NULL);
 	__ASSERT_NO_MSG(cq != NULL);
+	__ASSERT_NO_MSG(cq->dev != NULL);
 
 	/* Get type of the control */
 	switch (cq->type) {
@@ -629,7 +631,7 @@ void video_print_ctrl(const struct device *const dev, const struct video_ctrl_qu
 	/* Get current value of the control */
 	struct video_control vc = {.id = cq->id};
 
-	video_get_ctrl(dev, &vc);
+	video_get_ctrl(cq->dev, &vc);
 
 	/* Print the control information */
 	if (cq->type == VIDEO_CTRL_TYPE_INTEGER64) {

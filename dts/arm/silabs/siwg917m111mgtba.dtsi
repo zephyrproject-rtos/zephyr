@@ -16,5 +16,57 @@
 };
 
 &flash0 {
-	reg = <0x08202000 DT_SIZE_K(2048-8)>;
+	reg = <0x08000000 DT_SIZE_M(8)>;
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* See AN1416: SiWx917 SoC Memory Map, 3.1.4 Memory Map (8 MB) */
+		mbr_nwp_partition: partition@0 {
+			label = "mbr_nwp";
+			reg = <0x0000000 DT_SIZE_K(68)>;
+		};
+
+		code_nwp_partition: partition@11000 {
+			label = "code_nwp";
+			reg = <0x00011000 DT_SIZE_K(1916)>;
+		};
+
+		mbr_partition: partition@1f0000 {
+			label = "mbr";
+			reg = <0x001f0000 DT_SIZE_K(68)>;
+		};
+
+		hdr_partition: partition@201000 {
+			label = "hdr";
+			reg = <0x00201000 DT_SIZE_K(4)>;
+		};
+
+		/* 0x00202000-0x00400000: Free space for Zephyr */
+
+		ota_swap_partition: partition@400000 {
+			/* During the upgrade process, this area will be copied to
+			 * 0x011000-0x400000
+			 */
+			label = "ota_swap";
+			reg = <0x00400000 DT_SIZE_K(3900)>;
+		};
+
+		storage_nwp_partition: partition@7cf000 {
+			label = "storage_nwp";
+			reg = <0x007cf000 DT_SIZE_K(160)>;
+		};
+
+		storage_shared_partition: partition@7f7000 {
+			label = "storage_shared";
+			reg = <0x007f7000 DT_SIZE_K(20)>;
+		};
+
+		backup_bootloader_partition: partition@7fc000 {
+			label = "backup_bootloader";
+			reg = <0x007fc000 DT_SIZE_K(16)>;
+		};
+	};
 };

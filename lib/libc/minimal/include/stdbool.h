@@ -9,7 +9,7 @@
 #ifndef ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_STDBOOL_H_
 #define ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_STDBOOL_H_
 
-#ifndef __cplusplus
+#if !defined(__cplusplus) && __STDC_VERSION__ < 202311L
 #define bool   _Bool
 #define true   1
 #define false  0

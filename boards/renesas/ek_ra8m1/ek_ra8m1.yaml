@@ -13,4 +13,7 @@ supported:
   - watchdog
   - usbd
   - counter
+  - i2s
+  - i3c
+  - crc
 vendor: renesas

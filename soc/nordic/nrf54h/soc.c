@@ -22,7 +22,14 @@
 #include <soc/nrfx_coredep.h>
 #include <soc_lrcconf.h>
 #include <dmm.h>
-#include <zephyr/drivers/firmware/nrf_ironside/cpuconf.h>
+#include <uicr/uicr.h>
+
+#if defined(CONFIG_SOC_NRF54H20_CPURAD_ENABLE)
+#include <nrf_ironside/cpuconf.h>
+#endif
+#if defined(CONFIG_SOC_NRF54H20_TDD_ENABLE)
+#include <nrf_ironside/tdd.h>
+#endif
 
 LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 
@@ -31,6 +38,15 @@ LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 #elif defined(NRF_RADIOCORE)
 #define HSFLL_NODE DT_NODELABEL(cpurad_hsfll)
 #endif
+
+#ifdef CONFIG_USE_DT_CODE_PARTITION
+#define FLASH_LOAD_OFFSET DT_REG_ADDR(DT_CHOSEN(zephyr_code_partition))
+#elif defined(CONFIG_FLASH_LOAD_OFFSET)
+#define FLASH_LOAD_OFFSET CONFIG_FLASH_LOAD_OFFSET
+#endif
+
+#define PARTITION_IS_RUNNING_APP_PARTITION(label)                                                  \
+	(DT_REG_ADDR(DT_NODELABEL(label)) == FLASH_LOAD_OFFSET)
 
 sys_snode_t soc_node;
 
@@ -43,8 +59,6 @@ sys_snode_t soc_node;
 				      ADDRESS_SECURITY_Msk |                   \
 				      ADDRESS_DOMAIN_Msk |                     \
 				      ADDRESS_BUS_Msk)))
-
-#define DT_NODELABEL_CPURAD_SLOT0_PARTITION DT_NODELABEL(cpurad_slot0_partition)
 
 static void power_domain_init(void)
 {
@@ -153,16 +167,34 @@ void soc_early_init_hook(void)
 	nrf_spu_periph_perm_dmasec_set(spu, nrf_address_slave_get(ccm030_addr), true);
 #endif
 
-	if (DT_NODE_HAS_STATUS(DT_NODELABEL(nfct), disabled) &&
+	if (((IS_ENABLED(CONFIG_SOC_NRF54H20_CPUAPP) &&
+	      DT_NODE_HAS_STATUS(DT_NODELABEL(nfct), disabled)) ||
+	     DT_NODE_HAS_STATUS(DT_NODELABEL(nfct), reserved)) &&
 	    DT_PROP_OR(DT_NODELABEL(nfct), nfct_pins_as_gpios, 0)) {
 		nrf_nfct_pad_config_enable_set(NRF_NFCT, false);
 	}
 }
 
-#if defined(CONFIG_SOC_NRF54H20_CPURAD_ENABLE)
+#if defined(CONFIG_SOC_LATE_INIT_HOOK)
+
 void soc_late_init_hook(void)
 {
-	int err;
+#if defined(CONFIG_SOC_NRF54H20_TDD_ENABLE)
+	int err_tdd;
+
+	err_tdd = ironside_se_tdd_configure(IRONSIDE_SE_TDD_CONFIG_ON_DEFAULT);
+	__ASSERT(err_tdd == 0, "err_tdd was %d", err_tdd);
+
+	UICR_GPIO_PIN_CNF_CTRLSEL_SET(NRF_P7, 3, GPIO_PIN_CNF_CTRLSEL_TND);
+	UICR_GPIO_PIN_CNF_CTRLSEL_SET(NRF_P7, 4, GPIO_PIN_CNF_CTRLSEL_TND);
+	UICR_GPIO_PIN_CNF_CTRLSEL_SET(NRF_P7, 5, GPIO_PIN_CNF_CTRLSEL_TND);
+	UICR_GPIO_PIN_CNF_CTRLSEL_SET(NRF_P7, 6, GPIO_PIN_CNF_CTRLSEL_TND);
+	UICR_GPIO_PIN_CNF_CTRLSEL_SET(NRF_P7, 7, GPIO_PIN_CNF_CTRLSEL_TND);
+
+#endif
+
+#if defined(CONFIG_SOC_NRF54H20_CPURAD_ENABLE)
+	int err_cpuconf;
 
 	/* The msg will be used for communication prior to IPC
 	 * communication being set up. But at this moment no such
@@ -170,16 +202,40 @@ void soc_late_init_hook(void)
 	 */
 	uint8_t *msg = NULL;
 	size_t msg_size = 0;
+	void *radiocore_address = NULL;
 
-	void *radiocore_address =
-		(void *)(DT_REG_ADDR(DT_GPARENT(DT_NODELABEL_CPURAD_SLOT0_PARTITION)) +
-				 DT_REG_ADDR(DT_NODELABEL_CPURAD_SLOT0_PARTITION));
+#if DT_NODE_EXISTS(DT_NODELABEL(cpurad_slot1_partition))
+	if (PARTITION_IS_RUNNING_APP_PARTITION(slot1_partition)) {
+		radiocore_address =
+			(void *)(DT_REG_ADDR(DT_GPARENT(DT_NODELABEL(cpurad_slot1_partition))) +
+				 DT_REG_ADDR(DT_NODELABEL(cpurad_slot1_partition)) +
+				 CONFIG_ROM_START_OFFSET);
+	} else {
+		radiocore_address =
+			(void *)(DT_REG_ADDR(DT_GPARENT(DT_NODELABEL(cpurad_slot0_partition))) +
+				 DT_REG_ADDR(DT_NODELABEL(cpurad_slot0_partition)) +
+				 CONFIG_ROM_START_OFFSET);
+	}
+#else
+	radiocore_address =
+		(void *)(DT_REG_ADDR(DT_GPARENT(DT_NODELABEL(cpurad_slot0_partition))) +
+			 DT_REG_ADDR(DT_NODELABEL(cpurad_slot0_partition)) +
+			 CONFIG_ROM_START_OFFSET);
+#endif
 
-	/* Don't wait as this is not yet supported. */
-	bool cpu_wait = false;
+	if (IS_ENABLED(CONFIG_SOC_NRF54H20_CPURAD_ENABLE_CHECK_VTOR) &&
+	    sys_read32((mem_addr_t)radiocore_address) == 0xFFFFFFFFUL) {
+		LOG_ERR("Radiocore is not programmed, it will not be started");
 
-	err = ironside_cpuconf(NRF_PROCESSOR_RADIOCORE, radiocore_address, cpu_wait, msg, msg_size);
-	__ASSERT(err == 0, "err was %d", err);
+		return;
+	}
+
+	bool cpu_wait = IS_ENABLED(CONFIG_SOC_NRF54H20_CPURAD_ENABLE_DEBUG_WAIT);
+
+	err_cpuconf = ironside_cpuconf(NRF_PROCESSOR_RADIOCORE, radiocore_address, cpu_wait, msg,
+				       msg_size);
+	__ASSERT(err_cpuconf == 0, "err_cpuconf was %d", err_cpuconf);
+#endif /* CONFIG_SOC_NRF54H20_CPURAD_ENABLE */
 }
 #endif
 

@@ -107,6 +107,8 @@ config X86
 config RISCV
 	bool
 	select ARCH_IS_SET
+	select ATOMIC_OPERATIONS_C if !RISCV_ISA_EXT_A
+	select ATOMIC_OPERATIONS_BUILTIN if RISCV_ISA_EXT_A
 	select ARCH_SUPPORTS_COREDUMP
 	select ARCH_SUPPORTS_COREDUMP_PRIV_STACKS
 	select ARCH_SUPPORTS_ROM_START if !SOC_FAMILY_ESPRESSIF_ESP32
@@ -133,6 +135,7 @@ config XTENSA
 	select ARCH_HAS_DIRECTED_IPIS
 	select THREAD_STACK_INFO
 	select ARCH_HAS_THREAD_PRIV_STACK_SPACE_GET if USERSPACE
+	select ARCH_SUPPORTS_COREDUMP_STACK_PTR if !SMP
 	help
 	  Xtensa architecture
 
@@ -228,7 +231,17 @@ config SRAM_BASE_ADDRESS
 	  /chosen/zephyr,sram in devicetree. The user should generally avoid
 	  changing it via menuconfig or in configuration files.
 
-if ARC || ARM || ARM64 || X86 || RISCV || RX
+config XIP
+	bool "Execute in place"
+	help
+	  This option allows zephyr to operate with its text and read-only
+	  sections residing in ROM (or similar read-only memory). Not all boards
+	  support this option so it must be used with care; you must also
+	  supply a linker command file when building your image. Enabling this
+	  option increases both the code and data footprint of the image.
+
+
+if ARC || ARM || ARM64 || X86 || RISCV || RX || ARCH_POSIX
 
 # Workaround for not being able to have commas in macro arguments
 DT_CHOSEN_Z_FLASH := zephyr,flash
@@ -251,7 +264,7 @@ config FLASH_BASE_ADDRESS
 	  normally set by the board's defconfig file and the user should generally
 	  avoid modifying it via the menu configuration.
 
-endif # ARM || ARM64 || ARC || X86 || RISCV || RX
+endif # ARM || ARM64 || ARC || X86 || RISCV || RX || ARCH_POSIX
 
 if ARCH_HAS_TRUSTED_EXECUTION
 
@@ -313,6 +326,16 @@ config USERSPACE
 	  may or may not catch stack overflows when the system is in
 	  privileged mode or handling a system call; to ensure these are always
 	  caught, enable CONFIG_HW_STACK_PROTECTION.
+
+config NOINIT_SNIPPET_FIRST
+	bool "Place the no-init linker script snippet first"
+	help
+	  By default the include/zephyr/linker/common-noinit.ld file inserts the
+	  snippets-noinit.ld file at the end of the section.  There are times when
+	  the directives in the snippets-noinit.ld file apply to the other directives
+	  in this file.  And in that case the include statement for the snippets-noinit.ld
+	  file needs to come at the start of the section.  This configuration option
+	  allows that to happen.
 
 config PRIVILEGED_STACK_SIZE
 	int "Size of privileged stack"
@@ -440,15 +463,21 @@ config ARCH_STACKWALK_MAX_FRAMES
 
 menu "Interrupt Configuration"
 
+config TOOLCHAIN_SUPPORTS_ISR_TABLES_LOCAL_DECLARATION
+	bool
+	help
+	  Hidden option to signal that toolchain supports local declaration of
+	  interrupt tables.
+
 config ISR_TABLES_LOCAL_DECLARATION_SUPPORTED
 	bool
 	default y
 	# Userspace is currently not supported
 	depends on !USERSPACE
 	# List of currently supported architectures
-	depends on ARM || ARM64
+	depends on ARM || ARM64 || RISCV
 	# List of currently supported toolchains
-	depends on "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "zephyr" || "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "gnuarmemb"
+	depends on "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "zephyr" || "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "gnuarmemb" || "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "llvm" || TOOLCHAIN_SUPPORTS_ISR_TABLES_LOCAL_DECLARATION
 
 config ISR_TABLES_LOCAL_DECLARATION
 	bool "ISR tables created locally and placed by linker"
@@ -464,6 +493,7 @@ config ISR_TABLES_LOCAL_DECLARATION
 
 config DYNAMIC_INTERRUPTS
 	bool "Installation of IRQs at runtime"
+	select SRAM_SW_ISR_TABLE
 	help
 	  Enable installation of interrupts at runtime, which will move some
 	  interrupt-related data structures to RAM instead of ROM, and
@@ -589,6 +619,12 @@ config SRAM_VECTOR_TABLE
 	help
 	  When XiP is enabled, this option will result in the vector table being
 	  relocated from Flash to SRAM.
+
+config SRAM_SW_ISR_TABLE
+	bool "Place the software ISR table in SRAM instead of flash"
+	help
+	  The option specifies that the software interrupts vector table will be
+	  placed inside SRAM instead of the flash.
 
 config IRQ_OFFLOAD_NESTED
 	bool "irq_offload() supports nested IRQs"
@@ -754,6 +790,9 @@ config ARCH_HAS_THREAD_PRIV_STACK_SPACE_GET
 	bool
 	help
 	  Select when the architecture implements arch_thread_priv_stack_space_get().
+
+config ARCH_HAS_HW_SHADOW_STACK
+	bool
 
 #
 # Other architecture related options
@@ -1067,9 +1106,12 @@ config CACHE_MANAGEMENT
 	  This option enables the cache management functions backed by arch or
 	  driver code.
 
+if CACHE_MANAGEMENT
+
+if DCACHE
+
 config DCACHE_LINE_SIZE_DETECT
 	bool "Detect d-cache line size at runtime"
-	depends on CACHE_MANAGEMENT && DCACHE
 	help
 	  This option enables querying some architecture-specific hardware for
 	  finding the d-cache line size at the expense of taking more memory and
@@ -1081,18 +1123,21 @@ config DCACHE_LINE_SIZE_DETECT
 
 config DCACHE_LINE_SIZE
 	int "d-cache line size"
-	depends on CACHE_MANAGEMENT && DCACHE && !DCACHE_LINE_SIZE_DETECT
+	depends on !DCACHE_LINE_SIZE_DETECT
+	default $(dt_node_int_prop_int,/cpus/cpu@0,d-cache-line-size) \
+		  if $(dt_node_has_prop,/cpus/cpu@0,d-cache-line-size)
 	default 0
 	help
-	  Size in bytes of a CPU d-cache line. If this is set to 0 the value is
-	  obtained from the 'd-cache-line-size' DT property instead if present.
-
+	  Size in bytes of a CPU d-cache line.
 
 	  Detect automatically at runtime by selecting DCACHE_LINE_SIZE_DETECT.
 
+endif # DCACHE
+
+if ICACHE
+
 config ICACHE_LINE_SIZE_DETECT
 	bool "Detect i-cache line size at runtime"
-	depends on CACHE_MANAGEMENT && ICACHE
 	help
 	  This option enables querying some architecture-specific hardware for
 	  finding the i-cache line size at the expense of taking more memory and
@@ -1104,17 +1149,19 @@ config ICACHE_LINE_SIZE_DETECT
 
 config ICACHE_LINE_SIZE
 	int "i-cache line size"
-	depends on CACHE_MANAGEMENT && ICACHE && !ICACHE_LINE_SIZE_DETECT
+	depends on !ICACHE_LINE_SIZE_DETECT
+	default $(dt_node_int_prop_int,/cpus/cpu@0,i-cache-line-size) \
+		  if $(dt_node_has_prop,/cpus/cpu@0,i-cache-line-size)
 	default 0
 	help
-	  Size in bytes of a CPU i-cache line. If this is set to 0 the value is
-	  obtained from the 'i-cache-line-size' DT property instead if present.
+	  Size in bytes of a CPU i-cache line.
 
 	  Detect automatically at runtime by selecting ICACHE_LINE_SIZE_DETECT.
 
+endif # ICACHE
+
 choice CACHE_TYPE
 	prompt "Cache type"
-	depends on CACHE_MANAGEMENT
 	default ARCH_CACHE
 
 config ARCH_CACHE
@@ -1128,6 +1175,8 @@ config EXTERNAL_CACHE
 	  External cache controller
 
 endchoice
+
+endif # CACHE_MANAGEMENT
 
 endmenu
 
@@ -1173,3 +1222,9 @@ config ARCH_HAS_CUSTOM_CURRENT_IMPL
 	help
 	  Select when architecture implements arch_current_thread() &
 	  arch_current_thread_set().
+
+config ARCH_IPI_LAZY_COPROCESSORS_SAVE
+	bool
+	help
+	  Select when the architecture has multi-CPU lazy context switching
+	  of coprocessor registers.

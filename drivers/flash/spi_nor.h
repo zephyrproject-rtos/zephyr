@@ -71,6 +71,8 @@
 #define SPI_NOR_CMD_PP_1_4_4_4B  0x3e  /* Quad Page program (1-4-4) 4 Byte Address */
 #define SPI_NOR_CMD_RDFLSR       0x70  /* Read Flag Status Register */
 #define SPI_NOR_CMD_CLRFLSR      0x50  /* Clear Flag Status Register */
+#define SPI_NOR_CMD_WR_VCFGREG   0x81  /* Octal Write volatile configuration Register */
+#define SPI_NOR_OCMD_READ        0xFD  /* Octal IO read command */
 
 /* Flash octal opcodes */
 #define SPI_NOR_OCMD_SE         0x21DE  /* Octal Sector erase */

@@ -3,34 +3,33 @@
 Overview
 ********
 
-PocketBeagle 2 is a computational platform powered by TI AM62x SoC (there are two
-revisions, AM6232 and AM6254).
+PocketBeagle 2 is a computational platform powered by a TI AM6254 SoC.
 
-The board configuration provides support for the ARM Cortex-M4F MCU core.
+(NOTE: Rev A0 used a TI AM6232 SoC and is no longer available. Rev A1
+uses a TI AM6254 SoC.)
 
 See the `PocketBeagle 2 Product Page`_ for details.
 
 Hardware
 ********
+
 PocketBeagle 2 features the TI AM62x SoC based around an Arm Cortex-A53 multicore
 cluster with an Arm Cortex-M4F microcontroller, Imagination Technologies AXE-1-16
-graphics processor (from revision A1) and TI programmable real-time unit subsystem
-microcontroller cluster coprocessors.
+graphics processor and TI programmable real-time unit subsystem microcontroller
+cluster coprocessors.
 
-Zephyr is ported to run on the both A53 cores and/or M4F core.
+Additionally, PocketBeagle 2 also contains an MSPM0L1105 SoC which serves as EEPROM and ADC.
 
-The following listed hardware specifications are used:
+Zephyr is enabled to run on:
 
-- Dual ARM Cortex-A53 cores
-- Low-power ARM Cortex-M4F
-- Memory
-
-   - 256KB of SRAM
-   - 512MB of DDR4
+- Arm Cortex-A53 cores on AM62x,
+- Arm Cortex-M4F core on AM62x, and
+- Arm Cortex-M0+ core on MSPM0L1105.
 
 Currently supported PocketBeagle 2 revisions:
 
-- A0: Comes wth SOC AM6232
+- A0: Comes with SOC AM6232. Discontinued.
+- A1: Comes with SOC AM6254
 
 Supported Features
 ==================
@@ -82,6 +81,14 @@ Download BeagleBoard.org's official `BeagleBoard Imaging Utility`_ to create boo
 SD-card with the Linux distro image. This will boot Linux on the A53 application
 cores. These cores will then load the Zephyr binary on the M4 core using remoteproc.
 
+MSPM0L1105
+==========
+
+Download BeagleBoard.org's official `BeagleBoard Imaging Utility`_ to create bootable
+SD-card with the Linux distro image. This will boot Linux on the A53 application
+cores. We can then flash MSPM0L1105 firmware from Linux using BSL over I2C. The BeagleBoard.org
+distro images ship with a driver that supports `Firmware Upload API`_ for MSPM0L1105.
+
 Flashing
 ********
 
@@ -93,7 +100,7 @@ The testing requires the binary to be copied to the BOOT partition in SD card.
 To test the A53 core, we build the :zephyr:code-sample:`hello_world` sample with the following command.
 
 .. zephyr-app-commands::
-   :board: pocketbeagle_2/am6232/a53
+   :board: pocketbeagle_2/am6254/a53
    :zephyr-app: samples/hello_world
    :goals: build
 
@@ -121,7 +128,7 @@ The testing requires the binary to be copied to the SD card to allow the A53 cor
 To test the M4F core, we build the :zephyr:code-sample:`hello_world` sample with the following command.
 
 .. zephyr-app-commands::
-   :board: pocketbeagle_2/am6232/m4
+   :board: pocketbeagle_2/am6254/m4
    :zephyr-app: samples/hello_world
    :goals: build
 
@@ -142,6 +149,35 @@ The SD card can now be used for booting. The binary will now be loaded onto the 
 
 The binary will run and print Hello world to the MCU_UART0 port.
 
+MSPM0L1105
+==========
+
+.. note::
+   On PocketBeagle 2 MSPM0L1105 is used as EEPROM and ADC. So flashing any custom firmware will
+   break this functionality.
+
+.. note::
+   Flashing new firmware will also clear the EEPROM contents. So please make backup of EEPROM data
+   before attempting to flash firmware to MSPM0L1105.
+
+To test the A53 cores, we build the :zephyr:code-sample:`minimal` sample with the following command.
+
+.. zephyr-app-commands::
+   :board: pocketbeagle_2/mspm0l1105
+   :zephyr-app: samples/basic/minimal
+   :goals: build
+
+This builds the program and the binary is present in the :file:`build/zephyr` directory as
+:file:`zephyr.bin`.
+
+We now flash this binary using FW Upload API.
+
+.. code-block:: console
+
+   echo 1 > /sys/class/firmware/mspm0l1105/loading
+   dd if=zephyr.bin of=/sys/class/firmware/mspm0l1105/data
+   echo 0 > /sys/class/firmware/mspm0l1105/loading
+
 Debugging
 *********
 
@@ -159,6 +195,7 @@ superuser privilege, openocd needs to be launched separately for now:
 Start debugging
 
 .. zephyr-app-commands::
+   :board: pocketbeagle_2/am6254/m4
    :goals: debug
 
 References
@@ -175,3 +212,6 @@ References
 
 .. _bb-zephyr-images:
    https://github.com/beagleboard/bb-zephyr-images/releases
+
+.. _Firmware Upload API:
+   https://www.kernel.org/doc/html/latest/driver-api/firmware/fw_upload.html

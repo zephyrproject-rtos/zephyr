@@ -6,8 +6,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 source "Kconfig.constants"
+source "$(KCONFIG_ENV_FILE)"
 
-osource "${APPLICATION_SOURCE_DIR}/VERSION"
+osource "$(APPLICATION_SOURCE_DIR)/VERSION"
 
 # Include Kconfig.defconfig files first so that they can override defaults and
 # other symbol/choice properties by adding extra symbol/choice definitions.
@@ -460,17 +461,6 @@ config NATIVE_BUILD
 	  Zephyr will be built targeting the host system for debug and
 	  development purposes.
 
-config NATIVE_APPLICATION
-	bool
-	default y if ARCH_POSIX
-	depends on !NATIVE_LIBRARY
-	select NATIVE_BUILD
-	select DEPRECATED
-	help
-	  Build as a native application that can run on the host and using
-	  resources and libraries provided by the host. This option is deprecated
-	  and will be removed in Zephyr v4.3
-
 config NATIVE_LIBRARY
 	bool
 	select NATIVE_BUILD
@@ -507,7 +497,7 @@ config SIZE_OPTIMIZATIONS
 config SIZE_OPTIMIZATIONS_AGGRESSIVE
 	bool "Aggressively optimize for size"
 	help
-	  Compiler optimizations wil be set to -Oz independently of other
+	  Compiler optimizations will be set to -Oz independently of other
 	  options.
 
 config SPEED_OPTIMIZATIONS
@@ -542,7 +532,6 @@ config LTO
 
 config COMPILER_WARNINGS_AS_ERRORS
 	bool "Treat warnings as errors"
-	depends on !DEPRECATION_TEST
 	help
 	  Turn on "warning as error" toolchain flags
 
@@ -697,6 +686,13 @@ config OUTPUT_DISASSEMBLY_WITH_SOURCE
 	  since it can be used to remove one of the elements of
 	  the .lst file that can vary across platforms because
 	  of reasons such as having ".." include paths.
+
+config OUTPUT_DISASSEMBLY_NO_ALIASES
+	bool "Disassemble with raw instruction mnemonics"
+	depends on OUTPUT_DISASSEMBLY
+	help
+	  The .lst file will contain raw instruction mnemonic instead of
+	  pseudo instructions.
 
 config OUTPUT_PRINT_MEMORY_USAGE
 	bool "Print memory usage to stdout"
@@ -968,7 +964,7 @@ config BUILD_OUTPUT_STRIP_PATHS
 	bool "Strip absolute paths from binaries"
 	default y
 	help
-	  If the compiler supports it, strip the ${ZEPHYR_BASE} prefix from the
+	  If the compiler supports it, strip the $(ZEPHYR_BASE) prefix from the
 	  __FILE__ macro used in __ASSERT*, in the
 	  .noinit."/home/joe/zephyr/fu/bar.c" section names and in any
 	  application code.
@@ -1030,6 +1026,12 @@ config WARN_EXPERIMENTAL
 	help
 	  Print a warning when the Kconfig tree is parsed if any experimental
 	  features are enabled.
+
+config NOT_SECURE
+	bool
+	help
+	  Symbol to be selected by a feature to indicate that feature is
+	  not secure.
 
 config TAINT
 	bool

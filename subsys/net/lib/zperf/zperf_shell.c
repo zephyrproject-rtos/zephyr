@@ -516,41 +516,56 @@ static void shell_udp_upload_print_stats(const struct shell *sh,
 			client_rate_in_kbps = 0U;
 		}
 
-		if (!rate_in_kbps) {
+		/* Print warning if no server stats in unicast case; for multicast,
+		 * server stats are not expected.
+		 */
+		if (!rate_in_kbps && !results->is_multicast) {
 			shell_fprintf(sh, SHELL_ERROR,
 				      "LAST PACKET NOT RECEIVED!!!\n");
 		}
 
-		shell_fprintf(sh, SHELL_NORMAL,
-			      "Statistics:\t\tserver\t(client)\n");
-		shell_fprintf(sh, SHELL_NORMAL, "Duration:\t\t");
-		print_number_64(sh, results->time_in_us, TIME_US,
-			     TIME_US_UNIT);
-		shell_fprintf(sh, SHELL_NORMAL, "\t(");
-		print_number_64(sh, results->client_time_in_us, TIME_US,
-			     TIME_US_UNIT);
-		shell_fprintf(sh, SHELL_NORMAL, ")\n");
+		if (results->is_multicast) {
+			shell_fprintf(sh, SHELL_NORMAL, "Statistics (client only)\n");
+			shell_fprintf(sh, SHELL_NORMAL, "Duration:\t\t");
+			print_number_64(sh, results->client_time_in_us, TIME_US, TIME_US_UNIT);
+			shell_fprintf(sh, SHELL_NORMAL, "\n");
+			shell_fprintf(sh, SHELL_NORMAL, "Num packets:\t\t%u\n",
+					results->nb_packets_sent);
+			shell_fprintf(sh, SHELL_NORMAL, "Rate:\t\t\t");
+			print_number(sh, client_rate_in_kbps, KBPS, KBPS_UNIT);
+			shell_fprintf(sh, SHELL_NORMAL, "\n");
+		} else {
+			shell_fprintf(sh, SHELL_NORMAL,
+					"Statistics:\t\tserver\t(client)\n");
+			shell_fprintf(sh, SHELL_NORMAL, "Duration:\t\t");
+			print_number_64(sh, results->time_in_us, TIME_US,
+					TIME_US_UNIT);
+			shell_fprintf(sh, SHELL_NORMAL, "\t(");
+			print_number_64(sh, results->client_time_in_us, TIME_US,
+					TIME_US_UNIT);
+			shell_fprintf(sh, SHELL_NORMAL, ")\n");
 
-		shell_fprintf(sh, SHELL_NORMAL, "Num packets:\t\t%u\t(%u)\n",
-			      results->nb_packets_rcvd,
-			      results->nb_packets_sent);
+			shell_fprintf(sh, SHELL_NORMAL, "Num packets:\t\t%u\t(%u)\n",
+					results->nb_packets_rcvd,
+					results->nb_packets_sent);
 
-		shell_fprintf(sh, SHELL_NORMAL,
-			      "Num packets out order:\t%u\n",
-			      results->nb_packets_outorder);
-		shell_fprintf(sh, SHELL_NORMAL, "Num packets lost:\t%u\n",
-			      results->nb_packets_lost);
+			shell_fprintf(sh, SHELL_NORMAL,
+					"Num packets out order:\t%u\n",
+					results->nb_packets_outorder);
+			shell_fprintf(sh, SHELL_NORMAL, "Num packets lost:\t%u\n",
+					results->nb_packets_lost);
 
-		shell_fprintf(sh, SHELL_NORMAL, "Jitter:\t\t\t");
-		print_number(sh, results->jitter_in_us, TIME_US,
-			     TIME_US_UNIT);
-		shell_fprintf(sh, SHELL_NORMAL, "\n");
+			shell_fprintf(sh, SHELL_NORMAL, "Jitter:\t\t\t");
+			print_number(sh, results->jitter_in_us, TIME_US,
+					TIME_US_UNIT);
+			shell_fprintf(sh, SHELL_NORMAL, "\n");
 
-		shell_fprintf(sh, SHELL_NORMAL, "Rate:\t\t\t");
-		print_number(sh, rate_in_kbps, KBPS, KBPS_UNIT);
-		shell_fprintf(sh, SHELL_NORMAL, "\t(");
-		print_number(sh, client_rate_in_kbps, KBPS, KBPS_UNIT);
-		shell_fprintf(sh, SHELL_NORMAL, ")\n");
+			shell_fprintf(sh, SHELL_NORMAL, "Rate:\t\t\t");
+			print_number(sh, rate_in_kbps, KBPS, KBPS_UNIT);
+			shell_fprintf(sh, SHELL_NORMAL, "\t(");
+			print_number(sh, client_rate_in_kbps, KBPS, KBPS_UNIT);
+			shell_fprintf(sh, SHELL_NORMAL, ")\n");
+		}
 
 #ifdef CONFIG_ZPERF_SESSION_PER_THREAD
 		if (is_async) {
@@ -809,8 +824,9 @@ static int execute_upload(const struct shell *sh,
 	shell_fprintf(sh, SHELL_NORMAL, "\n");
 	shell_fprintf(sh, SHELL_NORMAL, "Packet size:\t%u bytes\n",
 		      param->packet_size);
-	shell_fprintf(sh, SHELL_NORMAL, "Rate:\t\t%u kbps\n",
-		      param->rate_kbps);
+	shell_fprintf(sh, SHELL_NORMAL, "Rate:\t\t");
+	print_number(sh, param->rate_kbps, KBPS, KBPS_UNIT);
+	shell_fprintf(sh, SHELL_NORMAL, "\n");
 
 	if (IS_ENABLED(CONFIG_ZPERF_SESSION_PER_THREAD) &&
 	    COND_CODE_1(CONFIG_ZPERF_SESSION_PER_THREAD,
@@ -1646,8 +1662,9 @@ static void session_cb(struct session *ses,
 		print_number_64(sh,
 				(uint64_t)ses->async_upload_ctx.param.duration_ms * USEC_PER_MSEC,
 				TIME_US, TIME_US_UNIT);
-		shell_fprintf(sh, SHELL_NORMAL, "\t\t%u kbps\n",
-			      ses->async_upload_ctx.param.rate_kbps);
+		shell_fprintf(sh, SHELL_NORMAL, "\t\t");
+		print_number(sh, ses->async_upload_ctx.param.rate_kbps, KBPS, KBPS_UNIT);
+		shell_fprintf(sh, SHELL_NORMAL, "\n");
 
 		data->finalized_count++;
 	}

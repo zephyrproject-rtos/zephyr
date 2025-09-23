@@ -18,6 +18,8 @@
 #include <zephyr/logging/log.h>
 
 #include "lis2dux12.h"
+#include "lis2dux12_decoder.h"
+#include "lis2dux12_rtio.h"
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_lis2dux12)
 #include "lis2dux12_api.h"
@@ -53,6 +55,19 @@ static int lis2dux12_freq_to_odr_val(const struct device *dev, uint16_t freq)
 	int odr;
 
 	for (odr = LIS2DUX12_DT_ODR_OFF; odr < LIS2DUX12_DT_ODR_END; odr++) {
+		/*
+		 * In case power-mode is HP, skip the ULP odrs in order to
+		 * avoid to erroneously break the loop sooner than expected.
+		 * In HP mode the correct ODRs must be found from
+		 * LIS2DUX12_DT_ODR_6Hz on.
+		 */
+		if ((cfg->pm == LIS2DUX12_OPER_MODE_HIGH_PERFORMANCE) &&
+		    ((odr == LIS2DUX12_DT_ODR_1Hz_ULP) ||
+		     (odr == LIS2DUX12_DT_ODR_3Hz_ULP) ||
+		     (odr == LIS2DUX12_DT_ODR_25Hz_ULP))) {
+			continue;
+		}
+
 		if (freq <= lis2dux12_odr_map[odr]) {
 			break;
 		}
@@ -65,15 +80,6 @@ static int lis2dux12_freq_to_odr_val(const struct device *dev, uint16_t freq)
 
 	if (unlikely(odr == LIS2DUX12_DT_ODR_OFF)) {
 		return LIS2DUX12_DT_ODR_OFF;
-	}
-
-	/* handle high performance mode */
-	if (cfg->pm == LIS2DUX12_OPER_MODE_HIGH_PERFORMANCE) {
-		if (odr < LIS2DUX12_DT_ODR_6Hz) {
-			odr = LIS2DUX12_DT_ODR_6Hz;
-		}
-
-		odr |= 0x10;
 	}
 
 	return odr;
@@ -243,6 +249,10 @@ static DEVICE_API(sensor, lis2dux12_driver_api) = {
 #endif
 	.sample_fetch = lis2dux12_sample_fetch,
 	.channel_get = lis2dux12_channel_get,
+#ifdef CONFIG_SENSOR_ASYNC_API
+	.get_decoder = lis2dux12_get_decoder,
+	.submit = lis2dux12_submit,
+#endif
 };
 
 /*
@@ -269,16 +279,26 @@ static DEVICE_API(sensor, lis2dux12_driver_api) = {
 	.range = DT_INST_PROP(inst, range),						\
 	.pm = DT_INST_PROP(inst, power_mode),						\
 	.odr = DT_INST_PROP(inst, odr),							\
+	IF_ENABLED(CONFIG_LIS2DUX12_STREAM,						\
+		   (.fifo_wtm = DT_INST_PROP(inst, fifo_watermark),			\
+		    .fifo_mode_sel = DT_INST_PROP(inst, fifo_mode_sel),			\
+		    .accel_batch  = DT_INST_PROP(inst, accel_fifo_batch_rate),		\
+		    .ts_batch  = DT_INST_PROP(inst, timestamp_fifo_batch_rate),))	\
 	IF_ENABLED(UTIL_OR(DT_INST_NODE_HAS_PROP(inst, int1_gpios),			\
 			   DT_INST_NODE_HAS_PROP(inst, int2_gpios)),			\
 		   (LIS2DUX12_CFG_IRQ(inst)))						\
 
-#define LIS2DUX12_SPI_OPERATION								\
-	(SPI_WORD_SET(8) | SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA)
-
 /*
  * Instantiation macros used when a device is on a SPI bus.
  */
+#define LIS2DUX12_SPI_OPERATION								\
+	(SPI_WORD_SET(8) | SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA)
+
+#define LIS2DUX12_SPI_RTIO_DEFINE(inst, name)				\
+	SPI_DT_IODEV_DEFINE(lis2dux12_iodev_##name##_##inst,		\
+		DT_DRV_INST(inst), LIS2DUX12_SPI_OPERATION, 0U);	\
+	RTIO_DEFINE(lis2dux12_rtio_ctx_##name##_##inst, 4, 4);
+
 #define LIS2DUX12_CONFIG_SPI(inst, name)						\
 	{										\
 		STMEMSC_CTX_SPI(&lis2dux12_config_##name##_##inst.stmemsc_cfg),		\
@@ -288,9 +308,27 @@ static DEVICE_API(sensor, lis2dux12_driver_api) = {
 		LIS2DUX12_CONFIG_COMMON(inst, name)					\
 	}
 
+#define LIS2DUX12_DEFINE_SPI(inst, name)				\
+	IF_ENABLED(UTIL_AND(CONFIG_LIS2DUX12_STREAM,			\
+			    CONFIG_SPI_RTIO),				\
+		   (LIS2DUX12_SPI_RTIO_DEFINE(inst, name)));		\
+	static struct lis2dux12_data lis2dux12_data_##name##_##inst = {	\
+		IF_ENABLED(UTIL_AND(CONFIG_LIS2DUX12_STREAM,		\
+				    CONFIG_SPI_RTIO),			\
+			(.rtio_ctx = &lis2dux12_rtio_ctx_##name##_##inst,	\
+			 .iodev = &lis2dux12_iodev_##name##_##inst,		\
+			 .bus_type = BUS_SPI,))				\
+	};								\
+	static const struct lis2dux12_config lis2dux12_config_##name##_##inst =	\
+		LIS2DUX12_CONFIG_SPI(inst, name);
+
 /*
  * Instantiation macros used when a device is on an I2C bus.
  */
+#define LIS2DUX12_I2C_RTIO_DEFINE(inst, name)				\
+	I2C_DT_IODEV_DEFINE(lis2dux12_iodev_##name##_##inst, DT_DRV_INST(inst));	\
+	RTIO_DEFINE(lis2dux12_rtio_ctx_##name##_##inst, 4, 4);
+
 #define LIS2DUX12_CONFIG_I2C(inst, name)						\
 	{										\
 		STMEMSC_CTX_I2C(&lis2dux12_config_##name##_##inst.stmemsc_cfg),		\
@@ -300,17 +338,29 @@ static DEVICE_API(sensor, lis2dux12_driver_api) = {
 		LIS2DUX12_CONFIG_COMMON(inst, name)					\
 	}
 
+#define LIS2DUX12_DEFINE_I2C(inst, name)				\
+	IF_ENABLED(UTIL_AND(CONFIG_LIS2DUX12_STREAM,			\
+			    CONFIG_I2C_RTIO),				\
+		   (LIS2DUX12_I2C_RTIO_DEFINE(inst, name)));		\
+	static struct lis2dux12_data lis2dux12_data_##name##_##inst = {	\
+		IF_ENABLED(UTIL_AND(CONFIG_LIS2DUX12_STREAM,		\
+				    CONFIG_I2C_RTIO),			\
+			(.rtio_ctx = &lis2dux12_rtio_ctx_##name##_##inst,	\
+			 .iodev = &lis2dux12_iodev_##name##_##inst,		\
+			 .bus_type = BUS_I2C,))				\
+	};								\
+	static const struct lis2dux12_config lis2dux12_config_##name##_##inst =	\
+		LIS2DUX12_CONFIG_I2C(inst, name);
+
 /*
  * Main instantiation macro. Use of COND_CODE_1() selects the right
  * bus-specific macro at preprocessor time.
  */
 
 #define LIS2DUX12_DEFINE(inst, name)							\
-	static struct lis2dux12_data lis2dux12_data_##name##_##inst;			\
-	static const struct lis2dux12_config lis2dux12_config_##name##_##inst =		\
 		COND_CODE_1(DT_INST_ON_BUS(inst, spi),					\
-			    (LIS2DUX12_CONFIG_SPI(inst, name)),				\
-			    (LIS2DUX12_CONFIG_I2C(inst, name)));			\
+			    (LIS2DUX12_DEFINE_SPI(inst, name)),				\
+			    (LIS2DUX12_DEFINE_I2C(inst, name)));			\
 											\
 	SENSOR_DEVICE_DT_INST_DEFINE(inst, name##_init, NULL,				\
 				     &lis2dux12_data_##name##_##inst,			\

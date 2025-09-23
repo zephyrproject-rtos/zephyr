@@ -19,6 +19,9 @@ config NRFX_CLOCK
 
 if NRFX_CLOCK
 
+config NRFX_CLOCK_USE_LFRC_CALIBRATION
+	bool "Extend NRFX_CLOCK to use LFRC peripheral"
+
 config NRFX_CLOCK_LFXO_TWO_STAGE_ENABLED
 	bool "Two stage start sequence of the low frequency clock"
 
@@ -226,6 +229,10 @@ config NRFX_GPIOTE131
 	depends on $(dt_nodelabel_exists,gpiote131)
 	select NRFX_GPIOTE
 
+config NRFX_GPIOTE_NONUNIFORM_INSTANCES
+	def_bool $(dt_nodelabel_enabled,gpiote0)
+	depends on $(dt_nodelabel_bool_prop,gpiote0,fixed-channels-supported)
+
 config NRFX_GPIOTE_NUM_OF_EVT_HANDLERS
 	int "Number of event handlers"
 	depends on NRFX_GPIOTE
@@ -264,6 +271,10 @@ config NRFX_IPC
 config NRFX_LPCOMP
 	bool "LPCOMP driver"
 	depends on $(dt_nodelabel_exists,comp) && !SOC_NRF52810 && !SOC_NRF52811 && !SOC_NRF52820
+
+config NRFX_MRAMC
+	bool "MRAMC driver"
+	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_MRAMC))
 
 config NRFX_NFCT
 	bool "NFCT driver"
@@ -547,6 +558,11 @@ config NRFX_SPIM00
 	depends on $(dt_nodelabel_exists,spi00)
 	select NRFX_SPIM
 
+config NRFX_SPIM01
+	bool "SPIM01 driver instance"
+	depends on $(dt_nodelabel_exists,spi01)
+	select NRFX_SPIM
+
 config NRFX_SPIM20
 	bool "SPIM20 driver instance"
 	depends on $(dt_nodelabel_exists,spi20)
@@ -560,6 +576,16 @@ config NRFX_SPIM21
 config NRFX_SPIM22
 	bool "SPIM22 driver instance"
 	depends on $(dt_nodelabel_exists,spi22)
+	select NRFX_SPIM
+
+config NRFX_SPIM23
+	bool "SPIM23 driver instance"
+	depends on $(dt_nodelabel_exists,spi23)
+	select NRFX_SPIM
+
+config NRFX_SPIM24
+	bool "SPIM24 driver instance"
+	depends on $(dt_nodelabel_exists,spi24)
 	select NRFX_SPIM
 
 config NRFX_SPIM30
@@ -645,6 +671,11 @@ config NRFX_SPIS00
 	depends on $(dt_nodelabel_exists,spi00)
 	select NRFX_SPIS
 
+config NRFX_SPIS01
+	bool "SPIS01 driver instance"
+	depends on $(dt_nodelabel_exists,spi01)
+	select NRFX_SPIS
+
 config NRFX_SPIS20
 	bool "SPIS20 driver instance"
 	depends on $(dt_nodelabel_exists,spi20)
@@ -658,6 +689,16 @@ config NRFX_SPIS21
 config NRFX_SPIS22
 	bool "SPIS22 driver instance"
 	depends on $(dt_nodelabel_exists,spi22)
+	select NRFX_SPIS
+
+config NRFX_SPIS23
+	bool "SPIS23 driver instance"
+	depends on $(dt_nodelabel_exists,spi23)
+	select NRFX_SPIS
+
+config NRFX_SPIS24
+	bool "SPIS24 driver instance"
+	depends on $(dt_nodelabel_exists,spi24)
 	select NRFX_SPIS
 
 config NRFX_SPIS30
@@ -901,6 +942,16 @@ config NRFX_TWIM22
 	depends on $(dt_nodelabel_exists,i2c22)
 	select NRFX_TWIM
 
+config NRFX_TWIM23
+	bool "TWIM23 driver instance"
+	depends on $(dt_nodelabel_exists,i2c23)
+	select NRFX_TWIM
+
+config NRFX_TWIM24
+	bool "TWIM24 driver instance"
+	depends on $(dt_nodelabel_exists,i2c24)
+	select NRFX_TWIM
+
 config NRFX_TWIM30
 	bool "TWIM30 driver instance"
 	depends on $(dt_nodelabel_exists,i2c30)
@@ -987,6 +1038,16 @@ config NRFX_TWIS21
 config NRFX_TWIS22
 	bool "TWIS22 driver instance"
 	depends on $(dt_nodelabel_exists,i2c22)
+	select NRFX_TWIS
+
+config NRFX_TWIS23
+	bool "TWIS23 driver instance"
+	depends on $(dt_nodelabel_exists,i2c23)
+	select NRFX_TWIS
+
+config NRFX_TWIS24
+	bool "TWIS24 driver instance"
+	depends on $(dt_nodelabel_exists,i2c24)
 	select NRFX_TWIS
 
 config NRFX_TWIS30
@@ -1083,6 +1144,16 @@ config NRFX_UARTE21
 config NRFX_UARTE22
 	bool "UARTE22 driver instance"
 	depends on $(dt_nodelabel_exists,uart22)
+	select NRFX_UARTE
+
+config NRFX_UARTE23
+	bool "UARTE23 driver instance"
+	depends on $(dt_nodelabel_exists,uart23)
+	select NRFX_UARTE
+
+config NRFX_UARTE24
+	bool "UARTE24 driver instance"
+	depends on $(dt_nodelabel_exists,uart24)
 	select NRFX_UARTE
 
 config NRFX_UARTE30

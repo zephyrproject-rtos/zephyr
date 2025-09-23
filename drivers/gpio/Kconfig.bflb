@@ -1,0 +1,9 @@
+# Copyright (c) 2024-2025 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_BFLB_BL61X
+	bool "Bouffalo Lab BL61X GPIO driver"
+	depends on DT_HAS_BFLB_BL61X_GPIO_ENABLED
+	default y
+	help
+	  Bouffalo Lab BL61X GPIO driver

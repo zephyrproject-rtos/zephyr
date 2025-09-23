@@ -1,0 +1,52 @@
+# Distributed Switch Architecture [DSA] configuration options
+
+# Copyright (c) 2020 DENX Software Engineering GmbH
+#               Lukasz Majewski <lukma@denx.de>
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig NET_DSA
+	bool "Distributed Switch Architecture support"
+	help
+	  Enable Distributed Switch Architecture support.
+
+if NET_DSA
+
+DSA_PORT_COMPAT := zephyr,dsa-port
+
+config NET_DSA_DEPRECATED
+	bool "Distributed Switch Architecture support for legacy device"
+	select DEPRECATED
+	depends on ETH_DSA_SUPPORT_DEPRECATED
+	help
+	  This is obsolete, and only used for legacy dsa device.
+
+config DSA_PORT_MAX_COUNT
+	int "DSA port max count"
+	default 8
+	help
+	  Set DSA port max count.
+
+config DSA_TAG_SIZE
+	int "DSA tag size in bytes"
+	# These platforms are still using legacy DSA core driver
+	default 1 if DSA_KSZ8794 || DSA_KSZ8863 || DSA_KSZ8463
+	default 0
+	help
+	  Set the DSA tag length in bytes.
+
+# Tag protocol ID found in <zephyr/dt-bindings/ethernet/dsa_tag_proto.h>
+config DSA_TAG_PROTOCOL_NETC
+	bool "Tag protocol - NETC"
+	default y
+	depends on $(dt_compat_any_has_prop,$(DSA_PORT_COMPAT),dsa-tag-protocol,1)
+	help
+	  NXP NETC tag protocol.
+
+module = NET_DSA
+module-dep = NET_LOG
+module-str = Log level for DSA
+module-help = Enables core DSA code to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+
+endif # NET_DSA

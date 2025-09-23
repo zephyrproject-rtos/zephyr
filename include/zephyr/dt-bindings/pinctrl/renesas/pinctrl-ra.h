@@ -32,6 +32,7 @@
 #define RA_PSEL_SCI_9        0x5
 #define RA_PSEL_SPI          0x6
 #define RA_PSEL_I2C          0x7
+#define RA_PSEL_I3C          0x7
 #define RA_PSEL_CLKOUT_RTC   0x9
 #define RA_PSEL_ACMPHS_VCOUT 0x9
 #define RA_PSEL_CAC_ADC      0xa
@@ -47,6 +48,7 @@
 #define RA_PSEL_ETH_RMII     0x17
 #define RA_PSEL_GLCDC        0x19
 #define RA_PSEL_OSPI         0x1c
+#define RA_PSEL_CTSU         0x0c
 
 #define RA_PSEL_POS  8
 #define RA_PSEL_MASK 0x1f

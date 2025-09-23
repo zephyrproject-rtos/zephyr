@@ -1,0 +1,203 @@
+/*
+ * Copyright (c) 2024-2025 MASSDRIVER EI (massdriver.space)
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <freq.h>
+#include <mem.h>
+#include <dt-bindings/pinctrl/bflb-common-pinctrl.h>
+#include <dt-bindings/pinctrl/bl61x-pinctrl.h>
+#include <dt-bindings/clock/bflb_bl61x_clock.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	clocks {
+		clk_rc32m: clk-rc32m {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(32)>;
+			status = "okay";
+		};
+
+		clk_crystal: clk-crystal {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(40)>;
+			status = "okay";
+		};
+
+		clk_wifipll: clk-wifipll {
+			#clock-cells = <1>;
+			compatible = "bflb,bl61x-wifipll";
+			clocks = <&clk_crystal>;
+			status = "okay";
+		};
+
+		clk_aupll: clk-aupll {
+			#clock-cells = <1>;
+			compatible = "bflb,bl61x-aupll";
+			clocks = <&clk_rc32m>;
+			status = "disabled";
+		};
+
+		clk_root: clk-root {
+			#clock-cells = <0>;
+			compatible = "bflb,bl61x-root-clk";
+			clocks = <&clk_wifipll BL61X_WIFIPLL_320MHz>;
+			divider = <1>;
+			status = "okay";
+		};
+
+		clk_bclk: clk-bclk {
+			#clock-cells = <0>;
+			compatible = "bflb,bclk";
+			divider = <4>;
+			status = "okay";
+		};
+
+		clk_flash: clk-flash {
+			#clock-cells = <0>;
+			compatible = "bflb,bl61x-flash-clk";
+			clocks = <&clk_bclk>;
+			divider = <2>;
+			status = "okay";
+		};
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		timebase-frequency = <DT_FREQ_M(1)>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "xuantie,e907", "riscv";
+			reg = <0>;
+			riscv,isa = "rv32imafcp";
+			hardware-exec-breakpoint-count = <4>;
+			status = "okay";
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+			clic: clic@e0800000 {
+				compatible = "nuclei,eclic";
+				reg = <0xe0800000 0x10000>;
+				#address-cells = <0>;
+				#interrupt-cells = <2>;
+				interrupt-controller;
+			};
+		};
+	};
+
+	soc {
+		compatible = "simple-bus";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		mtimer: timer@e000bff8 {
+			compatible = "riscv,machine-timer";
+			reg = <0xE000BFF8 0x8 0xE0004000 0x8>;
+			reg-names = "mtime", "mtimecmp";
+
+			interrupts-extended = <&clic 7 1>;
+		};
+
+		pinctrl: pin-controller@20000000 {
+			compatible = "bflb,pinctrl";
+			reg = <0x20000000 0x1000>;
+			ranges = <0x20000000 0x20000000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "okay";
+
+			gpio0: gpio@20000000 {
+				compatible = "bflb,bl61x-gpio";
+				reg = <0x20000000 0x1000>;
+				#gpio-cells = <2>;
+				#bflb,pin-cells = <2>;
+				status = "disabled";
+
+				gpio-controller;
+				interrupts = <60 1>;
+				interrupt-parent = <&clic>;
+			};
+		};
+
+		clocks: clock-controller@20000000 {
+			compatible = "bflb,bl61x-clock-controller", "bflb,clock-controller";
+			reg = <0x20000000 DT_SIZE_K(4)>;
+			#clock-cells = <1>;
+			status = "okay";
+			clocks = <&clk_rc32m>, <&clk_crystal>,
+				<&clk_wifipll BL61X_WIFIPLL_320MHz>,
+				<&clk_wifipll BL61X_WIFIPLL_240MHz>,
+				<&clk_wifipll BL61X_WIFIPLL_OC_480MHz>,
+				<&clk_wifipll BL61X_WIFIPLL_OC_360MHz>,
+				<&clk_aupll BL61X_AUPLL_DIV1>, <&clk_aupll BL61X_AUPLL_DIV2>,
+				<&clk_root>, <&clk_bclk>, <&clk_flash>;
+			clock-names = "rc32m", "crystal",
+				"wifipll_320",
+				"wifipll_240",
+				"wifipll_480",
+				"wifipll_360",
+				"aupll_div1", "aupll_div2",
+				"root", "bclk", "flash";
+		};
+
+		uart0: uart@2000a000 {
+			compatible = "bflb,uart";
+			reg = <0x2000a000 0x100>;
+			interrupts = <44 1>;
+			interrupt-parent = <&clic>;
+			status = "disabled";
+		};
+
+		uart1: uart@2000a100 {
+			compatible = "bflb,uart";
+			reg = <0x2000a100 0x100>;
+			interrupts = <45 1>;
+			interrupt-parent = <&clic>;
+			status = "disabled";
+		};
+
+		flashctrl: flash-controller@2000b000 {
+			compatible = "bflb,flash-controller";
+			reg = <0x2000b000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "disabled";
+
+			interrupts = <29 1>;
+			interrupt-parent = <&clic>;
+		};
+
+		retram: memory@20010000 {
+			compatible = "mmio-sram";
+			reg = <0x20010000 DT_SIZE_K(4)>;
+		};
+
+		efuse: efuse@20056000 {
+			compatible = "bflb,efuse";
+			reg = <0x20056000 0x1000>;
+			status = "okay";
+			size = <512>;
+		};
+
+		sram0: memory@62fc0000 {
+			compatible = "mmio-sram";
+			reg = <0x62FC0000 DT_SIZE_K(320)>;
+		};
+
+		sram1: memory@63010000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x63010000 DT_SIZE_K(160)>;
+			zephyr,memory-region = "ITCM";
+		};
+	};
+};

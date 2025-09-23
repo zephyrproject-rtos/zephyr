@@ -78,7 +78,7 @@
 	};
 };
 
-&exmif{
+&exmif {
 	status = "disabled";
 };
 
@@ -137,6 +137,6 @@ dut_spis: &spi131 {
 	pinctrl-1 = <&spis131_sleep_alt>;
 	pinctrl-names = "default", "sleep";
 	memory-regions = <&cpuapp_dma_region>;
-	/delete-property/rx-delay-supported;
-	/delete-property/rx-delay;
+	/delete-property/ rx-delay-supported;
+	/delete-property/ rx-delay;
 };

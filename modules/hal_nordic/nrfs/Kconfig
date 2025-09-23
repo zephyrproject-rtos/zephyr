@@ -46,6 +46,9 @@ config NRFS_HAS_TEMP_SERVICE
 config NRFS_HAS_VBUS_DETECTOR_SERVICE
 	bool
 
+config NRFS_TEMP_SERVICE_HAS_SUBSCRIPTION_SERVICE
+	bool
+
 config NRFS
 	bool "nRF Services Support"
 	select NRFS_LOCAL_DOMAIN if SOC_NRF54H20_CPUAPP || \
@@ -91,6 +94,11 @@ config NRFS_MRAM_SERVICE_ENABLED
 config NRFS_TEMP_SERVICE_ENABLED
 	bool "Temperature service"
 	depends on NRFS_HAS_TEMP_SERVICE
+	default y
+
+config NRFS_TEMP_SERVICE_SUBSCRIPTION_ENABLED
+	bool "Subscription feature for the temperature service"
+	depends on NRFS_TEMP_SERVICE_HAS_SUBSCRIPTION_SERVICE
 	default y
 
 config NRFS_VBUS_DETECTOR_SERVICE_ENABLED

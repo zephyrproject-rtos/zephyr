@@ -6,7 +6,7 @@
  */
 
 #include <zephyr/kernel.h>
-#include <ksched.h>
+#include <kernel_internal.h>
 #include <zephyr/arch/riscv/csr.h>
 #include <stdio.h>
 #include <pmp.h>
@@ -255,3 +255,12 @@ FUNC_NORETURN void z_riscv_switch_to_main_no_multithreading(k_thread_entry_t mai
 	CODE_UNREACHABLE; /* LCOV_EXCL_LINE */
 }
 #endif /* !CONFIG_MULTITHREADING */
+
+int arch_coprocessors_disable(struct k_thread *thread)
+{
+#ifdef CONFIG_FPU_SHARING
+	return arch_float_disable(thread);
+#else
+	return -ENOTSUP;
+#endif
+}

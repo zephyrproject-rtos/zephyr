@@ -61,6 +61,7 @@ static const char *e1000_reg_to_string(enum e1000_reg_t r)
 	_(TDT);
 	_(RAL);
 	_(RAH);
+	_(ITR);
 	}
 #undef _
 	LOG_ERR("Unsupported register: 0x%x", r);
@@ -103,19 +104,23 @@ static int e1000_tx(struct e1000_dev *dev, void *buf, size_t len)
 {
 	hexdump(buf, len, "%zu byte(s)", len);
 
-	dev->tx.addr = POINTER_TO_INT(buf);
-	dev->tx.len = len;
-	dev->tx.cmd = TDESC_EOP | TDESC_RS;
+	dev->tx[dev->next_tx_desc].addr = POINTER_TO_INT(buf);
+	dev->tx[dev->next_tx_desc].len = len;
+	dev->tx[dev->next_tx_desc].cmd = TDESC_EOP | TDESC_RS;
+	dev->tx[dev->next_tx_desc].sta = 0;
 
-	iow32(dev, TDT, 1);
+	uint32_t old_tx_desc = dev->next_tx_desc;
 
-	while (!(dev->tx.sta)) {
+	dev->next_tx_desc = (dev->next_tx_desc + 1) % CONFIG_ETH_E1000_TX_QUEUE_SIZE;
+	iow32(dev, TDT, dev->next_tx_desc);
+
+	while (!(dev->tx[old_tx_desc].sta)) {
 		k_yield();
 	}
 
-	LOG_DBG("tx.sta: 0x%02hx", dev->tx.sta);
+	LOG_DBG("tx.sta: 0x%02hx", dev->tx[old_tx_desc].sta);
 
-	return (dev->tx.sta & TDESC_STA_DD) ? 0 : -EIO;
+	return (dev->tx[old_tx_desc].sta & TDESC_STA_DD) ? 0 : -EIO;
 }
 
 static int e1000_send(const struct device *ddev, struct net_pkt *pkt)
@@ -123,11 +128,11 @@ static int e1000_send(const struct device *ddev, struct net_pkt *pkt)
 	struct e1000_dev *dev = ddev->data;
 	size_t len = net_pkt_get_len(pkt);
 
-	if (net_pkt_read(pkt, dev->txb, len)) {
+	if (net_pkt_read(pkt, dev->txb[dev->next_tx_desc], len)) {
 		return -EIO;
 	}
 
-	return e1000_tx(dev, dev->txb, len);
+	return e1000_tx(dev, dev->txb[dev->next_tx_desc], len);
 }
 
 static struct net_pkt *e1000_rx(struct e1000_dev *dev)
@@ -136,19 +141,18 @@ static struct net_pkt *e1000_rx(struct e1000_dev *dev)
 	void *buf;
 	ssize_t len;
 
-	LOG_DBG("rx.sta: 0x%02hx", dev->rx.sta);
+	LOG_DBG("rx.sta: 0x%02hx", dev->rx[dev->next_rx_desc].sta);
 
-	if (!(dev->rx.sta & RDESC_STA_DD)) {
-		LOG_ERR("RX descriptor not ready");
-		goto out;
+	if (!(dev->rx[dev->next_rx_desc].sta & RDESC_STA_DD)) {
+		return NULL;
 	}
 
-	buf = INT_TO_POINTER((uint32_t)dev->rx.addr);
-	len = dev->rx.len - 4;
+	buf = INT_TO_POINTER((uint32_t)dev->rx[dev->next_rx_desc].addr);
+	len = dev->rx[dev->next_rx_desc].len - 4;
 
 	if (len <= 0) {
-		LOG_ERR("Invalid RX descriptor length: %hu", dev->rx.len);
-		goto out;
+		LOG_ERR("Invalid RX descriptor length: %hu", dev->rx[dev->next_rx_desc].len);
+		goto err;
 	}
 
 	hexdump(buf, len, "%zd byte(s)", len);
@@ -157,16 +161,24 @@ static struct net_pkt *e1000_rx(struct e1000_dev *dev)
 					   K_NO_WAIT);
 	if (!pkt) {
 		LOG_ERR("Out of buffers");
-		goto out;
+		goto err;
 	}
 
 	if (net_pkt_write(pkt, buf, len)) {
 		LOG_ERR("Out of memory for received frame");
 		net_pkt_unref(pkt);
 		pkt = NULL;
+	} else {
+		goto out;
 	}
 
+err:
+	eth_stats_update_errors_rx(get_iface(dev));
 out:
+	dev->rx[dev->next_rx_desc].sta = 0;
+	iow32(dev, RDT, dev->next_rx_desc);
+	dev->next_rx_desc = (dev->next_rx_desc + 1) % CONFIG_ETH_E1000_RX_QUEUE_SIZE;
+
 	return pkt;
 }
 
@@ -177,16 +189,14 @@ static void e1000_isr(const struct device *ddev)
 
 	icr &= ~(ICR_TXDW | ICR_TXQE);
 
-	if (icr & ICR_RXO) {
-		struct net_pkt *pkt = e1000_rx(dev);
+	if (icr & (ICR_RXO | ICR_RXDMT0 | ICR_RXT0)) {
+		struct net_pkt *pkt = NULL;
 
-		icr &= ~ICR_RXO;
-
-		if (pkt) {
+		while ((pkt = e1000_rx(dev))) {
 			net_recv_data(get_iface(dev), pkt);
-		} else {
-			eth_stats_update_errors_rx(get_iface(dev));
 		}
+
+		icr &= ~(ICR_RXO | ICR_RXDMT0 | ICR_RXT0);
 	}
 
 	if (icr) {
@@ -213,30 +223,34 @@ int e1000_probe(const struct device *ddev)
 	device_map(&dev->address, mbar.phys_addr, mbar.size,
 		   K_MEM_CACHE_NONE);
 
-	/* Setup TX descriptor */
+	/* Setup TX descriptors */
 
-	iow32(dev, TDBAL, (uint32_t)POINTER_TO_UINT(&dev->tx));
-	iow32(dev, TDBAH, (uint32_t)((POINTER_TO_UINT(&dev->tx) >> 16) >> 16));
-	iow32(dev, TDLEN, 1*16);
+	iow32(dev, TDBAL, (uint32_t)POINTER_TO_UINT(&dev->tx[0]));
+	iow32(dev, TDBAH, (uint32_t)((POINTER_TO_UINT(&dev->tx[0]) >> 16) >> 16));
+	iow32(dev, TDLEN, (uint32_t)(CONFIG_ETH_E1000_TX_QUEUE_SIZE * sizeof(struct e1000_tx)));
 
 	iow32(dev, TDH, 0);
 	iow32(dev, TDT, 0);
+	dev->next_tx_desc = 0;
 
 	iow32(dev, TCTL, TCTL_EN);
 
-	/* Setup RX descriptor */
+	/* Setup RX descriptors */
 
-	dev->rx.addr = POINTER_TO_INT(dev->rxb);
-	dev->rx.len = sizeof(dev->rxb);
+	for (int i = 0; i < CONFIG_ETH_E1000_RX_QUEUE_SIZE; i++) {
+		dev->rx[i].addr = POINTER_TO_INT(dev->rxb[i]);
+		dev->rx[i].len = sizeof(dev->rxb[i]);
+	}
 
-	iow32(dev, RDBAL, (uint32_t)POINTER_TO_UINT(&dev->rx));
-	iow32(dev, RDBAH, (uint32_t)((POINTER_TO_UINT(&dev->rx) >> 16) >> 16));
-	iow32(dev, RDLEN, 1*16);
+	iow32(dev, RDBAL, (uint32_t)POINTER_TO_UINT(&dev->rx[0]));
+	iow32(dev, RDBAH, (uint32_t)((POINTER_TO_UINT(&dev->rx[0]) >> 16) >> 16));
+	iow32(dev, RDLEN, (uint32_t)(CONFIG_ETH_E1000_RX_QUEUE_SIZE * sizeof(struct e1000_rx)));
 
 	iow32(dev, RDH, 0);
-	iow32(dev, RDT, 1);
+	iow32(dev, RDT, CONFIG_ETH_E1000_RX_QUEUE_SIZE - 1);
+	dev->next_rx_desc = 0;
 
-	iow32(dev, IMS, IMS_RXO);
+	iow32(dev, IMS, IMS_RXDMT0 | IMS_RXO | IMS_RXT0);
 
 	ral = ior32(dev, RAL);
 	rah = ior32(dev, RAH);
@@ -312,7 +326,8 @@ static const struct ethernet_api e1000_api = {
 									\
 		irq_enable(DT_INST_IRQN(inst));				\
 		iow32(dev, CTRL, CTRL_SLU); /* Set link up */		\
-		iow32(dev, RCTL, RCTL_EN | RCTL_MPE);			\
+		iow32(dev, RCTL, RCTL_EN | RCTL_MPE | DT_INST_PROP(inst, rdmts) << RDMTS_OFFSET); \
+		iow32(dev, ITR, DT_INST_PROP(inst, itr) & (uint32_t)GENMASK(15, 0)); \
 	}								\
 									\
 	static const struct e1000_config config_##inst = {		\
@@ -382,21 +397,11 @@ static int ptp_clock_e1000_rate_adjust(const struct device *dev, double ratio)
 	int32_t mul;
 	float val;
 
-	/* No change needed. */
-	if (ratio == 1.0) {
-		return 0;
-	}
-
-	ratio *= context->clk_ratio;
-
 	/* Limit possible ratio. */
 	if ((ratio > 1.0 + 1.0/(2.0 * hw_inc)) ||
 			(ratio < 1.0 - 1.0/(2.0 * hw_inc))) {
 		return -EINVAL;
 	}
-
-	/* Save new ratio. */
-	context->clk_ratio = ratio;
 
 	if (ratio < 1.0) {
 		corr = hw_inc - 1;

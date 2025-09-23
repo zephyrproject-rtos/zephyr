@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include <silabs/efm32gg12b810f1024gm64.dtsi>
+#include <silabs/gg12/efm32gg12b810f1024gm64.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include "sltb009a-pinctrl.dtsi"
 

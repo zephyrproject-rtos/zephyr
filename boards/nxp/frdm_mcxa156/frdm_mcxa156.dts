@@ -8,6 +8,7 @@
 
 #include <nxp/nxp_mcxa156.dtsi>
 #include "frdm_mcxa156-pinctrl.dtsi"
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <freq.h>
 
@@ -18,13 +19,14 @@
 	aliases{
 		led0 = &red_led;
 		led1 = &green_led;
-		led2 = &red_led;
+		led2 = &blue_led;
 		sw0 = &user_button_2;
 		sw1 = &user_button_3;
 		pwm-0 = &flexpwm0_pwm0;
 		mcuboot-button0 = &user_button_2;
 		watchdog0 = &wwdt0;
 		ambient-temp0 = &p3t1755;
+		die-temp0 = &temp0;
 	};
 
 	chosen {
@@ -79,6 +81,35 @@
 		gpio-map =	<9  0 &gpio2 15 0>,	/* Pin 9, LCD touch INT */
 				<10  0 &gpio3 22 0>,	/* Pin 10, LCD backlight control */
 				<11  0 &gpio3 0 0>;	/* Pin 11, LCD and touch reset */
+	};
+
+	arduino_header: arduino-connector {
+		compatible = "arduino-header-r3";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <ARDUINO_HEADER_R3_A0 0 &gpio1 10 0>,
+			   <ARDUINO_HEADER_R3_A1 0 &gpio2 5 0>,
+			   <ARDUINO_HEADER_R3_A2 0 &gpio2 3 0>,
+			   <ARDUINO_HEADER_R3_A3 0 &gpio2 4 0>,
+			   <ARDUINO_HEADER_R3_A4 0 &gpio1 12 0>,
+			   <ARDUINO_HEADER_R3_A5 0 &gpio1 13 0>,
+			   <ARDUINO_HEADER_R3_D0 0 &gpio2 11 0>,
+			   <ARDUINO_HEADER_R3_D1 0 &gpio2 10 0>,
+			   <ARDUINO_HEADER_R3_D2 0 &gpio3 1 0>,
+			   <ARDUINO_HEADER_R3_D3 0 &gpio3 12 0>,
+			   <ARDUINO_HEADER_R3_D4 0 &gpio3 31 0>,
+			   <ARDUINO_HEADER_R3_D5 0 &gpio3 14 0>,
+			   <ARDUINO_HEADER_R3_D6 0 &gpio3 16 0>,
+			   <ARDUINO_HEADER_R3_D7 0 &gpio1 14 0>,
+			   <ARDUINO_HEADER_R3_D8 0 &gpio1 15 0>,
+			   <ARDUINO_HEADER_R3_D9 0 &gpio3 17 0>,
+			   <ARDUINO_HEADER_R3_D10 0 &gpio3 13 0>,
+			   <ARDUINO_HEADER_R3_D11 0 &gpio3 15 0>,
+			   <ARDUINO_HEADER_R3_D12 0 &gpio2 16 0>,
+			   <ARDUINO_HEADER_R3_D13 0 &gpio2 12 0>,
+			   <ARDUINO_HEADER_R3_D14 0 &gpio0 16 0>,
+			   <ARDUINO_HEADER_R3_D15 0 &gpio0 17 0>;
 	};
 };
 
@@ -214,6 +245,13 @@ zephyr_mipi_dbi_parallel: &flexio0_lcd {
 };
 
 &lptmr0 {
+	status = "okay";
+};
+
+/*
+ * Uses OS timer as the kernel timer
+ */
+&ostimer0 {
 	status = "okay";
 };
 

@@ -45,7 +45,7 @@
 		vsync-active = <0>;
 		clock-frequency = <9210240>;
 	};
-	pixel-format = <PANEL_PIXEL_FORMAT_BGR_565>;
+	pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
 	data-bus-width = "16-bit";
 	backlight-gpios = <&nxp_parallel_lcd_connector 0 GPIO_ACTIVE_HIGH>;
 };

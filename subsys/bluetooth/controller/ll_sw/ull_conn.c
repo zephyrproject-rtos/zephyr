@@ -5,10 +5,13 @@
  */
 
 #include <stddef.h>
+
 #include <zephyr/kernel.h>
-#include <soc.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/sys/byteorder.h>
+
+#include <soc.h>
 
 #include "hal/cpu.h"
 #include "hal/ecb.h"
@@ -127,23 +130,18 @@ static uint8_t force_md_cnt_calc(struct lll_conn *lll_conn, uint32_t tx_rate);
 				(LL_LENGTH_OCTETS_TX_MAX + \
 				BT_CTLR_USER_TX_BUFFER_OVERHEAD))
 
-#define CONN_DATA_BUFFERS CONFIG_BT_BUF_ACL_TX_COUNT
-
-static MFIFO_DEFINE(conn_tx, sizeof(struct lll_tx), CONN_DATA_BUFFERS);
+static MFIFO_DEFINE(conn_tx, sizeof(struct lll_tx), CONFIG_BT_BUF_ACL_TX_COUNT);
 static MFIFO_DEFINE(conn_ack, sizeof(struct lll_tx),
-		    (CONN_DATA_BUFFERS +
-		     LLCP_TX_CTRL_BUF_COUNT));
+		    (CONFIG_BT_BUF_ACL_TX_COUNT + LLCP_TX_CTRL_BUF_COUNT));
 
 static struct {
 	void *free;
-	uint8_t pool[CONN_TX_BUF_SIZE * CONN_DATA_BUFFERS];
+	uint8_t pool[CONN_TX_BUF_SIZE * CONFIG_BT_BUF_ACL_TX_COUNT];
 } mem_conn_tx;
 
 static struct {
 	void *free;
-	uint8_t pool[sizeof(memq_link_t) *
-		     (CONN_DATA_BUFFERS +
-		      LLCP_TX_CTRL_BUF_COUNT)];
+	uint8_t pool[sizeof(memq_link_t) * (CONFIG_BT_BUF_ACL_TX_COUNT + LLCP_TX_CTRL_BUF_COUNT)];
 } mem_link_tx;
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
@@ -906,6 +904,12 @@ void ull_conn_setup(memq_link_t *rx_link, struct node_rx_pdu *rx)
 		LL_ASSERT(!hdr->disabled_cb);
 		hdr->disabled_param = rx;
 		hdr->disabled_cb = conn_setup_adv_scan_disabled_cb;
+
+		/* NOTE: we are not forcing a lll_disable, in case of initiator
+		 *       we need let the CONNECT_IND PDU be transmitted. There
+		 *       is a possibility that a new scan window is in the LLL
+		 *       pipeline, it has to be disabled.
+		 */
 	} else {
 		conn_setup_adv_scan_disabled_cb(rx);
 	}
@@ -1129,7 +1133,7 @@ void ull_conn_done(struct node_rx_event_done *done)
 #endif /* CONFIG_BT_PERIPHERAL */
 	}
 
-	elapsed_event = latency_event + lll->lazy_prepare + 1U;
+	elapsed_event = lll->lazy_prepare + 1U;
 
 	/* Reset supervision countdown */
 	if (done->extra.crc_valid && !done->extra.is_aborted) {
@@ -1693,14 +1697,11 @@ static int init_reset(void)
 	}
 
 	/* Initialize tx pool. */
-	mem_init(mem_conn_tx.pool, CONN_TX_BUF_SIZE, CONN_DATA_BUFFERS,
-		 &mem_conn_tx.free);
+	mem_init(mem_conn_tx.pool, CONN_TX_BUF_SIZE, CONFIG_BT_BUF_ACL_TX_COUNT, &mem_conn_tx.free);
 
 	/* Initialize tx link pool. */
 	mem_init(mem_link_tx.pool, sizeof(memq_link_t),
-		 (CONN_DATA_BUFFERS +
-		  LLCP_TX_CTRL_BUF_COUNT),
-		 &mem_link_tx.free);
+		 (CONFIG_BT_BUF_ACL_TX_COUNT + LLCP_TX_CTRL_BUF_COUNT), &mem_link_tx.free);
 
 	/* Initialize control procedure system. */
 	ull_cp_init();
@@ -1910,7 +1911,8 @@ static void conn_cleanup_finalize(struct ll_conn *conn)
 				    TICKER_ID_CONN_BASE + lll->handle,
 				    ticker_stop_op_cb, conn);
 	LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
-		  (ticker_status == TICKER_STATUS_BUSY));
+		  (ticker_status == TICKER_STATUS_BUSY) ||
+		  ((void *)conn == ull_disable_mark_get()));
 
 	/* Invalidate the connection context */
 	lll->handle = LLL_HANDLE_INVALID;
@@ -1982,7 +1984,14 @@ static void ticker_stop_op_cb(uint32_t status, void *param)
 	static struct mayfly mfy = {0, 0, &link, NULL, conn_disable};
 	uint32_t ret;
 
-	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
+	/* Peripheral ticker_stop succeeds, or it fails in a race condition
+	 * when disconnecting (race with ticker_stop), say on HCI Reset.
+	 */
+	if (status != TICKER_STATUS_SUCCESS) {
+		LL_ASSERT(param == ull_disable_mark_get());
+
+		return;
+	}
 
 	/* Check if any pending LLL events that need to be aborted */
 	mfy.param = param;
@@ -2177,6 +2186,11 @@ void ull_conn_resume_rx_data(struct ll_conn *conn)
 }
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
+uint16_t ull_conn_event_counter_at_prepare(const struct ll_conn *conn)
+{
+	return conn->event_counter + conn->llcp.prep.lazy;
+}
+
 uint16_t ull_conn_event_counter(struct ll_conn *conn)
 {
 	struct lll_conn *lll;
@@ -2204,6 +2218,7 @@ uint16_t ull_conn_event_counter(struct ll_conn *conn)
 
 	return event_counter;
 }
+
 static void ull_conn_update_ticker(struct ll_conn *conn,
 				   uint32_t ticks_win_offset,
 				   uint32_t ticks_slot_overhead,
@@ -2281,7 +2296,7 @@ void ull_conn_update_parameters(struct ll_conn *conn, uint8_t is_cu_proc, uint8_
 	lll = &conn->lll;
 
 	/* Calculate current event counter */
-	event_counter = ull_conn_event_counter(conn);
+	event_counter = ull_conn_event_counter_at_prepare(conn);
 
 	instant_latency = (event_counter - instant) & 0xFFFF;
 
@@ -2363,7 +2378,7 @@ void ull_conn_update_parameters(struct ll_conn *conn, uint8_t is_cu_proc, uint8_
 	periodic_us = conn_interval_us;
 
 	conn_interval_old_us = conn_interval_old * conn_interval_unit_old;
-	latency_upd = conn_interval_old_us / conn_interval_us;
+	latency_upd = DIV_ROUND_UP(conn_interval_old_us, conn_interval_us);
 	conn_interval_new_us = latency_upd * conn_interval_us;
 	if (conn_interval_new_us > conn_interval_old_us) {
 		ticks_at_expire += HAL_TICKER_US_TO_TICKS(
@@ -2373,6 +2388,11 @@ void ull_conn_update_parameters(struct ll_conn *conn, uint8_t is_cu_proc, uint8_
 			conn_interval_old_us - conn_interval_new_us);
 	}
 
+	/* Adjust ULL event counter */
+	conn->event_counter += conn->llcp.prep.lazy;
+	conn->event_counter -= (instant_latency - latency_upd);
+
+	/* Adjust LLL prepare latency */
 	lll->latency_prepare += conn->llcp.prep.lazy;
 	lll->latency_prepare -= (instant_latency - latency_upd);
 
@@ -2385,43 +2405,52 @@ void ull_conn_update_parameters(struct ll_conn *conn, uint8_t is_cu_proc, uint8_
 
 	/* calculate the window widening and interval */
 	switch (lll->role) {
+
 #if defined(CONFIG_BT_PERIPHERAL)
 	case BT_HCI_ROLE_PERIPHERAL:
 		/* Since LLL prepare doesn't get to run, accumulate window widening here */
 		lll->periph.window_widening_prepare_us += lll->periph.window_widening_periodic_us *
-							  (conn->llcp.prep.lazy + 1);
-		if (lll->periph.window_widening_prepare_us > lll->periph.window_widening_max_us) {
-			lll->periph.window_widening_prepare_us =
-				lll->periph.window_widening_max_us;
-		}
+							  conn->llcp.prep.lazy;
 
-		lll->periph.window_widening_prepare_us -=
-			lll->periph.window_widening_periodic_us * instant_latency;
-
-		lll->periph.window_widening_periodic_us =
-			DIV_ROUND_UP(((lll_clock_ppm_local_get() +
-					   lll_clock_ppm_get(conn->periph.sca)) *
-					  conn_interval_us), 1000000U);
-		lll->periph.window_widening_max_us = (conn_interval_us >> 1U) - EVENT_IFS_US;
-		lll->periph.window_size_prepare_us = win_size * CONN_INT_UNIT_US;
+		/* Remove old window widening for the latency events */
+		lll->periph.window_widening_prepare_us -= lll->periph.window_widening_periodic_us *
+							  instant_latency;
 
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 		conn->periph.ticks_to_offset = 0U;
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
-		lll->periph.window_widening_prepare_us +=
-			lll->periph.window_widening_periodic_us * latency_upd;
+		/* Calculate new window widening per connection event and permitted maximum value */
+		lll->periph.window_widening_periodic_us =
+			DIV_ROUND_UP(((lll_clock_ppm_local_get() +
+					   lll_clock_ppm_get(conn->periph.sca)) *
+					  conn_interval_us), 1000000U);
+		lll->periph.window_widening_max_us = (conn_interval_us >> 1U) - EVENT_IFS_US;
+
+		/* Use requested window size for anchor point at instant, until successful sync */
+		lll->periph.window_size_prepare_us = win_size * CONN_INT_UNIT_US;
+
+		/* Accumulated new window widening for latency events */
+		lll->periph.window_widening_prepare_us += lll->periph.window_widening_periodic_us *
+							  latency_upd;
 		if (lll->periph.window_widening_prepare_us > lll->periph.window_widening_max_us) {
 			lll->periph.window_widening_prepare_us = lll->periph.window_widening_max_us;
 		}
 
-		ticks_at_expire -= HAL_TICKER_US_TO_TICKS(lll->periph.window_widening_periodic_us *
-							  latency_upd);
+		/* Adjust for future window widening */
+		ticks_at_expire -= HAL_TICKER_US_TO_TICKS_CEIL(
+					lll->periph.window_widening_periodic_us * latency_upd);
+
+		/* Window Offset */
 		ticks_win_offset = HAL_TICKER_US_TO_TICKS((win_offset_us / CONN_INT_UNIT_US) *
 							  CONN_INT_UNIT_US);
+
+		/* Periodic interval considering window widening */
 		periodic_us -= lll->periph.window_widening_periodic_us;
+
 		break;
 #endif /* CONFIG_BT_PERIPHERAL */
+
 #if defined(CONFIG_BT_CENTRAL)
 	case BT_HCI_ROLE_CENTRAL:
 		ticks_win_offset = HAL_TICKER_US_TO_TICKS(win_offset_us);
@@ -2433,6 +2462,7 @@ void ull_conn_update_parameters(struct ll_conn *conn, uint8_t is_cu_proc, uint8_
 		ticks_win_offset += 1U;
 		break;
 #endif /*CONFIG_BT_CENTRAL */
+
 	default:
 		LL_ASSERT(0);
 		break;
@@ -2910,7 +2940,57 @@ uint8_t ull_conn_lll_phy_active(struct ll_conn *conn, uint8_t phys)
 	return 1;
 }
 
-uint8_t ull_is_lll_tx_queue_empty(struct ll_conn *conn)
+#if defined(CONFIG_BT_CTLR_LE_PATH_LOSS_MONITORING)
+uint8_t ll_conn_set_path_loss_parameters(uint16_t handle,
+					 uint8_t  high_threshold,
+					 uint8_t  high_hysteresis,
+					 uint8_t  low_threshold,
+					 uint8_t  low_hysteresis,
+					 uint16_t min_time_spent)
 {
-	return (memq_peek(conn->lll.memq_tx.head, conn->lll.memq_tx.tail, NULL) == NULL);
+	struct ll_conn *conn;
+
+	conn = ll_connected_get(handle);
+
+	if (!conn) {
+		return BT_HCI_ERR_UNKNOWN_CONN_ID;
+	}
+
+	conn->lll.pl_params.high_threshold  = high_threshold;
+	conn->lll.pl_params.high_hysteresis = high_hysteresis;
+	conn->lll.pl_params.low_threshold   = low_threshold;
+	conn->lll.pl_params.low_hysteresis  = low_hysteresis;
+	conn->lll.pl_params.min_time_spent  = min_time_spent;
+
+	/* Reset the counter and zone after any update from the host */
+	conn->lll.pl_state.min_time_counter = 0;
+	conn->lll.pl_current_zone = BT_HCI_LE_ZONE_ENTERED_LOW;
+
+	return BT_HCI_ERR_SUCCESS;
+}
+
+uint8_t ll_conn_set_path_loss_reporting(uint16_t handle, uint8_t enable)
+{
+	struct ll_conn *conn;
+
+	conn = ll_connected_get(handle);
+
+	if (!conn) {
+		return BT_HCI_ERR_UNKNOWN_CONN_ID;
+	}
+
+	conn->lll.pl_params.enabled = enable;
+
+	/* Reset the counter and zone after any update from the host */
+	conn->lll.pl_state.min_time_counter = 0;
+	conn->lll.pl_current_zone = BT_HCI_LE_ZONE_ENTERED_LOW;
+
+	return BT_HCI_ERR_SUCCESS;
+
+}
+#endif /* CONFIG_BT_CTLR_LE_PATH_LOSS_MONITORING */
+
+bool ull_conn_lll_tx_queue_is_empty(struct ll_conn *conn)
+{
+	return memq_peek(conn->lll.memq_tx.head, conn->lll.memq_tx.tail, NULL) == NULL;
 }

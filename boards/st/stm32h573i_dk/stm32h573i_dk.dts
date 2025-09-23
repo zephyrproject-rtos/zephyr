@@ -110,21 +110,21 @@
 		#size-cells = <0>;
 
 		bank@0 {
-			reg = <0x0>;
+			reg = <STM32_FMC_NORSRAM_BANK1>;
 			st,control = <STM32_FMC_DATA_ADDRESS_MUX_DISABLE
-				STM32_FMC_MEMORY_TYPE_SRAM
-				STM32_FMC_NORSRAM_MEM_BUS_WIDTH_16
-				STM32_FMC_BURST_ACCESS_MODE_DISABLE
-				STM32_FMC_WAIT_SIGNAL_POLARITY_LOW
-				STM32_FMC_WAIT_TIMING_BEFORE_WS
-				STM32_FMC_WRITE_OPERATION_ENABLE
-				STM32_FMC_WAIT_SIGNAL_DISABLE
-				STM32_FMC_EXTENDED_MODE_DISABLE
-				STM32_FMC_ASYNCHRONOUS_WAIT_DISABLE
-				STM32_FMC_WRITE_BURST_DISABLE
-				STM32_FMC_CONTINUOUS_CLOCK_SYNC_ONLY
-				STM32_FMC_WRITE_FIFO_DISABLE
-				STM32_FMC_PAGE_SIZE_NONE>;
+				      STM32_FMC_MEMORY_TYPE_SRAM
+				      STM32_FMC_NORSRAM_MEM_BUS_WIDTH_16
+				      STM32_FMC_BURST_ACCESS_MODE_DISABLE
+				      STM32_FMC_WAIT_SIGNAL_POLARITY_LOW
+				      STM32_FMC_WAIT_TIMING_BEFORE_WS
+				      STM32_FMC_WRITE_OPERATION_ENABLE
+				      STM32_FMC_WAIT_SIGNAL_DISABLE
+				      STM32_FMC_EXTENDED_MODE_DISABLE
+				      STM32_FMC_ASYNCHRONOUS_WAIT_DISABLE
+				      STM32_FMC_WRITE_BURST_DISABLE
+				      STM32_FMC_CONTINUOUS_CLOCK_SYNC_ONLY
+				      STM32_FMC_WRITE_FIFO_DISABLE
+				      STM32_FMC_PAGE_SIZE_NONE>;
 			st,timing = <1 1 32 0 2 2 STM32_FMC_ACCESS_MODE_A>;
 
 			fmc-mipi-dbi {
@@ -233,6 +233,13 @@
 	status = "okay";
 };
 
+&usart3 {
+	pinctrl-0 = <&usart3_tx_pb10 &usart3_rx_pb11>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
 &timers2 {
 	st,prescaler = <10000>;
 	status = "okay";
@@ -300,21 +307,6 @@
 			reg = <0x00000000 DT_SIZE_K(64)>;
 		};
 
-		slot0_partition: partition@10000 {
-			label = "image-0";
-			reg = <0x00010000 DT_SIZE_K(416)>;
-		};
-
-		slot1_partition: partition@78000 {
-			label = "image-1";
-			reg = <0x00078000 DT_SIZE_K(416)>;
-		};
-
-		scratch_partition: partition@e0000 {
-			label = "image-scratch";
-			reg = <0x000e0000 DT_SIZE_K(64)>;
-		};
-
 		/* Set 64KB of storage at the end of Bank1 */
 		storage_partition: partition@f0000 {
 			label = "storage";
@@ -324,7 +316,7 @@
 };
 
 &rtc {
-	clocks = <&rcc STM32_CLOCK_BUS_APB3 0x00200000>,
+	clocks = <&rcc STM32_CLOCK(APB3, 21)>,
 		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
 	status = "okay";
 };
@@ -349,7 +341,7 @@
 };
 
 &adc1 {
-	clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000400>,
+	clocks = <&rcc STM32_CLOCK(AHB2, 10)>,
 		 <&rcc STM32_SRC_HCLK ADCDAC_SEL(0)>;
 	pinctrl-0 = <&adc1_inp6_pf12>; /* Arduino A5 */
 	pinctrl-names = "default";
@@ -366,7 +358,7 @@
 };
 
 &fdcan1 {
-	clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000200>,
+	clocks = <&rcc STM32_CLOCK(APB1_2, 9)>,
 		<&rcc STM32_SRC_PLL1_Q FDCAN_SEL(1)>;
 	pinctrl-0 = <&fdcan1_rx_pa11 &fdcan1_tx_pa12>;
 	pinctrl-names = "default";
@@ -399,9 +391,19 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			partition@0 {
-				label = "nor";
-				reg = <0x00000000 DT_SIZE_M(64)>;
+			slot0_partition: partition@0 {
+				label = "image-0";
+				reg = <0x00000000 DT_SIZE_M(16)>;
+			};
+
+			slot1_partition: partition@1000000 {
+				label = "image-1";
+				reg = <0x01000000 DT_SIZE_M(16)>;
+			};
+
+			scratch_partition: partition@2000000 {
+				label = "image-scratch";
+				reg = <0x02000000 DT_SIZE_M(24)>;
 			};
 		};
 	};

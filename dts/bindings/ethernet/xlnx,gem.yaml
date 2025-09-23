@@ -225,19 +225,21 @@ properties:
       Optional feature flag - Enable frames to be received in half-duplex
       mode while transmitting.
 
-  rx-checksum-offload:
+  disable-rx-checksum-offload:
     type: boolean
     description: |
-      Optional feature flag - Enable RX IP/TCP/UDP checksum offload to
-      hardware. Frames with bad IP, TCP or UDP checksums will be discarded.
-      This option is NOT supported by the QEMU implementation of the GEM!
+      Disable RX IPv4/IPv6/TCP/UDP checksum offload to hardware. Checksum
+      offloading is enabled by default, and automatically disabled for
+      QEMU targets, where hardware checksum offloading is not emulated,
+      without having to set this flag explicitly.
 
-  tx-checksum-offload:
+  disable-tx-checksum-offload:
     type: boolean
     description: |
-      Optional feature flag - Enable TX IP/TCP/UDP checksum offload to
-      hardware. This option is NOT supported by the QEMU implementation
-      of the GEM!
+      Disable TX IPv4/IPv6/TCP/UDP checksum offload to hardware. Checksum
+      offloading is enabled by default, and automatically disabled for
+      QEMU targets, where hardware checksum offloading is not emulated,
+      without having to set this flag explicitly.
 
   disable-pause-copy:
     type: boolean

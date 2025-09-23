@@ -6,7 +6,7 @@
 #
 
 # TODO: Use DTS generated Kconfig once the board support is added
-DT_COMPAT_NORDIC_WIFI71 := nordic,wifi71
+DT_COMPAT_NORDIC_WIFI71 := nordic,nrf7120
 
 menuconfig WIFI_NRF70
 	bool "nRF70 driver"
@@ -570,6 +570,21 @@ config NRF70_RSSI_STALE_TIMEOUT_MS
 	  value as the driver does not store it and requires RPU to provide the
 	  information.
 
+config NRF_WIFI_GLOBAL_HEAP
+	bool "Use Zephyr kernel heap for Wi-Fi driver"
+	depends on KERNEL_MEM_POOL && ((HEAP_MEM_POOL_SIZE > 0) || HEAP_MEM_POOL_IGNORE_MIN)
+	help
+	  Enable this option to use K_HEAP for memory allocations in Wi-Fi driver.
+
+if NRF_WIFI_GLOBAL_HEAP
+config HEAP_MEM_POOL_ADD_SIZE_NRF70
+	# Use a maximum that works for typical use cases and boards, each sample/app can override
+	# this value if needed by using CONFIG_HEAP_MEM_POOL_IGNORE_MIN
+	def_int 25000 if NRF70_SCAN_ONLY
+	def_int 150000
+endif # NRF_WIFI_GLOBAL_HEAP
+
+if !NRF_WIFI_GLOBAL_HEAP
 config NRF_WIFI_CTRL_HEAP_SIZE
 	int "Dedicated memory pool for control plane"
 	default 20000
@@ -580,13 +595,12 @@ config NRF_WIFI_DATA_HEAP_SIZE
 	default 8000 if NRF70_SCAN_ONLY
 	default 110000 if !SOC_FAMILY_NORDIC_NRF
 	default 130000
+endif
 
 if NETWORKING
 # Finetune defaults for certain system components used by the driver
-
-config SYSTEM_WORKQUEUE_STACK_SIZE
-	default 4096
-
+# Note: These will take effect only if the symbol is not defined already
+# (i.e., the original symbol is processed after "drivers/Kconfig")
 config NET_TX_STACK_SIZE
 	default 4096
 
@@ -734,11 +748,12 @@ config NRF_WIFI_RPU_RECOVERY_PS_ACTIVE_TIMEOUT_MS
 
 config NRF_WIFI_RPU_MIN_TIME_TO_ENTER_SLEEP_MS
 	int "Minimum idle time to enter sleep in milliseconds"
-	range 100 5000
-	default 1000
+	range 100 40000
+	default 5000
 	help
 	  Minimum time the host should de-assert WAKEUP_NOW and let RPU enter
-	  sleep mode, assuming there is no activity.
+	  sleep mode, assuming there is no activity. Please note that higher values
+	  of this value may increase the power consumption.
 
 config NRF_WIFI_RPU_RECOVERY_DEBUG
 	bool "RPU recovery debug logs"
@@ -825,7 +840,7 @@ if NRF_WIFI_FEAT_KEEPALIVE
 config NRF_WIFI_KEEPALIVE_PERIOD_S
 	int "Keepalive period in seconds"
 	range 30 3600
-	default 60
+	default 30
 	help
 	  Keepalive period in seconds to send keepalive packets to the AP.
 endif
@@ -908,4 +923,25 @@ config NRF_WIFI_RX_STBC_HT
 	help
 	  Receive packets encoded with STBC (Space-Time Block Coding)
 	  in HT (Wi-Fi4) mode.
+
+config NRF_WIFI_DYNAMIC_BANDWIDTH_SIGNALLING
+	bool "Dynamic bandwidth signalling for Wi-Fi"
+	help
+	  This option enables support for dynamic bandwidth signalling.
+
+config NRF_WIFI_DYNAMIC_ED
+	bool "Dynamic ED"
+	help
+	  This option enables support for proprietary algorithm to
+	  enhance performance in high-traffic channels.
+
+config NRF_WIFI_TWT_SETUP_TIMEOUT_MS
+	int "TWT setup timeout (ms)"
+	range 100 10000
+	default 250
+	help
+	  Timeout duration (in milliseconds) for the TWT setup procedure.
+	  The STA will transmit a TWT setup request every 100 milliseconds,
+	  continuing until this timeout value is reached. If no response is
+	  received before the timeout expires, the TWT setup is considered failed.
 endif # WIFI_NRF70

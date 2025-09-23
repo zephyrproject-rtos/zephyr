@@ -1,16 +1,19 @@
 /*
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2025 Analog Devices, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 / {
 	chosen {
-		zephyr,cortex-m-idle-timer = &rtc_counter;
+		zephyr,cortex-m-idle-timer = &counter_wut0;
 	};
 };
 
-&rtc_counter {
+&wut0 {
 	status = "okay";
 	wakeup-source;
+	counter_wut0: counter {
+		status = "okay";
+	};
 };

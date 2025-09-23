@@ -1,0 +1,11 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RZ Interrupt Controller
+compatible: "renesas,rz-intc"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

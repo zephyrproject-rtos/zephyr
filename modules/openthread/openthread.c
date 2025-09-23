@@ -33,6 +33,7 @@ LOG_MODULE_REGISTER(net_openthread_platform, CONFIG_OPENTHREAD_PLATFORM_LOG_LEVE
 #include <openthread/platform/diag.h>
 #include <openthread/tasklet.h>
 #include <openthread/thread.h>
+#include <openthread/thread_ftd.h>
 #include <openthread/dataset.h>
 #include <openthread/joiner.h>
 #include <openthread-system.h>
@@ -98,6 +99,12 @@ LOG_MODULE_REGISTER(net_openthread_platform, CONFIG_OPENTHREAD_PLATFORM_LOG_LEVE
 #define OT_POLL_PERIOD 0
 #endif
 
+#if defined(CONFIG_OPENTHREAD_ROUTER_SELECTION_JITTER)
+#define OT_ROUTER_SELECTION_JITTER CONFIG_OPENTHREAD_ROUTER_SELECTION_JITTER
+#else
+#define OT_ROUTER_SELECTION_JITTER 0
+#endif
+
 #define ZEPHYR_PACKAGE_NAME "Zephyr"
 #define PACKAGE_VERSION     KERNEL_VERSION_STRING
 
@@ -157,6 +164,22 @@ static void ot_joiner_start_handler(otError error, void *context)
 			LOG_ERR("Failed to start the OpenThread network [%d]", error);
 		}
 	}
+}
+
+static void ot_configure_instance(void)
+{
+#ifndef CONFIG_OPENTHREAD_COPROCESSOR_RCP
+	/* Configure Child Supervision and MLE Child timeouts. */
+	otChildSupervisionSetInterval(openthread_instance,
+				      CONFIG_OPENTHREAD_CHILD_SUPERVISION_INTERVAL);
+	otChildSupervisionSetCheckTimeout(openthread_instance,
+					  CONFIG_OPENTHREAD_CHILD_SUPERVISION_CHECK_TIMEOUT);
+	otThreadSetChildTimeout(openthread_instance, CONFIG_OPENTHREAD_MLE_CHILD_TIMEOUT);
+
+	if (IS_ENABLED(CONFIG_OPENTHREAD_ROUTER_SELECTION_JITTER_OVERRIDE)) {
+		otThreadSetRouterSelectionJitter(openthread_instance, OT_ROUTER_SELECTION_JITTER);
+	}
+#endif
 }
 
 static bool ot_setup_default_configuration(void)
@@ -295,6 +318,14 @@ int openthread_init(void)
 		return 0;
 	}
 
+	/* Initialize the OpenThread work queue */
+	k_work_queue_init(&openthread_work_q);
+
+	/* Start work queue for the OpenThread module */
+	k_work_queue_start(&openthread_work_q, ot_stack_area,
+			   K_KERNEL_STACK_SIZEOF(ot_stack_area),
+			   OT_PRIORITY, &q_cfg);
+
 	openthread_mutex_lock();
 
 	otSysInit(0, NULL);
@@ -340,11 +371,8 @@ int openthread_init(void)
 		}
 	}
 
+	ot_configure_instance();
 	openthread_mutex_unlock();
-
-	/* Start work queue for the OpenThread module */
-	k_work_queue_start(&openthread_work_q, ot_stack_area, K_KERNEL_STACK_SIZEOF(ot_stack_area),
-			   OT_PRIORITY, &q_cfg);
 
 	(void)k_work_submit_to_queue(&openthread_work_q, &openthread_work);
 
@@ -390,13 +418,6 @@ int openthread_run(void)
 			goto exit;
 		}
 	}
-
-	/* Configure Child Supervision and MLE Child timeouts. */
-	otChildSupervisionSetInterval(openthread_instance,
-				      CONFIG_OPENTHREAD_CHILD_SUPERVISION_INTERVAL);
-	otChildSupervisionSetCheckTimeout(openthread_instance,
-					  CONFIG_OPENTHREAD_CHILD_SUPERVISION_CHECK_TIMEOUT);
-	otThreadSetChildTimeout(openthread_instance, CONFIG_OPENTHREAD_MLE_CHILD_TIMEOUT);
 
 	if (otDatasetIsCommissioned(openthread_instance)) {
 		/* OpenThread already has dataset stored - skip the

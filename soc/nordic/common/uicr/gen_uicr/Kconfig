@@ -1,0 +1,26 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+menu "UICR generator options"
+
+config GEN_UICR_GENERATE_PERIPHCONF
+	bool "Generate PERIPHCONF hex alongside UICR"
+	default y
+	help
+	  When enabled, the UICR generator will populate the
+	  periphconf_partition partition.
+
+config GEN_UICR_SECONDARY
+	bool "Enable UICR.SECONDARY.ENABLE"
+
+config GEN_UICR_SECONDARY_GENERATE_PERIPHCONF
+	bool "Generate SECONDARY.PERIPHCONF hex alongside UICR"
+	default y
+	depends on GEN_UICR_SECONDARY
+	help
+	  When enabled, the UICR generator will populate the
+	  secondary_periphconf_partition partition.
+
+endmenu
+
+source "Kconfig.zephyr"

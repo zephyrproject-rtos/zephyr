@@ -1,21 +1,21 @@
-/**
- * @file
- *
- * @brief Generic low-level inter-processor mailbox communication API.
- */
-
 /*
  * Copyright (c) 2015 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @ingroup ipm_interface
+ * @brief Main header file for IPM (Inter-Processor Mailbox) driver API.
+ */
+
 #ifndef ZEPHYR_INCLUDE_DRIVERS_IPM_H_
 #define ZEPHYR_INCLUDE_DRIVERS_IPM_H_
 
 /**
- * @brief IPM Interface
- * @defgroup ipm_interface IPM Interface
+ * @brief Interfaces for Inter-Processor Mailbox (IPM) controllers.
+ * @defgroup ipm_interface IPM
  * @since 1.0
  * @version 1.0.0
  * @ingroup io_interfaces
@@ -126,9 +126,10 @@ __subsystem struct ipm_driver_api {
  * data read back.
  *
  * @param ipmdev Driver instance
- * @param wait If nonzero, busy-wait for remote to consume the message. The
- *	       message is considered consumed once the remote interrupt handler
- *	       finishes. If there is deferred processing on the remote side,
+ * @param wait If non-zero, busy-wait indefinitely for the remote to consume
+ *	       the message. The message is considered consumed
+ *	       once the remote interrupt handler finishes.
+ *	       If there is deferred processing on the remote side,
  *	       or you would like to queue outgoing messages and wait on an
  *	       event/semaphore, you can implement that in a high-level driver
  * @param id Message identifier. Values are constrained by

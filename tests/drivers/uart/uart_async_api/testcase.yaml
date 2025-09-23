@@ -18,6 +18,14 @@ tests:
       - platform:mimxrt685_evk/mimxrt685s/cm33:"DTC_OVERLAY_FILE=nxp/dut_flexcomm4.overlay"
       - platform:mimxrt595_evk/mimxrt595s/cm33:"DTC_OVERLAY_FILE=nxp/dut_flexcomm12.overlay"
       - platform:frdm_rw612/rw612:"DTC_OVERLAY_FILE=nxp/dut_lpc_flexcomm0.overlay"
+  drivers.uart.async_api.fast:
+    harness: ztest
+    harness_config:
+      fixture: uart_fast_loopback
+    platform_allow:
+      - nrf54lm20dk/nrf54lm20a/cpuapp
+    extra_args:
+      - DTC_OVERLAY_FILE="boards/nrf54lm20dk_nrf54lm20a_cpuapp_uart00.overlay"
   drivers.uart.wide:
     filter: CONFIG_SERIAL_SUPPORT_ASYNC and not CONFIG_UART_MCUX_LPUART
     harness: ztest
@@ -66,8 +74,8 @@ tests:
       - platform:frdm_k82f/mk82f25615:"DTC_OVERLAY_FILE=nxp/dut_lpuart0_loopback.overlay"
       - platform:frdm_mcxa156/mcxa156:"DTC_OVERLAY_FILE=nxp/dut_lpuart1.overlay"
       - platform:frdm_mcxa153/mcxa153:"DTC_OVERLAY_FILE=nxp/dut_lpuart2_loopback.overlay;nxp/enable_edma0.overlay"
-      - platform:frdm_mcxa166/mcxa166:"DTC_OVERLAY_FILE=nxp/dut_lpuart3_loopback.overlay;nxp/enable_edma0.overlay"
-      - platform:frdm_mcxa276/mcxa276:"DTC_OVERLAY_FILE=nxp/dut_lpuart3_loopback.overlay;nxp/enable_edma0.overlay"
+      - platform:frdm_mcxa346/mcxa346:"DTC_OVERLAY_FILE=nxp/dut_lpuart3_loopback.overlay;nxp/enable_edma0.overlay"
+      - platform:frdm_mcxa266/mcxa266:"DTC_OVERLAY_FILE=nxp/dut_lpuart3_loopback.overlay;nxp/enable_edma0.overlay"
       - platform:mimxrt1160_evk/mimxrt1166/cm4:"DTC_OVERLAY_FILE=nxp/dut_lpuart2_loopback.overlay"
       - platform:mimxrt1170_evk@A/mimxrt1176/cm4:"DTC_OVERLAY_FILE=nxp/dut_lpuart2_loopback.overlay"
       - platform:mimxrt1170_evk@B/mimxrt1176/cm4:"DTC_OVERLAY_FILE=nxp/dut_lpuart2_loopback.overlay"

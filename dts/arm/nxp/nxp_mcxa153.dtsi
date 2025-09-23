@@ -29,6 +29,10 @@
 		status = "okay";
 	};
 
+	cmc {
+		compatible = "nxp,cmc-reset-cause";
+	};
+
 	soc {
 		ctimer0: ctimer@40004000 {
 			compatible = "nxp,lpc-ctimer";
@@ -131,6 +135,11 @@
 				reg = <0 DT_SIZE_K(128)>;
 				erase-block-size = <8192>;
 				write-block-size = <128>;
+			};
+
+			uuid: uuid@1100800 {
+				compatible = "nxp,lpc-uid";
+				reg = <0x1100800 0x10>;
 			};
 		};
 
@@ -298,6 +307,13 @@
 			dma-names = "rx", "tx";
 		};
 
+		ostimer0: timers@400ad000 {
+			compatible = "nxp,os-timer";
+			reg = <0x400ad000 0x1000>;
+			interrupts = <57 0>;
+			status = "disabled";
+		};
+
 		porta: pinmux@400bc000 {
 			compatible = "nxp,port-pinmux";
 			reg = <0x400bc000 0x1000>;
@@ -341,6 +357,11 @@
 				compatible = "nxp,lpc-syscon-reset";
 				#reset-cells = <1>;
 			};
+		};
+
+		temp0: temp0 {
+			compatible = "nxp,lpadc-temp40";
+			status = "disabled";
 		};
 
 		usb: usbd@400a4000 {

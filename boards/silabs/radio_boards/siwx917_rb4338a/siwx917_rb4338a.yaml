@@ -19,6 +19,8 @@ supported:
   - spi
   - uart
   - i2s
+  - adc
   - wifi
   - rtc
+  - counter
 vendor: silabs

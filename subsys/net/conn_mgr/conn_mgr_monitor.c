@@ -32,7 +32,7 @@ static struct k_thread conn_mgr_mon_thread;
  * conn_mgr_mon_get_if_by_index and conn_mgr_get_index_for_if are used to go back and forth between
  * iface_states indices and Zephyr iface pointers.
  */
-uint16_t iface_states[CONN_MGR_IFACE_MAX];
+static uint16_t iface_states[CONN_MGR_IFACE_MAX];
 
 /* Tracks the most recent total quantity of L4-ready ifaces (any, IPv4, IPv6) */
 static uint16_t last_ready_count;
@@ -49,6 +49,11 @@ K_SEM_DEFINE(conn_mgr_mon_updated, 1, 1);
 
 /* Used to protect conn_mgr_monitor state */
 K_MUTEX_DEFINE(conn_mgr_mon_lock);
+
+uint16_t *conn_mgr_if_state_internal(void)
+{
+	return iface_states;
+}
 
 /**
  * @brief Retrieves pointer to an iface by the index that corresponds to it in iface_states
@@ -400,12 +405,6 @@ void conn_mgr_watch_l2(const struct net_l2 *l2)
 
 static int conn_mgr_mon_init(void)
 {
-	int i;
-
-	for (i = 0; i < ARRAY_SIZE(iface_states); i++) {
-		iface_states[i] = 0;
-	}
-
 	k_thread_create(&conn_mgr_mon_thread, conn_mgr_mon_stack,
 			CONFIG_NET_CONNECTION_MANAGER_MONITOR_STACK_SIZE,
 			conn_mgr_mon_thread_fn,

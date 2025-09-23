@@ -42,18 +42,6 @@ struct __thread_entry {
 
 struct k_thread;
 
-/*
- * This _pipe_desc structure is used by the pipes kernel module when
- * CONFIG_PIPES has been selected.
- */
-
-struct _pipe_desc {
-	sys_dnode_t      node;
-	unsigned char   *buffer;         /* Position in src/dest buffer */
-	size_t           bytes_to_xfer;  /* # bytes left to transfer */
-	struct k_thread *thread;         /* Back pointer to pended thread */
-};
-
 /* can be used for creating 'dummy' threads, e.g. for pending on objects */
 struct _thread_base {
 
@@ -279,7 +267,7 @@ struct k_thread {
 #if defined(CONFIG_EVENTS)
 	struct k_thread *next_event_link;
 
-	uint32_t   events;
+	uint32_t   events; /* dual purpose - wait on and then received */
 	uint32_t   event_options;
 
 	/** true if timeout should not wake the thread */
@@ -360,11 +348,6 @@ struct k_thread {
 	/** Paging statistics */
 	struct k_mem_paging_stats_t paging_stats;
 #endif /* CONFIG_DEMAND_PAGING_THREAD_STATS */
-
-#ifdef CONFIG_PIPES
-	/** Pipe descriptor used with blocking k_pipe operations */
-	struct _pipe_desc pipe_desc;
-#endif /* CONFIG_PIPES */
 
 #ifdef CONFIG_OBJ_CORE_THREAD
 	struct k_obj_core  obj_core;

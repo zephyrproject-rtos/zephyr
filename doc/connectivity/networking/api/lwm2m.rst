@@ -13,7 +13,7 @@ Overview
 Lightweight Machine to Machine (LwM2M) is an application layer protocol
 designed with device management, data reporting and device actuation in mind.
 Based on CoAP/UDP, `LwM2M`_ is a
-`standard <http://openmobilealliance.org/release/LightweightM2M/>`_ defined by
+`standard <https://openmobilealliance.org/release/LightweightM2M/>`_ defined by
 the Open Mobile Alliance and suitable for constrained devices by its use of
 CoAP packet-size optimization and a simple, stateless flow that supports a
 REST API.
@@ -225,7 +225,7 @@ instance 0 (the default and only instance) by sending a ``READ 3/0/0``
 operation to the client.
 
 The full list of registered objects and resource IDs can be found in the
-`LwM2M registry`_.
+`OMA LwM2M registries`_.
 
 Zephyr's LwM2M library lives in the :zephyr_file:`subsys/net/lib/lwm2m`, with a
 client sample in :zephyr_file:`samples/net/lwm2m_client`.  For more information
@@ -244,7 +244,8 @@ The Zephyr LwM2M library implements the following items:
 By default, the library implements `LwM2M specification 1.0.2`_ and can be set to
 `LwM2M specification 1.1.1`_ with a Kconfig option.
 
-For more information about LwM2M visit `OMA Specworks LwM2M`_.
+For more information about LwM2M specification releases visit the
+`OMA LwM2M releases`_ page.
 
 Sample usage
 ************
@@ -804,16 +805,16 @@ API Reference
 .. doxygengroup:: lwm2m_api
 
 .. _LwM2M:
-   https://www.omaspecworks.org/what-is-oma-specworks/iot/lightweight-m2m-lwm2m/
+   https://www.openmobilealliance.org/specifications/lwm2m
 
-.. _LwM2M registry:
-   http://www.openmobilealliance.org/wp/OMNA/LwM2M/LwM2MRegistry.html
+.. _OMA LwM2M registries:
+   https://www.openmobilealliance.org/specifications/registries
 
-.. _OMA Specworks LwM2M:
-   https://www.omaspecworks.org/what-is-oma-specworks/iot/lightweight-m2m-lwm2m/
+.. _OMA LwM2M releases:
+   https://www.openmobilealliance.org/specifications/lwm2m/releases
 
 .. _LwM2M specification 1.0.2:
-   http://openmobilealliance.org/release/LightweightM2M/V1_0_2-20180209-A/OMA-TS-LightweightM2M-V1_0_2-20180209-A.pdf
+   https://www.openmobilealliance.org/release/LightweightM2M/V1_0_2-20180209-A/OMA-TS-LightweightM2M-V1_0_2-20180209-A.pdf
 
 .. _LwM2M specification 1.1.1:
-   http://openmobilealliance.org/release/LightweightM2M/V1_1_1-20190617-A/
+   https://www.openmobilealliance.org/release/LightweightM2M/V1_1_1-20190617-A/

@@ -14,6 +14,14 @@
 
 LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
 
+#if !DT_HAS_CHOSEN(zephyr_camera)
+#error No camera chosen in devicetree. Missing "--shield" or "--snippet video-sw-generator" flag?
+#endif
+
+#if !DT_HAS_CHOSEN(zephyr_display)
+#error No display chosen in devicetree. Missing "--shield" flag?
+#endif
+
 int main(void)
 {
 	struct video_buffer *buffers[2];
@@ -23,8 +31,12 @@ int main(void)
 	struct video_format fmt;
 	struct video_caps caps;
 	enum video_buf_type type = VIDEO_BUF_TYPE_OUTPUT;
+	struct video_selection sel = {
+		.type = VIDEO_BUF_TYPE_OUTPUT,
+	};
 	size_t bsize;
 	int i = 0;
+	int err;
 
 	display_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
 	if (!device_is_ready(display_dev)) {
@@ -66,10 +78,49 @@ int main(void)
 		return 0;
 	}
 
+	/* Set the crop setting if necessary */
+#if CONFIG_VIDEO_SOURCE_CROP_WIDTH && CONFIG_VIDEO_SOURCE_CROP_HEIGHT
+	sel.target = VIDEO_SEL_TGT_CROP;
+	sel.rect.left = CONFIG_VIDEO_SOURCE_CROP_LEFT;
+	sel.rect.top = CONFIG_VIDEO_SOURCE_CROP_TOP;
+	sel.rect.width = CONFIG_VIDEO_SOURCE_CROP_WIDTH;
+	sel.rect.height = CONFIG_VIDEO_SOURCE_CROP_HEIGHT;
+	if (video_set_selection(video_dev, &sel)) {
+		LOG_ERR("Unable to set selection crop");
+		return 0;
+	}
+	LOG_INF("Selection crop set to (%u,%u)/%ux%u",
+		sel.rect.left, sel.rect.top, sel.rect.width, sel.rect.height);
+#endif
+
 	/* Set format */
 	fmt.width = CONFIG_VIDEO_WIDTH;
 	fmt.height = CONFIG_VIDEO_HEIGHT;
 	fmt.pixelformat = VIDEO_PIX_FMT_RGB565;
+
+	/*
+	 * Check (if possible) if targeted size is same as crop
+	 * and if compose is necessary
+	 */
+	sel.target = VIDEO_SEL_TGT_CROP;
+	err = video_get_selection(video_dev, &sel);
+	if (err < 0 && err != -ENOSYS) {
+		LOG_ERR("Unable to get selection crop");
+		return 0;
+	}
+
+	if (err == 0 && (sel.rect.width != fmt.width || sel.rect.height != fmt.height)) {
+		sel.target = VIDEO_SEL_TGT_COMPOSE;
+		sel.rect.left = 0;
+		sel.rect.top = 0;
+		sel.rect.width = fmt.width;
+		sel.rect.height = fmt.height;
+		err = video_set_selection(video_dev, &sel);
+		if (err < 0 && err != -ENOSYS) {
+			LOG_ERR("Unable to set selection compose");
+			return 0;
+		}
+	}
 
 	if (video_set_format(video_dev, &fmt)) {
 		LOG_ERR("Unable to set up video format");
@@ -89,7 +140,8 @@ int main(void)
 
 	/* Alloc video buffers and enqueue for capture */
 	for (i = 0; i < ARRAY_SIZE(buffers); i++) {
-		buffers[i] = video_buffer_alloc(bsize, K_FOREVER);
+		buffers[i] = video_buffer_aligned_alloc(bsize, CONFIG_VIDEO_BUFFER_POOL_ALIGN,
+							K_FOREVER);
 		if (buffers[i] == NULL) {
 			LOG_ERR("Unable to alloc video buffer");
 			return 0;
@@ -133,8 +185,6 @@ int main(void)
 	/* Grab video frames */
 	vbuf->type = type;
 	while (1) {
-		int err;
-
 		err = video_dequeue(video_dev, &vbuf, K_FOREVER);
 		if (err) {
 			LOG_ERR("Unable to dequeue video buf");

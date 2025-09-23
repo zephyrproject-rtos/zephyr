@@ -4,8 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(net_dsa_tag, CONFIG_NET_DSA_LOG_LEVEL);
+
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/dsa_core.h>
+#include "dsa_tag.h"
 
 struct net_if *dsa_tag_recv(struct net_if *iface, struct net_pkt *pkt)
 {
@@ -35,4 +39,25 @@ struct net_pkt *dsa_tag_xmit(struct net_if *iface, struct net_pkt *pkt)
 	}
 
 	return dsa_switch_ctx->dapi->xmit(iface, pkt);
+}
+
+void dsa_tag_setup(const struct device *dev_cpu)
+{
+	const struct dsa_port_config *cfg = dev_cpu->config;
+	struct dsa_switch_context *dsa_switch_ctx = dev_cpu->data;
+
+	switch (cfg->tag_proto) {
+#ifdef CONFIG_DSA_TAG_PROTOCOL_NETC
+	case DSA_TAG_PROTO_NETC:
+		dsa_switch_ctx->dapi->recv = dsa_tag_netc_recv;
+		dsa_switch_ctx->dapi->xmit = dsa_tag_netc_xmit;
+		break;
+#endif
+	case DSA_TAG_PROTO_NOTAG:
+		dsa_switch_ctx->dapi->recv = NULL;
+		dsa_switch_ctx->dapi->xmit = NULL;
+		break;
+	default:
+		LOG_ERR("DSA tag protocol %d not supported", cfg->tag_proto);
+	}
 }

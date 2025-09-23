@@ -1,7 +1,7 @@
 .. _usb_dc_api:
 
-USB device controller driver API
-################################
+USB device controller driver API (deprecated)
+#############################################
 
 The USB device controller driver API is described in
 :zephyr_file:`include/zephyr/drivers/usb/usb_dc.h` and sometimes referred to

@@ -815,6 +815,12 @@ static void generate_mac(uint8_t *mac_addr)
 	result_mac_32_bits = crc32_ieee((uint8_t *)unique_device_ID_12_bytes, 12);
 	memcpy(&mac_addr[3], &result_mac_32_bits, 3);
 
+	/**
+	 * Set MAC address locally administered bit (LAA) as this is not assigned by the
+	 * manufacturer
+	 */
+	mac_addr[0] |= 0x02;
+
 #endif /* NODE_HAS_VALID_MAC_ADDR(DT_DRV_INST(0))) */
 #endif
 }
@@ -1128,12 +1134,15 @@ static void phy_link_state_changed(const struct device *phy_dev, struct phy_link
 
 	ARG_UNUSED(phy_dev);
 
+	/* The hal also needs to be stopped before changing the MAC config.
+	 * The speed can change without receiving a link down callback before.
+	 */
+	eth_stm32_hal_stop(dev);
 	if (state->is_up) {
 		set_mac_config(dev, state);
 		eth_stm32_hal_start(dev);
 		net_eth_carrier_on(dev_data->iface);
 	} else {
-		eth_stm32_hal_stop(dev);
 		net_eth_carrier_off(dev_data->iface);
 	}
 }
@@ -1230,41 +1239,6 @@ static enum ethernet_hw_caps eth_stm32_hal_get_capabilities(const struct device 
 		;
 }
 
-static int eth_stm32_hal_get_config(const struct device *dev, enum ethernet_config_type type,
-				    struct ethernet_config *config)
-{
-	struct eth_stm32_hal_dev_data *dev_data = dev->data;
-
-	switch (type) {
-	case ETHERNET_CONFIG_TYPE_MAC_ADDRESS:
-		memcpy(config->mac_address.addr, dev_data->mac_addr,
-		       sizeof(config->mac_address.addr));
-		return 0;
-#if defined(CONFIG_NET_PROMISCUOUS_MODE)
-	case ETHERNET_CONFIG_TYPE_PROMISC_MODE:
-		ETH_HandleTypeDef *heth = &dev_data->heth;
-#if defined(CONFIG_ETH_STM32_HAL_API_V2)
-		ETH_MACFilterConfigTypeDef MACFilterConf;
-
-		HAL_ETH_GetMACFilterConfig(heth, &MACFilterConf);
-
-		config->promisc_mode = (MACFilterConf.PromiscuousMode == ENABLE);
-#else
-		if (heth->Instance->MACFFR & ETH_MACFFR_PM) {
-			config->promisc_mode = true;
-		} else {
-			config->promisc_mode = false;
-		}
-#endif /* CONFIG_ETH_STM32_HAL_API_V2 */
-		return 0;
-#endif /* CONFIG_NET_PROMISCUOUS_MODE */
-	default:
-		break;
-	}
-
-	return -ENOTSUP;
-}
-
 static int eth_stm32_hal_set_config(const struct device *dev,
 				    enum ethernet_config_type type,
 				    const struct ethernet_config *config)
@@ -1348,7 +1322,6 @@ static const struct ethernet_api eth_api = {
 	.get_capabilities = eth_stm32_hal_get_capabilities,
 	.set_config = eth_stm32_hal_set_config,
 	.get_phy = eth_stm32_hal_get_phy,
-	.get_config = eth_stm32_hal_get_config,
 #if defined(CONFIG_NET_DSA_DEPRECATED)
 	.send = dsa_tx,
 #else
@@ -1536,14 +1509,7 @@ static int ptp_clock_stm32_rate_adjust(const struct device *dev, double ratio)
 	int key, ret;
 	uint32_t addend_val;
 
-	/* No change needed */
-	if (ratio == 1.0L) {
-		return 0;
-	}
-
 	key = irq_lock();
-
-	ratio *= (double)eth_dev_data->clk_ratio_adj;
 
 	/* Limit possible ratio */
 	if (ratio * 100 < CONFIG_ETH_STM32_HAL_PTP_CLOCK_ADJ_MIN_PCT ||
@@ -1551,9 +1517,6 @@ static int ptp_clock_stm32_rate_adjust(const struct device *dev, double ratio)
 		ret = -EINVAL;
 		goto error;
 	}
-
-	/* Save new ratio */
-	eth_dev_data->clk_ratio_adj = ratio;
 
 	/* Update addend register */
 	addend_val = UINT32_MAX * (double)eth_dev_data->clk_ratio * ratio;
@@ -1652,12 +1615,10 @@ static int ptp_stm32_init(const struct device *port)
 	 * clk_ratio is a ratio between desired PTP clock frequency and HCLK rate.
 	 * Because HCLK is defined by a physical oscillator, it might drift due
 	 * to manufacturing tolerances and environmental effects (e.g. temperature).
-	 * clk_ratio_adj compensates for such inaccuracies. It starts off as 1.0
-	 * and gets adjusted by calling ptp_clock_stm32_rate_adjust().
+	 * It gets adjusted by calling ptp_clock_stm32_rate_adjust().
 	 */
-	eth_dev_data->clk_ratio_adj = 1.0f;
 	addend_val =
-		UINT32_MAX * eth_dev_data->clk_ratio * eth_dev_data->clk_ratio_adj;
+		UINT32_MAX * eth_dev_data->clk_ratio;
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet)
 	heth->Instance->MACTSAR = addend_val;
 	heth->Instance->MACTSCR |= ETH_MACTSCR_TSADDREG;

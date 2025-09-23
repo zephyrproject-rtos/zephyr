@@ -9,6 +9,7 @@
  * Copyright (c) 2017-2018 Linaro Limited
  * Copyright (c) 2021 Nordic Semiconductor
  * Copyright (c) 2025 Aerlync Labs Inc.
+ * Copyright 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -991,6 +992,11 @@ struct in_pktinfo {
 	struct in_addr ipi_addr;     /**< Header Destination address */
 };
 
+/** Pass an IP_RECVTTL ancillary message that contains information
+ *  about the time to live of the incoming packet.
+ */
+#define IP_RECVTTL 12
+
 /** Retrieve the current known path MTU of the current socket. Returns an
  *  integer. IP_MTU is valid only for getsockopt and can be employed only when
  *  the socket has been connected.
@@ -1085,6 +1091,17 @@ struct ipv6_mreq {
  *  incoming packet. See RFC 3542.
  */
 #define IPV6_RECVPKTINFO 49
+
+/** Option which returns an in6_pktinfo structure in ancillary data */
+#define IPV6_PKTINFO 50
+
+/** Pass an IPV6_RECVHOPLIMIT ancillary message that contains information
+ *  about the hop limit of the incoming packet. See RFC 3542.
+ */
+#define IPV6_RECVHOPLIMIT 51
+
+/** Set or receive the hoplimit value for an outgoing packet. */
+#define IPV6_HOPLIMIT 52
 
 /** RFC5014: Source address selection. */
 #define IPV6_ADDR_PREFERENCES   72
@@ -1216,6 +1233,30 @@ struct net_socket_register {
 
 #define NET_SOCKET_OFFLOAD_REGISTER(socket_name, prio, _family, _is_supported, _handler) \
 	_NET_SOCKET_REGISTER(socket_name, prio, _family, _is_supported, _handler, true)
+
+struct socket_op_vtable {
+	struct fd_op_vtable fd_vtable;
+	int (*shutdown)(void *obj, int how);
+	int (*bind)(void *obj, const struct sockaddr *addr, socklen_t addrlen);
+	int (*connect)(void *obj, const struct sockaddr *addr,
+		       socklen_t addrlen);
+	int (*listen)(void *obj, int backlog);
+	int (*accept)(void *obj, struct sockaddr *addr, socklen_t *addrlen);
+	ssize_t (*sendto)(void *obj, const void *buf, size_t len, int flags,
+			  const struct sockaddr *dest_addr, socklen_t addrlen);
+	ssize_t (*recvfrom)(void *obj, void *buf, size_t max_len, int flags,
+			    struct sockaddr *src_addr, socklen_t *addrlen);
+	int (*getsockopt)(void *obj, int level, int optname,
+			  void *optval, socklen_t *optlen);
+	int (*setsockopt)(void *obj, int level, int optname,
+			  const void *optval, socklen_t optlen);
+	ssize_t (*sendmsg)(void *obj, const struct msghdr *msg, int flags);
+	ssize_t (*recvmsg)(void *obj, struct msghdr *msg, int flags);
+	int (*getpeername)(void *obj, struct sockaddr *addr,
+			   socklen_t *addrlen);
+	int (*getsockname)(void *obj, struct sockaddr *addr,
+			   socklen_t *addrlen);
+};
 
 /** @endcond */
 

@@ -25,6 +25,8 @@ LOG_MODULE_REGISTER(uart_ambiq, CONFIG_UART_LOG_LEVEL);
 #define UART_AMBIQ_RSR_ERROR_MASK                                                                  \
 	(UART0_RSR_FESTAT_Msk | UART0_RSR_PESTAT_Msk | UART0_RSR_BESTAT_Msk | UART0_RSR_OESTAT_Msk)
 
+#define UART_IO_RESUME_DELAY_US 100
+
 #ifdef CONFIG_UART_ASYNC_API
 struct uart_ambiq_async_tx {
 	const uint8_t *buf;
@@ -105,6 +107,7 @@ static void uart_ambiq_pm_policy_state_lock_get(const struct device *dev)
 	}
 }
 
+#if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API)
 static void uart_ambiq_pm_policy_state_lock_put_unconditional(void)
 {
 	if (IS_ENABLED(CONFIG_PM)) {
@@ -123,6 +126,7 @@ static void uart_ambiq_pm_policy_state_lock_put(const struct device *dev)
 		}
 	}
 }
+#endif
 
 static int uart_ambiq_configure(const struct device *dev, const struct uart_config *cfg)
 {
@@ -251,11 +255,14 @@ static void uart_ambiq_poll_out(const struct device *dev, unsigned char c)
 {
 	struct uart_ambiq_data *data = dev->data;
 	uint32_t flag = 0;
+	unsigned int key;
 
 	/* Wait for space in FIFO */
 	do {
 		am_hal_uart_flags_get(data->uart_handler, &flag);
 	} while (flag & UART0_FR_TXFF_Msk);
+
+	key = irq_lock();
 
 	/* If an interrupt transmission is in progress, the pm constraint is already managed by the
 	 * call of uart_ambiq_irq_tx_[en|dis]able
@@ -267,10 +274,13 @@ static void uart_ambiq_poll_out(const struct device *dev, unsigned char c)
 		 * transmission has completed
 		 */
 		uart_ambiq_pm_policy_state_lock_get(dev);
+		am_hal_uart_interrupt_enable(data->uart_handler, AM_HAL_UART_INT_TXCMP);
 	}
 
 	/* Send a character */
 	am_hal_uart_fifo_write(data->uart_handler, &c, 1, NULL);
+
+	irq_unlock(key);
 }
 
 static int uart_ambiq_err_check(const struct device *dev)
@@ -302,8 +312,14 @@ static int uart_ambiq_fifo_fill(const struct device *dev, const uint8_t *tx_data
 {
 	struct uart_ambiq_data *data = dev->data;
 	int num_tx = 0U;
+	unsigned int key;
+
+	/* Lock interrupts to prevent nested interrupts or thread switch */
+	key = irq_lock();
 
 	am_hal_uart_fifo_write(data->uart_handler, (uint8_t *)tx_data, len, &num_tx);
+
+	irq_unlock(key);
 
 	return num_tx;
 }
@@ -322,13 +338,17 @@ static void uart_ambiq_irq_tx_enable(const struct device *dev)
 {
 	const struct uart_ambiq_config *cfg = dev->config;
 	struct uart_ambiq_data *data = dev->data;
+	unsigned int key;
 
+	key = irq_lock();
 	data->tx_poll_trans_on = false;
 	data->tx_int_trans_on = true;
 	uart_ambiq_pm_policy_state_lock_get(dev);
 
 	am_hal_uart_interrupt_enable(data->uart_handler,
 				     (AM_HAL_UART_INT_TX | AM_HAL_UART_INT_TXCMP));
+
+	irq_unlock(key);
 
 	if (!data->sw_call_txdrdy) {
 		return;
@@ -367,12 +387,17 @@ static void uart_ambiq_irq_tx_enable(const struct device *dev)
 static void uart_ambiq_irq_tx_disable(const struct device *dev)
 {
 	struct uart_ambiq_data *data = dev->data;
+	unsigned int key;
+
+	key = irq_lock();
 
 	data->sw_call_txdrdy = true;
 	am_hal_uart_interrupt_disable(data->uart_handler,
 				      (AM_HAL_UART_INT_TX | AM_HAL_UART_INT_TXCMP));
 	data->tx_int_trans_on = false;
 	uart_ambiq_pm_policy_state_lock_put(dev);
+
+	irq_unlock(key);
 }
 
 static int uart_ambiq_irq_tx_complete(const struct device *dev)
@@ -388,16 +413,18 @@ static int uart_ambiq_irq_tx_ready(const struct device *dev)
 {
 	const struct uart_ambiq_config *cfg = dev->config;
 	struct uart_ambiq_data *data = dev->data;
-	uint32_t status, flag = 0;
+	uint32_t status, flag, ier = 0;
 
 	if (!(UARTn(cfg->inst_idx)->CR & UART0_CR_TXE_Msk)) {
 		return false;
 	}
 
 	/* Check for TX interrupt status is set or TX FIFO is empty. */
-	am_hal_uart_interrupt_status_get(data->uart_handler, &status, true);
+	am_hal_uart_interrupt_status_get(data->uart_handler, &status, false);
 	am_hal_uart_flags_get(data->uart_handler, &flag);
-	return ((status & UART0_IES_TXRIS_Msk) || (flag & AM_HAL_UART_FR_TX_EMPTY));
+	am_hal_uart_interrupt_enable_get(data->uart_handler, &ier);
+	return ((ier & AM_HAL_UART_INT_TX) &&
+		((status & UART0_IES_TXRIS_Msk) || (flag & AM_HAL_UART_FR_TX_EMPTY)));
 }
 
 static void uart_ambiq_irq_rx_enable(const struct device *dev)
@@ -526,24 +553,44 @@ end:
 #ifdef CONFIG_PM_DEVICE
 static int uart_ambiq_pm_action(const struct device *dev, enum pm_device_action action)
 {
+	const struct uart_ambiq_config *config = dev->config;
 	struct uart_ambiq_data *data = dev->data;
-	uint32_t ret;
 	am_hal_sysctrl_power_state_e status;
+	int err;
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
+		/* Set pins to active state */
+		err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+		if (err < 0) {
+			return err;
+		}
+		k_busy_wait(UART_IO_RESUME_DELAY_US);
 		status = AM_HAL_SYSCTRL_WAKE;
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
+		am_hal_uart_tx_flush(data->uart_handler);
+		/* Move pins to sleep state */
+		err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_SLEEP);
+		if ((err < 0) && (err != -ENOENT)) {
+			/*
+			 * If returning -ENOENT, no pins where defined for sleep mode :
+			 * Do not output on console (might sleep already) when going to sleep,
+			 * "(LP)UART pinctrl sleep state not available"
+			 * and don't block PM suspend.
+			 * Else return the error.
+			 */
+			return err;
+		}
 		status = AM_HAL_SYSCTRL_DEEPSLEEP;
 		break;
 	default:
 		return -ENOTSUP;
 	}
 
-	ret = am_hal_uart_power_control(data->uart_handler, status, true);
+	err = am_hal_uart_power_control(data->uart_handler, status, true);
 
-	if (ret != AM_HAL_STATUS_SUCCESS) {
+	if (err != AM_HAL_STATUS_SUCCESS) {
 		return -EPERM;
 	} else {
 		return 0;
@@ -558,6 +605,7 @@ void uart_ambiq_isr(const struct device *dev)
 	uint32_t status = 0;
 
 	am_hal_uart_interrupt_status_get(data->uart_handler, &status, false);
+	am_hal_uart_interrupt_clear(data->uart_handler, status);
 
 	if (status & AM_HAL_UART_INT_TXCMP) {
 		if (data->tx_poll_trans_on) {
@@ -605,7 +653,6 @@ void uart_ambiq_isr(const struct device *dev)
 		k_work_reschedule(&data->async.rx.timeout_work, K_USEC(data->async.rx.timeout));
 	}
 #endif /* CONFIG_UART_ASYNC_API */
-	am_hal_uart_interrupt_clear(data->uart_handler, status);
 }
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 

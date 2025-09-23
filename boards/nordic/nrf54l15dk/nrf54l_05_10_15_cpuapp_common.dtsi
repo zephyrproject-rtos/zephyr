@@ -20,6 +20,11 @@
 		zephyr,ieee802154 = &ieee802154;
 		zephyr,boot-mode = &boot_mode0;
 	};
+
+	aliases {
+		mcuboot-button0 = &button0;
+		mcuboot-led0 = &led0;
+	};
 };
 
 &cpuapp_sram {
@@ -129,6 +134,7 @@
 		has-dpd;
 		t-enter-dpd = <10000>;
 		t-exit-dpd = <35000>;
+		reset-gpios = <&gpio2 0 GPIO_ACTIVE_LOW>;
 	};
 };
 

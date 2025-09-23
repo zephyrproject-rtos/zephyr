@@ -2,9 +2,16 @@
 # Copyright (c) 2020, Teslabs Engineering S.L.
 # SPDX-License-Identifier: Apache-2.0
 
-description: ILI9XXX display controllers common properties.
+title: ILI9XXX display controllers common properties.
 
-include: [mipi-dbi-spi-device.yaml, display-controller.yaml]
+description: |
+    Ilitek ILI9XXX is a color TFT-LCD controller series.
+
+include:
+  - display-controller.yaml
+  - name: mipi-dbi-spi-device.yaml
+    property-blocklist:
+      - te-delay
 
 properties:
   pixel-format:

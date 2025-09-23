@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <nxp/nxp_rt11xx_cm7.dtsi>
+#include <nxp/nxp_rt1170_cm7.dtsi>
 #include "mimxrt1170_evk.dtsi"
 
 / {
@@ -118,7 +118,7 @@ nxp_mipi_i2c: &lpi2c5 {
 	#size-cells = <0>;
 };
 
-&lpadc0 {
+&lpadc1 {
 	status = "okay";
 };
 

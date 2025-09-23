@@ -10,6 +10,7 @@ tests:
       - nrf52dk/nrf52832
       - nrf54l15dk/nrf54l15/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
+      - nrf54lm20dk/nrf54lm20a/cpuapp
     tags: bluetooth
     integration_platforms:
       - qemu_cortex_m3
@@ -17,6 +18,7 @@ tests:
       - nrf52dk/nrf52832
       - nrf54l15dk/nrf54l15/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
+      - nrf54lm20dk/nrf54lm20a/cpuapp
   sample.bluetooth.beacon-coex:
     extra_args: CONF_FILE="prj-coex.conf"
     harness: bluetooth

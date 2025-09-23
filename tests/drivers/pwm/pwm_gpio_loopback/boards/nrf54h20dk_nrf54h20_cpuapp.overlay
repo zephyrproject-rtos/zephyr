@@ -4,45 +4,55 @@
  *
  * Test requires wire connection between:
  *  - PWM130 OUT[0] at P0.00 <-> GPIO input at P0.01
+ *  - PWM130 OUT[1] at P0.02 <-> GPIO input at P0.04
+ *  - PWM130 OUT[2] at P0.03 <-> GPIO input at P0.05
+ *  - PWM130 OUT[3] at P0.06 <-> GPIO input at P0.07
  *  - PWM120 OUT[0] at P7.00 <-> GPIO input at P1.09
- *  - PWM120 OUT[1] at P7.01 <-> GPIO input at P1.05
  */
 
 / {
 	zephyr,user {
 		pwms = <&pwm130 0 160000 PWM_POLARITY_NORMAL>,
-			<&pwm120 0 80000 PWM_POLARITY_NORMAL>,
-			<&pwm120 1 80000 PWM_POLARITY_NORMAL>;
+		       <&pwm130 1 160000 PWM_POLARITY_NORMAL>,
+		       <&pwm130 2 160000 PWM_POLARITY_NORMAL>,
+		       <&pwm130 3 160000 PWM_POLARITY_NORMAL>,
+		       <&pwm120 0 80000 PWM_POLARITY_NORMAL>;
 		gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>,
-			<&gpio1 9 GPIO_ACTIVE_HIGH>,
-			<&gpio1 5 GPIO_ACTIVE_HIGH>;
+			<&gpio0 4 GPIO_ACTIVE_HIGH>,
+			<&gpio0 5 GPIO_ACTIVE_HIGH>,
+			<&gpio0 7 GPIO_ACTIVE_HIGH>,
+			<&gpio1 9 GPIO_ACTIVE_HIGH>;
 	};
 };
 
 &pinctrl {
 	pwm130_default: pwm130_default {
 		group1 {
-			psels = <NRF_PSEL(PWM_OUT0, 0, 0)>;
+			psels = <NRF_PSEL(PWM_OUT0, 0, 0)>,
+				<NRF_PSEL(PWM_OUT1, 0, 2)>,
+				<NRF_PSEL(PWM_OUT2, 0, 3)>,
+				<NRF_PSEL(PWM_OUT3, 0, 6)>;
 		};
 	};
 
 	pwm130_sleep: pwm130_sleep {
 		group1 {
-			psels = <NRF_PSEL(PWM_OUT0, 0, 0)>;
+			psels = <NRF_PSEL(PWM_OUT0, 0, 0)>,
+				<NRF_PSEL(PWM_OUT1, 0, 2)>,
+				<NRF_PSEL(PWM_OUT2, 0, 3)>,
+				<NRF_PSEL(PWM_OUT3, 0, 6)>;
 			low-power-enable;
 		};
 	};
 
 	pwm120_default: pwm120_default {
 		group1 {
-			psels = <NRF_PSEL(PWM_OUT0, 7, 0)>,
-				<NRF_PSEL(PWM_OUT1, 7, 1)>;
+			psels = <NRF_PSEL(PWM_OUT0, 7, 0)>;
 		};
 	};
 	pwm120_sleep: pwm120_sleep {
 		group1 {
-			psels = <NRF_PSEL(PWM_OUT0, 7, 0)>,
-				<NRF_PSEL(PWM_OUT1, 7, 1)>;
+			psels = <NRF_PSEL(PWM_OUT0, 7, 0)>;
 			low-power-enable;
 		};
 	};

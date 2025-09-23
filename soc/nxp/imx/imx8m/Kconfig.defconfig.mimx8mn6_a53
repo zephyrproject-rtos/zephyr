@@ -1,4 +1,4 @@
-# Copyright 2022-2024 NXP
+# Copyright 2022-2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 if SOC_MIMX8MN6_A53
@@ -14,6 +14,12 @@ config FLASH_BASE_ADDRESS
 
 # Enable GIC Safe Configuration to run multiple OSes on Cortex-A Cores
 config GIC_SAFE_CONFIG
+	default y
+
+# Disable data cache until MMU is enabled when booting from EL2
+config ARM64_DCACHE_ALL_OPS
+	default y
+config ARM64_BOOT_DISABLE_DCACHE
 	default y
 
 config NUM_IRQS

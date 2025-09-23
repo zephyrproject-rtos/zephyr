@@ -22,7 +22,7 @@ struct internal_ctx {
 };
 
 #ifdef CONFIG_SMF_ANCESTOR_SUPPORT
-static bool share_paren(const struct smf_state *test_state, const struct smf_state *target_state)
+static bool share_parent(const struct smf_state *test_state, const struct smf_state *target_state)
 {
 	for (const struct smf_state *state = test_state; state != NULL; state = state->parent) {
 		if (target_state == state) {
@@ -70,7 +70,7 @@ static const struct smf_state *get_lca_of(const struct smf_state *source,
 	     ancestor = ancestor->parent) {
 		if (ancestor == dest) {
 			return ancestor->parent;
-		} else if (share_paren(dest, ancestor)) {
+		} else if (share_parent(dest, ancestor)) {
 			return ancestor;
 		}
 	}
@@ -158,7 +158,11 @@ static bool smf_execute_ancestor_run_actions(struct smf_ctx *ctx)
 		ctx->executing = tmp_state;
 		/* Execute parent run action */
 		if (tmp_state->run) {
-			tmp_state->run(ctx);
+			enum smf_state_result rc = tmp_state->run(ctx);
+
+			if (rc == SMF_EVENT_HANDLED) {
+				internal->handled = true;
+			}
 			/* No need to continue if terminate was set */
 			if (internal->terminate) {
 				return true;
@@ -188,8 +192,7 @@ static bool smf_execute_all_exit_actions(struct smf_ctx *const ctx, const struct
 	struct internal_ctx *const internal = (void *)&ctx->internal;
 
 	for (const struct smf_state *to_execute = ctx->current;
-	     to_execute != NULL && to_execute != topmost;
-	     to_execute = to_execute->parent) {
+	     to_execute != NULL && to_execute != topmost; to_execute = to_execute->parent) {
 		if (to_execute->exit) {
 			to_execute->exit(ctx);
 
@@ -288,10 +291,10 @@ void smf_set_state(struct smf_ctx *const ctx, const struct smf_state *new_state)
 #ifdef CONFIG_SMF_ANCESTOR_SUPPORT
 	const struct smf_state *topmost;
 
-	if (share_paren(ctx->executing, new_state)) {
+	if (share_parent(ctx->executing, new_state)) {
 		/* new state is a parent of where we are now*/
 		topmost = new_state;
-	} else if (share_paren(new_state, ctx->executing)) {
+	} else if (share_parent(new_state, ctx->executing)) {
 		/* we are a parent of the new state */
 		topmost = ctx->executing;
 	} else {
@@ -381,13 +384,6 @@ void smf_set_terminate(struct smf_ctx *ctx, int32_t val)
 	ctx->terminate_val = val;
 }
 
-void smf_set_handled(struct smf_ctx *ctx)
-{
-	struct internal_ctx *const internal = (void *)&ctx->internal;
-
-	internal->handled = true;
-}
-
 int32_t smf_run_state(struct smf_ctx *const ctx)
 {
 	struct internal_ctx *const internal = (void *)&ctx->internal;
@@ -404,15 +400,20 @@ int32_t smf_run_state(struct smf_ctx *const ctx)
 
 #ifdef CONFIG_SMF_ANCESTOR_SUPPORT
 	ctx->executing = ctx->current;
-#endif
-
 	if (ctx->current->run) {
-		ctx->current->run(ctx);
+		enum smf_state_result rc = ctx->current->run(ctx);
+
+		if (rc == SMF_EVENT_HANDLED) {
+			internal->handled = true;
+		}
 	}
 
-#ifdef CONFIG_SMF_ANCESTOR_SUPPORT
 	if (smf_execute_ancestor_run_actions(ctx)) {
 		return ctx->terminate_val;
+	}
+#else
+	if (ctx->current->run) {
+		ctx->current->run(ctx);
 	}
 #endif
 	return 0;

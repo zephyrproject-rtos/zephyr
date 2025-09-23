@@ -16,3 +16,5 @@ string
 	default "frdm_mcxn947/mcxn947/cpu1" if $(BOARD) = "frdm_mcxn947"
 	default "mcx_n9xx_evk/mcxn947/cpu1" if $(BOARD) = "mcx_n9xx_evk"
 	default "mimxrt1180_evk/mimxrt1189/cm7" if $(BOARD) = "mimxrt1180_evk"
+	default "esp32s3_devkitc/esp32s3/appcpu" if $(BOARD) = "esp32s3_devkitc"
+	default "esp32_devkitc/esp32/appcpu" if $(BOARD) = "esp32_devkitc"

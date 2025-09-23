@@ -22,6 +22,7 @@
 #define WIFI_MGMT_DATA_CTRL_FILTER_SETTING 0xE
 #define WIFI_ALL_FILTER_SETTING 0xF
 
+#ifdef CONFIG_NRF70_STA_MODE
 struct twt_interval_float {
 	unsigned short mantissa;
 	unsigned char exponent;
@@ -54,6 +55,7 @@ int nrf_wifi_get_power_save_config(const struct device *dev,
 void nrf_wifi_event_proc_get_power_save_info(void *vif_ctx,
 		struct nrf_wifi_umac_event_power_save_info *ps_info,
 		unsigned int event_len);
+#endif /* CONFIG_NRF70_STA_MODE */
 
 #ifdef CONFIG_NRF70_SYSTEM_WITH_RAW_MODES
 int nrf_wifi_mode(const struct device *dev,
@@ -75,4 +77,7 @@ int nrf_wifi_set_rts_threshold(const struct device *dev,
 
 int nrf_wifi_get_rts_threshold(const struct device *dev,
 			       unsigned int *rts_threshold);
+
+int nrf_wifi_set_bss_max_idle_period(const struct device *dev,
+				     unsigned short bss_max_idle_period);
 #endif /*  __ZEPHYR_WIFI_MGMT_H__ */

@@ -86,6 +86,7 @@ source "drivers/ethernet/phy/Kconfig"
 
 source "drivers/ethernet/nxp_imx_netc/Kconfig"
 source "drivers/ethernet/Kconfig.renesas_ra"
+source "drivers/ethernet/intel/Kconfig"
 
 endif # "Ethernet Drivers"
 

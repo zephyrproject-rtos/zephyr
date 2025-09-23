@@ -15,12 +15,22 @@
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/i2c.h>
+#include <zephyr/rtio/rtio.h>
 
 #define DT_DRV_COMPAT bosch_bmm350
 
 #define BMM350_BUS_I2C DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 
+enum bmm350_bus_type {
+	BMM350_BUS_TYPE_I2C,
+};
+
 struct bmm350_bus {
+	struct {
+		struct rtio *ctx;
+		struct rtio_iodev *iodev;
+		enum bmm350_bus_type type;
+	} rtio;
 	struct i2c_dt_spec i2c;
 };
 
@@ -29,13 +39,22 @@ typedef int (*bmm350_reg_read_fn)(const struct bmm350_bus *bus, uint8_t start, u
 				  int size);
 typedef int (*bmm350_reg_write_fn)(const struct bmm350_bus *bus, uint8_t reg, uint8_t val);
 
+typedef int (*bmm350_reg_prep_write_async_fn)(const struct bmm350_bus *bus,
+					      uint8_t reg, uint8_t val,
+					      struct rtio_sqe **out);
+typedef int (*bmm350_reg_prep_read_async_fn)(const struct bmm350_bus *bus,
+					     uint8_t reg, uint8_t *buf, size_t len,
+					     struct rtio_sqe **out);
+
 struct bmm350_bus_io {
 	bmm350_bus_check_fn check;
 	bmm350_reg_read_fn read;
 	bmm350_reg_write_fn write;
+	bmm350_reg_prep_write_async_fn write_async_prep;
+	bmm350_reg_prep_read_async_fn read_async_prep;
 };
 
-extern const struct bmm350_bus_io bmm350_bus_io_i2c;
+extern const struct bmm350_bus_io bmm350_bus_rtio;
 
 #include <zephyr/types.h>
 #include <zephyr/drivers/i2c.h>
@@ -151,11 +170,11 @@ extern const struct bmm350_bus_io bmm350_bus_io_i2c;
 
 /**************************** Signed bit macros **********************/
 enum bmm350_signed_bit {
-	BMM350_SIGNED_8_BIT = 8,
-	BMM350_SIGNED_12_BIT = 12,
-	BMM350_SIGNED_16_BIT = 16,
-	BMM350_SIGNED_21_BIT = 21,
-	BMM350_SIGNED_24_BIT = 24
+	BMM350_SIGNED_8_BIT = 7,
+	BMM350_SIGNED_12_BIT = 11,
+	BMM350_SIGNED_16_BIT = 15,
+	BMM350_SIGNED_21_BIT = 20,
+	BMM350_SIGNED_24_BIT = 23
 };
 
 /********************* Power modes *************************/
@@ -183,20 +202,30 @@ enum bmm350_signed_bit {
 #define BMM350_PMU_CMD_STATUS_0_BR_FAST  UINT8_C(0x07)
 
 /*********************** Macros for bit masking ***************************/
-#define BMM350_AVG_MSK                (0x30)
-#define BMM350_AVG_POS                UINT8_C(0x04)
-#define BMM350_PMU_CMD_BUSY_MSK       UINT8_C(0x01)
-#define BMM350_PMU_CMD_BUSY_POS       UINT8_C(0x00)
-#define BMM350_ODR_OVWR_MSK           UINT8_C(0x02)
-#define BMM350_ODR_OVWR_POS           UINT8_C(0x01)
-#define BMM350_AVG_OVWR_MSK           UINT8_C(0x04)
-#define BMM350_AVG_OVWR_POS           UINT8_C(0x02)
-#define BMM350_PWR_MODE_IS_NORMAL_MSK UINT8_C(0x08)
-#define BMM350_PWR_MODE_IS_NORMAL_POS UINT8_C(0x03)
-#define BMM350_CMD_IS_ILLEGAL_MSK     UINT8_C(0x10)
-#define BMM350_CMD_IS_ILLEGAL_POS     UINT8_C(0x04)
-#define BMM350_PMU_CMD_VALUE_MSK      UINT8_C(0xE0)
-#define BMM350_PMU_CMD_VALUE_POS      UINT8_C(0x05)
+#define BMM350_AVG_MSK                       (0x30)
+#define BMM350_AVG_POS                       UINT8_C(0x04)
+#define BMM350_PMU_CMD_BUSY_MSK              UINT8_C(0x01)
+#define BMM350_PMU_CMD_BUSY_POS              UINT8_C(0x00)
+#define BMM350_ODR_OVWR_MSK                  UINT8_C(0x02)
+#define BMM350_ODR_OVWR_POS                  UINT8_C(0x01)
+#define BMM350_AVG_OVWR_MSK                  UINT8_C(0x04)
+#define BMM350_AVG_OVWR_POS                  UINT8_C(0x02)
+#define BMM350_PWR_MODE_IS_NORMAL_MSK        UINT8_C(0x08)
+#define BMM350_PWR_MODE_IS_NORMAL_POS        UINT8_C(0x03)
+#define BMM350_CMD_IS_ILLEGAL_MSK            UINT8_C(0x10)
+#define BMM350_CMD_IS_ILLEGAL_POS            UINT8_C(0x04)
+#define BMM350_PMU_CMD_VALUE_MSK             UINT8_C(0xE0)
+#define BMM350_PMU_CMD_VALUE_POS             UINT8_C(0x05)
+#define BMM350_INT_CTRL_INT_MODE_MSK         UINT8_C(0x01)
+#define BMM350_INT_CTRL_INT_MODE_POS         UINT8_C(0x00)
+#define BMM350_INT_CTRL_INT_POL_MSK          UINT8_C(0x02)
+#define BMM350_INT_CTRL_INT_POL_POS          UINT8_C(0x01)
+#define BMM350_INT_CTRL_INT_OD_MSK           UINT8_C(0x04)
+#define BMM350_INT_CTRL_INT_OD_POS           UINT8_C(0x02)
+#define BMM350_INT_CTRL_INT_OUTPUT_EN_MSK    UINT8_C(0x08)
+#define BMM350_INT_CTRL_INT_OUTPUT_EN_POS    UINT8_C(0x03)
+#define BMM350_INT_CTRL_DRDY_DATA_REG_EN_MSK UINT8_C(0x80)
+#define BMM350_INT_CTRL_DRDY_DATA_REG_EN_POS UINT8_C(0x07)
 
 /**************************** Self-test macros **********************/
 #define BMM350_SELF_TEST_DISABLE UINT8_C(0x00)
@@ -246,32 +275,31 @@ enum bmm350_signed_bit {
 #define BMM350_SENS_CORR_Y 1
 #define BMM350_TCS_CORR_Z  1
 
-#define BMM350_EN_X_MSK            UINT8_C(0x01)
-#define BMM350_EN_X_POS            UINT8_C(0x0)
-#define BMM350_EN_Y_MSK            UINT8_C(0x02)
-#define BMM350_EN_Y_POS            UINT8_C(0x1)
-#define BMM350_EN_Z_MSK            UINT8_C(0x04)
-#define BMM350_EN_Z_POS            UINT8_C(0x2)
-#define BMM350_EN_XYZ_MSK          UINT8_C(0x7)
-#define BMM350_EN_XYZ_POS          UINT8_C(0x0)
+#define BMM350_EN_X_MSK     UINT8_C(0x01)
+#define BMM350_EN_X_POS     UINT8_C(0x0)
+#define BMM350_EN_Y_MSK     UINT8_C(0x02)
+#define BMM350_EN_Y_POS     UINT8_C(0x1)
+#define BMM350_EN_Z_MSK     UINT8_C(0x04)
+#define BMM350_EN_Z_POS     UINT8_C(0x2)
+#define BMM350_EN_XYZ_MSK   UINT8_C(0x7)
+#define BMM350_EN_XYZ_POS   UINT8_C(0x0)
 /************************ Averaging macros **********************/
-#define BMM350_AVG_NO_AVG          0x0
-#define BMM350_AVG_2               0x1
-#define BMM350_AVG_4               0x2
-#define BMM350_AVG_8               0x3
+#define BMM350_AVG_NO_AVG   0x0
+#define BMM350_AVG_2        0x1
+#define BMM350_AVG_4        0x2
+#define BMM350_AVG_8        0x3
 /******************************* ODR **************************/
-#define BMM350_ODR_400HZ           UINT8_C(0x2)
-#define BMM350_ODR_200HZ           UINT8_C(0x3)
-#define BMM350_ODR_100HZ           UINT8_C(0x4)
-#define BMM350_ODR_50HZ            UINT8_C(0x5)
-#define BMM350_ODR_25HZ            UINT8_C(0x6)
-#define BMM350_ODR_12_5HZ          UINT8_C(0x7)
-#define BMM350_ODR_6_25HZ          UINT8_C(0x8)
-#define BMM350_ODR_3_125HZ         UINT8_C(0x9)
-#define BMM350_ODR_1_5625HZ        UINT8_C(0xA)
-#define BMM350_ODR_MSK             UINT8_C(0xf)
-#define BMM350_ODR_POS             UINT8_C(0x0)
-#define BMM350_DATA_READY_INT_CTRL UINT8_C(0x8e)
+#define BMM350_ODR_400HZ    UINT8_C(0x2)
+#define BMM350_ODR_200HZ    UINT8_C(0x3)
+#define BMM350_ODR_100HZ    UINT8_C(0x4)
+#define BMM350_ODR_50HZ     UINT8_C(0x5)
+#define BMM350_ODR_25HZ     UINT8_C(0x6)
+#define BMM350_ODR_12_5HZ   UINT8_C(0x7)
+#define BMM350_ODR_6_25HZ   UINT8_C(0x8)
+#define BMM350_ODR_3_125HZ  UINT8_C(0x9)
+#define BMM350_ODR_1_5625HZ UINT8_C(0xA)
+#define BMM350_ODR_MSK      UINT8_C(0xf)
+#define BMM350_ODR_POS      UINT8_C(0x0)
 
 /* Macro to SET and GET BITS of a register*/
 #define BMM350_SET_BITS(reg_data, bitname, data)                                                   \
@@ -317,16 +345,7 @@ enum bmm350_performance_parameters {
  * @brief bmm350 compensated magnetometer data and temperature data
  */
 struct bmm350_mag_temp_data {
-	/*! Compensated mag X data */
-	int32_t x;
-
-	/*! Compensated mag Y data */
-	int32_t y;
-
-	/*! Compensated mag Z data */
-	int32_t z;
-
-	/*! Temperature */
+	int32_t mag[3];
 	int32_t temperature;
 };
 
@@ -435,29 +454,48 @@ struct bmm350_pmu_cmd_status_0 {
  * @brief bmm350 un-compensated (raw) magnetometer data, signed integer
  */
 struct bmm350_raw_mag_data {
-	/*! Raw mag X data */
-	int32_t raw_xdata;
+	union {
+		uint8_t buf[17];
+		struct {
+			uint16_t dummy;
+			uint32_t magn_x : 24;
+			uint32_t magn_y : 24;
+			uint32_t magn_z : 24;
+			uint32_t temp : 24;
+			uint32_t ts : 24;
+		} __packed;
+	};
+};
 
-	/*! Raw mag Y data */
-	int32_t raw_ydata;
-
-	/*! Raw mag Z data */
-	int32_t raw_zdata;
-
-	/*! Raw mag temperature value */
-	int32_t raw_data_temp;
+struct bmm350_encoded_data {
+	struct {
+		uint64_t timestamp;
+		uint8_t events : 1;
+		uint8_t channels : 3;
+	} header;
+	struct mag_compensate comp;
+	struct bmm350_raw_mag_data payload;
 };
 
 struct bmm350_config {
 	struct bmm350_bus bus;
 	const struct bmm350_bus_io *bus_io;
 	struct gpio_dt_spec drdy_int;
+	uint8_t int_flags;
+	uint8_t default_odr;
+	uint8_t default_osr;
+	uint8_t drive_strength;
+};
+
+struct bmm350_stream {
+	atomic_t state;
+	const struct device *dev;
+	struct gpio_callback cb;
+	struct rtio_iodev_sqe *iodev_sqe;
 };
 
 struct bmm350_data {
 
-	/*! Variable to store status of axes enabled */
-	uint8_t axis_en;
 	struct mag_compensate mag_comp;
 	/*! Array to store OTP data */
 	uint16_t otp_data[BMM350_OTP_DATA_LENGTH];
@@ -466,6 +504,10 @@ struct bmm350_data {
 	/*! Variable to enable/disable xy bit reset */
 	uint8_t enable_auto_br;
 	struct bmm350_mag_temp_data mag_temp_data;
+
+#ifdef CONFIG_BMM350_STREAM
+	struct bmm350_stream stream;
+#endif
 
 #ifdef CONFIG_BMM350_TRIGGER
 	struct gpio_callback gpio_cb;
@@ -486,12 +528,52 @@ struct bmm350_data {
 #ifdef CONFIG_BMM350_TRIGGER
 	const struct sensor_trigger *drdy_trigger;
 	sensor_trigger_handler_t drdy_handler;
-#endif /* CONFIG_BMM350_TRIGGER */
+#endif
 };
 
 int bmm350_trigger_mode_init(const struct device *dev);
 
 int bmm350_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
 		       sensor_trigger_handler_t handler);
-int bmm350_reg_write(const struct device *dev, uint8_t reg, uint8_t val);
+
+/* inline helper functions */
+static inline int bmm350_bus_check(const struct device *dev)
+{
+	const struct bmm350_config *cfg = dev->config;
+
+	return cfg->bus_io->check(&cfg->bus);
+}
+
+static inline int bmm350_reg_read(const struct device *dev, uint8_t start, uint8_t *buf, int size)
+{
+	const struct bmm350_config *cfg = dev->config;
+
+	return cfg->bus_io->read(&cfg->bus, start, buf, size);
+}
+
+static inline int bmm350_reg_write(const struct device *dev, uint8_t reg, uint8_t val)
+{
+	const struct bmm350_config *cfg = dev->config;
+
+	return cfg->bus_io->write(&cfg->bus, reg, val);
+}
+
+static inline int bmm350_prep_reg_write_async(const struct device *dev,
+					      uint8_t reg, uint8_t val,
+					      struct rtio_sqe **out)
+{
+	const struct bmm350_config *cfg = dev->config;
+
+	return cfg->bus_io->write_async_prep(&cfg->bus, reg, val, out);
+}
+
+static inline int bmm350_prep_reg_read_async(const struct device *dev,
+					      uint8_t reg, uint8_t *buf, size_t len,
+					      struct rtio_sqe **out)
+{
+	const struct bmm350_config *cfg = dev->config;
+
+	return cfg->bus_io->read_async_prep(&cfg->bus, reg, buf, len, out);
+}
+
 #endif /* __SENSOR_BMM350_H__ */

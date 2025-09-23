@@ -86,7 +86,7 @@ endif()
 
 # Enable VLA if CONFIG_MISRA_SANE is not set and warnings are not enabled.
 if(NOT CONFIG_MISRA_SANE AND NOT DEFINED W)
-  list(APPEND IAR_COMMON_FLAGS --vla)
+  list(APPEND IAR_COMMON_FLAGS $<$<COMPILE_LANGUAGE:C>:--vla>)
 endif()
 
 # Minimal ASM compiler flags

@@ -21,7 +21,7 @@
 		compatible = "st,stm32l432", "st,stm32l4", "simple-bus";
 
 		rng: rng@50060800 {
-			clocks = <&rcc STM32_CLOCK(AHB2, 18U)>,
+			clocks = <&rcc STM32_CLOCK(AHB2, 18)>,
 				 <&rcc STM32_SRC_HSI48 CLK48_SEL(0)>;
 		};
 
@@ -30,7 +30,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40003c00 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB1, 15U)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 15)>;
 			interrupts = <51 5>;
 			status = "disabled";
 		};
@@ -38,7 +38,8 @@
 		timers7: timers@40001400 {
 			compatible = "st,stm32-timers";
 			reg = <0x40001400 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB1, 5U)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 5)>,
+				 <&rcc STM32_SRC_TIMPCLK1 NO_SEL>;
 			resets = <&rctl STM32_RESET(APB1L, 5U)>;
 			interrupts = <55 0>;
 			interrupt-names = "global";
@@ -56,7 +57,7 @@
 			reg = <0x40006400 0x400>;
 			interrupts = <19 0>, <20 0>, <21 0>, <22 0>;
 			interrupt-names = "TX", "RX0", "RX1", "SCE";
-			clocks = <&rcc STM32_CLOCK(APB1, 25U)>; //RCC_APB1ENR1_CAN1EN
+			clocks = <&rcc STM32_CLOCK(APB1, 25)>; //RCC_APB1ENR1_CAN1EN
 			status = "disabled";
 		};
 
@@ -69,7 +70,7 @@
 			ram-size = <1024>;
 			maximum-speed = "full-speed";
 			phys = <&usb_fs_phy>;
-			clocks = <&rcc STM32_CLOCK(APB1, 26U)>,
+			clocks = <&rcc STM32_CLOCK(APB1, 26)>,
 				 <&rcc STM32_SRC_HSI48 CLK48_SEL(0)>;
 			status = "disabled";
 		};
@@ -77,7 +78,7 @@
 		dac1: dac@40007400 {
 			compatible = "st,stm32-dac";
 			reg = <0x40007400 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB1, 29U)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 29)>;
 			status = "disabled";
 			#io-channel-cells = <1>;
 		};

@@ -24,6 +24,11 @@
 
 typedef void (*irq_config_func_t)(const struct device *port);
 
+#ifdef CONFIG_I2C_STM32_V2
+/*  Private I2C_MSG_* flags for STM32 I2C */
+#define I2C_MSG_STM32_USE_RELOAD_MODE	BIT(7)
+#endif
+
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_i2c_v2)
 /**
  * @brief structure to convey optional i2c timings settings
@@ -73,12 +78,15 @@ struct i2c_stm32_data {
 	struct i2c_rtio *ctx;
 	uint32_t dev_config;
 	uint8_t *xfer_buf;
-	uint8_t xfer_len;
+	size_t xfer_len;
 	uint8_t xfer_flags;
 #ifdef CONFIG_I2C_STM32_V1
-	uint8_t msg_len;
+	size_t msg_len;
 	uint8_t is_restart;
 	uint16_t slave_address;
+#else
+	uint8_t burst_flags;
+	uint8_t burst_len;
 #endif /* CONFIG_I2C_STM32_V1 */
 #else /* CONFIG_I2C_RTIO */
 #ifdef CONFIG_I2C_STM32_INTERRUPT
@@ -106,14 +114,6 @@ struct i2c_stm32_data {
 		unsigned int len;
 		uint8_t *buf;
 	} current;
-#ifdef CONFIG_I2C_TARGET
-	bool master_active;
-	struct i2c_target_config *slave_cfg;
-#ifdef CONFIG_I2C_STM32_V2
-	struct i2c_target_config *slave2_cfg;
-#endif /* CONFIG_I2C_STM32_V2 */
-	bool slave_attached;
-#endif /* CONFIG_I2C_TARGET */
 	bool is_configured;
 	bool smbalert_active;
 	enum i2c_stm32_mode mode;
@@ -127,6 +127,15 @@ struct i2c_stm32_data {
 	struct dma_block_config dma_blk_cfg;
 #endif /* CONFIG_I2C_STM32_V2_DMA */
 #endif /* CONFIG_I2C_RTIO */
+
+#ifdef CONFIG_I2C_TARGET
+	bool master_active;
+	bool slave_attached;
+	struct i2c_target_config *slave_cfg;
+#ifdef CONFIG_I2C_STM32_V2
+	struct i2c_target_config *slave2_cfg;
+#endif /* CONFIG_I2C_STM32_V2 */
+#endif /* CONFIG_I2C_TARGET */
 };
 
 #ifdef CONFIG_I2C_RTIO
@@ -137,13 +146,14 @@ int i2c_stm32_msg_start(const struct device *dev, uint8_t flags,
 int i2c_stm32_transaction(const struct device *dev,
 			  struct i2c_msg msg, uint8_t *next_msg_flags,
 			  uint16_t periph);
+#endif /* CONFIG_I2C_RTIO */
+
 int i2c_stm32_runtime_configure(const struct device *dev, uint32_t config);
 
 #ifdef CONFIG_I2C_TARGET
 int i2c_stm32_target_register(const struct device *dev, struct i2c_target_config *config);
 int i2c_stm32_target_unregister(const struct device *dev, struct i2c_target_config *config);
 #endif /* CONFIG_I2C_TARGET */
-#endif /* CONFIG_I2C_RTIO */
 
 int i2c_stm32_activate(const struct device *dev);
 int i2c_stm32_configure_timing(const struct device *dev, uint32_t clk);
@@ -197,9 +207,9 @@ static void i2c_stm32_irq_config_func_##index(const struct device *dev)				\
 }
 
 #else /* CONFIG_I2C_STM32_INTERRUPT */
-#define STM32_I2C_IRQ_HANDLER_DECL(index)
-#define STM32_I2C_IRQ_HANDLER_FUNCTION(index)
-#define STM32_I2C_IRQ_HANDLER(index)
+#define I2C_STM32_IRQ_HANDLER_DECL(index)
+#define I2C_STM32_IRQ_HANDLER_FUNCTION(index)
+#define I2C_STM32_IRQ_HANDLER(index)
 #endif /* CONFIG_I2C_STM32_INTERRUPT */
 
 #endif	/* ZEPHYR_DRIVERS_I2C_I2C_LL_STM32_H_ */
