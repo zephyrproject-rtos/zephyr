@@ -151,6 +151,14 @@ Ethernet
     * Replaced devicetree property ``tx-checksum-offload`` which enabled TX checksum offloading
       ``disable-tx-checksum-offload`` which now actively disables it.
 
+Power management
+****************
+
+* :kconfig:option:`CONFIG_PM_S2RAM` and :kconfig:option:`PM_S2RAM_CUSTOM_MARKING` have been
+  refactored to be automatically managed by SoCs and the devicetree. Applications shall no
+  longer enable them directly, instead, enable or disable the "suspend-to-ram" power states
+  in the devicetree.
+
 Networking
 **********
 
