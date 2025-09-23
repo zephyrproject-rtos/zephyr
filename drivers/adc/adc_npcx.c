@@ -22,12 +22,6 @@
 #include <zephyr/irq.h>
 LOG_MODULE_REGISTER(adc_npcx, CONFIG_ADC_LOG_LEVEL);
 
-/* ADC speed/delay values during initialization */
-#define ADC_REGULAR_DLY_VAL	0x03
-#define ADC_REGULAR_ADCCNF2_VAL	0x8B07
-#define ADC_REGULAR_GENDLY_VAL	0x0100
-#define ADC_REGULAR_MEAST_VAL	0x0001
-
 /* ADC targeted operating frequency (2MHz) */
 #define NPCX_ADC_CLK 2000000
 
@@ -54,6 +48,12 @@ struct adc_npcx_config {
 	/* routine for configuring ADC's ISR */
 	void (*irq_cfg_func)(void);
 	const struct pinctrl_dev_config *pcfg;
+	/* ADC speed configurations */
+	uint16_t delay;
+	uint16_t speed;
+	uint16_t gen_delay;
+	uint16_t meast;
+
 };
 
 struct adc_npcx_threshold_control {
@@ -157,8 +157,10 @@ static inline void adc_npcx_config_channels(const struct device *dev, uint32_t c
 
 	/* Only npcx4 and later series support over 16 ADC channels */
 	if (config->channel_count > NPCX_ADCCS_MAX_CHANNEL_COUNT) {
+#if (DT_INST_PROP(0, channel_count) > NPCX_ADCCS_MAX_CHANNEL_COUNT)
 		inst->ADCCS2 = (channels >> NPCX_ADCCS_MAX_CHANNEL_COUNT) &
 			       BIT_MASK(NPCX_ADCCS_MAX_CHANNEL_COUNT);
+#endif
 	}
 }
 
@@ -325,8 +327,10 @@ static void adc_npcx_start_scan(const struct device *dev)
 	inst->ADCCNF |= BIT(NPCX_ADCCNF_START);
 
 	if (config->channel_count > NPCX_ADCCS_MAX_CHANNEL_COUNT) {
-		LOG_DBG("Start ADC scan conversion and ADCCNF,ADCCS, ADCCS2 are "
-			"(%04X,%04X,%04X)\n", inst->ADCCNF, inst->ADCCS, inst->ADCCS2);
+#if (DT_INST_PROP(0, channel_count) > NPCX_ADCCS_MAX_CHANNEL_COUNT)
+		LOG_DBG("ADC scan channels ADCCS, ADCCS2 are "
+			"(%04X,%04X)", inst->ADCCS, inst->ADCCS2);
+#endif
 	} else {
 		LOG_DBG("Start ADC scan conversion and ADCCNF,ADCCS are (%04X,%04X)\n",
 			inst->ADCCNF, inst->ADCCS);
@@ -809,12 +813,12 @@ static int adc_npcx_init(const struct device *dev)
 	SET_FIELD(inst->ATCTL, NPCX_ATCTL_SCLKDIV_FIELD, prescaler - 1);
 
 	/* Set regular ADC delay */
-	SET_FIELD(inst->ATCTL, NPCX_ATCTL_DLY_FIELD, ADC_REGULAR_DLY_VAL);
+	SET_FIELD(inst->ATCTL, NPCX_ATCTL_DLY_FIELD, config->delay);
 
 	/* Set ADC speed sequentially */
-	inst->ADCCNF2 = ADC_REGULAR_ADCCNF2_VAL;
-	inst->GENDLY = ADC_REGULAR_GENDLY_VAL;
-	inst->MEAST = ADC_REGULAR_MEAST_VAL;
+	inst->ADCCNF2 = config->speed;
+	inst->GENDLY = config->gen_delay;
+	inst->MEAST = config->meast;
 
 	/* Configure ADC interrupt and enable it */
 	config->irq_cfg_func();
@@ -858,6 +862,10 @@ static int adc_npcx_init(const struct device *dev)
 		.threshold_count = DT_INST_PROP(n, threshold_count),		\
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
 		.irq_cfg_func = adc_npcx_irq_cfg_func_##n,			\
+		.delay = DT_INST_PROP_BY_IDX(n, speed_conf, 0),			\
+		.speed = DT_INST_PROP_BY_IDX(n, speed_conf, 1),			\
+		.gen_delay = DT_INST_PROP_BY_IDX(n, speed_conf, 2),		\
+		.meast = DT_INST_PROP_BY_IDX(n, speed_conf, 3),			\
 	};									\
 	static struct adc_npcx_threshold_data threshold_data_##n;		\
 	static struct adc_npcx_data adc_npcx_data_##n = {			\
