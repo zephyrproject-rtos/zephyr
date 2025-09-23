@@ -1,4 +1,10 @@
-/* SPDX-License-Identifier: Apache-2.0 */
+/*
+ * Copyright (c) 2025 Texas Instruments
+ * Copyright (c) 2025 Linumiz
+ * Copyright (c) 2025 Bang & Olufsen
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <ti/mspm0/g/mspm0g.dtsi>
 
