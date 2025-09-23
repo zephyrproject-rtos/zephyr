@@ -141,6 +141,30 @@ static int adxl345_rtio_cqe_consume(struct adxl345_dev_data *data)
 	return res;
 }
 
+static int adxl345_check_streaming(struct adxl345_dev_data *data,
+				   struct sensor_read_config **ptr_read_config)
+{
+	if (!data->sqe) {
+		LOG_ERR("data->iodev_sqe was NULL");
+		return false;
+	}
+
+	*ptr_read_config = (struct sensor_read_config *)data->sqe->sqe.iodev->data;
+	struct sensor_read_config *read_config = *ptr_read_config;
+
+	if (!read_config) {
+		LOG_WRN("read_config was NULL");
+		return false;
+	}
+
+	if (!read_config->is_streaming) {
+		LOG_WRN("is_streaming of read_config was false/NULL");
+		return false;
+	}
+
+	return true;
+}
+
 /* streaming callbacks and calls */
 
 static void adxl345_irq_en_cb(struct rtio *r, const struct rtio_sqe *sqe, int result, void *arg)
@@ -225,21 +249,10 @@ static void adxl345_process_status1_cb(struct rtio *r, const struct rtio_sqe *sq
 	struct sensor_read_config *read_config;
 	uint8_t status1 = data->reg_int_source;
 
-	if (data->sqe == NULL) {
+	if (!adxl345_check_streaming(data, &read_config)) {
+		LOG_WRN("Failed! RTIO not setup for streaming");
 		return;
 	}
-
-	read_config = (struct sensor_read_config *)data->sqe->sqe.iodev->data;
-
-	if (read_config == NULL) {
-		goto err;
-	}
-
-	if (read_config->is_streaming == false) {
-		goto err;
-	}
-
-	adxl345_set_gpios_en(dev, false);
 
 	struct sensor_stream_trigger *fifo_wmark_cfg = NULL;
 
