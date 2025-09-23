@@ -13,3 +13,5 @@ tests:
     min_ram: 32
     integration_platforms:
       - mimxrt1064_evk
+    platform_exclude:
+      - mimxrt700_evk/mimxrt798s/cm33_cpu0
