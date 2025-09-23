@@ -8,7 +8,11 @@
  * @brief NRF Wi-Fi util shell module
  */
 #include <stdlib.h>
+#ifdef NRF71_ON_IPC
+#include <nrf71_wifi_ctrl.h>
+#else
 #include "host_rpu_umac_if.h"
+#endif
 #include "common/fmac_util.h"
 #include "system/fmac_api.h"
 #include "fmac_main.h"
