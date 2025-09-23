@@ -114,6 +114,10 @@ static void adxl345_int1_gpio_callback(const struct device *dev,
 
 	adxl345_set_int_pad_state(dev, 1, false);
 
+#if defined(CONFIG_ADXL345_STREAM)
+	adxl345_stream_irq_handler(drv_data->dev);
+#endif
+
 #if defined(CONFIG_ADXL345_TRIGGER_OWN_THREAD)
 	k_sem_give(&drv_data->gpio_sem);
 #elif defined(CONFIG_ADXL345_TRIGGER_GLOBAL_THREAD)
@@ -131,6 +135,10 @@ static void adxl345_int2_gpio_callback(const struct device *dev,
 	ARG_UNUSED(pins);
 
 	adxl345_set_int_pad_state(dev, 2, false);
+
+#if defined(CONFIG_ADXL345_STREAM)
+	adxl345_stream_irq_handler(drv_data->dev);
+#endif
 
 #if defined(CONFIG_ADXL345_TRIGGER_OWN_THREAD)
 	k_sem_give(&drv_data->gpio_sem);

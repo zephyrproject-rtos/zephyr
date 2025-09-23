@@ -431,14 +431,12 @@ void adxl345_stream_irq_handler(const struct device *dev)
 	struct adxl345_dev_data *data = (struct adxl345_dev_data *) dev->data;
 	struct rtio_iodev_sqe *current_sqe = data->sqe;
 	uint64_t cycles;
-	int rc;
 
-	if (data->sqe == NULL) {
+	if (!current_sqe) {
 		return;
 	}
 
-	rc = sensor_clock_get_cycles(&cycles);
-	if (rc != 0) {
+	if (sensor_clock_get_cycles(&cycles)) {
 		LOG_ERR("Failed to get sensor clock cycles");
 		goto err;
 	}
