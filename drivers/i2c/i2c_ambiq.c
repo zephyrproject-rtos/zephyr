@@ -13,6 +13,7 @@
 #include <zephyr/pm/policy.h>
 #include <zephyr/pm/device_runtime.h>
 #include <zephyr/cache.h>
+#include <zephyr/sys/atomic.h>
 
 #ifdef CONFIG_I2C_AMBIQ_BUS_RECOVERY
 #include <zephyr/drivers/gpio.h>
@@ -29,6 +30,12 @@ LOG_MODULE_REGISTER(ambiq_i2c, CONFIG_I2C_LOG_LEVEL);
 #include "i2c-priv.h"
 
 #include <soc.h>
+
+enum i2c_ambiq_pm_policy_flag {
+	I2C_AMBIQ_PM_POLICY_STATE_FLAG,
+	I2C_AMBIQ_PM_POLICY_CMDQ_FLAG,
+	I2C_AMBIQ_PM_POLICY_FLAG_COUNT,
+};
 
 struct i2c_ambiq_config {
 #ifdef CONFIG_I2C_AMBIQ_BUS_RECOVERY
@@ -53,18 +60,34 @@ struct i2c_ambiq_data {
 	i2c_ambiq_callback_t callback;
 	void *callback_data;
 	uint32_t transfer_status;
-	bool pm_policy_state_on;
+	ATOMIC_DEFINE(pm_policy_flag, I2C_AMBIQ_PM_POLICY_FLAG_COUNT);
 	bool dma_mode;
+	bool need_pm_lock;
 };
 
-static void i2c_ambiq_pm_policy_state_lock_get(const struct device *dev)
+static void i2c_ambiq_pm_policy_state_lock_get(const struct device *dev, struct i2c_msg *msgs,
+					       uint8_t num_msgs)
 {
 	struct i2c_ambiq_data *data = dev->data;
 
-	if (!data->pm_policy_state_on) {
-		data->pm_policy_state_on = true;
-		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
-		pm_device_runtime_get(dev);
+	if (data->dma_mode &&
+	    !atomic_test_bit(data->pm_policy_flag, I2C_AMBIQ_PM_POLICY_STATE_FLAG)) {
+		bool need_lock = false;
+
+		if (atomic_test_bit(data->pm_policy_flag, I2C_AMBIQ_PM_POLICY_CMDQ_FLAG)) {
+			need_lock = true;
+		} else {
+			for (int i = 0; i < num_msgs && !need_lock; i++) {
+				if (msgs[i].buf && msgs[i].len) {
+					need_lock = ambiq_buf_in_dtcm((uintptr_t)msgs[i].buf,
+								      msgs[i].len);
+				}
+			}
+		}
+		if (need_lock) {
+			atomic_set_bit(data->pm_policy_flag, I2C_AMBIQ_PM_POLICY_STATE_FLAG);
+			pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
+		}
 	}
 }
 
@@ -72,9 +95,7 @@ static void i2c_ambiq_pm_policy_state_lock_put(const struct device *dev)
 {
 	struct i2c_ambiq_data *data = dev->data;
 
-	if (data->pm_policy_state_on) {
-		data->pm_policy_state_on = false;
-		pm_device_runtime_put(dev);
+	if (atomic_test_and_clear_bit(data->pm_policy_flag, I2C_AMBIQ_PM_POLICY_STATE_FLAG)) {
 		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
 	}
 }
@@ -102,7 +123,7 @@ static void i2c_ambiq_isr(const struct device *dev)
 }
 
 static int i2c_ambiq_read(const struct device *dev, struct i2c_msg *hdr_msg,
-			   struct i2c_msg *data_msg, uint16_t addr)
+			  struct i2c_msg *data_msg, uint16_t addr)
 {
 	struct i2c_ambiq_data *data = dev->data;
 
@@ -245,11 +266,13 @@ static int i2c_ambiq_transfer(const struct device *dev, struct i2c_msg *msgs, ui
 		return 0;
 	}
 
+	/* Prevent driver from being suspended by PM until I2C transaction is complete */
+	(void)pm_device_runtime_get(dev);
+
+	i2c_ambiq_pm_policy_state_lock_get(dev, msgs, num_msgs);
+
 	/* Send out messages */
 	k_sem_take(&data->bus_sem, K_FOREVER);
-
-	/* Prevent driver from being suspended by PM until I2C transaction is complete */
-	i2c_ambiq_pm_policy_state_lock_get(dev);
 
 	for (int i = 0; i < num_msgs; i++) {
 		if (msgs[i].flags & I2C_MSG_READ) {
@@ -271,9 +294,11 @@ static int i2c_ambiq_transfer(const struct device *dev, struct i2c_msg *msgs, ui
 		}
 	}
 
+	k_sem_give(&data->bus_sem);
+
 	i2c_ambiq_pm_policy_state_lock_put(dev);
 
-	k_sem_give(&data->bus_sem);
+	(void)pm_device_runtime_put(dev);
 
 	return ret;
 }
@@ -372,6 +397,12 @@ static int i2c_ambiq_init(const struct device *dev)
 	if (AM_HAL_STATUS_SUCCESS != am_hal_iom_initialize(config->inst_idx, &data->iom_handler)) {
 		LOG_ERR("Fail to initialize I2C\n");
 		return -ENXIO;
+	}
+
+	/* One-time compute: whether cmdq buffer lies in DTCM */
+	if (ambiq_buf_in_dtcm((uintptr_t)data->iom_cfg.pNBTxnBuf,
+			      (size_t)data->iom_cfg.ui32NBTxnBufLength)) {
+		atomic_set_bit(data->pm_policy_flag, I2C_AMBIQ_PM_POLICY_CMDQ_FLAG);
 	}
 
 	ret = am_hal_iom_power_ctrl(data->iom_handler, AM_HAL_SYSCTRL_WAKE, false);

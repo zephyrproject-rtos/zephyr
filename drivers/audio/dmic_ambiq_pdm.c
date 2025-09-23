@@ -16,11 +16,18 @@
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/policy.h>
 #include <zephyr/pm/device_runtime.h>
+#include <zephyr/sys/atomic.h>
 #include <am_mcu_apollo.h>
 
 #define DT_DRV_COMPAT ambiq_pdm
 
 LOG_MODULE_REGISTER(ambiq_pdm, CONFIG_AUDIO_DMIC_LOG_LEVEL);
+
+enum pdm_ambiq_pm_policy_flag {
+	PDM_AMBIQ_PM_POLICY_STATE_FLAG,
+	PDM_AMBIQ_PM_POLICY_DTCM_FLAG,
+	PDM_AMBIQ_PM_POLICY_FLAG_COUNT,
+};
 
 struct dmic_ambiq_pdm_data {
 	void *pdm_handler;
@@ -33,7 +40,7 @@ struct dmic_ambiq_pdm_data {
 	uint8_t frame_size_bytes;
 	am_hal_pdm_config_t pdm_cfg;
 	am_hal_pdm_transfer_t pdm_transfer;
-	bool pm_policy_state_on;
+	ATOMIC_DEFINE(pm_policy_flag, PDM_AMBIQ_PM_POLICY_FLAG_COUNT);
 
 	enum dmic_state dmic_state;
 };
@@ -47,10 +54,10 @@ static void dmic_ambiq_pdm_pm_policy_state_lock_get(const struct device *dev)
 {
 	struct dmic_ambiq_pdm_data *data = dev->data;
 
-	if (!data->pm_policy_state_on) {
-		data->pm_policy_state_on = true;
+	if (!atomic_test_bit(data->pm_policy_flag, PDM_AMBIQ_PM_POLICY_STATE_FLAG) &&
+	    atomic_test_bit(data->pm_policy_flag, PDM_AMBIQ_PM_POLICY_DTCM_FLAG)) {
+		atomic_set_bit(data->pm_policy_flag, PDM_AMBIQ_PM_POLICY_STATE_FLAG);
 		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
-		pm_device_runtime_get(dev);
 	}
 }
 
@@ -58,9 +65,9 @@ static void dmic_ambiq_pdm_pm_policy_state_lock_put(const struct device *dev)
 {
 	struct dmic_ambiq_pdm_data *data = dev->data;
 
-	if (data->pm_policy_state_on) {
-		data->pm_policy_state_on = false;
-		pm_device_runtime_put(dev);
+	if (atomic_test_bit(data->pm_policy_flag, PDM_AMBIQ_PM_POLICY_STATE_FLAG) &&
+	    atomic_test_bit(data->pm_policy_flag, PDM_AMBIQ_PM_POLICY_DTCM_FLAG)) {
+		atomic_clear_bit(data->pm_policy_flag, PDM_AMBIQ_PM_POLICY_STATE_FLAG);
 		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
 	}
 }
@@ -187,6 +194,11 @@ static int dmic_ambiq_pdm_configure(const struct device *dev, struct dmic_cfg *d
 	data->pdm_transfer.ui32TargetAddrReverse =
 		data->pdm_transfer.ui32TargetAddr + data->pdm_transfer.ui32TotalCount;
 
+	/* One-time compute: whether DMA buffer region intersects DTCM. */
+	atomic_set_bit_to(data->pm_policy_flag, PDM_AMBIQ_PM_POLICY_DTCM_FLAG,
+			  ambiq_buf_in_dtcm((uintptr_t)data->pdm_transfer.ui32TargetAddr,
+					    (size_t)data->pdm_transfer.ui32TotalCount));
+
 	return 0;
 }
 
@@ -243,6 +255,9 @@ static int dmic_ambiq_pdm_read(const struct device *dev, uint8_t stream, void **
 	}
 
 	ret = k_sem_take(&data->dma_done_sem, SYS_TIMEOUT_MS(timeout));
+
+	(void)pm_device_runtime_get(dev);
+
 	dmic_ambiq_pdm_pm_policy_state_lock_get(dev);
 
 	if (ret != 0) {
@@ -283,6 +298,9 @@ static int dmic_ambiq_pdm_read(const struct device *dev, uint8_t stream, void **
 	}
 
 	dmic_ambiq_pdm_pm_policy_state_lock_put(dev);
+
+	(void)pm_device_runtime_put(dev);
+
 	return ret;
 }
 

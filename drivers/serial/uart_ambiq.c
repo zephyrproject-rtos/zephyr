@@ -85,40 +85,9 @@ struct uart_ambiq_data {
 #endif
 	bool tx_poll_trans_on;
 	bool tx_int_trans_on;
-	bool pm_policy_state_on;
+	bool tx_dma_lock_active;
+	bool rx_dma_lock_active;
 };
-
-static void uart_ambiq_pm_policy_state_lock_get_unconditional(void)
-{
-	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
-}
-
-static void uart_ambiq_pm_policy_state_lock_get(const struct device *dev)
-{
-	struct uart_ambiq_data *data = dev->data;
-
-	if (!data->pm_policy_state_on) {
-		data->pm_policy_state_on = true;
-		uart_ambiq_pm_policy_state_lock_get_unconditional();
-	}
-}
-
-#if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API)
-static void uart_ambiq_pm_policy_state_lock_put_unconditional(void)
-{
-	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
-}
-
-static void uart_ambiq_pm_policy_state_lock_put(const struct device *dev)
-{
-	struct uart_ambiq_data *data = dev->data;
-
-	if (data->pm_policy_state_on) {
-		data->pm_policy_state_on = false;
-		uart_ambiq_pm_policy_state_lock_put_unconditional();
-	}
-}
-#endif
 
 static int uart_ambiq_configure(const struct device *dev, const struct uart_config *cfg)
 {
@@ -262,10 +231,6 @@ static void uart_ambiq_poll_out(const struct device *dev, unsigned char c)
 	if (!data->tx_poll_trans_on && !data->tx_int_trans_on) {
 		data->tx_poll_trans_on = true;
 
-		/* Don't allow system to suspend until
-		 * transmission has completed
-		 */
-		uart_ambiq_pm_policy_state_lock_get(dev);
 		am_hal_uart_interrupt_enable(data->uart_handler, AM_HAL_UART_INT_TXCMP);
 	}
 
@@ -335,7 +300,6 @@ static void uart_ambiq_irq_tx_enable(const struct device *dev)
 	key = irq_lock();
 	data->tx_poll_trans_on = false;
 	data->tx_int_trans_on = true;
-	uart_ambiq_pm_policy_state_lock_get(dev);
 
 	am_hal_uart_interrupt_enable(data->uart_handler,
 				     (AM_HAL_UART_INT_TX | AM_HAL_UART_INT_TXCMP));
@@ -387,7 +351,6 @@ static void uart_ambiq_irq_tx_disable(const struct device *dev)
 	am_hal_uart_interrupt_disable(data->uart_handler,
 				      (AM_HAL_UART_INT_TX | AM_HAL_UART_INT_TXCMP));
 	data->tx_int_trans_on = false;
-	uart_ambiq_pm_policy_state_lock_put(dev);
 
 	irq_unlock(key);
 }
@@ -606,7 +569,6 @@ void uart_ambiq_isr(const struct device *dev)
 			 */
 			am_hal_uart_interrupt_disable(data->uart_handler, AM_HAL_UART_INT_TXCMP);
 			data->tx_poll_trans_on = false;
-			uart_ambiq_pm_policy_state_lock_put(dev);
 		}
 		/* Transmission was either async or IRQ based,
 		 * constraint will be released at the same time TXCMP IT
@@ -636,7 +598,10 @@ void uart_ambiq_isr(const struct device *dev)
 			async_user_callback(dev, &tx_done);
 			data->tx_int_trans_on = false;
 			data->async.dma_rdy = true;
-			uart_ambiq_pm_policy_state_lock_put_unconditional();
+			if (data->tx_dma_lock_active) {
+				pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
+				data->tx_dma_lock_active = false;
+			}
 		}
 	}
 
@@ -724,8 +689,11 @@ static int uart_ambiq_async_tx(const struct device *dev, const uint8_t *buf, siz
 	data->async.tx.len = len;
 	data->async.tx.timeout = timeout;
 
-	/* Do not allow system to suspend until transmission has completed */
-	uart_ambiq_pm_policy_state_lock_get_unconditional();
+	/* Lock only if TX buffer lies in DTCM */
+	data->tx_dma_lock_active = ambiq_buf_in_dtcm((uintptr_t)buf, len);
+	if (data->tx_dma_lock_active) {
+		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
+	}
 
 	/* Enable interrupt so we can signal correct TX done */
 	am_hal_uart_interrupt_enable(
@@ -912,10 +880,22 @@ static void uart_ambiq_async_rx_callback(uint32_t status, void *user_data)
 		am_hal_uart_interrupt_enable(data->uart_handler,
 					     (AM_HAL_UART_INT_DMACPRIS | AM_HAL_UART_INT_DMAERIS));
 
+		/* Switch lock to next RX buffer if needed */
+		if (!data->rx_dma_lock_active &&
+		    ambiq_buf_in_dtcm((uintptr_t)async->rx.buf, async->rx.len)) {
+			pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
+			data->rx_dma_lock_active = true;
+		}
+
 		am_hal_uart_dma_transfer(data->uart_handler, &uart_rx);
 
 		async_timer_start(&async->rx.timeout_work, async->rx.timeout);
 	} else {
+		/* Release lock if active when RX ends */
+		if (data->rx_dma_lock_active) {
+			pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
+			data->rx_dma_lock_active = false;
+		}
 		uart_ambiq_async_rx_disable(dev);
 	}
 }
@@ -949,6 +929,12 @@ static int uart_ambiq_async_rx_enable(const struct device *dev, uint8_t *buf, si
 	uart_rx.pui32RxBuffer = (uint32_t *)buf;
 	uart_rx.pfnCallback = uart_ambiq_async_rx_callback;
 	uart_rx.pvContext = (void *)dev;
+
+	/* Lock only if RX buffer lies in DTCM */
+	data->rx_dma_lock_active = ambiq_buf_in_dtcm((uintptr_t)buf, len);
+	if (data->rx_dma_lock_active) {
+		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
+	}
 
 	/* Disable RX interrupts to let DMA to handle it */
 	uart_ambiq_irq_rx_disable(dev);

@@ -16,6 +16,7 @@
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/policy.h>
 #include <zephyr/pm/device_runtime.h>
+#include <zephyr/sys/atomic.h>
 
 #include <am_mcu_apollo.h>
 
@@ -39,7 +40,11 @@ struct i2s_ambiq_data {
 	struct i2s_config i2s_user_config;
 	uint32_t *dma_tcb_tx_buf;
 	uint32_t *dma_tcb_rx_buf;
-	bool pm_policy_state_on;
+	uint32_t dma_tcb_tx_bytes;
+	uint32_t dma_tcb_rx_bytes;
+	atomic_t pm_policy_state[ATOMIC_BITMAP_SIZE(1)];
+	bool need_pm_lock_tx;
+	bool need_pm_lock_rx;
 
 	enum i2s_state i2s_state;
 };
@@ -53,10 +58,12 @@ static void i2s_ambiq_pm_policy_state_lock_get(const struct device *dev)
 {
 	struct i2s_ambiq_data *data = dev->data;
 
-	if (!data->pm_policy_state_on) {
-		data->pm_policy_state_on = true;
-		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
-		pm_device_runtime_get(dev);
+	if (!atomic_test_bit(data->pm_policy_state, 0)) {
+		if (((data->i2s_hal_cfg.eXfer == AM_HAL_I2S_XFER_TX) && data->need_pm_lock_tx) ||
+		    ((data->i2s_hal_cfg.eXfer == AM_HAL_I2S_XFER_RX) && data->need_pm_lock_rx)) {
+			atomic_set_bit(data->pm_policy_state, 0);
+			pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
+		}
 	}
 }
 
@@ -64,9 +71,8 @@ static void i2s_ambiq_pm_policy_state_lock_put(const struct device *dev)
 {
 	struct i2s_ambiq_data *data = dev->data;
 
-	if (data->pm_policy_state_on) {
-		data->pm_policy_state_on = false;
-		pm_device_runtime_put(dev);
+	if (atomic_test_bit(data->pm_policy_state, 0)) {
+		atomic_clear_bit(data->pm_policy_state, 0);
 		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
 	}
 }
@@ -329,6 +335,8 @@ static int i2s_ambiq_configure(const struct device *dev, enum i2s_dir dir,
 		LOG_INF("TX addr : 0x%x Cnt : %d Rev : 0x%x", data->i2s_transfer.ui32TxTargetAddr,
 			data->i2s_transfer.ui32TxTotalCount,
 			data->i2s_transfer.ui32TxTargetAddrReverse);
+		data->need_pm_lock_tx = ambiq_buf_in_dtcm((uintptr_t)data->dma_tcb_tx_buf,
+							  (size_t)data->dma_tcb_tx_bytes);
 	} else {
 		uint8_t *rx_buf_8 = (uint8_t *)data->dma_tcb_rx_buf;
 
@@ -340,6 +348,8 @@ static int i2s_ambiq_configure(const struct device *dev, enum i2s_dir dir,
 		LOG_INF("RX addr : 0x%x Cnt : %d Rev : 0x%x", data->i2s_transfer.ui32RxTargetAddr,
 			data->i2s_transfer.ui32RxTotalCount,
 			data->i2s_transfer.ui32RxTargetAddrReverse);
+		data->need_pm_lock_rx = ambiq_buf_in_dtcm((uintptr_t)data->dma_tcb_rx_buf,
+							  (size_t)data->dma_tcb_rx_bytes);
 	}
 
 	memcpy(&(data->i2s_user_config), i2s_config_in, sizeof(struct i2s_config));
@@ -443,6 +453,7 @@ static int i2s_ambiq_write(const struct device *dev, void *buffer, size_t size)
 
 	ret = k_sem_take(&(data->tx_ready_sem), K_MSEC(100));
 
+	(void)pm_device_runtime_get(dev);
 	i2s_ambiq_pm_policy_state_lock_get(dev);
 
 	uint32_t i2s_data_buf_ptr =
@@ -474,6 +485,7 @@ static int i2s_ambiq_write(const struct device *dev, void *buffer, size_t size)
 
 	k_mem_slab_free(data->mem_slab, buffer);
 	i2s_ambiq_pm_policy_state_lock_put(dev);
+	(void)pm_device_runtime_put(dev);
 
 	return ret;
 }
@@ -493,6 +505,7 @@ static int i2s_ambiq_read(const struct device *dev, void **buffer, size_t *size)
 	if (ret != 0) {
 		LOG_DBG("No audio data to be read %d", ret);
 	} else {
+		(void)pm_device_runtime_get(dev);
 		i2s_ambiq_pm_policy_state_lock_get(dev);
 
 		ret = k_mem_slab_alloc(data->mem_slab, &data->mem_slab_buffer, K_NO_WAIT);
@@ -519,6 +532,7 @@ static int i2s_ambiq_read(const struct device *dev, void **buffer, size_t *size)
 	}
 
 	i2s_ambiq_pm_policy_state_lock_put(dev);
+	(void)pm_device_runtime_put(dev);
 
 	return ret;
 }
@@ -580,6 +594,10 @@ static DEVICE_API(i2s, i2s_ambiq_driver_api) = {
 		.i2s_state = I2S_STATE_NOT_READY,                                                  \
 		.dma_tcb_tx_buf = i2s_dma_tcb_buf##n,                                              \
 		.dma_tcb_rx_buf = i2s_dma_tcb_buf##n + DT_INST_PROP_OR(n, i2s_buffer_size, 1536),  \
+		.dma_tcb_tx_bytes =                                                                \
+			(uint32_t)(DT_INST_PROP_OR(n, i2s_buffer_size, 1536) * sizeof(uint32_t)),  \
+		.dma_tcb_rx_bytes =                                                                \
+			(uint32_t)(DT_INST_PROP_OR(n, i2s_buffer_size, 1536) * sizeof(uint32_t)),  \
 	};                                                                                         \
 	static const struct i2s_ambiq_cfg i2s_ambiq_cfg##n = {                                     \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \

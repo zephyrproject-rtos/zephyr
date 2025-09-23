@@ -18,12 +18,19 @@ LOG_MODULE_REGISTER(spi_ambiq);
 #include <zephyr/pm/policy.h>
 #include <zephyr/pm/device_runtime.h>
 #include <zephyr/cache.h>
+#include <zephyr/sys/atomic.h>
 
 #include <stdlib.h>
 #include <errno.h>
 #include "spi_context.h"
 
 #include <soc.h>
+
+enum spi_ambiq_pm_policy_flag {
+	SPI_AMBIQ_PM_POLICY_STATE_FLAG,
+	SPI_AMBIQ_PM_POLICY_CMDQ_FLAG,
+	SPI_AMBIQ_PM_POLICY_FLAG_COUNT,
+};
 
 struct spi_ambiq_config {
 	uint32_t base;
@@ -39,7 +46,7 @@ struct spi_ambiq_data {
 	am_hal_iom_config_t iom_cfg;
 	void *iom_handler;
 	bool cont;
-	bool pm_policy_state_on;
+	ATOMIC_DEFINE(pm_policy_flag, SPI_AMBIQ_PM_POLICY_FLAG_COUNT);
 	bool dma_mode;
 };
 
@@ -51,10 +58,26 @@ static void spi_ambiq_pm_policy_state_lock_get(const struct device *dev)
 {
 	struct spi_ambiq_data *data = dev->data;
 
-	if (!data->pm_policy_state_on) {
-		data->pm_policy_state_on = true;
-		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
-		pm_device_runtime_get(dev);
+	if (data->dma_mode &&
+	    !atomic_test_bit(data->pm_policy_flag, SPI_AMBIQ_PM_POLICY_STATE_FLAG)) {
+		bool need_lock = false;
+
+		if (atomic_test_bit(data->pm_policy_flag, SPI_AMBIQ_PM_POLICY_CMDQ_FLAG)) {
+			need_lock = true;
+		} else {
+			struct spi_context *ctx = &data->ctx;
+
+			if (ctx->tx_buf && ctx->tx_len) {
+				need_lock = ambiq_buf_in_dtcm((uintptr_t)ctx->tx_buf, ctx->tx_len);
+			}
+			if (!need_lock && ctx->rx_buf && ctx->rx_len) {
+				need_lock = ambiq_buf_in_dtcm((uintptr_t)ctx->rx_buf, ctx->rx_len);
+			}
+		}
+		if (need_lock) {
+			atomic_set_bit(data->pm_policy_flag, SPI_AMBIQ_PM_POLICY_STATE_FLAG);
+			pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
+		}
 	}
 }
 
@@ -62,9 +85,7 @@ static void spi_ambiq_pm_policy_state_lock_put(const struct device *dev)
 {
 	struct spi_ambiq_data *data = dev->data;
 
-	if (data->pm_policy_state_on) {
-		data->pm_policy_state_on = false;
-		pm_device_runtime_put(dev);
+	if (atomic_test_and_clear_bit(data->pm_policy_flag, SPI_AMBIQ_PM_POLICY_STATE_FLAG)) {
 		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
 	}
 }
@@ -375,6 +396,9 @@ static int spi_ambiq_transceive(const struct device *dev, const struct spi_confi
 	/* context setup */
 	spi_context_lock(&data->ctx, false, NULL, NULL, config);
 
+	/* Prevent driver from being suspended by PM until SPI transaction is complete */
+	(void)pm_device_runtime_get(dev);
+
 	spi_ambiq_pm_policy_state_lock_get(dev);
 
 	ret = spi_config(dev, config);
@@ -390,6 +414,8 @@ static int spi_ambiq_transceive(const struct device *dev, const struct spi_confi
 
 xfer_end:
 	spi_ambiq_pm_policy_state_lock_put(dev);
+
+	(void)pm_device_runtime_put(dev);
 
 	spi_context_release(&data->ctx, ret);
 
@@ -431,6 +457,12 @@ static int spi_ambiq_init(const struct device *dev)
 	if (AM_HAL_STATUS_SUCCESS != am_hal_iom_initialize(cfg->inst_idx, &data->iom_handler)) {
 		LOG_ERR("Fail to initialize SPI\n");
 		return -ENXIO;
+	}
+
+	/* One-time compute: whether cmdq buffer lies in DTCM */
+	if (ambiq_buf_in_dtcm((uintptr_t)data->iom_cfg.pNBTxnBuf,
+			      (size_t)data->iom_cfg.ui32NBTxnBufLength)) {
+		atomic_set_bit(data->pm_policy_flag, SPI_AMBIQ_PM_POLICY_CMDQ_FLAG);
 	}
 
 	ret = am_hal_iom_power_ctrl(data->iom_handler, AM_HAL_SYSCTRL_WAKE, false);

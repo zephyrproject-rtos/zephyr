@@ -14,6 +14,7 @@
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/policy.h>
 #include <zephyr/pm/device_runtime.h>
+#include <zephyr/sys/atomic.h>
 #include <am_mcu_apollo.h>
 
 #define DT_DRV_COMPAT ambiq_audadc
@@ -23,6 +24,12 @@
 #define CH_A1_GAIN_DB    18
 
 LOG_MODULE_REGISTER(ambiq_audadc, CONFIG_AUDIO_AMIC_LOG_LEVEL);
+
+enum audadc_ambiq_pm_policy_flag {
+	AUDADC_AMBIQ_PM_POLICY_STATE_FLAG,
+	AUDADC_AMBIQ_PM_POLICY_DTCM_FLAG,
+	AUDADC_AMBIQ_PM_POLICY_FLAG_COUNT,
+};
 
 struct amic_ambiq_audadc_data {
 	void *audadc_handler;
@@ -41,9 +48,7 @@ struct amic_ambiq_audadc_data {
 	am_hal_audadc_irtt_config_t irtt_cfg;
 	am_hal_audadc_dma_config_t dma_cfg;
 
-#ifdef CONFIG_PM_DEVICE
-	bool pm_policy_state_on;
-#endif
+	ATOMIC_DEFINE(pm_policy_flag, AUDADC_AMBIQ_PM_POLICY_FLAG_COUNT);
 
 	enum amic_state amic_state;
 };
@@ -56,10 +61,10 @@ static void amic_ambiq_audadc_pm_policy_state_lock_get(const struct device *dev)
 {
 	struct amic_ambiq_audadc_data *data = dev->data;
 
-	if (!data->pm_policy_state_on) {
-		data->pm_policy_state_on = true;
+	if (!atomic_test_bit(data->pm_policy_flag, AUDADC_AMBIQ_PM_POLICY_STATE_FLAG) &&
+	    atomic_test_bit(data->pm_policy_flag, AUDADC_AMBIQ_PM_POLICY_DTCM_FLAG)) {
+		atomic_set_bit(data->pm_policy_flag, AUDADC_AMBIQ_PM_POLICY_STATE_FLAG);
 		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
-		pm_device_runtime_get(dev);
 	}
 }
 
@@ -67,9 +72,9 @@ static void amic_ambiq_audadc_pm_policy_state_lock_put(const struct device *dev)
 {
 	struct amic_ambiq_audadc_data *data = dev->data;
 
-	if (data->pm_policy_state_on) {
-		data->pm_policy_state_on = false;
-		pm_device_runtime_put(dev);
+	if (atomic_test_bit(data->pm_policy_flag, AUDADC_AMBIQ_PM_POLICY_STATE_FLAG) &&
+	    atomic_test_bit(data->pm_policy_flag, AUDADC_AMBIQ_PM_POLICY_DTCM_FLAG)) {
+		atomic_clear_bit(data->pm_policy_flag, AUDADC_AMBIQ_PM_POLICY_STATE_FLAG);
 		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
 	}
 }
@@ -206,6 +211,12 @@ static int amic_ambiq_audadc_configure(const struct device *dev, struct amic_cfg
 	data->dma_cfg.ui32TargetAddressReverse = data->dma_cfg.ui32TargetAddress +
 						 (data->dma_cfg.ui32SampleCount * sizeof(uint32_t));
 
+	/* One-time compute: whether DMA buffer region intersects DTCM. */
+	atomic_set_bit_to(
+		data->pm_policy_flag, AUDADC_AMBIQ_PM_POLICY_DTCM_FLAG,
+		ambiq_buf_in_dtcm((uintptr_t)data->dma_cfg.ui32TargetAddress,
+				  (size_t)data->dma_cfg.ui32SampleCount * sizeof(uint32_t)));
+
 	if (AM_HAL_STATUS_SUCCESS !=
 	    am_hal_audadc_configure_dma(data->audadc_handler, &(data->dma_cfg))) {
 		LOG_ERR("Error - configuring AUDADC DMA failed.\n");
@@ -311,6 +322,9 @@ static int amic_ambiq_audadc_read(const struct device *dev, uint8_t stream, void
 	}
 
 	ret = k_sem_take(&data->dma_done_sem, SYS_TIMEOUT_MS(timeout));
+
+	(void)pm_device_runtime_get(dev);
+
 	amic_ambiq_audadc_pm_policy_state_lock_get(dev);
 
 	if (ret != 0) {
@@ -378,6 +392,9 @@ static int amic_ambiq_audadc_read(const struct device *dev, uint8_t stream, void
 	}
 
 	amic_ambiq_audadc_pm_policy_state_lock_put(dev);
+
+	(void)pm_device_runtime_put(dev);
+
 	return ret;
 }
 
