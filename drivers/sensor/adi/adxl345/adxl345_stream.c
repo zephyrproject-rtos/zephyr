@@ -11,8 +11,6 @@
 
 LOG_MODULE_DECLARE(ADXL345, CONFIG_SENSOR_LOG_LEVEL);
 
-static void adxl345_fifo_flush_rtio(const struct device *dev);
-
 /* auxiliary functions */
 
 int adxl345_rtio_reg_read(const struct device *dev, uint8_t reg,
@@ -167,15 +165,6 @@ static int adxl345_check_streaming(struct adxl345_dev_data *data,
 
 /* streaming callbacks and calls */
 
-static void adxl345_irq_en_cb(struct rtio *r, const struct rtio_sqe *sqe, int result, void *arg)
-{
-	ARG_UNUSED(result);
-
-	const struct device *dev = (const struct device *)arg;
-
-	adxl345_set_gpios_en(dev, true);
-}
-
 static void adxl345_fifo_read_cb(struct rtio *rtio_ctx, const struct rtio_sqe *sqe,
 				 int result, void *arg)
 {
@@ -300,8 +289,11 @@ static void adxl345_process_status1_cb(struct rtio *r, const struct rtio_sqe *sq
 		adxl345_rtio_init_hdr((struct adxl345_fifo_data *)buf, data, 0);
 
 		if (data_opt == SENSOR_STREAM_DATA_DROP) {
-			/* Flush the FIFO by disabling it. Save current mode for after the reset. */
-			adxl345_fifo_flush_rtio(dev);
+			/*
+			 * Flush the FIFO by disabling it. Save current mode
+			 * for after the reset.
+			 */
+			adxl345_rtio_flush_fifo(dev);
 		}
 
 		adxl345_sqe_done(dev, current_sqe, 0);
@@ -321,50 +313,107 @@ err:
 	adxl345_sqe_done(dev, current_sqe, -ENOMEM);
 }
 
-static void adxl345_fifo_flush_rtio(const struct device *dev)
+/**
+ * adxl345_rtio_flush_fifo - Reset the FIFO and interrupt status registers.
+ * @dev The device node.
+ *
+ * Consume all FIFO elements, since this not just resets FIFO_STATUS, but also INT_SOURCE entries.
+ * When using Analog's STREAM FIFO mode, FIFO elements must be consumed. For Analog's
+ * TRIGGER FIFO mode, it would be sufficient to switch FIFO modes to BYPASS FIFO mode and
+ * back to Analog's STREAM FIFO mode, since in this mode, the FIFO gets only activated once if the
+ * trigger bit of the sensor is set by one of the sensor events, i.e. in terms of Analog Devices a
+ * "trigger event". The INT SOURCE does not need to be reset here, but using the sensor in a
+ * permanent sensing mode, such as Analog's STREAM FIFO mode requires a reset of the INT_SOURCE
+ * register, too. Thus, it is required to consume the FIFO elements.
+ *
+ * @return 0 for success, or error number.
+ */
+int adxl345_rtio_flush_fifo(const struct device *dev)
 {
 	struct adxl345_dev_data *data = dev->data;
-	uint8_t fifo_config;
+	struct rtio_iodev_sqe *current_sqe = data->sqe;
+	int8_t fifo_entries = ADXL345_MAX_FIFO_SIZE;
+	struct sensor_read_config *read_config = NULL;
 
-	fifo_config = ADXL345_FIFO_CTL_TRIGGER_UNSET |
-			adxl345_fifo_ctl_mode_init[ADXL345_FIFO_BYPASSED] |
-			data->fifo_config.fifo_samples;
+	if (!adxl345_check_streaming(data, &read_config)) {
+		LOG_WRN("adxl345_check_streaming() failed");
+		return 0;
+	}
 
-	struct rtio_sqe *write_fifo_addr = rtio_sqe_acquire(data->rtio_ctx);
-	const uint8_t reg_addr_w2[2] = {ADXL345_FIFO_CTL_REG, fifo_config};
+	if (adxl345_rtio_cqe_consume(data)) {
+		LOG_WRN("adxl345_rtio_cqe_consume() failed");
+		goto err;
+	}
 
-	rtio_sqe_prep_tiny_write(write_fifo_addr, data->iodev, RTIO_PRIO_NORM,
-				 reg_addr_w2, 2, NULL);
+	if (adxl345_set_measure_en(dev, false)) {
+		LOG_WRN("adxl345_set_measure_en() failed");
+		goto err;
+	}
 
-	fifo_config = ADXL345_FIFO_CTL_TRIGGER_UNSET |
-			adxl345_fifo_ctl_mode_init[data->fifo_config.fifo_mode] |
-			data->fifo_config.fifo_samples;
+	const struct adxl345_dev_config *cfg = dev->config;
+	uint8_t reg = ADXL345_REG_DATA_XYZ_REGS;
+	uint8_t reg_addr = ADXL345_REG_READ_MULTIBYTE(reg);
+	size_t buflen = ADXL345_FIFO_SAMPLE_SIZE;
 
-	write_fifo_addr = rtio_sqe_acquire(data->rtio_ctx);
-	const uint8_t reg_addr_w3[2] = {ADXL345_FIFO_CTL_REG, fifo_config};
+	for (size_t i = 0; i < fifo_entries; i++) {
+		uint8_t dummy[6];
+		uint8_t *buf = dummy;
+		struct rtio_sqe *write_sqe = rtio_sqe_acquire(data->rtio_ctx);
 
-	rtio_sqe_prep_tiny_write(write_fifo_addr, data->iodev, RTIO_PRIO_NORM,
-				 reg_addr_w3, 2, NULL);
-	write_fifo_addr->flags |= RTIO_SQE_CHAINED;
+		if (!write_sqe) {
+			LOG_WRN("write_sqe failed");
+			goto err;
+		}
+		rtio_sqe_prep_tiny_write(write_sqe, data->iodev,
+					 RTIO_PRIO_NORM, &reg_addr,
+					 sizeof(reg_addr), NULL);
+		write_sqe->flags |= RTIO_SQE_TRANSACTION;
 
-	struct rtio_sqe *complete_op = rtio_sqe_acquire(data->rtio_ctx);
+		struct rtio_sqe *read_sqe = rtio_sqe_acquire(data->rtio_ctx);
 
-	rtio_sqe_prep_callback(complete_op, adxl345_irq_en_cb, (void *)dev, NULL);
-	rtio_submit(data->rtio_ctx, 0);
+		if (!read_sqe) {
+			LOG_WRN("read_sqe failed");
+			goto err;
+		}
+		rtio_sqe_prep_read(read_sqe, data->iodev, RTIO_PRIO_NORM,
+				   buf, buflen,
+				   current_sqe);
+
+		if (cfg->bus_type == ADXL345_BUS_I2C) {
+			read_sqe->iodev_flags |= RTIO_IODEV_I2C_STOP | RTIO_IODEV_I2C_RESTART;
+		}
+		rtio_submit(data->rtio_ctx, 2); /* cautiously keep blocking */
+		ARG_UNUSED(rtio_cqe_consume(data->rtio_ctx));
+	}
+
+	if (adxl345_set_measure_en(dev, true)) {
+		LOG_WRN("adxl345_set_measure_en() failed");
+		goto err;
+	}
+
+	return 0;
+err:
+	LOG_WRN("Failed.");
+	return -EINVAL;
 }
 
 /* Consumer calls */
 
+static bool first = true;
 void adxl345_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
 {
 	const struct sensor_read_config *cfg =
 			(const struct sensor_read_config *)iodev_sqe->sqe.iodev->data;
 	struct adxl345_dev_data *data = (struct adxl345_dev_data *)dev->data;
-	uint8_t status;
 	int rc;
 
-	if (adxl345_set_gpios_en(dev, false)) {
-		return;
+	data->sqe = iodev_sqe;
+
+	if (first) {
+		/* Initialize measurement and start with flushed registers */
+		adxl345_rtio_flush_fifo(dev);
+		adxl345_set_gpios_en(dev, true);
+		first = false;
 	}
 
 	for (size_t i = 0; i < cfg->count; i++) {
@@ -376,27 +425,7 @@ void adxl345_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iode
 				return;
 			}
 		}
-
-		/* Flush the FIFO by disabling it. Save current mode for after the reset. */
-		enum adxl345_fifo_mode current_fifo_mode = data->fifo_config.fifo_mode;
-
-		if (current_fifo_mode == ADXL345_FIFO_BYPASSED) {
-			current_fifo_mode = ADXL345_FIFO_STREAMED;
-		}
-		adxl345_configure_fifo(dev, ADXL345_FIFO_BYPASSED,
-				       data->fifo_config.fifo_trigger,
-				       data->fifo_config.fifo_samples);
-		adxl345_configure_fifo(dev, current_fifo_mode,
-				       data->fifo_config.fifo_trigger,
-				       data->fifo_config.fifo_samples);
-		rc = adxl345_reg_read_byte(dev, ADXL345_FIFO_STATUS_REG, &status);
 	}
-
-	if (adxl345_set_gpios_en(dev, true)) {
-		return;
-	}
-
-	data->sqe = iodev_sqe;
 }
 
 void adxl345_stream_irq_handler(const struct device *dev)

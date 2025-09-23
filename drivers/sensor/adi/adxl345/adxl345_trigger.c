@@ -89,7 +89,7 @@ static void adxl345_thread_cb(const struct device *dev)
 		 * If overrun handling is enabled, reset status register and
 		 * fifo here, if not handled before in any way
 		 */
-		adxl345_flush_fifo(dev);
+		adxl345_raw_flush_fifo(dev);
 	}
 
 	if (drv_data->act_trigger && FIELD_GET(ADXL345_INT_ACT, status)) {
@@ -246,7 +246,7 @@ done:
 		return ret;
 	}
 
-	return adxl345_flush_fifo(dev);
+	return adxl345_raw_flush_fifo(dev);
 }
 
 int adxl345_init_interrupt(const struct device *dev)

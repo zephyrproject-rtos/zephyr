@@ -272,10 +272,13 @@ struct adxl345_dev_config {
 
 int adxl345_set_gpios_en(const struct device *dev, bool enable);
 int adxl345_set_measure_en(const struct device *dev, bool en);
-int adxl345_flush_fifo(const struct device *dev);
 
+int adxl345_raw_flush_fifo(const struct device *dev);
+#ifdef CONFIG_ADXL345_STREAM
+int adxl345_rtio_flush_fifo(const struct device *dev);
 void adxl345_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe);
 void adxl345_stream_irq_handler(const struct device *dev);
+#endif
 
 #ifdef CONFIG_ADXL345_TRIGGER
 int adxl345_get_fifo_entries(const struct device *dev);

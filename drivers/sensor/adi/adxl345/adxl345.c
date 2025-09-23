@@ -250,11 +250,10 @@ int adxl345_get_status(const struct device *dev, uint8_t *status)
 	return adxl345_reg_read_byte(dev, ADXL345_INT_SOURCE_REG, status);
 }
 
-int adxl345_flush_fifo(const struct device *dev)
+int adxl345_raw_flush_fifo(const struct device *dev)
 {
-#ifdef CONFIG_ADXL345_TRIGGER
-	int8_t sample_number;
-	uint8_t regval;
+#if defined(CONFIG_ADXL345_TRIGGER)
+	uint8_t sample_line[ADXL345_FIFO_SAMPLE_SIZE];
 	int rc;
 
 	rc = adxl345_set_measure_en(dev, false);
@@ -262,15 +261,43 @@ int adxl345_flush_fifo(const struct device *dev)
 		return rc;
 	}
 
-	sample_number = adxl345_get_fifo_entries(dev);
-	while (sample_number >= 0) { /* Read FIFO entries + 1 sample lines */
-		rc = adxl345_raw_reg_read(dev, ADXL345_REG_DATA_XYZ_REGS,
-					  &regval, ADXL345_FIFO_SAMPLE_SIZE);
-		if (rc) {
+	while (true) {
+		rc = adxl345_get_fifo_entries(dev);
+		if (rc < 0) {
 			return rc;
 		}
 
-		sample_number--;
+		if (rc == 0) {
+			break;
+		}
+
+		/*
+		 * For FIFO_MODE_TRIGGERED (re)setting the FIFO to BYPASSED and back to
+		 * TRIGGERED is enough to reset just the FIFO (as described on p.21 of
+		 * the data sheet). In this case measurement and optionally GPIO lines,
+		 * too, need to be turned off in forehand and turned on again
+		 * afterwards.
+		 *
+		 * When FIFO_MODE_STREAMED is in place, reading out the FIFO elements
+		 * actually resets the FIFO and resets also the particular interrupt
+		 * trigger in INT_SOURCE register e.g. such as watermark, tap events,
+		 * activity, etc. Resetting a STREAMED FIFO is supposed to happen while
+		 * the sensor continues running. Thus measurement is not supposed to be
+		 * turned off except in case of overrun i.e. error. In this case, just
+		 * switching to BYPASSED does not reset any the INT_SOURCE bit flags.
+		 * Therefore the entries must be read.
+		 */
+		uint8_t fifo_entries = rc + 1;
+
+		while (fifo_entries > 0) { /* Read FIFO entries + 1 sample lines */
+			rc = adxl345_raw_reg_read(dev, ADXL345_REG_DATA_XYZ_REGS,
+						  sample_line, ADXL345_FIFO_SAMPLE_SIZE);
+			if (rc) {
+				return rc;
+			}
+
+			fifo_entries--;
+		}
 	}
 #endif /* CONFIG_ADXL345_TRIGGER */
 
