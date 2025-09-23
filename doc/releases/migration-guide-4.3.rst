@@ -65,6 +65,14 @@ MFD
   kconfig symbol ``MFD_AXP192_AXP2101`` is removed. :kconfig:option:`MFD_AXP192` is now to be
   used for AXP192 device while :kconfig:option:`MFD_AXP2101` for the AXP2101 one.
 
+PWM
+===
+
+* :dtcompatible:`nxp,pca9685` ``invert`` property has been removed and you can now use the
+  :c:macro:`PWM_POLARITY_INVERTED` or :c:macro:`PWM_POLARITY_NORMAL` flags as specifier cells for
+  space "pwm" are now named: ``['channel', 'period', 'flags']`` (old value:
+  ``['channel', 'period']``) and ``#pwm-cells`` const value changed from 2 to 3.
+
 Phy
 ===
 
