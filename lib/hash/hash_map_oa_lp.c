@@ -91,16 +91,17 @@ static int sys_hashmap_oa_lp_insert_no_rehash(struct sys_hashmap *map, uint64_t 
 	case TOMBSTONE:
 		--data->n_tombstones;
 		++data->size;
-		ret = 0;
+		ret = 1;
 		break;
 	case USED:
-	default:
+		if (old_value != NULL) {
+			*old_value = entry->value;
+		}
 		ret = 0;
 		break;
-	}
-
-	if (old_value != NULL) {
-		*old_value = entry->value;
+	default:
+		ret = 1;
+		break;
 	}
 
 	entry->state = USED;
