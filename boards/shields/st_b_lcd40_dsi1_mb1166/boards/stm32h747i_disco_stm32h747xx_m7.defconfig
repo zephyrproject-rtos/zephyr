@@ -11,8 +11,11 @@ config STM32_LTDC_FB_NUM
 config LV_Z_DOUBLE_VDB
 	default y
 
-config LV_Z_VDB_CUSTOM_SECTION
+config LV_Z_VDB_ZEPHYR_REGION
 	default y
+
+config LV_Z_VDB_ZEPHYR_REGION_NAME
+	default "SDRAM2"
 
 config LV_Z_FULL_REFRESH
 	default y
