@@ -30,24 +30,6 @@ LOG_MODULE_REGISTER(udc_numaker, CONFIG_UDC_DRIVER_LOG_LEVEL);
  *        to generate necessary 48MHz.
  */
 
-/* Not support USBD/HSUSBD simultaneously
- *
- * The code is re-organized to implement both usbd and hsusbd in single
- * source file. Multiple instances of either usbd or hsusbd are supported,
- * but usbd and hsusbd cannot support simultaneously. This limitation is
- * for easy implementation with just single source file, assuming that real
- * application just needs one usb device type.
- */
-BUILD_ASSERT(!(DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_usbd) &&
-	       DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_hsusbd)),
-	     "NOT SUPPORT USBD/HSUSBD simultaneously");
-
-#if DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_usbd)
-#define DT_DRV_COMPAT nuvoton_numaker_usbd
-#elif DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_hsusbd)
-#define DT_DRV_COMPAT nuvoton_numaker_hsusbd
-#endif
-
 /* For bus reset, keep 'SE0' (USB spec: SE0 >= 2.5 ms) */
 #define NUMAKER_USBD_BUS_RESET_DRV_SE0_US 3000
 
@@ -58,10 +40,6 @@ BUILD_ASSERT(!(DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_usbd) &&
 #define NUMAKER_USBD_DMABUF_SIZE_SETUP   8
 #define NUMAKER_USBD_DMABUF_SIZE_CTRLOUT 64
 #define NUMAKER_USBD_DMABUF_SIZE_CTRLIN  64
-
-#if DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_usbd)
-
-#define NUMAKER_USBD_SPEED_IDX_DEFAULT 1
 
 /* USBD controller does not support DMA, and PHY does not require a delay after reset. */
 
@@ -75,19 +53,11 @@ BUILD_ASSERT(!(DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_usbd) &&
 #endif
 #endif
 
-#elif DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_hsusbd)
-
-#define NUMAKER_USBD_SPEED_IDX_DEFAULT       2
-
-/* Redefine to reuse code for HSUSBD */
-#define USBD_T                               HSUSBD_T
-#define USBD_EP_T                            HSUSBD_EP_T
-
 /* Per HSUSBD H/W spec, after setting HSUSBEN to enable HSUSB/PHY, user
  * should keep HSUSB/PHY at reset mode at lease 10us before changing to
  * active mode.
  */
-#define NUMAKER_HSUSBD_PHY_RESET_US          10
+#define NUMAKER_HSUSBD_PHY_RESET_US 10
 
 /* Wait for USB/PHY stable timeout 100 ms */
 #define NUMAKER_HSUSBD_PHY_STABLE_TIMEOUT_US 100000
@@ -99,8 +69,6 @@ BUILD_ASSERT(!(DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_usbd) &&
 #if !defined(SYS_USBPHY_HSUSBROLE_STD_USBD)
 #define SYS_USBPHY_HSUSBROLE_STD_USBD (0x0 << SYS_USBPHY_HSUSBROLE_Pos)
 #endif
-#endif
-
 #endif
 
 enum numaker_usbd_msg_type {
@@ -149,24 +117,20 @@ struct numaker_usbd_ep {
 
 	const struct device *dev; /* Pointer to the containing device */
 
-	int32_t ep_hw_idx;  /* BSP USBD/HSUSBD driver EP index, e.g. EP0/EPA, EP1/EPB, etc. */
-	uint32_t ep_hw_cfg; /* BSP USBD/HSUSBD driver EP configuration */
-#if DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_hsusbd)
-	uint32_t ep_hw_rspctl;
-#endif
+	int32_t ep_hw_idx;     /* BSP USBD/HSUSBD driver EP index, e.g. EP0/EPA, EP1/EPB, etc. */
+	uint32_t ep_hw_cfg;    /* BSP USBD/HSUSBD driver EP configuration */
+	uint32_t ep_hw_rspctl; /* BSP HSUSBD driver RSPCTL */
 
 	/* EP DMA buffer */
 	bool dmabuf_valid;
 	uint32_t dmabuf_base;
 	uint32_t dmabuf_size;
 
-#if DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_usbd)
 	/* NOTE: On USBD, Setup and CTRL OUT are not completely separated. CTRL OUT MXPLD
 	 * can be overridden to 8 by next Setup. To overcome it, we make one copy of CTRL
 	 * OUT MXPLD immediately on its interrupt.
 	 */
 	uint32_t mxpld_ctrlout;
-#endif
 
 	/* EP address */
 	bool addr_valid;
@@ -183,7 +147,7 @@ struct udc_numaker_config {
 	struct udc_ep_config *ep_cfg_in;
 	uint32_t ep_cfg_out_size;
 	uint32_t ep_cfg_in_size;
-	USBD_T *base;
+	void *base;
 	const struct reset_dt_spec reset;
 	uint32_t clk_modidx;
 	uint32_t clk_src;
@@ -196,6 +160,7 @@ struct udc_numaker_config {
 	bool disallow_iso_inout_same;
 	int speed_idx;
 	void (*make_thread)(const struct device *dev);
+	bool is_hsusbd;
 };
 
 /* EP H/W context manager */
@@ -242,64 +207,71 @@ struct udc_numaker_data {
 static inline void numaker_usbd_sw_connect(const struct device *dev)
 {
 	const struct udc_numaker_config *config = dev->config;
-	USBD_T *base = config->base;
 
-#if DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_usbd)
-	/* Clear all interrupts first for clean */
-	base->INTSTS = base->INTSTS;
+	if (config->is_hsusbd) {
+		HSUSBD_T *base = config->base;
 
-	/* Enable relevant interrupts */
-	base->INTEN = USBD_INT_BUS | USBD_INT_USB | USBD_INT_FLDET |
-		      IF_ENABLED(CONFIG_UDC_ENABLE_SOF, (USBD_INT_SOF |)) /* CPU load concern */
-		      USBD_INT_WAKEUP;
+		/* Clear all interrupts first for clean */
+		base->BUSINTSTS = base->BUSINTSTS;
+		base->CEPINTSTS = base->CEPINTSTS;
 
-	/* Clear SE0 for connect */
-	base->ATTR |= USBD_ATTR_DPPUEN_Msk;
-	base->SE0 &= ~USBD_DRVSE0;
-#elif DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_hsusbd)
-	/* Clear all interrupts first for clean */
-	base->BUSINTSTS = base->BUSINTSTS;
-	base->CEPINTSTS = base->CEPINTSTS;
+		/* Enable relevant interrupts */
+		base->GINTEN = HSUSBD_GINTEN_CEPIEN_Msk | HSUSBD_GINTEN_USBIEN_Msk;
+		base->BUSINTEN = HSUSBD_BUSINTEN_VBUSDETIEN_Msk |
+				 IF_ENABLED(CONFIG_UDC_NUMAKER_DMA,
+					    (HSUSBD_BUSINTEN_DMADONEIEN_Msk |)) /* DMA */
+				 HSUSBD_BUSINTEN_SUSPENDIEN_Msk |
+				 HSUSBD_BUSINTEN_RESUMEIEN_Msk | HSUSBD_BUSINTEN_RSTIEN_Msk |
+				 COND_CODE_1(CONFIG_UDC_ENABLE_SOF, (HSUSBD_BUSINTEN_SOFIEN_Msk),
+					     (0)); /* CPU load concern */
+		base->CEPINTEN = HSUSBD_CEPINTEN_STSDONEIEN_Msk | HSUSBD_CEPINTEN_ERRIEN_Msk |
+				 HSUSBD_CEPINTEN_STALLIEN_Msk | HSUSBD_CEPINTEN_SETUPPKIEN_Msk |
+				 HSUSBD_CEPINTEN_SETUPTKIEN_Msk;
 
-	/* Enable relevant interrupts */
-	base->GINTEN = HSUSBD_GINTEN_CEPIEN_Msk | HSUSBD_GINTEN_USBIEN_Msk;
-	base->BUSINTEN = HSUSBD_BUSINTEN_VBUSDETIEN_Msk |
-			 IF_ENABLED(CONFIG_UDC_NUMAKER_DMA,
-				    (HSUSBD_BUSINTEN_DMADONEIEN_Msk |)) /* DMA */
-			 HSUSBD_BUSINTEN_SUSPENDIEN_Msk |
-			 HSUSBD_BUSINTEN_RESUMEIEN_Msk | HSUSBD_BUSINTEN_RSTIEN_Msk |
-			 COND_CODE_1(CONFIG_UDC_ENABLE_SOF, (HSUSBD_BUSINTEN_SOFIEN_Msk),
-				     (0)); /* CPU load concern */
-	base->CEPINTEN = HSUSBD_CEPINTEN_STSDONEIEN_Msk | HSUSBD_CEPINTEN_ERRIEN_Msk |
-			 HSUSBD_CEPINTEN_STALLIEN_Msk | HSUSBD_CEPINTEN_SETUPPKIEN_Msk |
-			 HSUSBD_CEPINTEN_SETUPTKIEN_Msk;
-
-	/* Enable USB handshake
-	 *
-	 * Being unset, USB handshake won't start, including bus events
-	 * reset/suspend/resume. Per test, this bit also takes effect
-	 * for full-speed;
-	 */
+		/* Enable USB handshake
+		 *
+		 * Being unset, USB handshake won't start, including bus events
+		 * reset/suspend/resume. Per test, this bit also takes effect
+		 * for full-speed;
+		 */
 #if defined(HSUSBD_OPER_HISHSEN_Msk)
-	base->OPER |= HSUSBD_OPER_HISHSEN_Msk;
+		base->OPER |= HSUSBD_OPER_HISHSEN_Msk;
 #endif
 
-	/* Clear SE0 for connect */
-	base->PHYCTL |= HSUSBD_PHYCTL_DPPUEN_Msk;
-#endif
+		/* Clear SE0 for connect */
+		base->PHYCTL |= HSUSBD_PHYCTL_DPPUEN_Msk;
+	} else {
+		USBD_T *base = config->base;
+
+		/* Clear all interrupts first for clean */
+		base->INTSTS = base->INTSTS;
+
+		/* Enable relevant interrupts */
+		base->INTEN = USBD_INT_BUS | USBD_INT_USB | USBD_INT_FLDET |
+			      IF_ENABLED(CONFIG_UDC_ENABLE_SOF,
+					 (USBD_INT_SOF |)) /* CPU load concern */
+			      USBD_INT_WAKEUP;
+
+		/* Clear SE0 for connect */
+		base->ATTR |= USBD_ATTR_DPPUEN_Msk;
+		base->SE0 &= ~USBD_DRVSE0;
+	}
 }
 
 static inline void numaker_usbd_sw_disconnect(const struct device *dev)
 {
 	const struct udc_numaker_config *config = dev->config;
-	USBD_T *base = config->base;
 
 	/* Set SE0 for disconnect */
-#if DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_usbd)
-	base->SE0 |= USBD_DRVSE0;
-#elif DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_hsusbd)
-	base->PHYCTL &= ~HSUSBD_PHYCTL_DPPUEN_Msk;
-#endif
+	if (config->is_hsusbd) {
+		HSUSBD_T *base = config->base;
+
+		base->PHYCTL &= ~HSUSBD_PHYCTL_DPPUEN_Msk;
+	} else {
+		USBD_T *base = config->base;
+
+		base->SE0 |= USBD_DRVSE0;
+	}
 }
 
 static inline void numaker_usbd_sw_reconnect(const struct device *dev)
@@ -314,9 +286,17 @@ static inline void numaker_usbd_reset_addr(const struct device *dev)
 {
 	const struct udc_numaker_config *config = dev->config;
 	struct udc_numaker_data *priv = udc_get_private(dev);
-	USBD_T *base = config->base;
 
-	base->FADDR = 0;
+	if (config->is_hsusbd) {
+		HSUSBD_T *base = config->base;
+
+		base->FADDR = 0;
+	} else {
+		USBD_T *base = config->base;
+
+		base->FADDR = 0;
+	}
+
 	priv->addr = 0;
 }
 
@@ -324,24 +304,39 @@ static inline void numaker_usbd_set_addr(const struct device *dev)
 {
 	const struct udc_numaker_config *config = dev->config;
 	struct udc_numaker_data *priv = udc_get_private(dev);
-	USBD_T *base = config->base;
 
-	if (base->FADDR != priv->addr) {
-		base->FADDR = priv->addr;
+	if (config->is_hsusbd) {
+		HSUSBD_T *base = config->base;
+
+		if (base->FADDR != priv->addr) {
+			base->FADDR = priv->addr;
+		}
+	} else {
+		USBD_T *base = config->base;
+
+		if (base->FADDR != priv->addr) {
+			base->FADDR = priv->addr;
+		}
 	}
 }
 
 /* USBD/HSUSBD EP base by EP index e.g. EP0/EPA, EP1/EPB, etc. */
-static inline USBD_EP_T *numaker_usbd_ep_base(const struct device *dev, uint32_t ep_hw_idx)
+static inline void *numaker_usbd_ep_base(const struct device *dev, uint32_t ep_hw_idx)
 {
 	const struct udc_numaker_config *config = dev->config;
-	USBD_T *base = config->base;
+	void *ep_base;
 
-#if DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_usbd)
-	return base->EP + (ep_hw_idx - EP0);
-#elif DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_hsusbd)
-	return (ep_hw_idx == CEP) ? NULL : base->EP + (ep_hw_idx - EPA);
-#endif
+	if (config->is_hsusbd) {
+		HSUSBD_T *base = config->base;
+
+		ep_base = (ep_hw_idx == CEP) ? NULL : base->EP + (ep_hw_idx - EPA);
+	} else {
+		USBD_T *base = config->base;
+
+		ep_base = base->EP + (ep_hw_idx - EP0);
+	}
+
+	return ep_base;
 }
 
 static inline void numaker_usbd_ep_sync_udc_halt(struct numaker_usbd_ep *ep_cur, bool stalled)
@@ -358,24 +353,27 @@ static inline void numaker_usbd_ep_set_stall(struct numaker_usbd_ep *ep_cur)
 {
 	const struct device *dev = ep_cur->dev;
 	const struct udc_numaker_config *config = dev->config;
-	__maybe_unused USBD_T *base = config->base;
-	USBD_EP_T *ep_base = numaker_usbd_ep_base(dev, ep_cur->ep_hw_idx);
 
 	/* Set EP to stalled */
-#if DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_usbd)
-	ep_base->CFGP |= USBD_CFGP_SSTALL_Msk;
-	numaker_usbd_ep_sync_udc_halt(ep_cur, true);
-#elif DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_hsusbd)
-	if (ep_cur->ep_hw_idx == CEP) {
-		base->CEPCTL = HSUSBD_CEPCTL_STALL;
-	} else {
-		uint32_t eprspctl = ep_base->EPRSPCTL;
+	if (config->is_hsusbd) {
+		HSUSBD_T *base = config->base;
+		HSUSBD_EP_T *ep_base = numaker_usbd_ep_base(dev, ep_cur->ep_hw_idx);
 
-		eprspctl &= ~(HSUSBD_EPRSPCTL_HALT_Msk | HSUSBD_EPRSPCTL_TOGGLE_Msk);
-		eprspctl |= HSUSBD_EP_RSPCTL_HALT;
-		ep_base->EPRSPCTL = eprspctl;
+		if (ep_cur->ep_hw_idx == CEP) {
+			base->CEPCTL = HSUSBD_CEPCTL_STALL;
+		} else {
+			uint32_t eprspctl = ep_base->EPRSPCTL;
+
+			eprspctl &= ~(HSUSBD_EPRSPCTL_HALT_Msk | HSUSBD_EPRSPCTL_TOGGLE_Msk);
+			eprspctl |= HSUSBD_EP_RSPCTL_HALT;
+			ep_base->EPRSPCTL = eprspctl;
+		}
+	} else {
+		USBD_EP_T *ep_base = numaker_usbd_ep_base(dev, ep_cur->ep_hw_idx);
+
+		ep_base->CFGP |= USBD_CFGP_SSTALL_Msk;
+		numaker_usbd_ep_sync_udc_halt(ep_cur, true);
 	}
-#endif
 }
 
 /* Reset EP to unstalled and data toggle bit to 0 */
@@ -383,29 +381,32 @@ static inline void numaker_usbd_ep_clear_stall_n_data_toggle(struct numaker_usbd
 {
 	const struct device *dev = ep_cur->dev;
 	const struct udc_numaker_config *config = dev->config;
-	__maybe_unused USBD_T *base = config->base;
-	USBD_EP_T *ep_base = numaker_usbd_ep_base(dev, ep_cur->ep_hw_idx);
 
-#if DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_usbd)
-	/* Reset EP to unstalled */
-	ep_base->CFGP &= ~USBD_CFGP_SSTALL_Msk;
-	numaker_usbd_ep_sync_udc_halt(ep_cur, false);
+	if (config->is_hsusbd) {
+		HSUSBD_T *base = config->base;
+		HSUSBD_EP_T *ep_base = numaker_usbd_ep_base(dev, ep_cur->ep_hw_idx);
 
-	/* Reset EP data toggle bit to 0 */
-	ep_base->CFG &= ~USBD_CFG_DSQSYNC_Msk;
-#elif DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_hsusbd)
-	if (ep_cur->ep_hw_idx == CEP) {
-		/* Reset EP to unstalled and H/W will care toggle bit reset */
-		base->CEPCTL = 0;
+		if (ep_cur->ep_hw_idx == CEP) {
+			/* Reset EP to unstalled and H/W will care toggle bit reset */
+			base->CEPCTL = 0;
+		} else {
+			/* Reset EP to unstalled and its data toggle bit to 0 */
+			uint32_t eprspctl = ep_base->EPRSPCTL;
+
+			eprspctl &= ~(HSUSBD_EPRSPCTL_HALT_Msk | HSUSBD_EPRSPCTL_TOGGLE_Msk);
+			eprspctl |= HSUSBD_EP_RSPCTL_TOGGLE;
+			ep_base->EPRSPCTL = eprspctl;
+		}
 	} else {
-		/* Reset EP to unstalled and its data toggle bit to 0 */
-		uint32_t eprspctl = ep_base->EPRSPCTL;
+		USBD_EP_T *ep_base = numaker_usbd_ep_base(dev, ep_cur->ep_hw_idx);
 
-		eprspctl &= ~(HSUSBD_EPRSPCTL_HALT_Msk | HSUSBD_EPRSPCTL_TOGGLE_Msk);
-		eprspctl |= HSUSBD_EP_RSPCTL_TOGGLE;
-		ep_base->EPRSPCTL = eprspctl;
+		/* Reset EP to unstalled */
+		ep_base->CFGP &= ~USBD_CFGP_SSTALL_Msk;
+		numaker_usbd_ep_sync_udc_halt(ep_cur, false);
+
+		/* Reset EP data toggle bit to 0 */
+		ep_base->CFG &= ~USBD_CFG_DSQSYNC_Msk;
 	}
-#endif
 }
 
 static int numaker_usbd_send_msg(const struct device *dev, const struct numaker_usbd_msg *msg)
@@ -437,18 +438,22 @@ static int numaker_usbd_send_msg(const struct device *dev, const struct numaker_
 static int numaker_usbd_enable_usb_phy(const struct device *dev)
 {
 	const struct udc_numaker_config *config = dev->config;
-	USBD_T *base = config->base;
 
-#if DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_usbd)
-	base->ATTR |= USBD_ATTR_USBEN_Msk | USBD_ATTR_PHYEN_Msk;
-#elif DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_hsusbd)
-	base->PHYCTL |= HSUSBD_PHYCTL_PHYEN_Msk;
-	WAIT_FOR(base->PHYCTL & HSUSBD_PHYCTL_PHYCLKSTB_Msk, NUMAKER_HSUSBD_PHY_STABLE_TIMEOUT_US,
-		 ;);
-	if (!(base->PHYCTL & HSUSBD_PHYCTL_PHYCLKSTB_Msk)) {
-		return -EIO;
+	if (config->is_hsusbd) {
+		HSUSBD_T *base = config->base;
+
+		base->PHYCTL |= HSUSBD_PHYCTL_PHYEN_Msk;
+		WAIT_FOR(base->PHYCTL & HSUSBD_PHYCTL_PHYCLKSTB_Msk,
+			 NUMAKER_HSUSBD_PHY_STABLE_TIMEOUT_US,
+			 ;);
+		if (!(base->PHYCTL & HSUSBD_PHYCTL_PHYCLKSTB_Msk)) {
+			return -EIO;
+		}
+	} else {
+		USBD_T *base = config->base;
+
+		base->ATTR |= USBD_ATTR_USBEN_Msk | USBD_ATTR_PHYEN_Msk;
 	}
-#endif
 
 	return 0;
 }
@@ -456,7 +461,6 @@ static int numaker_usbd_enable_usb_phy(const struct device *dev)
 static int numaker_usbd_hw_setup(const struct device *dev)
 {
 	const struct udc_numaker_config *config = dev->config;
-	USBD_T *base = config->base;
 	int err;
 	struct numaker_scc_subsys scc_subsys;
 
@@ -469,33 +473,37 @@ static int numaker_usbd_hw_setup(const struct device *dev)
 	SYS_UnlockReg();
 
 	/* Configure USB role as USB Device and enable USB/PHY */
-#if DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_usbd)
+	if (config->is_hsusbd) {
 #if defined(CONFIG_SOC_SERIES_M46X)
-	SYS->USBPHY = (SYS->USBPHY & ~SYS_USBPHY_USBROLE_Msk) |
-		      (SYS_USBPHY_USBROLE_STD_USBD | SYS_USBPHY_USBEN_Msk | SYS_USBPHY_SBO_Msk);
+		/* Configure HSUSB role as USB Device and enable HSUSB/PHY */
+		SYS->USBPHY = (SYS->USBPHY &
+			       ~(SYS_USBPHY_HSUSBROLE_Msk | SYS_USBPHY_HSUSBACT_Msk)) |
+			      (SYS_USBPHY_HSUSBROLE_STD_USBD | SYS_USBPHY_HSUSBEN_Msk |
+			       SYS_USBPHY_SBO_Msk);
+		k_sleep(K_USEC(NUMAKER_HSUSBD_PHY_RESET_US));
+		SYS->USBPHY |= SYS_USBPHY_HSUSBACT_Msk;
+#elif defined(CONFIG_SOC_SERIES_M55M1X)
+		/* Configure HSUSB role as USB Device and enable HSUSB/PHY */
+		SYS->USBPHY = (SYS->USBPHY &
+			       ~(SYS_USBPHY_HSUSBROLE_Msk | SYS_USBPHY_HSUSBACT_Msk)) |
+			      (SYS_USBPHY_HSUSBROLE_STD_USBD | SYS_USBPHY_HSOTGPHYEN_Msk);
+		k_sleep(K_USEC(NUMAKER_HSUSBD_PHY_RESET_US));
+		SYS->USBPHY |= SYS_USBPHY_HSUSBACT_Msk;
+#endif
+	} else {
+#if defined(CONFIG_SOC_SERIES_M46X)
+		SYS->USBPHY = (SYS->USBPHY & ~SYS_USBPHY_USBROLE_Msk) |
+			      (SYS_USBPHY_USBROLE_STD_USBD | SYS_USBPHY_USBEN_Msk |
+			       SYS_USBPHY_SBO_Msk);
 #elif defined(CONFIG_SOC_SERIES_M2L31X)
-	SYS->USBPHY = (SYS->USBPHY & ~SYS_USBPHY_USBROLE_Msk) |
-		      (SYS_USBPHY_USBROLE_STD_USBD | SYS_USBPHY_USBEN_Msk | SYS_USBPHY_SBO_Msk);
+		SYS->USBPHY = (SYS->USBPHY & ~SYS_USBPHY_USBROLE_Msk) |
+			      (SYS_USBPHY_USBROLE_STD_USBD | SYS_USBPHY_USBEN_Msk |
+			       SYS_USBPHY_SBO_Msk);
 #elif defined(CONFIG_SOC_SERIES_M55M1X)
-	SYS->USBPHY = (SYS->USBPHY & ~SYS_USBPHY_USBROLE_Msk) |
-		      (SYS_USBPHY_USBROLE_STD_USBD | SYS_USBPHY_OTGPHYEN_Msk);
+		SYS->USBPHY = (SYS->USBPHY & ~SYS_USBPHY_USBROLE_Msk) |
+			      (SYS_USBPHY_USBROLE_STD_USBD | SYS_USBPHY_OTGPHYEN_Msk);
 #endif
-#elif DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_hsusbd)
-#if defined(CONFIG_SOC_SERIES_M46X)
-	/* Configure HSUSB role as USB Device and enable HSUSB/PHY */
-	SYS->USBPHY = (SYS->USBPHY & ~(SYS_USBPHY_HSUSBROLE_Msk | SYS_USBPHY_HSUSBACT_Msk)) |
-		      (SYS_USBPHY_HSUSBROLE_STD_USBD | SYS_USBPHY_HSUSBEN_Msk | SYS_USBPHY_SBO_Msk);
-	k_sleep(K_USEC(NUMAKER_HSUSBD_PHY_RESET_US));
-	SYS->USBPHY |= SYS_USBPHY_HSUSBACT_Msk;
-#elif defined(CONFIG_SOC_SERIES_M55M1X)
-	/* Configure HSUSB role as USB Device and enable HSUSB/PHY */
-	SYS->USBPHY = (SYS->USBPHY & ~(SYS_USBPHY_HSUSBROLE_Msk | SYS_USBPHY_HSUSBACT_Msk)) |
-		      (SYS_USBPHY_HSUSBROLE_STD_USBD | SYS_USBPHY_HSOTGPHYEN_Msk);
-	k_sleep(K_USEC(NUMAKER_HSUSBD_PHY_RESET_US));
-	SYS->USBPHY |= SYS_USBPHY_HSUSBACT_Msk;
-#endif
-
-#endif
+	}
 
 	/* Invoke Clock controller to enable module clock */
 	memset(&scc_subsys, 0x00, sizeof(scc_subsys));
@@ -533,13 +541,17 @@ static int numaker_usbd_hw_setup(const struct device *dev)
 	 */
 	reset_line_toggle_dt(&config->reset);
 
-#if DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_usbd)
-	/* Initialize USBD engine */
-	/* NOTE: Per USBD spec, BIT(6) is hidden. */
-	base->ATTR = USBD_ATTR_BYTEM_Msk | USBD_ATTR_PWRDN_Msk | BIT(6);
-#elif DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_hsusbd)
-	base->PHYCTL = 0;
-#endif
+	if (config->is_hsusbd) {
+		HSUSBD_T *base = config->base;
+
+		base->PHYCTL = 0;
+	} else {
+		USBD_T *base = config->base;
+
+		/* Initialize USBD engine */
+		/* NOTE: Per USBD spec, BIT(6) is hidden. */
+		base->ATTR = USBD_ATTR_BYTEM_Msk | USBD_ATTR_PWRDN_Msk | BIT(6);
+	}
 	err = numaker_usbd_enable_usb_phy(dev);
 	if (err < 0) {
 		LOG_ERR("Enable USB/PHY failed");
@@ -549,25 +561,27 @@ static int numaker_usbd_hw_setup(const struct device *dev)
 	/* Set SE0 for S/W disconnect */
 	numaker_usbd_sw_disconnect(dev);
 
-#if DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_usbd)
-	/* NOTE: Ignore DT maximum-speed with USBD fixed to full-speed */
-#elif DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_hsusbd)
-	/* Initiate high-speed negotiation (chirp during reset) */
+	if (config->is_hsusbd) {
+		HSUSBD_T *base = config->base;
+
+		/* Initiate high-speed negotiation (chirp during reset) */
 #if defined(CONFIG_UDC_DRIVER_HIGH_SPEED_SUPPORT_ENABLED)
-	switch (config->speed_idx) {
-	case 0:
-	case 1:
-		base->OPER &= ~HSUSBD_OPER_HISPDEN_Msk;
-		break;
-	case 2:
-	case 3:
-	default:
-		base->OPER |= HSUSBD_OPER_HISPDEN_Msk;
-	}
+		switch (config->speed_idx) {
+		case 0:
+		case 1:
+			base->OPER &= ~HSUSBD_OPER_HISPDEN_Msk;
+			break;
+		case 2:
+		case 3:
+		default:
+			base->OPER |= HSUSBD_OPER_HISPDEN_Msk;
+		}
 #else
-	base->OPER &= ~HSUSBD_OPER_HISPDEN_Msk;
+		base->OPER &= ~HSUSBD_OPER_HISPDEN_Msk;
 #endif
-#endif
+	} else {
+		/* NOTE: Ignore DT maximum-speed with USBD fixed to full-speed */
+	}
 
 	/* Initialize IRQ */
 	config->irq_config_func(dev);
@@ -581,7 +595,6 @@ cleanup:
 static void numaker_usbd_hw_shutdown(const struct device *dev)
 {
 	const struct udc_numaker_config *config = dev->config;
-	USBD_T *base = config->base;
 	struct numaker_scc_subsys scc_subsys;
 
 	SYS_UnlockReg();
@@ -593,11 +606,15 @@ static void numaker_usbd_hw_shutdown(const struct device *dev)
 	numaker_usbd_sw_disconnect(dev);
 
 	/* Disable USB/PHY */
-#if DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_usbd)
-	base->ATTR &= ~USBD_PHY_EN;
-#elif DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_hsusbd)
-	base->PHYCTL &= ~HSUSBD_PHYCTL_PHYEN_Msk;
-#endif
+	if (config->is_hsusbd) {
+		HSUSBD_T *base = config->base;
+
+		base->PHYCTL &= ~HSUSBD_PHYCTL_PHYEN_Msk;
+	} else {
+		USBD_T *base = config->base;
+
+		base->ATTR &= ~USBD_PHY_EN;
+	}
 
 	/* Invoke Clock controller to disable module clock */
 	memset(&scc_subsys, 0x00, sizeof(scc_subsys));
@@ -618,15 +635,16 @@ static void numaker_usbd_hw_shutdown(const struct device *dev)
 static void numaker_usbd_vbus_plug_th(const struct device *dev)
 {
 	const struct udc_numaker_config *config = dev->config;
-	__maybe_unused USBD_T *base = config->base;
 	struct numaker_usbd_msg msg = {0};
 
-#if DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_usbd)
-	/* Enable back USB/PHY */
-	base->ATTR |= USBD_ATTR_USBEN_Msk | USBD_ATTR_PHYEN_Msk;
-#elif DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_hsusbd)
-	/* For HSUSBD, enable back USB/PHY will be done in bottom-half for needed wait. */
-#endif
+	if (config->is_hsusbd) {
+		/* For HSUSBD, enable back USB/PHY will be done in bottom-half for needed wait. */
+	} else {
+		USBD_T *base = config->base;
+
+		/* Enable back USB/PHY */
+		base->ATTR |= USBD_ATTR_USBEN_Msk | USBD_ATTR_PHYEN_Msk;
+	}
 
 	/* Message for bottom-half processing */
 	msg.type = NUMAKER_USBD_MSG_TYPE_ATTACH;
@@ -639,15 +657,18 @@ static void numaker_usbd_vbus_plug_th(const struct device *dev)
 static void numaker_usbd_vbus_unplug_th(const struct device *dev)
 {
 	const struct udc_numaker_config *config = dev->config;
-	USBD_T *base = config->base;
 
-#if DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_usbd)
-	/* Disable USB */
-	base->ATTR &= ~USBD_USB_EN;
-#elif DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_hsusbd)
-	/* Disable USB/PHY */
-	base->PHYCTL &= ~HSUSBD_PHYCTL_PHYEN_Msk;
-#endif
+	if (config->is_hsusbd) {
+		HSUSBD_T *base = config->base;
+
+		/* Disable USB/PHY */
+		base->PHYCTL &= ~HSUSBD_PHYCTL_PHYEN_Msk;
+	} else {
+		USBD_T *base = config->base;
+
+		/* Disable USB */
+		base->ATTR &= ~USBD_USB_EN;
+	}
 
 	/* UDC stack would handle bottom-half processing */
 	udc_submit_event(dev, UDC_EVT_VBUS_REMOVED, 0);
@@ -655,13 +676,11 @@ static void numaker_usbd_vbus_unplug_th(const struct device *dev)
 	LOG_DBG("USB unplug");
 }
 
-#if DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_usbd)
 /* Interrupt top half processing for bus wakeup */
 static void numaker_usbd_bus_wakeup_th(const struct device *dev)
 {
 	LOG_DBG("USB wake-up");
 }
-#endif
 
 /* Interrupt top half processing for bus reset */
 static void numaker_usbd_bus_reset_th(const struct device *dev)
@@ -674,17 +693,12 @@ static void numaker_usbd_bus_reset_th(const struct device *dev)
 	USBD_EP_T *ep_base;
 	struct numaker_usbd_msg msg = {0};
 
-#if DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_usbd)
 	/* Enable back USB/PHY */
 	base->ATTR |= USBD_ATTR_USBEN_Msk | USBD_ATTR_PHYEN_Msk;
-#elif DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_hsusbd)
-	/* For HSUSBD, enable back USB/PHY will be done in bottom-half for needed wait. */
-#endif
 
 	for (; ep_cur != ep_end; ep_cur++) {
 		ep_base = numaker_usbd_ep_base(dev, ep_cur->ep_hw_idx);
 
-#if DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_usbd)
 		/* For USBD, no separate EP interrupt control */
 
 		/* Cancel EP on-going transaction */
@@ -700,7 +714,33 @@ static void numaker_usbd_bus_reset_th(const struct device *dev)
 		if (ep_cur->ep_hw_idx >= (EP0 + 2)) {
 			ep_base->CFG = 0;
 		}
-#elif DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_hsusbd)
+	}
+
+	numaker_usbd_reset_addr(dev);
+
+	/* Message for bottom-half processing */
+	msg.type = NUMAKER_USBD_MSG_TYPE_RESET;
+	numaker_usbd_send_msg(dev, &msg);
+
+	LOG_DBG("USB reset");
+}
+
+/* Interrupt top half processing for bus reset */
+static void numaker_hsusbd_bus_reset_th(const struct device *dev)
+{
+	const struct udc_numaker_config *config = dev->config;
+	HSUSBD_T *base = config->base;
+	struct udc_numaker_data *priv = udc_get_private(dev);
+	struct numaker_usbd_ep *ep_cur = priv->ep_pool;
+	struct numaker_usbd_ep *ep_end = priv->ep_pool + priv->ep_pool_size;
+	HSUSBD_EP_T *ep_base;
+	struct numaker_usbd_msg msg = {0};
+
+	/* For HSUSBD, enable back USB/PHY will be done in bottom-half for needed wait. */
+
+	for (; ep_cur != ep_end; ep_cur++) {
+		ep_base = numaker_usbd_ep_base(dev, ep_cur->ep_hw_idx);
+
 		if (ep_cur->ep_hw_idx == CEP) {
 			/* Disable CEP interrupt (exclude Setup) */
 			base->CEPINTEN &= ~(HSUSBD_CEPINTEN_TXPKIEN_Msk |
@@ -729,7 +769,6 @@ static void numaker_usbd_bus_reset_th(const struct device *dev)
 			/* Disable all non-CTRL EPs */
 			ep_base->EPCFG &= ~HSUSBD_EPCFG_EPEN_Msk;
 		}
-#endif
 	}
 
 	numaker_usbd_reset_addr(dev);
@@ -745,18 +784,19 @@ static void numaker_usbd_bus_reset_th(const struct device *dev)
 static void numaker_usbd_bus_suspend_th(const struct device *dev)
 {
 	const struct udc_numaker_config *config = dev->config;
-	__maybe_unused USBD_T *base = config->base;
 
-#if DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_usbd)
-	/* Enable USB but disable PHY */
-	base->ATTR &= ~USBD_PHY_EN;
-#elif DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_hsusbd)
-	/* NOT disable USB/PHY
-	 *
-	 * For HSUSBD, unlike USBD, bus events (Reset/Suspend/Resume)
-	 * will get unrecognized after USB/PHY is disabled.
-	 */
-#endif
+	if (config->is_hsusbd) {
+		/* NOT disable USB/PHY
+		 *
+		 * For HSUSBD, unlike USBD, bus events (Reset/Suspend/Resume)
+		 * will get unrecognized after USB/PHY is disabled.
+		 */
+	} else {
+		USBD_T *base = config->base;
+
+		/* Enable USB but disable PHY */
+		base->ATTR &= ~USBD_PHY_EN;
+	}
 
 	/* UDC stack would handle bottom-half processing */
 	udc_submit_event(dev, UDC_EVT_SUSPEND, 0);
@@ -768,15 +808,16 @@ static void numaker_usbd_bus_suspend_th(const struct device *dev)
 static void numaker_usbd_bus_resume_th(const struct device *dev)
 {
 	const struct udc_numaker_config *config = dev->config;
-	__maybe_unused USBD_T *base = config->base;
 	struct numaker_usbd_msg msg = {0};
 
-#if DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_usbd)
-	/* Enable back USB/PHY */
-	base->ATTR |= USBD_ATTR_USBEN_Msk | USBD_ATTR_PHYEN_Msk;
-#elif DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_hsusbd)
-	/* For HSUSBD, enable back USB/PHY will be done in bottom-half for needed wait. */
-#endif
+	if (config->is_hsusbd) {
+		/* For HSUSBD, enable back USB/PHY will be done in bottom-half for needed wait. */
+	} else {
+		USBD_T *base = config->base;
+
+		/* Enable back USB/PHY */
+		base->ATTR |= USBD_ATTR_USBEN_Msk | USBD_ATTR_PHYEN_Msk;
+	}
 
 	/* Message for bottom-half processing */
 	msg.type = NUMAKER_USBD_MSG_TYPE_RESUME;
@@ -794,7 +835,6 @@ static void numaker_usbd_sof_th(const struct device *dev)
 
 static void numaker_usbd_setup_copy_to_user(const struct device *dev, uint8_t *usrbuf);
 
-#if DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_usbd)
 /* Interrupt top half processing for Setup packet */
 static void numaker_usbd_setup_th(const struct device *dev)
 {
@@ -870,12 +910,12 @@ static void numaker_usbd_ep_th(const struct device *dev, uint32_t ep_hw_idx)
 	}
 	numaker_usbd_send_msg(dev, &msg);
 }
-#elif DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_hsusbd)
+
 /* Interrupt top half processing for CTRL transfer */
 static void numaker_hsusbd_cep_th(const struct device *dev, uint32_t cepintsts)
 {
 	const struct udc_numaker_config *config = dev->config;
-	USBD_T *base = config->base;
+	HSUSBD_T *base = config->base;
 	struct numaker_usbd_msg msg = {0};
 
 	/* Setup token */
@@ -946,7 +986,7 @@ static void numaker_hsusbd_cep_th(const struct device *dev, uint32_t cepintsts)
 /* Interrupt top half processing for BULK/INT/ISO transfer */
 static void numaker_hsusbd_ep_th(const struct device *dev, uint32_t ep_hw_idx, uint32_t epintsts)
 {
-	USBD_EP_T *ep_base = numaker_usbd_ep_base(dev, ep_hw_idx);
+	HSUSBD_EP_T *ep_base = numaker_usbd_ep_base(dev, ep_hw_idx);
 	uint8_t ep_dir;
 	uint8_t ep_idx;
 	uint8_t ep;
@@ -976,9 +1016,7 @@ static void numaker_hsusbd_ep_th(const struct device *dev, uint32_t ep_hw_idx, u
 	}
 	numaker_usbd_send_msg(dev, &msg);
 }
-#endif
 
-#if DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_usbd)
 /* USBD SRAM base for DMA */
 static inline uint32_t numaker_usbd_buf_base(const struct device *dev)
 {
@@ -987,31 +1025,33 @@ static inline uint32_t numaker_usbd_buf_base(const struct device *dev)
 
 	return ((uint32_t)base + 0x800ul);
 }
-#endif
 
 /* Copy Setup packet to user buffer */
 static void numaker_usbd_setup_copy_to_user(const struct device *dev, uint8_t *usrbuf)
 {
 	const struct udc_numaker_config *config = dev->config;
-	USBD_T *base = config->base;
-	__maybe_unused uint32_t dmabuf_addr;
 
-#if DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_usbd)
-	dmabuf_addr = numaker_usbd_buf_base(dev) + (base->STBUFSEG & USBD_STBUFSEG_STBUFSEG_Msk);
-	bytecpy(usrbuf, (uint8_t *)dmabuf_addr, 8ul);
-#elif DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_hsusbd)
-	*usrbuf = (uint8_t)(base->SETUP1_0 & 0xfful);
-	*(usrbuf + 1) = (uint8_t)((base->SETUP1_0 >> 8) & 0xfful);
-	*(usrbuf + 2) = (uint8_t)(base->SETUP3_2 & 0xfful);
-	*(usrbuf + 3) = (uint8_t)((base->SETUP3_2 >> 8) & 0xfful);
-	*(usrbuf + 4) = (uint8_t)(base->SETUP5_4 & 0xfful);
-	*(usrbuf + 5) = (uint8_t)((base->SETUP5_4 >> 8) & 0xfful);
-	*(usrbuf + 6) = (uint8_t)(base->SETUP7_6 & 0xfful);
-	*(usrbuf + 7) = (uint8_t)((base->SETUP7_6 >> 8) & 0xfful);
-#endif
+	if (config->is_hsusbd) {
+		HSUSBD_T *base = config->base;
+
+		*usrbuf = (uint8_t)(base->SETUP1_0 & 0xfful);
+		*(usrbuf + 1) = (uint8_t)((base->SETUP1_0 >> 8) & 0xfful);
+		*(usrbuf + 2) = (uint8_t)(base->SETUP3_2 & 0xfful);
+		*(usrbuf + 3) = (uint8_t)((base->SETUP3_2 >> 8) & 0xfful);
+		*(usrbuf + 4) = (uint8_t)(base->SETUP5_4 & 0xfful);
+		*(usrbuf + 5) = (uint8_t)((base->SETUP5_4 >> 8) & 0xfful);
+		*(usrbuf + 6) = (uint8_t)(base->SETUP7_6 & 0xfful);
+		*(usrbuf + 7) = (uint8_t)((base->SETUP7_6 >> 8) & 0xfful);
+	} else {
+		USBD_T *base = config->base;
+		uint32_t dmabuf_addr;
+
+		dmabuf_addr = numaker_usbd_buf_base(dev) +
+			      (base->STBUFSEG & USBD_STBUFSEG_STBUFSEG_Msk);
+		bytecpy(usrbuf, (uint8_t *)dmabuf_addr, 8ul);
+	}
 }
 
-#if DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_hsusbd)
 #if defined(CONFIG_UDC_NUMAKER_DMA)
 /* Transfer data between user buffer and USB buffer by DMA
  *
@@ -1023,7 +1063,7 @@ static int numaker_hsusbd_ep_xfer_user_dma(struct numaker_usbd_ep *ep_cur, uint8
 	const struct device *dev = ep_cur->dev;
 	const struct udc_numaker_config *config = dev->config;
 	struct udc_numaker_data *priv = udc_get_private(dev);
-	USBD_T *base = config->base;
+	HSUSBD_T *base = config->base;
 	int err;
 
 	/* Reset DMA semaphore */
@@ -1081,8 +1121,8 @@ static int numaker_hsusbd_ep_copy_to_user(struct numaker_usbd_ep *ep_cur, uint8_
 {
 	const struct device *dev = ep_cur->dev;
 	const struct udc_numaker_config *config = dev->config;
-	USBD_T *base = config->base;
-	USBD_EP_T *ep_base = numaker_usbd_ep_base(dev, ep_cur->ep_hw_idx);
+	HSUSBD_T *base = config->base;
+	__maybe_unused HSUSBD_EP_T *ep_base = numaker_usbd_ep_base(dev, ep_cur->ep_hw_idx);
 
 	__ASSERT_NO_MSG(size);
 
@@ -1128,8 +1168,8 @@ static int numaker_hsusbd_ep_copy_from_user(struct numaker_usbd_ep *ep_cur, cons
 {
 	const struct device *dev = ep_cur->dev;
 	const struct udc_numaker_config *config = dev->config;
-	USBD_T *base = config->base;
-	USBD_EP_T *ep_base = numaker_usbd_ep_base(dev, ep_cur->ep_hw_idx);
+	HSUSBD_T *base = config->base;
+	__maybe_unused HSUSBD_EP_T *ep_base = numaker_usbd_ep_base(dev, ep_cur->ep_hw_idx);
 
 	__ASSERT_NO_MSG(size);
 
@@ -1166,8 +1206,6 @@ static int numaker_hsusbd_ep_copy_from_user(struct numaker_usbd_ep *ep_cur, cons
 	return 0;
 }
 
-#endif
-
 /* Copy data to user buffer
  *
  * size holds size to copy/copied on input/output
@@ -1177,44 +1215,49 @@ static int numaker_usbd_ep_copy_to_user(struct numaker_usbd_ep *ep_cur, uint8_t 
 {
 	const struct device *dev = ep_cur->dev;
 	const struct udc_numaker_config *config = dev->config;
-	__maybe_unused USBD_T *base = config->base;
-	USBD_EP_T *ep_base = numaker_usbd_ep_base(dev, ep_cur->ep_hw_idx);
-	__maybe_unused uint32_t dmabuf_addr;
 	uint32_t data_rmn;
-	__maybe_unused int err;
 
 	__ASSERT_NO_MSG(size);
 	__ASSERT_NO_MSG(ep_cur->dmabuf_valid);
 
-#if DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_usbd)
-	dmabuf_addr = numaker_usbd_buf_base(dev) + ep_base->BUFSEG;
+	if (config->is_hsusbd) {
+		HSUSBD_T *base = config->base;
+		HSUSBD_EP_T *ep_base = numaker_usbd_ep_base(dev, ep_cur->ep_hw_idx);
 
-	/* NOTE: See comment on mxpld_ctrlout for why make one copy of CTRL OUT's MXPLD */
-	if (ep_cur->addr == USB_CONTROL_EP_OUT) {
-		data_rmn = ep_cur->mxpld_ctrlout;
+		if (ep_cur->ep_hw_idx == CEP) {
+			data_rmn = (base->CEPDATCNT & HSUSBD_CEPDATCNT_DATCNT_Msk) >>
+				   HSUSBD_CEPDATCNT_DATCNT_Pos;
+		} else {
+			data_rmn = (ep_base->EPDATCNT & HSUSBD_EPDATCNT_DATCNT_Msk) >>
+				   HSUSBD_EPDATCNT_DATCNT_Pos;
+		}
 	} else {
-		data_rmn = (ep_base->MXPLD & USBD_MXPLD_MXPLD_Msk) >> USBD_MXPLD_MXPLD_Pos;
+		USBD_EP_T *ep_base = numaker_usbd_ep_base(dev, ep_cur->ep_hw_idx);
+
+		/* NOTE: See comment on mxpld_ctrlout for why make one copy of CTRL OUT's MXPLD */
+		if (ep_cur->addr == USB_CONTROL_EP_OUT) {
+			data_rmn = ep_cur->mxpld_ctrlout;
+		} else {
+			data_rmn = (ep_base->MXPLD & USBD_MXPLD_MXPLD_Msk) >> USBD_MXPLD_MXPLD_Pos;
+		}
 	}
-#elif DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_hsusbd)
-	if (ep_cur->ep_hw_idx == CEP) {
-		data_rmn = (base->CEPDATCNT & HSUSBD_CEPDATCNT_DATCNT_Msk) >>
-			   HSUSBD_CEPDATCNT_DATCNT_Pos;
-	} else {
-		data_rmn = (ep_base->EPDATCNT & HSUSBD_EPDATCNT_DATCNT_Msk) >>
-			   HSUSBD_EPDATCNT_DATCNT_Pos;
-	}
-#endif
 
 	*size = MIN(*size, data_rmn);
 
-#if DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_usbd)
-	bytecpy(usrbuf, (uint8_t *)dmabuf_addr, *size);
-#elif DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_hsusbd)
-	err = numaker_hsusbd_ep_copy_to_user(ep_cur, usrbuf, size);
-	if (err < 0) {
-		return err;
+	if (config->is_hsusbd) {
+		int err;
+
+		err = numaker_hsusbd_ep_copy_to_user(ep_cur, usrbuf, size);
+		if (err < 0) {
+			return err;
+		}
+	} else {
+		USBD_EP_T *ep_base = numaker_usbd_ep_base(dev, ep_cur->ep_hw_idx);
+		uint32_t dmabuf_addr;
+
+		dmabuf_addr = numaker_usbd_buf_base(dev) + ep_base->BUFSEG;
+		bytecpy(usrbuf, (uint8_t *)dmabuf_addr, *size);
 	}
-#endif
 
 	data_rmn -= *size;
 
@@ -1233,9 +1276,7 @@ static int numaker_usbd_ep_copy_from_user(struct numaker_usbd_ep *ep_cur, const 
 					  uint32_t *size)
 {
 	const struct device *dev = ep_cur->dev;
-	__maybe_unused USBD_EP_T *ep_base = numaker_usbd_ep_base(dev, ep_cur->ep_hw_idx);
-	__maybe_unused uint32_t dmabuf_addr;
-	__maybe_unused int err;
+	const struct udc_numaker_config *config = dev->config;
 
 	__ASSERT_NO_MSG(size);
 	__ASSERT_NO_MSG(ep_cur->dmabuf_valid);
@@ -1244,15 +1285,20 @@ static int numaker_usbd_ep_copy_from_user(struct numaker_usbd_ep *ep_cur, const 
 
 	*size = MIN(*size, ep_cur->mps);
 
-#if DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_usbd)
-	dmabuf_addr = numaker_usbd_buf_base(dev) + ep_base->BUFSEG;
-	bytecpy((uint8_t *)dmabuf_addr, (uint8_t *)usrbuf, *size);
-#elif DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_hsusbd)
-	err = numaker_hsusbd_ep_copy_from_user(ep_cur, usrbuf, size);
-	if (err < 0) {
-		return err;
+	if (config->is_hsusbd) {
+		int err;
+
+		err = numaker_hsusbd_ep_copy_from_user(ep_cur, usrbuf, size);
+		if (err < 0) {
+			return err;
+		}
+	} else {
+		USBD_EP_T *ep_base = numaker_usbd_ep_base(dev, ep_cur->ep_hw_idx);
+		uint32_t dmabuf_addr;
+
+		dmabuf_addr = numaker_usbd_buf_base(dev) + ep_base->BUFSEG;
+		bytecpy((uint8_t *)dmabuf_addr, (uint8_t *)usrbuf, *size);
 	}
-#endif
 
 	return 0;
 }
@@ -1262,20 +1308,23 @@ static void numaker_usbd_ep_config_dmabuf(struct numaker_usbd_ep *ep_cur, uint32
 {
 	const struct device *dev = ep_cur->dev;
 	const struct udc_numaker_config *config = dev->config;
-	__maybe_unused USBD_T *base = config->base;
-	USBD_EP_T *ep_base = numaker_usbd_ep_base(dev, ep_cur->ep_hw_idx);
 
-#if DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_usbd)
-	ep_base->BUFSEG = dmabuf_base;
-#elif DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_hsusbd)
-	if (ep_cur->ep_hw_idx == CEP) {
-		base->CEPBUFSTART = dmabuf_base;
-		base->CEPBUFEND = dmabuf_base + dmabuf_size - 1ul;
+	if (config->is_hsusbd) {
+		HSUSBD_T *base = config->base;
+		HSUSBD_EP_T *ep_base = numaker_usbd_ep_base(dev, ep_cur->ep_hw_idx);
+
+		if (ep_cur->ep_hw_idx == CEP) {
+			base->CEPBUFSTART = dmabuf_base;
+			base->CEPBUFEND = dmabuf_base + dmabuf_size - 1ul;
+		} else {
+			ep_base->EPBUFSTART = dmabuf_base;
+			ep_base->EPBUFEND = dmabuf_base + dmabuf_size - 1ul;
+		}
 	} else {
-		ep_base->EPBUFSTART = dmabuf_base;
-		ep_base->EPBUFEND = dmabuf_base + dmabuf_size - 1ul;
+		USBD_EP_T *ep_base = numaker_usbd_ep_base(dev, ep_cur->ep_hw_idx);
+
+		ep_base->BUFSEG = dmabuf_base;
 	}
-#endif
 
 	ep_cur->dmabuf_valid = true;
 	ep_cur->dmabuf_base = dmabuf_base;
@@ -1287,32 +1336,35 @@ static void numaker_usbd_ep_abort(struct numaker_usbd_ep *ep_cur, bool excl_ctrl
 	struct udc_ep_config *ep_cfg;
 	const struct device *dev = ep_cur->dev;
 	const struct udc_numaker_config *config = dev->config;
-	__maybe_unused USBD_T *base = config->base;
-	USBD_EP_T *ep_base = numaker_usbd_ep_base(dev, ep_cur->ep_hw_idx);
 
-#if DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_usbd)
-	/* Abort EP on-going transaction */
-	if ((ep_cur->ep_hw_idx != EP0 && ep_cur->ep_hw_idx != EP1) || !excl_ctrl) {
-		ep_base->CFGP |= USBD_CFGP_CLRRDY_Msk;
-	}
-#elif DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_hsusbd)
-	/* For HSUSBD, there is no control for aborting EP on-going
-	 * transaction, but there is related control of flush EP FIFO.
-	 */
-	if (ep_cur->ep_hw_idx == CEP) {
-		if (!excl_ctrl) {
-			/* Flush CEP FIFO */
-			base->CEPCTL = HSUSBD_CEPCTL_FLUSH | HSUSBD_CEPCTL_NAKCLR_Msk;
+	if (config->is_hsusbd) {
+		HSUSBD_T *base = config->base;
+		HSUSBD_EP_T *ep_base = numaker_usbd_ep_base(dev, ep_cur->ep_hw_idx);
+
+		/* For HSUSBD, there is no control for aborting EP on-going
+		 * transaction, but there is related control of flush EP FIFO.
+		 */
+		if (ep_cur->ep_hw_idx == CEP) {
+			if (!excl_ctrl) {
+				/* Flush CEP FIFO */
+				base->CEPCTL = HSUSBD_CEPCTL_FLUSH | HSUSBD_CEPCTL_NAKCLR_Msk;
+			}
+		} else {
+			/* Flush EP FIFO */
+			uint32_t eprspctl = ep_base->EPRSPCTL;
+
+			eprspctl &= ~HSUSBD_EPRSPCTL_TOGGLE_Msk;
+			eprspctl |= HSUSBD_EP_RSPCTL_FLUSH;
+			ep_base->EPRSPCTL = eprspctl;
 		}
 	} else {
-		/* Flush EP FIFO */
-		uint32_t eprspctl = ep_base->EPRSPCTL;
+		USBD_EP_T *ep_base = numaker_usbd_ep_base(dev, ep_cur->ep_hw_idx);
 
-		eprspctl &= ~HSUSBD_EPRSPCTL_TOGGLE_Msk;
-		eprspctl |= HSUSBD_EP_RSPCTL_FLUSH;
-		ep_base->EPRSPCTL = eprspctl;
+		/* Abort EP on-going transaction */
+		if ((ep_cur->ep_hw_idx != EP0 && ep_cur->ep_hw_idx != EP1) || !excl_ctrl) {
+			ep_base->CFGP |= USBD_CFGP_CLRRDY_Msk;
+		}
 	}
-#endif
 
 	if (ep_cur->addr_valid) {
 		ep_cfg = udc_get_ep_cfg(dev, ep_cur->addr);
@@ -1332,7 +1384,6 @@ static void numaker_usbd_ep_config_major(struct numaker_usbd_ep *ep_cur,
 	ep_cur->mps = ep_cfg->mps;
 
 	/* Configure EP transfer type, DATA0/1 toggle, direction, number, etc. */
-#if DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_usbd)
 	ep_cur->ep_hw_cfg = 0;
 
 	/* Clear STALL Response in Setup stage */
@@ -1356,7 +1407,20 @@ static void numaker_usbd_ep_config_major(struct numaker_usbd_ep *ep_cur,
 			     USBD_CFG_EPNUM_Msk;
 
 	ep_base->CFG = ep_cur->ep_hw_cfg;
-#elif DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_hsusbd)
+}
+
+/* Configure EP major common parts */
+static void numaker_hsusbd_ep_config_major(struct numaker_usbd_ep *ep_cur,
+					   struct udc_ep_config *const ep_cfg)
+{
+	const struct device *dev = ep_cur->dev;
+	HSUSBD_EP_T *ep_base = numaker_usbd_ep_base(dev, ep_cur->ep_hw_idx);
+	uint8_t ep_type = ep_cfg->attributes & USB_EP_TRANSFER_TYPE_MASK;
+
+	ep_cur->mps_valid = true;
+	ep_cur->mps = ep_cfg->mps;
+
+	/* Configure EP transfer type, DATA0/1 toggle, direction, number, etc. */
 	if (ep_cur->ep_hw_idx == CEP) {
 		/* EP type: CONTROL */
 		__ASSERT_NO_MSG(ep_type == USB_EP_TYPE_CONTROL);
@@ -1404,21 +1468,17 @@ static void numaker_usbd_ep_config_major(struct numaker_usbd_ep *ep_cur,
 		ep_base->EPRSPCTL = ep_cur->ep_hw_rspctl;
 		ep_base->EPCFG = ep_cur->ep_hw_cfg;
 	}
-#endif
 }
 
 static void numaker_usbd_ep_enable(struct numaker_usbd_ep *ep_cur)
 {
 	const struct device *dev = ep_cur->dev;
-	const struct udc_numaker_config *config = dev->config;
-	__maybe_unused USBD_T *base = config->base;
 	USBD_EP_T *ep_base = numaker_usbd_ep_base(dev, ep_cur->ep_hw_idx);
 
 	/* For safe, EP (re-)enable from clean state */
 	numaker_usbd_ep_abort(ep_cur, false);
 	numaker_usbd_ep_clear_stall_n_data_toggle(ep_cur);
 
-#if DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_usbd)
 	/* Enable EP to IN/OUT */
 	ep_cur->ep_hw_cfg &= ~USBD_CFG_STATE_Msk;
 	if (USB_EP_DIR_IS_IN(ep_cur->addr)) {
@@ -1429,8 +1489,19 @@ static void numaker_usbd_ep_enable(struct numaker_usbd_ep *ep_cur)
 	ep_base->CFG = ep_cur->ep_hw_cfg;
 
 	/* For USBD, no separate EP interrupt control */
+}
 
-#elif DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_hsusbd)
+static void numaker_hsusbd_ep_enable(struct numaker_usbd_ep *ep_cur)
+{
+	const struct device *dev = ep_cur->dev;
+	const struct udc_numaker_config *config = dev->config;
+	HSUSBD_T *base = config->base;
+	HSUSBD_EP_T *ep_base = numaker_usbd_ep_base(dev, ep_cur->ep_hw_idx);
+
+	/* For safe, EP (re-)enable from clean state */
+	numaker_usbd_ep_abort(ep_cur, false);
+	numaker_usbd_ep_clear_stall_n_data_toggle(ep_cur);
+
 	if (ep_cur->ep_hw_idx == CEP) {
 		/* CEP global interrupt should have enabled for resident. */
 
@@ -1446,23 +1517,27 @@ static void numaker_usbd_ep_enable(struct numaker_usbd_ep *ep_cur)
 
 		/* To enable EP local interrupt in EP trigger */
 	}
-#endif
 }
 
 static void numaker_usbd_ep_disable(struct numaker_usbd_ep *ep_cur)
 {
 	const struct device *dev = ep_cur->dev;
-	const struct udc_numaker_config *config = dev->config;
-	__maybe_unused USBD_T *base = config->base;
 	USBD_EP_T *ep_base = numaker_usbd_ep_base(dev, ep_cur->ep_hw_idx);
 
-#if DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_usbd)
 	/* For USBD, no separate EP interrupt control */
 
 	/* Disable EP */
 	ep_cur->ep_hw_cfg = (ep_cur->ep_hw_cfg & ~USBD_CFG_STATE_Msk) | USBD_CFG_EPMODE_DISABLE;
 	ep_base->CFG = ep_cur->ep_hw_cfg;
-#elif DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_hsusbd)
+}
+
+static void numaker_hsusbd_ep_disable(struct numaker_usbd_ep *ep_cur)
+{
+	const struct device *dev = ep_cur->dev;
+	const struct udc_numaker_config *config = dev->config;
+	HSUSBD_T *base = config->base;
+	HSUSBD_EP_T *ep_base = numaker_usbd_ep_base(dev, ep_cur->ep_hw_idx);
+
 	if (ep_cur->ep_hw_idx == CEP) {
 		/* Disable CEP local interrupt */
 		if (USB_EP_DIR_IS_IN(ep_cur->addr)) {
@@ -1487,26 +1562,16 @@ static void numaker_usbd_ep_disable(struct numaker_usbd_ep *ep_cur)
 		ep_cur->ep_hw_cfg &= ~HSUSBD_EPCFG_EPEN_Msk;
 		ep_base->EPCFG = ep_cur->ep_hw_cfg;
 	}
-#endif
 }
 
 /* Start EP data transaction */
-static void numaker_usbd_ep_trigger(struct numaker_usbd_ep *ep_cur, uint32_t len)
+static void numaker_hsusbd_ep_trigger(struct numaker_usbd_ep *ep_cur, uint32_t len)
 {
-	struct udc_ep_config *ep_cfg;
 	const struct device *dev = ep_cur->dev;
 	const struct udc_numaker_config *config = dev->config;
-	__maybe_unused USBD_T *base = config->base;
-	USBD_EP_T *ep_base = numaker_usbd_ep_base(dev, ep_cur->ep_hw_idx);
+	HSUSBD_T *base = config->base;
+	HSUSBD_EP_T *ep_base = numaker_usbd_ep_base(dev, ep_cur->ep_hw_idx);
 
-	__ASSERT_NO_MSG(ep_cur->addr_valid);
-
-	ep_cfg = udc_get_ep_cfg(dev, ep_cur->addr);
-	udc_ep_set_busy(ep_cfg, true);
-
-#if DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_usbd)
-	ep_base->MXPLD = len;
-#elif DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_hsusbd)
 	if (ep_cur->ep_hw_idx == CEP) {
 		if (USB_EP_DIR_IS_IN(ep_cur->addr)) {
 			if (udc_ctrl_stage_is_status_in(dev) || udc_ctrl_stage_is_no_data(dev)) {
@@ -1573,7 +1638,27 @@ static void numaker_usbd_ep_trigger(struct numaker_usbd_ep *ep_cur, uint32_t len
 			ep_base->EPINTEN |= HSUSBD_EPINTEN_RXPKIEN_Msk;
 		}
 	}
-#endif
+}
+
+/* Start EP data transaction */
+static void numaker_usbd_ep_trigger(struct numaker_usbd_ep *ep_cur, uint32_t len)
+{
+	struct udc_ep_config *ep_cfg;
+	const struct device *dev = ep_cur->dev;
+	const struct udc_numaker_config *config = dev->config;
+
+	__ASSERT_NO_MSG(ep_cur->addr_valid);
+
+	ep_cfg = udc_get_ep_cfg(dev, ep_cur->addr);
+	udc_ep_set_busy(ep_cfg, true);
+
+	if (config->is_hsusbd) {
+		numaker_hsusbd_ep_trigger(ep_cur, len);
+	} else {
+		USBD_EP_T *ep_base = numaker_usbd_ep_base(dev, ep_cur->ep_hw_idx);
+
+		ep_base->MXPLD = len;
+	}
 }
 
 static struct numaker_usbd_ep *numaker_usbd_ep_mgmt_alloc_ep(const struct device *dev)
@@ -1628,7 +1713,6 @@ static void numaker_usbd_ep_mgmt_init(const struct device *dev)
 {
 	const struct udc_numaker_config *config = dev->config;
 	struct udc_numaker_data *priv = udc_get_private(dev);
-	__maybe_unused USBD_T *base = config->base;
 	struct numaker_usbd_ep_mgmt *ep_mgmt = &priv->ep_mgmt;
 
 	struct numaker_usbd_ep *ep_cur;
@@ -1648,28 +1732,28 @@ static void numaker_usbd_ep_mgmt_init(const struct device *dev)
 		/* Pointer to the containing device */
 		ep_cur->dev = dev;
 
-#if DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_usbd)
-		/* BSP USBD driver EP handle
-		 *
-		 * ep_pool[0]: EP0 (CTRL OUT)
-		 * ep_pool[1]: EP1 (CTRL IN)
-		 * ep_pool[2~]: EP2, EP3, etc.
-		 */
-		ep_cur->ep_hw_idx = EP0 + (ep_cur - priv->ep_pool);
-#elif DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_hsusbd)
-		/* BSP HSUSBD driver EP handle
-		 *
-		 * ep_pool[0]: CEP (CTRL OUT)
-		 * ep_pool[1]: CEP (CTRL IN)
-		 * ep_pool[2~]: EPA, EPB, etc.
-		 */
-		ep_cur->ep_hw_idx = EPA + (ep_cur - priv->ep_pool);
-		if (ep_cur->ep_hw_idx == 0 || ep_cur->ep_hw_idx == 1) {
-			ep_cur->ep_hw_idx = CEP;
+		if (config->is_hsusbd) {
+			/* BSP HSUSBD driver EP handle
+			 *
+			 * ep_pool[0]: CEP (CTRL OUT)
+			 * ep_pool[1]: CEP (CTRL IN)
+			 * ep_pool[2~]: EPA, EPB, etc.
+			 */
+			ep_cur->ep_hw_idx = EPA + (ep_cur - priv->ep_pool);
+			if (ep_cur->ep_hw_idx == 0 || ep_cur->ep_hw_idx == 1) {
+				ep_cur->ep_hw_idx = CEP;
+			} else {
+				ep_cur->ep_hw_idx -= 2;
+			}
 		} else {
-			ep_cur->ep_hw_idx -= 2;
+			/* BSP USBD driver EP handle
+			 *
+			 * ep_pool[0]: EP0 (CTRL OUT)
+			 * ep_pool[1]: EP1 (CTRL IN)
+			 * ep_pool[2~]: EP2, EP3, etc.
+			 */
+			ep_cur->ep_hw_idx = EP0 + (ep_cur - priv->ep_pool);
 		}
-#endif
 	}
 
 	/* Reserve 1st/2nd EP H/W contexts for CTRL OUT/IN
@@ -1683,12 +1767,14 @@ static void numaker_usbd_ep_mgmt_init(const struct device *dev)
 	ep_mgmt->dmabuf_pos = 0;
 
 	/* Configure DMA buffer for Setup packet */
-#if DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_usbd)
-	base->STBUFSEG = ep_mgmt->dmabuf_pos;
-	ep_mgmt->dmabuf_pos += NUMAKER_USBD_DMABUF_SIZE_SETUP;
-#elif DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_hsusbd)
-	/* For HSUSBD, SETUP1_0, SETUP3_2, SETUP5_4, SETUP7_6 */
-#endif
+	if (config->is_hsusbd) {
+		/* For HSUSBD, SETUP1_0, SETUP3_2, SETUP5_4, SETUP7_6 */
+	} else {
+		USBD_T *base = config->base;
+
+		base->STBUFSEG = ep_mgmt->dmabuf_pos;
+		ep_mgmt->dmabuf_pos += NUMAKER_USBD_DMABUF_SIZE_SETUP;
+	}
 
 	/* Reserve 1st EP H/W context for CTRL OUT */
 	ep_cur = priv->ep_pool + 0;
@@ -1893,19 +1979,20 @@ static int numaker_usbd_ctrl_feed_dout(const struct device *dev, const size_t le
 /* Message handler for device plug-in */
 static int numaker_usbd_msg_handle_attach(const struct device *dev, struct numaker_usbd_msg *msg)
 {
+	const struct udc_numaker_config *config = dev->config;
 	int err;
 
 	__ASSERT_NO_MSG(msg->type == NUMAKER_USBD_MSG_TYPE_ATTACH);
 
-#if DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_usbd)
-	/* For USBD, enable back USB/PHY has done in ISR for unneeded wait. */
-#elif DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_hsusbd)
-	err = numaker_usbd_enable_usb_phy(dev);
-	if (err < 0) {
-		LOG_ERR("Enable USB/PHY failed");
-		return -err;
+	if (config->is_hsusbd) {
+		err = numaker_usbd_enable_usb_phy(dev);
+		if (err < 0) {
+			LOG_ERR("Enable USB/PHY failed");
+			return -err;
+		}
+	} else {
+		/* For USBD, enable back USB/PHY has done in ISR for unneeded wait. */
 	}
-#endif
 
 	err = udc_submit_event(dev, UDC_EVT_VBUS_READY, 0);
 
@@ -1915,19 +2002,20 @@ static int numaker_usbd_msg_handle_attach(const struct device *dev, struct numak
 /* Message handler for bus reset */
 static int numaker_usbd_msg_handle_reset(const struct device *dev, struct numaker_usbd_msg *msg)
 {
+	const struct udc_numaker_config *config = dev->config;
 	int err;
 
 	__ASSERT_NO_MSG(msg->type == NUMAKER_USBD_MSG_TYPE_RESET);
 
-#if DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_usbd)
-	/* For USBD, enable back USB/PHY has done in ISR for unneeded wait. */
-#elif DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_hsusbd)
-	err = numaker_usbd_enable_usb_phy(dev);
-	if (err < 0) {
-		LOG_ERR("Enable USB/PHY failed");
-		return -err;
+	if (config->is_hsusbd) {
+		err = numaker_usbd_enable_usb_phy(dev);
+		if (err < 0) {
+			LOG_ERR("Enable USB/PHY failed");
+			return -err;
+		}
+	} else {
+		/* For USBD, enable back USB/PHY has done in ISR for unneeded wait. */
 	}
-#endif
 
 	/* UDC stack would handle bottom-half processing,
 	 * including reset device address (udc_set_address),
@@ -1941,19 +2029,20 @@ static int numaker_usbd_msg_handle_reset(const struct device *dev, struct numake
 /* Message handler for bus resume */
 static int numaker_usbd_msg_handle_resume(const struct device *dev, struct numaker_usbd_msg *msg)
 {
+	const struct udc_numaker_config *config = dev->config;
 	int err;
 
 	__ASSERT_NO_MSG(msg->type == NUMAKER_USBD_MSG_TYPE_RESUME);
 
-#if DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_usbd)
-	/* For USBD, enable back USB/PHY has done in ISR for unneeded wait. */
-#elif DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_hsusbd)
-	err = numaker_usbd_enable_usb_phy(dev);
-	if (err < 0) {
-		LOG_ERR("Enable USB/PHY failed");
-		return -err;
+	if (config->is_hsusbd) {
+		err = numaker_usbd_enable_usb_phy(dev);
+		if (err < 0) {
+			LOG_ERR("Enable USB/PHY failed");
+			return -err;
+		}
+	} else {
+		/* For USBD, enable back USB/PHY has done in ISR for unneeded wait. */
 	}
-#endif
 
 	err = udc_submit_event(dev, UDC_EVT_RESUME, 0);
 
@@ -1963,6 +2052,7 @@ static int numaker_usbd_msg_handle_resume(const struct device *dev, struct numak
 /* Message handler for Setup transaction completed */
 static int numaker_usbd_msg_handle_setup(const struct device *dev, struct numaker_usbd_msg *msg)
 {
+	const struct udc_numaker_config *config = dev->config;
 	int err;
 	uint8_t ep;
 	struct numaker_usbd_ep *ep_cur;
@@ -2003,16 +2093,16 @@ static int numaker_usbd_msg_handle_setup(const struct device *dev, struct numake
 	__ASSERT_NO_MSG((ep_cur + 1)->addr == USB_CONTROL_EP_IN);
 
 	/* Abort previous CTRL OUT/IN */
-#if DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_usbd)
-	numaker_usbd_ep_abort(ep_cur, false);
-	numaker_usbd_ep_abort(ep_cur + 1, false);
-#elif DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_hsusbd)
-	/* For HSUSBD, there is timing concern between FIFO flush and
-	 * immediately following data transaction. Do in ISR for in time.
-	 */
-	numaker_usbd_ep_abort(ep_cur, true);
-	numaker_usbd_ep_abort(ep_cur + 1, true);
-#endif
+	if (config->is_hsusbd) {
+		/* For HSUSBD, there is timing concern between FIFO flush and
+		 * immediately following data transaction. Do in ISR for in time.
+		 */
+		numaker_usbd_ep_abort(ep_cur, true);
+		numaker_usbd_ep_abort(ep_cur + 1, true);
+	} else {
+		numaker_usbd_ep_abort(ep_cur, false);
+		numaker_usbd_ep_abort(ep_cur + 1, false);
+	}
 
 	/* CTRL OUT/IN reset to unstalled by H/W on receive of Setup packet */
 	numaker_usbd_ep_sync_udc_halt(ep_cur, false);
@@ -2314,13 +2404,10 @@ static void numaker_usbd_msg_handler(const struct device *dev)
 	}
 }
 
-static void numaker_usbd_isr(const struct device *dev)
+__maybe_unused static void numaker_usbd_isr(const struct device *dev)
 {
 	const struct udc_numaker_config *config = dev->config;
-	__maybe_unused struct udc_numaker_data *priv = udc_get_private(dev);
 	USBD_T *base = config->base;
-
-#if DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_usbd)
 	uint32_t usbd_intsts = base->INTSTS;
 	uint32_t usbd_bus_state = base->ATTR;
 
@@ -2398,7 +2485,13 @@ static void numaker_usbd_isr(const struct device *dev)
 			epintsts &= ~BIT(ep_hw_idx - EP0);
 		}
 	}
-#elif DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_hsusbd)
+}
+
+__maybe_unused static void numaker_hsusbd_isr(const struct device *dev)
+{
+	const struct udc_numaker_config *config = dev->config;
+	struct udc_numaker_data *priv = udc_get_private(dev);
+	HSUSBD_T *base = config->base;
 	uint32_t gintsts = base->GINTSTS;
 	uint32_t gintsts_ep = gintsts &
 			      (BIT_MASK(priv->ep_pool_size - 2) << HSUSBD_GINTSTS_EPAIF_Pos);
@@ -2438,7 +2531,7 @@ static void numaker_usbd_isr(const struct device *dev)
 
 	/* USB reset */
 	if (busintsts & HSUSBD_BUSINTSTS_RSTIF_Msk) {
-		numaker_usbd_bus_reset_th(dev);
+		numaker_hsusbd_bus_reset_th(dev);
 	}
 
 	/* Bus suspend */
@@ -2493,19 +2586,19 @@ static void numaker_usbd_isr(const struct device *dev)
 			gintsts_ep_iter &= ~BIT(ep_hw_idx - EPA);
 		}
 	}
-#endif
 }
 
 static enum udc_bus_speed udc_numaker_device_speed(const struct device *dev)
 {
 	const struct udc_numaker_config *config = dev->config;
-	__maybe_unused USBD_T *base = config->base;
 
-#if DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_usbd)
-	return UDC_BUS_SPEED_FS;
-#elif DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_hsusbd)
-	return (base->OPER & HSUSBD_OPER_CURSPD_Msk) ? UDC_BUS_SPEED_HS : UDC_BUS_SPEED_FS;
-#endif
+	if (config->is_hsusbd) {
+		HSUSBD_T *base = config->base;
+
+		return (base->OPER & HSUSBD_OPER_CURSPD_Msk) ? UDC_BUS_SPEED_HS : UDC_BUS_SPEED_FS;
+	} else {
+		return UDC_BUS_SPEED_FS;
+	}
 }
 
 static int udc_numaker_ep_enqueue(const struct device *dev, struct udc_ep_config *const ep_cfg,
@@ -2594,6 +2687,7 @@ static int udc_numaker_ep_clear_halt(const struct device *dev, struct udc_ep_con
 
 static int udc_numaker_ep_enable(const struct device *dev, struct udc_ep_config *const ep_cfg)
 {
+	const struct udc_numaker_config *config = dev->config;
 	int err;
 	uint32_t dmabuf_base;
 	uint32_t dmabuf_size;
@@ -2623,16 +2717,25 @@ static int udc_numaker_ep_enable(const struct device *dev, struct udc_ep_config 
 	}
 
 	/* Configure EP majorly */
-	numaker_usbd_ep_config_major(ep_cur, ep_cfg);
+	if (config->is_hsusbd) {
+		numaker_hsusbd_ep_config_major(ep_cur, ep_cfg);
+	} else {
+		numaker_usbd_ep_config_major(ep_cur, ep_cfg);
+	}
 
 	/* Enable EP */
-	numaker_usbd_ep_enable(ep_cur);
+	if (config->is_hsusbd) {
+		numaker_hsusbd_ep_enable(ep_cur);
+	} else {
+		numaker_usbd_ep_enable(ep_cur);
+	}
 
 	return 0;
 }
 
 static int udc_numaker_ep_disable(const struct device *dev, struct udc_ep_config *const ep_cfg)
 {
+	const struct udc_numaker_config *config = dev->config;
 	struct numaker_usbd_ep *ep_cur;
 
 	LOG_DBG("Disable ep 0x%02x", ep_cfg->addr);
@@ -2645,15 +2748,36 @@ static int udc_numaker_ep_disable(const struct device *dev, struct udc_ep_config
 	}
 
 	/* Disable EP */
-	numaker_usbd_ep_disable(ep_cur);
+	if (config->is_hsusbd) {
+		numaker_hsusbd_ep_disable(ep_cur);
+	} else {
+		numaker_usbd_ep_disable(ep_cur);
+	}
 
 	return 0;
+}
+
+static void udc_numaker_usbd_gen_K(const struct device *dev)
+{
+	const struct udc_numaker_config *config = dev->config;
+	USBD_T *base = config->base;
+
+	base->ATTR |= USBD_ATTR_RWAKEUP_Msk;
+	k_sleep(K_USEC(NUMAKER_USBD_BUS_RESUME_DRV_K_US));
+	base->ATTR ^= USBD_ATTR_RWAKEUP_Msk;
+}
+
+static void udc_numaker_hsusbd_gen_K(const struct device *dev)
+{
+	const struct udc_numaker_config *config = dev->config;
+	HSUSBD_T *base = config->base;
+
+	base->OPER |= HSUSBD_OPER_RESUMEEN_Msk;
 }
 
 static int udc_numaker_host_wakeup(const struct device *dev)
 {
 	const struct udc_numaker_config *config = dev->config;
-	USBD_T *base = config->base;
 	int err;
 
 	/* Enable back USB/PHY first */
@@ -2664,13 +2788,11 @@ static int udc_numaker_host_wakeup(const struct device *dev)
 	}
 
 	/* Then generate 'K' */
-#if DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_usbd)
-	base->ATTR |= USBD_ATTR_RWAKEUP_Msk;
-	k_sleep(K_USEC(NUMAKER_USBD_BUS_RESUME_DRV_K_US));
-	base->ATTR ^= USBD_ATTR_RWAKEUP_Msk;
-#elif DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_hsusbd)
-	base->OPER |= HSUSBD_OPER_RESUMEEN_Msk;
-#endif
+	if (config->is_hsusbd) {
+		udc_numaker_hsusbd_gen_K(dev);
+	} else {
+		udc_numaker_usbd_gen_K(dev);
+	}
 
 	return 0;
 }
@@ -2710,11 +2832,43 @@ static int udc_numaker_disable(const struct device *dev)
 	return 0;
 }
 
-static int udc_numaker_init(const struct device *dev)
+static void udc_numaker_usbd_init_int_early(const struct device *dev)
 {
 	const struct udc_numaker_config *config = dev->config;
 	struct udc_data *data = dev->data;
 	USBD_T *base = config->base;
+
+	/* Enable VBUS detect early */
+	if (data->caps.can_detect_vbus) {
+		base->INTEN = USBD_INT_FLDET;
+	} else {
+		base->INTEN = 0;
+	}
+
+	/* Enable USB wake-up early */
+	base->INTEN |= USBD_INT_WAKEUP;
+}
+
+static void udc_numaker_hsusbd_init_int_early(const struct device *dev)
+{
+	const struct udc_numaker_config *config = dev->config;
+	struct udc_data *data = dev->data;
+	HSUSBD_T *base = config->base;
+
+	/* Enable VBUS detect early */
+	if (data->caps.can_detect_vbus) {
+		base->BUSINTEN = HSUSBD_BUSINTEN_VBUSDETIEN_Msk;
+	} else {
+		base->BUSINTEN = 0;
+	}
+
+	/* Enable USB wake-up early */
+	base->PHYCTL |= HSUSBD_PHYCTL_VBUSWKEN_Msk;
+}
+
+static int udc_numaker_init(const struct device *dev)
+{
+	const struct udc_numaker_config *config = dev->config;
 	int err;
 
 	/* Initialize UDC H/W */
@@ -2740,27 +2894,12 @@ static int udc_numaker_init(const struct device *dev)
 		return -EIO;
 	}
 
-	/* Enable VBUS detect early */
-	if (data->caps.can_detect_vbus) {
-#if DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_usbd)
-		base->INTEN = USBD_INT_FLDET;
-#elif DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_hsusbd)
-		base->BUSINTEN = HSUSBD_BUSINTEN_VBUSDETIEN_Msk;
-#endif
+	/* Initialize interrupt early */
+	if (config->is_hsusbd) {
+		udc_numaker_hsusbd_init_int_early(dev);
 	} else {
-#if DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_usbd)
-		base->INTEN = 0;
-#elif DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_hsusbd)
-		base->BUSINTEN = 0;
-#endif
+		udc_numaker_usbd_init_int_early(dev);
 	}
-
-	/* Enable USB wake-up early */
-#if DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_usbd)
-	base->INTEN |= USBD_INT_WAKEUP;
-#elif DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_hsusbd)
-	base->PHYCTL |= HSUSBD_PHYCTL_VBUSWKEN_Msk;
-#endif
 
 	return 0;
 }
@@ -2806,15 +2945,15 @@ static int udc_numaker_driver_preinit(const struct device *dev)
 	uint16_t mps = 1023;
 	int err;
 
-#if DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_usbd)
-	/* For USBD, support just full-speed */
-#elif DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_hsusbd)
-	/* For HSUSBD, support both full-speed and high-speed */
-	if (config->speed_idx >= 2) {
-		data->caps.hs = true;
-		mps = 1024;
+	if (config->is_hsusbd) {
+		/* For HSUSBD, support both full-speed and high-speed */
+		if (config->speed_idx >= 2) {
+			data->caps.hs = true;
+			mps = 1024;
+		}
+	} else {
+		/* For USBD, support just full-speed */
 	}
-#endif
 	data->caps.rwup = true;
 	data->caps.addr_before_status = true;
 	data->caps.can_detect_vbus = true;
@@ -2909,12 +3048,17 @@ static const struct udc_api udc_numaker_api = {
 #define NUMAKER_USBD_PINCTRL_DEFINE(inst)                                                          \
 	IF_ENABLED(DT_NODE_HAS_PROP(DT_DRV_INST(inst), pinctrl_0), (PINCTRL_DT_INST_DEFINE(inst)))
 
+#define UDC_NUMAKER_ISR                                                                            \
+	COND_CODE_1(UDC_NUMAKER_DEVICE_HSUSBD, (numaker_hsusbd_isr), (numaker_usbd_isr))
+
+#define UDC_NUMAKER_SPEED_IDX_DEFAULT COND_CODE_1(UDC_NUMAKER_DEVICE_HSUSBD, (2), (1))
+
 #define UDC_NUMAKER_DEVICE_DEFINE(inst)                                                            \
 	NUMAKER_USBD_PINCTRL_DEFINE(inst);                                                         \
                                                                                                    \
 	static void udc_numaker_irq_config_func_##inst(const struct device *dev)                   \
 	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority), numaker_usbd_isr,     \
+		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority), UDC_NUMAKER_ISR,      \
 			    DEVICE_DT_INST_GET(inst), 0);                                          \
                                                                                                    \
 		irq_enable(DT_INST_IRQN(inst));                                                    \
@@ -2970,7 +3114,8 @@ static const struct udc_api udc_numaker_api = {
 		.disallow_iso_inout_same = DT_INST_PROP_OR(inst, disallow_iso_in_out_same_number,  \
 							   0),                                     \
 		.speed_idx = DT_ENUM_IDX_OR(DT_DRV_INST(inst), maximum_speed,                      \
-					    NUMAKER_USBD_SPEED_IDX_DEFAULT),                       \
+					    UDC_NUMAKER_SPEED_IDX_DEFAULT),                        \
+		.is_hsusbd = IS_ENABLED(UDC_NUMAKER_DEVICE_HSUSBD),                                \
 	};                                                                                         \
                                                                                                    \
 	static struct numaker_usbd_ep                                                              \
@@ -2994,4 +3139,13 @@ static const struct udc_api udc_numaker_api = {
 			      &udc_numaker_config_##inst, POST_KERNEL,                             \
 			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &udc_numaker_api);
 
+/* Define USBD devices */
+#define DT_DRV_COMPAT nuvoton_numaker_usbd
+DT_INST_FOREACH_STATUS_OKAY(UDC_NUMAKER_DEVICE_DEFINE)
+
+/* Define HSUSBD devices */
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT             nuvoton_numaker_hsusbd
+#define UDC_NUMAKER_DEVICE_HSUSBD 1
 DT_INST_FOREACH_STATUS_OKAY(UDC_NUMAKER_DEVICE_DEFINE)
