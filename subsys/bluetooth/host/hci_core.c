@@ -48,6 +48,7 @@
 
 #include "addr_internal.h"
 #include "adv.h"
+#include "bt_taskq.h"
 #include "common/hci_common_internal.h"
 #include "common/bt_str.h"
 #include "common/rpa.h"
@@ -5036,5 +5037,5 @@ static K_WORK_DEFINE(tx_work, tx_processor);
 void bt_tx_irq_raise(void)
 {
 	LOG_DBG("kick TX");
-	k_work_submit(&tx_work);
+	k_work_submit_to_queue(bt_taskq_chosen, &tx_work);
 }
