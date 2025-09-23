@@ -1090,14 +1090,14 @@ static int i3c_stm32_do_daa(const struct device *dev)
 
 	if (data->msg_state == STM32_I3C_MSG_ERR) {
 		i3c_stm32_clear_err(dev, false);
-		/* Enable TXFNF interrupt in case an error occurred before it was enabled by RXFNE
-		 */
-		LL_I3C_EnableIT_TXFNF(i3c);
 		ret = -EIO;
 		goto i3c_stm32_do_daa_ending;
 	}
 
 i3c_stm32_do_daa_ending:
+	/* We enable TX interrupt again in any case */
+	LL_I3C_EnableIT_TXFNF(i3c);
+
 	k_mutex_unlock(&data->bus_mutex);
 
 	return ret;
@@ -1621,6 +1621,11 @@ static void i3c_stm32_event_isr_tx(const struct device *dev)
 		bcr = (data->pid >> 8) & 0xFF;
 		dcr = data->pid & 0xFF;
 		data->pid >>= 16;
+
+		/* Disable TXFNF interrupt, the RXFNE interrupt will enable it once all PID bytes
+		 * are received for next I3C target, or in i3c_stm32_do_daa after frame complete
+		 */
+		LL_I3C_DisableIT_TXFNF(i3c);
 
 		/* Find the device in the device list */
 		ret = i3c_dev_list_daa_addr_helper(&data->drv_data.attached_dev.addr_slots,
