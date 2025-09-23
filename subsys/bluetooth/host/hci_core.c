@@ -471,35 +471,6 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 		return err;
 	}
 
-	/* TODO: disallow sending sync commands from syswq altogether */
-
-	/* Since the commands are now processed in the syswq, we cannot suspend
-	 * and wait. We have to send the command from the current context.
-	 */
-	if (k_current_get() == &k_sys_work_q.thread) {
-		/* drain the command queue until we get to send the command of interest. */
-		struct net_buf *cmd = NULL;
-
-		do {
-			cmd = k_fifo_peek_head(&bt_dev.cmd_tx_queue);
-			LOG_DBG("process cmd %p want %p", cmd, buf);
-
-			/* Wait for a response from the Bluetooth Controller.
-			 * The Controller may fail to respond if:
-			 *  - It was never programmed or connected.
-			 *  - There was a fatal error.
-			 *
-			 * See the `BT_HCI_OP_` macros in hci_types.h or
-			 * Core_v5.4, Vol 4, Part E, Section 5.4.1 and Section 7
-			 * to map the opcode to the HCI command documentation.
-			 * Example: 0x0c03 represents HCI_Reset command.
-			 */
-			__maybe_unused bool success = process_pending_cmd(HCI_CMD_TIMEOUT);
-
-			BT_ASSERT_MSG(success, "command opcode 0x%04x timeout", opcode);
-		} while (buf != cmd);
-	}
-
 	/* Now that we have sent the command, suspend until the LL replies */
 	err = k_sem_take(&sync_sem, HCI_CMD_TIMEOUT);
 	BT_ASSERT_MSG(err == 0,
