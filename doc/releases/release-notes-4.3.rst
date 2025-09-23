@@ -71,6 +71,11 @@ Deprecated APIs and options
 New APIs and options
 ====================
 
+* :kconfig:option:`CONFIG_PSA_CRYPTO_PROVIDER` allows to automatically select a PSA Crypto API
+  provider based on the current board capabilities. TF-M and Mbed TLS are the only options available
+  for now, but the user can select :kconfig:option:`CONFIG_PSA_CRYPTO_PROVIDER_CUSTOM` to use
+  a custom solution.
+
 ..
   Link to new APIs here, in a group if you think it's necessary, no need to get
   fancy just list the link, that should contain the documentation. If you feel
