@@ -19,6 +19,19 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 	};
+
+	aliases {
+		pwm-led0 = &pwm_led0;
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		pwm_led0: pwm_led_0 {
+			status = "okay";
+			pwms = <&tcc0 2 PWM_MSEC(20) 0>;
+		};
+	};
 };
 
 &flash0 {
@@ -59,4 +72,15 @@
 
 	pinctrl-0 = <&sercom2_uart_default>;
 	pinctrl-names = "default";
+};
+
+&tcc0 {
+	compatible = "microchip,tcc-g1-pwm";
+	status = "okay";
+	#pwm-cells = <3>;
+	pinctrl-0 = <&tcc0_pwm_default>;
+	pinctrl-names = "default";
+	max-bit-width = <24>;
+	prescaler = <8>;
+	channels = <6>;
 };
