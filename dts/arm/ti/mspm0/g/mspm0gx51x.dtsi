@@ -60,5 +60,27 @@
 				status = "disabled";
 			};
 		};
+
+		canfd0: can@40508000 {
+			compatible = "ti,mspm0-canfd";
+			reg = <0x40508000 0x8000>, <0x4050F000 0x1000>, <0x40508000 0x400>;
+			reg-names = "ti_canfd", "m_can", "message_ram";
+			interrupts = <6 0>;
+			clocks = <&ckm MSPM0_CLOCK_CANCLK>;
+			ti,divider = <1>;
+			bosch,mram-cfg = <0x0 20 8 3 3 0 3 3>;
+			status = "disabled";
+		};
+
+		canfd1: can@40510000 {
+			compatible = "ti,mspm0-canfd";
+			reg = <0x40510000 0x8000>, <0x40517000 0x1000>, <0x40510000 0x400>;
+			reg-names = "ti_canfd", "m_can", "message_ram";
+			interrupts = <12 0>;
+			clocks = <&ckm MSPM0_CLOCK_CANCLK>;
+			ti,divider = <1>;
+			bosch,mram-cfg = <0x0 20 8 3 3 0 3 3>;
+			status = "disabled";
+		};
 	};
 };
