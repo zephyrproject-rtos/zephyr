@@ -11,6 +11,7 @@ flash: 1024
 ram: 256
 supported:
   - pinctrl
+  - pwm
   - reset
   - shell
   - uart
