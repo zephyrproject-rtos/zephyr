@@ -14,3 +14,25 @@ properties:
   channel:
     type: int
     required: true
+
+  tei-ctrl:
+    type: phandle
+    description: |
+      Group interrupt controller for the transmit end interrupt (TEI). This only applies
+      in cases the RX MCU supports group interrupt feature
+
+  tei-number:
+    type: int
+    description: |
+      Number of the TEI in the interrupt group of tei-ctrl
+
+  eri-ctrl:
+    type: phandle
+    description: |
+      Group interrupt controller for the error interrupt (ERI). This only applies
+      in cases the RX MCU supports group interrupt feature
+
+  eri-number:
+    type: int
+    description: |
+      Number of the ERI in the interrupt group of eri-ctrl

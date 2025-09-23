@@ -466,6 +466,10 @@
 			interrupt-names = "rxi", "txi";
 			reg = <0x8A020 0x20>;
 			clocks = <&pclkb MSTPB 30>;
+			tei-ctrl = <&group_irq_bl0>;
+			tei-number = <2>;
+			eri-ctrl = <&group_irq_bl0>;
+			eri-number = <3>;
 			status = "disabled";
 			channel = <1>;
 
@@ -481,6 +485,10 @@
 			interrupt-names = "rxi", "txi";
 			reg = <0x8A0A0 0x20>;
 			clocks = <&pclkb MSTPB 26>;
+			tei-ctrl = <&group_irq_bl0>;
+			tei-number = <10>;
+			eri-ctrl = <&group_irq_bl0>;
+			eri-number = <11>;
 			status = "disabled";
 			channel = <5>;
 
@@ -496,6 +504,10 @@
 			interrupt-names = "rxi", "txi";
 			reg = <0x8A0C0 0x20>;
 			clocks = <&pclkb MSTPB 25>;
+			tei-ctrl = <&group_irq_bl0>;
+			tei-number = <12>;
+			eri-ctrl = <&group_irq_bl0>;
+			eri-number = <13>;
 			status = "disabled";
 			channel = <6>;
 
@@ -511,6 +523,10 @@
 			interrupt-names = "rxi", "txi";
 			reg = <0x8B300 0x20>;
 			clocks = <&pclkb MSTPB 4>;
+			tei-ctrl = <&group_irq_bl0>;
+			tei-number = <16>;
+			eri-ctrl = <&group_irq_bl0>;
+			eri-number = <17>;
 			status = "disabled";
 			channel = <12>;
 
