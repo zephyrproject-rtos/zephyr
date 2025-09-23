@@ -15,6 +15,17 @@ static void adxl345_fifo_flush_rtio(const struct device *dev);
 
 /* auxiliary functions */
 
+static void adxl345_sqe_done(const struct device *dev,
+			     struct rtio_iodev_sqe *iodev_sqe, int res)
+{
+	if (res < 0) {
+		LOG_WRN("res == %d < 0)", res);
+		rtio_iodev_sqe_err(iodev_sqe, res);
+	} else {
+		rtio_iodev_sqe_ok(iodev_sqe, res);
+	}
+	adxl345_set_gpios_en(dev, true);
+}
 
 /* streaming callbacks and calls */
 
@@ -36,11 +47,7 @@ static void adxl345_fifo_read_cb(struct rtio *rtio_ctx, const struct rtio_sqe *s
 	struct adxl345_dev_data *data = (struct adxl345_dev_data *) dev->data;
 	struct rtio_iodev_sqe *iodev_sqe = sqe->userdata;
 
-	if (data->fifo_entries == 0) {
-		rtio_iodev_sqe_ok(iodev_sqe, 0);
-		adxl345_set_gpios_en(dev, true);
-	}
-
+	adxl345_sqe_done(dev, iodev_sqe, data->fifo_entries);
 }
 
 static void adxl345_process_fifo_samples_cb(struct rtio *r, const struct rtio_sqe *sqe,
@@ -74,9 +81,7 @@ static void adxl345_process_fifo_samples_cb(struct rtio *r, const struct rtio_sq
 
 	if (rtio_sqe_rx_buf(current_sqe, min_read_size, ideal_read_size, &buf, &buf_len) != 0) {
 		LOG_ERR("Failed to get buffer");
-		rtio_iodev_sqe_err(current_sqe, -ENOMEM);
-		adxl345_set_gpios_en(dev, true);
-		return;
+		goto err;
 	}
 	LOG_DBG("Requesting buffer [%u, %u] got %u", (unsigned int)min_read_size,
 		(unsigned int)ideal_read_size, buf_len);
@@ -125,8 +130,7 @@ static void adxl345_process_fifo_samples_cb(struct rtio *r, const struct rtio_sq
 
 	/* Bail/cancel attempt to read sensor on any error */
 	if (res != 0) {
-		rtio_iodev_sqe_err(current_sqe, res);
-		return;
+		goto err;
 	}
 
 
@@ -157,6 +161,11 @@ static void adxl345_process_fifo_samples_cb(struct rtio *r, const struct rtio_sq
 		rtio_submit(data->rtio_ctx, 0);
 		ARG_UNUSED(rtio_cqe_consume(data->rtio_ctx));
 	}
+
+	return;
+err:
+	LOG_WRN("Failed.");
+	adxl345_sqe_done(dev, current_sqe, -ENOMEM);
 }
 
 static void adxl345_process_status1_cb(struct rtio *r, const struct rtio_sqe *sqe,
@@ -178,11 +187,11 @@ static void adxl345_process_status1_cb(struct rtio *r, const struct rtio_sqe *sq
 	read_config = (struct sensor_read_config *)data->sqe->sqe.iodev->data;
 
 	if (read_config == NULL) {
-		return;
+		goto err;
 	}
 
 	if (read_config->is_streaming == false) {
-		return;
+		goto err;
 	}
 
 	adxl345_set_gpios_en(dev, false);
@@ -203,8 +212,7 @@ static void adxl345_process_status1_cb(struct rtio *r, const struct rtio_sqe *sq
 	}
 
 	if (!fifo_full_irq) {
-		adxl345_set_gpios_en(dev, true);
-		return;
+		goto err;
 	}
 
 	/* Flush completions */
@@ -224,8 +232,7 @@ static void adxl345_process_status1_cb(struct rtio *r, const struct rtio_sqe *sq
 
 	/* Bail/cancel attempt to read sensor on any error */
 	if (res != 0) {
-		rtio_iodev_sqe_err(current_sqe, res);
-		return;
+		goto err;
 	}
 
 	enum sensor_stream_data_opt data_opt;
@@ -242,9 +249,7 @@ static void adxl345_process_status1_cb(struct rtio *r, const struct rtio_sqe *sq
 		data->sqe = NULL;
 		if (rtio_sqe_rx_buf(current_sqe, sizeof(struct adxl345_fifo_data),
 				    sizeof(struct adxl345_fifo_data), &buf, &buf_len) != 0) {
-			rtio_iodev_sqe_err(current_sqe, -ENOMEM);
-			adxl345_set_gpios_en(dev, true);
-			return;
+			goto err;
 		}
 
 		struct adxl345_fifo_data *rx_data = (struct adxl345_fifo_data *)buf;
@@ -254,14 +259,13 @@ static void adxl345_process_status1_cb(struct rtio *r, const struct rtio_sqe *sq
 		rx_data->timestamp = data->timestamp;
 		rx_data->int_status = status1;
 		rx_data->fifo_byte_count = 0;
-		rtio_iodev_sqe_ok(current_sqe, 0);
 
 		if (data_opt == SENSOR_STREAM_DATA_DROP) {
 			/* Flush the FIFO by disabling it. Save current mode for after the reset. */
 			adxl345_fifo_flush_rtio(dev);
 		}
 
-		adxl345_set_gpios_en(dev, true);
+		adxl345_sqe_done(dev, current_sqe, 0);
 		return;
 	}
 
@@ -282,6 +286,11 @@ static void adxl345_process_status1_cb(struct rtio *r, const struct rtio_sqe *sq
 							current_sqe);
 
 	rtio_submit(data->rtio_ctx, 0);
+
+	return;
+err:
+	LOG_WRN("Failed.");
+	adxl345_sqe_done(dev, current_sqe, -ENOMEM);
 }
 
 static void adxl345_fifo_flush_rtio(const struct device *dev)
@@ -366,6 +375,7 @@ void adxl345_stream_irq_handler(const struct device *dev)
 {
 	struct adxl345_dev_data *data = (struct adxl345_dev_data *) dev->data;
 	const struct adxl345_dev_config *cfg = (const struct adxl345_dev_config *) dev->config;
+	struct rtio_iodev_sqe *current_sqe = data->sqe;
 	uint64_t cycles;
 	int rc;
 
@@ -376,8 +386,7 @@ void adxl345_stream_irq_handler(const struct device *dev)
 	rc = sensor_clock_get_cycles(&cycles);
 	if (rc != 0) {
 		LOG_ERR("Failed to get sensor clock cycles");
-		rtio_iodev_sqe_err(data->sqe, rc);
-		return;
+		goto err;
 	}
 
 	data->timestamp = sensor_clock_cycles_to_ns(cycles);
@@ -399,4 +408,9 @@ void adxl345_stream_irq_handler(const struct device *dev)
 	}
 	rtio_sqe_prep_callback(check_status_reg, adxl345_process_status1_cb, (void *)dev, NULL);
 	rtio_submit(data->rtio_ctx, 0);
+
+	return;
+err:
+	LOG_WRN("Failed.");
+	adxl345_sqe_done(dev, current_sqe, -ENOMEM);
 }
