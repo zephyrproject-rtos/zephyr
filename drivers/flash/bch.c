@@ -394,11 +394,6 @@ int bch_init(int m, int t, uint32_t size_step, bch_t **bch_ret)
 	LOG_DBG("This system is %s endian\r\n", bch->le ? "Little" : "Big");
 
 	bch->size_step = size_step;
-	bch->m = m;
-	bch->t = t;
-	bch->n = (1 << m) - 1;
-	bch->ecc_words = (m * t + 31) / 32;
-	bch->len = (bch->n + 1) / 8;
 
 	build_gf_table(bch);
 	if (0 != build_generator_poly(bch)) {
