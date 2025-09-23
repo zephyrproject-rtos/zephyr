@@ -236,7 +236,6 @@ static void adxl345_process_status1_cb(struct rtio *r, const struct rtio_sqe *sq
 	struct adxl345_dev_data *data = (struct adxl345_dev_data *) dev->data;
 	struct rtio_iodev_sqe *current_sqe = data->sqe;
 	struct sensor_read_config *read_config;
-	uint8_t status1 = data->reg_int_source;
 
 	if (!adxl345_check_streaming(data, &read_config)) {
 		LOG_WRN("Failed! RTIO not setup for streaming");
@@ -244,28 +243,27 @@ static void adxl345_process_status1_cb(struct rtio *r, const struct rtio_sqe *sq
 	}
 
 	struct sensor_stream_trigger *fifo_wmark_cfg = NULL;
+	struct sensor_stream_trigger *fifo_full_cfg = NULL;
+	enum sensor_stream_data_opt data_opt = SENSOR_STREAM_DATA_DROP;
 
 	for (int i = 0; i < read_config->count; ++i) {
-		if (read_config->triggers[i].trigger == SENSOR_TRIG_FIFO_WATERMARK) {
-			fifo_wmark_cfg = &read_config->triggers[i];
+		switch (read_config->triggers[i].trigger) {
+		case SENSOR_TRIG_FIFO_WATERMARK:
+			if (FIELD_GET(ADXL345_INT_WATERMARK, data->reg_int_source)) {
+				fifo_wmark_cfg = &read_config->triggers[i];
+				data_opt = MIN(data_opt, fifo_wmark_cfg->opt);
+			}
 			continue;
+		case SENSOR_TRIG_FIFO_FULL:
+			if (FIELD_GET(ADXL345_INT_OVERRUN, data->reg_int_source)) {
+				fifo_full_cfg = &read_config->triggers[i];
+				data_opt = MIN(data_opt, fifo_full_cfg->opt);
+			}
+			continue;
+		default:
+			LOG_WRN("SENSOR_* case not covered");
+			goto err;
 		}
-	}
-
-	bool fifo_full_irq = false;
-
-	if (fifo_wmark_cfg && FIELD_GET(ADXL345_INT_WATERMARK, status1)) {
-		fifo_full_irq = true;
-	}
-
-	if (!fifo_full_irq) {
-		goto err;
-	}
-
-	enum sensor_stream_data_opt data_opt;
-
-	if (fifo_wmark_cfg != NULL) {
-		data_opt = fifo_wmark_cfg->opt;
 	}
 
 	/* Flush completions, in case cancel out */
