@@ -5701,16 +5701,6 @@ West:
   labels:
     - "area: LVGL"
 
-"West project: lz4":
-  status: odd fixes
-  collaborators:
-    - parthitce
-  files:
-    - modules/lz4/
-    - samples/modules/compression/lz4/
-  labels:
-    - "area: Compression"
-
 "West project: mbedtls":
   status: maintained
   maintainers:
@@ -5985,12 +5975,6 @@ West:
   files: []
   labels:
     - "area: Rust"
-
-"West project: zscilib":
-  status: maintained
-  maintainers:
-    - microbuilder
-  files: []
 
 Wurth Elektronik Platforms:
   status: maintained

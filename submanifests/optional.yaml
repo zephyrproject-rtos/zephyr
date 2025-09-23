@@ -16,27 +16,9 @@ manifest:
       remote: upstream
       groups:
         - optional
-    - name: lz4
-      revision: 11b8a1e22fa651b524494e55d22b69d3d9cebcfd
-      path: modules/lib/lz4
-      remote: upstream
-      groups:
-        - optional
-    - name: psa-arch-tests
-      revision: 2cadb02a72eacda7042505dcbdd492371e8ce024
-      path: modules/tee/tf-m/psa-arch-tests
-      remote: upstream
-      groups:
-        - optional
     - name: sof
       revision: ba8de7551f88a4f8d4533791274fa85b37ec332e
       path: modules/audio/sof
-      remote: upstream
-      groups:
-        - optional
-    - name: tf-m-tests
-      revision: a286347e6a5dd37a9a5e960450ffc0260d63fb27
-      path: modules/tee/tf-m/tf-m-tests
       remote: upstream
       groups:
         - optional
@@ -56,12 +38,6 @@ manifest:
     - name: zephyr-lang-rust
       revision: dd73abc242e995784da62352fe8c70d9a6c7ac2e
       path: modules/lang/rust
-      remote: upstream
-      groups:
-        - optional
-    - name: zscilib
-      path: modules/lib/zscilib
-      revision: ee3c0c405087e331aad16d167b6e4ec1c3452ba9
       remote: upstream
       groups:
         - optional
