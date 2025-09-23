@@ -465,12 +465,13 @@
 
 		sci1: sci1@8a020 {
 			compatible = "renesas,rx-sci";
-			interrupts = <60 1>, <61 1>;
-			interrupt-names = "rxi", "txi";
+			interrupts-extended = <&icu 60 1>, <&icu 61 1>,
+					      <&group_irq_bl0 2 1>, <&group_irq_bl0 3 1>;
+			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x8A020 0x20>;
 			clocks = <&pclkb MSTPB 30>;
-			status = "disabled";
 			channel = <1>;
+			status = "disabled";
 
 			uart {
 				compatible = "renesas,rx-uart-sci";
@@ -480,12 +481,13 @@
 
 		sci5: sci5@8a0a0 {
 			compatible = "renesas,rx-sci";
-			interrupts = <84 1>, <85 1>;
-			interrupt-names = "rxi", "txi";
 			reg = <0x8A0A0 0x20>;
 			clocks = <&pclkb MSTPB 26>;
-			status = "disabled";
+			interrupts-extended = <&icu 84 1>, <&icu 85 1>,
+					      <&group_irq_bl0 10 1>, <&group_irq_bl0 11 1>;
+			interrupt-names = "rxi", "txi", "tei", "eri";
 			channel = <5>;
+			status = "disabled";
 
 			uart {
 				compatible = "renesas,rx-uart-sci";
@@ -495,12 +497,13 @@
 
 		sci6: sci6@8a0c0 {
 			compatible = "renesas,rx-sci";
-			interrupts = <86 1>, <87 1>;
-			interrupt-names = "rxi", "txi";
+			interrupts-extended = <&icu 86 1>, <&icu 87 1>,
+					      <&group_irq_bl0 12 1>, <&group_irq_bl0 13 1>;
+			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x8A0C0 0x20>;
 			clocks = <&pclkb MSTPB 25>;
-			status = "disabled";
 			channel = <6>;
+			status = "disabled";
 
 			uart {
 				compatible = "renesas,rx-uart-sci";
@@ -510,12 +513,13 @@
 
 		sci12: sci12@8b300 {
 			compatible = "renesas,rx-sci";
-			interrupts = <116 1>, <117 1>;
-			interrupt-names = "rxi", "txi";
+			interrupts-extended = <&icu 116 1>, <&icu 117 1>,
+					      <&group_irq_bl0 16 1>, <&group_irq_bl0 17 1>;
+			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x8B300 0x20>;
 			clocks = <&pclkb MSTPB 4>;
-			status = "disabled";
 			channel = <12>;
+			status = "disabled";
 
 			uart {
 				compatible = "renesas,rx-uart-sci";
