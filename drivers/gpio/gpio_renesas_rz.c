@@ -102,14 +102,15 @@ static int gpio_rz_pin_config_get_raw(bsp_io_port_pin_t port_pin, struct gpio_rz
 	pm_value = GPIO_RZ_PM_VALUE_GET(*p_pm, pin);
 	pfc_value = GPIO_RZ_PFC_VALUE_GET(*p_pfc, pin);
 
-	if (p_value) {
-		rz_flags->gpio_flags = GPIO_OUTPUT_INIT_HIGH;
-	} else {
-		rz_flags->gpio_flags = GPIO_OUTPUT_INIT_LOW;
-	}
-
-	rz_flags->gpio_flags |= (pm_value << 16);
 	rz_flags->pfc = pfc_value;
+	rz_flags->gpio_flags = (pm_value << 16);
+	if (rz_flags->gpio_flags & GPIO_OUTPUT) {
+		if (p_value) {
+			rz_flags->gpio_flags |= GPIO_OUTPUT_INIT_HIGH;
+		} else {
+			rz_flags->gpio_flags |= GPIO_OUTPUT_INIT_LOW;
+		}
+	}
 
 	return 0;
 }
