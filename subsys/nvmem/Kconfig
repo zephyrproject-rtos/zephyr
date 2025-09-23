@@ -1,0 +1,18 @@
+# Copyright (c) 2025 Basalte bv
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig NVMEM
+	bool "Non Volatile Memory (NVMEM)"
+
+if NVMEM
+
+config NVMEM_EEPROM
+	bool "NVMEM support for EEPROM devices"
+	default y
+	depends on EEPROM
+
+module = NVMEM
+module-str = nvmem
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # NVMEM
