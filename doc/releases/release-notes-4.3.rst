@@ -206,6 +206,10 @@ New APIs and options
 
   * :c:func:`sys_count_bits`
 
+* Toolchain
+
+  * :c:macro:`__deprecated_version`
+
 * Task Watchdog
 
   * :kconfig:option:`CONFIG_TASK_WDT_DUMMY`
