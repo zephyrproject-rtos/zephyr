@@ -87,7 +87,14 @@ int xen_domctl_setvcpucontext(int domid, int vcpu, vcpu_guest_context_t *ctxt);
  */
 int xen_domctl_getdomaininfo(int domid, xen_domctl_getdomaininfo_t *dom_info);
 
-int xen_domctl_get_paging_mempool_size(int domid, uint64_t *size_mb);
+/**
+ * @brief Gets the paging mempool size for a specified domain.
+ *
+ * @param domid The ID of the domain.
+ * @param size  Output pointer that receives the paging mempool size in bytes.
+ * @return 0 on success, or a negative error code on failure.
+ */
+int xen_domctl_get_paging_mempool_size(int domid, uint64_t *size);
 
 /**
  * @brief Sets the paging mempool size for a specified domain.

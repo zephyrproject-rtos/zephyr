@@ -105,7 +105,7 @@ int xen_domctl_getdomaininfo(int domid, xen_domctl_getdomaininfo_t *dom_info)
 	return 0;
 }
 
-int xen_domctl_get_paging_mempool_size(int domid, uint64_t *size_mb)
+int xen_domctl_get_paging_mempool_size(int domid, uint64_t *size)
 {
 	int rc;
 	xen_domctl_t domctl = {
@@ -118,7 +118,7 @@ int xen_domctl_get_paging_mempool_size(int domid, uint64_t *size_mb)
 		return rc;
 	}
 
-	*size_mb = domctl.u.paging_mempool.size;
+	*size = domctl.u.paging_mempool.size;
 
 	return 0;
 }
