@@ -1,0 +1,162 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_mcxa344.dtsi>
+#include "frdm_mcxa344-pinctrl.dtsi"
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "NXP FRDM_MCXA344 board";
+	compatible = "nxp,mcxa344", "nxp,mcx";
+
+	aliases{
+		led0 = &red_led;
+		led1 = &green_led;
+		led2 = &blue_led;
+		sw0 = &user_button_2;
+		sw1 = &user_button_3;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash;
+		zephyr,flash-controller = &fmu;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,console = &lpuart2;
+		zephyr,shell-uart = &lpuart2;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		red_led: led_0 {
+			gpios = <&gpio3 18 GPIO_ACTIVE_LOW>;
+			label = "Red LED";
+		};
+
+		green_led: led_1 {
+			gpios = <&gpio3 19 GPIO_ACTIVE_LOW>;
+			label = "Green LED";
+		};
+
+		blue_led: led_2 {
+			gpios = <&gpio3 21 GPIO_ACTIVE_LOW>;
+			label = "Blue LED";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		user_button_2: button_2 {
+			label = "User SW2";
+			gpios = <&gpio1 7 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		user_button_3: button_3 {
+			label = "User SW3";
+			gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+
+	arduino_header: arduino-connector {
+		compatible = "arduino-header-r3";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <ARDUINO_HEADER_R3_A0 0 &gpio1 14 0>,
+			   <ARDUINO_HEADER_R3_A1 0 &gpio2 5 0>,
+			   <ARDUINO_HEADER_R3_A2 0 &gpio2 7 0>,
+			   <ARDUINO_HEADER_R3_A3 0 &gpio3 30 0>,
+			   <ARDUINO_HEADER_R3_A4 0 &gpio1 0 0>,
+			   <ARDUINO_HEADER_R3_A5 0 &gpio1 1 0>,
+			   <ARDUINO_HEADER_R3_D0 0 &gpio2 3 0>,
+			   <ARDUINO_HEADER_R3_D1 0 &gpio2 2 0>,
+			   <ARDUINO_HEADER_R3_D2 0 &gpio3 12 0>,
+			   <ARDUINO_HEADER_R3_D3 0 &gpio3 14 0>,
+			   <ARDUINO_HEADER_R3_D4 0 &gpio1 15 0>,
+			   <ARDUINO_HEADER_R3_D5 0 &gpio3 1 0>,
+			   <ARDUINO_HEADER_R3_D6 0 &gpio3 17 0>,
+			   <ARDUINO_HEADER_R3_D7 0 &gpio3 22 0>,
+			   <ARDUINO_HEADER_R3_D8 0 &gpio4 3 0>,
+			   <ARDUINO_HEADER_R3_D9 0 &gpio3 13 0>,
+			   <ARDUINO_HEADER_R3_D10 0 &gpio3 11 0>,
+			   <ARDUINO_HEADER_R3_D11 0 &gpio3 8 0>,
+			   <ARDUINO_HEADER_R3_D12 0 &gpio3 9 0>,
+			   <ARDUINO_HEADER_R3_D13 0 &gpio3 10 0>,
+			   <ARDUINO_HEADER_R3_D14 0 &gpio1 8 0>,
+			   <ARDUINO_HEADER_R3_D15 0 &gpio1 9 0>;
+	};
+};
+
+&cpu0 {
+	clock-frequency = <180000000>;
+};
+
+&edma0 {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&gpio2 {
+	status = "okay";
+};
+
+&gpio3 {
+	status = "okay";
+};
+
+&gpio4 {
+	status = "okay";
+};
+
+&lpuart2 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_lpuart2>;
+	pinctrl-names = "default";
+};
+
+&flash {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(16)>;
+			read-only;
+		};
+
+		slot0_partition: partition@4000 {
+			label = "image-0";
+			reg = <0x00004000 DT_SIZE_K(100)>;
+		};
+
+		slot1_partition: partition@1D000 {
+			label = "image-1";
+			reg = <0x0001D000 DT_SIZE_K(100)>;
+		};
+
+		storage_partition: partition@36000 {
+			label = "storage";
+			reg = <0x00036000 DT_SIZE_K(28)>;
+		};
+	};
+};
