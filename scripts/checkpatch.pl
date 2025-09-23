@@ -1,5 +1,5 @@
 #!/usr/bin/env perl
-# SPDX-License-Identifier: GPL-2.0
+# SPDX-License-Identifier: Apache-2.0
 #
 # (c) 2001, Dave Jones. (the file handling bit)
 # (c) 2005, Joel Schopp <jschopp@austin.ibm.com> (the ugly bit)
@@ -394,6 +394,7 @@ our $Attribute	= qr{
 			__pure|
 			__noclone|
 			__deprecated|
+			__deprecated_version|
 			__read_mostly|
 			__ro_after_init|
 			__kprobes|
