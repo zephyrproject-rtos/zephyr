@@ -125,7 +125,7 @@ LOG_MODULE_REGISTER(adc_ad7124, CONFIG_ADC_LOG_LEVEL);
 #define AD7124_IOUT1_CHANNEL_MSK GENMASK(7, 4)
 #define AD7124_IOUT0_CHANNEL_MSK GENMASK(3, 0)
 #define AD7124_IOUT_MSK                                                                            \
-	(AD7124_IO_CONTROL_1_REG_PDSW_EN, AD7124_IOUT1_CURRENT_MSK | AD7124_IOUT0_CURRENT_MSK | 		   \
+		(AD7124_IO_CONTROL_1_REG_PDSW_EN, AD7124_IOUT1_CURRENT_MSK | AD7124_IOUT0_CURRENT_MSK |    \
 		AD7124_IOUT1_CHANNEL_MSK | AD7124_IOUT0_CHANNEL_MSK)
 
 /* Current source configuration bits */
@@ -1460,7 +1460,7 @@ static DEVICE_API(adc, adc_ad7124_api) = {
 		.power_mode = DT_INST_PROP(inst, power_mode),                                      \
 		.active_device = DT_INST_PROP(inst, active_device),                                \
 		.ref_en = DT_INST_PROP(inst, reference_enable),                                    \
-		.pdsw_en = DT_INST_PROP(inst, pd_switch_enable),								   \
+		.pdsw_en = DT_INST_PROP(inst, pd_switch_enable),                                   \
 	};                                                                                         \
 	static struct adc_ad7124_data adc_ad7124_data##inst = {                                    \
 		ADC_CONTEXT_INIT_LOCK(adc_ad7124_data##inst, ctx),                                 \
