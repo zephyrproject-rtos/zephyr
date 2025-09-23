@@ -84,35 +84,33 @@ def _resolve_build_dir(fmt, guess, cwd, **kwargs):
 
 def find_build_dir(dir, guess=False, **kwargs):
     '''Heuristic for finding a build directory.
-
-    The default build directory is computed by reading the build.dir-fmt
-    configuration option, defaulting to DEFAULT_BUILD_DIR if not set. It might
-    be None if the build.dir-fmt configuration option is set but cannot be
-    resolved.
-    If the given argument is truthy, it is returned. Otherwise, if
-    the default build folder is a build directory, it is returned.
-    Next, if the current working directory is a build directory, it is
-    returned. Finally, the default build directory is returned (may be None).
+    If `dir` is specified, this directory is returned as the build directory.
+    Otherwise, the default build directory is determined according to the
+    following priorities:
+    1. Resolved `build.dir-fmt` configuration option (all {args} are resolvable).
+       Return this directory, if it is an already existing build directory.
+    2. The current working directory, if it is an existing build directory.
+    3. Resolved `build.dir-fmt` configuration option, no matter if it is an
+       already existing build directory.
+    4. DEFAULT_BUILD_DIR
     '''
 
-    if dir:
-        build_dir = dir
-    else:
-        cwd = os.getcwd()
-        default = config.get('build', 'dir-fmt', fallback=DEFAULT_BUILD_DIR)
-        default = _resolve_build_dir(default, guess, cwd, **kwargs)
-        log.dbg(f'config dir-fmt: {default}', level=log.VERBOSE_EXTREME)
-        if default and is_zephyr_build(default):
-            build_dir = default
-        elif is_zephyr_build(cwd):
-            build_dir = cwd
-        else:
-            build_dir = default
+    build_dir = dir
+    cwd = os.getcwd()
+    dir_fmt = config.get('build', 'dir-fmt', fallback=None)
+    if dir_fmt:
+        log.dbg(f'config dir-fmt: {dir_fmt}', level=log.VERBOSE_EXTREME)
+        dir_fmt = _resolve_build_dir(dir_fmt, guess, cwd, **kwargs)
+    if not build_dir and is_zephyr_build(dir_fmt):
+        build_dir = dir_fmt
+    if not build_dir and is_zephyr_build(cwd):
+        build_dir = cwd
+    if not build_dir and dir_fmt:
+        build_dir = dir_fmt
+    if not build_dir:
+        build_dir = DEFAULT_BUILD_DIR
     log.dbg(f'build dir: {build_dir}', level=log.VERBOSE_EXTREME)
-    if build_dir:
-        return os.path.abspath(build_dir)
-    else:
-        return None
+    return os.path.abspath(build_dir)
 
 def is_zephyr_build(path):
     '''Return true if and only if `path` appears to be a valid Zephyr
@@ -128,6 +126,9 @@ def is_zephyr_build(path):
     The cached ZEPHYR_BASE was added in
     https://github.com/zephyrproject-rtos/zephyr/pull/23054.)
     '''
+    if not path:
+        return False
+
     try:
         cache = zcmake.CMakeCache.from_build_dir(path)
     except FileNotFoundError:
