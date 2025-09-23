@@ -3477,6 +3477,115 @@ ZTEST_USER(net_socket_udp, test_44_recvmsg_ancillary_ipv6_hoplimit_data_user)
 					    sizeof(server_addr));
 }
 
+static void sendto_recvfrom(int client_sock,
+			    struct sockaddr *client_addr,
+			    socklen_t client_addrlen,
+			    int server_sock,
+			    struct sockaddr *server_addr,
+			    socklen_t server_addrlen,
+			    bool expect_failure)
+{
+	ssize_t sent = 0;
+	ssize_t recved = 0;
+	struct sockaddr addr;
+	socklen_t addrlen;
+	struct sockaddr addr2;
+	socklen_t addrlen2;
+
+	zassert_not_null(client_addr, "null client addr");
+	zassert_not_null(server_addr, "null server addr");
+
+	/*
+	 * Test client -> server sending
+	 */
+
+	sent = zsock_sendto(client_sock, TEST_STR_SMALL, strlen(TEST_STR_SMALL),
+			    0, server_addr, server_addrlen);
+	zassert_equal(sent, strlen(TEST_STR_SMALL), "sendto failed");
+
+	k_msleep(100);
+
+	/* Test normal recvfrom() */
+	addrlen = sizeof(addr);
+	clear_buf(rx_buf);
+	recved = zsock_recvfrom(server_sock, rx_buf, sizeof(rx_buf),
+				0, &addr, &addrlen);
+	zassert_true(recved >= 0, "recvfrom fail");
+	zassert_equal(recved, strlen(TEST_STR_SMALL),
+		      "unexpected received bytes");
+	zassert_mem_equal(rx_buf, BUF_AND_SIZE(TEST_STR_SMALL), "wrong data");
+	zassert_equal(addrlen, client_addrlen, "unexpected addrlen");
+
+	/*
+	 * Test server -> client sending
+	 */
+
+	sent = zsock_sendto(server_sock, TEST_STR2, sizeof(TEST_STR2) - 1,
+			    0, &addr, addrlen);
+	zassert_equal(sent, STRLEN(TEST_STR2), "sendto failed");
+
+	/* Test normal recvfrom() */
+	addrlen2 = sizeof(addr);
+	clear_buf(rx_buf);
+	recved = zsock_recvfrom(client_sock, rx_buf, sizeof(rx_buf),
+				expect_failure ? ZSOCK_MSG_DONTWAIT : 0,
+				&addr2, &addrlen2);
+	if (!expect_failure) {
+		zassert_true(recved >= 0, "recvfrom fail");
+		zassert_equal(recved, STRLEN(TEST_STR2),
+			      "unexpected received bytes");
+		zassert_mem_equal(rx_buf, BUF_AND_SIZE(TEST_STR2), "wrong data");
+		zassert_equal(addrlen2, server_addrlen, "unexpected addrlen");
+	} else {
+		/* We should not receive anything as the socket is shutdown for
+		 * receiving.
+		 */
+		zassert_equal(recved, -1, "recvfrom should fail (got %d)", recved);
+	}
+}
+
+ZTEST_USER(net_socket_udp, test_45_udp_shutdown_recv)
+{
+	int rv;
+	int client_sock;
+	int server_sock;
+	struct sockaddr_in client_addr;
+	struct sockaddr_in server_addr;
+
+	prepare_sock_udp_v4(MY_IPV4_ADDR, ANY_PORT, &client_sock, &client_addr);
+	prepare_sock_udp_v4(MY_IPV4_ADDR, SERVER_PORT, &server_sock, &server_addr);
+
+	rv = zsock_bind(server_sock,
+			(struct sockaddr *)&server_addr,
+			sizeof(server_addr));
+	zassert_equal(rv, 0, "bind failed");
+
+	sendto_recvfrom(client_sock,
+			(struct sockaddr *)&client_addr,
+			sizeof(client_addr),
+			server_sock,
+			(struct sockaddr *)&server_addr,
+			sizeof(server_addr),
+			false);
+
+	/* Shutdown UDP socket for receiving and verify that we do not get any data. */
+	rv = zsock_shutdown(client_sock, ZSOCK_SHUT_RD);
+	zassert_equal(rv, 0, "shutdown failed (%d)", -errno);
+
+	sendto_recvfrom(client_sock,
+			(struct sockaddr *)&client_addr,
+			sizeof(client_addr),
+			server_sock,
+			(struct sockaddr *)&server_addr,
+			sizeof(server_addr),
+			true);
+
+	rv = zsock_close(client_sock);
+	zassert_equal(rv, 0, "close failed");
+	rv = zsock_close(server_sock);
+	zassert_equal(rv, 0, "close failed");
+}
+
 static void after(void *arg)
 {
 	ARG_UNUSED(arg);
