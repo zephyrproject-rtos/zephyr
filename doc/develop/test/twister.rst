@@ -1594,6 +1594,25 @@ In this case you can run twister with the following options:
 The script is user-defined and handles delivering the messages which can be
 used by twister to determine the test execution status.
 
+To support devices that communicate via RTT, use the ``--device-rtt`` option. Twister
+will connect to the device with ``west rtt`` command and capture the log messages.
+In this case you can run twister with the following options:
+
+.. tabs::
+
+   .. group-tab:: Linux
+
+      .. code-block:: bash
+
+         scripts/twister --device-testing --device-rtt \
+         -p nrf7002dk/nrf5340/cpuapp -T tests/kernel
+
+   .. group-tab:: Windows
+
+      .. note::
+
+         Not supported on Windows OS
+
 The ``--device-flash-timeout`` option allows to set explicit timeout on the
 device flash operation, for example when device flashing takes significantly
 large time.
@@ -1788,6 +1807,23 @@ work. It is equivalent to following west and twister commands.
   and generate a correct hardware map automatically. You have to edit it
   manually according to above example. This is because the serial port
   of the PTY is not fixed and being allocated in the system at runtime.
+
+RTT support using ``--device-rtt``  can also be used in the
+hardware map:
+
+.. code-block:: yaml
+
+   - connected: true
+     id: 001050795550
+     platform: nrf7002dk/nrf5340/cpuapp
+     product: J-Link
+     runner: nrfutil
+     rtt: true
+     rtt_runner: jlink
+
+If a different runner should be used for RTT connection than for flashing, specify
+``rtt_runner`` field, like shown above. If a different runner is not needed, then
+``rtt_runner`` can be omitted.
 
 If west is not available or does not know how to flash your system, a custom
 flash command can be specified using the ``flash-command`` flag. The script is
