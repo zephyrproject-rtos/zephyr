@@ -2024,9 +2024,7 @@ static int nxp_wifi_dev_init(const struct device *dev)
 
 #ifdef CONFIG_NXP_RW610
 	IRQ_CONNECT(IMU_IRQ_N, IMU_IRQ_P, WL_MCI_WAKEUP0_DriverIRQHandler, 0, 0);
-	irq_enable(IMU_IRQ_N);
 	IRQ_CONNECT(IMU_WAKEUP_IRQ_N, IMU_WAKEUP_IRQ_P, WL_MCI_WAKEUP_DONE0_DriverIRQHandler, 0, 0);
-	irq_enable(IMU_WAKEUP_IRQ_N);
 #if (DT_INST_PROP(0, wakeup_source))
 	NXP_ENABLE_WAKEUP_SIGNAL(IMU_IRQ_N);
 #endif /* DT_INST_PROP */
