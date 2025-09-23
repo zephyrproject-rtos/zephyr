@@ -25,7 +25,7 @@ struct voltage_config {
 
 struct voltage_data {
 	struct adc_sequence sequence;
-	k_timeout_t earliest_sample;
+	k_timepoint_t earliest_sample_time;
 	uint16_t raw;
 };
 
@@ -40,7 +40,7 @@ static int fetch(const struct device *dev, enum sensor_channel chan)
 	}
 
 	/* Wait until sampling is valid */
-	k_sleep(data->earliest_sample);
+	k_sleep(sys_timepoint_timeout(data->earliest_sample_time));
 
 	/* configure the active channel to be converted */
 	ret = adc_channel_setup_dt(&config->voltage.port);
@@ -125,8 +125,7 @@ static int pm_action(const struct device *dev, enum pm_device_action action)
 		if (ret != 0) {
 			LOG_ERR("failed to set GPIO for PM resume");
 		}
-		data->earliest_sample = K_TIMEOUT_ABS_TICKS(
-			k_uptime_ticks() + k_us_to_ticks_ceil32(config->sample_delay_us));
+		data->earliest_sample_time = sys_timepoint_calc(K_USEC(config->sample_delay_us));
 		/* Power up ADC */
 		ret = pm_device_runtime_get(config->voltage.port.dev);
 		if (ret != 0) {
@@ -164,7 +163,7 @@ static int voltage_init(const struct device *dev)
 	int ret;
 
 	/* Default value to use if `power-gpios` does not exist */
-	data->earliest_sample = K_TIMEOUT_ABS_TICKS(0);
+	data->earliest_sample_time = sys_timepoint_calc(K_NO_WAIT);
 
 	if (!adc_is_ready_dt(&config->voltage.port)) {
 		LOG_ERR("ADC is not ready");
