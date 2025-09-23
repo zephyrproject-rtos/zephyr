@@ -74,3 +74,8 @@
 	status = "okay";
 	prescale-glitch-filter = <10>;
 };
+
+&tpm1 {
+	compatible = "nxp,tpm-timer";
+	status = "okay";
+};
