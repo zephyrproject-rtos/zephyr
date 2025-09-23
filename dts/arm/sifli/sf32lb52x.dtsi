@@ -201,6 +201,13 @@
 				status = "disabled";
 			};
 		};
+
+		wdt: watchdog@50094000 {
+			compatible = "sifli,sf32lb-watchdog";
+			reg = <0x50094000 0x400>;
+			interrupts = <26 0>;
+			status = "disabled";
+		};
 	};
 };
 
