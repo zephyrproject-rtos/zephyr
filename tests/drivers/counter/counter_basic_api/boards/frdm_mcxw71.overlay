@@ -23,3 +23,8 @@
 &lpit1_channel3 {
 	status = "okay";
 };
+
+&tpm1 {
+	compatible = "nxp,tpm-timer";
+	status = "okay";
+};
