@@ -10,12 +10,12 @@
 #include <stdio.h>
 #include <zephyr/sys/__assert.h>
 
-#define DELAY_WITH_TRIGGER K_SECONDS(5)
+#define DELAY_WITH_TRIGGER    K_SECONDS(5)
 #define DELAY_WITHOUT_TRIGGER K_SECONDS(1)
 
-#define UCEL_PER_CEL 1000000
-#define UCEL_PER_MCEL 1000
-#define TEMP_INITIAL_CEL 21
+#define UCEL_PER_CEL          1000000
+#define UCEL_PER_MCEL         1000
+#define TEMP_INITIAL_CEL      21
 #define TEMP_WINDOW_HALF_UCEL 500000
 
 K_SEM_DEFINE(sem, 0, 1);
@@ -35,12 +35,10 @@ static const char *now_str(void)
 	now /= 60U;
 	h = now;
 
-	snprintf(buf, sizeof(buf), "%u:%02u:%02u.%03u",
-		 h, min, s, ms);
+	snprintf(buf, sizeof(buf), "%u:%02u:%02u.%03u", h, min, s, ms);
 	return buf;
 }
-static void trigger_handler(const struct device *dev,
-			    const struct sensor_trigger *trigger)
+static void trigger_handler(const struct device *dev, const struct sensor_trigger *trigger)
 {
 	k_sem_give(&sem);
 }
@@ -48,8 +46,7 @@ static void trigger_handler(const struct device *dev,
 static int low_ucel;
 static int high_ucel;
 
-static int sensor_set_attribute(const struct device *dev,
-				enum sensor_channel chan,
+static int sensor_set_attribute(const struct device *dev, enum sensor_channel chan,
 				enum sensor_attribute attr, int value)
 {
 	struct sensor_value sensor_val;
@@ -73,25 +70,23 @@ static bool temp_in_window(const struct sensor_value *val)
 	return (temp_ucel >= low_ucel) && (temp_ucel <= high_ucel);
 }
 
-static int sensor_set_window(const struct device *dev,
-			     const struct sensor_value *val)
+static int sensor_set_window(const struct device *dev, const struct sensor_value *val)
 {
 	int temp_ucel = val->val1 * UCEL_PER_CEL + val->val2;
 
 	low_ucel = temp_ucel - TEMP_WINDOW_HALF_UCEL;
 	high_ucel = temp_ucel + TEMP_WINDOW_HALF_UCEL;
 
-	int rc = sensor_set_attribute(dev, SENSOR_CHAN_AMBIENT_TEMP,
-				      SENSOR_ATTR_UPPER_THRESH, high_ucel);
+	int rc = sensor_set_attribute(dev, SENSOR_CHAN_AMBIENT_TEMP, SENSOR_ATTR_UPPER_THRESH,
+				      high_ucel);
 
 	if (rc == 0) {
-		sensor_set_attribute(dev, SENSOR_CHAN_AMBIENT_TEMP,
-				     SENSOR_ATTR_LOWER_THRESH, low_ucel);
+		sensor_set_attribute(dev, SENSOR_CHAN_AMBIENT_TEMP, SENSOR_ATTR_LOWER_THRESH,
+				     low_ucel);
 	}
 
 	if (rc == 0) {
-		printk("Alert on temp outside [%d, %d] mCel\n",
-		       low_ucel / UCEL_PER_MCEL,
+		printk("Alert on temp outside [%d, %d] mCel\n", low_ucel / UCEL_PER_MCEL,
 		       high_ucel / UCEL_PER_MCEL);
 	}
 
@@ -105,8 +100,8 @@ static void process(const struct device *dev)
 	bool reset_window = false;
 
 	/* Set update rate to 240 mHz */
-	sensor_set_attribute(dev, SENSOR_CHAN_AMBIENT_TEMP,
-			     SENSOR_ATTR_SAMPLING_FREQUENCY, 240 * 1000);
+	sensor_set_attribute(dev, SENSOR_CHAN_AMBIENT_TEMP, SENSOR_ATTR_SAMPLING_FREQUENCY,
+			     240 * 1000);
 
 	if (IS_ENABLED(CONFIG_ADT7420_TRIGGER)) {
 		struct sensor_trigger trig = {
@@ -134,8 +129,7 @@ static void process(const struct device *dev)
 			return;
 		}
 
-		ret = sensor_channel_get(dev, SENSOR_CHAN_AMBIENT_TEMP,
-					 &temp_val);
+		ret = sensor_channel_get(dev, SENSOR_CHAN_AMBIENT_TEMP, &temp_val);
 		if (ret) {
 			printf("sensor_channel_get failed ret %d\n", ret);
 			return;
@@ -146,9 +140,7 @@ static void process(const struct device *dev)
 		}
 
 		printf("[%s]: temperature %.6f Cel%s\n", now_str(),
-		       sensor_value_to_double(&temp_val),
-		       reset_window ? ": NEED RESET" : "");
-
+		       sensor_value_to_double(&temp_val), reset_window ? ": NEED RESET" : "");
 
 		if (IS_ENABLED(CONFIG_ADT7420_TRIGGER)) {
 			if (reset_window) {

@@ -20,9 +20,9 @@
 #define UPDATE_TIME_MS 2000
 
 #if CONFIG_SHIELD_NPM1300_EK
-#define SHIELD_LABEL(component) DT_NODELABEL(npm1300_ek_ ## component)
+#define SHIELD_LABEL(component) DT_NODELABEL(npm1300_ek_##component)
 #elif CONFIG_SHIELD_NPM1304_EK
-#define SHIELD_LABEL(component) DT_NODELABEL(npm1304_ek_ ## component)
+#define SHIELD_LABEL(component) DT_NODELABEL(npm1304_ek_##component)
 #else
 #error "either npm1300_ek or npm1304_ek shield should be selected"
 #endif
@@ -83,8 +83,8 @@ void configure_events(void)
 	/* Setup callback for shiphold button press */
 	static struct gpio_callback event_cb;
 
-	gpio_init_callback(&event_cb, event_callback, BIT(NPM13XX_EVENT_SHIPHOLD_PRESS) |
-			   BIT(NPM13XX_EVENT_SHIPHOLD_RELEASE));
+	gpio_init_callback(&event_cb, event_callback,
+			   BIT(NPM13XX_EVENT_SHIPHOLD_PRESS) | BIT(NPM13XX_EVENT_SHIPHOLD_RELEASE));
 
 	mfd_npm13xx_add_callback(pmic, &event_cb);
 }

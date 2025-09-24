@@ -14,8 +14,8 @@
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/i2c.h>
 
-#define MAX_TEST_TIME	5000
-#define SLEEPTIME	300
+#define MAX_TEST_TIME 5000
+#define SLEEPTIME     300
 
 static void print_proxy_data(const struct device *dev)
 {
@@ -26,7 +26,7 @@ static void print_proxy_data(const struct device *dev)
 		return;
 	}
 
-	printf("Proximity: %d\n", (uint16_t) pdata.val1);
+	printf("Proximity: %d\n", (uint16_t)pdata.val1);
 }
 #if defined(CONFIG_VCNL4040_ENABLE_ALS)
 static void print_als_data(const struct device *dev)
@@ -38,7 +38,7 @@ static void print_als_data(const struct device *dev)
 		return;
 	}
 
-	printf("Light (lux): %d\n", (uint16_t) val.val1);
+	printf("Light (lux): %d\n", (uint16_t)val.val1);
 }
 #endif
 static void test_polling_mode(const struct device *dev)
@@ -63,8 +63,7 @@ static void test_polling_mode(const struct device *dev)
 }
 
 #if defined(CONFIG_VCNL4040_TRIGGER)
-static void trigger_handler(const struct device *dev,
-			    const struct sensor_trigger *trig)
+static void trigger_handler(const struct device *dev, const struct sensor_trigger *trig)
 {
 	switch (trig->type) {
 	case SENSOR_TRIG_THRESHOLD:
@@ -94,16 +93,14 @@ static void test_trigger_mode(const struct device *dev)
 	attr.val1 = 127;
 	attr.val2 = 0;
 
-	if (sensor_attr_set(dev, SENSOR_CHAN_PROX,
-			    SENSOR_ATTR_UPPER_THRESH, &attr) < 0) {
+	if (sensor_attr_set(dev, SENSOR_CHAN_PROX, SENSOR_ATTR_UPPER_THRESH, &attr) < 0) {
 		printf("cannot set proximity high threshold.\n");
 		return;
 	}
 
 	attr.val1 = 122;
 
-	if (sensor_attr_set(dev, SENSOR_CHAN_PROX,
-			    SENSOR_ATTR_LOWER_THRESH, &attr) < 0) {
+	if (sensor_attr_set(dev, SENSOR_CHAN_PROX, SENSOR_ATTR_LOWER_THRESH, &attr) < 0) {
 		printf("cannot set proximity low threshold.\n");
 		return;
 	}
@@ -125,7 +122,6 @@ static void test_trigger_mode(const struct device *dev)
 
 	printf("Threshold trigger test finished.\n");
 #endif
-
 }
 
 int main(void)

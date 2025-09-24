@@ -14,8 +14,8 @@ LOG_MODULE_REGISTER(app_device, LOG_LEVEL_DBG);
 
 #include "device.h"
 
-#define SENSOR_CHAN     SENSOR_CHAN_AMBIENT_TEMP
-#define SENSOR_UNIT     "Celsius"
+#define SENSOR_CHAN SENSOR_CHAN_AMBIENT_TEMP
+#define SENSOR_UNIT "Celsius"
 
 /* Devices */
 static const struct device *sensor = DEVICE_DT_GET_OR_NULL(DT_ALIAS(ambient_temp0));
@@ -33,10 +33,7 @@ static void led_off_handler(void)
 }
 
 /* Supported device commands */
-struct device_cmd device_commands[] = {
-	{"led_on", led_on_handler},
-	{"led_off", led_off_handler}
-};
+struct device_cmd device_commands[] = {{"led_on", led_on_handler}, {"led_off", led_off_handler}};
 
 const size_t num_device_commands = ARRAY_SIZE(device_commands);
 

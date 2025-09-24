@@ -14,8 +14,8 @@
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/i2c.h>
 
-#define MAX_TEST_TIME	15000
-#define SLEEPTIME	300
+#define MAX_TEST_TIME 15000
+#define SLEEPTIME     300
 
 #if !DT_HAS_COMPAT_STATUS_OKAY(bosch_bmg160)
 #error "No bosch,bmg160 compatible node found in the device tree"
@@ -30,10 +30,8 @@ static void print_gyro_data(const struct device *bmg160)
 		return;
 	}
 
-	printf("Gyro (rad/s): X=%f, Y=%f, Z=%f\n",
-	       val[0].val1 + val[0].val2 / 1000000.0,
-	       val[1].val1 + val[1].val2 / 1000000.0,
-	       val[2].val1 + val[2].val2 / 1000000.0);
+	printf("Gyro (rad/s): X=%f, Y=%f, Z=%f\n", val[0].val1 + val[0].val2 / 1000000.0,
+	       val[1].val1 + val[1].val2 / 1000000.0, val[2].val1 + val[2].val2 / 1000000.0);
 }
 
 static void print_temp_data(const struct device *bmg160)
@@ -45,8 +43,7 @@ static void print_temp_data(const struct device *bmg160)
 		return;
 	}
 
-	printf("Temperature (Celsius): %f\n",
-	       val.val1 + val.val2 / 1000000.0);
+	printf("Temperature (Celsius): %f\n", val.val1 + val.val2 / 1000000.0);
 }
 
 static void test_polling_mode(const struct device *bmg160)
@@ -69,11 +66,9 @@ static void test_polling_mode(const struct device *bmg160)
 	} while (remaining_test_time > 0);
 }
 
-static void trigger_handler(const struct device *bmg160,
-			    const struct sensor_trigger *trigger)
+static void trigger_handler(const struct device *bmg160, const struct sensor_trigger *trigger)
 {
-	if (trigger->type != SENSOR_TRIG_DATA_READY &&
-	    trigger->type != SENSOR_TRIG_DELTA) {
+	if (trigger->type != SENSOR_TRIG_DATA_READY && trigger->type != SENSOR_TRIG_DELTA) {
 		printf("Gyro: trigger handler: unknown trigger type.\n");
 		return;
 	}
@@ -102,8 +97,7 @@ static void test_trigger_mode(const struct device *bmg160)
 
 	sensor_degrees_to_rad(10, &attr); /* convert to rad/s */
 
-	if (sensor_attr_set(bmg160, SENSOR_CHAN_GYRO_XYZ,
-			    SENSOR_ATTR_SLOPE_TH, &attr) < 0) {
+	if (sensor_attr_set(bmg160, SENSOR_CHAN_GYRO_XYZ, SENSOR_ATTR_SLOPE_TH, &attr) < 0) {
 		printf("Gyro: cannot set slope threshold.\n");
 		return;
 	}
@@ -112,8 +106,7 @@ static void test_trigger_mode(const struct device *bmg160)
 	attr.val1 = 4;
 	attr.val2 = 0;
 
-	if (sensor_attr_set(bmg160, SENSOR_CHAN_GYRO_XYZ,
-			    SENSOR_ATTR_SLOPE_DUR, &attr) < 0) {
+	if (sensor_attr_set(bmg160, SENSOR_CHAN_GYRO_XYZ, SENSOR_ATTR_SLOPE_DUR, &attr) < 0) {
 		printf("Gyro: cannot set slope duration.\n");
 		return;
 	}
@@ -141,8 +134,8 @@ static void test_trigger_mode(const struct device *bmg160)
 	attr.val1 = 100;
 	attr.val2 = 0;
 
-	if (sensor_attr_set(bmg160, SENSOR_CHAN_GYRO_XYZ,
-			    SENSOR_ATTR_SAMPLING_FREQUENCY, &attr) < 0) {
+	if (sensor_attr_set(bmg160, SENSOR_CHAN_GYRO_XYZ, SENSOR_ATTR_SAMPLING_FREQUENCY, &attr) <
+	    0) {
 		printf("Gyro: cannot set sampling frequency.\n");
 		return;
 	}
@@ -189,8 +182,7 @@ int main(void)
 	 */
 	sensor_degrees_to_rad(250, &attr);
 
-	if (sensor_attr_set(bmg160, SENSOR_CHAN_GYRO_XYZ,
-			    SENSOR_ATTR_FULL_SCALE, &attr) < 0) {
+	if (sensor_attr_set(bmg160, SENSOR_CHAN_GYRO_XYZ, SENSOR_ATTR_FULL_SCALE, &attr) < 0) {
 		printf("Cannot set gyro range.\n");
 		return 0;
 	}

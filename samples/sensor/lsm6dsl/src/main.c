@@ -23,8 +23,7 @@ static struct sensor_value press_out, temp_out;
 #endif
 
 #ifdef CONFIG_LSM6DSL_TRIGGER
-static void lsm6dsl_trigger_handler(const struct device *dev,
-				    const struct sensor_trigger *trig)
+static void lsm6dsl_trigger_handler(const struct device *dev, const struct sensor_trigger *trig)
 {
 	static struct sensor_value accel_x, accel_y, accel_z;
 	static struct sensor_value gyro_x, gyro_y, gyro_z;
@@ -86,7 +85,6 @@ static void lsm6dsl_trigger_handler(const struct device *dev,
 		temp_out = temp;
 #endif
 	}
-
 }
 #endif
 
@@ -106,14 +104,14 @@ int main(void)
 	odr_attr.val1 = 104;
 	odr_attr.val2 = 0;
 
-	if (sensor_attr_set(lsm6dsl_dev, SENSOR_CHAN_ACCEL_XYZ,
-			    SENSOR_ATTR_SAMPLING_FREQUENCY, &odr_attr) < 0) {
+	if (sensor_attr_set(lsm6dsl_dev, SENSOR_CHAN_ACCEL_XYZ, SENSOR_ATTR_SAMPLING_FREQUENCY,
+			    &odr_attr) < 0) {
 		printk("Cannot set sampling frequency for accelerometer.\n");
 		return 0;
 	}
 
-	if (sensor_attr_set(lsm6dsl_dev, SENSOR_CHAN_GYRO_XYZ,
-			    SENSOR_ATTR_SAMPLING_FREQUENCY, &odr_attr) < 0) {
+	if (sensor_attr_set(lsm6dsl_dev, SENSOR_CHAN_GYRO_XYZ, SENSOR_ATTR_SAMPLING_FREQUENCY,
+			    &odr_attr) < 0) {
 		printk("Cannot set sampling frequency for gyro.\n");
 		return 0;
 	}
@@ -142,31 +140,28 @@ int main(void)
 
 		/* lsm6dsl accel */
 		sprintf(out_str, "accel x:%f ms/2 y:%f ms/2 z:%f ms/2",
-							  sensor_value_to_double(&accel_x_out),
-							  sensor_value_to_double(&accel_y_out),
-							  sensor_value_to_double(&accel_z_out));
+			sensor_value_to_double(&accel_x_out), sensor_value_to_double(&accel_y_out),
+			sensor_value_to_double(&accel_z_out));
 		printk("%s\n", out_str);
 
 		/* lsm6dsl gyro */
 		sprintf(out_str, "gyro x:%f dps y:%f dps z:%f dps",
-							   sensor_value_to_double(&gyro_x_out),
-							   sensor_value_to_double(&gyro_y_out),
-							   sensor_value_to_double(&gyro_z_out));
+			sensor_value_to_double(&gyro_x_out), sensor_value_to_double(&gyro_y_out),
+			sensor_value_to_double(&gyro_z_out));
 		printk("%s\n", out_str);
 
 #if defined(CONFIG_LSM6DSL_EXT0_LIS2MDL)
 		/* lsm6dsl external magn */
 		sprintf(out_str, "magn x:%f gauss y:%f gauss z:%f gauss",
-							   sensor_value_to_double(&magn_x_out),
-							   sensor_value_to_double(&magn_y_out),
-							   sensor_value_to_double(&magn_z_out));
+			sensor_value_to_double(&magn_x_out), sensor_value_to_double(&magn_y_out),
+			sensor_value_to_double(&magn_z_out));
 		printk("%s\n", out_str);
 #endif
 
 #if defined(CONFIG_LSM6DSL_EXT0_LPS22HB)
 		/* lsm6dsl external press/temp */
-		sprintf(out_str, "press: %f kPa - temp: %f deg",
-			sensor_value_to_double(&press_out), sensor_value_to_double(&temp_out));
+		sprintf(out_str, "press: %f kPa - temp: %f deg", sensor_value_to_double(&press_out),
+			sensor_value_to_double(&temp_out));
 		printk("%s\n", out_str);
 #endif
 

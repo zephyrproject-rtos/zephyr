@@ -26,9 +26,8 @@ int main(void)
 		sensor_sample_fetch(dev);
 		sensor_channel_get(dev, SENSOR_CHAN_CO2, &co2);
 		sensor_channel_get(dev, SENSOR_CHAN_VOC, &voc);
-		printk("Co2: %d.%06dppm; VOC: %d.%06dppb\n",
-			co2.val1, co2.val2,
-			voc.val1, voc.val2);
+		printk("Co2: %d.%06dppm; VOC: %d.%06dppb\n", co2.val1, co2.val2, voc.val1,
+		       voc.val2);
 
 		k_sleep(K_MSEC(1000));
 	}

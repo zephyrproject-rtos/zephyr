@@ -47,10 +47,8 @@ int main(void)
 
 	heater_p.val1 = CONFIG_APP_HEATER_PULSE_POWER;
 	heater_d.val1 = CONFIG_APP_HEATER_PULSE_DURATION;
-	sensor_attr_set(sht, SENSOR_CHAN_ALL,
-			SENSOR_ATTR_SHT4X_HEATER_POWER, &heater_p);
-	sensor_attr_set(sht, SENSOR_CHAN_ALL,
-			SENSOR_ATTR_SHT4X_HEATER_DURATION, &heater_d);
+	sensor_attr_set(sht, SENSOR_CHAN_ALL, SENSOR_ATTR_SHT4X_HEATER_POWER, &heater_p);
+	sensor_attr_set(sht, SENSOR_CHAN_ALL, SENSOR_ATTR_SHT4X_HEATER_DURATION, &heater_d);
 #endif
 
 	while (true) {
@@ -73,7 +71,7 @@ int main(void)
 		 * The temperature data will not be updated here for obvious reasons.
 		 **/
 		if (hum.val1 > CONFIG_APP_HEATER_HUMIDITY_THRESH &&
-				temp.val1 < SHT4X_HEATER_MAX_TEMP) {
+		    temp.val1 < SHT4X_HEATER_MAX_TEMP) {
 			printf("Activating heater.\n");
 
 			if (sht4x_fetch_with_heater(sht)) {
@@ -88,14 +86,8 @@ int main(void)
 #if CONFIG_APP_USE_COMPENSATION
 		comp_t.val1 = temp.val1; /* Temp [°C] */
 		comp_rh.val1 = hum.val1; /* RH [%] */
-		sensor_attr_set(sgp,
-				SENSOR_CHAN_GAS_RES,
-				SENSOR_ATTR_SGP40_TEMPERATURE,
-				&comp_t);
-		sensor_attr_set(sgp,
-				SENSOR_CHAN_GAS_RES,
-				SENSOR_ATTR_SGP40_HUMIDITY,
-				&comp_rh);
+		sensor_attr_set(sgp, SENSOR_CHAN_GAS_RES, SENSOR_ATTR_SGP40_TEMPERATURE, &comp_t);
+		sensor_attr_set(sgp, SENSOR_CHAN_GAS_RES, SENSOR_ATTR_SGP40_HUMIDITY, &comp_rh);
 #endif
 		if (sensor_sample_fetch(sgp)) {
 			printf("Failed to fetch sample from SGP40 device.\n");
@@ -105,9 +97,7 @@ int main(void)
 		sensor_channel_get(sgp, SENSOR_CHAN_GAS_RES, &gas);
 
 		printf("SHT4X: %.2f Temp. [C] ; %0.2f RH [%%] -- SGP40: %d Gas [a.u.]\n",
-		       sensor_value_to_double(&temp),
-		       sensor_value_to_double(&hum),
-		       gas.val1);
+		       sensor_value_to_double(&temp), sensor_value_to_double(&hum), gas.val1);
 
 		/* Maximum duty cycle for using the heater is 5% */
 #if CONFIG_APP_USE_HEATER && CONFIG_APP_HEATER_PULSE_DURATION == 0

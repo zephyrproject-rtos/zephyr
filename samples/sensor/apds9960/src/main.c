@@ -14,8 +14,7 @@
 #ifdef CONFIG_APDS9960_TRIGGER
 K_SEM_DEFINE(sem, 0, 1);
 
-static void trigger_handler(const struct device *dev,
-			    const struct sensor_trigger *trigger)
+static void trigger_handler(const struct device *dev, const struct sensor_trigger *trigger)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(trigger);
@@ -42,8 +41,7 @@ int main(void)
 		.val2 = 0,
 	};
 
-	if (sensor_attr_set(dev, SENSOR_CHAN_PROX,
-			    SENSOR_ATTR_UPPER_THRESH, &attr)) {
+	if (sensor_attr_set(dev, SENSOR_CHAN_PROX, SENSOR_ATTR_UPPER_THRESH, &attr)) {
 		printk("Could not set threshold\n");
 		return 0;
 	}
@@ -73,8 +71,7 @@ int main(void)
 		sensor_channel_get(dev, SENSOR_CHAN_LIGHT, &intensity);
 		sensor_channel_get(dev, SENSOR_CHAN_PROX, &pdata);
 
-		printk("ambient light intensity %d, proximity %d\n",
-		       intensity.val1, pdata.val1);
+		printk("ambient light intensity %d, proximity %d\n", intensity.val1, pdata.val1);
 
 #ifdef CONFIG_PM_DEVICE
 		pm_device_action_run(dev, PM_DEVICE_ACTION_SUSPEND);

@@ -10,22 +10,22 @@
 #include <zephyr/ztest.h>
 
 #if DT_NODE_HAS_STATUS(DT_INST(0, hc_sr04), okay)
-#define HC_SR04 DT_NODELABEL(hc_sr04)
+#define HC_SR04          DT_NODELABEL(hc_sr04)
 #define HC_SR04_GPIO_OUT DT_GPIO_CTLR(DT_INST(0, hc_sr04), trigger_gpios)
-#define HC_SR04_PIN_OUT DT_GPIO_PIN(DT_INST(0, hc_sr04), trigger_gpios)
-#define HC_SR04_GPIO_IN DT_GPIO_CTLR(DT_INST(0, hc_sr04), echo_gpios)
-#define HC_SR04_PIN_IN DT_GPIO_PIN(DT_INST(0, hc_sr04), echo_gpios)
+#define HC_SR04_PIN_OUT  DT_GPIO_PIN(DT_INST(0, hc_sr04), trigger_gpios)
+#define HC_SR04_GPIO_IN  DT_GPIO_CTLR(DT_INST(0, hc_sr04), echo_gpios)
+#define HC_SR04_PIN_IN   DT_GPIO_PIN(DT_INST(0, hc_sr04), echo_gpios)
 #else
 #error "HC-SR04 not enabled"
 #endif
 
-#define TEST_MEASURED_VALUE(fixture, value, duration_us, value1, value2)                   \
-	fixture->emul.echo_duration_us = duration_us;                                      \
-	zassert_false(sensor_sample_fetch(fixture->dev), "sensor_sample_fetch failed");    \
-	zassert_false(sensor_channel_get(fixture->dev, SENSOR_CHAN_DISTANCE, &value),      \
-			"sensor_channel_get failed");                                      \
-	zassert_equal(value.val1, value1, "incorrect measurement for value.val1");         \
-	zassert_within(value.val2, value2, 10000, "incorrect measurement for value.val2"); \
+#define TEST_MEASURED_VALUE(fixture, value, duration_us, value1, value2)                           \
+	fixture->emul.echo_duration_us = duration_us;                                              \
+	zassert_false(sensor_sample_fetch(fixture->dev), "sensor_sample_fetch failed");            \
+	zassert_false(sensor_channel_get(fixture->dev, SENSOR_CHAN_DISTANCE, &value),              \
+		      "sensor_channel_get failed");                                                \
+	zassert_equal(value.val1, value1, "incorrect measurement for value.val1");                 \
+	zassert_within(value.val2, value2, 10000, "incorrect measurement for value.val2");
 
 struct hcsr04_emul {
 	bool fail_echo;
@@ -38,32 +38,26 @@ struct hcsr04_fixture {
 	struct hcsr04_emul emul;
 };
 
-static void gpio_emul_callback_handler(const struct device *port,
-					struct gpio_callback *cb,
-					gpio_port_pins_t pins);
+static void gpio_emul_callback_handler(const struct device *port, struct gpio_callback *cb,
+				       gpio_port_pins_t pins);
 
 static void *hcsr04_setup(void)
 {
 	static struct hcsr04_fixture fixture = {
-		.dev = DEVICE_DT_GET(HC_SR04),
-		.emul = {
-			.fail_echo = false,
-			.echo_duration_us = 0
-		}
-	};
+		.dev = DEVICE_DT_GET(HC_SR04), .emul = {.fail_echo = false, .echo_duration_us = 0}};
 	const struct device *gpio_dev = DEVICE_DT_GET(HC_SR04_GPIO_IN);
 
 	zassert_not_null(fixture.dev);
 	zassert_not_null(gpio_dev);
 	zassert_true(device_is_ready(fixture.dev));
 	zassert_equal(DEVICE_DT_GET(HC_SR04_GPIO_IN), DEVICE_DT_GET(HC_SR04_GPIO_OUT),
-			"Input and output GPIO devices must the same");
+		      "Input and output GPIO devices must the same");
 
 	zassert_true(device_is_ready(gpio_dev), "GPIO dev is not ready");
 
 	gpio_init_callback(&fixture.emul.cb, &gpio_emul_callback_handler, BIT(HC_SR04_PIN_OUT));
 	zassert_false(gpio_add_callback(gpio_dev, &fixture.emul.cb),
-			"Failed to add emulation callback");
+		      "Failed to add emulation callback");
 
 	return &fixture;
 }
@@ -75,9 +69,8 @@ static void hcsr04_before(void *f)
 	fixture->emul.fail_echo = false;
 }
 
-static void gpio_emul_callback_handler(const struct device *port,
-					struct gpio_callback *cb,
-					gpio_port_pins_t pins)
+static void gpio_emul_callback_handler(const struct device *port, struct gpio_callback *cb,
+				       gpio_port_pins_t pins)
 {
 	const struct hcsr04_emul *emul = CONTAINER_OF(cb, struct hcsr04_emul, cb);
 

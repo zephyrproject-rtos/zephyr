@@ -18,8 +18,7 @@
 #ifdef CONFIG_STTS22H_TRIGGER
 static int stts22h_trig_cnt;
 
-static void stts22h_trigger_handler(const struct device *dev,
-				    const struct sensor_trigger *trig)
+static void stts22h_trigger_handler(const struct device *dev, const struct sensor_trigger *trig)
 {
 	stts22h_trig_cnt++;
 }
@@ -28,8 +27,7 @@ static void stts22h_trigger_handler(const struct device *dev,
 #ifdef CONFIG_IIS2DLPC_TRIGGER
 static int iis2dlpc_trig_cnt;
 
-static void iis2dlpc_trigger_handler(const struct device *dev,
-				     const struct sensor_trigger *trig)
+static void iis2dlpc_trigger_handler(const struct device *dev, const struct sensor_trigger *trig)
 {
 	sensor_sample_fetch_chan(dev, SENSOR_CHAN_ACCEL_XYZ);
 	iis2dlpc_trig_cnt++;
@@ -39,8 +37,7 @@ static void iis2dlpc_trigger_handler(const struct device *dev,
 #ifdef CONFIG_IIS2MDC_TRIGGER
 static int iis2mdc_trig_cnt;
 
-static void iis2mdc_trigger_handler(const struct device *dev,
-				    const struct sensor_trigger *trig)
+static void iis2mdc_trigger_handler(const struct device *dev, const struct sensor_trigger *trig)
 {
 	sensor_sample_fetch_chan(dev, SENSOR_CHAN_ALL);
 	iis2mdc_trig_cnt++;
@@ -69,8 +66,7 @@ static void ism330dhcx_gyr_trigger_handler(const struct device *dev,
 #ifdef CONFIG_IIS2ICLX_TRIGGER
 static int iis2iclx_trig_cnt;
 
-static void iis2iclx_trigger_handler(const struct device *dev,
-				     const struct sensor_trigger *trig)
+static void iis2iclx_trigger_handler(const struct device *dev, const struct sensor_trigger *trig)
 {
 	sensor_sample_fetch_chan(dev, SENSOR_CHAN_ACCEL_XYZ);
 	iis2iclx_trig_cnt++;
@@ -85,8 +81,8 @@ static void stts22h_config(const struct device *stts22h)
 	odr_attr.val1 = 100;
 	odr_attr.val2 = 0;
 
-	if (sensor_attr_set(stts22h, SENSOR_CHAN_AMBIENT_TEMP,
-			    SENSOR_ATTR_SAMPLING_FREQUENCY, &odr_attr) < 0) {
+	if (sensor_attr_set(stts22h, SENSOR_CHAN_AMBIENT_TEMP, SENSOR_ATTR_SAMPLING_FREQUENCY,
+			    &odr_attr) < 0) {
 		printk("Cannot set sampling frequency for STTS22H\n");
 		return;
 	}
@@ -108,16 +104,16 @@ static void iis2dlpc_config(const struct device *iis2dlpc)
 	odr_attr.val1 = 200;
 	odr_attr.val2 = 0;
 
-	if (sensor_attr_set(iis2dlpc, SENSOR_CHAN_ACCEL_XYZ,
-			    SENSOR_ATTR_SAMPLING_FREQUENCY, &odr_attr) < 0) {
+	if (sensor_attr_set(iis2dlpc, SENSOR_CHAN_ACCEL_XYZ, SENSOR_ATTR_SAMPLING_FREQUENCY,
+			    &odr_attr) < 0) {
 		printk("Cannot set sampling frequency for IIS2DLPC accel\n");
 		return;
 	}
 
 	sensor_g_to_ms2(16, &fs_attr);
 
-	if (sensor_attr_set(iis2dlpc, SENSOR_CHAN_ACCEL_XYZ,
-			    SENSOR_ATTR_FULL_SCALE, &fs_attr) < 0) {
+	if (sensor_attr_set(iis2dlpc, SENSOR_CHAN_ACCEL_XYZ, SENSOR_ATTR_FULL_SCALE, &fs_attr) <
+	    0) {
 		printk("Cannot set full scale for IIS2DLPC accel\n");
 		return;
 	}
@@ -139,16 +135,16 @@ static void iis2iclx_config(const struct device *iis2iclx)
 	odr_attr.val1 = 200;
 	odr_attr.val2 = 0;
 
-	if (sensor_attr_set(iis2iclx, SENSOR_CHAN_ACCEL_XYZ,
-			    SENSOR_ATTR_SAMPLING_FREQUENCY, &odr_attr) < 0) {
+	if (sensor_attr_set(iis2iclx, SENSOR_CHAN_ACCEL_XYZ, SENSOR_ATTR_SAMPLING_FREQUENCY,
+			    &odr_attr) < 0) {
 		printk("Cannot set sampling frequency for IIS2ICLX accel\n");
 		return;
 	}
 
 	sensor_g_to_ms2(2, &fs_attr);
 
-	if (sensor_attr_set(iis2iclx, SENSOR_CHAN_ACCEL_XYZ,
-			    SENSOR_ATTR_FULL_SCALE, &fs_attr) < 0) {
+	if (sensor_attr_set(iis2iclx, SENSOR_CHAN_ACCEL_XYZ, SENSOR_ATTR_FULL_SCALE, &fs_attr) <
+	    0) {
 		printk("Cannot set full scale for IIS2ICLX accel\n");
 		return;
 	}
@@ -170,8 +166,8 @@ static void iis2mdc_config(const struct device *iis2mdc)
 	odr_attr.val1 = 100;
 	odr_attr.val2 = 0;
 
-	if (sensor_attr_set(iis2mdc, SENSOR_CHAN_ALL,
-			    SENSOR_ATTR_SAMPLING_FREQUENCY, &odr_attr) < 0) {
+	if (sensor_attr_set(iis2mdc, SENSOR_CHAN_ALL, SENSOR_ATTR_SAMPLING_FREQUENCY, &odr_attr) <
+	    0) {
 		printk("Cannot set sampling frequency for IIS2MDC\n");
 		return;
 	}
@@ -193,16 +189,16 @@ static void ism330dhcx_config(const struct device *ism330dhcx)
 	odr_attr.val1 = 416;
 	odr_attr.val2 = 0;
 
-	if (sensor_attr_set(ism330dhcx, SENSOR_CHAN_ACCEL_XYZ,
-			    SENSOR_ATTR_SAMPLING_FREQUENCY, &odr_attr) < 0) {
+	if (sensor_attr_set(ism330dhcx, SENSOR_CHAN_ACCEL_XYZ, SENSOR_ATTR_SAMPLING_FREQUENCY,
+			    &odr_attr) < 0) {
 		printk("Cannot set sampling frequency for ISM330DHCX accel\n");
 		return;
 	}
 
 	sensor_g_to_ms2(16, &fs_attr);
 
-	if (sensor_attr_set(ism330dhcx, SENSOR_CHAN_ACCEL_XYZ,
-			    SENSOR_ATTR_FULL_SCALE, &fs_attr) < 0) {
+	if (sensor_attr_set(ism330dhcx, SENSOR_CHAN_ACCEL_XYZ, SENSOR_ATTR_FULL_SCALE, &fs_attr) <
+	    0) {
 		printk("Cannot set sampling frequency for ISM330DHCX accel\n");
 		return;
 	}
@@ -211,16 +207,16 @@ static void ism330dhcx_config(const struct device *ism330dhcx)
 	odr_attr.val1 = 208;
 	odr_attr.val2 = 0;
 
-	if (sensor_attr_set(ism330dhcx, SENSOR_CHAN_GYRO_XYZ,
-			    SENSOR_ATTR_SAMPLING_FREQUENCY, &odr_attr) < 0) {
+	if (sensor_attr_set(ism330dhcx, SENSOR_CHAN_GYRO_XYZ, SENSOR_ATTR_SAMPLING_FREQUENCY,
+			    &odr_attr) < 0) {
 		printk("Cannot set sampling frequency for ISM330DHCX gyro\n");
 		return;
 	}
 
 	sensor_degrees_to_rad(250, &fs_attr);
 
-	if (sensor_attr_set(ism330dhcx, SENSOR_CHAN_GYRO_XYZ,
-			    SENSOR_ATTR_FULL_SCALE, &fs_attr) < 0) {
+	if (sensor_attr_set(ism330dhcx, SENSOR_CHAN_GYRO_XYZ, SENSOR_ATTR_FULL_SCALE, &fs_attr) <
+	    0) {
 		printk("Cannot set fs for ISM330DHCX gyro\n");
 		return;
 	}
@@ -246,8 +242,8 @@ static void ilps22qs_config(const struct device *ilps22qs)
 	odr_attr.val1 = 50;
 	odr_attr.val2 = 0;
 
-	if (sensor_attr_set(ilps22qs, SENSOR_CHAN_ALL,
-			    SENSOR_ATTR_SAMPLING_FREQUENCY, &odr_attr) < 0) {
+	if (sensor_attr_set(ilps22qs, SENSOR_CHAN_ALL, SENSOR_ATTR_SAMPLING_FREQUENCY, &odr_attr) <
+	    0) {
 		printk("Cannot set sampling frequency for ILPS22QS\n");
 		return;
 	}
@@ -408,14 +404,13 @@ int main(void)
 		printf("STWIN.box dashboard\n\n");
 
 		/* STTS22H temperature */
-		printf("STTS22H: Temperature: %.1f C\n",
-		       sensor_value_to_double(&stts22h_temp));
+		printf("STTS22H: Temperature: %.1f C\n", sensor_value_to_double(&stts22h_temp));
 
 		/* iis2dlpc */
 		printf("IIS2DLPC: Accel (m.s-2): x: %.3f, y: %.3f, z: %.3f\n",
-			sensor_value_to_double(&iis2dlpc_accel[0]),
-			sensor_value_to_double(&iis2dlpc_accel[1]),
-			sensor_value_to_double(&iis2dlpc_accel[2]));
+		       sensor_value_to_double(&iis2dlpc_accel[0]),
+		       sensor_value_to_double(&iis2dlpc_accel[1]),
+		       sensor_value_to_double(&iis2dlpc_accel[2]));
 
 		/* iis2mdc */
 		printf("IIS2MDC: Magn (gauss): x: %.3f, y: %.3f, z: %.3f\n",
@@ -423,32 +418,29 @@ int main(void)
 		       sensor_value_to_double(&iis2mdc_magn[1]),
 		       sensor_value_to_double(&iis2mdc_magn[2]));
 
-		printf("IIS2MDC: Temperature: %.1f C\n",
-		       sensor_value_to_double(&iis2mdc_temp));
+		printf("IIS2MDC: Temperature: %.1f C\n", sensor_value_to_double(&iis2mdc_temp));
 
 		/* ism330dhcx */
 		printf("ISM330DHCX: Accel (m.s-2): x: %.3f, y: %.3f, z: %.3f\n",
-			sensor_value_to_double(&ism330dhcx_accel[0]),
-			sensor_value_to_double(&ism330dhcx_accel[1]),
-			sensor_value_to_double(&ism330dhcx_accel[2]));
+		       sensor_value_to_double(&ism330dhcx_accel[0]),
+		       sensor_value_to_double(&ism330dhcx_accel[1]),
+		       sensor_value_to_double(&ism330dhcx_accel[2]));
 
 		printf("ISM330DHCX: Gyro (dps): x: %.3f, y: %.3f, z: %.3f\n",
-			sensor_value_to_double(&ism330dhcx_gyro[0]),
-			sensor_value_to_double(&ism330dhcx_gyro[1]),
-			sensor_value_to_double(&ism330dhcx_gyro[2]));
+		       sensor_value_to_double(&ism330dhcx_gyro[0]),
+		       sensor_value_to_double(&ism330dhcx_gyro[1]),
+		       sensor_value_to_double(&ism330dhcx_gyro[2]));
 
 		/* iis2iclx */
 		printf("IIS2ICLX: Accel (m.s-2): x: %.3f, y: %.3f\n",
-			sensor_value_to_double(&iis2iclx_accel[0]),
-			sensor_value_to_double(&iis2iclx_accel[1]));
+		       sensor_value_to_double(&iis2iclx_accel[0]),
+		       sensor_value_to_double(&iis2iclx_accel[1]));
 
 		/* temperature */
-		printf("ILPS22QS: Temperature: %.1f C\n",
-		       sensor_value_to_double(&ilps22qs_temp));
+		printf("ILPS22QS: Temperature: %.1f C\n", sensor_value_to_double(&ilps22qs_temp));
 
 		/* pressure */
-		printf("ILPS22QS: Pressure: %.3f kpa\n",
-		       sensor_value_to_double(&ilps22qs_press));
+		printf("ILPS22QS: Pressure: %.3f kpa\n", sensor_value_to_double(&ilps22qs_press));
 
 #ifdef CONFIG_STTS22H_TRIGGER
 		printk("%d:: stts22h trig %d\n", cnt, stts22h_trig_cnt);

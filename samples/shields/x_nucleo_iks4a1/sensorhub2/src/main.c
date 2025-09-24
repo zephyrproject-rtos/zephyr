@@ -14,7 +14,7 @@
 static int lsm6dso16is_acc_trig_cnt;
 
 static void lsm6dso16is_acc_trig_handler(const struct device *dev,
-				     const struct sensor_trigger *trig)
+					 const struct sensor_trigger *trig)
 {
 	sensor_sample_fetch_chan(dev, SENSOR_CHAN_ALL);
 	lsm6dso16is_acc_trig_cnt++;
@@ -29,16 +29,16 @@ static void lsm6dso16is_config(const struct device *lsm6dso16is)
 	odr_attr.val1 = 208;
 	odr_attr.val2 = 0;
 
-	if (sensor_attr_set(lsm6dso16is, SENSOR_CHAN_ACCEL_XYZ,
-			    SENSOR_ATTR_SAMPLING_FREQUENCY, &odr_attr) < 0) {
+	if (sensor_attr_set(lsm6dso16is, SENSOR_CHAN_ACCEL_XYZ, SENSOR_ATTR_SAMPLING_FREQUENCY,
+			    &odr_attr) < 0) {
 		printk("Cannot set sampling frequency for LSM6DSO16IS accel\n");
 		return;
 	}
 
 	sensor_g_to_ms2(16, &fs_attr);
 
-	if (sensor_attr_set(lsm6dso16is, SENSOR_CHAN_ACCEL_XYZ,
-			    SENSOR_ATTR_FULL_SCALE, &fs_attr) < 0) {
+	if (sensor_attr_set(lsm6dso16is, SENSOR_CHAN_ACCEL_XYZ, SENSOR_ATTR_FULL_SCALE, &fs_attr) <
+	    0) {
 		printk("Cannot set full scale for LSM6DSO16IS accel\n");
 		return;
 	}
@@ -47,16 +47,16 @@ static void lsm6dso16is_config(const struct device *lsm6dso16is)
 	odr_attr.val1 = 208;
 	odr_attr.val2 = 0;
 
-	if (sensor_attr_set(lsm6dso16is, SENSOR_CHAN_GYRO_XYZ,
-			    SENSOR_ATTR_SAMPLING_FREQUENCY, &odr_attr) < 0) {
+	if (sensor_attr_set(lsm6dso16is, SENSOR_CHAN_GYRO_XYZ, SENSOR_ATTR_SAMPLING_FREQUENCY,
+			    &odr_attr) < 0) {
 		printk("Cannot set sampling frequency for LSM6DSO16IS gyro\n");
 		return;
 	}
 
 	sensor_degrees_to_rad(250, &fs_attr);
 
-	if (sensor_attr_set(lsm6dso16is, SENSOR_CHAN_GYRO_XYZ,
-			    SENSOR_ATTR_FULL_SCALE, &fs_attr) < 0) {
+	if (sensor_attr_set(lsm6dso16is, SENSOR_CHAN_GYRO_XYZ, SENSOR_ATTR_FULL_SCALE, &fs_attr) <
+	    0) {
 		printk("Cannot set full scale for LSM6DSO16IS gyro\n");
 		return;
 	}
@@ -66,23 +66,23 @@ static void lsm6dso16is_config(const struct device *lsm6dso16is)
 	odr_attr.val2 = 0;
 
 #ifdef CONFIG_LSM6DSO16IS_EXT_LIS2MDL
-	if (sensor_attr_set(lsm6dso16is, SENSOR_CHAN_MAGN_XYZ,
-			    SENSOR_ATTR_SAMPLING_FREQUENCY, &odr_attr) < 0) {
+	if (sensor_attr_set(lsm6dso16is, SENSOR_CHAN_MAGN_XYZ, SENSOR_ATTR_SAMPLING_FREQUENCY,
+			    &odr_attr) < 0) {
 		printk("Cannot set sampling frequency for LSM6DSO16IS ext magn\n");
 	}
 #endif
 
 #ifdef CONFIG_LSM6DSO16IS_EXT_LPS22DF
-	if (sensor_attr_set(lsm6dso16is, SENSOR_CHAN_PRESS,
-			    SENSOR_ATTR_SAMPLING_FREQUENCY, &odr_attr) < 0) {
+	if (sensor_attr_set(lsm6dso16is, SENSOR_CHAN_PRESS, SENSOR_ATTR_SAMPLING_FREQUENCY,
+			    &odr_attr) < 0) {
 		printk("Cannot set sampling frequency for LSM6DSO16IS ext pressure\n");
 	}
 #endif
 
 #ifdef CONFIG_LSM6DSO16IS_EXT_HTS221
 	odr_attr.val1 = 12;
-	if (sensor_attr_set(lsm6dso16is, SENSOR_CHAN_HUMIDITY,
-			    SENSOR_ATTR_SAMPLING_FREQUENCY, &odr_attr) < 0) {
+	if (sensor_attr_set(lsm6dso16is, SENSOR_CHAN_HUMIDITY, SENSOR_ATTR_SAMPLING_FREQUENCY,
+			    &odr_attr) < 0) {
 		printk("Cannot set sampling frequency for LSM6DSO16IS ext humidity\n");
 	}
 #endif
@@ -150,14 +150,14 @@ int main(void)
 		printf("X-NUCLEO-IKS01A4 sensor dashboard\n\n");
 
 		printf("LSM6DSO16IS: Accel (m.s-2): x: %.3f, y: %.3f, z: %.3f\n",
-			sensor_value_to_double(&lsm6dso16is_xl[0]),
-			sensor_value_to_double(&lsm6dso16is_xl[1]),
-			sensor_value_to_double(&lsm6dso16is_xl[2]));
+		       sensor_value_to_double(&lsm6dso16is_xl[0]),
+		       sensor_value_to_double(&lsm6dso16is_xl[1]),
+		       sensor_value_to_double(&lsm6dso16is_xl[2]));
 
 		printf("LSM6DSO16IS: Gyro (dps): x: %.3f, y: %.3f, z: %.3f\n",
-			sensor_value_to_double(&lsm6dso16is_gy[0]),
-			sensor_value_to_double(&lsm6dso16is_gy[1]),
-			sensor_value_to_double(&lsm6dso16is_gy[2]));
+		       sensor_value_to_double(&lsm6dso16is_gy[0]),
+		       sensor_value_to_double(&lsm6dso16is_gy[1]),
+		       sensor_value_to_double(&lsm6dso16is_gy[2]));
 
 #ifdef CONFIG_LSM6DSO16IS_ENABLE_TEMP
 		/* temperature */
@@ -173,11 +173,9 @@ int main(void)
 #endif
 
 #ifdef CONFIG_LSM6DSO16IS_EXT_LPS22DF
-		printf("LSM6DSO16IS: Temperature: %.1f C\n",
-		       sensor_value_to_double(&lps22df_temp));
+		printf("LSM6DSO16IS: Temperature: %.1f C\n", sensor_value_to_double(&lps22df_temp));
 
-		printf("LSM6DSO16IS: Pressure:%.3f kpa\n",
-		       sensor_value_to_double(&lps22df_press));
+		printf("LSM6DSO16IS: Pressure:%.3f kpa\n", sensor_value_to_double(&lps22df_press));
 #endif
 
 #ifdef CONFIG_LSM6DSO16IS_TRIGGER

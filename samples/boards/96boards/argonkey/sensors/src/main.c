@@ -17,8 +17,8 @@
 
 /* #define ARGONKEY_TEST_LOG 1 */
 
-#define WHOAMI_REG      0x0F
-#define WHOAMI_ALT_REG  0x4F
+#define WHOAMI_REG     0x0F
+#define WHOAMI_ALT_REG 0x4F
 
 #ifdef CONFIG_LP3943
 static const struct device *const ledc = DEVICE_DT_GET_ONE(ti_lp3943);
@@ -31,8 +31,7 @@ static inline float out_ev(struct sensor_value *val)
 
 static int lsm6dsl_trig_cnt;
 #ifdef CONFIG_LSM6DSL_TRIGGER
-static void lsm6dsl_trigger_handler(const struct device *dev,
-				    const struct sensor_trigger *trig)
+static void lsm6dsl_trigger_handler(const struct device *dev, const struct sensor_trigger *trig)
 {
 #ifdef ARGONKEY_TEST_LOG
 	char out_str[64];
@@ -55,8 +54,7 @@ static void lsm6dsl_trigger_handler(const struct device *dev,
 	sensor_channel_get(dev, SENSOR_CHAN_ACCEL_Z, &accel_z);
 #ifdef ARGONKEY_TEST_LOG
 	sprintf(out_str, "accel (%f %f %f) m/s2", (double)out_ev(&accel_x),
-						(double)out_ev(&accel_y),
-						(double)out_ev(&accel_z));
+		(double)out_ev(&accel_y), (double)out_ev(&accel_z));
 	printk("TRIG %s\n", out_str);
 #endif
 
@@ -66,9 +64,8 @@ static void lsm6dsl_trigger_handler(const struct device *dev,
 	sensor_channel_get(dev, SENSOR_CHAN_GYRO_Y, &gyro_y);
 	sensor_channel_get(dev, SENSOR_CHAN_GYRO_Z, &gyro_z);
 #ifdef ARGONKEY_TEST_LOG
-	sprintf(out_str, "gyro (%f %f %f) dps", (double)out_ev(&gyro_x),
-						(double)out_ev(&gyro_y),
-						(double)out_ev(&gyro_z));
+	sprintf(out_str, "gyro (%f %f %f) dps", (double)out_ev(&gyro_x), (double)out_ev(&gyro_y),
+		(double)out_ev(&gyro_z));
 	printk("TRIG %s\n", out_str);
 #endif
 
@@ -79,9 +76,8 @@ static void lsm6dsl_trigger_handler(const struct device *dev,
 	sensor_channel_get(dev, SENSOR_CHAN_MAGN_Y, &magn_y);
 	sensor_channel_get(dev, SENSOR_CHAN_MAGN_Z, &magn_z);
 #ifdef ARGONKEY_TEST_LOG
-	sprintf(out_str, "magn (%f %f %f) gauss", (double)out_ev(&magn_x),
-						 (double)out_ev(&magn_y),
-						 (double)out_ev(&magn_z));
+	sprintf(out_str, "magn (%f %f %f) gauss", (double)out_ev(&magn_x), (double)out_ev(&magn_y),
+		(double)out_ev(&magn_z));
 	printk("TRIG %s\n", out_str);
 #endif
 
@@ -96,7 +92,7 @@ static void lsm6dsl_trigger_handler(const struct device *dev,
 
 #ifdef ARGONKEY_TEST_LOG
 	sprintf(out_str, "press (%f) kPa - temp (%f) deg", (double)out_ev(&press),
-							   (double)out_ev(&temp));
+		(double)out_ev(&temp));
 	printk("%s\n", out_str);
 #endif
 
@@ -104,7 +100,7 @@ static void lsm6dsl_trigger_handler(const struct device *dev,
 }
 #endif
 
-#define NUM_LEDS 12
+#define NUM_LEDS   12
 #define DELAY_TIME K_MSEC(50)
 
 int main(void)
@@ -187,8 +183,8 @@ int main(void)
 	a_odr_attr.val1 = 104;
 	a_odr_attr.val2 = 0;
 
-	if (sensor_attr_set(accel_dev, SENSOR_CHAN_ACCEL_XYZ,
-			    SENSOR_ATTR_SAMPLING_FREQUENCY, &a_odr_attr) < 0) {
+	if (sensor_attr_set(accel_dev, SENSOR_CHAN_ACCEL_XYZ, SENSOR_ATTR_SAMPLING_FREQUENCY,
+			    &a_odr_attr) < 0) {
 		printk("Cannot set sampling frequency for accelerometer.\n");
 		return 0;
 	}
@@ -200,8 +196,8 @@ int main(void)
 	/* set full scale to 16g for accel */
 	sensor_g_to_ms2(16, &a_fs_attr);
 
-	if (sensor_attr_set(accel_dev, SENSOR_CHAN_ACCEL_XYZ,
-			    SENSOR_ATTR_FULL_SCALE, &a_fs_attr) < 0) {
+	if (sensor_attr_set(accel_dev, SENSOR_CHAN_ACCEL_XYZ, SENSOR_ATTR_FULL_SCALE, &a_fs_attr) <
+	    0) {
 		printk("Cannot set fs for accelerometer.\n");
 		return 0;
 	}
@@ -214,8 +210,8 @@ int main(void)
 	g_odr_attr.val1 = 104;
 	g_odr_attr.val2 = 0;
 
-	if (sensor_attr_set(accel_dev, SENSOR_CHAN_GYRO_XYZ,
-			    SENSOR_ATTR_SAMPLING_FREQUENCY, &g_odr_attr) < 0) {
+	if (sensor_attr_set(accel_dev, SENSOR_CHAN_GYRO_XYZ, SENSOR_ATTR_SAMPLING_FREQUENCY,
+			    &g_odr_attr) < 0) {
 		printk("Cannot set sampling frequency for gyro.\n");
 		return 0;
 	}
@@ -227,8 +223,8 @@ int main(void)
 	/* set full scale to 245dps for accel */
 	sensor_degrees_to_rad(245, &g_fs_attr);
 
-	if (sensor_attr_set(accel_dev, SENSOR_CHAN_GYRO_XYZ,
-			    SENSOR_ATTR_FULL_SCALE, &g_fs_attr) < 0) {
+	if (sensor_attr_set(accel_dev, SENSOR_CHAN_GYRO_XYZ, SENSOR_ATTR_FULL_SCALE, &g_fs_attr) <
+	    0) {
 		printk("Cannot set fs for gyroscope.\n");
 		return 0;
 	}
@@ -250,8 +246,7 @@ int main(void)
 
 	trig.type = SENSOR_TRIG_DATA_READY;
 	trig.chan = SENSOR_CHAN_ACCEL_XYZ;
-	if (sensor_trigger_set(accel_dev, &trig,
-			       lsm6dsl_trigger_handler) != 0) {
+	if (sensor_trigger_set(accel_dev, &trig, lsm6dsl_trigger_handler) != 0) {
 		printk("Could not set sensor type and channel\n");
 		return 0;
 	}
@@ -283,8 +278,7 @@ int main(void)
 		sensor_channel_get(tof_dev, SENSOR_CHAN_PROX, &prox);
 		printk("proxy: %d  ;\n", prox.val1);
 		sensor_channel_get(tof_dev, SENSOR_CHAN_DISTANCE, &prox);
-		printk("distance: %d m -- %02d cm;\n", prox.val1,
-						       prox.val2/10000);
+		printk("distance: %d m -- %02d cm;\n", prox.val1, prox.val2 / 10000);
 #endif
 
 #ifdef CONFIG_LPS22HB
@@ -292,16 +286,15 @@ int main(void)
 		sensor_channel_get(baro_dev, SENSOR_CHAN_AMBIENT_TEMP, &temp);
 		sensor_channel_get(baro_dev, SENSOR_CHAN_PRESS, &press);
 
-		printk("temp: %d.%02d C; press: %d.%06d\n",
-		       temp.val1, temp.val2, press.val1, press.val2);
+		printk("temp: %d.%02d C; press: %d.%06d\n", temp.val1, temp.val2, press.val1,
+		       press.val2);
 #endif
 
 #ifdef CONFIG_HTS221
 		sensor_sample_fetch(hum_dev);
 		sensor_channel_get(hum_dev, SENSOR_CHAN_HUMIDITY, &humidity);
 
-		printk("humidity: %d.%06d\n",
-		       humidity.val1, humidity.val2);
+		printk("humidity: %d.%06d\n", humidity.val1, humidity.val2);
 #endif
 
 #ifdef CONFIG_LSM6DSL
@@ -311,8 +304,7 @@ int main(void)
 		sensor_channel_get(accel_dev, SENSOR_CHAN_ACCEL_Y, &accel_y);
 		sensor_channel_get(accel_dev, SENSOR_CHAN_ACCEL_Z, &accel_z);
 		sprintf(out_str, "accel (%f %f %f) m/s2", (double)out_ev(&accel_x),
-							(double)out_ev(&accel_y),
-							(double)out_ev(&accel_z));
+			(double)out_ev(&accel_y), (double)out_ev(&accel_z));
 		printk("%s\n", out_str);
 
 		/* lsm6dsl gyro */
@@ -321,8 +313,7 @@ int main(void)
 		sensor_channel_get(accel_dev, SENSOR_CHAN_GYRO_Y, &gyro_y);
 		sensor_channel_get(accel_dev, SENSOR_CHAN_GYRO_Z, &gyro_z);
 		sprintf(out_str, "gyro (%f %f %f) dps", (double)out_ev(&gyro_x),
-							(double)out_ev(&gyro_y),
-							(double)out_ev(&gyro_z));
+			(double)out_ev(&gyro_y), (double)out_ev(&gyro_z));
 		printk("%s\n", out_str);
 #if defined(CONFIG_LSM6DSL_EXT0_LIS2MDL)
 		/* lsm6dsl magn */
@@ -331,8 +322,7 @@ int main(void)
 		sensor_channel_get(accel_dev, SENSOR_CHAN_MAGN_Y, &magn_y);
 		sensor_channel_get(accel_dev, SENSOR_CHAN_MAGN_Z, &magn_z);
 		sprintf(out_str, "magn (%f %f %f) gauss", (double)out_ev(&magn_x),
-							 (double)out_ev(&magn_y),
-							 (double)out_ev(&magn_z));
+			(double)out_ev(&magn_y), (double)out_ev(&magn_z));
 		printk("%s\n", out_str);
 #endif
 #if defined(CONFIG_LSM6DSL_EXT0_LPS22HB)
@@ -343,8 +333,8 @@ int main(void)
 		sensor_sample_fetch_chan(accel_dev, SENSOR_CHAN_AMBIENT_TEMP);
 		sensor_channel_get(accel_dev, SENSOR_CHAN_AMBIENT_TEMP, &temp);
 
-		sprintf(out_str, "press (%f) kPa - temp (%f) deg",
-			(double)out_ev(&press), (double)out_ev(&temp));
+		sprintf(out_str, "press (%f) kPa - temp (%f) deg", (double)out_ev(&press),
+			(double)out_ev(&temp));
 		printk("%s\n", out_str);
 #endif
 

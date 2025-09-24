@@ -10,9 +10,9 @@
 #include <zephyr/drivers/sensor.h>
 #include <stdio.h>
 
-#define UCEL_PER_CEL 1000000
-#define UCEL_PER_MCEL 1000
-#define TEMP_INITIAL_CEL 25
+#define UCEL_PER_CEL          1000000
+#define UCEL_PER_MCEL         1000
+#define TEMP_INITIAL_CEL      25
 #define TEMP_WINDOW_HALF_UCEL 500000
 
 static const char *now_str(void)
@@ -31,8 +31,7 @@ static const char *now_str(void)
 	now /= 60U;
 	h = now;
 
-	snprintf(buf, sizeof(buf), "%u:%02u:%02u.%03u",
-		 h, min, s, ms);
+	snprintf(buf, sizeof(buf), "%u:%02u:%02u.%03u", h, min, s, ms);
 	return buf;
 }
 
@@ -40,8 +39,7 @@ static const char *now_str(void)
 
 static struct sensor_trigger sensor_trig;
 
-static int set_window(const struct device *dev,
-		      const struct sensor_value *temp)
+static int set_window(const struct device *dev, const struct sensor_value *temp)
 {
 	const int temp_ucel = temp->val1 * UCEL_PER_CEL + temp->val2;
 	const int low_ucel = temp_ucel - TEMP_WINDOW_HALF_UCEL;
@@ -50,26 +48,21 @@ static int set_window(const struct device *dev,
 		.val1 = low_ucel / UCEL_PER_CEL,
 		.val2 = low_ucel % UCEL_PER_CEL,
 	};
-	int rc = sensor_attr_set(dev, SENSOR_CHAN_AMBIENT_TEMP,
-				 SENSOR_ATTR_LOWER_THRESH, &val);
+	int rc = sensor_attr_set(dev, SENSOR_CHAN_AMBIENT_TEMP, SENSOR_ATTR_LOWER_THRESH, &val);
 	if (rc == 0) {
-		val.val1 = high_ucel / UCEL_PER_CEL,
-		val.val2 = high_ucel % UCEL_PER_CEL,
-		rc = sensor_attr_set(dev, SENSOR_CHAN_AMBIENT_TEMP,
-				     SENSOR_ATTR_UPPER_THRESH, &val);
+		val.val1 = high_ucel / UCEL_PER_CEL, val.val2 = high_ucel % UCEL_PER_CEL,
+		rc = sensor_attr_set(dev, SENSOR_CHAN_AMBIENT_TEMP, SENSOR_ATTR_UPPER_THRESH, &val);
 	}
 
 	if (rc == 0) {
-		printf("Alert on temp outside [%d, %d] milli-Celsius\n",
-		       low_ucel / UCEL_PER_MCEL,
+		printf("Alert on temp outside [%d, %d] milli-Celsius\n", low_ucel / UCEL_PER_MCEL,
 		       high_ucel / UCEL_PER_MCEL);
 	}
 
 	return rc;
 }
 
-static inline int set_window_ucel(const struct device *dev,
-				  int temp_ucel)
+static inline int set_window_ucel(const struct device *dev, int temp_ucel)
 {
 	struct sensor_value val = {
 		.val1 = temp_ucel / UCEL_PER_CEL,
@@ -79,8 +72,7 @@ static inline int set_window_ucel(const struct device *dev,
 	return set_window(dev, &val);
 }
 
-static void trigger_handler(const struct device *dev,
-			    const struct sensor_trigger *trig)
+static void trigger_handler(const struct device *dev, const struct sensor_trigger *trig)
 {
 	struct sensor_value temp;
 	static size_t cnt;
@@ -98,8 +90,7 @@ static void trigger_handler(const struct device *dev,
 		return;
 	}
 
-	printf("trigger fired %u, temp %g deg C\n", cnt,
-	       sensor_value_to_double(&temp));
+	printf("trigger fired %u, temp %g deg C\n", cnt, sensor_value_to_double(&temp));
 	set_window(dev, &temp);
 }
 #endif
@@ -148,8 +139,7 @@ int main(void)
 			break;
 		}
 
-		printf("%s: %g C\n", now_str(),
-		       sensor_value_to_double(&temp));
+		printf("%s: %g C\n", now_str(), sensor_value_to_double(&temp));
 
 		k_sleep(K_SECONDS(2));
 	}

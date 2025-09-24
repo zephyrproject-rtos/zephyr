@@ -35,14 +35,12 @@ static uint8_t simulate_htm;
 static uint8_t indicating;
 static struct bt_gatt_indicate_params ind_params;
 
-static void htmc_ccc_cfg_changed(const struct bt_gatt_attr *attr,
-				 uint16_t value)
+static void htmc_ccc_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
 	simulate_htm = (value == BT_GATT_CCC_INDICATE) ? 1 : 0;
 }
 
-static void indicate_cb(struct bt_conn *conn,
-			struct bt_gatt_indicate_params *params, uint8_t err)
+static void indicate_cb(struct bt_conn *conn, struct bt_gatt_indicate_params *params, uint8_t err)
 {
 	printk("Indication %s\n", err != 0U ? "fail" : "success");
 }
@@ -54,13 +52,11 @@ static void indicate_destroy(struct bt_gatt_indicate_params *params)
 }
 
 /* Health Thermometer Service Declaration */
-BT_GATT_SERVICE_DEFINE(hts_svc,
-	BT_GATT_PRIMARY_SERVICE(BT_UUID_HTS),
-	BT_GATT_CHARACTERISTIC(BT_UUID_HTS_MEASUREMENT, BT_GATT_CHRC_INDICATE,
-			       BT_GATT_PERM_NONE, NULL, NULL, NULL),
-	BT_GATT_CCC(htmc_ccc_cfg_changed,
-		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE),
-	/* more optional Characteristics */
+BT_GATT_SERVICE_DEFINE(hts_svc, BT_GATT_PRIMARY_SERVICE(BT_UUID_HTS),
+		       BT_GATT_CHARACTERISTIC(BT_UUID_HTS_MEASUREMENT, BT_GATT_CHRC_INDICATE,
+					      BT_GATT_PERM_NONE, NULL, NULL, NULL),
+		       BT_GATT_CCC(htmc_ccc_cfg_changed, BT_GATT_PERM_READ | BT_GATT_PERM_WRITE),
+		       /* more optional Characteristics */
 );
 
 void hts_init(void)
@@ -69,8 +65,7 @@ void hts_init(void)
 		printk("no temperature device; using simulated data\n");
 		temp_dev = NULL;
 	} else {
-		printk("temp device is %p, name is %s\n", temp_dev,
-		       temp_dev->name);
+		printk("temp device is %p, name is %s\n", temp_dev, temp_dev->name);
 	}
 }
 
@@ -104,8 +99,7 @@ void hts_indicate(void)
 			printk("sensor_sample_fetch failed return: %d\n", r);
 		}
 
-		r = sensor_channel_get(temp_dev, SENSOR_CHAN_DIE_TEMP,
-				       &temp_value);
+		r = sensor_channel_get(temp_dev, SENSOR_CHAN_DIE_TEMP, &temp_value);
 		if (r) {
 			printk("sensor_channel_get failed return: %d\n", r);
 		}

@@ -10,16 +10,164 @@
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/sensor_clock.h>
 #include <zephyr/dsp/types.h>
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/rtio/work.h>
 
 LOG_MODULE_REGISTER(sensor_compat, CONFIG_SENSOR_LOG_LEVEL);
+
+static struct sensor_chan_spec default_channels[16];
+static struct sensor_read_config default_blocking_read_config = {
+	.channels = default_channels,
+	.max = ARRAY_SIZE(default_channels),
+};
+RTIO_IODEV_DEFINE(default_blocking_read_rtio_dev, &__sensor_iodev_api,
+		  &default_blocking_read_config);
+RTIO_DEFINE(default_blocking_rtio, 4, 4);
+K_MUTEX_DEFINE(blocking_rtio_mutex);
 
 /*
  * Ensure that the size of the generic header aligns with the sensor channel specifier . If it
  * doesn't, then cores that require aligned memory access will fail to read channel[0].
  */
 BUILD_ASSERT((sizeof(struct sensor_data_generic_header) % sizeof(struct sensor_chan_spec)) == 0);
+
+static void append_q31_value(size_t idx, int8_t *shift, q31_t *values, size_t num_values,
+			     q31_t new_value, int8_t new_shift)
+{
+	if (idx == 0 || *shift == new_shift) {
+		*shift = new_shift;
+		values[idx] = new_value;
+		return;
+	}
+	if (new_shift < *shift) {
+		/* Need to shift new_value */
+		new_value >>= (*shift - new_shift);
+		values[idx] = new_value;
+		return;
+	}
+	/* Need to shift all the old values */
+	for (size_t i = 0; i < idx; ++i) {
+		values[i] >>= (new_shift - *shift);
+	}
+	values[idx] = new_value;
+	*shift = new_shift;
+}
+
+int sensor_read_and_decode(const struct device *dev, struct sensor_chan_spec *channels,
+			   size_t num_channels, int8_t *shift, q31_t *values, size_t num_values)
+{
+	static uint8_t read_buffer[128];
+	static uint8_t decode_buffer[128];
+	const struct sensor_decoder_api *decoder;
+	int rc;
+
+	k_mutex_lock(&blocking_rtio_mutex, K_FOREVER);
+
+	rc = sensor_reconfigure_read_iodev(&default_blocking_read_rtio_dev, dev, channels,
+					   num_channels);
+
+	if (rc != 0) {
+		LOG_ERR("Failed to reconfigure RTIO device");
+		k_mutex_unlock(&blocking_rtio_mutex);
+		return rc;
+	}
+
+	rc = sensor_read(&default_blocking_read_rtio_dev, &default_blocking_rtio, read_buffer,
+			 sizeof(read_buffer));
+	if (rc != 0) {
+		LOG_ERR("Failed to read RTIO device");
+		k_mutex_unlock(&blocking_rtio_mutex);
+		return rc;
+	}
+
+	rc = sensor_get_decoder(dev, &decoder);
+	if (rc != 0) {
+		LOG_ERR("Failed to get decoder");
+		k_mutex_unlock(&blocking_rtio_mutex);
+		return rc;
+	}
+
+	size_t value_idx = 0;
+
+	for (size_t channel_idx = 0; channel_idx < num_channels && value_idx < num_values;
+	     ++channel_idx) {
+		size_t base_size;
+		size_t frame_size;
+		uint16_t frame_count;
+		uint32_t fit = 0;
+
+		rc = decoder->get_frame_count(read_buffer, channels[channel_idx], &frame_count);
+		if (rc != 0) {
+			LOG_ERR("Failed to get frame count");
+			k_mutex_unlock(&blocking_rtio_mutex);
+			return rc;
+		}
+
+		if (frame_count == 0) {
+			LOG_ERR("Data missing for channel %d", channels[channel_idx].chan_type);
+			k_mutex_unlock(&blocking_rtio_mutex);
+			return -ENODATA;
+		}
+
+		if (frame_count > 1) {
+			LOG_WRN("Too much data for a one shot read, some frames will be skipped");
+		}
+
+		rc = decoder->get_size_info(channels[channel_idx], &base_size, &frame_size);
+		if (rc != 0) {
+			LOG_ERR("Failed to get decode size requirements");
+			k_mutex_unlock(&blocking_rtio_mutex);
+			return rc;
+		}
+
+		if (base_size + frame_size > sizeof(decode_buffer)) {
+			LOG_ERR("Decoded size is too big");
+			k_mutex_unlock(&blocking_rtio_mutex);
+			return -ENOMEM;
+		}
+
+		rc = decoder->decode(read_buffer, channels[channel_idx], &fit, 1, &decode_buffer);
+		if (rc <= 0) {
+			LOG_ERR("Failed to decode frame");
+			k_mutex_unlock(&blocking_rtio_mutex);
+			return rc;
+		}
+
+		switch (channels[channel_idx].chan_type) {
+		case SENSOR_CHAN_ACCEL_XYZ:
+		case SENSOR_CHAN_GYRO_XYZ:
+		case SENSOR_CHAN_MAGN_XYZ: {
+			struct sensor_three_axis_data *data =
+				(struct sensor_three_axis_data *)decode_buffer;
+
+			LOG_DBG("Adding 3 entries for channel %d", channels[channel_idx].chan_type);
+			append_q31_value(value_idx++, shift, values, num_values,
+					 data->readings[0].values[0], data->shift);
+			append_q31_value(value_idx++, shift, values, num_values,
+					 data->readings[0].values[1], data->shift);
+			append_q31_value(value_idx++, shift, values, num_values,
+					 data->readings[0].values[2], data->shift);
+			break;
+		}
+		default: {
+			struct sensor_q31_data *data = (struct sensor_q31_data *)decode_buffer;
+
+			LOG_DBG("Adding 1 entry for channel %d", channels[channel_idx].chan_type);
+			append_q31_value(value_idx++, shift, values, num_values,
+					 data->readings[0].value, data->shift);
+			break;
+		}
+		}
+	}
+	if (value_idx > num_values) {
+		LOG_ERR("Wrote too many values, %zu / %zu", value_idx, num_values);
+		k_mutex_unlock(&blocking_rtio_mutex);
+		return -ENOMEM;
+	}
+	k_mutex_unlock(&blocking_rtio_mutex);
+	return 0;
+}
 
 static void sensor_submit_fallback(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe);
 
@@ -108,12 +256,7 @@ static inline int check_header_contains_channel(const struct sensor_data_generic
 	return -1;
 }
 
-/**
- * @brief Fallback function for retrofiting old drivers to rtio (sync)
- *
- * @param[in] iodev_sqe The read submission queue event
- */
-static void sensor_submit_fallback_sync(struct rtio_iodev_sqe *iodev_sqe)
+void z_impl_sensor_submit_fallback_sync(struct rtio_iodev_sqe *iodev_sqe)
 {
 	const struct sensor_read_config *cfg = iodev_sqe->sqe.iodev->data;
 	const struct device *dev = cfg->sensor;
@@ -134,7 +277,7 @@ static void sensor_submit_fallback_sync(struct rtio_iodev_sqe *iodev_sqe)
 	uint8_t *buf;
 	uint32_t buf_len;
 
-	rc = sensor_sample_fetch(dev);
+	rc = z_impl_sensor_sample_fetch(dev);
 	/* Check that the fetch succeeded */
 	if (rc != 0) {
 		LOG_WRN("Failed to fetch samples");
@@ -142,7 +285,8 @@ static void sensor_submit_fallback_sync(struct rtio_iodev_sqe *iodev_sqe)
 		return;
 	}
 
-	/* Get the buffer for the frame, it may be allocated dynamically by the rtio context */
+	/* Get the buffer for the frame, it may be allocated dynamically by the rtio context
+	 */
 	rc = rtio_sqe_rx_buf(iodev_sqe, min_buf_len, min_buf_len, &buf, &buf_len);
 	if (rc != 0) {
 		LOG_WRN("Failed to get a read buffer of size %u bytes", min_buf_len);
@@ -165,26 +309,18 @@ static void sensor_submit_fallback_sync(struct rtio_iodev_sqe *iodev_sqe)
 		const int num_samples = SENSOR_CHANNEL_3_AXIS(channels[i].chan_type) ? 3 : 1;
 
 		/* Get the current channel requested by the user */
-		rc = sensor_channel_get(dev, channels[i].chan_type, value);
+		rc = z_impl_sensor_channel_get(dev, channels[i].chan_type, value);
 
 		if (num_samples == 3) {
-			header->channels[sample_idx++] = (struct sensor_chan_spec) {
-				rc == 0 ? channels[i].chan_type - 3 : SENSOR_CHAN_MAX,
-				0
-			};
-			header->channels[sample_idx++] = (struct sensor_chan_spec) {
-				rc == 0 ? channels[i].chan_type - 2 : SENSOR_CHAN_MAX,
-				0
-			};
-			header->channels[sample_idx++] = (struct sensor_chan_spec) {
-				rc == 0 ? channels[i].chan_type - 1 : SENSOR_CHAN_MAX,
-				0
-			};
+			header->channels[sample_idx++] = (struct sensor_chan_spec){
+				rc == 0 ? channels[i].chan_type - 3 : SENSOR_CHAN_MAX, 0};
+			header->channels[sample_idx++] = (struct sensor_chan_spec){
+				rc == 0 ? channels[i].chan_type - 2 : SENSOR_CHAN_MAX, 0};
+			header->channels[sample_idx++] = (struct sensor_chan_spec){
+				rc == 0 ? channels[i].chan_type - 1 : SENSOR_CHAN_MAX, 0};
 		} else {
-			header->channels[sample_idx++] = (struct sensor_chan_spec) {
-				rc == 0 ? channels[i].chan_type : SENSOR_CHAN_MAX,
-				0
-			};
+			header->channels[sample_idx++] = (struct sensor_chan_spec){
+				rc == 0 ? channels[i].chan_type : SENSOR_CHAN_MAX, 0};
 		}
 
 		if (rc != 0) {
@@ -193,19 +329,20 @@ static void sensor_submit_fallback_sync(struct rtio_iodev_sqe *iodev_sqe)
 			continue;
 		}
 
-		/* Get the largest absolute value reading to set the scale for the channel */
+		/* Get the largest absolute value reading to set the scale for the channel
+		 */
 		uint32_t header_scale = 0;
 
 		for (int sample = 0; sample < num_samples; ++sample) {
 			/*
 			 * The scale is the ceil(abs(sample)).
-			 * Since we are using fractional values, it's easier to assume that .val2
-			 *   is non 0 and convert this to abs(sample.val1) + 1 (removing a branch).
-			 * Since it's possible that val1 (int32_t) is saturated (INT32_MAX) we need
-			 *   to upcast it to 64 bit int first, then take the abs() of that 64 bit
-			 *   int before we '+ 1'. Once that's done, we can safely cast back down
-			 *   to uint32_t because the min value is 0 and max is INT32_MAX + 1 which
-			 *   is less than UINT32_MAX.
+			 * Since we are using fractional values, it's easier to assume that
+			 * .val2 is non 0 and convert this to abs(sample.val1) + 1 (removing
+			 * a branch). Since it's possible that val1 (int32_t) is saturated
+			 * (INT32_MAX) we need to upcast it to 64 bit int first, then take
+			 * the abs() of that 64 bit int before we '+ 1'. Once that's done,
+			 * we can safely cast back down to uint32_t because the min value is
+			 * 0 and max is INT32_MAX + 1 which is less than UINT32_MAX.
 			 */
 			uint32_t scale = (uint32_t)llabs((int64_t)value[sample].val1) + 1;
 
@@ -218,9 +355,9 @@ static void sensor_submit_fallback_sync(struct rtio_iodev_sqe *iodev_sqe)
 		sample_idx -= num_samples;
 		if (header->shift < new_shift) {
 			/*
-			 * Shift was updated, need to convert all the existing q values. This could
-			 * be optimized by calling zdsp_scale_q31() but that would force a
-			 * dependency between sensors and the zDSP subsystem.
+			 * Shift was updated, need to convert all the existing q values.
+			 * This could be optimized by calling zdsp_scale_q31() but that
+			 * would force a dependency between sensors and the zDSP subsystem.
 			 */
 			for (int q_idx = 0; q_idx < sample_idx; ++q_idx) {
 				q[q_idx] = q[q_idx] >> (new_shift - header->shift);
@@ -230,8 +367,8 @@ static void sensor_submit_fallback_sync(struct rtio_iodev_sqe *iodev_sqe)
 
 		/*
 		 * Spread the q31 values. This is needed because some channels are 3D. If
-		 * the user specified one of those then num_samples will be 3; and we need to
-		 * produce 3 separate readings.
+		 * the user specified one of those then num_samples will be 3; and we need
+		 * to produce 3 separate readings.
 		 */
 		for (int sample = 0; sample < num_samples; ++sample) {
 			/* Check if the channel is already in the buffer */
@@ -251,14 +388,15 @@ static void sensor_submit_fallback_sync(struct rtio_iodev_sqe *iodev_sqe)
 			int64_t value_u = sensor_value_to_micro(&value[sample]);
 
 			/* Convert to q31 using the shift */
-			q[sample_idx + sample] =
-				((value_u * ((INT64_C(1) << 31) - 1)) / 1000000) >> header->shift;
 
-			LOG_DBG("value[%d]=%s%d.%06d, q[%d]@%p=%d, shift: %d",
-				sample, value_u < 0 ? "-" : "",
-				abs((int)value[sample].val1), abs((int)value[sample].val2),
-				(int)(sample_idx + sample), (void *)&q[sample_idx + sample],
-				q[sample_idx + sample], header->shift);
+			q[sample_idx + sample] =
+				((value_u * ((INT64_C(1) << (31 - header->shift)) - 1)) / 1000000);
+
+			LOG_DBG("value[%d]=%s%d.%06d, q[%d]@%p=%d, shift: %d", sample,
+				value_u < 0 ? "-" : "", abs((int)value[sample].val1),
+				abs((int)value[sample].val2), (int)(sample_idx + sample),
+				(void *)&q[sample_idx + sample], q[sample_idx + sample],
+				header->shift);
 		}
 		sample_idx += num_samples;
 	}
@@ -332,8 +470,10 @@ static int get_frame_count(const uint8_t *buffer, struct sensor_chan_spec channe
 	case SENSOR_CHAN_GYRO_XYZ:
 	case SENSOR_CHAN_MAGN_XYZ:
 	case SENSOR_CHAN_POS_DXYZ:
-		for (size_t i = 0 ; i < header->num_channels; ++i) {
-			/* For 3-axis channels, we need to verify we have each individual axis */
+		for (size_t i = 0; i < header->num_channels; ++i) {
+			/* For 3-axis channels, we need to verify we have each individual
+			 * axis
+			 */
 			struct sensor_chan_spec channel_x = {
 				.chan_type = channel.chan_type - 3,
 				.chan_idx = channel.chan_idx,
@@ -347,8 +487,8 @@ static int get_frame_count(const uint8_t *buffer, struct sensor_chan_spec channe
 				.chan_idx = channel.chan_idx,
 			};
 
-			/** The three axes don't need to be at the beginning of the header, but
-			 * they should be consecutive.
+			/* The three axes don't need to be at the beginning of the header,
+			 * but they should be consecutive.
 			 */
 			if (((header->num_channels - i) >= 3) &&
 			    sensor_chan_spec_eq(header->channels[i], channel_x) &&
@@ -378,7 +518,7 @@ int sensor_natively_supported_channel_size_info(struct sensor_chan_spec channel,
 	__ASSERT_NO_MSG(base_size != NULL);
 	__ASSERT_NO_MSG(frame_size != NULL);
 
-	if (channel.chan_type >= SENSOR_CHAN_ALL) {
+	if (channel.chan_type >= SENSOR_CHAN_MAX) {
 		return -ENOTSUP;
 	}
 
@@ -480,19 +620,25 @@ static int decode_q31(const struct sensor_data_generic_header *header, const q31
  * @return >0 the number of decoded frames
  * @return <0 on error
  */
-static int decode(const uint8_t *buffer, struct sensor_chan_spec chan_spec,
-		  uint32_t *fit, uint16_t max_count, void *data_out)
+static int decode(const uint8_t *buffer, struct sensor_chan_spec chan_spec, uint32_t *fit,
+		  uint16_t max_count, void *data_out)
 {
 	const struct sensor_data_generic_header *header =
 		(const struct sensor_data_generic_header *)buffer;
 	const q31_t *q = (const q31_t *)(buffer + compute_header_size(header->num_channels));
 	int count = 0;
 
-	if (*fit != 0 || max_count < 1) {
+	if (*fit != 0) {
+		LOG_ERR("Frame iterator MUST be 0");
+		return -EINVAL;
+	}
+	if (max_count < 1) {
+		LOG_ERR("max_count CANNOT be 0");
 		return -EINVAL;
 	}
 
-	if (chan_spec.chan_type >= SENSOR_CHAN_ALL) {
+	if (chan_spec.chan_type >= SENSOR_CHAN_MAX) {
+		LOG_WRN("Channe type too big, can't decode");
 		return 0;
 	}
 

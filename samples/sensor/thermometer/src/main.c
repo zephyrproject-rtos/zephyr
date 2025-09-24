@@ -87,8 +87,7 @@ int main(void)
 		printf("Failed to convert low threshold to sensor value: %d\n", ret);
 		return ret;
 	}
-	ret = sensor_attr_set(dev, SENSOR_CHAN_AMBIENT_TEMP,
-			      SENSOR_ATTR_LOWER_THRESH, &value);
+	ret = sensor_attr_set(dev, SENSOR_CHAN_AMBIENT_TEMP, SENSOR_ATTR_LOWER_THRESH, &value);
 	if (ret == 0) {
 		/* This sensor supports threshold triggers */
 		printf("Set temperature lower limit to %0.1f°C\n", low_temp);
@@ -100,8 +99,7 @@ int main(void)
 		printf("Failed to convert low threshold to sensor value: %d\n", ret);
 		return ret;
 	}
-	ret = sensor_attr_set(dev, SENSOR_CHAN_AMBIENT_TEMP,
-			      SENSOR_ATTR_UPPER_THRESH, &value);
+	ret = sensor_attr_set(dev, SENSOR_CHAN_AMBIENT_TEMP, SENSOR_ATTR_UPPER_THRESH, &value);
 	if (ret == 0) {
 		/* This sensor supports threshold triggers */
 		printf("Set temperature upper limit to %0.1f°C\n", high_temp);

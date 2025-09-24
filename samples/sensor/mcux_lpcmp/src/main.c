@@ -64,15 +64,15 @@ int main(void)
 {
 #ifdef CONFIG_MCUX_LPCMP_TRIGGER
 	struct sensor_trigger trigger[ARRAY_SIZE(triggers)] = {
-		[0] = {
+		[0] =
+			{
 				.chan = SENSOR_CHAN_MCUX_LPCMP_OUTPUT,
 				.type = triggers[0],
 			},
 		[1] = {
-				.chan = SENSOR_CHAN_MCUX_LPCMP_OUTPUT,
-				.type = triggers[1],
-			}
-		};
+			.chan = SENSOR_CHAN_MCUX_LPCMP_OUTPUT,
+			.type = triggers[1],
+		}};
 #endif /* CONFIG_MCUX_LPCMP_TRIGGER */
 	const struct device *const lpcmp = DEVICE_DT_GET(DT_NODELABEL(lpcmp0));
 	struct sensor_value val;

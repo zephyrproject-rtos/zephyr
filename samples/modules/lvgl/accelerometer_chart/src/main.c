@@ -82,9 +82,8 @@ int main(void)
 	}
 
 	create_accelerometer_chart(lv_screen_active());
-	sensor_timer = lv_timer_create(sensor_timer_cb,
-					1000 / CONFIG_SAMPLE_ACCEL_SAMPLING_RATE,
-					NULL);
+	sensor_timer =
+		lv_timer_create(sensor_timer_cb, 1000 / CONFIG_SAMPLE_ACCEL_SAMPLING_RATE, NULL);
 	lv_timer_handler();
 	display_blanking_off(display_dev);
 

@@ -13,14 +13,12 @@
 
 /* getting all devices from device tree with alias "prox_sensor?" */
 #define PROX_ALIASES(i) DT_ALIAS(_CONCAT(prox_sensor, i))
-#define PROX_DEVICES(i, _) \
+#define PROX_DEVICES(i, _)                                                                         \
 	IF_ENABLED(DT_NODE_EXISTS(PROX_ALIASES(i)),\
 	(DEVICE_DT_GET(PROX_ALIASES(i)),))
 
 /* creating a list with the first 10 devices */
-static const struct device *prox_devices[] = {
-	LISTIFY(10, PROX_DEVICES, ())
-};
+static const struct device *prox_devices[] = {LISTIFY(10, PROX_DEVICES, ()) };
 
 void print_prox_data(void)
 {

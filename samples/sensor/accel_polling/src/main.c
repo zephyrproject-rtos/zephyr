@@ -15,7 +15,7 @@
 #include <zephyr/drivers/sensor.h>
 
 #define ACCEL_ALIAS(i) DT_ALIAS(_CONCAT(accel, i))
-#define ACCELEROMETER_DEVICE(i, _)                                                           \
+#define ACCELEROMETER_DEVICE(i, _)                                                                 \
 	IF_ENABLED(DT_NODE_EXISTS(ACCEL_ALIAS(i)), (DEVICE_DT_GET(ACCEL_ALIAS(i)),))
 #define NUM_SENSORS 1
 
@@ -24,24 +24,24 @@ static const struct device *const sensors[] = {LISTIFY(10, ACCELEROMETER_DEVICE,
 
 #ifdef CONFIG_SENSOR_ASYNC_API
 
-#define ACCEL_IODEV_SYM(id) CONCAT(accel_iodev, id)
+#define ACCEL_IODEV_SYM(id)    CONCAT(accel_iodev, id)
 #define ACCEL_IODEV_PTR(id, _) &ACCEL_IODEV_SYM(id)
 
-#define ACCEL_TRIGGERS                                   \
-	{SENSOR_TRIG_FIFO_FULL, SENSOR_STREAM_DATA_INCLUDE}, \
-	{SENSOR_TRIG_FIFO_WATERMARK, SENSOR_STREAM_DATA_INCLUDE}
+#define ACCEL_TRIGGERS                                                                             \
+	{SENSOR_TRIG_FIFO_FULL, SENSOR_STREAM_DATA_INCLUDE},                                       \
+	{                                                                                          \
+		SENSOR_TRIG_FIFO_WATERMARK, SENSOR_STREAM_DATA_INCLUDE                             \
+	}
 
-#define ACCEL_DEFINE_IODEV(id, _)         \
-	SENSOR_DT_STREAM_IODEV(               \
-		ACCEL_IODEV_SYM(id),              \
-		ACCEL_ALIAS(id),                  \
-		ACCEL_TRIGGERS);
+#define ACCEL_DEFINE_IODEV(id, _)                                                                  \
+	SENSOR_DT_STREAM_IODEV(ACCEL_IODEV_SYM(id), ACCEL_ALIAS(id), ACCEL_TRIGGERS);
 
 LISTIFY(NUM_SENSORS, ACCEL_DEFINE_IODEV, (;));
 
-struct rtio_iodev *iodevs[NUM_SENSORS] = { LISTIFY(NUM_SENSORS, ACCEL_IODEV_PTR, (,)) };
+struct rtio_iodev *iodevs[NUM_SENSORS] = {LISTIFY(NUM_SENSORS, ACCEL_IODEV_PTR, (,)) };
 
-RTIO_DEFINE_WITH_MEMPOOL(accel_ctx, NUM_SENSORS, NUM_SENSORS, NUM_SENSORS*20, 256, sizeof(void *));
+RTIO_DEFINE_WITH_MEMPOOL(accel_ctx, NUM_SENSORS, NUM_SENSORS, NUM_SENSORS * 20, 256,
+			 sizeof(void *));
 
 static int print_accels_stream(const struct device *dev, struct rtio_iodev *iodev)
 {
@@ -91,8 +91,8 @@ static int print_accels_stream(const struct device *dev, struct rtio_iodev *iode
 		/* Number of accelerometer data frames */
 		uint16_t frame_count;
 
-		rc = decoder->get_frame_count(buf,
-				(struct sensor_chan_spec) {SENSOR_CHAN_ACCEL_XYZ, 0}, &frame_count);
+		rc = decoder->get_frame_count(
+			buf, (struct sensor_chan_spec){SENSOR_CHAN_ACCEL_XYZ, 0}, &frame_count);
 
 		if (rc != 0) {
 			printk("sensor_get_decoder failed %d\n", rc);
@@ -106,16 +106,16 @@ static int print_accels_stream(const struct device *dev, struct rtio_iodev *iode
 
 		/* Decode all available accelerometer sample frames */
 		for (int i = 0; i < frame_count; i++) {
-			decoder->decode(buf, (struct sensor_chan_spec) {SENSOR_CHAN_ACCEL_XYZ, 0},
+			decoder->decode(buf, (struct sensor_chan_spec){SENSOR_CHAN_ACCEL_XYZ, 0},
 					&accel_fit, 1, &accel_data);
 
-			printk("Accel data for %s (%" PRIq(6) ", %" PRIq(6)
-					", %" PRIq(6) ") %lluns\n", dev->name,
-			PRIq_arg(accel_data.readings[0].x, 6, accel_data.shift),
-			PRIq_arg(accel_data.readings[0].y, 6, accel_data.shift),
-			PRIq_arg(accel_data.readings[0].z, 6, accel_data.shift),
-			(accel_data.header.base_timestamp_ns
-			+ accel_data.readings[0].timestamp_delta));
+			printk("Accel data for %s (%" PRIq(6) ", %" PRIq(6) ", %" PRIq(
+				       6) ") %lluns\n",
+			       dev->name, PRIq_arg(accel_data.readings[0].x, 6, accel_data.shift),
+			       PRIq_arg(accel_data.readings[0].y, 6, accel_data.shift),
+			       PRIq_arg(accel_data.readings[0].z, 6, accel_data.shift),
+			       (accel_data.header.base_timestamp_ns +
+				accel_data.readings[0].timestamp_delta));
 		}
 
 		rtio_release_buffer(&accel_ctx, buf, buf_len);

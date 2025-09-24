@@ -14,7 +14,7 @@ LOG_MODULE_REGISTER(main);
 
 int main(void)
 {
-	struct sensor_value oversampling_rate = { 8192, 0 };
+	struct sensor_value oversampling_rate = {8192, 0};
 	const struct device *const dev = DEVICE_DT_GET_ANY(meas_ms5837);
 
 	if (dev == NULL) {
@@ -22,13 +22,12 @@ int main(void)
 		return 0;
 	}
 	if (!device_is_ready(dev)) {
-		LOG_ERR("MS5837 device %s is not ready, aborting test.",
-			dev->name);
+		LOG_ERR("MS5837 device %s is not ready, aborting test.", dev->name);
 		return 0;
 	}
 
-	if (sensor_attr_set(dev, SENSOR_CHAN_ALL, SENSOR_ATTR_OVERSAMPLING,
-				&oversampling_rate) != 0) {
+	if (sensor_attr_set(dev, SENSOR_CHAN_ALL, SENSOR_ATTR_OVERSAMPLING, &oversampling_rate) !=
+	    0) {
 		LOG_ERR("Could not set oversampling rate of %d "
 			"on MS5837 device, aborting test.",
 			oversampling_rate.val1);
@@ -43,8 +42,8 @@ int main(void)
 		sensor_channel_get(dev, SENSOR_CHAN_AMBIENT_TEMP, &temp);
 		sensor_channel_get(dev, SENSOR_CHAN_PRESS, &press);
 
-		printf("Temperature: %d.%06d, Pressure: %d.%06d\n", temp.val1,
-		       temp.val2, press.val1, press.val2);
+		printf("Temperature: %d.%06d, Pressure: %d.%06d\n", temp.val1, temp.val2,
+		       press.val1, press.val2);
 
 		k_sleep(K_MSEC(10000));
 	}

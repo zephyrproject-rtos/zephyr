@@ -39,11 +39,9 @@ static void process_sample(const struct device *dev)
 
 	/* display temperature */
 	printf("Temperature: %.2f C\n", sensor_value_to_double(&temp));
-
 }
 
-static void lps22hh_handler(const struct device *dev,
-			    const struct sensor_trigger *trig)
+static void lps22hh_handler(const struct device *dev, const struct sensor_trigger *trig)
 {
 	process_sample(dev);
 }
@@ -66,8 +64,8 @@ int main(void)
 			.chan = SENSOR_CHAN_ALL,
 		};
 
-		if (sensor_attr_set(dev, SENSOR_CHAN_ALL,
-				    SENSOR_ATTR_SAMPLING_FREQUENCY, &attr) < 0) {
+		if (sensor_attr_set(dev, SENSOR_CHAN_ALL, SENSOR_ATTR_SAMPLING_FREQUENCY, &attr) <
+		    0) {
 			printf("Cannot configure sampling rate\n");
 			return 0;
 		}
@@ -75,8 +73,7 @@ int main(void)
 			printf("Cannot configure trigger\n");
 			return 0;
 		}
-		printk("Configured for triggered collection at %u Hz\n",
-		       attr.val1);
+		printk("Configured for triggered collection at %u Hz\n", attr.val1);
 	}
 
 	while (!IS_ENABLED(CONFIG_LPS22HH_TRIGGER)) {
