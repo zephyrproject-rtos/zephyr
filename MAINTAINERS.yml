@@ -740,6 +740,13 @@ Build system:
     - tests/misc/test_build/
     - tests/application_development/
     - samples/application_development/
+    - arch/archs.yml
+    - version.h.in
+    - scripts/schemas/arch-schema.yaml
+    - scripts/schemas/board-schema.yaml
+    - scripts/schemas/soc-schema.yaml
+    - scripts/list_shields.py
+    - scripts/snippets.py
   labels:
     - "area: Build System"
   tests:
@@ -875,6 +882,7 @@ Common Architecture Interface:
     - nashif
   files:
     - arch/Kconfig
+    - arch/CMakeLists.txt
     - include/zephyr/arch/
     - arch/common/
     - include/zephyr/arch/common/
