@@ -8,8 +8,6 @@
 
 #define BT_OBEX_VERSION 0x10
 
-#define BT_OBEX_MIN_MTU 255
-
 #define BT_OBEX_OPCODE_CONNECT  0x80
 #define BT_OBEX_OPCODE_DISCONN  0x81
 #define BT_OBEX_OPCODE_PUT      0x02
