@@ -183,6 +183,8 @@ struct video_buffer_request {
 	uint8_t count;
 	/** size of a requested buffer */
 	size_t size;
+	/** alignment of a requested buffer for type @ref VIDEO_MEMORY_INTERNAL */
+	size_t align;
 	/** timeout when allocating buffers of type @ref VIDEO_MEMORY_INTERNAL */
 	k_timeout_t timeout;
 	/** index of the 1st succesfully requested buffer, returned to application */
