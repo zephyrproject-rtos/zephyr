@@ -4843,6 +4843,15 @@ Testing with Renode:
   labels:
     - "area: Renode"
 
+Tests:
+  status: maintained
+  maintainers:
+    - nashif
+  files:
+    - tests/
+  labels:
+    - "area: Tests"
+
 "Toolchain ARC MWDT":
   status: maintained
   maintainers:
