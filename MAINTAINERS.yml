@@ -3857,7 +3857,6 @@ Nuvoton NPCM Platforms:
   status: maintained
   maintainers:
     - maxdog988
-    - warp5tw
   files:
     - soc/nuvoton/npcm/
     - boards/nuvoton/npcm*/
