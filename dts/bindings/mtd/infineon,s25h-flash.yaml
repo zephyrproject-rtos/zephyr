@@ -1,0 +1,47 @@
+# Copyright (c) 2025 Siemens Mobility GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: MSPI Infineon S25H Flash
+
+compatible: "infineon,s25h-flash"
+
+on-bus: mspi
+
+include: ["soc-nv-flash.yaml", "pinctrl-device.yaml", "mspi-device.yaml"]
+
+properties:
+  reg:
+    required: true
+
+  reset-startup-time-us:
+    required: true
+    type: int
+    description: |
+      Time the device requires to recover after a reset in microseconds
+
+  flash-size:
+    required: true
+    type: int
+    description: |
+      Size of the flash in byte
+
+  device-id:
+    required: true
+    type: int
+    description: |
+     16 bit JEDEC device id of the flash device that will be read to verify the
+     communication is working
+
+  manufacturer-id:
+    required: true
+    type: int
+    description: |
+      8 bit JEDEC manufacturer id of the flash device that will be read to
+      verify the communication is working
+
+  keep-startup-mspi-config:
+    type: boolean
+    description: |
+      Don't change the MSPI config to 4S-4S-4S during startup and stay at the
+      configuration specified in the devicetree. This allows communication with
+      slow but very similar flash device that aren't fully supported yet
