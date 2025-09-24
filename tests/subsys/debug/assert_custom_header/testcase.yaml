@@ -1,0 +1,9 @@
+common:
+  integration_platforms:
+    - native_sim
+
+tests:
+  debug.assert_custom_header:
+    tags:
+      - assert_custom_header
+      - assert
