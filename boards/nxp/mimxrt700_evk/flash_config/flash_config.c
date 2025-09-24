@@ -1,7 +1,7 @@
 /*
  * Copyright 2023, 2025 NXP
  *
- * SPDXLicense-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0
  */
 #include "flash_config.h"
 
