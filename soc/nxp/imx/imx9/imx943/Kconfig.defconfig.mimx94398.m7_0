@@ -49,4 +49,7 @@ configdefault SYS_CLOCK_TICKS_PER_SEC
 
 endif
 
+configdefault DMA_TCD_QUEUE_SIZE
+	default 4
+
 endif # SOC_MIMX94398_M7_0
