@@ -24,6 +24,7 @@ static uint8_t rx[255];
 
 static struct msg_send_data {
 	int called;
+	uint8_t msg_data[CONFIG_MQTT_SN_LIB_MAX_PAYLOAD_SIZE];
 	size_t msg_sz;
 	int ret;
 	const void *dest_addr;
@@ -43,11 +44,17 @@ int mqtt_sn_data_cmp(struct mqtt_sn_data data1, struct mqtt_sn_data data2)
 static int msg_sendto(struct mqtt_sn_client *client, void *buf, size_t sz, const void *dest_addr,
 		      size_t addrlen)
 {
+	zassert_not_null(buf);
+	zassert_true(sz <= sizeof(msg_send_data.msg_data),
+		     "buffer is bigger than supported by the test: %zu", sz);
+
 	msg_send_data.called++;
 	msg_send_data.msg_sz = sz;
 	msg_send_data.client = client;
 	msg_send_data.dest_addr = dest_addr;
 	msg_send_data.addrlen = addrlen;
+
+	memcpy(msg_send_data.msg_data, buf, sz);
 
 	k_sem_give(&mqtt_sn_tx_sem);
 
@@ -60,6 +67,26 @@ static void assert_msg_send(int called, size_t msg_sz, const struct mqtt_sn_data
 		      msg_send_data.called, called);
 	zassert_equal(msg_send_data.msg_sz, msg_sz, "msg_sz is %zu instead of %zu",
 		      msg_send_data.msg_sz, msg_sz);
+	if (dest_addr != NULL) {
+		zassert_equal(mqtt_sn_data_cmp(*dest_addr,
+					       *((struct mqtt_sn_data *)msg_send_data.dest_addr)),
+			      0, "Addresses incorrect");
+	}
+
+	memset(&msg_send_data, 0, sizeof(msg_send_data));
+}
+
+static void assert_msg_send_data(int called, const void *msg_data, size_t msg_sz,
+				 const struct mqtt_sn_data *dest_addr)
+{
+	zassert_equal(msg_send_data.called, called, "msg_send called %d times instead of %d",
+		      msg_send_data.called, called);
+	if (msg_send_data.msg_sz != msg_sz || memcmp(msg_send_data.msg_data, msg_data, msg_sz)) {
+		LOG_ERR("Unexpected msg_data");
+		LOG_HEXDUMP_ERR(msg_send_data.msg_data, msg_send_data.msg_sz, "actual");
+		LOG_HEXDUMP_ERR(msg_data, msg_sz, "expected");
+		zassert_true(false);
+	}
 	if (dest_addr != NULL) {
 		zassert_equal(mqtt_sn_data_cmp(*dest_addr,
 					       *((struct mqtt_sn_data *)msg_send_data.dest_addr)),
@@ -126,7 +153,7 @@ int tp_poll(struct mqtt_sn_client *client)
 	return recvfrom_data.sz;
 }
 
-#define NUM_TEST_CLIENTS 11
+#define NUM_TEST_CLIENTS 13
 static ZTEST_BMEM struct mqtt_sn_client mqtt_clients[NUM_TEST_CLIENTS];
 static ZTEST_BMEM struct mqtt_sn_client *mqtt_client;
 
@@ -428,6 +455,45 @@ static ZTEST(mqtt_sn_client, test_mqtt_sn_publish_event_qos0)
 	zassert_mem_equal(evt_cb_data.last_evt.param.publish.data.data, data.data, data.size);
 }
 
+/* Test a simple incoming PUBLISH event on a predefined topic */
+static ZTEST(mqtt_sn_client, test_mqtt_sn_publish_event_qos0_predefined)
+{
+	struct mqtt_sn_data data = MQTT_SN_DATA_STRING_LITERAL("Hello.");
+	struct mqtt_sn_data topic = MQTT_SN_DATA_STRING_LITERAL("zephyr");
+	uint8_t suback[] = {8, 0x13, 0, 0x1B, 0x1B, 0x00, 0x01, 0};
+	static const uint8_t pubmsg[] = {0x0d, 0x0c, 0x01, 0x00, 0x2a, 0x00, 0x00,
+					 'H',  'e',  'l',  'l',  'o',  '.'};
+	int err;
+
+	mqtt_sn_connect_no_will(mqtt_client);
+	err = k_sem_take(&mqtt_sn_tx_sem, K_NO_WAIT);
+
+	err = mqtt_sn_predefine_topic(mqtt_client, 42, &topic);
+	zassert_equal(err, 0, "unexpected error %d", err);
+
+	err = mqtt_sn_predefine_topic(mqtt_client, 42, &topic);
+	zassert_equal(err, -EALREADY, "unexpected error %d", err);
+
+	err = mqtt_sn_subscribe(mqtt_client, MQTT_SN_QOS_0, &topic);
+	zassert_ok(err, "Unexpected error %d", err);
+	err = k_sem_take(&mqtt_sn_tx_sem, K_SECONDS(1));
+	/* Expect a SUBSCRIBE message */
+	assert_msg_send(1, 7, &gw_addr);
+
+	err = input(mqtt_client, suback, sizeof(suback), &gw_addr);
+	zassert_ok(err, "unexpected error %d", err);
+
+	/* Send PUBLISH */
+	err = input(mqtt_client, pubmsg, sizeof(pubmsg), &gw_addr);
+	zassert_equal(err, 0, "unexpected error %d", err);
+	zassert_equal(evt_cb_data.called, 2, "NO event");
+	zassert_equal(evt_cb_data.last_evt.type, MQTT_SN_EVT_PUBLISH, "Wrong event");
+	zassert_equal(evt_cb_data.last_evt.param.publish.data.size, data.size,
+		      "Unexpected publish data size: %zu",
+		      evt_cb_data.last_evt.param.publish.data.size);
+	zassert_mem_equal(evt_cb_data.last_evt.param.publish.data.data, data.data, data.size);
+}
+
 /* Test a simple PUBLISH message */
 static ZTEST(mqtt_sn_client, test_mqtt_sn_publish_qos0)
 {
@@ -459,6 +525,44 @@ static ZTEST(mqtt_sn_client, test_mqtt_sn_publish_qos0)
 	err = k_sem_take(&mqtt_sn_tx_sem, K_SECONDS(10));
 	zassert_equal(err, 0, "Timed out waiting for callback.");
 	assert_msg_send(1, 20, &gw_addr);
+
+	/* Expect publishes to be empty - all done */
+	zassert_true(sys_slist_is_empty(&mqtt_client->publish), "Publish not empty");
+
+	/* Expect topics not to be empty - should be remembered */
+	zassert_false(sys_slist_is_empty(&mqtt_client->topic), "Topic empty");
+}
+
+/* Test a simple PUBLISH message on a predefined topic */
+static ZTEST(mqtt_sn_client, test_mqtt_sn_publish_qos0_predefined)
+{
+	struct mqtt_sn_data data = MQTT_SN_DATA_STRING_LITERAL("Hello");
+	struct mqtt_sn_data topic = MQTT_SN_DATA_STRING_LITERAL("zephyr");
+	static const uint8_t msg_data_pub[] = {0x0c, 0x0c, 0x01, 0x00, 0x2a, 0x00,
+					       0x00, 'H',  'e',  'l',  'l',  'o'};
+	int err;
+
+	mqtt_sn_connect_no_will(mqtt_client);
+	err = k_sem_take(&mqtt_sn_tx_sem, K_NO_WAIT);
+
+	err = mqtt_sn_predefine_topic(mqtt_client, 42, &topic);
+	zassert_equal(err, 0, "unexpected error %d", err);
+
+	err = mqtt_sn_predefine_topic(mqtt_client, 42, &topic);
+	zassert_equal(err, -EALREADY, "unexpected error %d", err);
+
+	/* Expect topics not to be empty, because we just predefined one */
+	zassert_false(sys_slist_is_empty(&mqtt_client->topic), "Topic empty");
+
+	err = mqtt_sn_publish(mqtt_client, MQTT_SN_QOS_0, &topic, false, &data);
+	zassert_equal(err, 0, "Unexpected error %d", err);
+
+	assert_msg_send(0, 0, NULL);
+
+	/* Expect PUBLISH to be sent */
+	err = k_sem_take(&mqtt_sn_tx_sem, K_SECONDS(10));
+	zassert_equal(err, 0, "Timed out waiting for callback.");
+	assert_msg_send_data(1, msg_data_pub, sizeof(msg_data_pub), &gw_addr);
 
 	/* Expect publishes to be empty - all done */
 	zassert_true(sys_slist_is_empty(&mqtt_client->publish), "Publish not empty");
