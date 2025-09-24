@@ -1687,7 +1687,6 @@ Documentation Infrastructure:
   status: odd fixes
   collaborators:
     - henrikbrixandersen
-    - mnkp
   files:
     - doc/hardware/peripherals/gpio.rst
     - drivers/gpio/
@@ -3250,7 +3249,6 @@ Microchip SAM Platforms:
     - nandojve
   collaborators:
     - pdgendt
-    - mnkp
     - stephanosio
   files:
     - boards/atmel/
@@ -5518,7 +5516,6 @@ West:
     - jerome-pouiller
     - sateeshkotapati
     - yonsch
-    - mnkp
     - rettichschnidi
     - Martinhoff-maker
   files:
