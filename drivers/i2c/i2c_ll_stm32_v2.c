@@ -161,8 +161,16 @@ static inline void msg_init(const struct device *dev, struct i2c_msg *msg,
 	struct i2c_stm32_data *data = dev->data;
 	I2C_TypeDef *i2c = cfg->i2c;
 
+	bool stop_or_restart_follows =
+		(msg->flags & I2C_MSG_STOP)
+		|| (next_msg_flags && (*next_msg_flags & I2C_MSG_RESTART));
+
 	if (LL_I2C_IsEnabledReloadMode(i2c)) {
 		LL_I2C_SetTransferSize(i2c, msg->len);
+
+		if (stop_or_restart_follows) {
+			LL_I2C_DisableReloadMode(i2c);
+		}
 	} else {
 		if (I2C_ADDR_10_BITS & data->dev_config) {
 			LL_I2C_SetMasterAddressingMode(i2c,
@@ -174,12 +182,10 @@ static inline void msg_init(const struct device *dev, struct i2c_msg *msg,
 			LL_I2C_SetSlaveAddr(i2c, (uint32_t) slave << 1);
 		}
 
-		if (!(msg->flags & I2C_MSG_STOP) && next_msg_flags &&
-		    !(*next_msg_flags & I2C_MSG_RESTART)) {
+		if (!stop_or_restart_follows) {
 			LL_I2C_EnableReloadMode(i2c);
-		} else {
-			LL_I2C_DisableReloadMode(i2c);
 		}
+
 		LL_I2C_DisableAutoEndMode(i2c);
 		LL_I2C_SetTransferRequest(i2c, transfer);
 		LL_I2C_SetTransferSize(i2c, msg->len);
