@@ -291,6 +291,10 @@ Libraries / Subsystems
     via :kconfig:option:`CONFIG_LOG_RATELIMIT_FALLBACK` to either log all messages or drop them completely.
     For more details, see :ref:`logging_ratelimited`.
 
+* Secure storage
+
+  * The experimental status has been removed. (:github:`96483`)
+
 Other notable changes
 *********************
 
