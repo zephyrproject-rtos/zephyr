@@ -383,6 +383,19 @@ extern "C" {
 
 #define _minmax_cnt(op, a, b, cnt) \
 	_minmax_unique(op, a, b, UTIL_CAT(_value_a_, cnt), UTIL_CAT(_value_b_, cnt))
+
+#define _minmax3_unique(op, a, b, c, ua, ub, uc) ({ \
+		__typeof__(a) ua = (a);             \
+		__typeof__(b) ub = (b);             \
+		__typeof__(c) uc = (c);             \
+		op(ua, op(ub, uc));                 \
+	})
+
+#define _minmax3_cnt(op, a, b, c, cnt)            \
+	_minmax3_unique(op, a, b, c,              \
+			UTIL_CAT(_value_a_, cnt), \
+			UTIL_CAT(_value_b_, cnt), \
+			UTIL_CAT(_value_c_, cnt))
 /**
  * @endcond
  */
@@ -415,6 +428,13 @@ extern "C" {
 #define max(a, b) _minmax_cnt(MAX, a, b, __COUNTER__)
 #endif
 
+/** @brief Return larger value of three provided expressions.
+ *
+ * Macro ensures that expressions are evaluated only once. See @ref max for
+ * macro limitations.
+ */
+#define max3(a, b, c) _minmax3_cnt(MAX, a, b, c, __COUNTER__)
+
 #ifndef MIN
 /**
  * @brief Obtain the minimum of two values.
@@ -438,6 +458,14 @@ extern "C" {
  */
 #define min(a, b) _minmax_cnt(MIN, a, b, __COUNTER__)
 #endif
+
+/** @brief Return smaller value of three provided expressions.
+ *
+ * Macro ensures that expressions are evaluated only once. See @ref max for
+ * macro limitations.
+ */
+#define min3(a, b, c) _minmax3_cnt(MIN, a, b, c, __COUNTER__)
+
 
 #ifndef MAX_FROM_LIST
 /**
