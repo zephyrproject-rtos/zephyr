@@ -607,7 +607,7 @@ before opening a new Pull Request:
 
 .. code-block:: bash
 
-   ./scripts/ci/check_compliance.py -c upstream/main..
+   ./scripts/ci/check_compliance.py -c <commit range>
 
 .. note::
    On Windows if the .pl extension has not yet been associated with an
