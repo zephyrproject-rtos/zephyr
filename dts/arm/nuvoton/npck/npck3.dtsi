@@ -251,6 +251,7 @@
 		espi0: espi@4000a000 {
 			rx-plsize = <64>;
 			tx-plsize = <64>;
+
 			#address-cells = <1>;
 			#size-cells = <1>;
 
