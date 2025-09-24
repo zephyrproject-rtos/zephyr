@@ -20,6 +20,7 @@ struct voltage_config {
 	struct voltage_divider_dt_spec voltage;
 	struct gpio_dt_spec gpio_power;
 	uint32_t sample_delay_us;
+	bool skip_calibration;
 };
 
 struct voltage_data {
@@ -191,7 +192,7 @@ static int voltage_init(const struct device *dev)
 
 	data->sequence.buffer = &data->raw;
 	data->sequence.buffer_size = sizeof(data->raw);
-	data->sequence.calibrate = true;
+	data->sequence.calibrate = !config->skip_calibration;
 
 	return pm_device_driver_init(dev, pm_action);
 }
@@ -203,6 +204,7 @@ static int voltage_init(const struct device *dev)
 		.voltage = VOLTAGE_DIVIDER_DT_SPEC_GET(DT_DRV_INST(inst)),                         \
 		.gpio_power = GPIO_DT_SPEC_INST_GET_OR(inst, power_gpios, {0}),                    \
 		.sample_delay_us = DT_INST_PROP(inst, power_on_sample_delay_us),                   \
+		.skip_calibration = DT_INST_PROP(inst, skip_calibration),                          \
 	};                                                                                         \
                                                                                                    \
 	PM_DEVICE_DT_INST_DEFINE(inst, pm_action);                                                 \
