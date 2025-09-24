@@ -861,23 +861,8 @@ Coding Guidelines:
     - jfischer-no
     - simhein
   files:
-    - .checkpatch.conf
-    - .clang-format
-    - .editorconfig
-    - .gitlint
-    - .yamllint
     - doc/contribute/guidelines.rst
     - doc/contribute/coding_guidelines/
-    - scripts/checkpatch.pl
-    - scripts/checkpatch/
-    - scripts/ci/check_compliance.py
-    - scripts/ci/guideline_check.py
-    - scripts/ci/pylintrc
-    - scripts/coccicheck
-    - scripts/coccinelle/
-    - scripts/gitlint/
-    - scripts/pylint/
-    - scripts/spelling.txt
   labels:
     - "area: Coding Guidelines"
 
@@ -3064,6 +3049,43 @@ Linker Scripts:
   tests:
     - linker
 
+Linters and Static Analyzers:
+  status: maintained
+  maintainers:
+    - keith-zephyr
+  collaborators:
+    - nashif
+    - kartben
+    - pdgendt
+  files:
+    - .codechecker.yml
+    - .codecov.yml
+    - .ruff-excludes.toml
+    - .ruff.toml
+    - REUSE.toml
+    - .yamllint
+    - scripts/ruff/gen_format_exclude.py
+    - scripts/ruff/gen_lint_exclude.py
+    - cmake/sca/
+    - .checkpatch.conf
+    - .clang-format
+    - .editorconfig
+    - .gitlint
+    - .yamllint
+    - scripts/checkpatch.pl
+    - scripts/checkpatch/
+    - scripts/ci/check_compliance.py
+    - scripts/ci/guideline_check.py
+    - scripts/ci/pylintrc
+    - scripts/coccicheck
+    - scripts/coccinelle/
+    - scripts/gitlint/
+    - scripts/pylint/
+    - scripts/spelling.txt
+  labels:
+    - "area: Linters"
+  description: >-
+    Linters and Static Analyzers used in Zephyr project.
 LiteX Platforms:
   status: maintained
   maintainers:
