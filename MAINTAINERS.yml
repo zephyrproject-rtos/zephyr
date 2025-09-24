@@ -675,7 +675,9 @@ Board/SoC configuration:
     - "57300"
   files:
     - soc/Kconfig*
+    - soc/CMakeLists.txt
     - boards/Kconfig*
+    - boards/CMakeLists.txt
   labels:
     - "area: Board/SoC configuration"
 
