@@ -376,8 +376,7 @@ extern "C" {
 /**
  * @brief Obtain the maximum of two values.
  *
- * @note Arguments are evaluated twice. Use Z_MAX for a GCC-only, single
- * evaluation version
+ * @note Arguments are evaluated twice. Use max for a single evaluation version
  *
  * @param a First value.
  * @param b Second value.
@@ -387,28 +386,29 @@ extern "C" {
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
 #endif
 
+#ifndef __cplusplus
 /** @brief Return larger value of two provided expressions.
  *
  * Macro ensures that expressions are evaluated only once.
  *
  * @note Macro has limited usage compared to the standard macro as it cannot be
  *	 used:
- *	 - to generate constant integer, e.g. __aligned(Z_MAX(4,5))
- *	 - static variable, e.g. array like static uint8_t array[Z_MAX(...)];
+ *	 - to generate constant integer, e.g. __aligned(max(4,5))
+ *	 - static variable, e.g. array like static uint8_t array[max(...)];
  */
-#define Z_MAX(a, b) ({ \
+#define max(a, b) ({ \
 		/* random suffix to avoid naming conflict */ \
 		__typeof__(a) _value_a_ = (a); \
 		__typeof__(b) _value_b_ = (b); \
 		(_value_a_ > _value_b_) ? _value_a_ : _value_b_; \
 	})
+#endif
 
 #ifndef MIN
 /**
  * @brief Obtain the minimum of two values.
  *
- * @note Arguments are evaluated twice. Use Z_MIN for a GCC-only, single
- * evaluation version
+ * @note Arguments are evaluated twice. Use min for a single evaluation version
  *
  * @param a First value.
  * @param b Second value.
@@ -418,17 +418,19 @@ extern "C" {
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 #endif
 
+#ifndef __cplusplus
 /** @brief Return smaller value of two provided expressions.
  *
- * Macro ensures that expressions are evaluated only once. See @ref Z_MAX for
+ * Macro ensures that expressions are evaluated only once. See @ref max for
  * macro limitations.
  */
-#define Z_MIN(a, b) ({ \
+#define min(a, b) ({ \
 		/* random suffix to avoid naming conflict */ \
 		__typeof__(a) _value_a_ = (a); \
 		__typeof__(b) _value_b_ = (b); \
 		(_value_a_ < _value_b_) ? _value_a_ : _value_b_; \
 	})
+#endif
 
 #ifndef MAX_FROM_LIST
 /**
@@ -555,8 +557,8 @@ extern "C" {
 /**
  * @brief Clamp a value to a given range.
  *
- * @note Arguments are evaluated multiple times. Use Z_CLAMP for a GCC-only,
- * single evaluation version.
+ * @note Arguments are evaluated multiple times. Use clamp for a single
+ * evaluation version.
  *
  * @param val Value to be clamped.
  * @param low Lowest allowed value (inclusive).
@@ -567,12 +569,13 @@ extern "C" {
 #define CLAMP(val, low, high) (((val) <= (low)) ? (low) : MIN(val, high))
 #endif
 
+#ifndef __cplusplus
 /** @brief Return a value clamped to a given range.
  *
- * Macro ensures that expressions are evaluated only once. See @ref Z_MAX for
+ * Macro ensures that expressions are evaluated only once. See @ref max for
  * macro limitations.
  */
-#define Z_CLAMP(val, low, high) ({                                             \
+#define clamp(val, low, high) ({                                               \
 		/* random suffix to avoid naming conflict */                   \
 		__typeof__(val) _value_val_ = (val);                           \
 		__typeof__(low) _value_low_ = (low);                           \
@@ -581,6 +584,7 @@ extern "C" {
 		(_value_val_ > _value_high_) ? _value_high_ :                  \
 					       _value_val_;                    \
 	})
+#endif
 
 /**
  * @brief Checks if a value is within range.
