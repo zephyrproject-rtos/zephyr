@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2025 Nordic Semiconductor ASA
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Replace default ipc0 instance */
+/delete-node/ &ipc0;
+
+ipc0: &cpuapp_cpuppr_ipc {
+	status = "okay";
+};
+
+&cpuppr_vevif {
+	status = "okay";
+};
+
+&cpuapp_bellboard {
+	status = "okay";
+};
+
+/ {
+	chosen {
+		/delete-property/ zephyr,bt-hci;
+	};
+};
