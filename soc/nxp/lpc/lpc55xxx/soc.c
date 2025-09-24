@@ -422,6 +422,11 @@ DT_FOREACH_STATUS_OKAY(nxp_ctimer_pwm, CTIMER_CLOCK_SETUP)
 #endif /* SOC platform */
 #endif /* DAC */
 
+#ifdef CONFIG_LOG_BACKEND_SWO
+	CLOCK_AttachClk(kTRACE_DIV_to_TRACE);
+	CLOCK_SetClkDiv(kCLOCK_DivArmTrClkDiv, 1U, true);
+#endif
+
 }
 
 /**
