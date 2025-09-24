@@ -1127,8 +1127,6 @@ Documentation:
     - doc/introduction/
     - doc/project/
     - doc/releases/
-    - doc/security/
-    - doc/safety/
     - README.rst
     - doc/substitutions.txt
     - doc/images/Zephyr-Kite-in-tree.png
@@ -4418,6 +4416,16 @@ STM32 Wireless Platforms:
     STM32WB SOCs, dts files and related drivers. STM32WB development boards
     and ST bluetooth shields.
 
+Safety:
+  status: maintained
+  maintainers:
+    - tobiaskaestner
+    - parphane
+  files:
+    - doc/safety/
+  labels:
+    - "area: Safety"
+
 Samples:
   status: maintained
   maintainers:
@@ -4445,6 +4453,16 @@ Secure storage:
     - "area: Secure storage"
   tests:
     - psa.secure_storage
+
+Security:
+  status: maintained
+  maintainers:
+    - ceolin
+    - d3zd3z
+  files:
+    - doc/security/
+  labels:
+    - "area: Security"
 
 Seeed Studio Platforms:
   status: odd fixes
