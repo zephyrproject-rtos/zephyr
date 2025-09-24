@@ -27,7 +27,6 @@
 	CONFIG_GPIO_INIT_PRIORITY.
 #endif
 
-#define MAX_PORT_COUNT  4
 #define MAX_PIN_COUNT   16
 #define INVALID_PORT    0xFF
 #define INTERRUPT_COUNT 8
@@ -35,6 +34,7 @@
 /* Types */
 struct gpio_siwx91x_common_config {
 	EGPIO_Type *reg;
+	uint8_t port_count;
 };
 
 struct gpio_siwx91x_port_config {
@@ -49,7 +49,7 @@ struct gpio_siwx91x_port_config {
 
 struct gpio_siwx91x_common_data {
 	/* a list of all ports */
-	const struct device *ports[MAX_PORT_COUNT];
+	const struct device **ports;
 	sl_gpio_t interrupts[INTERRUPT_COUNT];
 };
 
@@ -324,11 +324,12 @@ static inline int gpio_siwx91x_init_port(const struct device *port)
 {
 	const struct gpio_siwx91x_port_config *cfg = port->config;
 	const struct device *parent = cfg->parent;
-	struct gpio_siwx91x_common_data *data = parent->data;
+	__maybe_unused const struct gpio_siwx91x_common_config *pcfg = parent->config;
+	struct gpio_siwx91x_common_data *pdata = parent->data;
 
 	/* Register port as active */
-	__ASSERT(cfg->port < MAX_PORT_COUNT, "Too many ports");
-	data->ports[cfg->port] = port;
+	__ASSERT(cfg->port < pcfg->port_count, "Too many ports");
+	pdata->ports[cfg->port] = port;
 
 	return pm_device_driver_init(port, gpio_siwx91x_port_pm_action);
 }
@@ -409,10 +410,14 @@ static DEVICE_API(gpio, gpio_siwx91x_api) = {
 static DEVICE_API(gpio, gpio_siwx91x_common_api) = { };
 
 #define GPIO_CONTROLLER_INIT(idx)                                                                  \
+	const struct device *ports_##idx[DT_INST_PROP(idx, silabs_port_count)];                    \
 	static const struct gpio_siwx91x_common_config gpio_siwx91x_config##idx = {                \
 		.reg = (EGPIO_Type *)DT_INST_REG_ADDR(idx),                                        \
+		.port_count = DT_INST_PROP(idx, silabs_port_count),                                \
 	};                                                                                         \
-	static struct gpio_siwx91x_common_data gpio_siwx91x_data##idx;                             \
+	static struct gpio_siwx91x_common_data gpio_siwx91x_data##idx = {                          \
+		.ports = ports_##idx,                                                              \
+	};                                                                                         \
                                                                                                    \
 	static int gpio_siwx91x_init_controller_##idx(const struct device *dev)                    \
 	{                                                                                          \
