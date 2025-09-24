@@ -1,4 +1,4 @@
-# Copyright (c) 2024 Renesas Electronics Corporation
+# Copyright (c) 2025 Renesas Electronics Corporation
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
@@ -17,7 +17,7 @@ description: |
         dma-names = "rx", "tx";
    };
 
-compatible: "renesas,rz-dma"
+compatible: "renesas,rz-dmac-b"
 
 include: [dma-controller.yaml, pinctrl-device.yaml]
 
@@ -34,7 +34,8 @@ properties:
   "#dma-cells":
     const: 2
 
-  dma-buf-addr-alignment:
+  dma-unit:
+    type: int
     required: true
 
 dma-cells:
