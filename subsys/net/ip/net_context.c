@@ -2415,15 +2415,16 @@ static int context_sendto(struct net_context *context,
 	 */
 	if (IS_ENABLED(CONFIG_NET_IPV4_MAPPING_TO_IPV6) &&
 	    IS_ENABLED(CONFIG_NET_IPV6) &&
-	    net_context_get_family(context) == AF_INET6 &&
-	    dst_addr != NULL &&
-	    dst_addr->sa_family == AF_INET) {
-		family = AF_INET;
-	} else if (IS_ENABLED(CONFIG_NET_IPV4_MAPPING_TO_IPV6) &&
-		   IS_ENABLED(CONFIG_NET_IPV6) && msghdr != NULL) {
-		const struct sockaddr_in6 *addr6 = msghdr->msg_name;
+	    net_context_get_family(context) == AF_INET6) {
+		const struct sockaddr_in6 *addr6 = NULL;
 
-		if (net_ipv6_addr_is_v4_mapped(&addr6->sin6_addr)) {
+		if (dst_addr != NULL) {
+			addr6 = (const struct sockaddr_in6 *)dst_addr;
+		} else if (msghdr != NULL) {
+			addr6 = msghdr->msg_name;
+		}
+
+		if (addr6 != NULL && net_ipv6_addr_is_v4_mapped(&addr6->sin6_addr)) {
 			family = AF_INET;
 		} else {
 			family = net_context_get_family(context);
