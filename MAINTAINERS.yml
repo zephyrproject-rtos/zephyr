@@ -2858,7 +2858,6 @@ Intel Platforms (Agilex):
     - gdengi
   collaborators:
     - nbalabak
-    - teikheng
   files:
     - boards/intel/socfpga/
     - soc/intel/intel_socfpga/
