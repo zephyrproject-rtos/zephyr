@@ -235,13 +235,18 @@ static int smbus_stm32_block_write(const struct device *dev, uint16_t periph_add
 		{
 			.buf = &command,
 			.len = sizeof(command),
-			.flags = 0,
+			.flags = I2C_MSG_WRITE,
+		},
+		{
+			.buf = &count,
+			.len = sizeof(count),
+			.flags = I2C_MSG_WRITE,
 		},
 		{
 			.buf = buf,
 			.len = count,
-			.flags = 0,
-		},
+			.flags = I2C_MSG_WRITE,
+		}
 	};
 
 	return i2c_transfer(config->i2c_dev, messages, ARRAY_SIZE(messages), periph_addr);
