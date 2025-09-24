@@ -237,7 +237,9 @@ static int acquire(const struct device *dev)
 	struct flash_mspi_nor_data *dev_data = dev->data;
 	int rc;
 
+#if defined(CONFIG_MULTITHREADING)
 	k_sem_take(&dev_data->acquired, K_FOREVER);
+#endif
 
 	rc = pm_device_runtime_get(dev_config->bus);
 	if (rc < 0) {
@@ -269,21 +271,27 @@ static int acquire(const struct device *dev)
 		(void)pm_device_runtime_put(dev_config->bus);
 	}
 
+#if defined(CONFIG_MULTITHREADING)
 	k_sem_give(&dev_data->acquired);
+#endif
+
 	return rc;
 }
 
 static void release(const struct device *dev)
 {
 	const struct flash_mspi_nor_config *dev_config = dev->config;
-	struct flash_mspi_nor_data *dev_data = dev->data;
 
 	/* This releases the MSPI controller. */
 	(void)mspi_get_channel_status(dev_config->bus, 0);
 
 	(void)pm_device_runtime_put(dev_config->bus);
 
+#if defined(CONFIG_MULTITHREADING)
+	struct flash_mspi_nor_data *dev_data = dev->data;
+
 	k_sem_give(&dev_data->acquired);
+#endif
 }
 
 static inline uint32_t dev_flash_size(const struct device *dev)
@@ -1215,7 +1223,9 @@ static int drv_init(const struct device *dev)
 		}
 	}
 
+#if defined(CONFIG_MULTITHREADING)
 	k_sem_init(&dev_data->acquired, 1, K_SEM_MAX_LIMIT);
+#endif
 
 	return pm_device_driver_init(dev, dev_pm_action_cb);
 }
