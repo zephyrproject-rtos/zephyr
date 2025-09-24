@@ -318,7 +318,7 @@ static void espi_bus_cfg_update_isr(const struct device *dev)
 
 #if defined(CONFIG_ESPI_NPCX_CAF_GLOBAL_RESET_WORKAROUND)
 			if (chan == NPCX_ESPI_CH_FLASH && evt.evt_data == 1 &&
-			    IS_BIT_SET(inst->FLASHCTL, NPCX_FLASHCTL_FLASH_TX_AVAIL)) {
+			    IS_BIT_SET(inst->FLASHCTL, NPCX_FLASHCTL_FLASH_ACC_TX_AVAIL)) {
 				espi_npcx_flash_fake_request(dev);
 			}
 #endif
@@ -1220,7 +1220,7 @@ static int espi_npcx_flash_read(const struct device *dev,
 	}
 
 	/* Check Flash Transmit Queue is empty? */
-	if (IS_BIT_SET(inst->FLASHCTL, NPCX_FLASHCTL_FLASH_TX_AVAIL)) {
+	if (IS_BIT_SET(inst->FLASHCTL, NPCX_FLASHCTL_FLASH_ACC_TX_AVAIL)) {
 		LOG_ERR("flash channel is busy");
 		return -EBUSY;
 	}
@@ -1232,8 +1232,8 @@ static int espi_npcx_flash_read(const struct device *dev,
 					  pckt->len,
 					  0);
 
-	/* Set the FLASHCTL.FLASH_TX_AVAIL bit to 1 to enqueue the packet */
-	inst->FLASHCTL |= BIT(NPCX_FLASHCTL_FLASH_TX_AVAIL);
+	/* Set the FLASHCTL.FLASH_ACC_TX_AVAIL bit to 1 to enqueue the packet */
+	inst->FLASHCTL |= BIT(NPCX_FLASHCTL_FLASH_ACC_TX_AVAIL);
 
 	/* Wait until get flash package or timeout */
 	ret = k_sem_take(&data->flash_rx_lock, K_MSEC(ESPI_FLASH_MAX_TIMEOUT));
@@ -1262,7 +1262,7 @@ static int espi_npcx_flash_write(const struct device *dev,
 	}
 
 	/* Check Flash Transmit Queue is empty? */
-	if (IS_BIT_SET(inst->FLASHCTL, NPCX_FLASHCTL_FLASH_TX_AVAIL)) {
+	if (IS_BIT_SET(inst->FLASHCTL, NPCX_FLASHCTL_FLASH_ACC_TX_AVAIL)) {
 		LOG_ERR("flash channel is busy");
 		return -EBUSY;
 	}
@@ -1292,8 +1292,8 @@ static int espi_npcx_flash_write(const struct device *dev,
 		*tx_buf = tx_data;
 	}
 
-	/* Set the FLASHCTL.FLASH_TX_AVAIL bit to 1 to enqueue the packet */
-	inst->FLASHCTL |= BIT(NPCX_FLASHCTL_FLASH_TX_AVAIL);
+	/* Set the FLASHCTL.FLASH_ACC_TX_AVAIL bit to 1 to enqueue the packet */
+	inst->FLASHCTL |= BIT(NPCX_FLASHCTL_FLASH_ACC_TX_AVAIL);
 
 	/* Wait until get flash package or timeout */
 	ret = k_sem_take(&data->flash_rx_lock, K_MSEC(ESPI_FLASH_MAX_TIMEOUT));
@@ -1314,7 +1314,7 @@ static int espi_npcx_flash_erase(const struct device *dev,
 	struct espi_npcx_data *const data = dev->data;
 
 	/* Check Flash Transmit Queue is empty? */
-	if (IS_BIT_SET(inst->FLASHCTL, NPCX_FLASHCTL_FLASH_TX_AVAIL)) {
+	if (IS_BIT_SET(inst->FLASHCTL, NPCX_FLASHCTL_FLASH_ACC_TX_AVAIL)) {
 		LOG_ERR("flash channel is busy");
 		return -EBUSY;
 	}
@@ -1326,8 +1326,8 @@ static int espi_npcx_flash_erase(const struct device *dev,
 					  pckt->len,
 					  0);
 
-	/* Set the FLASHCTL.FLASH_TX_AVAIL bit to 1 to enqueue the packet */
-	inst->FLASHCTL |= BIT(NPCX_FLASHCTL_FLASH_TX_AVAIL);
+	/* Set the FLASHCTL.FLASH_ACC_TX_AVAIL bit to 1 to enqueue the packet */
+	inst->FLASHCTL |= BIT(NPCX_FLASHCTL_FLASH_ACC_TX_AVAIL);
 
 	/* Wait until get flash package or timeout */
 	ret = k_sem_take(&data->flash_rx_lock, K_MSEC(ESPI_FLASH_MAX_TIMEOUT));

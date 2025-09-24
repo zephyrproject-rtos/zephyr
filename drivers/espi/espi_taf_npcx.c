@@ -270,8 +270,8 @@ static void taf_set_flash_c_avail(const struct device *dev)
 	 */
 	tmp &= NPCX_FLASHCTL_ACCESS_MASK;
 
-	/* Set FLASHCTL_FLASH_TX_AVAIL */
-	tmp |= BIT(NPCX_FLASHCTL_FLASH_TX_AVAIL);
+	/* Set FLASHCTL_FLASH_ACC_TX_AVAIL */
+	tmp |= BIT(NPCX_FLASHCTL_FLASH_ACC_TX_AVAIL);
 	inst->FLASHCTL = tmp;
 }
 
@@ -282,7 +282,7 @@ static void taf_release_flash_np_free(const struct device *dev)
 	uint32_t tmp = inst->FLASHCTL;
 
 	/*
-	 * Clear FLASHCTL_FLASH_TX_AVAIL to avoid host puts a
+	 * Clear FLASHCTL_FLASH_ACC_TX_AVAIL to avoid host puts a
 	 * GET_FLASH_C command at here.
 	 */
 	tmp &= NPCX_FLASHCTL_ACCESS_MASK;
@@ -313,9 +313,9 @@ static int taf_npcx_completion_handler(const struct device *dev, uint8_t type, u
 	}
 
 	/* Check the Flash Access TX Queue is empty by polling
-	 * FLASH_TX_AVAIL.
+	 * FLASH_ACC_TX_AVAIL.
 	 */
-	if (WAIT_FOR(!IS_BIT_SET(inst->FLASHCTL, NPCX_FLASHCTL_FLASH_TX_AVAIL),
+	if (WAIT_FOR(!IS_BIT_SET(inst->FLASHCTL, NPCX_FLASHCTL_FLASH_ACC_TX_AVAIL),
 		     NPCX_FLASH_CHK_TIMEOUT, NULL) == false) {
 		LOG_ERR("Check TX Queue Is Empty Timeout");
 		return -EBUSY;
@@ -327,7 +327,7 @@ static int taf_npcx_completion_handler(const struct device *dev, uint8_t type, u
 		inst->FLASHTXBUF[i] = tx_buf[i];
 	}
 
-	/* Set the FLASHCTL.FLASH_TX_AVAIL bit to 1 to enqueue the packet */
+	/* Set the FLASHCTL.FLASH_ACC_TX_AVAIL bit to 1 to enqueue the packet */
 	taf_set_flash_c_avail(dev);
 
 	/* Release FLASH_NP_FREE here to ready get next TAF request */
