@@ -95,7 +95,6 @@ static int32_t _get_hw_block_num(CySCB_Type *reg_addr)
 	return -ENOMEM;
 }
 
-#ifdef CONFIG_I2C_INFINEON_CAT1_ASYNC
 static void ifx_master_event_handler(void *callback_arg, cyhal_i2c_event_t event)
 {
 	const struct device *dev = (const struct device *) callback_arg;
@@ -167,7 +166,6 @@ static void ifx_master_event_handler(void *callback_arg, cyhal_i2c_event_t event
 		}
 	}
 }
-#endif
 
 static int ifx_cat1_i2c_configure(const struct device *dev, uint32_t dev_config)
 {
@@ -212,10 +210,9 @@ static int ifx_cat1_i2c_configure(const struct device *dev, uint32_t dev_config)
 		return -EIO;
 	}
 
-#ifdef CONFIG_I2C_INFINEON_CAT1_ASYNC
 	/* Register an I2C event callback handler */
 	cyhal_i2c_register_callback(&data->obj, ifx_master_event_handler, (void *)dev);
-#endif
+
 	/* Release semaphore */
 	k_sem_give(&data->operation_sem);
 	return 0;
@@ -282,7 +279,6 @@ static int ifx_cat1_i2c_transfer(const struct device *dev, struct i2c_msg *msg, 
 		return -EINVAL;
 	}
 
-#ifdef CONFIG_I2C_INFINEON_CAT1_ASYNC
 	const struct ifx_cat1_i2c_config *const config = dev->config;
 
 	struct i2c_msg *tx_msg;
@@ -350,26 +346,7 @@ static int ifx_cat1_i2c_transfer(const struct device *dev, struct i2c_msg *msg, 
 	/* Disable I2C Interrupt */
 	cyhal_i2c_enable_event(&data->obj, (cyhal_i2c_event_t)
 			       I2C_CAT1_EVENTS_MASK, config->irq_priority, false);
-#else
-	for (uint32_t i = 0u; i < num_msgs; i++) {
-		bool stop_flag = ((msg[i].flags & I2C_MSG_STOP) != 0u) ? true : false;
 
-		if ((msg[i].flags & I2C_MSG_RW_MASK) == I2C_MSG_WRITE) {
-			rslt = cyhal_i2c_master_write(&data->obj,
-						      addr, msg[i].buf, msg[i].len, 0, stop_flag);
-		}
-		if ((msg[i].flags & I2C_MSG_RW_MASK) == I2C_MSG_READ) {
-			rslt = cyhal_i2c_master_read(&data->obj,
-						     addr, msg[i].buf, msg[i].len, 0, stop_flag);
-		}
-
-		if (rslt != CY_RSLT_SUCCESS) {
-			/* Release semaphore */
-			k_sem_give(&data->operation_sem);
-			return -EIO;
-		}
-	}
-#endif
 	/* Release semaphore (After I2C transfer is complete) */
 	k_sem_give(&data->operation_sem);
 	return 0;
