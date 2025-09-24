@@ -135,6 +135,8 @@ struct video_caps {
 	 * the stream.
 	 */
 	uint8_t min_vbuf_count;
+	/** requirement on the buffer alignment, in bytes */
+	size_t buf_align;
 };
 
 /**
