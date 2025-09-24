@@ -903,6 +903,31 @@
 				};
 			};
 		};
+
+		test_nvmem_consumer: test-nvmem-consumer {
+			compatible = "vnd,nvmem-consumer";
+			nvmem-cells = <&cell0>, <&cell10>;
+			nvmem-cell-names = "cell0", "cell10";
+		};
+
+		test-nvmem-provider {
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				cell0: cell@0 {
+					reg = <0x0 0x10>;
+					#nvmem-cell-cells = <0>;
+				};
+
+				cell10: cell@10 {
+					reg = <0x10 0x10>;
+					read-only;
+					#nvmem-cell-cells = <0>;
+				};
+			};
+		};
 	};
 
 	test_64 {
