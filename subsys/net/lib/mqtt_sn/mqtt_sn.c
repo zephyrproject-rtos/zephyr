@@ -664,7 +664,9 @@ static int process_pubs(struct mqtt_sn_client *client, int64_t *next_cycle)
 				"Processing publish for topic");
 		LOG_HEXDUMP_DBG(pub->pubdata, pub->datalen, "Processing publish data");
 
-		if (pub->con.last_attempt == 0) {
+		if (now == 0) {
+			next_attempt = 1;
+		} else if (pub->con.last_attempt == 0) {
 			next_attempt = 0;
 			dup = false;
 		} else {
@@ -749,7 +751,9 @@ static int process_topics(struct mqtt_sn_client *client, int64_t *next_cycle)
 	SYS_SLIST_FOR_EACH_CONTAINER(&client->topic, topic, next) {
 		LOG_HEXDUMP_DBG(topic->name, topic->namelen, "Processing topic");
 
-		if (topic->con.last_attempt == 0) {
+		if (now == 0) {
+			next_attempt = 1;
+		} else if (topic->con.last_attempt == 0) {
 			next_attempt = 0;
 			dup = false;
 		} else {
