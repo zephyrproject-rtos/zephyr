@@ -2963,7 +2963,6 @@ JSON Web Token:
     - d3zd3z
   collaborators:
     - mrfuchs
-    - sir-branch
   files:
     - subsys/jwt/
     - include/zephyr/data/json.h
