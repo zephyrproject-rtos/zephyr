@@ -21,14 +21,14 @@
 LOG_MODULE_DECLARE(settings, CONFIG_SETTINGS_LOG_LEVEL);
 
 sys_slist_t settings_load_srcs;
-struct settings_store *settings_save_dst;
+const struct settings_store *settings_save_dst;
 
 void settings_src_register(struct settings_store *cs)
 {
 	sys_slist_append(&settings_load_srcs, &cs->cs_next);
 }
 
-void settings_dst_register(struct settings_store *cs)
+void settings_dst_register(const struct settings_store *cs)
 {
 	settings_save_dst = cs;
 }
@@ -209,7 +209,7 @@ ssize_t settings_load_one(const char *name, void *buf, size_t buf_len)
 int settings_save_one(const char *name, const void *value, size_t val_len)
 {
 	int rc;
-	struct settings_store *cs;
+	const struct settings_store *cs;
 
 	cs = settings_save_dst;
 	if (!cs) {
@@ -237,7 +237,7 @@ int settings_save(void)
 
 int settings_save_subtree(const char *subtree)
 {
-	struct settings_store *cs;
+	const struct settings_store *cs;
 	int rc;
 	int rc2;
 
@@ -286,7 +286,7 @@ int settings_save_subtree(const char *subtree)
 
 int settings_storage_get(void **storage)
 {
-	struct settings_store *cs = settings_save_dst;
+	const struct settings_store *cs = settings_save_dst;
 
 	if (!cs) {
 		return -ENOENT;
