@@ -372,6 +372,21 @@ extern "C" {
 		 ? ((n) - ((d) / 2)) / (d)                                                         \
 		 : ((n) + ((d) / 2)) / (d))
 
+/**
+ * @cond INTERNAL_HIDDEN
+ */
+#define _minmax_unique(op, a, b, ua, ub) ({ \
+		__typeof__(a) ua = (a);     \
+		__typeof__(b) ub = (b);     \
+		op(ua, ub);                 \
+	})
+
+#define _minmax_cnt(op, a, b, cnt) \
+	_minmax_unique(op, a, b, UTIL_CAT(_value_a_, cnt), UTIL_CAT(_value_b_, cnt))
+/**
+ * @endcond
+ */
+
 #ifndef MAX
 /**
  * @brief Obtain the maximum of two values.
@@ -397,12 +412,7 @@ extern "C" {
  *	 - to generate constant integer, e.g. __aligned(max(4,5))
  *	 - static variable, e.g. array like static uint8_t array[max(...)];
  */
-#define max(a, b) ({ \
-		/* random suffix to avoid naming conflict */ \
-		__typeof__(a) _value_a_ = (a); \
-		__typeof__(b) _value_b_ = (b); \
-		(_value_a_ > _value_b_) ? _value_a_ : _value_b_; \
-	})
+#define max(a, b) _minmax_cnt(MAX, a, b, __COUNTER__)
 #endif
 
 #ifndef MIN
@@ -426,12 +436,7 @@ extern "C" {
  * Macro ensures that expressions are evaluated only once. See @ref max for
  * macro limitations.
  */
-#define min(a, b) ({ \
-		/* random suffix to avoid naming conflict */ \
-		__typeof__(a) _value_a_ = (a); \
-		__typeof__(b) _value_b_ = (b); \
-		(_value_a_ < _value_b_) ? _value_a_ : _value_b_; \
-	})
+#define min(a, b) _minmax_cnt(MIN, a, b, __COUNTER__)
 #endif
 
 #ifndef MAX_FROM_LIST
