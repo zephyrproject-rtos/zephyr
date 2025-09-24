@@ -60,6 +60,15 @@
 				channel = <1>;
 				status = "disabled";
 			};
+
+			spi {
+				compatible = "renesas,ra-spi-sci";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				channel = <1>;
+				overrun-character = <0x00>;
+				status = "disabled";
+			};
 		};
 
 		sci2: sci2@40118200 {
@@ -81,6 +90,15 @@
 				#address-cells = <1>;
 				#size-cells = <0>;
 				channel = <2>;
+				status = "disabled";
+			};
+
+			spi {
+				compatible = "renesas,ra-spi-sci";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				channel = <2>;
+				overrun-character = <0x00>;
 				status = "disabled";
 			};
 		};
@@ -106,6 +124,15 @@
 				channel = <3>;
 				status = "disabled";
 			};
+
+			spi {
+				compatible = "renesas,ra-spi-sci";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				channel = <3>;
+				overrun-character = <0x00>;
+				status = "disabled";
+			};
 		};
 
 		sci4: sci4@40118400 {
@@ -127,6 +154,15 @@
 				#address-cells = <1>;
 				#size-cells = <0>;
 				channel = <4>;
+				status = "disabled";
+			};
+
+			spi {
+				compatible = "renesas,ra-spi-sci";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				channel = <4>;
+				overrun-character = <0x00>;
 				status = "disabled";
 			};
 		};
