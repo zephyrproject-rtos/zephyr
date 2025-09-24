@@ -375,6 +375,9 @@ extern "C" {
 /**
  * @cond INTERNAL_HIDDEN
  */
+#define Z_INTERNAL_MAX(a, b) (((a) > (b)) ? (a) : (b))
+#define Z_INTERNAL_MIN(a, b) (((a) < (b)) ? (a) : (b))
+
 #define _minmax_unique(op, a, b, ua, ub) ({ \
 		__typeof__(a) ua = (a);     \
 		__typeof__(b) ub = (b);     \
@@ -411,7 +414,7 @@ extern "C" {
  *
  * @returns Maximum value of @p a and @p b.
  */
-#define MAX(a, b) (((a) > (b)) ? (a) : (b))
+#define MAX(a, b) Z_INTERNAL_MAX(a, b)
 #endif
 
 #ifndef __cplusplus
@@ -424,7 +427,7 @@ extern "C" {
  *	 - to generate constant integer, e.g. __aligned(max(4,5))
  *	 - static variable, e.g. array like static uint8_t array[max(...)];
  */
-#define max(a, b) _minmax_cnt(MAX, a, b, __COUNTER__)
+#define max(a, b) _minmax_cnt(Z_INTERNAL_MAX, a, b, __COUNTER__)
 #endif
 
 /** @brief Return larger value of three provided expressions.
@@ -432,7 +435,7 @@ extern "C" {
  * Macro ensures that expressions are evaluated only once. See @ref max for
  * macro limitations.
  */
-#define max3(a, b, c) _minmax3_cnt(MAX, a, b, c, __COUNTER__)
+#define max3(a, b, c) _minmax3_cnt(Z_INTERNAL_MAX, a, b, c, __COUNTER__)
 
 #ifndef MIN
 /**
@@ -445,7 +448,7 @@ extern "C" {
  *
  * @returns Minimum value of @p a and @p b.
  */
-#define MIN(a, b) (((a) < (b)) ? (a) : (b))
+#define MIN(a, b) Z_INTERNAL_MIN(a, b)
 #endif
 
 #ifndef __cplusplus
@@ -454,7 +457,7 @@ extern "C" {
  * Macro ensures that expressions are evaluated only once. See @ref max for
  * macro limitations.
  */
-#define min(a, b) _minmax_cnt(MIN, a, b, __COUNTER__)
+#define min(a, b) _minmax_cnt(Z_INTERNAL_MIN, a, b, __COUNTER__)
 #endif
 
 /** @brief Return smaller value of three provided expressions.
@@ -462,7 +465,7 @@ extern "C" {
  * Macro ensures that expressions are evaluated only once. See @ref max for
  * macro limitations.
  */
-#define min3(a, b, c) _minmax3_cnt(MIN, a, b, c, __COUNTER__)
+#define min3(a, b, c) _minmax3_cnt(Z_INTERNAL_MIN, a, b, c, __COUNTER__)
 
 
 #ifndef MAX_FROM_LIST
@@ -599,7 +602,7 @@ extern "C" {
  *
  * @returns Clamped value.
  */
-#define CLAMP(val, low, high) (((val) <= (low)) ? (low) : MIN(val, high))
+#define CLAMP(val, low, high) (((val) <= (low)) ? (low) : Z_INTERNAL_MIN(val, high))
 #endif
 
 #ifndef __cplusplus
