@@ -40,6 +40,12 @@ struct xip_ctrl {
 };
 #endif
 
+/* Generic context structure for async work handling */
+struct mspi_async_work_ctx {
+	struct k_work work;
+	const struct device *dev;
+};
+
 struct mspi_dw_data {
 	const struct mspi_dev_id *dev_id;
 	uint32_t packets_done;
@@ -65,16 +71,32 @@ struct mspi_dw_data {
 	bool standard_spi;
 	bool suspended;
 
+	mspi_callback_handler_t         cbs[MSPI_BUS_EVENT_MAX];
+	struct mspi_callback_context    *cb_ctxs[MSPI_BUS_EVENT_MAX];
+
 	struct k_sem finished;
 	/* For synchronization of API calls made from different contexts. */
 	struct k_sem ctx_lock;
 	/* For locking of controller configuration. */
 	struct k_sem cfg_lock;
 	struct mspi_xfer xfer;
+#if defined(CONFIG_MSPI_DMA)
+	void *dma_transfer_list;
+	uint32_t dma_cr;
+#endif
+	/* Flag to track if async transfer is in progress */
+	/* TODO: Change to atomic variable when concurrent transactions are supported*/
+	volatile bool async_in_progress;
+	/* Timer for async transaction timeout */
+	struct k_timer async_timeout_timer;
+	/* Work contexts for async operations */
+	struct mspi_async_work_ctx timeout_work_ctx;
+	struct mspi_async_work_ctx next_packet_work_ctx;
 };
 
 struct mspi_dw_config {
 	DEVICE_MMIO_ROM;
+	void *wrapper_regs;
 	void (*irq_config)(void);
 	uint32_t clock_frequency;
 #if defined(CONFIG_PINCTRL)
@@ -92,8 +114,13 @@ struct mspi_dw_config {
 	uint8_t max_queued_dummy_bytes;
 	uint8_t tx_fifo_threshold;
 	uint8_t rx_fifo_threshold;
+#ifdef CONFIG_MSPI_DMA
+	uint8_t dma_tx_data_level;
+	uint8_t dma_rx_data_level;
+#endif
 	DECLARE_REG_ACCESS();
 	bool sw_multi_periph;
+	enum mspi_op_mode op_mode;
 };
 
 /* Register access helpers. */
@@ -118,6 +145,11 @@ DEFINE_MM_REG_RD_WR(dr,		0x60)
 DEFINE_MM_REG_WR(rx_sample_dly,	0xf0)
 DEFINE_MM_REG_WR(spi_ctrlr0,	0xf4)
 DEFINE_MM_REG_WR(txd_drive_edge, 0xf8)
+#if defined(CONFIG_MSPI_DMA)
+DEFINE_MM_REG_WR(dmacr,		0x4C)
+DEFINE_MM_REG_WR(dmatdlr,	0x50)
+DEFINE_MM_REG_WR(dmardlr,	0x54)
+#endif
 
 #if defined(CONFIG_MSPI_XIP)
 DEFINE_MM_REG_WR(xip_incr_inst,		0x100)
@@ -129,6 +161,220 @@ DEFINE_MM_REG_WR(xip_write_ctrl,	0x148)
 #endif
 
 #include "mspi_dw_vendor_specific.h"
+
+static int start_next_packet(const struct device *dev, k_timeout_t timeout);
+
+/* Common function to setup callback context and call user callback */
+static void call_user_callback_with_context(const struct device *dev,
+					    enum mspi_bus_event evt_type, int status)
+{
+	LOG_DBG("Calling user function");
+	struct mspi_dw_data *dev_data = dev->data;
+	struct mspi_callback_context *cb_ctx = dev_data->cb_ctxs[evt_type];
+
+	if (!cb_ctx || !dev_data->cbs[evt_type]) {
+		return;
+	}
+
+	const struct mspi_xfer_packet *packet = &dev_data->xfer.packets[dev_data->packets_done];
+
+	cb_ctx->mspi_evt.evt_type = evt_type;
+	cb_ctx->mspi_evt.evt_data.controller = dev;
+	cb_ctx->mspi_evt.evt_data.dev_id = dev_data->dev_id;
+	cb_ctx->mspi_evt.evt_data.packet = packet;
+	cb_ctx->mspi_evt.evt_data.packet_idx = dev_data->packets_done;
+	cb_ctx->mspi_evt.evt_data.status = status;
+
+	dev_data->cbs[evt_type](cb_ctx);
+}
+
+/* Common function for async cleanup on error */
+static void cleanup_async_on_error(const struct device *dev)
+{
+	struct mspi_dw_data *dev_data = dev->data;
+
+	LOG_DBG("Cleaning peripheral setup due to error");
+
+	k_timer_stop(&dev_data->async_timeout_timer);
+
+	write_imr(dev, 0);
+	write_ssienr(dev, 0);
+	dev_data->async_in_progress = false;
+	dev_data->packets_done = 0;
+
+#if defined(CONFIG_MSPI_DMA)
+	if (dev_data->xfer.xfer_mode == MSPI_DMA && dev_data->dma_transfer_list) {
+		vendor_specific_free_dma_transfer_list(dev);
+	}
+#endif
+
+	if (dev_data->dev_id && dev_data->dev_id->ce.port) {
+		gpio_pin_set_dt(&dev_data->dev_id->ce, 0);
+	}
+
+	int rc = pm_device_runtime_put(dev);
+
+	if (rc < 0) {
+		LOG_ERR("pm_device_runtime_put() failed: %d", rc);
+	}
+}
+
+static void async_timeout_work_handler(struct k_work *work)
+{
+	struct mspi_async_work_ctx *timeout_work_ctx =
+		CONTAINER_OF(work, struct mspi_async_work_ctx, work);
+	const struct device *dev = timeout_work_ctx->dev;
+	struct mspi_dw_data *dev_data = dev->data;
+	bool xip_enabled = COND_CODE_1(CONFIG_MSPI_XIP,
+				       (dev_data->xip_enabled != 0),
+				       (false));
+	unsigned int key;
+
+	if (!dev) {
+		LOG_ERR("Device reference not available for timeout handler");
+		return;
+	}
+
+	LOG_WRN("Async transaction timed out");
+
+	/* Take context lock to prevent race with other API calls */
+	(void)k_sem_take(&dev_data->ctx_lock, K_FOREVER);
+
+	/* Double-check that we still have an async transaction in progress */
+	if (!dev_data->async_in_progress) {
+		/* Transaction already completed, nothing to do */
+		LOG_DBG("Timeout fired but async transaction already completed");
+		k_sem_give(&dev_data->ctx_lock);
+		return;
+	}
+
+	/* For XIP, briefly reset the controller to ensure it stays functional */
+	/* TODO: This XiP code is currently untested*/
+	if (xip_enabled) {
+		/* Disable interrupts but handle XIP specially */
+		write_imr(dev, 0);
+		key = irq_lock();
+		write_ssienr(dev, 0);
+		write_ssienr(dev, SSIENR_SSIC_EN_BIT);
+		irq_unlock(key);
+
+		/* Manual cleanup for XIP case */
+		k_timer_stop(&dev_data->async_timeout_timer);
+		dev_data->async_in_progress = false;
+		dev_data->packets_done = 0;
+
+		/* Free DMA transfer list if allocated */
+#if defined(CONFIG_MSPI_DMA)
+		if (dev_data->xfer.xfer_mode == MSPI_DMA && dev_data->dma_transfer_list) {
+			vendor_specific_free_dma_transfer_list(dev);
+		}
+#endif
+
+		/* Deactivate chip select */
+		if (dev_data->dev_id && dev_data->dev_id->ce.port) {
+			gpio_pin_set_dt(&dev_data->dev_id->ce, 0);
+		}
+
+		/* Release power management reference */
+		int rc = pm_device_runtime_put(dev);
+
+		if (rc < 0) {
+			LOG_ERR("pm_device_runtime_put() failed: %d", rc);
+		}
+	} else {
+		/* For non-XIP, use common cleanup function */
+		cleanup_async_on_error(dev);
+	}
+
+	/* Release context lock before calling user callback */
+	k_sem_give(&dev_data->ctx_lock);
+
+	/* Call user callback with timeout error (outside of any locks) */
+	if (dev_data->cb_ctxs[MSPI_BUS_TIMEOUT]) {
+		call_user_callback_with_context(dev, MSPI_BUS_TIMEOUT, -ETIMEDOUT);
+	}
+	/* Clear the vendor specific IRQ to ensure clean state */
+	vendor_specific_irq_clear(dev);
+}
+
+static void async_packet_work_handler(struct k_work *work)
+{
+	struct mspi_async_work_ctx *next_packet_ctx =
+		CONTAINER_OF(work, struct mspi_async_work_ctx, work);
+	const struct device *dev = next_packet_ctx->dev;
+	struct mspi_dw_data *dev_data = dev->data;
+	int rc;
+
+	if (!dev) {
+		LOG_ERR("Device reference not available for async work handler");
+		return;
+	}
+
+	LOG_DBG("Processing async work in thread context");
+
+	/* Take context lock to prevent race with other API calls */
+	/* TODO: Should potentially keep ctx locked until final packet is complete? */
+	k_sem_take(&dev_data->ctx_lock, K_FOREVER);
+
+	vendor_specific_irq_clear(dev);
+
+	/* Double-check that we still have an async transaction in progress */
+	if (!dev_data->async_in_progress) {
+		LOG_DBG("Async work fired but transaction already completed");
+		k_sem_give(&dev_data->ctx_lock);
+		return;
+	}
+
+	if (dev_data->cb_ctxs[MSPI_BUS_XFER_COMPLETE]) {
+		call_user_callback_with_context(dev, MSPI_BUS_XFER_COMPLETE, 0);
+	}
+
+	/* Check if there are more packets to process */
+	if (++dev_data->packets_done < dev_data->xfer.num_packet) {
+		LOG_DBG("Starting next packet (%d/%d)",
+			dev_data->packets_done + 1, dev_data->xfer.num_packet);
+
+		/* Restart timer for next packet if timeout is configured */
+		if (dev_data->xfer.timeout > 0) {
+			k_timer_start(&dev_data->async_timeout_timer,
+				K_MSEC(dev_data->xfer.timeout), K_NO_WAIT);
+		}
+
+		rc = start_next_packet(dev, K_MSEC(dev_data->xfer.timeout));
+		if (rc < 0) {
+			LOG_ERR("start_next_packet() failed: %d", rc);
+
+			/* Error starting next packet - cleanup and notify user */
+			cleanup_async_on_error(dev);
+			k_sem_give(&dev_data->ctx_lock);
+			call_user_callback_with_context(dev, MSPI_BUS_ERROR, rc);
+			vendor_specific_irq_clear(dev);
+			return;
+		}
+	} else {
+		LOG_DBG("All packets completed");
+		rc = pm_device_runtime_put(dev);
+		if (rc < 0) {
+			LOG_ERR("pm_device_runtime_put() failed: %d", rc);
+		}
+		/* All packets completed - clear busy flag and reset packets done */
+		dev_data->async_in_progress = false;
+		dev_data->packets_done = 0;
+
+	}
+
+	/* Release context lock */
+	k_sem_give(&dev_data->ctx_lock);
+}
+
+static void async_timeout_timer_handler(struct k_timer *timer)
+{
+	struct mspi_dw_data *dev_data = CONTAINER_OF(timer, struct mspi_dw_data,
+		async_timeout_timer);
+
+	/* Submit work to handle timeout in proper context */
+	k_work_submit(&dev_data->timeout_work_ctx.work);
+}
 
 static void tx_data(const struct device *dev,
 		    const struct mspi_xfer_packet *packet)
@@ -283,62 +529,93 @@ static bool read_rx_fifo(const struct device *dev,
 static void mspi_dw_isr(const struct device *dev)
 {
 	struct mspi_dw_data *dev_data = dev->data;
+	struct mspi_xfer xfer = dev_data->xfer;
 	const struct mspi_xfer_packet *packet =
 		&dev_data->xfer.packets[dev_data->packets_done];
 	bool finished = false;
 
-	if (packet->dir == MSPI_TX) {
-		if (dev_data->buf_pos < dev_data->buf_end) {
-			tx_data(dev, packet);
-		} else {
-			/* It may happen that at this point the controller is
-			 * still shifting out the last frame (the last interrupt
-			 * occurs when the TX FIFO is empty). Wait if it signals
-			 * that it is busy.
-			 */
-			while (read_sr(dev) & SR_BUSY_BIT) {
-			}
+	uint32_t int_status = read_isr(dev);
+#if defined(CONFIG_MSPI_DMA)
+	bool dma_irq = vendor_specific_read_dma_irq(dev);
 
-			finished = true;
-		}
+	if (xfer.xfer_mode == MSPI_DMA && dma_irq) {
+		/* No need to read FIFO by CPU */
+		finished = true;
 	} else {
-		uint32_t int_status = read_isr(dev);
-
-		do {
-			if (int_status & ISR_RXFIS_BIT) {
-				if (read_rx_fifo(dev, packet)) {
-					finished = true;
-					break;
+#else
+	{
+#endif
+		if (packet->dir == MSPI_TX) {
+			if (dev_data->buf_pos < dev_data->buf_end) {
+				if (int_status & ISR_TXEIS_BIT) {
+					tx_data(dev, packet);
+				}
+			} else {
+				/* It may happen that at this point the controller is
+				 * still shifting out the last frame (the last interrupt
+				 * occurs when the TX FIFO is empty). Wait if it signals
+				 * that it is busy.
+				 */
+				while (read_sr(dev) & SR_BUSY_BIT) {
 				}
 
-				if (read_risr(dev) & RISR_RXOIR_BIT) {
-					finished = true;
-					break;
-				}
-
-				int_status = read_isr(dev);
+				finished = true;
 			}
+		} else {
+			do {
+				if (int_status & ISR_RXFIS_BIT) {
+					if (read_rx_fifo(dev, packet)) {
+						finished = true;
+						break;
+					}
 
-			if (int_status & ISR_TXEIS_BIT) {
-				if (tx_dummy_bytes(dev)) {
-					/* All the required dummy bytes were
-					 * written to the FIFO; disable the TXE
-					 * interrupt, as it's no longer needed.
-					 */
-					write_imr(dev, IMR_RXFIM_BIT);
+					if (read_risr(dev) & RISR_RXOIR_BIT) {
+						finished = true;
+						break;
+					}
+
+					int_status = read_isr(dev);
 				}
 
-				int_status = read_isr(dev);
-			}
-		} while (int_status != 0);
+				if (int_status & ISR_TXEIS_BIT) {
+					if (tx_dummy_bytes(dev)) {
+						/* All the required dummy bytes were
+						 * written to the FIFO; disable the TXE
+						 * interrupt, as it's no longer needed.
+						 */
+						write_imr(dev, IMR_RXFIM_BIT);
+					}
+
+					int_status = read_isr(dev);
+				}
+			} while (int_status != 0);
+		}
 	}
-
 	if (finished) {
 		write_imr(dev, 0);
+		#if defined(CONFIG_MSPI_DMA)
+		/* Free DMA transfer list from previous packet if allocated */
+		if (dev_data->xfer.xfer_mode == MSPI_DMA && dev_data->dma_transfer_list) {
+			vendor_specific_free_dma_transfer_list(dev);
+		}
+		#endif
+		/* For async, minimal ISR - just submit work and return */
+		if (xfer.async) {
+			/* Cancel the timeout timer since transaction completed normally */
+			k_timer_stop(&dev_data->async_timeout_timer);
+			write_ssienr(dev, 0);
 
-		k_sem_give(&dev_data->finished);
+			/* Submit work to handle callback and next packet/cleanup
+			 * in thread context
+			 */
+			k_work_submit(&dev_data->next_packet_work_ctx.work);
+		} else {
+			/* Only give semaphore for sync mode */
+			k_sem_give(&dev_data->finished);
+		}
+
 	}
-
+	LOG_DBG("ISR finished");
 	vendor_specific_irq_clear(dev);
 }
 
@@ -813,10 +1090,157 @@ static void tx_control_field(const struct device *dev,
 	} while (shift);
 }
 
-static int start_next_packet(const struct device *dev, k_timeout_t timeout)
+#if defined(CONFIG_MSPI_DMA)
+static int start_next_packet_dma(const struct device *dev, k_timeout_t timeout)
 {
 	const struct mspi_dw_config *dev_config = dev->config;
 	struct mspi_dw_data *dev_data = dev->data;
+	struct mspi_xfer xfer = dev_data->xfer;
+	const struct mspi_xfer_packet *packet =
+		&dev_data->xfer.packets[dev_data->packets_done];
+	bool xip_enabled = COND_CODE_1(CONFIG_MSPI_XIP,
+				       (dev_data->xip_enabled != 0),
+				       (false));
+	unsigned int key;
+	uint32_t packet_frames;
+	uint32_t imr;
+	int rc;
+
+	uint8_t *dma_buffer = packet->data_buf;
+	uint32_t total_transfer_len = packet->num_bytes;
+
+	if (packet->num_bytes == 0 &&
+	    dev_data->xfer.cmd_length == 0 &&
+	    dev_data->xfer.addr_length == 0) {
+		return 0;
+	}
+
+	/* Check if the packet buffer is accessible */
+	if (packet->num_bytes > 0 && !vendor_specific_dma_accessible_check(dev, dma_buffer)) {
+		LOG_ERR("Buffer not DMA accessible: ptr=0x%lx, size=%u",
+			(uintptr_t)dma_buffer, packet->num_bytes);
+		return -EINVAL;
+	}
+
+	dev_data->ctrlr0 &= ~(CTRLR0_TMOD_MASK)
+			  & ~(CTRLR0_DFS_MASK)
+			  & ~(CTRLR0_DFS32_MASK);
+	dev_data->spi_ctrlr0 &= ~SPI_CTRLR0_WAIT_CYCLES_MASK;
+
+	/* Set data frame size based on total transfer size */
+	if ((total_transfer_len % 4) == 0) {
+		dev_data->bytes_per_frame_exp = 2;
+		dev_data->ctrlr0 |= FIELD_PREP(CTRLR0_DFS_MASK, 31);
+	} else if ((total_transfer_len % 2) == 0) {
+		dev_data->bytes_per_frame_exp = 1;
+		dev_data->ctrlr0 |= FIELD_PREP(CTRLR0_DFS_MASK, 15);
+	} else {
+		dev_data->bytes_per_frame_exp = 0;
+		dev_data->ctrlr0 |= FIELD_PREP(CTRLR0_DFS_MASK, 7);
+	}
+
+	packet_frames = total_transfer_len >> dev_data->bytes_per_frame_exp;
+	if (packet_frames > UINT16_MAX + 1) {
+		LOG_ERR("Total transfer length (%u) exceeds supported maximum", total_transfer_len);
+		return -EINVAL;
+	}
+
+	dev_data->dma_cr |= DMA_CR_TDMAE_EN_BIT | DMA_CR_RDMAE_EN_BIT;
+
+	/* Configure transfer mode and interrupts for DMA */
+	if (packet->dir == MSPI_TX) {
+		imr = IMR_TXEIM_BIT;
+		dev_data->ctrlr0 |= FIELD_PREP(CTRLR0_TMOD_MASK, CTRLR0_TMOD_TX);
+		dev_data->spi_ctrlr0 |= FIELD_PREP(SPI_CTRLR0_WAIT_CYCLES_MASK,
+						   dev_data->xfer.tx_dummy);
+
+	} else if (packet->dir == MSPI_RX) {
+		imr = IMR_RXFIM_BIT;
+		dev_data->ctrlr0 |= FIELD_PREP(CTRLR0_TMOD_MASK, CTRLR0_TMOD_RX);
+		dev_data->spi_ctrlr0 |= FIELD_PREP(SPI_CTRLR0_WAIT_CYCLES_MASK,
+						   dev_data->xfer.rx_dummy);
+	}
+
+	/* Activate chip select */
+	if (dev_data->dev_id->ce.port) {
+		rc = gpio_pin_set_dt(&dev_data->dev_id->ce, 1);
+		if (rc < 0) {
+			LOG_ERR("Failed to activate CE line (%d)", rc);
+			return rc;
+		}
+	}
+
+	if (xip_enabled) {
+		key = irq_lock();
+		write_ssienr(dev, 0);
+	}
+
+	LOG_DBG("packet_frames = %d", packet_frames);
+	write_ctrlr0(dev, dev_data->ctrlr0);
+	write_ctrlr1(dev, packet_frames > 0
+		? FIELD_PREP(CTRLR1_NDF_MASK, packet_frames - 1)
+		: 0);
+	write_spi_ctrlr0(dev, dev_data->spi_ctrlr0);
+	write_baudr(dev, dev_data->baudr);
+	write_ser(dev, BIT(dev_data->dev_id->dev_idx));
+
+	write_txftlr(dev, ((2 << QSPI_CORE_CORE_TXFTLR_TXFTHR_Pos)  &
+		     QSPI_CORE_CORE_TXFTLR_TXFTHR_Msk) |
+		     ((0 << QSPI_CORE_CORE_TXFTLR_TFT_Pos) & QSPI_CORE_CORE_TXFTLR_TFT_Msk));
+	write_dmatdlr(dev, FIELD_PREP(DMA_TDLR_DMATDL_MASK, dev_config->dma_tx_data_level));
+	write_dmardlr(dev, FIELD_PREP(DMA_RDLR_DMARDL_MASK, dev_config->dma_rx_data_level));
+	write_dmacr(dev, dev_data->dma_cr);
+	rc = vendor_specific_setup_dma_xfer(dev, packet, &xfer);
+
+	if (rc < 0) {
+		LOG_ERR("Vendor specific DMA xfer failure %d", rc);
+		return rc;
+	}
+
+	if (xip_enabled) {
+		write_ssienr(dev, SSIENR_SSIC_EN_BIT);
+		irq_unlock(key);
+	}
+	write_ssienr(dev, SSIENR_SSIC_EN_BIT);
+	vendor_specific_start_dma_xfer(dev);
+
+	/* Wait for completion if synchronous */
+	if (!xfer.async) {
+		rc = k_sem_take(&dev_data->finished, timeout);
+
+		if (rc < 0) {
+			LOG_ERR("DMA transfer timed out %d", rc);
+			rc = -ETIMEDOUT;
+
+			if (dev_data->dma_transfer_list) {
+				vendor_specific_free_dma_transfer_list(dev);
+			}
+		}
+		write_ssienr(dev, 0);
+
+	}
+
+	/* Deactivate chip select */
+	if (dev_data->dev_id->ce.port) {
+		int rc2 = gpio_pin_set_dt(&dev_data->dev_id->ce, 0);
+
+		if (rc2 < 0) {
+			LOG_ERR("Failed to deactivate CE line (%d)", rc2);
+			return rc2;
+		}
+	}
+
+	LOG_DBG("Ended dma packet");
+
+	return rc;
+}
+#endif /* CONFIG_MSPI_DMA */
+
+static int start_next_packet_pio(const struct device *dev, k_timeout_t timeout)
+{
+	const struct mspi_dw_config *dev_config = dev->config;
+	struct mspi_dw_data *dev_data = dev->data;
+	struct mspi_xfer xfer = dev_data->xfer;
 	const struct mspi_xfer_packet *packet =
 		&dev_data->xfer.packets[dev_data->packets_done];
 	bool xip_enabled = COND_CODE_1(CONFIG_MSPI_XIP,
@@ -1055,18 +1479,21 @@ static int start_next_packet(const struct device *dev, k_timeout_t timeout)
 		tx_data(dev, packet);
 	}
 
-	/* Enable interrupts now and wait until the packet is done. */
+	/* Enable interrupts now and wait until the packet is done unless async. */
 	write_imr(dev, imr);
 	/* Write SER to start transfer */
 	write_ser(dev, BIT(dev_data->dev_id->dev_idx));
 
-	rc = k_sem_take(&dev_data->finished, timeout);
-	if (read_risr(dev) & RISR_RXOIR_BIT) {
-		LOG_ERR("RX FIFO overflow occurred");
-		rc = -EIO;
-	} else if (rc < 0) {
-		LOG_ERR("Transfer timed out");
-		rc = -ETIMEDOUT;
+	if (!xfer.async) {
+		rc = k_sem_take(&dev_data->finished, timeout);
+		/* TODO: detect overflow in async mode*/
+		if (read_risr(dev) & RISR_RXOIR_BIT) {
+			LOG_ERR("RX FIFO overflow occurred");
+			rc = -EIO;
+		} else if (rc < 0) {
+			LOG_ERR("Transfer timed out %d", rc);
+			rc = -ETIMEDOUT;
+		}
 	}
 
 	/* Disable the controller. This will immediately halt the transfer
@@ -1086,7 +1513,10 @@ static int start_next_packet(const struct device *dev, k_timeout_t timeout)
 			irq_unlock(key);
 		}
 	} else {
-		write_ssienr(dev, 0);
+		/* For Async, device stays enabled until turned off again in ISR */
+		if (!xfer.async) {
+			write_ssienr(dev, 0);
+		}
 	}
 	/* Clear SER */
 	write_ser(dev, 0);
@@ -1105,11 +1535,31 @@ static int start_next_packet(const struct device *dev, k_timeout_t timeout)
 	return rc;
 }
 
+static int start_next_packet(const struct device *dev, k_timeout_t timeout)
+{
+	struct mspi_dw_data *dev_data = dev->data;
+
+	switch (dev_data->xfer.xfer_mode) {
+	case MSPI_DMA:
+#if defined(CONFIG_MSPI_DMA)
+		return start_next_packet_dma(dev, timeout);
+#else
+		LOG_ERR("CONFIG_MSPI_DMA not enabled");
+		return -ENOTSUP;
+#endif
+	case MSPI_PIO:
+		return start_next_packet_pio(dev, timeout);
+	default:
+		LOG_ERR("Xfer mode not supported");
+		return -EIO;
+	}
+}
+
 static int _api_transceive(const struct device *dev,
 			   const struct mspi_xfer *req)
 {
 	struct mspi_dw_data *dev_data = dev->data;
-	int rc;
+	int rc = 0;
 
 	dev_data->spi_ctrlr0 &= ~SPI_CTRLR0_INST_L_MASK
 			     &  ~SPI_CTRLR0_ADDR_L_MASK;
@@ -1136,17 +1586,33 @@ static int _api_transceive(const struct device *dev,
 	}
 
 	dev_data->xfer = *req;
-
-	for (dev_data->packets_done = 0;
-	     dev_data->packets_done < dev_data->xfer.num_packet;
-	     dev_data->packets_done++) {
+	/*
+	 * For async, next packet is started by ISR, also choose between DMA and PIO
+	 * mode based on transfer configuration
+	 */
+	if (req->async) {
+		/* Start timeout timer for async transactions */
+		if (req->timeout > 0) {
+			k_timer_start(&dev_data->async_timeout_timer, K_MSEC(req->timeout),
+				      K_NO_WAIT);
+		}
 		rc = start_next_packet(dev, K_MSEC(dev_data->xfer.timeout));
 		if (rc < 0) {
+			cleanup_async_on_error(dev);
 			return rc;
+		}
+	} else {
+		for (dev_data->packets_done = 0;
+	     dev_data->packets_done < dev_data->xfer.num_packet;
+	     dev_data->packets_done++) {
+			rc = start_next_packet(dev, K_MSEC(dev_data->xfer.timeout));
+			if (rc < 0) {
+				return rc;
+			}
 		}
 	}
 
-	return 0;
+	return rc;
 }
 
 static int api_transceive(const struct device *dev,
@@ -1156,15 +1622,18 @@ static int api_transceive(const struct device *dev,
 	struct mspi_dw_data *dev_data = dev->data;
 	int rc, rc2;
 
+	mspi_callback_handler_t cb = NULL;
+	struct mspi_callback_context *cb_ctx = NULL;
+
 	if (dev_id != dev_data->dev_id) {
 		LOG_ERR("Controller is not configured for this device");
 		return -EINVAL;
 	}
 
-	/* TODO: add support for asynchronous transfers */
 	if (req->async) {
-		LOG_ERR("Asynchronous transfers are not supported");
-		return -ENOTSUP;
+		LOG_DBG("async transfer selected");
+		cb = dev_data->cbs[MSPI_BUS_XFER_COMPLETE];
+		cb_ctx = dev_data->cb_ctxs[MSPI_BUS_XFER_COMPLETE];
 	}
 
 	rc = pm_device_runtime_get(dev);
@@ -1175,12 +1644,28 @@ static int api_transceive(const struct device *dev,
 
 	(void)k_sem_take(&dev_data->ctx_lock, K_FOREVER);
 
+	if (req->async && dev_data->async_in_progress) {
+		LOG_ERR("Async transfer already in progress");
+		rc = -EBUSY;
+		goto out_unlock;
+	}
+
 	if (dev_data->suspended) {
 		rc = -EFAULT;
 	} else {
+		/* Set async busy flag before starting transfer */
+		if (req->async) {
+			dev_data->async_in_progress = true;
+		}
 		rc = _api_transceive(dev, req);
+		/* If async transaction failed to start, clean up */
+		if (rc < 0 && req->async) {
+			k_timer_stop(&dev_data->async_timeout_timer);
+			dev_data->async_in_progress = false;
+		}
 	}
 
+out_unlock:
 	k_sem_give(&dev_data->ctx_lock);
 
 	rc2 = pm_device_runtime_put(dev);
@@ -1190,6 +1675,29 @@ static int api_transceive(const struct device *dev,
 	}
 
 	return rc;
+}
+
+static int api_register_callback(const struct device *dev,
+					const struct mspi_dev_id *dev_id,
+					const enum mspi_bus_event evt_type,
+					mspi_callback_handler_t cb,
+					struct mspi_callback_context *ctx)
+{
+	struct mspi_dw_data *dev_data = dev->data;
+
+	if (dev_id != dev_data->dev_id) {
+		LOG_ERR("Controller is not configured for this device");
+		return -EINVAL;
+	}
+
+	if (evt_type != MSPI_BUS_XFER_COMPLETE && evt_type != MSPI_BUS_TIMEOUT) {
+		LOG_ERR("Callback type not supported");
+		return -ENOTSUP;
+	}
+
+	dev_data->cbs[evt_type] = cb;
+	dev_data->cb_ctxs[evt_type] = ctx;
+	return 0;
 }
 
 #if defined(CONFIG_MSPI_TIMING)
@@ -1420,11 +1928,21 @@ static int dev_init(const struct device *dev)
 
 	vendor_specific_init(dev);
 
+	dev_data->ctrlr0 |= FIELD_PREP(CTRLR0_SSIISMST_BIT, !(dev_config->op_mode));
+
 	dev_config->irq_config();
 
 	k_sem_init(&dev_data->finished, 0, 1);
 	k_sem_init(&dev_data->cfg_lock, 1, 1);
 	k_sem_init(&dev_data->ctx_lock, 1, 1);
+	dev_data->async_in_progress = false;
+
+	/* Initialize async timeout timer and work queues */
+	k_timer_init(&dev_data->async_timeout_timer, async_timeout_timer_handler, NULL);
+	k_work_init(&dev_data->timeout_work_ctx.work, async_timeout_work_handler);
+	dev_data->timeout_work_ctx.dev = dev;
+	k_work_init(&dev_data->next_packet_work_ctx.work, async_packet_work_handler);
+	dev_data->next_packet_work_ctx.dev = dev;
 
 	for (ce_gpio = dev_config->ce_gpios;
 	     ce_gpio < &dev_config->ce_gpios[dev_config->ce_gpios_len];
@@ -1465,6 +1983,7 @@ static DEVICE_API(mspi, drv_api) = {
 #if defined(CONFIG_MSPI_TIMING)
 	.timing_config      = api_timing_config,
 #endif
+	.register_callback  = api_register_callback
 #if defined(CONFIG_MSPI_XIP)
 	.xip_config         = api_xip_config,
 #endif
@@ -1510,8 +2029,12 @@ static DEVICE_API(mspi, drv_api) = {
 				7 * TX_FIFO_DEPTH(inst) / 8 - 1),	\
 	.rx_fifo_threshold =						\
 		DT_INST_PROP_OR(inst, rx_fifo_threshold,		\
-				1 * RX_FIFO_DEPTH(inst) / 8 - 1)
-
+				1 * RX_FIFO_DEPTH(inst) / 8 - 1)	\
+	IF_ENABLED(CONFIG_MSPI_DMA, (,				\
+	.dma_tx_data_level =						\
+		DT_INST_PROP_OR(inst, dma_transmit_data_level, 0),	\
+	.dma_rx_data_level =						\
+		DT_INST_PROP_OR(inst, dma_receive_data_level, 0)))
 #define MSPI_DW_INST(inst)						\
 	PM_DEVICE_DT_INST_DEFINE(inst, dev_pm_action_cb);		\
 	IF_ENABLED(CONFIG_PINCTRL, (PINCTRL_DT_INST_DEFINE(inst);))	\
@@ -1523,6 +2046,7 @@ static DEVICE_API(mspi, drv_api) = {
 	static struct mspi_dw_data dev##inst##_data;			\
 	static const struct mspi_dw_config dev##inst##_config = {	\
 		MSPI_DW_MMIO_ROM_INIT(DT_DRV_INST(inst)),		\
+		.wrapper_regs = (void *)DT_INST_REG_ADDR(inst),          \
 		.irq_config = irq_config##inst,				\
 		.clock_frequency = MSPI_DW_CLOCK_FREQUENCY(inst),	\
 	IF_ENABLED(CONFIG_PINCTRL,					\
@@ -1533,6 +2057,8 @@ static DEVICE_API(mspi, drv_api) = {
 		DEFINE_REG_ACCESS(inst)					\
 		.sw_multi_periph =					\
 			DT_INST_PROP(inst, software_multiperipheral),	\
+		.op_mode = DT_STRING_TOKEN(DT_INST(inst,		\
+					   DT_DRV_COMPAT), op_mode),	\
 	};								\
 	DEVICE_DT_INST_DEFINE(inst,					\
 		dev_init, PM_DEVICE_DT_INST_GET(inst),			\
