@@ -19,7 +19,8 @@ struct i2s_stm32_cfg {
 	size_t pclk_len;
 	const struct pinctrl_dev_config *pcfg;
 	void (*irq_config)(const struct device *dev);
-	bool master_clk_sel;
+	bool master_clk_sel: 1;
+	bool ioswp: 1;
 };
 
 struct stream {
