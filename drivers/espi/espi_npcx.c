@@ -25,6 +25,12 @@
 #include <zephyr/irq.h>
 LOG_MODULE_REGISTER(espi, CONFIG_ESPI_LOG_LEVEL);
 
+#if defined(CONFIG_NPCX_SOC_VARIANT_NPCKN)
+BUILD_ASSERT(DT_INST_NODE_HAS_PROP(0, rst_gpios), "Need rst_gpios to be defined");
+#else
+BUILD_ASSERT(!DT_INST_NODE_HAS_PROP(0, rst_gpios), "Reset of eSPI via GPIO is not supported");
+#endif
+
 struct espi_npcx_config {
 	uintptr_t base;
 	/* clock configuration */
@@ -33,6 +39,9 @@ struct espi_npcx_config {
 	struct npcx_wui espi_rst_wui;
 	/* pinmux configuration */
 	const struct pinctrl_dev_config *pcfg;
+#if DT_INST_NODE_HAS_PROP(0, rst_gpios)
+	struct gpio_dt_spec reset_pin;
+#endif
 };
 
 struct espi_npcx_data {
@@ -701,12 +710,19 @@ static void espi_vw_generic_isr(const struct device *dev, struct npcx_wui *wui)
 
 static void espi_vw_espi_rst_isr(const struct device *dev, struct npcx_wui *wui)
 {
-	struct espi_reg *const inst = HAL_INSTANCE(dev);
 	struct espi_npcx_data *const data = dev->data;
 	struct espi_event evt = { ESPI_BUS_RESET, 0, 0 };
 
-	data->espi_rst_level = IS_BIT_SET(inst->ESPISTS,
-					  NPCX_ESPISTS_ESPIRST_LVL);
+#if DT_INST_NODE_HAS_PROP(0, rst_gpios)
+	const struct espi_npcx_config *const config = dev->config;
+
+	data->espi_rst_level = gpio_pin_get_raw(config->reset_pin.port,
+						   config->reset_pin.pin);
+#else
+	struct espi_reg *const inst = HAL_INSTANCE(dev);
+
+	data->espi_rst_level = IS_BIT_SET(inst->ESPISTS, NPCX_ESPISTS_ESPIRST_LVL);
+#endif
 	LOG_DBG("eSPI RST level is %d!", data->espi_rst_level);
 
 	evt.evt_data = data->espi_rst_level;
@@ -735,7 +751,7 @@ static int espi_npcx_configure(const struct device *dev, struct espi_cfg *cfg)
 	case 50:
 		max_freq = NPCX_ESPI_MAXFREQ_50;
 		break;
-#ifdef CONFIG_SOC_SERIES_NPCX4
+#if defined(CONFIG_ESPI_NPCX_NPCXN_V3) || defined(CONFIG_ESPI_NPCX_NPCKN_V1)
 	case 66:
 		max_freq = NPCX_ESPI_MAXFREQ_66;
 		break;
@@ -1407,6 +1423,9 @@ static const struct espi_npcx_config espi_npcx_config = {
 	.espi_rst_wui = NPCX_DT_WUI_ITEM_BY_NAME(0, espi_rst_wui),
 	.clk_cfg = NPCX_DT_CLK_CFG_ITEM(0),
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
+#if DT_INST_NODE_HAS_PROP(0, rst_gpios)
+	.reset_pin = GPIO_DT_SPEC_INST_GET(0, rst_gpios),
+#endif
 };
 
 DEVICE_DT_INST_DEFINE(0, &espi_npcx_init, NULL,
@@ -1426,6 +1445,13 @@ static int espi_npcx_init(const struct device *dev)
 		LOG_ERR("clock control device not ready");
 		return -ENODEV;
 	}
+
+#if DT_INST_NODE_HAS_PROP(0, rst_gpios)
+	if (!gpio_is_ready_dt(&config->reset_pin)) {
+		LOG_ERR("eSPI reset pin not ready");
+		return -ENODEV;
+	}
+#endif
 
 	/* Turn on eSPI device clock first */
 	ret = clock_control_on(clk_dev, (clock_control_subsys_t)
