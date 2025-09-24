@@ -20,6 +20,9 @@
 #include <zephyr/net/wifi_mgmt.h>
 #ifdef CONFIG_PM_DEVICE
 #include <zephyr/pm/device.h>
+#ifndef CONFIG_NXP_RW610
+#include <fsl_gpc.h>
+#endif
 #endif
 #ifdef CONFIG_WIFI_NM
 #include <zephyr/net/wifi_nm.h>
@@ -2014,6 +2017,18 @@ extern void WL_MCI_WAKEUP0_DriverIRQHandler(void);
 extern void WL_MCI_WAKEUP_DONE0_DriverIRQHandler(void);
 #endif
 
+#ifdef CONFIG_PM_DEVICE
+#ifndef CONFIG_NXP_RW610
+struct gpio_callback wakeup_callback;
+
+static void gpio_wakeup_callback(const struct device *port, struct gpio_callback *cb,
+				 gpio_port_pins_t pins)
+{
+	/* TODO: Add necessary cleanup here. */
+}
+#endif
+#endif
+
 static int nxp_wifi_dev_init(const struct device *dev)
 {
 	struct nxp_wifi_dev *nxp_wifi = &nxp_wifi0;
@@ -2083,6 +2098,20 @@ void device_pm_dump_wakeup_source(void)
 		LOG_INF("Wakeup by RTC");
 		POWER_ClearWakeupStatus(32);
 	}
+}
+#endif
+
+static bool nxp_wifi_wlan_wakeup(void)
+{
+#ifdef CONFIG_NXP_RW610
+	return POWER_GetWakeupStatus(WL_MCI_WAKEUP0_IRQn);
+#elif CONFIG_NXP_IW610 || CONFIG_NXP_IW61X
+	return GPC_GetIRQStatusFlag(GPC, GPIO1_Combined_0_15_IRQn);
+#elif CONFIG_NXP_IW416
+	return GPC_GetIRQStatusFlag(GPC, GPIO1_Combined_16_31_IRQn);
+#else
+	return false;
+#endif
 }
 
 static int device_wlan_pm_action(const struct device *dev, enum pm_device_action pm_action)
