@@ -66,6 +66,15 @@
 				channel = <2>;
 				status = "disabled";
 			};
+
+			spi {
+				compatible = "renesas,ra-spi-sci";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				channel = <2>;
+				overrun-character = <0x00>;
+				status = "disabled";
+			};
 		};
 
 		adc@4005c000 {
