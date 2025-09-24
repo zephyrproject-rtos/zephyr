@@ -393,6 +393,10 @@ static inline int usbhs_enable_core(const struct device *dev)
 	k_timeout_t timeout = K_FOREVER;
 	int err;
 
+	if (CONFIG_UDC_DWC2_USBHS_VBUS_READY_TIMEOUT) {
+		timeout = K_MSEC(CONFIG_UDC_DWC2_USBHS_VBUS_READY_TIMEOUT);
+	}
+
 	if (!k_event_wait(&usbhs_events, USBHS_VBUS_READY, false, K_NO_WAIT)) {
 		LOG_WRN("VBUS is not ready, block udc_enable()");
 		if (!k_event_wait(&usbhs_events, USBHS_VBUS_READY, false, timeout)) {
