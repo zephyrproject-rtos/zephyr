@@ -21,9 +21,13 @@
 #include <errno.h>
 #include <stdbool.h>
 
+#include <zephyr/bluetooth/uuid.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#define BT_OBEX_MIN_MTU 255
 
 /** @brief OBEX Response Code. */
 enum __packed bt_obex_rsp_code {
@@ -1150,6 +1154,57 @@ int bt_obex_add_header_body(struct net_buf *buf, uint16_t len, const uint8_t *bo
  *  @return 0 in case of success or negative value in case of error.
  */
 int bt_obex_add_header_end_body(struct net_buf *buf, uint16_t len, const uint8_t *body);
+
+/** @brief Add Header: a chunk (may be a final chunk) of the object body.
+ *
+ *  The function is used to help to add body/end body for the upperlayer.
+ *  When the tail room of the buffer is more than the passed body room, and the total length of
+ *  buffer is not more than the mopl if the body has been added, the header end body will be
+ *  added. Or, the header body will be added.
+ *
+ *  @param buf Buffer needs to be sent.
+ *  @param mopl The MOPL of the OBEX connection
+ *  @param len Length of body.
+ *  @param body Object Body.
+ *  @param added_len The added length.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+static inline int bt_obex_add_header_body_or_end_body(struct net_buf *buf, uint16_t mopl,
+						      uint16_t len, const uint8_t *body,
+						      uint16_t *added_len)
+{
+	uint16_t tx_len;
+	int err;
+
+	if ((buf == NULL) || (body == NULL) || (added_len == NULL) || (mopl < BT_OBEX_MIN_MTU) ||
+	    (len == 0)) {
+		return -EINVAL;
+	}
+
+	tx_len = BT_OBEX_PDU_LEN(mopl);
+	if (tx_len <= buf->len) {
+		return -ENOMEM;
+	}
+
+	*added_len = 0;
+
+	tx_len = MIN((tx_len - buf->len), net_buf_tailroom(buf));
+	if (tx_len <= BT_OBEX_HDR_LEN_OF_HEADER_BODY) {
+		return 0;
+	}
+
+	tx_len = BT_OBEX_DATA_LEN_OF_HEADER_BODY(tx_len);
+	if (tx_len >= len) {
+		*added_len = len;
+		err = bt_obex_add_header_end_body(buf, len, body);
+	} else {
+		*added_len = tx_len;
+		err = bt_obex_add_header_body(buf, tx_len, body);
+	}
+
+	return err;
+}
 
 /** @brief Add Header: identifies the OBEX application, used to tell if talking to a peer.
  *
