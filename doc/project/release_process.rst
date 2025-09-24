@@ -61,7 +61,7 @@ sufficiently stable (and which is accepted by the maintainers and the wide commu
 merged into the mainline tree.  The bulk of changes for a new development cycle
 (and all of the major changes) will be merged during this time.
 
-The development phase lasts for approximately three months.  At the end of this time,
+The development phase lasts for approximately five months.  At the end of this time,
 the release owner will declare that the development phase is over and releases the first
 of the release candidates.  For the codebase release which is destined to be
 3.1.0, for example, the release which happens at the end of the development phase
