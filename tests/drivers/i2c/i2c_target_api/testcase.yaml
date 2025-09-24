@@ -65,6 +65,7 @@ tests:
       - max32690evkit/max32690/m4
       - nrf5340dk/nrf5340/cpuapp
       - nrf54h20dk/nrf54h20/cpuapp
+      - nrf54h20dk/nrf54h20/cpuppr
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54lm20dk/nrf54lm20a/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
