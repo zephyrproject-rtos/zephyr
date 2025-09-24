@@ -71,6 +71,7 @@ config MODEM_PPP
 	select MODEM_PIPE
 	select RING_BUFFER
 	select CRC
+	select PM_DEVICE_RUNTIME_ASYNC if PM_DEVICE_RUNTIME
 
 if MODEM_PPP
 
