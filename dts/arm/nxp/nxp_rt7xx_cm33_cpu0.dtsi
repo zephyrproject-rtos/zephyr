@@ -55,11 +55,11 @@
 	};
 
 	soc {
-		xspi0: memory-controller@50184000 {
+		xspi0: spi@50184000 {
 			reg = <0x50184000 0x1000>, <0x38000000 DT_SIZE_M(128)>;
 		};
 
-		xspi1: memory-controller@50185000 {
+		xspi1: spi@50185000 {
 			reg = <0x50185000 0x1000>, <0x18000000 DT_SIZE_M(128)>;
 		};
 	};
