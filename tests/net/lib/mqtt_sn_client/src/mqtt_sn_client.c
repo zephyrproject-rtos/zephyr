@@ -92,7 +92,7 @@ static int tp_init(struct mqtt_sn_transport *tp)
 }
 
 static struct {
-	void *data;
+	const void *data;
 	ssize_t sz;
 	const void *src_addr;
 	size_t addrlen;
@@ -149,7 +149,7 @@ static void cleanup(void *f)
 	mqtt_sn_client_deinit(mqtt_client);
 }
 
-static int input(struct mqtt_sn_client *client, void *buf, size_t sz,
+static int input(struct mqtt_sn_client *client, const void *buf, size_t sz,
 		 const struct mqtt_sn_data *src_addr)
 {
 	recvfrom_data.data = buf;
