@@ -223,7 +223,6 @@ ARM arch:
   collaborators:
     - MaureenHelm
     - stephanosio
-    - bbolen
     - ithinuel
   files:
     - arch/arm/
