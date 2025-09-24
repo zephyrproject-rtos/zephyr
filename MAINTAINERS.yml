@@ -681,6 +681,20 @@ Board/SoC configuration:
   labels:
     - "area: Board/SoC configuration"
 
+Boards/SoCs:
+  status: odd fixes
+  files:
+    - boards/
+    - soc/
+    - dts/
+  labels:
+    - "area: Boards/SoCs"
+  description: >-
+    Grouping of all board and SoC platforms. For maintainership of
+    individual platforms, see the relevant platform section.
+    This area will have subgrouping of files for each platform with corresponding
+    collaborators.
+
 Bootloaders:
   status: odd fixes
   files:
