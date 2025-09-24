@@ -728,8 +728,10 @@ static inline int video_get_caps(const struct device *dev, struct video_caps *ca
 {
 	const struct video_driver_api *api;
 
-	__ASSERT_NO_MSG(dev != NULL);
-	__ASSERT_NO_MSG(caps != NULL);
+	if (dev == NULL || caps == NULL ||
+	    (caps->type != VIDEO_BUF_TYPE_INPUT && caps->type != VIDEO_BUF_TYPE_OUTPUT)) {
+		return -EINVAL;
+	}
 
 	api = (const struct video_driver_api *)dev->api;
 	if (api->get_caps == NULL) {
