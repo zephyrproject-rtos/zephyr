@@ -31,6 +31,10 @@ properties:
         For example the WUI mapping on NPCX7 would be
            espi-rst-wui = <&wui_cr_sin1>;
 
+  rst-gpios:
+    type: phandle-array
+    description: Definition of the eSPI reset GPIO pin for the NPCKn variant.
+
   rx-plsize:
     type: int
     required: true
