@@ -49,8 +49,9 @@ __weak void clock_init(void)
 	CCM32K_SelectClockSource(CCM32K, kCCM32K_ClockSourceSelectOsc32k);
 
 	/* Wait for RTC Oscillator to be Valid */
-	while (!CLOCK_IsRoscValid())
-		;
+	while (!CLOCK_IsRoscValid()) {
+	}
+
 	/* Re-enable monitor */
 	CLOCK_SetRoscMonitorMode(kSCG_RoscMonitorInt);
 	/* Disable the FRO32K to save power */
