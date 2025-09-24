@@ -269,6 +269,13 @@ ZTEST(util, test_max_min_clamp) {
 		      "Unexpected macro result");
 	/* clamp should have call inc_func only once */
 	zassert_equal(inc_func(false), 8, "Unexpected return value");
+
+	/* Nested calls do not generate build warnings */
+	zassert_equal(max(inc_func(false),
+			  max(inc_func(false),
+			      min(inc_func(false),
+				  inc_func(false)))), 11, "Unexpected macro result");
+	zassert_equal(inc_func(false), 13, "Unexpected return value");
 #endif
 }
 
