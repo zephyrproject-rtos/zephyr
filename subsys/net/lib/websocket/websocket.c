@@ -1104,6 +1104,10 @@ int websocket_recv_msg(int ws_sock, uint8_t *buf, size_t buf_len,
 		}
 	}
 
+	if (ctx->message_type == WEBSOCKET_FLAG_CLOSE) {
+		return websocket_internal_disconnect(ctx);
+	}
+
 	return payload.count;
 }
 
