@@ -6,6 +6,7 @@
 
 #include <zephyr/ztest.h>
 #include <zephyr/devicetree.h>
+#include <zephyr/devicetree/nvmem.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
 
@@ -3830,6 +3831,63 @@ ZTEST(devicetree_api, test_interrupt_controller)
 
 	/* DT_INST_IRQ_INTC */
 	zassert_true(DT_SAME_NODE(DT_INST_IRQ_INTC(0), TEST_INTC), "");
+}
+
+ZTEST(devicetree_api, test_nvmem_devictree)
+{
+	zexpect_equal(DT_NVMEM_CELLS_HAS_IDX(DT_NODELABEL(test_nvmem_consumer), 0), 1);
+	zexpect_equal(DT_NVMEM_CELLS_HAS_IDX(DT_NODELABEL(test_nvmem_consumer), 1), 1);
+	zexpect_equal(DT_NVMEM_CELLS_HAS_IDX(DT_NODELABEL(test_nvmem_consumer), 2), 0);
+
+	zexpect_equal(DT_NVMEM_CELLS_HAS_NAME(DT_NODELABEL(test_nvmem_consumer), cell0), 1);
+	zexpect_equal(DT_NVMEM_CELLS_HAS_NAME(DT_NODELABEL(test_nvmem_consumer), cell10), 1);
+	zexpect_equal(DT_NVMEM_CELLS_HAS_NAME(DT_NODELABEL(test_nvmem_consumer), missing), 0);
+
+	zexpect_equal(DT_NUM_NVMEM_CELLS(DT_NODELABEL(test_nvmem_consumer)), 2);
+
+	zexpect_str_equal(DT_NODE_PATH(DT_NVMEM_CELL_BY_IDX(DT_NODELABEL(test_nvmem_consumer), 0)),
+			  "/test/test-nvmem-provider/nvmem-layout/cell@0");
+	zexpect_str_equal(DT_NODE_PATH(DT_NVMEM_CELL_BY_IDX(DT_NODELABEL(test_nvmem_consumer), 1)),
+			  "/test/test-nvmem-provider/nvmem-layout/cell@10");
+
+	zexpect_str_equal(
+		DT_NODE_PATH(DT_NVMEM_CELL_BY_NAME(DT_NODELABEL(test_nvmem_consumer), cell0)),
+		"/test/test-nvmem-provider/nvmem-layout/cell@0");
+	zexpect_str_equal(
+		DT_NODE_PATH(DT_NVMEM_CELL_BY_NAME(DT_NODELABEL(test_nvmem_consumer), cell10)),
+		"/test/test-nvmem-provider/nvmem-layout/cell@10");
+
+	zexpect_str_equal(DT_NODE_PATH(DT_MTD_FROM_NVMEM_CELL(
+				  DT_NVMEM_CELL(DT_NODELABEL(test_nvmem_consumer)))),
+			  "/test/test-nvmem-provider");
+}
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT vnd_nvmem_consumer
+ZTEST(devicetree_api, test_nvmem_devictree_inst)
+{
+	zexpect_equal(DT_INST_NVMEM_CELLS_HAS_IDX(0, 0), 1);
+	zexpect_equal(DT_INST_NVMEM_CELLS_HAS_IDX(0, 1), 1);
+	zexpect_equal(DT_INST_NVMEM_CELLS_HAS_IDX(0, 2), 0);
+
+	zexpect_equal(DT_INST_NVMEM_CELLS_HAS_NAME(0, cell0), 1);
+	zexpect_equal(DT_INST_NVMEM_CELLS_HAS_NAME(0, cell10), 1);
+	zexpect_equal(DT_INST_NVMEM_CELLS_HAS_NAME(0, missing), 0);
+
+	zexpect_equal(DT_INST_NUM_NVMEM_CELLS(0), 2);
+
+	zexpect_str_equal(DT_NODE_PATH(DT_INST_NVMEM_CELL_BY_IDX(0, 0)),
+			  "/test/test-nvmem-provider/nvmem-layout/cell@0");
+	zexpect_str_equal(DT_NODE_PATH(DT_INST_NVMEM_CELL_BY_IDX(0, 1)),
+			  "/test/test-nvmem-provider/nvmem-layout/cell@10");
+
+	zexpect_str_equal(DT_NODE_PATH(DT_INST_NVMEM_CELL_BY_NAME(0, cell0)),
+			  "/test/test-nvmem-provider/nvmem-layout/cell@0");
+	zexpect_str_equal(DT_NODE_PATH(DT_INST_NVMEM_CELL_BY_NAME(0, cell10)),
+			  "/test/test-nvmem-provider/nvmem-layout/cell@10");
+
+	zexpect_str_equal(DT_NODE_PATH(DT_MTD_FROM_NVMEM_CELL(DT_INST_NVMEM_CELL(0))),
+			  "/test/test-nvmem-provider");
 }
 
 ZTEST_SUITE(devicetree_api, NULL, NULL, NULL, NULL, NULL);
