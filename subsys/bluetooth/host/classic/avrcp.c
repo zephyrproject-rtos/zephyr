@@ -115,6 +115,10 @@ static struct bt_avrcp avrcp_connection[CONFIG_BT_MAX_CONN];
 static struct bt_avrcp_ct bt_avrcp_ct_pool[CONFIG_BT_MAX_CONN];
 static struct bt_avrcp_tg bt_avrcp_tg_pool[CONFIG_BT_MAX_CONN];
 
+#if defined(CONFIG_BT_AVRCP_TG_COVER_ART)
+static uint16_t bt_avrcp_tg_cover_art_psm;
+#endif /* CONFIG_BT_AVRCP_TG_COVER_ART */
+
 static struct bt_avctp_server avctp_server;
 #if defined(CONFIG_BT_AVRCP_BROWSING)
 static struct bt_avctp_server avctp_browsing_server;
@@ -181,11 +185,20 @@ static struct bt_sdp_attribute avrcp_tg_attrs[] = {
 		)
 	),
 	/* Browsing channel */
-#if defined(CONFIG_BT_AVRCP_BROWSING)
+#if defined(CONFIG_BT_AVRCP_BROWSING) || defined(CONFIG_BT_AVRCP_TG_COVER_ART)
 	BT_SDP_LIST(
 		BT_SDP_ATTR_ADD_PROTO_DESC_LIST,
+#if defined(CONFIG_BT_AVRCP_BROWSING) && defined(CONFIG_BT_AVRCP_TG_COVER_ART)
+		BT_SDP_TYPE_SIZE_VAR(BT_SDP_SEQ8, 33),
+#elif defined(CONFIG_BT_AVRCP_BROWSING)
 		BT_SDP_TYPE_SIZE_VAR(BT_SDP_SEQ8, 18),
+#elif defined(CONFIG_BT_AVRCP_TG_COVER_ART)
+		BT_SDP_TYPE_SIZE_VAR(BT_SDP_SEQ8, 15),
+#else
+#error Invalid configuration
+#endif /* CONFIG_BT_AVRCP_BROWSING && CONFIG_BT_AVRCP_TG_COVER_ART */
 		BT_SDP_DATA_ELEM_LIST(
+#if defined(CONFIG_BT_AVRCP_BROWSING)
 		{
 			BT_SDP_TYPE_SIZE_VAR(BT_SDP_SEQ8, 16),
 			BT_SDP_DATA_ELEM_LIST(
@@ -213,10 +226,40 @@ static struct bt_sdp_attribute avrcp_tg_attrs[] = {
 					BT_SDP_ARRAY_16(AVCTP_VER_1_4)
 				})
 			})
-		})
-	),
+		}
 #endif /* CONFIG_BT_AVRCP_BROWSING */
-	/* C2: Cover Art not supported */
+#if defined(CONFIG_BT_AVRCP_BROWSING) && defined(CONFIG_BT_AVRCP_TG_COVER_ART)
+		,
+#endif /* CONFIG_BT_AVRCP_BROWSING && CONFIG_BT_AVRCP_TG_COVER_ART */
+#if defined(CONFIG_BT_AVRCP_TG_COVER_ART)
+		{
+			BT_SDP_TYPE_SIZE_VAR(BT_SDP_SEQ8, 13),
+			BT_SDP_DATA_ELEM_LIST(
+			{
+				BT_SDP_TYPE_SIZE_VAR(BT_SDP_SEQ8, 6),
+				BT_SDP_DATA_ELEM_LIST(
+				{
+					BT_SDP_TYPE_SIZE(BT_SDP_UUID16),
+					BT_SDP_ARRAY_16(BT_SDP_PROTO_L2CAP)
+				},
+				{
+					BT_SDP_TYPE_SIZE(BT_SDP_UINT16),
+					&bt_avrcp_tg_cover_art_psm
+				})
+			},
+			{
+				BT_SDP_TYPE_SIZE_VAR(BT_SDP_SEQ8, 3),
+				BT_SDP_DATA_ELEM_LIST(
+				{
+					BT_SDP_TYPE_SIZE(BT_SDP_UUID16),
+					BT_SDP_ARRAY_16(BT_UUID_OBEX_VAL)
+				})
+			})
+		}
+#endif /* CONFIG_BT_AVRCP_TG_COVER_ART */
+		)
+	),
+#endif /* CONFIG_BT_AVRCP_BROWSING || CONFIG_BT_AVRCP_TG_COVER_ART*/
 	BT_SDP_LIST(
 		BT_SDP_ATTR_PROFILE_DESC_LIST,
 		BT_SDP_TYPE_SIZE_VAR(BT_SDP_SEQ8, 8),
@@ -236,7 +279,8 @@ static struct bt_sdp_attribute avrcp_tg_attrs[] = {
 		},
 		)
 	),
-	BT_SDP_SUPPORTED_FEATURES(AVRCP_CAT_1 | AVRCP_CAT_2 | AVRCP_BROWSING_ENABLE),
+	BT_SDP_SUPPORTED_FEATURES(AVRCP_TG_CAT_1 | AVRCP_TG_CAT_2 | AVRCP_TG_BROWSING_ENABLE |
+				  AVRCP_TG_COVER_ART_ENABLE),
 	/* O: Provider Name not presented */
 	BT_SDP_SERVICE_NAME("AVRCP Target"),
 };
@@ -349,7 +393,8 @@ static struct bt_sdp_attribute avrcp_ct_attrs[] = {
 		},
 		)
 	),
-	BT_SDP_SUPPORTED_FEATURES(AVRCP_CAT_1 | AVRCP_CAT_2 | AVRCP_BROWSING_ENABLE),
+	BT_SDP_SUPPORTED_FEATURES(AVRCP_CT_CAT_1 | AVRCP_CT_CAT_2 | AVRCP_CT_BROWSING_ENABLE |
+				  AVRCP_CT_COVER_ART_FEAT_ENABLE),
 	BT_SDP_SERVICE_NAME("AVRCP Controller"),
 };
 
@@ -2756,6 +2801,14 @@ int bt_avrcp_init(void)
 	}
 #endif /* CONFIG_BT_AVRCP_BROWSING */
 
+#if defined(CONFIG_BT_AVRCP_TG_COVER_ART)
+	err = bt_avrcp_tg_cover_art_init(&bt_avrcp_tg_cover_art_psm);
+	if (err < 0) {
+		LOG_ERR("AVRCP Cover Art initialization failed");
+		return err;
+	}
+#endif /* CONFIG_BT_AVRCP_TG_COVER_ART */
+
 #if defined(CONFIG_BT_AVRCP_TARGET)
 	bt_sdp_register_service(&avrcp_tg_rec);
 #endif /* CONFIG_BT_AVRCP_CONTROLLER */
@@ -4296,4 +4349,36 @@ int bt_avrcp_tg_add_to_now_playing(struct bt_avrcp_tg *tg, uint8_t tid, uint8_t 
 		net_buf_unref(buf);
 	}
 	return err;
+}
+
+struct bt_avrcp_tg *bt_avrcp_get_tg(struct bt_conn *conn, uint16_t psm)
+{
+	size_t index;
+
+	ARG_UNUSED(psm);
+
+	if (conn == NULL) {
+		LOG_ERR("Invalid parameter");
+		return NULL;
+	}
+
+	index = (size_t)bt_conn_index(conn);
+	__ASSERT(index < ARRAY_SIZE(bt_avrcp_tg_pool), "Conn index is out of bounds");
+
+	return &bt_avrcp_tg_pool[index];
+}
+
+struct bt_conn *bt_avrcp_ct_get_acl_conn(struct bt_avrcp_ct *ct)
+{
+	if (ct == NULL) {
+		LOG_ERR("Invalid parameter");
+		return NULL;
+	}
+
+	if (ct->avrcp->acl_conn == NULL) {
+		LOG_ERR("No connection");
+		return NULL;
+	}
+
+	return bt_conn_ref(ct->avrcp->acl_conn);
 }
