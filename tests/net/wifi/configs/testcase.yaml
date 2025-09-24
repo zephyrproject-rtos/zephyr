@@ -60,6 +60,22 @@ tests:
       - CONFIG_WIFI_NM_WPA_SUPPLICANT_INF_MON=n
       - CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE=y
       - CONFIG_WIFI_NM_HOSTAPD_CRYPTO_ENTERPRISE=y
+  wifi.build.hostapd_wps:
+    extra_configs:
+      - CONFIG_WIFI_NM_HOSTAPD_AP=y
+      - CONFIG_WIFI_NM_WPA_SUPPLICANT_INF_MON=n
+      - CONFIG_WIFI_NM_HOSTAPD_WPS=y
+      - CONFIG_WIFI_NM_WPA_SUPPLICANT_WPS=y
+      - CONFIG_WIFI_NM_WPA_SUPPLICANT_EAPOL=y
+  wifi.build.hostapd_dpp:
+    extra_configs:
+      - CONFIG_WIFI_NM_HOSTAPD_AP=y
+      - CONFIG_WIFI_NM_WPA_SUPPLICANT_INF_MON=n
+      - CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP=y
+  wifi.build.roaming:
+    extra_configs:
+      - CONFIG_WIFI_NM_WPA_SUPPLICANT_ROAMING=y
+      - CONFIG_WIFI_NM_WPA_SUPPLICANT_SKIP_DHCP_ON_ROAMING=y
   wifi.build.dpp:
     extra_configs:
       - CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP=y
