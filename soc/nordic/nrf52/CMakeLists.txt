@@ -3,8 +3,8 @@
 zephyr_library_sources(soc.c)
 zephyr_include_directories(.)
 
-if(CONFIG_SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58 AND CONFIG_SPI_NRFX_SPIM)
-  message(WARNING "Both SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58 and an NRF SPIM driver are enabled, therefore PAN 58 will apply if RXD.MAXCNT == 1 and TXD.MAXCNT <= 1")
+if(CONFIG_NRF52_ANOMALY_58_WORKAROUND AND CONFIG_SPI_NRFX_SPIM)
+  message(WARNING "Both CONFIG_NRF52_ANOMALY_58_WORKAROUND and an NRF SPIM driver are enabled, therefore PAN 58 will apply if RXD.MAXCNT == 1 and TXD.MAXCNT <= 1")
 endif()
 
 if(CONFIG_SOC_NRF52832)
