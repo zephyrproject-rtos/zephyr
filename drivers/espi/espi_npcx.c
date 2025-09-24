@@ -98,7 +98,7 @@ static const struct espi_npcx_vw_ex espi_npcx_vw_ex_0[] = {
 #define NPCX_ESPI_VWIRE_ACK_DELAY    10ul /* 10 us */
 
 /* OOB channel maximum payload size */
-#define NPCX_ESPI_OOB_MAX_PAYLOAD    64
+#define NPCX_ESPI_OOB_MAX_PAYLOAD    73
 #define NPCX_OOB_RX_PACKAGE_LEN(hdr) (((hdr & 0xff000000) >> 24) | \
 							((hdr & 0xf0000) >> 8))
 
