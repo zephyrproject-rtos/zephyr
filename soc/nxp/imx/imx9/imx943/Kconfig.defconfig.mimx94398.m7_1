@@ -26,4 +26,7 @@ config ETH_NXP_IMX_MSGINTR
 config CACHE_MANAGEMENT
 	default n
 
+config DMA_TCD_QUEUE_SIZE
+	default 4
+
 endif # SOC_MIMX94398_M7_1
