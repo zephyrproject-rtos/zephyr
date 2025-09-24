@@ -393,6 +393,8 @@
 			/* WUI maps for eSPI signals */
 			espi-rst-wui = <&wui_espi_rst>;
 
+			support-npckn-v1;
+
 			#address-cells = <1>;
 			#size-cells = <0>;
 			#vw-cells = <3>;
