@@ -1,40 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config UART_FOCALTECH
-	bool "ft9001 MCU serial driver"
+	bool "FocalTech FT9001 MCU serial driver"
 	default y
-	depends on SERIAL
+	depends on DT_HAS_FOCALTECH_FT9001_USART_ENABLED
 	select SERIAL_HAS_DRIVER
-	select FOCALTECH_HAL
-	select FOCALTECH_HAL_UART
 	select SERIAL_SUPPORT_INTERRUPT
 	help
-	  Enable UART driver for FocalTech FT9001 SoC. This driver provides
-	  support for the on-chip UART controllers with features including
-	  interrupt-driven operation, runtime configuration, and standard
-	  serial communication protocols.
-
-if UART_FOCALTECH
-config UART_INTERRUPT_DRIVEN
-	bool "UART Interrupt support"
-	depends on SERIAL_SUPPORT_INTERRUPT
-	help
-	  This option enables interrupt support for UART allowing console
-	  input and other UART based drivers.
-  
-config UART_USE_RUNTIME_CONFIGURE
-	bool "Runtime configuration for UART controllers"
-	default y
-	help
-		Enable runtime configuration of UART controllers.
-		This allows applications to call uart_configure() to
-		configure the UART controllers at runtime, and calling
-		uart_config_get() to retrieve configuration. If this is
-		disabled, UART controllers rely on UART driver
-		initialization function to properly configure
-		the controller.
-  
-		Say y if unsure. Disable this to reduce footprint for
-		applications that do not require runtime UART configuration.
-  
-  endif # UART_FOCALTECH
+	  Enable UART driver for FocalTech FT9001 SoC.

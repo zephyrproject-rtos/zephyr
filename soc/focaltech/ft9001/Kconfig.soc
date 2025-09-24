@@ -2,10 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_FT9001
-  bool "FocalTech FT9001 MCU"
-  help
-    Build for the FocalTech FT9001 MCU (ARM Cortex-M4F).
+	bool
+	help
+	  Build for the FocalTech FT9001 MCU (ARM Cortex-M4F).
 
 config SOC
-  default "ft9001" if SOC_FT9001
-  
+	default "ft9001" if SOC_FT9001

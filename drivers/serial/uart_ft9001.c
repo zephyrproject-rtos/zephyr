@@ -28,7 +28,7 @@
 LOG_MODULE_REGISTER(uart_ft9001, CONFIG_UART_LOG_LEVEL);
 
 /* FT9001 UART register structure (based on HAL) */
-typedef struct {
+struct ft9001_uart_regs {
 	__IO uint8_t SCIBDL;     /* 0x00 - Baud Rate Low */
 	__IO uint8_t SCIBDH;     /* 0x01 - Baud Rate High */
 	__IO uint8_t SCICR2;     /* 0x02 - Control Register 2 */
@@ -51,60 +51,60 @@ typedef struct {
 	__IO uint8_t SCIFCR2;    /* 0x13 - FIFO Control Register 2 */
 	__IO uint8_t SCIFCTRL;   /* 0x14 - FIFO Control Register */
 	__IO uint8_t SCIFSR2;    /* 0x15 - FIFO Status Register 2 */
-} UART_TypeDef;
+};
 
 /* Control Register 1 bits */
-#define SCICR1_M_MASK				0x10 /* Frame length */
-#define SCICR1_PE_MASK				0x02 /* Parity enable */
-#define SCICR1_PT_MASK				0x01 /* Parity type */
+#define SCICR1_M_MASK  0x10 /* Frame length */
+#define SCICR1_PE_MASK 0x02 /* Parity enable */
+#define SCICR1_PT_MASK 0x01 /* Parity type */
 
 /* Control Register 2 bits */
-#define SCICR2_TE_MASK				0x08 /* Transmitter enable */
-#define SCICR2_RE_MASK				0x04 /* Receiver enable */
+#define SCICR2_TE_MASK 0x08 /* Transmitter enable */
+#define SCICR2_RE_MASK 0x04 /* Receiver enable */
 
 /* FIFO Control Register bits */
-#define SCIFCR_RFEN					0x80 /* RX FIFO enable */
-#define SCIFCR_TFEN					0x40 /* TX FIFO enable */
-#define SCIFCR_RXFLSEL_1_8			0x00 /* RX FIFO trigger level */
-#define SCIFCR_TXFLSEL_1_8			0x04 /* TX FIFO trigger level */
+#define SCIFCR_RFEN        0x80 /* RX FIFO enable */
+#define SCIFCR_TFEN        0x40 /* TX FIFO enable */
+#define SCIFCR_RXFLSEL_1_8 0x00 /* RX FIFO trigger level */
+#define SCIFCR_TXFLSEL_1_8 0x04 /* TX FIFO trigger level */
 
 /* FIFO Control Register 2 bits */
-#define SCIFCR2_RXFTOE				0x04 /* RX FIFO timeout enable */
-#define SCIFCR2_TXFCLR				0x02 /* TX FIFO clear */
-#define SCIFCR2_RXFCLR				0x01 /* RX FIFO clear */
-#define SCIFCR2_TXFIE				0x80 /* TX FIFO interrupt enable */
-#define SCIFCR2_RXFIE				0x20 /* RX FIFO interrupt enable */
-#define SCIFCR2_RXFTOIE				0x08 /* RX FIFO timeout interrupt enable */
-#define SCIFCR2_RXORIE				0x10 /* RX overrun interrupt enable */
+#define SCIFCR2_RXFTOE  0x04 /* RX FIFO timeout enable */
+#define SCIFCR2_TXFCLR  0x02 /* TX FIFO clear */
+#define SCIFCR2_RXFCLR  0x01 /* RX FIFO clear */
+#define SCIFCR2_TXFIE   0x80 /* TX FIFO interrupt enable */
+#define SCIFCR2_RXFIE   0x20 /* RX FIFO interrupt enable */
+#define SCIFCR2_RXFTOIE 0x08 /* RX FIFO timeout interrupt enable */
+#define SCIFCR2_RXORIE  0x10 /* RX overrun interrupt enable */
 
 /* FIFO Status Register bits */
-#define SCIFSR_TFULL_MASK			0x08 /* TX FIFO full */
-#define SCIFSR_TEMPTY_MASK			0x04 /* TX FIFO empty */
-#define SCIFSR_REMPTY_MASK			0x01 /* RX FIFO empty */
-#define SCIFSR_RFTS_MASK			0x20 /* RX FIFO trigger level reached */
-#define SCIFSR_FTC_MASK				0x40 /* Frame transmission complete */
+#define SCIFSR_TFULL_MASK  0x08 /* TX FIFO full */
+#define SCIFSR_TEMPTY_MASK 0x04 /* TX FIFO empty */
+#define SCIFSR_REMPTY_MASK 0x01 /* RX FIFO empty */
+#define SCIFSR_RFTS_MASK   0x20 /* RX FIFO trigger level reached */
+#define SCIFSR_FTC_MASK    0x40 /* Frame transmission complete */
 
 /* Status Register 2 bits */
-#define SCISR2_FOR_MASK				0x08 /* FIFO overrun */
-#define SCISR2_FPF_MASK				0x01 /* Parity error */
-#define SCISR2_FNF_MASK				0x04 /* Noise error */
-#define SCISR2_FFE_MASK				0x02 /* Frame error */
+#define SCISR2_FOR_MASK 0x08 /* FIFO overrun */
+#define SCISR2_FPF_MASK 0x01 /* Parity error */
+#define SCISR2_FNF_MASK 0x04 /* Noise error */
+#define SCISR2_FFE_MASK 0x02 /* Frame error */
 
 /* HAL compatibility defines */
-#define UART_DATA_FRAME_LEN_10BIT	0
-#define UART_DATA_FRAME_LEN_11BIT	SCICR1_M_MASK
-#define UART_PARITY_NONE			2
-#define UART_PARITY_EVE				0
-#define UART_PARITY_ODD				SCICR1_PT_MASK
-#define UART_INT_MODE				1
+#define UART_DATA_FRAME_LEN_10BIT 0
+#define UART_DATA_FRAME_LEN_11BIT SCICR1_M_MASK
+#define UART_PARITY_NONE          2
+#define UART_PARITY_EVE           0
+#define UART_PARITY_ODD           SCICR1_PT_MASK
+#define UART_INT_MODE             1
 
 /**
  * @brief UART device configuration structure
  */
 struct uart_ft9001_config {
-	UART_TypeDef *base;                    /* UART base address */
-	uint32_t clkid;                        /* Clock control ID */
-	struct reset_dt_spec reset;            /* Reset control */
+	struct ft9001_uart_regs *base; /* UART base address */
+	uint32_t clkid;                /* Clock control ID */
+	struct reset_dt_spec reset;    /* Reset control */
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	uart_irq_config_func_t irq_config_func; /* IRQ config function */
 #endif
@@ -131,19 +131,19 @@ static void uart_ft9001_isr(const struct device *dev);
 /**
  * @brief Configure UART hardware (based on HAL UART_Init)
  */
-static void uart_ft9001_hw_init(UART_TypeDef *base, const struct uart_config *cfg,
+static void uart_ft9001_hw_init(struct ft9001_uart_regs *base, const struct uart_config *cfg,
 				uint32_t sys_freq)
 {
-	uint16_t bandrate_I;
-	uint8_t bandrate_F;
+	uint16_t bandrate_i;
+	uint8_t bandrate_f;
 	uint8_t bandrate_h;
 	uint8_t bandrate_l;
 
 	/* Calculate baud rate divisors (from HAL) */
-	bandrate_I = ((uint16_t)(sys_freq * 4 / cfg->baudrate)) >> 6;
-	bandrate_F = (((uint16_t)(sys_freq * 8 / cfg->baudrate) + 1) / 2) & 0x003f;
-	bandrate_h = (uint8_t)((bandrate_I >> 8) & 0x00ff);
-	bandrate_l = (uint8_t)(bandrate_I & 0x00ff);
+	bandrate_i = ((uint16_t)(sys_freq * 4 / cfg->baudrate)) >> 6;
+	bandrate_f = (((uint16_t)(sys_freq * 8 / cfg->baudrate) + 1) / 2) & 0x003f;
+	bandrate_h = (uint8_t)((bandrate_i >> 8) & 0x00ff);
+	bandrate_l = (uint8_t)(bandrate_i & 0x00ff);
 
 	/* Disable UART */
 	base->SCICR2 = 0;
@@ -153,7 +153,7 @@ static void uart_ft9001_hw_init(UART_TypeDef *base, const struct uart_config *cf
 	base->SCIFCR = SCIFCR_RFEN | SCIFCR_TFEN;
 
 	/* Set baud rate (write fraction before integer) */
-	base->SCIBRDF = bandrate_F;
+	base->SCIBRDF = bandrate_f;
 	base->SCIBDH = bandrate_h;
 	base->SCIBDL = bandrate_l;
 
@@ -213,7 +213,8 @@ static int uart_ft9001_init(const struct device *dev)
 	}
 
 	/* Get system frequency */
-	ret = clock_control_get_rate(clk, (clock_control_subsys_t *)(uintptr_t)config->clkid, &sys_freq);
+	ret = clock_control_get_rate(clk, (clock_control_subsys_t *)(uintptr_t)config->clkid,
+				     &sys_freq);
 	if (ret < 0) {
 		LOG_WRN("Could not get UART clock rate, using default");
 		sys_freq = 160000000 / 2; /* Default assumption */
@@ -274,7 +275,7 @@ static void uart_ft9001_poll_out(const struct device *dev, unsigned char c)
 	/* Wait for transmission complete */
 	while (1) {
 		if ((config->base->SCIFSR & SCIFSR_TEMPTY_MASK) &&
-			(config->base->SCIFSR & SCIFSR_FTC_MASK)) {
+		    (config->base->SCIFSR & SCIFSR_FTC_MASK)) {
 			break;
 		}
 	}
@@ -290,9 +291,9 @@ static int uart_ft9001_err_check(const struct device *dev)
 
 	/* Check error flags in SCIFSR2 */
 	z_err = ((config->base->SCIFSR2 & SCISR2_FOR_MASK) ? (1 << 0) : 0) | /* Overrun */
-			((config->base->SCIFSR2 & SCISR2_FPF_MASK) ? (1 << 1) : 0) | /* Parity */
-			((config->base->SCIFSR2 & SCISR2_FNF_MASK) ? (1 << 5) : 0) | /* Noise */
-			((config->base->SCIFSR2 & SCISR2_FFE_MASK) ? (1 << 2) : 0);  /* Frame */
+		((config->base->SCIFSR2 & SCISR2_FPF_MASK) ? (1 << 1) : 0) | /* Parity */
+		((config->base->SCIFSR2 & SCISR2_FNF_MASK) ? (1 << 5) : 0) | /* Noise */
+		((config->base->SCIFSR2 & SCISR2_FFE_MASK) ? (1 << 2) : 0);  /* Frame */
 
 	/* Clear error flags by writing back */
 	config->base->SCIFSR2 = config->base->SCIFSR2;
@@ -324,7 +325,8 @@ static int uart_ft9001_configure(const struct device *dev, const struct uart_con
 	}
 
 	/* Get clock frequency */
-	ret = clock_control_get_rate(clk, (clock_control_subsys_t *)(uintptr_t)config->clkid, &sys_freq);
+	ret = clock_control_get_rate(clk, (clock_control_subsys_t *)(uintptr_t)config->clkid,
+				     &sys_freq);
 	if (ret < 0) {
 		sys_freq = 160000000 / 2;
 	}
@@ -437,7 +439,7 @@ static int uart_ft9001_irq_tx_complete(const struct device *dev)
 {
 	const struct uart_ft9001_config *config = DEV_CFG(dev);
 	return ((config->base->SCIFSR & SCIFSR_TEMPTY_MASK) &&
-			(config->base->SCIFSR & SCIFSR_FTC_MASK));
+		(config->base->SCIFSR & SCIFSR_FTC_MASK));
 }
 
 /**
@@ -447,7 +449,7 @@ static int uart_ft9001_irq_rx_ready(const struct device *dev)
 {
 	const struct uart_ft9001_config *config = DEV_CFG(dev);
 	return ((config->base->SCIFSR & SCIFSR_RFTS_MASK) ||
-			!(config->base->SCIFSR & SCIFSR_REMPTY_MASK));
+		!(config->base->SCIFSR & SCIFSR_REMPTY_MASK));
 }
 
 /**
@@ -477,10 +479,10 @@ static int uart_ft9001_irq_is_pending(const struct device *dev)
 
 	/* Check if TX or RX interrupts are pending */
 	return ((!(config->base->SCIFSR & SCIFSR_TFULL_MASK) &&
-			(config->base->SCIFCR2 & SCIFCR2_TXFIE)) ||
+		 (config->base->SCIFCR2 & SCIFCR2_TXFIE)) ||
 		(((config->base->SCIFSR & SCIFSR_RFTS_MASK) ||
-			!(config->base->SCIFSR & SCIFSR_REMPTY_MASK)) &&
-			(config->base->SCIFCR2 & SCIFCR2_RXFIE)));
+		  !(config->base->SCIFSR & SCIFSR_REMPTY_MASK)) &&
+		 (config->base->SCIFCR2 & SCIFCR2_RXFIE)));
 }
 
 /**
@@ -544,18 +546,17 @@ static const struct uart_driver_api uart_ft9001_driver_api = {
 };
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-#define FOCALTECH_UART_IRQ_HANDLER(idx)									\
-	static void uart_ft9001_cfg_func_##idx(const struct device *dev)	\
-	{																	\
-		IRQ_CONNECT(DT_INST_IRQN(idx),									\
-					DT_INST_IRQ(idx, priority),							\
-					uart_ft9001_isr,									\
-					DEVICE_DT_INST_GET(idx),							\
-					0);													\
-		irq_enable(DT_INST_IRQN(idx));									\
+#define FOCALTECH_UART_IRQ_HANDLER(idx)                                \
+	static void uart_ft9001_cfg_func_##idx(const struct device *dev)   \
+	{                                                                  \
+		IRQ_CONNECT(DT_INST_IRQN(idx),                                 \
+					DT_INST_IRQ(idx, priority),                        \
+					uart_ft9001_isr,                                   \
+			    	DEVICE_DT_INST_GET(idx), 0);                       \
+		irq_enable(DT_INST_IRQN(idx));                                 \
 	}
-#define FOCALTECH_UART_IRQ_HANDLER_FUNC_INIT(idx) \
-	.irq_config_func = uart_ft9001_cfg_func_##idx,
+#define FOCALTECH_UART_IRQ_HANDLER_FUNC_INIT(idx)                      \
+			.irq_config_func = uart_ft9001_cfg_func_##idx,
 #else
 #define FOCALTECH_UART_IRQ_HANDLER(idx)
 #define FOCALTECH_UART_IRQ_HANDLER_FUNC_INIT(idx)
@@ -564,30 +565,31 @@ static const struct uart_driver_api uart_ft9001_driver_api = {
 /**
  * @brief Macro to define a FocalTech FT9001 UART device instance
  */
-#define UART_FOCALTECH_FT9001_DEVICE(idx)								\
-	FOCALTECH_UART_IRQ_HANDLER(idx)										\
-																		\
-	static struct uart_ft9001_data uart_ft9001_data_##idx = {			\
-		.uart_cfg =														\
-			{															\
-				.baudrate = DT_INST_PROP(idx, current_speed),			\
-				.parity = UART_CFG_PARITY_NONE,							\
-				.stop_bits = UART_CFG_STOP_BITS_1,						\
-				.data_bits = UART_CFG_DATA_BITS_8,						\
-				.flow_ctrl = UART_CFG_FLOW_CTRL_NONE,					\
-			},															\
-	};																	\
-																		\
-	static const struct uart_ft9001_config uart_ft9001_cfg_##idx = {	\
-		.base = (UART_TypeDef *)DT_INST_REG_ADDR(idx),					\
-		.clkid = DT_INST_CLOCKS_CELL(idx, id),							\
-		.reset = RESET_DT_SPEC_INST_GET(idx),							\
-		FOCALTECH_UART_IRQ_HANDLER_FUNC_INIT(idx)};						\
-																		\
-	DEVICE_DT_INST_DEFINE(idx, uart_ft9001_init,						\
-						NULL, &uart_ft9001_data_##idx,					\
-						&uart_ft9001_cfg_##idx,							\
-						PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,		\
-			      		(void *)&uart_ft9001_driver_api);
+#define UART_FOCALTECH_FT9001_DEVICE(idx)                               \
+	FOCALTECH_UART_IRQ_HANDLER(idx)                                     \
+                                                                        \
+	static struct uart_ft9001_data uart_ft9001_data_##idx = {           \
+		.uart_cfg =                                                     \
+			{                                                           \
+				.baudrate = DT_INST_PROP(idx, current_speed),           \
+				.parity = UART_CFG_PARITY_NONE,                         \
+				.stop_bits = UART_CFG_STOP_BITS_1,                      \
+				.data_bits = UART_CFG_DATA_BITS_8,                      \
+				.flow_ctrl = UART_CFG_FLOW_CTRL_NONE,                   \
+			},                                                          \
+	};                                                                  \
+                                                                        \
+	static const struct uart_ft9001_config uart_ft9001_cfg_##idx = {    \
+		.base = (struct ft9001_uart_regs *)DT_INST_REG_ADDR(idx),       \
+		.clkid = DT_INST_CLOCKS_CELL(idx, id),                          \
+		.reset = RESET_DT_SPEC_INST_GET(idx),                           \
+		FOCALTECH_UART_IRQ_HANDLER_FUNC_INIT(idx)};                     \
+                                                                        \
+	DEVICE_DT_INST_DEFINE(idx, uart_ft9001_init, NULL,                  \
+					&uart_ft9001_data_##idx,                            \
+					&uart_ft9001_cfg_##idx,                             \
+					PRE_KERNEL_1,                                       \
+					CONFIG_SERIAL_INIT_PRIORITY,                        \
+					(void *)&uart_ft9001_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(UART_FOCALTECH_FT9001_DEVICE);
