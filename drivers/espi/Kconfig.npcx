@@ -103,11 +103,11 @@ config ESPI_NPCX_WIRE_SEND_TIMEOUT_US
 
 config ESPI_TAF_NPCX
 	bool "Nuvoton NPCX embedded controller (EC) ESPI TAF driver"
-	depends on ESPI_NPCX_NPCXN_V3
+	depends on ESPI_NPCX_NPCXN_V3 || ESPI_NPCX_NPCKN_V1
 	depends on FLASH
 	help
 	  This option enables the Intel Enhanced Serial Peripheral Interface
-	  Target Attached Flash (eSPI TAF) for NPCX4 family of processors.
+	  Target Attached Flash (eSPI TAF) for NPCX4/NPCK3 family of processors.
 
 choice ESPI_TAF_ACCESS_MODE_CHOICE
 	prompt "eSPI TAF Read Access Mode"
@@ -124,6 +124,15 @@ config ESPI_TAF_MANUAL_MODE
 	  This is the setting to use manual mode for eSPI TAF read.
 
 endchoice
+
+config ESPI_TAF_TX_AVAIL_CHECK_TIME
+	int "Flash TX Available Check Time (microseconds)"
+	default 1000000
+	depends on ESPI_TAF_NPCX
+	help
+	  This option sets the time interval (in microseconds) for checking
+	  whether the host has sent a GET_FLASH_C command to retrieve the
+	  result.
 
 config ESPI_TAF_PR_NUM
 	int "Sets of protection region settings"
