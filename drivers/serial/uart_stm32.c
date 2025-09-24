@@ -1508,7 +1508,10 @@ static inline void uart_stm32_dma_rx_enable(const struct device *dev)
 
 static inline void uart_stm32_dma_rx_disable(const struct device *dev)
 {
+	const struct uart_stm32_config *config = dev->config;
 	struct uart_stm32_data *data = dev->data;
+
+	LL_USART_DisableDMAReq_RX(config->usart);
 
 	data->dma_rx.enabled = false;
 }
