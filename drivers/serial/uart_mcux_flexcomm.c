@@ -24,7 +24,7 @@
 #include <zephyr/drivers/pinctrl.h>
 #ifdef CONFIG_UART_ASYNC_API
 #include <zephyr/drivers/dma.h>
-#include <fsl_inputmux.h>
+#include <zephyr/drivers/mux.h>
 #endif
 
 #define FC_UART_IS_WAKEUP (IS_ENABLED(CONFIG_PM) && DT_ANY_INST_HAS_BOOL_STATUS_OKAY(wakeup_source))
@@ -53,6 +53,9 @@ struct mcux_flexcomm_config {
 	struct mcux_flexcomm_uart_dma_config rx_dma;
 	void (*rx_timeout_func)(struct k_work *work);
 	void (*tx_timeout_func)(struct k_work *work);
+	const struct device *mux_dev;
+	struct mux_control **mux_controls;
+	size_t num_muxes;
 #endif
 #ifdef CONFIG_PM_POLICY_DEVICE_CONSTRAINTS
 	void (*pm_unlock_work_fn)(struct k_work *);
@@ -903,75 +906,6 @@ static void mcux_flexcomm_uart_dma_rx_callback(const struct device *dma_device, 
 	data->rx_data.offset = 0;
 }
 
-#if defined(CONFIG_SOC_SERIES_IMXRT5XX) || defined(CONFIG_SOC_SERIES_IMXRT6XX)
-/*
- * This functions calculates the inputmux connection value
- * needed by INPUTMUX_EnableSignal to allow the UART's DMA
- * request to reach the DMA.
- */
-static uint32_t fc_uart_calc_inmux_connection(uint8_t channel, DMA_Type *base)
-{
-	uint32_t chmux_avl = 0;
-	uint32_t chmux_sel = 0;
-	uint32_t chmux_val = 0;
-
-#if defined(CONFIG_SOC_SERIES_IMXRT5XX)
-	uint32_t chmux_sel_id = 0;
-
-	if (base == (DMA_Type *)DMA0_BASE) {
-		chmux_sel_id = DMA0_CHMUX_SEL0_ID;
-	} else if (base == (DMA_Type *)DMA1_BASE) {
-		chmux_sel_id = DMA1_CHMUX_SEL0_ID;
-	}
-
-
-	if (channel >= 16 && !(channel >= 24 && channel <= 27)) {
-		chmux_avl = 1 << CHMUX_AVL_SHIFT;
-	} else {
-		chmux_avl = 0;
-	}
-
-	/* 1 for flexcomm */
-	chmux_val = 1 << CHMUX_VAL_SHIFT;
-
-
-	if (channel <= 15 || (channel >= 24 && channel <= 27)) {
-		chmux_sel = 0;
-	} else if (channel >= 16 && channel <= 23) {
-		chmux_sel = (chmux_sel_id + 4 * (channel - 16))
-				<< CHMUX_OFF_SHIFT;
-	} else {
-		chmux_sel = (chmux_sel_id + 4 * (channel - 20))
-				<< CHMUX_OFF_SHIFT;
-	}
-
-#endif /* RT5xx */
-
-	uint32_t req_en_id = 0;
-
-	if (base == (DMA_Type *)DMA0_BASE) {
-		req_en_id = DMA0_REQ_ENA0_ID;
-	} else if (base == (DMA_Type *)DMA1_BASE) {
-		req_en_id = DMA1_REQ_ENA0_ID;
-	}
-
-
-	uint32_t en_val;
-
-	if (channel <= 31) {
-		en_val = channel + (req_en_id << ENA_SHIFT);
-	} else {
-		en_val = (channel - 32) + ((req_en_id + 4) << ENA_SHIFT);
-	}
-
-
-	uint32_t ret = en_val + chmux_avl + chmux_val + chmux_sel;
-
-	return ret;
-}
-#endif /* RT 3-digit */
-
-
 static int flexcomm_uart_async_init(const struct device *dev)
 {
 	const struct mcux_flexcomm_config *config = dev->config;
@@ -992,19 +926,9 @@ static int flexcomm_uart_async_init(const struct device *dev)
 	USART_EnableRxDMA(config->base, false);
 
 	/* Route DMA requests */
-#if defined(CONFIG_SOC_SERIES_IMXRT5XX) || defined(CONFIG_SOC_SERIES_IMXRT6XX)
-	/* RT 3 digit uses input mux to route DMA requests from
-	 * the UART peripheral to a hardware designated DMA channel
-	 */
-	INPUTMUX_Init(INPUTMUX);
-	INPUTMUX_EnableSignal(INPUTMUX,
-		fc_uart_calc_inmux_connection(config->rx_dma.channel,
-					config->rx_dma.base), true);
-	INPUTMUX_EnableSignal(INPUTMUX,
-		fc_uart_calc_inmux_connection(config->tx_dma.channel,
-					config->tx_dma.base), true);
-	INPUTMUX_Deinit(INPUTMUX);
-#endif /* RT5xx and RT6xx */
+	for (int i = 0; i < config->num_muxes; i++) {
+		mux_configure_default(config->mux_dev, config->mux_controls[i]);
+	}
 
 	/* Init work objects for RX and TX timeouts */
 	k_work_init_delayable(&data->tx_data.timeout_work,
@@ -1325,6 +1249,25 @@ static void mcux_flexcomm_##n##_pm_unlock(struct k_work *work)			\
 DT_INST_FOREACH_STATUS_OKAY(UART_MCUX_FLEXCOMM_TX_TIMEOUT_FUNC);
 DT_INST_FOREACH_STATUS_OKAY(UART_MCUX_FLEXCOMM_RX_TIMEOUT_FUNC);
 
+/* mux-controls is not used in this driver actually because its all just init once */
+#define UART_MCUX_FLEXCOMM_MUX_CONTROL_DEFINE_IDX(node_id, pha, idx)		\
+	MUX_CONTROL_DT_SPEC_DEFINE_BY_IDX(node_id, idx)
+#define UART_MCUX_FLEXCOMM_MUX_CONTROL_DEFINE_ALL(n)				\
+	DT_INST_FOREACH_PROP_ELEM(n, mux_states,				\
+			   	  UART_MCUX_FLEXCOMM_MUX_CONTROL_DEFINE_IDX)
+DT_INST_FOREACH_STATUS_OKAY(UART_MCUX_FLEXCOMM_MUX_CONTROL_DEFINE_ALL)
+
+#define UART_MCUX_FLEXCOMM_MUX_CONTROL_GET_IDX(node_id, pha, idx)		\
+	MUX_CONTROL_DT_GET_BY_IDX(node_id, idx)
+#define UART_MCUX_FLEXCOMM_MUX_CONTROL_LIST_DEFINE(n)					\
+	static struct mux_control *fc_uart_##n##_muxes[] = {				\
+	DT_INST_FOREACH_PROP_ELEM_SEP(n, mux_states,					\
+				      UART_MCUX_FLEXCOMM_MUX_CONTROL_GET_IDX, (,)) 	\
+	};
+DT_INST_FOREACH_STATUS_OKAY(UART_MCUX_FLEXCOMM_MUX_CONTROL_LIST_DEFINE)
+
+#define UART_MCUX_FLEXCOMM_GET_MUX_LIST(n) fc_uart_##n##_muxes
+
 #define UART_MCUX_FLEXCOMM_ASYNC_CFG(n)						\
 	.tx_dma = {								\
 		.dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(n, tx)),		\
@@ -1367,7 +1310,10 @@ DT_INST_FOREACH_STATUS_OKAY(UART_MCUX_FLEXCOMM_RX_TIMEOUT_FUNC);
 				DT_REG_ADDR(DT_INST_DMAS_CTLR_BY_NAME(n, rx)),	\
 	},									\
 	.rx_timeout_func = mcux_flexcomm_uart_##n##_rx_timeout,			\
-	.tx_timeout_func = mcux_flexcomm_uart_##n##_tx_timeout,
+	.tx_timeout_func = mcux_flexcomm_uart_##n##_tx_timeout,			\
+	.mux_dev = DEVICE_DT_GET(DT_MUX_CTLR_BY_IDX(DT_DRV_INST(n), 0)),	\
+	.mux_controls = UART_MCUX_FLEXCOMM_GET_MUX_LIST(n),			\
+	.num_muxes = DT_INST_PROP_LEN(n, mux_states),
 #else
 #define UART_MCUX_FLEXCOMM_ASYNC_CFG(n)
 #endif /* CONFIG_UART_ASYNC_API */
