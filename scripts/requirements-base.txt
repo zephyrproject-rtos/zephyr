@@ -12,6 +12,7 @@ PyYAML>=6.0
 
 # YAML validation. Used by zephyr_module.
 pykwalify
+jsonschema
 
 # used by west_commands
 canopen

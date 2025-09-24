@@ -529,7 +529,8 @@
 			reg-names = "m_can", "message_ram";
 			interrupts = <39 0>, <40 0>;
 			interrupt-names = "int0", "int1";
-			clocks = <&rcc STM32_CLOCK(APB1_2, 9)>;
+			clocks = <&rcc STM32_CLOCK(APB1_2, 9)>,
+				 <&rcc STM32_SRC_HSE FDCAN_SEL(0)>;
 			bosch,mram-cfg = <0x0 28 8 3 3 0 3 3>;
 			status = "disabled";
 		};
@@ -544,28 +545,6 @@
 			status = "disabled";
 		};
 
-		ethernet@40028000 {
-			reg = <0x40028000 0x8000>;
-			compatible = "st,stm32-ethernet-controller";
-			clock-names = "stm-eth";
-			clocks = <&rcc STM32_CLOCK(AHB1, 19)>;
-
-			mac: ethernet {
-				compatible = "st,stm32h7-ethernet", "st,stm32-ethernet";
-				interrupts = <106 0>;
-				clock-names = "mac-clk-tx", "mac-clk-rx";
-				clocks = <&rcc STM32_CLOCK(AHB1, 20)>,
-					 <&rcc STM32_CLOCK(AHB1, 21)>;
-				status = "disabled";
-			};
-
-			mdio: mdio {
-				compatible = "st,stm32-mdio";
-				#address-cells = <1>;
-				#size-cells = <0>;
-				status = "disabled";
-			};
-		};
 
 		gpdma1: dma@40020000 {
 			compatible = "st,stm32u5-dma";
@@ -636,30 +615,6 @@
 				STM32_DMA_PRIORITY_HIGH)>;
 			dma-names = "tx", "rx";
 			interrupts = <57 3>;
-			status = "disabled";
-		};
-
-		sai1_a: sai1@40015404 {
-			compatible = "st,stm32-sai";
-			#address-cells = <1>;
-			#size-cells = <0>;
-			reg = <0x40015404 0x20>;
-			clocks = <&rcc STM32_CLOCK(APB2, 21)>,
-				 <&rcc STM32_SRC_PLL2_P SAI1_SEL(0)>;
-			dmas = <&gpdma1 1 53 (STM32_DMA_MODE_NORMAL | STM32_DMA_PRIORITY_HIGH |
-				STM32_DMA_16BITS)>;
-			status = "disabled";
-		};
-
-		sai1_b: sai1@40015424 {
-			compatible = "st,stm32-sai";
-			#address-cells = <1>;
-			#size-cells = <0>;
-			reg = <0x40015424 0x20>;
-			clocks = <&rcc STM32_CLOCK(APB2, 21)>,
-				 <&rcc STM32_SRC_PLL2_P SAI1_SEL(0)>;
-			dmas = <&gpdma1 0 54 (STM32_DMA_MODE_NORMAL | STM32_DMA_PRIORITY_HIGH |
-				STM32_DMA_16BITS)>;
 			status = "disabled";
 		};
 

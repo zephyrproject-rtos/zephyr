@@ -45,7 +45,6 @@ static int tp_udp_init(struct mqtt_sn_transport *transport)
 	struct mqtt_sn_transport_udp *udp = UDP_TRANSPORT(transport);
 	int err;
 	struct sockaddr addrm;
-	struct ip_mreqn mreqn;
 	int optval;
 	struct net_if *iface;
 
@@ -64,7 +63,7 @@ static int tp_udp_init(struct mqtt_sn_transport *transport)
 
 	if (IS_ENABLED(CONFIG_MQTT_SN_LOG_LEVEL_DBG)) {
 		char ip[30], *out;
-		uint16_t port;
+		uint16_t port = 0;
 
 		out = get_ip_str((struct sockaddr *)&udp->bcaddr, ip, sizeof(ip));
 		switch (udp->bcaddr.sa_family) {
@@ -79,7 +78,7 @@ static int tp_udp_init(struct mqtt_sn_transport *transport)
 		}
 
 		if (out != NULL) {
-			LOG_DBG("Binding to Brodcast IP %s:%u", out, port);
+			LOG_DBG("Binding to Broadcast IP %s:%u", out, port);
 		}
 	}
 
@@ -112,21 +111,42 @@ static int tp_udp_init(struct mqtt_sn_transport *transport)
 		return errno;
 	}
 
-	memcpy(&mreqn.imr_multiaddr, &udp->bcaddr.data[2], sizeof(udp->bcaddr.data) - 2);
 	if (udp->bcaddr.sa_family == AF_INET && IS_ENABLED(CONFIG_NET_IPV4)) {
+		struct sockaddr_in *bcaddr_in = (struct sockaddr_in *)&udp->bcaddr;
+		struct ip_mreqn mreqn;
+
 		iface = net_if_ipv4_select_src_iface(
 			&((struct sockaddr_in *)&udp->bcaddr)->sin_addr);
+
+		mreqn = (struct ip_mreqn) {
+			.imr_multiaddr = bcaddr_in->sin_addr,
+			.imr_ifindex = net_if_get_by_iface(iface),
+		};
+
+		err = zsock_setsockopt(udp->sock, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreqn,
+				       sizeof(mreqn));
+		if (err < 0) {
+			return errno;
+		}
 	} else if (udp->bcaddr.sa_family == AF_INET6 && IS_ENABLED(CONFIG_NET_IPV6)) {
+		struct sockaddr_in6 *bcaddr_in6 = (struct sockaddr_in6 *)&udp->bcaddr;
+		struct ipv6_mreq mreq;
+
 		iface = net_if_ipv6_select_src_iface(&((struct sockaddr_in6 *)&addrm)->sin6_addr);
+
+		mreq = (struct ipv6_mreq) {
+			.ipv6mr_multiaddr = bcaddr_in6->sin6_addr,
+			.ipv6mr_ifindex = net_if_get_by_iface(iface),
+		};
+
+		err = zsock_setsockopt(udp->sock, IPPROTO_IPV6, IPV6_ADD_MEMBERSHIP, &mreq,
+				       sizeof(mreq));
+		if (err < 0) {
+			return errno;
+		}
 	} else {
 		LOG_ERR("Unknown AF");
 		return -EINVAL;
-	}
-	mreqn.imr_ifindex = net_if_get_by_iface(iface);
-
-	err = zsock_setsockopt(udp->sock, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreqn, sizeof(mreqn));
-	if (err < 0) {
-		return errno;
 	}
 
 	optval = CONFIG_MQTT_SN_LIB_BROADCAST_RADIUS;

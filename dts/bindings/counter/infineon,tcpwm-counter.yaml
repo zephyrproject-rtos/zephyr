@@ -1,0 +1,27 @@
+# Copyright (c) 2025 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Infineon TCPWM counter
+
+compatible: "infineon,tcpwm-counter"
+
+include: [base.yaml, "infineon,system-interrupts.yaml"]
+
+properties:
+  clock-frequency:
+    type: int
+    description: |
+      Frequency that the counter runs
+
+  external-trigger-gpios:
+    type: phandle-array
+    description: |
+      External trigger that runs counter
+
+  interrupts:
+    description: Required for non-cat1c devices
+
+  system-interrupts:
+    description: Required for cat1c devices

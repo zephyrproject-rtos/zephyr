@@ -1,0 +1,121 @@
+/*
+ * Copyright (c) 2025 Core Devices LLC
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <sifli/sf32lb52x.dtsi>
+#include <sifli/sf32lb52x-ram012.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+#include "sf32lb52_devkit_lcd-pinctrl.dtsi"
+
+/ {
+	model = "SiFli SF32LB52-DevKit-LCD";
+	compatible = "sifli,sf32lb52-devkit-lcd";
+
+	chosen {
+		zephyr,flash = &py25q128ha;
+		zephyr,code-partition = &code;
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		key1: key1 {
+			label = "KEY1";
+			gpios = <&gpioa_32_44 2 GPIO_ACTIVE_HIGH>;
+			zephyr,code = <INPUT_KEY_1>;
+		};
+
+		key2: key2 {
+			label = "KEY2";
+			gpios = <&gpioa_00_31 11 GPIO_ACTIVE_HIGH>;
+			zephyr,code = <INPUT_KEY_2>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led0 {
+			label = "LED0";
+			gpios = <&gpioa_00_31 26 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	aliases {
+		led0 = &led0;
+		sw0 = &key1;
+		sw1 = &key2;
+	};
+};
+
+&cpu0 {
+	clock-frequency = <DT_FREQ_M(240)>;
+};
+
+&hxt48 {
+	status = "okay";
+};
+
+&rcc_clk {
+	status = "okay";
+
+	sifli,hdiv = <1>;
+	sifli,pdiv1 = <1>;
+	sifli,pdiv2 = <6>;
+
+	dll1 {
+		status = "okay";
+		clock-frequency = <DT_FREQ_M(240)>;
+	};
+};
+
+&gpioa_00_31 {
+	status = "okay";
+};
+
+&gpioa_32_44 {
+	status = "okay";
+};
+
+&mpi2 {
+	status = "okay";
+
+	py25q128ha: memory@12000000 {
+		compatible = "puya,py25q128ha";
+		reg = <0x12000000 DT_SIZE_M(16)>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			ptable: partition@0 {
+				label = "ptable";
+				reg = <0x0 DT_SIZE_K(64)>;
+			};
+
+			code: partition@10000 {
+				label = "code";
+				reg = <0x10000 DT_SIZE_K(16320)>;
+			};
+		};
+	};
+};
+
+&pinctrl {
+	status = "okay";
+};
+
+&usart1 {
+	status = "okay";
+	current-speed = <1000000>;
+	pinctrl-0 = <&usart1_default>;
+	pinctrl-names = "default";
+};

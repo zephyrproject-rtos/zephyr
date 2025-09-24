@@ -90,6 +90,8 @@ enum cellular_registration_status {
 enum cellular_event {
 	/** One or more modem-info field changed (e.g. IMSI became available). */
 	CELLULAR_EVENT_MODEM_INFO_CHANGED = BIT(0),
+	/** Cellular network registration status changed */
+	CELLULAR_EVENT_REGISTRATION_STATUS_CHANGED = BIT(1),
 };
 
 /* Opaque bit-mask large enough for all current & future events */
@@ -98,6 +100,11 @@ typedef uint32_t cellular_event_mask_t;
 /** Payload for @ref CELLULAR_EVENT_MODEM_INFO_CHANGED. */
 struct cellular_evt_modem_info {
 	enum cellular_modem_info_type field; /**< Which field changed */
+};
+
+/** Payload for @ref CELLULAR_EVENT_REGISTRATION_STATUS_CHANGED. */
+struct cellular_evt_registration_status {
+	enum cellular_registration_status status; /**< New registration status */
 };
 
 /**

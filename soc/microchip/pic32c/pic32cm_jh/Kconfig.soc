@@ -16,6 +16,12 @@ config GPIO_MCHP_PORT_U2210_3_1_0
 	help
 	  Enable PORT GPIO peripheral IP version id="U2210" version="3.1.0".
 
+config PINCTRL_MCHP_PORT_U2210_3_1_0
+	bool
+	default y
+	help
+	  Enable PORT pinctrl peripheral IP version 3.1.0 (U2210).
+
 endif # SOC_FAMILY_MICROCHIP_PIC32CM_JH
 
 rsource "*/Kconfig.soc"

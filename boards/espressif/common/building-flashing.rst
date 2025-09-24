@@ -2,9 +2,6 @@
 
 .. espressif-building-flashing
 
-Building & Flashing
-*******************
-
 Simple boot
 ===========
 

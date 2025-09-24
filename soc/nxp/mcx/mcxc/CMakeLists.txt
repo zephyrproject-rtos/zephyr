@@ -17,5 +17,5 @@ zephyr_linker_sources_ifdef(CONFIG_MCXC_FLASH_CONFIG
 
 # CMSIS SystemInit will disable watchdog unless instructed not to.
 # Add a compiler definition here to leave watchdog untouched
-# if this Kconfig is set
-zephyr_compile_definitions_ifdef(CONFIG_WDOG_ENABLE_AT_BOOT DISABLE_WDOG=0)
+# if this Kconfig is not set
+zephyr_compile_definitions_ifndef(CONFIG_WDT_DISABLE_AT_BOOT DISABLE_WDOG=0)

@@ -1500,38 +1500,57 @@ void bt_conn_unref(struct bt_conn *conn)
 	enum bt_conn_type conn_type;
 	uint8_t conn_role;
 	uint16_t conn_handle;
+	/* Used only if CONFIG_ASSERT and CONFIG_BT_CONN_TX. */
+	__maybe_unused bool conn_tx_is_pending;
 
 	__ASSERT(conn, "Invalid connection reference");
 
-	/* Storing parameters of interest so we don't access the object
-	 * after decrementing its ref-count
+	/* If we're removing the last reference, the connection object will be
+	 * considered freed and possibly re-allocated by the Bluetooth Host stack
+	 * as soon as we decrement the counter.
+	 * To prevent inconsistencies when accessing the connection's state,
+	 * we store its properties of interest before decrementing the ref-count,
+	 * then unset the local pointer.
 	 */
 	conn_type = conn->type;
 	conn_role = conn->role;
 	conn_handle = conn->handle;
-
+#if CONFIG_BT_CONN_TX && CONFIG_ASSERT
+	conn_tx_is_pending = k_work_is_pending(&conn->tx_complete_work);
+#endif
 	old = atomic_dec(&conn->ref);
-	/* Prevent from accessing connection object */
-	deallocated = (atomic_get(&old) == 1);
-	IF_ENABLED(CONFIG_BT_CONN_TX,
-		   (__ASSERT(!(deallocated && k_work_is_pending(&conn->tx_complete_work)),
-			     "tx_complete_work is pending when conn is deallocated")));
 	conn = NULL;
 
 	LOG_DBG("handle %u ref %ld -> %ld", conn_handle, old, (old - 1));
 
 	__ASSERT(old > 0, "Conn reference counter is 0");
 
-	/* Slot has been freed and can be taken. No guarantees are made on requests
-	 * to claim connection object as only the first claim will be served.
-	 */
-	if (deallocated) {
-		k_sem_give(&pending_recycled_events);
-		k_work_submit(&recycled_work);
+	/* Whether we removed the last reference. */
+	deallocated = (old == 1);
+	if (!deallocated) {
+		return;
 	}
 
+	IF_ENABLED(CONFIG_BT_CONN_TX,
+		   (__ASSERT(!conn_tx_is_pending,
+			     "tx_complete_work is pending when conn is deallocated");))
+
+	/* Notify listeners that a slot has been freed and can be taken.
+	 * No guarantees are made on requests to claim connection object
+	 * as only the first claim will be served.
+	 */
+	k_sem_give(&pending_recycled_events);
+	k_work_submit(&recycled_work);
+
+	/* Use the freed slot to automatically resume LE peripheral advertising.
+	 *
+	 * This behavior is deprecated:
+	 * - 8cfad44: Bluetooth: Deprecate adv auto-resume
+	 * - #72567: Bluetooth: Advertising resume functionality is broken
+	 * - Migration guide to Zephyr v4.0.0, Automatic advertiser resumption is deprecated
+	 */
 	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && conn_type == BT_CONN_TYPE_LE &&
-	    conn_role == BT_CONN_ROLE_PERIPHERAL && deallocated) {
+	    conn_role == BT_CONN_ROLE_PERIPHERAL) {
 		bt_le_adv_resume();
 	}
 }
@@ -2232,7 +2251,10 @@ static void deferred_work(struct k_work *work)
 		 * auto connect flag if it was set, instead just cancel
 		 * connection directly
 		 */
-		bt_le_create_conn_cancel();
+		if (bt_le_create_conn_cancel() == -ENOBUFS) {
+			LOG_WRN("No buffers to cancel connection, retrying in 10 ms");
+			k_work_reschedule(dwork, K_MSEC(10));
+		}
 		return;
 	}
 
@@ -2272,6 +2294,10 @@ static void deferred_work(struct k_work *work)
 				err);
 		}
 #endif
+	} else {
+		/* Neither the application nor the configuration
+		 * set LE connection parameters.
+		 */
 	}
 
 	atomic_set_bit(conn->flags, BT_CONN_PERIPHERAL_PARAM_UPDATE);
@@ -2374,6 +2400,8 @@ struct bt_conn *bt_conn_add_sco(const bt_addr_t *peer, int link_type)
 	} else if (link_type == BT_HCI_ESCO) {
 		sco_conn->sco.pkt_type = (bt_dev.br.esco_pkt_type &
 					  ~EDR_ESCO_PKT_MASK);
+	} else {
+		/* Ignoring unexpected link type BT_HCI_ACL. */
 	}
 
 	return sco_conn;

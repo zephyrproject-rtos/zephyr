@@ -7,16 +7,7 @@
 
 #include "mcxn_flexspi_nor_config.h"
 
-/* Component ID definition, used by tools. */
-#ifndef FSL_COMPONENT_ID
-#define FSL_COMPONENT_ID "platform.drivers.xip_board"
-#endif
-
-#if defined(__CC_ARM) || defined(__ARMCC_VERSION) || defined(__GNUC__)
 __attribute__((section(".flexspi_fcb"), used))
-#elif defined(__ICCARM__)
-#pragma location = ".flexspi_fcb"
-#endif
 
 #ifndef FLEXSPI_USE_CUSTOM_FCB
 #define FLEXSPI_USE_CUSTOM_FCB (0)
@@ -79,22 +70,22 @@ const uint8_t CUSTOM_FCB[] = {
 const flexspi_nor_image_config image_config = {
 	.image_version = 0xFFFE0001u,
 	.fcb_config = {
-		.memConfig = {
+		.mem_config = {
 			.tag = FLEXSPI_CFG_BLK_TAG,
 			.version = FLEXSPI_CFG_BLK_VERSION,
-			.readSampleClkSrc =
-				kFlexSPIReadSampleClk_LoopbackFromDqsPad,
-			.csHoldTime = 3u,
-			.csSetupTime = 3u,
+			.read_sample_clk_src =
+				flexspi_read_sample_clk_loopback_from_dqs_pad,
+			.cs_hold_time = 3u,
+			.cs_setup_time = 3u,
 			/* Enable DDR mode, Wordaddassable, Safe */
 			/* configuration, Differential clock */
-			.controllerMiscOption =
-			(1u << kFlexSpiMiscOffset_SafeConfigFreqEnable),
-			.deviceType = kFlexSpiDeviceType_SerialNOR,
-			.sflashPadType = kSerialFlash_4Pads,
-			.serialClkFreq = kFlexSpiSerialClk_75MHz,
-			.sflashA1Size = 8u * 1024u * 1024u,
-			.lookupTable = {
+			.controller_misc_option =
+			(1u << flexspi_misc_offset_safe_config_freq_enable),
+			.device_type = flexspi_device_type_serial_nor,
+			.sflash_pad_type = serial_flash_4_pads,
+			.serial_clk_freq = flexspi_serial_clk_75mhz,
+			.sflash_a1_size = 8u * 1024u * 1024u,
+			.lookup_table = {
 				/* Read LUTs */
 				[0] = FLEXSPI_LUT_SEQ(CMD_SDR,
 					FLEXSPI_1PAD, 0xEB,
@@ -139,11 +130,11 @@ const flexspi_nor_image_config image_config = {
 					FLEXSPI_1PAD, 0x0),
 			},
 		},
-		.pageSize = 256u,
-		.sectorSize = 4u * 1024u,
-		.ipcmdSerialClkFreq = 1u,
-		.blockSize = 64u * 1024u,
-		.isUniformBlockSize = false,
+		.page_size = 256u,
+		.sector_size = 4u * 1024u,
+		.ipcmd_serial_clk_freq = 1u,
+		.block_size = 64u * 1024u,
+		.is_uniform_block_size = false,
 	}
 };
 

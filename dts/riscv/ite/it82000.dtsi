@@ -1,0 +1,104 @@
+/*
+ * Copyright (c) 2025 ITE Corporation. All Rights Reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/dt-util.h>
+#include <zephyr/dt-bindings/interrupt-controller/ite-intc.h>
+#include <zephyr/dt-bindings/pinctrl/it8xxx2-pinctrl.h>
+
+#include <ite/it82xx2.dtsi>
+
+/ {
+	soc {
+		gpioq: gpio@f01611 {
+			compatible = "ite,it8xxx2-gpio-v2";
+			reg = <0x00f01611 1   /* GPDR (set) */
+			       0x00f01628 1   /* GPDMR (get) */
+			       0x00f01640 1   /* GPOTR */
+			       NO_FUNC 1      /* P18SCR */
+			       0x00f016e0 8>; /* GPCR */
+			ngpios = <5>;
+			gpio-reserved-ranges = <3 1>;
+			gpio-controller;
+			interrupts = <IT8XXX2_IRQ_WU184 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU185 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU186 IRQ_TYPE_LEVEL_HIGH
+				      NO_FUNC 0
+				      IT8XXX2_IRQ_WU188 IRQ_TYPE_LEVEL_HIGH
+				      NO_FUNC 0
+				      NO_FUNC 0
+				      NO_FUNC 0>;
+			interrupt-parent = <&intc>;
+			wuc-base = <0xf01b50 0xf01b50 0xf01b50 NO_FUNC 0xf01b50
+				    NO_FUNC NO_FUNC NO_FUNC>;
+			wuc-mask = <BIT(0) BIT(1) BIT(2) 0 BIT(4) 0 0 0>;
+			has-volt-sel = <0 0 0 0 0 0 0 0>;
+			#gpio-cells = <2>;
+		};
+	};
+};
+
+&pinctrlb {
+	func3-gcr = <NO_FUNC NO_FUNC 0xf03e11 NO_FUNC NO_FUNC 0xf03e11 NO_FUNC NO_FUNC>;
+	func3-en-mask = <0 0 BIT(5) 0 0 BIT(5) 0 0>;
+	func3-ext = <NO_FUNC NO_FUNC 0xf03e16 NO_FUNC NO_FUNC 0xf03e16 NO_FUNC NO_FUNC>;
+	func3-ext-mask = <0 0 BIT(6) 0 0 BIT(6) 0 0>;
+	volt-sel =<NO_FUNC NO_FUNC 0xf01649 NO_FUNC NO_FUNC 0xf01649 0xf01649 NO_FUNC>;
+	volt-sel-mask = <0 0 BIT(2) 0 0 BIT(5) BIT(6) 0>;
+};
+
+&gpiob {
+	ngpios = <7>;
+	gpio-reserved-ranges = <0 2>, <3 2>;
+	interrupts = <NO_FUNC 0
+		      NO_FUNC 0
+		      IT8XXX2_IRQ_WU84 IRQ_TYPE_LEVEL_HIGH
+		      NO_FUNC 0
+		      NO_FUNC 0
+		      IT8XXX2_IRQ_WU104 IRQ_TYPE_LEVEL_HIGH
+		      IT8XXX2_IRQ_WU105 IRQ_TYPE_LEVEL_HIGH
+		      NO_FUNC 0>;
+	wuc-base = <NO_FUNC NO_FUNC 0xf01b1c NO_FUNC NO_FUNC 0xf01b28 0xf01b28 NO_FUNC>;
+	wuc-mask = <0 0 BIT(4) 0 0 BIT(0) BIT(1) 0>;
+	has-volt-sel = <0 0 1 0 0 1 1 0>;
+};
+
+&pinctrlc {
+	func5-gcr = <NO_FUNC NO_FUNC NO_FUNC NO_FUNC NO_FUNC NO_FUNC NO_FUNC 0xf03e15>;
+	func5-en-mask = <0 0 0 0 0 0 0 BIT(0)>;
+};
+
+&pinctrle {
+	func3-gcr = <NO_FUNC 0xf03e16 0xf03e16 NO_FUNC NO_FUNC 0xf03e10 0xf03e15 NO_FUNC>;
+	func3-en-mask = <0 BIT(5) BIT(5) 0 0 BIT(3) BIT(1) 0>;
+};
+
+&pinctrlf {
+	func3-gcr = <0xf03e15 0xf03e15 NO_FUNC NO_FUNC NO_FUNC NO_FUNC 0xf03e11 NO_FUNC>;
+	func3-en-mask = <BIT(2) BIT(3) 0 0 0 0 BIT(4) 0>;
+};
+
+&pinctrlg {
+	func3-gcr = <0xf03e10 NO_FUNC 0xf03e10 NO_FUNC NO_FUNC NO_FUNC 0xf03e10 NO_FUNC>;
+	func3-en-mask = <BIT(5) 0 BIT(4) 0 0 0 BIT(1) 0>;
+	volt-sel = <0xf0164e NO_FUNC 0xf0164e NO_FUNC NO_FUNC NO_FUNC 0xf0164e NO_FUNC>;
+	volt-sel-mask = <BIT(0) 0 BIT(2) 0 0 0 BIT(6) 0>;
+};
+
+&gpiog {
+	ngpios = <8>;
+	gpio-reserved-ranges = <1 1>;
+	interrupts = <IT8XXX2_IRQ_WU115 IRQ_TYPE_LEVEL_HIGH
+		      NO_FUNC 0
+		      IT8XXX2_IRQ_WU117 IRQ_TYPE_LEVEL_HIGH
+		      IT8XXX2_IRQ_WU123 IRQ_TYPE_LEVEL_HIGH
+		      IT8XXX2_IRQ_WU124 IRQ_TYPE_LEVEL_HIGH
+		      IT8XXX2_IRQ_WU125 IRQ_TYPE_LEVEL_HIGH
+		      IT8XXX2_IRQ_WU118 IRQ_TYPE_LEVEL_HIGH
+		      IT8XXX2_IRQ_WU126 IRQ_TYPE_LEVEL_HIGH>;
+	wuc-base = <0xf01b2c NO_FUNC 0xf01b2c 0xf01b30 0xf01b30 0xf01b30 0xf01b2c 0xf01b30>;
+	wuc-mask = <BIT(3) 0 BIT(5) BIT(3) BIT(4) BIT(5) BIT(6) BIT(6)>;
+	has-volt-sel = <1 0 1 0 0 0 1 0>;
+};

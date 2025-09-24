@@ -73,6 +73,8 @@ LOG_MODULE_REGISTER(adc_ad405x, CONFIG_ADC_LOG_LEVEL);
 #define AD405X_SINGLE_ENDED  0x0U
 #define AD405X_DIFFERENTIAL  BIT(7)
 
+#define AD405X_NO_GPIO      0xFFU
+
 /** AD405X_REG_TIMER_CONFIG Bit Definitions */
 #define AD405X_FS_BURST_AUTO_MSK GENMASK(7, 4)
 
@@ -151,6 +153,9 @@ struct adc_ad405x_config {
 	struct gpio_dt_spec conversion;
 	uint16_t chip_id;
 	const struct adc_dt_spec spec;
+#ifdef CONFIG_AD405X_STREAM
+	uint32_t sampling_period;
+#endif /* CONFIG_AD405X_STREAM */
 };
 
 struct adc_ad405x_data {
@@ -174,8 +179,93 @@ struct adc_ad405x_data {
 	struct gpio_callback gpio0_cb;
 	struct k_sem sem_drdy;
 	uint8_t has_drdy;
+#endif /* CONFIG_AD405X_TRIGGER */
+#ifdef CONFIG_AD405X_STREAM
+	struct rtio_iodev_sqe *sqe;
+	struct rtio *rtio_ctx;
+	struct rtio_iodev *iodev;
+	uint64_t timestamp;
+	struct rtio *r_cb;
+	uint32_t adc_sample;
+	uint8_t data_ready_gpio;
+#if DT_HAS_CHOSEN(zephyr_adc_clock)
+	const struct device *timer_dev;
+#else
+	struct k_timer sample_timer;
 #endif
+#endif /* CONFIG_AD405X_STREAM */
 };
+
+#ifdef CONFIG_AD405X_STREAM
+#include <zephyr/drivers/counter.h>
+
+#define AD405X_DEF_SAMPLING_PERIOD 10000U /* 10ms */
+
+/** AD405X qscale modes */
+enum ad405x_qscale_modes {
+	AD4050_6_12B_MODE = 0,
+	AD4050_6_14B_MODE = 1,
+	AD4052_8_16B_MODE = 2,
+	AD4052_8_20B_MODE = 3,
+};
+
+struct adc_ad405x_fifo_data {
+	uint8_t is_fifo: 1;
+	uint8_t ad405x_qscale_mode: 2;
+	uint8_t diff_mode: 1;
+	uint8_t empty: 1;
+	uint8_t res: 3;
+	uint16_t vref_mv;
+	uint64_t timestamp;
+} __attribute__((__packed__));
+
+static void ad405x_stream_irq_handler(const struct device *dev);
+static int ad405x_conv_start(const struct device *dev);
+
+#if DT_HAS_CHOSEN(zephyr_adc_clock)
+static void timer_alarm_handler(const struct device *counter_dev, uint8_t chan_id,
+	uint32_t ticks, void *user_data)
+{
+	struct adc_ad405x_data *data = (struct adc_ad405x_data *)user_data;
+
+	ad405x_conv_start(data->dev);
+}
+#else
+static void sample_timer_handler(struct k_timer *timer)
+{
+	struct adc_ad405x_data *data = CONTAINER_OF(timer, struct adc_ad405x_data,
+						sample_timer);
+
+	ad405x_conv_start(data->dev);
+}
+#endif
+static void ad405x_timer_init(const struct device *dev)
+{
+	struct adc_ad405x_data *data = dev->data;
+
+#if DT_HAS_CHOSEN(zephyr_adc_clock)
+	counter_start(data->timer_dev);
+#else
+	k_timer_init(&data->sample_timer, sample_timer_handler, NULL);
+#endif
+}
+
+static void ad405x_timer_start(const struct device *dev)
+{
+	struct adc_ad405x_data *data = dev->data;
+	const struct adc_ad405x_config *cfg_405 = (const struct adc_ad405x_config *)dev->config;
+#if DT_HAS_CHOSEN(zephyr_adc_clock)
+	struct counter_alarm_cfg alarm_cfg = {.flags = 0,
+		.ticks = counter_us_to_ticks(data->timer_dev, (uint64_t)cfg_405->sampling_period),
+		.callback = timer_alarm_handler,
+		.user_data = data};
+
+	counter_set_channel_alarm(data->timer_dev, 0, &alarm_cfg);
+#else
+	k_timer_start(&data->sample_timer, K_USEC(cfg_405->sampling_period), K_NO_WAIT);
+#endif
+}
+#endif /* CONFIG_AD405X_STREAM */
 
 static bool ad405x_bus_is_ready_spi(const union ad405x_bus *bus)
 {
@@ -310,7 +400,17 @@ static void ad405x_gpio1_callback(const struct device *dev, struct gpio_callback
 		k_sem_give(&drv_data->sem_devrdy);
 		break;
 	case AD405X_DATA_READY:
+#ifdef CONFIG_AD405X_STREAM
+		const struct adc_read_config *cfg_adc = drv_data->sqe->sqe.iodev->data;
+
+		if (cfg_adc->is_streaming) {
+			ad405x_stream_irq_handler(drv_data->dev);
+		} else {
+			k_sem_give(&drv_data->sem_drdy);
+		}
+#else
 		k_sem_give(&drv_data->sem_drdy);
+#endif /* CONFIG_AD405X_STREAM */
 		gpio_flag = GPIO_INT_EDGE_TO_INACTIVE;
 		break;
 	default: /* TODO */
@@ -331,7 +431,17 @@ static void ad405x_gpio0_callback(const struct device *dev, struct gpio_callback
 
 	switch (drv_data->gp0_mode) {
 	case AD405X_DATA_READY:
+#ifdef CONFIG_AD405X_STREAM
+		const struct adc_read_config *cfg_adc = drv_data->sqe->sqe.iodev->data;
+
+		if (cfg_adc->is_streaming) {
+			ad405x_stream_irq_handler(drv_data->dev);
+		} else {
+			k_sem_give(&drv_data->sem_drdy);
+		}
+#else
 		k_sem_give(&drv_data->sem_drdy);
+#endif /* CONFIG_AD405X_STREAM */
 		gpio_flag = GPIO_INT_EDGE_TO_INACTIVE;
 		break;
 	default:
@@ -459,7 +569,7 @@ static int adc_ad405x_validate_buffer_size(const struct device *dev,
 	return 0;
 }
 
-int ad405x_conv_start(const struct device *dev)
+static int ad405x_conv_start(const struct device *dev)
 {
 	const struct adc_ad405x_config *cfg = dev->config;
 	int ret;
@@ -701,12 +811,18 @@ int ad405x_set_gpx_mode(const struct device *dev, uint8_t gp0_1, enum ad405x_gpx
 			if (gpx_mode == AD405X_DATA_READY) {
 				gpio_pin_interrupt_configure_dt(&cfg->gp0_interrupt,
 								GPIO_INT_EDGE_TO_INACTIVE);
+#ifdef CONFIG_AD405X_STREAM
+				data->data_ready_gpio = AD405X_GP0;
+#endif /* CONFIG_AD405X_STREAM */
 			}
 			data->gp0_mode = gpx_mode;
 		} else {
 			if (gpx_mode == AD405X_DATA_READY) {
 				gpio_pin_interrupt_configure_dt(&cfg->gp1_interrupt,
 								GPIO_INT_EDGE_TO_INACTIVE);
+#ifdef CONFIG_AD405X_STREAM
+				data->data_ready_gpio = AD405X_GP1;
+#endif /* CONFIG_AD405X_STREAM */
 			}
 			data->gp1_mode = gpx_mode;
 		}
@@ -899,16 +1015,321 @@ static int adc_ad405x_init(const struct device *dev)
 	return ret;
 }
 
+#ifdef CONFIG_AD405X_STREAM
+void ad405x_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
+{
+	struct adc_ad405x_data *data = (struct adc_ad405x_data *)dev->data;
+	const struct adc_ad405x_config *cfg_405 = (const struct adc_ad405x_config *)dev->config;
+
+	if (data->data_ready_gpio > AD405X_GP1)	{
+		LOG_ERR("DATA_READY irq is not enabled!");
+		rtio_iodev_sqe_err(iodev_sqe, -ENOTSUP);
+		return;
+	}
+
+	int rc;
+
+	if (data->data_ready_gpio == AD405X_GP0) {
+		rc = gpio_pin_interrupt_configure_dt(&cfg_405->gp0_interrupt,
+					      GPIO_INT_DISABLE);
+	} else {
+		rc = gpio_pin_interrupt_configure_dt(&cfg_405->gp1_interrupt,
+					      GPIO_INT_DISABLE);
+	}
+
+	if (rc < 0) {
+		rtio_iodev_sqe_err(iodev_sqe, rc);
+		return;
+	}
+
+	if (data->operation_mode == AD405X_CONFIG_MODE_OP) {
+		rc = ad405x_set_operation_mode(dev, cfg_405->active_mode);
+
+		if (rc < 0) {
+			LOG_ERR("Set operation mode failed!");
+			return;
+		}
+		ad405x_timer_init(dev);
+	}
+
+	if (data->data_ready_gpio == AD405X_GP0) {
+		rc = gpio_pin_interrupt_configure_dt(&cfg_405->gp0_interrupt,
+					      GPIO_INT_EDGE_TO_INACTIVE);
+	} else {
+		rc = gpio_pin_interrupt_configure_dt(&cfg_405->gp1_interrupt,
+					      GPIO_INT_EDGE_TO_INACTIVE);
+	}
+
+	if (rc < 0) {
+		rtio_iodev_sqe_err(iodev_sqe, rc);
+		return;
+	}
+
+	data->sqe = iodev_sqe;
+	ad405x_timer_start(dev);
+}
+
+static const uint32_t adc_ad405x_resolution[] = {
+	[AD4050_6_12B_MODE] = 12,
+	[AD4050_6_14B_MODE] = 14,
+	[AD4052_8_16B_MODE] = 16,
+	[AD4052_8_20B_MODE] = 20,
+};
+
+static inline void adc_ad405x_convert_q31(q31_t *out, const uint8_t *buff,
+				enum ad405x_qscale_modes mode, uint8_t diff_mode,
+				uint16_t vref_mv, uint8_t adc_shift)
+{
+	int32_t data_in = 0;
+	uint32_t scale = BIT(adc_ad405x_resolution[mode]);
+
+	/* In Differential mode, 1 bit is used for sign */
+	if (diff_mode) {
+		scale = BIT(adc_ad405x_resolution[mode] - 1);
+	}
+
+	uint32_t sensitivity = (vref_mv * (scale - 1)) / scale
+			 * 1000 / scale; /* uV / LSB */
+
+	switch (mode) {
+	case AD4050_6_12B_MODE:
+	case AD4050_6_14B_MODE:
+	case AD4052_8_16B_MODE:
+		data_in = sys_get_be16(buff);
+		if (diff_mode && (data_in & (BIT(adc_ad405x_resolution[mode] - 1)))) {
+			data_in |= ~BIT_MASK(adc_ad405x_resolution[mode]);
+		}
+		break;
+
+	case AD4052_8_20B_MODE:
+		data_in = sys_get_be24(buff);
+		if (diff_mode && (data_in & (BIT(adc_ad405x_resolution[mode] - 1)))) {
+			data_in |= ~BIT_MASK(adc_ad405x_resolution[mode]);
+		}
+		break;
+
+	default:
+		data_in = sys_get_be16(buff);
+		break;
+	}
+
+	*out = BIT(31 - adc_shift)/* scaling to q_31*/ * sensitivity / 1000000/*uV to V*/ * data_in;
+}
+
+static int ad405x_decoder_get_frame_count(const uint8_t *buffer, uint32_t channel,
+			       uint16_t *frame_count)
+{
+	const struct adc_ad405x_fifo_data *enc_data = (const struct adc_ad405x_fifo_data *)buffer;
+
+	if (enc_data->empty) {
+		return -ENODATA;
+	}
+
+	/* This adc does not have FIFO so it will stream one sample at a time */
+	*frame_count = 1;
+
+	return 0;
+}
+
+static int ad405x_decoder_decode(const uint8_t *buffer, uint32_t channel, uint32_t *fit,
+		      uint16_t max_count, void *data_out)
+{
+	const struct adc_ad405x_fifo_data *enc_data = (const struct adc_ad405x_fifo_data *)buffer;
+
+	if (*fit > 0) {
+		return -ENOTSUP;
+	}
+
+	struct adc_data *data = (struct adc_data *)data_out;
+
+	memset(data, 0, sizeof(struct adc_data));
+
+	if (enc_data->empty) {
+		data->header.base_timestamp_ns = 0;
+		data->header.reading_count = 0;
+		return -ENODATA;
+	}
+
+	data->header.base_timestamp_ns = enc_data->timestamp;
+	data->header.reading_count = 1;
+
+	/* 32 is used because input parameter for __builtin_clz func is
+	 * unsigneg int (32 bits) and func will consider any input value
+	 * as 32 bit.
+	 */
+	data->shift = 32 - __builtin_clz(enc_data->vref_mv);
+
+	buffer += sizeof(struct adc_ad405x_fifo_data);
+
+	data->readings[0].timestamp_delta = 0;
+	adc_ad405x_convert_q31(&data->readings[0].value, buffer, enc_data->ad405x_qscale_mode,
+				enc_data->diff_mode, enc_data->vref_mv, data->shift);
+
+	*fit = 1;
+
+	return 0;
+}
+
+static void ad405x_process_sample_cb(struct rtio *r, const struct rtio_sqe *sqe, int res, void *arg)
+{
+	struct rtio_iodev_sqe *iodev_sqe = sqe->userdata;
+
+	rtio_iodev_sqe_ok(iodev_sqe, 0);
+}
+
+static void ad405x_stream_irq_handler(const struct device *dev)
+{
+	struct adc_ad405x_data *data = (struct adc_ad405x_data *)dev->data;
+	const struct adc_ad405x_config *cfg = (const struct adc_ad405x_config *)dev->config;
+	struct rtio_iodev_sqe *current_sqe = data->sqe;
+	uint32_t sample_size = 2;
+	enum ad405x_qscale_modes qscale_mode = AD4050_6_12B_MODE;
+	struct adc_read_config *read_config = (struct adc_read_config *)data->sqe->sqe.iodev->data;
+
+	if (read_config == NULL) {
+		return;
+	}
+
+	if (current_sqe == NULL) {
+		return;
+	}
+
+	if (cfg->chip_id == AD4050_CHIP_ID) {
+		if ((cfg->active_mode == AD405X_BURST_AVERAGING_MODE_OP)
+					|| (cfg->active_mode == AD405X_AVERAGING_MODE_OP)) {
+			qscale_mode = AD4050_6_14B_MODE;
+		}
+	} else { /* AD4052_CHIP_ID */
+		if ((cfg->active_mode == AD405X_BURST_AVERAGING_MODE_OP)
+					|| (cfg->active_mode == AD405X_AVERAGING_MODE_OP)) {
+			sample_size = 3;
+			qscale_mode = AD4052_8_20B_MODE;
+		} else {
+			qscale_mode = AD4052_8_16B_MODE;
+		}
+	}
+
+#if DT_HAS_CHOSEN(zephyr_adc_clock)
+	uint32_t ticks;
+	int ret = counter_get_value(data->timer_dev, &ticks);
+
+	if (ret != 0) {
+		LOG_ERR("Failed to get timer value");
+		data->timestamp = 0;
+		return;
+	}
+
+	data->timestamp = (uint64_t)(counter_ticks_to_us(data->timer_dev, ticks))
+				* 1000 /* uS to nS */;
+#else
+	data->timestamp = k_ticks_to_ns_floor64(k_uptime_ticks());
+#endif
+	data->sqe = NULL;
+
+	/* Not inherently an underrun/overrun as we may have a buffer to fill next time */
+	if (current_sqe == NULL) {
+		LOG_ERR("No pending SQE");
+		return;
+	}
+
+	const size_t min_read_size = sizeof(struct adc_ad405x_fifo_data) + sample_size;
+
+	uint8_t *buf;
+	uint32_t buf_len;
+
+	if (rtio_sqe_rx_buf(current_sqe, min_read_size, min_read_size, &buf, &buf_len) != 0) {
+		rtio_iodev_sqe_err(current_sqe, -ENOMEM);
+		return;
+	}
+
+	/* Read FIFO and call back to rtio with rtio_sqe completion */
+	struct adc_ad405x_fifo_data *hdr = (struct adc_ad405x_fifo_data *)buf;
+
+	hdr->is_fifo = 1;
+	hdr->timestamp = data->timestamp;
+	hdr->diff_mode = cfg->spec.channel_cfg.differential;
+	hdr->vref_mv = cfg->spec.vref_mv;
+	hdr->ad405x_qscale_mode = qscale_mode;
+
+	uint8_t *read_buf = buf + sizeof(*hdr);
+
+	if (read_config->trigger_cnt != 0) {
+		enum adc_stream_data_opt data_opt = read_config->triggers[0].opt;
+
+		for (int i = 1; i < read_config->trigger_cnt; i++) {
+			data_opt = MIN(data_opt, read_config->triggers[i].opt);
+		}
+
+		if (data_opt == ADC_STREAM_DATA_NOP || data_opt == ADC_STREAM_DATA_DROP) {
+			hdr->empty = 1;
+		}
+	}
+
+	/* Setup new rtio chain to read the data and report then check the result */
+	struct rtio_sqe *read_fifo_data = rtio_sqe_acquire(data->rtio_ctx);
+	struct rtio_sqe *complete_op = rtio_sqe_acquire(data->rtio_ctx);
+
+	rtio_sqe_prep_read(read_fifo_data, data->iodev, RTIO_PRIO_NORM, read_buf, sample_size,
+				current_sqe);
+	read_fifo_data->flags = RTIO_SQE_CHAINED;
+	rtio_sqe_prep_callback(complete_op, ad405x_process_sample_cb, (void *)dev, current_sqe);
+
+	rtio_submit(data->rtio_ctx, 0);
+}
+
+static bool ad405x_decoder_has_trigger(const uint8_t *buffer, enum adc_trigger_type trigger)
+{
+	const struct adc_ad405x_fifo_data *data = (const struct adc_ad405x_fifo_data *)buffer;
+
+	if (!data->is_fifo) {
+		return false;
+	}
+
+	switch (trigger) {
+	/* This family of chips doesn't have FIFO so if there is a buffer trigger has happen. */
+	case ADC_TRIG_DATA_READY:
+	case ADC_TRIG_FIFO_WATERMARK:
+	case ADC_TRIG_FIFO_FULL:
+		return true;
+	default:
+		return false;
+	}
+}
+
+ADC_DECODER_API_DT_DEFINE() = {
+	.get_frame_count = ad405x_decoder_get_frame_count,
+	.decode = ad405x_decoder_decode,
+	.has_trigger = ad405x_decoder_has_trigger,
+};
+
+int ad405x_get_decoder(const struct device *dev, const struct adc_decoder_api **api)
+{
+	ARG_UNUSED(dev);
+	*api = &ADC_DECODER_NAME();
+
+	return 0;
+}
+
+#endif /* CONFIG_AD405X_STREAM */
+
 static DEVICE_API(adc, ad405x_api_funcs) = {
 	.channel_setup = ad405x_channel_setup,
 	.read = ad405x_read,
 	.ref_internal = 2500,
 #ifdef CONFIG_ADC_ASYNC
 	.read_async = ad405x_adc_read_async,
-#endif
+#endif /* CONFIG_ADC_ASYNC */
+#ifdef CONFIG_AD405X_STREAM
+	.submit = ad405x_submit_stream,
+	.get_decoder = ad405x_get_decoder,
+#endif /* CONFIG_AD405X_STREAM */
 };
 
 #define AD405X_SPI_CFG SPI_WORD_SET(8) | SPI_TRANSFER_MSB
+
+#define AD405X_RTIO_DEFINE(inst)                                                                  \
+	SPI_DT_IODEV_DEFINE(ad405x_iodev_##inst, DT_DRV_INST(inst), AD405X_SPI_CFG, 0U);         \
+	RTIO_DEFINE(ad405x_rtio_ctx_##inst, 16, 16);
 
 #define DT_INST_AD405X(inst, t) DT_INST(inst, adi_ad##t##_adc)
 
@@ -927,17 +1348,27 @@ static DEVICE_API(adc, ad405x_api_funcs) = {
 		   (AD405X_GPIO_PROPS0(n)))
 
 #define AD405X_INIT(t, n) \
-	static struct adc_ad405x_data ad##t##_data_##n = {};                                     \
-	static const struct adc_ad405x_config ad##t##_config_##n =  {                            \
-		.bus = {.spi = SPI_DT_SPEC_GET(DT_INST_AD405X(n, t), AD405X_SPI_CFG, 0)},        \
-		.conversion = GPIO_DT_SPEC_GET_BY_IDX(DT_INST_AD405X(n, t), conversion_gpios, 0),\
-		IF_ENABLED(CONFIG_AD405X_TRIGGER, (AD405X_GPIO(t, n)))                           \
-		.chip_id = t,                                                                    \
-		.active_mode = AD405X_SAMPLE_MODE_OP,                                            \
-		.spec = ADC_DT_SPEC_STRUCT(DT_INST(n, DT_DRV_COMPAT), 0)                         \
-		};                                                                               \
-	DEVICE_DT_DEFINE(DT_INST_AD405X(n, t), adc_ad405x_init, NULL, &ad##t##_data_##n,         \
-			&ad##t##_config_##n, POST_KERNEL,                                        \
+	IF_ENABLED(CONFIG_AD405X_STREAM, (AD405X_RTIO_DEFINE(n)));				\
+	static struct adc_ad405x_data ad##t##_data_##n = {					\
+	IF_ENABLED(CONFIG_AD405X_STREAM, (.rtio_ctx = &ad405x_rtio_ctx_##n,			\
+				.iodev = &ad405x_iodev_##n, .data_ready_gpio = AD405X_NO_GPIO,	\
+				COND_CODE_1(DT_HAS_CHOSEN(zephyr_adc_clock),			\
+				(.timer_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_adc_clock)),),	\
+				())))								\
+	};											\
+	static const struct adc_ad405x_config ad##t##_config_##n =  {				\
+		.bus = {.spi = SPI_DT_SPEC_GET(DT_INST_AD405X(n, t), AD405X_SPI_CFG, 0)},	\
+		.conversion = GPIO_DT_SPEC_GET_BY_IDX(DT_INST_AD405X(n, t),			\
+							conversion_gpios, 0),			\
+		IF_ENABLED(CONFIG_AD405X_TRIGGER, (AD405X_GPIO(t, n)))				\
+		.chip_id = t,									\
+		.active_mode = AD405X_SAMPLE_MODE_OP,						\
+		.spec = ADC_DT_SPEC_STRUCT(DT_INST(n, DT_DRV_COMPAT), 0),			\
+		IF_ENABLED(CONFIG_AD405X_STREAM, (.sampling_period =				\
+			DT_INST_PROP_OR(n, sampling_period, AD405X_DEF_SAMPLING_PERIOD),))	\
+		};										\
+	DEVICE_DT_DEFINE(DT_INST_AD405X(n, t), adc_ad405x_init, NULL, &ad##t##_data_##n,	\
+			&ad##t##_config_##n, POST_KERNEL,					\
 			CONFIG_ADC_INIT_PRIORITY, &ad405x_api_funcs);
 
 /*

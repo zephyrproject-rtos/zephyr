@@ -398,7 +398,6 @@ class TestInstance:
             for cp in coverage_platform:
                 if cp in platform.aliases:
                     content = content + "\nCONFIG_COVERAGE=y"
-                    content = content + "\nCONFIG_COVERAGE_DUMP=y"
 
         if platform.type == "native":
             if enable_asan:

@@ -11,6 +11,7 @@ Coding Style Guidelines
    cmake.rst
    devicetree.rst
    kconfig.rst
+   python.rst
 
 
 Style Tools

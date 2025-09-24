@@ -17,6 +17,8 @@
 #include <zephyr/device.h>
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/kernel.h>
+#include <zephyr/rtio/rtio.h>
+#include <zephyr/dsp/types.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -690,6 +692,169 @@ struct adc_sequence {
 	bool calibrate;
 };
 
+struct adc_data_header {
+	/**
+	 * The closest timestamp for when the first frame was generated as attained by
+	 * :c:func:`k_uptime_ticks`.
+	 */
+	uint64_t base_timestamp_ns;
+	/**
+	 * The number of elements in the 'readings' array.
+	 *
+	 * This must be at least 1
+	 */
+	uint16_t reading_count;
+};
+
+/**
+ * Data for the adc channel.
+ */
+struct adc_data {
+	struct adc_data_header header;
+	int8_t shift;
+	struct adc_sample_data {
+		uint32_t timestamp_delta;
+		union {
+			q31_t value;
+		};
+	} readings[1];
+};
+
+/**
+ * @brief ADC trigger types.
+ */
+enum adc_trigger_type {
+	/** Trigger fires whenever new data is ready. */
+	ADC_TRIG_DATA_READY,
+
+	/** Trigger fires when the FIFO watermark has been reached. */
+	ADC_TRIG_FIFO_WATERMARK,
+
+	/** Trigger fires when the FIFO becomes full. */
+	ADC_TRIG_FIFO_FULL,
+
+	/**
+	 * Number of all common adc triggers.
+	 */
+	ADC_TRIG_COMMON_COUNT,
+
+	/**
+	 * This and higher values are adc specific.
+	 * Refer to the adc header file.
+	 */
+	ADC_TRIG_PRIV_START = ADC_TRIG_COMMON_COUNT,
+
+	/**
+	 * Maximum value describing a adc trigger type.
+	 */
+	ADC_TRIG_MAX = INT16_MAX,
+};
+
+/**
+ * @brief Options for what to do with the associated data when a trigger is consumed
+ */
+enum adc_stream_data_opt {
+	/** @brief Include whatever data is associated with the trigger */
+	ADC_STREAM_DATA_INCLUDE = 0,
+	/** @brief Do nothing with the associated trigger data, it may be consumed later */
+	ADC_STREAM_DATA_NOP = 1,
+	/** @brief Flush/clear whatever data is associated with the trigger */
+	ADC_STREAM_DATA_DROP = 2,
+};
+
+struct adc_stream_trigger {
+	enum adc_trigger_type trigger;
+	enum adc_stream_data_opt opt;
+};
+
+/**
+ * @brief ADC Channel Specification
+ *
+ * A ADC channel specification is a unique identifier per ADC device describing
+ * a measurement channel.
+ *
+ */
+struct adc_chan_spec {
+	uint8_t chan_idx; /**< A ADC channel index */
+	uint8_t chan_resolution;  /**< A ADC channel resolution */
+};
+
+/*
+ * Internal data structure used to store information about the IODevice for async reading and
+ * streaming adc data.
+ */
+struct adc_read_config {
+	const struct device *adc;
+	const bool is_streaming;
+	const struct adc_dt_spec *adc_spec;
+	const struct adc_stream_trigger *triggers;
+	struct adc_sequence *sequence;
+	uint16_t fifo_watermark_lvl;
+	uint16_t fifo_mode;
+	size_t adc_spec_cnt;
+	size_t trigger_cnt;
+};
+
+/**
+ * @brief Decodes a single raw data buffer
+ *
+ */
+struct adc_decoder_api {
+	/**
+	 * @brief Get the number of frames in the current buffer.
+	 *
+	 * @param[in]  buffer The buffer provided on the @ref rtio context.
+	 * @param[in]  channel The channel to get the count for
+	 * @param[out] frame_count The number of frames on the buffer (at least 1)
+	 * @return 0 on success
+	 * @return -ENOTSUP if the channel/channel_idx aren't found
+	 */
+	int (*get_frame_count)(const uint8_t *buffer, uint32_t channel,
+			       uint16_t *frame_count);
+
+	/**
+	 * @brief Get the size required to decode a given channel
+	 *
+	 * When decoding a single frame, use @p base_size. For every additional frame, add another
+	 * @p frame_size. As an example, to decode 3 frames use: 'base_size + 2 * frame_size'.
+	 *
+	 * @param[in] adc_spec ADC Specs
+	 * @param[in]  channel The channel to query
+	 * @param[out] base_size The size of decoding the first frame
+	 * @param[out] frame_size The additional size of every additional frame
+	 * @return 0 on success
+	 * @return -ENOTSUP if the channel is not supported
+	 */
+	int (*get_size_info)(struct adc_dt_spec adc_spec, uint32_t channel, size_t *base_size,
+			     size_t *frame_size);
+
+	/**
+	 * @brief Decode up to @p max_count samples from the buffer
+	 *
+	 * Decode samples of channel across multiple frames. If there exist
+	 * multiple instances of the same channel, @p channel_index is used to differentiate them.
+	 *
+	 * @param[in]     buffer The buffer provided on the @ref rtio context
+	 * @param[in]     channel The channel to decode
+	 * @param[in,out] fit The current frame iterator
+	 * @param[in]     max_count The maximum number of channels to decode.
+	 * @param[out]    data_out The decoded data
+	 * @return 0 no more samples to decode
+	 * @return >0 the number of decoded frames
+	 * @return <0 on error
+	 */
+	int (*decode)(const uint8_t *buffer, uint32_t channel, uint32_t *fit,
+		      uint16_t max_count, void *data_out);
+
+	/**
+	 * @brief Check if the given trigger type is present
+	 *
+	 * @param[in] buffer The buffer provided on the @ref rtio context
+	 * @param[in] trigger The trigger type in question
+	 * @return Whether the trigger is present in the buffer
+	 */
+	bool (*has_trigger)(const uint8_t *buffer, enum adc_trigger_type trigger);
+};
 
 /**
  * @brief Type definition of ADC API function for configuring a channel.
@@ -704,6 +869,22 @@ typedef int (*adc_api_channel_setup)(const struct device *dev,
  */
 typedef int (*adc_api_read)(const struct device *dev,
 			    const struct adc_sequence *sequence);
+
+/**
+ * @brief Type definition of ADC API function for setting an submit
+ *        stream request.
+ */
+typedef void (*adc_api_submit)(const struct device *dev,
+				  struct rtio_iodev_sqe *sqe);
+
+/**
+ * @brief Get the decoder associate with the given device
+ *
+ * @see adc_get_decoder() for more details
+ */
+typedef int (*adc_api_get_decoder)(const struct device *dev,
+				    const struct adc_decoder_api **api);
+
 
 /**
  * @brief Type definition of ADC API function for setting an asynchronous
@@ -724,6 +905,10 @@ __subsystem struct adc_driver_api {
 	adc_api_read          read;
 #ifdef CONFIG_ADC_ASYNC
 	adc_api_read_async    read_async;
+#endif
+#ifdef CONFIG_ADC_STREAM
+	adc_api_submit    submit;
+	adc_api_get_decoder get_decoder;
 #endif
 	uint16_t ref_internal;	/* mV */
 };
@@ -836,7 +1021,6 @@ __syscall int adc_read_async(const struct device *dev,
 			     const struct adc_sequence *sequence,
 			     struct k_poll_signal *async);
 
-
 #ifdef CONFIG_ADC_ASYNC
 static inline int z_impl_adc_read_async(const struct device *dev,
 					const struct adc_sequence *sequence,
@@ -845,6 +1029,83 @@ static inline int z_impl_adc_read_async(const struct device *dev,
 	return DEVICE_API_GET(adc, dev)->read_async(dev, sequence, async);
 }
 #endif /* CONFIG_ADC_ASYNC */
+
+#ifdef CONFIG_ADC_STREAM
+/**
+ * @brief Get decoder APIs for that device.
+ *
+ * @note This function is available only if @kconfig{CONFIG_ADC_STREAM}
+ * is selected.
+ *
+ * @param dev	Pointer to the device structure for the driver instance.
+ * @param api	Pointer to the decoder which will be set upon success.
+ *
+ * @returns 0 on success, negative error code otherwise.
+ *
+ *
+ */
+__syscall int adc_get_decoder(const struct device *dev,
+				const struct adc_decoder_api **api);
+/*
+ * Generic data structure used for encoding the sample timestamp and number of channels sampled.
+ */
+struct __attribute__((__packed__)) adc_data_generic_header {
+	/* The timestamp at which the data was collected from the adc */
+	uint64_t timestamp_ns;
+
+	/*
+	 * The number of channels present in the frame.
+	 */
+	uint8_t num_channels;
+
+	/* Shift value for all samples in the frame */
+	int8_t shift;
+
+	/* This padding is needed to make sure that the 'channels' field is aligned */
+	int16_t _padding;
+
+	/* Channels present in the frame */
+	struct adc_chan_spec channels[0];
+};
+
+static inline int adc_stream(struct rtio_iodev *iodev, struct rtio *ctx, void *userdata,
+				struct rtio_sqe **handle)
+{
+	if (IS_ENABLED(CONFIG_USERSPACE)) {
+		struct rtio_sqe sqe;
+
+		rtio_sqe_prep_read_multishot(&sqe, iodev, RTIO_PRIO_NORM, userdata);
+		rtio_sqe_copy_in_get_handles(ctx, &sqe, handle, 1);
+	} else {
+		struct rtio_sqe *sqe = rtio_sqe_acquire(ctx);
+
+		if (sqe == NULL) {
+			return -ENOMEM;
+		}
+		if (handle != NULL) {
+			*handle = sqe;
+		}
+		rtio_sqe_prep_read_multishot(sqe, iodev, RTIO_PRIO_NORM, userdata);
+	}
+	rtio_submit(ctx, 0);
+	return 0;
+}
+
+static inline int z_impl_adc_get_decoder(const struct device *dev,
+					    const struct adc_decoder_api **decoder)
+{
+	const struct adc_driver_api *api = DEVICE_API_GET(adc, dev);
+
+	__ASSERT_NO_MSG(api != NULL);
+
+	if (api->get_decoder == NULL) {
+		*decoder = NULL;
+		return -1;
+	}
+
+	return api->get_decoder(dev, decoder);
+}
+#endif /* CONFIG_ADC_STREAM */
 
 /**
  * @brief Get the internal reference voltage.
@@ -1053,6 +1314,69 @@ static inline bool adc_is_ready_dt(const struct adc_dt_spec *spec)
 /**
  * @}
  */
+
+/**
+ * @brief Get the decoder name for the current driver
+ *
+ * This function depends on `DT_DRV_COMPAT` being defined.
+ */
+#define ADC_DECODER_NAME() UTIL_CAT(DT_DRV_COMPAT, __adc_decoder_api)
+
+/**
+ * @brief Statically get the decoder for a given node
+ *
+ * @code{.c}
+ * static const adc_decoder_api *decoder = ADC_DECODER_DT_GET(DT_ALIAS(adc));
+ * @endcode
+ */
+#define ADC_DECODER_DT_GET(node_id)                                                             \
+	&UTIL_CAT(DT_STRING_TOKEN_BY_IDX(node_id, compatible, 0), __adc_decoder_api)
+
+/**
+ * @brief Define a decoder API
+ *
+ * This macro should be created once per compatible string of a adc and will create a statically
+ * referenceable decoder API.
+ *
+ * @code{.c}
+ * ADC_DECODER_API_DT_DEFINE() = {
+ *   .get_frame_count = my_driver_get_frame_count,
+ *   .get_timestamp = my_driver_get_timestamp,
+ *   .get_shift = my_driver_get_shift,
+ *   .decode = my_driver_decode,
+ * };
+ * @endcode
+ */
+#define ADC_DECODER_API_DT_DEFINE()								\
+	COND_CODE_1(DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT), (), (static))			\
+	const STRUCT_SECTION_ITERABLE(adc_decoder_api, ADC_DECODER_NAME())
+
+#define Z_MAYBE_ADC_DECODER_DECLARE_INTERNAL_IDX(node_id, prop, idx)				\
+	extern const struct adc_decoder_api UTIL_CAT(						\
+		DT_STRING_TOKEN_BY_IDX(node_id, prop, idx), __adc_decoder_api);
+
+#define Z_MAYBE_ADC_DECODER_DECLARE_INTERNAL(node_id)						\
+	COND_CODE_1(DT_NODE_HAS_PROP(node_id, compatible),					\
+			(DT_FOREACH_PROP_ELEM(node_id, compatible,				\
+					  Z_MAYBE_ADC_DECODER_DECLARE_INTERNAL_IDX)),		\
+						())
+
+DT_FOREACH_STATUS_OKAY_NODE(Z_MAYBE_ADC_DECODER_DECLARE_INTERNAL)
+
+/* The default adc iodev API */
+extern const struct rtio_iodev_api __adc_iodev_api;
+
+#define ADC_DT_STREAM_IODEV(name, dt_node, adc_dt_spec, ...)					\
+	static struct adc_stream_trigger _CONCAT(__trigger_array_, name)[] = {__VA_ARGS__};	\
+	static struct adc_read_config _CONCAT(__adc_read_config_, name) = {			\
+		.adc = DEVICE_DT_GET(dt_node),							\
+		.is_streaming = true,								\
+		.adc_spec = adc_dt_spec,							\
+		.triggers = _CONCAT(__trigger_array_, name),					\
+		.adc_spec_cnt = ARRAY_SIZE(adc_dt_spec),					\
+		.trigger_cnt = ARRAY_SIZE(_CONCAT(__trigger_array_, name)),			\
+	};											\
+	RTIO_IODEV_DEFINE(name, &__adc_iodev_api, &_CONCAT(__adc_read_config_, name))
 
 #ifdef __cplusplus
 }

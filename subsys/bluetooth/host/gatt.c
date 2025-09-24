@@ -6590,3 +6590,54 @@ void bt_gatt_req_set_mtu(struct bt_att_req *req, uint16_t mtu)
 	 * request types if needed.
 	 */
 }
+
+/* Descriptor of application-specific authorization callbacks that are used
+ * with the CONFIG_BT_GATT_AUTHORIZATION_CUSTOM Kconfig enabled.
+ */
+static const struct bt_gatt_authorization_cb *authorization_cb;
+
+bool bt_gatt_attr_read_authorize(struct bt_conn *conn, const struct bt_gatt_attr *attr)
+{
+	if (!IS_ENABLED(CONFIG_BT_GATT_AUTHORIZATION_CUSTOM)) {
+		return true;
+	}
+
+	if (!authorization_cb || !authorization_cb->read_authorize) {
+		return true;
+	}
+
+	return authorization_cb->read_authorize(conn, attr);
+}
+
+bool bt_gatt_attr_write_authorize(struct bt_conn *conn, const struct bt_gatt_attr *attr)
+{
+	if (!IS_ENABLED(CONFIG_BT_GATT_AUTHORIZATION_CUSTOM)) {
+		return true;
+	}
+
+	if (!authorization_cb || !authorization_cb->write_authorize) {
+		return true;
+	}
+
+	return authorization_cb->write_authorize(conn, attr);
+}
+
+int bt_gatt_authorization_cb_register(const struct bt_gatt_authorization_cb *cb)
+{
+	if (!IS_ENABLED(CONFIG_BT_GATT_AUTHORIZATION_CUSTOM)) {
+		return -ENOSYS;
+	}
+
+	if (!cb) {
+		authorization_cb = NULL;
+		return 0;
+	}
+
+	if (authorization_cb) {
+		return -EALREADY;
+	}
+
+	authorization_cb = cb;
+
+	return 0;
+}

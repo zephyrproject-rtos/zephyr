@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,6 +15,10 @@
 #include <zephyr/dt-bindings/pwm/pwm.h>
 
 / {
+	aliases {
+		watchdog0 = &cop;
+	};
+
 	chosen {
 		zephyr,flash-controller = &ftfa;
 	};
@@ -105,6 +109,14 @@
 				clock-div = <2>;
 				#clock-cells = <0>;
 			};
+		};
+
+		cop: watchdog@40047000 {
+			compatible = "nxp,cop";
+			reg = <0x40047000 0x8>;
+			status = "disabled";
+			clk-source = <0>;
+			timeout-cycles = <32>;
 		};
 
 		porta: pinmux@40049000 {
@@ -321,6 +333,14 @@
 				reg = <1>;
 				status = "disabled";
 			};
+		};
+
+		cmp: cmp@40073000 {
+			compatible = "nxp,cmp";
+			reg = <0x40073000 0x1000>;
+			interrupts = <16 0>;
+			status = "disabled";
+			clocks = <&sim KINETIS_SIM_CMP_CLK 0 0>;
 		};
 	};
 };

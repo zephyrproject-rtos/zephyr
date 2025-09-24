@@ -147,6 +147,9 @@ static const struct device *const devices[] = {
 #ifdef CONFIG_COUNTER_RENESAS_RZ_CMTW
 	DEVS_FOR_DT_COMPAT(renesas_rz_cmtw_counter)
 #endif
+#ifdef CONFIG_COUNTER_INFINEON_TCPWM
+	DEVS_FOR_DT_COMPAT(infineon_tcpwm_counter)
+#endif
 };
 
 static const struct device *const period_devs[] = {

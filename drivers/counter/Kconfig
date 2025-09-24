@@ -94,6 +94,8 @@ source "drivers/counter/Kconfig.mcux_ctimer"
 
 source "drivers/counter/Kconfig.ifx_cat1"
 
+source "drivers/counter/Kconfig.ifx_tcpwm"
+
 source "drivers/counter/Kconfig.andes_atcpit100"
 
 source "drivers/counter/Kconfig.nxp_s32"

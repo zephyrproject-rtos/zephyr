@@ -1,0 +1,262 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2023, Nordic Semiconductor ASA
+
+# JSON Schema for board metadata YAML files
+# When possible, constraints and validation rules should be modeled directly in this file.
+
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "https://zephyrproject.org/schemas/zephyr/board"
+title: Zephyr Board Schema
+description: Schema for validating Zephyr board metadata files
+type: object
+$defs:
+  # Common regex patterns for revision formats
+  letterRevisionPattern:
+    pattern: "^[A-Z]$"
+
+  majorMinorPatchRevisionPattern:
+    pattern: "^0|[1-9][0-9]*\\.[0-9]+\\.[0-9]+$"
+
+  numberRevisionPattern:
+    pattern: "^\\d+$"
+
+  variantSchema:
+    type: array
+    items:
+      type: object
+      properties:
+        name:
+          type: string
+        cpucluster:
+          type: string
+        variants:
+          $ref: "#/$defs/variantSchema" # Recursive definition
+      required:
+        - name
+      additionalProperties: false
+
+  extendVariantSchema:
+    type: array
+    items:
+      type: object
+      properties:
+        name:
+          type: string
+        qualifier:
+          type: string
+      required:
+        - name
+        - qualifier
+      additionalProperties: false
+
+  boardSchema:
+    type: object
+    properties:
+      name:
+        type: string
+        description: Name of the board
+      full_name:
+        type: string
+        description: Full name of the board. Typically set to the commercial name of the board.
+      extend:
+        type: string
+      vendor:
+        type: string
+        description: SoC family of the SoC on the board.
+      revision:
+        type: object
+        properties:
+          format:
+            type: string
+            enum:
+              - "major.minor.patch"
+              - "letter"
+              - "number"
+              - "custom"
+          default:
+            type: string
+          exact:
+            type: boolean
+          revisions:
+            type: array
+            items:
+              type: object
+              properties:
+                name:
+                  type: string
+              required:
+                - name
+        required:
+          - format
+        additionalProperties: false
+        # Conditional logic: 'default' and 'revisions' are required if 'format' is not 'custom'
+        allOf:
+          - if:
+              properties:
+                format:
+                  not:
+                    const: "custom"
+            then:
+              required:
+                - default
+                - revisions
+          # Validation for 'letter' format: default and revision names must be [A-Z]
+          - if:
+              properties:
+                format:
+                  const: "letter"
+            then:
+              properties:
+                default:
+                  $ref: "#/$defs/letterRevisionPattern"
+                revisions:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      name:
+                        $ref: "#/$defs/letterRevisionPattern"
+          # Validation for 'major.minor.patch' format: default and revision names must be x.y.z
+          - if:
+              properties:
+                format:
+                  const: "major.minor.patch"
+            then:
+              properties:
+                default:
+                  $ref: "#/$defs/majorMinorPatchRevisionPattern"
+                revisions:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      name:
+                        $ref: "#/$defs/majorMinorPatchRevisionPattern"
+          # Validation for 'number' format: default and revision names must be integers
+          - if:
+              properties:
+                format:
+                  const: "number"
+            then:
+              properties:
+                default:
+                  $ref: "#/$defs/numberRevisionPattern"
+                revisions:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      name:
+                        $ref: "#/$defs/numberRevisionPattern"
+      socs:
+        type: array
+        items:
+          type: object
+          properties:
+            name:
+              type: string
+            variants:
+              $ref: "#/$defs/variantSchema"
+          required:
+            - name
+          additionalProperties: false
+      variants:
+        $ref: "#/$defs/extendVariantSchema"
+    # Conditional logic for requirements
+    allOf:
+      # 'name' and 'extend' are mutually exclusive: we're either defining a new board or extending
+      # an existing one.
+      - oneOf:
+          - required: [name]
+          - required: [extend]
+      # A base board (identified by 'name') must define its hardware via the 'socs' property.
+      - if:
+          required: [name]
+        then:
+          required: [socs]
+      # An extending board inherits its SoC and must not redefine it. It should define 'variants'
+      # instead.
+      - if:
+          required: [extend]
+        then:
+          not:
+            required: [socs]
+    additionalProperties: false
+  runnerSchema:
+    type: object
+    properties:
+      priority:
+        type: integer
+        description: |
+          Priority of this flash run once configuration. The highest value data will be used
+          instead of any with lower priorities. If omitted, will default to 10.
+      run_once:
+        type: object
+        description: |
+          Allows for restricting west flash commands when using sysbuild to run once per given
+          grouping of board targets. This is to allow for future image program cycles to not
+          erase the flash of a device which has just been programmed by another image.
+        patternProperties:
+          "^(.*)$":
+            description: |
+              A dictionary of commands which should be limited to running once per invocation
+              of west flash for a given set of flash runners and board targets.
+            type: array
+            items:
+              type: object
+              properties:
+                run:
+                  type: string
+                  enum: ["first", "last"]
+                  description: |
+                    If first, will run this command once when the first image is flashed, if
+                    last, will run this command once when the final image is flashed.
+                runners:
+                  type: array
+                  items:
+                    type: string
+                    description: |
+                      A list of flash runners that this applies to, can use `all` to apply
+                      to all runners.
+                groups:
+                  type: array
+                  items:
+                    type: object
+                    description: |
+                      A grouping of board targets which the command should apply to. Can
+                      be used multiple times to have multiple groups.
+                    properties:
+                      boards:
+                        type: array
+                        items:
+                          type: string
+                          description: |
+                            A board target to match against in regex. Must be one entry
+                            per board target, a single regex entry will not match two
+                            board targets even if they both match.
+                    required:
+                      - boards
+              required:
+                - run
+                - runners
+                - groups
+    additionalProperties: false
+properties:
+  board:
+    $ref: "#/$defs/boardSchema"
+  boards:
+    type: array
+    items:
+      $ref: "#/$defs/boardSchema"
+  runners:
+    $ref: "#/$defs/runnerSchema"
+dependentSchemas:
+  # A board.yml file may define either a single board or multiple boards, but not both.
+  board:
+    not:
+      required: ["boards"]
+  boards:
+    not:
+      required: ["board"]
+additionalProperties: false

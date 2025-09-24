@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024, 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,12 +19,20 @@
 
 #include <zephyr/sys/util.h>
 #include <fsl_common.h>
+#include <fsl_power.h>
+#include <soc_common.h>
 
 /* CPU 0 has an instruction and data cache, provide the defines for XCACHE */
 #ifdef CONFIG_SOC_MIMXRT798S_CM33_CPU0
 #define NXP_XCACHE_INSTR XCACHE1
 #define NXP_XCACHE_DATA XCACHE0
 #endif
+
+/* Handle variation to implement Wakeup Interrupt */
+#undef NXP_ENABLE_WAKEUP_SIGNAL
+#undef NXP_DISABLE_WAKEUP_SIGNAL
+#define NXP_ENABLE_WAKEUP_SIGNAL(irqn) EnableDeepSleepIRQ(irqn)
+#define NXP_DISABLE_WAKEUP_SIGNAL(irqn) DisableDeepSleepIRQ(irqn)
 
 #ifdef __cplusplus
 extern "C" {

@@ -1,0 +1,12 @@
+# Copyright (c) 2025 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config COUNTER_INFINEON_TCPWM
+	bool "Infineon TCPWM counter driver"
+	default y
+	depends on DT_HAS_INFINEON_TCPWM_COUNTER_ENABLED
+	select USE_INFINEON_TIMER
+	help
+	  This option enables the TCPWM counter driver for Infineon devices.

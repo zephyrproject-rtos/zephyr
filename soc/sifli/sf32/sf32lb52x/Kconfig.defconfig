@@ -1,0 +1,18 @@
+# Copyright (c) 2025 Core Devices LLC
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_SF32LB52X
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)
+
+config USE_DT_CODE_PARTITION
+	default y
+
+config CACHE_MANAGEMENT
+	default y
+
+config NUM_IRQS
+	default 100
+
+endif # SOC_SERIES_SF32LB52X

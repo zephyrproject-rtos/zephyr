@@ -74,6 +74,13 @@ otError otPlatUdpSocket(otUdpSocket *aUdpSocket)
 	sock = zsock_socket(AF_INET6, SOCK_DGRAM | SOCK_NONBLOCK, IPPROTO_UDP);
 	VerifyOrExit(sock >= 0, error = OT_ERROR_FAILED);
 
+#if defined(CONFIG_NET_IPV4) && defined(CONFIG_NET_IPV4_MAPPING_TO_IPV6)
+	int off = 0;
+
+	VerifyOrExit(zsock_setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY, &off, sizeof(off)) == 0,
+		     error = OT_ERROR_FAILED);
+#endif
+
 	aUdpSocket->mHandle = INT_TO_POINTER(sock);
 
 	for (idx = 0; idx < CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_MAX_UDP_SERVICES; idx++) {

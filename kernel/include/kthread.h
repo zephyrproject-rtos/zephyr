@@ -98,6 +98,25 @@ static inline bool z_is_thread_pending(struct k_thread *thread)
 	return (thread->base.thread_state & _THREAD_PENDING) != 0U;
 }
 
+static inline bool z_is_thread_dead(struct k_thread *thread)
+{
+	return (thread->base.thread_state & _THREAD_DEAD) != 0U;
+}
+
+/* Return true if the thread is aborting, else false */
+static inline bool z_is_thread_aborting(struct k_thread *thread)
+{
+	return (thread->base.thread_state & _THREAD_ABORTING) != 0U;
+}
+
+/* Return true if the thread is aborting or suspending, else false */
+static inline bool z_is_thread_halting(struct k_thread *thread)
+{
+	return (thread->base.thread_state &
+		(_THREAD_ABORTING | _THREAD_SUSPENDING)) != 0U;
+}
+
+
 static inline bool z_is_thread_prevented_from_running(struct k_thread *thread)
 {
 	uint8_t state = thread->base.thread_state;

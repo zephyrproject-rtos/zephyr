@@ -692,6 +692,8 @@ Bouffalolab Platforms:
   status: maintained
   maintainers:
     - VynDragon
+  collaborators:
+    - josuah
   files:
     - boards/bflb/
     - drivers/*/*bflb*
@@ -2899,6 +2901,7 @@ Intel Platforms (X86):
     - ceolin
   files:
     - boards/intel/adl/
+    - boards/intel/btl/
     - boards/intel/ehl/
     - boards/intel/rpl/
     - dts/x86/intel/
@@ -3065,11 +3068,11 @@ LiteX Platforms:
   status: maintained
   maintainers:
     - tgorochowik
-    - kgugala
     - fkokosinski
-  collaborators:
-    - mateusz-holenko
     - maass-hamburg
+  collaborators:
+    - kgugala
+    - mateusz-holenko
   files:
     - boards/enjoydigital/litex_vexriscv/
     - drivers/*/*litex*
@@ -3326,15 +3329,16 @@ NXP Platform Drivers:
   files-regex:
     - ^drivers/.*nxp.*
     - ^drivers/.*mcux.*
+    - drivers\/.*[_\/]+lpc[_\.\d]+.*c
   files:
     - drivers/*/*imx*
-    - drivers/*/*lpc*.c
     - drivers/*/*mcux*.c
     - drivers/*/*.mcux
     - drivers/*/*.nxp
     - drivers/*/*nxp*
     - drivers/*/*/*kinetis*
     - drivers/misc/*/nxp*
+    - drivers/sensor/nxp/
     - include/zephyr/dt-bindings/*/*nxp*
     - include/zephyr/dt-bindings/*/*mcux*
     - include/zephyr/dt-bindings/inputmux/
@@ -3342,6 +3346,7 @@ NXP Platform Drivers:
     - include/zephyr/drivers/*/*nxp*
     - include/zephyr/drivers/*/*nxp*/
     - include/zephyr/drivers/*/*mcux*
+    - include/zephyr/drivers/misc/flexram/
     - arch/arm/core/mpu/nxp_mpu.c
     - dts/bindings/*/nxp*
   files-exclude:
@@ -3351,7 +3356,7 @@ NXP Platform Drivers:
   files-regex-exclude:
     - .*s32.*
   labels:
-    - "platform: NXP Drivers"
+    - "platform: NXP"
   description: NXP Drivers
 
 NXP Platform MCUX USB:
@@ -3363,7 +3368,7 @@ NXP Platform MCUX USB:
     - drivers/usb/*/*mcux*
     - boards/nxp/usb_kw24d512/
   labels:
-    - "platform: NXP Drivers"
+    - "platform: NXP"
   description: NXP MCUX USB shim drivers
 
 NXP Platform Wireless:
@@ -3389,7 +3394,7 @@ NXP Platform Wireless:
     - soc/nxp/mcx/mcxw/
     - soc/nxp/rw/
   labels:
-    - "platform: NXP Drivers"
+    - "platform: NXP"
 
 NXP Platforms (MCU):
   status: maintained
@@ -3404,6 +3409,7 @@ NXP Platforms (MCU):
   files:
     - boards/nxp/mimxrt*/
     - boards/nxp/frdm*/
+    - boards/nxp/*mcx*/
     - boards/nxp/lpcxpress*/
     - boards/nxp/twr_*/
     - boards/nxp/*rw*/
@@ -3420,9 +3426,11 @@ NXP Platforms (MCU):
     - samples/boards/nxp*/
   files-exclude:
     - dts/arm/nxp/nxp_imx*
+    - boards/nxp/frdm_imx*/
   files-regex-exclude:
     - .*s32.*
   labels:
+    - "platform: NXP MCU"
     - "platform: NXP"
   description: NXP MCU Platforms supported by MCUXpresso suite
 
@@ -3443,9 +3451,10 @@ NXP Platforms (MPU):
     - soc/nxp/layerscape/
     - boards/nxp/ls1046ardb/
   files-regex:
-    - boards/nxp/m?imx[^(rt)].*/
+    - boards/nxp/.*m?imx[^(rt)].*/
   labels:
     - "platform: NXP MPU"
+    - "platform: NXP"
   description: NXP MPU platforms
 
 NXP Platforms (Robotics Products):
@@ -3460,8 +3469,7 @@ NXP Platforms (Robotics Products):
     - boards/nxp/rddrone_fmuk66/
     - boards/nxp/mr_canhubk3/
     - boards/nxp/ucans32k1sic/
-  labels:
-    - "platform: NXP Robotics"
+    - tests/boards/vmu_rt1170/
   description: NXP Robotics Module Platform Products
 
 NXP Platforms (S32):
@@ -3487,6 +3495,7 @@ NXP Platforms (S32):
     - boards/nxp/ucans32k1sic/
   labels:
     - "platform: NXP S32"
+    - "platform: NXP"
   description: NXP S32 platforms and S32-specific drivers
 
 NXP Platforms (Xtensa):
@@ -3497,13 +3506,13 @@ NXP Platforms (Xtensa):
     - iuliana-prodan
   files:
     - soc/nxp/imx/*/adsp/
-    - soc/nxp/imxrt/imxrt5xx/f1/
-    - soc/nxp/imxrt/imxrt7xx/hifi1/
-    - soc/nxp/imxrt/*/hifi4/
+    - soc/nxp/imxrt/*/f1/
+    - soc/nxp/imxrt/*/hifi*/
     - soc/nxp/imxrt/imxrt[567]xx/CMakeLists.txt
     - soc/nxp/imxrt/imxrt[567]xx/Kconfig*
   labels:
     - "platform: NXP Xtensa"
+    - "platform: NXP"
   description: NXP Xtensa platforms
 
 Native_sim and POSIX arch:
@@ -4206,7 +4215,6 @@ Release Notes:
 Renesas R-Car Platforms:
   status: maintained
   maintainers:
-    - aaillet
     - lorc
   collaborators:
     - xakep-amatop
@@ -4280,10 +4288,9 @@ Renesas SmartBond Platforms:
   status: maintained
   maintainers:
     - ioannis-karachalios
-    - andrzej-kaczmarek
-    - blauret
-  collaborators:
     - ydamigos
+  collaborators:
+    - blauret
   files:
     - boards/renesas/da14*/
     - drivers/*/*smartbond*
@@ -4505,6 +4512,24 @@ Shields:
     - "area: Shields"
   tests:
     - sample.shields
+
+SiFli SF32LB Platforms:
+  status: maintained
+  maintainers:
+    - gmarull
+  collaborators:
+    - cameled
+  files:
+    - boards/sifli/
+    - drivers/*/*sf32lb*
+    - dts/arm/sifli/
+    - dts/bindings/*/*sf32lb*
+    - scripts/west_commands/runners/sftool.py
+    - soc/sifli/
+  labels:
+    - "platform: SF32LB"
+  description: >-
+    SiFli SF32LB SoCs, dts files, related drivers and boards.
 
 Silabs Platforms:
   status: maintained
@@ -5236,6 +5261,7 @@ West:
     - ozersa
     - ttmut
     - yasinustunerg
+    - petejohanson-adi
   files: []
   labels:
     - "platform: ADI"
@@ -5280,6 +5306,8 @@ West:
   status: maintained
   maintainers:
     - VynDragon
+  collaborators:
+    - josuah
   files:
     - modules/hal_bouffalolab/
   labels:
@@ -5382,6 +5410,7 @@ West:
     - anangl
     - nika-nordic
     - masz-nordic
+    - carlescufi
   collaborators:
     - nordic-krch
     - kl-cruz
@@ -5390,6 +5419,7 @@ West:
     - mif1-nordic
     - adamkondraciuk
     - lstnl
+    - rlubos
   files:
     - modules/hal_nordic/
   labels:
@@ -5472,6 +5502,17 @@ West:
     - modules/hal_rpi_pico/
   labels:
     - "platform: Raspberry Pi Pico"
+
+"West project: hal_sifli":
+  status: maintained
+  maintainers:
+    - gmarull
+  collaborators:
+    - cameled
+  files:
+    - modules/hal_sifli/
+  labels:
+    - "platform: SF32LB"
 
 "West project: hal_silabs":
   status: maintained
@@ -5824,6 +5865,8 @@ West:
   collaborators:
     - Vge0rge
     - wearyzen
+    - valeriosetti
+    - tomi-font
     - ithinuel
   files: []
   labels:
@@ -5859,6 +5902,8 @@ West:
   collaborators:
     - Vge0rge
     - wearyzen
+    - valeriosetti
+    - tomi-font
     - ithinuel
   files: []
   labels:
@@ -5990,11 +6035,12 @@ Xen Platform:
     - "area: Xen Platform"
 
 Xilinx Platforms:
-  status: odd fixes
+  status: maintained
+  maintainers:
+    - michalsimek
   collaborators:
     - henrikbrixandersen
     - ibirnbaum
-    - michalsimek
   files:
     - boards/amd/
     - drivers/*/*xilinx*
@@ -6095,6 +6141,7 @@ nRF Platforms:
   maintainers:
     - anangl
     - masz-nordic
+    - bjarki-andreasen
   collaborators:
     - jaz1-nordic
     - kl-cruz

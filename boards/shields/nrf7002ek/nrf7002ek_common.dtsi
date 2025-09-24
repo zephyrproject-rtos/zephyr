@@ -24,3 +24,7 @@ wifi-max-tx-pwr-2g-mcs7 = <16>;
 wlan0: wlan0 {
 	compatible = "nordic,wlan";
 };
+
+wlan1: wlan1 {
+	compatible = "nordic,wlan";
+};

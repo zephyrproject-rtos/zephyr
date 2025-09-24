@@ -7,46 +7,37 @@
 
 #include "evkmimxrt1020_flexspi_nor_config.h"
 
-/* Component ID definition, used by tools. */
-#ifndef FSL_COMPONENT_ID
-#define FSL_COMPONENT_ID "platform.drivers.xip_board"
-#endif
-
 #if defined(XIP_BOOT_HEADER_ENABLE) && (XIP_BOOT_HEADER_ENABLE == 1)
-#if defined(__CC_ARM) || defined(__ARMCC_VERSION) || defined(__GNUC__)
 __attribute__((section(".boot_hdr.conf"), used))
-#elif defined(__ICCARM__)
-#pragma location = ".boot_hdr.conf"
-#endif
 
 #define FLASH_DUMMY_CYCLES 0x08
 #define FLASH_DUMMY_VALUE  0x02
 
-const flexspi_nor_config_t qspiflash_config = {
-	.memConfig = {
+const flexspi_nor_config_t qspi_flash_config = {
+	.mem_config = {
 		.tag                  = FLEXSPI_CFG_BLK_TAG,
 		.version              = FLEXSPI_CFG_BLK_VERSION,
-		.readSampleClkSrc     = kFlexSPIReadSampleClk_LoopbackFromDqsPad,
-		.csHoldTime           = 3u,
-		.csSetupTime          = 3u,
-		.controllerMiscOption =
-			(1u << kFlexSpiMiscOffset_SafeConfigFreqEnable),
-		.deviceType           = kFlexSpiDeviceType_SerialNOR,
-		.sflashPadType        = kSerialFlash_4Pads,
-		.serialClkFreq        = kFlexSpiSerialClk_133MHz,
-		.sflashA1Size         = 8u * 1024u * 1024u,
+		.read_sample_clk_src     = flexspi_read_sample_clk_loopback_from_dqs_pad,
+		.cs_hold_time           = 3u,
+		.cs_setup_time          = 3u,
+		.controller_misc_option =
+			(1u << flexspi_misc_offset_safe_config_freq_enable),
+		.device_type            = flexspi_device_type_serial_nor,
+		.sflash_pad_type        = serial_flash_4_pads,
+		.serial_clk_freq        = flexspi_serial_clk_133mhz,
+		.sflash_a1_size         = 8u * 1024u * 1024u,
 		/* Enable flash configuration feature */
-		.configCmdEnable   = 1u,
-		.configModeType[0] = kDeviceConfigCmdType_Generic,
+		.config_cmd_enable   = 1u,
+		.config_mode_type[0] = device_config_cmd_type_generic,
 		/* Set configuration command sequences */
-		.configCmdSeqs[0] = {
-			.seqNum   = 1,
-			.seqId    = 12,
+		.config_cmd_seqs[0] = {
+			.seq_num   = 1,
+			.seq_id    = 12,
 			.reserved = 0,
 		},
 		/* Prepare setting value for Read Register in flash */
-		.configCmdArgs[0] = ((FLASH_DUMMY_VALUE << 3) | 0xE0),
-		.lookupTable = {
+		.config_cmd_args[0] = ((FLASH_DUMMY_VALUE << 3) | 0xE0),
+		.lookup_table = {
 			/* Read LUTs */
 			[0] = FLEXSPI_LUT_SEQ(CMD_SDR, FLEXSPI_1PAD, 0xEB,
 				RADDR_SDR, FLEXSPI_4PAD, 0x18),
@@ -87,11 +78,11 @@ const flexspi_nor_config_t qspiflash_config = {
 				0x00, 0, 0, 0),
 		},
 	},
-	.pageSize           = 256u,
-	.sectorSize         = 4u * 1024u,
-	.ipcmdSerialClkFreq = 1u,
-	.blockSize          = 64u * 1024u,
-	.isUniformBlockSize = false,
+	.page_size           = 256u,
+	.sector_size         = 4u * 1024u,
+	.ipcmd_serial_clk_freq = 1u,
+	.block_size          = 64u * 1024u,
+	.is_uniform_block_size = false,
 };
 
 #endif /* XIP_BOOT_HEADER_ENABLE */

@@ -5,3 +5,5 @@
 #
 
 add_subdirectory(${SOC_FAMILY})
+
+zephyr_include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../common)

@@ -351,7 +351,7 @@ static struct mqtt_sn_gateway *mqtt_sn_gw_create(uint8_t gw_id, short duration,
 		return NULL;
 	}
 
-	__ASSERT(gw_addr.size < CONFIG_MQTT_SN_LIB_MAX_ADDR_SIZE,
+	__ASSERT(gw_addr.size <= CONFIG_MQTT_SN_LIB_MAX_ADDR_SIZE,
 		 "Gateway address is larger than allowed by CONFIG_MQTT_SN_LIB_MAX_ADDR_SIZE");
 
 	memset(gw, 0, sizeof(*gw));

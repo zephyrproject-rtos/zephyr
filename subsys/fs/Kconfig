@@ -106,6 +106,23 @@ config FUSE_FS_ACCESS
 	help
 	  Expose file system partitions to the host system through FUSE.
 
+choice FUSE_LIBRARY_VERSION
+	prompt "Host FUSE library version"
+	depends on FUSE_FS_ACCESS
+	default FUSE_LIBRARY_V2
+
+config FUSE_LIBRARY_V2
+	bool "Use libfuse(2)"
+	help
+	  Use v2 of the host FUSE library.
+
+config FUSE_LIBRARY_V3
+	bool "Use libfuse3"
+	help
+	  Use the host fuse3 library. This may not be available in older distributions.
+
+endchoice
+
 endif # FILE_SYSTEM
 
 if FILE_SYSTEM_LIB_LINK

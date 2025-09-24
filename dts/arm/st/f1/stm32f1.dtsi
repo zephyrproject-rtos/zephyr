@@ -55,7 +55,8 @@
 	};
 
 	sram0: memory@20000000 {
-		compatible = "mmio-sram";
+		compatible = "zephyr,memory-region", "mmio-sram";
+		zephyr,memory-region = "SRAM0";
 	};
 
 	clocks {

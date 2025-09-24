@@ -5,52 +5,43 @@
  */
 #include "flash_config.h"
 
-/* Component ID definition, used by tools. */
-#ifndef FSL_COMPONENT_ID
-#define FSL_COMPONENT_ID "platform.drivers.flash_config"
-#endif
-
 #if defined(BOOT_HEADER_ENABLE) && (BOOT_HEADER_ENABLE == 1)
-#if defined(__ARMCC_VERSION) || defined(__GNUC__)
 __attribute__((section(".flash_conf"), used))
-#elif defined(__ICCARM__)
-#pragma location = ".flash_conf"
-#endif
 
 const fc_static_platform_config_t flash_config = {
 	.xspi_fcb_block = {
-		.memConfig = {
+		.mem_config = {
 			.tag = FC_XSPI_CFG_BLK_TAG,
 			.version = FC_XSPI_CFG_BLK_VERSION,
-			.readSampleClkSrc =
-				kXSPIReadSampleClk_ExternalInputFromDqsPad,
-			.csHoldTime = 3,
-			.csSetupTime = 3,
-			.deviceModeCfgEnable = 1,
-			.deviceModeType = 2,
-			.waitTimeCfgCommands = 1,
-			.deviceModeSeq = {
-				.seqNum = 1,
-				.seqId = 6,
+			.read_sample_clk_src =
+				fc_xspi_read_sample_clk_external_input_from_dqs_pad,
+			.cs_hold_time = 3,
+			.cs_setup_time = 3,
+			.device_mode_cfg_enable = 1,
+			.device_mode_type = 2,
+			.wait_time_cfg_commands = 1,
+			.device_mode_seq = {
+				.seq_num = 1,
+				.seq_id = 6,
 				/* SeeLookup table for more details */
 				.reserved = 0,
 			},
-			.deviceModeArg = 2, /* Enable OPI DDR mode */
-			.controllerMiscOption =
-			(1u << Fc_XspiMiscOffset_SafeConfigFreqEnable) |
-			(1u << Fc_XspiMiscOffset_DdrModeEnable),
-			.deviceType = 1,
-			.sflashPadType = 8,
-			.serialClkFreq = Fc_XspiSerialClk_200MHz,
-			.sflashA1Size = 64ul * 1024u * 1024u,
-			.busyOffset = 0u,
-			.busyBitPolarity = 0u,
+			.device_mode_arg = 2, /* Enable OPI DDR mode */
+			.controller_misc_option =
+			(1u << fc_xspi_misc_offset_safe_config_freq_enable) |
+			(1u << fc_xspi_misc_offset_ddr_mode_enable),
+			.device_type = 1,
+			.sflash_pad_type = 8,
+			.serial_clk_freq = fc_xspi_serial_clk_200mhz,
+			.sflash_a1_size = 64ul * 1024u * 1024u,
+			.busy_offset = 0u,
+			.busy_bit_polarity = 0u,
 #if defined(FSL_FEATURE_SILICON_VERSION_A)
-			.lutCustomSeqEnable = 0u,
+			.lut_custom_seq_enable = 0u,
 #else
-			.lutCustomSeqEnable = 1u,
+			.lut_custom_seq_enable = 1u,
 #endif
-			.lookupTable = {
+			.lookup_table = {
 				/*Read*/
 				[0] = FC_XSPI_LUT_SEQ(FC_CMD_DDR, FC_XSPI_8PAD,
 					0xEE, FC_CMD_DDR, FC_XSPI_8PAD, 0x11),
@@ -129,21 +120,21 @@ const fc_static_platform_config_t flash_config = {
 		},
 
 		/* For PAGEPROGRAM custom LUT, uses joined LUT. */
-		.lutCustomSeq[4].seqNum = 2U,
-		.lutCustomSeq[4].seqId = 9U,
+		.lut_custom_seq[4].seq_num = 2U,
+		.lut_custom_seq[4].seq_id = 9U,
 #endif
 		},
-		.pageSize = 256u,
-		.sectorSize = 4u * 1024u,
-		.ipcmdSerialClkFreq = 1u,
-		.serialNorType = 2u,
-		.blockSize = 64u * 1024u,
-		.flashStateCtx = 0x07008200u,
+		.page_size = 256u,
+		.sector_size = 4u * 1024u,
+		.ipcmd_serial_clk_freq = 1u,
+		.serial_nor_type = 2u,
+		.block_size = 64u * 1024u,
+		.flash_state_ctx = 0x07008200u,
 	},
 #ifdef BOOT_ENABLE_XSPI1_PSRAM
 	.psram_config_block = {
-		.xmcdHeader = 0xC0010008,
-		.xmcdOpt0 = 0xC0000700,
+		.xmcd_header = 0xC0010008,
+		.xmcd_opt0 = 0xC0000700,
 	},
 #endif
 };

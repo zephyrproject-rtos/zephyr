@@ -10,6 +10,7 @@ config TEST_IRQ_NUM
 	default 14 if GIC
 	default 22 if SOC_SERIES_DA1469X
 	default 18 if SOC_SERIES_STM32C0X
+	default 1 if (SOC_SERIES_NPCX9 || SOC_SERIES_NPCX7 || SOC_SERIES_NPCK3)
 	default 0
 	help
 	  IRQ number to use for testing purposes. This should be an
@@ -20,6 +21,7 @@ config TEST_IRQ_NUM
 	  - GIC platforms: 14 (available test SGI - Software Generated Interrupt)
 	  - DA1469X series: 22 (available test IRQ)
 	  - STM32C0X series: 18 (available test IRQ)
+	  - NPCX9, NPCX7, NPCK3 series: 1 (unused IRQ not mapped to MIWU groups)
 	  - Other platforms: 0 (magic config value to select the last IRQ: NUM_IRQS - 1)
 
 config TEST_IRQ_PRIO

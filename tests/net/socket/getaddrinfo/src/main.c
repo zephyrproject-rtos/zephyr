@@ -96,7 +96,7 @@ static bool check_dns_query(uint8_t *buf, int buf_len)
 	/* In this test we are just checking if the query came to us in correct
 	 * form, we are not creating a DNS server implementation here.
 	 */
-	if (strncmp(result->data + 1, QUERY_HOST,
+	if (strncmp(result->data, QUERY_HOST,
 		    sizeof(QUERY_HOST) - 1)) {
 		net_buf_unref(result);
 		return false;

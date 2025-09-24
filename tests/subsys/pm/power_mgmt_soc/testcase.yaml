@@ -21,6 +21,10 @@ tests:
       - max32657evkit/max32657
       - max32657evkit/max32657/ns
       - imx95_evk/mimx9596/m7
+      - ek_ra8m1
+      - ek_ra8d1
+      - mck_ra8t1
+      - ek_ra8p1/r7ka8p1kflcac/cm85
     tags: pm
     integration_platforms:
       - mec15xxevb_assy6853

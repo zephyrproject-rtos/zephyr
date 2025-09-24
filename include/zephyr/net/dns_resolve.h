@@ -6,6 +6,7 @@
 
 /*
  * Copyright (c) 2017 Intel Corporation
+ * Copyright 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -395,6 +396,19 @@ typedef void (*dns_resolve_cb_t)(enum dns_resolve_status status,
 				 struct dns_addrinfo *info,
 				 void *user_data);
 
+/**
+ * @typedef dns_resolve_pkt_fw_cb_t
+ * @brief DNS resolve callback which passes the received packet from DNS server to application
+ *
+ * @details The DNS resolve packet forwarding callback is called after a successful
+ * DNS resolving.
+ *
+ * @param dns_data Pointer to data buffer containing the DNS message.
+ * @param buf_len Length of the data.
+ * @param user_data User data passed in dns_resolve function call.
+ */
+typedef void (*dns_resolve_pkt_fw_cb_t)(struct net_buf *dns_data, size_t buf_len, void *user_data);
+
 /** @cond INTERNAL_HIDDEN */
 
 enum dns_resolve_context_state {
@@ -506,6 +520,11 @@ struct dns_resolve_context {
 
 	/** Is this context in use */
 	enum dns_resolve_context_state state;
+
+#if defined(CONFIG_DNS_RESOLVER_PACKET_FORWARDING) || defined(__DOXYGEN__)
+	/** DNS packet forwarding callback. */
+	dns_resolve_pkt_fw_cb_t pkt_fw_cb;
+#endif /* CONFIG_DNS_RESOLVER_PACKET_FORWARDING */
 };
 
 /** @cond INTERNAL_HIDDEN */
@@ -773,6 +792,25 @@ static inline int dns_resolve_service(struct dns_resolve_context *ctx,
  * @return Default DNS context.
  */
 struct dns_resolve_context *dns_resolve_get_default(void);
+
+#if defined(CONFIG_DNS_RESOLVER_PACKET_FORWARDING) || defined(__DOXYGEN__)
+/**
+ * @brief Installs the packet forwarding callback to the DNS resolving context.
+ *
+ * @details When this callback is installed, a received message from DNS server
+ * will be passed to callback.
+ *
+ * @param ctx Pointer to DNS resolver context.
+ * If the application wants to use the default DNS context, pointer to default dns
+ * context can be obtained by calling dns_resolve_get_default() function.
+ * @param cb Callback to call when received DNS message is required by application.
+ */
+static inline void dns_resolve_enable_packet_forwarding(struct dns_resolve_context *ctx,
+							dns_resolve_pkt_fw_cb_t cb)
+{
+	ctx->pkt_fw_cb = cb;
+}
+#endif /* CONFIG_DNS_RESOLVER_PACKET_FORWARDING */
 
 /**
  * @brief Get IP address info from DNS.

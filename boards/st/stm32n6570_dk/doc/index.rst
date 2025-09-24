@@ -248,8 +248,15 @@ First, connect the STM32N6570_DK to your host computer using the ST-Link USB por
             :west-args: --sysbuild
             :goals: build flash
 
-         By default, application runs in XIP mode. Add ``-DSB_CONFIG_MCUBOOT_MODE_RAM_LOAD=y``
-         to use RAMLOAD mode.
+         .. note::
+             By default, application runs in XIP mode. To use RAMLOAD mode, build
+	     using the following command instead:
+
+                      .. zephyr-app-commands::
+                         :zephyr-app: samples/hello_world
+                         :board: stm32n6570_dk
+                         :west-args: --sysbuild -- -DCONFIG_XIP=n -DSB_CONFIG_MCUBOOT_MODE_RAM_LOAD=y
+                         :goals: build flash
 
       .. group-tab:: FSBL - ST-Link
 

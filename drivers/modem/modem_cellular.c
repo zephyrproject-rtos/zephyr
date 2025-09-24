@@ -319,6 +319,16 @@ static void modem_cellular_emit_modem_info(struct modem_cellular_data *data,
 	modem_cellular_emit_event(data, CELLULAR_EVENT_MODEM_INFO_CHANGED, &evt);
 }
 
+static void modem_cellular_emit_reg_state(struct modem_cellular_data *data,
+					   enum cellular_registration_status status)
+{
+	struct cellular_evt_registration_status evt = {
+		.status = status,
+	};
+
+	modem_cellular_emit_event(data, CELLULAR_EVENT_REGISTRATION_STATUS_CHANGED, &evt);
+}
+
 static bool modem_cellular_gpio_is_enabled(const struct gpio_dt_spec *gpio)
 {
 	return gpio->port != NULL;
@@ -585,6 +595,7 @@ static void modem_cellular_chat_on_cxreg(struct modem_chat *chat, char **argv, u
 	} else {
 		modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_DEREGISTERED);
 	}
+	modem_cellular_emit_reg_state(data, registration_status);
 }
 
 MODEM_CHAT_MATCH_DEFINE(ok_match, "OK", "", NULL);
@@ -1188,7 +1199,7 @@ static void modem_cellular_wait_for_apn_event_handler(struct modem_cellular_data
 static int modem_cellular_on_run_apn_script_state_enter(struct modem_cellular_data *data)
 {
 	/* Allow modem time to enter command mode before running apn script */
-	modem_cellular_start_timer(data, K_MSEC(100));
+	modem_cellular_start_timer(data, K_MSEC(200));
 	modem_cellular_build_apn_script(data);
 	return 0;
 }
@@ -2077,7 +2088,7 @@ static void modem_cellular_init_apn(struct modem_cellular_data *data)
 	modem_chat_script_set_abort_matches(&data->apn_script,
 					    abort_matches,
 					    ARRAY_SIZE(abort_matches));
-	modem_chat_script_set_timeout(&data->apn_script, 5);
+	modem_chat_script_set_timeout(&data->apn_script, 1);
 	modem_chat_script_set_callback(&data->apn_script,
 				       modem_cellular_chat_callback_handler);
 }

@@ -58,6 +58,41 @@ static unsigned int port;
 static char socket_path[UNIX_ADDR_BUFF_SIZE];
 static bool arg_found;
 
+static bool is_hci_event_discardable(const uint8_t *evt_data)
+{
+	uint8_t evt_type = evt_data[0];
+
+	switch (evt_type) {
+#if defined(CONFIG_BT_CLASSIC)
+	case BT_HCI_EVT_INQUIRY_RESULT_WITH_RSSI:
+	case BT_HCI_EVT_EXTENDED_INQUIRY_RESULT:
+		return true;
+#endif
+	case BT_HCI_EVT_LE_META_EVENT: {
+		uint8_t subevt_type = evt_data[sizeof(struct bt_hci_evt_hdr)];
+
+		switch (subevt_type) {
+		case BT_HCI_EVT_LE_ADVERTISING_REPORT:
+			return true;
+#if defined(CONFIG_BT_EXT_ADV)
+		case BT_HCI_EVT_LE_EXT_ADVERTISING_REPORT: {
+			const struct bt_hci_evt_le_ext_advertising_report *ext_adv =
+				(void *)&evt_data[3];
+
+			return (ext_adv->num_reports == 1) &&
+			       ((ext_adv->adv_info[0].evt_type & BT_HCI_LE_ADV_EVT_TYPE_LEGACY) !=
+				0);
+		}
+#endif
+		default:
+			return false;
+		}
+	}
+	default:
+		return false;
+	}
+}
+
 static struct net_buf *get_rx(const uint8_t *buf)
 {
 	bool discardable = false;
@@ -65,8 +100,7 @@ static struct net_buf *get_rx(const uint8_t *buf)
 
 	switch (buf[0]) {
 	case BT_HCI_H4_EVT:
-		if (buf[1] == BT_HCI_EVT_LE_META_EVENT &&
-		    (buf[3] == BT_HCI_EVT_LE_ADVERTISING_REPORT)) {
+		if (is_hci_event_discardable(buf)) {
 			discardable = true;
 			timeout = K_NO_WAIT;
 		}

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023, NXP
+ * Copyright 2022-2023, 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,6 +18,8 @@
 #ifndef _ASMLANGUAGE
 #include <zephyr/sys/util.h>
 #include <fsl_common.h>
+#include <fsl_power.h>
+#include <soc_common.h>
 
 #endif /* !_ASMLANGUAGE */
 
@@ -75,6 +77,12 @@
 /* Workaround to handle macro variation in the SDK */
 #ifndef INPUTMUX_PINTSEL_COUNT
 #define INPUTMUX_PINTSEL_COUNT INPUTMUX_PINT_SEL_COUNT
+
+/* Handle variation to implement Wakeup Interrupt */
+#undef NXP_ENABLE_WAKEUP_SIGNAL
+#undef NXP_DISABLE_WAKEUP_SIGNAL
+#define NXP_ENABLE_WAKEUP_SIGNAL(irqn) EnableDeepSleepIRQ(irqn)
+#define NXP_DISABLE_WAKEUP_SIGNAL(irqn) DisableDeepSleepIRQ(irqn)
 
 #if CONFIG_MIPI_DSI
 void imxrt_pre_init_display_interface(void);

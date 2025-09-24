@@ -52,6 +52,12 @@ COND_CODE_1(DT_NODE_EXISTS(DT_INST(1, ite_it8xxx2_usbpd)), (2), (1))
 #define CLK_DIV_HIGH_FIELDS(n) FIELD_PREP(GENMASK(7, 4), n)
 #define CLK_DIV_LOW_FIELDS(n)  FIELD_PREP(GENMASK(3, 0), n)
 
+#ifdef CONFIG_SOC_IT8XXX2_GPIO_Q_GROUP_SUPPORTED
+#define ELPM_BASE_ADDR          0xF03E00
+#define ELPMF5_INPUT_EN         0xF5
+#define XLPIN_INPUT_ENABLE_MASK GENMASK(5, 0)
+#endif /* CONFIG_SOC_IT8XXX2_GPIO_Q_GROUP_SUPPORTED */
+
 uint32_t chip_get_pll_freq(void)
 {
 	uint32_t pllfreq;
@@ -526,6 +532,12 @@ static int ite_it8xxx2_init(void)
 				IT8XXX2_USBPD_DISCONNECT_5_1K_CC1_DB);
 	}
 #endif /* (SOC_USBPD_ITE_PHY_PORT_COUNT > 0) */
+
+#ifdef CONFIG_SOC_IT8XXX2_GPIO_Q_GROUP_SUPPORTED
+	/* set gpio-q group as gpio by default */
+	sys_write8(sys_read8(ELPM_BASE_ADDR + ELPMF5_INPUT_EN) & ~XLPIN_INPUT_ENABLE_MASK,
+		   ELPM_BASE_ADDR + ELPMF5_INPUT_EN);
+#endif /* CONFIG_SOC_IT8XXX2_GPIO_Q_GROUP_SUPPORTED */
 
 	return 0;
 }

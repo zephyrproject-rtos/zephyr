@@ -7,3 +7,5 @@ zephyr_include_directories(.)
 zephyr_include_directories(${SOC_SERIES})
 
 zephyr_include_directories(${SOC_SERIES}/include)
+
+zephyr_include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../common)

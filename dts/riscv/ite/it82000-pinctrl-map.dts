@@ -1,0 +1,30 @@
+/*
+ * Copyright (c) 2025 ITE Corporation. All Rights Reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/it8xxx2-pinctrl.h>
+#include <ite/it8xxx2-pinctrl-map.dtsi>
+
+&pinctrl {
+	/* UART alternate function */
+	/delete-node/ uart1_rx_gpb0_default;
+	/delete-node/ uart1_tx_gpb1_default;
+	/omit-if-no-ref/ uart1_rx_gpc7_default: uart1_rx_gpc7_default {
+		pinmuxs = <&pinctrlc 7 IT8XXX2_ALT_FUNC_5>;
+	};
+	/omit-if-no-ref/ uart1_tx_gpe6_default: uart1_tx_gpe6_default {
+		pinmuxs = <&pinctrle 6 IT8XXX2_ALT_FUNC_3>;
+	};
+
+	/* I2C alternate function */
+	/delete-node/ i2c0_clk_gpb3_default;
+	/delete-node/ i2c0_data_gpb4_default;
+	/omit-if-no-ref/ i2c0_clk_gpf2_default: i2c0_clk_gpf2_default {
+		pinmuxs = <&pinctrlf 2 IT8XXX2_ALT_FUNC_1>;
+	};
+	/omit-if-no-ref/ i2c0_data_gpf3_default: i2c0_data_gpf3_default {
+		pinmuxs = <&pinctrlf 3 IT8XXX2_ALT_FUNC_1>;
+	};
+};

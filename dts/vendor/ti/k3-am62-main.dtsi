@@ -125,4 +125,39 @@
 		ngpios = <32>;
 		status = "disabled";
 	};
+
+	main_rti0: watchdog@e000000 {
+		compatible = "ti,j7-rti-wdt";
+		reg = <0x0e000000 0x100>;
+		clock-frequency = <DT_FREQ_M(25)>;
+		status = "disabled";
+	};
+
+	main_rti1: watchdog@e010000 {
+		compatible = "ti,j7-rti-wdt";
+		reg = <0x0e010000 0x100>;
+		clock-frequency = <DT_FREQ_M(25)>;
+		status = "disabled";
+	};
+
+	main_rti2: watchdog@e020000 {
+		compatible = "ti,j7-rti-wdt";
+		reg = <0x0e020000 0x100>;
+		clock-frequency = <DT_FREQ_M(25)>;
+		status = "disabled";
+	};
+
+	main_rti3: watchdog@e030000 {
+		compatible = "ti,j7-rti-wdt";
+		reg = <0x0e030000 0x100>;
+		clock-frequency = <DT_FREQ_M(25)>;
+		status = "disabled";
+	};
+
+	main_rti15: watchdog@e0f0000 {
+		compatible = "ti,j7-rti-wdt";
+		reg = <0x0e0f0000 0x100>;
+		clock-frequency = <DT_FREQ_M(25)>;
+		status = "disabled";
+	};
 };

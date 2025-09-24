@@ -7,31 +7,22 @@
 
 #include "evkmimxrt1010_flexspi_nor_config.h"
 
-/* Component ID definition, used by tools. */
-#ifndef FSL_COMPONENT_ID
-#define FSL_COMPONENT_ID "platform.drivers.xip_board"
-#endif
-
 #if defined(XIP_BOOT_HEADER_ENABLE) && (XIP_BOOT_HEADER_ENABLE == 1)
-#if defined(__CC_ARM) || defined(__ARMCC_VERSION) || defined(__GNUC__)
 __attribute__((section(".boot_hdr.conf"), used))
-#elif defined(__ICCARM__)
-#pragma location = ".boot_hdr.conf"
-#endif
 
-const flexspi_nor_config_t qspiflash_config = {
-	.memConfig = {
+const flexspi_nor_config_t qspi_flash_config = {
+	.mem_config = {
 		.tag = FLEXSPI_CFG_BLK_TAG,
 		.version = FLEXSPI_CFG_BLK_VERSION,
-		.readSampleClkSrc =
-			kFlexSPIReadSampleClk_LoopbackFromDqsPad,
-		.csHoldTime = 3u,
-		.csSetupTime = 3u,
-		.deviceType = kFlexSpiDeviceType_SerialNOR,
-		.sflashPadType = kSerialFlash_4Pads,
-		.serialClkFreq = kFlexSpiSerialClk_120MHz,
-		.sflashA1Size = 16u * 1024u * 1024u,
-		.lookupTable = {
+		.read_sample_clk_src =
+			flexspi_read_sample_clk_loopback_from_dqs_pad,
+		.cs_hold_time = 3u,
+		.cs_setup_time = 3u,
+		.device_type = flexspi_device_type_serial_nor,
+		.sflash_pad_type = serial_flash_4_pads,
+		.serial_clk_freq = flexspi_serial_clk_120mhz,
+		.sflash_a1_size = 16u * 1024u * 1024u,
+		.lookup_table = {
 			/* Read LUTs */
 			FLEXSPI_LUT_SEQ(CMD_SDR, FLEXSPI_1PAD,
 				0xEB, RADDR_SDR, FLEXSPI_4PAD, 0x18),
@@ -65,11 +56,11 @@ const flexspi_nor_config_t qspiflash_config = {
 				 STOP, FLEXSPI_1PAD, 0x0),
 		},
 	},
-	.pageSize = 256u,
-	.sectorSize = 4u * 1024u,
-	.ipcmdSerialClkFreq = 1u,
-	.blockSize = 64u * 1024u,
-	.isUniformBlockSize = false,
+	.page_size = 256u,
+	.sector_size = 4u * 1024u,
+	.ipcmd_serial_clk_freq = 1u,
+	.block_size = 64u * 1024u,
+	.is_uniform_block_size = false,
 };
 
 #endif /* XIP_BOOT_HEADER_ENABLE */

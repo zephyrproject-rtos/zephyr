@@ -26,3 +26,17 @@ tests:
     platform_allow:
       - native_sim
       - qemu_x86
+  filesystem.zms.no_double_write:
+    extra_args:
+      - CONFIG_ZMS_NO_DOUBLE_WRITE=y
+    platform_allow:
+      - native_sim
+      - qemu_x86
+  filesystem.zms.no_double_write_cache:
+    extra_args:
+      - CONFIG_ZMS_NO_DOUBLE_WRITE=y
+      - CONFIG_ZMS_LOOKUP_CACHE=y
+      - CONFIG_ZMS_LOOKUP_CACHE_SIZE=64
+    platform_allow:
+      - native_sim
+      - qemu_x86

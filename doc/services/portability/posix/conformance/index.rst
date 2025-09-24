@@ -40,7 +40,7 @@ POSIX System Interfaces
     :ref:`_POSIX_CLOCK_SELECTION<posix_option_group_clock_selection>`, 200809L, :kconfig:option:`CONFIG_POSIX_CLOCK_SELECTION`
     :ref:`_POSIX_MAPPED_FILES<posix_option_group_mapped_files>`, 200809L, :kconfig:option:`CONFIG_POSIX_MAPPED_FILES`
     :ref:`_POSIX_MEMORY_PROTECTION<posix_option_group_memory_protection>`, 200809L, :kconfig:option:`CONFIG_POSIX_MEMORY_PROTECTION` :ref:`†<posix_undefined_behaviour>`
-    :ref:`_POSIX_READER_WRITER_LOCKS<posix_option_reader_writer_locks>`, 200809L, :kconfig:option:`CONFIG_POSIX_READER_WRITER_LOCKS`
+    :ref:`_POSIX_READER_WRITER_LOCKS<posix_option_group_rw_locks>`, 200809L, :kconfig:option:`CONFIG_POSIX_RW_LOCKS`
     :ref:`_POSIX_REALTIME_SIGNALS<posix_option_group_realtime_signals>`, -1, :kconfig:option:`CONFIG_POSIX_REALTIME_SIGNALS`
     :ref:`_POSIX_SEMAPHORES<posix_option_group_semaphores>`, 200809L, :kconfig:option:`CONFIG_POSIX_SEMAPHORES`
     :ref:`_POSIX_SPIN_LOCKS<posix_option_group_spin_locks>`, 200809L, :kconfig:option:`CONFIG_POSIX_SPIN_LOCKS`

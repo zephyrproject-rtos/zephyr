@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, NXP
+ * Copyright (c) 2017, 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,5 +30,6 @@
 #define KINETIS_SIM_ENET_CLK		4321
 #define KINETIS_SIM_ENET_1588_CLK	4322
 
+#define KINETIS_SIM_CMP_CLK		4323
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_KINETIS_SIM_H_ */

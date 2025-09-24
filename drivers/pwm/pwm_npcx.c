@@ -58,6 +58,13 @@ static void pwm_npcx_configure(const struct device *dev, int clk_bus)
 	/* Disable PWM for module configuration first */
 	inst->PWMCTL &= ~BIT(NPCX_PWMCTL_PWR);
 
+	/*
+	 * NPCX PWM module mixes byte and word registers together. Make sure
+	 * word reg access via structure won't break into two byte reg accesses
+	 * unexpectedly by toolchains options or attributes. If so, stall here.
+	 */
+	NPCX_REG_WORD_ACCESS_CHECK(inst->PRSC, 0xA55A);
+
 	/* Set default PWM polarity to normal */
 	inst->PWMCTL &= ~BIT(NPCX_PWMCTL_INVP);
 
@@ -172,17 +179,8 @@ static int pwm_npcx_init(const struct device *dev)
 {
 	const struct pwm_npcx_config *const config = dev->config;
 	struct pwm_npcx_data *const data = dev->data;
-	struct pwm_reg *const inst = config->base;
 	const struct device *const clk_dev = DEVICE_DT_GET(NPCX_CLK_CTRL_NODE);
 	int ret;
-
-	/*
-	 * NPCX PWM module mixes byte and word registers together. Make sure
-	 * word reg access via structure won't break into two byte reg accesses
-	 * unexpectedly by toolchains options or attributes. If so, stall here.
-	 */
-	NPCX_REG_WORD_ACCESS_CHECK(inst->PRSC, 0xA55A);
-
 
 	if (!device_is_ready(clk_dev)) {
 		LOG_ERR("clock control device not ready");

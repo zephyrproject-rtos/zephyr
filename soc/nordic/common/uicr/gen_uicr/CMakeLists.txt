@@ -44,6 +44,25 @@ function(compute_partition_address_and_size partition_nodelabel output_address_v
   set(${output_size_var} ${partition_size} PARENT_SCOPE)
 endfunction()
 
+# Function to compute optional partition address and size from devicetree
+# If partition doesn't exist, sets both address and size to 0
+function(compute_optional_partition_address_and_size partition_nodelabel output_address_var output_size_var)
+  # Initialize with default values
+  set(${output_address_var} 0 PARENT_SCOPE)
+  set(${output_size_var} 0 PARENT_SCOPE)
+
+  # Check if partition exists
+  dt_nodelabel(partition_path NODELABEL ${partition_nodelabel} QUIET)
+  if(partition_path)
+    # Call nested function with different variable names to avoid naming conflicts
+    compute_partition_address_and_size(${partition_nodelabel} temp_addr temp_size)
+
+    # Copy the results to the output variables in parent scope
+    set(${output_address_var} ${temp_addr} PARENT_SCOPE)
+    set(${output_size_var} ${temp_size} PARENT_SCOPE)
+  endif()
+endfunction()
+
 # Use CMAKE_VERBOSE_MAKEFILE to silence an unused-variable warning.
 if(CMAKE_VERBOSE_MAKEFILE)
 endif()
@@ -59,6 +78,32 @@ set(secondary_periphconf_hex_file ${APPLICATION_BINARY_DIR}/zephyr/secondary_per
 # Get UICR absolute address from this image's devicetree
 dt_nodelabel(uicr_path NODELABEL "uicr" REQUIRED)
 dt_reg_addr(UICR_ADDRESS PATH ${uicr_path} REQUIRED)
+
+# Handle secure storage configuration
+set(securestorage_args)
+if(CONFIG_GEN_UICR_SECURESTORAGE)
+  list(APPEND securestorage_args --securestorage)
+
+  # Extract secure storage partition information (required)
+  compute_partition_address_and_size("secure_storage_partition" SECURE_STORAGE_ADDRESS SECURE_STORAGE_SIZE)
+  list(APPEND securestorage_args --securestorage-address ${SECURE_STORAGE_ADDRESS})
+  list(APPEND securestorage_args --securestorage-size ${SECURE_STORAGE_SIZE})
+
+  # Extract individual partition information for validation (optional partitions)
+  compute_optional_partition_address_and_size("cpuapp_crypto_partition" CPUAPP_CRYPTO_ADDRESS CPUAPP_CRYPTO_SIZE)
+  compute_optional_partition_address_and_size("cpurad_crypto_partition" CPURAD_CRYPTO_ADDRESS CPURAD_CRYPTO_SIZE)
+  compute_optional_partition_address_and_size("cpuapp_its_partition" CPUAPP_ITS_ADDRESS CPUAPP_ITS_SIZE)
+  compute_optional_partition_address_and_size("cpurad_its_partition" CPURAD_ITS_ADDRESS CPURAD_ITS_SIZE)
+
+  list(APPEND securestorage_args --cpuapp-crypto-address ${CPUAPP_CRYPTO_ADDRESS})
+  list(APPEND securestorage_args --cpuapp-crypto-size ${CPUAPP_CRYPTO_SIZE})
+  list(APPEND securestorage_args --cpurad-crypto-address ${CPURAD_CRYPTO_ADDRESS})
+  list(APPEND securestorage_args --cpurad-crypto-size ${CPURAD_CRYPTO_SIZE})
+  list(APPEND securestorage_args --cpuapp-its-address ${CPUAPP_ITS_ADDRESS})
+  list(APPEND securestorage_args --cpuapp-its-size ${CPUAPP_ITS_SIZE})
+  list(APPEND securestorage_args --cpurad-its-address ${CPURAD_ITS_ADDRESS})
+  list(APPEND securestorage_args --cpurad-its-size ${CPURAD_ITS_SIZE})
+endif(CONFIG_GEN_UICR_SECURESTORAGE)
 
 if(CONFIG_GEN_UICR_GENERATE_PERIPHCONF)
   # gen_uicr.py parses all zephyr.elf files. To find these files (which
@@ -134,6 +179,7 @@ add_custom_command(
           --out-merged-hex ${merged_hex_file}
           --out-uicr-hex ${uicr_hex_file}
           ${periphconf_args}
+          ${securestorage_args}
           ${secondary_args}
   DEPENDS ${periphconf_elfs} ${secondary_periphconf_elfs}
   WORKING_DIRECTORY ${APPLICATION_BINARY_DIR}

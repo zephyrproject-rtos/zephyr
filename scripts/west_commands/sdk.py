@@ -520,6 +520,10 @@ class Sdk(WestCommand):
         except Exception as e:
             self.die(e)
 
+        zephyr_sdk_install_dir = os.environ.get("ZEPHYR_SDK_INSTALL_DIR", None)
+        if zephyr_sdk_install_dir:
+            sdk_lines += [f'dir={zephyr_sdk_install_dir}']
+
         def parse_sdk_entry(line):
             class SdkEntry:
                 def __init__(self):

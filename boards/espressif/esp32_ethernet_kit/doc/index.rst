@@ -413,7 +413,7 @@ GPIO Allocation Summary
        to use these pins, please solder a module without PSRAM memory inside,
        e.g. the ESP32-WROOM-32D or ESP32-SOLO-1.
 
-System requirements
+System Requirements
 *******************
 
 Espressif HAL requires WiFi and Bluetooth binary blobs in order work. Run the command
@@ -460,8 +460,8 @@ Board Init
 RESET_N (GPIO5) is automatically set high to enable the Ethernet PHY
 during board initialization (board_init.c)
 
-Building and Flashing
-*********************
+Programming and Debugging
+*************************
 
 .. zephyr:board-supported-runners::
 
@@ -472,7 +472,7 @@ Building and Flashing
    :start-after: espressif-board-variants
 
 Debugging
-*********
+=========
 
 .. include:: ../../../espressif/common/openocd-debugging.rst
    :start-after: espressif-openocd-debugging

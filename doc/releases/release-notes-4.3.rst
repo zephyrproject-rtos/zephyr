@@ -66,6 +66,8 @@ Deprecated APIs and options
 * :c:enum:`bt_hci_bus` was deprecated as it was not used. :c:macro:`BT_DT_HCI_BUS_GET` should be
   used instead.
 
+* :kconfig:option:`CONFIG_POSIX_READER_WRITER_LOCKS` is deprecated. Use :kconfig:option:`CONFIG_POSIX_RW_LOCKS` instead.
+
 New APIs and options
 ====================
 
@@ -177,9 +179,19 @@ New APIs and options
     * :c:func:`zsock_listen` now implements the ``backlog`` parameter support. The TCP server
       socket will limit the number of pending incoming connections to that value.
 
+* Newlib
+
+  * :kconfig:option:`CONFIG_NEWLIB_LIBC_USE_POSIX_LIMITS_H`
+
 * Power management
 
    * :c:func:`pm_device_driver_deinit`
+   * :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME_DEFAULT_ENABLE`
+   * :kconfig:option:`CONFIG_PM_S2RAM` has been refactored to be promptless. The application now
+     only needs to enable any "suspend-to-ram" power state in the devicetree.
+   * The :kconfig:option:`PM_S2RAM_CUSTOM_MARKING` has been renamed to
+     :kconfig:option:`HAS_PM_S2RAM_CUSTOM_MARKING` and refactored to be promptless. This option
+     is now selected by SoCs if they need it for their "suspend-to-ram" implementations.
 
 * Settings
 
@@ -202,6 +214,10 @@ New APIs and options
 * Sys
 
   * :c:func:`sys_count_bits`
+
+* Task Watchdog
+
+  * :kconfig:option:`CONFIG_TASK_WDT_DUMMY`
 
 .. zephyr-keep-sorted-stop
 

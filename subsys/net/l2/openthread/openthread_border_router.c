@@ -9,6 +9,8 @@
 #include <openthread/backbone_router_ftd.h>
 #include <openthread/border_router.h>
 #include <openthread/border_routing.h>
+#include <openthread/dnssd_server.h>
+#include <openthread/srp_server.h>
 #include <openthread/link.h>
 #include <openthread/mdns.h>
 #include <openthread/thread.h>
@@ -93,11 +95,21 @@ int openthread_start_border_router_services(struct net_if *ot_iface, struct net_
 		error = -EIO;
 		goto exit;
 	}
+	if (dhcpv6_pd_client_init(instance, ail_iface_index) != OT_ERROR_NONE) {
+		error = -EIO;
+		goto exit;
+	}
 
 	if (border_agent_init(instance) != OT_ERROR_NONE) {
 		error = -EIO;
 		goto exit;
 	}
+#if defined(CONFIG_OPENTHREAD_DNS_UPSTREAM_QUERY)
+	if (dns_upstream_resolver_init(instance) != OT_ERROR_NONE) {
+		error = -EIO;
+		goto exit;
+	}
+#endif /* CONFIG_OPENTHREAD_DNS_UPSTREAM_QUERY */
 
 	/* Call OpenThread API */
 	if (otBorderRoutingInit(instance, ail_iface_index, true) != OT_ERROR_NONE) {
@@ -112,7 +124,14 @@ int openthread_start_border_router_services(struct net_if *ot_iface, struct net_
 		error = -EIO;
 		goto exit;
 	}
+
+	otBorderRoutingDhcp6PdSetEnabled(instance, true);
 	otBackboneRouterSetEnabled(instance, true);
+	otSrpServerSetAutoEnableMode(instance, true);
+
+#if defined(CONFIG_OPENTHREAD_DNS_UPSTREAM_QUERY)
+	otDnssdUpstreamQuerySetEnabled(instance, true);
+#endif /* CONFIG_OPENTHREAD_DNS_UPSTREAM_QUERY */
 
 	openthread_mutex_unlock();
 

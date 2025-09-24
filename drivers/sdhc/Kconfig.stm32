@@ -13,6 +13,8 @@ config SDHC_STM32_SDIO
 	help
 	  Enable support for SDMMC on STM32 platforms for SDIO devices.
 
+if SDHC_STM32_SDIO
+
 config SDHC_BUFFER_ALIGNMENT
 	default 32
 
@@ -20,3 +22,5 @@ config SDHC_STM32_POLLING_SUPPORT
 	bool "STM32 SDHC Polling driver support"
 	help
 	  Enables support for SDHC Polling mode on STM32 microcontrollers.
+
+endif # SDHC_STM32_SDIO

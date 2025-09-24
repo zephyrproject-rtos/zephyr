@@ -38,7 +38,7 @@ static struct wifi_enterprise_creds_params hapd_enterprise_creds;
 #define hostapd_cli_cmd_v(cmd, ...) ({					\
 	bool status;							\
 									\
-	if (zephyr_hostapd_cli_cmd_v(cmd, ##__VA_ARGS__) < 0) {		\
+	if (zephyr_hostapd_cli_cmd_v(iface->ctrl_conn, cmd, ##__VA_ARGS__) < 0) {		\
 		wpa_printf(MSG_ERROR,					\
 			   "Failed to execute wpa_cli command: %s",	\
 			   cmd);					\
@@ -365,12 +365,22 @@ out:
 }
 #endif
 
-bool hostapd_ap_reg_domain(struct wifi_reg_domain *reg_domain)
+bool hostapd_ap_reg_domain(const struct device *dev,
+	struct wifi_reg_domain *reg_domain)
 {
+	struct hostapd_iface *iface;
+
+	iface = get_hostapd_handle(dev);
+	if (iface == NULL) {
+		wpa_printf(MSG_ERROR, "Interface %s not found", dev->name);
+		return false;
+	}
+
 	return hostapd_cli_cmd_v("set country_code %s", reg_domain->country_code);
 }
 
-static int hapd_config_chan_center_seg0(struct wifi_connect_req_params *params)
+static int hapd_config_chan_center_seg0(struct hostapd_iface *iface,
+	struct wifi_connect_req_params *params)
 {
 	int ret = 0;
 	uint8_t center_freq_seg0_idx = 0;
@@ -472,7 +482,7 @@ int hapd_config_network(struct hostapd_iface *iface,
 		goto out;
 	}
 
-	ret = hapd_config_chan_center_seg0(params);
+	ret = hapd_config_chan_center_seg0(iface, params);
 	if (ret) {
 		goto out;
 	}

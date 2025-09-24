@@ -207,6 +207,12 @@ static int llext_find_tables(struct llext_loader *ldr, struct llext *ext)
 		return -ENOEXEC;
 	}
 
+	if (ldr->sects[LLEXT_MEM_SYMTAB].sh_entsize != sizeof(elf_sym_t) ||
+	    ldr->sects[LLEXT_MEM_SYMTAB].sh_size % ldr->sects[LLEXT_MEM_SYMTAB].sh_entsize != 0) {
+		LOG_ERR("Invalid symbol table");
+		return -ENOEXEC;
+	}
+
 	return 0;
 }
 
@@ -536,6 +542,8 @@ static int llext_count_export_syms(struct llext_loader *ldr, struct llext *ext)
 	size_t ent_size = ldr->sects[LLEXT_MEM_SYMTAB].sh_entsize;
 	size_t syms_size = ldr->sects[LLEXT_MEM_SYMTAB].sh_size;
 	int sym_cnt = syms_size / sizeof(elf_sym_t);
+	elf_shdr_t *str_region = ldr->sects + LLEXT_MEM_STRTAB;
+	size_t str_reg_size = str_region->sh_size;
 	const char *name;
 	elf_sym_t sym;
 	int i, ret;
@@ -560,6 +568,12 @@ static int llext_count_export_syms(struct llext_loader *ldr, struct llext *ext)
 		ret = llext_read(ldr, &sym, ent_size);
 		if (ret != 0) {
 			return ret;
+		}
+
+		if (sym.st_name >= str_reg_size) {
+			LOG_ERR("Invalid symbol name index %d in symbol %d",
+				sym.st_name, i);
+			return -ENOEXEC;
 		}
 
 		uint32_t stt = ELF_ST_TYPE(sym.st_info);
@@ -730,6 +744,25 @@ static int llext_copy_symbols(struct llext_loader *ldr, struct llext *ext,
 	return 0;
 }
 
+static int llext_validate_sections_name(struct llext_loader *ldr, struct llext *ext)
+{
+	const elf_shdr_t *shstrtab = ldr->sects + LLEXT_MEM_SHSTRTAB;
+	size_t shstrtab_size = shstrtab->sh_size;
+	int i;
+
+	for (i = 0; i < ext->sect_cnt; i++) {
+		elf_shdr_t *shdr = ext->sect_hdrs + i;
+
+		if (shdr->sh_name >= shstrtab_size) {
+			LOG_ERR("Invalid section name index %d in section %d",
+				shdr->sh_name, i);
+			return -ENOEXEC;
+		}
+	}
+
+	return 0;
+}
+
 /*
  * Load a valid ELF as an extension
  */
@@ -773,6 +806,12 @@ int do_llext_load(struct llext_loader *ldr, struct llext *ext,
 	ret = llext_copy_strings(ldr, ext, ldr_parm);
 	if (ret != 0) {
 		LOG_ERR("Failed to copy ELF string sections, ret %d", ret);
+		goto out;
+	}
+
+	ret = llext_validate_sections_name(ldr, ext);
+	if (ret != 0) {
+		LOG_ERR("Failed to validate ELF section names, ret %d", ret);
 		goto out;
 	}
 
