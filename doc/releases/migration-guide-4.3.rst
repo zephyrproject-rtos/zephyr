@@ -38,6 +38,9 @@ Base Libraries
   been moved from ``util.h`` to a separate
   :zephyr_file:`include/zephyr/sys/util_utf8.h` file.
 
+* ``Z_MIN``, ``Z_MAX`` and ``Z_CLAMP`` macros have been renamed to
+  :c:macro:`min` :c:macro:`max` and :c:macro:`clamp`.
+
 Boards
 ******
 
