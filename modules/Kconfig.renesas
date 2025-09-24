@@ -302,10 +302,15 @@ config USE_RZ_FSP_EXT_IRQ
 	help
 	  Enable RZ FSP External IRQ driver
 
-config USE_RZ_FSP_DMA
+config USE_RZ_FSP_DMAC
 	bool
 	help
-	  Enable RZ FSP DMA driver
+	  Enable RZ FSP DMAC driver
+
+config USE_RZ_FSP_DMAC_B
+	bool
+	help
+	  Enable RZ FSP DMAC_B driver
 
 config USE_RZ_FSP_MHU
 	bool
