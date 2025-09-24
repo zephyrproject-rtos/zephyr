@@ -285,8 +285,6 @@ static ALWAYS_INLINE void update_cache(int preempt_ok)
 #endif /* CONFIG_TIMESLICING */
 		update_metairq_preempt(thread);
 		_kernel.ready_q.cache = thread;
-	} else {
-		_kernel.ready_q.cache = _current;
 	}
 
 #else
