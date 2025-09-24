@@ -1054,6 +1054,7 @@ Devicetree:
     - ^dts/bindings/[^,]+$
   files:
     - scripts/dts/
+    - dts/Kconfig
     - dts/common/
     - tests/lib/devicetree/
     - doc/build/dts/
@@ -1068,6 +1069,16 @@ Devicetree:
     - "area: Devicetree"
   tests:
     - libraries.devicetree
+
+Devicetree Bindings:
+  status: odd fixes
+  files-regex:
+    - ^dts/bindings/.*zephyr.*
+  files:
+    - dts/bindings/
+    - include/zephyr/dt-bindings/
+  labels:
+    - "area: Devicetree Bindings"
 
 Disk:
   status: maintained
