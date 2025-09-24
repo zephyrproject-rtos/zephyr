@@ -123,8 +123,7 @@ int video_request_buffers(struct video_buffer_request *const vbr)
 
 	for (uint8_t i = 0; i < vbr->count; i++) {
 		if (vbr->memory == VIDEO_MEMORY_INTERNAL) {
-			mem = VIDEO_COMMON_HEAP_ALLOC(CONFIG_VIDEO_BUFFER_POOL_ALIGN, vbr->size,
-						      vbr->timeout);
+			mem = VIDEO_COMMON_HEAP_ALLOC(vbr->align, vbr->size, vbr->timeout);
 			if (mem == NULL) {
 				release_buffers_range((uint16_t)start_idx, i);
 				k_mutex_unlock(&video_buffer_mutex);
