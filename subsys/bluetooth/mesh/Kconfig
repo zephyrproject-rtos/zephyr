@@ -1072,7 +1072,7 @@ config BT_MESH_BLOB_IO_FLASH_WRITE_BLOCK_SIZE_MAX
 	default 4
 	help
 	  The BLOB IO Flash module will support flash devices with explicit erase
-	  using a write block size of at most this value.
+	  when this value is set to a multiple of the device write block size.
 
 endif # BT_MESH_BLOB_IO_FLASH_WITH_ERASE
 

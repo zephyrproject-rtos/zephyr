@@ -19,6 +19,10 @@ extern "C" {
  * @{
  */
 
+#ifndef CONFIG_BT_MESH_BLOB_IO_FLASH_WRITE_BLOCK_SIZE_MAX
+#define CONFIG_BT_MESH_BLOB_IO_FLASH_WRITE_BLOCK_SIZE_MAX 1
+#endif
+
 /** BLOB flash stream. */
 struct bt_mesh_blob_io_flash {
 	/** Flash area ID to write the BLOB to. */
