@@ -439,9 +439,9 @@ static ZTEST(mqtt_sn_client, test_mqtt_sn_wait_regack)
 	struct mqtt_sn_data topic1 = MQTT_SN_DATA_STRING_LITERAL("zephyr1");
 	struct mqtt_sn_data topic2 = MQTT_SN_DATA_STRING_LITERAL("zephyr2");
 	/* registration ack with topic ID 0x1A1B, msg ID 0x0002, return code accepted */
-	uint8_t regack1[] = {7, 0x0B, 0x1A, 0x1B, 0x00, 0x03, 0};
+	uint8_t regack1[] = {7, 0x0B, 0x1A, 0x1B, 0x00, 0x01, 0};
 	/* registration ack with topic ID 0x1A1C, msg ID 0x0003, return code accepted */
-	uint8_t regack2[] = {7, 0x0B, 0x1A, 0x1C, 0x00, 0x05, 0};
+	uint8_t regack2[] = {7, 0x0B, 0x1A, 0x1C, 0x00, 0x03, 0};
 	int err;
 
 	mqtt_sn_connect_no_will(mqtt_client);
@@ -503,8 +503,8 @@ static ZTEST(mqtt_sn_client, test_mqtt_sn_wait_suback)
 {
 	struct mqtt_sn_data topic1 = MQTT_SN_DATA_STRING_LITERAL("zephyr1");
 	struct mqtt_sn_data topic2 = MQTT_SN_DATA_STRING_LITERAL("zephyr2");
-	uint8_t suback1[] = {8, 0x13, 0, 0x1B, 0x1B, 0x00, 0x07, 0};
-	uint8_t suback2[] = {8, 0x13, 0, 0x1B, 0x1C, 0x00, 0x08, 0};
+	uint8_t suback1[] = {8, 0x13, 0, 0x1B, 0x1B, 0x00, 0x01, 0};
+	uint8_t suback2[] = {8, 0x13, 0, 0x1B, 0x1C, 0x00, 0x02, 0};
 	int err;
 
 	mqtt_sn_connect_no_will(mqtt_client);

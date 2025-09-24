@@ -98,11 +98,9 @@ static void mqtt_sn_set_state(struct mqtt_sn_client *client, enum mqtt_sn_client
 #define N_RETRY          (CONFIG_MQTT_SN_LIB_N_RETRY)
 #define T_KEEPALIVE_MSEC (CONFIG_MQTT_SN_KEEPALIVE * MSEC_PER_SEC)
 
-static uint16_t next_msg_id(void)
+static uint16_t next_msg_id(struct mqtt_sn_client *client)
 {
-	static uint16_t msg_id;
-
-	return ++msg_id;
+	return ++client->next_msg_id;
 }
 
 static int encode_and_send(struct mqtt_sn_client *client, struct mqtt_sn_param *p,
@@ -154,11 +152,11 @@ end:
 	return err;
 }
 
-static void mqtt_sn_con_init(struct mqtt_sn_confirmable *con)
+static void mqtt_sn_con_init(struct mqtt_sn_client *client, struct mqtt_sn_confirmable *con)
 {
 	con->last_attempt = 0;
 	con->retries = N_RETRY;
-	con->msg_id = next_msg_id();
+	con->msg_id = next_msg_id(client);
 }
 
 static void mqtt_sn_publish_destroy(struct mqtt_sn_client *client, struct mqtt_sn_publish *pub)
@@ -178,7 +176,8 @@ static void mqtt_sn_publish_destroy_all(struct mqtt_sn_client *client)
 	}
 }
 
-static struct mqtt_sn_publish *mqtt_sn_publish_create(struct mqtt_sn_data *data)
+static struct mqtt_sn_publish *mqtt_sn_publish_create(struct mqtt_sn_client *client,
+						      struct mqtt_sn_data *data)
 {
 	struct mqtt_sn_publish *pub;
 
@@ -199,7 +198,7 @@ static struct mqtt_sn_publish *mqtt_sn_publish_create(struct mqtt_sn_data *data)
 		pub->datalen = data->size;
 	}
 
-	mqtt_sn_con_init(&pub->con);
+	mqtt_sn_con_init(client, &pub->con);
 
 	return pub;
 }
@@ -232,7 +231,8 @@ static struct mqtt_sn_publish *mqtt_sn_publish_find_by_topic(struct mqtt_sn_clie
 	return NULL;
 }
 
-static struct mqtt_sn_topic *mqtt_sn_topic_create(struct mqtt_sn_data *name)
+static struct mqtt_sn_topic *mqtt_sn_topic_create(struct mqtt_sn_client *client,
+						  struct mqtt_sn_data *name)
 {
 	struct mqtt_sn_topic *topic;
 
@@ -256,7 +256,7 @@ static struct mqtt_sn_topic *mqtt_sn_topic_create(struct mqtt_sn_data *name)
 	memcpy(topic->name, name->data, name->size);
 	topic->namelen = name->size;
 
-	mqtt_sn_con_init(&topic->con);
+	mqtt_sn_con_init(client, &topic->con);
 
 	return topic;
 }
@@ -1182,7 +1182,7 @@ int mqtt_sn_subscribe(struct mqtt_sn_client *client, enum mqtt_sn_qos qos,
 			return -EALREADY;
 		}
 	} else {
-		topic = mqtt_sn_topic_create(topic_name);
+		topic = mqtt_sn_topic_create(client, topic_name);
 		if (!topic) {
 			return -ENOMEM;
 		}
@@ -1227,7 +1227,7 @@ int mqtt_sn_unsubscribe(struct mqtt_sn_client *client, enum mqtt_sn_qos qos,
 	}
 
 	topic->state = MQTT_SN_TOPIC_STATE_UNSUBSCRIBE;
-	mqtt_sn_con_init(&topic->con);
+	mqtt_sn_con_init(client, &topic->con);
 
 	err = k_work_reschedule(&client->process_work, K_NO_WAIT);
 	if (err < 0) {
@@ -1260,7 +1260,7 @@ int mqtt_sn_publish(struct mqtt_sn_client *client, enum mqtt_sn_qos qos,
 
 	topic = mqtt_sn_topic_find_by_name(client, topic_name);
 	if (!topic) {
-		topic = mqtt_sn_topic_create(topic_name);
+		topic = mqtt_sn_topic_create(client, topic_name);
 		if (!topic) {
 			return -ENOMEM;
 		}
@@ -1270,7 +1270,7 @@ int mqtt_sn_publish(struct mqtt_sn_client *client, enum mqtt_sn_qos qos,
 		sys_slist_append(&client->topic, &topic->next);
 	}
 
-	pub = mqtt_sn_publish_create(data);
+	pub = mqtt_sn_publish_create(client, data);
 	if (!pub) {
 		k_work_reschedule(&client->process_work, K_NO_WAIT);
 		return -ENOMEM;
@@ -1423,7 +1423,7 @@ static void handle_register(struct mqtt_sn_client *client, struct mqtt_sn_param_
 	struct mqtt_sn_param response = {.type = MQTT_SN_MSG_TYPE_REGACK};
 	struct mqtt_sn_topic *topic;
 
-	topic = mqtt_sn_topic_create(&p->topic);
+	topic = mqtt_sn_topic_create(client, &p->topic);
 	if (!topic) {
 		return;
 	}
@@ -1758,7 +1758,7 @@ int mqtt_sn_predefine_topic(struct mqtt_sn_client *client, uint16_t topic_id,
 		return -EALREADY;
 	}
 
-	topic = mqtt_sn_topic_create(topic_name);
+	topic = mqtt_sn_topic_create(client, topic_name);
 	if (topic == NULL) {
 		return -ENOMEM;
 	}
