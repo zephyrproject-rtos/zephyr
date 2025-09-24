@@ -3913,7 +3913,6 @@ OSDP:
   maintainers:
     - sidcha
   collaborators:
-    - adakus
     - r2r0
   files:
     - subsys/mgmt/osdp/
