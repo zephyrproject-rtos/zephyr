@@ -1837,7 +1837,6 @@ Documentation Infrastructure:
 "Drivers: LED":
   status: maintained
   maintainers:
-    - Mani-Sadhasivam
     - simonguinot
   collaborators:
     - jeppenodgaard
@@ -3104,7 +3103,6 @@ LoRa and LoRaWAN:
   maintainers:
     - JordanYates
   collaborators:
-    - Mani-Sadhasivam
     - martinjaeger
     - mniestroj
   files:
@@ -5688,9 +5686,7 @@ West:
     - "area: LoRa"
 
 "West project: loramac-node":
-  status: maintained
-  maintainers:
-    - Mani-Sadhasivam
+  status: odd fixes
   files:
     - modules/loramac-node/
   labels:
