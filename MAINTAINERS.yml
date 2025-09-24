@@ -4713,8 +4713,6 @@ TI SimpleLink Platforms:
   status: maintained
   maintainers:
     - vaishnavachath
-  collaborators:
-    - vanti
   files:
     - boards/ti/cc*/
     - boards/ti/msp*/
