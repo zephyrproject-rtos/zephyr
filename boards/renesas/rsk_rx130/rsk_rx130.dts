@@ -86,6 +86,10 @@
 	status = "okay";
 };
 
+&ioportc {
+	status = "okay";
+};
+
 &ioportd {
 	status = "okay";
 };
@@ -116,6 +120,58 @@
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
 	clock-frequency = <DT_FREQ_K(400)>;
+};
+
+&ctsu {
+	pinctrl-0 = <&ctsu_default>;
+	pinctrl-names = "default";
+	max-num-sensors = <36>;
+	tscap-gpios = <&ioportc 4 0>;
+	status = "okay";
+
+	onboard_slider: touch_slider_0 {
+		component-type = "slider";
+		ssdiv = <1>;
+		so = <0x040>;
+		snum = <0x03>;
+		sdpa = <0x07>;
+		channels-num = <10>, <9>, <8>, <7>;
+		zephyr,code = <INPUT_ABS_THROTTLE>;
+		touch-count-threshold = <750>;
+
+		sld0 {
+			compatible = "renesas,rx-ctsu-slider";
+			status = "okay";
+		};
+	};
+
+	onboard_button_1: touch_button_1 {
+		component-type = "button";
+		ssdiv = <0x0>;
+		snum = <0x07>;
+		sdpa = <0x03>;
+		channels-num = <11>;
+		zephyr,code = <INPUT_KEY_1>;
+
+		button1 {
+			compatible = "renesas,rx-ctsu-button";
+			status = "okay";
+		};
+	};
+
+	onboard_button_2: touch_button_2 {
+		component-type = "button";
+		ssdiv = <0x0>;
+		snum = <0x07>;
+		sdpa = <0x03>;
+		channels-num = <12>;
+		zephyr,code = <INPUT_KEY_2>;
+
+		button2 {
+			compatible = "renesas,rx-ctsu-button";
+			status = "okay";
+		};
+	};
 };
 
 &port_irq1 {
