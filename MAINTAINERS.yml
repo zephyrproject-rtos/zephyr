@@ -4426,7 +4426,6 @@ Sensor Subsystem:
   status: maintained
   maintainers:
     - lixuzha
-    - ghu0510
     - yperess
   collaborators:
     - qianruh
