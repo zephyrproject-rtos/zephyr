@@ -402,7 +402,7 @@ menu "Wi-Fi driver Stack configurations"
 
 config NXP_WIFI_MON_TASK_STACK_SIZE
 	int "Mon thread stack size"
-	depends on NXP_RW610 || NXP_IW610
+	depends on NXP_RW610 || NXP_IW610 || NXP_IW61X || NXP_IW416
 	default 3072
 	help
 	  This option specifies the size of the stack used by the mon task.
@@ -444,7 +444,7 @@ menu "Wi-Fi thread priority configurations"
 
 config NXP_WIFI_MON_TASK_PRIO
 	int "Mon task priority"
-	depends on NXP_RW610 || NXP_IW610
+	depends on NXP_RW610 || NXP_IW610 || NXP_IW61X || NXP_IW416
 	default 4
 	help
 	  This option specifies the priority of the mon task.
