@@ -668,6 +668,7 @@ smsc	Standard Microsystems Corporation
 snps	Synopsys, Inc.
 sochip	Shenzhen SoChip Technology Co., Ltd.
 socionext	Socionext Inc.
+solderedelectronics	Soldered Electronics
 solderparty	Solder Party AB
 solidrun	SolidRun
 solomon	Solomon Systech Limited
