@@ -70,6 +70,7 @@ static void assert_msg_send(int called, size_t msg_sz, const struct mqtt_sn_data
 }
 
 static struct {
+	uint8_t data[CONFIG_MQTT_SN_LIB_MAX_PAYLOAD_SIZE];
 	struct mqtt_sn_evt last_evt;
 	int called;
 } evt_cb_data;
@@ -77,6 +78,14 @@ static struct {
 static void evt_cb(struct mqtt_sn_client *client, const struct mqtt_sn_evt *evt)
 {
 	memcpy(&evt_cb_data.last_evt, evt, sizeof(*evt));
+
+	if (evt->type == MQTT_SN_EVT_PUBLISH) {
+		zassert_true(evt->param.publish.data.size <= sizeof(evt_cb_data.data));
+		memcpy(evt_cb_data.data, evt->param.publish.data.data,
+		       evt->param.publish.data.size);
+		evt_cb_data.last_evt.param.publish.data.data = evt_cb_data.data;
+	}
+
 	evt_cb_data.called++;
 
 	k_sem_give(&mqtt_sn_cb_sem);
@@ -117,7 +126,7 @@ int tp_poll(struct mqtt_sn_client *client)
 	return recvfrom_data.sz;
 }
 
-#define NUM_TEST_CLIENTS 10
+#define NUM_TEST_CLIENTS 11
 static ZTEST_BMEM struct mqtt_sn_client mqtt_clients[NUM_TEST_CLIENTS];
 static ZTEST_BMEM struct mqtt_sn_client *mqtt_client;
 
@@ -384,6 +393,39 @@ static ZTEST(mqtt_sn_client, test_mqtt_sn_connect_will)
 	zassert_equal(mqtt_client->state, 1, "Wrong state");
 	zassert_equal(evt_cb_data.called, 1, "NO event");
 	zassert_equal(evt_cb_data.last_evt.type, MQTT_SN_EVT_CONNECTED, "Wrong event");
+}
+
+/* Test a simple incoming PUBLISH event */
+static ZTEST(mqtt_sn_client, test_mqtt_sn_publish_event_qos0)
+{
+	struct mqtt_sn_data data = MQTT_SN_DATA_STRING_LITERAL("Hello.");
+	struct mqtt_sn_data topic = MQTT_SN_DATA_STRING_LITERAL("zephyr");
+	uint8_t suback[] = {8, 0x13, 0, 0x1B, 0x1B, 0x00, 0x01, 0};
+	static const uint8_t pubmsg[] = {0x0d, 0x0c, 0x01, 0x00, 0x2a, 0x00, 0x00,
+					 'H',  'e',  'l',  'l',  'o',  '.'};
+	int err;
+
+	mqtt_sn_connect_no_will(mqtt_client);
+	err = k_sem_take(&mqtt_sn_tx_sem, K_NO_WAIT);
+
+	err = mqtt_sn_subscribe(mqtt_client, MQTT_SN_QOS_0, &topic);
+	zassert_ok(err, "Unexpected error %d", err);
+	err = k_sem_take(&mqtt_sn_tx_sem, K_SECONDS(1));
+	/* Expect a SUBSCRIBE message */
+	assert_msg_send(1, 11, &gw_addr);
+
+	err = input(mqtt_client, suback, sizeof(suback), &gw_addr);
+	zassert_ok(err, "unexpected error %d", err);
+
+	/* Send PUBLISH */
+	err = input(mqtt_client, pubmsg, sizeof(pubmsg), &gw_addr);
+	zassert_equal(err, 0, "unexpected error %d", err);
+	zassert_equal(evt_cb_data.called, 2, "NO event");
+	zassert_equal(evt_cb_data.last_evt.type, MQTT_SN_EVT_PUBLISH, "Wrong event");
+	zassert_equal(evt_cb_data.last_evt.param.publish.data.size, data.size,
+		      "Unexpected publish data size: %zu",
+		      evt_cb_data.last_evt.param.publish.data.size);
+	zassert_mem_equal(evt_cb_data.last_evt.param.publish.data.data, data.data, data.size);
 }
 
 /* Test a simple PUBLISH message */
