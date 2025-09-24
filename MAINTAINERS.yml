@@ -1187,6 +1187,8 @@ Documentation Infrastructure:
     - carlescufi
     - nashif
   files:
+    - doc/requirements.in
+    - doc/requirements.txt
     - doc/_*/
     - doc/CMakeLists.txt
     - doc/conf.py
