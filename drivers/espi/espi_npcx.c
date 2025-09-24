@@ -679,7 +679,9 @@ static void espi_vw_generic_isr(const struct device *dev, struct npcx_wui *wui)
 	if (signal == ESPI_VWIRE_SIGNAL_SLP_S3
 		|| signal == ESPI_VWIRE_SIGNAL_SLP_S4
 		|| signal == ESPI_VWIRE_SIGNAL_SLP_S5
-		|| signal == ESPI_VWIRE_SIGNAL_SLP_A) {
+		|| signal == ESPI_VWIRE_SIGNAL_SLP_A
+		|| signal == ESPI_VWIRE_SIGNAL_SLP_LAN
+		|| signal == ESPI_VWIRE_SIGNAL_SLP_WLAN) {
 		espi_vw_notify_system_state(dev, signal);
 #if DT_NODE_EXISTS(DT_CHILD(DT_PATH(npcx_espi_vws_map), vw_dnx_warn))
 	} else if (signal == ESPI_VWIRE_SIGNAL_HOST_RST_WARN
