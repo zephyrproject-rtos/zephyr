@@ -227,7 +227,7 @@ To program the board, there are two options:
   and executed from there.
 - Optionally, it can also be taken advantage from the serial boot interface provided
   by the boot ROM. In that case, firmware is directly loaded in RAM and executed from
-  there. It is not retained.
+  there. It is not retained in persistent memory.
 
 Programming an application to STM32N6570_DK
 -------------------------------------------
@@ -258,6 +258,19 @@ First, connect the STM32N6570_DK to your host computer using the ST-Link USB por
                          :west-args: --sysbuild -- -DCONFIG_XIP=n -DSB_CONFIG_MCUBOOT_MODE_RAM_LOAD=y
                          :goals: build flash
 
+         .. note::
+            For flashing, before powering the board, set the boot pins in the following configuration:
+
+            * BOOT0: 0 (switch SW2 in position L)
+            * BOOT1: 1 (switch SW1 in position H)
+
+            After flashing, to run the application, set the boot pins in the following configuration:
+
+            * BOOT0: 0 (switch SW2 in position L)
+            * BOOT1: 0 (switch SW1 in position L)
+
+            Power off and on the board again.
+
       .. group-tab:: FSBL - ST-Link
 
          Build and flash an application using ``stm32n6570_dk/stm32n657xx/fsbl`` target.
@@ -270,26 +283,31 @@ First, connect the STM32N6570_DK to your host computer using the ST-Link USB por
          .. note::
             For flashing, before powering the board, set the boot pins in the following configuration:
 
-            * BOOT0: 0
-            * BOOT1: 1
+            * BOOT0: 0 (switch SW2 in position L)
+            * BOOT1: 1 (switch SW1 in position H)
 
             After flashing, to run the application, set the boot pins in the following configuration:
 
-            * BOOT1: 0
+            * BOOT0: 0 (switch SW2 in position L)
+            * BOOT1: 0 (switch SW1 in position L)
 
-	    Power off and on the board again.
+            Power off and on the board again.
 
       .. group-tab:: FSBL - Serial Boot Loader (USB)
 
-         Additionally, connect the STM32N6570_DK to your host computer using the USB port.
-         In this configuration, ST-Link is used to power the board and for serial communication
-         over the Virtual COM Port.
+         Additionally to the USB/ST-Link, connect the STM32N6570_DK to your
+         host computer using USB1 port (CN18).
+
+         In this configuration, ST-Link (USB/CN6) is used to power the board
+         and for serial communication over the Virtual COM Port, while
+         USB1/CN18 is used to send the Zephyr image to Boot ROM for loading it
+         in RAM and executing it.
 
          .. note::
             Before powering the board, set the boot pins in the following configuration:
 
-            * BOOT0: 1
-            * BOOT1: 0
+            * BOOT0: 1 (switch SW2 in position H)
+            * BOOT1: 0 (switch SW1 in position L)
 
          Build and load an application using ``stm32n6570_dk/stm32n657xx/sb`` target (you
          can also use the shortened form: ``stm32n6570_dk//sb``)
