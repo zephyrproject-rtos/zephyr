@@ -65,11 +65,16 @@ struct mspi_dw_data {
 	bool standard_spi;
 	bool suspended;
 
+#if defined(CONFIG_MULTITHREADING)
 	struct k_sem finished;
 	/* For synchronization of API calls made from different contexts. */
 	struct k_sem ctx_lock;
 	/* For locking of controller configuration. */
 	struct k_sem cfg_lock;
+#else
+	volatile bool finished;
+	bool cfg_lock;
+#endif
 	struct mspi_xfer xfer;
 
 #if defined(CONFIG_MSPI_DW_HANDLE_FIFOS_IN_SYSTEM_WORKQUEUE)
@@ -364,7 +369,11 @@ static void handle_fifos(const struct device *dev)
 	if (finished) {
 		set_imr(dev, 0);
 
+#if defined(CONFIG_MULTITHREADING)
 		k_sem_give(&dev_data->finished);
+#else
+		dev_data->finished = true;
+#endif
 	}
 }
 
@@ -816,8 +825,17 @@ static int api_dev_config(const struct device *dev,
 	int rc;
 
 	if (dev_id != dev_data->dev_id) {
+#if defined(CONFIG_MULTITHREADING)
 		rc = k_sem_take(&dev_data->cfg_lock,
 				K_MSEC(CONFIG_MSPI_COMPLETION_TIMEOUT_TOLERANCE));
+#else
+		if (dev_data->cfg_lock) {
+			rc = -1;
+		} else {
+			dev_data->cfg_lock = true;
+			rc = 0;
+		}
+#endif
 		if (rc < 0) {
 			LOG_ERR("Failed to switch controller to device");
 			return -EBUSY;
@@ -831,15 +849,23 @@ static int api_dev_config(const struct device *dev,
 		return 0;
 	}
 
+#if defined(CONFIG_MULTITHREADING)
 	(void)k_sem_take(&dev_data->ctx_lock, K_FOREVER);
+#endif
 
 	rc = _api_dev_config(dev, param_mask, cfg);
 
+#if defined(CONFIG_MULTITHREADING)
 	k_sem_give(&dev_data->ctx_lock);
+#endif
 
 	if (rc < 0) {
 		dev_data->dev_id = NULL;
+#if defined(CONFIG_MULTITHREADING)
 		k_sem_give(&dev_data->cfg_lock);
+#else
+		dev_data->cfg_lock = false;
+#endif
 	}
 
 	return rc;
@@ -851,12 +877,17 @@ static int api_get_channel_status(const struct device *dev, uint8_t ch)
 
 	struct mspi_dw_data *dev_data = dev->data;
 
+#if defined(CONFIG_MULTITHREADING)
 	(void)k_sem_take(&dev_data->ctx_lock, K_FOREVER);
+#endif
 
 	dev_data->dev_id = NULL;
+#if defined(CONFIG_MULTITHREADING)
 	k_sem_give(&dev_data->cfg_lock);
-
 	k_sem_give(&dev_data->ctx_lock);
+#else
+	dev_data->cfg_lock = false;
+#endif
 
 	return 0;
 }
@@ -1119,7 +1150,17 @@ static int start_next_packet(const struct device *dev, k_timeout_t timeout)
 	/* Write SER to start transfer */
 	write_ser(dev, BIT(dev_data->dev_id->dev_idx));
 
+#if defined(CONFIG_MULTITHREADING)
 	rc = k_sem_take(&dev_data->finished, timeout);
+#else
+	if (!WAIT_FOR(dev_data->finished,
+		      dev_data->xfer.timeout * USEC_PER_MSEC,
+		      NULL)) {
+		rc = -ETIMEDOUT;
+	}
+
+	dev_data->finished = false;
+#endif
 	if (read_risr(dev) & RISR_RXOIR_BIT) {
 		LOG_ERR("RX FIFO overflow occurred");
 		rc = -EIO;
@@ -1232,7 +1273,9 @@ static int api_transceive(const struct device *dev,
 		return rc;
 	}
 
+#if defined(CONFIG_MULTITHREADING)
 	(void)k_sem_take(&dev_data->ctx_lock, K_FOREVER);
+#endif
 
 	if (dev_data->suspended) {
 		rc = -EFAULT;
@@ -1240,7 +1283,9 @@ static int api_transceive(const struct device *dev,
 		rc = _api_transceive(dev, req);
 	}
 
+#if defined(CONFIG_MULTITHREADING)
 	k_sem_give(&dev_data->ctx_lock);
+#endif
 
 	rc2 = pm_device_runtime_put(dev);
 	if (rc2 < 0) {
@@ -1391,7 +1436,9 @@ static int api_xip_config(const struct device *dev,
 		return rc;
 	}
 
+#if defined(CONFIG_MULTITHREADING)
 	(void)k_sem_take(&dev_data->ctx_lock, K_FOREVER);
+#endif
 
 	if (dev_data->suspended) {
 		rc = -EFAULT;
@@ -1399,7 +1446,9 @@ static int api_xip_config(const struct device *dev,
 		rc = _api_xip_config(dev, dev_id, cfg);
 	}
 
+#if defined(CONFIG_MULTITHREADING)
 	k_sem_give(&dev_data->ctx_lock);
+#endif
 
 	rc2 = pm_device_runtime_put(dev);
 	if (rc2 < 0) {
@@ -1450,8 +1499,12 @@ static int dev_pm_action_cb(const struct device *dev,
 			return rc;
 		}
 #endif
+#if defined(CONFIG_MULTITHREADING)
 		if (xip_enabled ||
 		    k_sem_take(&dev_data->ctx_lock, K_NO_WAIT) != 0) {
+#else
+		if (xip_enabled) {
+#endif
 			LOG_ERR("Controller in use, cannot be suspended");
 			return -EBUSY;
 		}
@@ -1460,7 +1513,9 @@ static int dev_pm_action_cb(const struct device *dev,
 
 		vendor_specific_suspend(dev);
 
+#if defined(CONFIG_MULTITHREADING)
 		k_sem_give(&dev_data->ctx_lock);
+#endif
 
 		return 0;
 	}
@@ -1470,7 +1525,6 @@ static int dev_pm_action_cb(const struct device *dev,
 
 static int dev_init(const struct device *dev)
 {
-	struct mspi_dw_data *dev_data = dev->data;
 	const struct mspi_dw_config *dev_config = dev->config;
 	const struct gpio_dt_spec *ce_gpio;
 	int rc;
@@ -1481,9 +1535,13 @@ static int dev_init(const struct device *dev)
 
 	dev_config->irq_config();
 
+#if defined(CONFIG_MULTITHREADING)
+	struct mspi_dw_data *dev_data = dev->data;
+
 	k_sem_init(&dev_data->finished, 0, 1);
 	k_sem_init(&dev_data->cfg_lock, 1, 1);
 	k_sem_init(&dev_data->ctx_lock, 1, 1);
+#endif
 
 #if defined(CONFIG_MSPI_DW_HANDLE_FIFOS_IN_SYSTEM_WORKQUEUE)
 	dev_data->dev = dev;
