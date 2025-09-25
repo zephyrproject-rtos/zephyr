@@ -15,8 +15,8 @@
 #include <espressif/partitions_0x0_amp.dtsi>
 
 / {
-	model = "Heltec Wireless Stick Lite V3 PROCPU";
 	compatible = "espressif,esp32s3";
+	model = "Heltec Wireless Stick Lite V3 PROCPU";
 
 	aliases {
 		pwm-0 = &ledc0;
@@ -88,10 +88,10 @@
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &gpio0 {
@@ -105,9 +105,9 @@
 &ledc0 {
 	pinctrl-0 = <&ledc0_default>;
 	pinctrl-names = "default";
-	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
+	status = "okay";
 
 	channel0@0 {
 		reg = <0x0>;
@@ -124,9 +124,9 @@
 &spi2 {
 	#address-cells = <1>;
 	#size-cells = <0>;
-	status = "okay";
 	pinctrl-0 = <&spim2_default>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	lora0: lora@0 {
 		compatible = "semtech,sx1262";
@@ -171,10 +171,10 @@
 };
 
 &uart1 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart1_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &esp32_bt_hci {
