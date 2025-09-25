@@ -6,6 +6,7 @@ config UART_MCHP_SERCOM_G1
 	default y
 	depends on DT_HAS_MICROCHIP_SERCOM_G1_UART_ENABLED
 	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
 	select PINCTRL
 	help
 	  This option enables UART driver for group (g1) of SERCOM peripherals.
