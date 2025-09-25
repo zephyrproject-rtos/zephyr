@@ -10,8 +10,8 @@
 #include "cyw920829m2evk_02-pinctrl.dtsi"
 
 / {
-	model = "The Infineon AIROC™ CYW20829 Bluetooth® LE evaluation kit (CYW92089M2EVK-02)";
 	compatible = "infineon,cyw920829m2evk_02", "infineon,CYW20829";
+	model = "The Infineon AIROC™ CYW20829 Bluetooth® LE evaluation kit (CYW92089M2EVK-02)";
 
 	aliases {
 		watchdog0 = &watchdog0;
@@ -33,7 +33,6 @@
 
 uart2: &scb2 {
 	compatible = "infineon,cat1-uart";
-	status = "okay";
 	current-speed = <115200>;
 	hw-flow-control;
 
@@ -42,12 +41,13 @@ uart2: &scb2 {
 
 	dmas = <&dma0 8>, <&dma0 9>;
 	dma-names = "tx", "rx";
+	status = "okay";
 };
 
 &dma0 {
+	compatible = "infineon,cat1-dma";
 	#address-cells = <1>;
 	#size-cells = <0>;
-	compatible = "infineon,cat1-dma";
 	status = "okay";
 };
 
@@ -72,8 +72,8 @@ uart2: &scb2 {
 };
 
 &clk_hf0 {
-	status = "okay";
 	clocks = <&fll0>;
+	status = "okay";
 };
 
 &clk_hf1 {
@@ -123,19 +123,19 @@ uart2: &scb2 {
 			#size-cells = <1>;
 
 			boot_partition: partition@0 {
-				label = "mcuboot";
 				reg = <0x0 0x20000>;
+				label = "mcuboot";
 				read-only;
 			};
 
 			slot0_partition: partition@20000 {
-				label = "image-0";
 				reg = <0x20000 0x60000>;
+				label = "image-0";
 			};
 
 			slot1_partition: partition@80000 {
-				label = "image-1";
 				reg = <0x80000 0x60000>;
+				label = "image-1";
 			};
 
 			storage_partition: storage_partition@E0000 {
