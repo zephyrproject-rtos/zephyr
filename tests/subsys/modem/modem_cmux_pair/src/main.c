@@ -507,9 +507,10 @@ ZTEST(modem_cmux_pair, test_modem_cmux_disconnect_connect)
 	modem_backend_mock_reset(&bus_mock_dte);
 	zassert_true(modem_cmux_disconnect_async(&cmux_dte) == 0, "Failed to disconnect CMUX");
 
-	k_msleep(100);
+	events = k_event_wait_all(&cmux_event_dte, (EVENT_CMUX_DISCONNECTED), false, K_MSEC(660));
+	zassert_true((events & EVENT_CMUX_DISCONNECTED), "Failed to disconnect CMUX");
 
-	events = k_event_wait_all(&cmux_event_dte, (EVENT_CMUX_DISCONNECTED), false, K_MSEC(100));
+	events = k_event_wait_all(&cmux_event_dce, (EVENT_CMUX_DISCONNECTED), false, K_MSEC(660));
 	zassert_true((events & EVENT_CMUX_DISCONNECTED), "Failed to disconnect CMUX");
 
 	/* Reconnect CMUX */
@@ -554,6 +555,9 @@ ZTEST(modem_cmux_pair, test_modem_cmux_disconnect_connect_sync)
 	zassert_true(modem_cmux_disconnect(&cmux_dte) == 0, "Failed to disconnect CMUX");
 	zassert_true(modem_cmux_disconnect(&cmux_dte) == -EALREADY,
 		     "Should already be disconnected");
+
+	events = k_event_wait_all(&cmux_event_dce, (EVENT_CMUX_DISCONNECTED), false, K_MSEC(660));
+	zassert_true((events & EVENT_CMUX_DISCONNECTED), "Failed to disconnect CMUX");
 	zassert_true(modem_cmux_disconnect(&cmux_dce) == -EALREADY,
 		     "Should already be disconnected");
 
