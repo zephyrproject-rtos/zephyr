@@ -335,18 +335,13 @@ int z_nrf_grtc_timer_capture_prepare(int32_t chan)
 
 int z_nrf_grtc_timer_capture_read(int32_t chan, uint64_t *captured_time)
 {
-	/* TODO: The implementation should probably go to nrfx_grtc and this
-	 *       should be just a wrapper for some nrfx_grtc_syscounter_capture_read.
-	 */
-
 	uint64_t capt_time;
 	nrfx_err_t result;
 
 	IS_CHANNEL_ALLOWED_ASSERT(chan);
 
-	/* TODO: Use `nrfy_grtc_sys_counter_enable_check` when available (NRFX-2480) */
-	if (NRF_GRTC->CC[chan].CCEN == GRTC_CC_CCEN_ACTIVE_Enable) {
-		/* If the channel is enabled (.CCEN), it means that there was no capture
+	if (nrfx_grtc_sys_counter_cc_enable_check(chan)) {
+		/* If the channel is enabled, it means that there was no capture
 		 * triggering event.
 		 */
 		return -EBUSY;
