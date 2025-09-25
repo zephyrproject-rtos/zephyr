@@ -11,8 +11,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Holyiot YJ-16019";
 	compatible = "holyiot,yj-16019";
+	model = "Holyiot YJ-16019";
 
 	leds {
 		compatible = "gpio-leds";
@@ -50,8 +50,8 @@
 };
 
 &pwm0 {
-	status = "okay";
 	pinctrl-0 = <&pwm0_default>;
 	pinctrl-1 = <&pwm0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
