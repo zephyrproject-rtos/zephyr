@@ -11,8 +11,8 @@
 #include "mimxrt685_evk-pinctrl.dtsi"
 
 / {
-	model = "NXP MIMXRT685-EVK board, HiFi 4 DSP domain";
 	compatible = "nxp,mimxrt685";
+	model = "NXP MIMXRT685-EVK board, HiFi 4 DSP domain";
 
 	chosen {
 		zephyr,console = &flexcomm0;
@@ -75,7 +75,6 @@
 
 /* I2S receive channel */
 i2s0: &flexcomm1 {
-	status = "okay";
 	compatible = "nxp,lpc-i2s";
 	#address-cells = <1>;
 	#size-cells = <0>;
@@ -83,11 +82,11 @@ i2s0: &flexcomm1 {
 	dma-names = "rx";
 	pinctrl-0 = <&pinmux_flexcomm1_i2s>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 /* I2S transmit channel */
 i2s1: &flexcomm3 {
-	status = "okay";
 	compatible = "nxp,lpc-i2s";
 	#address-cells = <1>;
 	#size-cells = <0>;
@@ -95,12 +94,13 @@ i2s1: &flexcomm3 {
 	dma-names = "tx";
 	pinctrl-0 = <&pinmux_flexcomm3_i2s>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &i3c0 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_i3c>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	audio_codec: wm8904@1a0000000000000000 {
 		compatible = "wolfson,wm8904";

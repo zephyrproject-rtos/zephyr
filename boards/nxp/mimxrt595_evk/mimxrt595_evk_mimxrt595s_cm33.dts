@@ -13,8 +13,8 @@
 #include "mimxrt595_evk_mimxrt595s_cm33-pinctrl.dtsi"
 
 / {
-	model = "NXP MIMXRT595-EVK board";
 	compatible = "nxp,mimxrt595";
+	model = "NXP MIMXRT595-EVK board";
 
 	aliases {
 		sw0 = &user_button_1;
@@ -143,8 +143,8 @@
  * replace &os_timer with &systick
  */
 &os_timer {
-	status = "okay";
 	wakeup-source;
+	status = "okay";
 };
 
 &rtc {
@@ -153,22 +153,22 @@
 
 &flexcomm0 {
 	compatible = "nxp,lpc-usart";
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_flexcomm0_usart>;
 	pinctrl-names = "default";
 	dmas = <&dma0 0>, <&dma0 1>;
 	dma-names = "rx", "tx";
+	status = "okay";
 };
 
 arduino_i2c: &flexcomm4 {
 	compatible = "nxp,lpc-i2c";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 	#address-cells = <1>;
 	#size-cells = <0>;
 	pinctrl-0 = <&pinmux_flexcomm4_i2c>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	fxos8700: fxos8700@1e {
 		compatible = "nxp,fxos8700";
@@ -219,22 +219,22 @@ i2s1: &flexcomm3 {
 
 arduino_serial: &flexcomm12 {
 	compatible = "nxp,lpc-usart";
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_flexcomm12_usart>;
 	pinctrl-names = "default";
 	dmas = <&dma0 34>, <&dma0 35>;
 	dma-names = "rx", "tx";
+	status = "okay";
 };
 
 /* PCA9420 PMIC */
 &pmic_i2c {
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 	#address-cells = <1>;
 	#size-cells = <0>;
 	pinctrl-0 = <&pinmux_pmic_i2c>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	pca9420: pca9420@61 {
 		compatible = "nxp,pca9420";
@@ -276,9 +276,9 @@ arduino_serial: &flexcomm12 {
 };
 
 &lpadc0 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpadc0>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &gpio0 {
@@ -302,15 +302,15 @@ arduino_serial: &flexcomm12 {
  * interrupts.
  */
 &gpio3 {
-	status = "okay";
 	int-source = "int-a";
 	interrupts = <2 0>;
+	status = "okay";
 };
 
 &gpio4 {
-	status = "okay";
 	int-source = "int-b";
 	interrupts = <3 0>;
+	status = "okay";
 };
 
 &gpio5 {
@@ -370,19 +370,19 @@ zephyr_udc0: &usbhs {
 };
 
 &usdhc0 {
-	status = "okay";
 	pwr-gpios = <&gpio2 10 GPIO_ACTIVE_HIGH>;
 	cd-gpios = <&gpio2 9 GPIO_ACTIVE_LOW>;
+	pinctrl-0 = <&pinmux_usdhc>;
+	pinctrl-names = "default";
+	mmc-hs200-1_8v;
+	mmc-hs400-1_8v;
+	status = "okay";
 
 	mmc {
 		compatible = "zephyr,mmc-disk";
 		disk-name = "SD2";
 		status = "okay";
 	};
-	pinctrl-0 = <&pinmux_usdhc>;
-	pinctrl-names = "default";
-	mmc-hs200-1_8v;
-	mmc-hs400-1_8v;
 };
 
 &wwdt0 {
@@ -390,21 +390,21 @@ zephyr_udc0: &usbhs {
 };
 
 &flexspi {
-	status = "okay";
 	pinctrl-0 = <&pinmux_flexspi>;
 	pinctrl-1 = <&pinmux_flexspi_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	mx25um51345g: mx25um51345g@0 {
 		compatible = "nxp,imx-flexspi-mx25um51345g";
+		reg = <0>;
 		/* MX25UM51245G is 64MB, 512MBit flash part */
 		size = <DT_SIZE_M(64 * 8)>;
-		reg = <0>;
 		spi-max-frequency = <DT_FREQ_M(200)>;
-		status = "okay";
 		jedec-id = [c2 81 3a];
 		erase-block-size = <DT_SIZE_K(4)>;
 		write-block-size = <2>; /* FLASH_MCUX_FLEXSPI_MX25UM51345G_OPI_DTR set */
+		status = "okay";
 
 		partitions {
 			compatible = "fixed-partitions";
@@ -416,30 +416,29 @@ zephyr_udc0: &usbhs {
 			 * to the flash memory sector size of 4KB.
 			 */
 			boot_partition: partition@0 {
-				label = "mcuboot";
 				reg = <0x00000000 DT_SIZE_K(128)>;
+				label = "mcuboot";
 			};
 
 			slot0_partition: partition@20000 {
-				label = "image-0";
 				reg = <0x00020000 DT_SIZE_M(3)>;
+				label = "image-0";
 			};
 
 			slot1_partition: partition@320000 {
-				label = "image-1";
 				reg = <0x00320000 DT_SIZE_M(3)>;
+				label = "image-1";
 			};
 
 			storage_partition: partition@620000 {
-				label = "storage";
 				reg = <0x00620000 (DT_SIZE_M(58) - DT_SIZE_K(128))>;
+				label = "storage";
 			};
 		};
 	};
 };
 
 &flexspi2 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_flexspi2>;
 	pinctrl-names = "default";
 	rx-clock-source = <3>;
@@ -447,14 +446,14 @@ zephyr_udc0: &usbhs {
 	ahb-bufferable;
 	ahb-cacheable;
 	ahb-read-addr-opt;
+	status = "okay";
 
 	aps6408l: aps6408l@0 {
 		compatible = "nxp,imx-flexspi-aps6408l";
+		reg = <0>;
 		/* APS6408L is 8MB, 64MBit pSRAM */
 		size = <DT_SIZE_M(8 * 8)>;
-		reg = <0>;
 		spi-max-frequency = <DT_FREQ_M(198)>;
-		status = "okay";
 		cs-interval-unit = <1>;
 		cs-interval = <5>;
 		cs-hold-time = <3>;
@@ -463,6 +462,7 @@ zephyr_udc0: &usbhs {
 		column-space = <0>;
 		ahb-write-wait-unit = <2>;
 		ahb-write-wait-interval = <0>;
+		status = "okay";
 	};
 };
 
@@ -509,27 +509,27 @@ zephyr_udc0: &usbhs {
 };
 
 &dmic0 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_dmic0>;
 	pinctrl-names = "default";
 	use2fs;
+	status = "okay";
 };
 
 /* Configure pdm channels 0 and 1 with gain, and cutoff settings
  * appropriate for the attached MEMS microphones.
  */
 &pdmc0 {
-	status = "okay";
 	gainshift = <3>;
 	dc-cutoff = "155hz";
 	dc-gain = <1>;
+	status = "okay";
 };
 
 &pdmc1 {
-	status = "okay";
 	gainshift = <3>;
 	dc-cutoff = "155hz";
 	dc-gain = <1>;
+	status = "okay";
 };
 
 &mrt_channel0 {

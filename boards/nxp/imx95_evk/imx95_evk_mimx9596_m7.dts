@@ -10,8 +10,8 @@
 #include "imx95_evk-pinctrl.dtsi"
 
 / {
-	model = "NXP i.MX95 EVK board";
 	compatible = "nxp,imx95_evk";
+	model = "NXP i.MX95 EVK board";
 
 	chosen {
 		/* TCM */
@@ -50,22 +50,22 @@
 };
 
 &flexspi {
-	status = "okay";
 	ahb-prefetch;
 	ahb-read-addr-opt;
 	rx-clock-source = <1>;
 	pinctrl-0 = <&flexspi_default>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	mt35xu01gbba: mt35xu01gbba@0 {
 		compatible = "nxp,imx-flexspi-nor";
-		size = <DT_SIZE_M(1024)>;
 		reg = <0>;
+		size = <DT_SIZE_M(1024)>;
 		spi-max-frequency = <DT_FREQ_M(200)>;
-		status = "okay";
 		jedec-id = [2c 5b 1b];
 		erase-block-size = <DT_SIZE_K(4)>;
 		write-block-size = <2>;
+		status = "okay";
 
 		partitions {
 			compatible = "fixed-partitions";
@@ -77,23 +77,23 @@
 			 * to the flash memory sector size of 4KB.
 			 */
 			boot_partition: partition@0 {
-				label = "mcuboot";
 				reg = <0x00000000 DT_SIZE_K(128)>;
+				label = "mcuboot";
 			};
 
 			slot0_partition: partition@20000 {
-				label = "image-0";
 				reg = <0x00020000 DT_SIZE_M(7)>;
+				label = "image-0";
 			};
 
 			slot1_partition: partition@720000 {
-				label = "image-1";
 				reg = <0x00720000 DT_SIZE_M(7)>;
+				label = "image-1";
 			};
 
 			storage_partition: partition@E20000 {
-				label = "storage";
 				reg = <0x00E20000 (DT_SIZE_M(2) - DT_SIZE_K(128))>;
+				label = "storage";
 			};
 		};
 	};
@@ -118,17 +118,17 @@
 };
 
 &lpuart3 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&lpuart3_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &lpuart5 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&lpuart5_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &sai3 {

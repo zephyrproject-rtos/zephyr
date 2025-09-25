@@ -14,8 +14,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "NXP Freedom MK22F board";
 	compatible = "nxp,mk22f12", "nxp,k22f", "nxp,k2x";
+	model = "NXP Freedom MK22F board";
 
 	aliases {
 		led0 = &green_led;
@@ -136,14 +136,14 @@
 };
 
 &dac0 {
-	status = "okay";
 	voltage-reference = <2>;
+	status = "okay";
 };
 
 arduino_i2c: &i2c0 {
-	status = "okay";
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	fxos8700: fxos8700@1c {
 		compatible = "nxp,fxos8700";
@@ -154,25 +154,25 @@ arduino_i2c: &i2c0 {
 };
 
 arduino_spi: &spi0 {
-	status = "okay";
 	pinctrl-0 = <&spi0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &ftm0 {
-	status = "okay";
 	compatible = "nxp,ftm-pwm";
 	#pwm-cells = <3>;
 	pinctrl-0 = <&ftm0_default>;
 	pinctrl-names = "default";
 	clock-source = "fixed";
+	status = "okay";
 };
 
 &uart1 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart1_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &uart2 {
@@ -182,8 +182,8 @@ arduino_spi: &spi0 {
 
 zephyr_udc0: &usbotg {
 	compatible = "nxp,kinetis-usbd";
-	status = "okay";
 	num-bidir-endpoints = <8>;
+	status = "okay";
 };
 
 zephyr_uhc0: &usbh {
@@ -221,24 +221,24 @@ zephyr_uhc0: &usbh {
 		 * to the flash memory sector size of 2KB.
 		 */
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(64)>;
+			label = "mcuboot";
 			read-only;
 		};
 
 		slot0_partition: partition@10000 {
-			label = "image-0";
 			reg = <0x00010000 DT_SIZE_K(182)>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@3D800 {
-			label = "image-1";
 			reg = <0x0003D800 DT_SIZE_K(182)>;
+			label = "image-1";
 		};
 
 		storage_partition: partition@6B000 {
-			label = "storage";
 			reg = <0x0006B000 DT_SIZE_K(84)>;
+			label = "storage";
 		};
 	};
 };

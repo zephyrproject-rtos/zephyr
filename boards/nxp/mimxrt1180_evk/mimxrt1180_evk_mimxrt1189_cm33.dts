@@ -10,8 +10,8 @@
 #include "mimxrt1180_evk.dtsi"
 
 / {
-	model = "NXP MIMXRT1180-EVK board";
 	compatible = "nxp,mimxrt1189";
+	model = "NXP MIMXRT1180-EVK board";
 
 	chosen {
 		zephyr,sram = &hyperram0;
@@ -28,9 +28,9 @@
 	};
 
 	hyperram0: memory@14000000 {
+		reg = <0x14000000 DT_SIZE_M(8)>;
 		/* Winbond W957A8MFYA5K */
 		device_type = "memory";
-		reg = <0x14000000 DT_SIZE_M(8)>;
 		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
 		/*
 		 * Currently, HyperRAM on this board must be accessed under XIP mode,
@@ -56,16 +56,16 @@
 	};
 
 	qspi_flash: memory@38000000 {
-		device_type = "memory";
 		reg = <0x38000000 DT_SIZE_M(16)>;
+		device_type = "memory";
 		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_FLASH)>;
 		status = "okay";
 	};
 };
 
 &lpuart1 {
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 };
 
 &lpadc1 {
@@ -109,27 +109,27 @@
 };
 
 zephyr_udc0: &usb1 {
-	status = "okay";
 	phy-handle = <&usbphy1>;
+	status = "okay";
 };
 
 &usbphy1 {
-	status = "okay";
 	tx-d-cal = <7>;
 	tx-cal-45-dp-ohms = <6>;
 	tx-cal-45-dm-ohms = <6>;
+	status = "okay";
 };
 
 zephyr_udc1: &usb2 {
-	status = "okay";
 	phy-handle = <&usbphy2>;
+	status = "okay";
 };
 
 &usbphy2 {
-	status = "okay";
 	tx-d-cal = <7>;
 	tx-cal-45-dp-ohms = <6>;
 	tx-cal-45-dm-ohms = <6>;
+	status = "okay";
 };
 
 &kpp {

@@ -8,8 +8,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "NXP Freedom KL25Z board";
 	compatible = "nxp,frdm-kl25z", "nxp,kl25z", "nxp,mkl25z4";
+	model = "NXP Freedom KL25Z board";
 
 	aliases {
 		led0 = &green_led;
@@ -102,15 +102,15 @@
 };
 
 &adc0 {
-	status = "okay";
 	pinctrl-0 = <&adc0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &i2c0 {
-	status = "okay";
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	mma8451q: mma8451q@1d {
 		compatible = "nxp,fxos8700", "nxp,mma8451q";
@@ -121,10 +121,10 @@
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &gpioa {
@@ -141,6 +141,6 @@
 
 zephyr_udc0: &usbotg {
 	compatible = "nxp,kinetis-usbd";
-	status = "okay";
 	num-bidir-endpoints = <8>;
+	status = "okay";
 };

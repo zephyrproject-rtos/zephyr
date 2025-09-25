@@ -26,8 +26,8 @@
 			drive-strength = "r0-4";
 			drive-open-drain;
 			slew-rate = "slow";
-			nxp,speed = "100-mhz";
 			input-enable;
+			nxp,speed = "100-mhz";
 		};
 	};
 

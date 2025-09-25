@@ -29,23 +29,23 @@
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(80)>;
+			label = "mcuboot";
 		};
 
 		slot0_partition: partition@14000 {
-			label = "image-0";
 			reg = <0x00014000 DT_SIZE_M(3)>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@314000 {
-			label = "image-1";
 			reg = <0x00314000 DT_SIZE_M(3)>;
+			label = "image-1";
 		};
 
 		storage_partition: partition@614000 {
-			label = "storage";
 			reg = <0x00614000 DT_SIZE_K(1968)>;
+			label = "storage";
 		};
 	};
 };

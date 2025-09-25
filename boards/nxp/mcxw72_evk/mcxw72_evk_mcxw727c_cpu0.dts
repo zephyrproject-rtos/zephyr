@@ -112,16 +112,16 @@
 
 &lpuart0 {
 	current-speed = <115200>;
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpuart0>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &lpuart1 {
 	current-speed = <115200>;
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpuart1>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &flash {
@@ -145,9 +145,9 @@
 };
 
 &tpm0 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_tpm0>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &lptmr0 {
@@ -155,15 +155,15 @@
 };
 
 &lpspi1 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpspi1>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &flexcan0 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_flexcan>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	can-transceiver {
 		max-bitrate = <5000000>;
@@ -181,14 +181,14 @@
 };
 
 &lpi2c1 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpi2c1>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	accelerometer: accelerometer@19 {
-		status = "okay";
 		compatible = "nxp,fxls8974";
 		reg = <0x19>;
+		status = "okay";
 	};
 };
 

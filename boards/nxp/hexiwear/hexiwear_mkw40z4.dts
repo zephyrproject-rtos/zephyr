@@ -6,8 +6,8 @@
 #include "hexiwear_mkw40z4-pinctrl.dtsi"
 
 / {
-	model = "Hexiwear KW40 board";
 	compatible = "nxp,kw40z", "nxp,mkw40z4";
+	model = "Hexiwear KW40 board";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -21,16 +21,16 @@
 };
 
 &adc0 {
-	status = "okay";
 	pinctrl-0 = <&adc0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &lpuart0 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&lpuart0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &gpioa {

@@ -12,8 +12,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "NXP MIMXRT1064-EVK board";
 	compatible = "nxp,mimxrt1064";
+	model = "NXP MIMXRT1064-EVK board";
 
 	aliases {
 		led0 = &green_led;
@@ -39,9 +39,9 @@
 	};
 
 	sdram0: memory@80000000 {
+		reg = <0x80000000 DT_SIZE_M(32)>;
 		/* Micron MT48LC16M16A2B4-6AIT:G */
 		device_type = "memory";
-		reg = <0x80000000 DT_SIZE_M(32)>;
 	};
 
 	/*
@@ -143,10 +143,9 @@ zephyr_lcdif: &lcdif {
 nxp_parallel_i2c: &lpi2c1 {};
 
 &lpi2c1 {
-	status = "okay";
-
 	pinctrl-0 = <&pinmux_lpi2c1>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	ft5336: ft5336@38 {
 		compatible = "focaltech,ft5336";
@@ -156,23 +155,23 @@ nxp_parallel_i2c: &lpi2c1 {};
 };
 
 &flexspi {
-	status = "okay";
+	reg = <0x402a8000 0x4000>, <0x60000000 DT_SIZE_M(8)>;
 	pinctrl-0 = <&pinmux_flexspi1>;
 	pinctrl-names = "default";
 	ahb-prefetch;
 	ahb-read-addr-opt;
 	rx-clock-source = <1>;
-	reg = <0x402a8000 0x4000>, <0x60000000 DT_SIZE_M(8)>;
+	status = "okay";
 
 	is25wp064: is25wp064@0 {
 		compatible = "nxp,imx-flexspi-nor";
-		size = <DT_SIZE_M(8 * 8)>;
 		reg = <0>;
+		size = <DT_SIZE_M(8 * 8)>;
 		spi-max-frequency = <DT_FREQ_M(104)>;
-		status = "okay";
 		jedec-id = [9d 70 17];
 		erase-block-size = <DT_SIZE_K(4)>;
 		write-block-size = <1>;
+		status = "okay";
 
 		partitions {
 			compatible = "fixed-partitions";
@@ -180,8 +179,8 @@ nxp_parallel_i2c: &lpi2c1 {};
 			#size-cells = <1>;
 
 			storage_partition: partition@0 {
-				label = "storage";
 				reg = <0x00000000 DT_SIZE_M(8)>;
+				label = "storage";
 			};
 		};
 	};
@@ -198,29 +197,29 @@ nxp_parallel_i2c: &lpi2c1 {};
 		 * to the flash memory sector size of 4KB.
 		 */
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(128)>;
+			label = "mcuboot";
 		};
 
 		slot0_partition: partition@20000 {
-			label = "image-0";
 			reg = <0x00020000 DT_SIZE_K(1984)>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@210000 {
-			label = "image-1";
 			reg = <0x00210000 DT_SIZE_K(1984)>;
+			label = "image-1";
 		};
 		/* The storage partition is located in is25wp064 */
 	};
 };
 
 &lpuart1 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpuart1>;
 	pinctrl-1 = <&pinmux_lpuart1_sleep>;
 	pinctrl-names = "default", "sleep";
 	current-speed = <115200>;
+	status = "okay";
 };
 
 arduino_serial: &lpuart3 {
@@ -231,33 +230,33 @@ arduino_serial: &lpuart3 {
 };
 
 &enet_mac {
-	status = "okay";
 	pinctrl-0 = <&pinmux_enet>;
 	pinctrl-names = "default";
 	phy-handle = <&phy>;
-	zephyr,random-mac-address;
 	phy-connection-type = "rmii";
+	zephyr,random-mac-address;
+	status = "okay";
 };
 
 &enet_mdio {
-	status = "okay";
 	pinctrl-0 = <&pinmux_enet_mdio>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	phy: phy@0 {
 		compatible = "microchip,ksz8081";
 		reg = <0>;
-		status = "okay";
 		reset-gpios = <&gpio1 9 GPIO_ACTIVE_HIGH>;
 		int-gpios = <&gpio1 10 GPIO_ACTIVE_HIGH>;
 		microchip,interface-type = "rmii";
+		status = "okay";
 	};
 };
 
 &enet_ptp_clock {
-	status = "okay";
 	pinctrl-0 = <&pinmux_ptp>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 zephyr_udc0: &usb1 {
@@ -270,13 +269,12 @@ zephyr_udc0: &usb1 {
 };
 
 &flexpwm2_pwm3 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm2>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &usdhc1 {
-	status = "okay";
 	pwr-gpios = <&gpio1 19 GPIO_ACTIVE_HIGH>;
 	cd-gpios = <&gpio2 28 GPIO_ACTIVE_LOW>;
 	pinctrl-0 = <&pinmux_usdhc1>;
@@ -284,6 +282,7 @@ zephyr_udc0: &usb1 {
 	pinctrl-2 = <&pinmux_usdhc1_med>;
 	pinctrl-3 = <&pinmux_usdhc1_fast>;
 	pinctrl-names = "default", "slow", "med", "fast";
+	status = "okay";
 
 	sdmmc {
 		compatible = "zephyr,sdmmc-disk";
@@ -297,9 +296,9 @@ zephyr_udc0: &usb1 {
 };
 
 &flexcan2 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_flexcan2>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	can-transceiver {
 		max-bitrate = <5000000>;
@@ -311,28 +310,28 @@ zephyr_udc0: &usb1 {
 };
 
 &lpspi1 {
-	status = "okay";
 	/* DMA channels 0 and 1, muxed to LPSPI1 RX and TX */
 	dmas = <&edma0 0 13>, <&edma0 1 14>;
 	dma-names = "rx", "tx";
 	tristate-output;
 	pinctrl-0 = <&pinmux_lpspi1>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &lpspi3 {
-	status = "okay";
 	/* DMA channels 2 and 3, muxed to LPSPI3 RX and TX */
 	dmas = <&edma0 2 15>, <&edma0 3 16>;
 	dma-names = "rx", "tx";
 	pinctrl-0 = <&pinmux_lpspi3>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &adc1 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_adc1>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 /* GPT and Systick are enabled. If power management is enabled, the GPT

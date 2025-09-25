@@ -12,8 +12,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "NXP VMU RT1170";
 	compatible = "nxp,mimxrt1176";
+	model = "NXP VMU RT1170";
 
 	aliases {
 		led0 = &green_led;
@@ -172,19 +172,19 @@
 };
 
 &lpuart1 {
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 };
 
 &lpuart4 {
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 };
 
 &lpuart6 {
-	status = "okay";
 	single-wire;
 	rx-invert;
+	status = "okay";
 
 	sbus {
 		compatible = "futaba,sbus";
@@ -222,9 +222,9 @@
 };
 
 &flexcan1 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_flexcan1>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	can-transceiver {
 		max-bitrate = <5000000>;
@@ -232,9 +232,9 @@
 };
 
 &flexcan2 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_flexcan2>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	can-transceiver {
 		max-bitrate = <5000000>;
@@ -242,9 +242,9 @@
 };
 
 &flexcan3 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_flexcan3>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	can-transceiver {
 		max-bitrate = <5000000>;
@@ -254,10 +254,10 @@
 #include <zephyr/dt-bindings/sensor/icm42686.h>
 
 &lpspi1 {
-	status = "okay";
 	pcs-sck-delay = <50>;
 	sck-pcs-delay = <50>;
 	transfer-delay = <50>;
+	status = "okay";
 
 	icm42686_0: icm42686p0@0 {
 		compatible = "invensense,icm42686", "invensense,icm4268x";
@@ -282,10 +282,10 @@
 #include <zephyr/dt-bindings/sensor/icm42688.h>
 
 &lpspi2 {
-	status = "okay";
 	pcs-sck-delay = <50>;
 	sck-pcs-delay = <50>;
 	transfer-delay = <50>;
+	status = "okay";
 
 	icm42688_0: icm42688p0@0 {
 		compatible = "invensense,icm42688", "invensense,icm4268x";
@@ -307,9 +307,9 @@
 };
 
 &lpspi3 {
-	status = "okay";
 	cs-gpios = <&gpio2 15 GPIO_ACTIVE_LOW>,
 		   <&gpio2 18 GPIO_ACTIVE_LOW>;
+	status = "okay";
 
 	bmi08x_accel: bmi08x@0 {
 		compatible = "bosch,bmi08x-accel";
@@ -363,37 +363,37 @@
 };
 
 &lpi2c2 {
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 
 	bmp388_0: bmp388@76 {
 		compatible = "bosch,bmp388";
-		int-gpios = <&gpio2 3 GPIO_ACTIVE_HIGH>;
 		reg = <0x76>;
-		status = "okay";
+		int-gpios = <&gpio2 3 GPIO_ACTIVE_HIGH>;
 		odr = "50";
 		osr-press = <4>;
 		osr-temp = <2>;
+		status = "okay";
 	};
 };
 
 &lpi2c3 {
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 
 	bmm150: bmm150@10 {
 		compatible = "bosch,bmm150";
-		status = "okay";
 		reg = <0x10>;
+		status = "okay";
 	};
 
 	bmp388_1: bmp388@77 {
 		compatible = "bosch,bmp388";
 		reg = <0x77>;
-		status = "okay";
 		odr = "50";
 		osr-press = <4>;
 		osr-temp = <2>;
+		status = "okay";
 	};
 };
 
@@ -402,59 +402,59 @@
 };
 
 &flexpwm1_pwm0 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm_vmu_ch1>;
 	pinctrl-names = "default";
 	nxp,prescaler = <64>;
+	status = "okay";
 };
 
 &flexpwm1_pwm1 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm_vmu_ch2>;
 	pinctrl-names = "default";
 	nxp,prescaler = <64>;
+	status = "okay";
 };
 
 &flexpwm1_pwm2 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm_vmu_ch3>;
 	pinctrl-names = "default";
 	nxp,prescaler = <64>;
+	status = "okay";
 };
 
 &flexpwm2_pwm0 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm_vmu_ch4>;
 	pinctrl-names = "default";
 	nxp,prescaler = <64>;
+	status = "okay";
 };
 
 &flexpwm2_pwm1 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm_vmu_ch5>;
 	pinctrl-names = "default";
 	nxp,prescaler = <64>;
+	status = "okay";
 };
 
 &flexpwm2_pwm2 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm_vmu_ch6>;
 	pinctrl-names = "default";
 	nxp,prescaler = <64>;
+	status = "okay";
 };
 
 &flexpwm2_pwm3 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm_vmu_ch7>;
 	pinctrl-names = "default";
 	nxp,prescaler = <64>;
+	status = "okay";
 };
 
 &flexpwm3_pwm0 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm_vmu_ch8>;
 	pinctrl-names = "default";
 	nxp,prescaler = <64>;
+	status = "okay";
 };
 
 &gpt5 {
@@ -474,10 +474,10 @@
 };
 
 &usdhc1 {
-	status = "okay";
 	no-1-8-v;
 	pwr-gpios = <&gpio1 1 GPIO_ACTIVE_HIGH>;
 	cd-gpios = <&gpio3 31 (GPIO_ACTIVE_LOW | GPIO_PULL_DOWN)>;
+	status = "okay";
 
 	sdmmc {
 		compatible = "zephyr,sdmmc-disk";
@@ -523,8 +523,8 @@
 };
 
 &enet1g_phy {
-	status = "okay";
 	int-gpios = <&gpio5 10 GPIO_ACTIVE_HIGH>;
+	status = "okay";
 };
 
 zephyr_udc0: &usb1 {

@@ -12,8 +12,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "NXP MIMXRT1020-EVK board";
 	compatible = "nxp,mimxrt1021";
+	model = "NXP MIMXRT1020-EVK board";
 
 	aliases {
 		led0 = &green_led;
@@ -35,9 +35,9 @@
 	};
 
 	sdram0: memory@80000000 {
+		reg = <0x80000000 DT_SIZE_M(32)>;
 		/* ISSI IS42S16160J-6TLI */
 		device_type = "memory";
-		reg = <0x80000000 DT_SIZE_M(32)>;
 	};
 
 	leds {
@@ -96,18 +96,18 @@ arduino_serial: &lpuart2 {
 };
 
 &flexspi {
-	status = "okay";
 	reg = <0x402a8000 0x4000>, <0x60000000 DT_SIZE_M(8)>;
+	status = "okay";
 
 	is25lp064: is25lp064@0 {
 		compatible = "nxp,imx-flexspi-nor";
-		size = <DT_SIZE_M(8*8)>;
 		reg = <0>;
+		size = <DT_SIZE_M(8*8)>;
 		spi-max-frequency = <DT_FREQ_M(104)>;
-		status = "okay";
 		jedec-id = [9d 60 17];
 		erase-block-size = <DT_SIZE_K(4)>;
 		write-block-size = <1>;
+		status = "okay";
 
 		partitions {
 			compatible = "fixed-partitions";
@@ -119,85 +119,85 @@ arduino_serial: &lpuart2 {
 			 * to the flash memory sector size of 4KB.
 			 */
 			boot_partition: partition@0 {
-				label = "mcuboot";
 				reg = <0x00000000 DT_SIZE_K(128)>;
+				label = "mcuboot";
 			};
 
 			slot0_partition: partition@20000 {
-				label = "image-0";
 				reg = <0x00020000 DT_SIZE_M(3)>;
+				label = "image-0";
 			};
 
 			slot1_partition: partition@320000 {
-				label = "image-1";
 				reg = <0x00320000 DT_SIZE_M(3)>;
+				label = "image-1";
 			};
 
 			storage_partition: partition@620000 {
-				label = "storage";
 				reg = <0x00620000 (DT_SIZE_M(2) - DT_SIZE_K(128))>;
+				label = "storage";
 			};
 		};
 	};
 };
 
 &enet_mac {
-	status = "okay";
 	pinctrl-0 = <&pinmux_enet>;
 	pinctrl-names = "default";
 	phy-handle = <&phy>;
-	zephyr,random-mac-address;
 	phy-connection-type = "rmii";
+	zephyr,random-mac-address;
+	status = "okay";
 };
 
 &enet_mdio {
-	status = "okay";
 	pinctrl-0 = <&pinmux_enet_mdio>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	phy: phy@0 {
 		compatible = "microchip,ksz8081";
 		reg = <0>;
-		status = "okay";
 		reset-gpios = <&gpio1 4 GPIO_ACTIVE_HIGH>;
 		int-gpios = <&gpio1 22 GPIO_ACTIVE_HIGH>;
 		microchip,interface-type = "rmii";
+		status = "okay";
 	};
 };
 
 &enet_ptp_clock {
-	status = "okay";
 	pinctrl-0 = <&pinmux_ptp>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &lpi2c1 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpi2c1>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &lpi2c4 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpi2c4>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &lpuart1 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_lpuart1>;
 	pinctrl-1 = <&pinmux_lpuart1_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &lpspi1 {
-	status = "okay";
 	/* DMA channels 0 and 1, muxed to LPSPI1 RX and TX */
 	dmas = <&edma0 0 13>, <&edma0 1 14>;
 	dma-names = "rx", "tx";
 	pinctrl-0 = <&pinmux_lpspi1>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 zephyr_udc0: &usb1 {
@@ -205,7 +205,6 @@ zephyr_udc0: &usb1 {
 };
 
 &usdhc1 {
-	status = "okay";
 	no-1-8-v;
 	pinctrl-0 = <&pinmux_usdhc1>;
 	pinctrl-1 = <&pinmux_usdhc1_slow>;
@@ -214,6 +213,7 @@ zephyr_udc0: &usb1 {
 	pinctrl-names = "default", "slow", "med", "fast";
 	cd-gpios = <&gpio3 19 GPIO_ACTIVE_LOW>;
 	pwr-gpios = <&gpio3 24 GPIO_ACTIVE_HIGH>;
+	status = "okay";
 
 	sdmmc {
 		compatible = "zephyr,sdmmc-disk";
@@ -223,9 +223,9 @@ zephyr_udc0: &usb1 {
 };
 
 &adc1 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_adc1>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &sai3 {

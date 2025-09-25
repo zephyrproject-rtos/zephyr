@@ -10,8 +10,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "nxp,rd_rw612_bga";
 	compatible = "nxp,rd_rw612_bga";
+	model = "nxp,rd_rw612_bga";
 
 	aliases {
 		usart-0 = &flexcomm3;
@@ -100,27 +100,27 @@ arduino_spi: &flexcomm0 {
 	compatible = "nxp,lpc-spi";
 	pinctrl-0 = <&pinmux_flexcomm0_spi>;
 	pinctrl-names = "default";
-	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
+	status = "okay";
 };
 
 arduino_i2c: &flexcomm2 {
 	compatible = "nxp,lpc-i2c";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 	#address-cells = <1>;
 	#size-cells = <0>;
 	pinctrl-0 = <&pinmux_flexcomm2_i2c>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &flexcomm3 {
 	compatible = "nxp,lpc-usart";
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_flexcomm3_usart>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &hsgpio0 {
@@ -128,7 +128,6 @@ arduino_i2c: &flexcomm2 {
 };
 
 &flexspi {
-	status = "okay";
 	ahb-bufferable;
 	ahb-prefetch;
 	ahb-cacheable;
@@ -138,17 +137,18 @@ arduino_i2c: &flexcomm2 {
 	pinctrl-0 = <&pinmux_flexspi>;
 	pinctrl-names = "default";
 	status = "okay";
+	status = "okay";
 
 	mx25u51245g: mx25u51245g@0 {
 		compatible = "nxp,imx-flexspi-nor";
-		spi-max-frequency = <DT_FREQ_M(133)>;
 		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(133)>;
 		/* MX25UM51245G is 64MB, 512MBit flash part */
 		size = <DT_SIZE_M(64 * 8)>;
-		status = "okay";
 		jedec-id = [c2 25 3a];
 		erase-block-size = <DT_SIZE_K(4)>;
 		write-block-size = <1>;
+		status = "okay";
 
 		partitions {
 			compatible = "fixed-partitions";
@@ -160,37 +160,33 @@ arduino_i2c: &flexcomm2 {
 			 * to the flash memory sector size of 4KB.
 			 */
 			boot_partition: partition@0 {
-				label = "mcuboot";
 				reg = <0x00000000 DT_SIZE_K(128)>;
+				label = "mcuboot";
 			};
 
 			slot0_partition: partition@20000 {
-				label = "image-0";
 				reg = <0x00020000 DT_SIZE_M(3)>;
+				label = "image-0";
 			};
 
 			slot1_partition: partition@320000 {
-				label = "image-1";
 				reg = <0x00320000 DT_SIZE_M(3)>;
+				label = "image-1";
 			};
 
 			storage_partition: partition@620000 {
-				label = "storage";
 				reg = <0x00620000 (DT_SIZE_M(58) - DT_SIZE_K(128))>;
+				label = "storage";
 			};
 		};
 	};
 
 	is66wvq8m4: is66wvq8m4@2 {
 		compatible = "nxp,imx-flexspi-is66wvq8m4";
+		reg = <2>;
 		/* IS66WVQ8M4 is 4MB, 32MBit pSRAM */
 		size = <DT_SIZE_M(32)>;
-		reg = <2>;
 		spi-max-frequency = <DT_FREQ_M(256)>;
-		/* PSRAM cannot be enabled while board is in default XIP
-		 * configuration, as it will conflict with flash chip.
-		 */
-		status = "disabled";
 		cs-interval-unit = <1>;
 		cs-interval = <5>;
 		cs-hold-time = <2>;
@@ -199,6 +195,10 @@ arduino_i2c: &flexcomm2 {
 		column-space = <14>;
 		ahb-write-wait-unit = <2>;
 		ahb-write-wait-interval = <0>;
+		/* PSRAM cannot be enabled while board is in default XIP
+		 * configuration, as it will conflict with flash chip.
+		 */
+		status = "disabled";
 	};
 };
 
@@ -216,31 +216,31 @@ arduino_i2c: &flexcomm2 {
  * and PDM HW channel 1 as right channel.
  */
 &pdmc0 {
-	status = "okay";
 	gainshift = <3>;
 	dc-cutoff = "155hz";
 	dc-gain = <1>;
+	status = "okay";
 };
 
 &pdmc1 {
-	status = "okay";
 	gainshift = <3>;
 	dc-cutoff = "155hz";
 	dc-gain = <1>;
+	status = "okay";
 };
 
 &pdmc2 {
-	status = "okay";
 	gainshift = <3>;
 	dc-cutoff = "155hz";
 	dc-gain = <1>;
+	status = "okay";
 };
 
 &pdmc3 {
-	status = "okay";
 	gainshift = <3>;
 	dc-cutoff = "155hz";
 	dc-gain = <1>;
+	status = "okay";
 };
 
 zephyr_udc0: &usb_otg {
@@ -252,9 +252,9 @@ zephyr_udc0: &usb_otg {
 };
 
 zephyr_mipi_dbi_parallel: &lcdic {
-	status = "okay";
 	pinctrl-0 = <&pinmux_lcdic>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 /*
@@ -276,15 +276,15 @@ nxp_8080_touch_panel_i2c: &arduino_i2c {
 };
 
 &sctimer {
-	status = "okay";
 	pinctrl-0 = <&pinmux_pwm0>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 /* RTC is the wakeup source for PM modes 3,4 */
 &rtc_highres {
-	status = "okay";
 	wakeup-source;
+	status = "okay";
 };
 
 &pmu {
@@ -303,9 +303,9 @@ nxp_8080_touch_panel_i2c: &arduino_i2c {
 
 /* OS Timer is the wakeup source for PM mode 2 */
 &os_timer {
-	status = "okay";
 	wakeup-source;
 	deep-sleep-counter = <&rtc_highres>;
+	status = "okay";
 };
 
 &systick {
@@ -313,16 +313,16 @@ nxp_8080_touch_panel_i2c: &arduino_i2c {
 };
 
 &pin1 {
-	status = "okay";
 	wakeup-level = "low";
+	status = "okay";
 };
 
 &nbu {
-	status = "okay";
 	wakeup-source;
+	status = "okay";
 };
 
 &imu {
-	status = "okay";
 	wakeup-source;
+	status = "okay";
 };

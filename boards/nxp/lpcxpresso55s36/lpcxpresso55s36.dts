@@ -12,8 +12,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "NXP LPCXpresso55S36 board";
 	compatible = "nxp,lpc55xxx", "nxp,lpc";
+	model = "NXP LPCXpresso55S36 board";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -126,11 +126,11 @@
 };
 
 &flexcomm0 {
-	status = "okay";
 	compatible = "nxp,lpc-usart";
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_flexcomm0_usart>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &can0 {
@@ -144,9 +144,9 @@
 };
 
 &adc0 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpadc0>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 /* Flash is divided into 32 kB sub-regions.
@@ -160,23 +160,23 @@
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x0 DT_SIZE_K(32)>;
+			label = "mcuboot";
 		};
 
 		slot0_partition: partition@8000 {
-			label = "image-0";
 			reg = <0x00008000 DT_SIZE_K(96)>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@20000 {
-			label = "image-1";
 			reg = <0x00020000 DT_SIZE_K(96)>;
+			label = "image-1";
 		};
 
 		storage_partition: partition@38000 {
-			label = "storage";
 			reg = <0x00038000 DT_SIZE_K(20)>;
+			label = "storage";
 		};
 		/* The last 12KB are reserved for PFR on the 256KB flash.
 		 */
@@ -184,15 +184,15 @@
 };
 
 &flexpwm1_pwm0 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm1_pwm0>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 zephyr_udc0: &usbfs {
-	status = "okay";
 	pinctrl-0 = <&pinmux_usbfs>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &dma0 {
@@ -204,13 +204,13 @@ zephyr_udc0: &usbfs {
 };
 
 &dac0 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_dac0>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &opamp0 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_opamp0>;
 	pinctrl-names = "default";
+	status = "okay";
 };

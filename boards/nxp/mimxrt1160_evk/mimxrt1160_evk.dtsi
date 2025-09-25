@@ -47,11 +47,11 @@
 };
 
 &lpuart1 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_lpuart1>;
 	pinctrl-1 = <&pinmux_lpuart1_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &lpuart2 {
@@ -69,9 +69,9 @@
 };
 
 &lpi2c5 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpi2c5>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	fxos8700: fxos8700@1f {
 		compatible = "nxp,fxos8700";
@@ -88,21 +88,21 @@
 };
 
 &flexspi {
-	status = "okay";
+	reg = <0x400cc000 0x4000>, <0x30000000 DT_SIZE_M(16)>;
 	ahb-prefetch;
 	ahb-read-addr-opt;
 	rx-clock-source = <1>;
-	reg = <0x400cc000 0x4000>, <0x30000000 DT_SIZE_M(16)>;
+	status = "okay";
 
 	is25wp128: is25wp128@0 {
 		compatible = "nxp,imx-flexspi-nor";
-		size = <DT_SIZE_M(16*8)>;
 		reg = <0>;
+		size = <DT_SIZE_M(16*8)>;
 		spi-max-frequency = <DT_FREQ_M(104)>;
-		status = "okay";
 		jedec-id = [9d 70 18];
 		erase-block-size = <4096>;
 		write-block-size = <1>;
+		status = "okay";
 
 		partitions {
 			compatible = "fixed-partitions";
@@ -114,62 +114,62 @@
 			 * to the flash memory sector size of 4KB.
 			 */
 			boot_partition: partition@0 {
-				label = "mcuboot";
 				reg = <0x00000000 DT_SIZE_K(128)>;
+				label = "mcuboot";
 			};
 
 			slot0_partition: partition@20000 {
-				label = "image-0";
 				reg = <0x00020000 DT_SIZE_M(7)>;
+				label = "image-0";
 			};
 
 			slot1_partition: partition@720000 {
-				label = "image-1";
 				reg = <0x00720000 DT_SIZE_M(7)>;
+				label = "image-1";
 			};
 
 			storage_partition: partition@E20000 {
-				label = "storage";
 				reg = <0x00E20000 (DT_SIZE_M(2) - DT_SIZE_K(128))>;
+				label = "storage";
 			};
 		};
 	};
 };
 
 &flexpwm1_pwm2 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm1>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &enet_mac {
-	status = "okay";
 	pinctrl-0 = <&pinmux_enet>;
 	pinctrl-names = "default";
 	phy-handle = <&phy>;
 	phy-connection-type = "rmii";
 	zephyr,random-mac-address;
+	status = "okay";
 };
 
 &enet_mdio {
-	status = "okay";
 	pinctrl-0 = <&pinmux_enet_mdio>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	phy: phy@0 {
 		compatible = "microchip,ksz8081";
 		reg = <0>;
-		status = "okay";
 		reset-gpios = <&gpio12 12 GPIO_ACTIVE_HIGH>;
 		int-gpios = <&gpio9 11 GPIO_ACTIVE_HIGH>;
 		microchip,interface-type = "rmii";
+		status = "okay";
 	};
 };
 
 &enet_ptp_clock {
-	status = "okay";
 	pinctrl-0 = <&pinmux_ptp>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &csi {
