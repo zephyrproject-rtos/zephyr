@@ -9,8 +9,8 @@
 #include <ti/am62x_m4.dtsi>
 
 / {
-	model = "Toradex Verdin AM62";
 	compatible = "toradex,verdin_am62";
+	model = "Toradex Verdin AM62";
 
 	chosen {
 		zephyr,console = &uart0;

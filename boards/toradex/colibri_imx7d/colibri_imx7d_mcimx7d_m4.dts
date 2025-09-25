@@ -11,8 +11,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "TORADEX Colibri IMX7D board";
 	compatible = "nxp,mcimx7d_m4";
+	model = "TORADEX Colibri IMX7D board";
 
 	aliases {
 		led0 = &green_led;
@@ -47,11 +47,11 @@
 };
 
 &uart2 {
-	status = "okay";
 	current-speed = <115200>;
 	modem-mode = <64>;
 	pinctrl-0 = <&uart2_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &gpio1 {
