@@ -28,13 +28,20 @@
 #define SIUL2_IFER0             0x28
 /* SIUL2 Interrupt Filter Maximum Counter Register */
 #define SIUL2_IFMCR(n)          (0x30 + 0x4 * (n))
+#ifndef SIUL2_IFMCR_MAXCNT_MASK
 #define SIUL2_IFMCR_MAXCNT_MASK GENMASK(3, 0)
+#endif
+#ifndef SIUL2_IFMCR_MAXCNT
 #define SIUL2_IFMCR_MAXCNT(v)   FIELD_PREP(SIUL2_IFMCR_MAXCNT_MASK, (v))
+#endif
 /* SIUL2 Interrupt Filter Clock Prescaler Register */
 #define SIUL2_IFCPR             0xb0
+#ifndef SIUL2_IFCPR_IFCP_MASK
 #define SIUL2_IFCPR_IFCP_MASK   GENMASK(3, 0)
+#endif
+#ifndef SIUL2_IFCPR_IFCP
 #define SIUL2_IFCPR_IFCP(v)     FIELD_PREP(SIUL2_IFCPR_IFCP_MASK, (v))
-
+#endif
 /* Handy accessors */
 #define REG_READ(r)     sys_read32(config->base + (r))
 #define REG_WRITE(r, v) sys_write32((v), config->base + (r))
