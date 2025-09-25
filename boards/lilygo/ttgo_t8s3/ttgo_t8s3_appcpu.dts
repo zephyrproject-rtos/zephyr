@@ -9,8 +9,8 @@
 #include <espressif/partitions_0x0_amp.dtsi>
 
 / {
-	model = "TTGO T8S3 APPCPU";
 	compatible = "espressif,esp32s3";
+	model = "TTGO T8S3 APPCPU";
 
 	chosen {
 		zephyr,sram = &sram0;
