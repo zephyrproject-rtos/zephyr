@@ -11,8 +11,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Nuvoton NuMaker M5531 board";
 	compatible = "nuvoton,numaker-m5531";
+	model = "Nuvoton NuMaker M5531 board";
 
 	aliases {
 		led0 = &green_led;
@@ -82,23 +82,23 @@
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x0 0x8000>;
+			label = "mcuboot";
 		};
 
 		slot0_partition: partition@8000 {
-			label = "image-0";
 			reg = <0x8000 0xf8000>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@100000 {
-			label = "image-1";
 			reg = <0x100000 0xf8000>;
+			label = "image-1";
 		};
 
 		storage_partition: partition@1f8000 {
-			label = "storage";
 			reg = <0x1f8000 0x8000>;
+			label = "storage";
 		};
 	};
 };
