@@ -6,7 +6,6 @@
 
 / {
 	chosen {
-		zephyr,flash = &ocram;
 		zephyr,console = &lpuart1;
 		zephyr,shell-uart = &lpuart1;
 
