@@ -14,8 +14,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "u-blox BMD-345-EVAL EVK nRF52840";
 	compatible = "u-blox,ubx-bmd345eval-nrf52840";
+	model = "u-blox BMD-345-EVAL EVK nRF52840";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -184,19 +184,19 @@
 
 &uart0 {
 	compatible = "nordic,nrf-uarte";
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 arduino_i2c: &i2c0 {
 	compatible = "nordic,nrf-twi";
-	status = "okay";
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-1 = <&i2c0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &i2c1 {
@@ -209,10 +209,10 @@ arduino_i2c: &i2c0 {
 };
 
 &pwm0 {
-	status = "okay";
 	pinctrl-0 = <&pwm0_default>;
 	pinctrl-1 = <&pwm0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &spi0 {
@@ -226,33 +226,33 @@ arduino_i2c: &i2c0 {
 
 &spi1 {
 	compatible = "nordic,nrf-spi";
-	status = "okay";
 	pinctrl-0 = <&spi1_default>;
 	pinctrl-1 = <&spi1_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &spi2 {
 	compatible = "nordic,nrf-spi";
-	status = "disabled";
 	pinctrl-0 = <&spi2_default>;
 	pinctrl-1 = <&spi2_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "disabled";
 };
 
 arduino_spi: &spi3 {
-	status = "okay";
 	cs-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>; /* D10 */
 	pinctrl-0 = <&spi3_default>;
 	pinctrl-1 = <&spi3_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &qspi {
-	status = "okay";
 	pinctrl-0 = <&qspi_default>;
 	pinctrl-1 = <&qspi_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	mx25r64: mx25r6435f@0 {
 		compatible = "nordic,qspi-nor";
