@@ -5,8 +5,8 @@
 #include "apollo4p_blue_kxr_evb-pinctrl.dtsi"
 
 / {
-	model = "Ambiq Apollo4 Blue Plus KXR evaluation board";
 	compatible = "ambiq,apollo4p_blue_kxr_evb";
+	model = "Ambiq Apollo4 Blue Plus KXR evaluation board";
 
 	chosen {
 		zephyr,itcm = &tcm;
@@ -106,8 +106,8 @@
 };
 
 &rtc0 {
-	status = "disabled";
 	clock = "XTAL";
+	status = "disabled";
 };
 
 &wdt0 {
@@ -160,8 +160,8 @@
 
 		/* Set 16KB of storage at the end of the 1952KB of flash */
 		storage_partition: partition@1e4000 {
-			label = "storage";
 			reg = <0x001e4000 0x4000>;
+			label = "storage";
 		};
 	};
 };
