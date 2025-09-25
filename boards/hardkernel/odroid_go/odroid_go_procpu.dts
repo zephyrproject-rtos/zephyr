@@ -11,8 +11,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "ODROID-GO Game Kit PROCPU";
 	compatible = "hardkernel,odroid_go", "espressif,esp32";
+	model = "ODROID-GO Game Kit PROCPU";
 
 	chosen {
 		zephyr,sram = &sram1;
@@ -98,9 +98,9 @@
 
 		ili9341: ili9341@0 {
 			compatible = "ilitek,ili9341";
+			reg = <0>;
 			mipi-max-frequency = <25000000>;
 			pixel-format = <0>;
-			reg = <0>;
 			rotation = <270>;
 			width = <320>;
 			height = <240>;
@@ -109,10 +109,10 @@
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &gpio0 {
@@ -130,24 +130,25 @@
 };
 
 &i2c0 {
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 	sda-gpios = <&gpio0 4 GPIO_OPEN_DRAIN>;
 	scl-gpios = <&gpio0 15 GPIO_OPEN_DRAIN>;
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &spi3 {
 	#address-cells = <1>;
 	#size-cells = <0>;
-	status = "okay";
 	pinctrl-0 = <&spim3_default>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	sd0: sd@1 {
 		compatible = "zephyr,sdhc-spi-slot";
 		reg = <1>;
+		spi-max-frequency = <20000000>;
 		status = "okay";
 
 		mmc {
@@ -155,7 +156,6 @@
 			disk-name = "SD";
 			status = "okay";
 		};
-		spi-max-frequency = <20000000>;
 	};
 };
 
