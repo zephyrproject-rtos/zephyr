@@ -97,6 +97,12 @@
 					freq-32khz-gpios = <&test_gpio 0 0>;
 				};
 			};
+
+			test_pcf85063a: pcf85063a@b {
+				compatible = "nxp,pcf85063a";
+				reg = <0xb>;
+				int1-gpios = <&test_gpio 0 0>;
+			};
 		};
 	};
 };
