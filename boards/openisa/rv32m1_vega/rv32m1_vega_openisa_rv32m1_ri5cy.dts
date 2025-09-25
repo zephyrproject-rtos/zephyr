@@ -9,8 +9,8 @@
 #include "rv32m1_vega_openisa_rv32m1.dtsi"
 
 / {
-	model = "OpenISA RV32M1 Vega RI5CY";
 	compatible = "openisa,rv32m1";
+	model = "OpenISA RV32M1 Vega RI5CY";
 
 	chosen {
 		zephyr,sram = &m4_dtcm;
@@ -38,28 +38,28 @@
 		#size-cells = <1>;
 
 		slot0_partition: partition@0 {
-			label = "image-0";
 			reg = <0x00000000 0x00069000>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@69000 {
-			label = "image-1";
 			reg = <0x00069000 0x00069000>;
+			label = "image-1";
 		};
 
 		scratch_partition: partition@d2000 {
-			label = "image-scratch";
 			reg = <0x000d2000 0x0001e000>;
+			label = "image-scratch";
 		};
 
 		storage_partition: partition@f0000 {
-			label = "storage";
 			reg = <0x000f0000 0x00004000>;
+			label = "storage";
 		};
 
 		boot_partition: partition@f4000 {
-			label = "mcuboot";
 			reg = <0x000f4000 0x0000C000>;
+			label = "mcuboot";
 		};
 	};
 };
