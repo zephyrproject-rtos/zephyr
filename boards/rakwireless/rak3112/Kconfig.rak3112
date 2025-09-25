@@ -1,0 +1,7 @@
+# Copyright (c) 2025 Kenneth Lu
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_RAK3112
+	select SOC_ESP32S3_R2
+	select SOC_ESP32S3_PROCPU if BOARD_RAK3112_ESP32S3_PROCPU
+	select SOC_ESP32S3_APPCPU if BOARD_RAK3112_ESP32S3_APPCPU
