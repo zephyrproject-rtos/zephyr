@@ -299,6 +299,19 @@ void hf_subscriber_number(struct bt_hfp_hf *hf, const char *number, uint8_t type
 	bt_shell_print("Subscriber number %s, type %d, service %d", number, type, service);
 }
 
+#if defined(CONFIG_BT_HFP_HF_ECS)
+void hf_query_call(struct bt_hfp_hf *hf, struct bt_hfp_hf_current_call *call)
+{
+	if (call == NULL) {
+		return;
+	}
+
+	bt_shell_print("CLCC idx %d dir %d status %d mode %d mpty %d number %s type %d",
+		       call->index, call->dir, call->status, call->mode, call->multiparty,
+		       call->number != NULL ? call->number : "UNKNOWN", call->type);
+}
+#endif /* CONFIG_BT_HFP_HF_ECS */
+
 static struct bt_hfp_hf_cb hf_cb = {
 	.connected = hf_connected,
 	.disconnected = hf_disconnected,
@@ -348,6 +361,9 @@ static struct bt_hfp_hf_cb hf_cb = {
 #endif /* CONFIG_BT_HFP_HF_VOICE_RECG */
 	.request_phone_number = hf_request_phone_number,
 	.subscriber_number = hf_subscriber_number,
+#if defined(CONFIG_BT_HFP_HF_ECS)
+	.query_call = hf_query_call,
+#endif /* CONFIG_BT_HFP_HF_ECS */
 };
 
 static int cmd_reg_enable(const struct shell *sh, size_t argc, char **argv)
@@ -952,6 +968,20 @@ static int cmd_battery(const struct shell *sh, size_t argc, char **argv)
 }
 #endif /* CONFIG_BT_HFP_HF_HF_INDICATOR_BATTERY */
 
+#if defined(CONFIG_BT_HFP_HF_ECS)
+static int cmd_query_calls(const struct shell *sh, size_t argc, char **argv)
+{
+	int err;
+
+	err = bt_hfp_hf_query_list_of_current_calls(hfp_hf);
+	if (err != 0) {
+		shell_error(sh, "Failed to query list of current calls: %d", err);
+	}
+
+	return err;
+}
+#endif /* CONFIG_BT_HFP_HF_ECS */
+
 SHELL_STATIC_SUBCMD_SET_CREATE(hf_cmds,
 	SHELL_CMD_ARG(reg, NULL, HELP_NONE, cmd_reg_enable, 1, 0),
 	SHELL_CMD_ARG(connect, NULL, "<channel>", cmd_connect, 2, 0),
@@ -1017,6 +1047,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(hf_cmds,
 #if defined(CONFIG_BT_HFP_HF_HF_INDICATOR_BATTERY)
 	SHELL_CMD_ARG(battery, NULL, "<level>", cmd_battery, 2, 0),
 #endif /* CONFIG_BT_HFP_HF_HF_INDICATOR_BATTERY */
+#if defined(CONFIG_BT_HFP_HF_ECS)
+	SHELL_CMD_ARG(query_calls, NULL, HELP_NONE, cmd_query_calls, 1, 0),
+#endif /* */
 	SHELL_SUBCMD_SET_END
 );
 #endif /* CONFIG_BT_HFP_HF */
