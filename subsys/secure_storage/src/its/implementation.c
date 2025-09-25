@@ -161,9 +161,6 @@ psa_status_t secure_storage_its_set(secure_storage_its_caller_id_t caller_id, ps
 	if (make_its_uid(caller_id, uid, &its_uid) != PSA_SUCCESS) {
 		return PSA_ERROR_INVALID_ARGUMENT;
 	}
-	if (p_data == NULL && data_length != 0) {
-		return PSA_ERROR_INVALID_ARGUMENT;
-	}
 	if (create_flags & ~SECURE_STORAGE_ALL_CREATE_FLAGS) {
 		return PSA_ERROR_NOT_SUPPORTED;
 	}
@@ -193,14 +190,10 @@ psa_status_t secure_storage_its_get(secure_storage_its_caller_id_t caller_id, ps
 	if (make_its_uid(caller_id, uid, &its_uid) != PSA_SUCCESS) {
 		return PSA_ERROR_INVALID_ARGUMENT;
 	}
-	if ((p_data == NULL && data_size != 0) || p_data_length == NULL) {
-		return PSA_ERROR_INVALID_ARGUMENT;
-	}
 	if (data_size == 0) {
 		*p_data_length = 0;
 		return PSA_SUCCESS;
 	}
-
 
 	ret = get_stored_data(its_uid, stored_data, &stored_data_len);
 	if (ret != PSA_SUCCESS) {
@@ -237,9 +230,6 @@ psa_status_t secure_storage_its_get_info(secure_storage_its_caller_id_t caller_i
 	uint8_t data[CONFIG_SECURE_STORAGE_ITS_MAX_DATA_SIZE];
 
 	if (make_its_uid(caller_id, uid, &its_uid) != PSA_SUCCESS) {
-		return PSA_ERROR_INVALID_ARGUMENT;
-	}
-	if (p_info == NULL) {
 		return PSA_ERROR_INVALID_ARGUMENT;
 	}
 
