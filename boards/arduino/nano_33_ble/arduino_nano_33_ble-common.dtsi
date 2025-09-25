@@ -123,14 +123,14 @@
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "sam-ba";
 			reg = <0x00000000 0x00010000>;
+			label = "sam-ba";
 			read-only;
 		};
 
 		code_partition: partition@10000 {
-			label = "code";
 			reg = <0x00010000 0x000e8000>;
+			label = "code";
 			read-only;
 		};
 
@@ -142,8 +142,8 @@
 		 * if enabled.
 		 */
 		storage_partition: partition@f8000 {
-			label = "storage";
 			reg = <0x000f8000 0x00008000>;
+			label = "storage";
 		};
 	};
 };
@@ -155,26 +155,26 @@
 &uart0 {
 	compatible = "nordic,nrf-uart";
 	current-speed = <115200>;
-	status = "okay";
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 arduino_i2c: &i2c0 {
 	compatible = "nordic,nrf-twim";
-	status = "okay";
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-1 = <&i2c0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &i2c1 {
 	compatible = "nordic,nrf-twim";
-	status = "okay";
 	pinctrl-0 = <&i2c1_default>;
 	pinctrl-1 = <&i2c1_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	lsm9ds1: lsm9ds1@6b {
 		compatible = "st,lsm9ds1";
@@ -190,10 +190,10 @@ arduino_i2c: &i2c0 {
 /* SPI2 is used because SPI1/0 shares conflicts with I2C1/0 */
 arduino_spi: &spi2 {
 	compatible = "nordic,nrf-spim";
-	status = "okay";
 	pinctrl-0 = <&spi2_default>;
 	pinctrl-1 = <&spi2_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &uicr {
@@ -213,25 +213,25 @@ arduino_spi: &spi2 {
 };
 
 &pwm0 {
-	status = "okay";
 	pinctrl-0 = <&pwm0_default>;
 	pinctrl-1 = <&pwm0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &pwm1 {
-	status = "okay";
 	pinctrl-0 = <&pwm1_default>;
 	pinctrl-1 = <&pwm1_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &pwm2 {
-	/* Cannot be used together with spi2 because of conflict on P0.13. */
-	status = "disabled";
 	pinctrl-0 = <&pwm2_default>;
 	pinctrl-1 = <&pwm2_sleep>;
 	pinctrl-names = "default", "sleep";
+	/* Cannot be used together with spi2 because of conflict on P0.13. */
+	status = "disabled";
 };
 
 zephyr_udc0: &usbd {

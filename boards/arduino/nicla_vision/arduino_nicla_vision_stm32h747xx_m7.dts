@@ -11,8 +11,8 @@
 #include "arduino_nicla_vision.dtsi"
 
 / {
-	model = "Arduino Nicla Vision Board (M7)";
 	compatible = "arduino,nicla-vision";
+	model = "Arduino Nicla Vision Board (M7)";
 
 	chosen {
 		zephyr,console = &lpuart1;
@@ -37,9 +37,9 @@
 };
 
 &clk_hse {
-	status = "okay";
 	hse-bypass;
 	clock-frequency = <DT_FREQ_M(25)>;
+	status = "okay";
 };
 
 &clk_lse {
@@ -67,10 +67,10 @@
 };
 
 &lpuart1 {
-	status = "okay";
 	pinctrl-0 = <&lpuart1_tx_pa9 &lpuart1_rx_pa10>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
+	status = "okay";
 };
 
 &usart1 {
@@ -78,8 +78,8 @@
 		     &usart1_rts_pa12 &usart1_cts_pa11>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
-	status = "okay";
 	hw-flow-control;
+	status = "okay";
 
 	bt_hci_uart: bt_hci_uart {
 		compatible = "zephyr,bt-hci-uart";
@@ -96,46 +96,46 @@
 };
 
 zephyr_i2c: &i2c1 {
-	status = "disabled";
 	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
 	pinctrl-names = "default";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "disabled";
 };
 
 &i2c2 {
-	status = "okay";
 	pinctrl-0 = <&i2c2_scl_pf1 &i2c2_sda_pf0>;
 	pinctrl-names = "default";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 
 	vl53l1x: vl53l1x@29 {
 		compatible = "st,vl53l1x";
 		reg = <0x29>;
-		status = "okay";
 		xshut-gpios = <&gpiog 10 GPIO_ACTIVE_HIGH>;
 		int-gpios = <&gpiod 8 GPIO_ACTIVE_HIGH>;
+		status = "okay";
 	};
 };
 
 &spi4 {
-	status = "okay";
 	pinctrl-0 = <&spi4_nss_pe11 &spi4_sck_pe12
 		     &spi4_miso_pe13 &spi4_mosi_pe14>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &spi5 {
-	status = "okay";
 	pinctrl-0 = <&spi5_nss_pf6 &spi5_sck_pf7
 		     &spi5_miso_pf8 &spi5_mosi_pf11>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	lsm6dso: lsm6dso@0 {
 		compatible = "st,lsm6dso";
-		status = "okay";
 		reg = <0x0>;
 		irq-gpios = <&gpioa 1 GPIO_ACTIVE_LOW>;
 		spi-max-frequency = <4000000>;
+		status = "okay";
 	};
 };
 
@@ -146,14 +146,14 @@ zephyr_i2c: &i2c1 {
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "bootloader";
 			reg = <0x0 0x40000>;
+			label = "bootloader";
 			read-only;
 		};
 
 		slot0_partition: partition@40000 {
-			label = "image-0";
 			reg = <0x40000 0x000c0000>;
+			label = "image-0";
 		};
 	};
 };
@@ -179,13 +179,13 @@ zephyr_i2c: &i2c1 {
 			#size-cells = <1>;
 
 			slot1_partition: partition@0 {
-				label = "image-1";
 				reg = <0x00000000 DT_SIZE_M(1)>;
+				label = "image-1";
 			};
 
 			storage_partition: partition@100000 {
-				label = "storage";
 				reg = <0x00100000 DT_SIZE_M(15)>;
+				label = "storage";
 			};
 		};
 	};
@@ -215,10 +215,10 @@ zephyr_udc0: &usbotg_hs {
 };
 
 &i2c3 {
-	status = "okay";
 	pinctrl-0 = <&i2c3_scl_pa8 &i2c3_sda_pc9>;
 	pinctrl-names = "default";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 
 	gc2145: gc2145@3c {
 		compatible = "galaxycore,gc2145";
@@ -256,24 +256,24 @@ zephyr_udc0: &usbotg_hs {
  * GC2145 sensor, so we need to configure the PWM generator...
  */
 &timers3 {
-	status = "okay";
 	st,prescaler = <0>;
+	status = "okay";
 
 	cam_clock_pwm: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim3_ch2_pa7>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
 &cam_clock_pwm {
 	/* ...then use the pwmclock node to start the clock generation */
 	pwmclock: pwmclock {
-		status = "okay";
 		compatible = "pwm-clock";
 		clock-frequency = <0>;
 		#clock-cells = <1>;
 		pwms = <&cam_clock_pwm 2 PWM_HZ(10000000) PWM_POLARITY_NORMAL>;
+		status = "okay";
 	};
 };
 

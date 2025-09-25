@@ -13,8 +13,8 @@
 #include "arduino_nano_matter_connector.dtsi"
 
 / {
-	model = "Arduino Nano Matter";
 	compatible = "arduino,arduino_nano_matter", "silabs,mgm240sd22vna";
+	model = "Arduino Nano Matter";
 
 	chosen {
 		zephyr,bt-hci = &bt_hci_silabs;

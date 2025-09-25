@@ -11,8 +11,8 @@
 #include "arduino_mkr_connector.dtsi"
 
 / {
-	model = "Arduino MKR Zero";
 	compatible = "arduino,mkrzero";
+	model = "Arduino MKR Zero";
 
 	chosen {
 		zephyr,console = &sercom5;
@@ -42,7 +42,6 @@
 };
 
 zephyr_i2c: &sercom0 {
-	status = "okay";
 	compatible = "atmel,sam0-i2c";
 	clock-frequency = <I2C_BITRATE_FAST>;
 	#address-cells = <1>;
@@ -50,6 +49,7 @@ zephyr_i2c: &sercom0 {
 
 	pinctrl-0 = <&sercom0_i2c_default>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	atecc508a@c0 {
 		compatible = "atmel,atecc508";
@@ -58,7 +58,6 @@ zephyr_i2c: &sercom0 {
 };
 
 &sercom1 {
-	status = "okay";
 	compatible = "atmel,sam0-spi";
 	dipo = <3>;
 	dopo = <0>;
@@ -67,10 +66,10 @@ zephyr_i2c: &sercom0 {
 
 	pinctrl-0 = <&sercom1_spi_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &sercom2 {
-	status = "okay";
 	compatible = "atmel,sam0-spi";
 	dipo = <3>;
 	dopo = <0>;
@@ -81,12 +80,13 @@ zephyr_i2c: &sercom0 {
 	pinctrl-names = "default";
 
 	cs-gpios = <&porta 14 GPIO_ACTIVE_LOW>;
+	status = "okay";
 
 	sdhc0: sdhc@0 {
 		compatible = "zephyr,sdhc-spi-slot";
 		reg = <0>;
-		status = "okay";
 		spi-max-frequency = <1000000>;
+		status = "okay";
 
 		mmc {
 			compatible = "zephyr,sdmmc-disk";
@@ -97,7 +97,6 @@ zephyr_i2c: &sercom0 {
 };
 
 &sercom5 {
-	status = "okay";
 	compatible = "atmel,sam0-uart";
 	current-speed = <115200>;
 	rxpo = <3>;
@@ -105,20 +104,19 @@ zephyr_i2c: &sercom0 {
 
 	pinctrl-0 = <&sercom5_uart_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &adc {
-	status = "okay";
-
 	pinctrl-0 = <&adc_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &dac0 {
-	status = "okay";
-
 	pinctrl-0 = <&dac_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &flash0 {
@@ -128,14 +126,14 @@ zephyr_i2c: &sercom0 {
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "bootloader";
 			reg = <0x00000000 0x2000>;
+			label = "bootloader";
 			read-only;
 		};
 
 		code_partition: partition@2000 {
-			label = "code";
 			reg = <0x2000 0x3A000>;
+			label = "code";
 			read-only;
 		};
 
@@ -145,15 +143,14 @@ zephyr_i2c: &sercom0 {
 		 * if enabled.
 		 */
 		storage_partition: partition@3c000 {
-			label = "storage";
 			reg = <0x0003c000 0x00004000>;
+			label = "storage";
 		};
 	};
 };
 
 zephyr_udc0: &usb0 {
-	status = "okay";
-
 	pinctrl-0 = <&usb_dc_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };

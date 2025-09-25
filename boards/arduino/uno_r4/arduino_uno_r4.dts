@@ -12,8 +12,8 @@
 #include <zephyr/dt-bindings/adc/adc.h>
 
 / {
-	model = "Arduino Uno R4 Board";
 	compatible = "renesas,ra4m1", "renesas,ra";
+	model = "Arduino Uno R4 Board";
 
 	chosen {
 		zephyr,console = &uart2;
@@ -26,11 +26,11 @@
 };
 
 &sci2 {
-	status = "okay";
 	pinctrl-0 = <&sci2_default>;
 	pinctrl-names = "default";
 	interrupts = <0 1>, <1 1>, <2 1>, <3 1>;
 	interrupt-names = "rxi", "txi", "tei", "eri";
+	status = "okay";
 
 	uart2: uart {
 		current-speed = <115200>;
@@ -51,9 +51,9 @@
 };
 
 &adc0 {
-	status = "okay";
 	pinctrl-0 = <&adc0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &port_irq0 {
@@ -96,22 +96,22 @@
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "bootloader";
 			reg = <0x00000000 0x4000>;
+			label = "bootloader";
 			read-only;
 		};
 
 		code_partition: partition@4000 {
-			label = "code";
 			reg = <0x4000 0x3C000>;
+			label = "code";
 			read-only;
 		};
 	};
 };
 
 &hoco {
-	status = "okay";
 	clock-frequency = <48000000>;
+	status = "okay";
 };
 
 &pclkblock {

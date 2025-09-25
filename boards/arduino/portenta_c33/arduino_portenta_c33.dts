@@ -14,8 +14,8 @@
 #include "arduino_portenta_c33-pinctrl.dtsi"
 
 / {
-	model = "Arduino Portenta C33";
 	compatible = "renesas,ra6m5", "renesas,ra";
+	model = "Arduino Portenta C33";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -77,8 +77,8 @@
 
 	uart8: uart {
 		current-speed = <921600>;
-		status = "okay";
 		hw-flow-control;
+		status = "okay";
 
 		bt_hci_uart: bt_hci_uart {
 			compatible = "zephyr,bt-hci-uart";
@@ -86,10 +86,10 @@
 
 			esp32 {
 				compatible = "renesas,bt-hci-da1453x";
-				status = "okay";
 				reset-gpios = <&ioport8 4 GPIO_ACTIVE_LOW>;
 				reset-assert-duration-ms = <100>;
 				boot-duration-ms = <2000>;
+				status = "okay";
 			};
 		};
 	};
@@ -132,7 +132,6 @@
 };
 
 &iic0 {
-	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
 	interrupts = <87 1>, <88 1>, <89 1>, <90 1>;
@@ -140,10 +139,10 @@
 	clock-frequency = <DT_FREQ_M(1)>;
 	pinctrl-0 = <&iic0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &iic1 {
-	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
 	interrupts = <91 1>, <92 1>, <93 1>, <94 1>;
@@ -151,24 +150,25 @@
 	clock-frequency = <DT_FREQ_M(1)>;
 	pinctrl-0 = <&iic1_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &spi1 {
-	status = "okay";
 	pinctrl-0 = <&spi1_default>;
 	pinctrl-names = "default";
 	clock-frequency = <DT_FREQ_M(5)>;
 	cs-gpios = <&ioport1 3 GPIO_ACTIVE_LOW>,
 		   <&ioport1 4 GPIO_ACTIVE_LOW>;
+	status = "okay";
 
 	esp_hosted@1 {
-		status = "ok";
 		compatible = "espressif,esp-hosted";
 		reg = <0x1>;
 		spi-max-frequency = <DT_FREQ_M(5)>;
 		reset-gpios = <&ioport8 4 GPIO_ACTIVE_HIGH>;
 		handshake-gpios = <&ioport8 6 GPIO_ACTIVE_HIGH>;
 		dataready-gpios = <&ioport8 3 GPIO_ACTIVE_HIGH>;
+		status = "ok";
 	};
 };
 
@@ -258,9 +258,9 @@
 };
 
 &adc0 {
-	status = "okay";
 	pinctrl-0 = <&adc0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &port_irq9 {
@@ -288,14 +288,14 @@
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(64)>;
+			label = "mcuboot";
 			read-only;
 		};
 
 		code_partition: partition@10000 {
-			label = "image-0";
 			reg = <0x00010000 (DT_SIZE_M(2) - DT_SIZE_K(64))>;
+			label = "image-0";
 		};
 	};
 };
@@ -307,8 +307,8 @@
 		#size-cells = <1>;
 
 		storage_partition: partition@0 {
-			label = "storage";
 			reg = <0X0 DT_SIZE_K(8)>;
+			label = "storage";
 		};
 	};
 };
@@ -319,8 +319,8 @@
 
 &eth {
 	local-mac-address = [74 90 50 B0 5D E9];
-	status = "okay";
 	phy-handle = <&phy>;
+	status = "okay";
 };
 
 &mdio {
@@ -343,11 +343,11 @@
 	status = "okay";
 
 	eth_clock: pwmclock {
-		status = "okay";
 		compatible = "pwm-clock";
 		clock-frequency = <DT_FREQ_M(25)>;
 		#clock-cells = <1>;
 		pwms = <&pwm6 1 PWM_KHZ(25000) PWM_POLARITY_NORMAL>;
+		status = "okay";
 	};
 };
 

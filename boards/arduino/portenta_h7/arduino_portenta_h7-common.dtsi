@@ -130,7 +130,6 @@ zephyr_i2c: &i2c1 {
 };
 
 &fmc {
-	status = "okay";
 	pinctrl-0 = <&fmc_d2_pd0 &fmc_d3_pd1 &fmc_d13_pd8 &fmc_d14_pd9
 		     &fmc_d15_pd10 &fmc_d0_pd14 &fmc_d1_pd15 &fmc_nbl0_pe0
 		     &fmc_nbl1_pe1 &fmc_d4_pe7 &fmc_d5_pe8 &fmc_d6_pe9
@@ -144,9 +143,9 @@ zephyr_i2c: &i2c1 {
 		     &fmc_sdnwe_ph5>;
 	pinctrl-names = "default";
 	st,mem-swap = "disable";
+	status = "okay";
 
 	sdram {
-		status = "okay";
 		mode-register = <0x220>;
 
 		/** From Arduino github repository:
@@ -158,6 +157,7 @@ zephyr_i2c: &i2c1 {
 		 */
 		refresh-rate = <683>;
 		num-auto-refresh = <8>;
+		status = "okay";
 
 		bank@0 {
 			reg = <0>;
@@ -204,13 +204,13 @@ zephyr_i2c: &i2c1 {
 			#size-cells = <1>;
 
 			storage_partition: partition@0 {
-				label = "storage";
 				reg = <0x0 DT_SIZE_K(15872)>;
+				label = "storage";
 			};
 
 			wifi_firmware: partition@f80000 {
-				label = "wifi-firmware";
 				reg = <0xf80000 DT_SIZE_K(512)>;
+				label = "wifi-firmware";
 			};
 		};
 	};
@@ -235,9 +235,9 @@ zephyr_i2c: &i2c1 {
 };
 
 &mdio {
-	status = "okay";
 	pinctrl-0 = <&eth_mdio_pa2 &eth_mdc_pc1>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	eth_phy: ethernet-phy@0 {
 		compatible = "ethernet-phy";
@@ -261,10 +261,10 @@ sdhc: &sdmmc1 {
 	status = "okay";
 
 	wifi: airoc-wifi {
-		status = "okay";
 		compatible = "infineon,airoc-wifi";
 		wifi-reg-on-gpios = <&gpioj 1 GPIO_ACTIVE_HIGH>;
 		wifi-host-wake-gpios = <&gpioj 5 GPIO_ACTIVE_HIGH>;
+		status = "okay";
 	};
 };
 

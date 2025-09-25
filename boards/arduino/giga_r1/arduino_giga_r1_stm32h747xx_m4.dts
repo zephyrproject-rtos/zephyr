@@ -10,8 +10,8 @@
 #include "arduino_giga_r1.dtsi"
 
 / {
-	model = "Arduino GIGA R1 WiFi Board (M4)";
 	compatible = "arduino,giga-r1";
+	model = "Arduino GIGA R1 WiFi Board (M4)";
 
 	chosen {
 		zephyr,console = &usart2;
@@ -30,8 +30,8 @@
 };
 
 &usart2 {
-	status = "okay";
 	pinctrl-0 = <&usart2_tx_pd5 &usart2_rx_pd6>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
+	status = "okay";
 };
