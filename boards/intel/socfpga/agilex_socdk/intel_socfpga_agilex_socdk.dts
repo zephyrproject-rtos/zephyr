@@ -10,8 +10,8 @@
 #include <intel/intel_socfpga_agilex.dtsi>
 
 / {
-	model = "Intel SoC FPGA Agilex";
 	compatible = "intel,socfpga-agilex";
+	model = "Intel SoC FPGA Agilex";
 	#address-cells = <1>;
 	#size-cells = <1>;
 
@@ -23,8 +23,8 @@
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 };
 
 &qspi {

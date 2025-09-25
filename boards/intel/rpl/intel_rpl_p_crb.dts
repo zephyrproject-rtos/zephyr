@@ -12,8 +12,8 @@
 #include <intel/raptor_lake_p.dtsi>
 
 / {
-	model = "intel_rpl_p_crb";
 	compatible = "intel,raptor-lake-crb";
+	model = "intel_rpl_p_crb";
 
 	chosen {
 		zephyr,sram = &dram0;

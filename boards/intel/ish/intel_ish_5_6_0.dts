@@ -9,8 +9,8 @@
 #include "intel/intel_ish5.dtsi"
 
 / {
-	model = "intel_ish_5_6_0";
 	compatible = "intel,ish_5_6_0";
+	model = "intel_ish_5_6_0";
 
 	chosen {
 		zephyr,sram = &sram;

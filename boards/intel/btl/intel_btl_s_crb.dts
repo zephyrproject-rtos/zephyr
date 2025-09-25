@@ -12,8 +12,8 @@
 #include <intel/bartlett_lake_s.dtsi>
 
 / {
-	model = "intel_btl_s_crb";
 	compatible = "intel,bartlett-lake-crb";
+	model = "intel_btl_s_crb";
 
 	chosen {
 		zephyr,sram = &dram0;
