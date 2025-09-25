@@ -10,8 +10,8 @@
 #include "qemu_riscv32_xip-pinctrl.dtsi"
 
 / {
-	model = "SiFive HiFive 1";
 	compatible = "sifive,hifive1";
+	model = "SiFive HiFive 1";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -26,24 +26,24 @@
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_rx_default &uart0_tx_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &spi0 {
-	status = "okay";
+	reg = <0x10014000 0x1000 0x20400000 0xc00000>;
 
 	#address-cells = <1>;
 	#size-cells = <0>;
-	reg = <0x10014000 0x1000 0x20400000 0xc00000>;
+	status = "okay";
 
 	flash0: flash@0 {
 		compatible = "issi,is25lp128", "jedec,spi-nor";
+		reg = <0>;
 		size = <134217728>;
 		jedec-id = [96 60 18];
-		reg = <0>;
 		// Dummy entry
 		spi-max-frequency = <0>;
 	};
