@@ -10,8 +10,8 @@
 #include <common/mem.h>
 
 / {
-	model = "Firefly ROC-RK3568-PC";
 	compatible = "rockchip,rk3568";
+	model = "Firefly ROC-RK3568-PC";
 
 	chosen {
 		zephyr,console = &uart2;
@@ -20,13 +20,13 @@
 	};
 
 	sram0: memory@40000000 {
-		device_type = "memory";
 		compatible = "mmio-sram";
 		reg = <0x40000000 DT_SIZE_M(1)>;
+		device_type = "memory";
 	};
 };
 
 &uart2 {
-	status = "okay";
 	current-speed = <1500000>;
+	status = "okay";
 };
