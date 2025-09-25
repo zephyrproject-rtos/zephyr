@@ -78,3 +78,18 @@ properties:
     type: boolean
     description: |
       Enable collision detection for half-duplex mode.
+
+  run-in-standby-en:
+    type: int
+    enum:
+      - 0
+      - 1
+    default: 1
+    description: |
+      This property defines the functionality in standby sleep mode.
+
+      0: Generic clock is disabled when ongoing transfer is finished. The device
+         will not wake up on Transfer Complete interrupt unless the appropriate
+         ONDEMAND bits are set in the clocking chain.
+      1: Wake on Receive Complete interrupt. Generic clock is enabled in all sleep modes.
+         Any interrupt can wake up the device.
