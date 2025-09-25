@@ -65,6 +65,7 @@ NSI_OPT?=-O0
 NSI_WARNINGS?=-Wall -Wpedantic
 #  Preprocessor flags
 NSI_CPPFLAGS?=-D_POSIX_C_SOURCE=200809L -D_XOPEN_SOURCE=600 -D_XOPEN_SOURCE_EXTENDED
+NSI_CPPFLAGS+=-I/usr/include/x86_64-linux-gnu
 
 NO_PIE_CO:=-fno-pie -fno-pic
 DEPENDFLAGS:=-MMD -MP
