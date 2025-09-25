@@ -11,8 +11,8 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 
 / {
-	model = "Realtek RTS5912 Evaluation Board";
 	compatible = "realtek,rts5912-evb";
+	model = "Realtek RTS5912 Evaluation Board";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -23,7 +23,6 @@
 };
 
 &adc0 {
-	status = "okay";
 	pinctrl-0 = <&adc0_gpio074 &adc1_gpio075
 		     &adc2_gpio076 &adc3_gpio077
 		     &adc4_gpio078 &adc5_gpio079
@@ -31,21 +30,21 @@
 		     &adc8_gpio082 &adc9_gpio054
 		     &adc10_gpio098 &adc11_gpio024>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 };
 
 &uart0_wrapper {
-	status = "okay";
 	pinctrl-0 = <&uart_rx_gpio113 &uart_tx_gpio114>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &kbd {
-	status = "okay";
 	pinctrl-0 = <&kso0_gpio041 &kso1_gpio042
 		     &kso2_gpio043 &kso3_gpio044
 		     &kso4_gpio045 &kso5_gpio046
@@ -61,6 +60,7 @@
 	pinctrl-names = "default";
 	row-size = <8>;
 	col-size = <16>;
+	status = "okay";
 };
 
 &swj_port {
@@ -68,17 +68,17 @@
 };
 
 &tach0 {
-	status = "okay";
 	pinctrl-0 = <&tacho0_gpio052>;
 	pinctrl-names = "default";
 	pulses-per-round = <2>;
+	status = "okay";
 };
 
 &espi0 {
-	status = "okay";
 	pinctrl-0 = <&espi_alert_gpio003 &espi_cs_gpio004
 		     &espi_io3_gpio005 &espi_io2_gpio006
 		     &espi_io1_gpio007 &espi_io0_gpio008
 		     &espi_clk_gpio009 &espi_reset_gpio020>;
 	pinctrl-names = "default";
+	status = "okay";
 };
