@@ -10,8 +10,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "MXChip AZ3166 IoT Developer Kit";
 	compatible = "mxchip,az3166_iotdevkit";
+	model = "MXChip AZ3166 IoT Developer Kit";
 
 	aliases {
 		led0 = &user_led;
@@ -199,9 +199,9 @@
 	status = "okay";
 
 	pwm2: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim2_ch2_pb3>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
@@ -210,9 +210,9 @@
 	status = "okay";
 
 	pwm3: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim3_ch1_pb4 &tim3_ch2_pc7>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
