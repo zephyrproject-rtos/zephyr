@@ -43,20 +43,20 @@
 /delete-node/ &w25q16jvuxim;
 
 &flexspi {
-	status = "okay";
 	reg = <0x402a8000 0x4000>, <0x60000000 DT_SIZE_M(8)>;
+	status = "okay";
 
 	/* WINBOND flash memory*/
 	w25q128jvxgim: w25q128jvxgim@0 {
 		compatible = "nxp,imx-flexspi-nor";
-		size = <DT_SIZE_M(16 * 8)>;
 		reg = <0>;
+		size = <DT_SIZE_M(16 * 8)>;
 		spi-max-frequency = <DT_FREQ_M(133)>;
-		status = "okay";
 		jedec-id = [ef 70 18];
 
 		erase-block-size = <4096>;
 		write-block-size = <1>;
+		status = "okay";
 	};
 };
 
