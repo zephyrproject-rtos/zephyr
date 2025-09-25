@@ -12,8 +12,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "telink,b91";
 	compatible = "telink,tlsr9518adk80d";
+	model = "telink,b91";
 
 	aliases {
 		led0 = &led_blue;
@@ -101,28 +101,28 @@
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 0x10000>;
+			label = "mcuboot";
 		};
 
 		slot0_partition: partition@10000 {
-			label = "image-0";
 			reg = <0x10000 0x70000>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@80000 {
-			label = "image-1";
 			reg = <0x80000 0x70000>;
+			label = "image-1";
 		};
 
 		scratch_partition: partition@f0000 {
-			label = "image-scratch";
 			reg = <0xf0000 0x4000>;
+			label = "image-scratch";
 		};
 
 		storage_partition: partition@f4000 {
-			label = "storage";
 			reg = <0xf4000 0x0000b000>;
+			label = "storage";
 			/* region <0xff000 0x1000> is reserved for Telink B91 SDK's data */
 		};
 	};
@@ -138,10 +138,10 @@
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_tx_pb2_default &uart0_rx_pb3_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &trng0 {
@@ -153,35 +153,35 @@
 };
 
 &pwm0 {
-	status = "okay";
 	clock-frequency = <93750>;
 	pinctrl-0 = <&pwm_ch0_pb4_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &pspi {
-	status = "okay";
 	cs0-pin = "PSPI_CSN_PC4";
 	pinctrl-0 = <&pspi_clk_pc5_default &pspi_miso_pc6_default &pspi_mosi_pc7_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &hspi {
-	status = "okay";
 	cs0-pin = "HSPI_CSN_PA1";
 	pinctrl-0 = <&hspi_clk_pa2_default &hspi_miso_pa3_default &hspi_mosi_pa4_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &i2c {
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 	pinctrl-0 = <&i2c_scl_pe1_default &i2c_sda_pe3_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &adc {
-	status = "okay";
 	vref-internal-mv = <1200>;
 	sample-freq = <DT_FREQ_K(96)>;
+	status = "okay";
 };
