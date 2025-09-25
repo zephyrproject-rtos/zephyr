@@ -27,10 +27,10 @@
 	};
 };
 
-&i2c1 { /* feather I2C1 */
-	status = "okay";
+&i2c1 {
 	pinctrl-0 = <&i2c1_default>;
 	pinctrl-1 = <&i2c1_sleep>;
-	pinctrl-names = "default", "sleep";
+	pinctrl-names = "default", "sleep"; /* feather I2C1 */
+	status = "okay";
 };
 

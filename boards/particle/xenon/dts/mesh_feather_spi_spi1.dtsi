@@ -31,10 +31,10 @@
 
 feather_spi: &spi1 { /* feather SPI */
 	compatible = "nordic,nrf-spim";
-	status = "okay";
 	pinctrl-0 = <&spi1_default>;
 	pinctrl-1 = <&spi1_sleep>;
 	pinctrl-names = "default", "sleep";
 	cs-gpios = <&gpio0 31 GPIO_ACTIVE_LOW>;
+	status = "okay";
 };
 

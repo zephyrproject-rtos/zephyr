@@ -9,8 +9,8 @@
 #include "nrf52_blenano2-pinctrl.dtsi"
 
 / {
-	model = "Redbear BLE Nano 2";
 	compatible = "redbear,blenano2";
+	model = "Redbear BLE Nano 2";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -49,18 +49,18 @@
 &uart0 {
 	compatible = "nordic,nrf-uart";
 	current-speed = <115200>;
-	status = "okay";
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &i2c0 {
 	compatible = "nordic,nrf-twim";
-	status = "okay";
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-1 = <&i2c0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &flash0 {
@@ -70,23 +70,23 @@
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 0x8000>;
+			label = "mcuboot";
 		};
 
 		slot0_partition: partition@8000 {
-			label = "image-0";
 			reg = <0x00008000 0x34000>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@3c000 {
-			label = "image-1";
 			reg = <0x0003c000 0x34000>;
+			label = "image-1";
 		};
 
 		scratch_partition: partition@70000 {
-			label = "image-scratch";
 			reg = <0x00070000 0xa000>;
+			label = "image-scratch";
 		};
 
 		/*
@@ -97,8 +97,8 @@
 		 * if enabled.
 		 */
 		storage_partition: partition@7a000 {
-			label = "storage";
 			reg = <0x0007a000 0x00006000>;
+			label = "storage";
 		};
 	};
 };

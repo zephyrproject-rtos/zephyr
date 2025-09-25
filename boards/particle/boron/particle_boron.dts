@@ -11,8 +11,8 @@
 #include "particle_boron-pinctrl.dtsi"
 
 / {
-	model = "Particle Boron";
 	compatible = "particle,boron", "particle,feather";
+	model = "Particle Boron";
 
 	sky13351: sky13351 {
 		compatible = "skyworks,sky13351";
@@ -47,30 +47,30 @@
 
 &i2c1 { /* power monitoring */
 	compatible = "nordic,nrf-twi";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 	pinctrl-0 = <&i2c1_default>;
 	pinctrl-1 = <&i2c1_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &uart1 { /* u-blox SARA-U2 or SARA-R4 */
 	compatible = "nordic,nrf-uarte";
 	current-speed = <115200>;
-	status = "okay";
 
 	hw-flow-control;
 
 	pinctrl-0 = <&uart1_default>;
 	pinctrl-1 = <&uart1_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	sara_r4 {
 		compatible = "u-blox,sara-r4";
-		status = "okay";
 
 		mdm-power-gpios = <&gpio0 16 0>;
 		mdm-reset-gpios = <&gpio0 12 0>;
 		mdm-vint-gpios = <&gpio0 2 0>;
+		status = "okay";
 	};
 };
