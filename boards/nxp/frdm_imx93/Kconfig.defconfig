@@ -7,7 +7,7 @@ if BOARD_FRDM_IMX93_MIMX9352_A55
 
 if GPIO
 
-# CAN Phy must be initialized after board mux
+# I2C must be initialized for onboard expanders
 config I2C
 	default y
 
