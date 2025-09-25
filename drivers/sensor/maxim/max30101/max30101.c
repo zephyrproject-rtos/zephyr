@@ -100,7 +100,6 @@ static int max30101_init(const struct device *dev)
 	uint8_t part_id;
 	uint8_t mode_cfg;
 	uint32_t led_chan;
-	int fifo_chan;
 
 	if (!device_is_ready(config->i2c.bus)) {
 		LOG_ERR("Bus device is not ready");
@@ -142,7 +141,7 @@ static int max30101_init(const struct device *dev)
 
 	/* Write the mode configuration register */
 	if (i2c_reg_write_byte_dt(&config->i2c, MAX30101_REG_MODE_CFG,
-				  config->mode)) {
+				  max30101_mode_convert[config->mode])) {
 		return -EIO;
 	}
 
@@ -165,23 +164,24 @@ static int max30101_init(const struct device *dev)
 				  config->led_pa[2])) {
 		return -EIO;
 	}
-
-#ifdef CONFIG_MAX30101_MULTI_LED_MODE
-	uint8_t multi_led[2];
-
-	/* Write the multi-LED mode control registers */
-	multi_led[0] = (config->slot[1] << 4) | (config->slot[0]);
-	multi_led[1] = (config->slot[3] << 4) | (config->slot[2]);
-
-	if (i2c_reg_write_byte_dt(&config->i2c, MAX30101_REG_MULTI_LED,
-				  multi_led[0])) {
+	if (i2c_reg_write_byte_dt(&config->i2c, MAX30101_REG_LED4_PA, config->led_pa[2])) {
 		return -EIO;
 	}
-	if (i2c_reg_write_byte_dt(&config->i2c, MAX30101_REG_MULTI_LED + 1,
-				  multi_led[1])) {
-		return -EIO;
+
+	if (!config->mode) {
+		uint8_t multi_led[2];
+
+		/* Write the multi-LED mode control registers */
+		multi_led[0] = (config->slot[1] << 4) | (config->slot[0]);
+		multi_led[1] = (config->slot[3] << 4) | (config->slot[2]);
+
+		if (i2c_reg_write_byte_dt(&config->i2c, MAX30101_REG_MULTI_LED, multi_led[0])) {
+			return -EIO;
+		}
+		if (i2c_reg_write_byte_dt(&config->i2c, MAX30101_REG_MULTI_LED + 1, multi_led[1])) {
+			return -EIO;
+		}
 	}
-#endif
 
 	/* Initialize the channel map and active channel count */
 	data->num_channels = 0U;
@@ -192,9 +192,8 @@ static int max30101_init(const struct device *dev)
 	/* Count the number of active channels and build a map that translates
 	 * the LED channel number (red/ir/green) to the fifo channel number.
 	 */
-	for (fifo_chan = 0; fifo_chan < MAX30101_MAX_NUM_CHANNELS;
-	     fifo_chan++) {
-		led_chan = (config->slot[fifo_chan] & MAX30101_SLOT_LED_MASK)-1;
+	for (int fifo_chan = 0; fifo_chan < MAX30101_MAX_NUM_CHANNELS; fifo_chan++) {
+		led_chan = (config->slot[fifo_chan] & MAX30101_SLOT_LED_MASK) - 1;
 		if (led_chan < MAX30101_MAX_NUM_CHANNELS) {
 			data->map[led_chan] = fifo_chan;
 			data->num_channels++;
@@ -204,47 +203,39 @@ static int max30101_init(const struct device *dev)
 	return 0;
 }
 
-static struct max30101_config max30101_config = {
-	.i2c = I2C_DT_SPEC_INST_GET(0),
-	.fifo = (CONFIG_MAX30101_SMP_AVE << MAX30101_FIFO_CFG_SMP_AVE_SHIFT) |
-#ifdef CONFIG_MAX30101_FIFO_ROLLOVER_EN
-		MAX30101_FIFO_CFG_ROLLOVER_EN_MASK |
-#endif
-		(CONFIG_MAX30101_FIFO_A_FULL <<
-		 MAX30101_FIFO_CFG_FIFO_FULL_SHIFT),
+#define MAX30101_CHECK(n)                                                                          \
+	BUILD_ASSERT(DT_INST_PROP_LEN(n, led_pa) == 3,                                             \
+		     "MAX30101 led-pa property must have exactly 3 elements");                     \
+	BUILD_ASSERT(DT_INST_PROP_LEN(n, led_slot) == 4,                                           \
+		     "MAX30101 led-slot property must have exactly 4 elements")
 
-#if defined(CONFIG_MAX30101_HEART_RATE_MODE)
-	.mode = MAX30101_MODE_HEART_RATE,
-	.slot[0] = MAX30101_SLOT_RED_LED1_PA,
-	.slot[1] = MAX30101_SLOT_DISABLED,
-	.slot[2] = MAX30101_SLOT_DISABLED,
-	.slot[3] = MAX30101_SLOT_DISABLED,
-#elif defined(CONFIG_MAX30101_SPO2_MODE)
-	.mode = MAX30101_MODE_SPO2,
-	.slot[0] = MAX30101_SLOT_RED_LED1_PA,
-	.slot[1] = MAX30101_SLOT_IR_LED2_PA,
-	.slot[2] = MAX30101_SLOT_DISABLED,
-	.slot[3] = MAX30101_SLOT_DISABLED,
-#else
-	.mode = MAX30101_MODE_MULTI_LED,
-	.slot[0] = CONFIG_MAX30101_SLOT1,
-	.slot[1] = CONFIG_MAX30101_SLOT2,
-	.slot[2] = CONFIG_MAX30101_SLOT3,
-	.slot[3] = CONFIG_MAX30101_SLOT4,
-#endif
+#define MAX30101_SLOT_CFG(n)                                                                       \
+	COND_CODE_1(DT_INST_ENUM_HAS_VALUE(n, acq_mode, heart_rate), \
+		(MAX30101_HR_SLOTS), \
+		(COND_CODE_1(DT_INST_ENUM_HAS_VALUE(n, acq_mode, spo2), \
+			(MAX30101_SPO2_SLOTS), \
+			(MAX30101_MULTI_LED(n)) \
+		)) \
+	)
 
-	.spo2 = (CONFIG_MAX30101_ADC_RGE << MAX30101_SPO2_ADC_RGE_SHIFT) |
-		(CONFIG_MAX30101_SR << MAX30101_SPO2_SR_SHIFT) |
-		(MAX30101_PW_18BITS << MAX30101_SPO2_PW_SHIFT),
+#define MAX30101_INIT(n)                                                                           \
+	MAX30101_CHECK(n);                                                                         \
+	static const struct max30101_config max30101_config_##n = {                                \
+		.i2c = I2C_DT_SPEC_INST_GET(n),                                                    \
+		.fifo = (DT_INST_ENUM_IDX(n, smp_ave) << MAX30101_FIFO_CFG_SMP_AVE_SHIFT) |        \
+			(DT_INST_PROP(n, fifo_rollover_en)                                         \
+			 << MAX30101_FIFO_CFG_ROLLOVER_EN_SHIFT) |                                 \
+			(DT_INST_PROP(n, fifo_a_full) << MAX30101_FIFO_CFG_FIFO_FULL_SHIFT),       \
+		.mode = DT_INST_ENUM_IDX(n, acq_mode),                                             \
+		.spo2 = (DT_INST_ENUM_IDX(n, adc_rge) << MAX30101_SPO2_ADC_RGE_SHIFT) |            \
+			(DT_INST_ENUM_IDX(n, smp_sr) << MAX30101_SPO2_SR_SHIFT) |                  \
+			(DT_INST_ENUM_IDX(n, led_pw) << MAX30101_SPO2_PW_SHIFT),                   \
+		.led_pa = DT_INST_PROP(n, led_pa),                                                 \
+		.slot = MAX30101_SLOT_CFG(n),                                                      \
+	};                                                                                         \
+	static struct max30101_data max30101_data_##n;                                             \
+	SENSOR_DEVICE_DT_INST_DEFINE(n, max30101_init, NULL, &max30101_data_##n,                   \
+				     &max30101_config_##n, POST_KERNEL,                            \
+				     CONFIG_SENSOR_INIT_PRIORITY, &max30101_driver_api);
 
-	.led_pa[0] = CONFIG_MAX30101_LED1_PA,
-	.led_pa[1] = CONFIG_MAX30101_LED2_PA,
-	.led_pa[2] = CONFIG_MAX30101_LED3_PA,
-};
-
-static struct max30101_data max30101_data;
-
-SENSOR_DEVICE_DT_INST_DEFINE(0, max30101_init, NULL,
-		    &max30101_data, &max30101_config,
-		    POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
-		    &max30101_driver_api);
+DT_INST_FOREACH_STATUS_OKAY(MAX30101_INIT)
