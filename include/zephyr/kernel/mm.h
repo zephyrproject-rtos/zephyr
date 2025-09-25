@@ -79,6 +79,25 @@
 
 /** @} */
 
+/**
+ * @name optional region type attributes when K_MEM_CACHE_NONE is set
+ *
+ * Default is non cacheable device type
+ *
+ * @{
+ */
+
+/** Non-cacheable region will get device attribute allowing non aligned access */
+#define K_MEM_CACHE_NONE_DEVICE			0
+/** Non-cacheable region will get normal attribute allowing non aligned access */
+#define K_MEM_CACHE_NONE_NORMAL			BIT(7)
+/** Non-cacheable region will get strongly ordered attribute */
+#define K_MEM_CACHE_NONE_STRONGLY_ORDERED	BIT(8)
+/** Reserved bits for cache modes in k_map() flags argument */
+#define K_MEM_CACHE_TYPE_MASK			(BIT(8) | BIT(7))
+
+/** @} */
+
 #ifndef _ASMLANGUAGE
 #include <stdint.h>
 #include <stddef.h>
