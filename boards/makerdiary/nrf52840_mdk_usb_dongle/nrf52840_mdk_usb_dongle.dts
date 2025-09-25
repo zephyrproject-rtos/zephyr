@@ -12,8 +12,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "nRF52840 MDK USB Dongle";
 	compatible = "nrf52840_mdk_usb_dongle";
+	model = "nRF52840 MDK USB Dongle";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -109,11 +109,11 @@
 
 &uart0 {
 	compatible = "nordic,nrf-uarte";
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &ieee802154 {
