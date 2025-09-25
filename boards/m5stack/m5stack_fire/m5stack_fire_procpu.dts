@@ -15,8 +15,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "M5Stack Fire PROCPU";
 	compatible = "m5stack,fire";
+	model = "M5Stack Fire PROCPU";
 
 	aliases {
 		uart-0 = &uart0;
@@ -91,15 +91,15 @@
 		#size-cells = <0>;
 
 		ili9342c: ili9342c@0 {
-			status = "okay";
 			compatible = "ilitek,ili9342c";
-			mipi-max-frequency = <30000000>;
 			reg = <0>;
+			mipi-max-frequency = <30000000>;
 			pixel-format = <ILI9XXX_PIXEL_FORMAT_RGB565>;
 			display-inversion;
 			width = <320>;
 			height = <240>;
 			rotation = <0>;
+			status = "okay";
 		};
 	};
 };
@@ -113,17 +113,17 @@
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_tx_gpio1 &uart0_rx_gpio3>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &uart1 {
-	status = "disabled";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart1_rx_gpio33 &uart1_tx_gpio32>;
 	pinctrl-names = "default";
+	status = "disabled";
 };
 
 &gpio0 {
@@ -135,23 +135,22 @@
 };
 
 &i2c0 {
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 	sda-gpios = <&gpio0 21 GPIO_OPEN_DRAIN>;
 	scl-gpios = <&gpio0 22 GPIO_OPEN_DRAIN>;
 	pinctrl-0 = <&i2c0_default>;
 	scl-timeout-us = <0>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	mpu6886: mpu6886@68 {
-		status = "okay";
 		compatible = "invensense,mpu6050";
 		reg = <0x68>;
+		status = "okay";
 	};
 };
 
 &spi3 {
-	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
 	pinctrl-0 = <&spim3_default>;
@@ -159,17 +158,18 @@
 	dma-enabled;
 	clock-frequency = <20000000>;
 	cs-gpios = <&gpio0 14 GPIO_ACTIVE_LOW>, <&gpio0 4 GPIO_ACTIVE_LOW>;
+	status = "okay";
 
 	sd0: sd@1 {
-		status = "okay";
 		compatible = "zephyr,sdhc-spi-slot";
 		reg = <1>;
 		spi-max-frequency = <20000000>;
+		status = "okay";
 
 		mmc {
-			status = "okay";
 			compatible = "zephyr,sdmmc-disk";
 			disk-name = "SD";
+			status = "okay";
 		};
 	};
 };
@@ -177,9 +177,9 @@
 &ledc0 {
 	pinctrl-0 = <&ledc0_default>;
 	pinctrl-names = "default";
-	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
+	status = "okay";
 
 	hispeed0@7 {
 		reg = <0x7>;
