@@ -5,6 +5,7 @@ common:
     - wifi
     - net
     - hostap
+    - posix
   platform_allow:
     - native_sim
 tests:
