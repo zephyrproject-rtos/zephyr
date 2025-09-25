@@ -84,6 +84,24 @@
 			};
 		};
 
+		sram_shared: memory@20580000 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			reg = <0x20580000 DT_SIZE_K(32)>;
+
+			device_type = "memory";
+			compatible = "mmio-sram";
+
+			sram_shared0: memory@20580000 {
+				reg = <0x20580000 DT_SIZE_K(16)>;
+			};
+
+			sram_shared1: memory@20584000 {
+				reg = <0x20584000 DT_SIZE_K(16)>;
+			};
+		};
+
 		peripheral: peripheral@40000000 {
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -232,7 +250,7 @@
 		dma-requests = <105>;
 
 		interrupts = <20 0 0>, <21 0 0>, <22 0 0>, <23 0 0>,
-			     <24 0 0>, <25 0 0>, <26 0 0>, <27 0 0>;
+					 <24 0 0>, <25 0 0>, <26 0 0>, <27 0 0>;
 		no-error-irq;
 
 		compatible = "nxp,mcux-edma";
