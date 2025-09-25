@@ -692,14 +692,6 @@ enum bt_le_adv_opt {
 	BT_LE_ADV_OPT_NONE = 0,
 
 	/**
-	 * @internal
-	 *
-	 * Internal access to the deprecated value to maintain
-	 * the implementation of the deprecated feature.
-	 */
-	_BT_LE_ADV_OPT_ONE_TIME = BIT(1),
-
-	/**
 	 * @brief Connectable advertising
 	 *
 	 * Starting connectable advertising preallocates a connection
