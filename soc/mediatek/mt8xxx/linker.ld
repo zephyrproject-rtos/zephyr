@@ -21,7 +21,7 @@ MEMORY {
 #define RAMABLE_REGION dram
 #define ROMABLE_REGION dram
 
-ENTRY(mtk_adsp_boot_entry)
+ENTRY(CONFIG_KERNEL_ENTRY)
 
 SECTIONS {
 
