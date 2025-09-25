@@ -385,6 +385,7 @@
 		trng0: trng@3ff75144 {
 			compatible = "espressif,esp32-trng";
 			reg = <0x3FF75144 0x4>;
+			clocks = <&clock ESP32_RNG_MODULE>;
 			status = "disabled";
 		};
 
