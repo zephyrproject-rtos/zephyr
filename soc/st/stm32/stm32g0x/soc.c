@@ -82,7 +82,11 @@ void soc_early_init_hook(void)
 {
 	/* Enable ART Accelerator I-cache and prefetch */
 	LL_FLASH_EnableInstCache();
+
+/* Working around ErrataSheets ES0548/ES0549 section 2.2.10 may prevent enabling flash prefetch */
+#if defined(CONFIG_STM32_FLASH_PREFETCH)
 	LL_FLASH_EnablePrefetch();
+#endif
 
 	/* Update CMSIS SystemCoreClock variable (HCLK) */
 	/* At reset, system core clock is set to 16 MHz from HSI */
