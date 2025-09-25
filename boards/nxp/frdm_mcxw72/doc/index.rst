@@ -100,11 +100,13 @@ Openthread applications
    :zephyr-app: samples/net/sockets/echo_server
    :board: frdm_mcxw72/mcxw727c/cpu0
    :goals: build
+   :gen-args: -DEXTRA_CONF_FILE=overlay-ot.conf
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/sockets/echo_client
    :board: frdm_mcxw72/mcxw727c/cpu0
    :goals: build
+   :gen-args: -DEXTRA_CONF_FILE=overlay-ot.conf
 
 Application Flashing
 ====================
