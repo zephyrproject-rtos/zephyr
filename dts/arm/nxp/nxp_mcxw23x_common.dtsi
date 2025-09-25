@@ -18,6 +18,8 @@
 	};
 
 	chosen {
+		zephyr,nbu = &ble_ll;
+		zephyr,bt-hci = &hci;
 		zephyr,entropy = &trng;
 	};
 
@@ -150,7 +152,7 @@
 	rtc: rtc@2c000 {
 		compatible = "nxp,lpc-rtc";
 		reg = <0x2c000 0x1000>;
-		interrupts = <29 0>;
+		interrupts = <29 1>;
 		status = "okay";
 
 		rtc_highres: rtc_highres {
@@ -162,7 +164,7 @@
 	ctimer0: ctimer@8000 {
 		compatible = "nxp,lpc-ctimer";
 		reg = <0x8000 0x1000>;
-		interrupts = <10 0>;
+		interrupts = <10 1>;
 		status = "disabled";
 		clk-source = <3>;
 		clocks = <&syscon MCUX_CTIMER0_CLK>;
@@ -174,7 +176,7 @@
 	ctimer1: ctimer@9000 {
 		compatible = "nxp,lpc-ctimer";
 		reg = <0x9000 0x1000>;
-		interrupts = <11 0>;
+		interrupts = <11 1>;
 		status = "disabled";
 		clk-source = <3>;
 		clocks = <&syscon MCUX_CTIMER1_CLK>;
@@ -186,7 +188,7 @@
 	ctimer2: ctimer@28000 {
 		compatible = "nxp,lpc-ctimer";
 		reg = <0x28000 0x1000>;
-		interrupts = <36 0>;
+		interrupts = <36 1>;
 		status = "disabled";
 		clk-source = <3>;
 		clocks = <&syscon MCUX_CTIMER2_CLK>;
@@ -198,7 +200,7 @@
 	ctimer3: ctimer@29000 {
 		compatible = "nxp,lpc-ctimer";
 		reg = <0x29000 0x1000>;
-		interrupts = <13 0>;
+		interrupts = <13 1>;
 		status = "disabled";
 		clk-source = <3>;
 		clocks = <&syscon MCUX_CTIMER3_CLK>;
@@ -210,7 +212,7 @@
 	ctimer4: ctimer@2a000 {
 		compatible = "nxp,lpc-ctimer";
 		reg = <0x2a000 0x1000>;
-		interrupts = <37 0>;
+		interrupts = <37 1>;
 		status = "disabled";
 		clk-source = <3>;
 		clocks = <&syscon MCUX_CTIMER4_CLK>;
@@ -222,7 +224,7 @@
 	flexcomm0: flexcomm@86000 {
 		compatible = "nxp,lpc-flexcomm";
 		reg = <0x86000 0x1000>;
-		interrupts = <14 0>;
+		interrupts = <14 1>;
 		clocks = <&syscon MCUX_FLEXCOMM0_CLK>;
 		resets = <&reset NXP_SYSCON_RESET(1, 11)>;
 		status = "disabled";
@@ -231,7 +233,7 @@
 	flexcomm1: flexcomm@87000 {
 		compatible = "nxp,lpc-flexcomm";
 		reg = <0x87000 0x1000>;
-		interrupts = <15 0>;
+		interrupts = <15 1>;
 		clocks = <&syscon MCUX_FLEXCOMM1_CLK>;
 		resets = <&reset NXP_SYSCON_RESET(1, 12)>;
 		status = "disabled";
@@ -240,7 +242,7 @@
 	flexcomm2: flexcomm@88000 {
 		compatible = "nxp,lpc-flexcomm";
 		reg = <0x88000 0x1000>;
-		interrupts = <16 0>;
+		interrupts = <16 1>;
 		clocks = <&syscon MCUX_FLEXCOMM2_CLK>;
 		resets = <&reset NXP_SYSCON_RESET(1, 13)>;
 		status = "disabled";
@@ -250,13 +252,13 @@
 		compatible = "nxp,kinetis-trng";
 		reg = <0x3a000 0x1000>;
 		status = "okay";
-		interrupts = <53 0>;
+		interrupts = <53 1>;
 	};
 
 	dma0: dma-controller@82000 {
 		compatible = "nxp,lpc-dma";
 		reg = <0x82000 0x1000>;
-		interrupts = <1 0>;
+		interrupts = <1 1>;
 		dma-channels = <23>;
 		status = "disabled";
 		#dma-cells = <1>;
@@ -265,7 +267,7 @@
 	dma1: dma-controller@a7000 {
 		compatible = "nxp,lpc-dma";
 		reg = <0xa7000 0x1000>;
-		interrupts = <58 0>;
+		interrupts = <58 1>;
 		dma-channels = <10>;
 		status = "disabled";
 		#dma-cells = <1>;
@@ -274,9 +276,19 @@
 	wwdt0: watchdog@c000 {
 		compatible = "nxp,lpc-wwdt";
 		reg = <0xc000 0x1000>;
-		interrupts = <0 0>;
+		interrupts = <0 1>;
 		status = "disabled";
 		clk-divider = <1>;
+	};
+
+	hci: hci_ble {
+		compatible = "nxp,hci-ble";
+	};
+
+	ble_ll: ble_controller {
+		compatible = "nxp,nbu";
+		interrupts = <22 0>;
+		interrupt-names = "nbu_rx_int";
 	};
 };
 
