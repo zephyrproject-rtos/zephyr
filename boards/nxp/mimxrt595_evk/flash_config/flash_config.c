@@ -14,7 +14,7 @@ const flexspi_nor_config_t flash_config = {
 		.tag = FLEXSPI_CFG_BLK_TAG,
 		.version = FLEXSPI_CFG_BLK_VERSION,
 		.readSampleClkSrc =
-			flexspi_read_sample_clk_external_input_from_dqs_pad,
+			FLEXSPI_READ_SAMPLE_CLK_EXTERNAL_INPUT_FROM_DQS_PAD,
 		.csHoldTime = 3,
 		.csSetupTime = 3,
 		.deviceModeCfgEnable = 1,
@@ -29,11 +29,11 @@ const flexspi_nor_config_t flash_config = {
 		/* Enable OPI DDR mode */
 		.deviceModeArg = 2,
 		.controllerMiscOption =
-			(1u << flexspi_misc_offset_safe_config_freq_enable) |
-			(1u << flexspi_misc_offset_ddr_mode_enable),
+			(1u << FLEXSPI_MISC_OFFSET_SAFE_CONFIG_FREQ_ENABLE) |
+			(1u << FLEXSPI_MISC_OFFSET_DDR_MODE_ENABLE),
 		.deviceType = kFlexSpiDeviceType_SerialNOR,
 		.sflashPadType = kSerialFlash_8Pads,
-		.serialClkFreq = flexspi_serial_clk_60mhz,
+	.serialClkFreq = FLEXSPI_SERIAL_CLK_60MHZ,
 		.sflashA1Size = 64ul * 1024u * 1024u,
 		.busyOffset = 0u,
 		.busyBitPolarity = 0u,
