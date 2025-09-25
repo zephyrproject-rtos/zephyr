@@ -9,8 +9,8 @@
 #include "acn52832-pinctrl.dtsi"
 
 / {
-	model = "Aconno ACN52832 Module";
 	compatible = "aconno,acn52832";
+	model = "Aconno ACN52832 Module";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -63,10 +63,10 @@
 &uart0 {
 	compatible = "nordic,nrf-uarte";
 	current-speed = <115200>;
-	status = "okay";
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &flash0 {
@@ -76,23 +76,23 @@
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 0xc000>;
+			label = "mcuboot";
 		};
 
 		slot0_partition: partition@c000 {
-			label = "image-0";
 			reg = <0x0000c000 0x37000>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@43000 {
-			label = "image-1";
 			reg = <0x00043000 0x37000>;
+			label = "image-1";
 		};
 
 		storage_partition: partition@7a000 {
-			label = "storage";
 			reg = <0x0007a000 0x00006000>;
+			label = "storage";
 		};
 	};
 };
