@@ -32,12 +32,26 @@
 		cpu0: cpu@0 {
 			compatible = "arm,cortex-m33f";
 			reg = <0>;
+			cpu-power-states = <&sleep &deep_sleep>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 
 			mpu: mpu@e000ed90 {
 				compatible = "arm,armv8m-mpu";
 				reg = <0xe000ed90 0x40>;
+			};
+		};
+
+		power-states {
+			sleep: sleep {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				exit-latency-us = <10>;
+			};
+			deep_sleep: deep-sleep {
+				compatible = "zephyr,power-state";
+				power-state-name = "standby";
+				exit-latency-us = <11>;
 			};
 		};
 	};
