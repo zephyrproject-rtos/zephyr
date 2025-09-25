@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-config CHARGER_BQ25180
+config CHARGER_BQ2518X
 	bool "BQ25180 Battery Charger"
 	default y
 	depends on DT_HAS_TI_BQ25180_ENABLED
