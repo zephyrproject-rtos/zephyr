@@ -12,8 +12,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "KB1062 board";
 	compatible = "ene,kb1062";
+	model = "KB1062 board";
 
 	aliases {
 		uart0 = &uart0;
@@ -55,10 +55,10 @@
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&ser0_tx_gpio16 &ser0_rx_gpio17>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &gpio0x1x {
