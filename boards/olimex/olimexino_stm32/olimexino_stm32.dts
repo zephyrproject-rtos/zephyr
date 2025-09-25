@@ -10,8 +10,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Olimex OLIMEXINO-STM32 board";
 	compatible = "olimex,olimexino_stm32", "st,stm32f103rb";
+	model = "Olimex OLIMEXINO-STM32 board";
 
 	chosen {
 		zephyr,console = &usart1;
@@ -109,15 +109,15 @@ uext_serial: &usart1 {};
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 };
 
 &i2c2 {
 	pinctrl-0 = <&i2c2_scl_pb10 &i2c2_sda_pb11>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 };
 
 &spi1 {
@@ -131,14 +131,14 @@ uext_serial: &usart1 {};
 	pinctrl-0 = <&spi2_nss_master_pb12 &spi2_sck_master_pb13
 		     &spi2_miso_master_pb14 &spi2_mosi_master_pb15>;
 	pinctrl-names = "default";
-	status = "okay";
 	cs-gpios = <&gpiod 2 GPIO_ACTIVE_HIGH>;
+	status = "okay";
 
 	sdhc0: sdhc@0 {
 		compatible = "zephyr,sdhc-spi-slot";
 		reg = <0>;
-		status = "okay";
 		spi-max-frequency = <24000000>;
+		status = "okay";
 
 		mmc {
 			compatible = "zephyr,sdmmc-disk";
@@ -149,10 +149,10 @@ uext_serial: &usart1 {};
 };
 
 zephyr_udc0: &usb {
-	status = "okay";
 	disconnect-gpios = <&gpioc 12 GPIO_ACTIVE_LOW>;
 	pinctrl-0 = <&usb_dm_pa11 &usb_dp_pa12>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &timers1 {
@@ -160,9 +160,9 @@ zephyr_udc0: &usb {
 	status = "okay";
 
 	pwm1: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim1_ch1_pwm_out_pa8>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
