@@ -12,8 +12,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "STMicroelectronics STM32F334R8-NUCLEO board";
 	compatible = "st,stm32f334r8-nucleo";
+	model = "STMicroelectronics STM32F334R8-NUCLEO board";
 
 	chosen {
 		zephyr,console = &usart2;
@@ -96,8 +96,8 @@
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 };
 
 &spi1 {
@@ -112,9 +112,9 @@
 	status = "okay";
 
 	pwm1: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim1_ch1_pa8>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
@@ -136,8 +136,8 @@
 
 		/* Set 6Kb of storage at the end of the 64Kb of flash */
 		storage_partition: partition@e800 {
-			label = "storage";
 			reg = <0x0000e800 DT_SIZE_K(6)>;
+			label = "storage";
 		};
 	};
 };

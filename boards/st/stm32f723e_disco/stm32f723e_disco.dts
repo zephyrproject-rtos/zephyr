@@ -11,8 +11,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "STMicroelectronics STM32F723E DISCOVERY board";
 	compatible = "st,stm32f723e-disco";
+	model = "STMicroelectronics STM32F723E DISCOVERY board";
 
 	chosen {
 		zephyr,console = &usart6;
@@ -133,9 +133,9 @@
 		size = <DT_SIZE_M(512)>; /* 512 Mbits */
 		qspi-max-frequency = <8000000>;
 		cs-high-time = <3>; /* >= 30 ns */
-		status = "okay";
 		spi-bus-width = <4>;
 		writeoc = "PP_1_4_4";
+		status = "okay";
 	};
 };
 

@@ -10,8 +10,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "STMicroelectronics STM32F4DISCOVERY board";
 	compatible = "st,stm32f4discovery";
+	model = "STMicroelectronics STM32F4DISCOVERY board";
 
 	chosen {
 		zephyr,console = &usart2;
@@ -125,9 +125,9 @@
 	status = "okay";
 
 	pwm2: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim2_ch1_pa0>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
@@ -135,9 +135,9 @@
 	status = "okay";
 
 	pwm4: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim4_ch1_pd12 &tim4_ch2_pd13 &tim4_ch3_pd14 &tim4_ch4_pd15>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 

@@ -11,8 +11,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "STMicroelectronics STM32L496ZG-NUCLEO board";
 	compatible = "st,stm32l496zg-nucleo";
+	model = "STMicroelectronics STM32L496ZG-NUCLEO board";
 
 	chosen {
 		zephyr,console = &lpuart1;
@@ -130,11 +130,11 @@ zephyr_udc0: &usbotg_fs {
 	status = "okay";
 
 	pwm1: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim1_ch1_pe9
 			     &tim1_ch2_pe11
 			     &tim1_ch3_pe13>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
@@ -142,9 +142,9 @@ zephyr_udc0: &usbotg_fs {
 	status = "okay";
 
 	pwm2: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim2_ch1_pa0>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
@@ -153,17 +153,17 @@ zephyr_udc0: &usbotg_fs {
 	status = "okay";
 
 	pwm15: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim15_ch1_pb14>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 };
 
 &spi1 {

@@ -10,8 +10,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "STM32G081B EVAL board";
 	compatible = "st,stm32g081-eval";
+	model = "STM32G081B EVAL board";
 
 	chosen {
 		zephyr,console = &usart3;
@@ -132,21 +132,21 @@
 	status = "okay";
 
 	pwm15: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim15_ch1_pc1>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
 &adc1 {
 	pinctrl-0 = <&adc1_in3_pa3 &adc1_in9_pb1>;
 	pinctrl-names = "default";
-	st,adc-clock-source = "SYNC";
-	st,adc-prescaler = <4>;
-	status = "okay";
 
 	#address-cells = <1>;
 	#size-cells = <0>;
+	st,adc-clock-source = "SYNC";
+	st,adc-prescaler = <4>;
+	status = "okay";
 
 	channel@3 {
 		reg = <3>;
@@ -168,7 +168,6 @@
 };
 
 &ucpd1 {
-	status = "okay";
 
 	/*
 	 * UCPD is fed directly from HSI which is @ 16MHz. The ucpd_clk goes to
@@ -196,10 +195,10 @@
 	hbitclkdiv = <27>;
 	pinctrl-0 = <&ucpd1_cc1_pa8 &ucpd1_cc2_pb15>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &ucpd2 {
-	status = "okay";
 
 	/*
 	 * UCPD is fed directly from HSI which is @ 16MHz. The ucpd_clk goes to
@@ -227,6 +226,7 @@
 	hbitclkdiv = <27>;
 	pinctrl-0 = <&ucpd2_cc1_pd0 &ucpd2_cc2_pd2>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &iwdg {

@@ -11,8 +11,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "STMicroelectronics STM32H7A3ZI-Q-NUCLEO board";
 	compatible = "st,stm32h7a3zi-q-nucleo";
+	model = "STMicroelectronics STM32H7A3ZI-Q-NUCLEO board";
 
 	chosen {
 		zephyr,console = &usart3;
@@ -117,9 +117,9 @@
 	status = "okay";
 
 	pwm12: pwm {
-		status = "okay";
 		pinctrl-names = "default";
 		pinctrl-0 = <&tim12_ch1_pb14>;
+		status = "okay";
 	};
 };
 

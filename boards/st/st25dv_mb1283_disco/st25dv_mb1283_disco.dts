@@ -11,8 +11,8 @@
 #include <zephyr/dt-bindings/display/ili9xxx.h>
 
 / {
-	model = "ST ST25DV Discovery Kit with MB1283";
 	compatible = "st,st25dv_mb1283_disco", "st,stm32f405", "st,stm32f4";
+	model = "ST ST25DV Discovery Kit with MB1283";
 
 	chosen {
 		zephyr,console = &usart6;
@@ -84,8 +84,8 @@
 
 		ili9341: ili9341@0 {
 			compatible = "ilitek,ili9341";
-			mipi-max-frequency = <DT_FREQ_M(20)>;
 			reg = <0>;
+			mipi-max-frequency = <DT_FREQ_M(20)>;
 			pixel-format = <ILI9XXX_PIXEL_FORMAT_RGB888>;
 			rotation = <0>;
 			width = <240>;
@@ -146,12 +146,11 @@
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 
 	stmpe811: stmpe811@41 {
 		compatible = "st,stmpe811";
-		status = "okay";
 		reg = <0x41>;
 		int-gpios = <&gpiob 5 GPIO_ACTIVE_LOW>;
 		screen-width = <240>;
@@ -164,6 +163,7 @@
 		touch-detect-delay-us = <5000>;
 		touch-average-control = <8>;
 		tracking-index = <127>;
+		status = "okay";
 	};
 };
 

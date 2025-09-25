@@ -10,8 +10,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "STMicroelectronics STM32373C-EVAL board";
 	compatible = "st,stm32373c-eval";
+	model = "STMicroelectronics STM32373C-EVAL board";
 
 	chosen {
 		zephyr,console = &usart2;

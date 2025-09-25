@@ -43,43 +43,43 @@
 		wake_up: button {
 			label = "Wakeup";
 			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
-			status = "disabled";
 			zephyr,code = <INPUT_KEY_WAKEUP>;
+			status = "disabled";
 		};
 
 		joy_center: joystick_center {
 			label = "joystick center";
 			gpios = <&gpiok 2 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
-			status = "disabled";
 			zephyr,code = <INPUT_KEY_ENTER>;
+			status = "disabled";
 		};
 
 		joy_down: joystick_down {
 			label = "joystick down";
 			gpios = <&gpiok 3 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
-			status = "disabled";
 			zephyr,code = <INPUT_KEY_DOWN>;
+			status = "disabled";
 		};
 
 		joy_up: joystick_up {
 			label = "joystick up";
 			gpios = <&gpiok 6 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
-			status = "disabled";
 			zephyr,code = <INPUT_KEY_UP>;
+			status = "disabled";
 		};
 
 		joy_left: joystick_left {
 			label = "joystick left";
 			gpios = <&gpiok 4 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
-			status = "disabled";
 			zephyr,code = <INPUT_KEY_LEFT>;
+			status = "disabled";
 		};
 
 		joy_right: joystick_right {
 			label = "joystick right";
 			gpios = <&gpiok 5 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
-			status = "disabled";
 			zephyr,code = <INPUT_KEY_RIGHT>;
+			status = "disabled";
 		};
 	};
 

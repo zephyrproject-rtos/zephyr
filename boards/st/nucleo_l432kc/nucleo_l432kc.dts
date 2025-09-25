@@ -10,8 +10,8 @@
 #include "arduino_nano_connector.dtsi"
 
 / {
-	model = "STMicroelectronics STM32L432KC-NUCLEO board";
 	compatible = "st,stm32l432kc-nucleo";
+	model = "STMicroelectronics STM32L432KC-NUCLEO board";
 
 	chosen {
 		zephyr,console = &usart2;
@@ -92,9 +92,9 @@
 	status = "okay";
 
 	pwm2: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim2_ch1_pa0>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
@@ -120,8 +120,8 @@
 		 * Reserve the final 16 KiB for file system partition
 		 */
 		storage_partition: partition@3c000 {
-			label = "storage";
 			reg = <0x0003c000 DT_SIZE_K(16)>;
+			label = "storage";
 		};
 	};
 };

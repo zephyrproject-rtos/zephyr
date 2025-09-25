@@ -129,9 +129,9 @@
 };
 
 &clk_msi {
-	status = "okay";
 	msi-range = <6>;
 	msi-pll-mode;
+	status = "okay";
 };
 
 &clk_lse {
@@ -179,8 +179,8 @@ stm32_lp_tick_source: &lptim1 {
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 
 	lsm6dso: lsm6dso@6a {
 		compatible = "st,lsm6dso";
@@ -235,7 +235,6 @@ stm32_lp_tick_source: &lptim1 {
 		spi-bus-width = <OSPI_OPI_MODE>;
 		data-rate = <OSPI_DTR_TRANSFER>;
 		four-byte-opcodes;
-		status = "okay";
 		sfdp-bfp = [53 46 44 50 06 01 02 ff
 			    00 06 01 10 30 00 00 ff
 			    c2 00 01 04 10 01 00 ff
@@ -261,6 +260,7 @@ stm32_lp_tick_source: &lptim1 {
 			    00 00 00 00 00 00 00 00
 			    00 00 00 00 00 00 00 00
 			    7f ef ff ff 21 5c dc ff];
+		status = "okay";
 
 		partitions {
 			compatible = "fixed-partitions";
@@ -278,16 +278,16 @@ stm32_lp_tick_source: &lptim1 {
 	status = "okay";
 
 	pwm2: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim2_ch1_pa0>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
 &dac1 {
-	status = "okay";
 	pinctrl-0 = <&dac1_out1_pa4>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &adc1 {
@@ -316,7 +316,6 @@ zephyr_udc0: &usb {
 };
 
 &sdmmc1 {
-	status = "okay";
 	disk-name = "SD";
 	pinctrl-0 = <&sdmmc1_d0_pc8
 		     &sdmmc1_d1_pc9
@@ -328,6 +327,7 @@ zephyr_udc0: &usb {
 	pinctrl-names = "default";
 
 	cd-gpios = <&gpiof 2 GPIO_ACTIVE_LOW>;
+	status = "okay";
 };
 
 &vref {

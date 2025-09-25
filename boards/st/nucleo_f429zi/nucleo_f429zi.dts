@@ -11,8 +11,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "STMicroelectronics STM32F429ZI-NUCLEO board";
 	compatible = "st,stm32f429zi-nucleo";
+	model = "STMicroelectronics STM32F429ZI-NUCLEO board";
 
 	chosen {
 		zephyr,console = &usart3;
@@ -104,23 +104,23 @@
 };
 
 &dac1 {
-	status = "okay";
 	pinctrl-0 = <&dac_out1_pa4>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 };
 
 &i2c2 {
 	pinctrl-0 = <&i2c2_scl_pb10 &i2c2_sda_pb11>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 };
 
 &spi1 {
@@ -155,9 +155,9 @@ zephyr_udc0: &usbotg_fs {
 	status = "okay";
 
 	pwm1: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim1_ch3_pe13>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
@@ -180,7 +180,6 @@ zephyr_udc0: &usbotg_fs {
 };
 
 &mac {
-	status = "okay";
 	pinctrl-0 = <&eth_rxd0_pc4
 		     &eth_rxd1_pc5
 		     &eth_ref_clk_pa1
@@ -191,12 +190,13 @@ zephyr_udc0: &usbotg_fs {
 	pinctrl-names = "default";
 	phy-connection-type = "rmii";
 	phy-handle = <&eth_phy>;
+	status = "okay";
 };
 
 &mdio {
-	status = "okay";
 	pinctrl-0 = <&eth_mdio_pa2 &eth_mdc_pc1>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	eth_phy: ethernet-phy@0 {
 		compatible = "ethernet-phy";
@@ -212,8 +212,8 @@ zephyr_udc0: &usbotg_fs {
 
 		/* 32KB for bootloader */
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(32)>;
+			label = "mcuboot";
 			read-only;
 		};
 
@@ -231,20 +231,20 @@ zephyr_udc0: &usbotg_fs {
 
 		/* application image slot: 256KB */
 		slot0_partition: partition@20000 {
-			label = "image-0";
 			reg = <0x00020000 DT_SIZE_K(256)>;
+			label = "image-0";
 		};
 
 		/* backup slot: 256KB */
 		slot1_partition: partition@60000 {
-			label = "image-1";
 			reg = <0x00060000 DT_SIZE_K(256)>;
+			label = "image-1";
 		};
 
 		/* swap slot: 128KB */
 		scratch_partition: partition@a0000 {
-			label = "image-scratch";
 			reg = <0x000a0000 DT_SIZE_K(128)>;
+			label = "image-scratch";
 		};
 	};
 };

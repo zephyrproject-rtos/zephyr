@@ -11,8 +11,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "STM32G071B DEMO board";
 	compatible = "st,stm32g071-demo";
+	model = "STM32G071B DEMO board";
 
 	chosen {
 		zephyr,console = &usart3;
@@ -141,17 +141,16 @@
 };
 
 &i2c1 {
-	status = "okay";
 	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
+	status = "okay";
 
 	/*
 	 * Use U10, INA230 to measure VBUS. I2C Address: 0x40
 	 */
 	vbus_meas: ina230@40 {
-		status = "okay";
 		compatible = "ti,ina230";
 		reg = <0x40>;
 		adc-mode = "Bus voltage continuous";
@@ -160,11 +159,11 @@
 		avg-count = <1>;
 		current-lsb-microamps = <1000>;
 		rshunt-micro-ohms = <15000>;
+		status = "okay";
 	};
 };
 
 &ucpd1 {
-	status = "okay";
 
 	/*
 	 * UCPD is fed directly from HSI which is @ 16MHz. The ucpd_clk goes to
@@ -192,6 +191,7 @@
 	hbitclkdiv = <27>;
 	pinctrl-0 = <&ucpd1_cc1_pa8 &ucpd1_cc2_pb15>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &iwdg {
