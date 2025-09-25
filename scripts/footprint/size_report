@@ -484,7 +484,7 @@ def do_address_range_matching(dwarfinfo, symbol_dict, processed):
             offset_map[die.offset] = die
 
         for die in cu_list[cu]['dies']:
-            if not die.tag == 'DW_TAG_subprogram':
+            if not (die.tag == 'DW_TAG_subprogram' or die.tag == 'DW_TAG_variable'):
                 continue
 
             path = None
@@ -527,16 +527,32 @@ def do_address_range_matching(dwarfinfo, symbol_dict, processed):
                 if low is None:
                     continue
 
-                for ums in unmapped_symbols:
-                    for one_sym in symbol_dict[ums]:
-                        symbol = one_sym['symbol']
-                        symaddr = symbol['st_value']
+                # Case 1: Match for a function (using a range)
+                if die.tag == 'DW_TAG_subprogram':
+                    for ums in unmapped_symbols:
+                        for one_sym in symbol_dict[ums]:
+                            symbol = one_sym['symbol']
+                            symaddr = symbol['st_value']
 
-                        if symaddr not in mapped_addresses:
-                            if low <= symaddr < high:
-                                one_sym['mapped_files'].add(path)
-                                mapped_addresses.add(symaddr)
-                                newly_mapped_syms.add(ums)
+                            if symaddr not in mapped_addresses:
+                                if low <= symaddr < high:
+                                    one_sym['mapped_files'].add(path)
+                                    mapped_addresses.add(symaddr)
+                                    newly_mapped_syms.add(ums)
+
+                # Case 2: Match for a variable (using a single address)
+                elif die.tag == 'DW_TAG_variable':
+                    for ums in unmapped_symbols:
+                        for one_sym in symbol_dict[ums]:
+                            symbol = one_sym['symbol']
+                            symaddr = symbol['st_value']
+
+                            if symaddr not in mapped_addresses:
+                                # We expect the 'high' value to be 'low + 1' for a variable
+                                if low == symaddr:
+                                    one_sym['mapped_files'].add(path)
+                                    mapped_addresses.add(symaddr)
+                                    newly_mapped_syms.add(ums)
 
     mapped_symbols = mapped_symbols.union(newly_mapped_syms)
     unmapped_symbols = unmapped_symbols.difference(newly_mapped_syms)
