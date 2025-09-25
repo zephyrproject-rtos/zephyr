@@ -10,8 +10,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "GigaDevice GD32L233R Evaluation Kit";
 	compatible = "gd,gd32l233r-eval";
+	model = "GigaDevice GD32L233R Evaluation Kit";
 
 	chosen {
 		zephyr,sram = &sram;
@@ -88,14 +88,14 @@
 };
 
 &usart1 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&usart1_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &adc0 {
-	status = "okay";
 	pinctrl-0 = <&adc0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
