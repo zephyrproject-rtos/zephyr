@@ -10,8 +10,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "QuickLogic Qomu board";
 	compatible = "quicklogic,eos_s3";
+	model = "QuickLogic Qomu board";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -75,22 +75,22 @@
 	usb_pu_default: usb_pu_default {
 		pinmux = <USB_PU_CTRL_PAD23>;
 		bias-high-impedance;
-		quicklogic,control-selection = "fabric";
 		output-enable;
+		quicklogic,control-selection = "fabric";
 	};
 
 	usb_dn_default: usb_dn_default {
 		pinmux = <USB_DN_PAD28>;
 		bias-high-impedance;
-		quicklogic,control-selection = "fabric";
 		output-enable;
+		quicklogic,control-selection = "fabric";
 	};
 
 	usb_dp_default: usb_dp_default {
 		pinmux = <USB_DP_PAD31>;
 		bias-high-impedance;
-		quicklogic,control-selection = "fabric";
 		output-enable;
+		quicklogic,control-selection = "fabric";
 	};
 };
 
@@ -107,9 +107,9 @@
 };
 
 &uart1 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart1_rx_default &uart1_tx_default
 		     &usb_pu_default &usb_dn_default &usb_dp_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
