@@ -219,6 +219,14 @@ New APIs and options
 
   * :kconfig:option:`CONFIG_TASK_WDT_DUMMY`
 
+
+* Utilities
+
+  * :c:struct:`sys_set_node`
+  * :c:func:`sys_set_makeset`
+  * :c:func:`sys_set_find`
+  * :c:func:`sys_set_union`
+
 .. zephyr-keep-sorted-stop
 
 New Boards
