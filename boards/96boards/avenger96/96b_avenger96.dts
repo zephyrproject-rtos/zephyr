@@ -9,8 +9,8 @@
 #include <st/mp1/stm32mp157aacx-pinctrl.dtsi>
 
 / {
-	model = "Arrow Electronics STM32MP157A Avenger96 board";
 	compatible = "arrow,stm32mp157a-avenger96";
+	model = "Arrow Electronics STM32MP157A Avenger96 board";
 
 	chosen {
 		/*
