@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 NXP
+ * Copyright 2022-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,8 @@
 #include <zephyr/irq.h>
 #include <errno.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/pm/policy.h>
+#include <zephyr/pm/device.h>
 
 LOG_MODULE_REGISTER(adc_mcux_gau_adc, CONFIG_ADC_LOG_LEVEL);
 
@@ -17,6 +19,7 @@ LOG_MODULE_REGISTER(adc_mcux_gau_adc, CONFIG_ADC_LOG_LEVEL);
 #include "adc_context.h"
 
 #include <fsl_adc.h>
+#include <fsl_power.h>
 
 #define NUM_ADC_CHANNELS 16
 
@@ -38,6 +41,15 @@ struct mcux_gau_adc_data {
 	size_t results_length;
 	uint16_t *repeat;
 	struct k_work read_samples_work;
+	/* Save adc config state for low power modes */
+	bool restore_after_sleep;
+	bool wake_adjust_warmup_time;
+	struct {
+		uint32_t adc_reg_interval;
+		uint32_t adc_reg_ana;
+		uint16_t offset_cal;
+		uint16_t gain_cal;
+	} saved_state;
 };
 
 static int mcux_gau_adc_channel_setup(const struct device *dev,
@@ -123,6 +135,8 @@ static int mcux_gau_adc_channel_setup(const struct device *dev,
 	}
 
 	data->channel_sources[channel_id] = source_channel;
+	data->saved_state.adc_reg_ana = base->ADC_REG_ANA;
+	data->saved_state.adc_reg_interval = base->ADC_REG_INTERVAL;
 
 	return 0;
 }
@@ -144,8 +158,8 @@ static void mcux_gau_adc_read_samples(struct k_work *work)
 	}
 
 	adc_context_on_sampling_done(&data->ctx, dev);
+	pm_policy_device_power_lock_put(dev);
 }
-
 
 static void mcux_gau_adc_isr(const struct device *dev)
 {
@@ -186,6 +200,30 @@ static void adc_context_update_buffer_pointer(struct adc_context *ctx,
 	}
 }
 
+static int mcux_gau_adc_calibrate(const struct device *dev, bool autocalibrate)
+{
+	const struct mcux_gau_adc_config *config = dev->config;
+	ADC_Type *base = config->base;
+	struct mcux_gau_adc_data *data = dev->data;
+
+	if (autocalibrate) {
+		if (ADC_DoAutoCalibration(base, config->cal_volt)) {
+			LOG_WRN("Calibration of ADC failed!");
+			return -EIO;
+		}
+
+		/* Save new calibration values */
+		ADC_GetAutoCalibrationData(base, &data->saved_state.offset_cal,
+					   &data->saved_state.gain_cal);
+	} else {
+		/* Use saved calibration values  */
+		ADC_DoUserCalibration(base, data->saved_state.offset_cal,
+				      data->saved_state.gain_cal);
+	}
+
+	return 0;
+}
+
 static int mcux_gau_adc_do_read(const struct device *dev,
 		   const struct adc_sequence *sequence)
 {
@@ -193,6 +231,7 @@ static int mcux_gau_adc_do_read(const struct device *dev,
 	ADC_Type *base = config->base;
 	struct mcux_gau_adc_data *data = dev->data;
 	uint8_t num_channels = 0;
+	int err = 0;
 
 	/* if user selected channel >= NUM_ADC_CHANNELS that is invalid */
 	if (sequence->channels & (0xFFFF << NUM_ADC_CHANNELS)) {
@@ -211,6 +250,18 @@ static int mcux_gau_adc_do_read(const struct device *dev,
 	    (sequence->options == NULL && sequence->buffer_size < num_channels)) {
 		LOG_ERR("Buffer size too small");
 		return -ENOMEM;
+	}
+
+	/* Adjust warm up time for the first read after sleep to avoid garbage data.
+	 * 16us is the standard warmup time used in the SDK.
+	 */
+	if (data->wake_adjust_warmup_time) {
+		base->ADC_REG_INTERVAL &= ~ADC_ADC_REG_INTERVAL_BYPASS_WARMUP_MASK;
+		base->ADC_REG_INTERVAL &= ~ADC_ADC_REG_INTERVAL_WARMUP_TIME_MASK;
+		base->ADC_REG_INTERVAL |= ADC_ADC_REG_INTERVAL_WARMUP_TIME(kADC_WarmUpTime16us);
+		data->wake_adjust_warmup_time = false;
+	} else {
+		base->ADC_REG_INTERVAL = data->saved_state.adc_reg_interval;
 	}
 
 	/* Set scan length in data struct for isr to understand & set scan length register */
@@ -261,8 +312,9 @@ static int mcux_gau_adc_do_read(const struct device *dev,
 
 	/* Calibrate if requested */
 	if (sequence->calibrate) {
-		if (ADC_DoAutoCalibration(base, config->cal_volt)) {
-			LOG_WRN("Calibration of ADC failed!");
+		err = mcux_gau_adc_calibrate(dev, true);
+		if (err) {
+			return err;
 		}
 	}
 
@@ -270,6 +322,10 @@ static int mcux_gau_adc_do_read(const struct device *dev,
 	data->results_length = sequence->buffer_size;
 	data->repeat = sequence->buffer;
 
+	/* Block low power while performing conversion.
+	 * Released in mcux_gau_adc_read_samples.
+	 */
+	pm_policy_device_power_lock_get(dev);
 	adc_context_start_read(&data->ctx, sequence);
 
 	return adc_context_wait_for_completion(&data->ctx);
@@ -302,8 +358,7 @@ static int mcux_gau_adc_read_async(const struct device *dev,
 }
 #endif
 
-
-static int mcux_gau_adc_init(const struct device *dev)
+static void mcux_gau_adc_init_common(const struct device *dev)
 {
 	const struct mcux_gau_adc_config *config = dev->config;
 	struct mcux_gau_adc_data *data = dev->data;
@@ -334,21 +389,85 @@ static int mcux_gau_adc_init(const struct device *dev)
 
 	ADC_Init(base, &adc_config);
 
-	if (ADC_DoAutoCalibration(base, config->cal_volt)) {
-		LOG_WRN("Calibration of ADC failed!");
-	}
-
 	ADC_ClearStatusFlags(base, kADC_DataReadyInterruptFlag);
 
 	config->irq_config_func(dev);
 	ADC_EnableInterrupts(base, kADC_DataReadyInterruptEnable);
+}
+
+/* The driver saves the ADC configuration before entering a low-power state
+ * and restores it upon wake-up. This ensures that the ADC returns to its
+ * pre-sleep configuration, maintaining the exact state the application
+ * expects after resuming from a low-power mode.
+ *
+ * Specifically:
+ * - Hardware register states are saved before power-down
+ * - Calibration settings are preserved
+ * - Channel configurations are restored
+ * - Any ongoing conversions are properly handled
+ *
+ * NOTE: The driver adjusts the warmup time for the first read
+ * after wakeup to avoid getting garbage data. See mcux_gau_adc_do_read.
+ */
+static int mcux_gau_adc_pm_action(const struct device *dev,
+				  enum pm_device_action action)
+{
+	const struct mcux_gau_adc_config *config = dev->config;
+	struct mcux_gau_adc_data *data = dev->data;
+	ADC_Type *base = config->base;
+	int err = 0;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		break;
+	case PM_DEVICE_ACTION_TURN_ON:
+		/* GAU is not enabled after PM3 wakeup. */
+		POWER_PowerOnGau();
+		mcux_gau_adc_init_common(dev);
+		if (data->restore_after_sleep) {
+			err = mcux_gau_adc_calibrate(dev, false);
+			base->ADC_REG_ANA = data->saved_state.adc_reg_ana;
+			base->ADC_REG_INTERVAL = data->saved_state.adc_reg_interval;
+			data->restore_after_sleep = false;
+		}
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		break;
+	case PM_DEVICE_ACTION_TURN_OFF:
+		data->restore_after_sleep = true;
+		data->wake_adjust_warmup_time = true;
+		break;
+	default:
+		err = -ENOTSUP;
+	}
+
+	return err;
+}
+
+static int mcux_gau_adc_init(const struct device *dev)
+{
+	struct mcux_gau_adc_data *data = dev->data;
+	int err = 0;
+
+	/* Rest of the init is done from the PM_DEVICE_TURN_ON action
+	 * which is invoked by pm_device_driver_init().
+	 */
+	err = pm_device_driver_init(dev, mcux_gau_adc_pm_action);
+	if (err != 0) {
+		return err;
+	}
+
+	/* We only want to autocalibrate once at startup */
+	err = mcux_gau_adc_calibrate(dev, true);
+	if (err != 0) {
+		return err;
+	}
 
 	k_work_init(&data->read_samples_work, &mcux_gau_adc_read_samples);
-
 	adc_context_init(&data->ctx);
 	adc_context_unlock_unconditionally(&data->ctx);
 
-	return 0;
+	return err;
 }
 
 static DEVICE_API(adc, mcux_gau_adc_driver_api) = {
@@ -359,7 +478,6 @@ static DEVICE_API(adc, mcux_gau_adc_driver_api) = {
 #endif
 	.ref_internal = 1200,
 };
-
 
 #define GAU_ADC_MCUX_INIT(n)							\
 										\
@@ -377,7 +495,9 @@ static DEVICE_API(adc, mcux_gau_adc_driver_api) = {
 										\
 	static struct mcux_gau_adc_data mcux_gau_adc_data_##n = {0};		\
 										\
-	DEVICE_DT_INST_DEFINE(n, &mcux_gau_adc_init, NULL,			\
+	PM_DEVICE_DT_INST_DEFINE(n, mcux_gau_adc_pm_action);			\
+										\
+	DEVICE_DT_INST_DEFINE(n, &mcux_gau_adc_init, PM_DEVICE_DT_INST_GET(n),	\
 			      &mcux_gau_adc_data_##n, &mcux_gau_adc_config_##n,	\
 			      POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,		\
 			      &mcux_gau_adc_driver_api);			\
