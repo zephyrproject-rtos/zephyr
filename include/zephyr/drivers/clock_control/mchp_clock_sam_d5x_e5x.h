@@ -126,7 +126,7 @@ typedef struct {
 
 	/** @brief configure oscillator to ON in standby sleep mode, unless on_demand_en is set */
 	bool run_in_standby_en;
-} clock_mchp_subsys_osc32k_config_t;
+} clock_mchp_subsys_xosc32k_config_t;
 
 /** @brief Gclk Generator source clocks
  * @anchor clock_mchp_gclk_src_clock_t
