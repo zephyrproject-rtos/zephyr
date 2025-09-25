@@ -463,7 +463,10 @@ static char *prepare_multithreading(void)
 				       CONFIG_MAIN_THREAD_PRIORITY,
 				       K_ESSENTIAL, "main");
 	z_mark_thread_as_not_sleeping(&z_main_thread);
+
+#ifndef CONFIG_SMP
 	z_ready_thread(&z_main_thread);
+#endif
 
 	z_init_cpu(0);
 
