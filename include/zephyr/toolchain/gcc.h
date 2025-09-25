@@ -721,6 +721,7 @@ do {                                                                    \
 #define TOOLCHAIN_WARNING_SHADOW                   "-Wshadow"
 #define TOOLCHAIN_WARNING_UNUSED_LABEL             "-Wunused-label"
 #define TOOLCHAIN_WARNING_UNUSED_VARIABLE          "-Wunused-variable"
+#define TOOLCHAIN_WARNING_CAST_QUAL                "-Wcast-qual"
 
 /* GCC-specific warnings that aren't in clang. */
 #if defined(__GNUC__) && !defined(__clang__)
