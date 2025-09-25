@@ -8,8 +8,8 @@
 #include "sample_controller.dtsi"
 
 / {
-	model = "xt-sim";
 	compatible = "cdns,xtensa-sample-controller";
+	model = "xt-sim";
 
 	chosen {
 		zephyr,sram = &sram0;
