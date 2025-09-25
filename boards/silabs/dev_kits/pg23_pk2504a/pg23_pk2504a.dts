@@ -12,8 +12,8 @@
 #include "pg23_pk2504a-pinctrl.dtsi"
 
 / {
-	model = "Silicon Labs PG23 Pro Kit";
 	compatible = "silabs,pg23_pk2504a", "silabs,efm32pg23";
+	model = "Silicon Labs PG23 Pro Kit";
 
 	chosen {
 		zephyr,code-partition = &slot0_partition;
@@ -109,15 +109,15 @@
 };
 
 &hfxo {
-	status = "okay";
 	ctune = <106>;
 	precision = <50>;
+	status = "okay";
 };
 
 &lfxo {
-	status = "okay";
 	ctune = <38>;
 	precision = <50>;
+	status = "okay";
 };
 
 &hfrcodpll {

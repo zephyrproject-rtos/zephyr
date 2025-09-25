@@ -11,8 +11,8 @@
 #include "xg24_rb4187c-pinctrl.dtsi"
 
 / {
-	model = "Silicon Labs BRD4187C (Mighty Gecko 24 Radio Board)";
 	compatible = "silabs,xg24_rb4187c", "silabs,efr32mg24";
+	model = "Silicon Labs BRD4187C (Mighty Gecko 24 Radio Board)";
 
 	chosen {
 		zephyr,bt-hci = &bt_hci_silabs;
@@ -159,9 +159,9 @@
 	clock-frequency = <DT_FREQ_M(10)>;
 	pinctrl-0 = <&eusart1_default>;
 	pinctrl-names = "default";
-	status = "okay";
 
 	cs-gpios = <&gpioc 8 GPIO_ACTIVE_HIGH>, <&gpioc 4 GPIO_ACTIVE_LOW>;
+	status = "okay";
 
 	ls0xx_ls013b7dh03: ls0xx@0 {
 		compatible = "sharp,ls0xx";
@@ -180,9 +180,9 @@
 		dpd-wakeup-sequence = <30000 20 35000>;
 		has-dpd;
 		jedec-id = [c2 28 14];
-		mxicy,mx25r-power-mode = "low-power";
 		size = <DT_SIZE_M(8)>;
 		spi-max-frequency = <DT_FREQ_M(33)>;
+		mxicy,mx25r-power-mode = "low-power";
 		zephyr,pm-device-runtime-auto;
 	};
 };

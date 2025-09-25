@@ -10,6 +10,6 @@
 #include "slstk3402a_common.dtsi"
 
 / {
-	model = "Silicon Labs EFM32PG12 SLSTK3402A board";
 	compatible = "silabs,slstk3402a", "silabs,efm32pg12b";
+	model = "Silicon Labs EFM32PG12 SLSTK3402A board";
 };

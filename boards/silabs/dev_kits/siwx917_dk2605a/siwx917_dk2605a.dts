@@ -12,8 +12,8 @@
 #include "siwx917_dk2605a-pinctrl.dtsi"
 
 / {
-	model = "Silicon Labs BRD2605A (SiWx917 DK2605A Dev Kit)";
 	compatible = "silabs,siwx917_dk2605a", "silabs,siwg917";
+	model = "Silicon Labs BRD2605A (SiWx917 DK2605A Dev Kit)";
 
 	chosen {
 		zephyr,bt-hci = &bt_hci0;

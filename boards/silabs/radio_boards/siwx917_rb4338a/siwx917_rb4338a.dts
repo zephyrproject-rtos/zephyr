@@ -12,8 +12,8 @@
 #include <freq.h>
 
 / {
-	model = "Silicon Labs BRD4338A (SiWG917 Radio Board)";
 	compatible = "silabs,x917_rb4338a", "silabs,siwg917";
+	model = "Silicon Labs BRD4338A (SiWG917 Radio Board)";
 
 	chosen {
 		zephyr,bt-hci = &bt_hci0;

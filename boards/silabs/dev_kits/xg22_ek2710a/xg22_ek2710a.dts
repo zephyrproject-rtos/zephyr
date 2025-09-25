@@ -12,8 +12,8 @@
 #include "xg22_ek2710a-pinctrl.dtsi"
 
 / {
-	model = "Silicon Labs BRD2710A (xG22 Explorer Kit)";
 	compatible = "silabs,xg22_ek2710a", "silabs,efr32mg22";
+	model = "Silicon Labs BRD2710A (xG22 Explorer Kit)";
 
 	chosen {
 		zephyr,bt-hci = &bt_hci_silabs;
