@@ -37,7 +37,7 @@ endif # DISK_DRIVERS
 if NETWORKING
 
 config NET_L2_ETHERNET
-	default y if CPU_CORTEX_M7 # No cache memory support is required for driver
+	default y if DT_HAS_NXP_ENET_ENABLED && NETWORKING
 
 endif # NETWORKING
 
