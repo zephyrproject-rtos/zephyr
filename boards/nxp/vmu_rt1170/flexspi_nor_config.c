@@ -43,11 +43,11 @@ const struct flexspi_nor_config_t qspi_flash_config = {
 		.tag = FLEXSPI_CFG_BLK_TAG,
 		.version = FLEXSPI_CFG_BLK_VERSION,
 		.read_sample_clk_src =
-			flexspi_read_sample_clk_loopback_internally,
+			FLEXSPI_READ_SAMPLE_CLK_LOOPBACK_INTERNALLY,
 		.cs_hold_time = 1u,
 		.cs_setup_time = 1u,
-		.sflash_pad_type = serial_flash_1_pad,
-		.serial_clk_freq = flexspi_serial_clk_80mhz,
+		.sflash_pad_type = SERIAL_FLASH_1_PAD,
+		.serial_clk_freq = FLEXSPI_SERIAL_CLK_80MHZ,
 		.sflash_a1_size = 64u * 1024u * 1024u,
 		.lookup_table = {
 			FLEXSPI_LUT_SEQ(CMD_SDR, FLEXSPI_1PAD,
@@ -70,11 +70,11 @@ const struct flexspi_nor_config_t g_flash_fast_config = {
 	.mem_config = {
 		.tag                 = FLEXSPI_CFG_BLK_TAG,
 		.version             = FLEXSPI_CFG_BLK_VERSION,
-		.read_sample_clk_src    = flexspi_read_sample_clk_external_input_from_dqs_pad,
+		.read_sample_clk_src    = FLEXSPI_READ_SAMPLE_CLK_EXTERNAL_INPUT_FROM_DQS_PAD,
 		.cs_hold_time          = 1,
 		.cs_setup_time         = 1,
 		.device_mode_cfg_enable = 1,
-		.device_mode_type      = device_config_cmd_type_spi2xpi,
+		.device_mode_type      = DEVICE_CONFIG_CMD_TYPE_SPI2XPI,
 		.wait_time_cfg_commands = 1,
 		.device_mode_seq = {
 			.seq_num   = 1,
@@ -83,11 +83,11 @@ const struct flexspi_nor_config_t g_flash_fast_config = {
 		},
 		.device_mode_arg = 2, /* Enable OPI DDR mode */
 		.controller_misc_option =
-		(1u << flexspi_misc_offset_safe_config_freq_enable)
-			| (1u << flexspi_misc_offset_ddr_mode_enable),
-		.device_type    = flexspi_device_type_serial_nor,
-		.sflash_pad_type = serial_flash_8_pads,
-		.serial_clk_freq = flexspi_serial_clk_200mhz,
+		(1u << FLEXSPI_MISC_OFFSET_SAFE_CONFIG_FREQ_ENABLE)
+			| (1u << FLEXSPI_MISC_OFFSET_DDR_MODE_ENABLE),
+		.device_type    = FLEXSPI_DEVICE_TYPE_SERIAL_NOR,
+		.sflash_pad_type = SERIAL_FLASH_8_PADS,
+		.serial_clk_freq = FLEXSPI_SERIAL_CLK_200MHZ,
 		.sflash_a1_size  = 64ul * 1024u * 1024u,
 		.busy_offset      = 0u,
 		.busy_bit_polarity = 0u,

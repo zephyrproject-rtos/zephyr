@@ -5,9 +5,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __XMCD__
-#define __XMCD__
+#ifndef XMCD_
+#define XMCD_
 
 #include <stdint.h>
 
-#endif /* __XMCD__ */
+#endif /* XMCD_ */

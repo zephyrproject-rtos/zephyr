@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __FLASH_CONFIG__
-#define __FLASH_CONFIG__
+#ifndef FLASH_CONFIG_
+#define FLASH_CONFIG_
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -57,46 +57,46 @@
 
 /*! @brief Data pad used in Read command */
 enum {
-	serial_flash_1_pads = 1,
-	serial_flash_2_pads = 2,
-	serial_flash_4_pads = 4,
-	serial_flash_8_pads = 8,
+	SERIAL_FLASH_1_PADS = 1,
+	SERIAL_FLASH_2_PADS = 2,
+	SERIAL_FLASH_4_PADS = 4,
+	SERIAL_FLASH_8_PADS = 8,
 };
 
 /*! @brief FLEXSPI clock configuration - In High speed boot mode */
 enum {
-	flexspi_serial_clk_30mhz = 1,
-	flexspi_serial_clk_50mhz = 2,
-	flexspi_serial_clk_60mhz = 3,
-	flexspi_serial_clk_80mhz = 4,
-	flexspi_serial_clk_100mhz = 5,
-	flexspi_serial_clk_120mhz = 6,
-	flexspi_serial_clk_133mhz = 7,
-	flexspi_serial_clk_166mhz = 8,
-	flexspi_serial_clk_200mhz = 9,
+	FLEXSPI_SERIAL_CLK_30MHZ = 1,
+	FLEXSPI_SERIAL_CLK_50MHZ = 2,
+	FLEXSPI_SERIAL_CLK_60MHZ = 3,
+	FLEXSPI_SERIAL_CLK_80MHZ = 4,
+	FLEXSPI_SERIAL_CLK_100MHZ = 5,
+	FLEXSPI_SERIAL_CLK_120MHZ = 6,
+	FLEXSPI_SERIAL_CLK_133MHZ = 7,
+	FLEXSPI_SERIAL_CLK_166MHZ = 8,
+	FLEXSPI_SERIAL_CLK_200MHZ = 9,
 };
 
 /*! @brief FLEXSPI clock configuration - In Normal boot SDR mode */
 enum {
-	flexspi_serial_clk_sdr_24mhz = 1,
-	flexspi_serial_clk_sdr_48mhz = 2,
+	FLEXSPI_SERIAL_CLK_SDR_24MHZ = 1,
+	FLEXSPI_SERIAL_CLK_SDR_48MHZ = 2,
 };
 
 /*! @brief FLEXSPI clock configuration - In Normal boot DDR mode */
 enum {
-	flexspi_serial_clk_ddr_48mhz = 1,
+	FLEXSPI_SERIAL_CLK_DDR_48MHZ = 1,
 };
 
 /*! @brief Misc feature bit definitions */
 enum {
 	/* Bit for Differential clock enable */
-	flexspi_misc_offset_diff_clk_enable = 0,
+	FLEXSPI_MISC_OFFSET_DIFF_CLK_ENABLE = 0,
 	/* Bit for Word Addressable enable */
-	flexspi_misc_offset_word_addressable_enable = 3,
+	FLEXSPI_MISC_OFFSET_WORD_ADDRESSABLE_ENABLE = 3,
 	/* Bit for Safe Configuration Frequency enable */
-	flexspi_misc_offset_safe_config_freq_enable = 4,
+	FLEXSPI_MISC_OFFSET_SAFE_CONFIG_FREQ_ENABLE = 4,
 	/* Bit for DDR clock confiuration indication. */
-	flexspi_misc_offset_ddr_mode_enable = 6,
+	FLEXSPI_MISC_OFFSET_DDR_MODE_ENABLE = 6,
 };
 
 /*! @brief Flash Configuration Command Type */
@@ -104,17 +104,17 @@ enum {
 	/* !< Generic command, for example:
 	 * configure dummy cycles, drive strength, etc
 	 */
-	device_config_cmd_type_generic,
+	DEVICE_CONFIG_CMD_TYPE_GENERIC,
 	/* !< Quad Enable command */
-	device_config_cmd_type_quad_enable,
+	DEVICE_CONFIG_CMD_TYPE_QUAD_ENABLE,
 	/* !< Switch from SPI to DPI/QPI/OPI mode */
-	device_config_cmd_type_spi2xpi,
+	DEVICE_CONFIG_CMD_TYPE_SPI2XPI,
 	/* !< Switch from DPI/QPI/OPI to SPI mode */
-	device_config_cmd_type_xpi2spi,
+	DEVICE_CONFIG_CMD_TYPE_XPI2SPI,
 	/* !< Switch to 0-4-4/0-8-8 mode */
-	device_config_cmd_type_spi2nocmd,
+	DEVICE_CONFIG_CMD_TYPE_SPI2NOCMD,
 	/* !< Reset device command */
-	device_config_cmd_type_reset,
+	DEVICE_CONFIG_CMD_TYPE_RESET,
 };
 
 typedef struct {
@@ -292,4 +292,4 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif
-#endif /* __FLASH_CONFIG__ */
+#endif /* FLASH_CONFIG_ */
