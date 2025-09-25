@@ -11,8 +11,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Blues Wireless Swan board";
 	compatible = "blues,swan-r5";
+	model = "Blues Wireless Swan board";
 
 	chosen {
 		zephyr,console = &lpuart1;
@@ -169,9 +169,9 @@ zephyr_udc0: &usbotg_fs {
 	status = "okay";
 
 	pwm2: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim2_ch1_pa0>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
@@ -189,8 +189,8 @@ zephyr_udc0: &usbotg_fs {
 
 		/* Reserve last 16KiB for property storage */
 		storage_partition: partition@1FB000 {
-			label = "storage";
 			reg = <0x001FB000 0x00004000>;
+			label = "storage";
 		};
 	};
 };
