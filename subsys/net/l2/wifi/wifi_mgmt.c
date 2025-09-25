@@ -678,7 +678,7 @@ void wifi_mgmt_raise_neighbor_rep_recv_event(struct net_if *iface, char *inbuf, 
 			LOG_INF("Maximum neighbors added to list, Skipping.");
 		}
 	} else {
-		LOG_INF("Failed to Parse Neighbor Report - Skipping entry\n");
+		LOG_INF("Failed to Parse Neighbor Report - Skipping entry");
 	}
 }
 #endif
@@ -1038,7 +1038,7 @@ static int wifi_set_twt(uint64_t mgmt_request, struct net_if *iface,
 	}
 #else
 	NET_WARN("Check for valid IP address been disabled. "
-		 "Device might be unreachable or might not receive traffic.\n");
+		 "Device might be unreachable or might not receive traffic.");
 #endif /* CONFIG_WIFI_MGMT_TWT_CHECK_IP */
 
 	if (info.link_mode < WIFI_6) {
@@ -1537,7 +1537,7 @@ static int __stored_creds_to_params(struct wifi_credentials_personal *creds,
 {
 	/* SSID */
 	if (creds->header.ssid_len > WIFI_SSID_MAX_LEN) {
-		LOG_ERR("SSID string truncated\n");
+		LOG_ERR("SSID string truncated");
 		return -EINVAL;
 	}
 
@@ -1557,7 +1557,7 @@ static int __stored_creds_to_params(struct wifi_credentials_personal *creds,
 	if (params->security == WIFI_SECURITY_TYPE_EAP_TLS) {
 		if (creds->header.key_passwd_length > 0) {
 			if (creds->header.key_passwd_length > WIFI_ENT_PSWD_MAX_LEN) {
-				LOG_ERR("key_passwd string truncated\n");
+				LOG_ERR("key_passwd string truncated");
 				return -EINVAL;
 			}
 			memcpy((uint8_t *)params->key_passwd, creds->header.key_passwd,
