@@ -228,6 +228,44 @@ extern "C" {
 /** @} */
 
 /**
+ * @brief Complete I3C DT information
+ *
+ * @param bus is the I3C bus
+ * @param addr is the target dynamic address
+ */
+struct i3c_dt_spec {
+	const struct device *bus;
+	uint8_t addr;
+};
+
+/**
+ * @brief Structure initializer for i3c_dt_spec from devicetree (on I3C bus)
+ *
+ * This helper macro expands to a static initializer for a <tt>struct
+ * i3c_dt_spec</tt> by reading the relevant bus and address data from
+ * the devicetree.
+ *
+ * @param node_id Devicetree node identifier for the I3C device whose
+ *                struct i3c_dt_spec to create an initializer for
+ */
+#define I3C_DT_SPEC_GET(node_id)                 \
+	{ \
+		.bus = DEVICE_DT_GET(DT_BUS(node_id)),  \
+		.addr = DT_PROP_OR(node_id, assigned_address, 0) \
+	}
+
+/**
+ * @brief Structure initializer for i3c_dt_spec from devicetree instance
+ *
+ * This is equivalent to
+ * <tt>I3C_DT_SPEC_GET(DT_DRV_INST(inst))</tt>.
+ *
+ * @param inst Devicetree instance number
+ */
+#define I3C_DT_SPEC_INST_GET(inst) \
+	I3C_DT_SPEC_GET(DT_DRV_INST(inst))
+
+/**
  * @brief I3C bus mode
  */
 enum i3c_bus_mode {
@@ -1232,8 +1270,8 @@ struct i3c_driver_data {
  * @param desc: an I3C device descriptor pointer updated to point to the current slot
  *	 at each iteration of the loop
  */
-#define I3C_BUS_FOR_EACH_I3CDEV(bus, desc)                                                         \
-	SYS_SLIST_FOR_EACH_CONTAINER(                                                              \
+#define I3C_BUS_FOR_EACH_I3CDEV(bus, desc)                                                      \
+	SYS_SLIST_FOR_EACH_CONTAINER(                                                           \
 		&((struct i3c_driver_data *)(bus->data))->attached_dev.devices.i3c, desc, node)
 
 /**
@@ -1243,9 +1281,23 @@ struct i3c_driver_data {
  * @param desc: an I2C device descriptor pointer updated to point to the current slot
  *	 at each iteration of the loop
  */
-#define I3C_BUS_FOR_EACH_I2CDEV(bus, desc)                                                         \
-	SYS_SLIST_FOR_EACH_CONTAINER(                                                              \
+#define I3C_BUS_FOR_EACH_I2CDEV(bus, desc)                                                      \
+	SYS_SLIST_FOR_EACH_CONTAINER(                                                           \
 		&((struct i3c_driver_data *)(bus->data))->attached_dev.devices.i2c, desc, node)
+
+/**
+ * @brief Validate that I3C bus is ready.
+ *
+ * @param spec I3C specification from devicetree
+ *
+ * @retval true if the I3C bus is ready for use.
+ * @retval false if the I3C bus is not ready for use.
+ */
+static inline bool i3c_is_ready_dt(const struct i3c_dt_spec *spec)
+{
+	/* Validate bus is ready */
+	return device_is_ready(spec->bus);
+}
 
 /**
  * @brief Find a I3C target device descriptor by ID.
@@ -1972,6 +2024,24 @@ static inline int i3c_write(struct i3c_device_desc *target,
 }
 
 /**
+ * @brief Write requested number of bytes to an I3C device.
+ *
+ * @param spec I3C specification from devicetree.
+ * @param buf Memory pool that stores the data to send.
+ * @param num_bytes Number of bytes to write.
+ *
+ * @return a value from i3c_write()
+ */
+static inline int i3c_write_dt(const struct i3c_dt_spec *spec,
+				uint8_t *buf,
+				uint32_t num_bytes)
+{
+	struct i3c_device_desc *tar_desc = i3c_dev_list_i3c_addr_find(spec->bus, spec->addr);
+
+	return i3c_write(tar_desc, buf, num_bytes);
+}
+
+/**
  * @brief Read a set amount of data from an I3C target device.
  *
  * This routine reads a set amount of data synchronously.
@@ -2061,6 +2131,27 @@ static inline int i3c_burst_read(struct i3c_device_desc *target,
 	return i3c_write_read(target,
 			      &start_addr, sizeof(start_addr),
 			      buf, num_bytes);
+}
+
+/**
+ * @brief Read requested number of bytes from
+ * an internal address of an I3C device.
+ *
+ * @param spec I3C specification from devicetree.
+ * @param start_addr Internal address from which the data is being read.
+ * @param buf Memory pool that stores the retrieved data.
+ * @param num_bytes Number of bytes to read.
+ *
+ * @return a value from i3c_write_read()
+ */
+static inline int i3c_read_dt(const struct i3c_dt_spec *spec,
+				uint8_t start_addr,
+				uint8_t *buf,
+				uint32_t num_bytes)
+{
+	struct i3c_device_desc *tar_desc = i3c_dev_list_i3c_addr_find(spec->bus, spec->addr);
+
+	return i3c_write_read(tar_desc, &start_addr, sizeof(start_addr), buf, num_bytes);
 }
 
 /**
