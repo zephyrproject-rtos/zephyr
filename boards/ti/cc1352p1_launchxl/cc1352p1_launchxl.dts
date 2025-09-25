@@ -12,6 +12,6 @@
 #include "../common/launchxl_sky13317.dtsi"
 
 / {
-	model = "TI CC1352P1 LaunchXL";
 	compatible = "ti,launchxl-cc1352p1";
+	model = "TI CC1352P1 LaunchXL";
 };

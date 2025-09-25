@@ -10,8 +10,8 @@
 #include "am243x_evm_am2434_r5f0_0-pinctrl.dtsi"
 
 / {
-	model = "TI AM243x EVM R5F Cluster 0 Core 0";
 	compatible = "ti,am243x-evm-r5f-cluster-0-core-0";
+	model = "TI AM243x EVM R5F Cluster 0 Core 0";
 
 	chosen {
 		zephyr,sram = &sram;
@@ -70,10 +70,10 @@
 };
 
 &main_uart0 {
-	status = "okay";
 	pinctrl-0 = <&main_uart0_tx &main_uart0_rx>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
+	status = "okay";
 };
 
 &mcu_gpio0 {
@@ -85,22 +85,22 @@
 &main_i2c0 {
 	pinctrl-0 = <&main_i2c0_scl &main_i2c0_sda>;
 	pinctrl-names = "default";
-	status = "okay";
 	power-domains = <&i2c0_pd>;
+	status = "okay";
 };
 
 &main_mcspi0 {
 	pinctrl-0 = <&spi0_clk &spi0_cs0 &spi0_d0 &spi0_d1>;
 	pinctrl-names = "default";
-	status = "okay";
 	power-domains = <&mcspi0_pd>;
+	status = "okay";
 };
 
 &main_adc0 {
+	power-domains = <&adc0_pd>;
 	ti,vrefp = <1800>;
 	ti,fifo = <0>;
 	status = "okay";
-	power-domains = <&adc0_pd>;
 
 	channel@0 {
 		reg = <0>;
