@@ -16,7 +16,6 @@
 
 /* QSPIC settings for the APS6404L-3SQR QSPI PSRAM memory in QPI mode. */
 &memc {
-	status = "okay";
 	is-ram;
 	dev-size = <DT_SIZE_M(64)>;
 	dev-type = <0x5D>;
@@ -40,4 +39,5 @@
 	tx-inst-mode = "quad-spi";
 	tx-addr-mode = "quad-spi";
 	tx-data-mode = "quad-spi";
+	status = "okay";
 };

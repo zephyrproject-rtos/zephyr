@@ -11,8 +11,8 @@
 #include "ek_rx261-pinctrl.dtsi"
 
 / {
-	model = "Renesas EK-RX261 KIT";
 	compatible = "renesas,ek_rx261";
+	model = "Renesas EK-RX261 KIT";
 
 	chosen {
 		zephyr,sram = &sram0;

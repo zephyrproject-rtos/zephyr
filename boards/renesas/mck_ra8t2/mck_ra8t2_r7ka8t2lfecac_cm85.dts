@@ -9,8 +9,8 @@
 #include "mck_ra8t2.dtsi"
 
 / {
-	model = "Renesas MCK-RA8T2";
 	compatible = "renesas,ra8t2", "renesas,ra8";
+	model = "Renesas MCK-RA8T2";
 
 	chosen {
 		zephyr,sram = &sram0;

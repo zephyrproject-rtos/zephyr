@@ -9,8 +9,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Renesas Starter Kit+ for RZ/N2L";
 	compatible = "renesas,rzn2l-rsk";
+	model = "Renesas Starter Kit+ for RZ/N2L";
 
 	chosen {
 		zephyr,sram = &atcm;

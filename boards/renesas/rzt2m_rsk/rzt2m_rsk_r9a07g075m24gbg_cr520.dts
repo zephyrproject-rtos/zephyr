@@ -11,8 +11,8 @@
 #include "rzt2m_rsk-pinctrl.dtsi"
 
 / {
-	model = "Renesas Starter Kit+ for RZ/T2M";
 	compatible = "renesas,rzt2m-rsk";
+	model = "Renesas Starter Kit+ for RZ/T2M";
 
 	chosen {
 		zephyr,sram = &cpu0_atcm;

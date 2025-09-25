@@ -13,8 +13,8 @@
 #include "fpb_ra6e2-pinctrl.dtsi"
 
 / {
-	model = "Renesas FPB-RA6E2";
 	compatible = "renesas,ra6e2", "renesas,ra";
+	model = "Renesas FPB-RA6E2";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -89,8 +89,8 @@
 		#size-cells = <1>;
 
 		storage_partition: partition@0 {
-			label = "storage";
 			reg = <0X0 DT_SIZE_K(4)>;
+			label = "storage";
 		};
 	};
 };
@@ -107,9 +107,9 @@
 };
 
 &adc0 {
-	status = "okay";
 	pinctrl-0 = <&adc0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &dac0 {

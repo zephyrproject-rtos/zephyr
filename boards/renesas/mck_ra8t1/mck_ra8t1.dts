@@ -11,8 +11,8 @@
 #include "mck_ra8t1-pinctrl.dtsi"
 
 / {
-	model = "Renesas MCK-RA8T1";
 	compatible = "renesas,ra8t1", "renesas,ra8";
+	model = "Renesas MCK-RA8T1";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -170,8 +170,8 @@
 		#size-cells = <1>;
 
 		storage_partition: partition@0 {
-			label = "storage";
 			reg = <0X0 DT_SIZE_K(12)>;
+			label = "storage";
 		};
 	};
 };
@@ -205,8 +205,8 @@
 
 &eth {
 	local-mac-address = [74 90 50 6D 81 75];
-	status = "okay";
 	phy-handle = <&phy>;
+	status = "okay";
 };
 
 &mdio {
@@ -222,10 +222,10 @@
 };
 
 &adc0 {
-	status = "okay";
 	pinctrl-0 = <&adc0_default>;
 	pinctrl-names = "default";
 	average-count = <4>;
+	status = "okay";
 };
 
 &dac0 {

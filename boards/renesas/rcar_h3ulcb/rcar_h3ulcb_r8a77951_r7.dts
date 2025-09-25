@@ -11,8 +11,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Renesas h3ulcb board";
 	compatible = "renesas,h3ulcb-cr7";
+	model = "Renesas h3ulcb board";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -48,8 +48,8 @@
 };
 
 &cmt0 {
-	status = "okay";
 	clock-frequency = <32000>;
+	status = "okay";
 };
 
 &gpio6 {

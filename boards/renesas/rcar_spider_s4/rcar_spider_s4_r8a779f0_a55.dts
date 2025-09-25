@@ -20,8 +20,8 @@
 	};
 
 	ram: memory@48000000 {
-		device_type = "mmio-sram";
 		reg = <0x0 0x48000000 0x0 DT_SIZE_M(512)>;
+		device_type = "mmio-sram";
 	};
 };
 
@@ -40,15 +40,15 @@
 		     &mmc_data0 &mmc_data1 &mmc_data2 &mmc_data3
 		     &mmc_data4 &mmc_data5 &mmc_data6 &mmc_data7>;
 	pinctrl-names = "default", "uhs";
+	bus-width = <8>;
+	mmc-hs200-1_8v;
+	mmc-hs400-1_8v;
+	non-removable;
+	status = "okay";
 
 	disk {
 		compatible = "zephyr,mmc-disk";
 		disk-name = "SD2";
 		status = "okay";
 	};
-	bus-width = <8>;
-	mmc-hs200-1_8v;
-	mmc-hs400-1_8v;
-	non-removable;
-	status = "okay";
 };

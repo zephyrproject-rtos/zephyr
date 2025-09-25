@@ -14,8 +14,8 @@
 #include "ek_ra6m5-pinctrl.dtsi"
 
 / {
-	model = "Renesas EK-RA6M5";
 	compatible = "renesas,ra6m5", "renesas,ra";
+	model = "Renesas EK-RA6M5";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -145,7 +145,6 @@
 };
 
 &iic1 {
-	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
 	interrupts = <91 1>, <92 1>, <93 1>, <94 1>;
@@ -153,6 +152,7 @@
 	clock-frequency = <DT_FREQ_M(1)>;
 	pinctrl-0 = <&iic1_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &spi0 {
@@ -236,9 +236,9 @@
 };
 
 &adc0 {
-	status = "okay";
 	pinctrl-0 = <&adc0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &dac0 {
@@ -272,8 +272,8 @@
 		#size-cells = <1>;
 
 		storage_partition: partition@0 {
-			label = "storage";
 			reg = <0X0 DT_SIZE_K(8)>;
+			label = "storage";
 		};
 	};
 };
@@ -306,8 +306,8 @@ arduino_spi: &spi0 {};
 
 &eth {
 	local-mac-address = [74 90 50 B0 6D 5C];
-	status = "okay";
 	phy-handle = <&phy>;
+	status = "okay";
 };
 
 &mdio {
@@ -330,9 +330,9 @@ arduino_spi: &spi0 {};
 	mx25l25645g: qspi-nor-flash@60000000 {
 		compatible = "renesas,ra-qspi-nor";
 		reg = <0x60000000 DT_SIZE_M(32)>;
-		status = "okay";
 		write-block-size = <1>;
 		erase-block-size = <4096>;
+		status = "okay";
 	};
 };
 

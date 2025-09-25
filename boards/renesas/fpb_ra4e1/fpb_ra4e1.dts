@@ -12,8 +12,8 @@
 #include "fpb_ra4e1-pinctrl.dtsi"
 
 / {
-	model = "Renesas FPB-RA4E1";
 	compatible = "renesas,ra4e1", "renesas,ra";
+	model = "Renesas FPB-RA4E1";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -105,7 +105,6 @@
 };
 
 &iic0 {
-	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
 	interrupts = <91 1>, <92 1>, <93 1>, <94 1>;
@@ -113,12 +112,13 @@
 	clock-frequency = <DT_FREQ_M(1)>;
 	pinctrl-0 = <&iic0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &adc0 {
-	status = "okay";
 	pinctrl-0 = <&adc0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &dac0 {
@@ -151,8 +151,8 @@
 		#size-cells = <1>;
 
 		storage_partition: partition@0 {
-			label = "storage";
 			reg = <0X0 DT_SIZE_K(8)>;
+			label = "storage";
 		};
 	};
 };

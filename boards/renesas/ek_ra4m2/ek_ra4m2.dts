@@ -12,8 +12,8 @@
 #include "ek_ra4m2-pinctrl.dtsi"
 
 / {
-	model = "Renesas EK-RA4M2";
 	compatible = "renesas,ra4m2", "renesas,ra";
+	model = "Renesas EK-RA4M2";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -127,9 +127,9 @@
 };
 
 &adc0 {
-	status = "okay";
 	pinctrl-0 = <&adc0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &dac0 {
@@ -174,8 +174,8 @@
 		#size-cells = <1>;
 
 		storage_partition: partition@0 {
-			label = "storage";
 			reg = <0X0 DT_SIZE_K(8)>;
+			label = "storage";
 		};
 	};
 };

@@ -19,8 +19,8 @@
 #include "ek_ra2l1-pinctrl.dtsi"
 
 / {
-	model = "Renesas EK-RA2L1";
 	compatible = "renesas,r7fa2l1abxxfp", "renesas,ra2l1";
+	model = "Renesas EK-RA2L1";
 
 	chosen {
 		zephyr,sram = &sram0;
