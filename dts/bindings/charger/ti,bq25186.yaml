@@ -1,0 +1,20 @@
+# Copyright 2024 Google LLC
+# Copyright 2025 Brett Witherspoon
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  BQ25186 I2C Controlled, 1-Cell, 1-A Linear Battery Charger with Power Path,
+  Ship Mode, Shutdown Mode, and Battery Tracking
+
+  The device has a single child node for the charger. For example:
+
+  bq25186@6a {
+    compatible = "ti,bq25186";
+    reg = <0x6a>;
+
+    constant-charge-current-max-microamp = <500000>;
+  };
+
+compatible: "ti,bq25186"
+
+include: ti,bq2518x-base.yaml

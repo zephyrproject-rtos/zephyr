@@ -3,9 +3,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config CHARGER_BQ2518X
-	bool "BQ25180 Battery Charger"
+	bool "BQ25180/BQ25186 Battery Charger"
 	default y
-	depends on DT_HAS_TI_BQ25180_ENABLED
+	depends on DT_HAS_TI_BQ25180_ENABLED || DT_HAS_TI_BQ25186_ENABLED
 	select I2C
 	help
-	  Enable BQ25180 battery charger driver.
+	  Enable BQ25180/BQ25186 battery charger driver.
