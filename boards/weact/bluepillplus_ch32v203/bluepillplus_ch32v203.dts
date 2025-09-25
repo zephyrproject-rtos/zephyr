@@ -11,8 +11,8 @@
 #include "bluepillplus_ch32v203-pinctrl.dtsi"
 
 / {
-	model = "bluepillplus_ch32v203";
 	compatible = "wch,ch32v203";
+	model = "bluepillplus_ch32v203";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -72,8 +72,8 @@
 };
 
 &usart3 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&usart3_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };

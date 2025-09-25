@@ -10,8 +10,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "WeAct Studio Black Pill STM32H523 Board";
 	compatible = "weact,blackpill-h523ce";
+	model = "WeAct Studio Black Pill STM32H523 Board";
 
 	chosen {
 		zephyr,console = &usart1;
@@ -48,28 +48,28 @@
 };
 
 &timers3 {
-	status = "okay";
 	st,prescaler = <24>;
+	status = "okay";
 
 	pwm3: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim3_ch3_pb0 &tim3_ch4_pb1>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
 &usart1 {
 	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
 	pinctrl-names = "default";
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 };
 
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 };
 
 &spi1 {
@@ -115,8 +115,8 @@ zephyr_udc0: &usb {
 };
 
 &clk_hse {
-	status = "okay";
 	clock-frequency = <DT_FREQ_M(8)>;
+	status = "okay";
 };
 
 &rcc {

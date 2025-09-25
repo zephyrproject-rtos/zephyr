@@ -10,8 +10,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "WeAct Studio STM32F446 Core Board";
 	compatible = "weact,stm32f446-core", "st,stm32f446";
+	model = "WeAct Studio STM32F446 Core Board";
 
 	chosen {
 		zephyr,console = &usart1;
@@ -90,8 +90,8 @@
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 };
 
 &spi1 {
@@ -107,13 +107,13 @@
 };
 
 &sdmmc1 {
-	status = "okay";
 	pinctrl-0 = <&sdio_d0_pc8 &sdio_d1_pc9
 		     &sdio_d2_pc10 &sdio_d3_pc11
 		     &sdio_ck_pc12 &sdio_cmd_pd2>;
 	pinctrl-names = "default";
 	cd-gpios = <&gpioa 8 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
 	disk-name = "SD";
+	status = "okay";
 };
 
 &rtc {
