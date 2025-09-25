@@ -42,8 +42,8 @@
 };
 
 &uart10 {
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 };
 
 &gpio0_0 {
