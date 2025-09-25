@@ -11,8 +11,8 @@
 #include <../boards/nordic/nrf54lm20dk/nrf54lm20dk_nrf54lm20a-pinctrl.dtsi>
 
 / {
-	model = "Nordic NRF54LM20 BSIM NRF54LM20A Application MCU";
 	compatible = "bsim,nrf54lm20-bsim-nrf54lm20a-cpuapp", "bsim,nrf54";
+	model = "Nordic NRF54LM20 BSIM NRF54LM20A Application MCU";
 
 	chosen {
 		zephyr,console = &uart20;
@@ -64,8 +64,8 @@
 	};
 
 	rng: rng {
-		status = "okay";
 		compatible = "nordic,nrf-cracen-ctrdrbg";
+		status = "okay";
 	};
 
 	psa_rng: psa-rng {
@@ -87,18 +87,18 @@
 		#size-cells = <1>;
 
 		storage_partition: partition@0 {
-			label = "storage";
 			reg = <0x0 DT_SIZE_K(500)>;
+			label = "storage";
 		};
 	};
 };
 
 &uart20 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart20_default>;
 	pinctrl-1 = <&uart20_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &uart30 {
