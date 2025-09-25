@@ -100,6 +100,8 @@ enum sensor_channel {
 	SENSOR_CHAN_PROX,
 	/** Humidity, in percent. */
 	SENSOR_CHAN_HUMIDITY,
+	/** Ambient illuminance in visible spectrum, in lux. */
+	SENSOR_CHAN_AMBIENT_LIGHT,
 	/** Illuminance in visible spectrum, in lux. */
 	SENSOR_CHAN_LIGHT,
 	/** Illuminance in infra-red spectrum, in lux. */
@@ -281,6 +283,9 @@ enum sensor_trigger_type {
 
 	/** Trigger fires when a tilt is detected. */
 	SENSOR_TRIG_TILT,
+
+	/** Trigger fires when data overflows. */
+	SENSOR_TRIG_OVERFLOW,
 
 	/**
 	 * Number of all common sensor triggers.
