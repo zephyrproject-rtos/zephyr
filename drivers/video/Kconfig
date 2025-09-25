@@ -35,6 +35,19 @@ config VIDEO_BUFFER_POOL_ALIGN
 	int "Alignment of the video pool’s buffer"
 	default 64
 
+config VIDEO_BUFFER_ZEPHYR_REGION
+	bool "Place video pool in a Zephyr memory-region"
+	help
+	  Place the video pool in a section, automatically
+	  creating from a 'zephyr,memory-region' compatible node,
+	  whose name is specified in VIDEO_BUFFER_ZEPHYR_REGION_NAME.
+
+config VIDEO_BUFFER_ZEPHYR_REGION_NAME
+	string "Name of the zephyr memory-region for video pool"
+	depends on VIDEO_BUFFER_ZEPHYR_REGION
+	help
+	  Name of the Zephyr memory-region where video pool is placed.
+
 config VIDEO_BUFFER_USE_SHARED_MULTI_HEAP
 	bool "Use shared multi heap for video buffer"
 	default n
