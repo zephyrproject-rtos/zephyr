@@ -15,8 +15,8 @@
 #include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
 
 / {
-	model = "Pine64 PineTime DevKit0";
 	compatible = "pine64,pinetime-devkit0";
+	model = "Pine64 PineTime DevKit0";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -152,21 +152,21 @@
 &uart0 {
 	compatible = "nordic,nrf-uart";
 	current-speed = <115200>;
-	status = "okay";
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &i2c0 {
 	compatible = "nordic,nrf-twim";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>; /* 400KHz */
 
 	/* BOSCH BMA421 Triaxial Acceleration Sensor (1000KHz) */
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-1 = <&i2c0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	bma421: bma421@18 {
 		compatible = "bosch,bma4xx";
@@ -191,13 +191,13 @@
 
 &spi1 {
 	compatible = "nordic,nrf-spi";
-	status = "okay";
 
 	cs-gpios = <&gpio0 5 GPIO_ACTIVE_LOW>, <&gpio0 25 GPIO_ACTIVE_LOW>;
 
 	pinctrl-0 = <&spi1_default>;
 	pinctrl-1 = <&spi1_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	xt25fb32: xt25fb32@0 {
 		compatible = "jedec,spi-nor";
@@ -213,14 +213,14 @@
 
 			/* next firmware update */
 			slot1_partition: partition@0 {
-				label = "image-1";
 				reg = <0x00000000 0x74000>;
+				label = "image-1";
 			};
 
 			/* to be used in firmware */
 			storage_partition: partition@300000 {
-				label = "storage";
 				reg = <0x00300000 0x00100000>;
+				label = "storage";
 			};
 		};
 	};
@@ -234,14 +234,14 @@
 
 		/* MCUboot bootloader */
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 0xc000>;
+			label = "mcuboot";
 		};
 
 		/* main firmware partition */
 		slot0_partition: partition@c000 {
-			label = "image-0";
 			reg = <0x0000C000 0x74000>;
+			label = "image-0";
 		};
 	};
 };
