@@ -9,8 +9,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "PIC32CM JH01 Curiosity Pro";
 	compatible = "pic32cmjh01,cpro", "microchip,pic32cm5164jh01100", "microchip,pic32cm";
+	model = "PIC32CM JH01 Curiosity Pro";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -49,8 +49,8 @@
 		#size-cells = <1>;
 
 		storage_partition: partition@7c000 {
-			label = "storage";
 			reg = <0x0007c000 0x4000>;
+			label = "storage";
 		};
 	};
 };

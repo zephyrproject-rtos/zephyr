@@ -12,8 +12,8 @@
 #include "ev11l78a-pinctrl.dtsi"
 
 / {
-	model = "Microchip EV11L78A";
 	compatible = "atmel,samd20e16", "atmel,samd20";
+	model = "Microchip EV11L78A";
 
 	aliases {
 		led0 = &cap_mis_led;
@@ -50,7 +50,6 @@
 };
 
 &sercom0 {
-	status = "okay";
 	compatible = "atmel,sam0-spi";
 	dipo = <0>;
 	dopo = <2>;
@@ -60,10 +59,10 @@
 
 	pinctrl-0 = <&sercom0_spi_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &sercom1 {
-	status = "okay";
 	compatible = "atmel,sam0-uart";
 	current-speed = <115200>;
 	rxpo = <3>;
@@ -71,10 +70,10 @@
 
 	pinctrl-0 = <&sercom1_uart_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &sercom3 {
-	status = "okay";
 	compatible = "atmel,sam0-i2c";
 	clock-frequency = <I2C_BITRATE_HIGH>;
 
@@ -83,6 +82,7 @@
 
 	pinctrl-0 = <&sercom3_i2c_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &flash0 {
@@ -97,17 +97,20 @@
 		 * if enabled.
 		 */
 		storage_partition: partition@c000 {
-			label = "storage";
 			reg = <DT_SIZE_K(64-16) DT_SIZE_K(16)>;
+			label = "storage";
 		};
 	};
 };
 
 &adc {
-	status = "okay";
 	prescaler = <32>;
 	#address-cells = <1>;
 	#size-cells = <0>;
+
+	pinctrl-0 = <&adc_default>;
+	pinctrl-names = "default";
+	status = "okay";
 
 	channel@4 {
 		reg = <4>;
@@ -118,7 +121,4 @@
 		zephyr,resolution = <12>;
 		zephyr,input-positive = <4>;
 	};
-
-	pinctrl-0 = <&adc_default>;
-	pinctrl-names = "default";
 };

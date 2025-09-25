@@ -10,8 +10,8 @@
 #include <microchip/mec5/mec1753qlj-a0-pinctrl.dtsi>
 
 / {
-	model = "Microchip MEC ASSY6941 MEC1753-QLJ evaluation board";
 	compatible = "microchip,mec_assy6941-mec1753_qlj";
+	model = "Microchip MEC ASSY6941 MEC1753-QLJ evaluation board";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -36,8 +36,8 @@
 
 &cpu0 {
 	clock-frequency = <96000000>;
-	status = "okay";
 	cpu-power-states = <&idle &suspend_to_ram>;
+	status = "okay";
 };
 
 /* Disable ARM SysTick kernel timer driver */
@@ -52,9 +52,9 @@
 
 &uart1 {
 	compatible = "microchip,mec5-uart";
-	status = "okay";
 	clock-frequency = <1843200>;
 	current-speed = <115200>;
 	pinctrl-0 = <&uart1_tx_gpio170 &uart1_rx_gpio171>;
 	pinctrl-names = "default";
+	status = "okay";
 };
