@@ -891,6 +891,17 @@ static int __arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flag
 	switch (flags & K_MEM_CACHE_MASK) {
 
 	case K_MEM_CACHE_NONE:
+		switch (flags & K_MEM_CACHE_TYPE_MASK) {
+		case K_MEM_CACHE_NONE_STRONGLY_ORDERED:
+			conv_flags |= MT_STRONGLY_ORDERED;
+			break;
+		case K_MEM_CACHE_NONE_NORMAL:
+			conv_flags |= MT_NORMAL;
+			break;
+		default:
+			conv_flags |= MT_DEVICE;
+		}
+		break;
 	default:
 		conv_flags |= MT_DEVICE;
 		break;
