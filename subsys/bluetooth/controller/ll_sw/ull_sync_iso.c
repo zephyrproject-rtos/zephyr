@@ -489,20 +489,22 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 	lll->irc = PDU_BIG_INFO_IRC_GET(bi);
 	if (lll->pto) {
 		uint8_t nse;
+		uint8_t ptc;
 
 		nse = lll->irc * lll->bn; /* 4 bits * 3 bits, total 7 bits */
 		if (nse >= lll->nse) {
 			return;
 		}
 
-		lll->ptc = lll->nse - nse;
+		ptc = lll->nse - nse;
 
 		/* FIXME: Do not remember why ptc is 4 bits, it should be 5 bits as ptc is a
 		 *        running buffer offset related to nse.
 		 *        Fix ptc and ptc_curr definitions, until then we keep an assertion check
 		 *        here.
 		 */
-		LL_ASSERT(lll->ptc <= BIT_MASK(4));
+		LL_ASSERT(ptc <= BIT_MASK(4));
+		lll->ptc = ptc;
 	} else {
 		lll->ptc = 0U;
 	}
