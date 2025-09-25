@@ -32,6 +32,41 @@ struct bt_hfp_hf;
 
 struct bt_hfp_hf_call;
 
+/* The status of the call */
+enum __packed bt_hfp_hf_call_status {
+	BT_HFP_HF_CALL_STATUS_ACTIVE = 0,       /* Call is active */
+	BT_HFP_HF_CALL_STATUS_HELD = 1,         /* Call is on hold */
+	BT_HFP_HF_CALL_STATUS_DIALING = 2,      /* Outgoing call is being dialed */
+	BT_HFP_HF_CALL_STATUS_ALERTING = 3,     /* Outgoing call is being alerted */
+	BT_HFP_HF_CALL_STATUS_INCOMING = 4,     /* Incoming call is came */
+	BT_HFP_HF_CALL_STATUS_WAITING = 5,      /* Incoming call is waiting */
+	BT_HFP_HF_CALL_STATUS_INCOMING_HELD = 6 /* Call held by Response and Hold */
+};
+
+/* The direction of the call */
+enum __packed bt_hfp_hf_call_dir {
+	BT_HFP_HF_CALL_DIR_OUTGOING = 0, /* It is a outgoing call */
+	BT_HFP_HF_CALL_DIR_INCOMING = 1, /* It is a incoming call */
+};
+
+/* The mode of the call */
+enum __packed bt_hfp_hf_call_mode {
+	BT_HFP_HF_CALL_MODE_VOICE = 0, /* Voice */
+	BT_HFP_HF_CALL_MODE_DATA = 1, /* Data */
+	BT_HFP_HF_CALL_MODE_FAX = 2, /* FAX */
+};
+
+/* The information of current call */
+struct bt_hfp_hf_current_call {
+	uint8_t index; /* index */
+	enum bt_hfp_hf_call_dir dir; /* direction */
+	enum bt_hfp_hf_call_status status; /* status */
+	enum bt_hfp_hf_call_mode mode; /* mode */
+	bool multiparty; /* multiparty */
+	const char *number; /* phone number */
+	uint8_t type; /* phone number type */
+};
+
 /** @brief HFP profile application callback */
 struct bt_hfp_hf_cb {
 	/** HF connected callback to application
@@ -416,6 +451,20 @@ struct bt_hfp_hf_cb {
 	 */
 	void (*subscriber_number)(struct bt_hfp_hf *hf, const char *number, uint8_t type,
 				  uint8_t service);
+
+	/** Query list of current calls callback
+	 *
+	 *  If this callback is provided it will be called whenever the
+	 *  result code `+CLCC: <idx>,<dir>,<status>,<mode>,<mprty>[,<number>,<type>]`
+	 *  is received from AG.
+	 *  If the request is failed or no active calls, the callback will not be called.
+	 *  If the @ref bt_hfp_hf_current_call::number is NULL, the
+	 *  @ref bt_hfp_hf_current_call::type shall be ignored.
+	 *
+	 *  @param hf HFP HF object.
+	 *  @param call Current call information.
+	 */
+	void (*query_call)(struct bt_hfp_hf *hf, struct bt_hfp_hf_current_call *call);
 };
 
 /** @brief Register HFP HF profile
@@ -951,6 +1000,18 @@ int bt_hfp_hf_enhanced_safety(struct bt_hfp_hf *hf, bool enable);
  *  @return 0 in case of success or negative value in case of error.
  */
 int bt_hfp_hf_battery(struct bt_hfp_hf *hf, uint8_t level);
+
+/** @brief Handsfree HF query list of current calls
+ *
+ *  It allows HF to query list of current calls by sending `AT+CLCC` command.
+ *  If @kconfig{CONFIG_BT_HFP_HF_ECS} is not enabled,
+ *  the error `-ENOTSUP` will be returned if the function called.
+ *
+ *  @param hf HFP HF object.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_hfp_hf_query_list_of_current_calls(struct bt_hfp_hf *hf);
 
 #ifdef __cplusplus
 }
