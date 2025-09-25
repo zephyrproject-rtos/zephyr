@@ -26,5 +26,6 @@ source "drivers/auxdisplay/Kconfig.itron"
 source "drivers/auxdisplay/Kconfig.jhd1313"
 source "drivers/auxdisplay/Kconfig.pt6314"
 source "drivers/auxdisplay/Kconfig.serlcd"
+source "drivers/auxdisplay/Kconfig.tm1637"
 
 endif # AUXDISPLAY

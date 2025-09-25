@@ -1,0 +1,34 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2025 Siratul Islam
+
+description: TM1637 7-segment LED display controller
+
+compatible: "titanmicro,tm1637"
+
+include: auxdisplay-device.yaml
+
+properties:
+  clk-gpios:
+    type: phandle-array
+    required: true
+    description: Clock GPIO pin
+
+  dio-gpios:
+    type: phandle-array
+    required: true
+    description: Data I/O GPIO pin
+
+  bit-delay-us:
+    type: int
+    default: 100
+    description: Bit delay in microseconds (default 100 µs)
+
+  columns:
+    type: int
+    default: 4
+    description: Number of digit columns (always 4 for TM1637)
+
+  rows:
+    type: int
+    default: 1
+    description: Number of rows (always 1 for TM1637)
