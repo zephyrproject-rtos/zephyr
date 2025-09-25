@@ -10,8 +10,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Atmel SAM4S Xplained Board with an Atmel SAM4S16C SoC";
 	compatible = "atmel,sam4s_xplained", "atmel,sam4s16c", "atmel,sam4s";
+	model = "Atmel SAM4S Xplained Board with an Atmel SAM4S16C SoC";
 
 	aliases {
 		i2c-0 = &twi0;
@@ -32,15 +32,15 @@
 
 	sram1: sram@60000000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
-		device_type = "memory";
 		reg = <0x60000000 DT_SIZE_K(512)>;
+		device_type = "memory";
 		zephyr,memory-region = "SRAM1";
 	};
 
 	sram2: sram@61000000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
-		device_type = "memory";
 		reg = <0x61000000 DT_SIZE_K(512)>;
+		device_type = "memory";
 		zephyr,memory-region = "SRAM2";
 	};
 
@@ -158,48 +158,43 @@
 };
 
 &twi0 {
-	status = "okay";
-
 	pinctrl-0 = <&twi0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &spi0 {
-	status = "okay";
-
 	pinctrl-0 = <&spi0_default>;
 	pinctrl-names = "default";
 
 	cs-gpios = <&pioa 31 GPIO_ACTIVE_LOW>,
 		   <&pioa 30 GPIO_ACTIVE_LOW>;
+	status = "okay";
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
 
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &uart1 {
-	status = "okay";
 	current-speed = <115200>;
 
 	pinctrl-0 = <&uart1_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &pwm0 {
-	status = "okay";
-
 	pinctrl-0 = <&pwm0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &adc0 {
-	status = "okay";
-
 	pinctrl-0 = <&adc0_default>;
 	pinctrl-names = "default";
 
@@ -207,13 +202,13 @@
 	startup-time = <64>;
 	settling-time = <3>;
 	tracking-time = <2>;
+	status = "okay";
 };
 
 &dacc {
-	status = "okay";
-
 	pinctrl-0 = <&dacc_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &wdt {
@@ -233,9 +228,9 @@ xplained4_spi: &spi0 {};
 xplained4_serial: &uart1 {};
 
 &smc {
-	status = "okay";
 	pinctrl-0 = <&smc_default>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	is66wv51216dbll@0 {
 		reg = <0>;

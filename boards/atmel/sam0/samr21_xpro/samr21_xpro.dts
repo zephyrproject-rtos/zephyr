@@ -12,8 +12,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "SAM R21 Xplained Pro";
 	compatible = "samr21,xpro", "atmel,samr21g18a", "atmel,samr21";
+	model = "SAM R21 Xplained Pro";
 
 	chosen {
 		zephyr,console = &sercom0;
@@ -122,29 +122,28 @@
 };
 
 &adc {
-	status = "okay";
 	pinctrl-0 = <&adc_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &tcc0 {
-	status = "okay";
 	compatible = "atmel,sam0-tcc-pwm";
 	prescaler = <4>;
 	#pwm-cells = <2>;
 
 	pinctrl-0 = <&pwm_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &rtc {
-	status = "okay";
 	counter-mode = "clock";
 	prescaler = <1024>;
+	status = "okay";
 };
 
 &sercom0 {
-	status = "okay";
 	compatible = "atmel,sam0-uart";
 	current-speed = <115200>;
 	rxpo = <1>;
@@ -152,10 +151,10 @@
 
 	pinctrl-0 = <&sercom0_uart_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &sercom1 {
-	status = "okay";
 	compatible = "atmel,sam0-i2c";
 	clock-frequency = <I2C_BITRATE_FAST>;
 	#address-cells = <1>;
@@ -163,10 +162,10 @@
 
 	pinctrl-0 = <&sercom1_i2c_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &sercom4 {
-	status = "okay";
 	compatible = "atmel,sam0-spi";
 	/*
 	 *	CS-PB31; MOSI-PB30; MISO-PC19; SCLK-PC18
@@ -181,6 +180,7 @@
 	pinctrl-names = "default";
 
 	cs-gpios = <&portb 31 GPIO_ACTIVE_LOW>;
+	status = "okay";
 
 	ieee802154: rf2xx@0 {
 		compatible = "atmel,rf2xx";
@@ -190,7 +190,6 @@
 		reset-gpios = <&portb 15 GPIO_ACTIVE_LOW>;
 		slptr-gpios = <&porta 20 GPIO_ACTIVE_HIGH>;
 		dig2-gpios = <&portb 17 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
-		status = "okay";
 		tx-pwr-min = [01 11]; /* -17.0 dBm */
 		tx-pwr-max = [00 04]; /*   4.0 dBm */
 		tx-pwr-table = [00 01 03 04 05 05 06 06
@@ -199,11 +198,11 @@
 				0c 0c 0d 0d 0d 0d 0d 0d
 				0d 0d 0e 0e 0e 0e 0e 0e
 				0e 0e 0e 0e 0e 0e 0f 0f];
+		status = "okay";
 	};
 };
 
 &sercom5 {
-	status = "okay";
 	compatible = "atmel,sam0-spi";
 	dipo = <0>;
 	dopo = <2>;
@@ -212,13 +211,13 @@
 
 	pinctrl-0 = <&sercom5_spi_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 zephyr_udc0: &usb0 {
-	status = "okay";
-
 	pinctrl-0 = <&usb_dc_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 ext1_spi: &sercom5 {};
@@ -243,8 +242,8 @@ ext2_i2c: &sercom1 {};
 		 * if enabled.
 		 */
 		storage_partition: partition@3c000 {
-			label = "storage";
 			reg = <0x0003c000 0x00004000>;
+			label = "storage";
 		};
 	};
 };

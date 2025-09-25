@@ -10,8 +10,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Atmel SAM4L-EK Board with an Atmel SAM4LC4C SoC";
 	compatible = "atmel,sam4l_ek";
+	model = "Atmel SAM4L-EK Board with an Atmel SAM4LC4C SoC";
 
 	aliases {
 		i2c-0 = &twim0;
@@ -51,21 +51,20 @@
 };
 
 &usart2 {
-	status = "okay";
 	current-speed = <115200>;
 
 	pinctrl-0 = <&usart2_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &spi0 {
-	status = "okay";
-
 	pinctrl-0 = <&spi0_default>;
 	pinctrl-names = "default";
 
 	cs-gpios = <&gpioa 2 GPIO_ACTIVE_LOW>,
 		   <&gpioc 0 GPIO_ACTIVE_LOW>;
+	status = "okay";
 };
 
 &tc0 {
@@ -74,8 +73,6 @@
 };
 
 &twim0 {
-	status = "okay";
-
 	pinctrl-0 = <&twi0_default>;
 	pinctrl-names = "default";
 
@@ -91,11 +88,11 @@
 	hs-data-strength-low = "0.5";
 
 	hs-master-code = <0>;
+	status = "okay";
 };
 
 zephyr_udc0: &usbc {
-	status = "okay";
-
 	pinctrl-0 = <&usbc_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };

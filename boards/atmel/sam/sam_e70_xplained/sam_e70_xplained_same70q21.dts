@@ -12,6 +12,6 @@
 #include "sam_e70_xplained-common.dtsi"
 
 / {
-	model = "Atmel SAM E70 Xplained board";
 	compatible = "atmel,sam_e70_xplained", "atmel,same70q21", "atmel,same70";
+	model = "Atmel SAM E70 Xplained board";
 };
