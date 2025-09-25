@@ -5,3 +5,4 @@ zephyr_library()
 
 zephyr_library_sources(bmi323.c)
 zephyr_library_sources_ifdef(CONFIG_BMI323_BUS_SPI bmi323_spi.c)
+zephyr_library_sources_ifdef(CONFIG_BMI323_BUS_I3C bmi323_i3c.c)
