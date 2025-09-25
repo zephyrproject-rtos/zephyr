@@ -9,8 +9,8 @@
 #include <lowrisc/opentitan_earlgrey.dtsi>
 
 / {
-	model = "OpenTitan Earlgrey";
 	compatible = "lowrisc,opentitan-earlgrey";
+	model = "OpenTitan Earlgrey";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -21,9 +21,9 @@
 };
 
 &uart0 {
-	status = "okay";
 	clock-frequency = <125000>;
 	current-speed = <7200>;
+	status = "okay";
 };
 
 &mtimer {
