@@ -212,7 +212,13 @@ static int obex_server_connect(struct bt_obex_server *server, uint16_t len, stru
 	LOG_DBG("version %u, flags %u, mopl %u", version, flags, mopl);
 
 	if (mopl < BT_OBEX_MIN_MTU) {
-		LOG_WRN("Invalid MTU length (%d < %d)", mopl, BT_OBEX_MIN_MTU);
+		LOG_WRN("Invalid MOPL (%d < %d)", mopl, BT_OBEX_MIN_MTU);
+		rsp_code = BT_OBEX_RSP_CODE_PRECON_FAIL;
+		goto failed;
+	}
+
+	if (mopl > server->obex->tx.mtu) {
+		LOG_WRN("MOPL exceeds MTU (%d > %d)", mopl, server->obex->tx.mtu);
 		rsp_code = BT_OBEX_RSP_CODE_PRECON_FAIL;
 		goto failed;
 	}
@@ -949,9 +955,15 @@ static int obex_client_connect(struct bt_obex_client *client, uint8_t rsp_code, 
 	}
 
 	if (mopl < BT_OBEX_MIN_MTU) {
-		LOG_WRN("Invalid MTU length (%d < %d)", mopl, BT_OBEX_MIN_MTU);
+		LOG_WRN("Invalid MOPL (%d < %d)", mopl, BT_OBEX_MIN_MTU);
 		goto failed;
 	}
+
+	if (mopl > client->obex->tx.mtu) {
+		LOG_WRN("MOPL exceeds MTU (%d > %d)", mopl, client->obex->tx.mtu);
+		goto failed;
+	}
+
 	client->tx.mopl = mopl;
 
 	atomic_set(&client->_state,
@@ -1374,9 +1386,9 @@ int bt_obex_server_register(struct bt_obex_server *server, const struct bt_uuid_
 		return -EINVAL;
 	}
 
-	server->rx.mopl = server->obex->rx.mtu;
+	server->rx.mopl = BT_OBEX_MIN_MTU;
 	/* Set MOPL of TX to MTU by default to avoid the OBEX connect rsp cannot be sent. */
-	server->tx.mopl = server->obex->tx.mtu;
+	server->tx.mopl = BT_OBEX_MIN_MTU;
 
 	server->uuid = uuid;
 
@@ -1485,7 +1497,7 @@ int bt_obex_connect(struct bt_obex_client *client, uint16_t mopl, struct net_buf
 
 	client->rx.mopl = mopl;
 	/* Set MOPL of TX to MTU by default to avoid the OBEX connect req cannot be sent. */
-	client->tx.mopl = client->obex->tx.mtu;
+	client->tx.mopl = BT_OBEX_MIN_MTU;
 	atomic_set(&client->_state, BT_OBEX_CONNECTING);
 
 	if (!sys_slist_find(&client->obex->_clients, &client->_node, NULL)) {
