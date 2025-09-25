@@ -174,11 +174,11 @@
 
 &i2c1 {
 	compatible = "nordic,nrf-twim";
-	status = "okay";
 
 	pinctrl-0 = <&i2c1_default>;
 	pinctrl-1 = <&i2c1_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	at24c256@50 {
 		compatible = "atmel,at24c256", "atmel,at24";
@@ -230,12 +230,12 @@
 
 &spi2 {
 	compatible = "nordic,nrf-spim";
-	status = "okay";
 	cs-gpios = <&gpio0 25 GPIO_ACTIVE_LOW>;
 
 	pinctrl-0 = <&spi2_default>;
 	pinctrl-1 = <&spi2_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	enc424j600@0 {
 		compatible = "microchip,enc424j600";
@@ -247,18 +247,18 @@
 
 &spi3 {
 	compatible = "nordic,nrf-spim";
-	status = "okay";
 	cs-gpios = <&gpio1 12 GPIO_ACTIVE_LOW>;
 
 	pinctrl-0 = <&spi3_default>;
 	pinctrl-1 = <&spi3_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	sdhc0: sdhc@0 {
-		reg = <0>;
 		compatible = "zephyr,sdhc-spi-slot";
-		status = "okay";
+		reg = <0>;
 		spi-max-frequency = <8000000>;
+		status = "okay";
 
 		mmc {
 			compatible = "zephyr,sdmmc-disk";
@@ -270,20 +270,20 @@
 
 &spi4 {
 	compatible = "nordic,nrf-spim";
-	status = "okay";
 	cs-gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
 
 	pinctrl-0 = <&spi4_default>;
 	pinctrl-1 = <&spi4_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &uart1 {
@@ -294,17 +294,17 @@
 };
 
 &pwm0 {
-	status = "okay";
 	pinctrl-0 = <&pwm0_default>;
 	pinctrl-1 = <&pwm0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &qspi {
-	status = "okay";
 	pinctrl-0 = <&qspi_default>;
 	pinctrl-1 = <&qspi_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	mx25r64: mx25r6435f@0 {
 		compatible = "nordic,qspi-nor";
@@ -334,8 +334,8 @@
 
 		/* 64K */
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 0x00010000>;
+			label = "mcuboot";
 		};
 
 		/* 640K */
@@ -358,8 +358,8 @@
 		 * if enabled. 32K
 		 */
 		storage_partition: partition@f8000 {
-			label = "storage";
 			reg = <0x000f8000 0x00008000>;
+			label = "storage";
 		};
 	};
 };
@@ -382,23 +382,23 @@
 
 		/* 128K */
 		scratch_partition: partition@e0000 {
-			label = "image-scratch";
 			reg = <0x000e0000 0x00020000>;
+			label = "image-scratch";
 		};
 
 		/* 7MB */
 		lfs_partition: partition@100000 {
-			label = "lfs_storage";
 			reg = <0x00100000 0x00700000>;
+			label = "lfs_storage";
 		};
 	};
 };
 
 / {
 	reserved-memory {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		sram0_image: image@20000000 {
 			/* Zephyr image(s) memory */

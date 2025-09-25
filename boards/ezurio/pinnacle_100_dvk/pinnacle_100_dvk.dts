@@ -11,8 +11,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Pinnacle 100 Dev Kit";
 	compatible = "ezurio,pinnacle-100-dvk";
+	model = "Pinnacle 100 Dev Kit";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -119,25 +119,24 @@
 
 &uart0 {
 	compatible = "nordic,nrf-uart";
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &uart1 {
 	compatible = "nordic,nrf-uarte";
-	status = "okay";
 	current-speed = <115200>;
 	hw-flow-control;
 	pinctrl-0 = <&uart1_default>;
 	pinctrl-1 = <&uart1_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	hl7800: hl7800 {
 		compatible = "swir,hl7800";
-		status = "okay";
 		mdm-reset-gpios = <&gpio1 15 (GPIO_OPEN_DRAIN | GPIO_ACTIVE_LOW)>;
 		mdm-wake-gpios = <&gpio1 13 (GPIO_OPEN_SOURCE | GPIO_ACTIVE_HIGH)>;
 		mdm-pwr-on-gpios = <&gpio1 2 (GPIO_OPEN_DRAIN | GPIO_ACTIVE_LOW)>;
@@ -146,21 +145,22 @@
 		mdm-uart-dsr-gpios = <&gpio0 25 0>;
 		mdm-uart-cts-gpios = <&gpio0 15 0>;
 		mdm-gpio6-gpios = <&gpio1 12 0>;
+		status = "okay";
 	};
 };
 
 &i2c0 {
 	compatible = "nordic,nrf-twi";
-	status = "okay";
 
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-1 = <&i2c0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	bme680@76 {
 		compatible = "bosch,bme680";
-		status = "okay";
 		reg = <0x76>;
+		status = "okay";
 	};
 };
 
@@ -175,17 +175,17 @@
 
 &spi1 {
 	compatible = "nordic,nrf-spi";
-	status = "okay";
 	pinctrl-0 = <&spi1_default>;
 	pinctrl-1 = <&spi1_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &qspi {
-	status = "okay";
 	pinctrl-0 = <&qspi_default>;
 	pinctrl-1 = <&qspi_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	mx25r64: mx25r6435f@0 {
 		compatible = "nordic,qspi-nor";
@@ -213,14 +213,14 @@
 
 		/* 96K */
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 0x00018000>;
+			label = "mcuboot";
 		};
 
 		/* 896K */
 		slot0_partition: partition@18000 {
-			label = "image-0";
 			reg = <0x00018000 0x000E0000>;
+			label = "image-0";
 		};
 
 		/*
@@ -233,8 +233,8 @@
 		 * if enabled. 32K
 		 */
 		storage_partition: partition@f8000 {
-			label = "storage";
 			reg = <0x000f8000 0x00008000>;
+			label = "storage";
 		};
 	};
 };
@@ -247,20 +247,20 @@
 
 		/* 896K */
 		slot1_partition: partition@0 {
-			label = "image-1";
 			reg = <0x00000000 0x000E0000>;
+			label = "image-1";
 		};
 
 		/* 128K */
 		scratch_partition: partition@E0000 {
-			label = "image-scratch";
 			reg = <0x000E0000 0x00020000>;
+			label = "image-scratch";
 		};
 
 		/* 7MB */
 		lfs_partition: partition@100000 {
-			label = "lfs_storage";
 			reg = <0x00100000 0x00700000>;
+			label = "lfs_storage";
 		};
 	};
 };

@@ -11,8 +11,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Ezurio RM1XX_DVK";
 	compatible = "ezurio,rm1xx_dvk";
+	model = "Ezurio RM1XX_DVK";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -52,10 +52,10 @@
 
 &i2c0 {
 	compatible = "nordic,nrf-twi";
-	status = "okay";
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-1 = <&i2c0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 /* SPI0 cannot be used with I2C0 */
@@ -70,13 +70,13 @@
 
 &spi1 {
 	compatible = "nordic,nrf-spi";
-	status = "okay";
 	cs-gpios = <&gpio0 2 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>,
 		   <&gpio0 8 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 
 	pinctrl-0 = <&spi1_default>;
 	pinctrl-1 = <&spi1_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	at25: at25df041b@0 {
 		compatible = "jedec,spi-nor";
@@ -109,10 +109,10 @@
 &uart0 {
 	compatible = "nordic,nrf-uart";
 	current-speed = <115200>;
-	status = "okay";
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &flash0 {
@@ -123,14 +123,14 @@
 
 		/* 52K */
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 0x0000C000>;
+			label = "mcuboot";
 		};
 
 		/* 188K */
 		slot0_partition: partition@c000 {
-			label = "image-0";
 			reg = <0x0000C000 0x00030000>;
+			label = "image-0";
 		};
 
 		/*
@@ -138,8 +138,8 @@
 		 * if enabled. 16KB
 		 */
 		storage_partition: partition@3c000 {
-			label = "storage";
 			reg = <0x0003C000 0x00004000>;
+			label = "storage";
 		};
 	};
 };
@@ -154,8 +154,8 @@
 
 		/* 68K */
 		lfs_partition: partition@30000 {
-			label = "lfs_storage";
 			reg = <0x00030000 0x00010000>;
+			label = "lfs_storage";
 		};
 	};
 };

@@ -11,8 +11,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Ezurio BL654 Sensor Board";
 	compatible = "ezurio,bl654-sensor-board";
+	model = "Ezurio BL654 Sensor Board";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -82,32 +82,32 @@
 &uart0 {
 	compatible = "nordic,nrf-uart";
 	current-speed = <115200>;
-	status = "okay";
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &i2c0 {
 	compatible = "nordic,nrf-twi";
-	status = "okay";
 
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-1 = <&i2c0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	bme280@76 {
 		compatible = "bosch,bme280";
-		status = "okay";
 		reg = <0x76>;
+		status = "okay";
 	};
 };
 
 &pwm0 {
-	status = "okay";
 	pinctrl-0 = <&pwm0_default>;
 	pinctrl-1 = <&pwm0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &ieee802154 {
@@ -121,23 +121,23 @@
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 0x00010000>;
+			label = "mcuboot";
 		};
 
 		slot0_partition: partition@10000 {
-			label = "image-0";
 			reg = <0x00010000 0x00070000>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@80000 {
-			label = "image-1";
 			reg = <0x00080000 0x00070000>;
+			label = "image-1";
 		};
 
 		scratch_partition: partition@f0000 {
-			label = "image-scratch";
 			reg = <0x000f0000 0x00008000>;
+			label = "image-scratch";
 		};
 
 		/*
@@ -150,8 +150,8 @@
 		 * if enabled.
 		 */
 		storage_partition: partition@f8000 {
-			label = "storage";
 			reg = <0x000f8000 0x00008000>;
+			label = "storage";
 		};
 	};
 };
