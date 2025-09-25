@@ -11,8 +11,8 @@
 #include "pico_pi-pinctrl.dtsi"
 
 / {
-	model = "Pico-Pi IMX7D board";
 	compatible = "nxp,mcimx7d_m4";
+	model = "Pico-Pi IMX7D board";
 
 	aliases {
 		uart-6 = &uart6;
@@ -37,11 +37,11 @@
 };
 
 &uart6 {
-	status = "okay";
 	current-speed = <115200>;
 	modem-mode = <0>;
 	pinctrl-0 = <&uart6_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &i2c1 {
