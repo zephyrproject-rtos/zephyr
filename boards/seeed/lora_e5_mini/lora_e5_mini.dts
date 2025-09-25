@@ -9,8 +9,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Seeed Studio LoRa-E5 mini";
 	compatible = "seeed,lora-e5-mini";
+	model = "Seeed Studio LoRa-E5 mini";
 
 	chosen {
 		zephyr,console = &usart1;
@@ -48,9 +48,9 @@
 };
 
 stm32_lp_tick_source: &lptim1 {
-	status = "okay";
 	clocks = <&rcc STM32_CLOCK(APB1, 31)>,
 		 <&rcc STM32_SRC_LSI LPTIM1_SEL(1)>;
+	status = "okay";
 };
 
 &clk_lsi {
@@ -58,8 +58,8 @@ stm32_lp_tick_source: &lptim1 {
 };
 
 &clk_msi {
-	status = "okay";
 	msi-range = <11>;
+	status = "okay";
 };
 
 &rcc {
@@ -81,8 +81,8 @@ stm32_lp_tick_source: &lptim1 {
 &i2c2 {
 	pinctrl-0 = <&i2c2_scl_pb15 &i2c2_sda_pa15>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 };
 
 &rtc {
@@ -106,24 +106,24 @@ stm32_lp_tick_source: &lptim1 {
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(48)>;
+			label = "mcuboot";
 		};
 
 		slot0_partition: partition@c000 {
-			label = "image-0";
 			reg = <0x0000c000 DT_SIZE_K(96)>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@24000 {
-			label = "image-1";
 			reg = <0x00024000 DT_SIZE_K(96)>;
+			label = "image-1";
 		};
 
 		/* 16KB (8x2kB pages) of storage at the end of the flash */
 		storage_partition: partition@3c000 {
-			label = "storage";
 			reg = <0x0003c000 DT_SIZE_K(16)>;
+			label = "storage";
 		};
 	};
 };

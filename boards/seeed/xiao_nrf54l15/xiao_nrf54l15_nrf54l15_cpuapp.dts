@@ -8,8 +8,8 @@
 #include "xiao_nrf54l15_common.dtsi"
 
 / {
-	model = "Seeed XIAO nRF54L15";
 	compatible = "seeed,xiao-nrf54l15-cpuapp";
+	model = "Seeed XIAO nRF54L15";
 
 	pdm_imu_pwr: pdm-imu-pwr {
 		compatible = "regulator-fixed";
@@ -134,8 +134,8 @@ dmic_dev: &pdm20 {
 };
 
 &vregmain {
-	status = "okay";
 	regulator-initial-mode = <NRF5X_REG_MODE_DCDC>;
+	status = "okay";
 };
 
 &lfxo {
