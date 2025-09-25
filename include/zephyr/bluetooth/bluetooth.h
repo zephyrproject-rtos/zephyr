@@ -694,18 +694,6 @@ enum bt_le_adv_opt {
 	/**
 	 * @internal
 	 *
-	 * Internal access to the deprecated value to maintain the
-	 * implementation of the deprecated feature.
-	 *
-	 * At the end of the deprecation period, ABI will change so
-	 * `BT_LE_ADV_OPT_CONN` is just `BIT(0)`, removing the need for this
-	 * symbol.
-	 */
-	_BT_LE_ADV_OPT_CONNECTABLE = BIT(0),
-
-	/**
-	 * @internal
-	 *
 	 * Internal access to the deprecated value to maintain
 	 * the implementation of the deprecated feature.
 	 */
