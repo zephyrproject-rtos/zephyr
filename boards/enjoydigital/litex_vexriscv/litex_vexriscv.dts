@@ -9,8 +9,8 @@
 #include <riscv32-litex-vexriscv.dtsi>
 
 / {
-	model = "LiteX VexRiscV";
 	compatible = "litex,vexriscv";
+	model = "LiteX VexRiscV";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -23,8 +23,8 @@
 	};
 
 	ram0: memory@40000000 {
-		device_type = "memory";
 		reg = <0x40000000 0x10000000>;
+		device_type = "memory";
 	};
 };
 
@@ -33,8 +33,8 @@
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 };
 
 &timer0 {
