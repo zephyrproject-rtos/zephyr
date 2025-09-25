@@ -67,9 +67,8 @@
 
 		st7789v_tft: st7789v_tft@0 {
 			compatible = "sitronix,st7789v";
-			power-domains = <&disp_pwr>;
-			status = "okay";
 			reg = <0>;
+			power-domains = <&disp_pwr>;
 			mipi-max-frequency = <DT_FREQ_M(2)>;
 			width = <135>;
 			height = <240>;
@@ -91,6 +90,7 @@
 			ram-param = [00 F0];
 			rgb-param = [40 02 14];
 			mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
+			status = "okay";
 		};
 	};
 
@@ -124,38 +124,38 @@
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &i2c0 {
-	status = "okay";
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-1 = <&i2c0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &pwm0 {
-	status = "okay";
 	pinctrl-0 = <&pwm0_default>;
 	pinctrl-1 = <&pwm0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &spi2 {
-	status = "okay";
 	pinctrl-0 = <&spi2_default>;
 	pinctrl-1 = <&spi2_sleep>;
 	pinctrl-names = "default", "sleep";
 	cs-gpios = <&gpio1 1 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+	status = "okay";
 
 	lora0: lora@0 {
 		compatible = "semtech,sx1262";
-		label = "sx1262";
 		reg = <0>;
+		label = "sx1262";
 		reset-gpios = <&gpio1 6 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 		busy-gpios = <&gpio1 4 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
 		rx-enable-gpios = <&gpio0 25 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
@@ -168,11 +168,11 @@
 };
 
 &spi3 {
-	status = "okay";
 	pinctrl-0 = <&spi3_default>;
 	pinctrl-1 = <&spi3_sleep>;
 	pinctrl-names = "default", "sleep";
 	cs-gpios = <&gpio0 12 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+	status = "okay";
 };
 
 &reg0 {
