@@ -10,8 +10,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Nordic Thingy53 NRF5340 Network";
 	compatible = "nordic,thingy53-nrf5340-cpunet";
+	model = "Nordic Thingy53 NRF5340 Network";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -112,26 +112,26 @@
 
 &uart0 {
 	compatible = "nordic,nrf-uarte";
-	status = "disabled";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "disabled";
 };
 
 /* Disabled by default as shares same GPIO lines as SPI peripherals on application core */
 fem_spi: &spi0 {
-	status = "disabled";
 	cs-gpios = <&gpio0 24 GPIO_ACTIVE_LOW>;
 	pinctrl-0 = <&spi0_default>;
 	pinctrl-1 = <&spi0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "disabled";
 
 	nrf_radio_fem_spi: nrf21540_fem_spi@0 {
 		compatible = "nordic,nrf21540-fem-spi";
-		status = "disabled";
 		reg = <0>;
 		spi-max-frequency = <8000000>;
+		status = "disabled";
 	};
 };
 
@@ -147,23 +147,23 @@ fem_spi: &spi0 {
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 0xc000>;
+			label = "mcuboot";
 		};
 
 		slot0_partition: partition@c000 {
-			label = "image-0";
 			reg = <0x0000C000 0x17000>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@23000 {
-			label = "image-1";
 			reg = <0x00023000 0x17000>;
+			label = "image-1";
 		};
 
 		storage_partition: partition@3a000 {
-			label = "storage";
 			reg = <0x0003a000 0x6000>;
+			label = "storage";
 		};
 	};
 };

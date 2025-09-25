@@ -8,8 +8,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Nordic nRF9160 DK NRF9160";
 	compatible = "nordic,nrf9160-dk-nrf9160";
+	model = "Nordic nRF9160 DK NRF9160";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -102,12 +102,12 @@
 
 	nrf52840_reset: gpio-reset {
 		compatible = "nordic,nrf9160dk-nrf52840-reset";
-		status = "disabled";
 		/*
 		 * This line is specified as active high for compatibility
 		 * with the previously used Kconfig-based configuration.
 		 */
 		gpios = <&interface_to_nrf52840 5 GPIO_ACTIVE_HIGH>;
+		status = "disabled";
 	};
 
 	arduino_header: connector {
@@ -180,19 +180,19 @@
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 arduino_serial: &uart1 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart1_default>;
 	pinctrl-1 = <&uart1_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &uart2 {
@@ -203,26 +203,26 @@ arduino_serial: &uart1 {
 
 arduino_i2c: &i2c2 {
 	compatible = "nordic,nrf-twim";
-	status = "okay";
 	pinctrl-0 = <&i2c2_default>;
 	pinctrl-1 = <&i2c2_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &pwm0 {
-	status = "okay";
 	pinctrl-0 = <&pwm0_default>;
 	pinctrl-1 = <&pwm0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 arduino_spi: &spi3 {
 	compatible = "nordic,nrf-spim";
-	status = "okay";
 	cs-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>; /* D10 */
 	pinctrl-0 = <&spi3_default>;
 	pinctrl-1 = <&spi3_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 /* Include default memory partition configuration file */

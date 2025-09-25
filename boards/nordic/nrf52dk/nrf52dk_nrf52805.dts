@@ -10,8 +10,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Nordic nRF52 DK NRF52805";
 	compatible = "nordic,nrf52-dk-nrf52805";
+	model = "Nordic nRF52 DK NRF52805";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -114,27 +114,27 @@
 
 &i2c0 {
 	compatible = "nordic,nrf-twi";
-	status = "okay";
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-1 = <&i2c0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &spi0 {
 	compatible = "nordic,nrf-spi";
-	status = "okay";
 	pinctrl-0 = <&spi0_default>;
 	pinctrl-1 = <&spi0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &uart0 {
 	compatible = "nordic,nrf-uarte";
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &flash0 {
@@ -144,23 +144,23 @@
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 0xc000>;
+			label = "mcuboot";
 		};
 
 		slot0_partition: partition@c000 {
-			label = "image-0";
 			reg = <0x0000C000 0xe000>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@1a000 {
-			label = "image-1";
 			reg = <0x0001a000 0xe000>;
+			label = "image-1";
 		};
 
 		storage_partition: partition@28000 {
-			label = "storage";
 			reg = <0x00028000 0x00008000>;
+			label = "storage";
 		};
 	};
 };

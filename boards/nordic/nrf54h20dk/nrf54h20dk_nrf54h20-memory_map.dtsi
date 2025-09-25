@@ -78,10 +78,10 @@
 		dma_fast_region: memory@2f89c000 {
 			compatible = "zephyr,memory-region";
 			reg = <0x2f89c000 DT_SIZE_K(16)>;
-			status = "disabled";
 			#memory-region-cells = <0>;
 			zephyr,memory-region = "DMA_RAM21";
 			zephyr,memory-attr = <(DT_MEM_DMA | DT_MEM_CACHEABLE)>;
+			status = "disabled";
 		};
 
 		cpuppr_code_data: memory@2fc00000 {
@@ -99,28 +99,28 @@
 		cpuapp_dma_region: memory@2fc12000 {
 			compatible = "zephyr,memory-region";
 			reg = <0x2fc12000 DT_SIZE_K(4)>;
-			status = "disabled";
 			#memory-region-cells = <0>;
 			zephyr,memory-region = "DMA_RAM3x_APP";
 			zephyr,memory-attr = <DT_MEM_DMA>;
+			status = "disabled";
 		};
 
 		cpurad_dma_region: memory@2fc13000 {
 			compatible = "zephyr,memory-region";
 			reg = <0x2fc13000 DT_SIZE_K(1)>;
-			status = "disabled";
 			#memory-region-cells = <0>;
 			zephyr,memory-region = "DMA_RAM3x_RAD";
 			zephyr,memory-attr = <DT_MEM_DMA>;
+			status = "disabled";
 		};
 
 		xip_region: memory@60000000 {
 			compatible = "nordic,owned-memory";
 			reg = <0x60000000 0x20000000>;
-			status = "disabled";
+			ranges = <0x0 0x60000000 0x20000000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x0 0x60000000 0x20000000>;
+			status = "disabled";
 		};
 	};
 };
