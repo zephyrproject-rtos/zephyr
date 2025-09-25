@@ -28,9 +28,9 @@
 		#size-cells = <0>;
 
 		cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-m85";
 			reg = <0>;
+			device_type = "cpu";
 			#address-cells = <1>;
 			#size-cells = <1>;
 
@@ -69,15 +69,9 @@
 	};
 
 	reserved-memory {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
-
-		/* The memory regions defined below must match what the TF-M
-		 * project has defined for that board - a single image boot is
-		 * assumed. Please see the memory layout in:
-		 * https://git.trustedfirmware.org/TF-M/trusted-firmware-m.git/tree/platform/ext/target/mps4/corstone320/common/partition/flash_layout.h
-		 */
 
 		code: memory@28080000 {
 			reg = <0x28080000 DT_SIZE_K(512)>;
@@ -86,13 +80,19 @@
 		ram: memory@21020000 {
 			reg = <0x21020000 DT_SIZE_M(1)>;
 		};
+
+		/* The memory regions defined below must match what the TF-M
+		 * project has defined for that board - a single image boot is
+		 * assumed. Please see the memory layout in:
+		 * https://git.trustedfirmware.org/TF-M/trusted-firmware-m.git/tree/platform/ext/target/mps4/corstone320/common/partition/flash_layout.h
+		 */
 	};
 
 	soc {
 		peripheral@40000000 {
+			ranges = <0x0 0x40000000 0x10000000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x0 0x40000000 0x10000000>;
 
 			#include "mps4_common_soc_peripheral.dtsi"
 		};

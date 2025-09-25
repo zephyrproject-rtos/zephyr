@@ -67,9 +67,9 @@
 		#size-cells = <0>;
 
 		cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-m33";
 			reg = <0>;
+			device_type = "cpu";
 			#address-cells = <1>;
 			#size-cells = <1>;
 
@@ -102,15 +102,15 @@
 	};
 
 	psram: memory@80000000 {
+		reg = <0x80000000 DT_SIZE_M(16)>;
 		/* Table 3-6, row 1. */
 		device_type = "memory";
-		reg = <0x80000000 DT_SIZE_M(16)>;
 	};
 
 	reserved-memory {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		/* This code memory region must match what the TF-M
 		 * project has defined for that board - a single image boot is
@@ -135,9 +135,9 @@
 
 	soc {
 		peripheral@40000000 {
+			ranges = <0x0 0x40000000 0x10000000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x0 0x40000000 0x10000000>;
 
 			#include "mps2_an521-common.dtsi"
 		};
