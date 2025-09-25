@@ -9,6 +9,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <errno.h>
 
 #include <zephyr/device.h>
 #include <zephyr/pm/state.h>
@@ -94,6 +95,23 @@ const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks);
 #define PM_ALL_SUBSTATES (UINT8_MAX)
 
 #if defined(CONFIG_PM) || defined(__DOXYGEN__)
+
+/** @brief Get power state ID.
+ *
+ * Power state ID can be used in pm_policy_state_by_id_lock_get and pm_policy_state_by_id_lock_put.
+ *
+ * @retval non-negative power state ID.
+ * @retval -ENOSYS if power state is not found or PM is disabled.
+ */
+int pm_policy_state_id_get(enum pm_state state, uint8_t substate_id);
+
+/**
+ * @brief Increase a power state lock counter using power state ID.
+ *
+ * See pm_policy_state_lock_get.
+ */
+void pm_policy_state_by_id_lock_get(int id);
+
 /**
  * @brief Increase a power state lock counter.
  *
@@ -112,7 +130,21 @@ const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks);
  *
  * @see pm_policy_state_lock_put()
  */
-void pm_policy_state_lock_get(enum pm_state state, uint8_t substate_id);
+static inline void pm_policy_state_lock_get(enum pm_state state, uint8_t substate_id)
+{
+	int id = pm_policy_state_id_get(state, substate_id);
+
+	if (id >= 0) {
+		pm_policy_state_by_id_lock_get(id);
+	}
+}
+
+/**
+ * @brief Decrease a power state lock counter using power state ID.
+ *
+ * See pm_policy_state_lock_put.
+ */
+void pm_policy_state_by_id_lock_put(int id);
 
 /**
  * @brief Decrease a power state lock counter.
@@ -123,7 +155,14 @@ void pm_policy_state_lock_get(enum pm_state state, uint8_t substate_id);
  *
  * @see pm_policy_state_lock_get()
  */
-void pm_policy_state_lock_put(enum pm_state state, uint8_t substate_id);
+static inline void pm_policy_state_lock_put(enum pm_state state, uint8_t substate_id)
+{
+	int id = pm_policy_state_id_get(state, substate_id);
+
+	if (id >= 0) {
+		pm_policy_state_by_id_lock_put(id);
+	}
+}
 
 /**
  * @brief Check if a power state lock is active (not allowed).
@@ -232,10 +271,25 @@ bool pm_policy_device_is_disabling_state(const struct device *dev,
 int64_t pm_policy_next_event_ticks(void);
 
 #else
+static inline int pm_policy_state_id_get(enum pm_state state, uint8_t substate_id)
+{
+	return -ENOSYS;
+}
+
+static inline void pm_policy_state_by_id_lock_get(int id)
+{
+	ARG_UNUSED(id);
+}
+
 static inline void pm_policy_state_lock_get(enum pm_state state, uint8_t substate_id)
 {
 	ARG_UNUSED(state);
 	ARG_UNUSED(substate_id);
+}
+
+static inline void pm_policy_state_by_id_lock_put(int id)
+{
+	ARG_UNUSED(id);
 }
 
 static inline void pm_policy_state_lock_put(enum pm_state state, uint8_t substate_id)
