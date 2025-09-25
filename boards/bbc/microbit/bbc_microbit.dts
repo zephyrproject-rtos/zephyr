@@ -10,8 +10,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "BBC Micro:bit";
 	compatible = "bbc,microbit";
+	model = "BBC Micro:bit";
 
 	/* These aliases are provided for compatibility with samples */
 	aliases {
@@ -51,7 +51,6 @@
 
 	led_matrix: led_matrix {
 		compatible = "nordic,nrf-led-matrix";
-		status = "okay";
 		width = <5>;
 		height = <5>;
 		pixel-mapping = [00 13 01 14 02
@@ -74,6 +73,7 @@
 		refresh-frequency = <50>;
 		timer = <&timer2>;
 		pixel-group-size = <3>;
+		status = "okay";
 	};
 
 	edge_connector: connector {
@@ -109,55 +109,55 @@
 };
 
 &gpio0 {
-	status = "okay";
 	/*
 	 * Use the sensing mechanism for all pins by default, as GPIOTE channels
 	 * are needed for the LED matrix and the SW PWM.
 	 */
 	sense-edge-mask = <0xffffffff>;
+	status = "okay";
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &i2c0 {
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
-
-	/* See https://tech.microbit.org/hardware/i2c/ for board variants */
 
 	/* v1.3 MMA8653FC (= FXOS8700) + MAG3110 */
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-1 = <&i2c0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	mma8653fc: mma8653fc@1d {
 		compatible = "nxp,fxos8700", "nxp,mma8653fc";
-		status = "okay";
 		reg = <0x1d>;
 		int1-gpios = <&gpio0 28 GPIO_ACTIVE_LOW>;
 		int2-gpios = <&gpio0 27 GPIO_ACTIVE_LOW>;
+		status = "okay";
 	};
 
 	/* v1.5 variant 1 LSM303AGR */
 	lsm303agr_magn: lsm303agr-magn@1e {
 		compatible = "st,lis2mdl", "st,lsm303agr-magn";
-		status = "disabled";
 		reg = <0x1e>;
 		irq-gpios = <&gpio0 27 GPIO_ACTIVE_HIGH>;	/* A3 */
+		status = "disabled";
 	};
 
 	lsm303agr_accel: lsm303agr-accel@19 {
 		compatible = "st,lis2dh", "st,lsm303agr-accel";
-		status = "disabled";
 		reg = <0x19>;
 		irq-gpios = <&gpio0 28 GPIO_ACTIVE_HIGH>;
+		status = "disabled";
 	};
+
+	/* See https://tech.microbit.org/hardware/i2c/ for board variants */
 };
 
 &flash0 {
@@ -167,28 +167,28 @@
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 0x8000>;
+			label = "mcuboot";
 		};
 
 		slot0_partition: partition@8000 {
-			label = "image-0";
 			reg = <0x00008000 0x1a000>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@22000 {
-			label = "image-1";
 			reg = <0x00022000 0x1a000>;
+			label = "image-1";
 		};
 
 		scratch_partition: partition@3c000 {
-			label = "image-scratch";
 			reg = <0x0003c000 0x2000>;
+			label = "image-scratch";
 		};
 
 		storage_partition: partition@3e000 {
-			label = "storage";
 			reg = <0x0003e000 0x00002000>;
+			label = "storage";
 		};
 	};
 };

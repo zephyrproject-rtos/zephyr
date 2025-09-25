@@ -10,8 +10,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "BBC Micro:bit V2";
 	compatible = "bbc,microbit-v2";
+	model = "BBC Micro:bit V2";
 
 	/* These aliases are provided for compatibility with samples */
 	aliases {
@@ -51,7 +51,6 @@
 
 	led_matrix: led_matrix {
 		compatible = "nordic,nrf-led-matrix";
-		status = "okay";
 		width = <5>;
 		height = <5>;
 		pixel-mapping = [00 01 02 03 04
@@ -73,6 +72,7 @@
 		timer = <&timer4>;
 		pwm = <&pwm0>;
 		pixel-group-size = <4>;
+		status = "okay";
 	};
 
 	edge_connector: connector {
@@ -115,46 +115,46 @@
 };
 
 &pwm1 {
-	/* buzzer */
-	status = "okay";
 	pinctrl-0 = <&pwm1_default>;
 	pinctrl-1 = <&pwm1_sleep>;
 	pinctrl-names = "default", "sleep";
+	/* buzzer */
+	status = "okay";
 };
 
 &uart0 {
 	compatible = "nordic,nrf-uart";
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &i2c0 {
 	compatible = "nordic,nrf-twim";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
-
-	/* See https://tech.microbit.org/hardware/i2c/ for board variants */
 
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-1 = <&i2c0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	lsm303agr_magn: lsm303agr-magn@1e {
 		compatible = "st,lis2mdl", "st,lsm303agr-magn";
-		status = "okay";
 		reg = <0x1e>;
 		irq-gpios = <&gpio0 25 GPIO_ACTIVE_HIGH>;	/* A3 */
+		status = "okay";
 	};
 
 	lsm303agr_accel: lsm303agr-accel@19 {
 		compatible = "st,lis2dh", "st,lsm303agr-accel";
-		status = "okay";
 		reg = <0x19>;
 		irq-gpios = <&gpio0 25 GPIO_ACTIVE_HIGH>;
+		status = "okay";
 	};
+
+	/* See https://tech.microbit.org/hardware/i2c/ for board variants */
 };
 
 &flash0 {
@@ -164,28 +164,28 @@
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 0xC000>;
+			label = "mcuboot";
 		};
 
 		slot0_partition: partition@c000 {
-			label = "image-0";
 			reg = <0x0000C000 0x32000>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@3e000 {
-			label = "image-1";
 			reg = <0x0003E000 0x32000>;
+			label = "image-1";
 		};
 
 		scratch_partition: partition@70000 {
-			label = "image-scratch";
 			reg = <0x00070000 0xA000>;
+			label = "image-scratch";
 		};
 
 		storage_partition: partition@7a000 {
-			label = "storage";
 			reg = <0x0007A000 0x00006000>;
+			label = "storage";
 		};
 	};
 };
