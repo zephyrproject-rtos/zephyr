@@ -10,6 +10,6 @@
 #include "longan_nano-common.dtsi"
 
 / {
-	model = "Sipeed Longan Nano Lite";
 	compatible = "sipeed,longan_nano_lite";
+	model = "Sipeed Longan Nano Lite";
 };
