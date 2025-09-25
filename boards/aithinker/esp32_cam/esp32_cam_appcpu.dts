@@ -9,8 +9,8 @@
 #include <espressif/partitions_0x1000_amp.dtsi>
 
 / {
-	model = "Ai-Thinker ESP32-CAM APPCPU";
 	compatible = "aithinker,esp32-cam";
+	model = "Ai-Thinker ESP32-CAM APPCPU";
 
 	chosen {
 		zephyr,sram = &sram1;

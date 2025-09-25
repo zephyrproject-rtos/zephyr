@@ -10,8 +10,8 @@
 #include "ai_m62_12f-pinctrl.dtsi"
 
 / {
-	model = "Ai-Thinker M62-12F development board";
 	compatible = "bflb,bl616";
+	model = "Ai-Thinker M62-12F development board";
 
 	chosen {
 		zephyr,flash = &flash0;
@@ -83,26 +83,26 @@
 			#size-cells = <1>;
 
 			slot0_partition: partition@0 {
-				label = "image-0";
 				reg = <0x00000000 0x00100000>;
+				label = "image-0";
 				read-only;
 			};
 
 			storage_partition: partition@100000 {
-				label = "storage";
 				reg = <0x00100000 (0x300000 - 0x2000)>;
+				label = "storage";
 			};
 		};
 	};
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
 
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &gpio0 {
