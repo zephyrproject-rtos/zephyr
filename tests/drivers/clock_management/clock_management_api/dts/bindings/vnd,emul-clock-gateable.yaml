@@ -1,0 +1,16 @@
+# Copyright (c) 2025, Tenstorrent AI ULC
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Binding for emulated clock gate node. This clock node simply can be turned on
+  and off, and is used within the API test to verify the framework functions
+  correctly.
+
+compatible: "vnd,emul-clock-gateable"
+
+include: [clock-node.yaml]
+
+properties:
+  "#clock-cells":
+    const: 0
