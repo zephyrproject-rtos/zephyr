@@ -17,8 +17,8 @@
 
 / {
 	ddr0: memory@DDR_ADDR {
-		device_type = "memory";
 		reg = <DT_ADDR(DDR_ADDR) DDR_SIZE>;
+		device_type = "memory";
 	};
 
 	chosen {

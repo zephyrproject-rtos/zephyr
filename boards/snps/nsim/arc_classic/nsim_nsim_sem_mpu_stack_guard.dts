@@ -12,6 +12,6 @@
 #include "nsim_em-sec.dtsi"
 
 / {
-	model = "snps,nsim_sem";
 	compatible = "snps,nsim_sem";
+	model = "snps,nsim_sem";
 };

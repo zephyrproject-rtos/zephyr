@@ -9,6 +9,6 @@
 #include "hsdk.dtsi"
 
 / {
-	model = "hsdk";
 	compatible = "snps,hsdk";
+	model = "hsdk";
 };
