@@ -23,6 +23,10 @@ config NUMBER_OF_PASSES
 	int "Number of passes"
 	default 5
 
+config ADC_CALIBRATE_REQUIRED
+	bool "Require calibrate field in ADC test"
+	default y if DT_HAS_RENESAS_RA_ADC_ENABLED
+
 if DAC_SOURCE_TEST
 
 config DAC_BUFFER_NOT_SUPPORTED
