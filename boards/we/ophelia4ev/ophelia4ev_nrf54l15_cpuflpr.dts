@@ -9,8 +9,8 @@
 #include "ophelia4ev_common.dtsi"
 
 / {
-	model = "Ophelia-IV EV FLPR MCU";
 	compatible = "we,ophelia4ev_nrf54l15-cpuflpr";
+	model = "Ophelia-IV EV FLPR MCU";
 
 	chosen {
 		zephyr,console = &uart30;
@@ -22,12 +22,12 @@
 };
 
 &cpuflpr_sram {
-	status = "okay";
 
 	/* size must be increased due to booting from SRAM */
 	reg = <0x20028000 DT_SIZE_K(96)>;
 
 	ranges = <0x0 0x20028000 0x18000>;
+	status = "okay";
 };
 
 &cpuflpr_rram {
@@ -38,8 +38,8 @@
 		#size-cells = <1>;
 
 		cpuflpr_code_partition: partition@0 {
-			label = "image-0";
 			reg = <0x0 DT_SIZE_K(96)>;
+			label = "image-0";
 		};
 	};
 };

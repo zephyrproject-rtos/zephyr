@@ -9,8 +9,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Oceanus-I EV";
 	compatible = "we,oceanus1ev";
+	model = "Oceanus-I EV";
 
 	chosen {
 		zephyr,console = &lpuart1;
@@ -101,8 +101,8 @@ stm32_lp_tick_source: &lptim1 {
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb7>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 };
 
 &spi1 {
@@ -125,24 +125,24 @@ stm32_lp_tick_source: &lptim1 {
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(32)>;
+			label = "mcuboot";
 			read-only;
 		};
 
 		slot0_partition: partition@8000 {
-			label = "image-0";
 			reg = <0x00008000 DT_SIZE_K(108)>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@23000 {
-			label = "image-1";
 			reg = <0x00023000 DT_SIZE_K(108)>;
+			label = "image-1";
 		};
 
 		storage_partition: partition@3e000 {
-			label = "storage";
 			reg = <0x0003e000 DT_SIZE_K(8)>;
+			label = "storage";
 		};
 	};
 };
