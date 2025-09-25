@@ -9,8 +9,8 @@
 #include "reel_board_nrf52840_2-pinctrl.dtsi"
 
 / {
-	model = "reel board v2";
 	compatible = "phytec,reel_board_v2";
+	model = "reel board v2";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -38,8 +38,8 @@
 
 		ssd16xx: ssd16xxfb@0 {
 			compatible = "gooddisplay,gdeh0213b72", "solomon,ssd1675a";
-			mipi-max-frequency = <4000000>;
 			reg = <0>;
+			mipi-max-frequency = <4000000>;
 			width = <250>;
 			height = <122>;
 			busy-gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;
@@ -113,10 +113,10 @@
 
 &spi1 {
 	compatible = "nordic,nrf-spi";
-	status = "okay";
 	cs-gpios = <&gpio0 17 GPIO_ACTIVE_LOW>;
 
 	pinctrl-0 = <&spi1_default>;
 	pinctrl-1 = <&spi1_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
