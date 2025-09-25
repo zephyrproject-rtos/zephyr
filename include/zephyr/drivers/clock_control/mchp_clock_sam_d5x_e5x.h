@@ -25,9 +25,7 @@ typedef struct {
 	bool run_in_standby_en;
 } clock_mchp_subsys_xosc_config_t;
 
-/** @brief GCLK generator numbers
- * @anchor clock_mchp_gclkgen_t
- */
+/** @brief GCLK generator numbers */
 typedef enum {
 	CLOCK_MCHP_GCLKGEN_GEN0,
 	CLOCK_MCHP_GCLKGEN_GEN1,
@@ -53,7 +51,7 @@ typedef struct {
 	/** @brief Enable closed-loop operation */
 	bool closed_loop_en;
 
-	/** @brief Reference source clock selection @see @ref clock_mchp_gclkgen_t */
+	/** @brief Reference source clock selection */
 	clock_mchp_gclkgen_t src;
 
 	/** @brief Determines the ratio of the CLK_DFLL output frequency to the CLK_DFLL_REF input
@@ -62,9 +60,7 @@ typedef struct {
 	uint32_t multiply_factor;
 } clock_mchp_subsys_dfll_config_t;
 
-/** @brief FDPLL source clocks
- * @anchor clock_mchp_fdpll_src_clock_t
- */
+/** @brief FDPLL source clocks */
 typedef enum {
 	CLOCK_MCHP_FDPLL_SRC_GCLK0,
 	CLOCK_MCHP_FDPLL_SRC_GCLK1,
@@ -92,7 +88,7 @@ typedef struct {
 	/** @brief configure oscillator to ON in standby sleep mode, unless on_demand_en is set */
 	bool run_in_standby_en;
 
-	/** @brief Reference source clock selection @see @ref clock_mchp_fdpll_src_clock_t */
+	/** @brief Reference source clock selection */
 	clock_mchp_fdpll_src_clock_t src;
 
 	/** @brief Set the XOSC clock division factor (0 - 2047) */
@@ -105,9 +101,7 @@ typedef struct {
 	uint32_t divider_ratio_frac;
 } clock_mchp_subsys_fdpll_config_t;
 
-/** @brief RTC source clocks
- * @anchor clock_mchp_rtc_src_clock_t
- */
+/** @brief RTC source clocks */
 typedef enum {
 	CLOCK_MCHP_RTC_SRC_ULP1K = OSC32KCTRL_RTCCTRL_RTCSEL_ULP1K,
 	CLOCK_MCHP_RTC_SRC_ULP32K = OSC32KCTRL_RTCCTRL_RTCSEL_ULP32K,
@@ -116,7 +110,7 @@ typedef enum {
 } clock_mchp_rtc_src_clock_t;
 
 typedef struct {
-	/** @brief RTC source clock selection @see @ref clock_mchp_rtc_src_clock_t */
+	/** @brief RTC source clock selection */
 	clock_mchp_rtc_src_clock_t src;
 } clock_mchp_subsys_rtc_config_t;
 
@@ -126,11 +120,9 @@ typedef struct {
 
 	/** @brief configure oscillator to ON in standby sleep mode, unless on_demand_en is set */
 	bool run_in_standby_en;
-} clock_mchp_subsys_osc32k_config_t;
+} clock_mchp_subsys_xosc32k_config_t;
 
-/** @brief Gclk Generator source clocks
- * @anchor clock_mchp_gclk_src_clock_t
- */
+/** @brief Gclk Generator source clocks */
 typedef enum {
 	CLOCK_MCHP_GCLK_SRC_XOSC0,
 	CLOCK_MCHP_GCLK_SRC_XOSC1,
@@ -149,7 +141,7 @@ typedef struct {
 	/** @brief configure oscillator to ON in standby sleep mode, unless on_demand_en is set */
 	bool run_in_standby_en;
 
-	/** @brief Generator source clock selection @see @ref clock_mchp_gclk_src_clock_t */
+	/** @brief Generator source clock selection */
 	clock_mchp_gclk_src_clock_t src;
 
 	/** @brief Represent a division value for the corresponding Generator. The actual division
@@ -159,13 +151,11 @@ typedef struct {
 } clock_mchp_subsys_gclkgen_config_t;
 
 typedef struct {
-	/** @brief gclk generator source of a peripheral clock @see @ref clock_mchp_gclkgen_t*/
+	/** @brief gclk generator source of a peripheral clock */
 	clock_mchp_gclkgen_t src;
 } clock_mchp_subsys_gclkperiph_config_t;
 
-/** @brief division ratio of mclk prescaler for CPU
- * @anchor clock_mchp_mclk_cpu_div_t
- */
+/** @brief division ratio of mclk prescaler for CPU */
 typedef enum {
 	CLOCK_MCHP_MCLK_CPU_DIV_1 = 1,
 	CLOCK_MCHP_MCLK_CPU_DIV_2 = 2,
@@ -182,7 +172,7 @@ typedef enum {
  * Used for CLOCK_MCHP_SUBSYS_TYPE_MCLKCPU
  */
 typedef struct {
-	/** @brief division ratio of mclk prescaler for CPU @see @ref clock_mchp_mclk_cpu_div_t	 */
+	/** @brief division ratio of mclk prescaler for CPU */
 	clock_mchp_mclk_cpu_div_t division_factor;
 } clock_mchp_subsys_mclkcpu_config_t;
 
