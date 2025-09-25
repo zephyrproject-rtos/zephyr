@@ -16,12 +16,12 @@
 };
 
 &uart2 {
-	status = "okay";
 	current-speed = <115200>;
 	hw-flow-control;
 
 	pinctrl-0 = <&uart2_esp8266>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	esp8266: esp8266 {
 		compatible = "espressif,esp-at";

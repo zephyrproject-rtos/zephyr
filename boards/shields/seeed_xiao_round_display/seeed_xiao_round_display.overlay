@@ -38,7 +38,6 @@
 		#size-cells = <0>;
 
 		gc9a01_xiao_round_display: gc9a01@0 {
-			status = "okay";
 			compatible = "galaxycore,gc9x01x";
 			reg = <0>;
 			mipi-max-frequency = <DT_FREQ_M(100)>;
@@ -46,6 +45,7 @@
 			width = <240>;
 			height = <240>;
 			display-inversion;
+			status = "okay";
 		};
 	};
 };
@@ -66,26 +66,27 @@
 	clock-frequency = <I2C_BITRATE_FAST>;
 
 	pcf8563_xiao_round_display: pcf8563@51 {
-		status = "okay";
 		compatible = "nxp,pcf8563";
 		reg = <0x51>;
+		status = "okay";
 	};
 
 	chsc6x_xiao_round_display: chsc6x@2e {
-		status = "okay";
 		compatible = "chipsemi,chsc6x";
 		reg = <0x2e>;
 		irq-gpios = <&xiao_d 7 GPIO_ACTIVE_LOW>;
+		status = "okay";
 	};
 };
 
 &xiao_spi {
-	status = "okay";
 	cs-gpios = <&xiao_d 1 GPIO_ACTIVE_LOW>, <&xiao_d 2 GPIO_ACTIVE_LOW>;
+	status = "okay";
 
 	sdhc_xiao_round_display: sdhc@1 {
 		compatible = "zephyr,sdhc-spi-slot";
 		reg = <1>;
+		spi-max-frequency = <DT_FREQ_M(24)>;
 		status = "okay";
 
 		mmc {
@@ -93,6 +94,5 @@
 			disk-name = "SD";
 			status = "okay";
 		};
-		spi-max-frequency = <DT_FREQ_M(24)>;
 	};
 };

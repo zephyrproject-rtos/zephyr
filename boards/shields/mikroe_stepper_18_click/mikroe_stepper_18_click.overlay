@@ -13,17 +13,16 @@
 	status = "okay";
 
 	mcp4726_mikroe_stepper_18_click: mcp4726@70 {
-		status = "okay";
 		compatible = "microchip,mcp4725";
 		reg = <0x60>;
 
 		#io-channel-cells = <1>;
+		status = "okay";
 	};
 };
 
 / {
 	drv8426_mikroe_stepper_18_click: drv8426 {
-		status = "okay";
 		compatible = "ti,drv84xx";
 
 		dir-gpios = <&mikrobus_header 0 0>;
@@ -31,5 +30,6 @@
 		sleep-gpios = <&mikrobus_header 1 GPIO_ACTIVE_LOW>;
 		en-gpios = <&mikrobus_header 2 0>;
 		fault-gpios = <&mikrobus_header 7 GPIO_ACTIVE_LOW>;
+		status = "okay";
 	};
 };

@@ -5,16 +5,16 @@
  */
 
 &pico_spi {
-	status = "okay";
 	cs-gpios = <&pico_header 20 GPIO_ACTIVE_LOW>;
+	status = "okay";
 
 	mcp2515_adafruit_can_picowbell: can@0 {
 		compatible = "microchip,mcp2515";
+		reg = <0x0>;
 		spi-max-frequency = <1000000>;
 		int-gpios = <&pico_header 21 GPIO_ACTIVE_LOW>;
-		status = "okay";
-		reg = <0x0>;
 		osc-freq = <16000000>;
+		status = "okay";
 
 		can-transceiver {
 			max-bitrate = <1000000>;

@@ -32,8 +32,8 @@
 
 		ili9340_buydisplay_2_8_tft_touch_arduino: ili9340@0 {
 			compatible = "ilitek,ili9340";
-			mipi-max-frequency = <25000000>;
 			reg = <0>;
+			mipi-max-frequency = <25000000>;
 			width = <240>;
 			height = <320>;
 			pixel-format = <ILI9XXX_PIXEL_FORMAT_RGB565>;
@@ -49,8 +49,8 @@
 };
 
 &arduino_spi {
-	status = "okay";
 	cs-gpios = <&arduino_header ARDUINO_HEADER_R3_D9 GPIO_ACTIVE_LOW>;
+	status = "okay";
 };
 
 &arduino_i2c {

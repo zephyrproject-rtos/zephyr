@@ -22,8 +22,8 @@
 
 		ssd16xx_waveshare_epaper_gdeh0213b1: ssd16xxfb@0 {
 			compatible = "gooddisplay,gdeh0213b1", "solomon,ssd1673";
-			mipi-max-frequency = <4000000>;
 			reg = <0>;
+			mipi-max-frequency = <4000000>;
 			width = <250>;
 			height = <120>;
 			busy-gpios = <&arduino_header ARDUINO_HEADER_R3_D7 GPIO_ACTIVE_HIGH>;

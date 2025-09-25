@@ -31,8 +31,8 @@
 
 		adafruit_2_8_tft_touch_v2_ili9340: ili9340@0 {
 			compatible = "ilitek,ili9340";
-			mipi-max-frequency = <15151515>;
 			reg = <0>;
+			mipi-max-frequency = <15151515>;
 			width = <320>;
 			height = <240>;
 			pixel-format = <ILI9XXX_PIXEL_FORMAT_RGB888>;
@@ -48,15 +48,15 @@
 };
 
 &arduino_spi {
-	status = "okay";
 	cs-gpios = <&arduino_header ARDUINO_HEADER_R3_D10 GPIO_ACTIVE_LOW>,
 		   <&arduino_header ARDUINO_HEADER_R3_D4 GPIO_ACTIVE_LOW>;
+	status = "okay";
 
 	adafruit_2_8_tft_touch_v2_sdhc: sdhc@1 {
 		compatible = "zephyr,sdhc-spi-slot";
 		reg = <1>;
-		status = "okay";
 		spi-max-frequency = <24000000>;
+		status = "okay";
 
 		mmc {
 			compatible = "zephyr,sdmmc-disk";

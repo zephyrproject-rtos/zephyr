@@ -37,9 +37,12 @@
 };
 
 &zephyr_lcdif {
-	status = "okay";
 	width = <720>;
 	height = <1280>;
+	pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+	data-bus-width = "24-bit";
+	backlight-gpios = <&nxp_mipi_connector 0 GPIO_ACTIVE_HIGH>;
+	status = "okay";
 
 	display-timings {
 		compatible = "zephyr,panel-timing";
@@ -60,14 +63,9 @@
 		 */
 		clock-frequency = <62346240>;
 	};
-	pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
-	data-bus-width = "24-bit";
-	backlight-gpios = <&nxp_mipi_connector 0 GPIO_ACTIVE_HIGH>;
 };
 
 &zephyr_mipi_dsi {
-	status = "okay";
-	nxp,lcdif = <&lcdif>;
 	dpi-color-coding = "24-bit";
 	dpi-pixel-packet = "24-bit";
 	dpi-video-mode = "burst";
@@ -78,9 +76,10 @@
 	 * (pixel clock * bits per pixel) / MIPI data lanes
 	 */
 	phy-clock = <748154880>;
+	nxp,lcdif = <&lcdif>;
+	status = "okay";
 
 	hx8394-rk055hdmipi4ma0@0 {
-		status = "okay";
 		compatible = "himax,hx8394";
 		reg = <0x0>;
 		reset-gpios = <&nxp_mipi_connector 21 GPIO_ACTIVE_HIGH>;
@@ -88,5 +87,6 @@
 		width = <720>;
 		height = <1280>;
 		pixel-format = <MIPI_DSI_PIXFMT_RGB565>;
+		status = "okay";
 	};
 };

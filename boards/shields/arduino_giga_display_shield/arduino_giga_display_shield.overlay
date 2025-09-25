@@ -6,7 +6,6 @@
 
 &zephyr_mipi_dsi {
 	st7701: st7701@0 {
-		status = "okay";
 		compatible = "sitronix,st7701";
 		reg = <0x0>;
 		height = <800>;
@@ -29,6 +28,7 @@
 		gip-ed = [ED AB 89 76 54 01 FF FF FF FF FF FF 10 45 67 98 BA];
 		pvgamctrl = [B0 40 C9 91 0D 12 07 02 09 09 1F 04 50 0F E4 29 DF];
 		nvgamctrl = [B1 40 CB D0 11 92 07 00 08 07 1C 06 53 12 63 EB DF];
+		status = "okay";
 
 		display-timings {
 			compatible = "zephyr,panel-timing";

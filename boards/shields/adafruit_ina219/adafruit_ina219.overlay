@@ -14,10 +14,10 @@
 	 * Round the current LSB value upwards to 200 uA.
 	 */
 	adafruit_ina219: ina219@40 {
-		status = "okay";
 		compatible = "ti,ina219";
 		reg = <0x40>;
 		shunt-milliohm = <100>;
 		lsb-microamp = <200>;
+		status = "okay";
 	};
 };

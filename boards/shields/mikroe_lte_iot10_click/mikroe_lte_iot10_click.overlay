@@ -19,13 +19,13 @@
 };
 
 &mikrobus_serial {
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 
 	modem: modem {
-		status = "okay";
 		compatible = "sqn,gm02s";
 		mdm-wake-gpios = <&mikrobus_header 0 (GPIO_OPEN_SOURCE | GPIO_ACTIVE_HIGH)>;
 		mdm-reset-gpios = <&mikrobus_header 1 (GPIO_OPEN_DRAIN | GPIO_ACTIVE_LOW)>;
+		status = "okay";
 	};
 };

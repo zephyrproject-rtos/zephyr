@@ -64,13 +64,13 @@
 
 		ili9341: ili9341@0 {
 			compatible = "ilitek,ili9341";
+			reg = <0>;
 			mipi-max-frequency = <DT_FREQ_M(32)>;
 			mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
 			/* Transmit on falling edge to avoid tearing, since display
 			 * reads pixels faster than we can transfer.
 			 */
 			te-mode = "MIPI_DBI_TE_FALLING_EDGE";
-			reg = <0>;
 			width = <240>;
 			height = <320>;
 			rotation = <180>;

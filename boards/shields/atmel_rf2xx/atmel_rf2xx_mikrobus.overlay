@@ -11,10 +11,10 @@
 };
 
 &mikrobus_spi {
-	status = "okay";
 
 	/* CS */
 	cs-gpios = <&mikrobus_header 2 GPIO_ACTIVE_LOW>;
+	status = "okay";
 
 	ieee802154_atmel_rf2xx_mikrobus: rf2xx@0 {
 		compatible = "atmel,rf2xx";

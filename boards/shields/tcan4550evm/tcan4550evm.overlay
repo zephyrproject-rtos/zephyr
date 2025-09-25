@@ -14,21 +14,21 @@
 };
 
 &arduino_spi {
-	status = "okay";
 	cs-gpios = <&arduino_header ARDUINO_HEADER_R3_D10 GPIO_ACTIVE_LOW>;
+	status = "okay";
 
 	tcan4x5x_tcan4550evm: can@0 {
 		compatible = "ti,tcan4x5x";
 		reg = <0>;
 		/* reduced spi-max-frequency to accommodate flywire connections */
 		spi-max-frequency = <2000000>;
-		status = "okay";
 		clock-frequency = <40000000>;
 		device-state-gpios = <&arduino_header ARDUINO_HEADER_R3_D6 GPIO_ACTIVE_HIGH>;
 		device-wake-gpios = <&arduino_header ARDUINO_HEADER_R3_D7 GPIO_ACTIVE_HIGH>;
 		reset-gpios = <&arduino_header ARDUINO_HEADER_R3_D8 GPIO_ACTIVE_HIGH>;
 		int-gpios = <&arduino_header ARDUINO_HEADER_R3_D9 GPIO_ACTIVE_LOW>;
 		bosch,mram-cfg = <0x0 15 15 7 7 0 10 10>;
+		status = "okay";
 		status = "okay";
 
 		can-transceiver {

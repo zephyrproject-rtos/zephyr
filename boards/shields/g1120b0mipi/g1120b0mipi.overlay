@@ -41,12 +41,11 @@
 };
 
 &zephyr_mipi_dsi {
-	status = "okay";
 	autoinsert-eotp;
 	phy-clock = <316800000>;
+	status = "okay";
 
 	rm67162_g1120b0mipi: rm67162@0 {
-		status = "okay";
 		compatible = "raydium,rm67162";
 		reg = <0x0>;
 		reset-gpios = <&nxp_mipi_connector 21 GPIO_ACTIVE_HIGH>;
@@ -56,5 +55,6 @@
 		width = <400>;
 		height = <392>;
 		pixel-format = <MIPI_DSI_PIXFMT_RGB565>;
+		status = "okay";
 	};
 };
