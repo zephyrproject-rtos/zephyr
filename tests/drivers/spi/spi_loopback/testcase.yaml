@@ -89,7 +89,7 @@ tests:
       - nucleo_h745zi_q/stm32h745xx/m4
       - nucleo_h745zi_q/stm32h745xx/m7
     integration_platforms:
-      - nucleo_h743zi
+      - nucleo_h753zi
   drivers.spi.stm32_spi_interrupt.loopback:
     extra_args: EXTRA_CONF_FILE="overlay-stm32-spi-interrupt.conf"
     platform_allow:

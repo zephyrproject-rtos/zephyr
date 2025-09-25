@@ -37,7 +37,7 @@ tests:
     arch_allow: arm
     platform_allow: nucleo_h743zi
     integration_platforms:
-      - nucleo_h743zi
+      - nucleo_h753zi
   drivers.uart.async_api.nrf_uart:
     filter: CONFIG_SERIAL_SUPPORT_ASYNC
     harness: ztest
