@@ -91,6 +91,9 @@ static int max30101_channel_get(const struct device *dev,
 static DEVICE_API(sensor, max30101_driver_api) = {
 	.sample_fetch = max30101_sample_fetch,
 	.channel_get = max30101_channel_get,
+#if CONFIG_MAX30101_TRIGGER
+	.trigger_set = max30101_trigger_set,
+#endif
 };
 
 static int max30101_init(const struct device *dev)
@@ -183,6 +186,13 @@ static int max30101_init(const struct device *dev)
 		}
 	}
 
+#if CONFIG_MAX30101_TRIGGER
+	if (max30101_init_interrupts(dev)) {
+		LOG_ERR("Failed to initialize interrupts");
+		return -EIO;
+	}
+#endif
+
 	/* Initialize the channel map and active channel count */
 	data->num_channels = 0U;
 	for (led_chan = 0U; led_chan < MAX30101_MAX_NUM_CHANNELS; led_chan++) {
@@ -225,14 +235,16 @@ static int max30101_init(const struct device *dev)
 		.fifo = (DT_INST_ENUM_IDX(n, smp_ave) << MAX30101_FIFO_CFG_SMP_AVE_SHIFT) |        \
 			(DT_INST_PROP(n, fifo_rollover_en)                                         \
 			 << MAX30101_FIFO_CFG_ROLLOVER_EN_SHIFT) |                                 \
-			(DT_INST_PROP(n, fifo_a_full) << MAX30101_FIFO_CFG_FIFO_FULL_SHIFT),       \
+			(DT_INST_PROP(n, fifo_watermark) << MAX30101_FIFO_CFG_FIFO_FULL_SHIFT),    \
 		.mode = DT_INST_ENUM_IDX(n, acq_mode),                                             \
 		.spo2 = (DT_INST_ENUM_IDX(n, adc_rge) << MAX30101_SPO2_ADC_RGE_SHIFT) |            \
 			(DT_INST_ENUM_IDX(n, smp_sr) << MAX30101_SPO2_SR_SHIFT) |                  \
 			(DT_INST_ENUM_IDX(n, led_pw) << MAX30101_SPO2_PW_SHIFT),                   \
 		.led_pa = DT_INST_PROP(n, led_pa),                                                 \
 		.slot = MAX30101_SLOT_CFG(n),                                                      \
-	};                                                                                         \
+		IF_ENABLED(CONFIG_MAX30101_TRIGGER, \
+			(.irq_gpio = GPIO_DT_SPEC_INST_GET_OR(n, irq_gpios, {0}),) \
+		) };              \
 	static struct max30101_data max30101_data_##n;                                             \
 	SENSOR_DEVICE_DT_INST_DEFINE(n, max30101_init, NULL, &max30101_data_##n,                   \
 				     &max30101_config_##n, POST_KERNEL,                            \

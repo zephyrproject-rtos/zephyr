@@ -12,6 +12,11 @@ compatible: "maxim,max30101"
 include: [sensor-device.yaml, i2c-device.yaml]
 
 properties:
+  irq-gpios:
+    type: phandle-array
+    description: |
+      Active low interrupt signal. It is an open drain signal, so it
+      require either hardware or software pull-up.
   fifo-rollover-en:
     type: boolean
     description: |
@@ -20,7 +25,7 @@ properties:
       FIFO continues to fill with new data. If not set, then the FIFO is
       not updated until FIFO_DATA is read or the WRITE/READ pointer
       positions are changed.
-  fifo-a-full:
+  fifo-watermark:
     type: int
     default: 0
     enum:
@@ -41,7 +46,7 @@ properties:
       - 14 # Each 18 samples @ 14 empty space
       - 15 # Each 17 samples @ 15 empty space
     description: |
-      Configure the trigger for the FIFO_A_FULL interrupt (e.g. if set to 2,
+      Configure the trigger for the FIFO_WATERMARK interrupt (e.g. if set to 2,
       then the flag is set when the 30th word is written to the FIFO).
       Default set to 0, same as after Power Reset. Range: 0 - 15.
   acq-mode:
