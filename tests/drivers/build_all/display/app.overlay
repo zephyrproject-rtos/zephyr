@@ -313,6 +313,52 @@
 					cdi = <0x17>;
 				};
 			};
+
+			test_mipi_dbi_st7305: st7305@18 {
+				compatible = "sitronix,st7305";
+				mipi-max-frequency = <10000000>;
+				reg = <18>;
+				width = <168>;
+				height = <384>;
+				start-line = <0>;
+				start-column = <48>;
+				nvm-load = [17 02];
+				gate-voltages = [11 04];
+				vsh = [41 41 41 41];
+				vsl = [19 19 19 19];
+				vshn = [41 41 41 41];
+				vsln = [19 19 19 19];
+				osc-settings = <0xA6>;
+				framerate = <0x5>;
+				multiplex-ratio = <0x64>;
+				source-voltage = <0x0>;
+				remap-value = <0x40>;
+				panel-settings = <0x29>;
+				mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
+			};
+
+			test_mipi_dbi_st7306: st7306@19 {
+				compatible = "sitronix,st7306";
+				mipi-max-frequency = <10000000>;
+				reg = <19>;
+				width = <312>;
+				height = <400>;
+				start-line = <0>;
+				start-column = <216>;
+				nvm-load = [17 02];
+				gate-voltages = [11 04];
+				vsh = [41 41 41 41];
+				vsl = [19 19 19 19];
+				vshn = [41 41 41 41];
+				vsln = [19 19 19 19];
+				osc-settings = <0x80>;
+				framerate = <0x05>;
+				multiplex-ratio = <0x64>;
+				source-voltage = <0x0>;
+				remap-value = <0x4>;
+				panel-settings = <0x29>;
+				mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
+			};
 		};
 
 		test_mipi_dbi_xfr_16bit_write_only {
