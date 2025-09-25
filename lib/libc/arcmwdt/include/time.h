@@ -9,8 +9,6 @@
 
 #include_next <time.h>
 
-#include <zephyr/posix/posix_time.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif

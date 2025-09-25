@@ -68,6 +68,4 @@ time_t time(time_t *tloc);
 }
 #endif
 
-#include <zephyr/posix/posix_time.h>
-
 #endif /* ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_STDIO_H_ */

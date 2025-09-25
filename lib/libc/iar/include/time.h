@@ -12,10 +12,8 @@
 #ifndef ZEPHYR_LIB_LIBC_IAR_INCLUDE_TIME_H_
 #define ZEPHYR_LIB_LIBC_IAR_INCLUDE_TIME_H_
 
-#include_next <time.h>
-
-#include <zephyr/posix/posix_time.h>
 #include <zephyr/toolchain.h>
+#include_next <time.h>
 
 #ifdef __cplusplus
 extern "C" {
