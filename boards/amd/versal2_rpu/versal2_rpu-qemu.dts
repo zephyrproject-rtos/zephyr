@@ -6,196 +6,196 @@
 	#priority-cells = <0x01>;
 
 	pmc_ppu0_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x01>;
 		requester-id = <0x248>;
 		phandle = <0x108>;
 	};
 
 	pmc_ppu1_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x01>;
 		requester-id = <0x249>;
 		phandle = <0x109>;
 	};
 
 	psm_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x01>;
 		requester-id = <0x238>;
 		phandle = <0x10a>;
 	};
 
 	ddrmc_ub0_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x01>;
 		requester-id = <0x00>;
 		phandle = <0x10b>;
 	};
 
 	ddrmc_ub1_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x01>;
 		requester-id = <0x00>;
 		phandle = <0x10c>;
 	};
 
 	pmc_dma0_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x01>;
 		requester-id = <0x24a>;
 		phandle = <0x8b>;
 	};
 
 	pmc_dma1_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x01>;
 		requester-id = <0x24b>;
 		phandle = <0x8c>;
 	};
 
 	pmc_qspi_dma_ma_smid {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		requester-id = <0x244>;
 		phandle = <0x7d>;
 	};
 
 	pmc_qspi_dma_w_ma_smid {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		requester-id = <0x244>;
 		phandle = <0x7b>;
 	};
 
 	apu0_s_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x01>;
 		requester-id = <0x260>;
 		phandle = <0xd3>;
 	};
 
 	apu0_ns_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x00>;
 		requester-id = <0x260>;
 		phandle = <0xd4>;
 	};
 
 	apu1_s_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x01>;
 		requester-id = <0x261>;
 		phandle = <0xd5>;
 	};
 
 	apu1_ns_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x00>;
 		requester-id = <0x261>;
 		phandle = <0xd6>;
 	};
 
 	rpu0_s_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x01>;
 		requester-id = <0x200>;
 		phandle = <0xe4>;
 	};
 
 	rpu1_s_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x01>;
 		requester-id = <0x204>;
 		phandle = <0xe7>;
 	};
 
 	gem0_ma_smid {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		requester-id = <0x234>;
 		phandle = <0x18>;
 	};
 
 	gem0_w_ma_smid {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		requester-id = <0x234>;
 		phandle = <0x19>;
 	};
 
 	gem1_ma_smid {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		requester-id = <0x235>;
 		phandle = <0x1d>;
 	};
 
 	gem1_w_ma_smid {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		requester-id = <0x235>;
 		phandle = <0x1e>;
 	};
 
 	ospi_dma_ma_smid {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		requester-id = <0x245>;
 		phandle = <0x81>;
 	};
 
 	ospi_dma_w_ma_smid {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		requester-id = <0x245>;
 		phandle = <0x7c>;
 	};
 
 	sd0_ma_smid {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		requester-id = <0x242>;
 		phandle = <0x77>;
 	};
 
 	sd0_w_ma_smid {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		requester-id = <0x242>;
 		phandle = <0x78>;
 	};
 
 	sd1_ma_smid {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		requester-id = <0x243>;
 		phandle = <0x79>;
 	};
 
 	sd1_w_ma_smid {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		requester-id = <0x243>;
 		phandle = <0x7a>;
 	};
 
 	usb0_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x00>;
 		requester-id = <0x230>;
 		phandle = <0x20>;
@@ -913,29 +913,29 @@
 		phandle = <0x10d>;
 
 		amba@0 {
+			compatible = "simple-bus";
+			ranges;
 			#address-cells = <0x02>;
 			#size-cells = <0x02>;
 			#priority-cells = <0x01>;
-			compatible = "simple-bus";
-			ranges;
 			phandle = <0x0d>;
 
 			downstream_amba_lpd {
 				compatible = "qemu:memory-region";
-				alias = <0x0a>;
 				reg = <0x00 0x00 0xffffffff 0xffffffff 0xffffffff>;
+				alias = <0x0a>;
 			};
 
 			downstream_amba_fpd {
 				compatible = "qemu:memory-region";
-				alias = <0x0b>;
 				reg = <0x00 0x00 0xffffffff 0xffffffff 0xffffffff>;
+				alias = <0x0b>;
 			};
 
 			downstream_amba_pmc_internal {
 				compatible = "qemu:memory-region";
-				alias = <0x0c>;
 				reg = <0x00 0x00 0xffffffff 0xffffffff 0xffffffff>;
+				alias = <0x0c>;
 			};
 
 			xmpu_ocm@0 {
@@ -998,36 +998,36 @@
 
 			s_axi_tcm_a@0 {
 				compatible = "qemu:memory-region";
-				alias = <0x0f>;
 				reg = <0x00 0xeba00000 0x00 0x800000 0x00>;
+				alias = <0x0f>;
 				phandle = <0x34>;
 			};
 
 			s_axi_tcm_b@0 {
 				compatible = "qemu:memory-region";
-				alias = <0x10>;
 				reg = <0x00 0xeba80000 0x00 0x800000 0x00>;
+				alias = <0x10>;
 				phandle = <0x38>;
 			};
 
 			s_axi_tcm_c@0 {
 				compatible = "qemu:memory-region";
-				alias = <0x11>;
 				reg = <0x00 0xebb00000 0x00 0x800000 0x00>;
+				alias = <0x11>;
 				phandle = <0x3c>;
 			};
 
 			s_axi_tcm_d@0 {
 				compatible = "qemu:memory-region";
-				alias = <0x12>;
 				reg = <0x00 0xebb80000 0x00 0x800000 0x00>;
+				alias = <0x12>;
 				phandle = <0x40>;
 			};
 
 			s_axi_tcm_e@0 {
 				compatible = "qemu:memory-region";
-				alias = <0x13>;
 				reg = <0x00 0xebc00000 0x00 0x800000 0x00>;
+				alias = <0x13>;
 				phandle = <0x44>;
 			};
 
@@ -1079,23 +1079,23 @@
 		};
 
 		amba_lpd@0 {
+			compatible = "simple-bus";
+			ranges;
 			#address-cells = <0x02>;
 			#size-cells = <0x02>;
 			#priority-cells = <0x01>;
-			compatible = "simple-bus";
-			ranges;
 			phandle = <0x0a>;
 
 			downstream_amba_psm {
 				compatible = "qemu:memory-region";
-				alias = <0x14>;
 				reg = <0x00 0x00 0xffffffff 0xffffffff 0xffffffff>;
+				alias = <0x14>;
 			};
 
 			downstream_amba_xram {
 				compatible = "qemu:memory-region";
-				alias = <0x15>;
 				reg = <0x00 0x00 0xffffffff 0xffffffff 0xffffffff>;
+				alias = <0x15>;
 			};
 
 			xppu_lpd@0xeb990000 {
@@ -1109,15 +1109,15 @@
 			};
 
 			ethernet@0xf1a60000 {
+				compatible = "cdns,gem";
+				reg = <0x00 0xf1a60000 0x00 0x10000 0x00>;
 				#address-cells = <0x01>;
 				#size-cells = <0x00>;
 				#priority-cells = <0x00>;
-				compatible = "cdns,gem";
 				interrupts = <0x27 0x27>;
 				dma = <0x17>;
 				memattr = <0x18>;
 				memattr-write = <0x19>;
-				reg = <0x00 0xf1a60000 0x00 0x10000 0x00>;
 				num-priority-queues = <0x02>;
 				reset-gpios = <0x1a 0x01>;
 				power-gpios = <0x1b 0x2c>;
@@ -1126,15 +1126,15 @@
 			};
 
 			ethernet@0xf1a70000 {
+				compatible = "cdns,gem";
+				reg = <0x00 0xf1a70000 0x00 0x10000 0x00>;
 				#address-cells = <0x01>;
 				#size-cells = <0x00>;
 				#priority-cells = <0x00>;
-				compatible = "cdns,gem";
 				interrupts = <0x29 0x29>;
 				dma = <0x17>;
 				memattr = <0x1d>;
 				memattr-write = <0x1e>;
-				reg = <0x00 0xf1a70000 0x00 0x10000 0x00>;
 				num-priority-queues = <0x02>;
 				reset-gpios = <0x1a 0x02>;
 				power-gpios = <0x1b 0x2d>;
@@ -1144,8 +1144,8 @@
 
 			serial@0xf1920000 {
 				compatible = "pl011";
-				interrupts = <0x19>;
 				reg = <0x00 0xf1920000 0x00 0x10000 0x00>;
+				interrupts = <0x19>;
 				reset-gpios = <0x1a 0x05>;
 				chardev = "serial2";
 				phandle = <0x11a>;
@@ -1153,8 +1153,8 @@
 
 			serial@0xf1930000 {
 				compatible = "pl011";
-				interrupts = <0x1a>;
 				reg = <0x00 0xf1930000 0x00 0x10000 0x00>;
+				interrupts = <0x1a>;
 				reset-gpios = <0x1a 0x06>;
 				chardev = "con";
 				phandle = <0x11b>;
@@ -1167,24 +1167,24 @@
 
 			can@0xf19e0000 {
 				compatible = "xlnx,versal-canfd";
+				reg = <0x00 0xf19e0000 0x00 0x10000 0x00>;
 				rx-fifo0 = <0x40>;
 				rx-fifo1 = <0x40>;
 				enable-rx-fifo1 = <0x01>;
 				canfdbus = <0x1f>;
 				interrupts = <0x1b>;
-				reg = <0x00 0xf19e0000 0x00 0x10000 0x00>;
 				reset-gpios = <0x1a 0x09>;
 				phandle = <0x11c>;
 			};
 
 			can@0xf19f0000 {
 				compatible = "xlnx,versal-canfd";
+				reg = <0x00 0xf19f0000 0x00 0x10000 0x00>;
 				rx-fifo0 = <0x40>;
 				rx-fifo1 = <0x40>;
 				enable-rx-fifo1 = <0x01>;
 				canfdbus = <0x1f>;
 				interrupts = <0x1c>;
-				reg = <0x00 0xf19f0000 0x00 0x10000 0x00>;
 				reset-gpios = <0x1a 0x0a>;
 				phandle = <0x11d>;
 			};
@@ -1215,9 +1215,9 @@
 
 			spi@0xf19c0000 {
 				compatible = "cdns,spi-r1p6";
+				reg = <0x00 0xf19c0000 0x00 0x10000 0x00>;
 				interrupts = <0x17>;
 				num-ss-bits = <0x04>;
-				reg = <0x00 0xf19c0000 0x00 0x10000 0x00>;
 				#address-cells = <0x01>;
 				#size-cells = <0x00>;
 				#bus-cells = <0x01>;
@@ -1225,28 +1225,28 @@
 				phandle = <0x120>;
 
 				spi0_flash0@0 {
+					compatible = "m25p80\0st,m25p80";
+					reg = <0x00 0x00>;
 					#address-cells = <0x01>;
 					#size-cells = <0x01>;
 					#priority-cells = <0x00>;
 					#bus-cells = <0x01>;
-					compatible = "m25p80\0st,m25p80";
 					spi-max-frequency = <0x2faf080>;
-					reg = <0x00 0x00>;
 					blockdev-node-name = "spi0_flash0";
 					phandle = <0x121>;
 
 					spi0_flash0@0x00000000 {
-						label = "spi0_flash0";
 						reg = <0x00 0x100000>;
+						label = "spi0_flash0";
 					};
 				};
 			};
 
 			spi@0xf19d0000 {
 				compatible = "cdns,spi-r1p6";
+				reg = <0x00 0xf19d0000 0x00 0x10000 0x00>;
 				interrupts = <0x18>;
 				num-ss-bits = <0x04>;
-				reg = <0x00 0xf19d0000 0x00 0x10000 0x00>;
 				#address-cells = <0x01>;
 				#size-cells = <0x00>;
 				#bus-cells = <0x01>;
@@ -1254,19 +1254,19 @@
 				phandle = <0x122>;
 
 				spi1_flash0@0 {
+					compatible = "m25p80\0st,m25p80";
+					reg = <0x00 0x00>;
 					#address-cells = <0x01>;
 					#size-cells = <0x01>;
 					#priority-cells = <0x00>;
 					#bus-cells = <0x01>;
-					compatible = "m25p80\0st,m25p80";
 					spi-max-frequency = <0x2faf080>;
-					reg = <0x00 0x00>;
 					blockdev-node-name = "spi1_flash0";
 					phandle = <0x123>;
 
 					spi1_flash0@0x00000000 {
-						label = "spi1_flash0";
 						reg = <0x00 0x100000>;
+						label = "spi1_flash0";
 					};
 				};
 			};
@@ -1286,8 +1286,8 @@
 
 			timer@0xf1e60000 {
 				compatible = "xlnx,ps7-ttc-1.00.a";
-				interrupts = <0x2b 0x2b 0x2b>;
 				reg = <0x00 0xf1e60000 0x00 0x10000 0x00>;
+				interrupts = <0x2b 0x2b 0x2b>;
 				width = <0x20>;
 				reset-gpios = <0x1a 0x12>;
 				phandle = <0x125>;
@@ -1295,8 +1295,8 @@
 
 			timer@0xf1e70000 {
 				compatible = "xlnx,ps7-ttc-1.00.a";
-				interrupts = <0x2c 0x2c 0x2c>;
 				reg = <0x00 0xf1e70000 0x00 0x10000 0x00>;
+				interrupts = <0x2c 0x2c 0x2c>;
 				width = <0x20>;
 				reset-gpios = <0x1a 0x13>;
 				phandle = <0x126>;
@@ -1304,8 +1304,8 @@
 
 			timer@0xf1e80000 {
 				compatible = "xlnx,ps7-ttc-1.00.a";
-				interrupts = <0x2d 0x2d 0x2d>;
 				reg = <0x00 0xf1e80000 0x00 0x10000 0x00>;
+				interrupts = <0x2d 0x2d 0x2d>;
 				width = <0x20>;
 				reset-gpios = <0x1a 0x14>;
 				phandle = <0x127>;
@@ -1313,8 +1313,8 @@
 
 			timer@0xf1e90000 {
 				compatible = "xlnx,ps7-ttc-1.00.a";
-				interrupts = <0x2e 0x2e 0x2e>;
 				reg = <0x00 0xf1e90000 0x00 0x10000 0x00>;
+				interrupts = <0x2e 0x2e 0x2e>;
 				width = <0x20>;
 				reset-gpios = <0x1a 0x15>;
 				phandle = <0x128>;
@@ -1503,9 +1503,9 @@
 
 			lpd_i2c_wrapper {
 				ps_i2c@0xf1940000 {
+					compatible = "xlnx,ps7-i2c-1.00.a\0cdns,i2c-r1p10";
 					#address-cells = <0x01>;
 					#size-cells = <0x00>;
-					compatible = "xlnx,ps7-i2c-1.00.a\0cdns,i2c-r1p10";
 					interrupts = <0x15>;
 					reg-extended = <0x0a 0x00 0xf1940000 0x00 0x10000 0x00>;
 					reset-gpios = <0x1a 0x0b>;
@@ -1513,9 +1513,9 @@
 				};
 
 				ps_i2c@0xf1950000 {
+					compatible = "xlnx,ps7-i2c-1.00.a\0cdns,i2c-r1p10";
 					#address-cells = <0x01>;
 					#size-cells = <0x00>;
-					compatible = "xlnx,ps7-i2c-1.00.a\0cdns,i2c-r1p10";
 					interrupts = <0x16>;
 					reg-extended = <0x0a 0x00 0xf1950000 0x00 0x10000 0x00>;
 					reset-gpios = <0x1a 0x0c>;
@@ -1523,9 +1523,9 @@
 				};
 
 				ps_i2c@0xf1960000 {
+					compatible = "xlnx,ps7-i2c-1.00.a\0cdns,i2c-r1p10";
 					#address-cells = <0x01>;
 					#size-cells = <0x00>;
-					compatible = "xlnx,ps7-i2c-1.00.a\0cdns,i2c-r1p10";
 					interrupts = <0x0b>;
 					reg-extended = <0x0a 0x00 0xf1960000 0x00 0x10000 0x00>;
 					reset-gpios = <0x1a 0x30>;
@@ -1533,9 +1533,9 @@
 				};
 
 				ps_i2c@0xf1970000 {
+					compatible = "xlnx,ps7-i2c-1.00.a\0cdns,i2c-r1p10";
 					#address-cells = <0x01>;
 					#size-cells = <0x00>;
-					compatible = "xlnx,ps7-i2c-1.00.a\0cdns,i2c-r1p10";
 					interrupts = <0x0c>;
 					reg-extended = <0x0a 0x00 0xf1970000 0x00 0x10000 0x00>;
 					reset-gpios = <0x1a 0x31>;
@@ -1543,9 +1543,9 @@
 				};
 
 				ps_i2c@0xf1980000 {
+					compatible = "xlnx,ps7-i2c-1.00.a\0cdns,i2c-r1p10";
 					#address-cells = <0x01>;
 					#size-cells = <0x00>;
-					compatible = "xlnx,ps7-i2c-1.00.a\0cdns,i2c-r1p10";
 					interrupts = <0x0d>;
 					reg-extended = <0x0a 0x00 0xf1980000 0x00 0x10000 0x00>;
 					reset-gpios = <0x1a 0x32>;
@@ -1553,9 +1553,9 @@
 				};
 
 				ps_i2c@0xf1990000 {
+					compatible = "xlnx,ps7-i2c-1.00.a\0cdns,i2c-r1p10";
 					#address-cells = <0x01>;
 					#size-cells = <0x00>;
-					compatible = "xlnx,ps7-i2c-1.00.a\0cdns,i2c-r1p10";
 					interrupts = <0x64>;
 					reg-extended = <0x0a 0x00 0xf1990000 0x00 0x10000 0x00>;
 					reset-gpios = <0x1a 0x33>;
@@ -1563,9 +1563,9 @@
 				};
 
 				ps_i2c@0xf19a0000 {
+					compatible = "xlnx,ps7-i2c-1.00.a\0cdns,i2c-r1p10";
 					#address-cells = <0x01>;
 					#size-cells = <0x00>;
-					compatible = "xlnx,ps7-i2c-1.00.a\0cdns,i2c-r1p10";
 					interrupts = <0x65>;
 					reg-extended = <0x0a 0x00 0xf19a0000 0x00 0x10000 0x00>;
 					reset-gpios = <0x1a 0x34>;
@@ -1573,9 +1573,9 @@
 				};
 
 				ps_i2c@0xf19b0000 {
+					compatible = "xlnx,ps7-i2c-1.00.a\0cdns,i2c-r1p10";
 					#address-cells = <0x01>;
 					#size-cells = <0x00>;
-					compatible = "xlnx,ps7-i2c-1.00.a\0cdns,i2c-r1p10";
 					interrupts = <0x66>;
 					reg-extended = <0x0a 0x00 0xf19b0000 0x00 0x10000 0x00>;
 					reset-gpios = <0x1a 0x35>;
@@ -1585,9 +1585,9 @@
 
 			ocm_ctrl@OCM {
 				compatible = "xlnx,zynqmp-ocmc";
+				reg = <0x00 0xeb5d0000 0x00 0x10000 0x00>;
 				interrupts = <0x10>;
 				memsize = <0x80000>;
-				reg = <0x00 0xeb5d0000 0x00 0x10000 0x00>;
 				reset-gpios = <0x1a 0x18>;
 				phandle = <0x139>;
 			};
@@ -1641,11 +1641,11 @@
 			};
 
 			lpd_gpio@0xf1a50000 {
-				#gpio-cells = <0x01>;
 				compatible = "xlnx,zynqmp-gpio";
+				reg = <0x00 0xf1a50000 0x00 0x10000 0x00>;
+				#gpio-cells = <0x01>;
 				gpio-controller;
 				interrupts = <0x14>;
-				reg = <0x00 0xf1a50000 0x00 0x10000 0x00>;
 				reset-gpios = <0x1a 0x11>;
 				phandle = <0x13c>;
 			};
@@ -1715,8 +1715,8 @@
 
 			rpu_ctrl_a0@0xeb588000 {
 				compatible = "xlnx,psxc-rpu-cluster-core";
-				version = <0x01>;
 				reg = <0x00 0xeb588000 0x00 0x4000 0x00>;
+				version = <0x01>;
 				#gpio-cells = <0x01>;
 				gpio-controller;
 				gpios = <0x1a 0x23>;
@@ -1727,8 +1727,8 @@
 
 			rpu_ctrl_a1@0xeb58c000 {
 				compatible = "xlnx,psxc-rpu-cluster-core";
-				version = <0x01>;
 				reg = <0x00 0xeb58c000 0x00 0x4000 0x00>;
+				version = <0x01>;
 				#gpio-cells = <0x01>;
 				gpio-controller;
 				gpios = <0x1a 0x24 0x36 0x00>;
@@ -1748,8 +1748,8 @@
 
 			rpu_ctrl_b0@0xeb598000 {
 				compatible = "xlnx,psxc-rpu-cluster-core";
-				version = <0x01>;
 				reg = <0x00 0xeb598000 0x00 0x4000 0x00>;
+				version = <0x01>;
 				#gpio-cells = <0x01>;
 				gpio-controller;
 				gpios = <0x1a 0x25>;
@@ -1760,8 +1760,8 @@
 
 			rpu_ctrl_b1@0xeb59c000 {
 				compatible = "xlnx,psxc-rpu-cluster-core";
-				version = <0x01>;
 				reg = <0x00 0xeb59c000 0x00 0x4000 0x00>;
+				version = <0x01>;
 				#gpio-cells = <0x01>;
 				gpio-controller;
 				gpios = <0x1a 0x26 0x3a 0x00>;
@@ -1781,8 +1781,8 @@
 
 			rpu_ctrl_c0@0xeb5a8000 {
 				compatible = "xlnx,psxc-rpu-cluster-core";
-				version = <0x01>;
 				reg = <0x00 0xeb5a8000 0x00 0x4000 0x00>;
+				version = <0x01>;
 				#gpio-cells = <0x01>;
 				gpio-controller;
 				gpios = <0x1a 0x27>;
@@ -1793,8 +1793,8 @@
 
 			rpu_ctrl_c1@0xeb5ac000 {
 				compatible = "xlnx,psxc-rpu-cluster-core";
-				version = <0x01>;
 				reg = <0x00 0xeb5ac000 0x00 0x4000 0x00>;
+				version = <0x01>;
 				#gpio-cells = <0x01>;
 				gpio-controller;
 				gpios = <0x1a 0x28 0x3e 0x00>;
@@ -1814,8 +1814,8 @@
 
 			rpu_ctrl_d0@0xeb5b8000 {
 				compatible = "xlnx,psxc-rpu-cluster-core";
-				version = <0x01>;
 				reg = <0x00 0xeb5b8000 0x00 0x4000 0x00>;
+				version = <0x01>;
 				#gpio-cells = <0x01>;
 				gpio-controller;
 				gpios = <0x1a 0x29>;
@@ -1826,8 +1826,8 @@
 
 			rpu_ctrl_d1@0xeb5bc000 {
 				compatible = "xlnx,psxc-rpu-cluster-core";
-				version = <0x01>;
 				reg = <0x00 0xeb5bc000 0x00 0x4000 0x00>;
+				version = <0x01>;
 				#gpio-cells = <0x01>;
 				gpio-controller;
 				gpios = <0x1a 0x2a 0x42 0x00>;
@@ -1847,8 +1847,8 @@
 
 			rpu_ctrl_e0@0xeb5c8000 {
 				compatible = "xlnx,psxc-rpu-cluster-core";
-				version = <0x01>;
 				reg = <0x00 0xeb5c8000 0x00 0x4000 0x00>;
+				version = <0x01>;
 				#gpio-cells = <0x01>;
 				gpio-controller;
 				gpios = <0x1a 0x2b>;
@@ -1859,8 +1859,8 @@
 
 			rpu_ctrl_e1@0xeb5cc000 {
 				compatible = "xlnx,psxc-rpu-cluster-core";
-				version = <0x01>;
 				reg = <0x00 0xeb5cc000 0x00 0x4000 0x00>;
+				version = <0x01>;
 				#gpio-cells = <0x01>;
 				gpio-controller;
 				gpios = <0x1a 0x2c 0x46 0x00>;
@@ -1901,59 +1901,59 @@
 
 			ocm_ctrl@0xeb960000 {
 				compatible = "xlnx,zynqmp-ocmc";
+				reg = <0x00 0xeb960000 0x00 0x10000 0x00>;
 				interrupts = <0x11>;
 				memsize = <0x80000>;
-				reg = <0x00 0xeb960000 0x00 0x10000 0x00>;
 				reset-gpios = <0x1a 0xf1>;
 				phandle = <0x141>;
 			};
 
 			ocm_ctrl@0xeb9d0000 {
 				compatible = "xlnx,zynqmp-ocmc";
+				reg = <0x00 0xeb9d0000 0x00 0x10000 0x00>;
 				interrupts = <0x0e>;
 				memsize = <0x80000>;
-				reg = <0x00 0xeb9d0000 0x00 0x10000 0x00>;
 				reset-gpios = <0x1a 0xf2>;
 				phandle = <0x142>;
 			};
 
 			ocm_ctrl@0xeaa00000 {
 				compatible = "xlnx,zynqmp-ocmc";
+				reg = <0x00 0xeaa00000 0x00 0x10000 0x00>;
 				interrupts = <0x0f>;
 				memsize = <0x80000>;
-				reg = <0x00 0xeaa00000 0x00 0x10000 0x00>;
 				reset-gpios = <0x1a 0xf3>;
 				phandle = <0x143>;
 			};
 
 			can@0xf1a00000 {
 				compatible = "xlnx,versal-canfd";
+				reg = <0x00 0xf1a00000 0x00 0x10000 0x00>;
 				rx-fifo0 = <0x40>;
 				rx-fifo1 = <0x40>;
 				enable-rx-fifo1 = <0x01>;
 				canfdbus = <0x1f>;
 				interrupts = <0x5f>;
-				reg = <0x00 0xf1a00000 0x00 0x10000 0x00>;
 				reset-gpios = <0x1a 0x2e>;
 				phandle = <0x144>;
 			};
 
 			can@0xf1a10000 {
 				compatible = "xlnx,versal-canfd";
+				reg = <0x00 0xf1a10000 0x00 0x10000 0x00>;
 				rx-fifo0 = <0x40>;
 				rx-fifo1 = <0x40>;
 				enable-rx-fifo1 = <0x01>;
 				canfdbus = <0x1f>;
 				interrupts = <0x60>;
-				reg = <0x00 0xf1a10000 0x00 0x10000 0x00>;
 				reset-gpios = <0x1a 0x2f>;
 				phandle = <0x145>;
 			};
 
 			timer@0xf1ea0000 {
 				compatible = "xlnx,ps7-ttc-1.00.a";
-				interrupts = <0x2f 0x2f 0x2f>;
 				reg = <0x00 0xf1ea0000 0x00 0x10000 0x00>;
+				interrupts = <0x2f 0x2f 0x2f>;
 				width = <0x20>;
 				reset-gpios = <0x1a 0x36>;
 				phandle = <0x146>;
@@ -1961,8 +1961,8 @@
 
 			timer@0xf1eb0000 {
 				compatible = "xlnx,ps7-ttc-1.00.a";
-				interrupts = <0x30 0x30 0x30>;
 				reg = <0x00 0xf1eb0000 0x00 0x10000 0x00>;
+				interrupts = <0x30 0x30 0x30>;
 				width = <0x20>;
 				reset-gpios = <0x1a 0x37>;
 				phandle = <0x147>;
@@ -1970,8 +1970,8 @@
 
 			timer@0xf1ec0000 {
 				compatible = "xlnx,ps7-ttc-1.00.a";
-				interrupts = <0x31 0x31 0x31>;
 				reg = <0x00 0xf1ec0000 0x00 0x10000 0x00>;
+				interrupts = <0x31 0x31 0x31>;
 				width = <0x20>;
 				reset-gpios = <0x1a 0x38>;
 				phandle = <0x148>;
@@ -1979,8 +1979,8 @@
 
 			timer@0xf1ed0000 {
 				compatible = "xlnx,ps7-ttc-1.00.a";
-				interrupts = <0x32 0x32 0x32>;
 				reg = <0x00 0xf1ed0000 0x00 0x10000 0x00>;
+				interrupts = <0x32 0x32 0x32>;
 				width = <0x20>;
 				reset-gpios = <0x1a 0x39>;
 				phandle = <0x149>;
@@ -2179,17 +2179,17 @@
 
 			downstream_amba_asu {
 				compatible = "qemu:memory-region";
-				alias = <0x51>;
 				reg = <0x00 0x00 0xffffffff 0xffffffff 0xffffffff>;
+				alias = <0x51>;
 			};
 		};
 
 		amba_fpd@0 {
+			compatible = "simple-bus";
+			ranges;
 			#address-cells = <0x02>;
 			#size-cells = <0x02>;
 			#priority-cells = <0x01>;
-			compatible = "simple-bus";
-			ranges;
 			phandle = <0x0b>;
 
 			afi_fm@0xec880000 {
@@ -2219,14 +2219,14 @@
 
 			fpd_slcr@0xec8c0000 {
 				compatible = "xlnx,versal-fpd-slcr";
-				interrupts = <0x8c>;
 				reg = <0x00 0xec8c0000 0x00 0x10000 0x00>;
+				interrupts = <0x8c>;
 			};
 
 			fpd_slcr_secure@0xec8c0000 {
 				compatible = "xlnx,versal-fpd-slcr-secure";
-				interrupts = <0x8c>;
 				reg = <0x00 0xec8e0000 0x00 0x10000 0x00>;
+				interrupts = <0x8c>;
 			};
 
 			watchdog@0xecc10000 {
@@ -2239,10 +2239,10 @@
 			};
 
 			apu_cluster@0xecc00000 {
-				#gpio-cells = <0x01>;
-				gpio-controller;
 				compatible = "xlnx,versal-apu-ctrl";
 				reg = <0x00 0xecc00000 0x00 0x10000 0x00>;
+				#gpio-cells = <0x01>;
+				gpio-controller;
 				cpu0 = <0x53>;
 				cpu1 = <0x54>;
 				cpu2 = <0x55>;
@@ -2252,10 +2252,10 @@
 			};
 
 			apu_cluster@0xecd00000 {
-				#gpio-cells = <0x01>;
-				gpio-controller;
 				compatible = "xlnx,versal-apu-ctrl";
 				reg = <0x00 0xecd00000 0x00 0x10000 0x00>;
+				#gpio-cells = <0x01>;
+				gpio-controller;
 				cpu0 = <0x56>;
 				cpu1 = <0x57>;
 				cpu2 = <0x55>;
@@ -2265,10 +2265,10 @@
 			};
 
 			apu_cluster@0xece00000 {
-				#gpio-cells = <0x01>;
-				gpio-controller;
 				compatible = "xlnx,versal-apu-ctrl";
 				reg = <0x00 0xece00000 0x00 0x10000 0x00>;
+				#gpio-cells = <0x01>;
+				gpio-controller;
 				cpu0 = <0x58>;
 				cpu1 = <0x59>;
 				cpu2 = <0x55>;
@@ -2278,10 +2278,10 @@
 			};
 
 			apu_cluster@0xecf00000 {
-				#gpio-cells = <0x01>;
-				gpio-controller;
 				compatible = "xlnx,versal-apu-ctrl";
 				reg = <0x00 0xecf00000 0x00 0x10000 0x00>;
+				#gpio-cells = <0x01>;
+				gpio-controller;
 				cpu0 = <0x5a>;
 				cpu1 = <0x5b>;
 				cpu2 = <0x55>;
@@ -2362,50 +2362,50 @@
 			};
 
 			mmi_gem_ma {
-				doc-ignore = <0x01>;
 				compatible = "qemu:memory-transaction-attr";
+				doc-ignore = <0x01>;
 				secure = <0x00>;
 				requester-id = <0x25e>;
 				phandle = <0x69>;
 			};
 
 			mmi_usb_ma {
-				doc-ignore = <0x01>;
 				compatible = "qemu:memory-transaction-attr";
+				doc-ignore = <0x01>;
 				secure = <0x00>;
 				requester-id = <0x20e>;
 				phandle = <0x6b>;
 			};
 
 			amba_mmi@0 {
+				compatible = "simple-bus";
+				ranges;
 				#address-cells = <0x02>;
 				#size-cells = <0x02>;
 				#priority-cells = <0x01>;
-				compatible = "simple-bus";
-				ranges;
 				phandle = <0x6d>;
 
 				mdio_10gbe@0 {
+					compatible = "mdio";
 					#address-cells = <0x01>;
 					#size-cells = <0x00>;
 					#priority-cells = <0x00>;
-					compatible = "mdio";
 					phandle = <0x6a>;
 
 					phy@1 {
 						compatible = "phy-clause45-generic";
-						device_type = "ethernet-phy";
 						reg = <0x01>;
+						device_type = "ethernet-phy";
 						phandle = <0x15c>;
 					};
 				};
 
 				ethernet@0xed920000 {
+					compatible = "cdns,gem";
+					reg = <0x00 0xed920000 0x00 0x10000 0x00>;
 					#address-cells = <0x01>;
 					#size-cells = <0x00>;
 					#priority-cells = <0x00>;
-					compatible = "cdns,gem";
-					reg = <0x00 0xed920000 0x00 0x10000 0x00>;
 					interrupts = <0xa4 0xa4 0xa4 0xa4>;
 					dma = <0x5d>;
 					memattr = <0x69>;
@@ -2452,16 +2452,16 @@
 
 				mmi_slcr_sec@0 {
 					compatible = "qemu:memory-region";
-					qemu,ram = <0x01>;
 					reg = <0x00 0xedc30000 0x00 0x10000 0x00>;
 					read-only;
 					phandle = <0x162>;
+					qemu,ram = <0x01>;
 				};
 
 				trng@0xede80000 {
-					doc-status = "complete";
 					compatible = "xlnx,versal-trng";
 					reg = <0x00 0xede80000 0x00 0x10000 0x00>;
+					doc-status = "complete";
 					interrupts = <0xc7>;
 					#gpio-cells = <0x01>;
 					phandle = <0x6c>;
@@ -2482,10 +2482,10 @@
 
 				mmi_gpu_a@0 {
 					compatible = "qemu:memory-region";
-					qemu,ram = <0x01>;
 					reg = <0x00 0xed0a0098 0x00 0x10 0x00>;
 					read-only;
 					phandle = <0x165>;
+					qemu,ram = <0x01>;
 				};
 
 				loader_write_cpu0_0x1@0xEDC30440 {
@@ -2599,54 +2599,54 @@
 
 			downstream_amba_mmi {
 				compatible = "qemu:memory-region";
-				alias = <0x6d>;
 				reg = <0x00 0x00 0xffffffff 0xffffffff 0xffffffff>;
+				alias = <0x6d>;
 			};
 		};
 
 		amba_pmc_internal@0 {
+			compatible = "simple-bus";
+			ranges;
 			doc-ignore = <0x01>;
 			#address-cells = <0x02>;
 			#size-cells = <0x02>;
 			#priority-cells = <0x01>;
-			compatible = "simple-bus";
-			ranges;
 			phandle = <0x0c>;
 
 			downstream_amba_pmc_ppu {
 				compatible = "qemu:memory-region";
-				alias = <0x6e>;
 				reg = <0x00 0x00 0xffffffff 0xffffffff 0xffffffff>;
+				alias = <0x6e>;
 			};
 
 			downstream_amba_pmc_iou {
 				compatible = "qemu:memory-region";
-				alias = <0x16>;
 				reg = <0x00 0x00 0xffffffff 0xffffffff 0xffffffff>;
+				alias = <0x16>;
 			};
 
 			downstream_amba_pmc_sec {
 				compatible = "qemu:memory-region";
-				alias = <0x6f>;
 				reg = <0x00 0x00 0xffffffff 0xffffffff 0xffffffff>;
+				alias = <0x6f>;
 			};
 
 			downstream_amba_pmc_sys {
 				compatible = "qemu:memory-region";
-				alias = <0x70>;
 				reg = <0x00 0x00 0xffffffff 0xffffffff 0xffffffff>;
+				alias = <0x70>;
 			};
 
 			downstream_amba_pmc_pl {
 				compatible = "qemu:memory-region";
-				alias = <0x71>;
 				reg = <0x00 0x00 0xffffffff 0xffffffff 0xffffffff>;
+				alias = <0x71>;
 			};
 
 			downstream_amba_pmc_bat {
 				compatible = "qemu:memory-region";
-				alias = <0x72>;
 				reg = <0x00 0x00 0xffffffff 0xffffffff 0xffffffff>;
+				alias = <0x72>;
 			};
 
 			xmpu_pmc@0 {
@@ -2683,23 +2683,23 @@
 		};
 
 		amba_pmc@0 {
+			compatible = "simple-bus";
+			ranges;
 			#address-cells = <0x02>;
 			#size-cells = <0x02>;
 			#priority-cells = <0x01>;
-			compatible = "simple-bus";
-			ranges;
 			phandle = <0x74>;
 
 			downstream_amba {
 				compatible = "qemu:memory-region";
-				alias = <0x0d>;
 				reg = <0x00 0x00 0xffffffff 0xffffffff 0xffffffff>;
+				alias = <0x0d>;
 			};
 
 			downstream_amba_pmc_internal {
 				compatible = "qemu:memory-region";
-				alias = <0x0c>;
 				reg = <0x00 0x00 0xffffffff 0xffffffff 0xffffffff>;
+				alias = <0x0c>;
 			};
 
 			xmpu_pmc_cfu@0xf1340000 {
@@ -2729,19 +2729,19 @@
 		};
 
 		amba_pmc_iou@0 {
+			compatible = "simple-bus";
+			ranges;
 			#address-cells = <0x02>;
 			#size-cells = <0x02>;
 			#priority-cells = <0x01>;
-			compatible = "simple-bus";
-			ranges;
 			doc-name = "PMC IOU";
 			doc-status = "partial";
 			phandle = <0x16>;
 
 			pmc_iou_slcr@0xf1060000 {
-				doc-status = "partial";
 				compatible = "xlnx,versal-pmx-iou-slcr";
 				reg = <0x00 0xf1060000 0x00 0x1000 0x00>;
+				doc-status = "partial";
 				interrupts = <0xde>;
 				gpio-controller;
 				#gpio-cells = <0x02>;
@@ -2762,11 +2762,11 @@
 			};
 
 			pmc_qspi_dma@QSPI_DMA {
-				doc-status = "complete";
 				compatible = "zynqmp,csu-dma";
+				reg = <0x00 0xf1030800 0x00 0x800 0x00>;
+				doc-status = "complete";
 				interrupts = <0xd9>;
 				#stream-id-cells = <0x01>;
-				reg = <0x00 0xf1030800 0x00 0x800 0x00>;
 				dma = <0x74>;
 				memattr = <0x7d>;
 				memattr-write = <0x7b>;
@@ -2776,11 +2776,11 @@
 			};
 
 			pmc_qspi@0xf1030000 {
+				compatible = "xlnx,usmp-gqspi\0cdns,spi-r1p6";
 				doc-status = "complete";
 				#address-cells = <0x01>;
 				#size-cells = <0x00>;
 				#bus-cells = <0x01>;
-				compatible = "xlnx,usmp-gqspi\0cdns,spi-r1p6";
 				stream-connected-dma = <0x7f>;
 				dma = <0x74>;
 				interrupts = <0xd9>;
@@ -2788,86 +2788,86 @@
 				reg-extended = <0x16 0x00 0xf1030000 0x00 0x1000
 						0x00 0x80 0x00 0x00 0x00 0x20000000 0x00>;
 				speed-hz = <0x989680>;
+				reset-gpios = <0x7e 0x00>;
+				phandle = <0x176>;
 				xlnx,fb-clk = <0x01>;
 				xlnx,qspi-clk-freq-hz = <0xbebc200>;
 				xlnx,qspi-mode = <0x02>;
-				reset-gpios = <0x7e 0x00>;
-				phandle = <0x176>;
 
 				qspi_flash_lcs_lb@0 {
+					compatible = "m25qu02gcbb\0st,m25p80";
+					reg = <0x00 0x00>;
 					#address-cells = <0x01>;
 					#size-cells = <0x01>;
 					#priority-cells = <0x00>;
 					#bus-cells = <0x01>;
-					compatible = "m25qu02gcbb\0st,m25p80";
 					spi-max-frequency = <0x2faf080>;
-					reg = <0x00 0x00>;
 					drive-index = <0x00>;
 					phandle = <0x177>;
 
 					qspi_flash_lcs_lb@0x00000000 {
-						label = "qspi_flash_lcs_lb";
 						reg = <0x00 0x2000000>;
+						label = "qspi_flash_lcs_lb";
 					};
 				};
 
 				qspi_flash_lcs_ub@0 {
+					compatible = "m25qu02gcbb\0st,m25p80";
+					reg = <0x02 0x01>;
 					#address-cells = <0x01>;
 					#size-cells = <0x01>;
 					#priority-cells = <0x00>;
 					#bus-cells = <0x01>;
-					compatible = "m25qu02gcbb\0st,m25p80";
 					spi-max-frequency = <0x2faf080>;
-					reg = <0x02 0x01>;
 					drive-index = <0x01>;
 					phandle = <0x178>;
 
 					qspi_flash_lcs_ub@0x00000000 {
-						label = "qspi_flash_lcs_ub";
 						reg = <0x00 0x2000000>;
+						label = "qspi_flash_lcs_ub";
 					};
 				};
 
 				qspi_flash_ucs_lb@0 {
+					compatible = "m25qu02gcbb\0st,m25p80";
+					reg = <0x01 0x00>;
 					#address-cells = <0x01>;
 					#size-cells = <0x01>;
 					#priority-cells = <0x00>;
 					#bus-cells = <0x01>;
-					compatible = "m25qu02gcbb\0st,m25p80";
 					spi-max-frequency = <0x2faf080>;
-					reg = <0x01 0x00>;
 					drive-index = <0x02>;
 					phandle = <0x179>;
 
 					qspi_flash_ucs_lb@0x00000000 {
-						label = "qspi_flash_ucs_lb";
 						reg = <0x00 0x2000000>;
+						label = "qspi_flash_ucs_lb";
 					};
 				};
 
 				qspi_flash_ucs_ub@0 {
+					compatible = "m25qu02gcbb\0st,m25p80";
+					reg = <0x03 0x01>;
 					#address-cells = <0x01>;
 					#size-cells = <0x01>;
 					#priority-cells = <0x00>;
 					#bus-cells = <0x01>;
-					compatible = "m25qu02gcbb\0st,m25p80";
 					spi-max-frequency = <0x2faf080>;
-					reg = <0x03 0x01>;
 					drive-index = <0x03>;
 					phandle = <0x17a>;
 
 					qspi_flash_ucs_ub@0x00000000 {
-						label = "qspi_flash_ucs_ub";
 						reg = <0x00 0x2000000>;
+						label = "qspi_flash_ucs_ub";
 					};
 				};
 			};
 
 			ospi_dst_dma@0 {
-				doc-status = "complete";
 				compatible = "zynqmp,csu-dma";
-				interrupts = <0xd8>;
 				reg = <0x00 0xf1011800 0x00 0x800 0x00>;
+				doc-status = "complete";
+				interrupts = <0xd8>;
 				dma = <0x74>;
 				memattr = <0x81>;
 				memattr-write = <0x7c>;
@@ -2877,10 +2877,10 @@
 			};
 
 			ospi_src_dma@0 {
-				doc-status = "complete";
 				compatible = "zynqmp,csu-dma";
-				interrupts = <0xd8>;
 				reg = <0x00 0xf1011000 0x00 0x800 0x00>;
+				doc-status = "complete";
+				interrupts = <0xd8>;
 				dma = <0x82>;
 				memattr = <0x81>;
 				memattr-write = <0x7c>;
@@ -2890,11 +2890,11 @@
 			};
 
 			spi@0xf1010000 {
+				compatible = "xlnx,versal-ospi";
 				doc-status = "complete";
 				#address-cells = <0x01>;
 				#size-cells = <0x00>;
 				#bus-cells = <0x01>;
-				compatible = "xlnx,versal-ospi";
 				reg-extended = <0x16 0x00 0xf1010000 0x00 0x1000
 						0x00 0x82 0x00 0x00 0x00 0x20000000 0x00>;
 				dma-src = <0x84>;
@@ -2904,78 +2904,78 @@
 				phandle = <0x17b>;
 
 				ospi_flash_lcs_lb@0 {
+					compatible = "mt35xu02gbba";
+					reg = <0x00 0x00>;
 					#address-cells = <0x01>;
 					#size-cells = <0x01>;
 					#priority-cells = <0x00>;
 					#bus-cells = <0x01>;
-					compatible = "mt35xu02gbba";
 					spi-max-frequency = <0x2faf080>;
-					reg = <0x00 0x00>;
 					drive-index = <0x04>;
 					phandle = <0x17c>;
 
 					ospi_flash_lcs_lb@0x00000000 {
-						label = "ospi_flash_lcs_lb";
 						reg = <0x00 0x2000000>;
+						label = "ospi_flash_lcs_lb";
 					};
 				};
 
 				ospi_flash_lcs_ub@0 {
+					compatible = "mt35xu02gbba";
+					reg = <0x01 0x00>;
 					#address-cells = <0x01>;
 					#size-cells = <0x01>;
 					#priority-cells = <0x00>;
 					#bus-cells = <0x01>;
-					compatible = "mt35xu02gbba";
 					spi-max-frequency = <0x2faf080>;
-					reg = <0x01 0x00>;
 					drive-index = <0x05>;
 					phandle = <0x17d>;
 
 					ospi_flash_lcs_ub@0x00000000 {
-						label = "ospi_flash_lcs_ub";
 						reg = <0x00 0x2000000>;
+						label = "ospi_flash_lcs_ub";
 					};
 				};
 
 				ospi_flash_ucs_lb@0 {
+					compatible = "mt35xu01gbba\0st,m25p80";
+					reg = <0x02 0x00>;
 					#address-cells = <0x01>;
 					#size-cells = <0x01>;
 					#priority-cells = <0x00>;
 					#bus-cells = <0x01>;
-					compatible = "mt35xu01gbba\0st,m25p80";
 					spi-max-frequency = <0x2faf080>;
-					reg = <0x02 0x00>;
 					drive-index = <0x06>;
 					phandle = <0x17e>;
 
 					ospi_flash_ucs_lb@0x00000000 {
-						label = "ospi_flash_ucs_lb";
 						reg = <0x00 0x2000000>;
+						label = "ospi_flash_ucs_lb";
 					};
 				};
 
 				ospi_flash_ucs_ub@0 {
+					compatible = "mt35xu01gbba\0st,m25p80";
+					reg = <0x03 0x00>;
 					#address-cells = <0x01>;
 					#size-cells = <0x01>;
 					#priority-cells = <0x00>;
 					#bus-cells = <0x01>;
-					compatible = "mt35xu01gbba\0st,m25p80";
 					spi-max-frequency = <0x2faf080>;
-					reg = <0x03 0x00>;
 					drive-index = <0x07>;
 					phandle = <0x17f>;
 
 					ospi_flash_ucs_ub@0x00000000 {
-						label = "ospi_flash_ucs_ub";
 						reg = <0x00 0x2000000>;
+						label = "ospi_flash_ucs_ub";
 					};
 				};
 			};
 
 			gpio_mr_mux@0xc0000000 {
-				doc-status = "complete";
 				compatible = "gpio-mr-mux";
 				reg = <0x00 0xc0000000 0x00 0x20000000 0x00>;
+				doc-status = "complete";
 				gpios = <0x85 0x02 0x00 0x85 0x03 0x00>;
 				mr-size = <0x20000000>;
 				mr0 = <0x80>;
@@ -2986,20 +2986,20 @@
 			};
 
 			pmc_gpio@0xf1020000 {
-				#gpio-cells = <0x01>;
 				compatible = "xlnx,zynqmp-gpio";
+				reg = <0x00 0xf1020000 0x00 0x10000 0x00>;
+				#gpio-cells = <0x01>;
 				gpio-controller;
 				interrupts = <0xca>;
-				reg = <0x00 0xf1020000 0x00 0x10000 0x00>;
 				reset-gpios = <0x7e 0x05>;
 				phandle = <0x181>;
 			};
 
 			mmc@0xf1040000 {
-				doc-status = "complete";
 				compatible = "xilinx,zynqmp-sdhci\0generic-sdhci";
-				drive-index = <0x00>;
 				reg = <0x00 0xf1040000 0x00 0x10000 0x00>;
+				doc-status = "complete";
+				drive-index = <0x00>;
 				interrupts = <0xda>;
 				dma = <0x17>;
 				memattr = <0x77>;
@@ -3008,19 +3008,19 @@
 				gpio-names = "SLOTTYPE";
 				reset-gpios = <0x7e 0x08>;
 				is-mmc = <0x00>;
+				phandle = <0x182>;
 				xlnx,has-cd = <0x01>;
 				xlnx,has-power = <0x00>;
 				xlnx,has-wp = <0x01>;
 				xlnx,sdio-clk-freq-hz = <0x2faf080>;
-				phandle = <0x182>;
 			};
 
 			mmc@0xf1050000 {
-				doc-status = "complete";
 				compatible = "xlnx,versalnet-emmc";
-				drive-index = <0x01>;
 				reg = <0x00 0xf1050200 0x00 0x100 0x00 0x00 0xf1050000 0x00
 				       0x100 0x00>;
+				doc-status = "complete";
+				drive-index = <0x01>;
 				interrupts = <0xdc>;
 				dma = <0x17>;
 				memattr = <0x79>;
@@ -3029,20 +3029,20 @@
 				gpio-names = "SLOTTYPE";
 				reset-gpios = <0x7e 0x03>;
 				is-mmc = <0x00>;
+				phandle = <0x183>;
 				xlnx,has-cd = <0x01>;
 				xlnx,has-power = <0x00>;
 				xlnx,has-wp = <0x01>;
 				xlnx,sdio-clk-freq-hz = <0x2faf080>;
-				phandle = <0x183>;
 			};
 
 			pmc_tap@0xf11a0000 {
+				compatible = "xlnx,pmc-tap";
+				reg = <0x00 0xf11a0000 0x00 0x80000 0x00>;
 				doc-status = "complete";
 				doc-comments = "Just a stub.";
-				compatible = "xlnx,pmc-tap";
 				interrupts-extended = <0x86 0x1e>;
 				interrupt-names = "sec-dbg-int";
-				reg = <0x00 0xf11a0000 0x00 0x80000 0x00>;
 				idcode = <0x14ca8093>;
 				platform-ver = <0x01>;
 				phandle = <0x184>;
@@ -3099,11 +3099,11 @@
 		};
 
 		amba_pmc_sec@0 {
+			compatible = "simple-bus";
+			ranges;
 			#address-cells = <0x02>;
 			#size-cells = <0x02>;
 			#priority-cells = <0x01>;
-			compatible = "simple-bus";
-			ranges;
 			doc-name = "PMC Secure";
 			doc-status = "in-progress";
 			qemu-fdt-abort-on-error = "Unable to create PMC security models.
@@ -3111,17 +3111,17 @@ Cannot continue.\nTry installing libgcrypt.";
 			phandle = <0x6f>;
 
 			trng@0xf1230000 {
-				doc-status = "complete";
 				compatible = "xlnx,versal-trng";
 				reg = <0x00 0xf1230000 0x00 0x1000 0x00>;
+				doc-status = "complete";
 				interrupts = <0xe9>;
 			};
 
 			pmc_dma0_src@0 {
-				doc-status = "complete";
 				compatible = "zynqmp,csu-dma";
-				stream-connected-dma0 = <0x8a>;
 				reg = <0x00 0xf11c0000 0x00 0x800 0x00>;
+				doc-status = "complete";
+				stream-connected-dma0 = <0x8a>;
 				dma = <0x74>;
 				memattr = <0x8b>;
 				dma-width = <0x10>;
@@ -3132,9 +3132,9 @@ Cannot continue.\nTry installing libgcrypt.";
 			};
 
 			pmc_dma0_dst@0 {
-				doc-status = "complete";
 				compatible = "zynqmp,csu-dma";
 				reg = <0x00 0xf11c0800 0x00 0x800 0x00>;
+				doc-status = "complete";
 				dma = <0x74>;
 				memattr = <0x8b>;
 				is-dst = <0x01>;
@@ -3146,10 +3146,10 @@ Cannot continue.\nTry installing libgcrypt.";
 			};
 
 			pmc_dma1_src@0 {
-				doc-status = "complete";
 				compatible = "zynqmp,csu-dma";
-				stream-connected-dma1 = <0x8a>;
 				reg = <0x00 0xf11d0000 0x00 0x800 0x00>;
+				doc-status = "complete";
+				stream-connected-dma1 = <0x8a>;
 				dma = <0x74>;
 				memattr = <0x8c>;
 				dma-width = <0x10>;
@@ -3160,9 +3160,9 @@ Cannot continue.\nTry installing libgcrypt.";
 			};
 
 			pmc_dma1_dst@0 {
-				doc-status = "complete";
 				compatible = "zynqmp,csu-dma";
 				reg = <0x00 0xf11d0800 0x00 0x800 0x00>;
+				doc-status = "complete";
 				dma = <0x74>;
 				memattr = <0x8c>;
 				is-dst = <0x01>;
@@ -3174,8 +3174,8 @@ Cannot continue.\nTry installing libgcrypt.";
 			};
 
 			pmc_stream_switch@0 {
-				doc-status = "complete";
 				compatible = "versal,pmc-sss";
+				doc-status = "complete";
 				reg-extended = <0x70 0x00 0xf1110500 0x00 0x04 0x01>;
 				stream-connected-dma0 = <0x8d>;
 				stream-connected-dma1 = <0x8e>;
@@ -3187,20 +3187,20 @@ Cannot continue.\nTry installing libgcrypt.";
 			};
 
 			pmc_sha@0xf1210000 {
-				doc-status = "complete";
 				compatible = "xlnx,asu_sha3";
 				reg = <0x00 0xf1210000 0x00 0x100 0x00>;
+				doc-status = "complete";
 				interrupts = <0xe7>;
 				phandle = <0x90>;
 			};
 
 			pmc_aes@0xf11e0000 {
+				compatible = "xlnx-pmxc-aes";
+				reg = <0x00 0xf11e0000 0x00 0x100 0x00>;
 				doc-status = "in-progress";
 				#gpio-cells = <0x01>;
 				gpio-controller;
-				compatible = "xlnx-pmxc-aes";
 				stream-connected-aes = <0x8a>;
-				reg = <0x00 0xf11e0000 0x00 0x100 0x00>;
 				interrupts = <0xe4>;
 				gpios = <0x93 0x00 0x93 0x01>;
 				gpio-names = "busy\0done";
@@ -3210,8 +3210,8 @@ Cannot continue.\nTry installing libgcrypt.";
 				phandle = <0x8f>;
 
 				xlnx_aes@0 {
-					#gpio-cells = <0x01>;
 					compatible = "xlnx-aes";
+					#gpio-cells = <0x01>;
 					gpios = <0x8f 0x00>;
 					gpio-names = "reset";
 					phandle = <0x93>;
@@ -3219,47 +3219,47 @@ Cannot continue.\nTry installing libgcrypt.";
 			};
 
 			pmc_rsa@0xf1200000 {
-				doc-status = "complete";
 				compatible = "xlnx,versal-ecdsa-rsa";
 				reg = <0x00 0xf1200000 0x00 0x6c 0x00>;
+				doc-status = "complete";
 				interrupts = <0xe5>;
 				ram-nr-words = <0x100>;
 				phandle = <0x18a>;
 			};
 
 			xlnx_pmc_efuse_cache@0xf1250000 {
-				doc-status = "complete";
 				compatible = "xlnx,pmx_efuse_cache";
 				reg = <0x00 0xf1250000 0x00 0x10000 0x00>;
+				doc-status = "complete";
 				efuse = <0x95>;
 				phandle = <0x99>;
 			};
 
 			pmc_puf_ctrl@0 {
 				compatible = "xlnx,versal-puf-ctrl";
+				reg = <0x00 0xf1150000 0x00 0x10000 0x00>;
 				zynqmp-aes-key-sink-puf = <0x8f>;
 				efuse = <0x95>;
-				reg = <0x00 0xf1150000 0x00 0x10000 0x00>;
 				#gpio-cells = <0x01>;
 				gpio-controller;
 				phandle = <0x97>;
 			};
 
 			pmc_efuse@0xf1240000 {
-				doc-status = "complete";
 				compatible = "xlnx,pmx_efuse_ctrl";
+				reg = <0x00 0xf1240000 0x00 0x10000 0x00>;
+				doc-status = "complete";
 				#gpio-cells = <0x02>;
 				zynqmp-aes-key-sink-efuses = <0x8f>;
 				zynqmp-aes-key-sink-efuses-user0 = <0x8f>;
 				zynqmp-aes-key-sink-efuses-user1 = <0x8f>;
-				reg = <0x00 0xf1240000 0x00 0x10000 0x00>;
 				interrupts = <0xe6>;
 				efuse = <0x95>;
 				phandle = <0x18b>;
 
 				xlnx_efuse@0 {
-					doc-ignore = <0x01>;
 					compatible = "xlnx,efuse";
+					doc-ignore = <0x01>;
 					efuse-nr = <0x03>;
 					efuse-size = <0x2000>;
 					init-factory-extidcode = <0x01>;
@@ -3268,10 +3268,10 @@ Cannot continue.\nTry installing libgcrypt.";
 			};
 
 			pmc_bbram@0xf11f0000 {
-				doc-status = "partial";
-				doc-limitations = "Missing AES key connections.";
 				compatible = "xlnx,bbram-ctrl";
 				reg = <0x00 0xf11f0000 0x00 0x10000 0x00>;
+				doc-status = "partial";
+				doc-limitations = "Missing AES key connections.";
 				interrupts = <0xbca>;
 				zynqmp-aes-key-sink-bbram = <0x8f>;
 				crc-zpads = <0x00>;
@@ -3279,10 +3279,10 @@ Cannot continue.\nTry installing libgcrypt.";
 			};
 
 			pmc_sbi@0xf1220000 {
-				doc-status = "complete";
 				compatible = "pmc,slave-boot";
 				reg = <0x00 0xf1220000 0x00 0x10000 0x00 0x00 0xf2100000
 				       0x00 0x10000 0x00>;
+				doc-status = "complete";
 				interrupts = <0xe3>;
 				stream-connected-sbi = <0x8a>;
 				reset-gpios = <0x7e 0x12>;
@@ -3290,27 +3290,27 @@ Cannot continue.\nTry installing libgcrypt.";
 			};
 
 			pmc_sha1@0xF1800000 {
-				doc-status = "complete";
 				compatible = "xlnx,asu_sha2";
 				reg = <0x00 0xf1800000 0x00 0x10000 0x00>;
+				doc-status = "complete";
 				phandle = <0x92>;
 			};
 		};
 
 		amba_pmc_ppu@0 {
+			compatible = "simple-bus";
+			ranges;
 			#address-cells = <0x02>;
 			#size-cells = <0x02>;
 			#priority-cells = <0x01>;
-			compatible = "simple-bus";
-			ranges;
 			phandle = <0x6e>;
 
 			pmc_gic_proxy@0 {
+				compatible = "xlnx,zynqmp-gicp";
+				reg = <0x00 0xf1140000 0x00 0x100 0x00>;
 				doc-status = "complete";
 				#interrupt-cells = <0x03>;
 				interrupt-controller;
-				compatible = "xlnx,zynqmp-gicp";
-				reg = <0x00 0xf1140000 0x00 0x100 0x00>;
 				interrupt-parent = <0x08>;
 				interrupts = <0x10>;
 				max-ints = <0x100>;
@@ -3319,19 +3319,19 @@ Cannot continue.\nTry installing libgcrypt.";
 		};
 
 		amba_pmc_sys@0 {
+			compatible = "simple-bus";
+			ranges;
 			#address-cells = <0x02>;
 			#size-cells = <0x02>;
 			#priority-cells = <0x01>;
-			compatible = "simple-bus";
-			ranges;
 			doc-name = "PMC System";
 			doc-status = "partial";
 			phandle = <0x70>;
 
 			pmc_clk_rst@0xf1260000 {
-				doc-status = "partial";
 				compatible = "xlnx,pmx_crp";
 				reg = <0x00 0xf1260000 0x00 0x80000 0x00>;
+				doc-status = "partial";
 				interrupts = <0xbca>;
 				gpio-controller;
 				#gpio-cells = <0x01>;
@@ -3339,9 +3339,9 @@ Cannot continue.\nTry installing libgcrypt.";
 			};
 
 			pmc_int@0xf1400000 {
-				doc-status = "partial";
 				compatible = "xlnx,versal-pmc-int";
 				reg = <0x00 0xf1400000 0x00 0x300000 0x00>;
+				doc-status = "partial";
 				interrupts = <0xe2>;
 				phandle = <0x18c>;
 			};
@@ -3352,6 +3352,8 @@ Cannot continue.\nTry installing libgcrypt.";
 			};
 
 			pmc_global@0xf1110000 {
+				compatible = "xlnx,pmxc_global";
+				reg = <0x00 0xf1110000 0x00 0x50000 0x00>;
 				doc-status = "partial";
 				#gpio-cells = <0x01>;
 				gpio-controller;
@@ -3360,11 +3362,9 @@ Cannot continue.\nTry installing libgcrypt.";
 						       0x86 0x11 0x86 0x12 0x86 0x13 0x86 0x14 0x86
 						       0x15 0x86 0x16 0x86 0x17 0x86 0x18 0x86 0x19
 						       0x86 0x1a 0x86 0x1b 0x96 0x00 0x86 0x1d>;
-				reg = <0x00 0xf1110000 0x00 0x50000 0x00>;
 				gpios = <0x97 0x00>;
 				bbram = <0x98>;
 				efuse = <0x99>;
-				compatible = "xlnx,pmxc_global";
 				phandle = <0x76>;
 			};
 
@@ -3445,11 +3445,11 @@ Cannot continue.\nTry installing libgcrypt.";
 		};
 
 		amba_pmc_pl@0 {
+			compatible = "simple-bus";
+			ranges;
 			#address-cells = <0x02>;
 			#size-cells = <0x02>;
 			#priority-cells = <0x01>;
-			compatible = "simple-bus";
-			ranges;
 			doc-name = "PMC PL";
 			doc-status = "partial";
 			phandle = <0x71>;
@@ -3461,9 +3461,9 @@ Cannot continue.\nTry installing libgcrypt.";
 			};
 
 			npi_ddrmc_ub0@0xf62c0000 {
-				doc-limitations = "Only the uB rst is supported";
 				compatible = "xlnx,ddrmc5_ub";
 				reg = <0x00 0xf62c0000 0x00 0x40000 0x01>;
+				doc-limitations = "Only the uB rst is supported";
 				reset-gpios = <0x7e 0x0f>;
 				#gpio-cells = <0x01>;
 				gpio-controller;
@@ -3471,25 +3471,25 @@ Cannot continue.\nTry installing libgcrypt.";
 			};
 
 			npi_ddrmc_main0@0xf6290000 {
-				doc-limitations = "Just a stub";
 				compatible = "xlnx,versal-ddrmc-main";
 				reg = <0x00 0xf6290000 0x00 0x10000 0x01>;
+				doc-limitations = "Just a stub";
 				reset-gpios = <0x7e 0x0f>;
 				phandle = <0xcf>;
 			};
 
 			npi_ddrmc_noc0@0xf62a0000 {
-				doc-limitations = "Just a stub";
 				compatible = "xlnx,versal-ddrmc-noc";
 				reg = <0x00 0xf62a0000 0x00 0x20000 0xffffffff>;
+				doc-limitations = "Just a stub";
 				reset-gpios = <0x7e 0x0f>;
 				phandle = <0x193>;
 			};
 
 			npi_ddrmc_ub1@0xf63b0000 {
-				doc-limitations = "Only the uB rst is supported";
 				compatible = "xlnx,ddrmc5_ub";
 				reg = <0x00 0xf63b0000 0x00 0x40000 0x01>;
+				doc-limitations = "Only the uB rst is supported";
 				reset-gpios = <0x7e 0x0f>;
 				#gpio-cells = <0x01>;
 				gpio-controller;
@@ -3497,25 +3497,25 @@ Cannot continue.\nTry installing libgcrypt.";
 			};
 
 			npi_ddrmc_main1@0xf6380000 {
-				doc-limitations = "Just a stub";
 				compatible = "xlnx,versal-ddrmc-main";
 				reg = <0x00 0xf6380000 0x00 0x10000 0x01>;
+				doc-limitations = "Just a stub";
 				reset-gpios = <0x7e 0x0f>;
 				phandle = <0x195>;
 			};
 
 			npi_ddrmc_noc1@0xf6390000 {
-				doc-limitations = "Just a stub";
 				compatible = "xlnx,versal-ddrmc-noc";
 				reg = <0x00 0xf6390000 0x00 0x20000 0xffffffff>;
+				doc-limitations = "Just a stub";
 				reset-gpios = <0x7e 0x0f>;
 				phandle = <0x196>;
 			};
 
 			npi_ddrmc_ub2@0xf6940000 {
-				doc-limitations = "Only the uB rst is supported";
 				compatible = "xlnx,ddrmc5_ub";
 				reg = <0x00 0xf6940000 0x00 0x40000 0x01>;
+				doc-limitations = "Only the uB rst is supported";
 				reset-gpios = <0x7e 0x0f>;
 				#gpio-cells = <0x01>;
 				gpio-controller;
@@ -3523,25 +3523,25 @@ Cannot continue.\nTry installing libgcrypt.";
 			};
 
 			npi_ddrmc_main2@0xf6910000 {
-				doc-limitations = "Just a stub";
 				compatible = "xlnx,versal-ddrmc-main";
 				reg = <0x00 0xf6910000 0x00 0x10000 0x01>;
+				doc-limitations = "Just a stub";
 				reset-gpios = <0x7e 0x0f>;
 				phandle = <0x198>;
 			};
 
 			npi_ddrmc_noc2@0xf6920000 {
-				doc-limitations = "Just a stub";
 				compatible = "xlnx,versal-ddrmc-noc";
 				reg = <0x00 0xf6920000 0x00 0x20000 0xffffffff>;
+				doc-limitations = "Just a stub";
 				reset-gpios = <0x7e 0x0f>;
 				phandle = <0x199>;
 			};
 
 			npi_ddrmc_ub3@0xf6a20000 {
-				doc-limitations = "Only the uB rst is supported";
 				compatible = "xlnx,ddrmc5_ub";
 				reg = <0x00 0xf6a20000 0x00 0x40000 0x01>;
+				doc-limitations = "Only the uB rst is supported";
 				reset-gpios = <0x7e 0x0f>;
 				#gpio-cells = <0x01>;
 				gpio-controller;
@@ -3549,17 +3549,17 @@ Cannot continue.\nTry installing libgcrypt.";
 			};
 
 			npi_ddrmc_main3@0xf69f0000 {
-				doc-limitations = "Just a stub";
 				compatible = "xlnx,versal-ddrmc-main";
 				reg = <0x00 0xf69f0000 0x00 0x10000 0x01>;
+				doc-limitations = "Just a stub";
 				reset-gpios = <0x7e 0x0f>;
 				phandle = <0x19b>;
 			};
 
 			npi_ddrmc_noc3@0xf6a00000 {
-				doc-limitations = "Just a stub";
 				compatible = "xlnx,versal-ddrmc-noc";
 				reg = <0x00 0xf6a00000 0x00 0x20000 0xffffffff>;
+				doc-limitations = "Just a stub";
 				reset-gpios = <0x7e 0x0f>;
 				phandle = <0x19c>;
 			};
@@ -3805,12 +3805,12 @@ Cannot continue.\nTry installing libgcrypt.";
 				phandle = <0x75>;
 
 				cfu@0x0 {
-					doc-status = "partial";
-					doc-comments = "Stub";
-					doc-limitations = "No way to extract CFRAME data.";
 					compatible = "xlnx,versal-cfu";
 					reg = <0x00 0x00 0x00 0x10000 0x00 0x00 0x10000 0x00 0x1000
 					       0x00 0x00 0xcd0000 0x00 0x40000 0x00>;
+					doc-status = "partial";
+					doc-comments = "Stub";
+					doc-limitations = "No way to extract CFRAME data.";
 					chardev = "pmc-cfu";
 					dma = <0x74>;
 					phandle = <0xa3>;
@@ -3819,41 +3819,41 @@ Cannot continue.\nTry installing libgcrypt.";
 		};
 
 		amba_pmc_bat@0 {
+			compatible = "simple-bus";
+			ranges;
 			#address-cells = <0x02>;
 			#size-cells = <0x02>;
 			#priority-cells = <0x01>;
-			compatible = "simple-bus";
-			ranges;
 			doc-name = "PMC BAT";
 			doc-status = "partial";
 			phandle = <0x72>;
 
 			rtc@0xf12a0000 {
+				compatible = "xlnx,zynqmp-rtc";
+				reg = <0x00 0xf12a0000 0x00 0x10000 0x00>;
 				doc-status = "complete";
 				doc-comments = "Versal PMC RTC";
-				compatible = "xlnx,zynqmp-rtc";
 				interrupts = <0xbca 0xc8 0xc9>;
-				reg = <0x00 0xf12a0000 0x00 0x10000 0x00>;
-				xlnx,version = "2.0.0";
 				phandle = <0x1a2>;
+				xlnx,version = "2.0.0";
 			};
 		};
 
 		amba_psm@0 {
+			compatible = "simple-bus";
+			ranges;
 			#address-cells = <0x02>;
 			#size-cells = <0x02>;
 			#priority-cells = <0x01>;
-			compatible = "simple-bus";
-			ranges;
 			phandle = <0x14>;
 		};
 
 		amba_xram@0 {
+			compatible = "simple-bus";
+			ranges;
 			#address-cells = <0x02>;
 			#size-cells = <0x02>;
 			#priority-cells = <0x01>;
-			compatible = "simple-bus";
-			ranges;
 			phandle = <0x15>;
 
 			xram_ctrl_0 {
@@ -3894,44 +3894,45 @@ Cannot continue.\nTry installing libgcrypt.";
 		};
 
 		amba_asu_cpu@0 {
+			compatible = "simple-bus";
+			ranges;
 			#address-cells = <0x02>;
 			#size-cells = <0x02>;
 			#priority-cells = <0x01>;
 			#interrupt-cells = <0x01>;
-			compatible = "simple-bus";
-			ranges;
 			phandle = <0xb4>;
 
 			downstream_amba {
 				compatible = "qemu:memory-region";
-				alias = <0x0d>;
 				reg = <0x00 0x00 0xffffffff 0xffffffff 0xffffffff>;
+				alias = <0x0d>;
 			};
 		};
 
 		amba_asu@0 {
+			compatible = "simple-bus";
+			ranges;
 			#address-cells = <0x02>;
 			#size-cells = <0x02>;
 			#priority-cells = <0x01>;
-			compatible = "simple-bus";
-			ranges;
 			phandle = <0x51>;
 
 			asu_instr_ram@0xebe00000 {
 				compatible = "qemu:memory-region";
-				device_type = "memory";
-				qemu,ram = <0x01>;
 				reg = <0x00 0xebe00000 0x00 0x40000 0x00>;
+				device_type = "memory";
 				phandle = <0x1a3>;
+				qemu,ram = <0x01>;
 			};
 
 			io-module@0xebe80000 {
+				compatible = "xlnx,iomodule-1.02.a\0syscon\0simple-bus";
 				#address-cells = <0x02>;
 				#size-cells = <0x01>;
 				#priority-cells = <0x00>;
-				compatible = "xlnx,iomodule-1.02.a\0syscon\0simple-bus";
 				container = <0xb4>;
 				priority = <0xffffffff>;
+				phandle = <0x1a4>;
 				xlnx,freq = <0x47868c0>;
 				xlnx,instance = "iomodule_0";
 				xlnx,io-mask = <0xfffe0000>;
@@ -3939,15 +3940,15 @@ Cannot continue.\nTry installing libgcrypt.";
 				xlnx,lmb-dwidth = <0x20>;
 				xlnx,mask = <0xffffff80>;
 				xlnx,use-io-bus = <0x01>;
-				phandle = <0x1a4>;
 
 				asu_io_intc@0C {
-					#interrupt-cells = <0x01>;
 					compatible = "xlnx,io-intc-1.02.a\0xlnx,io_intc";
-					interrupt-controller;
-					interrupts-extended = <0xb5 0x0b>;
 					reg = <0x00 0xebe8000c 0x04 0x00 0xebe80030 0x10 0x00
 					       0xebe80080 0x7c>;
+					#interrupt-cells = <0x01>;
+					interrupt-controller;
+					interrupts-extended = <0xb5 0x0b>;
+					phandle = <0x09>;
 					xlnx,intc-addr-width = <0x20>;
 					xlnx,intc-base-vectors = <0x00>;
 					xlnx,intc-has-fast = <0x00>;
@@ -3955,110 +3956,109 @@ Cannot continue.\nTry installing libgcrypt.";
 					xlnx,intc-level-edge = <0x00>;
 					xlnx,intc-positive = <0xffff>;
 					xlnx,intc-use-ext-intr = <0x01>;
-					phandle = <0x09>;
 				};
 
 				asu_gpi@20 {
+					compatible = "xlnx,io-gpi-1.02.a\0xlnx,io_gpi";
+					reg = <0x00 0xebe80020 0x04>;
 					#gpio-cells = <0x01>;
 					gpio-controller;
-					compatible = "xlnx,io-gpi-1.02.a\0xlnx,io_gpi";
 					interrupt-parent = <0x09>;
 					interrupts = <0x0b>;
-					reg = <0x00 0xebe80020 0x04>;
+					phandle = <0x1a5>;
 					xlnx,gpi-interrupt = <0x01>;
 					xlnx,gpi-size = <0x20>;
 					xlnx,use-gpi = <0x01>;
-					phandle = <0x1a5>;
 				};
 
 				asu_gpo@10 {
-					#gpio-cells = <0x01>;
-					gpio-controller;
 					compatible = "xlnx,io-gpo-1.02.a\0xlnx,io_gpo";
 					reg = <0x00 0xebe80010 0x04>;
+					#gpio-cells = <0x01>;
+					gpio-controller;
+					phandle = <0xb6>;
 					xlnx,gpo-init = <0x00>;
 					xlnx,gpo-size = <0x03>;
 					xlnx,use-gpo = <0x01>;
-					phandle = <0xb6>;
 				};
 
 				asu_gpo@14 {
-					#gpio-cells = <0x01>;
-					gpio-controller;
 					compatible = "xlnx,io-gpo-1.02.a\0xlnx,io_gpo";
 					reg = <0x00 0xebe80014 0x04>;
+					#gpio-cells = <0x01>;
+					gpio-controller;
+					phandle = <0x1a6>;
 					xlnx,gpo-init = <0x00>;
 					xlnx,gpo-size = <0x20>;
 					xlnx,use-gpo = <0x01>;
-					phandle = <0x1a6>;
 				};
 
 				asu_pit@40 {
 					compatible = "xlnx,io-pit-1.02.a\0xlnx,io_pit";
+					reg = <0x00 0xebe80040 0x0c>;
 					interrupt-parent = <0x09>;
 					interrupts = <0x03>;
-					reg = <0x00 0xebe80040 0x0c>;
-					xlnx,pit-interrupt = <0x01>;
-					xlnx,pit-prescaler = <0x09>;
-					xlnx,pit-readable = <0x01>;
-					xlnx,pit-size = <0x20>;
-					xlnx,use-pit = <0x01>;
 					frequency = <0x1b6b0b00>;
 					gpios = <0xb6 0x01 0xb7 0x00>;
 					gpio-names = "ps_config\0ps_hit_in";
 					gpio-controller;
 					#gpio-cells = <0x01>;
 					phandle = <0x1a7>;
+					xlnx,pit-interrupt = <0x01>;
+					xlnx,pit-prescaler = <0x09>;
+					xlnx,pit-readable = <0x01>;
+					xlnx,pit-size = <0x20>;
+					xlnx,use-pit = <0x01>;
 				};
 
 				asu_pit@50 {
 					compatible = "xlnx,io-pit-1.02.a\0xlnx,io_pit";
+					reg = <0x00 0xebe80050 0x0c>;
 					interrupt-parent = <0x09>;
 					interrupts = <0x04>;
-					reg = <0x00 0xebe80050 0x0c>;
-					xlnx,pit-interrupt = <0x01>;
-					xlnx,pit-prescaler = <0x09>;
-					xlnx,pit-readable = <0x01>;
-					xlnx,pit-size = <0x20>;
-					xlnx,use-pit = <0x01>;
 					frequency = <0x1b6b0b00>;
 					gpio-controller;
 					#gpio-cells = <0x01>;
 					phandle = <0xb7>;
-				};
-
-				asu_pit@60 {
-					compatible = "xlnx,io-pit-1.02.a\0xlnx,io_pit";
-					interrupt-parent = <0x09>;
-					interrupts = <0x05>;
-					reg = <0x00 0xebe80060 0x0c>;
 					xlnx,pit-interrupt = <0x01>;
 					xlnx,pit-prescaler = <0x09>;
 					xlnx,pit-readable = <0x01>;
 					xlnx,pit-size = <0x20>;
 					xlnx,use-pit = <0x01>;
+				};
+
+				asu_pit@60 {
+					compatible = "xlnx,io-pit-1.02.a\0xlnx,io_pit";
+					reg = <0x00 0xebe80060 0x0c>;
+					interrupt-parent = <0x09>;
+					interrupts = <0x05>;
 					frequency = <0x1b6b0b00>;
 					gpios = <0xb6 0x02 0xb8 0x00>;
 					gpio-names = "ps_config\0ps_hit_in";
 					gpio-controller;
 					#gpio-cells = <0x01>;
 					phandle = <0x1a8>;
-				};
-
-				asu_pit@70 {
-					compatible = "xlnx,io-pit-1.02.a\0xlnx,io_pit";
-					interrupt-parent = <0x09>;
-					interrupts = <0x06>;
-					reg = <0x00 0xebe80070 0x0c>;
 					xlnx,pit-interrupt = <0x01>;
 					xlnx,pit-prescaler = <0x09>;
 					xlnx,pit-readable = <0x01>;
 					xlnx,pit-size = <0x20>;
 					xlnx,use-pit = <0x01>;
+				};
+
+				asu_pit@70 {
+					compatible = "xlnx,io-pit-1.02.a\0xlnx,io_pit";
+					reg = <0x00 0xebe80070 0x0c>;
+					interrupt-parent = <0x09>;
+					interrupts = <0x06>;
 					frequency = <0x1b6b0b00>;
 					gpio-controller;
 					#gpio-cells = <0x01>;
 					phandle = <0xb8>;
+					xlnx,pit-interrupt = <0x01>;
+					xlnx,pit-prescaler = <0x09>;
+					xlnx,pit-readable = <0x01>;
+					xlnx,pit-size = <0x20>;
+					xlnx,use-pit = <0x01>;
 				};
 			};
 
@@ -4158,9 +4158,9 @@ Cannot continue.\nTry installing libgcrypt.";
 			};
 
 			asu_aes@0xebe88000 {
-				doc-status = "complete";
 				compatible = "xlnx,asu-aes";
 				reg = <0x00 0xebe88000 0x00 0x2000 0x00>;
+				doc-status = "complete";
 				#gpio-cells = <0x01>;
 				gpio-controller;
 				interrupts = <0x12 0x1a>;
@@ -4178,40 +4178,40 @@ Cannot continue.\nTry installing libgcrypt.";
 			};
 
 			asu_sha3@0xebf40000 {
-				doc-status = "complete";
 				compatible = "xlnx,asu_sha3";
 				reg = <0x00 0xebf40000 0x00 0x10000 0x00>;
+				doc-status = "complete";
 				interrupts = <0x15>;
 				phandle = <0xbc>;
 			};
 
 			asu_sha2@0xebf30000 {
-				doc-status = "complete";
 				compatible = "xlnx,asu_sha2";
 				reg = <0x00 0xebf30000 0x00 0x10000 0x00>;
+				doc-status = "complete";
 				phandle = <0xbb>;
 			};
 
 			pmc_rsa@0xebf50000 {
-				doc-status = "complete";
 				compatible = "xlnx,asu-ecdsa-rsa";
 				reg = <0x00 0xebf50000 0x00 0x10000 0x00>;
+				doc-status = "complete";
 				interrupts = <0x17>;
 				phandle = <0x1b0>;
 			};
 
 			trng@0xebf20000 {
-				doc-status = "complete";
 				compatible = "xlnx-asu-trng";
 				reg = <0x00 0xebf10000 0x00 0x20000 0x00>;
+				doc-status = "complete";
 				interrupts = <0x18>;
 				phandle = <0x1b1>;
 			};
 
 			asu_ecc@0xebf00000 {
-				doc-status = "complete";
 				compatible = "xlnx,asu_ecc";
 				reg = <0x00 0xebf00000 0x00 0x10000 0x00>;
+				doc-status = "complete";
 				interrupts = <0x16>;
 				phandle = <0x1b2>;
 			};
@@ -4219,46 +4219,47 @@ Cannot continue.\nTry installing libgcrypt.";
 	};
 
 	lmb_pmc_ppu0@0 {
+		compatible = "simple-bus";
+		ranges;
 		#address-cells = <0x02>;
 		#size-cells = <0x02>;
 		#priority-cells = <0x01>;
-		compatible = "simple-bus";
-		ranges;
 		doc-name = "LMB PPU0";
 		doc-status = "complete";
 		phandle = <0xa1>;
 
 		main_bus_for_pmc {
 			compatible = "qemu:memory-region";
-			alias = <0x74>;
 			reg = <0x00 0x00 0xffffffff 0xffffffff 0x00>;
+			alias = <0x74>;
 		};
 
 		pmc_rom@0xf0000000 {
-			reg = <0x00 0xf0000000 0x00 0x40000 0x01>;
 			compatible = "qemu:memory-region";
+			reg = <0x00 0xf0000000 0x00 0x40000 0x01>;
 			container = <0xa1>;
-			qemu,ram = <0x01>;
 			read-only;
 			phandle = <0x1b3>;
+			qemu,ram = <0x01>;
 		};
 
 		ppu0_ram@0xf0060000 {
-			reg = <0x00 0xf0060000 0x00 0x8000 0x01>;
 			compatible = "qemu:memory-region";
+			reg = <0x00 0xf0060000 0x00 0x8000 0x01>;
 			container = <0xa1>;
-			qemu,ram = <0x01>;
 			phandle = <0x1b4>;
+			qemu,ram = <0x01>;
 		};
 
 		io-module@00 {
+			compatible = "xlnx,iomodule-1.02.a\0syscon\0simple-bus";
 			doc-status = "complete";
 			#address-cells = <0x02>;
 			#size-cells = <0x01>;
 			#priority-cells = <0x00>;
-			compatible = "xlnx,iomodule-1.02.a\0syscon\0simple-bus";
 			container = <0xa1>;
 			priority = <0xffffffff>;
+			phandle = <0x1b5>;
 			xlnx,freq = <0x47868c0>;
 			xlnx,instance = "iomodule_1";
 			xlnx,io-mask = <0xfffe0000>;
@@ -4266,15 +4267,15 @@ Cannot continue.\nTry installing libgcrypt.";
 			xlnx,lmb-dwidth = <0x20>;
 			xlnx,mask = <0xffffff80>;
 			xlnx,use-io-bus = <0x01>;
-			phandle = <0x1b5>;
 
 			pmc_ppu0_intc@0C {
-				#interrupt-cells = <0x01>;
 				compatible = "xlnx,io-intc-1.02.a\0xlnx,io_intc";
-				interrupt-controller;
-				interrupts-extended = <0xc0 0x00>;
 				reg = <0x00 0xf008000c 0x04 0x00 0xf0080030 0x10 0x00
 				       0xf0080080 0x7c>;
+				#interrupt-cells = <0x01>;
+				interrupt-controller;
+				interrupts-extended = <0xc0 0x00>;
+				phandle = <0x86>;
 				xlnx,intc-addr-width = <0x20>;
 				xlnx,intc-base-vectors = <0x00>;
 				xlnx,intc-has-fast = <0x00>;
@@ -4282,199 +4283,199 @@ Cannot continue.\nTry installing libgcrypt.";
 				xlnx,intc-level-edge = <0x00>;
 				xlnx,intc-positive = <0xffff>;
 				xlnx,intc-use-ext-intr = <0x01>;
-				phandle = <0x86>;
 			};
 
 			pmc_ppu0_gpi@20 {
+				compatible = "xlnx,io-gpi-1.02.a\0xlnx,io_gpi";
+				reg = <0x00 0xf0080020 0x04>;
 				#gpio-cells = <0x01>;
 				gpio-controller;
-				compatible = "xlnx,io-gpi-1.02.a\0xlnx,io_gpi";
 				interrupt-parent = <0x86>;
 				interrupts = <0x0b>;
-				reg = <0x00 0xf0080020 0x04>;
+				phandle = <0x1b6>;
 				xlnx,gpi-interrupt = <0x01>;
 				xlnx,gpi-size = <0x20>;
 				xlnx,use-gpi = <0x01>;
-				phandle = <0x1b6>;
 			};
 
 			pmc_ppu0_gpi@24 {
+				compatible = "xlnx,io-gpi-1.02.a\0xlnx,io_gpi";
+				reg = <0x00 0xf0080024 0x04>;
 				#gpio-cells = <0x01>;
 				gpio-controller;
-				compatible = "xlnx,io-gpi-1.02.a\0xlnx,io_gpi";
 				interrupt-parent = <0x86>;
 				interrupts = <0x0c>;
-				reg = <0x00 0xf0080024 0x04>;
+				phandle = <0x1b7>;
 				xlnx,gpi-interrupt = <0x01>;
 				xlnx,gpi-size = <0x20>;
 				xlnx,use-gpi = <0x01>;
-				phandle = <0x1b7>;
 			};
 
 			pmc_ppu0_gpi@28 {
+				compatible = "xlnx,io-gpi-1.02.a\0xlnx,io_gpi";
+				reg = <0x00 0xf0080028 0x04>;
 				#gpio-cells = <0x01>;
 				gpio-controller;
-				compatible = "xlnx,io-gpi-1.02.a\0xlnx,io_gpi";
 				interrupt-parent = <0x86>;
 				interrupts = <0x0d>;
-				reg = <0x00 0xf0080028 0x04>;
+				phandle = <0x1b8>;
 				xlnx,gpi-interrupt = <0x01>;
 				xlnx,gpi-size = <0x20>;
 				xlnx,use-gpi = <0x01>;
-				phandle = <0x1b8>;
 			};
 
 			pmc_ppu0_gpi@2c {
+				compatible = "xlnx,io-gpi-1.02.a\0xlnx,io_gpi";
+				reg = <0x00 0xf008002c 0x04>;
 				#gpio-cells = <0x01>;
 				gpio-controller;
-				compatible = "xlnx,io-gpi-1.02.a\0xlnx,io_gpi";
 				interrupt-parent = <0x86>;
 				interrupts = <0x0e>;
-				reg = <0x00 0xf008002c 0x04>;
+				phandle = <0x1b9>;
 				xlnx,gpi-interrupt = <0x01>;
 				xlnx,gpi-size = <0x20>;
 				xlnx,use-gpi = <0x01>;
-				phandle = <0x1b9>;
 			};
 
 			pmc_ppu0_gpo@10 {
-				#gpio-cells = <0x01>;
-				gpio-controller;
 				compatible = "xlnx,io-gpo-1.02.a\0xlnx,io_gpo";
 				reg = <0x00 0xf0080010 0x04>;
+				#gpio-cells = <0x01>;
+				gpio-controller;
+				phandle = <0xc1>;
 				xlnx,gpo-init = <0x00>;
 				xlnx,gpo-size = <0x09>;
 				xlnx,use-gpo = <0x01>;
-				phandle = <0xc1>;
 			};
 
 			pmc_ppu0_gpo@14 {
-				#gpio-cells = <0x01>;
-				gpio-controller;
 				compatible = "xlnx,io-gpo-1.02.a\0xlnx,io_gpo";
 				reg = <0x00 0xf0080014 0x04>;
+				#gpio-cells = <0x01>;
+				gpio-controller;
+				phandle = <0x1ba>;
 				xlnx,gpo-init = <0x00>;
 				xlnx,gpo-size = <0x20>;
 				xlnx,use-gpo = <0x01>;
-				phandle = <0x1ba>;
 			};
 
 			pmc_ppu0_gpo@18 {
-				#gpio-cells = <0x01>;
-				gpio-controller;
 				compatible = "xlnx,io-gpo-1.02.a\0xlnx,io_gpo";
 				reg = <0x00 0xf0080018 0x04>;
+				#gpio-cells = <0x01>;
+				gpio-controller;
+				phandle = <0x1bb>;
 				xlnx,gpo-init = <0x00>;
 				xlnx,gpo-size = <0x20>;
 				xlnx,use-gpo = <0x01>;
-				phandle = <0x1bb>;
 			};
 
 			pmc_ppu0_gpo@1c {
-				#gpio-cells = <0x01>;
-				gpio-controller;
 				compatible = "xlnx,io-gpo-1.02.a\0xlnx,io_gpo";
 				reg = <0x00 0xf008001c 0x04>;
+				#gpio-cells = <0x01>;
+				gpio-controller;
+				phandle = <0x1bc>;
 				xlnx,gpo-init = <0x00>;
 				xlnx,gpo-size = <0x20>;
 				xlnx,use-gpo = <0x01>;
-				phandle = <0x1bc>;
 			};
 
 			pmc_ppu0_pit@40 {
 				compatible = "xlnx,io-pit-1.02.a\0xlnx,io_pit";
+				reg = <0x00 0xf0080040 0x0c>;
 				interrupt-parent = <0x86>;
 				interrupts = <0x03>;
-				reg = <0x00 0xf0080040 0x0c>;
-				xlnx,pit-interrupt = <0x01>;
-				xlnx,pit-prescaler = <0x09>;
-				xlnx,pit-readable = <0x01>;
-				xlnx,pit-size = <0x20>;
-				xlnx,use-pit = <0x01>;
 				frequency = <0x1b6b0b00>;
 				gpios = <0xc1 0x01 0xc2 0x00>;
 				gpio-names = "ps_config\0ps_hit_in";
 				gpio-controller;
 				#gpio-cells = <0x01>;
 				phandle = <0x1bd>;
+				xlnx,pit-interrupt = <0x01>;
+				xlnx,pit-prescaler = <0x09>;
+				xlnx,pit-readable = <0x01>;
+				xlnx,pit-size = <0x20>;
+				xlnx,use-pit = <0x01>;
 			};
 
 			pmc_ppu0_pit@50 {
 				compatible = "xlnx,io-pit-1.02.a\0xlnx,io_pit";
+				reg = <0x00 0xf0080050 0x0c>;
 				interrupt-parent = <0x86>;
 				interrupts = <0x04>;
-				reg = <0x00 0xf0080050 0x0c>;
-				xlnx,pit-interrupt = <0x01>;
-				xlnx,pit-prescaler = <0x09>;
-				xlnx,pit-readable = <0x01>;
-				xlnx,pit-size = <0x20>;
-				xlnx,use-pit = <0x01>;
 				frequency = <0x1b6b0b00>;
 				gpio-controller;
 				#gpio-cells = <0x01>;
 				phandle = <0xc2>;
-			};
-
-			pmc_ppu0_pit@60 {
-				compatible = "xlnx,io-pit-1.02.a\0xlnx,io_pit";
-				interrupt-parent = <0x86>;
-				interrupts = <0x05>;
-				reg = <0x00 0xf0080060 0x0c>;
 				xlnx,pit-interrupt = <0x01>;
 				xlnx,pit-prescaler = <0x09>;
 				xlnx,pit-readable = <0x01>;
 				xlnx,pit-size = <0x20>;
 				xlnx,use-pit = <0x01>;
+			};
+
+			pmc_ppu0_pit@60 {
+				compatible = "xlnx,io-pit-1.02.a\0xlnx,io_pit";
+				reg = <0x00 0xf0080060 0x0c>;
+				interrupt-parent = <0x86>;
+				interrupts = <0x05>;
 				frequency = <0x1b6b0b00>;
 				gpios = <0xc1 0x06 0xc3 0x00>;
 				gpio-names = "ps_config\0ps_hit_in";
 				gpio-controller;
 				#gpio-cells = <0x01>;
 				phandle = <0x1be>;
-			};
-
-			pmc_ppu0_pit@70 {
-				compatible = "xlnx,io-pit-1.02.a\0xlnx,io_pit";
-				interrupt-parent = <0x86>;
-				interrupts = <0x06>;
-				reg = <0x00 0xf0080070 0x0c>;
 				xlnx,pit-interrupt = <0x01>;
 				xlnx,pit-prescaler = <0x09>;
 				xlnx,pit-readable = <0x01>;
 				xlnx,pit-size = <0x20>;
 				xlnx,use-pit = <0x01>;
+			};
+
+			pmc_ppu0_pit@70 {
+				compatible = "xlnx,io-pit-1.02.a\0xlnx,io_pit";
+				reg = <0x00 0xf0080070 0x0c>;
+				interrupt-parent = <0x86>;
+				interrupts = <0x06>;
 				frequency = <0x1b6b0b00>;
 				gpio-controller;
 				#gpio-cells = <0x01>;
 				phandle = <0xc3>;
+				xlnx,pit-interrupt = <0x01>;
+				xlnx,pit-prescaler = <0x09>;
+				xlnx,pit-readable = <0x01>;
+				xlnx,pit-size = <0x20>;
+				xlnx,use-pit = <0x01>;
 			};
 		};
 	};
 
 	lmb_pmc_ppu1@0 {
+		compatible = "simple-bus";
+		ranges;
 		#address-cells = <0x02>;
 		#size-cells = <0x02>;
 		#priority-cells = <0x01>;
-		compatible = "simple-bus";
-		ranges;
 		doc-name = "LMB PPU1";
 		doc-status = "complete";
 		phandle = <0xc4>;
 
 		main_bus_for_pmc {
 			compatible = "qemu:memory-region";
-			alias = <0x74>;
 			reg = <0x00 0x00 0xffffffff 0xffffffff 0x00>;
+			alias = <0x74>;
 		};
 
 		io-module@00 {
+			compatible = "xlnx,iomodule-1.02.a\0syscon\0simple-bus";
 			doc-status = "complete";
 			#address-cells = <0x02>;
 			#size-cells = <0x01>;
 			#priority-cells = <0x00>;
-			compatible = "xlnx,iomodule-1.02.a\0syscon\0simple-bus";
 			container = <0xc4>;
 			priority = <0xffffffff>;
+			phandle = <0x1bf>;
 			xlnx,freq = <0x47868c0>;
 			xlnx,instance = "iomodule_1";
 			xlnx,io-mask = <0xfffe0000>;
@@ -4482,15 +4483,15 @@ Cannot continue.\nTry installing libgcrypt.";
 			xlnx,lmb-dwidth = <0x20>;
 			xlnx,mask = <0xffffff80>;
 			xlnx,use-io-bus = <0x01>;
-			phandle = <0x1bf>;
 
 			pmc_ppu1_intc@0C {
-				#interrupt-cells = <0x01>;
 				compatible = "xlnx,io-intc-1.02.a\0xlnx,io_intc";
-				interrupt-controller;
-				interrupts-extended = <0xc5 0x00>;
 				reg = <0x00 0xf030000c 0x04 0x00 0xf0300030 0x10 0x00
 				       0xf0300080 0x7c>;
+				#interrupt-cells = <0x01>;
+				interrupt-controller;
+				interrupts-extended = <0xc5 0x00>;
+				phandle = <0x08>;
 				xlnx,intc-addr-width = <0x20>;
 				xlnx,intc-base-vectors = <0x00>;
 				xlnx,intc-has-fast = <0x00>;
@@ -4498,149 +4499,143 @@ Cannot continue.\nTry installing libgcrypt.";
 				xlnx,intc-level-edge = <0x00>;
 				xlnx,intc-positive = <0xffff>;
 				xlnx,intc-use-ext-intr = <0x01>;
-				phandle = <0x08>;
 			};
 
 			pmc_ppu1_gpi@20 {
+				compatible = "xlnx,io-gpi-1.02.a\0xlnx,io_gpi";
+				reg = <0x00 0xf0300020 0x04>;
 				#gpio-cells = <0x01>;
 				gpio-controller;
-				compatible = "xlnx,io-gpi-1.02.a\0xlnx,io_gpi";
 				interrupt-parent = <0x08>;
 				interrupts = <0x0b>;
-				reg = <0x00 0xf0300020 0x04>;
+				phandle = <0x1c0>;
 				xlnx,gpi-interrupt = <0x01>;
 				xlnx,gpi-size = <0x20>;
 				xlnx,use-gpi = <0x01>;
-				phandle = <0x1c0>;
 			};
 
 			pmc_ppu1_gpi@24 {
+				compatible = "xlnx,io-gpi-1.02.a\0xlnx,io_gpi";
+				reg = <0x00 0xf0300024 0x04>;
 				#gpio-cells = <0x01>;
 				gpio-controller;
-				compatible = "xlnx,io-gpi-1.02.a\0xlnx,io_gpi";
 				interrupt-parent = <0x08>;
 				interrupts = <0x0c>;
-				reg = <0x00 0xf0300024 0x04>;
+				phandle = <0x1c1>;
 				xlnx,gpi-interrupt = <0x01>;
 				xlnx,gpi-size = <0x20>;
 				xlnx,use-gpi = <0x01>;
-				phandle = <0x1c1>;
 			};
 
 			pmc_ppu1_gpi@28 {
+				compatible = "xlnx,io-gpi-1.02.a\0xlnx,io_gpi";
+				reg = <0x00 0xf0300028 0x04>;
 				#gpio-cells = <0x01>;
 				gpio-controller;
-				compatible = "xlnx,io-gpi-1.02.a\0xlnx,io_gpi";
 				interrupt-parent = <0x08>;
 				interrupts = <0x0d>;
-				reg = <0x00 0xf0300028 0x04>;
+				phandle = <0x1c2>;
 				xlnx,gpi-interrupt = <0x01>;
 				xlnx,gpi-size = <0x20>;
 				xlnx,use-gpi = <0x01>;
-				phandle = <0x1c2>;
 			};
 
 			pmc_ppu1_gpi@2c {
+				compatible = "xlnx,io-gpi-1.02.a\0xlnx,io_gpi";
+				reg = <0x00 0xf030002c 0x04>;
 				#gpio-cells = <0x01>;
 				gpio-controller;
-				compatible = "xlnx,io-gpi-1.02.a\0xlnx,io_gpi";
 				interrupt-parent = <0x08>;
 				interrupts = <0x0e>;
-				reg = <0x00 0xf030002c 0x04>;
+				phandle = <0x1c3>;
 				xlnx,gpi-interrupt = <0x01>;
 				xlnx,gpi-size = <0x20>;
 				xlnx,use-gpi = <0x01>;
-				phandle = <0x1c3>;
 			};
 
 			pmc_ppu1_gpo@10 {
-				#gpio-cells = <0x01>;
-				gpio-controller;
 				compatible = "xlnx,io-gpo-1.02.a\0xlnx,io_gpo";
 				reg = <0x00 0xf0300010 0x04>;
+				#gpio-cells = <0x01>;
+				gpio-controller;
+				phandle = <0xc6>;
 				xlnx,gpo-init = <0x00>;
 				xlnx,gpo-size = <0x09>;
 				xlnx,use-gpo = <0x01>;
-				phandle = <0xc6>;
 			};
 
 			pmc_ppu1_gpo@14 {
-				#gpio-cells = <0x01>;
-				gpio-controller;
 				compatible = "xlnx,io-gpo-1.02.a\0xlnx,io_gpo";
 				reg = <0x00 0xf0300014 0x04>;
+				#gpio-cells = <0x01>;
+				gpio-controller;
+				phandle = <0x1c4>;
 				xlnx,gpo-init = <0x00>;
 				xlnx,gpo-size = <0x20>;
 				xlnx,use-gpo = <0x01>;
-				phandle = <0x1c4>;
 			};
 
 			pmc_ppu1_gpo@18 {
-				#gpio-cells = <0x01>;
-				gpio-controller;
 				compatible = "xlnx,io-gpo-1.02.a\0xlnx,io_gpo";
 				reg = <0x00 0xf0300018 0x04>;
+				#gpio-cells = <0x01>;
+				gpio-controller;
+				phandle = <0x1c5>;
 				xlnx,gpo-init = <0x00>;
 				xlnx,gpo-size = <0x20>;
 				xlnx,use-gpo = <0x01>;
-				phandle = <0x1c5>;
 			};
 
 			pmc_ppu1_gpo@1c {
-				#gpio-cells = <0x01>;
-				gpio-controller;
 				compatible = "xlnx,io-gpo-1.02.a\0xlnx,io_gpo";
 				reg = <0x00 0xf030001c 0x04>;
+				#gpio-cells = <0x01>;
+				gpio-controller;
+				phandle = <0x1c6>;
 				xlnx,gpo-init = <0x00>;
 				xlnx,gpo-size = <0x20>;
 				xlnx,use-gpo = <0x01>;
-				phandle = <0x1c6>;
 			};
 
 			pmc_ppu1_pit@40 {
 				compatible = "xlnx,io-pit-1.02.a\0xlnx,io_pit";
+				reg = <0x00 0xf0300040 0x0c>;
 				interrupt-parent = <0x08>;
 				interrupts = <0x03>;
-				reg = <0x00 0xf0300040 0x0c>;
-				xlnx,pit-interrupt = <0x01>;
-				xlnx,pit-prescaler = <0x09>;
-				xlnx,pit-readable = <0x01>;
-				xlnx,pit-size = <0x20>;
-				xlnx,use-pit = <0x01>;
 				frequency = <0x5f5e100>;
 				gpios = <0xc6 0x01 0xc7 0x00>;
 				gpio-names = "ps_config\0ps_hit_in";
 				gpio-controller;
 				#gpio-cells = <0x01>;
 				phandle = <0x1c7>;
+				xlnx,pit-interrupt = <0x01>;
+				xlnx,pit-prescaler = <0x09>;
+				xlnx,pit-readable = <0x01>;
+				xlnx,pit-size = <0x20>;
+				xlnx,use-pit = <0x01>;
 			};
 
 			pmc_ppu1_pit@50 {
 				compatible = "xlnx,io-pit-1.02.a\0xlnx,io_pit";
+				reg = <0x00 0xf0300050 0x0c>;
 				interrupt-parent = <0x08>;
 				interrupts = <0x04>;
-				reg = <0x00 0xf0300050 0x0c>;
-				xlnx,pit-interrupt = <0x01>;
-				xlnx,pit-prescaler = <0x09>;
-				xlnx,pit-readable = <0x01>;
-				xlnx,pit-size = <0x20>;
-				xlnx,use-pit = <0x01>;
 				frequency = <0x5f5e100>;
 				gpio-controller;
 				#gpio-cells = <0x01>;
 				phandle = <0xc7>;
-			};
-
-			pmc_ppu1_pit@60 {
-				compatible = "xlnx,io-pit-1.02.a\0xlnx,io_pit";
-				interrupt-parent = <0x08>;
-				interrupts = <0x05>;
-				reg = <0x00 0xf0300060 0x0c>;
 				xlnx,pit-interrupt = <0x01>;
 				xlnx,pit-prescaler = <0x09>;
 				xlnx,pit-readable = <0x01>;
 				xlnx,pit-size = <0x20>;
 				xlnx,use-pit = <0x01>;
+			};
+
+			pmc_ppu1_pit@60 {
+				compatible = "xlnx,io-pit-1.02.a\0xlnx,io_pit";
+				reg = <0x00 0xf0300060 0x0c>;
+				interrupt-parent = <0x08>;
+				interrupts = <0x05>;
 				frequency = <0x5f5e100>;
 				gpios = <0xc6 0x06 0xc8 0x00>;
 				gpio-names = "ps_config\0ps_hit_in";
@@ -4648,94 +4643,100 @@ Cannot continue.\nTry installing libgcrypt.";
 				#gpio-cells = <0x01>;
 				windows-frequency = <0x13d620>;
 				phandle = <0x1c8>;
-			};
-
-			pmc_ppu1_pit@70 {
-				compatible = "xlnx,io-pit-1.02.a\0xlnx,io_pit";
-				interrupt-parent = <0x08>;
-				interrupts = <0x06>;
-				reg = <0x00 0xf0300070 0x0c>;
 				xlnx,pit-interrupt = <0x01>;
 				xlnx,pit-prescaler = <0x09>;
 				xlnx,pit-readable = <0x01>;
 				xlnx,pit-size = <0x20>;
 				xlnx,use-pit = <0x01>;
+			};
+
+			pmc_ppu1_pit@70 {
+				compatible = "xlnx,io-pit-1.02.a\0xlnx,io_pit";
+				reg = <0x00 0xf0300070 0x0c>;
+				interrupt-parent = <0x08>;
+				interrupts = <0x06>;
 				frequency = <0x5f5e100>;
 				gpio-controller;
 				#gpio-cells = <0x01>;
 				phandle = <0xc8>;
+				xlnx,pit-interrupt = <0x01>;
+				xlnx,pit-prescaler = <0x09>;
+				xlnx,pit-readable = <0x01>;
+				xlnx,pit-size = <0x20>;
+				xlnx,use-pit = <0x01>;
 			};
 		};
 	};
 
 	lmb_psm@0 {
+		compatible = "simple-bus";
+		ranges;
 		#address-cells = <0x02>;
 		#size-cells = <0x02>;
 		#priority-cells = <0x01>;
-		compatible = "simple-bus";
-		ranges;
 		phandle = <0x1c9>;
 
 		downstream_amba {
 			compatible = "qemu:memory-region";
-			alias = <0x0d>;
 			reg = <0x00 0x00 0xffffffff 0xffffffff 0xffffffff>;
+			alias = <0x0d>;
 		};
 
 		main_bus_for_pmc {
 			compatible = "qemu:memory-region";
-			alias = <0x14>;
 			reg = <0x00 0x00 0xffffffff 0xffffffff 0x00>;
+			alias = <0x14>;
 		};
 	};
 
 	lmb_ddrmc@0 {
+		compatible = "simple-bus";
+		ranges;
 		#address-cells = <0x02>;
 		#size-cells = <0x02>;
 		#priority-cells = <0x01>;
-		compatible = "simple-bus";
-		ranges;
 		doc-name = "LMB DDRMC0";
 		doc-status = "partial";
 		phandle = <0xc9>;
 
 		ddrmc0_ram_data@0x1c000 {
-			reg = <0x00 0x1c000 0x00 0x4000 0x01>;
 			compatible = "qemu:memory-region";
-			qemu,ram = <0x01>;
+			reg = <0x00 0x1c000 0x00 0x4000 0x01>;
 			phandle = <0x1ca>;
+			qemu,ram = <0x01>;
 		};
 
 		ddrmc0_ram_instr@0x20000 {
-			reg = <0x00 0x20000 0x00 0x20000 0x01>;
 			compatible = "qemu:memory-region";
-			qemu,ram = <0x01>;
+			reg = <0x00 0x20000 0x00 0x20000 0x01>;
 			phandle = <0x1cb>;
+			qemu,ram = <0x01>;
 		};
 
 		ddrmc0_ram_exchange@0x08000 {
-			reg = <0x00 0x8000 0x00 0x8000 0x01>;
 			compatible = "qemu:memory-region";
-			qemu,ram = <0x01>;
+			reg = <0x00 0x8000 0x00 0x8000 0x01>;
 			phandle = <0x1cc>;
+			qemu,ram = <0x01>;
 		};
 
 		io-module@00 {
+			compatible = "simple-bus";
 			doc-status = "complete";
 			#address-cells = <0x02>;
 			#size-cells = <0x01>;
 			#priority-cells = <0x00>;
-			compatible = "simple-bus";
 			container = <0xc9>;
 			priority = <0xffffffff>;
 			phandle = <0x1cd>;
 
 			ddrmc0_intc@0C {
-				#interrupt-cells = <0x01>;
 				compatible = "xlnx,io-intc-1.02.a\0xlnx,io_intc";
+				reg = <0x00 0x1b00c 0x04 0x00 0x1b030 0x10 0x00 0x1b080 0x7c>;
+				#interrupt-cells = <0x01>;
 				interrupt-controller;
 				interrupts-extended = <0xca 0x00>;
-				reg = <0x00 0x1b00c 0x04 0x00 0x1b030 0x10 0x00 0x1b080 0x7c>;
+				phandle = <0xcb>;
 				xlnx,intc-addr-width = <0x20>;
 				xlnx,intc-base-vectors = <0x00>;
 				xlnx,intc-has-fast = <0x00>;
@@ -4743,147 +4744,146 @@ Cannot continue.\nTry installing libgcrypt.";
 				xlnx,intc-level-edge = <0x00>;
 				xlnx,intc-positive = <0xffff>;
 				xlnx,intc-use-ext-intr = <0x01>;
-				phandle = <0xcb>;
 			};
 
 			ddrmc0_gpo@10 {
-				#gpio-cells = <0x01>;
-				gpio-controller;
 				compatible = "xlnx,io-gpo-1.02.a\0xlnx,io_gpo";
 				reg = <0x00 0x1b010 0x04>;
+				#gpio-cells = <0x01>;
+				gpio-controller;
+				phandle = <0xcc>;
 				xlnx,gpo-init = <0x00>;
 				xlnx,gpo-size = <0x03>;
 				xlnx,use-gpo = <0x01>;
-				phandle = <0xcc>;
 			};
 
 			ddrmc0_pit@40 {
 				compatible = "xlnx,io-pit-1.02.a\0xlnx,io_pit";
+				reg = <0x00 0x1b040 0x0c>;
 				interrupt-parent = <0xcb>;
 				interrupts = <0x03>;
-				reg = <0x00 0x1b040 0x0c>;
-				xlnx,pit-interrupt = <0x01>;
-				xlnx,pit-prescaler = <0x09>;
-				xlnx,pit-readable = <0x01>;
-				xlnx,pit-size = <0x20>;
-				xlnx,use-pit = <0x01>;
 				frequency = <0x1b6b0b00>;
 				gpios = <0xcc 0x01 0xcd 0x00>;
 				gpio-names = "ps_config\0ps_hit_in";
 				gpio-controller;
 				#gpio-cells = <0x01>;
 				phandle = <0x1ce>;
+				xlnx,pit-interrupt = <0x01>;
+				xlnx,pit-prescaler = <0x09>;
+				xlnx,pit-readable = <0x01>;
+				xlnx,pit-size = <0x20>;
+				xlnx,use-pit = <0x01>;
 			};
 
 			ddrmc0_pit@50 {
 				compatible = "xlnx,io-pit-1.02.a\0xlnx,io_pit";
+				reg = <0x00 0x1b050 0x0c>;
 				interrupt-parent = <0xcb>;
 				interrupts = <0x04>;
-				reg = <0x00 0x1b050 0x0c>;
-				xlnx,pit-interrupt = <0x01>;
-				xlnx,pit-prescaler = <0x09>;
-				xlnx,pit-readable = <0x01>;
-				xlnx,pit-size = <0x20>;
-				xlnx,use-pit = <0x01>;
 				frequency = <0x1b6b0b00>;
 				gpio-controller;
 				#gpio-cells = <0x01>;
 				phandle = <0xcd>;
-			};
-
-			ddrmc0_pit@60 {
-				compatible = "xlnx,io-pit-1.02.a\0xlnx,io_pit";
-				interrupt-parent = <0xcb>;
-				interrupts = <0x05>;
-				reg = <0x00 0x1b060 0x0c>;
 				xlnx,pit-interrupt = <0x01>;
 				xlnx,pit-prescaler = <0x09>;
 				xlnx,pit-readable = <0x01>;
 				xlnx,pit-size = <0x20>;
 				xlnx,use-pit = <0x01>;
+			};
+
+			ddrmc0_pit@60 {
+				compatible = "xlnx,io-pit-1.02.a\0xlnx,io_pit";
+				reg = <0x00 0x1b060 0x0c>;
+				interrupt-parent = <0xcb>;
+				interrupts = <0x05>;
 				frequency = <0x1b6b0b00>;
 				gpios = <0xcc 0x06 0xce 0x00>;
 				gpio-names = "ps_config\0ps_hit_in";
 				gpio-controller;
 				#gpio-cells = <0x01>;
 				phandle = <0x1cf>;
-			};
-
-			ddrmc0_pit@70 {
-				compatible = "xlnx,io-pit-1.02.a\0xlnx,io_pit";
-				interrupt-parent = <0xcb>;
-				interrupts = <0x06>;
-				reg = <0x00 0x1b070 0x0c>;
 				xlnx,pit-interrupt = <0x01>;
 				xlnx,pit-prescaler = <0x09>;
 				xlnx,pit-readable = <0x01>;
 				xlnx,pit-size = <0x20>;
 				xlnx,use-pit = <0x01>;
+			};
+
+			ddrmc0_pit@70 {
+				compatible = "xlnx,io-pit-1.02.a\0xlnx,io_pit";
+				reg = <0x00 0x1b070 0x0c>;
+				interrupt-parent = <0xcb>;
+				interrupts = <0x06>;
 				frequency = <0x1b6b0b00>;
 				gpio-controller;
 				#gpio-cells = <0x01>;
 				phandle = <0xce>;
+				xlnx,pit-interrupt = <0x01>;
+				xlnx,pit-prescaler = <0x09>;
+				xlnx,pit-readable = <0x01>;
+				xlnx,pit-size = <0x20>;
+				xlnx,use-pit = <0x01>;
 			};
 		};
 
 		ddrmc_uart0@0 {
 			compatible = "xlnx,io_uart";
 			reg = <0x00 0x1b000 0x0c 0x1b04c 0x04>;
-			xlnx,use-uart-rx = <0x01>;
-			xlnx,use-uart-tx = <0x01>;
 			chardev = "ddrmc-uart0\0serial1";
 			phandle = <0x1d0>;
+			xlnx,use-uart-rx = <0x01>;
+			xlnx,use-uart-tx = <0x01>;
 		};
 
 		alias_npi_ddrmc_main {
 			compatible = "qemu:memory-region";
-			alias = <0xcf>;
 			reg = <0x00 0x00 0x00 0x8000 0x00>;
+			alias = <0xcf>;
 		};
 	};
 
 	lmb_ddrmc@1 {
+		compatible = "simple-bus";
+		ranges;
 		#address-cells = <0x02>;
 		#size-cells = <0x02>;
 		#priority-cells = <0x01>;
-		compatible = "simple-bus";
-		ranges;
 		phandle = <0x1d1>;
 
 		ddrmc1_ram_data@0x1c000 {
-			reg = <0x00 0x1c000 0x00 0x4000 0x01>;
 			compatible = "qemu:memory-region";
-			qemu,ram = <0x01>;
+			reg = <0x00 0x1c000 0x00 0x4000 0x01>;
 			phandle = <0x1d2>;
+			qemu,ram = <0x01>;
 		};
 
 		ddrmc1_ram_instr@0x20000 {
-			reg = <0x00 0x20000 0x00 0x20000 0x01>;
 			compatible = "qemu:memory-region";
-			qemu,ram = <0x01>;
+			reg = <0x00 0x20000 0x00 0x20000 0x01>;
 			phandle = <0x1d3>;
+			qemu,ram = <0x01>;
 		};
 
 		ddrmc1_ram_exchange@0x08000 {
-			reg = <0x00 0x8000 0x00 0x8000 0x01>;
 			compatible = "qemu:memory-region";
-			qemu,ram = <0x01>;
+			reg = <0x00 0x8000 0x00 0x8000 0x01>;
 			phandle = <0x1d4>;
+			qemu,ram = <0x01>;
 		};
 	};
 
 	amba_rpu@0 {
+		compatible = "simple-bus";
+		ranges;
 		#address-cells = <0x02>;
 		#size-cells = <0x02>;
 		#priority-cells = <0x01>;
-		compatible = "simple-bus";
-		ranges;
 		phandle = <0xd0>;
 
 		downstream_amba {
 			compatible = "qemu:memory-region";
-			alias = <0x0d>;
 			reg = <0x00 0x00 0xffffffff 0xffffffff 0x00>;
+			alias = <0x0d>;
 		};
 
 		timer_a {
@@ -4923,56 +4923,56 @@ Cannot continue.\nTry installing libgcrypt.";
 	};
 
 	amba_r5@0 {
+		compatible = "simple-bus";
+		ranges;
 		#address-cells = <0x02>;
 		#size-cells = <0x02>;
 		#priority-cells = <0x01>;
-		compatible = "simple-bus";
-		ranges;
 		phandle = <0xe3>;
 
 		downstream_amba {
 			compatible = "qemu:memory-region";
-			alias = <0xd0>;
 			reg = <0x00 0x00 0xffffffff 0xffffffff 0x00>;
+			alias = <0xd0>;
 		};
 
 		downstream_tcm {
 			compatible = "qemu:memory-region";
-			alias = <0x35>;
 			reg = <0x00 0x00 0x00 0x400000 0x01>;
+			alias = <0x35>;
 		};
 
 		downstream_gic0 {
 			compatible = "qemu:memory-region";
-			alias = <0xd1>;
 			reg = <0x00 0xe2000000 0x00 0x140000 0x01>;
+			alias = <0xd1>;
 		};
 	};
 
 	amba_r5@1 {
+		compatible = "simple-bus";
+		ranges;
 		#address-cells = <0x02>;
 		#size-cells = <0x02>;
 		#priority-cells = <0x01>;
-		compatible = "simple-bus";
-		ranges;
 		phandle = <0xe6>;
 
 		downstream_amba {
 			compatible = "qemu:memory-region";
-			alias = <0xd0>;
 			reg = <0x00 0x00 0xffffffff 0xffffffff 0x00>;
+			alias = <0xd0>;
 		};
 
 		downstream_tcm {
 			compatible = "qemu:memory-region";
-			alias = <0x37>;
 			reg = <0x00 0x00 0x00 0x400000 0x01>;
+			alias = <0x37>;
 		};
 
 		downstream_gic0 {
 			compatible = "qemu:memory-region";
-			alias = <0xd1>;
 			reg = <0x00 0xe2000000 0x00 0x140000 0x01>;
+			alias = <0xd1>;
 		};
 	};
 
@@ -4986,65 +4986,65 @@ Cannot continue.\nTry installing libgcrypt.";
 	};
 
 	tbu0_slave@0 {
+		compatible = "simple-bus";
+		ranges;
 		#address-cells = <0x02>;
 		#size-cells = <0x02>;
 		#priority-cells = <0x01>;
-		compatible = "simple-bus";
-		ranges;
 		phandle = <0x17>;
 	};
 
 	tbu1_slave@0 {
+		compatible = "simple-bus";
+		ranges;
 		#address-cells = <0x02>;
 		#size-cells = <0x02>;
 		#priority-cells = <0x01>;
-		compatible = "simple-bus";
-		ranges;
 		phandle = <0x5c>;
 	};
 
 	tbu2_slave@0 {
+		compatible = "simple-bus";
+		ranges;
 		#address-cells = <0x02>;
 		#size-cells = <0x02>;
 		#priority-cells = <0x01>;
-		compatible = "simple-bus";
-		ranges;
 		phandle = <0x5d>;
 	};
 
 	tbu3_slave@0 {
+		compatible = "simple-bus";
+		ranges;
 		#address-cells = <0x02>;
 		#size-cells = <0x02>;
 		#priority-cells = <0x01>;
-		compatible = "simple-bus";
-		ranges;
 		phandle = <0x5e>;
 	};
 
 	tbu4_slave@0 {
+		compatible = "simple-bus";
+		ranges;
 		#address-cells = <0x02>;
 		#size-cells = <0x02>;
 		#priority-cells = <0x01>;
-		compatible = "simple-bus";
-		ranges;
 		phandle = <0x5f>;
 	};
 
 	tbu5_slave@0 {
+		compatible = "simple-bus";
+		ranges;
 		#address-cells = <0x02>;
 		#size-cells = <0x02>;
 		#priority-cells = <0x01>;
-		compatible = "simple-bus";
-		ranges;
 		phandle = <0x60>;
 	};
 
 	tbu6_slave@0 {
+		compatible = "simple-bus";
+		ranges;
 		#address-cells = <0x02>;
 		#size-cells = <0x02>;
 		#priority-cells = <0x01>;
-		compatible = "simple-bus";
-		ranges;
 		phandle = <0x61>;
 	};
 
@@ -5071,34 +5071,34 @@ Cannot continue.\nTry installing libgcrypt.";
 
 	ocm_mem_bank_0@ {
 		compatible = "qemu:memory-region";
-		container = <0x0e>;
-		qemu,ram = <0x01>;
 		reg = <0x00 0x100000 0x00 0x80000 0x00>;
+		container = <0x0e>;
 		phandle = <0x1d6>;
+		qemu,ram = <0x01>;
 	};
 
 	ocm_mem_bank_1@ {
 		compatible = "qemu:memory-region";
-		container = <0x0e>;
-		qemu,ram = <0x01>;
 		reg = <0x00 0x180000 0x00 0x80000 0x00>;
+		container = <0x0e>;
 		phandle = <0x1d7>;
+		qemu,ram = <0x01>;
 	};
 
 	ocm_mem_bank_2@ {
 		compatible = "qemu:memory-region";
-		container = <0x0e>;
-		qemu,ram = <0x01>;
 		reg = <0x00 0x00 0x00 0x80000 0x00>;
+		container = <0x0e>;
 		phandle = <0x1d8>;
+		qemu,ram = <0x01>;
 	};
 
 	ocm_mem_bank_3@ {
 		compatible = "qemu:memory-region";
-		container = <0x0e>;
-		qemu,ram = <0x01>;
 		reg = <0x00 0x80000 0x00 0x80000 0x00>;
+		container = <0x0e>;
 		phandle = <0x1d9>;
+		qemu,ram = <0x01>;
 	};
 
 	xram_mem@0xbbe00000 {
@@ -5108,11 +5108,11 @@ Cannot continue.\nTry installing libgcrypt.";
 
 	ipi_msgbuf@0 {
 		compatible = "qemu:memory-region";
+		reg = <0x00 0xeb3f0000 0x00 0x1000 0x00>;
 		device_type = "memory";
 		container = <0x0a>;
-		qemu,ram = <0x01>;
-		reg = <0x00 0xeb3f0000 0x00 0x1000 0x00>;
 		phandle = <0x1db>;
+		qemu,ram = <0x01>;
 	};
 
 	pmc_ram@0xf2000000 {
@@ -5122,57 +5122,57 @@ Cannot continue.\nTry installing libgcrypt.";
 
 	pmc_ram_bank_0@0x0 {
 		compatible = "qemu:memory-region";
-		container = <0x73>;
-		qemu,ram = <0x01>;
 		reg = <0x00 0x00 0x00 0x20000 0x00>;
+		container = <0x73>;
 		phandle = <0x1dc>;
+		qemu,ram = <0x01>;
 	};
 
 	pmc_ppu1_ram@0xf0200000 {
 		compatible = "qemu:memory-region";
-		container = <0x0d>;
-		qemu,ram = <0x01>;
 		reg = <0x00 0xf0200000 0x00 0x80000 0x00>;
+		container = <0x0d>;
 		phandle = <0x1dd>;
+		qemu,ram = <0x01>;
 	};
 
 	pmc_ppu1_ram@0xf0280000 {
 		compatible = "qemu:memory-region";
-		container = <0x0d>;
-		qemu,ram = <0x01>;
 		reg = <0x00 0xf0280000 0x00 0x20000 0x00>;
+		container = <0x0d>;
 		phandle = <0x1de>;
+		qemu,ram = <0x01>;
 	};
 
 	ppu0_mdm_uart@0xf0110000 {
-		doc-status = "complete";
 		compatible = "xlnx,xps-uartlite";
+		doc-status = "complete";
 		reg-extended = <0xa1 0x00 0xf0110000 0x00 0x10 0x01>;
 		chardev = "serial0";
 	};
 
 	ppu1_mdm_uart@0xf0310000 {
-		doc-status = "complete";
 		compatible = "xlnx,xps-uartlite";
+		doc-status = "complete";
 		reg-extended = <0xc4 0x00 0xf0310000 0x00 0x10 0x01>;
 		chardev = "serial1";
 	};
 
 	lqspi_mr@0 {
+		compatible = "simple-bus";
+		ranges;
 		#address-cells = <0x02>;
 		#size-cells = <0x02>;
 		#priority-cells = <0x01>;
-		compatible = "simple-bus";
-		ranges;
 		phandle = <0x80>;
 	};
 
 	lospi_mr@0 {
+		compatible = "simple-bus";
+		ranges;
 		#address-cells = <0x02>;
 		#size-cells = <0x02>;
 		#priority-cells = <0x01>;
-		compatible = "simple-bus";
-		ranges;
 		phandle = <0x82>;
 	};
 
@@ -5182,17 +5182,11 @@ Cannot continue.\nTry installing libgcrypt.";
 
 		apu_cpu@0 {
 			compatible = "cortex-a78-arm-cpu";
-			device_type = "cpu";
-			arm,ccsidr0 = <0x701fe00a>;
-			arm,ccsidr1 = <0x201fe012>;
 			reg = <0x00>;
+			device_type = "cpu";
 			core-count = <0x02>;
-			arm,reset-hivecs = <0x01>;
-			arm,rvbar = <0xffff0000>;
-			arm,reset-cbar = <0xe2060000>;
 			mr = <0xd2>;
 			memory = <0xd2>;
-			qemu,halt = <0x01>;
 			gdb-id = "Cortex-A78 0";
 			#interrupt-cells = <0x01>;
 			memattr_s = <0xd3>;
@@ -5204,21 +5198,21 @@ Cannot continue.\nTry installing libgcrypt.";
 			mp-affinity = <0x1000000>;
 			generic-timer-frequency = <0x298100>;
 			phandle = <0x53>;
+			arm,ccsidr0 = <0x701fe00a>;
+			arm,ccsidr1 = <0x201fe012>;
+			arm,reset-hivecs = <0x01>;
+			arm,rvbar = <0xffff0000>;
+			arm,reset-cbar = <0xe2060000>;
+			qemu,halt = <0x01>;
 		};
 
 		apu_cpu@1 {
 			compatible = "cortex-a78-arm-cpu";
-			device_type = "cpu";
-			arm,ccsidr0 = <0x701fe00a>;
-			arm,ccsidr1 = <0x201fe012>;
 			reg = <0x01>;
+			device_type = "cpu";
 			core-count = <0x02>;
-			arm,reset-hivecs = <0x01>;
-			arm,rvbar = <0xffff0000>;
-			arm,reset-cbar = <0xe2060000>;
 			mr = <0xd2>;
 			memory = <0xd2>;
-			qemu,halt = <0x01>;
 			gdb-id = "Cortex-A78 1";
 			#interrupt-cells = <0x01>;
 			direct-lnx-start-powered-off = <0x01>;
@@ -5232,21 +5226,21 @@ Cannot continue.\nTry installing libgcrypt.";
 			mp-affinity = <0x1000100>;
 			generic-timer-frequency = <0x298100>;
 			phandle = <0x54>;
+			arm,ccsidr0 = <0x701fe00a>;
+			arm,ccsidr1 = <0x201fe012>;
+			arm,reset-hivecs = <0x01>;
+			arm,rvbar = <0xffff0000>;
+			arm,reset-cbar = <0xe2060000>;
+			qemu,halt = <0x01>;
 		};
 
 		apu_cpu@2 {
 			compatible = "cortex-a78-arm-cpu";
-			device_type = "cpu";
-			arm,ccsidr0 = <0x701fe00a>;
-			arm,ccsidr1 = <0x201fe012>;
 			reg = <0x02>;
+			device_type = "cpu";
 			core-count = <0x02>;
-			arm,reset-hivecs = <0x01>;
-			arm,rvbar = <0xffff0000>;
-			arm,reset-cbar = <0xe2060000>;
 			mr = <0xd2>;
 			memory = <0xd2>;
-			qemu,halt = <0x01>;
 			gdb-id = "Cortex-A78 2";
 			#interrupt-cells = <0x01>;
 			direct-lnx-start-powered-off = <0x01>;
@@ -5260,21 +5254,21 @@ Cannot continue.\nTry installing libgcrypt.";
 			mp-affinity = <0x1010000>;
 			generic-timer-frequency = <0x298100>;
 			phandle = <0x56>;
+			arm,ccsidr0 = <0x701fe00a>;
+			arm,ccsidr1 = <0x201fe012>;
+			arm,reset-hivecs = <0x01>;
+			arm,rvbar = <0xffff0000>;
+			arm,reset-cbar = <0xe2060000>;
+			qemu,halt = <0x01>;
 		};
 
 		apu_cpu@3 {
 			compatible = "cortex-a78-arm-cpu";
-			device_type = "cpu";
-			arm,ccsidr0 = <0x701fe00a>;
-			arm,ccsidr1 = <0x201fe012>;
 			reg = <0x03>;
+			device_type = "cpu";
 			core-count = <0x02>;
-			arm,reset-hivecs = <0x01>;
-			arm,rvbar = <0xffff0000>;
-			arm,reset-cbar = <0xe2060000>;
 			mr = <0xd2>;
 			memory = <0xd2>;
-			qemu,halt = <0x01>;
 			gdb-id = "Cortex-A78 3";
 			#interrupt-cells = <0x01>;
 			direct-lnx-start-powered-off = <0x01>;
@@ -5288,21 +5282,21 @@ Cannot continue.\nTry installing libgcrypt.";
 			mp-affinity = <0x1010100>;
 			generic-timer-frequency = <0x298100>;
 			phandle = <0x57>;
+			arm,ccsidr0 = <0x701fe00a>;
+			arm,ccsidr1 = <0x201fe012>;
+			arm,reset-hivecs = <0x01>;
+			arm,rvbar = <0xffff0000>;
+			arm,reset-cbar = <0xe2060000>;
+			qemu,halt = <0x01>;
 		};
 
 		apu_cpu@4 {
 			compatible = "cortex-a78-arm-cpu";
-			device_type = "cpu";
-			arm,ccsidr0 = <0x701fe00a>;
-			arm,ccsidr1 = <0x201fe012>;
 			reg = <0x04>;
+			device_type = "cpu";
 			core-count = <0x02>;
-			arm,reset-hivecs = <0x01>;
-			arm,rvbar = <0xffff0000>;
-			arm,reset-cbar = <0xe2060000>;
 			mr = <0xd2>;
 			memory = <0xd2>;
-			qemu,halt = <0x01>;
 			gdb-id = "Cortex-A78 4";
 			#interrupt-cells = <0x01>;
 			direct-lnx-start-powered-off = <0x01>;
@@ -5316,21 +5310,21 @@ Cannot continue.\nTry installing libgcrypt.";
 			mp-affinity = <0x1020000>;
 			generic-timer-frequency = <0x298100>;
 			phandle = <0x58>;
+			arm,ccsidr0 = <0x701fe00a>;
+			arm,ccsidr1 = <0x201fe012>;
+			arm,reset-hivecs = <0x01>;
+			arm,rvbar = <0xffff0000>;
+			arm,reset-cbar = <0xe2060000>;
+			qemu,halt = <0x01>;
 		};
 
 		apu_cpu@5 {
 			compatible = "cortex-a78-arm-cpu";
-			device_type = "cpu";
-			arm,ccsidr0 = <0x701fe00a>;
-			arm,ccsidr1 = <0x201fe012>;
 			reg = <0x05>;
+			device_type = "cpu";
 			core-count = <0x02>;
-			arm,reset-hivecs = <0x01>;
-			arm,rvbar = <0xffff0000>;
-			arm,reset-cbar = <0xe2060000>;
 			mr = <0xd2>;
 			memory = <0xd2>;
-			qemu,halt = <0x01>;
 			gdb-id = "Cortex-A78 5";
 			#interrupt-cells = <0x01>;
 			direct-lnx-start-powered-off = <0x01>;
@@ -5344,21 +5338,21 @@ Cannot continue.\nTry installing libgcrypt.";
 			mp-affinity = <0x1020100>;
 			generic-timer-frequency = <0x298100>;
 			phandle = <0x59>;
+			arm,ccsidr0 = <0x701fe00a>;
+			arm,ccsidr1 = <0x201fe012>;
+			arm,reset-hivecs = <0x01>;
+			arm,rvbar = <0xffff0000>;
+			arm,reset-cbar = <0xe2060000>;
+			qemu,halt = <0x01>;
 		};
 
 		apu_cpu@6 {
 			compatible = "cortex-a78-arm-cpu";
-			device_type = "cpu";
-			arm,ccsidr0 = <0x701fe00a>;
-			arm,ccsidr1 = <0x201fe012>;
 			reg = <0x06>;
+			device_type = "cpu";
 			core-count = <0x02>;
-			arm,reset-hivecs = <0x01>;
-			arm,rvbar = <0xffff0000>;
-			arm,reset-cbar = <0xe2060000>;
 			mr = <0xd2>;
 			memory = <0xd2>;
-			qemu,halt = <0x01>;
 			gdb-id = "Cortex-A78 6";
 			#interrupt-cells = <0x01>;
 			direct-lnx-start-powered-off = <0x01>;
@@ -5372,21 +5366,21 @@ Cannot continue.\nTry installing libgcrypt.";
 			mp-affinity = <0x1030000>;
 			generic-timer-frequency = <0x298100>;
 			phandle = <0x5a>;
+			arm,ccsidr0 = <0x701fe00a>;
+			arm,ccsidr1 = <0x201fe012>;
+			arm,reset-hivecs = <0x01>;
+			arm,rvbar = <0xffff0000>;
+			arm,reset-cbar = <0xe2060000>;
+			qemu,halt = <0x01>;
 		};
 
 		apu_cpu@7 {
 			compatible = "cortex-a78-arm-cpu";
-			device_type = "cpu";
-			arm,ccsidr0 = <0x701fe00a>;
-			arm,ccsidr1 = <0x201fe012>;
 			reg = <0x07>;
+			device_type = "cpu";
 			core-count = <0x02>;
-			arm,reset-hivecs = <0x01>;
-			arm,rvbar = <0xffff0000>;
-			arm,reset-cbar = <0xe2060000>;
 			mr = <0xd2>;
 			memory = <0xd2>;
-			qemu,halt = <0x01>;
 			gdb-id = "Cortex-A78 7";
 			#interrupt-cells = <0x01>;
 			direct-lnx-start-powered-off = <0x01>;
@@ -5400,6 +5394,12 @@ Cannot continue.\nTry installing libgcrypt.";
 			mp-affinity = <0x1030100>;
 			generic-timer-frequency = <0x298100>;
 			phandle = <0x5b>;
+			arm,ccsidr0 = <0x701fe00a>;
+			arm,ccsidr1 = <0x201fe012>;
+			arm,reset-hivecs = <0x01>;
+			arm,rvbar = <0xffff0000>;
+			arm,reset-cbar = <0xe2060000>;
+			qemu,halt = <0x01>;
 		};
 
 		rpu_a@0 {
@@ -5410,17 +5410,8 @@ Cannot continue.\nTry installing libgcrypt.";
 			rpu_cpu_a@0 {
 				compatible = "cortex-r52-arm-cpu";
 				device_type = "cpu";
-				arm,tcmtr = <0x10001>;
-				arm,ctr = <0x8003c003>;
-				arm,clidr = <0x9200003>;
-				arm,ccsidr0 = <0xf01fe019>;
-				arm,ccsidr1 = <0xf01fe019>;
-				arm,mp-affinity = <0x00>;
-				arm,id_pfr0 = <0x131>;
-				arm,reset-hivecs = <0x01>;
 				#interrupt-cells = <0x01>;
 				memory = <0xe3>;
-				qemu,halt = <0x01>;
 				memattr_ns = <0xe4>;
 				core-count = <0x02>;
 				gdb-id = "Cortex-R52 #a0";
@@ -5429,22 +5420,22 @@ Cannot continue.\nTry installing libgcrypt.";
 				reset-cbar = <0xe2000000>;
 				power-gpios = <0x1b 0x08>;
 				phandle = <0x2a>;
-			};
-
-			rpu_cpu_a@1 {
-				compatible = "cortex-r52-arm-cpu";
-				device_type = "cpu";
 				arm,tcmtr = <0x10001>;
 				arm,ctr = <0x8003c003>;
 				arm,clidr = <0x9200003>;
 				arm,ccsidr0 = <0xf01fe019>;
 				arm,ccsidr1 = <0xf01fe019>;
-				arm,mp-affinity = <0x01>;
+				arm,mp-affinity = <0x00>;
 				arm,id_pfr0 = <0x131>;
 				arm,reset-hivecs = <0x01>;
+				qemu,halt = <0x01>;
+			};
+
+			rpu_cpu_a@1 {
+				compatible = "cortex-r52-arm-cpu";
+				device_type = "cpu";
 				#interrupt-cells = <0x01>;
 				memory = <0xe6>;
-				qemu,halt = <0x01>;
 				memattr_ns = <0xe7>;
 				core-count = <0x02>;
 				gdb-id = "Cortex-R52 #a1";
@@ -5453,6 +5444,15 @@ Cannot continue.\nTry installing libgcrypt.";
 				reset-cbar = <0xe2000000>;
 				power-gpios = <0x1b 0x09>;
 				phandle = <0x2b>;
+				arm,tcmtr = <0x10001>;
+				arm,ctr = <0x8003c003>;
+				arm,clidr = <0x9200003>;
+				arm,ccsidr0 = <0xf01fe019>;
+				arm,ccsidr1 = <0xf01fe019>;
+				arm,mp-affinity = <0x01>;
+				arm,id_pfr0 = <0x131>;
+				arm,reset-hivecs = <0x01>;
+				qemu,halt = <0x01>;
 			};
 		};
 
@@ -5464,17 +5464,8 @@ Cannot continue.\nTry installing libgcrypt.";
 			rpu_cpu_b@0 {
 				compatible = "cortex-r52-arm-cpu";
 				device_type = "cpu";
-				arm,tcmtr = <0x10001>;
-				arm,ctr = <0x8003c003>;
-				arm,clidr = <0x9200003>;
-				arm,ccsidr0 = <0xf01fe019>;
-				arm,ccsidr1 = <0xf01fe019>;
-				arm,mp-affinity = <0x100>;
-				arm,id_pfr0 = <0x131>;
-				arm,reset-hivecs = <0x01>;
 				#interrupt-cells = <0x01>;
 				memory = <0xe9>;
-				qemu,halt = <0x01>;
 				memattr_ns = <0xea>;
 				core-count = <0x02>;
 				gdb-id = "Cortex-R52 #b0";
@@ -5483,22 +5474,22 @@ Cannot continue.\nTry installing libgcrypt.";
 				reset-cbar = <0xe2000000>;
 				power-gpios = <0x1b 0x0a>;
 				phandle = <0x2c>;
-			};
-
-			rpu_cpu_b@1 {
-				compatible = "cortex-r52-arm-cpu";
-				device_type = "cpu";
 				arm,tcmtr = <0x10001>;
 				arm,ctr = <0x8003c003>;
 				arm,clidr = <0x9200003>;
 				arm,ccsidr0 = <0xf01fe019>;
 				arm,ccsidr1 = <0xf01fe019>;
-				arm,mp-affinity = <0x101>;
+				arm,mp-affinity = <0x100>;
 				arm,id_pfr0 = <0x131>;
 				arm,reset-hivecs = <0x01>;
+				qemu,halt = <0x01>;
+			};
+
+			rpu_cpu_b@1 {
+				compatible = "cortex-r52-arm-cpu";
+				device_type = "cpu";
 				#interrupt-cells = <0x01>;
 				memory = <0xec>;
-				qemu,halt = <0x01>;
 				memattr_ns = <0xed>;
 				core-count = <0x02>;
 				gdb-id = "Cortex-R52 #b1";
@@ -5507,6 +5498,15 @@ Cannot continue.\nTry installing libgcrypt.";
 				reset-cbar = <0xe2000000>;
 				power-gpios = <0x1b 0x0b>;
 				phandle = <0x2d>;
+				arm,tcmtr = <0x10001>;
+				arm,ctr = <0x8003c003>;
+				arm,clidr = <0x9200003>;
+				arm,ccsidr0 = <0xf01fe019>;
+				arm,ccsidr1 = <0xf01fe019>;
+				arm,mp-affinity = <0x101>;
+				arm,id_pfr0 = <0x131>;
+				arm,reset-hivecs = <0x01>;
+				qemu,halt = <0x01>;
 			};
 		};
 
@@ -5518,17 +5518,8 @@ Cannot continue.\nTry installing libgcrypt.";
 			rpu_cpu_c@0 {
 				compatible = "cortex-r52-arm-cpu";
 				device_type = "cpu";
-				arm,tcmtr = <0x10001>;
-				arm,ctr = <0x8003c003>;
-				arm,clidr = <0x9200003>;
-				arm,ccsidr0 = <0xf01fe019>;
-				arm,ccsidr1 = <0xf01fe019>;
-				arm,mp-affinity = <0x200>;
-				arm,id_pfr0 = <0x131>;
-				arm,reset-hivecs = <0x01>;
 				#interrupt-cells = <0x01>;
 				memory = <0xef>;
-				qemu,halt = <0x01>;
 				memattr_ns = <0xf0>;
 				core-count = <0x02>;
 				gdb-id = "Cortex-R52 #c0";
@@ -5537,22 +5528,22 @@ Cannot continue.\nTry installing libgcrypt.";
 				reset-cbar = <0xe2000000>;
 				power-gpios = <0x1b 0x0c>;
 				phandle = <0x2e>;
-			};
-
-			rpu_cpu_c@1 {
-				compatible = "cortex-r52-arm-cpu";
-				device_type = "cpu";
 				arm,tcmtr = <0x10001>;
 				arm,ctr = <0x8003c003>;
 				arm,clidr = <0x9200003>;
 				arm,ccsidr0 = <0xf01fe019>;
 				arm,ccsidr1 = <0xf01fe019>;
-				arm,mp-affinity = <0x201>;
+				arm,mp-affinity = <0x200>;
 				arm,id_pfr0 = <0x131>;
 				arm,reset-hivecs = <0x01>;
+				qemu,halt = <0x01>;
+			};
+
+			rpu_cpu_c@1 {
+				compatible = "cortex-r52-arm-cpu";
+				device_type = "cpu";
 				#interrupt-cells = <0x01>;
 				memory = <0xf2>;
-				qemu,halt = <0x01>;
 				memattr_ns = <0xf3>;
 				core-count = <0x02>;
 				gdb-id = "Cortex-R52 #c1";
@@ -5561,6 +5552,15 @@ Cannot continue.\nTry installing libgcrypt.";
 				reset-cbar = <0xe2000000>;
 				power-gpios = <0x1b 0x0d>;
 				phandle = <0x2f>;
+				arm,tcmtr = <0x10001>;
+				arm,ctr = <0x8003c003>;
+				arm,clidr = <0x9200003>;
+				arm,ccsidr0 = <0xf01fe019>;
+				arm,ccsidr1 = <0xf01fe019>;
+				arm,mp-affinity = <0x201>;
+				arm,id_pfr0 = <0x131>;
+				arm,reset-hivecs = <0x01>;
+				qemu,halt = <0x01>;
 			};
 		};
 
@@ -5572,17 +5572,8 @@ Cannot continue.\nTry installing libgcrypt.";
 			rpu_cpu_d@0 {
 				compatible = "cortex-r52-arm-cpu";
 				device_type = "cpu";
-				arm,tcmtr = <0x10001>;
-				arm,ctr = <0x8003c003>;
-				arm,clidr = <0x9200003>;
-				arm,ccsidr0 = <0xf01fe019>;
-				arm,ccsidr1 = <0xf01fe019>;
-				arm,mp-affinity = <0x300>;
-				arm,id_pfr0 = <0x131>;
-				arm,reset-hivecs = <0x01>;
 				#interrupt-cells = <0x01>;
 				memory = <0xf5>;
-				qemu,halt = <0x01>;
 				memattr_ns = <0xf6>;
 				core-count = <0x02>;
 				gdb-id = "Cortex-R52 #d0";
@@ -5591,22 +5582,22 @@ Cannot continue.\nTry installing libgcrypt.";
 				reset-cbar = <0xe2000000>;
 				power-gpios = <0x1b 0x0e>;
 				phandle = <0x30>;
-			};
-
-			rpu_cpu_d@1 {
-				compatible = "cortex-r52-arm-cpu";
-				device_type = "cpu";
 				arm,tcmtr = <0x10001>;
 				arm,ctr = <0x8003c003>;
 				arm,clidr = <0x9200003>;
 				arm,ccsidr0 = <0xf01fe019>;
 				arm,ccsidr1 = <0xf01fe019>;
-				arm,mp-affinity = <0x301>;
+				arm,mp-affinity = <0x300>;
 				arm,id_pfr0 = <0x131>;
 				arm,reset-hivecs = <0x01>;
+				qemu,halt = <0x01>;
+			};
+
+			rpu_cpu_d@1 {
+				compatible = "cortex-r52-arm-cpu";
+				device_type = "cpu";
 				#interrupt-cells = <0x01>;
 				memory = <0xf8>;
-				qemu,halt = <0x01>;
 				memattr_ns = <0xf9>;
 				core-count = <0x02>;
 				gdb-id = "Cortex-R52 #d1";
@@ -5615,6 +5606,15 @@ Cannot continue.\nTry installing libgcrypt.";
 				reset-cbar = <0xe2000000>;
 				power-gpios = <0x1b 0x0f>;
 				phandle = <0x31>;
+				arm,tcmtr = <0x10001>;
+				arm,ctr = <0x8003c003>;
+				arm,clidr = <0x9200003>;
+				arm,ccsidr0 = <0xf01fe019>;
+				arm,ccsidr1 = <0xf01fe019>;
+				arm,mp-affinity = <0x301>;
+				arm,id_pfr0 = <0x131>;
+				arm,reset-hivecs = <0x01>;
+				qemu,halt = <0x01>;
 			};
 		};
 
@@ -5626,17 +5626,8 @@ Cannot continue.\nTry installing libgcrypt.";
 			rpu_cpu_e@0 {
 				compatible = "cortex-r52-arm-cpu";
 				device_type = "cpu";
-				arm,tcmtr = <0x10001>;
-				arm,ctr = <0x8003c003>;
-				arm,clidr = <0x9200003>;
-				arm,ccsidr0 = <0xf01fe019>;
-				arm,ccsidr1 = <0xf01fe019>;
-				arm,mp-affinity = <0x400>;
-				arm,id_pfr0 = <0x131>;
-				arm,reset-hivecs = <0x01>;
 				#interrupt-cells = <0x01>;
 				memory = <0xfb>;
-				qemu,halt = <0x01>;
 				memattr_ns = <0xfc>;
 				core-count = <0x02>;
 				gdb-id = "Cortex-R52 #e0";
@@ -5645,22 +5636,22 @@ Cannot continue.\nTry installing libgcrypt.";
 				reset-cbar = <0xe2000000>;
 				power-gpios = <0x1b 0x10>;
 				phandle = <0x32>;
-			};
-
-			rpu_cpu_e@1 {
-				compatible = "cortex-r52-arm-cpu";
-				device_type = "cpu";
 				arm,tcmtr = <0x10001>;
 				arm,ctr = <0x8003c003>;
 				arm,clidr = <0x9200003>;
 				arm,ccsidr0 = <0xf01fe019>;
 				arm,ccsidr1 = <0xf01fe019>;
-				arm,mp-affinity = <0x401>;
+				arm,mp-affinity = <0x400>;
 				arm,id_pfr0 = <0x131>;
 				arm,reset-hivecs = <0x01>;
+				qemu,halt = <0x01>;
+			};
+
+			rpu_cpu_e@1 {
+				compatible = "cortex-r52-arm-cpu";
+				device_type = "cpu";
 				#interrupt-cells = <0x01>;
 				memory = <0xfe>;
-				qemu,halt = <0x01>;
 				memattr_ns = <0xff>;
 				core-count = <0x02>;
 				gdb-id = "Cortex-R52 #e1";
@@ -5669,22 +5660,31 @@ Cannot continue.\nTry installing libgcrypt.";
 				reset-cbar = <0xe2000000>;
 				power-gpios = <0x1b 0x11>;
 				phandle = <0x33>;
+				arm,tcmtr = <0x10001>;
+				arm,ctr = <0x8003c003>;
+				arm,clidr = <0x9200003>;
+				arm,ccsidr0 = <0xf01fe019>;
+				arm,ccsidr1 = <0xf01fe019>;
+				arm,mp-affinity = <0x401>;
+				arm,id_pfr0 = <0x131>;
+				arm,reset-hivecs = <0x01>;
+				qemu,halt = <0x01>;
 			};
 		};
 	};
 
 	amba_apu@0 {
+		compatible = "simple-bus";
+		ranges;
 		#address-cells = <0x02>;
 		#size-cells = <0x02>;
 		#priority-cells = <0x01>;
-		compatible = "simple-bus";
-		ranges;
 		phandle = <0xd2>;
 
 		downstream_amba {
 			compatible = "qemu:memory-region";
-			alias = <0x0d>;
 			reg = <0x00 0x00 0xffffffff 0xffffffff 0xffffffff>;
+			alias = <0x0d>;
 		};
 
 		timer {
@@ -5698,22 +5698,22 @@ Cannot continue.\nTry installing libgcrypt.";
 	};
 
 	amba_apu_gic@0 {
+		compatible = "simple-bus";
+		ranges;
 		#address-cells = <0x02>;
 		#size-cells = <0x02>;
 		#priority-cells = <0x01>;
-		compatible = "simple-bus";
-		ranges;
 		container = <0x0b>;
 		priority = <0xffffffff>;
 		phandle = <0x1e5>;
 
 		interrupt-controller@0xe2000000 {
-			#address-cells = <0x00>;
-			#size-cells = <0x00>;
-			#interrupt-cells = <0x03>;
 			compatible = "arm-gicv3";
 			reg = <0x00 0xe2000000 0x00 0x10000 0x00 0x00 0xe2060000
 			       0x00 0x400000 0x00>;
+			#address-cells = <0x00>;
+			#size-cells = <0x00>;
+			#interrupt-cells = <0x03>;
 			interrupt-controller;
 			interrupts-extended = <0x53 0x00 0x54 0x00 0x56 0x00 0x57 0x00 0x58 0x00
 					       0x59 0x00 0x5a 0x00 0x5b 0x00 0x53 0x01 0x54 0x01
@@ -5755,17 +5755,17 @@ Cannot continue.\nTry installing libgcrypt.";
 
 	amba_alias@0 {
 		compatible = "qemu:memory-region";
+		reg = <0x00 0x00 0xffffffff 0xffffffff 0x01>;
 		container = <0x101>;
 		alias = <0x0d>;
-		reg = <0x00 0x00 0xffffffff 0xffffffff 0x01>;
 		phandle = <0x1e6>;
 	};
 
 	qemu_sysmem@0 {
+		compatible = "qemu:system-memory";
 		#address-cells = <0x02>;
 		#size-cells = <0x02>;
 		#priority-cells = <0x01>;
-		compatible = "qemu:system-memory";
 		phandle = <0x101>;
 	};
 
@@ -5791,38 +5791,38 @@ Cannot continue.\nTry installing libgcrypt.";
 
 	ddr@0x00000000 {
 		compatible = "qemu:memory-region";
-		container = <0x102>;
-		qemu,ram = <0x01>;
 		reg = <0x00 0x00 0x00 0x80000000 0x00>;
+		container = <0x102>;
 		phandle = <0xa2>;
+		qemu,ram = <0x01>;
 	};
 
 	ddr_2@0x800000000ULL {
 		compatible = "qemu:memory-region-spec";
-		container = <0x103>;
-		qemu,ram = <0x01>;
 		reg = <0x08 0x00 0x08 0x00 0x00>;
+		container = <0x103>;
 		phandle = <0x1e8>;
+		qemu,ram = <0x01>;
 	};
 
 	mdio {
+		compatible = "mdio";
 		#address-cells = <0x01>;
 		#size-cells = <0x00>;
 		#priority-cells = <0x00>;
-		compatible = "mdio";
 		phandle = <0x1c>;
 
 		phy@1 {
 			compatible = "dp83867";
-			device_type = "ethernet-phy";
 			reg = <0x01>;
+			device_type = "ethernet-phy";
 			phandle = <0x1e9>;
 		};
 
 		phy@2 {
 			compatible = "88e1118r";
-			device_type = "ethernet-phy";
 			reg = <0x02>;
+			device_type = "ethernet-phy";
 			phandle = <0x1ea>;
 		};
 	};
@@ -5832,72 +5832,72 @@ Cannot continue.\nTry installing libgcrypt.";
 	};
 
 	tbu7_slave@0 {
+		compatible = "simple-bus";
+		ranges;
 		#address-cells = <0x02>;
 		#size-cells = <0x02>;
 		#priority-cells = <0x01>;
-		compatible = "simple-bus";
-		ranges;
 		phandle = <0x62>;
 	};
 
 	tbu8_slave@0 {
+		compatible = "simple-bus";
+		ranges;
 		#address-cells = <0x02>;
 		#size-cells = <0x02>;
 		#priority-cells = <0x01>;
-		compatible = "simple-bus";
-		ranges;
 		phandle = <0x63>;
 	};
 
 	tbu9_slave@0 {
+		compatible = "simple-bus";
+		ranges;
 		#address-cells = <0x02>;
 		#size-cells = <0x02>;
 		#priority-cells = <0x01>;
-		compatible = "simple-bus";
-		ranges;
 		phandle = <0x64>;
 	};
 
 	tbu10_slave@0 {
+		compatible = "simple-bus";
+		ranges;
 		#address-cells = <0x02>;
 		#size-cells = <0x02>;
 		#priority-cells = <0x01>;
-		compatible = "simple-bus";
-		ranges;
 		phandle = <0x65>;
 	};
 
 	tbu11_slave@0 {
+		compatible = "simple-bus";
+		ranges;
 		#address-cells = <0x02>;
 		#size-cells = <0x02>;
 		#priority-cells = <0x01>;
-		compatible = "simple-bus";
-		ranges;
 		phandle = <0x66>;
 	};
 
 	tbu12_slave@0 {
+		compatible = "simple-bus";
+		ranges;
 		#address-cells = <0x02>;
 		#size-cells = <0x02>;
 		#priority-cells = <0x01>;
-		compatible = "simple-bus";
-		ranges;
 		phandle = <0x67>;
 	};
 
 	mr_rpu_gic_a@0 {
+		compatible = "simple-bus";
 		#address-cells = <0x02>;
 		#size-cells = <0x02>;
 		#priority-cells = <0x01>;
-		compatible = "simple-bus";
 		phandle = <0xd1>;
 
 		rpu_gic_a@0x0 {
+			compatible = "arm-gicv3";
+			reg = <0x00 0x00 0x00 0x10000 0x00 0x00 0x100000 0x00 0x40000 0x00>;
 			#address-cells = <0x00>;
 			#size-cells = <0x00>;
 			#interrupt-cells = <0x03>;
-			compatible = "arm-gicv3";
-			reg = <0x00 0x00 0x00 0x10000 0x00 0x00 0x100000 0x00 0x40000 0x00>;
 			interrupt-controller;
 			interrupts-extended = <0x2a 0x00 0x2b 0x00 0x2a 0x01 0x2b 0x01 0x2a 0x02
 					       0x2b 0x02 0x2a 0x03 0x2b 0x03 0x02 0x01 0x09 0x104
@@ -5913,18 +5913,18 @@ Cannot continue.\nTry installing libgcrypt.";
 	};
 
 	mr_rpu_gic_b@0 {
+		compatible = "simple-bus";
 		#address-cells = <0x02>;
 		#size-cells = <0x02>;
 		#priority-cells = <0x01>;
-		compatible = "simple-bus";
 		phandle = <0x104>;
 
 		rpu_gic_b@0x0 {
+			compatible = "arm-gicv3";
+			reg = <0x00 0x00 0x00 0x10000 0x00 0x00 0x100000 0x00 0x40000 0x00>;
 			#address-cells = <0x00>;
 			#size-cells = <0x00>;
 			#interrupt-cells = <0x03>;
-			compatible = "arm-gicv3";
-			reg = <0x00 0x00 0x00 0x10000 0x00 0x00 0x100000 0x00 0x40000 0x00>;
 			interrupt-controller;
 			interrupts-extended = <0x2c 0x00 0x2d 0x00 0x2c 0x01 0x2d 0x01 0x2c 0x02
 					       0x2d 0x02 0x2c 0x03 0x2d 0x03 0x03 0x01 0x09 0x104
@@ -5940,18 +5940,18 @@ Cannot continue.\nTry installing libgcrypt.";
 	};
 
 	mr_rpu_gic_c@0 {
+		compatible = "simple-bus";
 		#address-cells = <0x02>;
 		#size-cells = <0x02>;
 		#priority-cells = <0x01>;
-		compatible = "simple-bus";
 		phandle = <0x105>;
 
 		rpu_gic_c@0x0 {
+			compatible = "arm-gicv3";
+			reg = <0x00 0x00 0x00 0x10000 0x00 0x00 0x100000 0x00 0x40000 0x00>;
 			#address-cells = <0x00>;
 			#size-cells = <0x00>;
 			#interrupt-cells = <0x03>;
-			compatible = "arm-gicv3";
-			reg = <0x00 0x00 0x00 0x10000 0x00 0x00 0x100000 0x00 0x40000 0x00>;
 			interrupt-controller;
 			interrupts-extended = <0x2e 0x00 0x2f 0x00 0x2e 0x01 0x2f 0x01 0x2e 0x02
 					       0x2f 0x02 0x2e 0x03 0x2f 0x03 0x04 0x01 0x09 0x104
@@ -5967,18 +5967,18 @@ Cannot continue.\nTry installing libgcrypt.";
 	};
 
 	mr_rpu_gic_d@0 {
+		compatible = "simple-bus";
 		#address-cells = <0x02>;
 		#size-cells = <0x02>;
 		#priority-cells = <0x01>;
-		compatible = "simple-bus";
 		phandle = <0x106>;
 
 		rpu_gic_d@0x0 {
+			compatible = "arm-gicv3";
+			reg = <0x00 0x00 0x00 0x10000 0x00 0x00 0x100000 0x00 0x40000 0x00>;
 			#address-cells = <0x00>;
 			#size-cells = <0x00>;
 			#interrupt-cells = <0x03>;
-			compatible = "arm-gicv3";
-			reg = <0x00 0x00 0x00 0x10000 0x00 0x00 0x100000 0x00 0x40000 0x00>;
 			interrupt-controller;
 			interrupts-extended = <0x30 0x00 0x31 0x00 0x30 0x01 0x31 0x01 0x30 0x02
 					       0x31 0x02 0x30 0x03 0x31 0x03 0x05 0x01 0x09 0x104
@@ -5994,18 +5994,18 @@ Cannot continue.\nTry installing libgcrypt.";
 	};
 
 	mr_rpu_gic_e@0 {
+		compatible = "simple-bus";
 		#address-cells = <0x02>;
 		#size-cells = <0x02>;
 		#priority-cells = <0x01>;
-		compatible = "simple-bus";
 		phandle = <0x107>;
 
 		rpu_gic_e@0x0 {
+			compatible = "arm-gicv3";
+			reg = <0x00 0x00 0x00 0x10000 0x00 0x00 0x100000 0x00 0x40000 0x00>;
 			#address-cells = <0x00>;
 			#size-cells = <0x00>;
 			#interrupt-cells = <0x03>;
-			compatible = "arm-gicv3";
-			reg = <0x00 0x00 0x00 0x10000 0x00 0x00 0x100000 0x00 0x40000 0x00>;
 			interrupt-controller;
 			interrupts-extended = <0x32 0x00 0x33 0x00 0x32 0x01 0x33 0x01 0x32 0x02
 					       0x33 0x02 0x32 0x03 0x33 0x03 0x06 0x01 0x09 0x104
@@ -6021,1213 +6021,1213 @@ Cannot continue.\nTry installing libgcrypt.";
 	};
 
 	tcm_core@0 {
+		compatible = "qemu:memory-region";
 		#address-cells = <0x02>;
 		#size-cells = <0x02>;
 		#priority-cells = <0x01>;
-		compatible = "qemu:memory-region";
 		phandle = <0x35>;
 
 		atcm_rpu_core0@0x00000 {
 			compatible = "qemu:memory-region";
-			container = <0x35>;
-			qemu,ram = <0x01>;
 			reg = <0x00 0x00 0x00 0x10000 0x00>;
+			container = <0x35>;
 			phandle = <0x1eb>;
+			qemu,ram = <0x01>;
 		};
 
 		btcm_rpu_core0@0x00000 {
 			compatible = "qemu:memory-region";
-			container = <0x35>;
-			qemu,ram = <0x01>;
 			reg = <0x00 0x10000 0x00 0x10000 0x00>;
+			container = <0x35>;
 			phandle = <0x1ec>;
+			qemu,ram = <0x01>;
 		};
 
 		ctcm_rpu_core0@0x00000 {
 			compatible = "qemu:memory-region";
-			container = <0x35>;
-			qemu,ram = <0x01>;
 			reg = <0x00 0x20000 0x00 0x10000 0x00>;
+			container = <0x35>;
 			phandle = <0x1ed>;
+			qemu,ram = <0x01>;
 		};
 	};
 
 	tcm_core@1 {
+		compatible = "qemu:memory-region";
 		#address-cells = <0x02>;
 		#size-cells = <0x02>;
 		#priority-cells = <0x01>;
-		compatible = "qemu:memory-region";
 		phandle = <0x37>;
 
 		atcm_rpu_core1@0x00000 {
 			compatible = "qemu:memory-region";
-			container = <0x37>;
-			qemu,ram = <0x01>;
 			reg = <0x00 0x00 0x00 0x10000 0x00>;
+			container = <0x37>;
 			phandle = <0x1ee>;
+			qemu,ram = <0x01>;
 		};
 
 		btcm_rpu_core1@0x00000 {
 			compatible = "qemu:memory-region";
-			container = <0x37>;
-			qemu,ram = <0x01>;
 			reg = <0x00 0x10000 0x00 0x10000 0x00>;
+			container = <0x37>;
 			phandle = <0x1ef>;
+			qemu,ram = <0x01>;
 		};
 
 		ctcm_rpu_core1@0x00000 {
 			compatible = "qemu:memory-region";
-			container = <0x37>;
-			qemu,ram = <0x01>;
 			reg = <0x00 0x20000 0x00 0x10000 0x00>;
+			container = <0x37>;
 			phandle = <0x1f0>;
+			qemu,ram = <0x01>;
 		};
 	};
 
 	tcm_core@2 {
+		compatible = "qemu:memory-region";
 		#address-cells = <0x02>;
 		#size-cells = <0x02>;
 		#priority-cells = <0x01>;
-		compatible = "qemu:memory-region";
 		phandle = <0x39>;
 
 		atcm_rpu_core2@0x00000 {
 			compatible = "qemu:memory-region";
-			container = <0x39>;
-			qemu,ram = <0x01>;
 			reg = <0x00 0x00 0x00 0x10000 0x00>;
+			container = <0x39>;
 			phandle = <0x1f1>;
+			qemu,ram = <0x01>;
 		};
 
 		btcm_rpu_core2@0x00000 {
 			compatible = "qemu:memory-region";
-			container = <0x39>;
-			qemu,ram = <0x01>;
 			reg = <0x00 0x10000 0x00 0x10000 0x00>;
+			container = <0x39>;
 			phandle = <0x1f2>;
+			qemu,ram = <0x01>;
 		};
 
 		ctcm_rpu_core2@0x00000 {
 			compatible = "qemu:memory-region";
-			container = <0x39>;
-			qemu,ram = <0x01>;
 			reg = <0x00 0x20000 0x00 0x10000 0x00>;
+			container = <0x39>;
 			phandle = <0x1f3>;
+			qemu,ram = <0x01>;
 		};
 	};
 
 	tcm_core@3 {
+		compatible = "qemu:memory-region";
 		#address-cells = <0x02>;
 		#size-cells = <0x02>;
 		#priority-cells = <0x01>;
-		compatible = "qemu:memory-region";
 		phandle = <0x3b>;
 
 		atcm_rpu_core3@0x00000 {
 			compatible = "qemu:memory-region";
-			container = <0x3b>;
-			qemu,ram = <0x01>;
 			reg = <0x00 0x00 0x00 0x10000 0x00>;
+			container = <0x3b>;
 			phandle = <0x1f4>;
+			qemu,ram = <0x01>;
 		};
 
 		btcm_rpu_core3@0x00000 {
 			compatible = "qemu:memory-region";
-			container = <0x3b>;
-			qemu,ram = <0x01>;
 			reg = <0x00 0x10000 0x00 0x10000 0x00>;
+			container = <0x3b>;
 			phandle = <0x1f5>;
+			qemu,ram = <0x01>;
 		};
 
 		ctcm_rpu_core3@0x00000 {
 			compatible = "qemu:memory-region";
-			container = <0x3b>;
-			qemu,ram = <0x01>;
 			reg = <0x00 0x20000 0x00 0x10000 0x00>;
+			container = <0x3b>;
 			phandle = <0x1f6>;
+			qemu,ram = <0x01>;
 		};
 	};
 
 	tcm_core@4 {
+		compatible = "qemu:memory-region";
 		#address-cells = <0x02>;
 		#size-cells = <0x02>;
 		#priority-cells = <0x01>;
-		compatible = "qemu:memory-region";
 		phandle = <0x3d>;
 
 		atcm_rpu_core4@0x00000 {
 			compatible = "qemu:memory-region";
-			container = <0x3d>;
-			qemu,ram = <0x01>;
 			reg = <0x00 0x00 0x00 0x10000 0x00>;
+			container = <0x3d>;
 			phandle = <0x1f7>;
+			qemu,ram = <0x01>;
 		};
 
 		btcm_rpu_core4@0x00000 {
 			compatible = "qemu:memory-region";
-			container = <0x3d>;
-			qemu,ram = <0x01>;
 			reg = <0x00 0x10000 0x00 0x10000 0x00>;
+			container = <0x3d>;
 			phandle = <0x1f8>;
+			qemu,ram = <0x01>;
 		};
 
 		ctcm_rpu_core4@0x00000 {
 			compatible = "qemu:memory-region";
-			container = <0x3d>;
-			qemu,ram = <0x01>;
 			reg = <0x00 0x20000 0x00 0x10000 0x00>;
+			container = <0x3d>;
 			phandle = <0x1f9>;
+			qemu,ram = <0x01>;
 		};
 	};
 
 	tcm_core@5 {
+		compatible = "qemu:memory-region";
 		#address-cells = <0x02>;
 		#size-cells = <0x02>;
 		#priority-cells = <0x01>;
-		compatible = "qemu:memory-region";
 		phandle = <0x3f>;
 
 		atcm_rpu_core5@0x00000 {
 			compatible = "qemu:memory-region";
-			container = <0x3f>;
-			qemu,ram = <0x01>;
 			reg = <0x00 0x00 0x00 0x10000 0x00>;
+			container = <0x3f>;
 			phandle = <0x1fa>;
+			qemu,ram = <0x01>;
 		};
 
 		btcm_rpu_core5@0x00000 {
 			compatible = "qemu:memory-region";
-			container = <0x3f>;
-			qemu,ram = <0x01>;
 			reg = <0x00 0x10000 0x00 0x10000 0x00>;
+			container = <0x3f>;
 			phandle = <0x1fb>;
+			qemu,ram = <0x01>;
 		};
 
 		ctcm_rpu_core5@0x00000 {
 			compatible = "qemu:memory-region";
-			container = <0x3f>;
-			qemu,ram = <0x01>;
 			reg = <0x00 0x20000 0x00 0x10000 0x00>;
+			container = <0x3f>;
 			phandle = <0x1fc>;
+			qemu,ram = <0x01>;
 		};
 	};
 
 	tcm_core@6 {
+		compatible = "qemu:memory-region";
 		#address-cells = <0x02>;
 		#size-cells = <0x02>;
 		#priority-cells = <0x01>;
-		compatible = "qemu:memory-region";
 		phandle = <0x41>;
 
 		atcm_rpu_core6@0x00000 {
 			compatible = "qemu:memory-region";
-			container = <0x41>;
-			qemu,ram = <0x01>;
 			reg = <0x00 0x00 0x00 0x10000 0x00>;
+			container = <0x41>;
 			phandle = <0x1fd>;
+			qemu,ram = <0x01>;
 		};
 
 		btcm_rpu_core6@0x00000 {
 			compatible = "qemu:memory-region";
-			container = <0x41>;
-			qemu,ram = <0x01>;
 			reg = <0x00 0x10000 0x00 0x10000 0x00>;
+			container = <0x41>;
 			phandle = <0x1fe>;
+			qemu,ram = <0x01>;
 		};
 
 		ctcm_rpu_core6@0x00000 {
 			compatible = "qemu:memory-region";
-			container = <0x41>;
-			qemu,ram = <0x01>;
 			reg = <0x00 0x20000 0x00 0x10000 0x00>;
+			container = <0x41>;
 			phandle = <0x1ff>;
+			qemu,ram = <0x01>;
 		};
 	};
 
 	tcm_core@7 {
+		compatible = "qemu:memory-region";
 		#address-cells = <0x02>;
 		#size-cells = <0x02>;
 		#priority-cells = <0x01>;
-		compatible = "qemu:memory-region";
 		phandle = <0x43>;
 
 		atcm_rpu_core7@0x00000 {
 			compatible = "qemu:memory-region";
-			container = <0x43>;
-			qemu,ram = <0x01>;
 			reg = <0x00 0x00 0x00 0x10000 0x00>;
+			container = <0x43>;
 			phandle = <0x200>;
+			qemu,ram = <0x01>;
 		};
 
 		btcm_rpu_core7@0x00000 {
 			compatible = "qemu:memory-region";
-			container = <0x43>;
-			qemu,ram = <0x01>;
 			reg = <0x00 0x10000 0x00 0x10000 0x00>;
+			container = <0x43>;
 			phandle = <0x201>;
+			qemu,ram = <0x01>;
 		};
 
 		ctcm_rpu_core7@0x00000 {
 			compatible = "qemu:memory-region";
-			container = <0x43>;
-			qemu,ram = <0x01>;
 			reg = <0x00 0x20000 0x00 0x10000 0x00>;
+			container = <0x43>;
 			phandle = <0x202>;
+			qemu,ram = <0x01>;
 		};
 	};
 
 	tcm_core@8 {
+		compatible = "qemu:memory-region";
 		#address-cells = <0x02>;
 		#size-cells = <0x02>;
 		#priority-cells = <0x01>;
-		compatible = "qemu:memory-region";
 		phandle = <0x45>;
 
 		atcm_rpu_core8@0x00000 {
 			compatible = "qemu:memory-region";
-			container = <0x45>;
-			qemu,ram = <0x01>;
 			reg = <0x00 0x00 0x00 0x10000 0x00>;
+			container = <0x45>;
 			phandle = <0x203>;
+			qemu,ram = <0x01>;
 		};
 
 		btcm_rpu_core8@0x00000 {
 			compatible = "qemu:memory-region";
-			container = <0x45>;
-			qemu,ram = <0x01>;
 			reg = <0x00 0x10000 0x00 0x10000 0x00>;
+			container = <0x45>;
 			phandle = <0x204>;
+			qemu,ram = <0x01>;
 		};
 
 		ctcm_rpu_core8@0x00000 {
 			compatible = "qemu:memory-region";
-			container = <0x45>;
-			qemu,ram = <0x01>;
 			reg = <0x00 0x20000 0x00 0x10000 0x00>;
+			container = <0x45>;
 			phandle = <0x205>;
+			qemu,ram = <0x01>;
 		};
 	};
 
 	tcm_core@9 {
+		compatible = "qemu:memory-region";
 		#address-cells = <0x02>;
 		#size-cells = <0x02>;
 		#priority-cells = <0x01>;
-		compatible = "qemu:memory-region";
 		phandle = <0x47>;
 
 		atcm_rpu_core9@0x00000 {
 			compatible = "qemu:memory-region";
-			container = <0x47>;
-			qemu,ram = <0x01>;
 			reg = <0x00 0x00 0x00 0x10000 0x00>;
+			container = <0x47>;
 			phandle = <0x206>;
+			qemu,ram = <0x01>;
 		};
 
 		btcm_rpu_core9@0x00000 {
 			compatible = "qemu:memory-region";
-			container = <0x47>;
-			qemu,ram = <0x01>;
 			reg = <0x00 0x10000 0x00 0x10000 0x00>;
+			container = <0x47>;
 			phandle = <0x207>;
+			qemu,ram = <0x01>;
 		};
 
 		ctcm_rpu_core9@0x00000 {
 			compatible = "qemu:memory-region";
-			container = <0x47>;
-			qemu,ram = <0x01>;
 			reg = <0x00 0x20000 0x00 0x10000 0x00>;
+			container = <0x47>;
 			phandle = <0x208>;
+			qemu,ram = <0x01>;
 		};
 	};
 
 	tcm_cluster_a@0 {
+		compatible = "qemu:memory-region";
 		#address-cells = <0x02>;
 		#size-cells = <0x02>;
 		#priority-cells = <0x01>;
-		compatible = "qemu:memory-region";
 		phandle = <0x0f>;
 
 		tcm_core_0 {
 			compatible = "qemu:memory-region";
-			alias = <0x35>;
 			reg = <0x00 0x00 0x00 0x40000 0x00>;
+			alias = <0x35>;
 		};
 
 		tcm_core_1 {
 			compatible = "qemu:memory-region";
-			alias = <0x37>;
 			reg = <0x00 0x40000 0x00 0x40000 0x00>;
+			alias = <0x37>;
 		};
 	};
 
 	tcm_cluster_b@0 {
+		compatible = "qemu:memory-region";
 		#address-cells = <0x02>;
 		#size-cells = <0x02>;
 		#priority-cells = <0x01>;
-		compatible = "qemu:memory-region";
 		phandle = <0x10>;
 
 		tcm_core_0 {
 			compatible = "qemu:memory-region";
-			alias = <0x39>;
 			reg = <0x00 0x00 0x00 0x40000 0x00>;
+			alias = <0x39>;
 		};
 
 		tcm_core_1 {
 			compatible = "qemu:memory-region";
-			alias = <0x3b>;
 			reg = <0x00 0x40000 0x00 0x40000 0x00>;
+			alias = <0x3b>;
 		};
 	};
 
 	tcm_cluster_c@0 {
+		compatible = "qemu:memory-region";
 		#address-cells = <0x02>;
 		#size-cells = <0x02>;
 		#priority-cells = <0x01>;
-		compatible = "qemu:memory-region";
 		phandle = <0x11>;
 
 		tcm_core_0 {
 			compatible = "qemu:memory-region";
-			alias = <0x3d>;
 			reg = <0x00 0x00 0x00 0x40000 0x00>;
+			alias = <0x3d>;
 		};
 
 		tcm_core_1 {
 			compatible = "qemu:memory-region";
-			alias = <0x3f>;
 			reg = <0x00 0x40000 0x00 0x40000 0x00>;
+			alias = <0x3f>;
 		};
 	};
 
 	tcm_cluster_d@0 {
+		compatible = "qemu:memory-region";
 		#address-cells = <0x02>;
 		#size-cells = <0x02>;
 		#priority-cells = <0x01>;
-		compatible = "qemu:memory-region";
 		phandle = <0x12>;
 
 		tcm_core_0 {
 			compatible = "qemu:memory-region";
-			alias = <0x41>;
 			reg = <0x00 0x00 0x00 0x40000 0x00>;
+			alias = <0x41>;
 		};
 
 		tcm_core_1 {
 			compatible = "qemu:memory-region";
-			alias = <0x43>;
 			reg = <0x00 0x40000 0x00 0x40000 0x00>;
+			alias = <0x43>;
 		};
 	};
 
 	tcm_cluster_e@0 {
+		compatible = "qemu:memory-region";
 		#address-cells = <0x02>;
 		#size-cells = <0x02>;
 		#priority-cells = <0x01>;
-		compatible = "qemu:memory-region";
 		phandle = <0x13>;
 
 		tcm_core_0 {
 			compatible = "qemu:memory-region";
-			alias = <0x45>;
 			reg = <0x00 0x00 0x00 0x40000 0x00>;
+			alias = <0x45>;
 		};
 
 		tcm_core_1 {
 			compatible = "qemu:memory-region";
-			alias = <0x47>;
 			reg = <0x00 0x40000 0x00 0x40000 0x00>;
+			alias = <0x47>;
 		};
 	};
 
 	amba_r5@2 {
+		compatible = "simple-bus";
+		ranges;
 		#address-cells = <0x02>;
 		#size-cells = <0x02>;
 		#priority-cells = <0x01>;
-		compatible = "simple-bus";
-		ranges;
 		phandle = <0xe9>;
 
 		downstream_tcm {
 			compatible = "qemu:memory-region";
-			alias = <0x39>;
 			reg = <0x00 0x00 0x00 0x400000 0x01>;
+			alias = <0x39>;
 		};
 
 		downstream_gic1 {
 			compatible = "qemu:memory-region";
-			alias = <0x104>;
 			reg = <0x00 0xe2000000 0x00 0x140000 0x01>;
+			alias = <0x104>;
 		};
 
 		downstream_amba {
 			compatible = "qemu:memory-region";
-			alias = <0xd0>;
 			reg = <0x00 0x00 0xffffffff 0xffffffff 0x00>;
+			alias = <0xd0>;
 		};
 	};
 
 	amba_r5@3 {
+		compatible = "simple-bus";
+		ranges;
 		#address-cells = <0x02>;
 		#size-cells = <0x02>;
 		#priority-cells = <0x01>;
-		compatible = "simple-bus";
-		ranges;
 		phandle = <0xec>;
 
 		downstream_tcm {
 			compatible = "qemu:memory-region";
-			alias = <0x3b>;
 			reg = <0x00 0x00 0x00 0x400000 0x01>;
+			alias = <0x3b>;
 		};
 
 		downstream_gic1 {
 			compatible = "qemu:memory-region";
-			alias = <0x104>;
 			reg = <0x00 0xe2000000 0x00 0x140000 0x01>;
+			alias = <0x104>;
 		};
 
 		downstream_amba {
 			compatible = "qemu:memory-region";
-			alias = <0xd0>;
 			reg = <0x00 0x00 0xffffffff 0xffffffff 0x00>;
+			alias = <0xd0>;
 		};
 	};
 
 	amba_r5@4 {
+		compatible = "simple-bus";
+		ranges;
 		#address-cells = <0x02>;
 		#size-cells = <0x02>;
 		#priority-cells = <0x01>;
-		compatible = "simple-bus";
-		ranges;
 		phandle = <0xef>;
 
 		downstream_tcm {
 			compatible = "qemu:memory-region";
-			alias = <0x3d>;
 			reg = <0x00 0x00 0x00 0x400000 0x01>;
+			alias = <0x3d>;
 		};
 
 		downstream_gic2 {
 			compatible = "qemu:memory-region";
-			alias = <0x105>;
 			reg = <0x00 0xe2000000 0x00 0x140000 0x01>;
+			alias = <0x105>;
 		};
 
 		downstream_amba {
 			compatible = "qemu:memory-region";
-			alias = <0xd0>;
 			reg = <0x00 0x00 0xffffffff 0xffffffff 0x00>;
+			alias = <0xd0>;
 		};
 	};
 
 	amba_r5@5 {
+		compatible = "simple-bus";
+		ranges;
 		#address-cells = <0x02>;
 		#size-cells = <0x02>;
 		#priority-cells = <0x01>;
-		compatible = "simple-bus";
-		ranges;
 		phandle = <0xf2>;
 
 		downstream_tcm {
 			compatible = "qemu:memory-region";
-			alias = <0x3f>;
 			reg = <0x00 0x00 0x00 0x400000 0x01>;
+			alias = <0x3f>;
 		};
 
 		downstream_gic2 {
 			compatible = "qemu:memory-region";
-			alias = <0x105>;
 			reg = <0x00 0xe2000000 0x00 0x140000 0x01>;
+			alias = <0x105>;
 		};
 
 		downstream_amba {
 			compatible = "qemu:memory-region";
-			alias = <0xd0>;
 			reg = <0x00 0x00 0xffffffff 0xffffffff 0x00>;
+			alias = <0xd0>;
 		};
 	};
 
 	amba_r5@6 {
+		compatible = "simple-bus";
+		ranges;
 		#address-cells = <0x02>;
 		#size-cells = <0x02>;
 		#priority-cells = <0x01>;
-		compatible = "simple-bus";
-		ranges;
 		phandle = <0xf5>;
 
 		downstream_tcm {
 			compatible = "qemu:memory-region";
-			alias = <0x41>;
 			reg = <0x00 0x00 0x00 0x400000 0x01>;
+			alias = <0x41>;
 		};
 
 		downstream_gic3 {
 			compatible = "qemu:memory-region";
-			alias = <0x106>;
 			reg = <0x00 0xe2000000 0x00 0x140000 0x01>;
+			alias = <0x106>;
 		};
 
 		downstream_amba {
 			compatible = "qemu:memory-region";
-			alias = <0xd0>;
 			reg = <0x00 0x00 0xffffffff 0xffffffff 0x00>;
+			alias = <0xd0>;
 		};
 	};
 
 	amba_r5@7 {
+		compatible = "simple-bus";
+		ranges;
 		#address-cells = <0x02>;
 		#size-cells = <0x02>;
 		#priority-cells = <0x01>;
-		compatible = "simple-bus";
-		ranges;
 		phandle = <0xf8>;
 
 		downstream_tcm {
 			compatible = "qemu:memory-region";
-			alias = <0x43>;
 			reg = <0x00 0x00 0x00 0x400000 0x01>;
+			alias = <0x43>;
 		};
 
 		downstream_gic3 {
 			compatible = "qemu:memory-region";
-			alias = <0x106>;
 			reg = <0x00 0xe2000000 0x00 0x140000 0x01>;
+			alias = <0x106>;
 		};
 
 		downstream_amba {
 			compatible = "qemu:memory-region";
-			alias = <0xd0>;
 			reg = <0x00 0x00 0xffffffff 0xffffffff 0x00>;
+			alias = <0xd0>;
 		};
 	};
 
 	amba_r5@8 {
+		compatible = "simple-bus";
+		ranges;
 		#address-cells = <0x02>;
 		#size-cells = <0x02>;
 		#priority-cells = <0x01>;
-		compatible = "simple-bus";
-		ranges;
 		phandle = <0xfb>;
 
 		downstream_tcm {
 			compatible = "qemu:memory-region";
-			alias = <0x45>;
 			reg = <0x00 0x00 0x00 0x400000 0x01>;
+			alias = <0x45>;
 		};
 
 		downstream_gic4 {
 			compatible = "qemu:memory-region";
-			alias = <0x107>;
 			reg = <0x00 0xe2000000 0x00 0x140000 0x01>;
+			alias = <0x107>;
 		};
 
 		downstream_amba {
 			compatible = "qemu:memory-region";
-			alias = <0xd0>;
 			reg = <0x00 0x00 0xffffffff 0xffffffff 0x00>;
+			alias = <0xd0>;
 		};
 	};
 
 	amba_r5@9 {
+		compatible = "simple-bus";
+		ranges;
 		#address-cells = <0x02>;
 		#size-cells = <0x02>;
 		#priority-cells = <0x01>;
-		compatible = "simple-bus";
-		ranges;
 		phandle = <0xfe>;
 
 		downstream_tcm {
 			compatible = "qemu:memory-region";
-			alias = <0x47>;
 			reg = <0x00 0x00 0x00 0x400000 0x01>;
+			alias = <0x47>;
 		};
 
 		downstream_gic4 {
 			compatible = "qemu:memory-region";
-			alias = <0x107>;
 			reg = <0x00 0xe2000000 0x00 0x140000 0x01>;
+			alias = <0x107>;
 		};
 
 		downstream_amba {
 			compatible = "qemu:memory-region";
-			alias = <0xd0>;
 			reg = <0x00 0x00 0xffffffff 0xffffffff 0x00>;
+			alias = <0xd0>;
 		};
 	};
 
 	rpu2_s_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x01>;
 		requester-id = <0x208>;
 		phandle = <0xea>;
 	};
 
 	rpu3_s_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x01>;
 		requester-id = <0x20c>;
 		phandle = <0xed>;
 	};
 
 	rpu4_s_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x01>;
 		requester-id = <0x208>;
 		phandle = <0xf0>;
 	};
 
 	rpu5_s_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x01>;
 		requester-id = <0x20c>;
 		phandle = <0xf3>;
 	};
 
 	rpu6_s_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x01>;
 		requester-id = <0x208>;
 		phandle = <0xf6>;
 	};
 
 	rpu7_s_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x01>;
 		requester-id = <0x20c>;
 		phandle = <0xf9>;
 	};
 
 	rpu8_s_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x01>;
 		requester-id = <0x208>;
 		phandle = <0xfc>;
 	};
 
 	rpu9_s_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x01>;
 		requester-id = <0x20c>;
 		phandle = <0xff>;
 	};
 
 	usb1_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x00>;
 		requester-id = <0x231>;
 		phandle = <0x48>;
 	};
 
 	apu2_s_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x01>;
 		requester-id = <0x262>;
 		phandle = <0xd7>;
 	};
 
 	apu2_ns_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x00>;
 		requester-id = <0x262>;
 		phandle = <0xd8>;
 	};
 
 	apu3_s_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x01>;
 		requester-id = <0x263>;
 		phandle = <0xd9>;
 	};
 
 	apu3_ns_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x00>;
 		requester-id = <0x263>;
 		phandle = <0xda>;
 	};
 
 	apu4_s_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x01>;
 		requester-id = <0x268>;
 		phandle = <0xdb>;
 	};
 
 	apu4_ns_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x00>;
 		requester-id = <0x268>;
 		phandle = <0xdc>;
 	};
 
 	apu5_s_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x01>;
 		requester-id = <0x269>;
 		phandle = <0xdd>;
 	};
 
 	apu5_ns_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x00>;
 		requester-id = <0x269>;
 		phandle = <0xde>;
 	};
 
 	apu6_s_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x01>;
 		requester-id = <0x26a>;
 		phandle = <0xdf>;
 	};
 
 	apu6_ns_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x00>;
 		requester-id = <0x26a>;
 		phandle = <0xe0>;
 	};
 
 	apu7_s_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x01>;
 		requester-id = <0x26b>;
 		phandle = <0xe1>;
 	};
 
 	apu7_ns_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x00>;
 		requester-id = <0x26b>;
 		phandle = <0xe2>;
 	};
 
 	apu8_s_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x01>;
 		requester-id = <0x270>;
 		phandle = <0x209>;
 	};
 
 	apu8_ns_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x00>;
 		requester-id = <0x270>;
 		phandle = <0x20a>;
 	};
 
 	apu9_s_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x01>;
 		requester-id = <0x271>;
 		phandle = <0x20b>;
 	};
 
 	apu9_ns_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x00>;
 		requester-id = <0x271>;
 		phandle = <0x20c>;
 	};
 
 	apu10_s_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x01>;
 		requester-id = <0x272>;
 		phandle = <0x20d>;
 	};
 
 	apu10_ns_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x00>;
 		requester-id = <0x272>;
 		phandle = <0x20e>;
 	};
 
 	apu11_s_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x01>;
 		requester-id = <0x273>;
 		phandle = <0x20f>;
 	};
 
 	apu11_ns_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x00>;
 		requester-id = <0x273>;
 		phandle = <0x210>;
 	};
 
 	apu12_s_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x01>;
 		requester-id = <0x278>;
 		phandle = <0x211>;
 	};
 
 	apu12_ns_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x00>;
 		requester-id = <0x278>;
 		phandle = <0x212>;
 	};
 
 	apu13_s_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x01>;
 		requester-id = <0x279>;
 		phandle = <0x213>;
 	};
 
 	apu13_ns_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x00>;
 		requester-id = <0x279>;
 		phandle = <0x214>;
 	};
 
 	apu14_s_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x01>;
 		requester-id = <0x27a>;
 		phandle = <0x215>;
 	};
 
 	apu14_ns_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x00>;
 		requester-id = <0x27a>;
 		phandle = <0x216>;
 	};
 
 	apu15_s_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x01>;
 		requester-id = <0x27b>;
 		phandle = <0x217>;
 	};
 
 	apu15_ns_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x00>;
 		requester-id = <0x27b>;
 		phandle = <0x218>;
 	};
 
 	apu16_s_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x01>;
 		requester-id = <0x280>;
 		phandle = <0x219>;
 	};
 
 	apu16_ns_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x00>;
 		requester-id = <0x280>;
 		phandle = <0x21a>;
 	};
 
 	apu17_s_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x01>;
 		requester-id = <0x281>;
 		phandle = <0x21b>;
 	};
 
 	apu17_ns_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x00>;
 		requester-id = <0x281>;
 		phandle = <0x21c>;
 	};
 
 	apu18_s_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x01>;
 		requester-id = <0x282>;
 		phandle = <0x21d>;
 	};
 
 	apu18_ns_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x00>;
 		requester-id = <0x282>;
 		phandle = <0x21e>;
 	};
 
 	apu19_s_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x01>;
 		requester-id = <0x283>;
 		phandle = <0x21f>;
 	};
 
 	apu19_ns_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x00>;
 		requester-id = <0x283>;
 		phandle = <0x220>;
 	};
 
 	apu20_s_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x01>;
 		requester-id = <0x288>;
 		phandle = <0x221>;
 	};
 
 	apu20_ns_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x00>;
 		requester-id = <0x288>;
 		phandle = <0x222>;
 	};
 
 	apu21_s_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x01>;
 		requester-id = <0x289>;
 		phandle = <0x223>;
 	};
 
 	apu21_ns_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x00>;
 		requester-id = <0x289>;
 		phandle = <0x224>;
 	};
 
 	apu22_s_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x01>;
 		requester-id = <0x28a>;
 		phandle = <0x225>;
 	};
 
 	apu22_ns_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x00>;
 		requester-id = <0x28a>;
 		phandle = <0x226>;
 	};
 
 	apu23_s_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x01>;
 		requester-id = <0x28b>;
 		phandle = <0x227>;
 	};
 
 	apu23_ns_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x00>;
 		requester-id = <0x28b>;
 		phandle = <0x228>;
 	};
 
 	apu24_s_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x01>;
 		requester-id = <0x290>;
 		phandle = <0x229>;
 	};
 
 	apu24_ns_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x00>;
 		requester-id = <0x290>;
 		phandle = <0x22a>;
 	};
 
 	apu25_s_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x01>;
 		requester-id = <0x291>;
 		phandle = <0x22b>;
 	};
 
 	apu25_ns_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x00>;
 		requester-id = <0x291>;
 		phandle = <0x22c>;
 	};
 
 	apu26_s_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x01>;
 		requester-id = <0x292>;
 		phandle = <0x22d>;
 	};
 
 	apu26_ns_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x00>;
 		requester-id = <0x292>;
 		phandle = <0x22e>;
 	};
 
 	apu27_s_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x01>;
 		requester-id = <0x293>;
 		phandle = <0x22f>;
 	};
 
 	apu27_ns_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x00>;
 		requester-id = <0x293>;
 		phandle = <0x230>;
 	};
 
 	apu28_s_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x01>;
 		requester-id = <0x298>;
 		phandle = <0x231>;
 	};
 
 	apu28_ns_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x00>;
 		requester-id = <0x298>;
 		phandle = <0x232>;
 	};
 
 	apu29_s_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x01>;
 		requester-id = <0x299>;
 		phandle = <0x233>;
 	};
 
 	apu29_ns_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x00>;
 		requester-id = <0x299>;
 		phandle = <0x234>;
 	};
 
 	apu30_s_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x01>;
 		requester-id = <0x29a>;
 		phandle = <0x235>;
 	};
 
 	apu30_ns_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x00>;
 		requester-id = <0x29a>;
 		phandle = <0x236>;
 	};
 
 	apu31_s_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x01>;
 		requester-id = <0x29b>;
 		phandle = <0x237>;
 	};
 
 	apu31_ns_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x00>;
 		requester-id = <0x29b>;
 		phandle = <0x238>;
 	};
 
 	asu_cpu_ma {
-		doc-ignore = <0x01>;
 		compatible = "qemu:memory-transaction-attr";
+		doc-ignore = <0x01>;
 		secure = <0x00>;
 		requester-id = <0x00>;
 		phandle = <0x239>;
 	};
 
 	lmb_amba_asu@0 {
+		compatible = "simple-bus";
+		ranges;
 		#address-cells = <0x02>;
 		#size-cells = <0x02>;
 		#priority-cells = <0x01>;
-		compatible = "simple-bus";
-		ranges;
 		phandle = <0x23a>;
 
 		main_bus_for_asu {
 			compatible = "qemu:memory-region";
-			alias = <0xb4>;
 			reg = <0x00 0x00 0xffffffff 0xffffffff 0x00>;
+			alias = <0xb4>;
 		};
 	};
 
@@ -7242,9 +7242,9 @@ Cannot continue.\nTry installing libgcrypt.";
 
 		asu_data_ram@0 {
 			compatible = "qemu:memory-region";
+			reg = <0x00 0x00 0x00 0x20000 0x00>;
 			device_type = "memory";
 			qemu,ram = <0x01>;
-			reg = <0x00 0x00 0x00 0x20000 0x00>;
 		};
 	};
 
