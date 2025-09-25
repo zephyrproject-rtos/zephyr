@@ -10,8 +10,8 @@
 #include "contextualelectronics_abc-pinctrl.dtsi"
 
 / {
-	model = "nRF52840 BLE Cell";
 	compatible = "nordic,nrf52840-ble-cell";
+	model = "nRF52840 BLE Cell";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -45,19 +45,16 @@
 
 &uart0 {
 	compatible = "nordic,nrf-uart";
-	status = "okay";
 	current-speed = <115200>;
 
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 arduino_serial: &uart1 {
-	status = "okay";
 	current-speed = <115200>;
-
-	/* UART Pin info. */
 
 	/* Use hardware flow control. */
 	hw-flow-control;
@@ -66,31 +63,34 @@ arduino_serial: &uart1 {
 	pinctrl-0 = <&uart1_default>;
 	pinctrl-1 = <&uart1_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	quectel_bg9x {
 		compatible = "quectel,bg9x";
-		status = "okay";
 
 		mdm-power-gpios = <&gpio1 5 0>;
 		mdm-reset-gpios = <&gpio1 6 0>;
 		mdm-dtr-gpios = <&gpio0 22 0>;
+		status = "okay";
 	};
+
+	/* UART Pin info. */
 };
 
 arduino_i2c: &i2c0 {
 	compatible = "nordic,nrf-twi";
-	status = "okay";
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-1 = <&i2c0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &spi2 {
 	compatible = "nordic,nrf-spi";
-	status = "okay";
 
 	/* This SPI device is interfaced with the SD card. */
 	pinctrl-0 = <&spi2_default>;
 	pinctrl-1 = <&spi2_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
