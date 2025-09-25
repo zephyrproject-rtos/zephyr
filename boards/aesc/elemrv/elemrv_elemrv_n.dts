@@ -9,8 +9,8 @@
 #include <aesc/elemrv-n.dtsi>
 
 / {
-	model = "ElemRV-N";
 	compatible = "aesc,elemrv-n";
+	model = "ElemRV-N";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -21,15 +21,15 @@
 
 	soc {
 		ocram: memory@80000000 {
-			device_type = "memory";
 			compatible = "mmio-sram";
 			reg = <0x80000000 DT_SIZE_K(1)>;
+			device_type = "memory";
 		};
 
 		hyperbus: memory@90000000 {
-			device_type = "memory";
 			compatible = "mmio-sram";
 			reg = <0x90000000 DT_SIZE_K(32)>;
+			device_type = "memory";
 		};
 
 		flash: flash@a0010000 {
