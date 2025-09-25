@@ -14,8 +14,8 @@
 #define BTN_GPIO_FLAGS (GPIO_ACTIVE_LOW | GPIO_PULL_UP)
 
 / {
-	model = "BeagleConnect Freedom";
 	compatible = "beagle,beagleconnect-freedom";
+	model = "BeagleConnect Freedom";
 
 	aliases {
 		led0 = &led0;
@@ -59,12 +59,12 @@
 	 */
 	antenna_mux0: antenna_mux0 {
 		compatible = "skyworks,sky13317";
-		status = "okay";
 		gpios = <&gpio0 29 GPIO_ACTIVE_HIGH>, <&gpio0 30 GPIO_ACTIVE_HIGH>;
 		pinctrl-0 = <&board_ant_tx_pa_off &board_ant_subg_off>;
 		pinctrl-1 = <&board_ant_tx_pa_off &board_ant_subg_on>;
 		pinctrl-2 = <&board_ant_tx_pa_on &board_ant_subg_on>;
 		pinctrl-names = "default", "ant_subg", "ant_subg_pa";
+		status = "okay";
 	};
 
 	leds: leds {
@@ -76,23 +76,23 @@
 	};
 
 	sens_i2c: sensor-switch {
-		status = "okay";
 		compatible = "gpio-i2c-switch";
 		#address-cells = <1>;
 		#size-cells = <0>;
 		controller = <&i2c0>;
 		gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;
+		status = "okay";
 
 		light: opt3001-light@44 {
-			status = "okay";
 			compatible = "ti,opt3001";
 			reg = <0x44>;
+			status = "okay";
 		};
 
 		humidity: hdc2010-humidity@41 {
-			status = "okay";
 			compatible = "ti,hdc2010";
 			reg = <0x41>;
+			status = "okay";
 		};
 	};
 };
@@ -105,14 +105,14 @@
 
 		/* Allocate 56 KiB for mcuboot */
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(56)>;
+			label = "mcuboot";
 		};
 
 		/* Allocate 640 KiB for application */
 		slot0_partition: partition@e000 {
-			label = "image-0";
 			reg = <0x0000e000 DT_SIZE_K(640)>;
+			label = "image-0";
 		};
 
 		/* (avoid touching CCFG) */
@@ -133,26 +133,26 @@
 
 /* Side away from battery connector (with MSP430) */
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_rx_default &uart0_tx_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 /* Side with battery connector (with CC1352 and not MSP430) */
 &uart1 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart1_rx_default &uart1_tx_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &i2c0 {
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 	pinctrl-0 = <&i2c0_scl_default &i2c0_sda_default>;
 	pinctrl-1 = <&i2c0_scl_sleep &i2c0_sda_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	mcu: msp430-usbbridge@4 {
 		compatible = "beagle,usbbridge";
@@ -161,7 +161,6 @@
 };
 
 &spi0 {
-	status = "okay";
 	pinctrl-0 = <&spi0_sck_default &spi0_mosi_default
 		     &spi0_miso_default &spi0_cs0_default
 		     &spi0_cs1_default &spi0_cs2_default>;
@@ -169,6 +168,7 @@
 	cs-gpios = <&gpio0 8 GPIO_ACTIVE_LOW>, // SPI flash
 		   <&gpio0 28 GPIO_ACTIVE_LOW>,  // mikroBUS port 1
 		   <&gpio0 27 GPIO_ACTIVE_LOW>;  // mikroBUS port 2
+	status = "okay";
 
 	spi_flash0: gd25q16c@0 {
 		compatible = "jedec,spi-nor";
@@ -189,19 +189,19 @@
 
 			/* Allocate 640 KiB for application */
 			slot1_partition: partition@0 {
-				label = "image-1";
 				reg = <0x00000000 DT_SIZE_K(640)>;
+				label = "image-1";
 			};
 
 			/* Allocate 128 KiB scratch for image swap */
 			scratch_partition: partition@A0000 {
-				label = "image-scratch";
 				reg = <0x000a0000 DT_SIZE_K(128)>;
+				label = "image-scratch";
 			};
 
 			storage_partition: partition@c0000 {
-				label = "storage";
 				reg = <0x000c0000 DT_SIZE_K(1280)>;
+				label = "storage";
 			};
 		};
 	};
@@ -220,22 +220,21 @@
 };
 
 &pwm0 {
-	status = "okay";
 	pinctrl-0 = <&pwm0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &pwm1 {
-	status = "okay";
 	pinctrl-0 = <&pwm1_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &adc0 {
-	status = "okay";
-
 	#address-cells = <1>;
 	#size-cells = <0>;
+	status = "okay";
 
 	/* MB1 AN */
 	channel@9 {
