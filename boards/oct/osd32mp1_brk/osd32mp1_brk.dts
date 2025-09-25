@@ -9,8 +9,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Octavo Systems OSD32MP1-BRK";
 	compatible = "oct,osd32mp1-brk";
+	model = "Octavo Systems OSD32MP1-BRK";
 
 	chosen {
 		/*
@@ -73,8 +73,8 @@
 &i2c5 {
 	pinctrl-0 = <&i2c5_scl_pd1 &i2c5_sda_pd0>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 };
 
 &uart7_tx_pa15 {
