@@ -13,8 +13,8 @@
 #include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
 
 / {
-	model = "Analog Devices MAX32672EVKIT";
 	compatible = "adi,max32672evkit";
+	model = "Analog Devices MAX32672EVKIT";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -68,10 +68,10 @@
 
 		st7735: st7735@0 {
 			compatible = "sitronix,st7735r";
-			mipi-max-frequency = <DT_FREQ_M(6)>;
-			mipi-mode = "MIPI_DBI_MODE_SPI_3WIRE";
 
 			reg = <0>;
+			mipi-max-frequency = <DT_FREQ_M(6)>;
+			mipi-mode = "MIPI_DBI_MODE_SPI_3WIRE";
 			width = <130>;
 			height = <132>;
 			x-offset = <0>;
@@ -126,9 +126,9 @@
 };
 
 &i2c0 {
-	status = "okay";
 	pinctrl-0 = <&i2c0a_scl_p0_6 &i2c0a_sda_p0_7>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &dma0 {
@@ -140,9 +140,9 @@
 };
 
 &spi1 {
-	status = "okay";
 	pinctrl-0 = <&spi1a_mosi_p0_15 &spi1a_miso_p0_14 &spi1a_sck_p0_16 &spi1a_ss0_p0_17>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &spi0a_mosi_p0_3 {
@@ -154,10 +154,10 @@
 };
 
 &spi0 {
-	status = "okay";
 	pinctrl-0 = <&spi0a_mosi_p0_3 &spi0a_miso_p0_2 &spi0a_sck_p0_4>;
 	pinctrl-names = "default";
 	cs-gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
+	status = "okay";
 };
 
 &rtc_counter {

@@ -17,13 +17,13 @@
 	};
 
 	reserved-memory {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		secure_ram: partition@30000000 {
-			label = "secure-memory";
 			reg = <0x30000000 DT_SIZE_K(256)>;
+			label = "secure-memory";
 		};
 	};
 };
@@ -35,14 +35,14 @@
 		#size-cells = <1>;
 
 		slot0_partition: partition@0 {
-			label = "image-0";
 			reg = <0x0 DT_SIZE_K(960)>;
+			label = "image-0";
 			read-only;
 		};
 
 		storage_partition: partition@f0000 {
-			label = "storage";
 			reg = <0xf0000 DT_SIZE_K(64)>;
+			label = "storage";
 		};
 	};
 };

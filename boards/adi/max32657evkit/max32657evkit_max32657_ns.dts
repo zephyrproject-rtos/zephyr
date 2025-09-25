@@ -17,19 +17,19 @@
 	};
 
 	reserved-memory {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		/* RAM split used by TFM */
 		secure_ram: partition@20000000 {
-			label = "secure-memory";
 			reg = <0x20000000 DT_SIZE_K(64)>;
+			label = "secure-memory";
 		};
 
 		non_secure_ram: partition@20010000 {
-			label = "non-secure-memory";
 			reg = <0x20010000 DT_SIZE_K(192)>;
+			label = "non-secure-memory";
 		};
 	};
 };
@@ -41,19 +41,19 @@
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x0 DT_SIZE_K(64)>;
+			label = "mcuboot";
 			read-only;
 		};
 
 		slot0_partition: partition@10000 {
-			label = "image-0";
 			reg = <0x10000 DT_SIZE_K(320)>;
+			label = "image-0";
 		};
 
 		slot0_ns_partition: partition@60000 {
-			label = "image-0-nonsecure";
 			reg = <0x60000 DT_SIZE_K(576)>;
+			label = "image-0-nonsecure";
 		};
 
 		/*
@@ -68,8 +68,8 @@
 		 */
 
 		storage_partition: partition@f0000 {
-			label = "storage";
 			reg = <0xf0000 DT_SIZE_K(64)>;
+			label = "storage";
 		};
 	};
 };
