@@ -166,6 +166,7 @@ test_i2c_isl29035: isl29035@14 {
 test_i2c_max30101: max30101@15 {
 	compatible = "maxim,max30101";
 	reg = <0x15>;
+	acq-mode = "multi-led";
 };
 
 test_i2c_max44009: max44009@16 {

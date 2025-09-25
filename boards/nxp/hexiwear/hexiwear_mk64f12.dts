@@ -1,4 +1,9 @@
-/* SPDX-License-Identifier: Apache-2.0 */
+/*
+ * Copyright (c) 2022, NXP
+ * Copyright (c) 2025, CATIE
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 /dts-v1/;
 
@@ -124,6 +129,7 @@
 		status = "disabled";
 		compatible = "maxim,max30101";
 		reg = <0x57>;
+		acq-mode = "multi-led";
 	};
 };
 
