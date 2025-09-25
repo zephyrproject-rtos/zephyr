@@ -481,8 +481,6 @@ choice COMPILER_OPTIMIZATIONS
 	prompt "Optimization level"
 	default NO_OPTIMIZATIONS    if COVERAGE
 	default DEBUG_OPTIMIZATIONS if DEBUG
-	# gcc 14.3 -Os is broken on riscv. This setting should be in the SDK, it's here for testing
-	default SPEED_OPTIMIZATIONS if "$(TOOLCHAIN_VARIANT_COMPILER)" = "gnu" && RISCV
 	default SIZE_OPTIMIZATIONS_AGGRESSIVE if "$(TOOLCHAIN_VARIANT_COMPILER)" = "llvm"
 	default SIZE_OPTIMIZATIONS
 	help
