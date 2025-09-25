@@ -10,8 +10,8 @@
 	 * via the STEMMA QT connector.
 	 */
 	i2c_reg: i2c_reg {
-		label = "I2C Power";
 		compatible = "power-domain-gpio";
+		label = "I2C Power";
 		#power-domain-cells = <0>;
 		enable-gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
 		startup-delay-us = <10>;

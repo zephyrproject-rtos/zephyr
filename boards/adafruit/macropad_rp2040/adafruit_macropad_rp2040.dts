@@ -7,8 +7,8 @@
 #include <zephyr/dt-bindings/pwm/pwm.h>
 
 / {
-	model = "Adafruit MacroPad RP2040";
 	compatible = "adafruit,macropad-rp2040";
+	model = "Adafruit MacroPad RP2040";
 
 	chosen {
 		zephyr,console = &uart1;
@@ -114,10 +114,10 @@
 		compatible = "gpio-qdec";
 		gpios = <&gpio0 17 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>,
 			<&gpio0 18 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
-		zephyr,axis = <INPUT_REL_WHEEL>;
 		steps-per-period = <4>;
 		sample-time-us = <2000>;
 		idle-timeout-ms = <200>;
+		zephyr,axis = <INPUT_REL_WHEEL>;
 	};
 
 	stemma_connector: stemma_connector {
@@ -140,8 +140,8 @@
 
 		/* Reserved memory for the second stage bootloader */
 		second_stage_bootloader: partition@0 {
-			label = "second_stage_bootloader";
 			reg = <0x00000000 0x100>;
+			label = "second_stage_bootloader";
 			read-only;
 		};
 
@@ -150,8 +150,8 @@
 		 * size is 8MB minus the 0x100 bytes taken by the bootloader.
 		 */
 		code_partition: partition@100 {
-			label = "code-partition";
 			reg = <0x100 (DT_SIZE_M(8) - 0x100)>;
+			label = "code-partition";
 			read-only;
 		};
 	};
@@ -159,9 +159,9 @@
 
 &uart1 {
 	current-speed = <115200>;
-	status = "okay";
 	pinctrl-0 = <&uart1_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 /* You need to disable uart1 to use i2c0 */
@@ -172,10 +172,10 @@
 };
 
 &spi1 {
-	status = "okay";
 	pinctrl-0 = <&spi1_default>;
 	pinctrl-names = "default";
 	cs-gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
+	status = "okay";
 
 	oled: ssd1306@0 {
 		compatible = "sinowealth,sh1106";
@@ -220,13 +220,12 @@ zephyr_udc0: &usbd {
 
 	pio-ws2812 {
 		compatible = "worldsemi,ws2812-rpi_pico-pio";
-		status = "okay";
 		pinctrl-0 = <&ws2812_pio1_default>;
 		pinctrl-names = "default";
 		bit-waveform = <3>, <3>, <4>;
+		status = "okay";
 
 		ws2812: ws2812 {
-			status = "okay";
 			gpios = <&gpio0 19 GPIO_ACTIVE_HIGH>;
 			chain-length = <12>;
 			color-mapping = <LED_COLOR_ID_GREEN
@@ -234,6 +233,7 @@ zephyr_udc0: &usbd {
 					 LED_COLOR_ID_BLUE>;
 			reset-delay = <280>;
 			frequency = <800000>;
+			status = "okay";
 		};
 	};
 };

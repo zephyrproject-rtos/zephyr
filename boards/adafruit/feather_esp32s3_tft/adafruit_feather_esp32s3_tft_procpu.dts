@@ -16,8 +16,8 @@
 #include "adafruit_feather_esp32s3_tft-pinctrl.dtsi"
 
 / {
-	model = "Adafruit Feather ESP32S3 TFT PROCPU";
 	compatible = "adafruit,feather_esp32s3_tft", "espressif,esp32s3";
+	model = "Adafruit Feather ESP32S3 TFT PROCPU";
 
 	aliases {
 		i2c-0 = &i2c0;
@@ -97,13 +97,12 @@
 
 		st7789v_tft: st7789v_tft@0 {
 			compatible = "sitronix,st7789v";
-			status = "disabled";
+			reg = <0>;
 
 			/* Also powered by i2c_reg */
 			power-domains = <&i2c_reg>;
 
 			mipi-max-frequency = <DT_FREQ_M(20)>;
-			reg = <0>;
 			width = <135>;
 			height = <240>;
 			x-offset = <52>;
@@ -124,6 +123,7 @@
 			ram-param = [00 F0];
 			rgb-param = [40 02 14];
 			mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
+			status = "disabled";
 		};
 	};
 };
@@ -133,17 +133,17 @@
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &uart1 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart1_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &gpio0 {
@@ -167,14 +167,13 @@
 };
 
 zephyr_i2c: &i2c0 {
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	max17048: max17048@36 {
 		compatible = "maxim,max17048";
-		status = "okay";
 		reg = <0x36>;
 
 		/*
@@ -183,33 +182,34 @@ zephyr_i2c: &i2c0 {
 		 * requires I2C pull-ups powered by the regulator.
 		 */
 		power-domains = <&i2c_reg>;
+		status = "okay";
 	};
 };
 
 &spi2 {
 	#address-cells = <1>;
 	#size-cells = <0>;
-	status = "okay";
 	pinctrl-0 = <&spim2_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &spi3 {
 	#address-cells = <1>;
 	#size-cells = <0>;
-	status = "okay";
 	pinctrl-0 = <&spim3_default>;
 	pinctrl-names = "default";
 
 	/* Workaround to support WS2812 driver */
 	line-idle-low;
+	status = "okay";
 
 	led_strip: ws2812@0 {
 		compatible = "worldsemi,ws2812-spi";
-		power-domains = <&neopixel_pwr>;
 
 		/* SPI */
 		reg = <0>; /* ignored, but necessary for SPI bindings */
+		power-domains = <&neopixel_pwr>;
 		spi-max-frequency = <6400000>;
 
 		/* WS2812 */

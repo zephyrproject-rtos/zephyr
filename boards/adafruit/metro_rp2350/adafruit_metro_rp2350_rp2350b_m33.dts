@@ -103,8 +103,8 @@
 		 * table at a much larger alignment offset.
 		 */
 		image_def: partition@0 {
-			label = "image_def";
 			reg = <0x00000000 0x100>;
+			label = "image_def";
 			read-only;
 		};
 
@@ -114,8 +114,8 @@
 		 * image definition.
 		 */
 		code_partition: partition@100 {
-			label = "code-partition";
 			reg = <0x100 (DT_SIZE_M(16) - 0x100)>;
+			label = "code-partition";
 			read-only;
 		};
 	};
@@ -123,9 +123,9 @@
 
 &uart0 {
 	current-speed = <115200>;
-	status = "okay";
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &gpio0 {
@@ -181,13 +181,12 @@ zephyr_udc0: &usbd {
 
 	pio-ws2812 {
 		compatible = "worldsemi,ws2812-rpi_pico-pio";
-		status = "okay";
 		pinctrl-0 = <&pio1_ws2812_default>;
 		pinctrl-names = "default";
 		bit-waveform = <3>, <3>, <4>;
+		status = "okay";
 
 		ws2812: ws2812 {
-			status = "okay";
 			gpios = <&gpio0 25 GPIO_ACTIVE_HIGH>;
 			chain-length = <1>;
 			color-mapping = <LED_COLOR_ID_GREEN
@@ -195,6 +194,7 @@ zephyr_udc0: &usbd {
 					 LED_COLOR_ID_BLUE>;
 			reset-delay = <280>;
 			frequency = <800000>;
+			status = "okay";
 		};
 	};
 };

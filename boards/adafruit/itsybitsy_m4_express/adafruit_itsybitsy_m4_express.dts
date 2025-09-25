@@ -9,8 +9,8 @@
 #include "adafruit_itsybitsy_m4_express-pinctrl.dtsi"
 
 / {
-	model = "Adafruit ItsyBitsy M4 Express";
 	compatible = "adafruit,itsybitsy-m4-express";
+	model = "Adafruit ItsyBitsy M4 Express";
 
 	chosen {
 		zephyr,console = &sercom3;
@@ -50,7 +50,6 @@
 };
 
 &sercom3 {
-	status = "okay";
 	compatible = "atmel,sam0-uart";
 	current-speed = <115200>;
 	rxpo = <1>;
@@ -58,10 +57,10 @@
 
 	pinctrl-0 = <&sercom3_uart_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &sercom1 {
-	status = "okay";
 	compatible = "atmel,sam0-spi";
 	dipo = <3>;
 	dopo = <0>;
@@ -71,23 +70,23 @@
 
 	pinctrl-0 = <&sercom1_spi_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &tcc0 {
-	status = "okay";
 	compatible = "atmel,sam0-tcc-pwm";
 	prescaler = <8>;
 	#pwm-cells = <2>;
 
 	pinctrl-0 = <&pwm0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 zephyr_udc0: &usb0 {
-	status = "okay";
-
 	pinctrl-0 = <&usb_dc_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &dmac {
@@ -101,14 +100,14 @@ zephyr_udc0: &usb0 {
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "uf2";
 			reg = <0x00000000 DT_SIZE_K(16)>;
+			label = "uf2";
 			read-only;
 		};
 
 		code_partition: partition@4000 {
-			label = "code";
 			reg = <0x4000 DT_SIZE_K(512-16-16)>;
+			label = "code";
 			read-only;
 		};
 
@@ -118,8 +117,8 @@ zephyr_udc0: &usb0 {
 		 * if enabled.
 		 */
 		storage_partition: partition@7c000 {
-			label = "storage";
 			reg = <0x7c000 DT_SIZE_K(16)>;
+			label = "storage";
 		};
 	};
 };

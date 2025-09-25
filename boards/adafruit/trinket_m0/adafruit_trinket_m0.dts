@@ -11,8 +11,8 @@
 #include <zephyr/dt-bindings/led/led.h>
 
 / {
-	model = "Adafruit Trinket M0";
 	compatible = "adafruit,trinket-m0", "atmel,samd21e18a", "atmel,samd21";
+	model = "Adafruit Trinket M0";
 
 	chosen {
 		zephyr,console = &sercom0;
@@ -52,7 +52,6 @@
 };
 
 &sercom0 {
-	status = "okay";
 	compatible = "atmel,sam0-uart";
 	current-speed = <115200>;
 	rxpo = <3>;
@@ -60,10 +59,10 @@
 
 	pinctrl-0 = <&sercom0_uart_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &sercom2 {
-	status = "okay";
 	compatible = "atmel,sam0-uart";
 	current-speed = <115200>;
 	rxpo = <1>;
@@ -71,11 +70,11 @@
 
 	pinctrl-0 = <&sercom2_uart_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 /* Drives the on-board DotStar LED */
 &sercom1 {
-	status = "okay";
 	compatible = "atmel,sam0-spi";
 	dipo = <2>;
 	dopo = <0>;
@@ -84,6 +83,7 @@
 
 	pinctrl-0 = <&sercom1_spi_default>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	led1: apa102@0 {
 		compatible = "apa,apa102";
@@ -97,7 +97,6 @@
 };
 
 &tcc0 {
-	status = "okay";
 	compatible = "atmel,sam0-tcc-pwm";
 	/* Gives a maximum period of 1.4 s */
 	prescaler = <4>;
@@ -105,6 +104,7 @@
 
 	pinctrl-0 = <&pwm_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &flash0 {
@@ -114,14 +114,14 @@
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "uf2";
 			reg = <0x00000000 0x2000>;
+			label = "uf2";
 			read-only;
 		};
 
 		code_partition: partition@2000 {
-			label = "code";
 			reg = <0x2000 0x3A000>;
+			label = "code";
 			read-only;
 		};
 
@@ -131,15 +131,14 @@
 		 * if enabled.
 		 */
 		storage_partition: partition@3c000 {
-			label = "storage";
 			reg = <0x0003c000 0x00004000>;
+			label = "storage";
 		};
 	};
 };
 
 zephyr_udc0: &usb0 {
-	status = "okay";
-
 	pinctrl-0 = <&usb_dc_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
