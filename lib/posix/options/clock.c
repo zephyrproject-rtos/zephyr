@@ -10,6 +10,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/posix/sys/time.h>
+#include <zephyr/posix/time.h>
 #include <zephyr/posix/unistd.h>
 #include <zephyr/sys/clock.h>
 

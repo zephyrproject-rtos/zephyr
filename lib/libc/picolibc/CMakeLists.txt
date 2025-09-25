@@ -10,7 +10,6 @@ zephyr_library_sources(
   locks.c
   stdio.c
   )
-zephyr_include_directories(include)
 
 zephyr_library_compile_options($<TARGET_PROPERTY:compiler,prohibit_lto>)
 
