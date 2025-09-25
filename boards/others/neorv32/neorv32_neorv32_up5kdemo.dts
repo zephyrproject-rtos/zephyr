@@ -11,8 +11,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "NEORV32 UP5KDemo";
 	compatible = "neorv32";
+	model = "NEORV32 UP5KDemo";
 
 	aliases {
 		led0 = &led0;
@@ -117,13 +117,13 @@
 };
 
 &imem {
-	status = "okay";
 	reg = <0x0 DT_SIZE_K(64)>;
+	status = "okay";
 };
 
 &dmem {
-	status = "okay";
 	reg = <0x80000000 DT_SIZE_K(64)>;
+	status = "okay";
 };
 
 &clint {
@@ -135,13 +135,13 @@
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <19200>;
+	status = "okay";
 };
 
 &gpio {
-	status = "okay";
 	ngpios = <32>;
+	status = "okay";
 };
 
 &pwm {

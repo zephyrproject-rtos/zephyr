@@ -14,8 +14,8 @@
 #include "canbardo-pinctrl.dtsi"
 
 / {
-	model = "CANbardo board";
 	compatible = "canbardo", "atmel,same70n20b", "atmel,same70b";
+	model = "CANbardo board";
 
 	chosen {
 		zephyr,console = &uart1;
@@ -102,10 +102,10 @@
 };
 
 &uart1 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart1_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 zephyr_udc0: &usbhs {
@@ -113,17 +113,17 @@ zephyr_udc0: &usbhs {
 };
 
 &can0 {
-	status = "okay";
 	pinctrl-0 = <&can0_default>;
 	pinctrl-names = "default";
 	phys = <&transceiver0>;
+	status = "okay";
 };
 
 &can1 {
-	status = "okay";
 	pinctrl-0 = <&can1_default>;
 	pinctrl-names = "default";
 	phys = <&transceiver1>;
+	status = "okay";
 };
 
 &wdt {
@@ -138,27 +138,27 @@ zephyr_udc0: &usbhs {
 
 		/* First half of sector 0 */
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x0 DT_SIZE_K(64)>;
+			label = "mcuboot";
 			read-only;
 		};
 
 		/* From sector 1 to sector 3 (included) */
 		slot0_partition: partition@20000 {
-			label = "image-0";
 			reg = <0x00020000 DT_SIZE_K(384)>;
+			label = "image-0";
 		};
 
 		/* From sector 4 to sector 6 (included) */
 		slot1_partition: partition@80000 {
-			label = "image-1";
 			reg = <0x00080000 DT_SIZE_K(384)>;
+			label = "image-1";
 		};
 
 		/* Sector 7 */
 		storage_partition: partition@e0000 {
-			label = "storage";
 			reg = <0x000e0000 DT_SIZE_K(128)>;
+			label = "storage";
 		};
 	};
 };
