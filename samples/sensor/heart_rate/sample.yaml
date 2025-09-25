@@ -1,10 +1,23 @@
 sample:
   name: Heart Rate Sensor Sample
+common:
+  filter: dt_alias_exists("heart-rate-sensor")
+  harness: sensor
 tests:
   sample.sensor.heart_rate:
-    harness: sensor
     tags: sensors
     platform_allow: hexiwear/mk64f12
-    depends_on: i2c
+    depends_on:
+      - i2c
     integration_platforms:
       - hexiwear/mk64f12
+  sample.sensor.heart_rate_interrupt:
+    tags: sensors
+    platform_allow: nrf52840dk/nrf52840
+    depends_on:
+      - i2c
+    integration_platforms:
+      - nrf52840dk/nrf52840
+    extra_configs:
+      - CONFIG_GPIO=y
+      - CONFIG_MAX30101_TRIGGER_GLOBAL_THREAD=y

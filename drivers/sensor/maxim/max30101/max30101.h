@@ -32,8 +32,6 @@
 #define MAX30101_REG_REV_ID		0xfe
 #define MAX30101_REG_PART_ID		0xff
 
-#define MAX30101_INT_PPG_MASK		(1 << 6)
-
 #define MAX30101_FIFO_CFG_SMP_AVE_SHIFT		5
 #define MAX30101_FIFO_CFG_ROLLOVER_EN_SHIFT     4
 #define MAX30101_FIFO_CFG_FIFO_FULL_SHIFT	0
@@ -57,6 +55,27 @@
 
 #define MAX30101_FIFO_DATA_BITS		18
 #define MAX30101_FIFO_DATA_MASK		((1 << MAX30101_FIFO_DATA_BITS) - 1)
+
+#if CONFIG_MAX30101_TRIGGER
+#define MAX30101_SUPPORTED_INTERRUPTS 4 /* FIFO_FULL | PPG | ALC | TEMP */
+
+enum max30101_callback_idx {
+	MAX30101_FULL_CB_INDEX = 0,
+	MAX30101_PPG_CB_INDEX = 1,
+	MAX30101_ALC_CB_INDEX = 2,
+	MAX30101_TEMP_CB_INDEX = 3,
+};
+
+#define MAX30101_INT_FULL_MASK    BIT(7) /* FIFO full */
+#define MAX30101_INT_PPG_MASK     BIT(6) /* PPG data ready */
+#define MAX30101_INT_ALC_OVF_MASK BIT(5) /* Ambient Light Cancellation overflow */
+#define MAX30101_INT_TEMP_MASK    BIT(1) /* DIE Temperature data ready */
+#define MAX30101_STAT_POR_MASK    BIT(0) /* Power on Reset status */
+
+/* SPO2 channels RED/IR/GREEN */
+#define MAX30101_SENSOR_PPG_CHANNEL_MIN SENSOR_CHAN_IR
+#define MAX30101_SENSOR_PPG_CHANNEL_MAX SENSOR_CHAN_GREEN
+#endif
 
 enum max30101_mode {
 	MAX30101_MODE_HEART_RATE = 2,
@@ -102,10 +121,27 @@ struct max30101_config {
 	uint8_t led_pa[MAX30101_MAX_NUM_CHANNELS];
 	uint8_t mode;
 	uint8_t slot[4];
+#if CONFIG_MAX30101_TRIGGER
+	const struct gpio_dt_spec irq_gpio;
+#endif
 };
 
 struct max30101_data {
 	uint32_t raw[MAX30101_MAX_NUM_CHANNELS];
 	uint8_t map[MAX30101_MAX_NUM_CHANNELS];
 	uint8_t num_channels;
+#if CONFIG_MAX30101_TRIGGER
+	const struct device *dev;
+	struct gpio_callback gpio_cb;
+	sensor_trigger_handler_t trigger_handler[MAX30101_SUPPORTED_INTERRUPTS];
+	const struct sensor_trigger *trigger[MAX30101_SUPPORTED_INTERRUPTS];
+	struct k_work cb_work;
+#endif
 };
+
+#ifdef CONFIG_MAX30101_TRIGGER
+int max30101_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
+			 sensor_trigger_handler_t handler);
+
+int max30101_init_interrupts(const struct device *dev);
+#endif

@@ -12,6 +12,11 @@ compatible: "maxim,max30101"
 include: [sensor-device.yaml, i2c-device.yaml]
 
 properties:
+  irq-gpios:
+    type: phandle-array
+    description: |
+      Active low interrupt signal. It is an open drain signal, so it
+      require either hardware or software pull-up.
   fifo-rollover-en:
     type: boolean
     description: |
