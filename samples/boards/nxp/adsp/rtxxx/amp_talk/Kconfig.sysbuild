@@ -1,0 +1,9 @@
+# Copyright 2025 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+source "share/sysbuild/Kconfig"
+
+config OPENAMP_REMOTE_BOARD
+string
+	default "mimxrt700_evk/mimxrt798s/cm33_cpu1" if $(BOARD) = "mimxrt700_evk"
