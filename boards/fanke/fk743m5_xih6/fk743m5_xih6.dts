@@ -9,8 +9,8 @@
 #include <st/h7/stm32h743xihx-pinctrl.dtsi>
 
 / {
-	model = "FANKE FK743M5-XIH6 board";
 	compatible = "fanke,fk743m5-xih6";
+	model = "FANKE FK743M5-XIH6 board";
 
 	chosen {
 		zephyr,console = &usart1;
@@ -102,9 +102,9 @@
 		size = <DT_SIZE_M(64)>; /* 64 Mbits */
 		qspi-max-frequency = <40000000>;
 		cs-high-time = <2>; /* >= 50 ns */
-		status = "okay";
 		spi-bus-width = <4>;
 		writeoc = "PP_1_1_4";
+		status = "okay";
 
 		partitions {
 			compatible = "fixed-partitions";
@@ -112,8 +112,8 @@
 			#size-cells = <1>;
 
 			storage_partition: partition@0 {
-				label = "storage";
 				reg = <0x00000000 DT_SIZE_M(8)>;
+				label = "storage";
 			};
 		};
 	};
@@ -135,11 +135,11 @@
 	status = "okay";
 
 	sdram {
-		status = "okay";
 		power-up-delay = <100>;
 		num-auto-refresh = <8>;
 		mode-register = <0x230>;
 		refresh-rate = <0x603>;
+		status = "okay";
 
 		bank@0 {
 			reg = <0>;
