@@ -1281,7 +1281,9 @@ static void ag_indicator_handle_call_held(struct bt_hfp_hf *hf, uint32_t value)
 {
 	struct bt_hfp_hf_call *call;
 
-	k_work_reschedule(&hf->deferred_work, K_MSEC(HF_ENHANCED_CALL_STATUS_TIMEOUT));
+	if (atomic_test_bit(hf->flags, BT_HFP_HF_FLAG_CONNECTED)) {
+		k_work_reschedule(&hf->deferred_work, K_MSEC(HF_ENHANCED_CALL_STATUS_TIMEOUT));
+	}
 
 	LOG_DBG("call setup %d", value);
 
