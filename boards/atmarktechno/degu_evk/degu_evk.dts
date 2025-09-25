@@ -10,8 +10,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Degu Evaluation Kit";
 	compatible = "nordic,pca10056-dk";
+	model = "Degu Evaluation Kit";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -120,26 +120,26 @@
 &uart0 {
 	compatible = "nordic,nrf-uart";
 	current-speed = <115200>;
-	status = "okay";
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &i2c0 {
 	compatible = "nordic,nrf-twim";
-	status = "okay";
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-1 = <&i2c0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &i2c1 {
 	compatible = "nordic,nrf-twim";
-	status = "okay";
 	pinctrl-0 = <&i2c1_default>;
 	pinctrl-1 = <&i2c1_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &ieee802154 {
@@ -153,28 +153,28 @@
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 0x00014000>;
+			label = "mcuboot";
 		};
 
 		slot0_partition: partition@14000 {
-			label = "image-0";
 			reg = <0x00014000 0x0006e000>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@82000 {
-			label = "image-1";
 			reg = <0x00082000 0x0006e000>;
+			label = "image-1";
 		};
 
 		scratch_partition: partition@f0000 {
-			label = "image-scratch";
 			reg = <0x000f0000 0x00008000>;
+			label = "image-scratch";
 		};
 
 		storage_partition: partition@f8000 {
-			label = "storage";
 			reg = <0x000f8000 0x00008000>;
+			label = "storage";
 		};
 	};
 };
