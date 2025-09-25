@@ -104,10 +104,10 @@
 };
 
 &pwm20 {
-	status = "okay";
 	pinctrl-0 = <&pwm20_default>;
 	pinctrl-1 = <&pwm20_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 /* Get a node label for wi-fi spi to use in shield files */
