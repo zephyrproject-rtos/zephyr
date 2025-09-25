@@ -74,16 +74,16 @@ const flexspi_nor_image_config image_config = {
 			.tag = FLEXSPI_CFG_BLK_TAG,
 			.version = FLEXSPI_CFG_BLK_VERSION,
 			.read_sample_clk_src =
-				flexspi_read_sample_clk_loopback_from_dqs_pad,
+					FLEXSPI_READ_SAMPLE_CLK_LOOPBACK_FROM_DQS_PAD,
 			.cs_hold_time = 3u,
 			.cs_setup_time = 3u,
 			/* Enable DDR mode, Wordaddassable, Safe */
 			/* configuration, Differential clock */
 			.controller_misc_option =
-			(1u << flexspi_misc_offset_safe_config_freq_enable),
-			.device_type = flexspi_device_type_serial_nor,
-			.sflash_pad_type = serial_flash_4_pads,
-			.serial_clk_freq = flexspi_serial_clk_75mhz,
+			(1u << FLEXSPI_MISC_OFFSET_SAFE_CONFIG_FREQ_ENABLE),
+			.device_type = FLEXSPI_DEVICE_TYPE_SERIAL_NOR,
+			.sflash_pad_type = SERIAL_FLASH_4_PADS,
+			.serial_clk_freq = FLEXSPI_SERIAL_CLK_75MHZ,
 			.sflash_a1_size = 8u * 1024u * 1024u,
 			.lookup_table = {
 				/* Read LUTs */

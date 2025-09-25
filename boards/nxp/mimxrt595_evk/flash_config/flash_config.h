@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  *
  */
-#ifndef __FLASH_CONFIG_H__
-#define __FLASH_CONFIG_H__
+#ifndef FLASH_CONFIG_H_
+#define FLASH_CONFIG_H_
 
 #include <stdint.h>
 #include "fsl_iap.h"
@@ -17,15 +17,15 @@
 
 /*! @brief FLEXSPI clock configuration - When clock source is PLL */
 enum {
-	flexspi_serial_clk_30mhz = 1,
-	flexspi_serial_clk_50mhz = 2,
-	flexspi_serial_clk_60mhz = 3,
-	flexspi_serial_clk_80mhz = 4,
-	flexspi_serial_clk_100mhz = 5,
-	flexspi_serial_clk_120mhz = 6,
-	flexspi_serial_clk_133mhz = 7,
-	flexspi_serial_clk_166mhz = 8,
-	flexspi_serial_clk_200mhz = 9,
+	FLEXSPI_SERIAL_CLK_30MHZ = 1,
+	FLEXSPI_SERIAL_CLK_50MHZ = 2,
+	FLEXSPI_SERIAL_CLK_60MHZ = 3,
+	FLEXSPI_SERIAL_CLK_80MHZ = 4,
+	FLEXSPI_SERIAL_CLK_100MHZ = 5,
+	FLEXSPI_SERIAL_CLK_120MHZ = 6,
+	FLEXSPI_SERIAL_CLK_133MHZ = 7,
+	FLEXSPI_SERIAL_CLK_166MHZ = 8,
+	FLEXSPI_SERIAL_CLK_200MHZ = 9,
 };
 
 /*! @brief LUT instructions supported by FLEXSPI */
@@ -70,28 +70,28 @@ enum {
 
 /*! @brief FlexSPI Read Sample Clock Source definition */
 typedef enum flexspi_read_sample_clk_source {
-	flexspi_read_sample_clk_loopback_internally = 0,
-	flexspi_read_sample_clk_loopback_from_dqs_pad = 1,
-	flexspi_read_sample_clk_loopback_from_sck_pad = 2,
-	flexspi_read_sample_clk_external_input_from_dqs_pad = 3,
+	FLEXSPI_READ_SAMPLE_CLK_LOOPBACK_INTERNALLY = 0,
+	FLEXSPI_READ_SAMPLE_CLK_LOOPBACK_FROM_DQS_PAD = 1,
+	FLEXSPI_READ_SAMPLE_CLK_LOOPBACK_FROM_SCK_PAD = 2,
+	FLEXSPI_READ_SAMPLE_CLK_EXTERNAL_INPUT_FROM_DQS_PAD = 3,
 } flexspi_read_sample_clk_t;
 
 /*! @brief Misc feature bit definitions */
 enum {
 	/* Bit for Differential clock enable */
-	flexspi_misc_offset_diff_clk_enable = 0,
+	FLEXSPI_MISC_OFFSET_DIFF_CLK_ENABLE = 0,
 	/* Bit for Parallel mode enable */
-	flexspi_misc_offset_parallel_enable = 2,
+	FLEXSPI_MISC_OFFSET_PARALLEL_ENABLE = 2,
 	/* Bit for Word Addressable enable */
-	flexspi_misc_offset_word_addressable_enable = 3,
+	FLEXSPI_MISC_OFFSET_WORD_ADDRESSABLE_ENABLE = 3,
 	/* Bit for Safe Configuration Frequency enable */
-	flexspi_misc_offset_safe_config_freq_enable = 4,
+	FLEXSPI_MISC_OFFSET_SAFE_CONFIG_FREQ_ENABLE = 4,
 	/* Bit for Pad setting override enable */
-	flexspi_misc_offset_pad_setting_override_enable = 5,
+	FLEXSPI_MISC_OFFSET_PAD_SETTING_OVERRIDE_ENABLE = 5,
 	/* Bit for DDR clock confiuration indication. */
-	flexspi_misc_offset_ddr_mode_enable = 6,
+	FLEXSPI_MISC_OFFSET_DDR_MODE_ENABLE = 6,
 	/* Bit for DLLCR settings under all modes */
-	flexspi_misc_offset_use_valid_time_for_all_freq = 7,
+	FLEXSPI_MISC_OFFSET_USE_VALID_TIME_FOR_ALL_FREQ = 7,
 };
 
-#endif
+#endif /* FLASH_CONFIG_H_ */
