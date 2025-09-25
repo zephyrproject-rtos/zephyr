@@ -13,8 +13,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Variscite VAR-SOM-MX93 A55";
 	compatible = "fsl,mimx93";
+	model = "Variscite VAR-SOM-MX93 A55";
 
 	chosen {
 		zephyr,console = &lpuart7;
@@ -39,10 +39,10 @@
 		interrupt-names = "irq_0";
 		interrupt-parent = <&gic>;
 		clocks = <&ccm IMX_CCM_LPUART7_CLK 0x6c 24>;
-		status = "okay";
 		current-speed = <115200>;
 		pinctrl-0 = <&uart7_default>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 
 	aliases {

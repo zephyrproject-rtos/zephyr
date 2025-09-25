@@ -17,8 +17,8 @@
 /delete-node/ &ddr_sys;
 
 / {
-	model = "Variscite DART-MX8M-PLUS M7 (DDR)";
 	compatible = "nxp,imx8mp_var_dart";
+	model = "Variscite DART-MX8M-PLUS M7 (DDR)";
 
 	chosen {
 		/* DDR */
@@ -31,15 +31,15 @@
 
 	soc {
 		ddr_code: code@7b000000 {
-			device_type = "memory";
 			compatible = "nxp,imx-code-bus";
 			reg = <0x7b000000 DT_SIZE_M(2)>;
+			device_type = "memory";
 		};
 
 		ddr_sys: memory@7b200000 {
-			device_type = "memory";
 			compatible = "nxp,imx-sys-bus";
 			reg = <0x7b200000 DT_SIZE_M(2)>;
+			device_type = "memory";
 		};
 	};
 
@@ -68,10 +68,10 @@
 };
 
 &uart3 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart3_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &gpio3 {
