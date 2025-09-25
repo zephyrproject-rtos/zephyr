@@ -14,6 +14,7 @@ LOG_MODULE_REGISTER(net_wifi_mgmt, CONFIG_NET_L2_WIFI_MGMT_LOG_LEVEL);
 #include <errno.h>
 #include <string.h>
 #include <stdio.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/wifi_mgmt.h>
@@ -1527,53 +1528,25 @@ BUILD_ASSERT(sizeof(CONFIG_WIFI_CREDENTIALS_STATIC_SSID) != 1,
 	     "CONFIG_WIFI_CREDENTIALS_STATIC_SSID required");
 #endif /* defined(CONFIG_WIFI_CREDENTIALS_STATIC) */
 
+/**
+ * Disable -Wcast-qual in this function, the buffers passed in the params argument are mutable.
+ */
+TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_CAST_QUAL)
 static int __stored_creds_to_params(struct wifi_credentials_personal *creds,
 				    struct wifi_connect_req_params *params)
 {
-	char *ssid = NULL;
-	char *psk = NULL;
-#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
-	char *key_passwd = NULL;
-#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE */
-	int ret;
-
 	/* SSID */
-	ssid = (char *)k_malloc(creds->header.ssid_len + 1);
-	if (!ssid) {
-		LOG_ERR("Failed to allocate memory for SSID\n");
-		ret = -ENOMEM;
-		goto err_out;
-	}
-
-	memset(ssid, 0, creds->header.ssid_len + 1);
-	ret = snprintf(ssid, creds->header.ssid_len + 1, "%s", creds->header.ssid);
-	if (ret > creds->header.ssid_len) {
+	if (creds->header.ssid_len > WIFI_SSID_MAX_LEN) {
 		LOG_ERR("SSID string truncated\n");
-		ret = -EINVAL;
-		goto err_out;
+		return -EINVAL;
 	}
 
-	params->ssid = ssid;
+	memcpy((uint8_t *)params->ssid, creds->header.ssid, creds->header.ssid_len);
 	params->ssid_length = creds->header.ssid_len;
 
 	/* PSK (optional) */
-	if (creds->password_len > 0) {
-		psk = (char *)k_malloc(creds->password_len + 1);
-		if (!psk) {
-			LOG_ERR("Failed to allocate memory for PSK\n");
-			ret = -ENOMEM;
-			goto err_out;
-		}
-
-		memset(psk, 0, creds->password_len + 1);
-		ret = snprintf(psk, creds->password_len + 1, "%s", creds->password);
-		if (ret > creds->password_len) {
-			LOG_ERR("PSK string truncated\n");
-			ret = -EINVAL;
-			goto err_out;
-		}
-
-		params->psk = psk;
+	if (creds->password_len > 0 && creds->password_len <= WIFI_PSK_MAX_LEN) {
+		memcpy((uint8_t *)params->psk, creds->password, creds->password_len);
 		params->psk_length = creds->password_len;
 	}
 
@@ -1583,21 +1556,12 @@ static int __stored_creds_to_params(struct wifi_credentials_personal *creds,
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
 	if (params->security == WIFI_SECURITY_TYPE_EAP_TLS) {
 		if (creds->header.key_passwd_length > 0) {
-			key_passwd = (char *)k_malloc(creds->header.key_passwd_length + 1);
-			if (!key_passwd) {
-				LOG_ERR("Failed to allocate memory for key_passwd\n");
-				ret = -ENOMEM;
-				goto err_out;
-			}
-			memset(key_passwd, 0, creds->header.key_passwd_length + 1);
-			ret = snprintf(key_passwd, creds->header.key_passwd_length + 1, "%s",
-				       creds->header.key_passwd);
-			if (ret > creds->header.key_passwd_length) {
+			if (creds->header.key_passwd_length > WIFI_ENT_PSWD_MAX_LEN) {
 				LOG_ERR("key_passwd string truncated\n");
-				ret = -EINVAL;
-				goto err_out;
+				return -EINVAL;
 			}
-			params->key_passwd = key_passwd;
+			memcpy((uint8_t *)params->key_passwd, creds->header.key_passwd,
+			       creds->header.key_passwd_length);
 			params->key_passwd_length = creds->header.key_passwd_length;
 		}
 	}
@@ -1632,26 +1596,8 @@ static int __stored_creds_to_params(struct wifi_credentials_personal *creds,
 	}
 
 	return 0;
-err_out:
-	if (ssid) {
-		k_free(ssid);
-		ssid = NULL;
-	}
-
-	if (psk) {
-		k_free(psk);
-		psk = NULL;
-	}
-
-#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
-	if (key_passwd) {
-		k_free(key_passwd);
-		key_passwd = NULL;
-	}
-#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE */
-
-	return ret;
 }
+TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_CAST_QUAL)
 
 static inline const char *wpa_supp_security_txt(enum wifi_security_type security)
 {
@@ -1674,31 +1620,37 @@ static int add_network_from_credentials_struct_personal(struct wifi_credentials_
 							struct net_if *iface)
 {
 	int ret = 0;
-	struct wifi_connect_req_params cnx_params = {0};
+	uint8_t ssid[WIFI_SSID_MAX_LEN + 1] = {0};
+	uint8_t psk[WIFI_PSK_MAX_LEN + 1] = {0};
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
+	uint8_t key_passwd[WIFI_ENT_PSWD_MAX_LEN + 1] = {0};
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE */
 
-	if (__stored_creds_to_params(creds, &cnx_params)) {
+	struct wifi_connect_req_params cnx_params = {
+		.ssid = ssid,
+		.psk = psk,
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
+		.key_passwd = key_passwd,
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE */
+	};
+
+	if (__stored_creds_to_params(creds, &cnx_params) != 0) {
 		ret = -ENOEXEC;
 		goto out;
 	}
 
-	if (net_mgmt(NET_REQUEST_WIFI_CONNECT, iface, &cnx_params,
-		     sizeof(struct wifi_connect_req_params))) {
-		LOG_ERR("Connection request failed\n");
+	ret = net_mgmt(NET_REQUEST_WIFI_CONNECT, iface, &cnx_params,
+		       sizeof(struct wifi_connect_req_params));
+	if (ret < 0) {
+		LOG_ERR("Connection request failed (%d)", ret);
 
-		return -ENOEXEC;
+		ret = -ENOEXEC;
+		goto out;
 	}
 
 	LOG_INF("Connection requested");
 
 out:
-	if (cnx_params.psk) {
-		k_free((void *)cnx_params.psk);
-	}
-
-	if (cnx_params.ssid) {
-		k_free((void *)cnx_params.ssid);
-	}
-
 	return ret;
 }
 
