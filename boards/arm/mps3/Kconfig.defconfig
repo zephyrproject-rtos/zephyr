@@ -2,7 +2,16 @@
 # Copyright 2024-2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_MPS3_CORSTONE300_AN547 || BOARD_MPS3_CORSTONE300_AN552 || BOARD_MPS3_CORSTONE300_FVP || BOARD_MPS3_CORSTONE310_AN555 || BOARD_MPS3_CORSTONE310_FVP
+if BOARD_MPS3_CORSTONE300_AN547 || \
+	BOARD_MPS3_CORSTONE300_AN547_NS || \
+	BOARD_MPS3_CORSTONE300_AN552 || \
+	BOARD_MPS3_CORSTONE300_AN552_NS || \
+	BOARD_MPS3_CORSTONE300_FVP || \
+	BOARD_MPS3_CORSTONE300_FVP_NS || \
+	BOARD_MPS3_CORSTONE310_AN555 || \
+	BOARD_MPS3_CORSTONE310_AN555_NS || \
+	BOARD_MPS3_CORSTONE310_FVP || \
+	BOARD_MPS3_CORSTONE310_FVP_NS
 
 # MPU-based null-pointer dereferencing detection cannot
 # be applied as the (0x0 - 0x400) is unmapped but QEMU
@@ -11,6 +20,15 @@ choice NULL_POINTER_EXCEPTION_DETECTION
 	bool
 	default NULL_POINTER_EXCEPTION_DETECTION_NONE if QEMU_TARGET
 endchoice
+
+# Get flash configuration for NS image from dts flash partition
+config USE_DT_CODE_PARTITION
+	default y if TRUSTED_EXECUTION_NONSECURE
+
+# By default, if we build for a Non-Secure version of the board,
+# force building with TF-M as the Secure Execution Environment.
+config BUILD_WITH_TFM
+	default y if TRUSTED_EXECUTION_NONSECURE
 
 if SERIAL
 
