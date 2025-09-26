@@ -196,8 +196,8 @@ static struct query_context *get_query_by_ot_transaction(otPlatDnsUpstreamQuery 
 
 static struct query_context *get_query_by_user_data(void *user_data)
 {
-	struct query_context *ctx;
-	otPlatDnsUpstreamQuery *query = (otPlatDnsUpstreamQuery *)user_data;
+	struct query_context *ctx = NULL;
+	otPlatDnsUpstreamQuery *query = ((struct query_context *)user_data)->transaction;
 
 	ctx = get_query_by_ot_transaction(query);
 
