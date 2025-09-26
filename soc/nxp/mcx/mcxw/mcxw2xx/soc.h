@@ -41,4 +41,6 @@
 #define IOCON_PIO_MODE_PULLDOWN 0x10u /*!<@brief Selects pull-down function */
 #define IOCON_PIO_MODE_PULLUP   0x20u /*!<@brief Selects pull-up function */
 
+#define nbu_handler BLE_LL_IRQHandler
+
 #endif /* _SOC__H_ */
