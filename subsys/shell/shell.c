@@ -158,15 +158,6 @@ static void tab_item_print(const struct shell *sh, const char *option,
 	z_shell_op_cursor_horiz_move(sh, diff);
 }
 
-static void history_init(const struct shell *sh)
-{
-	if (!IS_ENABLED(CONFIG_SHELL_HISTORY)) {
-		return;
-	}
-
-	z_shell_history_init(sh->history);
-}
-
 static void history_purge(const struct shell *sh)
 {
 	if (!IS_ENABLED(CONFIG_SHELL_HISTORY)) {
@@ -1232,8 +1223,6 @@ static int instance_init(const struct shell *sh,
 	if (CONFIG_SHELL_CMD_ROOT[0]) {
 		sh->ctx->selected_cmd = root_cmd_find(CONFIG_SHELL_CMD_ROOT);
 	}
-
-	history_init(sh);
 
 	k_event_init(&sh->ctx->signal_event);
 	k_sem_init(&sh->ctx->lock_sem, 1, 1);
