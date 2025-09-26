@@ -989,6 +989,8 @@ struct bt_security_info {
 
 /** Connection Info Structure */
 struct bt_conn_info {
+	/** Connection handle. */
+	uint16_t handle;
 	/** Connection Type. */
 	enum bt_conn_type type;
 	/** Connection Role. */
