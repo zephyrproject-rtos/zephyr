@@ -342,6 +342,7 @@ zephyr_udc0: &usbotg_hs1 {
 		read-latency = <4>;
 		write-latency = <1>;
 		burst-length = <0>;
+		st,csbound = <11>;
 		status = "okay";
 	};
 };
