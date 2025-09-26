@@ -1,0 +1,38 @@
+/*
+ * Copyright (c) 2025 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <microchip/pic32c/pic32cz_ca/common/pic32cz_ca.dtsi>
+
+/ {
+	soc {
+		porte: gpio@44840200 {
+			status = "disabled";
+			compatible = "microchip,port-g1-gpio";
+			reg = <0x44840200 0x80>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			#microchip,pin-cells = <2>;
+		};
+
+		portf: gpio@44840280 {
+			status = "disabled";
+			compatible = "microchip,port-g1-gpio";
+			reg = <0x44840280 0x80>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			#microchip,pin-cells = <2>;
+		};
+
+		portg: gpio@44840300 {
+			status = "disabled";
+			compatible = "microchip,port-g1-gpio";
+			reg = <0x44840300 0x80>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			#microchip,pin-cells = <2>;
+		};
+	};
+};
