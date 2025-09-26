@@ -4,12 +4,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @ingroup opamp_interface
+ * @brief Main header file for OPAMP (Operational Amplifier) driver API.
+ */
+
 #ifndef ZEPHYR_INCLUDE_DRIVERS_OPAMP_H_
 #define ZEPHYR_INCLUDE_DRIVERS_OPAMP_H_
 
 /**
- * @brief Opamp Interface
- * @defgroup opamp_interface Opamp Interface
+ * @brief Interfaces for operational amplifiers (OPAMP).
+ * @defgroup opamp_interface OPAMP
  * @since 4.3
  * @version 0.1.0
  * @ingroup io_interfaces
@@ -26,24 +32,24 @@ extern "C" {
 
 /** @brief OPAMP gain factors. */
 enum opamp_gain {
-	OPAMP_GAIN_1_7 = 0,	/**< x 1/7. */
-	OPAMP_GAIN_1_3,		/**< x 1/3. */
-	OPAMP_GAIN_1,		/**< x 1. */
-	OPAMP_GAIN_5_3,		/**< x 5/3. */
-	OPAMP_GAIN_2,		/**< x 2. */
-	OPAMP_GAIN_11_5,	/**< x 11/5. */
-	OPAMP_GAIN_3,		/**< x 3. */
-	OPAMP_GAIN_4,		/**< x 4. */
-	OPAMP_GAIN_13_3,	/**< x 13/3. */
-	OPAMP_GAIN_7,		/**< x 7. */
-	OPAMP_GAIN_8,		/**< x 8. */
-	OPAMP_GAIN_15,		/**< x 15. */
-	OPAMP_GAIN_16,		/**< x 16. */
-	OPAMP_GAIN_31,		/**< x 31. */
-	OPAMP_GAIN_32,		/**< x 32. */
-	OPAMP_GAIN_33,		/**< x 33. */
-	OPAMP_GAIN_63,		/**< x 63. */
-	OPAMP_GAIN_64,		/**< x 64. */
+	OPAMP_GAIN_1_7 = 0, /**< x 1/7. */
+	OPAMP_GAIN_1_3,     /**< x 1/3. */
+	OPAMP_GAIN_1,       /**< x 1. */
+	OPAMP_GAIN_5_3,     /**< x 5/3. */
+	OPAMP_GAIN_2,       /**< x 2. */
+	OPAMP_GAIN_11_5,    /**< x 11/5. */
+	OPAMP_GAIN_3,       /**< x 3. */
+	OPAMP_GAIN_4,       /**< x 4. */
+	OPAMP_GAIN_13_3,    /**< x 13/3. */
+	OPAMP_GAIN_7,       /**< x 7. */
+	OPAMP_GAIN_8,       /**< x 8. */
+	OPAMP_GAIN_15,      /**< x 15. */
+	OPAMP_GAIN_16,      /**< x 16. */
+	OPAMP_GAIN_31,      /**< x 31. */
+	OPAMP_GAIN_32,      /**< x 32. */
+	OPAMP_GAIN_33,      /**< x 33. */
+	OPAMP_GAIN_63,      /**< x 63. */
+	OPAMP_GAIN_64,      /**< x 64. */
 };
 
 /**
