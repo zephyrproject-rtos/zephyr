@@ -29,6 +29,8 @@ LOG_MODULE_REGISTER(soc);
 void soc_early_init_hook(void)
 {
 	/* Enable ART Accelerator prefetch */
+	__HAL_FLASH_PREFETCH_BUFFER_ENABLE();
+
 	sys_cache_instr_enable();
 
 	/* Update CMSIS SystemCoreClock variable (HCLK) */
