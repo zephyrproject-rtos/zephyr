@@ -2944,6 +2944,21 @@ int bt_conn_br_switch_role(const struct bt_conn *conn, uint8_t role);
  */
 int bt_conn_br_set_role_switch_enable(const struct bt_conn *conn, bool enable);
 
+/** @brief Set supervision timeout.
+ *
+ *  Each physical link has a timer that is used for link supervision.
+ *  This timer is used to detect physical link loss caused by devices
+ *  moving out of range, or being blocked by interference, a device’s
+ *  power-down, or other similar failure cases.
+ *
+ *  @param conn  Connection object.
+ *  @param timeout Link supervision timeout, Range: 0x0001 to 0xFFFF
+ *                 Time Range: 0.625 ms to 40.9 s.
+ *
+ *  @return  Zero for success, non-zero otherwise.
+ */
+int bt_conn_set_supervision_timeout(struct bt_conn *conn, uint16_t timeout);
+
 #ifdef __cplusplus
 }
 #endif
