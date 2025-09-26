@@ -33,6 +33,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
+#include <zephyr/nvmem.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/barrier.h>
 #include <zephyr/sys/util.h>
@@ -1729,36 +1730,23 @@ static int eth_initialize(const struct device *dev)
 	return retval;
 }
 
-#if DT_INST_NODE_HAS_PROP(0, mac_eeprom)
-static void get_mac_addr_from_i2c_eeprom(uint8_t mac_addr[6])
+static int generate_mac(const struct device *dev)
 {
-	uint32_t iaddr = CONFIG_ETH_SAM_GMAC_MAC_I2C_INT_ADDRESS;
-	int ret;
-	const struct i2c_dt_spec i2c = I2C_DT_SPEC_GET(DT_INST_PHANDLE(0, mac_eeprom));
+	struct eth_sam_dev_data *const dev_data = dev->data;
+	int ret = 0;
 
-	if (!device_is_ready(i2c.bus)) {
-		LOG_ERR("Bus device is not ready");
-		return;
+#if DT_INST_PROP(0, zephyr_random_mac_address)
+	gen_random_mac(dev_data->mac_addr, ATMEL_OUI_B0, ATMEL_OUI_B1, ATMEL_OUI_B2);
+#elif defined(CONFIG_NVMEM)
+	const struct eth_sam_dev_cfg *const cfg = dev->config;
+
+	if (nvmem_cell_is_ready(&cfg->mac_address_cell)) {
+		ret = nvmem_cell_read(&cfg->mac_address_cell, dev_data->mac_addr, 0,
+				      sizeof(dev_data->mac_addr));
 	}
-
-	ret = i2c_write_read_dt(&i2c,
-			   &iaddr, CONFIG_ETH_SAM_GMAC_MAC_I2C_INT_ADDRESS_SIZE,
-			   mac_addr, 6);
-
-	if (ret != 0) {
-		LOG_ERR("I2C: failed to read MAC addr");
-		return;
-	}
-}
 #endif
 
-static void generate_mac(uint8_t mac_addr[6])
-{
-#if DT_INST_NODE_HAS_PROP(0, mac_eeprom)
-	get_mac_addr_from_i2c_eeprom(mac_addr);
-#elif DT_INST_PROP(0, zephyr_random_mac_address)
-	gen_random_mac(mac_addr, ATMEL_OUI_B0, ATMEL_OUI_B1, ATMEL_OUI_B2);
-#endif
+	return ret;
 }
 
 static void phy_link_state_changed(const struct device *pdev,
@@ -1836,7 +1824,11 @@ static void eth0_iface_init(struct net_if *iface)
 		return;
 	}
 
-	generate_mac(dev_data->mac_addr);
+	result = generate_mac(dev);
+	if (result < 0) {
+		LOG_ERR("Failed to generate MAC (%d)", result);
+		return;
+	}
 
 	LOG_INF("MAC: %02x:%02x:%02x:%02x:%02x:%02x",
 		dev_data->mac_addr[0], dev_data->mac_addr[1],
@@ -2161,7 +2153,10 @@ static const struct eth_sam_dev_cfg eth0_config = {
 	.clock_cfg = SAM_DT_CLOCK_PMC_CFG(0, DT_INST_PARENT(0)),
 #endif
 	.config_func = eth0_irq_config,
-	.phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(0, phy_handle))
+	.phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(0, phy_handle)),
+#ifdef CONFIG_NVMEM
+	.mac_address_cell = NVMEM_CELL_INST_GET_BY_NAME_OR(0, mac_address, {0}),
+#endif
 };
 
 static struct eth_sam_dev_data eth0_data = {

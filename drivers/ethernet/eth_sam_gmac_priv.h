@@ -263,6 +263,9 @@ struct eth_sam_dev_cfg {
 	const struct pinctrl_dev_config *pcfg;
 	void (*config_func)(void);
 	const struct device *phy_dev;
+#ifdef CONFIG_NVMEM
+	struct nvmem_cell mac_address_cell;
+#endif
 };
 
 /* Device run time data */
