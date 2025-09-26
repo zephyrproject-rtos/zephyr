@@ -35,7 +35,14 @@
 #define WCH_RCC_SRC_IS_HSI 1
 #endif
 
+#if defined(CONFIG_SOC_CH32V307)
+/* TODO: Entry 13 is 6.5x (fractional multiple currently unsupported without
+ * changes to RCC config datatype)
+ */
+static const uint8_t pllmul_lut[] = {18, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 0, 15, 16};
+#else
 static const uint8_t pllmul_lut[] = {2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 18};
+#endif
 
 struct clock_control_wch_rcc_config {
 	RCC_TypeDef *regs;
