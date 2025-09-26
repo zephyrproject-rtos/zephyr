@@ -567,6 +567,13 @@ config BT_DEFAULT_ROLE_SWITCH_ENABLE
 	  This option sets the controller's default link policy to
 	  enable/disable the role switch.
 
+config BT_POWER_MODE_CONTROL
+	bool "Bluetooth Power Mode Control(Active/Sniff)"
+	help
+	  This option enables the power mode control feature. This feature
+	  allows the application to control the power mode of the Bluetooth
+	  controller.
+
 config BT_GOEP
 	bool "Bluetooth GOEP Profile [EXPERIMENTAL]"
 	select BT_RFCOMM
