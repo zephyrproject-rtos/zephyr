@@ -1,0 +1,22 @@
+sample:
+  name: I2C demo sample
+
+common:
+  tags:
+    - arduino-core
+  required_snippets:
+    - arduino-core
+  platform_allow:
+    - arduino_mkrzero/samd21g18a
+    - arduino_nano_33_ble/nrf52840
+    - arduino_nano_33_ble/nrf52840/sense
+    - arduino_nano_33_iot/samd21g18a
+    - beagleconnect_freedom/cc1352p7
+    - cc3220sf_launchxl/cc3220sf
+    - nrf52840dk/nrf52840
+    - nrf9160dk/nrf9160
+    - rpi_pico/rp2040
+
+tests:
+  sample.arduino-core.i2cdemo.build:
+    build_only: true
