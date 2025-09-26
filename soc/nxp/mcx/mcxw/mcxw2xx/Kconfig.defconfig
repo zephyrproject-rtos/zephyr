@@ -16,4 +16,20 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 config FLASH_FILL_BUFFER_SIZE
 	default 512
 
-endif
+if BT
+
+config FPU
+	default y
+
+config BT_BUF_ACL_TX_COUNT
+	default 8
+
+config BT_LONG_WQ_STACK_SIZE
+	default 2048
+
+config MAIN_STACK_SIZE
+	default 2048
+
+endif # BT
+
+endif # SOC_SERIES_MCXW2XX
