@@ -9,6 +9,8 @@ mapping:
   "net_init_config":
     type: map
     mapping:
+      "config_format_hash":
+        type: str
       "network_interfaces":
         type: seq
         sequence:
