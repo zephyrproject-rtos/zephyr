@@ -34,15 +34,8 @@ struct shell_history {
 	K_HEAP_DEFINE(_name##_heap, _size);			\
 	static struct shell_history _name = {			\
 		.heap = &_name##_heap,				\
+		.list = SYS_DLIST_STATIC_INIT(&_name.list),	\
 	}
-
-
-/**
- * @brief Initialize shell history module.
- *
- * @param history Shell history instance.
- */
-void z_shell_history_init(struct shell_history *history);
 
 /**
  * @brief Purge shell history.
