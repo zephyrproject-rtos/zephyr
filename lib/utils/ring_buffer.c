@@ -1,234 +1,152 @@
-/* ring_buffer.c: Simple ring buffer API */
-
 /*
- * Copyright (c) 2015 Intel Corporation
+ * Copyright (c) 2025 Måns Ansgariusson <mansgariusson@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
 #include <zephyr/sys/ring_buffer.h>
-#include <string.h>
 
-uint32_t ring_buf_area_claim(struct ring_buf *buf, struct ring_buf_index *ring,
-			     uint8_t **data, uint32_t size)
+static size_t read_index(const struct ring_buffer *rb)
 {
-	ring_buf_idx_t head_offset, wrap_size;
-
-	head_offset = ring->head - ring->base;
-	if (unlikely(head_offset >= buf->size)) {
-		/* ring->base is not yet adjusted */
-		head_offset -= buf->size;
-	}
-	wrap_size = buf->size - head_offset;
-	size = MIN(size, wrap_size);
-
-	*data = &buf->buffer[head_offset];
-	ring->head += size;
-
-	return size;
+	return rb->read_ptr % rb->size;
 }
 
-int ring_buf_area_finish(struct ring_buf *buf, struct ring_buf_index *ring,
-			 uint32_t size)
+static size_t write_index(const struct ring_buffer *rb)
 {
-	ring_buf_idx_t claimed_size, tail_offset;
-
-	claimed_size = ring->head - ring->tail;
-	if (unlikely(size > claimed_size)) {
-		return -EINVAL;
-	}
-
-	ring->tail += size;
-	ring->head = ring->tail;
-
-	tail_offset = ring->tail - ring->base;
-	if (unlikely(tail_offset >= buf->size)) {
-		/* we wrapped: adjust ring->base */
-		ring->base += buf->size;
-	}
-
-	return 0;
+	return rb->write_ptr % rb->size;
 }
 
-uint32_t ring_buf_put(struct ring_buf *buf, const uint8_t *data, uint32_t size)
+size_t ring_buffer_size(const struct ring_buffer *rb)
 {
-	uint8_t *dst;
-	uint32_t partial_size;
-	uint32_t total_size = 0U;
-	int err;
+	return rb->write_ptr - rb->read_ptr;
+}
 
-	do {
-		partial_size = ring_buf_put_claim(buf, &dst, size);
-		if (partial_size == 0) {
+size_t ring_buffer_capacity(const struct ring_buffer *rb)
+{
+	return rb->size;
+}
+
+bool ring_buffer_full(const struct ring_buffer *rb)
+{
+	return ring_buffer_size(rb) == ring_buffer_capacity(rb);
+}
+
+bool ring_buffer_empty(const struct ring_buffer *rb)
+{
+	return ring_buffer_size(rb) == 0;
+}
+
+size_t ring_buffer_space(const struct ring_buffer *rb)
+{
+	return ring_buffer_capacity(rb) - ring_buffer_size(rb);
+}
+
+static size_t max_dma_read_size(const struct ring_buffer *rb)
+{
+	return MIN(ring_buffer_size(rb), ring_buffer_capacity(rb) - read_index(rb));
+}
+
+static size_t max_dma_write_size(const struct ring_buffer *rb)
+{
+	return MIN(ring_buffer_space(rb), ring_buffer_capacity(rb) - write_index(rb));
+}
+
+size_t ring_buffer_write_ptr(const struct ring_buffer *rb, uint8_t **data)
+{
+	*data = &rb->buffer[write_index(rb)];
+	return max_dma_write_size(rb);
+}
+
+void ring_buffer_commit(struct ring_buffer *rb, size_t appended)
+{
+	ring_buffer_index_t diff;
+	ring_buffer_index_t cache_write_ptr = rb->write_ptr;
+
+	__ASSERT(appended <= ring_buffer_space(rb),
+		"Trying to commit more data than space available: appended %zu, available %zu",
+		 appended, ring_buffer_space(rb));
+	rb->write_ptr = rb->write_ptr + appended;
+	if (unlikely(rb->write_ptr < cache_write_ptr)) {
+		/* underlying index type overflowed */
+		diff = cache_write_ptr - rb->read_ptr;
+		rb->read_ptr = read_index(rb);
+		rb->write_ptr = rb->read_ptr + diff + appended;
+	}
+}
+
+size_t ring_buffer_read_ptr(const struct ring_buffer *rb, uint8_t **data)
+{
+	*data = &rb->buffer[read_index(rb)];
+	return max_dma_read_size(rb);
+}
+
+void ring_buffer_consume(struct ring_buffer *rb, size_t consumed)
+{
+	__ASSERT(consumed <= ring_buffer_size(rb),
+		"Trying to consume more data than available: consumed %zu, available %zu",
+		 consumed, ring_buffer_size(rb));
+	rb->read_ptr = rb->read_ptr + consumed;
+}
+
+size_t ring_buffer_read(struct ring_buffer *rb, uint8_t *data, size_t len)
+{
+	uint8_t *ref;
+	size_t read = 0;
+	size_t read_size;
+
+	while (read < len) {
+		read_size = MIN(ring_buffer_read_ptr(rb, &ref), len - read);
+		if (read_size == 0) {
 			break;
 		}
-		memcpy(dst, data, partial_size);
-		total_size += partial_size;
-		size -= partial_size;
-		data += partial_size;
-	} while (size != 0);
-
-	err = ring_buf_put_finish(buf, total_size);
-	__ASSERT_NO_MSG(err == 0);
-	ARG_UNUSED(err);
-
-	return total_size;
+		memcpy(&data[read], ref, read_size);
+		ring_buffer_consume(rb, read_size);
+		read += read_size;
+	}
+	return read;
 }
 
-uint32_t ring_buf_get(struct ring_buf *buf, uint8_t *data, uint32_t size)
+size_t ring_buffer_write(struct ring_buffer *rb, const uint8_t *data, size_t len)
 {
-	uint8_t *src;
-	uint32_t partial_size;
-	uint32_t total_size = 0U;
-	int err;
+	uint8_t *ref;
+	size_t write_size;
+	size_t written = 0;
 
-	do {
-		partial_size = ring_buf_get_claim(buf, &src, size);
-		if (partial_size == 0) {
+	while (written < len) {
+		write_size = MIN(ring_buffer_write_ptr(rb, &ref), len - written);
+		if (write_size == 0) {
 			break;
 		}
-		if (data) {
-			memcpy(data, src, partial_size);
-			data += partial_size;
-		}
-		total_size += partial_size;
-		size -= partial_size;
-	} while (size != 0);
-
-	err = ring_buf_get_finish(buf, total_size);
-	__ASSERT_NO_MSG(err == 0);
-	ARG_UNUSED(err);
-
-	return total_size;
-}
-
-uint32_t ring_buf_peek(struct ring_buf *buf, uint8_t *data, uint32_t size)
-{
-	uint8_t *src;
-	uint32_t partial_size;
-	uint32_t total_size = 0U;
-	int err;
-
-	do {
-		partial_size = ring_buf_get_claim(buf, &src, size);
-		if (partial_size == 0) {
-			break;
-		}
-		__ASSERT_NO_MSG(data != NULL);
-		memcpy(data, src, partial_size);
-		data += partial_size;
-		total_size += partial_size;
-		size -= partial_size;
-	} while (size != 0);
-
-	/* effectively unclaim total_size bytes */
-	err = ring_buf_get_finish(buf, 0);
-	__ASSERT_NO_MSG(err == 0);
-	ARG_UNUSED(err);
-
-	return total_size;
-}
-
-/**
- * Internal data structure for a buffer header.
- *
- * We want all of this to fit in a single uint32_t. Every item stored in the
- * ring buffer will be one of these headers plus any extra data supplied
- */
-struct ring_element {
-	uint32_t  type   :16; /**< Application-specific */
-	uint32_t  length :8;  /**< length in 32-bit chunks */
-	uint32_t  value  :8;  /**< Room for small integral values */
-};
-
-int ring_buf_item_put(struct ring_buf *buf, uint16_t type, uint8_t value,
-		      uint32_t *data32, uint8_t size32)
-{
-	uint8_t *dst, *data = (uint8_t *)data32;
-	struct ring_element *header;
-	uint32_t space, size, partial_size, total_size;
-	int err;
-
-	space = ring_buf_space_get(buf);
-	size = size32 * 4;
-	if (size + sizeof(struct ring_element) > space) {
-		return -EMSGSIZE;
+		memcpy(ref, &data[written], write_size);
+		ring_buffer_commit(rb, write_size);
+		written += write_size;
 	}
 
-	err = ring_buf_put_claim(buf, &dst, sizeof(struct ring_element));
-	__ASSERT_NO_MSG(err == sizeof(struct ring_element));
-
-	header = (struct ring_element *)dst;
-	header->type = type;
-	header->length = size32;
-	header->value = value;
-	total_size = sizeof(struct ring_element);
-
-	do {
-		partial_size = ring_buf_put_claim(buf, &dst, size);
-		if (partial_size == 0) {
-			break;
-		}
-		memcpy(dst, data, partial_size);
-		size -= partial_size;
-		total_size += partial_size;
-		data += partial_size;
-	} while (size != 0);
-	__ASSERT_NO_MSG(size == 0);
-
-	err = ring_buf_put_finish(buf, total_size);
-	__ASSERT_NO_MSG(err == 0);
-	ARG_UNUSED(err);
-
-	return 0;
+	return written;
 }
 
-int ring_buf_item_get(struct ring_buf *buf, uint16_t *type, uint8_t *value,
-		      uint32_t *data32, uint8_t *size32)
+size_t ring_buffer_peek(struct ring_buffer *rb, uint8_t *data, size_t len)
 {
-	uint8_t *src, *data = (uint8_t *)data32;
-	struct ring_element *header;
-	uint32_t size, partial_size, total_size;
-	int err;
+	size_t cache_read_ptr;
+	size_t read;
 
-	if (ring_buf_is_empty(buf)) {
-		return -EAGAIN;
-	}
+	cache_read_ptr = rb->read_ptr;
+	read = ring_buffer_read(rb, data, len);
 
-	err = ring_buf_get_claim(buf, &src, sizeof(struct ring_element));
-	__ASSERT_NO_MSG(err == sizeof(struct ring_element));
+	rb->read_ptr = cache_read_ptr;
 
-	header = (struct ring_element *)src;
+	return read;
+}
 
-	if (data && (header->length > *size32)) {
-		*size32 = header->length;
-		ring_buf_get_finish(buf, 0);
-		return -EMSGSIZE;
-	}
+void ring_buffer_reset(struct ring_buffer *rb)
+{
+	rb->read_ptr = 0;
+	rb->write_ptr = 0;
+}
 
-	*size32 = header->length;
-	*type = header->type;
-	*value = header->value;
-	total_size = sizeof(struct ring_element);
-
-	size = *size32 * 4;
-
-	do {
-		partial_size = ring_buf_get_claim(buf, &src, size);
-		if (partial_size == 0) {
-			break;
-		}
-		if (data) {
-			memcpy(data, src, partial_size);
-			data += partial_size;
-		}
-		total_size += partial_size;
-		size -= partial_size;
-	} while (size != 0);
-
-	err = ring_buf_get_finish(buf, total_size);
-	__ASSERT_NO_MSG(err == 0);
-	ARG_UNUSED(err);
-
-	return 0;
+void ring_buffer_init(struct ring_buffer *rb, uint8_t *data, size_t size)
+{
+	rb->size = size;
+	rb->buffer = data;
+	__ASSERT(rb->size <= RING_BUFFER_MAX_SIZE, RING_BUFFER_SIZE_ERROR_MSG);
+	ring_buffer_reset(rb);
 }
