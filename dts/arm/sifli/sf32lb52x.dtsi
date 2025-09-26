@@ -189,8 +189,17 @@
 		rtc: rtc@500cb000 {
 			compatible = "sifli,sf32lb-rtc";
 			reg = <0x500cb000 0x1000>;
+			ranges = <0x0 0x500cb000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
 			interrupts = <49 0>;
 			status = "disabled";
+
+			backup-registers@30 {
+				compatible = "sifli,sf32lb-rtc-backup";
+				reg = <0x30 0x28>;
+				status = "disabled";
+			};
 		};
 	};
 };
