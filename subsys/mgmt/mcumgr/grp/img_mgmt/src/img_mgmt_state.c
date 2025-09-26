@@ -685,7 +685,7 @@ int img_mgmt_set_next_boot_slot(int slot, bool confirm)
 	 * verified to actually be bootable, a new policy was introduced,
 	 * that applies to both active and inactive images.
 	 */
-#ifndef MCUMGR_GRP_IMG_ALLOW_CONFIRM_NON_ACTIVE_SLOT
+#ifndef CONFIG_MCUMGR_GRP_IMG_ALLOW_CONFIRM_NON_ACTIVE_SLOT
 	if (confirm && slot != active_slot) {
 		return IMG_MGMT_ERR_IMAGE_CONFIRMATION_DENIED;
 	}
@@ -751,7 +751,7 @@ int img_mgmt_set_next_boot_slot(int slot, bool confirm)
 		return IMG_MGMT_ERR_IMAGE_SETTING_TEST_TO_ACTIVE_DENIED;
 	}
 
-#ifndef MCUMGR_GRP_IMG_ALLOW_CONFIRM_NON_ACTIVE_SLOT
+#ifndef CONFIG_MCUMGR_GRP_IMG_ALLOW_CONFIRM_NON_ACTIVE_SLOT
 	if (slot != active_slot && confirm) {
 		return IMG_MGMT_ERR_IMAGE_CONFIRMATION_DENIED;
 	}
