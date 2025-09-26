@@ -187,3 +187,35 @@
 	usr-id = <0>;
 	status = "okay";
 };
+
+/* eMMC */
+&main_sdhci0 {
+	status = "okay";
+
+	mmc {
+		compatible = "zephyr,mmc-disk";
+		bus-width = <8>;
+		disk-name = "emmc";
+	};
+};
+
+/* SD */
+&main_sdhci1 {
+	status = "okay";
+
+	pinctrl-0 = <&mmc1_cmd
+		     &mmc1_clk
+		     &mmc1_dat0
+		     &mmc1_dat1
+		     &mmc1_dat2
+		     &mmc1_dat2
+		     &mmc1_dat3
+		     &mmc1_sdcd
+		     &mmc1_clklb>;
+	pinctrl-names = "default";
+
+	sd {
+		compatible = "zephyr,sdmmc-disk";
+		disk-name = "sd";
+	};
+};

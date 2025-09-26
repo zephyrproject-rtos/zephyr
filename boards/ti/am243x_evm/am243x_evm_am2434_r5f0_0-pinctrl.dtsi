@@ -40,6 +40,42 @@
 	spi0_d1: spi0_d1_default {
 		pinmux = <K3_PINMUX(0x218, PIN_OUTPUT, MUX_MODE_0)>;
 	};
+
+	mmc1_cmd: mmc1_cmd_default {
+		pinmux = <K3_PINMUX(0x0294, PIN_INPUT_PULLUP, MUX_MODE_0)>;
+	};
+
+	mmc1_clk: mmc1_clk_default {
+		pinmux = <K3_PINMUX(0x028c, PIN_INPUT, MUX_MODE_0)>;
+	};
+
+	mmc1_dat0: mmc1_dat0_default {
+		pinmux = <K3_PINMUX(0x0288, PIN_INPUT_PULLUP, MUX_MODE_0)>;
+	};
+
+	mmc1_dat1: mmc1_dat1_default {
+		pinmux = <K3_PINMUX(0x0284, PIN_INPUT_PULLUP, MUX_MODE_0)>;
+	};
+
+	mmc1_dat2: mmc1_dat2_default {
+		pinmux = <K3_PINMUX(0x0280, PIN_INPUT_PULLUP, MUX_MODE_0)>;
+	};
+
+	mmc1_dat3: mmc1_dat3_default {
+		pinmux = <K3_PINMUX(0x027c, PIN_INPUT_PULLUP, MUX_MODE_0)>;
+	};
+
+	mmc1_sdcd: mmc1_sdcd_default {
+		pinmux = <K3_PINMUX(0x0298, PIN_INPUT_PULLUP, MUX_MODE_0)>;
+	};
+
+	mmc1_sdwp: mmc1_sdwp_default {
+		pinmux = <K3_PINMUX(0x029c, PIN_INPUT, MUX_MODE_0)>;
+	};
+
+	mmc1_clklb: mmc1_clklb_default {
+		pinmux = <K3_PINMUX(0x0290, PIN_INPUT, MUX_MODE_0)>;
+	};
 };
 
 &mcu_pinctrl {
