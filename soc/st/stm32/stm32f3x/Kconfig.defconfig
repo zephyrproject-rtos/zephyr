@@ -9,4 +9,7 @@ if SOC_SERIES_STM32F3X
 
 rsource "Kconfig.defconfig.stm32f3*"
 
+config STM32_FLASH_PREFETCH
+	default y
+
 endif # SOC_SERIES_STM32F3X

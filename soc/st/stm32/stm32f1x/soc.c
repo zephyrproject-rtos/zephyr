@@ -24,7 +24,7 @@
  */
 void soc_early_init_hook(void)
 {
-#ifdef FLASH_ACR_PRFTBE
+#if defined(FLASH_ACR_PRFTBE) && defined(CONFIG_STM32_FLASH_PREFETCH)
 	/* Enable ART Accelerator prefetch */
 	LL_FLASH_EnablePrefetch();
 #endif

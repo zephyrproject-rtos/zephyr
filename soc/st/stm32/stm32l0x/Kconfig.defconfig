@@ -14,4 +14,7 @@ config TASK_WDT_HW_FALLBACK_DELAY
 	depends on TASK_WDT_HW_FALLBACK
 	default 200
 
+config STM32_FLASH_PREFETCH
+	default y
+
 endif # SOC_SERIES_STM32L0X
