@@ -68,12 +68,6 @@ static bool remove_from_tail(struct shell_history *history)
 	return true;
 }
 
-void z_shell_history_purge(struct shell_history *history)
-{
-	while (remove_from_tail(history)) {
-	}
-}
-
 void z_shell_history_put(struct shell_history *history, uint8_t *line,
 			 size_t len)
 {
@@ -96,7 +90,7 @@ void z_shell_history_put(struct shell_history *history, uint8_t *line,
 		return;
 	}
 
-	 for (;;) {
+	for (;;) {
 		new = k_heap_alloc(history->heap, total_len, K_NO_WAIT);
 		if (new) {
 			/* Got memory, add new item */
@@ -112,8 +106,9 @@ void z_shell_history_put(struct shell_history *history, uint8_t *line,
 	sys_dlist_prepend(&history->list, &new->dnode);
 }
 
-void z_shell_history_init(struct shell_history *history)
+void z_shell_history_purge(struct shell_history *history)
 {
-	sys_dlist_init(&history->list);
+	while (remove_from_tail(history)) {
+	}
 	history->current = NULL;
 }
