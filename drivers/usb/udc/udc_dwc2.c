@@ -437,6 +437,11 @@ static void dwc2_ensure_setup_ready(const struct device *dev)
 	} else {
 		struct udc_dwc2_data *const priv = udc_get_private(dev);
 
+		if (udc_ep_is_busy(udc_get_ep_cfg(dev, USB_CONTROL_EP_OUT))) {
+			/* There is already buffer queued */
+			return;
+		}
+
 		/* Enable EP0 OUT only if there is no pending EP0 IN transfer
 		 * after which the stack has to enable EP0 OUT.
 		 */
