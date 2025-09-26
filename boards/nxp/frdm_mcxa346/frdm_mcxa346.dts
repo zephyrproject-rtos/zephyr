@@ -213,3 +213,7 @@
 	pinctrl-names = "default";
 	status = "okay";
 };
+
+&cpu0 {
+	clock-frequency = <180000000>;
+};
