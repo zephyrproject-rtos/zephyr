@@ -237,6 +237,16 @@ void bt_br_foreach_bond(void (*func)(const struct bt_br_bond_info *info, void *u
 			void *user_data);
 
 /**
+ * @brief Set the local name of the BR/EDR Controller.
+ *
+ * @param name Local name of the BR/EDR Controller.
+ *
+ * @return Negative if fail set to requested state or requested state has been
+ *         already set. Zero if done successfully.
+ */
+int bt_br_write_local_name(const char *name);
+
+/**
  * @}
  */
 
