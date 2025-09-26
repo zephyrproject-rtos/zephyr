@@ -201,6 +201,8 @@
 	pinctrl-0 = <&gmac_mii>;
 	pinctrl-names = "default";
 
+	/* Atmel OUI */
+	local-mac-address = [00 04 25];
 	zephyr,random-mac-address;
 
 	phy-handle = <&phy>;
