@@ -128,6 +128,24 @@
 	#address-cells = <1>;
 	#size-cells = <1>;
 
+	cmc: system-modules@1000 {
+		compatible = "nxp,cmc";
+		reg = <0x1000 0x1000>;
+		interrupts = <1 0>;
+	};
+
+	spc: system-modules@16000 {
+		compatible = "nxp,spc";
+		reg = <0x16000 0x1000>;
+		interrupts = <21 0>;
+	};
+
+	wuu: system-modules@19000 {
+		compatible = "nxp,wuu";
+		reg = <0x19000 0x1000>;
+		interrupts = <22 0>;
+	};
+
 	scg: clock-controller@1e000 {
 		compatible = "nxp,scg-k4";
 		reg = <0x1e000 0x404>;
@@ -266,6 +284,7 @@
 	};
 
 	vbat: vbat@2b000 {
+		compatible = "nxp,vbat";
 		reg = <0x2b000 0x33c>;
 		interrupts = <74 0>;
 	};
