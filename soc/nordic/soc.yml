@@ -121,7 +121,9 @@ runners:
               - nrf54h20/cpuapp
               - nrf54h20/cpurad
               - nrf54h20/cpuppr
+              - nrf54h20/cpuppr/xip
               - nrf54h20/cpuflpr
+              - nrf54h20/cpuflpr/xip
           - qualifiers:
               - nrf9280/cpuapp
               - nrf9280/cpurad
@@ -184,7 +186,9 @@ runners:
               - nrf54h20/cpuapp
               - nrf54h20/cpurad
               - nrf54h20/cpuppr
+              - nrf54h20/cpuppr/xip
               - nrf54h20/cpuflpr
+              - nrf54h20/cpuflpr/xip
           - qualifiers:
               - nrf9280/cpuapp
               - nrf9280/cpurad
@@ -247,7 +251,9 @@ runners:
               - nrf54h20/cpuapp
               - nrf54h20/cpurad
               - nrf54h20/cpuppr
+              - nrf54h20/cpuppr/xip
               - nrf54h20/cpuflpr
+              - nrf54h20/cpuflpr/xip
           - qualifiers:
               - nrf9280/cpuapp
               - nrf9280/cpurad
