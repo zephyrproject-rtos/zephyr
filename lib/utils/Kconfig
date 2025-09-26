@@ -20,8 +20,15 @@ config JSON_LIBRARY_FP_SUPPORT
 	  Requires a libc implementation with support for floating point
 	  functions: strtof(), strtod(), isnan() and isinf().
 
+config RING_BUFFER_CONDITIONAL
+	bool "Conditional ring buffer support"
+	help
+	  Enable ring buffer implementation based on conditional logic, increases performances
+	  drastically on targets that lacks hardware division instructions.
+
 config RING_BUFFER
 	bool "Ring buffers"
+	select DEPRECATED
 	help
 	  Provide highly efficient ring buffer management for arbitrary data.
 	  Some facilities such as kernel pipes are built on top of this.
@@ -29,10 +36,9 @@ config RING_BUFFER
 
 config RING_BUFFER_LARGE
 	bool "Allow large ring buffer sizes"
-	depends on RING_BUFFER
 	help
 	  Increase maximum buffer size from 32KB to 2GB. When this is enabled,
-	  all struct ring_buf instances become 12 bytes bigger.
+	  increases the ring_buffer struct size slightly.
 
 config NOTIFY
 	bool "Asynchronous Notifications"
