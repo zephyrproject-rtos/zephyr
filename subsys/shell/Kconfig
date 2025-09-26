@@ -229,7 +229,6 @@ config SHELL_HELP_ON_WRONG_ARGUMENT_COUNT
 config SHELL_HISTORY
 	bool "History in shell"
 	default y if !SHELL_MINIMAL
-	select RING_BUFFER
 	help
 	  Enable commands history. History can be accessed using up and down
 	  arrows or Ctrl+n and Ctrl+p meta keys.
