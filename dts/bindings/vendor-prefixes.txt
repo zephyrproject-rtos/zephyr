@@ -601,6 +601,7 @@ sandisk	Sandisk Corporation
 satoz	Satoz International Co., Ltd
 sbs	Smart Battery System
 sc	Space Cubics Inc.
+scdz	Shenzhen Qiushi IoT Technology Co., Ltd.
 schindler	Schindler
 sciosense	Sciosense B.V.
 seagate	Seagate Technology PLC
