@@ -7,10 +7,43 @@
 #include <apollo510/ambiq-apollo510-pinmux.h>
 
 &pinctrl {
+	/* IOS I2C target pins: SCL=P11, SDA=P52 */
+	ios_i2c0_default: ios_i2c0_default {
+		group1 {
+			pinmux = <SLSCL_P11>, <SLSDAWIR3_P52>;
+			drive-open-drain;
+			drive-strength = "0.5";
+			bias-pull-up;
+		};
+	};
+
+	ios_i2c0_sleep: ios_i2c0_sleep {
+		group1 {
+			pinmux = <GPIO_P11>, <GPIO_P52>;
+		};
+	};
+
+	/* IOM5 I2C master pins: SCL=P47, SDA=P48 */
+	i2c5_default: i2c5_default {
+		group1 {
+			pinmux = <M5SCL_P47>, <M5SDAWIR3_P48>;
+			drive-open-drain;
+			drive-strength = "0.5";
+			bias-pull-up;
+		};
+	};
+
+	i2c5_sleep: i2c5_sleep {
+		group1 {
+			pinmux = <GPIO_P47>, <GPIO_P48>;
+		};
+	};
+
 	uart0_default: uart0_default {
 		group1 {
 			pinmux = <UART0TX_P30>;
 		};
+
 		group2 {
 			pinmux = <UART0RX_P55>;
 			input-enable;
@@ -31,32 +64,37 @@
 				 <SDIF0_DAT5_P157>,
 				 <SDIF0_DAT6_P158>,
 				 <SDIF0_DAT7_P159>;
-				 drive-strength = "1.0";
+			drive-strength = "1.0";
 		};
+
 		group1 {
 			pinmux = <SDIF0_DAT0_P84>,
 				 <SDIF0_DAT2_P86>,
 				 <SDIF0_CMD_P160>,
 				 <SDIF0_CLKOUT_P88>;
-				 drive-strength = "1.0";
-				 bias-pull-up;
-				 ambiq,pull-up-ohms = <12000>;
+			drive-strength = "1.0";
+			bias-pull-up;
+			ambiq,pull-up-ohms = <12000>;
 		};
+
 		group2 {
 			pinmux = <GPIO_P161>;
-				 ambiq,sdif-cdwp = <1>;
+			ambiq,sdif-cdwp = <1>;
 		};
+
 		group3 {
 			pinmux = <GPIO_P175>;
-				 ambiq,sdif-cdwp = <2>;
+			ambiq,sdif-cdwp = <2>;
 		};
+
 		group4 {
 			pinmux = <GPIO_P161>;
-				 ambiq,sdif-cdwp = <3>;
+			ambiq,sdif-cdwp = <3>;
 		};
+
 		group5 {
 			pinmux = <GPIO_P175>;
-				 ambiq,sdif-cdwp = <4>;
+			ambiq,sdif-cdwp = <4>;
 		};
 	};
 
@@ -68,34 +106,40 @@
 				 <SDIF1_DAT5_P131>,
 				 <SDIF1_DAT6_P132>,
 				 <SDIF1_DAT7_P133>;
-				 drive-strength = "1.0";
+			drive-strength = "1.0";
 		};
+
 		group1 {
 			pinmux = <SDIF1_DAT0_P125>,
 				 <SDIF1_DAT2_P127>,
 				 <SDIF1_CMD_P134>,
 				 <SDIF1_CLKOUT_P129>;
-				 drive-strength = "1.0";
-				 bias-pull-up;
-				 ambiq,pull-up-ohms = <12000>;
+			drive-strength = "1.0";
+			bias-pull-up;
+			ambiq,pull-up-ohms = <12000>;
 		};
+
 		group2 {
 			pinmux = <GPIO_P161>;
-				 ambiq,sdif-cdwp = <1>;
+			ambiq,sdif-cdwp = <1>;
 		};
+
 		group3 {
 			pinmux = <GPIO_P175>;
-				 ambiq,sdif-cdwp = <2>;
+			ambiq,sdif-cdwp = <2>;
 		};
+
 		group4 {
 			pinmux = <GPIO_P161>;
-				 ambiq,sdif-cdwp = <3>;
+			ambiq,sdif-cdwp = <3>;
 		};
+
 		group5 {
 			pinmux = <GPIO_P175>;
-				 ambiq,sdif-cdwp = <4>;
+			ambiq,sdif-cdwp = <4>;
 		};
 	};
+
 	pdm0_default: pdm0_default {
 		group0 {
 			pinmux = <PDM0_CLK_P50>,
@@ -143,6 +187,7 @@
 				 <MNCE0_0_P199>;
 			drive-strength = "0.5";
 		};
+
 		group1 {
 			pinmux = <MSPI0_8_P72>;
 			drive-strength = "0.75";
@@ -176,13 +221,14 @@
 				 <MNCE3_0_P114>;
 			drive-strength = "0.5";
 		};
+
 		group1 {
 			pinmux = <MSPI3_8_P123>;
 			drive-strength = "0.75";
 		};
 	};
 
-	mspi0_sleep: mspi0_sleep{
+	mspi0_sleep: mspi0_sleep {
 		group1 {
 			pinmux = <GPIO_P64>,
 				 <GPIO_P65>,
@@ -207,7 +253,7 @@
 		};
 	};
 
-	mspi1_sleep: mspi1_sleep{
+	mspi1_sleep: mspi1_sleep {
 		group1 {
 			pinmux = <GPIO_P95>,
 				 <GPIO_P96>,
@@ -223,7 +269,7 @@
 		};
 	};
 
-	mspi2_sleep: mspi2_sleep{
+	mspi2_sleep: mspi2_sleep {
 		group1 {
 			pinmux = <GPIO_P74>,
 				 <GPIO_P75>,
@@ -239,7 +285,7 @@
 		};
 	};
 
-	mspi3_sleep: mspi3_sleep{
+	mspi3_sleep: mspi3_sleep {
 		group1 {
 			pinmux = <GPIO_P115>,
 				 <GPIO_P116>,
@@ -287,6 +333,7 @@
 				 <MNCE0_0_P199>;  /* CE0 */
 			drive-strength = "0.5";
 		};
+
 		group1 {
 			pinmux = <MSPI0_8_P72>;   /* SCK */
 			drive-strength = "0.75";
@@ -307,6 +354,7 @@
 				 <MSPI1_9_P104>;
 			drive-strength = "1.0";
 		};
+
 		group1 {
 			pinmux = <MNCE1_0_P53>;
 			drive-strength = "0.5";
@@ -322,6 +370,7 @@
 				 <MSPI1_8_P103>;
 			drive-strength = "1.0";
 		};
+
 		group1 {
 			pinmux = <MNCE1_0_P53>;
 			drive-strength = "0.5";
@@ -342,6 +391,7 @@
 				 <MSPI2_9_P83>;
 			drive-strength = "1.0";
 		};
+
 		group1 {
 			pinmux = <MNCE2_0_P63>;
 			drive-strength = "0.5";
@@ -357,6 +407,7 @@
 				 <MSPI2_8_P82>;
 			drive-strength = "1.0";
 		};
+
 		group1 {
 			pinmux = <MNCE2_0_P63>;
 			drive-strength = "0.5";
@@ -386,6 +437,7 @@
 				 <MNCE3_0_P114>;   /* CE0 */
 			drive-strength = "0.5";
 		};
+
 		group1 {
 			pinmux = <MSPI3_8_P123>;   /* SCK */
 			drive-strength = "0.75";

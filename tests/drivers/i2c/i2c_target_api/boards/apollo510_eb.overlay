@@ -1,0 +1,61 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+/* Copyright (c) 2025 Ambiq Micro Inc. */
+
+/*
+ * Apollo510 EB overlay for tests/drivers/i2c/i2c_target_api
+ *
+ * - IOS acts as I2C target (SCL=P11, SDA=P52)
+ * - IOM5 acts as I2C master (SCL=P47, SDA=P48)
+ * - Physically short SCL and SDA pairs with pull-ups.
+ */
+
+&ios0 {
+	status = "okay";
+
+	i2c {
+		compatible = "ambiq,ios-i2c";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		pinctrl-0 = <&ios_i2c0_default>;
+		pinctrl-1 = <&ios_i2c0_sleep>;
+		pinctrl-names = "default", "sleep";
+		fifo-threshold = <16>;
+		status = "okay";
+
+		eeprom0: eeprom@10 {
+			compatible = "zephyr,i2c-target-eeprom";
+			reg = <0x10>;
+			size = <256>;
+			address-width = <8>;
+			status = "okay";
+		};
+	};
+
+	/* Ensure SPI device on IOS is disabled when using I2C target */
+	spi {
+		status = "disabled";
+	};
+};
+
+/* Use IOM5 as the peer I2C controller to access the target device */
+&iom5 {
+	i2c {
+		compatible = "ambiq,i2c";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		pinctrl-0 = <&i2c5_default>;
+		pinctrl-1 = <&i2c5_sleep>;
+		pinctrl-names = "default", "sleep";
+		clock-frequency = <I2C_BITRATE_STANDARD>;
+		status = "okay";
+
+		/* Second target for the test suite expectations */
+		eeprom1: eeprom@56 {
+			compatible = "zephyr,i2c-target-eeprom";
+			reg = <0x56>;
+			size = <256>;
+			address-width = <8>;
+			status = "okay";
+		};
+	};
+};
