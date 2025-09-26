@@ -217,6 +217,7 @@ enum {
 
 struct bt_keys_link_key {
 	bt_addr_t addr;
+	uint8_t enc_key_size;
 	uint8_t storage_start[0] __aligned(sizeof(void *));
 	uint8_t flags;
 	uint8_t val[16];
