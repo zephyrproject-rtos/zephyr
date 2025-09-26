@@ -880,6 +880,16 @@ struct bt_hci_rp_read_link_supervision_timeout {
 	uint16_t timeout;
 } __packed;
 
+/** HCI opcode for Write Link Supervision Timeout. */
+#define BT_HCI_OP_WRITE_LINK_SUPERVISION_TIMEOUT    BT_OP(BT_OGF_BASEBAND, 0x0037) /* 0x0c37 */
+/** HCI command parameters for Write Link Supervision Timeout. */
+struct bt_hci_cp_write_link_supervision_timeout {
+	/** Connection handle. */
+	uint16_t handle;
+	/** Link supervision timeout. */
+	uint16_t timeout;
+} __packed;
+
 #define BT_HCI_OP_WRITE_CURRENT_IAC_LAP         BT_OP(BT_OGF_BASEBAND, 0x003a) /* 0x0c3a */
 struct bt_hci_iac_lap {
 	uint8_t iac[3];
