@@ -26,6 +26,18 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(udc_stm32, CONFIG_UDC_DRIVER_LOG_LEVEL);
 
+/*
+ * The STM32 HAL does not provide PCD_SPEED_HIGH and PCD_SPEED_HIGH_IN_FULL
+ * on series which lack HS-capable hardware. Provide dummy definitions for
+ * these series to remove checks elsewhere in the driver. The exact value
+ * of the dummy definitions in insignificant, as long as they are not equal
+ * to PCD_SPEED_FULL (which is always provided).
+ */
+#if !defined(PCD_SPEED_HIGH)
+#define PCD_SPEED_HIGH		(PCD_SPEED_FULL + 1)
+#define PCD_SPEED_HIGH_IN_FULL	(PCD_SPEED_HIGH + 1)
+#endif
+
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs)
 #define DT_DRV_COMPAT st_stm32_otghs
 #define UDC_STM32_IRQ_NAME     otghs
@@ -52,16 +64,12 @@ LOG_MODULE_REGISTER(udc_stm32, CONFIG_UDC_DRIVER_LOG_LEVEL);
  * DT property to the corresponding definition used by the STM32 HAL.
  */
 #if defined(CONFIG_SOC_SERIES_STM32H7X) || USB_OTG_HS_EMB_PHY
-#define UDC_STM32_HIGH_SPEED             USB_OTG_SPEED_HIGH_IN_FULL
+#define UDC_STM32_HIGH_SPEED             PCD_SPEED_HIGH_IN_FULL
 #else
-#define UDC_STM32_HIGH_SPEED             USB_OTG_SPEED_HIGH
+#define UDC_STM32_HIGH_SPEED             PCD_SPEED_HIGH
 #endif
 
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usb)
 #define UDC_STM32_FULL_SPEED             PCD_SPEED_FULL
-#else
-#define UDC_STM32_FULL_SPEED             USB_OTG_SPEED_FULL
-#endif
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_otghs)
 #define USB_USBPHYC_CR_FSEL_24MHZ        USB_USBPHYC_CR_FSEL_1
@@ -955,13 +963,12 @@ static enum udc_bus_speed udc_stm32_device_speed(const struct device *dev)
 {
 	struct udc_stm32_data *priv = udc_get_private(dev);
 
-#ifdef USBD_HS_SPEED
-	if (priv->pcd.Init.speed == USBD_HS_SPEED) {
+	if (priv->pcd.Init.speed == PCD_SPEED_HIGH) {
 		return UDC_BUS_SPEED_HS;
 	}
-#endif
 
-	if (priv->pcd.Init.speed == USBD_FS_SPEED) {
+	if (priv->pcd.Init.speed == PCD_SPEED_HIGH_IN_FULL ||
+	    priv->pcd.Init.speed == PCD_SPEED_FULL) {
 		return UDC_BUS_SPEED_FS;
 	}
 
