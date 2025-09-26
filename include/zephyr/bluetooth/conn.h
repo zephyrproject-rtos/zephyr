@@ -3305,6 +3305,17 @@ int bt_conn_br_enter_sniff_mode(struct bt_conn *conn, uint16_t min_interval,
 int bt_conn_br_exit_sniff_mode(struct bt_conn *conn);
 #endif /* CONFIG_BT_POWER_MODE_CONTROL */
 
+/** @brief Read BR/EDR supervision timeout.
+ *
+ *  Read the current link supervision timeout value for a BR/EDR connection.
+ *
+ *  @param conn     Connection object.
+ *  @param timeout  Pointer to store the supervision timeout value.
+ *
+ *  @return  Zero for success, non-zero otherwise.
+ */
+int bt_conn_br_get_supervision_timeout(struct bt_conn *conn, uint16_t *timeout);
+
 #ifdef __cplusplus
 }
 #endif
