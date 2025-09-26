@@ -1,0 +1,12 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP System Power Control (SPC)
+
+compatible: "nxp,spc"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
