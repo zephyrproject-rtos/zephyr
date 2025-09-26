@@ -322,3 +322,35 @@ int bt_conn_br_get_supervision_timeout(struct bt_conn *conn, uint16_t *timeout)
 
 	return 0;
 }
+
+int bt_conn_br_set_supervision_timeout(struct bt_conn *conn, uint16_t timeout)
+{
+	struct bt_hci_cp_write_link_supervision_timeout *cp;
+	struct net_buf *buf;
+
+	if (conn == NULL) {
+		LOG_DBG("conn is NULL");
+		return -EINVAL;
+	}
+
+	if (!bt_conn_is_type(conn, BT_CONN_TYPE_BR)) {
+		LOG_DBG("Invalid connection type: %u for %p", conn->type, conn);
+		return -EINVAL;
+	}
+
+	buf = bt_hci_cmd_alloc(K_FOREVER);
+	if (buf == NULL) {
+		return -ENOBUFS;
+	}
+
+	if (net_buf_tailroom(buf) < sizeof(*cp)) {
+		net_buf_unref(buf);
+		return -ENOMEM;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->handle = sys_cpu_to_le16(conn->handle);
+	cp->timeout = sys_cpu_to_le16(timeout);
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_LINK_SUPERVISION_TIMEOUT, buf, NULL);
+}
