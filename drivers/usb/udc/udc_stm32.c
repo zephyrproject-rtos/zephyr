@@ -1081,13 +1081,19 @@ static int priv_clock_enable(void)
 		return -ENODEV;
 	}
 
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs) && defined(CONFIG_SOC_SERIES_STM32U5X)
-	/* Sequence to enable the power of the OTG HS on a stm32U5 serie : Enable VDDUSB */
-	bool pwr_clk = LL_AHB3_GRP1_IsEnabledClock(LL_AHB3_GRP1_PERIPH_PWR);
+	/* Power configuration */
+#if defined(CONFIG_SOC_SERIES_STM32H7X)
+	LL_PWR_EnableUSBVoltageDetector();
 
-	if (!pwr_clk) {
-		LL_AHB3_GRP1_EnableClock(LL_AHB3_GRP1_PERIPH_PWR);
+	/* Per AN2606: USBREGEN not supported when running in FS mode. */
+	LL_PWR_DisableUSBReg();
+	while (!LL_PWR_IsActiveFlag_USB()) {
+		LOG_INF("PWR not active yet");
+		k_msleep(100);
 	}
+#elif defined(CONFIG_SOC_SERIES_STM32U5X)
+	/* Sequence to enable the power of the OTG HS on a stm32U5 serie : Enable VDDUSB */
+	__ASSERT_NO_MSG(LL_AHB3_GRP1_IsEnabledClock(LL_AHB3_GRP1_PERIPH_PWR));
 
 	/* Check that power range is 1 or 2 */
 	if (LL_PWR_GetRegulVoltageScaling() < LL_PWR_REGU_VOLTAGE_SCALE2) {
@@ -1096,26 +1102,16 @@ static int priv_clock_enable(void)
 	}
 
 	LL_PWR_EnableVddUSB();
-	/* Configure VOSR register of USB HSTransceiverSupply(); */
-	LL_PWR_EnableUSBPowerSupply();
-	LL_PWR_EnableUSBEPODBooster();
-	while (LL_PWR_IsActiveFlag_USBBOOST() != 1) {
-		/* Wait for USB EPOD BOOST ready */
-	}
 
-	/* Leave the PWR clock in its initial position */
-	if (!pwr_clk) {
-		LL_AHB3_GRP1_DisableClock(LL_AHB3_GRP1_PERIPH_PWR);
-	}
-
-	/* Set the OTG PHY reference clock selection (through SYSCFG) block */
-	LL_APB3_GRP1_EnableClock(LL_APB3_GRP1_PERIPH_SYSCFG);
-	HAL_SYSCFG_SetOTGPHYReferenceClockSelection(
-		syscfg_otg_hs_phy_clk[DT_ENUM_IDX(DT_NODELABEL(otghs_phy), clock_reference)]
-	);
-	/* Configuring the SYSCFG registers OTG_HS PHY : OTG_HS PHY enable*/
-	HAL_SYSCFG_EnableOTGPHY(SYSCFG_OTG_HS_PHY_ENABLE);
-#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_otghs)
+	#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs)
+		/* Configure VOSR register of USB HSTransceiverSupply(); */
+		LL_PWR_EnableUSBPowerSupply();
+		LL_PWR_EnableUSBEPODBooster();
+		while (LL_PWR_IsActiveFlag_USBBOOST() != 1) {
+			/* Wait for USB EPOD BOOST ready */
+		}
+	#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs) */
+#elif defined(CONFIG_SOC_SERIES_STM32N6X)
 	/* Enable Vdd USB voltage monitoring */
 	LL_PWR_EnableVddUSBMonitoring();
 	while (__HAL_PWR_GET_FLAG(PWR_FLAG_USB33RDY)) {
@@ -1130,17 +1126,6 @@ static int priv_clock_enable(void)
 	 * with LL_PWR_EnableVDDUSB function (higher case)
 	 */
 	LL_PWR_EnableVDDUSB();
-#endif
-
-#if defined(CONFIG_SOC_SERIES_STM32H7X)
-	LL_PWR_EnableUSBVoltageDetector();
-
-	/* Per AN2606: USBREGEN not supported when running in FS mode. */
-	LL_PWR_DisableUSBReg();
-	while (!LL_PWR_IsActiveFlag_USB()) {
-		LOG_INF("PWR not active yet");
-		k_sleep(K_MSEC(100));
-	}
 #endif
 
 	if (DT_INST_NUM_CLOCKS(0) > 1) {
@@ -1182,21 +1167,16 @@ static int priv_clock_enable(void)
 
 #endif /* RCC_CFGR_OTGFSPRE / RCC_CFGR_USBPRE */
 
-#if USB_OTG_HS_ULPI_PHY
-#if defined(CONFIG_SOC_SERIES_STM32H7X)
-	LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_USB1OTGHSULPI);
-#else
-	LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_OTGHSULPI);
-#endif
-#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs) /* USB_OTG_HS_ULPI_PHY */
-	/* Disable ULPI interface (for external high-speed PHY) clock in sleep/low-power mode.
-	 * It is disabled by default in run power mode, no need to disable it.
+	/* PHY configuration */
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs)
+#if defined(CONFIG_SOC_SERIES_STM32N6X)
+	/*
+	 * Note that the USBPHYC is clocked only when
+	 * the OTG_HS instance is also clocked, so this
+	 * must come after clock_control_on() or the
+	 * SoC will deadlock.
 	 */
-#if defined(CONFIG_SOC_SERIES_STM32H7X)
-	LL_AHB1_GRP1_DisableClockSleep(LL_AHB1_GRP1_PERIPH_USB1OTGHSULPI);
-#elif defined(CONFIG_SOC_SERIES_STM32U5X)
-	LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_USBPHY);
-#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_otghs)
+
 	/* Reset specific configuration bits before setting new values */
 	USB1_HS_PHYC->USBPHYC_CR &= ~USB_USBPHYC_CR_FSEL_Msk;
 
@@ -1208,21 +1188,49 @@ static int priv_clock_enable(void)
 
 	/* Peripheral OTGPHY clock enable */
 	LL_AHB5_GRP1_EnableClock(LL_AHB5_GRP1_PERIPH_OTGPHY1);
-#else
-	LL_AHB1_GRP1_DisableClockLowPower(LL_AHB1_GRP1_PERIPH_OTGHSULPI);
-#endif /* defined(CONFIG_SOC_SERIES_STM32H7X) */
+#elif defined(CONFIG_SOC_SERIES_STM32U5X)
+	/* Configure OTG PHY reference clock through SYSCFG */
+	LL_APB3_GRP1_EnableClock(LL_APB3_GRP1_PERIPH_SYSCFG);
+	HAL_SYSCFG_SetOTGPHYReferenceClockSelection(
+		syscfg_otg_hs_phy_clk[DT_ENUM_IDX(DT_NODELABEL(otghs_phy), clock_reference)]
+	);
 
-#if USB_OTG_HS_EMB_PHY
-#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_otghs)
-	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_OTGPHYC);
-#endif
-#endif
+	/* De-assert reset and enable clock of OTG PHY */
+	HAL_SYSCFG_EnableOTGPHY(SYSCFG_OTG_HS_PHY_ENABLE);
+	LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_USBPHY);
+#elif defined(CONFIG_SOC_SERIES_STM32H7X)
+	/*
+	 * If HS PHY (over ULPI) is used, enable ULPI interface clock.
+	 * Otherwise, disable ULPI clock in sleep/low-power mode.
+	 * (No need to disable Run mode clock, it is off by default)
+	 */
+	if (USB_OTG_HS_ULPI_PHY) {
+		LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_USB1OTGHSULPI);
+	} else {
+		LL_AHB1_GRP1_DisableClockSleep(LL_AHB1_GRP1_PERIPH_USB1OTGHSULPI);
+	}
+#elif defined(CONFIG_SOC_SERIES_STM32F7X)
+	/*
+	 * Preprocessor check is required here because
+	 * the OTGPHYC defines are not provided if it
+	 * doesn't exist on SoC.
+	 */
+	#if USB_OTG_HS_ULPI_PHY
+		LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_OTGHSULPI);
+	#elif USB_OTG_HS_EMB_PHYC
+		LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_OTGPHYC);
+	#endif
+#else /* CONFIG_SOC_SERIES_STM32F2X || CONFIG_SOC_SERIES_STM32F4X */
+	if (USB_OTG_HS_UPLI_PHY) {
+		LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_OTGHSULPI);
+	}
+#endif /* CONFIG_SOC_SERIES_* */
 #elif defined(CONFIG_SOC_SERIES_STM32H7X) && DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otgfs)
 	/* The USB2 controller only works in FS mode, but the ULPI clock needs
 	 * to be disabled in sleep mode for it to work.
 	 */
 	LL_AHB1_GRP1_DisableClockSleep(LL_AHB1_GRP1_PERIPH_USB2OTGHSULPI);
-#endif /* USB_OTG_HS_ULPI_PHY */
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs) */
 
 	return 0;
 }
