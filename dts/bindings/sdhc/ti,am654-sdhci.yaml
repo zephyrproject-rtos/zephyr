@@ -1,0 +1,126 @@
+description: TI SD/eMMC Host Controller
+
+compatible: "ti,am654-sdhci"
+
+include: [sdhc.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  ti,is-embedded:
+    description: Whether the slot type is embedded or not
+    type: boolean
+
+  ti,dll-present:
+    description: Whether PHY requires DLL configuration or not
+    type: boolean
+
+  ti,fails-without-test-cd:
+    description:
+      When present, indicates that the CD line is not connected
+      and the controller is required to be forced into Test mode
+      to set the TESTCD bit.
+    type: boolean
+
+
+  ti,clkbuf-sel:
+    description: Clock Delay Buffer Select
+    type: int
+    required: true
+
+  ti,strobe-sel:
+    description: Strobe Select Delay
+    type: int
+
+  ti,strobe-sel-4-bit:
+    description: Whether Strobe Select Delay uses 4 bit field instead of 8
+    type: boolean
+
+  ti,dll-frqsel-2-bit:
+    description: Whether DLL frequency select uses 2 bit field instead of 3
+    type: boolean
+
+  ti,driver-strength-ohm:
+    description: DLL drive strength in ohms
+    type: int
+    enum:
+      - 33
+      - 40
+      - 50
+      - 66
+      - 100
+
+  ti,trm-icp:
+    description: DLL trim select
+    type: int
+
+  ti,itap-del-sel-legacy:
+    description: Input tap delay for SD/MMC legacy timing
+    type: int
+
+  ti,otap-del-sel-legacy:
+    description: Output tap delay for SD/MMC legacy timing
+    type: int
+
+  # HS200 input tap delay as calculated during tuning
+  ti,otap-del-sel-hs200:
+    description: Output tap delay for eMMC HS200 timing
+    type: int
+
+  ti,itap-del-sel-hs:
+    description: Input tap delay for SD/MMC High Speed timing
+    type: int
+
+  ti,otap-del-sel-hs:
+    description: Output tap delay for SD/MMC High Speed timing
+    type: int
+
+  ti,itap-del-sel-sdr12:
+    description: Input tap delay for SD UHS SDR12 timing
+    type: int
+
+  ti,otap-del-sel-sdr12:
+    description: Output tap delay for SD UHS SDR12 timing
+    type: int
+
+  ti,itap-del-sel-sdr25:
+    description: Input tap delay for SD UHS SDR25 timing
+    type: int
+
+  ti,otap-del-sel-sdr25:
+    description: Output tap delay for SD UHS SDR25 timing
+    type: int
+
+  ti,otap-del-sel-sdr50:
+    description: Output tap delay for SD UHS SDR50 timing
+    type: int
+
+  ti,otap-del-sel-ddr50:
+    description: Output tap delay for SD UHS DDR50 timing
+    type: int
+
+  ti,itap-del-sel-ddr52:
+    description: Input tap delay for eMMC DDR52 timing
+    type: int
+
+  ti,otap-del-sel-ddr52:
+    description: Output tap delay for eMMC DDR52 timing
+    type: int
+
+  # SDR104 input tap delay as calculated during tuning
+  ti,otap-del-sel-sdr104:
+    description: Output tap delay for SD UHS SDR104 timing
+    type: int
+
+  vmmc-supply:
+    type: phandle
+    description: |
+      Phandle to the regulator that provides the main power supply voltage
+      to the MMC/SD card.
+
+  vqmmc-supply:
+    type: phandle
+    description: |
+      Phandle to the regulator that provides the I/O signaling voltage
+      (VDDIO) to the MMC/SD card.
