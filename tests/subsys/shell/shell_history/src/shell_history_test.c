@@ -14,7 +14,7 @@
 
 #include <zephyr/shell/shell_history.h>
 
-#define HIST_BUF_SIZE 160
+#define HIST_BUF_SIZE 256
 Z_SHELL_HISTORY_DEFINE(history, HIST_BUF_SIZE);
 
 static void init_test_buf(uint8_t *buf, size_t len, uint8_t offset)
