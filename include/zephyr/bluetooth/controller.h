@@ -29,7 +29,7 @@ extern "C" {
  *
  *  @param addr Public address
  */
-void bt_ctlr_set_public_addr(const uint8_t *addr);
+__deprecated void bt_ctlr_set_public_addr(const uint8_t *addr);
 
 #ifdef __cplusplus
 }
