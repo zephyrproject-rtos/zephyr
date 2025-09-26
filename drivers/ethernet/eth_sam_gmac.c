@@ -141,10 +141,6 @@ static inline void dcache_clean(uint32_t addr, uint32_t size)
 #endif
 #endif /* !CONFIG_NET_TEST */
 
-BUILD_ASSERT(!(DT_ANY_INST_HAS_PROP_STATUS_OKAY(mac_eeprom) &&
-	       (DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 1)),
-	     "Only support one activated instance get MAC address from EEPROM");
-
 /* if GMAC_UR_MIM_RGMII (new for sama7g5) is defined, the media interface mode
  * supported are: mii, rmii and gmii. Otherwise mii and rmii are supported.
  */
@@ -1693,41 +1689,6 @@ static int eth_initialize(const struct device *dev)
 	return retval;
 }
 
-#if DT_INST_NODE_HAS_PROP(0, mac_eeprom)
-static void get_mac_addr_from_i2c_eeprom(uint8_t mac_addr[6])
-{
-	uint32_t iaddr = CONFIG_ETH_SAM_GMAC_MAC_I2C_INT_ADDRESS;
-	int ret;
-	const struct i2c_dt_spec i2c = I2C_DT_SPEC_GET(DT_INST_PHANDLE(0, mac_eeprom));
-
-	if (!device_is_ready(i2c.bus)) {
-		LOG_ERR("Bus device is not ready");
-		return;
-	}
-
-	ret = i2c_write_read_dt(&i2c,
-			   &iaddr, CONFIG_ETH_SAM_GMAC_MAC_I2C_INT_ADDRESS_SIZE,
-			   mac_addr, 6);
-
-	if (ret != 0) {
-		LOG_ERR("I2C: failed to read MAC addr");
-		return;
-	}
-}
-#endif
-
-static void generate_mac(uint8_t mac_addr[6], const struct eth_sam_dev_cfg *const cfg)
-{
-#if DT_INST_NODE_HAS_PROP(0, mac_eeprom)
-	ARG_UNUSED(cfg);
-	get_mac_addr_from_i2c_eeprom(mac_addr);
-#else
-	if (cfg->random_mac_addr) {
-		gen_random_mac(mac_addr, ATMEL_OUI_B0, ATMEL_OUI_B1, ATMEL_OUI_B2);
-	}
-#endif
-}
-
 static void phy_link_state_changed(const struct device *pdev,
 				   struct phy_link_state *state,
 				   void *user_data)
@@ -1802,7 +1763,11 @@ static void eth_iface_init(struct net_if *iface)
 		return;
 	}
 
-	generate_mac(dev_data->mac_addr, cfg);
+	result = net_eth_mac_load(cfg->mcfg, dev_data->mac_addr);
+	if (result < 0) {
+		LOG_ERR("Failed to load MAC (%d)", result);
+		return;
+	}
 
 	LOG_INF("%s MAC: %02x:%02x:%02x:%02x:%02x:%02x", dev->name,
 		dev_data->mac_addr[0], dev_data->mac_addr[1],
@@ -2117,6 +2082,8 @@ static const struct ethernet_api eth_api = {
 
 #define SAM_GMAC_PINCTRL_DEFN(n) PINCTRL_DT_INST_DEFINE(n);
 
+#define SAM_GMAC_ETH_MAC_DEFN(n) NET_ETH_MAC_DT_INST_DEFINE(n);
+
 #ifdef CONFIG_SOC_FAMILY_ATMEL_SAM
 #define CFG_CLK_DEFN(n) .clock_cfg = SAM_DT_CLOCK_PMC_CFG(0, DT_INST_PARENT(n)),
 #else
@@ -2136,7 +2103,7 @@ static const struct ethernet_api eth_api = {
 			.num_queues = DT_INST_PROP(n, num_queues),			\
 			.phy_conn_type = DT_INST_ENUM_IDX(n, phy_connection_type),	\
 			.ref_clk_source = DT_INST_ENUM_IDX(n, ref_clk_source),		\
-			.random_mac_addr = DT_INST_PROP(n, zephyr_random_mac_address),	\
+			.mcfg = NET_ETH_MAC_DT_INST_DEV_CONFIG_GET(n),			\
 		};
 
 #define DEFN_RX_FLAG_LIST_0(n)								\
@@ -2356,6 +2323,7 @@ static DEVICE_API(ptp_clock, ptp_api) = {
 											\
 		SAM_GMAC_IRQ_CONFIG_DEFN(n)						\
 		SAM_GMAC_PINCTRL_DEFN(n)						\
+		SAM_GMAC_ETH_MAC_DEFN(n)						\
 											\
 		SAM_GMAC_CFG_DEFN(n)							\
 		SAM_GMAC_DATA_DEFN(n)							\
