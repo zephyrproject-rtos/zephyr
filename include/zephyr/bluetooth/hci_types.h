@@ -863,6 +863,23 @@ struct bt_hci_cp_host_num_completed_packets {
 	struct bt_hci_handle_count h[0];
 } __packed;
 
+/** HCI opcode for Read Link Supervision Timeout. */
+#define BT_HCI_OP_READ_LINK_SUPERVISION_TIMEOUT     BT_OP(BT_OGF_BASEBAND, 0x0036) /* 0x0c36 */
+/** HCI command parameters for Read Link Supervision Timeout. */
+struct bt_hci_cp_read_link_supervision_timeout {
+	/** Connection handle. */
+	uint16_t handle;
+} __packed;
+/** HCI response parameters for Read Link Supervision Timeout. */
+struct bt_hci_rp_read_link_supervision_timeout {
+	/** Status. */
+	uint8_t  status;
+	/** Connection handle. */
+	uint16_t handle;
+	/** Link supervision timeout. */
+	uint16_t timeout;
+} __packed;
+
 #define BT_HCI_OP_WRITE_CURRENT_IAC_LAP         BT_OP(BT_OGF_BASEBAND, 0x003a) /* 0x0c3a */
 struct bt_hci_iac_lap {
 	uint8_t iac[3];
