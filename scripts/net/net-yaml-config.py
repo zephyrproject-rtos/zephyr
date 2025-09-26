@@ -2,6 +2,7 @@
 # SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
 # SPDX-License-Identifier: Apache-2.0
 
+import hashlib
 import os
 import re
 import sys
@@ -10,6 +11,7 @@ import yaml
 
 data = {}
 schema = {}
+normalized_output = ""
 
 
 def read_yaml_file(input_data):
@@ -296,25 +298,32 @@ def walk_list_union(cdict, key, lst):
             cdict[key] = len(lst)
 
 
+def output(indent, str):
+    global normalized_output
+
+    normalized_output += str
+    print(indent + str)
+
+
 def walk_dict_schema(level, top_level_name, cdict, key_upper, map, indent):
     for key, value in map.items():
         if key == "type":
             if value == "str":
-                print(indent + "const char *" + key_upper + ";")
+                output(indent, "const char *" + key_upper + ";")
             elif value == "bool":
-                print(indent + "bool " + key_upper + ";")
+                output(indent, "bool " + key_upper + ";")
             elif value == "int":
-                print(indent + "int " + key_upper + ";")
+                output(indent, "int " + key_upper + ";")
             elif value == "seq":
-                print(indent + "struct " + top_level_name + "_" + key_upper + " {")
+                output(indent, "struct " + top_level_name + "_" + key_upper + " {")
             elif value == "map":
                 if key_upper != "value":
                     if level == 1:
-                        print(indent + "struct " + key_upper + " {")
+                        output(indent, "struct " + key_upper + " {")
                     else:
-                        print(indent + "struct " + top_level_name + "_" + key_upper + " {")
+                        output(indent, "struct " + top_level_name + "_" + key_upper + " {")
             elif value == "any" and key_upper == "bind_to":
-                print(indent + "int bind_to;")
+                output(indent, "int bind_to;")
             continue
         elif key == "mapping":
             walk_dict_schema(level + 1, top_level_name, cdict, key, value, "\t" + indent)
@@ -322,16 +331,16 @@ def walk_dict_schema(level, top_level_name, cdict, key_upper, map, indent):
                 # Avoid creating a variable at the top level because we have
                 # a separate variable created in the header file that is used in C file.
                 if level == 1:
-                    print(indent + "};")
+                    output(indent, "};")
                 else:
-                    print(indent + "} " + key_upper + ";")
+                    output(indent, "} " + key_upper + ";")
             continue
         elif key == "sequence":
             walk_list_schema(level + 1, top_level_name, cdict, "value", value, "\t" + indent)
             if key_upper in combined_data:
-                print(indent + "} " + key_upper + "[" + str(combined_data[key_upper]) + "];")
+                output(indent, "} " + key_upper + "[" + str(combined_data[key_upper]) + "];")
             else:
-                print(indent + "} " + key_upper + "[1];")
+                output(indent, "} " + key_upper + "[1];")
             continue
 
         if isinstance(value, dict):
@@ -376,6 +385,8 @@ for key, value in data.items():
         print("#if defined(" + key.upper() + "_ENABLE_DATA)")
         print("#define " + key.upper() + "_DATA " + key + "_data")
         print("static const struct " + key + " " + key + "_data = {")
+        h = hashlib.sha1(normalized_output.encode('utf-8')).hexdigest()
+        print(f"\t.config_format_hash = \"{h}\",")
         walk_dict(value, "\t")
         print("};")
         print("#endif /* " + key.upper() + "_ENABLE_DATA */")
