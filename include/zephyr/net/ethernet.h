@@ -34,6 +34,10 @@
 #include <zephyr/net/ethernet_bridge.h>
 #endif
 
+#if defined(CONFIG_NVMEM)
+#include <zephyr/nvmem.h>
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -1286,6 +1290,85 @@ static inline bool net_eth_is_vlan_interface(struct net_if *iface)
  */
 #define ETH_NET_L3_REGISTER(name, ptype, handler) \
 	NET_L3_REGISTER(&NET_L2_GET_NAME(ETHERNET), name, ptype, handler)
+
+enum net_eth_mac_type {
+	NET_ETH_MAC_DEFAULT = 0,
+	NET_ETH_MAC_RANDOM,
+	NET_ETH_MAC_NVMEM,
+	NET_ETH_MAC_STATIC,
+};
+
+struct net_eth_mac_config {
+	enum net_eth_mac_type type;
+	uint8_t addr[NET_ETH_ADDR_LEN];
+	uint8_t addr_len;
+#if defined(CONFIG_NVMEM)
+	struct nvmem_cell cell;
+#endif
+};
+
+/** @cond INTERNAL_HIDDEN */
+
+/**
+ * @brief Obtain the variable name storing ethernet MAC config for the
+ * given DT node identifier.
+ *
+ * @param node_id Node identifier.
+ */
+#define Z_NET_ETH_MAC_DEV_CONFIG_NAME(node_id)                                                     \
+	_CONCAT(__net_eth_mac_dev_config, DEVICE_DT_NAME_GET(node_id))
+
+#define Z_NET_ETH_MAC_DEV_CONFIG_TYPE(node_id)                                                     \
+	COND_CODE_1(DT_PROP(node_id, zephyr_random_mac_address),                                   \
+		    (NET_ETH_MAC_RANDOM),                                                          \
+		    (COND_CODE_1(DT_NVMEM_CELLS_HAS_NAME(node_id, mac_address),                    \
+				 (NET_ETH_MAC_NVMEM),                                              \
+				 (COND_CODE_1(DT_NODE_HAS_PROP(node_id, local_mac_address),        \
+					      (NET_ETH_MAC_STATIC),                                \
+					      (NET_ETH_MAC_DEFAULT))))))
+
+#if defined(CONFIG_NVMEM)
+#define Z_NET_ETH_MAC_DEV_CONFIG_INIT_CELL(node_id)                                                \
+	.cell = NVMEM_CELL_GET_BY_NAME_OR(node_id, mac_address, {0}),
+#else
+#define Z_NET_ETH_MAC_DEV_CONFIG_INIT_CELL(node_id)
+#endif
+
+#define Z_NET_ETH_MAC_DEV_CONFIG_INIT(node_id)                                                     \
+	{                                                                                          \
+		.type = Z_NET_ETH_MAC_DEV_CONFIG_TYPE(node_id),                                    \
+		.addr = DT_PROP_OR(node_id, local_mac_address, {0}),                               \
+		.addr_len = DT_PROP_LEN_OR(node_id, local_mac_address, 0),                         \
+		Z_NET_ETH_MAC_DEV_CONFIG_INIT_CELL(node_id)                                        \
+	}
+
+/** @endcond */
+
+#define NET_ETH_MAC_DT_DEFINE(node_id)                                                             \
+	static const struct net_eth_mac_config Z_NET_ETH_MAC_DEV_CONFIG_NAME(node_id) =            \
+		Z_NET_ETH_MAC_DEV_CONFIG_INIT(node_id)
+
+#define NET_ETH_MAC_DT_INST_DEFINE(inst) NET_ETH_MAC_DT_DEFINE(DT_DRV_INST(inst))
+
+/**
+ * @brief Obtain a reference to the ethernet MAC configuration given a node
+ * identifier.
+ *
+ * @param node_id Node identifier.
+ */
+#define NET_ETH_MAC_DT_DEV_CONFIG_GET(node_id)                                                     \
+	&Z_NET_ETH_MAC_DEV_CONFIG_NAME(node_id)
+
+/**
+ * @brief Obtain a reference to the ethernet MAC configuration given current
+ * compatible instance number.
+ *
+ * @param inst Instance number.
+ *
+ * @see #NET_ETH_MAC_DT_DEV_CONFIG_GET
+ */
+#define NET_ETH_MAC_DT_INST_DEV_CONFIG_GET(inst)                                                   \
+	NET_ETH_MAC_DT_DEV_CONFIG_GET(DT_DRV_INST(inst))
 
 /**
  * @brief Inform ethernet L2 driver that ethernet carrier is detected.
