@@ -8,3 +8,12 @@ config SOC_NRF54H20_GENERATE_BICR
 	help
 	  This option generates a BICR file for the board being used. Board
 	  directory must contain a "bicr.json" file for this option to work.
+
+config SOC_NRF54H20_BICR_NAME
+	string "Name of nRF54H20 BICR file to use"
+	depends on SOC_NRF54H20_GENERATE_BICR
+	default "bicr.json"
+	help
+	  The file will be searched for in application folder first, then
+	  board folder if not found. The application can select a bicr by
+	  setting CONFIG_SOC_NRF54H20_BICR_NAME="some_bicr.json"
