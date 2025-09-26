@@ -5,7 +5,6 @@
  */
 
 #define DT_DRV_COMPAT virtio_console
-#include <stdio.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/virtio.h>
 #include <zephyr/drivers/virtio/virtqueue.h>
@@ -34,6 +33,11 @@ struct _virtio_console_control {
 	/* Device can give human-readable names to ports by sending */
 	/* VIRTIO_CONSOLE_PORT_NAME immediately followed by a name */
 	char name[CONFIG_UART_VIRTIO_CONSOLE_NAME_BUFSIZE];
+};
+struct _fifo_item_virtio_console_control {
+	void *fifo_reserved;
+	bool pending; /* true if message is awaiting transmission */
+	struct _virtio_console_control msg;
 };
 #endif
 
@@ -112,8 +116,10 @@ struct virtconsole_data {
 	int8_t n_console_ports;
 	struct k_spinlock ctlrxsl, ctltxsl;
 	size_t txctlcurrent;
-	struct _virtio_console_control rx_ctlbuf[CONFIG_UART_VIRTIO_CONSOLE_RX_CONTROL_BUFSIZE],
+	struct _virtio_console_control rx_ctlbuf[CONFIG_UART_VIRTIO_CONSOLE_RX_CONTROL_BUFSIZE];
+	struct _fifo_item_virtio_console_control
 		tx_ctlbuf[CONFIG_UART_VIRTIO_CONSOLE_TX_CONTROL_BUFSIZE];
+	struct k_fifo tx_ctlfifo;
 	struct _ctl_cb_data ctl_cb_data[CONFIG_UART_VIRTIO_CONSOLE_RX_CONTROL_BUFSIZE];
 	struct _rx_cb_data rx_cb_data[VIRTIO_CONSOLE_MAX_PORTS];
 #else
@@ -176,13 +182,42 @@ static void virtconsole_recv_setup(const struct device *dev, uint16_t q_no, void
 	}
 	struct virtq_buf vqbuf[] = {{.addr = addr, .len = len}};
 
-	if (virtq_add_buffer_chain(vq, vqbuf, 1, 0, recv_cb, cb_data, K_FOREVER)) {
+	if (virtq_add_buffer_chain(vq, vqbuf, 1, 0, recv_cb, cb_data, K_NO_WAIT)) {
 		LOG_ERR("could not set up virtqueue %u for receiving", q_no);
 		return;
 	}
 	virtio_notify_virtqueue(config->vdev, q_no);
 }
 #ifdef CONFIG_UART_VIRTIO_CONSOLE_F_MULTIPORT
+static void virtconsole_control_tx_flush(void *priv, uint32_t len)
+{
+	struct virtconsole_data *data = priv;
+	const struct device *dev = data->dev;
+	const struct virtconsole_config *config = dev->config;
+	struct _fifo_item_virtio_console_control *item;
+	struct virtq *vq = virtio_get_virtqueue(config->vdev, VIRTQ_CONTROL_TX);
+
+	if (vq == NULL) {
+		LOG_ERR("could not access virtqueue 3");
+		return;
+	}
+	int i = vq->free_desc_n;
+
+	while ((i-- > 0) && (item = k_fifo_get(&data->tx_ctlfifo, K_NO_WAIT))) {
+		struct virtq_buf vqbuf = {.addr = &item->msg, .len = sizeof(item->msg)};
+
+		int ret = virtq_add_buffer_chain(vq, &vqbuf, 1, 1, virtconsole_control_tx_flush,
+						 priv, K_NO_WAIT);
+
+		if (ret) {
+			LOG_ERR("could not send control message");
+			return;
+		}
+		virtio_notify_virtqueue(config->vdev, VIRTQ_CONTROL_TX);
+		item->pending = false;
+	}
+}
+
 static void virtconsole_send_control_msg(const struct device *dev, uint32_t port, uint16_t event,
 					 uint16_t value)
 {
@@ -196,17 +231,33 @@ static void virtconsole_send_control_msg(const struct device *dev, uint32_t port
 			LOG_ERR("could not access virtqueue 3");
 			K_SPINLOCK_BREAK;
 		}
-		data->tx_ctlbuf[data->txctlcurrent].port = sys_cpu_to_le32(port);
-		data->tx_ctlbuf[data->txctlcurrent].event = sys_cpu_to_le16(event);
-		data->tx_ctlbuf[data->txctlcurrent].value = sys_cpu_to_le16(value);
-		struct virtq_buf vqbuf = {.addr = data->tx_ctlbuf + data->txctlcurrent,
-					  .len = sizeof(data->tx_ctlbuf[0])};
+		struct _fifo_item_virtio_console_control *item =
+			&(data->tx_ctlbuf[data->txctlcurrent]);
+		struct _virtio_console_control *msg = &(item->msg);
 
-		if (virtq_add_buffer_chain(vq, &vqbuf, 1, 1, NULL, NULL, K_FOREVER)) {
-			LOG_ERR("could not send control message");
+		if (item->pending) {
+			LOG_ERR("not enough free buffers for control message");
 			K_SPINLOCK_BREAK;
 		}
-		virtio_notify_virtqueue(config->vdev, VIRTQ_CONTROL_TX);
+		msg->port = sys_cpu_to_le32(port);
+		msg->event = sys_cpu_to_le16(event);
+		msg->value = sys_cpu_to_le16(value);
+		struct virtq_buf vqbuf = {.addr = msg, .len = sizeof(*msg)};
+
+		int ret = virtq_add_buffer_chain(vq, &vqbuf, 1, 1, virtconsole_control_tx_flush,
+						 data, K_NO_WAIT);
+
+		if (ret == -EBUSY) {
+			/* put in FIFO to be sent later, mark buffer */
+			/* as occupied to prevent overwriting */
+			k_fifo_put(&data->tx_ctlfifo, data->tx_ctlbuf + data->txctlcurrent);
+			item->pending = true;
+		} else if (ret) {
+			LOG_ERR("could not send control message");
+			K_SPINLOCK_BREAK;
+		} else {
+			virtio_notify_virtqueue(config->vdev, VIRTQ_CONTROL_TX);
+		}
 		data->txctlcurrent =
 			(data->txctlcurrent + 1) % CONFIG_UART_VIRTIO_CONSOLE_TX_CONTROL_BUFSIZE;
 	}
@@ -499,6 +550,7 @@ static int virtconsole_init(const struct device *dev)
 	virtio_finalize_init(config->vdev);
 #ifdef CONFIG_UART_VIRTIO_CONSOLE_F_MULTIPORT
 	if (multiport) {
+		k_fifo_init(&data->tx_ctlfifo);
 		for (int i = 0; i < CONFIG_UART_VIRTIO_CONSOLE_RX_CONTROL_BUFSIZE; i++) {
 			data->ctl_cb_data[i].data = data;
 			data->ctl_cb_data[i].buf_no = i;
