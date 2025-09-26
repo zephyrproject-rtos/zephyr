@@ -173,6 +173,13 @@
 			compatible = "sifli,sf32lb-pmuc", "syscon";
 			reg = <0x500ca000 0x1000>;
 		};
+
+		rtc: rtc@500cb000 {
+			compatible = "sifli,sf32lb-rtc";
+			reg = <0x500cb000 0x1000>;
+			interrupts = <49 0>;
+			status = "disabled";
+		};
 	};
 };
 
