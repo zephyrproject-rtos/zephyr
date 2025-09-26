@@ -23,6 +23,7 @@ source "drivers/sdhc/Kconfig.max32"
 source "drivers/sdhc/Kconfig.ambiq"
 source "drivers/sdhc/Kconfig.xlnx"
 source "drivers/sdhc/Kconfig.stm32"
+source "drivers/sdhc/Kconfig.ti"
 
 config SDHC_INIT_PRIORITY
 	int "SDHC driver init priority"
