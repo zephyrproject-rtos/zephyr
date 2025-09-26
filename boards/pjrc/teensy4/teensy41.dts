@@ -18,45 +18,44 @@
 /delete-node/ &w25q16jvuxim;
 
 &flexspi {
-	status = "okay";
-
 	reg = <0x402a8000 0x4000>, <0x60000000 DT_SIZE_M(8)>;
+	status = "okay";
 
 	/* WINBOND flash memory*/
 	w25q64jvxgim: w25q64jvxgim@0 {
 		compatible = "nxp,imx-flexspi-nor";
-		size = <DT_SIZE_M(8 * 8)>;
 		reg = <0>;
+		size = <DT_SIZE_M(8 * 8)>;
 		spi-max-frequency = <DT_FREQ_M(133)>;
-		status = "okay";
 		jedec-id = [ef 70 17];
 
 		erase-block-size = <4096>;
 		write-block-size = <1>;
+		status = "okay";
 	};
 };
 
 &enet_mac {
-	status = "okay";
 	pinctrl-0 = <&pinmux_enet>;
 	pinctrl-names = "default";
-	nxp,unique-mac;
 	phy-connection-type = "rmii";
 	phy-handle = <&phy>;
+	nxp,unique-mac;
+	status = "okay";
 };
 
 &enet_mdio {
-	status = "okay";
 	pinctrl-0 = <&pinmux_enet_mdio>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	phy: phy@0 {
-		status = "okay";
 		compatible = "ti,dp83825";
 		reg = <0>;
 		reset-gpios = <&gpio2 14 GPIO_ACTIVE_LOW>;
 		int-gpios = <&gpio2 15 GPIO_ACTIVE_LOW>;
 		ti,interface-type = "rmii";
+		status = "okay";
 	};
 };
 
@@ -65,13 +64,13 @@
 };
 
 &usdhc1 {
-	status = "okay";
 	no-1-8-v;
 	pinctrl-0 = <&pinmux_usdhc1>;
 	pinctrl-1 = <&pinmux_usdhc1_slow>;
 	pinctrl-2 = <&pinmux_usdhc1_med>;
 	pinctrl-3 = <&pinmux_usdhc1_fast>;
 	pinctrl-names = "default", "slow", "med", "fast";
+	status = "okay";
 
 	mmc {
 		compatible = "zephyr,sdmmc-disk";

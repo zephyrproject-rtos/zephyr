@@ -13,8 +13,8 @@
 #include "ek_ra6e2-pinctrl.dtsi"
 
 / {
-	model = "Renesas EK-RA6E2";
 	compatible = "renesas,ra6e2", "renesas,ra";
+	model = "Renesas EK-RA6E2";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -147,9 +147,9 @@
 };
 
 &adc0 {
-	status = "okay";
 	pinctrl-0 = <&adc0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &dac0 {
@@ -188,8 +188,8 @@
 		#size-cells = <1>;
 
 		storage_partition: partition@0 {
-			label = "storage";
 			reg = <0X0 DT_SIZE_K(4)>;
+			label = "storage";
 		};
 	};
 };
@@ -206,9 +206,9 @@
 	at25sf128a: qspi-nor-flash@60000000 {
 		compatible = "renesas,ra-qspi-nor";
 		reg = <0x60000000 DT_SIZE_M(16)>;
-		status = "okay";
 		write-block-size = <1>;
 		erase-block-size = <4096>;
+		status = "okay";
 	};
 };
 

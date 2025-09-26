@@ -31,24 +31,22 @@
 };
 
 &mdio0 {
-	status = "okay";
-
 	pinctrl-0 = <&mdio_clk &mdio_io>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	pyh0: phy@0b {
 		compatible = "microchip,vsc8541";
 		reg = <0x0b>;
-		status = "okay";
 
 		reset-gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
 
 		microchip,interface-type = "rgmii";
+		status = "okay";
 	};
 };
 
 &eth0 {
-	status = "okay";
-
 	phy-handle = <&pyh0>;
+	status = "okay";
 };

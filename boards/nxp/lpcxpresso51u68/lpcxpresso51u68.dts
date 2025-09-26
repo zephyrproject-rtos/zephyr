@@ -11,8 +11,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "NXP LPCXPRESSO51U68 board";
 	compatible = "nxp,lpc51xxx", "nxp,lpc";
+	model = "NXP LPCXPRESSO51U68 board";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -74,28 +74,28 @@
 };
 
 &flexcomm0 {
-	status = "okay";
 	compatible = "nxp,lpc-usart";
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_flexcomm0_uart>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &flexcomm4 {
-	status = "okay";
 	compatible = "nxp,lpc-i2c";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	pinctrl-0 = <&pinmux_flexcomm4_i2c>;
 	pinctrl-names = "default";
 	#address-cells = <1>;
 	#size-cells = <0>;
+	status = "okay";
 };
 
 &flexcomm5 {
-	status = "okay";
 	compatible = "nxp,lpc-spi";
 	pinctrl-0 = <&pinmux_flexcomm5_spi>;
 	pinctrl-names = "default";
 	#address-cells = <1>;
 	#size-cells = <0>;
+	status = "okay";
 };

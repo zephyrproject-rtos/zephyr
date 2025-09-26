@@ -22,7 +22,6 @@
 	status = "okay";
 
 	otm8009a: otm8009a@0 {
-		status = "okay";
 		compatible = "orisetech,otm8009a";
 		reg = <0x0>;
 		height = <800>;
@@ -32,14 +31,15 @@
 		data-lanes = <2>;
 		pixel-format = <MIPI_DSI_PIXFMT_RGB888>;
 		rotation = <90>;
+		status = "okay";
 	};
 };
 
 &zephyr_lcd_controller {
-	status = "okay";
 	width = <800>;
 	height = <480>;
 	pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
+	status = "okay";
 
 	/* orisetech, otm8009a */
 	display-timings {

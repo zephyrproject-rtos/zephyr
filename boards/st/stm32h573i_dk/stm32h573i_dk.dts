@@ -15,8 +15,8 @@
 #include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
 
 / {
-	model = "STMicroelectronics STM32H573I DISCOVERY KIT board";
 	compatible = "st,stm32h573i-dk";
+	model = "STMicroelectronics STM32H573I DISCOVERY KIT board";
 
 	chosen {
 		zephyr,console = &usart1;
@@ -246,9 +246,9 @@
 	status = "okay";
 
 	pwm2: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim2_ch4_pa3>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
@@ -257,9 +257,9 @@
 	status = "okay";
 
 	pwm3: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim3_ch2_pb5>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
@@ -272,7 +272,6 @@
 };
 
 &mac {
-	status = "okay";
 	pinctrl-0 = <&eth_rxd0_pc4
 		     &eth_rxd1_pc5
 		     &eth_ref_clk_pa1
@@ -283,12 +282,13 @@
 	pinctrl-names = "default";
 	phy-connection-type = "rmii";
 	phy-handle = <&eth_phy>;
+	status = "okay";
 };
 
 &mdio {
-	status = "okay";
 	pinctrl-0 = <&eth_mdio_pa2 &eth_mdc_pc1>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	eth_phy: ethernet-phy@0 {
 		compatible = "ethernet-phy";
@@ -304,14 +304,14 @@
 
 		/* Set the partitions with first MB to make use of the whole Bank1 */
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(64)>;
+			label = "mcuboot";
 		};
 
 		/* Set 64KB of storage at the end of Bank1 */
 		storage_partition: partition@f0000 {
-			label = "storage";
 			reg = <0x000f0000 DT_SIZE_K(64)>;
+			label = "storage";
 		};
 	};
 };
@@ -393,18 +393,18 @@
 			#size-cells = <1>;
 
 			slot0_partition: partition@0 {
-				label = "image-0";
 				reg = <0x00000000 DT_SIZE_M(16)>;
+				label = "image-0";
 			};
 
 			slot1_partition: partition@1000000 {
-				label = "image-1";
 				reg = <0x01000000 DT_SIZE_M(16)>;
+				label = "image-1";
 			};
 
 			scratch_partition: partition@2000000 {
-				label = "image-scratch";
 				reg = <0x02000000 DT_SIZE_M(24)>;
+				label = "image-scratch";
 			};
 		};
 	};

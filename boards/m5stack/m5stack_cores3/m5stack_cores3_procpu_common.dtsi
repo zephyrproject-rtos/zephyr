@@ -46,24 +46,24 @@
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &uart1 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart1_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &uart2 {
-	status = "disabled";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart2_default>;
 	pinctrl-names = "default";
+	status = "disabled";
 };
 
 &gpio0 {
@@ -75,10 +75,10 @@
 };
 
 &i2c0 {
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	axp2101@34 {
 		compatible = "x-powers,axp2101";
@@ -163,8 +163,8 @@
 
 		axp2101_led: led {
 			compatible = "x-powers,axp2101-led";
-			status = "okay";
 			x-powers,mode = "by-reg";
+			status = "okay";
 		};
 
 		fuel_gauge: fuel_gauge {
@@ -193,37 +193,37 @@
 	};
 
 	ft6336_touch: ft5336@38 {
-		status = "okay";
 		compatible = "focaltech,ft5336";
 		reg = <0x38>;
 		int-gpios = <&aw9523b_gpio 10 GPIO_ACTIVE_LOW>;
 		reset-gpios = <&aw9523b_gpio 0 GPIO_ACTIVE_LOW>;
+		status = "okay";
 	};
 };
 
 &i2c1 {
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	pinctrl-0 = <&i2c1_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &spi2 {
-	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
-	status = "okay";
 	pinctrl-0 = <&spim2_default>;
 	pinctrl-names = "default";
 	clock-frequency = <20000000>;
 	cs-gpios = <&gpio0 3 GPIO_ACTIVE_LOW>, /* LCD     */
 		   <&gpio0 4 GPIO_ACTIVE_LOW>; /* TF-CARD */
+	status = "okay";
+	status = "okay";
 
 	sd0: sd@1 {
 		compatible = "zephyr,sdhc-spi-slot";
 		reg = <1>;
-		status = "okay";
 		spi-max-frequency = <20000000>;
+		status = "okay";
 
 		mmc {
 			compatible = "zephyr,sdmmc-disk";
@@ -234,9 +234,9 @@
 };
 
 &twai {
-	status = "disabled";
 	pinctrl-0 = <&twai_default>;
 	pinctrl-names = "default";
+	status = "disabled";
 };
 
 &wdt0 {

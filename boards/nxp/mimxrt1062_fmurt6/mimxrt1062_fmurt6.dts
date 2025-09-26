@@ -12,8 +12,8 @@
 #include <freq.h>
 
 / {
-	model = "NXP MIMXRT1062 FMURT6 board";
 	compatible = "nxp,mimxrt1062";
+	model = "NXP MIMXRT1062 FMURT6 board";
 
 	aliases {
 		led0 = &green_led;
@@ -109,9 +109,9 @@
 };
 
 &flexcan1 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_flexcan1>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	can-transceiver {
 		max-bitrate = <5000000>;
@@ -119,9 +119,9 @@
 };
 
 &flexcan2 {
-	status = "disabled";
 	pinctrl-0 = <&pinmux_flexcan2>;
 	pinctrl-names = "default";
+	status = "disabled";
 
 	can-transceiver {
 		max-bitrate = <5000000>;
@@ -129,9 +129,9 @@
 };
 
 &flexcan3 {
-	status = "disabled";
 	pinctrl-0 = <&pinmux_flexcan3>;
 	pinctrl-names = "default";
+	status = "disabled";
 
 	can-transceiver {
 		max-bitrate = <5000000>;
@@ -175,13 +175,13 @@
 };
 
 &adc1 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_adc1>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &flexspi {
-	status = "okay";
+	reg = <0x402a8000 0x4000>, <0x60000000 DT_SIZE_M(64)>;
 	ahb-prefetch;
 	ahb-read-addr-opt;
 	ahb-bufferable;
@@ -189,12 +189,12 @@
 	sck-differential-clock;
 	combination-mode;
 	rx-clock-source = <3>;
-	reg = <0x402a8000 0x4000>, <0x60000000 DT_SIZE_M(64)>;
+	status = "okay";
 
 	s26ks512s0: s26ks512s@0 {
 		compatible = "nxp,imx-flexspi-hyperflash";
-		size = <DT_SIZE_M(64*8)>;
 		reg = <0>;
+		size = <DT_SIZE_M(64*8)>;
 		spi-max-frequency = <DT_FREQ_M(166)>;
 		word-addressable;
 		cs-interval-unit = <1>;
@@ -205,9 +205,9 @@
 		column-space = <3>;
 		ahb-write-wait-unit = <2>;
 		ahb-write-wait-interval = <20>;
-		status = "okay";
 		erase-block-size = <DT_SIZE_K(256)>;
 		write-block-size = <16>;
+		status = "okay";
 
 		partitions {
 			compatible = "fixed-partitions";
@@ -219,38 +219,38 @@
 			 * to the flash memory sector size of 256KB.
 			 */
 			boot_partition: partition@0 {
-				label = "mcuboot";
 				reg = <0x00000000 DT_SIZE_K(256)>;
+				label = "mcuboot";
 			};
 
 			slot0_partition: partition@40000 {
-				label = "image-0";
 				reg = <0x00040000 DT_SIZE_M(3)>;
+				label = "image-0";
 			};
 
 			slot1_partition: partition@340000 {
-				label = "image-1";
 				reg = <0x00340000 DT_SIZE_M(3)>;
+				label = "image-1";
 			};
 
 			storage_partition: partition@640000 {
-				label = "storage";
 				reg = <0x00640000 (DT_SIZE_M(58) - DT_SIZE_K(256))>;
+				label = "storage";
 			};
 		};
 	};
 };
 
 &lpi2c1 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpi2c1>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &lpi2c2 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpi2c2>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	bmp388: bmp388@76 {
 		compatible = "bosch,bmp388";
@@ -260,73 +260,72 @@
 };
 
 &lpi2c4 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpi2c2>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	bmm150: bmm150@10 {
 		compatible = "bosch,bmm150";
-		status = "disabled";
 		reg = <0x10>;
+		status = "disabled";
 	};
 };
 
 &lpuart7 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_lpuart7>;
 	pinctrl-1 = <&pinmux_lpuart7_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &lpuart2 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_lpuart2>;
 	pinctrl-1 = <&pinmux_lpuart2_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &lpuart3 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_lpuart3>;
 	pinctrl-1 = <&pinmux_lpuart3_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &lpuart5 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_lpuart5>;
 	pinctrl-1 = <&pinmux_lpuart5_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &lpspi1 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpspi1>;
 	pinctrl-names = "default";
 	cs-gpios = <&gpio3 23 GPIO_ACTIVE_LOW>;
 	clock-frequency = <DT_FREQ_M(10)>;
+	status = "okay";
 };
 
 &lpspi2 {
-	status = "disabled";
 	pinctrl-0 = <&pinmux_lpspi2>;
 	pinctrl-names = "default";
 	clock-frequency = <DT_FREQ_M(1)>;
+	status = "disabled";
 
 	ism330dhcx: ism330dhcx@0 {
 		compatible = "st,ism330dhcx";
-		status = "disabled";
-		spi-max-frequency = <DT_FREQ_M(1)>;
 		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(1)>;
+		status = "disabled";
 	};
 };
 
 &lpspi3 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpspi3>;
 	pinctrl-names = "default";
 	/* Accelerometer */
@@ -335,62 +334,63 @@
 		   <&gpio2 26 GPIO_ACTIVE_LOW>;
 
 	clock-frequency = <DT_FREQ_M(10)>;
+	status = "okay";
 };
 
 &flexpwm2_pwm0 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm_fmu_ch1>;
 	pinctrl-names = "default";
 	nxp,prescaler = <64>;
+	status = "okay";
 };
 
 &flexpwm2_pwm1 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm_fmu_ch2>;
 	pinctrl-names = "default";
 	nxp,prescaler = <64>;
+	status = "okay";
 };
 
 &flexpwm2_pwm2 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm_fmu_ch3>;
 	pinctrl-names = "default";
 	nxp,prescaler = <64>;
+	status = "okay";
 };
 
 &flexpwm2_pwm3 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm_fmu_ch4>;
 	pinctrl-names = "default";
 	nxp,prescaler = <64>;
+	status = "okay";
 };
 
 &flexpwm3_pwm2 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm_fmu_ch5>;
 	pinctrl-names = "default";
 	nxp,prescaler = <64>;
+	status = "okay";
 };
 
 &flexpwm3_pwm0 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm_fmu_ch6>;
 	pinctrl-names = "default";
 	nxp,prescaler = <64>;
+	status = "okay";
 };
 
 &flexpwm4_pwm2 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm_fmu_ch7>;
 	pinctrl-names = "default";
 	nxp,prescaler = <64>;
+	status = "okay";
 };
 
 &flexpwm4_pwm0 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm_fmu_ch8>;
 	pinctrl-names = "default";
 	nxp,prescaler = <64>;
+	status = "okay";
 };
 
 &enet2 {
@@ -400,16 +400,16 @@
 &enet2_mac {
 	pinctrl-0 = <&pinmux_enet>;
 	pinctrl-names = "default";
-	zephyr,random-mac-address;
 	phy-connection-type = "rmii";
 	phy-handle = <&phy>;
+	zephyr,random-mac-address;
 	status = "okay";
 };
 
 &enet2_mdio {
-	status = "okay";
 	pinctrl-0 = <&pinmux_enet>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	phy: phy@0 {
 		compatible = "ethernet-phy";
@@ -423,7 +423,6 @@ zephyr_udc0: &usb1 {
 };
 
 &usdhc1 {
-	status = "okay";
 	power-delay-ms = <1000>;
 	pwr-gpios = <&gpio1 5 GPIO_ACTIVE_HIGH>;
 	cd-gpios = <&gpio2 28 GPIO_ACTIVE_LOW>;
@@ -432,6 +431,7 @@ zephyr_udc0: &usb1 {
 	pinctrl-2 = <&pinmux_usdhc1_med>;
 	pinctrl-3 = <&pinmux_usdhc1_fast>;
 	pinctrl-names = "default", "slow", "med", "fast";
+	status = "okay";
 
 	sdmmc {
 		compatible = "zephyr,sdmmc-disk";

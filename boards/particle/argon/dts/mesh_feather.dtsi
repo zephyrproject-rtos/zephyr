@@ -152,11 +152,11 @@ feather_adc: &adc { /* feather ADC */
 
 arduino_i2c: &i2c0 { /* feather I2C */
 	compatible = "nordic,nrf-twi";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-1 = <&i2c0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 feather_i2c: &i2c0 {};
@@ -165,11 +165,11 @@ feather_i2c: &i2c0 {};
 
 &spi2 { /* dedicated MX25L */
 	compatible = "nordic,nrf-spi";
-	status = "okay";
 	cs-gpios = <&gpio0 17 GPIO_ACTIVE_LOW>;
 	pinctrl-0 = <&spi2_default>;
 	pinctrl-1 = <&spi2_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	mx25l32: mx25l3233f@0 {
 		compatible = "jedec,spi-nor";
@@ -193,11 +193,11 @@ feather_i2c: &i2c0 {};
 feather_serial: &uart0 { /* feather UART1 */
 	compatible = "nordic,nrf-uarte";
 	current-speed = <115200>;
-	status = "okay";
 	/* optional mesh_feather_uart1_rtscts.dtsi */
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 zephyr_udc0: &usbd {

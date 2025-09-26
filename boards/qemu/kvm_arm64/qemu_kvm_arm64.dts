@@ -10,8 +10,8 @@
 #include <arm64/qemu/qemu-virt-arm64.dtsi>
 
 / {
-	model = "QEMU AArch64 KVM";
 	compatible = "qemu,virt-arm64-kvm";
+	model = "QEMU AArch64 KVM";
 
 	psci {
 		compatible = "arm,psci-0.2";
@@ -35,6 +35,6 @@
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 };

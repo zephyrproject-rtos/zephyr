@@ -8,8 +8,8 @@
 #include "esp32s3_luatos_core.dtsi"
 
 / {
-	model = "ESP32S3 Luatos Core PROCPU";
 	compatible = "espressif,esp32s3";
+	model = "ESP32S3 Luatos Core PROCPU";
 
 	aliases {
 		led0 = &led0;

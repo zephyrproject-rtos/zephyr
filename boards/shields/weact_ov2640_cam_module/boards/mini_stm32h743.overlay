@@ -30,11 +30,11 @@
 #define MCO1_PRE_DIV_4 4
 
 &mco1 {
-	status = "okay";
 	clocks = <&rcc STM32_SRC_HSI48 MCO1_SEL(MCO1_SEL_HSI48)>;
 	prescaler = <MCO1_PRE(MCO1_PRE_DIV_4)>;
 	pinctrl-0 = <&rcc_mco_1_pa8>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &zephyr_camera_i2c {

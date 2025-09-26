@@ -12,8 +12,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Analog Devices AD-SWIOT1L-SL";
 	compatible = "adi,ad_swiot1l_sl";
+	model = "Analog Devices AD-SWIOT1L-SL";
 
 	chosen {
 		zephyr,console = &uart0;

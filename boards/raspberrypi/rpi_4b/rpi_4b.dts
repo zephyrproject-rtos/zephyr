@@ -10,8 +10,8 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 
 / {
-	model = "Raspberry Pi 4 Model B";
 	compatible = "raspberrypi,4-model-b", "brcm,bcm2838";
+	model = "Raspberry Pi 4 Model B";
 	#address-cells = <1>;
 	#size-cells = <1>;
 
@@ -40,6 +40,6 @@
 };
 
 &uart1 {
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 };

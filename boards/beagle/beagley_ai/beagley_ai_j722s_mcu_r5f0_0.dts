@@ -12,8 +12,8 @@
 #include <freq.h>
 
 / {
-	model = "BeagleBoard.org BeagleY-AI";
 	compatible = "beagle,beagley-ai";
+	model = "BeagleBoard.org BeagleY-AI";
 
 	chosen {
 		zephyr,sram = &atcm;
@@ -54,10 +54,10 @@
 };
 
 &uart1 {
-	status = "okay";
 	pinctrl-0 = <&uart1_tx_default &uart1_rx_default>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
+	status = "okay";
 };
 
 &systick_timer {

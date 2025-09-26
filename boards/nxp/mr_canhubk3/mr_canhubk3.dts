@@ -14,8 +14,8 @@
 #include <zephyr/dt-bindings/sensor/qdec_nxp_s32.h>
 
 / {
-	model = "NXP MR-CANHUBK3";
 	compatible = "nxp,mr_canhubk3";
+	model = "NXP MR-CANHUBK3";
 
 	chosen {
 		zephyr,sram = &sram0_1;
@@ -119,7 +119,6 @@
 		pinctrl-0 = <&qdec_s32>;
 		pinctrl-names = "default";
 		micro-ticks-per-rev = <685440000>;
-		status = "okay";
 		trgmux = <&trgmux>;
 		trgmux-io-config = <0 TRGMUX_IP_OUTPUT_EMIOS0_CH5_9_IPP_IND_CH6
 				    TRGMUX_IP_INPUT_LCU1_LC0_OUT_I2>,
@@ -144,6 +143,7 @@
 		 * used by the emios pwm
 		 */
 		emios-channels = <6 7>;
+		status = "okay";
 	};
 
 	gpio_keys {
@@ -222,13 +222,13 @@
 		#size-cells = <1>;
 
 		ivt_header: partition@0 {
-			label = "ivt-header";
 			reg = <0x00000000 0x100>;
+			label = "ivt-header";
 		};
 
 		code_partition: partition@100 {
-			label = "code-partition";
 			reg = <0x00000100 (DT_SIZE_K(4048) - 0x100)>;
+			label = "code-partition";
 		};
 	};
 };
@@ -364,8 +364,8 @@
 			#size-cells = <1>;
 
 			storage_partition: partition@0 {
-				label = "storage";
 				reg = <0x0 0x100000>;
+				label = "storage";
 			};
 		};
 	};
@@ -492,10 +492,10 @@
 
 	phy: ethernet-phy@12 {
 		compatible = "nxp,tja1103";
-		status = "okay";
 		reg = <0x12>;
 		int-gpios = <&gpiod_l 5 GPIO_ACTIVE_LOW>;
 		master-slave = "slave";
+		status = "okay";
 	};
 };
 

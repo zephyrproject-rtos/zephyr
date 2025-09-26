@@ -4,8 +4,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Ambiq Apollo510 evaluation board";
 	compatible = "ambiq,apollo510_evb";
+	model = "Ambiq Apollo510 evaluation board";
 
 	chosen {
 		zephyr,itcm = &itcm;
@@ -126,8 +126,8 @@
 };
 
 &rtc0 {
-	status = "disabled";
 	clock = "XTAL";
+	status = "disabled";
 };
 
 &uart0 {
@@ -151,23 +151,22 @@
 	pinctrl-1 = <&mspi0_sleep>;
 	pinctrl-2 = <&mspi0_psram>;
 	pinctrl-names = "default", "sleep", "psram";
-	status = "disabled";
-	zephyr,pm-device-runtime-auto;
 
 	ce-gpios = <&gpio192_223 7 GPIO_ACTIVE_LOW>;
 
 	cmdq-buffer-location = "SRAM_NO_CACHE";
 	cmdq-buffer-size = <256>;
 
-	ambiq,apmemory;
-
 	dqs-support;
+	zephyr,pm-device-runtime-auto;
+
+	ambiq,apmemory;
+	status = "disabled";
 
 	aps51216ba: aps_z8@0 {
 		compatible = "ambiq,mspi-device", "mspi-aps-z8";
-		size = <DT_SIZE_M(512)>;
 		reg = <0>;
-		status = "disabled";
+		size = <DT_SIZE_M(512)>;
 		mspi-max-frequency = <125000000>;
 		mspi-io-mode = "MSPI_IO_MODE_HEX_8_8_16";
 		mspi-data-rate = "MSPI_DATA_RATE_S_D_D";
@@ -184,6 +183,7 @@
 		ambiq,timing-config-mask = <0x62>;
 		ambiq,timing-config = <8 7 1 0 0 3 10>;
 		zephyr,pm-device-runtime-auto;
+		status = "disabled";
 	};
 };
 
@@ -192,8 +192,6 @@
 	pinctrl-1 = <&mspi1_sleep>;
 	pinctrl-2 = <&mspi1_flash>;
 	pinctrl-names = "default", "sleep", "flash";
-	status = "okay";
-	zephyr,pm-device-runtime-auto;
 
 	ce-gpios = <&gpio32_63 21 GPIO_ACTIVE_LOW>;
 
@@ -201,12 +199,13 @@
 	cmdq-buffer-size = <256>;
 
 	dqs-support;
+	zephyr,pm-device-runtime-auto;
+	status = "okay";
 
 	is25wx064: is25wx064@0 {
 		compatible = "ambiq,mspi-device", "mspi-is25xX0xx";
-		size = <DT_SIZE_M(64)>;
 		reg = <0>;
-		status = "disabled";
+		size = <DT_SIZE_M(64)>;
 		mspi-max-frequency = <96000000>;
 		mspi-io-mode = "MSPI_IO_MODE_OCTAL_1_8_8";
 		mspi-data-rate = "MSPI_DATA_RATE_SINGLE";
@@ -222,6 +221,7 @@
 		ce-break-config = <0 0>;
 		ambiq,timing-config-mask = <0x62>;
 		ambiq,timing-config = <0 16 1 0 0 5 20>;
+		status = "disabled";
 	};
 };
 

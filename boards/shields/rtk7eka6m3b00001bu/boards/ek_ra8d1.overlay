@@ -64,10 +64,10 @@
 };
 
 &iic1 {
-	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
 	clock-frequency = <DT_FREQ_K(100)>;
 	pinctrl-0 = <&iic1_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };

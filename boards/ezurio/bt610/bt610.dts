@@ -11,8 +11,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Ezurio BT610 Sensor";
 	compatible = "ezurio,bt610";
+	model = "Ezurio BT610 Sensor";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -131,17 +131,17 @@
 };
 
 &pwm0 {
-	status = "okay";
 	pinctrl-0 = <&pwm0_default>;
 	pinctrl-1 = <&pwm0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &pwm1 {
-	status = "okay";
 	pinctrl-0 = <&pwm1_default>;
 	pinctrl-1 = <&pwm1_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &adc {
@@ -168,28 +168,28 @@
 &uart0 {
 	compatible = "nordic,nrf-uarte";
 	current-speed = <115200>;
-	status = "okay";
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &uart1 {
 	compatible = "nordic,nrf-uarte";
 	current-speed = <115200>;
-	status = "okay";
 	pinctrl-0 = <&uart1_default>;
 	pinctrl-1 = <&uart1_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &i2c0 {
 	compatible = "nordic,nrf-twi";
-	status = "okay";
 
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-1 = <&i2c0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	gpio_exp0: tca9538@70 {
 		compatible = "ti,tca9538";
@@ -203,19 +203,19 @@
 
 &spi1 {
 	compatible = "nordic,nrf-spi";
-	status = "okay";
 	cs-gpios = <&gpio0 25 0>,
 		   <&gpio0 31 0>;
 	pinctrl-0 = <&spi1_default>;
 	pinctrl-1 = <&spi1_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &qspi {
-	status = "okay";
 	pinctrl-0 = <&qspi_default>;
 	pinctrl-1 = <&qspi_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	mx25r64: mx25r6435f@0 {
 		compatible = "nordic,qspi-nor";
@@ -247,14 +247,14 @@
 
 		/* 96K */
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 0x00018000>;
+			label = "mcuboot";
 		};
 
 		/* 896K */
 		slot0_partition: partition@18000 {
-			label = "image-0";
 			reg = <0x00018000 0x000E0000>;
+			label = "image-0";
 		};
 
 		/*
@@ -267,8 +267,8 @@
 		 * if enabled. 32K
 		 */
 		storage_partition: partition@f8000 {
-			label = "storage";
 			reg = <0x000f8000 0x00008000>;
+			label = "storage";
 		};
 	};
 };
@@ -281,26 +281,26 @@
 
 		/* 896K */
 		slot1_partition: partition@0 {
-			label = "image-1";
 			reg = <0x00000000 0x000E0000>;
+			label = "image-1";
 		};
 
 		/* 16K */
 		scratch_partition: partition@E0000 {
-			label = "image-scratch";
 			reg = <0x000E0000 0x00004000>;
+			label = "image-scratch";
 		};
 
 		/* 112K */
 		customer_partition: partition@E4000 {
-			label = "customer-storage";
 			reg = <0x000E4000 0x0001C000>;
+			label = "customer-storage";
 		};
 
 		/* 7MB */
 		lfs_partition: partition@100000 {
-			label = "lfs_storage";
 			reg = <0x00100000 0x00700000>;
+			label = "lfs_storage";
 		};
 	};
 };

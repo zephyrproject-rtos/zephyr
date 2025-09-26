@@ -11,8 +11,8 @@
 #include <../boards/nordic/nrf54l15dk/nrf54l15dk_nrf54l_05_10_15-pinctrl.dtsi>
 
 / {
-	model = "Nordic NRF54L15 BSIM NRF54L15 Application";
 	compatible = "bsim,nrf54l15-bsim-nrf54l15-cpuapp", "bsim,nrf54";
+	model = "Nordic NRF54L15 BSIM NRF54L15 Application";
 
 	chosen {
 		zephyr,console = &uart20;
@@ -55,8 +55,8 @@
 	};
 
 	rng: rng {
-		status = "okay";
 		compatible = "nordic,nrf-cracen-ctrdrbg";
+		status = "okay";
 	};
 
 	psa_rng: psa-rng {
@@ -78,8 +78,8 @@
 		#size-cells = <1>;
 
 		storage_partition: partition@0 {
-			label = "storage";
 			reg = <0x0 DT_SIZE_K(500)>;
+			label = "storage";
 		};
 	};
 };
@@ -89,11 +89,11 @@
 };
 
 &uart20 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart20_default>;
 	pinctrl-1 = <&uart20_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &uart30 {

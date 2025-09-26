@@ -12,8 +12,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "STMicroelectronics STM32H7B3I DISCOVERY KIT board";
 	compatible = "st,stm32h7b3i-dk";
+	model = "STMicroelectronics STM32H7B3I DISCOVERY KIT board";
 
 	chosen {
 		zephyr,console = &usart1;
@@ -56,8 +56,8 @@
 
 	sdram2: sdram@d0000000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
-		device_type = "memory";
 		reg = <0xd0000000 DT_SIZE_M(16)>;
+		device_type = "memory";
 		zephyr,memory-region = "SDRAM2";
 		/* Frame buffer memory cache will cause screen flickering. */
 		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)>;
@@ -208,11 +208,11 @@
 	status = "okay";
 
 	sdram {
-		status = "okay";
 		power-up-delay = <100>;
 		num-auto-refresh = <8>;
 		mode-register = <0x220>;
 		refresh-rate = <0x603>;
+		status = "okay";
 
 		bank@1 {
 			reg = <1>;
@@ -251,11 +251,15 @@
 	disp-on-gpios = <&gpioa 2 GPIO_ACTIVE_HIGH>;
 	bl-ctrl-gpios = <&gpioa 1 GPIO_ACTIVE_HIGH>;
 	ext-sdram = <&sdram2>;
-	status = "okay";
 
 	width = <480>;
 	height = <272>;
 	pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+
+	def-back-color-red = <0xFF>;
+	def-back-color-green = <0xFF>;
+	def-back-color-blue = <0xFF>;
+	status = "okay";
 
 	display-timings {
 		compatible = "zephyr,panel-timing";
@@ -270,10 +274,6 @@
 		hfront-porch = <8>;
 		vfront-porch = <4>;
 	};
-
-	def-back-color-red = <0xFF>;
-	def-back-color-green = <0xFF>;
-	def-back-color-blue = <0xFF>;
 };
 
 &octospi1 {
@@ -302,8 +302,8 @@
 			#size-cells = <1>;
 
 			partition@0 {
-				label = "nor";
 				reg = <0x00000000 DT_SIZE_M(4)>;
+				label = "nor";
 			};
 		};
 	};

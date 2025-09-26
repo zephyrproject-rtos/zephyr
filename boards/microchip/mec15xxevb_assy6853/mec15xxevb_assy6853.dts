@@ -9,8 +9,8 @@
 #include "mec15xxevb_assy6853-pinctrl.dtsi"
 
 / {
-	model = "Microchip MEC15XXEVB_ASSY6853 evaluation board";
 	compatible = "microchip,mec15xxevb_assy6853", "microchip,mec1501hsz";
+	model = "Microchip MEC15XXEVB_ASSY6853 evaluation board";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -65,36 +65,36 @@
 };
 
 &uart2 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart2_tx_gpio146 &uart2_rx_gpio145>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &adc0 {
-	status = "okay";
 	pinctrl-0 = <&adc04_gpio204 &adc05_gpio205
 		     &adc06_gpio206 &adc07_gpio207
 		     &vref2_adc_gpio067>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &i2c_smb_0 {
-	status = "okay";
 	port-sel = <0>;
 	sda-gpios = <MCHP_GPIO_DECODE_003 0>;
 	scl-gpios = <MCHP_GPIO_DECODE_004 0>;
 	pinctrl-0 = <&i2c00_scl_gpio004 &i2c00_sda_gpio003>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &i2c_smb_1 {
-	status = "okay";
 	port-sel = <1>;
 	sda-gpios = <MCHP_GPIO_DECODE_130 0>;
 	scl-gpios = <MCHP_GPIO_DECODE_131 0>;
 	pinctrl-0 = <&i2c01_scl_gpio131 &i2c01_sda_gpio130>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	pca9555@26 {
 		compatible = "nxp,pca95xx";
@@ -114,16 +114,15 @@
 };
 
 &i2c_smb_2 {
-	status = "okay";
 	port-sel = <7>;
 	sda-gpios = <MCHP_GPIO_DECODE_012 0>;
 	scl-gpios = <MCHP_GPIO_DECODE_013 0>;
 	pinctrl-0 = <&i2c07_scl_gpio013 &i2c07_sda_gpio012>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &espi0 {
-	status = "okay";
 	io-girq = <19>;
 	vw-girqs = <24 25>;
 	pc-girq = <15>;
@@ -132,31 +131,30 @@
 		     &espi_io0_gpio070 &espi_io1_gpio071
 		     &espi_io2_gpio072 &espi_io3_gpio073>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &ps2_0 {
-	status = "okay";
 	pinctrl-0 = <&ps2_clk0b_gpio007 &ps2_dat0b_gpio010>;
 	pinctrl-1 = <&ps2_clk0b_gpio007_sleep &ps2_dat0b_gpio010_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &ps2_1 {
-	status = "okay";
 	pinctrl-0 = <&ps2_clk1b_gpio154 &ps2_dat1b_gpio155>;
 	pinctrl-1 = <&ps2_clk1b_gpio154_sleep &ps2_dat1b_gpio155_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &pwm0 {
-	status = "okay";
 	pinctrl-0 = <&pwm0_gpio053>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &kbd0 {
-	status = "okay";
-
 	pinctrl-0 = <&kso00_gpio040 &kso01_gpio045 &kso02_gpio046 &kso12_gpio125
 		     &kso13_gpio126 &kso03_gpio047 &kso04_gpio107 &kso05_gpio112
 		     &kso06_gpio113 &kso14_gpio152 &kso15_gpio151 &kso07_gpio120
@@ -174,17 +172,17 @@
 	pinctrl-names = "default", "sleep";
 	row-size = <8>;
 	col-size = <16>;
+	status = "okay";
 };
 
 &peci0 {
-	status = "okay";
 	pinctrl-0 = <&peci_dat_gpio042 &vref_vtt_gpio044>;
 	pinctrl-1 = <&peci_dat_gpio042_sleep &vref_vtt_gpio044_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &spi0 {
-	status = "okay";
 	port-sel = <0>;
 	chip-select = <0>;
 	lines = <1>;
@@ -193,10 +191,11 @@
 		     &shd_io0_gpio223
 		     &shd_io1_gpio224>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &tach0 {
-	status = "okay";
 	pinctrl-0 = <&ict0_tach0_gpio050>;
 	pinctrl-names = "default";
+	status = "okay";
 };

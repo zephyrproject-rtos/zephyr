@@ -12,8 +12,8 @@
 #include "seeed_xiao_connector.dtsi"
 
 / {
-	model = "Seeed XIAO MG24";
 	compatible = "seeed,xiao_mg24", "silabs,efr32mg24";
+	model = "Seeed XIAO MG24";
 
 	chosen {
 		zephyr,bt-hci = &bt_hci_silabs;

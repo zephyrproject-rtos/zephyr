@@ -12,8 +12,8 @@
 #include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
 
 / {
-	model = "FANKE FK750M1-VBT6 board";
 	compatible = "fanke,fk750m1-vbt6";
+	model = "FANKE FK750M1-VBT6 board";
 
 	chosen {
 		zephyr,console = &usart1;
@@ -45,8 +45,8 @@
 
 		st7789v_240x240: st7789v@0 {
 			compatible = "sitronix,st7789v";
-			mipi-max-frequency = <20000000>;
 			reg = <0>;
+			mipi-max-frequency = <20000000>;
 			width = <240>;
 			height = <240>;
 			x-offset = <0>;
@@ -125,9 +125,9 @@
 		size = <DT_SIZE_M(64)>; /* 64 Mbits */
 		qspi-max-frequency = <40000000>;
 		cs-high-time = <2>; /* >= 50 ns */
-		status = "okay";
 		spi-bus-width = <4>;
 		writeoc = "PP_1_1_4";
+		status = "okay";
 
 		partitions {
 			compatible = "fixed-partitions";
@@ -135,8 +135,8 @@
 			#size-cells = <1>;
 
 			storage_partition: partition@0 {
-				label = "storage";
 				reg = <0x00000000 DT_SIZE_M(64)>;
+				label = "storage";
 			};
 		};
 	};

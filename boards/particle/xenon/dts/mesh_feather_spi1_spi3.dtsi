@@ -31,9 +31,9 @@
 
 &spi3 { /* feather SPI */
 	compatible = "nordic,nrf-spim";
-	status = "okay";
 	pinctrl-0 = <&spi3_default>;
 	pinctrl-1 = <&spi3_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 

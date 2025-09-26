@@ -11,9 +11,9 @@
 #include "feather_connector.dtsi"
 
 / {
-	model = "Adafruit Feather M0 LoRa";
 	compatible = "adafruit,feather-m0-lora", "atmel,samd21g18a",
 		     "atmel,samd21";
+	model = "Adafruit Feather M0 LoRa";
 
 	chosen {
 		zephyr,console = &sercom0;
@@ -44,7 +44,6 @@
 };
 
 &sercom0 {
-	status = "okay";
 	compatible = "atmel,sam0-uart";
 	current-speed = <115200>;
 	rxpo = <3>;
@@ -52,10 +51,10 @@
 
 	pinctrl-0 = <&sercom0_uart_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &sercom3 {
-	status = "okay";
 	compatible = "atmel,sam0-i2c";
 	clock-frequency = <I2C_BITRATE_FAST>;
 	#address-cells = <1>;
@@ -63,10 +62,10 @@
 
 	pinctrl-0 = <&sercom3_i2c_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &sercom4 {
-	status = "okay";
 	compatible = "atmel,sam0-spi";
 	#address-cells = <1>;
 	#size-cells = <0>;
@@ -77,10 +76,11 @@
 	pinctrl-names = "default";
 
 	cs-gpios = <&porta 6 GPIO_ACTIVE_LOW>;
+	status = "okay";
 
 	lora: radio@0 {
-		reg = <0>;
 		compatible = "semtech,sx1276";
+		reg = <0>;
 		reset-gpios = <&porta 8 GPIO_ACTIVE_LOW>;
 		dio-gpios = <&porta 9 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
 		spi-max-frequency = <10000000>;
@@ -95,14 +95,14 @@
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "sam-ba";
 			reg = <0x00000000 DT_SIZE_K(8)>;
+			label = "sam-ba";
 			read-only;
 		};
 
 		code_partition: partition@2000 {
-			label = "code";
 			reg = <0x2000 DT_SIZE_K(232)>;
+			label = "code";
 			read-only;
 		};
 
@@ -112,15 +112,14 @@
 		 * if enabled.
 		 */
 		storage_partition: partition@3c000 {
-			label = "storage";
 			reg = <0x0003c000 DT_SIZE_K(16)>;
+			label = "storage";
 		};
 	};
 };
 
 &usb0 {
-	status = "okay";
-
 	pinctrl-0 = <&usb_dc_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };

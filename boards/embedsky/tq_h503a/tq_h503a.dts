@@ -9,8 +9,8 @@
 #include <st/h5/stm32h503cbtx-pinctrl.dtsi>
 
 / {
-	model = "TQ H503A board";
 	compatible = "embedsky,tq-h503a";
+	model = "TQ H503A board";
 
 	#address-cells = <1>;
 	#size-cells = <1>;

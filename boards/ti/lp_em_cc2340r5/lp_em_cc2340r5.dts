@@ -15,8 +15,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "LP_EM_CC2340R5";
 	compatible = "ti,lp_em_cc2340r5";
+	model = "LP_EM_CC2340R5";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -86,10 +86,10 @@
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_rx_default &uart0_tx_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &aes {
@@ -101,12 +101,12 @@
 };
 
 &spi0 {
-	status = "okay";
 	pinctrl-0 = <&spi0_sck_default
 		     &spi0_mosi_default
 		     &spi0_miso_default
 		     &spi0_cs_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &wdt0 {
@@ -114,7 +114,6 @@
 };
 
 &adc0 {
-	status = "okay";
 	pinctrl-0 = <&adc0_ch0
 		     &adc0_ch2
 		     &adc0_ch3
@@ -122,6 +121,7 @@
 		     &adc0_ch6
 		     &adc0_ch8>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &lgpt1 {
@@ -147,9 +147,9 @@
 };
 
 &i2c0 {
-	status = "okay";
 	pinctrl-0 = <&i2c0_scl_default
 		     &i2c0_sda_default>;
 	clock-frequency = <100000>;
 	pinctrl-names = "default";
+	status = "okay";
 };

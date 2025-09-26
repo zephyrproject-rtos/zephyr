@@ -12,8 +12,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "CY8CPROTO-063-BLE PSOC™ 6 BLE Prototyping Kit";
 	compatible = "cypress,cy8cproto_063_ble", "cypress,PSOC6";
+	model = "CY8CPROTO-063-BLE PSOC™ 6 BLE Prototyping Kit";
 
 	aliases {
 		uart-5 = &uart5;
@@ -82,18 +82,18 @@
 
 uart5: &scb5 {
 	compatible = "infineon,cat1-uart";
-	status = "okay";
 	current-speed = <115200>;
 
 	/* UART pins */
 	pinctrl-0 = <&p5_1_scb5_uart_tx &p5_0_scb5_uart_rx>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 /* System clock configuration */
 &fll0 {
-	status = "okay";
 	clock-frequency = <100000000>;
+	status = "okay";
 };
 
 &clk_hf0 {

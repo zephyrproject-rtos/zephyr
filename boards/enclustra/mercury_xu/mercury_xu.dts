@@ -9,8 +9,8 @@
 #include "mercury_xu-pinctrl.dtsi"
 
 / {
-	model = "Mercury XU";
 	compatible = "enclustra,mercury_xu";
+	model = "Mercury XU";
 
 	sram0: memory@0 {
 		compatible = "mmio-sram";
@@ -25,17 +25,17 @@
 	};
 
 	fpga0: fpga {
-		status = "okay";
 		compatible = "xlnx,fpga";
+		status = "okay";
 	};
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
 	clock-frequency = <99999901>;
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &uart1 {
@@ -44,8 +44,8 @@
 };
 
 &ttc0 {
-	status = "okay";
 	clock-frequency = <5000000>;
+	status = "okay";
 };
 
 &psgpio {

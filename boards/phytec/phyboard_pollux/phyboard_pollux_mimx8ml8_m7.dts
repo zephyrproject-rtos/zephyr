@@ -11,8 +11,8 @@
 #include "phyboard_pollux-pinctrl.dtsi"
 
 / {
-	model = "phyBOARD-Pollux i.MX8MP";
 	compatible = "nxp,phyboard_pollux";
+	model = "phyBOARD-Pollux i.MX8MP";
 
 	chosen {
 		/* TCM */
@@ -58,10 +58,10 @@
  * Standard uart for the M7-Core
  */
 &uart4 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart4_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 /*

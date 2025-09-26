@@ -12,6 +12,6 @@
 #include "../common/launchxl_sky13317.dtsi"
 
 / {
-	model = "TI CC1352P7 LaunchPad";
 	compatible = "ti,lp-cc1352p7";
+	model = "TI CC1352P7 LaunchPad";
 };

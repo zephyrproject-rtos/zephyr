@@ -10,8 +10,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Atmel SAM4L WM-400 Cape Board with an Atmel SAM4LC4B SoC";
 	compatible = "peregrine,sam4l_wm400_cape", "atmel,sam4lc4b", "atmel,sam4l";
+	model = "Atmel SAM4L WM-400 Cape Board with an Atmel SAM4LC4B SoC";
 
 	aliases {
 		i2c-0 = &twim1;
@@ -76,25 +76,24 @@
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "sam-ba";
 			reg = <0x000000000 0x00004000>;
+			label = "sam-ba";
 		};
 
 		code_partition: partition@4000 {
-			label = "image";
 			reg = <0x00004000 0x0003c000>;
+			label = "image";
 		};
 	};
 };
 
 &spi0 {
-	status = "okay";
-
 	pinctrl-0 = <&spi0_default>;
 	pinctrl-names = "default";
 
 	cs-gpios = <&gpioa 13 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)
 		    &gpioa 14 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+	status = "okay";
 
 	rf2xx@0 {
 		compatible = "atmel,rf2xx";
@@ -124,8 +123,8 @@
 			#size-cells = <1>;
 
 			storage_partition: partition@0 {
-				label = "storage";
 				reg = <0x00000000 0x00100000>;
+				label = "storage";
 			};
 		};
 	};
@@ -137,8 +136,6 @@
 };
 
 &twim1 {
-	status = "okay";
-
 	pinctrl-0 = <&twi1_default>;
 	pinctrl-names = "default";
 
@@ -154,6 +151,7 @@
 	hs-data-strength-low = "0.5";
 
 	hs-master-code = <0>;
+	status = "okay";
 
 	eeprom1: eeprom@57 {
 		compatible = "atmel,at24";
@@ -166,24 +164,23 @@
 };
 
 &usart0 {
-	status = "okay";
 	current-speed = <115200>;
 
 	pinctrl-0 = <&usart0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &usart1 {
-	status = "okay";
 	current-speed = <115200>;
 
 	pinctrl-0 = <&usart1_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 zephyr_udc0: &usbc {
-	status = "okay";
-
 	pinctrl-0 = <&usbc_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };

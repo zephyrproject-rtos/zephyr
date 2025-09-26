@@ -8,8 +8,8 @@
 #include <openhwgroup/cv32a6.dtsi>
 
 / {
-	model = "Openhardwaregroup CV32A6 on Genesys 2";
 	compatible = "openhwgroup,cv32a6_genesys_2";
+	model = "Openhardwaregroup CV32A6 on Genesys 2";
 
 	chosen {
 		zephyr,console = &uart0;

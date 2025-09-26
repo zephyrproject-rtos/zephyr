@@ -13,8 +13,8 @@
 #include "esp32s3_matrix-pinctrl.dtsi"
 
 / {
-	model = "ESP32-S3-Matrix PROCPU";
 	compatible = "waveshare,esp32-s3-matrix";
+	model = "ESP32-S3-Matrix PROCPU";
 
 	aliases {
 		sw0 = &button0;
@@ -44,11 +44,11 @@
 
 	rgb_matrix: rgb-matrix {
 		compatible = "led-strip-matrix";
-		status = "okay";
 		width = <8>;
 		height = <8>;
 		circulative;
 		led-strips = <&led_strip>;
+		status = "okay";
 	};
 };
 
@@ -65,12 +65,12 @@
 };
 
 &spi2 {
-	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
 	pinctrl-0 = <&spim2_ws2812_led>;
 	pinctrl-names = "default";
 	line-idle-low;
+	status = "okay";
 
 	led_strip: ws2812@0 {
 		compatible = "worldsemi,ws2812-spi";

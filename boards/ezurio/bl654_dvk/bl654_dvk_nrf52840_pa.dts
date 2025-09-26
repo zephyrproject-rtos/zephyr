@@ -10,7 +10,6 @@
 / {
 	/* Information from Nordic SDK-Based Application Development and SKY66112 datasheet */
 	nrf_radio_fem: fem {
-		status = "okay";
 		compatible = "generic-fem-two-ctrl-pins";
 		ctx-gpios = <&gpio1 2 GPIO_ACTIVE_HIGH>;
 		crx-gpios = <&gpio1 4 GPIO_ACTIVE_HIGH>;
@@ -18,6 +17,7 @@
 		crx-settle-time-us = <5>;
 		tx-gain-db = <22>;
 		rx-gain-db = <11>;
+		status = "okay";
 	};
 };
 

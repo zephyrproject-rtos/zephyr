@@ -12,8 +12,8 @@
 #include <freq.h>
 
 / {
-	model = "NXP FRDM_MCXA266 board";
 	compatible = "nxp,mcxa266", "nxp,mcx";
+	model = "NXP FRDM_MCXA266 board";
 
 	aliases {
 		led0 = &red_led;
@@ -112,10 +112,10 @@
 };
 
 &lpuart2 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_lpuart2>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &edma0 {
@@ -123,13 +123,13 @@
 };
 
 &i3c0 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_i3c0>;
 	pinctrl-names = "default";
 
 	i2c-scl-hz = <DT_FREQ_K(400)>;
 	i3c-scl-hz = <DT_FREQ_M(4)>;
 	i3c-od-scl-hz = <DT_FREQ_K(1500)>;
+	status = "okay";
 
 	p3t1755: p3t1755@4800000236152a0090 {
 		compatible = "nxp,p3t1755";
@@ -139,15 +139,15 @@
 };
 
 &lpadc0 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpadc0>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &lpadc1 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpadc1>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &lpcmp0 {
@@ -156,21 +156,21 @@
 };
 
 &lpi2c1 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpi2c1>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &lpi2c3 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpi2c3>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &lpspi0 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpspi0>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &flash {
@@ -180,24 +180,24 @@
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(64)>;
+			label = "mcuboot";
 			read-only;
 		};
 
 		slot0_partition: partition@10000 {
-			label = "image-0";
 			reg = <0x00010000 DT_SIZE_K(400)>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@74000 {
-			label = "image-1";
 			reg = <0x00074000 DT_SIZE_K(400)>;
+			label = "image-1";
 		};
 
 		storage_partition: partition@d8000 {
-			label = "storage";
 			reg = <0x000d8000 DT_SIZE_K(112)>;
+			label = "storage";
 		};
 	};
 };

@@ -11,8 +11,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "NXP FRDM_MCXA346 board";
 	compatible = "nxp,mcxa346", "nxp,mcx";
+	model = "NXP FRDM_MCXA346 board";
 
 	aliases {
 		led0 = &red_led;
@@ -110,10 +110,10 @@
 };
 
 &lpuart2 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_lpuart2>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &edma0 {
@@ -121,15 +121,15 @@
 };
 
 &lpadc0 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpadc0>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &lpadc1 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpadc1>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &lpcmp0 {
@@ -138,21 +138,21 @@
 };
 
 &lpi2c1 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpi2c1>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &lpi2c3 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpi2c3>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &lpspi0 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpspi0>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &flash {
@@ -162,24 +162,24 @@
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(64)>;
+			label = "mcuboot";
 			read-only;
 		};
 
 		slot0_partition: partition@10000 {
-			label = "image-0";
 			reg = <0x00010000 DT_SIZE_K(400)>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@74000 {
-			label = "image-1";
 			reg = <0x00074000 DT_SIZE_K(400)>;
+			label = "image-1";
 		};
 
 		storage_partition: partition@d8000 {
-			label = "storage";
 			reg = <0x000d8000 DT_SIZE_K(112)>;
+			label = "storage";
 		};
 	};
 };

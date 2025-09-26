@@ -15,7 +15,7 @@
 };
 
 &flexspi {
-	status = "okay";
+	reg = <0x402a8000 0x4000>, <0x60000000 DT_SIZE_M(64)>;
 	ahb-prefetch;
 	ahb-read-addr-opt;
 	pinctrl-0 = <&pinmux_flexspi1>;
@@ -25,12 +25,12 @@
 	sck-differential-clock;
 	combination-mode;
 	rx-clock-source = <3>;
-	reg = <0x402a8000 0x4000>, <0x60000000 DT_SIZE_M(64)>;
+	status = "okay";
 
 	s26ks512s0: s26ks512s@0 {
 		compatible = "nxp,imx-flexspi-hyperflash";
-		size = <DT_SIZE_M(64*8)>;
 		reg = <0>;
+		size = <DT_SIZE_M(64*8)>;
 		spi-max-frequency = <DT_FREQ_M(166)>;
 		word-addressable;
 		cs-interval-unit = <1>;
@@ -41,9 +41,9 @@
 		column-space = <3>;
 		ahb-write-wait-unit = <2>;
 		ahb-write-wait-interval = <20>;
-		status = "okay";
 		erase-block-size = <DT_SIZE_K(256)>;
 		write-block-size = <16>;
+		status = "okay";
 
 		partitions {
 			compatible = "fixed-partitions";
@@ -55,23 +55,23 @@
 			 * to the flash memory sector size of 256KB.
 			 */
 			boot_partition: partition@0 {
-				label = "mcuboot";
 				reg = <0x00000000 DT_SIZE_K(256)>;
+				label = "mcuboot";
 			};
 
 			slot0_partition: partition@40000 {
-				label = "image-0";
 				reg = <0x00040000 DT_SIZE_M(3)>;
+				label = "image-0";
 			};
 
 			slot1_partition: partition@340000 {
-				label = "image-1";
 				reg = <0x00340000 DT_SIZE_M(3)>;
+				label = "image-1";
 			};
 
 			storage_partition: partition@640000 {
-				label = "storage";
 				reg = <0x00640000 (DT_SIZE_M(58) - DT_SIZE_K(256))>;
+				label = "storage";
 			};
 		};
 	};

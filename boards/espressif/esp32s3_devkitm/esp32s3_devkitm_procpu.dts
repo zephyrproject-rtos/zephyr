@@ -12,8 +12,8 @@
 #include "esp32s3_devkitm-pinctrl.dtsi"
 
 / {
-	model = "Espressif ESP32S3-DevkitM PROCPU";
 	compatible = "espressif,esp32s3";
+	model = "Espressif ESP32S3-DevkitM PROCPU";
 
 	aliases {
 		i2c-0 = &i2c0;
@@ -46,10 +46,10 @@
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &gpio0 {
@@ -99,17 +99,17 @@
 &spi2 {
 	#address-cells = <1>;
 	#size-cells = <0>;
-	status = "okay";
 	pinctrl-0 = <&spim2_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &spi3 {
 	#address-cells = <1>;
 	#size-cells = <0>;
-	status = "okay";
 	pinctrl-0 = <&spim3_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &twai {

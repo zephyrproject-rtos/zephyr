@@ -12,8 +12,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Ezurio BL653 Dev Kit";
 	compatible = "ezurio,bl653_dvk";
+	model = "Ezurio BL653 Dev Kit";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -123,19 +123,19 @@
 &uart0 {
 	compatible = "nordic,nrf-uart";
 	current-speed = <115200>;
-	status = "okay";
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &i2c0 {
 	compatible = "nordic,nrf-twi";
-	status = "okay";
 
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-1 = <&i2c0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	dac0: mcp4725@60 {
 		/* MCP4725 not populated at factory */
@@ -153,19 +153,19 @@
 };
 
 &pwm0 {
-	status = "okay";
 	pinctrl-0 = <&pwm0_default>;
 	pinctrl-1 = <&pwm0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &spi1 {
 	compatible = "nordic,nrf-spi";
-	status = "okay";
 	cs-gpios = <&gpio0 23 GPIO_ACTIVE_LOW>;
 	pinctrl-0 = <&spi1_default>;
 	pinctrl-1 = <&spi1_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &flash0 {
@@ -175,28 +175,28 @@
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 0xC000>;
+			label = "mcuboot";
 		};
 
 		slot0_partition: partition@c000 {
-			label = "image-0";
 			reg = <0x0000C000 0x32000>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@3e000 {
-			label = "image-1";
 			reg = <0x0003E000 0x32000>;
+			label = "image-1";
 		};
 
 		scratch_partition: partition@70000 {
-			label = "image-scratch";
 			reg = <0x00070000 0xA000>;
+			label = "image-scratch";
 		};
 
 		storage_partition: partition@7a000 {
-			label = "storage";
 			reg = <0x0007A000 0x00006000>;
+			label = "storage";
 		};
 	};
 };

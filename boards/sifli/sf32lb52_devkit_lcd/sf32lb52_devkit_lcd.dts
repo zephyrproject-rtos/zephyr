@@ -13,8 +13,8 @@
 #include "sf32lb52_devkit_lcd-pinctrl.dtsi"
 
 / {
-	model = "SiFli SF32LB52-DevKit-LCD";
 	compatible = "sifli,sf32lb52-devkit-lcd";
+	model = "SiFli SF32LB52-DevKit-LCD";
 
 	chosen {
 		zephyr,flash = &py25q128ha;
@@ -64,15 +64,14 @@
 };
 
 &rcc_clk {
-	status = "okay";
-
 	sifli,hdiv = <1>;
 	sifli,pdiv1 = <1>;
 	sifli,pdiv2 = <6>;
+	status = "okay";
 
 	dll1 {
-		status = "okay";
 		clock-frequency = <DT_FREQ_M(240)>;
+		status = "okay";
 	};
 };
 
@@ -97,13 +96,13 @@
 			#size-cells = <1>;
 
 			ptable: partition@0 {
-				label = "ptable";
 				reg = <0x0 DT_SIZE_K(64)>;
+				label = "ptable";
 			};
 
 			code: partition@10000 {
-				label = "code";
 				reg = <0x10000 DT_SIZE_K(16320)>;
+				label = "code";
 			};
 		};
 	};
@@ -114,8 +113,8 @@
 };
 
 &usart1 {
-	status = "okay";
 	current-speed = <1000000>;
 	pinctrl-0 = <&usart1_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };

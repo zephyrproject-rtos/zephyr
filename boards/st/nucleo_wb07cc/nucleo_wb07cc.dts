@@ -12,8 +12,8 @@
 #include "arduino_r3_connector.dtsi"
 
 / {
-	model = "STMicroelectronics STM32WB07CC-NUCLEO board";
 	compatible = "st,stm32wb07cc-nucleo";
+	model = "STMicroelectronics STM32WB07CC-NUCLEO board";
 
 	#address-cells = <1>;
 	#size-cells = <1>;
@@ -148,20 +148,20 @@
 &spi2 {
 	pinctrl-0 = <&spi2_nss_pa4 &spi2_sck_pa5 &spi2_miso_pa7 &spi2_mosi_pa6>;
 	pinctrl-names = "default";
-	status = "okay";
 	/* Select 32MHz clock for SPI2 */
 	clocks = <&rcc STM32_CLOCK(APB1, 12)>,
 		 <&rcc STM32_SRC_SYSCLK SPI2_I2S2_SEL(1)>;
+	status = "okay";
 };
 
 &timers1 {
-	status = "okay";
 	st,prescaler = <10000>;
+	status = "okay";
 
 	pwm1: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim1_ch3_pb2>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
@@ -177,8 +177,8 @@
 
 		/* Set aside 16KB of storage at the end of 256KB flash */
 		storage_partition: partition@3c000 {
-			label = "storage";
 			reg = <0x0003c000 DT_SIZE_K(16)>;
+			label = "storage";
 		};
 	};
 };

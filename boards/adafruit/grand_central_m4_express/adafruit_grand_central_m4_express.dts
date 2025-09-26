@@ -8,8 +8,8 @@
 #include "adafruit_grand_central_m4_express-pinctrl.dtsi"
 
 / {
-	model = "Adafruit Grand Central M4 Express";
 	compatible = "adafruit,grand-central-m4-express";
+	model = "Adafruit Grand Central M4 Express";
 
 	chosen {
 		zephyr,console = &sercom0;
@@ -40,7 +40,6 @@
 };
 
 &sercom0 {
-	status = "okay";
 	compatible = "atmel,sam0-uart";
 	current-speed = <115200>;
 	rxpo = <1>;
@@ -48,10 +47,10 @@
 
 	pinctrl-0 = <&sercom0_uart_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &sercom2 {
-	status = "okay";
 	compatible = "atmel,sam0-spi";
 	dipo = <3>;
 	dopo = <0>;
@@ -63,24 +62,24 @@
 	pinctrl-names = "default";
 
 	cs-gpios = <&portb 28 GPIO_ACTIVE_LOW>;
+	status = "okay";
 
 	/* microSD Card */
 	sdhc0: sdhc@0 {
-		status = "okay";
 		compatible = "zephyr,sdhc-spi-slot";
 		reg = <0>;
 		spi-max-frequency = <20000000>;
+		status = "okay";
 
 		mmc {
-			status = "okay";
 			compatible = "zephyr,sdmmc-disk";
 			disk-name = "SD";
+			status = "okay";
 		};
 	};
 };
 
 &sercom3 {
-	status = "okay";
 	compatible = "atmel,sam0-i2c";
 	clock-frequency = <I2C_BITRATE_FAST>;
 
@@ -89,10 +88,10 @@
 
 	pinctrl-0 = <&sercom3_i2c_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &sercom7 {
-	status = "okay";
 	compatible = "atmel,sam0-spi";
 	dipo = <3>;
 	dopo = <0>;
@@ -102,13 +101,13 @@
 
 	pinctrl-0 = <&sercom7_spi_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 zephyr_udc0: &usb0 {
-	status = "okay";
-
 	pinctrl-0 = <&usb_dc_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &dmac {
@@ -122,14 +121,14 @@ zephyr_udc0: &usb0 {
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "uf2";
 			reg = <0x00000000 DT_SIZE_K(16)>;
+			label = "uf2";
 			read-only;
 		};
 
 		code_partition: partition@4000 {
-			label = "code";
 			reg = <0x4000 DT_SIZE_K(1024-16)>;
+			label = "code";
 			read-only;
 		};
 	};

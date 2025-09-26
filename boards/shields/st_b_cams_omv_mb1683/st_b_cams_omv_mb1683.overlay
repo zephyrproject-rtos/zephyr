@@ -17,9 +17,9 @@
 	ov5640: ov5640@3c {
 		compatible = "ovti,ov5640";
 		reg = <0x3c>;
-		status = "okay";
 		reset-gpios = <&dcmi_camera_connector 5 GPIO_ACTIVE_LOW>;
 		powerdown-gpios = <&dcmi_camera_connector 6 GPIO_ACTIVE_HIGH>;
+		status = "okay";
 
 		port {
 			ov5640_ep_out: endpoint {

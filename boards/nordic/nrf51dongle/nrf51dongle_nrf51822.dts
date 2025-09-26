@@ -9,8 +9,8 @@
 #include "nrf51dongle_nrf51822-pinctrl.dtsi"
 
 / {
-	model = "Nordic nRF51 Dongle NRF51822";
 	compatible = "nordic,nrf51-dongle-nrf51822";
+	model = "Nordic nRF51 Dongle NRF51822";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -61,9 +61,9 @@
 };
 
 &sw_pwm {
-	status = "okay";
 	channel-gpios = <&gpio0 21 PWM_POLARITY_INVERTED>;
 	clock-prescaler = <8>;
+	status = "okay";
 };
 
 &gpiote {
@@ -80,10 +80,10 @@
 
 &uart0 {
 	current-speed = <115200>;
-	status = "okay";
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &flash0 {
@@ -93,23 +93,23 @@
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 0x8000>;
+			label = "mcuboot";
 		};
 
 		slot0_partition: partition@8000 {
-			label = "image-0";
 			reg = <0x00008000 0x1b000>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@23000 {
-			label = "image-1";
 			reg = <0x00023000 0x1b000>;
+			label = "image-1";
 		};
 
 		storage_partition: partition@3e000 {
-			label = "storage";
 			reg = <0x0003e000 0x00002000>;
+			label = "storage";
 		};
 	};
 };

@@ -10,8 +10,8 @@
 #include "feather_connector.dtsi"
 
 / {
-	model = "Adafruit Feather ESP32-S2 TFT Reverse";
 	compatible = "espressif,esp32s2";
+	model = "Adafruit Feather ESP32-S2 TFT Reverse";
 
 	chosen {
 		zephyr,display = &st7789v_tft;
@@ -50,8 +50,8 @@
 	};
 
 	i2c_reg: i2c_reg {
-		label = "TFT I2C Power";
 		compatible = "power-domain-gpio";
+		label = "TFT I2C Power";
 		#power-domain-cells = <0>;
 		enable-gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
 		startup-delay-us = <10>;
@@ -68,13 +68,12 @@
 
 		st7789v_tft: st7789v_tft@0 {
 			compatible = "sitronix,st7789v";
-			status = "disabled";
+			reg = <0>;
 
 			/* Also powered by i2c_reg */
 			power-domains = <&i2c_reg>;
 
 			mipi-max-frequency = <DT_FREQ_M(20)>;
-			reg = <0>;
 			width = <135>;
 			height = <240>;
 			x-offset = <52>;
@@ -95,6 +94,7 @@
 			ram-param = [00 F0];
 			rgb-param = [40 02 14];
 			mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
+			status = "disabled";
 		};
 	};
 };
@@ -117,8 +117,8 @@
 &i2c0 {
 	max17048: max17048@36 {
 		compatible = "maxim,max17048";
-		status = "disabled";
 		reg = <0x36>;
 		power-domains = <&i2c_reg>;
+		status = "disabled";
 	};
 };

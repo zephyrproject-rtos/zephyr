@@ -12,8 +12,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Nordic nRF21540 DK NRF52840";
 	compatible = "nordic,nrf21540-dk-nrf52840";
+	model = "Nordic nRF21540 DK NRF52840";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -185,11 +185,11 @@
 
 &uart0 {
 	compatible = "nordic,nrf-uarte";
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 arduino_serial: &uart1 {
@@ -201,10 +201,10 @@ arduino_serial: &uart1 {
 
 arduino_i2c: &i2c0 {
 	compatible = "nordic,nrf-twi";
-	status = "okay";
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-1 = <&i2c0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &i2c1 {
@@ -217,10 +217,10 @@ arduino_i2c: &i2c0 {
 };
 
 &pwm0 {
-	status = "okay";
 	pinctrl-0 = <&pwm0_default>;
 	pinctrl-1 = <&pwm0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &spi0 {
@@ -234,32 +234,32 @@ arduino_i2c: &i2c0 {
 
 &spi1 {
 	compatible = "nordic,nrf-spi";
-	status = "okay";
 	pinctrl-0 = <&spi1_default>;
 	pinctrl-1 = <&spi1_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &spi2 {
 	compatible = "nordic,nrf-spi";
-	status = "disabled";
 	pinctrl-0 = <&spi2_default>;
 	pinctrl-1 = <&spi2_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "disabled";
 };
 
 fem_spi: &spi3 {
-	status = "okay";
 	cs-gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
 	pinctrl-0 = <&spi3_default>;
 	pinctrl-1 = <&spi3_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	nrf_radio_fem_spi: nrf21540_fem_spi@0 {
 		compatible = "nordic,nrf21540-fem-spi";
-		status = "okay";
 		reg = <0>;
 		spi-max-frequency = <8000000>;
+		status = "okay";
 	};
 };
 
@@ -278,18 +278,18 @@ fem_spi: &spi3 {
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 0x0000C000>;
+			label = "mcuboot";
 		};
 
 		slot0_partition: partition@c000 {
-			label = "image-0";
 			reg = <0x0000C000 0x00076000>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@82000 {
-			label = "image-1";
 			reg = <0x00082000 0x00076000>;
+			label = "image-1";
 		};
 
 		/*
@@ -302,8 +302,8 @@ fem_spi: &spi3 {
 		 * if enabled.
 		 */
 		storage_partition: partition@f8000 {
-			label = "storage";
 			reg = <0x000f8000 0x00008000>;
+			label = "storage";
 		};
 	};
 };

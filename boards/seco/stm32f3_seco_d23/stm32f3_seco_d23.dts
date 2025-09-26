@@ -9,8 +9,8 @@
 #include <st/f3/stm32f302v(b-c)tx-pinctrl.dtsi>
 
 / {
-	model = "SECO SBC-3.5-PX30 board (STM32F302VCT6)";
 	compatible = "seco,stm32f3-d23";
+	model = "SECO SBC-3.5-PX30 board (STM32F302VCT6)";
 
 	chosen {
 		zephyr,console = &usart1;
@@ -190,8 +190,8 @@ zephyr_udc0: &usb {
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 0x00010000>;
+			label = "mcuboot";
 			read-only;
 		};
 
@@ -201,23 +201,23 @@ zephyr_udc0: &usb {
 		 * by the application.
 		 */
 		slot0_partition: partition@20000 {
-			label = "image-0";
 			reg = <0x00020000 0x00008000>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@28000 {
-			label = "image-1";
 			reg = <0x00028000 0x00008000>;
+			label = "image-1";
 		};
 
 		storage_partition: partition@30000 {
-			label = "storage";
 			reg = <0x00030000 0x00002000>;
+			label = "storage";
 		};
 
 		scratch_partition: partition@32000 {
-			label = "image-scratch";
 			reg = <0x00032000 0x00008000>;
+			label = "image-scratch";
 		};
 	};
 };

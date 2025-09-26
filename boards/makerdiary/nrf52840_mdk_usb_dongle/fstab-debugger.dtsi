@@ -16,28 +16,28 @@
 		 * with an RTT console, CDC ACM support, and w/o optimizations.
 		 */
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 0x00012000>;
+			label = "mcuboot";
 		};
 
 		slot0_partition: partition@12000 {
-			label = "image-0";
 			reg = <0x00012000 0x00069000>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@7b000 {
-			label = "image-1";
 			reg = <0x0007b000 0x00069000>;
+			label = "image-1";
 		};
 
 		scratch_partition: partition@e4000 {
-			label = "image-scratch";
 			reg = <0x000e4000 0x00018000>;
+			label = "image-scratch";
 		};
 
 		storage_partition: partition@fc000 {
-			label = "storage";
 			reg = <0x000fc000 0x00004000>;
+			label = "storage";
 		};
 	};
 };

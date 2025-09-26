@@ -12,8 +12,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Analog Devices MAX32675EVKIT";
 	compatible = "adi,max32675evkit";
+	model = "Analog Devices MAX32675EVKIT";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -89,9 +89,9 @@
 };
 
 &i2c2 {
-	status = "okay";
 	pinctrl-0 = <&i2c2a_scl_p0_18 &i2c2a_sda_p0_19>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &trng {
@@ -99,7 +99,7 @@
 };
 
 &spi1 {
-	status = "okay";
 	pinctrl-0 = <&spi1a_mosi_p0_15 &spi1a_miso_p0_14 &spi1a_sck_p0_16 &spi1a_ss0_p0_17>;
 	pinctrl-names = "default";
+	status = "okay";
 };

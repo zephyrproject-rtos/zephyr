@@ -13,8 +13,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "NXP MIMXRT1010-EVK board";
 	compatible = "nxp,mimxrt1010";
+	model = "NXP MIMXRT1010-EVK board";
 
 	aliases {
 		led0 = &green_led;
@@ -92,18 +92,18 @@ arduino_serial: &lpuart1 {};
 };
 
 &flexspi {
-	status = "okay";
 	reg = <0x400a0000 0x4000>, <0x60000000 DT_SIZE_M(16)>;
+	status = "okay";
 
 	at25sf128a: at25sf128a@0 {
 		compatible = "nxp,imx-flexspi-nor";
-		size = <DT_SIZE_M(16 * 8)>;
 		reg = <0>;
+		size = <DT_SIZE_M(16 * 8)>;
 		spi-max-frequency = <DT_FREQ_M(133)>;
-		status = "okay";
 		jedec-id = [1f 89 01];
 		erase-block-size = <DT_SIZE_K(4)>;
 		write-block-size = <1>;
+		status = "okay";
 
 		partitions {
 			compatible = "fixed-partitions";
@@ -115,49 +115,49 @@ arduino_serial: &lpuart1 {};
 			 * to the flash memory sector size of 4KB.
 			 */
 			boot_partition: partition@0 {
-				label = "mcuboot";
 				reg = <0x00000000 DT_SIZE_K(128)>;
+				label = "mcuboot";
 			};
 
 			slot0_partition: partition@20000 {
-				label = "image-0";
 				reg = <0x00020000 DT_SIZE_M(7)>;
+				label = "image-0";
 			};
 
 			slot1_partition: partition@720000 {
-				label = "image-1";
 				reg = <0x00720000 DT_SIZE_M(7)>;
+				label = "image-1";
 			};
 
 			storage_partition: partition@E20000 {
-				label = "storage";
 				reg = <0x00E20000 (DT_SIZE_M(2) - DT_SIZE_K(128))>;
+				label = "storage";
 			};
 		};
 	};
 };
 
 arduino_i2c: &lpi2c1 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpi2c1>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &lpuart1 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_lpuart1>;
 	pinctrl-1 = <&pinmux_lpuart1_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 arduino_spi: &lpspi1 {
-	status = "okay";
 	/* DMA channels 0 and 1, muxed to LPSPI1 RX and TX */
 	dmas = <&edma0 0 13>, <&edma0 1 14>;
 	dma-names = "rx", "tx";
 	pinctrl-0 = <&pinmux_lpspi1>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 zephyr_udc0: &usb1 {
@@ -165,9 +165,9 @@ zephyr_udc0: &usb1 {
 };
 
 &adc1 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_adc1>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &sai1 {

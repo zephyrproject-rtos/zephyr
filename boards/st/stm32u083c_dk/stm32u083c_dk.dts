@@ -12,8 +12,8 @@
 #include <zephyr/dt-bindings/input/stm32-tsc-defines.h>
 
 / {
-	model = "STMicroelectronics STM32U83C-DK board";
 	compatible = "st,stm32u083c-dk";
+	model = "STMicroelectronics STM32U83C-DK board";
 
 	#address-cells = <1>;
 	#size-cells = <1>;
@@ -77,32 +77,32 @@
 &adc1 {
 	pinctrl-0 = <&adc1_in0_pc0 &adc1_in1_pc1>;
 	pinctrl-names = "default";
-	st,adc-clock-source = "ASYNC";
 	clocks = <&rcc STM32_CLOCK(APB1_2, 20)>,
 		 <&rcc STM32_SRC_HSI ADC_SEL(2)>;
+	vref-mv = <3300>;
+	st,adc-clock-source = "ASYNC";
 	st,adc-prescaler = <4>;
 	status = "okay";
-	vref-mv = <3300>;
 };
 
 &dac1 {
-	status = "okay";
 	pinctrl-0 = <&dac1_out1_pa4>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pa9 &i2c1_sda_pa10>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 };
 
 &i2c2 {
 	pinctrl-0 = <&i2c2_scl_pa7 &i2c2_sda_pa6>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 };
 
 &spi3 {
@@ -117,9 +117,9 @@
 	status = "okay";
 
 	pwm1: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim1_ch1_pa8>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
@@ -141,7 +141,6 @@ stm32_lp_tick_source: &lptim2 {
 };
 
 &tsc {
-	status = "okay";
 	pinctrl-0 = <&tsc_g1_io1_pb12 &tsc_g1_io2_pb13 &tsc_g6_io1_pd10 &tsc_g6_io2_pd11>;
 	pinctrl-names = "default";
 
@@ -152,12 +151,13 @@ stm32_lp_tick_source: &lptim2 {
 	st,spread-spectrum-prescaler = <2>;
 	st,spread-spectrum-deviation = <100>;
 	st,max-count-value = <8191>;
+	status = "okay";
 
 	tsc_group1: g1 {
 		group = <1>;
-		st,use-as-shield;
 		channel-ios = <TSC_IO2>;
 		sampling-io = <TSC_IO1>;
+		st,use-as-shield;
 	};
 
 	tsc_group6: g6 {

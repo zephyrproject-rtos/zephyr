@@ -12,8 +12,8 @@
 #include "mimxrt700_evk-pinctrl.dtsi"
 
 / {
-	model = "NXP MIMXRT700-EVK board";
 	compatible = "nxp,mimxrt798s";
+	model = "NXP MIMXRT700-EVK board";
 
 	aliases {
 		led0 = &green_led;
@@ -111,8 +111,8 @@
  * replace &os_timer with &systick
  */
 &os_timer_cpu0 {
-	status = "okay";
 	wakeup-source;
+	status = "okay";
 };
 
 &flexcomm0 {
@@ -120,28 +120,28 @@
 };
 
 &flexcomm0_lpuart0 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_flexcomm0_lpuart>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &lpspi14 {
-	status = "okay";
 	/* DMA channels 0 and 1, muxed to LPSPI14 RX and TX */
 	dmas = <&edma0 0 73>, <&edma0 1 74>;
 	dma-names = "rx", "tx";
 	pinctrl-0 = <&pinmux_lpspi14>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &lpi2c15 {
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 	#address-cells = <1>;
 	#size-cells = <0>;
 	pinctrl-0 = <&pinmux_lpi2c15>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	pca9422: pca9422@61 {
 		compatible = "nxp,pca9422";
@@ -241,12 +241,12 @@
 };
 
 &flexcomm2_lpi2c2 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_flexcomm2_i2c>;
 	pinctrl-names = "default";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	#address-cells = <1>;
 	#size-cells = <0>;
+	status = "okay";
 
 	audio_codec: wm8962@1a {
 		compatible = "wolfson,wm8962";
@@ -298,9 +298,9 @@ zephyr_lcdif: &lcdif {};
 };
 
 &lpadc0 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpadc0>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &blue_led {
@@ -312,15 +312,15 @@ zephyr_lcdif: &lcdif {};
 };
 
 &sai0 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_sai0>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &sc_timer {
-	status = "okay";
 	pinctrl-0 = <&pinmux_sctimer>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &xspi0 {
@@ -328,14 +328,14 @@ zephyr_lcdif: &lcdif {};
 
 	mx25um51345g: mx25um51345g@0 {
 		compatible = "nxp,xspi-mx25um51345g";
+		reg = <0>;
 		/* MX25UM51245G is 64MB, 512MBit flash part */
 		size = <DT_SIZE_M(64 * 8)>;
-		reg = <0>;
 		spi-max-frequency = <DT_FREQ_M(200)>;
-		status = "okay";
 		jedec-id = [c2 81 3a];
 		erase-block-size = <DT_SIZE_K(4)>;
 		write-block-size = <2>;
+		status = "okay";
 
 		partitions {
 			compatible = "fixed-partitions";
@@ -347,50 +347,53 @@ zephyr_lcdif: &lcdif {};
 			 * to the flash memory sector size of 4KB.
 			 */
 			boot_partition: partition@0 {
-				label = "mcuboot";
 				reg = <0x00000000 DT_SIZE_K(128)>;
+				label = "mcuboot";
 			};
+
 			slot0_partition: partition@20000 {
-				label = "image-0";
 				reg = <0x00020000 DT_SIZE_M(7)>;
+				label = "image-0";
 			};
+
 			slot1_partition: partition@720000 {
-				label = "image-1";
 				reg = <0x00720000 DT_SIZE_M(7)>;
+				label = "image-1";
 			};
+
 			storage_partition: partition@E20000 {
-				label = "storage";
 				reg = <0x00E20000 (DT_SIZE_M(2) - DT_SIZE_K(128))>;
+				label = "storage";
 			};
 		};
 	};
 };
 
 zephyr_udc0: &usb0 {
-	status = "okay";
 	phy-handle = <&usbphy>;
+	status = "okay";
 };
 
 &usbphy {
-	status = "okay";
 	tx-d-cal = <7>;
 	tx-cal-45-dp-ohms = <6>;
 	tx-cal-45-dm-ohms = <6>;
+	status = "okay";
 };
 
 &usdhc0 {
-	status = "okay";
 	pwr-gpios = <&gpio7 12 GPIO_ACTIVE_HIGH>;
+	pinctrl-0 = <&pinmux_usdhc>;
+	pinctrl-names = "default";
+	mmc-hs200-1_8v;
+	mmc-hs400-1_8v;
+	status = "okay";
 
 	mmc {
 		compatible = "zephyr,mmc-disk";
 		disk-name = "SD2";
 		status = "okay";
 	};
-	pinctrl-0 = <&pinmux_usdhc>;
-	pinctrl-names = "default";
-	mmc-hs200-1_8v;
-	mmc-hs400-1_8v;
 };
 
 &wwdt0 {
@@ -398,9 +401,9 @@ zephyr_udc0: &usb0 {
 };
 
 &acmp {
-	status = "okay";
 	pinctrl-0 = <&pinmux_acmp>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 p3t1755dp_ard_i2c_interface: &flexcomm8_lpi2c8 {};

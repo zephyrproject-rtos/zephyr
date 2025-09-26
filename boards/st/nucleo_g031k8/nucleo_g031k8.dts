@@ -10,8 +10,8 @@
 #include "arduino_nano_connector.dtsi"
 
 / {
-	model = "STMicroelectronics STM32G031K8-NUCLEO board";
 	compatible = "st,stm32g031k8-nucleo";
+	model = "STMicroelectronics STM32G031K8-NUCLEO board";
 
 	chosen {
 		zephyr,console = &usart2;

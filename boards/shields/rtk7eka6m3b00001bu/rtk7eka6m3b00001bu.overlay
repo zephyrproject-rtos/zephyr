@@ -32,11 +32,12 @@
 };
 
 &zephyr_lcdif {
-	status = "okay";
 	width = <480>;
 	height = <272>;
 	input-pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
 	output-pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
+	backlight-gpios = <&lcd_expansion_rtk7eka6m3b00001bu 39 GPIO_ACTIVE_HIGH>;
+	status = "okay";
 
 	display-timings {
 		compatible = "zephyr,panel-timing";
@@ -51,5 +52,4 @@
 		hfront-porch = <4>;
 		vfront-porch = <35>;
 	};
-	backlight-gpios = <&lcd_expansion_rtk7eka6m3b00001bu 39 GPIO_ACTIVE_HIGH>;
 };

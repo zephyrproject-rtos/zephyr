@@ -9,8 +9,8 @@
 #include "dc233c.dtsi"
 
 / {
-	model = "qemu_xtensa";
 	compatible = "cdns,xtensa-dc233c";
+	model = "qemu_xtensa";
 
 	chosen {
 		zephyr,sram = &sram0;

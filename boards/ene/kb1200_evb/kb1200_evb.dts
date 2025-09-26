@@ -12,8 +12,8 @@
 #include <dt-bindings/i2c/i2c.h>
 
 / {
-	model = "KB1200 board";
 	compatible = "ene,kb1200";
+	model = "KB1200 board";
 
 	aliases {
 		uart0 = &uart0;
@@ -57,22 +57,22 @@
 &uart0 {
 	pinctrl-0 = <&uart0_tx_gpio03 &uart0_rx_gpio01>;
 	pinctrl-names = "default";
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 };
 
 &uart1 {
 	pinctrl-0 = <&uart1_tx_gpio36 &uart1_rx_gpio28>;
 	pinctrl-names = "default";
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 };
 
 &uart2 {
 	pinctrl-0 = <&uart2_tx_gpio04 &uart2_rx_gpio55>;
 	pinctrl-names = "default";
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 };
 
 &gpio0x1x {
@@ -80,65 +80,65 @@
 };
 
 &adc0 {
-	status = "okay";
 	pinctrl-0 = <&adc0_gpio0a &adc1_gpio0b &adc2_gpio0c &adc3_gpio0d>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &pwm0 {
-	status = "okay";
 	pinctrl-0 = <&pwm0_gpio3a>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &pwm4 {
-	status = "okay";
 	pinctrl-0 = <&pwm4_gpio31>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &pwm5 {
-	status = "okay";
 	pinctrl-0 = <&pwm5_gpio30>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &pwm6 {
-	status = "okay";
 	pinctrl-0 = <&pwm6_gpio37>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &tach0 {
-	status = "okay";
 	pinctrl-0 = <&tach0_gpio48>;
 	pinctrl-names = "default";
 	pulses-per-round = <2>;
 	sample-time-us = <2>;
+	status = "okay";
 };
 
 &tach1 {
-	status = "okay";
 	pinctrl-0 = <&tach1_gpio4e>;
 	pinctrl-names = "default";
 	pulses-per-round = <1>;
 	sample-time-us = <8>;
+	status = "okay";
 };
 
 &tach2 {
-	status = "okay";
 	pinctrl-0 = <&tach2_gpio0e>;
 	pinctrl-names = "default";
 	pulses-per-round = <2>;
 	sample-time-us = <16>;
+	status = "okay";
 };
 
 &tach3 {
-	status = "okay";
 	pinctrl-0 = <&tach3_gpio43>;
 	pinctrl-names = "default";
 	pulses-per-round = <1>;
 	sample-time-us = <64>;
+	status = "okay";
 };
 
 &wdt0 {
@@ -146,15 +146,15 @@
 };
 
 &i2c0 {
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	pinctrl-0 = <&i2c0_clk_gpio2c &i2c0_dat_gpio2d>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &i2c8 {
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	pinctrl-0 = <&i2c8_clk_gpio70 &i2c8_dat_gpio71>;
 	pinctrl-names = "default";
+	status = "okay";
 };

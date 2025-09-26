@@ -12,8 +12,8 @@
 #include "arduino_r3_connector.dtsi"
 
 / {
-	model = "STMicroelectronics STM32WB09KE-NUCLEO board";
 	compatible = "st,stm32wb09ke-nucleo";
+	model = "STMicroelectronics STM32WB09KE-NUCLEO board";
 
 	#address-cells = <1>;
 	#size-cells = <1>;
@@ -149,15 +149,15 @@
 &spi3 {
 	pinctrl-0 = <&spi3_nss_pa9 &spi3_sck_pb3 &spi3_miso_pa8 &spi3_mosi_pa11>;
 	pinctrl-names = "default";
-	status = "okay";
 	/* Select 64MHz clock for SPI3 */
 	clocks = <&rcc STM32_CLOCK(APB1, 14)>,
 		 <&rcc STM32_SRC_SYSCLK SPI3_I2S3_SEL(3)>;
+	status = "okay";
 };
 
 &timers2 {
-	status = "okay";
 	st,prescaler = <10000>;
+	status = "okay";
 
 	pwm2: pwm {
 		/* PWM on red_led_1 */
@@ -179,8 +179,8 @@
 
 		/* Set 32KB of storage at the end of 512KB flash */
 		storage_partition: partition@78000 {
-			label = "storage";
 			reg = <0x00078000 DT_SIZE_K(32)>;
+			label = "storage";
 		};
 	};
 };

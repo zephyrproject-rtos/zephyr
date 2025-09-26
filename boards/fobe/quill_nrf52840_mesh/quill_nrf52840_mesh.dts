@@ -8,6 +8,6 @@
 #include "quill_nrf52840_mesh_common.dtsi"
 
 / {
-	model = "FoBE Quill nRF52840 Mesh";
 	compatible = "fobe,quill-nrf52840-mesh";
+	model = "FoBE Quill nRF52840 Mesh";
 };

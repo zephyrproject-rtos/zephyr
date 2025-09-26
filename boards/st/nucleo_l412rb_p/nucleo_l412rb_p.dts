@@ -11,8 +11,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "STMicroelectronics STM32L412RB-P-NUCLEO board";
 	compatible = "st,stm32l412rb-p-nucleo";
+	model = "STMicroelectronics STM32L412RB-P-NUCLEO board";
 
 	chosen {
 		zephyr,console = &lpuart1;
@@ -104,9 +104,9 @@
 	status = "okay";
 
 	pwm2: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim2_ch1_pa0>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
@@ -138,8 +138,8 @@
 		 * Size = 16384 --> (HEX) 0x00004000
 		 */
 		storage_partition: partition@1c276 {
-			label = "storage";
 			reg = <0x0001c276 DT_SIZE_K(16)>;
+			label = "storage";
 		};
 	};
 };

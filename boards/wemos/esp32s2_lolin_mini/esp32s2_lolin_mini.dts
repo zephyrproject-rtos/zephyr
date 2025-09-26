@@ -12,8 +12,8 @@
 #include <espressif/partitions_0x1000_default.dtsi>
 
 / {
-	model = "Wemos ESP32S2-Lolin Mini";
 	compatible = "espressif,esp32s2";
+	model = "Wemos ESP32S2-Lolin Mini";
 
 	aliases {
 		sw0 = &user_button;
@@ -54,10 +54,10 @@
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &gpio0 {

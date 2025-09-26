@@ -28,9 +28,9 @@
 		#size-cells = <0>;
 
 		cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-m85";
 			reg = <0>;
+			device_type = "cpu";
 			#address-cells = <1>;
 			#size-cells = <1>;
 
@@ -85,9 +85,9 @@
 
 	soc {
 		peripheral@50000000 {
+			ranges = <0x0 0x50000000 0x10000000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x0 0x50000000 0x10000000>;
 
 			#include "mps4_common_soc_peripheral.dtsi"
 		};

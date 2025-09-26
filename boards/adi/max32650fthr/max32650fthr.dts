@@ -12,8 +12,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Analog Devices MAX32650FTHR";
 	compatible = "adi,max32650fthr";
+	model = "Analog Devices MAX32650FTHR";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -94,9 +94,9 @@
 };
 
 &spi1 {
-	status = "okay";
 	pinctrl-0 = <&spi1_mosi_p1_29 &spi1_miso_p1_28 &spi1_sck_p1_26 &spi1_ss0_p1_23>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &wdt0 {

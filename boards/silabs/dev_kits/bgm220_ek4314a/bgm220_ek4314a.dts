@@ -13,8 +13,8 @@
 #include "bgm220_ek4314a-pinctrl.dtsi"
 
 / {
-	model = "Silicon Labs BRD4314A (BGM220 Explorer Kit)";
 	compatible = "silabs,bgm220_ek4314a", "silabs,efr32bg22";
+	model = "Silicon Labs BRD4314A (BGM220 Explorer Kit)";
 
 	chosen {
 		zephyr,bt-hci = &bt_hci_silabs;
@@ -104,7 +104,6 @@
 		status = "okay";
 	};
 };
-
 
 &timer1 {
 	status = "okay";

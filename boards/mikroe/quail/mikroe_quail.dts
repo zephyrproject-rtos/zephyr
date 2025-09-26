@@ -10,8 +10,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "MikroE Quail for STM32";
 	compatible = "mikroe,stm32-e427", "st,stm32f427";
+	model = "MikroE Quail for STM32";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -179,23 +179,23 @@
 	};
 
 	skd1: socket_1_adc {
-		status = "okay";
 		io-channels = <&adc2 0>;
+		status = "okay";
 	};
 
 	skd2: socket_2_adc {
-		status = "okay";
 		io-channels = <&adc1 0>;
+		status = "okay";
 	};
 
 	skd3: socket_3_adc {
-		status = "okay";
 		io-channels = <&adc2 1>;
+		status = "okay";
 	};
 
 	skd4: socket_4_adc {
-		status = "okay";
 		io-channels = <&adc1 1>;
+		status = "okay";
 	};
 };
 
@@ -275,13 +275,13 @@ zephyr_udc0: &usbotg_fs {
 };
 
 &spi3 {
-	status = "okay";
 	pinctrl-0 = <&spi3_sck_pc10 &spi3_miso_pc11 &spi3_mosi_pc12>;
 	pinctrl-names = "default";
 
 	cs-gpios = <&gpiod 11 GPIO_ACTIVE_LOW>,    // CS0
 		   <&gpiod 1 GPIO_ACTIVE_LOW>,     // CS1
 		   <&gpioa 13 GPIO_ACTIVE_LOW>;    // CS2
+	status = "okay";
 };
 
 /* Flash chip 1 (extra flash connected to CS2) */
@@ -307,19 +307,19 @@ zephyr_udc0: &usbotg_fs {
 };
 
 &adc1 {
-	status = "okay";
 	pinctrl-0 = <&adc1_in4_pa4 &adc1_in5_pa5>;
 	pinctrl-names = "default";
 	st,adc-clock-source = "SYNC";
 	st,adc-prescaler = <2>;
+	status = "okay";
 };
 
 &adc2 {
-	status = "okay";
 	pinctrl-0 = <&adc2_in6_pa6 &adc2_in7_pa7>;
 	pinctrl-names = "default";
 	st,adc-clock-source = "SYNC";
 	st,adc-prescaler = <2>;
+	status = "okay";
 };
 
 &vref {

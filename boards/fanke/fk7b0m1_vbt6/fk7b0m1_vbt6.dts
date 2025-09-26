@@ -11,8 +11,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "FANKE FK7B0M1-VBT6 board";
 	compatible = "fanke,fk7b0m1-vbt6";
+	model = "FANKE FK7B0M1-VBT6 board";
 
 	chosen {
 		zephyr,console = &usart1;
@@ -118,11 +118,11 @@
 		reg = <0>;
 		spi-max-frequency = <DT_FREQ_M(40)>;
 		size = <DT_SIZE_M(64)>; /* 64 Mbits */
-		status = "okay";
 		jedec-id = [ef 40 17];
 		has-dpd;
 		t-enter-dpd = <3500>;
 		t-exit-dpd = <3500>;
+		status = "okay";
 
 		partitions {
 			compatible = "fixed-partitions";
@@ -130,8 +130,8 @@
 			#size-cells = <1>;
 
 			storage_partition: partition@0 {
-				label = "storage";
 				reg = <0x00000000 DT_SIZE_M(8)>; /* 64 Mbits */
+				label = "storage";
 			};
 		};
 	};

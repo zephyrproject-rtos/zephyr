@@ -11,8 +11,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Nuvoton PFM M467 board";
 	compatible = "nuvoton,pfm-m467", "nuvoton,m467";
+	model = "Nuvoton PFM M467 board";
 
 	aliases {
 		led0 = &green_led;
@@ -86,18 +86,18 @@
 		#size-cells = <1>;
 
 		slot0_partition: partition@0 {
-			label = "image-0";
 			reg = <0x00000000 0x00080000>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@80000 {
-			label = "image-1";
 			reg = <0x00080000 0x0007e000>;
+			label = "image-1";
 		};
 
 		storage_partition: partition@fe000 {
-			label = "storage";
 			reg = <0x000fe000 0x00002000>;
+			label = "storage";
 		};
 	};
 };

@@ -10,8 +10,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "WeAct Studio Black Pill STM32U585 Core Board";
 	compatible = "weact,blackpill-u585ci";
+	model = "WeAct Studio Black Pill STM32U585 Core Board";
 
 	#address-cells = <1>;
 	#size-cells = <1>;
@@ -71,9 +71,9 @@
 };
 
 &clk_msis {
-	status = "okay";
 	msi-range = <4>;
 	msi-pll-mode;
+	status = "okay";
 };
 
 &pll1 {
@@ -111,15 +111,15 @@
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb3>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 };
 
 &i2c2 {
 	pinctrl-0 = <&i2c2_scl_pb10 &i2c2_sda_pb14>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 };
 
 &spi1 {

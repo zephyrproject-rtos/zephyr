@@ -10,8 +10,8 @@
 #include <ti/am64x_r5f0_1.dtsi>
 
 / {
-	model = "TI AM64x STARTER KIT (SK) R5F";
 	compatible = "ti,am64x_sk_r5f0_1", "ti,am6442";
+	model = "TI AM64x STARTER KIT (SK) R5F";
 
 	chosen {
 		zephyr,sram = &atcm;

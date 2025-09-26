@@ -11,8 +11,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "STMicroelectronics STM32H7S78 DISCOVERY KIT board";
 	compatible = "st,stm32h7s78-dk";
+	model = "STMicroelectronics STM32H7S78 DISCOVERY KIT board";
 
 	chosen {
 		zephyr,console = &uart4;
@@ -137,9 +137,9 @@
 	status = "okay";
 
 	pwm2: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim2_ch4_pa3>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
@@ -148,9 +148,9 @@
 	status = "okay";
 
 	pwm3: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim3_ch2_pb5>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
@@ -229,8 +229,8 @@
 
 		/* Set the partitions with first MB to make use of the whole Bank1 */
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(64)>;
+			label = "mcuboot";
 		};
 	};
 };
@@ -262,23 +262,23 @@
 			#size-cells = <1>;
 
 			slot0_partition: partition@0 {
-				label = "image-0";
 				reg = <0x00000000 DT_SIZE_K(512)>;
+				label = "image-0";
 			};
 
 			slot1_partition: partition@80000 {
-				label = "image-1";
 				reg = <0x0080000 DT_SIZE_K(512)>;
+				label = "image-1";
 			};
 
 			scratch_partition: partition@100000 {
-				label = "image-scratch";
 				reg = <0x00100000 DT_SIZE_K(64)>;
+				label = "image-scratch";
 			};
 
 			storage_partition: partition@110000 {
-				label = "storage";
 				reg = <0x00110000 DT_SIZE_K(64)>;
+				label = "storage";
 			};
 		};
 	};

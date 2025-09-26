@@ -11,8 +11,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "STMicroelectronics STM32F413H-DISCO board";
 	compatible = "st,stm32f413h-disco";
+	model = "STMicroelectronics STM32F413H-DISCO board";
 
 	chosen {
 		zephyr,console = &usart6;

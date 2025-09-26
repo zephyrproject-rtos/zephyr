@@ -11,8 +11,8 @@
 #include "stm32h747i_disco.dtsi"
 
 / {
-	model = "STMicroelectronics STM32H747I DISCOVERY board";
 	compatible = "st,stm32h747i-disco";
+	model = "STMicroelectronics STM32H747I DISCOVERY board";
 
 	/* HW resources are split between CM7 and CM4 */
 	chosen {
@@ -25,8 +25,8 @@
 
 	sdram2: sdram@d0000000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
-		device_type = "memory";
 		reg = <0xd0000000 DT_SIZE_M(32)>;
+		device_type = "memory";
 		zephyr,memory-region = "SDRAM2";
 		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
 	};
@@ -121,22 +121,13 @@
 
 		/* Set 2KB of storage at the end of first 1MB flash */
 		storage_partition: partition@ff800 {
-			label = "storage";
 			reg = <0x000ff800 DT_SIZE_K(2)>;
+			label = "storage";
 		};
 	};
 };
 
 &mac {
-	/*
-	 * From UM2411 Rev 4:
-	 * With the default setting, the Ethernet feature is not working due
-	 * of a pin conflict between ETH_MDC and SAI4_D1 of the MEMs digital
-	 * microphone.
-	 * Cf Ethernet section in board documentation for more information on
-	 * the hw modification to be done to enable it.
-	 */
-	status = "okay";
 	pinctrl-0 = <&eth_ref_clk_pa1
 		     &eth_crs_dv_pa7
 		     &eth_rxd0_pc4
@@ -147,12 +138,21 @@
 	pinctrl-names = "default";
 	phy-connection-type = "rmii";
 	phy-handle = <&eth_phy>;
+	/*
+	 * From UM2411 Rev 4:
+	 * With the default setting, the Ethernet feature is not working due
+	 * of a pin conflict between ETH_MDC and SAI4_D1 of the MEMs digital
+	 * microphone.
+	 * Cf Ethernet section in board documentation for more information on
+	 * the hw modification to be done to enable it.
+	 */
+	status = "okay";
 };
 
 &mdio {
-	status = "okay";
 	pinctrl-0 = <&eth_mdio_pa2 &eth_mdc_pc1>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	eth_phy: ethernet-phy@0 {
 		compatible = "ethernet-phy";
@@ -165,7 +165,6 @@
 };
 
 &fmc {
-	status = "okay";
 	pinctrl-0 = <&fmc_nbl0_pe0 &fmc_nbl1_pe1 &fmc_nbl2_pi4 &fmc_nbl3_pi5
 		     &fmc_sdclk_pg8 &fmc_sdnwe_ph5 &fmc_sdcke1_ph7
 		     &fmc_sdne1_ph6 &fmc_sdnras_pf11 &fmc_sdncas_pg15
@@ -182,14 +181,14 @@
 		     &fmc_d27_pi3 &fmc_d28_pi6 &fmc_d29_pi7 &fmc_d30_pi9
 		     &fmc_d31_pi10>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	sdram {
-		status = "okay";
-
 		power-up-delay = <100>;
 		num-auto-refresh = <8>;
 		mode-register = <0x220>;
 		refresh-rate = <603>;
+		status = "okay";
 
 		bank@1 {
 			reg = <1>;
@@ -230,7 +229,6 @@ zephyr_udc0: &usbotg_hs {
 };
 
 &sdmmc1 {
-	status = "okay";
 	clocks = <&rcc STM32_CLOCK(AHB3, 16)>,
 		 <&rcc STM32_SRC_PLL2_R SDMMC_SEL(1)>;
 	pinctrl-0 = <&sdmmc1_d0_pc8 &sdmmc1_d1_pc9
@@ -241,6 +239,7 @@ zephyr_udc0: &usbotg_hs {
 	pinctrl-names = "default";
 	cd-gpios = <&gpioi 8 GPIO_ACTIVE_LOW>;
 	disk-name = "SD";
+	status = "okay";
 };
 
 &quadspi {

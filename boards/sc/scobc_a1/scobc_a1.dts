@@ -22,9 +22,9 @@
 		#size-cells = <0>;
 
 		cpu0: cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-m3";
 			reg = <0>;
+			device_type = "cpu";
 			#address-cells = <1>;
 			#size-cells = <1>;
 
@@ -43,8 +43,8 @@
 
 		uartlite0: uartlite@4f010000 {
 			compatible = "xlnx,xps-uartlite-1.00.a";
-			interrupts = <0 0>;
 			reg = <0x4f010000 0x10000>;
+			interrupts = <0 0>;
 		};
 
 		sysreg: sysreg@4f000000 {

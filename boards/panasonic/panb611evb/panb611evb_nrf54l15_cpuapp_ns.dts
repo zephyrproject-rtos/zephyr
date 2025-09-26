@@ -12,8 +12,8 @@
 #include "panb611evb_nrf54l15_cpuapp_common.dtsi"
 
 / {
-	model = "Panasonic PAN B611 EVB nRF54L15 Application MCU";
 	compatible = "panasonic-industrial-devices-europe-gmbh,panb611evb-cpuapp";
+	model = "Panasonic PAN B611 EVB nRF54L15 Application MCU";
 
 	chosen {
 		zephyr,code-partition = &slot0_ns_partition;
@@ -41,9 +41,9 @@
 	 * needs to happen both in the flash_layout.h and in this file at the same time.
 	 */
 	reserved-memory {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		sram0_s: image_s@20000000 {
 			/* Secure image memory */
@@ -58,13 +58,12 @@
 };
 
 &uart20 {
-	/* Disable so that TF-M can use this UART */
-	status = "disabled";
-
 	current-speed = <115200>;
 	pinctrl-0 = <&uart20_default>;
 	pinctrl-1 = <&uart20_sleep>;
 	pinctrl-names = "default", "sleep";
+	/* Disable so that TF-M can use this UART */
+	status = "disabled";
 };
 
 /* Include default memory partition configuration file */

@@ -10,8 +10,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "STMicroelectronics STEVAL-STWINBX1 Development kit";
 	compatible = "st,steval_stwinbx1";
+	model = "STMicroelectronics STEVAL-STWINBX1 Development kit";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -82,9 +82,9 @@
 };
 
 &clk_msis {
-	status = "okay";
 	msi-range = <4>;
 	msi-pll-mode;
+	status = "okay";
 };
 
 &pll1 {
@@ -152,32 +152,32 @@ stm32_lp_tick_source: &lptim1 {
 &spi2 {
 	pinctrl-0 = <&spi2_sck_pi1 &spi2_miso_pd3 &spi2_mosi_pi3>;
 	pinctrl-names = "default";
-	status = "okay";
 
 	cs-gpios = <&gpioh 6 GPIO_ACTIVE_LOW>,
 		   <&gpioh 15 GPIO_ACTIVE_LOW>,
 		   <&gpioi 7 GPIO_ACTIVE_LOW>;
+	status = "okay";
 
 	iis2dlpc: iis2dlpc@0 {
 		compatible = "st,iis2dlpc";
-		spi-max-frequency = <DT_FREQ_M(10)>;
 		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(10)>;
 		drdy-gpios = <&gpiof 1 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 		drdy-int = <1>;
 	};
 
 	ism330dhcx: ism330dhcx@1 {
 		compatible = "st,ism330dhcx";
-		spi-max-frequency = <DT_FREQ_M(10)>;
 		reg = <1>;
+		spi-max-frequency = <DT_FREQ_M(10)>;
 		drdy-gpios = <&gpiob 8 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 		int-pin = <1>;
 	};
 
 	iis2iclx: iis2iclx@2 {
 		compatible = "st,iis2iclx";
-		spi-max-frequency = <DT_FREQ_M(10)>;
 		reg = <2>;
+		spi-max-frequency = <DT_FREQ_M(10)>;
 		drdy-gpios = <&gpiof 11 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 		int-pin = <2>;
 	};
@@ -186,8 +186,8 @@ stm32_lp_tick_source: &lptim1 {
 &spi3 {
 	pinctrl-0 = <&spi3_sck_pg9 &spi3_miso_pb4 &spi3_mosi_pb5>;
 	pinctrl-names = "default";
-	status = "okay";
 	cs-gpios = <&gpioe 1 GPIO_ACTIVE_LOW>;
+	status = "okay";
 
 	hci_spi: bluenrg-2@0 {
 		compatible = "st,hci-spi-v2";
@@ -204,8 +204,8 @@ stm32_lp_tick_source: &lptim1 {
 &i2c2 {
 	pinctrl-0 = <&i2c2_scl_ph4 &i2c2_sda_pf0>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 
 	stts22h@3f {
 		compatible = "st,stts22h";
@@ -233,9 +233,9 @@ stm32_lp_tick_source: &lptim1 {
 	status = "okay";
 
 	pwm5: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim5_ch3_ph12>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
@@ -258,18 +258,18 @@ zephyr_udc0: &usbotg_fs {
 &adc1 {
 	pinctrl-0 = <&adc1_in1_pc0>;
 	pinctrl-names = "default";
+	vref-mv = <2750>;
 	st,adc-clock-source = "ASYNC";
 	st,adc-prescaler = <4>;
-	vref-mv = <2750>;
 	status = "okay";
 };
 
 &adc4 {
 	pinctrl-0 = <&adc4_in3_pc2>;
 	pinctrl-names = "default";
+	vref-mv = <2750>;
 	st,adc-clock-source = "ASYNC";
 	st,adc-prescaler = <4>;
-	vref-mv = <2750>;
 	status = "okay";
 };
 
@@ -290,7 +290,6 @@ zephyr_udc0: &usbotg_fs {
 };
 
 &sdmmc1 {
-	status = "okay";
 	pinctrl-0 = <&sdmmc1_d0_pc8 &sdmmc1_d1_pc9
 		     &sdmmc1_d2_pc10 &sdmmc1_d3_pc11
 		     &sdmmc1_ck_pc12 &sdmmc1_cmd_pd2>;
@@ -299,6 +298,7 @@ zephyr_udc0: &usbotg_fs {
 	bus-width = <4>;
 	clk-div = <4>;
 	disk-name = "SD";
+	status = "okay";
 };
 
 &flash0 {
@@ -313,28 +313,28 @@ zephyr_udc0: &usbotg_fs {
 		 * Set the partitions with first MB to make use of the whole Bank1
 		 */
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(64)>;
+			label = "mcuboot";
 		};
 
 		slot0_partition: partition@10000 {
-			label = "image-0";
 			reg = <0x00010000 DT_SIZE_K(416)>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@78000 {
-			label = "image-1";
 			reg = <0x00078000 DT_SIZE_K(416)>;
+			label = "image-1";
 		};
 
 		scratch_partition: partition@e0000 {
-			label = "image-scratch";
 			reg = <0x000e0000 DT_SIZE_K(64)>;
+			label = "image-scratch";
 		};
 
 		storage_partition: partition@f0000 {
-			label = "storage";
 			reg = <0x000f0000 DT_SIZE_K(64)>;
+			label = "storage";
 		};
 	};
 };

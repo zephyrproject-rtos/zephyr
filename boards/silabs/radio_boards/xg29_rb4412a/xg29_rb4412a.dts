@@ -12,8 +12,8 @@
 #include "xg29_rb4412a-pinctrl.dtsi"
 
 / {
-	model = "Silicon Labs xG29-RB4412A";
 	compatible = "silabs,xg29_rb4412a", "silabs,efr32mg29";
+	model = "Silicon Labs xG29-RB4412A";
 
 	chosen {
 		zephyr,bt-hci = &bt_hci_silabs;
@@ -173,9 +173,9 @@
 	clock-frequency = <DT_FREQ_M(8)>;
 	pinctrl-0 = <&eusart1_default>;
 	pinctrl-names = "default";
-	status = "okay";
 
 	cs-gpios = <&gpioa 4 GPIO_ACTIVE_LOW>, <&gpioc 6 GPIO_ACTIVE_HIGH>;
+	status = "okay";
 
 	mx25r80: mx25r8035f@0 {
 		compatible = "jedec,spi-nor";
@@ -183,10 +183,10 @@
 		dpd-wakeup-sequence = <30000 20 35000>;
 		has-dpd;
 		jedec-id = [c2 28 14];
-		mxicy,mx25r-power-mode = "low-power";
 		size = <0x800000>;
 		spi-max-frequency = <DT_FREQ_M(33)>;
 		t-enter-dpd = <0>;
+		mxicy,mx25r-power-mode = "low-power";
 	};
 
 	ls013b7dh03: ls0xx@1 {
@@ -249,9 +249,9 @@
 };
 
 &dcdc {
-	status = "okay";
 	regulator-boot-on;
 	regulator-initial-mode = <SILABS_DCDC_MODE_BUCK>;
+	status = "okay";
 };
 
 &radio {

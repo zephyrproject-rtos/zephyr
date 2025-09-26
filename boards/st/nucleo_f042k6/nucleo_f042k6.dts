@@ -9,8 +9,8 @@
 #include <st/f0/stm32f042k(4-6)tx-pinctrl.dtsi>
 
 / {
-	model = "STMicroelectronics STM32F042K6-NUCLEO board";
 	compatible = "st,stm32f042k6-nucleo";
+	model = "STMicroelectronics STM32F042K6-NUCLEO board";
 
 	chosen {
 		zephyr,console = &usart2;
@@ -67,13 +67,13 @@
 };
 
 &timers3 {
-	status = "okay";
 	st,prescaler = <10000>;
+	status = "okay";
 
 	pwm3: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim3_ch3_pb0>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
@@ -87,8 +87,8 @@
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 };
 
 &spi1 {

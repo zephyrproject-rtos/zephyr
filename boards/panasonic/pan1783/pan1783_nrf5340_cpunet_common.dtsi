@@ -152,11 +152,11 @@
 };
 
 &uart0 {
-	status = "disabled";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "disabled";
 };
 
 arduino_serial: &uart0 {};
@@ -187,23 +187,23 @@ arduino_spi: &spi0 {
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 0xc000>;
+			label = "mcuboot";
 		};
 
 		slot0_partition: partition@c000 {
-			label = "image-0";
 			reg = <0x0000C000 0x17000>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@23000 {
-			label = "image-1";
 			reg = <0x00023000 0x17000>;
+			label = "image-1";
 		};
 
 		storage_partition: partition@3a000 {
-			label = "storage";
 			reg = <0x0003a000 0x6000>;
+			label = "storage";
 		};
 	};
 };

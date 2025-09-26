@@ -10,8 +10,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Croxel CX1825 NRF52840";
 	compatible = "croxel,cx1825-nrf52840";
+	model = "Croxel CX1825 NRF52840";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -86,44 +86,44 @@
 };
 
 &pwm0 {
-	status = "okay";
 	pinctrl-0 = <&pwm0_default>;
 	pinctrl-1 = <&pwm0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &i2c0 {
 	compatible = "nordic,nrf-twi";
-	status = "okay";
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-1 = <&i2c0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	hts221: hts221@5f {
 		compatible = "st,hts221";
-		status = "okay";
 		reg = <0x5f>;
 		drdy-gpios = <&gpio1 2 GPIO_ACTIVE_HIGH>;
+		status = "okay";
 	};
 
 	lps22hb: lps22hb-press@5c {
 		compatible = "st,lps22hb-press";
-		status = "okay";
 		reg = <0x5c>;
+		status = "okay";
 	};
 
 	apds9960: apds9960@39 {
 		compatible = "avago,apds9960";
-		status = "okay";
 		reg = <0x39>;
 		int-gpios = <&gpio0 4 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		status = "okay";
 	};
 
 	lis3dh: lis3dh@18 {
 		compatible = "st,lis3dh", "st,lis2dh";
-		status = "okay";
 		reg = <0x18>;
 		irq-gpios = <&gpio1 15 GPIO_ACTIVE_HIGH>;
+		status = "okay";
 	};
 };
 
@@ -141,18 +141,18 @@ zephyr_udc0: &usbd {
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 0x0000C000>;
+			label = "mcuboot";
 		};
 
 		slot0_partition: partition@c000 {
-			label = "image-0";
 			reg = <0x0000C000 0x00076000>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@82000 {
-			label = "image-1";
 			reg = <0x00082000 0x00076000>;
+			label = "image-1";
 		};
 
 		/*
@@ -160,8 +160,8 @@ zephyr_udc0: &usbd {
 		 * if enabled.
 		 */
 		storage_partition: partition@f8000 {
-			label = "storage";
 			reg = <0x000f8000 0x00008000>;
+			label = "storage";
 		};
 	};
 };

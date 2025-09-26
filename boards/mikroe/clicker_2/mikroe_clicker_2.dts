@@ -10,8 +10,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "MikroE clicker 2 for STM32";
 	compatible = "mikroe,stm32-e407", "st,stm32f407";
+	model = "MikroE clicker 2 for STM32";
 
 	chosen {
 		zephyr,console = &uart4;
@@ -147,11 +147,11 @@ zephyr_udc0: &usbotg_fs {
 };
 
 &adc1 {
-	status = "okay";
 	pinctrl-0 = <&adc1_in2_pa2 &adc1_in3_pa3>;
 	pinctrl-names = "default";
 	st,adc-clock-source = "SYNC";
 	st,adc-prescaler = <2>;
+	status = "okay";
 };
 
 &vref {

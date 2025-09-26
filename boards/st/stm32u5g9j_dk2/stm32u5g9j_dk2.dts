@@ -11,8 +11,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "STMicroelectronics STM32U5G9J DISCOVERY-2 KIT board";
 	compatible = "st,stm32u5g9j-dk2";
+	model = "STMicroelectronics STM32U5G9J DISCOVERY-2 KIT board";
 
 	chosen {
 		zephyr,console = &usart1;
@@ -79,7 +79,6 @@
 	pinctrl-names = "default";
 	disp-on-gpios = <&gpioe 4 GPIO_ACTIVE_HIGH>;
 	bl-ctrl-gpios = <&gpioe 6 GPIO_ACTIVE_HIGH>;
-	status = "okay";
 
 	width = <800>;
 	height = <480>;
@@ -88,6 +87,7 @@
 	def-back-color-red = <0x00>;
 	def-back-color-green = <0x00>;
 	def-back-color-blue = <0x00>;
+	status = "okay";
 
 	display-timings {
 		compatible = "zephyr,panel-timing";
@@ -114,9 +114,9 @@
 };
 
 &clk_msis {
-	status = "okay";
 	msi-range = <4>; /* 4MHz (reset value) */
 	msi-pll-mode;
+	status = "okay";
 };
 
 &clk_lse {
@@ -179,15 +179,15 @@
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pg14 &i2c1_sda_pg13>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
+	status = "okay";
 };
 
 &i2c2 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&i2c2_scl_pf1 &i2c2_sda_pf0>;
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 
 	gt911: gt911@5d {
 		compatible = "goodix,gt911";
@@ -209,9 +209,9 @@
 	status = "okay";
 
 	pwm1: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim1_ch2_pe11>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
@@ -220,9 +220,9 @@
 	status = "okay";
 
 	pwm2: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim2_ch4_pa3>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
@@ -247,12 +247,12 @@
 &adc1 {
 	pinctrl-0 = <&adc1_in5_pa0 &adc1_in12_pa7>;
 	pinctrl-names = "default";
-	st,adc-clock-source = "ASYNC";
-	st,adc-prescaler = <1>;
-	status = "okay";
 
 	#address-cells = <1>;
 	#size-cells = <0>;
+	st,adc-clock-source = "ASYNC";
+	st,adc-prescaler = <1>;
+	status = "okay";
 
 	channel@5 {
 		reg = <0x5>;
@@ -274,12 +274,12 @@
 &adc4 {
 	pinctrl-0 = <&adc4_in4_pc3>;
 	pinctrl-names = "default";
-	st,adc-clock-source = "ASYNC";
-	st,adc-prescaler = <1>;
-	status = "okay";
 
 	#address-cells = <1>;
 	#size-cells = <0>;
+	st,adc-clock-source = "ASYNC";
+	st,adc-prescaler = <1>;
+	status = "okay";
 
 	channel@4 {
 		reg = <0x4>;
@@ -310,23 +310,23 @@ zephyr_udc0: &usbotg_hs {
 		 * Following flash partition is dedicated to the use of bootloader
 		 */
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(64)>;
+			label = "mcuboot";
 		};
 
 		slot0_partition: partition@10000 {
-			label = "image-0";
 			reg = <0x00010000 DT_SIZE_K(1952)>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@1f8000 {
-			label = "image-1";
 			reg = <0x001f8000 DT_SIZE_K(1960)>;
+			label = "image-1";
 		};
 
 		storage_partition: partition@3e2000 {
-			label = "storage";
 			reg = <0x003e2000 DT_SIZE_K(120)>;
+			label = "storage";
 		};
 	};
 };
@@ -360,8 +360,8 @@ zephyr_udc0: &usbotg_hs {
 			#size-cells = <1>;
 
 			extflash_partition: partition@0 {
-				label = "ext_storage";
 				reg = <0 DT_SIZE_M(128)>;
+				label = "ext_storage";
 			};
 		};
 	};

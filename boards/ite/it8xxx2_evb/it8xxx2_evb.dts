@@ -10,8 +10,8 @@
 #include <ite/it8xxx2-pinctrl-map.dtsi>
 
 / {
-	model = "IT8XXX2 EV-Board";
 	compatible = "ite,it8xxx2-evb";
+	model = "IT8XXX2 EV-Board";
 
 	aliases {
 		i2c-0 = &i2c0;
@@ -42,78 +42,78 @@
 };
 
 &adc0 {
-	status = "okay";
 	pinctrl-0 = <&adc0_ch3_gpi3_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 /* voltage comparator for test */
 &vcmp0 {
-	status = "okay";
 	scan-period = <IT8XXX2_VCMP_SCAN_PERIOD_600US>;
 	comparison = <IT8XXX2_VCMP_GREATER>;
 	threshold-mv = <2000>;
 	io-channels = <&adc0 3>;
+	status = "okay";
 };
 
 &i2c0 {
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	pinctrl-0 = <&i2c0_clk_gpb3_default
 		     &i2c0_data_gpb4_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &i2c1 {
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	pinctrl-0 = <&i2c1_clk_gpc1_default
 		     &i2c1_data_gpc2_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &i2c2 {
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	pinctrl-0 = <&i2c2_clk_gpf6_default
 		     &i2c2_data_gpf7_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &i2c3 {
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	pinctrl-0 = <&i2c3_clk_gph1_default
 		     &i2c3_data_gph2_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &i2c4 {
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	pinctrl-0 = <&i2c4_clk_gpe0_default
 		     &i2c4_data_gpe7_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &i2c5 {
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	pinctrl-0 = <&i2c5_clk_gpa4_default
 		     &i2c5_data_gpa5_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &uart1 {
-	status = "okay";
 	current-speed = <115200>;
 	clock-frequency = <1843200>;
+	status = "okay";
 };
 
 &uart2 {
-	status = "okay";
 	current-speed = <460800>;
 	clock-frequency = <1843200>;
+	status = "okay";
 
 	bt_hci_uart: bt_hci_uart {
 		compatible = "zephyr,bt-hci-uart";
@@ -122,17 +122,17 @@
 };
 
 &ite_uart1_wrapper {
-	status = "okay";
 	pinctrl-0 = <&uart1_rx_gpb0_default
 		     &uart1_tx_gpb1_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &ite_uart2_wrapper {
-	status = "okay";
 	pinctrl-0 = <&uart2_rx_gph1_default
 		     &uart2_tx_gph2_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 /*
@@ -141,31 +141,30 @@
  * then we should set frequency <=324Hz.
  */
 &pwm0 {
-	status = "okay";
 	prescaler-cx = <PWM_PRESCALER_C6>;
 	pinctrl-0 = <&pwm0_gpa0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 /* pwm for fan */
 &pwm7 {
-	status = "okay";
 	prescaler-cx = <PWM_PRESCALER_C4>;
 	pinctrl-0 = <&pwm7_gpa7_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 /* fan tachometer sensor */
 &tach0 {
-	status = "okay";
 	channel = <IT8XXX2_TACH_CHANNEL_A>;
 	pulses-per-round = <2>;
 	pinctrl-0 = <&tach0a_gpd6_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &kbd {
-	status = "okay";
 	pinctrl-0 = <&ksi0_default
 		     &ksi1_default
 		     &ksi2_default
@@ -193,12 +192,13 @@
 	pinctrl-names = "default";
 	row-size = <8>;
 	col-size = <16>;
+	status = "okay";
 };
 
 &peci0 {
-	status = "okay";
 	pinctrl-0 = <&peci_gpf6_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &sha0 {
@@ -212,28 +212,28 @@
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 0x20000>;
+			label = "mcuboot";
 		};
 
 		slot0_partition: partition@20000 {
-			label = "image-0";
 			reg = <0x00020000 0x20000>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@40000 {
-			label = "image-1";
 			reg = <0x00040000 0x10000>;
+			label = "image-1";
 		};
 
 		scratch_partition: partition@50000 {
-			label = "image-scratch";
 			reg = <0x00050000 0x10000>;
+			label = "image-scratch";
 		};
 
 		storage_partition: partition@60000 {
-			label = "storage";
 			reg = <0x00060000 0x20000>;
+			label = "storage";
 		};
 	};
 };

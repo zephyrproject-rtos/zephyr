@@ -9,8 +9,8 @@
 #include "dt_xt_zb1_devkit-pinctrl.dtsi"
 
 / {
-	model = "Zigbee 3.0 and BLE 5.0 Coexistence Module Development Kit";
 	compatible = "bflb,bl702";
+	model = "Zigbee 3.0 and BLE 5.0 Coexistence Module Development Kit";
 
 	chosen {
 		zephyr,flash = &flash0;
@@ -40,24 +40,24 @@
 			#size-cells = <1>;
 
 			slot0_partition: partition@0 {
-				label = "image-0";
 				reg = <0x00000000 0x80000>;
+				label = "image-0";
 				read-only;
 			};
 
 			storage_partition: partition@80000 {
-				label = "storage";
 				reg = <0x00080000 (0x80000 - 0x2000)>;
+				label = "storage";
 			};
 		};
 	};
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
 
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };

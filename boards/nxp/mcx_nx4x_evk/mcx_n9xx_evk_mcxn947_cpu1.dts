@@ -10,8 +10,8 @@
 #include "mcx_n9xx_evk.dtsi"
 
 / {
-	model = "NXP MCX-N9XX-EVK board";
 	compatible = "nxp,mcxn947", "nxp,mcx";
+	model = "NXP MCX-N9XX-EVK board";
 
 	cpus {
 		/delete-node/ cpu@0;

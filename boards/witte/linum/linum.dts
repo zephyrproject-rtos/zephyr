@@ -10,8 +10,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Witte Technology STM32H753ZI Linum board";
 	compatible = "witte,linum";
+	model = "Witte Technology STM32H753ZI Linum board";
 
 	chosen {
 		zephyr,console = &usart1;
@@ -25,8 +25,8 @@
 
 	sdram1: sdram@c0000000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
-		device_type = "memory";
 		reg = <0xc0000000 DT_SIZE_M(8)>;
+		device_type = "memory";
 		zephyr,memory-region = "SDRAM1";
 		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
 	};
@@ -188,8 +188,8 @@ zephyr_udc0: &usbotg_fs {
 &i2c3 {
 	pinctrl-0 = <&i2c3_scl_ph7 &i2c3_sda_ph8>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 };
 
 &timers12 {
@@ -197,9 +197,9 @@ zephyr_udc0: &usbotg_fs {
 	status = "okay";
 
 	pwm12: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim12_ch1_pb14>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
@@ -232,7 +232,6 @@ zephyr_udc0: &usbotg_fs {
 };
 
 &mac {
-	status = "okay";
 	pinctrl-0 = <&eth_rxd0_pc4
 		     &eth_rxd1_pc5
 		     &eth_ref_clk_pa1
@@ -243,12 +242,13 @@ zephyr_udc0: &usbotg_fs {
 	pinctrl-names = "default";
 	phy-connection-type = "rmii";
 	phy-handle = <&eth_phy>;
+	status = "okay";
 };
 
 &mdio {
-	status = "okay";
 	pinctrl-0 = <&eth_mdio_pa2 &eth_mdc_pc1>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	eth_phy: ethernet-phy@0 {
 		compatible = "microchip,ksz8081";
@@ -258,10 +258,10 @@ zephyr_udc0: &usbotg_fs {
 };
 
 &spi1 {
-	status = "okay";
 	pinctrl-0 = <&spi1_sck_pa5 &spi1_miso_pa6 &spi1_mosi_pb5>;
 	pinctrl-names = "default";
 	cs-gpios = <&gpiod 14 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+	status = "okay";
 };
 
 &fmc {
@@ -280,11 +280,11 @@ zephyr_udc0: &usbotg_fs {
 	status = "okay";
 
 	sdram {
-		status = "okay";
 		power-up-delay = <100>;
 		num-auto-refresh = <8>;
 		mode-register = <0x220>;
 		refresh-rate = <0x603>;
+		status = "okay";
 
 		bank@1 {
 			reg = <1>;
@@ -314,7 +314,6 @@ zephyr_udc0: &usbotg_fs {
 	disp-on-gpios = <&gpiod 7 GPIO_ACTIVE_HIGH>;
 
 	ext-sdram = <&sdram1>;
-	status = "okay";
 
 	clocks = <&rcc STM32_CLOCK(APB3, 3)>,
 		 <&rcc STM32_SRC_PLL3_R NO_SEL>;
@@ -322,6 +321,10 @@ zephyr_udc0: &usbotg_fs {
 	width = <480>;
 	height = <272>;
 	pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+	def-back-color-red = <0xFF>;
+	def-back-color-green = <0xFF>;
+	def-back-color-blue = <0xFF>;
+	status = "okay";
 
 	display-timings {
 		compatible = "zephyr,panel-timing";
@@ -336,9 +339,6 @@ zephyr_udc0: &usbotg_fs {
 		hfront-porch = <8>;
 		vfront-porch = <4>;
 	};
-	def-back-color-red = <0xFF>;
-	def-back-color-green = <0xFF>;
-	def-back-color-blue = <0xFF>;
 };
 
 &sdmmc1 {
@@ -366,33 +366,33 @@ zephyr_udc0: &usbotg_fs {
 
 		/* 128KB for bootloader */
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(128)>;
+			label = "mcuboot";
 			read-only;
 		};
 
 		/* storage: 128KB for settings */
 		storage_partition: partition@20000 {
-			label = "storage";
 			reg = <0x00020000 DT_SIZE_K(128)>;
+			label = "storage";
 		};
 
 		/* application image slot: 256KB */
 		slot0_partition: partition@40000 {
-			label = "image-0";
 			reg = <0x00040000 DT_SIZE_K(256)>;
+			label = "image-0";
 		};
 
 		/* backup slot: 256KB */
 		slot1_partition: partition@80000 {
-			label = "image-1";
 			reg = <0x00080000 DT_SIZE_K(256)>;
+			label = "image-1";
 		};
 
 		/* swap slot: 128KB */
 		scratch_partition: partition@c0000 {
-			label = "image-scratch";
 			reg = <0x000c0000 DT_SIZE_K(128)>;
+			label = "image-scratch";
 		};
 	};
 };

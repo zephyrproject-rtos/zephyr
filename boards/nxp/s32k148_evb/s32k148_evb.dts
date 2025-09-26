@@ -12,8 +12,8 @@
 #include "s32k148_evb-pinctrl.dtsi"
 
 / {
-	model = "NXP S32K148EVB";
 	compatible = "nxp,s32k148_evb";
+	model = "NXP S32K148EVB";
 
 	chosen {
 		zephyr,sram = &sram_l;
@@ -183,8 +183,8 @@
 &enet_mac {
 	pinctrl-0 = <&pinmux_enet>;
 	pinctrl-names = "default";
-	zephyr,random-mac-address;
 	phy-connection-type = "rmii";
+	zephyr,random-mac-address;
 };
 
 &enet_mdio {

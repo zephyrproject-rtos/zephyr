@@ -9,8 +9,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Olimex STM32-H103 board";
 	compatible = "olimex,stm32-h103";
+	model = "Olimex STM32-H103 board";
 
 	chosen {
 		zephyr,console = &usart2;
@@ -89,15 +89,15 @@
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
 	pinctrl-names = "default";
-	status = "disabled";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "disabled";
 };
 
 &i2c2 {
 	pinctrl-0 = <&i2c2_scl_pb10 &i2c2_sda_pb11>;
 	pinctrl-names = "default";
-	status = "disabled";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "disabled";
 };
 
 &spi1 {

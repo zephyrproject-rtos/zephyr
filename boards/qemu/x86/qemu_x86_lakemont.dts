@@ -18,8 +18,8 @@
 #include <intel/lakemont.dtsi>
 
 / {
-	model = "QEMU X86 (Lakemont) emulator";
 	compatible = "qemu,x86_lakemont_emulator";
+	model = "QEMU X86 (Lakemont) emulator";
 
 	aliases {
 		uart-0 = &uart0;
@@ -32,8 +32,8 @@
 	};
 
 	dram0: memory@DT_DRAM_BASE {
-		device_type = "memory";
 		reg = <DT_ADDR(DT_DRAM_BASE) DT_DRAM_SIZE>;
+		device_type = "memory";
 	};
 
 	soc {

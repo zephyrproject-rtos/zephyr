@@ -12,8 +12,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "NXP LPCXpresso55S28 board";
 	compatible = "nxp,lpc55xxx", "nxp,lpc";
+	model = "NXP LPCXpresso55S28 board";
 
 	aliases {
 		sw0 = &user_button_1;
@@ -83,9 +83,9 @@
 };
 
 &hs_lspi {
-	status = "okay";
 	dmas = <&dma0 2>, <&dma0 3>;
 	dma-names = "rx", "tx";
+	status = "okay";
 };
 
 &wwdt0 {
@@ -93,9 +93,9 @@
 };
 
 &adc0 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpadc0>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &dma0 {
@@ -109,31 +109,31 @@
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x0 DT_SIZE_K(32)>;
+			label = "mcuboot";
 		};
 
 		slot0_partition: partition@8000 {
-			label = "image-0";
 			reg = <0x00008000 DT_SIZE_K(208)>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@3C000 {
-			label = "image-1";
 			reg = <0x0003C000 DT_SIZE_K(208)>;
+			label = "image-1";
 		};
 
 		storage_partition: partition@70000 {
-			label = "storage";
 			reg = <0x00070000 DT_SIZE_K(52)>;
+			label = "storage";
 		};
 		/* The last 12KBs are reserved for PFR. */
 	};
 };
 
 zephyr_udc0: &usbhs {
-	status = "okay";
 	phy-handle = <&usbphy1>;
+	status = "okay";
 };
 
 zephyr_uhc0: &usbhfs {
@@ -145,25 +145,25 @@ zephyr_uhc0: &usbhfs {
 zephyr_uhc1: &usbhhs {
 	pinctrl-0 = <&pinmux_usbhhs>;
 	pinctrl-names = "default";
-	status = "okay";
 	phy-handle = <&usbphy1>;
+	status = "okay";
 };
 
 &usbphy1 {
-	status = "okay";
 	tx-d-cal = <5>;
 	tx-cal-45-dp-ohms = <10>;
 	tx-cal-45-dm-ohms = <10>;
+	status = "okay";
 };
 
 &sdif {
-	status = "okay";
 	pinctrl-0 = <&pinmux_sdif_default>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	mmc {
 		compatible = "zephyr,sdmmc-disk";
-		status = "okay";
 		disk-name = "SD";
+		status = "okay";
 	};
 };

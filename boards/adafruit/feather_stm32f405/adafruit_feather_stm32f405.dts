@@ -10,8 +10,8 @@
 #include "feather_connector.dtsi"
 
 / {
-	model = "Adafruit Feather STM32F405 Express";
 	compatible = "adafruit,adafruit_feather_stm32f405", "st,stm32f405";
+	model = "Adafruit Feather STM32F405 Express";
 
 	chosen {
 		zephyr,console = &usart3;
@@ -71,8 +71,8 @@
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 };
 
 &spi1_nss_pa15 {
@@ -83,8 +83,8 @@
 	pinctrl-0 = <&spi1_nss_pa15 &spi1_sck_pb3
 		     &spi1_miso_pb4 &spi1_mosi_pb5>;
 	pinctrl-names = "default";
-	status = "okay";
 	cs-gpios = <&gpioa 15 GPIO_ACTIVE_LOW>;
+	status = "okay";
 
 	gd25q16: gd25q16c@0 {
 		compatible = "jedec,spi-nor";

@@ -10,8 +10,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "STMicroelectronics STM32C0116-DK Discovery board";
 	compatible = "st,stm32c011f6-dk";
+	model = "STMicroelectronics STM32C0116-DK Discovery board";
 
 	chosen {
 		zephyr,console = &usart1;
@@ -43,8 +43,8 @@
 		reset_button: button {
 			label = "reset button";
 			gpios = <&gpiof 2 GPIO_ACTIVE_LOW>;
-			status = "okay";
 			zephyr,code = <INPUT_KEY_0>;
+			status = "okay";
 		};
 	};
 
@@ -143,12 +143,12 @@
 &adc1 {
 	pinctrl-0 = <&adc1_in8_pa8>;
 	pinctrl-names = "default";
-	st,adc-clock-source = "SYNC";
-	st,adc-prescaler = <2>;
-	status = "okay";
 
 	#address-cells = <1>;
 	#size-cells = <0>;
+	st,adc-clock-source = "SYNC";
+	st,adc-prescaler = <2>;
+	status = "okay";
 
 	channel@8 {
 		reg = <0x8>;

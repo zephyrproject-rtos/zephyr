@@ -12,8 +12,8 @@
 #include "cy8ckit_062_wifi_bt_cy8c6247-pinctrl.dtsi"
 
 / {
-	model = "cy8ckit_062_wifi_bt_m0 with a Cypress PSOC 6 SoC";
 	compatible = "cypress,cy8ckit_062_wifi_bt_m0", "cypress,PSOC6";
+	model = "cy8ckit_062_wifi_bt_m0 with a Cypress PSOC 6 SoC";
 
 	aliases {
 		sw0 = &user_bt;
@@ -49,8 +49,8 @@
 };
 
 &gpio_prt0 {
-	status = "okay";
 	interrupt-parent = <&intmux_ch20>;
+	status = "okay";
 };
 
 &gpio_prt13 {
@@ -58,11 +58,11 @@
 };
 
 &uart6 {
-	status = "okay";
 	current-speed = <115200>;
 
 	interrupt-parent = <&intmux_ch21>;
 
 	pinctrl-0 = <&p13_0_scb6_uart_rx &p13_1_scb6_uart_tx>;
 	pinctrl-names = "default";
+	status = "okay";
 };

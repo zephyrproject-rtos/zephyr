@@ -11,8 +11,8 @@
 #include "slwrb4180b-pinctrl.dtsi"
 
 / {
-	model = "Silicon Labs BRD4180B (Wireless Gecko 21 Radio Board)";
 	compatible = "silabs,slwrb4180b", "silabs,efr32mg21";
+	model = "Silicon Labs BRD4180B (Wireless Gecko 21 Radio Board)";
 
 	chosen {
 		zephyr,bt-hci = &bt_hci_silabs;

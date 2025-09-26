@@ -9,8 +9,8 @@
 #include <intel/intel_adsp_ace15_mtpm.dtsi>
 
 / {
-	model = "intel_adsp_ace15_mtpm";
 	compatible = "intel,intel_adsp_ace20_lnl";
+	model = "intel_adsp_ace15_mtpm";
 
 	aliases {
 		dma0 = &lpgpdma0;

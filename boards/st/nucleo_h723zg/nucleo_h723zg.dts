@@ -15,8 +15,8 @@
  */
 
 / {
-	model = "STMicroelectronics STM32H723ZG-NUCLEO board";
 	compatible = "st,stm32h723zg-nucleo";
+	model = "STMicroelectronics STM32H723ZG-NUCLEO board";
 
 	chosen {
 		zephyr,console = &usart3;
@@ -151,17 +151,17 @@
 };
 
 &spi1 {
-	status = "okay";
 	pinctrl-0 = <&spi1_sck_pa5 &spi1_miso_pa6 &spi1_mosi_pb5>;
 	pinctrl-names = "default";
 	cs-gpios = <&gpiod 14 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+	status = "okay";
 };
 
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 };
 
 &backup_sram {
@@ -173,14 +173,13 @@
 	status = "okay";
 
 	pwm12: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim12_ch1_pb14>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
 &mac {
-	status = "okay";
 	pinctrl-0 = <&eth_ref_clk_pa1
 		     &eth_crs_dv_pa7
 		     &eth_rxd0_pc4
@@ -191,12 +190,13 @@
 	pinctrl-names = "default";
 	phy-connection-type = "rmii";
 	phy-handle = <&eth_phy>;
+	status = "okay";
 };
 
 &mdio {
-	status = "okay";
 	pinctrl-0 = <&eth_mdio_pa2 &eth_mdc_pc1>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	eth_phy: ethernet-phy@0 {
 		compatible = "ethernet-phy";

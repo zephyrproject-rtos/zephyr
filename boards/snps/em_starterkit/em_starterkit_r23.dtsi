@@ -55,11 +55,11 @@
 
 			w25q128bv: w25q128bv@0 {
 				compatible = "jedec,spi-nor";
-				size = <0x8000000>;
 				reg = <0>;
+				size = <0x8000000>;
 				spi-max-frequency = <20000000>;
-				status = "okay";
 				jedec-id = [ef 40 18];
+				status = "okay";
 			};
 		};
 

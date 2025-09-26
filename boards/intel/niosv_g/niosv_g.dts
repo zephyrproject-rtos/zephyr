@@ -9,8 +9,8 @@
 #include <niosv/niosv-g.dtsi>
 
 / {
-	model = "niosv_g";
 	compatible = "intel,niosv_g";
+	model = "niosv_g";
 
 	chosen {
 		zephyr,console = &uart0;

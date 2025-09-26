@@ -13,8 +13,8 @@
 #include <espressif/partitions_0x0_amp.dtsi>
 
 / {
-	model = "Espressif ESP32S3-EYE PROCPU";
 	compatible = "espressif,esp32s3";
+	model = "Espressif ESP32S3-EYE PROCPU";
 
 	aliases {
 		i2c-0 = &i2c0;
@@ -92,8 +92,8 @@
 
 		st7789v: st7789v@0 {
 			compatible = "sitronix,st7789v";
-			mipi-max-frequency = <20000000>;
 			reg = <0>;
+			mipi-max-frequency = <20000000>;
 			width = <240>;
 			height = <240>;
 			x-offset = <0>;
@@ -123,16 +123,16 @@
 };
 
 &i2c1 {
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	pinctrl-0 = <&i2c1_default>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	ov2640: ov2640@30 {
 		compatible = "ovti,ov2640";
 		reg = <0x30>;
-		status = "okay";
 		clock-rate-control = <0x80>;
+		status = "okay";
 
 		port {
 			ov2640_ep_out: endpoint {
@@ -143,13 +143,13 @@
 };
 
 &lcd_cam {
-	status = "okay";
 	cam-clk = <10000000>;
 	pinctrl-0 = <&lcd_cam_default>;
 	pinctrl-names = "default";
 	source = <&ov2640>;
 	dmas = <&dma 2>;
 	dma-names = "rx";
+	status = "okay";
 
 	port {
 		dvp_ep_in: endpoint {
@@ -179,9 +179,9 @@
 };
 
 &adc0 {
-	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
+	status = "okay";
 
 	channel@0 {
 		reg = <0>;
@@ -195,9 +195,9 @@
 &spi3 {
 	#address-cells = <1>;
 	#size-cells = <0>;
-	status = "okay";
 	pinctrl-0 = <&spim3_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &wdt0 {
@@ -218,12 +218,11 @@
 
 &sdhc {
 	sdhc0: sdhc@0 {
-		status = "okay";
-
 		pinctrl-0 = <&sdhc0_default>;
 		pinctrl-names = "default";
 		max-bus-freq = <52000000>;
 		bus-width = <1>;
+		status = "okay";
 
 		mmc {
 			compatible = "zephyr,sdmmc-disk";

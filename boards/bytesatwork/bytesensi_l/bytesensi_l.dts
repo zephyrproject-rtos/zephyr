@@ -12,8 +12,8 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 
 / {
-	model = "bytesatwork BLE/LORA sensor board";
 	compatible = "bytesatwork,bytesensi-l";
+	model = "bytesatwork BLE/LORA sensor board";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -37,28 +37,28 @@
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 0xc000>;
+			label = "mcuboot";
 		};
 
 		slot0_partition: partition@c000 {
-			label = "image-0";
 			reg = <0x0000C000 0x32000>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@3e000 {
-			label = "image-1";
 			reg = <0x0003E000 0x32000>;
+			label = "image-1";
 		};
 
 		scratch_partition: partition@70000 {
-			label = "image-scratch";
 			reg = <0x00070000 0xa000>;
+			label = "image-scratch";
 		};
 
 		storage_partition: partition@7a000 {
-			label = "storage";
 			reg = <0x0007a000 0x00005000>;
+			label = "storage";
 		};
 	};
 };
@@ -84,25 +84,25 @@
 
 &i2c0 {
 	compatible = "nordic,nrf-twi";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-1 = <&i2c0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	light_sensor: apds9960@39 {
-		status = "okay";
 		compatible = "avago,apds9960";
 		reg = <0x39>;
 		int-gpios = <&gpio0 25 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		status = "okay";
 	};
 
 	temperature_sensor: tmp11x@4a {
-		status = "okay";
 		compatible = "ti,tmp11x";
 		reg = <0x4a>;
 		#address-cells = <1>;
 		#size-cells = <0>;
+		status = "okay";
 
 		eeprom: ti_tmp11x_eeprom@0 {
 			compatible = "ti,tmp11x-eeprom";
@@ -112,31 +112,30 @@
 	};
 
 	gas_sensor: ccs811@5a {
-		status = "okay";
 		compatible = "ams,ccs811";
 		reg = <0x5a>;
 		irq-gpios = <&gpio0 28 GPIO_ACTIVE_LOW>;
 		wake-gpios = <&gpio0 27 GPIO_ACTIVE_LOW>;
+		status = "okay";
 	};
 
 	pressure_sensor: lps22hb-press@5c {
-		status = "okay";
 		compatible = "st,lps22hb-press";
 		reg = <0x5c>;
+		status = "okay";
 	};
 };
 
 &spi1 {
-	status = "okay";
 	compatible = "nordic,nrf-spi";
 	pinctrl-0 = <&spi1_default>;
 	pinctrl-1 = <&spi1_sleep>;
 	pinctrl-names = "default", "sleep";
 	cs-gpios = <&gpio0 6 GPIO_ACTIVE_LOW>,
 		   <&gpio0 5 GPIO_ACTIVE_LOW>;
+	status = "okay";
 
 	lora: lora@0 {
-		status = "okay";
 		compatible = "semtech,sx1276";
 		reg = <0>;
 		reset-gpios = <&gpio0 17 GPIO_ACTIVE_LOW>;
@@ -146,28 +145,29 @@
 			    <&gpio0 23 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
 		spi-max-frequency = <1000000>;
 		power-amplifier-output = "pa-boost";
+		status = "okay";
 	};
 
 	nor_flash: mx25r6435f@1 {
-		status = "okay";
 		compatible = "jedec,spi-nor";
-		size = <0x4000000>;
 		reg = <1>;
+		size = <0x4000000>;
 		spi-max-frequency = <8000000>;
-		status = "okay";
 		jedec-id = [c2 28 17];
+		status = "okay";
+		status = "okay";
 	};
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <9600>;
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	gnss: u_blox_m8 {
-		status = "okay";
 		compatible = "gnss-nmea-generic";
+		status = "okay";
 	};
 };

@@ -39,9 +39,9 @@
 
 	ili9340: ili9340@0 {
 		compatible = "ilitek,ili9340";
+		reg = <0>;
 		mipi-max-frequency = <15151515>;
 		duplex = <SPI_HALF_DUPLEX>;
-		reg = <0>;
 		width = <320>;
 		height = <240>;
 		pixel-format = <ILI9XXX_PIXEL_FORMAT_RGB888>;

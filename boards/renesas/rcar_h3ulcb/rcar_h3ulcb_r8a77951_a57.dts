@@ -21,8 +21,8 @@
 	};
 
 	ram: memory@48000000 {
-		device_type = "mmio-sram";
 		reg = <0x0 0x48000000 0x0 DT_SIZE_M(512)>;
+		device_type = "mmio-sram";
 	};
 
 	/* These aliases are provided for compatibility with samples */
@@ -65,18 +65,18 @@
 		     &sd0_data0_uhs &sd0_data1_uhs &sd0_data2_uhs &sd0_data3_uhs>;
 	pinctrl-names = "default", "uhs";
 
-	disk {
-		compatible = "zephyr,sdmmc-disk";
-		disk-name = "SD";
-		status = "okay";
-	};
-
 	vmmc-supply = <&vcc_sd0>;
 	vqmmc-supply = <&vccq_sd0>;
 
 	bus-width = <4>;
 	mmc-sdr104-support;
 	status = "okay";
+
+	disk {
+		compatible = "zephyr,sdmmc-disk";
+		disk-name = "SD";
+		status = "okay";
+	};
 };
 
 &scif2 {
@@ -93,14 +93,14 @@
 		     &emmc2_data0 &emmc2_data1 &emmc2_data2 &emmc2_data3
 		     &emmc2_data4 &emmc2_data5 &emmc2_data6 &emmc2_data7>;
 	pinctrl-names = "default", "uhs";
+	bus-width = <8>;
+	mmc-hs200-1_8v;
+	mmc-hs400-1_8v;
+	non-removable;
 
 	disk {
 		compatible = "zephyr,mmc-disk";
 		disk-name = "SD2";
 		status = "disabled";
 	};
-	bus-width = <8>;
-	mmc-hs200-1_8v;
-	mmc-hs400-1_8v;
-	non-removable;
 };

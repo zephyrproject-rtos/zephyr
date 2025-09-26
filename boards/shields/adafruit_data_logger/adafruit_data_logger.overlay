@@ -35,8 +35,8 @@
 };
 
 &arduino_spi {
-	status = "okay";
 	cs-gpios = <&arduino_header ARDUINO_HEADER_R3_D10 GPIO_ACTIVE_LOW>;
+	status = "okay";
 
 	sdhc0_adafruit_data_logger: sdhc@0 {
 		compatible = "zephyr,sdhc-spi-slot";

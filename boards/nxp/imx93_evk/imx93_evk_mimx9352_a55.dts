@@ -11,8 +11,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "NXP i.MX93 A55";
 	compatible = "fsl,mimx93";
+	model = "NXP i.MX93 A55";
 
 	chosen {
 		zephyr,console = &lpuart2;
@@ -100,8 +100,8 @@
 	pinctrl-0 = <&pinmux_enet>;
 	pinctrl-names = "default";
 	phy-handle = <&phy>;
-	zephyr,random-mac-address;
 	phy-connection-type = "rgmii";
+	zephyr,random-mac-address;
 	status = "okay";
 };
 
@@ -118,33 +118,33 @@
 };
 
 &lpuart1 {
-	status = "disabled";
 	current-speed = <115200>;
 	/* clocks = <&ccm IMX_CCM_UART4_CLK 0x6c 24>; */
 	pinctrl-0 = <&uart1_default>;
 	pinctrl-names = "default";
+	status = "disabled";
 };
 
 &lpuart2 {
-	status = "okay";
 	current-speed = <115200>;
 	/* clocks = <&ccm IMX_CCM_UART4_CLK 0x6c 24>; */
 	pinctrl-0 = <&uart2_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &lpi2c1 {
-	status = "disabled";
 	clock-frequency = <I2C_BITRATE_FAST>;
 	pinctrl-0 = <&i2c1_default>;
 	pinctrl-names = "default";
+	status = "disabled";
 };
 
 &lpi2c2 {
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 	pinctrl-0 = <&i2c2_default>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	mfd0: adp5585@34 {
 		compatible = "adi,adp5585";
@@ -178,10 +178,10 @@
 };
 
 &lpspi3 {
-	status = "disabled";
 	clock-frequency = <DT_FREQ_M(1)>;
 	pinctrl-0 = <&spi3_default>;
 	pinctrl-names = "default";
+	status = "disabled";
 };
 
 &gpio1 {

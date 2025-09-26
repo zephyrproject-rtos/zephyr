@@ -13,8 +13,8 @@
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 
 / {
-	model = "STMicroelectronics STM32F746G DISCOVERY board";
 	compatible = "st,stm32f746g-disco";
+	model = "STMicroelectronics STM32F746G DISCOVERY board";
 
 	chosen {
 		zephyr,console = &usart1;
@@ -53,8 +53,8 @@
 
 	sdram1: sdram@c0000000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
-		device_type = "memory";
 		reg = <0xc0000000 DT_SIZE_M(16)>;
+		device_type = "memory";
 		zephyr,memory-region = "SDRAM1";
 		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
 	};
@@ -112,15 +112,15 @@
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 };
 
 &i2c3 {
 	pinctrl-0 = <&i2c3_scl_ph7 &i2c3_sda_ph8>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 
 	ft5336: ft5336@38 {
 		compatible = "focaltech,ft5336";
@@ -161,9 +161,9 @@ zephyr_udc0: &usbotg_fs {
 	status = "okay";
 
 	pwm3: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim3_ch1_pb4>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
@@ -178,17 +178,16 @@ zephyr_udc0: &usbotg_fs {
 };
 
 &sdmmc1 {
-	status = "okay";
 	pinctrl-0 = <&sdmmc1_d0_pc8 &sdmmc1_d1_pc9
 		     &sdmmc1_d2_pc10 &sdmmc1_d3_pc11
 		     &sdmmc1_ck_pc12 &sdmmc1_cmd_pd2>;
 	pinctrl-names = "default";
 	cd-gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
 	disk-name = "SD";
+	status = "okay";
 };
 
 &mac {
-	status = "okay";
 	pinctrl-0 = <&eth_rxd0_pc4
 		     &eth_rxd1_pc5
 		     &eth_ref_clk_pa1
@@ -199,12 +198,13 @@ zephyr_udc0: &usbotg_fs {
 	pinctrl-names = "default";
 	phy-connection-type = "rmii";
 	phy-handle = <&eth_phy>;
+	status = "okay";
 };
 
 &mdio {
-	status = "okay";
 	pinctrl-0 = <&eth_mdio_pa2 &eth_mdc_pc1>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	eth_phy: ethernet-phy@0 {
 		compatible = "ethernet-phy";
@@ -233,13 +233,13 @@ zephyr_udc0: &usbotg_fs {
 			#size-cells = <1>;
 
 			slot1_partition: partition@0 {
-				label = "image-1";
 				reg = <0x00000000 DT_SIZE_K(640)>;
+				label = "image-1";
 			};
 
 			storage_partition: partition@a0000 {
-				label = "storage";
 				reg = <0x000a0000 DT_SIZE_M(15)>;
+				label = "storage";
 			};
 		};
 	};
@@ -261,7 +261,6 @@ zephyr_udc0: &usbotg_fs {
 	status = "okay";
 
 	sdram {
-		status = "okay";
 		power-up-delay = <100>;
 		num-auto-refresh = <8>;
 		mode-register = <0x220>;
@@ -271,6 +270,7 @@ zephyr_udc0: &usbotg_fs {
 		 * Note: SDRAM_CLK_MHZ = HCLK_MHZ / 2 (108 MHz)
 		 */
 		refresh-rate = <1667>;
+		status = "okay";
 
 		bank@0 {
 			reg = <0>;
@@ -299,11 +299,15 @@ zephyr_udc0: &usbotg_fs {
 	disp-on-gpios = <&gpioi 12 GPIO_ACTIVE_HIGH>;
 	bl-ctrl-gpios = <&gpiok 3 GPIO_ACTIVE_HIGH>;
 	ext-sdram = <&sdram1>;
-	status = "okay";
 
 	width = <480>;
 	height = <272>;
 	pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+
+	def-back-color-red = <0xFF>;
+	def-back-color-green = <0xFF>;
+	def-back-color-blue = <0xFF>;
+	status = "okay";
 
 	display-timings {
 		compatible = "zephyr,panel-timing";
@@ -318,8 +322,4 @@ zephyr_udc0: &usbotg_fs {
 		hfront-porch = <8>;
 		vfront-porch = <4>;
 	};
-
-	def-back-color-red = <0xFF>;
-	def-back-color-green = <0xFF>;
-	def-back-color-blue = <0xFF>;
 };

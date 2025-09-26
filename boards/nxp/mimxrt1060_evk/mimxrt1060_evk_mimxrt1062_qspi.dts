@@ -15,23 +15,23 @@
 };
 
 &flexspi {
-	status = "okay";
+	reg = <0x402a8000 0x4000>, <0x60000000 DT_SIZE_M(8)>;
 	pinctrl-0 = <&pinmux_flexspi1>;
 	pinctrl-names = "default";
 	ahb-prefetch;
 	ahb-read-addr-opt;
 	rx-clock-source = <1>;
-	reg = <0x402a8000 0x4000>, <0x60000000 DT_SIZE_M(8)>;
+	status = "okay";
 
 	is25wp064: is25wp064@0 {
 		compatible = "nxp,imx-flexspi-nor";
-		size = <DT_SIZE_M(8 * 8)>;
 		reg = <0>;
+		size = <DT_SIZE_M(8 * 8)>;
 		spi-max-frequency = <DT_FREQ_M(104)>;
-		status = "okay";
 		jedec-id = [9d 70 17];
 		erase-block-size = <DT_SIZE_K(4)>;
 		write-block-size = <1>;
+		status = "okay";
 
 		partitions {
 			compatible = "fixed-partitions";
@@ -43,23 +43,23 @@
 			 * to the flash memory sector size of 4KB.
 			 */
 			boot_partition: partition@0 {
-				label = "mcuboot";
 				reg = <0x00000000 DT_SIZE_K(128)>;
+				label = "mcuboot";
 			};
 
 			slot0_partition: partition@20000 {
-				label = "image-0";
 				reg = <0x00020000 DT_SIZE_M(3)>;
+				label = "image-0";
 			};
 
 			slot1_partition: partition@320000 {
-				label = "image-1";
 				reg = <0x00320000 DT_SIZE_M(3)>;
+				label = "image-1";
 			};
 
 			storage_partition: partition@620000 {
-				label = "storage";
 				reg = <0x00620000 (DT_SIZE_M(2) - DT_SIZE_K(128))>;
+				label = "storage";
 			};
 		};
 	};

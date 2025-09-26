@@ -14,8 +14,8 @@
 #include <zephyr/dt-bindings/led/led.h>
 
 / {
-	model = "TDONGLE S3 PROCPU";
 	compatible = "espressif,esp32s3";
+	model = "TDONGLE S3 PROCPU";
 
 	aliases {
 		watchdog0 = &wdt0;
@@ -63,9 +63,9 @@
 
 		st7735r: st7735r@0 {
 			compatible = "sitronix,st7735r";
+			reg = <0>;
 			mipi-max-frequency = <20000000>;
 			mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
-			reg = <0>;
 			width = <160>;
 			height = <80>;
 			inversion-on;

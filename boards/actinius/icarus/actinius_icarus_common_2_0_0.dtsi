@@ -22,9 +22,8 @@
 };
 
 &spi3 {
-	status = "okay";
-
 	cs-gpios = <&gpio0 25 GPIO_ACTIVE_LOW>;
+	status = "okay";
 
 	w25q64: w25q64jv@0 {
 		compatible = "jedec,spi-nor";

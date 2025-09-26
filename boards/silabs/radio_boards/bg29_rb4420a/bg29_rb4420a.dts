@@ -12,8 +12,8 @@
 #include "bg29_rb4420a-pinctrl.dtsi"
 
 / {
-	model = "Silicon Labs BG29-RB4420A";
 	compatible = "silabs,bg29_rb4420a", "silabs,efr32bg29";
+	model = "Silicon Labs BG29-RB4420A";
 
 	chosen {
 		zephyr,bt-hci = &bt_hci_silabs;
@@ -152,9 +152,9 @@
 	clock-frequency = <DT_FREQ_M(8)>;
 	pinctrl-0 = <&eusart1_default>;
 	pinctrl-names = "default";
-	status = "okay";
 
 	cs-gpios = <&gpioc 4 GPIO_ACTIVE_LOW>;
+	status = "okay";
 
 	mx25r80: mx25r8035f@0 {
 		compatible = "jedec,spi-nor";
@@ -162,10 +162,10 @@
 		dpd-wakeup-sequence = <30000 20 35000>;
 		has-dpd;
 		jedec-id = [c2 28 14];
-		mxicy,mx25r-power-mode = "low-power";
 		size = <0x800000>;
 		spi-max-frequency = <DT_FREQ_M(33)>;
 		t-enter-dpd = <0>;
+		mxicy,mx25r-power-mode = "low-power";
 		zephyr,pm-device-runtime-auto;
 	};
 };

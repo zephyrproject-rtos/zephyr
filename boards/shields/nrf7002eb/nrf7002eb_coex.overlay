@@ -7,10 +7,10 @@
 / {
 	nrf_radio_coex: coex {
 		compatible = "nordic,nrf7002-coex";
-		status = "okay";
 
 		status0-gpios = <&edge_connector 5 GPIO_ACTIVE_HIGH>;
 		req-gpios = <&edge_connector 6 GPIO_ACTIVE_HIGH>;
 		grant-gpios = <&edge_connector 15 (GPIO_PULL_DOWN | GPIO_ACTIVE_LOW)>;
+		status = "okay";
 	};
 };

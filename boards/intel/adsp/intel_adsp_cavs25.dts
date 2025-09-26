@@ -9,8 +9,8 @@
 #include <intel/intel_adsp_cavs25.dtsi>
 
 / {
-	model = "intel_adsp_cavs25";
 	compatible = "intel,intel_adsp_cavs25";
+	model = "intel_adsp_cavs25";
 
 	aliases {
 		dma0 = &lpgpdma0;

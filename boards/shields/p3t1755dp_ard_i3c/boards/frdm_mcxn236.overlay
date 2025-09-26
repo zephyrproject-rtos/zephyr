@@ -19,9 +19,8 @@
 };
 
 &i3c1 {
-	status = "okay";
-
 	i2c-scl-hz = <DT_FREQ_K(400)>;
 	i3c-scl-hz = <DT_FREQ_K(400)>;
 	i3c-od-scl-hz = <DT_FREQ_K(100)>;
+	status = "okay";
 };

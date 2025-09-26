@@ -10,8 +10,8 @@
 #include "imx8mp_evk-pinctrl.dtsi"
 
 / {
-	model = "NXP i.MX8M Plus EVK board";
 	compatible = "nxp,mimx8mp_evk";
+	model = "NXP i.MX8M Plus EVK board";
 
 	chosen {
 		/* TCM */
@@ -24,10 +24,10 @@
 };
 
 &uart4 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart4_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &gpio3 {

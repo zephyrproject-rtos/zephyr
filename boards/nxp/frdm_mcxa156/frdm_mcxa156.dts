@@ -13,8 +13,8 @@
 #include <freq.h>
 
 / {
-	model = "NXP FRDM_MCXA156 board";
 	compatible = "nxp,mcxa156", "nxp,mcx";
+	model = "NXP FRDM_MCXA156 board";
 
 	aliases {
 		led0 = &red_led;
@@ -139,17 +139,17 @@
 };
 
 &lpuart0 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_lpuart0>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &lpuart1 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_lpuart1>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &ctimer0 {
@@ -157,9 +157,9 @@
 };
 
 &dac0 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_dac0>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &edma0 {
@@ -167,9 +167,9 @@
 };
 
 &flexcan0 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_flexcan0>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &flexio0 {
@@ -198,19 +198,19 @@ zephyr_mipi_dbi_parallel: &flexio0_lcd {
 };
 
 &flexpwm0_pwm0 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm0_pwm0>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &i3c0 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_i3c0>;
 	pinctrl-names = "default";
 
 	i2c-scl-hz = <DT_FREQ_K(400)>;
 	i3c-scl-hz = <DT_FREQ_M(4)>;
 	i3c-od-scl-hz = <DT_FREQ_K(1500)>;
+	status = "okay";
 
 	p3t1755: p3t1755@4800000236152a0090 {
 		compatible = "nxp,p3t1755";
@@ -220,39 +220,39 @@ zephyr_mipi_dbi_parallel: &flexio0_lcd {
 };
 
 &lpadc0 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpadc0>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &lpcmp0 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpcmp0>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &opamp0 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_opamp0>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &lpi2c0 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpi2c0>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &lpi2c3 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpi2c3>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &lpspi0 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpspi0>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &lptmr0 {
@@ -267,8 +267,8 @@ zephyr_mipi_dbi_parallel: &flexio0_lcd {
 };
 
 zephyr_udc0: &usb {
-	status = "okay";
 	num-bidir-endpoints = <8>;
+	status = "okay";
 };
 
 &wwdt0 {
@@ -282,24 +282,24 @@ zephyr_udc0: &usb {
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(64)>;
+			label = "mcuboot";
 			read-only;
 		};
 
 		slot0_partition: partition@10000 {
-			label = "image-0";
 			reg = <0x00010000 DT_SIZE_K(424)>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@7a000 {
-			label = "image-1";
 			reg = <0x0007a000 DT_SIZE_K(424)>;
+			label = "image-1";
 		};
 
 		storage_partition: partition@e4000 {
-			label = "storage";
 			reg = <0x000e4000 DT_SIZE_K(112)>;
+			label = "storage";
 		};
 	};
 };

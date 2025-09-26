@@ -15,8 +15,8 @@
 #include <microchip/sam/sama7g5.dtsi>
 
 / {
-	model = "SAMA7G54-EK board";
 	compatible = "microchip,sama7g5ek", "microchip,sama7g5", "microchip,sama7";
+	model = "SAMA7G54-EK board";
 
 	aliases {
 		led0 = &led_green;
@@ -178,7 +178,6 @@
 			bias-pull-up;
 		};
 	};
-
 };
 
 &pit64b0 {

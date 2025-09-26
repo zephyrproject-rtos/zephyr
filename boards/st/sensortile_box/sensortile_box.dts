@@ -10,8 +10,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "STMicroelectronics SensorTile.box board";
 	compatible = "st,sensortile-box";
+	model = "STMicroelectronics SensorTile.box board";
 
 	chosen {
 		zephyr,console = &usart1;
@@ -105,8 +105,8 @@
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 
 	hts221@5f {
 		compatible = "st,hts221";
@@ -124,8 +124,8 @@
 &i2c3 {
 	pinctrl-0 = <&i2c3_scl_pg7 &i2c3_sda_pg8>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 
 	stts751@38 {
 		compatible = "st,stts751";
@@ -138,30 +138,30 @@
 	pinctrl-0 = <&spi1_nss_pe12 &spi1_sck_pe13
 		     &spi1_miso_pe14 &spi1_mosi_pe15>;
 	pinctrl-names = "default";
-	status = "okay";
 
 	cs-gpios = <&gpioe 11 GPIO_ACTIVE_LOW>, <&gpioe 12 GPIO_ACTIVE_LOW>,
 		   <&gpioe 10 GPIO_ACTIVE_LOW>;
+	status = "okay";
 
 	lis2dw12: lis2dw12@0 {
 		compatible = "st,lis2dw12";
-		spi-max-frequency = <1000000>;
 		reg = <0>;
+		spi-max-frequency = <1000000>;
 		irq-gpios = <&gpioc 5 GPIO_ACTIVE_HIGH>;
 	};
 
 	lsm6dso: lsm6dso@1 {
 		compatible = "st,lsm6dso";
-		spi-max-frequency = <1000000>;
 		reg = <1>;
+		spi-max-frequency = <1000000>;
 		irq-gpios = <&gpioa 2 GPIO_ACTIVE_HIGH>;
 		int-pin = <1>;
 	};
 
 	iis3dhhc: iis3dhhc@2 {
 		compatible = "st,iis3dhhc";
-		spi-max-frequency = <1000000>;
 		reg = <2>;
+		spi-max-frequency = <1000000>;
 		irq-gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>, <&gpioe 6 GPIO_ACTIVE_HIGH>;
 	};
 };
@@ -169,8 +169,8 @@
 &spi2 {
 	pinctrl-0 = <&spi2_sck_pd1 &spi2_miso_pd3 &spi2_mosi_pc3>;
 	pinctrl-names = "default";
-	status = "okay";
 	cs-gpios = <&gpiod 0 GPIO_ACTIVE_LOW>;
+	status = "okay";
 
 	spbtle_1s_sensortile_box: spbtle-1s@0 {
 		compatible = "st,hci-spi-v2";
@@ -188,14 +188,14 @@
 	pinctrl-0 = <&spi3_nss_pa15 &spi3_sck_pb3
 		     &spi3_miso_pb4 &spi3_mosi_pb5>;
 	pinctrl-names = "default";
-	status = "okay";
 
 	cs-gpios = <&gpioa 15 GPIO_ACTIVE_LOW>;
+	status = "okay";
 
 	lis2mdl: lis2mdl@0 {
 		compatible = "st,lis2mdl";
-		spi-max-frequency = <1000000>;
 		reg = <0>;
+		spi-max-frequency = <1000000>;
 	};
 };
 
@@ -218,8 +218,8 @@ zephyr_udc0: &usbotg_fs {
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(64)>;
+			label = "mcuboot";
 			read-only;
 		};
 
@@ -229,23 +229,23 @@ zephyr_udc0: &usbotg_fs {
 		 */
 
 		slot0_partition: partition@20000 {
-			label = "image-0";
 			reg = <0x00020000 DT_SIZE_K(432)>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@8c000 {
-			label = "image-1";
 			reg = <0x0008C000 DT_SIZE_K(432)>;
+			label = "image-1";
 		};
 
 		scratch_partition: partition@f8000 {
-			label = "image-scratch";
 			reg = <0x000F8000 DT_SIZE_K(24)>;
+			label = "image-scratch";
 		};
 
 		storage_partition: partition@fc000 {
-			label = "storage";
 			reg = <0x000fc000 DT_SIZE_K(24)>;
+			label = "storage";
 		};
 	};
 };

@@ -13,10 +13,9 @@
 };
 
 &arduino_spi {
-	status = "okay";
-
 	cs-gpios = <&arduino_header ARDUINO_HEADER_R3_D10
 		    (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+	status = "okay";
 
 	ieee802154_atmel_rf2xx_arduino: rf2xx@0 {
 		compatible = "atmel,rf2xx";

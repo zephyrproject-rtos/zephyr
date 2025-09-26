@@ -10,8 +10,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "DA1469x series Development Kit Pro";
 	compatible = "renesas,da1469x_dk_pro";
+	model = "DA1469x series Development Kit Pro";
 	#address-cells = <1>;
 	#size-cells = <1>;
 
@@ -110,20 +110,23 @@
 		 */
 
 		boot_partition: partition@2400 {
-			label = "mcuboot";
 			reg = <0x000002400 0x0000dc00>;
+			label = "mcuboot";
 		};
+
 		slot0_partition: partition@10000 {
-			label = "image-0";
 			reg = <0x00010000 DT_SIZE_K(512)>;
+			label = "image-0";
 		};
+
 		slot1_partition: partition@90000 {
-			label = "image-1";
 			reg = <0x00090000 DT_SIZE_K(512)>;
+			label = "image-1";
 		};
+
 		storage_partition: partition@110000 {
-			label = "storage";
 			reg = <0x00110000 DT_SIZE_K(32)>;
+			label = "storage";
 		};
 	};
 };
@@ -138,10 +141,10 @@
 
 &uart {
 	current-speed = <115200>;
-	status = "okay";
 	pinctrl-0 = <&uart_default>;
 	pinctrl-names = "default";
 	rx-wake-gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
+	status = "okay";
 };
 
 zephyr_udc0: &usbd {

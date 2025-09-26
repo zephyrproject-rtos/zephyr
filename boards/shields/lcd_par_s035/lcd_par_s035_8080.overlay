@@ -32,9 +32,9 @@
 };
 
 &zephyr_mipi_dbi_parallel {
-	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
+	status = "okay";
 
 	st7796s: st7796s@0 {
 		compatible = "sitronix,st7796s";

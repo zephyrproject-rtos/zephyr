@@ -11,8 +11,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Seeed Studio Carbon 96boards";
 	compatible = "seeed,carbon";
+	model = "Seeed Studio Carbon 96boards";
 
 	chosen {
 		zephyr,console = &usart1;
@@ -110,23 +110,22 @@
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 };
 
 &i2c2 {
 	pinctrl-0 = <&i2c2_scl_pb10 &i2c2_sda_pb3>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 };
 
 &spi1 {
-	status = "okay";
-
 	pinctrl-0 = <&spi1_miso_pa6 &spi1_mosi_pa7
 		     &spi1_sck_pa5 &spi1_nss_pa4>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	/* Nordic nRF51822-QFAC */
 	hci_spi: bt-hci@0 {
@@ -158,8 +157,8 @@ zephyr_udc0: &usbotg_fs {
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(32)>;
+			label = "mcuboot";
 			read-only;
 		};
 
@@ -170,18 +169,18 @@ zephyr_udc0: &usbotg_fs {
 		 */
 
 		slot0_partition: partition@20000 {
-			label = "image-0";
 			reg = <0x00020000 DT_SIZE_K(128)>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@40000 {
-			label = "image-1";
 			reg = <0x00040000 DT_SIZE_K(128)>;
+			label = "image-1";
 		};
 
 		scratch_partition: partition@60000 {
-			label = "image-scratch";
 			reg = <0x00060000 DT_SIZE_K(128)>;
+			label = "image-scratch";
 		};
 	};
 };

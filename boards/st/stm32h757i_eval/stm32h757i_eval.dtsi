@@ -42,50 +42,50 @@
 		wake_up: button_1 {
 			label = "Wakeup";
 			gpios = <&gpioa 0 GPIO_ACTIVE_HIGH>;
-			status = "disabled";
 			zephyr,code = <INPUT_KEY_WAKEUP>;
+			status = "disabled";
 		};
 
 		tamper: button_2 {
 			label = "Tamper";
 			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
-			status = "disabled";
 			zephyr,code = <INPUT_KEY_ENTER>;
+			status = "disabled";
 		};
 
 		joy_center: joystick_center {
 			label = "joystick center";
 			gpios = <&gpiob 0 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
-			status = "disabled";
 			zephyr,code = <INPUT_KEY_ENTER>;
+			status = "disabled";
 		};
 
 		joy_down: joystick_down {
 			label = "joystick down";
 			gpios = <&gpiob 1 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
-			status = "disabled";
 			zephyr,code = <INPUT_KEY_DOWN>;
+			status = "disabled";
 		};
 
 		joy_up: joystick_up {
 			label = "joystick up";
 			gpios = <&gpiob 4 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
-			status = "disabled";
 			zephyr,code = <INPUT_KEY_UP>;
+			status = "disabled";
 		};
 
 		joy_left: joystick_left {
 			label = "joystick left";
 			gpios = <&gpiob 2 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
-			status = "disabled";
 			zephyr,code = <INPUT_KEY_LEFT>;
+			status = "disabled";
 		};
 
 		joy_right: joystick_right {
 			label = "joystick right";
 			gpios = <&gpiob 3 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
-			status = "disabled";
 			zephyr,code = <INPUT_KEY_RIGHT>;
+			status = "disabled";
 		};
 	};
 

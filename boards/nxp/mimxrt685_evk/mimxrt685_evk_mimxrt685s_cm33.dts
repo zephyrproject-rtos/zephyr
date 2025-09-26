@@ -14,8 +14,8 @@
 #include "mimxrt685_evk-pinctrl.dtsi"
 
 / {
-	model = "NXP MIMXRT685-EVK board";
 	compatible = "nxp,mimxrt685";
+	model = "NXP MIMXRT685-EVK board";
 
 	aliases {
 		sw0 = &user_button_1;
@@ -142,8 +142,8 @@
  * replace &os_timer with &systick
  */
 &os_timer {
-	status = "okay";
 	wakeup-source;
+	status = "okay";
 };
 
 &rtc {
@@ -152,22 +152,22 @@
 
 &flexcomm0 {
 	compatible = "nxp,lpc-usart";
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_flexcomm0_usart>;
 	pinctrl-names = "default";
 	dmas = <&dma0 0>, <&dma0 1>;
 	dma-names = "rx", "tx";
+	status = "okay";
 };
 
 arduino_i2c: &flexcomm2 {
 	compatible = "nxp,lpc-i2c";
-	status = "okay";
 	pinctrl-0 = <&pinmux_flexcomm2_i2c>;
 	pinctrl-names = "default";
 	clock-frequency = <I2C_BITRATE_FAST>;
 	#address-cells = <1>;
 	#size-cells = <0>;
+	status = "okay";
 
 	fxos8700: fxos8700@1e {
 		compatible = "nxp,fxos8700";
@@ -179,28 +179,27 @@ arduino_i2c: &flexcomm2 {
 
 arduino_serial: &flexcomm4 {
 	compatible = "nxp,lpc-usart";
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_flexcomm4_usart>;
 	pinctrl-names = "default";
 	dmas = <&dma0 8>, <&dma0 9>;
 	dma-names = "rx", "tx";
+	status = "okay";
 };
 
 arduino_spi: &flexcomm5 {
 	compatible = "nxp,lpc-spi";
-	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
 	dmas = <&dma0 10>, <&dma0 11>;
 	dma-names = "rx", "tx";
 	pinctrl-0 = <&pinmux_flexcomm5_spi>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 /* I2S receive channel */
 i2s0: &flexcomm1 {
-	status = "okay";
 	compatible = "nxp,lpc-i2s";
 	#address-cells = <1>;
 	#size-cells = <0>;
@@ -208,11 +207,11 @@ i2s0: &flexcomm1 {
 	dma-names = "rx";
 	pinctrl-0 = <&pinmux_flexcomm1_i2s>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 /* I2S transmit channel */
 i2s1: &flexcomm3 {
-	status = "okay";
 	compatible = "nxp,lpc-i2s";
 	#address-cells = <1>;
 	#size-cells = <0>;
@@ -220,17 +219,18 @@ i2s1: &flexcomm3 {
 	dma-names = "tx";
 	pinctrl-0 = <&pinmux_flexcomm3_i2s>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 /* PCA9420 PMIC */
 &pmic_i2c {
-	status = "okay";
 	compatible = "nxp,lpc-i2c";
 	clock-frequency = <I2C_BITRATE_FAST>;
 	#address-cells = <1>;
 	#size-cells = <0>;
 	pinctrl-0 = <&pinmux_pmic_i2c>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	pca9420: pca9420@61 {
 		compatible = "nxp,pca9420";
@@ -262,14 +262,14 @@ i2s1: &flexcomm3 {
 
 	mx25um51345g: mx25um51345g@2 {
 		compatible = "nxp,imx-flexspi-mx25um51345g";
+		reg = <2>;
 		/* MX25UM51245G is 64MB, 512MBit flash part */
 		size = <DT_SIZE_M(64 * 8)>;
-		reg = <2>;
 		spi-max-frequency = <DT_FREQ_M(200)>;
-		status = "okay";
 		jedec-id = [c2 81 3a];
 		erase-block-size = <DT_SIZE_K(4)>;
 		write-block-size = <1>; /* FLASH_MCUX_FLEXSPI_MX25UM51345G_OPI_STR set */
+		status = "okay";
 
 		partitions {
 			compatible = "fixed-partitions";
@@ -281,23 +281,23 @@ i2s1: &flexcomm3 {
 			 * to the flash memory sector size of 4KB.
 			 */
 			boot_partition: partition@0 {
-				label = "mcuboot";
 				reg = <0x00000000 DT_SIZE_K(128)>;
+				label = "mcuboot";
 			};
 
 			slot0_partition: partition@20000 {
-				label = "image-0";
 				reg = <0x00020000 DT_SIZE_M(3)>;
+				label = "image-0";
 			};
 
 			slot1_partition: partition@320000 {
-				label = "image-1";
 				reg = <0x00320000 DT_SIZE_M(3)>;
+				label = "image-1";
 			};
 
 			storage_partition: partition@620000 {
-				label = "storage";
 				reg = <0x00620000 (DT_SIZE_M(58) - DT_SIZE_K(128))>;
+				label = "storage";
 			};
 		};
 	};
@@ -344,43 +344,43 @@ i2s1: &flexcomm3 {
 };
 
 &sc_timer {
-	status = "okay";
 	pinctrl-0 = <&pinmux_sctimer>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &usdhc0 {
-	status = "okay";
 	/* Quick fix for 1.8V SD cards on RT600- disable 1.8V negotiation */
 	no-1-8-v;
 	pwr-gpios = <&gpio2 10 GPIO_ACTIVE_HIGH>;
 	cd-gpios = <&gpio2 9 GPIO_ACTIVE_LOW>;
+	pinctrl-0 = <&pinmux_usdhc>;
+	pinctrl-names = "default";
+	status = "okay";
 
 	sdmmc {
 		compatible = "zephyr,sdmmc-disk";
 		disk-name = "SD";
 		status = "okay";
 	};
-	pinctrl-0 = <&pinmux_usdhc>;
-	pinctrl-names = "default";
 };
 
 &lpadc0 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpadc0>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 zephyr_udc0: &usbhs {
-	status = "okay";
 	phy-handle = <&usbphy>;
+	status = "okay";
 };
 
 &usbphy {
-	status = "okay";
 	tx-d-cal = <12>;
 	tx-cal-45-dp-ohms = <6>;
 	tx-cal-45-dm-ohms = <6>;
+	status = "okay";
 };
 
 &ctimer0 {
@@ -430,25 +430,25 @@ zephyr_udc0: &usbhs {
 };
 
 &dmic0 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_dmic0>;
 	pinctrl-names = "default";
 	use2fs;
+	status = "okay";
 };
 
 /* Configure pdm channels 0 and 1 with gain, and cutoff settings
  * appropriate for the attached MEMS microphones.
  */
 &pdmc0 {
-	status = "okay";
 	gainshift = <3>;
 	dc-cutoff = "155hz";
 	dc-gain = <1>;
+	status = "okay";
 };
 
 &pdmc1 {
-	status = "okay";
 	gainshift = <3>;
 	dc-cutoff = "155hz";
 	dc-gain = <1>;
+	status = "okay";
 };

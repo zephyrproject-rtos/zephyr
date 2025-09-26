@@ -88,35 +88,34 @@
 
 &flexcomm3 {
 	compatible = "nxp,lpc-usart";
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_flexcomm3_usart>;
 	pinctrl-names = "default";
 	wakeup-source;
+	status = "okay";
 };
 
 &flexcomm0 {
 	compatible = "nxp,lpc-usart";
-	status = "disabled";
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_flexcomm0_usart>;
 	pinctrl-names = "default";
+	status = "disabled";
 };
 
 &hsgpio0 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_hsgpio0>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &hsgpio1 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_hsgpio1>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &flexspi {
-	status = "okay";
 	ahb-bufferable;
 	ahb-prefetch;
 	ahb-cacheable;
@@ -124,17 +123,18 @@
 	ahb-boundary = "1024";
 	rx-clock-source = <1>;
 	rx-clock-source-b = <1>;
+	status = "okay";
 
 	/* Winbond external flash */
 	w25q512jvfiq: w25q512jvfiq@0 {
 		compatible = "nxp,imx-flexspi-nor";
 		reg = <0>;
 		size = <DT_SIZE_M(64 * 8)>;
-		status = "okay";
 		jedec-id = [ef 40 20];
 		erase-block-size = <4096>;
 		write-block-size = <1>;
 		spi-max-frequency = <DT_FREQ_M(104)>;
+		status = "okay";
 
 		partitions {
 			compatible = "fixed-partitions";
@@ -146,37 +146,33 @@
 			 * to the flash memory sector size of 4KB.
 			 */
 			boot_partition: partition@0 {
-				label = "mcuboot";
 				reg = <0x00000000 DT_SIZE_K(128)>;
+				label = "mcuboot";
 			};
 
 			slot0_partition: partition@20000 {
-				label = "image-0";
 				reg = <0x00020000 DT_SIZE_M(3)>;
+				label = "image-0";
 			};
 
 			slot1_partition: partition@320000 {
-				label = "image-1";
 				reg = <0x00320000 DT_SIZE_M(3)>;
+				label = "image-1";
 			};
 
 			storage_partition: partition@620000 {
-				label = "storage";
 				reg = <0x00620000 (DT_SIZE_M(58) - DT_SIZE_K(128))>;
+				label = "storage";
 			};
 		};
 	};
 
 	aps6404l: aps6404l@2 {
 		compatible = "nxp,imx-flexspi-aps6404l";
+		reg = <2>;
 		/* APS6404L is 8MB, 64MBit pSRAM */
 		size = <DT_SIZE_M(8 * 8)>;
-		reg = <2>;
 		spi-max-frequency = <DT_FREQ_M(109)>;
-		/* PSRAM cannot be enabled while board is in default XIP
-		 * configuration, as it will conflict with flash chip.
-		 */
-		status = "disabled";
 		cs-interval-unit = <1>;
 		cs-interval = <2>;
 		cs-hold-time = <3>;
@@ -185,35 +181,39 @@
 		column-space = <0>;
 		ahb-write-wait-unit = <2>;
 		ahb-write-wait-interval = <0>;
+		/* PSRAM cannot be enabled while board is in default XIP
+		 * configuration, as it will conflict with flash chip.
+		 */
+		status = "disabled";
 	};
 };
 
 &hci {
-	status = "okay";
 	wakeup-source;
+	status = "okay";
 };
 
 &enet_mac {
-	status = "okay";
 	pinctrl-0 = <&pinmux_enet>;
 	pinctrl-names = "default";
 	phy-handle = <&phy>;
-	nxp,unique-mac;
 	phy-connection-type = "rmii";
+	nxp,unique-mac;
+	status = "okay";
 };
 
 &enet_mdio {
-	status = "okay";
 	pinctrl-0 = <&pinmux_mdio>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	phy: phy@2 {
 		compatible = "microchip,ksz8081";
 		reg = <2>;
-		status = "okay";
 		reset-gpios = <&hsgpio1 23 GPIO_ACTIVE_HIGH>;
 		int-gpios = <&hsgpio0 21 GPIO_ACTIVE_HIGH>;
 		microchip,interface-type = "rmii";
+		status = "okay";
 	};
 };
 
@@ -241,9 +241,9 @@
 
 /* OS Timer is the wakeup source for PM mode 2 */
 &os_timer {
-	status = "okay";
 	wakeup-source;
 	deep-sleep-counter = <&rtc_highres>;
+	status = "okay";
 };
 
 &systick {
@@ -259,25 +259,25 @@
 };
 
 &sctimer {
-	status = "okay";
 	pinctrl-0 = <&pinmux_pwm0>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 /* RTC is the wakeup source for PM modes 3,4 */
 &rtc_highres {
-	status = "okay";
 	wakeup-source;
+	status = "okay";
 };
 
 &nbu {
-	status = "okay";
 	wakeup-source;
+	status = "okay";
 };
 
 &imu {
-	status = "okay";
 	wakeup-source;
+	status = "okay";
 };
 
 zephyr_udc0: &usb_otg {
@@ -294,19 +294,19 @@ zephyr_udc0: &usb_otg {
 	compatible = "nxp,lpc-spi";
 	pinctrl-0 = <&pinmux_flexcomm1_spi>;
 	pinctrl-names = "default";
-	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
+	status = "okay";
 };
 
 arduino_i2c: &flexcomm2 {
 	compatible = "nxp,lpc-i2c";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 	#address-cells = <1>;
 	#size-cells = <0>;
 	pinctrl-0 = <&pinmux_flexcomm2_i2c>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	p3t1755: p3t1755@48 {
 		compatible = "nxp,p3t1755";
@@ -316,9 +316,9 @@ arduino_i2c: &flexcomm2 {
 };
 
 zephyr_mipi_dbi_spi: &lcdic {
-	status = "okay";
 	pinctrl-0 = <&pinmux_lcdic>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 nxp_pmod_touch_panel_i2c: &arduino_i2c {

@@ -10,8 +10,8 @@
 #include "arduino_r3_connector.dtsi"
 
 / {
-	model = "STMicroelectronics STM32L4R9I-DISCO board";
 	compatible = "st,stm32l4r9i-disco";
+	model = "STMicroelectronics STM32L4R9I-DISCO board";
 
 	chosen {
 		zephyr,console = &usart2;
@@ -121,13 +121,12 @@
 };
 
 &clk_msi {
-	status = "okay";
 	msi-range = <6>;
 	msi-pll-mode;
+	status = "okay";
 };
 
 &pll {
-	status = "okay";
 	div-m = <1>;
 	mul-n = <60>;
 	/*
@@ -138,6 +137,7 @@
 	div-q = <2>;
 	div-r = <2>;
 	clocks = <&clk_msi>;
+	status = "okay";
 };
 
 &rcc {
@@ -149,24 +149,23 @@
 };
 
 &usart2 {
-	status = "okay";
 	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
+	status = "okay";
 };
 
 &lpuart1 {
-	status = "okay";
 	pinctrl-0 = <&lpuart1_tx_pc1 &lpuart1_rx_pc0>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
+	status = "okay";
 };
 
 &timers3 {
 	status = "okay";
 
 	pwm3: pwm {
-		status = "okay";
 		/*
 		 * N.B.: Datasheet indicates that ARD_D11 (wired to PB15) is connected to TIM3_CH2.
 		 * However, this is incorrect as PB15 cannot be muxed to TIM3 (see DS12023).
@@ -174,6 +173,7 @@
 		 */
 		pinctrl-0 = <&tim3_ch1_pb4>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
@@ -181,9 +181,9 @@
 	status = "okay";
 
 	pwm5: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim5_ch2_pa1 &tim5_ch4_pi0>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
@@ -191,9 +191,9 @@
 	status = "okay";
 
 	pwm8: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim8_ch1n_ph13>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
@@ -201,17 +201,17 @@
 	status = "okay";
 
 	pwm15: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim15_ch2_pf10 &tim15_ch2_pb15>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
 st_cam_i2c: &i2c1 {
-	status = "okay";
 	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pg13>;
 	pinctrl-names = "default";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
+	status = "okay";
 
 	mfx: gpio@42 {
 		compatible = "st,mfxstm32l152";
@@ -224,17 +224,17 @@ st_cam_i2c: &i2c1 {
 };
 
 &i2c3 {
-	status = "okay";
 	pinctrl-0 = <&i2c3_scl_pg7 &i2c3_sda_pg8>;
 	pinctrl-names = "default";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
+	status = "okay";
 };
 
 &spi2 {
-	status = "okay";
 	pinctrl-0 = <&spi2_sck_pb13 &spi2_miso_pb14 &spi2_mosi_pb15>;
 	pinctrl-names = "default";
 	cs-gpios = <&gpioi 0 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+	status = "okay";
 };
 
 &rtc {
@@ -244,28 +244,28 @@ st_cam_i2c: &i2c1 {
 };
 
 &sdmmc1 {
-	status = "okay";
 	pinctrl-0 = <&sdmmc1_d0_pc8 &sdmmc1_d1_pc9
 		     &sdmmc1_d2_pc10 &sdmmc1_d3_pc11
 		     &sdmmc1_ck_pc12 &sdmmc1_cmd_pd2>;
 	pinctrl-names = "default";
 	disk-name = "SD";
+	status = "okay";
 };
 
 &adc1 {
-	status = "okay";
 	pinctrl-0 = <&adc1_in5_pa0 &adc1_in12_pa7 &adc1_in15_pb0
 		     &adc1_in4_pc3 &adc1_in13_pc4>;
 	pinctrl-names = "default";
 	st,adc-clock-source = "SYNC";
 	st,adc-prescaler = <1>;
+	status = "okay";
 };
 
 zephyr_udc0: &usbotg_fs {
-	status = "okay";
 	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12
 		     &usb_otg_fs_id_pa10>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &die_temp {
@@ -281,7 +281,6 @@ zephyr_udc0: &usbotg_fs {
 };
 
 &octospi2 {
-	status = "okay";
 	pinctrl-0 = <&octospim_p2_clk_pi6 &octospim_p2_ncs_pg12
 		     &octospim_p2_io0_pi11 &octospim_p2_io1_pi10
 		     &octospim_p2_io2_pi9 &octospim_p2_io3_ph8
@@ -289,9 +288,9 @@ zephyr_udc0: &usbotg_fs {
 		     &octospim_p2_io6_pg9 &octospim_p2_io7_pg10
 		     &octospim_p2_dqs_pg15>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	mx25lm51245: ospi-nor-flash@0 {
-		status = "okay";
 		compatible = "st,stm32-ospi-nor";
 		reg = <0>;
 		size = <DT_SIZE_M(512)>; /* 512 Megabits */
@@ -324,6 +323,7 @@ zephyr_udc0: &usbotg_fs {
 			    00 00 00 00 00 00 00 00
 			    00 00 00 00 00 00 00 00
 			    7f ef ff ff 21 5c dc ff];
+		status = "okay";
 
 		partitions {
 			compatible = "fixed-partitions";

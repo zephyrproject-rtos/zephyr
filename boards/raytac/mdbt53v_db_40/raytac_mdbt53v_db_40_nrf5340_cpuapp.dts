@@ -9,8 +9,8 @@
 #include "raytac_mdbt53v_db_40_nrf5340_cpuapp_common.dts"
 
 / {
-	model = "Raytac MDBT53V-DB-40 NRF5340 Application";
 	compatible = "raytac,raytac-mdbt53v-db-40-nrf5340-cpuapp";
+	model = "Raytac MDBT53V-DB-40 NRF5340 Application";
 
 	chosen {
 		zephyr,sram = &sram0_image;

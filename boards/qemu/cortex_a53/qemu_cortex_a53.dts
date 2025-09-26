@@ -9,8 +9,8 @@
 #include <arm64/qemu/qemu-virt-a53.dtsi>
 
 / {
-	model = "QEMU Cortex-A53";
 	compatible = "qemu,arm-cortex-a53";
+	model = "QEMU Cortex-A53";
 
 	psci {
 		compatible = "arm,psci-0.2";
@@ -89,8 +89,8 @@
 
 		virtio_mmio8: virtio_mmio@a001000 {
 			compatible = "virtio,mmio";
-			interrupts = <GIC_SPI 24 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			reg = <0x0 0xa001000 0x0 0x200>;
+			interrupts = <GIC_SPI 24 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			status = "disabled";
 		};
 
@@ -258,18 +258,18 @@
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 };
 
 &pcie {
 	eth0: pcie@1,0 {
 		compatible = "intel,e1000";
+		reg = <0x0800 0 0 0 0>;
 		vendor-id = <0x8086>;
 		device-id = <0x100e>;
 		interrupts = <1>;
 		interrupt-parent = <&pcie>;
-		reg = <0x0800 0 0 0 0>;
 		status = "okay";
 	};
 };

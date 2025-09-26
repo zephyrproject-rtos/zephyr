@@ -13,8 +13,8 @@
 #include "ek_ra8m1-pinctrl.dtsi"
 
 / {
-	model = "Renesas EK-RA8M1";
 	compatible = "renesas,ra8m1", "renesas,ra8";
+	model = "Renesas EK-RA8M1";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -165,15 +165,15 @@
 };
 
 &pll2 {
-	status = "okay";
 	clocks = <&xtal>;
 	div = <2>;
 	mul = <80 0>;
+	status = "okay";
 
 	pll2p {
-		status = "okay";
 		freq = <DT_FREQ_M(400)>;
 		div = <2>;
+		status = "okay";
 	};
 };
 
@@ -323,10 +323,10 @@ mikrobus_spi: &spi1 {};
 };
 
 &adc0 {
-	status = "okay";
 	pinctrl-0 = <&adc0_default>;
 	pinctrl-names = "default";
 	average-count = <4>;
+	status = "okay";
 };
 
 &dac0 {
@@ -370,8 +370,8 @@ mikrobus_spi: &spi1 {};
 		#size-cells = <1>;
 
 		storage_partition: partition@0 {
-			label = "storage";
 			reg = <0X0 DT_SIZE_K(12)>;
+			label = "storage";
 		};
 	};
 };
@@ -398,8 +398,8 @@ pmod_header: &pmod1_header {};
 
 &eth {
 	local-mac-address = [74 90 50 B0 6D 5A];
-	status = "okay";
 	phy-handle = <&phy>;
+	status = "okay";
 };
 
 &mdio {
@@ -474,10 +474,10 @@ pmod_sd_shield: &sdhc0 {};
 
 	s28hl512t: ospi-nor-flash@90000000 {
 		compatible = "renesas,ra-ospi-b-nor";
+		reg = <0x90000000 DT_SIZE_M(64)>;
 		protocol-mode = <XSPI_OCTO_MODE>;
 		data-rate = <XSPI_DTR_TRANSFER>;
 		ospi-max-frequency = <DT_FREQ_M(200)>;
-		reg = <0x90000000 DT_SIZE_M(64)>;
 		write-block-size = <1>;
 		status = "okay";
 
@@ -504,8 +504,8 @@ pmod_sd_shield: &sdhc0 {};
 			#size-cells = <1>;
 
 			partition@0 {
-				label = "nor";
 				reg = <0x00000000 DT_SIZE_M(64)>;
+				label = "nor";
 			};
 		};
 	};

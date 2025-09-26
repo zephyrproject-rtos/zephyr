@@ -132,40 +132,40 @@
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x0 DT_SIZE_K(32)>;
+			label = "mcuboot";
 		};
 
 		slot0_partition: partition@8000 {
-			label = "image-0";
 			reg = <0x00008000 DT_SIZE_K(96)>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@20000 {
-			label = "image-1";
 			reg = <0x00020000 DT_SIZE_K(96)>;
+			label = "image-1";
 		};
 
 		storage_partition: partition@38000 {
-			label = "storage";
 			reg = <0x00038000 DT_SIZE_K(20)>;
+			label = "storage";
 		};
 		/* The last 12KB are reserved for PFR on the 256KB flash. */
 	};
 };
 
 &flexcomm0 {
-	status = "okay";
 	compatible = "nxp,lpc-usart";
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_flexcomm0_usart>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &can0 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_can0>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	can-transceiver {
 		max-bitrate = <5000000>;

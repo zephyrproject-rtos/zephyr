@@ -12,8 +12,8 @@
 #include "stm32h757i_eval.dtsi"
 
 / {
-	model = "STMicroelectronics STM32H757I Eval board";
 	compatible = "st,stm32h757i-eval";
+	model = "STMicroelectronics STM32H757I Eval board";
 
 	/* HW resources are split between CM7 and CM4 */
 	chosen {
@@ -27,8 +27,8 @@
 
 	sdram2: sdram@d0000000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
-		device_type = "memory";
 		reg = <0xd0000000 DT_SIZE_M(32)>;
+		device_type = "memory";
 		zephyr,memory-region = "SDRAM2";
 		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
 	};
@@ -128,29 +128,28 @@
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(128)>;
+			label = "mcuboot";
 		};
 
 		slot0_partition: partition@20000 {
-			label = "image-0";
 			reg = <0x00020000 DT_SIZE_K(896)>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@100000 {
-			label = "image-1";
 			reg = <0x00100000 DT_SIZE_K(896)>;
+			label = "image-1";
 		};
 
 		storage_partition: partition@1e0000 {
-			label = "storage";
 			reg = <0x001e0000 DT_SIZE_K(128)>;
+			label = "storage";
 		};
 	};
 };
 
 &mac {
-	status = "okay";
 	pinctrl-0 = <&eth_ref_clk_pa1
 		     &eth_crs_dv_pa7
 		     &eth_rxd0_pc4
@@ -161,12 +160,13 @@
 	pinctrl-names = "default";
 	phy-connection-type = "rmii";
 	phy-handle = <&eth_phy>;
+	status = "okay";
 };
 
 &mdio {
-	status = "okay";
 	pinctrl-0 = <&eth_mdio_pa2 &eth_mdc_pc1>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	eth_phy: ethernet-phy@0 {
 		compatible = "ethernet-phy";
@@ -179,7 +179,6 @@
 };
 
 &fmc {
-	status = "okay";
 	pinctrl-0 = <&fmc_nbl0_pe0 &fmc_nbl1_pe1 &fmc_nbl2_pi4 &fmc_nbl3_pi5
 		     &fmc_sdclk_pg8 &fmc_sdnwe_ph5 &fmc_sdcke1_ph7
 		     &fmc_sdne1_ph6 &fmc_sdnras_pf11 &fmc_sdncas_pg15
@@ -196,14 +195,14 @@
 		     &fmc_d27_pi3 &fmc_d28_pi6 &fmc_d29_pi7 &fmc_d30_pi9
 		     &fmc_d31_pi10>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	sdram {
-		status = "okay";
-
 		power-up-delay = <100>;
 		num-auto-refresh = <8>;
 		mode-register = <0x220>;
 		refresh-rate = <603>;
+		status = "okay";
 
 		bank@1 {
 			reg = <1>;
@@ -244,7 +243,6 @@ zephyr_udc0: &usbotg_hs {
 };
 
 &sdmmc1 {
-	status = "okay";
 	clocks = <&rcc STM32_CLOCK(AHB3, 16)>,
 		 <&rcc STM32_SRC_PLL2_R SDMMC_SEL(1)>;
 	pinctrl-0 = <&sdmmc1_d0_pc8 &sdmmc1_d1_pc9
@@ -255,6 +253,7 @@ zephyr_udc0: &usbotg_hs {
 	pinctrl-names = "default";
 	cd-gpios = <&gpioi 8 GPIO_ACTIVE_LOW>;
 	disk-name = "SD";
+	status = "okay";
 };
 
 &quadspi {

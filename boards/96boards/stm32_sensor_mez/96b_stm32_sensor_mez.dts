@@ -10,8 +10,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "STMicroelectronics 96Boards STM32 Sensor Mezzanine board";
 	compatible = "st,stm32f446-b96b-f446ve";
+	model = "STMicroelectronics 96Boards STM32 Sensor Mezzanine board";
 
 	chosen {
 		zephyr,console = &uart4;
@@ -104,8 +104,8 @@
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 
 	/* ST Microelectronics LIS3MDL magnetic field sensor */
 	lis3mdl-magn@1e {
@@ -123,8 +123,8 @@
 &i2c2 {
 	pinctrl-0 = <&i2c2_scl_pb10 &i2c2_sda_pc12>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 };
 
 &dma1 {
@@ -175,9 +175,9 @@
 	status = "okay";
 
 	pwm3: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim3_ch1_pb4 &tim3_ch3_pc8>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
@@ -185,9 +185,9 @@
 	status = "okay";
 
 	pwm4: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim4_ch3_pd14 &tim4_ch4_pd15>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
@@ -195,9 +195,9 @@
 	status = "okay";
 
 	pwm9: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim9_ch1_pe5 &tim9_ch2_pe6>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 

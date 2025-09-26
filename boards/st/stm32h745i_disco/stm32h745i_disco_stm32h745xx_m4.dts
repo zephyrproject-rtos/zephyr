@@ -10,8 +10,8 @@
 #include "stm32h745i_disco.dtsi"
 
 / {
-	model = "STMicroelectronics STM32H745I-DISCO board";
 	compatible = "st,stm32h745i-disco";
+	model = "STMicroelectronics STM32H745I-DISCO board";
 
 	/* HW resources belonging to CM4 */
 	chosen {

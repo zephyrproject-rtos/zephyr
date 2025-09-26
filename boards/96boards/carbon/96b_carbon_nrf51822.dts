@@ -9,8 +9,8 @@
 #include "96b_carbon_nrf51822-pinctrl.dtsi"
 
 / {
-	model = "Seeed Studio Carbon nRF51 96board";
 	compatible = "seeed,carbon_nrf51";
+	model = "Seeed Studio Carbon nRF51 96board";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -34,27 +34,27 @@
 };
 
 &i2c0 {
-	status = "okay";
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-1 = <&i2c0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &uart0 {
 	current-speed = <115200>;
-	status = "okay";
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &spi1 {
 	compatible = "nordic,nrf-spis";
-	status = "okay";
 	def-char = <0x00>;
 
 	pinctrl-0 = <&spi1_default>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	bt-hci@0 {
 		compatible = "zephyr,bt-hci-spi-slave";

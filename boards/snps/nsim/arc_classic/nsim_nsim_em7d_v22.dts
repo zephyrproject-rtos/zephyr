@@ -12,8 +12,8 @@
 #include "nsim_em.dtsi"
 
 / {
-	model = "snps,nsim_em";
 	compatible = "snps,nsim_em";
+	model = "snps,nsim_em";
 };
 
 &cpu0 {

@@ -9,8 +9,8 @@
 #include <st/l0/stm32l072c(b-z)tx-pinctrl.dtsi>
 
 / {
-	model = "Dragino NBSN95 NB-IoT Sensor Node";
 	compatible = "vendor,dragino";
+	model = "Dragino NBSN95 NB-IoT Sensor Node";
 
 	chosen {
 		zephyr,console = &usart2;

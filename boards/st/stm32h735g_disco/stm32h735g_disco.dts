@@ -11,8 +11,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "STMicroelectronics STM32H735G DISCOVERY board";
 	compatible = "st,stm32h735g-disco";
+	model = "STMicroelectronics STM32H735G DISCOVERY board";
 
 	chosen {
 		zephyr,console = &usart3;
@@ -147,9 +147,9 @@
 };
 
 &mdio {
-	status = "okay";
 	pinctrl-0 = <&eth_mdio_pa2 &eth_mdc_pc1>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	eth_phy: ethernet-phy@0 {
 		compatible = "ethernet-phy";
@@ -195,8 +195,8 @@
 			#size-cells = <1>;
 
 			partition@0 {
-				label = "nor";
 				reg = <0x00000000 DT_SIZE_M(4)>;
+				label = "nor";
 			};
 		};
 	};
@@ -250,7 +250,7 @@
 };
 
 zephyr_udc0: &usbotg_hs {
-	status = "okay";
 	pinctrl-0 = <&usb_otg_hs_dm_pa11 &usb_otg_hs_dp_pa12>;
 	pinctrl-names = "default";
+	status = "okay";
 };

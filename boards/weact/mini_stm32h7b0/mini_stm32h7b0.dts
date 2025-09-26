@@ -11,8 +11,8 @@
 #include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
 
 / {
-	model = "WeAct Studio MiniSTM32H7B0 Core Board";
 	compatible = "weact,mini-stm32h7b0";
+	model = "WeAct Studio MiniSTM32H7B0 Core Board";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -48,9 +48,9 @@
 
 		st7735r_160x80: st7735r@0 {
 			compatible = "sitronix,st7735r";
+			reg = <0>;
 			mipi-max-frequency = <20000000>;
 			mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
-			reg = <0>;
 			width = <160>;
 			height = <80>;
 			inversion-on;
@@ -149,10 +149,10 @@ zephyr_udc0: &usbotg_hs {
 		reg = <0>;
 		size = <DT_SIZE_M(64)>; /* 64 Mbits */
 		ospi-max-frequency = <40000000>;
-		status = "okay";
 		spi-bus-width = <4>;
 		data-rate = <OSPI_STR_TRANSFER>;
 		writeoc = "PP_1_1_4";
+		status = "okay";
 
 		partitions {
 			compatible = "fixed-partitions";
@@ -177,11 +177,11 @@ zephyr_udc0: &usbotg_hs {
 		reg = <0>;
 		spi-max-frequency = <40000000>;
 		size = <DT_SIZE_M(64)>; /* 64 Mbits */
-		status = "okay";
 		jedec-id = [ef 40 17];
 		has-dpd;
 		t-enter-dpd = <3500>;
 		t-exit-dpd = <3500>;
+		status = "okay";
 
 		partitions {
 			compatible = "fixed-partitions";
@@ -189,8 +189,8 @@ zephyr_udc0: &usbotg_hs {
 			#size-cells = <1>;
 
 			storage_partition: partition@0 {
-				label = "storage";
 				reg = <0x00000000 DT_SIZE_M(64)>;
+				label = "storage";
 			};
 		};
 	};

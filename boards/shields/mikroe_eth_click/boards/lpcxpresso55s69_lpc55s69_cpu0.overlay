@@ -7,12 +7,11 @@
 /delete-node/ &eth_click;
 
 &mikrobus_spi {
-	status = "okay";
-
 	cs-gpios = <&gpio0 20 GPIO_ACTIVE_LOW>,
 		   <&gpio1 1 GPIO_ACTIVE_LOW>,
 		   <&gpio1 12 GPIO_ACTIVE_LOW>,
 		   <&gpio1 26 GPIO_ACTIVE_LOW>;
+	status = "okay";
 
 	/* LPCXpresso55xxx boards all use SSEL1. */
 	eth_click_mikroe_eth_click: eth_click@1 {

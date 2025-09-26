@@ -142,18 +142,18 @@ nxp_8080_touch_panel_i2c: &flexcomm2_lpi2c2 {
 
 /* SmartDMA is used for video driver on this board */
 &smartdma {
+	program-mem = <0x4000000>;
 	/* Shields do not enable video-sdma parent node so enable it by default */
 	status = "okay";
-	program-mem = <0x4000000>;
 
 	video_sdma: video-sdma {
-		status = "disabled";
 		compatible = "nxp,video-smartdma";
 		pinctrl-0 = <&pinmux_smartdma_camera>;
 		pinctrl-names = "default";
 		vsync-pin = <4>;
 		hsync-pin = <11>;
 		pclk-pin = <5>;
+		status = "disabled";
 	};
 };
 
@@ -193,18 +193,18 @@ nxp_8080_touch_panel_i2c: &flexcomm2_lpi2c2 {
 		 * to the flash memory sector size of 8KB.
 		 */
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(80)>;
+			label = "mcuboot";
 		};
 
 		slot0_partition: partition@14000 {
-			label = "image-0";
 			reg = <0x00014000 DT_SIZE_K(984)>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@10A000 {
-			label = "image-1";
 			reg = <0x0010A000 DT_SIZE_K(984)>;
+			label = "image-1";
 		};
 		/* storage_partition is placed in WINBOND flash memory*/
 	};
@@ -223,9 +223,8 @@ nxp_8080_touch_panel_i2c: &flexcomm2_lpi2c2 {
 	/* WINBOND flash memory*/
 	w25q64jvssiq: w25q64jvssiq@0 {
 		compatible = "nxp,imx-flexspi-nor";
-		status = "disabled";
-		size = <DT_SIZE_M(64)>;
 		reg = <0>;
+		size = <DT_SIZE_M(64)>;
 		spi-max-frequency = <DT_FREQ_M(133)>;
 		jedec-id = [ef 40 17];
 		erase-block-size = <DT_SIZE_K(4)>;
@@ -236,6 +235,7 @@ nxp_8080_touch_panel_i2c: &flexcomm2_lpi2c2 {
 		cs-setup-time = <3>;
 		data-valid-time = <2>;
 		column-space = <0>;
+		status = "disabled";
 	};
 };
 
@@ -261,8 +261,8 @@ nxp_8080_touch_panel_i2c: &flexcomm2_lpi2c2 {
 
 &enet_mac {
 	phy-connection-type = "rmii";
-	zephyr,random-mac-address;
 	phy-handle = <&phy>;
+	zephyr,random-mac-address;
 };
 
 &enet_mdio {

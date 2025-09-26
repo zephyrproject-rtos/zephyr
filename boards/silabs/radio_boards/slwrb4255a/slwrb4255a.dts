@@ -11,8 +11,8 @@
 #include "slwrb4255a-pinctrl.dtsi"
 
 / {
-	model = "Silicon Labs BRD4255A (Flex Gecko Radio Board)";
 	compatible = "silabs,slwrb4255a", "silabs,efr32fg13p";
+	model = "Silicon Labs BRD4255A (Flex Gecko Radio Board)";
 };
 
 &cpu0 {

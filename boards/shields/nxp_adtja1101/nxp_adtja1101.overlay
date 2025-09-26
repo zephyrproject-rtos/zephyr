@@ -5,8 +5,8 @@
  */
 
 &enet_mac {
-	status = "okay";
 	phy-handle = <&phy>;
+	status = "okay";
 };
 
 &enet_mdio {

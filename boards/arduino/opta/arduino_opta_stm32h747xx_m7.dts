@@ -12,8 +12,8 @@
 #include "arduino_opta-common.dtsi"
 
 / {
-	model = "Arduino OPTA M7 core Programmable Logic Controller";
 	compatible = "arduino,opta-m7";
+	model = "Arduino OPTA M7 core Programmable Logic Controller";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -75,14 +75,14 @@ zephyr_udc0: &usbotg_fs {
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "mcu-boot";
 			reg = <0x00000000 DT_SIZE_K(256)>;
+			label = "mcu-boot";
 			read-only;
 		};
 
 		slot0_partition: partition@40000 {
-			label = "image-0";
 			reg = <0x00040000 DT_SIZE_K(768)>;
+			label = "image-0";
 		};
 	};
 };
@@ -177,14 +177,14 @@ zephyr_udc0: &usbotg_fs {
 
 			/* WiFi firmware and TLS certificates: 1MB - 4K for MBR using LBA */
 			wlan_partition: partition@1000 {
-				label = "wlan";
 				reg = <0x001000 DT_SIZE_K(1020)>;
+				label = "wlan";
 			};
 
 			/* Arduino OTA partition: 13MB */
 			fs_partition: partition@100000 {
-				label = "fs";
 				reg = <0x100000 DT_SIZE_M(13)>;
+				label = "fs";
 			};
 
 			/* The final 2MB is used to keep a memory-mapped copy of the WiFi
@@ -193,8 +193,8 @@ zephyr_udc0: &usbotg_fs {
 			 * specify a zero size in `reg` we just give the "correct" one.
 			 */
 			wifi_partition: partition@e00000 {
-				label = "4343WA1";
 				reg = <0xE00000 DT_SIZE_M(2)>;
+				label = "4343WA1";
 			};
 		};
 	};

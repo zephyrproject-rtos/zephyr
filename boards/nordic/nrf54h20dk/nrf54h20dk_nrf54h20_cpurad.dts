@@ -37,11 +37,11 @@
 };
 
 &cpurad_bellboard {
-	status = "okay";
 	interrupts = <96 NRF_DEFAULT_IRQ_PRIORITY>;
 	interrupt-names = "irq0";
 	/* irq0: 0: cpurad-cpusec, 6: cpurad-cpusys, 12: cpurad-cpuapp */
 	nordic,interrupt-mapping = <0x00001041 0>;
+	status = "okay";
 };
 
 &cpuapp_bellboard {
@@ -53,8 +53,8 @@
 };
 
 &cpusec_cpurad_ipc {
-	status = "okay";
 	mbox-names = "tx", "rx";
+	status = "okay";
 };
 
 &cpusec_bellboard {
@@ -62,19 +62,19 @@
 };
 
 ipc0: &cpuapp_cpurad_ipc {
-	status = "okay";
 	mbox-names = "tx", "rx";
 	tx-region = <&cpurad_cpuapp_ipc_shm>;
 	rx-region = <&cpuapp_cpurad_ipc_shm>;
 	tx-blocks = <32>;
 	rx-blocks = <32>;
+	status = "okay";
 };
 
 &cpurad_cpusys_ipc {
-	status = "okay";
 	mbox-names = "rx", "tx";
 	tx-region = <&cpurad_cpusys_ipc_shm>;
 	rx-region = <&cpusys_cpurad_ipc_shm>;
+	status = "okay";
 };
 
 &cpurad_dma_region {
@@ -94,12 +94,12 @@ slot1_partition: &cpurad_slot1_partition {
 };
 
 &uart135 {
-	status = "okay";
 	memory-regions = <&cpurad_dma_region>;
 	current-speed = <115200>;
 	pinctrl-0 = <&uart135_default>;
 	pinctrl-1 = <&uart135_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &uart136 {

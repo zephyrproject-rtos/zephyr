@@ -13,8 +13,8 @@
 #include "xg27_rb4194a-pinctrl.dtsi"
 
 / {
-	model = "Silicon Labs xG27-RB4194A";
 	compatible = "silabs,xg27_rb4194a", "silabs,efr32mg27";
+	model = "Silicon Labs xG27-RB4194A";
 
 	chosen {
 		zephyr,bt-hci = &bt_hci_silabs;
@@ -209,9 +209,9 @@
 	clock-frequency = <DT_FREQ_M(8)>;
 	pinctrl-0 = <&eusart0_default>;
 	pinctrl-names = "default";
-	status = "okay";
 
 	cs-gpios = <&gpioa 4 GPIO_ACTIVE_LOW>, <&gpioc 6 GPIO_ACTIVE_HIGH>;
+	status = "okay";
 
 	mx25r80: mx25r8035f@0 {
 		compatible = "jedec,spi-nor";
@@ -219,10 +219,10 @@
 		dpd-wakeup-sequence = <30000 20 35000>;
 		has-dpd;
 		jedec-id = [c2 28 14];
-		mxicy,mx25r-power-mode = "low-power";
 		size = <0x800000>;
 		spi-max-frequency = <DT_FREQ_M(33)>;
 		t-enter-dpd = <0>;
+		mxicy,mx25r-power-mode = "low-power";
 		zephyr,pm-device-runtime-auto;
 	};
 

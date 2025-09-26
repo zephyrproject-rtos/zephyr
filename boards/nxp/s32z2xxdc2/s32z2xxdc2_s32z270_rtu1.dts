@@ -9,8 +9,8 @@
 #include "s32z2xxdc2_s32z270.dtsi"
 
 / {
-	model = "NXP X-S32Z270-DC (DC2) on RTU1 Cortex-R52 cores";
 	compatible = "nxp,s32z270";
+	model = "NXP X-S32Z270-DC (DC2) on RTU1 Cortex-R52 cores";
 
 	chosen {
 		zephyr,sram = &dram1;

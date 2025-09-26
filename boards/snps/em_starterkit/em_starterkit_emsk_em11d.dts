@@ -12,8 +12,8 @@
 #include "board.dtsi"
 
 / {
-	model = "em_starterkit-em11d";
 	compatible = "snps,em_starterkit-em11d", "snps,em_starterkit";
+	model = "em_starterkit-em11d";
 
 	aliases {
 		uart-0 = &uart0;
@@ -49,6 +49,6 @@
 };
 
 &uart1 {
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 };

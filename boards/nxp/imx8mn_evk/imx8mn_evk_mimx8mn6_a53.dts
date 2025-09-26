@@ -12,8 +12,8 @@
 #include "imx8mn_evk-pinctrl.dtsi"
 
 / {
-	model = "NXP i.MX8MN A53";
 	compatible = "fsl,mimx8mn";
+	model = "NXP i.MX8MN A53";
 
 	chosen {
 		zephyr,console = &uart4;
@@ -49,8 +49,8 @@
 	pinctrl-0 = <&pinmux_enet>;
 	pinctrl-names = "default";
 	phy-handle = <&phy>;
-	zephyr,random-mac-address;
 	phy-connection-type = "rgmii";
+	zephyr,random-mac-address;
 	status = "okay";
 };
 
@@ -78,10 +78,10 @@
 };
 
 &i2c3 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_i2c3>;
 	pinctrl-names = "default";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
+	status = "okay";
 
 	gpio_exp1: pca6416@20 {
 		compatible = "nxp,pca6416";

@@ -10,8 +10,8 @@
 #include "serpente-pinctrl.dtsi"
 
 / {
-	model = "Serpente";
 	compatible = "arturo182,serpente";
+	model = "Serpente";
 
 	chosen {
 		zephyr,console = &sercom2;
@@ -85,7 +85,6 @@
 };
 
 &sercom2 {
-	status = "okay";
 	compatible = "atmel,sam0-uart";
 	current-speed = <115200>;
 	rxpo = <1>;
@@ -93,10 +92,10 @@
 
 	pinctrl-0 = <&sercom2_uart_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &sercom3 {
-	status = "okay";
 	compatible = "atmel,sam0-spi";
 	dipo = <1>;
 	dopo = <1>;
@@ -105,23 +104,23 @@
 
 	pinctrl-0 = <&sercom3_spi_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 zephyr_udc0: &usb0 {
-	status = "okay";
-
 	pinctrl-0 = <&usb_dc_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &tcc0 {
-	status = "okay";
 	compatible = "atmel,sam0-tcc-pwm";
 	prescaler = <4>;
 	#pwm-cells = <2>;
 
 	pinctrl-0 = <&pwm_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &flash0 {
@@ -131,14 +130,14 @@ zephyr_udc0: &usb0 {
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "uf2";
 			reg = <0x00000000 DT_SIZE_K(8)>;
+			label = "uf2";
 			read-only;
 		};
 
 		code_partition: partition@2000 {
-			label = "code";
 			reg = <0x2000 DT_SIZE_K(256-8)>;
+			label = "code";
 			read-only;
 		};
 	};

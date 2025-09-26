@@ -33,8 +33,8 @@
 &csi_i2c {
 	imx335: camera@1a {
 		compatible = "sony,imx335";
-		clocks = <&imx335_input_clock>;
 		reg = <0x1a>;
+		clocks = <&imx335_input_clock>;
 		reset-gpios = <&csi_connector CSI_IO0 GPIO_ACTIVE_LOW>;
 
 		port {

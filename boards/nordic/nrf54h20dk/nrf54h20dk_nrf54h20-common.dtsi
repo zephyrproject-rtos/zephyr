@@ -9,8 +9,8 @@
 #include "nrf54h20dk_nrf54h20-pinctrl.dtsi"
 
 &hfxo {
-	status = "okay";
 	accuracy-ppm = <30>;
+	status = "okay";
 };
 
 &lfxo {

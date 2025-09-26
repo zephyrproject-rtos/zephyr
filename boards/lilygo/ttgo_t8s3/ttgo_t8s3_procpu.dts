@@ -12,8 +12,8 @@
 #include <espressif/partitions_0x0_amp.dtsi>
 
 / {
-	model = "TTGO T8S3 PROCPU";
 	compatible = "espressif,esp32s3";
+	model = "TTGO T8S3 PROCPU";
 
 	aliases {
 		i2c-0 = &i2c0;
@@ -47,10 +47,10 @@
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &gpio0 {
@@ -82,18 +82,18 @@
 &spi2 {
 	#address-cells = <1>;
 	#size-cells = <0>;
-	status = "okay";
 	pinctrl-0 = <&spim2_default>;
 	pinctrl-names = "default";
 	/* dma-enabled; TODO */
 	clock-frequency = <20000000>;
 	cs-gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
+	status = "okay";
 
 	sd0: sd@0 {
 		compatible = "zephyr,sdhc-spi-slot";
 		reg = <0>;
-		status = "okay";
 		spi-max-frequency = <20000000>;
+		status = "okay";
 
 		mmc {
 			compatible = "zephyr,sdmmc-disk";
@@ -106,9 +106,9 @@
 &spi3 {
 	#address-cells = <1>;
 	#size-cells = <0>;
-	status = "okay";
 	pinctrl-0 = <&spim3_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &twai {

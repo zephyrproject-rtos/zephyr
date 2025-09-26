@@ -14,10 +14,10 @@
 	status = "okay";
 
 	sparkfun_shtc3: shtc3@70 {
-		status = "okay";
 		compatible = "sensirion,shtc3", "sensirion,shtcx";
 		reg = <0x70>;
 		measure-mode = "normal";
 		clock-stretching;
+		status = "okay";
 	};
 };

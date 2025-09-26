@@ -9,8 +9,8 @@
 #include <espressif/partitions_0x0_amp.dtsi>
 
 / {
-	model = "Seeed Xiao ESP32S3 PROCPU Sense";
 	compatible = "seeed,xiao-esp32s3";
+	model = "Seeed Xiao ESP32S3 PROCPU Sense";
 
 	chosen {
 		zephyr,camera = &lcd_cam;
@@ -18,16 +18,16 @@
 };
 
 &i2c1 {
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	pinctrl-0 = <&i2c1_default>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	ov2640: ov2640@30 {
 		compatible = "ovti,ov2640";
 		reg = <0x30>;
-		status = "okay";
 		clock-rate-control = <0x80>;
+		status = "okay";
 
 		port {
 			ov2640_ep_out: endpoint {
@@ -42,13 +42,13 @@
 };
 
 &lcd_cam {
-	status = "okay";
 	cam-clk = <10000000>;
 	pinctrl-0 = <&lcd_cam_default>;
 	pinctrl-names = "default";
 	source = <&ov2640>;
 	dmas = <&dma 2>;
 	dma-names = "rx";
+	status = "okay";
 
 	port {
 		dvp_ep_in: endpoint {
@@ -58,12 +58,13 @@
 };
 
 &spi2 {
-	status = "okay";
 	cs-gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
+	status = "okay";
 
 	sdcard: sdcard@0 {
 		compatible = "zephyr,sdhc-spi-slot";
 		reg = <0>;
+		spi-max-frequency = <20000000>;
 		status = "okay";
 
 		mmc {
@@ -71,6 +72,5 @@
 			disk-name = "SD";
 			status = "okay";
 		};
-		spi-max-frequency = <20000000>;
 	};
 };

@@ -6,9 +6,9 @@
 #include <ti/msp432p401r.dtsi>
 
 / {
-	model = "TI MSP-EXP432P401R LaunchXL";
 	compatible = "ti,msp-exp432p401r-launchxl", "ti,msp432p401r",
 		     "ti,msp432p4xx";
+	model = "TI MSP-EXP432P401R LaunchXL";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -23,6 +23,6 @@
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 };

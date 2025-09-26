@@ -9,8 +9,8 @@
 #include "../common/efr32-series1-common.dtsi"
 
 / {
-	model = "Silicon Labs BRD4161A (Mighty Gecko 12 Radio Board)";
 	compatible = "silabs,slwrb4161a", "silabs,efr32mg12p";
+	model = "Silicon Labs BRD4161A (Mighty Gecko 12 Radio Board)";
 };
 
 &cpu0 {

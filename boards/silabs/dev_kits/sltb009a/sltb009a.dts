@@ -10,8 +10,8 @@
 #include "sltb009a-pinctrl.dtsi"
 
 / {
-	model = "Silicon Labs EFM32GG12 SLTB009A board";
 	compatible = "silabs,sltb009a";
+	model = "Silicon Labs EFM32GG12 SLTB009A board";
 
 	chosen {
 		zephyr,console = &usart0;

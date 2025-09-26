@@ -11,8 +11,8 @@
 #include "fpb_rx261-pinctrl.dtsi"
 
 / {
-	model = "Renesas FPB-RX261";
 	compatible = "renesas,fpb_rx261";
+	model = "Renesas FPB-RX261";
 
 	chosen {
 		zephyr,sram = &sram0;

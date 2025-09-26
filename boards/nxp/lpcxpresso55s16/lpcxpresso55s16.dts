@@ -11,8 +11,8 @@
 #include "lpcxpresso55s16_common.dtsi"
 
 / {
-	model = "NXP LPCXpresso55S16 board";
 	compatible = "nxp,lpc55xxx", "nxp,lpc";
+	model = "NXP LPCXpresso55S16 board";
 };
 
 /*
@@ -25,13 +25,13 @@
 };
 
 zephyr_udc0: &usbhs {
-	status = "okay";
 	phy-handle = <&usbphy1>;
+	status = "okay";
 };
 
 &usbphy1 {
-	status = "okay";
 	tx-d-cal = <5>;
 	tx-cal-45-dp-ohms = <10>;
 	tx-cal-45-dm-ohms = <10>;
+	status = "okay";
 };

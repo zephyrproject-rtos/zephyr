@@ -42,26 +42,26 @@
 
 		/* 48K */
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 0xc000>;
+			label = "mcuboot";
 		};
 
 		/* 88K */
 		slot0_partition: partition@c000 {
-			label = "image-0";
 			reg = <0x0000C000 0x16000>;
+			label = "image-0";
 		};
 
 		/* 88K */
 		slot1_partition: partition@22000 {
-			label = "image-1";
 			reg = <0x00022000 0x16000>;
+			label = "image-1";
 		};
 
 		/* 32K */
 		storage_partition: partition@38000 {
-			label = "storage";
 			reg = <0x00038000 0x8000>;
+			label = "storage";
 		};
 	};
 };

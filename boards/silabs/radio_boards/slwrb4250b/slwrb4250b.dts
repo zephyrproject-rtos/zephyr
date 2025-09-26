@@ -10,8 +10,8 @@
 #include "slwrb4250b-pinctrl.dtsi"
 
 / {
-	model = "Silicon Labs BRD4250B (Flex Gecko 1 Radio Board)";
 	compatible = "silabs,slwrb4250b", "silabs,efr32fg1p";
+	model = "Silicon Labs BRD4250B (Flex Gecko 1 Radio Board)";
 
 	aliases {
 		pwm-led0 = &pwm_led0;

@@ -10,8 +10,8 @@
 #include "arduino_zero-pinctrl.dtsi"
 
 / {
-	model = "Arduino Zero";
 	compatible = "arduino,zero", "atmel,samd21g18a", "atmel,samd21";
+	model = "Arduino Zero";
 
 	chosen {
 		zephyr,console = &sercom5;
@@ -61,7 +61,6 @@
 };
 
 &sercom0 {
-	status = "okay";
 	compatible = "atmel,sam0-uart";
 	current-speed = <115200>;
 	rxpo = <3>;
@@ -69,10 +68,10 @@
 
 	pinctrl-0 = <&sercom0_uart_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &sercom5 {
-	status = "okay";
 	compatible = "atmel,sam0-uart";
 	current-speed = <115200>;
 	rxpo = <3>;
@@ -80,10 +79,10 @@
 
 	pinctrl-0 = <&sercom5_uart_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &sercom4 {
-	status = "okay";
 	compatible = "atmel,sam0-spi";
 	dipo = <0>;
 	dopo = <1>;
@@ -92,10 +91,10 @@
 
 	pinctrl-0 = <&sercom4_spi_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &tcc2 {
-	status = "okay";
 	compatible = "atmel,sam0-tcc-pwm";
 	/* Gives a maximum period of 1.4 s */
 	prescaler = <1024>;
@@ -103,20 +102,19 @@
 
 	pinctrl-0 = <&pwm_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &adc {
-	status = "okay";
-
 	pinctrl-0 = <&adc_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &dac0 {
-	status = "okay";
-
 	pinctrl-0 = <&dac_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &flash0 {
@@ -131,15 +129,14 @@
 		 * if enabled.
 		 */
 		storage_partition: partition@3c000 {
-			label = "storage";
 			reg = <0x0003c000 0x00004000>;
+			label = "storage";
 		};
 	};
 };
 
 zephyr_udc0: &usb0 {
-	status = "okay";
-
 	pinctrl-0 = <&usb_dc_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };

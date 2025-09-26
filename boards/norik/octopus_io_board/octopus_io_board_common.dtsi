@@ -6,8 +6,8 @@
 #include "../octopus_som/octopus_som_common.dtsi"
 
 / {
-	model = "Norik Octopus IO-Board";
 	compatible = "norik,octopus-io-board";
+	model = "Norik Octopus IO-Board";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -23,33 +23,32 @@
 
 &i2c1 {
 	compatible = "nordic,nrf-twim";
-	status = "okay";
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-1 = <&i2c0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	bq25180: bq25180@6a {
 		compatible = "ti,bq25180";
-		status = "okay";
 		reg = <0x6a>;
 		constant-charge-current-max-microamp = <10000>;
+		status = "okay";
 	};
 };
 
 &spi3 {
-	status = "okay";
 	cs-gpios = <&gpio0 11 GPIO_ACTIVE_LOW>, <&gpio0 5 GPIO_ACTIVE_LOW>;
+	status = "okay";
 
 	adxl362: adxl362@0 {
 		compatible = "adi,adxl362";
-		spi-max-frequency = <8000000>;
 		reg = <0>;
+		spi-max-frequency = <8000000>;
 		int1-gpios = <&gpio0 12 0>;
 	};
 
 	w25q64: w25q64@1 {
 		compatible = "jedec,spi-nor";
-		status = "okay";
 		reg = <1>;
 		spi-max-frequency = <8000000>;
 		jedec-id = [ef 40 17];
@@ -57,5 +56,6 @@
 		has-dpd;
 		t-enter-dpd = <3500>;
 		t-exit-dpd = <3500>;
+		status = "okay";
 	};
 };

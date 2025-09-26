@@ -14,8 +14,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Ronoth LoDev";
 	compatible = "ronoth,lodev";
+	model = "Ronoth LoDev";
 
 	chosen {
 		zephyr,console = &usart1;
@@ -171,9 +171,9 @@
 };
 
 &dac1 {
-	status = "okay";
 	pinctrl-0 = <&dac_out1_pa4>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &rtc {

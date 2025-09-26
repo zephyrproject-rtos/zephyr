@@ -10,8 +10,8 @@
 #include "rak5010_nrf52840-pinctrl.dtsi"
 
 / {
-	model = "RAKWireless RAK5010 Wistrio Board with a Nordic NRF52840 SoC";
 	compatible = "nordic,rak5010_nrf52840";
+	model = "RAKWireless RAK5010 Wistrio Board with a Nordic NRF52840 SoC";
 
 	chosen {
 		zephyr,console = &uart1;
@@ -58,11 +58,11 @@
 
 &uart0 {
 	compatible = "nordic,nrf-uarte";
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	modem: modem {
 		compatible = "quectel,bg95";
@@ -73,20 +73,20 @@
 
 &uart1 {
 	current-speed = <115200>;
-	status = "okay";
 	pinctrl-0 = <&uart1_default>;
 	pinctrl-1 = <&uart1_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &i2c1 {
 	compatible = "nordic,nrf-twi";
-	status = "okay";
 
 	/* TI OPT3001 light sensor */
 	pinctrl-0 = <&i2c1_default>;
 	pinctrl-1 = <&i2c1_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	opt3001@44 {
 		compatible = "ti,opt3001";
@@ -108,10 +108,10 @@
 };
 
 &qspi {
-	status = "okay";
 	pinctrl-0 = <&qspi_default>;
 	pinctrl-1 = <&qspi_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	is25wp064a: is25wp064a@0 {
 		compatible = "nordic,qspi-nor";

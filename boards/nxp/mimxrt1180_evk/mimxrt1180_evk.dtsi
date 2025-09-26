@@ -100,38 +100,38 @@
 };
 
 &switch_port0 {
-	zephyr,random-mac-address;
 	pinctrl-0 = <&eth0_default>;
 	pinctrl-names = "default";
 	phy-handle = <&phy0>;
 	phy-connection-type = "rmii";
+	zephyr,random-mac-address;
 	status = "okay";
 };
 
 &switch_port1 {
-	zephyr,random-mac-address;
 	pinctrl-0 = <&eth1_default>;
 	pinctrl-names = "default";
 	phy-handle = <&phy1>;
 	phy-connection-type = "rgmii";
+	zephyr,random-mac-address;
 	status = "okay";
 };
 
 &switch_port2 {
-	zephyr,random-mac-address;
 	pinctrl-0 = <&eth2_default>;
 	pinctrl-names = "default";
 	phy-handle = <&phy2>;
 	phy-connection-type = "rgmii";
+	zephyr,random-mac-address;
 	status = "okay";
 };
 
 &switch_port3 {
-	zephyr,random-mac-address;
 	pinctrl-0 = <&eth3_default>;
 	pinctrl-names = "default";
 	phy-handle = <&phy3>;
 	phy-connection-type = "rgmii";
+	zephyr,random-mac-address;
 	status = "okay";
 };
 
@@ -142,19 +142,19 @@
 };
 
 &lpuart1 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_lpuart1>;
 	pinctrl-1 = <&pinmux_lpuart1_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &lpuart12 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_lpuart12>;
 	pinctrl-1 = <&pinmux_lpuart12_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &lpuart3 {
@@ -181,6 +181,9 @@
 };
 
 &flexspi {
+	ahb-prefetch;
+	ahb-read-addr-opt;
+	rx-clock-source = <1>;
 	/*
 	 * If booting with XIP from FlexSPI flash, the flash memory will be initialized by the
 	 * bootloader in ROM.
@@ -190,19 +193,16 @@
 	 * corresponding MPU settings.
 	 */
 	status = "disabled";
-	ahb-prefetch;
-	ahb-read-addr-opt;
-	rx-clock-source = <1>;
 
 	w25q128jw: w25q128jw@0 {
 		compatible = "nxp,imx-flexspi-nor";
-		size = <DT_SIZE_M(16*8)>;
 		reg = <0>;
+		size = <DT_SIZE_M(16*8)>;
 		spi-max-frequency = <DT_FREQ_M(133)>;
-		status = "okay";
 		jedec-id = [ef 60 18];
 		erase-block-size = <DT_SIZE_K(4)>;
 		write-block-size = <1>;
+		status = "okay";
 
 		partitions {
 			compatible = "fixed-partitions";
@@ -214,23 +214,23 @@
 			 * to the flash memory sector size of 4KB.
 			 */
 			boot_partition: partition@0 {
-				label = "mcuboot";
 				reg = <0x00000000 DT_SIZE_K(128)>;
+				label = "mcuboot";
 			};
 
 			slot0_partition: partition@20000 {
-				label = "image-0";
 				reg = <0x00020000 DT_SIZE_M(7)>;
+				label = "image-0";
 			};
 
 			slot1_partition: partition@720000 {
-				label = "image-1";
 				reg = <0x00720000 DT_SIZE_M(7)>;
+				label = "image-1";
 			};
 
 			storage_partition: partition@E20000 {
-				label = "storage";
 				reg = <0x00E20000 (DT_SIZE_M(2) - DT_SIZE_K(128))>;
+				label = "storage";
 			};
 		};
 	};
@@ -261,9 +261,9 @@
 };
 
 &flexpwm2_pwm1 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm2>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &tpm5 {
@@ -288,13 +288,13 @@ p3t1755dp_ard_i2c_interface: &lpi2c2 {};
 };
 
 &usdhc1 {
-	status = "okay";
 	detect-dat3;
 	no-1-8-v;
 	pwr-gpios = <&gpio4 14 GPIO_ACTIVE_LOW>;
 	pinctrl-0 = <&pinmux_usdhc1>;
 	pinctrl-1 = <&pinmux_usdhc1_dat3_nopull>;
 	pinctrl-names = "default", "nopull";
+	status = "okay";
 
 	sdmmc {
 		compatible = "zephyr,sdmmc-disk";
@@ -321,5 +321,4 @@ p3t1755dp_ard_i2c_interface: &lpi2c2 {};
 		clocks = <&ccm IMX_CCM_SAI1_CLK 0x2004 4>;
 		clock-names = "mclk";
 	};
-
 };

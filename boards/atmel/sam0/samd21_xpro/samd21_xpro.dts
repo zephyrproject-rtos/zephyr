@@ -13,8 +13,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "SAM D21 Xplained Pro";
 	compatible = "samd21,xpro", "atmel,samd21j18a", "atmel,samd21";
+	model = "SAM D21 Xplained Pro";
 
 	chosen {
 		zephyr,console = &sercom3;
@@ -64,7 +64,6 @@
 };
 
 &tcc0 {
-	status = "okay";
 	compatible = "atmel,sam0-tcc-pwm";
 	/* Gives a maximum period of 1.4s */
 	prescaler = <4>;
@@ -72,16 +71,16 @@
 
 	pinctrl-0 = <&pwm_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &rtc {
-	status = "okay";
 	counter-mode = "clock";
 	prescaler = <1024>;
+	status = "okay";
 };
 
 &sercom0 {
-	status = "okay";
 	compatible = "atmel,sam0-uart";
 	current-speed = <9600>;
 	rxpo = <3>;
@@ -89,10 +88,10 @@
 
 	pinctrl-0 = <&sercom0_uart_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &sercom1 {
-	status = "okay";
 	compatible = "atmel,sam0-uart";
 	current-speed = <115200>;
 	rxpo = <3>;
@@ -100,10 +99,10 @@
 
 	pinctrl-0 = <&sercom1_uart_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &sercom2 {
-	status = "okay";
 	compatible = "atmel,sam0-i2c";
 	clock-frequency = <I2C_BITRATE_FAST>;
 	#address-cells = <1>;
@@ -111,10 +110,10 @@
 
 	pinctrl-0 = <&sercom2_i2c_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &sercom3 {
-	status = "okay";
 	compatible = "atmel,sam0-uart";
 	current-speed = <115200>;
 	rxpo = <1>;
@@ -122,10 +121,10 @@
 
 	pinctrl-0 = <&sercom3_uart_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &sercom5 {
-	status = "okay";
 	compatible = "atmel,sam0-spi";
 	dipo = <0>;
 	dopo = <2>;
@@ -134,11 +133,11 @@
 
 	pinctrl-0 = <&sercom5_spi_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 zephyr_udc0: &usb0 {
-	status = "okay";
-
 	pinctrl-0 = <&usb_dc_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };

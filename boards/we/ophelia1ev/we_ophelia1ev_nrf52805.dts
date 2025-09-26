@@ -10,8 +10,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "we_ophelia1ev_nrf52805";
 	compatible = "we,we-ophelia1ev-nrf52805";
+	model = "we_ophelia1ev_nrf52805";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -81,27 +81,27 @@
 
 &i2c0 {
 	compatible = "nordic,nrf-twi";
-	status = "okay";
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-1 = <&i2c0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &spi0 {
 	compatible = "nordic,nrf-spi";
-	status = "okay";
 	pinctrl-0 = <&spi0_default>;
 	pinctrl-1 = <&spi0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &uart0 {
 	compatible = "nordic,nrf-uarte";
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &flash0 {
@@ -111,28 +111,28 @@
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 0xc000>;
+			label = "mcuboot";
 		};
 
 		slot0_partition: partition@c000 {
-			label = "image-0";
 			reg = <0x0000C000 0xd000>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@19000 {
-			label = "image-1";
 			reg = <0x00019000 0xd000>;
+			label = "image-1";
 		};
 
 		scratch_partition: partition@26000 {
-			label = "image-scratch";
 			reg = <0x00026000 0x3000>;
+			label = "image-scratch";
 		};
 
 		storage_partition: partition@29000 {
-			label = "storage";
 			reg = <0x00029000 0x00007000>;
+			label = "storage";
 		};
 	};
 };

@@ -91,19 +91,19 @@
 	};
 
 	reserved-memory {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		/* RAM split used by TFM */
 		secure_ram: partition@20000000 {
-			label = "secure-memory";
 			reg = <0x20000000 DT_SIZE_K(136)>;
+			label = "secure-memory";
 		};
 
 		non_secure_ram: partition@20022000 {
-			label = "non-secure-memory";
 			reg = <0x20022000 DT_SIZE_K(136)>;
+			label = "non-secure-memory";
 		};
 	};
 };
@@ -120,29 +120,29 @@
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(32)>;
+			label = "mcuboot";
 			read-only;
 		};
 
 		slot0_partition: partition@8000 {
-			label = "image-0";
 			reg = <0x00008000 DT_SIZE_K(160)>;
+			label = "image-0";
 		};
 
 		slot0_ns_partition: partition@30000 {
-			label = "image-0-nonsecure";
 			reg = <0x00030000 DT_SIZE_K(96)>;
+			label = "image-0-nonsecure";
 		};
 
 		slot1_partition: partition@48000 {
-			label = "image-1";
 			reg = <0x00048000 DT_SIZE_K(160)>;
+			label = "image-1";
 		};
 
 		slot1_ns_partition: partition@70000 {
-			label = "image-1-nonsecure";
 			reg = <0x00070000 DT_SIZE_K(96)>;
+			label = "image-1-nonsecure";
 		};
 
 		/*
@@ -150,8 +150,8 @@
 		 * 0x949FF is reserved for the application.
 		 */
 		storage_partition: partition@88000 {
-			label = "storage";
 			reg = <0x00088000 DT_SIZE_K(50)>;
+			label = "storage";
 		};
 	};
 };

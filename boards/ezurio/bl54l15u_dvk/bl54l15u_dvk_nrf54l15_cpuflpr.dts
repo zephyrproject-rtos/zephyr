@@ -10,8 +10,8 @@
 #include "bl54l15u_dvk_common.dtsi"
 
 / {
-	model = "Ezurio BL54L15u DVK nRF54L15 FLPR MCU";
 	compatible = "ezurio,bl54l15u_dvk_nrf54l15-cpuflpr";
+	model = "Ezurio BL54L15u DVK nRF54L15 FLPR MCU";
 
 	chosen {
 		zephyr,console = &uart30;
@@ -23,10 +23,10 @@
 };
 
 &cpuflpr_sram {
-	status = "okay";
 	/* size must be increased due to booting from SRAM */
 	reg = <0x20028000 DT_SIZE_K(96)>;
 	ranges = <0x0 0x20028000 0x18000>;
+	status = "okay";
 };
 
 &cpuflpr_rram {
@@ -36,8 +36,8 @@
 		#size-cells = <1>;
 
 		cpuflpr_code_partition: partition@0 {
-			label = "image-0";
 			reg = <0x0 DT_SIZE_K(96)>;
+			label = "image-0";
 		};
 	};
 };

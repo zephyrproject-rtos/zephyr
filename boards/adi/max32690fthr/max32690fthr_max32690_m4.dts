@@ -12,8 +12,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Analog Devices MAX32690FTHR";
 	compatible = "adi,max32690fthr";
+	model = "Analog Devices MAX32690FTHR";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -135,15 +135,15 @@ feather_serial: &uart2 {
 };
 
 feather_i2c: &i2c0 {
-	status = "okay";
 	pinctrl-0 = <&i2c0a_scl_p2_8 &i2c0a_sda_p2_7>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 feather_spi: &spi0 {
-	status = "okay";
 	pinctrl-0 = <&spi0b_mosi_p2_28 &spi0b_miso_p2_27 &spi0b_sck_p2_29>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 zephyr_udc0: &usbhs {

@@ -10,8 +10,8 @@
 #include "96b_lscon.dtsi"
 
 / {
-	model = "RAKWireless 96boards WisTrio board";
 	compatible = "rak,wistrio";
+	model = "RAKWireless 96boards WisTrio board";
 
 	chosen {
 		zephyr,console = &usart1;
@@ -108,8 +108,8 @@
 &spi1 {
 	pinctrl-0 = <&spi1_sck_pa5 &spi1_miso_pa6 &spi1_mosi_pa7>;
 	pinctrl-names = "default";
-	status = "okay";
 	cs-gpios = <&gpiob 0 GPIO_ACTIVE_LOW>;
+	status = "okay";
 
 	lora: lora@0 {
 		compatible = "semtech,sx1276";
