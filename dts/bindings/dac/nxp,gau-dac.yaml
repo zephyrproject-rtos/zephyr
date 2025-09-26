@@ -24,8 +24,7 @@ properties:
       - "small"
       - "medium"
       - "large"
-      - "large2"
-    default: "large2"
+    default: "large"
     description: |
       See specific platform Reference Manual for equations describing the options.
       Default is large because that is the reset value.
