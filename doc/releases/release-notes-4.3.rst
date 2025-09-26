@@ -75,6 +75,9 @@ Deprecated APIs and options
 
 * :kconfig:option:`CONFIG_POSIX_READER_WRITER_LOCKS` is deprecated. Use :kconfig:option:`CONFIG_POSIX_RW_LOCKS` instead.
 
+* :c:func:`bt_ctlr_set_public_addr` is deprecated in favor of using
+  :c:struct:`bt_hci_cp_vs_write_bd_addr` for setting the public Bluetooth device address.
+
 New APIs and options
 ====================
 
