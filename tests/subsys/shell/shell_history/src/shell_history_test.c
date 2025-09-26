@@ -14,7 +14,7 @@
 
 #include <zephyr/shell/shell_history.h>
 
-#define HIST_BUF_SIZE 160
+#define HIST_BUF_SIZE 256
 Z_SHELL_HISTORY_DEFINE(history, HIST_BUF_SIZE);
 
 static void init_test_buf(uint8_t *buf, size_t len, uint8_t offset)
@@ -83,7 +83,6 @@ ZTEST(shell_test, test_history_purge)
 	init_test_buf(exp_buf, sizeof(exp_buf), 0);
 
 	z_shell_history_init(&history);
-
 	z_shell_history_put(&history, exp_buf, 20);
 	z_shell_history_put(&history, exp_buf, 20);
 
@@ -118,7 +117,6 @@ ZTEST(shell_test, test_history_get_up_and_down)
 	init_test_buf(exp3_buf, sizeof(exp3_buf), 20);
 
 	z_shell_history_init(&history);
-
 	z_shell_history_put(&history, exp1_buf, 20);
 	z_shell_history_put(&history, exp2_buf, 15);
 	z_shell_history_put(&history, exp3_buf, 20);
@@ -144,7 +142,6 @@ static int get_max_buffer_len(void)
 	uint16_t out_len;
 
 	z_shell_history_init(&history);
-
 	do {
 		z_shell_history_put(&history, buf, len);
 		out_len = sizeof(out_buf);
@@ -249,6 +246,33 @@ ZTEST(shell_test, test_storing_long_buffers)
 	z_shell_history_put(&history, exp3_buf, max_len);
 	test_get(true, true, exp3_buf, max_len);
 	test_get(false, true, NULL, 0); /* only one entry */
+
+	z_shell_history_purge(&history);
+}
+
+ZTEST(shell_test, test_circle_through_history)
+{
+	uint8_t exp1_buf[HIST_BUF_SIZE];
+	uint8_t exp2_buf[HIST_BUF_SIZE];
+	uint8_t exp3_buf[HIST_BUF_SIZE];
+
+	z_shell_history_init(&history);
+
+	init_test_buf(exp1_buf, sizeof(exp1_buf), 0);
+	init_test_buf(exp2_buf, sizeof(exp2_buf), 10);
+	init_test_buf(exp3_buf, sizeof(exp3_buf), 20);
+
+	z_shell_history_put(&history, exp1_buf, 20);
+	z_shell_history_put(&history, exp2_buf, 15);
+	z_shell_history_put(&history, exp3_buf, 20);
+
+	test_get(true, true, exp3_buf, 20); /* up - 3*/
+	test_get(true, true, exp2_buf, 15); /* up - 2*/
+	test_get(true, true, exp1_buf, 20); /* up - 1*/
+	test_get(false, true, NULL, 0); /* up - nothing */
+	test_get(true, true, exp3_buf, 20); /* up - 3*/
+	test_get(true, true, exp2_buf, 15); /* up - 2*/
+	test_get(true, true, exp1_buf, 20); /* up - 1*/
 
 	z_shell_history_purge(&history);
 }
