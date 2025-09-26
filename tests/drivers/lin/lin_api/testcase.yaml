@@ -4,6 +4,9 @@ common:
     - drivers
   depends_on: lin
 tests:
+  drivers.lin.api:
+    integration_platforms:
+      - ek_ra8m1/r7fa8m1ahecbd
   drivers.lin.api.skeleton:
     extra_args:
       - EXTRA_DTC_OVERLAY_FILE="lin_skeleton.overlay"
