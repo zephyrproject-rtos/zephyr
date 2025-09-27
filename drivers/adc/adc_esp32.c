@@ -773,7 +773,7 @@ static DEVICE_API(adc, api_esp32_driver_api) = {
 			},                                                                         \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, &adc_esp32_init, NULL, &adc_esp32_data_##inst,                 \
+	DEVICE_DT_INST_DEFINE(inst, adc_esp32_init, NULL, &adc_esp32_data_##inst,                  \
 			      &adc_esp32_conf_##inst, POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,       \
 			      &api_esp32_driver_api);
 
