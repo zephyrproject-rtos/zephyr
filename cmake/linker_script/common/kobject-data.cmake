@@ -51,7 +51,7 @@ if(CONFIG_USERSPACE)
     ".kobject_data.data*"
     ".kobject_data.sdata*"
     PASS LINKER_ZEPHYR_PREBUILT LINKER_ZEPHYR_FINAL
-    ALIGN @KOBJECT_DATA_ALIGN,undef:4@
+    ALIGN @KOBJECT_DATA_ALIGN:undef=4@
     MIN_SIZE @KOBJECT_DATA_SZ@
     MAX_SIZE @KOBJECT_DATA_SZ@
     SYMBOLS _kobject_data_area_start _kobject_data_area_end
