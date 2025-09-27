@@ -92,6 +92,18 @@ test_murata_ncp15wb473: murata-ncp15wb473 {
 	connected-positive;
 };
 
+test_omron_d6f_p0001: test-omron-d6f-p0001 {
+	status = "okay";
+	compatible = "omron,d6f-p0001";
+	io-channels = <&test_adc 0>;
+};
+
+test_omron_d6f_p0010: test-omron-d6f-p0010 {
+	status = "okay";
+	compatible = "omron,d6f-p0010";
+	io-channels = <&test_adc 0>;
+};
+
 test_tdk_ntcg163jf103ft1: tdk-ntcg163jf103ft1 {
 	compatible = "tdk,ntcg163jf103ft1";
 	io-channels = <&test_adc 0>;
