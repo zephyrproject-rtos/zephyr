@@ -37,3 +37,24 @@ ZTEST(hash_map, test_remove_false)
 	zassert_equal(1, sys_hashmap_insert(&map, 1, 1, NULL));
 	zassert_false(sys_hashmap_remove(&map, 42, NULL));
 }
+
+ZTEST(hash_map, test_remove_entry)
+{
+	uint64_t entry = 0xF00DF00DF00DF00DU;
+	uint64_t old_value;
+
+	/* Fill hashmap so that the rehashing condition is not always met when running the test */
+	for (size_t i = 0; i < 20; ++i) {
+		zassert_false(sys_hashmap_insert(&map, i, i, NULL) < 0);
+	}
+
+	/* Remove key 16, expecting its entry to be erased */
+	old_value = 0;
+	zassert_true(sys_hashmap_remove(&map, 16, &old_value));
+	zassert_equal(16, old_value);
+
+	/* Insert an entry at key 16, expecting no old entry to be returned */
+	old_value = 0;
+	zassert_equal(1, sys_hashmap_insert(&map, 16, entry, &old_value));
+	zassert_equal(0, old_value);
+}
