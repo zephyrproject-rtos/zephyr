@@ -44,7 +44,7 @@ static bool modem_backend_uart_async_is_open(struct modem_backend_uart *backend)
 
 static uint32_t get_receive_buf_length(struct modem_backend_uart *backend)
 {
-	return ring_buf_size_get(&backend->async.receive_rb);
+	return ring_buffer_size(&backend->async.receive_rb);
 }
 
 static void modem_backend_uart_async_event_handler(const struct device *dev,
@@ -111,14 +111,14 @@ static void modem_backend_uart_async_event_handler(const struct device *dev,
 
 	case UART_RX_RDY:
 		key = k_spin_lock(&backend->async.receive_rb_lock);
-		received = ring_buf_put(&backend->async.receive_rb,
+		received = ring_buffer_write(&backend->async.receive_rb,
 					&evt->data.rx.buf[evt->data.rx.offset],
 					evt->data.rx.len);
 
 		if (received < evt->data.rx.len) {
 			const unsigned int buf_size = get_receive_buf_length(backend);
 
-			ring_buf_reset(&backend->async.receive_rb);
+			ring_buffer_reset(&backend->async.receive_rb);
 			k_spin_unlock(&backend->async.receive_rb_lock, key);
 
 			LOG_WRN("Receive buffer overrun (dropped %u + %u)",
@@ -154,7 +154,7 @@ static int modem_backend_uart_async_open(void *data)
 	int ret;
 
 	atomic_clear(&backend->async.common.state);
-	ring_buf_reset(&backend->async.receive_rb);
+	ring_buffer_reset(&backend->async.receive_rb);
 
 	atomic_set_bit(&backend->async.common.state,
 		       MODEM_BACKEND_UART_ASYNC_STATE_RX_BUF0_USED_BIT);
@@ -179,7 +179,7 @@ static int modem_backend_uart_async_open(void *data)
 #if CONFIG_MODEM_STATS
 static uint32_t get_receive_buf_size(struct modem_backend_uart *backend)
 {
-	return ring_buf_capacity_get(&backend->async.receive_rb);
+	return ring_buffer_capacity(&backend->async.receive_rb);
 }
 
 static void advertise_transmit_buf_stats(struct modem_backend_uart *backend, uint32_t length)
@@ -249,8 +249,8 @@ static int modem_backend_uart_async_receive(void *data, uint8_t *buf, size_t siz
 	advertise_receive_buf_stats(backend);
 #endif
 
-	received = ring_buf_get(&backend->async.receive_rb, buf, size);
-	empty = ring_buf_is_empty(&backend->async.receive_rb);
+	received = ring_buffer_read(&backend->async.receive_rb, buf, size);
+	empty = ring_buffer_empty(&backend->async.receive_rb);
 	k_spin_unlock(&backend->async.receive_rb_lock, key);
 
 	if (!empty) {
@@ -325,8 +325,9 @@ int modem_backend_uart_async_init(struct modem_backend_uart *backend,
 	backend->async.receive_bufs[1] = &config->receive_buf[receive_buf_size_quarter];
 
 	/* Use half the receive buffer for the received data ring buffer */
-	ring_buf_init(&backend->async.receive_rb, (receive_buf_size_quarter * 2),
-		      &config->receive_buf[receive_buf_size_quarter * 2]);
+	ring_buffer_init(&backend->async.receive_rb,
+			&config->receive_buf[receive_buf_size_quarter * 2],
+			(receive_buf_size_quarter * 2));
 
 	backend->async.common.transmit_buf = config->transmit_buf;
 	backend->async.common.transmit_buf_size = config->transmit_buf_size;
