@@ -112,8 +112,8 @@ struct cdc_acm_dev_data_t {
 	bool tx_irq_ena;			/* Tx interrupt enable status */
 	bool rx_irq_ena;			/* Rx interrupt enable status */
 	uint8_t rx_buf[CDC_ACM_BUFFER_SIZE];	/* Internal RX buffer */
-	struct ring_buf *rx_ringbuf;
-	struct ring_buf *tx_ringbuf;
+	struct ring_buffer *rx_ringbuf;
+	struct ring_buffer *tx_ringbuf;
 	/* Interface data buffer */
 	/* CDC ACM line coding properties. LE order */
 	struct cdc_acm_line_coding line_coding;
@@ -230,7 +230,7 @@ static void cdc_acm_write_cb(uint8_t ep, int size, void *priv)
 	 * ensure that actual payload will not be sent before initialization
 	 * timeout passes.
 	 */
-	if (ring_buf_is_empty(dev_data->tx_ringbuf) && size) {
+	if (ring_buffer_empty(dev_data->tx_ringbuf) && size) {
 		LOG_DBG("tx_ringbuf is empty");
 		return;
 	}
@@ -269,9 +269,7 @@ static void tx_work_handler(struct k_work *work)
 		return;
 	}
 
-	len = ring_buf_get_claim(dev_data->tx_ringbuf, &data,
-				 CONFIG_USB_CDC_ACM_RINGBUF_SIZE);
-
+	len = ring_buffer_read_ptr(dev_data->tx_ringbuf, &data);
 	if (!len) {
 		LOG_DBG("Nothing to send");
 		return;
@@ -294,7 +292,7 @@ static void tx_work_handler(struct k_work *work)
 	usb_transfer(ep, data, len, USB_TRANS_WRITE,
 		     cdc_acm_write_cb, dev_data);
 
-	ring_buf_get_finish(dev_data->tx_ringbuf, len);
+	ring_buffer_consume(dev_data->tx_ringbuf, len);
 }
 
 static void cdc_acm_read_cb(uint8_t ep, int size, void *priv)
@@ -303,13 +301,13 @@ static void cdc_acm_read_cb(uint8_t ep, int size, void *priv)
 	size_t wrote;
 
 	LOG_DBG("ep %x size %d dev_data %p rx_ringbuf space %u",
-		ep, size, dev_data, ring_buf_space_get(dev_data->rx_ringbuf));
+		ep, size, dev_data, ring_buffer_space(dev_data->rx_ringbuf));
 
 	if (size <= 0) {
 		goto done;
 	}
 
-	wrote = ring_buf_put(dev_data->rx_ringbuf, dev_data->rx_buf, size);
+	wrote = ring_buffer_write(dev_data->rx_ringbuf, dev_data->rx_buf, size);
 	if (wrote < size) {
 		LOG_ERR("Ring buffer full, drop %zd bytes", size - wrote);
 	}
@@ -321,7 +319,7 @@ static void cdc_acm_read_cb(uint8_t ep, int size, void *priv)
 		k_work_submit_to_queue(&USB_WORK_Q, &dev_data->cb_work);
 	}
 
-	if (ring_buf_space_get(dev_data->rx_ringbuf) < sizeof(dev_data->rx_buf)) {
+	if (ring_buffer_space(dev_data->rx_ringbuf) < sizeof(dev_data->rx_buf)) {
 		dev_data->rx_paused = true;
 		return;
 	}
@@ -526,10 +524,10 @@ static int cdc_acm_fifo_fill(const struct device *dev,
 	size_t wrote;
 
 	LOG_DBG("dev_data %p len %d tx_ringbuf space %u",
-		dev_data, len, ring_buf_space_get(dev_data->tx_ringbuf));
+		dev_data, len, ring_buffer_space(dev_data->tx_ringbuf));
 
 	lock = irq_lock();
-	wrote = ring_buf_put(dev_data->tx_ringbuf, tx_data, len);
+	wrote = ring_buffer_write(dev_data->tx_ringbuf, tx_data, len);
 	irq_unlock(lock);
 	LOG_DBG("Wrote %zu of %d bytes to TX ringbuffer", wrote, len);
 
@@ -557,12 +555,12 @@ static int cdc_acm_fifo_read(const struct device *dev, uint8_t *rx_data,
 	uint32_t len;
 
 	LOG_DBG("dev %p size %d rx_ringbuf space %u",
-		dev, size, ring_buf_space_get(dev_data->rx_ringbuf));
+		dev, size, ring_buffer_space(dev_data->rx_ringbuf));
 
-	len = ring_buf_get(dev_data->rx_ringbuf, rx_data, size);
+	len = ring_buffer_read(dev_data->rx_ringbuf, rx_data, size);
 
 	if (dev_data->rx_paused == true) {
-		if (ring_buf_space_get(dev_data->rx_ringbuf) >= CDC_ACM_BUFFER_SIZE) {
+		if (ring_buffer_space(dev_data->rx_ringbuf) >= CDC_ACM_BUFFER_SIZE) {
 			struct usb_cfg_data *cfg = (void *)dev->config;
 
 			if (dev_data->configured) {
@@ -615,7 +613,7 @@ static int cdc_acm_irq_tx_ready(const struct device *dev)
 	struct cdc_acm_dev_data_t * const dev_data = dev->data;
 
 	if (dev_data->tx_irq_ena && dev_data->tx_ready) {
-		return ring_buf_space_get(dev_data->tx_ringbuf);
+		return ring_buffer_space(dev_data->tx_ringbuf);
 	}
 
 	return 0;
@@ -694,11 +692,11 @@ static int cdc_acm_irq_update(const struct device *dev)
 {
 	struct cdc_acm_dev_data_t * const dev_data = dev->data;
 
-	if (!ring_buf_space_get(dev_data->tx_ringbuf)) {
+	if (!ring_buffer_space(dev_data->tx_ringbuf)) {
 		dev_data->tx_ready = false;
 	}
 
-	if (ring_buf_is_empty(dev_data->rx_ringbuf)) {
+	if (ring_buffer_empty(dev_data->rx_ringbuf)) {
 		dev_data->rx_ready = false;
 	}
 
@@ -1033,7 +1031,7 @@ static void cdc_acm_poll_out(const struct device *dev, unsigned char c)
 
 	while (true) {
 		lock = irq_lock();
-		wrote = ring_buf_put(dev_data->tx_ringbuf, &c, 1);
+		wrote = ring_buffer_write(dev_data->tx_ringbuf, &c, 1);
 		irq_unlock(lock);
 		if (wrote == 1) {
 			break;
@@ -1202,9 +1200,9 @@ static DEVICE_API(uart, cdc_acm_driver_api) = {
 		.endpoint = cdc_acm_ep_data_##x,			\
 	};								\
 									\
-	RING_BUF_DECLARE(cdc_acm_rx_rb_##x,				\
+	RING_BUFFER_DECLARE(cdc_acm_rx_rb_##x,				\
 			 CONFIG_USB_CDC_ACM_RINGBUF_SIZE);		\
-	RING_BUF_DECLARE(cdc_acm_tx_rb_##x,				\
+	RING_BUFFER_DECLARE(cdc_acm_tx_rb_##x,				\
 			 CONFIG_USB_CDC_ACM_RINGBUF_SIZE);		\
 	static struct cdc_acm_dev_data_t cdc_acm_dev_data_##x = {	\
 		.line_coding = CDC_ACM_DEFAULT_BAUDRATE,		\
