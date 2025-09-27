@@ -629,7 +629,7 @@ static void net_queue_rx(struct net_if *iface, struct net_pkt *pkt)
 #endif
 
 	if ((IS_ENABLED(CONFIG_NET_TC_RX_SKIP_FOR_HIGH_PRIO) &&
-	     prio >= NET_PRIORITY_CA) || NET_TC_RX_COUNT == 0) {
+	     prio >= NET_PRIORITY_NC) || NET_TC_RX_COUNT == 0) {
 		net_process_rx_packet(pkt);
 	} else {
 		if (net_tc_submit_to_rx_queue(tc, pkt) != NET_OK) {
