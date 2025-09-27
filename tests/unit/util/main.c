@@ -245,26 +245,58 @@ static int inc_func(bool cleanup)
 	return a++;
 }
 
-/* Test checks if @ref Z_MAX, @ref Z_MIN and @ref Z_CLAMP return correct result
+/* Test checks if @ref max, @ref min and @ref clamp return correct result
  * and perform single evaluation of input arguments.
  */
-ZTEST(util, test_z_max_z_min_z_clamp) {
-	zassert_equal(Z_MAX(inc_func(true), 0), 1, "Unexpected macro result");
-	/* Z_MAX should have call inc_func only once */
+ZTEST(util, test_max_min_clamp) {
+#ifdef __cplusplus
+	/* C++ has its own std::min() and std::max(), min and max are not available. */
+	ztest_test_skip();
+#else
+	zassert_equal(max(inc_func(true), 0), 1, "Unexpected macro result");
+	/* max should have call inc_func only once */
 	zassert_equal(inc_func(false), 2, "Unexpected return value");
 
-	zassert_equal(Z_MIN(inc_func(false), 2), 2, "Unexpected macro result");
-	/* Z_MIN should have call inc_func only once */
+	zassert_equal(min(inc_func(false), 2), 2, "Unexpected macro result");
+	/* min should have call inc_func only once */
 	zassert_equal(inc_func(false), 4, "Unexpected return value");
 
-	zassert_equal(Z_CLAMP(inc_func(false), 1, 3), 3, "Unexpected macro result");
-	/* Z_CLAMP should have call inc_func only once */
+	zassert_equal(clamp(inc_func(false), 1, 3), 3, "Unexpected macro result");
+	/* clamp should have call inc_func only once */
 	zassert_equal(inc_func(false), 6, "Unexpected return value");
 
-	zassert_equal(Z_CLAMP(inc_func(false), 10, 15), 10,
+	zassert_equal(clamp(inc_func(false), 10, 15), 10,
 		      "Unexpected macro result");
-	/* Z_CLAMP should have call inc_func only once */
+	/* clamp should have call inc_func only once */
 	zassert_equal(inc_func(false), 8, "Unexpected return value");
+
+	/* Nested calls do not generate build warnings */
+	zassert_equal(max(inc_func(false),
+			  max(inc_func(false),
+			      min(inc_func(false),
+				  inc_func(false)))), 11, "Unexpected macro result");
+	zassert_equal(inc_func(false), 13, "Unexpected return value");
+#endif
+}
+
+ZTEST(util, test_max3_min3) {
+	/* check for single call */
+	zassert_equal(max3(inc_func(true), 0, 0), 1, "Unexpected macro result");
+	zassert_equal(inc_func(false), 2, "Unexpected return value");
+
+	zassert_equal(min3(inc_func(false), 9, 10), 3, "Unexpected macro result");
+	zassert_equal(inc_func(false), 4, "Unexpected return value");
+
+	/* test the general functionality */
+	zassert_equal(max3(1, 2, 3), 3, "Unexpected macro result");
+	zassert_equal(max3(3, 1, 2), 3, "Unexpected macro result");
+	zassert_equal(max3(2, 3, 1), 3, "Unexpected macro result");
+	zassert_equal(max3(-1, 0, 1), 1, "Unexpected macro result");
+
+	zassert_equal(min3(1, 2, 3), 1, "Unexpected macro result");
+	zassert_equal(min3(3, 1, 2), 1, "Unexpected macro result");
+	zassert_equal(min3(2, 3, 1), 1, "Unexpected macro result");
+	zassert_equal(min3(-1, 0, 1), -1, "Unexpected macro result");
 }
 
 ZTEST(util, test_max_from_list_macro) {

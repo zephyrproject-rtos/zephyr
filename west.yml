@@ -200,7 +200,7 @@ manifest:
       groups:
         - hal
     - name: hal_nordic
-      revision: 57d9fc59c9ea86465b5cd26f0fe2b9dcc520768b
+      revision: refs/pull/321/head
       path: modules/hal/nordic
       groups:
         - hal
@@ -226,7 +226,7 @@ manifest:
         - hal
     - name: hal_renesas
       path: modules/hal/renesas
-      revision: d8ee5f18e95b9f4616a481be65e2c9ee0af1779f
+      revision: refs/pull/144/head
       groups:
         - hal
     - name: hal_rpi_pico
@@ -342,7 +342,7 @@ manifest:
       revision: 40403f5f2805cca210d2a47c8717d89c4e816cda
       path: modules/bsim_hw_models/nrf_hw_models
     - name: nrf_wifi
-      revision: acb24fe26f479df9dba3c4bd97ea653ad3086ee7
+      revision: 53500666a59195b44e2e5a939c111effbf23db7b
       path: modules/lib/nrf_wifi
     - name: open-amp
       revision: c30a6d8b92fcebdb797fc1a7698e8729e250f637
