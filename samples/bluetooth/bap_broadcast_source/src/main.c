@@ -142,7 +142,7 @@ static struct broadcast_source_stream {
 	lc3_encoder_mem_48k_t lc3_encoder_mem;
 #endif
 #if defined(CONFIG_USE_USB_AUDIO_INPUT)
-	struct ring_buf audio_ring_buf;
+	struct ring_buffer audio_ring_buf;
 	uint8_t _ring_buffer_memory[AUDIO_RING_BUF_BYTES];
 #endif /* defined(CONFIG_USE_USB_AUDIO_INPUT) */
 #endif /* defined(CONFIG_LIBLC3) */
@@ -197,7 +197,7 @@ static void send_data(struct broadcast_source_stream *source_stream)
 	}
 
 #if defined(CONFIG_USE_USB_AUDIO_INPUT)
-	uint32_t size = ring_buf_get(&source_stream->audio_ring_buf, (uint8_t *)send_pcm_data,
+	uint32_t size = ring_buffer_read(&source_stream->audio_ring_buf, (uint8_t *)send_pcm_data,
 				     sizeof(send_pcm_data));
 
 	if (size < sizeof(send_pcm_data)) {
@@ -373,13 +373,14 @@ static void data_recv_cb(const struct device *dev, uint8_t terminal, void *buf, 
 
 	for (size_t i = 0U; i < MIN(ARRAY_SIZE(streams), 2); i++) {
 		const uint32_t size_put =
-			ring_buf_put(&(streams[i].audio_ring_buf), (uint8_t *)(usb_pcm_data[i]),
-				     nsamples * USB_BYTES_PER_SAMPLE);
+			ring_buffer_write(&(streams[i].audio_ring_buf),
+					(uint8_t *)(usb_pcm_data[i]),
+					nsamples * USB_BYTES_PER_SAMPLE);
 		if (size_put < nsamples * USB_BYTES_PER_SAMPLE) {
 			printk("Not enough room for samples in %s buffer: %u < %u, total capacity: "
 			       "%u\n",
 			       i == 0 ? "left" : "right", size_put, nsamples * USB_BYTES_PER_SAMPLE,
-			       ring_buf_capacity_get(&(streams[i].audio_ring_buf)));
+			       ring_buffer_capacity(&(streams[i].audio_ring_buf)));
 		}
 	}
 
@@ -540,10 +541,11 @@ int main(void)
 	(void)memset(streams, 0, sizeof(streams));
 
 	for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
-		ring_buf_init(&(streams[i].audio_ring_buf), sizeof(streams[i]._ring_buffer_memory),
-			      streams[i]._ring_buffer_memory);
+		ring_buffer_init(&(streams[i].audio_ring_buf),
+				streams[i]._ring_buffer_memory,
+				sizeof(streams[i]._ring_buffer_memory));
 		printk("Initialized ring buf %zu: capacity: %u\n", i,
-		       ring_buf_capacity_get(&(streams[i].audio_ring_buf)));
+		       ring_buffer_capacity(&(streams[i].audio_ring_buf)));
 	}
 
 	usbd_uac2_set_ops(broadcaster_dev, &usb_audio_ops, NULL);
