@@ -6,3 +6,4 @@ board:
     - name: stm32u585xx
       variants:
         - name: ns
+        - name: ext_flash_app
