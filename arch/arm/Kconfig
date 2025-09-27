@@ -144,6 +144,16 @@ config ARM_ON_EXIT_CPU_IDLE
 	  observed on some SoCs caused by a memory access following WFI/WFE
 	  instructions.
 
+config ARCH_PM_S2RAM_RESUME
+	bool "Include PM S2RAM resume jump"
+    depends on ARCH_HAS_SUSPEND_TO_RAM && !PM_S2RAM
+	depends on CPU_CORTEX_M
+	help
+	  This option enables suspend-to-RAM (S2RAM) resume intermediary support.
+	  It is dedicated for the bootloader use case where the bootloader is the first stage
+	  and its role (in S2RAM flow) is just to mediate in resuming the application from
+	  the suspension.
+
 rsource "core/Kconfig"
 rsource "core/Kconfig.vfp"
 
