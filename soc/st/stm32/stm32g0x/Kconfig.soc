@@ -73,3 +73,11 @@ config SOC
 	default "stm32g0b0xx" if SOC_STM32G0B0XX
 	default "stm32g0b1xx" if SOC_STM32G0B1XX
 	default "stm32g0c1xx" if SOC_STM32G0C1XX
+
+# Default enable flash prefetch for all G0xx SoCs but G0Bx, G0Cx since ErrataSheet
+# ES0548 2.2.10 "Prefetch failure when branching across flash memory banks
+# which causes code execution corruption and may lead to HardFault interrupt"
+# Project may override this configuration if sure no cross-bank prefetch access is
+# awaited.
+config STM32_FLASH_PREFETCH
+	default y if !SOC_STM32G0B0XX && !SOC_STM32G0B1XX && !SOC_STM32G0C1XX
