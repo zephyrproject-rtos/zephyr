@@ -1,0 +1,28 @@
+# Copyright 2024 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+include: [battery.yaml, i2c-device.yaml]
+
+properties:
+  constant-charge-current-max-microamp:
+    type: int
+    default: 0
+    description: |
+      Charge current set at init time in uA, available range is 5 mA to 1000 mA.
+      The value specified will be rounded down to the closest implemented
+      value. If set to 0 (default) skip setting the charge current value at
+      driver initialization.
+
+  constant-charge-voltage-max-microvolt:
+    type: int
+    default: 4200000
+    description: |
+      The maximum voltage that the battery will be charged at, defaults to
+      4.2V, matching the device default reset configuration.
+
+  precharge-voltage-threshold-microvolt:
+    type: int
+    default: 3000000
+    description: |
+      Threshold at which voltage to switch to constant current charge.
+      Must be either 3.0V or 2.8V
