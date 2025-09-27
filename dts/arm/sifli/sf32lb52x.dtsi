@@ -117,6 +117,18 @@
 			status = "disabled";
 		};
 
+		dmac: dma-controller@50081000 {
+			compatible = "sifli,sf32lb-dmac";
+			reg = <0x50081000 0x1000>;
+			clocks = <&rcc_clk SF32LB52X_CLOCK_DMAC1>;
+			interrupts = <50 0>, <51 0>, <52 0>, <53 0>,
+				     <54 0>, <55 0>, <56 0>, <57 0>;
+			dma-channels = <8>;
+			dma-requests = <64>;
+			#dma-cells = <3>;
+			status = "disabled";
+		};
+
 		usart1: serial@50084000 {
 			compatible = "sifli,sf32lb-usart";
 			reg = <0x50084000 0x400>;
