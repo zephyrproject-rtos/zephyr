@@ -403,9 +403,13 @@ static void i2s_esp32_tx_callback(void *arg, int status)
 
 	err = k_msgq_get(&stream->data->queue, &item, K_NO_WAIT);
 	if (err < 0) {
-		stream->data->state = I2S_STATE_ERROR;
-		LOG_ERR("TX queue empty: %d", err);
-		goto tx_disable;
+		/*
+		 * Stop DMA and transition to READY, so the next write()
+		 * can auto-kick TX without requiring a new START trigger.
+		 */
+		stream->data->state = I2S_STATE_READY;
+		stream->conf->stop_transfer(dev);
+		return;
 	}
 
 	mem_block_tmp = stream->data->mem_block;
@@ -459,7 +463,13 @@ static int i2s_esp32_tx_start_transfer(const struct device *dev)
 
 	err = k_msgq_get(&stream->data->queue, &item, K_NO_WAIT);
 	if (err < 0) {
-		return -ENOMEM;
+		/*
+		 * No data queued yet. Leave mem_block NULL and return success.
+		 * START will keep TX in READY; next write() will auto-kick TX.
+		 */
+		stream->data->mem_block = NULL;
+		stream->data->mem_block_len = 0;
+		return 0;
 	}
 
 	stream->data->mem_block = item.buffer;
@@ -1183,58 +1193,149 @@ static const struct i2s_config *i2s_esp32_config_get(const struct device *dev, e
 	return &stream->data->i2s_cfg;
 }
 
-static int i2s_esp32_trigger_stream(const struct device *dev, const struct i2s_esp32_stream *stream,
-				    enum i2s_dir dir, enum i2s_trigger_cmd cmd)
+static inline bool tx_has_data(const struct i2s_esp32_stream *s)
 {
-	const struct i2s_esp32_cfg *dev_cfg = dev->config;
-	const i2s_hal_context_t *hal = &dev_cfg->hal;
-	unsigned int key;
-	int err;
+	return k_msgq_num_used_get(&s->data->queue) > 0;
+}
 
-	switch (cmd) {
-	case I2S_TRIGGER_START:
-		if (stream->data->state != I2S_STATE_READY) {
-			LOG_ERR("START - Invalid state: %d", (int)stream->data->state);
-			return -EIO;
+static inline bool is_ready_or_running(const struct i2s_esp32_stream *s)
+{
+	return s->data->state == I2S_STATE_READY || s->data->state == I2S_STATE_RUNNING;
+}
+
+static inline void reset_fifo(const i2s_hal_context_t *hal, enum i2s_dir dir)
+{
+	if (dir == I2S_DIR_RX) {
+		i2s_hal_rx_stop(hal);
+		i2s_hal_rx_reset(hal);
+#if !SOC_GDMA_SUPPORTED
+		i2s_hal_rx_reset_dma(hal);
+#endif
+		i2s_hal_rx_reset_fifo(hal);
+	} else {
+		i2s_hal_tx_stop(hal);
+		i2s_hal_tx_reset(hal);
+#if !SOC_GDMA_SUPPORTED
+		i2s_hal_tx_reset_dma(hal);
+#endif
+		i2s_hal_tx_reset_fifo(hal);
+	}
+}
+
+static int handle_start(const struct device *dev, const struct i2s_esp32_stream *stream,
+			enum i2s_dir dir, const i2s_hal_context_t *hal)
+{
+	if (stream->data->state == I2S_STATE_RUNNING) {
+		LOG_DBG("START ignored: already RUNNING");
+		return 0;
+	}
+	if (stream->data->state != I2S_STATE_READY) {
+		LOG_ERR("START - Invalid state: %d", (int)stream->data->state);
+		return -EIO;
+	}
+
+	reset_fifo(hal, dir);
+
+	int err = stream->conf->start_transfer(dev);
+
+	if (err < 0) {
+		LOG_ERR("START - Transfer start failed: %d", err);
+		return -EIO;
+	}
+
+	stream->data->last_block = false;
+
+	/* TX: if no mem_block was set (queue empty), remain READY */
+	if (dir == I2S_DIR_TX && stream->data->mem_block == NULL && !stream->data->dma_pending) {
+		stream->data->state = I2S_STATE_READY;
+		return 0;
+	}
+
+	stream->data->state = I2S_STATE_RUNNING;
+	return 0;
+}
+
+static int handle_stop(const struct device *dev, const struct i2s_esp32_stream *stream)
+{
+	if (stream->data->state == I2S_STATE_READY) {
+		return 0; /* already idle */
+	}
+	if (stream->data->state != I2S_STATE_RUNNING) {
+		LOG_ERR("STOP - Invalid state: %d", (int)stream->data->state);
+		return -EIO;
+	}
+
+	if (stream->data->dma_pending) {
+		stream->data->stop_without_draining = true;
+		stream->data->state = I2S_STATE_STOPPING;
+	} else {
+		stream->conf->stop_transfer(dev);
+		stream->data->last_block = true;
+		stream->data->state = I2S_STATE_READY;
+	}
+	return 0;
+}
+
+static int handle_drain(const struct device *dev, const struct i2s_esp32_stream *stream,
+			enum i2s_dir dir)
+{
+	int32_t st = stream->data->state;
+
+	if (st != I2S_STATE_READY && st != I2S_STATE_RUNNING) {
+		LOG_ERR("DRAIN - Invalid state: %d", (int)st);
+		return -EIO;
+	}
+
+	if (st == I2S_STATE_READY) {
+#if I2S_ESP32_IS_DIR_EN(tx)
+		if (dir == I2S_DIR_TX) {
+			bool have_data = tx_has_data(stream);
+
+			/* If idle but data queued, kick once and drain */
+			if (have_data && !stream->data->dma_pending) {
+				int kick = stream->conf->start_transfer(dev);
+
+				if (kick < 0) {
+					LOG_ERR("DRAIN - autostart failed: %d", kick);
+					return -EIO;
+				}
+				stream->data->last_block = false;
+				stream->data->stop_without_draining = false;
+				stream->data->state = I2S_STATE_STOPPING;
+				return 0;
+			}
+
+			/* Idle and no data: nothing to drain */
+			if (!have_data && !stream->data->dma_pending) {
+				return 0;
+			}
 		}
+#endif /* I2S_ESP32_IS_DIR_EN(tx) */
 
-		key = irq_lock();
-
+#if I2S_ESP32_IS_DIR_EN(rx)
 		if (dir == I2S_DIR_RX) {
-			i2s_hal_rx_stop(hal);
-			i2s_hal_rx_reset(hal);
-#if !SOC_GDMA_SUPPORTED
-			i2s_hal_rx_reset_dma(hal);
-#endif /* !SOC_GDMA_SUPPORTED */
-			i2s_hal_rx_reset_fifo(hal);
-		} else if (dir == I2S_DIR_TX) {
-			i2s_hal_tx_stop(hal);
-			i2s_hal_tx_reset(hal);
-#if !SOC_GDMA_SUPPORTED
-			i2s_hal_tx_reset_dma(hal);
-#endif /* !SOC_GDMA_SUPPORTED */
-			i2s_hal_tx_reset_fifo(hal);
+			if (!stream->data->dma_pending) {
+				return 0; /* idle, no data */
+			}
 		}
+#endif /* I2S_ESP32_IS_DIR_EN(rx) */
+	}
 
-		err = stream->conf->start_transfer(dev);
-		if (err < 0) {
-			LOG_ERR("START - Transfer start failed: %d", err);
-			irq_unlock(key);
-			return -EIO;
+	/* Common tail: RUNNING, or READY with dma_pending */
+#if I2S_ESP32_IS_DIR_EN(tx)
+	if (dir == I2S_DIR_TX) {
+		if (tx_has_data(stream) || stream->data->dma_pending) {
+			stream->data->stop_without_draining = false;
+			stream->data->state = I2S_STATE_STOPPING;
+		} else {
+			stream->conf->stop_transfer(dev);
+			stream->data->state = I2S_STATE_READY;
 		}
-		stream->data->last_block = false;
-		stream->data->state = I2S_STATE_RUNNING;
-		irq_unlock(key);
-		break;
+	}
+#endif /* I2S_ESP32_IS_DIR_EN(tx) */
 
-	case I2S_TRIGGER_STOP:
-		key = irq_lock();
-		if (stream->data->state != I2S_STATE_RUNNING) {
-			irq_unlock(key);
-			LOG_ERR("STOP - Invalid state: %d", (int)stream->data->state);
-			return -EIO;
-		}
-
+#if I2S_ESP32_IS_DIR_EN(rx)
+	if (dir == I2S_DIR_RX) {
 		if (stream->data->dma_pending) {
 			stream->data->stop_without_draining = true;
 			stream->data->state = I2S_STATE_STOPPING;
@@ -1243,49 +1344,37 @@ static int i2s_esp32_trigger_stream(const struct device *dev, const struct i2s_e
 			stream->data->last_block = true;
 			stream->data->state = I2S_STATE_READY;
 		}
+	}
+#endif /* I2S_ESP32_IS_DIR_EN(rx) */
 
-		irq_unlock(key);
+	return 0;
+}
+
+static int i2s_esp32_trigger_stream(const struct device *dev, const struct i2s_esp32_stream *stream,
+				    enum i2s_dir dir, enum i2s_trigger_cmd cmd)
+{
+	const struct i2s_esp32_cfg *dev_cfg = dev->config;
+	const i2s_hal_context_t *hal = &dev_cfg->hal;
+
+	unsigned int key = irq_lock();
+	int ret = 0;
+
+	switch (cmd) {
+	case I2S_TRIGGER_START:
+		ret = handle_start(dev, stream, dir, hal);
+		break;
+
+	case I2S_TRIGGER_STOP:
+		ret = handle_stop(dev, stream);
 		break;
 
 	case I2S_TRIGGER_DRAIN:
-		key = irq_lock();
-		if (stream->data->state != I2S_STATE_RUNNING) {
-			irq_unlock(key);
-			LOG_ERR("DRAIN - Invalid state: %d", (int)stream->data->state);
-			return -EIO;
-		}
-
-#if I2S_ESP32_IS_DIR_EN(tx)
-		if (dir == I2S_DIR_TX) {
-			if (k_msgq_num_used_get(&stream->data->queue) > 0 ||
-			    stream->data->dma_pending) {
-				stream->data->stop_without_draining = false;
-				stream->data->state = I2S_STATE_STOPPING;
-			} else {
-				stream->conf->stop_transfer(dev);
-				stream->data->state = I2S_STATE_READY;
-			}
-		}
-#endif /* I2S_ESP32_IS_DIR_EN(tx) */
-
-#if I2S_ESP32_IS_DIR_EN(rx)
-		if (dir == I2S_DIR_RX) {
-			if (stream->data->dma_pending) {
-				stream->data->stop_without_draining = true;
-				stream->data->state = I2S_STATE_STOPPING;
-			} else {
-				stream->conf->stop_transfer(dev);
-				stream->data->last_block = true;
-				stream->data->state = I2S_STATE_READY;
-			}
-		}
-#endif /* I2S_ESP32_IS_DIR_EN(rx) */
-
-		irq_unlock(key);
+		ret = handle_drain(dev, stream, dir);
 		break;
 
 	case I2S_TRIGGER_DROP:
 		if (stream->data->state == I2S_STATE_NOT_READY) {
+			irq_unlock(key);
 			LOG_ERR("DROP - invalid state: %d", (int)stream->data->state);
 			return -EIO;
 		}
@@ -1296,6 +1385,7 @@ static int i2s_esp32_trigger_stream(const struct device *dev, const struct i2s_e
 
 	case I2S_TRIGGER_PREPARE:
 		if (stream->data->state != I2S_STATE_ERROR) {
+			irq_unlock(key);
 			LOG_ERR("PREPARE - invalid state: %d", (int)stream->data->state);
 			return -EIO;
 		}
@@ -1304,11 +1394,13 @@ static int i2s_esp32_trigger_stream(const struct device *dev, const struct i2s_e
 		break;
 
 	default:
+		irq_unlock(key);
 		LOG_ERR("Unsupported trigger command: %d", (int)cmd);
 		return -EINVAL;
 	}
 
-	return 0;
+	irq_unlock(key);
+	return ret;
 }
 
 static int i2s_esp32_trigger(const struct device *dev, enum i2s_dir dir, enum i2s_trigger_cmd cmd)
@@ -1458,6 +1550,36 @@ static int i2s_esp32_write(const struct device *dev, void *mem_block, size_t siz
 	if (err < 0) {
 		LOG_ERR("TX queue full");
 		return err;
+	}
+
+	/*
+	 * Auto-restart TX after an underrun or a START with no data:
+	 * If TX is in READY and no DMA is pending and there's no current block,
+	 * kick DMA immediately so we don't require a new START trigger.
+	 */
+	if (stream->data->state == I2S_STATE_READY && !stream->data->dma_pending &&
+	    stream->data->mem_block == NULL) {
+		unsigned int key = irq_lock();
+
+		if (stream->data->state == I2S_STATE_READY && !stream->data->dma_pending &&
+		    stream->data->mem_block == NULL) {
+			int kick = stream->conf->start_transfer(dev);
+
+			if (kick < 0) {
+				irq_unlock(key);
+				LOG_ERR("TX auto-restart failed: %d", kick);
+				return kick;
+			}
+			stream->data->last_block = false;
+			/*
+			 * If start_transfer pulled from the queue, we are RUNNING;
+			 * if not (shouldn't happen here), stay READY.
+			 */
+			if (stream->data->mem_block != NULL || stream->data->dma_pending) {
+				stream->data->state = I2S_STATE_RUNNING;
+			}
+		}
+		irq_unlock(key);
 	}
 
 	return 0;
