@@ -4,9 +4,6 @@ tests:
       - drivers
       - pwm
       - userspace
-    filter: dt_alias_exists("pwm-0") or dt_alias_exists("pwm-1") or dt_alias_exists("pwm-2")
-      or dt_alias_exists("pwm-3") or dt_compat_enabled("st,stm32-pwm")
-      or dt_compat_enabled("intel,blinky-pwm") or dt_compat_enabled("nordic,nrf-pwm")
     depends_on: pwm
   drivers.pwm.pwm_flexio:
     tags:
@@ -26,9 +23,7 @@ tests:
       - mimxrt700_evk/mimxrt798s/cm33_cpu0
       - mimxrt1180_evk/mimxrt1189/cm33
       - mimxrt1180_evk/mimxrt1189/cm7
-    filter: (dt_alias_exists("pwm-0") or dt_alias_exists("pwm-1") or dt_alias_exists("pwm-2")
-      or dt_alias_exists("pwm-3")) and CONFIG_DT_HAS_NXP_FLEXIO_ENABLED and
-      CONFIG_DT_HAS_NXP_FLEXIO_PWM_ENABLED
+    filter: CONFIG_DT_HAS_NXP_FLEXIO_ENABLED and CONFIG_DT_HAS_NXP_FLEXIO_PWM_ENABLED
     depends_on: pwm
   drivers.pwm.pwm_fast:
     tags:
@@ -59,7 +54,5 @@ tests:
     platform_allow:
       - frdm_mcxw71
       - frdm_mcxw72/mcxw727c/cpu0
-    filter: (dt_alias_exists("pwm-0") or dt_alias_exists("pwm-1") or dt_alias_exists("pwm-2")
-      or dt_alias_exists("pwm-3")) and CONFIG_DT_HAS_NXP_FLEXIO_ENABLED and
-      CONFIG_DT_HAS_NXP_FLEXIO_PWM_ENABLED
+    filter: CONFIG_DT_HAS_NXP_FLEXIO_ENABLED and CONFIG_DT_HAS_NXP_FLEXIO_PWM_ENABLED
     depends_on: pwm

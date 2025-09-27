@@ -8,7 +8,7 @@
 
 / {
 	aliases {
-		pwm-0 = &ledc0;
+		pwm-test = &ledc0;
 	};
 };
 
