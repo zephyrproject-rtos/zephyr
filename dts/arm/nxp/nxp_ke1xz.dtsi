@@ -190,7 +190,7 @@
 			reg = <0x40040000 0x1000>;
 			interrupts = <29 0>;
 			clock-frequency = <DT_FREQ_K(128)>;
-			prescaler = <1>;
+			prescale-glitch-filter = <0>;
 			clk-source = <1>;
 			resolution = <16>;
 		};
