@@ -163,6 +163,44 @@ extern "C" {
 	((_bis_bitfield) == 0U || (_bis_bitfield) == BT_BAP_BIS_SYNC_NO_PREF ||                    \
 	 BT_ISO_VALID_BIS_BITFIELD(_bis_bitfield))
 
+
+enum bt_bap_past_flag {
+	/** Advertising Address matches both address in ADV_EXT_IND and source */
+	BT_BAP_PAST_MATCHES_ADVA_IN_ADV_EXT_IND_AND_SOURCE = 0x0000,
+
+	/** Advertising Address matches the source address (bit 1 is 0)
+	 * Matching in ADV_EXT_IND : No / don't know (bit 0 is 1)
+	 */
+	BT_BAP_PAST_MATCHES_ADVA_IN_SOURCE = 0x0001,
+
+	/** Advertising Address matches the ADV_EXT_IND (bit 1 is 0)
+	 * Matching in source address: No / don't know (bit 0 is 1)
+	 */
+	BT_BAP_PAST_MATCHES_ADVA_IN_ADV_EXT_IND = 0x0002,
+
+	/** Can not verify that Advertising Address in PAST matches
+	 * either Source or ADV_EXT_IND (both bit 0 and 1 are 1)
+	 */
+	BT_BAP_PAST_MATCHES_NOTHING = 0x0003,
+};
+
+
+/**
+ * @brief Helper to pack addr_type and src_id
+ *
+ * @param past_flags past_addr_types bits0..7
+ * @param src_id past_addr_types bits8..15
+ */
+#define BT_BAP_PAST_SERVICE_DATA(past_flags, src_id) \
+	((uint16_t)(src_id) & 0xFFU) << 8U \
+	| ((uint16_t)(past_flags) & 0xFFU)
+
+/** Extract BAP addr_type from 16-bit Service Data */
+#define BT_BAP_PAST_GET_SRC_ID(data) (uint8_t)(((data) & 0xFFU) >> 8U)
+
+/** Extract BAP src_id (server ID) from 16-bit Service Data */
+#define BT_BAP_PAST_GET_ADDR_TYPE(data) (uint8_t)(((data) & 0xFFU))
+
 /**
  * @brief Helper to declare elements of bt_bap_qos_cfg
  *
