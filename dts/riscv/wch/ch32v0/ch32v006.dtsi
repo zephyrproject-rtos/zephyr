@@ -11,33 +11,63 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/clock/ch32v00x-clocks.h>
+#include <zephyr/dt-bindings/reset/ch32v00x-reset.h>
 #include <zephyr/dt-bindings/dma/ch32v003-dma.h>
 
 / {
 	clocks {
+		clk_lsi: clk-lsi {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_K(128)>;
+			status = "okay";
+		};
+
 		clk_hse: clk-hse {
 			#clock-cells = <0>;
-			compatible = "wch,ch32v00x-hse-clock";
+			compatible = "wch,ch32-hse-clock";
 			status = "disabled";
 		};
 
 		clk_hsi: clk-hsi {
 			#clock-cells = <0>;
-			compatible = "wch,ch32v00x-hsi-clock";
+			compatible = "wch,ch32-hsi-clock";
 			clock-frequency = <DT_FREQ_M(24)>;
-			status = "disabled";
-		};
-
-		clk_lsi: clk-lsi {
-			#clock-cells = <0>;
-			compatible = "fixed-clock";
-			clock-frequency = <DT_FREQ_K(128)>;
 			status = "disabled";
 		};
 
 		pll: pll {
 			#clock-cells = <0>;
 			compatible = "wch,ch32v00x-pll-clock";
+			clocks = <&clk_hsi>;
+			mul = <2>;
+			status = "disabled";
+		};
+
+		clk_sys: clk-sys {
+			#clock-cells = <0>;
+			compatible = "wch,ch32-sys-clock";
+			clocks = <&clk_hsi>;
+		};
+
+		clk_hb: clk-hb {
+			#clock-cells = <0>;
+			compatible = "wch,ch32v00x-hb-clock";
+			clocks = <&clk_sys>;
+			div = <1>;
+		};
+
+		clk_adc: clk-adc {
+			#clock-cells = <0>;
+			compatible = "wch,ch32v00x-adc-clock";
+			clocks = <&clk_hb>;
+			div = <2>;
+		};
+	};
+
+	mcos {
+		mco: mco {
+			compatible = "wch,ch32-clock-mco";
 			status = "disabled";
 		};
 	};
@@ -91,6 +121,7 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			clocks = <&rcc CH32V00X_CLOCK_AFIO>;
+			resets = <&rctl CH32_RESET(PB2, 0)>;
 			status = "okay";
 
 			gpioa: gpio@40010800 {
@@ -100,6 +131,7 @@
 				#gpio-cells = <2>;
 				ngpios = <8>;
 				clocks = <&rcc CH32V00X_CLOCK_IOPA>;
+				resets = <&rctl CH32_RESET(PB2, 2)>;
 			};
 
 			gpiob: gpio@40010C00 {
@@ -109,6 +141,7 @@
 				#gpio-cells = <2>;
 				ngpios = <7>;
 				clocks = <&rcc CH32V00X_CLOCK_IOPB>;
+				resets = <&rctl CH32_RESET(PB2, 3)>;
 			};
 
 			gpioc: gpio@40011000 {
@@ -118,6 +151,7 @@
 				#gpio-cells = <2>;
 				ngpios = <8>;
 				clocks = <&rcc CH32V00X_CLOCK_IOPC>;
+				resets = <&rctl CH32_RESET(PB2, 4)>;
 			};
 
 			gpiod: gpio@40011400 {
@@ -127,6 +161,7 @@
 				#gpio-cells = <2>;
 				ngpios = <8>;
 				clocks = <&rcc CH32V00X_CLOCK_IOPD>;
+				resets = <&rctl CH32_RESET(PB2, 5)>;
 			};
 		};
 
@@ -136,6 +171,7 @@
 			#size-cells = <0>;
 			reg = <0x40005400 0x400>;
 			clocks = <&rcc CH32V00X_CLOCK_I2C1>;
+			resets = <&rctl CH32_RESET(PB1, 21)>;
 			interrupt-parent = <&pfic>;
 			interrupts = <30>, <31>;
 			status = "disabled";
@@ -145,6 +181,7 @@
 			compatible = "wch,usart";
 			reg = <0x40013800 0x10>;
 			clocks = <&rcc CH32V00X_CLOCK_USART1>;
+			resets = <&rctl CH32_RESET(PB2, 14)>;
 			interrupt-parent = <&pfic>;
 			interrupts = <32>;
 			status = "disabled";
@@ -154,16 +191,31 @@
 			compatible = "wch,usart";
 			reg = <0x40004400 0x10>;
 			clocks = <&rcc CH32V00X_CLOCK_USART2>;
+			resets = <&rctl CH32_RESET(PB2, 13)>;
 			interrupt-parent = <&pfic>;
 			interrupts = <39>;
 			status = "disabled";
 		};
 
 		rcc: rcc@40021000 {
-			compatible = "wch,rcc";
-			reg = <0x40021000 0x10>;
+			compatible = "wch,ch32v00x-rcc";
+			reg = <0x40021000 0x28>;
+			reg-names = "rcc";
+			#address-cells = <1>;
+			#size-cells = <1>;
 			#clock-cells = <1>;
+			clocks = <&clk_lsi>, <&clk_hse>, <&clk_hsi>, <&pll>,
+				 <&clk_sys>, <&clk_hb>, <&clk_adc>;
+			clock-names = "clk_lsi", "clk_hse", "clk_hsi", "pll",
+				"clk_sys", "clk_hb", "clk_adc";
 			status = "okay";
+
+			rctl: reset-controler@0x0C {
+				compatible = "wch,ch32-rcc-rctl";
+				#reset-cells = <1>;
+				reg = <0x0C 0x08>;
+				status = "okay";
+			};
 		};
 
 		dma1: dma@40020000 {
@@ -182,6 +234,7 @@
 			prescaler = <1>;
 			channels = <4>;
 			clocks = <&rcc CH32V00X_CLOCK_TIM2>;
+			resets = <&rctl CH32_RESET(PB1, 0)>;
 			interrupt-parent = <&pfic>;
 			interrupts = <38>;
 			interrupt-names = "global";
@@ -199,6 +252,7 @@
 			compatible = "wch,spi";
 			reg = <0x40013000 0x24>;
 			clocks = <&rcc CH32V00X_CLOCK_SPI1>;
+			resets = <&rctl CH32_RESET(PB2, 12)>;
 			interrupt-parent = <&pfic>;
 			interrupts = <33>;
 			status = "disabled";
