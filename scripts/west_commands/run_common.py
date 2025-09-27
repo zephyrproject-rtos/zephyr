@@ -244,8 +244,7 @@ def do_run_common(command, user_args, user_runner_args, domain_file=None):
             )
 
     build_dir = get_build_dir(user_args)
-    if not user_args.skip_rebuild:
-        rebuild(command, build_dir, user_args)
+    rebuild(command, build_dir, user_args)
 
     domains = get_domains_to_process(build_dir, user_args, domain_file)
 
@@ -568,6 +567,12 @@ def load_cmake_cache(build_dir, args):
         log.die(f'no CMake cache found (expected one at {cache_file})')
 
 def rebuild(command, build_dir, args):
+    skip_rebuild_config = config.get('flash', 'skip-rebuild', fallback='false')
+    skip_rebuild = args.skip_rebuild or (skip_rebuild_config.lower() == 'true')
+
+    if skip_rebuild:
+        return
+
     _banner(f'west {command.name}: rebuilding')
     try:
         zcmake.run_build(build_dir)
@@ -723,7 +728,7 @@ def dump_context(command, args, unknown_args):
         get_all_domain = True
 
     # Re-build unless asked not to, to make sure the output is up to date.
-    if build_dir and not args.skip_rebuild:
+    if build_dir:
         rebuild(command, build_dir, args)
 
     domains = get_domains_to_process(build_dir, args, None, get_all_domain)

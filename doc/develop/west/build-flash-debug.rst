@@ -551,6 +551,22 @@ only the image from this domain::
 
 .. _west-debugging:
 
+Configuration Options
+=====================
+
+You can :ref:`configure <west-config-cmd>` ``west flash`` using these options.
+
+.. NOTE: docs authors: keep this table sorted alphabetically
+
+.. list-table::
+   :widths: 10 30
+   :header-rows: 1
+
+   * - Option
+     - Description
+   * - ``flash.skip-rebuild``
+     - Boolean, default ``false``. If ``true``, do not rebuild on west flash.
+
 Debugging: ``west debug``, ``west debugserver``
 ***********************************************
 
