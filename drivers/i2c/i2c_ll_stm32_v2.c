@@ -33,8 +33,6 @@ LOG_MODULE_REGISTER(i2c_ll_stm32_v2);
 #include "i2c_ll_stm32.h"
 #include "i2c-priv.h"
 
-#define I2C_STM32_TRANSFER_TIMEOUT_MSEC  500
-
 #ifdef CONFIG_I2C_STM32_V2_TIMING
 /* Use the algorithm to calcuate the I2C timing */
 #ifndef I2C_STM32_VALID_TIMING_NBR
@@ -691,7 +689,7 @@ static int i2c_stm32_msg_write(const struct device *dev, struct i2c_msg *msg,
 	LL_I2C_EnableIT_TX(i2c);
 
 	if (k_sem_take(&data->device_sync_sem,
-		       K_MSEC(I2C_STM32_TRANSFER_TIMEOUT_MSEC)) != 0) {
+		       K_MSEC(CONFIG_I2C_STM32_TRANSFER_TIMEOUT_MSEC)) != 0) {
 		i2c_stm32_master_mode_end(dev);
 		k_sem_take(&data->device_sync_sem, K_FOREVER);
 		is_timeout = true;
@@ -750,7 +748,7 @@ static int i2c_stm32_msg_read(const struct device *dev, struct i2c_msg *msg,
 	LL_I2C_EnableIT_RX(i2c);
 
 	if (k_sem_take(&data->device_sync_sem,
-		       K_MSEC(I2C_STM32_TRANSFER_TIMEOUT_MSEC)) != 0) {
+		       K_MSEC(CONFIG_I2C_STM32_TRANSFER_TIMEOUT_MSEC)) != 0) {
 		i2c_stm32_master_mode_end(dev);
 		k_sem_take(&data->device_sync_sem, K_FOREVER);
 		is_timeout = true;
@@ -845,7 +843,7 @@ static inline int msg_done(const struct device *dev,
 			return -EIO;
 		}
 		if ((k_uptime_get() - start_time) >
-		    I2C_STM32_TRANSFER_TIMEOUT_MSEC) {
+		    CONFIG_I2C_STM32_TRANSFER_TIMEOUT_MSEC) {
 			return -ETIMEDOUT;
 		}
 	}
@@ -854,7 +852,7 @@ static inline int msg_done(const struct device *dev,
 		LL_I2C_GenerateStopCondition(i2c);
 		while (!LL_I2C_IsActiveFlag_STOP(i2c)) {
 			if ((k_uptime_get() - start_time) >
-			    I2C_STM32_TRANSFER_TIMEOUT_MSEC) {
+			    CONFIG_I2C_STM32_TRANSFER_TIMEOUT_MSEC) {
 				return -ETIMEDOUT;
 			}
 		}
@@ -889,7 +887,7 @@ static int i2c_stm32_msg_write(const struct device *dev, struct i2c_msg *msg,
 			}
 
 			if ((k_uptime_get() - start_time) >
-			    I2C_STM32_TRANSFER_TIMEOUT_MSEC) {
+			    CONFIG_I2C_STM32_TRANSFER_TIMEOUT_MSEC) {
 				return -ETIMEDOUT;
 			}
 		}
@@ -920,7 +918,7 @@ static int i2c_stm32_msg_read(const struct device *dev, struct i2c_msg *msg,
 				return -EIO;
 			}
 			if ((k_uptime_get() - start_time) >
-			    I2C_STM32_TRANSFER_TIMEOUT_MSEC) {
+			    CONFIG_I2C_STM32_TRANSFER_TIMEOUT_MSEC) {
 				return -ETIMEDOUT;
 			}
 		}
