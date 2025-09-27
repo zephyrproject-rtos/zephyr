@@ -288,6 +288,7 @@ def write_special_props(node: edtlib.Node) -> None:
     write_pinctrls(node)
     write_fixed_partitions(node)
     write_gpio_hogs(node)
+    write_maps(node)
 
 
 def write_ranges(node: edtlib.Node) -> None:
@@ -577,6 +578,72 @@ def write_gpio_hogs(node: edtlib.Node) -> None:
         out_dt_define(f"{macro}_NUM", len(node.gpio_hogs))
         for macro, val in macro2val.items():
             out_dt_define(macro, val)
+
+
+def write_maps(node: edtlib.Node) -> None:
+    if len(node.maps) == 0:
+        return
+
+    out_comment("Map properties:")
+
+    basename = str2ident(node.maps[0].basename)
+    macro = f"{node.z_path_id}_P_{basename}_map"
+    macro2val = {}
+
+    for i, cd in enumerate(node.maps):
+        if basename != str2ident(cd.basename):
+            err(f"Map basename mismatch: {basename} != {str2ident(cd.basename)}")
+
+        macro2val.update(controller_and_data_macros(cd, i, macro, ""))
+
+    prop_id = f"{basename}_map"
+    plen = len(node.maps)
+    # DT_N_<node-id>_P_<prop-id>_FOREACH_PROP_ELEM
+    macro2val[f"{macro}_FOREACH_PROP_ELEM(fn)"] = ' \\\n\t'.join(
+        f'fn(DT_{node.z_path_id}, {prop_id}, {i})' for i in range(plen)
+    )
+
+    # DT_N_<node-id>_P_<prop-id>_FOREACH_PROP_ELEM_SEP
+    macro2val[f"{macro}_FOREACH_PROP_ELEM_SEP(fn, sep)"] = ' DT_DEBRACKET_INTERNAL sep \\\n\t'.join(
+        f'fn(DT_{node.z_path_id}, {prop_id}, {i})' for i in range(plen)
+    )
+
+    # DT_N_<node-id>_P_<prop-id>_FOREACH_PROP_ELEM_VARGS
+    macro2val[f"{macro}_FOREACH_PROP_ELEM_VARGS(fn, ...)"] = ' \\\n\t'.join(
+        f'fn(DT_{node.z_path_id}, {prop_id}, {i}, __VA_ARGS__)' for i in range(plen)
+    )
+
+    # DT_N_<node-id>_P_<prop-id>_FOREACH_PROP_ELEM_SEP_VARGS
+    macro2val[f"{macro}_FOREACH_PROP_ELEM_SEP_VARGS(fn, sep, ...)"] = (
+        ' DT_DEBRACKET_INTERNAL sep \\\n\t'.join(
+            f'fn(DT_{node.z_path_id}, {prop_id}, {i}, __VA_ARGS__)' for i in range(plen)
+        )
+    )
+
+    macro2val[f"{macro}_LEN"] = plen
+    macro2val[f"{macro}_EXISTS"] = 1
+
+    for i, cd in enumerate(node.maps):
+        parent_specifier_len = len([k for k in cd.data if k.startswith('parent_specifier_')])
+        child_specifiers = list(cd.data.values())[:-parent_specifier_len]
+        parent_specifiers = list(cd.data.values())[-parent_specifier_len:]
+        child_specifier_len = len(child_specifiers)
+
+        args = []
+        args.extend([str(v) for v in child_specifiers])
+        args.extend(["DT_" + node_z_path_id(cd.controller)])
+        args.extend([str(v) for v in parent_specifiers])
+
+        macro2val[f"{macro}_MAP_IDX_{i}"] = ", ".join(args)
+        macro2val[f"{macro}_MAP_IDX_{i}_CHILD_SPECIFIER_POS"] = 0
+        macro2val[f"{macro}_MAP_IDX_{i}_CHILD_SPECIFIER_LEN"] = child_specifier_len
+        macro2val[f"{macro}_MAP_IDX_{i}_PARENT_POS"] = child_specifier_len
+        macro2val[f"{macro}_MAP_IDX_{i}_PARENT_LEN"] = 1
+        macro2val[f"{macro}_MAP_IDX_{i}_PARENT_SPECIFIER_POS"] = child_specifier_len + 1
+        macro2val[f"{macro}_MAP_IDX_{i}_PARENT_SPECIFIER_LEN"] = parent_specifier_len
+
+    for mc, val in macro2val.items():
+        out_dt_define(mc, val)
 
 
 def write_vanilla_props(node: edtlib.Node) -> None:

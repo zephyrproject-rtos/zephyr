@@ -5048,6 +5048,15 @@ West:
   labels:
     - "area: West"
 
+"West project: Arduino-Core-Zephyr":
+  status: maintained
+  maintainers:
+    - dhruvag2000
+  files:
+    - snippets/arduino-core/
+  labels:
+    - manifest-arduino-api
+
 "West project: acpica":
   status: maintained
   maintainers:
@@ -5236,6 +5245,15 @@ West:
     - modules/fatfs/
   labels:
     - "area: Storage"
+
+"West project: gsoc-2022-arduino-core":
+  status: maintained
+  maintainers:
+    - dhruvag2000
+  files:
+    - snippets/arduino-core/
+  labels:
+    - manifest-arduino-api
 
 "West project: hal_adi":
   status: maintained
