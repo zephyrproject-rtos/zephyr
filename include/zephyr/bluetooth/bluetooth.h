@@ -756,6 +756,8 @@ enum bt_le_adv_opt {
 	 *
 	 * Starting connectable advertising preallocates a connection
 	 * object. If this fails, the API returns @c -ENOMEM.
+	 * Stopping connectable advertising will free the connection object,
+	 * and will trigger a call to @ref bt_conn_cb.recycled.
 	 *
 	 * The advertising set stops immediately after it creates a
 	 * connection. This happens automatically in the controller.
