@@ -42,7 +42,12 @@
 #define __always_inline ALWAYS_INLINE
 #endif /* __always_inline */
 
-/* Two definitions required for the flash driver */
+/* Definitions required for various drivers */
+#ifndef __CONCAT
+#define __CONCAT(x, y) UTIL_CAT(x, y)
+#endif
+#ifndef __STRING
 #define __STRING(x) #x
+#endif
 
 #endif
