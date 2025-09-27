@@ -104,7 +104,7 @@ enum test_tx_mode {
 
 struct test_tx_data {
 	uint8_t buf[512];
-	struct ring_buf rbuf;
+	struct ring_buffer rbuf;
 	atomic_t busy;
 	uint8_t packet_len;
 	uint8_t cnt;
@@ -163,7 +163,7 @@ static void fill_tx(struct test_tx_data *data)
 		return;
 	}
 
-	while ((len = ring_buf_put_claim(&data->rbuf, &buf, 255)) > 1) {
+	while ((len = ring_buffer_write_ptr(&data->rbuf, &buf)) > 1) {
 		uint8_t r = (sys_rand8_get() % MAX_PACKET_LEN) % len;
 		uint8_t packet_len = MAX(r, 2);
 		uint8_t rem = len - packet_len;
@@ -174,7 +174,7 @@ static void fill_tx(struct test_tx_data *data)
 			buf[i] = packet_len - i;
 		}
 
-		ring_buf_put_finish(&data->rbuf, packet_len);
+		ring_buffer_commit(&data->rbuf, packet_len);
 	}
 }
 
@@ -205,7 +205,7 @@ static void try_tx(const struct device *dev, bool irq)
 		return;
 	}
 
-	len = ring_buf_get_claim(&tx_data.rbuf, &buf, 255);
+	len = MIN(ring_buffer_read_ptr(&tx_data.rbuf, &buf), 255);
 	if (len > 0) {
 		err = uart_tx(dev, buf, len, TX_TIMEOUT);
 		zassert_equal(err, 0,
@@ -222,7 +222,7 @@ static void on_tx_done(const struct device *dev, struct uart_event *evt)
 	}
 
 	/* Finish previous data chunk and start new if any pending. */
-	ring_buf_get_finish(&tx_data.rbuf, evt->data.tx.len);
+	ring_buffer_consume(&tx_data.rbuf, evt->data.tx.len);
 	atomic_set(&tx_data.busy, 0);
 	try_tx(dev, true);
 }
@@ -401,7 +401,7 @@ static void var_packet_hwfc(uint32_t baudrate, bool tx_packets, bool cont)
 	rx_data.state = RX_HDR;
 	rx_data.mode = cont ? RX_CONT : RX_DIS;
 
-	ring_buf_init(&tx_data.rbuf, sizeof(tx_data.buf), tx_data.buf);
+	ring_buffer_init(&tx_data.rbuf, tx_data.buf, sizeof(tx_data.buf));
 
 	k_timer_start(&test_timer, K_MSEC(CONFIG_UART_ASYNC_DUAL_TEST_TIMEOUT), K_NO_WAIT);
 
