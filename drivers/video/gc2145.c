@@ -1185,26 +1185,20 @@ static int gc2145_init_controls(const struct device *dev)
 	struct gc2145_data *drv_data = dev->data;
 	struct gc2145_ctrls *ctrls = &drv_data->ctrls;
 
-	ret = video_init_ctrl(&ctrls->hflip, dev, VIDEO_CID_HFLIP,
-			      (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 0});
+	ret = video_init_ctrl(&ctrls->hflip, dev);
 	if (ret) {
 		return ret;
 	}
 
-	ret = video_init_ctrl(&ctrls->vflip, dev, VIDEO_CID_VFLIP,
-			      (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 0});
+	ret = video_init_ctrl(&ctrls->vflip, dev);
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = video_init_int_menu_ctrl(&ctrls->linkfreq, dev, VIDEO_CID_LINK_FREQ,
-				       GC2145_640_480_LINK_FREQ_ID, gc2145_link_frequency,
-				       ARRAY_SIZE(gc2145_link_frequency));
+	ret = video_init_ctrl(&ctrls->linkfreq, dev);
 	if (ret < 0) {
 		return ret;
 	}
-
-	ctrls->linkfreq.flags |= VIDEO_CTRL_FLAG_READ_ONLY;
 
 	return 0;
 }
@@ -1293,8 +1287,29 @@ static int gc2145_init(const struct device *dev)
 #define GC2145_GET_PWDN_GPIO(n)
 #endif
 
-#define GC2145_INIT(n)										\
-	static struct gc2145_data gc2145_data_##n;						\
+#define GC2145_INIT(n)                                                                         \
+	static struct gc2145_data gc2145_data_##n = {                                           \
+		.ctrls = {                                                                      \
+			.hflip =                                                                \
+				{                                                               \
+					.id = VIDEO_CID_HFLIP,                                  \
+					.range = {.min = 0, .max = 1, .step = 1, .def = 0},     \
+				},                                                              \
+			.vflip =                                                                \
+				{                                                               \
+					.id = VIDEO_CID_VFLIP,                                  \
+					.range = {.min = 0, .max = 1, .step = 1, .def = 0},     \
+				},                                                              \
+			.link_freq =                                                            \
+				{                                                               \
+					.id = VIDEO_CID_LINK_FREQ,                              \
+					.range = {.max = ARRAY_SIZE(gc2145_link_frequency) - 1, \
+						  .def = GC2145_640_480_LINK_FREQ_ID},          \
+					.flags = VIDEO_CTRL_FLAG_READ_ONLY,                     \
+					.int_menu = gc2145_link_frequency,                      \
+				},                                                              \
+		}};                                                                             \
+                                                                                               \
 	static const struct gc2145_config gc2145_cfg_##n = {					\
 		.i2c = I2C_DT_SPEC_INST_GET(n),							\
 		GC2145_GET_PWDN_GPIO(n)								\

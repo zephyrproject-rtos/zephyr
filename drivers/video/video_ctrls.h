@@ -19,6 +19,11 @@
 #define VIDEO_CTRL_FLAG_INACTIVE   BIT(3)
 /** Control that affects other controls, e.g. the primary control of a cluster */
 #define VIDEO_CTRL_FLAG_UPDATE     BIT(4)
+/**
+ * Control is executed immediately when set, and driver callback is invoked even if the value
+ * hasn't changed
+ */
+#define VIDEO_CTRL_FLAG_EXECUTE_ON_WRITE BIT(5)
 
 enum video_ctrl_type {
 	/** Boolean type */
@@ -33,6 +38,8 @@ enum video_ctrl_type {
 	VIDEO_CTRL_TYPE_STRING = 5,
 	/** Menu integer type, standard or driver-defined menu */
 	VIDEO_CTRL_TYPE_INTEGER_MENU = 6,
+	/** Command-like type, triggers an action when written, without storing a value */
+	VIDEO_CTRL_TYPE_BUTTON = 7,
 };
 
 struct video_device;
@@ -41,13 +48,7 @@ struct video_device;
  * @see video_control for the struct used in public API
  */
 struct video_ctrl {
-	/* Fields should not touched by drivers, used only for the 1st control of a cluster */
-	struct video_ctrl *cluster;
-	uint8_t cluster_sz;
-	bool is_auto;
-	bool has_volatiles;
-
-	const struct video_device *vdev;
+	/* Fields could be set directly by drivers if needed */
 	uint32_t id;
 	enum video_ctrl_type type;
 	unsigned long flags;
@@ -60,17 +61,18 @@ struct video_ctrl {
 		const char *const *menu;
 		const int64_t *int_menu;
 	};
+	const char *name;
+
+	/* Fields should not be touched by drivers */
+	const struct video_device *vdev;
+	struct video_ctrl *cluster;
+	uint8_t cluster_sz;
+	bool is_auto;
+	bool has_volatiles;
 	sys_dnode_t node;
 };
 
-int video_init_ctrl(struct video_ctrl *ctrl, const struct device *dev, uint32_t id,
-		    struct video_ctrl_range range);
-
-int video_init_menu_ctrl(struct video_ctrl *ctrl, const struct device *dev, uint32_t id,
-			 uint8_t def, const char *const menu[]);
-
-int video_init_int_menu_ctrl(struct video_ctrl *ctrl, const struct device *dev, uint32_t id,
-			     uint8_t def, const int64_t menu[], size_t menu_len);
+int video_init_ctrl(struct video_ctrl *ctrl, const struct device *const dev);
 
 void video_cluster_ctrl(struct video_ctrl *ctrls, uint8_t sz);
 
