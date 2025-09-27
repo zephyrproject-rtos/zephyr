@@ -9,27 +9,20 @@
 
 / {
 	zephyr,user {
-		opamp = <&opamp1>;
-		adc-read-delay-ms = <1>;
-		io-channels = <&lpadc1 0>;
+		/* adjust channel number according to pinmux in board.dts */
+		io-channels = <&lpadc0 0>;
 	};
 };
 
-/* OPAMP is in follower mode, and its output is Vref of OPAMP1/2/3 */
-&opamp0 {
-	functional-mode = "follower";
-	is-reference-source;
-	compensation-capcitor = <0>;
-};
-
-&opamp1 {
-	functional-mode = "inverting";
-	compensation-capcitor = <2>;
-};
-
-&lpadc1 {
+&lpadc0 {
 	#address-cells = <1>;
 	#size-cells = <0>;
+
+	/*
+	 * To use this sample:
+	 * LPADC0 CH7 is used
+	 * - Connect LPADC0 CH7 signal to voltage between 0~3.3V (J4 pin6)
+	 */
 
 	channel@0 {
 		reg = <0>;
@@ -38,7 +31,6 @@
 		zephyr,vref-mv = <3300>;
 		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
 		zephyr,resolution = <16>;
-		/* LPADC1 CH2A is internally connected to the OPAMP1 output. */
-		zephyr,input-positive = <MCUX_LPADC_CH2A>;
+		zephyr,input-positive = <MCUX_LPADC_CH7A>;
 	};
 };
