@@ -12,24 +12,14 @@
 	};
 };
 
-&pinctrl {
-	i2s_default: i2s_default {
-		group1 {
-			pinmux = <I2S_MCLK_GPIO6>,
-				 <I2S_O_WS_GPIO5>,
-				 <I2S_O_BCK_GPIO4>,
-				 <I2S_O_SD_GPIO8>;
-		};
-		group2 {
-			pinmux = <I2S_I_SD_GPIO2>;
-		};
+&i2s_default {
+	group1 {
+		pinmux = <I2S_O_SD_GPIO8>;
 	};
 };
 
 i2s_led: &i2s {
 	status = "okay";
-	pinctrl-0 = <&i2s_default>;
-	pinctrl-names = "default";
 
 	dmas = <&dma 3>;
 	dma-names = "tx";
