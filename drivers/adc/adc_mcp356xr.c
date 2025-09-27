@@ -1308,7 +1308,7 @@ static DEVICE_API(adc, adc_mcp356xr_api) = {
 		.dev = DEVICE_DT_INST_GET(index),                                                  \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(index, &adc_mcp356xr_init, NULL, &adc_mcp356xr_data_##index,         \
+	DEVICE_DT_INST_DEFINE(index, adc_mcp356xr_init, NULL, &adc_mcp356xr_data_##index,          \
 			      &adc_mcp356xr_config_##index, POST_KERNEL, CONFIG_ADC_INIT_PRIORITY, \
 			      &adc_mcp356xr_api);
 

@@ -1064,7 +1064,7 @@ static DEVICE_API(adc, adc_ad4130_driver_api) = {
 		ADC_CONTEXT_INIT_TIMER(adc_ad4130_data_##inst, ctx),                               \
 		ADC_CONTEXT_INIT_SYNC(adc_ad4130_data_##inst, ctx),                                \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(inst, &ad4130_init, NULL, &adc_ad4130_data_##inst,                   \
+	DEVICE_DT_INST_DEFINE(inst, ad4130_init, NULL, &adc_ad4130_data_##inst,                    \
 			      &ad4130_config_##inst, POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,        \
 			      &adc_ad4130_driver_api);
 

@@ -726,7 +726,7 @@ static DEVICE_API(adc, mcux_lpadc_driver_api) = {
 	};														\
 										\
 	DEVICE_DT_INST_DEFINE(n,						\
-		&mcux_lpadc_init, NULL, &mcux_lpadc_data_##n,			\
+		mcux_lpadc_init, NULL, &mcux_lpadc_data_##n,			\
 		&mcux_lpadc_config_##n, POST_KERNEL,				\
 		CONFIG_ADC_INIT_PRIORITY,					\
 		&mcux_lpadc_driver_api);							\

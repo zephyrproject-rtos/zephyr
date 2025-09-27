@@ -550,7 +550,7 @@ static DEVICE_API(adc, mcux_adc16_driver_api) = {
 		ADC16_MCUX_EDMA_DATA(n)					\
 	};								\
 									\
-	DEVICE_DT_INST_DEFINE(n, &mcux_adc16_init,	\
+	DEVICE_DT_INST_DEFINE(n, mcux_adc16_init,	\
 			      NULL,	\
 			      &mcux_adc16_data_##n,	\
 			      &mcux_adc16_config_##n,	\
