@@ -6,3 +6,13 @@ description: LPC I2S node
 compatible: "nxp,lpc-i2s"
 
 include: [i2s-controller.yaml, "nxp,lpc-flexcomm.yaml"]
+
+properties:
+  framelength:
+    type: int
+    description: In most cases, frameLength is equal to bitWidth
+        times lineChannels. In some cases, frameLength needs to be set to other value.
+        For example, when the number of bit clock on the bus between two neighboring WS
+        value is greater than bitWidth times lineChannels, frameLength needs to be set to
+        the value that is equal to the number of bit clock between two neighboring WS signal.
+        Ommit or set to 0 means use calculation of driver (default behaviour).
