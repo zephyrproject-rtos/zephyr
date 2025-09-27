@@ -112,6 +112,7 @@ jobs:
       with:
         app-path: zephyr
         toolchains: 'all'
+        west-version: 1.5.0
 
     - name: install-pip
       working-directory: zephyr
@@ -231,6 +232,7 @@ jobs:
       with:
         app-path: zephyr
         toolchains: 'arm-zephyr-eabi'
+        west-version: 1.5.0
 
     - name: install-pip-pkgs
       working-directory: zephyr
