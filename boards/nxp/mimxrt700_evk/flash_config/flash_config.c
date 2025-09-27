@@ -14,7 +14,7 @@ const fc_static_platform_config_t flash_config = {
 			.tag = FC_XSPI_CFG_BLK_TAG,
 			.version = FC_XSPI_CFG_BLK_VERSION,
 			.read_sample_clk_src =
-				fc_xspi_read_sample_clk_external_input_from_dqs_pad,
+				FC_XSPI_READ_SAMPLE_CLK_EXTERNAL_INPUT_FROM_DQS_PAD,
 			.cs_hold_time = 3,
 			.cs_setup_time = 3,
 			.device_mode_cfg_enable = 1,
@@ -28,11 +28,11 @@ const fc_static_platform_config_t flash_config = {
 			},
 			.device_mode_arg = 2, /* Enable OPI DDR mode */
 			.controller_misc_option =
-			(1u << fc_xspi_misc_offset_safe_config_freq_enable) |
-			(1u << fc_xspi_misc_offset_ddr_mode_enable),
+			(1u << FC_XSPI_MISC_OFFSET_SAFE_CONFIG_FREQ_ENABLE) |
+			(1u << FC_XSPI_MISC_OFFSET_DDR_MODE_ENABLE),
 			.device_type = 1,
 			.sflash_pad_type = 8,
-			.serial_clk_freq = fc_xspi_serial_clk_200mhz,
+			.serial_clk_freq = FC_XSPI_SERIAL_CLK_200MHZ,
 			.sflash_a1_size = 64ul * 1024u * 1024u,
 			.busy_offset = 0u,
 			.busy_bit_polarity = 0u,

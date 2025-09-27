@@ -19,15 +19,15 @@
 
 /*! @brief XSPI clock configuration - When clock source is PLL */
 typedef enum fc_xspi_serial_clock_freq {
-	fc_xspi_serial_clk_30mhz = 1,
-	fc_xspi_serial_clk_50mhz = 2,
-	fc_xspi_serial_clk_60mhz = 3,
-	fc_xspi_serial_clk_80mhz = 4,
-	fc_xspi_serial_clk_100mhz = 5,
-	fc_xspi_serial_clk_120mhz = 6,
-	fc_xspi_serial_clk_133mhz = 7,
-	fc_xspi_serial_clk_166mhz = 8,
-	fc_xspi_serial_clk_200mhz = 9,
+	FC_XSPI_SERIAL_CLK_30MHZ = 1,
+	FC_XSPI_SERIAL_CLK_50MHZ = 2,
+	FC_XSPI_SERIAL_CLK_60MHZ = 3,
+	FC_XSPI_SERIAL_CLK_80MHZ = 4,
+	FC_XSPI_SERIAL_CLK_100MHZ = 5,
+	FC_XSPI_SERIAL_CLK_120MHZ = 6,
+	FC_XSPI_SERIAL_CLK_133MHZ = 7,
+	FC_XSPI_SERIAL_CLK_166MHZ = 8,
+	FC_XSPI_SERIAL_CLK_200MHZ = 9,
 } fc_xspi_serial_clk_freq_t;
 
 /*! @brief LUT instructions supported by XSPI */
@@ -87,21 +87,21 @@ typedef enum fc_xspi_serial_clock_freq {
 
 /* !@brief XSPI Read Sample Clock Source definition */
 typedef enum fc_xspi_read_sample_clk_source {
-	fc_xspi_read_sample_clk_loopback_internally = 0,
-	fc_xspi_read_sample_clk_loopback_from_dqs_pad = 2,
-	fc_xspi_read_sample_clk_external_input_from_dqs_pad = 3,
+	FC_XSPI_READ_SAMPLE_CLK_LOOPBACK_INTERNALLY = 0,
+	FC_XSPI_READ_SAMPLE_CLK_LOOPBACK_FROM_DQS_PAD = 2,
+	FC_XSPI_READ_SAMPLE_CLK_EXTERNAL_INPUT_FROM_DQS_PAD = 3,
 } fc_xspi_read_sample_clk_t;
 
 /* !@brief Misc feature bit definitions */
 enum {
 	/* !< Bit for Differential clock enable */
-	fc_xspi_misc_offset_diff_clk_enable = 0,
+	FC_XSPI_MISC_OFFSET_DIFF_CLK_ENABLE = 0,
 	/* !< Bit for Word Addressable enable */
-	fc_xspi_misc_offset_word_addressable_enable = 3,
+	FC_XSPI_MISC_OFFSET_WORD_ADDRESSABLE_ENABLE = 3,
 	/* !< Bit for Safe Configuration Frequency enable */
-	fc_xspi_misc_offset_safe_config_freq_enable = 4,
+	FC_XSPI_MISC_OFFSET_SAFE_CONFIG_FREQ_ENABLE = 4,
 	/* !< Bit for DDR clock confiuration indication. */
-	fc_xspi_misc_offset_ddr_mode_enable = 6,
+	FC_XSPI_MISC_OFFSET_DDR_MODE_ENABLE = 6,
 };
 
 typedef struct {
