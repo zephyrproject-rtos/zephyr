@@ -123,8 +123,10 @@ static int get_h_m_s(const struct shell *sh, struct tm *t, char *time_str)
 		return -EINVAL;
 	}
 
-	/* Note range allows for a leap second */
-	if ((t->tm_sec < 0) || (t->tm_sec > 60)) {
+	/* Note that leap seconds are not accepted because
+	 * SYS_CLOCK_REALTIME uses Unix time which doesn't support them.
+	 */
+	if ((t->tm_sec < 0) || (t->tm_sec > 59)) {
 		shell_error(sh, "Invalid second");
 		return -EINVAL;
 	}
