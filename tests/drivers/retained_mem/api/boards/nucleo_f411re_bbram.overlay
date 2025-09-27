@@ -1,0 +1,14 @@
+/ {
+	aliases {
+		retainedmemtestdevice = &retainedmem0;
+	};
+};
+
+&bbram {
+	status = "okay";
+
+	retainedmem0: retainedmem {
+		compatible = "zephyr,retained-bbram";
+		status = "okay";
+	};
+};
