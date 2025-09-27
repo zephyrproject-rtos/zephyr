@@ -118,6 +118,36 @@ int disk_access_write(const char *pdrv, const uint8_t *data_buf,
 	return rc;
 }
 
+int disk_access_erase(const char *pdrv, uint32_t start_sector, uint32_t num_sector,
+		      enum disk_access_erase_type erase_type)
+{
+	struct disk_info *disk = disk_access_get_di(pdrv);
+	uint32_t erase_sector_size;
+	int rc = -EINVAL;
+
+	/* Only support physical erase for now.
+	 * This parameter is not passed through to the underlying disk to leave the design
+	 * space open for future erase types (Other erase types may be dedicated functions).
+	 */
+	if (erase_type != DISK_ACCESS_ERASE_PHYSICAL) {
+		return -EINVAL;
+	}
+
+	/* Validate sector sizes, if underlying driver exposes a way to query it */
+	if (disk_access_ioctl(pdrv, DISK_IOCTL_GET_ERASE_BLOCK_SZ, &erase_sector_size) == 0) {
+		/* Alignment check on both start and range of erase request */
+		if ((start_sector % erase_sector_size) || (num_sector % erase_sector_size)) {
+			return -EINVAL;
+		}
+	}
+
+	if ((disk != NULL) && (disk->ops != NULL) && (disk->ops->erase != NULL)) {
+		rc = disk->ops->erase(disk, start_sector, num_sector);
+	}
+
+	return rc;
+}
+
 int disk_access_ioctl(const char *pdrv, uint8_t cmd, void *buf)
 {
 	struct disk_info *disk = disk_access_get_di(pdrv);
