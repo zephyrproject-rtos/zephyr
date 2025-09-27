@@ -1,9 +1,11 @@
-/* Copyright (c) 2023 Nordic Semiconductor ASA
+/* Copyright (c) 2023-2025 Nordic Semiconductor ASA
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <errno.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <testlib/conn.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
@@ -26,6 +28,7 @@ struct testlib_security_ctx {
 /* Context pool (with capacity of one). */
 static K_SEM_DEFINE(g_ctx_free, 1, 1);
 static K_MUTEX_DEFINE(g_ctx_lock);
+static K_CONDVAR_DEFINE(g_event);
 static struct testlib_security_ctx *g_ctx;
 
 static void security_changed(struct bt_conn *conn, bt_security_t level, enum bt_security_err err)
@@ -37,6 +40,7 @@ static void security_changed(struct bt_conn *conn, bt_security_t level, enum bt_
 	 * accesses.
 	 */
 	k_mutex_lock(&g_ctx_lock, K_FOREVER);
+	k_condvar_broadcast(&g_event);
 
 	if (g_ctx && (g_ctx->conn == conn)) {
 		g_ctx->result = err;
@@ -51,7 +55,15 @@ static void security_changed(struct bt_conn *conn, bt_security_t level, enum bt_
 	k_mutex_unlock(&g_ctx_lock);
 }
 
+static void disconnected(struct bt_conn *conn, uint8_t reason)
+{
+	k_mutex_lock(&g_ctx_lock, K_FOREVER);
+	k_condvar_broadcast(&g_event);
+	k_mutex_unlock(&g_ctx_lock);
+}
+
 BT_CONN_CB_DEFINE(conn_callbacks) = {
+	.disconnected = disconnected,
 	.security_changed = security_changed,
 };
 
@@ -107,4 +119,27 @@ int bt_testlib_secure(struct bt_conn *conn, bt_security_t new_minimum)
 
 	__ASSERT_NO_MSG(ctx.result >= 0);
 	return ctx.result;
+}
+
+int testlib_wait_for_encryption(struct bt_conn *conn)
+{
+	k_mutex_lock(&g_ctx_lock, K_FOREVER);
+
+	while (!(bt_conn_get_security(conn) >= BT_SECURITY_L2 ||
+		 bt_testlib_conn_state_get(conn) == BT_CONN_STATE_DISCONNECTED)) {
+		k_condvar_wait(&g_event, &g_ctx_lock, K_FOREVER);
+	}
+
+	k_mutex_unlock(&g_ctx_lock);
+
+	/* TODO: Update API contract of `bt_conn_get_security` so it guarantees
+	 * the security level of the connection at the time of disconnection,
+	 * and add test for that. This needed to uphold the contract of
+	 * `testlib_wait_for_encryption`.
+	 */
+	if (bt_conn_get_security(conn) >= BT_SECURITY_L2) {
+		return 0;
+	}
+
+	return -ENOTCONN;
 }
