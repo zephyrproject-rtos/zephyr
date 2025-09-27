@@ -23,10 +23,8 @@ LOG_MODULE_REGISTER(mock_serial, CONFIG_LOG_DEFAULT_LEVEL);
 
 #define DT_DRV_COMPAT vnd_serial
 struct serial_vnd_data {
-#ifdef CONFIG_RING_BUFFER
 	struct ring_buf *written;
 	struct ring_buf *read_queue;
-#endif
 	serial_vnd_write_cb_t callback;
 	void *callback_data;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -49,14 +47,14 @@ static bool is_irq_rx_pending(const struct device *dev)
 {
 	struct serial_vnd_data *data = dev->data;
 
-	return !ring_buf_is_empty(data->read_queue);
+	return !ring_buffer_empty(data->read_queue);
 }
 
 static bool is_irq_tx_pending(const struct device *dev)
 {
 	struct serial_vnd_data *data = dev->data;
 
-	return ring_buf_space_get(data->written) != 0;
+	return ring_buffer_space(data->written) != 0;
 }
 
 static void irq_process(const struct device *dev)
@@ -105,7 +103,7 @@ static void irq_rx_disable(const struct device *dev)
 static int irq_rx_ready(const struct device *dev)
 {
 	struct serial_vnd_data *data = dev->data;
-	bool ready = !ring_buf_is_empty(data->read_queue);
+	bool ready = !ring_buffer_empty(data->read_queue);
 
 	LOG_DBG("rx ready: %d", ready);
 	return ready;
@@ -131,7 +129,7 @@ static void irq_tx_disable(const struct device *dev)
 static int irq_tx_ready(const struct device *dev)
 {
 	struct serial_vnd_data *data = dev->data;
-	int available = ring_buf_space_get(data->written);
+	int available = ring_buffer_space(data->written);
 
 	LOG_DBG("tx ready: %d", available);
 	return available;
@@ -163,7 +161,7 @@ static int irq_update(const struct device *dev)
 static int fifo_fill(const struct device *dev, const uint8_t *tx_data, int size)
 {
 	struct serial_vnd_data *data = dev->data;
-	uint32_t write_len = ring_buf_put(data->written, tx_data, size);
+	uint32_t write_len = ring_buffer_write(data->written, tx_data, size);
 
 	if (data->callback) {
 		data->callback(dev, data->callback_data);
@@ -174,7 +172,7 @@ static int fifo_fill(const struct device *dev, const uint8_t *tx_data, int size)
 static int fifo_read(const struct device *dev, uint8_t *rx_data, const int size)
 {
 	struct serial_vnd_data *data = dev->data;
-	int read_len = ring_buf_get(data->read_queue, rx_data, size);
+	int read_len = ring_buffer_read(data->read_queue, rx_data, size);
 
 	LOG_HEXDUMP_DBG(rx_data, read_len, "");
 	return read_len;
@@ -183,33 +181,29 @@ static int fifo_read(const struct device *dev, uint8_t *rx_data, const int size)
 
 static int serial_vnd_poll_in(const struct device *dev, unsigned char *c)
 {
-#ifdef CONFIG_RING_BUFFER
+
 	struct serial_vnd_data *data = dev->data;
 	uint32_t bytes_read;
 
 	if (data == NULL || data->read_queue == NULL) {
 		return -ENOTSUP;
 	}
-	bytes_read = ring_buf_get(data->read_queue, c, 1);
+	bytes_read = ring_buffer_read(data->read_queue, c, 1);
 	if (bytes_read == 1) {
 		return 0;
 	}
 	return -1;
-#else
-	return -ENOTSUP;
-#endif
 }
 
 static void serial_vnd_poll_out(const struct device *dev, unsigned char c)
 {
 	struct serial_vnd_data *data = dev->data;
 
-#ifdef CONFIG_RING_BUFFER
 	if (data == NULL || data->written == NULL) {
 		return;
 	}
-	ring_buf_put(data->written, &c, 1);
-#endif
+	ring_buffer_write(data->written, &c, 1);
+
 	if (data->callback) {
 		data->callback(dev, data->callback_data);
 	}
@@ -219,7 +213,6 @@ static void serial_vnd_poll_out(const struct device *dev, unsigned char c)
 static void async_rx_run(const struct device *dev);
 #endif
 
-#ifdef CONFIG_RING_BUFFER
 int serial_vnd_queue_in_data(const struct device *dev, const unsigned char *c, uint32_t size)
 {
 	struct serial_vnd_data *data = dev->data;
@@ -228,7 +221,7 @@ int serial_vnd_queue_in_data(const struct device *dev, const unsigned char *c, u
 	if (data == NULL || data->read_queue == NULL) {
 		return -ENOTSUP;
 	}
-	write_size = ring_buf_put(data->read_queue, c, size);
+	write_size = ring_buffer_write(data->read_queue, c, size);
 
 	LOG_DBG("size %u write_size %u", size, write_size);
 	LOG_HEXDUMP_DBG(c, write_size, "");
@@ -253,7 +246,7 @@ uint32_t serial_vnd_out_data_size_get(const struct device *dev)
 	if (data == NULL || data->written == NULL) {
 		return -ENOTSUP;
 	}
-	return ring_buf_size_get(data->written);
+	return ring_buffer_size(data->written);
 }
 
 uint32_t serial_vnd_read_out_data(const struct device *dev, unsigned char *out_data, uint32_t size)
@@ -263,7 +256,7 @@ uint32_t serial_vnd_read_out_data(const struct device *dev, unsigned char *out_d
 	if (data == NULL || data->written == NULL) {
 		return -ENOTSUP;
 	}
-	return ring_buf_get(data->written, out_data, size);
+	return ring_buffer_read(data->written, out_data, size);
 }
 
 uint32_t serial_vnd_peek_out_data(const struct device *dev, unsigned char *out_data, uint32_t size)
@@ -275,7 +268,7 @@ uint32_t serial_vnd_peek_out_data(const struct device *dev, unsigned char *out_d
 	}
 	return ring_buf_peek(data->written, out_data, size);
 }
-#endif
+
 
 void serial_vnd_set_callback(const struct device *dev, serial_vnd_write_cb_t callback,
 			     void *user_data)
@@ -345,7 +338,7 @@ static int serial_vnd_api_tx(const struct device *dev, const uint8_t *tx_data, s
 		return -EINVAL;
 	}
 
-	write_len = ring_buf_put(data->written, tx_data, len);
+	write_len = ring_buffer_write(data->written, tx_data, len);
 	if (data->callback) {
 		data->callback(dev, data->callback_data);
 	}
@@ -377,7 +370,7 @@ static void async_rx_run(const struct device *dev)
 
 	read_remaining = data->read_size - data->read_position;
 
-	read_len = ring_buf_get(data->read_queue, &data->read_buf[data->read_position],
+	read_len = ring_buffer_read(data->read_queue, &data->read_buf[data->read_position],
 				read_remaining);
 
 	if (read_len != 0) {
@@ -456,8 +449,8 @@ static DEVICE_API(uart, serial_vnd_api) = {
 };
 
 #define VND_SERIAL_DATA_BUFFER(n)                                                                  \
-	RING_BUF_DECLARE(written_data_##n, DT_INST_PROP(n, buffer_size));                          \
-	RING_BUF_DECLARE(read_queue_##n, DT_INST_PROP(n, buffer_size));                            \
+	RING_BUFFER_DECLARE(written_data_##n, DT_INST_PROP(n, buffer_size));                       \
+	RING_BUFFER_DECLARE(read_queue_##n, DT_INST_PROP(n, buffer_size));                         \
 	static struct serial_vnd_data serial_vnd_data_##n = {                                      \
 		.written = &written_data_##n,                                                      \
 		.read_queue = &read_queue_##n,                                                     \

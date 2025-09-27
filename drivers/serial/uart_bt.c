@@ -27,8 +27,8 @@ struct uart_bt_data {
 		atomic_t enabled;
 	} bt;
 	struct {
-		struct ring_buf *rx_ringbuf;
-		struct ring_buf *tx_ringbuf;
+		struct ring_buffer *rx_ringbuf;
+		struct ring_buffer *tx_ringbuf;
 		struct k_work cb_work;
 		struct k_work_delayable tx_work;
 		bool rx_irq_ena;
@@ -52,7 +52,7 @@ static void bt_notif_enabled(bool enabled, void *ctx)
 
 	LOG_DBG("%s() - %s", __func__, enabled ? "enabled" : "disabled");
 
-	if (!ring_buf_is_empty(dev_data->uart.tx_ringbuf)) {
+	if (!ring_buffer_empty(dev_data->uart.tx_ringbuf)) {
 		k_work_reschedule_for_queue(&nus_work_queue, &dev_data->uart.tx_work, K_NO_WAIT);
 	}
 }
@@ -66,13 +66,13 @@ static void bt_received(struct bt_conn *conn, const void *data, uint16_t len, vo
 
 	const struct device *dev = (const struct device *)ctx;
 	struct uart_bt_data *dev_data = (struct uart_bt_data *)dev->data;
-	struct ring_buf *ringbuf = dev_data->uart.rx_ringbuf;
+	struct ring_buffer *ringbuf = dev_data->uart.rx_ringbuf;
 	uint32_t put_len;
 
-	LOG_DBG("%s() - len: %d, rx_ringbuf space %d", __func__, len, ring_buf_space_get(ringbuf));
+	LOG_DBG("%s() - len: %d, rx_ringbuf space %d", __func__, len, ring_buffer_space(ringbuf));
 	LOG_HEXDUMP_DBG(data, len, "data");
 
-	put_len = ring_buf_put(ringbuf, (const uint8_t *)data, len);
+	put_len = ring_buffer_write(ringbuf, (const uint8_t *)data, len);
 	if (put_len < len) {
 		LOG_ERR("RX Ring buffer full. received: %d, added to queue: %d", len, put_len);
 	}
@@ -139,7 +139,7 @@ static void tx_work_handler(struct k_work *work)
 		 * peers, and the same chunk is sent to everyone. This avoids
 		 * managing separate read pointers: one per connection.
 		 */
-		len = ring_buf_get_claim(dev_data->uart.tx_ringbuf, &data, chunk_size);
+		len = MIN(ring_buffer_read_ptr(dev_data->uart.tx_ringbuf, &data), chunk_size);
 		if (len > 0) {
 			err = bt_nus_inst_send(NULL, dev_data->bt.inst, data, len);
 			if (err) {
@@ -147,10 +147,10 @@ static void tx_work_handler(struct k_work *work)
 			}
 		}
 
-		ring_buf_get_finish(dev_data->uart.tx_ringbuf, len);
+		ring_buffer_consume(dev_data->uart.tx_ringbuf, len);
 	} while (len > 0 && !err);
 
-	if ((ring_buf_space_get(dev_data->uart.tx_ringbuf) > 0) && dev_data->uart.tx_irq_ena) {
+	if ((ring_buffer_space(dev_data->uart.tx_ringbuf) > 0) && dev_data->uart.tx_irq_ena) {
 		k_work_submit_to_queue(&nus_work_queue, &dev_data->uart.cb_work);
 	}
 }
@@ -160,7 +160,7 @@ static int uart_bt_fifo_fill(const struct device *dev, const uint8_t *tx_data, i
 	struct uart_bt_data *dev_data = (struct uart_bt_data *)dev->data;
 	size_t wrote;
 
-	wrote = ring_buf_put(dev_data->uart.tx_ringbuf, tx_data, len);
+	wrote = ring_buffer_write(dev_data->uart.tx_ringbuf, tx_data, len);
 	if (wrote < len) {
 		LOG_WRN("Ring buffer full, drop %zd bytes", len - wrote);
 	}
@@ -176,7 +176,7 @@ static int uart_bt_fifo_read(const struct device *dev, uint8_t *rx_data, const i
 {
 	struct uart_bt_data *dev_data = (struct uart_bt_data *)dev->data;
 
-	return ring_buf_get(dev_data->uart.rx_ringbuf, rx_data, size);
+	return ring_buffer_read(dev_data->uart.rx_ringbuf, rx_data, size);
 }
 
 static int uart_bt_poll_in(const struct device *dev, unsigned char *c)
@@ -189,10 +189,10 @@ static int uart_bt_poll_in(const struct device *dev, unsigned char *c)
 static void uart_bt_poll_out(const struct device *dev, unsigned char c)
 {
 	struct uart_bt_data *dev_data = (struct uart_bt_data *)dev->data;
-	struct ring_buf *ringbuf = dev_data->uart.tx_ringbuf;
+	struct ring_buffer *ringbuf = dev_data->uart.tx_ringbuf;
 
 	/** Right now we're discarding data if ring-buf is full. */
-	while (!ring_buf_put(ringbuf, &c, 1)) {
+	while (!ring_buffer_write(ringbuf, &c, 1)) {
 		if (k_is_in_isr() || !atomic_get(&dev_data->bt.enabled)) {
 			LOG_WRN_ONCE("Ring buffer full, discard %c", c);
 			break;
@@ -215,7 +215,7 @@ static int uart_bt_irq_tx_ready(const struct device *dev)
 {
 	struct uart_bt_data *dev_data = (struct uart_bt_data *)dev->data;
 
-	if ((ring_buf_space_get(dev_data->uart.tx_ringbuf) > 0) && dev_data->uart.tx_irq_ena) {
+	if ((ring_buffer_space(dev_data->uart.tx_ringbuf) > 0) && dev_data->uart.tx_irq_ena) {
 		return 1;
 	}
 
@@ -244,7 +244,7 @@ static int uart_bt_irq_rx_ready(const struct device *dev)
 {
 	struct uart_bt_data *dev_data = (struct uart_bt_data *)dev->data;
 
-	if (!ring_buf_is_empty(dev_data->uart.rx_ringbuf) && dev_data->uart.rx_irq_ena) {
+	if (!ring_buffer_empty(dev_data->uart.rx_ringbuf) && dev_data->uart.rx_irq_ena) {
 		return 1;
 	}
 
@@ -347,8 +347,8 @@ static int uart_bt_init(const struct device *dev)
 												   \
 	BT_NUS_INST_DEFINE(bt_nus_inst_##n);							   \
 												   \
-	RING_BUF_DECLARE(bt_nus_rx_rb_##n, UART_BT_RX_FIFO_SIZE(n));				   \
-	RING_BUF_DECLARE(bt_nus_tx_rb_##n, UART_BT_TX_FIFO_SIZE(n));				   \
+	RING_BUFFER_DECLARE(bt_nus_rx_rb_##n, UART_BT_RX_FIFO_SIZE(n));				   \
+	RING_BUFFER_DECLARE(bt_nus_tx_rb_##n, UART_BT_TX_FIFO_SIZE(n));				   \
 												   \
 	static struct uart_bt_data uart_bt_data_##n = {						   \
 		.bt = {										   \
