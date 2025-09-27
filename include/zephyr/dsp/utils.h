@@ -15,7 +15,7 @@
 
 #include <stdint.h>
 #include <zephyr/kernel.h>
-#include <zephyr/dsp/dsp.h>
+#include <zephyr/dsp/types.h>
 
 #ifdef __cplusplus
 extern "C" {
