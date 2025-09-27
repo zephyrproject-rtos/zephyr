@@ -1,0 +1,30 @@
+/*
+ * Copyright (c) 2025 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&dma2 {
+	status = "okay";
+};
+
+&dmamux1 {
+	status = "okay";
+};
+
+#define MCO1_SEL_SYSCLK 1
+
+#define MCO1_PRE_DIV_4 2
+
+&mco1 {
+	status = "okay";
+	clocks = <&rcc STM32_SRC_SYSCLK MCO1_SEL(MCO1_SEL_SYSCLK)>;
+	prescaler = <MCO1_PRE(MCO1_PRE_DIV_4)>;
+	pinctrl-0 = <&rcc_mco_pa8>;
+	pinctrl-names = "default";
+};
+
+&st_cam_dvp {
+	/* DMA config is already hardcoded within the DCMI driver */
+	dmas = <&dma2 5 0 0>;
+};
