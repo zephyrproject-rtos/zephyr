@@ -26,8 +26,8 @@ LOG_MODULE_REGISTER(osdp, CONFIG_OSDP_LOG_LEVEL);
 #endif	/* CONFIG_OSDP_SC_ENABLED */
 
 struct osdp_device {
-	struct ring_buf rx_buf;
-	struct ring_buf tx_buf;
+	struct ring_buffer rx_buf;
+	struct ring_buffer tx_buf;
 #ifdef CONFIG_OSDP_MODE_PD
 	int rx_event_data;
 	struct k_fifo rx_event_fifo;
@@ -52,15 +52,15 @@ static void osdp_handle_in_byte(struct osdp_device *p, uint8_t *buf, int len)
 		/* Check for new packet beginning with [FF,53,...] sequence */
 		if (p->last_byte == 0xFF && buf[0] == 0x53) {
 			buf[0] = 0xFF;
-			ring_buf_put(&p->rx_buf, buf, 1);   /* put last byte */
+			ring_buffer_write(&p->rx_buf, buf, 1);   /* put last byte */
 			buf[0] = 0x53;
-			ring_buf_put(&p->rx_buf, buf, len); /* put rest */
+			ring_buffer_write(&p->rx_buf, buf, len); /* put rest */
 			p->wait_for_mark = 0; /* Mark found. Clear flag */
 		}
 		p->last_byte = buf[0];
 		return;
 	}
-	ring_buf_put(&p->rx_buf, buf, len);
+	ring_buffer_write(&p->rx_buf, buf, len);
 }
 
 static void osdp_uart_isr(const struct device *dev, void *user_data)
@@ -79,7 +79,7 @@ static void osdp_uart_isr(const struct device *dev, void *user_data)
 		}
 
 		if (uart_irq_tx_ready(dev)) {
-			len = ring_buf_get(&p->tx_buf, buf, 1);
+			len = ring_buffer_read(&p->tx_buf, buf, 1);
 			if (!len) {
 				uart_irq_tx_disable(dev);
 			} else {
@@ -99,7 +99,7 @@ static int osdp_uart_receive(void *data, uint8_t *buf, int len)
 {
 	struct osdp_device *p = data;
 
-	return (int)ring_buf_get(&p->rx_buf, buf, len);
+	return (int)ring_buffer_read(&p->rx_buf, buf, len);
 }
 
 static int osdp_uart_send(void *data, uint8_t *buf, int len)
@@ -107,7 +107,7 @@ static int osdp_uart_send(void *data, uint8_t *buf, int len)
 	int sent = 0;
 	struct osdp_device *p = data;
 
-	sent = (int)ring_buf_put(&p->tx_buf, buf, len);
+	sent = (int)ring_buffer_write(&p->tx_buf, buf, len);
 	uart_irq_tx_enable(p->dev);
 	return sent;
 }
@@ -117,8 +117,8 @@ static void osdp_uart_flush(void *data)
 	struct osdp_device *p = data;
 
 	p->wait_for_mark = 1;
-	ring_buf_reset(&p->tx_buf);
-	ring_buf_reset(&p->rx_buf);
+	ring_buffer_reset(&p->tx_buf);
+	ring_buffer_reset(&p->rx_buf);
 }
 
 struct osdp *osdp_get_ctx()
@@ -193,8 +193,8 @@ static int osdp_init(void)
 	k_fifo_init(&p->rx_event_fifo);
 #endif
 
-	ring_buf_init(&p->rx_buf, sizeof(p->rx_fbuf), p->rx_fbuf);
-	ring_buf_init(&p->tx_buf, sizeof(p->tx_fbuf), p->tx_fbuf);
+	ring_buffer_init(&p->rx_buf, p->rx_fbuf, sizeof(p->rx_fbuf));
+	ring_buffer_init(&p->tx_buf, p->tx_fbuf, sizeof(p->tx_fbuf));
 
 	/* init OSDP uart device */
 	p->dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_osdp_uart));
