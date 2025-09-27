@@ -154,9 +154,12 @@ static int stm32_dma_init(const struct device *dev)
 	dma_cfg.user_data = &hdma;
 	/* HACK: This field is used to inform driver that it is overridden */
 	dma_cfg.linked_channel = STM32_DMA_HAL_OVERRIDE;
-	ret = dma_config(config->dma.dma_dev, config->dma.channel, &dma_cfg);
+	/* Because of the STREAM OFFSET, the DMA channel given here is from 1 - 8 */
+	ret = dma_config(config->dma.dma_dev,
+			config->dma.channel + STM32_DMA_STREAM_OFFSET, &dma_cfg);
 	if (ret != 0) {
-		LOG_ERR("Failed to configure DMA channel %d", config->dma.channel);
+		LOG_ERR("Failed to configure DMA channel %d",
+			config->dma.channel + STM32_DMA_STREAM_OFFSET);
 		return ret;
 	}
 
@@ -170,10 +173,15 @@ static int stm32_dma_init(const struct device *dev)
 	hdma.Init.MemDataAlignment	= DMA_MDATAALIGN_WORD;
 	hdma.Init.Mode			= DMA_CIRCULAR;
 	hdma.Init.Priority		= DMA_PRIORITY_HIGH;
-	hdma.Instance			= STM32_DMA_GET_INSTANCE(config->dma.reg,
-								 config->dma.channel);
 #if defined(CONFIG_SOC_SERIES_STM32F7X) || defined(CONFIG_SOC_SERIES_STM32H7X)
 	hdma.Init.FIFOMode		= DMA_FIFOMODE_DISABLE;
+#endif
+
+#if defined(CONFIG_SOC_SERIES_STM32F7X) || defined(CONFIG_SOC_SERIES_STM32H7X)
+	hdma.Instance = __LL_DMA_GET_STREAM_INSTANCE(config->dma.reg,
+						config->dma.channel);
+#elif defined(CONFIG_SOC_SERIES_STM32L4X)
+	hdma.Instance = __LL_DMA_GET_CHANNEL_INSTANCE(config->dma.reg, config->dma.channel);
 #endif
 
 	/* Initialize DMA HAL */
@@ -206,7 +214,6 @@ static int video_stm32_dcmi_set_fmt(const struct device *dev, struct video_forma
 	const struct video_stm32_dcmi_config *config = dev->config;
 	struct video_stm32_dcmi_data *data = dev->data;
 	int ret;
-
 	ret = video_set_format(config->sensor_dev, fmt);
 	if (ret < 0) {
 		return ret;
@@ -462,12 +469,6 @@ static DEVICE_API(video, video_stm32_dcmi_driver_api) = {
 	.get_selection = video_stm32_dcmi_get_selection,
 };
 
-static void video_stm32_dcmi_irq_config_func(const struct device *dev)
-{
-	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
-		stm32_dcmi_isr, DEVICE_DT_INST_GET(0), 0);
-	irq_enable(DT_INST_IRQN(0));
-}
 
 #define DCMI_DMA_CHANNEL_INIT(index, src_dev, dest_dev)					\
 	.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_IDX(index, 0)),			\
@@ -489,7 +490,6 @@ static void video_stm32_dcmi_irq_config_func(const struct device *dev)
 		.dma_callback = dcmi_dma_callback,					\
 	},										\
 
-PINCTRL_DT_INST_DEFINE(0);
 
 #define STM32_DCMI_GET_BUS_WIDTH(bus_width)						\
 	((bus_width) == 8 ? DCMI_EXTEND_DATA_8B :					\
@@ -505,51 +505,12 @@ PINCTRL_DT_INST_DEFINE(0);
 			(NULL))								\
 	},
 
-static struct video_stm32_dcmi_data video_stm32_dcmi_data_0 = {
-	.hdcmi = {
-		.Instance = (DCMI_TypeDef *) DT_INST_REG_ADDR(0),
-		.Init = {
-				.SynchroMode = DCMI_SYNCHRO_HARDWARE,
-				.PCKPolarity = DT_PROP_OR(DT_INST_ENDPOINT_BY_ID(0, 0, 0),
-							  pclk_sample, 0) ?
-							  DCMI_PCKPOLARITY_RISING :
-							  DCMI_PCKPOLARITY_FALLING,
-				.HSPolarity = DT_PROP_OR(DT_INST_ENDPOINT_BY_ID(0, 0, 0),
-							 hsync_active, 0) ?
-							 DCMI_HSPOLARITY_HIGH : DCMI_HSPOLARITY_LOW,
-				.VSPolarity = DT_PROP_OR(DT_INST_ENDPOINT_BY_ID(0, 0, 0),
-							 vsync_active, 0) ?
-							 DCMI_VSPOLARITY_HIGH : DCMI_VSPOLARITY_LOW,
-				.ExtendedDataMode = STM32_DCMI_GET_BUS_WIDTH(
-							DT_PROP_OR(DT_INST_ENDPOINT_BY_ID(0, 0, 0),
-								   bus_width, 8)),
-				.JPEGMode = DCMI_JPEG_DISABLE,
-				.ByteSelectMode = DCMI_BSM_ALL,
-				.ByteSelectStart = DCMI_OEBS_ODD,
-				.LineSelectMode = DCMI_LSM_ALL,
-				.LineSelectStart = DCMI_OELS_ODD,
-		},
-	},
-};
-
-#define SOURCE_DEV(n) DEVICE_DT_GET(DT_NODE_REMOTE_DEVICE(DT_INST_ENDPOINT_BY_ID(n, 0, 0)))
-
-static const struct video_stm32_dcmi_config video_stm32_dcmi_config_0 = {
-	.pclken = {
-		.enr = DT_INST_CLOCKS_CELL(0, bits),
-		.bus = DT_INST_CLOCKS_CELL(0, bus)
-	},
-	.irq_config = video_stm32_dcmi_irq_config_func,
-	.pctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
-	.sensor_dev = SOURCE_DEV(0),
-	DCMI_DMA_CHANNEL(0, PERIPHERAL, MEMORY)
-};
-
 static int video_stm32_dcmi_init(const struct device *dev)
 {
 	const struct video_stm32_dcmi_config *config = dev->config;
 	struct video_stm32_dcmi_data *data = dev->data;
 	int err;
+	LOG_DBG("video_stm32_dcmi_init(%p): d:%p c:%p", dev, data, config);
 
 	/* Configure DT provided pins */
 	err = pinctrl_apply_state(config->pctrl, PINCTRL_STATE_DEFAULT);
@@ -592,10 +553,64 @@ static int video_stm32_dcmi_init(const struct device *dev)
 	return 0;
 }
 
-DEVICE_DT_INST_DEFINE(0, &video_stm32_dcmi_init,
-		    NULL, &video_stm32_dcmi_data_0,
-		    &video_stm32_dcmi_config_0,
-		    POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY,
-		    &video_stm32_dcmi_driver_api);
+#define SOURCE_DEV(n) DEVICE_DT_GET(DT_NODE_REMOTE_DEVICE(DT_INST_ENDPOINT_BY_ID(n, 0, 0)))
 
-VIDEO_DEVICE_DEFINE(dcmi, DEVICE_DT_INST_GET(0), SOURCE_DEV(0));
+#define STM32_DCMI_INIT(inst)									\
+	static void video_stm32_dcmi_irq_config_func_##inst(const struct device *dev)		\
+	{											\
+		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority),			\
+			stm32_dcmi_isr, DEVICE_DT_INST_GET(inst), 0);				\
+		irq_enable(DT_INST_IRQN(inst));							\
+	}											\
+												\
+	static struct video_stm32_dcmi_data video_stm32_dcmi_data_##inst = {			\
+		.hdcmi = {									\
+			.Instance = (DCMI_TypeDef *) DT_INST_REG_ADDR(inst),			\
+			.Init = {								\
+				.SynchroMode = DCMI_SYNCHRO_HARDWARE,				\
+				.PCKPolarity = DT_PROP_OR(DT_INST_ENDPOINT_BY_ID(inst, 0, 0),	\
+							  pclk_sample, 0) ?			\
+							  DCMI_PCKPOLARITY_RISING :		\
+							  DCMI_PCKPOLARITY_FALLING,		\
+				.HSPolarity = DT_PROP_OR(DT_INST_ENDPOINT_BY_ID(inst, 0, 0),	\
+							 hsync_active, 0) ?			\
+								DCMI_HSPOLARITY_HIGH :		\
+								DCMI_HSPOLARITY_LOW,		\
+				.VSPolarity = DT_PROP_OR(DT_INST_ENDPOINT_BY_ID(inst, 0, 0),	\
+							 vsync_active, 0) ?			\
+								DCMI_VSPOLARITY_HIGH :		\
+								DCMI_VSPOLARITY_LOW,		\
+				.ExtendedDataMode = STM32_DCMI_GET_BUS_WIDTH(			\
+						DT_PROP_OR(DT_INST_ENDPOINT_BY_ID(inst, 0, 0),	\
+								   bus_width, 8)),		\
+				.JPEGMode = DCMI_JPEG_DISABLE,					\
+				.ByteSelectMode = DCMI_BSM_ALL,					\
+				.ByteSelectStart = DCMI_OEBS_ODD,				\
+				.LineSelectMode = DCMI_LSM_ALL,					\
+				.LineSelectStart = DCMI_OELS_ODD,				\
+			},									\
+		},										\
+	};											\
+												\
+	PINCTRL_DT_INST_DEFINE(inst);								\
+												\
+	static const struct video_stm32_dcmi_config video_stm32_dcmi_config_##inst = {		\
+		.pclken = {									\
+			.enr = DT_INST_CLOCKS_CELL(inst, bits),					\
+			.bus = DT_INST_CLOCKS_CELL(inst, bus)					\
+		},										\
+		.irq_config = video_stm32_dcmi_irq_config_func_##inst,				\
+		.pctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),					\
+		.sensor_dev = SOURCE_DEV(inst),							\
+		DCMI_DMA_CHANNEL(inst, PERIPHERAL, MEMORY)					\
+	};											\
+												\
+	DEVICE_DT_INST_DEFINE(inst, &video_stm32_dcmi_init,					\
+		    NULL, &video_stm32_dcmi_data_##inst,					\
+		    &video_stm32_dcmi_config_##inst,						\
+		    POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY,					\
+		    &video_stm32_dcmi_driver_api);						\
+												\
+	VIDEO_DEVICE_DEFINE(dcmi_##inst, DEVICE_DT_INST_GET(inst), SOURCE_DEV(inst));
+
+DT_INST_FOREACH_STATUS_OKAY(STM32_DCMI_INIT)
