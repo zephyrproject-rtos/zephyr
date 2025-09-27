@@ -298,8 +298,9 @@ SECTIONS
 		_end = .;
 	} GROUP_LINK_IN(RAMABLE_REGION)
 
-#include <zephyr/linker/common-noinit.ld>
 	_ebss = . ;
+
+#include <zephyr/linker/common-noinit.ld>
 
 	_image_ram_end = .;
 	_end = .;
