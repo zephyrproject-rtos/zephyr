@@ -151,6 +151,7 @@ stm32_lp_tick_source: &lptim1 {
 		max-frequency = <DT_FREQ_M(133)>;
 		fixed-latency;
 		burst-length = <3>;
+		st,csbound = <10>;
 		status = "okay";
 	};
 };

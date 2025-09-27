@@ -146,3 +146,16 @@ properties:
       once, then continue to burst incrementally up to maximum column address
       (2K in X8 mode/1K in X16 mode) before wrapping around within the entire
       column address space
+
+  st,csbound:
+    type: int
+    default: 3
+    description: |
+      Limit a transaction to a boundary of aligned addresses. The size of the
+      alignment is given by the value: 2^(csbound) bits.
+      A csbound value of 0 means the feature is disabled.
+      The default is the minimum recommended value in the Reference Manual. It
+      is recommended to set this value according to the length of the burst wrap
+      of the PSRAM device for the linear burst command.
+    enum: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+           21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31]
