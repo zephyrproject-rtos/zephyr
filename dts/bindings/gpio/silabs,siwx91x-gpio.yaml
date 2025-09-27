@@ -11,6 +11,19 @@ properties:
   interrupts:
     required: true
 
+  silabs,port-count:
+    type: int
+    description: |
+        Number of ports present in the GPIO controller
+    required: true
+
+  silabs,max-pin-usage-count:
+    type: int
+    description: |
+        Maximum number of pins used as GPIO, not applicable for UULP nodes
+        For HP GPIO, range is between <1 to 64>
+        For ULP GPIO, range is between <1 to 16>
+
   silabs,ulp:
     type: boolean
     description: |
