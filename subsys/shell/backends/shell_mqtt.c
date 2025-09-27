@@ -573,20 +573,20 @@ static void mqtt_evt_handler(struct mqtt_client *const client, const struct mqtt
 
 		while (payload_left > 0) {
 			/* Attempt to claim `payload_left` bytes of buffer in rb */
-			size = (size_t)ring_buf_put_claim(&sh->rx_rb, &sh->rx_rb_ptr,
-							  payload_left);
+			size = (size_t)MIN(ring_buffer_write_ptr(&sh->rx_rb, &sh->rx_rb_ptr),
+					payload_left);
 			/* Read `size` bytes of payload from mqtt */
 			rc = mqtt_read_publish_payload_blocking(client, sh->rx_rb_ptr, size);
 
 			/* errno value, return */
 			if (rc < 0) {
-				ring_buf_reset(&sh->rx_rb);
+				ring_buffer_reset(&sh->rx_rb);
 				return;
 			}
 
 			size = (size_t)rc;
 			/* Indicate that `size` bytes of payload has been written into rb */
-			(void)ring_buf_put_finish(&sh->rx_rb, size);
+			ring_buffer_commit(&sh->rx_rb, size);
 			/* Update `payload_left` */
 			payload_left -= size;
 			/* Tells the shell that we have new data for it */
@@ -598,9 +598,9 @@ static void mqtt_evt_handler(struct mqtt_client *const client, const struct mqtt
 		/* Shell won't execute the cmds without \r\n */
 		while (true) {
 			/* Check if rb's free space is enough to fit in \r\n */
-			size = ring_buf_space_get(&sh->rx_rb);
+			size = ring_buffer_space(&sh->rx_rb);
 			if (size >= sizeof("\r\n")) {
-				(void)ring_buf_put(&sh->rx_rb, "\r\n", sizeof("\r\n"));
+				(void)ring_buffer_write(&sh->rx_rb, "\r\n", sizeof("\r\n"));
 				break;
 			}
 			/* Arbitrary sleep for the shell to do its thing */
@@ -652,7 +652,7 @@ static int init(const struct shell_transport *transport, const void *config,
 	(void)snprintf(sh->sub_topic, SH_MQTT_TOPIC_RX_MAX_SIZE, "%s" CONFIG_SHELL_MQTT_TOPIC_RX_ID,
 		       sh->device_id);
 
-	ring_buf_init(&sh->rx_rb, RX_RB_SIZE, sh->rx_rb_buf);
+	ring_buffer_init(&sh->rx_rb, sh->rx_rb_buf, RX_RB_SIZE);
 
 	LOG_DBG("Initializing shell MQTT backend");
 
@@ -795,10 +795,10 @@ static int read_data(const struct shell_transport *transport, void *data, size_t
 		return 0;
 	}
 
-	*cnt = ring_buf_get(&sh->rx_rb, data, length);
+	*cnt = ring_buffer_read(&sh->rx_rb, data, length);
 
 	/* Inform the shell if there are still data in the rb */
-	if (ring_buf_size_get(&sh->rx_rb) > 0) {
+	if (ring_buffer_size(&sh->rx_rb) > 0) {
 		sh->shell_handler(SHELL_TRANSPORT_EVT_RX_RDY, sh->shell_context);
 	}
 

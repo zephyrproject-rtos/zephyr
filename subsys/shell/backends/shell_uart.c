@@ -78,9 +78,7 @@ static void uart_rx_handle(const struct device *dev, struct shell_uart_int_drive
 #endif
 
 	do {
-		len = ring_buf_put_claim(&sh_uart->rx_ringbuf, &data,
-					 sh_uart->rx_ringbuf.size);
-
+		len = ring_buffer_write_ptr(&sh_uart->rx_ringbuf, &data);
 		if (len > 0) {
 			rd_len = uart_fifo_read(dev, data, len);
 
@@ -105,9 +103,7 @@ static void uart_rx_handle(const struct device *dev, struct shell_uart_int_drive
 				}
 			}
 #endif /* CONFIG_MCUMGR_TRANSPORT_SHELL */
-			int err = ring_buf_put_finish(&sh_uart->rx_ringbuf, rd_len);
-			(void)err;
-			__ASSERT_NO_MSG(err == 0);
+			ring_buffer_commit(&sh_uart->rx_ringbuf, rd_len);
 		} else {
 			uint8_t dummy;
 
@@ -176,15 +172,10 @@ static void uart_tx_handle(const struct device *dev, struct shell_uart_int_drive
 		return;
 	}
 
-	len = ring_buf_get_claim(&sh_uart->tx_ringbuf, (uint8_t **)&data,
-				 sh_uart->tx_ringbuf.size);
+	len = ring_buffer_read_ptr(&sh_uart->tx_ringbuf, (uint8_t **)&data);
 	if (len) {
-		int err;
-
 		len = uart_fifo_fill(dev, data, len);
-		err = ring_buf_get_finish(&sh_uart->tx_ringbuf, len);
-		__ASSERT_NO_MSG(err == 0);
-		ARG_UNUSED(err);
+		ring_buffer_consume(&sh_uart->tx_ringbuf, len);
 	} else {
 		uart_irq_tx_disable(dev);
 		sh_uart->tx_busy = 0;
@@ -212,10 +203,10 @@ static void irq_init(struct shell_uart_int_driven *sh_uart)
 {
 	const struct device *dev = sh_uart->common.dev;
 
-	ring_buf_init(&sh_uart->rx_ringbuf, CONFIG_SHELL_BACKEND_SERIAL_RX_RING_BUFFER_SIZE,
-		      sh_uart->rx_buf);
-	ring_buf_init(&sh_uart->tx_ringbuf, CONFIG_SHELL_BACKEND_SERIAL_TX_RING_BUFFER_SIZE,
-		      sh_uart->tx_buf);
+	ring_buffer_init(&sh_uart->rx_ringbuf, sh_uart->rx_buf,
+			CONFIG_SHELL_BACKEND_SERIAL_RX_RING_BUFFER_SIZE);
+	ring_buffer_init(&sh_uart->tx_ringbuf, sh_uart->tx_buf,
+		      CONFIG_SHELL_BACKEND_SERIAL_TX_RING_BUFFER_SIZE);
 	sh_uart->tx_busy = 0;
 	uart_irq_callback_user_data_set(dev, uart_callback, (void *)sh_uart);
 	uart_irq_rx_enable(dev);
@@ -266,7 +257,7 @@ static void polling_rx_timeout_handler(struct k_timer *timer)
 	struct shell_uart_polling *sh_uart = k_timer_user_data_get(timer);
 
 	while (uart_poll_in(sh_uart->common.dev, &c) == 0) {
-		if (ring_buf_put(&sh_uart->rx_ringbuf, &c, 1) == 0U) {
+		if (ring_buffer_write(&sh_uart->rx_ringbuf, &c, 1) == 0U) {
 			/* ring buffer full. */
 			LOG_WRN("RX ring buffer full.");
 		}
@@ -280,8 +271,8 @@ static void polling_init(struct shell_uart_polling *sh_uart)
 	k_timer_user_data_set(&sh_uart->rx_timer, (void *)sh_uart);
 	k_timer_start(&sh_uart->rx_timer, RX_POLL_PERIOD, RX_POLL_PERIOD);
 
-	ring_buf_init(&sh_uart->rx_ringbuf, CONFIG_SHELL_BACKEND_SERIAL_RX_RING_BUFFER_SIZE,
-		      sh_uart->rx_buf);
+	ring_buffer_init(&sh_uart->rx_ringbuf, sh_uart->rx_buf,
+			CONFIG_SHELL_BACKEND_SERIAL_RX_RING_BUFFER_SIZE);
 }
 
 static int init(const struct shell_transport *transport,
@@ -375,7 +366,7 @@ static int polling_write(struct shell_uart_common *sh_uart,
 static int irq_write(struct shell_uart_int_driven *sh_uart,
 		 const void *data, size_t length, size_t *cnt)
 {
-	*cnt = ring_buf_put(&sh_uart->tx_ringbuf, data, length);
+	*cnt = ring_buffer_write(&sh_uart->tx_ringbuf, data, length);
 
 	if (atomic_set(&sh_uart->tx_busy, 1) == 0) {
 		uart_irq_tx_enable(sh_uart->common.dev);
@@ -420,7 +411,7 @@ static int write_uart(const struct shell_transport *transport,
 static int irq_read(struct shell_uart_int_driven *sh_uart,
 		    void *data, size_t length, size_t *cnt)
 {
-	*cnt = ring_buf_get(&sh_uart->rx_ringbuf, data, length);
+	*cnt = ring_buffer_read(&sh_uart->rx_ringbuf, data, length);
 
 	return 0;
 }
@@ -428,7 +419,7 @@ static int irq_read(struct shell_uart_int_driven *sh_uart,
 static int polling_read(struct shell_uart_polling *sh_uart,
 			void *data, size_t length, size_t *cnt)
 {
-	*cnt = ring_buf_get(&sh_uart->rx_ringbuf, data, length);
+	*cnt = ring_buffer_read(&sh_uart->rx_ringbuf, data, length);
 
 	return 0;
 }
