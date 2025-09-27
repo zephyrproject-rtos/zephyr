@@ -1,0 +1,12 @@
+# Copyright (c) 2025 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# PSOC CAT1B Configuration
+
+if SOC_FAMILY_INFINEON_EDGE
+
+rsource "*/Kconfig.defconfig"
+
+endif # SOC_FAMILY_INFINEON_EDGE
