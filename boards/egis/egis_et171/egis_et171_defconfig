@@ -1,0 +1,8 @@
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y
+
+# Serial driver options
+CONFIG_SERIAL=y
+
+# GPIO driver options
+CONFIG_GPIO=y
