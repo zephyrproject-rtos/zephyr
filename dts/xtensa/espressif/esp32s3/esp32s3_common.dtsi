@@ -496,6 +496,7 @@
 		trng0: trng@6003507c {
 			compatible = "espressif,esp32-trng";
 			reg = <0x6003507c 0x4>;
+			clocks = <&clock ESP32_RNG_MODULE>;
 			status = "disabled";
 		};
 
