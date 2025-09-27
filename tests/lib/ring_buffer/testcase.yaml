@@ -1,0 +1,11 @@
+common:
+  tags:
+    - ring_buffer
+    - circular_buffer
+  timeout: 150
+
+tests:
+  libraries.ring_buffer:
+    integration_platforms:
+      - native_sim
+      - native_sim/native/64

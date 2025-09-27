@@ -5184,7 +5184,7 @@ Utilities:
     - tests/lib/onoff/
     - tests/lib/sys_util/
     - tests/lib/sprintf/
-    - tests/lib/ringbuffer/
+    - tests/lib/ring_buffer/
     - tests/lib/notify/
     - tests/lib/linear_range/
   labels:
