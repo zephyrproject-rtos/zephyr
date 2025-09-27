@@ -1,5 +1,6 @@
 #
 # Copyright (c) 2022 Codecoup
+# Copyright (c) 2025 Demant A/S
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -48,5 +49,39 @@ config HAP_HA_HEARING_AID_RIGHT
 	bool "Right Ear"
 
 endchoice # HAP_HA_HEARING_AID_LOCATION
+
+config SCAN_OFFLOAD
+	bool "Whether to wait for a Broadcast Assistant"
+	default y
+	# enable PAST support if we can
+	select BT_PER_ADV_SYNC_TRANSFER_RECEIVER if (!BT_CTLR || BT_CTLR_SYNC_TRANSFER_RECEIVER_SUPPORT)
+	help
+	  If set to true, the sample will start advertising connectable for
+	  Broadcast Assistants.
+
+config SCAN_SELF
+	bool "Whether to scan for Broadcast Sources without Broadcast Assistant"
+	default y
+	help
+	  If set to true, the sample will start scanning for Broadcast Sources
+	  without waiting for a Broadcast Assistant to connect.
+
+
+config TARGET_BROADCAST_NAME
+	string "Target Broadcast Device Name"
+	default "Test Broadcast"
+	help
+	  Name of target broadcast device. If not empty string, sink device
+	  will only listen to the specified broadcast source. Not case sensitive.
+
+config SCAN_DELAY
+	int "Delay before starting scan (in seconds)"
+	range 0 255
+	default 120
+	depends on SCAN_SELF
+	help
+	  Time to advertise connectable for a Broadcast Assistant to connect
+	  before starting scanning for Broadcast Sources.
+
 
 endmenu
