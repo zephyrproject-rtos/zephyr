@@ -19,6 +19,9 @@ if (CONFIG_BUILD_WITH_TFM)
   # PSA API awareness for the Non-Secure application
   target_compile_definitions(app PRIVATE "TFM_PSA_API")
 
+  # Compile commands for improved IDE integration
+  list(APPEND TFM_CMAKE_ARGS -DCMAKE_EXPORT_COMPILE_COMMANDS=TRUE)
+
   if(CONFIG_TFM_BL1)
     list(APPEND TFM_CMAKE_ARGS -DBL1:BOOL=ON)
     if(CONFIG_TFM_BL2_SIGNING_KEY_PATH)
