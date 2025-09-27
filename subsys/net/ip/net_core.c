@@ -74,9 +74,19 @@ static void update_priority_l2(struct net_pkt *pkt)
 	/* This is just an example.
 	 * Similar infrastructure with custom application rules like
 	 * net_pkt_filter could be established
+	 *
+	 * COMMENT this out to see the effect on the sample
+	 *
 	 */
-	if (net_pkt_ll_proto_type(pkt) ==  NET_ETH_PTYPE_PTP) {
-		net_pkt_set_priority(pkt, NET_PRIORITY_IC);
+	switch(net_pkt_ll_proto_type(pkt)) {
+		case NET_ETH_PTYPE_123: net_pkt_set_priority(pkt, NET_PRIORITY_BK); break; /**< Background (lowest)                */
+		case NET_ETH_PTYPE_124: net_pkt_set_priority(pkt, NET_PRIORITY_BE); break; /**< Best effort (default)              */
+		case NET_ETH_PTYPE_125: net_pkt_set_priority(pkt, NET_PRIORITY_EE); break; /**< Excellent effort                   */
+		case NET_ETH_PTYPE_126: net_pkt_set_priority(pkt, NET_PRIORITY_CA); break; /**< Critical applications              */
+		case NET_ETH_PTYPE_127: net_pkt_set_priority(pkt, NET_PRIORITY_VI); break; /**< Video, < 100 ms latency and jitter */
+		case NET_ETH_PTYPE_128: net_pkt_set_priority(pkt, NET_PRIORITY_VO); break; /**< Voice, < 10 ms latency and jitter  */
+		case NET_ETH_PTYPE_129: net_pkt_set_priority(pkt, NET_PRIORITY_IC); break; /**< Internetwork control               */
+		case NET_ETH_PTYPE_130: net_pkt_set_priority(pkt, NET_PRIORITY_NC); break; /**< Network control (highest)          */
 	}
 }
 
