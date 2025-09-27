@@ -12,13 +12,13 @@
  */
 enum opamp_functional_mode {
 	/** Differential amplifier mode */
-	OPAMP_DIFFERENTIAL_MODE = 0,
+	OPAMP_FUNCTIONAL_MODE_DIFFERENTIAL = 0,
 	/** Inverting amplifier mode */
-	OPAMP_INVERTING_MODE,
+	OPAMP_FUNCTIONAL_MODE_INVERTING,
 	/** Non-inverting amplifier mode */
-	OPAMP_NON_INVERTING_MODE,
+	OPAMP_FUNCTIONAL_MODE_NON_INVERTING,
 	/** Follower mode */
-	OPAMP_FOLLOWER_MODE,
+	OPAMP_FUNCTIONAL_MODE_FOLLOWER,
 };
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_OPAMP_OPAMP_H_ */
