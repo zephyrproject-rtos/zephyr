@@ -1077,9 +1077,12 @@ static void hci_disconn_complete(struct net_buf *buf)
 		 * If only for one connection session bond was set, clear keys
 		 * database row for this connection.
 		 */
-		if (conn->type == BT_CONN_TYPE_BR && conn->br.link_key != NULL &&
-		    atomic_test_and_clear_bit(conn->flags, BT_CONN_BR_NOBOND)) {
-			bt_keys_link_key_clear(conn->br.link_key);
+		if (conn->type == BT_CONN_TYPE_BR && conn->br.link_key != NULL) {
+			if (atomic_test_and_clear_bit(conn->flags, BT_CONN_BR_NOBOND)) {
+				bt_keys_link_key_clear(conn->br.link_key);
+			}
+
+			conn->br.link_key->enc_key_size = 0;
 		}
 #endif
 		bt_conn_unref(conn);
