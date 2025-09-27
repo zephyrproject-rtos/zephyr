@@ -7,7 +7,7 @@
 include(${ZEPHYR_BASE}/boards/common/xsdb.board.cmake)
 set(SUPPORTED_EMU_PLATFORMS qemu)
 set(QEMU_ARCH xilinx-aarch64)
-set(QEMU_CPU_TYPE_${ARCH} cortex-a78ae)
+set(QEMU_CPU_TYPE_${ARCH} cortex-r52)
 
 set(QEMU_FLAGS_${ARCH}
 	-machine arm-generic-fdt
