@@ -78,8 +78,6 @@
 /* position of L3 heap, size of L3 heap - till end of the L3 memory */
 /* !!! FIXME: L3 heap base MUST be automatically calculated. !!! */
 #define IMR_L3_HEAP_BASE		(IMR_BOOT_LDR_STACK_BASE + IMR_BOOT_LDR_STACK_SIZE)
-#define IMR_L3_HEAP_SIZE		(L3_MEM_SIZE - \
-					(IMR_L3_HEAP_BASE - L3_MEM_BASE_ADDR))
 
 #define ADSP_L1_CACHE_PREFCTL_VALUE 0x1038
 
@@ -167,6 +165,40 @@ struct ace_lpsram_regs {
 	uint8_t USxPGISTS;
 	uint8_t reserved1[3];
 };
+
+/* IMR memory info */
+#define HFIMRIA1_REG (DT_REG_ADDR(DT_NODELABEL(imria1)))
+#define HFIMRIS1_REG (DT_REG_ADDR(DT_NODELABEL(imria1)) + 0x8)
+
+/* IMR Info Address 1 */
+struct ace_hfimria1 {
+	/** @brief Physical base address of the IMR memory region */
+	uint64_t addr;
+};
+
+/* IMR Info Size 1 */
+struct ace_hfimris1 {
+	/** @brief IMR used */
+	uint64_t iu	: 1;
+	/** @brief Root Space */
+	uint64_t rs	: 3;
+	uint64_t rsvd31	: 28;
+	/** @brief IMR size in KB */
+	uint64_t sz	: 32;
+};
+
+#define ACE_HFIMRA1 ((volatile struct ace_hfimria1 *)HFIMRIA1_REG)
+#define ACE_HFIMRS1 ((volatile struct ace_hfimris1 *)HFIMRIS1_REG)
+
+static ALWAYS_INLINE uint32_t ace_imr_used(void)
+{
+	return ACE_HFIMRS1->iu;
+}
+
+static ALWAYS_INLINE uint32_t ace_imr_get_mem_size(void)
+{
+	return ACE_HFIMRS1->sz * 1024;
+}
 #endif
 
 /* These registers are for the L2 HP SRAM bank power management control and status.*/

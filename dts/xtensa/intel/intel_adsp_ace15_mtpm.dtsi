@@ -136,6 +136,11 @@
 			reg = <0x71d80 0x0008>;
 		};
 
+		imria1: imria1@162080 {
+			compatible = "intel,adsp-imria1";
+			reg = <0x162080 0x0008>;
+		};
+
 		hsbpm: hsbpm@17a800 {
 			compatible = "intel,adsp-hsbpm";
 			reg = <0x17a800 0x0008>;
