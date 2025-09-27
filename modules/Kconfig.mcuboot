@@ -430,4 +430,13 @@ config MCUBOOT_BOOTUTIL_LIB_FOR_DIRECT_XIP
 	  when bootloader is in DirectXIP-revert mode.
 endif
 
+config MCUBOOT_BOOT_MAX_ALIGN
+	int "Override programmable flash block alignment"
+	default 0
+	help
+	  Allow to override the programmable flash block alignment size.
+	  By default it's set to the maximum of the write block size of
+	  the chosen zephyr,flash node and 8.
+	  This option is ignored if set to zero.
+
 endif # MCUBOOT_BOOTUTIL_LIB
