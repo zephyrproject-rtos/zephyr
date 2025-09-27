@@ -1,0 +1,18 @@
+# Copyright (c) 2025 Qingsong Gou <gouqs@hotmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  This binding describes the Sifli SF32LB watchdog timer (WDT).
+
+compatible: "sifli,sf32lb-watchdog"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+    description: Register address and size of the WDT peripheral.
+
+  interrupts:
+    required: true
+    description: Interrupt specifier for the WDT.
