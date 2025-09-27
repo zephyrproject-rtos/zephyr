@@ -19,6 +19,12 @@ enum opamp_functional_mode {
 	OPAMP_FUNCTIONAL_MODE_NON_INVERTING,
 	/** Follower mode */
 	OPAMP_FUNCTIONAL_MODE_FOLLOWER,
+	/**
+	 * @brief Standalone mode.
+	 * The gain is set by external resistors. The API call to set the gain
+	 * is ignored in this mode or has no impact.
+	 */
+	OPAMP_FUNCTIONAL_MODE_STANDALONE,
 };
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_OPAMP_OPAMP_H_ */
