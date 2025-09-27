@@ -93,9 +93,55 @@ static bool being_processed_by_correct_thread(struct net_pkt *pkt)
 	return net_tc_rx_is_current_thread(tc);
 }
 
+static inline void ethernet_update_length(struct net_if *iface,
+					  struct net_pkt *pkt)
+{
+	uint16_t len;
+#ifdef CONFIG_NET_VLAN
+	const uint16_t min_len =
+		NET_ETH_MINIMAL_FRAME_SIZE - (net_pkt_vlan_tag(pkt) != NET_VLAN_TAG_UNSPEC
+						      ? sizeof(struct net_eth_vlan_hdr)
+						      : sizeof(struct net_eth_hdr));
+#else
+	const uint16_t min_len = NET_ETH_MINIMAL_FRAME_SIZE - sizeof(struct net_eth_hdr);
+#endif
+
+	/* Let's check IP payload's length. If it's smaller than 46 bytes,
+	 * i.e. smaller than minimal Ethernet frame size minus ethernet
+	 * header size,then Ethernet has padded so it fits in the minimal
+	 * frame size of 60 bytes. In that case, we need to get rid of it.
+	 */
+
+	if (net_pkt_family(pkt) == AF_INET) {
+		len = ntohs(NET_IPV4_HDR(pkt)->len);
+	} else if (net_pkt_family(pkt) == AF_INET6) {
+		len = ntohs(NET_IPV6_HDR(pkt)->len) + NET_IPV6H_LEN;
+	} else {
+		return;
+	}
+
+	if (len < min_len) {
+		struct net_buf *frag;
+
+		for (frag = pkt->frags; frag; frag = frag->frags) {
+			if (frag->len < len) {
+				len -= frag->len;
+			} else {
+				frag->len = len;
+				len = 0U;
+			}
+		}
+	}
+}
+
+
+
 static inline enum net_verdict process_data(struct net_pkt *pkt)
 {
 	int ret;
+	enum net_verdict verdict = NET_CONTINUE;
+	bool handled = false;
+	uint16_t type;
 
 	net_packet_socket_input(pkt, ETH_P_ALL, SOCK_RAW);
 
@@ -112,8 +158,6 @@ static inline enum net_verdict process_data(struct net_pkt *pkt)
 		if (ret != NET_CONTINUE) {
 			if (ret == NET_DROP) {
 				NET_DBG("Packet %p discarded by L2", pkt);
-				net_stats_update_processing_error(
-							net_pkt_iface(pkt));
 			}
 			return ret;
 		}
@@ -127,6 +171,45 @@ static inline enum net_verdict process_data(struct net_pkt *pkt)
 			net_queue_rx(net_pkt_iface(pkt), pkt);
 			return NET_OK;
 		}
+	}
+
+	type = net_pkt_ll_proto_type(pkt);
+
+	STRUCT_SECTION_FOREACH(net_l3_register, l3) {
+		if (l3->ptype != type || l3->l2 != &NET_L2_GET_NAME(ETHERNET) ||
+		    l3->handler == NULL) {
+			continue;
+		}
+
+		NET_DBG("Calling L3 %s handler for type 0x%04x", l3->name, type);
+
+		verdict = l3->handler(net_pkt_iface(pkt), type, pkt);
+		if (verdict == NET_OK) {
+			/* the packet was consumed by the l3-handler */
+			return NET_OK;
+		} else if (verdict == NET_DROP) {
+			NET_DBG("Dropping frame, packet rejected by %s", l3->name);
+			return NET_DROP;
+		}
+
+		/* The packet will be processed further by IP-stack
+		 * when NET_CONTINUE is returned
+		 */
+		handled = true;
+		break;
+	}
+
+	if (!handled) {
+		if (IS_ENABLED(CONFIG_NET_ETHERNET_FORWARD_UNRECOGNISED_ETHERTYPE)) {
+			net_pkt_set_family(pkt, AF_UNSPEC);
+		} else {
+			NET_DBG("Unknown hdr type 0x%04x", type);
+			return NET_DROP;
+		}
+	}
+
+	if (type != NET_ETH_PTYPE_EAPOL) {
+		ethernet_update_length(net_pkt_iface(pkt), pkt);
 	}
 
 	/* L2 has modified the buffer starting point, it is easier
