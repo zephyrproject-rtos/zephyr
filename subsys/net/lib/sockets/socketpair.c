@@ -47,7 +47,7 @@ __net_socket struct spair {
 	int remote; /**< the remote endpoint file descriptor */
 	uint32_t flags; /**< status and option bits */
 	struct k_sem sem; /**< semaphore for exclusive structure access */
-	struct ring_buf recv_q;
+	struct ring_buffer recv_q;
 	/** indicates local @a recv_q isn't empty */
 	struct k_poll_signal readable;
 	/** indicates local @a recv_q isn't full */
@@ -106,7 +106,7 @@ static inline size_t spair_write_avail(struct spair *spair)
 		return 0;
 	}
 
-	return ring_buf_space_get(&remote->recv_q);
+	return ring_buffer_space(&remote->recv_q);
 }
 
 /**
@@ -117,7 +117,7 @@ static inline size_t spair_write_avail(struct spair *spair)
  */
 static inline size_t spair_read_avail(struct spair *spair)
 {
-	return ring_buf_size_get(&spair->recv_q);
+	return ring_buffer_size(&spair->recv_q);
 }
 
 /** Swap two 32-bit integers */
@@ -250,7 +250,7 @@ static struct spair *spair_new(void)
 	spair->flags = SPAIR_FLAGS_DEFAULT;
 
 	k_sem_init(&spair->sem, 1, 1);
-	ring_buf_init(&spair->recv_q, sizeof(spair->buf), spair->buf);
+	ring_buffer_init(&spair->recv_q, spair->buf, sizeof(spair->buf));
 	k_poll_signal_init(&spair->readable);
 	k_poll_signal_init(&spair->writeable);
 
@@ -550,7 +550,7 @@ static ssize_t spair_write(void *obj, const void *buffer, size_t count)
 		}
 	}
 
-	bytes_written = ring_buf_put(&remote->recv_q, (void *)buffer, count);
+	bytes_written = ring_buffer_write(&remote->recv_q, (void *)buffer, count);
 	if (spair_write_avail(spair) == 0) {
 		k_poll_signal_reset(&remote->writeable);
 	}
@@ -721,7 +721,7 @@ static ssize_t spair_read(void *obj, void *buffer, size_t count)
 		}
 	}
 
-	bytes_read = ring_buf_get(&spair->recv_q, (void *)buffer, count);
+	bytes_read = ring_buffer_read(&spair->recv_q, (void *)buffer, count);
 	if (spair_read_avail(spair) == 0 && !sock_is_eof(spair)) {
 		k_poll_signal_reset(&spair->readable);
 	}
