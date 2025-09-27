@@ -15,4 +15,7 @@ config BOOTLOADER_MCUBOOT
 config MAIN_STACK_SIZE
 	default 4096
 
+config KERNEL_ENTRY
+	default "__appcpu_start"
+
 endif # SOC_SERIES_ESP32S3

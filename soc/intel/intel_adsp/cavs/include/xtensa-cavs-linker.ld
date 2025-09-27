@@ -22,7 +22,7 @@ OUTPUT_ARCH(xtensa)
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/linker/linker-tool.h>
 
-ENTRY(rom_entry);
+ENTRY(CONFIG_KERNEL_ENTRY);
 
 /* DSP RAM regions (all of them) are mapped twice on the DSP.  One
  * mapping is set up to bypass the L1 cache, so it must be used when

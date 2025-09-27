@@ -37,6 +37,9 @@ config MULTITHREADING
 config NUM_PREEMPT_PRIORITIES
 	default 0
 
+config KERNEL_ENTRY
+	default "reset_vector"
+
 # Workaround for not being able to have commas in macro arguments
 DT_CHOSEN_Z_CODE_PARTITION := zephyr,code-partition
 
