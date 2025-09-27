@@ -73,6 +73,14 @@ struct net_eth_addr {
 #define NET_ETH_PTYPE_PTP		0x88f7
 #define NET_ETH_PTYPE_TSN		0x22f0 /* TSN (IEEE 1722) packet */
 #define NET_ETH_PTYPE_VLAN		0x8100
+#define NET_ETH_PTYPE_123		123
+#define NET_ETH_PTYPE_124		124
+#define NET_ETH_PTYPE_125		125
+#define NET_ETH_PTYPE_126		126
+#define NET_ETH_PTYPE_127		127
+#define NET_ETH_PTYPE_128		128
+#define NET_ETH_PTYPE_129		129
+#define NET_ETH_PTYPE_130		130
 /* zephyr-keep-sorted-stop */
 
 /* zephyr-keep-sorted-start re(^#define) */
