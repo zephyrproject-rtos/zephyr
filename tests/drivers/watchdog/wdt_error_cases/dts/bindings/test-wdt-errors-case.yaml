@@ -1,0 +1,50 @@
+#
+# Copyright (c) 2025 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: |
+    This binding provides resources required to build and run the
+    tests/drivers/watchdog/wdt_error_cases test in Zephyr.
+
+compatible: "test-wdt-error-cases"
+
+properties:
+  opt-pause-in-sleep:
+    type: boolean
+    description: |
+      If true, the watchdog timer will be paused when the CPU is in sleep mode.
+      This is useful to prevent the watchdog from triggering during low-power
+      states.
+  opt-pause-halted-by-dbg:
+    type: boolean
+    description: |
+      If true, the watchdog timer will be paused when the CPU is halted by a
+      debugger. This allows the watchdog to be used during debugging without
+      triggering a reset.
+  feed-can-stall:
+    type: boolean
+    description: |
+      If true, feeding the watchdog can stall the CPU. This is useful for
+      testing purposes to simulate a watchdog timeout.
+  window-min:
+    type: boolean
+    description: |
+      If true, the watchdog supports a minimum window value. This allows for
+      more precise control over the watchdog timeout period.
+  opt-pause-in-sleep-requires-pm:
+    type: boolean
+    description: |
+      If true, the watchdog timer can only be paused in sleep mode if
+      power management is enabled.
+  flag-reset-cpu-core:
+    type: boolean
+    description: |
+      If true, the watchdog supports resetting the CPU core. This allows for
+      more flexible error recovery options.
+  flag-reset-none:
+    type: boolean
+    description: |
+      If true, the watchdog supports not resetting the CPU core. This allows for
+      more flexible error recovery options.

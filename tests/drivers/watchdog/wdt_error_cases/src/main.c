@@ -40,31 +40,38 @@
 #define WDT_OPT_PAUSE_IN_SLEEP_REQUIRES_PM        BIT(9)
 
 /* Common for all targets: */
-#define DEFAULT_WINDOW_MAX (500U)
-#define DEFAULT_WINDOW_MIN (0U)
+#define DEFAULT_WINDOW_MAX       (500U)
+#define DEFAULT_WINDOW_MIN       (0U)
 
-/* Align tests to the specific target: */
-#if defined(CONFIG_SOC_SERIES_NRF53X) || defined(CONFIG_SOC_SERIES_NRF54LX) || \
-	defined(CONFIG_SOC_NRF54H20) || defined(CONFIG_SOC_NRF9280)
-#define WDT_TEST_FLAGS                                                                             \
-	(WDT_DISABLE_SUPPORTED | WDT_FLAG_RESET_SOC_SUPPORTED |                                    \
-	 WDT_FLAG_ONLY_ONE_TIMEOUT_VALUE_SUPPORTED | WDT_OPT_PAUSE_IN_SLEEP_SUPPORTED |            \
-	 WDT_OPT_PAUSE_HALTED_BY_DBG_SUPPORTED)
+
+#define DT_CONFIG DT_INST(0, test_wdt_error_cases)
+#define WDT_TEST_FLAGS \
+	(WDT_DISABLE_SUPPORTED | WDT_FLAG_RESET_SOC_SUPPORTED | \
+	WDT_FLAG_ONLY_ONE_TIMEOUT_VALUE_SUPPORTED | \
+	((DT_NODE_HAS_STATUS_OKAY(DT_INST(0, test_wdt_error_cases))) ? \
+		(DT_PROP_OR(DT_CONFIG, opt_pause_in_sleep, 0) ? WDT_OPT_PAUSE_IN_SLEEP_SUPPORTED : 0) | \
+		(DT_PROP_OR(DT_CONFIG, opt_pause_halted_by_dbg, 0) ? \
+		 WDT_OPT_PAUSE_HALTED_BY_DBG_SUPPORTED : 0) | \
+		(DT_PROP_OR(DT_CONFIG, feed_can_stall, 0) ? WDT_FEED_CAN_STALL : 0) | \
+		(DT_PROP_OR(DT_CONFIG, window_min, 0) ? WDT_WINDOW_MIN_SUPPORTED : 0) | \
+		(DT_PROP_OR(DT_CONFIG, opt_pause_in_sleep_requires_pm, 0) ? \
+		 WDT_OPT_PAUSE_IN_SLEEP_REQUIRES_PM : 0) | \
+		(DT_PROP_OR(DT_CONFIG, flag_reset_cpu_core, 0) ? WDT_FLAG_RESET_CPU_CORE_SUPPORTED : 0) | \
+		(DT_PROP_OR(DT_CONFIG, flag_reset_none, 0) ? WDT_FLAG_RESET_NONE_SUPPORTED : 0) \
+	: 0))
+
+#if defined(CONFIG_SOC_FAMILY_NORDIC_NRF)
 #define DEFAULT_FLAGS            (WDT_FLAG_RESET_SOC)
 #define MAX_INSTALLABLE_TIMEOUTS (8)
 #define WDT_WINDOW_MAX_ALLOWED   (0x07CFFFFFU)
 #define DEFAULT_OPTIONS          (WDT_OPT_PAUSE_IN_SLEEP | WDT_OPT_PAUSE_HALTED_BY_DBG)
+
 #elif defined(CONFIG_SOC_FAMILY_SILABS_S2)
 #if defined(WDOG_CFG_EM1RUN)
 #define WDT_TEST_FLAG_SLEEP_REQUIRES_PM 0
 #else
 #define WDT_TEST_FLAG_SLEEP_REQUIRES_PM WDT_OPT_PAUSE_IN_SLEEP_REQUIRES_PM
 #endif
-#define WDT_TEST_FLAGS                                                                             \
-	(WDT_DISABLE_SUPPORTED | WDT_FLAG_RESET_NONE_SUPPORTED | WDT_FLAG_RESET_SOC_SUPPORTED |    \
-	 WDT_FLAG_ONLY_ONE_TIMEOUT_VALUE_SUPPORTED | WDT_OPT_PAUSE_IN_SLEEP_SUPPORTED |            \
-	 WDT_OPT_PAUSE_HALTED_BY_DBG_SUPPORTED | WDT_WINDOW_MIN_SUPPORTED |                        \
-	 WDT_TEST_FLAG_SLEEP_REQUIRES_PM)
 #define DEFAULT_FLAGS            (WDT_FLAG_RESET_NONE)
 #define MAX_INSTALLABLE_TIMEOUTS (1)
 #define WDT_WINDOW_MAX_ALLOWED   (0x40001U)
@@ -73,9 +80,6 @@
 /* By default run most of the error checks.
  * See Readme.txt on how to align test scope for the specific target.
  */
-#define WDT_TEST_FLAGS                                                                             \
-	(WDT_DISABLE_SUPPORTED | WDT_FLAG_RESET_SOC_SUPPORTED |                                    \
-	 WDT_FLAG_ONLY_ONE_TIMEOUT_VALUE_SUPPORTED)
 #define DEFAULT_FLAGS            (WDT_FLAG_RESET_SOC)
 #define MAX_INSTALLABLE_TIMEOUTS (8)
 #define WDT_WINDOW_MAX_ALLOWED   (0xFFFFFFFFU)
