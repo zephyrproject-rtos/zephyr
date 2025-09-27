@@ -260,9 +260,15 @@ static bool uarte_transfer(const uint8_t *tx_data, size_t tx_data_len,
 {
 	nrfx_err_t err;
 
-	err = nrfx_uarte_rx(&uarte, rx_buf, rx_buf_size);
+	err = nrfx_uarte_rx_buffer_set(&uarte, rx_buf, rx_buf_size);
 	if (err != NRFX_SUCCESS) {
-		printk("nrfx_uarte_rx() failed: 0x%08x\n", err);
+		printk("nrfx_uarte_rx_buffer_set() failed: 0x%08x\n", err);
+		return false;
+	}
+
+	err = nrfx_uarte_rx_enable(&uarte, NRFX_UARTE_RX_ENABLE_STOP_ON_END);
+	if (err != NRFX_SUCCESS) {
+		printk("nrfx_uarte_rx_enable() failed: 0x%08x\n", err);
 		return false;
 	}
 
