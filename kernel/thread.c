@@ -1213,6 +1213,10 @@ void z_dummy_thread_init(struct k_thread *dummy_thread)
 	dummy_thread->resource_pool = NULL;
 #endif /* K_HEAP_MEM_POOL_SIZE */
 
+#ifdef CONFIG_USE_SWITCH
+	dummy_thread->switch_handle = NULL;
+#endif /* CONFIG_USE_SWITCH */
+
 #ifdef CONFIG_TIMESLICE_PER_THREAD
 	dummy_thread->base.slice_ticks = 0;
 #endif /* CONFIG_TIMESLICE_PER_THREAD */
