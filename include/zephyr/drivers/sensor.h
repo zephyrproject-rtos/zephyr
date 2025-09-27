@@ -485,12 +485,12 @@ struct sensor_decoder_api {
 	 * @brief Get the number of frames in the current buffer.
 	 *
 	 * @param[in]  buffer The buffer provided on the @ref rtio context.
-	 * @param[in]  channel The channel to get the count for
+	 * @param[in]  chan_spec The channel spec to get the count for
 	 * @param[out] frame_count The number of frames on the buffer (at least 1)
 	 * @return 0 on success
 	 * @return -ENOTSUP if the channel/channel_idx aren't found
 	 */
-	int (*get_frame_count)(const uint8_t *buffer, struct sensor_chan_spec channel,
+	int (*get_frame_count)(const uint8_t *buffer, struct sensor_chan_spec chan_spec,
 			       uint16_t *frame_count);
 
 	/**
@@ -499,13 +499,13 @@ struct sensor_decoder_api {
 	 * When decoding a single frame, use @p base_size. For every additional frame, add another
 	 * @p frame_size. As an example, to decode 3 frames use: 'base_size + 2 * frame_size'.
 	 *
-	 * @param[in]  channel The channel to query
+	 * @param[in]  chan_spec The channel spec to query
 	 * @param[out] base_size The size of decoding the first frame
 	 * @param[out] frame_size The additional size of every additional frame
 	 * @return 0 on success
 	 * @return -ENOTSUP if the channel is not supported
 	 */
-	int (*get_size_info)(struct sensor_chan_spec channel, size_t *base_size,
+	int (*get_size_info)(struct sensor_chan_spec chan_spec, size_t *base_size,
 			     size_t *frame_size);
 
 	/**
@@ -525,15 +525,15 @@ struct sensor_decoder_api {
 	 * @endcode
 	 *
 	 * @param[in]     buffer The buffer provided on the @ref rtio context
-	 * @param[in]     channel The channel to decode
+	 * @param[in]     chan_spec The channel spec to decode
 	 * @param[in,out] fit The current frame iterator
-	 * @param[in]     max_count The maximum number of channels to decode.
+	 * @param[in]     max_count The maximum number of channel specs to decode.
 	 * @param[out]    data_out The decoded data
 	 * @return 0 no more samples to decode
 	 * @return >0 the number of decoded frames
 	 * @return <0 on error
 	 */
-	int (*decode)(const uint8_t *buffer, struct sensor_chan_spec channel, uint32_t *fit,
+	int (*decode)(const uint8_t *buffer, struct sensor_chan_spec chan_spec, uint32_t *fit,
 		      uint16_t max_count, void *data_out);
 
 	/**
@@ -598,10 +598,10 @@ struct sensor_decode_context {
  */
 static inline int sensor_decode(struct sensor_decode_context *ctx, void *out, uint16_t max_count)
 {
-	return ctx->decoder->decode(ctx->buffer, ctx->channel, &ctx->fit, max_count, out);
+	return ctx->decoder->decode(ctx->buffer, ctx->channels, &ctx->fit, max_count, out);
 }
 
-int sensor_natively_supported_channel_size_info(struct sensor_chan_spec channel, size_t *base_size,
+int sensor_natively_supported_channel_size_info(struct sensor_chan_spec chan_spec,size_t *base_size,
 						size_t *frame_size);
 
 /**
@@ -653,7 +653,7 @@ struct sensor_read_config {
 /**
  * @brief Define a reading instance of a sensor
  *
- * Use this macro to generate a @ref rtio_iodev for reading specific channels. Example:
+ * Use this macro to generate a @ref rtio_iodev for reading specific channel specs. Example:
  *
  * @code(.c)
  * SENSOR_DT_READ_IODEV(icm42688_accelgyro, DT_NODELABEL(icm42688),
@@ -1022,30 +1022,30 @@ static inline int z_impl_sensor_get_decoder(const struct device *dev,
  *
  * @param[in] iodev The iodev to reconfigure
  * @param[in] sensor The sensor to read from
- * @param[in] channels One or more channels to read
- * @param[in] num_channels The number of channels in @p channels
+ * @param[in] chan_specs One or more channel specs to read
+ * @param[in] num_chan_specs The number of channels in @p channels
  * @return 0 on success
  * @return < 0 on error
  */
 __syscall int sensor_reconfigure_read_iodev(const struct rtio_iodev *iodev,
 					    const struct device *sensor,
-					    const struct sensor_chan_spec *channels,
-					    size_t num_channels);
+					    const struct sensor_chan_spec *chan_specs,
+					    size_t num_chan_specs);
 
 static inline int z_impl_sensor_reconfigure_read_iodev(const struct rtio_iodev *iodev,
 						       const struct device *sensor,
-						       const struct sensor_chan_spec *channels,
-						       size_t num_channels)
+						       const struct sensor_chan_spec *chan_specs,
+						       size_t num_chan_specs)
 {
 	struct sensor_read_config *cfg = (struct sensor_read_config *)iodev->data;
 
-	if (cfg->max < num_channels || cfg->is_streaming) {
+	if (cfg->max < num_chan_specs || cfg->is_streaming) {
 		return -ENOMEM;
 	}
 
 	cfg->sensor = sensor;
-	memcpy(cfg->channels, channels, num_channels * sizeof(struct sensor_chan_spec));
-	cfg->count = num_channels;
+	memcpy(cfg->channels, chan_specs, num_chan_specs * sizeof(struct sensor_chan_spec));
+	cfg->count = num_chan_specs;
 	return 0;
 }
 
