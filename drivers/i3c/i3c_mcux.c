@@ -2123,6 +2123,7 @@ static DEVICE_API(i3c, mcux_i3c_driver_api) = {
 
 #define I3C_MCUX_DEVICE(id)							\
 	PINCTRL_DT_INST_DEFINE(id);						\
+	CLOCK_CONTROL_DT_SPEC_INST_DEFINE(id, clocks);				\
 	static void mcux_i3c_config_func_##id(const struct device *dev);	\
 	static struct i3c_device_desc mcux_i3c_device_array_##id[] =		\
 		I3C_DEVICE_ARRAY_DT_INST(id);					\
@@ -2132,7 +2133,7 @@ static DEVICE_API(i3c, mcux_i3c_driver_api) = {
 		.base = (I3C_Type *) DT_INST_REG_ADDR(id),			\
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(id)),		\
 		.clock_subsys =							\
-			(clock_control_subsys_t)DT_INST_CLOCKS_CELL(id, name),	\
+			CLOCK_CONTROL_DT_SPEC_INST_GET(id, clocks),		\
 		.irq_config_func = mcux_i3c_config_func_##id,			\
 		.common.dev_list.i3c = mcux_i3c_device_array_##id,			\
 		.common.dev_list.num_i3c = ARRAY_SIZE(mcux_i3c_device_array_##id),	\
