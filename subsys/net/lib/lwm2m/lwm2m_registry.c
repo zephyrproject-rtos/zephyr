@@ -1618,7 +1618,7 @@ int lwm2m_enable_cache(const struct lwm2m_obj_path *path, struct lwm2m_time_seri
 		return -ENODATA;
 	}
 
-	ring_buf_init(&cache_entry->rb, cache_entry_size * cache_len, (uint8_t *)data_cache);
+	ring_buffer_init(&cache_entry->rb, (uint8_t *)data_cache, cache_entry_size * cache_len);
 
 	return 0;
 #else
@@ -1651,27 +1651,28 @@ bool lwm2m_cache_write(struct lwm2m_time_series_resource *cache_entry,
 	uint8_t *buf_ptr;
 	uint32_t element_size = sizeof(struct lwm2m_time_series_elem);
 
-	if (ring_buf_space_get(&cache_entry->rb) < element_size) {
+	if (ring_buffer_space(&cache_entry->rb) < element_size) {
 		/* No space  */
 		if (IS_ENABLED(CONFIG_LWM2M_CACHE_DROP_LATEST)) {
 			return false;
 		}
 		/* Free entry */
-		length = ring_buf_get_claim(&cache_entry->rb, &buf_ptr, element_size);
-		ring_buf_get_finish(&cache_entry->rb, length);
+		if (ring_buffer_size(&cache_entry->rb) < element_size) {
+			LOG_ERR("Cache entry too small %u", ring_buffer_size(&cache_entry->rb));
+			return false;
+		}
+		ring_buffer_consume(&cache_entry->rb, element_size);
 	}
 
-	length = ring_buf_put_claim(&cache_entry->rb, &buf_ptr, element_size);
-
-	if (length != element_size) {
-		ring_buf_put_finish(&cache_entry->rb, 0);
+	length = ring_buffer_write_ptr(&cache_entry->rb, &buf_ptr);
+	if (length < element_size) {
 		LOG_ERR("Allocation failed %u", length);
 		return false;
 	}
 
-	ring_buf_put_finish(&cache_entry->rb, length);
 	/* Store data */
 	memcpy(buf_ptr, buf, element_size);
+	ring_buffer_commit(&cache_entry->rb, element_size);
 	return true;
 #else
 	return NULL;
@@ -1686,21 +1687,19 @@ bool lwm2m_cache_read(struct lwm2m_time_series_resource *cache_entry,
 	uint8_t *buf_ptr;
 	uint32_t element_size = sizeof(struct lwm2m_time_series_elem);
 
-	if (ring_buf_is_empty(&cache_entry->rb)) {
+	if (ring_buffer_empty(&cache_entry->rb)) {
 		return false;
 	}
 
-	length = ring_buf_get_claim(&cache_entry->rb, &buf_ptr, element_size);
-
-	if (length != element_size) {
+	length = ring_buffer_read_ptr(&cache_entry->rb, &buf_ptr);
+	if (length < element_size) {
 		LOG_ERR("Cache read fail %u", length);
-		ring_buf_get_finish(&cache_entry->rb, 0);
 		return false;
 	}
 
 	/* Read Data */
 	memcpy(buf, buf_ptr, element_size);
-	ring_buf_get_finish(&cache_entry->rb, length);
+	ring_buffer_consume(&cache_entry->rb, element_size);
 	return true;
 
 #else
@@ -1713,11 +1712,11 @@ size_t lwm2m_cache_size(const struct lwm2m_time_series_resource *cache_entry)
 #if defined(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)
 	uint32_t bytes_available;
 
-	if (ring_buf_is_empty(&cache_entry->rb)) {
+	if (ring_buffer_empty(&cache_entry->rb)) {
 		return 0;
 	}
 
-	bytes_available = ring_buf_size_get(&cache_entry->rb);
+	bytes_available = ring_buffer_size(&cache_entry->rb);
 
 	return (bytes_available / sizeof(struct lwm2m_time_series_elem));
 #else
