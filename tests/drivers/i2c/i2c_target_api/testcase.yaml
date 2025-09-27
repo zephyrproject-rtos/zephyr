@@ -25,13 +25,14 @@ tests:
       - nucleo_f401re
       - nucleo_f429zi
       - nucleo_h503rb
-      - nucleo_wl55jc
+      - nucleo_h753zi
       - nucleo_l073rz
       - nucleo_l152re
       - nucleo_u083rc
       - nucleo_u385rg_q
       - nucleo_wba55cg
       - nucleo_wb55rg
+      - nucleo_wl55jc
       - rpi_pico
       - sltb010a@0
       - mr_canhubk3
