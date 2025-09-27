@@ -37,3 +37,11 @@ config SOC_PART_NUMBER_MIMX94398AVKM
 
 config SOC_PART_NUMBER
 	default "MIMX94398AVKM" if SOC_PART_NUMBER_MIMX94398AVKM
+
+config SOC_IMX943_PM_MCORE
+	bool "Enable i.MX943 multi-core PM shared logic"
+	default y
+	depends on PM
+	depends on SOC_MIMX94398_M33 || SOC_MIMX94398_M7_0 || SOC_MIMX94398_M7_1
+	help
+	  Common PM flow for Cortex-M cores (M33/M7) on i.MX943
