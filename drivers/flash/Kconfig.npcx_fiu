@@ -26,6 +26,13 @@ config FLASH_NPCX_FIU_NOR
 	  This option enables the QSPI NOR Flash driver for NPCX family of
 	  processors.
 
+config FLASH_NPCX_FIU_USE_DMA
+	bool "Use GDMA for FIU transactions"
+	default y if $(dt_nodelabel_has_prop,qspi_fiu0,dmas)
+	depends on DMA_NPCX_GDMA
+	help
+	  Enable GDMA transaction
+
 if FLASH_NPCX_FIU_QSPI
 
 config FLASH_NPCX_FIU_NOR_INIT
@@ -39,20 +46,39 @@ config FLASH_NPCX_FIU_NOR_INIT
 
 config FLASH_NPCX_FIU_DRA_V1
 	bool "Direct Read Access version 1 support"
-	default y if SOC_SERIES_NPCX9
+	default y
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_NUVOTON_NPCX_FIU_QSPI),support-npcxn-v1,True)
 	help
 	  This option enables DRA V1 support.
 
 config FLASH_NPCX_FIU_DRA_V2
 	bool "Direct Read Access version 2 support"
-	default y if SOC_SERIES_NPCX4
+	default y
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_NUVOTON_NPCX_FIU_QSPI),support-npcxn-v2,True)
 	help
-	  This option enables DRA V1 support.
+	  This option enables DRA V2 support.
+
+config FLASH_NPCX_FIU_DRA_EX
+	bool "Extended Direct Read Access mode support"
+	default y
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_NUVOTON_NPCX_FIU_QSPI),support-npckn-v1,True)
+	help
+	  This option enables extended DRA mode support for NPCKn variant of
+	  processors.
+
+config FLASH_NPCX_FIU_UMA_EX
+	bool "Extended User Mode Access mode support"
+	default y
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_NUVOTON_NPCX_FIU_QSPI),support-npckn-v1,True)
+	help
+	  This option enables extended UMA mode support for NPCKn variant of
+	  processors.
 
 config FLASH_NPCX_FIU_SUPP_DRA_4B_ADDR
 	bool "4 byte address support in Direct Read Access mode"
-	default y if FLASH_NPCX_FIU_DRA_V1 || \
-		     FLASH_NPCX_FIU_DRA_V2
+	default y if FLASH_NPCX_FIU_DRA_V1    || \
+		     FLASH_NPCX_FIU_DRA_V2    || \
+		     FLASH_NPCX_FIU_DRA_EX
 	help
 	  Selected if NPCX series supports 4 byte address mode in Direct Read
 	  Access mode.

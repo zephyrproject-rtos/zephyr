@@ -68,10 +68,6 @@
 
 /* Overwrite default device properties with overlays in board dt file here. */
 
-&qspi_fiu0 {
-	status = "disabled";
-};
-
 &uart1 {
 	status = "okay";
 	current-speed = <115200>;
