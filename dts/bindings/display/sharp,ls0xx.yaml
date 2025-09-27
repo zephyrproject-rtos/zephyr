@@ -45,3 +45,19 @@ properties:
       The DISPLAY pin controls if the LCD displays memory contents or
       white screen. If defined, the pin will be set high during driver
       initialization. display blanking apis can be used to control it.
+
+  serial-vcom-inversion:
+    type: boolean
+    description: Send serial VCOM inversion commands
+
+      Driver creates a thread to send inversion commands over SPI.
+      Enable when EXTCOMIN is not configured and VCOM inversion is not
+      application-managed.
+
+  serial-vcom-interval:
+    type: int
+    description: Serial VCOM inversion interval
+
+      VCOM inversion interval in milliseconds. This value is used when
+      there is no EXTCOMIN configured and serial-vcom inversion is set.
+      If not configured, 1000ms will be used.
