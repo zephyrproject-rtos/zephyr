@@ -24,7 +24,7 @@
 			ranges = <0x0 0x50000000 0x10000000>;
 		};
 
-		xspi2: memory-controller@50411000 {
+		xspi2: spi@50411000 {
 			reg = <0x50411000 0x1000>, <0x70000000 DT_SIZE_M(128)>;
 		};
 	};

@@ -44,11 +44,11 @@
 			zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_DEVICE)>;
 		};
 
-		flexspi: memory-controller@525e0000 {
+		flexspi: spi@525e0000 {
 			reg = <0x525e0000 0x4000>, <0x38000000 DT_SIZE_M(128)>;
 		};
 
-		flexspi2: memory-controller@545e0000 {
+		flexspi2: spi@545e0000 {
 			reg = <0x545e0000 0x4000>, <0x14000000 DT_SIZE_M(64)>;
 		};
 	};
