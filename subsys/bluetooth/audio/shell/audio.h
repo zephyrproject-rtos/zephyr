@@ -161,6 +161,7 @@ void bap_usb_clear_frames_to_usb(void);
 uint16_t get_next_seq_num(struct bt_bap_stream *bap_stream);
 struct shell_stream *shell_stream_from_bap_stream(struct bt_bap_stream *bap_stream);
 struct bt_bap_stream *bap_stream_from_shell_stream(struct shell_stream *sh_stream);
+struct bt_cap_stream *cap_stream_from_shell_stream(struct shell_stream *sh_stream);
 bool bap_usb_can_get_full_sdu(struct shell_stream *sh_stream);
 void bap_usb_get_frame(struct shell_stream *sh_stream, enum bt_audio_location chan_alloc,
 		       int16_t buffer[]);
@@ -187,6 +188,14 @@ struct broadcast_sink {
 	bool syncable;
 };
 
+struct unicast_group {
+	bool is_cap;
+	union {
+		struct bt_bap_unicast_group *bap_group;
+		struct bt_cap_unicast_group *cap_group;
+	};
+};
+
 #define BAP_UNICAST_AC_MAX_CONN   2U
 #define BAP_UNICAST_AC_MAX_SNK    (2U * BAP_UNICAST_AC_MAX_CONN)
 #define BAP_UNICAST_AC_MAX_SRC    (2U * BAP_UNICAST_AC_MAX_CONN)
@@ -210,7 +219,7 @@ extern struct shell_stream unicast_streams[CONFIG_BT_MAX_CONN * MAX(UNICAST_SERV
 
 #if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
 
-struct bap_unicast_ac_param {
+struct cap_unicast_ac_param {
 	char *name;
 	size_t conn_cnt;
 	size_t snk_cnt[BAP_UNICAST_AC_MAX_CONN];
@@ -219,17 +228,13 @@ struct bap_unicast_ac_param {
 	size_t src_chan_cnt;
 };
 
-extern struct bt_bap_unicast_group *default_unicast_group;
+extern struct unicast_group default_unicast_group;
 extern struct bt_bap_ep *snks[CONFIG_BT_MAX_CONN][CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT];
 extern struct bt_bap_ep *srcs[CONFIG_BT_MAX_CONN][CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT];
 extern struct named_lc3_preset default_sink_preset;
 extern struct named_lc3_preset default_source_preset;
 
-int bap_ac_create_unicast_group(const struct bap_unicast_ac_param *param,
-				struct shell_stream *snk_uni_streams[], size_t snk_cnt,
-				struct shell_stream *src_uni_streams[], size_t src_cnt);
-
-int cap_ac_unicast(const struct shell *sh, const struct bap_unicast_ac_param *param);
+int cap_ac_unicast(const struct shell *sh, const struct cap_unicast_ac_param *param);
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
 #endif /* CONFIG_BT_BAP_UNICAST */
 
