@@ -170,6 +170,13 @@ void z_sched_cpu_usage(uint8_t cpu_id, struct k_thread_runtime_stats *stats)
 }
 #endif /* CONFIG_SCHED_THREAD_USAGE_ALL */
 
+void z_sched_thread_reset_long_frame(struct k_thread *thread)
+{
+#ifdef CONFIG_THREAD_ANALYZER_LONG_FRAME_PER_INTERVAL
+	thread->base.usage.longest = 0;
+#endif
+}
+
 void z_sched_thread_usage(struct k_thread *thread,
 			  struct k_thread_runtime_stats *stats)
 {
