@@ -1,0 +1,25 @@
+# Copyright (c) 2025 COGNID Telematik GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Sensor simulator with async API and internal sensor FIFO.
+  Can be fed with test data which then can be queried with both Fetch + Get and Read + Decode APIs.
+  Also capable of sensor streaming.
+
+compatible: "zephyr,sensor-sim-async"
+
+include: [sensor-device.yaml, base.yaml]
+
+properties:
+  fifo_wm:
+    type: int
+    default: 16
+    description: |
+      Watermark of FIFO that triggers the FIFO_WM callback.
+      Default is half the default fifo capacity.
+
+  fifo_capacity:
+    type: int
+    default: 32
+    description: |
+      Capacity of simulated sensor FIFO. Default is 32 as this is enough for a simple test.
