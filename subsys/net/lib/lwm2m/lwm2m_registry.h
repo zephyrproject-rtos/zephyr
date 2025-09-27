@@ -210,7 +210,7 @@ struct lwm2m_time_series_resource {
 	/* Resource Path url */
 	struct lwm2m_obj_path path;
 	/* Ring buffer */
-	struct ring_buf rb;
+	struct ring_buffer rb;
 };
 
 #if defined(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)
@@ -219,7 +219,7 @@ struct lwm2m_time_series_resource {
 
 struct lwm2m_cache_read_entry {
 	struct lwm2m_time_series_resource *cache_data;
-	struct ring_buf_index original_rb_get;
+	ring_buffer_index_t original_rb_get;
 };
 
 struct lwm2m_cache_read_info {
