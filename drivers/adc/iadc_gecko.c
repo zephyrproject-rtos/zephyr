@@ -30,6 +30,7 @@ struct adc_gecko_channel_config {
 	IADC_CfgReference_t reference;
 	IADC_PosInput_t input_positive;
 	IADC_NegInput_t input_negative;
+	IADC_DigitalAveraging_t digital_averaging;
 	bool initialized;
 };
 
@@ -72,6 +73,8 @@ static void adc_gecko_set_config(const struct device *dev)
 	initAllConfigs.configs[0].analogGain = channel_config->gain;
 
 	initAllConfigs.configs[0].reference = channel_config->reference;
+
+	initAllConfigs.configs[0].digAvg = channel_config->digital_averaging;
 
 	IADC_init(iadc, &init, &initAllConfigs);
 
@@ -125,8 +128,8 @@ static int start_read(const struct device *dev, const struct adc_sequence *seque
 		return -EINVAL;
 	}
 
-	if (sequence->oversampling) {
-		LOG_ERR("Oversampling is not supported");
+	if (sequence->oversampling > iadcDigitalAverage16) {
+		LOG_ERR("Oversampling must be smaller");
 		return -EINVAL;
 	}
 
@@ -140,7 +143,10 @@ static int start_read(const struct device *dev, const struct adc_sequence *seque
 	channels = sequence->channels;
 	channel_count = 0;
 	while (channels) {
-		/* Iterate through all channels and check if they are initialized */
+		/*
+		 * Iterate through all channels, check if they are initialized, and update the
+		 * digital averaging ratio
+		 */
 		index = find_lsb_set(channels) - 1;
 		if (index >= GECKO_CHANNEL_COUNT) {
 			LOG_DBG("Requested channel index not available: %d", index);
@@ -153,6 +159,7 @@ static int start_read(const struct device *dev, const struct adc_sequence *seque
 		}
 		channel_count++;
 		channels &= ~BIT(index);
+		data->channel_config[index].digital_averaging = sequence->oversampling;
 	}
 
 	/* Check buffer size */
