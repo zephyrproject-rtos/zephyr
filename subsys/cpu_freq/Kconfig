@@ -8,8 +8,6 @@ config HAS_CPU_FREQ
 menuconfig CPU_FREQ
 	bool "CPU Frequency Scaling Subsystem"
 	select EXPERIMENTAL
-	depends on !SMP
-	depends on HAS_CPU_FREQ
 	help
 	  CPU Frequency scaling subsystem
 
@@ -25,6 +23,14 @@ config CPU_FREQ_INTERVAL_MS
 	help
 	  Controls the interval (in milliseconds) at which the CPU Frequency
 	  subsystem runs and evaluates the current policy.
+
+config CPU_FREQ_PER_CPU_SCALING
+	bool "Per-CPU frequency scaling"
+	default n
+	depends on SMP
+	help
+	  Enable per-CPU frequency scaling support. If disabled, setting the
+	  p-state will apply to the whole system instead of just the current CPU.
 
 choice CPU_FREQ_POLICY
 	prompt "CPU Frequency Scaling Policy"
@@ -42,5 +48,36 @@ config CPU_FREQ_POLICY_ON_DEMAND
 	select CPU_LOAD_METRIC
 
 endchoice # CPU_FREQ_POLICY
+
+choice CPU_FREQ_PSTATE_SET
+	prompt "Select method of setting CPU p-state"
+	default CPU_FREQ_PSTATE_SET_SOC if HAS_CPU_FREQ
+	default CPU_FREQ_PSTATE_SET_STUB
+	help
+	  The implementation used to set the CPU p-state.
+
+config CPU_FREQ_PSTATE_SET_STUB
+	bool "Stub p-state setter"
+	help
+	  A stub implementation that does nothing. This is useful for
+	  exercising the CPU frequency subsystem without actually
+	  changing the CPU frequency.
+
+config CPU_FREQ_PSTATE_SET_SOC
+	bool "SoC-specific p-state setter"
+	depends on HAS_CPU_FREQ
+	help
+	  A SoC-specific implementation that sets the CPU p-state using
+	  SoC-specific mechanisms. This requires the SoC to provide
+	  the necessary implementation of cpu_freq_pstate_set().
+
+config CPU_FREQ_PSTATE_SET_CUSTOM
+	bool "Custom p-state setter defined by the project"
+	help
+	  A custom implementation that sets the CPU p-state using
+	  project-specific mechanisms. This requires the project to provide
+	  the necessary implementation of cpu_freq_pstate_set().
+
+endchoice # CPU_FREQ_PSTATE_SET
 
 endif # CPU_FREQ
