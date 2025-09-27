@@ -16,7 +16,7 @@
 
 static int do_domctl(xen_domctl_t *domctl)
 {
-	domctl->interface_version = XEN_DOMCTL_INTERFACE_VERSION;
+	domctl->interface_version = CONFIG_XEN_DOMCTL_INTERFACE_VERSION;
 	return HYPERVISOR_domctl(domctl);
 }
 
@@ -105,7 +105,8 @@ int xen_domctl_getdomaininfo(int domid, xen_domctl_getdomaininfo_t *dom_info)
 	return 0;
 }
 
-int xen_domctl_get_paging_mempool_size(int domid, uint64_t *size_mb)
+#if CONFIG_XEN_DOMCTL_INTERFACE_VERSION >= 0x00000016
+int xen_domctl_get_paging_mempool_size(int domid, uint64_t *size)
 {
 	int rc;
 	xen_domctl_t domctl = {
@@ -118,21 +119,22 @@ int xen_domctl_get_paging_mempool_size(int domid, uint64_t *size_mb)
 		return rc;
 	}
 
-	*size_mb = domctl.u.paging_mempool.size;
+	*size = domctl.u.paging_mempool.size;
 
 	return 0;
 }
 
-int xen_domctl_set_paging_mempool_size(int domid, uint64_t size_mb)
+int xen_domctl_set_paging_mempool_size(int domid, uint64_t size)
 {
 	xen_domctl_t domctl = {
 		.cmd = XEN_DOMCTL_set_paging_mempool_size,
 		.domain = domid,
-		.u.paging_mempool.size = size_mb,
+		.u.paging_mempool.size = size,
 	};
 
 	return do_domctl(&domctl);
 }
+#endif
 
 int xen_domctl_max_mem(int domid, uint64_t max_memkb)
 {
@@ -273,15 +275,23 @@ int xen_domctl_max_vcpus(int domid, int max_vcpus)
 	return do_domctl(&domctl);
 }
 
-int xen_domctl_createdomain(int domid, struct xen_domctl_createdomain *config)
+int xen_domctl_createdomain(int *domid, struct xen_domctl_createdomain *config)
 {
-	xen_domctl_t domctl = {
-		.cmd = XEN_DOMCTL_createdomain,
-		.domain = domid,
-		.u.createdomain = *config,
-	};
+	int ret;
+	xen_domctl_t domctl;
 
-	return do_domctl(&domctl);
+	if (!domid || !config) {
+		return -EINVAL;
+	}
+
+	domctl.cmd = XEN_DOMCTL_createdomain,
+	domctl.domain = *domid,
+	domctl.u.createdomain = *config,
+
+	ret = do_domctl(&domctl);
+	*domid = domctl.domain;
+
+	return ret;
 }
 
 int xen_domctl_destroydomain(int domid)
@@ -303,4 +313,25 @@ int xen_domctl_cacheflush(int domid,  struct xen_domctl_cacheflush *cacheflush)
 	};
 
 	return do_domctl(&domctl);
+}
+
+int xen_domctl_getvcpu(int domid, uint32_t vcpu, struct xen_domctl_getvcpuinfo *info)
+{
+	int ret;
+	xen_domctl_t domctl = {
+		.cmd = XEN_DOMCTL_getvcpuinfo,
+		.domain = domid,
+		.u.getvcpuinfo.vcpu = vcpu,
+	};
+
+	if (!info) {
+		return -EINVAL;
+	}
+
+	ret = do_domctl(&domctl);
+	if (!ret) {
+		*info = domctl.u.getvcpuinfo;
+	}
+
+	return ret;
 }
