@@ -174,6 +174,13 @@ config WIFI_SILABS_SIWX91X_ENABLE_INSTANT_SCAN
 	  can perform an advanced scan without waiting for the periodic
 	  scan interval, enabling quicker detection of available networks.
 
+config WIFI_SILABS_SIWX91X_FIRMWARE_UPDATE
+	bool "Implementation of firmware update"
+	help
+	  Enable this option to allow to use of the Firmware update Processor using
+	  zephyr native stack APIs provided by the Network Co-Processor present on
+	  SiWx91x series.
+
 # Override the WIFI_MGMT_SCAN_SSID_FILT_MAX parameter for the Wi-Fi subsystem.
 # This device supports filtering scan results for only one SSID.
 config WIFI_MGMT_SCAN_SSID_FILT_MAX
