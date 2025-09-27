@@ -69,11 +69,20 @@ CREATE_FLAG(flag_operation_success);
 
 static void stream_configured(struct bt_bap_stream *stream, const struct bt_bap_qos_cfg_pref *pref)
 {
+	struct bt_conn *ep_conn;
+
 	printk("Configured stream %p\n", stream);
 
 	/* TODO: The preference should be used/taken into account when
 	 * setting the QoS
 	 */
+
+	ep_conn = bt_bap_ep_get_conn(stream->ep);
+	if (ep_conn == NULL || stream->conn != ep_conn) {
+		FAIL("Invalid conn from endpoint: %p", ep_conn);
+		return;
+	}
+	bt_conn_unref(ep_conn);
 
 	SET_FLAG(flag_stream_codec_configured);
 }
