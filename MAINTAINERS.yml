@@ -457,6 +457,7 @@ Bluetooth Classic:
     - MarkWangChinese
     - gzh-terry
     - makeshi
+    - chengkai15
   files:
     - doc/connectivity/bluetooth/shell/classic/a2dp.rst
     - subsys/bluetooth/common/
