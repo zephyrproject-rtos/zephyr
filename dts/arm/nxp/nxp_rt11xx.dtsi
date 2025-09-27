@@ -951,6 +951,22 @@
 			compatible = "zephyr,memory-region", "mmio-sram";
 			zephyr,memory-region = "OCRAM";
 			reg = <0x20200000 DT_SIZE_K(256)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			/* The M7 core accesses the M4 TCMs through the OCRAM alias.
+			 * Add an OCRAM alias region just for the M4 ITCM.  The M4
+			 * memory map:
+			 *	0x1FFE_0000 - 0x1FFF_FFFF: ITCM/RAM_L/sram0, OCRAM 0x2020_0000
+			 *	0x2000_0000 - 0x2001_FFFF: DTCM/RAM_U/sram1, OCRAM 0x2022_0000
+			 *
+			 * The M7 core can access this OCRAM alias for M4 ITCM and copy
+			 * the M4 image here.
+			 */
+			ocram_m4_itcm: ocram_m4_itcm@20200000 {
+				compatible = "mmio-sram";
+				reg = <0x20200000 DT_SIZE_K(128)>;
+			};
 		};
 
 		lpadc1: adc@40050000 {
