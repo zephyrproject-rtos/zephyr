@@ -62,11 +62,6 @@ static void goep_rfcomm_connected(struct bt_rfcomm_dlc *dlc)
 	goep->obex.rx.mtu = dlc->mtu;
 	goep->obex.tx.mtu = dlc->mtu;
 
-	/* Set MOPL of RX to MTU by default */
-	goep->obex.rx.mopl = dlc->mtu;
-	/* Set MOPL of TX to MTU by default to avoid the OBEX connect req cannot be sent. */
-	goep->obex.tx.mopl = dlc->mtu;
-
 	atomic_set(&goep->_state, BT_GOEP_TRANSPORT_CONNECTED);
 
 	err = bt_obex_transport_connected(&goep->obex);
@@ -186,8 +181,7 @@ static int goep_rfcomm_accept(struct bt_conn *conn, struct bt_rfcomm_server *ser
 		return err;
 	}
 
-	if (!goep || !goep->transport_ops || !goep->obex.server_ops ||
-	    !goep->obex.server_ops->connect || !goep->obex.server_ops->disconnect) {
+	if (goep == NULL || goep->transport_ops == NULL) {
 		LOG_DBG("Invalid parameter");
 		return -EINVAL;
 	}
@@ -263,8 +257,7 @@ int bt_goep_transport_rfcomm_connect(struct bt_conn *conn, struct bt_goep *goep,
 	uint32_t mtu;
 	uint32_t hdr_size;
 
-	if (!conn || !goep || !goep->transport_ops || !goep->obex.client_ops ||
-	    !goep->obex.client_ops->connect || !goep->obex.client_ops->disconnect) {
+	if (conn == NULL || goep == NULL || goep->transport_ops == NULL) {
 		LOG_DBG("Invalid parameter");
 		return -EINVAL;
 	}
@@ -342,6 +335,9 @@ int bt_goep_transport_rfcomm_disconnect(struct bt_goep *goep)
 /* L2CAP Server list */
 static sys_slist_t goep_l2cap_server = SYS_SLIST_STATIC_INIT(&goep_l2cap_server);
 
+NET_BUF_POOL_DEFINE(goep_rx_pool, BT_BUF_ACL_RX_COUNT, BT_BUF_ACL_SIZE(CONFIG_BT_BUF_ACL_RX_SIZE),
+		    CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
+
 static int goep_l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
 	struct bt_goep *goep = CONTAINER_OF(chan, struct bt_goep, _transport.chan.chan);
@@ -371,11 +367,6 @@ static void goep_l2cap_connected(struct bt_l2cap_chan *chan)
 
 	goep->obex.rx.mtu = goep->_transport.chan.rx.mtu;
 	goep->obex.tx.mtu = goep->_transport.chan.tx.mtu;
-
-	/* Set MOPL of RX to MTU by default */
-	goep->obex.rx.mopl = goep->_transport.chan.rx.mtu;
-	/* Set MOPL of TX to MTU by default to avoid the OBEX connect req cannot be sent. */
-	goep->obex.tx.mopl = goep->_transport.chan.tx.mtu;
 
 	atomic_set(&goep->_state, BT_GOEP_TRANSPORT_CONNECTED);
 
@@ -410,7 +401,20 @@ static void goep_l2cap_disconnected(struct bt_l2cap_chan *chan)
 	}
 }
 
+static struct net_buf *l2cap_alloc_buf(struct bt_l2cap_chan *chan)
+{
+	struct net_buf *buf;
+
+	buf = net_buf_alloc(&goep_rx_pool, K_FOREVER);
+	if (buf == NULL) {
+		LOG_ERR("Failed to allocate buffer");
+	}
+
+	return buf;
+}
+
 static const struct bt_l2cap_chan_ops goep_l2cap_ops = {
+	.alloc_buf = l2cap_alloc_buf,
 	.recv = goep_l2cap_recv,
 	.connected = goep_l2cap_connected,
 	.disconnected = goep_l2cap_disconnected,
@@ -485,8 +489,7 @@ static int goep_l2cap_accept(struct bt_conn *conn, struct bt_l2cap_server *serve
 		return err;
 	}
 
-	if (!goep || !goep->transport_ops || !goep->obex.server_ops ||
-	    !goep->obex.server_ops->connect || !goep->obex.server_ops->disconnect) {
+	if (goep == NULL || goep->transport_ops == NULL) {
 		LOG_DBG("Invalid parameter");
 		return -EINVAL;
 	}
@@ -566,8 +569,7 @@ int bt_goep_transport_l2cap_connect(struct bt_conn *conn, struct bt_goep *goep, 
 	uint32_t mtu;
 	uint32_t hdr_size;
 
-	if (!conn || !goep || !goep->transport_ops || !goep->obex.client_ops ||
-	    !goep->obex.client_ops->connect || !goep->obex.client_ops->disconnect) {
+	if (conn == NULL || goep == NULL || goep->transport_ops == NULL) {
 		LOG_DBG("Invalid parameter");
 		return -EINVAL;
 	}
