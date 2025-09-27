@@ -46,9 +46,11 @@ static const char test_str_all_tx_bufs[] =
 ;
 
 #define MY_IPV4_ADDR "127.0.0.1"
+#define MY_IPV4_MAPPED_ADDR "::ffff:127.0.0.1"
 #define MY_IPV6_ADDR "::1"
 #define MY_MCAST_IPV4_ADDR "224.0.0.1"
 #define MY_MCAST_IPV6_ADDR "ff01::1"
+#define ANY_IPV6_ADDR "::"
 
 #define ANY_PORT 0
 #define SERVER_PORT 4242
@@ -3584,6 +3586,133 @@ ZTEST_USER(net_socket_udp, test_45_udp_shutdown_recv)
 	zassert_equal(rv, 0, "close failed");
 	rv = zsock_close(server_sock);
 	zassert_equal(rv, 0, "close failed");
+}
+
+enum ipv4_mapped_to_ipv6_send_mode {
+	IPV4_MAPPED_TO_IPV6_SENDTO,
+	IPV4_MAPPED_TO_IPV6_SENDMSG,
+};
+
+void test_ipv4_mapped_to_ipv6_send_common(enum ipv4_mapped_to_ipv6_send_mode test_mode)
+{
+	int off = 0;
+	int ret;
+	int sock_s, sock_c;
+	socklen_t addrlen;
+	struct sockaddr_in addr_c4 = { 0 };
+	struct sockaddr_in addr_s4 = { 0 };
+	struct sockaddr_in6 addr_s6 = { 0 };
+	struct sockaddr_in6 addr_recv = { 0 };
+	struct in6_addr mapped_address = { 0 };
+
+	/* Create IPv4 client socket */
+	prepare_sock_udp_v4(MY_IPV4_ADDR, CLIENT_PORT, &sock_c, &addr_c4);
+	/* Create IPv6 server socket */
+	prepare_sock_udp_v6(ANY_IPV6_ADDR, SERVER_PORT, &sock_s, &addr_s6);
+
+	/* Prepare server's IPv4 address and expected mapped address */
+	addr_s4.sin_family = AF_INET;
+	addr_s4.sin_port = htons(SERVER_PORT);
+	ret = zsock_inet_pton(AF_INET, MY_IPV4_ADDR, &addr_s4.sin_addr);
+	zassert_equal(ret, 1, "inet_pton failed");
+
+	ret = zsock_inet_pton(AF_INET6, MY_IPV4_MAPPED_ADDR, &mapped_address);
+	zassert_equal(ret, 1, "inet_pton failed");
+
+	/* Bind the client socket to ensure we check the correct address */
+	ret = zsock_bind(sock_c, (struct sockaddr *)&addr_c4, sizeof(addr_c4));
+	zassert_ok(ret, "bind failed, %d", errno);
+
+	/* Turn off IPV6_V6ONLY on the server socket, so the socket becomes
+	 * dual-stack.
+	 */
+	ret = zsock_setsockopt(sock_s, IPPROTO_IPV6, IPV6_V6ONLY, &off, sizeof(off));
+	zassert_ok(ret, "setsockopt failed, %d", errno);
+
+	/* And bind it to ANY address */
+	ret = zsock_bind(sock_s, (struct sockaddr *)&addr_s6, sizeof(addr_s6));
+	zassert_ok(ret, "bind failed, %d", errno);
+
+	/* Send datagram from IPv4 client socket to dual-stack server */
+	ret = zsock_sendto(sock_c, TEST_STR_SMALL, sizeof(TEST_STR_SMALL) - 1, 0,
+			   (struct sockaddr *)&addr_s4, sizeof(addr_s4));
+	zexpect_equal(ret, sizeof(TEST_STR_SMALL) - 1,
+		      "invalid send len (was %d expected %d) (%d)",
+		      ret, sizeof(TEST_STR_SMALL) - 1, errno);
+
+	/* Give the packet a chance to go through the net stack */
+	k_msleep(10);
+
+	/* Server should get the datagram, with IPv4-to-IPv6 mapped address */
+	addrlen = sizeof(addr_recv);
+	clear_buf(rx_buf);
+	ret = zsock_recvfrom(sock_s, rx_buf, sizeof(rx_buf), ZSOCK_MSG_DONTWAIT,
+			     (struct sockaddr *)&addr_recv, &addrlen);
+	zassert_true(ret >= 0, "recvfrom fail (%d)", errno);
+	zassert_equal(ret, sizeof(TEST_STR_SMALL) - 1, "unexpected received bytes");
+	zassert_mem_equal(rx_buf, BUF_AND_SIZE(TEST_STR_SMALL), "wrong data");
+	zassert_equal(addrlen, sizeof(struct sockaddr_in6), "unexpected addrlen");
+	zassert_equal(addr_recv.sin6_family, AF_INET6,
+		      "IPv4-to-IPv6 mapped address should be AF_INET6");
+	zassert_equal(addr_recv.sin6_port, htons(CLIENT_PORT), "invalid port");
+	zassert_mem_equal(&addr_recv.sin6_addr, &mapped_address,
+			  sizeof(mapped_address), "invalid mapped address");
+
+	/* Echo data back */
+	if (test_mode == IPV4_MAPPED_TO_IPV6_SENDTO) {
+		ret = zsock_sendto(sock_s, TEST_STR_SMALL, sizeof(TEST_STR_SMALL) - 1, 0,
+				   (struct sockaddr *)&addr_recv, addrlen);
+		zexpect_equal(ret, sizeof(TEST_STR_SMALL) - 1,
+			      "invalid send len (was %d expected %d) (%d)",
+			      ret, sizeof(TEST_STR_SMALL) - 1, errno);
+	} else if (test_mode == IPV4_MAPPED_TO_IPV6_SENDMSG) {
+		struct msghdr msg = { 0 };
+		struct iovec io_vector[1] = { 0 };
+
+		io_vector[0].iov_base = TEST_STR_SMALL;
+		io_vector[0].iov_len = strlen(TEST_STR_SMALL);
+
+		msg.msg_iov = io_vector;
+		msg.msg_iovlen = 1;
+		msg.msg_name = &addr_recv;
+		msg.msg_namelen = addrlen;
+
+		ret = zsock_sendmsg(sock_s, &msg, 0);
+		zexpect_equal(ret, sizeof(TEST_STR_SMALL) - 1,
+			      "invalid send len (was %d expected %d) (%d)",
+			      ret, sizeof(TEST_STR_SMALL) - 1, errno);
+	} else {
+		zassert_unreachable("invalid test mode");
+	}
+
+	/* Give the packet a chance to go through the net stack */
+	k_msleep(10);
+
+	/* Client should get the echoed datagram */
+	clear_buf(rx_buf);
+	ret = zsock_recv(sock_c, rx_buf, sizeof(rx_buf), ZSOCK_MSG_DONTWAIT);
+	zassert_true(ret >= 0, "recvfrom fail (%d)", errno);
+	zassert_equal(ret, sizeof(TEST_STR_SMALL) - 1, "unexpected received bytes");
+	zassert_mem_equal(rx_buf, BUF_AND_SIZE(TEST_STR_SMALL), "wrong data");
+
+	ret = zsock_close(sock_c);
+	zassert_ok(ret, "close failed, %d", errno);
+	ret = zsock_close(sock_s);
+	zassert_ok(ret, "close failed, %d", errno);
+}
+
+ZTEST(net_socket_udp, test_46_ipv4_mapped_to_ipv6_sendto)
+{
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_IPV4_MAPPING_TO_IPV6);
+
+	test_ipv4_mapped_to_ipv6_send_common(IPV4_MAPPED_TO_IPV6_SENDTO);
+}
+
+ZTEST(net_socket_udp, test_47_ipv4_mapped_to_ipv6_sendmsg)
+{
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_IPV4_MAPPING_TO_IPV6);
+
+	test_ipv4_mapped_to_ipv6_send_common(IPV4_MAPPED_TO_IPV6_SENDMSG);
 }
 
 static void after(void *arg)
