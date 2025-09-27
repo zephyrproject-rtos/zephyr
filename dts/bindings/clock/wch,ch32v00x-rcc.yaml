@@ -1,0 +1,35 @@
+# Copyright (c) 2024 Michael Hope
+# SPDX-License-Identifier: Apache-2.0
+
+description: WCH CH32V00x Reset and Clock Control (RCC)
+
+compatible: "wch,ch32v00x-rcc"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  "#clock-cells":
+    const: 1
+
+  hb-prescaler:
+    type: int
+    required: true
+    description: |
+      Prescaler for the HB HCLK
+    enum:
+      - 1 # Off
+      - 2 # /2
+      - 3 # /3
+      - 4 # /4
+      - 5 # /5
+      - 6 # /6
+      - 7 # /7
+      - 8 # /8
+      - 16 # /16
+      - 32 # /32
+      - 64 # /64
+      - 128 # /128
+      - 256 # /256
+
+clock-cells:
+  - id
