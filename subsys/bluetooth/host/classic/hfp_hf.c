@@ -3410,6 +3410,10 @@ static int bcs_finish(struct at_client *hf_at, enum at_result result,
 
 	LOG_DBG("BCS (result %d) on %p", result, hf);
 
+	if (result == AT_RESULT_OK) {
+		hf->active_codec_id = hf->neg_codec_id;
+	}
+
 	return 0;
 }
 #endif /* CONFIG_BT_HFP_HF_CODEC_NEG */
@@ -3417,6 +3421,8 @@ static int bcs_finish(struct at_client *hf_at, enum at_result result,
 int bt_hfp_hf_select_codec(struct bt_hfp_hf *hf, uint8_t codec_id)
 {
 #if defined(CONFIG_BT_HFP_HF_CODEC_NEG)
+	int err;
+
 	LOG_DBG("");
 
 	if (!hf) {
@@ -3434,7 +3440,14 @@ int bt_hfp_hf_select_codec(struct bt_hfp_hf *hf, uint8_t codec_id)
 		return -ESRCH;
 	}
 
-	return hfp_hf_send_cmd(hf, NULL, bcs_finish, "AT+BCS=%d", codec_id);
+	err = hfp_hf_send_cmd(hf, NULL, bcs_finish, "AT+BCS=%d", codec_id);
+	if (err < 0) {
+		LOG_ERR("Fail to select codec on %p", hf);
+		return err;
+	}
+
+	hf->neg_codec_id = codec_id;
+	return 0;
 #else
 	return -ENOTSUP;
 #endif /* CONFIG_BT_HFP_HF_CODEC_NEG */
@@ -4117,6 +4130,7 @@ static struct bt_hfp_hf *hfp_hf_create(struct bt_conn *conn)
 
 	/* Set supported codec ids */
 	hf->hf_codec_ids = BT_HFP_HF_SUPPORTED_CODEC_IDS;
+	hf->active_codec_id = BT_HFP_HF_CODEC_CVSD;
 
 	k_fifo_init(&hf->tx_pending);
 
@@ -4163,6 +4177,43 @@ static void hfp_hf_sco_disconnected(struct bt_sco_chan *chan, uint8_t reason)
 	}
 }
 
+static int hfp_hf_set_voice_setting(struct bt_hfp_hf *hf)
+{
+	uint16_t air_coding_fmt;
+
+	switch (hf->active_codec_id) {
+	case BT_HFP_HF_CODEC_CVSD:
+		air_coding_fmt = BT_HCI_VOICE_SETTING_AIR_CODING_FMT_CVSD;
+		break;
+#if defined(CONFIG_BT_HFP_HF_CODEC_NEG)
+	case BT_HFP_HF_CODEC_MSBC:
+		if (!IS_ENABLED(CONFIG_BT_HFP_HF_CODEC_MSBC)) {
+			LOG_ERR("mSBC is not enabled");
+			return -EINVAL;
+		}
+		air_coding_fmt = BT_HCI_VOICE_SETTING_AIR_CODING_FMT_TRANSPARENT;
+		break;
+	case BT_HFP_HF_CODEC_LC3_SWB:
+		if (!IS_ENABLED(CONFIG_BT_HFP_HF_CODEC_LC3_SWB)) {
+			LOG_ERR("LC3 SWB is not enabled");
+			return -EINVAL;
+		}
+		air_coding_fmt = BT_HCI_VOICE_SETTING_AIR_CODING_FMT_TRANSPARENT;
+		break;
+#endif /* CONFIG_BT_HFP_HF_CODEC_NEG */
+	default:
+		LOG_ERR("Unsupported codec ID %u", hf->active_codec_id);
+		return -EINVAL;
+	}
+
+	hf->chan.voice_setting = BT_HCI_VOICE_SETTINGS(
+		air_coding_fmt, BT_HCI_VOICE_SETTING_PCM_BIT_POS_DEFAULT,
+		BT_HCI_VOICE_SETTING_SAMPLE_SIZE_16_BITS,
+		BT_HCI_VOICE_SETTING_DATA_FMT_2_COMPLEMENT, BT_HCI_VOICE_SETTING_CODING_FMT_LINEAR);
+
+	return 0;
+}
+
 static int bt_hfp_hf_sco_accept(const struct bt_sco_accept_info *info,
 		      struct bt_sco_chan **chan)
 {
@@ -4172,6 +4223,7 @@ static int bt_hfp_hf_sco_accept(const struct bt_sco_accept_info *info,
 	};
 	size_t index;
 	struct bt_hfp_hf *hf;
+	int err;
 
 	LOG_DBG("conn %p", info->acl);
 
@@ -4185,6 +4237,12 @@ static int bt_hfp_hf_sco_accept(const struct bt_sco_accept_info *info,
 	}
 
 	hf->chan.ops = &ops;
+
+	err = hfp_hf_set_voice_setting(hf);
+	if (err < 0) {
+		LOG_ERR("Fail to set voice setting");
+		return err;
+	}
 
 	*chan = &hf->chan;
 
