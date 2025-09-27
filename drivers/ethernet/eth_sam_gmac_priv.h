@@ -203,8 +203,8 @@ enum queue_idx {
 #error "GMAC_MAX_FRAME_SIZE is invalid, fix it at device tree."
 #endif
 
-/** Minimal ring buffer implementation */
-struct ring_buffer {
+/** Minimal queue buffer implementation */
+struct simple_queue {
 	uint32_t *buf;
 	uint16_t len;
 	uint16_t head;
@@ -238,9 +238,9 @@ struct gmac_queue {
 	struct net_buf **rx_frag_list;
 
 #if GMAC_MULTIPLE_TX_PACKETS == 1
-	struct ring_buffer tx_frag_list;
+	struct simple_queue tx_frag_list;
 #if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
-	struct ring_buffer tx_frames;
+	struct simple_queue tx_frames;
 #endif
 #endif
 

@@ -173,7 +173,6 @@ config IPM_CONSOLE_SENDER
 
 config IPM_CONSOLE_RECEIVER
 	bool "Inter-processor Mailbox console receiver"
-	select RING_BUFFER
 	help
 	  Enable the receiving side of IPM console
 

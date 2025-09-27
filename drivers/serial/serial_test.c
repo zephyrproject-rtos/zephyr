@@ -23,8 +23,8 @@ LOG_MODULE_REGISTER(mock_serial, CONFIG_LOG_DEFAULT_LEVEL);
 
 #define DT_DRV_COMPAT vnd_serial
 struct serial_vnd_data {
-	struct ring_buf *written;
-	struct ring_buf *read_queue;
+	struct ring_buffer *written;
+	struct ring_buffer *read_queue;
 	serial_vnd_write_cb_t callback;
 	void *callback_data;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -266,7 +266,7 @@ uint32_t serial_vnd_peek_out_data(const struct device *dev, unsigned char *out_d
 	if (data == NULL || data->written == NULL) {
 		return -ENOTSUP;
 	}
-	return ring_buf_peek(data->written, out_data, size);
+	return ring_buffer_peek(data->written, out_data, size);
 }
 
 

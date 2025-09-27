@@ -18,8 +18,6 @@
 
 static void ipm_console_thread(void *arg1, void *arg2, void *arg3)
 {
-	uint8_t size32;
-	uint16_t type;
 	int ret, key;
 	const struct ipm_console_receiver_config_info *config_info;
 	struct ipm_console_receiver_runtime_data *driver_data;
@@ -28,19 +26,17 @@ static void ipm_console_thread(void *arg1, void *arg2, void *arg3)
 	driver_data = (struct ipm_console_receiver_runtime_data *)arg1;
 	config_info = (const struct ipm_console_receiver_config_info *)arg2;
 	ARG_UNUSED(arg3);
-	size32 = 0U;
 	pos = 0;
 
 	while (1) {
 		k_sem_take(&driver_data->sem, K_FOREVER);
 
-		ret = ring_buf_item_get(&driver_data->rb, &type,
-					(uint8_t *)&config_info->line_buf[pos],
-					NULL, &size32);
-		if (ret) {
+		ret = ring_buffer_read(&driver_data->rb, (uint8_t *)&config_info->line_buf[pos],
+				sizeof(uint32_t));
+
+		if (ret < sizeof(uint32_t)) {
 			/* Shouldn't ever happen... */
 			printk("ipm console ring buffer error: %d\n", ret);
-			size32 = 0U;
 			continue;
 		}
 
@@ -73,7 +69,7 @@ static void ipm_console_thread(void *arg1, void *arg2, void *arg3)
 		 * clearing the channel_disabled flag.
 		 */
 		if (driver_data->channel_disabled &&
-		    ring_buf_item_space_get(&driver_data->rb)) {
+		    sizeof(uint32_t) <= ring_buffer_space(&driver_data->rb)) {
 			key = irq_lock();
 			ipm_set_enabled(driver_data->ipm_device, 1);
 			driver_data->channel_disabled = 0;
@@ -92,8 +88,8 @@ static void ipm_console_receive_callback(const struct device *ipm_dev,
 	ARG_UNUSED(data);
 
 	/* Should always be at least one free buffer slot */
-	ret = ring_buf_item_put(&driver_data->rb, 0, id, NULL, 0);
-	__ASSERT(ret == 0, "Failed to insert data into ring buffer");
+	ret = ring_buffer_write(&driver_data->rb, (uint8_t *)&id, sizeof(id));
+	__ASSERT(ret == sizeof(id), "Failed to insert data into ring buffer");
 	k_sem_give(&driver_data->sem);
 
 	/* If the buffer is now full, disable future interrupts for this channel
@@ -104,7 +100,7 @@ static void ipm_console_receive_callback(const struct device *ipm_dev,
 	 * call with the wait flag enabled.  It blocks until the receiver side
 	 * re-enables the channel and consumes the data.
 	 */
-	if (ring_buf_item_space_get(&driver_data->rb) == 0) {
+	if (ring_buffer_space(&driver_data->rb) < sizeof(uint32_t)) {
 		ipm_set_enabled(ipm_dev, 0);
 		driver_data->channel_disabled = 1;
 	}
@@ -135,8 +131,8 @@ int ipm_console_receiver_init(const struct device *d)
 	driver_data->ipm_device = ipm;
 	driver_data->channel_disabled = 0;
 	k_sem_init(&driver_data->sem, 0, K_SEM_MAX_LIMIT);
-	ring_buf_item_init(&driver_data->rb, config_info->rb_size32,
-			   config_info->ring_buf_data);
+	ring_buffer_init(&driver_data->rb, (uint8_t *)config_info->ring_buf_data,
+			config_info->rb_size32 * sizeof(uint32_t));
 
 	ipm_register_callback(ipm, ipm_console_receive_callback, driver_data);
 
