@@ -25,7 +25,7 @@ struct uart_bridge_config {
 
 struct uart_bridge_peer_data {
 	uint8_t buf[RING_BUF_SIZE];
-	struct ring_buf rb;
+	struct ring_buffer rb;
 	bool paused;
 };
 
@@ -107,31 +107,26 @@ static void uart_bridge_handle_rx(const struct device *dev,
 	int rb_len, recv_len;
 	int ret;
 
-	if (ring_buf_space_get(&own_data->rb) < RING_BUF_FULL_THRESHOLD) {
+	if (ring_buffer_space(&own_data->rb) < RING_BUF_FULL_THRESHOLD) {
 		LOG_DBG("%s: buffer full: pause", dev->name);
 		uart_irq_rx_disable(dev);
 		own_data->paused = true;
 		return;
 	}
 
-	rb_len = ring_buf_put_claim(&own_data->rb, &recv_buf, RING_BUF_SIZE);
+	rb_len = ring_buffer_write_ptr(&own_data->rb, &recv_buf);
 	if (rb_len == 0) {
-		LOG_WRN("%s: ring_buf full", dev->name);
+		LOG_WRN("%s: ring_buffer full", dev->name);
 		return;
 	}
 
 	recv_len = uart_fifo_read(dev, recv_buf, rb_len);
 	if (recv_len < 0) {
-		ring_buf_put_finish(&own_data->rb, 0);
 		LOG_ERR("%s: rx error: %d", dev->name, recv_len);
 		return;
 	}
 
-	ret = ring_buf_put_finish(&own_data->rb, recv_len);
-	if (ret < 0) {
-		LOG_ERR("%s: ring_buf_put_finish error: %d", dev->name, rb_len);
-		return;
-	}
+	ring_buffer_commit(&own_data->rb, recv_len);
 
 	uart_irq_tx_enable(peer_dev);
 }
@@ -151,7 +146,7 @@ static void uart_bridge_handle_tx(const struct device *dev,
 	int rb_len, sent_len;
 	int ret;
 
-	rb_len = ring_buf_get_claim(&peer_data->rb, &send_buf, RING_BUF_SIZE);
+	rb_len = ring_buffer_read_ptr(&peer_data->rb, &send_buf);
 	if (rb_len == 0) {
 		LOG_DBG("%s: buffer empty, disable tx irq", dev->name);
 		uart_irq_tx_disable(dev);
@@ -160,19 +155,14 @@ static void uart_bridge_handle_tx(const struct device *dev,
 
 	sent_len = uart_fifo_fill(dev, send_buf, rb_len);
 	if (sent_len < 0) {
-		ring_buf_get_finish(&peer_data->rb, 0);
 		LOG_ERR("%s: tx error: %d", dev->name, sent_len);
 		return;
 	}
 
-	ret = ring_buf_get_finish(&peer_data->rb, sent_len);
-	if (ret < 0) {
-		LOG_ERR("ring_buf_get_finish error: %d", ret);
-		return;
-	}
+	ring_buffer_consume(&peer_data->rb, sent_len);
 
 	if (peer_data->paused &&
-	    ring_buf_space_get(&peer_data->rb) > RING_BUF_FULL_THRESHOLD) {
+	    ring_buffer_space(&peer_data->rb) > RING_BUF_FULL_THRESHOLD) {
 		LOG_DBG("%s: buffer free: resume", dev->name);
 		uart_irq_rx_enable(peer_dev);
 		peer_data->paused = false;
@@ -225,8 +215,8 @@ static int uart_bridge_init(const struct device *dev)
 {
 	struct uart_bridge_data *data = dev->data;
 
-	ring_buf_init(&data->peer[0].rb, RING_BUF_SIZE, data->peer[0].buf);
-	ring_buf_init(&data->peer[1].rb, RING_BUF_SIZE, data->peer[1].buf);
+	ring_buffer_init(&data->peer[0].rb, data->peer[0].buf, RING_BUF_SIZE);
+	ring_buffer_init(&data->peer[1].rb, data->peer[1].buf, RING_BUF_SIZE);
 
 	return pm_device_driver_init(dev, uart_bridge_pm_action);
 }
