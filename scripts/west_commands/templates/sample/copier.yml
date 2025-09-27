@@ -1,0 +1,45 @@
+_jinja_extensions:
+  - copier_templates_extensions.TemplateExtensionLoader
+  - ../extensions/context_hook.py:ZephyrContextHook
+
+_tasks:
+  - "echo"
+  - "echo 🎉 Code sample '{{ sample_name }}' is now available in {{ _copier_conf.dst_path }}/{{ sample_name }}"
+  - "echo 'You can build it with the following command:'"
+  - "echo 'west build -b qemu_x86 {{ _copier_conf.dst_path }}/{{ sample_name }}'"
+
+sample_name:
+  type: str
+  help: "Name of the code sample? (directory name under samples/)"
+
+reference_board:
+  type: str
+  help: |
+    Which board should be used as reference for the code sample?
+       It will be mentioned in the README.rst file and used as the default integration
+       platform for the tests.
+  choices: ["native_sim", "qemu_x86", "other"]
+
+reference_board_other:
+  type: str
+  when: "{{ reference_board == 'other' }}"
+  help: "Board name"
+  validator: >-
+    {% if reference_board_other not in valid_boards %}
+    Invalid board name
+    {% endif %}
+
+category:
+  type: str
+  help: "Category of the code sample" # this is not used at the moment, just here for testing purposes
+  choices: "{{ categories }}"
+
+options:
+  type: str
+  help: "Selection options you want to enable for the sample"
+  multiselect: true
+  default: '["CONFIG_LOG","CONFIG_CONSOLE"]'
+  choices:
+    Logging: CONFIG_LOG
+    Console: CONFIG_CONSOLE
+    Shell: CONFIG_SHELL
