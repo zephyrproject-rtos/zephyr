@@ -185,6 +185,12 @@
 	clock-frequency = <DT_FREQ_M(10)>;
 };
 
+&pit64b1 {
+	top-alarm;
+	prescaler-period = <15>;
+	status = "okay";
+};
+
 &sdmmc0 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_sdmmc0_default>;
