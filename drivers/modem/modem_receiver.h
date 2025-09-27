@@ -25,7 +25,7 @@ struct mdm_receiver_context {
 	const struct device *uart_dev;
 
 	/* rx data */
-	struct ring_buf rx_rb;
+	struct ring_buffer rx_rb;
 	struct k_sem rx_sem;
 
 	/* modem data */

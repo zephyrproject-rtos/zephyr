@@ -319,7 +319,7 @@ static void modem_ppp_process_received_byte(struct modem_ppp *ppp, uint8_t byte)
 #if CONFIG_MODEM_STATS
 static uint32_t get_transmit_buf_length(struct modem_ppp *ppp)
 {
-	return ring_buf_size_get(&ppp->transmit_rb);
+	return ring_buffer_size(&ppp->transmit_rb);
 }
 
 static void advertise_transmit_buf_stats(struct modem_ppp *ppp)
@@ -361,7 +361,7 @@ static void modem_ppp_send_handler(struct k_work *item)
 	struct modem_ppp *ppp = CONTAINER_OF(item, struct modem_ppp, send_work);
 	uint8_t byte;
 	uint8_t *reserved;
-	uint32_t reserved_size;
+	uint32_t max_read_size;
 	int ret;
 
 	if (ppp->tx_pkt == NULL) {
@@ -375,10 +375,10 @@ static void modem_ppp_send_handler(struct k_work *item)
 		}
 
 		/* Fill transmit ring buffer */
-		while (ring_buf_space_get(&ppp->transmit_rb) > 0) {
+		while (ring_buffer_space(&ppp->transmit_rb) > 0) {
 			byte = modem_ppp_wrap_net_pkt_byte(ppp);
 
-			ring_buf_put(&ppp->transmit_rb, &byte, 1);
+			ring_buffer_write(&ppp->transmit_rb, &byte, 1);
 
 			if (ppp->transmit_state == MODEM_PPP_TRANSMIT_STATE_IDLE) {
 				net_pkt_unref(ppp->tx_pkt);
@@ -392,18 +392,17 @@ static void modem_ppp_send_handler(struct k_work *item)
 	advertise_transmit_buf_stats(ppp);
 #endif
 
-	while (!ring_buf_is_empty(&ppp->transmit_rb)) {
-		reserved_size = ring_buf_get_claim(&ppp->transmit_rb, &reserved, UINT32_MAX);
+	while (!ring_buffer_empty(&ppp->transmit_rb)) {
+		max_read_size = ring_buffer_read_ptr(&ppp->transmit_rb, &reserved);
 
-		ret = modem_pipe_transmit(ppp->pipe, reserved, reserved_size);
+		ret = modem_pipe_transmit(ppp->pipe, reserved, max_read_size);
 		if (ret < 0) {
-			ring_buf_get_finish(&ppp->transmit_rb, 0);
 			break;
 		}
 
-		ring_buf_get_finish(&ppp->transmit_rb, (uint32_t)ret);
+		ring_buffer_consume(&ppp->transmit_rb, (uint32_t)ret);
 
-		if (ret < reserved_size) {
+		if (ret < max_read_size) {
 			break;
 		}
 	}
@@ -599,7 +598,7 @@ int modem_ppp_init_internal(const struct device *dev)
 	struct modem_ppp *ppp = (struct modem_ppp *)dev->data;
 
 	atomic_set(&ppp->state, 0);
-	ring_buf_init(&ppp->transmit_rb, ppp->buf_size, ppp->transmit_buf);
+	ring_buffer_init(&ppp->transmit_rb, ppp->transmit_buf, ppp->buf_size);
 	k_work_init(&ppp->send_work, modem_ppp_send_handler);
 	k_work_init(&ppp->process_work, modem_ppp_process_handler);
 	k_fifo_init(&ppp->tx_pkt_fifo);

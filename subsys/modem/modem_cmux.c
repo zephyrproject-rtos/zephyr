@@ -171,12 +171,12 @@ static uint32_t modem_cmux_get_receive_buf_size(struct modem_cmux *cmux)
 
 static uint32_t modem_cmux_get_transmit_buf_length(struct modem_cmux *cmux)
 {
-	return ring_buf_size_get(&cmux->transmit_rb);
+	return ring_buffer_size(&cmux->transmit_rb);
 }
 
 static uint32_t modem_cmux_get_transmit_buf_size(struct modem_cmux *cmux)
 {
-	return ring_buf_capacity_get(&cmux->transmit_rb);
+	return ring_buffer_capacity(&cmux->transmit_rb);
 }
 
 static void modem_cmux_init_buf_stats(struct modem_cmux *cmux)
@@ -284,7 +284,7 @@ static uint16_t modem_cmux_transmit_frame(struct modem_cmux *cmux,
 	uint16_t data_len;
 	uint16_t buf_idx;
 
-	space = ring_buf_space_get(&cmux->transmit_rb) - MODEM_CMUX_HEADER_SIZE;
+	space = ring_buffer_space(&cmux->transmit_rb) - MODEM_CMUX_HEADER_SIZE;
 	data_len = MIN(space, frame->data_len);
 	data_len = MIN(data_len, CONFIG_MODEM_CMUX_MTU);
 
@@ -318,15 +318,15 @@ static uint16_t modem_cmux_transmit_frame(struct modem_cmux *cmux,
 	}
 
 	/* Frame header */
-	ring_buf_put(&cmux->transmit_rb, buf, buf_idx);
+	ring_buffer_write(&cmux->transmit_rb, buf, buf_idx);
 
 	/* Data */
-	ring_buf_put(&cmux->transmit_rb, frame->data, data_len);
+	ring_buffer_write(&cmux->transmit_rb, frame->data, data_len);
 
 	/* FCS and EOF will be put on the same call */
 	buf[0] = fcs;
 	buf[1] = MODEM_CMUX_SOF;
-	ring_buf_put(&cmux->transmit_rb, buf, 2);
+	ring_buffer_write(&cmux->transmit_rb, buf, 2);
 	modem_work_schedule(&cmux->transmit_work, K_NO_WAIT);
 	return data_len;
 }
@@ -338,7 +338,7 @@ static bool modem_cmux_transmit_cmd_frame(struct modem_cmux *cmux,
 	struct modem_cmux_command *command;
 
 	k_mutex_lock(&cmux->transmit_rb_lock, K_FOREVER);
-	space = ring_buf_space_get(&cmux->transmit_rb);
+	space = ring_buffer_space(&cmux->transmit_rb);
 
 	if (space < MODEM_CMUX_CMD_FRAME_SIZE_MAX) {
 		k_mutex_unlock(&cmux->transmit_rb_lock);
@@ -369,7 +369,7 @@ static int16_t modem_cmux_transmit_data_frame(struct modem_cmux *cmux,
 		return 0;
 	}
 
-	space = ring_buf_space_get(&cmux->transmit_rb);
+	space = ring_buffer_space(&cmux->transmit_rb);
 
 	/*
 	 * One command frame is reserved for command channel, and we shall prefer
@@ -682,7 +682,7 @@ static void modem_cmux_on_dlci_frame_ua(struct modem_cmux_dlci *dlci)
 		modem_pipe_notify_opened(&dlci->pipe);
 		k_work_cancel_delayable(&dlci->open_work);
 		k_mutex_lock(&dlci->receive_rb_lock, K_FOREVER);
-		ring_buf_reset(&dlci->receive_rb);
+		ring_buffer_reset(&dlci->receive_rb);
 		k_mutex_unlock(&dlci->receive_rb_lock);
 		break;
 
@@ -710,7 +710,7 @@ static void modem_cmux_on_dlci_frame_uih(struct modem_cmux_dlci *dlci)
 	}
 
 	k_mutex_lock(&dlci->receive_rb_lock, K_FOREVER);
-	written = ring_buf_put(&dlci->receive_rb, cmux->frame.data, cmux->frame.data_len);
+	written = ring_buffer_write(&dlci->receive_rb, cmux->frame.data, cmux->frame.data_len);
 	k_mutex_unlock(&dlci->receive_rb_lock);
 	if (written != cmux->frame.data_len) {
 		LOG_WRN("DLCI %u receive buffer overrun (dropped %u out of %u bytes)",
@@ -734,7 +734,7 @@ static void modem_cmux_on_dlci_frame_sabm(struct modem_cmux_dlci *dlci)
 	dlci->state = MODEM_CMUX_DLCI_STATE_OPEN;
 	modem_pipe_notify_opened(&dlci->pipe);
 	k_mutex_lock(&dlci->receive_rb_lock, K_FOREVER);
-	ring_buf_reset(&dlci->receive_rb);
+	ring_buffer_reset(&dlci->receive_rb);
 	k_mutex_unlock(&dlci->receive_rb_lock);
 }
 
@@ -1060,17 +1060,16 @@ static void modem_cmux_transmit_handler(struct k_work *item)
 #endif
 
 	while (true) {
-		transmit_rb_empty = ring_buf_is_empty(&cmux->transmit_rb);
+		transmit_rb_empty = ring_buffer_empty(&cmux->transmit_rb);
 
 		if (transmit_rb_empty) {
 			break;
 		}
 
-		reserved_size = ring_buf_get_claim(&cmux->transmit_rb, &reserved, UINT32_MAX);
+		reserved_size = ring_buffer_read_ptr(&cmux->transmit_rb, &reserved);
 
 		ret = modem_pipe_transmit(cmux->pipe, reserved, reserved_size);
 		if (ret < 0) {
-			ring_buf_get_finish(&cmux->transmit_rb, 0);
 			if (ret != -EPERM) {
 				LOG_ERR("Failed to %s %u bytes. (%d)",
 					"transmit", reserved_size, ret);
@@ -1078,7 +1077,7 @@ static void modem_cmux_transmit_handler(struct k_work *item)
 			break;
 		}
 
-		ring_buf_get_finish(&cmux->transmit_rb, (uint32_t)ret);
+		ring_buffer_consume(&cmux->transmit_rb, (uint32_t)ret);
 
 		if (ret < reserved_size) {
 			LOG_DBG("Transmitted only %u out of %u bytes at once.", ret, reserved_size);
@@ -1154,12 +1153,12 @@ static void modem_cmux_disconnect_handler(struct k_work *item)
 #if CONFIG_MODEM_STATS
 static uint32_t modem_cmux_dlci_get_receive_buf_length(struct modem_cmux_dlci *dlci)
 {
-	return ring_buf_size_get(&dlci->receive_rb);
+	return ring_buffer_size(&dlci->receive_rb);
 }
 
 static uint32_t modem_cmux_dlci_get_receive_buf_size(struct modem_cmux_dlci *dlci)
 {
-	return ring_buf_capacity_get(&dlci->receive_rb);
+	return ring_buffer_capacity(&dlci->receive_rb);
 }
 
 static void modem_cmux_dlci_init_buf_stats(struct modem_cmux_dlci *dlci)
@@ -1242,7 +1241,7 @@ static int modem_cmux_dlci_pipe_api_receive(void *data, uint8_t *buf, size_t siz
 	modem_cmux_dlci_advertise_receive_buf_stat(dlci);
 #endif
 
-	ret = ring_buf_get(&dlci->receive_rb, buf, size);
+	ret = ring_buffer_read(&dlci->receive_rb, buf, size);
 	k_mutex_unlock(&dlci->receive_rb_lock);
 	return ret;
 }
@@ -1363,7 +1362,7 @@ void modem_cmux_init(struct modem_cmux *cmux, const struct modem_cmux_config *co
 	cmux->receive_buf_size = config->receive_buf_size;
 	sys_slist_init(&cmux->dlcis);
 	cmux->state = MODEM_CMUX_STATE_DISCONNECTED;
-	ring_buf_init(&cmux->transmit_rb, config->transmit_buf_size, config->transmit_buf);
+	ring_buffer_init(&cmux->transmit_rb, config->transmit_buf, config->transmit_buf_size);
 	k_mutex_init(&cmux->transmit_rb_lock);
 	k_work_init_delayable(&cmux->receive_work, modem_cmux_receive_handler);
 	k_work_init_delayable(&cmux->transmit_work, modem_cmux_transmit_handler);
@@ -1391,7 +1390,7 @@ struct modem_pipe *modem_cmux_dlci_init(struct modem_cmux *cmux, struct modem_cm
 	memset(dlci, 0x00, sizeof(*dlci));
 	dlci->cmux = cmux;
 	dlci->dlci_address = config->dlci_address;
-	ring_buf_init(&dlci->receive_rb, config->receive_buf_size, config->receive_buf);
+	ring_buffer_init(&dlci->receive_rb, config->receive_buf, config->receive_buf_size);
 	k_mutex_init(&dlci->receive_rb_lock);
 	modem_pipe_init(&dlci->pipe, dlci, &modem_cmux_dlci_pipe_api);
 	k_work_init_delayable(&dlci->open_work, modem_cmux_dlci_open_handler);
@@ -1413,7 +1412,7 @@ int modem_cmux_attach(struct modem_cmux *cmux, struct modem_pipe *pipe)
 	}
 
 	cmux->pipe = pipe;
-	ring_buf_reset(&cmux->transmit_rb);
+	ring_buffer_reset(&cmux->transmit_rb);
 	cmux->receive_state = MODEM_CMUX_RECEIVE_STATE_SOF;
 	modem_pipe_attach(cmux->pipe, modem_cmux_bus_callback, cmux);
 
