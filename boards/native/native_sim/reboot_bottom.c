@@ -13,6 +13,7 @@
 #include <nsi_tasks.h>
 #include <nsi_tracing.h>
 #include <nsi_cmdline.h>
+#include <nsi_host_trampolines.h>
 
 static const char module[] = "native_sim_reboot";
 
@@ -60,6 +61,10 @@ void maybe_reboot(void)
 	nsi_get_cmd_line_args(&argc, &argv);
 
 	if (close_open_fds() < 0) {
+		nsi_exit(1);
+	}
+
+	if (nsi_host_setenv("NATIVE_SIM_RESET_CAUSE", "SOFTWARE", 1) < 0) {
 		nsi_exit(1);
 	}
 

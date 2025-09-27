@@ -37,6 +37,8 @@ void *nsi_host_realloc(void *ptr, unsigned long size);
 void nsi_host_srandom(unsigned int seed);
 char *nsi_host_strdup(const char *s);
 long nsi_host_write(int fd, const void *buffer, unsigned long size);
+char *nsi_host_getenv(const char *name);
+int nsi_host_setenv(const char *name, const char *value, int overwrite);
 
 #ifdef __cplusplus
 }
