@@ -70,10 +70,20 @@
 #define ADXL345_INT_MAP    0x2Fu
 #define ADXL345_INT_SOURCE 0x30u
 
+#define ADXL345_THRESH_ACT_REG 0x24
+#define ADXL345_ACT_INACT_CTL_REG 0x27
+
+#define ADXL345_ACT_AC_DC         BIT(7)
+#define ADXL345_ACT_X_EN          BIT(6)
+#define ADXL345_ACT_Y_EN          BIT(5)
+#define ADXL345_ACT_Z_EN          BIT(4)
+#define ADXL345_ACT_INT_EN        BIT(4)
+
 /* ADXL345_STATUS_1 */
 #define ADXL345_STATUS_DOUBLE_TAP(x) (((x) >> 5) & 0x1)
 #define ADXL345_STATUS_SINGLE_TAP(x) (((x) >> 6) & 0x1)
 #define ADXL345_STATUS_DATA_RDY(x)   (((x) >> 7) & 0x1)
+#define ADXL345_STATUS_ACTIVITY(x)   (((x) >> 4) & 0x1)
 
 /* ADXL345_INT_MAP */
 #define ADXL345_INT_MAP_OVERRUN_MSK        BIT(0)
@@ -167,6 +177,8 @@ struct adxl345_dev_data {
 	const struct sensor_trigger *th_trigger;
 	sensor_trigger_handler_t drdy_handler;
 	const struct sensor_trigger *drdy_trigger;
+	sensor_trigger_handler_t act_handler;
+	const struct sensor_trigger *act_trigger;
 	const struct device *dev;
 
 #if defined(CONFIG_ADXL345_TRIGGER_OWN_THREAD)
