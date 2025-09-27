@@ -18,8 +18,7 @@
  *
  * @retval 0       If successful.
  * @retval -EBUSY  Returned without waiting.
- * @retval -EAGAIN Waiting period timed out,
- *                 or the underlying semaphore was reset during the waiting period.
+ * @retval -EAGAIN Waiting period timed out
  */
 int i2c_nrfx_twim_exclusive_access_acquire(const struct device *dev, k_timeout_t timeout);
 
