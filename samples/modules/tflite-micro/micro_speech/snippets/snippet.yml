@@ -1,0 +1,6 @@
+name: nxp-openamp-imx8-adsp
+boards:
+  /imx8qxp_mek\/mimx8qx6\/adsp|imx8qm_mek\/mimx8qm6\/adsp/:
+    append:
+      EXTRA_DTC_OVERLAY_FILE: nxp-openamp-imx8-adsp.overlay
+      EXTRA_CONF_FILE: nxp-openamp-imx8-adsp.conf
