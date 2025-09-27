@@ -22,7 +22,7 @@
 #include <string.h>
 #include <zephyr/logging/log.h>
 
-#include "apds9960.h"
+#include <zephyr/drivers/sensor/apds9960.h>
 
 LOG_MODULE_REGISTER(APDS9960, CONFIG_SENSOR_LOG_LEVEL);
 
