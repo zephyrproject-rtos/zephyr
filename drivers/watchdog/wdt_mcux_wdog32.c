@@ -1,5 +1,6 @@
 /*
  * Copyright (2) 2019 Vestas Wind Systems A/S
+ * Copyright 2025 NXP
  *
  * Based on wdt_mcux_wdog.c, which is:
  * Copyright (c) 2018, NXP
@@ -11,6 +12,7 @@
 
 #include <zephyr/drivers/watchdog.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/sys/device_mmio.h>
 #include <fsl_wdog32.h>
 
 #define LOG_LEVEL CONFIG_WDT_LOG_LEVEL
@@ -20,8 +22,11 @@ LOG_MODULE_REGISTER(wdt_mcux_wdog32);
 
 #define MIN_TIMEOUT 1
 
+#define DEV_CFG(_dev) ((const struct mcux_wdog32_config *)(_dev)->config)
+#define DEV_DATA(_dev) ((struct mcux_wdog32_data *)(_dev)->data)
+
 struct mcux_wdog32_config {
-	WDOG_Type *base;
+	DEVICE_MMIO_NAMED_ROM(reg);
 #if DT_NODE_HAS_PROP(DT_INST_PHANDLE(0, clocks), clock_frequency)
 	uint32_t clock_frequency;
 #else /* !DT_NODE_HAS_PROP(DT_INST_PHANDLE(0, clocks), clock_frequency) */
@@ -34,16 +39,21 @@ struct mcux_wdog32_config {
 };
 
 struct mcux_wdog32_data {
+	DEVICE_MMIO_NAMED_RAM(reg);
 	wdt_callback_t callback;
 	wdog32_config_t wdog_config;
 	bool timeout_valid;
 };
 
+static inline WDOG_Type *get_base_address(const struct device *dev)
+{
+	return (WDOG_Type *)DEVICE_MMIO_NAMED_GET(dev, reg);
+}
+
 static int mcux_wdog32_setup(const struct device *dev, uint8_t options)
 {
-	const struct mcux_wdog32_config *config = dev->config;
 	struct mcux_wdog32_data *data = dev->data;
-	WDOG_Type *base = config->base;
+	WDOG_Type *base = get_base_address(dev);
 
 	if (!data->timeout_valid) {
 		LOG_ERR("No valid timeouts installed");
@@ -64,9 +74,8 @@ static int mcux_wdog32_setup(const struct device *dev, uint8_t options)
 
 static int mcux_wdog32_disable(const struct device *dev)
 {
-	const struct mcux_wdog32_config *config = dev->config;
 	struct mcux_wdog32_data *data = dev->data;
-	WDOG_Type *base = config->base;
+	WDOG_Type *base = get_base_address(dev);
 
 	WDOG32_Deinit(base);
 	data->timeout_valid = false;
@@ -140,8 +149,7 @@ static int mcux_wdog32_install_timeout(const struct device *dev,
 
 static int mcux_wdog32_feed(const struct device *dev, int channel_id)
 {
-	const struct mcux_wdog32_config *config = dev->config;
-	WDOG_Type *base = config->base;
+	WDOG_Type *base = get_base_address(dev);
 
 	if (channel_id != 0) {
 		LOG_ERR("Invalid channel id");
@@ -156,13 +164,14 @@ static int mcux_wdog32_feed(const struct device *dev, int channel_id)
 
 static void mcux_wdog32_isr(const struct device *dev)
 {
-	const struct mcux_wdog32_config *config = dev->config;
 	struct mcux_wdog32_data *data = dev->data;
-	WDOG_Type *base = config->base;
+#ifndef CONFIG_SOC_MIMX9352
+	WDOG_Type *base = get_base_address(dev);
 	uint32_t flags;
 
 	flags = WDOG32_GetStatusFlags(base);
 	WDOG32_ClearStatusFlags(base, flags);
+#endif
 
 	if (data->callback) {
 		data->callback(dev, 0);
@@ -172,6 +181,9 @@ static void mcux_wdog32_isr(const struct device *dev)
 static int mcux_wdog32_init(const struct device *dev)
 {
 	const struct mcux_wdog32_config *config = dev->config;
+
+	/* Map the named MMIO region */
+	DEVICE_MMIO_NAMED_MAP(dev, reg, K_MEM_CACHE_NONE | K_MEM_DIRECT_MAP);
 
 	config->irq_config_func(dev);
 
@@ -191,7 +203,7 @@ static DEVICE_API(wdt, mcux_wdog32_api) = {
 static void mcux_wdog32_config_func_0(const struct device *dev);
 
 static const struct mcux_wdog32_config mcux_wdog32_config_0 = {
-	.base = (WDOG_Type *) DT_INST_REG_ADDR(0),
+	DEVICE_MMIO_NAMED_ROM_INIT(reg, DT_DRV_INST(0)),
 #if DT_NODE_HAS_PROP(DT_INST_PHANDLE(0, clocks), clock_frequency)
 	.clock_frequency = DT_INST_PROP_BY_PHANDLE(0, clocks, clock_frequency),
 #else /* !DT_NODE_HAS_PROP(DT_INST_PHANDLE(0, clocks), clock_frequency) */
