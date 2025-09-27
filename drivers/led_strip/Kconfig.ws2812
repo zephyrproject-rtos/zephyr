@@ -46,7 +46,6 @@ config WS2812_STRIP_GPIO
 	default y
 	depends on DT_HAS_WORLDSEMI_WS2812_GPIO_ENABLED
 	depends on (SOC_SERIES_NRF91X || SOC_SERIES_NRF51X || SOC_SERIES_NRF52X || SOC_SERIES_NRF53X)
-	select LED_STRIP_RGB_SCRATCH
 	help
 	  Enable driver for WS2812 (and compatibles) LED strip directly
 	  controlling with GPIO. The GPIO driver does bit-banging with inline
