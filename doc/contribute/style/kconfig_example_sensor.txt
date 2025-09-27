@@ -1,0 +1,8 @@
+config SENSOR_BOSCH_BMP581
+	bool "BMP581 (Bosch) barometric pressure sensor driver"
+
+config SENSOR_TI_TMP007
+	bool "TMP007 (Texas Instruments) infrared thermopile sensor driver"
+
+config SENSOR_LM75
+	bool "LM75 temperature sensor driver"
