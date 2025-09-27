@@ -1,0 +1,9 @@
+sample:
+  name: 2SMPB-02E sensor sample
+tests:
+  sample.sensor.2smpb_02e:
+    harness: sensor
+    tags: sensors
+    depends_on:
+      - i2c
+    filter: dt_compat_enabled("omron,2smpb_02e")
