@@ -204,7 +204,7 @@ static int smbus_stm32_word_data_read(const struct device *dev, uint16_t periph_
 	int result;
 
 	result = i2c_write_read(config->i2c_dev, periph_addr, &command, sizeof(command), word,
-			      sizeof(*word));
+				sizeof(*word));
 	*word = sys_le16_to_cpu(*word);
 
 	return result;
@@ -221,7 +221,7 @@ static int smbus_stm32_pcall(const struct device *dev, uint16_t periph_addr, uin
 	sys_put_le16(send_word, buffer + 1);
 
 	result = i2c_write_read(config->i2c_dev, periph_addr, buffer, ARRAY_SIZE(buffer), recv_word,
-			      sizeof(*recv_word));
+				sizeof(*recv_word));
 	*recv_word = sys_le16_to_cpu(*recv_word);
 
 	return result;
@@ -252,6 +252,42 @@ static int smbus_stm32_block_write(const struct device *dev, uint16_t periph_add
 	return i2c_transfer(config->i2c_dev, messages, ARRAY_SIZE(messages), periph_addr);
 }
 
+static int smbus_stm32_block_read(const struct device *dev, uint16_t periph_addr, uint8_t command,
+				  uint8_t *count, uint8_t *buf)
+{
+	const struct smbus_stm32_config *config = dev->config;
+
+	struct i2c_msg messages[] = {
+		{
+			.buf = &command,
+			.len = sizeof(command),
+			.flags = I2C_MSG_WRITE,
+		},
+		{
+			.buf = NULL, /* will point to next message's len field */
+			.len = 1,
+			.flags = I2C_MSG_READ | I2C_MSG_RESTART,
+		},
+		{
+			.buf = buf,
+			.len = 0, /* written by previous message! */
+			.flags = I2C_MSG_READ,
+		}
+	};
+
+	/* Count is read in msg 1 and stored in the len of msg 2.
+	 * This works because the STM I2C driver processes each message serially.
+	 * The addressing math assumes little-endian.
+	 */
+	messages[1].buf = (uint8_t *)&messages[2].len;
+
+	int res = i2c_transfer(config->i2c_dev, messages, ARRAY_SIZE(messages), periph_addr);
+
+	*count = messages[2].len;
+
+	return res;
+}
+
 static DEVICE_API(smbus, smbus_stm32_api) = {
 	.configure = smbus_stm32_configure,
 	.get_config = smbus_stm32_get_config,
@@ -264,6 +300,7 @@ static DEVICE_API(smbus, smbus_stm32_api) = {
 	.smbus_word_data_read = smbus_stm32_word_data_read,
 	.smbus_pcall = smbus_stm32_pcall,
 	.smbus_block_write = smbus_stm32_block_write,
+	.smbus_block_read = smbus_stm32_block_read,
 #ifdef CONFIG_SMBUS_STM32_SMBALERT
 	.smbus_smbalert_set_cb = smbus_stm32_smbalert_set_cb,
 	.smbus_smbalert_remove_cb = smbus_stm32_smbalert_remove_cb,
@@ -271,7 +308,6 @@ static DEVICE_API(smbus, smbus_stm32_api) = {
 	.smbus_smbalert_set_cb = NULL,
 	.smbus_smbalert_remove_cb = NULL,
 #endif /* CONFIG_SMBUS_STM32_SMBALERT */
-	.smbus_block_read = NULL,
 	.smbus_block_pcall = NULL,
 	.smbus_host_notify_set_cb = NULL,
 	.smbus_host_notify_remove_cb = NULL,
