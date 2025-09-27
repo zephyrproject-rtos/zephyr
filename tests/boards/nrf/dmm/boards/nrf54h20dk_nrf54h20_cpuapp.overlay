@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 / {
 	aliases {
 		dut-cache = &spi120;
@@ -57,4 +63,8 @@
 	pinctrl-1 = <&spi120_sleep_alt>;
 	pinctrl-names = "default", "sleep";
 	memory-regions = <&dma_fast_region>;
+};
+
+cycle_timer: &timer120 {
+	status = "okay";
 };

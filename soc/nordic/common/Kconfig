@@ -48,5 +48,22 @@ source "subsys/logging/Kconfig.template.log_config"
 
 endif # MRAM_LATENCY
 
+if HAS_NORDIC_DMM
+
+config DMM_HEAP_CHUNKS
+	int "Number of chunks in the DMM heap"
+	default 32
+	help
+	  DMM is using a simplified heap which is using 32 bit mask to allocate
+	  required buffer which consists of contiguous chunks. If there are many
+	  small buffers used with DMM it is possible that allocation will fail.
+	  Number of chunks is a trade-off between performance and granularity.
+	  Must be multiply of 32.
+
+config DMM_STATS
+	bool "Usage statistics"
+
+endif # HAS_NORDIC_DMM
+
 rsource "vpr/Kconfig"
 rsource "uicr/Kconfig"
