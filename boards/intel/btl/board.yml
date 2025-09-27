@@ -2,5 +2,12 @@ boards:
   - name: intel_btl_s_crb
     full_name: Bartlett Lake P CRB
     vendor: intel
+    revision:
+      format: letter
+      default: "H"
+      exact: true
+      revisions:
+        - name: "H"
+        - name: "P"
     socs:
       - name: raptor_lake
