@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 KWS Computersysteme Gmbh
+ * Copyright (c) 2025 Andrew Featherstone
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,6 @@
  * 2. Core-specific configuration.
  * 3. Board-specific configuration.
  */
-#include <raspberrypi/rpi_pico/rp2350a.dtsi>
-#include <raspberrypi/rpi_pico/m33.dtsi>
-#include "pico2_spe.dtsi"
+#include <raspberrypi/rpi_pico/rp2350b.dtsi>
+#include <riscv/raspberrypi/hazard3.dtsi>
+#include "pico_plus2.dtsi"
