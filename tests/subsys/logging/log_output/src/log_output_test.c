@@ -246,10 +246,11 @@ ZTEST(test_log_output, test_thread_id)
 	char exp_str[256];
 	char package[256];
 
+	k_tid_t tid = k_current_get();
 	if (IS_ENABLED(CONFIG_THREAD_NAME)) {
-		sprintf(exp_str, "<err> [%s] src: Test\r\n", k_thread_name_get(k_current_get()));
+		sprintf(exp_str, "<err> [%3d %s] src: Test\r\n", k_thread_priority_get(tid), k_thread_name_get(tid));
 	} else {
-		sprintf(exp_str, "<err> [%p] src: Test\r\n", k_current_get());
+		sprintf(exp_str, "<err> [%3d %p] src: Test\r\n", k_thread_priority_get(tid), tid);
 	}
 
 	uint32_t flags = LOG_OUTPUT_FLAG_LEVEL | LOG_OUTPUT_FLAG_THREAD;
