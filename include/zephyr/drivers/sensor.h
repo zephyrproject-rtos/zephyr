@@ -509,31 +509,30 @@ struct sensor_decoder_api {
 			     size_t *frame_size);
 
 	/**
-	 * @brief Decode up to @p max_count samples from the buffer
+	 * @brief Decode up to @p max_count frames specified by @p chan_spec from the @p buffer
 	 *
-	 * Decode samples of channel @ref sensor_channel across multiple frames. If there exist
-	 * multiple instances of the same channel, @p channel_index is used to differentiate them.
-	 * As an example, assume a sensor provides 2 distance measurements:
+	 * Sample showing the process of decoding at most @code MAX_FRAMES for each distance
+	 * sensor channel. The frame iterator is reset for each new channel to allow the
+	 * full history of each channel to be decoded.
 	 *
 	 * @code{.c}
-	 * // Decode the first channel instance of 'distance'
-	 * decoder->decode(buffer, SENSOR_CHAN_DISTANCE, 0, &fit, 5, out);
-	 * ...
-	 *
-	 * // Decode the second channel instance of 'distance'
-	 * decoder->decode(buffer, SENSOR_CHAN_DISTANCE, 1, &fit, 5, out);
+	 * for (int i = 0; i < NUM_DISTANCE_CHANNELS; i++) {
+	 *     fit = 0;
+	 *     decoder->decode(buffer, {SENSOR_CHAN_DISTANCE, i}, &fit, MAX_FRAMES, out);
+	 * }
 	 * @endcode
 	 *
-	 * @param[in]     buffer The buffer provided on the @ref rtio context
-	 * @param[in]     channel The channel to decode
-	 * @param[in,out] fit The current frame iterator
-	 * @param[in]     max_count The maximum number of channels to decode.
-	 * @param[out]    data_out The decoded data
-	 * @return 0 no more samples to decode
-	 * @return >0 the number of decoded frames
-	 * @return <0 on error
+	 * @param[in]     buffer      Buffer provided on the RTIO context
+	 * @param[in]     chan_spec   Channel specification to decode
+	 * @param[in,out] fit         Current frame iterator
+	 * @param[in]     max_count   Maximum number of frames to decode
+	 * @param[out]    data_out    Decoded data
+	 *
+	 * @return Number of frames that were decoded
+	 * @retval -EINVAL   Invalid parameters or unsupported channel
+	 * @retval -ENODATA  Requested data type not present in the frame
 	 */
-	int (*decode)(const uint8_t *buffer, struct sensor_chan_spec channel, uint32_t *fit,
+	int (*decode)(const uint8_t *buffer, struct sensor_chan_spec chan_spec, uint32_t *fit,
 		      uint16_t max_count, void *data_out);
 
 	/**
