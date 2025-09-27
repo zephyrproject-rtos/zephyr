@@ -81,9 +81,9 @@ static int mcux_opamp_set_gain(const struct device *dev, enum opamp_gain gain)
 	}
 
 	switch (config->functional_mode) {
-	case OPAMP_DIFFERENTIAL_MODE:
-	case OPAMP_INVERTING_MODE:
-	case OPAMP_NON_INVERTING_MODE:
+	case OPAMP_FUNCTIONAL_MODE_DIFFERENTIAL:
+	case OPAMP_FUNCTIONAL_MODE_INVERTING:
+	case OPAMP_FUNCTIONAL_MODE_NON_INVERTING:
 		/* For differential, inverting and non-inverting mode,
 		 * set Ngain to select different gains, and set Pgain
 		 * to be the same as Ngain.
@@ -91,7 +91,7 @@ static int mcux_opamp_set_gain(const struct device *dev, enum opamp_gain gain)
 		OPAMP_DoNegGainConfig(config->base, gain_index);
 		OPAMP_DoPosGainConfig(config->base, gain_index);
 		break;
-	case OPAMP_FOLLOWER_MODE:
+	case OPAMP_FUNCTIONAL_MODE_FOLLOWER:
 		OPAMP_DoNegGainConfig(config->base, kOPAMP_NegGainBufferMode);
 		OPAMP_DoPosGainConfig(config->base, kOPAMP_PosGainNonInvert1X);
 	default:
@@ -179,11 +179,11 @@ int mcux_opamp_init(const struct device *dev)
 #endif
 
 	switch (config->functional_mode) {
-	case OPAMP_DIFFERENTIAL_MODE:
-	case OPAMP_INVERTING_MODE:
-	case OPAMP_NON_INVERTING_MODE:
+	case OPAMP_FUNCTIONAL_MODE_DIFFERENTIAL:
+	case OPAMP_FUNCTIONAL_MODE_INVERTING:
+	case OPAMP_FUNCTIONAL_MODE_NON_INVERTING:
 		break;
-	case OPAMP_FOLLOWER_MODE:
+	case OPAMP_FUNCTIONAL_MODE_FOLLOWER:
 #if defined(FSL_FEATURE_OPAMP_HAS_OPAMP_CTR_BUFEN) && FSL_FEATURE_OPAMP_HAS_OPAMP_CTR_BUFEN
 		base->OPAMP_CTR &= ~OPAMP_OPAMP_CTR_BUFEN_MASK;
 #else
