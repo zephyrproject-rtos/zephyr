@@ -62,11 +62,6 @@ static void goep_rfcomm_connected(struct bt_rfcomm_dlc *dlc)
 	goep->obex.rx.mtu = dlc->mtu;
 	goep->obex.tx.mtu = dlc->mtu;
 
-	/* Set MOPL of RX to MTU by default */
-	goep->obex.rx.mopl = dlc->mtu;
-	/* Set MOPL of TX to MTU by default to avoid the OBEX connect req cannot be sent. */
-	goep->obex.tx.mopl = dlc->mtu;
-
 	atomic_set(&goep->_state, BT_GOEP_TRANSPORT_CONNECTED);
 
 	err = bt_obex_transport_connected(&goep->obex);
@@ -186,8 +181,7 @@ static int goep_rfcomm_accept(struct bt_conn *conn, struct bt_rfcomm_server *ser
 		return err;
 	}
 
-	if (!goep || !goep->transport_ops || !goep->obex.server_ops ||
-	    !goep->obex.server_ops->connect || !goep->obex.server_ops->disconnect) {
+	if (goep == NULL || goep->transport_ops == NULL) {
 		LOG_DBG("Invalid parameter");
 		return -EINVAL;
 	}
@@ -263,8 +257,7 @@ int bt_goep_transport_rfcomm_connect(struct bt_conn *conn, struct bt_goep *goep,
 	uint32_t mtu;
 	uint32_t hdr_size;
 
-	if (!conn || !goep || !goep->transport_ops || !goep->obex.client_ops ||
-	    !goep->obex.client_ops->connect || !goep->obex.client_ops->disconnect) {
+	if (conn == NULL || goep == NULL || goep->transport_ops == NULL) {
 		LOG_DBG("Invalid parameter");
 		return -EINVAL;
 	}
@@ -371,11 +364,6 @@ static void goep_l2cap_connected(struct bt_l2cap_chan *chan)
 
 	goep->obex.rx.mtu = goep->_transport.chan.rx.mtu;
 	goep->obex.tx.mtu = goep->_transport.chan.tx.mtu;
-
-	/* Set MOPL of RX to MTU by default */
-	goep->obex.rx.mopl = goep->_transport.chan.rx.mtu;
-	/* Set MOPL of TX to MTU by default to avoid the OBEX connect req cannot be sent. */
-	goep->obex.tx.mopl = goep->_transport.chan.tx.mtu;
 
 	atomic_set(&goep->_state, BT_GOEP_TRANSPORT_CONNECTED);
 
@@ -485,8 +473,7 @@ static int goep_l2cap_accept(struct bt_conn *conn, struct bt_l2cap_server *serve
 		return err;
 	}
 
-	if (!goep || !goep->transport_ops || !goep->obex.server_ops ||
-	    !goep->obex.server_ops->connect || !goep->obex.server_ops->disconnect) {
+	if (goep == NULL || goep->transport_ops == NULL) {
 		LOG_DBG("Invalid parameter");
 		return -EINVAL;
 	}
@@ -566,8 +553,7 @@ int bt_goep_transport_l2cap_connect(struct bt_conn *conn, struct bt_goep *goep, 
 	uint32_t mtu;
 	uint32_t hdr_size;
 
-	if (!conn || !goep || !goep->transport_ops || !goep->obex.client_ops ||
-	    !goep->obex.client_ops->connect || !goep->obex.client_ops->disconnect) {
+	if (conn == NULL || goep == NULL || goep->transport_ops == NULL) {
 		LOG_DBG("Invalid parameter");
 		return -EINVAL;
 	}
