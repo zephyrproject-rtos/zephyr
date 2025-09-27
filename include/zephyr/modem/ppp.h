@@ -105,7 +105,7 @@ struct modem_ppp {
 	uint16_t tx_pkt_fcs;
 
 	/* Ring buffer used for transmitting partial PPP frame */
-	struct ring_buf transmit_rb;
+	struct ring_buffer transmit_rb;
 
 	struct k_fifo tx_pkt_fifo;
 

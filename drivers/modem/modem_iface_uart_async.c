@@ -52,7 +52,7 @@ static void iface_uart_async_callback(const struct device *dev,
 		break;
 	case UART_RX_RDY:
 		/* Place received data on the ring buffer */
-		written = ring_buf_put(&data->rx_rb,
+		written = ring_buffer_write(&data->rx_rb,
 				       evt->data.rx.buf + evt->data.rx.offset,
 				       evt->data.rx.len);
 		if (written != evt->data.rx.len) {
@@ -97,7 +97,7 @@ static int modem_iface_uart_async_read(struct modem_iface *iface,
 
 	/* Pull data off the ring buffer */
 	data = iface->iface_data;
-	*bytes_read = ring_buf_get(&data->rx_rb, buf, size);
+	*bytes_read = ring_buffer_read(&data->rx_rb, buf, size);
 	return 0;
 }
 
@@ -176,7 +176,7 @@ int modem_iface_uart_init(struct modem_iface *iface, struct modem_iface_uart_dat
 	iface->read = modem_iface_uart_async_read;
 	iface->write = modem_iface_uart_async_write;
 
-	ring_buf_init(&data->rx_rb, config->rx_rb_buf_len, config->rx_rb_buf);
+	ring_buffer_init(&data->rx_rb, config->rx_rb_buf_len, config->rx_rb_buf);
 	k_sem_init(&data->rx_sem, 0, 1);
 	k_sem_init(&data->tx_sem, 0, 1);
 
