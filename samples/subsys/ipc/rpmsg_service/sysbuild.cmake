@@ -13,3 +13,9 @@ ExternalZephyrProject_Add(
   )
 
 add_dependencies(${DEFAULT_IMAGE} rpmsg_service_remote)
+sysbuild_add_dependencies(CONFIGURE ${DEFAULT_IMAGE} rpmsg_service_remote)
+
+if(SB_CONFIG_BOOTLOADER_MCUBOOT)
+  # Make sure MCUboot is flashed first
+  sysbuild_add_dependencies(FLASH rpmsg_service_remote mcuboot)
+endif()
