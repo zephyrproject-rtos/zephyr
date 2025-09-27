@@ -70,6 +70,8 @@ config BT_LLL_VENDOR_NORDIC
 
 	select BT_TICKER_PREFER_START_BEFORE_STOP if BT_TICKER_SLOT_AGNOSTIC
 
+	select BT_CTLR_ASSERT_OPTIMIZE_FOR_SIZE_SUPPORT if CPU_CORTEX_M
+
 	default y
 	help
 	  Use Nordic Lower Link Layer implementation.
