@@ -19,5 +19,7 @@ void mock_ccp_call_control_client_cleanup(void);
 DECLARE_FAKE_VOID_FUNC(mock_ccp_call_control_client_discover_cb,
 		       struct bt_ccp_call_control_client *, int,
 		       struct bt_ccp_call_control_client_bearers *);
+DECLARE_FAKE_VOID_FUNC(mock_ccp_call_control_client_bearer_provider_name_cb,
+		       struct bt_ccp_call_control_client_bearer *, int, const char *);
 
 #endif /* MOCKS_CCP_CALL_CONTROL_CLIENT_H_ */
