@@ -38,7 +38,6 @@ struct gpio_mcux_config {
 	GPIO_Type *gpio_base;
 	PORT_Type *port_base;
 	unsigned int flags;
-	uint32_t port_no;
 };
 
 struct gpio_mcux_data {
@@ -53,7 +52,7 @@ static int gpio_mcux_iopctl_configure(const struct device *dev, gpio_pin_t pin, 
 {
 	const struct gpio_mcux_config *config = dev->config;
 	GPIO_Type *gpio_base = config->gpio_base;
-	uint32_t port_no = config->port_no;
+	volatile uint32_t port_base = (uint32_t)config->port_base;
 	volatile uint32_t pinconfig = 0;
 
 	if (((flags & GPIO_INPUT) != 0) && ((flags & GPIO_OUTPUT) != 0)) {
@@ -116,7 +115,7 @@ static int gpio_mcux_iopctl_configure(const struct device *dev, gpio_pin_t pin, 
 	}
 #endif /* defined(FSL_FEATURE_PORT_HAS_DRIVE_STRENGTH) && FSL_FEATURE_PORT_HAS_DRIVE_STRENGTH */
 
-	IOPCTL_PinMuxSet(port_no, pin, pinconfig);
+	*((volatile uint32_t *)(port_base + (pin * 4))) = pinconfig;
 
 	return 0;
 }
@@ -494,8 +493,6 @@ static DEVICE_API(gpio, gpio_mcux_driver_api) = {
 	} while (false)
 
 #define GPIO_PORT_BASE_ADDR(n) DT_REG_ADDR(DT_INST_PHANDLE(n, nxp_kinetis_port))
-#define GPIO_PORT_NUMBER(n) COND_CODE_1(DT_INST_NODE_HAS_PROP(n, gpio_port_offest),	\
-						(DT_INST_PROP(n, gpio_port_offest) + n), (n))	\
 
 #define GPIO_DEVICE_INIT_MCUX(n)                                                                   \
 	static int gpio_mcux_port##n##_init(const struct device *dev);                             \
@@ -509,7 +506,6 @@ static DEVICE_API(gpio, gpio_mcux_driver_api) = {
 		.port_base = (PORT_Type *)GPIO_PORT_BASE_ADDR(n),                                  \
 		.flags = UTIL_AND(UTIL_OR(DT_INST_IRQ_HAS_IDX(n, 0), GPIO_HAS_SHARED_IRQ),         \
 				  GPIO_INT_ENABLE),                                                \
-		.port_no = GPIO_PORT_NUMBER(n),						\
 	};                                                                                         \
                                                                                                    \
 	static struct gpio_mcux_data gpio_mcux_port##n##_data;                                     \
