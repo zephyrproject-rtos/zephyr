@@ -493,6 +493,12 @@ New APIs and options
 
 .. _boards_added_in_zephyr_4_2:
 
+Kernel
+******
+
+* :c:func:`k_thread_runtime_stats_is_enabled`.
+
+
 New Boards
 **********
 
