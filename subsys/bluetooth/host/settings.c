@@ -257,6 +257,10 @@ static int commit_settings(void)
 #if defined(CONFIG_BT_DEVICE_NAME_DYNAMIC)
 	if (bt_dev.name[0] == '\0') {
 		bt_set_name(CONFIG_BT_DEVICE_NAME);
+	} else {
+		if (IS_ENABLED(CONFIG_BT_CLASSIC)) {
+			bt_br_write_local_name(bt_dev.name);
+		}
 	}
 #endif
 	if (!bt_dev.id_count) {
