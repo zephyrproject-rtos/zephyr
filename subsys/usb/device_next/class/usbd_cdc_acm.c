@@ -1350,8 +1350,8 @@ const static struct usb_desc_header *cdc_acm_hs_desc_##n[] = {			\
 				USBD_DUT_STRING_INTERFACE);			\
 	))									\
 										\
-	RING_BUFFER_DECLARE(cdc_acm_rb_rx_##n, DT_INST_PROP(n, rx_fifo_size));	\
-	RING_BUFFER_DECLARE(cdc_acm_rb_tx_##n, DT_INST_PROP(n, tx_fifo_size));	\
+	RING_BUFFER_DEFINE(cdc_acm_rb_rx_##n, DT_INST_PROP(n, rx_fifo_size));	\
+	RING_BUFFER_DEFINE(cdc_acm_rb_tx_##n, DT_INST_PROP(n, tx_fifo_size));	\
 										\
 	static const struct cdc_acm_uart_config uart_config_##n = {		\
 		.c_data = &cdc_acm_##n,						\

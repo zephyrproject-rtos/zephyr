@@ -80,14 +80,12 @@ choice TRACING_METHOD_CHOICE
 
 config TRACING_SYNC
 	bool "Synchronous Tracing"
-	select RING_BUFFER
 	help
 	  Enable synchronous tracing. This requires the backend to be
 	  very low-latency.
 
 config TRACING_ASYNC
 	bool "Asynchronous Tracing"
-	select RING_BUFFER
 	help
 	  Enable asynchronous tracing. This will buffer all the tracing
 	  packets to the ring buffer first, tracing thread will try to

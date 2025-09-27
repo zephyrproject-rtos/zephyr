@@ -23,7 +23,7 @@ struct busy_sim_data {
 };
 
 static struct k_work sim_work;
-static struct ring_buf rnd_rbuf;
+static struct ring_buffer rnd_rbuf;
 static uint8_t rnd_buf[BUFFER_SIZE];
 
 struct busy_sim_config {
@@ -58,15 +58,13 @@ static void rng_pool_work_handler(struct k_work *work)
 	uint32_t len;
 	const struct busy_sim_config *config = busy_sim_dev->config;
 
-	len = ring_buf_put_claim(&rnd_rbuf, &buf, BUFFER_SIZE - 1);
+	len = ring_buffer_write_ptr(&rnd_rbuf, &buf);
 	if (len) {
 		int err = entropy_get_entropy(config->entropy, buf, len);
-
 		if (err == 0) {
-			ring_buf_put_finish(&rnd_rbuf, len);
+			ring_buffer_commit(&rnd_rbuf, len);
 			return;
 		}
-		ring_buf_put_finish(&rnd_rbuf, 0);
 	}
 
 	k_work_submit(work);
@@ -84,7 +82,7 @@ static uint32_t get_timeout(bool idle, bool use_rand)
 	if (use_rand) {
 		sys_rand_get(&rand_val, sizeof(rand_val));
 	} else {
-		len = ring_buf_get(&rnd_rbuf,
+		len = ring_buffer_read(&rnd_rbuf,
 				   (uint8_t *)&rand_val,
 				   sizeof(rand_val));
 		if (len < sizeof(rand_val)) {
@@ -198,7 +196,7 @@ static int busy_sim_init(const struct device *dev)
 
 	if (config->entropy) {
 		k_work_init(&sim_work, rng_pool_work_handler);
-		ring_buf_init(&rnd_rbuf, BUFFER_SIZE, rnd_buf);
+		ring_buffer_init(&rnd_rbuf, rnd_buf, BUFFER_SIZE);
 	}
 
 	data->us_tick = freq / 1000000;

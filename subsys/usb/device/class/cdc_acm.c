@@ -1200,9 +1200,9 @@ static DEVICE_API(uart, cdc_acm_driver_api) = {
 		.endpoint = cdc_acm_ep_data_##x,			\
 	};								\
 									\
-	RING_BUFFER_DECLARE(cdc_acm_rx_rb_##x,				\
+	RING_BUFFER_DEFINE(cdc_acm_rx_rb_##x,				\
 			 CONFIG_USB_CDC_ACM_RINGBUF_SIZE);		\
-	RING_BUFFER_DECLARE(cdc_acm_tx_rb_##x,				\
+	RING_BUFFER_DEFINE(cdc_acm_tx_rb_##x,				\
 			 CONFIG_USB_CDC_ACM_RINGBUF_SIZE);		\
 	static struct cdc_acm_dev_data_t cdc_acm_dev_data_##x = {	\
 		.line_coding = CDC_ACM_DEFAULT_BAUDRATE,		\
