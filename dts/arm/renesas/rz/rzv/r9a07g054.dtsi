@@ -896,6 +896,11 @@
 				compatible = "renesas,rz-gtm-os-timer";
 				status = "disabled";
 			};
+
+			counter {
+				compatible = "renesas,rz-gtm-counter";
+				status = "disabled";
+			};
 		};
 
 		gtm1: gtm@42801400 {
@@ -910,6 +915,11 @@
 				compatible = "renesas,rz-gtm-os-timer";
 				status = "disabled";
 			};
+
+			counter {
+				compatible = "renesas,rz-gtm-counter";
+				status = "disabled";
+			};
 		};
 
 		gtm2: gtm@42801800 {
@@ -922,6 +932,11 @@
 
 			os_timer {
 				compatible = "renesas,rz-gtm-os-timer";
+				status = "disabled";
+			};
+
+			counter {
+				compatible = "renesas,rz-gtm-counter";
 				status = "disabled";
 			};
 		};
