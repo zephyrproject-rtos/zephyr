@@ -1352,22 +1352,22 @@ isr_rx_next_subevent:
 		hcto -= addr_us_get(lll->phy);
 		hcto -= radio_rx_ready_delay_get(lll->phy, PHY_FLAGS_S8);
 
-		overhead_us = radio_rx_chain_delay_get(lll->phy, PHY_FLAGS_S8);
-		overhead_us += addr_us_get(lll->phy);
-		overhead_us += radio_rx_ready_delay_get(lll->phy, PHY_FLAGS_S8);
+		/* Overhead within EVENT_IFS_US to exclude from max. jitter */
+		overhead_us = radio_rx_ready_delay_get(lll->phy, PHY_FLAGS_S8);
+		/* If single timer used, then consider required max. latency */
+		overhead_us = MAX(overhead_us, HAL_RADIO_ISR_LATENCY_MAX_US);
+		/* Add chain delay overhead */
+		overhead_us += radio_rx_chain_delay_get(lll->phy, PHY_FLAGS_S8);
+		/* Add active clock jitter overhead per subevent */
 		overhead_us += (EVENT_CLOCK_JITTER_US << 1);
-
 		LL_ASSERT(EVENT_IFS_US > overhead_us);
 
+		/* Max. available jitter */
 		jitter_max_us = (EVENT_IFS_US - overhead_us) >> 1;
+		/* Max. jitter per subevent */
 		jitter_max_us = (jitter_max_us * nse) / (lll->num_bis * lll->nse);
-		overhead_us = HAL_RADIO_TMR_START_DELAY_US;
-		if (jitter_max_us > overhead_us) {
-			jitter_max_us -= overhead_us;
-		} else {
-			jitter_max_us = 0U;
-		}
 
+		/* Jitter for current subevent */
 		jitter_us = (EVENT_CLOCK_JITTER_US << 1) * nse;
 		if (jitter_us > jitter_max_us) {
 			jitter_us = jitter_max_us;
