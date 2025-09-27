@@ -16,8 +16,12 @@
 &pinctrl {
 	adc0_default: adc0_default {
 		group0 {
-			/* Allocate odd bus 0 on GPIO port C/D to IADC for access to pin PD3 */
-			silabs,analog-bus = <ABUS_CDODD0_IADC0>;
+			/* Allocate odd Analog bus 0 on GPIO port C/D to IADC
+			 * for access to pin PD3 and PC3.
+			 * Allocate even Analog bus 0 on GPIO port A to IADC
+			 * for access to pin PA8.
+			 */
+			silabs,analog-bus = <ABUS_CDODD0_IADC0>, <ABUS_AEVEN0_IADC0>;
 		};
 	};
 };
@@ -34,7 +38,8 @@
 		zephyr,gain = "ADC_GAIN_1";
 		zephyr,reference = "ADC_REF_INTERNAL";
 		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
-		zephyr,resolution = <12>;
+		zephyr,oversampling = <5>;
+		zephyr,resolution = <16>;
 		zephyr,input-positive = <IADC_INPUT_AVDD>;
 	};
 
@@ -44,7 +49,20 @@
 		zephyr,reference = "ADC_REF_VDD_1";
 		zephyr,vref-mv = <3300>;
 		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,oversampling = <5>;
 		zephyr,resolution = <12>;
 		zephyr,input-positive = <IADC_INPUT_PD3>;
+	};
+
+	channel@c {
+		reg = <12>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,vref-mv = <3300>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,oversampling = <5>;
+		zephyr,resolution = <16>;
+		zephyr,input-positive = <IADC_INPUT_PC3>; /* WPK EXP HEADER 10 */
+		zephyr,input-negative = <IADC_INPUT_PA8>; /* WPK EXP HEADER 13 */
 	};
 };

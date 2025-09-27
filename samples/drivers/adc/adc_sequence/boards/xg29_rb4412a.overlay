@@ -4,23 +4,28 @@
  * Copyright (c) 2025 Silicon Laboratories Inc.
  */
 
+#include <dt-bindings/pinctrl/silabs/xg29-pinctrl.h>
 #include <dt-bindings/adc/silabs-adc.h>
 
 / {
 	zephyr,user {
 		io-channels = <&adc0 3>, <&adc0 4>, <&adc0 12>;
 	};
+
+	aliases {
+		adc0 = &adc0;
+	};
 };
 
 &pinctrl {
 	adc0_default: adc0_default {
 		group0 {
-			/* Allocate odd Analog bus 0 on GPIO port B to IADC
-			 * for access to pin PB2 and PB5.
-			 * Allocate even Analog bus 0 on GPIO port C/D to IADC
-			 * for access to pin PC0.
+			/* Allocate odd Analog bus 0 on GPIO port C/D to IADC
+			 * for access to pin PD3 and PC3.
+			 * Allocate even Analog bus 0 on GPIO port A to IADC
+			 * for access to pin PA8.
 			 */
-			silabs,analog-bus = <ABUS_BODD0_IADC0>, <ABUS_CDEVEN0_IADC0>;
+			silabs,analog-bus = <ABUS_CDODD0_IADC0>, <ABUS_AEVEN0_IADC0>;
 		};
 	};
 };
@@ -48,7 +53,7 @@
 		zephyr,vref-mv = <3300>;
 		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
 		zephyr,resolution = <12>;
-		zephyr,input-positive = <IADC_INPUT_PB1>;
+		zephyr,input-positive = <IADC_INPUT_PD3>;
 	};
 
 	channel@c {
@@ -58,7 +63,7 @@
 		zephyr,vref-mv = <3300>;
 		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
 		zephyr,resolution = <12>;
-		zephyr,input-positive = <IADC_INPUT_PB5>; /* WPK EXP HEADER 3 */
-		zephyr,input-negative = <IADC_INPUT_PC0>; /* WPK EXP HEADER 10 */
+		zephyr,input-positive = <IADC_INPUT_PC3>; /* WPK EXP HEADER 10 */
+		zephyr,input-negative = <IADC_INPUT_PA8>; /* WPK EXP HEADER 13 */
 	};
 };
