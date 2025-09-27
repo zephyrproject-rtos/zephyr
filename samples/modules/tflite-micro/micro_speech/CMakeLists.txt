@@ -17,6 +17,7 @@ file(
   app_sources
   src/*
   src/inference/*
+  src/transport/*
 )
 
 target_include_directories(

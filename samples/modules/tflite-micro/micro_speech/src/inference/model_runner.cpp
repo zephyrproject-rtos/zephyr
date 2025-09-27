@@ -29,6 +29,8 @@ LOG_MODULE_REGISTER(model_runner);
 #include "audio_preprocessor_int8_model.hpp"
 #include "micro_speech_quantized_model.hpp"
 
+#include "transport/rpmsg_transport.h"
+
 #include <zephyr/kernel.h>
 #include <algorithm>
 #include <stdio.h>
