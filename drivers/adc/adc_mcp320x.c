@@ -320,7 +320,7 @@ static DEVICE_API(adc, mcp320x_adc_api) = {
 		.channels = ch, \
 	}; \
 	DEVICE_DT_DEFINE(INST_DT_MCP320X(n, t), \
-			 &mcp320x_init, NULL, \
+			 mcp320x_init, NULL, \
 			 &mcp##t##_data_##n, \
 			 &mcp##t##_config_##n, POST_KERNEL, \
 			 CONFIG_ADC_INIT_PRIORITY, \

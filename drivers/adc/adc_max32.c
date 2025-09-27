@@ -620,7 +620,7 @@ static DEVICE_API(adc, adc_max32_driver_api) = {
 		ADC_CONTEXT_INIT_SYNC(max32_adc_data_##_num, ctx),                                 \
 		.resolution = DT_INST_PROP(_num, resolution),                                      \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(_num, &adc_max32_init, NULL, &max32_adc_data_##_num,                 \
+	DEVICE_DT_INST_DEFINE(_num, adc_max32_init, NULL, &max32_adc_data_##_num,                  \
 			      &max32_adc_config_##_num, POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,     \
 			      &adc_max32_driver_api);
 

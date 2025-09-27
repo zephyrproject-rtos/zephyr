@@ -212,7 +212,7 @@ static DEVICE_API(adc, mcux_sar_adc_driver_api) = {
 		ADC_CONTEXT_INIT_SYNC(mcux_sar_adc_data_##n, ctx),                                 \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, &mcux_sar_adc_init, NULL, &mcux_sar_adc_data_##n,                 \
+	DEVICE_DT_INST_DEFINE(n, mcux_sar_adc_init, NULL, &mcux_sar_adc_data_##n,                  \
 			      &mcux_sar_adc_config_##n, POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,     \
 			      &mcux_sar_adc_driver_api);                                           \
                                                                                                    \

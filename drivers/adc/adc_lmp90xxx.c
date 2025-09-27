@@ -1073,7 +1073,7 @@ static DEVICE_API(adc, lmp90xxx_adc_api) = {
 		.channels = ch, \
 	}; \
 	DEVICE_DT_DEFINE(DT_INST_LMP90XXX(n, t), \
-			 &lmp90xxx_init, NULL, \
+			 lmp90xxx_init, NULL, \
 			 &lmp##t##_data_##n, \
 			 &lmp##t##_config_##n, POST_KERNEL, \
 			 CONFIG_ADC_INIT_PRIORITY, \

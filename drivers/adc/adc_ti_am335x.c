@@ -399,7 +399,7 @@ static void ti_adc_isr(const struct device *dev)
 		.dev = DEVICE_DT_INST_GET(n),                                                      \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, &ti_adc_init, NULL, &ti_adc_data_##n, &ti_adc_cfg_##n,            \
+	DEVICE_DT_INST_DEFINE(n, ti_adc_init, NULL, &ti_adc_data_##n, &ti_adc_cfg_##n,             \
 			      POST_KERNEL, CONFIG_ADC_INIT_PRIORITY, &ti_adc_driver_api_##n);
 
 DT_INST_FOREACH_STATUS_OKAY(TI_ADC_INIT)
