@@ -477,6 +477,69 @@ static void broadcast_source_cleanup(struct bt_bap_broadcast_source *source)
 	(void)memset(source, 0, sizeof(*source));
 }
 
+static bool valid_broadcast_source_subgroup_param(
+	const struct bt_bap_broadcast_source_subgroup_param *subgroup_param,
+	const struct bt_bap_broadcast_source *source)
+{
+	CHECKIF(subgroup_param->params == NULL) {
+		LOG_DBG("subgroup_param->params is NULL");
+		return false;
+	}
+
+	CHECKIF(!IN_RANGE(subgroup_param->params_count, 1U,
+			  CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT)) {
+		LOG_DBG("subgroup_param->count (%zu) is invalid", subgroup_param->params_count);
+		return false;
+	}
+
+	CHECKIF(!bt_audio_valid_codec_cfg(subgroup_param->codec_cfg)) {
+		LOG_DBG("subgroup_param->codec_cfg  is invalid");
+		return false;
+	}
+
+	for (size_t i = 0U; i < subgroup_param->params_count; i++) {
+		const struct bt_bap_broadcast_source_stream_param *stream_param;
+
+		stream_param = &subgroup_param->params[i];
+
+		CHECKIF(stream_param->stream == NULL) {
+			LOG_DBG("subgroup_param->stream_params[%zu]->stream is NULL", i);
+			return false;
+		}
+
+		CHECKIF(stream_param->stream->group != NULL &&
+			stream_param->stream->group != source) {
+			LOG_DBG("subgroup_param->stream_params[%zu]->stream is already part of "
+				"group %p",
+				i, stream_param->stream->group);
+			return false;
+		}
+
+#if CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0
+		CHECKIF(stream_param->data == NULL && stream_param->data_len != 0) {
+			LOG_DBG("subgroup_param->stream_params[%zu]->data is NULL with len %zu", i,
+				stream_param->data_len);
+			return false;
+		}
+
+		CHECKIF(stream_param->data_len > CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE) {
+			LOG_DBG("subgroup_param->stream_params[%zu]->data_len too large: %zu > %d",
+				i, stream_param->data_len, CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE);
+			return false;
+		}
+
+		CHECKIF(stream_param->data != NULL &&
+			subgroup_param->codec_cfg->id == BT_HCI_CODING_FORMAT_LC3 &&
+			!bt_audio_valid_ltv(stream_param->data, stream_param->data_len)) {
+			LOG_DBG("subgroup_param->stream_params[%zu]->data not valid LTV", i);
+			return false;
+		}
+	}
+#endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0 */
+
+	return true;
+}
+
 static bool valid_broadcast_source_param(const struct bt_bap_broadcast_source_param *param,
 					 const struct bt_bap_broadcast_source *source)
 {
@@ -529,68 +592,10 @@ static bool valid_broadcast_source_param(const struct bt_bap_broadcast_source_pa
 
 		subgroup_param = &param->params[i];
 
-		CHECKIF(subgroup_param->params == NULL) {
-			LOG_DBG("subgroup_params[%zu].params is NULL", i);
+		if (!valid_broadcast_source_subgroup_param(subgroup_param, source)) {
+			LOG_DBG("subgroup_params[%zu] is invalid", i);
 			return false;
 		}
-
-		CHECKIF(!IN_RANGE(subgroup_param->params_count, 1U,
-				  CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT)) {
-			LOG_DBG("subgroup_params[%zu].count (%zu) is invalid", i,
-				subgroup_param->params_count);
-			return false;
-		}
-
-		CHECKIF(!bt_audio_valid_codec_cfg(subgroup_param->codec_cfg)) {
-			LOG_DBG("subgroup_params[%zu].codec_cfg  is invalid", i);
-			return false;
-		}
-
-		for (size_t j = 0U; j < subgroup_param->params_count; j++) {
-			const struct bt_bap_broadcast_source_stream_param *stream_param;
-
-			stream_param = &subgroup_param->params[j];
-
-			CHECKIF(stream_param->stream == NULL) {
-				LOG_DBG("subgroup_params[%zu].stream_params[%zu]->stream is NULL",
-					i, j);
-				return false;
-			}
-
-			CHECKIF(stream_param->stream->group != NULL &&
-				stream_param->stream->group != source) {
-				LOG_DBG("subgroup_params[%zu].stream_params[%zu]->stream is "
-					"already part of group %p",
-					i, j, stream_param->stream->group);
-				return false;
-			}
-
-#if CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0
-			CHECKIF(stream_param->data == NULL && stream_param->data_len != 0) {
-				LOG_DBG("subgroup_params[%zu].stream_params[%zu]->data is "
-					"NULL with len %zu",
-					i, j, stream_param->data_len);
-				return false;
-			}
-
-			CHECKIF(stream_param->data_len > CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE) {
-				LOG_DBG("subgroup_params[%zu].stream_params[%zu]->data_len too "
-					"large: %zu > %d",
-					i, j, stream_param->data_len,
-					CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE);
-				return false;
-			}
-
-			CHECKIF(stream_param->data != NULL &&
-				subgroup_param->codec_cfg->id == BT_HCI_CODING_FORMAT_LC3 &&
-				!bt_audio_valid_ltv(stream_param->data, stream_param->data_len)) {
-				LOG_DBG("subgroup_params[%zu].stream_params[%zu]->data not valid "
-					"LTV",
-					i, j);
-				return false;
-			}
-		}
-#endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0 */
 	}
 
 	return true;
