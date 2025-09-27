@@ -7,6 +7,9 @@ if SOC_SERIES_STM32U0X
 
 rsource "Kconfig.defconfig.stm32u0*"
 
+config STM32_FLASH_PREFETCH
+	default y
+
 if I2C_STM32
 
 config SHARED_INTERRUPTS

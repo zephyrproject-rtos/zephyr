@@ -27,8 +27,10 @@ LOG_MODULE_REGISTER(soc);
  */
 void soc_early_init_hook(void)
 {
+#if defined(CONFIG_STM32_FLASH_PREFETCH)
 	/* Enable ART Accelerator prefetch */
 	LL_FLASH_EnablePrefetch();
+#endif
 
 	/* Update CMSIS SystemCoreClock variable (HCLK) */
 	/* At reset, system core clock is set to 16 MHz from HSI */

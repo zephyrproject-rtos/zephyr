@@ -7,6 +7,9 @@
 
 if SOC_SERIES_STM32G0X
 
+config STM32_FLASH_PREFETCH
+	default y
+
 rsource "Kconfig.defconfig.stm32g0*"
 
 if UART_STM32

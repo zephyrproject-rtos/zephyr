@@ -21,4 +21,7 @@ config COUNTER
 
 endif # PM
 
+config STM32_FLASH_PREFETCH
+	default y
+
 endif # SOC_SERIES_STM32F1X

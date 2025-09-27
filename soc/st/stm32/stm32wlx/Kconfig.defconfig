@@ -7,4 +7,7 @@ if SOC_SERIES_STM32WLX
 
 rsource "Kconfig.defconfig.stm32wl*"
 
+config STM32_FLASH_PREFETCH
+	default y
+
 endif # SOC_SERIES_STM32WLX

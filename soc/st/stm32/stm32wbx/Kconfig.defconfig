@@ -10,4 +10,7 @@ rsource "Kconfig.defconfig.stm32wb*"
 config BT_USER_PHY_UPDATE
 	default y if BT
 
+config STM32_FLASH_PREFETCH
+	default y
+
 endif # SOC_SERIES_STM32WBX
