@@ -81,6 +81,17 @@ Phy
   clock-reference. The selection directly depends on the value on OTGHSSEL (OTG_HS PHY kernel
   clock source selection) located in the RCC_CCIPR2 register.
 
+SPI
+===
+
+* The macros :c:macro:`SPI_CS_CONTROL_INIT` :c:macro:`SPI_CS_CONTROL_INIT_INST`,
+  :c:macro:`SPI_CONFIG_DT`, :c:macro:`SPI_CONFIG_DT_INST`, :c:macro:`SPI_DT_SPEC_GET`,
+  and :c:macro:`SPI_DT_SPEC_INST_GET` have been changed so that they do not need to be
+  provided a delay parameter anymore. This is because the timing parameters of a SPI peripheral
+  chip select should now be specified in DT with the
+  ``spi-cs-setup-delay-ns`` and ``spi-cs-hold-delay-ns`` properties.
+  (:github:`87427`).
+
 Sensors
 =======
 

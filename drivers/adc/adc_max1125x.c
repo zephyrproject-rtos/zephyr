@@ -787,8 +787,7 @@ static DEVICE_API(adc, max1125x_api) = {
 #define MAX1125X_INIT(t, n, odr_delay_us, res, mux, pgab)                                          \
 	static const struct max1125x_config max##t##_cfg_##n = {                                   \
 		.bus = SPI_DT_SPEC_GET(DT_INST_MAX1125X(n, t),                                     \
-				       SPI_OP_MODE_MASTER | SPI_WORD_SET(8) | SPI_TRANSFER_MSB,    \
-				       1),                                                         \
+				       SPI_OP_MODE_MASTER | SPI_WORD_SET(8) | SPI_TRANSFER_MSB),   \
 		.odr_delay = odr_delay_us,                                                         \
 		.resolution = res,                                                                 \
 		.multiplexer = mux,                                                                \
