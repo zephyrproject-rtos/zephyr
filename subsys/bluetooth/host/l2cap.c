@@ -50,6 +50,11 @@ LOG_MODULE_REGISTER(bt_l2cap, CONFIG_BT_L2CAP_LOG_LEVEL);
 
 #define L2CAP_LE_MAX_CREDITS		(BT_BUF_ACL_RX_COUNT - 1)
 
+#define L2CAP_LE_CID_FIXED_START 0x0001
+#define L2CAP_LE_CID_FIXED_END   0x003f
+#define L2CAP_LE_CID_IS_FIXED(_cid) \
+	(_cid >= L2CAP_LE_CID_FIXED_START && _cid <= L2CAP_LE_CID_FIXED_END)
+
 #define L2CAP_LE_CID_DYN_START	0x0040
 #define L2CAP_LE_CID_DYN_END	0x007f
 #define L2CAP_LE_CID_IS_DYN(_cid) \
@@ -410,6 +415,12 @@ void bt_l2cap_connected(struct bt_conn *conn)
 	STRUCT_SECTION_FOREACH(bt_l2cap_fixed_chan, fchan) {
 		struct bt_l2cap_le_chan *le_chan;
 
+		__ASSERT(L2CAP_LE_CID_IS_FIXED(fchan->cid),
+			 "CID %u is not in the fixed channel range", fchan->cid);
+
+		chan = bt_l2cap_le_lookup_tx_cid(conn, fchan->cid);
+		__ASSERT(chan == NULL, "Fixed channel with CID %u already exists", fchan->cid);
+
 		if (fchan->accept(conn, &chan) < 0) {
 			continue;
 		}
@@ -422,7 +433,7 @@ void bt_l2cap_connected(struct bt_conn *conn)
 		le_chan->rx.cid = fchan->cid;
 		le_chan->tx.cid = fchan->cid;
 
-		if (!l2cap_chan_add(conn, chan, fchan->destroy)) {
+		if (!l2cap_chan_add(conn, chan, NULL)) {
 			return;
 		}
 
@@ -2936,7 +2947,10 @@ static int l2cap_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 	return -ENOMEM;
 }
 
-BT_L2CAP_CHANNEL_DEFINE(le_fixed_chan, BT_L2CAP_CID_LE_SIG, l2cap_accept, NULL);
+BT_L2CAP_FIXED_CHANNEL_DEFINE(le_fixed_chan) = {
+	.cid = BT_L2CAP_CID_LE_SIG,
+	.accept = l2cap_accept,
+};
 
 void bt_l2cap_init(void)
 {
@@ -3394,6 +3408,16 @@ static int bt_l2cap_dyn_chan_send(struct bt_l2cap_le_chan *le_chan, struct net_b
 
 	return 0;
 }
+#endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
+
+static void l2cap_fixed_chan_sent_cb(struct bt_conn *conn, void *user_data, int err)
+{
+	struct bt_l2cap_chan *chan = user_data;
+
+	if (chan->ops->sent) {
+		chan->ops->sent(chan);
+	}
+}
 
 int bt_l2cap_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
@@ -3421,20 +3445,21 @@ int bt_l2cap_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		return bt_l2cap_br_chan_send_cb(chan, buf, NULL, NULL);
 	}
 
-	/* Sending over static channels is not supported by this fn. Use
-	 * `bt_l2cap_send_pdu()` instead.
-	 */
-	if (IS_ENABLED(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)) {
-		struct bt_l2cap_le_chan *le_chan = BT_L2CAP_LE_CHAN(chan);
+	struct bt_l2cap_le_chan *le_chan = BT_L2CAP_LE_CHAN(chan);
 
-		__ASSERT_NO_MSG(le_chan);
-		__ASSERT_NO_MSG(L2CAP_LE_CID_IS_DYN(le_chan->tx.cid));
+	__ASSERT_NO_MSG(le_chan);
 
+#if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
+	if (L2CAP_LE_CID_IS_DYN(le_chan->tx.cid)) {
 		return bt_l2cap_dyn_chan_send(le_chan, buf);
+	}
+#endif
+
+	if (L2CAP_LE_CID_IS_FIXED(le_chan->tx.cid)) {
+		return bt_l2cap_send_pdu(le_chan, buf, l2cap_fixed_chan_sent_cb, (void *)chan);
 	}
 
 	LOG_DBG("Invalid channel type (chan %p)", chan);
 
 	return -EINVAL;
 }
-#endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
