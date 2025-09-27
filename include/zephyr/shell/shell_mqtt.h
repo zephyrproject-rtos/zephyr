@@ -47,7 +47,7 @@ struct shell_mqtt {
 	/** Handler function registered by shell. */
 	shell_transport_handler_t shell_handler;
 
-	struct ring_buf rx_rb;
+	struct ring_buffer rx_rb;
 	uint8_t rx_rb_buf[RX_RB_SIZE];
 	uint8_t *rx_rb_ptr;
 
