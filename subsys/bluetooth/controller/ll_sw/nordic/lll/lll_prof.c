@@ -12,6 +12,7 @@
 
 #include "hal/ccm.h"
 #include "hal/radio.h"
+#include "hal/ticker.h"
 
 #include "util/memq.h"
 
@@ -23,12 +24,46 @@
 
 #include "lll.h"
 
+#include "hal/debug.h"
+
+/* Below profiling measurements using a sample with:
+ * 1 connectable legacy advertising or 1 peripheral ACL,
+ * plus
+ * 3 extended advertising sets, scanning on 2M PHY, scanning on Coded PHY, and
+ * 2 auxiliary scan set.
+ */
+#if defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
+#define LLL_PROF_RADIO_MAX_US    85  /* Max. Radio Rx/Tx ISR, O(1)*/
+#define LLL_PROF_LLL_MAX_US      75  /* Max. LLL prepare, O(1) */
+#define LLL_PROF_ULL_HIGH_MAX_US 260 /* Max. Radio + LLL + ULL High, O(1) */
+#define LLL_PROF_ULL_LOW_MAX_US  306 /* Max. ULL Low, O(n) n is ticker nodes */
+#else /* !CONFIG_SOC_COMPATIBLE_NRF54LX */
+#define LLL_PROF_RADIO_MAX_US    184 /* Max. Radio Rx/Tx ISR, O(1)*/
+#define LLL_PROF_LLL_MAX_US      214 /* Max. LLL prepare, O(1) */
+#define LLL_PROF_ULL_HIGH_MAX_US 397 /* Max. Radio + LLL + ULL High, O(1) */
+#define LLL_PROF_ULL_LOW_MAX_US  733 /* Max. ULL Low, O(n) n is ticker nodes */
+#endif /* !CONFIG_SOC_COMPATIBLE_NRF54LX */
+
+#define LLL_PROF_ASSERT(val, max) \
+	{ \
+		LL_ASSERT_MSG(((val) <= (max)), \
+			      "%s: %u (%u), %u (%u), %u (%u), %u (%u)\n", __func__, \
+			      HAL_TICKER_TICKS_TO_US(cputime_ticks_radio), \
+			      LLL_PROF_RADIO_MAX_US, \
+			      HAL_TICKER_TICKS_TO_US(cputime_ticks_lll), \
+			      LLL_PROF_LLL_MAX_US, \
+			      HAL_TICKER_TICKS_TO_US(cputime_ticks_ull_high), \
+			      LLL_PROF_ULL_HIGH_MAX_US, \
+			      HAL_TICKER_TICKS_TO_US(cputime_ticks_ull_low), \
+			      LLL_PROF_ULL_LOW_MAX_US); \
+	}
+
 static int send(struct node_rx_pdu *rx);
 static uint16_t latency_get(void);
 static inline void sample(uint32_t *timestamp);
 static inline void sample_ticks(uint32_t *timestamp_ticks);
 static inline void delta(uint32_t timestamp, uint16_t *cputime);
-static inline void delta_ticks(uint32_t timestamp_ticks, uint8_t *cputime_ticks);
+static inline void delta_ticks(uint32_t timestamp_ticks, uint16_t *cputime_ticks);
 
 static uint32_t timestamp_radio;
 static uint32_t timestamp_lll;
@@ -50,10 +85,10 @@ static uint32_t timestamp_ticks_radio;
 static uint32_t timestamp_ticks_lll;
 static uint32_t timestamp_ticks_ull_high;
 static uint32_t timestamp_ticks_ull_low;
-static uint8_t  cputime_ticks_radio;
-static uint8_t  cputime_ticks_lll;
-static uint8_t  cputime_ticks_ull_high;
-static uint8_t  cputime_ticks_ull_low;
+static uint16_t  cputime_ticks_radio;
+static uint16_t  cputime_ticks_lll;
+static uint16_t  cputime_ticks_ull_high;
+static uint16_t  cputime_ticks_ull_low;
 
 void lll_prof_enter_radio(void)
 {
@@ -65,6 +100,12 @@ void lll_prof_exit_radio(void)
 {
 	delta(timestamp_radio, &cputime_radio);
 	delta_ticks(timestamp_ticks_radio, &cputime_ticks_radio);
+	LLL_PROF_ASSERT(cputime_ticks_radio, HAL_TICKER_US_TO_TICKS(LLL_PROF_RADIO_MAX_US));
+}
+
+uint16_t lll_prof_radio_get(void)
+{
+	return HAL_TICKER_TICKS_TO_US(cputime_ticks_radio);
 }
 
 void lll_prof_enter_lll(void)
@@ -77,6 +118,12 @@ void lll_prof_exit_lll(void)
 {
 	delta(timestamp_lll, &cputime_lll);
 	delta_ticks(timestamp_ticks_lll, &cputime_ticks_lll);
+	LLL_PROF_ASSERT(cputime_ticks_lll, HAL_TICKER_US_TO_TICKS(LLL_PROF_LLL_MAX_US));
+}
+
+uint16_t lll_prof_lll_get(void)
+{
+	return HAL_TICKER_TICKS_TO_US(cputime_ticks_lll);
 }
 
 void lll_prof_enter_ull_high(void)
@@ -89,6 +136,12 @@ void lll_prof_exit_ull_high(void)
 {
 	delta(timestamp_ull_high, &cputime_ull_high);
 	delta_ticks(timestamp_ticks_ull_high, &cputime_ticks_ull_high);
+	LLL_PROF_ASSERT(cputime_ticks_ull_high, HAL_TICKER_US_TO_TICKS(LLL_PROF_ULL_HIGH_MAX_US));
+}
+
+uint16_t lll_prof_ull_high_get(void)
+{
+	return HAL_TICKER_TICKS_TO_US(cputime_ticks_ull_high);
 }
 
 void lll_prof_enter_ull_low(void)
@@ -101,6 +154,12 @@ void lll_prof_exit_ull_low(void)
 {
 	delta(timestamp_ull_low, &cputime_ull_low);
 	delta_ticks(timestamp_ticks_ull_low, &cputime_ticks_ull_low);
+	LLL_PROF_ASSERT(cputime_ticks_ull_low, HAL_TICKER_US_TO_TICKS(LLL_PROF_ULL_LOW_MAX_US));
+}
+
+uint16_t lll_prof_ull_low_get(void)
+{
+	return HAL_TICKER_TICKS_TO_US(cputime_ticks_ull_low);
 }
 
 void lll_prof_latency_capture(void)
@@ -329,12 +388,12 @@ static inline void delta(uint32_t timestamp, uint16_t *cputime)
 	}
 }
 
-static inline void delta_ticks(uint32_t timestamp_ticks, uint8_t *cputime_ticks)
+static inline void delta_ticks(uint32_t timestamp_ticks, uint16_t *cputime_ticks)
 {
 	uint32_t delta;
 
 	delta = ticker_ticks_now_get() - timestamp_ticks;
-	if (delta < UINT8_MAX && delta > *cputime_ticks) {
+	if (delta < UINT16_MAX && delta > *cputime_ticks) {
 		*cputime_ticks = delta;
 	}
 }
