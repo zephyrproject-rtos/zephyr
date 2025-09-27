@@ -174,4 +174,14 @@ config NET_ETHERNET_FORWARD_UNRECOGNISED_ETHERTYPE
 	  it does not recognize the EtherType in the header. By default, such
 	  frames are dropped at the L2 processing.
 
+config NET_QBV
+	bool "Qbv support"
+	depends on PTP_CLOCK
+	help
+	  Enable Qbv support, Qbv is Enhancements for Scheduled Traffic (EST), one
+	  feature of TSN. It provides time "slots" for specific classes of traffic
+	  in a manner similar to TDM. Host (beyond standard) can select time/time
+	  gate during which a packet will be sent, granular control by software of
+	  packet transmission.
+
 endif # NET_L2_ETHERNET
