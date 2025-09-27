@@ -154,7 +154,8 @@ static int unicast_client_ase_discover(struct bt_conn *conn, uint16_t start_hand
 static void unicast_client_reset(struct bt_bap_ep *ep, uint8_t reason);
 
 static void delayed_ase_read_handler(struct k_work *work);
-static void unicast_client_ep_set_status(struct bt_bap_ep *ep, struct net_buf_simple *buf);
+static void unicast_client_ep_set_status(struct bt_bap_ep *ep, struct net_buf_simple *buf,
+					 bool is_notification);
 
 static int unicast_client_send_start(struct bt_bap_ep *ep)
 {
@@ -582,7 +583,7 @@ static void unicast_client_ep_set_local_idle_state(struct bt_bap_ep *ep)
 
 	net_buf_simple_init_with_data(&buf, &status, sizeof(status));
 
-	unicast_client_ep_set_status(ep, &buf);
+	unicast_client_ep_set_status(ep, &buf, false);
 }
 
 static void unicast_client_notify_location(struct bt_conn *conn, enum bt_audio_dir dir,
@@ -1246,12 +1247,14 @@ static void unicast_client_ep_releasing_state(struct bt_bap_ep *ep, struct net_b
 	}
 }
 
-static void unicast_client_ep_set_status(struct bt_bap_ep *ep, struct net_buf_simple *buf)
+static void unicast_client_ep_set_status(struct bt_bap_ep *ep, struct net_buf_simple *buf,
+					 bool is_notification)
 {
 	struct bt_ascs_ase_status *status;
 	struct bt_bap_unicast_client_ep *client_ep;
 	bool state_changed;
 	uint8_t old_state;
+	uint8_t new_state;
 
 	if (!ep) {
 		return;
@@ -1260,11 +1263,29 @@ static void unicast_client_ep_set_status(struct bt_bap_ep *ep, struct net_buf_si
 	client_ep = CONTAINER_OF(ep, struct bt_bap_unicast_client_ep, ep);
 
 	status = net_buf_simple_pull_mem(buf, sizeof(*status));
-
+	new_state = status->state;
 	old_state = ep->state;
+
+	LOG_DBG("ep %p handle 0x%04x id 0x%02x dir %s state %s -> %s", ep, client_ep->handle,
+		status->id, bt_audio_dir_str(ep->dir), bt_bap_ep_state_str(old_state),
+		bt_bap_ep_state_str(new_state));
+
+	/* Only check state changes for notifications. In the case of local changes or when we are
+	 * reading the state during discovery, we do not want to compare states as that would cause
+	 * a invalid state change from e.g. IDLE to IDLE
+	 */
+	if (is_notification && !bt_bap_stream_valid_state_transition(ep, new_state)) {
+		LOG_WRN("Invalid state transition: %s -> %s", bt_bap_ep_state_str(ep->state),
+			bt_bap_ep_state_str(new_state));
+		/* TODO: We should notify the application when this happens
+		 * https://github.com/zephyrproject-rtos/zephyr/issues/94353
+		 */
+		return;
+	}
+
 	ep->id = status->id;
-	ep->state = status->state;
-	state_changed = old_state != ep->state;
+	ep->state = new_state;
+	state_changed = old_state != new_state;
 
 	if (state_changed && old_state == BT_BAP_EP_STATE_STREAMING) {
 		/* We left the streaming state, let the upper layers know that the stream is stopped
@@ -1298,150 +1319,26 @@ static void unicast_client_ep_set_status(struct bt_bap_ep *ep, struct net_buf_si
 		}
 	}
 
-	LOG_DBG("ep %p handle 0x%04x id 0x%02x dir %s state %s -> %s", ep, client_ep->handle,
-		status->id, bt_audio_dir_str(ep->dir), bt_bap_ep_state_str(old_state),
-		bt_bap_ep_state_str(status->state));
-
-	switch (status->state) {
+	switch (new_state) {
 	case BT_BAP_EP_STATE_IDLE:
 		unicast_client_ep_idle_state(ep);
 		break;
 	case BT_BAP_EP_STATE_CODEC_CONFIGURED:
-		switch (old_state) {
-		/* Valid only if ASE_State field = 0x00 (Idle) */
-		case BT_BAP_EP_STATE_IDLE:
-			/* or 0x01 (Codec Configured) */
-		case BT_BAP_EP_STATE_CODEC_CONFIGURED:
-			/* or 0x02 (QoS Configured) */
-		case BT_BAP_EP_STATE_QOS_CONFIGURED:
-			/* or 0x06 (Releasing) */
-		case BT_BAP_EP_STATE_RELEASING:
-			break;
-		default:
-			LOG_WRN("Invalid state transition: %s -> %s",
-				bt_bap_ep_state_str(old_state), bt_bap_ep_state_str(ep->state));
-			return;
-		}
-
 		unicast_client_ep_config_state(ep, buf);
 		break;
 	case BT_BAP_EP_STATE_QOS_CONFIGURED:
-		/* QoS configured have different allowed states depending on the endpoint type */
-		if (ep->dir == BT_AUDIO_DIR_SOURCE) {
-			switch (old_state) {
-			/* Valid only if ASE_State field = 0x01 (Codec Configured) */
-			case BT_BAP_EP_STATE_CODEC_CONFIGURED:
-			/* or 0x02 (QoS Configured) */
-			case BT_BAP_EP_STATE_QOS_CONFIGURED:
-			/* or 0x04 (Streaming) if there is a disconnect */
-			case BT_BAP_EP_STATE_STREAMING:
-			/* or 0x05 (Disabling) */
-			case BT_BAP_EP_STATE_DISABLING:
-				break;
-			default:
-				LOG_WRN("Invalid state transition: %s -> %s",
-					bt_bap_ep_state_str(old_state),
-					bt_bap_ep_state_str(ep->state));
-				return;
-			}
-		} else {
-			switch (old_state) {
-			/* Valid only if ASE_State field = 0x01 (Codec Configured) */
-			case BT_BAP_EP_STATE_CODEC_CONFIGURED:
-			/* or 0x02 (QoS Configured) */
-			case BT_BAP_EP_STATE_QOS_CONFIGURED:
-			/* or 0x03 (Enabling) */
-			case BT_BAP_EP_STATE_ENABLING:
-			/* or 0x04 (Streaming)*/
-			case BT_BAP_EP_STATE_STREAMING:
-				break;
-			default:
-				LOG_WRN("Invalid state transition: %s -> %s",
-					bt_bap_ep_state_str(old_state),
-					bt_bap_ep_state_str(ep->state));
-				return;
-			}
-		}
-
 		unicast_client_ep_qos_state(ep, buf, old_state);
 		break;
 	case BT_BAP_EP_STATE_ENABLING:
-		switch (old_state) {
-		/* Valid only if ASE_State field = 0x02 (QoS Configured) */
-		case BT_BAP_EP_STATE_QOS_CONFIGURED:
-			/* or 0x03 (Enabling) */
-		case BT_BAP_EP_STATE_ENABLING:
-			break;
-		default:
-			LOG_WRN("Invalid state transition: %s -> %s",
-				bt_bap_ep_state_str(old_state), bt_bap_ep_state_str(ep->state));
-			return;
-		}
-
 		unicast_client_ep_enabling_state(ep, buf, state_changed);
 		break;
 	case BT_BAP_EP_STATE_STREAMING:
-		switch (old_state) {
-		/* Valid only if ASE_State field = 0x03 (Enabling)*/
-		case BT_BAP_EP_STATE_ENABLING:
-			/* or 0x04 (Streaming)*/
-		case BT_BAP_EP_STATE_STREAMING:
-			break;
-		default:
-			LOG_WRN("Invalid state transition: %s -> %s",
-				bt_bap_ep_state_str(old_state), bt_bap_ep_state_str(ep->state));
-			return;
-		}
-
 		unicast_client_ep_streaming_state(ep, buf, state_changed);
 		break;
 	case BT_BAP_EP_STATE_DISABLING:
-		if (ep->dir == BT_AUDIO_DIR_SOURCE) {
-			switch (old_state) {
-			/* Valid only if ASE_State field = 0x03 (Enabling) */
-			case BT_BAP_EP_STATE_ENABLING:
-			/* or 0x04 (Streaming) */
-			case BT_BAP_EP_STATE_STREAMING:
-				break;
-			default:
-				LOG_WRN("Invalid state transition: %s -> %s",
-					bt_bap_ep_state_str(old_state),
-					bt_bap_ep_state_str(ep->state));
-				return;
-			}
-		} else {
-			/* Sinks cannot go into the disabling state */
-			LOG_WRN("Invalid state transition: %s -> %s",
-				bt_bap_ep_state_str(old_state), bt_bap_ep_state_str(ep->state));
-			return;
-		}
-
 		unicast_client_ep_disabling_state(ep, buf);
 		break;
 	case BT_BAP_EP_STATE_RELEASING:
-		switch (old_state) {
-		/* Valid only if ASE_State field = 0x01 (Codec Configured) */
-		case BT_BAP_EP_STATE_CODEC_CONFIGURED:
-			/* or 0x02 (QoS Configured) */
-		case BT_BAP_EP_STATE_QOS_CONFIGURED:
-			/* or 0x03 (Enabling) */
-		case BT_BAP_EP_STATE_ENABLING:
-			/* or 0x04 (Streaming) */
-		case BT_BAP_EP_STATE_STREAMING:
-			break;
-			/* or 0x04 (Disabling) */
-		case BT_BAP_EP_STATE_DISABLING:
-			if (ep->dir == BT_AUDIO_DIR_SOURCE) {
-				break;
-			} /* else fall through for sink */
-
-			/* fall through */
-		default:
-			LOG_WRN("Invalid state transition: %s -> %s",
-				bt_bap_ep_state_str(old_state), bt_bap_ep_state_str(ep->state));
-			return;
-		}
-
 		unicast_client_ep_releasing_state(ep, buf);
 		break;
 	}
@@ -1741,7 +1638,7 @@ static uint8_t unicast_client_ase_ntf_read_func(struct bt_conn *conn, uint8_t er
 			ep->reason = BT_HCI_ERR_REMOTE_USER_TERM_CONN;
 		}
 
-		unicast_client_ep_set_status(ep, &buf_clone);
+		unicast_client_ep_set_status(ep, &buf_clone, true);
 	}
 
 	return BT_GATT_ITER_STOP;
@@ -1856,7 +1753,7 @@ static uint8_t unicast_client_ep_notify(struct bt_conn *conn,
 		ep->reason = BT_HCI_ERR_REMOTE_USER_TERM_CONN;
 	}
 
-	unicast_client_ep_set_status(ep, &buf);
+	unicast_client_ep_set_status(ep, &buf, true);
 
 	return BT_GATT_ITER_CONTINUE;
 }
@@ -1976,19 +1873,6 @@ static int unicast_client_ep_config(struct bt_bap_ep *ep, struct net_buf_simple 
 		return -EINVAL;
 	}
 
-	switch (ep->state) {
-	/* Valid only if ASE_State field = 0x00 (Idle) */
-	case BT_BAP_EP_STATE_IDLE:
-		/* or 0x01 (Codec Configured) */
-	case BT_BAP_EP_STATE_CODEC_CONFIGURED:
-		/* or 0x02 (QoS Configured) */
-	case BT_BAP_EP_STATE_QOS_CONFIGURED:
-		break;
-	default:
-		LOG_ERR("Invalid state: %s", bt_bap_ep_state_str(ep->state));
-		return -EINVAL;
-	}
-
 	LOG_DBG("id 0x%02x dir %s codec 0x%02x", ep->id, bt_audio_dir_str(ep->dir), codec_cfg->id);
 
 	req = net_buf_simple_add(buf, sizeof(*req));
@@ -2016,17 +1900,6 @@ int bt_bap_unicast_client_ep_qos(struct bt_bap_ep *ep, struct net_buf_simple *bu
 	if (ep == NULL || ep->iso == NULL || ep->iso->chan.iso == NULL) {
 		LOG_DBG("Invalid endpoint %p (%p (%p))", ep, ep == NULL ? NULL : ep->iso,
 			(ep == NULL || ep->iso == NULL) ? NULL : ep->iso->chan.iso);
-		return -EINVAL;
-	}
-
-	switch (ep->state) {
-	/* Valid only if ASE_State field = 0x01 (Codec Configured) */
-	case BT_BAP_EP_STATE_CODEC_CONFIGURED:
-		/* or 0x02 (QoS Configured) */
-	case BT_BAP_EP_STATE_QOS_CONFIGURED:
-		break;
-	default:
-		LOG_ERR("Invalid state: %s", bt_bap_ep_state_str(ep->state));
 		return -EINVAL;
 	}
 
@@ -2063,11 +1936,6 @@ static int unicast_client_ep_enable(struct bt_bap_ep *ep, struct net_buf_simple 
 		return -EINVAL;
 	}
 
-	if (ep->state != BT_BAP_EP_STATE_QOS_CONFIGURED) {
-		LOG_ERR("Invalid state: %s", bt_bap_ep_state_str(ep->state));
-		return -EINVAL;
-	}
-
 	LOG_DBG("id 0x%02x", ep->id);
 
 	req = net_buf_simple_add(buf, sizeof(*req));
@@ -2090,17 +1958,6 @@ static int unicast_client_ep_metadata(struct bt_bap_ep *ep, struct net_buf_simpl
 		return -EINVAL;
 	}
 
-	switch (ep->state) {
-	/* Valid for an ASE only if ASE_State field = 0x03 (Enabling) */
-	case BT_BAP_EP_STATE_ENABLING:
-	/* or 0x04 (Streaming) */
-	case BT_BAP_EP_STATE_STREAMING:
-		break;
-	default:
-		LOG_ERR("Invalid state: %s", bt_bap_ep_state_str(ep->state));
-		return -EINVAL;
-	}
-
 	LOG_DBG("id 0x%02x", ep->id);
 
 	req = net_buf_simple_add(buf, sizeof(*req));
@@ -2120,11 +1977,6 @@ static int unicast_client_ep_start(struct bt_bap_ep *ep, struct net_buf_simple *
 		return -EINVAL;
 	}
 
-	if (ep->state != BT_BAP_EP_STATE_ENABLING && ep->state != BT_BAP_EP_STATE_DISABLING) {
-		LOG_ERR("Invalid state: %s", bt_bap_ep_state_str(ep->state));
-		return -EINVAL;
-	}
-
 	LOG_DBG("id 0x%02x", ep->id);
 
 	net_buf_simple_add_u8(buf, ep->id);
@@ -2137,17 +1989,6 @@ static int unicast_client_ep_disable(struct bt_bap_ep *ep, struct net_buf_simple
 	LOG_DBG("ep %p buf %p", ep, buf);
 
 	if (!ep) {
-		return -EINVAL;
-	}
-
-	switch (ep->state) {
-	/* Valid only if ASE_State field = 0x03 (Enabling) */
-	case BT_BAP_EP_STATE_ENABLING:
-		/* or 0x04 (Streaming) */
-	case BT_BAP_EP_STATE_STREAMING:
-		break;
-	default:
-		LOG_ERR("Invalid state: %s", bt_bap_ep_state_str(ep->state));
 		return -EINVAL;
 	}
 
@@ -2166,12 +2007,6 @@ static int unicast_client_ep_stop(struct bt_bap_ep *ep, struct net_buf_simple *b
 		return -EINVAL;
 	}
 
-	/* Valid only if ASE_State field value = 0x05 (Disabling). */
-	if (ep->state != BT_BAP_EP_STATE_DISABLING) {
-		LOG_ERR("Invalid state: %s", bt_bap_ep_state_str(ep->state));
-		return -EINVAL;
-	}
-
 	LOG_DBG("id 0x%02x", ep->id);
 
 	net_buf_simple_add_u8(buf, ep->id);
@@ -2184,23 +2019,6 @@ static int unicast_client_ep_release(struct bt_bap_ep *ep, struct net_buf_simple
 	LOG_DBG("ep %p buf %p", ep, buf);
 
 	if (!ep) {
-		return -EINVAL;
-	}
-
-	switch (ep->state) {
-	/* Valid only if ASE_State field = 0x01 (Codec Configured) */
-	case BT_BAP_EP_STATE_CODEC_CONFIGURED:
-		/* or 0x02 (QoS Configured) */
-	case BT_BAP_EP_STATE_QOS_CONFIGURED:
-		/* or 0x03 (Enabling) */
-	case BT_BAP_EP_STATE_ENABLING:
-		/* or 0x04 (Streaming) */
-	case BT_BAP_EP_STATE_STREAMING:
-		/* or 0x05 (Disabling) */
-	case BT_BAP_EP_STATE_DISABLING:
-		break;
-	default:
-		LOG_ERR("Invalid state: %s", bt_bap_ep_state_str(ep->state));
 		return -EINVAL;
 	}
 
@@ -3379,18 +3197,6 @@ int bt_bap_unicast_client_qos(struct bt_conn *conn, struct bt_bap_unicast_group 
 			return -EINVAL;
 		}
 
-		/* Can only be done if all the streams are in the codec
-		 * configured state or the QoS configured state
-		 */
-		switch (ep->state) {
-		case BT_BAP_EP_STATE_CODEC_CONFIGURED:
-		case BT_BAP_EP_STATE_QOS_CONFIGURED:
-			break;
-		default:
-			LOG_DBG("Invalid state: %s", bt_bap_ep_state_str(stream->ep->state));
-			return -EINVAL;
-		}
-
 		if (bt_bap_stream_verify_qos(stream, stream->qos) != BT_BAP_ASCS_REASON_NONE) {
 			return -EINVAL;
 		}
@@ -3874,7 +3680,7 @@ static uint8_t unicast_client_ase_read_func(struct bt_conn *conn, uint8_t err,
 		goto fail;
 	}
 
-	unicast_client_ep_set_status(ep, buf);
+	unicast_client_ep_set_status(ep, buf, false);
 	cb_err = unicast_client_ep_subscribe(conn, ep);
 	if (cb_err != 0) {
 		LOG_DBG("Failed to subscribe to ep %p: %d", ep, cb_err);
