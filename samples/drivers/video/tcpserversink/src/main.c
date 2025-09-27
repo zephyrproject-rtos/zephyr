@@ -95,9 +95,17 @@ int main(void)
 		return 0;
 	}
 
+    /* Alloc Buffers */
+    size_t buffer_size;
+    if (video_bits_per_pixel(fmt.pixelformat) > 0) {
+        buffer_size = fmt.pitch * fmt.height;
+    } else {
+        buffer_size = fmt.width * fmt.height / 10;
+	}
+
 	/* Alloc Buffers */
 	for (i = 0; i < ARRAY_SIZE(buffers); i++) {
-		buffers[i] = video_buffer_alloc(fmt.pitch * fmt.height, K_FOREVER);
+		buffers[i] = video_buffer_alloc(buffer_size, K_FOREVER);
 		if (buffers[i] == NULL) {
 			LOG_ERR("Unable to alloc video buffer");
 			return 0;
