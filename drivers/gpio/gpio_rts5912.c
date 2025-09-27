@@ -412,7 +412,25 @@ static int gpio_rts5912_port_toggle_bits(const struct device *port, gpio_port_pi
 	return 0;
 }
 
-static gpio_pin_t gpio_rts5912_get_intr_pin(volatile uint32_t *reg_base)
+int gpio_rts5912_get_pin_num(const struct gpio_dt_spec *gpio)
+{
+	const struct device *dev = gpio->port;
+	const struct gpio_rts5912_config *config = dev->config;
+	uint32_t gcr = (uint32_t)config->reg_base;
+
+	return (gcr - (uint32_t)(RTS5912_GPIOA_REG_BASE)) / 4 + gpio->pin;
+}
+
+volatile uint32_t *gpio_rts5912_get_port_address(const struct gpio_dt_spec *gpio)
+{
+	const struct device *dev = gpio->port;
+	const struct gpio_rts5912_config *config = dev->config;
+	volatile uint32_t *gcr = config->reg_base;
+
+	return gcr;
+}
+
+gpio_pin_t gpio_rts5912_get_intr_pin(volatile uint32_t *reg_base)
 {
 	gpio_pin_t pin = 0U;
 
@@ -564,7 +582,7 @@ static DEVICE_API(gpio, gpio_rts5912_driver_api) = {
 		.num_pins = DT_INST_PROP(id, ngpios),                                              \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(id, gpio_rts5912_init_##id, NULL, &gpio_rts5912_data_##id,           \
-			      &gpio_rts5912_config_##id, POST_KERNEL, CONFIG_GPIO_INIT_PRIORITY,   \
+			      &gpio_rts5912_config_##id, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,  \
 			      &gpio_rts5912_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_RTS5912_INIT)

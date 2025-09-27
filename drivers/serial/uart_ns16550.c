@@ -384,6 +384,13 @@ struct uart_ns16550_dev_data {
 #endif
 };
 
+uint32_t uart_ns16550_get_port(const struct device *dev)
+{
+	const struct uart_ns16550_dev_config *config = dev->config;
+
+	return config->port;
+}
+
 static void ns16550_outbyte(const struct uart_ns16550_dev_config *cfg,
 			    uintptr_t port, uint8_t val)
 {
