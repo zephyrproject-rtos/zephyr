@@ -5,7 +5,7 @@ description: Quectel BG95 modem
 
 compatible: "quectel,bg95"
 
-include: uart-device.yaml
+include: zephyr,cellular-modem-device.yaml
 
 properties:
   mdm-power-gpios:
