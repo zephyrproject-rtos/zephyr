@@ -22,8 +22,8 @@ extern "C" {
 #endif
 
 struct modem_backend_uart_isr {
-	struct ring_buf receive_rdb[2];
-	struct ring_buf transmit_rb;
+	struct ring_buffer receive_rdb[2];
+	struct ring_buffer transmit_rb;
 	atomic_t transmit_buf_len;
 	atomic_t receive_buf_len;
 	uint8_t receive_rdb_used;
@@ -60,7 +60,7 @@ struct modem_backend_uart_async {
 	struct modem_backend_uart_async_common common;
 	uint8_t *receive_bufs[2];
 	uint32_t receive_buf_size;
-	struct ring_buf receive_rb;
+	struct ring_buffer receive_rb;
 	struct k_spinlock receive_rb_lock;
 };
 

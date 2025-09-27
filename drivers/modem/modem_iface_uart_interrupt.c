@@ -52,7 +52,7 @@ static void modem_iface_uart_isr(const struct device *uart_dev,
 {
 	struct modem_context *ctx;
 	struct modem_iface_uart_data *data;
-	int rx = 0, ret;
+	int rx = 0;
 	uint8_t *dst;
 	uint32_t partial_size = 0;
 	uint32_t total_size = 0;
@@ -70,8 +70,7 @@ static void modem_iface_uart_isr(const struct device *uart_dev,
 	while (uart_irq_update(ctx->iface.dev) &&
 	       uart_irq_rx_ready(ctx->iface.dev)) {
 		if (!partial_size) {
-			partial_size = ring_buf_put_claim(&data->rx_rb, &dst,
-							  UINT32_MAX);
+			partial_size = ring_buffer_write_ptr(&data->rx_rb, &dst);
 		}
 		if (!partial_size) {
 			if (data->hw_flow_control) {
@@ -93,8 +92,7 @@ static void modem_iface_uart_isr(const struct device *uart_dev,
 		partial_size -= rx;
 	}
 
-	ret = ring_buf_put_finish(&data->rx_rb, total_size);
-	__ASSERT_NO_MSG(ret == 0);
+	ring_buffer_commit(&data->rx_rb, total_size);
 
 	if (total_size > 0) {
 		k_sem_give(&data->rx_sem);
@@ -116,7 +114,7 @@ static int modem_iface_uart_read(struct modem_iface *iface,
 	}
 
 	data = (struct modem_iface_uart_data *)(iface->iface_data);
-	*bytes_read = ring_buf_get(&data->rx_rb, buf, size);
+	*bytes_read = ring_buffer_read(&data->rx_rb, buf, size);
 
 	if (data->hw_flow_control && *bytes_read == 0) {
 		uart_irq_rx_enable(iface->dev);
@@ -190,7 +188,7 @@ int modem_iface_uart_init(struct modem_iface *iface, struct modem_iface_uart_dat
 	iface->read = modem_iface_uart_read;
 	iface->write = modem_iface_uart_write;
 
-	ring_buf_init(&data->rx_rb, config->rx_rb_buf_len, config->rx_rb_buf);
+	ring_buffer_init(&data->rx_rb, config->rx_rb_buf, config->rx_rb_buf_len);
 	k_sem_init(&data->rx_sem, 0, 1);
 
 	/* Configure hardware flow control */
