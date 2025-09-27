@@ -57,7 +57,8 @@ static const struct smf_state *get_last_of(const struct smf_state *states)
 }
 
 /**
- * @brief Find the Least Common Ancestor (LCA) of two states
+ * @brief Find the Least Common Ancestor (LCA) of two states,
+ *	  that are not ancestors of one another.
  *
  * @param source transition source
  * @param dest transition destination
@@ -68,9 +69,8 @@ static const struct smf_state *get_lca_of(const struct smf_state *source,
 {
 	for (const struct smf_state *ancestor = source->parent; ancestor != NULL;
 	     ancestor = ancestor->parent) {
-		if (ancestor == dest) {
-			return ancestor->parent;
-		} else if (share_parent(dest, ancestor)) {
+		/* First common ancestor */
+		if (share_parent(dest, ancestor)) {
 			return ancestor;
 		}
 	}
