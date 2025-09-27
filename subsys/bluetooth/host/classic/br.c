@@ -1292,6 +1292,95 @@ int bt_br_set_discoverable(bool enable, bool limited)
 	return 0;
 }
 
+static int write_scan_activity(uint16_t opcode, uint16_t interval, uint16_t windown)
+{
+	struct bt_hci_cp_write_scan_activity *cp;
+	struct net_buf *buf;
+
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+		return -EAGAIN;
+	}
+
+	buf = bt_hci_cmd_create(opcode, sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->interval = sys_cpu_to_le16(interval);
+	cp->windown = sys_cpu_to_le16(windown);
+
+	return bt_hci_cmd_send(opcode, buf);
+}
+
+int bt_br_write_page_scan_activity(uint16_t interval, uint16_t window)
+{
+	return write_scan_activity(BT_HCI_OP_WRITE_PAGE_SCAN_ACTIVITY, interval, window);
+}
+
+int bt_br_write_inquiry_scan_activity(uint16_t interval, uint16_t window)
+{
+	return write_scan_activity(BT_HCI_OP_WRITE_INQUIRY_SCAN_ACTIVITY, interval, window);
+}
+
+static int write_scan_type(uint16_t opcode, uint8_t type)
+{
+	struct bt_hci_cp_write_scan_type *cp;
+	struct net_buf *buf;
+	int err;
+
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+		return -EAGAIN;
+	}
+
+	buf = bt_hci_cmd_create(opcode, 1);
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->type = type;
+
+	err = bt_hci_cmd_send_sync(opcode, buf, NULL);
+	if (err) {
+		return err;
+	}
+
+	return 0;
+}
+
+int bt_br_write_inquiry_scan_type(uint8_t type)
+{
+	return write_scan_type(BT_HCI_OP_WRITE_INQUIRY_SCAN_TYPE, type);
+}
+
+int bt_br_write_page_scan_type(uint8_t type)
+{
+	return write_scan_type(BT_HCI_OP_WRITE_PAGE_SCAN_TYPE, type);
+}
+
+int bt_br_set_class_of_device(uint32_t local_cod)
+{
+	struct net_buf *buf;
+	struct bt_hci_cp_write_class_of_device *class_cp;
+
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+		return -EAGAIN;
+	}
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_WRITE_CLASS_OF_DEVICE, sizeof(*class_cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	class_cp = net_buf_add(buf, sizeof(*class_cp));
+	class_cp->class_of_device[0] = (uint8_t)local_cod;
+	class_cp->class_of_device[1] = (uint8_t)(local_cod >> 8);
+	class_cp->class_of_device[2] = (uint8_t)(local_cod >> 16);
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_CLASS_OF_DEVICE, buf, NULL);
+}
+
 bool bt_br_bond_exists(const bt_addr_t *addr)
 {
 	struct bt_keys_link_key *key = bt_keys_find_link_key(addr);
