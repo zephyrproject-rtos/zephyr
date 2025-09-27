@@ -49,7 +49,7 @@ int main(void)
 	ppt = cfb_get_display_parameter(dev, CFB_DISPLAY_PPT);
 
 	for (int idx = 0; idx < 42; idx++) {
-		if (cfb_get_font_size(dev, idx, &font_width, &font_height)) {
+		if (cfb_get_font_size(idx, &font_width, &font_height)) {
 			break;
 		}
 		cfb_framebuffer_set_font(dev, idx);
