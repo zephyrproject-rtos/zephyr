@@ -1,0 +1,16 @@
+description: UART DTR Wrapper Driver
+
+compatible: "zephyr,uart-dtr"
+
+include: base.yaml
+
+on-bus: uart
+bus: uart
+
+properties:
+  dtr-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      DTR (Data Terminal Ready) GPIO specification.
+      Use GPIO_ACTIVE_HIGH for active-high DTR or GPIO_ACTIVE_LOW for active-low DTR.
