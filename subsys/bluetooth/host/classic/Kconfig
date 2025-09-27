@@ -545,6 +545,26 @@ config BT_DEVICE_VERSION
 
 endif # BT_DID
 
+config BT_SPP
+	bool "Bluetooth SPP Profile [EXPERIMENTAL]"
+	select BT_RFCOMM
+	select EXPERIMENTAL
+	help
+	  This option enables the Bluetooth SPP profile
+
+if BT_SPP
+
+config BT_SPP_L2CAP_MTU
+	int "L2CAP MTU for SPP frames"
+	depends on BT_RFCOMM
+	default BT_RFCOMM_L2CAP_MTU
+	range 23 $(INT16_MAX)
+	help
+	  Maximum size of L2CAP PDU for RFCOMM frames.
+	  RX MTU will be truncated to account for the L2CAP PDU header.
+
+endif # BT_SPP
+
 config BT_PAGE_TIMEOUT
 	hex "Bluetooth Page Timeout"
 	default 0x2000
