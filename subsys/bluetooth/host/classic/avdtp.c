@@ -152,6 +152,98 @@ static inline void bt_avdtp_clear_req(struct bt_avdtp *session)
 	avdtp_unlock(session);
 }
 
+static int avdtp_media_disconnect(struct bt_avdtp_sep *sep)
+{
+	if (sep == NULL || sep->chan.chan.conn == NULL || sep->chan.chan.ops == NULL) {
+		return -EINVAL;
+	}
+
+	return bt_l2cap_chan_disconnect(&sep->chan.chan);
+}
+
+static bool avdtp_media_chan_valid(struct bt_avdtp_sep *sep)
+{
+	/* another way is checking whether the `chan` is in `conn->channels`. */
+	if ((sep->chan.state != BT_L2CAP_DISCONNECTED) &&
+	    (sep->chan.chan.conn != NULL) &&
+	    (sep->chan.chan.ops != NULL) &&
+	    (sep->state != AVDTP_IDLE)) {
+		return true;
+	}
+
+	if (((sep->chan.state != BT_L2CAP_DISCONNECTED) ||
+	     (sep->chan.chan.conn != NULL)) &&
+	    (sep->state != AVDTP_IDLE)) {
+		LOG_ERR("Media chan is disconnected, but sep state is %u", sep->state);
+	}
+
+	if (((sep->chan.state != BT_L2CAP_DISCONNECTED) ||
+	     (sep->chan.chan.conn != NULL)) &&
+	    (sep->state == AVDTP_IDLE)) {
+		LOG_ERR("Sep state is IDLE, but stream chan is not disconnected");
+	}
+
+	return false;
+}
+
+static void avdtp_endpoint_released(struct bt_avdtp_sep *sep)
+{
+	if (sep->endpoint_released != NULL) {
+		sep->endpoint_released(sep);
+	}
+}
+
+#define DELAY_WORK_RETRY 1
+#define DELAY_WORK_CHECK 2
+#define RETRY_MEDIA_DISCONNECT_TIMEOUT 100
+#define CHECK_MEDIA_DISCONNECT_TIMEOUT 3000
+
+static void avdtp_schedule_media_disconnect_work(struct bt_avdtp_sep *sep, uint8_t state)
+{
+	uint32_t timeout;
+
+	sep->_delay_work_state = state;
+
+	if (state == DELAY_WORK_RETRY) {
+		timeout = RETRY_MEDIA_DISCONNECT_TIMEOUT;
+	} else {
+		timeout = CHECK_MEDIA_DISCONNECT_TIMEOUT;
+	}
+
+	k_work_schedule(&sep->_delay_work, K_MSEC(timeout));
+}
+
+static void avdtp_cancel_media_disconnect_work(struct bt_avdtp_sep *sep)
+{
+	k_work_cancel_delayable(&sep->_delay_work);
+}
+
+static void avdtp_media_disconnect_work(struct k_work *work)
+{
+	struct bt_avdtp_sep *sep = CONTAINER_OF(work, struct bt_avdtp_sep, _delay_work.work);
+
+	if (!avdtp_media_chan_valid(sep)) {
+		if (sep->state != AVDTP_IDLE) {
+			bt_avdtp_set_state_lock(sep, AVDTP_IDLE);
+			avdtp_endpoint_released(sep);
+		}
+
+		return;
+	}
+
+	if (sep->_delay_work_state == DELAY_WORK_RETRY) {
+		int err;
+
+		err = avdtp_media_disconnect(sep);
+		if (err == 0) {
+			avdtp_schedule_media_disconnect_work(sep, DELAY_WORK_CHECK);
+			return;
+		}
+	}
+
+	/* TODO: disconnect acl or notify application? */
+}
+
 /* L2CAP Interface callbacks */
 void bt_avdtp_media_l2cap_connected(struct bt_l2cap_chan *chan)
 {
@@ -195,6 +287,8 @@ void bt_avdtp_media_l2cap_disconnected(struct bt_l2cap_chan *chan)
 
 	LOG_DBG("chan %p", chan);
 	chan->conn = NULL;
+	avdtp_cancel_media_disconnect_work(sep);
+
 	avdtp_sep_lock(sep);
 
 	if ((sep->state == AVDTP_CLOSING) && (session->req != NULL) &&
@@ -210,14 +304,13 @@ void bt_avdtp_media_l2cap_disconnected(struct bt_l2cap_chan *chan)
 		if (req->func != NULL) {
 			req->func(req, NULL);
 		}
-	} else if (sep->state > AVDTP_OPENING) {
+	} else {
 		bt_avdtp_set_state(sep, AVDTP_IDLE);
 		avdtp_sep_unlock(sep);
-		/* the l2cap is disconnected by other unexpected reasons */
-		session->ops->stream_l2cap_disconnected(session, sep);
-	} else {
-		avdtp_sep_unlock(sep);
 	}
+
+	/* the media l2cap is disconnected by other unexpected reasons */
+	avdtp_endpoint_released(sep);
 }
 
 int bt_avdtp_media_l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
@@ -250,15 +343,6 @@ static int avdtp_media_connect(struct bt_avdtp *session, struct bt_avdtp_sep *se
 
 	return bt_l2cap_chan_connect(session->br_chan.chan.conn, &sep->chan.chan,
 				     BT_L2CAP_PSM_AVDTP);
-}
-
-static int avdtp_media_disconnect(struct bt_avdtp_sep *sep)
-{
-	if (sep == NULL || sep->chan.chan.conn == NULL || sep->chan.chan.ops == NULL) {
-		return -EINVAL;
-	}
-
-	return bt_l2cap_chan_disconnect(&sep->chan.chan);
 }
 
 static struct net_buf *avdtp_create_pdu(uint8_t msg_type, uint8_t sig_id, uint8_t tid)
@@ -870,6 +954,7 @@ static void avdtp_process_configuration_cmd(struct bt_avdtp *session, struct net
 	err = avdtp_send_rsp(session, rsp_buf);
 
 	if (!reconfig && !err && !avdtp_err_code) {
+		sep->session = session;
 		bt_avdtp_set_state(sep, AVDTP_CONFIGURED);
 	}
 
@@ -903,6 +988,10 @@ static void avdtp_process_configuration_rsp(struct bt_avdtp *session, struct net
 
 	if (req->status == BT_AVDTP_SUCCESS) {
 		avdtp_set_status(req, buf, msg_type);
+	}
+
+	if (req->status == BT_AVDTP_SUCCESS) {
+		SET_CONF_REQ(req)->sep->session = session;
 	}
 
 	bt_avdtp_clear_req(session);
@@ -1139,11 +1228,28 @@ static void avdtp_close_cmd(struct bt_avdtp *session, struct net_buf *buf, uint8
 
 	err = avdtp_send_rsp(session, rsp_buf);
 
-	if (!err && !avdtp_err_code) {
-		bt_avdtp_set_state(sep, AVDTP_IDLE);
-	}
+	/* From AVDTP spec, endpoint state should be idle after responsing CLOSE.
+	 * But before the sep->chan is released, the sep can't be used from stack
+	 * perspective, so waiting the stream chan released.
+	 */
+	if (err == 0 && avdtp_err_code == 0) {
+		if (avdtp_media_chan_valid(sep)) {
+			avdtp_sep_unlock(sep);
 
-	avdtp_sep_unlock(sep);
+			/* TODO: If the INT does not close the transport channels within 3 seconds
+			 * the ACP device may initiate the ABORT procedure to reset the states on
+			 * both sides.
+			 */
+			avdtp_schedule_media_disconnect_work(sep, DELAY_WORK_CHECK);
+		} else {
+			bt_avdtp_set_state(sep, AVDTP_IDLE);
+			avdtp_sep_unlock(sep);
+
+			avdtp_endpoint_released(sep);
+		}
+	} else {
+		avdtp_sep_unlock(sep);
+	}
 }
 
 static void avdtp_close_rsp(struct bt_avdtp *session, struct net_buf *buf, uint8_t msg_type)
@@ -1158,10 +1264,30 @@ static void avdtp_close_rsp(struct bt_avdtp *session, struct net_buf *buf, uint8
 	avdtp_set_status(req, buf, msg_type);
 
 	if (req->status == BT_AVDTP_SUCCESS) {
-		bt_avdtp_set_state_lock(CTRL_REQ(req)->sep, AVDTP_CLOSING);
+		struct bt_avdtp_sep *sep = CTRL_REQ(req)->sep;
 
-		if (!avdtp_media_disconnect(CTRL_REQ(req)->sep)) {
-			return;
+		/* release stream */
+		avdtp_sep_lock(sep);
+		if (avdtp_media_chan_valid(sep)) {
+			int err;
+			uint8_t work_state;
+
+			bt_avdtp_set_state(sep, AVDTP_CLOSING);
+			avdtp_sep_unlock(sep);
+
+			err = avdtp_media_disconnect(sep);
+			if (err != 0) {
+				work_state = DELAY_WORK_RETRY;
+			} else {
+				work_state = DELAY_WORK_CHECK;
+			}
+
+			avdtp_schedule_media_disconnect_work(sep, work_state);
+		} else {
+			bt_avdtp_set_state(sep, AVDTP_IDLE);
+			avdtp_sep_unlock(sep);
+
+			avdtp_endpoint_released(sep);
 		}
 	}
 
@@ -1281,15 +1407,20 @@ static void avdtp_abort_cmd(struct bt_avdtp *session, struct net_buf *buf, uint8
 	err = avdtp_send_rsp(session, rsp_buf);
 
 	if (!err && !avdtp_err_code) {
-		if ((sep->state & (AVDTP_OPEN | AVDTP_STREAMING)) &&
-		    (sep->chan.state == BT_L2CAP_CONNECTED)) {
+		if (avdtp_media_chan_valid(sep)) {
 			bt_avdtp_set_state(sep, AVDTP_ABORTING);
+			avdtp_sep_unlock(sep);
+
+			avdtp_schedule_media_disconnect_work(sep, DELAY_WORK_CHECK);
 		} else {
 			bt_avdtp_set_state(sep, AVDTP_IDLE);
-		}
-	}
+			avdtp_sep_unlock(sep);
 
-	avdtp_sep_unlock(sep);
+			avdtp_endpoint_released(sep);
+		}
+	} else {
+		avdtp_sep_unlock(sep);
+	}
 }
 
 static void avdtp_abort_rsp(struct bt_avdtp *session, struct net_buf *buf, uint8_t msg_type)
@@ -1303,25 +1434,36 @@ static void avdtp_abort_rsp(struct bt_avdtp *session, struct net_buf *buf, uint8
 	k_work_cancel_delayable(&session->timeout_work);
 
 	if (msg_type == BT_AVDTP_ACCEPT) {
-		uint8_t pre_state = CTRL_REQ(req)->sep->state;
+		struct bt_avdtp_sep *sep = CTRL_REQ(req)->sep;
 
-		bt_avdtp_set_state_lock(CTRL_REQ(req)->sep, AVDTP_ABORTING);
+		req->status = BT_AVDTP_SUCCESS;
 
 		/* release stream */
-		if (pre_state & (AVDTP_OPEN | AVDTP_STREAMING)) {
-			avdtp_media_disconnect(CTRL_REQ(req)->sep);
+		avdtp_sep_lock(sep);
+		if (avdtp_media_chan_valid(sep)) {
+			int err;
+			uint8_t work_state;
+
+			bt_avdtp_set_state(sep, AVDTP_ABORTING);
+			avdtp_sep_unlock(sep);
+
+			err = avdtp_media_disconnect(sep);
+			if (err != 0) {
+				work_state = DELAY_WORK_RETRY;
+			} else {
+				work_state = DELAY_WORK_CHECK;
+			}
+
+			avdtp_schedule_media_disconnect_work(sep, work_state);
+		} else {
+			bt_avdtp_set_state(sep, AVDTP_IDLE);
+			avdtp_sep_unlock(sep);
+
+			avdtp_endpoint_released(sep);
 		}
-
-		/* For abort, make sure the state revert to IDLE state after
-		 * releasing l2cap channel.
-		 */
-		bt_avdtp_set_state_lock(CTRL_REQ(req)->sep, AVDTP_IDLE);
-	} else if (msg_type == BT_AVDTP_REJECT) {
-		avdtp_handle_reject(buf, req);
-	}
-
-	if (req->status == BT_AVDTP_SUCCESS) {
-		avdtp_set_status(req, buf, msg_type);
+	} else {
+		/* Spec only allows accept, spec doesn't define the packet format of reject. */
+		req->status = BT_AVDTP_BAD_STATE;
 	}
 
 	bt_avdtp_clear_req(session);
@@ -1412,6 +1554,34 @@ void bt_avdtp_l2cap_connected(struct bt_l2cap_chan *chan)
 	session->ops->connected(session);
 }
 
+static void avdtp_release_work(struct k_work *work)
+{
+	struct bt_avdtp_sep *sep, *next;
+	struct bt_avdtp *session = CONTAINER_OF(work, struct bt_avdtp, _release_work);
+	int err;
+	uint8_t work_state;
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&seps, sep, next, _node) {
+		if (sep->session != session || sep->state == AVDTP_IDLE) {
+			continue;
+		}
+
+		if (avdtp_media_chan_valid(sep)) {
+			err = avdtp_media_disconnect(sep);
+			if (err != 0) {
+				work_state = DELAY_WORK_RETRY;
+			} else {
+				work_state = DELAY_WORK_CHECK;
+			}
+
+			avdtp_schedule_media_disconnect_work(sep, work_state);
+		} else {
+			bt_avdtp_set_state_lock(sep, AVDTP_IDLE);
+			avdtp_endpoint_released(sep);
+		}
+	}
+}
+
 void bt_avdtp_clear_tx(struct bt_avdtp *session)
 {
 	struct net_buf *buf, *next;
@@ -1456,6 +1626,8 @@ void bt_avdtp_l2cap_disconnected(struct bt_l2cap_chan *chan)
 
 	/* notify a2dp disconnect */
 	session->ops->disconnected(session);
+
+	k_work_submit(&session->_release_work);
 }
 
 void (*cmd_handler[])(struct bt_avdtp *session, struct net_buf *buf, uint8_t tid) = {
@@ -1768,6 +1940,7 @@ int bt_avdtp_connect(struct bt_conn *conn, struct bt_avdtp *session)
 
 	/* Locking semaphore initialized to 1 (unlocked) */
 	k_sem_init(&session->sem_lock, 1, 1);
+	k_work_init(&session->_release_work, avdtp_release_work);
 	session->br_chan.rx.mtu = BT_L2CAP_RX_MTU;
 	session->br_chan.chan.ops = &signal_chan_ops;
 	session->br_chan.required_sec_level = BT_SECURITY_L2;
@@ -1777,11 +1950,28 @@ int bt_avdtp_connect(struct bt_conn *conn, struct bt_avdtp *session)
 
 int bt_avdtp_disconnect(struct bt_avdtp *session)
 {
+	struct bt_avdtp_sep *sep, *next;
+	int err;
+
 	if (!session) {
 		return -EINVAL;
 	}
 
 	LOG_DBG("session %p", session);
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&seps, sep, next, _node) {
+		if ((sep->session != session) || (!avdtp_media_chan_valid(sep))) {
+			continue;
+		}
+
+		err = avdtp_media_disconnect(sep);
+		if (err != 0) {
+			LOG_ERR("fail to disconnect media connection");
+			return err;
+		}
+
+		avdtp_schedule_media_disconnect_work(sep, DELAY_WORK_CHECK);
+	}
 
 	return bt_l2cap_chan_disconnect(&session->br_chan.chan);
 }
@@ -1812,6 +2002,7 @@ int bt_avdtp_l2cap_accept(struct bt_conn *conn, struct bt_l2cap_server *server,
 		k_sem_give(&avdtp_sem_lock);
 		/* Locking semaphore initialized to 1 (unlocked) */
 		k_sem_init(&session->sem_lock, 1, 1);
+		k_work_init(&session->_release_work, avdtp_release_work);
 		session->br_chan.chan.ops = &signal_chan_ops;
 		session->br_chan.rx.mtu = BT_L2CAP_RX_MTU;
 		*chan = &session->br_chan.chan;
@@ -1876,6 +2067,7 @@ int bt_avdtp_register_sep(uint8_t media_type, uint8_t sep_type, struct bt_avdtp_
 	sep->sep_info.tsep = sep_type;
 	/* Locking semaphore initialized to 1 (unlocked) */
 	k_sem_init(&sep->sem_lock, 1, 1);
+	k_work_init_delayable(&sep->_delay_work, avdtp_media_disconnect_work);
 	bt_avdtp_set_state_lock(sep, AVDTP_IDLE);
 
 	sys_slist_append(&seps, &sep->_node);
@@ -2161,9 +2353,12 @@ int bt_avdtp_suspend(struct bt_avdtp *session, struct bt_avdtp_ctrl_params *para
 
 int bt_avdtp_abort(struct bt_avdtp *session, struct bt_avdtp_ctrl_params *param)
 {
+	/* from ACP and INT point of views, when the state is CONFIGURED, OPEN, STREAMING or
+	 * CLOSING. However, AVDTP_ABORT_CMD can be sent or received in IDLE state.
+	 */
 	return bt_avdtp_ctrl(session, param, BT_AVDTP_ABORT,
-			     AVDTP_CONFIGURED | AVDTP_OPENING | AVDTP_OPEN | AVDTP_STREAMING |
-				     AVDTP_CLOSING);
+			     AVDTP_IDLE | AVDTP_CONFIGURED | AVDTP_OPENING | AVDTP_OPEN |
+			     AVDTP_STREAMING | AVDTP_CLOSING);
 }
 
 int bt_avdtp_send_media_data(struct bt_avdtp_sep *sep, struct net_buf *buf)
