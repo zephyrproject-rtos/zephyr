@@ -54,3 +54,11 @@ config UART_NS16550_INTEL_LPSS_DMA
 
 config HAS_COVERAGE_SUPPORT
 	default y
+
+if GPIO
+config GPIO_INTEL_INT_STAT_OFFSET
+	default 0x30
+
+config GPIO_INTEL_INT_EN_OFFSET
+	default 0x10
+endif
