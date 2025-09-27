@@ -31,7 +31,7 @@ const struct uart_config uart_cfg = {.baudrate = 115200,
 				     .flow_ctrl = UART_CFG_FLOW_CTRL_NONE};
 
 /* define a ring buffer to get raw bytes*/
-RING_BUF_DECLARE(ring_buf, RING_BUF_SIZE);
+RING_BUFFER_DEFINE(ring_buf, RING_BUF_SIZE);
 
 /* define uart rx buffer */
 static uint8_t rx_buffer[RX_BUF_SIZE];
@@ -63,7 +63,7 @@ static void uart_rx_thread(void *p1, void *p2, void *p3)
 	while (1) {
 
 		/* Check if there's data in the ring buffer */
-		len = ring_buf_get(&ring_buf, rx_data, sizeof(rx_data));
+		len = ring_buffer_read(&ring_buf, rx_data, sizeof(rx_data));
 
 		if (len > 0) {
 
@@ -78,7 +78,8 @@ void uart_cb(const struct device *dev, struct uart_event *evt, void *user_data)
 	switch (evt->type) {
 	case UART_RX_RDY:
 		/* Data received; place into ring buffer */
-		ring_buf_put(&ring_buf, evt->data.rx.buf + evt->data.rx.offset, evt->data.rx.len);
+		ring_buffer_write(&ring_buf, evt->data.rx.buf + evt->data.rx.offset,
+				evt->data.rx.len);
 
 		break;
 
