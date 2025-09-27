@@ -1,0 +1,42 @@
+# Copyright 2025 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config USBD_MCTP_CLASS
+	bool "USB MCTP implementation"
+	default y
+	help
+	  USB device MCTP class implementation.
+
+if USBD_MCTP_CLASS
+
+config USBD_MCTP_BULK_IN_EP_ADDR
+	hex "Address for the Bulk IN endpoint"
+	default 0x81
+	help
+	  Address for the Bulk IN endpoint.
+
+config USBD_MCTP_BULK_OUT_EP_ADDR
+	hex "Address for the Bulk OUT endpoint"
+	default 0x01
+	help
+	  Address for the Bulk OUT endpoint.
+
+config USBD_MCTP_INTERFACE_SUBCLASS
+	int "Sub-class field of the interface descriptor"
+	default 0
+	help
+	  Sub-class field of the interface descriptor.
+
+config USBD_MCTP_INTERFACE_PROTOCOL
+	int "Protocol field for interface descriptor"
+	default 1
+	help
+	  Protocol field for interface descriptor.
+
+module = USBD_MCTP
+module-str = usbd mctp
+default-count = 1
+source "subsys/logging/Kconfig.template.log_config"
+
+endif

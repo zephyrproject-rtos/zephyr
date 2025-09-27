@@ -41,6 +41,8 @@ Samples
 
 * :zephyr:code-sample:`usb-hid-mouse`
 
+* :zephyr:code-sample:`mctp-usb-endpoint`
+
 * :zephyr:code-sample:`zperf` To build the sample for the device support,
   set the configuration overlay file
   ``-DDEXTRA_CONF_FILE=overlay-usbd_next_ecm.conf`` and devicetree overlay file
@@ -216,6 +218,8 @@ instance (``n``) and is used as an argument to the :c:func:`usbd_register_class`
 | Bluetooth HCI USB transport layer | :ref:`bt_hci_raw`       | :samp:`bt_hci_{n}`      |
 +-----------------------------------+-------------------------+-------------------------+
 | USB Video Class (UVC)             | Video device            | :samp:`uvc_{n}`         |
++-----------------------------------+-------------------------+-------------------------+
+| USB MCTP over USB Endpoint        | :ref:`usbd_mctp`        | :samp:`mctp_{n}`        |
 +-----------------------------------+-------------------------+-------------------------+
 
 CDC ACM UART
