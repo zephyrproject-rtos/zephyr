@@ -6,7 +6,6 @@ config UDC_SAM0
 	default y
 	depends on DT_HAS_ATMEL_SAM0_USB_ENABLED
 	select PINCTRL
-	select SYS_MEM_BLOCKS
 	select EVENTS
 	help
 	  Driver for SAM0 family USB device controller.
