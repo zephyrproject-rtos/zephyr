@@ -5985,7 +5985,30 @@ function(add_llext_target target_name)
     set(gnu_strip_for_mwdt_cmd ${CMAKE_COMMAND} -E true)
   endif()
 
-  # Remove sections that are unused by the llext loader
+  get_property(TOPT GLOBAL PROPERTY TOPT)
+  get_property(COMPILER_TOPT TARGET compiler PROPERTY linker_script)
+  set_ifndef(  TOPT "${COMPILER_TOPT}")
+  set_ifndef(  TOPT -Wl,-T)
+
+  # The LLEXT loader cannot load ELF files where regions overlap, so
+  # reorder the sections in these cases.
+  if (CONFIG_LLEXT_TYPE_ELF_OBJECT)
+    set(backup_for_reorder_sects_cmd
+      ${CMAKE_COMMAND} -E copy ${llext_pkg_output} ${llext_pkg_output}.bak
+    )
+    set(reorder_sects_cmd
+      ${CMAKE_C_COMPILER}
+      -r ${LLEXT_APPEND_FLAGS}
+      ${TOPT} ${ZEPHYR_BASE}/subsys/llext/llext_reorder_sections.ld
+      ${llext_pkg_output}.bak -o ${llext_pkg_output}
+    )
+  else()
+    set(backup_for_reorder_sects_cmd ${CMAKE_COMMAND} -E true)
+    set(reorder_sects_cmd ${CMAKE_COMMAND} -E true)
+  endif()
+
+  # Remove sections that are unused by the llext loader,
+  # reorder sections, and inject SLIDs
   add_custom_command(
     OUTPUT ${llext_pkg_output}
     COMMAND ${gnu_strip_for_mwdt_cmd}
@@ -5997,6 +6020,8 @@ function(add_llext_target target_name)
             $<TARGET_PROPERTY:bintools,elfconvert_flag_infile>${llext_pkg_input}
             $<TARGET_PROPERTY:bintools,elfconvert_flag_outfile>${llext_pkg_output}
             $<TARGET_PROPERTY:bintools,elfconvert_flag_final>
+    COMMAND ${backup_for_reorder_sects_cmd}
+    COMMAND ${reorder_sects_cmd}
     COMMAND ${slid_inject_cmd}
     DEPENDS ${llext_pkg_input}
     COMMAND_EXPAND_LISTS
