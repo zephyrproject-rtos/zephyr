@@ -50,21 +50,11 @@ Programming and Debugging
 .. include:: ../../../espressif/common/board-variants.rst
    :start-after: espressif-board-variants
 
-Applications for the ``esp32_cam`` board can be built and flashed in the usual way
-(see :ref:`build_an_application` and :ref:`application_run` for more details);
-however, an external FTDI USB to TTL Serial Adapter is required since the board
-does not have any on-board debug IC.
-
-The following pins of the Serial Adapter must be connected to the header pins:
-
-* VTref = VCC
-* GND = GND
-* TXD = U0TXD
-* RXD = U0RXD
-* Boot = GPIO0 (Must be low at boot)
-
 Debugging
 =========
+
+.. include:: ../../../espressif/common/openocd-debugging.rst
+   :start-after: espressif-openocd-debugging
 
 ESP32 support on OpenOCD is available at `OpenOCD ESP32`_.
 
@@ -84,14 +74,22 @@ ESP32 support on OpenOCD is available at `OpenOCD ESP32`_.
 | IO15       | TDO       |
 +------------+-----------+
 
+Sample Applications
+*******************
+
 Further documentation can be obtained from the SoC vendor in `JTAG debugging for ESP32`_.
+Applications for the ``esp32_cam`` board can be built and flashed in the usual way
+(see :ref:`build_an_application` and :ref:`application_run` for more details);
+however, an external FTDI USB to TTL Serial Adapter is required since the board
+does not have any on-board debug IC.
 
-Here is an example for building the :zephyr:code-sample:`hello_world` application.
+The following pins of the Serial Adapter must be connected to the header pins:
 
-.. zephyr-app-commands::
-   :zephyr-app: samples/hello_world
-   :board: esp32_cam/esp32/procpu
-   :goals: build flash
+* VTref = VCC
+* GND = GND
+* TXD = U0TXD
+* RXD = U0RXD
+* Boot = GPIO0 (Must be low at boot)
 
 References
 **********

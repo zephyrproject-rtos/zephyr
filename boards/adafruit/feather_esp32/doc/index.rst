@@ -25,9 +25,6 @@ Supported Features
 System requirements
 ===================
 
-Prerequisites
--------------
-
 Espressif HAL requires WiFi and Bluetooth binary blobs in order to work. Run
 the commands below to retrieve the files.
 
@@ -36,26 +33,22 @@ the commands below to retrieve the files.
    west update
    west blobs fetch hal_espressif
 
-Building & flashing
--------------------
+Programming and Debugging
+*************************
 
-Use the standard build and flash process for this board. See
-:ref:`build_an_application` and :ref:`application_run` for more details.
+.. zephyr:board-supported-runners::
 
-.. zephyr-app-commands::
-   :zephyr-app: samples/hello_world
-   :board: adafruit_feather_esp32/esp32/procpu
-   :goals: build flash
+.. include:: ../../../espressif/common/building-flashing.rst
+   :start-after: espressif-building-flashing
 
-The baud rate of 921600bps is set by default. If experiencing issues when flashing,
-try using different values by using ``--esp-baud-rate <BAUD>`` option during
-``west flash`` (e.g. ``west flash --esp-baud-rate 115200``).
+.. include:: ../../../espressif/common/board-variants.rst
+   :start-after: espressif-board-variants
 
-After flashing, view the serial monitor with the espressif monitor command.
+Debugging
+=========
 
-.. code-block:: shell
-
-   west espressif monitor
+.. include:: ../../../espressif/common/openocd-debugging.rst
+   :start-after: espressif-openocd-debugging
 
 Testing
 =======
@@ -106,8 +99,11 @@ Test ESP32 Wi-Fi functionality using the Wi-Fi shell module.
 
 References
 **********
-- `Adafruit ESP32 Feather V2 <https://www.adafruit.com/product/5400>`_
-- `Adafruit ESP32 Feather V2 Pinouts <https://learn.adafruit.com/adafruit-esp32-feather-v2/pinouts>`_
-- `Adafruit ESP32 Feather V2 Schematic <https://learn.adafruit.com/adafruit-esp32-feather-v2/downloads#schematic-and-fab-print-3112284>`_
-- `ESP32-PICO-MINI-02 Datasheet <https://cdn-learn.adafruit.com/assets/assets/000/109/588/original/esp32-pico-mini-02_datasheet_en.pdf?1646852017>`_ (PDF)
-- `STEMMA QT <https://learn.adafruit.com/introducing-adafruit-stemma-qt>`_
+
+.. target-notes::
+
+- _`Adafruit ESP32 Feather V2`: https://www.adafruit.com/product/5400
+- _`Adafruit ESP32 Feather V2 Pinouts`: https://learn.adafruit.com/adafruit-esp32-feather-v2/pinouts
+- _`Adafruit ESP32 Feather V2 Schematic`: https://learn.adafruit.com/adafruit-esp32-feather-v2/downloads#schematic-and-fab-print-3112284
+- _`ESP32-PICO-MINI-02 Datasheet`: https://cdn-learn.adafruit.com/assets/assets/000/109/588/original/esp32-pico-mini-02_datasheet_en.pdf?1646852017
+- _`STEMMA QT`: https://learn.adafruit.com/introducing-adafruit-stemma-qt

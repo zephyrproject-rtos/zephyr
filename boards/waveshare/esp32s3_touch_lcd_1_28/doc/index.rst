@@ -59,8 +59,8 @@ Supported Features
 
 .. zephyr:board-supported-hw::
 
-Prerequisites
--------------
+System requirements
+*******************
 
 Espressif HAL requires WiFi and Bluetooth binary blobs in order work. Run the command
 below to retrieve those files.
@@ -73,26 +73,28 @@ below to retrieve those files.
 
    It is recommended running the command above after :file:`west update`.
 
-Building & Flashing
-*******************
+Programming and Debugging
+*************************
 
 .. zephyr:board-supported-runners::
 
-Simple boot
-===========
+.. include:: ../../../espressif/common/building-flashing.rst
+   :start-after: espressif-building-flashing
 
-The board could be loaded using the single binary image, without 2nd stage bootloader.
-It is the default option when building the application without additional configuration.
+.. include:: ../../../espressif/common/board-variants.rst
+   :start-after: espressif-board-variants
 
-.. note::
+Debugging
+=========
 
-   Simple boot does not provide any security features nor OTA updates.
+.. include:: ../../../espressif/common/openocd-debugging.rst
+   :start-after: espressif-openocd-debugging
 
 References
 **********
 
 .. target-notes::
 
-.. _ESP32-S3-Touch-LCD-1.28 Waveshare Wiki: https://www.waveshare.com/wiki/ESP32-S3-Touch-LCD-1.28
-.. _ESP32-S3 Datasheet: https://www.espressif.com/sites/default/files/documentation/esp32-s3-mini-1_mini-1u_datasheet_en.pdf
-.. _ESP32-S3 Technical Reference Manual: https://www.espressif.com/sites/default/files/documentation/esp32-s3_technical_reference_manual_en.pdf
+.. _`ESP32-S3-Touch-LCD-1.28 Waveshare Wiki`: https://www.waveshare.com/wiki/ESP32-S3-Touch-LCD-1.28
+.. _`ESP32-S3 Datasheet`: https://www.espressif.com/sites/default/files/documentation/esp32-s3-mini-1_mini-1u_datasheet_en.pdf
+.. _`ESP32-S3 Technical Reference Manual`: https://www.espressif.com/sites/default/files/documentation/esp32-s3_technical_reference_manual_en.pdf

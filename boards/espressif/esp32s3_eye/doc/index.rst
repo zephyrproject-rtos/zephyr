@@ -152,8 +152,8 @@ Debugging
 References
 **********
 
+.. target-notes::
+
 .. _`OpenOCD ESP32`: https://github.com/espressif/openocd-esp32/releases
-
 .. _`Espressif`: https://espressif.com
-
 .. _`ESP32-S3`: https://www.espressif.com/en/products/socs/esp32-s3
