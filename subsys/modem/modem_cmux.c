@@ -7,6 +7,9 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(modem_cmux, CONFIG_MODEM_CMUX_LOG_LEVEL);
 
+/* Set to 1 to enable logging of all frames */
+#define LOG_FRAMES 0
+
 #include <zephyr/kernel.h>
 #include <zephyr/sys/crc.h>
 #include <zephyr/modem/cmux.h>
@@ -101,6 +104,7 @@ static struct modem_cmux_command *modem_cmux_command_wrap(const uint8_t *data)
 	return (struct modem_cmux_command *)data;
 }
 
+#if LOG_FRAMES
 static const char *modem_cmux_frame_type_to_str(enum modem_cmux_frame_types frame_type)
 {
 	switch (frame_type) {
@@ -131,8 +135,14 @@ static void modem_cmux_log_frame(const struct modem_cmux_frame *frame,
 {
 	LOG_DBG("%s ch:%u cr:%u pf:%u type:%s dlen:%u", action, frame->dlci_address,
 		frame->cr, frame->pf, modem_cmux_frame_type_to_str(frame->type), frame->data_len);
-	LOG_HEXDUMP_DBG(frame->data, hexdump_len, "data:");
+	if (hexdump_len > 0) {
+		LOG_HEXDUMP_DBG(frame->data, hexdump_len, "data:");
+	}
 }
+#else
+#define modem_cmux_log_frame(frame, action, hexdump_len) \
+	do { ARG_UNUSED(frame); ARG_UNUSED(action); ARG_UNUSED(hexdump_len); } while (0)
+#endif /* LOG_FRAMES */
 
 static void modem_cmux_log_transmit_frame(const struct modem_cmux_frame *frame)
 {
@@ -225,14 +235,12 @@ static void modem_cmux_log_transmit_command(const struct modem_cmux_command *com
 {
 	LOG_DBG("ea:%u,cr:%u,type:%s", command->type.ea, command->type.cr,
 		modem_cmux_command_type_to_str(command->type.value));
-	LOG_HEXDUMP_DBG(command->value, command->length.value, "data:");
 }
 
 static void modem_cmux_log_received_command(const struct modem_cmux_command *command)
 {
 	LOG_DBG("ea:%u,cr:%u,type:%s", command->type.ea, command->type.cr,
 		modem_cmux_command_type_to_str(command->type.value));
-	LOG_HEXDUMP_DBG(command->value, command->length.value, "data:");
 }
 
 static void modem_cmux_raise_event(struct modem_cmux *cmux, enum modem_cmux_event event)
@@ -561,7 +569,7 @@ static void modem_cmux_on_control_frame(struct modem_cmux *cmux)
 		break;
 
 	default:
-		LOG_WRN("Unknown %s frame type", "control");
+		LOG_WRN("Unknown %s frame type %d", "control", cmux->frame.type);
 		break;
 	}
 }
@@ -690,7 +698,8 @@ static void modem_cmux_on_dlci_frame(struct modem_cmux *cmux)
 		break;
 
 	default:
-		LOG_WRN("Unknown %s frame type", "DLCI");
+		LOG_WRN("Unknown %s frame type (%d, DLCI %d)", "DLCI", cmux->frame.type,
+			cmux->frame.dlci_address);
 		break;
 	}
 }
