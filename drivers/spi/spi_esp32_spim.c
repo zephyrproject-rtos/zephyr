@@ -17,6 +17,7 @@ LOG_MODULE_REGISTER(esp32_spi, CONFIG_SPI_LOG_LEVEL);
 #include <soc.h>
 #include <esp_memory_utils.h>
 #include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/spi/rtio.h>
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #ifdef SOC_GDMA_SUPPORTED
 #include <zephyr/drivers/dma.h>
