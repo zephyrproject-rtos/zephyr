@@ -22,6 +22,8 @@
 extern "C" {
 #endif
 
+struct bt_dev;
+
 /** Converts a HCI error to string.
  *
  * The error codes are described in the Bluetooth Core specification,
@@ -96,7 +98,7 @@ struct net_buf *bt_hci_cmd_alloc(k_timeout_t timeout);
   *
   * @return 0 on success or negative error value on failure.
   */
-int bt_hci_cmd_send(uint16_t opcode, struct net_buf *buf);
+int bt_hci_cmd_send(struct bt_dev *hdev, uint16_t opcode, struct net_buf *buf);
 
 /** Send a HCI command synchronously.
   *
@@ -121,7 +123,7 @@ int bt_hci_cmd_send(uint16_t opcode, struct net_buf *buf);
   *
   * @return 0 on success or negative error value on failure.
   */
-int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
+int bt_hci_cmd_send_sync(struct bt_dev *hdev, uint16_t opcode, struct net_buf *buf,
 			 struct net_buf **rsp);
 
 /** @brief Get connection handle for a connection.
@@ -229,7 +231,13 @@ int bt_hci_register_vnd_evt_cb(bt_hci_vnd_evt_cb_t cb);
  *
  * @return 0 on success or negative error value on failure.
  */
-int bt_hci_le_rand(void *buffer, size_t len);
+int bt_hci_le_rand_mc(uint8_t dev_id, void *buffer, size_t len);
+#ifdef CONFIG_BT_ORIGINAL_API
+static inline int bt_hci_le_rand(void *buffer, size_t len)
+{
+  return bt_hci_le_rand_mc(0, buffer, len);
+}
+#endif
 
 
 #ifdef __cplusplus
