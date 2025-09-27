@@ -1,0 +1,40 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+# example:
+# &i2c4
+# {
+# 	status = "okay";
+# 	hm0360: hm0360@24{
+# 		compatible = "himax,hm0360";
+# 		reg = <0x24>;
+# 		status = "okay";
+# 		port {
+# 			hm01b0_ep_out: endpoint {
+# 			remote-endpoint-label = "video_pio_dma_ep_in";
+# 			};
+#       };
+# 	};
+# };
+
+description: HM0360 CMOS video sensor
+
+compatible: "himax,hm0360"
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    description: |
+      The RESETn pin is asserted to disable the sensor causing a hard
+      reset. The sensor receives this as an active-low signal.
+  pwdn-gpios:
+    type: phandle-array
+    description: |
+      The PWDN pin is asserted to power down the sensor. The sensor
+      receives this as an active high signal
+
+include: i2c-device.yaml
+
+child-binding:
+  child-binding:
+    include: video-interfaces.yaml
