@@ -4,11 +4,31 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define TENSOR_ARENA_SIZE 50000
-
 const char *modelName = "keyword_spotting_cnn_small_int8";
 
-__aligned(16) __attribute__((section("tflm_model"))) uint8_t networkModelData[] = {
+#if defined(CONFIG_TAINT_BLOBS_TFLM_ETHOSU)
+#define TENSOR_ARENA_SIZE 80000
+#else
+#define TENSOR_ARENA_SIZE 50000
+#endif
+
+#if CONFIG_DCACHE_LINE_SIZE > 16
+#define NPU_ALIGN CONFIG_DCACHE_LINE_SIZE
+#else
+#define NPU_ALIGN 16
+#endif
+
+#if (defined(CONFIG_SOC_SERIES_MPS3) || defined(CONFIG_SOC_SERIES_MPS4)) &&                        \
+	DT_NODE_HAS_STATUS(DT_NODELABEL(ddr4), okay)
+#define TENSOR_ARENA_ATTR __aligned(NPU_ALIGN) __attribute__((section("tflm_arena")))
+#define MODEL_ATTR        __aligned(NPU_ALIGN) __attribute__((section("tflm_model")))
+#else
+#define TENSOR_ARENA_ATTR __aligned(NPU_ALIGN) __attribute__((section(".noinit.tflm_arena")))
+#define MODEL_ATTR        __aligned(NPU_ALIGN) __attribute__((section(".rodata.tflm_model")))
+#endif
+
+MODEL_ATTR uint8_t networkModelData[] = {
+#if defined(CONFIG_SOC_SERIES_MPS3)
 	0x1c, 0x00, 0x00, 0x00, 0x54, 0x46, 0x4c, 0x33, 0x00, 0x00, 0x12, 0x00, 0x1c, 0x00, 0x18,
 	0x00, 0x14, 0x00, 0x10, 0x00, 0x0c, 0x00, 0x08, 0x00, 0x00, 0x00, 0x04, 0x00, 0x12, 0x00,
 	0x00, 0x00, 0x18, 0x00, 0x00, 0x00, 0x74, 0x00, 0x00, 0x00, 0x74, 0x2b, 0x01, 0x00, 0x08,
@@ -5127,4 +5147,7 @@ __aligned(16) __attribute__((section("tflm_model"))) uint8_t networkModelData[] 
 	0x00, 0x00, 0x00, 0x0c, 0x00, 0x10, 0x00, 0x0f, 0x00, 0x04, 0x00, 0x00, 0x00, 0x08, 0x00,
 	0x0c, 0x00, 0x00, 0x00, 0x0c, 0x00, 0x00, 0x00, 0x20, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 	0x20, 0x07, 0x00, 0x00, 0x00, 0x65, 0x74, 0x68, 0x6f, 0x73, 0x2d, 0x75, 0x00
+#else
+/* "Check readme for generating Vela-compiled model blob */
+#endif
 };
