@@ -55,6 +55,14 @@ tests:
       fixture: fixture_display
       pytest_dut_scope: session
       display_capture_config: "${DISPLAY_TEST_DIR}/display_config.yaml"
+  tests.drivers.display.check.st_b_dsi_mb1314:
+    filter: dt_compat_enabled("gvo,g1120tb101")
+    platform_allow: stm32l4r9i_disco
+    extra_args: SHIELD=st_b_dsi_mb1314
+    harness_config:
+      fixture: fixture_display
+      pytest_dut_scope: session
+      display_capture_config: "${DISPLAY_TEST_DIR}/display_config.yaml"
   tests.drivers.display.check.shield:
     # This test case is intended to verify support for shields on boards
     # known to support them. It is not intended to cover all combinations
