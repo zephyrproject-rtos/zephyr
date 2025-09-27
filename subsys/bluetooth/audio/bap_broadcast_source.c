@@ -1077,7 +1077,7 @@ int bt_bap_broadcast_source_update_metadata(struct bt_bap_broadcast_source *sour
 	}
 
 	broadcast_state = broadcast_source_get_state(source);
-	if (broadcast_source_get_state(source) != BT_BAP_EP_STATE_STREAMING) {
+	if (broadcast_state != BT_BAP_EP_STATE_STREAMING) {
 		LOG_DBG("Broadcast source invalid state: %u", broadcast_state);
 
 		return -EBADMSG;
