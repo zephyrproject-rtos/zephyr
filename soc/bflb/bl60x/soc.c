@@ -14,6 +14,7 @@
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <zephyr/irq.h>
+#include <zephyr/drivers/cache.h>
 
 #include <clic.h>
 #include <bflb_soc.h>
@@ -40,6 +41,11 @@ static void system_bor_init(void)
 	tmp = sys_read32(HBN_BASE + HBN_IRQ_MODE_OFFSET);
 	tmp = tmp & HBN_IRQ_BOR_EN_UMSK;
 	sys_write32(tmp, HBN_BASE + HBN_IRQ_MODE_OFFSET);
+}
+
+void arch_cache_init(void)
+{
+	cache_data_flush_and_invd_all();
 }
 
 void soc_early_init_hook(void)
