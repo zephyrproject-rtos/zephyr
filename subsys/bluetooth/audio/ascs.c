@@ -607,95 +607,9 @@ static void state_transition_work_handler(struct k_work *work)
 int ascs_ep_set_state(struct bt_bap_ep *ep, enum bt_bap_ep_state state)
 {
 	struct bt_ascs_ase *ase = CONTAINER_OF(ep, struct bt_ascs_ase, ep);
-	const enum bt_bap_ep_state old_state = ep->state;
-	bool valid_state_transition = false;
 	int err;
 
-	switch (state) {
-	case BT_BAP_EP_STATE_IDLE:
-		valid_state_transition = true;
-		break;
-	case BT_BAP_EP_STATE_CODEC_CONFIGURED:
-		switch (old_state) {
-		case BT_BAP_EP_STATE_IDLE:
-		case BT_BAP_EP_STATE_CODEC_CONFIGURED:
-		case BT_BAP_EP_STATE_QOS_CONFIGURED:
-		case BT_BAP_EP_STATE_RELEASING:
-			valid_state_transition = true;
-			break;
-		default:
-			break;
-		} break;
-	case BT_BAP_EP_STATE_QOS_CONFIGURED:
-		switch (old_state) {
-		case BT_BAP_EP_STATE_CODEC_CONFIGURED:
-		case BT_BAP_EP_STATE_QOS_CONFIGURED:
-			valid_state_transition = true;
-			break;
-		case BT_BAP_EP_STATE_DISABLING:
-			valid_state_transition = ep->dir == BT_AUDIO_DIR_SOURCE;
-			break;
-		case BT_BAP_EP_STATE_ENABLING:
-		case BT_BAP_EP_STATE_STREAMING:
-			/* Source ASE transition Streaming->QoS configured is valid on case of CIS
-			 * link-loss.
-			 */
-			valid_state_transition =
-				ep->dir == BT_AUDIO_DIR_SINK || ase->unexpected_iso_link_loss;
-			break;
-		default:
-			break;
-		} break;
-	case BT_BAP_EP_STATE_ENABLING:
-		switch (old_state) {
-		case BT_BAP_EP_STATE_QOS_CONFIGURED:
-		case BT_BAP_EP_STATE_ENABLING:
-			valid_state_transition = true;
-			break;
-		default:
-			break;
-		} break;
-	case BT_BAP_EP_STATE_STREAMING:
-		switch (old_state) {
-		case BT_BAP_EP_STATE_ENABLING:
-		case BT_BAP_EP_STATE_STREAMING:
-			valid_state_transition = true;
-			break;
-		default:
-			break;
-		} break;
-	case BT_BAP_EP_STATE_DISABLING:
-		switch (old_state) {
-		case BT_BAP_EP_STATE_ENABLING:
-		case BT_BAP_EP_STATE_STREAMING:
-			valid_state_transition = ep->dir == BT_AUDIO_DIR_SOURCE;
-			break;
-		default:
-			break;
-		} break;
-	case BT_BAP_EP_STATE_RELEASING:
-		switch (old_state) {
-		case BT_BAP_EP_STATE_CODEC_CONFIGURED:
-		case BT_BAP_EP_STATE_QOS_CONFIGURED:
-		case BT_BAP_EP_STATE_ENABLING:
-		case BT_BAP_EP_STATE_STREAMING:
-			valid_state_transition = true;
-			break;
-		case BT_BAP_EP_STATE_DISABLING:
-			valid_state_transition = ep->dir == BT_AUDIO_DIR_SOURCE;
-			break;
-		default:
-			break;
-		} break;
-	default:
-		__ASSERT_PRINT("Unhandled state %d", state);
-		break;
-	}
-
-	if (!valid_state_transition) {
-		BT_ASSERT_MSG(false, "Invalid state transition: %s -> %s",
-			      bt_bap_ep_state_str(old_state), bt_bap_ep_state_str(state));
-
+	if (!bt_bap_stream_valid_state_transition(ep, state)) {
 		return -EBADMSG;
 	}
 
