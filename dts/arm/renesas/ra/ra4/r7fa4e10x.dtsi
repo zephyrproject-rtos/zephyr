@@ -35,6 +35,14 @@
 				channel = <3>;
 				status = "disabled";
 			};
+
+			i2c {
+				compatible = "renesas,ra-i2c-sci";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				channel = <3>;
+				status = "disabled";
+			};
 		};
 
 		sci4: sci4@40118400 {
@@ -45,6 +53,14 @@
 
 			uart {
 				compatible = "renesas,ra-sci-uart";
+				channel = <4>;
+				status = "disabled";
+			};
+
+			i2c {
+				compatible = "renesas,ra-i2c-sci";
+				#address-cells = <1>;
+				#size-cells = <0>;
 				channel = <4>;
 				status = "disabled";
 			};
