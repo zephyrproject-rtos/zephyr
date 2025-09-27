@@ -19,6 +19,9 @@
 #include <inttypes.h>
 #include <zephyr/kernel.h>
 #include <zephyr/shell/shell.h>
+#include <zephyr/logging/log.h>
+
+LOG_MODULE_REGISTER(net_otPlat_border_agent, CONFIG_OPENTHREAD_BORDER_ROUTER_PLATFORM_LOG_LEVEL);
 
 static struct otInstance *ot_instance_ptr;
 static bool border_agent_is_init;
@@ -67,6 +70,8 @@ otError border_agent_init(otInstance *instance)
 		border_agent_is_init = true;
 	}
 exit:
+	LOG_DBG("%s : finished with code %d", __func__, error);
+
 	return error;
 }
 
@@ -195,6 +200,8 @@ static otError border_agent_enable_epskc_service(uint32_t timeout)
 					       ephemeral_key_timeout, 0);
 
 exit:
+	LOG_DBG("%s : finished with code %d", __func__, error);
+
 	return error;
 }
 
