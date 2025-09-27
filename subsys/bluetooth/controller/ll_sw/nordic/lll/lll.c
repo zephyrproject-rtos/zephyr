@@ -689,7 +689,6 @@ void lll_chan_set(uint32_t chan)
 	radio_whiten_iv_set(chan);
 }
 
-
 uint32_t lll_radio_is_idle(void)
 {
 	return radio_is_idle();

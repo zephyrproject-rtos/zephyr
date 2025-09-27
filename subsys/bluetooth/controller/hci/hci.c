@@ -39,6 +39,7 @@
 #include "ll_sw/pdu.h"
 
 #include "ll_sw/lll.h"
+#include "ll_sw/lll_chan.h"
 #include "lll/lll_adv_types.h"
 #include "ll_sw/lll_adv.h"
 #include "lll/lll_adv_pdu.h"
@@ -8902,6 +8903,12 @@ static void encode_control(struct node_rx_pdu *node_rx,
 		return;
 #endif /* CONFIG_BT_CTLR_CONN_RSSI_EVENT */
 
+#if defined(CONFIG_BT_CTLR_CHAN_METRICS_EVENT)
+	case NODE_RX_TYPE_CHAN_METRICS:
+		lll_chan_metrics_print();
+		return;
+#endif /* CONFIG_BT_CTLR_CHAN_METRICS_EVENT */
+
 #if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
 	case NODE_RX_TYPE_CIS_REQUEST:
 		le_cis_request(pdu_data, node_rx, buf);
@@ -9406,6 +9413,10 @@ uint8_t hci_get_class(struct node_rx_pdu *node_rx)
 #if defined(CONFIG_BT_CTLR_CONN_RSSI_EVENT)
 		case NODE_RX_TYPE_RSSI:
 #endif /* CONFIG_BT_CTLR_CONN_RSSI_EVENT */
+
+#if defined(CONFIG_BT_CTLR_CHAN_METRICS_EVENT)
+		case NODE_RX_TYPE_CHAN_METRICS:
+#endif /* CONFIG_BT_CTLR_CHAN_METRICS_EVENT */
 
 #if defined(CONFIG_BT_CTLR_LE_PING)
 		case NODE_RX_TYPE_APTO:
