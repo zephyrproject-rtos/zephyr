@@ -84,18 +84,22 @@
 };
 
 &mdio {
+	status = "okay";
 	pinctrl-0 = <&mdio_default>;
 	pinctrl-names = "default";
+	ref-clk-output-gpios = <&gpio0 0 0>;
 
 	phy: ethernet-phy@1 {
 		compatible = "ethernet-phy";
-		status = "disabled";
 		reg = <1>;
 	};
 };
 
 &eth {
+	status = "okay";
 	phy-handle = <&phy>;
+	phy-connection-type = "rmii";
+	ref-clk-output-gpios = <&gpio0 0 0>;
 };
 
 &esp32_bt_hci {
