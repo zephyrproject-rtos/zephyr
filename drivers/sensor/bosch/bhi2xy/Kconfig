@@ -1,0 +1,41 @@
+# Bosch BHI2xy smart sensor configuration
+
+menuconfig BHI2XY
+	bool "BHI2xy smart sensor"
+	default y
+	depends on DT_HAS_BOSCH_BHI2XY_ENABLED
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BHI2XY),i2c)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BHI2XY),spi)
+	help
+	  Enable driver for BHI260AP/BHI260AB ultra-low power smart sensor.
+	  This sensor combines a 6-axis IMU (accelerometer and gyroscope) with
+	  a programmable 32-bit microcontroller and event-driven software framework
+	  for sensor fusion and processing.
+
+if BHI2XY
+
+config BHI2XY_BUS_I2C
+	bool
+	default y
+	depends on $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BHI2XY),i2c)
+
+config BHI2XY_BUS_SPI
+	bool
+	default y
+	depends on $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BHI2XY),spi)
+
+config BHI2XY_WORK_BUFFER_SIZE
+	int "Work buffer size"
+	default 2048
+	help
+	  Size of the work buffer used for FIFO processing operations.
+
+config BHI2XY_FIRMWARE_FILE
+	string "Sensor firmware file"
+	help
+	  Name of the firmware file for the BHI2xy sensor. This file is used to
+	  initialize the sensor and load the necessary firmware for operation.
+	  This file should be located in the project's source directory, or one
+	  can use firmware file from BHI2XY API firmware directory.
+
+endif # BHI2XY
