@@ -150,7 +150,7 @@ struct host_sub_npcx_data {
 	uint8_t espi_rst_level; /* current ESPI_RST# status */
 	const struct device *host_bus_dev; /* device for eSPI/LPC bus */
 #ifdef CONFIG_ESPI_NPCX_PERIPHERAL_DEBUG_PORT_80_MULTI_BYTE
-	struct ring_buf port80_ring_buf;
+	struct ring_buffer port80_ring_buf;
 	uint8_t port80_data[CONFIG_ESPI_NPCX_PERIPHERAL_DEBUG_PORT_80_RING_BUF_SIZE];
 	struct k_work work;
 #endif
@@ -505,26 +505,26 @@ static void host_port80_work_handler(struct k_work *item)
 {
 	uint32_t code = 0;
 	struct host_sub_npcx_data *data = CONTAINER_OF(item, struct host_sub_npcx_data, work);
-	struct ring_buf *rbuf = &data->port80_ring_buf;
+	struct ring_buffer *rbuf = &data->port80_ring_buf;
 	struct espi_event evt = {ESPI_BUS_PERIPHERAL_NOTIFICATION,
 				 (ESPI_PERIPHERAL_INDEX_0 << 16) | ESPI_PERIPHERAL_DEBUG_PORT80,
 				 ESPI_PERIPHERAL_NODATA};
 
-	while (!ring_buf_is_empty(rbuf)) {
+	while (!ring_buffer_empty(rbuf)) {
 		struct npcx_dp80_buf dp80_buf;
 		uint8_t offset;
 
-		ring_buf_get(rbuf, &dp80_buf.offset_code[0], sizeof(dp80_buf.offset_code));
+		ring_buffer_read(rbuf, &dp80_buf.offset_code[0], sizeof(dp80_buf.offset_code));
 		offset = dp80_buf.offset_code[1];
 		code |= dp80_buf.offset_code[0] << (8 * offset);
-		if (ring_buf_is_empty(rbuf)) {
+		if (ring_buffer_empty(rbuf)) {
 			evt.evt_data = code;
 			espi_send_callbacks(host_sub_data.callbacks, host_sub_data.host_bus_dev,
 					    evt);
 			break;
 		}
 		/* peek the offset of the next byte */
-		ring_buf_peek(rbuf, &dp80_buf.offset_code[0], sizeof(dp80_buf.offset_code));
+		ring_buffer_peek(rbuf, &dp80_buf.offset_code[0], sizeof(dp80_buf.offset_code));
 		offset = dp80_buf.offset_code[1];
 		/*
 		 * If the peeked next byte's offset is 0, it is the start of the new code.
@@ -547,13 +547,13 @@ static void host_port80_isr(const void *arg)
 	uint8_t status = inst_shm->DP80STS;
 
 #ifdef CONFIG_ESPI_NPCX_PERIPHERAL_DEBUG_PORT_80_MULTI_BYTE
-	struct ring_buf *rbuf = &host_sub_data.port80_ring_buf;
+	struct ring_buffer *rbuf = &host_sub_data.port80_ring_buf;
 
 	while (IS_BIT_SET(inst_shm->DP80STS, NPCX_DP80STS_FNE)) {
 		struct npcx_dp80_buf dp80_buf;
 
 		dp80_buf.offset_code_16 = inst_shm->DP80BUF;
-		ring_buf_put(rbuf, &dp80_buf.offset_code[0], sizeof(dp80_buf.offset_code));
+		ring_buffer_write(rbuf, &dp80_buf.offset_code[0], sizeof(dp80_buf.offset_code));
 	}
 	k_work_submit(&host_sub_data.work);
 #else
@@ -1156,8 +1156,9 @@ int npcx_host_init_subs_core_domain(const struct device *host_bus_dev,
 #if defined(CONFIG_ESPI_PERIPHERAL_DEBUG_PORT_80)
 	host_port80_init();
 #if defined(CONFIG_ESPI_NPCX_PERIPHERAL_DEBUG_PORT_80_MULTI_BYTE)
-	ring_buf_init(&host_sub_data.port80_ring_buf, sizeof(host_sub_data.port80_data),
-		      host_sub_data.port80_data);
+	ring_buffer_init(&host_sub_data.port80_ring_buf,
+			host_sub_data.port80_data,
+			sizeof(host_sub_data.port80_data));
 	k_work_init(&host_sub_data.work, host_port80_work_handler);
 #endif
 #endif

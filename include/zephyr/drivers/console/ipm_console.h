@@ -65,7 +65,7 @@ struct ipm_console_receiver_config_info {
 
 struct ipm_console_receiver_runtime_data {
 	/** Buffer for received bytes from the low-level IPM device */
-	struct ring_buf rb;
+	struct ring_buffer rb;
 
 	/** Semaphore to wake up the thread to print out messages */
 	struct k_sem sem;

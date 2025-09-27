@@ -35,8 +35,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 struct openthread_uart {
 	struct k_work work;
-	struct ring_buf *rx_ringbuf;
-	struct ring_buf *tx_ringbuf;
+	struct ring_buffer *rx_ringbuf;
+	struct ring_buffer *tx_ringbuf;
 	const struct device *dev;
 	atomic_t tx_busy;
 
@@ -45,8 +45,8 @@ struct openthread_uart {
 };
 
 #define OT_UART_DEFINE(_name, _ringbuf_rx_size, _ringbuf_tx_size)  \
-	RING_BUF_DECLARE(_name##_rx_ringbuf, _ringbuf_rx_size); \
-	RING_BUF_DECLARE(_name##_tx_ringbuf, _ringbuf_tx_size); \
+	RING_BUFFER_DECLARE(_name##_rx_ringbuf, _ringbuf_rx_size); \
+	RING_BUFFER_DECLARE(_name##_tx_ringbuf, _ringbuf_tx_size); \
 	static struct openthread_uart _name = { \
 		.rx_ringbuf = &_name##_rx_ringbuf, \
 		.tx_ringbuf = &_name##_tx_ringbuf, \
@@ -70,11 +70,10 @@ static void ot_uart_rx_cb(struct k_work *item)
 	uint8_t *data;
 	uint32_t len;
 
-	len = ring_buf_get_claim(otuart->rx_ringbuf, &data,
-				 otuart->rx_ringbuf->size);
+	len = ring_buffer_read_ptr(otuart->rx_ringbuf, &data);
 	if (len > 0) {
 		otuart->cb(data, len, otuart->param);
-		ring_buf_get_finish(otuart->rx_ringbuf, len);
+		ring_buffer_consume(otuart->rx_ringbuf, len);
 	}
 }
 
@@ -83,14 +82,10 @@ static void uart_tx_handle(const struct device *dev)
 	uint32_t tx_len = 0, len;
 	uint8_t *data;
 
-	len = ring_buf_get_claim(
-		ot_uart.tx_ringbuf, &data,
-		ot_uart.tx_ringbuf->size);
+	len = ring_buffer_read_ptr(ot_uart.tx_ringbuf, &data);
 	if (len > 0) {
 		tx_len = uart_fifo_fill(dev, data, len);
-		int err = ring_buf_get_finish(ot_uart.tx_ringbuf, tx_len);
-		(void)err;
-		__ASSERT_NO_MSG(err == 0);
+		ring_buffer_consume(ot_uart.tx_ringbuf, tx_len);
 	} else {
 		uart_irq_tx_disable(dev);
 	}
@@ -101,15 +96,10 @@ static void uart_rx_handle(const struct device *dev)
 	uint32_t rd_len = 0, len;
 	uint8_t *data;
 
-	len = ring_buf_put_claim(
-		ot_uart.rx_ringbuf, &data,
-		ot_uart.rx_ringbuf->size);
+	len = ring_buffer_write_ptr(ot_uart.rx_ringbuf, &data);
 	if (len > 0) {
 		rd_len = uart_fifo_read(dev, data, len);
-
-		int err = ring_buf_put_finish(ot_uart.rx_ringbuf, rd_len);
-		(void)err;
-		__ASSERT_NO_MSG(err == 0);
+		ring_buffer_commit(ot_uart.rx_ringbuf, rd_len);
 	}
 }
 
@@ -127,7 +117,7 @@ static void uart_callback(const struct device *dev, void *user_data)
 		}
 	}
 
-	if (ring_buf_size_get(ot_uart.rx_ringbuf) > 0) {
+	if (ring_buffer_size(ot_uart.rx_ringbuf) > 0) {
 		k_work_submit(&ot_uart.work);
 	}
 }
@@ -175,7 +165,7 @@ static int hdlc_send(const uint8_t *frame, uint16_t length)
 		return -EIO;
 	}
 
-	ret = ring_buf_put(ot_uart.tx_ringbuf, frame, length);
+	ret = ring_buffer_write(ot_uart.tx_ringbuf, frame, length);
 	uart_irq_tx_enable(ot_uart.dev);
 
 	if (ret < length) {
@@ -191,8 +181,8 @@ static int hdlc_deinit(void)
 	uart_irq_tx_disable(ot_uart.dev);
 	uart_irq_rx_disable(ot_uart.dev);
 
-	ring_buf_reset(ot_uart.rx_ringbuf);
-	ring_buf_reset(ot_uart.tx_ringbuf);
+	ring_buffer_reset(ot_uart.rx_ringbuf);
+	ring_buffer_reset(ot_uart.tx_ringbuf);
 
 	return 0;
 }

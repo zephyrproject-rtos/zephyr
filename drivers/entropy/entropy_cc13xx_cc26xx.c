@@ -30,7 +30,7 @@
 struct entropy_cc13xx_cc26xx_data {
 	struct k_sem lock;
 	struct k_sem sync;
-	struct ring_buf pool;
+	struct ring_buffer pool;
 	uint8_t data[CONFIG_ENTROPY_CC13XX_CC26XX_POOL_SIZE];
 #ifdef CONFIG_PM
 	Power_NotifyObj post_notify;
@@ -111,7 +111,7 @@ static int entropy_cc13xx_cc26xx_get_entropy(const struct device *dev,
 
 	while (len) {
 		k_sem_take(&data->lock, K_FOREVER);
-		cnt = ring_buf_get(&data->pool, buf, len);
+		cnt = ring_buffer_read(&data->pool, buf, len);
 		k_sem_give(&data->lock);
 
 		if (cnt) {
@@ -140,7 +140,7 @@ static void entropy_cc13xx_cc26xx_isr(const struct device *dev)
 		num[1] = TRNGNumberGet(TRNG_HI_WORD);
 		num[0] = TRNGNumberGet(TRNG_LOW_WORD);
 
-		cnt = ring_buf_put(&data->pool, (uint8_t *)num, sizeof(num));
+		cnt = ring_buffer_write(&data->pool, (uint8_t *)num, sizeof(num));
 
 		/* When pool is full disable interrupt and stop reading numbers */
 		if (cnt != sizeof(num)) {
@@ -178,7 +178,7 @@ static int entropy_cc13xx_cc26xx_get_entropy_isr(const struct device *dev,
 	unsigned int key;
 
 	key = irq_lock();
-	cnt = ring_buf_get(&data->pool, buf, len);
+	cnt = ring_buffer_read(&data->pool, buf, len);
 	irq_unlock(key);
 
 	if ((cnt == len) || ((flags & ENTROPY_BUSYWAIT) == 0U)) {
@@ -200,7 +200,7 @@ static int entropy_cc13xx_cc26xx_get_entropy_isr(const struct device *dev,
 				num[1] = TRNGNumberGet(TRNG_HI_WORD);
 				num[0] = TRNGNumberGet(TRNG_LOW_WORD);
 
-				ring_buf_put(&data->pool, (uint8_t *)num,
+				ring_buffer_write(&data->pool, (uint8_t *)num,
 					sizeof(num));
 			}
 
@@ -209,7 +209,7 @@ static int entropy_cc13xx_cc26xx_get_entropy_isr(const struct device *dev,
 			 * would allow us to pick up anything that has been put
 			 * in by the ISR as well.
 			 */
-			cnt = ring_buf_get(&data->pool, buf, len);
+			cnt = ring_buffer_read(&data->pool, buf, len);
 
 			if (src & TRNG_FRO_SHUTDOWN) {
 				handle_shutdown_ovf();
@@ -286,7 +286,7 @@ static int entropy_cc13xx_cc26xx_init(const struct device *dev)
 	struct entropy_cc13xx_cc26xx_data *data = dev->data;
 
 	/* Initialize driver data */
-	ring_buf_init(&data->pool, sizeof(data->data), data->data);
+	ring_buffer_init(&data->pool, data->data, sizeof(data->data));
 
 #if defined(CONFIG_PM)
 	Power_setDependency(PowerCC26XX_PERIPH_TRNG);
