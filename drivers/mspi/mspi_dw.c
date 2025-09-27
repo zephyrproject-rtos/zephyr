@@ -250,9 +250,12 @@ static bool read_rx_fifo(const struct device *dev,
 	uint8_t *buf_pos = dev_data->buf_pos;
 	const uint8_t *buf_end = &packet->data_buf[packet->num_bytes];
 	uint8_t bytes_per_frame_exp = dev_data->bytes_per_frame_exp;
-	/* See `room` in tx_data(). */
-	uint32_t in_fifo = 1;
 	uint32_t remaining_frames;
+	uint32_t in_fifo = FIELD_GET(RXFLR_RXTFL_MASK, read_rxflr(dev));
+
+	if (in_fifo == 0) {
+		return false;
+	}
 
 	do {
 		uint32_t data = read_dr(dev);
@@ -327,28 +330,37 @@ static void handle_fifos(const struct device *dev)
 		}
 	} else {
 		for (;;) {
+			/* Always read everything from the RX FIFO, regardless
+			 * of the interrupt status.
+			 * tx_dummy_bytes() subtracts the number of items that
+			 * are present in the RX FIFO from the number of dummy
+			 * bytes it is allowed to send, so it can potentially
+			 * not fill the TX FIFO above its transfer start level
+			 * in some iteration of this loop. If in such case the
+			 * interrupt handler exited without emptying the RX FIFO
+			 * (seeing the RXFIS flag not set due to not enough
+			 * items in the RX FIFO), this could lead to a situation
+			 * in which a transfer stopped temporarily (after the TX
+			 * FIFO got empty) is not resumed (since the TX FIFO is
+			 * not filled above its transfer start level), so no
+			 * further dummy bytes are transmitted and the RX FIFO
+			 * has no chance to get new entries, hence no further
+			 * interrupts are generated and the transfer gets stuck.
+			 */
+			if (read_rx_fifo(dev, packet)) {
+				finished = true;
+				break;
+			}
+
 			/* Use RISR, not ISR, because when this function is
 			 * executed through the system workqueue, all interrupts
 			 * are masked (IMR is 0).
 			 */
 			uint32_t int_status = read_risr(dev);
 
-			if (int_status & RISR_RXFIR_BIT) {
-				if (read_rx_fifo(dev, packet)) {
-					finished = true;
-					break;
-				}
-
-				if (int_status & RISR_RXOIR_BIT) {
-					finished = true;
-					break;
-				}
-
-				/* Refresh interrupt status, as during reading
-				 * from the RX FIFO, the TX FIFO status might
-				 * have changed.
-				 */
-				int_status = read_risr(dev);
+			if (int_status & RISR_RXOIR_BIT) {
+				finished = true;
+				break;
 			}
 
 			if (dev_data->dummy_bytes == 0 ||
