@@ -56,6 +56,23 @@ ZTEST(workqueue_api, test_k_work_queue_start_stop)
 		      "Succeeded to submit work item to non-initialized work queue");
 }
 
+ZTEST(workqueue_api, test_k_work_queue_stop_sys_thread)
+{
+	struct k_work_q work_q = {0};
+	struct k_work_queue_config cfg = {
+		.name = "test_work_q",
+		.no_yield = true,
+		.essential = true,
+	};
+
+	k_work_queue_start(&work_q, work_q_stack, K_THREAD_STACK_SIZEOF(work_q_stack),
+			   K_PRIO_PREEMPT(4), &cfg);
+
+	zassert_true(k_work_queue_drain(&work_q, true) >= 0, "Failed to drain & plug work queue");
+	zassert_equal(-ENOTSUP, k_work_queue_stop(&work_q, K_FOREVER), "Failed to stop work queue");
+}
+
+
 #define STACK_SIZE (1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
 
 static K_THREAD_STACK_DEFINE(run_stack, STACK_SIZE);
