@@ -3,12 +3,18 @@
 
 # Common fields for Ethernet devices
 
-include: base.yaml
+include:
+  - name: base.yaml
+  - name: nvmem-consumer.yaml
 
 properties:
   local-mac-address:
     type: uint8-array
-    description: Specifies the MAC address that was assigned to the network device
+    description: |
+      A statically assigned MAC address, or a MAC address prefix if less
+      than 6 bytes are provided.
+      Can be combined with zephyr,random-mac-address or NVMEM cells, for
+      example to set the OUI.
 
   zephyr,random-mac-address:
     type: boolean
