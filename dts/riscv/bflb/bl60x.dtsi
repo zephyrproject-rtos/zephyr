@@ -196,7 +196,7 @@
 			reg = <0x4000b000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			status = "disabled";
+			status = "okay";
 
 			interrupts = <39 0>;
 			interrupt-parent = <&clic>;
