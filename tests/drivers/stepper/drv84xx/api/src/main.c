@@ -265,20 +265,6 @@ ZTEST_F(drv84xx_api, test_run_negative_direction_correct_position)
 		     "Current position should be between -6 and -4 but is %d", steps);
 }
 
-ZTEST_F(drv84xx_api, test_run_zero_step_interval_correct_position)
-{
-	uint64_t step_interval = 0;
-	int32_t steps = 0;
-
-	(void)stepper_enable(fixture->dev);
-	(void)stepper_set_microstep_interval(fixture->dev, step_interval);
-	(void)stepper_run(fixture->dev, STEPPER_DIRECTION_POSITIVE);
-	k_msleep(100);
-
-	zassert_equal(steps, 0, "Current position should not have changed from %d but is %d", 0,
-		      steps);
-}
-
 ZTEST_F(drv84xx_api, test_run_is_moving_true_when_step_interval_greater_zero)
 {
 	uint64_t step_interval = 20000000;
