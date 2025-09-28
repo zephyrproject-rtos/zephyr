@@ -1,0 +1,133 @@
+# Copyright (c) 2025 EXALT Technologies.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    STM32 QSPI controller representation for MSPI interface. Enabling a stm32 qspi node 
+    in a board description would typically require this: (pinning depends on the stm32 mcu)
+
+        &qspi {
+            pinctrl-0 = <&quadspi_clk_pe10 &quadspi_ncs_pe11 
+                         &quadspi_io0_pe12 &quadspi_io1_pe13
+                         &quadspi_io2_pe14 &quadspi_io3_pe15>;
+
+            dmas = <&dma1 5 41 0x10000>;
+            dma-names = "tx_rx";
+
+            status = "okay";
+        };
+
+compatible: "st,stm32-qspi-controller"
+
+include: [base.yaml, pinctrl-device.yaml, mspi-controller.yaml]
+
+bus: mspi
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  clock-names:
+    required: true
+
+  dmas:
+    description: |
+      Optional DMA channel specifier, required for DMA transactions.
+      For example dmas for TX/RX on QSPI
+         dmas = <&dma1 5 41 0x10000>;
+
+      With, in each cell of the dmas specifier:
+      - &dma1: dma controller phandle
+      - 5: channel number (0 to Max-Channel minus 1). From 0 to 15 on stm32u5x.
+      - 41: slot number (request which could be given by the DMAMUX)
+      - 0x10000: channel configuration (only for src/dest data size, priority)
+
+      Notes:
+        - On series supporting DMAMUX, the DMA phandle should be provided
+          but DMAMUX node should also be enabled in the DTS.
+        - For channel configuration, only the config bits priority and
+          periph/mem datasize are used. The periph/mem datasize must be equal,
+          0 is a correct value.
+        - There is no Fifo used by this DMA peripheral.
+
+      For example dmas for TX/RX on QSPI
+         dmas = <&dma1 5 41 0x10000>;
+
+  dma-names:
+    description: |
+      DMA channel name. If DMA should be used, expected value is "tx_rx".
+
+      For example
+         dma-names = "tx_rx";
+
+  ssht-enable:
+    type: boolean
+    description: |
+      Enables Sample Shifting half-cycle.
+
+      It is recommended to be enabled in STR mode and disabled in DTR mode.
+      Note: DTR support is limited on QSPI compared to OCTOSPI/XSPI.
+
+  flash-id:
+    type: int
+    enum:
+      - 1
+      - 2
+    description: |
+      Specifies which flash device is selected (for dual flash configurations).
+      
+      If absent, then flash 1 is used.
+
+  dual-flash:
+    type: boolean
+    description: |
+      Enables dual flash mode where two identical flash devices are connected
+      to provide doubled capacity and/or performance.
+      
+      Note: This is only supported on certain STM32 QSPI implementations.
+
+  fifo-threshold:
+    type: int
+    description: |
+      FIFO threshold for QSPI operations. This determines when the FIFO
+      threshold flag is set during indirect read/write operations.
+      
+      Valid range is typically 1-32 bytes depending on QSPI implementation.
+      Default is 4 bytes if not specified.
+
+  chip-select-high-time:
+    type: int
+    enum:
+      - 1
+      - 2  
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+      - 8
+    description: |
+      Specifies the minimum number of clock cycles that the chip select (nCS)
+      must remain high between commands.
+      
+      Default is 1 cycle if not specified.
+
+  clock-mode:
+    type: int
+    enum:
+      - 0
+      - 3
+    description: |
+      Specifies the clock mode (CPOL/CPHA combination):
+      - 0: Clock stays low when nCS is released (CPOL=0, CPHA=0)
+      - 3: Clock goes high when nCS is released (CPOL=1, CPHA=1)
+      
+      Default is mode 0 if not specified.
