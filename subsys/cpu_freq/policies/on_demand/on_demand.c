@@ -53,3 +53,21 @@ int cpu_freq_policy_select_pstate(const struct pstate **pstate_out)
 
 	return -ENOTSUP;
 }
+
+void cpu_freq_policy_reset(void)
+{
+	/* No state to reset for on-demand policy */
+}
+
+const struct pstate *cpu_freq_policy_pstate_set(const struct pstate *state)
+{
+	int rv;
+
+	rv = cpu_freq_pstate_set(pstate);
+	if (rv != 0) {
+		LOG_ERR("Failed to set P-state: %d", rv);
+		return NULL;
+	}
+
+	return pstate;
+}
