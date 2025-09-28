@@ -210,7 +210,22 @@ New APIs and options
 
   * :kconfig:option:`CONFIG_TASK_WDT_DUMMY`
 
+* Tracing
+
+  * :c:macro:`SYS_PORT_TRACK_FOR_EACH`  
+  * :c:macro:`SYS_PORT_TRACK_K_TIMER_NEXT`  
+  * :c:macro:`SYS_PORT_TRACK_K_MEM_SLAB_NEXT`  
+  * :c:macro:`SYS_PORT_TRACK_K_SEM_NEXT`  
+  * :c:macro:`SYS_PORT_TRACK_K_MUTEX_NEXT`  
+  * :c:macro:`SYS_PORT_TRACK_K_STACK_NEXT`  
+  * :c:macro:`SYS_PORT_TRACK_K_MSGQ_NEXT`  
+  * :c:macro:`SYS_PORT_TRACK_K_MBOX_NEXT`  
+  * :c:macro:`SYS_PORT_TRACK_K_PIPE_NEXT`  
+  * :c:macro:`SYS_PORT_TRACK_K_QUEUE_NEXT`  
+  * :c:macro:`SYS_PORT_TRACK_K_EVENT_NEXT` 
+
 .. zephyr-keep-sorted-stop
+
 
 New Boards
 **********
