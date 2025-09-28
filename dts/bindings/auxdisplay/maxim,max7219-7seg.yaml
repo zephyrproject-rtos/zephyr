@@ -1,0 +1,59 @@
+# Copyright (c) 2025 Maksim Salau <maksim.salau@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+title: Maxim MAX7219 8-Digit LED Display Driver
+
+description: |
+  The Maxim MAX7219 is a 8-Digit LED Display Driver.
+
+compatible: "maxim,max7219-7seg"
+
+include: [auxdisplay-device.yaml, spi-device.yaml]
+
+properties:
+  scan-limit:
+    type: int
+    const: 7
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+    description: |
+      Number of scanned digits for MAX7219.
+      Display digit 0 only when scan-limit is 0, digits 0 & 1 when
+      scan-limit is 1, and so on.
+
+  intensity:
+    type: int
+    default: 0
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+      - 8
+      - 9
+      - 10
+      - 11
+      - 12
+      - 13
+      - 14
+      - 15
+    description: Intensity for MAX7219.
+
+  rows:
+    type: int
+    const: 1
+
+  digit-order-reversed:
+    type: boolean
+    description: Digit order is reversed

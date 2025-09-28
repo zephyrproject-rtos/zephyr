@@ -24,6 +24,7 @@ source "drivers/auxdisplay/Kconfig.gpio"
 source "drivers/auxdisplay/Kconfig.hd44780"
 source "drivers/auxdisplay/Kconfig.itron"
 source "drivers/auxdisplay/Kconfig.jhd1313"
+source "drivers/auxdisplay/Kconfig.max7219"
 source "drivers/auxdisplay/Kconfig.pt6314"
 source "drivers/auxdisplay/Kconfig.serlcd"
 
