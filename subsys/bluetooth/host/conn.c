@@ -1497,8 +1497,6 @@ void bt_conn_unref(struct bt_conn *conn)
 {
 	atomic_val_t old;
 	bool deallocated;
-	enum bt_conn_type conn_type;
-	uint8_t conn_role;
 	uint16_t conn_handle;
 	/* Used only if CONFIG_ASSERT and CONFIG_BT_CONN_TX. */
 	__maybe_unused bool conn_tx_is_pending;
@@ -1512,8 +1510,6 @@ void bt_conn_unref(struct bt_conn *conn)
 	 * we store its properties of interest before decrementing the ref-count,
 	 * then unset the local pointer.
 	 */
-	conn_type = conn->type;
-	conn_role = conn->role;
 	conn_handle = conn->handle;
 #if CONFIG_BT_CONN_TX && CONFIG_ASSERT
 	conn_tx_is_pending = k_work_is_pending(&conn->tx_complete_work);
@@ -1541,18 +1537,6 @@ void bt_conn_unref(struct bt_conn *conn)
 	 */
 	k_sem_give(&pending_recycled_events);
 	k_work_submit(&recycled_work);
-
-	/* Use the freed slot to automatically resume LE peripheral advertising.
-	 *
-	 * This behavior is deprecated:
-	 * - 8cfad44: Bluetooth: Deprecate adv auto-resume
-	 * - #72567: Bluetooth: Advertising resume functionality is broken
-	 * - Migration guide to Zephyr v4.0.0, Automatic advertiser resumption is deprecated
-	 */
-	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && conn_type == BT_CONN_TYPE_LE &&
-	    conn_role == BT_CONN_ROLE_PERIPHERAL) {
-		bt_le_adv_resume();
-	}
 }
 
 uint8_t bt_conn_index(const struct bt_conn *conn)
