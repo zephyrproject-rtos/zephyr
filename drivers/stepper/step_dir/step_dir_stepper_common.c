@@ -347,6 +347,11 @@ int step_dir_stepper_common_run(const struct device *dev, const enum stepper_dir
 	struct step_dir_stepper_common_data *data = dev->data;
 	int ret;
 
+	if (data->microstep_interval_ns == 0) {
+		LOG_ERR("Step interval not set or invalid step interval set");
+		return -EINVAL;
+	}
+
 	K_SPINLOCK(&data->lock) {
 		data->run_mode = STEPPER_RUN_MODE_VELOCITY;
 		data->direction = direction;
