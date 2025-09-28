@@ -1497,15 +1497,6 @@ void bt_hci_le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 			bt_addr_copy(&conn->le.resp_addr.a, &evt->local_rpa);
 		}
 
-		/* if the controller supports, lets advertise for another
-		 * peripheral connection.
-		 * check for connectable advertising state is sufficient as
-		 * this is how this le connection complete for peripheral occurred.
-		 */
-		if (BT_LE_STATES_PER_CONN_ADV(bt_dev.le.states)) {
-			bt_le_adv_resume();
-		}
-
 		if (IS_ENABLED(CONFIG_BT_EXT_ADV) &&
 		    !BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
 			struct bt_le_ext_adv *adv = bt_le_adv_lookup_legacy();
