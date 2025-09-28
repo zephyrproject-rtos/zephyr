@@ -79,34 +79,6 @@ ZTEST_F(drv84xx_api, test_micro_step_res_set)
 		      res);
 }
 
-ZTEST_F(drv84xx_api, test_actual_position_set)
-{
-	int32_t pos = 100u;
-	(void)stepper_set_reference_position(fixture->dev, pos);
-	(void)stepper_get_actual_position(fixture->dev, &pos);
-	zassert_equal(pos, 100u, "Actual position should be %u but is %u", 100u, pos);
-}
-
-ZTEST_F(drv84xx_api, test_move_to_positive_direction_movement)
-{
-	int32_t pos = 50;
-
-	(void)stepper_enable(fixture->dev);
-	(void)stepper_set_microstep_interval(fixture->dev, 20000000);
-	(void)stepper_set_event_callback(fixture->dev, fixture->callback, NULL);
-	(void)stepper_move_to(fixture->dev, pos);
-	(void)k_poll(&stepper_event, 1, K_SECONDS(5));
-	unsigned int signaled;
-	int result;
-
-	k_poll_signal_check(&stepper_signal, &signaled, &result);
-	zassert_equal(signaled, 1, "No event detected");
-	zassert_equal(result, STEPPER_EVENT_STEPS_COMPLETED,
-		      "Event was not STEPPER_EVENT_STEPS_COMPLETED event");
-	(void)stepper_get_actual_position(fixture->dev, &pos);
-	zassert_equal(pos, 50u, "Target position should be %d but is %d", 50u, pos);
-}
-
 ZTEST_F(drv84xx_api, test_move_to_negative_direction_movement)
 {
 	int32_t pos = -50;
@@ -125,26 +97,6 @@ ZTEST_F(drv84xx_api, test_move_to_negative_direction_movement)
 		      "Event was not STEPPER_EVENT_STEPS_COMPLETED event");
 	(void)stepper_get_actual_position(fixture->dev, &pos);
 	zassert_equal(pos, -50, "Target position should be %d but is %d", -50, pos);
-}
-
-ZTEST_F(drv84xx_api, test_move_to_identical_current_and_target_position)
-{
-	int32_t pos = 0;
-
-	(void)stepper_enable(fixture->dev);
-	(void)stepper_set_microstep_interval(fixture->dev, 20000000);
-	(void)stepper_set_event_callback(fixture->dev, fixture->callback, NULL);
-	(void)stepper_move_to(fixture->dev, pos);
-	(void)k_poll(&stepper_event, 1, K_SECONDS(5));
-	unsigned int signaled;
-	int result;
-
-	k_poll_signal_check(&stepper_signal, &signaled, &result);
-	zassert_equal(signaled, 1, "No event detected");
-	zassert_equal(result, STEPPER_EVENT_STEPS_COMPLETED,
-		      "Event was not STEPPER_EVENT_STEPS_COMPLETED event");
-	(void)stepper_get_actual_position(fixture->dev, &pos);
-	zassert_equal(pos, 0, "Target position should not have changed from %d but is %d", 0, pos);
 }
 
 ZTEST_F(drv84xx_api, test_move_to_is_moving_true_while_moving)
@@ -179,26 +131,6 @@ ZTEST_F(drv84xx_api, test_move_to_is_moving_false_when_completed)
 		      "Event was not STEPPER_EVENT_STEPS_COMPLETED event");
 	(void)stepper_is_moving(fixture->dev, &moving);
 	zassert_false(moving, "Driver should not be in state is_moving after finishing");
-}
-
-ZTEST_F(drv84xx_api, test_move_by_zero_steps_no_movement)
-{
-	int32_t steps = 0;
-
-	(void)stepper_enable(fixture->dev);
-	(void)stepper_set_microstep_interval(fixture->dev, 20000000);
-	(void)stepper_set_event_callback(fixture->dev, fixture->callback, NULL);
-	(void)stepper_move_by(fixture->dev, steps);
-	(void)k_poll(&stepper_event, 1, K_SECONDS(5));
-	unsigned int signaled;
-	int result;
-
-	k_poll_signal_check(&stepper_signal, &signaled, &result);
-	zassert_equal(signaled, 1, "No event detected");
-	zassert_equal(result, STEPPER_EVENT_STEPS_COMPLETED,
-		      "Event was not STEPPER_EVENT_STEPS_COMPLETED event");
-	(void)stepper_get_actual_position(fixture->dev, &steps);
-	zassert_equal(steps, 0, "Target position should be %d but is %d", 0, steps);
 }
 
 ZTEST_F(drv84xx_api, test_move_by_is_moving_true_while_moving)

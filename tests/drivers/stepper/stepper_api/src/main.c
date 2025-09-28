@@ -128,7 +128,7 @@ ZTEST_F(stepper, test_actual_position)
 	zassert_equal(pos, 100u, "Actual position not set correctly");
 }
 
-ZTEST_F(stepper, test_target_position_w_fixed_step_interval)
+ZTEST_F(stepper, test_move_to_positive_step_count)
 {
 	int32_t pos = 10u;
 	int ret;
@@ -138,13 +138,13 @@ ZTEST_F(stepper, test_target_position_w_fixed_step_interval)
 		ztest_test_skip();
 	}
 
-	(void)stepper_move_to(fixture->dev, pos);
+	zassert_ok(stepper_move_to(fixture->dev, pos));
 
 	POLL_AND_CHECK_SIGNAL(
 		stepper_signal, stepper_event, STEPPER_EVENT_STEPS_COMPLETED,
 		K_MSEC(pos * (100 + CONFIG_STEPPER_TEST_TIMING_TIMEOUT_TOLERANCE_PCT)));
 
-	(void)stepper_get_actual_position(fixture->dev, &pos);
+	zassert_ok(stepper_get_actual_position(fixture->dev, &pos));
 	zassert_equal(pos, 10u, "Target position should be %d but is %d", 10u, pos);
 	zassert_equal(user_data_received, fixture->dev, "User data not received");
 }
@@ -203,21 +203,28 @@ ZTEST_F(stepper, test_stop)
 	}
 }
 
-ZTEST_F(stepper, test_move_by_zero_steps)
+ZTEST_F(stepper, test_move_zero_steps)
 {
-	bool is_moving;
+	bool moving;
+	int32_t pos = 0;
+	int32_t actual_steps;
 	int err;
 
 	err = stepper_set_microstep_interval(fixture->dev, 100 * USEC_PER_SEC);
 	if (err == -ENOSYS) {
 		ztest_test_skip();
 	}
-	zassert_equal(err, 0, "Failed to set microstep interval");
+	zassert_ok(err, "Failed to set microstep interval");
 
-	zassert_equal(stepper_move_by(fixture->dev, 0), 0, "Failed to move by zero steps");
+	zassert_ok(stepper_move_by(fixture->dev, pos));
 	POLL_AND_CHECK_SIGNAL(stepper_signal, stepper_event, STEPPER_EVENT_STEPS_COMPLETED,
 			      K_NO_WAIT);
-	zassert_equal(stepper_is_moving(fixture->dev, &is_moving), 0,
-		      "Failed to check if stepper is moving");
-	zassert_equal(is_moving, false, "Stepper is still moving");
+	zassert_ok(stepper_is_moving(fixture->dev, &moving));
+	zassert_false(moving, "%s reported moving even after completion of steps",
+		      fixture->dev->name);
+	zassert_ok(stepper_move_to(fixture->dev, pos));
+	POLL_AND_CHECK_SIGNAL(stepper_signal, stepper_event, STEPPER_EVENT_STEPS_COMPLETED,
+			      K_NO_WAIT);
+	zassert_ok(stepper_get_actual_position(fixture->dev, &actual_steps));
+	zassert_equal(pos, actual_steps, "Position should not have changed from %d", pos);
 }
