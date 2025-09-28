@@ -1,0 +1,79 @@
+/*
+ * Copyright (c) 2025 EXALT Technologies.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Replace the quadspi by a "st,stm32-qspi-controller" compatible */
+/delete-node/ &quadspi;
+
+/ {
+	aliases {
+		/* The sample gets the DT_ALIAS(flash0) as the mspi device */
+		flash0 = &n25q128a;
+	};
+
+	qspi_memory: qspi-memory@90000000 {
+		compatible = "zephyr,memory-region";
+		device_type = "memory";
+		reg = <0x90000000 DT_SIZE_M(256)>;
+		zephyr,memory-region = "QSPI";
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_FLASH)>;
+	};
+
+	soc {
+		quadspi: spi@52005000 {
+			compatible = "st,stm32-qspi-controller";
+			reg = <0x52005000 0x1000>, <0x90000000 DT_SIZE_M(256)>;
+			interrupts = <92 0>;
+			clocks = <&rcc STM32_CLOCK(AHB3, 14U)>;
+			clock-names = "qspix";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clock-frequency = <DT_FREQ_M(72)>;
+			op-mode = "MSPI_OP_MODE_CONTROLLER";
+			duplex = "MSPI_HALF_DUPLEX";
+			pinctrl-0 = <&quadspi_clk_pf10 &quadspi_bk1_ncs_pg6
+				     &quadspi_bk1_io0_pd11 &quadspi_bk1_io1_pd12
+				     &quadspi_bk1_io2_pe2 &quadspi_bk1_io3_pf6>;
+			pinctrl-names = "default";
+
+			status = "okay";
+
+			n25q128a: qspi-nor-flash@0 {
+				compatible = "jedec,mspi-nor";
+				reg = <0>;
+				size = <DT_SIZE_M(128)>; /* 128 Mbits */
+				status = "okay";
+
+				mspi-max-frequency = <DT_FREQ_M((72))>;
+				mspi-io-mode = "MSPI_IO_MODE_SINGLE";
+				mspi-data-rate = "MSPI_DATA_RATE_SINGLE";
+				mspi-hardware-ce-num = <0>;
+				read-command = <0x0b>;
+				write-command = <0x02>;
+				command-length = "INSTR_1_BYTE";
+				address-length = "ADDR_3_BYTE";
+				rx-dummy = <8>;
+				tx-dummy = <0>;
+				jedec-id = [1f 89 01];
+
+				partitions {
+					compatible = "fixed-partitions";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					slot1_partition: partition@0 {
+						label = "image-1";
+						reg = <0x00000000 DT_SIZE_M(1)>;
+					};
+
+					storage_partition: partition@100000 {
+						label = "storage";
+						reg = <0x00100000 DT_SIZE_M(15)>;
+					};
+				};
+			};
+		};
+	};
+};
