@@ -224,8 +224,7 @@ static ALWAYS_INLINE struct k_thread *next_up(void)
 	}
 
 	/* Put _current back into the queue */
-	if ((thread != _current) && active &&
-		!z_is_idle_thread_object(_current) && !queued) {
+	if ((thread != _current) && active && !queued) {
 		queue_thread(_current);
 	}
 
