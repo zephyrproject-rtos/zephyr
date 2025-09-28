@@ -1005,8 +1005,6 @@ static int adv_start_legacy(struct bt_le_ext_adv *adv,
 		bt_conn_unref(conn);
 	}
 
-	atomic_set_bit_to(adv->flags, BT_ADV_PERSIST, false);
-
 	atomic_set_bit_to(adv->flags, BT_ADV_CONNECTABLE, param->options & BT_LE_ADV_OPT_CONN);
 
 	atomic_set_bit_to(adv->flags, BT_ADV_SCANNABLE, scannable);
@@ -1170,9 +1168,6 @@ static int le_ext_adv_param_set(struct bt_le_ext_adv *adv,
 		}
 	}
 
-	/* Flag only used by bt_le_adv_start API. */
-	atomic_set_bit_to(adv->flags, BT_ADV_PERSIST, false);
-
 	atomic_set_bit_to(adv->flags, BT_ADV_CONNECTABLE, param->options & BT_LE_ADV_OPT_CONN);
 
 	atomic_set_bit_to(adv->flags, BT_ADV_SCANNABLE, scannable);
@@ -1259,9 +1254,6 @@ int bt_le_adv_start_ext(struct bt_le_ext_adv *adv,
 		bt_conn_unref(conn);
 	}
 
-	/* Flag always set to false by le_ext_adv_param_set */
-	atomic_set_bit_to(adv->flags, BT_ADV_PERSIST, false);
-
 	return 0;
 }
 
@@ -1317,11 +1309,6 @@ int bt_le_adv_stop(void)
 	}
 
 	(void)bt_le_lim_adv_cancel_timeout(adv);
-
-	/* Make sure advertising is not re-enabled later even if it's not
-	 * currently enabled (i.e. BT_DEV_ADVERTISING is not set).
-	 */
-	atomic_clear_bit(adv->flags, BT_ADV_PERSIST);
 
 	if (!atomic_test_bit(adv->flags, BT_ADV_ENABLED)) {
 		/* Legacy advertiser exists, but is not currently advertising.
@@ -1561,8 +1548,6 @@ int bt_le_ext_adv_stop(struct bt_le_ext_adv *adv)
 	}
 
 	(void)bt_le_lim_adv_cancel_timeout(adv);
-
-	atomic_clear_bit(adv->flags, BT_ADV_PERSIST);
 
 	if (!atomic_test_bit(adv->flags, BT_ADV_ENABLED)) {
 		return 0;

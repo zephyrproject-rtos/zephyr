@@ -1499,13 +1499,10 @@ void bt_hci_le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 
 		if (IS_ENABLED(CONFIG_BT_EXT_ADV) &&
 		    !BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
-			struct bt_le_ext_adv *adv = bt_le_adv_lookup_legacy();
 			/* No advertising set terminated event, must be a
 			 * legacy advertiser set.
 			 */
-			if (!atomic_test_bit(adv->flags, BT_ADV_PERSIST)) {
-				bt_le_adv_delete_legacy();
-			}
+			bt_le_adv_delete_legacy();
 		}
 	}
 
