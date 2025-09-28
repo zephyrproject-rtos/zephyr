@@ -26,6 +26,8 @@ static void cpu_freq_timer_handler(struct k_timer *timer)
 	/* Get next performance state */
 	const struct pstate *pstate_next;
 
+	cpu_freq_policy_reset();
+
 	ret = cpu_freq_policy_select_pstate(&pstate_next);
 	if (ret) {
 		LOG_ERR("Failed to get pstate: %d", ret);
@@ -33,7 +35,7 @@ static void cpu_freq_timer_handler(struct k_timer *timer)
 	}
 
 	/* Set performance state using pstate driver */
-	ret = cpu_freq_pstate_set(pstate_next);
+	ret = cpu_freq_policy_pstate_set(pstate_next);
 	if (ret) {
 		LOG_ERR("Failed to set performance state: %d", ret);
 		return;
