@@ -50,33 +50,33 @@ static const char trace_esc_end[] = "\x1b[0;39m"; /* Reset all styles */
 
 void nsi_vprint_warning(const char *format, va_list vargs)
 {
-	if (is_a_tty[ST_ERR] == -1) {
+	if (is_a_tty[ST_OUT] == -1) {
 		decide_about_color();
 	}
-	if (is_a_tty[ST_ERR]) {
-		fprintf(stderr, "%s", trace_type_esc_start[WARN]);
+	if (is_a_tty[ST_OUT]) {
+		fprintf(stdout, "%s", trace_type_esc_start[WARN]);
 	}
 
-	vfprintf(stderr, format, vargs);
+	vfprintf(stdout, format, vargs);
 
-	if (is_a_tty[ST_ERR]) {
-		fprintf(stderr, "%s", trace_esc_end);
+	if (is_a_tty[ST_OUT]) {
+		fprintf(stdout, "%s", trace_esc_end);
 	}
 }
 
 void nsi_vprint_error_and_exit(const char *format, va_list vargs)
 {
-	if (is_a_tty[ST_ERR] == -1) {
+	if (is_a_tty[ST_OUT] == -1) {
 		decide_about_color();
 	}
-	if (is_a_tty[ST_ERR]) {
-		fprintf(stderr, "%s", trace_type_esc_start[ERROR]);
+	if (is_a_tty[ST_OUT]) {
+		fprintf(stdout, "%s", trace_type_esc_start[ERROR]);
 	}
 
-	vfprintf(stderr, format, vargs);
+	vfprintf(stdout, format, vargs);
 
-	if (is_a_tty[ST_ERR]) {
-		fprintf(stderr, "%s\n", trace_esc_end);
+	if (is_a_tty[ST_OUT]) {
+		fprintf(stdout, "%s\n", trace_esc_end);
 	}
 
 	nsi_exit(1);
