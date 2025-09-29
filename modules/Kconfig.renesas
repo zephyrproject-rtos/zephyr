@@ -65,6 +65,11 @@ config USE_RA_FSP_SCE
 	help
 	  Enable RA FSP SCE driver
 
+config USE_RA_FSP_MRAM
+	bool
+	help
+	  Enable RA FSP MRAM driver
+
 if USE_RA_FSP_SCE
 
 config HAS_RENESAS_RA_RSIP_E51A
