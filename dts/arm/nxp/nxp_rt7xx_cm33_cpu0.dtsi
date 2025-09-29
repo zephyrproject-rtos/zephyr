@@ -9,6 +9,10 @@
 #include <zephyr/dt-bindings/misc/nxp_rtxxx_dsp_ctrl.h>
 
 / {
+	aliases {
+		die-temp0 = &pmc_tmpsns;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -1103,6 +1107,11 @@
 		compatible = "nxp,kinetis-acmp";
 		reg = <0x20b000 0x1000>;
 		interrupts = <17 0>;
+		status = "disabled";
+	};
+
+	pmc_tmpsns: pmc-tmpsns {
+		compatible = "nxp,pmc-tmpsns";
 		status = "disabled";
 	};
 };
