@@ -163,6 +163,16 @@ static int smp_udp_ud_copy(struct net_buf *dst, const struct net_buf *src)
 	return MGMT_ERR_EOK;
 }
 
+static void smp_udp_ud_init(struct net_buf *nb, void *priv)
+{
+	struct sockaddr *ud = net_buf_user_data(nb);
+	const struct sockaddr *addr = priv;
+
+	if (addr) {
+		memcpy(ud, addr, sizeof(*addr));
+	}
+}
+
 static int create_socket(enum proto_type proto, int *sock)
 {
 	int tmp_sock;
@@ -438,6 +448,7 @@ static void smp_udp_start(void)
 	smp_udp_configs.ipv4.smp_transport.functions.output = smp_udp4_tx;
 	smp_udp_configs.ipv4.smp_transport.functions.get_mtu = smp_udp_get_mtu;
 	smp_udp_configs.ipv4.smp_transport.functions.ud_copy = smp_udp_ud_copy;
+	smp_udp_configs.ipv4.smp_transport.functions.ud_init = smp_udp_ud_init;
 
 	rc = smp_transport_init(&smp_udp_configs.ipv4.smp_transport);
 #ifdef CONFIG_SMP_CLIENT
@@ -460,6 +471,7 @@ static void smp_udp_start(void)
 	smp_udp_configs.ipv6.smp_transport.functions.output = smp_udp6_tx;
 	smp_udp_configs.ipv6.smp_transport.functions.get_mtu = smp_udp_get_mtu;
 	smp_udp_configs.ipv6.smp_transport.functions.ud_copy = smp_udp_ud_copy;
+	smp_udp_configs.ipv6.smp_transport.functions.ud_init = smp_udp_ud_init;
 
 	rc = smp_transport_init(&smp_udp_configs.ipv6.smp_transport);
 #ifdef CONFIG_SMP_CLIENT
@@ -482,5 +494,25 @@ static void smp_udp_start(void)
 	smp_udp_open();
 #endif
 }
+
+#ifdef CONFIG_SMP_CLIENT
+int smp_client_udp_set_host_addr(struct smp_client_object *obj, struct sockaddr *addr)
+{
+#ifdef CONFIG_MCUMGR_TRANSPORT_UDP_IPV4
+	if (obj->smpt == smp_udp_configs.ipv4_transport.smpt && addr->sa_family == AF_INET) {
+		smp_client_object_set_data(obj, addr);
+		return 0;
+	}
+#endif
+#ifdef CONFIG_MCUMGR_TRANSPORT_UDP_IPV6
+	if (obj->smpt == smp_udp_configs.ipv6_transport.smpt && addr->sa_family == AF_INET6) {
+		smp_client_object_set_data(obj, addr);
+		return 0;
+	}
+#endif
+
+	return -EINVAL;
+}
+#endif
 
 MCUMGR_HANDLER_DEFINE(smp_udp, smp_udp_start);

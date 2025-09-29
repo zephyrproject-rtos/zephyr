@@ -60,6 +60,16 @@ struct k_work_q *smp_get_wq(void);
 #endif
 
 /**
+ * @brief Allocates a request buffer.
+ *
+ * @param arg		The streamer providing the callback.
+ *
+ * @return	Newly-allocated buffer on success
+ *		NULL on failure.
+ */
+struct net_buf *smp_alloc_req(void *arg, void *priv);
+
+/**
  * @brief Allocates a response buffer.
  *
  * If a source buf is provided, its user data is copied into the new buffer.

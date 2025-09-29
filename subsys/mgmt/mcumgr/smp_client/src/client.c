@@ -256,7 +256,7 @@ struct net_buf *smp_client_buf_allocation(struct smp_client_object *smp_client, 
 	struct net_buf *nb;
 	struct smp_hdr smp_header;
 
-	nb = smp_packet_alloc();
+	nb = smp_alloc_req(smp_client->smpt, smp_client_object_get_data(smp_client));
 
 	if (nb) {
 		/* Write SMP header with payload length 0 */
