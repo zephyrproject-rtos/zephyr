@@ -362,6 +362,7 @@ config BT_DRV_RX_STACK_SIZE
 	default BT_RX_STACK_SIZE if (BT_H4 || BT_HCI_RAW_H4)
 	default BT_STM32_IPM_RX_STACK_SIZE if BT_STM32_IPM
 	default HCI_NXP_RX_STACK_SIZE if HCI_NXP_RX_THREAD
+	default 1024 if BT_SF32LB
 	default 512
 	help
 	  Stack size for the HCI driver's RX thread.
@@ -403,3 +404,12 @@ config BT_H4_NXP_CTLR_WAIT_TIME_AFTER_BAUDRATE_UPDATE
 	  Waiting time after controller baudrate is updated. Unit is millisecond.
 
 endif #BT_H4_NXP_CTLR
+
+config BT_SF32LB
+	bool "SiFli Bluetooth Controller"
+	default y
+	depends on DT_HAS_SIFLI_SF32LB_MAILBOX_ENABLED
+	select USE_SIFLI_IPC_QUEUE
+	select USE_SIFLI_HAL
+	help
+	  Bluetooth HCI over ipc mailbox in SiFli SF32LB chipsets.
