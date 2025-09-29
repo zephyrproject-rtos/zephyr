@@ -1266,5 +1266,25 @@
 			interrupts = <GIC_SPI 388 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
 			status = "disabled";
 		};
+
+		xspi0: xspi@80220000 {
+			compatible = "renesas,rz-xspi";
+			reg = <0x80220000 0x1000>;
+			interrupts = <GIC_SPI 339 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				<GIC_SPI 340 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "disabled";
+		};
+
+		xspi1: xspi@80221000 {
+			compatible = "renesas,rz-xspi";
+			reg = <0x80221000 0x1000>;
+			interrupts = <GIC_SPI 341 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				<GIC_SPI 342 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "disabled";
+		};
 	};
 };
