@@ -25,6 +25,24 @@ config USE_CODEC_CLOCK
 	  to generate those. If not selected, the I2S peripheral will generate
 	  them and the codec will be expected to consume them.
 
+config EXTRA_BLOCKS
+	int "Extra block size"
+	default 32
+	help
+	  Count of DMIC channels to capture and process.
+
+config SAMPLE_WIDTH
+	int "Sample bit width"
+	default 16
+	help
+	  Sample bit width of the system.
+
+config BYTES_PER_SAMPLE
+	int "Bytes per sample"
+	default 2
+	help
+	  Bytes per sample of the system.
+
 config USE_DMIC
 	bool "Use DMIC as an audio input"
 
