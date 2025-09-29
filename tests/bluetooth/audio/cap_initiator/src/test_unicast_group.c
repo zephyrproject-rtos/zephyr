@@ -22,12 +22,12 @@
 #include <zephyr/fff.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/ztest_assert.h>
+#include <zephyr/ztest_test.h>
 #include <sys/errno.h>
 
-#include "bap_endpoint.h"
+#include "audio/bap_endpoint.h"
 #include "test_common.h"
-#include "ztest_assert.h"
-#include "ztest_test.h"
 
 struct cap_initiator_test_unicast_group_fixture {
 	struct bt_cap_unicast_group_param *group_param;
