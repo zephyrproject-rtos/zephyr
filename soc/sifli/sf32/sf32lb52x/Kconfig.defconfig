@@ -19,7 +19,13 @@ config USE_DT_CODE_PARTITION
 config CACHE_MANAGEMENT
 	default y
 
-config NUM_IRQS
+configdefault MAIN_STACK_SIZE
+	default 2048 if MBEDTLS_INIT
+
+configdefault NUM_IRQS
 	default 100
+
+configdefault BT_BUF_ACL_TX_COUNT
+	default 8 if BT
 
 endif # SOC_SERIES_SF32LB52X
