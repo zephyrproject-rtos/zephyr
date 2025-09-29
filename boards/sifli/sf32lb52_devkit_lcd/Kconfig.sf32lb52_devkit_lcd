@@ -3,3 +3,12 @@
 
 config BOARD_SF32LB52_DEVKIT_LCD
 	select SOC_SF32LB525UC6
+
+config BT_HCI_ACL_FLOW_CONTROL
+    default n
+    
+config MAIN_STACK_SIZE 
+    default 2048 if BT_SF32LB
+    
+config BT_BUF_ACL_TX_COUNT    
+    default 8 if BT_SF32LB
