@@ -88,13 +88,6 @@
 	};
 };
 
-&flash {
-	flash0: flash@2000000 {
-		compatible = "soc-nv-flash";
-		reg = <0x2000000 DT_SIZE_K(1024)>;
-	};
-};
-
 &sciclk {
 	status = "okay";
 };
