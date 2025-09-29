@@ -641,10 +641,11 @@ static inline void timespec_from_timeout(k_timeout_t timeout, struct timespec *t
 static inline k_timeout_t timespec_to_timeout(const struct timespec *req, struct timespec *rem)
 {
 	k_timeout_t timeout;
+	struct timespec temp = SYS_TIMESPEC_NO_WAIT;
 
 	__ASSERT_NO_MSG((req != NULL) && timespec_is_valid(req));
 
-	if (timespec_compare(req, &SYS_TIMESPEC_NO_WAIT) <= 0) {
+	if (timespec_compare(req, &temp) <= 0) {
 		if (rem != NULL) {
 			*rem = *req;
 		}
@@ -653,7 +654,9 @@ static inline k_timeout_t timespec_to_timeout(const struct timespec *req, struct
 		return timeout;
 	}
 
-	if (timespec_compare(req, &SYS_TIMESPEC_FOREVER) == 0) {
+	temp = SYS_TIMESPEC_FOREVER;
+
+	if (timespec_compare(req, &temp) == 0) {
 		if (rem != NULL) {
 			*rem = SYS_TIMESPEC_NO_WAIT;
 		}
@@ -662,7 +665,9 @@ static inline k_timeout_t timespec_to_timeout(const struct timespec *req, struct
 		return timeout;
 	}
 
-	if (timespec_compare(req, &SYS_TIMESPEC_MAX) >= 0) {
+	temp = SYS_TIMESPEC_MAX;
+
+	if (timespec_compare(req, &temp) >= 0) {
 		/* round down to align to max ticks */
 		timeout.ticks = K_TICK_MAX;
 	} else {
