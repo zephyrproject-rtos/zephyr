@@ -1,0 +1,22 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2025 Ambiq Micro Inc.
+
+config GPU_AMBIQ
+	bool "Ambiq GPU Driver"
+	default y
+	depends on DT_HAS_AMBIQ_NEMA_GPU_ENABLED
+	help
+	  Enables the GPU driver for Ambiq devices.
+
+if GPU_AMBIQ
+module = GPU_AMBIQ
+module-str = gpu_ambiq
+source "subsys/logging/Kconfig.template.log_config"
+
+config GPU_AMBIQ_INIT_PRIORITY
+	int "Init priority"
+	default 91
+	help
+	  Ambiq GPU driver initialization priority.
+endif

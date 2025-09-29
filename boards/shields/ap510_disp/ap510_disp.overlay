@@ -12,6 +12,7 @@
 	chosen {
 		zephyr,display = &co5300;
 		zephyr,touch = &chsc5x;
+		ambiq,gpu = &gpu;
 	};
 };
 
@@ -81,5 +82,10 @@
 };
 
 &gpio64_95 {
+	status = "okay";
+};
+
+&gpu {
+	high-performance-mode;
 	status = "okay";
 };

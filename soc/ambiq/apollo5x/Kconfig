@@ -43,3 +43,5 @@ config SOC_AMBIQ_DMA_BUFF_ALIGNMENT
 	default 1
 	help
 	  This option specifies the DMA buffers' alignment
+
+rsource "Kconfig.gpu"

@@ -6,6 +6,7 @@
 zephyr_sources(soc.c)
 zephyr_include_directories(.)
 zephyr_sources_ifdef(CONFIG_PM power.c)
+zephyr_sources_ifdef(CONFIG_GPU_AMBIQ gpu.c)
 zephyr_include_directories(${ZEPHYR_BASE}/soc/arm/common/cortex_m)
 
 zephyr_linker_sources(SECTIONS shared_ram.ld)

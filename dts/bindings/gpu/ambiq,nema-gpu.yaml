@@ -1,0 +1,26 @@
+# Copyright (c) 2025, Ambiq Micro Inc. <www.ambiq.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Bindings for the Ambiq Nema|GFX and Nema|VG Graphics Processor (GPU).
+  This GPU is used for 2D and vector graphics acceleration.
+
+compatible: "ambiq,nema-gpu"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+    description: Base address and size of the GPU's memory-mapped register space.
+
+  interrupts:
+    required: true
+    description: Interrupt specifier for the GPU, typically for command completion.
+
+  high-performance-mode:
+    type: boolean
+    description: |
+      If present, sets the GPU to default to High Performance (HP@250MHz) mode.
+      HP mode offers maximum rendering speed at higher power consumption.
+      If this property is absent, the GPU will default to Low Power (LP@96MHz) mode.
