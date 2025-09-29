@@ -64,148 +64,26 @@ static void find_suitable_clock(const struct i2s_nrfx_drv_cfg *drv_cfg,
 				nrfx_i2s_config_t *config,
 				const struct i2s_config *i2s_cfg)
 {
-	static const struct {
-		uint16_t        ratio_val;
-		nrf_i2s_ratio_t ratio_enum;
-	} ratios[] = {
-		{  32, NRF_I2S_RATIO_32X },
-		{  48, NRF_I2S_RATIO_48X },
-		{  64, NRF_I2S_RATIO_64X },
-		{  96, NRF_I2S_RATIO_96X },
-		{ 128, NRF_I2S_RATIO_128X },
-		{ 192, NRF_I2S_RATIO_192X },
-		{ 256, NRF_I2S_RATIO_256X },
-		{ 384, NRF_I2S_RATIO_384X },
-		{ 512, NRF_I2S_RATIO_512X }
+	const nrfx_i2s_clk_params_t clk_params = {
+		.base_clock_freq =
+			(NRF_I2S_HAS_CLKCONFIG && drv_cfg->clk_src == ACLK)
+			/* The I2S_NRFX_DEVICE() macro contains build assertions that
+			 * make sure that the ACLK clock source is only used when it is
+			 * available and only with the "hfclkaudio-frequency" property
+			 * defined, but the default value of 0 here needs to be used to
+			 * prevent compilation errors when the property is not defined
+			 * (this expression will be eventually optimized away then).
+			 */
+			? DT_PROP_OR(DT_NODELABEL(clock), hfclkaudio_frequency, 0)
+			: 32*1000*1000UL,
+		.transfer_rate = i2s_cfg->frame_clk_freq,
+		.swidth = config->sample_width,
+		.allow_bypass = IS_ENABLED(CONFIG_I2S_NRFX_ALLOW_MCK_BYPASS),
 	};
-	const uint32_t src_freq =
-		(NRF_I2S_HAS_CLKCONFIG && drv_cfg->clk_src == ACLK)
-		/* The I2S_NRFX_DEVICE() macro contains build assertions that
-		 * make sure that the ACLK clock source is only used when it is
-		 * available and only with the "hfclkaudio-frequency" property
-		 * defined, but the default value of 0 here needs to be used to
-		 * prevent compilation errors when the property is not defined
-		 * (this expression will be eventually optimized away then).
-		 */
-		? DT_PROP_OR(DT_NODELABEL(clock), hfclkaudio_frequency, 0)
-		: 32*1000*1000UL;
-	uint32_t bits_per_frame = 2 * i2s_cfg->word_size;
-	uint32_t best_diff = UINT32_MAX;
-	uint8_t r, best_r = 0;
-	nrf_i2s_mck_t best_mck_cfg = 0;
-	uint32_t best_mck = 0;
 
-#if defined(CONFIG_I2S_NRFX_ALLOW_MCK_BYPASS) && NRF_I2S_HAS_CLKCONFIG
-	/* Check for bypass before calculating f_MCK */
-	for (r = 0; r < ARRAY_SIZE(ratios); ++r) {
-		if (i2s_cfg->frame_clk_freq * ratios[r].ratio_val == src_freq) {
-			LOG_INF("MCK bypass calculated");
-			best_r = r;
-			best_mck = src_freq;
-			best_diff = 0;
-
-			/* Set CONFIG.MCKFREQ register to non-zero reset value to
-			 * ensure peripheral functionality
-			 */
-			best_mck_cfg = NRF_I2S_MCK_32MDIV8;
-
-			config->enable_bypass = true;
-			break;
-		}
+	if (nrfx_i2s_prescalers_calc(&clk_params, &config->prescalers) != NRFX_SUCCESS) {
+		LOG_ERR("Failed to find suitable I2S clock configuration.");
 	}
-#endif
-
-	for (r = 0; (best_diff != 0) && (r < ARRAY_SIZE(ratios)); ++r) {
-		/* Only multiples of the frame width can be used as ratios. */
-		if ((ratios[r].ratio_val % bits_per_frame) != 0) {
-			continue;
-		}
-
-		if (IS_ENABLED(CONFIG_SOC_SERIES_NRF53X) || IS_ENABLED(CONFIG_SOC_SERIES_NRF54LX)) {
-			uint32_t requested_mck =
-				i2s_cfg->frame_clk_freq * ratios[r].ratio_val;
-			/* As specified in the nRF5340 PS:
-			 *
-			 * MCKFREQ = 4096 * floor(f_MCK * 1048576 /
-			 *                        (f_source + f_MCK / 2))
-			 * f_actual = f_source /
-			 *            floor(1048576 * 4096 / MCKFREQ)
-			 */
-			enum { MCKCONST = 1048576 };
-			uint32_t mck_factor =
-				(uint32_t)(((uint64_t)requested_mck * MCKCONST) /
-					   (src_freq + requested_mck / 2));
-
-			/* skip cases when mck_factor is too big for dividing */
-			if (mck_factor > MCKCONST) {
-				continue;
-			}
-			uint32_t actual_mck = src_freq / (MCKCONST / mck_factor);
-
-			uint32_t lrck_freq = actual_mck / ratios[r].ratio_val;
-			uint32_t diff = lrck_freq >= i2s_cfg->frame_clk_freq
-					? (lrck_freq - i2s_cfg->frame_clk_freq)
-					: (i2s_cfg->frame_clk_freq - lrck_freq);
-
-			if (diff < best_diff) {
-				best_mck_cfg = mck_factor * 4096;
-				best_mck = actual_mck;
-				best_r = r;
-				best_diff = diff;
-			}
-		} else {
-			static const struct {
-				uint8_t       divider_val;
-				nrf_i2s_mck_t divider_enum;
-			} dividers[] = {
-				{   8, NRF_I2S_MCK_32MDIV8 },
-				{  10, NRF_I2S_MCK_32MDIV10 },
-				{  11, NRF_I2S_MCK_32MDIV11 },
-				{  15, NRF_I2S_MCK_32MDIV15 },
-				{  16, NRF_I2S_MCK_32MDIV16 },
-				{  21, NRF_I2S_MCK_32MDIV21 },
-				{  23, NRF_I2S_MCK_32MDIV23 },
-				{  30, NRF_I2S_MCK_32MDIV30 },
-				{  31, NRF_I2S_MCK_32MDIV31 },
-				{  32, NRF_I2S_MCK_32MDIV32 },
-				{  42, NRF_I2S_MCK_32MDIV42 },
-				{  63, NRF_I2S_MCK_32MDIV63 },
-				{ 125, NRF_I2S_MCK_32MDIV125 }
-			};
-
-			for (uint8_t d = 0; (best_diff != 0) && (d < ARRAY_SIZE(dividers)); ++d) {
-				uint32_t mck_freq =
-					src_freq / dividers[d].divider_val;
-				uint32_t lrck_freq =
-					mck_freq / ratios[r].ratio_val;
-				uint32_t diff =
-					lrck_freq >= i2s_cfg->frame_clk_freq
-					? (lrck_freq - i2s_cfg->frame_clk_freq)
-					: (i2s_cfg->frame_clk_freq - lrck_freq);
-
-				if (diff < best_diff) {
-					best_mck_cfg = dividers[d].divider_enum;
-					best_mck = mck_freq;
-					best_r = r;
-					best_diff = diff;
-				}
-
-				/* Since dividers are in ascending order, stop
-				 * checking next ones for the current ratio
-				 * after resulting LRCK frequency falls below
-				 * the one requested.
-				 */
-				if (lrck_freq < i2s_cfg->frame_clk_freq) {
-					break;
-				}
-			}
-		}
-	}
-
-	config->mck_setup = best_mck_cfg;
-	config->ratio = ratios[best_r].ratio_enum;
-	LOG_INF("I2S MCK frequency: %u, actual PCM rate: %u",
-		best_mck, best_mck / ratios[best_r].ratio_val);
 }
 
 static bool get_next_tx_buffer(struct i2s_nrfx_drv_data *drv_data,
@@ -551,7 +429,7 @@ static int i2s_nrfx_configure(const struct device *dev, enum i2s_dir dir,
 		 */
 		drv_data->request_clock = (drv_cfg->clk_src != PCLK32M);
 	} else {
-		nrfx_cfg.mck_setup = NRF_I2S_MCK_DISABLED;
+		nrfx_cfg.prescalers.mck_setup = NRF_I2S_MCK_DISABLED;
 		drv_data->request_clock = false;
 	}
 
@@ -780,7 +658,7 @@ static int trigger_start(const struct device *dev)
 	nrf_i2s_clk_configure(drv_cfg->i2s.p_reg,
 			      drv_cfg->clk_src == ACLK ? NRF_I2S_CLKSRC_ACLK
 						       : NRF_I2S_CLKSRC_PCLK32M,
-			      nrfx_cfg->enable_bypass);
+			      nrfx_cfg->prescalers.enable_bypass);
 #endif
 
 	/* If it is required to use certain HF clock, request it to be running
