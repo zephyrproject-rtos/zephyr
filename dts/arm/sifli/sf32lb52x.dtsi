@@ -159,6 +159,13 @@
 			status = "disabled";
 		};
 
+		mailbox: mailbox@50082000 {
+			compatible = "sifli,sf32lb-mailbox";
+			reg = <0x50082000 0x1000>;
+			interrupts = <58 1>;
+			status = "disabled";
+		};
+
 		usart1: serial@50084000 {
 			compatible = "sifli,sf32lb-usart";
 			reg = <0x50084000 0x400>;
