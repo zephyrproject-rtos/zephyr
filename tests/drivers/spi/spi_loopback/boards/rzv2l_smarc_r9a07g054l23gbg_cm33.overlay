@@ -1,0 +1,28 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&spi1 {
+	dmas = <&dma0 6 RZ_DMA_PERIPH_TO_MEM>,
+	       <&dma0 5 RZ_DMA_MEM_TO_PERIPH>;
+	dma-names = "rx", "tx";
+
+	slow@2 {
+		compatible = "test-spi-loopback-slow";
+		reg = <2>;
+		spi-max-frequency = <500000>;
+	};
+
+	fast@2 {
+		compatible = "test-spi-loopback-fast";
+		reg = <2>;
+		spi-max-frequency = <8333333>;
+	};
+};
+
+&dma0 {
+	status = "okay";
+	dma-buf-addr-alignment = <1>;
+};
