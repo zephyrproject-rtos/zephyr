@@ -192,7 +192,7 @@
 			clocks = <&clock ESP32_MODULE_MAX>;
 			interrupts = <RTC_CORE_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
-			status = "okay";
+			status = "disabled";
 		};
 
 		flash: flash-controller@3ff42000 {
