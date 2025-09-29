@@ -33,3 +33,7 @@ if (CONFIG_XTENSA_MMU)
 endif()
 
 set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld CACHE INTERNAL "")
+
+if (CONFIG_INTEL_ADSP_FWREADY_MSG)
+  zephyr_library_sources(fw_ready.c)
+endif()
