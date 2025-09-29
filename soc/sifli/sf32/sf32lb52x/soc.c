@@ -6,6 +6,7 @@
 #include <zephyr/arch/cpu.h>
 #include <zephyr/cache.h>
 #include <zephyr/sys/util.h>
+#include <bf0_hal.h>
 
 #define BOOTROM_BKP_REG             DT_REG_ADDR(DT_INST(0, sifli_sf32lb_rtc_backup))
 #define BOOTROM_FLASH_OFF_DELAY_MSK GENMASK(11U, 4U)
@@ -28,3 +29,11 @@ void soc_early_init_hook(void)
 	sys_write32(val, BOOTROM_BKP_REG);
 #endif
 }
+
+void HAL_Delay_us(uint32_t us)
+{
+    k_sleep (K_USEC(us));
+}
+
+
+
