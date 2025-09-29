@@ -1,0 +1,16 @@
+# Mailbox Bluetooth HCI device
+
+description: |
+    Mailbox device to exchange Bluetooth HCI traffic between
+    application CPU and bluetooth LCPU. The traffic is encoding
+    in Bluetooth UART H:4 format.
+
+compatible: "sifli,sf32lb-mailbox"
+
+include: bt-hci.yaml
+
+properties:
+  bt-hci-name:
+    default: "mailbox"
+  bt-hci-bus:
+    default: "virtual"
