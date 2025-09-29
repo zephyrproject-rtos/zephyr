@@ -12,6 +12,8 @@
 #include <zephyr/linker/devicetree_regions.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 #include <dmm.h>
 
 LOG_MODULE_REGISTER(adc_nrfx_saadc, CONFIG_ADC_LOG_LEVEL);
@@ -724,9 +726,18 @@ static int adc_nrfx_read(const struct device *dev,
 {
 	int error;
 
+	error = pm_device_runtime_get(dev);
+	if (error) {
+		return error;
+	}
+
 	adc_context_lock(&m_data.ctx, false, NULL);
 	error = start_read(dev, sequence);
 	adc_context_release(&m_data.ctx, error);
+
+	if (pm_device_runtime_put(dev)) {
+		LOG_ERR("PM put failed");
+	}
 
 	return error;
 }
@@ -777,6 +788,13 @@ static void event_handler(const nrfx_saadc_evt_t *event)
 	}
 }
 
+static int saadc_pm_handler(const struct device *dev, enum pm_device_action action)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(action);
+	return 0;
+}
+
 static int init_saadc(const struct device *dev)
 {
 	nrfx_err_t err;
@@ -794,7 +812,7 @@ static int init_saadc(const struct device *dev)
 
 	adc_context_unlock_unconditionally(&m_data.ctx);
 
-	return 0;
+	return pm_device_driver_init(dev, saadc_pm_handler);
 }
 
 static DEVICE_API(adc, adc_nrfx_driver_api) = {
@@ -837,5 +855,7 @@ DT_FOREACH_CHILD(DT_DRV_INST(0), VALIDATE_CHANNEL_CONFIG)
 
 NRF_DT_CHECK_NODE_HAS_REQUIRED_MEMORY_REGIONS(DT_DRV_INST(0));
 
-DEVICE_DT_INST_DEFINE(0, init_saadc, NULL, NULL, NULL, POST_KERNEL,
-		      CONFIG_ADC_INIT_PRIORITY, &adc_nrfx_driver_api);
+PM_DEVICE_DT_INST_DEFINE(0, saadc_pm_handler);
+DEVICE_DT_INST_DEFINE(0, init_saadc, PM_DEVICE_DT_INST_GET(0), NULL,
+		      NULL, POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,
+		      &adc_nrfx_driver_api);
