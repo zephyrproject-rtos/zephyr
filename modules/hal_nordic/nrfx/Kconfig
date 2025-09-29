@@ -56,93 +56,6 @@ config NRFX_CRACEN
 	bool "CRACEN drivers"
 	depends on SOC_COMPATIBLE_NRF54LX
 
-config NRFX_DPPI
-	bool
-
-config NRFX_DPPI0
-	bool "DPPI0 driver instance"
-	default y if NRFX_GPPI
-	depends on $(dt_nodelabel_exists,dppic0)
-	select NRFX_DPPI
-
-config NRFX_DPPI00
-	bool "DPPI00 driver instance"
-	default y if NRFX_GPPI
-	depends on $(dt_nodelabel_exists,dppic00)
-	select NRFX_DPPI
-
-config NRFX_DPPI10
-	bool "DPPI10 driver instance"
-	default y if NRFX_GPPI
-	depends on $(dt_nodelabel_exists,dppic10)
-	select NRFX_DPPI
-
-config NRFX_DPPI20
-	bool "DPPI20 driver instance"
-	default y if NRFX_GPPI
-	depends on $(dt_nodelabel_exists,dppic20)
-	select NRFX_DPPI
-
-config NRFX_DPPI30
-	bool "DPPI30 driver instance"
-	default y if NRFX_GPPI
-	depends on $(dt_nodelabel_exists,dppic30)
-	select NRFX_DPPI
-
-config NRFX_DPPI020
-	bool "DPPI020 driver instance"
-	default y if NRFX_GPPI
-	depends on $(dt_nodelabel_exists,dppic020)
-	select NRFX_DPPI
-
-config NRFX_DPPI120
-	bool "DPPI120 driver instance"
-	default y if NRFX_GPPI
-	depends on $(dt_nodelabel_exists,dppic120)
-	select NRFX_DPPI
-
-config NRFX_DPPI130
-	bool "DPPI130 driver instance"
-	default y if NRFX_GPPI
-	depends on $(dt_nodelabel_exists,dppic130)
-	select NRFX_DPPI
-
-config NRFX_DPPI131
-	bool "DPPI131 driver instance"
-	default y if NRFX_GPPI
-	depends on $(dt_nodelabel_exists,dppic131)
-	select NRFX_DPPI
-
-config NRFX_DPPI132
-	bool "DPPI132 driver instance"
-	default y if NRFX_GPPI
-	depends on $(dt_nodelabel_exists,dppic132)
-	select NRFX_DPPI
-
-config NRFX_DPPI133
-	bool "DPPI133 driver instance"
-	default y if NRFX_GPPI
-	depends on $(dt_nodelabel_exists,dppic133)
-	select NRFX_DPPI
-
-config NRFX_DPPI134
-	bool "DPPI134 driver instance"
-	default y if NRFX_GPPI
-	depends on $(dt_nodelabel_exists,dppic134)
-	select NRFX_DPPI
-
-config NRFX_DPPI135
-	bool "DPPI135 driver instance"
-	default y if NRFX_GPPI
-	depends on $(dt_nodelabel_exists,dppic135)
-	select NRFX_DPPI
-
-config NRFX_DPPI136
-	bool "DPPI136 driver instance"
-	default y if NRFX_GPPI
-	depends on $(dt_nodelabel_exists,dppic136)
-	select NRFX_DPPI
-
 config NRFX_EGU
 	bool
 
@@ -247,6 +160,13 @@ config NRFX_GPPI
 	   Enable the nrfx_gppi utilities providing unified API for creating PPI
 	   connections across SoC families.
 
+config NRFX_GPPI_V1
+	bool "GPPI layer legacy"
+	depends on NRFX_GPPI
+	default y if SOC_SERIES_NRF54HX
+	help
+	  When enabled then legacy version of Generic PPI layer is used.
+
 config NRFX_GRTC
 	bool "GRTC driver"
 	depends on $(dt_nodelabel_exists,grtc)
@@ -284,62 +204,6 @@ config NRFX_POWER
 	# On SoCs featuring the USBREG peripheral, the POWER driver uses
 	# internally the USBREG driver.
 	select NRFX_USBREG if $(dt_nodelabel_exists,usbreg)
-
-config NRFX_PPI
-	bool "PPI allocator"
-	default y if NRFX_GPPI
-	depends on $(dt_nodelabel_exists,ppi)
-
-config NRFX_PPIB
-	bool
-
-config NRFX_PPIB00
-	bool "PPIB00 driver instance"
-	default y if NRFX_GPPI
-	depends on $(dt_nodelabel_exists,ppib00)
-	select NRFX_PPIB
-
-config NRFX_PPIB01
-	bool "PPIB01 driver instance"
-	default y if NRFX_GPPI
-	depends on $(dt_nodelabel_exists,ppib01)
-	select NRFX_PPIB
-
-config NRFX_PPIB10
-	bool "PPIB10 driver instance"
-	default y if NRFX_GPPI
-	depends on $(dt_nodelabel_exists,ppib10)
-	select NRFX_PPIB
-
-config NRFX_PPIB11
-	bool "PPIB11 driver instance"
-	default y if NRFX_GPPI
-	depends on $(dt_nodelabel_exists,ppib11)
-	select NRFX_PPIB
-
-config NRFX_PPIB20
-	bool "PPIB20 driver instance"
-	default y if NRFX_GPPI
-	depends on $(dt_nodelabel_exists,ppib20)
-	select NRFX_PPIB
-
-config NRFX_PPIB21
-	bool "PPIB21 driver instance"
-	default y if NRFX_GPPI
-	depends on $(dt_nodelabel_exists,ppib21)
-	select NRFX_PPIB
-
-config NRFX_PPIB22
-	bool "PPIB22 driver instance"
-	default y if NRFX_GPPI
-	depends on $(dt_nodelabel_exists,ppib22)
-	select NRFX_PPIB
-
-config NRFX_PPIB30
-	bool "PPIB30 driver instance"
-	default y if NRFX_GPPI
-	depends on $(dt_nodelabel_exists,ppib30)
-	select NRFX_PPIB
 
 config NRFX_PWM
 	bool "PWM driver"
