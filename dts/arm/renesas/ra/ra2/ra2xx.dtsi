@@ -157,6 +157,14 @@
 				channel = <0>;
 				status = "disabled";
 			};
+
+			i2c {
+				compatible = "renesas,ra-i2c-sci";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				channel = <0>;
+				status = "disabled";
+			};
 		};
 
 		sci1: sci@40070020 {
@@ -168,6 +176,14 @@
 			status = "disabled";
 			uart {
 				compatible = "renesas,ra-sci-uart";
+				channel = <1>;
+				status = "disabled";
+			};
+
+			i2c {
+				compatible = "renesas,ra-i2c-sci";
+				#address-cells = <1>;
+				#size-cells = <0>;
 				channel = <1>;
 				status = "disabled";
 			};
@@ -185,6 +201,14 @@
 				channel = <2>;
 				status = "disabled";
 			};
+
+			i2c {
+				compatible = "renesas,ra-i2c-sci";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				channel = <2>;
+				status = "disabled";
+			};
 		};
 
 		sci3: sci@40070060 {
@@ -199,6 +223,14 @@
 				channel = <3>;
 				status = "disabled";
 			};
+
+			i2c {
+				compatible = "renesas,ra-i2c-sci";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				channel = <3>;
+				status = "disabled";
+			};
 		};
 
 		sci9: sci@40070120 {
@@ -210,6 +242,14 @@
 			status = "disabled";
 			uart {
 				compatible = "renesas,ra-sci-uart";
+				channel = <9>;
+				status = "disabled";
+			};
+
+			i2c {
+				compatible = "renesas,ra-i2c-sci";
+				#address-cells = <1>;
+				#size-cells = <0>;
 				channel = <9>;
 				status = "disabled";
 			};
