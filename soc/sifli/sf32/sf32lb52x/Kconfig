@@ -11,6 +11,10 @@ config SOC_SERIES_SF32LB52X
 	select CPU_HAS_ICACHE
 	select CPU_HAS_DCACHE
 	select SOC_EARLY_INIT_HOOK
+    
+config SIFLI_LXT_DISABLE
+    bool
+    default n
 
 if SOC_SERIES_SF32LB52X
 
