@@ -176,6 +176,10 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 	}
 #endif
 
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(micfil), okay)
+	CLOCK_EnableClock(kCLOCK_Micfil);
+#endif
+
 	return 0;
 }
 
@@ -611,6 +615,12 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(const struct device *de
 		*rate = CLOCK_GetLpspiClkFreq(1);
 		break;
 #endif /* defined(CONFIG_SPI_NXP_LPSPI) */
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(micfil), okay)
+	case MCUX_MICFIL_CLK:
+		*rate = CLOCK_GetMicfilClkFreq();
+		break;
+#endif
 	}
 
 	return 0;

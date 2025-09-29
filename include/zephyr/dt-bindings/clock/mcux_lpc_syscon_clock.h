@@ -1,5 +1,6 @@
 /*
  * Copyright 2020-2025 NXP
+ * Copyright 2020-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -133,5 +134,7 @@
 #define MCUX_OPAMP1_CLK MCUX_LPC_CLK_ID(0x18, 0x01)
 #define MCUX_OPAMP2_CLK MCUX_LPC_CLK_ID(0x18, 0x02)
 #define MCUX_OPAMP3_CLK MCUX_LPC_CLK_ID(0x18, 0x03)
+
+#define MCUX_MICFIL_CLK MCUX_LPC_CLK_ID(0x18, 0x00)
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_MCUX_LPC_SYSCON_H_ */
