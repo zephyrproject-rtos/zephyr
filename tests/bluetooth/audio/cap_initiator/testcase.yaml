@@ -4,4 +4,7 @@ common:
     - bluetooth_audio
 tests:
   bluetooth.audio.cap_initiator.test_default:
-    type: unit
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
