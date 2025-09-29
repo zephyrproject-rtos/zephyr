@@ -56,9 +56,17 @@
 #include "net_private.h"
 #include "../ip/ipv6.h"
 
+enum net_shell_stats_format {
+	NET_SHELL_STATS_FORMAT_DEFAULT,
+	NET_SHELL_STATS_FORMAT_KEY_VALUE,
+	NET_SHELL_STATS_FORMAT_HEX_BLOB,
+	NET_SHELL_STATS_FORMAT_BOTH
+};
+
 struct net_shell_user_data {
 	const struct shell *sh;
 	void *user_data;
+	enum net_shell_stats_format vendor_stats_format;
 };
 
 #if !defined(NET_VLAN_MAX_COUNT)
