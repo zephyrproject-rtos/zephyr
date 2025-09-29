@@ -10,6 +10,7 @@
 #include <soc.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/bluetooth/hci_types.h>
 
 #include "hal/cpu.h"
 #include "hal/ccm.h"
@@ -604,7 +605,7 @@ static void isr_tx_common(void *param,
 		pdu->ctrl.opcode = PDU_BIG_CTRL_TYPE_TERM_IND;
 
 		term = (void *)&pdu->ctrl.term_ind;
-		term->reason = lll->term_reason;
+		term->reason_unused = BT_HCI_ERR_REMOTE_USER_TERM_CONN;
 		term->instant = lll->ctrl_instant;
 
 		/* control subevent to use bis = 0 and se_n = 1 */

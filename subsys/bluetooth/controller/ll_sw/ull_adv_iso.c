@@ -779,7 +779,6 @@ uint8_t ll_big_terminate(uint8_t big_handle, uint8_t reason)
 	}
 
 	/* Request terminate procedure */
-	lll_adv_iso->term_reason = reason;
 	lll_adv_iso->term_req = 1U;
 
 	return BT_HCI_ERR_SUCCESS;

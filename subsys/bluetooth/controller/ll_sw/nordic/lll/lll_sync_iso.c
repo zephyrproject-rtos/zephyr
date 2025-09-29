@@ -1848,7 +1848,7 @@ static void isr_rx_ctrl_recv(struct lll_sync_iso *lll, struct pdu_bis *pdu)
 			struct pdu_big_ctrl_term_ind *term;
 
 			term = (void *)&pdu->ctrl.term_ind;
-			lll->term_reason = term->reason;
+			lll->term_reason = BT_HCI_ERR_REMOTE_USER_TERM_CONN;
 			lll->ctrl_instant = term->instant;
 		}
 	} else if (opcode == PDU_BIG_CTRL_TYPE_CHAN_MAP_IND) {

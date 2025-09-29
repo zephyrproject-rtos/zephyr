@@ -1109,7 +1109,7 @@ struct pdu_big_ctrl_chan_map_ind {
 } __packed;
 
 struct pdu_big_ctrl_term_ind {
-	uint8_t  reason;
+	uint8_t  reason_unused;
 	uint16_t instant;
 } __packed;
 
