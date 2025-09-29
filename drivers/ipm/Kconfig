@@ -76,6 +76,7 @@ source "drivers/ipm/Kconfig.imx"
 source "drivers/ipm/Kconfig.stm32"
 source "drivers/ipm/Kconfig.intel_adsp"
 source "drivers/ipm/Kconfig.ivshmem"
+source "drivers/ipm/Kconfig.rpi_pico"
 source "drivers/ipm/Kconfig.sedi"
 
 
