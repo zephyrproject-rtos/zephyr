@@ -210,14 +210,11 @@ zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54LX_SKIP_GLITCHDETECTOR_DISABLE 
 zephyr_compile_definitions_ifndef(CONFIG_SOC_NRF54L_ANOMALY_56_WORKAROUND NRF54L_CONFIGURATION_56_ENABLE=0)
 
 if(CONFIG_SOC_COMPATIBLE_NRF54LX AND CONFIG_NRFX_GPPI)
-  zephyr_library_sources(${HELPERS_DIR}/nrfx_gppi_dppi_ppib_lumos.c)
-  zephyr_library_sources(${SOC_DIR}/soc/interconnect/dppic_ppib/nrfx_interconnect_dppic_ppib.c)
+  zephyr_library_sources(${HELPERS_DIR}/nrfx_gppi_ppib.c)
 endif()
 
 if(CONFIG_SOC_SERIES_NRF54HX AND CONFIG_NRFX_GPPI)
-  zephyr_library_sources(${HELPERS_DIR}/nrfx_gppi_dppi_ppib.c)
-  zephyr_library_sources(${SOC_DIR}/soc/interconnect/apb/nrfx_interconnect_apb.c)
-  zephyr_library_sources(${SOC_DIR}/soc/interconnect/ipct/nrfx_interconnect_ipct.c)
+  zephyr_library_sources(${HELPERS_DIR}/nrfx_gppi_ipct.c)
 endif()
 
 # Get the SVD file for the current SoC
