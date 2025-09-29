@@ -2,16 +2,28 @@
 
 cmake_minimum_required(VERSION 3.20.0)
 
-project(bluetooth_ccp)
-find_package(Zephyr COMPONENTS unittest HINTS $ENV{ZEPHYR_BASE})
+find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
+project(bluetooth_ccp_server)
 
-add_subdirectory(${ZEPHYR_BASE}/tests/bluetooth/audio/ccp_call_control_server/uut uut)
+target_include_directories(app PRIVATE
+  ${ZEPHYR_BASE}/subsys/bluetooth/
 
-target_link_libraries(testbinary PRIVATE uut)
+  ${ZEPHYR_BASE}/tests/bluetooth/audio/mocks/include
+)
 
-target_include_directories(testbinary PRIVATE include)
+target_sources(app PRIVATE
+  # Test source files
+  src/main.c
 
-target_sources(testbinary
-  PRIVATE
-    src/main.c
+  # Stack source file
+  ${ZEPHYR_BASE}/subsys/bluetooth/audio/audio.c
+  ${ZEPHYR_BASE}/subsys/bluetooth/audio/ccid.c
+  ${ZEPHYR_BASE}/subsys/bluetooth/audio/ccp_call_control_server.c
+  ${ZEPHYR_BASE}/subsys/bluetooth/audio/tbs.c
+  ${ZEPHYR_BASE}/subsys/bluetooth/common/bt_str.c
+  ${ZEPHYR_BASE}/subsys/bluetooth/host/uuid.c
+
+  # Mock files
+  ${ZEPHYR_BASE}/tests/bluetooth/audio/mocks/src/conn.c
+  ${ZEPHYR_BASE}/tests/bluetooth/audio/mocks/src/gatt.c
 )
