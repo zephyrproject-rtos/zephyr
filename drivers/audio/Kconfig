@@ -43,6 +43,7 @@ source "drivers/audio/Kconfig.tlv320aic3110"
 source "drivers/audio/Kconfig.tlv320dac"
 source "drivers/audio/Kconfig.wm8904"
 source "drivers/audio/Kconfig.wm8962"
+source "drivers/audio/Kconfig.da7212"
 
 endif # AUDIO_CODEC
 
