@@ -16,3 +16,24 @@ config SOC_SERIES_RA8D1
 	select SOC_EARLY_INIT_HOOK
 	select GPIO_RA_HAS_VBTICTLR
 	select HAS_PM
+
+if SOC_SERIES_RA8D1
+
+config RENESAS_PN_PACKAGE_TYPE
+	int
+	range 1 2
+	default 1 if SOC_R7FA8D1BHECBD
+	help
+	  Package type:
+	  1 -> BD: FBGA 224 pins
+	  2 -> FC: LQFP 176 pins
+
+config RENESAS_PN_FEATURE_SET
+	hex
+	default 0x42 if SOC_R7FA8D1BHECBD
+	help
+	  Feature set (Convert the feature set character into its ASCII hex value):
+	  - A (0x41): MIPI DSI is not available
+	  - B (0x42): MIPI DSI is available
+
+endif # SOC_SERIES_RA8D1

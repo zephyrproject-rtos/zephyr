@@ -17,3 +17,27 @@ config SOC_SERIES_RA6M5
 	select SOC_EARLY_INIT_HOOK
 	select GPIO_RA_HAS_VBTICTLR
 	select OUTPUT_RPD if ETH_RENESAS_RA
+
+if SOC_SERIES_RA6M5
+
+config RENESAS_PN_PACKAGE_TYPE
+	int
+	range 1 5
+	default 4 if SOC_R7FA6M5BH3CFC
+	help
+	  Package type:
+	  1 -> BG: FBGA 176 pins
+	  2 -> BM: FBGA 144 pins
+	  3 -> FB: LQFP 144 pins
+	  4 -> FC: LQFP 176 pins
+	  5 -> FP: LQFP 100 pins
+
+config RENESAS_PN_FEATURE_SET
+	hex
+	default 0x42 if SOC_R7FA6M5BH3CFC
+	help
+	  Feature set (Convert the feature set character into its ASCII hex value):
+	  - A (0x41): Supporting only Classical CAN (Not supporting Flexible Data rate)
+	  - B (0x42): Supporting Classical CAN with Flexible Data rate
+
+endif # SOC_SERIES_RA6M5

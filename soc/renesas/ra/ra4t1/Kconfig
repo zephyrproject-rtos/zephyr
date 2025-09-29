@@ -13,3 +13,23 @@ config SOC_SERIES_RA4T1
 	select FPU
 	select XIP
 	select SOC_EARLY_INIT_HOOK
+
+if SOC_SERIES_RA4T1
+
+config RENESAS_PN_PACKAGE_TYPE
+	int
+	range 1 5
+	default 1 if SOC_R7FA4T1BB3CFM || SOC_R7FA4T1B93CFM
+	default 2 if SOC_R7FA4T1BB3CFL || SOC_R7FA4T1B93CFL
+	default 3 if SOC_R7FA4T1BB3CFJ || SOC_R7FA4T1B93CFJ
+	default 4 if SOC_R7FA4T1BB3CNE || SOC_R7FA4T1B93CNE
+	default 5 if SOC_R7FA4T1BB3CNH || SOC_R7FA4T1B93CNH
+	help
+	  Package type:
+	  1 -> FM: LQFP 64 pins
+	  2 -> FL: LQFP 48 pins
+	  3 -> FJ: LQFP 32 pins
+	  4 -> NE: QFN 48 pins
+	  5 -> NH: QFN 32 pins
+
+endif # SOC_SERIES_RA4T1

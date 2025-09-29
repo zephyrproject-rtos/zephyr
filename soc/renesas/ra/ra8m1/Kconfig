@@ -18,3 +18,18 @@ config SOC_SERIES_RA8M1
 	select HAS_PM
 	help
 	  Enable support for Renesas RA8M1 MCU series
+
+if SOC_SERIES_RA8M1
+
+config RENESAS_PN_PACKAGE_TYPE
+	int
+	range 1 4
+	default 1 if SOC_R7FA8M1AHECBD
+	help
+	  Package type:
+	  1 -> BD: FBGA 224 pins
+	  2 -> FC: LQFP 176 pins
+	  3 -> FB: LQFP 144 pins
+	  4 -> FP: LQFP 100 pins
+
+endif # SOC_SERIES_RA8M1
