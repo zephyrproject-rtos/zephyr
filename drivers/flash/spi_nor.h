@@ -91,9 +91,10 @@
 #define SPI_NOR_OCMD_BULKE      0x609F  /* Octa Bulk Erase */
 
  /* Page, sector, and block size are standard, not configurable. */
- #define SPI_NOR_PAGE_SIZE    0x0100U
- #define SPI_NOR_SECTOR_SIZE  0x1000U
- #define SPI_NOR_BLOCK_SIZE   0x10000U
+#define SPI_NOR_PAGE_SIZE      0x0100U
+#define SPI_NOR_SECTOR_SIZE    0x1000U
+#define SPI_NOR_BLOCK_32K_SIZE 0x8000U
+#define SPI_NOR_BLOCK_SIZE     0x10000U
 
 /* Flash Auto-polling values */
 #define SPI_NOR_WREN_MATCH    0x02
