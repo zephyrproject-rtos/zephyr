@@ -129,6 +129,8 @@ static int counter_esp32_set_alarm(const struct device *dev, uint8_t chan_id,
 		ticks = now + alarm_cfg->ticks;
 	}
 
+	data->ticks = (uint32_t)ticks;
+
 	rtc_cntl_ll_set_wakeup_timer(ticks);
 
 	/* RTC main timer set alarm value */
@@ -145,14 +147,18 @@ static int counter_esp32_set_alarm(const struct device *dev, uint8_t chan_id,
 
 static int counter_esp32_cancel_alarm(const struct device *dev, uint8_t chan_id)
 {
-	ARG_UNUSED(dev);
 	ARG_UNUSED(chan_id);
+	struct counter_esp32_data *data = dev->data;
 
 	/* RTC main timer set alarm disable */
 	CLEAR_PERI_REG_MASK(RTC_CNTL_SLP_TIMER1_REG, RTC_CNTL_MAIN_TIMER_ALARM_EN);
 
-	/* RTC main timer interrupt disable */
+	/* RTC main timer interrupt disable, and clear interrupt flag */
+	REG_WRITE(RTC_CNTL_INT_ENA_REG, 0);
 	SET_PERI_REG_MASK(RTC_CNTL_INT_CLR_REG, RTC_CNTL_MAIN_TIMER_INT_CLR);
+
+	data->alarm_cfg.callback = NULL;
+	data->alarm_cfg.user_data = NULL;
 
 	return 0;
 }
@@ -228,6 +234,8 @@ static void counter_esp32_isr(void *arg)
 {
 	const struct device *dev = (const struct device *)arg;
 	struct counter_esp32_data *data = dev->data;
+	counter_alarm_callback_t cb = data->alarm_cfg.callback;
+	void *cb_data = data->alarm_cfg.user_data;
 	uint32_t now;
 	uint32_t status = REG_READ(RTC_CNTL_INT_ST_REG);
 
@@ -238,8 +246,8 @@ static void counter_esp32_isr(void *arg)
 	counter_esp32_cancel_alarm(dev, 0);
 	counter_esp32_get_value(dev, &now);
 
-	if (data->alarm_cfg.callback) {
-		data->alarm_cfg.callback(dev, 0, now, data->alarm_cfg.user_data);
+	if (cb && (now > data->ticks)) {
+		cb(dev, 0, now, cb_data);
 	}
 }
 
