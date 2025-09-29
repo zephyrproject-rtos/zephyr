@@ -2036,6 +2036,26 @@ Documentation Infrastructure:
   tests:
     - drivers.modem
 
+"Drivers: Opamp":
+  status: maintained
+  maintainers:
+    - ZhaoxiangJin
+  collaborators:
+    - KozhinovAlexander
+  files:
+    - dts/bindings/opamp/
+    - drivers/opamp/
+    - include/zephyr/drivers/opamp.h
+    - include/zephyr/dt-bindings/opamp/
+    - samples/drivers/opamp/
+    - tests/drivers/build_all/opamp/
+    - tests/drivers/opamp/
+    - doc/hardware/peripherals/opamp.rst
+  labels:
+    - "area: Opamp"
+  tests:
+    - drivers.opamp
+
 "Drivers: PCI":
   status: maintained
   maintainers:
