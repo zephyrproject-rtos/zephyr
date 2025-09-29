@@ -30,7 +30,6 @@
 #include "conn.h"
 #include "gatt.h"
 #include "iso.h"
-#include "mock_kernel.h"
 #include "pacs.h"
 
 #include "test_common.h"
