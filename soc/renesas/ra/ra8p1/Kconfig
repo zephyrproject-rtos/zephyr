@@ -24,3 +24,40 @@ config SOC_R7KA8P1KFLCAC_CM85
 config SOC_R7KA8P1KFLCAC_CM33
 	select CPU_CORTEX_M33
 	select SOC_RA_SECOND_CORE_BUILD
+
+if SOC_SERIES_RA8P1
+
+config RENESAS_PN_ROM_SIZE
+	hex
+	default 0x100000 if SOC_R7KA8P1KFLCAC
+	help
+	  Code MRAM and Flash size
+
+config RENESAS_PN_PACKAGE_TYPE
+	int
+	range 1 3
+	default 2 if SOC_R7KA8P1KFLCAC
+	help
+	  Package type:
+	  1 -> AB: LFBGA 224 pins
+	  2 -> AC: LFBGA 289 pins
+	  3 -> AJ: LFBGA 303 pins
+
+config RENESAS_PN_FEATURE_SET
+	hex
+	default 0x4b if SOC_R7KA8P1KFLCAC
+	help
+	  Feature set (Convert the feature set character into its ASCII hex value):
+	  - A (0x41): Single Core (CM85 only), MIPI DSI/CSI is not available
+	  - B (0x42): Single Core (CM85 only), MIPI DSI/CSI is available
+	  - J (0x4a): Dual Core, MIPI DSI/CSI is not available
+	  - K (0x4b): Dual Core, MIPI DSI/CSI is available
+
+config RENESAS_PN_NUMBER_OF_CORES
+	int
+	range 1 2
+	default 2 if SOC_R7KA8P1KFLCAC
+	help
+	  Number of SoC cores
+
+endif # SOC_SERIES_RA8P1

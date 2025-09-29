@@ -14,3 +14,18 @@ config SOC_SERIES_RA6M1
 	select XIP
 	select SOC_EARLY_INIT_HOOK
 	select GPIO_RA_HAS_VBTICTLR
+
+if SOC_SERIES_RA6M1
+
+config RENESAS_PN_PACKAGE_TYPE
+	int
+	range 1 4
+	default 1 if SOC_R7FA6M1AD3CFP
+	help
+	  Package type:
+	  1 -> FP: LQFP 100 pins
+	  2 -> FM: LQFP 64 pins
+	  3 -> LJ: LGA 100 pins
+	  4 -> NB: QFN 64 pins
+
+endif # SOC_SERIES_RA6M1

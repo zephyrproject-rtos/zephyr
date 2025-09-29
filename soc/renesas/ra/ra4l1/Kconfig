@@ -14,3 +14,21 @@ config SOC_SERIES_RA4L1
 	select CLOCK_CONTROL_RENESAS_RA_CGC if CLOCK_CONTROL
 	select XIP
 	select SOC_EARLY_INIT_HOOK
+
+if SOC_SERIES_RA4L1
+
+config RENESAS_PN_PACKAGE_TYPE
+	int
+	range 1 7
+	default 3 if SOC_R7FA4L1BD4CFP
+	help
+	  Package type:
+	  1 -> FL: LQFP 48 pins
+	  2 -> FM: LQFP 64 pins
+	  3 -> FP: LQFP 100 pins
+	  4 -> NE: QFN 48 Pins
+	  5 -> AH: BGA 64 pins
+	  6 -> AG: BGA 100 pins
+	  7 -> DB: WLCSP 72 pins
+
+endif # SOC_SERIES_RA4L1
