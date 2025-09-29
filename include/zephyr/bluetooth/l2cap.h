@@ -670,6 +670,42 @@ struct bt_l2cap_chan_ops {
 	void (*seg_recv)(struct bt_l2cap_chan *chan, size_t sdu_len,
 			 off_t seg_offset, struct net_buf_simple *seg);
 #endif /* CONFIG_BT_L2CAP_SEG_RECV */
+
+#if defined(CONFIG_BT_L2CAP_SEG_SEND)
+	/** @brief Handle sending L2CAP segments directly
+	 *
+	 *  This is an alternative to calling bt_l2cap_chan_send().
+	 *
+	 *  This callback is invoked whenever the channel has credits
+	 *  and is ready to send a segment. To inform the stack that the
+	 *  channel is ready to send, the application should call @ref
+	 *  bt_l2cap_chan_send_ready. The callback provides the segment.
+	 *  The credit count will be decremented if a valid segment is returned
+	 *  by the callback. After the segment is sent, this callback
+	 *  will be invoked again if there are more credits available.
+	 *
+	 *  If the application has nothing to send, the callback should return
+	 *  NULL. The stack will then stop invoking the callback until
+	 *  @ref bt_l2cap_chan_send_ready is called again.
+	 *
+	 *  The requirements for the segment returned by this callback are the same
+	 *  as the one described in @ref bt_l2cap_chan_send except that the
+	 *  application is responsible for adding the SDU header and it is
+	 *  also the application that is responsible for segmenting SDUs
+	 *  into PDUs. The stack will add the PDU header and automatically
+	 *  do additional fragmentation as needed to accommodate ACL mtu limits.
+	 *
+	 *  @note The stack takes a reference of the buffer but it is okay for
+	 *  the application to retain a reference as well. This can be useful
+	 *  if the buffer has more data than can be sent in one segment/PDU, or even
+	 *  one SDU. The callback can adjust the same buffer and reuse it in subsequent
+	 *  invocations of the callback.
+	 *
+	 *  @param chan The sending channel.
+	 *  @return seg The segment payload.
+	 */
+	struct net_buf *(*seg_send)(struct bt_l2cap_chan *chan);
+#endif /* CONFIG_BT_L2CAP_SEG_SEND */
 };
 
 /**
@@ -953,6 +989,23 @@ int bt_l2cap_chan_disconnect(struct bt_l2cap_chan *chan);
  *  @return -other (from lower layers) if chan is BR/EDR.
  */
 int bt_l2cap_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf);
+
+#if defined(CONFIG_BT_L2CAP_SEG_SEND)
+/** @brief Indicate that L2CAP channel has data to send
+ *
+ *  Notify the host stack that the channel has data to send.
+ *  When credits are available, the seg_send callback will be
+ *  called to get a PDU to send.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ *  @return -EINVAL if `chan` is NULL.
+ *  @return -EINVAL if `chan` is not either BR/EDR or LE credit-based.
+ *  @return -ENOTCONN if underlying conn is disconnected.
+ *  @return -ESHUTDOWN if L2CAP channel is disconnected.
+ *  @return -other (from lower layers) if chan is BR/EDR.
+ */
+int bt_l2cap_chan_send_ready(struct bt_l2cap_chan *chan);
+#endif
 
 /** @brief Give credits to the remote
  *
