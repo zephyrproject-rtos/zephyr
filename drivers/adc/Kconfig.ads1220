@@ -1,0 +1,33 @@
+# Copyright (c) 2025 Baumer Group
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ADC_ADS1220
+	bool "Texas Instruments ADS1220 ADC driver"
+	default y
+	depends on DT_HAS_TI_ADS1220_ENABLED
+	select SPI
+	select ADC_CONFIGURABLE_INPUTS
+	help
+	  Enable the driver for Texas Instruments ADS1220 24-bit, 4-channel,
+	  low-power Delta-Sigma ADC with integrated PGA, VREF, SPI interface,
+	  and two IDACs.
+
+	  The ADS1220 is a precision ADC designed for high-resolution measurements
+	  in sensor applications such as temperature, pressure, and strain sensing.
+
+	  Features supported by this driver:
+	  - 24-bit resolution with up to 2000 samples per second
+	  - 4 multiplexed input channels (single-ended and differential)
+	  - Programmable gain amplifier (1 to 128)
+	  - Internal 2.048V reference or external reference
+	  - Two matched excitation current sources (IDACs)
+	  - Supply monitoring capabilities
+	  - 50/60 Hz rejection filters
+	  - Low power operation modes
+
+config ADC_ADS1220_WAIT_FOR_COMPLETION_TIMEOUT_MS
+	int "Timeout for wait for completion of a read in ms"
+	default 250
+	depends on ADC_ADS1220
+	help
+	  This is the wait time in ms until a read is completed.
