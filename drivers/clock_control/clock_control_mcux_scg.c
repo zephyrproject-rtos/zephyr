@@ -46,7 +46,8 @@ static int mcux_scg_get_rate(const struct device *dev,
 	case KINETIS_SCG_BUS_CLK:
 		clock_name = kCLOCK_BusClk;
 		break;
-#if !(defined(CONFIG_SOC_MKE17Z7) || defined(CONFIG_SOC_MKE17Z9))
+#if !(defined(CONFIG_SOC_MKE17Z7) || defined(CONFIG_SOC_MKE17Z9) \
+		|| defined(CONFIG_SOC_SERIES_MCXE24X))
 	case KINETIS_SCG_FLEXBUS_CLK:
 		clock_name = kCLOCK_FlexBusClk;
 		break;
