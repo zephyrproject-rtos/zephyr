@@ -33,6 +33,18 @@ tests:
     extra_args:
       - DTC_OVERLAY_FILE="./boards/${BOARD}${NORMALIZED_BOARD_QUALIFIERS}_sci_b_i2c.overlay"
       - CONF_FILE="./prj.conf ./boards/${BOARD}${NORMALIZED_BOARD_QUALIFIERS}_sci_b_i2c.conf"
+  drivers.i2c.renesas_sci_i2c.api:
+    depends_on: i2c
+    tags:
+      - drivers
+      - i2c
+    filter: dt_alias_exists("gy271") and CONFIG_I2C_RENESAS_RA_SCI
+    platform_allow:
+      - ek_ra6m5
+      - ek_ra6m4
+    extra_args:
+      - DTC_OVERLAY_FILE="./boards/${BOARD}${NORMALIZED_BOARD_QUALIFIERS}_sci_i2c.overlay"
+      - CONF_FILE="./prj.conf ./boards/${BOARD}${NORMALIZED_BOARD_QUALIFIERS}_sci_i2c.conf"
   drivers.i2c.stm32.interrupt_disabled:
     depends_on:
       - i2c
