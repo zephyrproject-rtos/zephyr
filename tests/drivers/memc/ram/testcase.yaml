@@ -11,3 +11,9 @@ tests:
     extra_args:
       - platform:da1469x_dk_pro/da14699:EXTRA_DTC_OVERLAY_FILE="da1469x_dk_pro_psram.overlay"
       - platform:da14695_dk_usb/da14695:EXTRA_DTC_OVERLAY_FILE="da14695_dk_usb_psram.overlay"
+  drivers.memc.stm32_psram:
+    depends_on: memc
+    integration_platforms:
+      - stm32h7s78_dk
+    extra_args:
+      - platform:stm32h7s78_dk/stm32h7s7xx:DTC_OVERLAY_FILE="boards/stm32h7s78_psram.overlay"
