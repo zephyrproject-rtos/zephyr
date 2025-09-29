@@ -13,6 +13,7 @@
 
 #include <zephyr/drivers/uart.h>
 #include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 #include <zephyr/ztest.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(test, LOG_LEVEL_NONE);
@@ -334,6 +335,9 @@ static void test_detect_error(bool hwfc, int err_byte)
 	}
 
 	if (IS_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN)) {
+		if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+			pm_device_runtime_get(uart_dev);
+		}
 		uart_irq_err_enable(uart_dev);
 		uart_irq_rx_enable(uart_dev);
 	} else {
@@ -378,6 +382,9 @@ static void test_detect_error(bool hwfc, int err_byte)
 	if (IS_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN)) {
 		uart_irq_err_disable(uart_dev);
 		uart_irq_rx_disable(uart_dev);
+		if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+			pm_device_runtime_put(uart_dev);
+		}
 	} else {
 		rx_active = false;
 		err = uart_rx_disable(uart_dev);
