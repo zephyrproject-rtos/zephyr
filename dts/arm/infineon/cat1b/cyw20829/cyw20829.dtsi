@@ -6,9 +6,7 @@
  */
 
 #include <mem.h>
-
-#define BOOTSTRAP_SIZE    DT_SIZE_K(16)
-#define SRAM0_SIZE       (DT_SIZE_K(256) - BOOTSTRAP_SIZE)
+#include <zephyr/dt-bindings/misc/ifx_cyw20829.h>
 
 / {
 	cpus {
@@ -42,36 +40,36 @@
 		#size-cells = <1>;
 
 		compatible = "mmio-sram";
-		reg = <0x20000000 SRAM0_SIZE>;
+		reg = <SRAM0_SAHB_BASE SRAM0_SIZE>;
 
 		/* SRAM aliased address path */
 		sram_sahb: sram_sahb@20000000 {
-			reg = <0x20000000 SRAM0_SIZE>;  /* SAHB address */
+			reg = <SRAM0_SAHB_BASE SRAM0_SIZE>;  /* SAHB address */
 		};
 
 		sram_cbus: sram_cbus@4000000 {
-			reg = <0x04000000 SRAM0_SIZE>;  /* CBUS address */
+			reg = <SRAM0_CBUS_BASE SRAM0_SIZE>;  /* CBUS address */
 		};
 	};
 
 	/* sram_bootstrap address calculation:
 	 * sram_sahb + sram_size (256k) - bootstrap size
-	 * (e.g. 0x20000000 + 0x40000 - 12K (0x3000) = 0x2003D000)
+	 * (e.g. 0x20000000 + 0x40000 - 16K (0x4000) = 0x2003C000)
 	 */
-	sram_bootstrap: memory@2003D000 {
+	sram_bootstrap: memory@2003c000 {
 		#address-cells = <1>;
 		#size-cells = <1>;
 		compatible = "zephyr,memory-region", "mmio-sram";
 		zephyr,memory-region = "BOOTSTRAP_RAM";
-		reg = <0x2003D000 BOOTSTRAP_SIZE>;
+		reg = <BOOTSTRAP_SAHB_BASE BOOTSTRAP_SIZE>;
 
 		/* SRAM aliased address path */
-		sram_bootstrap_sahb: sram_bootstrap_sahb@2003D000 {
-			reg = <0x2003D000 BOOTSTRAP_SIZE>;  /* SAHB address */
+		sram_bootstrap_sahb: sram_bootstrap_sahb@2003c000 {
+			reg = <BOOTSTRAP_SAHB_BASE BOOTSTRAP_SIZE>;  /* SAHB address */
 		};
 
-		sram_bootstrap_cbus: sram_bootstrap_cbus@403D000 {
-			reg = <0x0403D000 BOOTSTRAP_SIZE>;  /* CBUS address */
+		sram_bootstrap_cbus: sram_bootstrap_cbus@403c000 {
+			reg = <BOOTSTRAP_CBUS_BASE BOOTSTRAP_SIZE>;  /* CBUS address */
 		};
 	};
 
