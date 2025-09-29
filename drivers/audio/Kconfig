@@ -68,6 +68,7 @@ source "drivers/audio/Kconfig.mpxxdtyy"
 source "drivers/audio/Kconfig.dmic_pdm_nrfx"
 source "drivers/audio/Kconfig.dmic_mcux"
 source "drivers/audio/Kconfig.dmic_ambiq_pdm"
+source "drivers/audio/Kconfig.dmic_nxp_micfil"
 
 endif # AUDIO_DMIC
 
