@@ -65,6 +65,4 @@ function(compiler_set_linker_properties)
 endfunction()
 
 # Include architecture-specific settings
-if("${ARCH}" STREQUAL "riscv")
-  include(${CMAKE_CURRENT_LIST_DIR}/target_riscv.cmake)
-endif()
+include(${CMAKE_CURRENT_LIST_DIR}/target_${ARCH}.cmake OPTIONAL)
