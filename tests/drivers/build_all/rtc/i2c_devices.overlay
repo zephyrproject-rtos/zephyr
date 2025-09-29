@@ -103,6 +103,16 @@
 				reg = <0xb>;
 				int1-gpios = <&test_gpio 0 0>;
 			};
+
+			test_rv3032: rv3032@c {
+				compatible = "microcrystal,rv3032";
+				reg = <0xc>;
+				clkout-frequency = <1>;
+				backup-switch-mode = "disabled";
+				trickle-resistor-ohms = <600>;
+				trickle-charger-mode = <1750>;
+				int-gpios = <&test_gpio 0 0>;
+			};
 		};
 	};
 };
