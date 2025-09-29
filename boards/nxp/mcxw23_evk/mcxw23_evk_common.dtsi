@@ -30,6 +30,7 @@
 		accel0 = &fxls8974;
 		mcuboot-button0 = &btn_wk;
 		watchdog0 = &wwdt0;
+		pwm-0 = &sc_timer;
 	};
 
 	leds {
@@ -149,11 +150,21 @@
 	status = "okay";
 };
 
+&sc_timer {
+	status = "okay";
+	pinctrl-0 = <&pinmux_sctimer_default>;
+	pinctrl-names = "default";
+};
+
 &wwdt0 {
 	status = "okay";
 };
 
 &rtc {
+	status = "okay";
+};
+
+&mrt0_channel0 {
 	status = "okay";
 };
 
