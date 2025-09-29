@@ -176,6 +176,7 @@ devantech	Devantech, Ltd.
 dfi	DFI Inc.
 dfrobot	DFRobot
 dh	DH electronics GmbH
+dialog	Dialog Semiconductor
 difrnce	Shenzhen Yagu Electronic Technology Co., Ltd.
 digi	Digi International Inc.
 digilent	Digilent, Inc.
