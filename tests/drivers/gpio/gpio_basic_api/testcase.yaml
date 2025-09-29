@@ -58,6 +58,7 @@ tests:
       - frdm_k64f
     platform_exclude:
       # below boards are customized
+      - frdm_mcxe247
       - mimxrt595_evk/mimxrt595s/cm33
       - mimxrt1020_evk
       - mimxrt1040_evk
