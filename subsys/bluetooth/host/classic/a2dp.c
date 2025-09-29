@@ -158,10 +158,10 @@ static int a2dp_get_capabilities_ind(struct bt_avdtp *session, struct bt_avdtp_s
 	/* Service Category: Media Codec */
 	cap = net_buf_add(rsp_buf, sizeof(*cap));
 	cap->service_category = BT_AVDTP_SERVICE_MEDIA_CODEC;
-	cap->losc = ep->codec_cap->len + 2U;
+	cap->losc = ep->codec_cap->len + sizeof(*media_cap);
 
 	media_cap = net_buf_add(rsp_buf, sizeof(*media_cap));
-	media_cap->media_type = sep->sep_info.media_type << 4U;
+	media_cap->media_type = AVDTP_SEP_MEDIA_TYPE_PREP(sep->sep_info.media_type);
 	media_cap->media_code_type = ep->codec_type;
 	/* Codec Info Element */
 	net_buf_add_mem(rsp_buf, &ep->codec_cap->codec_ie[0], ep->codec_cap->len);
@@ -311,7 +311,6 @@ static int a2dp_process_config_ind(struct bt_avdtp *session, struct bt_avdtp_sep
 	ep = CONTAINER_OF(sep, struct bt_a2dp_ep, sep);
 
 	/* parse the configuration */
-	codec_info_element_len = 4U;
 	err = bt_avdtp_parse_capability_codec(buf, &codec_type, &codec_info_element,
 					      &codec_info_element_len, &delay_report);
 	if (err) {
@@ -328,7 +327,7 @@ static int a2dp_process_config_ind(struct bt_avdtp *session, struct bt_avdtp_sep
 		struct bt_a2dp_codec_sbc_params *sbc_set;
 		struct bt_a2dp_codec_sbc_params *sbc;
 
-		if (codec_info_element_len != 4U) {
+		if (codec_info_element_len != sizeof(*sbc)) {
 			*errcode = BT_AVDTP_BAD_ACP_SEID;
 			return -EINVAL;
 		}
@@ -450,7 +449,7 @@ static int a2dp_ctrl_ind(struct bt_avdtp *session, struct bt_avdtp_sep *sep, uin
 	*errcode = 0;
 	ep = CONTAINER_OF(sep, struct bt_a2dp_ep, sep);
 	if (ep->stream == NULL) {
-		*errcode = BT_AVDTP_ERR_SEP_NOT_IN_USE;
+		*errcode = BT_AVDTP_SEP_NOT_IN_USE;
 		return -EINVAL;
 	}
 
@@ -544,7 +543,7 @@ static int a2dp_get_config_ind(struct bt_avdtp *session, struct bt_avdtp_sep *se
 
 	ep = CONTAINER_OF(sep, struct bt_a2dp_ep, sep);
 	if (ep->stream == NULL) {
-		*errcode = BT_AVDTP_ERR_SEP_NOT_IN_USE;
+		*errcode = BT_AVDTP_SEP_NOT_IN_USE;
 		return -EINVAL;
 	}
 
@@ -580,10 +579,10 @@ static int a2dp_get_config_ind(struct bt_avdtp *session, struct bt_avdtp_sep *se
 	/* Service Category: Media Codec */
 	cap = net_buf_add(rsp_buf, sizeof(*cap));
 	cap->service_category = BT_AVDTP_SERVICE_MEDIA_CODEC;
-	cap->losc = ep->stream->codec_config.len + 2U;
+	cap->losc = ep->stream->codec_config.len + sizeof(*media_cap);
 
 	media_cap = net_buf_add(rsp_buf, sizeof(*media_cap));
-	media_cap->media_type = sep->sep_info.media_type << 4U;
+	media_cap->media_type = AVDTP_SEP_MEDIA_TYPE_PREP(sep->sep_info.media_type);
 	media_cap->media_code_type = ep->codec_type;
 	/* Codec Info Element */
 	net_buf_add_mem(rsp_buf, &ep->stream->codec_config.codec_ie[0],
