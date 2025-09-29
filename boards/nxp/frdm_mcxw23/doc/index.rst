@@ -100,6 +100,16 @@ The MCXW23 SoC has 3 FLEXCOMM interfaces for serial
 communication. One is configured as USART for the console, one is
 configured for I2C, and the other one is configured for SPI.
 
+Fetch Binary Blobs
+******************
+
+To support Bluetooth, frdm_mcxw23 requires fetching controller lib blobs, which can be
+achieved by running the following command:
+
+.. code-block:: console
+
+   west blobs fetch hal_nxp
+
 Programming and Debugging
 *************************
 
