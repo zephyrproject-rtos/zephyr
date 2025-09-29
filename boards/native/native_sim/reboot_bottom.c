@@ -71,8 +71,8 @@ void maybe_reboot(void)
 
 	(void)execv("/proc/self/exe", argv);
 
-	nsi_print_error_and_exit("%s: Failed to restart process, exiting (%s)\n", module,
-				 strerror(errno));
+	nsi_print_warning("%s: Failed to restart process, exiting (%s)\n", module, strerror(errno));
+	nsi_exit(1);
 }
 
 NSI_TASK(maybe_reboot, ON_EXIT_POST, 999);
