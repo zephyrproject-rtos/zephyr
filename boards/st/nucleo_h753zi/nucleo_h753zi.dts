@@ -63,6 +63,7 @@
 		pwm-led0 = &red_pwm_led;
 		sw0 = &user_button;
 		volt-sensor1 = &vbat;
+		watchdog0 = &iwdg;
 	};
 };
 
@@ -271,4 +272,8 @@ zephyr_udc0: &usbotg_fs {
 			reg = <0x000c0000 DT_SIZE_K(128)>;
 		};
 	};
+};
+
+&iwdg1 {
+	status = "okay";
 };
