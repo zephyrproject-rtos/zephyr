@@ -12,4 +12,5 @@ supported:
   - adc
   - i2c
   - mbox
+  - spi
 vendor: renesas
