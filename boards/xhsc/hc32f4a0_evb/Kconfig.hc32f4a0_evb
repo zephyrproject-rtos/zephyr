@@ -1,0 +1,5 @@
+# Copyright (C) 2024-2025, Xiaohua Semiconductor Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_HC32F4A0_EVB
+	select SOC_HC32F4A0
