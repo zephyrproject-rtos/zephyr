@@ -1,0 +1,36 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <nxp/nxp_mcxe24x_common.dtsi>
+
+/ {
+	/*
+	 * SRAM_L and SRAM_U form a continuous block in memory map,
+	 * but misaligned accesses across the 0x20000000 boundary
+	 * are not supported. Therefore two separate memory nodes
+	 * are created.
+	 */
+	sram_l: sram@1ffe0000 {
+		compatible = "mmio-sram";
+		reg = <0x1ffe0000 DT_SIZE_K(128)>;
+	};
+
+	sram_u: sram@20000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x20000000 DT_SIZE_K(124)>;
+		zephyr,memory-region = "SRAMU";
+	};
+};
+
+&ftfc {
+	flash0: flash@0 {
+		compatible = "soc-nv-flash";
+		reg = <0 DT_SIZE_K(1536)>;
+		erase-block-size = <DT_SIZE_K(4)>;
+		write-block-size = <8>;
+	};
+};
