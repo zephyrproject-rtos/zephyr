@@ -21,7 +21,9 @@
 
 void soc_reset_hook(void)
 {
+#if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
 	SystemInit();
+#endif /* ! CONFIG_TRUSTED_EXECUTION_NONSECURE */
 }
 
 #endif
