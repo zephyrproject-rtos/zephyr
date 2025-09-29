@@ -6,7 +6,7 @@ tests:
     platform_allow:
       - esp32_devkitc/esp32/procpu
       - esp32c3_devkitm
-      - esp32s3_devkitm/esp32s3/procpu
+      - esp32s3_devkitc/esp32s3/procpu
     harness: console
     harness_config:
       type: one_line

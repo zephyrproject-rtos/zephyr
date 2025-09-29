@@ -11,7 +11,7 @@ tests:
       - nrf52840dk/nrf52840
       - esp32_devkitc/esp32/procpu
       - esp32s2_devkitc
-      - esp32s3_devkitm/esp32s3/procpu
+      - esp32s3_devkitc/esp32s3/procpu
       - esp32c3_devkitm
       - esp32c6_devkitc/esp32c6/hpcore
       - nucleo_c071rb
@@ -42,7 +42,7 @@ tests:
       - nrf52840dk/nrf52840
       - esp32_devkitc/esp32/procpu
       - esp32s2_devkitc
-      - esp32s3_devkitm/esp32s3/procpu
+      - esp32s3_devkitc/esp32s3/procpu
       - esp32c3_devkitm
       - esp32c6_devkitc/esp32c6/hpcore
     tags: mcuboot

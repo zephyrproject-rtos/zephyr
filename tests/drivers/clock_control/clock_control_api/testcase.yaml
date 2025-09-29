@@ -8,7 +8,7 @@ tests:
       - esp32_devkitc/esp32/procpu
       - esp32c3_devkitm
       - esp32s2_saola
-      - esp32s3_devkitm/esp32s3/procpu
+      - esp32s3_devkitc/esp32s3/procpu
       - sltb010a@0
       - xg24_dk2601b
       - xg27_dk2602a
