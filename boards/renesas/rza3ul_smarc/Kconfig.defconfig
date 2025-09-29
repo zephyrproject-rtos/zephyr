@@ -1,0 +1,5 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config FLASH_LOAD_OFFSET
+	default $(dt_nodelabel_reg_addr_hex,header)
