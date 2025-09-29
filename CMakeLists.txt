@@ -818,12 +818,12 @@ set(struct_tags_json ${CMAKE_CURRENT_BINARY_DIR}/misc/generated/struct_tags.json
 # The syscalls subdirs txt file is constructed by python containing a list of folders to use for
 # dependency handling, including empty folders.
 # Windows:  The list is used to specify DIRECTORY list with CMAKE_CONFIGURE_DEPENDS attribute.
-# Other OS: The list will update whenever a file is added/removed/modified and ensure a re-build.
+# Other OS: The list file is updated whenever a directory is added or removed.
 set(syscalls_subdirs_txt ${CMAKE_CURRENT_BINARY_DIR}/misc/generated/syscalls_subdirs.txt)
 
-# As syscalls_subdirs_txt is updated whenever a file is modified, this file can not be used for
-# monitoring of added / removed folders. A trigger file is thus used for correct dependency
-# handling. The trigger file will update when a folder is added / removed.
+# As syscalls_subdirs_txt is updated only on directory add or remove, this file can not be used for
+# monitoring of syscall changes. A trigger file is thus used for correct dependency handling. The
+# trigger file will update when syscalls change.
 set(syscalls_subdirs_trigger ${CMAKE_CURRENT_BINARY_DIR}/misc/generated/syscalls_subdirs.trigger)
 
 if(NOT (${CMAKE_HOST_SYSTEM_NAME} STREQUAL Windows))
@@ -842,14 +842,13 @@ execute_process(
 )
 file(STRINGS ${syscalls_subdirs_txt} PARSE_SYSCALLS_PATHS_DEPENDS ENCODING UTF-8)
 
+# Each header file must be monitored as file modifications are not reflected on directory level.
+file(GLOB_RECURSE PARSE_SYSCALLS_HEADER_DEPENDS ${ZEPHYR_BASE}/include/*.h)
+
 if(${CMAKE_HOST_SYSTEM_NAME} STREQUAL Windows)
   # On windows only adding/removing files or folders will be reflected in depends.
   # Hence adding a file requires CMake to re-run to add this file to the file list.
   set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${PARSE_SYSCALLS_PATHS_DEPENDS})
-
-  # Also On Windows each header file must be monitored as file modifications are not reflected
-  # on directory level.
-  file(GLOB_RECURSE PARSE_SYSCALLS_HEADER_DEPENDS ${ZEPHYR_BASE}/include/*.h)
 else()
   # The syscall parsing depends on the folders in order to detect add/removed/modified files.
   # When a folder is removed, CMake will try to find a target that creates that dependency.
@@ -880,10 +879,10 @@ else()
     file(WRITE ${syscalls_subdirs_txt} "")
   endif()
 
-  # On other OS'es, modifying a file is reflected on the folder timestamp and hence detected
+  # On other OS'es, using git checkout is reflected on the folder timestamp and hence detected
   # when using depend on directory level.
   # Thus CMake only needs to re-run when sub-directories are added / removed, which is indicated
-  # using a trigger file.
+  # by syscalls_subdirs_txt being updated.
   set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${syscalls_subdirs_txt})
 endif()
 
