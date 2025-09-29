@@ -586,6 +586,8 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 			      lll->window_size_event_us;
 	/* Skip to first selected BIS subevent */
 	stream = ull_sync_iso_stream_get(lll->stream_handle[0]);
+	LL_ASSERT(stream);
+
 	if (lll->bis_spacing >= (lll->sub_interval * lll->nse)) {
 		sync_iso_offset_us += (stream->bis_index - 1U) *
 				      lll->sub_interval *
