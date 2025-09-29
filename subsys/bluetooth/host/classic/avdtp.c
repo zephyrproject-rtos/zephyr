@@ -596,6 +596,11 @@ static void avdtp_set_status(struct bt_avdtp_req *req, struct net_buf *buf, uint
 	} else if (msg_type == BT_AVDTP_REJECT) {
 		if (buf->len >= sizeof(req->status)) {
 			req->status = net_buf_pull_u8(buf);
+
+			if (req->status == BT_AVDTP_SUCCESS) {
+				LOG_WRN("Reject frame with success status");
+				req->status = BT_AVDTP_BAD_HEADER_FORMAT;
+			}
 		} else {
 			LOG_WRN("Invalid RSP frame");
 			req->status = BT_AVDTP_BAD_LENGTH;
