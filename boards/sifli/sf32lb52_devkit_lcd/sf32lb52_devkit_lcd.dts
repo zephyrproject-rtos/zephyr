@@ -21,6 +21,7 @@
 		zephyr,code-partition = &code;
 		zephyr,console = &usart1;
 		zephyr,shell-uart = &usart1;
+		zephyr,bt-hci = &mailbox;
 	};
 
 	buttons {
@@ -118,4 +119,8 @@
 	current-speed = <1000000>;
 	pinctrl-0 = <&usart1_default>;
 	pinctrl-names = "default";
+};
+
+&mailbox {
+	status = "okay";
 };
