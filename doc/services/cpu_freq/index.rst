@@ -55,8 +55,11 @@ the SoC's P-state driver.
 Usage considerations
 ********************
 
-The CPU Frequency Scaling subsystem assumes that each CPU is clocked independently and that a
-P-state transition does not impact an unrelated CPU of the SoC.
+The CPU Frequency Scaling subsystem is designed to work on both UP and SMP system. On SMP systems,
+it is assumed by default that each of the CPUs are clocked at the same rate. Thus, should one CPU
+undergo a P-state transition, then all other CPUs will also undergo the same P-state transition.
+This can be overridden by the SoC by enabling the :kconfig:option:`CONFIG_CPU_FREQ_PER_CPU_SCALING`
+configuration option to allow each CPU to be clocked independently.
 
 The SoC supporting CPU Freq must uphold Zephyr's requirement that the system timer remains constant
 over the lifetime of the program. See :ref:`Kernel Timing <kernel_timing>` for more information.
@@ -66,6 +69,3 @@ in interrupt context (IRQ). The SoC P-state driver must ensure that its implemen
 :c:func:`cpu_freq_pstate_set` is IRQ context safe. If a P-state transition
 cannot be completed reasonably in an IRQ context, it is recommended that the P-state driver of the
 SoC implements its task as a workqueue item.
-
-CPU Frequency Scaling subsystem is not compatible with SMP as of now since the thread can migrate
-between cores during execution, causing per-CPU metrics to be attributed to the wrong CPU.
