@@ -10,7 +10,7 @@ tests:
     platform_allow:
       - esp32_devkitc/esp32/procpu
       - esp32s2_saola
-      - esp32s3_devkitm/esp32s3/procpu
+      - esp32s3_devkitc/esp32s3/procpu
       - esp32c3_devkitm
       - esp8684_devkitm
   esp.wifi.sec.wpa2:
@@ -22,7 +22,7 @@ tests:
     platform_allow:
       - esp32_devkitc/esp32/procpu
       - esp32s2_saola
-      - esp32s3_devkitm/esp32s3/procpu
+      - esp32s3_devkitc/esp32s3/procpu
       - esp32c3_devkitm
       - esp8684_devkitm
   esp.wifi.sec.wpa3:
@@ -34,6 +34,6 @@ tests:
     platform_allow:
       - esp32_devkitc/esp32/procpu
       - esp32s2_saola
-      - esp32s3_devkitm/esp32s3/procpu
+      - esp32s3_devkitc/esp32s3/procpu
       - esp32c3_devkitm
       - esp8684_devkitm
