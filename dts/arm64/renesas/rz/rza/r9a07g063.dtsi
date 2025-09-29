@@ -957,5 +957,14 @@
 			clock-freq = <DT_FREQ_M(24)>;
 			status = "disabled";
 		};
+
+		spibsc: spibsc@10060000 {
+			compatible = "renesas,rz-spibsc";
+			reg = <0x10060000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "disabled";
+		};
+
 	};
 };
