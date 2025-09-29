@@ -12,6 +12,16 @@
 		};
 	};
 
+	sci2_default: sci2_default {
+		group1 {
+			/* sda scl */
+			psels = <RA_PSEL(RA_PSEL_SCI_2, 1, 12)>,
+				<RA_PSEL(RA_PSEL_SCI_2, 1, 13)>;
+			drive-strength = "medium";
+			drive-open-drain;
+		};
+	};
+
 	sci7_default: sci7_default {
 		group1 {
 			/* tx rx */
