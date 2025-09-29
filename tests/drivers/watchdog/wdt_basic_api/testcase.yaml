@@ -87,7 +87,6 @@ tests:
       - nucleo_wl55jc
       - b_u585i_iot02a
       - nucleo_u575zi_q
-      - nucleo_h753zi
       - nucleo_h743zi
       - nucleo_c031c6
       - nucleo_h753zi
