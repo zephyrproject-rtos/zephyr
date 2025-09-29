@@ -63,30 +63,13 @@
 #define BT_AVDTP_SERVICE_CAT_MEDIA_CODEC        0x07
 #define BT_AVDTP_SERVICE_CAT_DELAYREPORTING     0x08
 
-/* AVDTP Error Codes */
-#define BT_AVDTP_SUCCESS                        0x00
-#define BT_AVDTP_ERR_BAD_HDR_FORMAT             0x01
-#define BT_AVDTP_ERR_BAD_LENGTH                 0x11
-#define BT_AVDTP_ERR_BAD_ACP_SEID               0x12
-#define BT_AVDTP_ERR_SEP_IN_USE                 0x13
-#define BT_AVDTP_ERR_SEP_NOT_IN_USE             0x14
-#define BT_AVDTP_ERR_BAD_SERV_CATEGORY          0x17
-#define BT_AVDTP_ERR_BAD_PAYLOAD_FORMAT         0x18
-#define BT_AVDTP_ERR_NOT_SUPPORTED_COMMAND      0x19
-#define BT_AVDTP_ERR_INVALID_CAPABILITIES       0x1a
-#define BT_AVDTP_ERR_BAD_RECOVERY_TYPE          0x22
-#define BT_AVDTP_ERR_BAD_MEDIA_TRANSPORT_FORMAT 0x23
-#define BT_AVDTP_ERR_BAD_RECOVERY_FORMAT        0x25
-#define BT_AVDTP_ERR_BAD_ROHC_FORMAT            0x26
-#define BT_AVDTP_ERR_BAD_CP_FORMAT              0x27
-#define BT_AVDTP_ERR_BAD_MULTIPLEXING_FORMAT    0x28
-#define BT_AVDTP_ERR_UNSUPPORTED_CONFIGURAION   0x29
-#define BT_AVDTP_ERR_BAD_STATE                  0x31
-
 #define BT_AVDTP_MIN_SEID 0x01
 #define BT_AVDTP_MAX_SEID 0x3E
 
 #define BT_AVDTP_RTP_VERSION 2
+
+#define AVDTP_SEP_MEDIA_TYPE_MASK      GENMASK(7, 4)
+#define AVDTP_SEP_MEDIA_TYPE_PREP(val) FIELD_PREP(AVDTP_SEP_MEDIA_TYPE_MASK, val)
 
 struct bt_avdtp;
 struct bt_avdtp_req;
