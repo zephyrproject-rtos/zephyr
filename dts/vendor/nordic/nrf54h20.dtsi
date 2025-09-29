@@ -999,7 +999,13 @@
 				interrupts = <386 NRF_DEFAULT_IRQ_PRIORITY>;
 				status = "disabled";
 				#io-channel-cells = <1>;
-				power-domains = <&gdpwr_slow_active>;
+				/*
+				 * This device is actually in the gdpwr_slow_active domain, but
+				 * all of its analog inputs are routed to pads in the
+				 * gdpwr_slow_main. Request gdpwr_slow_main and rely on the
+				 * device HW to force its own power domain on while ENABLED.
+				 */
+				power-domains = <&gdpwr_slow_main>;
 				zephyr,pm-device-runtime-auto;
 			};
 
@@ -1012,7 +1018,13 @@
 				reg = <0x983000 0x1000>;
 				status = "disabled";
 				interrupts = <387 NRF_DEFAULT_IRQ_PRIORITY>;
-				power-domains = <&gdpwr_slow_active>;
+				/*
+				 * This device is actually in the gdpwr_slow_active domain, but
+				 * all of its analog inputs are routed to pads in the
+				 * gdpwr_slow_main. Request gdpwr_slow_main and rely on the
+				 * device HW to force its own power domain on while ENABLED.
+				 */
+				power-domains = <&gdpwr_slow_main>;
 			};
 
 			temp: temperature-sensor@984000 {
