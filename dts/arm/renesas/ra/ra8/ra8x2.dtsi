@@ -73,10 +73,12 @@
 			status = "okay";
 		};
 
-		flash: flash-controller@4013c000 {
+		mram: mram-controller@4013c000 {
+			compatible = "renesas,ra-mram-controller";
 			reg = <0x4013c000 0x4000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+			status = "okay";
 		};
 
 		ioport0: gpio@40400000 {
