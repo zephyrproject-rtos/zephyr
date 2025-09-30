@@ -77,6 +77,14 @@ ADC
 * ``iadc_gecko.c`` driver is replaced by ``adc_silabs_iadc.c``.
   :dtcompatible:`silabs,gecko-iadc` is replaced by :dtcompatible:`silabs,iadc`.
 
+* The :dtcompatible:`renesas,ra-adc` compatible has been replaced by
+  :dtcompatible:`renesas,ra-adc12`. Applications using the old compatible
+  must update their devicetree nodes.
+
+* The :dtcompatible:`renesas,ra-adc16` compatible was added. This must be
+  used when working with the EK-RA2A1 board, which provides a 16-bit ADC
+  resolution.
+
 Clock Control
 =============
 
