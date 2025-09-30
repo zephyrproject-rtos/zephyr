@@ -81,7 +81,7 @@ Comparator
 MFD
 ===
 
-* Driver suppor for AXP2101 has been separated from the AXP192 one. As a consequence the
+* Driver support for AXP2101 has been separated from the AXP192 one. As a consequence the
   kconfig symbol ``MFD_AXP192_AXP2101`` is removed. :kconfig:option:`MFD_AXP192` is now to be
   used for AXP192 device while :kconfig:option:`MFD_AXP2101` for the AXP2101 one.
 
@@ -208,6 +208,11 @@ Power management
   refactored to be automatically managed by SoCs and the devicetree. Applications shall no
   longer enable them directly, instead, enable or disable the "suspend-to-ram" power states
   in the devicetree.
+
+* For the NXP RW61x, the devicetree property ``exit-latency-us`` has been updated to reflect more
+  accurate, measured wake-up times. For applications utilizing Standby mode (PM3), this update and
+  an increase to the ``min-residency-us`` devicetree property may influence how the system
+  transitions between power modes. In some cases, this could lead to changes in power consumption.
 
 Networking
 **********
