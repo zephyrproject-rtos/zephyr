@@ -56,6 +56,11 @@ else()
   zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_ADC      ${pdl_drv_dir}/source/cy_sar.c)
 endif()
 
+zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_HPPASS_SAR_ADC ${pdl_drv_dir}/source/cy_hppass_sar.c)
+zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_HPPASS_SAR_ADC ${pdl_drv_dir}/source/cy_hppass.c)
+zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_HPPASS_SAR_ADC ${pdl_drv_dir}/source/cy_hppass_csg.c)
+zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_HPPASS_SAR_ADC ${pdl_drv_dir}/source/cy_hppass_ac.c)
+
 if(CONFIG_USE_INFINEON_TRNG)
   zephyr_library_sources(${pdl_drv_dir}/source/cy_crypto.c)
   zephyr_library_sources(${pdl_drv_dir}/source/cy_crypto_core_trng_v1.c)

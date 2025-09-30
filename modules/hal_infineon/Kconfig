@@ -14,10 +14,20 @@ config USE_INFINEON_ADC
 	help
 	  Enable Analog-to-Digital Converter (ADC) HAL module driver for Infineon devices
 
+config USE_INFINEON_HPPASS_SAR_ADC
+	bool
+	help
+	  Enable Infineon HPPASS SAR ADC PDL library support
+
+config USE_INFINEON_HPPASS_ANALOG
+	bool
+	help
+	  Enable Infineon HPPASS Analog PDL library support
+
 config USE_INFINEON_DMA
 	bool
 	help
-	  Enable ADC HAL module driver for Infineon devices
+	  Enable DMA HAL module driver for Infineon devices
 
 config USE_INFINEON_I2C
 	bool
