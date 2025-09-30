@@ -23,6 +23,13 @@ config VIDEO_INIT_PRIORITY
 	help
 	  System initialization priority for video drivers.
 
+config VIDEO_ISP_INIT_PRIORITY
+	int "Video ISP initialization priority"
+	default 61
+	help
+	  System initialization priority for video ISP drivers.
+	  This priority needs to be lower than VIDEO_INIT_PRIORITY
+
 config VIDEO_BUFFER_POOL_SZ_MAX
 	int "Size of the largest buffer in the video pool"
 	default 1048576
