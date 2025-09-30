@@ -1,0 +1,30 @@
+# Copyright (c) 2025 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# Infineon PSE84 based MCU default configuration
+
+if SOC_SERIES_PSE84
+
+config CORTEX_M_SYSTICK
+	default y
+
+choice NULL_POINTER_EXCEPTION_DETECTION
+	default NULL_POINTER_EXCEPTION_DETECTION_NONE
+endchoice
+
+config NUM_IRQS
+	default 197 if CPU_CORTEX_M33
+	default 174 if CPU_CORTEX_M55
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency) if CPU_CORTEX_M33
+	default $(dt_node_int_prop_int,/cpus/cpu@1,clock-frequency) if CPU_CORTEX_M55
+
+config BUILD_OUTPUT_ADJUST_LMA
+	depends on XIP
+	depends on CPU_CORTEX_M33
+	default "0x60000000 - $(dt_node_reg_addr_hex,$(dt_nodelabel_path,flash0))"
+
+endif # SOC_SERIES_PSE84
