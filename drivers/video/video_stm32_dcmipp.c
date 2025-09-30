@@ -646,43 +646,6 @@ static void stm32_dcmipp_get_isp_decimation(struct stm32_dcmipp_data *dcmipp)
 static int stm32_dcmipp_get_fmt(const struct device *dev, struct video_format *fmt)
 {
 	struct stm32_dcmipp_pipe_data *pipe = dev->data;
-#if defined(STM32_DCMIPP_HAS_PIXEL_PIPES)
-	struct stm32_dcmipp_data *dcmipp = pipe->dcmipp;
-	const struct stm32_dcmipp_config *config = dev->config;
-	static atomic_t isp_init_once;
-	int ret;
-
-	/* Initialize the external ISP handling stack */
-	/*
-	 * TODO - this is not the right place to do that, however we need to know
-	 * the source format before calling the isp_init handler hence can't
-	 * do that within the stm32_dcmipp_init function due to unknown
-	 * driver initialization order
-	 *
-	 * Would need an ops that get called when both side of an endpoint get
-	 * initiialized
-	 */
-	if (atomic_cas(&isp_init_once, 0, 1) &&
-	    (pipe->id == DCMIPP_PIPE1 || pipe->id == DCMIPP_PIPE2)) {
-		/*
-		 * It is necessary to perform a dummy configuration here otherwise any
-		 * ISP related configuration done by the stm32_dcmipp_isp_init will
-		 * fail due to the HAL DCMIPP driver not being in READY state
-		 */
-		ret = stm32_dcmipp_conf_parallel(dcmipp->dev, &stm32_dcmipp_input_fmt_desc[0]);
-		if (ret < 0) {
-			LOG_ERR("Failed to perform dummy parallel configuration");
-			return ret;
-		}
-
-		ret = stm32_dcmipp_isp_init(&dcmipp->hdcmipp, config->source_dev);
-		if (ret < 0) {
-			LOG_ERR("Failed to initialize the ISP");
-			return ret;
-		}
-		stm32_dcmipp_get_isp_decimation(dcmipp);
-	}
-#endif
 
 	*fmt = pipe->fmt;
 
@@ -1183,12 +1146,6 @@ static int stm32_dcmipp_stream_enable(const struct device *dev)
 		if (ret < 0) {
 			goto out;
 		}
-	}
-
-	/* Initialize the external ISP handling stack */
-	ret = stm32_dcmipp_isp_init(&dcmipp->hdcmipp, config->source_dev);
-	if (ret < 0) {
-		goto out;
 	}
 #endif
 
@@ -1695,6 +1652,33 @@ static int stm32_dcmipp_init(const struct device *dev)
 		return -EIO;
 	}
 
+#if defined(STM32_DCMIPP_HAS_PIXEL_PIPES)
+	/* Check if source device is ready */
+	if (!device_is_ready(cfg->source_dev)) {
+		LOG_ERR("Source device not ready");
+		return -ENODEV;
+	}
+
+	/*
+	 * It is necessary to perform a dummy configuration here otherwise any
+	 * ISP related configuration done by the stm32_dcmipp_isp_init will
+	 * fail due to the HAL DCMIPP driver not being in READY state
+	 */
+	err = stm32_dcmipp_conf_parallel(dcmipp->dev, &stm32_dcmipp_input_fmt_desc[0]);
+	if (err < 0) {
+		LOG_ERR("Failed to perform dummy parallel configuration");
+		return err;
+	}
+
+	err = stm32_dcmipp_isp_init(&dcmipp->hdcmipp, cfg->source_dev);
+	if (err < 0) {
+		LOG_ERR("Failed to initialize the ISP");
+		return err;
+	}
+
+	stm32_dcmipp_get_isp_decimation(dcmipp);
+#endif
+
 	LOG_DBG("%s initialized", dev->name);
 
 	return 0;
@@ -1744,7 +1728,7 @@ static void stm32_dcmipp_isr(const struct device *dev)
 	DEVICE_DT_DEFINE(node_id, &stm32_dcmipp_pipe_init, NULL,			\
 			 &stm32_dcmipp_pipe_##node_id,					\
 			 &stm32_dcmipp_config_##inst,					\
-			 POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY,			\
+			 POST_KERNEL, CONFIG_VIDEO_STM32_DCMIPP_INIT_PRIORITY,			\
 			 &stm32_dcmipp_driver_api);					\
 											\
 	VIDEO_DEVICE_DEFINE(dcmipp_##inst_pipe_##node_id, DEVICE_DT_GET(node_id), SOURCE_DEV(inst));
@@ -1829,7 +1813,7 @@ static void stm32_dcmipp_isr(const struct device *dev)
 	DEVICE_DT_INST_DEFINE(inst, &stm32_dcmipp_init,						\
 		    NULL, &stm32_dcmipp_data_##inst,						\
 		    &stm32_dcmipp_config_##inst,						\
-		    POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY,					\
+		    POST_KERNEL, CONFIG_VIDEO_STM32_DCMIPP_INIT_PRIORITY,			\
 		    NULL);									\
 												\
 	STM32_DCMIPP_PIPES(inst)
