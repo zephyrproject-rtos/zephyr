@@ -114,7 +114,6 @@ struct virtconsole_data {
 	/* bitmask of ports to be used as console */
 	uint32_t console_ports;
 	int8_t n_console_ports;
-	struct k_spinlock ctlrxsl, ctltxsl;
 	size_t txctlcurrent;
 	struct _virtio_console_control rx_ctlbuf[CONFIG_UART_VIRTIO_CONSOLE_RX_CONTROL_BUFSIZE];
 	struct _fifo_item_virtio_console_control
@@ -226,43 +225,39 @@ static void virtconsole_send_control_msg(const struct device *dev, uint32_t port
 	const struct virtconsole_config *config = dev->config;
 	struct virtconsole_data *data = dev->data;
 
-	K_SPINLOCK(&(data->ctltxsl)) {
-		struct virtq *vq = virtio_get_virtqueue(config->vdev, VIRTQ_CONTROL_TX);
+	struct virtq *vq = virtio_get_virtqueue(config->vdev, VIRTQ_CONTROL_TX);
 
-		if (vq == NULL) {
-			LOG_ERR("could not access virtqueue 3");
-			K_SPINLOCK_BREAK;
-		}
-		struct _fifo_item_virtio_console_control *item =
-			&(data->tx_ctlbuf[data->txctlcurrent]);
-		struct _virtio_console_control *msg = &(item->msg);
-
-		if (item->pending) {
-			LOG_ERR("not enough free buffers for control message");
-			K_SPINLOCK_BREAK;
-		}
-		msg->port = sys_cpu_to_le32(port);
-		msg->event = sys_cpu_to_le16(event);
-		msg->value = sys_cpu_to_le16(value);
-		struct virtq_buf vqbuf = {.addr = msg, .len = sizeof(*msg)};
-
-		int ret = virtq_add_buffer_chain(vq, &vqbuf, 1, 1, virtconsole_control_tx_flush,
-						 data, K_NO_WAIT);
-
-		if (ret == -EBUSY) {
-			/* put in FIFO to be sent later, mark buffer */
-			/* as occupied to prevent overwriting */
-			k_fifo_put(&data->tx_ctlfifo, data->tx_ctlbuf + data->txctlcurrent);
-			item->pending = true;
-		} else if (ret) {
-			LOG_ERR("could not send control message");
-			K_SPINLOCK_BREAK;
-		} else {
-			virtio_notify_virtqueue(config->vdev, VIRTQ_CONTROL_TX);
-		}
-		data->txctlcurrent =
-			(data->txctlcurrent + 1) % CONFIG_UART_VIRTIO_CONSOLE_TX_CONTROL_BUFSIZE;
+	if (vq == NULL) {
+		LOG_ERR("could not access virtqueue 3");
+		return;
 	}
+	struct _fifo_item_virtio_console_control *item = &(data->tx_ctlbuf[data->txctlcurrent]);
+	struct _virtio_console_control *msg = &(item->msg);
+
+	if (item->pending) {
+		LOG_ERR("not enough free buffers for control message");
+		return;
+	}
+	msg->port = sys_cpu_to_le32(port);
+	msg->event = sys_cpu_to_le16(event);
+	msg->value = sys_cpu_to_le16(value);
+	struct virtq_buf vqbuf = {.addr = msg, .len = sizeof(*msg)};
+
+	int ret = virtq_add_buffer_chain(vq, &vqbuf, 1, 1, virtconsole_control_tx_flush, data,
+					 K_NO_WAIT);
+
+	if (ret == -EBUSY) {
+		/* put in FIFO to be sent later, mark buffer as occupied to prevent overwriting */
+		k_fifo_put(&data->tx_ctlfifo, data->tx_ctlbuf + data->txctlcurrent);
+		item->pending = true;
+	} else if (ret == 0) {
+		virtio_notify_virtqueue(config->vdev, VIRTQ_CONTROL_TX);
+	} else {
+		LOG_ERR("could not send control message");
+		return;
+	}
+	data->txctlcurrent =
+		(data->txctlcurrent + 1) % CONFIG_UART_VIRTIO_CONSOLE_TX_CONTROL_BUFSIZE;
 }
 
 static void virtconsole_control_recv_cb(void *priv, uint32_t len)
@@ -270,66 +265,62 @@ static void virtconsole_control_recv_cb(void *priv, uint32_t len)
 	struct _ctl_cb_data *ctld = priv;
 	struct virtconsole_data *data = ctld->data;
 
-	K_SPINLOCK(&data->ctlrxsl) {
-		for (int i = 0; i < CONFIG_UART_VIRTIO_CONSOLE_RX_CONTROL_BUFSIZE; i++) {
-			if (data->rx_ctlbuf[i].port == UINT32_MAX) {
-				continue;
-			}
-			data->rx_ctlbuf[i].port = sys_le32_to_cpu(data->rx_ctlbuf[i].port);
-			data->rx_ctlbuf[i].event = sys_le16_to_cpu(data->rx_ctlbuf[i].event);
-			data->rx_ctlbuf[i].value = sys_le16_to_cpu(data->rx_ctlbuf[i].value);
-
-			switch (data->rx_ctlbuf[i].event) {
-			case VIRTIO_CONSOLE_DEVICE_ADD:
-				virtconsole_send_control_msg(data->dev, data->rx_ctlbuf[i].port,
-							     VIRTIO_CONSOLE_PORT_READY,
-							     (data->rx_ctlbuf[i].port) <
-								     VIRTIO_CONSOLE_MAX_PORTS);
-				break;
-			case VIRTIO_CONSOLE_DEVICE_REMOVE: {
-				int port = data->rx_ctlbuf[i].port;
-
-				if ((port < VIRTIO_CONSOLE_MAX_PORTS) &&
-				    IS_BIT_SET(data->console_ports, port)) {
-					/* Remove console port (unset bit) */
-					data->console_ports = ~(data->console_ports);
-					data->console_ports |= BIT(port);
-					data->console_ports = ~(data->console_ports);
-					data->n_console_ports--;
-				}
-				break;
-			}
-			case VIRTIO_CONSOLE_CONSOLE_PORT: {
-				int port = data->rx_ctlbuf[i].port;
-
-				if ((port < VIRTIO_CONSOLE_MAX_PORTS) &&
-				    !IS_BIT_SET(data->console_ports, port)) {
-					data->console_ports |= BIT(port);
-					data->n_console_ports++;
-				}
-				virtconsole_send_control_msg(data->dev, data->rx_ctlbuf[i].port,
-							     VIRTIO_CONSOLE_PORT_OPEN, 1);
-				break;
-			}
-			case VIRTIO_CONSOLE_RESIZE:
-				/* Terminal sizes are not supported by Zephyr and the */
-				/* VIRTIO_CONSOLE_F_SIZE feature was not enabled */
-				LOG_WRN("device tried to set console size");
-				break;
-			case VIRTIO_CONSOLE_PORT_OPEN:
-				LOG_INF("port %u is ready", data->rx_ctlbuf[i].port);
-				break;
-			case VIRTIO_CONSOLE_PORT_NAME:
-				LOG_INF("port %u is named \"%.*s\"", data->rx_ctlbuf[i].port,
-					(int)ARRAY_SIZE(data->rx_ctlbuf[i].name),
-					data->rx_ctlbuf[i].name);
-				break;
-			default:
-				break;
-			}
-			data->rx_ctlbuf[i].port = UINT32_MAX;
-			memset(&(data->rx_ctlbuf[i].name), 0, ARRAY_SIZE(data->rx_ctlbuf[i].name));
+	for (int i = 0; i < CONFIG_UART_VIRTIO_CONSOLE_RX_CONTROL_BUFSIZE; i++) {
+		if (data->rx_ctlbuf[i].port == UINT32_MAX) {
+			continue;
 		}
+		data->rx_ctlbuf[i].port = sys_le32_to_cpu(data->rx_ctlbuf[i].port);
+		data->rx_ctlbuf[i].event = sys_le16_to_cpu(data->rx_ctlbuf[i].event);
+		data->rx_ctlbuf[i].value = sys_le16_to_cpu(data->rx_ctlbuf[i].value);
+
+		switch (data->rx_ctlbuf[i].event) {
+		case VIRTIO_CONSOLE_DEVICE_ADD:
+			virtconsole_send_control_msg(
+				data->dev, data->rx_ctlbuf[i].port, VIRTIO_CONSOLE_PORT_READY,
+				(data->rx_ctlbuf[i].port) < VIRTIO_CONSOLE_MAX_PORTS);
+			break;
+		case VIRTIO_CONSOLE_DEVICE_REMOVE: {
+			int port = data->rx_ctlbuf[i].port;
+
+			if ((port < VIRTIO_CONSOLE_MAX_PORTS) &&
+			    IS_BIT_SET(data->console_ports, port)) {
+				/* Remove console port (unset bit) */
+				data->console_ports = ~(data->console_ports);
+				data->console_ports |= BIT(port);
+				data->console_ports = ~(data->console_ports);
+				data->n_console_ports--;
+			}
+			break;
+		}
+		case VIRTIO_CONSOLE_CONSOLE_PORT: {
+			int port = data->rx_ctlbuf[i].port;
+
+			if ((port < VIRTIO_CONSOLE_MAX_PORTS) &&
+			    !IS_BIT_SET(data->console_ports, port)) {
+				data->console_ports |= BIT(port);
+				data->n_console_ports++;
+			}
+			virtconsole_send_control_msg(data->dev, data->rx_ctlbuf[i].port,
+						     VIRTIO_CONSOLE_PORT_OPEN, 1);
+			break;
+		}
+		case VIRTIO_CONSOLE_RESIZE:
+			/* Terminal sizes are not supported by Zephyr and the */
+			/* VIRTIO_CONSOLE_F_SIZE feature was not enabled */
+			LOG_WRN("device tried to set console size");
+			break;
+		case VIRTIO_CONSOLE_PORT_OPEN:
+			LOG_INF("port %u is ready", data->rx_ctlbuf[i].port);
+			break;
+		case VIRTIO_CONSOLE_PORT_NAME:
+			LOG_INF("port %u is named \"%.*s\"", data->rx_ctlbuf[i].port,
+				(int)ARRAY_SIZE(data->rx_ctlbuf[i].name), data->rx_ctlbuf[i].name);
+			break;
+		default:
+			break;
+		}
+		data->rx_ctlbuf[i].port = UINT32_MAX;
+		memset(&(data->rx_ctlbuf[i].name), 0, ARRAY_SIZE(data->rx_ctlbuf[i].name));
 	}
 	virtconsole_recv_setup(data->dev, VIRTQ_CONTROL_RX, &data->rx_ctlbuf[ctld->buf_no],
 			       sizeof(struct _virtio_console_control), virtconsole_control_recv_cb,
