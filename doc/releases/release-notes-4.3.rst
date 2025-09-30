@@ -149,6 +149,13 @@ New APIs and options
   * :c:macro:`K_THREAD_HW_SHADOW_STACK_ATTACH`
   * :c:macro:`k_thread_hw_shadow_stack_attach`
 
+* LVGL (Light and Versatile Graphics Library)
+
+  * :kconfig:option:`CONFIG_LV_Z_MEMORY_POOL_ZEPHYR_REGION`
+  * :kconfig:option:`CONFIG_LV_Z_MEMORY_POOL_ZEPHYR_REGION_NAME`
+  * :kconfig:option:`CONFIG_LV_Z_VDB_ZEPHYR_REGION`
+  * :kconfig:option:`CONFIG_LV_Z_VDB_ZEPHYR_REGION_NAME`
+
 * Logging:
 
   * Added rate-limited logging macros to prevent log flooding when messages are generated frequently.
