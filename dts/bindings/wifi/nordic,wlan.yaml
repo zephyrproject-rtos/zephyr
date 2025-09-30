@@ -9,3 +9,5 @@ description: |
   interfaces like wlan0.
 
 compatible: "nordic,wlan"
+
+include: wifi-interface.yaml
