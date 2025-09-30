@@ -1,0 +1,11 @@
+name: rp2-boot-mode-retention
+append:
+  EXTRA_CONF_FILE: rp2-boot-mode-retention.conf
+
+boards:
+  /.*\/rp2040(/.*)?/:
+    append:
+      EXTRA_DTC_OVERLAY_FILE: soc/rp2040.overlay
+  /.*/rp2350b?/.*/:
+    append:
+      EXTRA_DTC_OVERLAY_FILE: soc/rp2350.overlay
