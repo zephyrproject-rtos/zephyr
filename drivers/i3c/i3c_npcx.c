@@ -1147,10 +1147,12 @@ static int npcx_i3c_transfer(const struct device *dev, struct i3c_device_desc *t
 	enum npcx_i3c_mctrl_type op_type;
 
 	if (msgs == NULL) {
+		LOG_ERR("Null msgs");
 		return -EINVAL;
 	}
 
 	if (target->dynamic_addr == 0U) {
+		LOG_ERR("Dynamic addr 0");
 		return -EINVAL;
 	}
 
