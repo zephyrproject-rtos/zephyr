@@ -9,6 +9,9 @@
 #include "sl_rsi_utility.h"
 #include "sl_net.h"
 
+#define SIWX91X_AP_BEACON_INTERVAL_MS 100
+#define SIWX91X_FW_KEEPALIVE_BEACON_COUNT 32
+
 LOG_MODULE_DECLARE(siwx91x_wifi);
 
 static int siwx91x_nwp_reboot_if_required(const struct device *dev, uint8_t oper_mode)
@@ -134,13 +137,13 @@ int siwx91x_ap_enable(const struct device *dev, struct wifi_connect_req_params *
 	sl_wifi_ap_configuration_t siwx91x_ap_cfg = {
 		.credential_id       = SL_NET_DEFAULT_WIFI_AP_CREDENTIAL_ID,
 		.keepalive_type      = SL_SI91X_AP_NULL_BASED_KEEP_ALIVE,
+		.beacon_interval     = SIWX91X_AP_BEACON_INTERVAL_MS,
 		.rate_protocol       = SL_WIFI_RATE_PROTOCOL_AUTO,
 		.encryption          = SL_WIFI_DEFAULT_ENCRYPTION,
 		.channel.bandwidth   = SL_WIFI_BANDWIDTH_20MHz,
 		.maximum_clients     = sidev->max_num_sta,
 		.tdi_flags           = SL_WIFI_TDI_NONE,
 		.client_idle_timeout = 0xFF,
-		.beacon_interval     = 100,
 		.dtim_beacon_count   = 3,
 		.beacon_stop         = 0,
 		.options             = 0,
@@ -319,6 +322,10 @@ int siwx91x_ap_config_params(const struct device *dev, struct wifi_ap_config_par
 {
 	sl_wifi_interface_t interface = sl_wifi_get_default_interface();
 	sl_wifi_ap_configuration_t siwx91x_ap_cfg;
+	uint64_t fw_keepalive_count;
+	uint64_t requested_ms;
+	uint64_t fw_unit;
+	uint32_t max_sec;
 
 	__ASSERT(params, "params cannot be NULL");
 
@@ -335,7 +342,24 @@ int siwx91x_ap_config_params(const struct device *dev, struct wifi_ap_config_par
 	sli_get_saved_ap_configuration(&siwx91x_ap_cfg);
 	siwx91x_ap_cfg.channel.bandwidth = SL_WIFI_BANDWIDTH_20MHz;
 	if (params->type & WIFI_AP_CONFIG_PARAM_MAX_INACTIVITY) {
-		siwx91x_ap_cfg.client_idle_timeout = params->max_inactivity * 1000;
+		/*
+		 * Firmware requires keepalive timeout as 32 beacon count value:
+		 * timeout_ms = counter * 32 * beacon_interval_ms
+		 * The actual timeout applied by the FW will be slightly higher than requested
+		 */
+		fw_unit = (uint64_t)SIWX91X_FW_KEEPALIVE_BEACON_COUNT *
+			  (uint64_t)SIWX91X_AP_BEACON_INTERVAL_MS;
+		requested_ms = (uint64_t)params->max_inactivity * 1000ULL;
+		fw_keepalive_count = DIV_ROUND_UP(requested_ms, fw_unit);
+
+		if (fw_keepalive_count > UINT8_MAX) {
+			/* Maximum supported inactivity in seconds */
+			max_sec = (fw_unit * UINT8_MAX) / 1000;
+			LOG_WRN("requested inactivity %u exceeds FW limit %u, clamping to %u",
+				params->max_inactivity, max_sec, max_sec);
+			fw_keepalive_count = UINT8_MAX;
+		}
+		siwx91x_ap_cfg.client_idle_timeout = (uint8_t)fw_keepalive_count;
 	}
 
 	if (params->type & WIFI_AP_CONFIG_PARAM_MAX_NUM_STA) {
