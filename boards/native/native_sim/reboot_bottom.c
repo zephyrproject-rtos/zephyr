@@ -17,29 +17,6 @@
 
 static const char module[] = "native_sim_reboot";
 
-static long close_open_fds(void)
-{
-	/* close all open file descriptors except 0-2 */
-	errno = 0;
-
-	long max_fd = sysconf(_SC_OPEN_MAX);
-
-	if (max_fd < 0) {
-		if (errno != 0) {
-			nsi_print_error_and_exit("%s: %s\n", module, strerror(errno));
-		} else {
-			nsi_print_warning("%s: Cannot determine maximum number of file descriptors"
-					  "\n",
-					  module);
-		}
-		return max_fd;
-	}
-	for (int fd = 3; fd < max_fd; fd++) {
-		(void)close(fd);
-	}
-	return 0;
-}
-
 static bool reboot_on_exit;
 
 void native_set_reboot_on_exit(void)
@@ -59,10 +36,6 @@ void maybe_reboot(void)
 	reboot_on_exit = false; /* If we reenter it means we failed to reboot */
 
 	nsi_get_cmd_line_args(&argc, &argv);
-
-	if (close_open_fds() < 0) {
-		nsi_exit(1);
-	}
 
 	/* Let's set an environment variable which the native_sim hw_info driver may check */
 	(void)nsi_host_setenv("NATIVE_SIM_RESET_CAUSE", "SOFTWARE", 1);
