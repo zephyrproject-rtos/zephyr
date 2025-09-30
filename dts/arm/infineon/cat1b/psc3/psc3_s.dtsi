@@ -128,12 +128,20 @@
 			#gpio-cells = <2>;
 		};
 
-		adc0: adc@52b70000 {
-			compatible = "infineon,adc-hppass-saradc";
-			reg = <0x52b70000 0x10000>;
-			interrupts = <109 4>;
-			status = "disabled";
-			#io-channel-cells = <1>;
+		hppass_analog0: analog@52b00000 {
+			reg = <0x52b00000 0x100000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
+
+			adc0: adc@70000 {
+				compatible = "infineon,hppass-sar-adc";
+				/* Offset within HPPASS analog region */
+				reg = <0x00070000 0x10000>;
+				interrupts = <109 4>;
+				status = "disabled";
+				#io-channel-cells = <1>;
+			};
 		};
 
 		ipc0: ipc@521d0000 {
