@@ -1,0 +1,3 @@
+# SPDX-License-Identifier: Apache-2.0
+
+find_program(CMAKE_C_COMPILER "${CROSS_COMPILE}clang" PATHS ${TOOLCHAIN_HOME} NO_DEFAULT_PATH REQUIRED)
