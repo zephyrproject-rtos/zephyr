@@ -19,10 +19,34 @@ config MAX_PENDING_COMMAND_LIST
 	default 100
 	range 10 200
 
-config GRAPHICS_HEAP_SIZE
-	int "graphics heap size, unit:KB"
-	default 1024
-	depends on !MEM_ATTR_HEAP
+config NEMAGFX_HEAP_SIZE_ASSETS
+	int "NemaGFX assets heap size, unit: KB"
+	default 256
+
+DT_CHOSEN_AMBIQ_PSRAM := ambiq,psram
+DT_CHOSEN_AMBIQ_EXTERNAL_RAM_REGION := ambiq,external-ram-region
+
+config NEMAGFX_ASSETS_HEAP_IN_PSRAM
+	bool "Locate NemaGFX assets heap in PSRAM"
+	default y
+	depends on $(dt_chosen_enabled,$(DT_CHOSEN_AMBIQ_PSRAM)) && $(dt_chosen_enabled,$(DT_CHOSEN_AMBIQ_EXTERNAL_RAM_REGION))
+
+config NEMAGFX_HEAP_SIZE_RENDER
+	int "NemaGFX render heap size, unit: KB"
+	default 1280
+
+config NEMAGFX_RENDER_HEAP_IN_NONCACHE_SRAM
+	bool "Locate NemaGFX render heap in non-cache SSRAM"
+	default y
+
+config NEMAGFX_HEAP_SIZE_CPU_ONLY
+	int "NemaGFX CPU only heap size, unit: KB"
+	default 16
+
+config NEMAGFX_CPU_ONLY_HEAP_IN_DTCM
+	bool "Locate NemaGFX CPU only heap in DTCM"
+	default y
+
 
 config GPU_WAIT_IRQ_TIMEOUT_MS
 	int "timeout value to wait for GPU complete IRQ, unit: ms"
