@@ -208,6 +208,8 @@ static inline void net_tc_rx_init(void) { }
 enum net_verdict net_tc_try_submit_to_tx_queue(uint8_t tc, struct net_pkt *pkt,
 					       k_timeout_t timeout);
 extern enum net_verdict net_tc_submit_to_rx_queue(uint8_t tc, struct net_pkt *pkt);
+extern int net_tc_tx_thread_priority(int tc);
+extern int net_tc_rx_thread_priority(int tc);
 extern enum net_verdict net_promisc_mode_input(struct net_pkt *pkt);
 
 char *net_sprint_addr(sa_family_t af, const void *addr);
