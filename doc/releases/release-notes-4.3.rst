@@ -135,6 +135,7 @@ New APIs and options
     * :c:struct:`bt_bap_stream` now contains an ``iso`` field as a reference to the ISO channel
     * :c:func:`bt_bap_unicast_group_get_info`
     * :c:func:`bt_cap_unicast_group_get_info`
+    * :c:func:`bt_bap_unicast_client_unregister_cb`
 
   * Host
 
