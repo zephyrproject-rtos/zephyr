@@ -140,6 +140,7 @@ source "drivers/can/Kconfig.nrf"
 source "drivers/can/Kconfig.renesas_ra"
 source "drivers/can/Kconfig.renesas_rz"
 source "drivers/can/Kconfig.max32"
+source "drivers/can/Kconfig.mspm0"
 
 source "drivers/can/transceiver/Kconfig"
 
