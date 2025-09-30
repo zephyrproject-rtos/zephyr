@@ -494,6 +494,9 @@ Display
   :dtcompatible:`solomon,ssd1306` and :dtcompatible:`solomon,ssd1309` respectively,
   to harmonize with other display controllers and eliminate the zephyr-irrelevant ``fb`` suffix.
 
+* The NXP eLCDIF controller (:dtcompatible:`nxp,imx-elcdif`) now correctly advertises support for
+  :c:macro:`PIXEL_FORMAT_XRGB_8888` instead of :c:macro:`PIXEL_FORMAT_ARGB_8888`.
+
 DMA
 ===
 
