@@ -4720,7 +4720,7 @@ function(zephyr_dt_import)
       COMMAND_ERROR_IS_FATAL ANY
     )
 
-    file(COPY_FILE ${gen_dts_cmake_temp} ${gen_dts_cmake_output} ONLY_IF_DIFFERENT)
+    zephyr_file_copy(${gen_dts_cmake_temp} ${gen_dts_cmake_output} ONLY_IF_DIFFERENT)
   endif()
   set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${gen_dts_cmake_script})
 
