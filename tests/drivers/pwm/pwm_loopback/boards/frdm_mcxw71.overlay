@@ -1,0 +1,36 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	tpm0_default: tpm0_default {
+		group0 {
+			pinmux = <TPM0_CH0_PTA21>,
+					<TPM0_CH1_PTA20>,
+					<TPM0_CH2_PTA19>,
+					<TPM0_CH3_PTA18>;
+			drive-strength = "low";
+			slew-rate = "slow";
+		};
+	};
+};
+
+/* To test this sample, connect
+ * PTA18(J2-9) ---> PTA21(J1-8)
+ */
+
+/ {
+	pwm_loopback_0 {
+		compatible = "test-pwm-loopback";
+		pwms = <&tpm0 3 0 PWM_POLARITY_NORMAL>, /* PTA18 J2 pin 9, out */
+			<&tpm0 0 0 PWM_POLARITY_NORMAL>; /* PTA21 J1 pin 8, in */
+	};
+};
+
+&tpm0 {
+	status = "okay";
+	pinctrl-0 = <&tpm0_default>;
+	pinctrl-names = "default";
+};
