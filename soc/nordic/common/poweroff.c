@@ -7,7 +7,9 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/drivers/retained_mem/nrf_retained_mem.h>
 
-#if defined(CONFIG_SOC_SERIES_NRF51) || defined(CONFIG_SOC_SERIES_NRF52)
+#if defined(CONFIG_TFM_NRF_SYSTEM_OFF_SERVICE)
+#include "tfm_platform_api.h"
+#elif defined(CONFIG_SOC_SERIES_NRF51) || defined(CONFIG_SOC_SERIES_NRF52)
 #include <hal/nrf_power.h>
 #elif defined(CONFIG_NRF_PLATFORM_HALTIUM)
 #include <haltium_power.h>
@@ -30,6 +32,10 @@
 
 void z_sys_poweroff(void)
 {
+#if defined(CONFIG_TFM_NRF_SYSTEM_OFF_SERVICE)
+	tfm_platform_system_off();
+#else
+
 #if defined(CONFIG_HAS_NORDIC_RAM_CTRL)
 	uint8_t *ram_start;
 	size_t ram_size;
@@ -77,6 +83,8 @@ void z_sys_poweroff(void)
 #else
 	nrf_regulators_system_off(NRF_REGULATORS);
 #endif
+
+#endif /* CONFIG_TFM_NRF_SYSTEM_OFF_SERVICE */
 
 	CODE_UNREACHABLE;
 }
