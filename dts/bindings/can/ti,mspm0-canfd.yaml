@@ -1,0 +1,41 @@
+# Copyright (c) 2026 Texas Instruments
+# SPDX-License-Identifier: Apache-2.0
+
+description: TI MSPM0 CANFD
+
+compatible: "ti,mspm0-canfd"
+
+include: ["bosch,m_can-base.yaml", "pinctrl-device.yaml"]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+
+  ti,canclk-source:
+    type: int
+    default: 1
+    enum:
+      - 0
+      - 1
+    description: |
+      Selects the source clock for the CANCLK (MCAN_FCLK).
+      0: HFCLK
+      1: PLLCLK1
+      If not specified, defaults to PLLCLK1 (1).
+
+  ti,divider:
+    type: int
+    default: 1
+    enum:
+      - 1
+      - 2
+      - 4
+    description: |
+      CANCLK divider ratio for MCAN functional clock.
+      Valid values are 1, 2, or 4. Default is 1 if omitted.
