@@ -122,10 +122,13 @@ done:
 /*
  * Called by bus driver to complete the sqe.
  */
-static void iis3dwb_complete_op_cb(struct rtio *r, const struct rtio_sqe *sqe, void *arg)
+static void iis3dwb_complete_op_cb(struct rtio *r, const struct rtio_sqe *sqe, int result,
+				   void *arg)
 {
 	const struct device *dev = arg;
 	struct iis3dwb_data *iis3dwb = dev->data;
+
+	ARG_UNUSED(result);
 
 	/*
 	 * Mark operation completed
@@ -139,7 +142,7 @@ static void iis3dwb_complete_op_cb(struct rtio *r, const struct rtio_sqe *sqe, v
  * Called by bus driver to complete the IIS3DWB_FIFO_STATUS read op (2 bytes).
  * If FIFO threshold or FIFO full events are active it reads all FIFO entries.
  */
-static void iis3dwb_read_fifo_cb(struct rtio *r, const struct rtio_sqe *sqe, void *arg)
+static void iis3dwb_read_fifo_cb(struct rtio *r, const struct rtio_sqe *sqe, int result, void *arg)
 {
 	const struct device *dev = arg;
 	struct iis3dwb_data *iis3dwb = dev->data;
@@ -149,6 +152,8 @@ static void iis3dwb_read_fifo_cb(struct rtio *r, const struct rtio_sqe *sqe, voi
 	struct sensor_read_config *read_config;
 	uint8_t fifo_th = 0, fifo_full = 0;
 	uint16_t fifo_count;
+
+	ARG_UNUSED(result);
 
 	/* At this point, no sqe request is queued should be considered as a bug */
 	__ASSERT_NO_MSG(iis3dwb->streaming_sqe != NULL);
@@ -335,13 +340,16 @@ static void iis3dwb_read_fifo_cb(struct rtio *r, const struct rtio_sqe *sqe, voi
  * Called by bus driver to complete the IIS3DWB_STATUS_REG read op.
  * If drdy_xl is active it reads XL data (6 bytes) from IIS3DWB_OUTX_L_A reg.
  */
-static void iis3dwb_read_status_cb(struct rtio *r, const struct rtio_sqe *sqe, void *arg)
+static void iis3dwb_read_status_cb(struct rtio *r, const struct rtio_sqe *sqe, int result,
+				   void *arg)
 {
 	const struct device *dev = arg;
 	struct iis3dwb_data *iis3dwb = dev->data;
 	struct rtio *rtio = iis3dwb->rtio_ctx;
 	const struct gpio_dt_spec *irq_gpio = iis3dwb->drdy_gpio;
 	struct sensor_read_config *read_config;
+
+	ARG_UNUSED(result);
 
 	/* At this point, no sqe request is queued should be considered as a bug */
 	__ASSERT_NO_MSG(iis3dwb->streaming_sqe != NULL);
