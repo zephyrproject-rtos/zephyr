@@ -305,18 +305,29 @@ def output(indent, str):
     print(indent + str)
 
 
+changed = ""
+
+
 def walk_dict_schema(level, top_level_name, cdict, key_upper, map, indent):
+    global changed
     for key, value in map.items():
         if key == "type":
             if value == "str":
                 output(indent, "const char *" + key_upper + ";")
+                changed += indent + "bool " + "__" + key_upper + "_changed : 1;" + "\n"
             elif value == "bool":
                 output(indent, "bool " + key_upper + ";")
+                changed += indent + "bool " + "__" + key_upper + "_changed : 1;" + "\n"
             elif value == "int":
                 output(indent, "int " + key_upper + ";")
+                changed += indent + "bool " + "__" + key_upper + "_changed : 1;" + "\n"
             elif value == "seq":
+                print(changed, end="")
+                changed = ""
                 output(indent, "struct " + top_level_name + "_" + key_upper + " {")
             elif value == "map":
+                print(changed, end="")
+                changed = ""
                 if key_upper != "value":
                     if level == 1:
                         output(indent, "struct " + key_upper + " {")
@@ -324,9 +335,12 @@ def walk_dict_schema(level, top_level_name, cdict, key_upper, map, indent):
                         output(indent, "struct " + top_level_name + "_" + key_upper + " {")
             elif value == "any" and key_upper == "bind_to":
                 output(indent, "int bind_to;")
+                changed += indent + "bool " + "__bind_to_changed : 1;" + "\n"
             continue
         elif key == "mapping":
             walk_dict_schema(level + 1, top_level_name, cdict, key, value, "\t" + indent)
+            print(changed, end="")
+            changed = ""
             if key_upper != "value":
                 # Avoid creating a variable at the top level because we have
                 # a separate variable created in the header file that is used in C file.
@@ -337,6 +351,8 @@ def walk_dict_schema(level, top_level_name, cdict, key_upper, map, indent):
             continue
         elif key == "sequence":
             walk_list_schema(level + 1, top_level_name, cdict, "value", value, "\t" + indent)
+            print(changed, end="")
+            changed = ""
             if key_upper in combined_data:
                 output(indent, "} " + key_upper + "[" + str(combined_data[key_upper]) + "];")
             else:
