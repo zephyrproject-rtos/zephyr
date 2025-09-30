@@ -25,6 +25,11 @@ menuconfig NET_CONFIG_SETTINGS
 
 if NET_CONFIG_SETTINGS
 
+config HEAP_MEM_POOL_ADD_SIZE_NET_CONFIG
+	int "Amount of heap needed for storing user configuration data"
+	default 1024
+	depends on SETTINGS
+
 config NET_CONFIG_AUTO_INIT
 	bool "Init networking support automatically during device startup"
 	default y if !(USB_DEVICE_NETWORK || USBD_CDC_ECM_CLASS || USBD_CDC_NCM_CLASS)

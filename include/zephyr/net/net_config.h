@@ -16,6 +16,12 @@
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/ieee802154_mgmt.h>
 
+#if defined(CONFIG_NET_CONFIG_SETTINGS)
+#include <network_config.inc>
+#else
+struct networking;
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -98,6 +104,37 @@ int net_config_init_by_iface(struct net_if *iface, const char *app_info,
  * @return 0 if ok, <0 if error.
  */
 int net_config_init_app(const struct device *dev, const char *app_info);
+
+/* @brief Get network initialization configuration.
+ *
+ * @details This network configuration consists of initial read-only
+ *          configuration and read-write configuration when the
+ *          configuration is changed at runtime.
+ *
+ * @param cfg Caller supplied pointer to struct net_init_config where
+ *            the configuration will be stored.
+ */
+int net_config_get(struct networking *cfg);
+
+/* @brief Set network initialization configuration.
+ *
+ * @details The user supplied configuration is saved to permanent
+ *          storage. How this works:
+ *          - If the config option in struct networking is different
+ *            than the default one, then change the option and enable the _changed flag.
+ *          - If the config option in struct networking is the same
+ *	      as the default one.
+ *
+ * @param cfg Caller supplied pointer to struct networking where
+ *            the configuration will be read.
+ */
+int net_config_set(const struct networking *cfg);
+
+/* @brief Clear all network configuration.
+ *
+ * @details This will reset all runtime configuration back to defaults.
+ */
+int net_config_clear(void);
 
 /**
  * @}
