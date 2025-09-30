@@ -744,8 +744,8 @@ static void test_valid_function_without_alarm(const struct device *dev)
 		ticks_expected = counter_us_to_ticks(dev, wait_for_us);
 	}
 
-	/* Set 10% or 2 ticks tolerance, whichever is greater */
-	ticks_tol = ticks_expected / 10;
+	/* Set percentage or 2 ticks tolerance, whichever is greater */
+	ticks_tol = (ticks_expected * CONFIG_TEST_DRIVER_COUNTER_TOLERANCE) / 100;
 	ticks_tol = ticks_tol < 2 ? 2 : ticks_tol;
 
 	err = counter_start(dev);
