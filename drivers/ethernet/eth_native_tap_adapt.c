@@ -44,7 +44,7 @@ int eth_iface_create(const char *dev_name, const char *if_name, bool tun_only)
 	struct ifreq ifr;
 	int fd, ret = -EINVAL;
 
-	fd = open(dev_name, O_RDWR);
+	fd = open(dev_name, O_RDWR | O_CLOEXEC);
 	if (fd < 0) {
 		return -errno;
 	}
