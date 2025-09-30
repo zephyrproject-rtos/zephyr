@@ -49,7 +49,7 @@ config UDC_DWC2_THREAD_PRIORITY
 
 config UDC_DWC2_USBHS_VBUS_READY_TIMEOUT
 	int "UDC DWC2 USBHS VBUS ready event timeout in ms"
-	depends on SOC_SERIES_NRF54HX || SOC_SERIES_NRF54LX
+	depends on SOC_SERIES_NRF54HX || SOC_SERIES_NRF54LX || SOC_SERIES_NRF92X
 	default 0
 	help
 	  UDC DWC2 USBHS VBUS ready event timeout. If the VBUS is not ready
