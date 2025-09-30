@@ -1,0 +1,20 @@
+# Copyright (c) 2025 Andes Technology Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+choice LLVM_LINKER
+	prompt "LLVM Linker"
+	default LLVM_USE_LLD
+
+config LLVM_USE_LD
+	bool "GNU ld"
+	help
+	  Use binutils ld linker with llvm/clang.
+
+config LLVM_USE_LLD
+	bool "LLVM lld"
+	help
+	  Use LLVM built-in lld linker with llvm/clang.
+
+endchoice
+
+rsource "../andes/Kconfig"

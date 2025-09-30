@@ -35,6 +35,14 @@ if(CLANG_COMPILER_VERSION VERSION_LESS "17.0.0")
   endforeach()
 endif()
 
+# For Andes Clang < 20.1.8, LLD may perform Zcmt relaxation even with -Wl,--no-relax.
+# Disable it using the Andes-specific -Wl,--mno-opt-table-jump option.
+if(CLANG_COMPILER_VERSION VERSION_LESS "20.1.8")
+  if(CONFIG_LLVM_USE_LLD AND CONFIG_LINKER_USE_NO_RELAX AND CONFIG_RISCV_ISA_EXT_ZCMT)
+    list(APPEND TOOLCHAIN_LD_FLAGS "-Wl,--mno-opt-table-jump")
+  endif()
+endif()
+
 foreach(file_name include/stddef.h)
   execute_process(
     COMMAND ${CMAKE_C_COMPILER} --print-file-name=${file_name}
