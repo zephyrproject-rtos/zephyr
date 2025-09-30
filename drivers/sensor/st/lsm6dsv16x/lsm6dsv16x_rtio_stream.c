@@ -337,19 +337,9 @@ static void lsm6dsv16x_read_fifo_cb(struct rtio *r, const struct rtio_sqe *sqe,
 	}
 
 	/* flush completion */
-	struct rtio_cqe *cqe;
 	int res = 0;
 
-	do {
-		cqe = rtio_cqe_consume(rtio);
-		if (cqe != NULL) {
-			if ((cqe->result < 0) && (res == 0)) {
-				LOG_ERR("Bus error: %d", cqe->result);
-				res = cqe->result;
-			}
-			rtio_cqe_release(rtio, cqe);
-		}
-	} while (cqe != NULL);
+	res = rtio_flush_completion_queue(rtio);
 
 	/* Bail/cancel attempt to read sensor on any error */
 	if (res != 0) {
@@ -532,19 +522,9 @@ static void lsm6dsv16x_read_status_cb(struct rtio *r, const struct rtio_sqe *sqe
 	}
 
 	/* flush completion */
-	struct rtio_cqe *cqe;
 	int res = 0;
 
-	do {
-		cqe = rtio_cqe_consume(rtio);
-		if (cqe != NULL) {
-			if ((cqe->result < 0) && (res == 0)) {
-				LOG_ERR("Bus error: %d", cqe->result);
-				res = cqe->result;
-			}
-			rtio_cqe_release(rtio, cqe);
-		}
-	} while (cqe != NULL);
+	res = rtio_flush_completion_queue(rtio);
 
 	/* Bail/cancel attempt to read sensor on any error */
 	if (res != 0) {
