@@ -98,7 +98,7 @@ volatile int totalCompletedJobs = 0;
 /* TensorArena static initialisation */
 const size_t arenaSize = TENSOR_ARENA_SIZE_PER_INFERENCE;
 
-__attribute__((section("tflm_arena"), aligned(16)))
+TENSOR_ARENA_ATTR
 uint8_t inferenceProcessTensorArena[NUM_INFERENCE_TASKS][arenaSize];
 
 /* Allocate and initialize heap */
