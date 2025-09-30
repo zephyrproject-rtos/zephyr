@@ -974,16 +974,19 @@ static const struct net_wifi_mgmt_offload wifi_offload_ops = {
 	.wifi_drv_ops = &wpa_supp_ops,
 #endif /* CONFIG_NRF70_STA_MODE */
 };
+
+NET_ETH_MAC_DT_INST_DEFINE(0);
+#ifdef CONFIG_NRF70_ENABLE_DUAL_VIF
+NET_ETH_MAC_DT_INST_DEFINE(1);
+#endif
 #endif /* CONFIG_NET_L2_ETHERNET */
-
-
 
 #ifdef CONFIG_NET_L2_ETHERNET
 ETH_NET_DEVICE_DT_INST_DEFINE(0,
 		    nrf_wifi_drv_main_zep, /* init_fn */
 		    NULL, /* pm_action_cb */
 		    &rpu_drv_priv_zep.rpu_ctx_zep.vif_ctx_zep[0], /* data */
-		    NULL, /* cfg */
+		    NET_ETH_MAC_DT_INST_DEV_CONFIG_GET(0), /* cfg */
 		    CONFIG_WIFI_INIT_PRIORITY, /* prio */
 		    &wifi_offload_ops, /* api */
 		    CONFIG_NRF_WIFI_IFACE_MTU); /*mtu */
@@ -993,7 +996,7 @@ ETH_NET_DEVICE_DT_INST_DEFINE(1,
 		    nrf_wifi_drv_main_zep, /* init_fn */
 		    NULL, /* pm_action_cb */
 		    &rpu_drv_priv_zep.rpu_ctx_zep.vif_ctx_zep[1], /* data */
-		    NULL, /* cfg */
+		    NET_ETH_MAC_DT_INST_DEV_CONFIG_GET(1), /* cfg */
 		    CONFIG_WIFI_INIT_PRIORITY, /* prio */
 		    &wifi_offload_ops, /* api */
 		    CONFIG_NRF_WIFI_IFACE_MTU); /*mtu */

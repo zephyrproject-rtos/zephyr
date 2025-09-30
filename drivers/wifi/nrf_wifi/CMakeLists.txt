@@ -13,6 +13,8 @@ zephyr_include_directories(
   inc
   # for net_sprint_ll_addr
   ${ZEPHYR_BASE}/subsys/net/ip
+  # for net_eth_mac_load
+  ${ZEPHYR_BASE}/drivers/ethernet
 )
 
 zephyr_include_directories_ifdef(CONFIG_NRF70_OFFLOADED_RAW_TX
