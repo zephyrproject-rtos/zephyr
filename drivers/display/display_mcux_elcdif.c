@@ -31,7 +31,7 @@ LOG_MODULE_REGISTER(display_mcux_elcdif, CONFIG_DISPLAY_LOG_LEVEL);
 K_HEAP_DEFINE(display_heap, CONFIG_MCUX_ELCDIF_FB_NUM * CONFIG_MCUX_ELCDIF_FB_SIZE + 512);
 
 static const uint32_t supported_fmts =
-	PIXEL_FORMAT_RGB_565 | PIXEL_FORMAT_ARGB_8888 | PIXEL_FORMAT_RGB_888;
+	PIXEL_FORMAT_RGB_565 | PIXEL_FORMAT_XRGB_8888 | PIXEL_FORMAT_RGB_888;
 
 struct mcux_elcdif_config {
 	LCDIF_Type *base;
@@ -289,7 +289,7 @@ static int mcux_elcdif_set_pixel_format(const struct device *dev,
 		dev_data->rgb_mode.pixelFormat = kELCDIF_PixelFormatRGB565;
 	} else if (pixel_format == PIXEL_FORMAT_RGB_888) {
 		dev_data->rgb_mode.pixelFormat = kELCDIF_PixelFormatRGB888;
-	} else if (pixel_format == PIXEL_FORMAT_ARGB_8888) {
+	} else if (pixel_format == PIXEL_FORMAT_XRGB_8888) {
 		dev_data->rgb_mode.pixelFormat = kELCDIF_PixelFormatXRGB8888;
 	}
 
