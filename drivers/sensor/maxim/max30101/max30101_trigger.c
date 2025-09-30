@@ -104,8 +104,13 @@ int max30101_trigger_set(const struct device *dev, const struct sensor_trigger *
 	case SENSOR_TRIG_DATA_READY:
 		switch (trig->chan) {
 		case SENSOR_CHAN_DIE_TEMP:
+#if CONFIG_MAX30101_DIE_TEMPERATURE
 			mask = MAX30101_INT_TEMP_MASK;
 			index = MAX30101_TEMP_CB_INDEX;
+#else
+			LOG_ERR("SENSOR_CHAN_DIE_TEMP needs CONFIG_MAX30101_DIE_TEMPERATURE");
+			return -EINVAL;
+#endif /* CONFIG_MAX30101_DIE_TEMPERATURE */
 			break;
 
 		case SENSOR_CHAN_LIGHT:
@@ -146,6 +151,13 @@ int max30101_trigger_set(const struct device *dev, const struct sensor_trigger *
 		LOG_ERR("Could not get interrupt STATUS register");
 		return -EIO;
 	}
+
+#if CONFIG_MAX30101_DIE_TEMPERATURE
+	/* Start die temperature acquisition */
+	if (i2c_reg_write_byte_dt(&config->i2c, MAX30101_REG_TEMP_CFG, 1)) {
+		return -EIO;
+	}
+#endif /* CONFIG_MAX30101_DIE_TEMPERATURE */
 
 	if (!!enable) {
 		data->trigger_handler[index] = handler;
