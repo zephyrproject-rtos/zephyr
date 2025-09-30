@@ -3,10 +3,11 @@
  * Copyright (c) 2023 EPAM Systems
  */
 
+#include <xen/public/xen.h>
+#include <xen/public/memory.h>
+
 #include <zephyr/arch/arm64/hypercall.h>
 #include <zephyr/xen/generic.h>
-#include <zephyr/xen/public/memory.h>
-#include <zephyr/xen/public/xen.h>
 
 #include <zephyr/kernel.h>
 
