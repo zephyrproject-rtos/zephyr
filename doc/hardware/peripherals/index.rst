@@ -57,7 +57,7 @@ Peripherals
    sensor/index.rst
    sent.rst
    spi.rst
-   stepper.rst
+   stepper/index.rst
    smbus.rst
    uart.rst
    usbc_vbus.rst

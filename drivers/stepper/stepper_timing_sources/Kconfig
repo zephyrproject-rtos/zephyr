@@ -1,0 +1,18 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Jilay Sandeep Pandya
+# SPDX-License-Identifier: Apache-2.0
+
+config STEPPER_TIMING_SOURCES
+	bool "Stepper Timing Sources"
+	help
+	  Enable timing sources for stepper
+
+if STEPPER_TIMING_SOURCES
+
+config STEPPER_TIMING_SOURCES_COUNTER_TIMING
+	bool "Counter use for stepping"
+	select COUNTER
+	default y
+	help
+	  Enable usage of a counter device for accurate stepping.
+
+endif

@@ -1,6 +1,7 @@
 / {
 	aliases {
-		stepper = &tmc_stepper;
+		stepper-driver = &tmc_stepper_driver;
+		motion-controller = &tmc_motion_controller;
 	};
 };
 
@@ -19,34 +20,39 @@
 
 		clock-frequency = <DT_FREQ_M(10)>; /* Internal/External Clock frequency */
 
-		tmc_stepper: tmc_stepper@0 {
+		tmc_stepper_0: tmc_stepper@0 {
 			status = "okay";
 			reg = <0>;
 
 			/* common stepper controller settings */
-			micro-step-res = <256>;
-
-			/* ADI TMC stallguard settings specific to TMC50XX */
-			activate-stallguard2;
-			stallguard-velocity-check-interval-ms = <1000>;
-			stallguard2-threshold = <30>;
-			stallguard-threshold-velocity = <200000>;
+			tmc_stepper_driver: stepper_driver {
+				micro-step-res = <256>;
+				compatible = "adi,tmc50xx-stepper-driver";
+				/* ADI TMC stallguard settings specific to TMC50XX */
+				stallguard2-threshold=<30>;
+			};
 
 			/* ADI TMC ramp generator as well as current settings */
-			vstart = <1000>;
-			vstop = <10>;
-			a1 = <10000>;
-			v1 = <50000>;
-			d1 = <14000>;
-			vmax = <900000>;
-			amax = <50000>;
-			dmax = <7000>;
-			tzerowait = <100>;
-			vhigh = <900000>;
-			vcoolthrs = <900000>;
-			ihold = <1>;
-			irun = <10>;
-			iholddelay = <1>;
+			tmc_motion_controller: motion_controller {
+				compatible = "adi,tmc50xx-motion-controller";
+				vstart = <1000>;
+				vstop = <10>;
+				a1 = <10000>;
+				v1 = <50000>;
+				d1 = <14000>;
+				vmax = <900000>;
+				amax = <50000>;
+				dmax = <7000>;
+				tzerowait = <100>;
+				vhigh = <900000>;
+				vcoolthrs = <900000>;
+				ihold = <1>;
+				irun = <10>;
+				iholddelay = <1>;
+				activate-stallguard2;
+				stallguard-velocity-check-interval-ms=<1000>;
+				stallguard-threshold-velocity=<200000>;
+			};
 		};
 	};
 };

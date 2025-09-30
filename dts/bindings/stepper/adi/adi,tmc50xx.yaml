@@ -85,29 +85,6 @@ properties:
 
 child-binding:
   include:
-    - name: stepper-controller.yaml
     - name: base.yaml
       property-allowlist:
         - reg
-    - name: adi,trinamic-ramp-generator.yaml
-      property-allowlist:
-        - vstart
-        - a1
-        - v1
-        - amax
-        - vmax
-        - dmax
-        - d1
-        - vstop
-        - tzerowait
-        - vhigh
-        - vcoolthrs
-        - ihold
-        - irun
-        - iholddelay
-    - name: adi,trinamic-stallguard.yaml
-      property-allowlist:
-        - activate-stallguard2
-        - stallguard2-threshold
-        - stallguard-threshold-velocity
-        - stallguard-velocity-check-interval-ms
