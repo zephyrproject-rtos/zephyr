@@ -151,88 +151,26 @@ int net_rx_priority2tc(enum net_priority prio)
 
 #if defined(CONFIG_NET_TC_THREAD_PRIO_CUSTOM)
 #define BASE_PRIO_TX CONFIG_NET_TC_TX_THREAD_BASE_PRIO
+#define PRIO_SPREAD_TX CONFIG_NET_TC_TX_THREAD_PRIO_SPREAD
 #elif defined(CONFIG_NET_TC_THREAD_COOPERATIVE)
 #define BASE_PRIO_TX (CONFIG_NET_TC_NUM_PRIORITIES - 1)
+#define PRIO_SPREAD_TX 1
+BUILD_ASSERT(NET_TC_TX_COUNT <= CONFIG_NUM_COOP_PRIORITIES, "Too many traffic classes");
 #else
 #define BASE_PRIO_TX (CONFIG_NET_TC_TX_COUNT - 1)
+#define PRIO_SPREAD_TX 1
 #endif
-
-#define PRIO_TX(i, _) (BASE_PRIO_TX - i)
 
 #if defined(CONFIG_NET_TC_THREAD_PRIO_CUSTOM)
 #define BASE_PRIO_RX CONFIG_NET_TC_RX_THREAD_BASE_PRIO
+#define PRIO_SPREAD_RX CONFIG_NET_TC_RX_THREAD_PRIO_SPREAD
 #elif defined(CONFIG_NET_TC_THREAD_COOPERATIVE)
 #define BASE_PRIO_RX (CONFIG_NET_TC_NUM_PRIORITIES - 1)
+#define PRIO_SPREAD_RX 1
+BUILD_ASSERT(NET_TC_RX_COUNT <= CONFIG_NUM_COOP_PRIORITIES, "Too many traffic classes");
 #else
 #define BASE_PRIO_RX (CONFIG_NET_TC_RX_COUNT - 1)
-#endif
-
-#define PRIO_RX(i, _) (BASE_PRIO_RX - i)
-
-#if NET_TC_TX_COUNT > 0
-/* Convert traffic class to thread priority */
-static uint8_t tx_tc2thread(uint8_t tc)
-{
-	/* Initial implementation just maps the traffic class to certain queue.
-	 * If there are less queues than classes, then map them into
-	 * some specific queue.
-	 *
-	 * Lower value in this table means higher thread priority. The
-	 * value is used as a parameter to K_PRIO_COOP() or K_PRIO_PREEMPT()
-	 * which converts it to actual thread priority.
-	 *
-	 * Higher traffic class value means higher priority queue. This means
-	 * that thread_priorities[7] value should contain the highest priority
-	 * for the TX queue handling thread.
-	 *
-	 * For example, if NET_TC_TX_COUNT = 8, which is the maximum number of
-	 * traffic classes, then this priority array will contain following
-	 * values if preemptive priorities are used:
-	 *      7, 6, 5, 4, 3, 2, 1, 0
-	 * and
-	 *      14, 13, 12, 11, 10, 9, 8, 7
-	 * if cooperative priorities are used.
-	 *
-	 * Then these will be converted to following thread priorities if
-	 * CONFIG_NET_TC_THREAD_COOPERATIVE is enabled:
-	 *      -1, -2, -3, -4, -5, -6, -7, -8
-	 *
-	 * and if CONFIG_NET_TC_THREAD_PREEMPTIVE is enabled, following thread
-	 * priorities are used:
-	 *       7, 6, 5, 4, 3, 2, 1, 0
-	 *
-	 * This means that the lowest traffic class 1, will have the lowest
-	 * cooperative priority -1 for coop priorities and 7 for preemptive
-	 * priority.
-	 */
-	static const uint8_t thread_priorities[] = {
-		LISTIFY(NET_TC_TX_COUNT, PRIO_TX, (,))
-	};
-
-	BUILD_ASSERT(NET_TC_TX_COUNT <= CONFIG_NUM_COOP_PRIORITIES,
-		     "Too many traffic classes");
-
-	NET_ASSERT(tc < ARRAY_SIZE(thread_priorities));
-
-	return thread_priorities[tc];
-}
-#endif
-
-#if NET_TC_RX_COUNT > 0
-/* Convert traffic class to thread priority */
-static uint8_t rx_tc2thread(uint8_t tc)
-{
-	static const uint8_t thread_priorities[] = {
-		LISTIFY(NET_TC_RX_COUNT, PRIO_RX, (,))
-	};
-
-	BUILD_ASSERT(NET_TC_RX_COUNT <= CONFIG_NUM_COOP_PRIORITIES,
-		     "Too many traffic classes");
-
-	NET_ASSERT(tc < ARRAY_SIZE(thread_priorities));
-
-	return thread_priorities[tc];
-}
+#define PRIO_SPREAD_RX 1
 #endif
 
 #if defined(CONFIG_NET_STATISTICS)
@@ -362,7 +300,8 @@ void net_tc_tx_init(void)
 		int priority;
 		k_tid_t tid;
 
-		thread_priority = tx_tc2thread(i);
+		BUILD_ASSERT(BASE_PRIO_TX >= PRIO_SPREAD_TX * (NET_TC_TX_COUNT - 1));
+		thread_priority = BASE_PRIO_TX - PRIO_SPREAD_TX * i;
 
 		priority = IS_ENABLED(CONFIG_NET_TC_THREAD_COOPERATIVE) ?
 			K_PRIO_COOP(thread_priority) :
@@ -430,7 +369,8 @@ void net_tc_rx_init(void)
 		int priority;
 		k_tid_t tid;
 
-		thread_priority = rx_tc2thread(i);
+		BUILD_ASSERT(BASE_PRIO_RX >= PRIO_SPREAD_RX * (NET_TC_RX_COUNT - 1));
+		thread_priority = BASE_PRIO_RX - PRIO_SPREAD_RX * i;
 
 		priority = IS_ENABLED(CONFIG_NET_TC_THREAD_COOPERATIVE) ?
 			K_PRIO_COOP(thread_priority) :
