@@ -60,7 +60,12 @@
 		};
 	};
 };
-
+&zephyr_udc0 {
+	cdc_acm_uart0 {
+		compatible = "zephyr,cdc-acm-uart";
+		label = "Zephyr USB CDC-ACM";
+	};
+};
 /* Enable USB0 node */
 &usb0 {
 	status = "okay";
