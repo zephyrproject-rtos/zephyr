@@ -46,7 +46,7 @@ int eeprom_mock_init_native(bool eeprom_in_ram, char **mock_eeprom, unsigned int
 			return -1;
 		}
 	} else {
-		*eeprom_fd = open(eeprom_file_path, O_RDWR | O_CREAT, (mode_t)0600);
+		*eeprom_fd = open(eeprom_file_path, O_RDWR | O_CREAT | O_CLOEXEC, (mode_t)0600);
 		if (*eeprom_fd == -1) {
 			nsi_print_warning("Failed to open EEPROM device file %s: %s\n",
 					  eeprom_file_path, strerror(errno));
