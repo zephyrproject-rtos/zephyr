@@ -32,6 +32,17 @@ Boards
 Device Drivers and Devicetree
 *****************************
 
+ADC
+===
+
+* The :dtcompatible:`renesas,ra-adc` compatible has been replaced by
+  :dtcompatible:`renesas,ra-adc12`. Applications using the old compatible
+  must update their devicetree nodes.
+
+* The :dtcompatible:`renesas,ra-adc16` compatible was added. This must be
+  used when working with the EK-RA2A1 board, which provides a 16-bit ADC
+  resolution.
+
 QSPI
 ===
 
