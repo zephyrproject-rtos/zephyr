@@ -10,6 +10,7 @@ flash: 16320
 toolchain:
   - zephyr
 supported:
+  - i2c
   - uart
   - gpio
 vendor: sifli
