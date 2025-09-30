@@ -14,6 +14,9 @@ endif # SERIAL
 config ZTEST_STACK_SIZE
 	default 4096 if ZTEST
 
+config ISR_STACK_SIZE
+	default 4096
+
 if COVERAGE_GCOV
 
 config MAIN_STACK_SIZE
@@ -23,9 +26,6 @@ config IDLE_STACK_SIZE
 	default 4096
 
 config PRIVILEGED_STACK_SIZE
-	default 4096
-
-config ISR_STACK_SIZE
 	default 4096
 
 config TEST_EXTRA_STACK_SIZE

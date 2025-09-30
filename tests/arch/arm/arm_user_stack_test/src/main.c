@@ -25,7 +25,14 @@ k_tid_t low_tid, hi_tid;
 
 void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *pEsf)
 {
-	ztest_test_pass();
+	printk("reason: %d\n", reason);
+	if (reason != K_ERR_STACK_CHK_FAIL) {
+		printk("should fail\n");
+		ztest_test_fail();
+	} else {
+		printk("should succeed\n");
+		ztest_test_pass();
+	}
 	k_thread_abort(low_tid);
 
 	/* This check is to handle a case where low prio thread has started and
