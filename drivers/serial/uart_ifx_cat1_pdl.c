@@ -24,6 +24,7 @@
 #include <cy_sysint.h>
 
 #include <zephyr/drivers/clock_control/clock_control_ifx_cat1.h>
+#include <zephyr/dt-bindings/clock/ifx_clock_source_common.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(uart_ifx_cat1, CONFIG_UART_LOG_LEVEL);
@@ -731,7 +732,7 @@ static int ifx_cat1_uart_init(const struct device *dev)
 	int ret;
 
 	/* Dedicate SCB HW resource */
-	data->hw_resource.type = IFX_CAT1_RSC_SCB;
+	data->hw_resource.type = IFX_RSC_SCB;
 	data->hw_resource.block_num = ifx_cat1_uart_get_hw_block_num(config->reg_addr);
 
 	/* Configure dt provided device signals when available */
@@ -803,7 +804,7 @@ static DEVICE_API(uart, ifx_cat1_uart_driver_api) = {
 #endif
 
 #if defined(COMPONENT_CAT1B) || defined(COMPONENT_CAT1C)
-#define PERI_INFO(n) .clock_peri_group = DT_PROP_BY_IDX(DT_INST_PHANDLE(n, clocks), clk_dst, 1),
+#define PERI_INFO(n) .clock_peri_group = DT_PROP_BY_IDX(DT_INST_PHANDLE(n, clocks), peri_group, 1),
 #else
 #define PERI_INFO(n)
 #endif
@@ -829,9 +830,9 @@ static DEVICE_API(uart, ifx_cat1_uart_driver_api) = {
 	.clock =                                                                                   \
 		{                                                                                  \
 			.block = IFX_CAT1_PERIPHERAL_GROUP_ADJUST(                                 \
-				DT_PROP_BY_IDX(DT_INST_PHANDLE(n, clocks), clk_dst, 1),            \
+				DT_PROP_BY_IDX(DT_INST_PHANDLE(n, clocks), peri_group, 1),            \
 				DT_INST_PROP_BY_PHANDLE(n, clocks, div_type)),                     \
-			.channel = DT_INST_PROP_BY_PHANDLE(n, clocks, div_num),                    \
+			.channel = DT_INST_PROP_BY_PHANDLE(n, clocks, channel),                    \
 	},                                                                                         \
 	PERI_INFO(n)
 

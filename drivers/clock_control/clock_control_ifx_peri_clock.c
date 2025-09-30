@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2025 Cypress Semiconductor Corporation (an Infineon company) or
- * an affiliate of Cypress Semiconductor Corporation
+ * Copyright (c) 2025 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,12 +9,16 @@
  * @brief Peripheral Clock control driver for Infineon CAT1 MCU family.
  */
 
-#define DT_DRV_COMPAT infineon_cat1_peri_div
+#define DT_DRV_COMPAT infineon_peri_div
 
-#include <zephyr/drivers/clock_control/clock_control_ifx_cat1.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/kernel.h>
 #include <stdlib.h>
+
+#include <infineon_kconfig.h>
+#include <zephyr/drivers/clock_control/clock_control_ifx_cat1.h>
+#include <zephyr/dt-bindings/clock/ifx_clock_source_common.h>
+
 #include <cy_sysclk.h>
 #include <cy_systick.h>
 
@@ -52,6 +56,14 @@ en_clk_dst_t ifx_cat1_scb_get_clock_index(uint32_t block_num)
 	} else {
 		clk = (en_clk_dst_t)((uint32_t)_IFX_CAT1_SCB0_PCLK_CLOCK + block_num - 1);
 	}
+#elif defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
+	if (block_num == 0) {
+		clk = (en_clk_dst_t)((uint32_t)_IFX_CAT1_SCB0_PCLK_CLOCK);
+	} else if (block_num == 1) {
+		clk = (en_clk_dst_t)((uint32_t)_IFX_CAT1_SCB1_PCLK_CLOCK);
+	} else {
+		clk = (en_clk_dst_t)((uint32_t)_IFX_CAT1_SCB0_PCLK_CLOCK + block_num - 1);
+	}
 #else
 	clk = (en_clk_dst_t)((uint32_t)_IFX_CAT1_SCB0_PCLK_CLOCK + block_num);
 #endif
@@ -62,27 +74,41 @@ static int ifx_cat1_peri_clock_init(const struct device *dev)
 {
 	struct ifx_cat1_peri_clock_data *const data = dev->data;
 
-	en_clk_dst_t clk_idx = ifx_cat1_scb_get_clock_index(data->hw_resource.block_num);
+	if (data->hw_resource.type == IFX_RSC_SCB) {
+		en_clk_dst_t clk_idx = ifx_cat1_scb_get_clock_index(data->hw_resource.block_num);
 
-	ifx_cat1_utils_peri_pclk_set_divider(clk_idx, &data->clock, data->divider - 1);
-	ifx_cat1_utils_peri_pclk_assign_divider(clk_idx, &data->clock);
-	ifx_cat1_utils_peri_pclk_enable_divider(clk_idx, &data->clock);
+		ifx_cat1_utils_peri_pclk_set_divider(clk_idx, &data->clock, data->divider - 1);
+		ifx_cat1_utils_peri_pclk_assign_divider(clk_idx, &data->clock);
+		ifx_cat1_utils_peri_pclk_enable_divider(clk_idx, &data->clock);
+	} else {
+		return -EINVAL;
+	}
 
 	return 0;
 }
 
+#if defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
+#define PERI_CLOCK_INIT(n)                                                                         \
+	.clock = {                                                                                 \
+		.block = IFX_CAT1_PERIPHERAL_GROUP_ADJUST(DT_INST_PROP_BY_IDX(n, peri_group, 0),   \
+							  DT_INST_PROP_BY_IDX(n, peri_group, 1),   \
+							  DT_INST_PROP(n, div_type)),              \
+		.channel = DT_INST_PROP(n, channel),                                               \
+	},
+#else
+#define PERI_CLOCK_INIT(n)                                                                         \
+	.clock = {                                                                                 \
+		.block = IFX_CAT1_PERIPHERAL_GROUP_ADJUST(DT_INST_PROP_BY_IDX(n, peri_group, 1),   \
+							  DT_INST_PROP(n, div_type)),              \
+		.channel = DT_INST_PROP(n, channel),                                               \
+	},
+#endif
+
 #define INFINEON_CAT1_PERI_CLOCK_INIT(n)                                                           \
 	static struct ifx_cat1_peri_clock_data ifx_cat1_peri_clock##n##_data = {                   \
-		.clock =                                                                           \
-			{                                                                          \
-				.block = IFX_CAT1_PERIPHERAL_GROUP_ADJUST(                         \
-					DT_INST_PROP_BY_IDX(n, clk_dst, 1),                        \
-					DT_INST_PROP(n, div_type)),                                \
-				.channel = DT_INST_PROP(n, div_num),                               \
-			},                                                                         \
-		.divider = DT_INST_PROP(n, div_value),                                             \
-		.hw_resource = {.type = IFX_CAT1_RSC_SCB,                                          \
-				.block_num = DT_INST_PROP(n, scb_block)},                          \
+		PERI_CLOCK_INIT(n).divider = DT_INST_PROP(n, clock_div),                           \
+		.hw_resource = {.type = DT_INST_PROP(n, resource_type),                            \
+				.block_num = DT_INST_PROP(n, resource_instance)},                  \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, &ifx_cat1_peri_clock_init, NULL, &ifx_cat1_peri_clock##n##_data,  \
