@@ -13,6 +13,7 @@ menuconfig NET_CONFIG_SETTINGS
 	bool "Set network settings for applications"
 	select NET_MGMT
 	select NET_MGMT_EVENT
+	select SETTINGS
 	help
 	  Allow IP addresses to be set in config file for
 	  networking client/server sample applications, or

@@ -15,6 +15,13 @@ LOG_MODULE_REGISTER(net_config, CONFIG_NET_CONFIG_LOG_LEVEL);
 #include <errno.h>
 #include <stdlib.h>
 
+#include <zephyr/settings/settings.h>
+
+#if defined(CONFIG_FILE_SYSTEM_LITTLEFS)
+#include <zephyr/fs/fs.h>
+#include <zephyr/fs/littlefs.h>
+#endif
+
 #include <zephyr/logging/log_backend.h>
 #include <zephyr/logging/log_backend_net.h>
 #include <zephyr/net/ethernet.h>
@@ -35,12 +42,106 @@ LOG_MODULE_REGISTER(net_config, CONFIG_NET_CONFIG_LOG_LEVEL);
 
 #include "net_init_config.inc"
 
+#define STORAGE_PARTITION	storage_partition
+#define STORAGE_PARTITION_ID	FIXED_PARTITION_ID(STORAGE_PARTITION)
+
 extern int net_init_clock_via_sntp(struct net_if *iface,
 				   const char *server,
 				   int timeout);
 
 static K_SEM_DEFINE(waiter, 0, 1);
 static K_SEM_DEFINE(counter, 0, UINT_MAX);
+
+#define SETTINGS_SUBTREE_NET_CONFIG "net/config"
+
+static struct net_init_config net_init_config_user;
+
+#if defined(CONFIG_SETTINGS)
+static bool settings_loaded;
+
+static int net_config_settings_set(const char *name, size_t len,
+				   settings_read_cb read_cb, void *cb_arg);
+static int net_config_settings_commit(void);
+static int net_config_settings_export(int (*cb)(const char *name,
+						const void *value, size_t val_len));
+static int net_config_settings_get(const char *name, char *val, int val_len_max);
+
+static struct settings_handler net_config_settings_handler = {
+	.name = SETTINGS_SUBTREE_NET_CONFIG,
+	.h_get = net_config_settings_get,
+	.h_set = net_config_settings_set,
+	.h_commit = net_config_settings_commit,
+	.h_export = net_config_settings_export
+};
+
+static int net_config_settings_set(const char *name, size_t len,
+				   settings_read_cb read_cb, void *cb_arg)
+{
+	const char *next;
+	int ret;
+
+	if (settings_name_steq(name, "user", &next) && next == NULL) {
+		if (len != sizeof(struct net_init_config)) {
+			NET_ERR("Error net_init_config too large %zu (expecting %zu)",
+				len, sizeof(struct net_init_config));
+			return -EINVAL;
+		}
+
+		ret = read_cb(cb_arg, &net_init_config_user,
+			      sizeof(net_init_config_user));
+		if (ret == 0) {
+			/* The key is deleted */
+			memset(&net_init_config_user, 0, sizeof(net_init_config_user));
+			return 0;
+		} else if (ret > 0) {
+			return 0;
+		}
+
+		NET_ERR("Error code list read failure: %d", ret);
+
+		return ret;
+	}
+
+	return -ENOENT;
+}
+
+static int net_config_settings_commit(void)
+{
+	NET_DBG("loading all settings under <%s> handler is done",
+		SETTINGS_SUBTREE_NET_CONFIG);
+	return 0;
+}
+
+static int net_config_settings_get(const char *name, char *val, int val_len_max)
+{
+	const char *next;
+
+	if (settings_name_steq(name, "user", &next) && !next) {
+		if (val_len_max != sizeof(struct net_init_config)) {
+			NET_ERR("Error net_init_config too large %zu (expecting %zu)",
+				val_len_max, sizeof(struct net_init_config));
+			return -EINVAL;
+		}
+
+		memcpy((struct net_init_config *)val, &net_init_config_user, val_len_max);
+
+		return val_len_max;
+	}
+
+	return -ENOENT;
+}
+
+static int net_config_settings_export(int (*cb)(const char *name,
+						const void *value, size_t val_len))
+{
+	NET_DBG("export keys under <%s> handler", SETTINGS_SUBTREE_NET_CONFIG);
+
+	(void)cb(SETTINGS_SUBTREE_NET_CONFIG "/user", &net_init_config_user,
+		 sizeof(net_init_config_user));
+
+	return 0;
+}
+#endif /* CONFIG_SETTINGS */
 
 #if defined(CONFIG_NET_NATIVE)
 static struct net_mgmt_event_callback mgmt_iface_cb;
@@ -751,15 +852,719 @@ static int process_iface_flag(struct net_if *iface, const char *flag_str)
 	return 0;
 }
 
-static int generated_net_config_init_app(const struct device *dev,
-					 const char *app_info)
+#define UPDATE_IFACE_VAL(x)						\
+	if (iface_cfg->__##x##_changed) {				\
+		cfg->network_interfaces[i].x =				\
+			net_init_config_user.network_interfaces[i].x;	\
+		cfg->network_interfaces[i].__##x##_changed = true;	\
+	} else {							\
+		cfg->network_interfaces[i].x =				\
+			config->network_interfaces[i].x;		\
+		cfg->network_interfaces[i].__##x##_changed = false;	\
+	}
+
+#define UPDATE_FLAGS_VAL(x)						\
+	if (iface_cfg->flags[j].__##x##_changed) {			\
+		cfg->network_interfaces[i].flags[j].x =			\
+			net_init_config_user.network_interfaces[i].flags[j].x;	\
+		cfg->network_interfaces[i].flags[j].__##x##_changed = true;	\
+	} else {							\
+		cfg->network_interfaces[i].flags[j].x =			\
+			config->network_interfaces[i].flags[j].x;	\
+		cfg->network_interfaces[i].flags[j].__##x##_changed = false; \
+	}
+
+#define UPDATE_IPV6_VAL(x)						\
+	if (iface_cfg->ipv6.__##x##_changed) {				\
+		cfg->network_interfaces[i].ipv6.x =			\
+			net_init_config_user.network_interfaces[i].ipv6.x; \
+		cfg->network_interfaces[i].ipv6.__##x##_changed = true; \
+	} else {							\
+		cfg->network_interfaces[i].ipv6.x =			\
+			config->network_interfaces[i].ipv6.x;		\
+		cfg->network_interfaces[i].ipv6.__##x##_changed = false; \
+	}
+
+#define UPDATE_IPV6_ADDR_VAL(x)						\
+	if (iface_cfg->ipv6.ipv6_addresses[j].__##x##_changed) {	\
+		cfg->network_interfaces[i].ipv6.ipv6_addresses[j].x =	\
+			net_init_config_user.network_interfaces[i].ipv6.ipv6_addresses[j].x; \
+		cfg->network_interfaces[i].ipv6.ipv6_addresses[j].__##x##_changed = true; \
+	} else {							\
+		cfg->network_interfaces[i].ipv6.ipv6_addresses[j].x =	\
+			config->network_interfaces[i].ipv6.ipv6_addresses[j].x; \
+		cfg->network_interfaces[i].ipv6.ipv6_addresses[j].__##x##_changed = false; \
+	}
+
+#define UPDATE_IPV6_MADDR_VAL(x)					\
+	if (iface_cfg->ipv6.ipv6_multicast_addresses[j].__##x##_changed) { \
+		cfg->network_interfaces[i].ipv6.ipv6_multicast_addresses[j].x = \
+		net_init_config_user.network_interfaces[i].ipv6.ipv6_multicast_addresses[j].x; \
+		cfg->network_interfaces[i].ipv6.ipv6_multicast_addresses[j].\
+			__##x##_changed = true;				\
+	} else {							\
+		cfg->network_interfaces[i].ipv6.ipv6_multicast_addresses[j].x = \
+			config->network_interfaces[i].ipv6.ipv6_multicast_addresses[j].x; \
+		cfg->network_interfaces[i].ipv6.ipv6_multicast_addresses[j].\
+			__##x##_changed = false;			\
+	}
+
+#define UPDATE_IPV6_PREFIX_VAL(x)					\
+	if (iface_cfg->ipv6.prefixes[j].__##x##_changed) {		\
+		cfg->network_interfaces[i].ipv6.prefixes[j].x =		\
+			net_init_config_user.network_interfaces[i].ipv6.prefixes[j].x; \
+		cfg->network_interfaces[i].ipv6.prefixes[j].__##x##_changed = true; \
+	} else {							\
+		cfg->network_interfaces[i].ipv6.prefixes[j].x =		\
+			config->network_interfaces[i].ipv6.prefixes[j].x; \
+		cfg->network_interfaces[i].ipv6.prefixes[j].__##x##_changed = false; \
+	}
+
+#define UPDATE_IPV6_DHCPV6_VAL(x)					\
+	if (iface_cfg->ipv6.dhcpv6.__##x##_changed) {			\
+		cfg->network_interfaces[i].ipv6.dhcpv6.x =		\
+		net_init_config_user.network_interfaces[i].ipv6.dhcpv6.x; \
+		cfg->network_interfaces[i].ipv6.dhcpv6.__##x##_changed = true; \
+	} else {							\
+		cfg->network_interfaces[i].ipv6.dhcpv6.x =		\
+			config->network_interfaces[i].ipv6.dhcpv6.x;	\
+		cfg->network_interfaces[i].ipv6.dhcpv6.__##x##_changed = false; \
+	}
+
+#define UPDATE_IPV4_VAL(x)						\
+	if (iface_cfg->ipv4.__##x##_changed) {				\
+		cfg->network_interfaces[i].ipv4.x =			\
+			net_init_config_user.network_interfaces[i].ipv4.x; \
+		cfg->network_interfaces[i].ipv4.__##x##_changed = true;	\
+	} else {							\
+		cfg->network_interfaces[i].ipv4.x =			\
+			config->network_interfaces[i].ipv4.x;		\
+		cfg->network_interfaces[i].ipv4.__##x##_changed = false; \
+	}
+
+#define UPDATE_IPV4_ADDR_VAL(x)						\
+	if (iface_cfg->ipv4.ipv4_addresses[j].__##x##_changed) {	\
+		cfg->network_interfaces[i].ipv4.ipv4_addresses[j].x =	\
+			net_init_config_user.network_interfaces[i].ipv4.ipv4_addresses[j].x; \
+		cfg->network_interfaces[i].ipv4.ipv4_addresses[j].__##x##_changed = true; \
+	} else {							\
+		cfg->network_interfaces[i].ipv4.ipv4_addresses[j].x =	\
+			config->network_interfaces[i].ipv4.ipv4_addresses[j].x; \
+		cfg->network_interfaces[i].ipv4.ipv4_addresses[j].__##x##_changed = false; \
+	}
+
+#define UPDATE_IPV4_MADDR_VAL(x) \
+	if (iface_cfg->ipv4.ipv4_multicast_addresses[j].__##x##_changed) {	\
+		cfg->network_interfaces[i].ipv4.ipv4_multicast_addresses[j].x = \
+		net_init_config_user.network_interfaces[i].ipv4.ipv4_multicast_addresses[j].x; \
+		cfg->network_interfaces[i].ipv4.ipv4_multicast_addresses[j].\
+			__##x##_changed = true;				\
+	} else {							\
+		cfg->network_interfaces[i].ipv4.ipv4_multicast_addresses[j].x = \
+			config->network_interfaces[i].ipv4.ipv4_multicast_addresses[j].x; \
+		cfg->network_interfaces[i].ipv4.ipv4_multicast_addresses[j].\
+			__##x##_changed = false;			\
+	}
+
+#define UPDATE_IPV4_DHCPV4_SERVER_VAL(x)				\
+	if (iface_cfg->ipv4.dhcpv4_server.__##x##_changed) {		\
+		cfg->network_interfaces[i].ipv4.dhcpv4_server.x =	\
+			net_init_config_user.network_interfaces[i].ipv4.dhcpv4_server.x; \
+		cfg->network_interfaces[i].ipv4.dhcpv4_server.__##x##_changed = true; \
+	} else {							\
+		cfg->network_interfaces[i].ipv4.dhcpv4_server.x =	\
+			config->network_interfaces[i].ipv4.dhcpv4_server.x; \
+		cfg->network_interfaces[i].ipv4.dhcpv4_server.__##x##_changed = false; \
+	}
+
+#define UPDATE_IFACE_VLAN_VAL(x)					\
+	if (iface_cfg->vlan.__##x##_changed) {				\
+		cfg->network_interfaces[i].vlan.x =			\
+			net_init_config_user.network_interfaces[i].vlan.x; \
+		cfg->network_interfaces[i].vlan.__##x##_changed = true;	\
+	} else {							\
+		cfg->network_interfaces[i].vlan.x =			\
+			config->network_interfaces[i].vlan.x;		\
+		cfg->network_interfaces[i].vlan.__##x##_changed = false; \
+	}
+
+#define UPDATE_IEEE802154_VAL(x)					\
+	if (net_init_config_user.ieee_802_15_4.__##x##_changed) {	\
+		cfg->ieee_802_15_4.x = net_init_config_user.ieee_802_15_4.x; \
+		cfg->ieee_802_15_4.__##x##_changed = true;		\
+	} else {							\
+		cfg->ieee_802_15_4.x = config->ieee_802_15_4.x;		\
+		cfg->ieee_802_15_4.__##x##_changed = false;		\
+	}
+
+#define UPDATE_IEEE802154_SECURITY_KEY_VAL(x)				\
+	if (net_init_config_user.ieee_802_15_4.security_key[0].__##x##_changed) { \
+		cfg->ieee_802_15_4.security_key[0].x =			\
+			net_init_config_user.ieee_802_15_4.security_key[0].x; \
+		cfg->ieee_802_15_4.security_key[0].__##x##_changed = true; \
+	} else {							\
+		cfg->ieee_802_15_4.security_key[0].x =			\
+			config->ieee_802_15_4.security_key[0].x;	\
+		cfg->ieee_802_15_4.security_key[0].__##x##_changed = false; \
+	}
+
+#define UPDATE_SNTP_VAL(x)						\
+	if (net_init_config_user.sntp.__##x##_changed) {		\
+		cfg->sntp.x = net_init_config_user.sntp.x;		\
+		cfg->sntp.__##x##_changed = true;			\
+	} else {							\
+		cfg->sntp.x = config->sntp.x;				\
+		cfg->sntp.__##x##_changed = false;			\
+	}
+
+int net_config_get(struct net_init_config *cfg)
 {
+#if defined(CONFIG_SETTINGS) && defined(CONFIG_SETTINGS_RUNTIME)
 	const struct net_init_config *config;
-	int ret, ifindex;
+	int ret;
+
+	if (cfg == NULL) {
+		return -EINVAL;
+	}
 
 	config = net_config_get_init_config();
 	if (config == NULL) {
-		NET_ERR("Network configuration not found.");
+		NET_ERR("Default network configuration not found.");
+		return -ENOENT;
+	}
+
+	if (!settings_loaded) {
+		settings_load();
+
+		ret = settings_runtime_get(SETTINGS_SUBTREE_NET_CONFIG "/user",
+					   &net_init_config_user,
+					   sizeof(net_init_config_user));
+		if (ret < 0) {
+			NET_ERR("Cannot get user network configuration (%d)", ret);
+			return ret;
+		}
+
+		settings_loaded = true;
+	}
+
+	/* Make a union of the default config and the user modified one and
+	 * return results in cfg pointer.
+	 */
+	ARRAY_FOR_EACH(net_init_config_user.network_interfaces, i) {
+		struct net_init_config_network_interfaces *iface_cfg;
+
+		iface_cfg = &net_init_config_user.network_interfaces[i];
+
+		UPDATE_IFACE_VAL(bind_to);
+		UPDATE_IFACE_VAL(name);
+		UPDATE_IFACE_VAL(device_name);
+		UPDATE_IFACE_VAL(set_name);
+		UPDATE_IFACE_VAL(set_default);
+
+		ARRAY_FOR_EACH(iface_cfg->flags, j) {
+			UPDATE_FLAGS_VAL(value);
+		}
+
+		/* IPv6 config */
+		if (IS_ENABLED(CONFIG_NET_IPV6)) {
+			UPDATE_IPV6_VAL(status);
+			UPDATE_IPV6_VAL(hop_limit);
+			UPDATE_IPV6_VAL(multicast_hop_limit);
+
+			ARRAY_FOR_EACH(iface_cfg->ipv6.ipv6_addresses, j) {
+				UPDATE_IPV6_ADDR_VAL(value);
+			}
+
+			ARRAY_FOR_EACH(iface_cfg->ipv6.ipv6_multicast_addresses, j) {
+				UPDATE_IPV6_MADDR_VAL(value);
+			}
+
+			ARRAY_FOR_EACH(iface_cfg->ipv6.prefixes, j) {
+				UPDATE_IPV6_PREFIX_VAL(address);
+				UPDATE_IPV6_PREFIX_VAL(len);
+				UPDATE_IPV6_PREFIX_VAL(lifetime);
+			}
+
+			if (IS_ENABLED(CONFIG_NET_DHCPV6)) {
+				UPDATE_IPV6_DHCPV6_VAL(status);
+				UPDATE_IPV6_DHCPV6_VAL(do_request_address);
+				UPDATE_IPV6_DHCPV6_VAL(do_request_prefix);
+			}
+		}
+
+		/* IPv4 config */
+		if (IS_ENABLED(CONFIG_NET_IPV4)) {
+			UPDATE_IPV4_VAL(status);
+			UPDATE_IPV4_VAL(time_to_live);
+			UPDATE_IPV4_VAL(multicast_time_to_live);
+			UPDATE_IPV4_VAL(gateway);
+			UPDATE_IPV4_VAL(dhcpv4_enabled);
+			UPDATE_IPV4_VAL(ipv4_autoconf_enabled);
+
+			ARRAY_FOR_EACH(iface_cfg->ipv4.ipv4_addresses, j) {
+				UPDATE_IPV4_ADDR_VAL(value);
+			}
+
+			ARRAY_FOR_EACH(iface_cfg->ipv4.ipv4_multicast_addresses, j) {
+				UPDATE_IPV4_MADDR_VAL(value);
+			}
+
+			if (IS_ENABLED(CONFIG_NET_DHCPV4_SERVER)) {
+				UPDATE_IPV4_DHCPV4_SERVER_VAL(status);
+				UPDATE_IPV4_DHCPV4_SERVER_VAL(base_address);
+			}
+		}
+
+		/* VLAN config */
+		if (IS_ENABLED(CONFIG_NET_VLAN)) {
+			UPDATE_IFACE_VLAN_VAL(status);
+			UPDATE_IFACE_VLAN_VAL(tag);
+		}
+	}
+
+	/* IEEE 802.15.4 config */
+	if (IS_ENABLED(CONFIG_NET_L2_IEEE802154)) {
+		UPDATE_IEEE802154_VAL(status);
+		UPDATE_IEEE802154_VAL(bind_to);
+		UPDATE_IEEE802154_VAL(pan_id);
+		UPDATE_IEEE802154_VAL(channel);
+		UPDATE_IEEE802154_VAL(tx_power);
+		UPDATE_IEEE802154_VAL(security_key_mode);
+		UPDATE_IEEE802154_VAL(security_level);
+		UPDATE_IEEE802154_VAL(ack_required);
+		UPDATE_IEEE802154_SECURITY_KEY_VAL(value);
+	}
+
+	/* SNTP config */
+	if (IS_ENABLED(CONFIG_NET_CONFIG_CLOCK_SNTP_INIT)) {
+		UPDATE_SNTP_VAL(status);
+		UPDATE_SNTP_VAL(bind_to);
+		UPDATE_SNTP_VAL(server);
+		UPDATE_SNTP_VAL(timeout);
+	}
+
+	return 0;
+#else
+	const struct net_init_config *config;
+
+	config = net_config_get_init_config();
+	if (config == NULL) {
+		NET_ERR("Default network configuration not found.");
+		return -ENOENT;
+	}
+
+	memcpy(cfg, config, sizeof(*config));
+
+	return 0;
+#endif /* CONFIG_SETTINGS */
+}
+
+#define SET_IFACE_VAL(x)							\
+	if (net_init_config_user.network_interfaces[i].__##x##_changed == true) { \
+		if (cfg->network_interfaces[i].x != net_init_config_user.	\
+		    network_interfaces[i].x) {					\
+			net_init_config_user.network_interfaces[i].x =		\
+				cfg->network_interfaces[i].x;			\
+		}								\
+	} else if (cfg->network_interfaces[i].__##x##_changed &&		\
+		   cfg->network_interfaces[i].x != config->network_interfaces[i].x) { \
+		net_init_config_user.network_interfaces[i].x = cfg->network_interfaces[i].x; \
+		net_init_config_user.network_interfaces[i].__##x##_changed = true; \
+	}
+
+#define SET_FLAGS_VAL(x)						\
+	if (net_init_config_user.network_interfaces[i].flags[j].__##x##_changed == true) { \
+		if (cfg->network_interfaces[i].flags[j].x != net_init_config_user. \
+		    network_interfaces[i].flags[j].x) {			\
+			net_init_config_user.network_interfaces[i].flags[j].x =	\
+				cfg->network_interfaces[i].flags[j].x;	\
+		}							\
+	} else if (cfg->network_interfaces[i].flags[j].__##x##_changed && \
+		   cfg->network_interfaces[i].flags[j].x !=		\
+		   config->network_interfaces[i].flags[j].x) {		\
+		net_init_config_user.network_interfaces[i].flags[j].x = \
+			cfg->network_interfaces[i].flags[j].x;		\
+		net_init_config_user.network_interfaces[i].flags[j].__##x##_changed = true; \
+	}
+
+#define SET_IPV6_VAL(x)							\
+	if (net_init_config_user.network_interfaces[i].ipv6.__##x##_changed == true) { \
+		if (cfg->network_interfaces[i].ipv6.x != net_init_config_user. \
+		    network_interfaces[i].ipv6.x) {			\
+			net_init_config_user.network_interfaces[i].ipv6.x = \
+				cfg->network_interfaces[i].ipv6.x;	\
+		}							\
+	} else if (cfg->network_interfaces[i].ipv6.__##x##_changed && \
+		   cfg->network_interfaces[i].ipv6.x != config->network_interfaces[i].ipv6.x) { \
+		net_init_config_user.network_interfaces[i].ipv6.x =	\
+			cfg->network_interfaces[i].ipv6.x;		\
+		net_init_config_user.network_interfaces[i].ipv6.__##x##_changed = true; \
+	}
+
+#define SET_IPV6_ADDR_VAL(x)						\
+	if (net_init_config_user.network_interfaces[i].ipv6.ipv6_addresses[j].\
+	    __##x##_changed == true) {					\
+		if (cfg->network_interfaces[i].ipv6.ipv6_addresses[j].x != \
+		    net_init_config_user.network_interfaces[i].ipv6.ipv6_addresses[j].x) { \
+			net_init_config_user.network_interfaces[i].ipv6.ipv6_addresses[j].x = \
+				cfg->network_interfaces[i].ipv6.ipv6_addresses[j].x; \
+		}							\
+	} else if (cfg->network_interfaces[i].ipv6.ipv6_addresses[j].__##x##_changed && \
+		   cfg->network_interfaces[i].ipv6.ipv6_addresses[j].x != \
+		   config->network_interfaces[i].ipv6.ipv6_addresses[j].x) { \
+		net_init_config_user.network_interfaces[i].ipv6.ipv6_addresses[j].x = \
+			cfg->network_interfaces[i].ipv6.ipv6_addresses[j].x; \
+		net_init_config_user.network_interfaces[i].ipv6.ipv6_addresses[j].\
+			__##x##_changed = true;				\
+	}
+
+#define SET_IPV6_MADDR_VAL(x)						\
+	if (net_init_config_user.network_interfaces[i].ipv6.ipv6_multicast_addresses[j].\
+	    __##x##_changed == true) {					\
+		if (cfg->network_interfaces[i].ipv6.ipv6_multicast_addresses[j].x != \
+		    net_init_config_user.network_interfaces[i].ipv6.	\
+		    ipv6_multicast_addresses[j].x) {			\
+			net_init_config_user.network_interfaces[i].ipv6.\
+				ipv6_multicast_addresses[j].x =		\
+			cfg->network_interfaces[i].ipv6.ipv6_multicast_addresses[j].x; \
+		}							\
+	} else if (cfg->network_interfaces[i].ipv6.ipv6_multicast_addresses[j].__##x##_changed && \
+		   cfg->network_interfaces[i].ipv6.ipv6_multicast_addresses[j].x != \
+		   config->network_interfaces[i].ipv6.ipv6_multicast_addresses[j].x) { \
+		net_init_config_user.network_interfaces[i].ipv6.\
+			ipv6_multicast_addresses[j].x =			\
+		cfg->network_interfaces[i].ipv6.ipv6_multicast_addresses[j].x; \
+		net_init_config_user.network_interfaces[i].ipv6.ipv6_multicast_addresses[j].\
+			__##x##_changed = true;				\
+	}
+
+#define SET_IPV6_PREFIX_VAL(x)						\
+	if (net_init_config_user.network_interfaces[i].ipv6.prefixes[j].\
+	    __##x##_changed == true) {					\
+		if (cfg->network_interfaces[i].ipv6.prefixes[j].x !=	\
+		    net_init_config_user.network_interfaces[i].ipv6.prefixes[j].x) { \
+			net_init_config_user.network_interfaces[i].ipv6.prefixes[j].x =	\
+				cfg->network_interfaces[i].ipv6.prefixes[j].x; \
+		}							\
+	} else if (cfg->network_interfaces[i].ipv6.prefixes[j].__##x##_changed && \
+		   cfg->network_interfaces[i].ipv6.prefixes[j].x !=	\
+		   config->network_interfaces[i].ipv6.prefixes[j].x) {	\
+		net_init_config_user.network_interfaces[i].ipv6.prefixes[j].x = \
+			cfg->network_interfaces[i].ipv6.prefixes[j].x;	\
+		net_init_config_user.network_interfaces[i].ipv6.prefixes[j].\
+			__##x##_changed = true;				\
+	}
+
+#define SET_IPV6_DHCPV6_VAL(x)						\
+	if (net_init_config_user.network_interfaces[i].ipv6.dhcpv6.\
+	    __##x##_changed == true) {					\
+		if (cfg->network_interfaces[i].ipv6.dhcpv6.x != \
+		    net_init_config_user.network_interfaces[i].ipv6.dhcpv6.x) {	\
+			net_init_config_user.network_interfaces[i].ipv6.dhcpv6.x = \
+				cfg->network_interfaces[i].ipv6.dhcpv6.x; \
+		}							\
+	} else if (cfg->network_interfaces[i].ipv6.dhcpv6.__##x##_changed &&	\
+		   cfg->network_interfaces[i].ipv6.dhcpv6.x !=		\
+		   config->network_interfaces[i].ipv6.dhcpv6.x) {	\
+		net_init_config_user.network_interfaces[i].ipv6.dhcpv6.x = \
+			cfg->network_interfaces[i].ipv6.dhcpv6.x;	\
+		net_init_config_user.network_interfaces[i].ipv6.dhcpv6.\
+			__##x##_changed = true;			       \
+	}
+
+#define SET_IPV4_VAL(x)							\
+	if (net_init_config_user.network_interfaces[i].ipv4.__##x##_changed == true) { \
+		if (cfg->network_interfaces[i].ipv4.x !=		\
+		    net_init_config_user.network_interfaces[i].ipv4.x) { \
+			net_init_config_user.network_interfaces[i].ipv4.x = \
+				cfg->network_interfaces[i].ipv4.x;	\
+		}							\
+	} else if (cfg->network_interfaces[i].ipv4.__##x##_changed &&	\
+		   cfg->network_interfaces[i].ipv4.x !=			\
+		   config->network_interfaces[i].ipv4.x) {		\
+		net_init_config_user.network_interfaces[i].ipv4.x =	\
+			cfg->network_interfaces[i].ipv4.x;		\
+		net_init_config_user.network_interfaces[i].ipv4.__##x##_changed = true; \
+	}
+
+#define SET_IPV4_ADDR_VAL(x)						\
+	if (net_init_config_user.network_interfaces[i].ipv4.ipv4_addresses[j].\
+	    __##x##_changed == true) {					\
+		if (cfg->network_interfaces[i].ipv4.ipv4_addresses[j].x != \
+		    net_init_config_user.network_interfaces[i].ipv4.ipv4_addresses[j].x) { \
+			net_init_config_user.network_interfaces[i].ipv4.ipv4_addresses[j].x = \
+				cfg->network_interfaces[i].ipv4.ipv4_addresses[j].x; \
+		}							\
+	} else if (cfg->network_interfaces[i].ipv4.ipv4_addresses[j].__##x##_changed &&	\
+		   cfg->network_interfaces[i].ipv4.ipv4_addresses[j].x != \
+		   config->network_interfaces[i].ipv4.ipv4_addresses[j].x) { \
+		net_init_config_user.network_interfaces[i].ipv4.ipv4_addresses[j].x = \
+			cfg->network_interfaces[i].ipv4.ipv4_addresses[j].x; \
+		net_init_config_user.network_interfaces[i].ipv4.ipv4_addresses[j].\
+			__##x##_changed = true;				\
+	}
+
+#define SET_IPV4_MADDR_VAL(x) \
+	if (net_init_config_user.network_interfaces[i].ipv4.ipv4_multicast_addresses[j].\
+	    __##x##_changed == true) {					\
+		if (cfg->network_interfaces[i].ipv4.ipv4_multicast_addresses[j].x != \
+		    net_init_config_user.network_interfaces[i].ipv4.	\
+		    ipv4_multicast_addresses[j].x) {			\
+			net_init_config_user.network_interfaces[i].ipv4.\
+				ipv4_multicast_addresses[j].x =		\
+				cfg->network_interfaces[i].ipv4.ipv4_multicast_addresses[j].x; \
+		}							\
+	} else if (cfg->network_interfaces[i].ipv4.ipv4_multicast_addresses[j].__##x##_changed && \
+		   cfg->network_interfaces[i].ipv4.ipv4_multicast_addresses[j].x != \
+		   config->network_interfaces[i].ipv4.ipv4_multicast_addresses[j].x) { \
+		net_init_config_user.network_interfaces[i].ipv4.ipv4_multicast_addresses[j].x = \
+			cfg->network_interfaces[i].ipv4.ipv4_multicast_addresses[j].x; \
+		net_init_config_user.network_interfaces[i].ipv4.ipv4_multicast_addresses[j].\
+			__##x##_changed = true;				\
+	}
+
+#define SET_IPV4_DHCPV4_SERVER_VAL(x)					\
+	if (net_init_config_user.network_interfaces[i].ipv4.dhcpv4_server. \
+	    __##x##_changed == true) {					\
+		if (cfg->network_interfaces[i].ipv4.dhcpv4_server.x !=	\
+		    net_init_config_user.network_interfaces[i].ipv4.dhcpv4_server.x) { \
+			net_init_config_user.network_interfaces[i].ipv4.dhcpv4_server.x = \
+				cfg->network_interfaces[i].ipv4.dhcpv4_server.x; \
+		}							\
+	} else if (cfg->network_interfaces[i].ipv4.dhcpv4_server.__##x##_changed && \
+		   cfg->network_interfaces[i].ipv4.dhcpv4_server.x !=	\
+		   config->network_interfaces[i].ipv4.dhcpv4_server.x) { \
+		net_init_config_user.network_interfaces[i].ipv4.dhcpv4_server.x = \
+			cfg->network_interfaces[i].ipv4.dhcpv4_server.x; \
+		net_init_config_user.network_interfaces[i].ipv4.dhcpv4_server. \
+			__##x##_changed = true;				\
+	}
+
+#define SET_IFACE_VLAN_VAL(x)						\
+	if (net_init_config_user.network_interfaces[i].vlan.__##x##_changed == true) { \
+		if (cfg->network_interfaces[i].vlan.x != net_init_config_user. \
+		    network_interfaces[i].vlan.x) {			\
+			net_init_config_user.network_interfaces[i].vlan.x = \
+				cfg->network_interfaces[i].vlan.x;	\
+		}							\
+	} else if (cfg->network_interfaces[i].vlan.__##x##_changed &&	\
+		   cfg->network_interfaces[i].vlan.x != config->network_interfaces[i].vlan.x) { \
+		net_init_config_user.network_interfaces[i].vlan.x =	\
+			cfg->network_interfaces[i].vlan.x;		\
+		net_init_config_user.network_interfaces[i].vlan.__##x##_changed = true; \
+	}
+
+#define SET_IEEE802154_VAL(x)						\
+	if (net_init_config_user.ieee_802_15_4.__##x##_changed == true) { \
+		if (cfg->ieee_802_15_4.x != net_init_config_user.ieee_802_15_4.x) { \
+			net_init_config_user.ieee_802_15_4.x = cfg->ieee_802_15_4.x; \
+		}							\
+	} else if (cfg->ieee_802_15_4.__##x##_changed &&		\
+		   cfg->ieee_802_15_4.x != config->ieee_802_15_4.x) {	\
+		net_init_config_user.ieee_802_15_4.x = cfg->ieee_802_15_4.x; \
+		net_init_config_user.ieee_802_15_4.__##x##_changed = true; \
+	}
+
+#define SET_IEEE802154_SECURITY_KEY_VAL(x)				\
+	if (net_init_config_user.ieee_802_15_4.security_key[0].__##x##_changed == true) { \
+		if (cfg->ieee_802_15_4.security_key[0].x !=		\
+		    net_init_config_user.ieee_802_15_4.security_key[0].x) { \
+			net_init_config_user.ieee_802_15_4.security_key[0].x = \
+				cfg->ieee_802_15_4.security_key[0].x;	\
+		}							\
+	} else if (cfg->ieee_802_15_4.security_key[0].__##x##_changed && \
+		   cfg->ieee_802_15_4.security_key[0].x !=		\
+		   config->ieee_802_15_4.security_key[0].x) {		\
+		net_init_config_user.ieee_802_15_4.security_key[0].x =	\
+			cfg->ieee_802_15_4.security_key[0].x;		\
+		net_init_config_user.ieee_802_15_4.security_key[0].__##x##_changed = true; \
+	}
+
+#define SET_SNTP_VAL(x)						   \
+	if (net_init_config_user.sntp.__##x##_changed == true) {   \
+		if (cfg->sntp.x != net_init_config_user.sntp.x) {  \
+			net_init_config_user.sntp.x = cfg->sntp.x; \
+		}						   \
+	} else if (cfg->sntp.__##x##_changed &&			   \
+		   cfg->sntp.x != config->sntp.x) {		   \
+		net_init_config_user.sntp.x = cfg->sntp.x;	   \
+		net_init_config_user.sntp.__##x##_changed = true;  \
+	}
+
+int net_config_set(const struct net_init_config *cfg)
+{
+#if defined(CONFIG_SETTINGS) && defined(CONFIG_SETTINGS_RUNTIME)
+	const struct net_init_config *config;
+	int ret;
+
+	if (cfg == NULL) {
+		return -EINVAL;
+	}
+
+	config = net_config_get_init_config();
+	if (config == NULL) {
+		NET_ERR("Default network configuration not found.");
+		return -ENOENT;
+	}
+
+	/* Save the user modified config */
+	ARRAY_FOR_EACH(config->network_interfaces, i) {
+		const struct net_init_config_network_interfaces *iface_cfg;
+
+		iface_cfg = &config->network_interfaces[i];
+
+		SET_IFACE_VAL(bind_to);
+		SET_IFACE_VAL(name);
+		SET_IFACE_VAL(device_name);
+		SET_IFACE_VAL(set_name);
+		SET_IFACE_VAL(set_default);
+
+		ARRAY_FOR_EACH(iface_cfg->flags, j) {
+			SET_FLAGS_VAL(value);
+		}
+
+		/* IPv6 config */
+		if (IS_ENABLED(CONFIG_NET_IPV6)) {
+			SET_IPV6_VAL(status);
+			SET_IPV6_VAL(hop_limit);
+			SET_IPV6_VAL(multicast_hop_limit);
+
+			ARRAY_FOR_EACH(iface_cfg->ipv6.ipv6_addresses, j) {
+				SET_IPV6_ADDR_VAL(value);
+			}
+
+			ARRAY_FOR_EACH(iface_cfg->ipv6.ipv6_multicast_addresses, j) {
+				SET_IPV6_MADDR_VAL(value);
+			}
+
+			ARRAY_FOR_EACH(iface_cfg->ipv6.prefixes, j) {
+				SET_IPV6_PREFIX_VAL(address);
+				SET_IPV6_PREFIX_VAL(len);
+				SET_IPV6_PREFIX_VAL(lifetime);
+			}
+
+			if (IS_ENABLED(CONFIG_NET_DHCPV6)) {
+				SET_IPV6_DHCPV6_VAL(status);
+				SET_IPV6_DHCPV6_VAL(do_request_address);
+				SET_IPV6_DHCPV6_VAL(do_request_prefix);
+			}
+		}
+
+		/* IPv4 config */
+		if (IS_ENABLED(CONFIG_NET_IPV4)) {
+			SET_IPV4_VAL(status);
+			SET_IPV4_VAL(time_to_live);
+			SET_IPV4_VAL(multicast_time_to_live);
+			SET_IPV4_VAL(gateway);
+			SET_IPV4_VAL(dhcpv4_enabled);
+			SET_IPV4_VAL(ipv4_autoconf_enabled);
+
+			ARRAY_FOR_EACH(iface_cfg->ipv4.ipv4_addresses, j) {
+				SET_IPV4_ADDR_VAL(value);
+			}
+
+			ARRAY_FOR_EACH(iface_cfg->ipv4.ipv4_multicast_addresses, j) {
+				SET_IPV4_MADDR_VAL(value);
+			}
+
+			if (IS_ENABLED(CONFIG_NET_DHCPV4_SERVER)) {
+				SET_IPV4_DHCPV4_SERVER_VAL(status);
+				SET_IPV4_DHCPV4_SERVER_VAL(base_address);
+			}
+		}
+
+		/* VLAN config */
+		if (IS_ENABLED(CONFIG_NET_VLAN)) {
+			SET_IFACE_VLAN_VAL(status);
+			SET_IFACE_VLAN_VAL(tag);
+		}
+	}
+
+	/* IEEE 802.15.4 config */
+	if (IS_ENABLED(CONFIG_NET_L2_IEEE802154)) {
+		SET_IEEE802154_VAL(status);
+		SET_IEEE802154_VAL(bind_to);
+		SET_IEEE802154_VAL(pan_id);
+		SET_IEEE802154_VAL(channel);
+		SET_IEEE802154_VAL(tx_power);
+		SET_IEEE802154_VAL(security_key_mode);
+		SET_IEEE802154_VAL(security_level);
+		SET_IEEE802154_VAL(ack_required);
+		SET_IEEE802154_SECURITY_KEY_VAL(value);
+	}
+
+	/* SNTP config */
+	if (IS_ENABLED(CONFIG_NET_CONFIG_CLOCK_SNTP_INIT)) {
+		SET_SNTP_VAL(status);
+		SET_SNTP_VAL(bind_to);
+		SET_SNTP_VAL(server);
+		SET_SNTP_VAL(timeout);
+	}
+
+	ret = settings_runtime_set(SETTINGS_SUBTREE_NET_CONFIG "/user",
+				   &net_init_config_user, sizeof(net_init_config_user));
+	if (ret < 0) {
+		NET_ERR("Cannot save user network configuration (%d)", ret);
+		return ret;
+	}
+
+	ret = settings_runtime_commit(SETTINGS_SUBTREE_NET_CONFIG);
+	if (ret < 0) {
+		NET_ERR("Cannot commit user network configuration (%d)", ret);
+		return ret;
+	}
+
+	settings_save();
+
+	NET_DBG("Saved user network configuration");
+
+	return 0;
+#else
+	return -ENOTSUP;
+#endif
+}
+
+int net_config_clear(void)
+{
+#if defined(CONFIG_SETTINGS) && defined(CONFIG_SETTINGS_RUNTIME)
+	int ret;
+
+	ret = settings_delete(SETTINGS_SUBTREE_NET_CONFIG "/user");
+	if (ret < 0) {
+		NET_ERR("Cannot clear user network configuration (%d)", ret);
+		return ret;
+	}
+
+	memset(&net_init_config_user, 0, sizeof(net_init_config_user));
+
+	settings_loaded = false;
+
+	ret = settings_runtime_commit(SETTINGS_SUBTREE_NET_CONFIG);
+	if (ret < 0) {
+		NET_ERR("Cannot commit user network configuration (%d)", ret);
+		return ret;
+	}
+
+	settings_save();
+
+	NET_DBG("Cleared user network configuration");
+
+	return 0;
+#else
+	return -ENOTSUP;
+#endif
+}
+
+static int generated_net_config_init_app(const struct device *dev,
+					 const char *app_info)
+{
+	struct net_init_config user_config;
+	struct net_init_config *config = &user_config;
+	int ret, ifindex;
+
+	ret = net_config_get(&user_config);
+	if (ret < 0) {
+		NET_ERR("Network configuration error (%d)", ret);
 		return -ENOENT;
 	}
 
@@ -911,6 +1716,55 @@ static int generated_net_config_init_app(const struct device *dev,
 
 int net_config_init_app(const struct device *dev, const char *app_info)
 {
+#if defined(CONFIG_SETTINGS)
+	int ret;
+
+#if defined(CONFIG_FILE_SYSTEM_LITTLEFS)
+	FS_LITTLEFS_DECLARE_DEFAULT_CONFIG(cstorage);
+
+	/* mounting info */
+	static struct fs_mount_t littlefs_mnt = {
+		.type = FS_LITTLEFS,
+		.fs_data = &cstorage,
+		.storage_dev = (void *)STORAGE_PARTITION_ID,
+		.mnt_point = "/littlefs"
+	};
+
+	ret = fs_mount(&littlefs_mnt);
+	if (ret != 0) {
+		NET_ERR("mounting littlefs error [%d]", ret);
+	} else {
+		ret = fs_unlink(CONFIG_SETTINGS_FILE_PATH);
+		if ((ret != 0) && (ret != -ENOENT)) {
+			NET_ERR("can't delete config file (%d)", ret);
+		} else {
+			NET_DBG("FS initialized OK");
+		}
+	}
+#endif /* CONFIG_FILE_SYSTEM_LITTLEFS */
+
+	ret = settings_subsys_init();
+	if (ret != 0) {
+		NET_ERR("settings subsys initialization fail (%d)", ret);
+		return ret;
+	}
+
+	settings_loaded = false;
+
+	ret = settings_register(&net_config_settings_handler);
+	if (ret == 0) {
+		ret = settings_load_subtree(SETTINGS_SUBTREE_NET_CONFIG);
+		if (ret != 0) {
+			NET_ERR("Settings load failed: %d", ret);
+		} else {
+			NET_DBG("Settings %s loaded", SETTINGS_SUBTREE_NET_CONFIG);
+			settings_loaded = true;
+		}
+	} else {
+		NET_ERR("Settings register failed: %d", ret);
+	}
+#endif /* CONFIG_SETTINGS */
+
 	return generated_net_config_init_app(dev, app_info);
 }
 
