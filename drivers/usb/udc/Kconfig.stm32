@@ -9,6 +9,7 @@ config UDC_STM32
 	select USE_STM32_LL_USB
 	select USE_STM32_HAL_PCD
 	select USE_STM32_HAL_PCD_EX
+	select UDC_DRIVER_HAS_HIGH_SPEED_SUPPORT if DT_HAS_ST_STM32_OTGHS_ENABLED
 	select PINCTRL
 	default y
 	help
