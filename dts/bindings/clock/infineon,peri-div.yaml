@@ -1,31 +1,33 @@
-# Copyright (c) 2025 Cypress Semiconductor Corporation (an Infineon company) or
-# an affiliate of Cypress Semiconductor Corporation
+# Copyright (c) 2025 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
 #
 # SPDX-License-Identifier: Apache-2.0
 
-description: infineon cat1 peripheral divider 8bit.
+description: infineon peripheral divider
 
-compatible: "infineon,cat1-peri-div"
+compatible: "infineon,peri-div"
 
 include: [clock-controller.yaml, base.yaml]
 
 properties:
-  clk-dst:
+  peri-group:
     type: uint8-array
     description: |
-      Clock Connections. PDL uses the target IP to identify the peri group
+      Peri instance and group of given peripheral divider:
+      peri0_group1_... : peri-group = [00 01]
+      peri1_group3_... : peri-group = [01 03]
 
   div-type:
     type: int
     description: |
-      Clock divider type.
+      Programmable clock divider types: DIV_8_BIT, DIV_16_BIT, DIV_16_5_BIT, DIV_24_5_BIT
 
-  div-num:
+  channel:
     type: int
     description: |
-     Programmable clock divider types: DIV_8_BIT, DIV_16_BIT, DIV_16_5_BIT, DIV_24_5_BIT
+      Channel of given peripheral divider.
 
-  div-value:
+  clock-div:
     type: int
     description: |
       For non-fractional clock dividers (div-type: DIV_8_BIT, DIV_16_BIT)
@@ -45,11 +47,19 @@ properties:
       it divides the clock by 1/32 for each count. To divide the clock by 11/32nds
       set this value to 11.
 
-  scb-block:
+  resource-type:
     type: int
     required: true
     description: |
-      SCB device instance peripheral clock is assigned to:
-      &scb0 : scb-block = <0>
-      &scb3 : scb-block = <3>
-      &scb5 : scb-block = <5>
+      Resource type that the peripheral clock is assigned to:
+      &scb3     : resource-type = IFX_RSC_SCB
+      &tcpwm0_0 : resource-type = IFX_RSC_TCPWM
+
+  resource-instance:
+    type: int
+    required: true
+    description: |
+      Resource instance that the peripheral clock is assigned to:
+      &scb0 : resource-instance = <0>
+      &scb3 : resource-instance = <3>
+      &scb5 : resource-instance = <5>
