@@ -114,10 +114,13 @@ static int iis3dwb_attr_set(const struct device *dev, enum sensor_channel chan,
 	return 0;
 }
 
-static void iis3dwb_one_shot_complete_cb(struct rtio *ctx, const struct rtio_sqe *sqe, void *arg)
+static void iis3dwb_one_shot_complete_cb(struct rtio *ctx, const struct rtio_sqe *sqe, int result,
+					 void *arg)
 {
 	struct rtio_iodev_sqe *iodev_sqe = (struct rtio_iodev_sqe *)sqe->userdata;
 	int err = 0;
+
+	ARG_UNUSED(result);
 
 	err = rtio_flush_completion_queue(ctx);
 
