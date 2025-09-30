@@ -39,8 +39,9 @@ uart3: &scb3 {
 
 &peri0_group4_8bit_0 {
 	status = "okay";
-	scb-block = <3>;
-	div-value = <109>;
+	resource-type = <IFX_RSC_SCB>;
+	resource-instance = <3>;
+	clock-div = <109>;
 };
 
 &path_mux0 {
