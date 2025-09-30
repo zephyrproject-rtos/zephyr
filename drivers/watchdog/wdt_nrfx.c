@@ -121,10 +121,10 @@ static int wdt_nrf_install_timeout(const struct device *dev,
 		 * in all nRF chips can use reload values (determining
 		 * the timeout) from range 0xF-0xFFFFFFFF given in 32768 Hz
 		 * clock ticks. This makes the allowed range of 0x1-0x07CFFFFF
-		 * in milliseconds. Check if the provided value is within
-		 * this range.
+		 * in milliseconds, defined using NRF_WDT_RR_VALUE_MS symbol.
+		 * Check if the provided value is within this range.
 		 */
-		if ((cfg->window.max == 0U) || (cfg->window.max > 0x07CFFFFF)) {
+		if ((cfg->window.max == 0U) || (cfg->window.max > NRF_WDT_RR_VALUE_MS)) {
 			return -EINVAL;
 		}
 
