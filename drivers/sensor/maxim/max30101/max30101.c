@@ -24,7 +24,7 @@ static int max30101_sample_fetch(const struct device *dev,
 	int i;
 
 	/* Read all the active channels for one sample */
-	num_bytes = data->num_channels * MAX30101_BYTES_PER_CHANNEL;
+	num_bytes = data->total_channels * MAX30101_BYTES_PER_CHANNEL;
 	if (i2c_burst_read_dt(&config->i2c, MAX30101_REG_FIFO_DATA, buffer,
 			      num_bytes)) {
 		LOG_ERR("Could not fetch sample");
@@ -36,11 +36,26 @@ static int max30101_sample_fetch(const struct device *dev,
 		/* Each channel is 18-bits */
 		fifo_data = (buffer[i] << 16) | (buffer[i + 1] << 8) |
 			    (buffer[i + 2]);
-		fifo_data &= MAX30101_FIFO_DATA_MASK;
+		fifo_data = (fifo_data & MAX30101_FIFO_DATA_MASK) >> config->data_shift;
 
 		/* Save the raw data */
 		data->raw[fifo_chan++] = fifo_data;
 	}
+
+#if CONFIG_MAX30101_DIE_TEMPERATURE
+	/* Read the die temperature */
+	if (i2c_burst_read_dt(&config->i2c, MAX30101_REG_TINT, buffer, 2)) {
+		LOG_ERR("Could not fetch die temperature");
+		return -EIO;
+	}
+
+	/* Save the raw data */
+	data->die_temp[0] = buffer[0];
+	data->die_temp[1] = buffer[1];
+	if (i2c_reg_write_byte_dt(&config->i2c, MAX30101_REG_TEMP_CFG, 1)) {
+		return -EIO;
+	}
+#endif /* CONFIG_MAX30101_DIE_TEMPERATURE */
 
 	return 0;
 }
@@ -66,6 +81,13 @@ static int max30101_channel_get(const struct device *dev,
 		led_chan = MAX30101_LED_CHANNEL_GREEN;
 		break;
 
+#if CONFIG_MAX30101_DIE_TEMPERATURE
+	case SENSOR_CHAN_DIE_TEMP:
+		val->val1 = data->die_temp[0];
+		val->val2 = (1000000 * data->die_temp[1]) >> MAX30101_TEMP_FRAC_SHIFT;
+		return 0;
+#endif /* CONFIG_MAX30101_DIE_TEMPERATURE */
+
 	default:
 		LOG_ERR("Unsupported sensor channel");
 		return -ENOTSUP;
@@ -75,14 +97,19 @@ static int max30101_channel_get(const struct device *dev,
 	 * channel. If the fifo channel isn't valid, then the led channel
 	 * isn't active.
 	 */
-	fifo_chan = data->map[led_chan];
-	if (fifo_chan >= MAX30101_MAX_NUM_CHANNELS) {
+	fifo_chan = data->num_channels[led_chan];
+	if (!fifo_chan) {
 		LOG_ERR("Inactive sensor channel");
 		return -ENOTSUP;
 	}
 
+	val->val1 = 0;
+	for (fifo_chan = 0; fifo_chan < data->num_channels[led_chan]; fifo_chan++) {
+		val->val1 += data->raw[data->map[led_chan][fifo_chan]];
+	}
+
 	/* TODO: Scale the raw data to standard units */
-	val->val1 = data->raw[fifo_chan];
+	val->val1 /= data->num_channels[led_chan];
 	val->val2 = 0;
 
 	return 0;
@@ -96,45 +123,9 @@ static DEVICE_API(sensor, max30101_driver_api) = {
 #endif
 };
 
-static int max30101_init(const struct device *dev)
+static int max30101_configure(const struct device *dev)
 {
 	const struct max30101_config *config = dev->config;
-	struct max30101_data *data = dev->data;
-	uint8_t part_id;
-	uint8_t mode_cfg;
-	uint32_t led_chan;
-
-	if (!device_is_ready(config->i2c.bus)) {
-		LOG_ERR("Bus device is not ready");
-		return -ENODEV;
-	}
-
-	/* Check the part id to make sure this is MAX30101 */
-	if (i2c_reg_read_byte_dt(&config->i2c, MAX30101_REG_PART_ID,
-				 &part_id)) {
-		LOG_ERR("Could not get Part ID");
-		return -EIO;
-	}
-	if (part_id != MAX30101_PART_ID) {
-		LOG_ERR("Got Part ID 0x%02x, expected 0x%02x",
-			    part_id, MAX30101_PART_ID);
-		return -EIO;
-	}
-
-	/* Reset the sensor */
-	if (i2c_reg_write_byte_dt(&config->i2c, MAX30101_REG_MODE_CFG,
-				  MAX30101_MODE_CFG_RESET_MASK)) {
-		return -EIO;
-	}
-
-	/* Wait for reset to be cleared */
-	do {
-		if (i2c_reg_read_byte_dt(&config->i2c, MAX30101_REG_MODE_CFG,
-					 &mode_cfg)) {
-			LOG_ERR("Could read mode cfg after reset");
-			return -EIO;
-		}
-	} while (mode_cfg & MAX30101_MODE_CFG_RESET_MASK);
 
 	/* Write the FIFO configuration register */
 	if (i2c_reg_write_byte_dt(&config->i2c, MAX30101_REG_FIFO_CFG,
@@ -186,6 +177,12 @@ static int max30101_init(const struct device *dev)
 		}
 	}
 
+#if CONFIG_MAX30101_DIE_TEMPERATURE
+	if (i2c_reg_write_byte_dt(&config->i2c, MAX30101_REG_TEMP_CFG, 1)) {
+		return -EIO;
+	}
+#endif /* CONFIG_MAX30101_DIE_TEMPERATURE */
+
 #if CONFIG_MAX30101_TRIGGER
 	if (max30101_init_interrupts(dev)) {
 		LOG_ERR("Failed to initialize interrupts");
@@ -193,10 +190,48 @@ static int max30101_init(const struct device *dev)
 	}
 #endif
 
-	/* Initialize the channel map and active channel count */
-	data->num_channels = 0U;
-	for (led_chan = 0U; led_chan < MAX30101_MAX_NUM_CHANNELS; led_chan++) {
-		data->map[led_chan] = MAX30101_MAX_NUM_CHANNELS;
+	return 0;
+}
+
+static int max30101_init(const struct device *dev)
+{
+	const struct max30101_config *config = dev->config;
+	struct max30101_data *data = dev->data;
+	uint8_t part_id;
+	uint8_t mode_cfg;
+	uint32_t led_chan;
+
+	if (!device_is_ready(config->i2c.bus)) {
+		LOG_ERR("Bus device is not ready");
+		return -ENODEV;
+	}
+
+	/* Check the part id to make sure this is MAX30101 */
+	if (i2c_reg_read_byte_dt(&config->i2c, MAX30101_REG_PART_ID, &part_id)) {
+		LOG_ERR("Could not get Part ID");
+		return -EIO;
+	}
+	if (part_id != MAX30101_PART_ID) {
+		LOG_ERR("Got Part ID 0x%02x, expected 0x%02x", part_id, MAX30101_PART_ID);
+		return -EIO;
+	}
+
+	/* Reset the sensor */
+	if (i2c_reg_write_byte_dt(&config->i2c, MAX30101_REG_MODE_CFG,
+				  MAX30101_MODE_CFG_RESET_MASK)) {
+		return -EIO;
+	}
+
+	/* Wait for reset to be cleared */
+	do {
+		if (i2c_reg_read_byte_dt(&config->i2c, MAX30101_REG_MODE_CFG, &mode_cfg)) {
+			LOG_ERR("Could read mode cfg after reset");
+			return -EIO;
+		}
+	} while (mode_cfg & MAX30101_MODE_CFG_RESET_MASK);
+
+	if (max30101_configure(dev)) {
+		return -EIO;
 	}
 
 	/* Count the number of active channels and build a map that translates
@@ -204,10 +239,18 @@ static int max30101_init(const struct device *dev)
 	 */
 	for (int fifo_chan = 0; fifo_chan < MAX30101_MAX_NUM_CHANNELS; fifo_chan++) {
 		led_chan = (config->slot[fifo_chan] & MAX30101_SLOT_LED_MASK) - 1;
-		if (led_chan < MAX30101_MAX_NUM_CHANNELS) {
-			data->map[led_chan] = fifo_chan;
-			data->num_channels++;
+		if (led_chan >= MAX30101_MAX_NUM_CHANNELS) {
+			continue;
 		}
+
+		for (int i = 0; i < MAX30101_MAX_NUM_CHANNELS; i++) {
+			if (data->map[led_chan][i] == MAX30101_MAX_NUM_CHANNELS) {
+				data->map[led_chan][i] = fifo_chan;
+				data->num_channels[led_chan]++;
+				break;
+			}
+		}
+		data->total_channels++;
 	}
 
 	return 0;
@@ -242,10 +285,15 @@ static int max30101_init(const struct device *dev)
 			(DT_INST_ENUM_IDX(n, led_pw) << MAX30101_SPO2_PW_SHIFT),                   \
 		.led_pa = DT_INST_PROP(n, led_pa),                                                 \
 		.slot = MAX30101_SLOT_CFG(n),                                                      \
+		.data_shift = MAX30101_FIFO_DATA_MAX_SHIFT - DT_INST_ENUM_IDX(n, led_pw),          \
 		IF_ENABLED(CONFIG_MAX30101_TRIGGER, \
 			(.irq_gpio = GPIO_DT_SPEC_INST_GET_OR(n, irq_gpios, {0}),) \
 		) };              \
-	static struct max30101_data max30101_data_##n;                                             \
+	static struct max30101_data max30101_data_##n = {                                          \
+		.map = {{3, 3, 3}, {3, 3, 3}, {3, 3, 3}},                                          \
+		.num_channels = {0, 0, 0},                                                         \
+		.total_channels = 0,                                                               \
+	};                                                                                         \
 	SENSOR_DEVICE_DT_INST_DEFINE(n, max30101_init, NULL, &max30101_data_##n,                   \
 				     &max30101_config_##n, POST_KERNEL,                            \
 				     CONFIG_SENSOR_INIT_PRIORITY, &max30101_driver_api);
