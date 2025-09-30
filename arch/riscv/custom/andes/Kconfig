@@ -10,7 +10,9 @@ config RISCV_CUSTOM_CSR_ANDES_EXECIT
 	bool "Andes V5 EXEC.IT extension"
 	depends on CPU_HAS_ANDES_EXECIT
 	depends on RISCV_ISA_EXT_C
-	depends on !RISCV_GENERIC_TOOLCHAIN
+	depends on "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "andes" || \
+		"$(ZEPHYR_TOOLCHAIN_VARIANT)" = "andes-clang" || \
+		"$(ZEPHYR_TOOLCHAIN_VARIANT)" = "cross-compile"
 	depends on !LINKER_USE_NO_RELAX
 	help
 	  The EXEC.IT extension (Execution on Instruction Table) generate
@@ -32,7 +34,9 @@ config CPU_HAS_ANDES_HWDSP
 config RISCV_CUSTOM_CSR_ANDES_HWDSP
 	bool "AndeStar V5 DSP ISA"
 	depends on CPU_HAS_ANDES_HWDSP
-	depends on !RISCV_GENERIC_TOOLCHAIN
+	depends on "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "andes" || \
+		"$(ZEPHYR_TOOLCHAIN_VARIANT)" = "andes-clang" || \
+		"$(ZEPHYR_TOOLCHAIN_VARIANT)" = "cross-compile"
 	help
 	  This option enables the AndeStar v5 hardware DSP, in order to
 	  support using the DSP instructions.
