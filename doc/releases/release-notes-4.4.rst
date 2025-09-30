@@ -259,6 +259,7 @@ New APIs and options
 
   * :kconfig:option:`SSD1325_DEFAULT_CONTRAST`
   * :kconfig:option:`SSD1325_CONV_BUFFER_LINES`
+  * :kconfig:option:`CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_XRGB_8888`
 
 * Ethernet
 

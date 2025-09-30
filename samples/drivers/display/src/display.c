@@ -287,6 +287,7 @@ int sample_display_draw(void)
 	}
 
 	switch (capabilities.current_pixel_format) {
+	case PIXEL_FORMAT_XRGB_8888:
 	case PIXEL_FORMAT_ARGB_8888:
 		bg_color = 0xFFu;
 		fill_buffer_fnc = fill_buffer_argb8888;
