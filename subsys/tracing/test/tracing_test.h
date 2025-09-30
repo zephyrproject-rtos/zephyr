@@ -745,6 +745,13 @@ void sys_trace_k_timer_status_sync_blocking(struct k_timer *timer);
 void sys_trace_k_timer_status_sync_exit(struct k_timer *timer, uint32_t result);
 
 void sys_trace_k_event_init(struct k_event *event);
+void sys_trace_k_event_post_enter(struct k_event *event, uint32_t events, uint32_t events_mask);
+void sys_trace_k_event_post_exit(struct k_event *event, uint32_t events, uint32_t events_mask);
+void sys_trace_k_event_wait_enter(struct k_event *event, uint32_t events, unsigned int options,
+				  k_timeout_t timeout);
+void sys_trace_k_event_wait_blocking(struct k_event *event, uint32_t events, unsigned int options,
+				     k_timeout_t timeout);
+void sys_trace_k_event_wait_exit(struct k_event *event, uint32_t events, uint32_t ret);
 
 #define sys_port_trace_socket_init(sock, family, type, proto)
 #define sys_port_trace_socket_close_enter(sock)
