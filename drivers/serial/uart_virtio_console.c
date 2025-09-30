@@ -140,10 +140,12 @@ struct virtconsole_data {
 static uint16_t virtconsole_enum_queues_cb(uint16_t q_index, uint16_t q_size_max, void *)
 {
 	switch (q_index) {
+#ifdef CONFIG_UART_VIRTIO_CONSOLE_F_MULTIPORT
 	case VIRTQ_CONTROL_RX:
 		return CONFIG_UART_VIRTIO_CONSOLE_RX_CONTROL_BUFSIZE;
 	case VIRTQ_CONTROL_TX:
 		return CONFIG_UART_VIRTIO_CONSOLE_TX_CONTROL_BUFSIZE;
+#endif
 	default:
 		return 1;
 	}
