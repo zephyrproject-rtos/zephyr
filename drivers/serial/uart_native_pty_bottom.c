@@ -139,7 +139,7 @@ int np_uart_open_pty(const char *uart_name, const char *auto_attach_cmd,
 	int ret;
 	int flags;
 
-	master_pty = posix_openpt(O_RDWR | O_NOCTTY);
+	master_pty = posix_openpt(O_RDWR | O_NOCTTY | O_CLOEXEC);
 	if (master_pty == -1) {
 		ERROR("Could not open a new PTY for the UART\n");
 	}
@@ -214,7 +214,7 @@ int np_uart_open_pty(const char *uart_name, const char *auto_attach_cmd,
 		 * The connection of the client would cause the HUP flag to be
 		 * cleared, and in turn set again at disconnect.
 		 */
-		ret = open(slave_pty_name, O_RDWR | O_NOCTTY);
+		ret = open(slave_pty_name, O_RDWR | O_NOCTTY | O_CLOEXEC);
 		if (ret == -1) {
 			err_nbr = errno;
 			ERROR("%s: Could not open terminal from the slave side (%i,%s)\n",
