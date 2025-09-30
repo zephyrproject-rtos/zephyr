@@ -4684,3 +4684,18 @@ int bt_bap_unicast_client_register_cb(struct bt_bap_unicast_client_cb *cb)
 
 	return 0;
 }
+
+int bt_bap_unicast_client_unregister_cb(struct bt_bap_unicast_client_cb *cb)
+{
+	if (cb == NULL) {
+		LOG_DBG("cb was NULL");
+		return -EINVAL;
+	}
+
+	if (!sys_slist_find_and_remove(&unicast_client_cbs, &cb->_node)) {
+		LOG_DBG("cb was not registered");
+		return -EALREADY;
+	}
+
+	return 0;
+}
