@@ -359,7 +359,7 @@
 			interrupts = <85 0>;
 			interrupt-names = "dcmi";
 			clocks = <&rcc STM32_CLOCK(AHB2, 14)>;
-			dmas = <&dma1 0 91 (STM32_DMA_PERIPH_TO_MEMORY | STM32_DMA_PERIPH_NO_INC |
+			dmas = <&dma1 1 91 (STM32_DMA_PERIPH_TO_MEMORY | STM32_DMA_PERIPH_NO_INC |
 				STM32_DMA_MEM_INC | STM32_DMA_PERIPH_8BITS | STM32_DMA_MEM_32BITS |
 				STM32_DMA_PRIORITY_HIGH) STM32_DMA_FIFO_1_4>;
 			status = "disabled";
