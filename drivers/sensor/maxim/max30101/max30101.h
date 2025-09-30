@@ -55,6 +55,9 @@
 
 #define MAX30101_FIFO_DATA_BITS		18
 #define MAX30101_FIFO_DATA_MASK		((1 << MAX30101_FIFO_DATA_BITS) - 1)
+#define MAX30101_FIFO_DATA_MAX_SHIFT    3
+
+#define MAX30101_TEMP_FRAC_SHIFT 4
 
 #if CONFIG_MAX30101_TRIGGER
 #define MAX30101_SUPPORTED_INTERRUPTS 4 /* FIFO_FULL | PPG | ALC | TEMP */
@@ -121,6 +124,7 @@ struct max30101_config {
 	uint8_t led_pa[MAX30101_MAX_NUM_CHANNELS];
 	uint8_t mode;
 	uint8_t slot[4];
+	uint8_t data_shift;
 #if CONFIG_MAX30101_TRIGGER
 	const struct gpio_dt_spec irq_gpio;
 #endif
@@ -128,8 +132,12 @@ struct max30101_config {
 
 struct max30101_data {
 	uint32_t raw[MAX30101_MAX_NUM_CHANNELS];
-	uint8_t map[MAX30101_MAX_NUM_CHANNELS];
-	uint8_t num_channels;
+	uint8_t map[MAX30101_MAX_NUM_CHANNELS][MAX30101_MAX_NUM_CHANNELS];
+	uint8_t num_channels[MAX30101_MAX_NUM_CHANNELS];
+	uint8_t total_channels;
+#if CONFIG_MAX30101_DIE_TEMPERATURE
+	uint8_t die_temp[2];
+#endif /* CONFIG_MAX30101_DIE_TEMPERATURE */
 #if CONFIG_MAX30101_TRIGGER
 	const struct device *dev;
 	struct gpio_callback gpio_cb;
