@@ -40,6 +40,7 @@
  */
 const struct flash_area default_flash_map[] = {
 	DT_FOREACH_STATUS_OKAY(fixed_partitions, FOREACH_PARTITION)
+	DT_FOREACH_STATUS_OKAY(fixed_subpartitions, FOREACH_PARTITION)
 };
 
 const int flash_map_entries = ARRAY_SIZE(default_flash_map);
@@ -63,11 +64,11 @@ const struct flash_area *flash_map = default_flash_map;
 #define FOR_EACH_PARTITION_TABLE(table) DT_FOREACH_CHILD(table, DEFINE_PARTITION)
 DT_FOREACH_STATUS_OKAY(fixed_partitions, FOR_EACH_PARTITION_TABLE)
 
-#define DEFINE_SUB_PARTITION(part) DEFINE_SUB_PARTITION_1(part, DT_DEP_ORD(part))
-#define DEFINE_SUB_PARTITION_1(part, ord)							\
+#define DEFINE_SUBPARTITION(part) DEFINE_SUBPARTITION_1(part, DT_DEP_ORD(part))
+#define DEFINE_SUBPARTITION_1(part, ord)							\
 	COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(DT_MTD_FROM_FIXED_SUBPARTITION(part)),		\
-		(DEFINE_SUB_PARTITION_0(part, ord)), ())
-#define DEFINE_SUB_PARTITION_0(part, ord)							\
+		(DEFINE_SUBPARTITION_0(part, ord)), ())
+#define DEFINE_SUBPARTITION_0(part, ord)							\
 	const struct flash_area DT_CAT(global_fixed_subpartition_ORD_, ord) = {			\
 		.fa_id = DT_FIXED_PARTITION_ID(part),						\
 		.fa_off = DT_REG_ADDR(part),							\
@@ -75,5 +76,5 @@ DT_FOREACH_STATUS_OKAY(fixed_partitions, FOR_EACH_PARTITION_TABLE)
 		.fa_size = DT_REG_SIZE(part),							\
 	};
 
-#define FOR_EACH_SUB_PARTITION_TABLE(table) DT_FOREACH_CHILD(table, DEFINE_SUB_PARTITION)
-DT_FOREACH_STATUS_OKAY(fixed_subpartitions, FOR_EACH_SUB_PARTITION_TABLE)
+#define FOR_EACH_SUBPARTITION_TABLE(table) DT_FOREACH_CHILD(table, DEFINE_SUBPARTITION)
+DT_FOREACH_STATUS_OKAY(fixed_subpartitions, FOR_EACH_SUBPARTITION_TABLE)
