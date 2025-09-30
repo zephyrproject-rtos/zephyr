@@ -959,51 +959,6 @@ config NRFX_USBREG
 config NRFX_WDT
 	bool
 
-config NRFX_WDT0
-	bool "WDT0 driver instance"
-	depends on $(dt_nodelabel_exists,wdt0)
-	select NRFX_WDT
-
-config NRFX_WDT1
-	bool "WDT1 driver instance"
-	depends on $(dt_nodelabel_exists,wdt1)
-	select NRFX_WDT
-
-config NRFX_WDT30
-	bool "WDT30 driver instance"
-	depends on $(dt_nodelabel_exists,wdt30)
-	select NRFX_WDT
-
-config NRFX_WDT31
-	bool "WDT31 driver instance"
-	depends on $(dt_nodelabel_exists,wdt31)
-	select NRFX_WDT
-
-config NRFX_WDT010
-	bool "WDT010 driver instance"
-	depends on $(dt_nodelabel_exists,wdt010)
-	select NRFX_WDT
-
-config NRFX_WDT011
-	bool "WDT011 driver instance"
-	depends on $(dt_nodelabel_exists,wdt011)
-	select NRFX_WDT
-
-config NRFX_WDT130
-	bool "WDT130 driver instance"
-	depends on $(dt_nodelabel_exists,wdt130)
-	select NRFX_WDT
-
-config NRFX_WDT131
-	bool "WDT131 driver instance"
-	depends on $(dt_nodelabel_exists,wdt131)
-	select NRFX_WDT
-
-config NRFX_WDT132
-	bool "WDT132 driver instance"
-	depends on $(dt_nodelabel_exists,wdt132)
-	select NRFX_WDT
-
 menu "Peripheral Resource Sharing module"
 
 config NRFX_PRS
