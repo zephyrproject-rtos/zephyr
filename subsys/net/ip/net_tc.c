@@ -157,7 +157,7 @@ int net_rx_priority2tc(enum net_priority prio)
 #define BASE_PRIO_TX (CONFIG_NET_TC_TX_COUNT - 1)
 #endif
 
-#define PRIO_TX(i, _) (BASE_PRIO_TX - i)
+#define PRIO_TX(i, _) (BASE_PRIO_TX - 2 * i)
 
 #if defined(CONFIG_NET_TC_THREAD_PRIO_CUSTOM)
 #define BASE_PRIO_RX CONFIG_NET_TC_RX_THREAD_BASE_PRIO
@@ -167,7 +167,7 @@ int net_rx_priority2tc(enum net_priority prio)
 #define BASE_PRIO_RX (CONFIG_NET_TC_RX_COUNT - 1)
 #endif
 
-#define PRIO_RX(i, _) (BASE_PRIO_RX - i)
+#define PRIO_RX(i, _) (BASE_PRIO_RX - 2 * i)
 
 #if NET_TC_TX_COUNT > 0
 /* Convert traffic class to thread priority */
