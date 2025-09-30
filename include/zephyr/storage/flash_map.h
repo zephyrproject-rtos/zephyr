@@ -349,14 +349,17 @@ const char *flash_area_label(const struct flash_area *fa);
 uint8_t flash_area_erased_val(const struct flash_area *fa);
 
 /**
- * Returns non-0 value if fixed-partition of given DTS node label exists.
+ * Returns non-0 value if fixed-partition or fixed-subpartition of given
+ * DTS node label exists.
  *
  * @param label DTS node label
  *
  * @return non-0 if fixed-partition node exists and is enabled;
  *	   0 if node does not exist, is not enabled or is not fixed-partition.
  */
-#define FIXED_PARTITION_EXISTS(label) DT_FIXED_PARTITION_EXISTS(DT_NODELABEL(label))
+#define FIXED_PARTITION_EXISTS(label) \
+	UTIL_OR(DT_FIXED_PARTITION_EXISTS(DT_NODELABEL(label)), \
+		DT_FIXED_SUBPARTITION_EXISTS(DT_NODELABEL(label)))
 
 /**
  * Get flash area ID from fixed-partition DTS node label
@@ -368,13 +371,37 @@ uint8_t flash_area_erased_val(const struct flash_area *fa);
 #define FIXED_PARTITION_ID(label) DT_FIXED_PARTITION_ID(DT_NODELABEL(label))
 
 /**
- * Get fixed-partition offset from DTS node label
+ * Get fixed-partition or fixed-subpartition offset from DTS node label
  *
  * @param label DTS node label of a partition
  *
  * @return fixed-partition offset, as defined for the partition in DTS.
  */
 #define FIXED_PARTITION_OFFSET(label) DT_REG_ADDR(DT_NODELABEL(label))
+
+/**
+ * Get fixed-partition or fixed-subpartition address from DTS node label
+ *
+ * @param label DTS node label of a partition or subpartition
+ *
+ * @return fixed-partition address, as defined for the partition in DTS.
+ */
+#define FIXED_PARTITION_ADDRESS(label) \
+	(COND_CODE_1(DT_FIXED_SUBPARTITION_EXISTS(DT_NODELABEL(label)), \
+		(DT_FIXED_SUBPARTITION_ADDR(DT_NODELABEL(label))), \
+		(DT_FIXED_PARTITION_ADDR(DT_NODELABEL(label)))))
+
+/**
+ * Get fixed-partition or fixed-subpartition address from DTS node
+ *
+ * @param node DTS node of a partition
+ *
+ * @return fixed-partition address, as defined for the partition in DTS.
+ */
+#define FIXED_PARTITION_NODE_ADDRESS(node) \
+	(COND_CODE_1(DT_FIXED_SUBPARTITION_EXISTS(node), \
+		(DT_FIXED_SUBPARTITION_ADDR(node)), \
+		(DT_FIXED_PARTITION_ADDR(node))))
 
 /**
  * Get fixed-partition offset from DTS node
@@ -421,8 +448,10 @@ uint8_t flash_area_erased_val(const struct flash_area *fa);
  * @return Pointer to a device.
  */
 #define FIXED_PARTITION_DEVICE(label) \
-	DEVICE_DT_GET(DT_MTD_FROM_FIXED_PARTITION(DT_NODELABEL(label)))
-
+	DEVICE_DT_GET(COND_CODE_1( \
+		DT_FIXED_SUBPARTITION_EXISTS(DT_NODELABEL(label)), \
+			(DT_MTD_FROM_FIXED_SUBPARTITION(DT_NODELABEL(label))), \
+			(DT_MTD_FROM_FIXED_PARTITION(DT_NODELABEL(label)))))
 /**
  * Get device pointer for device the area/partition resides on
  *
@@ -431,7 +460,10 @@ uint8_t flash_area_erased_val(const struct flash_area *fa);
  * @return Pointer to a device.
  */
 #define FIXED_PARTITION_NODE_DEVICE(node) \
-	DEVICE_DT_GET(DT_MTD_FROM_FIXED_PARTITION(node))
+	DEVICE_DT_GET(COND_CODE_1( \
+		DT_FIXED_SUBPARTITION_EXISTS(node), \
+			(DT_MTD_FROM_FIXED_SUBPARTITION(node)), \
+			(DT_MTD_FROM_FIXED_PARTITION(node))))
 
 /**
  * Get pointer to flash_area object by partition label
@@ -467,6 +499,22 @@ DT_FOREACH_STATUS_OKAY(fixed_partitions, FOR_EACH_PARTITION_TABLE)
 #undef DECLARE_PARTITION
 #undef DECLARE_PARTITION_0
 #undef FOR_EACH_PARTITION_TABLE
+
+#define FIXED_SUBPARTITION_1(node) FIXED_SUBPARTITION_0(DT_DEP_ORD(node))
+#define FIXED_SUBPARTITION_0(ord)						\
+	((const struct flash_area *)&DT_CAT(global_fixed_subpartition_ORD_, ord))
+
+#define DECLARE_SUBPARTITION(node) DECLARE_SUBPARTITION_0(DT_DEP_ORD(node))
+#define DECLARE_SUBPARTITION_0(ord)						\
+	extern const struct flash_area DT_CAT(global_fixed_subpartition_ORD_, ord);
+#define FOR_EACH_SUBPARTITION_TABLE(table) DT_FOREACH_CHILD(table, DECLARE_SUBPARTITION)
+
+/* Generate declarations */
+DT_FOREACH_STATUS_OKAY(fixed_subpartitions, FOR_EACH_SUBPARTITION_TABLE)
+
+#undef DECLARE_SUBPARTITION
+#undef DECLARE_SUBPARTITION_0
+#undef FOR_EACH_SUBPARTITION_TABLE
 /** @endcond */
 
 #ifdef __cplusplus
