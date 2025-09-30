@@ -199,6 +199,8 @@ static int sdl_display_init(const struct device *dev)
 		PIXEL_FORMAT_L_8
 #elif defined(CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_AL_88)
 		PIXEL_FORMAT_AL_88
+#elif defined(CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_XRGB_8888)
+		PIXEL_FORMAT_XRGB_8888
 #else  /* SDL_DISPLAY_DEFAULT_PIXEL_FORMAT */
 		PIXEL_FORMAT_ARGB_8888
 #endif /* SDL_DISPLAY_DEFAULT_PIXEL_FORMAT */
@@ -232,6 +234,29 @@ static void sdl_display_write_argb8888(void *disp_buf,
 			"Input buffer too small");
 
 	memcpy(disp_buf, buf, desc->pitch * 4U * desc->height);
+}
+
+/*
+ * Convert from			Byte 0   Byte 1   Byte 2   Byte 3
+ *				7......0 15.....8 23....16 31....24
+ * PIXEL_FORMAT_XRGB_8888	Bbbbbbbb Gggggggg Rrrrrrrr Xxxxxxxx
+ * into
+ * SDL_PIXELFORMAT_BGRA32	Bbbbbbbb Gggggggg Rrrrrrrr 11111111
+ */
+static void sdl_display_write_xrgb8888(uint8_t *disp_buf,
+		const struct display_buffer_descriptor *desc, const void *buf)
+{
+	__ASSERT((desc->pitch * 4U * desc->height) <= desc->buf_size,
+			"Input buffer too small");
+
+	for (uint32_t y = 0; y < desc->height; y++) {
+		const uint32_t *src_row = (const uint32_t *)buf + y * desc->pitch;
+
+		for (uint32_t x = 0; x < desc->width; x++) {
+			*(uint32_t *)disp_buf = src_row[x] | sys_cpu_to_le32(0xFF000000);
+			disp_buf += 4;
+		}
+	}
 }
 
 /*
@@ -475,6 +500,8 @@ static int sdl_display_write(const struct device *dev, const uint16_t x,
 	k_mutex_lock(&disp_data->task_mutex, K_FOREVER);
 	if (disp_data->current_pixel_format == PIXEL_FORMAT_ARGB_8888) {
 		sdl_display_write_argb8888(disp_data->buf, desc, buf);
+	} else if (disp_data->current_pixel_format == PIXEL_FORMAT_XRGB_8888) {
+		sdl_display_write_xrgb8888(disp_data->buf, desc, buf);
 	} else if (disp_data->current_pixel_format == PIXEL_FORMAT_RGB_888) {
 		sdl_display_write_rgb888(disp_data->buf, desc, buf);
 	} else if (disp_data->current_pixel_format == PIXEL_FORMAT_MONO10) {
@@ -518,6 +545,29 @@ static void sdl_display_read_argb8888(const uint8_t *read_buf,
 	__ASSERT((desc->pitch * 4U * desc->height) <= desc->buf_size, "Read buffer is too small");
 
 	memcpy(buf, read_buf, desc->pitch * 4U * desc->height);
+}
+
+/*
+ * Convert from			Byte 0   Byte 1   Byte 2   Byte 3
+ *				7......0 15.....8 23....16 31....24
+ * SDL_PIXELFORMAT_BGRA32	Bbbbbbbb Gggggggg Rrrrrrrr 11111111
+ * into
+ * PIXEL_FORMAT_XRGB_8888	Bbbbbbbb Gggggggg Rrrrrrrr 00000000
+ */
+static void sdl_display_read_xrgb8888(const uint8_t *read_buf,
+				      const struct display_buffer_descriptor *desc, void *buf)
+{
+	const uint32_t *src = (const uint32_t *)read_buf;
+
+	__ASSERT((desc->pitch * 4U * desc->height) <= desc->buf_size, "Read buffer is too small");
+
+	for (uint32_t y = 0; y < desc->height; y++) {
+		uint32_t *dst_row = (uint32_t *)buf + y * desc->pitch;
+
+		for (uint32_t x = 0; x < desc->width; x++) {
+			dst_row[x] = src[y * desc->width + x] & sys_cpu_to_le32(0x00FFFFFF);
+		}
+	}
 }
 
 /*
@@ -720,8 +770,7 @@ static void sdl_display_read_al88(const uint8_t *read_buf,
 		}
 	}
 }
-
-static int sdl_display_read(const struct device *dev, const uint16_t x, const uint16_t y,
+	static int sdl_display_read(const struct device *dev, const uint16_t x, const uint16_t y,
 			    const struct display_buffer_descriptor *desc, void *buf)
 {
 	struct sdl_display_data *disp_data = dev->data;
@@ -758,6 +807,8 @@ static int sdl_display_read(const struct device *dev, const uint16_t x, const ui
 
 	if (disp_data->current_pixel_format == PIXEL_FORMAT_ARGB_8888) {
 		sdl_display_read_argb8888(disp_data->read_buf, desc, buf);
+	} else if (disp_data->current_pixel_format == PIXEL_FORMAT_XRGB_8888) {
+		sdl_display_read_xrgb8888(disp_data->read_buf, desc, buf);
 	} else if (disp_data->current_pixel_format == PIXEL_FORMAT_RGB_888) {
 		sdl_display_read_rgb888(disp_data->read_buf, desc, buf);
 	} else if (disp_data->current_pixel_format == PIXEL_FORMAT_MONO10) {
@@ -777,7 +828,6 @@ static int sdl_display_read(const struct device *dev, const uint16_t x, const ui
 
 	return 0;
 }
-
 static int sdl_display_clear(const struct device *dev)
 {
 	const struct sdl_display_config *config = dev->config;
@@ -789,6 +839,7 @@ static int sdl_display_clear(const struct device *dev)
 
 	switch (disp_data->current_pixel_format) {
 	case PIXEL_FORMAT_ARGB_8888:
+	case PIXEL_FORMAT_XRGB_8888:
 		size = config->width * config->height * 4U;
 		break;
 	case PIXEL_FORMAT_RGB_888:
@@ -878,6 +929,7 @@ static void sdl_display_get_capabilities(
 	capabilities->x_resolution = config->width;
 	capabilities->y_resolution = config->height;
 	capabilities->supported_pixel_formats = PIXEL_FORMAT_ARGB_8888 |
+		PIXEL_FORMAT_XRGB_8888 |
 		PIXEL_FORMAT_RGB_888 |
 		PIXEL_FORMAT_MONO01 |
 		PIXEL_FORMAT_MONO10 |
@@ -890,14 +942,14 @@ static void sdl_display_get_capabilities(
 		(IS_ENABLED(CONFIG_SDL_DISPLAY_MONO_VTILED) ? SCREEN_INFO_MONO_VTILED : 0) |
 		(IS_ENABLED(CONFIG_SDL_DISPLAY_MONO_MSB_FIRST) ? SCREEN_INFO_MONO_MSB_FIRST : 0);
 }
-
-static int sdl_display_set_pixel_format(const struct device *dev,
+	static int sdl_display_set_pixel_format(const struct device *dev,
 		const enum display_pixel_format pixel_format)
 {
 	struct sdl_display_data *disp_data = dev->data;
 
 	switch (pixel_format) {
 	case PIXEL_FORMAT_ARGB_8888:
+	case PIXEL_FORMAT_XRGB_8888:
 	case PIXEL_FORMAT_RGB_888:
 	case PIXEL_FORMAT_MONO01:
 	case PIXEL_FORMAT_MONO10:
