@@ -532,37 +532,6 @@ config NRF70_RPU_EXTEND_TWT_SP
 	  mechanism is not used.
 endif # NRF_WIFI_LOW_POWER
 
-config WIFI_FIXED_MAC_ADDRESS
-	string "Wi-Fi Fixed MAC address in format XX:XX:XX:XX:XX:XX"
-	help
-	  This option overrides the MAC address read from OTP. It is strictly for testing purposes only.
-
-choice
-	prompt "Wi-Fi MAC address type"
-	default WIFI_FIXED_MAC_ADDRESS_ENABLED if WIFI_FIXED_MAC_ADDRESS != ""
-	default WIFI_OTP_MAC_ADDRESS
-	help
-	  Select the type of MAC address to be used by the Wi-Fi driver
-
-config WIFI_OTP_MAC_ADDRESS
-	bool "Use MAC address from OTP"
-	help
-	  This option uses the MAC address stored in the OTP memory of the nRF70.
-
-config WIFI_FIXED_MAC_ADDRESS_ENABLED
-	bool "fixed MAC address"
-	help
-	  Enable fixed MAC address
-
-config WIFI_RANDOM_MAC_ADDRESS
-	bool "Random MAC address generation at runtime"
-	depends on ENTROPY_GENERATOR
-	help
-	  This option enables random MAC address generation at runtime.
-	  The random MAC address is generated using the entropy device random generator.
-
-endchoice
-
 config NRF70_RSSI_STALE_TIMEOUT_MS
 	int "RSSI stale timeout in milliseconds"
 	default 1000
