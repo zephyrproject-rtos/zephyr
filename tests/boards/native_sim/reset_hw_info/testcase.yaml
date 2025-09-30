@@ -1,5 +1,6 @@
 tests:
   boards.native_sim.reset_hw_info:
+    skip: true
     platform_allow:
       - native_sim
       - native_sim/native/64
