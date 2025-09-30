@@ -140,6 +140,56 @@ struct uc81xx_ptl16 {
 
 BUILD_ASSERT(sizeof(struct uc81xx_ptl16) == 9);
 
+/* UC8151D-specific structures */
+#if DT_HAS_COMPAT_STATUS_OKAY(ultrachip_uc8151d)
+struct uc8151d_tres {
+	/* Horizontal resolution in pixels.
+	 * Hardware interprets as bank[7:3] | column[2:0]
+	 */
+	uint8_t hres;
+	uint8_t vres_h;       /* VRES[8] - MSB of vertical resolution */
+	uint8_t vres_l;       /* VRES[7:0] - LSB of vertical resolution */
+} __packed;
+
+BUILD_ASSERT(sizeof(struct uc8151d_tres) == 3);
+
+struct uc8151d_ptl {
+	/* Horizontal start in pixels.
+	 * Hardware interprets as bank[7:3] | column[2:0]
+	 */
+	uint8_t hrst;
+	/* Horizontal end in pixels.
+	 * Hardware interprets as bank[7:3] | column[2:0]
+	 */
+	uint8_t hred;
+	uint8_t vrst_h;       /* VRST[8] - Vertical start MSB */
+	uint8_t vrst_l;       /* VRST[7:0] - Vertical start LSB */
+	uint8_t vred_h;       /* VRED[8] - Vertical end MSB */
+	uint8_t vred_l;       /* VRED[7:0] - Vertical end LSB */
+	uint8_t pt_scan;      /* PT_SCAN - Scan mode */
+} __packed;
+
+BUILD_ASSERT(sizeof(struct uc8151d_ptl) == 7);
+
+/* UC8151D CDI register bit fields */
+#define UC8151D_CDI_VBD_MASK		0xC0    /* bits 7:6 */
+#define UC8151D_CDI_DDX_MASK		0x30    /* bits 5:4 */
+#define UC8151D_CDI_MASK		0x0F    /* bits 3:0 */
+#define UC8151D_CDI_DEFAULT		0xD7    /* Default value */
+
+/* UC8151D CDI VBD values for border control */
+#define UC8151D_CDI_VBD_FLOATING	0x00    /* Floating border */
+#define UC8151D_CDI_VBD_LUT1		0x40    /* LUT1 border */
+#define UC8151D_CDI_VBD_LUT2		0x80    /* LUT2 border */
+#define UC8151D_CDI_VBD_LUT3		0xC0    /* LUT3 border */
+
+/* UC8151D CDI DDX values for data polarity */
+#define UC8151D_CDI_DDX_DEFAULT		0x10    /* Default DDX setting */
+
+/* UC8151D CDI interval values */
+#define UC8151D_CDI_10_HSYNC		0x07    /* 10 hsync (default) */
+#endif
+
 #define UC81XX_PTL_FLAG_PT_SCAN			BIT(0)
 
 /* Time constants in ms */
