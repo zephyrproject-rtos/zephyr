@@ -75,7 +75,18 @@ jobs:
         fi
         sudo tar xf doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz -C /opt
         echo "/opt/doxygen-${DOXYGEN_VERSION}/bin" >> $GITHUB_PATH
-        echo "${HOME}/.local/bin" >> $GITHUB_PATH
+        echo "${HOME}/.local/bin" >> $
+        echo "Free disk space pre cleanup"
+        df -h
+
+        # cleanup
+        rm doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz
+        sudo apt-get clean
+
+        echo "Free disk space post cleanup"
+        df -h
+        
+        echo "Runner temp = $RUNNER_TEMP"
 
     - name: checkout
       uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
@@ -128,11 +139,11 @@ jobs:
           DOC_TAG="development"
         fi
 
-        if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-          DOC_TARGET="html-fast"
-        else
-          DOC_TARGET="html"
-        fi
+        # if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+        #   DOC_TARGET="html-fast"
+        # else
+        DOC_TARGET="html"
+        # fi
 
         DOC_TAG=${DOC_TAG} \
         SPHINXOPTS="-j ${JOB_COUNT} -W --keep-going -T" \
