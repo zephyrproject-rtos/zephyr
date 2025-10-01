@@ -96,6 +96,17 @@
 			};
 		};
 
+		v2m_sysreg: sysreg@1c010000 {
+			compatible = "arm,vexpress-sysreg";
+			reg = <0x1c010000 0x1000>;
+		};
+
+		pwrc: power-controller@1c100000 {
+			compatible = "arm,fvp-pwrc";
+			reg = <0x1c100000 0x1000>;
+			arm,vexpress-sysreg = <&v2m_sysreg>;
+		};
+
 		uart0: uart@1c090000 {
 			compatible = "arm,pl011";
 			reg = <0x1c090000 0x1000>;
