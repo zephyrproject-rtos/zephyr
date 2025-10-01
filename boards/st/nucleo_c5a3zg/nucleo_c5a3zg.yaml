@@ -11,6 +11,7 @@ supported:
   - counter
   - gpio
   - pwm
+  - rtc
   - uart
 ram: 256
 flash: 1024
