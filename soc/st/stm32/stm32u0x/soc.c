@@ -27,6 +27,7 @@ LOG_MODULE_REGISTER(soc);
  */
 void soc_early_init_hook(void)
 {
+	LL_FLASH_EnableInstCache();
 #if defined(CONFIG_STM32_FLASH_PREFETCH)
 	/* Enable ART Accelerator prefetch */
 	LL_FLASH_EnablePrefetch();
