@@ -58,6 +58,7 @@ BUILD_ASSERT(sizeof(CONFIG_MODEM_CELLULAR_APN) - 1 < MODEM_CELLULAR_DATA_APN_LEN
 enum modem_cellular_state {
 	MODEM_CELLULAR_STATE_IDLE = 0,
 	MODEM_CELLULAR_STATE_RESET_PULSE,
+	MODEM_CELLULAR_STATE_AWAIT_RESET,
 	MODEM_CELLULAR_STATE_POWER_ON_PULSE,
 	MODEM_CELLULAR_STATE_AWAIT_POWER_ON,
 	MODEM_CELLULAR_STATE_SET_BAUDRATE,
@@ -205,6 +206,8 @@ static const char *modem_cellular_state_str(enum modem_cellular_state state)
 		return "idle";
 	case MODEM_CELLULAR_STATE_RESET_PULSE:
 		return "reset pulse";
+	case MODEM_CELLULAR_STATE_AWAIT_RESET:
+		return "await reset";
 	case MODEM_CELLULAR_STATE_POWER_ON_PULSE:
 		return "power pulse";
 	case MODEM_CELLULAR_STATE_AWAIT_POWER_ON:
@@ -287,6 +290,7 @@ static bool modem_cellular_apn_change_allowed(enum modem_cellular_state st)
 	switch (st) {
 	case MODEM_CELLULAR_STATE_IDLE:
 	case MODEM_CELLULAR_STATE_RESET_PULSE:
+	case MODEM_CELLULAR_STATE_AWAIT_RESET:
 	case MODEM_CELLULAR_STATE_POWER_ON_PULSE:
 	case MODEM_CELLULAR_STATE_AWAIT_POWER_ON:
 	case MODEM_CELLULAR_STATE_SET_BAUDRATE:
@@ -846,9 +850,16 @@ static int modem_cellular_on_reset_pulse_state_enter(struct modem_cellular_data 
 static void modem_cellular_reset_pulse_event_handler(struct modem_cellular_data *data,
 							enum modem_cellular_event evt)
 {
+	const struct modem_cellular_config *config =
+		(const struct modem_cellular_config *)data->dev->config;
+
 	switch (evt) {
 	case MODEM_CELLULAR_EVENT_TIMEOUT:
-		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_AWAIT_POWER_ON);
+		if (modem_cellular_gpio_is_enabled(&config->power_gpio)) {
+			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_AWAIT_RESET);
+		} else {
+			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_AWAIT_POWER_ON);
+		}
 		break;
 
 	case MODEM_CELLULAR_EVENT_SUSPEND:
@@ -871,6 +882,41 @@ static int modem_cellular_on_reset_pulse_state_leave(struct modem_cellular_data 
 		gpio_pin_set_dt(&config->wake_gpio, 1);
 	}
 
+	modem_cellular_stop_timer(data);
+	return 0;
+}
+
+static int modem_cellular_on_await_reset_state_enter(struct modem_cellular_data *data)
+{
+	modem_cellular_start_timer(data, K_MSEC(CONFIG_MODEM_CELLULAR_RESET_POWER_ON_DELAY_MS));
+	return 0;
+}
+
+static void modem_cellular_await_reset_event_handler(struct modem_cellular_data *data,
+							enum modem_cellular_event evt)
+{	const struct modem_cellular_config *config =
+		(const struct modem_cellular_config *)data->dev->config;
+
+	switch (evt) {
+	case MODEM_CELLULAR_EVENT_TIMEOUT:
+		if (modem_cellular_gpio_is_enabled(&config->power_gpio)) {
+			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_POWER_ON_PULSE);
+		} else {
+			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_AWAIT_POWER_ON);
+		}
+		break;
+
+	case MODEM_CELLULAR_EVENT_SUSPEND:
+		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_IDLE);
+		break;
+
+	default:
+		break;
+	}
+}
+
+static int modem_cellular_on_await_reset_state_leave(struct modem_cellular_data *data)
+{
 	modem_cellular_stop_timer(data);
 	return 0;
 }
@@ -1531,6 +1577,10 @@ static int modem_cellular_on_state_enter(struct modem_cellular_data *data)
 		ret = modem_cellular_on_reset_pulse_state_enter(data);
 		break;
 
+	case MODEM_CELLULAR_STATE_AWAIT_RESET:
+		ret = modem_cellular_on_await_reset_state_enter(data);
+		break;
+
 	case MODEM_CELLULAR_STATE_POWER_ON_PULSE:
 		ret = modem_cellular_on_power_on_pulse_state_enter(data);
 		break;
@@ -1614,6 +1664,10 @@ static int modem_cellular_on_state_leave(struct modem_cellular_data *data)
 
 	case MODEM_CELLULAR_STATE_RESET_PULSE:
 		ret = modem_cellular_on_reset_pulse_state_leave(data);
+		break;
+
+	case MODEM_CELLULAR_STATE_AWAIT_RESET:
+		ret = modem_cellular_on_await_reset_state_leave(data);
 		break;
 
 	case MODEM_CELLULAR_STATE_POWER_ON_PULSE:
@@ -1701,6 +1755,10 @@ static void modem_cellular_event_handler(struct modem_cellular_data *data,
 
 	case MODEM_CELLULAR_STATE_RESET_PULSE:
 		modem_cellular_reset_pulse_event_handler(data, evt);
+		break;
+
+	case MODEM_CELLULAR_STATE_AWAIT_RESET:
+		modem_cellular_await_reset_event_handler(data, evt);
 		break;
 
 	case MODEM_CELLULAR_STATE_POWER_ON_PULSE:

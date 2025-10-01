@@ -74,6 +74,10 @@ config MODEM_CELLULAR_NEW_BAUDRATE_DELAY
 	default 100 if DT_HAS_U_BLOX_LARA_R6_ENABLED
 	default 300
 
+config MODEM_CELLULAR_RESET_POWER_ON_DELAY_MS
+	int "Delay between de-asserting the reset pin and pulsing the power pin"
+	default 500
+
 if DT_HAS_U_BLOX_LARA_R6_ENABLED
 
 choice MODEM_CELLULAR_RAT
