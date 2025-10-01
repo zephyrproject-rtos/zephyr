@@ -79,6 +79,17 @@ struct video_format {
 	 * the next row (>=width).
 	 */
 	uint32_t pitch;
+	/**
+	 * @brief size of the buffer in bytes, need to be set by the drivers
+	 *
+	 * For uncompressed formats, this is the size of the raw data buffer in bytes,
+	 * which could be the whole raw image or a portion of the raw image in cases
+	 * the receiver / dma supports it.
+	 *
+	 * For compressed formats, this is the maximum number of bytes required to
+	 * hold a complete compressed frame, estimated for the worst case.
+	 */
+	uint32_t size;
 };
 
 /**
