@@ -15,7 +15,7 @@ BUILD_ASSERT(((NRF_PULL_NONE == NRF_GPIO_PIN_NOPULL) &&
 	      (NRF_PULL_UP == NRF_GPIO_PIN_PULLUP)),
 	      "nRF pinctrl pull settings do not match HAL values");
 
-#if defined(GPIO_PIN_CNF_DRIVE_E0E1) || defined(GPIO_PIN_CNF_DRIVE0_E0)
+#if NRF_GPIO_HAS_DRIVE_EXTRA
 #define NRF_DRIVE_COUNT (NRF_DRIVE_E0E1 + 1)
 #else
 #define NRF_DRIVE_COUNT (NRF_DRIVE_H0D1 + 1)
@@ -29,7 +29,7 @@ static const nrf_gpio_pin_drive_t drive_modes[NRF_DRIVE_COUNT] = {
 	[NRF_DRIVE_D0H1] = NRF_GPIO_PIN_D0H1,
 	[NRF_DRIVE_S0D1] = NRF_GPIO_PIN_S0D1,
 	[NRF_DRIVE_H0D1] = NRF_GPIO_PIN_H0D1,
-#if defined(GPIO_PIN_CNF_DRIVE_E0E1) || defined(GPIO_PIN_CNF_DRIVE0_E0)
+#if NRF_GPIO_HAS_DRIVE_EXTRA
 	[NRF_DRIVE_E0E1] = NRF_GPIO_PIN_E0E1,
 #endif
 };
@@ -494,7 +494,7 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 #endif /* defined(NRF_PSEL_TDM) */
 #if defined(NRF_GRTC_CLKOUT_FAST)
 		case NRF_FUN_GRTC_CLKOUT_FAST:
-#if NRF_GPIO_HAS_SEL && defined(GPIO_PIN_CNF_CTRLSEL_GRTC)
+#if NRF_GPIO_HAS_SEL && NRF_GPIO_HAS_CTRLSEL_GRTC
 			nrf_gpio_pin_control_select(psel, NRF_GPIO_PIN_SEL_GRTC);
 #endif
 			dir = NRF_GPIO_PIN_DIR_OUTPUT;
@@ -503,7 +503,7 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 #endif /* defined(NRF_GRTC_CLKOUT_FAST) */
 #if defined(NRF_GRTC_CLKOUT_SLOW)
 		case NRF_FUN_GRTC_CLKOUT_32K:
-#if NRF_GPIO_HAS_SEL && defined(GPIO_PIN_CNF_CTRLSEL_GRTC)
+#if NRF_GPIO_HAS_SEL && NRF_GPIO_HAS_CTRLSEL_GRTC
 			nrf_gpio_pin_control_select(psel, NRF_GPIO_PIN_SEL_GRTC);
 #endif
 			dir = NRF_GPIO_PIN_DIR_OUTPUT;
