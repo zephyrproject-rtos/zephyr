@@ -14,13 +14,28 @@ config MODEM_BACKEND_UART
 
 if MODEM_BACKEND_UART
 
-config MODEM_BACKEND_UART_ISR
-	bool "Modem UART backend module interrupt driven implementation"
-	default y if UART_INTERRUPT_DRIVEN
+config MODEM_BACKEND_UART_ASYNC_API
+	bool
+
+choice MODEM_BACKEND_UART_IMPL
+	prompt "Modem UART backend implementation"
 
 config MODEM_BACKEND_UART_ASYNC
 	bool "Modem UART backend module async implementation"
-	default y if UART_ASYNC_API
+	depends on UART_ASYNC_API
+	select MODEM_BACKEND_UART_ASYNC_API
+
+config MODEM_BACKEND_UART_ASYNC_HWFC
+	bool "Modem UART backend module async implementation with Hardware flow control (HWFC)"
+	depends on UART_ASYNC_API
+	select MODEM_BACKEND_UART_ASYNC_API
+	select EXPERIMENTAL
+
+config MODEM_BACKEND_UART_ISR
+	bool "Modem UART backend module interrupt driven implementation"
+	depends on UART_INTERRUPT_DRIVEN
+
+endchoice # MODEM_BACKEND_UART_IMPL
 
 if MODEM_BACKEND_UART_ISR
 
@@ -36,9 +51,9 @@ config MODEM_BACKEND_UART_ISR_RECEIVE_IDLE_TIMEOUT_MS
 	  (<UART receive_buf_size> / 2) / (<UART baud rate> / <UART bits per byte>) * <ms per sec>
 	  By default (for the modem_cellular driver): (512 / 2) / (115200 / 10) * 1000 = 22,222 => 20
 
-endif
+endif # MODEM_BACKEND_UART_ISR
 
-if MODEM_BACKEND_UART_ASYNC
+if MODEM_BACKEND_UART_ASYNC_API
 
 config MODEM_BACKEND_UART_ASYNC_TRANSMIT_TIMEOUT_MS
 	int "Modem async UART transmit timeout in milliseconds"
@@ -48,9 +63,7 @@ config MODEM_BACKEND_UART_ASYNC_RECEIVE_IDLE_TIMEOUT_MS
 	int "Modem async UART receive idle timeout in milliseconds"
 	default 30
 
-config MODEM_BACKEND_UART_ASYNC_HWFC
-	bool "Hardware flow control (HWFC) for the modem async UART backend"
-	select EXPERIMENTAL
+endif # MODEM_BACKEND_UART_ASYNC_API
 
 if MODEM_BACKEND_UART_ASYNC_HWFC
 
@@ -60,7 +73,5 @@ config MODEM_BACKEND_UART_ASYNC_HWFC_BUFFER_COUNT
 	default 3
 
 endif # MODEM_BACKEND_UART_ASYNC_HWFC
-
-endif # MODEM_BACKEND_UART_ASYNC
 
 endif # MODEM_BACKEND_UART
