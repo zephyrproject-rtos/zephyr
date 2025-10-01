@@ -44,18 +44,6 @@ extern const struct device *eth_stm32_phy_dev;
 #define __eth_stm32_buf  __aligned(4)
 #endif
 
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_ethernet)
-#define STM32_ETH_PHY_MODE(inst) \
-	((DT_INST_ENUM_HAS_VALUE(inst, phy_connection_type, rgmii) ? ETH_RGMII_MODE : \
-	 (DT_INST_ENUM_HAS_VALUE(inst, phy_connection_type, gmii) ? ETH_GMII_MODE : \
-	 (DT_INST_ENUM_HAS_VALUE(inst, phy_connection_type, mii) ? ETH_MII_MODE : \
-		 ETH_RMII_MODE))))
-#else
-#define STM32_ETH_PHY_MODE(inst) \
-	(DT_INST_ENUM_HAS_VALUE(inst, phy_connection_type, mii) ? \
-		ETH_MII_MODE : ETH_RMII_MODE)
-#endif
-
 #if defined(CONFIG_ETH_STM32_HAL_API_V1)
 
 #define ETH_MII_MODE	ETH_MEDIA_INTERFACE_MII
@@ -76,6 +64,22 @@ struct eth_stm32_tx_context {
 };
 
 #endif /* CONFIG_ETH_STM32_HAL_API_V2 */
+
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_ethernet)
+
+#define ETH_GMII_MODE	HAL_ETH_GMII_MODE
+#define ETH_RGMII_MODE	HAL_ETH_RGMII_MODE
+
+#define STM32_ETH_PHY_MODE(inst) \
+	((DT_INST_ENUM_HAS_VALUE(inst, phy_connection_type, rgmii) ? ETH_RGMII_MODE : \
+	 (DT_INST_ENUM_HAS_VALUE(inst, phy_connection_type, gmii) ? ETH_GMII_MODE : \
+	 (DT_INST_ENUM_HAS_VALUE(inst, phy_connection_type, mii) ? ETH_MII_MODE : \
+								ETH_RMII_MODE))))
+#else
+#define STM32_ETH_PHY_MODE(inst) \
+	(DT_INST_ENUM_HAS_VALUE(inst, phy_connection_type, mii) ? \
+		ETH_MII_MODE : ETH_RMII_MODE)
+#endif
 
 /* Definition of the Ethernet driver buffers size and count */
 #define ETH_STM32_RX_BUF_SIZE	ETH_MAX_PACKET_SIZE /* buffer size for receive */
