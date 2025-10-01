@@ -138,6 +138,12 @@ New APIs and options
       * fvp_base_revc_2xaemv8a/fvp_base_revc_2xaemv8a/smp/ns
         → fvp_base_revc_2xaem/v8a/smp/ns
 
+    * New board targets:
+
+      * fvp_base_revc_2xaem/v9a (basic ARMv9-A single core)
+      * fvp_base_revc_2xaem/v9a/smp (ARMv9-A SMP 4 cores)
+      * fvp_base_revc_2xaem/v9a/smp/ns (ARMv9-A SMP non-secure with TFA)
+
 * Bluetooth
 
   * Audio
