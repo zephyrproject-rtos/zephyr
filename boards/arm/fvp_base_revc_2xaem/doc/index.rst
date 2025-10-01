@@ -49,6 +49,19 @@ The following board targets are available:
 * ``fvp_base_revc_2xaem/v9a`` - ARMv9-A (64-bit) with Cortex-A510 cores
 * ``fvp_base_revc_2xaem/v9a/smp`` - ARMv9-A SMP (4 cores)
 * ``fvp_base_revc_2xaem/v9a/smp/ns`` - ARMv9-A SMP Non-Secure
+* ``fvp_base_revc_2xaem/a320`` - ARMv9.2-A with Cortex-A320 configuration
+
+**Cortex-A320 Variant:**
+
+The ``fvp_base_revc_2xaem/a320`` variant provides Cortex-A320 specific FVP
+configuration with:
+
+* ARMv9.2-A architecture compliance
+* Enhanced cryptographic extensions (SHA3, SHA512, SM3, SM4)
+* Advanced memory tagging (MTE Level 3)
+* QARMA3 Pointer Authentication
+* Optimized cache configuration for Cortex-A320
+* Performance monitoring unit with SVE-specific events
 
 Devices
 ========
@@ -101,6 +114,14 @@ For ARMv9-A variants:
    :zephyr-app: samples/synchronization
    :host-os: unix
    :board: fvp_base_revc_2xaem/v9a
+   :goals: build
+
+For Cortex-A320 variants:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :host-os: unix
+   :board: fvp_base_revc_2xaem/a320
    :goals: build
 
 For SMP variants:
