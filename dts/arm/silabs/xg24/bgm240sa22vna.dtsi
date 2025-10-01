@@ -7,17 +7,31 @@
  */
 
 #include <mem.h>
-#include <silabs/xg24/efr32bg24.dtsi>
+#include <silabs/xg24/bgm24.dtsi>
 
 / {
 	soc {
-		compatible = "silabs,bgm240sa22vna", "silabs,efr32bg24", "silabs,xg24",
-			     "silabs,efr32", "simple-bus";
+		compatible = "silabs,bgm240sa22vna", "silabs,bgm24", "silabs,xg24", "silabs,efr32",
+			     "simple-bus";
 	};
 };
 
 &flash0 {
 	reg = <0x08000000 DT_SIZE_K(1536)>;
+};
+
+&hfxo {
+	ctune = <140>;
+	precision = <50>;
+	status = "okay";
+};
+
+&lfrco {
+	precision-mode;
+};
+
+&radio {
+	pa-voltage-mv = <1800>;
 };
 
 &sram0 {
