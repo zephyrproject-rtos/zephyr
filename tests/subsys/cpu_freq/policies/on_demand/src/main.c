@@ -44,7 +44,7 @@ ZTEST(cpu_freq_on_demand, test_pstates)
 	zassert_equal(ret, 0, "Expected success from cpu_freq_policy_select_pstate");
 
 	zassert_not_equal(test_pstate->load_threshold, prev_threshold,
-			  "Expected different p-state after sleep");
+			  "Expected different P-state after sleep");
 }
 
 ZTEST_SUITE(cpu_freq_on_demand, NULL, NULL, NULL, NULL, NULL);
