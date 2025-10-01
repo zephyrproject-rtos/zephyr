@@ -260,6 +260,7 @@ enum bt_mesh_net_if {
 /* Decoding context for Network/Transport data */
 struct bt_mesh_net_rx {
 	struct bt_mesh_subnet *sub;
+	const struct bt_mesh_net_cred *cred;
 	struct bt_mesh_msg_ctx ctx;
 	uint32_t  seq;            /* Sequence Number */
 	uint8_t   old_iv:1,       /* iv_index - 1 was used */
