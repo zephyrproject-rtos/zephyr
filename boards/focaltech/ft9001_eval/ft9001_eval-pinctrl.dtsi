@@ -1,0 +1,80 @@
+/*
+ * Copyright (c) 2025, FocalTech Systems CO.,Ltd
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/focaltech_ft9001_pinctrl.h>
+
+&pinctrl {
+	usart3_default: usart3_default {
+		group1 {
+			pinmux = <FOCALTECH_PINMUX(FOCALTECH_IOCTRL_SCICR_OFFSET, 25, 1)>, /* SCI3 TxD */
+					 <FOCALTECH_PINMUX(FOCALTECH_IOCTRL_SCICR_OFFSET, 26, 1)>; /* SCI3 RxD */
+		};
+
+		group2 {
+			/* Disable I2S */
+			pinmux = <FOCALTECH_PINMUX(FOCALTECH_IOCTRL_SWAPCR3_OFFSET, 9, 0)>,
+					 <FOCALTECH_PINMUX(FOCALTECH_IOCTRL_SWAPCR3_OFFSET, 12, 0)>;
+		};
+
+		group3 {
+			/* Disable PWMT1 */
+			pinmux = <FOCALTECH_PINMUX(FOCALTECH_IOCTRL_SWAPCR4_OFFSET, 24, 0)>,
+					 <FOCALTECH_PINMUX(FOCALTECH_IOCTRL_SWAPCR4_OFFSET, 29, 0)>;
+		};
+	};
+
+	/* Pin28 configured as GINT40 */
+	gint40_default: gint40_default {
+		group1 {
+			/* First level mux: SSI5 -> SPI1_SS */
+			pinmux = <FOCALTECH_PINMUX(FOCALTECH_IOCTRL_SWAPCR5_OFFSET, 15, 0)>;
+		};
+
+		group2 {
+			/* Second level mux: SPI1_SS -> GINT40 */
+			pinmux = <FOCALTECH_PINMUX(FOCALTECH_IOCTRL_SWAPCR2_OFFSET, 8, 1)>;
+		};
+	};
+
+	/* Pin26 configured as GINT41 */
+	gint41_default: gint41_default {
+		group1 {
+			/* First level mux: SSI5 -> SPI1_SCK */
+			pinmux = <FOCALTECH_PINMUX(FOCALTECH_IOCTRL_SWAPCR5_OFFSET, 14, 0)>;
+		};
+
+		group2 {
+			/* Second level mux: SPI1_SCK -> GINT41 */
+			pinmux = <FOCALTECH_PINMUX(FOCALTECH_IOCTRL_SWAPCR2_OFFSET, 9, 1)>;
+		};
+	};
+
+	/* Pin29 configured as GINT42 */
+	gint42_default: gint42_default {
+		group1 {
+			/* First level mux: SSI5 -> SPI1_MISO */
+			pinmux = <FOCALTECH_PINMUX(FOCALTECH_IOCTRL_SWAPCR5_OFFSET, 13, 0)>;
+		};
+
+		group2 {
+			/* Second level mux: SPI1_MISO -> GINT42 */
+			pinmux = <FOCALTECH_PINMUX(FOCALTECH_IOCTRL_SWAPCR2_OFFSET, 10, 1)>;
+		};
+	};
+
+	/* Pin27 configured as GINT43 */
+	gint43_default: gint43_default {
+		group1 {
+			/* First level mux: SSI5 -> SPI1_MOSI */
+			pinmux = <FOCALTECH_PINMUX(FOCALTECH_IOCTRL_SWAPCR5_OFFSET, 12, 0)>;
+		};
+
+		group2 {
+			/* Second level mux: SPI1_MOSI -> GINT43 */
+			pinmux = <FOCALTECH_PINMUX(FOCALTECH_IOCTRL_SWAPCR2_OFFSET, 11, 1)>;
+		};
+	};
+};
