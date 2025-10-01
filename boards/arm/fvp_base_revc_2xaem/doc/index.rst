@@ -132,6 +132,17 @@ then export the :envvar:`ARMFVP_BL1_FILE` and :envvar:`ARMFVP_FIP_FILE` environm
    export ARMFVP_BL1_FILE=<path/to/tfa-a/build/fvp/release/bl1.bin>
    export ARMFVP_FIP_FILE=<path/to/tfa-a/build/fvp/release/fip.bin>
 
+Migration from Legacy Board Names
+*********************************
+
+The legacy board name ``fvp_base_revc_2xaemv8a`` has been replaced with the
+unified ``fvp_base_revc_2xaem/v8a`` naming. Update your build commands:
+
+* Old: ``west build -b fvp_base_revc_2xaemv8a``
+* New: ``west build -b fvp_base_revc_2xaem/v8a``
+
+The legacy board name remains supported for backward compatibility.
+
 Debugging
 =========
 
