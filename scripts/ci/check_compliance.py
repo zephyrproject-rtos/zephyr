@@ -1744,6 +1744,7 @@ class Identity(ComplianceTest):
                 auth_name, auth_email, body = commit_info
             else:
                 self.failure(f'Unable to parse commit message for {shaidx}')
+                continue
 
             match_signoff = re.search(r"signed-off-by:\s(.*)", body,
                                       re.IGNORECASE)
