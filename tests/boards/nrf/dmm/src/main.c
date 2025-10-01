@@ -522,6 +522,10 @@ static void stress_allocator(void *mem_reg, bool cached)
 	int rv;
 	uint32_t curr_use;
 
+	if (mem_reg == NULL) {
+		ztest_test_skip();
+	}
+
 	memset(&ctx, 0, sizeof(ctx));
 	ctx.mem_reg = mem_reg;
 	ctx.cached = cached;
