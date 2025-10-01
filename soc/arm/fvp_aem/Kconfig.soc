@@ -9,8 +9,13 @@ config SOC_V8A
 	bool
 	select SOC_SERIES_FVP_AEM
 
+config SOC_V9A
+	bool
+	select SOC_SERIES_FVP_AEM
+
 config SOC
 	default "v8a" if SOC_V8A
+	default "v9a" if SOC_V9A
 
 config SOC_SERIES
 	default "fvp_aem" if SOC_SERIES_FVP_AEM
