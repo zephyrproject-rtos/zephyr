@@ -70,6 +70,9 @@ tests:
       - CONFIG_THREAD_STACK_INFO=n
   portability.posix.common.userspace:
     filter: CONFIG_ARCH_HAS_USERSPACE
+    # Excluded while #96602 is in review
+    platform_exclude:
+      - mps2/an385
     tags:
       - userspace
     extra_configs:
