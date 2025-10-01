@@ -79,6 +79,12 @@ struct video_format {
 	 * the next row (>=width).
 	 */
 	uint32_t pitch;
+	/**
+	 * @brief size of buffer data.
+	 *
+	 * This is the maximum size in bytes required for buffer data.
+	 */
+	uint32_t sizeimage;
 };
 
 /**
