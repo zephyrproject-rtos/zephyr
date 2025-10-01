@@ -1723,6 +1723,34 @@ def filter_py(root, fnames):
                              mime=True) == "text/x-python")]
 
 
+class CMakeStyle(ComplianceTest):
+    """
+    Checks cmake style added/modified files
+    """
+    name = "CMakeStyle"
+    doc = "See https://docs.zephyrproject.org/latest/contribute/style/cmake.html for more details."
+
+    def run(self):
+        # Loop through added/modified files
+        for fname in get_files(filter="d"):
+            if fname.endswith(".cmake") or fname == "CMakeLists.txt":
+                self.check_style(fname)
+
+    def check_style(self, fname):
+        SPACE_BEFORE_OPEN_BRACKETS_CHECK = re.compile(r"^\s*if\s+\(")
+        TAB_INDENTATION_CHECK = re.compile(r"^\t+")
+
+        with open(fname, encoding="utf-8") as f:
+            for line_num, line in enumerate(f.readlines(), start=1):
+                if TAB_INDENTATION_CHECK.match(line):
+                    self.fmtd_failure("error", "CMakeStyle", fname, line_num,
+                                      "Use spaces instead of tabs for indentation")
+
+                if SPACE_BEFORE_OPEN_BRACKETS_CHECK.match(line):
+                    self.fmtd_failure("error", "CMakeStyle", fname, line_num,
+                                      "Remove space before '(' in if() statements")
+
+
 class Identity(ComplianceTest):
     """
     Checks if Emails of author and signed-off messages are consistent.
