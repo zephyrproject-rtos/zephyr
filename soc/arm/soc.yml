@@ -32,6 +32,7 @@ family:
   - name: fvp_aem
     socs:
     - name: v8a
+    - name: v9a
   - name: fvp_aemv8r
     socs:
     - name: fvp_aemv8r_aarch64

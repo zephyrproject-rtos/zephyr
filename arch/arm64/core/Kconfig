@@ -79,6 +79,16 @@ config CPU_CORTEX_A78
 	help
 	  This option signifies the use of a Cortex-A78 CPU
 
+config CPU_CORTEX_A510
+	bool
+	select CPU_CORTEX_A
+	select ARMV9_A
+	help
+	  This option signifies the use of a Cortex-A510 CPU, which is Arm's
+	  efficiency core implementing the ARMv9-A architecture. It provides
+	  power-efficient processing optimized for embedded applications with
+	  ARMv9-A features.
+
 config CPU_CORTEX_R82
 	bool
 	select CPU_AARCH64_CORTEX_R
@@ -222,6 +232,19 @@ config ARMV8_A
 	  compatibility with the Armv7-A architecture and enhances that profile
 	  so that it can support some features included in the AArch64 state.
 	  It supports the T32 and A32 instruction sets.
+
+config ARMV9_A
+	bool
+	select ATOMIC_OPERATIONS_BUILTIN
+	select CPU_HAS_MMU
+	select ARCH_HAS_USERSPACE if ARM_MMU
+	select ARCH_HAS_NOCACHE_MEMORY_SUPPORT if ARM_MMU
+	help
+	  This option signifies the use of an ARMv9-A processor
+	  implementation.
+	  ARMv9-A builds on ARMv8-A and introduces additional security,
+	  performance, and machine learning capabilities while maintaining
+	  backward compatibility with ARMv8-A software.
 
 rsource "xen/Kconfig"
 
