@@ -346,66 +346,6 @@ config NRFX_PPIB30
 config NRFX_PWM
 	bool
 
-config NRFX_PWM0
-	bool "PWM0 driver instance"
-	depends on $(dt_nodelabel_exists,pwm0)
-	select NRFX_PWM
-
-config NRFX_PWM1
-	bool "PWM1 driver instance"
-	depends on $(dt_nodelabel_exists,pwm1)
-	select NRFX_PWM
-
-config NRFX_PWM2
-	bool "PWM2 driver instance"
-	depends on $(dt_nodelabel_exists,pwm2)
-	select NRFX_PWM
-
-config NRFX_PWM3
-	bool "PWM3 driver instance"
-	depends on $(dt_nodelabel_exists,pwm3)
-	select NRFX_PWM
-
-config NRFX_PWM20
-	bool "PWM20 driver instance"
-	depends on $(dt_nodelabel_exists,pwm20)
-	select NRFX_PWM
-
-config NRFX_PWM21
-	bool "PWM21 driver instance"
-	depends on $(dt_nodelabel_exists,pwm21)
-	select NRFX_PWM
-
-config NRFX_PWM22
-	bool "PWM22 driver instance"
-	depends on $(dt_nodelabel_exists,pwm22)
-	select NRFX_PWM
-
-config NRFX_PWM120
-	bool "PWM120 driver instance"
-	depends on $(dt_nodelabel_exists,pwm120)
-	select NRFX_PWM
-
-config NRFX_PWM130
-	bool "PWM130 driver instance"
-	depends on $(dt_nodelabel_exists,pwm130)
-	select NRFX_PWM
-
-config NRFX_PWM131
-	bool "PWM131 driver instance"
-	depends on $(dt_nodelabel_exists,pwm131)
-	select NRFX_PWM
-
-config NRFX_PWM132
-	bool "PWM132 driver instance"
-	depends on $(dt_nodelabel_exists,pwm132)
-	select NRFX_PWM
-
-config NRFX_PWM133
-	bool "PWM133 driver instance"
-	depends on $(dt_nodelabel_exists,pwm133)
-	select NRFX_PWM
-
 config NRFX_QDEC
 	bool
 
