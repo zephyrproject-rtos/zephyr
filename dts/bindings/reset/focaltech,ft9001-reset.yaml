@@ -1,0 +1,18 @@
+# Copyright (c) 2025, FocalTech Systems CO.,Ltd
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Reset controller for FocalTech FT9001 SoC.
+  Reset specifiers use the IDs defined in
+  include/zephyr/dt-bindings/reset/focaltech_ft9001_reset.h
+
+compatible: "focaltech,ft9001-reset"
+
+include: [reset-controller.yaml, base.yaml]
+
+properties:
+  "#reset-cells":
+    const: 1
+
+reset-cells:
+  - id
