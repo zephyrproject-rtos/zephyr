@@ -1361,9 +1361,9 @@ extern const struct rtio_iodev_api spi_iodev_api;
  * @param node_id Devicetree node identifier
  * @param operation_ SPI operational mode
  */
-#define SPI_DT_IODEV_DEFINE(name, node_id, operation_)				\
+#define SPI_DT_IODEV_DEFINE(name, node_id, operation_, ...)			\
 	const struct spi_dt_spec _spi_dt_spec_##name =				\
-		SPI_DT_SPEC_GET(node_id, operation_);				\
+		SPI_DT_SPEC_GET(node_id, operation_, __VA_ARGS__);		\
 	RTIO_IODEV_DEFINE(name, &spi_iodev_api, (void *)&_spi_dt_spec_##name)
 
 /**
