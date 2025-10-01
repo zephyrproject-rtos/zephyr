@@ -2,4 +2,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_FVP_BASE_REVC_2XAEM
-	select SOC_FVP_V8A
+	bool
+	select SOC_SERIES_FVP_AEM
+	select SOC_FVP_V8A if BOARD_QUALIFIERS = "v8a"
+	select SOC_FVP_V8A if BOARD_QUALIFIERS = "v8a/smp"
+	select SOC_FVP_V8A if BOARD_QUALIFIERS = "v8a/smp/ns"
+	select SOC_FVP_V9A if BOARD_QUALIFIERS = "v9a"
+	select SOC_FVP_V9A if BOARD_QUALIFIERS = "v9a/smp"
+	select SOC_FVP_V9A if BOARD_QUALIFIERS = "v9a/smp/ns"
