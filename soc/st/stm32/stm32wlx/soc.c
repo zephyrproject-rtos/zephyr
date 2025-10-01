@@ -32,7 +32,9 @@ void soc_early_init_hook(void)
 	/* Enable CPU data and instruction cache and prefetch */
 	LL_FLASH_EnableInstCache();
 	LL_FLASH_EnableDataCache();
+#if defined(CONFIG_STM32_FLASH_PREFETCH)
 	LL_FLASH_EnablePrefetch();
+#endif
 
 	/* Update CMSIS SystemCoreClock variable (HCLK) */
 	/* At reset, system core clock is set to 4 MHz from MSI */
