@@ -1746,27 +1746,31 @@ class Identity(ComplianceTest):
                 self.failure(f'Unable to parse commit message for {shaidx}')
                 continue
 
-            match_signoff = re.search(r"signed-off-by:\s(.*)", body,
-                                      re.IGNORECASE)
-            detailed_match = re.search(rf"signed-off-by:\s({re.escape(auth_name)}) <({re.escape(auth_email)})>",
-                                       body,
-                                       re.IGNORECASE)
-
             if auth_email.endswith("@users.noreply.github.com"):
                 failures.append(f"{shaidx}: author email ({auth_email}) must "
                                 "be a real email and cannot end in "
                                 "@users.noreply.github.com")
 
-            if not match_signoff:
+            # Returns an array of everything to the right of ':' on each signoff line
+            signoff_lines = re.findall(r"signed-off-by:\s(.*)", body, re.IGNORECASE)
+            if len(signoff_lines) == 0:
                 failures.append(f'{shaidx}: Missing signed-off-by line')
-            elif not detailed_match:
-                signoff = match_signoff.group(0)
-                failures.append(f"{shaidx}: Signed-off-by line ({signoff}) "
-                                "does not follow the syntax: First "
-                                "Last <email>.")
-            elif (auth_name, auth_email) != detailed_match.groups():
-                failures.append(f"{shaidx}: author email ({auth_email}) needs "
-                                "to match one of the signed-off-by entries.")
+            else:
+                # Validate all signoff lines' syntax while also searching for commit author
+                found_author_signoff = False
+                for signoff in signoff_lines:
+                    match = re.search(r"(.+) <(.+)>", signoff)
+
+                    if not match:
+                        failures.append(f"{shaidx}: Signed-off-by line ({signoff}) "
+                                        "does not follow the syntax: First "
+                                        "Last <email>.")
+                    elif (auth_name, auth_email) == match.groups():
+                        found_author_signoff = True
+
+                if not found_author_signoff:
+                    failures.append(f"{shaidx}: author name ({auth_name}) and email ({auth_email}) "
+                                    "needs to match one of the signed-off-by entries.")
 
             if failures:
                 self.failure('\n'.join(failures))
