@@ -13,3 +13,4 @@ board:
     - name: smp
       variants:
       - name: ns
+  - name: a320
