@@ -129,6 +129,7 @@ New APIs and options
       * fvp_base_revc_2xaem/v9a (basic ARMv9-A single core)
       * fvp_base_revc_2xaem/v9a/smp (ARMv9-A SMP 4 cores)
       * fvp_base_revc_2xaem/v9a/smp/ns (ARMv9-A SMP non-secure with TFA)
+      * fvp_base_revc_2xaem/a320 (Cortex-A320 specific)
 
 * Bluetooth
 
