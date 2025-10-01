@@ -51,8 +51,8 @@ static inline void feedback_target_init(void)
 #error "Unsupported target"
 #endif
 
-static const nrfx_timer_t feedback_timer_instance =
-	NRFX_TIMER_INSTANCE(FEEDBACK_TIMER_INSTANCE_NUMBER);
+static nrfx_timer_t feedback_timer_instance =
+	NRFX_TIMER_INSTANCE(NRF_TIMER_INST_GET(FEEDBACK_TIMER_INSTANCE_NUMBER));
 
 /* While it might be possible to determine I2S FRAMESTART to USB SOF offset
  * entirely in software, the I2S API lacks appropriate timestamping. Therefore
