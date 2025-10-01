@@ -43,10 +43,12 @@ Board Variants
 
 The following board targets are available:
 
-* ``fvp_base_revc_2xaem/v8a`` - ARMv8-A (64-bit)
+* ``fvp_base_revc_2xaem/v8a`` - ARMv8-A (64-bit) with Cortex-A53 cores
 * ``fvp_base_revc_2xaem/v8a/smp`` - ARMv8-A SMP (4 cores)
 * ``fvp_base_revc_2xaem/v8a/smp/ns`` - ARMv8-A SMP Non-Secure
-* ``fvp_base_revc_2xaem/v9a`` - ARMv9-A (64-bit) [Future]
+* ``fvp_base_revc_2xaem/v9a`` - ARMv9-A (64-bit) with Cortex-A510 cores
+* ``fvp_base_revc_2xaem/v9a/smp`` - ARMv9-A SMP (4 cores)
+* ``fvp_base_revc_2xaem/v9a/smp/ns`` - ARMv9-A SMP Non-Secure
 
 Devices
 ========
@@ -92,6 +94,14 @@ Arm FVP emulated environment, for example, with the :zephyr:code-sample:`synchro
 
 This will build an image with the synchronization sample app for ARMv8-A.
 Then you can run it with ``west build -t run``.
+
+For ARMv9-A variants:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/synchronization
+   :host-os: unix
+   :board: fvp_base_revc_2xaem/v9a
+   :goals: build
 
 For SMP variants:
 
